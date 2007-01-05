@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.tmpl,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+# $Id: Makefile,v 1.1 2007-01-05 15:14:51 pda Exp $
 #
 # Makefile pour lancer l'installation de l'application topo
 # Ce Makefile n'est normalement jamais appelé lui-même, mais
