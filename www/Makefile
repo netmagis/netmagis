@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.1 2007-01-05 15:14:51 pda Exp $
+# $Id: Makefile,v 1.2 2007-01-05 16:47:30 pda Exp $
 #
 # Makefile pour lancer l'installation de l'application topo
 # Ce Makefile n'est normalement jamais appelé lui-même, mais
@@ -7,6 +7,8 @@
 #
 
 TCLSH	= /usr/local/bin/tclsh8.4
+
+DESTDIR=
 
 DEBUG  = 0
 BASE    = {host=dbcrc.u-strasbg.fr dbname=dns user=dns password=pas-fou-non-?}
@@ -23,6 +25,7 @@ NOLOGIN	= /local/etc/nologin.dns
 # utilisateur par défaut pour les scripts non web
 DEFUSER	= crc
 
+DESTDIR	= /local/services/www$(HOMEURL)
 PKGTCL	= /local/services/www/pkgtcl
 
 HTG	= /local/services/www/utils/htg
