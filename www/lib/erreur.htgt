@@ -1,0 +1,48 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {27/03/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - Métrologie - Erreur !
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Metro v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}     {%HOMEURL%/}}
+	    \reference {\lien {Équipements} {%HOMEURL%/bin/eq}}
+	    \reference {\lien {Vlans}       {%HOMEURL%/bin/l2}}
+	    \reference {\lien {Réseaux}     {%HOMEURL%/bin/l3}}
+	    \* %ADMIN%
+	}
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	    \reference {\lien {DNS}	{/applis/dns/}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Erreur !}
+
+    Une erreur est survenue dans l'exécution du script.
+    \retrait {<FONT COLOR="#FF0000">%MESSAGE%</FONT>}
+
+    Utilisez votre navigateur pour revenir à la page précédente.
+}
+
+}

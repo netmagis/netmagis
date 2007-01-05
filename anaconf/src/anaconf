@@ -1,0 +1,154 @@
+#!/bin/sh
+
+#
+# $Id: anaconf,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+#
+# Enchaîne les différentes phases pour constituer le graphe du
+# réseau donné.
+#
+# Syntaxe :
+#	$0		(sans argument, fichier généré dans osiris.graph)
+#
+# Historique :
+#   2004/06/08 : pda/jean   : conception
+#   2004/09/29 : pda/jean   : rm fichiers générés avant nouvelle génération
+#   2006/06/01 : pda/jean   : test communauté snmp
+#   2006/06/19 : pda/boggia : envoi des points de collecte
+#
+
+TMP=/tmp/p1.$$
+
+RANCIDDIR=/local/idr/conf/osiris
+RANCIDDB=$RANCIDDIR/router.db
+RANCIDCONFDIR=$RANCIDDIR/configs
+
+BASE=/local/applis/topo
+BINDIR=$BASE/bin
+DATADIR=$BASE/osiris
+EQVIRT=$DATADIR/eqvirt
+EQGEN=$DATADIR/eqgen
+DESTFILE=$DATADIR/osiris.graph
+VLANFILE=$EQGEN/_vlan.eq
+URLSETGRAPH=http://metro.u-strasbg.fr/bin/setgraph
+
+VERBOSE=0
+
+verbositer ()
+{
+    if [ $VERBOSE != 0 ]
+    then echo "$*" >&2
+    fi
+}
+
+abort_if_error ()
+{
+    if [ $1 != 0 ]
+    then
+	echo "Abort" >&2
+	exit 1
+    fi
+}
+
+#
+# Vérification de syntaxe
+#
+
+if [ $# != 0 ]
+then
+    echo "usage: $0" >&2
+    exit 1
+fi
+
+#
+# Récupérer la liste des équipements dans le fichier de configuration
+# de rancid, avec le modèle de chaque équipement extrait du fichier de
+# l'équipement lui-même.
+#
+
+verbositer "appel à 'liste-rancid'"
+$BINDIR/liste-rancid $RANCIDDB $RANCIDCONFDIR > $TMP
+abort_if_error $?
+
+#
+# Nettoyer le répertoire de génération, au cas où d'anciens
+# équipements auraient été enlevés de rancid.
+#
+rm -f $EQGEN/*
+
+#
+# Récupérer la liste des vlans sur le serveur VTP, en explorant le
+# fichier de configuration de rancid et les différentes configurations
+# des équipements.
+#
+
+verbositer "appel à 'liste-vlans'"
+$BINDIR/liste-vlans $RANCIDDB $RANCIDCONFDIR > $VLANFILE
+abort_if_error $?
+
+#
+# Extraire les informations utiles des fichiers de configuration
+#
+
+while read name type model
+do
+    # retirer le nom de domaine (simplification pour l'installation locale)
+    n=`echo $name | sed 's/\..*//'`
+
+    verbositer "analyse de $name"
+    $BINDIR/analyser $BINDIR $type $model $RANCIDCONFDIR/$name $n > $EQGEN/$n.eq
+done < $TMP
+
+#
+# Pour les équipements non gérés par rancid, copier les fichiers
+# "résultats d'analyse générés à la main".
+#
+
+for nameeq in `ls $EQVIRT | grep '\.eq$'`
+do
+    cp $EQVIRT/$nameeq $EQGEN/$nameeq
+done
+
+#
+# Génération du graphe
+#
+
+verbositer "génération du graphe"
+cat $EQGEN/* | $BINDIR/buildgraph > $DESTFILE
+abort_if_error $?
+
+#
+# Vérification que la communauté SNMP est définie sur chaque équipement
+#
+
+verbositer "vérification des communautés SNMP"
+WITHOUTSNMP=`$BINDIR/dumpgraph < $DESTFILE | sed -n '/^eq .* snmp -$/s/eq \([^ ]*\) .*/\1/p'`
+if [ "$WITHOUTSNMP" != "" ]
+then
+    (
+	echo "Warning : equipements without any SNMP community string"
+	echo "$WITHOUTSNMP" | sed 's/^/	/'
+    ) >&2
+fi
+
+#
+# Vérification que les routeurs sont déclarés dans le DNS
+#
+
+verbositer "vérification de la déclaration DNS des interfaces des routeurs"
+$BINDIR/getnetif < $DESTFILE > /dev/null
+#  | $BINDIR/checkdns
+
+#
+# Envoi des points de collecte au métrologiseur
+#
+
+verbositer "envoi des points de collecte au métrologiseur"
+$BINDIR/dumpcoll < $DESTFILE | $BINDIR/sendcoll $URLSETGRAPH
+abort_if_error $?
+
+#
+# Nettoyage de sortie
+#
+
+rm -f $TMP
+exit 0

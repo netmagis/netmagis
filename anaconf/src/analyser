@@ -1,0 +1,114 @@
+#!/usr/local/bin/tclsh8.4
+
+#
+# $Id: analyser,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+#
+
+set debug 0
+#set debug 1
+#set debug 2
+
+proc parse-desc {desc linknamevar statnamevar msgvar} {
+    upvar $linknamevar linkname
+    upvar $statnamevar statname
+    upvar $msgvar msg
+
+    # exemples de syntaxe admises :
+    # Lnnn vers toto 			ancienne syntaxe
+    # <Lnnn> vers toto			nouvelle syntaxe
+    # <Lnnn MLnnn.crc> vers toto	nouvelle syntaxe avec métrologie
+    # X rch ulp bidule			ancienne syntaxe
+    # <X> rch ulp bidule		nouvelle syntaxe
+    # <X MXnnn> rch ulp bidule		nouvelle syntaxe avec métrologie
+
+    set linkname ""
+    set statname ""
+
+    set r 1
+    if {[regexp {<\s*([^<>]+)>} $desc bidon liste]} then {
+	while {[regexp {^(\S+)(\s+(.*))?$} $liste bidon premier bidon liste]} {
+	    switch -glob -- $premier {
+		X* -
+		L* {
+		    if {[string equal $linkname ""]} then {
+			set linkname $premier
+		    } else {
+			set msg "duplicate link name"
+			set r 0
+			break
+		    }
+		}
+		M* {
+		    if {[string equal $statname ""]} then {
+			set statname $premier
+		    } else {
+			set msg "duplicate stat name"
+			set r 0
+			break
+		    }
+		}
+		* {
+		    set msg "invalid interface description '<$premier>'"
+		    set r 0
+		    break
+		}
+	    }
+	}
+    } elseif {! [regexp {^(\S+)(\s+.*)?$} $desc bidon linkname bidon2]} {
+	set msg "invalid link name"
+	set r 0
+    }
+    return $r
+}
+
+proc parse {debug libdir type model fdin fdout tab eq} {
+    upvar $tab t
+
+    global loadedfiles
+
+    set error 0
+    if {[string equal $libdir ""]} then {
+	set file "parse-$type.tcl"
+    } else {
+	set file "$libdir/parse-$type.tcl"
+    }
+
+    if {! [info exists loadedfiles($file)]} then {
+	if {[file exists $file]} then {
+	    uplevel #0 source $file
+	    set loadedfiles($file) 1
+	} else {
+	    puts stderr "Fichier '$file' inexistant"
+	    set error 1
+	}
+    }
+
+    if {! $error} then {
+	set error [$type-parse $debug $model $fdin $fdout t $eq]
+    }
+
+    return $error
+}
+
+proc main {debug libdir type model fichier eq} {
+    set fd [open $fichier "r"]
+    set error [parse $debug $libdir $type $model $fd stdout tab $eq]
+    close $fd
+
+    if {! $error} then {
+#	parray tab
+    }
+}
+
+if {[llength $argv] != 5} then {
+    puts stderr \
+	"$argv0 <libdir> <cisco|juniper> <model> <fichier conf> <eq name>"
+    exit 1
+}
+
+main $debug \
+	[lindex $argv 0] \
+	[lindex $argv 1] \
+	[lindex $argv 2] \
+	[lindex $argv 3] \
+	[lindex $argv 4]

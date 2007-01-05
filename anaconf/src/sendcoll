@@ -1,0 +1,111 @@
+#!/bin/sh
+
+#
+# $Id: sendcoll,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+#
+# Prend sur l'entrée standard une liste des points de collecte
+# (telle que générée par dumpcoll), et la présente au métrologiseur
+# par l'intermédiaire du service Web.
+#
+# Syntaxe :
+#	sendcoll <url>
+#
+# Exemple :
+#	sendcoll http://metro.u-strasbg.fr/bin/setgraph
+#
+# Historique :
+#   2006/06/19 : pda/boggia : conception
+#   2006/08/09 : pda        : paramétrisation de l'emplacement de wget
+#
+
+VERBOSE=0
+WGET=/usr/local/bin/wget
+
+if [ $# != 1 ]
+then
+    echo "usage: $0 <url>" >&2
+    exit 1
+fi
+
+URL="$1"
+
+verbositer ()
+{
+    if [ "$VERBOSE" != "0" ]
+    then
+	echo "$*"
+    fi
+}
+
+#
+# Envoyer les données toutes prêtes au métrologiseur
+#
+# Paramètres
+#	1 : URL à interroger
+#	2 : data prêtes à êtres postées
+# Sortie :
+#	sortie standard : HTML résultant de l'envoi des spéc de métrologie
+#
+
+send_data ()
+{
+    $WGET --quiet --output-document=- --post-data="$2" "$1"
+}
+
+#
+# Convertir les données extraites de "dumpcoll" en format
+# pour le métrologiseur.
+#
+# Données en entrée (entrée standard) :
+#	<id> <eq> <iface-avec-vlan-eventuellement> <communauté-snmp>
+# Données en sortie (sortie standard) :
+#	graph_<X>_nom=<point_de_collecte>
+#	sonde_<X>_ip=<adresse_ip_eq ou nom_eq>
+#	sonde_<X>_community=<communauté SNMP>
+#	sonde_<X>_param_<Y>=<paramètre de collecte>
+#
+
+post_data ()
+{
+    i=1
+    echo -n "verbose=0"
+    while read id eq iface comm
+    do
+	echo -n "&graph_${i}_nom=$id"
+	echo -n "&sonde_${i}_ip=$eq"
+	echo -n "&sonde_${i}_community=$comm"
+	echo -n "&sonde_${i}_param_1=$iface"
+	i=`expr $i + 1`
+    done
+}
+
+DATA="`post_data`"
+if [ $? != 0 ]
+then
+    echo "Metrology points not dumped" >&2
+    exit 1
+fi
+
+verbositer "Sending $DATA"
+
+# Les quotes sont un peu "tricky", mais bon...
+RES="`send_data \"$URL\" \"$DATA\"`"
+
+verbositer "Received $RES"
+
+if [ $? != 0 ]
+then
+    echo "Metrology points not sent" >&2
+    exit 1
+fi
+
+case "$RES" in
+    OK*)    ;;
+    ERROR*)
+	    echo "Error sending metrology points" >&2
+	    echo "$RES" >&2
+	    exit 1
+	    ;;
+esac
+
+exit 0

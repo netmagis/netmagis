@@ -1,0 +1,54 @@
+#!/bin/sh
+
+#
+# $Id: liste-rancid,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+#
+# Analyse un fichier de configuration de rancid, et en extrait
+# le nom et le type de chaque équipement, et extrait de chaque
+# fichier d'équipement le modèle exact.
+# Présente le tout sur la sortie standard.
+#
+# Syntaxe :
+#	liste-rancid <fichierdb> <confdir>	> <fichier de sortie>
+#
+# Historique :
+#   2004/06/08 : pda/jean : conception
+#
+
+if [ $# != 2 ]
+then
+    echo "usage: $0 <fichierdb> <confdir>" >&2
+    exit 1
+fi
+
+DB="$1"
+DIR="$2"
+
+fetch_model_cisco ()
+{
+    sed -n "/^!Chassis type:/s/!Chassis type: \([^ ]*\) .*/\1/p" "$1"
+}
+
+fetch_model_juniper ()
+{
+    sed -n "/^# Chassis/s/.* \([^ ]*\)$/\1/p" "$1"
+}
+
+IFS=":"
+grep ":up$" $DB |
+    while read eq type up
+    do
+	case "$type" in
+	    cisco)
+		model=`fetch_model_cisco "$DIR/$eq"`
+		;;
+	    juniper)
+		model=`fetch_model_juniper "$DIR/$eq"`
+		;;
+	    *)
+		echo "Unsupported type '$type' for '$eq' in $DB" >&2
+		exit 1
+		;;
+	esac
+	echo "$eq $type $model"
+    done

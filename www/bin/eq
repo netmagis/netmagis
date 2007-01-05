@@ -1,0 +1,399 @@
+#!%TCLSH%
+
+#
+# Script pour afficher la liste des équipements,
+# ou les détails d'un équipement
+#
+# Appelé par : /applis/topo/<tous les scripts>
+#
+# Paramètres (formulaire ou URL) :
+#	- eq : si fourni, nom (ou pattern glob) de l'équipement
+#	- iface : si fourni, nom d'une interface à souligner
+#
+# Historique
+#   2006/06/05 : pda      : création
+#   2006/08/14 : pda      : fusion script listeq
+#   2007/01/04 : pda      : ajout du paramètre uti
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	%LIBDNS%
+set conf(libmetro)	$conf(lib)/libtopo.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page1)		$conf(lib)/eq.html
+set conf(pagen)		$conf(lib)/liste.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+    {uti		0 1}
+    {eq			0 1}
+    {iface		0 1}
+}
+
+set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
+set conf(extracteq)	"%TOPODIR%/bin/extracteq %s < %GRAPH%"
+set conf(urlstat)	"/applis/metro/bin/trafic?id=%s"
+set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s"
+set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s"
+set conf(urll2)		"$conf(homeurl)/bin/l2?eq=%s&iface=%s&vlan=%d"
+set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s"
+
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# Spécification du tableau pour l'affichage des points de collecte
+# par réseau.
+#
+
+set conf(tabreseau) {
+    global {
+	chars {12 normal}
+	align {left}
+	botbar {yes}
+	columns {100}
+    }
+    pattern Titre {
+	vbar {yes}
+	column {
+	    align {center}
+	    chars {14 bold}
+	}
+	vbar {yes}
+    }
+    pattern Normal {
+	vbar {yes}
+	column {
+	    format {raw}
+	}
+	vbar {yes}
+    }
+}
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+source $conf(libmetro)
+
+##############################################################################
+# Fonctions utilitaires
+##############################################################################
+
+proc tri-iface {i1 i2} {
+    if {[regexp {(\D+)([-\d/.]+)$} $i1 bidon pref1 suf1] &&
+		[regexp {(\D+)([-\d/.]+)$} $i2 bidon pref2 suf2]} then {
+	set n [string compare $pref1 $pref2]
+	if {$n == 0} then {
+	    set l1 [split $suf1 "-/."]
+	    set l2 [split $suf2 "-/."]
+	    foreach c1 $l1 c2 $l2 {
+		if {[string equal $c1 ""]} then {
+		    set n -1
+		    break
+		} elseif {[string equal $c2 ""]} then {
+		    set n 1
+		    break
+		} elseif {$c1 < $c2} then {
+		    set n -1
+		    break
+		} elseif {$c1 > $c2} then {
+		    set n 1
+		    break
+		}
+	    }
+	}
+    } else {
+	set n [string compare $i1 $i2]
+    }
+    return $n
+}
+
+proc trier-ifaces {marque modele iflist} {
+    return [lsort -command tri-iface $iflist]
+}
+
+proc trier-vlans {vlans} {
+    return [lsort -index 0 -integer $vlans]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Récupération des paramètres dans des variables simples
+    #
+
+    foreach spec $conf(form) {
+	set champ [lindex $spec 0]
+	if {[info exists ftab($champ)]} then {
+	    set $champ [string trim [lindex $ftab($champ) 0]]
+	} else {
+	    set $champ ""
+	}
+    }
+
+    #
+    # Si l'utilisateur est un administrateur, l'autoriser à se substituer
+    # à un autre utilisateur.
+    #
+
+    set uti $login
+    set urluti ""
+    if {[attribut-correspondant $dbfd $tabcor(idcor) admin]} then {
+	#
+	# A partir de maintenant, on prend le nouveau login qui est
+	# fourni dans le formulaire (s'il est fourni)
+	#
+
+	if {[llength $ftab(uti)] > 0} then {
+	    set uti [lindex $ftab(uti) 0]
+	    set urluti "&uti=[::webapp::post-string $uti]"
+	    unset tabcor
+	    set msg [lire-correspondant-par-login $dbfd $uti tabcor]
+	    if {! [string equal $msg ""]} then {
+		::webapp::error-exit $conf(err) "'$uti' non trouvé ($msg)"
+	    }
+	}
+    }
+
+    #
+    # Récupérer les informations lues dans le graphe
+    #
+
+    set fd [open "|$conf(dumpgraph)" "r"]
+    while {[gets $fd ligne] > -1} {
+	switch [lindex $ligne 0] {
+	    eq {
+		set nomeq  [lindex $ligne 1]
+		if {[string equal $eq ""] || [string match -nocase $eq $nomeq]} then {
+		    set type   [lindex $ligne 3]
+		    set modele [lindex $ligne 5]
+		    set tabeq($nomeq) [list $type $modele]
+		}
+	    }
+	}
+    }
+    close $fd
+
+    #
+    # S'il y a plusieurs équipements trouvés, les présenter
+    # dans le bon ordre
+    #
+
+    switch [llength [array names tabeq]] {
+	0 {
+	    #
+	    # Aucun équipement trouvé. Faire comme pour une liste, mais
+	    # une liste vide ;-)
+	    #
+
+	    set liste "Aucun équipement trouvé"
+
+	    #
+	    # Sortie de la page
+	    #
+
+	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
+						[list \
+							[list %OBJETS% "équipements"] \
+							[list %LISTE%  $liste] \
+							[list %EQ%     $eq] \
+							[list %VLAN%   ""] \
+							[list %ADDR%   ""] \
+						    ] \
+					    ]
+	}
+	1 {
+	    #
+	    # Valider les paramètres :
+	    # - tester si le correspondant a le droit sur l'équipement
+	    #
+
+	    set nomeq [lindex [array names tabeq] 0]
+
+	    #
+	    # Récupérer les informations lues dans le graphe
+	    #
+
+	    set fd [open "|[format $conf(extracteq) $nomeq]" "r"]
+	    while {[gets $fd ligne] > -1} {
+		switch [lindex $ligne 0] {
+		    eq {
+			set nomeq  [lindex $ligne 1]
+			set type   [lindex $ligne 2]
+			set modele [lindex $ligne 3]
+			set titre "Équipement $nomeq $type $modele"
+		    }
+		    iface {
+			set if [lindex $ligne 1]
+			set tabiface($if) $ligne
+		    }
+		}
+	    }
+	    close $fd
+
+	    #
+	    # Trier les interfaces pour les présenter dans le bon ordre
+	    #
+
+	    set iflist [trier-ifaces $type $modele [array names tabiface]]
+
+	    #
+	    # Mettre en forme toutes ces informations
+	    #
+
+	    set txt "<UL>\n"
+	    foreach i $iflist {
+		append txt "<LI><P>"
+		set ligne $tabiface($i)
+
+		set nom  [lindex $ligne 1]
+		set stat [lindex $ligne 2]
+		set mode [lindex $ligne 3]
+		set lien [lindex $ligne 4]
+		set ligne [lreplace $ligne 0 4]
+
+		if {[string equal $iface $nom]} then {
+		    append txt "<B>$nom</B>"
+		} else {
+		    append txt "$nom"
+		}
+
+		if {! [string equal $stat "-"]} then {
+		    set url [format $conf(urlstat) [::webapp::post-string $stat]]
+		    append txt [format " <A HREF=\"%s\">\[Métro\]</A>" $url]
+		}
+
+		append txt " $mode"
+
+		if {[llength $lien] > 1} then {
+		    set via [lindex $lien 0]
+		    set eq2 [lindex $lien 1]
+		    set if2 [lindex $lien 2]
+
+		    set urleqiface [format $conf(urleqiface) $eq2 $if2]
+		    append txt [format " $via vers <A HREF=\"%s\">$eq2 $if2</A>" \
+				    $urleqiface]
+		}
+
+		set nvlan [llength $ligne]
+		foreach vlan [trier-vlans $ligne] {
+		    set vlanid [lindex $vlan 0]
+		    set desc   [lindex $vlan 1]
+		    set stat   [lindex $vlan 2]
+
+		    append txt "\n<BR>\n"
+
+		    if {$nvlan > 1 || $vlanid != 0} then {
+			set urll2 [format $conf(urll2) $nomeq $i $vlanid]
+			append txt [format "Vlan <A HREF=\"%s\">$vlanid ($desc)</A>" $urll2]
+
+			if {! [string equal $stat "-"]} then {
+			    set url [format $conf(urlstat) $stat]
+			    append txt [format " <A HREF=\"%s\">\[Métro\]</A>" $url]
+			}
+		    }
+
+		    foreach ip [lsort [lindex $vlan 3]] {
+			set urll3 [format $conf(urll3) $ip]
+			append txt [format " <A HREF=\"%s\">$ip</A>" $urll3]
+		    }
+		}
+		append txt "</P>"
+	    }
+	    append txt "</UL>"
+
+	    #
+	    # Sortie de la page
+	    #
+
+	    ::webapp::send html [::webapp::file-subst $conf(page1) \
+						[list \
+							[list %TITRE% $titre] \
+							[list %TEXTE% $txt] \
+							[list %EQ%    $eq] \
+							[list %VLAN%  ""] \
+							[list %ADDR%  ""] \
+						    ] \
+					    ]
+	}
+	default {
+	    #
+	    # Trier les équipements pour les présenter dans le bon ordre
+	    #
+
+	    set liste "<UL>\n"
+	    foreach e [lsort [array names tabeq]] {
+		set type   [lindex $tabeq($e) 0]
+		set modele [lindex $tabeq($e) 1]
+		set url [format $conf(urleq) $e]
+		append liste [format "<LI><A HREF=\"%s\">$e</A> $type $modele\n" $url]
+	    }
+	    append liste "</UL>"
+
+	    #
+	    # Sortie de la page
+	    #
+
+	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
+						[list \
+							[list %OBJETS% "équipements"] \
+							[list %LISTE%  $liste] \
+							[list %EQ%     $eq] \
+							[list %VLAN%   ""] \
+							[list %ADDR%   ""] \
+						    ] \
+					    ]
+	}
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

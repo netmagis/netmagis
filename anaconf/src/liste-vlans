@@ -1,0 +1,66 @@
+#!/bin/sh
+
+#
+# $Id: liste-vlans,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+#
+# Analyse un fichier de configuration de rancid, et en extrait
+# le nom du commutateur serveur VTP, ainsi que la liste des
+# Vlans diffusés par VTP.
+# Présente le tout sur la sortie standard.
+#
+# Syntaxe :
+#	liste-vlans <fichierdb> <confdir>	> <fichier de sortie>
+#
+# Historique :
+#   2004/07/09 : pda/jean : conception
+#
+
+if [ $# != 2 ]
+then
+    echo "usage: $0 <fichierdb> <confdir>" >&2
+    exit 1
+fi
+
+DB="$1"
+DIR="$2"
+
+is_vtp_server ()
+{
+    grep "!VTP: VTP Operating Mode.*Server" "$1" > /dev/null
+}
+
+liste_vlans ()
+{
+    grep "^!VLAN: *[0-9][0-9]*.* active" "$1" \
+	| sed "s/^!VLAN: *\([0-9][0-9]*\) *\([^ ].*[^ ][^ ]*\)  *active.*/\1 \2/" \
+	| grep -v "^1 " \
+	| sed "s/^/vlan /"
+}
+
+search_vtp ()
+{
+    dir="$1"
+    IFS=":"
+    while read eq type up
+    do
+	if [ "$type" = cisco ] && is_vtp_server "$dir/$eq"
+	then
+	    # echo $eq
+	    liste_vlans "$dir/$eq"
+	    #
+	    # On a trouvé : on sort tout de suite
+	    # (on aimerait pouvoir faire var=0, mais la variable
+	    # ne serait pas exportée à l'extérieur du sous-shell
+	    # utilisé pour cette boucle "while").
+	    #
+	    return 0
+	fi
+    done
+    echo "VTP server not found" >&2
+    return 1
+}
+
+
+grep ":up$" $DB | search_vtp $DIR
+
+exit $?
