@@ -1,5 +1,5 @@
 /*
- * $Id: buildgraph.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: buildgraph.c,v 1.2 2007-01-07 21:19:20 pda Exp $
  */
 
 #include "graph.h"
@@ -94,13 +94,39 @@ Computes the list of Vlan-ids transported on each link
 void l2graph (void)
 {
     struct node *n ;
+    vlanset_t verr ;
+    struct node *ref [MAXVLAN] ;
+    int i ;
+
+    for (i = 0 ; i < MAXVLAN ; i++)
+	ref [i] = NULL ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
 	vlan_zero (n->vlanset) ;
+    vlan_zero (verr) ;			/* vlan for which we already reported an error */
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+    {
 	if (n->nodetype == NT_L2 && ! vlan_isset (n->vlanset, n->u.l2.vlan))
-	    transport_vlan_on_L2 (n, n->u.l2.vlan) ;
+	{
+	    vlan_t v ;
+	    struct node *l1 ;
+
+	    l1 = get_neighbour (n, NT_L1) ;
+
+	    v = n->u.l2.vlan ;
+	    if (v > 1 && ref [v] != NULL && ! vlan_isset (verr, v))
+	    {
+		inconsistency ("Vlan '%d' disconnected on %s:%s and %s:%s",
+				v, ref [v]->eq, ref [v]->u.l1.ifname,
+				n->eq, ((l1!=NULL) ? l1->u.l1.ifname : "?")) ;
+		vlan_set (verr, v) ;
+	    }
+	    else ref [v] = l1 ;
+
+	    transport_vlan_on_L2 (n, v) ;
+	}
+    }
 }
 
 
@@ -211,7 +237,6 @@ MOBJ *newmobj [NB_MOBJ] ;
 int main (int argc, char *argv [])
 {
     text_read (stdin) ;
-    /* debug_graph () ; */
     l1graph () ;
     check_links () ;
     l2graph () ;
