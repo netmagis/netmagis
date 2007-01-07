@@ -1,5 +1,5 @@
 /*
- * $Id: buildgraph.c,v 1.2 2007-01-07 21:19:20 pda Exp $
+ * $Id: buildgraph.c,v 1.3 2007-01-07 21:31:23 pda Exp $
  */
 
 #include "graph.h"
@@ -117,7 +117,7 @@ void l2graph (void)
 	    v = n->u.l2.vlan ;
 	    if (v > 1 && ref [v] != NULL && ! vlan_isset (verr, v))
 	    {
-		inconsistency ("Vlan '%d' disconnected on %s:%s and %s:%s",
+		inconsistency ("Vlan '%d' disconnected between %s:%s and %s:%s",
 				v, ref [v]->eq, ref [v]->u.l1.ifname,
 				n->eq, ((l1!=NULL) ? l1->u.l1.ifname : "?")) ;
 		vlan_set (verr, v) ;
