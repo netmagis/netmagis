@@ -1,5 +1,5 @@
 /*
- * $Id: ip.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: ip.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include "graph.h"
@@ -102,6 +102,28 @@ int ip_ntop (ip_t *cidr, iptext_t text, int prefix)
 
     return p != NULL ;
 }
+
+int ip_equal (ip_t *adr1, ip_t *adr2)
+{
+    int r ;
+
+    r = 0 ;
+    if (adr1->family == adr2->family && adr1->preflen == adr2->preflen)
+    {
+	switch (adr1->family)
+	{
+	    case AF_INET :
+		r = ! bcmp (&adr1->u.adr4, &adr2->u.adr4, sizeof adr1->u.adr4) ;
+		break ;
+	    case AF_INET6 :
+		r = ! bcmp (&adr1->u.adr6, &adr2->u.adr6, sizeof adr1->u.adr6) ;
+		break ;
+	}
+    }
+
+    return r ;
+}
+
 
 /*
  * Inspired from bitncmp (ISC)

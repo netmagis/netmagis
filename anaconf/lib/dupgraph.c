@@ -1,8 +1,18 @@
 /*
- * $Id: dupgraph.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: dupgraph.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include "graph.h"
+
+/******************************************************************************
+ * Address translation API
+ */
+
+/*
+ * Declaration of &tab[i] as a new address which corresponds
+ * to old address optr, and copy the contents of the old address
+ * into the new address. Increments the counter i.
+ */
 
 #define	TRANSNEW(tab,i,optr) \
 		do { \
@@ -11,8 +21,22 @@
 		    (i)++ ; \
 		} while (0)
 
+/*
+ * Get the new address associated with the old address (ptr)
+ */
+
 #define	TRANSPTR(ptr)	 	((ptr) = transaddr_get (ptr))
+
+/*
+ * Set the address of the head of a new mobj m1 to be the translation
+ * of the address of the old mobj m2.
+ */
+
 #define	TRANSHEAD(m1,m2)	mobj_sethead (m1,transaddr_get(mobj_head(m2)))
+
+/******************************************************************************
+ * Address translation implementation
+ */
 
 #define	HASHADDRSIZE	16789
 
@@ -74,6 +98,10 @@ static void transaddr_add (void *new, void *old)
 
 
 
+/******************************************************************************
+ * Main part of the dupgraph module
+ */
+
 static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 {
     int i, j ;
@@ -91,9 +119,13 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     int maxeq ;
     struct network *onet, *newnettab ;
     int maxnet ;
+    struct netlist *newnlisttab ;
+    int maxnlist ;
+    struct rnet *ornet, *newrnettab ;
+    int maxrnet ;
     struct route *newroutetab ;
     int maxroute ;
-    char **oldvdesc, **newvdesc ;
+    struct vlan *oldvlan, *newvlan ;
 
     /*************************************************************
      * First pass : copy all structures
@@ -125,7 +157,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	    TRANSNEW (newsymtab, j, os) ;
     }
     if (j != mobj_count (old [SYMMOBJIDX]))
-	error (0, "Panic. Wrong number of symtab objects") ;
+	error (0, "Panic. Wrong number of symtab mobj") ;
     maxsym = j ;
 
     /*
@@ -143,7 +175,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	j += strlen (newsymtab [i].name) + 1 ;
     }
     if (j != mobj_count (old [STRMOBJIDX]))
-	error (0, "Panic. Wrong number of strtab objects") ;
+	error (0, "Panic. Wrong number of strtab mobj") ;
 
     /*
      * Nodelist
@@ -155,7 +187,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     for (onode = mobj_head (old [NODEMOBJIDX]) ; onode != NULL ; onode = onode->next)
 	TRANSNEW (newnodetab, j, onode) ;
     if (j != mobj_count (old [NODEMOBJIDX]))
-	error (0, "Panic. Wrong number of nodes") ;
+	error (0, "Panic. Wrong number of node mobj") ;
     maxnode = j ;
 
     /*
@@ -173,7 +205,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	    TRANSNEW (newllisttab, j, ll) ;
     }
     if (j != mobj_count (old [LLISTMOBJIDX]))
-	error (0, "Panic. Wrong number of linklist") ;
+	error (0, "Panic. Wrong number of linklist mobj") ;
     maxllist = j ;
 
     /*
@@ -189,7 +221,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	    TRANSNEW (newlinktab, j, newllisttab [i].link) ;
     }
     if (j != mobj_count (old [LINKMOBJIDX]))
-	error (0, "Panic. Wrong number of link") ;
+	error (0, "Panic. Wrong number of link mobj") ;
     maxlink = j ;
 
     /*
@@ -202,18 +234,18 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     for (oeq = mobj_head (old [EQMOBJIDX]) ; oeq != NULL ; oeq = oeq->next)
 	TRANSNEW (neweqtab, j, oeq) ;
     if (j != mobj_count (old [EQMOBJIDX]))
-	error (0, "Panic. Wrong number of equipements") ;
+	error (0, "Panic. Wrong number of eq mobj") ;
     maxeq = j ;
 
     /*
-     * Vlan descriptions
+     * Vlans
      */
 
-    oldvdesc = mobj_data (old [VDESCMOBJIDX]) ;
-    newvdesc = mobj_data (new [VDESCMOBJIDX]) ;
+    oldvlan = mobj_data (old [VLANMOBJIDX]) ;
+    newvlan = mobj_data (new [VLANMOBJIDX]) ;
 
     for (i = 0 ; i < MAXVLAN ; i++)
-	newvdesc [i] = oldvdesc [i] ;
+	newvlan [i] = oldvlan [i] ;
 
     /*
      * Networks
@@ -225,8 +257,39 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     for (onet = mobj_head (old [NETMOBJIDX]) ; onet != NULL ; onet = onet->next)
 	TRANSNEW (newnettab, j, onet) ;
     if (j != mobj_count (old [NETMOBJIDX]))
-	error (0, "Panic. Wrong number of networks") ;
+	error (0, "Panic. Wrong number of network mobj") ;
     maxnet = j ;
+
+    /*
+     * Network lists
+     */
+
+    newnlisttab = mobj_data (new [NLISTMOBJIDX]) ;
+
+    j = 0 ;
+    for (i = 0 ; i < MAXVLAN ; i++)
+    {
+	struct netlist *nl ;
+
+	for (nl = newvlan [i].netlist ; nl != NULL ; nl = nl->next)
+	    TRANSNEW (newnlisttab, j, nl) ;
+    }
+    if (j != mobj_count (old [NLISTMOBJIDX]))
+	error (0, "Panic. Wrong number of netlist mobj") ;
+    maxnlist = j ;
+
+    /*
+     * Routed networks
+     */
+
+    newrnettab = mobj_data (new [RNETMOBJIDX]) ;
+
+    j = 0 ;
+    for (ornet = mobj_head (old [RNETMOBJIDX]) ; ornet != NULL ; ornet = ornet->next)
+	TRANSNEW (newrnettab, j, ornet) ;
+    if (j != mobj_count (old [RNETMOBJIDX]))
+	error (0, "Panic. Wrong number of rnet mobj") ;
+    maxrnet = j ;
 
     /*
      * Route entries
@@ -235,15 +298,15 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     newroutetab = mobj_data (new [ROUTEMOBJIDX]) ;
 
     j = 0 ;
-    for (i = 0 ; i < maxnet ; i++)
+    for (i = 0 ; i < maxrnet ; i++)
     {
 	struct route *or ;
 
-	for (or = newnettab [i].routelist ; or != NULL ; or = or->next)
+	for (or = newrnettab [i].routelist ; or != NULL ; or = or->next)
 	    TRANSNEW (newroutetab, j, or) ;
     }
     if (j != mobj_count (old [ROUTEMOBJIDX]))
-	error (0, "Panic. Wrong number of route entries") ;
+	error (0, "Panic. Wrong number of route mobj") ;
     maxroute = j ;
 
     /*************************************************************
@@ -284,6 +347,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	{
 	    case NT_L1 :
 		TRANSPTR (newnodetab [i].u.l1.ifname) ;
+		TRANSPTR (newnodetab [i].u.l1.ifdesc) ;
 		TRANSPTR (newnodetab [i].u.l1.link) ;
 		TRANSPTR (newnodetab [i].u.l1.stat) ;
 		break ;
@@ -326,6 +390,25 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     }
 
     /*
+     * Networks
+     */
+
+    for (i = 0 ; i < maxnet ; i++)
+    {
+	TRANSPTR (newnettab [i].next) ;
+    }
+
+    /*
+     * Network lists
+     */
+
+    for (i = 0 ; i < maxnlist ; i++)
+    {
+	TRANSPTR (newnlisttab [i].net) ;
+	TRANSPTR (newnlisttab [i].next) ;
+    }
+
+    /*
      * Equipements
      */
 
@@ -340,26 +423,31 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     TRANSHEAD (new [EQMOBJIDX], old [EQMOBJIDX]) ;
 
     /*
-     * Vlan descriptions
+     * Vlan
      */
 
     for (i = 0 ; i < MAXVLAN ; i++)
-	TRANSPTR (newvdesc [i]) ;
+    {
+	TRANSPTR (newvlan [i].name) ;
+	TRANSPTR (newvlan [i].netlist) ;
+    }
+    TRANSHEAD (new [VLANMOBJIDX], old [VLANMOBJIDX]) ;
 
     /*
-     * Networks
+     * Routed networks
      */
 
-    for (i = 0 ; i < maxnet ; i++)
+    for (i = 0 ; i < maxrnet ; i++)
     {
-	TRANSPTR (newnettab [i].router) ;
-	TRANSPTR (newnettab [i].l3) ;
-	TRANSPTR (newnettab [i].l2) ;
-	TRANSPTR (newnettab [i].l1) ;
-	TRANSPTR (newnettab [i].routelist) ;
-	TRANSPTR (newnettab [i].next) ;
+	TRANSPTR (newrnettab [i].net) ;
+	TRANSPTR (newrnettab [i].router) ;
+	TRANSPTR (newrnettab [i].l3) ;
+	TRANSPTR (newrnettab [i].l2) ;
+	TRANSPTR (newrnettab [i].l1) ;
+	TRANSPTR (newrnettab [i].routelist) ;
+	TRANSPTR (newrnettab [i].next) ;
     }
-    TRANSHEAD (new [NETMOBJIDX], old [NETMOBJIDX]) ;
+    TRANSHEAD (new [RNETMOBJIDX], old [RNETMOBJIDX]) ;
 
     /*
      * Route entries

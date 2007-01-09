@@ -1,5 +1,5 @@
 /*
- * $Id: graph.h,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: graph.h,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 /*
@@ -104,9 +104,11 @@ int mobj_write (FILE *fp, MOBJ *d) ;
 #define	LINKMOBJIDX	4
 #define	LLISTMOBJIDX	5
 #define	EQMOBJIDX	6
-#define	VDESCMOBJIDX	7
+#define	VLANMOBJIDX	7
 #define	NETMOBJIDX	8
-#define	ROUTEMOBJIDX	9
+#define	NLISTMOBJIDX	9
+#define	RNETMOBJIDX	10
+#define	ROUTEMOBJIDX	11
 #define	NB_MOBJ		(ROUTEMOBJIDX+1)
 
 #define	hashmobj	(mobjlist [HASHMOBJIDX])
@@ -116,13 +118,13 @@ int mobj_write (FILE *fp, MOBJ *d) ;
 #define	linkmobj	(mobjlist [LINKMOBJIDX])
 #define	llistmobj	(mobjlist [LLISTMOBJIDX])
 #define	eqmobj		(mobjlist [EQMOBJIDX])
-#define	vdescmobj	(mobjlist [VDESCMOBJIDX])
+#define	vlanmobj	(mobjlist [VLANMOBJIDX])
 #define	netmobj		(mobjlist [NETMOBJIDX])
+#define	nlistmobj	(mobjlist [NLISTMOBJIDX])
+#define	rnetmobj	(mobjlist [RNETMOBJIDX])
 #define	routemobj	(mobjlist [ROUTEMOBJIDX])
 
 extern MOBJ *mobjlist [] ;
-
-char **vlandesc ;			/* array of vlan descriptions */
 
 void duplicate_graph (MOBJ *new [], MOBJ *old []) ;
 
@@ -207,8 +209,11 @@ typedef char iptext_t [IPADDRLEN+1] ;
 
 int ip_pton (char *text, ip_t *cidr) ;
 int ip_ntop (ip_t *cidr, iptext_t text, int prefix) ;
+int ip_equal (ip_t *adr1, ip_t *adr2) ;
 int ip_match (ip_t *adr, ip_t *network, int prefix) ;
 void ip_netof (ip_t *srcadr, ip_t *dstadr) ;
+
+struct network *get_net (char *addr) ;
 
 /******************************************************************************
 Node name management
@@ -250,6 +255,7 @@ enum L1type
 struct L1
 {
     char *ifname ;			/* physical interface name */
+    char *ifdesc ;			/* description */
     char *link ;			/* physical link name */
     char *stat ;			/* collect point */
     enum L1type l1type ;
@@ -366,7 +372,32 @@ struct eq
 struct eq *search_eq (char *name) ;
 
 /******************************************************************************
-Network list
+Vlan and attached network list
+******************************************************************************/
+
+struct network
+{
+    ip_t addr ;				/* IP (v4 or v6) address with mask */
+    struct network *next ;
+} ;
+
+struct netlist
+{
+    struct network *net ;
+    struct netlist *next ;
+} ;
+
+struct vlan
+{
+    char *name ;
+    struct netlist *netlist ;
+} ;
+
+struct network *net_lookup_n (ip_t *addr), *net_get_n (ip_t *addr) ;
+struct network *net_lookup_p (char *addr), *net_get_p (char *addr) ;
+
+/******************************************************************************
+Routed networks
 ******************************************************************************/
 
 struct route
@@ -376,9 +407,10 @@ struct route
     struct route *next ;
 } ;
 
-struct network
+/* routed network */
+struct rnet
 {
-    ip_t addr ;				/* IP (v4 or v6) address with mask */
+    struct network *net ;		/* IP (v4 or v6) address with mask */
     struct node *router ;
     struct node *l3 ;
     struct node *l2 ;
@@ -386,7 +418,7 @@ struct network
     ip_t vrrpaddr ;
     int vrrpprio ;
     struct route *routelist ;
-    struct network *next ;
+    struct rnet *next ;
 } ;
 
 /******************************************************************************
@@ -411,6 +443,7 @@ struct graphhdr
 #define	MAGIC		0x67726571	/* greq (graph of equipements) */
 #define	VERSION1	1
 #define	VERSION2	2
+#define	VERSION3	3
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

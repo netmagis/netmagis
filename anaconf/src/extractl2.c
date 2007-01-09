@@ -1,5 +1,5 @@
 /*
- * $Id: extractl2.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: extractl2.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include <stdio.h>
@@ -15,7 +15,7 @@
 Example of output format
 
 
-vlans {{2 description vlan2} {4 description vlan4} ...}
+vlans {{2 <desc-vlan-en-hexa>} {4 <desc-vlan-en-hexa>} ...}
 eq crc-cc1 cisco/WS-C4506
 eq atrium-ce1 cisco/WS-C3750G-24TS
 eq crc-rc1 juniper/M20

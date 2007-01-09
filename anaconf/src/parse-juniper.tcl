@@ -1,5 +1,5 @@
 #
-# $Id: parse-juniper.tcl,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+# $Id: parse-juniper.tcl,v 1.2 2007-01-09 10:46:10 pda Exp $
 #
 # Package d'analyse de fichiers de configuration JunOS
 #
@@ -12,6 +12,7 @@
 #   2005/06/01 : pda      : ajout family inet policer
 #   2006/05/26 : pda/jean : ajout des points de collecte de métrologie
 #   2006/06/01 : pda/jean : ajout snmp
+#   2007/01/06 : pda      : ajout desc interface
 #
 
 ###############################################################################
@@ -418,10 +419,12 @@ proc juniper-parse-if {conf tab idx} {
 # Remplit :
 #   tab(eq!<eqname>!if!<ifname>!link!name) <linkname>
 #   tab(eq!<nom eq>!if!<ifname>!link!stat) <statname> ou vide
+#   tab(eq!<nom eq>!if!<ifname>!link!desc) <desc>
 #
 # Historique :
 #   2004/03/23 : pda/jean : conception
 #   2006/05/23 : pda/jean : ajout de stat
+#   2007/01/06 : pda      : ajout de desc
 #
 
 proc juniper-parse-if-descr {conf tab idx} {
@@ -429,13 +432,14 @@ proc juniper-parse-if-descr {conf tab idx} {
 
     set line [lindex $conf 1]
 
-    if {[parse-desc $line linkname statname msg]} then {
+    if {[parse-desc $line linkname statname descname msg]} then {
 	if {[string equal $linkname ""]} then {
 	    juniper-warning "$idx: no link name found ($line)"
 	    set error 1
 	} else {
 	    set t($idx!link!name) $linkname
 	    set t($idx!link!stat) $statname
+	    set t($idx!link!desc) $descname
 	    set error 0
 	}
     } else {
@@ -492,7 +496,7 @@ proc juniper-parse-unit-descr {conf tab idx} {
     set unitnb $t(current!unitnb)
     set line [lindex $conf 1]
 
-    if {[parse-desc $line linkname statname msg]} then {
+    if {[parse-desc $line linkname statname descname msg]} then {
 	#
 	# 1) linkname peut contenir n'importe quoi (compatibilité avec
 	#    l'ancienne syntaxe), donc on l'ignore
@@ -890,6 +894,7 @@ proc juniper-parse-snmp-community {conf tab idx} {
 #   2004/06/08 : pda/jean : changement de format du fichier de sortie
 #   2006/06/01 : pda/jean : ajout snmp
 #   2006/08/21 : pda/pegon : liens X+X+X+...+X deviennent X
+#   2007/01/06 : pda       : ajout desc interface
 #
 
 proc juniper-post-process {model fdout eq tab} {
@@ -960,6 +965,10 @@ proc juniper-post-process {model fdout eq tab} {
 	if {[string equal $statname ""]} then {
 	    set statname "-"
 	}
+	set desc $t(eq!$eq!if!$iface!link!desc)
+	if {[string equal $desc ""]} then {
+	    set desc "-"
+	}
 	set linktype $t(eq!$eq!if!$iface!link!type)
 
 	if {! [string equal $linktype "aggregate"]} then {
@@ -979,7 +988,7 @@ proc juniper-post-process {model fdout eq tab} {
 
 	    set nodeL1 [format $fmtnode [incr numnode]]
 
-	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname"
+	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $desc"
 
 	    foreach v $arg {
 		#
@@ -1051,7 +1060,7 @@ proc juniper-post-process {model fdout eq tab} {
 			set vrrp "- -"
 		    }
 
-		    puts $fdout "network $cidr $nodeR $nodeL3 $nodeL2 $nodeL1 $vrrp $static"
+		    puts $fdout "rnet $cidr $nodeR $nodeL3 $nodeL2 $nodeL1 $vrrp $static"
 		}
 	    }
 	}

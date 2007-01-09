@@ -1,5 +1,5 @@
 /*
- * $Id: absrel.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: absrel.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include "graph.h"
@@ -27,8 +27,10 @@ void abs_to_rel (MOBJ *graph [])
     struct link *linktab	= mobj_data (graph [LINKMOBJIDX]) ;
     struct linklist *llisttab	= mobj_data (graph [LLISTMOBJIDX]) ;
     struct eq *eqtab		= mobj_data (graph [EQMOBJIDX]) ;
-    char **vdesctab		= mobj_data (graph [VDESCMOBJIDX]) ;
+    struct vlan *vlantab	= mobj_data (graph [VLANMOBJIDX]) ;
     struct network *nettab	= mobj_data (graph [NETMOBJIDX]) ;
+    struct netlist *nlisttab	= mobj_data (graph [NLISTMOBJIDX]) ;
+    struct rnet *rnettab	= mobj_data (graph [RNETMOBJIDX]) ;
     struct route *routetab	= mobj_data (graph [ROUTEMOBJIDX]) ;
 
     PROLOGREL (max, graph [HASHMOBJIDX], hashtab) ;
@@ -61,6 +63,7 @@ void abs_to_rel (MOBJ *graph [])
 	{
 	    case NT_L1 :
 		ABSTOREL (nodetab [i].u.l1.ifname, strtab) ;
+		ABSTOREL (nodetab [i].u.l1.ifdesc, strtab) ;
 		ABSTOREL (nodetab [i].u.l1.link, strtab) ;
 		ABSTOREL (nodetab [i].u.l1.stat, strtab) ;
 		break ;
@@ -100,21 +103,33 @@ void abs_to_rel (MOBJ *graph [])
 	ABSTOREL (eqtab [i].next, eqtab) ;
     }
 
-    PROLOGREL (max, graph [VDESCMOBJIDX], vdesctab) ;
+    PROLOGREL (max, graph [NETMOBJIDX], nettab) ;
+    /* nothing for netmobj */
+
+    PROLOGREL (max, graph [NLISTMOBJIDX], nlisttab) ;
     for (i = 0 ; i < max ; i++)
     {
-	ABSTOREL (vdesctab [i], strtab) ;
+	ABSTOREL (nlisttab [i].net, nettab) ;
+	ABSTOREL (nlisttab [i].next, nlisttab) ;
     }
 
-    PROLOGREL (max, graph [NETMOBJIDX], nettab) ;
+    PROLOGREL (max, graph [VLANMOBJIDX], vlantab) ;
     for (i = 0 ; i < max ; i++)
     {
-	ABSTOREL (nettab [i].router, nodetab) ;
-	ABSTOREL (nettab [i].l3, nodetab) ;
-	ABSTOREL (nettab [i].l2, nodetab) ;
-	ABSTOREL (nettab [i].l1, nodetab) ;
-	ABSTOREL (nettab [i].routelist, routetab) ;
-	ABSTOREL (nettab [i].next, nettab) ;
+	ABSTOREL (vlantab [i].name, strtab) ;
+	ABSTOREL (vlantab [i].netlist, nlisttab) ;
+    }
+
+    PROLOGREL (max, graph [RNETMOBJIDX], rnettab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	ABSTOREL (rnettab [i].net, nettab) ;
+	ABSTOREL (rnettab [i].router, nodetab) ;
+	ABSTOREL (rnettab [i].l3, nodetab) ;
+	ABSTOREL (rnettab [i].l2, nodetab) ;
+	ABSTOREL (rnettab [i].l1, nodetab) ;
+	ABSTOREL (rnettab [i].routelist, routetab) ;
+	ABSTOREL (rnettab [i].next, rnettab) ;
     }
 
     PROLOGREL (max, graph [ROUTEMOBJIDX], routetab) ;

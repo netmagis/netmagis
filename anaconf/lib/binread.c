@@ -1,5 +1,5 @@
 /*
- * $Id: binread.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: binread.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include "graph.h"
@@ -20,6 +20,8 @@ void bin_read (FILE *fpin, MOBJ *graph [])
 	case VERSION1 :
 	    error (0, "Cannot recognize version 1 binary files") ;
 	case VERSION2 :
+	    error (0, "Cannot recognize version 2 binary files") ;
+	case VERSION3 :
 	    for (i = 0 ; i < hdr.nbmobj ; i++)
 	    {
 		int objsiz, objcnt ;
@@ -34,7 +36,6 @@ void bin_read (FILE *fpin, MOBJ *graph [])
 		if (fread (data, objsiz, objcnt, fpin) != objcnt)
 		    error (1, "Cannot read mobj in binary file") ;
 	    }
-	    vlandesc = mobj_data (graph [VDESCMOBJIDX]) ;
 	    break ;
 	default :
 	    error (0, "Bad version in binary file") ;

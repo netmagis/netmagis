@@ -1,17 +1,18 @@
 #!/usr/local/bin/tclsh8.4
 
 #
-# $Id: analyser,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+# $Id: analyser,v 1.2 2007-01-09 10:46:10 pda Exp $
 #
 
 set debug 0
 #set debug 1
 #set debug 2
 
-proc parse-desc {desc linknamevar statnamevar msgvar} {
-    upvar $linknamevar linkname
-    upvar $statnamevar statname
-    upvar $msgvar msg
+proc parse-desc {desc _linkname _statname _descname _msg} {
+    upvar $_linkname linkname
+    upvar $_statname statname
+    upvar $_descname descname
+    upvar $_msg msg
 
     # exemples de syntaxe admises :
     # Lnnn vers toto 			ancienne syntaxe
@@ -23,9 +24,10 @@ proc parse-desc {desc linknamevar statnamevar msgvar} {
 
     set linkname ""
     set statname ""
+    set descname ""
 
     set r 1
-    if {[regexp {<\s*([^<>]+)>} $desc bidon liste]} then {
+    if {[regexp {([^<]*)<\s*([^<>]+)>(.*)} $desc bidon p1 liste p2]} then {
 	while {[regexp {^(\S+)(\s+(.*))?$} $liste bidon premier bidon liste]} {
 	    switch -glob -- $premier {
 		X* -
@@ -54,10 +56,24 @@ proc parse-desc {desc linknamevar statnamevar msgvar} {
 		}
 	    }
 	}
-    } elseif {! [regexp {^(\S+)(\s+.*)?$} $desc bidon linkname bidon2]} {
+	set descname [string trim "[string trim $p1] [string trim $p2]"]
+    } elseif {[regexp {^(\S+)(\s+.*)?$} $desc bidon linkname p1]} {
+	set descname [string trim $p1]
+    } else {
 	set msg "invalid link name"
 	set r 0
     }
+
+    #
+    # Conversion de la description en chaîne de chiffres hexa
+    # pour éviter d'avoir à quoter les éléments.
+    # Cette chaîne sera propagée dans le graphe, et chaque outil
+    # utilisant le graphe devra faire la conversion inverse
+    # avec une commande comme par exemple : "binary format H* $desc"
+    #
+
+    binary scan $descname H* descname
+
     return $r
 }
 

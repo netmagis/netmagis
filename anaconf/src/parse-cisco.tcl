@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+# $Id: parse-cisco.tcl,v 1.2 2007-01-09 10:46:10 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -10,6 +10,7 @@
 #   2006/06/01 : pda/jean : ajout snmp
 #   2006/09/25 : lauce    : ajout encapsulation-dot1Q pour VPN
 #   2006/09/25 : lauce    : modification cisco-parse-shutdown 
+#   2007/01/06 : pda      : ajout desc interface
 #
 
 ###############################################################################
@@ -649,10 +650,12 @@ proc cisco-parse-ipv6-address {active line tab idx} {
 # Remplit
 #   - tab(eq!<nom eq>!if!<ifname>!link!name) <linkname>
 #   - tab(eq!<nom eq>!if!<ifname>!link!stat) <statname> ou vide
+#   - tab(eq!<nom eq>!if!<ifname>!link!desc) <desc>
 #
 # Historique
 #   2004/03/26 : pda/jean : conception
 #   2006/05/23 : pda/jean : ajout de stat
+#   2007/01/06 : pda      : ajout desc interface
 #
 
 proc cisco-parse-desc {active line tab idx} {
@@ -660,7 +663,7 @@ proc cisco-parse-desc {active line tab idx} {
 
     set ifname $t($idx!current!if)
 
-    if {[parse-desc $line linkname statname msg]} then {
+    if {[parse-desc $line linkname statname descname msg]} then {
 	if {[string equal $linkname ""]} then {
 	    cisco-warning "$idx: no link name found ($line)"
 	    set error 1
@@ -669,6 +672,9 @@ proc cisco-parse-desc {active line tab idx} {
 	}
 	if {! $error} then {
 	    set error [cisco-set-ifattr t $idx!if!$ifname stat $statname]
+	}
+	if {! $error} then {
+	    set error [cisco-set-ifattr t $idx!if!$ifname desc $descname]
 	}
     } else {
 	cisco-warning "$idx: $msg ($line)"
@@ -832,6 +838,9 @@ proc cisco-set-ifattr {tab idx attr val} {
 	stat {
 	    set t($idx!link!stat) $val
 	}
+	desc {
+	    set t($idx!link!desc) $val
+	}
 	type {
 	    if {[info exists t($idx!link!type)]} then {
 		if {[string equal $t($idx!link!type) $val]} then {
@@ -883,7 +892,7 @@ proc cisco-set-ifattr {tab idx attr val} {
 	    set t($idx!link!allowedvlans) $val
 	}
 	default {
-	    cisco-warning "Incorrect attribut type for $idx (internal error)"
+	    cisco-warning "Incorrect attribute type for $idx (internal error)"
 	    set error 1
 	}
     }
@@ -1044,9 +1053,13 @@ proc cisco-post-process {model fdout eq tab} {
 	    if {[string equal $statname ""]} then {
 		set statname "-"
 	    }
+	    set descname $t(eq!$eq!if!$iface!link!desc)
+	    if {[string equal $descname ""]} then {
+		set descname "-"
+	    }
 
 	    set nodeL1 [format $fmtnode [incr numnode]]
-	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname"
+	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname"
 
 	    set nodeL2 [format $fmtnode [incr numnode]]
 

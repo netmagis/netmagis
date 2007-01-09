@@ -1,5 +1,5 @@
 /*
- * $Id: buildgraph.c,v 1.3 2007-01-07 21:31:23 pda Exp $
+ * $Id: buildgraph.c,v 1.4 2007-01-09 10:46:10 pda Exp $
  */
 
 #include "graph.h"
@@ -227,6 +227,43 @@ void remove_l2pat_brpat (void)
     }
 }
 
+/******************************************************************************
+Attach network addresses to vlans
+******************************************************************************/
+
+void add_net_to_vlan (vlan_t vlan, ip_t *addr_in_net)
+{
+    ip_t net ;
+    struct netlist *nl ;
+    struct vlan *tab ;
+    struct network *n ;
+
+    tab = mobj_data (vlanmobj) ;
+    ip_netof (addr_in_net, &net) ;
+    n = net_get_n (&net) ;
+    for (nl = tab [vlan].netlist ; nl != NULL ; nl = nl->next)
+	if (&nl->net->addr == &n->addr)	/* pointer comparison */
+	    break ;
+    if (nl == NULL)
+    {
+	nl = mobj_alloc (nlistmobj, 1) ;
+	nl->net = n ;
+	nl->next = tab [vlan].netlist ;
+	tab [vlan].netlist = nl ;
+    }
+}
+
+void attach_net_to_vlan (void)
+{
+    struct node *n ;
+    int vlan ;
+
+    for (vlan = 2 ; vlan < MAXVLAN ; vlan++)
+	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	    if (n->nodetype == NT_L3 && vlan_isset (n->vlanset, vlan))
+		add_net_to_vlan (vlan, &n->u.l3.addr) ;
+}
+
 
 /******************************************************************************
 Main function
@@ -242,6 +279,7 @@ int main (int argc, char *argv [])
     l2graph () ;
     check_inconsistencies () ;
     remove_l2pat_brpat () ;
+    attach_net_to_vlan () ;
     duplicate_graph (newmobj, mobjlist) ;
     bin_write (stdout, newmobj) ;
     exit (0) ;

@@ -1,5 +1,5 @@
 /*
- * $Id: printvlans.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: printvlans.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include "graph.h"
@@ -8,14 +8,17 @@ void print_vlanlist (FILE *fp, vlanset_t vs)
 {
     vlan_t v ;
     char *p ;
+    struct vlan *tab ;
 
+    tab = mobj_data (vlanmobj) ;
     for (v = 0 ; v < MAXVLAN ; v++)
     {
 	if (vlan_isset (vs, v))
 	{
 	    fprintf (fp, " {%d ", v) ;
 
-	    p = vlandesc [v] ;
+	    p = tab [v].name ;
+#ifdef OLD
 	    if (p != NULL)
 	    {
 		while (*p != '\0')
@@ -27,6 +30,10 @@ void print_vlanlist (FILE *fp, vlanset_t vs)
 		}
 	    }
 	    else fprintf (fp, "(no description)") ;
+#else
+	    if (p == NULL)
+		p = "-" ;
+#endif
 
 	    fprintf (fp, "}") ;
 	}

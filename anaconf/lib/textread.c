@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: textread.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include "graph.h"
@@ -214,9 +214,11 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	{ "type", 1,	},
 	{ "eq", 1,	},
 	{ "name", 1,	},
+	{ "desc", 1,	},
 	{ "link", 1,	},
 	{ "stat", 1,	},
 	{ "encap", 1,	},
+	{ "net", 1,	},
 	{ "vlan", 1,	},
 	{ "allow", 2,	},
 	{ "addr", 1,	},
@@ -270,18 +272,70 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 }
 
 /******************************************************************************
+Process net lists associated to L1 & L2 interfaces
+******************************************************************************/
+
+static void process_netlist (struct netlist **head, struct attrtab *attrtab)
+{
+    struct attrvallist *av ;
+    struct netlist *nl ;
+
+    *head = NULL ;
+
+    av = attr_get_vallist (attrtab, "net") ;
+    while (av != NULL)
+    {
+	char *addr ;
+	struct network *n ;
+
+	addr = attr_get_val (av) ;
+	n = net_get_p (addr) ;
+
+	/*
+	 * First, look for the same network in our list, just in case
+	 */
+
+	for (nl = *head ; nl != NULL ; nl = nl->next)
+	    if (ip_equal (&nl->net->addr, &n->addr))
+		break ;
+
+	/*
+	 * If not found, insert it
+	 */
+
+	if (nl == NULL)
+	{
+	    nl = mobj_alloc (nlistmobj, 1) ;
+	    nl->net = n ;
+	    nl->next = *head ;
+	    *head = nl ;
+	}
+
+	av = av->next ;
+    }
+}
+
+/******************************************************************************
 Build the initial graph
 ******************************************************************************/
 
 static void process_L1 (struct attrtab *attrtab, struct node *n)
 {
     char *ifname ;
+    char *ifdesc ;
     char *link ;
     char *encap ;
     char *stat ;
 
     ifname = attr_get_val (attr_get_vallist (attrtab, "name")) ;
     n->u.l1.ifname = symtab_to_name (symtab_get (ifname)) ;
+
+    ifdesc = attr_get_val (attr_get_vallist (attrtab, "desc")) ;
+    ifdesc = symtab_to_name (symtab_get (ifdesc)) ;
+    if (strcmp (ifdesc, "-") == 0) {
+	ifdesc = NULL ;
+    }
+    n->u.l1.ifdesc = ifdesc ;
 
     link = attr_get_val (attr_get_vallist (attrtab, "link")) ;
     n->u.l1.link = symtab_to_name (symtab_get (link)) ;
@@ -527,9 +581,11 @@ static void process_node (char *tab [], int ntab)
 			{ "type", 1, 1 },
 		        { "eq", 1, 1 },
 		        { "name", 1, 1 },
+		        { "desc", 1, 1 },
 		        { "link", 1, 1 },
 		        { "stat", 1, 1 },
 		        { "encap", 1, 1 },
+			{ "net", 0, 1000000 },
 		        { NULL, 0 },
 	       },
 	},
@@ -703,21 +759,24 @@ struct route *process_static_routes (char *tab [], int ntab)
     return head ;
 }
 
-static void process_network (char *tab [], int ntab)
+static void process_rnet (char *tab [], int ntab)
 {
-    struct network *n ;
+    struct rnet *n ;
+    struct network *net ;
     char *vrrpaddr ;
 
     if (ntab < 8)
     {
-	inconsistency ("Network has not enough data") ;
+	inconsistency ("Routed network has not enough data") ;
 	exit (1) ;
     }
 
-    n = mobj_alloc (netmobj, 1) ;
+    n = mobj_alloc (rnetmobj, 1) ;
 
-    if (! ip_pton (tab [1], &n->addr))
-	inconsistency ("Network '%s' has a bad address", tab [1]) ;
+    net = net_get_p (tab [1]) ;
+    if (net == NULL)
+	error (0, "Cannot find a slot for net") ;
+    n->net = net ;
 
     n->router = check_node (tab [2], tab [1]) ;
     n->l3     = check_node (tab [3], tab [1]) ;
@@ -728,7 +787,7 @@ static void process_network (char *tab [], int ntab)
     if (strcmp (vrrpaddr, "-") == 0)
 	vrrpaddr = "0.0.0.0/0" ;
     if (! ip_pton (vrrpaddr, &n->vrrpaddr))
-	inconsistency ("Network '%s' has a bad VRRP address (%s)",
+	inconsistency ("Routed network '%s' has a bad VRRP address (%s)",
 					tab [1], vrrpaddr) ;
     n->vrrpprio = atoi (tab [7]) ;
 
@@ -736,45 +795,62 @@ static void process_network (char *tab [], int ntab)
     ntab -= 8 ;
     n->routelist = process_static_routes (tab, ntab) ;
 
-    n->next = mobj_head (netmobj) ;
-    mobj_sethead (netmobj, n) ;
+    n->next = mobj_head (rnetmobj) ;
+    mobj_sethead (rnetmobj, n) ;
 }
 
 static void process_vlan (char *tab [], int ntab)
 {
-    char desc [MAXLINE], *p ;
-    vlan_t vlan ;
-    int i ;
+    int vlanid ;
+    char *id, *desc ;
+    struct attrtab *attrtab ;			/* head of attribute table */
+    struct attrvallist *av ;
+    static struct attrcheck vlanattr [] = {
+	{ "desc", 1, 1},
+	{ "net",  0, 100000},
+	{ NULL, 0, 0}
+    } ;
+    struct vlan *tabvlan ;
 
     if (ntab < 2)
     {
-	inconsistency ("Vlan without id") ;
+	inconsistency ("Vlan declaration has not enough attributes") ;
 	exit (1) ;
     }
 
-    vlan = atoi (tab [1]) ;
-    if (vlan < 0 || vlan >= MAXVLAN)
+    tabvlan = mobj_data (vlanmobj) ;
+    vlanid = 0 ;
+
+    id = tab [1] ;
+    if (sscanf (id, "%d", &vlanid) != 1 || vlanid  >= MAXVLAN)
+	inconsistency ("Incorrect vlan-id ('%s')", id) ;
+
+    tab += 2 ;
+    ntab -= 2 ;
+
+    /*
+     * Parse all attributes
+     */
+
+    attrtab = attr_init () ;
+    parse_attr (tab, ntab, &attrtab) ;
+
+    if (! check_attr (attrtab, vlanattr))
     {
-	inconsistency ("Invalid vlan-id (%s)", tab [1]) ;
+	inconsistency ("Incorrect vlan attribute list") ;
 	exit (1) ;
     }
 
-    p = desc ;
-    *p = '\0' ;				/* if no description */
-    for (i = 2 ; i < ntab ; i++)
-    {
-	int l ;
+    av = attr_get_vallist (attrtab, "desc") ;
+    if (av != NULL)
+	desc = symtab_to_name (symtab_get (attr_get_val (av))) ;
+    else desc = NULL ;
 
-	l = strlen (tab [i]) ;
-	if (p - desc + 1 + l + 1 < sizeof desc)
-	{
-	    if (p != desc)
-		*p++ = ' ' ;
-	    strcpy (p, tab [i]) ;
-	    p += l ;
-	}
-    }
-    vlandesc [vlan] = symtab_to_name (symtab_get (desc)) ;
+    tabvlan [vlanid].name = desc ;
+
+    process_netlist (&tabvlan [vlanid].netlist, attrtab) ;
+
+    attr_close (attrtab) ;
 }
 
 /******************************************************************************
@@ -786,7 +862,6 @@ void text_read (FILE *fpin)
     char orgline [MAXLINE] ;
     char line [MAXLINE] ;
     MOBJ *args ; char **argv ;
-    vlan_t vlan ;
     char *p ;
     char *tok ;
     int n ;
@@ -801,14 +876,13 @@ void text_read (FILE *fpin)
     llistmobj = mobj_init (sizeof (struct linklist), MOBJ_MALLOC) ;
     eqmobj    = mobj_init (sizeof (struct eq      ), MOBJ_MALLOC) ;
     netmobj   = mobj_init (sizeof (struct network ), MOBJ_MALLOC) ;
+    nlistmobj = mobj_init (sizeof (struct netlist ), MOBJ_MALLOC) ;
+    rnetmobj  = mobj_init (sizeof (struct rnet    ), MOBJ_MALLOC) ;
     routemobj = mobj_init (sizeof (struct route   ), MOBJ_MALLOC) ;
-
     vlistmobj = mobj_init (sizeof (struct vlanlist), MOBJ_MALLOC) ;
 
-    vdescmobj = mobj_init (sizeof (char *         ), MOBJ_CONST) ;
-    vlandesc = mobj_alloc (vdescmobj, MAXVLAN) ;
-    for (vlan = 0 ; vlan < MAXVLAN ; vlan++)
-	vlandesc [vlan] = NULL ;
+    vlanmobj  = mobj_init (sizeof (struct vlan    ), MOBJ_CONST) ;
+    mobj_alloc (vlanmobj, MAXVLAN) ;
 
     args = mobj_init (sizeof (char *), MOBJ_REALLOC) ;
 
@@ -858,8 +932,8 @@ void text_read (FILE *fpin)
 		process_node (argv, n) ;
 	    else if (strcmp (argv [0], "link") == 0)
 		process_link (argv, n) ;
-	    else if (strcmp (argv [0], "network") == 0)
-		process_network (argv, n) ;
+	    else if (strcmp (argv [0], "rnet") == 0)
+		process_rnet (argv, n) ;
 	    else if (strcmp (argv [0], "vlan") == 0)
 		process_vlan (argv, n) ;
 	    else

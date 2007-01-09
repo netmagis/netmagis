@@ -1,5 +1,5 @@
 /*
- * $Id: textwrite.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: textwrite.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include "graph.h"
@@ -31,13 +31,14 @@ static void text_write_nodes (FILE *fp)
 	switch (n->nodetype)
 	{
 	    case NT_L1 :
-		fprintf (fp, "node %s type L1 eq %s name %s link %s encap %s stat %s\n",
+		fprintf (fp, "node %s type L1 eq %s name %s link %s encap %s stat %s desc %s\n",
 				n->name,
 				n->eq,
 				n->u.l1.ifname,
 				n->u.l1.link,
 				(n->u.l1.l1type == L1T_TRUNK ? "trunk" : "ether"),
-				(n->u.l1.stat == NULL ? "-" : n->u.l1.stat)
+				(n->u.l1.stat == NULL ? "-" : n->u.l1.stat),
+				(n->u.l1.ifdesc == NULL ? "-" : n->u.l1.ifdesc)
 			    ) ;
 		break ;
 	    case NT_L2 :
@@ -120,16 +121,16 @@ static void text_write_links (FILE *fp)
     }
 }
 
-static void text_write_networks (FILE *fp)
+static void text_write_rnet (FILE *fp)
 {
-    struct network *n ;
+    struct rnet *n ;
     struct route *r ;
     iptext_t addr, vrrpaddr, netaddr, gwaddr ;
 
-    for (n = mobj_head (netmobj) ; n != NULL ; n = n->next)
+    for (n = mobj_head (rnetmobj) ; n != NULL ; n = n->next)
     {
-	ip_ntop (&n->addr, addr, 1) ;
-	fprintf (fp, "network %s %s %s %s %s",
+	ip_ntop (&n->net->addr, addr, 1) ;
+	fprintf (fp, "rnet %s %s %s %s %s",
 				addr,
 				n->router->name,
 				n->l3->name,
@@ -157,10 +158,25 @@ static void text_write_networks (FILE *fp)
 static void text_write_vlans (FILE *fp)
 {
     vlan_t v ;
+    struct vlan *tab ;
 
+    tab = mobj_data (vlanmobj) ;
     for (v = 0 ; v < MAXVLAN ; v++)
-	if (vlandesc [v] != NULL)
-	    fprintf (fp, "vlan %d %s\n", v, vlandesc [v]) ;
+    {
+	if (tab [v].name != NULL)
+	{
+	    iptext_t n ;
+	    struct netlist *nl ;
+
+	    fprintf (fp, "vlan %d desc %s", v, tab [v].name) ;
+	    for (nl = tab [v].netlist ; nl != NULL ; nl = nl->next)
+	    {
+		ip_ntop (&nl->net->addr, n, 1) ;
+		fprintf (fp, " net %s", n) ;
+	    }
+	    fprintf (fp, "\n") ;
+	}
+    }
 }
 
 void text_write (FILE *fp)
@@ -168,6 +184,6 @@ void text_write (FILE *fp)
     text_write_eq (fp) ;
     text_write_nodes (fp) ;
     text_write_links (fp) ;
-    text_write_networks (fp) ;
+    text_write_rnet (fp) ;
     text_write_vlans (fp) ;
 }

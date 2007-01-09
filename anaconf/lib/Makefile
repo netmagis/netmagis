@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+# $Id: Makefile,v 1.2 2007-01-09 10:46:10 pda Exp $
 #
 
 CFLAGS = -g -Wall
@@ -7,6 +7,7 @@ CFLAGS = -g -Wall
 OBJS = \
 	mobj.o \
 	ip.o \
+	net.o \
 	symtab.o \
 	node.o \
 	util.o \

@@ -1,5 +1,5 @@
 /*
- * $Id: extracteq.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: extracteq.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include <stdio.h>
@@ -17,7 +17,7 @@ Example of output format
 
 eq crc-cc1 cisco/WS-C4506
 iface GigaEthernet0/1 <M123 ou ->  <Ether ou Trunk> {X / L33 crc-rc1 ge-0/0/0}
-    {0 {} <ip> ...} {7 {rch ulp toto} 130.79.....} ...
+    {0 {} <ip> ...} {7 <vlan-desc-en-hexa> 130.79.....} ...
 <all ifaces>
 ******************************************************************************/
 
@@ -79,8 +79,10 @@ void output_iface (FILE *fp, struct node *n)
 
 	    vlanid = peer2->u.l2.vlan ;
 	    stat = (peer2->u.l2.stat == NULL) ? "-" : peer2->u.l2.stat ;
-	    desc = vlandesc [vlanid] ;
-	    fprintf (fp, " %c%d {%s} %s", LB, vlanid, desc, stat) ;
+	    desc = ((struct vlan *) mobj_data (vlanmobj)) [vlanid].name ;
+	    if (desc == NULL)
+		desc = "-" ;
+	    fprintf (fp, " %c%d %s %s", LB, vlanid, desc, stat) ;
 
 	    /*
 	     * Search all L3 interfaces

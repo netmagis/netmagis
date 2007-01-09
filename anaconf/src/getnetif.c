@@ -1,5 +1,5 @@
 /*
- * $Id: getnetif.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: getnetif.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include <stdio.h>
@@ -15,13 +15,13 @@
 /******************************************************************************
 Output format
 
-    vlan <id> <long description>
+    vlan <id> <desc-en-hexa>
     iface <eq> <if> <vlan-id> <ip>
     vrrp <vlan-id> <ip>
 
 Example of output format
 
-    vlan 5	crc postes travail
+    vlan 5 41424344454647
     iface crc-rc1 ge-0/0/0 5 130.79.201.253
     vrrp 5 130.79.201.254
 
@@ -40,10 +40,18 @@ struct vrrpdone *vrrplist = NULL ;
 void output_vlans (FILE *fp)
 {
     vlan_t v ;
+    struct vlan *tab ;
 
+    tab = mobj_data (vlanmobj) ;
     for (v = 0 ; v < MAXVLAN ; v++)
-	if (vlandesc [v] != NULL)
-	    fprintf (fp, "vlan %d %s\n", v, vlandesc [v]) ;
+    {
+	char *p ;
+
+	p = tab [v].name ;
+	if (p == NULL)
+	    p = "-" ;
+	fprintf (fp, "vlan %d %s\n", v, p) ;
+    }
 }
 
 int is_vrrpdone (ip_t *net)
@@ -72,14 +80,14 @@ int is_vrrpdone (ip_t *net)
 
 void output_ifaces (FILE *fp)
 {
-    struct network *n ;
+    struct rnet *n ;
     iptext_t addr ;
 
-    for (n = mobj_head (netmobj) ; n != NULL ; n = n->next)
+    for (n = mobj_head (rnetmobj) ; n != NULL ; n = n->next)
     {
 	if (n->vrrpaddr.preflen > 0)
 	{
-	    if (! is_vrrpdone (&n->addr))
+	    if (! is_vrrpdone (&n->net->addr))
 	    {
 		iptext_t vrrpaddr ;
 

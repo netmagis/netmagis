@@ -1,5 +1,5 @@
 /*
- * $Id: relabs.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: relabs.c,v 1.2 2007-01-09 10:46:10 pda Exp $
  */
 
 #include "graph.h"
@@ -24,8 +24,10 @@ void rel_to_abs (MOBJ *graph [])
     struct link *linktab	= mobj_data (graph [LINKMOBJIDX]) ;
     struct linklist *llisttab	= mobj_data (graph [LLISTMOBJIDX]) ;
     struct eq *eqtab		= mobj_data (graph [EQMOBJIDX]) ;
-    char **vdesctab		= mobj_data (graph [VDESCMOBJIDX]) ;
+    struct vlan *vlantab	= mobj_data (graph [VLANMOBJIDX]) ;
     struct network *nettab	= mobj_data (graph [NETMOBJIDX]) ;
+    struct netlist *nlisttab	= mobj_data (graph [NLISTMOBJIDX]) ;
+    struct rnet *rnettab	= mobj_data (graph [RNETMOBJIDX]) ;
     struct route *routetab	= mobj_data (graph [ROUTEMOBJIDX]) ;
 
     PROLOGABS (max, graph [HASHMOBJIDX], hashtab) ;
@@ -58,6 +60,7 @@ void rel_to_abs (MOBJ *graph [])
 	{
 	    case NT_L1 :
 		RELTOABS (nodetab [i].u.l1.ifname, strtab) ;
+		RELTOABS (nodetab [i].u.l1.ifdesc, strtab) ;
 		RELTOABS (nodetab [i].u.l1.link, strtab) ;
 		RELTOABS (nodetab [i].u.l1.stat, strtab) ;
 		break ;
@@ -97,21 +100,36 @@ void rel_to_abs (MOBJ *graph [])
 	RELTOABS (eqtab [i].next, eqtab) ;
     }
 
-    PROLOGABS (max, graph [VDESCMOBJIDX], vdesctab) ;
-    for (i = 0 ; i < max ; i++)
-    {
-	RELTOABS (vdesctab [i], strtab) ;
-    }
-
     PROLOGABS (max, graph [NETMOBJIDX], nettab) ;
     for (i = 0 ; i < max ; i++)
     {
-	RELTOABS (nettab [i].router, nodetab) ;
-	RELTOABS (nettab [i].l3, nodetab) ;
-	RELTOABS (nettab [i].l2, nodetab) ;
-	RELTOABS (nettab [i].l1, nodetab) ;
-	RELTOABS (nettab [i].routelist, routetab) ;
 	RELTOABS (nettab [i].next, nettab) ;
+    }
+
+    PROLOGABS (max, graph [NLISTMOBJIDX], nlisttab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	RELTOABS (nlisttab [i].net, nettab) ;
+	RELTOABS (nlisttab [i].next, nlisttab) ;
+    }
+
+    PROLOGABS (max, graph [VLANMOBJIDX], vlantab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	RELTOABS (vlantab [i].name, strtab) ;
+	RELTOABS (vlantab [i].netlist, nlisttab) ;
+    }
+
+    PROLOGABS (max, graph [RNETMOBJIDX], rnettab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	RELTOABS (rnettab [i].net, nettab) ;
+	RELTOABS (rnettab [i].router, nodetab) ;
+	RELTOABS (rnettab [i].l3, nodetab) ;
+	RELTOABS (rnettab [i].l2, nodetab) ;
+	RELTOABS (rnettab [i].l1, nodetab) ;
+	RELTOABS (rnettab [i].routelist, routetab) ;
+	RELTOABS (rnettab [i].next, rnettab) ;
     }
 
     PROLOGABS (max, graph [ROUTEMOBJIDX], routetab) ;
