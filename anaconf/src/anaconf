@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: anaconf,v 1.2 2007-01-09 10:46:10 pda Exp $
+# $Id: anaconf,v 1.3 2007-01-09 11:05:20 pda Exp $
 #
 # Enchaîne les différentes phases pour constituer le graphe du
 # réseau donné.
@@ -22,14 +22,14 @@ RANCIDDIR=/local/idr/conf/osiris
 RANCIDDB=$RANCIDDIR/router.db
 RANCIDCONFDIR=$RANCIDDIR/configs
 
-BASE=/local/applis/topo
+BASE=/local/applis/devtopo
 BINDIR=$BASE/bin
 DATADIR=$BASE/osiris
 EQVIRT=$DATADIR/eqvirt
 EQGEN=$DATADIR/eqgen
 DESTFILE=$DATADIR/osiris.graph
 VLANFILE=$EQGEN/_vlan.eq
-URLSETGRAPH=http://metro.u-strasbg.fr/bin/setgraph
+URLSETGRAPH=http://devmetro.u-strasbg.fr/bin/setgraph
 
 VERBOSE=0
 
@@ -142,9 +142,9 @@ $BINDIR/getnetif < $DESTFILE > /dev/null
 # Envoi des points de collecte au métrologiseur
 #
 
-# verbositer "envoi des points de collecte au métrologiseur"
-# $BINDIR/dumpcoll < $DESTFILE | $BINDIR/sendcoll $URLSETGRAPH
-# abort_if_error $?
+verbositer "envoi des points de collecte au métrologiseur"
+$BINDIR/dumpcoll < $DESTFILE | $BINDIR/sendcoll $URLSETGRAPH
+abort_if_error $?
 
 #
 # Nettoyage de sortie
