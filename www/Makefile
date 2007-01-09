@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.2 2007-01-05 16:47:30 pda Exp $
+# $Id: Makefile,v 1.3 2007-01-09 15:36:14 pda Exp $
 #
 # Makefile pour lancer l'installation de l'application topo
 # Ce Makefile n'est normalement jamais appelé lui-même, mais
@@ -10,15 +10,15 @@ TCLSH	= /usr/local/bin/tclsh8.4
 
 DESTDIR=
 
-DEBUG  = 0
+#DEBUG  = 0
+#BASE    = {host=dbcrc.u-strasbg.fr dbname=dns user=dns password=pas-fou-non-?}
+#AUTH    = {ldap {host ldaposiris.u-strasbg.fr port 389 base o=osiris filter (\&(objectClass=osirisPerson)(uid=%s)) fields {login uid nom sn prenom givenName prenomnom cn mel mail tel telephoneNumber fax facsimileTelephoneNumber mobile mobile adr l password userPassword groupes webGroup phnom sn phprenom givenName} searchperson_ou ou=personnes,o=osiris createperson_ou ou=autres,ou=personnes,o=osiris group_ou ou=webGroups,o=osiris person_oc osirisPerson group_oc osirisWebGroup param_ou ou=auth,ou=osirisParam,o=osiris param_oc osirisParam}}
+#HOMEURL	= /applis/topo
+
+DEBUG   = 1
 BASE    = {host=dbcrc.u-strasbg.fr dbname=dns user=dns password=pas-fou-non-?}
 AUTH    = {ldap {host ldaposiris.u-strasbg.fr port 389 base o=osiris filter (\&(objectClass=osirisPerson)(uid=%s)) fields {login uid nom sn prenom givenName prenomnom cn mel mail tel telephoneNumber fax facsimileTelephoneNumber mobile mobile adr l password userPassword groupes webGroup phnom sn phprenom givenName} searchperson_ou ou=personnes,o=osiris createperson_ou ou=autres,ou=personnes,o=osiris group_ou ou=webGroups,o=osiris person_oc osirisPerson group_oc osirisWebGroup param_ou ou=auth,ou=osirisParam,o=osiris param_oc osirisParam}}
-HOMEURL	= /applis/topo
-
-#DEBUG   = 1
-#BASE    = {host=dbcrc.u-strasbg.fr dbname=devdns user=dns password=pas-fou-non-?}
-#AUTH    = {ldap {host ldaposiris.u-strasbg.fr port 389 base o=osiris filter (\&(objectClass=osirisPerson)(uid=%s)) fields {login uid nom sn prenom givenName prenomnom cn mel mail tel telephoneNumber fax facsimileTelephoneNumber mobile mobile adr l password userPassword groupes webGroup phnom sn phprenom givenName} searchperson_ou ou=personnes,o=osiris createperson_ou ou=autres,ou=personnes,o=osiris group_ou ou=webGroups,o=osiris person_oc osirisPerson group_oc osirisWebGroup param_ou ou=auth,ou=osirisParam,o=osiris param_oc osirisParam}}
-#HOMEURL	= /applis/devtopo
+HOMEURL	= /applis/devtopo
 
 NOLOGIN	= /local/etc/nologin.dns
 
@@ -34,7 +34,7 @@ ROOT	= {pda jean}
 
 LIBDNS	= /local/services/www/applis/dns/lib/libdns.tcl
 #LIBDNS	= /local/services/www/applis/devdns/lib/libdns.tcl
-TOPODIR	= /local/applis/topo
+TOPODIR	= /local/applis/devtopo
 GRAPH	= $(TOPODIR)/osiris/osiris.graph
 
 NEATO	= /usr/local/bin/neato

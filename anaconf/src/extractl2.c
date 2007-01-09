@@ -1,5 +1,5 @@
 /*
- * $Id: extractl2.c,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id: extractl2.c,v 1.3 2007-01-09 15:36:13 pda Exp $
  */
 
 #include <stdio.h>
@@ -15,7 +15,7 @@
 Example of output format
 
 
-vlans {{2 <desc-vlan-en-hexa>} {4 <desc-vlan-en-hexa>} ...}
+vlans 2 4 ...
 eq crc-cc1 cisco/WS-C4506
 eq atrium-ce1 cisco/WS-C3750G-24TS
 eq crc-rc1 juniper/M20
@@ -165,7 +165,7 @@ Output traversed vlans
 void output_vlans (FILE *fp, vlanset_t vs)
 {
     fprintf (fp, "vlans") ;
-    print_vlanlist (fp, vs) ;
+    print_vlanlist (fp, vs, 0) ;
     fprintf (fp, "\n") ;
 }
 

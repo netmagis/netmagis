@@ -165,8 +165,6 @@ proc prologue {format} {
 		size="11,7.6" ;
 		orientation = landscape ;
 
-		/* len = 0.5 ; */
-		/* ranksep = 0.5 */
 		fontname = Helvetica ;
 
 		node [fontname = Helvetica, fontsize = 10,
@@ -185,40 +183,44 @@ proc prologue {format} {
 	png -
 	default {
 	    append g {
-		    fontsize = 14 ;
-		    fontname = "Helvetica" ;
-		    margin = .3 ;
-		    center = true ;
+		fontsize = 14 ;
+		fontname = "Helvetica" ;
+		margin = .3 ;
+		center = true ;
 
-		    orientation = portrait ;
+		orientation = portrait ;
 
-		    /* len = 0.5 ; */
-		    /* ranksep = 0.5 */
-		    fontname = Helvetica ;
+		fontname = Helvetica ;
 
-		    node [fontname = Helvetica, fontsize = 10,
-				color = grey
-			    ] ;
-		    edge [fontname = Helvetica, fontsize = 8,
-				len = 1.4,
-				labelfontname = Helvetica, labelfontsize = 6,
-				color = grey
-			    ] ;
+		node [fontname = Helvetica, fontsize = 10,
+			    color = grey
+			] ;
+		edge [fontname = Helvetica, fontsize = 8,
+			    len = 1.4,
+			    labelfontname = Helvetica, labelfontsize = 6,
+			    color = grey
+			] ;
 
-		    overlap = false ;
-		    spline = true ;
-		}
+		overlap = false ;
+		spline = true ;
+	    }
 	}
     }
     return "$g\n"
 }
 
-proc title {vlanlist} {
+proc title {vlanlist _tabvlan} {
+    upvar $_tabvlan tabvlan
+
     set vlan0 0
     set vl ""
     foreach v $vlanlist {
 	set vlanid   [lindex $v 0]
-	set vlandesc [lreplace $v 0 0]
+	if {[info exists tabvlan($v)]} then {
+	    set vlandesc [lindex $tabvlan($v) 0]
+	} else {
+	    set vlandesc "(pas de description)"
+	}
 	switch -- $vlanid {
 	    0 {
 		set vlan0 1
@@ -245,8 +247,9 @@ proc epilogue {format} {
 }
 
 
-proc generer-dot {format eq iface vlan prog urlfmt _nnodes} {
+proc generer-dot {format eq iface vlan prog urlfmt _tabvlan _nnodes} {
     upvar $_nnodes nnodes
+    upvar $_tabvlan tabvlan
 
     set nnodes 0
     set fd [open "|$prog" "r"]
@@ -280,7 +283,7 @@ proc generer-dot {format eq iface vlan prog urlfmt _nnodes} {
     #
 
     set dot [prologue $format]
-    append dot [title $vlans]
+    append dot [title $vlans tabvlan]
 
     foreach nomeq [array names tabeq] {
 	set attrlist [match-eq $tabeq($nomeq)]
@@ -328,11 +331,11 @@ proc chercher-vlans {vlan _tabvlan} {
 	#
 	set pattern "*${vlan}*"
 	foreach v [lsort -integer [array names tabvlan]] {
-	    if {[string match -nocase $pattern $tabvlan($v)]} then {
+	    set desc [lindex $tabvlan($v) 0]
+	    if {[string match -nocase $pattern $desc]} then {
 		lappend r $v
 	    }
 	}
-
     } else {
 	lappend r $vlan
 
@@ -446,7 +449,11 @@ proc main {} {
 	    set v [lindex $lvlans 0]
 	    set desc "(pas de description)"
 	    if {[info exists tabvlan($v)]} then {
-		set desc $tabvlan($v)
+		set desc [lindex $tabvlan($v) 0]
+		set nets [join [lindex $tabvlan($v) 1] " "]
+		if {! [string equal $nets ""]} then {
+		    append desc " ($nets)"
+		}
 	    }
 	    set qvlan [::webapp::html-string $vlan]
 
@@ -455,18 +462,19 @@ proc main {} {
 	    #
 
 	    set xl2 [format $conf(extractl2) $eq $iface $v]
-	    set dot [generer-dot $format $eq $iface $v $xl2 $conf(urleq) nnodes]
+	    set dot [generer-dot $format \
+				$eq $iface $v $xl2 $conf(urleq) tabvlan nnodes]
 	    if {[string equal $dot ""]} then {
 		set liste "Vlan '$qvlan' non trouvé sur les équipements"
 		::webapp::send html [::webapp::file-subst $conf(pagen) \
-						    [list \
-							    [list %OBJETS% "Vlans"] \
-							    [list %LISTE%  $liste] \
-							    [list %EQ%     ""] \
-							    [list %VLAN%   $qvlan] \
-							    [list %ADDR%   ""] \
-							] \
-						]
+						[list \
+						    [list %OBJETS% "Vlans"] \
+						    [list %LISTE%  $liste] \
+						    [list %EQ%     ""] \
+						    [list %VLAN%   $qvlan] \
+						    [list %ADDR%   ""] \
+						    ] \
+					    ]
 	    } else {
 		set fd [open "$tmp.dot" "w"]
 		puts $fd $dot
@@ -530,7 +538,12 @@ proc main {} {
 
 	    set liste "<UL>\n"
 	    foreach id $lvlans {
-		set desc [::webapp::html-string $tabvlan($id)]
+		set desc [lindex $tabvlan($id) 0]
+		set nets [lindex $tabvlan($id) 1]
+		if {[llength $nets] > 0} then {
+		    append desc " : $nets"
+		}
+		set desc [::webapp::html-string $desc]
 		set url [format $conf(urll2) $id]
 		append liste [format "<LI><A HREF=\"%s\">$id ($desc)</A>\n" $url]
 	    }

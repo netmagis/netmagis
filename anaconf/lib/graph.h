@@ -1,5 +1,5 @@
 /*
- * $Id: graph.h,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id: graph.h,v 1.3 2007-01-09 15:36:12 pda Exp $
  */
 
 /*
@@ -152,7 +152,7 @@ typedef unsigned char vlanset_t [NBYTESVLAN] ;
 					if (vlan_set(tab,n)) break ; } while (0)
 
 void traversed_vlans (vlanset_t vs) ;
-void print_vlanlist (FILE *fp, vlanset_t vs) ;
+void print_vlanlist (FILE *fp, vlanset_t vs, int desc) ;
 
 /******************************************************************************
 Miscellaneous functions

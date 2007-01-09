@@ -1,10 +1,10 @@
 /*
- * $Id: printvlans.c,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id: printvlans.c,v 1.3 2007-01-09 15:36:12 pda Exp $
  */
 
 #include "graph.h"
 
-void print_vlanlist (FILE *fp, vlanset_t vs)
+void print_vlanlist (FILE *fp, vlanset_t vs, int desc)
 {
     vlan_t v ;
     char *p ;
@@ -15,27 +15,15 @@ void print_vlanlist (FILE *fp, vlanset_t vs)
     {
 	if (vlan_isset (vs, v))
 	{
-	    fprintf (fp, " {%d ", v) ;
-
-	    p = tab [v].name ;
-#ifdef OLD
-	    if (p != NULL)
+	    if (desc)
 	    {
-		while (*p != '\0')
-		{
-		    if (*p == '{' || *p == '}')
-			fputc ('\\', fp) ;
-		    fputc (*p, fp) ;
-		    p++ ;
-		}
+		fprintf (fp, " {%d ", v) ;
+		p = tab [v].name ;
+		if (p == NULL)
+		    p = "-" ;
+		fprintf (fp, "%s}", p) ;
 	    }
-	    else fprintf (fp, "(no description)") ;
-#else
-	    if (p == NULL)
-		p = "-" ;
-#endif
-
-	    fprintf (fp, "}") ;
+	    else fprintf (fp, " %d ", v) ;
 	}
     }
 }

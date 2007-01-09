@@ -322,6 +322,11 @@ proc main {} {
 		foreach vlan [trier-vlans $ligne] {
 		    set vlanid [lindex $vlan 0]
 		    set desc   [lindex $vlan 1]
+		    if {[string equal $desc "-"]} then {
+			set desc "pas de description"
+		    } else {
+			set desc [binary format H* $desc]
+		    }
 		    set stat   [lindex $vlan 2]
 
 		    append txt "\n<BR>\n"

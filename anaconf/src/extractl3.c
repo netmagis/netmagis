@@ -1,5 +1,5 @@
 /*
- * $Id: extractl3.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: extractl3.c,v 1.2 2007-01-09 15:36:13 pda Exp $
  */
 
 #include <stdio.h>
@@ -165,7 +165,7 @@ void output_cloud (FILE *fp, struct node *n, char *cloudname, size_t size)
 
     traversed_vlans (vs) ;
     fprintf (fp, " {") ;
-    print_vlanlist (fp, vs) ;
+    print_vlanlist (fp, vs, 1) ;
     fprintf (fp, "}") ;
 
     /*
