@@ -1,10 +1,10 @@
 #
 # Makefile principale pour l'analyseur de configurations
 #
-# $Id: Makefile,v 1.2 2007-01-07 21:20:46 pda Exp $
+# $Id: Makefile,v 1.3 2007-01-09 18:41:52 pda Exp $
 #
 
-DESTDIR	= /local/applis/topo
+DESTDIR	= /local/applis/devtopo
 
 all:
 	cd lib ; make

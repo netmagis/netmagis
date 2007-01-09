@@ -1,5 +1,5 @@
 /*
- * $Id: extractl3.c,v 1.2 2007-01-09 15:36:13 pda Exp $
+ * $Id: extractl3.c,v 1.3 2007-01-09 18:41:53 pda Exp $
  */
 
 #include <stdio.h>
@@ -156,8 +156,23 @@ void output_cloud (FILE *fp, struct node *n, char *cloudname, size_t size)
      */
 
     find_interface (&l1node, &l2node) ;
-    fprintf (fp, " {%s %s %d}",
-			l1node->eq, l1node->u.l1.ifname, l2node->u.l2.vlan) ;
+    if (l1node == NULL || l2node == NULL)
+    {
+	/*
+	 * Degenerated case such as an L3 node not connected to the
+	 * rest of the world...
+	 */
+	if (l2node == NULL)
+	    l2node = get_neighbour (n, NT_L2) ;
+
+	if (l2node != NULL)
+	    fprintf (fp, " {%s %s %d}", l2node->eq, "-", l2node->u.l2.vlan) ;
+	else
+	    fprintf (fp, " {%s %s %d}", "-", "-", 0) ;
+    }
+    else
+	fprintf (fp, " {%s %s %d}",
+			    l1node->eq, l1node->u.l1.ifname, l2node->u.l2.vlan) ;
 
     /*
      * Get all vlan used
@@ -532,7 +547,6 @@ int main (int argc, char *argv [])
      * Read the graph
      */
 
-    /* text_read (stdin) ; */
     bin_read (stdin, mobjlist) ;
 
     /*
