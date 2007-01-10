@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: anaconf,v 1.3 2007-01-09 11:05:20 pda Exp $
+# $Id: anaconf,v 1.4 2007-01-10 18:12:08 pda Exp $
 #
 # Enchaîne les différentes phases pour constituer le graphe du
 # réseau donné.
@@ -22,14 +22,14 @@ RANCIDDIR=/local/idr/conf/osiris
 RANCIDDB=$RANCIDDIR/router.db
 RANCIDCONFDIR=$RANCIDDIR/configs
 
-BASE=/local/applis/devtopo
+BASE=/local/applis/topo
 BINDIR=$BASE/bin
 DATADIR=$BASE/osiris
 EQVIRT=$DATADIR/eqvirt
 EQGEN=$DATADIR/eqgen
 DESTFILE=$DATADIR/osiris.graph
 VLANFILE=$EQGEN/_vlan.eq
-URLSETGRAPH=http://devmetro.u-strasbg.fr/bin/setgraph
+URLSETGRAPH=http://metro.u-strasbg.fr/bin/setgraph
 
 VERBOSE=0
 
