@@ -1,5 +1,5 @@
 /*
- * $Id: dumpcoll.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: dumpcoll.c,v 1.2 2007-01-10 16:50:00 pda Exp $
  */
 
 #include <stdio.h>
@@ -24,24 +24,6 @@ M124 le7-rc1 ge-4/5/6.58 toto
 Output interfaces (L2 or L1 with restrictions) marked for this network
 ******************************************************************************/
 
-char *community (char *eqname)
-{
-    struct eq *eq ;
-    char *r ;
-
-    r = "-" ;
-    for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
-    {
-	if (eq->name == eqname)
-	{
-	    if (eq->snmp != NULL)
-		r = eq->snmp ;
-	    break ;
-	}
-    }
-    return r ;
-}
-
 void output_L1 (FILE *fp, struct node *L1node)
 {
     if (L1node->u.l1.stat)
@@ -49,9 +31,9 @@ void output_L1 (FILE *fp, struct node *L1node)
 	/* <id collect> <eq> <iface> <community> */
 	fprintf (fp, "%s %s %s %s\n",
 			L1node->u.l1.stat,
-			L1node->eq,
+			L1node->eq->name,
 			L1node->u.l1.ifname,
-			community (L1node->eq)
+			(L1node->eq->snmp == NULL) ? "-" : L1node->eq->snmp
 		    ) ;
     }
 }
@@ -68,9 +50,9 @@ void output_L2 (FILE *fp, struct node *L2node)
 	    /* <id collect> <eq> <iface>.<vlan> <community> */
 	    fprintf (fp, "%s %s %s.%d %s\n",
 			    L2node->u.l2.stat,
-			    L1node->eq,
+			    L1node->eq->name,
 			    L1node->u.l1.ifname, L2node->u.l2.vlan,
-			    community (L1node->eq)
+			    (L1node->eq->snmp == NULL) ? "-" : L1node->eq->snmp
 			) ;
 	}
     }
@@ -84,7 +66,7 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 int main (int argc, char *argv [])
 {
-    char *eqname ;
+    struct eq *eq ;
     struct node *n ;
 
     /*
@@ -94,10 +76,16 @@ int main (int argc, char *argv [])
     switch (argc)
     {
 	case 1 :
-	    eqname = NULL ;
+	    eq = NULL ;
 	    break ;
 	case 2 :
-	    eqname = argv [1] ;
+	    eq = eq_lookup (argv [1]) ;
+	    if (eq == NULL)
+	    {
+		fprintf (stderr, "%s : equipement '%s' not found\n",
+				    argv [0], argv [1]) ;
+		exit (1) ;
+	    }
 	    break ;
 	default :
 	    fprintf (stderr, "Usage : %s [eq]\n", argv [0]) ;
@@ -115,9 +103,10 @@ int main (int argc, char *argv [])
      * Traverse the graph
      */
 
+
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (eqname == NULL || strcmp (n->eq, eqname) == 0)
+	if (eq == NULL || n->eq == eq)
 	{
 	    switch (n->nodetype)
 	    {

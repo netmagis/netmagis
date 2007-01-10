@@ -1,5 +1,5 @@
 /*
- * $Id: dupgraph.c,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id: dupgraph.c,v 1.3 2007-01-10 16:49:53 pda Exp $
  */
 
 #include "graph.h"
@@ -333,6 +333,20 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     }
 
     /*
+     * Equipements
+     */
+
+    for (i = 0 ; i < maxeq ; i++)
+    {
+	TRANSPTR (neweqtab [i].name) ;
+	TRANSPTR (neweqtab [i].type) ;
+	TRANSPTR (neweqtab [i].model) ;
+	TRANSPTR (neweqtab [i].snmp) ;
+	TRANSPTR (neweqtab [i].next) ;
+    }
+    TRANSHEAD (new [EQMOBJIDX], old [EQMOBJIDX]) ;
+
+    /*
      * Nodes
      */
 
@@ -407,20 +421,6 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	TRANSPTR (newnlisttab [i].net) ;
 	TRANSPTR (newnlisttab [i].next) ;
     }
-
-    /*
-     * Equipements
-     */
-
-    for (i = 0 ; i < maxeq ; i++)
-    {
-	TRANSPTR (neweqtab [i].name) ;
-	TRANSPTR (neweqtab [i].type) ;
-	TRANSPTR (neweqtab [i].model) ;
-	TRANSPTR (neweqtab [i].snmp) ;
-	TRANSPTR (neweqtab [i].next) ;
-    }
-    TRANSHEAD (new [EQMOBJIDX], old [EQMOBJIDX]) ;
 
     /*
      * Vlan

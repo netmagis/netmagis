@@ -1,5 +1,5 @@
 /*
- * $Id: locatecoll.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: locatecoll.c,v 1.2 2007-01-10 16:50:00 pda Exp $
  */
 
 #include <stdio.h>
@@ -134,7 +134,7 @@ int main (int argc, char *argv [])
 	struct node *m ;
 
 	m = search_L3 (n) ;
-	printf ("%s", n->eq) ;
+	printf ("%s", n->eq->name) ;
 	if (m != NULL)
 	{
 	    iptext_t ip ;

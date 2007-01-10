@@ -1,5 +1,5 @@
 /*
- * $Id: textwrite.c,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id: textwrite.c,v 1.3 2007-01-10 16:49:53 pda Exp $
  */
 
 #include "graph.h"
@@ -10,14 +10,14 @@ Output graph in textual form
 
 static void text_write_eq (FILE *fp)
 {
-    struct eq *e ;
+    struct eq *eq ;
 
-    for (e = mobj_head (eqmobj) ; e != NULL ; e = e->next)
+    for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
 	fprintf (fp, "eq %s type %s model %s snmp %s\n",
-				e->name,
-				e->type,
-				e->model,
-				(e->snmp == NULL ? "-" : e->snmp)
+				eq->name,
+				eq->type,
+				eq->model,
+				(eq->snmp == NULL ? "-" : eq->snmp)
 			    ) ;
 }
 
@@ -33,7 +33,7 @@ static void text_write_nodes (FILE *fp)
 	    case NT_L1 :
 		fprintf (fp, "node %s type L1 eq %s name %s link %s encap %s stat %s desc %s\n",
 				n->name,
-				n->eq,
+				n->eq->name,
 				n->u.l1.ifname,
 				n->u.l1.link,
 				(n->u.l1.l1type == L1T_TRUNK ? "trunk" : "ether"),
@@ -44,7 +44,7 @@ static void text_write_nodes (FILE *fp)
 	    case NT_L2 :
 		fprintf (fp, "node %s type L2 eq %s vlan %d stat %s\n",
 				n->name,
-				n->eq,
+				n->eq->name,
 				n->u.l2.vlan,
 				(n->u.l2.stat == NULL ? "-" : n->u.l2.stat)
 			    ) ;
@@ -57,20 +57,20 @@ static void text_write_nodes (FILE *fp)
 		}
 		fprintf (fp, "node %s type L3 eq %s addr %s\n",
 				n->name,
-				n->eq,
+				n->eq->name,
 				ipaddr
 			    ) ;
 		break ;
 	    case NT_BRIDGE :
 		fprintf (fp, "node %s type bridge eq %s\n",
 				n->name,
-				n->eq
+				n->eq->name
 			    ) ;
 		break ;
 	    case NT_ROUTER :
 		fprintf (fp, "node %s type router eq %s instance %s\n",
 				n->name,
-				n->eq,
+				n->eq->name,
 				n->u.router.name
 			    ) ;
 		break ;

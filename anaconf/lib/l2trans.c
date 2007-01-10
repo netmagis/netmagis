@@ -1,5 +1,5 @@
 /*
- * $Id: l2trans.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: l2trans.c,v 1.2 2007-01-10 16:49:53 pda Exp $
  */
 
 #include "graph.h"
@@ -109,7 +109,7 @@ static void transport_vlan_on_L2pat (struct node *n, vlan_t v, struct node *prev
      * Instanciate this L2pat into a L2
      */
 
-    l2node = create_node (new_nodename (n->eq), n->eq,  NT_L2) ;
+    l2node = create_node (new_nodename (n->eq->name), n->eq,  NT_L2) ;
     l2node->u.l2.vlan = v ;
     l2node->u.l2.stat = NULL ;
     (void) create_link (NULL, prev->name, l2node->name) ;
@@ -185,7 +185,7 @@ static void transport_vlan_on_brpat (struct node *n, vlan_t v, struct node *prev
      * Instanciate this brpat into a bridge
      */
 
-    bridgenode = create_node (new_nodename (n->eq), n->eq,  NT_BRIDGE) ;
+    bridgenode = create_node (new_nodename (n->eq->name), n->eq,  NT_BRIDGE) ;
     (void) create_link (NULL, prev->name, bridgenode->name) ;
     vlan_set (bridgenode->vlanset, v) ;
 

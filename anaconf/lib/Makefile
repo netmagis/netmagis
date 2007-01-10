@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.2 2007-01-09 10:46:10 pda Exp $
+# $Id: Makefile,v 1.3 2007-01-10 16:49:53 pda Exp $
 #
 
 CFLAGS = -g -Wall
@@ -10,11 +10,11 @@ OBJS = \
 	net.o \
 	symtab.o \
 	node.o \
+	eq.o \
 	util.o \
 	textread.o \
 	textwrite.o \
 	l2trans.o \
-	searcheq.o \
 	getneighbour.o \
 	traversedvlans.o \
 	printvlans.o \
@@ -23,7 +23,8 @@ OBJS = \
 	relabs.o \
 	absrel.o \
 	binwrite.o \
-	binread.o
+	binread.o \
+	sel.o
 
 
 libgraph.a:	$(OBJS)

@@ -1,5 +1,5 @@
 /*
- * $Id: extracteq.c,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id: extracteq.c,v 1.3 2007-01-10 16:50:00 pda Exp $
  */
 
 #include <stdio.h>
@@ -58,7 +58,7 @@ void output_iface (FILE *fp, struct node *n)
 	if (ll1 != NULL)
 	    fprintf (fp, " {%s %s %s}",
 			    ll1->link->name,
-			    peer->eq,
+			    peer->eq->name,
 			    peer->u.l1.ifname) ;
     }
 
@@ -159,9 +159,7 @@ int main (int argc, char *argv [])
      * soient plus efficaces (simple comparaison de pointeurs).
      */
 
-    for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
-	if (strcmp (eq->name, eqname) == 0)
-	    break ;
+    eq = eq_lookup (eqname) ;
     if (eq == NULL)
     {
 	fprintf (stderr, "equipement '%s' not found\n", eqname) ;
@@ -171,7 +169,7 @@ int main (int argc, char *argv [])
     output_eq (stdout, eq) ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	if (n->eq == eq->name && n->nodetype == NT_L1)
+	if (n->eq == eq && n->nodetype == NT_L1)
 	    output_iface (stdout, n) ;
 
     exit (0) ;

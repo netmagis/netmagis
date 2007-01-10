@@ -1,5 +1,5 @@
 /*
- * $Id: getnetif.c,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id: getnetif.c,v 1.3 2007-01-10 16:50:00 pda Exp $
  */
 
 #include <stdio.h>
@@ -98,7 +98,7 @@ void output_ifaces (FILE *fp)
 	/* iface <eq> <if> <vlan-id> <ip> */
 	ip_ntop (&n->l3->u.l3.addr, addr, 0) ;
 	fprintf (fp, "iface %s %s %d %s\n",
-			n->l1->eq,
+			n->l1->eq->name,
 			n->l1->u.l1.ifname,
 			n->l2->u.l2.vlan,
 			addr) ;

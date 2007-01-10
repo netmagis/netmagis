@@ -1,5 +1,5 @@
 /*
- * $Id: extractl3.c,v 1.3 2007-01-09 18:41:53 pda Exp $
+ * $Id: extractl3.c,v 1.4 2007-01-10 16:50:00 pda Exp $
  */
 
 #include <stdio.h>
@@ -166,13 +166,13 @@ void output_cloud (FILE *fp, struct node *n, char *cloudname, size_t size)
 	    l2node = get_neighbour (n, NT_L2) ;
 
 	if (l2node != NULL)
-	    fprintf (fp, " {%s %s %d}", l2node->eq, "-", l2node->u.l2.vlan) ;
+	    fprintf (fp, " {%s %s %d}", l2node->eq->name, "-", l2node->u.l2.vlan) ;
 	else
 	    fprintf (fp, " {%s %s %d}", "-", "-", 0) ;
     }
     else
 	fprintf (fp, " {%s %s %d}",
-			    l1node->eq, l1node->u.l1.ifname, l2node->u.l2.vlan) ;
+			    l1node->eq->name, l1node->u.l1.ifname, l2node->u.l2.vlan) ;
 
     /*
      * Get all vlan used
@@ -230,7 +230,7 @@ int get_l3tol1_L1 (FILE *fp, struct node *n, l3tol1_t *tab, int max, int idx)
     idx++ ;				/* we found an L1 */
     if (idx >= max)
     {
-	fprintf (stderr, "More than %d interfaces in %s", max, n->eq) ;
+	fprintf (stderr, "More than %d interfaces in %s", max, n->eq->name) ;
 	exit (1) ;
     }
     tab [idx].l2 = tab [idx-1].l2 ;
@@ -339,7 +339,7 @@ void output_link (FILE *fp, struct node *n, char *cloudname)
 	l3tol1_t *p ;
 
 	p = &tab [i] ;
-	fprintf (fp, "link %s", n->eq) ;
+	fprintf (fp, "link %s", n->eq->name) ;
 	if (tab [i].r != NULL)
 	    fprintf (fp, ":%s", p->r->u.router.name) ;
 
@@ -384,7 +384,7 @@ void output_direct (FILE *fp, struct node *n [2])
 	}
 
 	p = &tab [0] ;
-	fprintf (fp, " %s", n [peer]->eq) ;
+	fprintf (fp, " %s", n [peer]->eq->name) ;
 	if (tab [0].r != NULL)
 	    fprintf (fp, ":%s", p->r->u.router.name) ;
 
@@ -593,15 +593,14 @@ int main (int argc, char *argv [])
 	{
 	    struct node *r ;
 
-	    eq = search_eq (n->eq) ;
-	    eq->mark |= MK_IPMATCH ;
+	    n->eq->mark |= MK_IPMATCH ;
 
 	    r = get_neighbour (n, NT_ROUTER) ;
 	    if (r != NULL && ! (r->mark & MK_ISROUTER))
 	    {
 		n->mark |= MK_ISROUTER ;
 		r->mark |= MK_ISROUTER ;
-		eq->mark |= MK_ISROUTER ;
+		n->eq->mark |= MK_ISROUTER ;
 		fprintf (stdout, "eq %s:%s router\n", eq->name, r->u.router.name) ;
 	    }
 	}

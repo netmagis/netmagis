@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id: textread.c,v 1.3 2007-01-10 16:49:53 pda Exp $
  */
 
 #include "graph.h"
@@ -505,6 +505,12 @@ static void process_eq (char *tab [0], int ntab)
     ntab -= 2 ;
 
     /*
+     * Locate proper equipement
+     */
+
+    eq = eq_get (eqname, 0) ;
+
+    /*
      * Parse all attributes
      */
 
@@ -544,15 +550,11 @@ static void process_eq (char *tab [0], int ntab)
 	exit (1) ;
     }
 
-    eq = mobj_alloc (eqmobj, 1) ;
-    eq->name = symtab_to_name (symtab_get (eqname)) ;
     eq->type = symtab_to_name (symtab_get (eqtype)) ;
     eq->model = symtab_to_name (symtab_get (eqmodel)) ;
     if (strcmp (eqsnmp, "-") == 0)
 	eq->snmp = NULL ;
     else eq->snmp = symtab_to_name (symtab_get (eqsnmp)) ;
-    eq->next = mobj_head (eqmobj) ;
-    mobj_sethead (eqmobj, eq) ;
 
     attr_close (attrtab) ;
 }
@@ -566,7 +568,7 @@ static void process_node (char *tab [], int ntab)
     struct node *n ;
     char *nodename ;
     char *nodetype ;
-    char *eqname ;
+    struct eq *eq ;
     struct attrtab *attrtab ;			/* head of attribute table */
     struct attrvallist *av ;
     static struct
@@ -672,9 +674,9 @@ static void process_node (char *tab [], int ntab)
 		exit (1) ;
 	    }
 
-	    eqname = attr_get_val (attr_get_vallist (attrtab, "eq")) ;
+	    eq = eq_get (attr_get_val (attr_get_vallist (attrtab, "eq")), 0) ;
 
-	    n = create_node (nodename, eqname,  attrbytype [i].nodetype) ;
+	    n = create_node (nodename, eq,  attrbytype [i].nodetype) ;
 	    (*attrbytype [i].fct) (attrtab, n) ;
 	    break ;
 	}

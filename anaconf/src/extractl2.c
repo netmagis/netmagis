@@ -1,5 +1,5 @@
 /*
- * $Id: extractl2.c,v 1.3 2007-01-09 15:36:13 pda Exp $
+ * $Id: extractl2.c,v 1.4 2007-01-10 16:50:00 pda Exp $
  */
 
 #include <stdio.h>
@@ -24,11 +24,6 @@ eq crc-rc1 juniper/M20
 link L12 crc-cc1 GigabitEthernet4/5 crc-rc1 ge-0/0/0
 ... (all links)
 ******************************************************************************/
-
-int match_eq (struct node *nl2, char *eqname)
-{
-    return eqname == NULL || nl2->eq == eqname ;
-}
 
 int match_iface (struct node *nl2, char *ifname)
 {
@@ -62,7 +57,7 @@ int match_iface (struct node *nl2, char *ifname)
 Marks all nodes/links (except L1 nodes) reached by this vlan
 ******************************************************************************/
 
-int walkl2 (vlan_t vlan, char *eqname, char *ifname)
+int walkl2 (vlan_t vlan, struct eq *eq, char *ifname)
 {
     struct node *n ;
     int vlan_found ;
@@ -74,7 +69,7 @@ int walkl2 (vlan_t vlan, char *eqname, char *ifname)
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
 	if (n->nodetype == NT_L2
-		&& match_eq (n, eqname)
+		&& (eq == NULL || n->eq == eq)
 		&& match_iface (n, ifname)
 		&& n->u.l2.vlan == vlan
 		&& ! vlan_isset (n->vlanset, vlan) )
@@ -93,18 +88,17 @@ Output equipements
 
 void output_eq (FILE *fp)
 {
-    struct eq *e ;
     struct node *n ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
 	if (n->nodetype == NT_L1 && (n->mark & MK_L2TRANSPORT))
 	{
-	    e = search_eq (n->eq) ;
-	    if (! e->mark)
+	    if (! n->eq->mark)
 	    {
-		e->mark = 1 ;
-		fprintf (fp, "eq %s %s/%s\n", e->name, e->type, e->model) ;
+		n->eq->mark = 1 ;
+		fprintf (fp, "eq %s %s/%s\n",
+			    n->eq->name, n->eq->type, n->eq->model) ;
 	    }
 	}
     }
@@ -144,8 +138,8 @@ void output_links (FILE *fp)
 						n1->name, n2->name) ;
 		    fprintf (fp, "link %s %s %s %s %s\n",
 					l->name,
-					n1->eq, n1->u.l1.ifname,
-					n2->eq, n2->u.l1.ifname
+					n1->eq->name, n1->u.l1.ifname,
+					n2->eq->name, n2->u.l1.ifname
 				    ) ;
 		}
 	    }
@@ -178,6 +172,7 @@ MOBJ *mobjlist [NB_MOBJ] ;
 int main (int argc, char *argv [])
 {
     struct node *n ;
+    struct eq *eq ;
     char *eqname ;
     char *ifname ;
     char *vlanid ; vlan_t vlan ;
@@ -217,32 +212,28 @@ int main (int argc, char *argv [])
      * Search for arguments
      */
 
+    eq = NULL ;
     if (eqname != NULL)
     {
-	struct eq *eq ;
-
 	/*
 	 * Chercher l'équipement, et remplacer le nom cherché par
 	 * celui qui est dans le noeud, afin que les recherches
 	 * soient plus efficaces (simple comparaison de pointeurs).
 	 */
 
-	for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
-	    if (strcmp (eq->name, eqname) == 0)
-		break ;
+	eq = eq_lookup (eqname) ;
 	if (eq == NULL)
 	{
 	    fprintf (stderr, "equipement '%s' not found\n", eqname) ;
 	    exit (1) ;
 	}
-	eqname = eq->name ;
 
 	if (ifname != NULL)
 	{
 	    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
 		if (n->nodetype == NT_L1
-			&& strcmp (n->u.l1.ifname, ifname) == 0
-			&& n->eq == eqname)
+			&& n->eq == eq
+			&& strcmp (n->u.l1.ifname, ifname) == 0)
 		    break ;
 	    if (n == NULL)
 	    {
@@ -263,7 +254,7 @@ int main (int argc, char *argv [])
 
     vlan = atoi (vlanid) ;
 
-    if (! walkl2 (vlan, eqname, ifname))
+    if (! walkl2 (vlan, eq, ifname))
     {
 	fprintf (stderr, "%s: vlan not found\n", argv [0]) ;
 	exit (1) ;

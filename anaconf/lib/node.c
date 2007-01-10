@@ -1,5 +1,5 @@
 /*
- * $Id: node.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: node.c,v 1.2 2007-01-10 16:49:53 pda Exp $
  */
 
 #include "graph.h"
@@ -8,19 +8,18 @@
 Node management
 ******************************************************************************/
 
-struct node *create_node (char *name, char *eq, enum nodetype nodetype)
+struct node *create_node (char *name, struct eq *eq, enum nodetype nodetype)
 {
     struct node *n ;
-    char *s1, *s2 ;
+    char *s ;
     struct symtab *p ;
 
     p = symtab_get (name) ;
 
-    s1 = symtab_to_name (p) ;
-    s2 = symtab_to_name (symtab_get (eq)) ;
+    s = symtab_to_name (p) ;
     n = mobj_alloc (nodemobj, 1) ;
-    n->name = s1 ;
-    n->eq = s2 ;
+    n->name = s ;
+    n->eq = eq ;
     n->nodetype = nodetype ;
 
     n->linklist = NULL ;

@@ -1,5 +1,5 @@
 /*
- * $Id: relabs.c,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id: relabs.c,v 1.3 2007-01-10 16:49:53 pda Exp $
  */
 
 #include "graph.h"
@@ -48,11 +48,21 @@ void rel_to_abs (MOBJ *graph [])
     PROLOGABS (max, graph [STRMOBJIDX], strtab) ;
     /* nothing for strmobj */
 
+    PROLOGABS (max, graph [EQMOBJIDX], eqtab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	RELTOABS (eqtab [i].name, strtab) ;
+	RELTOABS (eqtab [i].type, strtab) ;
+	RELTOABS (eqtab [i].model, strtab) ;
+	RELTOABS (eqtab [i].snmp, strtab) ;
+	RELTOABS (eqtab [i].next, eqtab) ;
+    }
+
     PROLOGABS (max, graph [NODEMOBJIDX], nodetab) ;
     for (i = 0 ; i < max ; i++)
     {
 	RELTOABS (nodetab [i].name, strtab) ;
-	RELTOABS (nodetab [i].eq, strtab) ;
+	RELTOABS (nodetab [i].eq, eqtab) ;
 	RELTOABS (nodetab [i].next, nodetab) ;
 	RELTOABS (nodetab [i].linklist, llisttab) ;
 
@@ -88,16 +98,6 @@ void rel_to_abs (MOBJ *graph [])
     {
 	RELTOABS (llisttab [i].link, linktab) ;
 	RELTOABS (llisttab [i].next, llisttab) ;
-    }
-
-    PROLOGABS (max, graph [EQMOBJIDX], eqtab) ;
-    for (i = 0 ; i < max ; i++)
-    {
-	RELTOABS (eqtab [i].name, strtab) ;
-	RELTOABS (eqtab [i].type, strtab) ;
-	RELTOABS (eqtab [i].model, strtab) ;
-	RELTOABS (eqtab [i].snmp, strtab) ;
-	RELTOABS (eqtab [i].next, eqtab) ;
     }
 
     PROLOGABS (max, graph [NETMOBJIDX], nettab) ;

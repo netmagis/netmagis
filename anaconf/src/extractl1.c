@@ -1,5 +1,5 @@
 /*
- * $Id: extractl1.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id: extractl1.c,v 1.2 2007-01-10 16:50:00 pda Exp $
  */
 
 #include <stdio.h>
@@ -32,15 +32,15 @@ Output equipements and interfaces
 
 void output_eq_ifaces (FILE *fp)
 {
-    struct eq *e ;
+    struct eq *eq ;
     struct node *n ;
 
-    for (e = mobj_head (eqmobj) ; e != NULL ; e = e->next)
+    for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
     {
-	fprintf (fp, "%s", e->name) ;
+	fprintf (fp, "%s", eq->name) ;
 	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
 	{
-	    if (n->eq == e->name && n->nodetype == NT_L1 && n->mark == 0)
+	    if (n->eq == eq && n->nodetype == NT_L1 && n->mark == 0)
 		fprintf (fp, " %s", n->u.l1.ifname) ;
 	}
 	fprintf (fp, "\n") ;

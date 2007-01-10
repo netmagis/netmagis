@@ -1,5 +1,5 @@
 /*
- * $Id: absrel.c,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id: absrel.c,v 1.3 2007-01-10 16:49:53 pda Exp $
  */
 
 #include "graph.h"
@@ -51,11 +51,21 @@ void abs_to_rel (MOBJ *graph [])
     PROLOGREL (max, graph [STRMOBJIDX], strtab) ;
     /* nothing for strmobj */
 
+    PROLOGREL (max, graph [EQMOBJIDX], eqtab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	ABSTOREL (eqtab [i].name, strtab) ;
+	ABSTOREL (eqtab [i].type, strtab) ;
+	ABSTOREL (eqtab [i].model, strtab) ;
+	ABSTOREL (eqtab [i].snmp, strtab) ;
+	ABSTOREL (eqtab [i].next, eqtab) ;
+    }
+
     PROLOGREL (max, graph [NODEMOBJIDX], nodetab) ;
     for (i = 0 ; i < max ; i++)
     {
 	ABSTOREL (nodetab [i].name, strtab) ;
-	ABSTOREL (nodetab [i].eq, strtab) ;
+	ABSTOREL (nodetab [i].eq, eqtab) ;
 	ABSTOREL (nodetab [i].next, nodetab) ;
 	ABSTOREL (nodetab [i].linklist, llisttab) ;
 
@@ -91,16 +101,6 @@ void abs_to_rel (MOBJ *graph [])
     {
 	ABSTOREL (llisttab [i].link, linktab) ;
 	ABSTOREL (llisttab [i].next, llisttab) ;
-    }
-
-    PROLOGREL (max, graph [EQMOBJIDX], eqtab) ;
-    for (i = 0 ; i < max ; i++)
-    {
-	ABSTOREL (eqtab [i].name, strtab) ;
-	ABSTOREL (eqtab [i].type, strtab) ;
-	ABSTOREL (eqtab [i].model, strtab) ;
-	ABSTOREL (eqtab [i].snmp, strtab) ;
-	ABSTOREL (eqtab [i].next, eqtab) ;
     }
 
     PROLOGREL (max, graph [NETMOBJIDX], nettab) ;

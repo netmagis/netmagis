@@ -1,5 +1,5 @@
 /*
- * $Id: graph.h,v 1.3 2007-01-09 15:36:12 pda Exp $
+ * $Id: graph.h,v 1.4 2007-01-10 16:49:53 pda Exp $
  */
 
 /*
@@ -292,7 +292,7 @@ struct L2pat
 struct node
 {
     char *name ;			/* name of node */
-    char *eq ;				/* name of equipement */
+    struct eq *eq ;			/* equipement */
     enum nodetype nodetype ;
     union
     {
@@ -315,9 +315,10 @@ struct node
 
 
 #define	MK_L2TRANSPORT		0x1	/* used by transport_vlan_on_L2 */
-#define	MK_LAST			MK_L2TRANSPORT
+#define	MK_SELECTED		0x2	/* used by select_xxx */
+#define	MK_LAST			MK_SELECTED
 
-struct node *create_node (char *name, char *eq, enum nodetype nodetype) ;
+struct node *create_node (char *name, struct eq *eq, enum nodetype nodetype) ;
 
 /******************************************************************************
 Link management
@@ -369,7 +370,8 @@ struct eq
     struct eq *next ;
 } ;
 
-struct eq *search_eq (char *name) ;
+struct eq *eq_lookup (char *name) ;
+struct eq *eq_get (char *name, int nameinsymtab) ;
 
 /******************************************************************************
 Vlan and attached network list
@@ -457,3 +459,13 @@ void text_write (FILE *fpin) ;
 
 void bin_read (FILE *fpin, MOBJ *graph []) ;
 void bin_write (FILE *fpout, MOBJ *graph []) ;
+
+/******************************************************************************
+Sub-graph selection functions
+******************************************************************************/
+
+void sel_init (void) ;
+void sel_end (void) ;
+int sel_network (iptext_t addr) ;
+int sel_regexp (char *rex) ;
+void sel_mark (void) ;
