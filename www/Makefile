@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.4 2007-01-09 18:41:54 pda Exp $
+# $Id: Makefile,v 1.5 2007-01-10 19:17:59 pda Exp $
 #
 # Makefile pour lancer l'installation de l'application topo
 # Ce Makefile n'est normalement jamais appelé lui-même, mais
@@ -7,8 +7,6 @@
 #
 
 TCLSH	= /usr/local/bin/tclsh8.4
-
-DESTDIR=
 
 DEBUG  = 0
 BASE    = {host=dbcrc.u-strasbg.fr dbname=dns user=dns password=pas-fou-non-?}
@@ -34,7 +32,7 @@ ROOT	= {pda jean}
 
 LIBDNS	= /local/services/www/applis/dns/lib/libdns.tcl
 #LIBDNS	= /local/services/www/applis/devdns/lib/libdns.tcl
-TOPODIR	= /local/applis/devtopo
+TOPODIR	= /local/applis/topo
 GRAPH	= $(TOPODIR)/osiris/osiris.graph
 
 NEATO	= /usr/local/bin/neato

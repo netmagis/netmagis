@@ -1,5 +1,5 @@
 /*
- * $Id: extractl3.c,v 1.4 2007-01-10 16:50:00 pda Exp $
+ * $Id: extractl3.c,v 1.5 2007-01-10 19:17:57 pda Exp $
  */
 
 #include <stdio.h>
@@ -601,7 +601,8 @@ int main (int argc, char *argv [])
 		n->mark |= MK_ISROUTER ;
 		r->mark |= MK_ISROUTER ;
 		n->eq->mark |= MK_ISROUTER ;
-		fprintf (stdout, "eq %s:%s router\n", eq->name, r->u.router.name) ;
+		fprintf (stdout, "eq %s:%s router\n",
+				n->eq->name, r->u.router.name) ;
 	    }
 	}
     }

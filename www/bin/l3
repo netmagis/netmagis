@@ -163,6 +163,7 @@ proc generer-dot {format prog urleq urll2} {
 
     set dot [prologue $format]
 
+puts stderr "$prog"
     set fd [open "|$prog" "r"]
     while {[gets $fd line] > 0} {
 	switch -- [lindex $line 0] {
