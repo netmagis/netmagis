@@ -1,5 +1,5 @@
 /*
- * $Id: extracteq.c,v 1.5 2007-01-11 22:24:12 pda Exp $
+ * $Id: extracteq.c,v 1.6 2007-01-11 22:32:14 pda Exp $
  */
 
 #include "graph.h"
@@ -176,10 +176,6 @@ int main (int argc, char *argv [])
 
     bin_read (stdin, mobjlist) ;
     sel_mark () ;
-
-    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	vlan_zero (n->vlanset) ;
-
 
     /*
      * Search equipement
