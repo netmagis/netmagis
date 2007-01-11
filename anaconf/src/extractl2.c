@@ -1,13 +1,6 @@
 /*
- * $Id: extractl2.c,v 1.4 2007-01-10 16:50:00 pda Exp $
+ * $Id: extractl2.c,v 1.5 2007-01-11 15:31:23 pda Exp $
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <assert.h>
 
 #include "graph.h"
 
@@ -25,8 +18,9 @@ link L12 crc-cc1 GigabitEthernet4/5 crc-rc1 ge-0/0/0
 ... (all links)
 ******************************************************************************/
 
-int match_iface (struct node *nl2, char *ifname)
-{
+#define	MK_PRINTED	(MK_LAST << 1)
+
+int match_iface (struct node *nl2, char *ifname) {
     int r ;
 
     if (ifname != NULL)
@@ -89,16 +83,20 @@ Output equipements
 void output_eq (FILE *fp)
 {
     struct node *n ;
+    struct eq *eq ;
+
+    for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
+	MK_CLEAR (eq, MK_PRINTED) ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L1 && (n->mark & MK_L2TRANSPORT))
+	if (n->nodetype == NT_L1 && MK_ISSET (n, MK_L2TRANSPORT))
 	{
-	    if (! n->eq->mark)
+	    eq = n->eq ;
+	    if (MK_ISSELECTED (eq) && ! MK_ISSET (eq, MK_PRINTED))
 	    {
-		n->eq->mark = 1 ;
-		fprintf (fp, "eq %s %s/%s\n",
-			    n->eq->name, n->eq->type, n->eq->model) ;
+		MK_SET (eq, MK_PRINTED) ;
+		fprintf (fp, "eq %s %s/%s\n", eq->name, eq->type, eq->model) ;
 	    }
 	}
     }
@@ -118,7 +116,7 @@ void output_links (FILE *fp)
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L1 && (n->mark & MK_L2TRANSPORT))
+	if (n->nodetype == NT_L1 && MK_ISSET (n, MK_L2TRANSPORT))
 	{
 	    struct linklist *ll ;
 
@@ -130,8 +128,12 @@ void output_links (FILE *fp)
 		l = ll->link ;
 		n1 = l->node [0] ;
 		n2 = l->node [1] ;
-		if ((n1->mark & MK_L2TRANSPORT) && (n2->mark & MK_L2TRANSPORT)
-			&& n1->nodetype == NT_L1 && n2->nodetype == NT_L1)
+		if (n1->nodetype == NT_L1 && n2->nodetype == NT_L1
+			&& MK_ISSET (n1, MK_L2TRANSPORT)
+			&& MK_ISSET (n2, MK_L2TRANSPORT)
+			&& MK_ISSELECTED (n1->eq)
+			&& MK_ISSELECTED (n2->eq)
+			)
 		{
 		    if (l->name == NULL)
 			inconsistency ("Link between %s and %s without name",
@@ -143,7 +145,7 @@ void output_links (FILE *fp)
 				    ) ;
 		}
 	    }
-	    n->mark = 0 ;		/* link has been processed */
+	    MK_CLEAR (n, MK_L2TRANSPORT) ;	/* link has been processed */
 	}
     }
 }
@@ -169,6 +171,12 @@ Main function
 
 MOBJ *mobjlist [NB_MOBJ] ;
 
+void usage (char *progname)
+{
+    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]* [eq [iface]] vlanid\n", progname) ;
+    exit (1) ;
+}
+
 int main (int argc, char *argv [])
 {
     struct node *n ;
@@ -177,36 +185,71 @@ int main (int argc, char *argv [])
     char *ifname ;
     char *vlanid ; vlan_t vlan ;
     vlanset_t vs ;
+    int c, err ;
+    char *prog ;
+    struct vlan *tabvlan ;
+
+    prog = argv [0] ;
+    err = 0 ;
+
+    sel_init () ;
+
+    while ((c = getopt (argc, argv, "n:e:")) != -1) {
+	switch (c)
+	{
+	    case 'n' :
+		if (! sel_network (optarg))
+		{
+		    fprintf (stderr, "%s: '%s' is not a valid cidr\n", prog, optarg) ;
+		    err = 1 ;
+		}
+		break ;
+	    case 'e' :
+		if (! sel_regexp (optarg))
+		{
+		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
+		    err = 1 ;
+		}
+		break ;
+	    case '?' :
+	    default :
+		usage (prog) ;
+	}
+    }
+
+    if (err)
+	exit (1) ;
+
+    argc -= optind ;
+    argv += optind ;
 
     switch (argc)
     {
-	case 2 :
+	case 1 :
 	    eqname = NULL ;
+	    ifname = NULL ;
+	    vlanid = argv [0] ;
+	    break ;
+	case 2 :
+	    eqname = argv [0] ;
 	    ifname = NULL ;
 	    vlanid = argv [1] ;
 	    break ;
 	case 3 :
-	    eqname = argv [1] ;
-	    ifname = NULL ;
+	    eqname = argv [0] ;
+	    ifname = argv [1] ;
 	    vlanid = argv [2] ;
 	    break ;
-	case 4 :
-	    eqname = argv [1] ;
-	    ifname = argv [2] ;
-	    vlanid = argv [3] ;
-	    break ;
 	default :
-	    fprintf (stderr, "Usage : %s [eq [iface]] vlanid\n", argv [0]) ;
-	    exit (1) ;
-	    break ;
+	    usage (prog) ;
     }
 
     /*
      * Read the graph
      */
 
-    /* text_read (stdin) ; */
     bin_read (stdin, mobjlist) ;
+    sel_mark () ;
 
     /*
      * Search for arguments
@@ -249,14 +292,12 @@ int main (int argc, char *argv [])
      * and mark all visited nodes for these vlans
      */
 
-    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	n->mark = 0 ;
-
+    tabvlan = mobj_data (vlanmobj) ;
     vlan = atoi (vlanid) ;
 
     if (! walkl2 (vlan, eq, ifname))
     {
-	fprintf (stderr, "%s: vlan not found\n", argv [0]) ;
+	fprintf (stderr, "%s: vlan '%d' not found\n", prog, vlan) ;
 	exit (1) ;
     }
 
@@ -280,5 +321,6 @@ int main (int argc, char *argv [])
 
     output_links (stdout) ;
 
+    sel_end () ;
     exit (0) ;
 }

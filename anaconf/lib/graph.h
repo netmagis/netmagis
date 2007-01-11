@@ -1,5 +1,5 @@
 /*
- * $Id: graph.h,v 1.4 2007-01-10 16:49:53 pda Exp $
+ * $Id: graph.h,v 1.5 2007-01-11 15:31:22 pda Exp $
  */
 
 /*
@@ -19,6 +19,8 @@ Include files for items specific to this file
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <ctype.h>
 
 /*
  * For IP address manipulation functions
@@ -213,8 +215,6 @@ int ip_equal (ip_t *adr1, ip_t *adr2) ;
 int ip_match (ip_t *adr, ip_t *network, int prefix) ;
 void ip_netof (ip_t *srcadr, ip_t *dstadr) ;
 
-struct network *get_net (char *addr) ;
-
 /******************************************************************************
 Node name management
 ******************************************************************************/
@@ -314,9 +314,16 @@ struct node
 } ;
 
 
-#define	MK_L2TRANSPORT		0x1	/* used by transport_vlan_on_L2 */
-#define	MK_SELECTED		0x2	/* used by select_xxx */
+#define	MK_L2TRANSPORT		(1<<0)	/* used by transport_vlan_on_L2 */
+#define	MK_SELECTED		(1<<1)	/* used by select_xxx */
 #define	MK_LAST			MK_SELECTED
+
+#define	MK_SET(p,b)		((p)->mark |= (b))
+#define	MK_CLEAR(p,b)		((p)->mark &= ~(b))
+#define	MK_ISSET(p,b)		((p)->mark & (b))
+
+#define	MK_SELECT(p)		MK_SET ((p), MK_SELECTED)
+#define	MK_ISSELECTED(p)	MK_ISSET ((p), MK_SELECTED)
 
 struct node *create_node (char *name, struct eq *eq, enum nodetype nodetype) ;
 
@@ -380,6 +387,7 @@ Vlan and attached network list
 struct network
 {
     ip_t addr ;				/* IP (v4 or v6) address with mask */
+    int mark ;
     struct network *next ;
 } ;
 
@@ -392,6 +400,7 @@ struct netlist
 struct vlan
 {
     char *name ;
+    int mark ;
     struct netlist *netlist ;
 } ;
 

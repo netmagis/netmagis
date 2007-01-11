@@ -1,15 +1,10 @@
 /*
- * $Id: extractl1.c,v 1.2 2007-01-10 16:50:00 pda Exp $
+ * $Id: extractl1.c,v 1.3 2007-01-11 15:31:23 pda Exp $
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <assert.h>
-
 #include "graph.h"
+
+#define	MK_IFACE	(MK_LAST << 1)
 
 /******************************************************************************
 Example of output format
@@ -37,13 +32,18 @@ void output_eq_ifaces (FILE *fp)
 
     for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
     {
-	fprintf (fp, "%s", eq->name) ;
-	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	if (MK_ISSELECTED (eq))
 	{
-	    if (n->eq == eq && n->nodetype == NT_L1 && n->mark == 0)
-		fprintf (fp, " %s", n->u.l1.ifname) ;
+	    fprintf (fp, "%s", eq->name) ;
+	    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	    {
+		if (n->eq == eq
+			&& n->nodetype == NT_L1
+			&& ! MK_ISSET (n, MK_IFACE))
+		    fprintf (fp, " %s", n->u.l1.ifname) ;
+	    }
+	    fprintf (fp, "\n") ;
 	}
-	fprintf (fp, "\n") ;
     }
 }
 
@@ -57,22 +57,22 @@ void mark_ifaces (int termif)
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L1 && n->mark == 0)
+	if (n->nodetype == NT_L1 && ! MK_ISSET (n, MK_IFACE))
 	{
 	    peer = get_neighbour (n, NT_L1) ;
 	    if (termif)
 	    {
 		/* we don't want terminal interfaces */
 		if (peer == NULL)
-		    n->mark = 1 ;
+		    MK_SET (n, MK_IFACE) ;
 	    }
 	    else
 	    {
 		/* we don't want backbone interfaces */
 		if (peer != NULL)
 		{
-		    n->mark = 1 ;
-		    peer->mark = 1 ;		/* optimization */
+		    MK_SET (n, MK_IFACE) ;
+		    MK_SET (peer, MK_IFACE) ;		/* optimization */
 		}
 	    }
 	}
@@ -85,44 +85,76 @@ Main function
 
 MOBJ *mobjlist [NB_MOBJ] ;
 
+void usage (char *progname)
+{
+    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]* [-b|-t]\n", progname) ;
+    exit (1) ;
+}
+
+
 int main (int argc, char *argv [])
 {
     int termif, backif ;
-    struct node *n ;
+    int c, err ;
+    char *prog ;
 
+
+    prog = argv [0] ;
+    err = 0 ;
     termif = backif = 0 ;
-    switch (argc)
-    {
-	case 1 :
-	    termif = 1 ;
-	    backif = 1 ;
-	    break ;
-	case 2 :
-	    if (strcmp (argv [1], "-t") == 0)
+
+    sel_init () ;
+
+    while ((c = getopt (argc, argv, "n:e:tb")) != -1) {
+	switch (c)
+	{
+	    case 'n' :
+		if (! sel_network (optarg))
+		{
+		    fprintf (stderr, "%s: '%s' is not a valid cidr\n", prog, optarg) ;
+		    err = 1 ;
+		}
+		break ;
+	    case 'e' :
+		if (! sel_regexp (optarg))
+		{
+		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
+		    err = 1 ;
+		}
+		break ;
+	    case 't' :
 		termif = 1 ;
-	    else if (strcmp (argv [1], "-b") == 0)
+		break ;
+	    case 'b' :
 		backif = 1 ;
-	    else
-	    {
-		fprintf (stderr, "Usage : %s [-b|-t]\n", argv [0]) ;
-		exit (1) ;
-	    }
-	    break ;
-	default :
-	    fprintf (stderr, "Usage : %s [-b|-t]\n", argv [0]) ;
-	    exit (1) ;
-	    break ;
+		break ;
+	    case '?' :
+	    default :
+		usage (prog) ;
+	}
+    }
+
+    if (err)
+	exit (1) ;
+
+    argc -= optind ;
+    argv += optind ;
+
+    if (argc != 0)
+	usage (prog) ;
+
+    if (termif == 0 && backif == 0)
+    {
+	termif = 1 ;
+	backif = 1 ;
     }
 
     /*
-     * Read the graph
+     * Read the graph and select a subgraph
      */
 
-    /* text_read (stdin) ; */
     bin_read (stdin, mobjlist) ;
-
-    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	n->mark = 0 ;
+    sel_mark () ;
 
     /*
      * Grep interface type
@@ -140,5 +172,6 @@ int main (int argc, char *argv [])
 
     output_eq_ifaces (stdout) ;
 
+    sel_end () ;
     exit (0) ;
 }

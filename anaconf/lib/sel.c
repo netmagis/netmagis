@@ -1,5 +1,5 @@
 /*
- * $Id: sel.c,v 1.1 2007-01-10 16:49:53 pda Exp $
+ * $Id: sel.c,v 1.2 2007-01-11 15:31:22 pda Exp $
  */
 
 #include "graph.h"
@@ -97,23 +97,29 @@ int sel_regexp (char *rex)
     return r ;
 }
 
-static void sel_mark_net (ip_t *net)
+static void sel_mark_net (ip_t *addr)
 {
     struct node *n, *l2node ;
+    struct network *net ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L3 && ip_match (&n->u.l3.addr, net, 0))
+	if (n->nodetype == NT_L3 && ip_match (&n->u.l3.addr, addr, 0))
 	{
+	    MK_SELECT (n) ;
 	    l2node = get_neighbour (n, NT_L2) ;
 	    if (l2node != NULL)
 		transport_vlan_on_L2 (l2node, l2node->u.l2.vlan) ;
 	}
     }
 
+    for (net = mobj_head (netmobj) ; net != NULL ; net = net->next)
+	if (ip_match (&net->addr, addr, 0))
+	    MK_SELECT (net) ;
+
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
 	if ((n->mark & MK_L2TRANSPORT) != 0)
-	    n->mark = MK_SELECTED ;
+	    MK_SELECT (n) ;
 }
 
 static void sel_mark_regexp (regex_t *rc)
@@ -122,7 +128,7 @@ static void sel_mark_regexp (regex_t *rc)
 
     for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
 	if (regexec (rc, eq->name, 0, NULL, 0) == 0)
-	    eq->mark = 1 ;
+	    MK_SELECT (eq) ;
 }
 
 
@@ -132,14 +138,30 @@ void sel_mark (void)
     struct selrex *sr ;
     struct node *n ;
     struct eq *eq ;
+    struct vlan *vlantab ;
+    struct network *net ;
+    int i ;
+
+    vlantab = mobj_data (vlanmobj) ;
 
     if (mobj_head (selnetmobj) == NULL && mobj_head (selrexmobj) == NULL)
     {
 	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
 	    n->mark = MK_SELECTED ;
+	for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
+	    eq->mark = MK_SELECTED ;
+	for (i = 0 ; i < MAXVLAN ; i++)
+	    vlantab [i].mark = MK_SELECTED ;
+	for (net = mobj_head (netmobj) ; net != NULL ; net = net->next)
+	    net->mark = MK_SELECTED ;
+
     }
     else
     {
+	/*
+	 * Preparation
+	 */
+
 	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
 	{
 	    n->mark = 0 ;
@@ -149,14 +171,41 @@ void sel_mark (void)
 	for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
 	    eq->mark = 0 ;
 
+	for (i = 0 ; i < MAXVLAN ; i++)
+	    vlantab [i].mark = 0 ;
+
+	for (net = mobj_head (netmobj) ; net != NULL ; net = net->next)
+	    net->mark = 0 ;
+
+	/*
+	 * Select nodes based on network cidr
+	 * Select routed networks based on network cidr
+	 */
+
 	for (sn = mobj_head (selnetmobj) ; sn != NULL ; sn = sn->next)
 	    sel_mark_net (&sn->addr) ;
+
+	/*
+	 * Select equipements based on regexp
+	 */
 
 	for (sr = mobj_head (selrexmobj) ; sr != NULL ; sr = sr->next)
 	    sel_mark_regexp (&sr->rc) ;
 
+	/*
+	 * Select equipements where node are selected
+	 */
+
 	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	    if (n->eq->mark)
-		n->mark |= MK_SELECTED ;
+	    if (n->mark)
+		MK_SELECT (n->eq) ;
+
+	/*
+	 * Select Vlans where L2 node are selected
+	 */
+
+	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	    if (n->nodetype == NT_L2 && MK_ISSELECTED (n))
+		MK_SELECT (&vlantab [n->u.l2.vlan]) ;
     }
 }

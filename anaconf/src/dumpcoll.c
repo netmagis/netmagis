@@ -1,11 +1,7 @@
 /*
- * $Id: dumpcoll.c,v 1.2 2007-01-10 16:50:00 pda Exp $
+ * $Id: dumpcoll.c,v 1.3 2007-01-11 15:31:23 pda Exp $
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 #include <stdarg.h>
 #include <assert.h>
 

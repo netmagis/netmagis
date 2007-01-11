@@ -1,13 +1,6 @@
 /*
- * $Id: extracteq.c,v 1.3 2007-01-10 16:50:00 pda Exp $
+ * $Id: extracteq.c,v 1.4 2007-01-11 15:31:23 pda Exp $
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <assert.h>
 
 #include "graph.h"
 
@@ -125,52 +118,86 @@ Main function
 
 MOBJ *mobjlist [NB_MOBJ] ;
 
+void usage (char *progname)
+{
+    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]* eq\n", progname) ;
+    exit (1) ;
+}
+
 int main (int argc, char *argv [])
 {
     struct node *n ;
-    char *eqname ;
+    char *eqname, *prog ;
     struct eq *eq ;
+    int c, err ;
 
-    switch (argc)
-    {
-	case 2 :
-	    eqname = argv [1] ;
-	    break ;
-	default :
-	    fprintf (stderr, "Usage : %s eq\n", argv [0]) ;
-	    exit (1) ;
-	    break ;
+    prog = argv [0] ;
+    err = 0 ;
+
+    sel_init () ;
+
+    while ((c = getopt (argc, argv, "n:e:")) != -1) {
+	switch (c)
+	{
+	    case 'n' :
+		if (! sel_network (optarg))
+		{
+		    fprintf (stderr, "%s: '%s' is not a valid cidr\n", prog, optarg) ;
+		    err = 1 ;
+		}
+		break ;
+	    case 'e' :
+		if (! sel_regexp (optarg))
+		{
+		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
+		    err = 1 ;
+		}
+		break ;
+	    case '?' :
+	    default :
+		usage (prog) ;
+	}
     }
+
+    if (err)
+	exit (1) ;
+
+    argc -= optind ;
+    argv += optind ;
+
+    if (argc != 1)
+	usage (prog) ;
+
+    eqname = argv [0] ;
 
     /*
      * Read the graph
      */
 
     bin_read (stdin, mobjlist) ;
+    sel_mark () ;
 
     /*
-     * Search for arguments
-     */
-
-
-    /*
-     * Chercher l'équipement, et remplacer le nom cherché par
-     * celui qui est dans le noeud, afin que les recherches
-     * soient plus efficaces (simple comparaison de pointeurs).
+     * Search equipement
      */
 
     eq = eq_lookup (eqname) ;
-    if (eq == NULL)
+    if (eq == NULL || ! MK_ISSELECTED (eq))
     {
-	fprintf (stderr, "equipement '%s' not found\n", eqname) ;
+	fprintf (stderr, "%s: equipement '%s' not found\n", prog, eqname) ;
 	exit (1) ;
     }
+
+    /*
+     * Output the final result
+     */
 
     output_eq (stdout, eq) ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	if (n->eq == eq && n->nodetype == NT_L1)
+	if (n->eq == eq && n->nodetype == NT_L1 && MK_ISSELECTED (n))
 	    output_iface (stdout, n) ;
 
+    sel_end () ;
     exit (0) ;
 }

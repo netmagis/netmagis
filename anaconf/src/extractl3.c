@@ -1,13 +1,6 @@
 /*
- * $Id: extractl3.c,v 1.5 2007-01-10 19:17:57 pda Exp $
+ * $Id: extractl3.c,v 1.6 2007-01-11 15:31:23 pda Exp $
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <assert.h>
 
 #include "graph.h"
 
@@ -79,12 +72,12 @@ void find_interface (struct node **l1node, struct node **l2node)
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L1 && (n->mark & MK_L2TRANSPORT))
+	if (n->nodetype == NT_L1 && MK_ISSET (n, MK_L2TRANSPORT))
 	{
 	    for (ll = n->linklist ; ll != NULL ; ll = ll->next)
 	    {
 		p = getlinkpeer (ll->link, n) ;
-		if (p->nodetype == NT_L2 && (p->mark & MK_L2TRANSPORT))
+		if (p->nodetype == NT_L2 && MK_ISSET (p, MK_L2TRANSPORT))
 		{
 		    *l1node = n ;
 		    *l2node = p ;
@@ -106,7 +99,7 @@ int find_networks (ip_t tabnet [], int maxtab)
     ntab = 0 ;
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L3 && (n->mark & MK_VLANTRAVERSAL))
+	if (n->nodetype == NT_L3 && MK_ISSET (n, MK_VLANTRAVERSAL))
 	{
 	    if (ntab < maxtab)
 	    {
@@ -219,12 +212,12 @@ int get_l3tol1_bridge (FILE *fp, struct node *n, l3tol1_t *tab, int max, int idx
 
 int get_l3tol1_L1 (FILE *fp, struct node *n, l3tol1_t *tab, int max, int idx)
 {
-    if (! (n->mark & MK_L2TRANSPORT))
+    if (! MK_ISSET (n, MK_L2TRANSPORT))
 	return idx ;
 
-    if (n->mark & MK_OUTPUTLINK)
+    if (MK_ISSET (n, MK_OUTPUTLINK))
 	return idx ;
-    n->mark |= MK_OUTPUTLINK ;
+    MK_SET (n, MK_OUTPUTLINK) ;
 
     tab [idx].l1 = n ;
     idx++ ;				/* we found an L1 */
@@ -243,12 +236,12 @@ int get_l3tol1_L2 (FILE *fp, struct node *n, l3tol1_t *tab, int max, int idx)
 {
     struct linklist *ll ;
 
-    if (! (n->mark & MK_L2TRANSPORT))
+    if (! MK_ISSET (n, MK_L2TRANSPORT))
 	return idx ;
 
-    if (n->mark & MK_OUTPUTLINK)
+    if (MK_ISSET (n, MK_OUTPUTLINK))
 	return idx ;
-    n->mark |= MK_OUTPUTLINK ;
+    MK_SET (n, MK_OUTPUTLINK) ;
 
     for (ll = n->linklist ; ll != NULL ; ll = ll->next)
     {
@@ -275,12 +268,12 @@ int get_l3tol1_bridge (FILE *fp, struct node *n, l3tol1_t *tab, int max, int idx
 {
     struct linklist *ll ;
 
-    if (! (n->mark & MK_L2TRANSPORT))
+    if (! MK_ISSET (n, MK_L2TRANSPORT))
 	return idx ;
 
-    if (n->mark & MK_OUTPUTLINK)
+    if (MK_ISSET (n, MK_OUTPUTLINK))
 	return idx ;
-    n->mark |= MK_OUTPUTLINK ;
+    MK_SET (n, MK_OUTPUTLINK) ;
 
     for (ll = n->linklist ; ll != NULL ; ll = ll->next)
     {
@@ -315,7 +308,7 @@ int get_l3tol1 (FILE *fp, struct node *n, l3tol1_t *tab, int max)
 	    struct node *m ;
 
 	    for (m = mobj_head (nodemobj) ; m != NULL ; m = m->next)
-		m->mark &= ~MK_OUTPUTLINK ;
+		MK_CLEAR (m, MK_OUTPUTLINK) ;
 
 	    idx = get_l3tol1_L2 (fp, p, tab, max, idx) ;
 	}
@@ -332,6 +325,9 @@ void output_link (FILE *fp, struct node *n, char *cloudname)
     int nl1, i ;
     iptext_t ipaddr ;
     l3tol1_t tab [MAXIFPERIP] ;
+
+    if (! MK_ISSELECTED (n))
+	return ;
 
     nl1 = get_l3tol1 (fp, n, tab, NTAB(tab)) ;
     for (i = 0 ; i < nl1 ; i++)
@@ -371,6 +367,9 @@ void output_direct (FILE *fp, struct node *n [2])
     l3tol1_t tab [MAXIFPERIP] ;
     l3tol1_t *p ;
     int peer ;
+
+    if (! (MK_ISSELECTED (n [0]) && MK_ISSELECTED (n [1])))
+	return ;
 
     fprintf (fp, "direct ") ;
 
@@ -417,6 +416,7 @@ void walkl3 (FILE *fp, struct node *n)
     char cloudname [MAXCLOUDNAME] ;
     int l1count, l3count ;
     struct node *directl1 [2], *directl3 [2] ;
+    int selected ;
 
     /*
      * Reset all non-L3 nodes
@@ -425,9 +425,15 @@ void walkl3 (FILE *fp, struct node *n)
     for (m = mobj_head (nodemobj) ; m != NULL ; m = m->next)
     {
 	if (m->nodetype == NT_L3)
-	    m->mark &= ~MK_L2TRANSPORT ;
+	    MK_CLEAR (m, MK_L2TRANSPORT) ;
 	else
-	    m->mark = 0 ;
+	{
+	    MK_CLEAR (m, MK_L2TRANSPORT) ;
+	    MK_CLEAR (m, MK_IPMATCH) ;
+	    MK_CLEAR (m, MK_ISROUTER) ;
+	    MK_CLEAR (m, MK_VLANTRAVERSAL) ;
+	    MK_CLEAR (m, MK_PROCESSED) ;
+	}
 	vlan_zero (m->vlanset) ;
     }
 
@@ -449,23 +455,33 @@ void walkl3 (FILE *fp, struct node *n)
     l1count = 0 ;
     l3count = 0 ;
 
+    selected = 0 ;
     for (m = mobj_head (nodemobj) ; m != NULL ; m = m->next)
     {
-	if (m->nodetype == NT_L1 && (m->mark & MK_L2TRANSPORT))
+	if (m->nodetype == NT_L1 && MK_ISSET (m, MK_L2TRANSPORT))
 	{
-	    if (++l1count > 2)
-		break ;
-	    directl1 [l1count-1] = m ;
+	    if (MK_ISSELECTED (m) || MK_ISSELECTED (m->eq))
+		selected = 1 ;
+
+	    if (l1count < 2)
+		directl1 [l1count] = m ;
+	    l1count++ ;
 	}
 
-	if (m->nodetype == NT_L3
-			&& (m->mark & MK_IPMATCH) && (m->mark & MK_L2TRANSPORT))
+	if (m->nodetype == NT_L3 && MK_ISSET (m, MK_L2TRANSPORT)
+					&& MK_ISSET (m, MK_IPMATCH))
 	{
-	    if (++l3count > 2)
-		break ;
-	    directl3 [l3count-1] = m ;
+	    if (MK_ISSELECTED (m) || MK_ISSELECTED (m->eq))
+		selected = 1 ;
+
+	    if (l3count < 2)
+		directl3 [l3count] = m ;
+	    l3count++ ;
 	}
     }
+
+    if (! selected)
+	return ;
 
     if (l1count == 2 && l3count == 2 &&
 		directl1 [0]->u.l1.link == directl1 [1]->u.l1.link)
@@ -476,8 +492,8 @@ void walkl3 (FILE *fp, struct node *n)
 
 	output_direct (fp, directl3) ;
 
-	directl3 [0]->mark |= MK_PROCESSED ;
-	directl3 [1]->mark |= MK_PROCESSED ;
+	MK_SET (directl3 [0], MK_PROCESSED) ;
+	MK_SET (directl3 [1], MK_PROCESSED) ;
     }
     else
     {
@@ -487,7 +503,7 @@ void walkl3 (FILE *fp, struct node *n)
 
 	for (m = mobj_head (nodemobj) ; m != NULL ; m = m->next)
 	{
-	    if (m->nodetype == NT_L2 && (m->mark & MK_L2TRANSPORT))
+	    if (m->nodetype == NT_L2 && MK_ISSET (m, MK_L2TRANSPORT))
 	    {
 		struct linklist *ll ;
 		struct node *r ;
@@ -495,8 +511,8 @@ void walkl3 (FILE *fp, struct node *n)
 		for (ll = m->linklist ; ll != NULL ; ll = ll->next)
 		{
 		    r = getlinkpeer (ll->link, m) ;
-		    if (r->nodetype == NT_L3 && (r->mark & MK_IPMATCH))
-			r->mark |= MK_VLANTRAVERSAL ;
+		    if (r->nodetype == NT_L3 && MK_ISSET (r, MK_IPMATCH))
+			MK_SET (r, MK_VLANTRAVERSAL) ;
 		}
 	    }
 	}
@@ -513,11 +529,11 @@ void walkl3 (FILE *fp, struct node *n)
 
 	for (m = mobj_head (nodemobj) ; m != NULL ; m = m->next)
 	{
-	    if (m->nodetype == NT_L3 && (m->mark & MK_VLANTRAVERSAL))
+	    if (m->nodetype == NT_L3 && MK_ISSET (m, MK_VLANTRAVERSAL))
 	    {
 		output_link (fp, m, cloudname) ;
-		m->mark &= ~MK_VLANTRAVERSAL ;
-		m->mark |= MK_PROCESSED ;
+		MK_CLEAR (m, MK_VLANTRAVERSAL) ;
+		MK_SET (m, MK_PROCESSED) ;
 	    }
 	}
     }
@@ -530,46 +546,80 @@ Main function
 
 MOBJ *mobjlist [NB_MOBJ] ;
 
+void usage (char *progname)
+{
+    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]* cidr ... cidr\n", progname) ;
+    exit (1) ;
+}
+
 int main (int argc, char *argv [])
 {
     int i ;
     struct node *n ;
     struct eq *eq ;
     ip_t cidr ;
+    int c, err ;
+    char *prog ;
 
-    if (argc == 1)
-    {
-	fprintf (stderr, "Usage : %s cidr ... cidr\n", argv [0]) ;
-	exit (1) ;
+    prog = argv [0] ;
+    err = 0 ;
+
+    sel_init () ;
+
+    while ((c = getopt (argc, argv, "n:e:")) != -1) {
+	switch (c)
+	{
+	    case 'n' :
+		if (! sel_network (optarg))
+		{
+		    fprintf (stderr, "%s: '%s' is not a valid cidr\n", prog, optarg) ;
+		    err = 1 ;
+		}
+		break ;
+	    case 'e' :
+		if (! sel_regexp (optarg))
+		{
+		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
+		    err = 1 ;
+		}
+		break ;
+	    case '?' :
+	    default :
+		usage (prog) ;
+	}
     }
 
+    if (err)
+	exit (1) ;
+
+    argc -= optind ;
+    argv += optind ;
+
+    if (argc == 0)
+	usage (prog) ;
+
     /*
-     * Read the graph
+     * Read the graph and select subgraph
      */
 
     bin_read (stdin, mobjlist) ;
+    sel_mark () ;
 
     /*
      * First pass : mark all L3 nodes matching CIDR arguments
      */
 
-    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	n->mark = 0 ;
-
-    for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
-	eq->mark = 0 ;
-
-    for (i = 1 ; i < argc ; i++)
+    for (i = 0 ; i < argc ; i++)
     {
 	if (! ip_pton (argv [i], &cidr))
 	{
-	    fprintf (stderr, "Invalid cidr '%s'\n", argv [1]) ;
+	    fprintf (stderr, "%s: Invalid cidr '%s'\n", prog, argv [i]) ;
 	    exit (1) ;
 	}
 
 	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
 	    if (n->nodetype == NT_L3 && ip_match (&n->u.l3.addr, &cidr, 0))
-		n->mark |= MK_IPMATCH ;
+		MK_SET (n, MK_IPMATCH) ;
     }
 
     /*
@@ -577,7 +627,7 @@ int main (int argc, char *argv [])
      */
 
     fprintf (stdout, "selection") ;
-    for (i = 1 ; i < argc ; i++)
+    for (i = 0 ; i < argc ; i++)
 	fprintf (stdout, " %s", argv [i]) ;
     fprintf (stdout, "\n") ;
 
@@ -589,20 +639,21 @@ int main (int argc, char *argv [])
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L3 && (n->mark & MK_IPMATCH))
+	if (n->nodetype == NT_L3 && MK_ISSET (n, MK_IPMATCH))
 	{
 	    struct node *r ;
 
-	    n->eq->mark |= MK_IPMATCH ;
+	    MK_SET (n->eq, MK_IPMATCH) ;
 
 	    r = get_neighbour (n, NT_ROUTER) ;
-	    if (r != NULL && ! (r->mark & MK_ISROUTER))
+	    if (r != NULL && ! MK_ISSET (r, MK_ISROUTER))
 	    {
-		n->mark |= MK_ISROUTER ;
-		r->mark |= MK_ISROUTER ;
-		n->eq->mark |= MK_ISROUTER ;
-		fprintf (stdout, "eq %s:%s router\n",
-				n->eq->name, r->u.router.name) ;
+		MK_SET (n, MK_ISROUTER) ;
+		MK_SET (r, MK_ISROUTER) ;
+		MK_SET (n->eq, MK_ISROUTER) ;
+		if (MK_ISSELECTED (n))
+		    fprintf (stdout, "eq %s:%s router\n",
+				    n->eq->name, r->u.router.name) ;
 	    }
 	}
     }
@@ -612,8 +663,9 @@ int main (int argc, char *argv [])
      */
 
     for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
-	if ((eq->mark & MK_IPMATCH) && ! (eq->mark & MK_ISROUTER))
-	    fprintf (stdout, "eq %s host\n", eq->name) ;
+	if (MK_ISSET (eq, MK_IPMATCH) && ! MK_ISSET (eq, MK_ISROUTER))
+	    if (MK_ISSELECTED (eq))
+		fprintf (stdout, "eq %s host\n", eq->name) ;
 
     /*
      * Fourth pass : identify broadcast domain for each L3
@@ -622,10 +674,11 @@ int main (int argc, char *argv [])
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
 	if (n->nodetype == NT_L3
-			    && (n->mark & MK_IPMATCH)
-			    && ! (n->mark & MK_PROCESSED))
+				&& MK_ISSET (n, MK_IPMATCH)
+				&& ! MK_ISSET (n, MK_PROCESSED))
 	    walkl3 (stdout, n) ;
     }
 
+    sel_end () ;
     exit (0) ;
 }

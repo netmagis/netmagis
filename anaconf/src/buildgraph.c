@@ -1,11 +1,8 @@
 /*
- * $Id: buildgraph.c,v 1.5 2007-01-10 16:50:00 pda Exp $
+ * $Id: buildgraph.c,v 1.6 2007-01-11 15:31:23 pda Exp $
  */
 
 #include "graph.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 /******************************************************************************
 Match physical interfaces between equipements (i.e. physical links)

@@ -1,13 +1,6 @@
 /*
- * $Id: extractcoll.c,v 1.2 2007-01-10 16:50:00 pda Exp $
+ * $Id: extractcoll.c,v 1.3 2007-01-11 15:31:23 pda Exp $
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <assert.h>
 
 #include "graph.h"
 
@@ -78,7 +71,7 @@ Main function
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-n cidr|-e eq]+\n", progname) ;
+    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]*\n", progname) ;
     exit (1) ;
 }
 
@@ -86,45 +79,50 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 int main (int argc, char *argv [])
 {
+    char *prog ;
+    int c, err ;
     struct node *n ;
-    int i ;
 
     /*
      * Analyzes arguments
-     * Must be an even number.
      */
 
-    if (argc == 1 || argc % 2 == 0)
-	usage (argv [0]) ;
-
-    /*
-     * First loop only to build selection specifiers
-     */
+    prog = argv [0] ;
+    err = 0 ;
 
     sel_init () ;
 
-    for (i = 1 ; i < argc ; i += 2)
-    {
-	if (strcmp (argv [i], "-n") == 0)
+    while ((c = getopt (argc, argv, "n:e:")) != -1) {
+	switch (c)
 	{
-	    if (! sel_network (argv [i+1]))
-	    {
-		fprintf (stderr, "%s: '%s' is not a valid cidr\n",
-					argv [0], argv [i+1]) ;
-		exit (1) ;
-	    }
+	    case 'n' :
+		if (! sel_network (optarg))
+		{
+		    fprintf (stderr, "%s: '%s' is not a valid cidr\n", prog, optarg) ;
+		    err = 1 ;
+		}
+		break ;
+	    case 'e' :
+		if (! sel_regexp (optarg))
+		{
+		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
+		    err = 1 ;
+		}
+		break ;
+	    case '?' :
+	    default :
+		usage (prog) ;
 	}
-	else if (strcmp (argv [i], "-e") == 0)
-	{
-	    if (! sel_regexp (argv [i+1]))
-	    {
-		fprintf (stderr, "%s: '%s' is not a valid regexp\n",
-					argv [0], argv [i+1]) ;
-		exit (1) ;
-	    }
-	}
-	else usage (argv [0]) ;
     }
+
+    if (err)
+	exit (1) ;
+
+    argc -= optind ;
+    argv += optind ;
+
+    if (argc != 0)
+	usage (prog) ;
 
     /*
      * Read the graph and process selection
@@ -153,6 +151,5 @@ int main (int argc, char *argv [])
     }
 
     sel_end () ;
-
     exit (0) ;
 }

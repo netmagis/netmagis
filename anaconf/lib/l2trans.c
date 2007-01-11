@@ -1,5 +1,5 @@
 /*
- * $Id: l2trans.c,v 1.2 2007-01-10 16:49:53 pda Exp $
+ * $Id: l2trans.c,v 1.3 2007-01-11 15:31:22 pda Exp $
  */
 
 #include "graph.h"
@@ -42,7 +42,7 @@ static void transport_vlan_on_L1 (struct node *n, vlan_t v)
 	return ;
     vlan_set (n->vlanset, v) ;
 
-    n->mark |= MK_L2TRANSPORT ;
+    MK_SET (n, MK_L2TRANSPORT) ;
     for (ll = n->linklist ; ll != NULL ; ll = ll->next)
     {
 	struct link *l ;
@@ -115,7 +115,7 @@ static void transport_vlan_on_L2pat (struct node *n, vlan_t v, struct node *prev
     (void) create_link (NULL, prev->name, l2node->name) ;
 
     vlan_set (l2node->vlanset, v) ;
-    l2node->mark |= MK_L2TRANSPORT ;
+    MK_SET (l2node, MK_L2TRANSPORT) ;
     for (ll = n->linklist ; ll != NULL ; ll = ll->next)
     {
 	struct link *l ;
@@ -243,7 +243,7 @@ void transport_vlan_on_bridge (struct node *n)
 	return ;
     vlan_set (n->vlanset, 0) ;
 
-    n->mark |= MK_L2TRANSPORT ;
+    MK_SET (n, MK_L2TRANSPORT) ;
     for (ll = n->linklist ; ll != NULL ; ll = ll->next)
     {
 	struct link *l ;
@@ -292,7 +292,7 @@ void transport_vlan_on_L3 (struct node *n, vlan_t v)
 	return ;
     vlan_set (n->vlanset, v) ;
 
-    n->mark |= MK_L2TRANSPORT ;
+    MK_SET (n, MK_L2TRANSPORT) ;
 }
 
 void transport_vlan_on_L2 (struct node *n, vlan_t v)
@@ -303,7 +303,7 @@ void transport_vlan_on_L2 (struct node *n, vlan_t v)
 	return ;
     vlan_set (n->vlanset, v) ;
 
-    n->mark |= MK_L2TRANSPORT ;
+    MK_SET (n, MK_L2TRANSPORT) ;
     for (ll = n->linklist ; ll != NULL ; ll = ll->next)
     {
 	struct link *l ;
