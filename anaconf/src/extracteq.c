@@ -1,5 +1,5 @@
 /*
- * $Id: extracteq.c,v 1.4 2007-01-11 15:31:23 pda Exp $
+ * $Id: extracteq.c,v 1.5 2007-01-11 22:24:12 pda Exp $
  */
 
 #include "graph.h"
@@ -64,7 +64,7 @@ void output_iface (FILE *fp, struct node *n)
 	struct node *peer2 ;
 
 	peer2 = getlinkpeer (ll2->link, n) ;
-	if (peer2->nodetype == NT_L2)
+	if (peer2->nodetype == NT_L2 && MK_ISSELECTED (peer2))
 	{
 	    vlan_t vlanid ;
 	    char *desc ;
@@ -176,6 +176,10 @@ int main (int argc, char *argv [])
 
     bin_read (stdin, mobjlist) ;
     sel_mark () ;
+
+    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	vlan_zero (n->vlanset) ;
+
 
     /*
      * Search equipement
