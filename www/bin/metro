@@ -1,0 +1,185 @@
+#!%TCLSH%
+
+#
+# Script pour afficher la page contenant le graphe et le formulaire
+# d'actualisation des dates
+#
+# Appelé par : /applis/topo/bin/accueil
+#
+# Paramètres (formulaire ou URL) :
+#   - id : id du point de collecte sélectionné
+#   - hdebut : heure de début
+#   - jdebut : date de début
+#   - hfin : heure de fin
+#   - jfin : date de fin
+#
+# Historique
+#   2006/05/24 : pda/jean/boggia : création
+#   2006/08/10 : pda/boggia      : ajout du paramètre uti
+#   2007/01/12 : pda             : mutualisation initialisation
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	%LIBDNS%
+set conf(libtopo)	$conf(lib)/libtopo.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/metro.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+    {id			1 1}
+    {jdebut		0 1}
+    {hdebut		0 1}
+    {jfin		0 1}
+    {hfin		0 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+source $conf(libtopo)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
+			$conf(form) ftab dbfd uid tabuid ouid tabouid urluid
+
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	set $var [string trim [lindex [set $var] 0]]
+    }
+
+    set u1 ""
+    set u2 ""
+    if {! [string equal $urluid ""]} then {
+	set u1 "&$urluid"
+	set u2 "?$urluid"
+    }
+
+    #
+    # valider l'id du graphe en fonction des droits
+    #
+
+    set msg [verifier-metro-id $dbfd $id tabuid eq iface vlan]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Valider l'intervalle de temps
+    #
+
+    set nsaisis 0
+    foreach c {jdebut hdebut jfin hfin} {
+	if {! [string equal [set $c] ""]} then {
+	    incr nsaisis
+	}
+    }
+
+    switch $nsaisis {
+	0 {
+	    set debut [clock scan "-1 day -12 hours"]
+	    set fin   [clock seconds]
+	}
+	4 {
+	    set debut [decoder-date $jdebut $hdebut]
+	    if {[string equal $debut ""]} then {
+		::webapp::error-exit $conf(err) \
+		    "Date ou heure de début incorrecte"
+	    }
+	    set debut [clock scan $debut]
+
+	    set jdebut [clock format $debut -format "%d/%m/%Y"]
+	    set hdebut [clock format $debut -format "%H"]
+
+	    set fin [decoder-date $jfin $hfin]
+	    if {[string equal $fin ""]} then {
+		::webapp::error-exit $conf(err) \
+		    "Date ou heure de fin incorrecte"
+	    }
+	    set fin [clock scan $fin]
+
+	    set jfin [clock format $fin -format "%d/%m/%Y"]
+	    set hfin [clock format $fin -format "%H"]
+	}
+	default {
+	    ::webapp::error-exit $conf(err) \
+		"Vous devez remplir tous les champs ou bien aucun"
+	}
+    }
+
+    #
+    # Sortie de la page
+    #
+
+    if {[string equal $vlan "-"]} then {
+	set vlan ""
+    } else {
+	set vlan "le vlan $vlan de"
+    }
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+					[list \
+						[list %ADMIN%  "admin (future use)"] \
+						[list %EQ%     $eq] \
+						[list %IFACE%  $iface] \
+						[list %VLAN%   $vlan] \
+						[list %ID%     $id] \
+						[list %JDEBUT% $jdebut] \
+						[list %HDEBUT% $hdebut] \
+						[list %JFIN%   $jfin] \
+						[list %HFIN%   $hfin] \
+						[list %DEBUT%  $debut] \
+						[list %FIN%    $fin] \
+						[list %URLUID% $u2] \
+						[list %URL2%   $u1] \
+					    ] \
+				    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

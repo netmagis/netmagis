@@ -1,0 +1,63 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean/boggia}
+\set {date}   {25/05/2006}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - Topologie
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Topologie v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    \* \reference {\lien {Accueil}     {%HOMEURL%/}}
+	    \reference {\lien {Équipements} {%HOMEURL%/bin/eq%URLUID%}}
+	    \reference {\lien {Vlans}       {%HOMEURL%/bin/l2%URLUID%}}
+	    \reference {\lien {Réseaux}     {%HOMEURL%/bin/l3%URLUID%}}
+	    \* \reference {\lien {Métrologie}  {%HOMEURL%/bin/metro%URLUID%}}
+	}
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	    \reference {\lien {DNS}	{/applis/dns/}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Trafic sur %VLAN% l'interface %IFACE% de %EQ%}
+
+    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/metro%URLUID%">
+	<INPUT TYPE="HIDDEN" NAME="id" VALUE="%ID%">
+	Afficher les statistiques entre
+	    le <INPUT TYPE="TEXT" NAME="jdebut" VALUE="%JDEBUT%"
+			SIZE="10" MAXLEN="10">
+	    à  <INPUT TYPE="TEXT" NAME="hdebut" VALUE="%HDEBUT%"
+			SIZE="2" MAXLEN="2">h
+	et
+	    le <INPUT TYPE="TEXT" NAME="jfin" VALUE="%JFIN%"
+			SIZE="10" MAXLEN="10">
+	    à  <INPUT TYPE="TEXT" NAME="hfin" VALUE="%HFIN%"
+			SIZE="2" MAXLEN="2">h
+	<INPUT TYPE="SUBMIT" VALUE="Afficher">
+    </FORM>
+
+    <P>
+
+    \image {%HOMEURL%/bin/graphe?id=%ID%&debut=%DEBUT%&fin=%FIN%%URL2%}
+	{Trafic sur %VLAN% l'interface %IFACE% de %EQ%}
+}
+
+}

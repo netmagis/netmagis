@@ -1,0 +1,186 @@
+#!%TCLSH%
+
+#
+# Script pour récupérer et envoyer juste le graphe de la page de trafic
+#
+# Appelé par : /applis/topo/bin/metro
+#
+# Paramètres (formulaire ou URL) :
+#   - id : id du point de collecte sélectionné
+#   - taille : taille du graphe : "petit", "moyen", "grand"
+#   - un intervalle de temps :
+#	- soit periode
+#	- soit debut et fin
+# Avec :
+#   - periode : "daily", "weekly", "monthly", "yearly"
+# ou
+#   - debut : heure de début (time_t)
+#   - fin : heure de fin (time_t)
+#
+#
+# Historique
+#   2006/08/09 : pda/boggia      : création
+#   2006/08/10 : pda/boggia      : ajout du paramètre uti
+#   2006/12/12 : jean/boggia     : ajout du paramètre periode et taille
+#   2007/01/12 : pda             : mutualisation initialisation
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	%LIBDNS%
+set conf(libtopo)	$conf(lib)/libtopo.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+    {id			1 1}
+    {debut		0 1}
+    {fin		0 1}
+    {periode		0 1}
+    {taille		0 1}
+}
+
+set conf(idrfmt)	"http://%IDRHOST%/bin/gengraph?id=%s&debut=%d&fin=%d"
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+source $conf(libtopo)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
+			$conf(form) ftab dbfd uid tabuid ouid tabouid urluid
+
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	set $var [string trim [lindex [set $var] 0]]
+    }
+
+    set u1 ""
+    set u2 ""
+    if {! [string equal $urluid ""]} then {
+	set u1 "&$urluid"
+	set u2 "?$urluid"
+    }
+
+    #
+    # valider l'id du graphe en fonction des droits
+    #
+
+    set msg [verifier-metro-id $dbfd $id tabuid eq iface vlan]
+    if {! $tabuid(admin) && ! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Valider l'intervalle de temps
+    # Si 'periode' est present, on ignore les paramètre 'debut' et 'fin'.
+    #
+
+    if {! [string equal $periode ""]} then {
+	set fin [clock second]
+	switch -exact $periode {
+	    daily {
+		set debut [clock scan "yesterday"]
+	    }
+	    weekly {
+		set debut [clock scan "last week"]
+	    }
+	    monthly {
+		set debut [clock scan "last month"]
+	    }
+	    yearly {
+		set debut [clock scan "last year"]
+	    }
+	    default {
+		::webapp::error-exit $conf(err) "Période '$periode' invalide"
+	    }
+	}
+    } elseif {[string equal $debut ""] && [string equal $fin ""]} then {
+	set fin   [clock second]
+	set debut [clock scan "yesterday"]
+    } else {
+	if {[catch {clock format $debut}]} then {
+	    ::webapp::error-exit $conf(err) "Date de début invalide '$debut'"
+	}
+	if {[catch {clock format $fin}]} then {
+	    ::webapp::error-exit $conf(err) "Date de fin invalide '$fin'"
+	}
+	if {$debut >= $fin} then {
+	    ::webapp::error-exit $conf(err) "Date de début postérieure à la date de fin"
+	}
+    }
+
+    #
+    # Valider le paramètre taille du graphe
+    #
+
+    switch -exact $taille {
+	petit -
+	moyen -
+	grand {
+	    set urltaille "&taille=$taille"
+	}
+	"" {
+	    set urltaille ""
+	}
+	default {
+	    ::webapp::error-exit $conf(err) "Taille du graphe invalide '$taille'"
+	}
+    }
+
+    #
+    # Sortie de la page
+    #
+
+    set url [format $conf(idrfmt) [::webapp::post-string $id] $debut $fin]
+    append url $urltaille
+    gengraph $url $conf(err)
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%
