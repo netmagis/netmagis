@@ -1,5 +1,5 @@
 /*
- * $Id: extractl2.c,v 1.5 2007-01-11 15:31:23 pda Exp $
+ * $Id: extractl2.c,v 1.6 2007-01-16 09:51:43 pda Exp $
  */
 
 #include "graph.h"
@@ -58,11 +58,15 @@ int walkl2 (vlan_t vlan, struct eq *eq, char *ifname)
 
     vlan_found = 0 ;
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+    {
 	vlan_zero (n->vlanset) ;
+	MK_CLEAR (n, MK_L2TRANSPORT) ;
+    }
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
 	if (n->nodetype == NT_L2
+		&& MK_ISSELECTED (n)
 		&& (eq == NULL || n->eq == eq)
 		&& match_iface (n, ifname)
 		&& n->u.l2.vlan == vlan
@@ -90,13 +94,15 @@ void output_eq (FILE *fp)
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L1 && MK_ISSET (n, MK_L2TRANSPORT))
+	if (n->nodetype == NT_L2
+			&& MK_ISSELECTED (n)
+			&& MK_ISSET (n, MK_L2TRANSPORT))
 	{
 	    eq = n->eq ;
-	    if (MK_ISSELECTED (eq) && ! MK_ISSET (eq, MK_PRINTED))
+	    if (! MK_ISSET (eq, MK_PRINTED))
 	    {
-		MK_SET (eq, MK_PRINTED) ;
 		fprintf (fp, "eq %s %s/%s\n", eq->name, eq->type, eq->model) ;
+		MK_SET (eq, MK_PRINTED) ;
 	    }
 	}
     }
@@ -116,36 +122,46 @@ void output_links (FILE *fp)
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L1 && MK_ISSET (n, MK_L2TRANSPORT))
+	if (n->nodetype == NT_L2
+			&& MK_ISSELECTED (n)
+			&& MK_ISSET (n, MK_L2TRANSPORT))
 	{
-	    struct linklist *ll ;
+	    struct node *l1node ;
 
-	    for (ll = n->linklist ; ll != NULL ; ll = ll->next)
+	    l1node = get_neighbour (n, NT_L1) ;
+	    if (l1node != NULL)
 	    {
-		struct link *l ;
-		struct node *n1, *n2 ;
+		struct linklist *ll ;
 
-		l = ll->link ;
-		n1 = l->node [0] ;
-		n2 = l->node [1] ;
-		if (n1->nodetype == NT_L1 && n2->nodetype == NT_L1
-			&& MK_ISSET (n1, MK_L2TRANSPORT)
-			&& MK_ISSET (n2, MK_L2TRANSPORT)
-			&& MK_ISSELECTED (n1->eq)
-			&& MK_ISSELECTED (n2->eq)
-			)
+		for (ll = l1node->linklist ; ll != NULL ; ll = ll->next)
 		{
-		    if (l->name == NULL)
-			inconsistency ("Link between %s and %s without name",
-						n1->name, n2->name) ;
-		    fprintf (fp, "link %s %s %s %s %s\n",
-					l->name,
-					n1->eq->name, n1->u.l1.ifname,
-					n2->eq->name, n2->u.l1.ifname
-				    ) ;
+		    struct link *l ;
+		    struct node *n1, *n2 ;
+
+		    l = ll->link ;
+		    n1 = l->node [0] ;
+		    n2 = l->node [1] ;
+		    if (n1->nodetype == NT_L1 && n2->nodetype == NT_L1
+				&& MK_ISSET (n1, MK_L2TRANSPORT)
+				&& MK_ISSET (n2, MK_L2TRANSPORT)
+				&& MK_ISSELECTED (n1)
+				&& MK_ISSELECTED (n2)
+				&& MK_ISSET (n1->eq, MK_PRINTED)
+				&& MK_ISSET (n2->eq, MK_PRINTED)
+				)
+		    {
+			if (l->name == NULL)
+			    inconsistency ("Link between %s and %s without name",
+						    n1->name, n2->name) ;
+			fprintf (fp, "link %s %s %s %s %s\n",
+					    l->name,
+					    n1->eq->name, n1->u.l1.ifname,
+					    n2->eq->name, n2->u.l1.ifname
+					) ;
+		    }
 		}
+		MK_CLEAR (l1node, MK_L2TRANSPORT) ;	/* link has been processed */
 	    }
-	    MK_CLEAR (n, MK_L2TRANSPORT) ;	/* link has been processed */
 	}
     }
 }
@@ -267,7 +283,7 @@ int main (int argc, char *argv [])
 	eq = eq_lookup (eqname) ;
 	if (eq == NULL)
 	{
-	    fprintf (stderr, "equipement '%s' not found\n", eqname) ;
+	    fprintf (stderr, "%s: equipement '%s' not found\n", prog, eqname) ;
 	    exit (1) ;
 	}
 
@@ -280,7 +296,8 @@ int main (int argc, char *argv [])
 		    break ;
 	    if (n == NULL)
 	    {
-		fprintf (stderr, "interface '%s' not found on '%s'\n", ifname, eqname) ;
+		fprintf (stderr, "%s: interface '%s' not found on '%s'\n",
+					prog, ifname, eqname) ;
 		exit (1) ;
 	    }
 	    ifname = n->u.l1.ifname ;

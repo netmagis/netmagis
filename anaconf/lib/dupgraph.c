@@ -1,5 +1,5 @@
 /*
- * $Id: dupgraph.c,v 1.3 2007-01-10 16:49:53 pda Exp $
+ * $Id: dupgraph.c,v 1.4 2007-01-16 09:51:42 pda Exp $
  */
 
 #include "graph.h"
@@ -411,6 +411,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     {
 	TRANSPTR (newnettab [i].next) ;
     }
+    TRANSHEAD (new [NETMOBJIDX], old [NETMOBJIDX]) ;
 
     /*
      * Network lists

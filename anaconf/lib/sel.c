@@ -1,5 +1,5 @@
 /*
- * $Id: sel.c,v 1.2 2007-01-11 15:31:22 pda Exp $
+ * $Id: sel.c,v 1.3 2007-01-16 09:51:42 pda Exp $
  */
 
 #include "graph.h"
@@ -68,10 +68,8 @@ int sel_network (iptext_t addr)
     r = 0 ;
     if (ip_pton (addr, &a))
     {
-	s = mobj_alloc (selnetmobj, 1) ;
+	MOBJ_ALLOC_INSERT (s, selnetmobj) ;
 	s->addr = a ;
-	s->next = mobj_head (selnetmobj) ;
-	mobj_sethead (selnetmobj, s) ;
 	r = 1 ;
     }
 
@@ -87,10 +85,8 @@ int sel_regexp (char *rex)
     r = 0 ;
     if (regcomp (&rc, rex, RE_MODE) == 0)
     {
-	s = mobj_alloc (selrexmobj, 1) ;
+	MOBJ_ALLOC_INSERT (s, selrexmobj) ;
 	s->rc = rc ;
-	s->next = mobj_head (selrexmobj) ;
-	mobj_sethead (selrexmobj, s) ;
 	r = 1 ;
     }
 
@@ -104,7 +100,7 @@ static void sel_mark_net (ip_t *addr)
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L3 && ip_match (&n->u.l3.addr, addr, 0))
+	if (n->nodetype == NT_L3 && ip_match (&n->u.l3.addr, addr, 1))
 	{
 	    MK_SELECT (n) ;
 	    l2node = get_neighbour (n, NT_L2) ;
@@ -114,11 +110,11 @@ static void sel_mark_net (ip_t *addr)
     }
 
     for (net = mobj_head (netmobj) ; net != NULL ; net = net->next)
-	if (ip_match (&net->addr, addr, 0))
+	if (ip_match (&net->addr, addr, 1))
 	    MK_SELECT (net) ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	if ((n->mark & MK_L2TRANSPORT) != 0)
+	if (MK_ISSET (n, MK_L2TRANSPORT))
 	    MK_SELECT (n) ;
 }
 
@@ -154,7 +150,6 @@ void sel_mark (void)
 	    vlantab [i].mark = MK_SELECTED ;
 	for (net = mobj_head (netmobj) ; net != NULL ; net = net->next)
 	    net->mark = MK_SELECTED ;
-
     }
     else
     {
@@ -193,12 +188,12 @@ void sel_mark (void)
 	    sel_mark_regexp (&sr->rc) ;
 
 	/*
-	 * Select equipements where node are selected
+	 * Select all nodes on selected equipements
 	 */
 
 	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	    if (n->mark)
-		MK_SELECT (n->eq) ;
+	    if (MK_ISSELECTED (n->eq))
+		MK_SELECT (n) ;
 
 	/*
 	 * Select Vlans where L2 node are selected

@@ -1,5 +1,5 @@
 /*
- * $Id: eq.c,v 1.1 2007-01-10 18:09:54 pda Exp $
+ * $Id: eq.c,v 1.2 2007-01-16 09:51:42 pda Exp $
  */
 
 #include "graph.h"
@@ -29,12 +29,10 @@ struct eq *eq_get (char *name, int nameinsymtab)
     eq = eq_lookup (name) ;
     if (eq == NULL)
     {
-	eq = mobj_alloc (eqmobj, 1) ;
+	MOBJ_ALLOC_INSERT (eq, eqmobj) ;
 	if (! nameinsymtab)
 	    name = symtab_to_name (symtab_get (name)) ;
 	eq->name = name ;
-	eq->next = mobj_head (eqmobj) ;
-	mobj_sethead (eqmobj, eq) ;
     }
     return eq ;
 }

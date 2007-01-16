@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.3 2007-01-10 16:49:53 pda Exp $
+ * $Id: textread.c,v 1.4 2007-01-16 09:51:42 pda Exp $
  */
 
 #include "graph.h"
@@ -773,7 +773,7 @@ static void process_rnet (char *tab [], int ntab)
 	exit (1) ;
     }
 
-    n = mobj_alloc (rnetmobj, 1) ;
+    MOBJ_ALLOC_INSERT (n, rnetmobj) ;
 
     net = net_get_p (tab [1]) ;
     if (net == NULL)
@@ -796,9 +796,6 @@ static void process_rnet (char *tab [], int ntab)
     tab += 8 ;
     ntab -= 8 ;
     n->routelist = process_static_routes (tab, ntab) ;
-
-    n->next = mobj_head (rnetmobj) ;
-    mobj_sethead (rnetmobj, n) ;
 }
 
 static void process_vlan (char *tab [], int ntab)

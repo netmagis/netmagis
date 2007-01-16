@@ -16,6 +16,8 @@
 #   2006/08/09 : pda      : ps2pdf avec chemin complet
 #   2006/08/14 : pda      : fusion script l3
 #   2007/01/04 : pda      : ajout du paramètre uti
+#   2007/01/11 : pda      : mutualisation initialisation
+#   2007/01/11 : pda      : substitution possible d'un uid
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -27,7 +29,7 @@ set conf(homeurl)	%HOMEURL%
 set conf(pkg)		%PKGTCL%
 set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	%LIBDNS%
-set conf(libmetro)	$conf(lib)/libtopo.tcl
+set conf(libtopo)	$conf(lib)/libtopo.tcl
 
 #
 # Définition des noms des pages "à trous"
@@ -46,17 +48,16 @@ set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 
 set conf(form)	{
-    {uti		0 1}
     {addr		0 1}
     {format		0 1}
 }
 
-set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
-set conf(extractl3)	"%TOPODIR%/bin/extractl3 %s %s < %GRAPH%"
-set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s"
-set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s"
-set conf(urll2)		"$conf(homeurl)/bin/l2?vlan=%d"
-set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s"
+set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
+set conf(extractl3)	"%TOPODIR%/bin/extractl3 %s %s %s < %GRAPH%"
+set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
+set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
+set conf(urll2)		"$conf(homeurl)/bin/l2?vlan=%d%s"
+set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
 set conf(dot)		"%DOT%"
 set conf(neato)		"%NEATO%"
 set conf(ps2pdf)	"%PS2PDF%"
@@ -73,7 +74,6 @@ set conf(bb6)		"2001:660:2402::/61"
 package require ip
 
 lappend auto_path $conf(pkg)
-package require auth
 package require webapp
 package require pgsql
 
@@ -84,7 +84,7 @@ package require pgsql
 # ::webapp::cgidebug ; exit
 
 source $conf(libdns)
-source $conf(libmetro)
+source $conf(libtopo)
 
 ##############################################################################
 # Fonctions utilitaires
@@ -159,7 +159,7 @@ proc epilogue {format} {
     return "\}\n"
 }
 
-proc generer-dot {format prog urleq urll2} {
+proc generer-dot {format prog urleq urll2 u1} {
 
     set dot [prologue $format]
 
@@ -172,27 +172,35 @@ proc generer-dot {format prog urleq urll2} {
 	    eq {
 		set nodename [lindex $line 1]
 		set nodetype [lindex $line 2]
-		if {[string equal $nodetype "router"]} then {
-		    if {! [regexp -- {([^:]+):(.*)} $nodename bidon eqname rinst]} then {
-			puts stderr "Invalid router instance ($nodename)"
-			return 1
+		switch $nodetype {
+		    router {
+			if {! [regexp -- {([^:]+):(.*)} $nodename bidon eqname rinst]} then {
+			    puts stderr "Invalid router instance ($nodename)"
+			    return ""
+			}
+			switch -- $rinst {
+			    _v4 { set label "$eqname\\ndefault" }
+			    _v6 { set label "$eqname\\ndefault (IPv6)" }
+			    default { set label "$eqname\\r$rinst" }
+			}
+			set attrlist {shape=circle
+					    style=filled fillcolor=lightgrey
+					    fixedsize height=1.5}
+			lappend attrlist label=\"$label\"
 		    }
-		    switch -- $rinst {
-			_v4 { set label "$eqname\\ndefault" }
-			_v6 { set label "$eqname\\ndefault (IPv6)" }
-			default { set label "$eqname\\r$rinst" }
+		    host {
+			set eqname $nodename
+			set attrlist {shape=box
+					    style=filled fillcolor=lightblue
+					    height=.25}
 		    }
-		    set attrlist {shape=circle
-					style=filled fillcolor=lightgrey
-					fixedsize height=1.5}
-		    lappend attrlist label=\"$label\"
-		} else {
-		    set attrlist {shape=box
-					style=filled fillcolor=lightblue
-					height=.25}
+		    default {
+			puts stderr "Invalid node type ($nodetype) for $nodename"
+			return ""
+		    }
 		}
 
-		set url [format $urleq $eqname]
+		set url [format $urleq $eqname $u1]
 		lappend attrlist "href=\"$url\""
 
 		set attr [join $attrlist ", "]
@@ -245,7 +253,7 @@ proc generer-dot {format prog urleq urll2} {
 		lappend attrlist "label=\"$label\""
 
 		if {$vlanid != -1} then {
-		    set url [format $urll2 $vlanid]
+		    set url [format $urll2 $vlanid $u1]
 		    lappend attrlist "href=\"$url\""
 		}
 
@@ -287,60 +295,38 @@ proc main {} {
     # Initialisation
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor
+    init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
+			$conf(form) ftab dbfd uid tabuid ouid tabouid urluid
+
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	set $var [string trim [lindex [set $var] 0]]
+    }
 
     set tmp /tmp/l3-[pid]
 
-    #
-    # Récupération des paramètres dans des variables simples
-    #
-
-    foreach spec $conf(form) {
-	set champ [lindex $spec 0]
-	if {[info exists ftab($champ)]} then {
-	    set $champ [string trim [lindex $ftab($champ) 0]]
-	} else {
-	    set $champ ""
-	}
+    set u1 ""
+    set u2 ""
+    if {! [string equal $urluid ""]} then {
+	set u1 "&$urluid"
+	set u2 "?$urluid"
     }
-
-    #
-    # Si l'utilisateur est un administrateur, l'autoriser à se substituer
-    # à un autre utilisateur.
-    #
-
-    set uti $login
-    set urluti ""
-    if {[attribut-correspondant $dbfd $tabcor(idcor) admin]} then {
-	#
-	# A partir de maintenant, on prend le nouveau login qui est
-	# fourni dans le formulaire (s'il est fourni)
-	#
-
-	if {[llength $ftab(uti)] > 0} then {
-	    set uti [lindex $ftab(uti) 0]
-	    set urluti "&uti=[::webapp::post-string $uti]"
-	    unset tabcor
-	    set msg [lire-correspondant-par-login $dbfd $uti tabcor]
-	    if {! [string equal $msg ""]} then {
-		::webapp::error-exit $conf(err) "'$uti' non trouvé ($msg)"
-	    }
-	}
-    }
-
-    #
-    # Valider les paramètres :
-    # - tester si le correspondant a le droit sur l'équipement
-    #
 
     #
     # Récupérer les réseaux IP déclarés dans le graphe
     #
 
-    set msg [lire-reseaux tabip]
-    if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) "Lecture des réseaux impossible ($msg)"
+    set cmd [format $conf(dumpgraph) $tabuid(flags)]
+    set fd [open "|$cmd" "r"]
+
+    while {[gets $fd ligne] > -1} {
+	if {[regexp {^rnet ([^ ]+)} $ligne bidon a]} then {
+	    set tabip($a) ""
+	}
+    }
+    if {[catch {close $fd} msg]} then {
+	::webapp::error-exit $conf(err) \
+		"Erreur lors de la lecture des réseaux (msg)"
     }
 
     if {[string equal $addr ""]} then {
@@ -350,7 +336,7 @@ proc main {} {
 
 	set liste "<UL>\n"
 	foreach addr [lsort -command comparer-ip [array names tabip]] {
-	    set url [format $conf(urll3) $addr]
+	    set url [format $conf(urll3) $addr $u1]
 	    append liste [format "<LI><A HREF=\"%s\">$addr</A>\n" $url]
 	}
 	append liste "</UL>"
@@ -366,6 +352,7 @@ proc main {} {
 						    [list %EQ%     ""] \
 						    [list %VLAN%   ""] \
 						    [list %ADDR%   ""] \
+						    [list %URLUID% $u2] \
 						] \
 					]
     } else {
@@ -387,13 +374,17 @@ proc main {} {
 	# Récupérer les informations lues dans le graphe
 	#
 
-	if {[::ip::version $addr] == 6} then {
-	    set bb $conf(bb6)
+	if {! [string equal $urluid ""]} then {
+	    set bb ""
 	} else {
-	    set bb $conf(bb4)
+	    if {[::ip::version $addr] == 6} then {
+		set bb $conf(bb6)
+	    } else {
+		set bb $conf(bb4)
+	    }
 	}
-	set xl3 [format $conf(extractl3) [join $lnet " "] $bb]
-	set dot [generer-dot $format $xl3 $conf(urleq) $conf(urll2)]
+	set xl3 [format $conf(extractl3) $tabuid(flags) [join $lnet " "] $bb]
+	set dot [generer-dot $format $xl3 $conf(urleq) $conf(urll2) $u1]
 	set fd [open "$tmp.dot" "w"]
 	puts $fd $dot
 	close $fd
@@ -402,7 +393,7 @@ proc main {} {
 	# Sélectionner le format et sortir la page
 	#
 
-	set url "addr=$addr"
+	set url "addr=$addr$u1"
 	set prog "$conf(neato) -Gmaxiter=10000"
 
 	switch -- $format {
@@ -425,12 +416,13 @@ proc main {} {
 		set map [exec sh -c "$prog -Tcmapx < $tmp.dot"]
 		::webapp::send html [::webapp::file-subst $conf(page1) \
 					    [list \
-						    [list %EQ%   ""] \
-						    [list %VLAN% ""] \
+						    [list %EQ%     ""] \
+						    [list %VLAN%   ""] \
 						    [list %RESEAU% $lnet] \
-						    [list %ADDR% $addr] \
-						    [list %URL%  $url] \
-						    [list %MAP%  $map] \
+						    [list %ADDR%   $addr] \
+						    [list %URL%    $url] \
+						    [list %MAP%    $map] \
+						    [list %URLUID% $u2] \
 						] \
 					]
 	    }

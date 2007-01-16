@@ -1,5 +1,5 @@
 /*
- * $Id: node.c,v 1.2 2007-01-10 16:49:53 pda Exp $
+ * $Id: node.c,v 1.3 2007-01-16 09:51:42 pda Exp $
  */
 
 #include "graph.h"
@@ -17,16 +17,11 @@ struct node *create_node (char *name, struct eq *eq, enum nodetype nodetype)
     p = symtab_get (name) ;
 
     s = symtab_to_name (p) ;
-    n = mobj_alloc (nodemobj, 1) ;
+    MOBJ_ALLOC_INSERT (n, nodemobj) ;
     n->name = s ;
     n->eq = eq ;
     n->nodetype = nodetype ;
-
     n->linklist = NULL ;
-
-    n->next = mobj_head (nodemobj) ;
-    mobj_sethead (nodemobj, n) ;
-
     symtab_to_node (p) = n ;
 
     return n ;

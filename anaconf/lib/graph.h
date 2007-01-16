@@ -1,5 +1,5 @@
 /*
- * $Id: graph.h,v 1.5 2007-01-11 15:31:22 pda Exp $
+ * $Id: graph.h,v 1.6 2007-01-16 09:51:42 pda Exp $
  */
 
 /*
@@ -93,6 +93,10 @@ int mobj_size (MOBJ *d) ;
 int mobj_count (MOBJ *d) ;
 int mobj_read (FILE *fp, MOBJ *d, int nelem) ;
 int mobj_write (FILE *fp, MOBJ *d) ;
+
+#define	MOBJ_ALLOC_INSERT(v,m)	(((v) = mobj_alloc ((m),1)), \
+				 ((v)->next = mobj_head (m)), \
+				 (mobj_sethead ((m), (v))) )
 
 
 /*

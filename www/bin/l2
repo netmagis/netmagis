@@ -19,6 +19,8 @@
 #   2006/08/09 : pda      : ps2pdf avec chemin complet
 #   2006/08/14 : pda      : fusion avec listl2
 #   2007/01/04 : pda      : ajout du paramètre uti
+#   2007/01/11 : pda      : mutualisation initialisation
+#   2007/01/11 : pda      : substitution possible d'un uid
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -30,7 +32,7 @@ set conf(homeurl)	%HOMEURL%
 set conf(pkg)		%PKGTCL%
 set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	%LIBDNS%
-set conf(libmetro)	$conf(lib)/libtopo.tcl
+set conf(libtopo)	$conf(lib)/libtopo.tcl
 
 #
 # Définition des noms des pages "à trous"
@@ -44,23 +46,22 @@ set conf(pagen)		$conf(lib)/liste.html
 # Quelques paramètres du script
 #
 
-set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 
 set conf(form)	{
-    {uti		0 1}
     {eq			0 1}
     {iface		0 1}
     {vlan		0 1}
     {format		0 1}
 }
 
-set conf(extractl2)	"%TOPODIR%/bin/extractl2 %s %s %d < %GRAPH%"
-set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s"
-set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s"
-set conf(urll2)		"$conf(homeurl)/bin/l2?vlan=%s"
-set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s"
+set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
+set conf(extractl2)	"%TOPODIR%/bin/extractl2 %s %s %s %d < %GRAPH%"
+set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
+set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
+set conf(urll2)		"$conf(homeurl)/bin/l2?vlan=%s%s"
+set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
 set conf(dot)		"%DOT%"
 set conf(neato)		"%NEATO%"
 set conf(ps2pdf)	"%PS2PDF%"
@@ -73,7 +74,6 @@ set conf(maxdot)	12
 #
 
 lappend auto_path $conf(pkg)
-package require auth
 package require webapp
 package require pgsql
 
@@ -84,7 +84,7 @@ package require pgsql
 # ::webapp::cgidebug ; exit
 
 source $conf(libdns)
-source $conf(libmetro)
+source $conf(libtopo)
 
 ##############################################################################
 # Fonctions utilitaires
@@ -247,7 +247,7 @@ proc epilogue {format} {
 }
 
 
-proc generer-dot {format eq iface vlan prog urlfmt _tabvlan _nnodes} {
+proc generer-dot {format eq iface vlan prog urlfmt u1 _tabvlan _nnodes} {
     upvar $_nnodes nnodes
     upvar $_tabvlan tabvlan
 
@@ -288,7 +288,7 @@ proc generer-dot {format eq iface vlan prog urlfmt _tabvlan _nnodes} {
     foreach nomeq [array names tabeq] {
 	set attrlist [match-eq $tabeq($nomeq)]
 
-	set url [format $urlfmt $nomeq]
+	set url [format $urlfmt $nomeq $u1]
 	lappend attrlist "href=\"$url\""
 
 	set attr [join $attrlist ", "]
@@ -354,62 +354,63 @@ proc main {} {
     # Initialisation
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor
+    init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
+			$conf(form) ftab dbfd uid tabuid ouid tabouid urluid
+
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	set $var [string trim [lindex [set $var] 0]]
+    }
 
     set tmp /tmp/l2-[pid]
 
-    #
-    # Récupération des paramètres dans des variables simples
-    #
-
-    foreach spec $conf(form) {
-	set champ [lindex $spec 0]
-	if {[info exists ftab($champ)]} then {
-	    set $champ [string trim [lindex $ftab($champ) 0]]
-	} else {
-	    set $champ ""
-	}
+    set u1 ""
+    set u2 ""
+    if {! [string equal $urluid ""]} then {
+	set u1 "&$urluid"
+	set u2 "?$urluid"
     }
 
-    #
-    # Si l'utilisateur est un administrateur, l'autoriser à se substituer
-    # à un autre utilisateur.
-    #
-
-    set uti $login
-    set urluti ""
-    if {[attribut-correspondant $dbfd $tabcor(idcor) admin]} then {
-	#
-	# A partir de maintenant, on prend le nouveau login qui est
-	# fourni dans le formulaire (s'il est fourni)
-	#
-
-	if {[llength $ftab(uti)] > 0} then {
-	    set uti [lindex $ftab(uti) 0]
-	    set urluti "&uti=[::webapp::post-string $uti]"
-	    unset tabcor
-	    set msg [lire-correspondant-par-login $dbfd $uti tabcor]
-	    if {! [string equal $msg ""]} then {
-		::webapp::error-exit $conf(err) "'$uti' non trouvé ($msg)"
-	    }
-	}
-    }
 
     #
     # Récupération des descriptions de vlans
     #
 
-    set msg [lire-vlans tabvlan]
-    if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) "Lecture des vlans impossible ($msg)"
+    set cmd [format $conf(dumpgraph) $tabuid(flags)]
+    set fd [open "|$cmd" "r"]
+
+    while {[gets $fd ligne] > -1} {
+	switch [lindex $ligne 0] {
+	    vlan {
+		set id [lindex $ligne 1]
+		set reste [lreplace $ligne 0 1]
+		set desc ""
+		set lnet {}
+		while {[llength $reste] > 0} {
+		    set key [lindex $reste 0]
+		    set val [lindex $reste 1]
+		    switch $key {
+			desc {
+			    if {[string equal $val "-"]} then {
+				set desc ""
+			    } else {
+				set desc [binary format H* $val]
+			    }
+			}
+			net {
+			    lappend lnet $val
+			}
+		    }
+		    set reste [lreplace $reste 0 1]
+		}
+		set tabvlan($id) [list $desc $lnet]
+	    }
+	}
     }
-
-    #
-    # Valider les paramètres :
-    # - tester si le correspondant a le droit sur l'équipement
-    #
-
+    if {[catch {close $fd} msg]} then {
+	::webapp::error-exit $conf(err) \
+		"Erreur lors de la lecture des vlans ($msg)"
+    }
 
     #
     # Chercher la liste des vlans demandés
@@ -438,6 +439,7 @@ proc main {} {
 							[list %EQ%     ""] \
 							[list %VLAN%   $qvlan] \
 							[list %ADDR%   ""] \
+							[list %URLUID% $u2] \
 						    ] \
 					    ]
 	}
@@ -461,9 +463,9 @@ proc main {} {
 	    # Récupérer les informations lues dans le graphe
 	    #
 
-	    set xl2 [format $conf(extractl2) $eq $iface $v]
+	    set xl2 [format $conf(extractl2) $tabuid(flags) $eq $iface $v]
 	    set dot [generer-dot $format \
-				$eq $iface $v $xl2 $conf(urleq) tabvlan nnodes]
+				$eq $iface $v $xl2 $conf(urleq) $u1 tabvlan nnodes]
 	    if {[string equal $dot ""]} then {
 		set liste "Vlan '$qvlan' non trouvé sur les équipements"
 		::webapp::send html [::webapp::file-subst $conf(pagen) \
@@ -473,6 +475,7 @@ proc main {} {
 						    [list %EQ%     ""] \
 						    [list %VLAN%   $qvlan] \
 						    [list %ADDR%   ""] \
+						    [list %URLUID% $u2] \
 						    ] \
 					    ]
 	    } else {
@@ -490,7 +493,7 @@ proc main {} {
 		    set prog "$conf(dot)"
 		}
 
-		set url "eq=$eq&iface=$iface&vlan=$v"
+		set url "eq=$eq&iface=$iface&vlan=$v$u1"
 
 		#
 		# Sélectionner le format et sortir la page
@@ -522,6 +525,7 @@ proc main {} {
 							    [list %EQ%    ""] \
 							    [list %VLAN%  $qvlan] \
 							    [list %ADDR%  ""] \
+							    [list %URLUID% $u2] \
 							] \
 						]
 		    }
@@ -544,8 +548,9 @@ proc main {} {
 		    append desc " : $nets"
 		}
 		set desc [::webapp::html-string $desc]
-		set url [format $conf(urll2) $id]
-		append liste [format "<LI><A HREF=\"%s\">$id ($desc)</A>\n" $url]
+		set url [format $conf(urll2) $id $u1]
+		append liste [format "<LI><A HREF=\"%s\">$id ($desc)</A>\n" \
+					$url]
 	    }
 	    append liste "</UL>"
 
@@ -560,6 +565,7 @@ proc main {} {
 							[list %EQ%     ""] \
 							[list %VLAN%   $qvlan] \
 							[list %ADDR%   ""] \
+							[list %URLUID% $u2] \
 						    ] \
 					    ]
 

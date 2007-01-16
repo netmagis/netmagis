@@ -1,5 +1,5 @@
 /*
- * $Id: extracteq.c,v 1.6 2007-01-11 22:32:14 pda Exp $
+ * $Id: extracteq.c,v 1.7 2007-01-16 09:51:43 pda Exp $
  */
 
 #include "graph.h"
@@ -130,6 +130,7 @@ int main (int argc, char *argv [])
     char *eqname, *prog ;
     struct eq *eq ;
     int c, err ;
+    int selected ;
 
     prog = argv [0] ;
     err = 0 ;
@@ -178,11 +179,29 @@ int main (int argc, char *argv [])
     sel_mark () ;
 
     /*
-     * Search equipement
+     * Search selected equipement, or a selected node inside this equipement
      */
 
     eq = eq_lookup (eqname) ;
-    if (eq == NULL || ! MK_ISSELECTED (eq))
+    selected = 0 ;
+    if (eq != NULL)
+    {
+	if (MK_ISSELECTED (eq))
+	    selected = 1 ;
+	else
+	{
+	    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	    {
+		if (n->eq == eq && MK_ISSELECTED (n))
+		{
+		    selected = 1 ;
+		    break ;
+		}
+	    }
+	}
+    }
+
+    if (! selected)
     {
 	fprintf (stderr, "%s: equipement '%s' not found\n", prog, eqname) ;
 	exit (1) ;

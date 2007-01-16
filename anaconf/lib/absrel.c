@@ -1,5 +1,5 @@
 /*
- * $Id: absrel.c,v 1.3 2007-01-10 16:49:53 pda Exp $
+ * $Id: absrel.c,v 1.4 2007-01-16 09:51:42 pda Exp $
  */
 
 #include "graph.h"
@@ -104,7 +104,10 @@ void abs_to_rel (MOBJ *graph [])
     }
 
     PROLOGREL (max, graph [NETMOBJIDX], nettab) ;
-    /* nothing for netmobj */
+    for (i = 0 ; i < max ; i++)
+    {
+	ABSTOREL (nettab [i].next, nettab) ;
+    }
 
     PROLOGREL (max, graph [NLISTMOBJIDX], nlisttab) ;
     for (i = 0 ; i < max ; i++)

@@ -14,6 +14,8 @@
 #   2006/06/05 : pda      : création
 #   2006/08/14 : pda      : fusion script listeq
 #   2007/01/04 : pda      : ajout du paramètre uti
+#   2007/01/11 : pda      : mutualisation initialisation
+#   2007/01/11 : pda      : substitution possible d'un uid
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -25,7 +27,7 @@ set conf(homeurl)	%HOMEURL%
 set conf(pkg)		%PKGTCL%
 set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	%LIBDNS%
-set conf(libmetro)	$conf(lib)/libtopo.tcl
+set conf(libtopo)	$conf(lib)/libtopo.tcl
 
 #
 # Définition des noms des pages "à trous"
@@ -39,23 +41,21 @@ set conf(pagen)		$conf(lib)/liste.html
 # Quelques paramètres du script
 #
 
-set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 
 set conf(form)	{
-    {uti		0 1}
     {eq			0 1}
     {iface		0 1}
 }
 
-set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
-set conf(extracteq)	"%TOPODIR%/bin/extracteq %s < %GRAPH%"
-set conf(urlstat)	"/applis/metro/bin/trafic?id=%s"
-set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s"
-set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s"
-set conf(urll2)		"$conf(homeurl)/bin/l2?eq=%s&iface=%s&vlan=%d"
-set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s"
+set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
+set conf(extracteq)	"%TOPODIR%/bin/extracteq %s %s < %GRAPH%"
+set conf(urlstat)	"$conf(homeurl)/bin/metro?id=%s%s"
+set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
+set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
+set conf(urll2)		"$conf(homeurl)/bin/l2?eq=%s&iface=%s&vlan=%d%s"
+set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
 
 
 #
@@ -63,7 +63,6 @@ set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s"
 #
 
 lappend auto_path $conf(pkg)
-package require auth
 package require webapp
 package require pgsql
 package require arrgen
@@ -104,48 +103,7 @@ set conf(tabreseau) {
 # ::webapp::cgidebug ; exit
 
 source $conf(libdns)
-source $conf(libmetro)
-
-##############################################################################
-# Fonctions utilitaires
-##############################################################################
-
-proc tri-iface {i1 i2} {
-    if {[regexp {(\D+)([-\d/.]+)$} $i1 bidon pref1 suf1] &&
-		[regexp {(\D+)([-\d/.]+)$} $i2 bidon pref2 suf2]} then {
-	set n [string compare $pref1 $pref2]
-	if {$n == 0} then {
-	    set l1 [split $suf1 "-/."]
-	    set l2 [split $suf2 "-/."]
-	    foreach c1 $l1 c2 $l2 {
-		if {[string equal $c1 ""]} then {
-		    set n -1
-		    break
-		} elseif {[string equal $c2 ""]} then {
-		    set n 1
-		    break
-		} elseif {$c1 < $c2} then {
-		    set n -1
-		    break
-		} elseif {$c1 > $c2} then {
-		    set n 1
-		    break
-		}
-	    }
-	}
-    } else {
-	set n [string compare $i1 $i2]
-    }
-    return $n
-}
-
-proc trier-ifaces {marque modele iflist} {
-    return [lsort -command tri-iface $iflist]
-}
-
-proc trier-vlans {vlans} {
-    return [lsort -index 0 -integer $vlans]
-}
+source $conf(libtopo)
 
 ##############################################################################
 # Programme principal
@@ -158,51 +116,27 @@ proc main {} {
     # Initialisation
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor
+    init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
+			$conf(form) ftab dbfd uid tabuid ouid tabouid urluid
 
-    #
-    # Récupération des paramètres dans des variables simples
-    #
-
-    foreach spec $conf(form) {
-	set champ [lindex $spec 0]
-	if {[info exists ftab($champ)]} then {
-	    set $champ [string trim [lindex $ftab($champ) 0]]
-	} else {
-	    set $champ ""
-	}
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	set $var [string trim [lindex [set $var] 0]]
     }
 
-    #
-    # Si l'utilisateur est un administrateur, l'autoriser à se substituer
-    # à un autre utilisateur.
-    #
-
-    set uti $login
-    set urluti ""
-    if {[attribut-correspondant $dbfd $tabcor(idcor) admin]} then {
-	#
-	# A partir de maintenant, on prend le nouveau login qui est
-	# fourni dans le formulaire (s'il est fourni)
-	#
-
-	if {[llength $ftab(uti)] > 0} then {
-	    set uti [lindex $ftab(uti) 0]
-	    set urluti "&uti=[::webapp::post-string $uti]"
-	    unset tabcor
-	    set msg [lire-correspondant-par-login $dbfd $uti tabcor]
-	    if {! [string equal $msg ""]} then {
-		::webapp::error-exit $conf(err) "'$uti' non trouvé ($msg)"
-	    }
-	}
+    set u1 ""
+    set u2 ""
+    if {! [string equal $urluid ""]} then {
+	set u1 "&$urluid"
+	set u2 "?$urluid"
     }
 
     #
     # Récupérer les informations lues dans le graphe
     #
 
-    set fd [open "|$conf(dumpgraph)" "r"]
+    set cmd [format $conf(dumpgraph) $tabuid(flags)]
+    set fd [open "|$cmd" "r"]
     while {[gets $fd ligne] > -1} {
 	switch [lindex $ligne 0] {
 	    eq {
@@ -215,7 +149,10 @@ proc main {} {
 	    }
 	}
     }
-    close $fd
+    if {[catch {close $fd} msg]} then {
+	::webapp::error-exit $conf(err) \
+		"Erreur lors de la lecture des équipements (msg)"
+    }
 
     #
     # S'il y a plusieurs équipements trouvés, les présenter
@@ -242,22 +179,19 @@ proc main {} {
 							[list %EQ%     $eq] \
 							[list %VLAN%   ""] \
 							[list %ADDR%   ""] \
+							[list %URLUID% $u2] \
 						    ] \
 					    ]
 	}
 	1 {
 	    #
-	    # Valider les paramètres :
-	    # - tester si le correspondant a le droit sur l'équipement
+	    # Récupérer les informations lues dans le graphe
 	    #
 
 	    set nomeq [lindex [array names tabeq] 0]
 
-	    #
-	    # Récupérer les informations lues dans le graphe
-	    #
-
-	    set fd [open "|[format $conf(extracteq) $nomeq]" "r"]
+	    set cmd [format $conf(extracteq) $tabuid(flags) $nomeq]
+	    set fd [open "|$cmd" "r"]
 	    while {[gets $fd ligne] > -1} {
 		switch [lindex $ligne 0] {
 		    eq {
@@ -278,7 +212,9 @@ proc main {} {
 	    # Trier les interfaces pour les présenter dans le bon ordre
 	    #
 
-	    set iflist [trier-ifaces $type $modele [array names tabiface]]
+	    set iflist [lsort -command compare-interfaces \
+					[array names tabiface] \
+				    ]
 
 	    #
 	    # Mettre en forme toutes ces informations
@@ -302,8 +238,8 @@ proc main {} {
 		}
 
 		if {! [string equal $stat "-"]} then {
-		    set url [format $conf(urlstat) [::webapp::post-string $stat]]
-		    append txt [format " <A HREF=\"%s\">\[Métro\]</A>" $url]
+		    set url [format $conf(urlstat) [::webapp::post-string $stat] $u1]
+		    append txt [format " <A HREF=\"%s\">\[Trafic\]</A>" $url]
 		}
 
 		append txt " $mode"
@@ -313,13 +249,13 @@ proc main {} {
 		    set eq2 [lindex $lien 1]
 		    set if2 [lindex $lien 2]
 
-		    set urleqiface [format $conf(urleqiface) $eq2 $if2]
+		    set urleqiface [format $conf(urleqiface) $eq2 $if2 $u1]
 		    append txt [format " $via vers <A HREF=\"%s\">$eq2 $if2</A>" \
 				    $urleqiface]
 		}
 
 		set nvlan [llength $ligne]
-		foreach vlan [trier-vlans $ligne] {
+		foreach vlan [lsort -index 0 -integer $ligne] {
 		    set vlanid [lindex $vlan 0]
 		    set desc   [lindex $vlan 1]
 		    if {[string equal $desc "-"]} then {
@@ -332,17 +268,17 @@ proc main {} {
 		    append txt "\n<BR>\n"
 
 		    if {$nvlan > 1 || $vlanid != 0} then {
-			set urll2 [format $conf(urll2) $nomeq $i $vlanid]
+			set urll2 [format $conf(urll2) $nomeq $i $vlanid $u1]
 			append txt [format "Vlan <A HREF=\"%s\">$vlanid ($desc)</A>" $urll2]
 
 			if {! [string equal $stat "-"]} then {
-			    set url [format $conf(urlstat) $stat]
-			    append txt [format " <A HREF=\"%s\">\[Métro\]</A>" $url]
+			    set url [format $conf(urlstat) $stat $u1]
+			    append txt [format " <A HREF=\"%s\">\[Trafic\]</A>" $url]
 			}
 		    }
 
 		    foreach ip [lsort [lindex $vlan 3]] {
-			set urll3 [format $conf(urll3) $ip]
+			set urll3 [format $conf(urll3) $ip $u1]
 			append txt [format " <A HREF=\"%s\">$ip</A>" $urll3]
 		    }
 		}
@@ -361,6 +297,7 @@ proc main {} {
 							[list %EQ%    $eq] \
 							[list %VLAN%  ""] \
 							[list %ADDR%  ""] \
+							[list %URLUID% $u2] \
 						    ] \
 					    ]
 	}
@@ -373,7 +310,7 @@ proc main {} {
 	    foreach e [lsort [array names tabeq]] {
 		set type   [lindex $tabeq($e) 0]
 		set modele [lindex $tabeq($e) 1]
-		set url [format $conf(urleq) $e]
+		set url [format $conf(urleq) $e $u1]
 		append liste [format "<LI><A HREF=\"%s\">$e</A> $type $modele\n" $url]
 	    }
 	    append liste "</UL>"
@@ -389,6 +326,7 @@ proc main {} {
 							[list %EQ%     $eq] \
 							[list %VLAN%   ""] \
 							[list %ADDR%   ""] \
+							[list %URLUID% $u2] \
 						    ] \
 					    ]
 	}

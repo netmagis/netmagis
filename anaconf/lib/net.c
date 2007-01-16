@@ -1,5 +1,5 @@
 /*
- * $Id: net.c,v 1.1 2007-01-09 10:58:52 pda Exp $
+ * $Id: net.c,v 1.2 2007-01-16 09:51:42 pda Exp $
  */
 
 #include "graph.h"
@@ -34,11 +34,8 @@ struct network *net_get_n (ip_t *addr)
     n = net_lookup_n (addr) ;
     if (n == NULL)
     {
-	n = mobj_alloc (netmobj, 1) ;
+	MOBJ_ALLOC_INSERT (n, netmobj) ;
 	n->addr = *addr ;
-
-	n->next = mobj_head (netmobj) ;
-	mobj_sethead (netmobj, n) ;
     }
     return n ;
 }

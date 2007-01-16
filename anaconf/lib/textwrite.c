@@ -1,10 +1,11 @@
 /*
- * $Id: textwrite.c,v 1.4 2007-01-11 15:31:22 pda Exp $
+ * $Id: textwrite.c,v 1.5 2007-01-16 09:51:42 pda Exp $
  */
 
 #include "graph.h"
 
-#define	MK_LINK	(MK_LAST << 1)
+#define	MK_LINK		(MK_LAST << 1)
+#define	MK_PRINTED	(MK_LAST << 2)
 
 /******************************************************************************
 Output graph in textual form
@@ -12,16 +13,29 @@ Output graph in textual form
 
 static void text_write_eq (FILE *fp)
 {
+    struct node *n ;
     struct eq *eq ;
 
     for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
-	if (MK_ISSELECTED (eq))
+	MK_CLEAR (eq, MK_PRINTED) ;
+
+    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+    {
+	int selected ;
+
+	eq = n->eq ;
+	selected = MK_ISSELECTED (n) || MK_ISSELECTED (eq) ;
+	if (selected && ! MK_ISSET (eq, MK_PRINTED))
+	{
 	    fprintf (fp, "eq %s type %s model %s snmp %s\n",
 				eq->name,
 				eq->type,
 				eq->model,
 				(eq->snmp == NULL ? "-" : eq->snmp)
 			    ) ;
+	    MK_SET (eq, MK_PRINTED) ;
+	}
+    }
 }
 
 static void text_write_nodes (FILE *fp)

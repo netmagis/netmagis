@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.5 2007-01-10 19:17:59 pda Exp $
+# $Id: Makefile,v 1.6 2007-01-16 09:51:44 pda Exp $
 #
 # Makefile pour lancer l'installation de l'application topo
 # Ce Makefile n'est normalement jamais appelé lui-même, mais
@@ -34,6 +34,7 @@ LIBDNS	= /local/services/www/applis/dns/lib/libdns.tcl
 #LIBDNS	= /local/services/www/applis/devdns/lib/libdns.tcl
 TOPODIR	= /local/applis/topo
 GRAPH	= $(TOPODIR)/osiris/osiris.graph
+IDRHOST	= idris.u-strasbg.fr
 
 NEATO	= /usr/local/bin/neato
 DOT	= /usr/local/bin/dot
@@ -64,8 +65,10 @@ SUBST	= \
 	-e 's|%BASE%|$(BASE)|' \
 	-e 's|%NEATO%|$(NEATO)|' \
 	-e 's|%DOT%|$(DOT)|' \
-	-e 's|%PS2PDF%|$(PS2PDF)|'
+	-e 's|%PS2PDF%|$(PS2PDF)|' \
+	-e 's|%IDRHOST%|$(IDRHOST)|'
 
+EXCL = \./doc|CVS
 #
 # La documentation (succinte) de l'application
 #
@@ -85,12 +88,14 @@ pre:
 dirs:
 	if [ ! -d $(DESTDIR) ] ; then mkdir $(DESTDIR) ; fi
 	find . -type d -print | \
+	    egrep -v "$(EXCL)" | \
 	    while read d ; do \
 		if [ ! -d $(DESTDIR)/$$d ] ; then mkdir -p $(DESTDIR)/$$d ; fi ; \
 	    done
 
 autres:
 	find . \( -type f -o -type l \) -print | \
+	    egrep -v "$(EXCL)" | \
 	    grep -v '.htgt$$' | \
 	    grep -v '.gif$$' | \
 	    grep -v Makefile | \
