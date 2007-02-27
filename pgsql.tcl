@@ -1,4 +1,6 @@
 #
+# $Id: pgsql.tcl,v 1.2 2007-02-27 13:04:48 pda Exp $
+#
 # Librairie de fonctions TCL pour faciliter l'accès à une base PostgreSQL
 #
 # Historique

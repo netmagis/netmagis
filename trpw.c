@@ -1,4 +1,6 @@
 /*
+ * $Id: trpw.c,v 1.2 2007-02-27 13:04:48 pda Exp $
+ *
  * trpw.c
  *
  * A partir d'un mot de passe en clair, calcule le mot de passe crypte
