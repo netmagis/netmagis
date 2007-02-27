@@ -1,5 +1,5 @@
 #
-# $Id: auth.tcl,v 1.2 2007-02-27 13:04:48 pda Exp $
+# $Id: auth.tcl,v 1.3 2007-02-27 13:06:22 pda Exp $
 #
 # Librairie de fonctions TCL d'authentification utilisables dans les scripts CGI
 #
@@ -12,6 +12,7 @@
 #   2005/05/25 : pda/jean : début de la ldapisation
 #   2005/06/07 : pda/jean/zamboni : changement de la commande de chiffrement
 #   2005/08/24 : pda      : ajout du port ldap
+#   2006/01/17 : jean     : suite ldapisation
 #
 
 package require Pgtcl
@@ -20,7 +21,7 @@ package require webapp
 package require arrgen
 package require ldap
 
-package provide auth 1.2
+package provide auth 1.3
 
 namespace eval auth {
     namespace export init \
@@ -39,9 +40,15 @@ namespace eval auth {
 
     # si method = "ldap"
     variable ldapfd	""
-    variable ldapbase	""
     variable ldapbind	0
     variable ldapfilter ""
+    variable ldapcreateperson_ou ""
+    variable ldapsearchperson_ou ""
+    variable ldapgroup_ou ""
+    variable ldapperson_oc ""
+    variable ldapgroup_oc ""
+    variable ldapparam_ou ""
+    variable ldapparam_oc ""
     array set ldapfields {}
 
     variable champs {login password nom prenom mel tel mobile fax adr}
@@ -246,9 +253,14 @@ namespace eval auth {
 #   - si la méthode d'accès est "postgresql", la clef d'accès est de la
 #	forme : {host=<HOST> dbname=<BASE> user=<USER> password=<PASSWORD>}
 #   - si la méthode d'accès est "ldap", la clef d'accès est de la
-#	forme : {host <HOST> port <PORT> base <BASE>
-#			binddn <USER> bindpw <PASSWORD>}
-#			filter <FILTRE> fields <FIELDS>}
+#	forme : {host <HOST> port <PORT> 
+#			binddn <USER> bindpw <PASSWORD>
+#			filter <FILTRE> fields <FIELDS>
+#                       searchperson_ou <BRANCHE_PERSONNES_POUR_LDAP_SEARCH>
+#                       createperson_ou <BRANCHE_PERSONNES_POUR_LDAP_ADD>
+#			person_oc <OBJECTCLASS_PERSONNES>
+#                       group_ou  <BRANCHE_GROUPES> group_oc  <OBJECTCLASS_GROUPES>
+#                       param_ou <BRANCHE_PARAM> param_oc <OBJECTCLASS_PARAM>}
 #	où <FIELDS> = liste de correspondance {<attribut AUTH> <attribut LDAP>}
 #   - les données d'accès à la base sont mémorisées
 #
@@ -273,6 +285,15 @@ proc ::auth::init {acces} {
 	    set l(port) 389
 	    set l(binddn) ""
 	    set l(bindpw) ""
+	    set l(base) ""
+	    set l(searchperson_ou) ""
+	    set l(createperson_ou) ""
+	    set l(group_ou) ""
+	    set l(param_ou) ""
+	    set l(person_oc) ""
+	    set l(group_oc)  ""
+	    set l(param_oc) ""
+
 	    array set l $clef
 	    if {[catch {set ldapfd [::ldap::connect $l(host) $l(port)]} msg]} then {
 		return $msg
@@ -283,8 +304,15 @@ proc ::auth::init {acces} {
 	    }
 
 	    set ::auth::ldapfd $ldapfd
-	    set ::auth::ldapbase $l(base)
 	    set ::auth::ldapfilter $l(filter)
+	    set ::auth::ldapbase $l(base)
+	    set ::auth::ldapcreateperson_ou $l(createperson_ou)
+	    set ::auth::ldapsearchperson_ou $l(searchperson_ou)
+	    set ::auth::ldapperson_oc $l(person_oc)
+	    set ::auth::ldapgroup_ou $l(group_ou)
+	    set ::auth::ldapgroup_oc $l(group_oc)
+	    set ::auth::ldapparam_ou $l(param_ou)
+	    set ::auth::ldapparam_oc $l(param_oc)
 	    array unset ::auth::ldapfields
 	    array set ::auth::ldapfields $l(fields)
 	}
@@ -338,7 +366,11 @@ proc ::auth::close {} {
 # Sortie :
 #   - valeur de retour : suivant la méthode
 #	- "postgresql" : dbfd
-#	- "ldap" : ldapfd base
+#	- "ldap" : liste au formet {ldapfd searchbase format}
+#	    avec :  - ldapfd     : descripteur de connexion ldap
+#		    - base       : OU de base
+#		    - searchbase : OU de base pour la recherche de personne
+#                   - format     : chaine de format du filtre de recherche
 #
 # Historique :
 #   2005/05/26 : pda/jean/zamboni : conception
@@ -350,7 +382,9 @@ proc ::auth::gethandle {} {
 	    set r [list $::auth::dbfd]
 	}
 	ldap {
-	    set r [list $::auth::ldapfd $::auth::ldapbase $::auth::ldapfilter]
+	    set r [list $::auth::ldapfd $auth::ldapbase \
+			$::auth::ldapsearchperson_ou \
+			$::auth::ldapfilter]
 	}
 	default {
 	    return ""
@@ -401,7 +435,8 @@ proc ::auth::transact {kwd msg} {
 	    }
 	}
 	ldap {
-	    # LDAP est très pauvre...
+	    # On fait semblant...
+	    set r 1
 	}
 	default {
 	    set m "Accès invalide"
@@ -432,6 +467,7 @@ proc ::auth::transact {kwd msg} {
 #	tab(fax)	fax
 #	tab(mobile)	téléphone mobile
 #	tab(adr)	adresse
+#	tab(encryption)	"crypt" si le mot de passe est crypté
 #	tab(password)	mot de passe crypté
 #	tab(groupes)	la liste des groupes auxquels l'utilisateur appartient
 #
@@ -462,22 +498,39 @@ proc ::auth::getuser {login tab} {
 	    }
 	}
 	ldap {
-	    # XXX : il faudrait quoter $login
 	    set filtre [format $::auth::ldapfilter $login]
+	    set base $::auth::ldapsearchperson_ou
+	    set attr {}
+	    foreach c [array names ::auth::ldapfields] {
+		lappend attr $::auth::ldapfields($c)
+	    }
+	    set nb [ldap-lire-entree $::auth::ldapfd $base $filtre x $attr]
 
-	    foreach e [::ldap::search $::auth::ldapfd $::auth::ldapbase $filtre ""] {
-		array unset x
-		array set x [lindex $e 1]
-
+	    if {$nb==1} then {
+		set trouve 1
 		foreach c [array names ::auth::ldapfields] {
 		    set ldapc $::auth::ldapfields($c)
+
 		    if {[info exists x($ldapc)]} then {
-			set t($c) $x($ldapc)
+			if {[string equal -nocase $ldapc "userpassword"]} {
+			    set ldappassword [lindex $x($ldapc) 0]
+			    if {[regexp {{([0-9a-zA-Z]+)}(.+)} $ldappassword \
+					bidon encryption password]} {
+				set t(encryption) $encryption
+				set t($c)         $password
+			    }
+			} elseif {[string equal -nocase $ldapc "webgroup"]} {
+			    # ce champ est multivalué, on récupère donc une liste
+			    set t($c) $x($ldapc)
+			} else {
+			    set t($c) [lindex $x($ldapc) 0]
+			}
 		    } else {
 			set t($c) ""
 		    }
 		}
-		set trouve 1
+	    } else {
+		set trouve 0
 	    }
 	}
 	default {
@@ -593,6 +646,109 @@ proc ::auth::setuser {tab {transact transaction}} {
 		}
 	    }
 	}
+	ldap {
+
+	    # 
+	    # On construit la liste des attributs ldap à lire
+	    # 
+
+	    set attr {}
+	    foreach a [array names ::auth::ldapfields] {
+		lappend attr $::auth::ldapfields($a)
+	    }
+
+	    # 
+	    # On fait une lecture de l'enregistrement ldap actuel
+	    # 
+
+	    set fd $::auth::ldapfd
+	    set filtre [format $::auth::ldapfilter $t(login)]
+	    set base $::auth::ldapsearchperson_ou
+	    set nb [ldap-lire-entree $fd $base $filtre x $attr]
+
+	    #
+	    # Si l'utilisateur n'existe pas, on crée un enregistrement minimum
+	    # et refait une lecture de l'enregistrement juste après
+	    #
+
+	    if {$nb == 0} then {
+
+		set ou $::auth::ldapcreateperson_ou
+		set oc $::auth::ldapperson_oc
+		set m  [creer-uti-ldap $fd "uid=$t(login),$ou" $oc t ]
+
+		if {![string equal $m ""]} {
+		    return "creation de l'utilisateur impossible ($m)"
+		} else {
+		    set filtre [format $::auth::ldapfilter $t(login)]
+		    set base $::auth::ldapcreateperson_ou
+		    array unset x
+		    if {[ldap-lire-entree $fd $base $filtre x $attr] != 1} {
+			return "erreur de relecture de l'utilisateur $t(login)"
+		    }
+		}
+	    }
+
+	    #
+	    # Préparation de la nouvelle entree pour ldap-ecrire-entree
+	    #
+
+	    array set new {}
+	    set new(copie:orig) [array get x]
+	    set new(dn) $x(dn)
+
+	    #
+	    # Conversion des champs pour ldap (y compris les groupes)
+	    #
+
+	    foreach c [concat $::auth::champs "groupes"] {
+		set ldapfield $::auth::ldapfields($c)
+
+		if {![string equal $ldapfield ""] && \
+			[info exists t($c)] && \
+			![string equal $t($c) ""]} then {
+
+		    #
+		    # separer le format d'encryption et le mot de passe
+		    #
+		    if {[string equal $c "password"]} {
+			if {[info exists t(encryption)]} then {
+			    set new($ldapfield) \
+				    [list "{$t(encryption)}$t(password)"]
+			} else {
+			    set new($ldapfield) [list $t(password)]
+			}
+		    #
+		    # construire une liste des groupes (champ multivalue)
+		    #
+		    } elseif {[string equal $c "groupes"]} {
+			set new($ldapfield) [split $t($c)]
+		    } else {
+			set new($ldapfield) [list $t($c)]
+		    }
+		}
+	    }
+
+	    #
+	    # Traite le cas du champs 'prenomnom' (cn) a part
+	    #
+	    set prenomnom ""
+	    if {[info exists t(prenom)]} {
+		append prenomnom "$t(prenom) "
+	    }
+	    if {[info exists t(nom)]} {
+		append prenomnom $t(nom)
+	    }
+	    set ldapfield $::auth::ldapfields(prenomnom)
+	    set new($ldapfield) [list [string trim $prenomnom]]
+
+	    #
+	    # On ecrit l'entrée
+	    #
+
+	    return [ldap-ecrire-entree $fd new]
+	}
+
 	default {
 	    return "Accès invalide"
 	}
@@ -600,6 +756,167 @@ proc ::auth::setuser {tab {transact transaction}} {
     return ""
 }
 
+
+#
+# Récupération d'une entrée LDAP
+#
+# Entrée :
+#   - paramètres :
+#       - fd     : accès a l'annuaire
+#       - base   : le DN de base
+#       - filtre : le filtre de recherche
+#       - tabvar : les attributs LDAP renvoyés dans le tableau
+#       - attr   : liste des attributs à lire
+# Sortie :
+#   - valeur de retour : nb d'entrées trouvés (devrait être 1 si ok)
+#
+# Historique
+#   2005/05/26 : pda/jean/zamboni : conception
+#   2005/06/08 : pda/jean/zamboni : mise en commun des fonctions de bas niveau
+#
+
+proc ldap-lire-entree {fd base filtre tabvar attr} {
+    upvar $tabvar tab
+
+    set trouve 0
+    foreach e [::ldap::search $fd $base $filtre $attr] {
+        incr trouve
+        set tab(dn) [lindex $e 0]
+        array set tab [lindex $e 1]
+
+        foreach a [array names tab] {
+            set l {}
+            foreach v $tab($a) {
+                lappend l [encoding convertfrom utf-8 $v]
+            }
+            set tab($a) $l
+        }
+    }
+    return $trouve
+}
+
+#
+# Crée un utilisateur minimal dans ldap.
+# Seuls les champs obligatoires pour un objectClass de
+# de type "personne" (uid, sn, cn) sont créés
+#
+# Entrée :
+#   - paramètres :
+#	- fd          : accès à l'annuaire
+#	- dn          : dn a creer
+#	- objectclass : objectclass des personnes
+#	- tabvar      : tableau indexe des attributs 
+# Sortie :
+#   - valeur de retour : message d'erreur, ou chaîne vide
+#
+
+proc creer-uti-ldap {fd dn objectclass tabvar} {
+    upvar $tabvar tab
+
+    set     l {}
+    lappend l "objectClass" $objectclass
+    lappend l "uid"         $tab(login)
+    lappend l "sn"          $tab(nom)
+    lappend l "cn"          "$tab(prenom) $tab(nom)"
+
+    return [::ldap::add $fd $dn $l]
+}
+
+
+#
+#
+# Enregistrer les modifications d'une entrée LDAP
+#
+# Entrée :
+#   - paramètres :
+#	- fd : accès aux bases
+#	- tabvar : les attributs LDAP originaux
+# Sortie :
+#   - valeur de retour : message d'erreur, ou chaîne vide
+#
+# Historique
+#   2005/06/01 : pda/jean/zamboni : conception
+#
+
+proc ldap-ecrire-entree {fd tabvar} {
+    upvar $tabvar tab
+
+    if {! [info exists tab(copie:orig)]} then {
+	return "Tableau non préparé"
+    }
+
+    array set old $tab(copie:orig)
+    unset tab(copie:orig)
+    array set new [array get tab]
+
+    #
+    # Tri des valeurs des attributs
+    #
+
+    foreach a [array names old] {
+	set old($a) [lsort $old($a)]
+    }
+    foreach a [array names new] {
+	set new($a) [lsort $new($a)]
+    }
+
+    #
+    # Extraire tous les attributs non modifiés
+    # ainsi que les attributs à remplacer (on ne remplace que le premier
+    # en cas de multivalué, les autres seront ajoutés)
+    #
+
+    set rep {}
+    set add {}
+    foreach a [array names old] {
+	if {[info exists new($a)]} then {
+	    if {! [string equal $old($a) $new($a)]} then {
+		#
+		# Prendre la première valeur pour le remplacement
+		#
+		lappend rep $a
+		lappend rep [encoding convertto utf-8 [lindex $new($a) 0]]
+
+		#
+		# Les n-1 autres valeurs sont ajoutées
+		#
+		foreach v [lreplace $new($a) 0 0] {
+		    lappend add $a
+		    lappend add [encoding convertto utf-8 $v]
+		}
+	    }
+	    unset new($a)
+	    unset old($a)
+	}
+    }
+
+    #
+    # Rechercher les attributs supprimés
+    #
+
+    set del [array names old]
+
+    #
+    # Rechercher les attributs ajoutés
+    #
+
+    foreach a [array names new] {
+	foreach v $new($a) {
+	    lappend add $a
+	    lappend add [encoding convertto utf-8 $v]
+	}
+    }
+
+    if {[llength $del] > 0 || [llength $add] > 0 || [llength $rep] > 0} then {
+	set dn $tab(dn) 
+
+	if {[catch {::ldap::modify $fd $dn $rep $del $add} msg]} then {
+	    return "$dn: cannot MOD attributes ($msg)\nrep = $rep, del=$del\n add=$add"
+	}
+    }
+
+    return ""
+}
 
 #
 # Supprime l'entrée d'un utilisateur
@@ -653,6 +970,24 @@ proc ::auth::deluser {login {transact transaction}} {
 		    return $m
 		}
 	    }
+	}
+	ldap {
+	    set fd $::auth::ldapfd
+	    set filtre "(&(uid=$login)(objectClass=$::auth::ldapperson_oc))"
+	    set base $::auth::ldapsearchperson_ou
+	    set nb [ldap-lire-entree $fd  $base $filtre x "uid"]
+
+	    if {$nb==0} then {
+		return "Utilisateur '$login' inexistant"
+	    } elseif {$nb>1} then {
+		return "Utilisateur '$login' existe plusieurs fois"
+	    }
+
+	    set msg [::ldap::delete $fd $x(dn)]
+	    if {![string equal $msg ""]} then {
+		return "Suppression de '$login' impossible ($msg)"
+	    }
+	    
 	}
 	default {
 	    return "Accès invalide"
@@ -789,10 +1124,67 @@ proc ::auth::searchuser {tabcrit {tri {+nom +prenom}}} {
 		lappend lusers $tab(login)
 	    }
 	}
+	ldap {
+	    set attrsel ""
+	    set groupesel ""
+	    set lusers {}
+
+	    #
+	    # Pour chaque critere potentiel, on convertit en filtre ldap
+	    #
+
+	    foreach c {login phnom phprenom nom prenom adr mel tel mobile
+					fax groupes} {
+		if {[info exists tabcriteres($c)]} then {
+		    set val $tabcriteres($c)
+
+		    if {! [string equal $val ""]} then {
+
+			if {[info exists ::auth::ldapfields($c)]} {
+			    set ldapc $::auth::ldapfields($c)
+			    switch -- $c {
+				"groupes"    {
+				    foreach g $val {
+					append groupesel "($ldapc=$g)"
+				    }
+				}
+				"phnom"	    -
+				"phprenom"  {
+				    append attrsel "($ldapc~=$val)"
+				}
+				default	    {
+				    append attrsel "($ldapc=$val)"
+				}
+			    }
+			}
+		    }
+		}
+	    }
+
+	    #
+	    # Le champ groupe est obligatoire. S'il n'existe pas en tant
+	    # que critere de recherche, on l'ajoute.
+	    #
+
+	    if {[string equal $groupesel ""]} {
+		set groupesel "($::auth::ldapfields(groupes)=*)"
+	    }
+
+	    set fd $::auth::ldapfd
+	    set base $::auth::ldapsearchperson_ou 
+	    set filtre \
+		"(& objectclass=$::auth::ldapperson_oc (|$groupesel) $attrsel)"
+	    foreach e [::ldap::search $fd $base $filtre "uid"] {
+		array unset x
+		array set x [lindex $e 1]
+		lappend lusers $x(uid)
+	    }
+	}
 	default {
 	    set lusers {}
 	}
     }
+
     return $lusers
 }
 
@@ -919,6 +1311,9 @@ proc ::auth::chpw {login action mail newpwvar} {
 	return "Login '$login' inexistant"
     }
 
+    if {[string equal $::auth::method "ldap"]} {
+	set tab(encryption) "crypt"
+    }
     switch -- [lindex $action 0] {
 	block {
 	    set newpw "<invalid>"
@@ -1009,6 +1404,30 @@ proc ::auth::lsgroup {tab} {
 	    }
 	    set r 1
 	}
+	ldap {
+	    set grpfield $::auth::ldapfields(groupes)
+	    
+	    set fd $::auth::ldapfd
+	    set base $::auth::ldapgroup_ou
+	    set filtre "(objectClass=$::auth::ldapgroup_oc)"
+	    foreach e [::ldap::search $fd $base $filtre ""] {
+		array unset x
+		array set x [lindex $e 1]
+		set groupe $x(uid)
+		if {[info exists x(groupDescription)]} {
+		    set descr [encoding convertfrom utf-8 $x(groupDescription)]
+		}
+		set membres {}
+		set base $::auth::ldapsearchperson_ou
+		foreach m [::ldap::search $fd $base "$grpfield=$groupe" "uid"] {
+		    array unset z
+		    array set z [lindex $m 1]
+		    lappend membres $z(uid)
+		}
+		set t($groupe) [list $descr $membres]
+	    }
+	    set r 1
+	}
 	default {
 	    set r 0
 	}
@@ -1052,6 +1471,22 @@ proc ::auth::addgroup {groupe descr msgvar} {
 		set r 1
 	    }
 	}
+	ldap {
+	    set dn "uid=$groupe,$::auth::ldapgroup_ou"
+	    set     l  {}
+	    lappend l  "objectClass"      $::auth::ldapgroup_oc
+	    lappend l  "uid"              $groupe
+	    lappend l  "groupDescription" [encoding convertto utf-8 $descr]
+
+	    set m [::ldap::add $auth::ldapfd $dn $l]
+
+	    if {! [string equal $m ""]} then {
+		set msg "Echec de creation du groupe '$groupe' ($m)"
+		set r 0
+	    } else {
+		set r 1
+	    }
+	}
 	default {
 	    set r 0
 	}
@@ -1086,6 +1521,18 @@ proc ::auth::delgroup {groupe msgvar} {
 	    set sql "DELETE FROM groupes WHERE groupe = '$qgroupe'"
 	    if {! [::pgsql::execsql $::auth::dbfd $sql m]} then {
 		set msg "Suppression du groupe '$groupe' impossible ($m)"
+		set r 0
+	    } else {
+		set r 1
+	    }
+	}
+	ldap {
+	    set dn "uid=$groupe,$::auth::ldapgroup_ou"
+
+	    set m [::ldap::delete $auth::ldapfd $dn]
+
+	    if {! $string equal $m ""]} then {
+		set msg "Echec de suppression du groupe $groupe dans ldap ($m)"
 		set r 0
 	    } else {
 		set r 1
@@ -1191,6 +1638,72 @@ proc ::auth::setgroup {groupe descr membres msgvar} {
 
 	    set r 1
 	}
+
+	ldap {
+
+	    set grpfield $::auth::ldapfields(groupes)
+	    #
+	    # Si le groupe n'existe pas, le créer
+	    # S'il existe, modifier la description.
+	    #
+	    set trouve 0
+	    set fd $::auth::ldapfd
+	    set base $::auth::ldapgroup_ou
+	    foreach g [::ldap::search $fd $base "$grpfield=$groupe" "uid"] {
+		set trouve 1
+	    }
+	    if {! $trouve} then {
+		if {! [::auth::addgroup $groupe $descr msg]} then {
+		    return 0
+		}
+	    } else {
+		set dn "uid=$groupe,$base"
+		array set x {groupDescription $descr}
+		set m [::ldap::modify $fd $dn x {} {}]
+
+		if {! [string equal $m ""]} then {
+		    set msg "Mise à jour de '$groupe' impossible ($m)"
+		    return 0
+		}
+	    }
+
+	    #
+	    # Détermine les logins des membres actuels et
+	    # génère un tableau indexé
+	    #
+
+	    foreach m [::ldap::search $fd $base "$grpfield=$groupe" "uid"] {
+		array set z [lindex $m 1]
+		set login $z(uid)
+		set current($login) 1
+	    }
+	    
+	    #
+	    # Met à jour le groupe pour les nouveaux membres
+	    #
+
+	    foreach login $membres {
+		if {![info exists current($login)]} {
+		    ::auth::getuser $login tab
+		    set tab(groupe) $groupe
+		    ::auth::setuser tab
+		}
+	    }
+
+	    #
+	    # Supprime l'appartenance au groupe des anciens membres
+	    #
+
+	    foreach login [array names current] {
+		if {[lsearch -exact $membres $login] == -1} {
+		    ::auth::getuser $login tab
+		    set tab(groupe) ""
+		    ::auth::setuser tab
+		}
+	    }
+	    set r 1
+	}
+
 	default {
 	    set r 0
 	}
@@ -1286,6 +1799,19 @@ proc ::auth::getconfig {clef} {
 		set valeur $tab(valeur)
 	    }
 	}
+	ldap {
+	    set valeur {}
+	    set fd $::auth::ldapfd 
+	    set base $::auth::ldapparam_ou
+	    foreach e [::ldap::search $fd $base "uid=$clef" "paramValue"] {
+		array unset x
+		array set x [lindex $e 1]
+		if {[info exists x(paramValue)]} {
+		    set v [lindex $x(paramValue) 0]
+		    set valeur [encoding convertfrom utf-8 $v]
+		}
+	    }
+	}
 	default {
 	    set valeur {}
 	}
@@ -1323,6 +1849,32 @@ proc ::auth::setconfig {clef val varmsg} {
 		if {[::pgsql::execsql $::auth::dbfd $sql msg]} then {
 		    set r 1
 		}
+	    }
+	}
+	ldap {
+	    set trouve 0
+	    set fd $::auth::ldapfd
+	    set base $::auth::ldapparam_ou
+	    foreach e [::ldap::search $fd $base "uid=$clef" "uid"] {
+		set trouve 1
+	    }
+	    if {$trouve} {
+		set dn "uid=$clef,$::auth::param_ou"
+		array set x {paramValue $val}
+		set msg [::ldap::modify $fd $dn x {} {}]
+		if {[string equal $msg ""]} then {
+		    set r 1
+		}
+	    } else {
+		set dn "uid=$clef,$::auth::param_ou"
+		set     l  {}
+		lappend l  "objectClass"      $::auth::ldapparam_oc
+		lappend l  "uid"              $clef
+		lappend l  "paramValue"       [encoding convertto utf-8 $val]
+		set msg [::ldap::add $fd $dn $l]
+		if {[string equal $msg ""]} {
+		    set r 1
+		} 
 	    }
 	}
 	default {
@@ -1990,6 +2542,7 @@ proc ::auth::um-afficher-modif {evar login nom} {
 
     set valu [uplevel 3 [format $e(script-getuser) $login]]
 
+
     #
     # Générer les champs de saisie des informations de auth
     #
@@ -2078,6 +2631,7 @@ proc ::auth::um-enregistrer-modif {evar ftabvar login} {
     upvar $evar e
     upvar $ftabvar ftab
 
+
     #
     # Vérifier si le script a bien le droit de modifier l'utilisateur
     #
@@ -2102,6 +2656,7 @@ proc ::auth::um-enregistrer-modif {evar ftabvar login} {
     #
     # Récupérer les informations pré-existantes dans la base
     #
+    set u(groupes) {}
     set nouveau [expr ! [::auth::getuser $login u]]
 
     if {! [::auth::transact "begin" m]} then {
@@ -2153,6 +2708,7 @@ proc ::auth::um-enregistrer-modif {evar ftabvar login} {
 	    # déjà
 	    #
 	    set trouve 0
+	    if 
 	    foreach g $u(groupes) {
 		if {[string equal $g $e(groupes)]} then {
 		    set trouve 1
@@ -2460,8 +3016,9 @@ proc ::auth::um-enregistrer-passwd {evar ftabvar login} {
 	}
 	Générer {
 	    set mail [list "mail" $e(mailfrom) $e(mailreplyto) \
-					$e(mailcc) $e(mailbcc) \
-					$e(mailsubject) $e(mailbody)]
+				$e(mailcc) $e(mailbcc) \
+				[encoding convertto iso8859-1 $e(mailsubject)] \
+				[encoding convertto iso8859-1 $e(mailbody)]]
 	    set msg [::auth::chpw $login {generate} $mail newpw]
 	    set res "de génération de mot de passe ($newpw) pour '$hlogin'"
 	    set comp "Le mot de passe a été envoyé par mél."
