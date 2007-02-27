@@ -1,0 +1,566 @@
+'\" 
+'\" Copyright (c) 2002 by Pierre David <Pierre.David@crc.u-strasbg.fr>
+'\" All rights reserved.
+'\" 
+'\" The definitions below are for supplemental macros used in Tcl/Tk
+'\" manual entries.
+'\"
+'\" .AP type name in/out ?indent?
+'\"	Start paragraph describing an argument to a library procedure.
+'\"	type is type of argument (int, etc.), in/out is either "in", "out",
+'\"	or "in/out" to describe whether procedure reads or modifies arg,
+'\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+'\"	needed;  use .AS below instead)
+'\"
+'\" .AS ?type? ?name?
+'\"	Give maximum sizes of arguments for setting tab stops.  Type and
+'\"	name are examples of largest possible arguments that will be passed
+'\"	to .AP later.  If args are omitted, default tab stops are used.
+'\"
+'\" .BS
+'\"	Start box enclosure.  From here until next .BE, everything will be
+'\"	enclosed in one large box.
+'\"
+'\" .BE
+'\"	End of box enclosure.
+'\"
+'\" .CS
+'\"	Begin code excerpt.
+'\"
+'\" .CE
+'\"	End code excerpt.
+'\"
+'\" .VS ?version? ?br?
+'\"	Begin vertical sidebar, for use in marking newly-changed parts
+'\"	of man pages.  The first argument is ignored and used for recording
+'\"	the version when the .VS was added, so that the sidebars can be
+'\"	found and removed when they reach a certain age.  If another argument
+'\"	is present, then a line break is forced before starting the sidebar.
+'\"
+'\" .VE
+'\"	End of vertical sidebar.
+'\"
+'\" .DS
+'\"	Begin an indented unfilled display.
+'\"
+'\" .DE
+'\"	End of indented unfilled display.
+'\"
+'\" .SO
+'\"	Start of list of standard options for a Tk widget.  The
+'\"	options follow on successive lines, in four columns separated
+'\"	by tabs.
+'\"
+'\" .SE
+'\"	End of list of standard options for a Tk widget.
+'\"
+'\" .OP cmdName dbName dbClass
+'\"	Start of description of a specific option.  cmdName gives the
+'\"	option's name as specified in the class command, dbName gives
+'\"	the option's name in the option database, and dbClass gives
+'\"	the option's class in the option database.
+'\"
+'\" .UL arg1 arg2
+'\"	Print arg1 underlined, then print arg2 normally.
+'\"
+'\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+'\"	# Start an argument description
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ta \\n()Au \\n()Bu
+.ie !"\\$3"" \{\
+\&\\$1	\\fI\\$2\\fP	(\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+'\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+.AS Tcl_Interp Tcl_CreateInterp in/out
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\"	# VS - start vertical sidebar
+'\"	# ^Y = starting y location
+'\"	# ^v = 1 (for troff;  for nroff this doesn't matter)
+.de VS
+.if !"\\$2"" .br
+.mk ^Y
+.ie n 'mc \s12\(br\s0
+.el .nr ^v 1u
+..
+'\"	# VE - end of vertical sidebar
+.de VE
+.ie n 'mc
+.el \{\
+.ev 2
+.nf
+.ti 0
+.mk ^t
+\h'|\\n(^lu+3n'\L'|\\n(^Yu-1v\(bv'\v'\\n(^tu+1v-\\n(^Yu'\h'-|\\n(^lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.nr ^v 0
+..
+'\"	# Special macro to handle page bottom:  finish off current
+'\"	# box/sidebar if in box/sidebar mode, then invoked standard
+'\"	# page bottom macro.
+.de ^B
+.ev 2
+'ti 0
+'nf
+.mk ^t
+.if \\n(^b \{\
+.\"	Draw three-sided box if this is the box's first page,
+.\"	draw two sides but no top otherwise.
+.ie !\\n(^b-1 \h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.el \h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.\}
+.if \\n(^v \{\
+.nr ^x \\n(^tu+1v-\\n(^Yu
+\kx\h'-\\nxu'\h'|\\n(^lu+3n'\ky\L'-\\n(^xu'\v'\\n(^xu'\h'|0u'\c
+.\}
+.bp
+'fi
+.ev
+.if \\n(^b \{\
+.mk ^y
+.nr ^b 2
+.\}
+.if \\n(^v \{\
+.mk ^Y
+.\}
+..
+'\"	# DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+'\"	# DE - end display
+.de DE
+.fi
+.RE
+.sp
+..
+'\"	# SO - start of list of standard options
+.de SO
+.SH "STANDARD OPTIONS"
+.LP
+.nf
+.ta 4c 8c 12c
+.ft B
+..
+'\"	# SE - end of list of standard options
+.de SE
+.fi
+.ft R
+.LP
+See the \\fBoptions\\fR manual entry for details on the standard options.
+..
+'\"	# OP - start of full description for a single option
+.de OP
+.LP
+.nf
+.ta 4c
+Command-Line Name:	\\fB\\$1\\fR
+Database Name:	\\fB\\$2\\fR
+Database Class:	\\fB\\$3\\fR
+.fi
+.IP
+..
+'\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+'\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.de UL
+\\$1\l'|0\(ul'\\$2
+..
+.TH webapp n 1.5 Webapp "Web Applications"
+.BS
+'\" Note: do not modify the .SH NAME line immediately below!
+.SH NAME
+::webapp \- Procedures to help web application programming
+.SH SYNOPSIS
+\fBpackage require Tcl 8\fR
+.sp
+\fBpackage require webapp ?1.5?\fR
+.sp
+\fB::webapp::debug\fR \fIlist\fR
+.sp
+\fB::webapp::cgidebug\fR
+.sp
+\fB::webapp::log\fR \fIfile\fR \fImessage\fR
+.sp
+\fB::webapp::nologin\fR \fItestfile\fR \fIlusers\fR \fIerrfile\fR
+.sp
+\fB::webapp::pathinfo\fR
+.sp
+\fB::webapp::script-name\fR
+.sp
+\fB::webapp::user\fR
+.sp
+\fB::webapp::get-data\fR \fIarray\fR \fIspec\fR
+.sp
+\fB::webapp::import-vars\fR \fIarray\fR
+.sp
+\fB::webapp::call-cgi\fR \fIscript\fR \fIarray
+.sp
+\fB::webapp::send-cookie\fR (not yet implemented)
+.sp
+\fB::webapp::ask-cookie\fR (not yet implemented)
+.sp
+\fB::webapp::form-field\fR \fIspec\fR \fIvar\fR \fIval\fR
+.sp
+\fB::webapp::form-yesno\fR \fIvar\fR \fIdefval\fR \fIfmt\fR
+.sp
+\fB::webapp::form-bool\fR \fIvar\fR \fIdefval\fR
+.sp
+\fB::webapp::form-menu\fR \fIvar\fR \fIsize\fR \fImultiple\fR \fIlist\fR \fIlsel\fR
+.sp
+\fB::webapp::form-text\fR \fIvar\fR \fIheight\fR \fIwidth\fR \fImax\fR \fIvalue\fR
+.sp
+\fB::webapp::hide-parameters\fR \fIfields\fR \fIarray\fR
+.sp
+\fB::webapp::post-string\fR \fIstring\fR
+.sp
+\fB::webapp::html-string\fR \fIstring\fR
+.sp
+\fB::webapp::random\fR
+.sp
+\fB::webapp::file-subst\fR \fIfile\fR \fIpatterns\fR
+.sp
+\fB::webapp::send\fR \fItype\fR \fIcontent\fR
+.sp
+\fB::webapp::error-exit\fR \fIfile\fR \fImessage\fR
+.sp
+\fB::webapp::cgi-exec\fR \fIscript\fR \fI?debug?\fR
+.BE
+.SH DESCRIPTION
+.PP
+This package provides procedures to help web application programming.
+.TP
+\fB::webapp::debug\fR \fIlist\fR
+Set the debug characteristics. This is a list, which may contains
+the values \fBlatexfiles\fR (to leave latex files when generating
+a PDF output with \fB::webapp::send\fR) and \fBlatexsource\fR (do
+not generate the PDF file, but display latex source file instead).
+The empty list disables any debug activity.
+.TP
+\fB::webapp::cgidebug\fR
+This procedure prints the environment and exits. Used to verify
+form values and other variables at low level.
+.TP
+\fB::webapp::log\fR \fIfile\fR \fImessage\fR
+Appends a message in a file. The \fIfile\fR parameter must contain
+the name of a file writable by the owner of the CGI process (most
+often \fBnobody\fR), and the \fImessage\fR is printed without any
+modification.
+.TP
+\fB::webapp::nologin\fR \fItestfile\fR \fIlusers\fR \fIerrfile\fR
+Suspends access to the application if the file \fItestfile\fR exists,
+extracts the message stored in this file, returns the contents
+of the \fIerrfile\fR (which must be an existing HTML file) with the
+%MESSAGE% replaced by the actual message, and exits. If the
+authenticated user matches one of the users in the \fIlusers\fR,
+the test is bypassed and access is given to the application.
+.TP
+\fB::webapp::pathinfo\fR
+Returns the contents of the PATH_INFO environment variable,
+which holds the local part of the URL of the current CGI script.
+.TP
+\fB::webapp::script-name\fR
+Returns the contents of the SCRIPT_NAME environment variable,
+which holds the name of the current CGI script.
+.TP
+\fB::webapp::user\fR
+Returns the contents of the REMOTE_USER environment variable, which
+holds the login name used for HTTP server authentication. If no
+authentication is needed, this function returns an empty string.
+.TP
+\fB::webapp::get-data\fR \fIarray\fR \fIspec\fR
+Explores CGI parameters given to this script, either as FORM input
+or as URL parameter and, for specified parameters, checks their
+validity and returns their names. This procedure may be called more
+than once, for example if the application must read one CGI parameter
+in order to decide which other parameters it needs.
+.RS
+.PP
+The \fIarray\fR parameter must be the name of an array, which will be
+filled by this procedure with all CGI parameters found. Parameter names
+are used as indices in this array.
+.PP
+The \fIspec\fR list specifies which CGI parameters are to be checked.
+It is a list whose format is: \fB{ name min max def }\fR:
+.RS
+.TP
+\fIname\fR
+Regular expression matching the name of the parameter.
+.TP
+\fImin\fR
+Minimum number of occurrences of this parameter.
+.TP
+\fImax\fR
+Maximum number of occurrences of this parameter.
+.TP
+\fIdefval\fR
+Default value if no valid occurrence is found
+.RE
+.PP
+This procedure returns the list of matched parameters. If an error
+is found, an empty list is returned and the \fBarray(_error)\fR
+cell is set to the error message.
+.RE
+.TP
+\fB::webapp::import-vars\fR \fIarray\fR
+Update variables, in current procedure context, from the \fIarray\fR
+parameter (most often the result of a \fBget-data\fR call). For
+each cell in \fIarray\fR argument, a variable with that name is
+created in current context.
+.RS
+.PP
+Example:
+.CS
+set spec {
+    model    1 1
+    qty      0 1
+}
+set f [::webapp::get-data ftab $spec]
+if {[llength $f] > 0} then {
+    ::webapp::import-vars ftab
+    set command "Command of [lindex $model 0]"
+    if {[string equal $qty ""]} then {
+	set qty 1
+    } else {
+	set qty [lindex $qty 0]
+    }
+    set price [expr $amount * $qty]
+}
+.CE
+.RE
+.TP
+\fB::webapp::call-cgi\fR \fIscript\fR \fIarray
+This functions calls the \fIscript\fR using the CGI protocol. The
+\fIarray\fR contains the parameters, in the same form as they would be
+returned from the \fB::webapp::get-data\fR procedure. The return value
+is the standard output of the called script.
+.TP
+\fB::webapp::send-cookie\fR
+Not yet implemented.
+.TP
+\fB::webapp::ask-cookie\fR
+Not yet implemented.
+.TP
+\fB::webapp::form-field\fR \fIspec\fR \fIvar\fR \fIval\fR
+Returns a valid HTML code for a dialog, based on the \fIspec\fR
+value:
+.RS
+.TP
+\fBstring\fR ?\fIwidth\fR ?\fImaxwidth\fR??
+STILL TO WRITE
+.TP
+\fBtext\fR ?\fIheight\fR ?\fIwidth\fR??
+STILL TO WRITE
+.TP
+\fBmenu\fR \fIitem\fR ... \fIitem\fR
+STILL TO WRITE
+.TP
+\fBlist\fR \fImono\fR \fIitem\fR ... \fIitem\fR
+STILL TO WRITE
+.TP
+\fBpassword\fR
+STILL TO WRITE
+.TP
+\fBbool\fR
+STILL TO WRITE
+.RE
+.TP
+\fB::webapp::form-yesno\fR \fIvar\fR \fIdefval\fR \fIfmt\fR
+Returns a valid HTML code for a ``yes/no'' dialog, based on a
+\fBradio\fR HTML input type. The \fIvar\fR parameter holds the name
+of the CGI parameter which will be transmitted to the next script.
+The \fIdefval\fR parameter is the default value (0 or different
+from 0). Last, the \fIfmt\fR parameter is a format(n) string which
+contains the two values \fB%1$s\fR and \fB%2$s\fR which will be
+replaced by the \fIyes\fR and the \fIno\fR codes respectively.
+.RS
+.PP
+Example:
+.CS
+set html [::webapp::form-yesno confirm 0 "Delete: %1$s Yes / %2$s No"]
+.CE
+.RE
+.TP
+\fB::webapp::form-bool\fR \fIvar\fR \fIdefval\fR
+Returns a valid HTML code for a ``boolean'' dialog, based on a
+\fBcheckbox\fR HTML input type. The \fIvar\fR parameter holds the name
+of the CGI parameter which will be transmitted to the next script.
+The \fIdefval\fR parameter is the default value (0 or different
+from 0).
+.RS
+.PP
+Example:
+.CS
+set html [::webapp::form-bool mailack 0]
+.CE
+.RE
+.TP
+\fB::webapp::form-menu\fR \fIvar\fR \fIsize\fR \fImultiple\fR \fIlist\fR \fIlsel\fR
+Returns a valid HTML code for a menu or a listbox dialog, based on
+the \fBselect\fR HTML keyword. The \fIvar\fR parameter holds the name of
+the CGI parameter which will be transmitted to the next script.
+The \fIsize\fR parameter is the size of the listbox, or 1 for a
+simple menu. The \fImultiple\fR parameter is 1 if multiple choice
+is authorized, or 0 if only one choice is permitted. The \fIlist\fR
+parameter is a list of couples, each couple contains the value to
+return and the value to display. Last, the \fIlsel\fR list contains
+the indices (in the \fIlist\fR parameter) of the pre-selected values
+if any.
+.RS
+.PP
+Example:
+.CS
+set list {{1 Black} {2 Red} {3 Green} {4 Blue} {5 White}}
+set lsel {0 4}
+set html [::webapp::form-menu color 3 1 $list $lsel]
+.CE
+This example returns a listbox of 5 elements, where only 3 are
+displayed. The first and the last are pre-selected.
+.RE
+.TP
+\fB::webapp::form-text\fR \fIvar\fR \fIheight\fR \fIwidth\fR \fImax\fR \fIvalue\fR
+Returns a valid HTML code for a text input dialog, based on the
+input or textarea HTML keywords. The \fIvar\fR parameter holds the
+name of the CGI parameter which will be transmitted to the next
+script. The \fIheight\fR and \fIwidth\fR parameters give the dimension
+of the input box. The \fImax\fR parameter is the maximum length of the
+text, when \fIheight\fR=1. The \fIvalue\fR parameter is the initial
+value.
+.TP
+\fB::webapp::hide-parameters\fR \fIfields\fR \fIarray\fR
+Returns a valid HTML fragment containing hidden values to be transmitted
+to the next CGI script without being displayed. The \fIarray\fR
+parameter is the name of the array which holds CGI parameters, such
+as returned by the \fBget-data\fR procedure. The \fIfields\fR parameter
+is a list of names which must be hidden.
+.TP
+\fB::webapp::post-string\fR \fIstring\fR
+Converts a string such as it is suitable for insertion in an URL.
+Special characters are converted into %xx where \fIxx\fR is the
+hexadecimal code.
+.TP
+\fB::webapp::html-string\fR \fIstring\fR
+Converts a string such as it is suitable for insertion in an HTML code.
+Special characters are converted into their HTML counterparts (for
+example, \fB&\fR is converted into \fB&amp;\fR).
+.TP
+\fB::webapp::random\fR
+Returns a pseudo-random 20 characters string. The random is based
+on the number of clock clicks (see \fBclock(n)\fR), the process-id,
+and the date.
+.TP
+\fB::webapp::file-subst\fR \fIfile\fR \fIpatterns\fR
+Returns the contents of a file after some substitutions. The \fIfile\fR
+parameter is the name of an existing file. The \fIpatterns\fR is a list
+of substitutions, each substitution is a 2-elements list: a pattern and
+a substitution value. These two items are used with \fBregsub(n)\fR.
+.RS
+.PP
+Example:
+.CS
+set patterns [list [list %NVAL% 5] [list %VALS% $vals]]
+set html [::webapp::file-subst lib/example.html $patterns]
+.CE
+This example returns the contents of the file \fIlib/example.html\fR
+after substituing the string \fI%NVAL%\fR by 5 and the string
+\fI%VALS%\fR by the contents of the \fI$vals\fR variable.
+.RE
+.TP
+\fB::webapp::send\fR \fItype\fR \fIcontent\fR
+Returns on the standard output (where the HTTP servers expects it)
+the results of the CGI script. The \fItype\fR parameter is \fBhtml\fR,
+\fBpng\fR, \fBgif\fR, \fBpng\fR or \fBpdf\fR. The \fIcontent\fR
+parameter hold the page to be displayed.
+.RS
+.PP
+If the \fItype\fR is \fBpdf\fR, the \fIcontent\fR is supposed to be a
+latex document, which is stored in a file and compiled with
+\fBpdflatex\fR.
+.RE
+.TP
+\fB::webapp::error-exit\fR \fIfile\fR \fImessage\fR
+Returns the contents of a file after the substitution of the string
+\fB%MESSAGE%\fR by the contents of the parameter \fImessage\fR, then
+exit the script.
+.TP
+\fB::webapp::cgi-exec\fR \fIscript\fR \fI?debug?\fR
+Call the specified \fIscript\fR. If execution fails, send to the
+standard output an HTML formatted page explaining that an error
+was encountered (if \fIdebug\fR parameter is not specified
+or specified with a null value), or explaining what the error was
+(if \fIdebug\fR parameter value is different from 0).
+This procedure never returns.
+.SH "SEE ALSO"
+arrgen(n)
+.SH AUTHOR
+Pierre David (Pierre.David@crc.u-strasbg.fr)
