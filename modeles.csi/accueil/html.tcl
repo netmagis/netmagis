@@ -1,4 +1,6 @@
 #
+# $Id: html.tcl,v 1.2 2007-03-13 21:08:05 pda Exp $
+#
 # Modèle "page d'accueil"
 #
 # Historique

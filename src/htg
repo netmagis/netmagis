@@ -1,6 +1,8 @@
 #!/local/services/www/htg/src/htgtcl
 
 #
+# $Id: htg,v 1.2 2007-03-13 21:08:19 pda Exp $
+#
 # HTG : HTml (and other languages) Generator
 #
 # Usage :

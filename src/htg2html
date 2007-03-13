@@ -1,6 +1,8 @@
 #!/bin/sh
 
 #
+# $Id: htg2html,v 1.2 2007-03-13 21:08:19 pda Exp $
+#
 # htg2html
 #
 # But : convertit toute une arborescence HTG en une arborescence HTML

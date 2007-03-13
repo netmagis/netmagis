@@ -1,3 +1,5 @@
+# $Id: bandeau.tcl,v 1.2 2007-03-13 21:08:06 pda Exp $
+
 proc xxx_elementtableau {bgcoul titre texte} {
     #
     # mettre le titre s'il y a besoin

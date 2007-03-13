@@ -1,4 +1,6 @@
 #
+# $Id: macros.txt,v 1.2 2007-03-13 21:07:44 pda Exp $
+#
 # Modèle "transp" (transparents)
 #
 # Historique

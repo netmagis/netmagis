@@ -1,4 +1,6 @@
 #
+# $Id: latex.tcl,v 1.2 2007-03-13 21:08:09 pda Exp $
+#
 # Modèle "texte"
 #
 # Historique

@@ -1,4 +1,6 @@
 #
+# $Id: html.tcl,v 1.2 2007-03-13 21:08:04 pda Exp $
+#
 # Modèle "transp" (transparents)
 #
 # Historique

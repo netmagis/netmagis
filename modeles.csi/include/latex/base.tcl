@@ -1,4 +1,6 @@
 #
+# $Id: base.tcl,v 1.2 2007-03-13 21:08:07 pda Exp $
+#
 # Modèle HTG de base pour la génération de pages LaTeX
 # Doit être inclus en premier par le modèle
 # Peut être complété par des procédures issues du modèle spécifique
