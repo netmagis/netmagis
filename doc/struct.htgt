@@ -1,0 +1,171 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {27/07/1999}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    UVSQ - HTG : HTML Generator
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    CENTRE DE SERVICES INFORMATIQUES
+    DE L'UNIVERSITE DE VERSAILLES
+    SAINT-QUENTIN
+}
+
+
+\*******************************************************************************
+\bandeau {
+	HTG
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {CSI} {/}}
+	    \reference {\lien {Mise à jour} {/applis/majweb/}}
+	}
+	\elementbandeau {HTG} {
+	    \reference {\lien {Présentation}	{index.html}}
+	    \reference {\lien {Structure}	{struct.html}}
+	    \reference {\lien {Directives}	{comm.html}}
+	    \reference {\lien {Modèles}		{modeles.html}}
+	    \reference {\lien {Bandeau}		{bandeau.html}}
+	    \reference {\lien {Doc interne}	{interne.html}}
+	}
+	\elementbandeau {En bref} {
+	    \reference {\lien {Source}	{#source}}
+	    \reference {\lien {Modèles}	{#modeles}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {HTG - Structure des pages}
+
+    \titre {2} {\ancre {source} {Source}}
+
+    Le <<~source~>> d'une page Web à générer par HTG est
+    constitué d'un fichier suffixé par <<~.htgt~>> (HTG~text).
+    Un tel fichier possède la structure suivante~:
+
+    \verbatim {
+    \{
+	\\modele \{texte\}
+	~
+	\\* un beau commentaire
+	~
+	\\set \{auteur\} \{pda\}
+	\\set \{date\} \{06/07/1998\}
+	\\partie \{banniere\} \{
+	    un texte placé dans la barre de titre de la fenêtre
+	\}
+	~
+	etc...
+	~
+	\\partie \{texte\} \{
+	    \\titre \{1\} \{Un zoli titre\}
+	    ~
+	    Et un exemple de texte avec du \\gras \{texte en gras\}
+	    et une liste à puces~~:
+	    ~
+	    \\liste \{
+		\\item \{et voilà la première puce...\}
+		\\item \{... bientôt suivie d'une deuxième~~!\}
+	    \}
+	\}
+    \}
+    }
+
+    Quelques remarques~:
+
+    \liste {
+	\item {
+	    le texte est enrichi de \italique {directives},
+	    composées d'un caractère <<~\\~>>, puis d'un mot-clef
+	    (italique, gras, titre, etc.). Une directive peut avoir
+	    des arguments (\\gras, par exemple, attend un argument,
+	    le texte à mettre en gras) placés entre accolades~;
+	}
+	\item {
+	    le caractère <<~\\~>> est spécial, comme les accolades
+	    ou encore d'autres caractères~; pour les afficher,
+	    il faut placer un <<~\\~>> devant le caractère spécial~: par
+	    exemple, pour afficher <<~\\~>>, il faudra saisir <<~\\\\~>>~;
+	}
+	\item {
+	    une ligne vide dans le texte est vue comme un séparateur
+	    de paragraphe~;
+	}
+	\item {
+	    l'espace insécable est représenté par un tilde (~~), ce qui
+	    est par exemple nécessaire avant les signes de ponctuation
+	    doubles (deux-points, point-virgule, points d'exclamation et
+	    d'interrogation) en typographie française~;
+	}
+	\item {
+	    les guillemets français sont représentés par &lt;&lt; et
+	    &gt;&gt; (attention à l'espace insécable après~<< et
+	    avant~>>~;
+	}
+	\item {
+	    il est possible (mais pas conseillé)
+	    d'ajouter du code HTML brut dans le texte~;
+	}
+	\item {
+	    du fait que les signes \lt et \gt sont utilisés pour
+	    ajouter du code HTML brut, il faut spécifier <<~\\lt~>>
+	    pour représenter \lt et <<~\\gt~>> pour représenter
+	    \gt~;
+	}
+    }
+
+    Avec ces quelques règles de base, il est possible de commencer
+    à rédiger très vite des pages.
+
+
+    \titre {2} {\ancre {modeles} {Modèles}}
+
+    Toute la mise en forme est concentrée dans les <<~modèles~>>
+    de HTG. Ceux-ci sont constitués de~:
+
+    \liste {
+	\item {un fond de page HTML <<~avec des trous~>>}
+	\item {un ensemble de procédures implémentant les directives,
+	    permettant ainsi des mises en forme sophistiquées, comme
+	    le jeu de couleurs dans les titres des pages par exemple}
+    }
+
+    Normalement, les modèles du serveur Web du CSI sont fixés. Toutefois,
+    si vous avez une mise en page qui se répète sur plusieurs pages, et
+    que vous aimeriez bien la simplifier par mise en commun dans un
+    modèle, contactez-moi.
+
+
+    Le serveur Web du CSI comprend les modèles ci-après~:
+
+    \liste {
+	\item {\gras {accueil} : les pages d'accueil
+	    (\lien {exemple} {/}),
+	    c'est-à-dire les pages donnant des listes de liens
+	    regroupés par thèmes
+	}
+	\item {\gras {texte} : une page de texte
+	    (\lien {exemple} {/presentation/}),
+	    c'est-à-dire la plupart des pages de ce serveur
+	}
+	\item {\gras {personne} : une page de présentation d'une personne
+	    (\lien {exemple} {/personnes/pda/}),
+	    c'est-à-dire un texte avec une structure simple et figée
+	}
+    }
+
+    En théorie, du fait que les directives sont associées à un modèle,
+    chaque modèle peut fournir son propre jeu de directives. En pratique,
+    j'ai essayé de définir le même jeu de directives pour tous les modèles.
+    Dans le cas contraire, c'est clairement spécifié dans la liste
+    des directives.
+}
+
+}

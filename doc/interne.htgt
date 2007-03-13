@@ -1,0 +1,209 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {27/07/1999}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    UVSQ - HTG : HTML Generator
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    CENTRE DE SERVICES INFORMATIQUES
+    DE L'UNIVERSITE DE VERSAILLES
+    SAINT-QUENTIN
+}
+
+
+\*******************************************************************************
+\bandeau {
+	HTG
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {CSI} {/}}
+	    \reference {\lien {Mise à jour} {/applis/majweb/}}
+	}
+	\elementbandeau {HTG} {
+	    \reference {\lien {Présentation}	{index.html}}
+	    \reference {\lien {Structure}	{struct.html}}
+	    \reference {\lien {Directives}	{comm.html}}
+	    \reference {\lien {Modèles}		{modeles.html}}
+	    \reference {\lien {Bandeau}		{bandeau.html}}
+	    \reference {\lien {Doc interne}	{interne.html}}
+	}
+	\elementbandeau {En bref} {
+	    \reference {\lien {Introduction}	{#intro}}
+	    \reference {\lien {L'outil htg}	{#htg}}
+	    \reference {\lien {L'interprète TCL}	{#htgtcl}}
+	    \reference {\lien {Modèles}		{#modeles}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {HTG - Fonctionnement interne sur HTG}
+
+    \titre {2} {\ancre {intro} {Introduction}}
+
+    HTG a un fonctionnement relativement simple. Pour les férus
+    de techniques de compilation, il s'agit d'un analyseur
+    syntaxique en descente récursive.
+
+    En termes compréhensibles, l'analyseur en C suit l'algorithme
+    suivant~:
+
+    \liste {
+	\item {lorsqu'un caractère simple est rencontré, il est
+	    simplement retourné~;
+	}
+
+	\item {lorsqu'un caractère <<~\{~>> est rencontré, tous
+	    les caractères qui suivent jusqu'au <<~\}~>> correspondant
+	    sont retournés~;
+	}
+
+	\item {lorsqu'un caractère <<~\\~>> est rencontré, on
+	    explore la suite de caractères alphanumériques qui
+	    suivent. Par exemple, pour <<~\\italique~>>, on trouve
+	    la suite <<~italique~>>.
+
+	    Ensuite, l'analyseur construit le nom d'une fonction en
+	    préfixant la suite par <<~htg_~>>. Par exemple,
+	    <<~htg_italique~>>. Cette fonction (écrite en TCL) est
+	    alors appelée.
+
+	    Lorsque cette fonction est appelée, elle désire un
+	    texte à mettre en italiques. Pour l'obtenir, elle
+	    appelle (récursivement) l'analyseur en C pour lire
+	    la suite.
+
+	    La boucle est alors bouclée.
+	}
+    }
+
+    L'analyseur en C est donc le <<~moteur~>> de l'ensemble. Il ne
+    fait finalement que regrouper des caractères et appeler des
+    fonctions.
+
+    C'est dans ces fonctions que réside toute la partie de mise
+    en forme adaptée à un langage (HTML, LaTeX, etc.).
+    Pour les rendre plus facilement
+    adaptables, modifiables, il a été choisi de les programmer en
+    TCL (mais on pourrait tout à fait envisager de les programmer en
+    C si cela présentait le moindre soupçon d'intérêt). Ces fonctions
+    ont été regroupées dans des ensembles appelés <<~modèles~>>. Un
+    modèle n'est rien de plus qu'un jeu de fonctions TCL décrivant
+    une certaine mise en forme. Comme toutefois cela n'est pas
+    suffisant, les modèles incluent généralement un <<~fond~>>,
+    c'est à dire une page HTML, par exemple, avec des <<~trous~>>
+    qui seront remplis par le texte mis en forme.
+
+    \titre {2} {\ancre {htg} {L'outil htg lui-même}}
+
+    L'outil de base est \gras {htg}.
+
+    À rédiger...
+
+
+    \titre {2} {\ancre {htgtcl} {L'interprète TCL lui-même}}
+
+    À rédiger...
+
+    \titre {2} {\ancre {modeles} {Les modèles}}
+
+    L'arborescence HTG contient un répertoire \gras {modeles/}.
+    Il contient les modèles, et est organisé comme suit~:
+
+    \liste {
+	\item {\gras {include/} : fichiers communs à tous les modèles,
+	    ou à un grand nombre de modèles
+	    \liste {
+		\item {\gras {html/}~: fichiers pour la génération HTML
+		    \liste {
+			\item {\gras {base.tcl}~: fonctions TCL
+			    utilisables par tous les modèles
+			}
+			\item {\gras {fond1.html}, \gras {fond2.html}~:
+			    morceaux de pages HTML utilisés par tous
+			    les modèles du CSI
+			}
+			\item {\gras {bandeau.tcl}~: fonctions TCL
+			    du bandeau (vertical à gauche) des
+			    pages Web UVSQ
+			}
+		    }
+		}
+		\item {\gras {latex/}~: fichiers pour la génération LaTeX
+		    (idem html/)
+		}
+	    }
+	}
+	\item {\gras {texte/}, \gras {accueil/}, \gras {personne/}~:
+	    modèles du CSI
+	    \liste {
+		\item {
+		    \gras {html.tcl}~: fonctions TCL définissant
+		    le modèle
+		    <<~texte~>> pour la génération HTML
+		    (inclusion de include/html/base.tcl)
+		}
+		\item {
+		    \gras {latex.tcl}~: idem pour la génération LaTeX
+		    <<~texte~>> (inclusion de include/html/base.tcl)
+		}
+		\item {
+		    \gras {fond.html}~: fond de page
+		    pour la génération HTML
+		    (inclusion de include/html/fond*.html)
+		}
+		\item {
+		    \gras {fond.latex}~: fond de page
+		    pour la génération LaTeX
+		    (inclusion de include/latex/preambule.latex)
+		}
+	    }
+	}
+    }
+
+    Définir un nouveau modèle consiste donc à~:
+
+    \enumeration {
+	\item {créer un répertoire dans \gras {modeles/include/}}
+
+	\item {créer un fichier \gras {html.tcl}~:
+	    \liste {
+		\item {il est vraisemblable que ce fichier devra
+		    inclure include/html/base.tcl pour ne pas avoir
+		    à réécrire toutes les fonctions htg_gras, etc.
+		}
+		\item {définir les fonctions spécifiques au modèle,
+		    ou redéfinir les fonctions (de include/html/base.tcl)
+		    ayant une caractéristique spécifique dans le
+		    modèle. Par exemple, htg_titre est défini par
+		    défaut dans include/html/base.tcl, mais est redéfini
+		    par les modèles du CSI.
+		}
+	    }
+	}
+
+	\item {créer un fichier \gras {fond.html}~·
+	    ce fichier est un fond de page HTML (entouré d'accolades
+	    pour une obscure raison liée au fonctionnement de l'analyseur)
+	    avec des directives \\recuperer~{\italique {partie}}, où
+	    \italique {partie} est définie dans le modèle et utilisée
+	    dans les pages HTG. Cela permet de stocker des textes lors
+	    de la lecture de la page HTG, et de la restituer au bon
+	    endroit lors de la génération HTML à l'aide de ce fichier.
+	}
+
+	\item {créer des fichiers similaires pour chaque langage
+	    de génération que l'on désire supporter
+	}
+
+	\item {tester... ;-)}
+    }
+}
+}

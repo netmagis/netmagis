@@ -1,0 +1,146 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {27/07/1999}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    UVSQ - HTG : HTML Generator
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    CENTRE DE SERVICES INFORMATIQUES
+    DE L'UNIVERSITE DE VERSAILLES
+    SAINT-QUENTIN
+}
+
+
+\*******************************************************************************
+\bandeau {
+	HTG
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {CSI} {/}}
+	    \reference {\lien {Mise à jour} {/applis/majweb/}}
+	}
+	\elementbandeau {HTG} {
+	    \reference {\lien {Présentation}	{index.html}}
+	    \reference {\lien {Structure}	{struct.html}}
+	    \reference {\lien {Directives}	{comm.html}}
+	    \reference {\lien {Modèles}		{modeles.html}}
+	    \reference {\lien {Bandeau}		{bandeau.html}}
+	    \reference {\lien {Doc interne}	{interne.html}}
+	}
+	\elementbandeau {En bref} {
+	    \reference {\lien {Présentation}	{#intro}}
+	    \reference {\lien {Directives}	{#directives}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {HTG - Le bandeau}
+
+    \titre {2} {\ancre {intro} {Présentation}}
+
+    Tous les modèles du CSI utilisent un bandeau vertical
+    contenant généralement deux parties~:
+
+    \liste {
+	\item {<<~Voir aussi~>>~: référence à des pages Web
+	    (externes ou sur le même serveur) traitant de
+	    sujets voisins~;}
+	\item {<<~En bref~>>~: le plan de la page, sous
+	    la forme de liens vers les titres de niveau~2 de
+	    la page.}
+    }
+
+    On peut compléter ces deux parties par d'autres en fonction des
+    besoins. Par exemple, voir les pages de cette documentation~: l'élément
+    <<~HTG~>> a été ajouté.
+
+    Pour réaliser ce bandeau, il faut utiliser la directive \\bandeau.
+    Le premier paramètre est le nom du bandeau, et le deuxième est
+    une suite de \\elementbandeau.
+
+    \titre {2} {\ancre {exemple} {Exemple}}
+
+    Par exemple, ce bandeau est réalisé par~:
+
+    \verbatim {
+    \\bandeau \{
+	HTG
+    \} \{
+	\\elementbandeau \{Voir aussi\} \{
+	    \\reference \{\\lien \{CSI\} \{/\}\}
+	    \\reference \{\\lien \{Mise à jour\} \{/applis/majweb/\}\}
+	\}
+	\\elementbandeau \{HTG\} \{
+	    \\reference \{\\lien \{Présentation\}	\{index.html\}\}
+	    \\reference \{\\lien \{Structure\}	\{struct.html\}\}
+	    \\reference \{\\lien \{Directives\}	\{comm.html\}\}
+	    \\reference \{\\lien \{Modèles\}		\{modeles.html\}\}
+	    \\reference \{\\lien \{Bandeau\}		\{bandeau.html\}\}
+	\}
+	\\elementbandeau \{En bref\} \{
+	    \\reference \{\\lien \{Présentation\}	\{#intro\}\}
+	    \\reference \{\\lien \{Directives\}	\{#directives\}\}
+	\}
+    \}
+    }
+
+    \titre {2} {\ancre {directives} {Directives du bandeau}}
+
+    \titre {3} {\\bandeau \{\italique {titre}\} \{\italique {contenu}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : spécifie le bandeau (la partie gauche de la page)}
+	    \item {nombre d'arguments : 2}
+	    \item {argument 1 : le titre du bandeau (doit être court)}
+	    \item {argument 2 : le contenu du bandeau, sous forme
+		de suite de directives \\elementbandeau}
+	}
+
+    \titre {3} {\\elementbandeau \{\italique {titre}\} \{\italique {contenu}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : un élément du bandeau}
+	    \item {nombre d'arguments : 2}
+	    \item {argument 1 : le titre du bandeau
+		(<<~Voir aussi~>>, <<~En bref~>>, etc.
+	    }
+	    \item {argument 2 : le contenu de l'élément, c'est à dire une
+		suite de directives \\reference
+	    }
+	}
+
+    \titre {3} {\\element \{\italique {espace avant}\} \{\italique {titre}\} \{\italique {contenu}\}}
+
+	\liste {
+	    \item {modèle : \gras {accueil}}
+	    \item {action : spécifie un élément (bloc) du tableau de liens}
+	    \item {nombre d'arguments : 3}
+	    \item {argument 1 : le nombre de lignes à sauter avant le bloc de liens}
+	    \item {argument 2 : le titre du bloc}
+	    \item {argument 3 : le contenu de la colonne (le bloc)}
+	}
+
+    \titre {3} {\\reference \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : une ligne dans le bandeau}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : la ligne de bandeau, qui est traditionnellement
+		un \\lien
+	    }
+	}
+
+}
+
+}

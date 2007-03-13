@@ -1,0 +1,482 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {27/07/1999}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    UVSQ - HTG : HTML Generator
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    CENTRE DE SERVICES INFORMATIQUES
+    DE L'UNIVERSITE DE VERSAILLES
+    SAINT-QUENTIN
+}
+
+
+\*******************************************************************************
+\bandeau {
+	HTG
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {CSI} {/}}
+	    \reference {\lien {Mise à jour} {/applis/majweb/}}
+	}
+	\elementbandeau {HTG} {
+	    \reference {\lien {Présentation}	{index.html}}
+	    \reference {\lien {Structure}	{struct.html}}
+	    \reference {\lien {Directives}	{comm.html}}
+	    \reference {\lien {Modèles}		{modeles.html}}
+	    \reference {\lien {Bandeau}		{bandeau.html}}
+	    \reference {\lien {Doc interne}	{interne.html}}
+	}
+	\elementbandeau {En bref} {
+	    \reference {\lien {Titres}		{#titres}}
+	    \reference {\lien {Caractères}	{#spec}}
+	    \reference {\lien {Mise en forme}	{#forme}}
+	    \reference {\lien {Puces}		{#puces}}
+	    \reference {\lien {Tableaux}	{#tab}}
+	    \reference {\lien {Liens}		{#liens}}
+	    \reference {\lien {Divers}		{#divers}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {HTG - Directives communes à tous les modèles}
+
+    Cette section liste les directives communes à tous les modèles.
+
+    \************************************************************
+    \titre {2} {\ancre {titres} {Titres}}
+
+    \titre {3} {\\titre \{\italique {niveau}\} \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : introduit un titre}
+	    \item {nombre d'arguments : 2}
+	    \item {argument 1 : le niveau du titre (1 pour le titre
+		associé à la page, 2 pour un sous-titre, etc.)}
+	    \item {argument 2 : le texte du titre}
+	    \item {note : le traitement associé à un titre est propre
+		à chaque modèle}
+	}
+
+    \************************************************************
+    \titre {2} {\ancre {spec} {Caractères spéciaux}}
+
+    \titre {3} {\\lt}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place un signe <<~inférieur~>> (\lt)}
+	    \item {nombre d'arguments : 0}
+	}
+
+    \titre {3} {\\gt}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place un signe <<~supérieur~>> (\gt)}
+	    \item {nombre d'arguments : 0}
+	}
+
+    \titre {3} {~~}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place un signe <<~espace insécable~>>}
+	    \item {nombre d'arguments : 0}
+	}
+
+    \titre {3} {\lt\lt}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place un guillemet français ouvrant (<<)}
+	    \item {nombre d'arguments : 0}
+	    \item {note : ne pas oublier d'insérer un espace insécable après~!}
+	}
+
+    \titre {3} {\gt\gt}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place un guillemet français fermant (>>)}
+	    \item {nombre d'arguments : 0}
+	    \item {note : ne pas oublier d'insérer un espace insécable avant~!}
+	}
+
+    \titre {3} {\\br}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : provoque un retour à la ligne}
+	    \item {nombre d'arguments : 0}
+	    \item {note : ne pas confondre avec le séparateur de paragraphes
+		(une ligne vide), \gras {\\br} sert juste à provoquer une
+		rupture de ligne}
+	}
+
+
+    \************************************************************
+    \titre {2} {\ancre {forme} {Directives de mise en forme}}
+
+    \titre {3} {\\gras \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place un texte en gras}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : le texte à mettre en gras}
+	}
+
+    \titre {3} {\\italique \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place un texte en italiques}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : le texte à mettre en italiques}
+	}
+
+    \titre {3} {\\retrait \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place un texte en retrait par rapport au
+		reste du texte}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : le texte à mettre en retrait}
+	}
+
+    \titre {3} {\\souligne \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : souligne un texte}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : le texte à souligner}
+	    \item {note : le soulignement est extrêmement rare en
+		typographie française}
+	}
+
+    \titre {3} {\\teletype \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place un texte en fonte télétype}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : le texte à mettre en fonte télétype}
+	}
+
+    \titre {3} {\\verbatim \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : texte à insérer "brut"}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : le texte à mettre entre des
+		balises &lt;PRE&gt; ... &lt;/PRE&gt;~;
+	    }
+	    \item {note~: le traitement du texte <<~verbatim~>>
+		est à revoir, car de trop nombreux caractères
+		conservent leur fonction spéciale~;
+	    }
+	}
+
+    \************************************************************
+    \titre {2} {\ancre {puces} {Listes à puces}}
+
+    \titre {3} {\\enumeration \{\italique {texte avec des \\item}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : liste énumérée (liste à puces avec des numéros
+		à la place des puces)}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : un texte, chaque paragraphe étant marqué
+		par un \\item}
+	}
+
+    \titre {3} {\\liste \{\italique {texte avec des \\item}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : liste à puces}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : un texte, chaque paragraphe étant marqué
+		par un \\item}
+	}
+
+    \titre {3} {\\item \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : élément d'une liste à puces}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : le texte du paragraphe à mettre dans
+		la liste}
+	}
+
+    \************************************************************
+    \titre {2} {\ancre {tab} {Tableaux}}
+
+    \titre {3} {\\tableau \{\italique {attributs}\} \{\italique {colonnes}\} \{\italique {contenu}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : spécifie un tableau}
+	    \item {nombre d'arguments : 3}
+	    \item {argument 1 : attributs généraux du tableau, qui
+		peuvent être~:
+		\liste {
+		    \item {\\bordure \{\italique {nb-pixels}\} \{\italique {couleur}\}~:
+			nombre de pixels de la bordure (ou 0), et couleur de
+			celle-ci (ou vide)}
+		    \item {\\centragehorizontal \{\italique {centrage}\}~:
+			centrage du tableau dans la page (valeur = 
+			CENTER, LEFT ou RIGHT)}
+		    \item {\\taille \{\italique {pourcent}\}~:
+			taille du tableau en pourcentage de la page}
+		    \item {\\couleurfond \{\italique {couleur}\}~:
+			couleur du fond du tableau}
+		}
+	    }
+	    \item {argument 2 : les spécifications des colonnes
+		du tableau, chacune définie avec \\casedefauttableau
+		(voir cette directive plus loin)}
+	    \item {argument 3 : le contenu du tableau, composé de
+		lignes (voir directive \\lignetableau), chacune
+		composée de cases (voir directives \\casetableau
+		et \\multicasetableau)}
+	}
+
+    \titre {3} {\\casedefauttableau \{\italique {attributs}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : spécifie les attributs d'une colonne du tableau}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : la suite d'attributs de colonnes,
+		qui peuvent être~:
+		\liste {
+		    \item {\\centragehorizontal \{\italique {centrage}\}~:
+			centrage du texte dans la case (valeur = 
+			CENTER, LEFT ou RIGHT)}
+		    \item {\\centragevertical \{\italique {centrage}\}~:
+			centrage du texte dans la case (valeur = 
+			BASELINE, BOTTOM, CENTER ou TOP)}
+		    \item {\\taille \{\italique {pourcent}\}~:
+			taille de la colonne en pourcentage de la largeur
+			du tableau}
+		    \item {\\couleurfond \{\italique {couleur}\}~:
+			couleur du fond des cases de la colonne}
+		}
+	    }
+	}
+
+    \titre {3} {\\lignetableau \{\italique {contenu}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : spécifie une ligne de tableau}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : la suite de directives \\casetableau
+		ou \\multicasetableau
+		pour toutes les cases de la ligne}
+	}
+
+    \titre {3} {\\casetableau \{\italique {attributs}\} \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : spécifie une case de tableau}
+	    \item {nombre d'arguments : 2}
+	    \item {argument 1 : la suite d'attributs particuliers pour
+		cette case, qui supplantent les attributs de colonne. Voir
+		la définition de \\casedefauttableau pour les valeurs
+		possibles d'attributs}
+	    \item {argument 2 : le texte composant la case de tableau}
+	}
+
+    \titre {3} {\\multicasetableau \{\italique {nbcol}\} \{\italique {attributs}\} \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : spécifie une case de tableau s'étendant sur
+		plusieurs colonnes}
+	    \item {nombre d'arguments : 3}
+	    \item {argument 1 : nombre de colonnes sur lesquelles s'étend
+		cette case de tableau}
+	    \item {argument 2 : la suite d'attributs particuliers pour
+		cette case, qui supplantent les attributs de colonne. Voir
+		la définition de \\casedefauttableau pour les valeurs
+		possibles d'attributs}
+	    \item {argument 3 : le texte composant la case de tableau}
+	}
+
+
+
+
+    \gras {Les anciennes directives pour les tableaux sont~:}
+
+    \titre {3} {\\tableau \{\italique {nbcol}\} \{\italique {contenu}\}}
+
+	\liste {
+	    \item {modèle : \gras {accueil}, \gras {texte}}
+	    \item {action : spécifie un tableau}
+	    \item {nombre d'arguments : 2}
+	    \item {argument 1 : le nombre de colonnes dans le tableau}
+	    \item {argument 2 : le contenu du tableau, composé de
+		colonnes (voir directive \\colonne)}
+	    \item {note : le traitement associé dans le modèle <<~accueil~>>
+		est très spécifique, puisque le tableau est le seul
+		élément dans la page. Le contenu du tableau est
+		spécifié avec~:
+		\liste {
+		    \item {modèle accueil~: \\colonne}
+		    \item {modèle texte~: \\lignetableau}
+		}
+	    }
+	}
+
+    \titre {3} {\\lignetableau \{\italique {contenu}\}}
+
+	\liste {
+	    \item {modèle : \gras {texte}}
+	    \item {action : spécifie une ligne de tableau}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : la suite de directives \\colonne
+		pour toutes les cases du tableau}
+	}
+
+    \titre {3} {\\colonne \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : \gras {accueil}, \gras {texte}}
+	    \item {action : spécifie une case de tableau}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : le texte composant la case de tableau}
+	}
+
+
+    \************************************************************
+    \titre {2} {\ancre {liens} {Liens et ancres}}
+
+    \titre {3} {\\ancre \{\italique {ancre}\} \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : spécifie une ancre, c'est-à-dire un
+		pointeur dans un texte, que l'on peut ensuite utiliser
+		dans une URL}
+	    \item {nombre d'arguments : 2}
+	    \item {argument 1 : nom de l'ancre}
+	    \item {argument 2 : texte associé à l'ancre}
+	    \item {exemple : \\ancre \{toto\} \{Ceci est un texte\}
+		(cela permettra plus tard de référencer l'URL via
+		\\lien \{texte\} \{machin.html#toto\}}
+	}
+
+    \titre {3} {\\lien \{\italique {texte}\} \{\italique {url}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : lien HTML}
+	    \item {nombre d'arguments : 2}
+	    \item {argument 1 : le texte du lien}
+	    \item {argument 2 : l'URL du lien}
+	    \item {note : la plupart des URL peuvent être spécifiées
+		de manière relative au répertoire courant, et il ne
+		faut pas s'en priver, afin de rendre ses pages
+		<<~déplaçables~>> dans l'arborescence sans trop de problème}
+	}
+
+    \************************************************************
+    \titre {2} {\ancre {divers} {Divers}}
+
+    \titre {3} {\\image \{\italique {fichier-gif}\} \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place une image}
+	    \item {nombre d'arguments : 2}
+	    \item {argument 1 : le fichier GIF contenant l'image}
+	    \item {argument 2 : un texte alternatif à afficher si
+		on utilise un browser texte, ou si on choisit de ne pas
+		charger les images}
+	    \item {note : dans le futur, il faudra que HTG calcule
+		la taille de l'image afin que netscape, par exemple,
+		affiche la page en cours de chargement}
+	}
+
+    \titre {3} {\\include \{\italique {fichier}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : insère le contenu d'un fichier}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : le fichier à inclure pendant la
+		phase de <<~compilation~>> du fichier html}
+	    \item {note : le fichier est au format .htgt}
+	}
+
+    \titre {3} {\\modele \{\italique {modele}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : spécifie le nom du modèle à
+		utiliser pour cette page}
+	    \item {nombre d'arguments : 1}
+	    \item {argument 1 : nom du modèle}
+	}
+
+    \titre {3} {\\partie \{\italique {nom}\} \{\italique {texte}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : spécifie une nom de partie}
+	    \item {nombre d'arguments : 2}
+	    \item {argument 1 : le nom de la partie}
+	    \item {argument 2 : le texte de la partie}
+	    \item {note : le nom des parties est fixé par le modèle
+		(à chaque partie est associé un type de traitement
+		particulier).
+		Les noms des parties pour les modèles du serveur
+		Web du CSI sont~:
+		\liste {
+		    \item {\gras {banniere} : le titre de la fenêtre}
+		    \item {\gras {titrepage} : le titre de la page}
+		    \item {\gras {texte} : le texte proprement dit}
+		}
+	    }
+	}
+
+    \titre {3} {\\set \{\italique {variable}\} \{\italique {valeur}\}}
+
+	\liste {
+	    \item {modèle : tous}
+	    \item {action : place une valeur dans une variable}
+	    \item {nombre d'arguments : 2}
+	    \item {argument 1 : le nom de la variable}
+	    \item {argument 2 : la valeur de la variable}
+	    \item {note : comme pour les noms des parties,
+		les noms des variables sont fixés~:
+
+		\liste {
+		    \item {\gras {auteur} : l'auteur de la page}
+		    \item {\gras {date} : la date de rédaction ou dernière
+			modification de la page}
+		}
+	    }
+	}
+
+}
+
+}

@@ -1,0 +1,12 @@
+Version 1.1	1999/09/??
+	mise en place de la détection d'erreur
+	ajout de \br pour les sauts de ligne
+
+Version 1.0	1999/07/27
+	nouveaux tableaux
+	plus de "&lt;" et "&gt;" => \lt et \gt
+	mise à jour de la doc
+	début d'une doc interne
+
+Version 0.0	1998/06/29
+	conception initiale
