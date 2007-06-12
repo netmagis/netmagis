@@ -119,6 +119,11 @@ proc match-eq {type_model} {
 	nuage/* {
 	    set attr {shape=ellipse style=filled fillcolor=palegreen width=1.5}
 	}
+	fwroutebridge* {
+	    set attr {shape=Mcircle
+				style=filled fillcolor=tomato
+				height=1}
+	}
 	fwroute* {
 	    set attr {shape=circle
 				style=filled fillcolor=tomato
