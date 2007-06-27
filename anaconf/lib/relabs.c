@@ -1,5 +1,5 @@
 /*
- * $Id: relabs.c,v 1.3 2007-01-10 16:49:53 pda Exp $
+ * $Id: relabs.c,v 1.4 2007-06-27 15:03:35 pda Exp $
  */
 
 #include "graph.h"
@@ -27,6 +27,7 @@ void rel_to_abs (MOBJ *graph [])
     struct vlan *vlantab	= mobj_data (graph [VLANMOBJIDX]) ;
     struct network *nettab	= mobj_data (graph [NETMOBJIDX]) ;
     struct netlist *nlisttab	= mobj_data (graph [NLISTMOBJIDX]) ;
+    struct lvlan *lvlantab	= mobj_data (graph [LVLANMOBJIDX]) ;
     struct rnet *rnettab	= mobj_data (graph [RNETMOBJIDX]) ;
     struct route *routetab	= mobj_data (graph [ROUTEMOBJIDX]) ;
 
@@ -113,11 +114,20 @@ void rel_to_abs (MOBJ *graph [])
 	RELTOABS (nlisttab [i].next, nlisttab) ;
     }
 
+    PROLOGABS (max, graph [LVLANMOBJIDX], lvlantab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	RELTOABS (lvlantab [i].eq, eqtab) ;
+	RELTOABS (lvlantab [i].name, strtab) ;
+	RELTOABS (lvlantab [i].next, lvlantab) ;
+    }
+
     PROLOGABS (max, graph [VLANMOBJIDX], vlantab) ;
     for (i = 0 ; i < max ; i++)
     {
 	RELTOABS (vlantab [i].name, strtab) ;
 	RELTOABS (vlantab [i].netlist, nlisttab) ;
+	RELTOABS (vlantab [i].lvlan, lvlantab) ;
     }
 
     PROLOGABS (max, graph [RNETMOBJIDX], rnettab) ;

@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.2 2007-01-09 10:46:10 pda Exp $
+# $Id: parse-cisco.tcl,v 1.3 2007-06-27 15:03:36 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -11,6 +11,7 @@
 #   2006/09/25 : lauce    : ajout encapsulation-dot1Q pour VPN
 #   2006/09/25 : lauce    : modification cisco-parse-shutdown 
 #   2007/01/06 : pda      : ajout desc interface
+#   2007/06/15 : pda/jean : ajout desc vlan local
 #
 
 ###############################################################################
@@ -298,6 +299,8 @@ proc cisco-parse {debug model fdin fdout tab eq} {
 
 array set cisco_kwtab {
     interface				{CALL cisco-parse-interface}
+    vlan				{CALL cisco-parse-vlan}
+    name				{CALL cisco-parse-vlan-name}
     switchport				NEXT
     switchport-access			NEXT
     switchport-access-vlan		{CALL cisco-parse-access-vlan}
@@ -400,6 +403,86 @@ proc cisco-parse-line {line tab idx} {
     }
 
     return $error
+}
+
+
+#
+# Entrée :
+#   - line = "1,2,5-10,16" ou <autres commandes>
+#   - idx = eq!<eqname>
+# Remplit
+#   - tab(eq!<nom eq>!lvlan) {<id> ... <id>}
+#   - tab(eq!<nom eq>!lvlan!lastid) <id>
+#   - tab(eq!<nom eq>!lvlan!<id>!desc) ""  (sera remplacé par parse-vlan-name)
+#
+# Historique
+#   2007/06/15 : pda/jean : conception
+#
+
+proc cisco-parse-vlan {active line tab idx} {
+    upvar $tab t
+
+    set idx "$idx!lvlan"
+
+    set line [string trim $line]
+    if {[regexp {^[-,0-9]+$} $line]} then {
+	set lvlan [split $line ","]
+	foreach lv $lvlan {
+	    set rg [split $lv "-"]
+	    switch [llength $rg] {
+		1 {
+		    set v [lindex $rg 0]
+		    set min $v
+		    set max $v
+		}
+		2 {
+		    set min [lindex $rg 0]
+		    set max [lindex $rg 1]
+		}
+		default {
+		    cisco-warning "Unrecognized vlan range ($vr) on $ifname"
+		    set error 1
+		    break
+		}
+	    }
+	    for {set v $min} {$v <= $max} {incr v} {
+		lappend t($idx) $v
+		set t($idx!$v!desc) ""
+	    }
+	    set t($idx!lastid) $max
+	}
+    }
+
+    return 0
+}
+
+#
+# Entrée :
+#   - line = <nom de vlan>
+#   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!lvlan!lastid) <id>
+# Remplit
+#   - tab(eq!<nom eq>!lvlan!<id>!desc) <desc>
+#   - tab(eq!<nom eq>!lvlan!lastid) (remis à 0)
+#
+# Historique
+#   2007/06/15 : pda/jean : conception
+#
+
+proc cisco-parse-vlan-name {active line tab idx} {
+    upvar $tab t
+
+    set idx "$idx!lvlan"
+    if {[info exists t($idx!lastid)]} then {
+	set id $t($idx!lastid)
+
+	# traduction en hexa : cf analyser, fct parse-desc
+	binary scan $line H* line
+	set t($idx!$id!desc) $line
+	unset t($idx!lastid)
+    }
+
+    return 0
 }
 
 
@@ -958,6 +1041,7 @@ proc cisco-sanitize {model eq tab} {
 #   2004/06/08 : pda/jean  : changement de format du fichier de sortie
 #   2006/06/01 : pda/jean  : ajout snmp
 #   2006/08/21 : pda/pegon : liens X+X+X+...+X deviennent X
+#   2007/06/15 : pda/jean  : description des vlans locaux
 #
 
 proc cisco-post-process {model fdout eq tab} {
@@ -977,6 +1061,22 @@ proc cisco-post-process {model fdout eq tab} {
 	set c "-"
     }
     puts $fdout "eq $eq type cisco model $model snmp $c"
+
+    #
+    # Sortir tous les vlans locaux
+    #
+
+    if {[info exists t(eq!$eq!lvlan)]} then {
+	foreach id $t(eq!$eq!lvlan) {
+	    set desc $t(eq!$eq!lvlan!$id!desc)
+	    puts -nonewline $fdout "lvlan $eq $id declared yes"
+	    if {[string equal $desc ""]} then {
+		puts $fdout " desc -"
+	    } else {
+		puts $fdout " desc $desc"
+	    }
+	}
+    }
 
     set nodeB [format $fmtnode [incr numnode]]
     puts $fdout "node $nodeB type brpat eq $eq"

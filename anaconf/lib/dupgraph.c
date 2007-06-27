@@ -1,5 +1,5 @@
 /*
- * $Id: dupgraph.c,v 1.4 2007-01-16 09:51:42 pda Exp $
+ * $Id: dupgraph.c,v 1.5 2007-06-27 15:03:35 pda Exp $
  */
 
 #include "graph.h"
@@ -121,6 +121,8 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     int maxnet ;
     struct netlist *newnlisttab ;
     int maxnlist ;
+    struct lvlan *newlvlantab ;
+    int maxlvlan ;
     struct rnet *ornet, *newrnettab ;
     int maxrnet ;
     struct route *newroutetab ;
@@ -279,6 +281,24 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     maxnlist = j ;
 
     /*
+     * Local vlan declarations
+     */
+
+    newlvlantab = mobj_data (new [LVLANMOBJIDX]) ;
+
+    j = 0 ;
+    for (i = 0 ; i < MAXVLAN ; i++)
+    {
+	struct lvlan *nv ;
+
+	for (nv = newvlan [i].lvlan ; nv != NULL ; nv = nv->next)
+	    TRANSNEW (newlvlantab, j, nv) ;
+    }
+    if (j != mobj_count (old [LVLANMOBJIDX]))
+	error (0, "Panic. Wrong number of lvlan mobj") ;
+    maxlvlan = j ;
+
+    /*
      * Routed networks
      */
 
@@ -424,6 +444,17 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     }
 
     /*
+     * Local vlan declarations
+     */
+
+    for (i = 0 ; i < maxlvlan ; i++)
+    {
+	TRANSPTR (newlvlantab [i].eq) ;
+	TRANSPTR (newlvlantab [i].name) ;
+	TRANSPTR (newlvlantab [i].next) ;
+    }
+
+    /*
      * Vlan
      */
 
@@ -431,6 +462,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     {
 	TRANSPTR (newvlan [i].name) ;
 	TRANSPTR (newvlan [i].netlist) ;
+	TRANSPTR (newvlan [i].lvlan) ;
     }
     TRANSHEAD (new [VLANMOBJIDX], old [VLANMOBJIDX]) ;
 

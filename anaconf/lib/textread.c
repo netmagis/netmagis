@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.4 2007-01-16 09:51:42 pda Exp $
+ * $Id: textread.c,v 1.5 2007-06-27 15:03:35 pda Exp $
  */
 
 #include "graph.h"
@@ -211,20 +211,22 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	int  nparam ;			/* number of parameters for this attr */
     } attrtypes [] =
     {
-	{ "type", 1,	},
-	{ "eq", 1,	},
-	{ "name", 1,	},
-	{ "desc", 1,	},
-	{ "link", 1,	},
-	{ "stat", 1,	},
-	{ "encap", 1,	},
-	{ "net", 1,	},
-	{ "vlan", 1,	},
-	{ "allow", 2,	},
-	{ "addr", 1,	},
-	{ "instance", 1,	},
-	{ "model", 1,	},
-	{ "snmp", 1,	},
+	{ "type",	1, },
+	{ "eq",		1, },
+	{ "name",	1, },
+	{ "desc",	1, },
+	{ "link",	1, },
+	{ "stat",	1, },
+	{ "encap",	1, },
+	{ "net",	1, },
+	{ "vlan",	1, },
+	{ "allow",	2, },
+	{ "addr",	1, },
+	{ "instance",	1, },
+	{ "model",	1, },
+	{ "snmp",	1, },
+	{ "incoming",	1, },
+	{ "declared",	1, },
     } ;
 
 
@@ -852,6 +854,100 @@ static void process_vlan (char *tab [], int ntab)
     attr_close (attrtab) ;
 }
 
+static void process_lvlan (char *tab [], int ntab)
+{
+    int vlanid ;
+    char *id, *eqname, *flag ;
+    struct eq *eq ;
+    struct attrtab *attrtab ;			/* head of attribute table */
+    struct attrvallist *av ;
+    static struct attrcheck lvlanattr [] = {
+	{ "desc",     1, 1},
+	{ "incoming", 0, 1},
+	{ "declared", 0, 1},
+	{ NULL, 0, 0}
+    } ;
+    struct vlan *tabvlan ;
+    struct lvlan *lv ;
+
+    if (ntab < 3)
+    {
+	inconsistency ("Lvlan declaration has not enough attributes") ;
+	exit (1) ;
+    }
+
+
+    eqname = tab [1] ;
+    id = tab [2] ;
+    tab += 3 ;
+    ntab -= 3 ;
+
+    /*
+     * Locate proper equipement
+     */
+
+    eq = eq_get (eqname, 0) ;
+
+    /*
+     * Translate vlan id
+     */
+
+    vlanid = 0 ;
+    if (sscanf (id, "%d", &vlanid) != 1 || vlanid  >= MAXVLAN)
+	inconsistency ("Incorrect vlan-id ('%s')", id) ;
+
+    tabvlan = mobj_data (vlanmobj) ;
+
+    /*
+     * Insert lvlan in vlan table
+     */
+
+    lv = mobj_alloc (lvlanmobj, 1) ;
+
+    lv->next = tabvlan [vlanid].lvlan ;
+    tabvlan [vlanid].lvlan = lv ;
+
+    lv->vlanid = vlanid ;
+    lv->eq = eq ;
+    lv->name = NULL ;
+    lv->mark = 0 ;
+
+    /*
+     * Parse all attributes
+     */
+
+    attrtab = attr_init () ;
+    parse_attr (tab, ntab, &attrtab) ;
+
+    if (! check_attr (attrtab, lvlanattr))
+    {
+	inconsistency ("Incorrect lvlan attribute list") ;
+	exit (1) ;
+    }
+
+    av = attr_get_vallist (attrtab, "desc") ;
+    if (av != NULL)
+	lv->name = symtab_to_name (symtab_get (attr_get_val (av))) ;
+
+    av = attr_get_vallist (attrtab, "incoming") ;
+    if (av != NULL)
+    {
+	flag = attr_get_val (av) ;
+	if (strcmp (flag, "yes") == 0)
+	    lv->mark |= LVLAN_INCOMING ;
+    }
+
+    av = attr_get_vallist (attrtab, "declared") ;
+    if (av != NULL)
+    {
+	flag = attr_get_val (av) ;
+	if (strcmp (flag, "yes") == 0)
+	    lv->mark |= LVLAN_DECLARED ;
+    }
+
+    attr_close (attrtab) ;
+}
+
 /******************************************************************************
 The real function of this file
 ******************************************************************************/
@@ -874,6 +970,7 @@ void text_read (FILE *fpin)
     linkmobj  = mobj_init (sizeof (struct link    ), MOBJ_MALLOC) ;
     llistmobj = mobj_init (sizeof (struct linklist), MOBJ_MALLOC) ;
     eqmobj    = mobj_init (sizeof (struct eq      ), MOBJ_MALLOC) ;
+    lvlanmobj = mobj_init (sizeof (struct lvlan),    MOBJ_MALLOC) ;
     netmobj   = mobj_init (sizeof (struct network ), MOBJ_MALLOC) ;
     nlistmobj = mobj_init (sizeof (struct netlist ), MOBJ_MALLOC) ;
     rnetmobj  = mobj_init (sizeof (struct rnet    ), MOBJ_MALLOC) ;
@@ -935,6 +1032,8 @@ void text_read (FILE *fpin)
 		process_rnet (argv, n) ;
 	    else if (strcmp (argv [0], "vlan") == 0)
 		process_vlan (argv, n) ;
+	    else if (strcmp (argv [0], "lvlan") == 0)
+		process_lvlan (argv, n) ;
 	    else
 	    {
 		inconsistency ("Unknown directive '%s'", argv [0]) ;

@@ -1,5 +1,5 @@
 /*
- * $Id: textwrite.c,v 1.5 2007-01-16 09:51:42 pda Exp $
+ * $Id: textwrite.c,v 1.6 2007-06-27 15:03:35 pda Exp $
  */
 
 #include "graph.h"
@@ -204,6 +204,26 @@ static void text_write_vlans (FILE *fp)
     }
 }
 
+static void text_write_lvlans (FILE *fp)
+{
+    vlan_t v ;
+    struct vlan *tab ;
+    struct lvlan *lv ;
+
+    tab = mobj_data (vlanmobj) ;
+    for (v = 0 ; v < MAXVLAN ; v++)
+    {
+	for (lv = tab [v].lvlan ; lv != NULL ; lv = lv->next)
+	{
+	    fprintf (fp, "lvlan %s %d desc %s declared %s incoming %s\n",
+			    lv->eq->name, v,
+			    (lv->name == NULL ? "-" : lv->name),
+			    ((lv->mark & LVLAN_DECLARED) ? "yes" : "no"),
+			    ((lv->mark & LVLAN_INCOMING) ? "yes" : "no")) ;
+	}
+    }
+}
+
 void text_write (FILE *fp)
 {
     text_write_eq (fp) ;
@@ -211,4 +231,5 @@ void text_write (FILE *fp)
     text_write_links (fp) ;
     text_write_rnet (fp) ;
     text_write_vlans (fp) ;
+    text_write_lvlans (fp) ;
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: buildgraph.c,v 1.6 2007-01-11 15:31:23 pda Exp $
+ * $Id: buildgraph.c,v 1.7 2007-06-27 15:03:36 pda Exp $
  */
 
 #include "graph.h"
@@ -122,6 +122,55 @@ void l2graph (void)
 	    else ref [v] = l1 ;
 
 	    transport_vlan_on_L2 (n, v) ;
+	}
+    }
+}
+
+
+/******************************************************************************
+Update active vlans on each equipement
+******************************************************************************/
+
+void update_lvlans (void)
+{
+    struct vlan *tabvlan ;
+    struct node *n ;
+    struct eq *eq ;
+    struct lvlan *lv ;
+    int i ;
+
+    tabvlan = mobj_data (vlanmobj) ;
+
+    for (i = 1 ; i < MAXVLAN ; i++)
+    {
+	for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
+	    eq->mark = 0 ;
+
+	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	    if (n->nodetype == NT_L2 && vlan_isset (n->vlanset, i))
+		n->eq->mark = 1 ;
+
+	for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
+	{
+	    if (eq->mark)
+	    {
+		for (lv = tabvlan [i].lvlan ; lv != NULL ; lv = lv->next)
+		    if (lv->eq == eq)
+			break ;
+
+		if (lv == NULL)
+		{
+		    lv = mobj_alloc (lvlanmobj, 1) ;
+		    lv->next = tabvlan [i].lvlan ;
+		    tabvlan [i].lvlan = lv ;
+		    lv->eq = eq ;
+		    lv->vlanid = i ;
+		    lv->name = NULL ;
+		    lv->mark = 0 ;
+		}
+
+		lv->mark |= LVLAN_INCOMING ;
+	    }
 	}
     }
 }
@@ -274,6 +323,7 @@ int main (int argc, char *argv [])
     l1graph () ;
     check_links () ;
     l2graph () ;
+    update_lvlans () ;
     check_inconsistencies () ;
     remove_l2pat_brpat () ;
     attach_net_to_vlan () ;

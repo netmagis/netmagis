@@ -1,5 +1,5 @@
 /*
- * $Id: absrel.c,v 1.4 2007-01-16 09:51:42 pda Exp $
+ * $Id: absrel.c,v 1.5 2007-06-27 15:03:35 pda Exp $
  */
 
 #include "graph.h"
@@ -30,6 +30,7 @@ void abs_to_rel (MOBJ *graph [])
     struct vlan *vlantab	= mobj_data (graph [VLANMOBJIDX]) ;
     struct network *nettab	= mobj_data (graph [NETMOBJIDX]) ;
     struct netlist *nlisttab	= mobj_data (graph [NLISTMOBJIDX]) ;
+    struct lvlan *lvlantab	= mobj_data (graph [LVLANMOBJIDX]) ;
     struct rnet *rnettab	= mobj_data (graph [RNETMOBJIDX]) ;
     struct route *routetab	= mobj_data (graph [ROUTEMOBJIDX]) ;
 
@@ -116,11 +117,20 @@ void abs_to_rel (MOBJ *graph [])
 	ABSTOREL (nlisttab [i].next, nlisttab) ;
     }
 
+    PROLOGREL (max, graph [LVLANMOBJIDX], lvlantab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	ABSTOREL (lvlantab [i].eq, eqtab) ;
+	ABSTOREL (lvlantab [i].name, strtab) ;
+	ABSTOREL (lvlantab [i].next, lvlantab) ;
+    }
+
     PROLOGREL (max, graph [VLANMOBJIDX], vlantab) ;
     for (i = 0 ; i < max ; i++)
     {
 	ABSTOREL (vlantab [i].name, strtab) ;
 	ABSTOREL (vlantab [i].netlist, nlisttab) ;
+	ABSTOREL (vlantab [i].lvlan, lvlantab) ;
     }
 
     PROLOGREL (max, graph [RNETMOBJIDX], rnettab) ;

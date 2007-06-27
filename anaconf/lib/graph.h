@@ -1,5 +1,5 @@
 /*
- * $Id: graph.h,v 1.6 2007-01-16 09:51:42 pda Exp $
+ * $Id: graph.h,v 1.7 2007-06-27 15:03:35 pda Exp $
  */
 
 /*
@@ -10,6 +10,7 @@
  * History
  *   2004/06/22 : pda/jean : design
  *   2006/05/26 : pda/jean : collect points
+ *   2007/06/15 : pda/jean : local vlan descriptions
  */
 
 /******************************************************************************
@@ -111,10 +112,11 @@ int mobj_write (FILE *fp, MOBJ *d) ;
 #define	LLISTMOBJIDX	5
 #define	EQMOBJIDX	6
 #define	VLANMOBJIDX	7
-#define	NETMOBJIDX	8
-#define	NLISTMOBJIDX	9
-#define	RNETMOBJIDX	10
-#define	ROUTEMOBJIDX	11
+#define	LVLANMOBJIDX	8
+#define	NETMOBJIDX	9
+#define	NLISTMOBJIDX	10
+#define	RNETMOBJIDX	11
+#define	ROUTEMOBJIDX	12
 #define	NB_MOBJ		(ROUTEMOBJIDX+1)
 
 #define	hashmobj	(mobjlist [HASHMOBJIDX])
@@ -125,6 +127,7 @@ int mobj_write (FILE *fp, MOBJ *d) ;
 #define	llistmobj	(mobjlist [LLISTMOBJIDX])
 #define	eqmobj		(mobjlist [EQMOBJIDX])
 #define	vlanmobj	(mobjlist [VLANMOBJIDX])
+#define	lvlanmobj	(mobjlist [LVLANMOBJIDX])
 #define	netmobj		(mobjlist [NETMOBJIDX])
 #define	nlistmobj	(mobjlist [NLISTMOBJIDX])
 #define	rnetmobj	(mobjlist [RNETMOBJIDX])
@@ -406,7 +409,21 @@ struct vlan
     char *name ;
     int mark ;
     struct netlist *netlist ;
+    struct lvlan *lvlan ;		/* local vlan descriptions */
 } ;
+
+/* local vlan descriptions */
+struct lvlan
+{
+    vlan_t vlanid ;
+    struct eq *eq ;
+    char *name ;
+    int mark ;
+    struct lvlan *next ;
+} ;
+
+#define	LVLAN_INCOMING	0x1
+#define	LVLAN_DECLARED	0x2
 
 struct network *net_lookup_n (ip_t *addr), *net_get_n (ip_t *addr) ;
 struct network *net_lookup_p (char *addr), *net_get_p (char *addr) ;
@@ -459,6 +476,7 @@ struct graphhdr
 #define	VERSION1	1
 #define	VERSION2	2
 #define	VERSION3	3
+#define	VERSION4	4		/* lvlan */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;
