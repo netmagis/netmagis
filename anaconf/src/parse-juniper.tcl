@@ -1,5 +1,5 @@
 #
-# $Id: parse-juniper.tcl,v 1.2 2007-01-09 10:46:10 pda Exp $
+# $Id: parse-juniper.tcl,v 1.3 2007-06-29 15:44:14 jean Exp $
 #
 # Package d'analyse de fichiers de configuration JunOS
 #
@@ -465,6 +465,7 @@ proc juniper-parse-if-unit {conf tab idx} {
 	description	{2	juniper-parse-unit-descr}
 	vlan-id		{2	juniper-parse-vlan-id}
 	family		{2	juniper-parse-family}
+	tunnel		{1	NOP}
 	*		{2	ERROR}
     }
 
@@ -600,6 +601,7 @@ proc juniper-parse-if-address {conf tab idx} {
     array set kwtab {
 	vrrp-group	{2	juniper-parse-vrrp}
 	arp		{4	NOP}
+	destination	{2	NOP}
 	*		{2	ERROR}
     }
 
