@@ -1,5 +1,5 @@
 /*
- * $Id: buildgraph.c,v 1.7 2007-06-27 15:03:36 pda Exp $
+ * $Id: buildgraph.c,v 1.8 2007-07-11 13:56:06 pda Exp $
  */
 
 #include "graph.h"
@@ -72,7 +72,9 @@ void l1graph (void)
 	llnext = l->next ;
 
 	if (l->link->node [1] == NULL)
-	    inconsistency ("Link '%s' seen only on one node", l->link->name) ;
+	    inconsistency ("Link '%s' seen only on one node (%s)",
+					l->link->name,
+					l->link->node [0]->eq->name) ;
 	else /* the link has two endpoints */
 	    (void) create_link (l->link->name,
 					l->link->node [0]->name,
