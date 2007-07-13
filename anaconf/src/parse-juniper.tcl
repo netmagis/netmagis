@@ -1,5 +1,5 @@
 #
-# $Id: parse-juniper.tcl,v 1.3 2007-06-29 15:44:14 jean Exp $
+# $Id: parse-juniper.tcl,v 1.4 2007-07-13 08:40:38 pda Exp $
 #
 # Package d'analyse de fichiers de configuration JunOS
 #
@@ -22,7 +22,6 @@
 proc juniper-init {} {
     global juniper_masques
     global juniper_where
-    global juniper_debuglevel
 
     # masques(24) {0xff 0xff 0xff 0x00 0x00 ... 0x00 }
     # masques(25) {0xff 0xff 0xff 0x80 0x00 ... 0x00 }
@@ -45,7 +44,6 @@ proc juniper-init {} {
     }
 
     set juniper_where {}
-    set juniper_debuglevel 0
 }
 
 proc juniper-warning {msg} {
@@ -222,8 +220,7 @@ proc juniper-match-network {adr cidr} {
 #   2004/06/08 : pda/jean : ajout de model
 #
 
-proc juniper-parse {debug model fdin fdout tab eq} {
-    global juniper_debuglevel
+proc juniper-parse {model fdin fdout tab eq} {
     upvar $tab t
 
     array set kwtab {
@@ -240,7 +237,6 @@ proc juniper-parse {debug model fdin fdout tab eq} {
     # le nom de l'équipement en cours d'analyse
     lappend t(eq) $eq
 
-    set juniper_debuglevel $debug
     set error [juniper-parse-list kwtab $conf t "eq!$eq"]
 
     if {! $error} then {
@@ -261,8 +257,7 @@ proc juniper-parse {debug model fdin fdout tab eq} {
 #   - tab : tableau contenant les informations résultant de l'analyse
 #   - conf : extrait de conf
 #   - idx : index dans le tableau tab
-#   - variable globale juniper_debuglevel : si > 0, affiche tous les
-#		mots-clefs en cours d'analyse de profondeur >= niveau demandé
+#   - variable globale debug : affiche tous les mots-clefs en cours d'analyse
 # Sortie :
 #   - valeur de retour : 1 si erreur, 0 sinon
 #
@@ -272,7 +267,7 @@ proc juniper-parse {debug model fdin fdout tab eq} {
 
 proc juniper-parse-list {kwtab conf tab idx} {
     global juniper_where
-    global juniper_debuglevel
+    global debug
     upvar $kwtab k
     upvar $tab t
 
@@ -281,8 +276,7 @@ proc juniper-parse-list {kwtab conf tab idx} {
     while {[llength $conf] > 0} {
 	set kw [lindex $conf 0]
 
-	if {$juniper_debuglevel > 0 &&
-		[llength $juniper_where] >= $juniper_debuglevel} then {
+	if {$debug & 0x01} then {
 	    juniper-debug "kw = <$kw>"
 	}
 
@@ -897,10 +891,16 @@ proc juniper-parse-snmp-community {conf tab idx} {
 #   2006/06/01 : pda/jean : ajout snmp
 #   2006/08/21 : pda/pegon : liens X+X+X+...+X deviennent X
 #   2007/01/06 : pda       : ajout desc interface
+#   2007/07/13 : pda       : ajout sortie tableau si debug
 #
 
 proc juniper-post-process {model fdout eq tab} {
+    global debug
     upvar $tab t
+
+    if {$debug & 0x02} then {
+	parray t
+    }
 
     set fmtnode "$eq:%d"
     set numnode 0

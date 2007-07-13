@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.3 2007-06-27 15:03:36 pda Exp $
+# $Id: parse-cisco.tcl,v 1.4 2007-07-13 08:40:38 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -12,6 +12,8 @@
 #   2006/09/25 : lauce    : modification cisco-parse-shutdown 
 #   2007/01/06 : pda      : ajout desc interface
 #   2007/06/15 : pda/jean : ajout desc vlan local
+#   2007/07/12 : pda      : debut codage ios router
+#   2007/07/13 : pda      : retrait cisco_debug et ajout flag debug en global
 #
 
 ###############################################################################
@@ -21,8 +23,6 @@
 proc cisco-init {} {
     global cisco_masques
     global cisco_rfc1878
-    global cisco_where
-    global cisco_debuglevel
 
     # masques(24) {0xff 0xff 0xff 0x00 0x00 ... 0x00 }
     # masques(25) {0xff 0xff 0xff 0x80 0x00 ... 0x00 }
@@ -79,16 +79,9 @@ proc cisco-init {} {
 	255.255.255.255	32
     }
 
-    set cisco_where {}
-    set cisco_debuglevel 0
 }
 
 proc cisco-warning {msg} {
-    global cisco_where
-
-    if {[llength $cisco_where] > 0} then {
-	puts -nonewline stderr "$cisco_where: "
-    }
     puts stderr "$msg"
 }
 
@@ -272,21 +265,23 @@ proc cisco-match-network {adr cidr} {
 #   - eq = <eqname>
 # Remplit :
 #   - tab(eq)	{<eqname> ... <eqname>}
+#   - tab(eq!ios) "unsure|router|switch"
 #
 # Historique
 #   2004/03/23 : pda/jean : conception
 #   2004/06/08 : pda/jean : ajout de model
+#   2007/07/12 : pda      : ajout de ios
 #
 
-proc cisco-parse {debug model fdin fdout tab eq} {
-    global cisco_debuglevel
+proc cisco-parse {model fdin fdout tab eq} {
     upvar $tab t
 
-    set cisco_debuglevel $debug
     lappend t(eq) $eq
+    set idx "eq!$eq"
+    set t($idx!ios) "unsure"
     while {[gets $fdin line] > -1} {
 	if {! [regexp {^!} $line]} then {
-	    set error [cisco-parse-line $line t "eq!$eq"]
+	    set error [cisco-parse-line $line t $idx]
 	}
     }
 
@@ -320,6 +315,7 @@ array set cisco_kwtab {
     snmp-server-community		{CALL cisco-parse-snmp-community}
     encapsulation			NEXT
     encapsulation-dot1Q			{CALL cisco-parse-encapsulation-dot1q}
+    bridge-group			{CALL cisco-parse-bridge-group}
 }
 
 #
@@ -329,7 +325,7 @@ array set cisco_kwtab {
 #   - line : extrait de conf
 #   - tab : tableau contenant les informations résultant de l'analyse
 #   - idx : index dans le tableau tab
-#   - variable globale cisco_debuglevel : si > 0, affiche les mots-clefs
+#   - variable globale debug : affiche les mots-clefs
 # Sortie :
 #   - valeur de retour : 1 si erreur, 0 sinon
 #
@@ -338,12 +334,11 @@ array set cisco_kwtab {
 #
 
 proc cisco-parse-line {line tab idx} {
+    global debug
     global cisco_kwtab
-    global cisco_where
-    global cisco_debuglevel
     upvar $tab t
 
-    if {$cisco_debuglevel > 2} then {
+    if {$debug & 0x01} then {
 	cisco-debug "$line"
     }
 
@@ -375,7 +370,7 @@ proc cisco-parse-line {line tab idx} {
 	    lappend kwlist $kw
 	    set fullkw [join $kwlist "-"]
 	    if {[info exists cisco_kwtab($fullkw)]} then {
-		if {$cisco_debuglevel > 0} then {
+		if {$debug & 0x01} then {
 		    cisco-debug "match $fullkw ($line) -> $cisco_kwtab($fullkw)"
 		}
 		set action $cisco_kwtab($fullkw)
@@ -488,24 +483,58 @@ proc cisco-parse-vlan-name {active line tab idx} {
 
 #
 # Entrée :
-#   - line = "ATM1/0.1 point-to-point"
+#   - line = "GigaEthernet1/2/6"
+#	ou "ATM1/0.1 point-to-point"
+#	ou "FastEthernet0.128"
 #   - idx = eq!<eqname>
-# Remplit
+# Remplit en cas d'interface physique :
 #   - tab(eq!<nom eq>!if) {<ifname> ... <ifname>}
+#   - tab(eq!<nom eq>!current!physif) <physifname>
+# Remplit en cas de sous-interface :
+#   - tab(eq!<nom eq>!if!<physifname>!subif) { <ifname> ...} (liste des sous-i/f)
+# Remplit dans tous les cas :
 #   - tab(eq!<nom eq>!current!if) <ifname>
 #
 # Historique
 #   2004/03/26 : pda/jean : conception
+#   2007/07/12 : pda      : gestion des sous-interfaces
 #
 
 proc cisco-parse-interface {active line tab idx} {
     upvar $tab t
 
+    set error 0
+
     set ifname [lindex $line 0]
-    lappend t($idx!if) $ifname
+
+    if {[regsub -- {\.[0-9]+$} $ifname {} physifname]} then {
+	#
+	# sous-interface d'une interface physique
+	#
+
+	if {! [string equal $physifname $t($idx!current!physif)]} then {
+	    cisco-warning "Interface '$ifname' is not a sub-interface of '$t(idx!current!physif)'"
+	    set error 1
+	}
+	lappend t($idx!if!$physifname!subif) $ifname
+
+    } else {
+	#
+	# interface physique (ou Tunnel, ou Loopback, ou ...) mais en
+	# en tous cas pas une sous-interface
+	#
+
+	lappend t($idx!if) $ifname
+	set t($idx!current!physif) $ifname
+    }
+
+    #
+    # dans tous les cas
+    #
+
     set t($idx!current!if) $ifname
 
-    return 0
+    return $error
 }
 
 #
@@ -525,6 +554,7 @@ proc cisco-parse-encap {active line tab idx} {
     set ifname $t($idx!current!if)
     return [cisco-set-ifattr t $idx!if!$ifname type "trunk"]
 }
+
 #
 # Entrée :
 #   - line = "<vlan-id>"
@@ -551,37 +581,33 @@ proc cisco-parse-access-vlan {active line tab idx} {
 }
 
 #
-
 #
 # Entrée :
 #   - line = "<vlan-id>"
 #   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!current!if) <ifname>
+#   - tab(eq!<nom eq>!current!physif) <physifname>
 # Remplit
-#
+#   - tab(eq!<nom eq>!if!<ifname>!link!type) ether
+#   - tab(eq!<nom eq>!if!<ifname>!vlans) <vlanid>
 # Historique
 #   2006/09/25 : lauce : conception
+#   2007/07/12 : pda   : généralisation
 #
 
 proc cisco-parse-encapsulation-dot1q {active line tab idx} {
     upvar $tab t
 
     set error 0
-    set l {}
+
+    set vlanid [lindex $line 0]
+
+    # nom de l'interface
     set ifname $t($idx!current!if)
-    regsub -all {\.[0-9]+} $ifname {} ifname
-    
-    if {[info exists t($idx!if!$ifname!link!allowedvlans)]} then {
-            set l $t($idx!if!$ifname!link!allowedvlans)
-    }
 
-    if {! $error} then {
-	 lappend l [list $line $line]
-    }
-
-
-    if {! $error} then {
-        set error [cisco-set-ifattr t $idx!if!$ifname allowed-vlans $l]
-    }
+    set error [expr [cisco-set-ifattr t $idx!if!$ifname type "access"] \
+		|| [cisco-set-ifattr t $idx!if!$ifname vlan $vlanid] \
+		]
 
     return $error
 }
@@ -829,7 +855,8 @@ proc cisco-remove-if {var ifname} {
 #   - idx = eq!<eqname>
 #   - tab(eq!<nom eq>!current!if) <ifname>
 # Remplit :
-#   ?
+#   - tab(eq!<nom eq>!ios) "switch"
+#   - tab(eq!<nom eq>!if!<ifname>!type) access|trunk
 #
 # Historique
 #   2004/03/26 : pda/jean : conception
@@ -837,6 +864,8 @@ proc cisco-remove-if {var ifname} {
 
 proc cisco-parse-mode {active line tab idx} {
     upvar $tab t
+
+    set t($idx!ios) "switch"
 
     set ifname $t($idx!current!if)
     set ty [lindex $line 0]
@@ -878,6 +907,35 @@ proc cisco-parse-snmp-community {active line tab idx} {
 	cisco-warning "Inconsistent SNMP community string ($line)"
 	set error 1
     }
+    return $error
+}
+
+#
+#
+# Entrée :
+#   - line = "<bg-id> [ ... ]"
+#   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!current!if) <ifname>
+# Remplit
+#   - tab(eq!<nom eq>!if!<ifname>!bridge) <bgid>
+#   - tab(eq!<nom eq>!bridge!<bgid>!if) <ifname>
+# Historique
+#   2007/07/12 : pda   : conception
+#
+
+proc cisco-parse-bridge-group {active line tab idx} {
+    upvar $tab t
+
+    set error 0
+
+    # nom de l'interface
+    set ifname $t($idx!current!if)
+
+    if {[regexp {[0-9]+$} $line bgid]} then {
+	set t($idx!if!$ifname!bridge) $bgid
+	lappend t($idx!bridge!$bgid!if) $ifname
+    }
+
     return $error
 }
 
@@ -1042,14 +1100,22 @@ proc cisco-sanitize {model eq tab} {
 #   2006/06/01 : pda/jean  : ajout snmp
 #   2006/08/21 : pda/pegon : liens X+X+X+...+X deviennent X
 #   2007/06/15 : pda/jean  : description des vlans locaux
+#   2007/07/12 : pda       : debut conception sous-interface (ios router)
 #
 
 proc cisco-post-process {model fdout eq tab} {
+    global debug
     upvar $tab t
+
+    if {$debug & 0x02} then {
+	parray t
+    }
 
     if {[cisco-sanitize $model $eq t]} then {
 	return 1
     }
+
+    set ios $t(eq!$eq!ios)
 
     set fmtnode "$eq:%d"
     set numnode 0
@@ -1078,20 +1144,17 @@ proc cisco-post-process {model fdout eq tab} {
 	}
     }
 
-    set nodeB [format $fmtnode [incr numnode]]
-    puts $fdout "node $nodeB type brpat eq $eq"
-
     #
     # Chercher tous les liens. Pour cela, parcourir la liste
     # des interfaces
     #
     catch {unset agtab}
 
-    # première boucle pour constituer les noms des liens agrégés
+    # boucle pour constituer les noms des liens agrégés
     # et repérer les interfaces sans description
     set error 0
     foreach iface $t(eq!$eq!if) {
-	if {[regexp {^Vlan[0-9]+} $iface]} then {
+	if {[regexp {^(Vlan|Tunnel)[0-9]+} $iface]} then {
 	    # rien. On ignore l'absence de description pour
 	    # ces interfaces.
 	} elseif {[info exists t(eq!$eq!if!$iface!link!name)]} then {
@@ -1110,82 +1173,179 @@ proc cisco-post-process {model fdout eq tab} {
 	return 1
     }
 
-    # deuxième boucle pour retrouver les liens de niveau 2
-    # (sans le détail des constituants d'un lien agrégé)
-    foreach iface $t(eq!$eq!if) {
-	if {[regexp {^Vlan([0-9]+)} $iface bidon vlan]} then {
-	    if {[info exists t(eq!$eq!if!$iface!networks)]} then {
-		set nodeL2 [format $fmtnode [incr numnode]]
-		puts $fdout "node $nodeL2 type L2 eq $eq vlan $vlan stat -"
-		puts $fdout "link $nodeL2 $nodeB"
 
-		foreach net $t(eq!$eq!if!$iface!networks) {
-		    set addr $t(eq!$eq!if!$iface!net!$net)
-		    set len  $t(eq!$eq!if!$iface!net!$net!preflen)
-		    set nodeL3 [format $fmtnode [incr numnode]]
-		    puts $fdout "node $nodeL3 type L3 eq $eq addr $addr/$len"
-		    puts $fdout "link $nodeL3 $nodeL2"
-		}
-	    }
-	} else {
-	    if {[info exists agtab($iface)]} then {
-		#
-		# Si tous les liens sont "X", constituer un lien "X"
-		# au lieu d'un lien "X+X+X+..+X"
-		#
-		set tousX 1
-		foreach l $agtab($iface) {
-		    if {! [string equal $l "X"]} then {
-			set tousX 0
-			break
+    if {[string equal $ios "switch"]} then {
+	#
+	# IOS Switch
+	#
+
+	set nodeB [format $fmtnode [incr numnode]]
+	puts $fdout "node $nodeB type brpat eq $eq"
+
+	# retrouver les liens de niveau 2
+	# (sans le détail des constituants d'un lien agrégé)
+	foreach iface $t(eq!$eq!if) {
+	    if {[regexp {^Vlan([0-9]+)} $iface bidon vlan]} then {
+		if {[info exists t(eq!$eq!if!$iface!networks)]} then {
+		    set nodeL2 [format $fmtnode [incr numnode]]
+		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $vlan stat -"
+		    puts $fdout "link $nodeL2 $nodeB"
+
+		    foreach net $t(eq!$eq!if!$iface!networks) {
+			set addr $t(eq!$eq!if!$iface!net!$net)
+			set len  $t(eq!$eq!if!$iface!net!$net!preflen)
+			set nodeL3 [format $fmtnode [incr numnode]]
+			puts $fdout "node $nodeL3 type L3 eq $eq addr $addr/$len"
+			puts $fdout "link $nodeL3 $nodeL2"
 		    }
-		}
-		if {$tousX} then {
-		    set linkname "X"
-		} else {
-		    set linkname [join [lsort $agtab($iface)] "+"]
 		}
 	    } else {
-		set linkname $t(eq!$eq!if!$iface!link!name)
-	    }
-	    set linktype $t(eq!$eq!if!$iface!link!type)
-	    set statname $t(eq!$eq!if!$iface!link!stat)
-	    if {[string equal $statname ""]} then {
-		set statname "-"
-	    }
-	    set descname $t(eq!$eq!if!$iface!link!desc)
-	    if {[string equal $descname ""]} then {
-		set descname "-"
-	    }
-
-	    set nodeL1 [format $fmtnode [incr numnode]]
-	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname"
-
-	    set nodeL2 [format $fmtnode [incr numnode]]
-
-	    if {! [string equal $linktype "aggregate"]} then {
-		switch $linktype {
-		    ether {
-			# il ne peut y avoir qu'un seul "vlan" sur un lien natif
-			set arg $t(eq!$eq!if!$iface!link!vlans)
-
-			puts $fdout "node $nodeL2 type L2 eq $eq vlan $arg stat -"
-		    }
-		    trunk {
-			# Liste des vlans pour ce lien
-			set av $t(eq!$eq!if!$iface!link!allowedvlans)
-			puts -nonewline $fdout "node $nodeL2 type L2pat eq $eq"
-			foreach a $av {
-			    puts -nonewline $fdout " allow $a"
+		if {[info exists agtab($iface)]} then {
+		    #
+		    # Si tous les liens sont "X", constituer un lien "X"
+		    # au lieu d'un lien "X+X+X+..+X"
+		    #
+		    set tousX 1
+		    foreach l $agtab($iface) {
+			if {! [string equal $l "X"]} then {
+			    set tousX 0
+			    break
 			}
-			puts $fdout ""
 		    }
-		    default {
-			cisco-warning "Unknown link type for '$eq/$iface"
+		    if {$tousX} then {
+			set linkname "X"
+		    } else {
+			set linkname [join [lsort $agtab($iface)] "+"]
+		    }
+		} else {
+		    set linkname $t(eq!$eq!if!$iface!link!name)
+		}
+		set linktype $t(eq!$eq!if!$iface!link!type)
+		set statname $t(eq!$eq!if!$iface!link!stat)
+		if {[string equal $statname ""]} then {
+		    set statname "-"
+		}
+		set descname $t(eq!$eq!if!$iface!link!desc)
+		if {[string equal $descname ""]} then {
+		    set descname "-"
+		}
+
+		set nodeL1 [format $fmtnode [incr numnode]]
+		puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname"
+
+		set nodeL2 [format $fmtnode [incr numnode]]
+
+		if {! [string equal $linktype "aggregate"]} then {
+		    switch $linktype {
+			ether {
+			    # il ne peut y avoir qu'un seul "vlan" sur un lien natif
+			    set arg $t(eq!$eq!if!$iface!link!vlans)
+
+			    puts $fdout "node $nodeL2 type L2 eq $eq vlan $arg stat -"
+			}
+			trunk {
+			    # Liste des vlans pour ce lien
+			    set av $t(eq!$eq!if!$iface!link!allowedvlans)
+			    puts -nonewline $fdout "node $nodeL2 type L2pat eq $eq"
+			    foreach a $av {
+				puts -nonewline $fdout " allow $a"
+			    }
+			    puts $fdout ""
+			}
+			default {
+			    cisco-warning "Unknown link type for '$eq/$iface"
+			}
+		    }
+		    puts $fdout "link $nodeL1 $nodeL2"
+		    puts $fdout "link $nodeL2 $nodeB"
+		}
+	    }
+	}
+    } else {
+	#
+	# IOS Router
+	#
+
+	set nip 0
+	################################################################
+
+	# boucle pour retrouver les liens de niveau 2
+	# (sans le détail des constituants d'un lien agrégé)
+	foreach iface $t(eq!$eq!if) {
+	    if {[regexp {^Vlan([0-9]+)} $iface bidon vlan]} then {
+		if {[info exists t(eq!$eq!if!$iface!networks)]} then {
+		    set nodeL2 [format $fmtnode [incr numnode]]
+		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $vlan stat -"
+		    puts $fdout "link $nodeL2 $nodeB"
+
+		    foreach net $t(eq!$eq!if!$iface!networks) {
+			set addr $t(eq!$eq!if!$iface!net!$net)
+			set len  $t(eq!$eq!if!$iface!net!$net!preflen)
+			set nodeL3 [format $fmtnode [incr numnode]]
+			puts $fdout "node $nodeL3 type L3 eq $eq addr $addr/$len"
+			puts $fdout "link $nodeL3 $nodeL2"
 		    }
 		}
-		puts $fdout "link $nodeL1 $nodeL2"
-		puts $fdout "link $nodeL2 $nodeB"
+	    } else {
+		if {[info exists agtab($iface)]} then {
+		    #
+		    # Si tous les liens sont "X", constituer un lien "X"
+		    # au lieu d'un lien "X+X+X+..+X"
+		    #
+		    set tousX 1
+		    foreach l $agtab($iface) {
+			if {! [string equal $l "X"]} then {
+			    set tousX 0
+			    break
+			}
+		    }
+		    if {$tousX} then {
+			set linkname "X"
+		    } else {
+			set linkname [join [lsort $agtab($iface)] "+"]
+		    }
+		} else {
+		    set linkname $t(eq!$eq!if!$iface!link!name)
+		}
+		set linktype $t(eq!$eq!if!$iface!link!type)
+		set statname $t(eq!$eq!if!$iface!link!stat)
+		if {[string equal $statname ""]} then {
+		    set statname "-"
+		}
+		set descname $t(eq!$eq!if!$iface!link!desc)
+		if {[string equal $descname ""]} then {
+		    set descname "-"
+		}
+
+		set nodeL1 [format $fmtnode [incr numnode]]
+		puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname"
+
+		set nodeL2 [format $fmtnode [incr numnode]]
+
+		if {! [string equal $linktype "aggregate"]} then {
+		    switch $linktype {
+			ether {
+			    # il ne peut y avoir qu'un seul "vlan" sur un lien natif
+			    set arg $t(eq!$eq!if!$iface!link!vlans)
+
+			    puts $fdout "node $nodeL2 type L2 eq $eq vlan $arg stat -"
+			}
+			trunk {
+			    # Liste des vlans pour ce lien
+			    set av $t(eq!$eq!if!$iface!link!allowedvlans)
+			    puts -nonewline $fdout "node $nodeL2 type L2pat eq $eq"
+			    foreach a $av {
+				puts -nonewline $fdout " allow $a"
+			    }
+			    puts $fdout ""
+			}
+			default {
+			    cisco-warning "Unknown link type for '$eq/$iface"
+			}
+		    }
+		    puts $fdout "link $nodeL1 $nodeL2"
+		    puts $fdout "link $nodeL2 $nodeB"
+		}
 	    }
 	}
     }
