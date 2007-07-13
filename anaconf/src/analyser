@@ -1,12 +1,24 @@
 #!/usr/local/bin/tclsh8.4
 
 #
-# $Id: analyser,v 1.2 2007-01-09 10:46:10 pda Exp $
+# $Id: analyser,v 1.3 2007-07-13 08:15:37 pda Exp $
 #
-
-set debug 0
-#set debug 1
-#set debug 2
+# Analyse un fichier de configuration d'un équipement réseau
+# et renvoie la modélisation de cet équipement sous forme de
+# la représentation comprise par buildgraph & co.
+#
+# Syntaxe :
+#   analyser <libdir> <cisco|juniper> <model> <fichier conf> <eq name> [<debug>]
+#
+# Exemple :
+#   analyser $PWD cisco 4506 \
+#		/local/idr/conf/osiris/configs/crc-ce1.u-strasbg.fr crc-ce1
+#
+# Historique :
+#   2007/01/05 : pda : intégration dans le CVS
+#   2007/07/13 : pda : documentation
+#   2007/07/13 : pda : ajout syntaxe debug
+#
 
 proc parse-desc {desc _linkname _statname _descname _msg} {
     upvar $_linkname linkname
@@ -106,25 +118,39 @@ proc parse {debug libdir type model fdin fdout tab eq} {
     return $error
 }
 
-proc main {debug libdir type model fichier eq} {
+proc usage {argv0} {
+    puts stderr \
+	"$argv0 libdir cisco|juniper modele fichier-conf eq-name \[debug\]"
+}
+
+proc main {argv0 argv} {
+    set debug 0
+
+    switch [llength $argv] {
+	5 {
+	    # rien
+	}
+	6 {
+	    set debug [lindex $argv 5]
+	}
+	default {
+	    usage $argv0
+	    return 1
+	}
+    }
+
+    set libdir  [lindex $argv 0]
+    set type    [lindex $argv 1]
+    set modele  [lindex $argv 2]
+    set fichier [lindex $argv 3]
+    set eq      [lindex $argv 4]
+
     set fd [open $fichier "r"]
-    set error [parse $debug $libdir $type $model $fd stdout tab $eq]
+    set error [parse $debug $libdir $type $modele $fd stdout tab $eq]
     close $fd
 
-    if {! $error} then {
-#	parray tab
-    }
+    return 0
 }
 
-if {[llength $argv] != 5} then {
-    puts stderr \
-	"$argv0 <libdir> <cisco|juniper> <model> <fichier conf> <eq name>"
-    exit 1
-}
 
-main $debug \
-	[lindex $argv 0] \
-	[lindex $argv 1] \
-	[lindex $argv 2] \
-	[lindex $argv 3] \
-	[lindex $argv 4]
+exit [main $argv0 $argv]
