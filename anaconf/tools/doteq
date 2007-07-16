@@ -1,0 +1,118 @@
+#!/usr/local/bin/tclsh8.4
+
+#
+# $Id: doteq,v 1.1 2007-07-16 11:49:05 pda Exp $
+#
+# Script pour analyser la sortie de l'analyse de configuration
+# et la présenter sous forme graphique à l'aide de "neato".
+#
+# Usage :
+#	analyser ... | doteq > /tmp/eq.ps
+#
+# Historique
+#   2007/07/16 : pda : reconception
+#
+
+proc prologue {} {
+    set t "graph G \{"
+    append t "center=true ;"
+    append t "size=\"7.5,10.5\" ;"
+    append t "fontname=\"Helvetica\" ;"
+    append t "fontsize=10 ;"
+    return $t
+}
+
+proc epilogue {} {
+    return "\}"
+}
+
+proc titre {eq type model} {
+    return "label = \"$eq ($type / $model)\" ;"
+}
+
+proc node {name shape label} {
+    set t "\"$name\""
+    append t "\[ shape=\"$shape\""
+    append t ",  label=\"$label\""
+    append t ",  fontname=\"Helvetica\""
+    append t ",  fontsize=8 \]"
+    return $t
+}
+
+proc link {l1 l2} {
+    return "\"$l1\" -- \"$l2\" ;"
+}
+
+proc main {argv0 argv} {
+
+    set r ""
+
+    append r [prologue]
+    while {[gets stdin l] >= 0} {
+	switch [lindex $l 0] {
+	    eq {
+		array set t $l
+		append r [titre $t(eq) $t(type) $t(model)]
+		array unset t
+	    }
+	    node {
+		set node [lindex $l 1]
+		set type [lindex $l 3]
+		switch $type {
+		    L1 {
+			array set t $l
+			set iface $t(name)
+			set link  $t(link)
+			append r [node $node "rectangle" "$iface\\n$link"]
+			array unset t
+		    }
+		    L2 {
+			array set t $l
+			set vlan $t(vlan)
+			append r [node $node "diamond" "$vlan"]
+			array unset t
+		    }
+		    L2pat {
+			append r [node $node "Mdiamond" ""]
+		    }
+		    bridge {
+			append r [node $node "box" ""]
+		    }
+		    brpat {
+			append r [node $node "Msquare" ""]
+		    }
+		    L3 {
+			set ip [lindex $l 7]
+			append r [node $node "circle" "$ip"]
+		    }
+		    router {
+			append r [node $node "octagon" ""]
+		    }
+		}
+	    }
+	    link {
+		set l1 [lindex $l 1]
+		set l2 [lindex $l 2]
+		append r [link $l1 $l2]
+	    }
+	}
+    }
+    append r [epilogue]
+
+    set tmp "/tmp/doteq.[pid]"
+    set fd [open $tmp "w"]
+    puts $fd $r
+    close $fd
+
+    set fd [open "|neato -Tps < $tmp" "r"]
+    set ps [read $fd]
+    close $fd
+
+    file delete $tmp
+
+    puts stdout $ps
+
+    return 0
+}
+
+exit [main $argv0 $argv]
