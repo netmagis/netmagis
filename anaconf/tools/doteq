@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.4
 
 #
-# $Id: doteq,v 1.1 2007-07-16 11:49:05 pda Exp $
+# $Id: doteq,v 1.2 2007-07-16 12:38:38 pda Exp $
 #
 # Script pour analyser la sortie de l'analyse de configuration
 # et la présenter sous forme graphique à l'aide de "neato".
@@ -13,41 +13,88 @@
 #   2007/07/16 : pda : reconception
 #
 
+proc dot-init {} {
+    global dottxt
+
+    set dottxt ""
+}
+
+proc dot-kw {lattrval} {
+    global dottxt
+
+    foreach {a v} $lattrval {
+	append dottxt "$a = $v ;\n"
+    }
+}
+
+proc dot-add-node {node lattrval} {
+    global dottxt
+
+    if {[string equal $node ""]} then {
+	append dottxt "node"
+    } else {
+	append dottxt "\"$node\""
+    }
+
+    if {[llength lattrval] > 0} then {
+	set lattr {}
+	foreach {a v} $lattrval {
+	    lappend lattr "$a=$v"
+	}
+	set attr [join $lattr ", "]
+	append dottxt " \[$attr\]"
+    }
+
+    append dottxt ";\n"
+}
+
+proc dot-add-link {n1 n2} {
+    global dottxt
+
+    append dottxt "\"$n1\" -- \"$n2\" ;\n"
+}
+
+proc dot-get {} {
+    global dottxt
+
+    return $dottxt
+}
+
 proc prologue {} {
-    set t "graph G \{"
-    append t "center=true ;"
-    append t "size=\"7.5,10.5\" ;"
-    append t "fontname=\"Helvetica\" ;"
-    append t "fontsize=10 ;"
-    return $t
+    dot-init
+    dot-kw {
+		center		true
+		size		\"7.5,10.5\"
+		fontname	Helvetica
+		fontsize	10
+		ratio		compress
+	    }
+    dot-add-node "" {
+			fontname	Helvetica
+			fontsize	10
+		}
 }
 
 proc epilogue {} {
-    return "\}"
+    return
 }
 
 proc titre {eq type model} {
-    return "label = \"$eq ($type / $model)\" ;"
+    dot-kw [list "label" "\"$eq ($type / $model)\""]
 }
 
-proc node {name shape label} {
-    set t "\"$name\""
-    append t "\[ shape=\"$shape\""
-    append t ",  label=\"$label\""
-    append t ",  fontname=\"Helvetica\""
-    append t ",  fontsize=8 \]"
-    return $t
-}
-
-proc link {l1 l2} {
-    return "\"$l1\" -- \"$l2\" ;"
+proc node {name shape label {sup {}}} {
+    dot-add-node $name [concat \
+			    [list shape $shape label "\"$label\""] \
+			    $sup
+			]
 }
 
 proc main {argv0 argv} {
+    dot-init
 
-    set r ""
+    prologue
 
-    append r [prologue]
     while {[gets stdin l] >= 0} {
 	switch [lindex $l 0] {
 	    eq {
@@ -76,32 +123,33 @@ proc main {argv0 argv} {
 			append r [node $node "Mdiamond" ""]
 		    }
 		    bridge {
-			append r [node $node "box" ""]
+			append r [node $node "box" "" {regular true}]
 		    }
 		    brpat {
 			append r [node $node "Msquare" ""]
 		    }
 		    L3 {
 			set ip [lindex $l 7]
-			append r [node $node "circle" "$ip"]
+			append r [node $node "ellipse" "$ip"]
 		    }
 		    router {
-			append r [node $node "octagon" ""]
+			append r [node $node "circle" ""]
 		    }
 		}
 	    }
 	    link {
 		set l1 [lindex $l 1]
 		set l2 [lindex $l 2]
-		append r [link $l1 $l2]
+		dot-add-link $l1 $l2
 	    }
 	}
     }
-    append r [epilogue]
+
+    epilogue
 
     set tmp "/tmp/doteq.[pid]"
     set fd [open $tmp "w"]
-    puts $fd $r
+    puts $fd "graph G \{\n[dot-get] \}"
     close $fd
 
     set fd [open "|neato -Tps < $tmp" "r"]
