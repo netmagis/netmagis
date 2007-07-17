@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.4 2007-07-13 08:40:38 pda Exp $
+# $Id: parse-cisco.tcl,v 1.5 2007-07-17 12:55:39 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -316,6 +316,7 @@ array set cisco_kwtab {
     encapsulation			NEXT
     encapsulation-dot1Q			{CALL cisco-parse-encapsulation-dot1q}
     bridge-group			{CALL cisco-parse-bridge-group}
+    router				{CALL cisco-parse-router}
 }
 
 #
@@ -581,6 +582,7 @@ proc cisco-parse-access-vlan {active line tab idx} {
 }
 
 #
+# Spécifique IOS-R
 #
 # Entrée :
 #   - line = "<vlan-id>"
@@ -588,6 +590,7 @@ proc cisco-parse-access-vlan {active line tab idx} {
 #   - tab(eq!<nom eq>!current!if) <ifname>
 #   - tab(eq!<nom eq>!current!physif) <physifname>
 # Remplit
+#   - tab(eq!<nom eq>!if!<physifname>!link!type) trunk
 #   - tab(eq!<nom eq>!if!<ifname>!link!type) ether
 #   - tab(eq!<nom eq>!if!<ifname>!vlans) <vlanid>
 # Historique
@@ -605,9 +608,16 @@ proc cisco-parse-encapsulation-dot1q {active line tab idx} {
     # nom de l'interface
     set ifname $t($idx!current!if)
 
-    set error [expr [cisco-set-ifattr t $idx!if!$ifname type "access"] \
+    set error [expr [cisco-set-ifattr t $idx!if!$ifname type "ether"] \
 		|| [cisco-set-ifattr t $idx!if!$ifname vlan $vlanid] \
 		]
+
+    if {! $error} then {
+	if {[info exists t($idx!current!physif)]} then {
+	    set physifname $t($idx!current!physif)
+	    set error [cisco-set-ifattr t $idx!if!$physifname type "trunk"]
+	}
+    }
 
     return $error
 }
@@ -689,7 +699,7 @@ proc cisco-parse-allowed-vlan {active line tab idx} {
 proc cisco-parse-ip-address {active line tab idx} {
     upvar $tab t
 
-    if {$active} then {
+    if {$active && ![string equal $t($idx!current!if) ""]} then {
 	set ifname $t($idx!current!if)
 
 	set addr [lindex $line 0]
@@ -729,7 +739,7 @@ proc cisco-parse-ipv6-address {active line tab idx} {
 
     set error 0
 
-    if {$active} then {
+    if {$active && ![string equal $t($idx!current!if) ""]} then {
 	set ifname $t($idx!current!if)
 
 	set parm [lindex $line 0]
@@ -770,24 +780,27 @@ proc cisco-parse-ipv6-address {active line tab idx} {
 proc cisco-parse-desc {active line tab idx} {
     upvar $tab t
 
-    set ifname $t($idx!current!if)
+    set error 0
+    if {! [string equal $t($idx!current!if) ""]} then {
+	set ifname $t($idx!current!if)
 
-    if {[parse-desc $line linkname statname descname msg]} then {
-	if {[string equal $linkname ""]} then {
-	    cisco-warning "$idx: no link name found ($line)"
-	    set error 1
+	if {[parse-desc $line linkname statname descname msg]} then {
+	    if {[string equal $linkname ""]} then {
+		cisco-warning "$idx: no link name found ($line)"
+		set error 1
+	    } else {
+		set error [cisco-set-ifattr t $idx!if!$ifname name $linkname]
+	    }
+	    if {! $error} then {
+		set error [cisco-set-ifattr t $idx!if!$ifname stat $statname]
+	    }
+	    if {! $error} then {
+		set error [cisco-set-ifattr t $idx!if!$ifname desc $descname]
+	    }
 	} else {
-	    set error [cisco-set-ifattr t $idx!if!$ifname name $linkname]
+	    cisco-warning "$idx: $msg ($line)"
+	    set error 1
 	}
-	if {! $error} then {
-	    set error [cisco-set-ifattr t $idx!if!$ifname stat $statname]
-	}
-	if {! $error} then {
-	    set error [cisco-set-ifattr t $idx!if!$ifname desc $descname]
-	}
-    } else {
-	cisco-warning "$idx: $msg ($line)"
-	set error 1
     }
 
     return $error
@@ -830,9 +843,14 @@ proc cisco-parse-channel-group {active line tab idx} {
 proc cisco-parse-shutdown {active line tab idx} {
     upvar $tab t
 
-    if {$active} then {
-    return [cisco-remove-if t($idx!if) $t($idx!current!if)]
+    set error 0
+    if {$active
+	    && ![string equal $t($idx!current!if) ""]
+	    && [string equal $t($idx!current!if) $t($idx!current!physif)]
+	    } then {
+	set error [cisco-remove-if t($idx!if) $t($idx!current!if)]
     }
+    return $error
 }
 
 proc cisco-remove-if {var ifname} {
@@ -843,8 +861,9 @@ proc cisco-remove-if {var ifname} {
     if {$pos == -1} then {
 	cisco-warning "Cannot remove $ifname from list of active interfaces"
 	set error 1
+    } else {
+	set v [lreplace $v $pos $pos]
     }
-    set v [lreplace $v $pos $pos]
     return $error
 }
 
@@ -917,6 +936,7 @@ proc cisco-parse-snmp-community {active line tab idx} {
 #   - idx = eq!<eqname>
 #   - tab(eq!<nom eq>!current!if) <ifname>
 # Remplit
+#   - tab(eq!<nom eq>!bridge) {<bgid> ...}
 #   - tab(eq!<nom eq>!if!<ifname>!bridge) <bgid>
 #   - tab(eq!<nom eq>!bridge!<bgid>!if) <ifname>
 # Historique
@@ -931,12 +951,33 @@ proc cisco-parse-bridge-group {active line tab idx} {
     # nom de l'interface
     set ifname $t($idx!current!if)
 
-    if {[regexp {[0-9]+$} $line bgid]} then {
+    if {[regexp {^[0-9]+$} $line bgid]} then {
 	set t($idx!if!$ifname!bridge) $bgid
+	lappend t($idx!bridge) $bgid
 	lappend t($idx!bridge!$bgid!if) $ifname
     }
 
     return $error
+}
+
+#
+# Entrée :
+#   - line = ""
+#   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!current!if) <ifname>
+#   - tab(eq!<nom eq>!current!physif) <ifname>
+# Vilain hack pour supprimer la notion d'interface courante
+#
+# Historique
+#   2007/07/16 : pda      : conception
+#
+
+proc cisco-parse-router {active line tab idx} {
+    upvar $tab t
+
+    set t($idx!current!if) ""
+    set t($idx!current!physif) ""
+    return 0
 }
 
 
@@ -1108,7 +1149,7 @@ proc cisco-post-process {model fdout eq tab} {
     upvar $tab t
 
     if {$debug & 0x02} then {
-	parray t
+	debug-array t
     }
 
     if {[cisco-sanitize $model $eq t]} then {
@@ -1116,9 +1157,6 @@ proc cisco-post-process {model fdout eq tab} {
     }
 
     set ios $t(eq!$eq!ios)
-
-    set fmtnode "$eq:%d"
-    set numnode 0
 
     if {[info exists t(eq!$eq!snmp)]} then {
 	# XXX : on ne prend que la première communauté trouvée
@@ -1146,15 +1184,18 @@ proc cisco-post-process {model fdout eq tab} {
 
     #
     # Chercher tous les liens. Pour cela, parcourir la liste
-    # des interfaces
+    # des interfaces.
+    # Si une interface est un constituant d'un lien agrégé,
+    # supprimer l'interface de la liste et actualiser le numéro
+    # de lien du portchannel correspondant.
     #
-    catch {unset agtab}
+    unset -nocomplain agtab
 
-    # boucle pour constituer les noms des liens agrégés
-    # et repérer les interfaces sans description
+    # constituer les noms des liens agrégés et repérer
+    # les interfaces sans description
     set error 0
     foreach iface $t(eq!$eq!if) {
-	if {[regexp {^(Vlan|Tunnel)[0-9]+} $iface]} then {
+	if {[regexp {^(Vlan|Tunnel|BVI|Null|Loopback)[0-9]+} $iface]} then {
 	    # rien. On ignore l'absence de description pour
 	    # ces interfaces.
 	} elseif {[info exists t(eq!$eq!if!$iface!link!name)]} then {
@@ -1173,13 +1214,62 @@ proc cisco-post-process {model fdout eq tab} {
 	return 1
     }
 
+    # composer la description des interfaces  agrégées
+    foreach iface [array names agtab] {
+	#
+	# Si tous les liens sont "X", constituer un lien "X"
+	# au lieu d'un lien "X+X+X+..+X"
+	#
+	set tousX 1
+	foreach l $agtab($iface) {
+	    if {! [string equal $l "X"]} then {
+		set tousX 0
+		break
+	    }
+	}
+	if {$tousX} then {
+	    set linkname "X"
+	} else {
+	    set linkname [join [lsort $agtab($iface)] "+"]
+	}
+	set t(eq!$eq!if!$iface!link!name) $linkname
+    }
+    unset -nocomplain agtab
+
+    #
+    # Sortir la liste des interfaces physiques
+    #
+
+    foreach iface $t(eq!$eq!if) {
+	if {! [regexp {^(Vlan|Tunnel|Null|Loopback|BVI)([0-9]+)$} $iface bidon type vlan]} then {
+	    set linkname $t(eq!$eq!if!$iface!link!name)
+	    set linktype $t(eq!$eq!if!$iface!link!type)
+	    set statname $t(eq!$eq!if!$iface!link!stat)
+	    if {[string equal $statname ""]} then {
+		set statname "-"
+	    }
+	    set descname $t(eq!$eq!if!$iface!link!desc)
+	    if {[string equal $descname ""]} then {
+		set descname "-"
+	    }
+
+	    set nodeL1 [newnode]
+	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname"
+
+	    set t(eq!$eq!if!$iface!node) $nodeL1
+	}
+    }
+
+    #
+    # Le reste du traitement est fondamentalement différent
+    #
 
     if {[string equal $ios "switch"]} then {
-	#
+	#######################################################################
 	# IOS Switch
-	#
+	#######################################################################
 
-	set nodeB [format $fmtnode [incr numnode]]
+	set nodeB [newnode]
 	puts $fdout "node $nodeB type brpat eq $eq"
 
 	# retrouver les liens de niveau 2
@@ -1187,56 +1277,23 @@ proc cisco-post-process {model fdout eq tab} {
 	foreach iface $t(eq!$eq!if) {
 	    if {[regexp {^Vlan([0-9]+)} $iface bidon vlan]} then {
 		if {[info exists t(eq!$eq!if!$iface!networks)]} then {
-		    set nodeL2 [format $fmtnode [incr numnode]]
+		    set nodeL2 [newnode]
 		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $vlan stat -"
 		    puts $fdout "link $nodeL2 $nodeB"
 
-		    foreach net $t(eq!$eq!if!$iface!networks) {
-			set addr $t(eq!$eq!if!$iface!net!$net)
-			set len  $t(eq!$eq!if!$iface!net!$net!preflen)
-			set nodeL3 [format $fmtnode [incr numnode]]
-			puts $fdout "node $nodeL3 type L3 eq $eq addr $addr/$len"
+		    foreach nodeL3 [cisco-output-ip4 $fdout t $eq $iface] {
+			puts $fdout "link $nodeL3 $nodeL2"
+		    }
+		    foreach nodeL3 [cisco-output-ip6 $fdout t $eq $iface] {
 			puts $fdout "link $nodeL3 $nodeL2"
 		    }
 		}
 	    } else {
-		if {[info exists agtab($iface)]} then {
-		    #
-		    # Si tous les liens sont "X", constituer un lien "X"
-		    # au lieu d'un lien "X+X+X+..+X"
-		    #
-		    set tousX 1
-		    foreach l $agtab($iface) {
-			if {! [string equal $l "X"]} then {
-			    set tousX 0
-			    break
-			}
-		    }
-		    if {$tousX} then {
-			set linkname "X"
-		    } else {
-			set linkname [join [lsort $agtab($iface)] "+"]
-		    }
-		} else {
-		    set linkname $t(eq!$eq!if!$iface!link!name)
-		}
-		set linktype $t(eq!$eq!if!$iface!link!type)
-		set statname $t(eq!$eq!if!$iface!link!stat)
-		if {[string equal $statname ""]} then {
-		    set statname "-"
-		}
-		set descname $t(eq!$eq!if!$iface!link!desc)
-		if {[string equal $descname ""]} then {
-		    set descname "-"
-		}
-
-		set nodeL1 [format $fmtnode [incr numnode]]
-		puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname"
-
-		set nodeL2 [format $fmtnode [incr numnode]]
+		set nodeL1 $t(eq!$eq!if!$iface!node)
+		set nodeL2 [newnode]
 
 		if {! [string equal $linktype "aggregate"]} then {
-		    switch $linktype {
+		    switch $t(eq!$eq!if!$iface!link!type) {
 			ether {
 			    # il ne peut y avoir qu'un seul "vlan" sur un lien natif
 			    set arg $t(eq!$eq!if!$iface!link!vlans)
@@ -1262,95 +1319,227 @@ proc cisco-post-process {model fdout eq tab} {
 	    }
 	}
     } else {
-	#
+	#######################################################################
 	# IOS Router
+	#######################################################################
+
+	set ip4 {}
+	set ip6 {}
+
+	#
+	# Sortir la liste des bridges et des adresses IP associées
 	#
 
-	set nip 0
-	################################################################
+	if {[info exists t(eq!$eq!bridge)]} then {
+	    set lbridge [lsort -integer  -unique $t(eq!$eq!bridge)]
+	} else {
+	    set lbridge {}
+	}
 
-	# boucle pour retrouver les liens de niveau 2
-	# (sans le détail des constituants d'un lien agrégé)
-	foreach iface $t(eq!$eq!if) {
-	    if {[regexp {^Vlan([0-9]+)} $iface bidon vlan]} then {
-		if {[info exists t(eq!$eq!if!$iface!networks)]} then {
-		    set nodeL2 [format $fmtnode [incr numnode]]
-		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $vlan stat -"
-		    puts $fdout "link $nodeL2 $nodeB"
+	foreach bgid $lbridge {
+	    #
+	    # Noeud bridge
+	    #
+	    set nodeB [newnode]
+	    set t(eq!$eq!bridge!$bgid!node) $nodeB
+	    puts $fdout "node $nodeB type bridge eq $eq"
 
-		    foreach net $t(eq!$eq!if!$iface!networks) {
-			set addr $t(eq!$eq!if!$iface!net!$net)
-			set len  $t(eq!$eq!if!$iface!net!$net!preflen)
-			set nodeL3 [format $fmtnode [incr numnode]]
-			puts $fdout "node $nodeL3 type L3 eq $eq addr $addr/$len"
-			puts $fdout "link $nodeL3 $nodeL2"
-		    }
+	    #
+	    # Adresses IP associées ?
+	    #
+	    set iface BVI$bgid
+	    if {[info exists t(eq!$eq!if!$iface!networks)]} then {
+		foreach nodeL3 [cisco-output-ip4 $fdout t $eq BVI$bgid] {
+		    lappend ip4 $nodeL3
+		    puts $fdout "link $nodeL3 $nodeB"
 		}
-	    } else {
-		if {[info exists agtab($iface)]} then {
+		foreach nodeL3 [cisco-output-ip6 $fdout t $eq BVI$bgid] {
+		    lappend ip6 $nodeL3
+		    puts $fdout "link $nodeL3 $nodeB"
+		}
+		cisco-remove-if t(eq!$eq!if) $iface
+	    }
+	}
+
+	#
+	# Parcourir la liste des interfaces, sortir les adresses IP
+	# et faire de même (avec les vlans) pour les sous-interfaces.
+	#
+
+	foreach iface $t(eq!$eq!if) {
+
+	    #
+	    # Est-ce qu'il existe des sous-interfaces ?
+	    #
+
+	    if {[info exists t(eq!$eq!if!$iface!node)]
+		    && [info exists t(eq!$eq!if!$iface!subif)]} then {
+		set nodeL1 $t(eq!$eq!if!$iface!node)
+
+		#
+		# Parcourir la liste des sous-interfaces
+		#
+
+		foreach subif $t(eq!$eq!if!$iface!subif) {
+
 		    #
-		    # Si tous les liens sont "X", constituer un lien "X"
-		    # au lieu d'un lien "X+X+X+..+X"
+		    # Sortir le L2 approprié, connecté à l'interface
+		    # physique
 		    #
-		    set tousX 1
-		    foreach l $agtab($iface) {
-			if {! [string equal $l "X"]} then {
-			    set tousX 0
-			    break
+
+		    if {[info exists t(eq!$eq!if!$subif!link!stat)]} then {
+			set statname $t(eq!$eq!if!$subif!link!stat)
+			if {[string equal $statname ""]} then {
+			    set statname "-"
+			}
+		    } else {
+			set statname "-"
+		    }
+		    set vlanid $t(eq!$eq!if!$subif!link!vlans)
+		    set nodeL2 [newnode]
+		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $vlanid stat $statname"
+
+		    puts $fdout "link $nodeL2 $nodeL1"
+
+		    #
+		    # Sortir le L3 si besoin est, éventuellement
+		    # interconnecté à un bridge.
+		    #
+
+		    set isbridge 0
+		    if {[info exists t(eq!$eq!if!$subif!bridge)]} then {
+			set bgid $t(eq!$eq!if!$subif!bridge)
+			set nodeB $t(eq!$eq!bridge!$bgid!node) 
+			puts $fdout "link $nodeL2 $nodeB"
+			set isbridge 1
+		    }
+
+		    set xip4 [cisco-output-ip4 $fdout t $eq $subif]
+		    set xip6 [cisco-output-ip6 $fdout t $eq $subif]
+		    set xip [concat $xip4 $xip6]
+		    set isip [expr [llength $xip] > 0]
+
+		    switch "$isbridge$isip" {
+			00 {
+			    cisco-warning "Interface '$eq/$subif' not used"
+			}
+			01 {
+			    foreach nodeL3 $xip4 {
+				puts $fdout "link $nodeL2 $nodeL3"
+				lappend ip4 $nodeL3
+			    }
+			    foreach nodeL3 $xip6 {
+				puts $fdout "link $nodeL2 $nodeL3"
+				lappend ip6 $nodeL3
+			    }
+			}
+			10 {
+			    # rien, le lien L2-B est déjà sorti plus haut
+			}
+			11 {
+			    foreach nodeL3 $xip4 {
+				puts $fdout "link $nodeB $nodeL3"
+				lappend ip4 $nodeL3
+			    }
+			    foreach nodeL3 $xip6 {
+				puts $fdout "link $nodeB $nodeL3"
+				lappend ip6 $nodeL3
+			    }
 			}
 		    }
-		    if {$tousX} then {
-			set linkname "X"
-		    } else {
-			set linkname [join [lsort $agtab($iface)] "+"]
+		}
+	    } elseif {[info exists t(eq!$eq!if!$iface!node)]} then {
+
+		set nodeL1 $t(eq!$eq!if!$iface!node)
+
+		if {[info exists t(eq!$eq!if!$iface!link!stat)]} then {
+		    set statname $t(eq!$eq!if!$iface!link!stat)
+		    if {[string equal $statname ""]} then {
+			set statname "-"
 		    }
 		} else {
-		    set linkname $t(eq!$eq!if!$iface!link!name)
-		}
-		set linktype $t(eq!$eq!if!$iface!link!type)
-		set statname $t(eq!$eq!if!$iface!link!stat)
-		if {[string equal $statname ""]} then {
 		    set statname "-"
 		}
-		set descname $t(eq!$eq!if!$iface!link!desc)
-		if {[string equal $descname ""]} then {
-		    set descname "-"
+
+		#
+		# Vlan 0 (mode access), puis sortir toutes les
+		# interfaces, connectées éventuellement par un
+		# bridge si besoin est.
+		#
+
+		set nodeL2 [newnode]
+		puts $fdout "node $nodeL2 type L2 eq $eq vlan 0 stat $statname"
+		puts $fdout "link $nodeL2 $nodeL1"
+
+		foreach nodeL3 [cisco-output-ip4 $fdout t $eq $iface] {
+		    lappend ip4 $nodeL3
+		    puts $fdout "link $nodeL2 $nodeL3"
 		}
-
-		set nodeL1 [format $fmtnode [incr numnode]]
-		puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname"
-
-		set nodeL2 [format $fmtnode [incr numnode]]
-
-		if {! [string equal $linktype "aggregate"]} then {
-		    switch $linktype {
-			ether {
-			    # il ne peut y avoir qu'un seul "vlan" sur un lien natif
-			    set arg $t(eq!$eq!if!$iface!link!vlans)
-
-			    puts $fdout "node $nodeL2 type L2 eq $eq vlan $arg stat -"
-			}
-			trunk {
-			    # Liste des vlans pour ce lien
-			    set av $t(eq!$eq!if!$iface!link!allowedvlans)
-			    puts -nonewline $fdout "node $nodeL2 type L2pat eq $eq"
-			    foreach a $av {
-				puts -nonewline $fdout " allow $a"
-			    }
-			    puts $fdout ""
-			}
-			default {
-			    cisco-warning "Unknown link type for '$eq/$iface"
-			}
-		    }
-		    puts $fdout "link $nodeL1 $nodeL2"
-		    puts $fdout "link $nodeL2 $nodeB"
+		foreach nodeL3 [cisco-output-ip6 $fdout t $eq $iface] {
+		    lappend ip6 $nodeL3
+		    puts $fdout "link $nodeL2 $nodeL3"
 		}
+	    }
+	}
+
+	if {[llength $ip4] > 1} then {
+	    set nodeR4 [newnode]
+	    puts $fdout "node $nodeR4 type router eq $eq instance _v4"
+	    foreach n $ip4 {
+		puts $fdout "link $n $nodeR4"
+	    }
+	}
+
+	if {[llength $ip6] > 1} then {
+	    set nodeR6 [newnode]
+	    puts $fdout "node $nodeR6 type router eq $eq instance _v6"
+	    foreach n $ip6 {
+		puts $fdout "link $n $nodeR6"
 	    }
 	}
     }
 
     return 0
+}
+
+proc cisco-output-ip4 {fdout tab eq iface} {
+    global debug
+    upvar $tab t
+
+    set lnodes {}
+    set idx eq!$eq!if!$iface
+    if {[info exists t($idx!networks)]} then {
+	foreach net $t($idx!networks) {
+	    set addr $t($idx!net!$net)
+	    if {[regexp {\.} $addr]} then {
+		set len  $t($idx!net!$net!preflen)
+		set nodeL3 [newnode]
+		puts $fdout "node $nodeL3 type L3 eq $eq addr $addr/$len"
+		lappend lnodes $nodeL3
+	    }
+	}
+    }
+    return $lnodes
+}
+
+proc cisco-output-ip6 {fdout tab eq iface} {
+    global debug
+    upvar $tab t
+
+    set lnodes {}
+    set idx eq!$eq!if!$iface
+    if {[info exists t($idx!networks)]} then {
+	foreach net $t($idx!networks) {
+	    set addr $t($idx!net!$net)
+	    if {[regexp {:} $addr]} then {
+		set len  $t($idx!net!$net!preflen)
+		set nodeL3 [newnode]
+		puts $fdout "node $nodeL3 type L3 eq $eq addr $addr/$len"
+		lappend lnodes $nodeL3
+	    }
+	}
+    }
+    return $lnodes
 }
 
 ###############################################################################

@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.4
 
 #
-# $Id: analyser,v 1.4 2007-07-13 08:40:38 pda Exp $
+# $Id: analyser,v 1.5 2007-07-17 12:55:39 pda Exp $
 #
 # Analyse un fichier de configuration d'un équipement réseau
 # et renvoie la modélisation de cet équipement sous forme de
@@ -29,6 +29,26 @@
 #
 
 set debug 0
+
+# inspiré de parray.tcl dans la lib tcl
+# la seule différence est la sortie sur stderr (et non sur stdout)
+proc debug-array {a {pattern *}} {
+    upvar 1 $a array
+    if {![array exists array]} {
+	error "\"$a\" isn't an array"
+    }
+    set maxl 0
+    foreach name [lsort [array names array $pattern]] {
+	if {[string length $name] > $maxl} {
+	    set maxl [string length $name]
+	}
+    }
+    set maxl [expr {$maxl + [string length $a] + 2}]
+    foreach name [lsort [array names array $pattern]] {
+	set nameString [format %s(%s) $a $name]
+	puts stderr [format "%-*s = %s" $maxl $nameString $array($name)]
+    }
+}
 
 proc parse-desc {desc _linkname _statname _descname _msg} {
     upvar $_linkname linkname
@@ -128,6 +148,19 @@ proc parse {libdir type modele fdin fdout tab eq} {
     return $error
 }
 
+proc initnode {eq} {
+    global numnode fmtnode
+
+    set fmtnode "$eq:%d"
+    set numnode 0
+}
+
+proc newnode {} {
+    global numnode fmtnode
+
+    return [format $fmtnode [incr numnode]]
+}
+
 proc usage {argv0} {
     puts stderr \
 	"$argv0 libdir cisco|juniper modele fichier-conf eq-name \[debug\]"
@@ -154,6 +187,8 @@ proc main {argv0 argv} {
     set modele  [lindex $argv 2]
     set fichier [lindex $argv 3]
     set eq      [lindex $argv 4]
+
+    initnode $eq
 
     set fd [open $fichier "r"]
     set error [parse $libdir $type $modele $fd stdout tab $eq]

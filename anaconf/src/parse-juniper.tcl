@@ -1,5 +1,5 @@
 #
-# $Id: parse-juniper.tcl,v 1.4 2007-07-13 08:40:38 pda Exp $
+# $Id: parse-juniper.tcl,v 1.5 2007-07-17 12:55:39 pda Exp $
 #
 # Package d'analyse de fichiers de configuration JunOS
 #
@@ -899,11 +899,8 @@ proc juniper-post-process {model fdout eq tab} {
     upvar $tab t
 
     if {$debug & 0x02} then {
-	parray t
+	debug-array t
     }
-
-    set fmtnode "$eq:%d"
-    set numnode 0
 
     if {[info exists t(eq!$eq!snmp)]} then {
 	# XXX : on ne prend que la première communauté trouvée
@@ -988,7 +985,7 @@ proc juniper-post-process {model fdout eq tab} {
 		}
 	    }
 
-	    set nodeL1 [format $fmtnode [incr numnode]]
+	    set nodeL1 [newnode]
 
 	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $desc"
 
@@ -996,7 +993,7 @@ proc juniper-post-process {model fdout eq tab} {
 		#
 		# Interconnexion des VLAN aux interfaces physiques
 		#
-		set nodeL2 [format $fmtnode [incr numnode]]
+		set nodeL2 [newnode]
 		set t(eq!$eq!if!$iface!vlan!$v!node) $nodeL2
 		set statname $t(eq!$eq!if!$iface!vlan!$v!stat)
 		if {[string equal $statname ""]} then {
@@ -1017,20 +1014,20 @@ proc juniper-post-process {model fdout eq tab} {
 		    # (i.e. l'adresse IP de l'interface)
 		    set gwadr $t($idx)
 		    set preflen $t($idx!preflen)
-		    set nodeL3 [format $fmtnode [incr numnode]]
+		    set nodeL3 [newnode]
 
 		    puts $fdout "node $nodeL3 type L3 eq $eq addr $gwadr/$preflen"
 		    puts $fdout "link $nodeL3 $nodeL2"
 
 		    if {[string first ":" $gwadr] != -1} then {
 			if {[string equal $nodeR6 ""]} then {
-			    set nodeR6 [format $fmtnode [incr numnode]]
+			    set nodeR6 [newnode]
 			    puts $fdout "node $nodeR6 type router eq $eq instance _v6"
 			}
 			set nodeR $nodeR6
 		    } else {
 			if {[string equal $nodeR4 ""]} then {
-			    set nodeR4 [format $fmtnode [incr numnode]]
+			    set nodeR4 [newnode]
 			    puts $fdout "node $nodeR4 type router eq $eq instance _v4"
 			}
 			set nodeR $nodeR4
