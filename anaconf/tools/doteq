@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.4
 
 #
-# $Id: doteq,v 1.2 2007-07-16 12:38:38 pda Exp $
+# $Id: doteq,v 1.3 2007-07-17 12:56:06 pda Exp $
 #
 # Script pour analyser la sortie de l'analyse de configuration
 # et la présenter sous forme graphique à l'aide de "neato".
@@ -133,7 +133,8 @@ proc main {argv0 argv} {
 			append r [node $node "ellipse" "$ip"]
 		    }
 		    router {
-			append r [node $node "circle" ""]
+			set instance [lindex $l 7]
+			append r [node $node "circle" "$instance"]
 		    }
 		}
 	    }
