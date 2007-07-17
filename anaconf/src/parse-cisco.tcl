@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.5 2007-07-17 12:55:39 pda Exp $
+# $Id: parse-cisco.tcl,v 1.6 2007-07-17 21:05:26 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -276,8 +276,11 @@ proc cisco-match-network {adr cidr} {
 proc cisco-parse {model fdin fdout tab eq} {
     upvar $tab t
 
+    set error 0
+
     lappend t(eq) $eq
     set idx "eq!$eq"
+    set t($idx!if) {}
     set t($idx!ios) "unsure"
     while {[gets $fdin line] > -1} {
 	if {! [regexp {^!} $line]} then {
