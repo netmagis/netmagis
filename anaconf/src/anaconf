@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: anaconf,v 1.6 2007-01-24 13:49:33 pda Exp $
+# $Id: anaconf,v 1.7 2007-07-17 20:55:46 pda Exp $
 #
 # Enchaîne les différentes phases pour constituer le graphe du
 # réseau donné.
@@ -14,6 +14,7 @@
 #   2004/09/29 : pda/jean   : rm fichiers générés avant nouvelle génération
 #   2006/06/01 : pda/jean   : test communauté snmp
 #   2006/06/19 : pda/boggia : envoi des points de collecte
+#   2007/07/17 : pda        : non-détection par rancid du modèle d'ap cisco
 #
 
 TMP=/tmp/p1.$$
@@ -147,7 +148,10 @@ do
     n=`echo $name | sed 's/\..*//'`
 
     verbositer "analyse de $name"
-    $BINDIR/analyser $BINDIR $type $model $RANCIDCONFDIR/$name $n > $EQGEN/$n.eq
+    # pour une raison que j'ignore, rancid ne détecte pas le modèle
+    # pour certains AP Cisco (et seulement pour certains).
+    $BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
+	> $EQGEN/$n.eq
 done < $TMP
 
 #
