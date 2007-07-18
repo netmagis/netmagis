@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+# $Id: Makefile,v 1.2 2007-07-18 15:09:53 pda Exp $
 #
 
 DESTDIR=/local/applis/topo
@@ -26,6 +26,7 @@ SCRIPTS = \
 	anaconf		\
 	analyser	\
 	checkdns	\
+	doteq		\
 	liste-rancid	\
 	liste-vlans	\
 	parse-cisco.tcl	\

@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.4
 
 #
-# $Id: doteq,v 1.3 2007-07-17 12:56:06 pda Exp $
+# $Id: doteq,v 1.1 2007-07-18 15:09:53 pda Exp $
 #
 # Script pour analyser la sortie de l'analyse de configuration
 # et la présenter sous forme graphique à l'aide de "neato".
