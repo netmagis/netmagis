@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.7 2007-07-18 18:19:09 pda Exp $
+# $Id: parse-cisco.tcl,v 1.8 2007-07-18 18:19:48 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -1466,7 +1466,7 @@ proc cisco-post-process {model fdout eq tab} {
 		#
 
 		set nodeL2 [newnode]
-		puts $fdout "node $nodeL2 type L2 eq $eq vlan 0 stat $statname"
+		puts $fdout "node $nodeL2 type L2 eq $eq vlan 0 stat -"
 		puts $fdout "link $nodeL2 $nodeL1"
 
 		foreach nodeL3 [cisco-output-ip4 $fdout t $eq $iface] {
