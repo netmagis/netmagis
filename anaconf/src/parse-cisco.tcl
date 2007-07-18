@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.6 2007-07-17 21:05:26 pda Exp $
+# $Id: parse-cisco.tcl,v 1.7 2007-07-18 18:19:09 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -1349,16 +1349,20 @@ proc cisco-post-process {model fdout eq tab} {
 
 	    #
 	    # Adresses IP associées ?
+	    # Si oui, il faut les connecter via un noeud L2 fictif
 	    #
 	    set iface BVI$bgid
 	    if {[info exists t(eq!$eq!if!$iface!networks)]} then {
+		set nodeL2 [newnode]
+		puts $fdout "node $nodeL2 type L2 eq $eq vlan 0 stat -"
+		puts $fdout "link $nodeL2 $nodeB"
 		foreach nodeL3 [cisco-output-ip4 $fdout t $eq BVI$bgid] {
 		    lappend ip4 $nodeL3
-		    puts $fdout "link $nodeL3 $nodeB"
+		    puts $fdout "link $nodeL3 $nodeL2"
 		}
 		foreach nodeL3 [cisco-output-ip6 $fdout t $eq BVI$bgid] {
 		    lappend ip6 $nodeL3
-		    puts $fdout "link $nodeL3 $nodeB"
+		    puts $fdout "link $nodeL3 $nodeL2"
 		}
 		cisco-remove-if t(eq!$eq!if) $iface
 	    }
@@ -1426,7 +1430,8 @@ proc cisco-post-process {model fdout eq tab} {
 			00 {
 			    cisco-warning "Interface '$eq/$subif' not used"
 			}
-			01 {
+			01 -
+			11 {
 			    foreach nodeL3 $xip4 {
 				puts $fdout "link $nodeL2 $nodeL3"
 				lappend ip4 $nodeL3
@@ -1438,16 +1443,6 @@ proc cisco-post-process {model fdout eq tab} {
 			}
 			10 {
 			    # rien, le lien L2-B est déjà sorti plus haut
-			}
-			11 {
-			    foreach nodeL3 $xip4 {
-				puts $fdout "link $nodeB $nodeL3"
-				lappend ip4 $nodeL3
-			    }
-			    foreach nodeL3 $xip6 {
-				puts $fdout "link $nodeB $nodeL3"
-				lappend ip6 $nodeL3
-			    }
 			}
 		    }
 		}
@@ -1481,6 +1476,15 @@ proc cisco-post-process {model fdout eq tab} {
 		foreach nodeL3 [cisco-output-ip6 $fdout t $eq $iface] {
 		    lappend ip6 $nodeL3
 		    puts $fdout "link $nodeL2 $nodeL3"
+		}
+
+		#
+		# Sortir les bridges rattachés à cette interface physique
+		#
+
+		foreach bgid $lbridge {
+		    set t(eq!$eq!bridge!$bgid!node) $nodeB
+		    puts $fdout "link $nodeL2 $nodeB"
 		}
 	    }
 	}
