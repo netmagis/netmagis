@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.6 2007-01-16 09:51:44 pda Exp $
+# $Id: Makefile,v 1.7 2007-08-07 14:29:30 pda Exp $
 #
 # Makefile pour lancer l'installation de l'application topo
 # Ce Makefile n'est normalement jamais appelé lui-même, mais
@@ -34,7 +34,7 @@ LIBDNS	= /local/services/www/applis/dns/lib/libdns.tcl
 #LIBDNS	= /local/services/www/applis/devdns/lib/libdns.tcl
 TOPODIR	= /local/applis/topo
 GRAPH	= $(TOPODIR)/osiris/osiris.graph
-IDRHOST	= idris.u-strasbg.fr
+IDRHOST	= metro.u-strasbg.fr
 
 NEATO	= /usr/local/bin/neato
 DOT	= /usr/local/bin/dot
