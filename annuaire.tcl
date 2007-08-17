@@ -1,5 +1,5 @@
 #
-# $Id: annuaire.tcl,v 1.3 2007-08-17 10:05:52 zamboni Exp $
+# $Id: annuaire.tcl,v 1.4 2007-08-17 10:18:39 zamboni Exp $
 #  
 # Librairie de fonctions TCL pour faciliter l'accès à l'annuaire LDAP
 #
@@ -420,21 +420,16 @@ proc ::annuaire::chercher-par-nom {dbfd name {limite 0}} {
     set name [::annuaire::canoniser $name]
 
     #
-    # Modification du masque de recherche  pour que le grep
-    # accepte les caractères de substitution
-    #         . devient null
-    #         ^ devient null
-    #         $ devient null
-    #         ; devient null
-    #         * devient .*
-    #         ? devient .
-    #         tout caractère en dehors de l'alphabet devient .
+    # Nettoyage de la chaîne de recherche
+    #
+    regsub -all {[\.\^\$\;]} $name "" sname
+
+    #
+    # le ? n'a pas d'équivalent en filtre ldap.
+    # on le remplace par *
     #
 
-    regsub -all {[\.\^\$\;]} $name "" sname
-    regsub -all {\?} $sname {.} sname
-    regsub -all { } $sname {.} sname
-    regsub -all {\*} $sname {.*} sname
+    regsub -all {\?} $sname {*} sname
 
     #
     # Recherche dans la base
