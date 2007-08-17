@@ -1,5 +1,5 @@
 #
-# $Id: annuaire.tcl,v 1.2 2007-02-27 13:04:48 pda Exp $
+# $Id: annuaire.tcl,v 1.3 2007-08-17 10:05:52 zamboni Exp $
 #  
 # Librairie de fonctions TCL pour faciliter l'accès à l'annuaire LDAP
 #
@@ -53,7 +53,7 @@ namespace eval annuaire {
 
     variable defaults
     array set defaults {
-	base	{url ldap://ldap base o=ulp}
+	base	{url ldap://ldap base o=osiris}
 	limite	9999
 	cmdldap	{/usr/local/bin/ldapsearch -LLL -H %1$s -b %2$s
 			-s sub -z %3$s %6$s %4$s %5$s}
@@ -533,6 +533,7 @@ proc ::annuaire::format-html {entree} {
 
     set donnees {}
     foreach x {
+		{DN		0	first}
 		{Nom		1	all}
 		{Prénom		2	all}
 		{Téléphone	7	all}
