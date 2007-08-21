@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: anaconf,v 1.8 2007-07-18 06:58:12 pda Exp $
+# $Id: anaconf,v 1.9 2007-08-21 15:41:37 pda Exp $
 #
 # Enchaîne les différentes phases pour constituer le graphe du
 # réseau donné.
@@ -169,10 +169,14 @@ done
 
 #
 # Génération du graphe
+# On construit dans un fichier temporaire afin de ne pas perturber
+# les autres applications qui pourraient tourner en ce moment
+# (interface Web par exemple).
 #
 
 verbositer "génération du graphe"
-cat $EQGEN/* | $BINDIR/buildgraph > $DESTFILE
+cat $EQGEN/* | $BINDIR/buildgraph > $DESTFILE.tmp \
+	&& mv $DESTFILE.tmp $DESTFILE
 abort_if_error $?
 
 #
