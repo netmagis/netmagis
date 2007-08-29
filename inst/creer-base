@@ -1,0 +1,520 @@
+#!/bin/sh
+
+#
+# Création de la base DNS
+#
+# Syntaxe :
+#	creer-base-dns
+# (pas d'argument)
+#
+# Historique
+#   2002/02/11 : pda        : conception
+#   2002/02/12 : pda/jean   : modifications pour coller au mcd original
+#   2002/04/19 : pda/jean   : contrainte unique sur nom+domaine de rr
+#   2002/04/19 : pda        : contrainte unique sur le nom de domaine
+#   2002/04/23 : pda        : ajout de la priorité dans les droits de domaine
+#   2002/04/23 : pda/jean   : ajout de la gestionde la génération des zones
+#   2002/05/02 : pda/jean   : table zone objectisée
+#   2002/05/06 : pda        : id pour la table zone
+#   2002/05/21 : pda        : ajout de la table communaute
+#   2004/01/22 : pda        : adaptation au nouveau format de base
+#   2005/04/08 : pda        : adaptation au nouveau format de base (v 1.3)
+#
+
+BASE=dns
+
+PGPASSWORD="mot-de-passe-de-dns"
+export PGPASSWORD
+
+NOBODY="dns"			# utilisateur(s) non privilégié(s)
+ROOT="pda jean"			# utilisateur(s) privilégié(s)
+
+##############################################################################
+# POUR EVITER LES ERREURS (LANCEMENT MALENCONTREUX DE CE SCRIPT)
+
+#exit 0
+
+##############################################################################
+
+dropdb $BASE > /dev/null 2> /dev/null
+
+createdb -E unicode $BASE
+
+createlang pltcl $BASE
+
+psql --quiet $BASE <<'EOF'
+
+    -- les domaines
+
+    CREATE SEQUENCE seq_domaine START 1 ;
+    CREATE TABLE domaine (
+	iddom		INT		-- identifiant du domaine
+		DEFAULT NEXTVAL ('seq_domaine'),
+	nom		TEXT,		-- le domaine (ex: "u-strasbg.fr")
+
+	UNIQUE (nom),
+	PRIMARY KEY (iddom)
+    ) ;
+
+    -- les correspondants et les groupes
+
+    CREATE SEQUENCE seq_groupe START 1 ;
+    CREATE TABLE groupe (
+	idgrp		INT		-- identifiant du correspondant
+		DEFAULT NEXTVAL ('seq_groupe'),
+	nom		TEXT,		-- login sur le serveur
+	admin		INT,		-- 1 si root, 0 si utilisateur normal
+
+	UNIQUE (nom),
+	PRIMARY KEY (idgrp)
+    ) ;
+
+    CREATE SEQUENCE seq_corresp START 1 ;
+    CREATE TABLE corresp (
+	idcor		INT		-- identifiant du correspondant
+		DEFAULT NEXTVAL ('seq_corresp'),
+	login		TEXT,		-- login sur le serveur
+	present		INT,		-- 1 si present, 0 si plus là
+	idgrp		INT,		-- le groupe qui reférence ses droits
+
+	UNIQUE (login),
+	FOREIGN KEY (idgrp) REFERENCES groupe (idgrp),
+	PRIMARY KEY (idcor)
+    ) ;
+
+    -- la description des réseaux, des communautés et des établissements
+
+    CREATE SEQUENCE seq_etablissement START 1 ;
+    CREATE TABLE etablissement (
+	idetabl		INT		-- identifiant de l'établissement
+		DEFAULT NEXTVAL ('seq_etablissement'),
+	nom		TEXT,		-- "Université Louis Pasteur"
+
+	PRIMARY KEY (idetabl)
+    ) ;
+
+    CREATE SEQUENCE seq_communaute START 1 ;
+    CREATE TABLE communaute (
+	idcommu		INT		-- identifiant de la communaute
+		DEFAULT NEXTVAL ('seq_communaute'),
+	nom		TEXT,		-- "Administration"
+
+	PRIMARY KEY (idcommu)
+    ) ;
+
+    CREATE SEQUENCE seq_reseau START 1 ;
+    CREATE TABLE reseau (
+	idreseau	INT		-- identification du réseau
+		DEFAULT NEXTVAL ('seq_reseau'),
+	nom		TEXT,		-- nom (ex: "serveurs CRC")
+	localisation	TEXT,		-- localisation précise éventuelle
+	adr4		CIDR,		-- plage IPv4 du réseau
+	adr6		CIDR,		-- plage IPv6 du réseau
+	idetabl		INT,		-- l'établissement d'appartenance
+	idcommu		INT,		-- ADM, ENS, RECH
+	commentaire	TEXT,		-- texte libre
+	dhcp		INT DEFAULT 0,	-- activer DHCP (1) ou non (0)
+	gw4		INET,		-- routeur IPv4 par défaut du réseau
+	gw6		INET,		-- routeur IPv6 par défaut du réseau
+
+
+	CONSTRAINT au_moins_un_prefixe_v4_ou_v6
+	    CHECK (adr4 IS NOT NULL OR adr6 IS NOT NULL),
+	CONSTRAINT gw4_in_net CHECK (gw4 <<= adr4),
+	CONSTRAINT gw6_in_net CHECK (gw6 <<= adr6),
+	CONSTRAINT dhcp_needs_ipv4_gateway
+	    CHECK (dhcp = 0 OR (dhcp != 0 AND gw4 IS NOT NULL)),
+	FOREIGN KEY (idetabl) REFERENCES etablissement (idetabl),
+	FOREIGN KEY (idcommu) REFERENCES communaute    (idcommu),
+	PRIMARY KEY (idreseau)
+    ) ;
+
+
+    -- les types de machines
+
+    CREATE SEQUENCE seq_hinfo MINVALUE 0 START 0 ;
+    CREATE TABLE hinfo (
+	idhinfo		INT		-- le type de machine
+		DEFAULT NEXTVAL ('seq_hinfo'),
+	texte		TEXT,		-- le type en clair
+	tri		INT,		-- classe de tri
+	present		INT,		-- présent dans l'application
+	PRIMARY KEY (idhinfo)
+    ) ;
+
+    -- les plages de réseau gérées par les correspondants
+
+    CREATE TABLE dr_reseau (
+	idgrp		INT,		-- le groupe qui gère le réseau
+	idreseau	INT,		-- le réseau
+	tri		INT,		-- classe de tri pour l'affichage
+	dhcp		INT DEFAULT 0,	-- accès à la gestion DHCP (dynamique)
+	acl		INT DEFAULT 0,	-- accès aux ACL (plus tard...)
+
+	FOREIGN KEY (idgrp)    REFERENCES groupe (idgrp),
+	FOREIGN KEY (idreseau) REFERENCES reseau (idreseau),
+	PRIMARY KEY (idgrp, idreseau)
+    ) ;
+
+    -- les droits associés aux groupes
+
+    CREATE TABLE dr_dom (
+	idgrp		INT,		-- le groupe
+	iddom		INT,		-- texte du domaine
+	tri		INT,		-- pour l'affichage dans les menus
+	rolemail	INT DEFAULT 0,	-- groupe a accès aux rôles mail
+	roleweb		INT DEFAULT 0,	-- groupe a accès aux rôles web
+
+	FOREIGN KEY (idgrp) REFERENCES groupe (idgrp),
+	PRIMARY KEY (idgrp, iddom)
+    ) ;
+
+    CREATE TABLE dr_ip (
+	idgrp		INT,		-- le groupe
+	adr		CIDR,		-- portion de réseau
+	allow_deny	INT,		-- 1 = allow, 0 = deny
+
+	FOREIGN KEY (idgrp) REFERENCES groupe (idgrp),
+	PRIMARY KEY (idgrp, adr)
+    ) ;
+
+    -- les profils DHCP
+
+    CREATE SEQUENCE seq_dhcpprofil START 1 ;
+    CREATE TABLE dhcpprofil (
+	iddhcpprofil	INT		-- identifiant du profil DHCP
+		DEFAULT NEXTVAL ('seq_dhcpprofil'),
+	nom 		TEXT UNIQUE,	-- nom du profil
+	texte		TEXT,		-- texte à ajouter avant les hosts
+
+	CHECK (iddhcpprofil >= 1),
+	PRIMARY KEY (iddhcpprofil)
+    ) ;
+
+    -- les droits associés aux profils DHCP
+
+    CREATE TABLE dr_dhcpprofil (
+	idgrp		INT,		-- identifiant du groupe
+	iddhcpprofil	INT,		-- identifiant du profil DHCP
+	tri		INT,		-- classe de tri pour les menus
+
+	FOREIGN KEY (idgrp)        REFERENCES groupe     (idgrp),
+	FOREIGN KEY (iddhcpprofil) REFERENCES dhcpprofil (iddhcpprofil),
+	PRIMARY KEY (idgrp, iddhcpprofil)
+    ) ;
+
+    -- les intervalles d'adresses dynamiques DHCP
+
+    CREATE SEQUENCE seq_dhcprange START 1 ;
+    CREATE TABLE dhcprange (
+	iddhcprange	INT		-- seulement pour l'édition de tableau
+		DEFAULT NEXTVAL ('seq_dhcprange'),
+	min 		INET UNIQUE,	-- début de l'intervalle dynamique
+	max		INET UNIQUE,	-- fin de l'intervalle dynamique
+	iddom		INT,		-- domaine fourni par DHCP
+	default_lease_time INT DEFAULT 0, -- en secondes
+	max_lease_time	INT DEFAULT 0,	-- en secondes
+
+	CHECK (min <= max),
+	FOREIGN KEY (iddom) REFERENCES domaine (iddom),
+	PRIMARY KEY (iddhcprange)
+    ) ;
+
+
+    -- les RR
+
+    CREATE SEQUENCE seq_rr START 1 ;
+    CREATE TABLE rr (
+	idrr		INT		-- l'objet
+		DEFAULT NEXTVAL ('seq_rr'),
+	nom		TEXT,		-- le nom de l'objet (premier composant)
+	iddom		INT,		-- domaine de l'objet
+
+	mac		MACADDR UNIQUE,	-- adresse MAC associée au nom, ou NULL
+	iddhcpprofil	INT,		-- identifiant du profil DHCP ou NULL
+
+	idhinfo		INT DEFAULT 0,	-- index dans la table hinfo
+	commentaire	TEXT,		-- un champ "commentaire" en fait
+	respnom		TEXT,		-- nom du responsable
+	respmel		TEXT,		-- adresse du responsable
+
+	idcor		INT,		-- auteur de la dernière modification
+	date		TIMESTAMP WITHOUT TIME ZONE	-- date dernière modif.
+			    DEFAULT CURRENT_TIMESTAMP,
+
+	FOREIGN KEY (idcor)        REFERENCES corresp    (idcor),
+	FOREIGN KEY (iddom)        REFERENCES domaine    (iddom),
+	FOREIGN KEY (iddhcpprofil) REFERENCES dhcpprofil (iddhcpprofil),
+	FOREIGN KEY (idhinfo)      REFERENCES hinfo      (idhinfo),
+	UNIQUE (nom, iddom),
+	PRIMARY KEY (idrr)
+    ) ;
+
+    CREATE TABLE rr_ip (
+	idrr		INT,		-- l'objet
+	adr		INET,		-- adresse IP (v4 ou v6)
+
+	FOREIGN KEY (idrr) REFERENCES rr (idrr),
+	PRIMARY KEY (idrr, adr)
+    ) ;
+
+    CREATE TABLE rr_cname (
+	idrr		INT,		-- l'objet
+	cname		INT,		-- l'objet pointé
+
+	FOREIGN KEY (idrr)  REFERENCES rr (idrr),
+	FOREIGN KEY (cname) REFERENCES rr (idrr),
+	PRIMARY KEY (idrr, cname)
+    ) ;
+
+    CREATE TABLE rr_mx (
+	idrr		INT,		-- l'objet
+	priorite	INT,		-- priorite
+	mx		INT,		-- objet pointé par le mx
+
+	FOREIGN KEY (idrr) REFERENCES rr (idrr),
+	FOREIGN KEY (mx)   REFERENCES rr (idrr),
+	PRIMARY KEY (idrr, mx)
+    ) ;
+
+    -- les rôles "web"
+    CREATE TABLE role_web (
+	idrr		INT,		-- id du "serveur web"
+
+	FOREIGN KEY (idrr) REFERENCES rr (idrr),
+	PRIMARY KEY (idrr)
+    ) ;
+
+    -- les rôles "mail"
+    CREATE TABLE role_mail (
+	idrr		INT,		-- id de "l'adresse de messagerie"
+	heberg		INT,		-- id du rr de l'hébergeur des mboxes
+
+	FOREIGN KEY (idrr)   REFERENCES rr (idrr),
+	FOREIGN KEY (heberg) REFERENCES rr (idrr),
+	PRIMARY KEY (idrr)
+    ) ;
+
+    -- table des groupes ayant droit de gérer des boites aux lettres
+    -- de "l'adresse de messagerie"
+    CREATE TABLE dr_mbox (
+	idgrp		INT,		-- id du groupe
+	idmail		INT,		-- id de "l'adresse de messagerie"
+
+	FOREIGN KEY (idgrp)  REFERENCES groupe (idgrp),
+	FOREIGN KEY (idmail) REFERENCES role_mail (idrr),
+	PRIMARY KEY (idgrp, idmail)
+    ) ;
+
+    -- table des relais de messagerie pour les adresses d'un domaine
+    CREATE TABLE relais_dom (
+	iddom		INT,		-- id du domaine
+	priorite	INT,		-- priorité du MX à générer
+	mx		INT,		-- id du rr du relais pour ce domaine
+
+	FOREIGN KEY (iddom) REFERENCES domaine (iddom),
+	FOREIGN KEY (mx)    REFERENCES rr      (idrr),
+	PRIMARY KEY (iddom, mx)
+    ) ;
+
+
+    -- la génération des zones DNS
+
+    CREATE SEQUENCE seq_zone START 1 ;
+    CREATE TABLE zone (
+	idzone		INT		-- l'id de la zone
+		DEFAULT NEXTVAL ('seq_zone'),
+	domaine		TEXT,		-- le domaine à générer
+	version		INT,		-- numéro de version dans la zone
+	prologue	TEXT,		-- prologue de la zone (trou %VERSION%)
+	rrsup		TEXT,		-- ajouté à chaque génération de nom
+	generer		INT,		-- modifiée depuis dernière génération
+
+	UNIQUE (domaine),
+	PRIMARY KEY (idzone)
+    ) ;
+
+    CREATE TABLE zone_normale (
+	selection	TEXT		-- critère de sélection des noms
+    ) INHERITS (zone) ;
+
+    CREATE TABLE zone_reverse4 (
+	selection	CIDR		-- critère de sélection des adresses
+    ) INHERITS (zone) ;
+
+    CREATE TABLE zone_reverse6 (
+	selection	CIDR		-- critère de sélection des adresses
+    ) INHERITS (zone) ;
+
+    -- une table à une seule ligne pour indiquer s'il faut regénérer dhcpd.conf
+
+    CREATE TABLE dhcp (
+	generer INTEGER			-- 1 s'il faut regénerer la config
+    ) ;
+
+    INSERT INTO dhcp (generer) VALUES (0) ;
+
+    -- les paramètres de configuration de la base
+    CREATE TABLE config (
+	clef		TEXT,		-- la clef de configuration
+	valeur		TEXT,		-- valeur de la clef
+
+	PRIMARY KEY (clef)
+    ) ;
+
+    -- fonctions
+
+    -- valide un intervalle DHCP (min-max) par rapport aux droits du groupe
+    -- $1 : idgrp
+    -- $2 : dhcp min
+    -- $3 : dhcp max
+    CREATE OR REPLACE FUNCTION valide_dhcprange_grp (INTEGER, INET, INET)
+		    RETURNS BOOLEAN AS '
+	set min {}
+	foreach o [split $2 "."] {
+	    lappend min [format "%02x" $o]
+	}
+	set min [join $min ""]
+	set min [expr 0x$min]
+	set ipbin [expr 0x$min]
+
+	set max {}
+	foreach o [split $3 "."] {
+	    lappend max [format "%02x" $o]
+	}
+	set max [join $max ""]
+	set max [expr 0x$max]
+
+	set r t
+	for {set ipbin $min} {$ipbin <= $max} {incr ipbin} {
+	    # Preparer la nouvelle adresse IP
+	    set ip {}
+	    set o $ipbin
+	    for {set i 0} {$i < 4} {incr i} {
+		set ip [linsert $ip 0 [expr $o & 0xff]]
+		set o [expr $o >> 8]
+	    }
+	    set ip [join $ip "."]
+
+	    # Tester la validite
+	    spi_exec "SELECT valide_ip_grp (\'$ip\', $1) AS v"
+
+	    if {! [string equal $v "t"]} then {
+		set r f
+		break
+	    }
+	}
+	return $r
+	' LANGUAGE pltcl ;
+
+EOF
+
+##############################################################################
+# Les droits pour les administrateurs de la base
+##############################################################################
+
+for root in $ROOT
+do
+    psql -q $BASE <<EOF
+	GRANT ALL
+	    ON 
+		seq_domaine, domaine,
+		seq_groupe, groupe, seq_corresp, corresp,
+		seq_reseau, reseau, dr_reseau,
+		seq_etablissement, etablissement,
+		seq_communaute, communaute,
+		dr_dom, dr_ip,
+		seq_dhcprange, dhcprange,
+		seq_dhcpprofil, dhcpprofil, dr_dhcpprofil,
+		seq_rr, rr,
+		rr_ip, rr_cname, rr_mx,
+		seq_hinfo, hinfo,
+		role_web, role_mail, dr_mbox, relais_dom,
+		seq_zone, zone, zone_normale, zone_reverse4, zone_reverse6,
+		dhcp,
+		config
+	    TO $root ;
+EOF
+done
+
+##############################################################################
+# Les droits pour l'interface Web (utilisateur nobody)
+##############################################################################
+
+for nobody in $NOBODY
+do
+    psql -q $BASE <<EOF
+	GRANT SELECT
+	    ON
+		seq_domaine, domaine,
+		seq_groupe, groupe, seq_corresp, corresp,
+		seq_reseau, reseau, dr_reseau,
+		seq_etablissement, etablissement,
+		seq_communaute, communaute,
+		dr_dom, dr_ip,
+		seq_dhcprange, dhcprange,
+		seq_dhcpprofil, dhcpprofil, dr_dhcpprofil,
+		seq_rr, rr,
+		rr_ip, rr_cname, rr_mx,
+		seq_hinfo, hinfo,
+		role_web, role_mail, dr_mbox, relais_dom,
+		seq_zone, zone, zone_normale, zone_reverse4, zone_reverse6,
+		dhcp,
+		config
+	    TO $nobody ;
+	GRANT INSERT
+	    ON
+		seq_domaine, domaine,
+		seq_groupe, groupe, seq_corresp, corresp,
+		seq_reseau, reseau, dr_reseau,
+		seq_etablissement, etablissement,
+		seq_communaute, communaute,
+		dr_dom, dr_ip,
+		seq_dhcprange, dhcprange,
+		seq_dhcpprofil, dhcpprofil, dr_dhcpprofil,
+		seq_rr, rr,
+		rr_ip, rr_cname, rr_mx,
+		seq_hinfo, hinfo,
+		role_web, role_mail, dr_mbox, relais_dom,
+		seq_zone, zone, zone_normale, zone_reverse4, zone_reverse6,
+		dhcp,
+		config
+	    TO $nobody ;
+	GRANT UPDATE
+	    ON
+		seq_domaine, domaine,
+		seq_groupe, groupe, seq_corresp, corresp,
+		seq_reseau, reseau, dr_reseau,
+		seq_etablissement, etablissement,
+		seq_communaute, communaute,
+		dr_dom, dr_ip,
+		seq_dhcprange, dhcprange,
+		seq_dhcpprofil, dhcpprofil, dr_dhcpprofil,
+		seq_rr, rr,
+		rr_ip, rr_cname, rr_mx,
+		seq_hinfo, hinfo,
+		role_web, role_mail, dr_mbox, relais_dom,
+		seq_zone, zone, zone_normale, zone_reverse4, zone_reverse6,
+		dhcp,
+		config
+	    TO $nobody ;
+	GRANT DELETE
+	    ON
+		seq_domaine, domaine,
+		seq_corresp, corresp,
+		seq_reseau, reseau, dr_reseau,
+		seq_etablissement, etablissement,
+		seq_communaute, communaute,
+		dr_dom, dr_ip,
+		seq_dhcprange, dhcprange,
+		seq_dhcpprofil, dhcpprofil, dr_dhcpprofil,
+		seq_rr, rr,
+		rr_ip, rr_cname, rr_mx,
+		seq_hinfo, hinfo,
+		role_web, role_mail, dr_mbox, relais_dom,
+		seq_zone, zone, zone_normale, zone_reverse4, zone_reverse6,
+		dhcp,
+		config
+	    TO $nobody ;
+EOF
+done

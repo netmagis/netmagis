@@ -1,0 +1,311 @@
+#!%TCLSH%
+
+#
+# Script pour chercher le ou les correspondants associés à un
+# réseau, à une adresse IP ou une machine.
+#
+# Appelé par : index.htgt
+#
+# Paramètres (formulaire ou URL) :
+#	- critere : critere de recherche (ip, cidr, ou fqdn)
+#
+# Historique
+#   2002/07/25 : pda      : création
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/01/14 : pda/jean : ajout IPv6
+#   2004/08/06 : pda/jean : extension des droits sur les réseaux
+#   2005/02/24 : pda      : ajout cas rôle mail sans adresse IP
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/corresp.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+	{critere	0 1 {}}
+}
+
+#
+# Tableau pour afficher une machine
+#
+
+
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+proc corresp-erreur {critere msg} {
+    global conf
+
+    set qmsg     [::webapp::html-string $msg]
+    set qcritere [::webapp::unpost-string $critere]
+    set resultat "<FONT COLOR=\"FF0000\">$qmsg</FONT>"
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+			    [list \
+				    [list %CRITERE% $qcritere] \
+				    [list %RESULTAT% $resultat] \
+				] \
+			    ]
+    exit 0
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) {} \
+		$conf(form) ftab dbfd login tabcor
+
+    set critere [string trim [lindex $ftab(critere) 0]]
+
+    #
+    # Est-ce que c'est une adresse IP ?
+    #
+
+    if {[string equal $critere ""]} then {
+	#
+	# Rien. Ce n'est pas une erreur à strictement parler,
+	# mais on le traite comme tel.
+	#
+	corresp-erreur "" ""
+
+    } elseif {[string equal [syntaxe-ip $dbfd $critere "inet"] ""]} then {
+	#
+	# Adresse IP
+	#
+	set adr $critere
+
+	#
+	# Tentative de recherche de la machine. Si elle existe,
+	# tabrr sera rempli. Si non, tabrr ne sera pas créé.
+	# On ne se préoccupe pas du résultat (l'existence ou non
+	# de tabrr(idrr) nous suffira) par la suite.
+	#
+	lire-rr-par-ip $dbfd $critere tabrr
+
+    } elseif {[string equal [syntaxe-ip $dbfd $critere "cidr"] ""]} then {
+	#
+	# CIDR
+	#
+	set adr $critere
+
+    } elseif {[regexp {^([^.]+)\.(.+)$} $critere bidon nom domaine]} then {
+	#
+	# Nom et domaine
+	#
+	set iddom [lire-domaine $dbfd $domaine]
+	if {$iddom == -1} then {
+	    corresp-erreur $critere "Domaine '$domaine' non trouvé."
+	}
+
+	if {! [lire-rr-par-nom $dbfd $nom $iddom tabrr]} then {
+	    corresp-erreur $critere \
+		"Machine '$nom' non trouvée dans le domaine '$domaine'."
+	}
+
+    } elseif {[regexp {^([^.]+)$}  $critere bidon nom]} then {
+	#
+	# Nom sans domaine : prendre par défaut le domaine privilégié
+	# du correspondant qui exécute ce script.
+	#
+	set qnom [::pgsql::quote $nom]
+	set idrr -1
+	set iddom -1
+	set sql "SELECT d.iddom, d.nom
+			FROM corresp c, groupe g, dr_dom dd, domaine d
+			WHERE c.idcor = $tabcor(idcor)
+			    AND c.idgrp = g.idgrp
+			    AND g.idgrp = dd.idgrp
+			    AND dd.iddom = d.iddom
+			ORDER BY dd.tri ASC
+			LIMIT 1
+			"
+	pg_select $dbfd $sql tab {
+	    set iddom $tab(iddom)
+	    set domaine $tab(nom)
+	}
+	if {$iddom == -1} then {
+	    ::webapp::error-exit $conf(err) "Pas de domaine par défaut !"
+	}
+	if {! [lire-rr-par-nom $dbfd $nom $iddom tabrr]} then {
+	    corresp-erreur $critere \
+		"Machine '$nom' non trouvée dans le domaine '$domaine'."
+	}
+
+    } else {
+	#
+	# On ne peut normalement pas arriver là : tout doit passer
+	# dans le cas précédent !
+	#
+	corresp-erreur $critere "Critère de recherche '$critere' invalide."
+    }
+
+    #
+    # Si on arrive ici, c'est qu'on a réussi à analyser le
+    # critère de recherche.
+    #
+    # Si, de plus, tabrr(idrr) existe, c'est que le nom ou l'adresse
+    # correspond à une machine réelle.
+    #
+
+    #
+    # Si c'est un alias, rechercher la vraie adresse
+    #
+
+    if {[info exists tabrr(cname)]} then {
+	if {! [string equal $tabrr(cname) ""]} then {
+	    set idrr $tabrr(cname)
+	    unset tabrr
+	    if {! [lire-rr-par-id $dbfd $idrr tabrr]} then {
+		::webapp::error-exit $conf(err) \
+			"Erreur interne : objet pointé par l'alias non trouvé"
+	    }
+	}
+    }
+
+    #
+    # Si c'est un rôle de messagerie, sans adresse IP, rechercher
+    # l'adresse de l'hébergeur.
+    #
+
+    if {[info exists tabrr(rolemail)] && [llength $tabrr(ip)] == 0} then {
+	if {! [string equal $tabrr(rolemail) ""]} then {
+	    set idrr $tabrr(rolemail)
+	    unset tabrr
+	    if {! [lire-rr-par-id $dbfd $idrr tabrr]} then {
+		::webapp::error-exit $conf(err) \
+			"Erreur interne : hébergeur du rolemail non trouvé"
+	    }
+	}
+    }
+
+    #
+    # Si le critère était un nom et pas une adresse IP, extraire une
+    # adresse IP (au hasard parmi celles associées au nom).
+    #
+
+    if {! [info exists adr]} then {
+	if {! [info exists tabrr(ip)]} then {
+	    ::webapp::error-exit $conf(err) "Erreur interne : pas d'adresse et pas de tabrr"
+	}
+
+	set adr [lindex $tabrr(ip) 0]
+    }
+
+    #
+    # Afficher l'adresse
+    #
+
+    set resultat ""
+
+    append resultat "Adresse recherchée&nbsp;: $adr\n"
+    append resultat "<P>\n"
+
+    #
+    # Si on a trouvé une machine à cette adresse, afficher les
+    # informations pertinentes
+    #
+
+    if {[info exists tabrr(idrr)]} then {
+	append resultat [html-machine $dbfd tabrr]
+	append resultat "<P>"
+    }
+
+    #
+    # Rechercher les différents correspondants qui peuvent
+    # potentiellement s'occuper de la plage dans laquelle
+    # il y a cete adresse.
+    #
+
+    set sql "SELECT c.idcor
+		    FROM corresp c, groupe g, dr_reseau d, reseau r
+		    WHERE c.idgrp = g.idgrp
+			AND g.idgrp = d.idgrp
+			AND d.idreseau = r.idreseau
+			AND ('$adr' <<= r.adr4 OR '$adr' <<= r.adr6)
+			"
+    set lidcor {}
+    pg_select $dbfd $sql tab {
+	lappend lidcor $tab(idcor)
+    }
+
+    #
+    # Parmi les correspondants sélectionnés, rechercher ceux
+    # dont les droits correspondent à l'adresse fournie.
+    #
+
+    set trouve 0
+    foreach idcor $lidcor {
+	if {[droit-correspondant-ip $dbfd $idcor $adr]} then {
+	    set msg [lire-correspondant-par-id $dbfd $idcor tabcor]
+	    if {! [string equal $msg ""]} then {
+		::webapp::error-exit "Erreur interne ($msg)"
+	    }
+	    append resultat [html-correspondant tabcor]
+	    append resultat "\n<P>\n"
+	    set trouve 1
+	}
+    }
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+		    [list \
+			    [list %CRITERE% $critere] \
+			    [list %RESULTAT% $resultat] \
+			] \
+	    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

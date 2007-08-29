@@ -1,0 +1,409 @@
+#!%TCLSH%
+
+#
+# Script de modification des paramètres DHCP d'un réseau
+#
+# Appelé par : dhcpedit
+#
+# Paramètres (formulaire ou URL) :
+#   - iddhcprange*, min*, max*, iddom*, defaut_lease_time*, max_lease_time*
+#
+# Historique
+#   2004/10/05 : pda/jean : spécification
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+	{idreseau			1 1}
+
+	{min[0-9]+			0 9999}
+	{max[0-9]+			0 9999}
+	{iddom[0-9]+			0 9999}
+	{default_lease_time[0-9]+	0 9999}
+	{max_lease_time[0-9]+		0 9999}
+
+	{minn[0-9]+			1 9999}
+	{maxn[0-9]+			1 9999}
+	{iddomn[0-9]+			1 9999}
+	{default_lease_timen[0-9]+	1 9999}
+	{max_lease_timen[0-9]+		1 9999}
+}
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/dhcpmodif.html
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Valider les données du formulaire en entrée
+##############################################################################
+
+#
+# Teste s'il y a chevauchement entre deux intervalles d'adresses IP
+#
+# Entrée :
+#   - dbfd : accès à la base
+#   - min1, max1, min2, max2 : les bornes des deux intervalles
+# Sortie :
+#   - valeur de retour : 1 si chevauchement, 0 si pas de chevauchement
+# Historique :
+#   2004/10/08 : pda/jean : conception et codage
+#
+
+proc chevauchement {dbfd min1 max1 min2 max2} {
+    # On suppose que min1 <= max1 et min2 <= max2
+    set sql "SELECT
+		(
+		    (inet '$max2') >= (inet '$min1')
+		    AND
+		    (inet '$max2') <= (inet '$max1')
+		)
+		OR
+		(
+		    (inet '$min2') >= (inet '$min1')
+		    AND
+		    (inet '$min2') <= (inet '$max1')
+		)
+		AS resultat"
+    set r 0
+    pg_select $dbfd $sql tab {
+	if {[string equal $tab(resultat) "t"]} then {
+	    set r 1
+	}
+    }
+    return $r
+}
+
+#
+# Valide les différents intervalles DHCP fournis dans le formulaire
+#
+# Entrée :
+#   - dbfd : accès à la base
+#   - ftabvar : tableau contenant les champs du formulaire
+#   - idcor : id du correspondant faisant la modification
+#   - idgrp : id du groupe du correspondant faisant la modification
+#   - cidr : cidr du réseau dans lequel on travaille
+# Sortie :
+#   - valeur de retour : chaîne vide (ok) ou message d'erreur
+# Historique :
+#   2004/10/08 : pda/jean : conception et codage
+#   2004/10/13 : pda/jean : paramètre minimum du bail
+#
+
+proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
+    upvar $ftabvar ftab
+
+    #
+    # Récupérer le paramètre minimal des baux DHCP
+    #
+
+    set min_lease_time [getconfig $dbfd "min_lease_time"]
+
+    #
+    # Récupérer la liste des id d'intervalles pré-existants trouvés
+    # dans le formulaire
+    #
+
+    set lid [array names ftab -regexp "^min\[0-9\]+$"]
+    regsub -all "min" $lid "" lid
+    set lid [lsort -integer -increasing $lid]
+
+    #
+    # Récupérer la liste des nouveaux id trouvés dans le formulaire
+    #
+
+    set lnid {}
+    foreach i [array names ftab -regexp "^minn\[0-9\]+$"] {
+	if {! [string equal [string trim [lindex $ftab($i) 0]] ""]} then {
+	    lappend lnid $i
+	}
+    }
+    regsub -all "minn" $lnid "" lnid
+    set lnid [lsort -integer -increasing $lnid]
+    regsub -all {[[:<:]]} $lnid "n" lnid
+   
+    # 
+    # Construit la liste complète des id 
+    # 
+
+    set lid [concat $lid $lnid]
+
+    #
+    # Récupérer la liste de tous les domaines pour faciliter la
+    # vérification des droits.
+    # 
+
+    pg_select $dbfd "SELECT iddom, nom FROM domaine" tab {
+	set tabdom($tab(iddom)) $tab(nom)
+    }
+
+    #
+    # Récupérer la liste de tous les intervalles DHCP pour ce
+    # réseau
+    #
+
+    set sql "SELECT iddhcprange, min, max
+			FROM dhcprange
+			WHERE min <<= '$cidr' AND max <<= '$cidr'"
+    pg_select $dbfd $sql tab {
+	set tabrange($tab(iddhcprange)) [list $tab(min) $tab(max)]
+    }
+
+    #
+    # Valider chaque intervalle
+    #
+
+    foreach i $lid {
+	switch -glob $i {
+	    n*		{ set new 1 }
+	    default	{ set new 0 }
+	}
+
+	foreach c {min max iddom default_lease_time max_lease_time} {
+	    if {! [info exists ftab($c$i)]} then {
+		return "Formulaire non conforme (champ '$c$i' non trouvé)"
+	    }
+	}
+
+	set iddom		[string trim [lindex $ftab(iddom$i) 0]]
+	set min			[string trim [lindex $ftab(min$i) 0]]
+	set max			[string trim [lindex $ftab(max$i) 0]]
+	set default_lease_time	[string trim [lindex $ftab(default_lease_time$i) 0]]
+	set max_lease_time	[string trim [lindex $ftab(max_lease_time$i) 0]]
+
+	#
+	# Valider que l'on a bien le droit de modifier l'intervalle
+	# spécifié par cet iddhcprange
+	#
+
+	if {! $new} then {
+	    if {! [info exists tabrange($i)]} then {
+		return "Vous n'avez pas accès à l'intervalle d'Id '$i'"
+	    }
+	}
+	set tabrange($i) [list $min $max]
+
+	if {[string equal $min ""]} then {
+	    unset tabrange($i)
+	} else {
+	    #
+	    # Valider le droit sur le domaine
+	    #
+
+	    if {! [info exists tabdom($iddom)]} then {
+		return "Id de domaine '$iddom' non trouvé"
+	    }
+	    set msg [valide-domaine $dbfd $idcor $tabdom($iddom) bidon "tri"]
+	    if {! [string equal $msg ""]} then {
+		return $msg
+	    }
+
+	    #
+	    # Valider la syntaxe des paramètres
+	    #
+
+	    set msg [syntaxe-ip $dbfd $min "inet4"]
+	    if {! [string equal $msg ""]} then {
+		return "Adresse minimum : $msg"
+	    }
+	    set msg [syntaxe-ip $dbfd $max "inet4"]
+	    if {! [string equal $msg ""]} then {
+		return "Adresse maximum : $msg"
+	    }
+
+	    if {[catch {expr $default_lease_time+0}]} then {
+		return "Valeur default_lease_time incorrecte ($default_lease_time)"
+	    } elseif {$default_lease_time != 0 &&
+				$default_lease_time < $min_lease_time} then {
+		return "Valeur default_lease_time trop petite (inférieure à $min_lease_time)"
+	    }
+
+	    if {[catch {expr $max_lease_time+0}]} then {
+		return "Valeur max_lease_time incorrecte ($max_lease_time)"
+	    } elseif {$max_lease_time != 0 &&
+				$max_lease_time < $min_lease_time} then {
+		return "Valeur max_lease_time trop petite (inférieure à $min_lease_time)"
+	    }
+
+	    #
+	    # Valider que min < max
+	    #
+
+	    set sql "SELECT (inet '$min') <= (inet '$max') AS resultat"
+	    pg_select $dbfd $sql tab {
+		if {[string equal $tab(resultat) "f"]} then {
+		    return "Intervalle invalide : $min est supérieur à $max"
+		}
+	    }
+
+	    #
+	    # Valider l'intervalle par rapport aux plages autorisées par
+	    # le correspondant
+	    #
+
+	    set sql "SELECT valide_dhcprange_grp ($idgrp, '$min', '$max') AS valide"
+	    pg_select $dbfd $sql tab {
+		if {[string equal $tab(valide) "f"]} then {
+		    return "Intervalle non autorisé ($min, $max)"
+		}
+	    }
+
+	    #
+	    # Vérifier qu'il n'y a de machine avec un adressage DHCP
+	    # statique (i.e. une adresse MAC stockée dans le RR) dans
+	    # l'intervalle donné.
+	    #
+
+	    set sql "SELECT count(*) AS nb
+			    FROM rr, rr_ip
+			    WHERE rr.mac IS NOT NULL
+				AND rr.idrr = rr_ip.idrr
+				AND rr_ip.adr >= '$min'
+				AND rr_ip.adr <= '$max'"
+	    pg_select $dbfd $sql tab {
+		set nb $tab(nb)
+	    }
+	    if {$nb > 0} then {
+		return "Conflit entre l'adressage dynamique et l'adressage statique : $nb adresse(s) IP déclarée(s) avec une adresse MAC dans l'intervalle ($min, $max)"
+	    }
+	}
+    }
+
+    #
+    # Vérifier qu'il n'y a pas de chevauchement dans les intervalles
+    # qui subsistent après cette boucle (i.e. ceux qu'on a changés,
+    # ceux qu'on a a ajoutés, et également ceux auxquels nos droits
+    # ne nous donnent pas accès).
+    #
+
+    foreach i [array names tabrange] {
+	set min [lindex $tabrange($i) 0]
+	set max [lindex $tabrange($i) 1]
+	unset tabrange($i)
+
+	foreach j [array names tabrange] {
+	    set jmin [lindex $tabrange($j) 0]
+	    set jmax [lindex $tabrange($j) 1]
+	    if {[chevauchement $dbfd $min $max $jmin $jmax]} then {
+		return "L'intervalle ($min,$max) a une intersection non nulle avec l'intervalle ($jmin,$jmax)"
+	    }
+	}
+    }
+
+    #
+    # On est arrivés jusqu'ici sans erreur ! Ouf !
+    #
+
+    return ""
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation, avec récupération du type de modification.
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Valider le réseau
+    #
+
+    set idreseau [lindex $ftab(idreseau) 0]
+    set lcidr [valide-idreseau $dbfd $idreseau $tabcor(idgrp) "dhcp" 4 msg]
+    if {[llength $lcidr] == 0} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+    if {[llength $lcidr] != 1} then {
+	::webapp::error-exit $conf(err) "Erreur interne: trop de CIDR trouvés !"
+    }
+
+    #
+    # Valider les données de telle sorte qu'il n'y ait pas de
+    # chevauchement des intervalles, et que chaque intervalle
+    # soit bien dans le réseau et dans les plages autorisées.
+    # Valider également le domaine.
+    #
+
+    set msg [valide-dhcprange $dbfd ftab $tabcor(idcor) $tabcor(idgrp) $lcidr]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Enregistrer les modifications dans la base
+    #
+
+    set spec {
+	{min}
+	{max}
+	{iddom}
+	{default_lease_time 0}
+	{max_lease_time 0}
+    }
+
+    set msg [enregistrer-tableau $dbfd $spec iddhcprange dhcprange ftab]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # C'est fini !
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				[list \
+					[list %RESEAU% $lcidr] \
+				    ] \
+				]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

@@ -1,0 +1,44 @@
+;
+; Zone esiatf.fr
+;
+; Historique
+;   2004/04/13 : pda : conception d'une zone exemple
+;
+
+@	IN	SOA	ns1.univ-machin.fr. hostmaster.esiatf.fr. (
+		    2004041301		; version
+		    86400		; refresh = 1 j
+		    3600		; retry = 1 h
+		    3600000		; expire = 1000 heures (~ 41 j)
+		    86400		; default ttl = 1 j
+		)
+
+;
+; Le TTL par défaut des enregistrements de la zone
+;
+$TTL	86400
+
+;
+; Les serveurs autoritaires pour la zone
+;
+
+			IN	NS	ns1.univ-machin.fr.
+			IN	NS	ns2.univ-machin.fr.
+			IN	NS	shiva.univ-bidule.fr.
+
+;
+; Le MX par défaut de la zone
+;
+
+			IN	MX	10 relais.univ-machin.fr.
+
+;
+; Un gros hack
+;
+
+localhost		IN	A	127.0.0.1
+
+; COUPER ICI -------------------------------------------------------------
+
+www			IN	A	192.168.1.1
+mailetu			IN	A	192.168.1.2

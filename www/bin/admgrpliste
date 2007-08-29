@@ -1,0 +1,446 @@
+#!%TCLSH%
+
+#
+# Script pour présenter les caractéristiques associées à un groupe
+#
+# Appelé par : index.htgt
+#
+# Paramètres (formulaire ou URL) :
+#	- groupe : nom du groupe
+#
+# Historique
+#   2002/05/21 : pda/jean : création
+#   2002/07/09 : pda      : ajout de nologin
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/01/14 : pda/jean : ajout IPv6
+#   2005/04/08 : pda/jean : ajout dhcpprofil
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admgrpliste.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+# nb de lignes dans les listboxes
+set conf(hauteur)	20
+
+set conf(form) {
+	{groupe		1 1}
+}
+
+set conf(tabdomaines) {
+    global {
+	chars {12 normal}
+	botbar {no}
+	columns {25 25 25 25}
+	align {center}
+	format {raw}
+    }
+    pattern Titre {
+	topbar {no}
+	vbar {no}
+	chars {bold}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+    }
+    pattern Normal {
+	topbar {no}
+	vbar {no}
+	format {raw}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+    }
+}
+
+set conf(tabreseaux) {
+    global {
+	chars {12 normal}
+	botbar {no}
+	columns {14 58 14 14}
+	align {center}
+    }
+    pattern Titre {
+	topbar {no}
+	vbar {no}
+	chars {bold}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+    }
+    pattern Normal {
+	topbar {no}
+	vbar {no}
+	format {raw}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+    }
+}
+
+set conf(tabdrip) {
+    global {
+	chars {12 normal}
+	botbar {no}
+	columns {20 80}
+	format {raw}
+    }
+    pattern Normal {
+	topbar {no}
+	vbar {no}
+	column {
+	    align {right}
+	}
+	vbar {no}
+	column {
+	    align {left}
+	}
+	vbar {no}
+    }
+}
+
+set conf(tabdhcpprofil) {
+    global {
+	chars {12 normal}
+	botbar {no}
+	columns {20 80}
+	format {raw}
+    }
+    pattern Titre {
+	topbar {no}
+	vbar {no}
+	chars {bold}
+	column {
+	    align {center}
+	}
+	vbar {no}
+	column {
+	    align {left}
+	}
+	vbar {no}
+    }
+    pattern Normal {
+	topbar {no}
+	vbar {no}
+	column {
+	    align {center}
+	}
+	vbar {no}
+	column {
+	    align {left}
+	}
+	vbar {no}
+    }
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Valider le nom du groupe, et récupérer son identifiant numérique
+    #
+
+    set groupe [lindex $ftab(groupe) 0]
+    set qgroupe [::pgsql::quote $groupe]
+    set idgrp -1
+    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$qgroupe'" tab {
+	set idgrp $tab(idgrp)
+    }
+
+    if {$idgrp == -1} then {
+	::webapp::error-exit $conf(err) "Groupe '$groupe' non trouvé"
+    }
+
+    #
+    # Extraire la liste des correspondants pour ce groupe (pour info)
+    #
+
+    set lcor {}
+    set sql "SELECT login FROM corresp WHERE idgrp = $idgrp"
+    pg_select $dbfd $sql tab {
+	lappend lcor $tab(login)
+    }
+    set listecor [join $lcor " "]
+
+    #
+    # Extraire la liste des domaines, sélectionner ceux qui sont
+    # autorisés pour le groupe, et présenter tout ça dans un tableau
+    #
+
+    set donnees {}
+    lappend donnees {Titre
+			{Classe de tri}
+			{Domaine}
+			{Édition des rôles de messagerie}
+			{Édition des rôles Web}
+		    }
+    set ldom [::pgsql::getcols $dbfd domaine "" "nom ASC" {nom nom}]
+    set sql "SELECT domaine.nom AS nom, dr_dom.tri AS tri,
+				dr_dom.rolemail, dr_dom.roleweb
+			FROM domaine, dr_dom
+			WHERE domaine.iddom = dr_dom.iddom
+				AND dr_dom.idgrp = $idgrp
+			ORDER BY dr_dom.tri ASC, domaine.nom ASC"
+    set ndom 1
+    pg_select $dbfd $sql tab {
+	set d        $tab(nom)
+	set tri      $tab(tri)
+	set rolemail $tab(rolemail)
+	set roleweb  $tab(roleweb)
+
+	set idx [lsearch -exact $ldom [list $d $d]]
+	if {$idx == -1} then {
+	    ::webapp::error-exit $conf(err) \
+		"Le groupe à accès au domaine '$d' qui n'existe pas dans la base"
+	}
+	set htri  [::webapp::form-text tridom$ndom 1 5 5 $tri]
+	set hdom  [::webapp::form-menu domaine$ndom 1 0 $ldom [list $idx]]
+	set hmail [::webapp::form-bool rolemail$ndom $rolemail]
+	set hweb  [::webapp::form-bool roleweb$ndom  $roleweb]
+	lappend donnees [list Normal $htri $hdom $hmail $hweb]
+	incr ndom
+    }
+
+    for {set i 1} {$i <= 5} {incr i} {
+	set htri  [::webapp::form-text tridom$ndom 1 5 5 ""]
+	set hdom  [::webapp::form-menu domaine$ndom 1 0 $ldom {}]
+	set hmail [::webapp::form-bool rolemail$ndom 0]
+	set hweb  [::webapp::form-bool roleweb$ndom  0]
+	lappend donnees [list Normal $htri $hdom $hmail $hweb]
+	incr ndom
+    }
+
+    set listedomaines [::arrgen::output "html" $conf(tabdomaines) $donnees]
+
+    #
+    # Extraire la liste des réseaux, sélectionner ceux qui sont
+    # autorisés pour le groupe, et présenter tout ça dans un tableau
+    #
+
+    set donnees {}
+    lappend donnees {Titre
+			{Classe de tri}
+			{Réseau}
+			{Accès à la gestion DHCP}
+			{Accès aux ACL}
+		    }
+    set lres {}
+    set idx 0
+    set sql "SELECT idreseau, nom, adr4, adr6 FROM reseau ORDER BY adr4, adr6"
+    pg_select $dbfd $sql tab {
+	set res [format "%s\t%s\t(%s)" \
+			    $tab(adr4) $tab(adr6) \
+			    [::webapp::html-string $tab(nom)] \
+			]
+	lappend lres [list $tab(idreseau) $res]
+	set idxreseau($tab(idreseau)) $idx
+	incr idx
+    }
+
+    set sql "SELECT dr_reseau.idreseau,
+			dr_reseau.tri,
+			dr_reseau.dhcp,
+			dr_reseau.acl
+		FROM reseau, dr_reseau
+		WHERE reseau.idreseau = dr_reseau.idreseau
+			AND dr_reseau.idgrp = $idgrp
+		ORDER BY dr_reseau.tri ASC, reseau.adr4 ASC, reseau.adr6 ASC"
+    set nres 1
+    pg_select $dbfd $sql tab {
+	set idreseau $tab(idreseau)
+	set tri      $tab(tri)
+	set dhcp     $tab(dhcp)
+	set acl      $tab(acl)
+
+	if {! [info exists idxreseau($idreseau)]} then {
+	    ::webapp::error-exit $conf(err) \
+		"Le groupe à accès au réseau '$idreseau' qui n'existe pas dans la base"
+	}
+	set idx $idxreseau($idreseau)
+
+	set htri  [::webapp::form-text trires$nres 1 5 5 $tri]
+	set hres  [::webapp::form-menu reseau$nres 1 0 $lres [list $idx]]
+	set hdhcp [::webapp::form-bool dhcp$nres $dhcp]
+	set hacl  [::webapp::form-bool acl$nres $acl]
+
+	lappend donnees [list Normal $htri $hres $hdhcp $hacl]
+	incr nres
+    }
+
+    for {set i 1} {$i <= 5} {incr i} {
+	set htri  [::webapp::form-text trires$nres 1 5 5 ""]
+	set hres  [::webapp::form-menu reseau$nres 1 0 $lres {}]
+	set hdhcp [::webapp::form-bool dhcp$nres 0]
+	set hacl  [::webapp::form-bool acl$nres  0]
+	lappend donnees [list Normal $htri $hres $hdhcp $hacl]
+	incr nres
+    }
+
+    set listereseaux [::arrgen::output "html" $conf(tabreseaux) $donnees]
+
+    #
+    # Les droits
+    #
+
+    set donnees {}
+    set n 1
+    set sql "SELECT adr, allow_deny \
+			FROM dr_ip \
+			WHERE idgrp = $idgrp \
+			ORDER BY adr"
+    pg_select $dbfd $sql tab {
+	set a $tab(allow_deny)
+	set menuallow [::webapp::form-menu allow$n 1 0 \
+					{{1 allow} {0 deny}} \
+					[list [expr 1 - $a]] \
+				    ]
+	set textcidr [::webapp::form-text adr$n 1 49 49 $tab(adr)]
+	lappend donnees [list Normal $menuallow $textcidr]
+	incr n
+    }
+
+    for {set i 0} {$i < 5} {incr i} {
+	set menuallow [::webapp::form-menu allow$n 1 0 \
+					{{1 allow} {0 deny}} \
+					{0} \
+				    ]
+	set textcidr [::webapp::form-text adr$n 1 49 49 ""]
+	lappend donnees [list Normal $menuallow $textcidr]
+	incr n
+    }
+
+    set listedroits [::arrgen::output "html" $conf(tabdrip) $donnees]
+
+    #
+    # Les profils DHCP visibles
+    #
+
+    set donnees {}
+    lappend donnees {Titre
+			{Classe de tri}
+			{Profil DHCP}
+		    }
+    set lprof [::pgsql::getcols $dbfd dhcpprofil "" "nom ASC" {nom nom}]
+    set sql "SELECT p.nom AS nom, dr.tri AS tri
+			FROM dr_dhcpprofil dr, dhcpprofil p
+			WHERE dr.idgrp = $idgrp
+			    AND dr.iddhcpprofil = p.iddhcpprofil
+			ORDER BY dr.tri ASC, p.nom ASC"
+    set nprof 1
+    pg_select $dbfd $sql tab {
+	set p        $tab(nom)
+	set tri      $tab(tri)
+
+	set idx [lsearch -exact $lprof [list $p $p]]
+	if {$idx == -1} then {
+	    ::webapp::error-exit $conf(err) \
+		"Le groupe à accès au profil '$d' qui n'existe pas dans la base"
+	}
+	set htri  [::webapp::form-text tridhcpprof$nprof 1 5 5 $tri]
+	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof [list $idx]]
+	lappend donnees [list Normal $htri $hprof]
+	incr nprof
+    }
+
+    for {set i 1} {$i <= 5} {incr i} {
+	set htri  [::webapp::form-text tridhcpprof$nprof 1 5 5 ""]
+	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof {}]
+	lappend donnees [list Normal $htri $hprof]
+	incr nprof
+    }
+
+    set listedhcpprof [::arrgen::output "html" $conf(tabdhcpprofil) $donnees]
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				[list \
+					[list %GROUPE% $groupe] \
+					[list %LISTECOR% $listecor] \
+					[list %LISTEDOMAINES% $listedomaines] \
+					[list %LISTERESEAUX% $listereseaux] \
+					[list %LISTEDROITS% $listedroits] \
+					[list %LISTEDHCPPROFILS% $listedhcpprof] \
+				    ] \
+			    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

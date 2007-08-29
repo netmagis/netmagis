@@ -1,0 +1,119 @@
+#!%TCLSH%
+
+#
+# Script pour demander les paramètres de consultation d'une zone
+# ou d'une plage IP.
+#
+# Appelé par : index.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2002/03/27 : pda/jean : création
+#   2002/05/06 : pda/jean : ajout des groupes
+#   2002/07/09 : pda      : ajout de nologin
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/consulter.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+# nb maximum de plages IP affichables sans mettre d'ascenseur
+set conf(maxplages)	10
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) {} \
+		{} ftab dbfd login tabcor
+
+    #
+    # Mettre en forme les informations associées au correspondant pour
+    # qu'il se les rappelle bien (et pense à nous envoyer les
+    # modifications ;-)
+    #
+
+    set corresp	[html-correspondant tabcor]
+
+    #
+    # Récupération des plages auxquelles a droit le correspondant
+    #
+
+    set lres [liste-reseaux $dbfd $tabcor(idgrp) "consult"]
+    set taille [llength $lres]
+    if {$taille == 0} then {
+	set plages "Aucun réseau sélectionnable"
+    } else {
+	if {$taille > $conf(maxplages)} then {
+	    set taille $conf(maxplages)
+	}
+	set plages [::webapp::form-menu "plages" $taille 1 $lres {}]
+    }
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				[list \
+					[list %CORRESP% $corresp] \
+					[list %PLAGES%  $plages] \
+				    ] \
+			    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

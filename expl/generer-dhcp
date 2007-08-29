@@ -1,0 +1,353 @@
+#!/usr/local/bin/tclsh8.4
+
+#
+# Script de génération d'une configuration DHCP
+#
+# Syntaxe :
+#	generer-dhcp [test|gen]
+#
+#   avec "test" pour tester si la configuration doit être générée, ou "gen"
+#	pour générer la zone.
+#	Code de retour = 0 (rien à générer), 1 (erreur), 2 (génération)
+#
+# Historique
+#   2004/08/05 : pda/jean : spécification
+#   2004/08/06 : pda/jean : conception
+#   2005/03/31 : pda      : ajout des groupes DHCP
+#
+
+
+#
+# Valeurs par défaut du script
+#
+
+set conf(base)		{host=crc.u-strasbg.fr dbname=dns
+				user=dns password=mot-de-passe-de-dns}
+#set conf(base)		{host=crc.u-strasbg.fr dbname=devdns
+#				user=dns password=mot-de-passe-de-dns}
+
+package require Pgtcl
+
+#
+# Neutralise les caractères spéciaux figurant dans une chaîne,
+# de façon à pouvoir la passer au moteur SQL.
+# - double toutes les apostrophes
+#
+# Entrée :
+#   - paramètres
+#	- chaine : chaîne à traiter
+#	- maxindex (optionnel) : taille maximum de la chaîne
+# Sortie :
+#   - valeur de retour : la chaîne traitée
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc quote {chaine {maxindex 99999}} {
+    set chaine [string range $chaine 0 $maxindex]
+    regsub -all {'} $chaine {&&} chaine
+    regsub -all {\\} $chaine {&&} chaine
+    return $chaine
+}
+
+#
+# Exécute une commande sql, et affiche une erreur et sort
+# en cas de problème. Retourne le résultat de la commande
+# (résultat pour pg_result).
+#
+# Entrée :
+#   - paramètres
+#	- dbfd : la base
+#	- cmd : la commande à passer
+#	- result : contient en retour le nom de la variable contenant l'erreur
+# Sortie :
+#   - valeur de retour : 1 si tout est ok, 0 sinon
+#   - variable result :
+#	- si erreur, la variable contient le message d'erreur
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc execsql {dbfd cmd result} {
+    upvar $result rmsg
+
+    set res [pg_exec $dbfd $cmd]
+    if {! [string equal [pg_result $res -status] PGRES_COMMAND_OK]} then {
+	set ok 0
+	set rmsg "$cmd : [pg_result $res -error]"
+    } else {
+	set ok 1
+	set rmsg {}
+    }
+    pg_result $res -clear
+    return $ok
+}
+
+#
+# Teste si la configuration DHCP a été modifiée
+#
+# Entrée :
+#   - dbfd : accès à la base
+# Sortie :
+#   - valeur de retour : 0 ou 1
+#
+# Historique :
+#   200F4/8/05 : pda/jean : conception
+#
+
+proc tester-dhcp {dbfd} {
+    set r 0
+    pg_select $dbfd "SELECT generer FROM dhcp" tab {
+	if {$tab(generer) > 0} then {
+	    set r 1
+	}
+    }
+    return $r
+}
+
+#
+# Renvoie sur la sortie standard la configuration DHCP
+#
+# Entrée :
+#   - dbfd : accès à la base
+# Sortie :
+#   - valeur de retour : 1 si ok, 0 si erreur
+#   - sortie standard : la configuration DHCP
+#   - sortie d'erreur : les erreurs s'il y en a
+#
+# Historique :
+#   2004/08/05 : pda/jean : conception
+#   2005/03/31 : pda      : ajout des groupes DHCP
+#
+
+proc generer-dhcp {dbfd} {
+    #
+    # Cosmétique
+    #
+
+    set accg "\{"
+    set accd "\}"
+
+    #
+    # Récupérer les valeurs de paramètres DHCP par défaut stockées
+    # dans la configuration générale de l'application
+    #
+
+    foreach clef {default_lease_time max_lease_time min_lease_time} {
+	set dhcpdef($clef) -1
+	set sql "SELECT valeur FROM config WHERE clef = '$clef'"
+	pg_select $dbfd $sql tab {
+	    set dhcpdef($clef) $tab(valeur)
+	}
+    }
+
+    #
+    # Récupérer les attributs de chaque intervalle d'allocation dynamique
+    # et les stocker avec comme clef l'adresse du réseau auquel il
+    # appartient.
+    #
+    set sql "SELECT HOST (reseau.adr4) AS adr, domaine.nom AS dom, dhcprange.*
+		FROM reseau, dhcprange, domaine
+		WHERE reseau.dhcp > 0
+		    AND domaine.iddom = dhcprange.iddom
+		    AND dhcprange.min <<= reseau.adr4
+		    AND dhcprange.max <<= reseau.adr4
+		"
+    pg_select $dbfd $sql tab {
+	if {$tab(default_lease_time) == 0} then {
+	    set tab(default_lease_time) $dhcpdef(default_lease_time)
+	}
+	if {$tab(max_lease_time) == 0} then {
+	    set tab(max_lease_time) $dhcpdef(max_lease_time)
+	}
+	lappend range($tab(adr)) \
+		    [list $tab(dom) \
+			    $tab(min) $tab(max) \
+			    $tab(default_lease_time) $tab(max_lease_time) \
+			]
+    }
+
+    #
+    # Générer chaque réseau trouvé
+    #
+
+    set sql "SELECT HOST (adr4) AS adr, NETMASK (adr4) AS netmask, gw4
+		FROM reseau
+		WHERE dhcp > 0 AND gw4 IS NOT NULL
+		ORDER BY adr
+		"
+    pg_select $dbfd $sql tab {
+	set adr $tab(adr)
+	puts stdout "subnet $adr netmask $tab(netmask) $accg"
+	puts stdout "\toption routers $tab(gw4) ;"
+	if {[info exists range($adr)]} then {
+	    foreach pool $range($adr) {
+		set dom                [lindex $pool 0]
+		set min                [lindex $pool 1]
+		set max                [lindex $pool 2]
+		set default_lease_time [lindex $pool 3]
+		set max_lease_time     [lindex $pool 4]
+
+		puts stdout "\tpool $accg"
+		puts stdout "\t\trange $min $max ;"
+		puts stdout "\t\toption domain-name \"$dom\" ;"
+		if {$max_lease_time < $dhcpdef(min_lease_time)} then {
+		    puts stdout "\t\t# max-lease-time $max_lease_time ;"
+		    puts stderr "Max-lease-time trop petit ($max_lease_time) pour <$min,$max>"
+		} else {
+		    puts stdout "\t\tmax-lease-time $max_lease_time ;"
+		}
+		if {$default_lease_time < $dhcpdef(min_lease_time)} then {
+		    puts stderr "Default-lease-time trop petit ($default_lease_time) pour <$min,$max>"
+		    puts stdout "\t\t# default-lease-time $default_lease_time ;"
+		} else {
+		    puts stdout "\t\tdefault-lease-time $default_lease_time ;"
+		}
+		puts stdout "\t$accd"
+	    }
+	}
+	puts stdout "$accd"
+	puts stdout ""
+    }
+
+    #
+    # Récupérer les paramètres des groupes pour utilisation dans
+    # la boucle d'après.
+    #
+
+    set sql "SELECT iddhcpprofil, nom, texte FROM dhcpprofil"
+    pg_select $dbfd $sql tab {
+	set dhcpprofil($tab(iddhcpprofil)) $tab(texte)
+    }
+
+
+    #
+    # Générer tous les hosts qui ont une adresse MAC valide dans
+    # les réseaux dont on doit faire la génération.
+    #
+
+    set curgrp ""
+    set sql "SELECT rr.nom || '.' || domaine.nom AS host,
+		    rr.mac,
+		    rr.iddhcpprofil
+		FROM rr, domaine, rr_ip, reseau
+		WHERE rr.iddom = domaine.iddom
+		    AND rr.idrr = rr_ip.idrr
+		    AND rr_ip.adr <<= reseau.adr4
+		    AND reseau.dhcp > 0
+		    AND rr.mac IS NOT NULL
+		GROUP BY host, rr.mac, rr.iddhcpprofil
+		ORDER BY rr.iddhcpprofil
+		"
+    pg_select $dbfd $sql tab {
+	set host $tab(host)
+
+	set newgrp $tab(iddhcpprofil)
+	if {! [string equal $curgrp $newgrp]} then {
+	    # changement de groupe
+	    if {! [string equal $curgrp ""]} then {
+		# fin du groupe précédent
+		puts stdout "$accd"
+	    }
+
+	    set curgrp $newgrp
+	    if {! [string equal $curgrp ""]} then {
+		# début du nouveau groupe
+		puts stdout "group $accg"
+		if {[info exists dhcpprofil($curgrp)]} then {
+		    puts stdout $dhcpprofil($curgrp)
+		} else {
+		    puts stderr "$host reference un groupe DHCP inexistant ($newgrp)"
+		    return 0
+		}
+	    }
+
+	}
+
+	puts stdout "host $host $accg"
+	puts stdout "\thardware ethernet $tab(mac) ;"
+	puts stdout "\tfixed-address $host ;"
+	puts stdout "\toption host-name \"$host\" ;"
+	puts stdout "$accd"
+    }
+
+    if {! [string equal $curgrp ""]} then {
+	# fin du dernier groupe
+	puts stdout "$accd"
+    }
+
+    #
+    # Fin de la génération : se rappeler du fait que nous avons
+    # généré le fichier
+    #
+
+    set sql "UPDATE dhcp SET generer = 0"
+    if {! [execsql $dbfd $sql m]} then {
+	puts stderr $m
+	return 0
+    }
+
+    #
+    # Tout va bien !
+    #
+
+    return 1
+}
+
+##############################################################################
+# main
+##############################################################################
+
+proc main {argv0 argv} {
+    global conf
+
+    set arg [lindex $argv 0]
+    if {[llength $argv] != 1 ||
+	    !([string equal $arg "test"] || [string equal $arg "gen"])} then {
+	puts stderr "usage: $argv0 <test|gen>"
+	return 1
+    }
+
+    if {[catch {set dbfd [pg_connect -conninfo $conf(base)]} msg]} then {
+	puts stderr "$argv0: cannot access base ($msg)"
+	return 1
+    }
+
+    set sql "BEGIN WORK ; LOCK dhcp ; LOCK rr ; LOCK reseau ; LOCK dhcprange"
+    if {! [execsql $dbfd $sql m]} then { puts stderr $m ; exit 1 }
+
+    switch -- $arg {
+	test {
+	    set r [tester-dhcp $dbfd]
+	    if {$r} then {
+		puts stdout "La configuration DHCP doit être regénérée"
+		set r 2
+	    }
+	    return $r
+	}
+	gen {
+	    if {! [generer-dhcp $dbfd]} then {
+		set sql "ABORT WORK"
+		execsql $dbfd $sql m
+		return 1
+	    }
+	}
+    }
+
+    set sql "COMMIT WORK"
+    if {! [execsql $dbfd $sql m]} then { puts stderr $m ; exit 1 }
+
+    pg_disconnect $dbfd
+
+    return 0
+}
+
+#
+# Tout démarre ici...
+#
+
+exit [main $argv0 $argv]

@@ -1,0 +1,32 @@
+#!/bin/sh
+
+#
+# Enchaîne l'ensemble des opérations nécessaires pour charger
+# la base.
+#
+# Historique
+#   2002/04/19 : pda : conception
+#
+
+echo "Ajout des paramètres de configuration"
+./remplir-config
+
+echo "Ajout des groupes et des réseaux"
+./remplir-grpnet group.txt subnet.txt
+
+echo "Ajout des domaines"
+./charger-domaines
+
+echo "Ajout des droits sur les domaines"
+./remplir-grpdom grpdom.txt
+
+echo "Ajout des roles de messagerie"
+./remplir-rolemail rolemail.txt relaisdom.txt pda
+
+echo "Ajout des paramètres de génération des zones"
+./charger-zones
+
+echo "Chargement des triggers"
+./remplir-triggers
+
+echo "Fini !"

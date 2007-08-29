@@ -1,0 +1,215 @@
+#!%TCLSH%
+
+#
+# Script pour supprimer une machine (ou un alias) dans la base
+#
+# Syntaxe :
+#   dnsdelhost <fqdn>
+#
+# Historique
+#   2004/10/01 : pda/jean : conception
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(auth)		%AUTH%
+set conf(nologin)	%NOLOGIN%
+set conf(defuser)	%DEFUSER%
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require pgsql
+package require auth
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Petites fonctions utilitaires
+##############################################################################
+
+proc syntax-error {argv0} {
+    regsub {.*/} $argv0 {} argv0
+    puts stderr "usage: $argv0 fqdn"
+    exit 1
+}
+
+##############################################################################
+# Suppression d'une machine
+##############################################################################
+
+#
+# Suppression d'une machine dans la base
+#
+# Entrée :
+#   - dbfd : accès à la base
+#   - idcor : id du correspondant faisant la suppression
+#   - fqdn : nom du host
+# Sortie :
+#   - valeur de retour : message d'erreur, ou chaîne vide si ok.
+#
+# Historique
+#   2004/10/01 : pda/jean : conception
+#
+
+proc del-host {dbfd idcor fqdn} {
+    #
+    # Validation du nom du host
+    #
+
+    set msg [syntaxe-fqdn $dbfd $fqdn nom domaine iddom]
+    if {! [string equal $msg ""]} then {
+	return $msg
+    }
+    set nom [string tolower $nom]
+
+    #
+    # Valider le nom fourni
+    #
+
+    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "supprimer-un-nom"]
+    if {[string length $msg] > 0} then {
+	return $msg
+    }
+
+    #
+    # Vérifier que le nom demandé existe
+    #
+
+    if {[string equal $trr(idrr) ""]} then {
+	return "Le nom '$nom.$domaine' n'existe pas."
+    }
+
+    #
+    # Noter si c'est un alias
+    #
+
+    if {[string equal $trr(cname) ""]} then {
+	set alias 0
+
+	#
+	# Si ce n'est pas un alias, il doit y avoir au moins une adresse IP
+	#
+	if {[string equal $trr(ip) ""]} then {
+	    return "Le nom '$nom.$domaine' n'est pas une machine."
+	}
+
+    } else {
+	set alias 1
+
+	#
+	# C'est un alias. Lisons les informations pour afficher
+	# une page éventuelle de confirmation
+	#
+	if {! [lire-rr-par-id $dbfd $trr(cname) trrref]} then {
+	    return "Erreur interne. Alias non trouvé"
+	}
+    }
+
+    #
+    # Effectuer la suppression dans la base.
+    #
+
+    if {! [::pgsql::lock $dbfd {} msg]} then {
+	return "Transaction impossible : $msg"
+    }
+
+    if {$alias} then {
+	if {! [supprimer-alias-par-id $dbfd $trr(idrr) msg]} then {
+	    ::pgsql::unlock $dbfd "abort" m
+	     return "La suppression a échoué ($msg)"
+	}
+    } else {
+	#
+	# Ce n'est pas un alias. Supprimer toutes les dépendances
+	# du RR
+	# - les aliases pointant vers cet objet
+	# - les MX
+	# - les adresses IP
+	#
+	if {! [supprimer-rr-et-dependances $dbfd trr msg]} then {
+	    ::pgsql::unlock $dbfd "abort" m
+	    return "La suppression a échoué ($msg)"
+	}
+    }
+
+    #
+    # Enregistrer les modifications dans la base
+    #
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+       ::pgsql::unlock $dbfd "abort" m
+       return "La suppression a échoué ($msg)"
+    }
+
+    return ""
+}
+
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Initialisation des accès
+    #
+
+    set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
+					    dbfd $conf(defuser) tabcor]
+    if {! [string equal $errmsg ""]} then {
+	puts stderr "$errmsg"
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Validation des arguments
+    #
+
+    if {[llength $argv] != 1} then {
+	syntax-error $argv0
+	return 1
+    }
+
+    set fqdn [lindex $argv 0]
+
+    set msg [del-host $dbfd $tabcor(idcor) $fqdn]
+    if {! [string equal $msg ""]} then {
+	puts stderr $msg
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+
+    return 0
+}
+
+exit [main $argv0 $argv]

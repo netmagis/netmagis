@@ -1,0 +1,108 @@
+#!%TCLSH%
+
+#
+# Script pour demander le réseau pour lequel il faut présenter la page
+# d'édition des paramètres DHCP.
+#
+# Appelé par : index.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2004/10/05 : pda/jean : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/dhcpsel.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(script-edit)	%DESTDIR%/bin/dhcpedit
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) {} \
+		{} ftab dbfd login tabcor
+
+    #
+    # Récupération des réseaux auxquels a droit le correspondant
+    #
+
+    set lres [liste-reseaux $dbfd $tabcor(idgrp) "dhcp"]
+    set taille [llength $lres]
+    switch $taille {
+	0 {
+	    ::webapp::error-exit $conf(err) \
+			"Vous n'avez accès à aucun réseau avec le droit DHCP"
+	}
+	1 {
+	    set idreseau [lindex [lindex $lres 0] 0]
+	    set ftab(idreseau) [list $idreseau]
+	    puts stdout [::webapp::call-cgi $conf(script-edit) ftab]
+	}
+	default {
+	    set menureseau [::webapp::form-menu "idreseau" 1 0 $lres {}]
+	    ::webapp::send html [::webapp::file-subst $conf(page) \
+					[list \
+					    [list %MENURESEAU% $menureseau] \
+					    ] \
+				    ]
+	}
+    }
+
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

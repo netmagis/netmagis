@@ -1,0 +1,60 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {21/05/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Gestion des groupes}
+
+    \titre {2} {\ancre {login} {Intitulé}}
+
+	Intitulé du groupe.
+
+	Exemple~:
+	    \retrait {\verbatim {crcgti}}
+
+	Attention~: le nom du groupe peut changer, mais il doit
+	rester le même. Tous les correspondants qui étaient rattachés
+	à l'ancien nom restent rattachés à ce groupe.
+
+    \titre {2} {\ancre {admin} {Administrateur}}
+
+	Le groupe a le droit d'accéder aux pages d'administration de
+	l'application et de la base de données.
+
+	Exemple~:
+	    \retrait {(sans objet)}
+}
+
+}

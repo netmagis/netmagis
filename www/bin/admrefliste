@@ -1,0 +1,311 @@
+#!%TCLSH%
+
+#
+# Script de présentation des tables constituant le référentiel de la base.
+#
+# Appelé par : admin.htgt
+#
+# Paramètres (formulaire ou URL) :
+#   - type : etabl, commu, hinfo, reseau, domaine, zone, zone4, zone6,
+#	groupe
+#
+# Historique
+#   2001/11/01 : pda      : création
+#   2002/05/03 : pda/jean : récupération pour dns
+#   2002/05/06 : pda/jean : ajout des correspondants
+#   2002/05/16 : pda      : conversion à arrgen
+#   2002/05/21 : pda/jean : ajout des groupes
+#   2002/05/21 : pda/jean : ajout des communautes
+#   2002/07/09 : pda      : ajout de nologin
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2003/08/12 : pda      : retrait des correspondants
+#   2004/01/14 : pda/jean : ajout IPv6
+#   2004/08/06 : pda/jean : ajout flag dhcp par réseau
+#   2005/04/08 : pda/jean : ajout table dhcpprofil
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+	{type	1 1}
+}
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admrefliste.html
+
+set conf(aide-etabl)	$conf(homeurl)/aideetabl.html
+set conf(aide-commu)	$conf(homeurl)/aidecommu.html
+set conf(aide-hinfo)	$conf(homeurl)/aidehinfo.html
+set conf(aide-reseau)	$conf(homeurl)/aidereseau.html
+set conf(aide-domaine)	$conf(homeurl)/aidedomaine.html
+set conf(aide-zone)	$conf(homeurl)/aidezone.html
+set conf(aide-zone4)	$conf(homeurl)/aidezone.html
+set conf(aide-zone6)	$conf(homeurl)/aidezone.html
+set conf(aide-groupe)	$conf(homeurl)/aidegroupe.html
+set conf(aide-dhcpprofil) $conf(homeurl)/aidedhcpprofil.html
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Configure l'aide pour les titres de colonnes
+##############################################################################
+
+#
+# Prépare une liste de titres pour la fonction edition-tableau
+#
+# Entrée :
+#   - paramètres :
+#	- colonnes : spécification des titres au format {colonne texte}
+#		où colonne est le nom de la colonne dans la table, mais aussi
+#		de l'ancre dans la page d'aide
+#		et texte est le texte qui doit être affiché
+#	- urlaide : url de l'aide, chaîne destinée à passer à format avec
+#		%1$s est le nom de la colonne et %2$s est le texte à afficher
+# Sortie :
+#   - valeur de retour : spécification prête pour edition-tableau
+#
+# Historique
+#   2001/11/02 : pda : conception et documentation
+#
+proc prepare-titres {colonnes urlaide} {
+    set titres {}
+    foreach c $colonnes {
+	set clef    [lindex $c 0]
+	set legende [lindex $c 1]
+	lappend titres [list html [format $urlaide $clef $legende]]
+    }
+    return $titres
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Selon le type
+    #
+
+    set type [lindex $ftab(type) 0]
+    set pageaide $conf(aide-$type)
+
+    set urlaide "<A HREF=\"$conf(aide-$type)#%1\$s\">%2\$s</A>"
+
+    switch -- $type {
+	etabl	{
+	    set titrepage "Gestion des établissements"
+	    set largeurs {100}
+	    set titre [prepare-titres {
+					{nom		{Intitulé}}
+				    } $urlaide]
+	    set spec {
+		    {nom		{string 30}	{}}
+		}
+	    set sql "SELECT * FROM etablissement ORDER BY nom ASC"
+	    set id idetabl
+	}
+	commu	{
+	    set titrepage "Gestion des communautés"
+	    set largeurs {100}
+	    set titre [prepare-titres {
+					{nom		{Intitulé}}
+				    } $urlaide]
+	    set spec {
+		    {nom		{string 30}	{}}
+		}
+	    set sql "SELECT * FROM communaute ORDER BY nom ASC"
+	    set id idcommu
+	}
+	hinfo	{
+	    set titrepage "Gestion des types de machines"
+	    set largeurs {60 20 20}
+	    set titre [prepare-titres {
+					{texte		{Intitulé}}
+					{tri		{Tri}}
+					{present	{Présent}}
+				    } $urlaide]
+	    set spec {
+		    {texte		{string 30}	{}}
+		    {tri		{string 10}	{}}
+		    {present		{bool}		1}
+		}
+	    set sql "SELECT * FROM hinfo ORDER BY tri ASC, texte ASC"
+	    set id idhinfo
+	}
+	reseau	{
+	    set titrepage "Gestion des réseaux"
+	    # set largeurs {12 15 15 15 10 10 23}
+	    set largeurs {1 1 1 1 1 1 1 1 1 1}
+	    set titre [prepare-titres {
+					{nom		{Intitulé}}
+					{localisation	{Localisation}}
+					{adr4		{Adr IPv4}}
+					{gw4		{Passerelle IPv4}}
+					{dhcp		{DHCP activé}}
+					{adr6		{Adr IPv6}}
+					{gw6		{Passerelle IPv6}}
+					{idetabl	{Établissement}}
+					{idcommu	{Communauté}}
+					{commentaire	{Commentaire}}
+				    } $urlaide]
+	    set menuetabl [::pgsql::getcols $dbfd etablissement "" "nom ASC" \
+						{idetabl nom}]
+	    set menucommu [::pgsql::getcols $dbfd communaute "" "nom ASC" \
+						{idcommu nom}]
+	    set spec {
+		    {nom		{string 20}	{}}
+		    {localisation	{string 10}	{}}
+		    {adr4		{string 15}	{}}
+		    {gw4		{string 12}	{}}
+		    {dhcp		{bool}		0}
+		    {adr6		{string 49}	{}}
+		    {gw6		{string 45}	{}}
+		    {idetabl		{menu {%MENUETABL%}}	{}}
+		    {idcommu		{menu {%MENUCOMMU%}}	{}}
+		    {commentaire	{string 15}	{}}
+		}
+	    regsub -- "%MENUETABL%" $spec "$menuetabl" spec
+	    regsub -- "%MENUCOMMU%" $spec "$menucommu" spec
+	    set sql "SELECT * FROM reseau ORDER BY adr4"
+	    set id idreseau
+	}
+	domaine {
+	    set titrepage "Gestion des domaines"
+	    set largeurs {100}
+	    set titre [prepare-titres {
+					{nom		{Domaine}}
+				    } $urlaide]
+	    set spec {
+		    {nom		{string 30}		{}}
+		}
+	    set sql "SELECT * FROM domaine ORDER BY nom ASC"
+	    set id iddom
+	}
+	zone -
+	zone4 -
+	zone6 {
+	    switch -- $type {
+		zone  { set table zone_normale }
+		zone4 { set table zone_reverse4 }
+		zone6 { set table zone_reverse6 }
+	    }
+	    set titrepage "Gestion des zones"
+	    set largeurs {15 45 25 15}
+	    set titre [prepare-titres {
+					{domaine	{Domaine}}
+					{prologue	{Prologue}}
+					{rrsup		{RR suppl.}}
+					{selection	{Critère}}
+				    } $urlaide]
+	    set spec {
+		    {domaine		{string 15}		{}}
+		    {prologue		{textarea {45 10}}	{}}
+		    {rrsup		{textarea {30 10}}	{}}
+		    {selection		{string 15}		{}}
+		}
+	    set sql "SELECT * FROM $table ORDER BY domaine ASC"
+	    set id idzone
+	}
+	groupe {
+	    set titrepage "Gestion des groupes"
+	    set largeurs {80 20}
+	    set titre [prepare-titres {
+					{nom	 	{Intitulé}}
+					{admin		{Admin}}
+				    } $urlaide]
+	    set spec {
+		    {nom 		{string 15}		{}}
+		    {admin		{bool}			0}
+		}
+	    set sql "SELECT * FROM groupe ORDER BY nom ASC"
+	    set id idgrp
+	}
+	dhcpprofil {
+	    set titrepage "Gestion des profils DHCP"
+	    set largeurs {20 80}
+	    set titre [prepare-titres {
+					{nom		{Nom}}
+					{texte		{Directives dhcpd.conf}}
+				    } $urlaide]
+	    set spec {
+		    {nom		{string 20}		{}}
+		    {texte		{textarea {80 10}}	{}}
+		}
+	    set sql "SELECT * FROM dhcpprofil ORDER BY nom ASC"
+	    set id iddhcpprofil
+	}
+	default	{
+	    ::webapp::error-exit $conf(err) "Type d'édition invalide ($type)"
+	}
+    }
+
+    set errmsg [edition-tableau $largeurs $titre $spec $dbfd $sql $id tab]
+    if {[string length $errmsg] > 0} then {
+	::webapp::error-exit $conf(err) $errmsg
+    }
+
+    #
+    # Génération de la page contenant le formulaire
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				[list \
+					[list %TYPE% $type] \
+					[list %TABLEAU% $tab] \
+					[list %TITREPAGE% $titrepage] \
+				    ] \
+			    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

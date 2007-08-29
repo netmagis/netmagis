@@ -1,0 +1,173 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {11/04/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Ajout de machine dans le DNS}
+
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Ajout d'une machine}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
+		    <INPUT TYPE="HIDDEN" NAME="multiadresses" VALUE="non">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Nom}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				.
+				%DOMAINE%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Adresse IP}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="adr" SIZE="45">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Adresse MAC}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="mac" SIZE="20 MAXLENGTH="17">
+				~
+				~
+				%DHCPPROFIL%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Type de machine}
+			    \casetableau {} {
+				%MENUHINFO%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Infos complémentaires}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="commentaire" SIZE="50">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Responsable (nom et prénom)}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="respnom" SIZE="50">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Responsable (mél)}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="respmel" SIZE="50">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Valider">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Ajout d'un alias}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-alias">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Nom de l'alias}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				.
+				%DOMAINE%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Pointe vers}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nomref" SIZE="30">
+				.
+				%DOMAINEREF%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Valider">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+    }
+}
+
+}

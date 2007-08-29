@@ -1,0 +1,207 @@
+#!%TCLSH%
+
+#
+# Script pour consulter des stats sur les correspondants
+#
+# Appelé par : admin.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2002/07/25 : pda      : création
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/statcor.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+#
+# Le tableau servant à présenter le nb de machines par correspondant
+# Colonnes
+#	nom du correspondant
+#	nombre de RR déclarés
+#	pourcentage par rapport au nb de machines
+#	[nb d'adresses allouées au correspondant]
+#
+
+set conf(tabrrcor) {
+    global {
+	chars {10 normal}
+	columns {70 15 15}
+	botbar {yes}
+	align {right}
+    }
+    motif {Titre} {
+	align {center}
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    motif {Normal} {
+	title {yes}
+	vbar {yes}
+	colonne {
+	    align {left}
+	}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    motif {Total} {
+	title {yes}
+	chars {bold}
+	vbar {yes}
+	colonne {
+	    align {left}
+	}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Comparaison de deux éléments de liste (pour les tris)
+##############################################################################
+
+proc comparer {e1 e2} {
+    set nb1 [lindex $e1 0]
+    set nb2 [lindex $e2 0]
+    if {$nb1 < $nb2} then {
+	return 1
+    } elseif {$nb1 > $nb2} then {
+	return -1
+    }
+    return [string compare [lindex $e1 1] [lindex $e2 1]]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			{} ftab dbfd login tabcor
+
+    #
+    # Calcule les stats, et former une liste {nb nomprenom}
+    #
+
+    set sql "SELECT c.login, count(*) AS nb
+		    FROM rr r, corresp c
+		    WHERE r.idcor = c.idcor
+		    GROUP BY c.login
+		"
+    set total 0
+    set liste {}
+    pg_select $dbfd $sql tab {
+	catch {unset tabcor}
+	if {[::auth::getuser $tab(login) tabcor]} then {
+	    set nomprenom "$tabcor(nom) $tabcor(prenom)"
+	} else {
+	    set nomprenom $tab(login)
+	}
+
+	lappend liste [list $tab(nb) $nomprenom]
+	incr total $tab(nb)
+    }
+
+    #
+    # Trier la liste par nb, puis par nomprénom
+    #
+
+    set liste [lsort -command comparer $liste]
+
+    #
+    # Présenter les données dans un zoli tableau
+    #
+
+    set donnees {}
+    lappend donnees {Total Correspondant {Nombre de RR} {Pourcentage}}
+    set ptotal 0.0
+    foreach e $liste {
+	set nb    [lindex $e 0]
+	set nom   [lindex $e 1]
+	set pcent [expr $nb * 100.0 / $total]
+	lappend donnees [list Normal $nom $nb [format "%5.2f" $pcent]]
+	set ptotal [expr $ptotal + $pcent]
+    }
+    lappend donnees [list Total Total $total [format "%5.2f" $ptotal]]
+
+    set nbrrcor [::arrgen::output "html" $conf(tabrrcor) $donnees]
+
+    #
+    # Sortie de la page
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				[list \
+				    [list %NBRRCOR% $nbrrcor] \
+				] \
+			    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

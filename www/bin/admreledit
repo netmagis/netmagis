@@ -1,0 +1,132 @@
+#!%TCLSH%
+
+#
+# Script pour présenter les informations pour une modification de relais
+# de messagerie.
+#
+# Appelé par : admrelsel.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2004/03/04 : pda/jean : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admreledit.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form) {
+	{domaine	1 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require arrgen
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			$conf(form) ftab dbfd login tabcor
+    set idcor $tabcor(idcor)
+
+    set domaine [lindex $ftab(domaine) 0]
+
+    #
+    # Valider le domaine
+    #
+
+    set msg [valide-domaine-et-relais $dbfd $tabcor(idcor) $domaine iddom]
+    if {[string length $msg] > 0} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Présenter les informations de relayage en notre possession
+    #
+
+    set largeurs {10 50 40}
+    set titres {{texte Priorité} {texte Nom} {texte Domaine}}
+    set menudom [couple-domaine-par-corresp $dbfd $tabcor(idcor) ""]
+    set spec [list \
+		{priorite {string 5}  {}} \
+		{nom      {string 30} {}} \
+		[list domaine [list menu $menudom] {}] \
+	    ]
+    set sql "SELECT rd.mx, rd.priorite, r.nom, d.nom AS domaine
+		FROM relais_dom rd, rr r, domaine d
+		WHERE rd.iddom = $iddom
+			AND r.iddom = d.iddom
+			AND rd.mx = r.idrr
+		ORDER BY rd.priorite, d.nom, r.nom
+		"
+    set idnum "mx"
+
+    set msg [edition-tableau $largeurs $titres $spec $dbfd $sql $idnum tableau]
+    if {[string length $msg] > 0} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				    [list \
+					    [list %TABLEAU% $tableau] \
+					    [list %DOMAINE% $domaine] \
+					] \
+			    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

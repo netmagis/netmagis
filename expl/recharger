@@ -1,0 +1,29 @@
+#!/bin/sh
+
+#
+# recharge une base à partir d'un dump
+#
+
+if [ $# != 2 ]
+then
+    echo "usage: $0 <phrase-magique> <fichier-dump>" >&2
+    exit 1
+fi
+
+if [ ! -f $2 ]
+then
+    echo "$0: le fichier '$2' n'est pas présent" >&2
+    exit 1
+fi
+
+if [ "x$1" != "xje sais, je sais" ]
+then
+    echo "$0: la <phrase-magique> n'est pas bonne" >&2
+    exit 1
+fi
+
+BASE=dns
+
+dropdb $BASE
+createdb -E unicode $BASE
+psql $BASE < $2

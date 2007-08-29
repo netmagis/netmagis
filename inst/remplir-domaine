@@ -1,0 +1,517 @@
+#!/usr/local/bin/tclsh8.4
+
+#
+# Remplit la base DNS à partir d'un fichier de zone.
+#
+# Usage :
+#	<script> <nom du domaine> <fichier zone> <login du remplisseur>
+#
+# Historique
+#   2002/02/10 : pda      : conception
+#   2002/05/03 : pda/jean : insertion date/correspondant
+#   2002/05/23 : pda/jean : insertion responsable
+#   2003/02/09 : pda      : correction de petits bugs
+#   2003/07/15 : pda      : rechargement d'une zone pour compléter les RR
+#   2004/03/07 : pda      : ajout du motif de démarrage
+#   2005/04/08 : pda      : adaptation au nouveau format de base
+#
+
+#
+# Valeurs par défaut du script
+#
+
+set conf(base)		{dbname=dns user=dns password=mot-de-passe-de-dns}
+
+set conf(pattern)	{^; COUPER ICI}
+
+package require Pgtcl
+
+
+#
+# Neutralise les caractères spéciaux figurant dans une chaîne,
+# de façon à pouvoir la passer au moteur SQL.
+# - double toutes les apostrophes
+#
+# Entrée :
+#   - paramètres
+#	- chaine : chaîne à traiter
+#	- maxindex (optionnel) : taille maximum de la chaîne
+# Sortie :
+#   - valeur de retour : la chaîne traitée
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc quote {chaine {maxindex 99999}} {
+    set chaine [string range $chaine 0 $maxindex]
+    regsub -all {'} $chaine {&&} chaine
+    regsub -all {\\} $chaine {&&} chaine
+    return $chaine
+}
+
+#
+# Exécute une commande sql, et affiche une erreur et sort
+# en cas de problème. Retourne le résultat de la commande
+# (résultat pour pg_result).
+#
+# Entrée :
+#   - paramètres
+#	- dbfd : la base
+#	- cmd : la commande à passer
+#	- result : contient en retour le nom de la variable contenant l'erreur
+# Sortie :
+#   - valeur de retour : 1 si tout est ok, 0 sinon
+#   - variable result :
+#	- si erreur, la variable contient le message d'erreur
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc execsql {dbfd cmd result} {
+    upvar $result rmsg
+
+    set res [pg_exec $dbfd $cmd]
+    if {! [string equal [pg_result $res -status] PGRES_COMMAND_OK]} then {
+	set ok 0
+	set rmsg "$cmd : [pg_result $res -error]"
+    } else {
+	set ok 1
+	set rmsg {}
+    }
+    pg_result $res -clear
+    return $ok
+}
+
+##############################################################################
+
+proc warning {msg} {
+    global argv0 domaine lineno
+
+    set m ""
+    if {[info exists argv0]} then {
+	append m [lindex [split $argv0 "/"] end]
+    }
+
+    if {[info exists domaine]} then {
+	append m "\[$domaine"
+	if {[info exists lineno]} then {
+	    append m "/$lineno"
+	}
+	append m "\]"
+    }
+
+    if {[string length $m] > 0} then {
+	append m ": "
+    }
+
+    append m $msg
+
+    puts stderr $m
+}
+
+proc erreur {msg} {
+    warning $msg
+    exit 1
+}
+
+#
+# Valide la syntaxe d'un nom (partie de FQDN) au sens de la RFC 1035
+# élargie pour accepter les chiffres en début de nom.
+#
+# Entrée :
+#   - paramètres :
+#	- nom : le nom à tester
+# Sortie :
+#   - valeur de retour : chaîne vide (ok) ou non vide (message d'erreur)
+#
+# Historique
+#   2002/04/11 : pda/jean : conception
+#
+
+proc syntaxe-nom {nom} {
+    # cas général : une lettre-ou-chiffre en début, une lettre-ou-chiffre
+    # à la fin (tiret interdit en fin) et lettre-ou-chiffre-ou-tiret au
+    # milieu
+    set re1 {[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9]}
+    # cas particulier d'une seule lettre
+    set re2 {[a-zA-Z0-9]}
+
+    if {[regexp "^$re1$" $nom] || [regexp "^$re2$" $nom]} then {
+	set m ""
+    } else {
+	set m "Syntaxe invalide"
+    }
+
+    return $m
+}
+
+proc compter-deja-inscrits {dbfd iddom} {
+    global dejainscrits
+
+    set sql "SELECT r.nom AS nom, i.adr AS adr
+			FROM rr r, rr_ip i
+			WHERE r.idrr = i.idrr AND iddom = $iddom"
+    pg_select $dbfd $sql tab {
+	lappend dejainscrits(ip:$tab(nom)) $tab(adr)
+    }
+
+    set sql "SELECT r1.nom AS nom, r2.nom AS cname1, d.nom AS cname2
+			FROM rr r1, rr_cname c, rr r2, domaine d
+			WHERE r1.idrr = c.idrr
+				AND c.cname = r2.idrr
+				AND r2.iddom = d.iddom
+				AND r1.iddom = $iddom"
+    pg_select $dbfd $sql tab {
+	set dejainscrits(cname:$tab(nom)) "$tab(cname1).$tab(cname2)."
+    }
+}
+
+proc deja-inscrit {nom} {
+    global dejainscrits
+
+    return [expr [info exists dejainscrits(ip:$nom)] \
+			|| [info exists dejainscrits(cname:$nom)] ]
+}
+
+proc deja-inscrit-ip {nom adr} {
+    global dejainscrits
+
+    set r 0
+    set i ip:$nom
+    if {[info exists dejainscrits($i)]} then {
+	if {[lsearch -exact $dejainscrits($i) $adr] != -1} then {
+	    set r 1
+	}
+    }
+    return $r
+}
+
+proc deja-inscrit-cname {nom cname} {
+    global dejainscrits
+
+    set r 0
+    set i cname:$nom
+    if {[info exists dejainscrits($i)]} then {
+	if {[string equal $dejainscrits($i) $cname]} then {
+	    set r 1
+	} else {
+	    warning "$nom est déjà un CNAME sur $dejainscrits($i) (ignoré)"
+	    set r 1
+	}
+    }
+    return $r
+}
+
+proc ajouter-domaine {dbfd domaine} {
+    set domaine [quote $domaine]
+
+    set iddom -1
+    pg_select $dbfd "SELECT iddom FROM domaine WHERE nom = '$domaine'" tab {
+	set iddom $tab(iddom)
+	compter-deja-inscrits $dbfd $iddom
+    }
+
+    if {$iddom == -1} then {
+	set sql "INSERT INTO domaine (nom) VALUES ('$domaine')"
+	if {! [execsql $dbfd $sql m]} then { erreur $m }
+
+	pg_select $dbfd "SELECT iddom FROM domaine WHERE nom = '$domaine'" tab {
+	    set iddom $tab(iddom)
+	}
+    }
+    return $iddom
+}
+
+set authorized_types {A AAAA NS CNAME SOA PTR HINFO MINFO MX TXT}
+set authorized_classes {IN}
+
+proc get-token {champ} {
+    global authorized_types authorized_classes
+
+    if {[regexp "^\[0-9]+$" $champ]} then {
+	return TTL
+    }
+    set champ [string toupper $champ]
+    if {[lsearch -exact $authorized_classes $champ] != -1} then {
+	return CLASS
+    }
+    if {[lsearch -exact $authorized_types $champ] != -1} then {
+	return TYPE
+    }
+    return AUTRE
+}
+
+proc analyser-rr {ligne ftab anciennom} {
+    upvar $ftab tab
+    
+    # éliminer les commentaires
+    regsub -all -- ";.*" $ligne "" ligne
+
+    # éliminer les espaces superflus en fin de ligne (les espaces
+    # en début de ligne ne sont pas du tout superflus !)
+    set ligne [string trimright $ligne]
+
+    # éliminer les lignes vides
+    if {[string equal $ligne ""]} then {
+	set tab(type) RIEN
+	set tab(nom) $anciennom
+	set tab(reste) {}
+	return
+    }
+
+    # décomposer la ligne en éléments. Attention : si le RR commence
+    # par un espace, le nom doit être remplacé par l'ancien nom (cf
+    # RFC 1035, page 34).
+    regsub -all -- {\s+} $ligne " " ligne
+    set l [split $ligne " "]
+
+    # récupération du nom, et remplacement par l'ancien nom s'il est vide.
+    set tab(nom) [string tolower [lindex $l 0]]
+    if {[string equal $tab(nom) ""]} then {
+	set tab(nom) $anciennom
+    }
+    if {[string length $tab(nom)] > 0} then {
+	set m [syntaxe-nom $tab(nom)]
+	if {[string length $m] > 0} then { erreur "$m $tab(nom)" }
+    }
+
+    # on "saute" les ttl et class, jusqu'à trouver le type
+    set i 1
+    set type 0
+    while {$i <= [llength $l]-2 && ! $type} {
+	set tok [get-token [lindex $l $i]]
+	switch $tok {
+	    TTL -
+	    CLASS {
+		# on ne fait rien, si ce n'est passer au token suivant
+		incr i
+	    }
+	    TYPE {
+		# il faut sortir de la boucle
+		set type 1
+	    }
+	    default {
+		erreur "RR non reconnu ($ligne)"
+	    }
+	}
+    }
+    if {! [string equal $tok "TYPE"]} then {
+	erreur "RR sans type ($ligne)"
+    }
+
+    set tab(type) [string toupper [lindex $l $i]]
+    set tab(reste) [string tolower [lrange $l [expr $i + 1] end]]
+}
+
+proc nouveau-rr {dbfd nom iddom idcor} {
+    if {! [deja-inscrit $nom]} then {
+	# insertion
+	set sql "INSERT INTO rr (nom, iddom, \
+				    idhinfo, commentaire, respnom, respmel, \
+				    idcor) \
+		    VALUES ('$nom', $iddom, \
+				    0, '', '', '', \
+				    $idcor)"
+	if {! [execsql $dbfd $sql m]} then { erreur $m }
+    }
+
+    # recuperation de l'id inséré
+    set sql "SELECT idrr FROM rr WHERE nom = '$nom' AND iddom = $iddom"
+    pg_select $dbfd $sql tab {
+	set idrr $tab(idrr)
+    }
+    if {! [info exists idrr]} then {
+	erreur "'$nom' inséré dans la base, mais pas retrouvé."
+    }
+    return $idrr
+}
+
+proc remplir-rr {dbfd iddom domaine fd idcor pattern} {
+    global lineno
+
+    set lineno 0
+    set anciennom ""
+    set ok 0
+    while {[gets $fd ligne] > -1} {
+	incr lineno
+	if {! $ok} then {
+	    set ok [regexp -- $pattern $ligne]
+	}
+
+	if {$ok} then {
+	    catch {unset tab}
+	    analyser-rr $ligne tab $anciennom
+	    set nom $tab(nom)
+	    set reste $tab(reste)
+	    switch $tab(type) {
+		RIEN {
+		    # rien
+		}
+		NS	{
+		    # rien
+		}
+		AAAA	-
+		A	{
+		    if {! [deja-inscrit-ip $nom $reste]} then {
+			lappend adr($nom) $reste
+		    }
+		}
+		CNAME	{
+		    # Exemple :	a CNAME b.domaine.fr.
+		    #  ou :		a CNAME b
+		    if {[info exists cname($nom)]} then {
+			warning "$nom a déjà un cname : $cname($nom) (ignoré)"
+		    } else {
+			# cname(a) => b.domaine.fr ou b
+			if {! [string equal [string range $reste end end] "."]} then {
+			    append reste ".$domaine."
+			}
+			if {! [deja-inscrit-cname $nom $reste]} then {
+			    set cname($nom) $reste
+			    set lignecname($nom) $lineno
+			}
+		    }
+		}
+		MX {
+		    # rien
+		}
+		default {
+		    warning "Type de RR non reconnu : $tab(type) (ignoré)"
+		}
+	    }
+	    set anciennom $nom
+	}
+    }
+
+    #
+    # Est-ce qu'on a bien vu le pattern ?
+    #
+
+    if {!$ok} then {
+	erreur "Pattern '$pattern' non trouvé"
+    }
+
+    #
+    # Insérer dans la base tous les A ou AAAA rencontrés
+    #
+
+    # le numéro de ligne n'est plus valide (on est à la fin du fichier)
+    # on supprime la variable pour ne pas l'afficher en cas d'erreur
+    unset lineno
+
+    foreach n [lsort [array names adr]] {
+	set id($n) [nouveau-rr $dbfd $n $iddom $idcor]
+	foreach a $adr($n) {
+	    set sql "INSERT INTO rr_ip (idrr, adr) VALUES ($id($n), '$a')"
+	    if {! [execsql $dbfd $sql m]} then { erreur $m }
+	}
+    }
+
+    #
+    # Récupération de TOUS les RR de la base qui ne sont pas des CNAME
+    # baserr(a) => idrr de a
+    #
+    set sql "SELECT rr.nom || '.' || d.nom || '.' AS nom, rr.idrr
+			FROM rr, domaine d 
+			WHERE rr.iddom = d.iddom 
+			    AND rr.idrr NOT IN (SELECT idrr FROM rr_cname)"
+    # cname(a.domaine.fr) => idrr de a.domaine.fr
+    pg_select $dbfd $sql tab {
+	set nom $tab(nom)
+	set idrr $tab(idrr)
+	set baserr($nom) $idrr
+    }
+
+    #
+    # Exploration de tous les CNAME lus dans le fichier
+    # cname(a) => b.domaine.fr.
+    #
+    foreach n [lsort [array names cname]] {
+
+	# pour avoir des messages d'erreur précis : on récupère le
+	# numéro de la ligne contenant le cname
+	set lineno $lignecname($n)
+
+	# cname(a) => b.domaine.fr.
+	set ref $cname($n)
+#	regsub ".$domaine.$" $ref "" ref
+#	# ref = b
+
+	catch {unset refrr}
+	# id(b) = id dans la table rr
+	if {[info exists id($ref)]} then {
+	    set refrr $id($ref)
+	} elseif {[info exists baserr($ref)]} then {
+	    set refrr $baserr($ref)
+	} else {
+	    warning "CNAME '$n' pointe sur '$cname($n)' => inexistant ! (ignoré)"
+	}
+
+	if {[info exists refrr]} then {
+	    set id($n) [nouveau-rr $dbfd $n $iddom $idcor]
+	    set sql "INSERT INTO rr_cname (idrr, cname) VALUES ($id($n), $refrr)"
+	    if {! [execsql $dbfd $sql m]} then { erreur $m }
+	}
+    }
+
+    return ""
+}
+
+
+proc main {argv0 argv} {
+    global conf
+    global domaine
+    global abortfd
+
+    set abortfd ""
+
+    if {[llength $argv] != 3} then {
+	erreur "usage: $argv0 <domain-name> <zone-file> <login>"
+    }
+
+    if {[catch {set dbfd [pg_connect -conninfo $conf(base)]} msg]} then {
+	erreur "cannot access database ($msg)"
+    }
+
+    set domaine [lindex $argv 0]
+    set fichier [lindex $argv 1]
+    set login   [lindex $argv 2]
+    set pattern [lindex $argv 3]
+
+    set fd [open $fichier r]
+
+    set sql "BEGIN WORK ; LOCK domaine ; LOCK rr ; LOCK rr_ip ; LOCK rr_cname"
+    if {! [execsql $dbfd $sql m]} then { erreur $m }
+    set abortfd $dbfd
+
+    set qlogin [quote $login]
+    set idcor -1
+    pg_select $dbfd "SELECT idcor FROM corresp WHERE login = '$qlogin'" tab {
+	set idcor $tab(idcor)
+    }
+    if {$idcor == -1} then {
+	erreur "login '$login' non trouvé"
+    }
+
+    set iddom [ajouter-domaine $dbfd $domaine]
+    puts stderr "$domaine : id = $iddom"
+
+    remplir-rr $dbfd $iddom $domaine $fd $idcor $conf(pattern)
+
+    set sql "COMMIT WORK"
+    if {! [execsql $dbfd $sql m]} then { erreur $m }
+
+    pg_disconnect $dbfd
+
+    return 0
+}
+
+#
+# Tout démarre ici...
+#
+
+exit [main $argv0 $argv]

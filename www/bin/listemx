@@ -1,0 +1,295 @@
+#!%TCLSH%
+
+#
+# Script pour lister les machines d'un ou plusieurs domaines
+#
+# Appelé par : script consultmx (page lib/consultmx.htgt)
+#
+# Paramètres (formulaire ou URL) :
+#   - critères de sélection : 
+#	- domaine : liste de domaines pour lesquels on liste les MX
+#   - format de sortie
+#	- format : "Consulter" ou "Imprimer"
+#
+# Historique
+#   2002/05/25 : pda      : création
+#   2002/07/09 : pda      : ajout de nologin
+#   2002/10/24 : pda      : fichier à trou commun avec d'autres listes
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(liste)		$conf(lib)/listedes.html
+set conf(listetex)	$conf(lib)/listedes.tex
+set conf(err)		$conf(lib)/erreur.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)		{
+	{domaine	0 99999}
+	{format		1 1}
+}
+
+#
+# Le tableau servant à présenter le résultat
+# Colonnes :
+#	- machine
+#	- priorité
+#	- MX
+#
+
+set conf(tableau) {
+    global {
+	chars {12 normal}
+	columns {45 10 45}
+	botbar {yes}
+	align {left}
+    }
+    pattern {Titre} {
+	title {yes}
+	topbar {yes}
+	chars {12 bold}
+	align {center}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    pattern {Domaine} {
+	chars {12 bold}
+	align {center}
+	vbar {yes}
+	colonne {
+	    multicolumn {3}
+	}
+	vbar {yes}
+    }
+    pattern {PasdeMX} {
+	align {left}
+	vbar {yes}
+	colonne {
+	    multicolumn {3}
+	}
+	vbar {yes}
+    }
+    pattern {MX} {
+	vbar {yes}
+	colonne {
+	    botbar {no}
+	}
+	vbar {yes}
+	colonne {
+	    align {right}
+	}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    pattern {DernierMX} {
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne {
+	    align {right}
+	}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+}
+
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Analyse et validation des arguments
+    #
+
+    # format de sortie
+    switch -- [lindex $ftab(format) 0] {
+	Consulter	{ set format html }
+	Imprimer	{ set format latex }
+    }
+
+    foreach d $ftab(domaine) {
+	set iddom [lire-domaine $dbfd $d]
+	if {$iddom == -1} then {
+	    ::webapp::error-exit $conf(err) "Domaine '$d' non trouvé"
+	}
+	set tabdom($d) $iddom
+    }
+
+    #
+    # Lister les MX pour chaque domaine
+    #
+
+    set donnees {}
+    lappend donnees {Titre Nom Priorité MX}
+    foreach d [lsort $ftab(domaine)] {
+	lappend donnees [list Domaine $d]
+
+	set iddom $tabdom($d)
+
+	#
+	# Deux variables intermédiaires
+	# - tabmx(machin.u-strasbg.fr) = {{10 isis.u-strasbg.fr} {20 amon...}}
+	#
+	catch {unset tabmx}
+
+	#
+	# Récupération des MX de la zone, et stockage dans les
+	# deux variables intermédiaires. Le passage par ces deux
+	# variables est nécessaire pour pouvoir distinguer le
+	# dernier MX et le sortir différemment dans le tableau.
+	#
+
+	set sql "SELECT r1.nom || '.' || d1.nom AS gauche, \
+			m.priorite, \
+			r2.nom || '.' || d2.nom AS droite \
+		    FROM rr r1, domaine d1, rr_mx m, rr r2, domaine d2 \
+		    WHERE r1.iddom = d1.iddom \
+			AND r1.idrr = m.idrr \
+			AND m.mx = r2.idrr \
+			AND r2.iddom = d2.iddom \
+			AND r1.iddom = $iddom \
+		    ORDER BY r1.nom ASC, m.priorite ASC"
+	pg_select $dbfd $sql tab {
+	    set gauche $tab(gauche)
+	    set prio   $tab(priorite)
+	    set droite $tab(droite)
+	    lappend tabmx($gauche) [list $prio $droite]
+	}
+
+	#
+	# Traiter chaque MX de la zone
+	#
+
+	set lmx [lsort [array names tabmx]]
+	if {[llength $lmx] == 0} then {
+	    lappend donnees [list PasdeMX "(pas de MX pour ce domaine)"]
+	} else {
+	    foreach mx [lsort [array names tabmx]] {
+		set n [llength $tabmx($mx)]
+		for {set i 0} {$i < $n} {incr i} {
+
+		    set prio   [lindex [lindex $tabmx($mx) $i] 0]
+		    set droite [lindex [lindex $tabmx($mx) $i] 1]
+
+		    # sortir le nom du MX seulement la première fois
+		    if {$i == 0} then {
+			set nom $mx
+		    } else {
+			set nom ""
+		    }
+
+		    # ne pas afficher de trait horizontal sous le
+		    # nom du MX, sauf pour le dernier.
+		    if {$i < $n - 1} then {
+			set pattern MX
+		    } else {
+			set pattern DernierMX
+		    }
+
+		    lappend donnees [list $pattern $nom $prio $droite]
+		}
+	    }
+	}
+    }
+
+    #
+    # Générer le zoli tableau
+    #
+
+    set tableau [::arrgen::output $format $conf(tableau) $donnees]
+
+
+    #
+    # Sortie du résultat
+    #
+
+    set datefmt [getconfig $dbfd "datefmt"]
+    set date  [clock format [clock seconds] -format $datefmt]
+    switch -- $format  {
+	html	{
+	    ::webapp::send html [::webapp::file-subst $conf(liste) \
+					[list \
+					    [list %TITRE%	"MX"] \
+					    [list %TXT%		""] \
+					    [list %TABLEAU%	$tableau] \
+					    [list %DATE%	$date] \
+					] \
+				]
+	}
+	latex	{
+	    ::webapp::send pdf [::webapp::file-subst $conf(listetex) \
+					[list \
+					    [list %ORIENTATION%	"portrait"] \
+					    [list %TITRE%	"MX"] \
+					    [list %TXT%		""] \
+					    [list %TABLEAU%	$tableau] \
+					    [list %DATE%	$date] \
+					] \
+				]
+	}
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

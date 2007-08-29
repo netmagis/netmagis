@@ -1,0 +1,49 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {27/09/2003}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS - Mot de passe modifié
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}      {/osiris/}}
+	    \reference {\lien {CRC} {/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Action effectuée}
+
+    Le mot de passe a été modifié.
+
+    Vous pouvez à présent \lien {revenir au menu principal} {%HOMEURL%}.
+}
+
+}

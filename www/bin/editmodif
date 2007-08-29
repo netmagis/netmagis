@@ -1,0 +1,196 @@
+#!%TCLSH%
+
+#
+# Script pour saisir les modifications demandées par un correspondant.
+#
+# Appelé par : script modif (page lib/modif.htgt)
+#
+# Paramètres (formulaire ou URL) :
+#   - édition des informations d'une machine
+#	- action : "modif-infos"
+#	- nom : nom de la machine à ajouter
+#	- domaine : domaine dans lequel elle doit être ajoutée
+#
+# Historique
+#   2002/05/03 : pda/jean : création
+#   2002/07/09 : pda      : ajout de nologin
+#   2002/07/09 : pda      : conversion des noms en minuscules
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/08/05 : pda/jean : ajout MAC
+#   2005/04/08 : pda/jean : ajout dhcpprofil
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(page-edit-infos)	$conf(lib)/editmodif-infos.html
+set conf(err)			$conf(lib)/erreur.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+# le champ discriminant pour la suite
+set conf(form)		{
+	{action		1 1}
+}
+
+# les champs utilisés pour chacune des actions
+set conf(form-modif-infos)	{
+	{nom		1 1}
+	{domaine	1 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Ajout d'un nom
+##############################################################################
+
+# Historique
+#   2002/05/03 : pda/jean : conception
+#
+proc editmodif-infos {dbfd idcor ft} {
+    global conf
+    upvar $ft ftab
+
+    #
+    # Valider les champs du formulaire
+    #
+
+    set nom           [string trim [lindex $ftab(nom) 0]]
+    set domaine       [string trim [lindex $ftab(domaine) 0]]
+
+    #
+    # Valider la syntaxe du nom au sens de la RFC ????
+    #
+
+    set m [syntaxe-nom $nom]
+    if {[string length $m] > 0} then {
+	::webapp::error-exit $conf(err) "Erreur sur le nom '$nom': $m"
+    }
+    set nom [string tolower $nom]
+
+    #
+    # Valider le domaine, le nom (qui ne doit pas être un alias, un MX, etc)
+    #
+
+    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "machine-existante"]
+    if {[string length $msg] > 0} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Vérifier que le nom à modifier existe bien
+    #
+
+    if {[string equal $trr(idrr) ""]} then {
+	::webapp::error-exit $conf(err) "Le nom '$nom' n'existe pas"
+    }
+
+    #
+    # Pré-saisir les champs à éditer
+    #
+
+    set val [::webapp::html-string $trr(mac)]
+    set mac [::webapp::form-text mac 1 20 17 $val]
+    set dhcpprofil [menu-dhcpprofil $dbfd iddhcpprofil $idcor $trr(iddhcpprofil)]
+
+    set menuhinfo [menu-hinfo $dbfd hinfo $trr(hinfo)]
+
+    set val [::webapp::html-string $trr(commentaire)]
+    set commentaire [::webapp::form-text commentaire 1 50 50 $val]
+
+    set val [::webapp::html-string $trr(respnom)]
+    set respnom [::webapp::form-text respnom 1 50 50 $val]
+
+    set val [::webapp::html-string $trr(respmel)]
+    set respmel [::webapp::form-text respmel 1 50 50 $val]
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page-edit-infos) \
+				[list \
+					[list %NOM% $nom] \
+					[list %DOMAINE% $domaine] \
+					[list %MAC% $mac] \
+					[list %DHCPPROFIL% $dhcpprofil] \
+					[list %MENUHINFO% $menuhinfo] \
+					[list %COMMENTAIRE% $commentaire] \
+					[list %RESPNOM% $respnom] \
+					[list %RESPMEL% $respmel] \
+				    ] \
+			    ]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Valider l'action, lire les autres champs du formulaire,
+    # et faire le branchement
+    #
+
+    set action [lindex $ftab(action) 0]
+
+    if {! [info exists conf(form-$action)]} then {
+	::webapp::error-exit $conf(err) "Champ 'action' non conforme : $action"
+    }
+
+    if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
+	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
+    }
+
+    edit$action $dbfd $tabcor(idcor) ftab
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

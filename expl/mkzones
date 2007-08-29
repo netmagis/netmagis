@@ -1,0 +1,57 @@
+#!/bin/sh
+
+#
+# Script de génération de tous les fichiers zone ayant le flag "generer"
+# dans la base.
+#
+# Syntaxe :
+#	aucun paramètre
+#
+# Historique
+#   2002/04/26 : pda/jean : maquettage
+#   2002/05/02 : pda/jean : test sur isis
+#   2002/05/24 : pda/jean : mise en exploitation
+#   2002/05/28 : jean     : ajout de sudo (root possède le pipe de ndc)
+#   2004/04/26 : pda/jean/pegon : utilisation bind9 pour ipv6
+#
+
+# Chemin complet du script de génération d'une zone
+GENERER=/local/sbin/generer-zone
+
+# Répertoire où Bind s'attend à trouver les zones générées dynamiquement
+OUTDIR=/local/named/prim
+
+# Répertoire temporaire pour la génération des zones
+TMPDIR=/local/named/prim.tmp
+
+# Commande pour demander au serveur Bind de lire les nouvelles zones
+# Bind 8
+#NDC="/usr/local/bin/sudo /usr/sbin/ndc -s"
+# Bind 9
+NDC="/usr/local/sbin/rndc"
+
+if [ $# != 0 ]
+then
+    echo "usage: $0" >&2
+    exit 1
+fi
+
+LISTE=""
+for domaine in `$GENERER`
+do
+    if $GENERER $domaine > $TMPDIR/$domaine
+    then LISTE="$LISTE $domaine"
+    else
+	echo "Erreur lors de la génération de '$domaine'." >&2
+	echo "Abandon pour ce domaine." >&2
+    fi
+done
+
+if [ ! -z "$LISTE" ]
+then
+    cd $TMPDIR
+    mv $LISTE $OUTDIR
+    /usr/sbin/chown -R bind:bind $OUTDIR
+    $NDC reload
+    echo "Zones rechargees : $LISTE"
+fi

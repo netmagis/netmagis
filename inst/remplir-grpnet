@@ -1,0 +1,556 @@
+#!/usr/local/bin/tclsh8.4
+
+#
+# Remplit les domaines, les groupes et les correspondants
+# à partir des fichiers
+#	subnet.txt
+#	group.txt
+#
+# Historique
+#   2003/07/13 : pda      : re-conception en remplacement du script perl
+#   2005/04/08 : pda      : adaptation au nouveau format de base
+#
+
+#
+# Valeurs par défaut du script
+#
+
+##############################################################################
+# Paramètres d'accès à la base
+
+set conf(base)		{dbname=dns user=dns password=mot-de-passe-de-dns}
+
+##############################################################################
+# Liste des établissements reconnus
+# Attention : mettez des noms courts, de façon à avoir une page
+# d'édition de réseaux pas trop large.
+
+set conf(etabl)		{UM ESIATF INCONNU}
+
+##############################################################################
+# Liste des communautés
+# Attention : mettez des noms courts, de façon à avoir une page
+# d'édition de réseaux pas trop large.
+# Ce qui suit n'est pas un bon exemple :-(
+
+set conf(commu)		{Enseignement Administration Recherche INCONNUE}
+
+##############################################################################
+# Liste du ou des groupes WebDNS ayant le droit d'administrer la base
+
+set conf(admin)		{sysadm}
+
+
+
+
+package require Pgtcl
+
+##############################################################################
+# Fonctions utilitaires
+##############################################################################
+
+#
+# Neutralise les caractères spéciaux figurant dans une chaîne,
+# de façon à pouvoir la passer au moteur SQL.
+# - double toutes les apostrophes
+#
+# Entrée :
+#   - paramètres
+#	- chaine : chaîne à traiter
+#	- maxindex (optionnel) : taille maximum de la chaîne
+# Sortie :
+#   - valeur de retour : la chaîne traitée
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc quote {chaine {maxindex 99999}} {
+    set chaine [string range $chaine 0 $maxindex]
+    regsub -all {'} $chaine {&&} chaine
+    regsub -all {\\} $chaine {&&} chaine
+    return $chaine
+}
+
+#
+# Exécute une commande sql, et affiche une erreur et sort
+# en cas de problème. Retourne le résultat de la commande
+# (résultat pour pg_result).
+#
+# Entrée :
+#   - paramètres
+#	- dbfd : la base
+#	- cmd : la commande à passer
+#	- result : contient en retour le nom de la variable contenant l'erreur
+# Sortie :
+#   - valeur de retour : 1 si tout est ok, 0 sinon
+#   - variable result :
+#	- si erreur, la variable contient le message d'erreur
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc execsql {dbfd cmd result} {
+    upvar $result rmsg
+
+    set res [pg_exec $dbfd $cmd]
+    if {! [string equal [pg_result $res -status] PGRES_COMMAND_OK]} then {
+	set ok 0
+	set rmsg "$cmd : [pg_result $res -error]"
+    } else {
+	set ok 1
+	set rmsg {}
+    }
+    pg_result $res -clear
+    return $ok
+}
+
+proc warning {msg} {
+    global context
+
+    if {[info exists context]} then {
+	puts -nonewline stderr "$context: "
+    }
+    puts stderr $msg
+}
+
+proc erreur {msg} {
+    global abortfd
+
+    warning $msg
+    if {[info exists abortfd]} then {
+	execsql $abortfd "ABORT WORK" m
+    }
+    exit 1
+}
+
+proc executer {dbfd sql} {
+    if {! [execsql $dbfd $sql m]} then {
+	erreur $m
+    }
+}
+
+##############################################################################
+# Les fonctions du script
+##############################################################################
+
+
+#
+# Lecture dans la base pour constituer un tableau indexé par des clefs
+#
+
+proc lire-id {dbfd tabid table idx val} {
+    upvar $tabid tid
+
+    pg_select $dbfd "SELECT $idx AS idx, $val AS val FROM $table" tab {
+	set i $tab(idx)
+	set v $tab(val)
+	set tid($i) $v
+    }
+}
+
+#
+# Lecture d'un fichier d'enregistrements clef=valeur
+#
+
+proc lire-fichier {fichier t lchamps} {
+    global context
+    upvar $t tres
+
+    set fd [open $fichier "r"]
+
+    set nl 0
+    set nenr 0
+
+    while {[gets $fd ligne] > -1} {
+	incr nl
+	set context "$fichier/$nl"
+
+	regsub -all {[ \t]*#.*} $ligne "" ligne
+	set ligne [string trim $ligne]
+
+	#
+	# Si ligne vide : nouvel enregistrement
+	#
+	if {[string length $ligne] == 0} then {
+	    if {[llength [array names tab]] > 0} then {
+		incr nenr
+		foreach c $lchamps {
+		    if {[info exists tab($c)]} then {
+			set v $tab($c)
+		    } else {
+			set v ""
+		    }
+		    set tres($nenr:$c) $v
+		}
+		catch {unset tab}
+	    }
+	} else {
+	    if {! [regexp {([^=]*)=(.*)} $ligne bidon kw val]} then {
+		erreur "Syntaxe de ligne non reconnue"
+	    }
+
+	    if {[lsearch -exact $lchamps $kw] > -1} then {
+		set tab($kw) $val
+	    } else {
+		erreur "Mot-clef '$kw' non reconnu ($ligne)"
+	    }
+	}
+    }
+
+    #
+    # cas particulier du dernier enregistrement
+    #
+    if {[llength [array names tab]] > 0} then {
+	incr nenr
+	foreach c $lchamps {
+	    if {[info exists tab($c)]} then {
+		set v $tab($c)
+	    } else {
+		set v ""
+	    }
+	    set tres($nenr:$c) $v
+	}
+	catch {unset tab}
+    }
+
+    close $fd
+    unset context
+
+    set tres(nenr) $nenr
+}
+
+
+#
+# Lecture du fichier des subnets
+#
+
+proc lire-subnet {fichier ts} {
+    global context
+    upvar $ts subnet
+
+    # Format d'un enreg :
+    #nom=Serveurs Osiris
+    #subnet=130.79.200.0
+    #netmask=255.255.255.0
+    #gateway=130.79.200.254
+    #localisation=7 rue René Descartes - 67084 Strasbourg Cedex
+    #etablissement=ULP
+    #communaute=Recherche
+    #commentaire=Les serveurs du réseau Osiris
+    #groupes=crctdi crcgti
+
+    set champs {nom subnet netmask gateway commentaire localisation
+		    communaute etablissement groupes}
+    lire-fichier $fichier subnet $champs
+}
+
+#
+# Lecture du fichier des groupes
+#
+
+proc lire-groupes {fichier tg tcg} {
+    upvar $tg groupes
+    upvar $tcg corgrp
+    global context
+
+    set fd [open $fichier "r"]
+
+    set nl 0
+
+    # Format d'un enreg :
+    # <group> <login> ... <login>
+
+    while {[gets $fd ligne] > -1} {
+	incr nl
+	set context "$fichier/$nl"
+
+	regsub -all {[ \t]*#.*} $ligne "" ligne
+	if {[llength $ligne] > 0} then {
+	    set g [lindex $ligne 0]
+	    foreach c [lreplace $ligne 0 0] {
+		lappend groupes($g) $c
+		if {! [info exists corgrp($c)]} then {
+		    set corgrp($c) $g
+		} else {
+		    warning "Correspondant '$c' déjà affecté à un groupe ($corgrp($c))"
+		}
+	    }
+	}
+    }
+
+    close $fd
+}
+
+#
+# Insertion des données constantes : etablissements et communautés
+#
+
+proc inserer-etabl {dbfd etabl te} {
+    upvar $te tabidetabl
+
+    foreach e $etabl {
+	set qe [quote $e]
+	executer $dbfd "INSERT INTO etablissement (nom) VALUES ('$qe')"
+    }
+    lire-id $dbfd tabidetabl "etablissement" nom idetabl
+}
+
+proc inserer-commu {dbfd commu tc} {
+    upvar $tc tabidcommu
+
+    foreach c $commu {
+	set qc [quote $c]
+	executer $dbfd "INSERT INTO communaute (nom) VALUES ('$qc')"
+    }
+    lire-id $dbfd tabidcommu "communaute" nom idcommu
+}
+
+#
+# Insertion des groupes
+#
+
+proc inserer-groupes {dbfd admingrp tg tabid} {
+    global context
+
+    upvar $tg groupes
+    upvar $tabid tid
+
+    foreach g [array names groupes] {
+	set context "Groupe '$g'"
+	set admin 0
+	if {[lsearch -exact $admingrp $g] != -1} then {
+	    set admin 1
+	}
+	set qg [quote $g]
+	set sql "INSERT INTO groupe (nom, admin) VALUES ('$qg', $admin)"
+	executer $dbfd $sql
+    }
+    lire-id $dbfd tid "groupe" nom idgrp
+    unset context
+}
+
+#
+# Insertion des correspondants
+# Note : il n'y a pas de vérification de l'existance du correspondant
+# dans la base d'authentification.
+#
+
+proc inserer-corresp {dbfd tcg tig} {
+    global context
+    upvar $tcg corgrp
+    upvar $tig tabidgrp
+
+    foreach c [array names corgrp] {
+	set context "Correspondant '$c'"
+
+	set idgrp $tabidgrp($corgrp($c))
+	set qlogin [quote $c]
+
+	set sql "INSERT INTO corresp (login, present, idgrp)
+			    VALUES ('$qlogin', 1, $idgrp)"
+	executer $dbfd $sql
+    }
+}
+
+#
+# Insertion des réseaux
+#
+
+proc inserer-subnet {dbfd ts tgrp tcommu tetab} {
+    global context
+    upvar $ts subnet
+    upvar $tgrp tabidgrp
+    upvar $tcommu tabidcommu
+    upvar $tetab tabidetabl
+
+    set max $subnet(nenr)
+    for {set i 1} {$i <= $max} {incr i} {
+	set context "Réseau $subnet($i:subnet)"
+
+	#
+	# Convertir le réseau et le netmask en CIDR
+	# en comptant le nombre de bits à 0
+	#
+
+	set n [ip-to-32bits $subnet($i:netmask)]
+	set nbbits 0
+	while {($n & 0x1) == 0 && $nbbits < 32} {
+	    incr nbbits
+	    set n [expr $n >> 1]
+	}
+	set cidrmask [expr {32-$nbbits}]
+
+	set plage "$subnet($i:subnet)/$cidrmask"
+
+	#
+	# Chercher l'id du ou des groupes associés au réseau
+	#
+
+	set lg $subnet($i:groupes)
+	set lidgrp {}
+	foreach g $lg {
+	    if {[info exists tabidgrp($g)]} then {
+		lappend lidgrp $tabidgrp($g)
+	    } else {
+		warning "Groupe '$g' non trouvé"
+	    }
+	}
+
+	set commentaire $subnet($i:commentaire)
+
+	set commu $subnet($i:communaute)
+	if {[info exists tabidcommu($commu)]} then {
+	    set idcommu $tabidcommu($commu)
+	} else {
+	    warning "Communauté inconnue"
+	    set idcommu $tabidcommu(INCONNUE)
+	}
+
+	set etabl $subnet($i:etablissement)
+	if {[info exists tabidetabl($etabl)]} then {
+	    set idetabl $tabidetabl($etabl)
+	} else {
+	    warning "Etablissement inconnu"
+	    set idetabl $tabidetabl(INCONNU)
+	}
+
+	#
+	# Insérer le réseau
+	# NB : il n'y a pas de localisation pour le réseau
+	#
+
+	set qnom  [quote $subnet($i:nom)]
+	set qcomm [quote $commentaire]
+	set qloc  [quote $subnet($i:localisation)]
+	set sql "INSERT INTO reseau
+		    (nom,commentaire,localisation,adr4,adr6,idetabl,idcommu)
+		    VALUES
+		    ('$qnom','$qcomm','$qloc','$plage',NULL,$idetabl,$idcommu)"
+	executer $dbfd $sql 
+
+	#
+	# Lien groupe - réseau
+	#
+
+	set idreseau -1
+	set sql "SELECT idreseau FROM reseau WHERE adr4 = '$plage'"
+	pg_select $dbfd $sql tab {
+	    set idreseau $tab(idreseau)
+	}
+	if {$idreseau == -1} then {
+	    erreur "Réseau '$plage' inséré, mais non retrouvé"
+	}
+
+	foreach idgrp $lidgrp {
+	    set sql "INSERT INTO dr_reseau (idgrp, idreseau, tri)
+			    VALUES ($idgrp, $idreseau, 100)"
+	    executer $dbfd $sql
+	}
+
+	#
+	# Ajout des droits du groupe sur le réseau
+	# Les trois adresses interdites sont l'adresse
+	# de passerelle, l'adresse de broadcast, qu'on
+	# cherche à aggréger en un seul /31 si possible,
+	# et l'adresse du réseau lui-même.
+	#
+
+	# broadcast
+	set r [ip-to-32bits $subnet($i:subnet)]
+	set n [ip-to-32bits $subnet($i:netmask)]
+	set in [expr {(~ $n) & 0xffffffff}]
+	set b [expr {($r | $in)}]
+	set bip [32bits-to-ip $b]
+
+	# passerelle
+	set pip $subnet($i:gateway)
+	if {[string equal $pip ""]} then {
+	    set sql "INSERT INTO dr_ip VALUES ($idgrp, '$bip/32', 0)"
+	    executer $dbfd $sql
+	} else {
+	    set p [ip-to-32bits $pip]
+
+	    if {$p == $b + 1} then {
+		set sql "INSERT INTO dr_ip VALUES ($idgrp, '$pip/31', 0)"
+		executer $dbfd $sql
+	    } else {
+		set sql "INSERT INTO dr_ip VALUES ($idgrp, '$pip/32', 0)"
+		executer $dbfd $sql
+		set sql "INSERT INTO dr_ip VALUES ($idgrp, '$bip/32', 0)"
+		executer $dbfd $sql
+	    }
+	}
+
+	#
+	set adr0 [lindex [split $plage /] 0]
+	set sql "INSERT INTO dr_ip VALUES ($idgrp, '$adr0/32', 0)"
+	executer $dbfd $sql
+
+	set sql "INSERT INTO dr_ip VALUES ($idgrp, '$plage', 1)"
+	executer $dbfd $sql
+    }
+
+    unset context
+}
+
+proc ip-to-32bits {ip} {
+    set n 0
+    foreach ddd [split $ip .] {
+	# utilisation de wide() pour passer en arithmétique 64 bits
+	set n [expr {wide($n*256+$ddd)}]
+    }
+    return $n
+}
+
+proc 32bits-to-ip {n} {
+    set n [expr wide($n)]
+    set d 24
+    for {set i 0} {$i < 4} {incr i} {
+	lappend ip [expr {($n >> $d) & 0xff}]
+	incr d -8
+    }
+    return [join $ip .]
+}
+
+proc main {argv0 argv} {
+    global conf
+    global abortfd
+
+    if {[llength $argv] != 2} then {
+	erreur "usage: $argv0 <group.txt> <subnet.txt>"
+    }
+
+    if {[catch {set dbfd [pg_connect -conninfo $conf(base)]} msg]} then {
+	erreur "$argv0: cannot access base ($msg)"
+    }
+
+    set sql "BEGIN WORK ;
+		    LOCK reseau ; LOCK communaute ; LOCK etablissement ;
+		    LOCK dr_reseau ; LOCK groupe ; LOCK corresp ; LOCK dr_ip"
+    executer $dbfd $sql
+    set abortfd $dbfd
+
+    lire-groupes [lindex $argv 0] groupes corgrp
+    lire-subnet  [lindex $argv 1] subnet
+
+    inserer-etabl   $dbfd $conf(etabl) tabidetabl
+    inserer-commu   $dbfd $conf(commu) tabidcommu
+    inserer-groupes $dbfd $conf(admin) groupes tabidgrp
+    inserer-corresp $dbfd corgrp tabidgrp
+    inserer-subnet  $dbfd subnet tabidgrp tabidcommu tabidetabl
+
+    set sql "COMMIT WORK"
+    executer $dbfd $sql
+
+    return 0
+}
+
+#
+# Tout démarre ici...
+#
+
+exit [main $argv0 $argv]

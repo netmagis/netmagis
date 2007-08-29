@@ -1,0 +1,60 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {23/04/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Suppression effectuée}
+
+    La suppression de '%OBJET%' est effectuée.
+
+    Elle sera effective sur les
+    \lien {serveurs de nom Osiris} {%DOCDNS%}
+    d'ici %INTERVALLE% minutes.
+
+    Vous pouvez demander à~:
+
+    \liste {
+	\item {\lien {consulter les informations} {%HOMEURL%/bin/consulter}}
+	\item {\lien {supprimer une autre machine} {%HOMEURL%/bin/suppr}}
+	\item {\lien {ajouter une machine} {%HOMEURL%/bin/ajout}}
+	\item {\lien {modifier une machine} {%HOMEURL%/bin/modif}}
+    }
+}
+
+}

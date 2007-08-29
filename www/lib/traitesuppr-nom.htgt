@@ -1,0 +1,102 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {19/04/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Confirmation de suppression}
+
+    Vous avez demandé à supprimer le nom '%NOM%.%DOMAINE%'.
+
+    \tableau {
+	\bordure {1} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {} {Nom}
+	    \casetableau {} {%NOM%.%DOMAINE%}
+	}
+	\lignetableau {
+	    \casetableau {} {Adresse IP}
+	    \casetableau {} {%LISTEADR%}
+	}
+	\lignetableau {
+	    \casetableau {} {Adresse MAC}
+	    \casetableau {} {%MAC%}
+	}
+	\lignetableau {
+	    \casetableau {} {Profil DHCP}
+	    \casetableau {} {%DHCPPROFIL%}
+	}
+	\lignetableau {
+	    \casetableau {} {Machine}
+	    \casetableau {} {%HINFO%}
+	}
+	\lignetableau {
+	    \casetableau {} {Infos complémentaires}
+	    \casetableau {} {%COMMENTAIRE%}
+	}
+	\lignetableau {
+	    \casetableau {} {Responsable (nom + prénom)}
+	    \casetableau {} {%RESPNOM%}
+	}
+	\lignetableau {
+	    \casetableau {} {Responsable (mél)}
+	    \casetableau {} {%RESPMEL%}
+	}
+	\lignetableau {
+	    \casetableau {} {Aliases}
+	    \casetableau {} {%ALIASES%}
+	}
+    }
+
+    \gras {Voulez-vous vraiment supprimer toutes ces informations~?}
+
+    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/traitesuppr">
+	<INPUT TYPE="HIDDEN" NAME="action" VALUE="suppr-nom">
+	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="oui">
+	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
+	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
+	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
+    </FORM>
+}
+
+}

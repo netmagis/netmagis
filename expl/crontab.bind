@@ -1,0 +1,13 @@
+#
+# La crontab de l'utilisateur "bind" (sur le serveur DNS)
+#
+# Historique
+#   2002/05/02 : pda/jean : génération des zones DNS à partir de la base
+#   2002/06/03 : pda/jean : génération toutes les 10 minutes
+#   2004/04/13 : pda/jean : changement de nom
+#
+
+SHELL = /bin/sh
+MAILTO = hostmaster@u-strasbg.fr
+
+*/10 * * * * /local/sbin/mkzones

@@ -1,0 +1,189 @@
+#!%TCLSH%
+
+#
+# Script pour lister les correspondants 
+#
+# Appelé par : index.htgt
+#
+#
+# Historique
+#   2002/12/05 : jean     : création
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+set conf(err)		$conf(lib)/erreur.html
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(page)          $conf(lib)/listecorresp.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(tableau) {
+    global {
+	chars {10 normal}
+	columns {10 20 20 10 20 5 15}
+	botbar {yes}
+	align {left}
+	latex {
+	    linewidth {267}
+	}
+    }
+    motif {Gras} {
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    motif {Normal} {
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne {
+	    format {raw}
+	}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+}
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			{} ftab dbfd login tabcor
+
+    set titrepage "Liste des correspondants"
+
+    set largeurs {10 20 20 10 20 5 15}
+
+    set donnees {}
+
+    lappend donnees {Gras 
+			  {Login}
+			  {Nom+Prénom}
+			  {Mél}
+			  {Tél}
+			  {Localisation}
+			  {Présent}
+			  {Groupe}
+    }
+
+    set sql "SELECT login, present, groupe.nom \
+		FROM corresp, groupe \
+		WHERE groupe.idgrp = corresp.idgrp \
+		ORDER BY login"
+
+    pg_select $dbfd $sql tab {
+            set login		$tab(login)
+            set present		$tab(present)
+            set nomgroupe	$tab(nom)
+
+	    if {[::auth::getuser $login tabu]} then {
+		set nomprenom	"$tabu(nom) $tabu(prenom)"
+		set mel		$tabu(mel)
+		set tel		$tabu(tel)
+		set localisation $tabu(adr)
+	    } else {
+		set nomprenom	ERREUR
+		set mel		ERREUR
+		set tel		ERREUR
+		set localisation ERREUR
+	    }
+
+            lappend donnees [list Normal \
+              $login $nomprenom $mel $tel $localisation \
+              $present $nomgroupe ]
+    }
+
+
+    # on fabrique la liste
+    set tab [::arrgen::output "html" $conf(tableau) $donnees]
+
+    #
+    # Sortie du résultat
+    #
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+                    [list \
+                          [list %TITREPAGE%       $titrepage ] \
+                          [list %LISTECOR%        $tab ] \
+                    ] \
+    ]
+    
+
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

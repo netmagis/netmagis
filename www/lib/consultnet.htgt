@@ -1,0 +1,103 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {25/05/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Consultation des réseaux}
+
+    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/listenet">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {RIGHT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {RIGHT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\multicasetableau {4} {
+		    \centragehorizontal {CENTER}
+		    \couleurfond {#C0C0C0}
+		} {
+		    \gras {Sélectionner seulement les réseaux...}
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {... correspondant au CIDR}
+		\multicasetableau {4} {} {
+		    <INPUT TYPE="text" NAME="adr" SIZE=49>
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {... dont l'établissement est}
+		\casetableau {} {%LISTEETABL%}
+		\casetableau {} {... dont la communauté est}
+		\casetableau {} {%LISTECOMMU%}
+	    }
+	    \lignetableau {
+		\multicasetableau {4} {
+		    \centragehorizontal {CENTER}
+		    \couleurfond {#C0C0C0}
+		} {
+		    \gras {Tri...}
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {... primaire par}
+		\casetableau {} {%MENUTRI1%}
+		\casetableau {} {... secondaire par}
+		\casetableau {} {%MENUTRI2%}
+	    }
+	    \lignetableau {
+		\multicasetableau {4} {
+		    \couleurfond {#10C090}
+		     \centragehorizontal {CENTER}
+		} {
+		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Consulter">
+		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Imprimer">
+		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Tableur">
+		}
+	    }
+	}
+    </FORM>
+}
+
+}

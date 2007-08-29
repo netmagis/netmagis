@@ -1,0 +1,11 @@
+#
+# Les roles de messagerie définis pour nos domaines
+#
+# Historique
+#   2004/04/13 : pda/jean : zone exemple
+#
+
+lma.univ-machin.fr	zeus.univ-machin.fr
+lec.univ-machin.fr	droopy.univ-machin.fr
+lga.univ-machin.fr	athanase.univ-machin.fr
+etu.esiatf.fr		mailetu.esiatf.fr

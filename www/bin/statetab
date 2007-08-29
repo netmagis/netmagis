@@ -1,0 +1,231 @@
+#!%TCLSH%
+
+#
+# Script pour consulter des stats par établissement
+#
+# Appelé par : admin.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2002/07/25 : pda      : création
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/01/14 : pda/jean : ajout IPv6
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/statetab.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+#
+# Le tableau servant à présenter le nb de machines et d'adresses
+# par établissement
+# Colonnes
+#	établissement
+#	nb de machines déclarées
+#	pourcentage par rapport au total
+#	nb d'adresses allouées
+#	pourcentage par rapport au total
+#
+
+set conf(tabmachetabl) {
+    global {
+	chars {10 normal}
+	columns {40 15 15 15 15}
+	botbar {yes}
+	align {right}
+    }
+    motif {Titre} {
+	align {center}
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    motif {Normal} {
+	title {yes}
+	vbar {yes}
+	colonne {
+	    align {left}
+	}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    motif {Total} {
+	title {yes}
+	chars {bold}
+	vbar {yes}
+	colonne {
+	    align {left}
+	}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			{} ftab dbfd login tabcor
+
+    #
+    # Nb d'adresses (v4 ou v6) enregistrées par établissement dans la base.
+    #
+
+    set sql "SELECT e.nom,
+		    COUNT (rr_ip.adr) AS declarees
+		FROM etablissement e, rr_ip
+		WHERE rr_ip.adr << ANY
+		    (SELECT adr4 FROM reseau WHERE reseau.idetabl = e.idetabl
+			UNION
+		     SELECT adr6 FROM reseau WHERE reseau.idetabl = e.idetabl)
+		GROUP BY e.nom
+		"
+    set totaldecl 0
+    pg_select $dbfd $sql tab {
+	set e $tab(nom)
+	set n $tab(declarees)
+	set etabl($e) [list $n 0]
+	incr totaldecl $n
+    }
+
+    #
+    # Nb d'adresses IPv4 allouées
+    #
+
+    set sql "SELECT e.nom,
+		    SUM (2^(32 - MASKLEN (r.adr4))) AS allouees
+		FROM etablissement e, reseau r
+		WHERE e.idetabl = r.idetabl
+		GROUP BY e.nom
+		"
+    set totalalloc 0
+    pg_select $dbfd $sql tab {
+	set e $tab(nom)
+	set n $tab(allouees)
+	if {[info exists etabl($e)]} then {
+	    set etabl($e) [list [lindex $etabl($e) 0] $n]
+	} else {
+	    set etabl($e) [list 0 $n]
+	}
+	incr totalalloc $n
+    }
+
+    set donnees {}
+    lappend donnees {Titre
+			Établissement
+			{Nb de machines} {Pourcentage}
+			{Nb d'adresses} {Pourcentage}
+			}
+    set ptotaldecl 0.0
+    set ptotalalloc 0.0
+    foreach e [lsort [array names etabl]] {
+	set ndecl  [lindex $etabl($e) 0]
+	set nalloc [lindex $etabl($e) 1]
+	set pcentdecl  [expr $ndecl  * 100.0 / $totaldecl]
+	set pcentalloc [expr $nalloc * 100.0 / $totalalloc]
+	lappend donnees [list Normal $e \
+				$ndecl  [format "%5.2f" $pcentdecl] \
+				$nalloc [format "%5.2f" $pcentalloc] \
+			    ]
+	set ptotaldecl [expr $ptotaldecl + $pcentdecl]
+	set ptotalalloc [expr $ptotalalloc + $pcentalloc]
+    }
+
+    lappend donnees [list Total Total \
+				$totaldecl  [format "%5.2f" $ptotaldecl] \
+				$totalalloc [format "%5.2f" $ptotalalloc] \
+			    ]
+
+    set nbmachetabl [::arrgen::output "html" $conf(tabmachetabl) $donnees]
+
+    #
+    # Sortie de la page
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				[list \
+				    [list %NBMACHETABL% $nbmachetabl] \
+				] \
+			    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

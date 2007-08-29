@@ -1,0 +1,85 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {27/03/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Consultation des informations DNS}
+
+    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/liste">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {CENTER}}
+	} {
+	    \lignetableau {
+		\casetableau {} {%CORRESP%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		} {\gras {Choisissez votre réseau dans la liste ci-dessous...}}
+	    }
+	    \lignetableau {
+		\casetableau {} {%PLAGES%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		} {\gras {... ou saisissez la plage par son préfixe (par ex. 130.79.200.0/24 ou 2001:660:2402:10::/64)}}
+	    }
+	    \lignetableau {
+		\casetableau {} {<INPUT TYPE="text" NAME="cidr" SIZE="49">}
+	    }
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {#10C090}
+		     \centragehorizontal {CENTER}
+		} {
+		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Consulter">
+		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Imprimer">
+		}
+	    }
+	}
+    </FORM>
+}
+
+}

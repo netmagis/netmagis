@@ -1,0 +1,512 @@
+#!%TCLSH%
+
+#
+# Script pour enregistrer les suppressions demandées par un correspondant.
+#
+# Appelé par : script suppr (page lib/suppr.htgt)
+#
+# Paramètres (formulaire ou URL) :
+#   - suppression d'un nom
+#	- action : "suppr-nom"
+#	- confirm : "non" ou "oui" (si confirmation ok)
+#	- nom : nom de l'objet à supprimer
+#	- domaine : domaine dans lequel l'objet existait
+#   - suppression d'une adresse IP
+#	- action : "suppr-ip"
+#	- confirm : "non" ou "oui" (si confirmation ok)
+#	- adr : adresse IP
+#
+# Historique
+#   2002/04/11 : pda/jean : création
+#   2002/04/19 : pda/jean : ajout de la multi-adresses
+#   2002/05/03 : pda/jean : séparation des trois types de modifications
+#   2002/07/09 : pda      : ajout de nologin
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/01/14 : pda/jean : ajout IPv6
+#   2004/08/05 : pda/jean : ajout MAC
+#   2005/04/08 : pda/jean : ajout dhcpprofil
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(page-suppr-nom)	$conf(lib)/traitesuppr-nom.html
+set conf(page-suppr-alias)	$conf(lib)/traitesuppr-alias.html
+set conf(page-suppr-ip-uneip)	$conf(lib)/traitesuppr-ip-uneip.html
+set conf(page-suppr-ip-objet)	$conf(lib)/traitesuppr-ip-objet.html
+set conf(page-suppr-ok)		$conf(lib)/traitesuppr-ok.html
+set conf(err)			$conf(lib)/erreur.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+# le champ discriminant pour la suite
+set conf(form)		{
+	{action		1 1}
+}
+
+# les champs utilisés pour chacune des actions
+set conf(form-suppr-nom)	{
+	{confirm	1 1}
+	{nom		1 1}
+	{domaine	1 1}
+}
+
+set conf(form-suppr-ip)	{
+	{confirm	1 1}
+	{adr		1 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Suppression d'un nom
+##############################################################################
+
+# Historique
+#   2002/04/19 : pda/jean : conception
+#
+proc traitesuppr-nom {dbfd idcor ft} {
+    global conf
+    upvar $ft ftab
+
+    #
+    # Valider les champs du formulaire
+    #
+
+    set confirm       [string trim [lindex $ftab(confirm) 0]]
+    set nom           [string trim [lindex $ftab(nom) 0]]
+    set domaine       [string trim [lindex $ftab(domaine) 0]]
+
+    #
+    # Valider le nom fourni
+    #
+
+    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "supprimer-un-nom"]
+    if {[string length $msg] > 0} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Vérifier que le nom demandé existe
+    #
+
+    if {[string equal $trr(idrr) ""]} then {
+	::webapp::error-exit $conf(err) "Le nom '$nom.$domaine' n'existe pas."
+    }
+
+    #
+    # Noter si c'est un alias
+    #
+
+    if {[string equal $trr(cname) ""]} then {
+	set alias 0
+
+	#
+	# Si ce n'est pas un alias, il doit y avoir au moins une adresse IP
+	#
+	if {[string equal $trr(ip) ""]} then {
+	    ::webapp::error-exit $conf(err) "Le nom '$nom.$domaine' n'est pas une machine."
+	}
+
+    } else {
+	set alias 1
+
+	#
+	# C'est un alias. Lisons les informations pour afficher
+	# une page éventuelle de confirmation
+	#
+	if {! [lire-rr-par-id $dbfd $trr(cname) trrref]} then {
+	    ::webapp::error-exit $conf(err) "Erreur interne. Alias non trouvé"
+	}
+    }
+
+    #
+    # Demander confirmation à l'utilisateur si ce n'est pas encore
+    # fait
+    #
+
+    if {! [string equal $confirm "oui"]} then {
+	#
+	# Envoyer la page de confirmation
+	#
+
+	if {$alias} then {
+	    #
+	    # Sortie de la page de confirmation pour un alias
+	    #
+	    ::webapp::send html \
+		    [::webapp::file-subst \
+				$conf(page-suppr-alias) \
+				[list \
+					[list %NOM% $nom] \
+					[list %DOMAINE% $domaine] \
+					[list %NOMREF% $trrref(nom)] \
+					[list %DOMAINEREF% $trrref(domaine)] \
+				    ] \
+			    ]
+	} else {
+	    #
+	    # Sortie de la page de confirmation pour une machine
+	    # (y compris toutes ses dépendances)
+	    #
+	    set commentaire [html-tab-string $trr(commentaire)]
+	    set respnom     [html-tab-string $trr(respnom)]
+	    set respmel     [html-tab-string $trr(respmel)]
+
+	    set mac $trr(mac)
+	    set dhcpprofil $trr(dhcpprofil)
+	    set hinfo $trr(hinfo)
+	    set listeadr [join $trr(ip) " "]
+	    set laliases {}
+	    foreach a $trr(aliases) {
+		lire-rr-par-id $dbfd $a t
+		lappend laliases "$t(nom).$t(domaine)"
+	    }
+	    set aliases [join $laliases " "]
+	    if {[string length $aliases] == 0} then {
+		set aliases "&nbsp;"
+	    }
+	    ::webapp::send html \
+		    [::webapp::file-subst \
+				$conf(page-suppr-nom) \
+				[list \
+					[list %NOM% $nom] \
+					[list %DOMAINE% $domaine] \
+					[list %LISTEADR% $listeadr] \
+					[list %MAC% $mac] \
+					[list %DHCPPROFIL% $dhcpprofil] \
+					[list %HINFO% $hinfo] \
+					[list %COMMENTAIRE% $commentaire] \
+					[list %RESPNOM% $respnom] \
+					[list %RESPMEL% $respmel] \
+					[list %ALIASES% $aliases] \
+				    ] \
+			    ]
+	}
+    } else {
+	#
+	# La confirmation est acquise. Effectuer la suppression dans
+	# la base.
+	#
+	if {! [::pgsql::lock $dbfd {} msg]} then {
+	    ::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+	}
+
+	if {$alias} then {
+	    if {! [supprimer-alias-par-id $dbfd $trr(idrr) msg]} then {
+		::pgsql::unlock $dbfd "abort" m
+		 ::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
+	    }
+	} else {
+	    #
+	    # Ce n'est pas un alias. Supprimer toutes les dépendances
+	    # du RR
+	    # - les aliases pointant vers cet objet
+	    # - les MX
+	    # - les adresses IP
+	    #
+	    if {! [supprimer-rr-et-dependances $dbfd trr msg]} then {
+		::pgsql::unlock $dbfd "abort" m
+		::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
+	    }
+	}
+
+	#
+	# Enregistrer les modifications dans la base
+	#
+	if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+	   ::pgsql::unlock $dbfd "abort" m
+	   ::webapp::error-exit $conf(err) "La suppression a échoué. Abandon.\n$msg"
+	}
+
+	#
+	# Sortie du résultat pour dire que la suppression a été effectuée
+	# correctement.
+	#
+	set objet "$nom.$domaine"
+	::webapp::send html [::webapp::file-subst $conf(page-suppr-ok) \
+					[list \
+						[list %OBJET% $objet] \
+					    ] \
+				    ]
+    }
+}
+
+##############################################################################
+# Suppression d'une adresse IP
+##############################################################################
+
+# Historique
+#   2002/04/23 : pda/jean : conception
+#   2002/04/26 : pda/jean : fin de la conception
+#   2002/05/03 : pda/jean : mémoriser la mise à jour par le correspondant
+#
+proc traitesuppr-ip {dbfd idcor ft} {
+    global conf
+    upvar $ft ftab
+
+    #
+    # Valider les champs du formulaire
+    #
+
+    set confirm       [string trim [lindex $ftab(confirm) 0]]
+    set adr           [string trim [lindex $ftab(adr) 0]]
+
+    #
+    # Vérifier la syntaxe de l'adresse IP
+    #
+
+    set m [syntaxe-ip $dbfd $adr "inet"]
+    if {[string length $m] > 0} then {
+	::webapp::error-exit $conf(err) "Erreur sur l'adresse '$adr': $m"
+    }
+
+    #
+    # Vérifier que l'adresse IP appartient bien à une des plages
+    # autorisées pour le correspondant
+    #
+
+    if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
+	::webapp::error-exit $conf(err) "Vous n'avez pas accès à l'adresse '$adr'"
+    }
+
+    #
+    # Vérifier que l'adresse existe, en récupérant toutes les
+    # informations de l'objet.
+    #
+
+    if {! [lire-rr-par-ip $dbfd $adr trr]} then {
+	::webapp::error-exit $conf(err) "L'adresse '$adr' n'existe pas dans la base."
+    }
+
+    #
+    # Valider l'accès à ce nom
+    #
+    set nom     $trr(nom)
+    set domaine $trr(domaine)
+    set msg [valide-droit-nom $dbfd $idcor $nom $domaine bidon "supprimer-un-nom"]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Est-ce la dernière adresse IP ou non ?
+    #
+
+    if {[llength $trr(ip)] == 1} then {
+	set lastadr "oui"
+    } else {
+	set lastadr "non"
+    }
+
+    #
+    # Préparer l'affichage des informations à afficher le cas échéant
+    #
+
+    set objet ""
+    set mac	    $trr(mac)
+    set dhcpprofil  $trr(dhcpprofil)
+    set hinfo	    $trr(hinfo)
+    set commentaire [html-tab-string $trr(commentaire)]
+    set respnom     [html-tab-string $trr(respnom)]
+    set respmel     [html-tab-string $trr(respmel)]
+    set listeadr [join $trr(ip) " "]
+    set laliases {}
+    foreach a $trr(aliases) {
+	lire-rr-par-id $dbfd $a t
+	lappend laliases "$t(nom).$t(domaine)"
+    }
+    set aliases [join $laliases " "]
+    if {[string length $aliases] == 0} then {
+	set aliases "&nbsp;"
+    }
+
+    #
+    # Effectuer l'action de suppression seulement si confirmation
+    #
+
+    if {[string equal $confirm "oui"]} then {
+	#
+	# Verrouiller la base
+	#
+
+	if {! [::pgsql::lock $dbfd {} msg]} then {
+	    ::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+	}
+
+	#
+	# Procéder à la destruction effective
+	#
+
+	if {[string equal $lastadr "non"]} then {
+	    #
+	    # Suppression d'une adresse seulement
+	    #
+
+	    set sql "DELETE FROM rr_ip WHERE adr = '$adr'"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	       ::pgsql::unlock $dbfd "abort" m
+		::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
+	    }
+
+	    #
+	    # Se rappeler que le correspondant a fait la modification
+	    #
+
+	    set msg [touch-rr $dbfd $trr(idrr) $idcor]
+	    if {! [string equal $msg ""]} then {
+	       ::pgsql::unlock $dbfd "abort" m
+		::webapp::error-exit $conf(err) "Mise à jour impossible.\n$msg"
+	    }
+
+	} else {
+	    #
+	    # Suppression de l'objet entier
+	    #
+
+	    if {! [supprimer-rr-et-dependances $dbfd trr msg]} then {
+		::pgsql::unlock $dbfd "abort" m
+		::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
+	    }
+	}
+
+	#
+	# Enregistrer les modifications dans la base et la déverrouiller.
+	#
+	if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+	   ::pgsql::unlock $dbfd "abort" m
+	   ::webapp::error-exit $conf(err) "La suppression a échoué. Abandon.\n$msg"
+	}
+
+    }
+
+    #
+    # Préparer l'affichage de la page
+    #
+
+    switch -- "confirm=$confirm-lastadr=$lastadr" {
+	confirm=non-lastadr=non {
+	    #
+	    # Demander confirmation pour la suppression d'une des adresses
+	    # 
+	    set page $conf(page-suppr-ip-uneip)
+	}
+	confirm=non-lastadr=oui {
+	    #
+	    # Demander confirmation pour la suppression de la dernière
+	    # adresse et donc de l'objet entier.
+	    # 
+	    set page $conf(page-suppr-ip-objet)
+	}
+	confirm=oui-lastadr=non {
+	    #
+	    # L'adresse a été supprimée
+	    #
+
+	    set page $conf(page-suppr-ok)
+	    set objet $adr
+	}
+	confirm=oui-lastadr=oui {
+	    #
+	    # L'objet entier a été supprimé
+	    #
+
+	    set page $conf(page-suppr-ok)
+	    set objet "$nom.$domaine"
+	}
+	default {
+	    ::webapp::error-exit $conf(err) "Cas impossible : confirm=$confirm, lastadr=$lastadr"
+	}
+    }
+
+    ::webapp::send html \
+	    [::webapp::file-subst \
+			$page \
+			[list \
+				[list %NOM%         $nom] \
+				[list %DOMAINE%     $domaine] \
+				[list %ADR%         $adr] \
+				[list %MAC%         $mac] \
+				[list %DHCPPROFIL%  $dhcpprofil] \
+				[list %LISTEADR%    $listeadr] \
+				[list %HINFO%       $hinfo] \
+				[list %COMMENTAIRE% $commentaire] \
+				[list %RESPNOM%     $respnom] \
+				[list %RESPMEL%     $respmel] \
+				[list %ALIASES%     $aliases] \
+				[list %OBJET%       $objet] \
+			    ] \
+		    ]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Valider l'action, lire les autres champs du formulaire,
+    # et faire le branchement
+    #
+
+    set action [lindex $ftab(action) 0]
+
+    if {! [info exists conf(form-$action)]} then {
+	::webapp::error-exit $conf(err) "Champ 'action' non conforme : $action"
+    }
+
+    if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
+	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
+    }
+
+    traite$action $dbfd $tabcor(idcor) ftab
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

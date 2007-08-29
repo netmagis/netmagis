@@ -1,0 +1,185 @@
+#!%TCLSH%
+
+#
+# Script de présentation de la page des paramètres de la base
+#
+# Appelé par : index.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2003/12/08 : pda     : création à partir de sos
+#   2004/10/13 : pda     : ajout des paramètres DHCP
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admparliste.html
+set conf(aide)		$conf(homeurl)/aideparam.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# Le tableau servant à présenter les paramètres
+#
+
+set conf(tableau) {
+    global {
+	chars {12 normal}
+	columns {50 50}
+    }
+    pattern {Normal2} {
+	vbar {no}
+	column {
+	    align {right}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+	column {
+	    align {left}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+    }
+    pattern {Normal1} {
+	vbar {no}
+	column {
+	    multicolumn {2}
+	    color {10C090}
+	    align {center}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+    }
+}
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			{} ftab dbfd login tabcor
+
+    #
+    # Mise en forme des données dans le formulaire
+    #
+
+    set donnees {}
+
+    foreach attribut {
+	{datefmt	{Format d'affichage des dates/heures}		string}
+	{jourfmt	{Format d'affichage des jours}			string}
+	{authmailfrom   {Utiliser le "From" spécifié dans "auth"}	bool}
+	{mailfrom	{"From" des mails de modification de passwd}	string}
+	{authmailreplyto  {Utiliser le "Reply-To" spécifié dans "auth"}	bool}
+	{mailreplyto	{"Reply-To" des mails de modification de passwd} string}
+	{authmailcc	{Utiliser le "Cc" spécifié dans "auth"}	bool}
+	{mailcc		{"Cc" des mails de modification de passwd}	string}
+	{authmailbcc	{Utiliser le "Bcc" spécifié dans "auth"}	bool}
+	{mailbcc	{"Bcc" des mails de modification de passwd}	string}
+	{authmailsubject {Utiliser le "Subject" spécifié dans "auth"}	bool}
+	{mailsubject	{"Subject" des mails de moditication de passwd}	string}
+	{authmailbody	{Utiliser le corps spécifié dans "auth"}	bool}
+	{mailbody	{Corps du mail de modification de passwd}	text}
+	{groupes	{Groupes Web autorisés}				string}
+	{default_lease_time {default_lease_time}			string}
+	{max_lease_time	{max_lease_time}				string}
+	{min_lease_time	{min_lease_time}				string}
+	} {
+
+	set clef	[lindex $attribut 0]
+	set nom		[lindex $attribut 1]
+	set type	[lindex $attribut 2]
+
+	set curval [getconfig $dbfd $clef]
+
+	switch -- $type {
+	    bool {
+		set html [::webapp::form-yesno $clef $curval {%1$sOui %2$sNon}]
+	    }
+	    string {
+		set html [::webapp::form-text $clef 1 60 0 $curval]
+	    }
+	    text {
+		set html [::webapp::form-text $clef 20 70 0 $curval]
+	    }
+	    menu {
+		set lmenu [lindex $attribut 3]
+		set html [::webapp::form-menu $clef 1 0 $lmenu {}]
+	    }
+	    default {
+		set html "<FONT COLOR=#FF0000>ERREUR : type de '$attribut'</FONT>"
+	    }
+	}
+
+	set aide "<A HREF=\"$conf(aide)#$clef\">$nom</A>"
+	lappend donnees [list Normal2 $aide $html]
+    }
+    set html "<INPUT TYPE=submit VALUE=\"Enregistrer\">"
+    append html " <INPUT TYPE=reset VALUE=\"Réinitialiser\">"
+    lappend donnees [list Normal1 $html]
+
+    #
+    # Génération de la page contenant le formulaire
+    #
+
+    set subst {}
+    lappend subst [list %TAB% [::arrgen::output "html" $conf(tableau) $donnees]]
+
+    ::webapp::send html [::webapp::file-subst $conf(page) $subst]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

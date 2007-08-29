@@ -1,0 +1,97 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {05/10/2004}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS - DHCP
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Édition des paramètres DHCP du réseau %RESEAU%}
+
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {RIGHT}}
+	\casedefauttableau {\centragehorizontal {CENTER}}
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {} {Modifier une entrée}
+	    \casetableau {} {:}
+	    \casetableau {} {Modifier directement la ligne}
+	}
+	\lignetableau {
+	    \casetableau {} {Supprimer une entrée}
+	    \casetableau {} {:}
+	    \casetableau {} {Vider la case <<~min~>>}
+	}
+	\lignetableau {
+	    \casetableau {} {Ajouter une entrée}
+	    \casetableau {} {:}
+	    \casetableau {} {Ajouter les informations 
+		dans l'une des lignes vides en bas du tableau}
+	}
+    }
+
+    Note~: Les valeurs associées au bail sont exprimées en secondes.
+    La valeur <<~0~>> correspond à la valeur par défaut sur le
+    serveur DHCP
+
+    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/dhcpmodif">
+	<INPUT TYPE="HIDDEN" NAME="idreseau" VALUE="%IDRESEAU%">
+	%TABLEAU%
+	<P>
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {}
+	} {
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {#10C090}
+		    \centragehorizontal {CENTER}
+		} {
+		    <INPUT TYPE="SUBMIT" VALUE="Enregistrer">
+		    <INPUT TYPE="RESET" VALUE="Réinitialiser">
+		}
+	    }
+	}
+    </FORM>
+}
+
+}

@@ -1,0 +1,9 @@
+#
+# Génération du fichier routages à partir de la base DNS
+#
+# Cette crontab doit être installée sur les relais de messagerie
+#
+
+MAILTO = hostmaster@u-strasbg.fr
+*/5	* * * *	/local/sbin/mkroutages
+

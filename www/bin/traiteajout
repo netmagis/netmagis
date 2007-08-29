@@ -1,0 +1,551 @@
+#!%TCLSH%
+
+#
+# Script pour enregistrer les modifications demandées par un correspondant.
+#
+# Appelé par : script ajout (page lib/ajout.htgt)
+#
+# Paramètres (formulaire ou URL) :
+#   - ajout d'une machine
+#	- action : "ajout-machine"
+#	- multiadresses : "non" ou "oui" (si confirmation ok)
+#	- nom : nom de la machine à ajouter
+#	- domaine : domaine dans lequel elle doit être ajoutée
+#	- adr : adresse IP
+#	- mac : adresse MAC
+#	- iddhcpprofil : l'id du profil DHCP, ou 0
+#	- hinfo : type de machine (texte)
+#	- commentaire : informations complémentaires
+#	- respnom : nom et prénom du responsable
+#	- respmel : adresse électronique du responsable
+#   - ajout d'un alias
+#	- action : "ajout-alias"
+#	- nom : nom de l'alias à ajouter
+#	- domaine : domaine dans lequel il doit être ajouté
+#	- alias : nom de l'objet existant
+#	- domaine2 : domaine dans lequel l'objet existe
+#
+# Historique
+#   2002/04/11 : pda/jean : création
+#   2002/04/19 : pda/jean : ajout de la multi-adresses
+#   2002/05/03 : pda/jean : séparation des trois types de modifications
+#   2002/05/23 : pda/jean : ajout du responsable
+#   2002/07/09 : pda      : ajout de nologin
+#   2002/07/09 : pda      : conversion des noms en minuscules
+#   2002/10/31 : pda/jean : correction bug ajout adr ip sur alias existant
+#   2002/11/06 : pda/jean : correction de la correction du bug
+#   2003/04/24 : pda/jean : interdiction d'ajout d'ip à un mx
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/01/14 : pda/jean : ajout IPv6
+#   2004/08/04 : pda/jean : ajout mac
+#   2005/04/08 : pda/jean : ajout dhcpprofil
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(page-ajout-machine)	$conf(lib)/traiteajout-machine.html
+set conf(page-ajout-existe)	$conf(lib)/traiteajout-existe.html
+set conf(page-ajout-alias)	$conf(lib)/traiteajout-alias.html
+set conf(err)			$conf(lib)/erreur.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+# le champ discriminant pour la suite
+set conf(form)		{
+	{action		1 1}
+}
+
+# les champs utilisés pour chacune des actions
+set conf(form-ajout-machine)	{
+	{multiadresses	1 1}
+	{nom		1 1}
+	{domaine	1 1}
+	{adr		1 1}
+	{mac		1 1}
+	{iddhcpprofil	1 1}
+	{hinfo		1 1}
+	{commentaire	1 1}
+	{respnom	1 1}
+	{respmel	1 1}
+}
+
+set conf(form-ajout-alias)	{
+	{nom		1 1}
+	{domaine	1 1}
+	{nomref		1 1}
+	{domaineref	1 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Ajout d'un nom
+##############################################################################
+
+# Historique
+#   2002/04/11 : pda/jean : conception
+#   2002/04/19 : pda/jean : ajout de la confirmation multi-adresses
+#   2002/05/02 : pda/jean : modification du format de hinfo
+#   2002/05/03 : pda/jean : mémoriser la mise à jour par le correspondant
+#   2003/04/24 : pda/jean : interdiction d'ajout d'ip à un mx
+#   2004/08/04 : pda/jean : ajout mac
+#   2005/04/08 : pda/jean : ajout iddhcpprofil
+#
+
+proc traiteajout-machine {dbfd idcor ft} {
+    global conf
+    upvar $ft ftab
+
+    #
+    # Valider les champs du formulaire
+    #
+
+    set nom           [string trim [lindex $ftab(nom) 0]]
+    set domaine       [string trim [lindex $ftab(domaine) 0]]
+    set adr           [string trim [lindex $ftab(adr) 0]]
+    set mac           [string trim [lindex $ftab(mac) 0]]
+    set iddhcpprofil  [string trim [lindex $ftab(iddhcpprofil) 0]]
+    set hinfo         [string trim [lindex $ftab(hinfo) 0]]
+    set commentaire   [string trim [lindex $ftab(commentaire) 0]]
+    set respnom       [string trim [lindex $ftab(respnom) 0]]
+    set respmel       [string trim [lindex $ftab(respmel) 0]]
+    set multiadresses [string trim [lindex $ftab(multiadresses) 0]]
+
+    #
+    # Valider la syntaxe du nom au sens de la RFC ????
+    #
+
+    set m [syntaxe-nom $nom]
+    if {! [string equal $m ""]} then {
+	::webapp::error-exit $conf(err) "Erreur sur le nom '$nom': $m"
+    }
+    set nom [string tolower $nom]
+
+    #
+    # Valider le nom
+    #
+
+    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "machine"]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+    set iddom $trr(iddom)
+
+    #
+    # Est-ce que ce nom existe, et est déjà associé à
+    # une adresse IP (ou plus) ?
+    #
+
+    set dejaip 0
+    set rrexiste 0
+    if {! [string equal $trr(idrr) ""]} then {
+	set rrexiste 1
+	if {! [string equal $trr(ip) ""]} then {
+	    set dejaip 1
+	}
+    }
+
+    #
+    # Vérifier la syntaxe de l'adresse IP
+    #
+
+    set m [syntaxe-ip $dbfd $adr "inet"]
+    if {[string length $m] > 0} then {
+	::webapp::error-exit $conf(err) "Erreur sur l'adresse IP '$adr': $m"
+    }
+
+    #
+    # Vérifier que l'adresse IP appartient bien à une des plages
+    # autorisées pour le correspondant
+    #
+
+    if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
+	::webapp::error-exit $conf(err) "Vous n'avez pas accès à l'adresse '$adr'"
+    }
+
+    #
+    # Vérifier enfin que l'adresse n'existe pas déjà
+    #
+
+    if {[lire-rr-par-ip $dbfd $adr tabrrbidon]} then {
+	::webapp::error-exit $conf(err) "L'adresse '$adr' existe déjà"
+    }
+
+    #
+    # Vérifier la syntaxe de l'adresse MAC et que la nouvelle adresse IP
+    # n'empiète pas sur les intervalles DHCP dynamiques
+    #
+
+    if {! [string equal $mac  ""]} then {
+	set m [syntaxe-mac $dbfd $mac]
+	if {[string length $m] > 0} then {
+	    ::webapp::error-exit $conf(err) "Erreur sur l'adresse MAC : $m"
+	}
+    }
+
+    set mac_a_tester $mac
+    if {$dejaip} then {
+	set mac_a_tester $trr(mac)
+    }
+    set m [valide-dhcp-statique $dbfd $mac_a_tester [list $adr]]
+    if {[string length $m] > 0} then {
+	::webapp::error-exit $conf(err) "$m"
+    }
+
+    #
+    # Vérifier le profil DHCP
+    #
+
+    if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
+	::webapp::error-exit $conf(err) "Profil DHCP invalide ($msg)"
+    }
+
+    #
+    # Récupérer le type de machine en clair
+    #
+
+    set idhinfo [lire-hinfo $dbfd $hinfo]
+    if {$idhinfo == -1} then {
+	::webapp::error-exit $conf(err) "Le type de machine '$hinfo' n'existe pas."
+    }
+
+    #
+    # Si le nom existe déjà, poser la question, sinon
+    # insérer l'objet
+    #
+
+    if {$dejaip && ! [string equal $multiadresses "oui"]} then {
+	#
+	# Sortir une page avec la liste des attributs de l'objet
+	# identifié.
+	# Attributs affichés : nom, mac, hinfo, commentaire, respnom, respmel,
+	# liste des adresses.
+	#
+
+	set listeadr [join $trr(ip) " "]
+
+	set mac         [html-tab-string $trr(mac)]
+	set hinfo       [html-tab-string $trr(hinfo)]
+	set commentaire [html-tab-string $trr(commentaire)]
+	set respnom     [html-tab-string $trr(respnom)]
+	set respmel     [html-tab-string $trr(respmel)]
+	set dhcpprofil  [html-tab-string $trr(dhcpprofil)]
+
+	::webapp::send html [::webapp::file-subst $conf(page-ajout-existe) \
+				[list \
+					[list %NOM%         $nom] \
+					[list %DOMAINE%     $domaine] \
+					[list %ADR%         $adr] \
+					[list %MAC%         $mac] \
+					[list %DHCPPROFIL%  $dhcpprofil] \
+					[list %IDDHCPPROFIL% $iddhcpprofil] \
+					[list %HINFO%       $hinfo] \
+					[list %COMMENTAIRE% $commentaire] \
+					[list %RESPNOM%     $respnom] \
+					[list %RESPMEL%     $respmel] \
+					[list %LISTEADR%    $listeadr] \
+				    ] \
+			]
+    } else {
+	#
+	# L'objet n'a pas déjà une adresse IP, ou alors il en a déjà
+	# une (ou plus), mais l'utilisateur a confirmé qu'il souhaite
+	# lui attribuer plusieurs adresses.
+	#
+	# Insérer l'objet (RR + adr IP) ou seulement l'adr IP dans la base
+	#
+	if {! [::pgsql::lock $dbfd {rr rr_ip} msg]} then {
+	    ::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+	}
+
+	if {! $rrexiste} then {
+	    #
+	    # Rien n'existait pour ce nom, donc on insère un nouveau
+	    # RR.
+	    #
+	    set msg [ajouter-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
+			$commentaire $respnom $respmel $idcor trr]
+	    if {! [string equal $msg ""]} then {
+		::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
+	    }
+
+	} else {
+	    #
+	    # Le RR existait déjà. Le commentaire ou le hinfo peuvent
+	    # avoir été modifiés par l'utilisateur.
+	    # N'updater que si nécessaire.
+	    #
+
+	    if {! $dejaip} then {
+		#
+		# Complément d'un RR pré-existant (exemple : déclarer
+		# une machine alors que seul le rôle de messagerie existe
+		# déjà.
+		#
+		if {! ([string equal $mac $trr(mac)] &&
+			[string equal $iddhcpprofil $trr(iddhcpprofil)] &&
+			[string equal $hinfo $trr(hinfo)] &&
+			[string equal $commentaire $trr(commentaire)] &&
+			[string equal $respnom $trr(respnom)] &&
+			[string equal $respmel $trr(respmel)])} then {
+		    if {[string equal $mac ""]} then {
+			set qmac     NULL
+		    } else {
+			set qmac     "'[::pgsql::quote $mac]'"
+		    }
+		    set qcommentaire [::pgsql::quote $commentaire]
+		    set qrespnom     [::pgsql::quote $respnom]
+		    set qrespmel     [::pgsql::quote $respmel]
+		    id {$iddhcpprofil == 0} then {
+			set iddhcpprofil NULL
+		    }
+		    set sql "UPDATE rr SET
+					    mac = $qmac,
+					    iddhcpprofil = $iddhcpprofil,
+					    idhinfo = $idhinfo,
+					    commentaire = '$qcommentaire',
+					    respnom = '$qrespnom',
+					    respmel = '$qrespmel'
+					WHERE idrr = $trr(idrr)"
+		    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+			::webapp::error-exit $conf(err) "Mise à jour impossible HINFO : $msg"
+		    }
+		}
+	    } else {
+		#
+		# Il y a déjà une adresse IP, on en ajoute une. On ignore
+		# donc les attributs venus du formulaire.
+		# Pour l'affichage final des caractéristiques, on recharge
+		# ces attributs à partir de la base.
+		#
+
+		set mac          $trr(mac)
+		set iddhcpprofil $trr(iddhcpprofil)
+		set hinfo        $trr(hinfo)
+		set commentaire  $trr(commentaire)
+		set respnom      $trr(respnom)
+		set respmel      $trr(respmel)
+	    }
+	}
+
+	set sql "INSERT INTO rr_ip VALUES ($trr(idrr), '$adr')"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	   ::pgsql::unlock $dbfd "abort" m
+	    ::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
+	}
+
+	#
+	# Se rappeler du correspondant qui a effectué la modification
+	#
+
+	set msg [touch-rr $dbfd $trr(idrr) $idcor]
+	if {[string length $msg] > 0} then {
+	   ::pgsql::unlock $dbfd "abort" m
+	    ::webapp::error-exit $conf(err) $msg
+	}
+
+	if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+	   ::pgsql::unlock $dbfd "abort" m
+	   ::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
+	}
+
+	#
+	# Sortie du résultat
+	#
+
+	set dhcpprofil  [html-tab-string $dhcpprofil]
+	set commentaire [html-tab-string $commentaire]
+	set respnom     [html-tab-string $respnom]
+	set respmel     [html-tab-string $respmel]
+
+	if {$dejaip} then {
+	    set anciennesip [join $trr(ip) " "]
+	    append adr " ($anciennesip)"
+	}
+
+	::webapp::send html [::webapp::file-subst $conf(page-ajout-machine) \
+				    [list \
+					    [list %NOM%         $nom] \
+					    [list %DOMAINE%     $domaine] \
+					    [list %ADR%         $adr] \
+					    [list %MAC%         $mac] \
+					    [list %DHCPPROFIL%  $dhcpprofil] \
+					    [list %HINFO%       $hinfo] \
+					    [list %COMMENTAIRE% $commentaire] \
+					    [list %RESPNOM%     $respnom] \
+					    [list %RESPMEL%     $respmel] \
+					] \
+				]
+    }
+}
+
+
+##############################################################################
+# Ajout d'un alias
+##############################################################################
+
+# Historique
+#   2002/04/19 : pda/jean : conception
+#
+proc traiteajout-alias {dbfd idcor ft} {
+    global conf
+    upvar $ft ftab
+
+    #
+    # Valider les champs du formulaire
+    #
+
+    set nom           [string trim [lindex $ftab(nom) 0]]
+    set domaine       [string trim [lindex $ftab(domaine) 0]]
+    set nomref        [string trim [lindex $ftab(nomref) 0]]
+    set domaineref    [string trim [lindex $ftab(domaineref) 0]]
+
+    #
+    # Valider la syntaxe des noms au sens de la RFC ????
+    #
+
+    set m [syntaxe-nom $nom]
+    if {[string length $m] > 0} then {
+	::webapp::error-exit $conf(err) "Erreur sur le nom '$nom': $m"
+    }
+    set nom [string tolower $nom]
+
+    set m [syntaxe-nom $nomref]
+    if {[string length $m] > 0} then {
+	::webapp::error-exit $conf(err) "Erreur sur le nom '$nomref': $m"
+    }
+    set nomref [string tolower $nomref]
+
+    #
+    # Valider les noms d'alias et de machine.
+    #
+
+    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "alias"]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+    set iddom $trr(iddom)
+
+    set msg [valide-droit-nom $dbfd $idcor $nomref $domaineref trrref "machine-existante"]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Tous les tests sont ok, il faut insérer l'alias
+    #
+
+    if {! [::pgsql::lock $dbfd {rr rr_cname} msg]} then {
+	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+    }
+
+    #
+    # Rien n'existait pour ce nom, donc on insère un nouveau
+    # RR.
+    #
+
+    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" "" "" "" $idcor newrr]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
+    }
+
+    #
+    # Ajouter l'alias proprement dit
+    #
+
+    set sql "INSERT INTO rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	::webapp::error-exit $conf(err) "Impossible d'insérer l'alias : $msg"
+    }
+
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+       ::pgsql::unlock $dbfd "abort" m
+       ::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
+    }
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page-ajout-alias) \
+				    [list \
+					    [list %NOM%        $nom] \
+					    [list %DOMAINE%    $domaine] \
+					    [list %NOMREF%     $nomref] \
+					    [list %DOMAINEREF% $domaineref] \
+					] \
+				]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Valider l'action, lire les autres champs du formulaire,
+    # et faire le branchement
+    #
+
+    set action [lindex $ftab(action) 0]
+
+    if {! [info exists conf(form-$action)]} then {
+	::webapp::error-exit $conf(err) "Champ 'action' non conforme : $action"
+    }
+
+    if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
+	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
+    }
+
+    traite$action $dbfd $tabcor(idcor) ftab
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

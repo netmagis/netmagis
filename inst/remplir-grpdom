@@ -1,0 +1,256 @@
+#!/usr/local/bin/tclsh8.4
+
+#
+# Remplit les domaines associés à un groupe
+#
+# Usage :
+#	<script> <fichier>
+#
+# Historique
+#   2002/04/19 : pda : conception
+#   2002/04/23 : pda : ajout de la priorité
+#
+
+#
+# Valeurs par défaut du script
+#
+
+set conf(base)		{dbname=dns user=dns password=mot-de-passe-de-dns}
+
+package require Pgtcl
+
+#
+# Neutralise les caractères spéciaux figurant dans une chaîne,
+# de façon à pouvoir la passer au moteur SQL.
+# - double toutes les apostrophes
+#
+# Entrée :
+#   - paramètres
+#	- chaine : chaîne à traiter
+#	- maxindex (optionnel) : taille maximum de la chaîne
+# Sortie :
+#   - valeur de retour : la chaîne traitée
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc quote {chaine {maxindex 99999}} {
+    set chaine [string range $chaine 0 $maxindex]
+    regsub -all {'} $chaine {&&} chaine
+    regsub -all {\\} $chaine {&&} chaine
+    return $chaine
+}
+
+#
+# Exécute une commande sql, et affiche une erreur et sort
+# en cas de problème. Retourne le résultat de la commande
+# (résultat pour pg_result).
+#
+# Entrée :
+#   - paramètres
+#	- dbfd : la base
+#	- cmd : la commande à passer
+#	- result : contient en retour le nom de la variable contenant l'erreur
+# Sortie :
+#   - valeur de retour : 1 si tout est ok, 0 sinon
+#   - variable result :
+#	- si erreur, la variable contient le message d'erreur
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc execsql {dbfd cmd result} {
+    upvar $result rmsg
+
+    set res [pg_exec $dbfd $cmd]
+    if {! [string equal [pg_result $res -status] PGRES_COMMAND_OK]} then {
+	set ok 0
+	set rmsg "$cmd : [pg_result $res -error]"
+    } else {
+	set ok 1
+	set rmsg {}
+    }
+    pg_result $res -clear
+    return $ok
+}
+
+proc lire-fichier {nom tab} {
+    upvar $tab t
+    
+    set fd [open $nom r]
+    while {[gets $fd ligne] > -1} {
+	regsub -all {[ \t]*#.*} $ligne "" ligne
+
+	if {[string length $ligne] > 0} then {
+	    set domaine	[lindex $ligne 0]
+	    set op	[lindex $ligne 1]
+	    set tri	[lindex $ligne 2]
+
+	    switch -- $op {
+		{ALLBUT} {
+		    # rien...
+		}
+		{SET} {
+		    # rien...
+		}
+		default {
+		    puts stderr "ligne non reconnue '$ligne'"
+		    exit 1
+		}
+	    }
+	    set ligne [lreplace $ligne 0 2]
+
+	    lappend t($domaine) [list $op $tri $ligne]
+	}
+    }
+    close $fd
+
+    return
+}
+
+proc lire-domaine {dbfd domaine} {
+    set iddom -1
+    pg_select $dbfd "SELECT iddom FROM domaine WHERE nom = '$domaine'" tab {
+	set iddom $tab(iddom)
+    }
+    return $iddom
+}
+
+proc ajouter-domaine {dbfd domaine} {
+    set domaine [quote $domaine]
+    set iddom [lire-domaine $dbfd $domaine]
+    if {$iddom == -1} then {
+	set sql "INSERT INTO domaine (nom) VALUES ('$domaine')"
+	if {! [execsql $dbfd $sql m]} then {
+	    puts stderr $m
+	    exit 1
+	}
+	set iddom [lire-domaine $dbfd $domaine]
+    }
+    return $iddom
+}
+
+proc lire-groupe {dbfd nom} {
+    set idgrp -1
+    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$nom'" tab {
+	set idgrp $tab(idgrp)
+    }
+    return $idgrp
+}
+
+# le tableau contient en entrée
+# tab(u-strasbg.fr)	{{- 10 {weick tardif}} ...}
+# tab(alsace.iufm.fr)	{{= 20 {weick pda}} ...}
+#
+# en sortie, il contient :
+# tab(12)	{{- tri {<liste des id des groupes>}} ...}
+# tab(23)	{{= tri {<liste des id des groupes autorisés>}} ...}
+
+proc convertir-tableau {dbfd tab} {
+    upvar $tab t
+
+    foreach d [array names t] {
+	set iddom [ajouter-domaine $dbfd $d]
+
+	set nspec {}
+	foreach spec $t($d) {
+	    set op	[lindex $spec 0]
+	    set tri	[lindex $spec 1]
+	    set lgrp	[lindex $spec 2]
+
+	    set l2 {}
+	    foreach c $lgrp {
+		set idgrp [lire-groupe $dbfd $c]
+		if {$idgrp == -1} then {
+		    puts stderr "groupe '$c' non trouvé dans la base"
+		    exit 1
+		}
+		lappend l2 $idgrp
+	    }
+	    lappend nspec [list $op $tri $l2]
+	}
+	set t($iddom) $nspec
+	unset t($d)
+    }
+}
+
+proc enregistrer-droits-domaines {dbfd tab} {
+    upvar $tab t
+
+    foreach iddom [array names t] {
+	foreach spec $t($iddom) {
+	    set op	[lindex $spec 0]
+	    set tri	[lindex $spec 1]
+	    set lidgrp	[lindex $spec 2]
+
+	    switch -- $op {
+		{ALLBUT} {
+		    set s {}
+		    foreach idgrp $lidgrp {
+			lappend s "idgrp <> $idgrp"
+		    }
+		    set w [join $s " AND "]
+
+		    set sql "INSERT INTO dr_dom \
+				    SELECT idgrp, $iddom, $tri \
+				    FROM groupe WHERE $w"
+		    if {! [execsql $dbfd $sql m]} then {
+			puts stderr $m
+			exit 1
+		    }
+		}
+		{SET} {
+		    foreach idgrp $lidgrp {
+			set sql "INSERT INTO dr_dom \
+					VALUES ($idgrp, $iddom, $tri)"
+			if {! [execsql $dbfd $sql m]} then {
+			    puts stderr $m
+			    exit 1
+			}
+		    }
+		}
+	    }
+	}
+    }
+}
+
+proc main {argv0 argv} {
+    global conf
+
+    if {[llength $argv] != 1} then {
+	puts stderr "usage: $argv0 <fichier>"
+	return 1
+    }
+
+    if {[catch {set dbfd [pg_connect -conninfo $conf(base)]} msg]} then {
+	puts stderr "$argv0: cannot access base ($msg)"
+	return 1
+    }
+
+    set fichier [lindex $argv 0]
+    lire-fichier $fichier tab
+
+    set sql "BEGIN WORK ; DELETE FROM dr_dom"
+    if {! [execsql $dbfd $sql m]} then { puts stderr $m ; exit 1 }
+
+    convertir-tableau $dbfd tab
+
+    enregistrer-droits-domaines $dbfd tab
+
+    set sql "COMMIT WORK"
+    if {! [execsql $dbfd $sql m]} then { puts stderr $m ; exit 1 }
+
+    pg_disconnect $dbfd
+
+    return 0
+}
+
+#
+# Tout démarre ici...
+#
+
+exit [main $argv0 $argv]

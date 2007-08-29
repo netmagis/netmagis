@@ -1,0 +1,111 @@
+#!%TCLSH%
+
+#
+# Script pour lire le prologue d'une zone
+#
+# Syntaxe :
+#   dnsreadprol <zone>
+#
+# Historique
+#   2004/05/25 : pda      : conception en sh
+#   2005/04/11 : pda      : réécriture en Tcl pour bénéficier du Makefile
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(auth)		%AUTH%
+set conf(nologin)	%NOLOGIN%
+set conf(defuser)	%DEFUSER%
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require pgsql
+package require auth
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Petites fonctions utilitaires
+##############################################################################
+
+proc syntax-error {argv0} {
+    regsub {.*/} $argv0 {} argv0
+    puts stderr "usage: $argv0 zone"
+    exit 1
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Initialisation des accès
+    #
+
+    set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
+					    dbfd $conf(defuser) tabcor]
+    if {! [string equal $errmsg ""]} then {
+	puts stderr "$errmsg"
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Validation des arguments
+    #
+
+    if {[llength $argv] != 1} then {
+	syntax-error $argv0
+	return 1
+    }
+
+    set zone [lindex $argv 0]
+    set qzone [::pgsql::quote $zone]
+    set sql "SELECT prologue FROM zone WHERE domaine = '$qzone'"
+
+    set trouve 0
+    pg_select $dbfd $sql tab {
+	set trouve 1
+	puts -nonewline stdout $tab(prologue)
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+
+    if {! $trouve} then {
+	puts stderr "Zone '$zone' not found"
+	return 1
+    }
+
+    return 0
+}
+
+exit [main $argv0 $argv]

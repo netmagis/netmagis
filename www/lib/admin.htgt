@@ -1,0 +1,105 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {03/05/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS - Administration
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Module d'administration}
+
+    \titre {2} {Consultation des données}
+
+    \liste {
+	\item {Consulter les \lien {MX} {consultmx}}
+	\item {Consulter les \lien {statistiques par correspondant} {statcor}}
+	\item {Consulter les \lien {statistiques par établissement} {statetab}
+	    [Lent ! Compter 1 à 2 minutes]}
+	\item {Consulter les \lien {réseaux} {consultnet}}
+	\item {Lister les \lien {correspondants} {listecorresp}}
+	\item {Chercher un \lien {correspondant} {corresp} à partir d'une adresse}
+    }
+
+    \titre {2} {Administration des données}
+
+    \liste {
+	\* \item {Modifier les \lien {paramètres de l'application} {admparliste}}
+	\item {Modifier les \lien {établissements}
+		{admrefliste?type=etabl}}
+	\item {Modifier les \lien {communautés}
+		{admrefliste?type=commu}}
+	\item {Modifier les \lien {types de machines}
+		{admrefliste?type=hinfo}}
+	\item {Modifier les \lien {réseaux}
+		{admrefliste?type=reseau}}
+	\item {Modifier les \lien {domaines}
+		{admrefliste?type=domaine}}
+	\item {Modifier les \lien {relais de messagerie} {admrelsel}
+		d'un domaine}
+	\item {Modifier les \lien {zones normales}
+		{admrefliste?type=zone}}
+	\item {Modifier les \lien {zones reverse IPv4}
+		{admrefliste?type=zone4}}
+	\item {Modifier les \lien {zones reverse IPv6}
+		{admrefliste?type=zone6}}
+	\item {Modifier les \lien {MX} {admmxsel}}
+	\item {Modifier les \lien {profils DHCP}
+		{admrefliste?type=dhcpprofil}}
+    }
+
+    \titre {2} {Administration des correspondants et des groupes}
+
+    \liste {
+	\item {Gérer les \lien {correspondants} {admutil}}
+	\item {Modifier les \lien {groupes} {admrefliste?type=groupe}}
+	\item {Modifier les \lien {caractéristiques des groupes} {admgrpsel}}
+    }
+
+    \titre {2} {Actions}
+
+    \liste {
+	\item {Forcer la \lien {génération de zones} {admgenliste}}
+    }
+
+    \titre {2} {Administration de la base}
+
+    \liste {
+	\item {Modifier les \lien {paramètres de l'application} {admparliste}}
+    }
+}
+
+}

@@ -1,0 +1,267 @@
+#!%TCLSH%
+
+#
+# Script pour enregistrer une modification de relais de messagerie
+#
+# Appelé par : admrelsel.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2004/03/04 : pda/jean : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admrelmodif.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form) {
+	{domaine		1 1}
+
+	{priorite[0-9]+		0 9999}
+	{nom[0-9]+		0 9999}
+	{domaine[0-9]+		0 9999}
+
+	{prioriten[0-9]+	0 9999}
+	{nomn[0-9]+		0 9999}
+	{domainen[0-9]+		0 9999}
+}
+
+set conf(tableau) {
+    global {
+	chars {12 normal}
+	columns {20 80}
+	botbar {yes}
+	align {left}
+    }
+    motif {Titre} {
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    motif {Normal} {
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require arrgen
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Fonctions utilitaires
+##############################################################################
+
+#
+# Insère une liste de mx dans la base
+#
+# Entrée :
+#   - paramètres :
+#	- dbfd : accès à la base
+#	- iddom : id du domaine
+#	- lrel : liste au format spécifié dans valide-mx
+# Sortie :
+#   - valeur de retour : chaîne vide si ok, ou message d'erreur
+#
+# Historique
+#   2004/03/04 : pda/jean : reprise du cas MX
+#
+
+proc inserer-relais {dbfd iddom lrel} {
+    foreach rel $lrel {
+	set prio [lindex $rel 0]
+	set idmx [lindex $rel 1]
+	set sql "INSERT INTO relais_dom (iddom, priorite, mx)
+				    VALUES ($iddom, $prio, $idmx)"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    return "Insertion du relais impossible ($msg)"
+	}
+    }
+    return ""
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			$conf(form) ftab dbfd login tabcor
+
+    set domaine [lindex $ftab(domaine) 0]
+
+    #
+    # Valider le domaine
+    #
+
+    set msg [valide-domaine-et-relais $dbfd $tabcor(idcor) $domaine iddom]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Parcourir la liste des champs de formulaire et constituer une
+    # liste de la forme :
+    #		{{prio idmx} ... }
+    # où :
+    #  - prio = priorité numérique (syntaxe entière ok)
+    #  - idmx = id d'un RR existant
+    #
+
+    set lrel {}
+    foreach c [array names ftab] {
+	if {[regexp {^priorite(n?)([0-9]+)$} $c bidon n idmx]} then {
+	    set idxprio priorite$n$idmx
+	    set idxnom  nom$n$idmx
+	    set idxdom  domaine$n$idmx
+	    if {[info exists ftab($idxprio)] && \
+			    [info exists ftab($idxnom)] && \
+			    [info exists ftab($idxdom)] \
+		    } then {
+		set fprio [string trim [lindex $ftab($idxprio) 0]]
+		set fnom  [string trim [lindex $ftab($idxnom)  0]]
+		set fdom  [string trim [lindex $ftab($idxdom)  0]]
+		if {! [string equal $fprio ""]} then {
+		    set msg ""
+		    set mx [valide-mx $dbfd \
+					    $fprio $fnom $fdom \
+					    $tabcor(idcor) msg]
+		    if {! [string equal $msg ""]} then {
+			::webapp::error-exit $conf(err) "$msg pour $fnom.$fdom"
+		    }
+		    if {[info exists tmx([lindex $mx 1])]} then {
+			::webapp::error-exit $conf(err) "$fnom.$fdom spécifié deux fois."
+		    }
+		    lappend lrel $mx
+		}
+	    } else {
+		::webapp::error-exit $conf(err) "Formulaire non conforme ($idxprio, $idxnom, $idxdom)"
+	    }
+	}
+    }
+
+    #
+    # Débuter la transaction
+    #
+
+    if {! [::pgsql::lock $dbfd {} msg]} then {
+	::webapp::error-exit $conf(err) "Verrouillage de la base impossible: $msg"
+    }
+
+    #
+    # Supprimer tous les relais éventuels au préalable.
+    #
+
+    set sql "DELETE FROM relais_dom WHERE iddom = $iddom"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	::pgsql::unlock $dbfd "abort" m
+	::webapp::error-exit $conf(err) "Suppression des anciens relais impossible: $msg"
+    }
+
+    #
+    # Insérer les RR des MX
+    #
+    set msg [inserer-relais $dbfd $iddom $lrel]
+    if {! [string equal $msg ""]} then {
+	::pgsql::unlock $dbfd "abort" m
+	::webapp::error-exit $conf(err) "Ajout des relais impossible\n$msg"
+    }
+
+    #
+    # Déverrouillage, et enregistrement des modifications avant la sortie
+    #
+
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+        ::pgsql::unlock $dbfd "abort" m
+        return "Déverrouillage impossible, modification annulée ('$msg')"
+    }
+
+    #
+    # Récapituler les informations ajoutées dans la base.
+    #
+
+    if {[llength $lrel] > 0} then {
+	set donnees {}
+	lappend donnees {Titre Priorité Nom}
+	foreach mx $lrel {
+	    # priorité idmx
+	    lire-rr-par-id $dbfd [lindex $mx 1] tabmx
+	    lappend donnees [list Normal \
+				[lindex $mx 0] \
+				$tabmx(nom).$tabmx(domaine) \
+			    ]
+	}
+	set tableau [::arrgen::output "html" $conf(tableau) $donnees]
+    } else {
+	set tableau "Relais de messagerie supprimés."
+    }
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				    [list \
+					    [list %TABLEAU% $tableau] \
+					    [list %DOMAINE% $domaine] \
+					] \
+			    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

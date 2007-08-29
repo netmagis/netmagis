@@ -1,0 +1,99 @@
+#!%TCLSH%
+
+#
+# Script pour définir l'accueil général du module
+#
+# Appelé par : /applis/dns/
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2002/06/03 : pda      : création
+#   2002/07/09 : pda      : ajout de nologin
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/accueil.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			{} ftab dbfd login tabcor
+
+    #
+    # Est-ce que le correspondant a le droit d'accéder à la
+    # page d'administration ?
+    #
+
+    set admin ""
+    if {[attribut-correspondant $dbfd $tabcor(idcor) admin]} then {
+	set admin "<LI><A HREF=\"$conf(homeurl)/bin/admin\">Admin</A></LI>"
+    }
+
+    #
+    # Sortie de la page
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+					[list \
+						[list %ADMIN% $admin] \
+					    ] \
+				    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

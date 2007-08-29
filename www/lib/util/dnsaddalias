@@ -1,0 +1,198 @@
+#!%TCLSH%
+
+#
+# Script pour ajouter un alias dans la base
+#
+# Syntaxe :
+#   dnsaddalias <fqdn-alias> <fqdn-machine>
+#
+# Historique
+#   2004/09/24 : pda/jean : création à partir du script cgi
+#   2005/04/11 : pda/jean : adaptation
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(auth)		%AUTH%
+set conf(nologin)	%NOLOGIN%
+set conf(defuser)	%DEFUSER%
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require pgsql
+package require auth
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Petites fonctions utilitaires
+##############################################################################
+
+proc syntax-error {argv0} {
+    regsub {.*/} $argv0 {} argv0
+    puts stderr "usage: $argv0 fqdn-alias fqdn-machine"
+    exit 1
+}
+
+##############################################################################
+# Ajout d'un alias
+##############################################################################
+
+#
+# Ajout d'un alias dans la base
+#
+# Entrée :
+#   - dbfd : accès à la base
+#   - idcor : id du correspondant faisant l'ajout
+#   - fqdnalias : nom complet de l'alias
+#   - fqdnref : nom complet de la cible de l'alias
+# Sortie :
+#   - valeur de retour : message d'erreur, ou chaîne vide si ok.
+#
+# Historique
+#   2004/09/29 : pda/jean : conception à partir du script CGI
+#
+
+proc add-alias {dbfd idcor fqdnalias fqdnref} {
+    #
+    # Vérifier le FDQN de l'alias
+    #
+
+    set msg [syntaxe-fqdn $dbfd $fqdnalias nom domaine iddom]
+    if {! [string equal $msg ""]} then {
+	return $msg
+    }
+
+    #
+    # Vérifier le FQDN de la cible
+    #
+
+    set msg [syntaxe-fqdn $dbfd $fqdnref nomref domaineref iddomref]
+    if {! [string equal $msg ""]} then {
+	return $msg
+    }
+
+    #
+    # Valider les noms d'alias et de machine.
+    #
+
+    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "alias"]
+    if {! [string equal $msg ""]} then {
+	return $msg
+    }
+    set iddom $trr(iddom)
+
+    set msg [valide-droit-nom $dbfd $idcor $nomref $domaineref trrref "machine-existante"]
+    if {! [string equal $msg ""]} then {
+	return $msg
+    }
+
+    #
+    # Tous les tests sont ok, il faut insérer l'alias
+    #
+
+    if {! [::pgsql::lock $dbfd {rr rr_cname} msg]} then {
+	return "Transaction impossible : $msg"
+    }
+
+    #
+    # Rien n'existait pour ce nom, donc on insère un nouveau
+    # RR.
+    #
+
+    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" "" "" "" $idcor newrr]
+    if {! [string equal $msg ""]} then {
+	return "Impossible d'insérer : $msg"
+    }
+
+    #
+    # Ajouter l'alias proprement dit
+    #
+
+    set sql "INSERT INTO rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	return "Impossible d'insérer l'alias : $msg"
+    }
+
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+       ::pgsql::unlock $dbfd "abort" m
+       return "L'insertion a échoué : $msg"
+    }
+
+    #
+    # Sortie du résultat
+    #
+
+    return ""
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Initialisation des accès
+    #
+
+    set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
+					    dbfd $conf(defuser) tabcor]
+    if {! [string equal $errmsg ""]} then {
+	puts stderr "$errmsg"
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Validation des arguments
+    #
+
+    if {[llength $argv] != 2} then {
+	syntax-error $argv0
+	return 1
+    }
+
+    set fqdnalias [lindex $argv 0]
+    set fqdnref   [lindex $argv 1]
+
+    set msg [add-alias $dbfd $tabcor(idcor) $fqdnalias $fqdnref]
+    if {! [string equal $msg ""]} then {
+	puts stderr $msg
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+
+    return 0
+}
+
+exit [main $argv0 $argv]

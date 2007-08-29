@@ -1,0 +1,67 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {04/03/2004}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS - Relais de messagerie
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Modification des relais de messagerie}
+
+    Si vous utilisez les <<~rôles de messagerie~>>, vous devez
+    indiquer le ou les relais qui effectueront le routage de messagerie
+    pour un domaine. Ces relais~:
+
+    \liste {
+	\item {sont les MX désignés pour les rôles de messagerie
+	    de ce domaine (reçoivent donc le courrier pour les rôles
+	    définis)
+	}
+	\item {doivent router les messages vers les machines désignées
+	    (<<~hébergeurs~>> pour les rôles)
+	}
+    }
+
+    Entrez le domaine dont vous souhaitez modifier le ou les relais~:
+
+    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/admreledit">
+	Domaine~: %DOMAINE%
+	<INPUT TYPE="SUBMIT" VALUE="Sélectionner">
+    </FORM>
+}
+
+}

@@ -1,0 +1,226 @@
+#!%TCLSH%
+
+#
+# Script pour supprimer une adresse IP (voire une machine) dans la base
+#
+# Syntaxe :
+#   dnsdelip <ip>
+#
+# Historique
+#   2004/10/01 : pda/jean : conception
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(auth)		%AUTH%
+set conf(nologin)	%NOLOGIN%
+set conf(defuser)	%DEFUSER%
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require pgsql
+package require auth
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Petites fonctions utilitaires
+##############################################################################
+
+proc syntax-error {argv0} {
+    regsub {.*/} $argv0 {} argv0
+    puts stderr "usage: $argv0 ip"
+    exit 1
+}
+
+##############################################################################
+# Suppression d'une adresse
+##############################################################################
+
+#
+# Suppression d'une adresse dans la base
+#
+# Entrée :
+#   - dbfd : accès à la base
+#   - idcor : id du correspondant faisant la suppression
+#   - adr : adresse IP à supprimer
+# Sortie :
+#   - valeur de retour : message d'erreur, ou chaîne vide si ok.
+#
+# Historique
+#   2004/10/01 : pda/jean : conception
+#
+
+proc del-ip {dbfd idcor adr} {
+    #
+    # Vérifier la syntaxe de l'adresse IP
+    #
+
+    set m [syntaxe-ip $dbfd $adr "inet"]
+    if {[string length $m] > 0} then {
+	return "Erreur sur l'adresse '$adr': $m"
+    }
+
+    #
+    # Vérifier que l'adresse IP appartient bien à une des plages
+    # autorisées pour le correspondant
+    #
+
+    if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
+	return "Vous n'avez pas accès à l'adresse '$adr'"
+    }
+
+    #
+    # Vérifier que l'adresse existe, en récupérant toutes les
+    # informations de l'objet.
+    #
+
+    if {! [lire-rr-par-ip $dbfd $adr trr]} then {
+	return "L'adresse '$adr' n'existe pas dans la base."
+    }
+
+    #
+    # Valider l'accès à ce nom
+    #
+    set nom     $trr(nom)
+    set domaine $trr(domaine)
+    set msg [valide-droit-nom $dbfd $idcor $nom $domaine bidon "supprimer-un-nom"]
+    if {! [string equal $msg ""]} then {
+	return $msg
+    }
+
+    #
+    # Est-ce la dernière adresse IP ou non ?
+    #
+
+    if {[llength $trr(ip)] == 1} then {
+	set lastadr "oui"
+    } else {
+	set lastadr "non"
+    }
+
+    #
+    # Verrouiller la base
+    #
+
+    if {! [::pgsql::lock $dbfd {} msg]} then {
+	return "Transaction impossible : $msg"
+    }
+
+    #
+    # Procéder à la destruction effective
+    #
+
+    if {[string equal $lastadr "non"]} then {
+	#
+	# Suppression d'une adresse seulement
+	#
+
+	set sql "DELETE FROM rr_ip WHERE adr = '$adr'"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	   ::pgsql::unkock $dbfd "abort" m
+	    return "La suppression a échoué.\n$msg"
+	}
+
+	#
+	# Se rappeler que le correspondant a fait la modification
+	#
+
+	set msg [touch-rr $dbfd $trr(idrr) $idcor]
+	if {! [string equal $msg ""]} then {
+	   ::pgsql::unkock $dbfd "abort" m
+	    return "Mise à jour impossible.\n$msg"
+	}
+
+    } else {
+	#
+	# Suppression de l'objet entier
+	#
+
+	if {! [supprimer-rr-et-dependances $dbfd trr msg]} then {
+	    ::pgsql::unlock $dbfd "abort" m
+	    return "La suppression a échoué.\n$msg"
+	}
+    }
+
+    #
+    # Enregistrer les modifications dans la base et la déverrouiller.
+    #
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+       ::pgsql::unlock $dbfd "abort" m
+       return "La suppression a échoué. Abandon.\n$msg"
+    }
+
+    return ""
+}
+
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Initialisation des accès
+    #
+
+    set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
+					    dbfd $conf(defuser) tabcor]
+    if {! [string equal $errmsg ""]} then {
+	puts stderr "$errmsg"
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Validation des arguments
+    #
+
+    if {[llength $argv] != 1} then {
+	syntax-error $argv0
+	return 1
+    }
+
+    set adr [lindex $argv 0]
+
+    set msg [del-ip $dbfd $tabcor(idcor) $adr]
+    if {! [string equal $msg ""]} then {
+	puts stderr $msg
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+
+    return 0
+}
+
+exit [main $argv0 $argv]

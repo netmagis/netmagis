@@ -1,0 +1,375 @@
+#!%TCLSH%
+
+#
+# Script pour lister les machines d'un ou plusieurs domaines
+#
+# Appelé par : script consulter (page lib/consulter.htgt)
+#
+# Paramètres (formulaire ou URL) :
+#   - critères de sélection : 
+#	- plages4 : liste de plages IPv4 (idreseau dans tables reseau/plage)
+#	- plages6 : liste de plages IPv6 (idreseau dans tables reseau/plage)
+#	- cidr : cidr saisi par l'utilisateur
+#   - format de sortie
+#	- format : "Consulter" ou "Imprimer"
+#
+# Historique
+#   2002/03/27 : pda/jean : création
+#   2002/05/02 : pda/jean : traitement des hinfo
+#   2002/05/06 : pda/jean : ajout du cidr
+#   2002/05/06 : pda/jean : ajout des groupes
+#   2002/05/16 : pda      : conversion à arrgen
+#   2002/07/09 : pda      : ajout de nologin
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/01/14 : pda/jean : ajout IPv6
+#   2004/08/05 : pda/jean : ajout MAC
+#   2004/08/06 : pda/jean : extension des droits sur les réseaux
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(liste)		$conf(lib)/liste.html
+set conf(listetex)	$conf(lib)/liste.tex
+set conf(err)		$conf(lib)/erreur.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)		{
+	{plages		0 99999}
+	{cidr		1 1}
+	{format		0 1}
+}
+
+#
+# Le tableau servant à présenter le résultat
+# Colonnes :
+#	- adr IP
+#	- nom machine et aliases
+#	- adr MAC
+#	- type de machine (hinfo)
+#	- informations complémentaires (texte libre)
+#	- correspondant (login)
+#	- date de dernière modif (%m/%d/%y)
+#
+
+set conf(tableau) {
+    global {
+	chars {10 normal}
+	columns {21 17 10 9 13 17 6 7}
+	botbar {yes}
+	align {left}
+	latex {
+	    linewidth {267}
+	}
+    }
+    motif {Gras} {
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    motif {Normal} {
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne {
+	    format {raw}
+	}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+}
+
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Analyse et validation des arguments
+    #
+
+    # format de sortie
+    switch -- [lindex $ftab(format) 0] {
+	Imprimer	{ set format latex }
+	Consulter	-
+	default		{ set format html }
+    }
+
+    # le CIDR demandé par le correspondant
+    set cidr [string trim [lindex $ftab(cidr) 0]]
+    if {[string length $cidr] > 0} then {
+	set m [syntaxe-ip $dbfd $cidr "cidr"]
+	if {[string length $m] > 0} then {
+	    ::webapp::error-exit $conf(err) $m
+	}
+    }
+
+    # les plages demandées par le correspondant
+    set nplages [llength $ftab(plages)]
+
+    # compatibilité entre les deux arguments
+    if {[string length $cidr] == 0 && $nplages == 0} then {
+	::webapp::error-exit $conf(err) "Vous devez choisir un CIDR ou au moins une plage"
+    }
+    if {[string length $cidr] > 0 && $nplages > 0} then {
+	::webapp::error-exit $conf(err) "Vous ne pouvez pas choisir un CIDR et une plage"
+    }
+
+    #
+    # Valider les idreseaux fournis, et récupérer les CIDR correspondants
+    #
+
+    set lcidr {}
+    if {[string length $cidr] > 0} then {
+	lappend lcidr $cidr
+    }
+    if {$nplages > 0} then {
+	foreach idreseau $ftab(plages) {
+	    set l [valide-idreseau $dbfd $idreseau \
+					$tabcor(idgrp) "consult" {4 6} msg]
+	    if {[llength $l] == 0} then {
+		::webapp::error-exit $conf(err) $msg
+	    }
+	    set lcidr [concat $lcidr $l]
+	}
+    }
+
+    #
+    # Boucle externe : pour chaque plage demandée dans le formulaire
+    #
+
+    set donnees {}
+    lappend donnees {Gras {Adresse IP}
+			  {Noms et aliases}
+			  {Adresse MAC}
+			  {Système}
+			  {Commentaire}
+			  {Responsable}
+			  {Login}
+			  {Date}
+			}
+    set nbmachines 0
+
+    foreach cidrplage $lcidr {
+	#
+	# Les deux sous-select servent à récupérer les plages
+	# autorisées/interdites par le correspondant, à l'intérieur
+	# du numéro de réseau spécifié par le CIDR obtenu ci-dessus.
+	# 
+
+	set sqlallow "SELECT adr FROM dr_ip WHERE
+			    (adr <<= '$cidrplage' OR adr >>= '$cidrplage')
+			    AND allow_deny = 1
+			    AND idgrp = $tabcor(idgrp)"
+	set sqldeny "SELECT adr FROM dr_ip WHERE
+			    (adr <<= '$cidrplage' OR adr >>= '$cidrplage')
+			    AND allow_deny = 0
+			    AND idgrp = $tabcor(idgrp)"
+
+	#
+	# Récupérer tous les aliases dont l'adresse IP est
+	# dans les plages autorisées, et les mettre dans un
+	# tableau indexé par les adresses IP.
+	# Exemple :
+	#	cname(130.79.201.129) {aton.u-strasbg.fr diablo.u-strasbg.fr...}
+	#
+
+	set sql "SELECT alias.nom || '.' || domaine.nom AS nom, rr_ip.adr
+		    FROM rr alias, rr canonique, rr_ip, rr_cname, domaine
+		    WHERE canonique.idrr = rr_cname.cname
+			AND rr_cname.idrr = alias.idrr
+			AND rr_ip.idrr = canonique.idrr
+			AND rr_ip.adr <<= ANY ($sqlallow)
+			AND NOT rr_ip.adr <<= ANY ($sqldeny)
+			AND rr_ip.adr <<= '$cidrplage'
+			AND domaine.iddom = alias.iddom
+		    ORDER BY alias.nom"
+	pg_select $dbfd $sql tab {
+	    lappend cname($tab(adr)) $tab(nom)
+	}
+
+	#
+	# Récupérer toutes les adresses IP autorisées et les
+	# ajouter au tableau.
+	#
+
+	set jourfmt [getconfig $dbfd "jourfmt"]
+	set sql "SELECT rr.nom || '.' || domaine.nom AS nom,
+			rr_ip.adr,
+			rr.commentaire, rr.respnom, rr.respmel, rr.date,
+			rr.mac, hinfo.texte, corresp.login
+		    FROM rr_ip, rr, domaine, hinfo, corresp
+		    WHERE rr.idrr = rr_ip.idrr
+			AND rr_ip.adr <<= ANY ($sqlallow)
+			AND NOT rr_ip.adr <<= ANY ($sqldeny)
+			AND rr_ip.adr <<= '$cidrplage'
+			AND domaine.iddom = rr.iddom
+			AND rr.idhinfo = hinfo.idhinfo
+			AND rr.idcor = corresp.idcor
+		    ORDER BY rr_ip.adr"
+	pg_select $dbfd $sql tab {
+	    set nomprimaire	$tab(nom)
+	    set adr		$tab(adr)
+	    set mac		$tab(mac)
+	    set hinfo		$tab(texte)
+	    set commentaire	$tab(commentaire)
+	    set respnom    	$tab(respnom)
+	    set respmel    	$tab(respmel)
+	    set date		$tab(date)
+	    set login		$tab(login)
+	    if {[info exists cname($adr)]} then {
+		set nomssecondaires $cname($adr)
+	    } else {
+		set nomssecondaires ""
+	    }
+	    if {! [string equal $respmel ""]} then {
+		set responsable "$respnom <$respmel>"
+	    } else {
+		set responsable $respnom
+	    }
+	    set date [clock format [clock scan $date] -format $jourfmt]
+	    switch -- $format {
+		html {
+		    set nom "$nomprimaire <I>$nomssecondaires</I>"
+		}
+		latex {
+		    set nom "$nomprimaire \\textit \{$nomssecondaires\}"
+		}
+	    }
+	    lappend donnees [list Normal \
+				$adr $nom $mac \
+				$hinfo $commentaire $responsable \
+				$login $date]
+	    incr nbmachines
+	}
+    }
+
+    #
+    # Cosmétique...
+    #
+    set s ""
+    if {$nbmachines > 1} then {
+	set s "s"
+    }
+
+    #
+    # Générer le zoli tableau
+    #
+
+    set tableau [::arrgen::output $format $conf(tableau) $donnees]
+
+
+    #
+    # Sortie du résultat
+    #
+
+    set datefmt [getconfig $dbfd "datefmt"]
+    set date  [clock format [clock seconds] -format $datefmt]
+    switch -- $format  {
+	html	{
+	    ::webapp::send html [::webapp::file-subst $conf(liste) \
+					[list \
+					    [list %TITRE%	"machines"] \
+					    [list %TABLEAU%	$tableau] \
+					    [list %DATE%	$date] \
+					    [list %NBMACHINES%	$nbmachines] \
+					    [list %S%		$s] \
+					] \
+				]
+	}
+	latex	{
+	    ::webapp::send pdf [::webapp::file-subst $conf(listetex) \
+					[list \
+					    [list %ORIENTATION%	"landscape"] \
+					    [list %TITRE%	"machines"] \
+					    [list %TABLEAU%	$tableau] \
+					    [list %DATE%	$date] \
+					    [list %NBMACHINES%	$nbmachines] \
+					    [list %S%		$s] \
+					] \
+				]
+	}
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

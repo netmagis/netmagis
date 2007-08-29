@@ -1,0 +1,155 @@
+#!%TCLSH%
+
+#
+# Script de présentation des paramètres DHCP d'un réseau
+#
+# Appelé par : script dhcp ou dchpsel
+#
+# Paramètres (formulaire ou URL) :
+#   - reseau : id du réseau sélectionné
+#
+# Historique
+#   2004/10/05 : pda/jean : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+	{idreseau	1 1}
+}
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/dhcpedit.html
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor
+
+    set idgrp $tabcor(idgrp)
+
+    #
+    # Valider le réseau
+    #
+
+    set idreseau [lindex $ftab(idreseau) 0]
+    set lcidr [valide-idreseau $dbfd $idreseau $idgrp "dhcp" 4 msg]
+    if {[llength $lcidr] == 0} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+    if {[llength $lcidr] != 1} then {
+	::webapp::error-exit $conf(err) "Erreur interne: trop de CIDR trouvés !"
+    }
+
+    #
+    # Préparer les éléments du tableau n+5
+    #
+
+    set largeurs {30 30 20 10 10}
+    set titre {{texte Min} {texte Max}
+		{texte Domaine}
+		{texte {Durée par défaut du bail}}
+		{texte {Durée maximum du bail}}
+	    }
+
+    set menudom {}
+    set sql "SELECT d.iddom, d.nom FROM domaine d, dr_dom dr
+			WHERE d.iddom = dr.iddom
+				AND dr.idgrp = $idgrp
+			ORDER BY dr.tri ASC, d.nom ASC"
+    pg_select $dbfd $sql tab {
+	lappend menudom [list $tab(iddom) $tab(nom)]
+    }
+
+
+    set spec {
+	    {min		{string 15}	{}}
+	    {max		{string 15}	{}}
+	    {iddom		{menu {%MENUDOM%}}	{}}
+	    {default_lease_time	{string 10}	0}
+	    {max_lease_time	{string 10}	0}
+	}
+    regsub -- "%MENUDOM%" $spec "$menudom" spec
+    set sql "SELECT * FROM dhcprange
+			WHERE min <<= '$lcidr'
+			    AND max <<= '$lcidr'
+			    AND valide_dhcprange_grp ($idgrp, min, max)
+			ORDER BY min"
+    set id iddhcprange
+
+    #
+    # On y va !
+    #
+
+    set errmsg [edition-tableau $largeurs $titre $spec $dbfd $sql $id tableau]
+    if {[string length $errmsg] > 0} then {
+	::webapp::error-exit $conf(err) $errmsg
+    }
+
+    #
+    # Génération de la page contenant le formulaire
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				[list \
+					[list %IDRESEAU% $idreseau] \
+					[list %RESEAU% $lcidr] \
+					[list %TABLEAU% $tableau] \
+				    ] \
+			    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

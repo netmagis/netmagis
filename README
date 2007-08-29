@@ -1,0 +1,45 @@
+Application WebDNS
+------------------
+
+Objectif
+--------
+
+Déléguer la gestion du DNS et de DHCP à un ensemble de correspondants
+réseau, et constituer le début d'un système d'information réseau.
+Voir l'article présenté aux Jres 2003
+	http://2003.jres.org/actes/paper.144.pdf
+
+
+Auteurs
+-------
+
+Pierre DAVID (Pierre.David@crc.u-strasbg.fr)
+Jean BENOIT (Pierre.David@crc.u-strasbg.fr)
+
+
+Version
+-------
+
+1.3
+
+
+Installation
+------------
+
+Consultez doc/install/install.pdf ou doc/install/install.ps
+
+
+Liste de diffusion
+------------------
+
+La liste webdns@u-strasbg.fr (faible trafic) est destinée à
+accueillir toutes les discussions sur l'application et ses
+à-côtés.
+
+
+Contributions externes
+----------------------
+
+- Canal DNS pour le portail Esup
+    ftp://ftp.univ-pau.fr/pub/ACO/canaux/
+    Auteur : Philippe Martin (philippe.martin@univ-pau.fr)

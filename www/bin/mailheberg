@@ -1,0 +1,306 @@
+#!%TCLSH%
+
+#
+# Script pour présenter la page de saisie de l'hébergeur d'une adresse
+# de messagerie (ou la liste des adresses de messagerie existantes)
+#
+# Appelé par : script mail (page lib/mail.htgt)
+#
+# Paramètres (formulaire ou URL) :
+#   - nom : nom (premier constituant) de l'adresse de
+#		messagerie (ou vide si on veut une liste)
+#   - domaine : domaine de l'adresse de messagerie (tous les
+#		constituants sauf le premier)
+#
+# Historique
+#   2004/02/06 : pda/jean : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(pageliste)	$conf(lib)/mailheberg-liste.html
+set conf(pageedit)	$conf(lib)/mailheberg-edit.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+# les champs du formulaire
+set conf(form)		{
+	{nom		1 1}
+	{domaine	1 1}
+}
+
+#
+# Le tableau servant à présenter la liste des adresses
+# de messagerie enregistrées dans la base pour édition
+# Colonnes :
+#	- adresse de messagerie
+#	- hébergeur des boîtes pour cette adresse
+#
+
+set conf(tableau) {
+    global {
+	chars {12 normal}
+	columns {50 50}
+	botbar {yes}
+	align {left}
+    }
+    pattern {Titre} {
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	align {center}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    pattern {Normal} {
+	title {yes}
+	topbar {yes}
+	vbar {yes}
+	colonne {
+	    format {raw}
+	}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Fonctions auxiliaires
+##############################################################################
+
+#
+# Lit l'ensemble des rôles de messagerie associés à un groupe et un
+# domaine. Si le nom est fourni, seul le rôle associé à l'adresse
+# spécifiée est retourné.
+#
+# Entrée :
+#   - dbfd : accès à la base
+#   - idcor : correspondant
+#   - nom : nom (premier constituant) de l'adresse de messagerie
+#   - domaine : nom de domaine (tous les constituants sauf le premier) de
+#	l'adresse de messagerie
+# Sortie :
+#   - valeur de retour : liste de quadruplets {noma domainea nomh domaineh}
+#	où :
+#	    - noma : nom de l'adresse de messagerie
+#	    - domainea : nom de domaine de l'adresse de messagerie
+#	    - nomh : nom de l'hébergeur des boîtes
+#	    - domaineh : nom de domaine de l'hébergeur des boîtes
+#
+# Historique
+#   2004/02/06 : pda/jean : conception
+#   2004/02/27 : pda/jean : utilisation de l'id du correspondant
+#   2004/03/01 :     jean : requête de la mort qui tue !
+#
+
+proc lire-role-mail {dbfd idcor nom domaine} {
+    if {! [string equal $nom ""]} then {
+	set nom " AND r1.nom = '$nom' "
+    }
+    set sql "
+	SELECT r1.nom AS noma, d1.nom AS domainea,
+		r2.nom AS nomh, d2.nom AS domaineh
+	    FROM role_mail, rr r1, domaine d1, rr r2, domaine d2, corresp
+	    WHERE corresp.idcor = $idcor
+		$nom
+		AND role_mail.idrr = r1.idrr
+		AND r1.iddom = d1.iddom
+		AND d1.nom = '$domaine'
+		AND r1.iddom =
+			(SELECT dd1.iddom FROM dr_dom dd1
+					WHERE dd1.idgrp = corresp.idgrp
+					    AND dd1.iddom = r1.iddom
+					    AND dd1.rolemail > 0
+			    )
+		AND role_mail.heberg = r2.idrr
+		AND r2.iddom = d2.iddom
+		AND r2.iddom =
+			(SELECT dd2.iddom FROM dr_dom dd2
+					WHERE dd2.idgrp = corresp.idgrp
+					    AND dd2.iddom = r2.iddom
+			    )
+		AND r2.idrr IN
+			(SELECT r3.idrr FROM rr_ip r3
+					WHERE valide_ip_cor(adr, $idcor)
+					    AND r3.idrr = r2.idrr
+			    )
+		AND r2.idrr NOT IN
+			(SELECT r4.idrr FROM rr_ip r4
+					WHERE NOT valide_ip_cor(adr, $idcor)
+					    AND r4.idrr = r2.idrr
+			    )
+	    ORDER BY domainea ASC, noma ASC
+		"
+    set r {}
+    pg_select $dbfd $sql tab {
+	lappend r [list $tab(noma) $tab(domainea) $tab(nomh) $tab(domaineh)]
+    }
+    return $r
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor
+
+    set idcor $tabcor(idcor)
+
+    set nom     [string trim [lindex $ftab(nom) 0]]
+    set domaine [string trim [lindex $ftab(domaine) 0]]
+    set toutnom "$nom.$domaine"
+
+    #
+    # A-t'on le droit de déclarer des rôles mails dans ce domaine ?
+    #
+
+    set msg [valide-domaine $dbfd $idcor $domaine iddom "rolemail"]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Doit-on générer une liste de domaines de messagerie, ou bien
+    # l'utilisateur en a-t'il saisi un ?
+    #
+
+    set lsubst {}
+    if {[string equal $nom ""]} then {
+	#
+	# Pas de nom saisi : il faut générer une liste des
+	# rôles mails enregistrés dans la base pour les
+	# adresses dont le correspondant est propriétaire.
+	# C'est le cas par défaut si on utilise le bouton
+	# de consultation.
+	#
+
+	set page $conf(pageliste)
+	set lroles [lire-role-mail $dbfd $idcor "" $domaine]
+
+	if {[llength $lroles] == 0} then {
+	    set tableau "Aucun rôle de messagerie n'a été trouvée pour '$domaine'"
+	} else {
+	    set baseurl "$conf(homeurl)/bin/mailheberg"
+	    set donnees {}
+	    lappend donnees [list Titre \
+				"Adresse de messagerie" "Hébergeur des boîtes"]
+	    foreach q [lire-role-mail $dbfd $idcor "" $domaine] {
+		# lien de la forme "..../mailheberg?nom=...&domaine=.."
+		set noma [lindex $q 0] ; set domainea [lindex $q 1]
+		set nomh [lindex $q 2] ; set domaineh [lindex $q 3]
+
+		# normalement, il n'y a que des caractères "compatibles RFC"...
+		set url "$baseurl?nom=$noma&domaine=$domainea"
+
+		lappend donnees [list Normal \
+				    "<A HREF=\"$url\">$noma.$domainea</A>" \
+				    "$nomh.$domaineh" \
+				    ]
+		set tableau [::arrgen::output "html" $conf(tableau) $donnees]
+	    }
+	}
+
+	lappend lsubst [list %TABLEAU% $tableau]
+	lappend lsubst [list %DOMAINE% $domaine]
+
+    } else {
+
+	#
+	# Un nom a été fourni. Il faut présenter la page d'édition
+	# de rôle de messagerie pour ce nom.
+	#
+	set page $conf(pageedit)
+	set nomh ""
+	set domh ""
+
+	#
+	# Valider la syntaxe de l'adresse de messagerie
+	#
+
+	set msg [syntaxe-nom $nom]
+	if {! [string equal $msg ""]} then {
+	    ::webapp::error-exit $conf(err) $msg
+	}
+
+	#
+	# Valider le droit d'éditer cette adresse de messagerie
+	#
+
+	set msg [valide-role-mail $dbfd $idcor $nom $domaine trr trrh]
+	if {! [string equal $msg ""]} then {
+	    ::webapp::error-exit $conf(err) "$msg. Édition refusée."
+	}
+
+	set nomh $trrh(nom)
+	set domh $trrh(domaine)
+	set domaineh [menu-domaine $dbfd $idcor domaineh "" $domh $conf(err)]
+
+	lappend lsubst [list %NOM%      $nom]
+	lappend lsubst [list %DOMAINE%  $domaine]
+	lappend lsubst [list %NOMH%	$nomh]
+	lappend lsubst [list %DOMAINEH% $domaineh]
+    }
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $page $lsubst]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

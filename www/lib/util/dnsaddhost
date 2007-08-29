@@ -1,0 +1,235 @@
+#!%TCLSH%
+
+#
+# Script pour ajouter une machine dans la base
+#
+# Syntaxe :
+#   dnsaddhost <fqdn> <ip>
+#
+# Historique
+#   2004/09/24 : pda/jean : création à partir du script cgi
+#   2005/04/11 : pda/jean : adaptation
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(auth)		%AUTH%
+set conf(nologin)	%NOLOGIN%
+set conf(defuser)	%DEFUSER%
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require pgsql
+package require auth
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Petites fonctions utilitaires
+##############################################################################
+
+proc syntax-error {argv0} {
+    regsub {.*/} $argv0 {} argv0
+    puts stderr "usage: $argv0 fqdn ip"
+    exit 1
+}
+
+##############################################################################
+# Ajout d'une machine
+##############################################################################
+
+#
+# Ajout d'une machine dans la base
+#
+# Entrée :
+#   - dbfd : accès à la base
+#   - idcor : id du correspondant faisant l'ajout
+#   - fqdn : nom du host
+#   - adr : adresse IP à ajouter
+# Sortie :
+#   - valeur de retour : message d'erreur, ou chaîne vide si ok.
+#
+# Historique
+#   2004/09/29 : pda/jean : conception à partir du script CGI
+#
+
+proc add-ip {dbfd idcor fqdn adr} {
+    #
+    # Validation du nom du host
+    #
+
+    set msg [syntaxe-fqdn $dbfd $fqdn nom domaine iddom]
+    if {! [string equal $msg ""]} then {
+	return $msg
+    }
+    set nom [string tolower $nom]
+
+    #
+    # Valider le nom
+    #
+
+    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "machine"]
+    if {! [string equal $msg ""]} then {
+	return $msg
+    }
+    set iddom $trr(iddom)
+
+    #
+    # Est-ce que ce nom existe, et est déjà associé à
+    # une adresse IP (ou plus) ?
+    #
+
+    set dejaip 0
+    set rrexiste 0
+    if {! [string equal $trr(idrr) ""]} then {
+	set rrexiste 1
+	if {! [string equal $trr(ip) ""]} then {
+	    set dejaip 1
+	}
+    }
+
+    #
+    # Vérifier la syntaxe de l'adresse IP
+    #
+
+    set m [syntaxe-ip $dbfd $adr "inet"]
+    if {[string length $m] > 0} then {
+	return "Erreur sur l'adresse IP '$adr': $m"
+    }
+
+    #
+    # Vérifier que l'adresse IP appartient bien à une des plages
+    # autorisées pour le correspondant
+    #
+
+    if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
+	return "Vous n'avez pas accès à l'adresse '$adr'"
+    }
+
+    #
+    # Vérifier enfin que l'adresse n'existe pas déjà
+    #
+
+    if {[lire-rr-par-ip $dbfd $adr tabrrbidon]} then {
+	return "L'adresse '$adr' existe déjà"
+    }
+
+    #
+    # Début de l'insertion
+    #
+
+    if {! [::pgsql::lock $dbfd {rr rr_ip} msg]} then {
+	return "Transaction impossible : $msg"
+    }
+
+    if {! $rrexiste} then {
+	#
+	# Rien n'existait pour ce nom, donc on insère un nouveau
+	# RR.
+	#
+	set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" "" "" "" $idcor trr]
+	if {! [string equal $msg ""]} then {
+	    return "Impossible d'insérer : $msg"
+	}
+
+    }
+
+    #
+    # Insérer la nouvelle adresse
+    #
+
+    set sql "INSERT INTO rr_ip VALUES ($trr(idrr), '$adr')"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+       ::pgsql::unlock $dbfd "abort" m
+	return "Impossible d'insérer : $msg"
+    }
+
+    #
+    # Se rappeler du correspondant qui a effectué la modification
+    #
+
+    set msg [touch-rr $dbfd $trr(idrr) $idcor]
+    if {[string length $msg] > 0} then {
+       ::pgsql::unlock $dbfd "abort" m
+	return $msg
+    }
+
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+       ::pgsql::unlock $dbfd "abort" m
+       return "L'insertion a échoué ($msg)"
+    }
+
+    return ""
+}
+
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Initialisation des accès
+    #
+
+    set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
+					    dbfd $conf(defuser) tabcor]
+    if {! [string equal $errmsg ""]} then {
+	puts stderr "$errmsg"
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Validation des arguments
+    #
+
+    if {[llength $argv] != 2} then {
+	syntax-error $argv0
+	return 1
+    }
+
+    set fqdn [lindex $argv 0]
+    set adr  [lindex $argv 1]
+
+    set msg [add-ip $dbfd $tabcor(idcor) $fqdn $adr]
+    if {! [string equal $msg ""]} then {
+	puts stderr $msg
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+
+    return 0
+}
+
+exit [main $argv0 $argv]

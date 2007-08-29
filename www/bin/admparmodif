@@ -1,0 +1,134 @@
+#!%TCLSH%
+
+#
+# Script d'enregistrement des modifications des paramètres de la base
+#
+# Appelé par : adminliste
+#
+# Paramètres (formulaire ou URL) : les paramètres
+#
+# Historique
+#   2003/12/08 : pda     : création à partir de sos
+#   2004/10/13 : pda     : ajout des paramètres DHCP
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admvalide.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+	{datefmt		1 1}
+	{jourfmt		1 1}
+	{authmailfrom		1 1}
+	{mailfrom		1 1}
+	{authmailreplyto	1 1}
+	{mailreplyto		1 1}
+	{authmailcc		1 1}
+	{mailcc			1 1}
+	{authmailbcc		1 1}
+	{mailbcc		1 1}
+	{authmailsubject	1 1}
+	{mailsubject		1 1}
+	{authmailbody		1 1}
+	{mailbody		1 1}
+	{groupes		1 1}
+	{default_lease_time	1 1}
+	{max_lease_time		1 1}
+	{min_lease_time		1 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Enregistrement des paramètres du formulaire
+    #
+
+    if {! [::pgsql::lock $dbfd {config} msg]} then {
+	::webapp::error-exit $conf(err) "Verrouillage impossible ('$msg')"
+    }
+
+    foreach element $conf(form) {
+	set clef [lindex $element 0]
+	set val [lindex $ftab($clef) 0]
+	if {! [setconfig $dbfd $clef $val msg]} then {
+	    ::pgsql::unlock $dbfd "abort" m
+	    ::webapp::error-exit $conf(err) "Ereur dans l'enregistrement de '$clef' ('$msg')"
+	}
+    }
+
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+	::webapp::error-exit $conf(err) "Déverrouillage impossible ('$msg')"
+    }
+
+    #
+    # Génération de la page d'accusé de modification
+    #
+
+    set url "$conf(homeurl)/bin/admparliste"
+    set typeenclair "paramètres de l'application"
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				[list \
+					[list %TYPEENCLAIR% $typeenclair] \
+					[list %URL% $url] \
+				    ] \
+				]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

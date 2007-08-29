@@ -1,0 +1,58 @@
+;
+; Zone 16.172.in-addr.arpa
+;
+; Historique
+;   2004/04/13 : pda : conception d'une zone exemple
+;
+
+@	IN	SOA	ns1.univ-machin.fr. hostmaster.univ-machin.fr. (
+		    2004041301		; version
+		    86400		; refresh = 1 j
+		    3600		; retry = 1 h
+		    3600000		; expire = 1000 heures (~ 41 j)
+		    86400		; default ttl = 1 j
+		)
+
+;
+; Le TTL par défaut des enregistrements de la zone
+;
+$TTL	86400
+
+;
+; Les serveurs autoritaires pour la zone
+;
+
+			IN	NS	ns1.univ-machin.fr.
+			IN	NS	ns2.univ-machin.fr.
+			IN	NS	shiva.univ-bidule.fr.
+
+100			IN	NS	ailleurs.labo1.univ-machin.fr.
+			IN	NS	ns1.univ-machin.fr.
+			IN	NS	ns2.univ-machin.fr.
+
+; COUPER ICI -------------------------------------------------------------
+
+; Comme pour toutes les zones "reverse", ce qui suit n'est pas utilisé
+; par les scripts de chargement.
+
+1.1			IN	PTR	ns1.univ-machin.fr.
+2.1			IN	PTR	ns2.univ-machin.fr.
+3.1			IN	PTR	relais.univ-machin.fr.
+253.1			IN	PTR	r-campus2.univ-machin.fr
+254.1			IN	PTR	r-campus1.univ-machin.fr
+
+1.11			IN	PTR	zeus.univ-machin.fr.
+2.11			IN	PTR	apollon.univ-machin.fr.
+3.11			IN	PTR	aphrodite.univ-machin.fr.
+254.11			IN	PTR	r-campus1.univ-machin.fr.
+
+1.12			IN	PTR	droopy.univ-machin.fr.
+2.12			IN	PTR	pluto.univ-machin.fr.
+3.12			IN	PTR	dingo.univ-machin.fr.
+254.12			IN	PTR	r-campus1.univ-machin.fr.
+
+1.13			IN	PTR	athanase.univ-machin.fr.
+2.13			IN	PTR	trouillette.univ-machin.fr.
+3.13			IN	PTR	cassolette.univ-machin.fr.
+4.13			IN	PTR	boitalette.univ-machin.fr.
+254.13			IN	PTR	r-campus2.univ-machin.fr.

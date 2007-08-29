@@ -1,0 +1,115 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {21/05/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS - Groupes
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Modification des caractéristiques du groupe %GROUPE%}
+
+    Rappel des correspondants inscrits dans le groupe '\gras {%GROUPE%}'~:
+    %LISTECOR%
+
+    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/admgrpmodif">
+	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
+	<INPUT TYPE="HIDDEN" NAME="groupe" VALUE="%GROUPE%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {CENTER}}
+	} {
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {Domaines autorisés}}
+	    }
+	    \lignetableau {
+		\casetableau {} {Pour supprimer un domaine,
+		    vider la case <<~Classe de tri~>>.
+
+		    %LISTEDOMAINES%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {Réseaux autorisés}}
+	    }
+	    \lignetableau {
+		\casetableau {} {Pour supprimer un réseau,
+		    vider la case <<~Classe de tri~>>.
+
+		    %LISTERESEAUX%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {Droits d'accès IP}}
+	    }
+	    \lignetableau {
+		\casetableau {} {%LISTEDROITS%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {Profils DHCP visibles}}
+	    }
+	    \lignetableau {
+		\casetableau {} {Pour supprimer un accès à un profil,
+		    vider la case <<~Classe de tri~>>.
+
+		    %LISTEDHCPPROFILS%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {#10C090}
+		    \centragehorizontal {CENTER}
+		} {
+		    <INPUT TYPE="SUBMIT" VALUE="Enregistrer">
+		    <INPUT TYPE="RESET" VALUE="Réinitialiser">
+		}
+	    }
+	}
+    </FORM>
+}
+
+}

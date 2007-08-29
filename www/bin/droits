@@ -1,0 +1,150 @@
+#!%TCLSH%
+
+#
+# Script pour consulter les droits associés à un correspondant
+#
+# Appelé par : index.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#	- si l'utilisateur est un administrateur
+#		- login : nom de login d'un correspondant quelconque
+#	- si non : aucun paramètre
+#
+# Historique
+#   2002/05/21 : pda/jean : création
+#   2002/07/09 : pda      : ajout de nologin
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2005/04/06 : pda      : ajout des profils dhcp
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/droits.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+	{login	0 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) {} \
+		$conf(form) ftab dbfd login tabcor
+
+    #
+    # Si l'utilisateur est un administrateur, l'autoriser à consulter
+    # les droits d'un autre utilisateur.
+    #
+
+    if {[attribut-correspondant $dbfd $tabcor(idcor) admin]} then {
+	#
+	# A partir de maintenant, on prend le nouveau login qui est
+	# fourni dans le formulaire (s'il est fourni)
+	#
+
+	if {[llength $ftab(login)] > 0} then {
+	    set login [lindex $ftab(login) 0]
+
+	    unset tabcor
+	    set msg [lire-correspondant-par-login $dbfd $login tabcor]
+	    if {! [string equal $msg ""]} then {
+		::webapp::error-exit $conf(err) "'$login' non trouvé ($msg)"
+	    }
+	}
+    }
+
+    #
+    # Mettre en forme les informations associées au correspondant pour
+    # qu'il se les rappelle bien (et pense à nous envoyer les
+    # modifications ;-)
+    #
+
+    set corresp	[html-correspondant tabcor]
+
+    #
+    # Récupération du code HTML d'affichage des caractéristiques
+    # du groupe auquel appartient le correspondant
+    #
+
+    set grospaquet [info-groupe $dbfd $tabcor(idgrp)]
+    set tabreseaux        [lindex $grospaquet 0]
+    set tabcidrhorsreseau [lindex $grospaquet 1]
+    set tabdomaines       [lindex $grospaquet 2]
+    set tabdhcpprofil     [lindex $grospaquet 3]
+
+    if {[string length $tabcidrhorsreseau] == 0} then {
+	set titrecidrhorsreseau ""
+    } else {
+	set titrecidrhorsreseau "Droits non rattachés à des réseaux"
+    }
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+		    [list \
+			    [list %CORRESP% $corresp] \
+			    [list %TABRESEAUX% $tabreseaux] \
+			    [list %TITRECIDRHORSRESEAU% $titrecidrhorsreseau] \
+			    [list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
+			    [list %TABDOMAINES% $tabdomaines] \
+			    [list %TABDHCPPROFIL% $tabdhcpprofil] \
+			] \
+	    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

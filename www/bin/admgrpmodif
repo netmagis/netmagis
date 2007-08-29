@@ -1,0 +1,516 @@
+#!%TCLSH%
+
+#
+# Script pour enregistrer les caractéristiques associées à un groupe
+#
+# Appelé par : index.htgt
+#
+# Paramètres (formulaire ou URL) :
+#	- groupe : nom du groupe
+#	- confirm : oui ou non
+#	- domaineN : les noms des domaines validés pour ce groupe
+#	- tridomN : la classe de tri d'un domaine (si vide, suppression)
+#	- rolemailN : capacité d'éditer les rôles mail pour ce domaine (0 ou 1)
+#	- rolewebN : capacité d'éditer les rôles web pour ce domaine (0 ou 1)
+#	- reseauN : les id des réseaux valides pour ce groupe
+#	- triresN : la classe de tri d'un réseau (si vide, suppression)
+#	- dhcpN : capacité d'éditer les intervalles DHCP pour ce réseau (0 ou 1)
+#	- aclN : capacité d'éditer les ACL pour ce réseau (0 ou 1)
+#	- adrN et allow_denyN : droits IP associés à ce groupe
+#	- tridhcpprofN : classe de tri d'un profil DHCP (si vide, suppression)
+#	- nomdhcpprofN : nom du profil DHCP
+#
+# Historique
+#   2002/05/21 : pda/jean : création
+#   2002/07/09 : pda      : ajout de nologin
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/01/14 : pda/jean : ajout IPv6
+#   2004/02/12 : pda/jean : ajout rôles
+#   2004/08/06 : pda/jean : extensions des droits sur les réseaux
+#   2005/04/08 : pda/jean : profils dhcp
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admgrpmodif.html
+set conf(confirm)	$conf(lib)/admgrpconfirm.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form) {
+	{confirm		1 1}
+	{groupe			1 1}
+	{tridom[0-9]+		0 9999}
+	{domaine[0-9]+		0 9999}
+	{rolemail[0-9]+		0 9999}
+	{roleweb[0-9]+		0 9999}
+	{trires[0-9]+		0 9999}
+	{reseau[0-9]+		0 9999}
+	{dhcp[0-9]+		0 9999}
+	{acl[0-9]+		0 9999}
+	{adr[0-9]+		0 9999}
+	{allow[0-9]+		0 9999}
+	{tridhcpprof[0-9]+	0 9999}
+	{nomdhcpprof[0-9]+	0 9999}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			$conf(form) ftab dbfd login tabcor
+
+    set groupe [lindex $ftab(groupe) 0]
+    set confirm [lindex $ftab(confirm) 0]
+
+    #
+    # Valider le nom du groupe, et récupérer son identifiant numérique
+    #
+
+    set qgroupe [::pgsql::quote $groupe]
+    set idgrp -1
+    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$qgroupe'" tab {
+	set idgrp $tab(idgrp)
+    }
+
+    if {$idgrp == -1} then {
+	::webapp::error-exit $conf(err) "Groupe '$groupe' non trouvé"
+    }
+
+    #
+    # Tester la validité des domaines, et construire la liste
+    # des identificateurs de domaines
+    #
+
+    foreach ld [::pgsql::getcols $dbfd domaine "" "" {iddom nom}] {
+	set iddom [lindex $ld 0]
+	set nom   [lindex $ld 1]
+	set tabdom($nom) $iddom
+    }
+
+    set liddom {}
+    set n 1
+    while {[info exists ftab(tridom$n)] && [info exists ftab(domaine$n)]} {
+	set tri [string trim [lindex $ftab(tridom$n) 0]]
+	if {[string length $tri] > 0} then {
+	    if {! [regexp -- {^[0-9]+$} $tri]} then {
+		::webapp::error-exit $conf(err) "Classe de tri de domaine invalide ($tri)"
+	    }
+
+	    set domaine [string trim [lindex $ftab(domaine$n) 0]]
+	    if {! [info exists tabdom($domaine)]} then {
+		::webapp::error-exit $conf(err) "Domaine invalide ($domaine)"
+	    }
+
+	    if {! [info exists ftab(rolemail$n)]} then {
+		set ftab(rolemail$n) 0
+	    }
+	    set rolemail [string trim [lindex $ftab(rolemail$n) 0]]
+	    if {! [regexp -- {^[01]$} $rolemail]} then {
+		::webapp::error-exit $conf(err) "Role mail invalide ($rolemail)"
+	    }
+
+	    if {! [info exists ftab(roleweb$n)]} then {
+		set ftab(roleweb$n) 0
+	    }
+	    set roleweb [string trim [lindex $ftab(roleweb$n) 0]]
+	    if {! [regexp -- {^[01]$} $roleweb]} then {
+		::webapp::error-exit $conf(err) "Role web invalide ($roleweb)"
+	    }
+
+	    lappend liddom [list $tri $tabdom($domaine) $rolemail $roleweb]
+	}
+
+	incr n
+    }
+
+    #
+    # Tester la validité des identificateurs de réseaux et construire
+    # la liste des identificateurs de réseaux
+    #
+
+    foreach ld [::pgsql::getcols $dbfd reseau "" "" {idreseau adr4 adr6 dhcp}] {
+	set idreseau [lindex $ld 0]
+	set ladr {}
+	foreach i {1 2} {
+	    set a [lindex $ld $i]
+	    if {! [string equal $a ""]} then {
+		lappend ladr $a
+	    }
+	}
+	set tabres($idreseau) $ladr
+	set tabdhcp($idreseau) [lindex $ld 3]
+    }
+
+    set lidres {}
+    set n 1
+    while {[info exists ftab(trires$n)] && [info exists ftab(reseau$n)]} {
+	set tri [string trim [lindex $ftab(trires$n) 0]]
+	if {[string length $tri] > 0} then {
+	    if {! [regexp -- {^[0-9]+$} $tri]} then {
+		::webapp::error-exit $conf(err) "Classe de tri de réseau invalide ($tri)"
+	    }
+
+	    set idreseau [string trim [lindex $ftab(reseau$n) 0]]
+	    if {! [info exists tabres($idreseau)]} then {
+		::webapp::error-exit $conf(err) "Réseau invalide ($idreseau)"
+	    }
+
+	    if {! [info exists ftab(dhcp$n)]} then {
+		set ftab(dhcp$n) 0
+	    }
+	    set dhcp [string trim [lindex $ftab(dhcp$n) 0]]
+	    if {! [regexp -- {^[01]$} $dhcp]} then {
+		::webapp::error-exit $conf(err) "Droit DHCP invalide ($dhcp)"
+	    }
+
+	    if {! [info exists ftab(acl$n)]} then {
+		set ftab(acl$n) 0
+	    }
+	    set acl [string trim [lindex $ftab(acl$n) 0]]
+	    if {! [regexp -- {^[01]$} $acl]} then {
+		::webapp::error-exit $conf(err) "Droit ACL invalide ($acl)"
+	    }
+
+	    lappend lidres [list $tri $idreseau $dhcp $acl]
+	}
+
+	incr n
+    }
+
+    #
+    # Tester la validité syntaxique des droits IP
+    #
+
+    set n 1
+    set ldrip {}
+    set droits_allow {}
+    while {[info exists ftab(adr$n)] && [info exists ftab(allow$n)]} {
+	set allow_deny [lindex $ftab(allow$n) 0]
+	if {!([string equal $allow_deny "0"] || \
+		[string equal $allow_deny "1"])} then {
+	    ::webapp::error-exit $conf(err) \
+			"Valeur incorrecte pour allow/deny '$allow_deny'"
+	}
+
+	set adr [string trim [lindex $ftab(adr$n) 0]]
+	if {[string length $adr] != 0} then {
+	    set m [syntaxe-ip $dbfd $adr "cidr"]
+	    if {[string length $m] > 0} then {
+		::webapp::error-exit $conf(err) "CIDR incorrect '$adr'"
+	    }
+
+	    lappend ldrip [list $allow_deny $adr]
+	    if {$allow_deny} then {
+		lappend droits_allow $adr
+	    }
+	}
+
+	incr n
+    }
+
+    #
+    # Tester la validité des noms de profils DHCP
+    #
+
+    foreach ld [::pgsql::getcols $dbfd dhcpprofil "" "" {iddhcpprofil nom}] {
+	set iddhcpprofil [lindex $ld 0]
+	set nom          [lindex $ld 1]
+	set tabdhcpprofil($nom) $iddhcpprofil
+    }
+
+    set lidprof {}
+    set n 1
+    while {[info exists ftab(tridhcpprof$n)] && [info exists ftab(nomdhcpprof$n)]} {
+	set tri [string trim [lindex $ftab(tridhcpprof$n) 0]]
+	if {[string length $tri] > 0} then {
+	    if {! [regexp -- {^[0-9]+$} $tri]} then {
+		::webapp::error-exit $conf(err) \
+			"Classe de tri de profil DHCP invalide ($tri)"
+	    }
+
+	    set dhcpprofil [string trim [lindex $ftab(nomdhcpprof$n) 0]]
+	    if {! [info exists tabdhcpprofil($dhcpprofil)]} then {
+		::webapp::error-exit $conf(err) \
+			"Profil DHCP invalide ($dhcpprofil)"
+	    }
+
+	    lappend lidprof [list $tri $tabdhcpprofil($dhcpprofil)]
+	}
+
+	incr n
+    }
+
+    #
+    # Tester la cohérence des données
+    #
+
+    if {! [string equal $confirm "oui"]} then {
+	#
+	# - au moins un domaine
+	# - au moins un réseau
+	# - tout réseau a un ou plusieurs droits IP affectés
+	#	autrement dit, un correspondant peut bien accéder à
+	#	une plage dans les réseaux qui lui sont présentés.
+	# - tout droit IP est dans un réseau
+	#	autrement dit, on n'affecte pas à un correspondant
+	#	des droits plus grands que les réseaux auxquels il
+	#	a droit
+	# Si une au moins de ces conditions est fausse, on demande
+	# confirmation à l'administrateur : on doit pouvoir passer
+	# outre (exemple typique : l'administrateur a droit à tous
+	# les réseaux via un seul droit CIDR par exemple).
+	#
+
+	set incoherences {}
+
+	# au moins un domaine
+	if {[llength $liddom] == 0} then {
+	    lappend incoherences "Aucun domaine sélectionné"
+	}
+
+	# au moins un réseau
+	if {[llength $lidres] == 0} then {
+	    lappend incoherences "Aucun réseau sélectionné"
+	}
+
+	# autoriser l'accès dhcp nécessite que le réseau soit dhcp-capable
+	foreach r $lidres {
+	    set idreseau [lindex $r 1]
+	    set dhcp [lindex $r 2]
+	    if {$dhcp && ! $tabdhcp($idreseau)} then {
+		lappend incoherences "Réseau $tabres($idreseau) n'a pas la capacité DHCP"
+	    }
+	}
+
+	# tout réseau a au moins un droit de type "allow"
+	foreach r $lidres {
+	    set idreseau [lindex $r 1]
+	    foreach adr $tabres($idreseau) {
+		set aucun_droit 1
+		foreach dr $droits_allow {
+		    pg_select $dbfd "SELECT '$adr' >>= '$dr' AS resultat" tab {
+			set resultat $tab(resultat)
+		    }
+		    if {[string equal $resultat "t"]} then {
+			set aucun_droit 0
+			break
+		    }
+		}
+		if {$aucun_droit} then {
+		    lappend incoherences \
+			    "Aucun droit 'allow' trouvé pour le réseau '$adr'"
+		}
+	    }
+	}
+
+	# aucun droit de type "allow" n'est plus grand qu'un réseau
+	foreach dr $droits_allow {
+	    set plus_grand 0
+	    foreach r $lidres {
+		set idreseau [lindex $r 1]
+		foreach adr $tabres($idreseau) {
+		    set sql "SELECT cidr '$adr' << cidr '$dr' AS resultat"
+		    pg_select $dbfd $sql tab {
+			set resultat $tab(resultat)
+		    }
+		    if {[string equal $resultat "t"]} then {
+			set plus_grand 1
+			break
+		    }
+		}
+	    }
+
+	    if {$plus_grand} then {
+		lappend incoherences "Le droit 'allow - $dr' est trop grand"
+	    }
+	}
+
+	#
+	# S'il y a des incohérences, les annoncer et demander
+	# confirmation.
+	#
+
+	if {[llength $incoherences] > 0} then {
+	    set ftab(confirm)	{oui}
+	    set lchamps [array names ftab]
+	    set hidden  [::webapp::hide-parameters $lchamps ftab]
+	    set message [join $incoherences "<BR>\n"]
+	    ::webapp::send html [::webapp::file-subst $conf(confirm) \
+				[list \
+					[list %GROUPE%	$groupe] \
+					[list %HIDDEN%	$hidden] \
+					[list %MESSAGE%	$message] \
+				    ] \
+			    ]
+	    exit 0
+	}
+    }
+
+    #
+    # Si on arrive ici, c'est que les données sont cohérentes,
+    # ou qu'on a eu confirmation de la demande. Il faut donc
+    # enregistrer les données dans la base.
+    # Toutes les modifications se font par suppression totale
+    # des éléments, puis ré-insertion à partir de ce qui est
+    # fourni dans le formulaire
+    #
+
+    set cmd {}
+
+    lappend cmd "LOCK dr_dom ; LOCK dr_reseau ; LOCK dr_ip"
+
+    # Les domaines autorisés pour le groupe
+
+    lappend cmd "DELETE FROM dr_dom WHERE idgrp = $idgrp"
+
+    foreach e $liddom {
+	set tri      [lindex $e 0]
+	set iddom    [lindex $e 1]
+	set rolemail [lindex $e 2]
+	set roleweb  [lindex $e 3]
+	lappend cmd "INSERT INTO dr_dom (idgrp, iddom, tri, rolemail, roleweb)
+			VALUES ($idgrp, $iddom, $tri, $rolemail, $roleweb)"
+    }
+
+    # Les réseaux autorisés pour le groupe
+
+    lappend cmd "DELETE FROM dr_reseau WHERE idgrp = $idgrp"
+
+    foreach r $lidres {
+	set tri      [lindex $r 0]
+	set idreseau [lindex $r 1]
+	set dhcp     [lindex $r 2]
+	set acl      [lindex $r 3]
+	lappend cmd "INSERT INTO dr_reseau (idgrp, idreseau, tri, dhcp, acl)
+			VALUES ($idgrp, $idreseau, $tri, $dhcp, $acl)"
+    }
+
+    # Les droits IP associés au groupe
+
+    lappend cmd "DELETE FROM dr_ip WHERE idgrp = $idgrp"
+
+    foreach e $ldrip {
+	set allow_deny [lindex $e 0]
+	set adr        [lindex $e 1]
+	lappend cmd "INSERT INTO dr_ip VALUES ($idgrp, '$adr', $allow_deny)"
+    }
+
+    # Les profils DHCP visibles par le groupe
+
+    lappend cmd "DELETE FROM dr_dhcpprofil WHERE idgrp = $idgrp"
+
+    foreach e $lidprof {
+	set tri          [lindex $e 0]
+	set iddhcpprofil [lindex $e 1]
+	lappend cmd "INSERT INTO dr_dhcpprofil (idgrp, iddhcpprofil, tri)
+			VALUES ($idgrp, $iddhcpprofil, $tri)"
+    }
+
+    #
+    # Modifications dans la base
+    #
+
+    if {! [::pgsql::lock $dbfd {} msg]} then {
+	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+    }
+
+    foreach sql $cmd {
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	   ::pgsql::unlock $dbfd "abort" m
+	   ::webapp::error-exit $conf(err) \
+			"L'opération '$sql' a échoué. Abandon.\n$msg"
+	}
+    }
+
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+       ::pgsql::unlock $dbfd "abort" m
+       ::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
+    }
+
+    #
+    # Récupération du code HTML d'affichage des caractéristiques
+    # du groupe auquel appartient le correspondant
+    #
+
+    set grospaquet [info-groupe $dbfd $idgrp]
+    set tabreseaux        [lindex $grospaquet 0]
+    set tabcidrhorsreseau [lindex $grospaquet 1]
+    set tabdomaines       [lindex $grospaquet 2]
+    set tabdhcpprofils    [lindex $grospaquet 3]
+
+    if {[string length $tabcidrhorsreseau] == 0} then {
+	set titrecidrhorsreseau ""
+    } else {
+	set titrecidrhorsreseau "Droits non rattachés à des réseaux"
+    }
+
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+		    [list \
+			[list %GROUPE% $groupe] \
+			[list %TABRESEAUX% $tabreseaux] \
+			[list %TITRECIDRHORSRESEAU% $titrecidrhorsreseau] \
+			[list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
+			[list %TABDOMAINES% $tabdomaines] \
+			[list %TABDHCPPROFILS% $tabdhcpprofils] \
+			] \
+		    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

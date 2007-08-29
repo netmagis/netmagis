@@ -1,0 +1,312 @@
+#!%TCLSH%
+
+#
+# Script d'enregistrement des modifications de tables constituant le
+# référentiel de la base.
+#
+# Appelé par : admrefliste
+#
+# Paramètres (formulaire ou URL) :
+#   - type : etabl, commu, hinfo, reseau, domaine, zone, zone4, zone6,
+#		groupe
+#   - les paramètres spécifiques de chaque type
+#
+# Historique
+#   2001/11/01 : pda      : spécifications
+#   2001/11/02 : pda      : codage
+#   2002/05/03 : pda/jean : récupération pour dns
+#   2002/05/06 : pda/jean : ajout des correspondants
+#   2002/05/21 : pda/jean : ajout des groupes
+#   2002/05/21 : pda/jean : ajout des communautes
+#   2002/07/09 : pda      : ajout de nologin
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2003/08/12 : pda      : retrait des correspondants
+#   2004/08/06 : pda/jean : ajout flag dhcp par réseau
+#   2005/04/08 : pda/jean : ajout table dhcpprofil
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+	{type			1 1}
+}
+
+set conf(form-etabl) {
+	{nom[0-9]+		0 9999}
+	{nomn[0-9]+		1 9999}
+}
+
+set conf(form-commu) {
+	{nom[0-9]+		0 9999}
+	{nomn[0-9]+		1 9999}
+}
+
+set conf(form-hinfo) {
+	{texte[0-9]+		0 9999}
+	{tri[0-9]+		0 9999}
+	{present[0-9]+		0 9999}
+
+	{texten[0-9]+		1 9999}
+	{trin[0-9]+		1 9999}
+	{presentn[0-9]+		1 9999}
+}
+
+set conf(form-reseau) {
+	{nom[0-9]+		0 9999}
+	{localisation[0-9]+	0 9999}
+	{adr4[0-9]+		0 9999}
+	{gw4[0-9]+		0 9999}
+	{dhcp[0-9]+		0 9999}
+	{adr6[0-9]+		0 9999}
+	{gw6[0-9]+		0 9999}
+	{idetabl[0-9]+		0 9999}
+	{idcommu[0-9]+		0 9999}
+	{commentaire[0-9]+	0 9999}
+
+	{nomn[0-9]+		1 9999}
+	{localisationn[0-9]+	1 9999}
+	{adr4n[0-9]+		1 9999}
+	{gw4n[0-9]+		1 9999}
+	{dhcpn[0-9]+		0 9999}
+	{adr6n[0-9]+		1 9999}
+	{gw6n[0-9]+		1 9999}
+	{idetabln[0-9]+		1 9999}
+	{idcommun[0-9]+		1 9999}
+	{commentairen[0-9]+	1 9999}
+}
+
+set conf(form-domaine) {
+	{nom[0-9]+		0 9999}
+	{nomn[0-9]+		1 9999}
+}
+
+set conf(form-zone) {
+	{domaine[0-9]+		0 9999}
+	{prologue[0-9]+		0 9999}
+	{rrsup[0-9]+		0 9999}
+	{selection[0-9]+	0 9999}
+
+	{domainen[0-9]+		1 9999}
+	{prologuen[0-9]+	1 9999}
+	{rrsupn[0-9]+		1 9999}
+	{selectionn[0-9]+	1 9999}
+}
+
+set conf(form-zone4) $conf(form-zone)
+set conf(form-zone6) $conf(form-zone)
+
+set conf(form-groupe) {
+	{nom[0-9]+		0 9999}
+	{admin[0-9]+		0 9999 0}
+
+	{nomn[0-9]+		1 9999}
+	{adminn[0-9]+		0 9999 0}
+}
+
+set conf(form-dhcpprofil) {
+	{nom[0-9]+		0 9999}
+	{texte[0-9]+		0 9999}
+
+	{nomn[0-9]+		1 9999}
+	{texten[0-9]+		1 9999}
+}
+
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admvalide.html
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation, avec récupération du type de modification.
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # La spécification du formulaire est minimale, et ne comprend
+    # que le champ "type".
+    # On refera une deuxième requête get-data plus précise.
+    #
+
+    set type [lindex $ftab(type) 0]
+    switch -- $type {
+	etabl	{
+	    set typeenclair "nom des établissements"
+	    set formaux form-etabl
+	    set spec {
+		{nom}
+	    }
+	    set idnum idetabl
+	    set table etablissement
+	}
+	commu	{
+	    set typeenclair "nom des communautés"
+	    set formaux form-etabl
+	    set spec {
+		{nom}
+	    }
+	    set idnum idcommu
+	    set table communaute
+	}
+	hinfo {
+	    set typeenclair "types de machines"
+	    set formaux form-hinfo
+	    set spec {
+		{texte}
+		{tri}
+		{present}
+	    }
+	    set idnum idhinfo
+	    set table hinfo
+	}
+	reseau	{
+	    set typeenclair "réseaux"
+	    set formaux form-reseau
+	    set spec {
+		{nom}
+		{localisation}
+		{adr4}
+		{gw4}
+		{dhcp}
+		{adr6}
+		{gw6}
+		{idetabl}
+		{idcommu}
+		{commentaire}
+	    }
+	    set idnum idreseau
+	    set table reseau
+	}
+	domaine {
+	    set typeenclair "domaines"
+	    set formaux form-domaine
+	    set spec {
+		{nom}
+	    }
+	    set idnum iddom
+	    set table domaine
+	}
+	zone -
+	zone4 -
+	zone6 {
+	    set typeenclair "zones"
+	    set formaux form-$type
+	    set spec {
+		{domaine}
+		{prologue}
+		{rrsup}
+		{selection}
+	    }
+	    set idnum idzone
+	    switch -- $type {
+		zone  { set table zone_normale }
+		zone4 { set table zone_reverse4 }
+		zone6 { set table zone_reverse6 }
+	    }
+	}
+	groupe {
+	    set typeenclair "groupes"
+	    set formaux form-groupe
+	    set spec {
+		{nom}
+		{admin}
+	    }
+	    set idnum idgrp
+	    set table groupe
+	}
+	dhcpprofil {
+	    set typeenclair "dhcpprofil"
+	    set formaux form-dhcpprofil
+	    set spec {
+		{nom}
+		{texte}
+	    }
+	    set idnum iddhcpprofil
+	    set table dhcpprofil
+	}
+	default	{
+	    ::webapp::error-exit $conf(err) "Type de modification invalide ($type)"
+	}
+    }
+
+    #
+    # Récupération de tous les champs du formulaire
+    #
+
+    if {[llength [::webapp::get-data ftab $conf($formaux)]] == 0} then {
+	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
+    }
+
+    #
+    # Enregistrer les modifications dans la base
+    #
+
+    set errmsg [enregistrer-tableau $dbfd $spec $idnum $table ftab]
+    if {[string length $errmsg] > 0} then {
+	::webapp::error-exit $conf(err) $errmsg
+    }
+
+    #
+    # C'est fini !
+    #
+
+    set url "$conf(homeurl)/bin/admrefliste?type=$type"
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				[list \
+					[list %TYPEENCLAIR% $typeenclair] \
+					[list %URL% $url] \
+				    ] \
+				]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

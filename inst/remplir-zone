@@ -1,0 +1,230 @@
+#!/usr/local/bin/tclsh8.4
+
+#
+# Remplit la base DNS à partir d'un fichier de zone.
+#
+# Usage :
+#	<script> <domaine> <format> <selection> <version> <fichier-prologue>
+#		<fichier-rr-sup> <generer>
+#
+# Historique
+#   2002/04/23 : pda/jean : conception
+#   2002/05/06 : pda      : id pour les zones, avec numéro de séquence
+#
+
+#
+# Valeurs par défaut du script
+#
+
+set conf(base)		{dbname=dns user=dns password=mot-de-passe-de-dns}
+
+#
+# Motif de recherche de fin de prologue
+#
+set conf(pattern-fin)		{^; COUPER ICI}
+
+#
+# Motif de recherche du numéro de version dans le SOA.
+# La chaîne cherchée doit contenir trois parties, séparées par des parenthèses
+# - la chaîne avant le numéro de version
+# - la chaîne représentant le numéro de version lui-même
+# - la chaîne après le numéro de version
+# La deuxième partie sera remplacée, après vérification de cohérence,
+# par %VERSION% dans le prologue installé dans la base.
+#
+set conf(pattern-version)	{^([ \t]+)([0-9]+)([ \t]+;[ \t]*Version.*)}
+
+package require Pgtcl
+
+
+#
+# Neutralise les caractères spéciaux figurant dans une chaîne,
+# de façon à pouvoir la passer au moteur SQL.
+# - double toutes les apostrophes
+#
+# Entrée :
+#   - paramètres
+#	- chaine : chaîne à traiter
+#	- maxindex (optionnel) : taille maximum de la chaîne
+# Sortie :
+#   - valeur de retour : la chaîne traitée
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc quote {chaine {maxindex 99999}} {
+    set chaine [string range $chaine 0 $maxindex]
+    regsub -all {'} $chaine {&&} chaine
+    regsub -all {\\} $chaine {&&} chaine
+    return $chaine
+}
+
+#
+# Exécute une commande sql, et affiche une erreur et sort
+# en cas de problème. Retourne le résultat de la commande
+# (résultat pour pg_result).
+#
+# Entrée :
+#   - paramètres
+#	- dbfd : la base
+#	- cmd : la commande à passer
+#	- result : contient en retour le nom de la variable contenant l'erreur
+# Sortie :
+#   - valeur de retour : 1 si tout est ok, 0 sinon
+#   - variable result :
+#	- si erreur, la variable contient le message d'erreur
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc execsql {dbfd cmd result} {
+    upvar $result rmsg
+
+    set res [pg_exec $dbfd $cmd]
+    if {! [string equal [pg_result $res -status] PGRES_COMMAND_OK]} then {
+	set ok 0
+	set rmsg "$cmd : [pg_result $res -error]"
+    } else {
+	set ok 1
+	set rmsg {}
+    }
+    pg_result $res -clear
+    return $ok
+}
+
+#
+# Cas particulier pour "patfin" : si vide, alors on attend la fin
+# du fichier
+#
+
+proc lire-prologue {fichier patfin patversion} {
+    set prologue ""
+    set termine 0
+    set version 0
+    set fd [open $fichier "r"]
+    while {! $termine && [gets $fd ligne] > -1} {
+	if {! [string equal $patfin ""]} then {
+	    if {[regexp -- $patfin $ligne]} then {
+		set termine 1
+	    }
+	}
+
+	if {! $termine} then {
+	    if {[regexp -nocase $patversion $ligne bidon p1 p2 p3]} then {
+		set curver [clock format [clock seconds] -format "%Y%m%d"]
+		append curver "01"
+		if {$p2 >  $curver} then {
+		    puts stderr "Version '$p2' dans '$fichier' > $curver"
+		    puts stderr "Il faudra sans doute envisager de remettre à zéro les secondaires"
+		}
+		set ligne "$p1%VERSION%$p3"
+		set version 1
+	    }
+	    append prologue "$ligne\n"
+	}
+    }
+
+    if {! $version} then {
+	puts stderr "Pattern '$patversion' non trouvé dans '$fichier'"
+	exit 1
+    }
+    if {! $termine} then {
+	if {! [string equal $patfin ""]} then {
+	    puts stderr "Pattern '$patfin' non trouvé dans '$fichier'"
+	    exit 1
+	}
+    }
+    close $fd
+
+    return $prologue
+}
+
+proc remplir-zone {dbfd domaine format selection version prologue rrsup generer} {
+    set domaine [quote $domaine]
+    set rrsup [quote $rrsup]
+
+    set sql "DELETE FROM zone WHERE domaine = '$domaine'"
+    execsql $dbfd $sql m
+    # on se fout du résultat
+
+    switch $format {
+	normal		{ set table "zone_normale" }
+	reverse-ipv4	{ set table "zone_reverse4" }
+	reverse-ipv6	{ set table "zone_reverse6" }
+	default		{
+	    puts stderr "format invalide '$format'"
+	    return 0
+	}
+    }
+
+    set selection [quote $selection]
+    set prologue [quote $prologue]
+    set sql "INSERT INTO $table
+		    (domaine, version, prologue, rrsup, generer, selection)
+		VALUES
+		    ('$domaine', $version, '$prologue',
+			'$rrsup', $generer, '$selection')"
+    if {! [execsql $dbfd $sql m]} then {
+	puts stderr $m
+	return 0
+    }
+
+    return 1
+}
+
+proc main {argv0 argv} {
+    global conf
+
+    if {[llength $argv] != 7} then {
+	puts stderr "usage: $argv0 <domain> <format> <selection> <version> <zone-file> <rrsup-file> <generer>"
+	return 1
+    }
+
+    if {[catch {set dbfd [pg_connect -conninfo $conf(base)]} msg]} then {
+	puts stderr "$argv0: cannot access base ($msg)"
+	return 1
+    }
+
+    set domaine		[lindex $argv 0]
+    set format		[lindex $argv 1]
+    set selection	[lindex $argv 2]
+    set version		[lindex $argv 3]
+    set fichier		[lindex $argv 4]
+    set fichierrr	[lindex $argv 5]
+    set generer		[lindex $argv 6]
+
+    set prologue [lire-prologue $fichier $conf(pattern-fin) $conf(pattern-version)]
+
+    set fd [open $fichierrr r]
+    set rrsup [read $fd]
+    close $fd
+
+    set sql "BEGIN WORK ; LOCK zone ; LOCK zone_normale ;
+			LOCK zone_reverse4 ; LOCK zone_reverse6"
+    if {! [execsql $dbfd $sql m]} then { puts stderr $m ; exit 1 }
+
+    if {! [remplir-zone $dbfd $domaine \
+			$format $selection $version \
+			$prologue $rrsup $generer]} then {
+	execsql $dbfd "ABORT WORK" m
+	pg_disconnect $dbfd
+	exit 1
+    }
+
+    set sql "COMMIT WORK"
+    if {! [execsql $dbfd $sql m]} then { puts stderr $m ; exit 1 }
+
+    pg_disconnect $dbfd
+
+    return 0
+}
+
+#
+# Tout démarre ici...
+#
+
+exit [main $argv0 $argv]

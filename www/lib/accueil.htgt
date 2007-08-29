@@ -1,0 +1,99 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {16/05/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	    %ADMIN%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Gestion du DNS}
+
+    Bienvenue dans l'application de gestion du DNS du CRC.
+
+    \titre {2} {Introduction}
+
+    Cette application vous permet de gérer interactivement les
+    machines (noms et adresses IP) situées sur votre réseau. Ces
+    informations sont stockées dans une base de données, et sont
+    synchronisées sur les \lien {serveurs DNS Osiris} {%DOCDNS%}
+    toutes les %INTERVALLE% minutes.
+
+    Vous pouvez effectuer les opérations classiques~:
+
+    \liste {
+	\item {ajout de machine ou d'alias}
+	\item {modification des informations associées à une machine}
+	\item {suppression de machine ou d'alias}
+    }
+
+    Des informations supplémentaires sont associées à chaque machine~:
+
+    \liste {
+	\item {type de machine~: renseignez cette information}
+	\item {commentaire~: ceci est une zone pour votre usage,
+	    n'hésitez pas à vous en servir}
+	\item {responsable~: la personne responsable (utilisateur,
+	    ou administrateur système) de la machine}
+    }
+
+    N'hésitez pas à profiter de cette base de données pour gérer
+    vos machines. En cas de suggestion d'amélioration, contactez \lien
+    {hostmaster@u-strasbg.fr} {mailto:hostmaster@u-strasbg.fr}.
+
+    \titre {2} {Accès à la base}
+
+    Cette application vous permet~:
+    \liste {
+	\item {\lien {de consulter les informations}	{%HOMEURL%/bin/consulter}}
+	\item {\lien {d'ajouter une machine}		{%HOMEURL%/bin/ajout}}
+	\item {\lien {de modifier les informations}	{%HOMEURL%/bin/modif}}
+	\item {\lien {de supprimer une machine}		{%HOMEURL%/bin/suppr}}
+	\item {\lien {de consulter mes droits d'accès}	{%HOMEURL%/bin/droits}}
+	\item {\lien {de modifier mon mot de passe}	{%HOMEURL%/bin/passwd}}
+	\item {\lien {de gérer les "rôles mail"}	{%HOMEURL%/bin/mail}}
+	\* \item {\lien {de gérer les "rôles web"}	{%HOMEURL%/bin/web}}
+	\item {\lien {de gérer les plages DHCP}		{%HOMEURL%/bin/dhcp}}
+	\item {\lien {de rechercher un correspondant}	{%HOMEURL%/bin/corresp}}
+    }
+
+    \titre {2} {Autres opérations}
+
+    Si vous avez des questions, ou d'autres besoins plus spécifiques,
+    n'hésitez pas à \lien {nous contacter} {/crc/aide-osiris.html}.
+}
+
+}

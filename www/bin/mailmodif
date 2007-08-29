@@ -1,0 +1,269 @@
+#!%TCLSH%
+
+#
+# Script pour présenter la page de saisie de l'hébergeur d'une adresse
+# de messagerie (ou la liste des adresses de messagerie existantes)
+#
+# Appelé par : script mailheberg (page lib/mailheberg-edit.htgt)
+#
+# Paramètres (formulaire ou URL) :
+#   - nom : nom (premier constituant) de l'adresse de messagerie
+#   - domaine : domaine de l'adresse de messagerie (tous les
+#		constituants sauf le premier)
+#   - nomh : nom (premier constituant) de l'hébergeur
+#   - domaineh : domaine de l'hébergeur (tous les constituants sauf le premier)
+#
+# Historique
+#   2004/02/12 : pda/jean : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(pageok)	$conf(lib)/mailmodif.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+# les champs du formulaire
+set conf(form)		{
+	{nom		1 1}
+	{domaine	1 1}
+	{nomh		1 1}
+	{domaineh	1 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor
+
+    set idcor $tabcor(idcor)
+
+    set nom      [string trim [lindex $ftab(nom) 0]]
+    set domaine  [string trim [lindex $ftab(domaine) 0]]
+    set nomh     [string trim [lindex $ftab(nomh) 0]]
+    set domaineh [string trim [lindex $ftab(domaineh) 0]]
+
+    set toutnom "$nom.$domaine"
+    set toutheb "$nomh.$domaineh"
+
+    #
+    # Vérifier le droit de déclarer un rôle mail
+    # et récupérer les informations sur l'hébergeur éventuel
+    #
+
+    set msg [valide-role-mail $dbfd $idcor $nom $domaine trr oldtrrh]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    set rrexiste [expr ! [string equal $trr(idrr) ""]]
+    set oldnomh $oldtrrh(nom)
+
+    #
+    # Valider la syntaxe, l'existence et le droit d'accès au nouvel
+    # hébergeur (du moins, si nomh existe, c'est à dire si ce n'est
+    # pas une suppression).
+    #
+
+    set msg [valide-droit-nom $dbfd $idcor $nomh $domaineh newtrrh "machine"]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) "$msg\nAction refusée."
+    }
+
+    #
+    # Si nomh existe, l'hébergeur fourni par l'utilisateur doit exister.
+    #
+
+    if {! [string equal $nomh ""]} then {
+	if {[string equal $newtrrh(idrr) ""]} then {
+	    ::webapp::error-exit $conf(err) \
+			"Nom d'hébergeur '$toutheb' non valide (n'existe pas)."
+	}
+    }
+
+    #
+    # Insertion des données dans la base
+    #
+    # SELON oldnomh ET nomh
+    #   vide     ET vide     => erreur
+    #	vide     ET non-vide => création
+    #	non-vide ET vide     => suppression
+    #   non-vide ET non-vide => modification
+    #
+
+    set videoldnomh [string equal $oldnomh ""]
+    set videnewnomh [string equal $nomh ""]
+
+    if {! [::pgsql::lock $dbfd {rr role_mail} msg]} then {
+	::webapp::error-exit $conf(err) "Transaction impossible\n$msg"
+    }
+
+    switch "$videoldnomh-$videnewnomh" {
+	1-1 {
+	    ::webapp::error-exit $conf(err) \
+			"Le rôle '$toutnom' n'existe pas. Vous ne pouvez pas le supprimer."
+	}
+	1-0 {
+	    #
+	    # Création d'un rôle
+	    #
+	    set action "créée"
+
+	    if {! $rrexiste} then {
+		#
+		# Le nom de "l'adresse de messagerie" n'existe pas encore.
+		# Ajouter le RR correspondant
+		#
+		set msg [ajouter-rr $dbfd $nom $trr(iddom) "" 0 "" "" "" "" $idcor trr]
+		if {! [string equal $msg ""]} then {
+		    ::webapp::error-exit $conf(err) \
+			    "Insertion de '$toutnom' impossible ($msg)"
+		}
+	    }
+
+	    #
+	    # Ajouter le rôle dans la base
+	    #
+
+	    set sql "INSERT INTO role_mail (idrr, heberg)
+			    VALUES ($trr(idrr), $newtrrh(idrr))"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		::pgsql::unlock $dbfd "abort" m
+		::webapp::error-exit $conf(err) "Impossible d'insérer\n$msg"
+	    }
+
+	    #
+	    # Affecter un droit pour l'hébergement des boîtes
+	    # Ce droit est mis par défaut pour le groupe du correspondant
+	    # faisant cette création.
+	    #
+
+	    set sql "INSERT INTO dr_mbox (idgrp, idmail)
+				VALUES ($tabcor(idgrp), $trr(idrr))"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		::pgsql::unlock $dbfd "abort" m
+		::webapp::error-exit $conf(err) "Impossible d'insérer\n$msg"
+	    }
+	}
+	0-1 {
+	    #
+	    # Suppression d'un rôle et des droits associés
+	    # On sait que le rôle mail préexistait (donc
+	    # que trr(idrr) est non vide).
+	    #
+
+	    set action "supprimée"
+
+	    set idrr $trr(idrr)
+
+	    set sql "DELETE FROM dr_mbox WHERE idmail = $idrr ;
+		    DELETE FROM role_mail WHERE idrr = $idrr"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		::pgsql::unlock $dbfd "abort" m
+		::webapp::error-exit $conf(err) "Impossible de supprimer\n$msg"
+	    }
+
+	    #
+	    # Suppression du RR lui-même si possible
+	    #
+	    set msg [supprimer-rr-si-orphelin $dbfd $idrr]
+	    if {! [string equal $msg ""]} then {
+		::pgsql::unlock $dbfd "abort" m
+		::webapp::error-exit $conf(err) "Impossible de supprimer\n$msg"
+	    }
+	}
+	0-0 {
+	    #
+	    # Modification d'un rôle. On est sûr que le rôle mail
+	    # préexistait (donc que trr(idrr) est non vide).
+	    # On se borne à changer l'hébergeur.
+	    #
+
+	    set action "modifiée"
+
+	    set idrr $trr(idrr)
+
+	    set sql "UPDATE role_mail
+				SET heberg = $newtrrh(idrr)
+				WHERE idrr = $idrr"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		::pgsql::unlock $dbfd "abort" m
+		::webapp::error-exit $conf(err) "Impossible de modifier\n$msg"
+	    }
+	}
+    }
+
+    #
+    # Les modifications de la base sont terminées sans erreur.
+    # Procéder à la fin de la transaction.
+    #
+
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+	::pgsql::unlock $dbfd "abort" m
+	::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
+    }
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(pageok) \
+					[list \
+						[list %NOM% $toutnom] \
+						[list %ACTION% $action] \
+					    ] \
+				    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

@@ -1,0 +1,99 @@
+#!/bin/sh
+
+#
+# Script de génération du fichier utilise par dhcpd.conf a partir des
+# informations qui sont dans la base.
+#
+# Syntaxe :
+#	aucun paramètre
+#
+# Historique
+#   2005/04/11 : pda/jean : conception et mise en production
+#
+
+# Chemin complet du script de génération d'une zone
+GENERER=/local/sbin/generer-dhcp
+
+# Répertoire où dhcpd s'attend à trouver ses fichiers...
+DIR=/local/dhcpd
+CF=$DIR/dhcpd.conf			# fichier de configuration
+INC=$DIR/gen.conf			# fichier contenant la conf generee
+
+# Commande pour tester la configuration
+TESTCF="/usr/local/sbin/dhcpd -t -cf $CF"
+
+# Commande pour redemarrer dhcpd
+RESTART="sh /usr/local/etc/rc.d/isc-dhcpd.sh restart"
+
+PROGRAM=$0
+
+erreur ()
+{
+    echo "$PROGRAM: $1" >&2
+    exit 1
+}
+
+if [ $# != 0 ]
+then erreur "usage: $0"
+fi
+
+$GENERER test > /dev/null
+case "$?" in
+
+    0)	# Rien n'a ete change dans la base. On ne fait rien. Rhaaa.
+	;;
+
+    1)	# Erreur
+	echo "Erreur lors du test. Abandon." >&2
+	exit 1
+	;;
+
+    2)	# Generer la nouvelle configuration
+	if $GENERER gen > $INC.new
+	then
+	    # changer le proprietaire
+	    chown dhcpd:dhcpd $INC.new
+
+	    # sauvegarder l'ancien gen.conf en lieu sûr
+	    if mv $INC $INC.old
+	    then :
+	    else erreur "Cannot backup $INC to $INC.old"
+	    fi
+
+	    if mv $INC.new $INC
+	    then :
+	    else
+		mv $INC.old $INC
+		erreur "Cannot move generated file to $INC"
+	    fi
+
+	    # tester la configuration
+	    if $TESTCF
+	    then :
+	    else
+		mv $INC $INC.new
+		mv $INC.old $INC
+		erreur "Invalid generated DHCP configuration"
+	    fi
+
+	    # tout est ok : relancer dhcpd
+	    if $RESTART
+	    then :
+	    else
+		erreur "PANIC ! DHCP daemon not restarted"
+	    fi
+
+	else
+	    # Erreur lors de la generation.
+	    exit 1
+	fi
+	;;
+
+    *)	# Erreur non prévue
+	echo "Erreur non prévue. Abandon." >&2
+	exit 1
+	;;
+
+esac
+
+exit 0

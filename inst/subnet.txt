@@ -1,0 +1,67 @@
+nom=Dorsale
+subnet=172.16.1.0
+netmask=255.255.255.0
+commentaire=Dorsale + serveurs
+etablissement=UM
+communaute=Recherche
+localisation=Campus 1
+groupes=sysadm tech
+
+nom=LMA
+subnet=172.16.11.0
+netmask=255.255.255.0
+gateway=172.16.11.254
+communaute=Recherche
+etablissement=UM
+localisation=Campus 1 - Batiment bidule
+groupes=lma
+
+nom=LEC
+subnet=172.16.12.0
+netmask=255.255.255.0
+gateway=172.16.12.254
+commentaire=Laboratoire d'études des canidés
+communaute=Recherche
+etablissement=UM
+localisation=Campus 1 - Batiment truc
+groupes=lec
+
+nom=LGA
+subnet=172.16.13.0
+netmask=255.255.255.0
+gateway=172.16.13.254
+commentaire=Laboratoire de Génie des Alpages
+communaute=Recherche
+etablissement=UM
+localisation=7 rue René Descartes - 67084 Strasbourg Cedex
+groupes=lga
+
+nom=Services centraux
+subnet=172.16.14.0
+netmask=255.255.254.0
+gateway=172.16.15.254
+commentaire=Réseau des services centraux et de la présidence
+etablissement=UM
+communaute=Administration
+localisation=Campus 2 - Batiment central
+groupes=sysadm tech
+
+nom=Labo2
+subnet=172.16.20.0
+netmask=255.255.255.0
+gateway=172.16.20.254
+commentaire=Laboratoire 2
+communaute=Recherche
+localisation=Campus 1 - Batimentix
+etablissement=UM
+groupes=labo2
+
+nom=ESIATF
+subnet=192.168.1.0
+netmask=255.255.255.0
+gateway=192.168.1.254
+commentaire=Ecole Supérieure d'Ingénieurs À Tout Faire
+communaute=Enseignement
+localisation=Campus 2 - Batiment ESIATF
+groupes=esiatf
+etablissement=ESIATF

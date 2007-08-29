@@ -1,0 +1,284 @@
+#!%TCLSH%
+
+#
+# Script pour enregistrer les modifications demandées par un correspondant.
+#
+# Appelé par : script editmodif (page lib/editmodif-infos.htgt)
+#
+# Paramètres (formulaire ou URL) :
+#   - modifications des informations d'une machine
+#	- action : "modif-infos"
+#	- nom : nom de la machine à ajouter
+#	- domaine : domaine dans lequel elle doit être ajoutée
+#	- mac : adresse mac
+#	- iddhcpprofil : l'id du profil DHCP, ou 0
+#	- hinfo : type de machine (id)
+#	- commentaire : informations complémentaires
+#	- respnom : nom+prénom du responsable
+#	- respmel : mél du responsable
+#
+# Historique
+#   2002/05/03 : pda/jean : création
+#   2002/05/23 : pda/jean : ajout du responsable
+#   2002/07/09 : pda      : ajout de nologin
+#   2002/07/09 : pda      : conversion des noms en minuscules
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/08/05 : pda/jean : ajout mac
+#   2005/04/08 : pda/jean : ajout dhcppprofil
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(page-modif-infos)	$conf(lib)/traitemodif-infos.html
+set conf(err)			$conf(lib)/erreur.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+# le champ discriminant pour la suite
+set conf(form)		{
+	{action		1 1}
+}
+
+# les champs utilisés pour chacune des actions
+set conf(form-modif-infos)	{
+	{nom		1 1}
+	{domaine	1 1}
+	{mac		1 1}
+	{iddhcpprofil	1 1}
+	{hinfo		1 1}
+	{commentaire	1 1}
+	{respnom	1 1}
+	{respmel	1 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Modification des informations
+##############################################################################
+
+# Historique
+#   2002/05/03 : pda/jean : conception
+#
+proc traitemodif-infos {dbfd idcor ft} {
+    global conf
+    upvar $ft ftab
+
+    #
+    # Valider les champs du formulaire
+    #
+
+    set nom           [string trim [lindex $ftab(nom) 0]]
+    set domaine       [string trim [lindex $ftab(domaine) 0]]
+    set mac           [string trim [lindex $ftab(mac) 0]]
+    set iddhcpprofil  [string trim [lindex $ftab(iddhcpprofil) 0]]
+    set hinfo         [string trim [lindex $ftab(hinfo) 0]]
+    set commentaire   [string trim [lindex $ftab(commentaire) 0]]
+    set respnom       [string trim [lindex $ftab(respnom) 0]]
+    set respmel       [string trim [lindex $ftab(respmel) 0]]
+
+    #
+    # Vérifier la syntaxe de l'adresse MAC
+    #
+
+    if {! [string equal $mac  ""]} then {
+	set m [syntaxe-mac $dbfd $mac]
+	if {[string length $m] > 0} then {
+	    ::webapp::error-exit $conf(err) "Erreur sur l'adresse MAC : $m"
+	}
+    }
+
+    #
+    # Vérifier le profil DHCP
+    #
+
+    if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
+	::webapp::error-exit $conf(err) "Profil DHCP invalide ($msg)"
+    }
+
+    #
+    # Récupérer le type de machine en clair
+    #
+
+    set idhinfo [lire-hinfo $dbfd $hinfo]
+    if {$idhinfo == -1} then {
+	::webapp::error-exit $conf(err) "Le type de machine '$hinfo' n'existe pas."
+    }
+
+    #
+    # Valider la syntaxe du nom au sens de la RFC ????
+    #
+
+    set m [syntaxe-nom $nom]
+    if {[string length $m] > 0} then {
+	::webapp::error-exit $conf(err) "Erreur sur le nom '$nom': $m"
+    }
+    set nom [string tolower $nom]
+
+    #
+    # Tester si le nom n'est pas un alias, et que le correspondant
+    # est bien propriétaire de toutes les adresses associées au nom.
+    #
+
+    set m [valide-droit-nom $dbfd $idcor $nom $domaine trr "machine-existante"]
+    if {! [string equal $m ""]} then {
+	::webapp::error-exit $conf(err) "$m.\nModification refusée"
+    }
+
+    #
+    # Tester si la machine existe
+    #
+
+    if {[string equal $trr(idrr) ""]} then {
+	::webapp::error-exit $conf(err) "Le nom '$nom' n'existe pas"
+    }
+
+    #
+    # Tester si la machine doit être ajoutée statiquement comme adresse DHCP
+    #
+
+    set m [valide-dhcp-statique $dbfd $mac $trr(ip)]
+    if {! [string equal $m  ""]} then {
+	::webapp::error-exit $conf(err) "$m.\nModification refusée"
+    }
+
+    #
+    # Enregistrer les modifications
+    #
+
+    if {! [::pgsql::lock $dbfd {rr} msg]} then {
+	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+    }
+
+    if {[string equal $mac ""]} then {
+	set qmac NULL
+    } else {
+	set qmac "'[::pgsql::quote $mac]'"
+    }
+    if {$iddhcpprofil == 0} then {
+	set qiddhcpprofil NULL
+    } else {
+	set qiddhcpprofil $iddhcpprofil
+    }
+
+    set qcommentaire [::pgsql::quote $commentaire]
+    set qrespnom     [::pgsql::quote $respnom]
+    set qrespmel     [::pgsql::quote $respmel]
+    set sql "UPDATE rr SET
+			    mac = $qmac,
+			    iddhcpprofil = $qiddhcpprofil,
+			    idhinfo = $idhinfo,
+			    commentaire = '$qcommentaire',
+			    respnom = '$qrespnom',
+			    respmel = '$qrespmel'
+			WHERE idrr = $trr(idrr)"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+       ::pgsql::unlock $dbfd "abort" m
+	::webapp::error-exit $conf(err) "Impossible de mettre à jour : $msg"
+    }
+
+    set msg [touch-rr $dbfd $trr(idrr) $idcor]
+    if {[string length $msg] > 0} then {
+       ::pgsql::unlock $dbfd "abort" m
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+       ::pgsql::unlock $dbfd "abort" m
+       ::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
+    }
+
+    #
+    # Sortie du résultat
+    #
+
+    set commentaire [html-tab-string $commentaire]
+    set respnom     [html-tab-string $respnom]
+    set respmel     [html-tab-string $respmel]
+
+    ::webapp::send html [::webapp::file-subst $conf(page-modif-infos) \
+				[list \
+					[list %NOM% $nom] \
+					[list %DOMAINE% $domaine] \
+					[list %MAC% $mac] \
+					[list %DHCPPROFIL% $dhcpprofil] \
+					[list %HINFO% $hinfo] \
+					[list %COMMENTAIRE% $commentaire] \
+					[list %RESPNOM% $respnom] \
+					[list %RESPMEL% $respmel] \
+				    ] \
+			    ]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Valider l'action, lire les autres champs du formulaire,
+    # et faire le branchement
+    #
+
+    set action [lindex $ftab(action) 0]
+
+    if {! [info exists conf(form-$action)]} then {
+	::webapp::error-exit $conf(err) "Champ 'action' non conforme : $action"
+    }
+
+    if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
+	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
+    }
+
+    traite$action $dbfd $tabcor(idcor) ftab
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

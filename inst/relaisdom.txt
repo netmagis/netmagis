@@ -1,0 +1,10 @@
+#
+# Relais de messagerie associés à un domaine, pour
+# la gestion des roles de messagerie
+#
+# Historique
+#   2004/04/12 : pda      : conception
+#
+
+univ-machin.fr	10 relais1.univ-machin.fr	20 relais2.univ-machin.fr
+esiatf.fr	10 relais1.univ-machin.fr	20 relais2.univ-machin.fr

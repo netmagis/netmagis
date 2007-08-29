@@ -1,0 +1,121 @@
+#!%TCLSH%
+
+#
+# Script pour demander les paramètres de consultation des réseaux.
+#
+# Appelé par : admin.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2002/10/24 : pda      : création
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/01/20 : pda/jean : conversion ipv6
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/consultnet.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			{} ftab dbfd login tabcor
+
+    #
+    # Extraire la liste des établissements et des communautés
+    # et en faire des listes à choix multiples.
+    #
+
+    set le [::pgsql::getcols $dbfd etablissement "" "nom ASC" {idetabl nom}]
+    set h [llength $le]
+    set listeetabl [::webapp::form-menu etabl $h 1 $le {}]
+
+    set lc [::pgsql::getcols $dbfd communaute "" "nom ASC" {idcommu nom}]
+    set h [llength $le]
+    set listecommu [::webapp::form-menu commu $h 1 $lc {}]
+
+    #
+    # Liste des critères de tri
+    #
+
+    set tri {
+		{adr4		{Adresse IPv4}}
+		{adr6		{Adresse IPv6}}
+		{nom		Intitulé}
+		{etablissement	Établissement}
+		{communaute	Communauté}
+		{localisation	Localisation}
+		{commentaire	Commentaire}
+	    }
+    set menutri1 [::webapp::form-menu tri1 1 0 $tri 0]
+    set menutri2 [::webapp::form-menu tri2 1 0 $tri 1]
+
+    #
+    # Sortie du résultat
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+				[list \
+					[list %LISTEETABL% $listeetabl] \
+					[list %LISTECOMMU% $listecommu] \
+					[list %MENUTRI1%   $menutri1] \
+					[list %MENUTRI2%   $menutri2] \
+				    ] \
+			    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

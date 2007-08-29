@@ -1,0 +1,345 @@
+#!%TCLSH%
+
+#
+# Script pour lister les réseaux
+#
+# Appelé par : script admin (page lib/admin.htgt)
+#
+# Paramètres (formulaire ou URL) :
+#   - critères de sélection : 
+#	- adr4 = cidr d'une plage sélectionnée
+#	- etabl = {id d'un établissement ...}
+#	- commu = {id d'une communauté ...}
+#   - critères de tri :
+#	- tri1 = adr4|adr6|nom|etablissement|communaute|localisation|commentaire
+#	- tri2 = adr4|adr6|nom|etablissement|communaute|localisation|commentaire
+#   - format de sortie
+#	- format : "Consulter" ou "Imprimer" ou "Tableur"
+#
+# Historique
+#   2002/10/24 : pda      : création
+#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2004/01/14 : pda/jean : ajout IPv6
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(liste)		$conf(lib)/listedes.html
+set conf(listetex)	$conf(lib)/listedes.tex
+set conf(err)		$conf(lib)/erreur.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)		{
+	{adr		1 1}
+	{etablissement	0 9999}
+	{communaute	0 9999}
+	{tri1		1 1}
+	{tri2		1 1}
+	{format		0 1}
+}
+
+#
+# Le tableau servant à présenter le résultat
+# Colonnes :
+#	- Intitulé
+#	- Localisation
+#	- CIDR IPv4
+#	- CIDR IPv6
+#	- Établissement
+#	- Communauté
+#	- Commentaire
+#
+
+set conf(tableau) {
+    global {
+	chars {10 normal}
+	columns {20 20 10 10 10 10 20}
+	botbar {yes}
+	align {left}
+	latex {
+	    linewidth { 258 }
+	}
+    }
+    pattern {Titre} {
+	title {yes}
+	topbar {yes}
+	chars {12 bold}
+	align {center}
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+    pattern {Normal} {
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+	colonne { }
+	vbar {yes}
+    }
+}
+
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+proc critere-tri {tri} {
+    switch -- $tri {
+	adr4		{ set sql "r.adr4 ASC" ; set txt "adresse IPv4" }
+	adr6		{ set sql "r.adr6 ASC" ; set txt "adresse IPv6" }
+	nom		{ set sql "r.nom ASC" ; set txt "intitulé" }
+	etablissement	{ set sql "etabl ASC" ; set txt "établissement" }
+	communaute	{ set sql "commu ASC" ; set txt "communauté" }
+	localisation	{ set sql "r.localisation ASC" ; set txt "localisation" }
+	commentaire	{ set sql "r.commentaire ASC" ; set txt "commentaire" }
+	default		{ set sql "r.adr4 ASC" ; set txt "adresse IPv4" }
+    }
+    return [list $sql $txt]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			$conf(form) ftab dbfd login tabcor
+
+    #
+    # Analyse et validation des arguments
+    #
+
+    # format de sortie
+    switch -- [lindex $ftab(format) 0] {
+	Consulter	{ set format html }
+	Imprimer	{ set format latex }
+	Tableur		{ set format csv }
+	default		{ set format html }
+    }
+
+    # critères de tri (primaire et secondaire)
+    set tri1 [critere-tri [lindex $ftab(tri1) 0]]
+    set sqltri1 [lindex $tri1 0]
+    set txttri1 [lindex $tri1 1]
+
+    set tri2 [critere-tri [lindex $ftab(tri2) 0]]
+    set sqltri2 [lindex $tri2 0]
+    set txttri2 [lindex $tri2 1]
+
+    #
+    # Critères de sélection
+    #
+
+    set selection ""
+    set txtsel {}
+
+    # cidr
+    set cidr [string trim [lindex $ftab(adr) 0]]
+    if {! [string equal $cidr ""]} then {
+	set msg [syntaxe-ip $dbfd $cidr "cidr"]
+	if {! [string equal $msg ""]} then {
+	    ::webapp::error-exit $conf(err) $msg
+	}
+	append selection "AND (r.adr4 <<= '$cidr' OR r.adr6 <<= '$cidr')"
+	lappend txtsel "dont le CIDR correspond à '$cidr'"
+    }
+
+    # liste des établissements
+    if {[info exists ftab(etabl)]} then {
+	set lsqletabl {}
+	set ltxtetabl {}
+	pg_select $dbfd "SELECT * FROM etablissement" tab {
+	    set te($tab(idetabl)) $tab(nom)
+	}
+	foreach idetabl $ftab(etabl) {
+	    if {! [info exists te($idetabl)]} then {
+		::webapp::error-exit $conf(err) \
+			"'$idetabl' n'est pas un numéro d'établissement"
+	    }
+	    lappend lsqletabl "r.idetabl = $idetabl"
+	    lappend ltxtetabl "$te($idetabl)"
+	}
+	if {[llength $lsqletabl] > 0} then {
+	    set l [join $lsqletabl " OR "]
+	    append selection " AND ($l)"
+	    set t [join $ltxtetabl " ou "]
+	    lappend txtsel "dont l'établissement est $t"
+	}
+    }
+
+    # liste des communautés
+    if {[info exists ftab(commu)]} then {
+	set lsqlcommu {}
+	pg_select $dbfd "SELECT * FROM communaute" tab {
+	    set tc($tab(idcommu)) $tab(nom)
+	}
+	foreach idcommu $ftab(commu) {
+	    if {! [info exists tc($idcommu)]} then {
+		::webapp::error-exit $conf(err) "'$idcommu' n'est pas un numéro de communauté"
+	    }
+	    lappend lsqlcommu "r.idcommu = $idcommu"
+	    lappend ltxtcommu "$tc($idcommu)"
+	}
+	if {[llength $lsqlcommu] > 0} then {
+	    set l [join $lsqlcommu " OR "]
+	    append selection " AND ($l)"
+	    set t [join $ltxtcommu " ou "]
+	    lappend txtsel "dont la communauté est $t"
+	}
+    }
+
+    #
+    # Constitution de l'en-tête du tableau
+    #
+
+    set donnees {}
+    lappend donnees {Titre
+			Intitulé Localisation IPv4 IPv6
+			Établ. Communauté Commentaire
+		    }
+
+    #
+    # Récupération des données
+    #
+
+    set sql "SELECT r.idreseau,
+		    r.nom, r.localisation, r.adr4, r.adr6, 
+		    e.nom AS etabl, c.nom AS commu, r.commentaire
+		FROM reseau r, etablissement e, communaute c
+		WHERE r.idetabl = e.idetabl AND r.idcommu = c.idcommu
+			$selection
+		ORDER BY $sqltri1, $sqltri2"
+    set nres 0
+    pg_select $dbfd $sql tab {
+	lappend donnees [list Normal \
+				$tab(nom) \
+				$tab(localisation) \
+				$tab(adr4) \
+				$tab(adr6) \
+				$tab(etabl) \
+				$tab(commu) \
+				$tab(commentaire) \
+			    ]
+	incr nres
+    }
+
+    #
+    # Générer le zoli tableau
+    #
+
+    set tableau [::arrgen::output $format $conf(tableau) $donnees]
+
+    #
+    # Générer un titre adapté
+    #
+
+    set txt "Liste des réseaux"
+    if {[llength $txtsel] > 0} then {
+	append txt " "
+	append txt [join $txtsel " et "]
+    }
+    append txt ", triés par $txttri1 et par $txttri2"
+    append txt " : $nres réseau(x) sélectionné(s)."
+
+    #
+    # Sortie du résultat
+    #
+
+    set datefmt [getconfig $dbfd "datefmt"]
+    set date  [clock format [clock seconds] -format $datefmt]
+    switch -- $format  {
+	html	{
+	    ::webapp::send html [::webapp::file-subst $conf(liste) \
+					[list \
+					    [list %TITRE%	"réseaux"] \
+					    [list %TXT%		$txt] \
+					    [list %TABLEAU%	$tableau] \
+					    [list %DATE%	$date] \
+					] \
+				]
+	}
+	csv	{
+	    ::webapp::send csv $tableau
+	}
+	latex	{
+	    ::webapp::send pdf [::webapp::file-subst $conf(listetex) \
+					[list \
+					    [list %ORIENTATION%	"landscape"] \
+					    [list %TITRE%	"réseaux"] \
+					    [list %TXT%		$txt] \
+					    [list %TABLEAU%	$tableau] \
+					    [list %DATE%	$date] \
+					] \
+				]
+	}
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

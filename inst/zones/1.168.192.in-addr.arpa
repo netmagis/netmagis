@@ -1,0 +1,35 @@
+;
+; Zone 1.168.192.in-addr.arpa
+;
+; Historique
+;   2004/04/13 : pda : conception d'une zone exemple
+;
+
+@	IN	SOA	ns1.univ-machin.fr. hostmaster.univ-machin.fr. (
+		    2004041301		; version
+		    86400		; refresh = 1 j
+		    3600		; retry = 1 h
+		    3600000		; expire = 1000 heures (~ 41 j)
+		    86400		; default ttl = 1 j
+		)
+
+;
+; Le TTL par défaut des enregistrements de la zone
+;
+$TTL	86400
+
+;
+; Les serveurs autoritaires pour la zone
+;
+
+			IN	NS	ns1.univ-machin.fr.
+			IN	NS	ns2.univ-machin.fr.
+			IN	NS	shiva.univ-bidule.fr.
+
+; COUPER ICI -------------------------------------------------------------
+
+; Comme pour toutes les zones "reverse", ce qui suit n'est pas utilisé
+; par les scripts de chargement.
+1			IN	PTR	www.esiatf.fr.
+2			IN	PTR	mailetu.esiatf.fr.
+254			IN	PTR	r-campus2.univ-machin.fr.

@@ -1,0 +1,154 @@
+#!/usr/local/bin/tclsh8.4
+
+#
+# Script de génération du fichier de routages pour sendmail
+#
+# Syntaxe :
+#	generer-routages		(aucun paramètre)
+#
+#
+# Historique
+#   2004/03/09 : pda/jean : spécification
+#   2004/03/09 : pda/jean : conception
+#
+
+
+#
+# Valeurs par défaut du script
+#
+
+set conf(base)		{host=crc.u-strasbg.fr dbname=dns
+				user=dns password=mot-de-passe-de-dns}
+#set conf(base)		{host=crc.u-strasbg.fr dbname=devdns
+#				user=dns password=mot-de-passe-de-dns}
+
+package require Pgtcl
+
+#
+# Neutralise les caractères spéciaux figurant dans une chaîne,
+# de façon à pouvoir la passer au moteur SQL.
+# - double toutes les apostrophes
+#
+# Entrée :
+#   - paramètres
+#	- chaine : chaîne à traiter
+#	- maxindex (optionnel) : taille maximum de la chaîne
+# Sortie :
+#   - valeur de retour : la chaîne traitée
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc quote {chaine {maxindex 99999}} {
+    set chaine [string range $chaine 0 $maxindex]
+    regsub -all {'} $chaine {&&} chaine
+    regsub -all {\\} $chaine {&&} chaine
+    return $chaine
+}
+
+#
+# Exécute une commande sql, et affiche une erreur et sort
+# en cas de problème. Retourne le résultat de la commande
+# (résultat pour pg_result).
+#
+# Entrée :
+#   - paramètres
+#	- dbfd : la base
+#	- cmd : la commande à passer
+#	- result : contient en retour le nom de la variable contenant l'erreur
+# Sortie :
+#   - valeur de retour : 1 si tout est ok, 0 sinon
+#   - variable result :
+#	- si erreur, la variable contient le message d'erreur
+#
+# Historique
+#   1999/07/14 : pda : conception et codage
+#   1999/10/24 : pda : mise en package
+#
+
+proc execsql {dbfd cmd result} {
+    upvar $result rmsg
+
+    set res [pg_exec $dbfd $cmd]
+    if {! [string equal [pg_result $res -status] PGRES_COMMAND_OK]} then {
+	set ok 0
+	set rmsg "$cmd : [pg_result $res -error]"
+    } else {
+	set ok 1
+	set rmsg {}
+    }
+    pg_result $res -clear
+    return $ok
+}
+
+#
+# Génère la liste des routages pour les rôles de messagerie
+# existant dans la base.
+#
+# Entrée :
+#   - paramètres
+#	- dbfd : la base
+# Sortie :
+#   - valeur de retour : 1 si tout est ok, 0 sinon
+#   - sortie standard : la liste des routages
+#
+# Historique
+#   2004/03/09 : pda/jean : conception
+#
+
+proc generer-routages {dbfd} {
+    set sql "SELECT r1.nom || '.' || d1.nom AS nom,
+		    r2.nom || '.' || d2.nom AS nomh
+		FROM rr r1, domaine d1, rr r2, domaine d2, role_mail
+		WHERE role_mail.idrr = r1.idrr
+		    AND r1.iddom = d1.iddom
+		    AND role_mail.heberg = r2.idrr
+		    AND r2.iddom = d2.iddom
+		ORDER BY d2.nom ASC, r2.nom ASC, d1.nom ASC, r1.nom ASC
+		"
+    pg_select $dbfd $sql tab {
+	puts stdout [format {%-40s smtp.[%s]} $tab(nom) $tab(nomh)]
+    }
+
+    return 1
+}
+
+##############################################################################
+# main
+##############################################################################
+
+proc main {argv0 argv} {
+    global conf
+
+    if {[llength $argv] > 1} then {
+	puts stderr "usage: $argv0 [ <nom-de-zone> ]"
+	return 1
+    }
+
+    if {[catch {set dbfd [pg_connect -conninfo $conf(base)]} msg]} then {
+	puts stderr "$argv0: cannot access base ($msg)"
+	return 1
+    }
+
+    if {[llength $argv] != 0} then {
+	puts stderr "usage: $argv0"
+	return 1
+    }
+
+    if {! [generer-routages $dbfd]} then {
+	puts stderr "$argv0: erreur lors de la génération"
+	return 1
+    }
+
+    pg_disconnect $dbfd
+
+    return 0
+}
+
+#
+# Tout démarre ici...
+#
+
+exit [main $argv0 $argv]
