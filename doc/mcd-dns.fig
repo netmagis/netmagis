@@ -1,4 +1,4 @@
-#FIG 3.2
+#FIG 3.2  Produced by xfig version 3.2.5
 Portrait
 Center
 Metric
@@ -393,4 +393,5 @@ Single
 	 11925 12510 12015 12645 11925 12735
 2 1 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 4
 	 5220 8820 6750 8820 6750 7065 7695 7065
-4 0 0 50 0 19 12 0.0000 4 195 4890 450 270 Base DNS - Mod\350le logique des donn\351es au 31/03/2005\001
+4 0 0 50 0 19 12 0.0000 4 210 5655 450 270 Base DNS - Mod\350le logique des donn\351es au 31/03/2005\001
+4 0 0 50 -1 16 10 0.0000 4 150 315 675 14085 $Id: mcd-dns.fig,v 1.2 2007-08-29 13:35:21 pda Exp $\001

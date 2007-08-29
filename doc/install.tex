@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.2 2007-08-29 10:51:46 pda Exp $
+% $Id: install.tex,v 1.3 2007-08-29 13:35:21 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -137,7 +137,7 @@
 %    \end {quote}
 
     \begin {center}
-	Version 1.3, Avril 2005 \\
+	Version 1.4, ???? 2007 \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -176,12 +176,10 @@ L'objectif principal de WebDNS est de déléguer la gestion du DNS à
 un public de <<~correspondants réseau~>> sur un réseau, qu'il soit
 de laboratoire, de campus, métropolitain, etc.
 
-\cbstart%1.3
 Par la suite, de nouvelles fonctionnalités sont apparues~: gestion
 des rôles de messagerie, permettant une gestion fine et décentralisée
 du routage de messagerie sur un campus, et plus récemment intégration
 des informations liées au protocole DHCP.
-\cbend%1.3
 
 Jusqu'en 2002, le réseau métropolitain strasbourgeois Osiris\footnote
 {\htmlurl {http://www-crc.u-strasbg.fr/osiris}} fonctionnait sans
@@ -194,9 +192,7 @@ d'environ une centaine de correspondants réseau appartenant à une
 quinzaine d'établissements différents.  Souhaitant offrir à ces
 correspondants davantage d'indépendance tout en leur apportant un
 meilleur service, les auteurs se sont donc attelés à la rédaction
-\cbstart%1.3
 de WebDNS et l'application a été ouverte en juin 2002.
-\cbend%1.3
 
 Ce document décrit en détail l'installation de l'application, ainsi
 que certains éléments du paramétrage. Une bonne connaissance du DNS,
@@ -205,14 +201,12 @@ requises.
 
 \vspace* {10mm}
 
-\cbstart%1.3
 La liste de diffusion \texttt {webdns@u-strasbg.fr} est ouverte à
 tous les utilisateurs de l'application WebDNS. Pour s'y abonner,
 il suffit d'envoyer un message à \texttt {sympa@u-strasbg.fr}
 avec <<~\verb|SUBSCRIBE webdns|~>> dans le corps du message.
 Les archives sont consultables sur
 \htmlurl {http://listes.u-strasbg.fr/}.
-\cbend%1.3
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -228,7 +222,6 @@ ou plusieurs zones DNS, et d'en déléguer tout ou partie à une
 population d'utilisateurs (les correspondants réseaux) par un
 mécanisme de droits assez fin.
 
-\cbstart%1.3
 Plus précisément, l'application WebDNS permet de gérer des informations
 associées à un parc de machines, comme le nom, l'adresse IP, l'adresse
 MAC (ou adresse Ethernet), mais également le type de système
@@ -258,7 +251,6 @@ responsable de la machine.
 
 
 Au delà de ces applications particulières,
-\cbend%1.3
 l'application WebDNS
 constitue le c{\oe}ur d'un système complet de gestion d'un réseau
 universitaire (qu'il soit de laboratoire, de campus, métropolitain
@@ -267,11 +259,9 @@ ou régional).
 
 \titreB {Les constituants de l'application WebDNS}
 
-\cbstart%1.3
 L'application WebDNS est une application multitiers. Son principe
 de fonctionnement est résumé sur la figure ci-après, qui illustre plus
 particulièrement l'aspect de la génération de zones DNS~:
-\cbend%1.3
 
 \figpswidth {multitiers} {130mm}
 
@@ -291,17 +281,14 @@ de Bind, quant à lui, est constitué par l'administrateur du système
 et n'est pas généré par l'application.
 
 
-\cbstart%1.3
 Le même schéma s'applique également pour la génération de la
 configuration DHCP sur un serveur central (où le serveur DHCP,
 typiquement le serveur d'ISC, est client PostgreSQL du serveur de
 données), ou pour la génération de la table de routage de messagerie
 (où le serveur de messagerie est également client PostgreSQL du
 serveur de données).
-\cbend%1.3
 
 
-\cbstart%1.3
 \titreB {Fonctionnalités}
 
 \titreC {Génération de zones DNS}
@@ -364,8 +351,6 @@ Ces fonctionnalités sont offertes réseau par réseau (dans l'application,
 mais également sur les routeurs concernés) et groupe de correspondant
 par groupe de correspondant.
 
-\cbend%1.3
-
 
 \titreB {Authentification}
 
@@ -402,13 +387,11 @@ La distribution de l'application WebDNS est organisée comme suit~:
     \texttt {pkgtcl/}
 	& paquetages Tcl utilisés par les divers scripts
 	\\ \hline
-    \cbstart%1.3
     \texttt {upgrade/}
 	& scripts de migration de la base...
 	\\ \hline
     \texttt {upgrade/12-13/}
 	& ... de la version 1.2 vers la version 1.3
-	\cbend%1.3
 	\\ \hline
     \texttt {www/}
 	& arborescence visible par le serveur Web, fichiers HTML
@@ -420,11 +403,9 @@ La distribution de l'application WebDNS est organisée comme suit~:
 	& fichiers utilisés par les scripts, y compris les pages HTML
 	    à trous
 	\\ \hline
-    \cbstart%1.3
     \texttt {www/lib/util/}
 	& utilitaires non liés au Web, mais placés ici pour
 	    profiter du Makefile
-	\cbend%1.3
 	\\ \hline
 \end {tabular}
 
@@ -513,9 +494,7 @@ physiquement différents~:
 	messagerie~>> (voir~\ref {anx-rolemail}, page~\pageref
 	{anx-rolemail})
     \item
-	\cbstart%1.3
 	le serveur DHCP.
-	\cbend%1.3
 \end {itemize}
 
 Il faut donc configurer le serveur PostgreSQL pour autoriser l'accès
@@ -639,7 +618,6 @@ les tables) et \verb|\q| (sortir)~:
 
 
 \begin {quote}
-\cbstart%1.3
 \begin {verbatim}
 $ psql dns dns
 dns=# \dt
@@ -677,7 +655,6 @@ dns=# \dt
 
 dns=# \q
 \end{verbatim}
-\cbend%1.3
 \end {quote}
 
 
@@ -724,9 +701,7 @@ qui sont schématisées dans le tableau ci-après~:
 		\texttt {dr\_ip},
 		\texttt {etablissement},
 		\texttt {groupe},
-		\cbstart%1.3
 		\texttt {dr\_reseau},
-		\cbend%1.3
 		\texttt {reseau}
 	    &
 		\texttt {subnet.txt}
@@ -795,11 +770,9 @@ qui sont schématisées dans le tableau ci-après~:
 
 Le lecteur attentif constatera que toutes les tables de la base ne
 sont pas modifiées par ces scripts.
-\cbstart%1.3
 En effet, les tables non citées ne sont pas indispensables pour
 la reprise d'un existant, et n'ont donc pas été intégrées dans les
 scripts de chargement initial.
-\cbend%1.3
 
 Normalement, le script n'est censé être appelé qu'une seule fois,
 au chargement initial. Cependant, il est très vraisemblable que vos
@@ -1269,12 +1242,10 @@ fichier \texttt {Makefile}. Modifiez les variables~:
 	nom du fichier à créer pour rentrer en mode
 	<<~maintenance~>>
 	\\ \hline
-    \cbstart%1.3
     \texttt {DEFUSER} &
 	utilisateur par défaut dans les scripts auxiliaires de
 	modification de la base (ajout d'adresse IP, d'adresse MAC,
 	etc.)
-	\cbend%1.3
 	\\ \hline
     \texttt {DESTDIR} &
 	localisation de l'application dans l'arborescence Web
@@ -1298,10 +1269,13 @@ fichier \texttt {Makefile}. Modifiez les variables~:
 	URL d'une page présentant votre architecture DNS, pointée par
 	diverses pages de l'application.
 	\\ \hline
-    \cbstart%1.3
     \texttt {VERSION} &
 	Numéro de version de l'application. Normalement pas à modifier.
-	\cbend%1.3
+	\\ \hline
+    \cbstart%1.4
+    \texttt {COULEUR} &
+	Couleur de fond des boutons de validation. Normalement pas à modifier.
+	\cbend%1.4
 	\\ \hline
 \end {tabular}
 
@@ -1614,7 +1588,6 @@ Pour être installé~:
 \end {itemize}
 
 
-\cbstart%1.3
 \titreB {Génération de la configuration DHCP}
     \label {generer-dhcp}
 
@@ -1808,10 +1781,7 @@ Pour être installé~:
 
 \end {itemize}
 
-\cbend%1.3
 
-
-\cbstart%1.3
 \titreB {Utilitaires complémentaires}
 
 L'application WebDNS contient également quelques programmes conçus
@@ -1910,12 +1880,9 @@ Les programmes sont les suivants~:
 
 \end {itemize}
 
-\cbend%1.3
-
 
 \titreB {Scripts auxiliaires de maintenance de la base}
 
-\cbstart%1.3
 L'application WebDNS est complétée par des scripts auxiliaires,
 lancés par \texttt {cron} sur le serveur de données, pour réaliser
 les opérations de maintenance et de sauvegarde de la base PostgreSQL
@@ -1923,7 +1890,6 @@ les opérations de maintenance et de sauvegarde de la base PostgreSQL
 \titreC {Script \texttt {quotidien}}
 
 Le premier script,
-\cbend%1.3
 \verb|./expl/quotidien|, effectue une sauvegarde dans le répertoire
 \texttt {./dump}, ainsi qu'un <<~\texttt {VACUUM}~>> (spécifique
 PostgreSQL) sur la base.
@@ -1944,7 +1910,6 @@ utilisé (voir fichier \texttt {./expl/crontab.dns})~:
 \end{verbatim}
 \end {quote}
 
-\cbstart%1.3
 \titreC {Script \texttt {sauvegarde}}
 
 À l'usage, il appert que les données contenues dans la base DNS
@@ -1966,7 +1931,6 @@ par \texttt {cron}~:
 \end {quote}
 
 Il est vivement conseillé d'appliquer cette politique de sauvegarde...
-\cbend%1.3
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Conclusion
@@ -1988,9 +1952,7 @@ aux auteurs...
 \titreA {Modèle des données}
     \label {anx-mcd}
 
-\cbstart%1.3
 \figpswidth {mcd-dns} {150mm}
-\cbend%1.3
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Annexe - Paramétrage de l'application
@@ -2043,7 +2005,6 @@ Les autres attributs d'un réseau sont~:
     \item un \textbf {commentaire}~: texte libre.
 
     \item
-	\cbstart%1.3
 	une \textbf {passerelle IPv4} et une \textbf {passerelle IPv6}.
 	Seule la passerelle IPv4 est utilisée pour le moment, en cas
 	d'activation du service DHCP.
@@ -2052,14 +2013,11 @@ Les autres attributs d'un réseau sont~:
 	signaler que les adresses MAC de ce réseau doivent être prises
 	en compte lors de la génération du fichier \texttt {dhcpd.conf}
 	(voir~\ref {dhcpd.conf}, page~\pageref {dhcpd.conf}).
-	\cbend%1.3
 
 \end {itemize}
 
 La notion de réseau est utilisée, à l'heure actuelle,
-\cbstart%1.3
 principalement
-\cbend%1.3
 pour des raisons cosmétiques, afin de permettre à un
 correspondant de choisir dans une liste le réseau qu'il souhaite
 consulter. Toutefois, cette notion est appelée à évoluer avec la
@@ -2109,10 +2067,8 @@ attribués aux correspondants. Ces droits peuvent être~:
     \item le droit de consulter des réseaux
     \item le droit de déclarer des rôles de messagerie pour un domaine
     \item
-	\cbstart%1.3
 	le droit d'administrer des intervalles d'allocation DHCP
 	dynamique et d'utiliser des profils DHCP
-	\cbend%1.3
     \item le droit d'administrer la base
 \end {itemize}
 
@@ -2152,11 +2108,9 @@ Chaque RR porte un \textbf {nom} (sans point à l'intérieur), conforme
 	etc.~;
 
     \item
-	\cbstart%1.3
 	est associé éventuellement à une \textbf {adresse MAC} et
 	à un \textbf {profil DHCP}. Ces informations permettent de
 	générer des allocations statiques avec DHCP.
-	\cbend%1.3
 
     \item contient la référence du \textbf {dernier correspondant} ayant
 	modifié le RR, ainsi que la \textbf {date}.
@@ -2174,14 +2128,12 @@ domaine <<~labo.domaine.fr~>> et y rentrer le RR de nom <<~www~>>
 \textbf {adresses IP} (v4 aussi bien que v6), un ou plusieurs \textbf
 {aliases}, des \textbf {rôles de messagerie} ou des \textbf {MX}.
 
-\cbstart%1.3
 Il faut noter que l'adresse MAC est associée à un nom, et non à une
 adresse IP. Ce choix a été dicté par la simplicité d'implémentation
 et par l'ergonomie générale de WebDNS. Le cas de machines ayant
 plusieurs adresses IP et utilisant cependant DHCP a paru suffisamment
 rare pour relever de cas particulier et ne pas être pris en compte
 par cette interface.
-\cbend%1.3
 
 
 \titreB {Droits sur les adresses IP et les noms}
@@ -2395,7 +2347,6 @@ vous pouvez créer dynamiquement une table de routage pour \texttt
 {sendmail} telle que l'attend le kit Jussieu par exemple.
 
 
-\cbstart%1.3
 \titreB {Gestion DHCP}
 
 La gestion DHCP est intimement liée au DNS. Elle ne concerne que
@@ -2462,7 +2413,6 @@ colonne et une seule ligne), qui vaut soit 0 soit 1. Un \textit
 est modifiée et que la configuration DHCP doit être regénérée.
 
 L'utilitaire de génération remet la valeur à 0 en fin d'exécution.
-\cbend%1.3
 
 
 \titreB {Tables non utilisées}
@@ -2559,7 +2509,6 @@ La suppression d'un domaine nécessite les opérations inverses. En
 cas de violation d'une contrainte d'intégrité, la modification
 correspondante sera annulée.
 
-\cbstart%1.3
 \titreC {Configurer un terminal X par DHCP}
 
 Cette procédure est complexe, car elle met en {\oe}uvre beaucoup
@@ -2595,14 +2544,12 @@ Il faut donc~:
 Une fois ces modifications effectuées, le correspondant réseau peut
 saisir l'adresse MAC et le profil que vous aurez défini. Il verra
 également le texte du profil DHCP s'il consulte ses droits.
-\cbend%1.3
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Annexe - Migration de la version 1.2 vers la version 1.3
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \clearpage
-\cbstart%1.3
 \titreA {Version 1.3}
     \label {upgr12-13}
 
@@ -2818,8 +2765,6 @@ Le canal est téléchargeable sur~:
 (disponible pour la version 1.2 de WebDNS à l'heure de mise sous
 presse).
 
-\cbend%1.3
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Annexe - Pages à trous
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2842,10 +2787,8 @@ presse).
 	& adresse relative de la page d'accueil par rapport
 	    à la racine du serveur Web
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%VERSION\%}
 	& numéro de version de l'application WebDNS
-	\cbend%1.3
 	\\ \hline
     accueil.html
 	& \texttt {\%ADMIN\%}
@@ -2891,10 +2834,8 @@ presse).
 	& \texttt {\%LISTECOR\%}
 	& liste des correspondants inscrits dans le groupe
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%LISTEDHCPPROFILS\%}
 	& liste des profils DHCP visibles
-	\cbend%1.3
 	\\ \cline {2-3}
 	& \texttt {\%LISTEDOMAINES\%}
 	& tableau de domaines modifiables
@@ -2922,10 +2863,8 @@ presse).
 	& \texttt {\%TABCIDRHORSRESEAU\%}
 	& liste des plages hors des réseaux sélectionnés
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%TABDHCPPROFILS\%}
 	& liste des profils DHCP visibles
-	\cbend%1.3
 	\\ \hline
     admgrpsel.html
 	& \texttt {\%MENUGROUPE\%}
@@ -3032,10 +2971,8 @@ presse).
 	& \texttt {\%MENUHINFO\%}
 	& menu des types de machines
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%DHCPPROFIL\%}
 	& menu de sélection de profil DHCP (ou champ caché)
-	\cbend%1.3
 	\\ \hline
     consulter.html
 	& \texttt {\%CORRESP\%}
@@ -3068,7 +3005,6 @@ presse).
 	& \texttt {\%RESULTAT\%}
 	& résultat d'une précédente recherche d'une machine
 	\\ \hline
-    \cbstart%1.3
     dhcpedit.html
 	& \texttt {\%RESEAU\%}
 	& réseau pour lequel les intervalles DHCP dynamiques sont
@@ -3087,7 +3023,6 @@ presse).
     dhcpsel.html
 	& \texttt {\%MENURESEAU\%}
 	& menu de sélection du réseau
-	\cbend%1.3
 	\\ \hline
     droits.html
 	& \texttt {\%CORRESP\%}
@@ -3106,10 +3041,8 @@ presse).
 	& \texttt {\%TABCIDRHORSRESEAU\%}
 	& le cas échéant, liste des plages hors des réseaux enregistrés
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%TABDHCPPROFIL\%}
 	& le cas échéant, récapitulatif des profils DHCP visibles
-	\cbend%1.3
 	\\ \hline
     editmodif-infos.html
 	& \texttt {\%NOM\%}
@@ -3118,13 +3051,11 @@ presse).
 	& \texttt {\%DOMAINE\%}
 	& domaine du RR en cours de modification
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%MAC\%}
 	& champ de saisie de l'adresse MAC
 	\\ \cline {2-3}
 	& \texttt {\%DHCPPROFIL\%}
 	& menu de saisie du profil DHCP ou champ caché
-	\cbend%1.3
 	\\ \cline {2-3}
 	& \texttt {\%MENUHINFO\%}
 	& menu des types de machines
@@ -3266,7 +3197,6 @@ presse).
 	& \texttt {\%LISTEADR\%}
 	& liste des adresses déjà affectées à la machine
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%MAC\%}
 	& adresse MAC
 	\\ \cline {2-3}
@@ -3275,7 +3205,6 @@ presse).
 	\\ \cline {2-3}
 	& \texttt {\%IDDHCPPROFIL\%}
 	& identificateur du profil DHCP
-	\cbend%1.3
 	\\ \cline {2-3}
 	& \texttt {\%HINFO\%}
 	& type de la machine existante
@@ -3310,13 +3239,11 @@ presse).
 	& \texttt {\%ADR\%}
 	& adresse IP de la machine ajoutée
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%MAC\%}
 	& adresse MAC de la machine ajoutée
 	\\ \cline {2-3}
 	& \texttt {\%DHCPPROFIL\%}
 	& profil DHCP de la machine ajoutée
-	\cbend%1.3
 	\\ \cline {2-3}
 	& \texttt {\%HINFO\%}
 	& type de la machine ajouée
@@ -3345,13 +3272,11 @@ presse).
 	& \texttt {\%DOMAINE\%}
 	& domaine de la machine modifiée
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%MAC\%}
 	& adresse MAC de la machine modifiée
 	\\ \cline {2-3}
 	& \texttt {\%DHCPPROFIL\%}
 	& profil DHCP de la machine modifiée
-	\cbend%1.3
 	\\ \cline {2-3}
 	& \texttt {\%HINFO\%}
 	& type de la machine modifiée
@@ -3391,13 +3316,11 @@ presse).
 	& \texttt {\%LISTEADR\%}
 	& adresses trouvées pour cette machine
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%MAC\%}
 	& adresse MAC de la machine
 	\\ \cline {2-3}
 	& \texttt {\%DHCPPROFIL\%}
 	& profil DHCP
-	\cbend%1.3
 	\\ \cline {2-3}
 	& \texttt {\%HINFO\%}
 	& type de la machine
@@ -3427,13 +3350,11 @@ presse).
 	& \texttt {\%LISTEADR\%}
 	& adresses trouvées pour cette machine
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%MAC\%}
 	& adresse MAC de la machine
 	\\ \cline {2-3}
 	& \texttt {\%DHCPPROFIL\%}
 	& profil DHCP
-	\cbend%1.3
 	\\ \cline {2-3}
 	& \texttt {\%HINFO\%}
 	& type de la machine
@@ -3460,13 +3381,11 @@ presse).
 	& \texttt {\%LISTEADR\%}
 	& adresses trouvées pour ce nom
 	\\ \cline {2-3}
-	\cbstart%1.3
 	& \texttt {\%MAC\%}
 	& adresse MAC de la machine
 	\\ \cline {2-3}
 	& \texttt {\%DHCPPROFIL\%}
 	& profil DHCP
-	\cbend%1.3
 	\\ \cline {2-3}
 	& \texttt {\%HINFO\%}
 	& type de la machine
