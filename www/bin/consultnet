@@ -1,5 +1,7 @@
 #!%TCLSH%
 
+# $Id: consultnet,v 1.2 2007-08-29 10:51:58 pda Exp $
+
 #
 # Script pour demander les paramètres de consultation des réseaux.
 #
@@ -66,7 +68,7 @@ proc main {} {
     # Initialisation
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
 			{} ftab dbfd login tabcor
 
     #

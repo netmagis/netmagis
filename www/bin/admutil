@@ -1,5 +1,7 @@
 #!%TCLSH%
 
+# $Id: admutil,v 1.2 2007-08-29 10:51:58 pda Exp $
+
 #
 # Script pour faire la gestion des utilisateurs
 #
@@ -93,7 +95,7 @@ proc dns-getuser {dbfd login} {
 	pg_select $dbfd $sql tab {
 	    set grp $tab(nom)
 	}
-	set i [lsearch -exact [::pgsql::getcols $dbfd groupe "" "nom ASC" nom] $grp]
+	set i [lsearch -exact [liste-groupes $dbfd 1] $grp]
 	set r [list $tabcor(present) $i]
     }
     return $r
@@ -204,7 +206,7 @@ proc main {} {
     foreach s $e(specif) {
 	set type [lindex $s 1]
 	if {[string equal [lindex $type 1] "A-REMPLIR"]} then {
-	    set menu [::pgsql::getcols $dbfd groupe "" "nom ASC" {nom nom}]
+	    set menu [liste-groupes $dbfd 2]
 	    set s [list [lindex $s 0] \
 			[linsert $menu 0 "menu"] \
 			[lindex $s 2] \

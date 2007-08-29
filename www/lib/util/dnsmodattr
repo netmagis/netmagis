@@ -1,5 +1,7 @@
 #!%TCLSH%
 
+# $Id: dnsmodattr,v 1.2 2007-08-29 10:52:01 pda Exp $
+
 #
 # Script pour modifier les attributs d'un RR dans la base
 #

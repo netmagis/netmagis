@@ -1,6 +1,8 @@
 #
 # Fichier des groupes
 #
+# $Id: group.txt,v 1.2 2007-08-29 10:51:52 pda Exp $
+#
 # Format :
 #	<groupe> <login> ... <login>
 #

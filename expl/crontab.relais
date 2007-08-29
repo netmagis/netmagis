@@ -1,6 +1,8 @@
 #
 # Génération du fichier routages à partir de la base DNS
 #
+# $Id: crontab.relais,v 1.2 2007-08-29 10:51:47 pda Exp $
+#
 # Cette crontab doit être installée sur les relais de messagerie
 #
 

@@ -1,6 +1,8 @@
 #
 # Makefile pour lancer l'installation de l'application dns
 #
+# $Id: Makefile,v 1.2 2007-08-29 10:51:56 pda Exp $
+#
 
 TCLSH	= /usr/local/bin/tclsh8.4
 
@@ -33,8 +35,11 @@ INTERVALLE = 10
 # Page présentant les DNS Osiris
 DOCDNS	= /osiris/services/dns.html
 
+# Couleur de fond des boutons "valider"
+COULEUR = "\#10C090"
+
 # Version de l'application
-VERSION = 1.3
+VERSION = 1.3.9
 
 #
 # Motif de substitution à appliquer à chaque fichier installé
@@ -52,6 +57,7 @@ SUBST	= \
 	-e 's|%ROOT%|$(ROOT)|' \
 	-e 's|%NOLOGIN%|$(NOLOGIN)|' \
 	-e 's|%DEFUSER%|$(DEFUSER)|' \
+	-e 's|%COULEUR%|$(COULEUR)|' \
 	-e 's|%AUTH%|$(AUTH)|' \
 	-e 's|%BASE%|$(BASE)|'
 

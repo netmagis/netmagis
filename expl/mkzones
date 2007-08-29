@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# $Id: mkzones,v 1.2 2007-08-29 10:51:47 pda Exp $
+
 #
 # Script de génération de tous les fichiers zone ayant le flag "generer"
 # dans la base.

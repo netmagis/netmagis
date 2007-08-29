@@ -1,5 +1,7 @@
 #!%TCLSH%
 
+# $Id: corresp,v 1.2 2007-08-29 10:51:58 pda Exp $
+
 #
 # Script pour chercher le ou les correspondants associés à un
 # réseau, à une adresse IP ou une machine.
@@ -257,7 +259,7 @@ proc main {} {
     #
     # Rechercher les différents correspondants qui peuvent
     # potentiellement s'occuper de la plage dans laquelle
-    # il y a cete adresse.
+    # il y a cette adresse.
     #
 
     set sql "SELECT c.idcor
@@ -266,6 +268,7 @@ proc main {} {
 			AND g.idgrp = d.idgrp
 			AND d.idreseau = r.idreseau
 			AND ('$adr' <<= r.adr4 OR '$adr' <<= r.adr6)
+			ORDER BY g.admin, g.nom
 			"
     set lidcor {}
     pg_select $dbfd $sql tab {
@@ -282,7 +285,7 @@ proc main {} {
 	if {[droit-correspondant-ip $dbfd $idcor $adr]} then {
 	    set msg [lire-correspondant-par-id $dbfd $idcor tabcor]
 	    if {! [string equal $msg ""]} then {
-		::webapp::error-exit "Erreur interne ($msg)"
+		::webapp::error-exit $conf(err) "Erreur interne ($msg)"
 	    }
 	    append resultat [html-correspondant tabcor]
 	    append resultat "\n<P>\n"

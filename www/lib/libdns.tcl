@@ -1,12 +1,16 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
+# $Id: libdns.tcl,v 1.2 2007-08-29 10:52:00 pda Exp $
+#
 # Historique
 #   2002/03/27 : pda/jean : conception
 #   2002/05/23 : pda/jean : ajout de info-groupe
 #   2004/01/14 : pda/jean : ajout IPv6
 #   2004/08/04 : pda/jean : ajout MAC
 #   2004/08/06 : pda/jean : extension des droits sur les réseaux
+#   2006/01/26 : jean     : correction dans valide-droit-nom (cas ip EXIST)
+#   2006/01/30 : jean     : message alias dans valide-droit-nom
 #
 
 # set debug(base)	dbname=dns-debug
@@ -561,11 +565,15 @@ proc lire-correspondant-par-login {dbfd login tabcorvar} {
 
     set qlogin [::pgsql::quote $login]
     set tabcor(idcor) -1
-    set sql "SELECT * FROM corresp WHERE login = '$qlogin'"
+    set sql "SELECT * FROM corresp, groupe
+			WHERE corresp.login = '$qlogin'
+			    AND corresp.idgrp = groupe.idgrp"
     pg_select $dbfd $sql tab {
 	set tabcor(idcor)	$tab(idcor)
 	set tabcor(idgrp)	$tab(idgrp)
 	set tabcor(present)	$tab(present)
+	set tabcor(groupe)	$tab(nom)
+	set tabcor(admin)	$tab(admin)
     }
 
     if {$tabcor(idcor) == -1} then {
@@ -585,12 +593,16 @@ proc lire-correspondant-par-id {dbfd idcor tabcorvar} {
     #
 
     set tabcor(idcor) -1
-    set sql "SELECT * FROM corresp WHERE idcor = $idcor"
+    set sql "SELECT * FROM corresp, groupe
+			WHERE corresp.idcor = $idcor
+			    AND corresp.idgrp = groupe.idgrp"
     pg_select $dbfd $sql tab {
 	set tabcor(login)	$tab(login)
 	set tabcor(idcor)	$tab(idcor)
 	set tabcor(idgrp)	$tab(idgrp)
 	set tabcor(present)	$tab(present)
+	set tabcor(groupe)	$tab(nom)
+	set tabcor(admin)	$tab(admin)
     }
 
     if {$tabcor(idcor) == -1} then {
@@ -602,7 +614,7 @@ proc lire-correspondant-par-id {dbfd idcor tabcorvar} {
     #
 
     if {! [::auth::getuser $tabcor(login) tabcor]} then {
-	return "'$login' n'est pas dans la base d'authentification."
+	return "'$tabcor(login)' n'est pas dans la base d'authentification."
     }
 
     return ""
@@ -1692,7 +1704,9 @@ proc valide-droit-nom {dbfd idcor nom domaine tabrr contexte} {
 		    if {! [string equal $idrr ""]} then {
 			switch $parm {
 			    REJECT {
-				return "'$fqdn' est un alias"
+				lire-rr-par-id $dbfd $idrr talias
+				set alias "$talias(nom).$talias(domaine)"
+				return "'$fqdn' est un alias de '$alias'"
 			    }
 			    CHECK {
 				set ok [valide-adresses-ip $dbfd $idcor $idrr]
@@ -1812,6 +1826,10 @@ proc valide-droit-nom {dbfd idcor nom domaine tabrr contexte} {
 			default {
 			    return "Erreur interne : paramètre invalide '$parm' pour '$contexte'/$a"
 			}
+		    }
+		} else {
+		    if {[string equal $parm "EXISTS"]} {
+			return "Le nom '$fqdn' n'existe pas"
 		    }
 		}
 	    }
@@ -2415,6 +2433,28 @@ proc couple-domaine-par-corresp {dbfd idcor where} {
 ##############################################################################
 
 #
+# Récupère la liste des groupes
+#
+# Entrée :
+#   - paramètres :
+#	- dbfd : accès à la base
+#	- n : 1 s'il faut une liste à 1 élément, 2 s'il en faut 2, etc.
+# Sortie :
+#   - valeur de retour : liste des noms (ou des {noms noms}) des groupes
+#
+# Historique
+#   2006/02/17 : pda/jean/zamboni : création
+#
+
+proc liste-groupes {dbfd {n 1}} {
+    set l {}
+    for {set i 0} {$i < $n} {incr i} {
+	lappend l "nom"
+    }
+    return [::pgsql::getcols $dbfd groupe "" "nom ASC" $l]
+}
+
+#
 # Fournit du code HTML pour chaque groupe d'informations associé à un
 # groupe - les réseaux, les droits hors réseaux, les domaines et les
 # profils DHCP.
@@ -2608,15 +2648,17 @@ proc info-groupe {dbfd idgrp} {
 #	- idgrp : identificateur du groupe
 #	- droit : "consult", "dhcp" ou "acl"
 # Sortie :
-#   - valeur de retour : liste des réseaux sous la forme {idreseau nom-complet}
+#   - valeur de retour : liste des réseaux sous la forme
+#		{idreseau cidr4 cidr6 nom-complet}
 #
 # Historique
 #   2004/01/16 : pda/jean : spécification et conception
 #   2004/08/06 : pda/jean : extension des droits sur les réseaux
 #   2004/10/05 : pda/jean : adaptation aux nouveaux droits
+#   2006/05/24 : pda/jean/boggia : séparation en une fonction élémentaire
 #
 
-proc liste-reseaux {dbfd idgrp droit} {
+proc liste-reseaux-autorises {dbfd idgrp droit} {
     #
     # Mettre en forme les droits pour la clause where
     #
@@ -2648,13 +2690,42 @@ proc liste-reseaux {dbfd idgrp droit} {
 			    $w1 $w2
 			ORDER BY adr4, adr6"
     pg_select $dbfd $sql tab {
-	lappend lres [list $tab(idreseau) \
-				[format "%s\t%s\t(%s)" \
-					$tab(adr4) \
-					$tab(adr6) \
-					[::webapp::html-string $tab(nom)] \
-				    ] \
-			    ]
+	lappend lres [list $tab(idreseau) $tab(adr4) $tab(adr6) $tab(nom)]
+    }
+
+    return $lres
+}
+
+#
+# Fournit la liste de réseaux associés à un groupe avec un certain droit,
+# prête à être utilisée dans un menu.
+#
+# Entrée :
+#   - paramètres :
+#	- dbfd : accès à la base
+#	- idgrp : identificateur du groupe
+#	- droit : "consult", "dhcp" ou "acl"
+# Sortie :
+#   - valeur de retour : liste des réseaux sous la forme {idreseau nom-complet}
+#
+# Historique
+#   2006/05/24 : pda/jean/boggia : séparation du coeur de la fonction
+#
+
+proc liste-reseaux {dbfd idgrp droit} {
+    #
+    # Présente la liste élémentaire retournée par liste-reseaux-autorises
+    #
+
+    set lres {}
+    foreach r [liste-reseaux-autorises $dbfd $idgrp $droit] {
+	lappend lres [list [lindex $r 0] \
+			[format "%s\t%s\t(%s)" \
+				[lindex $r 1] \
+				[lindex $r 2] \
+				[::webapp::html-string [lindex $r 3]] \
+			    ] \
+			]
     }
 
     return $lres
@@ -3055,6 +3126,7 @@ proc enregistrer-tableau {dbfd spec idnum table tabvar} {
     # La clef pour savoir si une entrée doit être détruite (pour les
     # id existants) ou ajoutée (pour les nouveaux id)
     #
+
 
     set clef [lindex [lindex $spec 0] 0]
 

@@ -1,6 +1,8 @@
 #
 # Makefile de la doc d'installation de l'application SOS
 #
+# $Id: Makefile,v 1.2 2007-08-29 10:51:46 pda Exp $
+#
 #
 # Cibles possibles :
 #

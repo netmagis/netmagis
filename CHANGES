@@ -1,3 +1,18 @@
+version 1.4 - ??/??/2007
+    - intégration dans CVS et ajout des Id
+    - bug : les valeurs par défaut de dhcpmodif n'étaient pas prises en compte
+    - bug : erreur de syntaxe dans traiteajout (code peu utilisé)
+    - bug : cas non traité dans la vérification des droits pour l'ajout
+	d'un alias sur une machine inexistante
+    - inversion des bandeaux "voir aussi" et "actions"
+    - script de liste des correspondants accessible à tous
+    - script de liste des réseaux accessible (mais url non publiée)
+    - affichage des correspondants admin en dernier pour éviter aux admins
+	d'être toujours listés en premier
+    - récupération du nom du groupe pour plus d'efficacité
+    - explicitation du message en cas de tentative d'ajout sur un alias
+    - paramétrisation de la couleur du fond des boutons "valider"
+
 version 1.3 - 13/04/2005
     - bug : adresses IPv6 avec une longueur de préfixe acceptées à tort
     - bug : recherche de correspondant pour un rôle de messagerie
@@ -23,3 +38,5 @@ Verison 1.1 - 20/01/2004
 
 Version 1.0 - xx/05/2002
     - version initiale
+
+$Id: CHANGES,v 1.2 2007-08-29 10:51:44 pda Exp $

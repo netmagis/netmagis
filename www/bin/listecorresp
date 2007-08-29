@@ -1,5 +1,7 @@
 #!%TCLSH%
 
+# $Id: listecorresp,v 1.2 2007-08-29 10:51:58 pda Exp $
+
 #
 # Script pour lister les correspondants 
 #
@@ -9,6 +11,7 @@
 # Historique
 #   2002/12/05 : jean     : création
 #   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2005/09/30 : jean     : autorisation aux non-admin
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -117,7 +120,10 @@ proc main {} {
     # Initialisation
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+#    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+#			{} ftab dbfd login tabcor
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
 			{} ftab dbfd login tabcor
 
     set titrepage "Liste des correspondants"

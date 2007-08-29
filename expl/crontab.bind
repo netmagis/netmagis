@@ -1,6 +1,8 @@
 #
 # La crontab de l'utilisateur "bind" (sur le serveur DNS)
 #
+# $Id: crontab.bind,v 1.2 2007-08-29 10:51:47 pda Exp $
+#
 # Historique
 #   2002/05/02 : pda/jean : génération des zones DNS à partir de la base
 #   2002/06/03 : pda/jean : génération toutes les 10 minutes

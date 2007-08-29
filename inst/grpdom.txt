@@ -1,6 +1,8 @@
 #
 # Fichier des domaines autorisés pour les groupes
 #
+# $Id: grpdom.txt,v 1.2 2007-08-29 10:51:52 pda Exp $
+#
 # A utiliser avec remplir-domcor :
 #	remplir-grpdom grpdom.txt
 #

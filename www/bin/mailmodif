@@ -1,5 +1,7 @@
 #!%TCLSH%
 
+# $Id: mailmodif,v 1.2 2007-08-29 10:51:58 pda Exp $
+
 #
 # Script pour présenter la page de saisie de l'hébergeur d'une adresse
 # de messagerie (ou la liste des adresses de messagerie existantes)

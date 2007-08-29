@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# $Id: init-base,v 1.2 2007-08-29 10:51:52 pda Exp $
+
 #
 # Enchaîne l'ensemble des opérations nécessaires pour charger
 # la base.

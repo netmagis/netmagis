@@ -1,5 +1,7 @@
 #!%TCLSH%
 
+# $Id: admin,v 1.2 2007-08-29 10:51:58 pda Exp $
+
 #
 # Script pour définir l'accueil du module d'administration
 #

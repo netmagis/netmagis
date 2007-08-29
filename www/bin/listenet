@@ -1,5 +1,7 @@
 #!%TCLSH%
 
+# $Id: listenet,v 1.2 2007-08-29 10:51:58 pda Exp $
+
 #
 # Script pour lister les réseaux
 #
@@ -20,6 +22,7 @@
 #   2002/10/24 : pda      : création
 #   2003/05/13 : pda/jean : utilisation de la base d'authentification
 #   2004/01/14 : pda/jean : ajout IPv6
+#   2005/09/28 : pda/jean/lauce : autorisation aux non-admin
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -163,7 +166,7 @@ proc main {} {
     # Initialisation
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
 			$conf(form) ftab dbfd login tabcor
 
     #

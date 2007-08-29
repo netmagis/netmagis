@@ -1,4 +1,5 @@
 {
+\* $Id: droits.htgt,v 1.2 2007-08-29 10:52:00 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -20,10 +21,6 @@
 \bandeau {
 	DNS v%VERSION%
     } {
-	\elementbandeau {Voir aussi} {
-	    \reference {\lien {Osiris}	{/osiris/}}
-	    \reference {\lien {CRC}	{/crc/}}
-	}
 	\elementbandeau {Actions} {
 	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
 	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
@@ -33,6 +30,11 @@
 	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
 	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
 	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
+	}
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
 	}
 }
 

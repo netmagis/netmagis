@@ -1,5 +1,7 @@
 #!%TCLSH%
 
+# $Id: dhcpmodif,v 1.2 2007-08-29 10:51:58 pda Exp $
+
 #
 # Script de modification des paramètres DHCP d'un réseau
 #
@@ -10,6 +12,7 @@
 #
 # Historique
 #   2004/10/05 : pda/jean : spécification
+#   2006/05/04 : jean     : retrait des valeurs par defaut dans 'spec'
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -380,8 +383,8 @@ proc main {} {
 	{min}
 	{max}
 	{iddom}
-	{default_lease_time 0}
-	{max_lease_time 0}
+	{default_lease_time}
+	{max_lease_time}
     }
 
     set msg [enregistrer-tableau $dbfd $spec iddhcprange dhcprange ftab]
