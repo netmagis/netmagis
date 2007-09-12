@@ -1,5 +1,5 @@
 #
-# $Id: parse-juniper.tcl,v 1.5 2007-07-17 12:55:39 pda Exp $
+# $Id: parse-juniper.tcl,v 1.6 2007-09-12 13:42:40 jean Exp $
 #
 # Package d'analyse de fichiers de configuration JunOS
 #
@@ -593,10 +593,11 @@ proc juniper-parse-if-address {conf tab idx} {
     upvar $tab t
 
     array set kwtab {
-	vrrp-group	{2	juniper-parse-vrrp}
-	arp		{4	NOP}
-	destination	{2	NOP}
-	*		{2	ERROR}
+	vrrp-group	    {2	juniper-parse-vrrp}
+	vrrp-inet6-group    {2	juniper-parse-vrrp}
+	arp		    {4	NOP}
+	destination	    {2	NOP}
+	*		    {2	ERROR}
     }
 
     set parm [lindex $conf 1]
@@ -633,6 +634,7 @@ proc juniper-parse-vrrp {conf tab idx} {
     array set kwtab {
 	virtual-address		{2	juniper-parse-vrrp-vadr}
 	priority		{2	juniper-parse-vrrp-prio}
+	virtual-inet6-address	{2	juniper-parse-vrrp-vadr}
 	accept-data		{1	NOP}
 	*			{2	NOP}
     }
