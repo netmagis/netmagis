@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.2 2007-02-27 13:04:48 pda Exp $
+# $Id: webapp.tcl,v 1.3 2007-10-05 14:28:19 jean Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -21,11 +21,18 @@
 #   2004/02/12 : pda/jean : ajout form-bool
 #   2005/04/13 : pda : correction d'un bug dans form-text
 #   2006/08/29 : pda : ajout de import-vars
+#   2007/10/05 : pda/jean : ajout des objets auth et user
 #
+
+# packages nécessaires pour l'acces à la base d'authentification
+
+package require snit ;			# tcllib >= 1.10
+package require ldapx ;			# tcllib >= 1.10
+package require pgsql ;			# package local
 
 # package require Pgtcl
 
-package provide webapp 1.9
+package provide webapp 1.10
 
 #
 # Candidates à suppression
@@ -1847,4 +1854,240 @@ proc ::webapp::cgi-exec {script {debug 0}} {
 	::webapp::cgi-err $errorInfo $debug
     }
     exit 0
+}
+
+#
+# Classe "utilisateur dans la base d'authentification"
+#
+# Représente les attributs d'un utilisateur tel qu'il est stocké
+# dans la base d'authentification (PostgreSQL ou LDAP) sous une 
+# forme unifiée.
+#
+# Options :
+#   aucune
+#
+# Méthodes
+#   get	    : récupère la valeur (unique) d'un attribut
+#   set	    : modifie la valeur d'un attribut (en mémoire uniquement).
+#	      C'est une méthode utilisée uniquement par la classe authbase
+#   exists  : indique si l'utilisateur a été trouvé dans la base.
+#
+# Historique
+#   2007/10/05 : pda/jean : intégration et documentation
+#
+
+snit::type ::webapp::authuser {
+    variable exists 0
+    variable attrvals -array {}
+
+    method exists {{value {}}} {
+	if {$value ne ""} then {
+	    set exists $value
+	}
+	return $exists
+    }
+
+    method get {attr} {
+	if {[info exists attrvals($attr)]} then {
+	    set v $attrvals($attr)
+	} else {
+	    set v ""
+	}
+	return $v
+    }
+
+    method set {attr val} {
+	set attrvals($attr) $val
+    }
+}
+
+#
+# Classe "base d'authentification"
+#
+# Représente une base d'authentification et donne les moyens 
+# de récupérer les attributs d'un utilisateur
+#
+# Options :
+#   method  : "ldap" ou "postgresql"
+#   db	    : paramètres d'accès à la base d'authentification (cf. ci-dessous)
+#   attrmap : traduction d'attribut
+#
+# Méthodes
+#   getuser : recherche l'utilisateur par son login et récupère ses attributs
+#
+# Historique
+#   2007/10/05 : pda/jean : intégration et documentation
+
+snit::type ::webapp::authbase {
+
+    # Option method: ldap, postgresql
+    option -method  -default "none"
+
+    # Option db :
+    #   pour ldap:
+    #	  url ...
+    #	  [ binddn ... ]
+    #	  [ bindpw ... ]
+    #	  base ...
+    #	  searchuid ... (filtre avec un %s pour le login)
+    #   pour postgresql:
+    #	  host=...
+    #	  dbname=...
+    #	  user=...
+    #	  password=...
+    option -db      -default {}
+
+    # Option attrmap :
+    # liste de couples
+    #	<nom dans ce module> <nom dans la base>
+    option -attrmap -default {
+	login    login
+	password password
+	nom      nom
+	prenom   prenom
+	mel      mel
+	tel      tel
+	mobile   mobile
+	fax      fax
+	adr      adr
+    }
+
+    variable connected "no"
+    variable handle
+
+    destructor {
+	if {$connected} then {
+	    Disconnect $selfns
+	}
+    }
+
+    method getuser {login} {
+	if {! $connected} then {
+	    Connect $selfns
+	}
+
+	set u [::webapp::user create %AUTO%]
+
+	switch $options(-method) {
+	    postgresql {
+		set qlogin [::pgsql::quote $login]
+		set sql "SELECT * FROM utilisateurs WHERE login = '$qlogin'"
+		set av {}
+		pg_select $handle $sql tab {
+		    set av [array get tab]
+		}
+	    }
+	    ldap {
+		array set dbopt $options(-db)
+		set base   $dbopt(base)
+		set search $dbopt(searchuid)
+
+		# XXXXXXXXX  Il faut quoter le login
+		set filter [format $search $login]
+
+		set e [::ldapx::entry create %AUTO%]
+		set ne [$handle read $base $filter $e]
+
+		switch $ne {
+		    0 {
+			set av {}
+		    }
+		    1 {
+
+			# On ne garde que la première valeur 
+			# des champs multivalués
+
+			array set x [$e getall]
+			foreach i [array names x] {
+			    set x($i) [lindex $x($i) 0]
+			}
+			set av [array get x]
+		    }
+		    default {
+			error "Too many user found"
+		    }
+		}
+
+		$e destroy
+	    }
+	    default {
+		error "Auth method '$options(-method)' not supported"
+	    }
+	}
+
+	if {$av ne ""} then {
+	    $u exists 1
+	    array set t $av
+	    foreach {cmod cbase} [string tolower $options(-attrmap)] {
+		set v {}
+		foreach c $cbase {
+		    if {[info exists t($c)]} then {
+			lappend v $t($c)
+		    }
+		    $u set $cmod [join $v ", "]
+		}
+	    }
+	}
+
+	return $u
+    }
+
+    proc Connect {selfns} {
+	set db $options(-db)
+	switch $options(-method) {
+	    postgresql {
+		if {[catch {set handle [pg_connect -conninfo $db]} msg]} then {
+		    error $msg
+		}
+	    }
+	    ldap {
+		array set dbopt $db
+
+		if {! [info exists dbopt(url)]} then {
+		    error "url not configured for LDAP method"
+		} else {
+		    set url $dbopt(url)
+		}
+		if {[info exists dbopt(binddn)] && [info exists dbopt(bindpw)]} then {
+		    set binddn $dbopt(binddn)
+		    set bindpw $dbopt(bindpw)
+		} else {
+		    set binddn ""
+		    set bindpw ""
+		}
+
+		set handle [::ldapx::ldap create %AUTO%]
+		if {! [$handle connect $url $binddn $bindpw]} then {
+		    error [$handle error]
+		}
+	    }
+	    none {
+		error "Auth method not configured"
+	    }
+	    default {
+		error "Auth method '$options(-method)' not supported"
+	    }
+	}
+	set connected 1
+    }
+
+    proc Disconnect {selfns} {
+	switch $options(-method) {
+	    postgresql {
+		if {[catch {pg_disconnect $handle} msg]} then {
+		    error $msg
+		}
+	    }
+	    ldap {
+		if {! [$handle disconnect]} then {
+		    error [$handle error]
+		}
+		$handle destroy
+	    }
+	    default {
+		error "Auth method '$options(-method)' not supported"
+	    }
+	}
+	set connected 0
+    }
 }
