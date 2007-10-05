@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.3 2007-10-05 14:28:19 jean Exp $
+# $Id: webapp.tcl,v 1.4 2007-10-05 15:23:47 jean Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -1961,12 +1961,13 @@ snit::type ::webapp::authbase {
 	}
     }
 
-    method getuser {login} {
+    method getuser {login u} {
 	if {! $connected} then {
 	    Connect $selfns
 	}
 
-	set u [::webapp::user create %AUTO%]
+	$u exists 0
+	set n 0
 
 	switch $options(-method) {
 	    postgresql {
@@ -1975,6 +1976,7 @@ snit::type ::webapp::authbase {
 		set av {}
 		pg_select $handle $sql tab {
 		    set av [array get tab]
+		    incr n
 		}
 	    }
 	    ldap {
@@ -1986,26 +1988,19 @@ snit::type ::webapp::authbase {
 		set filter [format $search $login]
 
 		set e [::ldapx::entry create %AUTO%]
-		set ne [$handle read $base $filter $e]
+		set n [$handle read $base $filter $e]
 
-		switch $ne {
-		    0 {
-			set av {}
-		    }
-		    1 {
+		set av {}
+		if {$n == 1} then {
+		    #
+		    # On ne garde que la première valeur des champs multivalués
+		    #
 
-			# On ne garde que la première valeur 
-			# des champs multivalués
-
-			array set x [$e getall]
-			foreach i [array names x] {
-			    set x($i) [lindex $x($i) 0]
-			}
-			set av [array get x]
+		    array set x [$e getall]
+		    foreach i [array names x] {
+			set x($i) [lindex $x($i) 0]
 		    }
-		    default {
-			error "Too many user found"
-		    }
+		    set av [array get x]
 		}
 
 		$e destroy
@@ -2029,7 +2024,7 @@ snit::type ::webapp::authbase {
 	    }
 	}
 
-	return $u
+	return $n
     }
 
     proc Connect {selfns} {
