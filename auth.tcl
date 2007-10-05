@@ -1,5 +1,5 @@
 #
-# $Id: auth.tcl,v 1.3 2007-02-27 13:06:22 pda Exp $
+# $Id: auth.tcl,v 1.4 2007-10-05 13:01:03 jean Exp $
 #
 # Librairie de fonctions TCL d'authentification utilisables dans les scripts CGI
 #
@@ -13,6 +13,7 @@
 #   2005/06/07 : pda/jean/zamboni : changement de la commande de chiffrement
 #   2005/08/24 : pda      : ajout du port ldap
 #   2006/01/17 : jean     : suite ldapisation
+#   2007/10/04 : jean     : on ne modifie plus l'annuaire ldap dans setuser
 #
 
 package require Pgtcl
@@ -746,7 +747,7 @@ proc ::auth::setuser {tab {transact transaction}} {
 	    # On ecrit l'entrée
 	    #
 
-	    return [ldap-ecrire-entree $fd new]
+	    return ""
 	}
 
 	default {
