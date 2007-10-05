@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: listecorresp,v 1.2 2007-08-29 10:51:58 pda Exp $
+# $Id: listecorresp,v 1.3 2007-10-05 15:30:56 jean Exp $
 
 #
 # Script pour lister les correspondants 
@@ -115,6 +115,7 @@ source $conf(libdns)
 
 proc main {} {
     global conf
+    global ah
 
     #
     # Initialisation
@@ -142,6 +143,8 @@ proc main {} {
 			  {Groupe}
     }
 
+    set u [::webapp::authuser create %AUTO%]
+
     set sql "SELECT login, present, groupe.nom \
 		FROM corresp, groupe \
 		WHERE groupe.idgrp = corresp.idgrp \
@@ -152,11 +155,15 @@ proc main {} {
             set present		$tab(present)
             set nomgroupe	$tab(nom)
 
-	    if {[::auth::getuser $login tabu]} then {
-		set nomprenom	"$tabu(nom) $tabu(prenom)"
-		set mel		$tabu(mel)
-		set tel		$tabu(tel)
-		set localisation $tabu(adr)
+	    if {[catch {set n [$ah getuser $login $u]} m]} then {
+		return "Problème dans la base d'authentification ($m)"
+	    }
+	    
+	    if {$n == 1} then {
+		set nomprenom	 "[$u get nom] [$u get prenom]"
+		set mel		 [$u get mel]
+		set tel		 [$u get tel]
+		set localisation [$u get adr]
 	    } else {
 		set nomprenom	ERREUR
 		set mel		ERREUR
@@ -168,6 +175,8 @@ proc main {} {
               $login $nomprenom $mel $tel $localisation \
               $present $nomgroupe ]
     }
+
+    $u destroy
 
 
     # on fabrique la liste

@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.2 2007-08-29 10:52:00 pda Exp $
+# $Id: libdns.tcl,v 1.3 2007-10-05 15:31:03 jean Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -331,9 +331,11 @@ proc fermer-base {dbfd} {
 #   2001/06/18 : pda      : conception
 #   2002/12/26 : pda      : actualisation et mise en service
 #   2003/05/13 : pda/jean : intégration dans dns et utilisation de auth
+#   2007/10/05 : pda/jean : adaptation aux objets "authuser" et "authbase"
 #
 
 proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabcorvar} {
+    global ah
     upvar $ftabvar ftab
     upvar $dbfdvar dbfd
     upvar $loginvar login
@@ -349,10 +351,8 @@ proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabc
     # Accès à la base d'authentification
     #
 
-    set msg [::auth::init $auth]
-    if {! [string equal $msg ""]} then {
-	::webapp::error-exit $pageerr $msg
-    }
+    set ah [::webapp::authbase create %AUTO%]
+    $ah configurelist $auth
 
     #
     # Accès à la base
@@ -440,9 +440,11 @@ proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabc
 #
 # Historique
 #   2004/09/24 : pda/jean : conception
+#   2007/10/05 : pda/jean : adaptation aux objets "authuser" et "authbase"
 #
 
 proc init-dns-util {nologin auth base dbfdvar login tabcorvar} {
+    global ah
     upvar $dbfdvar dbfd
     upvar $tabcorvar tabcor
 
@@ -461,10 +463,8 @@ proc init-dns-util {nologin auth base dbfdvar login tabcorvar} {
     # Accès à la base d'authentification
     #
 
-    set msg [::auth::init $auth]
-    if {! [string equal $msg ""]} then {
-	return "Accès à la base d'authentification impossible\n$msg"
-    }
+    set ah [::webapp::authbase create %AUTO%]
+    $ah configurelist $auth
 
     #
     # Accès à la base
@@ -544,9 +544,11 @@ proc attribut-correspondant {dbfd idcor attribut} {
 #
 # Historique
 #   2003/05/13 : pda/jean : conception
+#   2007/10/05 : pda/jean : adaptation aux objets "authuser" et "authbase"
 #
 
 proc lire-correspondant-par-login {dbfd login tabcorvar} {
+    global ah
     upvar $tabcorvar tabcor
 
     catch {unset tabcor}
@@ -555,9 +557,28 @@ proc lire-correspondant-par-login {dbfd login tabcorvar} {
     # Lire les caractéristiques communes à toutes les applications
     #
 
-    if {! [::auth::getuser $login tabcor]} then {
-	return "'$login' n'est pas dans la base d'authentification."
+    set u [::webapp::authuser create %AUTO%]
+    if {[catch {set n [$ah getuser $login $u]} m]} then {
+	return "Problème dans la base d'authentification ($m)"
     }
+    
+    switch $n {
+	0 {
+	    return "'$login' n'est pas dans la base d'authentification."
+	}
+	1 { 
+	    # Rien
+	}
+	default {
+	    return "Trop d'utilisateurs trouvés"
+	}
+    }
+
+    foreach c {login password nom prenom mel tel mobile fax adr} {
+	set tabcor($c) [$u get $c]
+    }
+
+    $u destroy
 
     #
     # Lire les autres caractéristiques, propres à cette application.
@@ -584,6 +605,7 @@ proc lire-correspondant-par-login {dbfd login tabcorvar} {
 }
 
 proc lire-correspondant-par-id {dbfd idcor tabcorvar} {
+    global ah
     upvar $tabcorvar tabcor
 
     catch {unset tabcor}
@@ -613,9 +635,28 @@ proc lire-correspondant-par-id {dbfd idcor tabcorvar} {
     # Lire les caractéristiques communes à toutes les applications
     #
 
-    if {! [::auth::getuser $tabcor(login) tabcor]} then {
-	return "'$tabcor(login)' n'est pas dans la base d'authentification."
+    set u [::webapp::authuser create %AUTO%]
+    if {[catch {set n [$ah getuser $tabcor(login) $u]} m]} then {
+	return "Problème dans la base d'authentification ($m)"
     }
+    
+    switch $n {
+	0 {
+	    return "'$tabcor(login)' n'est pas dans la base d'authentification."
+	}
+	1 { 
+	    # Rien
+	}
+	default {
+	    return "Trop d'utilisateurs trouvés"
+	}
+    }
+
+    foreach c {login password nom prenom mel tel mobile fax adr} {
+	set tabcor($c) [$u get $c]
+    }
+
+    $u destroy
 
     return ""
 }
