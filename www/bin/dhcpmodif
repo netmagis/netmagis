@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dhcpmodif,v 1.2 2007-08-29 10:51:58 pda Exp $
+# $Id: dhcpmodif,v 1.3 2007-10-09 12:28:14 jean Exp $
 
 #
 # Script de modification des paramètres DHCP d'un réseau
@@ -61,7 +61,6 @@ set conf(page)		$conf(lib)/dhcpmodif.html
 #
 
 lappend auto_path $conf(pkg)
-package require auth
 package require webapp
 package require pgsql
 

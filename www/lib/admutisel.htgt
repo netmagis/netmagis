@@ -1,5 +1,5 @@
 {
-\* $Id: admutisel.htgt,v 1.2 2007-08-29 10:52:00 pda Exp $
+\* $Id: admutisel.htgt,v 1.3 2007-10-09 12:28:14 jean Exp $
 \modele {texte}
 
 \set {auteur} {pda}
@@ -29,7 +29,7 @@
 	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
 	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
 	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
-	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
 	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
 	}

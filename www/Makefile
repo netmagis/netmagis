@@ -1,7 +1,7 @@
 #
 # Makefile pour lancer l'installation de l'application dns
 #
-# $Id: Makefile,v 1.2 2007-08-29 10:51:56 pda Exp $
+# $Id: Makefile,v 1.3 2007-10-09 12:28:14 jean Exp $
 #
 
 TCLSH	= /usr/local/bin/tclsh8.4
@@ -41,6 +41,9 @@ COULEUR = "\#10C090"
 # Version de l'application
 VERSION = 1.3.9
 
+# URL pour modifier le mot de passe
+PASSWDURL = https://www-crc.u-strasbg.fr/applis/passwd/bin/passwd
+
 #
 # Motif de substitution à appliquer à chaque fichier installé
 #
@@ -59,6 +62,7 @@ SUBST	= \
 	-e 's|%DEFUSER%|$(DEFUSER)|' \
 	-e 's|%COULEUR%|$(COULEUR)|' \
 	-e 's|%AUTH%|$(AUTH)|' \
+	-e 's|%PASSWDURL%|$(PASSWDURL)|' \
 	-e 's|%BASE%|$(BASE)|'
 
 #
