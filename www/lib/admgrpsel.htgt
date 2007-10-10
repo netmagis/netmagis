@@ -1,9 +1,9 @@
 {
-\* $Id: admgrpsel.htgt,v 1.3 2007-10-09 12:28:14 jean Exp $
+\* $Id: admgrpsel.htgt,v 1.4 2007-10-10 16:06:18 jean Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {21/05/2002}
+\set {date}   {09/10/2007}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
@@ -42,13 +42,11 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Modification des caractéristiques d'un groupe}
+    \titre {1} {Modification des groupes et des correspondants}
 
-    Sélectionnez le groupe à modifier~:
-
-    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/admgrpliste">
-	%MENUGROUPE%
-	<INPUT TYPE="SUBMIT" VALUE="Sélectionner">
+    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/admgrpedit">
+	Sélectionnez le groupe à modifier~: %MENUGROUPE%
+	<INPUT TYPE="SUBMIT" VALUE="Ok">
     </FORM>
 }
 

@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpmodif,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: admgrpmodif,v 1.4 2007-10-10 16:06:18 jean Exp $
 
 #
 # Script pour enregistrer les caractéristiques associées à un groupe
@@ -8,8 +8,11 @@
 # Appelé par : index.htgt
 #
 # Paramètres (formulaire ou URL) :
-#	- groupe : nom du groupe
+#	- groupe : nom du groupe originel
+#	- nouvgroupe : nom du groupe modifié (eventuellement)
+#	- admin : droit d'administration (0 ou 1)
 #	- confirm : oui ou non
+#	- loginN : les logins des membres du groupe
 #	- domaineN : les noms des domaines validés pour ce groupe
 #	- tridomN : la classe de tri d'un domaine (si vide, suppression)
 #	- rolemailN : capacité d'éditer les rôles mail pour ce domaine (0 ou 1)
@@ -30,6 +33,7 @@
 #   2004/02/12 : pda/jean : ajout rôles
 #   2004/08/06 : pda/jean : extensions des droits sur les réseaux
 #   2005/04/08 : pda/jean : profils dhcp
+#   2007/10/10 : pda/jean : centralisation de l'administration des groupes
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -49,6 +53,8 @@ set conf(libdns)	$conf(lib)/libdns.tcl
 set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/admgrpmodif.html
 set conf(confirm)	$conf(lib)/admgrpconfirm.html
+set conf(confsuppr)	$conf(lib)/admgrpconfsuppr.html
+set conf(supprok)	$conf(lib)/admgrpsupprok.html
 
 #
 # Quelques paramètres du script
@@ -61,6 +67,9 @@ set conf(nologin)	%NOLOGIN%
 set conf(form) {
 	{confirm		1 1}
 	{groupe			1 1}
+	{nouvgroupe		1 1}
+	{admin			1 1}
+	{login[0-9]+		0 9999}
 	{tridom[0-9]+		0 9999}
 	{domaine[0-9]+		0 9999}
 	{rolemail[0-9]+		0 9999}
@@ -93,6 +102,122 @@ package require arrgen
 source $conf(libdns)
 
 ##############################################################################
+# Procédures utilitaires
+##############################################################################
+
+#
+# Valider le nom du groupe, et récupérer son identifiant numérique
+#
+
+proc valide-groupe {dbfd groupe existant} {
+    global conf
+
+    set qgroupe [::pgsql::quote $groupe]
+    set idgrp -1
+    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$qgroupe'" tab {
+	set idgrp $tab(idgrp)
+    }
+
+    if {$existant} then {
+	# On veut que le groupe existe
+	if {$idgrp == -1} then {
+	    ::webapp::error-exit $conf(err) "Groupe '$groupe' non trouvé"
+	}
+    } else {
+	# On veut que le groupe n'existe pas encore
+	if {$idgrp != -1} then {
+	    ::webapp::error-exit $conf(err) "Le groupe '$groupe' existe déjà"
+	}
+    }
+
+    return $idgrp
+}
+
+#
+# Suppression d'un groupe
+#
+
+proc supprime-groupe {dbfd idgrp} {
+
+    set ltab {groupe corresp dr_reseau dr_mbox dr_ip dr_dom dr_dhcpprofil} 
+    if {! [::pgsql::lock $dbfd $ltab msg]} then {
+	return $msg
+    } 
+
+    #
+    # Supprime les droits
+    #
+
+    foreach table {dr_reseau dr_mbox dr_ip dr_dom dr_dhcpprofil} {
+	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    ::pgsql::unlock $dbfd "abort" m
+	    return $msg
+	}
+    }
+
+    #
+    # Extrait tous les correspondants qui doivent rester orphelins
+    #
+
+    set sql "SELECT corresp.idcor FROM corresp, rr
+		WHERE corresp.idgrp = $idgrp AND rr.idcor = corresp.idcor
+		GROUP BY corresp.idcor"
+    
+    pg_select $dbfd $sql tab {
+	lappend lidcor $tab(idcor)
+    }
+
+    # 
+    # Vérifie que le groupe orphelin existe et le crée si nécessaire
+    # 
+
+    if {[llength $lidcor] > 0} then {
+	set idorphelin -1
+	pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = ''" tab {
+	    set idorphelin $tab(idgrp)
+	}
+	
+	if {$idorphelin == -1} then {
+	    set sql "INSERT INTO groupe (nom,admin) VALUES ('',0)"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		::pgsql::unlock $dbfd "abort" m
+		return $msg
+	    } 
+	    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = ''" tab {
+		set idorphelin $tab(idgrp)
+	    }
+	}
+    
+	set lcor [join $lidcor ","]
+	set sql "UPDATE corresp SET idgrp = $idorphelin, present = 0
+		    WHERE idcor IN ($lcor)"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    ::pgsql::unlock $dbfd "abort" m
+	    return $msg
+	} 
+    }
+
+    #
+    # Supprime les correspondants restants et le groupe
+    #
+
+    foreach table {corresp groupe} {
+	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    ::pgsql::unlock $dbfd "abort" m
+	    return $msg
+	}
+    }
+
+    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+	return $msg
+    }
+
+    return ""
+}
+
+##############################################################################
 # Programme principal
 ##############################################################################
 
@@ -106,21 +231,87 @@ proc main {} {
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
 			$conf(form) ftab dbfd login tabcor
 
-    set groupe [lindex $ftab(groupe) 0]
-    set confirm [lindex $ftab(confirm) 0]
+    set groupe     [lindex $ftab(groupe) 0]
+    set nouvgroupe [lindex $ftab(nouvgroupe) 0]
+    set confirm    [lindex $ftab(confirm) 0]
 
     #
-    # Valider le nom du groupe, et récupérer son identifiant numérique
+    # Déterminer dans quel cas on se trouve
     #
 
-    set qgroupe [::pgsql::quote $groupe]
-    set idgrp -1
-    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$qgroupe'" tab {
-	set idgrp $tab(idgrp)
+    set etat [string equal $groupe ""][string equal $nouvgroupe ""] 
+    switch $etat {
+	11 {
+	    ::webapp::error-exit $conf(err) "Il faut saisir un nom de groupe"
+	}
+	01 {
+	    set action "suppression"
+	}
+	10 {
+	    set action "création"
+	    valide-groupe $dbfd $nouvgroupe 0
+	}
+	00 {
+	    set action "édition"
+	    set idgrp [valide-groupe $dbfd $groupe 1]
+
+	    # Renommage
+	    if {! [string equal $groupe $nouvgroupe]} then {
+		valide-groupe $dbfd $nouvgroupe 0
+	    }
+	}
     }
 
-    if {$idgrp == -1} then {
-	::webapp::error-exit $conf(err) "Groupe '$groupe' non trouvé"
+    #
+    # Suppression
+    #
+
+    if {[string equal $action "suppression"]} then {
+	# Suppression
+	set idgrp [valide-groupe $dbfd $groupe 1]
+	if {! [string equal $confirm "oui"]} then {
+	    # Demander confirmation
+	    set ftab(confirm)	{oui}
+	    set lchamps [array names ftab]
+	    set hidden  [::webapp::hide-parameters $lchamps ftab]
+	    ::webapp::send html [::webapp::file-subst $conf(confsuppr) \
+				[list \
+					[list %GROUPE%	$groupe] \
+					[list %HIDDEN%	$hidden] \
+				    ] \
+			    ]
+	} else {
+	    # Procéder à la suppression
+	    set msg [supprime-groupe $dbfd $idgrp]
+	    if {! [string equal $msg ""]} then {
+		::webapp::error-exit $conf(err) \
+				    "Suppression impossible ($msg)"
+	    }
+	    ::webapp::send html [::webapp::file-subst $conf(supprok) \
+				[list \
+					[list %GROUPE%	$groupe] \
+				    ] \
+			    ]
+	}
+	exit 0
+    }
+
+    #
+    # Tout ce qui suit concerne la creation ou la modification d'un
+    # groupe existant
+    #
+    
+::webapp::error-exit $conf(err) "OK"
+
+## DEBUT VALIDATION EXISTANCE ET DROITS#####################################
+
+    #
+    # Tester le champ admin
+    #
+
+    set admin [lindex $ftab(admin) 0]
+    if {! ([string equal $admin 0] || [string equal $admin 1])} {
+	::webapp::error-exit $conf(err) "Champ 'admin' invalide"
     }
 
     #
@@ -287,6 +478,8 @@ proc main {} {
 	incr n
     }
 
+## FIN VALIDATION EXISTANCE ET DROITS ####################################
+
     #
     # Tester la cohérence des données
     #
@@ -392,6 +585,7 @@ proc main {} {
 	    exit 0
 	}
     }
+## FIN VALIDATION COHERENCE ####################################
 
     #
     # Si on arrive ici, c'est que les données sont cohérentes,
@@ -402,9 +596,26 @@ proc main {} {
     # fourni dans le formulaire
     #
 
-    set cmd {}
+    set ltab {groupe corresp dr_reseau dr_mbox dr_ip dr_dom dr_dhcpprofil} 
+    if {! [::pgsql::lock $dbfd $ltab msg]} then {
+	return $msg
+    } 
 
-    lappend cmd "LOCK dr_dom ; LOCK dr_reseau ; LOCK dr_ip"
+    
+
+    # Création du groupe si nécessaire
+
+    if {[string equal $action "création"]} then {
+	set sql "INSERT INTO groupe (nom,admin)
+		    VALUES ('$nouvgroupe',$admin)"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    ::pgsql::unlock $dbfd "abort" m
+	    return $msg
+	} 
+	pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = ''" tab {
+	    set idorphelin $tab(idgrp)
+	}
+    }
 
     # Les domaines autorisés pour le groupe
 

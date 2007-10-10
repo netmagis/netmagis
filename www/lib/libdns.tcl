@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.3 2007-10-05 15:31:03 jean Exp $
+# $Id: libdns.tcl,v 1.4 2007-10-10 16:06:18 jean Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -2485,6 +2485,7 @@ proc couple-domaine-par-corresp {dbfd idcor where} {
 #
 # Historique
 #   2006/02/17 : pda/jean/zamboni : création
+#   2007/10/10 : pda/jean         : ignorer le groupe des orphelins
 #
 
 proc liste-groupes {dbfd {n 1}} {
@@ -2492,7 +2493,7 @@ proc liste-groupes {dbfd {n 1}} {
     for {set i 0} {$i < $n} {incr i} {
 	lappend l "nom"
     }
-    return [::pgsql::getcols $dbfd groupe "" "nom ASC" $l]
+    return [::pgsql::getcols $dbfd groupe "nom <> ''" "nom ASC" $l]
 }
 
 #

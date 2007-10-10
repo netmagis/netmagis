@@ -1,5 +1,5 @@
 {
-\* $Id: admin.htgt,v 1.3 2007-10-09 12:28:14 jean Exp $
+\* $Id: admin.htgt,v 1.4 2007-10-10 16:06:18 jean Exp $
 \modele {texte}
 
 \set {auteur} {pda}
@@ -81,14 +81,7 @@
 	\item {Modifier les \lien {MX} {admmxsel}}
 	\item {Modifier les \lien {profils DHCP}
 		{admrefliste?type=dhcpprofil}}
-    }
-
-    \titre {2} {Administration des correspondants et des groupes}
-
-    \liste {
-	\item {Gérer les \lien {correspondants} {admutil}}
-	\item {Modifier les \lien {groupes} {admrefliste?type=groupe}}
-	\item {Modifier les \lien {caractéristiques des groupes} {admgrpsel}}
+	\item {Modifier les \lien {groupes et les correspondants} {admgrpsel}}
     }
 
     \titre {2} {Actions}
