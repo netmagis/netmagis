@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpmodif,v 1.4 2007-10-10 16:06:18 jean Exp $
+# $Id: admgrpmodif,v 1.5 2007-10-12 15:12:04 jean Exp $
 
 #
 # Script pour enregistrer les caractéristiques associées à un groupe
@@ -137,7 +137,7 @@ proc valide-groupe {dbfd groupe existant} {
 # Suppression d'un groupe
 #
 
-proc supprime-groupe {dbfd idgrp} {
+proc supprime-groupe {dbfd idgrp idorphelin} {
 
     set ltab {groupe corresp dr_reseau dr_mbox dr_ip dr_dom dr_dhcpprofil} 
     if {! [::pgsql::lock $dbfd $ltab msg]} then {
@@ -169,26 +169,10 @@ proc supprime-groupe {dbfd idgrp} {
     }
 
     # 
-    # Vérifie que le groupe orphelin existe et le crée si nécessaire
+    # Réaffecter ces correspondants
     # 
 
     if {[llength $lidcor] > 0} then {
-	set idorphelin -1
-	pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = ''" tab {
-	    set idorphelin $tab(idgrp)
-	}
-	
-	if {$idorphelin == -1} then {
-	    set sql "INSERT INTO groupe (nom,admin) VALUES ('',0)"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		::pgsql::unlock $dbfd "abort" m
-		return $msg
-	    } 
-	    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = ''" tab {
-		set idorphelin $tab(idgrp)
-	    }
-	}
-    
 	set lcor [join $lidcor ","]
 	set sql "UPDATE corresp SET idgrp = $idorphelin, present = 0
 		    WHERE idcor IN ($lcor)"
@@ -223,6 +207,7 @@ proc supprime-groupe {dbfd idgrp} {
 
 proc main {} {
     global conf
+    global ah
 
     #
     # Initialisation
@@ -234,6 +219,26 @@ proc main {} {
     set groupe     [lindex $ftab(groupe) 0]
     set nouvgroupe [lindex $ftab(nouvgroupe) 0]
     set confirm    [lindex $ftab(confirm) 0]
+
+    #
+    # Créer le groupe des orphelins si nécessaire
+    #
+
+    set idorphelin -1
+    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = ''" tab {
+	set idorphelin $tab(idgrp)
+    }
+    
+    if {$idorphelin == -1} then {
+	set sql "INSERT INTO groupe (nom,admin) VALUES ('',0)"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    ::pgsql::unlock $dbfd "abort" m
+	    return $msg
+	} 
+	pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = ''" tab {
+	    set idorphelin $tab(idgrp)
+	}
+    }
 
     #
     # Déterminer dans quel cas on se trouve
@@ -250,6 +255,7 @@ proc main {} {
 	10 {
 	    set action "création"
 	    valide-groupe $dbfd $nouvgroupe 0
+	    set idgrp -1
 	}
 	00 {
 	    set action "édition"
@@ -267,7 +273,6 @@ proc main {} {
     #
 
     if {[string equal $action "suppression"]} then {
-	# Suppression
 	set idgrp [valide-groupe $dbfd $groupe 1]
 	if {! [string equal $confirm "oui"]} then {
 	    # Demander confirmation
@@ -282,7 +287,7 @@ proc main {} {
 			    ]
 	} else {
 	    # Procéder à la suppression
-	    set msg [supprime-groupe $dbfd $idgrp]
+	    set msg [supprime-groupe $dbfd $idgrp $idorphelin]
 	    if {! [string equal $msg ""]} then {
 		::webapp::error-exit $conf(err) \
 				    "Suppression impossible ($msg)"
@@ -301,7 +306,6 @@ proc main {} {
     # groupe existant
     #
     
-::webapp::error-exit $conf(err) "OK"
 
 ## DEBUT VALIDATION EXISTANCE ET DROITS#####################################
 
@@ -310,8 +314,58 @@ proc main {} {
     #
 
     set admin [lindex $ftab(admin) 0]
-    if {! ([string equal $admin 0] || [string equal $admin 1])} {
+    if {! ([string equal $admin 0] || [string equal $admin 1])} then {
 	::webapp::error-exit $conf(err) "Champ 'admin' invalide"
+    }
+
+    #
+    # Tester les logins :
+    # - récupérer tous les logins
+    # - noter les orphelins à réaffecter
+    # - signaler une erreur si le login est déjà affecté à un autre groupe
+    # - noter les logins à créer
+    # - noter les logins à supprimer
+    #
+    
+    # On récupère tous les correspondants
+
+    set sql "SELECT corresp.login, groupe.nom, groupe.idgrp
+		FROM corresp, groupe
+		WHERE corresp.idgrp = groupe.idgrp"
+    pg_select $dbfd $sql tab {
+	if {[string equal $tab(nom) ""]} then {
+	    set torph($tab(login)) ""
+	} else {
+	    set tcor($tab(login)) $tab(idgrp)
+	}
+    }
+
+    set lcorcreate {}
+    set lcoraffect {}
+    set lcordelete {}
+    set n 1
+    while {[info exists ftab(login$n)]} {
+	set login [string trim [lindex $ftab(login$n) 0]]
+	if {[string length $login] > 0} then {
+	    if {[info exists torph($login)]} then {
+		lappend lcoraffect $login
+	    } elseif {[info exists tcor($login)]} then {
+		if {$idgrp != $tcor($login)} then {
+		    ::webapp::error-exit $conf(err) \
+			"Login '$login' déjà affecté au groupe '$groupe'"
+		}
+		unset tcor($login)
+	    } else {
+		lappend lcorcreate $login
+	    }
+	}
+	incr n
+    }
+
+    foreach login [array names tcor] {
+	if {$tcor($login) == $idgrp} then {
+	    lappend lcordelete $login
+	}
     }
 
     #
@@ -503,6 +557,32 @@ proc main {} {
 
 	set incoherences {}
 
+	# logins inexistants dans la base d'authentification
+
+	set u [::webapp::authuser create %AUTO%]
+	set n 1
+	while {[info exists ftab(login$n)]} {
+	    set login [string trim [lindex $ftab(login$n) 0]]
+	    if {[string length $login] > 0} then {
+		if {[catch {set nb [$ah getuser $login $u]} m]} then {
+		    ::webapp::error-exit $conf(err) \
+			"Problème dans la base d'authentification ($m)"
+		}
+		switch $nb {
+		    0 {
+			lappend incoherences "Le login '$login' n'existe pas"
+		    }
+		    1 {
+			# rien
+		    }
+		    default {
+			::webapp::error-exit $conf(err) "Login '$login' ambigu"
+		    }
+		}
+	    }
+	    incr n
+	}
+	
 	# au moins un domaine
 	if {[llength $liddom] == 0} then {
 	    lappend incoherences "Aucun domaine sélectionné"
@@ -601,21 +681,79 @@ proc main {} {
 	return $msg
     } 
 
-    
-
     # Création du groupe si nécessaire
 
     if {[string equal $action "création"]} then {
+	set ngroupe [::pgsql::quote $nouvgroupe]
 	set sql "INSERT INTO groupe (nom,admin)
-		    VALUES ('$nouvgroupe',$admin)"
+		    VALUES ('$ngroupe',$admin)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    return $msg
 	} 
-	pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = ''" tab {
-	    set idorphelin $tab(idgrp)
+    } else {
+
+	# Édition d'un groupe existant
+
+	set qgroupe [::pgsql::quote $groupe]
+
+	if {! [string equal $groupe $nouvgroupe]} then {
+
+	    # Renommage du groupe
+
+	    set sql "UPDATE groupe SET nom = '$ngroupe' WHERE nom = '$qgroupe'"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		::pgsql::unlock $dbfd "abort" m
+		return $msg
+	    }
+	    set groupe $nouvgroupe
 	}
     }
+
+    # Récupère l'identifiant du groupe
+
+    set qgroupe [::pgsql::quote $groupe]
+    set idgrp -1
+    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$qgroupe'" tab {
+	set idgrp $tab(idgrp)
+    }
+    if {$idgrp == -1} then {
+	::webapp::error-exit $conf(err) \
+		"Erreur interne : groupe '$groupe' non trouvé"
+    }
+
+    # Créer ou affecter les correspondants
+
+    if {[llength $lcorcreate] > 0} then {
+	foreach login $lcorcreate {
+	    set qlogin [::pgsql::quote $login]
+	    lappend cmd "INSERT INTO corresp (login,present,idgrp)
+			    VALUES ('$qlogin',1,$idgrp)"
+	}
+    }
+    if {[llength $lcoraffect] > 0} then {
+	foreach login $lcoraffect {
+	    set qlogin [::pgsql::quote $login]
+	    lappend cmd "UPDATE corresp SET idgrp = $idgrp
+			    WHERE login = '$qlogin'"
+	}
+    }
+
+    # On réaffecte tous les correspondants à supprimer au groupe orphelin
+
+    if {[llength $lcordelete] > 0} then {
+	foreach login $lcoraffect {
+	    set qlogin [::pgsql::quote $login]
+	    lappend cmd "UPDATE corresp SET idgrp = $idorphelin
+			    WHERE login = '$qlogin'"
+	}
+    }
+
+    # On nettoie tous les correspondants inutiles
+
+    lappend cmd "DELETE FROM corresp 
+			WHERE idgrp = $idorphelin 
+			    AND idcor NOT IN (SELECT DISTINCT idcor FROM rr)"
 
     # Les domaines autorisés pour le groupe
 
