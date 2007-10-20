@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.8 2007-07-18 18:19:48 pda Exp $
+# $Id: parse-cisco.tcl,v 1.9 2007-10-20 19:13:56 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -1245,21 +1245,23 @@ proc cisco-post-process {model fdout eq tab} {
 
     foreach iface $t(eq!$eq!if) {
 	if {! [regexp {^(Vlan|Tunnel|Null|Loopback|BVI)([0-9]+)$} $iface bidon type vlan]} then {
-	    set linkname $t(eq!$eq!if!$iface!link!name)
-	    set linktype $t(eq!$eq!if!$iface!link!type)
-	    set statname $t(eq!$eq!if!$iface!link!stat)
-	    if {[string equal $statname ""]} then {
-		set statname "-"
-	    }
-	    set descname $t(eq!$eq!if!$iface!link!desc)
-	    if {[string equal $descname ""]} then {
-		set descname "-"
-	    }
+	    if {[info exists t(eq!$eq!if!$iface!link!name)]} then {
+		set linkname $t(eq!$eq!if!$iface!link!name)
+		set linktype $t(eq!$eq!if!$iface!link!type)
+		set statname $t(eq!$eq!if!$iface!link!stat)
+		if {[string equal $statname ""]} then {
+		    set statname "-"
+		}
+		set descname $t(eq!$eq!if!$iface!link!desc)
+		if {[string equal $descname ""]} then {
+		    set descname "-"
+		}
 
-	    set nodeL1 [newnode]
-	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname"
+		set nodeL1 [newnode]
+		puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname"
 
-	    set t(eq!$eq!if!$iface!node) $nodeL1
+		set t(eq!$eq!if!$iface!node) $nodeL1
+	    }
 	}
     }
 
