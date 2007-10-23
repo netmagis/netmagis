@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpmodif,v 1.5 2007-10-12 15:12:04 jean Exp $
+# $Id: admgrpmodif,v 1.6 2007-10-23 15:46:25 pda Exp $
 
 #
 # Script pour enregistrer les caractéristiques associées à un groupe
@@ -336,7 +336,7 @@ proc main {} {
 	if {[string equal $tab(nom) ""]} then {
 	    set torph($tab(login)) ""
 	} else {
-	    set tcor($tab(login)) $tab(idgrp)
+	    set tcor($tab(login)) [list $tab(idgrp) $tab(nom)]
 	}
     }
 
@@ -350,9 +350,10 @@ proc main {} {
 	    if {[info exists torph($login)]} then {
 		lappend lcoraffect $login
 	    } elseif {[info exists tcor($login)]} then {
-		if {$idgrp != $tcor($login)} then {
+		if {$idgrp != [lindex $tcor($login) 0]} then {
+		    set g [lindex $tcor($login) 1]
 		    ::webapp::error-exit $conf(err) \
-			"Login '$login' déjà affecté au groupe '$groupe'"
+			"Login '$login' déjà affecté au groupe '$g'"
 		}
 		unset tcor($login)
 	    } else {
@@ -363,7 +364,7 @@ proc main {} {
     }
 
     foreach login [array names tcor] {
-	if {$tcor($login) == $idgrp} then {
+	if {[lindex $tcor($login) 0] == $idgrp} then {
 	    lappend lcordelete $login
 	}
     }
@@ -700,7 +701,7 @@ proc main {} {
 	if {! [string equal $groupe $nouvgroupe]} then {
 
 	    # Renommage du groupe
-
+	    set ngroupe [::pgsql::quote $nouvgroupe]
 	    set sql "UPDATE groupe SET nom = '$ngroupe' WHERE nom = '$qgroupe'"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
@@ -722,6 +723,9 @@ proc main {} {
 		"Erreur interne : groupe '$groupe' non trouvé"
     }
 
+    # Mettre a jour les attributs du groupe
+    lappend cmd "UPDATE groupe SET admin = $admin WHERE idgrp = $idgrp"
+
     # Créer ou affecter les correspondants
 
     if {[llength $lcorcreate] > 0} then {
@@ -742,7 +746,7 @@ proc main {} {
     # On réaffecte tous les correspondants à supprimer au groupe orphelin
 
     if {[llength $lcordelete] > 0} then {
-	foreach login $lcoraffect {
+	foreach login $lcordelete {
 	    set qlogin [::pgsql::quote $login]
 	    lappend cmd "UPDATE corresp SET idgrp = $idorphelin
 			    WHERE login = '$qlogin'"
@@ -806,10 +810,6 @@ proc main {} {
     # Modifications dans la base
     #
 
-    if {! [::pgsql::lock $dbfd {} msg]} then {
-	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
-    }
-
     foreach sql $cmd {
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	   ::pgsql::unlock $dbfd "abort" m
@@ -829,17 +829,11 @@ proc main {} {
     #
 
     set grospaquet [info-groupe $dbfd $idgrp]
-    set tabreseaux        [lindex $grospaquet 0]
-    set tabcidrhorsreseau [lindex $grospaquet 1]
-    set tabdomaines       [lindex $grospaquet 2]
-    set tabdhcpprofils    [lindex $grospaquet 3]
-
-    if {[string length $tabcidrhorsreseau] == 0} then {
-	set titrecidrhorsreseau ""
-    } else {
-	set titrecidrhorsreseau "Droits non rattachés à des réseaux"
-    }
-
+    set tablogins         [lindex $grospaquet 0]
+    set tabreseaux        [lindex $grospaquet 1]
+    set tabcidrhorsreseau [lindex $grospaquet 2]
+    set tabdomaines       [lindex $grospaquet 3]
+    set tabdhcpprofils    [lindex $grospaquet 4]
 
     #
     # Sortie du résultat
@@ -848,8 +842,8 @@ proc main {} {
     ::webapp::send html [::webapp::file-subst $conf(page) \
 		    [list \
 			[list %GROUPE% $groupe] \
+			[list %TABLOGINS% $tablogins] \
 			[list %TABRESEAUX% $tabreseaux] \
-			[list %TITRECIDRHORSRESEAU% $titrecidrhorsreseau] \
 			[list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
 			[list %TABDOMAINES% $tabdomaines] \
 			[list %TABDHCPPROFILS% $tabdhcpprofils] \

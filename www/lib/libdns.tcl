@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.4 2007-10-10 16:06:18 jean Exp $
+# $Id: libdns.tcl,v 1.5 2007-10-23 15:46:27 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -2498,8 +2498,8 @@ proc liste-groupes {dbfd {n 1}} {
 
 #
 # Fournit du code HTML pour chaque groupe d'informations associé à un
-# groupe - les réseaux, les droits hors réseaux, les domaines et les
-# profils DHCP.
+# groupe - les correspondants, les réseaux, les droits hors réseaux, les
+# domaines et les profils DHCP.
 #
 # Entrée :
 #   - paramètres :
@@ -2514,10 +2514,22 @@ proc liste-groupes {dbfd {n 1}} {
 # Historique
 #   2002/05/23 : pda/jean : spécification et conception
 #   2005/04/06 : pda      : ajout des profils dhcp
+#   2007/10/23 : pda/jean : ajout des correspondants
 #
 
 proc info-groupe {dbfd idgrp} {
     global libconf
+
+    #
+    # Récupération des correspondants
+    #
+
+    set lcor {}
+    set sql "SELECT login FROM corresp WHERE idgrp=$idgrp ORDER BY login"
+    pg_select $dbfd $sql tab {
+	lappend lcor [::webapp::html-string $tab(login)]
+    }
+    set tabcorresp [join $lcor ", "]
 
     #
     # Récupération des plages auxquelles a droit le correspondant
@@ -2587,7 +2599,11 @@ proc info-groupe {dbfd idgrp} {
 	lappend donnees [list Droits Droits [join $droits "\n"]]
     }
 
-    set tabreseaux [::arrgen::output "html" $libconf(tabreseaux) $donnees]
+    if {[llength $donnees] > 0} then {
+	set tabreseaux [::arrgen::output "html" $libconf(tabreseaux) $donnees]
+    } else {
+	set tabreseaux "Aucun réseau autorisé"
+    }
 
     #
     # Sélectionner les droits hors des plages réseaux identifiées
@@ -2627,7 +2643,7 @@ proc info-groupe {dbfd idgrp} {
 	set tabcidrhorsreseau [::arrgen::output "html" \
 						$libconf(tabreseaux) $donnees]
     } else {
-	set tabcidrhorsreseau ""
+	set tabcidrhorsreseau "Aucun (tout va bien)"
     }
 
 
@@ -2656,7 +2672,7 @@ proc info-groupe {dbfd idgrp} {
     if {[llength $donnees] > 0} then {
 	set tabdomaines [::arrgen::output "html" $libconf(tabdomaines) $donnees]
     } else {
-	set tabdomaines "Aucun profil DHCP actif"
+	set tabdomaines "Aucun domaine autorisé"
     }
 
     #
@@ -2678,7 +2694,12 @@ proc info-groupe {dbfd idgrp} {
 	set tabdhcpprofil "Aucun profil DHCP autorisé"
     }
 
-    return [list $tabreseaux $tabcidrhorsreseau $tabdomaines $tabdhcpprofil]
+    return [list    $tabcorresp \
+		    $tabreseaux \
+		    $tabcidrhorsreseau \
+		    $tabdomaines \
+		    $tabdhcpprofil \
+	    ]
 }
 
 #

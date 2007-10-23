@@ -1,5 +1,5 @@
 {
-\* $Id: admgrpmodif.htgt,v 1.2 2007-08-29 10:52:00 pda Exp $
+\* $Id: admgrpmodif.htgt,v 1.3 2007-10-23 15:46:27 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -44,11 +44,15 @@
 
     Les informations du groupe '\gras {%GROUPE%}' ont été mises à jour~:
 
+    \titre {2} {Correspondants}
+
+    %TABLOGINS%
+
     \titre {2} {Réseaux}
 
     %TABRESEAUX%
 
-    \titre {2} {%TITRECIDRHORSRESEAU%}
+    \titre {2} {Droits non rattachés à des réseaux}
 
     %TABCIDRHORSRESEAU%
 
