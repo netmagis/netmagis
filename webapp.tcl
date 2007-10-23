@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.4 2007-10-05 15:23:47 jean Exp $
+# $Id: webapp.tcl,v 1.5 2007-10-23 14:18:11 pda Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -22,6 +22,7 @@
 #   2005/04/13 : pda : correction d'un bug dans form-text
 #   2006/08/29 : pda : ajout de import-vars
 #   2007/10/05 : pda/jean : ajout des objets auth et user
+#   2007/10/23 : pda/jean : ajout de l'objet log
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -1917,6 +1918,7 @@ snit::type ::webapp::authuser {
 #
 # Historique
 #   2007/10/05 : pda/jean : intégration et documentation
+#
 
 snit::type ::webapp::authbase {
 
@@ -2084,5 +2086,128 @@ snit::type ::webapp::authbase {
 	    }
 	}
 	set connected 0
+    }
+}
+
+#
+# Classe "systeme de log"
+#
+# Représente l'acces a un support de journaux
+#
+# Options :
+#   method  : "postgresql", "file", "syslog"
+#   medium  : paramètres 
+#   subsys  : nom générique de l'application
+#
+# Méthodes
+#   log     : écrit un événement dans le journal
+#
+# Historique
+#   2007/10/23 : pda/jean : intégration et documentation
+#
+
+snit::type ::webapp::log {
+
+    # method: postgresql, file, syslog
+    option -method  -default "none"
+
+    # medium for postgresql :
+    #	host ...
+    #	dbname ...
+    #	table ...
+    #	user ...
+    #	password ...
+    #   (table must contain the columns : date, subsys, event, login, ip, msg)
+    # medium for file :
+    #   file ...
+    # medium for syslog :
+    #   host ...
+    #   facility ...
+    #   priority ...
+    option -medium      -default {}
+
+    # subsystem
+    option -subsys -default "none"
+
+    variable handle ""
+    variable table "log"
+
+    constructor {args} {
+	$self configurelist $args
+
+	switch $options(-method) {
+	    none {
+		error "Wrong # args: should be -method ... -medium ..."
+	    }
+	    postgresql {
+		array set x $options(-medium)
+		set db {}
+		foreach c {host dbname user password} {
+		    if {[info exists x($c)]} then {
+			lappend db "$c=$x($c)"
+		    }
+		}
+		set db [join $db " "]
+		if {[catch {set handle [pg_connect -conninfo $db]} msg]} then {
+		    error "Cannot connect: $msg"
+		}
+		if {[info exists x(table)]} then {
+		    set table $x(table)
+		}
+	    }
+	    file {
+		# XXX
+	    }
+	    syslog {
+		# XXX
+	    }
+	    default {
+		error "Unknown method '$options(-method)'"
+	    }
+	}
+    }
+    
+    destructor {
+	switch $options(-method) {
+	    postgresql {
+		pg_disconnect $handle
+	    }
+	    file {
+	    }
+	    syslog {
+	    }
+	    default {
+		error "Unknown method '$options(-method)'"
+	    }
+	}	
+    }
+
+    method log {event login ip msg} {
+
+	switch $options(-method) {
+	    postgresql {
+		foreach c {event login ip msg} {
+		    if {[string equal [set $c] ""]} then {
+			set t($c) NULL
+		    } else {
+			set t($c) "'[::pgsql::quote [set $c]]'"
+		    }
+		}
+		set t(subsys) "'[::pgsql::quote $options(-subsys)]'"
+		set sql "INSERT INTO $table (subsys,event,login,ip,msg)
+			    VALUES ($t(subsys),$t(event),$t(login),
+				    $t(ip),$t(msg))"
+		if {! [::pgsql::execsql $handle $sql m]} then {
+		    error "Cannot write log ($m)"
+		}
+	    }
+	    file {
+	    }
+	    syslog {
+	    }
+	    default {
+		error "Unknown method '$options(-method)'"
+	    }
+	}
     }
 }
