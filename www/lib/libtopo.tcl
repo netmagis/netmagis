@@ -102,7 +102,7 @@ proc init-topo {nologin base pageerr attr form _ftab _dbfd _uid _tabuid _ouid _t
 	#
 
 	if {$tabuid(idcor) == -1} then {
-	    ::webapp::error-exit $pagerr \
+	    ::webapp::error-exit $pageerr \
 		"'$uid' n'est pas dans la base des correspondants."
 	}
 

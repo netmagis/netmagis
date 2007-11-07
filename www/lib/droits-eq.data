@@ -64,7 +64,6 @@ ipcb			^ipcb-
 ipcms			^ipcms-
 ipst			^ipst-
 ircad			^ircad-
-ires			^ires-
 isu			^isu-
 iufm			^iufm-
 iutlptbiasioa		^(iut-nord-|iut-poe|iut-ap)
@@ -108,3 +107,4 @@ urs-pege		^$
 virologie		^microbio-
 wifidefault		^$
 zoologie		^zoologie-
+ires			^iphc-
