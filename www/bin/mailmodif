@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: mailmodif,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: mailmodif,v 1.4 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour présenter la page de saisie de l'hébergeur d'une adresse
@@ -17,6 +17,7 @@
 #
 # Historique
 #   2004/02/12 : pda/jean : création
+#   2007/10/25 : jean     : log des actions de modification
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -43,6 +44,7 @@ set conf(pageok)	$conf(lib)/mailmodif.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 # les champs du formulaire
 set conf(form)		{
@@ -80,7 +82,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor
+			$conf(form) ftab dbfd login tabcor $conf(log)
 
     set idcor $tabcor(idcor)
 
@@ -144,6 +146,7 @@ proc main {} {
 	::webapp::error-exit $conf(err) "Transaction impossible\n$msg"
     }
 
+    set lm ""
     switch "$videoldnomh-$videnewnomh" {
 	1-1 {
 	    ::webapp::error-exit $conf(err) \
@@ -164,7 +167,7 @@ proc main {} {
 		if {! [string equal $msg ""]} then {
 		    ::webapp::error-exit $conf(err) \
 			    "Insertion de '$toutnom' impossible ($msg)"
-		}
+		} 
 	    }
 
 	    #
@@ -190,6 +193,8 @@ proc main {} {
 		::pgsql::unlock $dbfd "abort" m
 		::webapp::error-exit $conf(err) "Impossible d'insérer\n$msg"
 	    }
+
+	    set lm "ajout role mail $toutnom -> $toutheb"
 	}
 	0-1 {
 	    #
@@ -217,6 +222,8 @@ proc main {} {
 		::pgsql::unlock $dbfd "abort" m
 		::webapp::error-exit $conf(err) "Impossible de supprimer\n$msg"
 	    }
+
+	    set lm "suppression du role mail $toutnom -> $toutheb"
 	}
 	0-0 {
 	    #
@@ -236,6 +243,7 @@ proc main {} {
 		::pgsql::unlock $dbfd "abort" m
 		::webapp::error-exit $conf(err) "Impossible de modifier\n$msg"
 	    }
+	    set lm "modification du role mail $toutnom -> $toutheb"
 	}
     }
 
@@ -248,6 +256,8 @@ proc main {} {
 	::pgsql::unlock $dbfd "abort" m
 	::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
     }
+
+    writelog "modifrolemail" $tabcor(login) $lm
 
     #
     # Sortie du résultat

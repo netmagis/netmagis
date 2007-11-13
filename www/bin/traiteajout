@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traiteajout,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: traiteajout,v 1.4 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
@@ -41,6 +41,7 @@
 #   2004/01/14 : pda/jean : ajout IPv6
 #   2004/08/04 : pda/jean : ajout mac
 #   2005/04/08 : pda/jean : ajout dhcpprofil
+#   2007/10/25 : jean     : log des actions de modification
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -69,6 +70,7 @@ set conf(err)			$conf(lib)/erreur.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 # le champ discriminant pour la suite
 set conf(form)		{
@@ -126,7 +128,7 @@ source $conf(libdns)
 #   2005/04/08 : pda/jean : ajout iddhcpprofil
 #
 
-proc traiteajout-machine {dbfd idcor ft} {
+proc traiteajout-machine {dbfd idcor ft login} {
     global conf
     upvar $ft ftab
 
@@ -368,6 +370,7 @@ proc traiteajout-machine {dbfd idcor ft} {
 	    ::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
 	}
 
+
 	#
 	# Se rappeler du correspondant qui a effectué la modification
 	#
@@ -397,6 +400,8 @@ proc traiteajout-machine {dbfd idcor ft} {
 	    append adr " ($anciennesip)"
 	}
 
+	writelog "ajoutmachine" $login "ajout de $nom.$domaine ($adr)"
+
 	::webapp::send html [::webapp::file-subst $conf(page-ajout-machine) \
 				    [list \
 					    [list %NOM%         $nom] \
@@ -421,7 +426,7 @@ proc traiteajout-machine {dbfd idcor ft} {
 # Historique
 #   2002/04/19 : pda/jean : conception
 #
-proc traiteajout-alias {dbfd idcor ft} {
+proc traiteajout-alias {dbfd idcor ft login} {
     global conf
     upvar $ft ftab
 
@@ -492,6 +497,7 @@ proc traiteajout-alias {dbfd idcor ft} {
 	::webapp::error-exit $conf(err) "Impossible d'insérer l'alias : $msg"
     }
 
+    
     if {! [::pgsql::unlock $dbfd "commit" msg]} then {
        ::pgsql::unlock $dbfd "abort" m
        ::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
@@ -500,6 +506,9 @@ proc traiteajout-alias {dbfd idcor ft} {
     #
     # Sortie du résultat
     #
+
+    writelog "ajoutalias" $login \
+	"ajout de l'alias $nom.$domaine pointant vers $nomref.$domaineref"
 
     ::webapp::send html [::webapp::file-subst $conf(page-ajout-alias) \
 				    [list \
@@ -523,7 +532,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor
+			$conf(form) ftab dbfd login tabcor $conf(log)
 
     #
     # Valider l'action, lire les autres champs du formulaire,
@@ -540,7 +549,7 @@ proc main {} {
 	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
     }
 
-    traite$action $dbfd $tabcor(idcor) ftab
+    traite$action $dbfd $tabcor(idcor) ftab $tabcor(login)
 
     #
     # Déconnexion de la base

@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admparliste,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: admparliste,v 1.4 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script de présentation de la page des paramètres de la base
@@ -39,6 +39,7 @@ set conf(aide)		$conf(homeurl)/aideparam.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -106,7 +107,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			{} ftab dbfd login tabcor
+			{} ftab dbfd login tabcor $conf(log)
 
     #
     # Mise en forme des données dans le formulaire

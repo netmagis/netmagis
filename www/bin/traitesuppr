@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traitesuppr,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: traitesuppr,v 1.4 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour enregistrer les suppressions demandées par un correspondant.
@@ -27,6 +27,7 @@
 #   2004/01/14 : pda/jean : ajout IPv6
 #   2004/08/05 : pda/jean : ajout MAC
 #   2005/04/08 : pda/jean : ajout dhcpprofil
+#   2007/10/25 : jean     : log des actions de modification
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -57,6 +58,7 @@ set conf(err)			$conf(lib)/erreur.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 # le champ discriminant pour la suite
 set conf(form)		{
@@ -98,7 +100,7 @@ source $conf(libdns)
 # Historique
 #   2002/04/19 : pda/jean : conception
 #
-proc traitesuppr-nom {dbfd idcor ft} {
+proc traitesuppr-nom {dbfd idcor login ft} {
     global conf
     upvar $ft ftab
 
@@ -230,6 +232,10 @@ proc traitesuppr-nom {dbfd idcor ft} {
 		::pgsql::unlock $dbfd "abort" m
 		 ::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
 	    }
+
+	    set p "$trrref(nom).$trrref(domaine)"
+	    set logevt "suppralias"
+	    set logmsg "suppression de l'alias $nom.$domaine -> $p"
 	} else {
 	    #
 	    # Ce n'est pas un alias. Supprimer toutes les dépendances
@@ -242,6 +248,8 @@ proc traitesuppr-nom {dbfd idcor ft} {
 		::pgsql::unlock $dbfd "abort" m
 		::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
 	    }
+	    set logevt "supprnom"
+	    set logmsg "suppression totale de $nom.$domaine"
 	}
 
 	#
@@ -251,6 +259,8 @@ proc traitesuppr-nom {dbfd idcor ft} {
 	   ::pgsql::unlock $dbfd "abort" m
 	   ::webapp::error-exit $conf(err) "La suppression a échoué. Abandon.\n$msg"
 	}
+
+	writelog $logevt $login $logmsg
 
 	#
 	# Sortie du résultat pour dire que la suppression a été effectuée
@@ -274,7 +284,7 @@ proc traitesuppr-nom {dbfd idcor ft} {
 #   2002/04/26 : pda/jean : fin de la conception
 #   2002/05/03 : pda/jean : mémoriser la mise à jour par le correspondant
 #
-proc traitesuppr-ip {dbfd idcor ft} {
+proc traitesuppr-ip {dbfd idcor login ft} {
     global conf
     upvar $ft ftab
 
@@ -392,6 +402,9 @@ proc traitesuppr-ip {dbfd idcor ft} {
 		::webapp::error-exit $conf(err) "Mise à jour impossible.\n$msg"
 	    }
 
+	    set logevt "suppradr"
+	    set logmsg "suppression de l'adresse $adr de $nom.$domaine"
+
 	} else {
 	    #
 	    # Suppression de l'objet entier
@@ -401,6 +414,9 @@ proc traitesuppr-ip {dbfd idcor ft} {
 		::pgsql::unlock $dbfd "abort" m
 		::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
 	    }
+
+	    set logevt "suppradr"
+	    set logmsg "suppression totale de $nom.$domaine"
 	}
 
 	#
@@ -410,6 +426,8 @@ proc traitesuppr-ip {dbfd idcor ft} {
 	   ::pgsql::unlock $dbfd "abort" m
 	   ::webapp::error-exit $conf(err) "La suppression a échoué. Abandon.\n$msg"
 	}
+    
+	writelog $logevt $login $logmsg
 
     }
 
@@ -484,7 +502,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor
+			$conf(form) ftab dbfd login tabcor $conf(log)
 
     #
     # Valider l'action, lire les autres champs du formulaire,
@@ -501,7 +519,7 @@ proc main {} {
 	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
     }
 
-    traite$action $dbfd $tabcor(idcor) ftab
+    traite$action $dbfd $tabcor(idcor) $tabcor(login) ftab
 
     #
     # Déconnexion de la base

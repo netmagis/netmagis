@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpsel,v 1.4 2007-10-10 16:06:18 jean Exp $
+# $Id: admgrpsel,v 1.5 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour sélectionner un groupe dont il faut modifier les caractéristiques
@@ -39,6 +39,7 @@ set conf(page)		$conf(lib)/admgrpsel.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -68,7 +69,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			{} ftab dbfd login tabcor
+			{} ftab dbfd login tabcor $conf(log)
 
     #
     # Récupérer la liste des groupes pour la convertir en menu.

@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: droits,v 1.4 2007-10-23 15:23:35 pda Exp $
+# $Id: droits,v 1.5 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour consulter les droits associés à un correspondant
@@ -43,6 +43,7 @@ set conf(page)		$conf(lib)/droits.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 set conf(form)	{
 	{login	0 1}
@@ -77,7 +78,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) {} \
-		$conf(form) ftab dbfd login tabcor
+		$conf(form) ftab dbfd login tabcor $conf(log)
 
     #
     # Si l'utilisateur est un administrateur, l'autoriser à consulter

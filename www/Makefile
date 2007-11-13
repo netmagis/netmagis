@@ -1,7 +1,7 @@
 #
 # Makefile pour lancer l'installation de l'application dns
 #
-# $Id: Makefile,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: Makefile,v 1.4 2007-11-13 16:44:01 pda Exp $
 #
 
 TCLSH	= /usr/local/bin/tclsh8.4
@@ -63,7 +63,8 @@ SUBST	= \
 	-e 's|%COULEUR%|$(COULEUR)|' \
 	-e 's|%AUTH%|$(AUTH)|' \
 	-e 's|%PASSWDURL%|$(PASSWDURL)|' \
-	-e 's|%BASE%|$(BASE)|'
+	-e 's|%BASE%|$(BASE)|' \
+	-e 's|%LOG%|$(LOG)|'
 
 #
 # La documentation (succinte) de l'application

@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: statcor,v 1.4 2007-10-09 12:28:14 jean Exp $
+# $Id: statcor,v 1.5 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour consulter des stats sur les correspondants
@@ -38,6 +38,7 @@ set conf(page)		$conf(lib)/statcor.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 #
 # Le tableau servant à présenter le nb de machines par correspondant
@@ -140,7 +141,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			{} ftab dbfd login tabcor
+			{} ftab dbfd login tabcor $conf(log)
 
     #
     # Calcule les stats, et former une liste {nb nomprenom}

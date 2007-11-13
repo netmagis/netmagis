@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: statetab,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: statetab,v 1.4 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour consulter des stats par établissement
@@ -39,6 +39,7 @@ set conf(page)		$conf(lib)/statetab.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 #
 # Le tableau servant à présenter le nb de machines et d'adresses
@@ -139,7 +140,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			{} ftab dbfd login tabcor
+			{} ftab dbfd login tabcor $conf(log)
 
     #
     # Nb d'adresses (v4 ou v6) enregistrées par établissement dans la base.

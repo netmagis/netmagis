@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgenliste,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: admgenliste,v 1.4 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour sélectionner la ou les zones dont il faut forcer la
@@ -40,6 +40,7 @@ set conf(page)		$conf(lib)/admgenliste.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -69,7 +70,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			{} ftab dbfd login tabcor
+			{} ftab dbfd login tabcor $conf(log)
 
     #
     # Récupérer la liste des zones

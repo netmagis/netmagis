@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpedit,v 1.1 2007-10-10 16:06:18 jean Exp $
+# $Id: admgrpedit,v 1.2 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour présenter les caractéristiques associées à un groupe
@@ -44,6 +44,7 @@ set conf(page)		$conf(lib)/admgrpedit.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 # nb de lignes dans les listboxes
 set conf(hauteur)	20
@@ -228,7 +229,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			$conf(form) ftab dbfd login tabcor
+			$conf(form) ftab dbfd login tabcor $conf(log)
 
     #
     # Valider le nom du groupe, et récupérer son identifiant numérique

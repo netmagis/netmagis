@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admmxedit,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: admmxedit,v 1.4 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour présenter les informations pour une modification de mx
@@ -38,6 +38,7 @@ set conf(page)		$conf(lib)/admmxedit.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 set conf(form) {
 	{nom		1 1}
@@ -73,7 +74,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			$conf(form) ftab dbfd login tabcor
+			$conf(form) ftab dbfd login tabcor $conf(log)
 
     set nom     [lindex $ftab(nom) 0]
     set domaine [lindex $ftab(domaine) 0]

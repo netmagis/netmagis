@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.5 2007-10-23 15:46:27 pda Exp $
+# $Id: libdns.tcl,v 1.6 2007-11-13 16:44:06 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -332,10 +332,12 @@ proc fermer-base {dbfd} {
 #   2002/12/26 : pda      : actualisation et mise en service
 #   2003/05/13 : pda/jean : intégration dans dns et utilisation de auth
 #   2007/10/05 : pda/jean : adaptation aux objets "authuser" et "authbase"
+#   2007/10/26 : jean     : ajout du log
 #
 
-proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabcorvar} {
+proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabcorvar logparam} {
     global ah
+    global log
     upvar $ftabvar ftab
     upvar $dbfdvar dbfd
     upvar $loginvar login
@@ -362,6 +364,15 @@ proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabc
     if {[string length $dbfd] == 0} then {
 	::webapp::error-exit $pageerr $msg
     }
+
+    #
+    # Initialisation du log
+    #
+
+    set logsubsys [lindex $logparam 0]
+    set logmethod [lindex $logparam 1]
+    set logmedium [lindex $logparam 2]
+    set log [::webapp::log create %AUTO% -subsys $logsubsys -method $logmethod -medium $logmedium]
 
     #
     # Le login de l'utilisateur (la page est protégée par mot de passe)
@@ -441,10 +452,12 @@ proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabc
 # Historique
 #   2004/09/24 : pda/jean : conception
 #   2007/10/05 : pda/jean : adaptation aux objets "authuser" et "authbase"
+#   2007/10/26 : jean     : ajout du log
 #
 
-proc init-dns-util {nologin auth base dbfdvar login tabcorvar} {
+proc init-dns-util {nologin auth base dbfdvar login tabcorvar log} {
     global ah
+    global log
     upvar $dbfdvar dbfd
     upvar $tabcorvar tabcor
 
@@ -476,6 +489,15 @@ proc init-dns-util {nologin auth base dbfdvar login tabcorvar} {
     }
 
     #
+    # Initialisation du log
+    #
+
+    set logsubsys [lindex $logparam 0]
+    set logmethod [lindex $logparam 1]
+    set logmedium [lindex $logparam 2]
+    set log [::webapp::log create %AUTO% -subsys $logsubsys -method $logmethod -medium $logmedium]
+
+    #
     # Lire toutes les caractéristiques du correspondant
     #
 
@@ -494,6 +516,36 @@ proc init-dns-util {nologin auth base dbfdvar login tabcorvar} {
     }
 
     return ""
+}
+
+# 
+# Écrire une ligne dans le système de log
+# 
+# Entrée :
+#   - paramètres :
+#	- evenement : nom de l'evenement (exemples : supprhost, suppralias etc.)
+#	- login     : identifiant du correspondant effectuant l'action
+#	- message   : message de log (par exemple les parametres de l'evenement)
+#
+# Sortie :
+#   rien
+#
+# Historique :
+#   2007/10/?? : jean : conception
+#
+
+proc writelog {evenement login msg} {
+    global log
+    global env
+
+    if {[info exists env(REMOTE_ADDR) ]} then {
+	set ip $env(REMOTE_ADDR)    
+    } else {
+	set ip ""
+    }
+
+    $log log "" $evenement $login $ip $msg
+    
 }
 
 ##############################################################################

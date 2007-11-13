@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traitemodif,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: traitemodif,v 1.4 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
@@ -27,6 +27,7 @@
 #   2003/05/13 : pda/jean : utilisation de la base d'authentification
 #   2004/08/05 : pda/jean : ajout mac
 #   2005/04/08 : pda/jean : ajout dhcppprofil
+#   2007/10/25 : jean     : log des actions de modification
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -53,6 +54,7 @@ set conf(err)			$conf(lib)/erreur.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 # le champ discriminant pour la suite
 set conf(form)		{
@@ -94,7 +96,7 @@ source $conf(libdns)
 # Historique
 #   2002/05/03 : pda/jean : conception
 #
-proc traitemodif-infos {dbfd idcor ft} {
+proc traitemodif-infos {dbfd idcor login ft} {
     global conf
     upvar $ft ftab
 
@@ -230,6 +232,10 @@ proc traitemodif-infos {dbfd idcor ft} {
     set respnom     [html-tab-string $respnom]
     set respmel     [html-tab-string $respmel]
 
+    set m "modification de $nom.$domaine :"
+    append m " $mac $dhcpprofil $hinfo $commentaire $respnom $respmel"
+    writelog "modifrr" $login $m
+
     ::webapp::send html [::webapp::file-subst $conf(page-modif-infos) \
 				[list \
 					[list %NOM% $nom] \
@@ -242,6 +248,7 @@ proc traitemodif-infos {dbfd idcor ft} {
 					[list %RESPMEL% $respmel] \
 				    ] \
 			    ]
+
 }
 
 ##############################################################################
@@ -256,7 +263,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor
+			$conf(form) ftab dbfd login tabcor $conf(log)
 
     #
     # Valider l'action, lire les autres champs du formulaire,
@@ -273,7 +280,7 @@ proc main {} {
 	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
     }
 
-    traite$action $dbfd $tabcor(idcor) ftab
+    traite$action $dbfd $tabcor(idcor) $tabcor(login) ftab
 
     #
     # Déconnexion de la base

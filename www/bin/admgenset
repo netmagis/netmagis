@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgenset,v 1.3 2007-10-09 12:28:14 jean Exp $
+# $Id: admgenset,v 1.4 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour forcer la génération d'une ou plusieurs zones.
@@ -14,6 +14,7 @@
 #   2002/05/23 : pda/jean : création
 #   2002/07/09 : pda      : ajout de nologin
 #   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2007/10/25 : jean     : log des actions de modification
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -40,6 +41,7 @@ set conf(page)		$conf(lib)/admgenset.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 set conf(form)	{
     {zones		0 9999}
@@ -73,7 +75,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			$conf(form) ftab dbfd login tabcor
+			$conf(form) ftab dbfd login tabcor $conf(log)
 
     #
     # Forcer la génération
@@ -96,6 +98,8 @@ proc main {} {
 	::pgsql::unlock $dbfd "abort" m
 	::webapp::error-exit $conf(err) "L'opération a échoué. Abandon.\n$msg"
     }
+
+    writelog "forcegeneration" $tabcor(login) "zones $ftab(zones)"
 
     #
     # Sortie du résultat

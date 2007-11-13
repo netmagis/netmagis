@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpmodif,v 1.6 2007-10-23 15:46:25 pda Exp $
+# $Id: admgrpmodif,v 1.7 2007-11-13 16:44:05 pda Exp $
 
 #
 # Script pour enregistrer les caractéristiques associées à un groupe
@@ -63,6 +63,7 @@ set conf(supprok)	$conf(lib)/admgrpsupprok.html
 set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
 
 set conf(form) {
 	{confirm		1 1}
@@ -214,7 +215,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			$conf(form) ftab dbfd login tabcor
+			$conf(form) ftab dbfd login tabcor $conf(log)
 
     set groupe     [lindex $ftab(groupe) 0]
     set nouvgroupe [lindex $ftab(nouvgroupe) 0]
