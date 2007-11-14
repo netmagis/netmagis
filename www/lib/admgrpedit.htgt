@@ -1,5 +1,5 @@
 {
-\* $Id: admgrpedit.htgt,v 1.1 2007-10-10 16:06:18 jean Exp $
+\* $Id: admgrpedit.htgt,v 1.2 2007-11-14 19:48:48 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -63,7 +63,7 @@
 		\casetableau {} {%MESSAGEGROUPE%
 
 		    <INPUT TYPE="TEXT" NAME="nouvgroupe" VALUE="%NOUVGROUPE%">
-		    ~ ~ ~ ~ ~ ~ Droit d'administration : %ADMIN% 
+		    ~ ~ ~ ~ ~ ~ Administration de l'application : %ADMIN% 
 		}
 	    }
 	    \lignetableau {
