@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnswriteprol,v 1.3 2007-11-13 16:44:07 pda Exp $
+# $Id: dnswriteprol,v 1.4 2007-11-14 15:27:31 pda Exp $
 
 #
 # Script pour écrire le prologue d'une zone dans la base
@@ -11,6 +11,7 @@
 # Historique
 #   2004/05/25 : pda      : conception en sh
 #   2005/04/11 : pda      : réécriture en Tcl pour bénéficier du Makefile
+#   2007/10/25 : jean     : log des actions de modification
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -73,7 +74,7 @@ proc main {argv0 argv} {
     #
 
     set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
-					    dbfd $conf(defuser) tabcor] $conf(log)
+				    dbfd $conf(defuser) tabcor $conf(log)]
     if {! [string equal $errmsg ""]} then {
 	puts stderr "$errmsg"
 	puts stderr "Aborted."
@@ -174,6 +175,13 @@ proc main {argv0 argv} {
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	return "Impossible de modifier : $msg"
     }
+
+    #
+    # Écrire le log
+    #
+
+    writelog "modifref" $tabcor(login) \
+	"modification du prologue de la zone '$zone' (ligne de commande)"
 
     #
     # Déconnexion de la base

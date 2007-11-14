@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsreadprol,v 1.3 2007-11-13 16:44:07 pda Exp $
+# $Id: dnsreadprol,v 1.4 2007-11-14 15:27:31 pda Exp $
 
 #
 # Script pour lire le prologue d'une zone
@@ -71,7 +71,7 @@ proc main {argv0 argv} {
     #
 
     set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
-					    dbfd $conf(defuser) tabcor] $conf(log)
+				    dbfd $conf(defuser) tabcor $conf(log)]
     if {! [string equal $errmsg ""]} then {
 	puts stderr "$errmsg"
 	puts stderr "Aborted."

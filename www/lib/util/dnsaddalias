@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsaddalias,v 1.3 2007-11-13 16:44:07 pda Exp $
+# $Id: dnsaddalias,v 1.4 2007-11-14 15:27:31 pda Exp $
 
 #
 # Script pour ajouter un alias dans la base
@@ -11,6 +11,7 @@
 # Historique
 #   2004/09/24 : pda/jean : création à partir du script cgi
 #   2005/04/11 : pda/jean : adaptation
+#   2007/10/25 : jean     : log des actions de modification
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -78,7 +79,7 @@ proc syntax-error {argv0} {
 #   2004/09/29 : pda/jean : conception à partir du script CGI
 #
 
-proc add-alias {dbfd idcor fqdnalias fqdnref} {
+proc add-alias {dbfd login idcor fqdnalias fqdnref} {
     #
     # Vérifier le FDQN de l'alias
     #
@@ -145,6 +146,13 @@ proc add-alias {dbfd idcor fqdnalias fqdnref} {
     }
 
     #
+    # Écrire le log
+    #
+
+    writelog "ajoutalias" $login \
+	"ajout de l'alias $fqdnalias -> $fqdnref (ligne de commande)"
+
+    #
     # Sortie du résultat
     #
 
@@ -163,7 +171,7 @@ proc main {argv0 argv} {
     #
 
     set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
-					    dbfd $conf(defuser) tabcor] $conf(log)
+				    dbfd $conf(defuser) tabcor $conf(log)]
     if {! [string equal $errmsg ""]} then {
 	puts stderr "$errmsg"
 	puts stderr "Aborted."
@@ -182,7 +190,7 @@ proc main {argv0 argv} {
     set fqdnalias [lindex $argv 0]
     set fqdnref   [lindex $argv 1]
 
-    set msg [add-alias $dbfd $tabcor(idcor) $fqdnalias $fqdnref]
+    set msg [add-alias $dbfd $tabcor(login) $tabcor(idcor) $fqdnalias $fqdnref]
     if {! [string equal $msg ""]} then {
 	puts stderr $msg
 	puts stderr "Aborted."

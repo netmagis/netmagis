@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: mailmodif,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: mailmodif,v 1.5 2007-11-14 15:27:28 pda Exp $
 
 #
 # Script pour présenter la page de saisie de l'hébergeur d'une adresse
@@ -223,7 +223,7 @@ proc main {} {
 		::webapp::error-exit $conf(err) "Impossible de supprimer\n$msg"
 	    }
 
-	    set lm "suppression du role mail $toutnom -> $toutheb"
+	    set lm "suppression du role mail $toutnom"
 	}
 	0-0 {
 	    #

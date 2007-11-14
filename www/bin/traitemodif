@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traitemodif,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: traitemodif,v 1.5 2007-11-14 15:27:28 pda Exp $
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
@@ -233,7 +233,9 @@ proc traitemodif-infos {dbfd idcor login ft} {
     set respmel     [html-tab-string $respmel]
 
     set m "modification de $nom.$domaine :"
-    append m " $mac $dhcpprofil $hinfo $commentaire $respnom $respmel"
+    foreach c {mac dhcpprofil hinfo commentaire respnom respmel} {
+	append m " $c=[set $c]"
+    }
     writelog "modifrr" $login $m
 
     ::webapp::send html [::webapp::file-subst $conf(page-modif-infos) \

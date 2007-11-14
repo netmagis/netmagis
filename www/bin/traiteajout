@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traiteajout,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: traiteajout,v 1.5 2007-11-14 15:27:28 pda Exp $
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
@@ -397,7 +397,9 @@ proc traiteajout-machine {dbfd idcor ft login} {
 
 	if {$dejaip} then {
 	    set anciennesip [join $trr(ip) " "]
-	    append adr " ($anciennesip)"
+	    set alladr "$adr ($anciennesip)"
+	} else {
+	    set alladr "$adr"
 	}
 
 	writelog "ajoutmachine" $login "ajout de $nom.$domaine ($adr)"
@@ -406,7 +408,7 @@ proc traiteajout-machine {dbfd idcor ft login} {
 				    [list \
 					    [list %NOM%         $nom] \
 					    [list %DOMAINE%     $domaine] \
-					    [list %ADR%         $adr] \
+					    [list %ADR%         $alladr] \
 					    [list %MAC%         $mac] \
 					    [list %DHCPPROFIL%  $dhcpprofil] \
 					    [list %HINFO%       $hinfo] \
@@ -508,7 +510,7 @@ proc traiteajout-alias {dbfd idcor ft login} {
     #
 
     writelog "ajoutalias" $login \
-	"ajout de l'alias $nom.$domaine pointant vers $nomref.$domaineref"
+	"ajout de l'alias $nom.$domaine -> $nomref.$domaineref"
 
     ::webapp::send html [::webapp::file-subst $conf(page-ajout-alias) \
 				    [list \

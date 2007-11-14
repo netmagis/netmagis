@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.6 2007-11-13 16:44:06 pda Exp $
+# $Id: libdns.tcl,v 1.7 2007-11-14 15:27:30 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -319,6 +319,7 @@ proc fermer-base {dbfd} {
 #	- tabcorvar : tableau contenant les caractéristiques de l'utilisateur
 #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
 #			idcor, idgrp, present)
+#	- logparam : paramètres de log (subsys, méthode, paramètres de la méth)
 # Sortie :
 #   - valeur de retour : aucune
 #   - paramètres :
@@ -443,6 +444,7 @@ proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabc
 #	- tabcorvar : tableau contenant les caractéristiques de l'utilisateur
 #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
 #			idcor, idgrp, present)
+#	- logparam : paramètres de log (subsys, méthode, paramètres de la méth)
 # Sortie :
 #   - valeur de retour : message d'erreur, ou chaîne vide si pas d'erreur
 #   - paramètres :
@@ -455,7 +457,7 @@ proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabc
 #   2007/10/26 : jean     : ajout du log
 #
 
-proc init-dns-util {nologin auth base dbfdvar login tabcorvar log} {
+proc init-dns-util {nologin auth base dbfdvar login tabcorvar logparam} {
     global ah
     global log
     upvar $dbfdvar dbfd

@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dhcpmodif,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: dhcpmodif,v 1.5 2007-11-14 15:27:28 pda Exp $
 
 #
 # Script de modification des paramètres DHCP d'un réseau
@@ -394,7 +394,7 @@ proc main {} {
     }
 
     writelog "modifdhcp" $tabcor(login) \
-		"intervalles dhcp modifiés : [join $lcidr {, }]"
+		"intervalles dhcp modifies : [join $lcidr {, }]"
 
     #
     # C'est fini !

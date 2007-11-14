@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsmodattr,v 1.3 2007-11-13 16:44:07 pda Exp $
+# $Id: dnsmodattr,v 1.4 2007-11-14 15:27:31 pda Exp $
 
 #
 # Script pour modifier les attributs d'un RR dans la base
@@ -19,6 +19,7 @@
 #   2004/09/29 : pda/jean : spécification
 #   2004/10/01 : pda/jean : codage
 #   2005/04/08 : pda/jean : ajout du profil DHCP
+#   2007/10/25 : jean     : log des actions de modification
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -131,7 +132,7 @@ proc valide-attr-mac {dbfd mac tabrr} {
 #   2004/10/01 : pda/jean : conception
 #
 
-proc update-rr {dbfd idcor tabrr tabattr} {
+proc update-rr {dbfd login idcor tabrr tabattr} {
     upvar $tabrr trr
     upvar $tabattr tattr
 
@@ -202,6 +203,16 @@ proc update-rr {dbfd idcor tabrr tabattr} {
 	return $msg
     }
 
+    #
+    # Écrire le log
+    #
+
+    set m "modification de $trr(nom).$trr(domaine) :"
+    foreach c [array names tattr] {
+	append m " $c=$tattr($c)"
+    }
+    writelog "modifrr" $login "$m (ligne de commande)"
+
     return ""
 }
 
@@ -218,7 +229,7 @@ proc main {argv0 argv} {
     #
 
     set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
-					    dbfd $conf(defuser) tabcor] $conf(log)
+				    dbfd $conf(defuser) tabcor $conf(log)]
     if {! [string equal $errmsg ""]} then {
 	puts stderr "$errmsg"
 	puts stderr "Aborted."
@@ -283,7 +294,7 @@ proc main {argv0 argv} {
     # Lancer la modification
     #
 
-    set msg [update-rr $dbfd $tabcor(idcor) trr tabattr]
+    set msg [update-rr $dbfd $tabcor(login) $tabcor(idcor) trr tabattr]
     if {! [string equal $msg ""]} then {
        ::pgsql::unlock $dbfd "abort" m
 	puts stderr $msg

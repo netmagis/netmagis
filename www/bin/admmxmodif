@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admmxmodif,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: admmxmodif,v 1.5 2007-11-14 15:27:28 pda Exp $
 
 #
 # Script pour enregistrer une modification de mx
@@ -302,7 +302,8 @@ proc main {} {
 	    #
 
 	    # XXX : pas de commentaire ni de responsable... peut-être plus tard
-	    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" "" "" "" $idcor tabrr]
+	    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" "" "" "" \
+				$tabcor(idcor) tabrr]
 	    if {! [string equal $msg ""]} then {
 		::webapp::error-exit $conf(err) \
 			"Impossible d'insérer '$nom.$domaine' : $msg($msg)"
@@ -335,6 +336,7 @@ proc main {} {
     if {[llength $lmx] > 0} then {
 	set donnees {}
 	lappend donnees {Titre Priorité Nom}
+	set lm {}
 	foreach mx $lmx {
 	    # priorité idmx
 	    lire-rr-par-id $dbfd [lindex $mx 1] tabmx
@@ -342,9 +344,11 @@ proc main {} {
 				[lindex $mx 0] \
 				$tabmx(nom).$tabmx(domaine) \
 			    ]
+	    lappend lm "$tabmx(nom).$tabmx(domaine)"
 	}
 	set tableau [::arrgen::output "html" $conf(tableau) $donnees]
-	writelog "ajoutmx" $tabcor(login) "ajout des mx '$lmx' pour $nom.$domaine"
+	writelog "ajoutmx" $tabcor(login) \
+		"ajout des mx [join $lm {, }] pour $nom.$domaine"
     } else {
 	set tableau "RR supprimé."
 	writelog "supprmx" $tabcor(login) "suppression du RR pour $nom.$domaine"

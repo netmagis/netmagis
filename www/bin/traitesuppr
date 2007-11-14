@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traitesuppr,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: traitesuppr,v 1.5 2007-11-14 15:27:28 pda Exp $
 
 #
 # Script pour enregistrer les suppressions demandées par un correspondant.
@@ -416,7 +416,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 	    }
 
 	    set logevt "suppradr"
-	    set logmsg "suppression totale de $nom.$domaine"
+	    set logmsg "suppression de l'adresse $adr -> suppression totale de $nom.$domaine"
 	}
 
 	#
