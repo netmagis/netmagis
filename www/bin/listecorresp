@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: listecorresp,v 1.5 2007-11-13 16:44:05 pda Exp $
+# $Id: listecorresp,v 1.6 2007-11-15 08:51:41 pda Exp $
 
 #
 # Script pour lister les correspondants 
@@ -125,7 +125,7 @@ proc main {} {
 #			{} ftab dbfd login tabcor $conf(log)
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			{} ftab dbfd login tabcor
+			{} ftab dbfd login tabcor $conf(log)
 
     set titrepage "Liste des correspondants"
 
