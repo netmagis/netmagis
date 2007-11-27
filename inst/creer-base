@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: creer-base,v 1.3 2007-11-27 15:47:31 pda Exp $
+# $Id: creer-base,v 1.4 2007-11-27 16:25:18 pda Exp $
 
 #
 # Création de la base DNS
@@ -22,6 +22,7 @@
 #   2004/01/22 : pda        : adaptation au nouveau format de base
 #   2005/04/08 : pda        : adaptation au nouveau format de base (v 1.3)
 #   2007/11/27 : pda/jean   : validation avec pgsql 8.2
+#   2007/11/27 : pda/jean   : ajout de la table log
 #
 
 BASE=dns
@@ -365,6 +366,19 @@ psql --quiet $BASE <<'EOF'
 	PRIMARY KEY (clef)
     ) ;
 
+
+    -- les entrées dans le log
+    CREATE TABLE log (
+	date		TIMESTAMP WITHOUT TIME ZONE
+				    DEFAULT CURRENT_TIMESTAMP
+				    NOT NULL,
+	subsys		TEXT NOT NULL,	-- sous-système ("dns" ici)
+	event		TEXT NOT NULL,	-- ajoutmachine, suppralias, etc.
+	login		TEXT,		-- du correspondant
+	ip		INET,		-- du correspondant
+	msg		TEXT		-- message en clair
+    ) ;
+
     -- fonctions
 
     -- valide un intervalle DHCP (min-max) par rapport aux droits du groupe
@@ -435,7 +449,7 @@ do
 		role_web, role_mail, dr_mbox, relais_dom,
 		seq_zone, zone, zone_normale, zone_reverse4, zone_reverse6,
 		dhcp,
-		config
+		config, log
 	    TO $root ;
 EOF
 done
@@ -463,7 +477,7 @@ do
 		role_web, role_mail, dr_mbox, relais_dom,
 		seq_zone, zone, zone_normale, zone_reverse4, zone_reverse6,
 		dhcp,
-		config
+		config, log
 	    TO $nobody ;
 	GRANT INSERT
 	    ON
@@ -481,7 +495,7 @@ do
 		role_web, role_mail, dr_mbox, relais_dom,
 		zone, zone_normale, zone_reverse4, zone_reverse6,
 		dhcp,
-		config
+		config, log
 	    TO $nobody ;
 	GRANT UPDATE
 	    ON
@@ -499,7 +513,7 @@ do
 		role_web, role_mail, dr_mbox, relais_dom,
 		seq_zone, zone, zone_normale, zone_reverse4, zone_reverse6,
 		dhcp,
-		config
+		config, log
 	    TO $nobody ;
 	GRANT DELETE
 	    ON
@@ -517,7 +531,7 @@ do
 		role_web, role_mail, dr_mbox, relais_dom,
 		zone, zone_normale, zone_reverse4, zone_reverse6,
 		dhcp,
-		config
+		config, log
 	    TO $nobody ;
 EOF
 done
