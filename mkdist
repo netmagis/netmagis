@@ -1,0 +1,188 @@
+#!/bin/sh
+
+#
+# $Id: mkdist,v 1.1 2007-11-27 14:58:29 pda Exp $
+#
+# Création d'une arborescence pour distribuer WebDNS
+#
+# Usage :
+#	mkdist <CVS root> <tag dns> <tag htg> <tag pkgtcl>
+#
+# Exemple :
+#	mkdist crc:/local/cvs HEAD WEBDNS HEAD
+#
+# Historique
+#   2004/03/07 : pda      : conception
+#   2004/04/16 : pda      : derniers ajustement avant sortie 1.2
+#   2005/04/12 : pda      : derniers ajustement avant sortie 1.3
+#   2007/11/27 : pda/jean : généralisation et utilisation des arbres CVS
+#
+
+TMPDIR=${TMPDIR:-/tmp}
+
+###############################################################################
+# Ça sert toujours...
+
+erreur ()
+{
+    echo "$1. Stop !" >&2
+    exit 1
+}
+
+###############################################################################
+# Extraction des fichiers à partir de CVS
+# $1 : WORKDIR
+# $2 : CVSROOT
+# $3 ... $5 : tags de dns, htg et pkgtcl (dans cet ordre)
+
+extraire_cvs ()
+{
+    (
+	rm -rf $1
+	mkdir $1
+	cd $1
+	shift
+
+	CVSROOT=$1
+	shift
+
+	for i in dns htg pkgtcl
+	do
+	    cvs -Q -d "$CVSROOT" co -r $1 $i
+	    shift
+	done
+    )
+}
+
+###############################################################################
+# Extraction de la version courante à partir du Makefile de dns/www
+# $1 : fichier Makefile
+
+extraire_version ()
+{
+    sed -n -e "/^VERSION[ 	]*=/ {
+					s/#.*//
+					s/VERSION[ 	]*=[ 	]*//
+					s/[ 	]*$//
+					p
+				    }" $1
+}
+
+###############################################################################
+# copie un répertoire $2 situé dans $1 vers $3
+
+copie_repertoire ()
+{
+    if [ ! -d $1/$2 ]
+    then erreur "$1/$2 n'est pas un répertoire"
+    fi
+    tar cf - --exclude CVS -C $1 $2 | tar xf - -C $3
+}
+
+###############################################################################
+# copie un ou des fichiers $3 $4 ... d'un repertoire $1 vers un répertoire $2
+
+copie_fichiers ()
+{
+    if [ ! -d $1 ]
+    then erreur "$1 n'est pas un répertoire"
+    fi
+    if [ ! -d $2 ]
+    then erreur "$2 n'est pas un répertoire"
+    fi
+    src=$1
+    dst=$2
+    shift 2
+    for f
+    do
+	if [ ! -f $src/$f ]
+	then erreur "$src/$f non trouvé"
+	fi
+	tar cf - -C $src $f | tar xf - -C $dst
+    done
+}
+
+
+###############################################################################
+# Programme principal
+
+if [ $# != 4 ]
+then
+    erreur "usage: mkdist <CVS root> <tag dns> <tag htg> <tag pkgtcl>"
+fi
+
+WORKDIR="$TMPDIR/distdns"
+
+CVSROOT="$1"
+TAGDNS="$2"
+TAGHTG="$3"
+TAGPKGTCL="$4"
+
+#
+# Extraire les composants de WebDNS
+#
+
+extraire_cvs "$WORKDIR" "$CVSROOT" "$TAGDNS" "$TAGHTG" "$TAGPKGTCL"
+
+#
+# Extraire le numéro de version
+#
+
+VERSION="`extraire_version $WORKDIR/dns/www/Makefile`"
+PREFIXE="webdns-$VERSION"
+
+#
+# Placer tout cela dans le répertoire destination
+#
+
+DESTDIR="$WORKDIR/$PREFIXE"
+
+mkdir $DESTDIR
+
+#
+# Extraction des fichiers de l'arborescence dns
+#
+
+(
+    cd $WORKDIR/dns/doc
+    make dist
+) > /dev/null
+
+copie_repertoire $WORKDIR/dns	doc		$DESTDIR
+copie_repertoire $WORKDIR/dns	expl		$DESTDIR
+copie_repertoire $WORKDIR/dns	inst		$DESTDIR
+copie_repertoire $WORKDIR/dns	upgrade		$DESTDIR
+copie_repertoire $WORKDIR/dns	www		$DESTDIR
+
+copie_fichiers	 $WORKDIR/dns $DESTDIR CHANGES README
+
+#
+# Extraction des fichiers de l'arborescence htg
+#
+
+copie_repertoire $WORKDIR 	htg		$DESTDIR
+
+#
+# Extraction des fichiers de l'arborescence pkgtcl
+#
+
+mkdir $DESTDIR/pkgtcl
+copie_fichiers	 $WORKDIR/pkgtcl $DESTDIR \
+			Makefile \
+			arrgen.n arrgen.tcl \
+			webapp.n webapp.tcl \
+			pgsql.n pgsql.tcl
+
+#
+# Création des répertoires vides
+#
+
+mkdir $DESTDIR/dump
+
+#
+# Création du tgz final
+#
+
+tar czf $PREFIXE.tgz -C $WORKDIR $PREFIXE
+
+# rm -r $WORKDIR
