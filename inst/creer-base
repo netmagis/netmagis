@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: creer-base,v 1.2 2007-08-29 10:51:52 pda Exp $
+# $Id: creer-base,v 1.3 2007-11-27 15:47:31 pda Exp $
 
 #
 # Création de la base DNS
@@ -21,6 +21,7 @@
 #   2002/05/21 : pda        : ajout de la table communaute
 #   2004/01/22 : pda        : adaptation au nouveau format de base
 #   2005/04/08 : pda        : adaptation au nouveau format de base (v 1.3)
+#   2007/11/27 : pda/jean   : validation avec pgsql 8.2
 #
 
 BASE=dns
@@ -399,7 +400,7 @@ psql --quiet $BASE <<'EOF'
 	    set ip [join $ip "."]
 
 	    # Tester la validite
-	    spi_exec "SELECT valide_ip_grp (\'$ip\', $1) AS v"
+	    spi_exec "SELECT valide_ip_grp (''$ip'', $1) AS v"
 
 	    if {! [string equal $v "t"]} then {
 		set r f
@@ -466,19 +467,19 @@ do
 	    TO $nobody ;
 	GRANT INSERT
 	    ON
-		seq_domaine, domaine,
-		seq_groupe, groupe, seq_corresp, corresp,
-		seq_reseau, reseau, dr_reseau,
-		seq_etablissement, etablissement,
-		seq_communaute, communaute,
+		domaine,
+		groupe, corresp,
+		reseau, dr_reseau,
+		etablissement,
+		communaute,
 		dr_dom, dr_ip,
-		seq_dhcprange, dhcprange,
-		seq_dhcpprofil, dhcpprofil, dr_dhcpprofil,
-		seq_rr, rr,
+		dhcprange,
+		dhcpprofil, dr_dhcpprofil,
+		rr,
 		rr_ip, rr_cname, rr_mx,
-		seq_hinfo, hinfo,
+		hinfo,
 		role_web, role_mail, dr_mbox, relais_dom,
-		seq_zone, zone, zone_normale, zone_reverse4, zone_reverse6,
+		zone, zone_normale, zone_reverse4, zone_reverse6,
 		dhcp,
 		config
 	    TO $nobody ;
@@ -502,19 +503,19 @@ do
 	    TO $nobody ;
 	GRANT DELETE
 	    ON
-		seq_domaine, domaine,
-		seq_corresp, corresp,
-		seq_reseau, reseau, dr_reseau,
-		seq_etablissement, etablissement,
-		seq_communaute, communaute,
+		domaine,
+		corresp,
+		reseau, dr_reseau,
+		etablissement,
+		communaute,
 		dr_dom, dr_ip,
-		seq_dhcprange, dhcprange,
-		seq_dhcpprofil, dhcpprofil, dr_dhcpprofil,
-		seq_rr, rr,
+		dhcprange,
+		dhcpprofil, dr_dhcpprofil,
+		rr,
 		rr_ip, rr_cname, rr_mx,
-		seq_hinfo, hinfo,
+		hinfo,
 		role_web, role_mail, dr_mbox, relais_dom,
-		seq_zone, zone, zone_normale, zone_reverse4, zone_reverse6,
+		zone, zone_normale, zone_reverse4, zone_reverse6,
 		dhcp,
 		config
 	    TO $nobody ;
