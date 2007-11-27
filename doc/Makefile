@@ -1,7 +1,7 @@
 #
 # Makefile de la doc d'installation de l'application SOS
 #
-# $Id: Makefile,v 1.2 2007-08-29 10:51:46 pda Exp $
+# $Id: Makefile,v 1.3 2007-11-27 14:55:54 pda Exp $
 #
 #
 # Cibles possibles :
@@ -71,3 +71,6 @@ clean:
 	cleantex -a $(SRCS)
 	rm -f $(FIGS) *.ps *.bak *.cb *.pdf
 	rm -rf install
+
+dist:	clean install.pdf
+	rm -f *.aux *.bbl *.blg *.log *.lof *.lot *.idx *.ilg *.ind *.toc *.ps *.cp *.fn *.ky *.pg *.tp *.vr *.cb *.dvi *.ps
