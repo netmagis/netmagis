@@ -1,0 +1,1340 @@
+%
+% Documentation d'installation de WebAuth
+%
+% Historique
+%   2004/03/07 : pda : début de la rédaction
+%
+
+\documentclass [twoside] {article}
+
+    \usepackage {verbatim}
+
+    \usepackage [a4,palatino] {my2e}	% style "à moi-même personnellement je"
+    \NoAutoSpaceBeforeFDP		% pas d'espace automatique avant ":"
+
+    \usepackage {supertabular}
+
+    % \pagestyle {headings}
+
+    \parskip=2mm
+
+    %
+    % Les particularités liées à l'utilisation de latex2html
+    %
+    \usepackage {html}
+
+    \begin {htmlonly}
+	\renewcommand {\cbstart} {}
+	\renewcommand {\cbend} {}
+	\renewcommand {\cbdelete} {}
+    \end {htmlonly}
+
+    % texte noir sur fond blanc, liens non parcourus en rouge
+    % \bodytext {TEXT="#000000" BGCOLOR="#ffffff" LINK="#ff0000"}
+    % texte noir sur fond blanc
+    \bodytext {TEXT="#000000" BGCOLOR="#ffffff"}
+
+    \newcommand {\titreANN} [1] {\cleardoublepage\chapter* {#1}
+	    \addcontentsline {toc} {chapter} {#1}}
+    \newcommand {\titreA} {\section}
+    \newcommand {\titreB} {\subsection}
+    \newcommand {\titreC} {\subsubsection}
+    \newcommand {\titreD} {\paragraph}
+
+    \newcommand {\fichier} [1] {\texttt{#1}\xspace}
+
+    \newcommand {\slashslash} {\char92\char92}
+
+    \renewcommand {\fig} [2]
+    {
+	\begin {figure} [htbp]
+	    \hrule
+	    \vspace {3mm}
+	    % Attention : pas de \figps pour latex2html
+	    \begin {center}
+		\epsfig {figure=#1.ps}
+	    \end {center}
+	    \vspace {2mm}
+	    \caption {#2}
+	    \vspace {2mm}
+	    \hrule
+	    \label {fig:#1}
+	\end {figure}
+    }
+
+\begin {document}
+
+\begin {center}
+    {
+    \huge\bf
+    Installation de l'application WebAuth
+    \par
+    }
+
+    Version 1.0 -- 21 mars 2004 \\
+    Pierre David, Jean Benoit
+
+\end {center}
+
+\tassertoc
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Introduction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titreA {Introduction}
+
+L'application WebAuth permet de s'affranchir de la gestion statique
+(via l'utilitaire \texttt {htpasswd}) des comptes sur un serveur
+Web. Elle vous permet de gérer facilement et efficacement les
+utilisateurs via une base d'authentification, exploitée par le
+serveur Web Apache et, par exemple, les applications Web développées
+au CRC.
+
+Les principales caractéristiques de l'application sont~:
+
+\begin {itemize}
+    \item gestion centralisée de tous les comptes d'un serveur Web~:
+	tous les comptes sont dans une base d'authentification
+	unique~;
+
+    \item basée atuellement sur une base de données PostgreSQL~:
+	l'utilisation d'un annuaire LDAP est tout à fait possible\footnote
+	{Nous cherchons un ou des volontaires pour effectuer le
+	portage. Merci de vous manifester si vous êtes intéressé.}
+	bien que l'utilisation de certaines fonctionnalités évoluées
+	(telles que la recherche phonétique) ne soit alors pas
+	garantie.
+
+    \item distinction des domaines d'accès~: un utilisateur peut
+	appartenir à un ou plusieurs groupes, permettant ainsi à
+	Apache d'offrir l'accès à une partie de l'arborescence à
+	un ou plusieurs groupes~;
+
+    \item facilement intégrable dans une application~:
+	chaque nouvelle application Web peut embarquer des fonctions
+	de changement de mot de passe, de création ou de suppression
+	d'utilisateur, etc.
+
+\end {itemize}
+
+L'objectif de ce document est de décrire l'installation de l'application
+WebAuth
+
+Si vous lisez ce document, il est vraisemblable que vous êtes en
+train d'installer une autre des applications développées au CRC.
+Dans ce cas, il est conseillé de créer juste un utilisateur avec
+l'interface de WebAuth, et de créer les autres par l'intermédiaire
+de l'autre application que vous souhaitez installer.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Principes
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titreA {Principe}
+
+\titreB {Utilisateurs et groupes}
+
+L'application WebAuth permet de définir des utilisateurs et des
+groupes, avec une sémantique proche de \texttt {/etc/passwd} et
+\texttt {/etc/group} sur Unix~:
+
+\begin {itemize}
+    \item un utilisateur appartient à un ou plusieurs groupes
+
+    \item un groupe regroupe seulement des utilisateurs (et pas des
+	sous-groupes)
+
+\end {itemize}
+
+À la différence du modèle \texttt {/etc/passwd} et \texttt {/etc/group},
+un utilisateur n'a pas de <<~groupe privilégié~>>.
+
+La notion de groupe est utilisée, en particulier sur le serveur
+Apache, pour donner l'accès à un ensemble de pages Web (statiques,
+ou produites par des scripts CGI). En ce sens, la notion de groupe
+correspond à un <<~domaine Web~>> que l'utilisateur peut consulter,
+sans avoir à donner son mot de passe de multiples fois.
+
+
+\titreB {Architecture de l'application}
+
+Le principe général de fonctionnement de l'application est résumé sur la
+figure ci-après~:
+
+% \begin {figure} [htbp]
+\figpswidth {principe} {130mm}
+% \end {figure}
+
+Dans cette figure, l'administrateur accède à la base d'authentification
+par l'intermédiaire de l'application WebAuth, pour ajouter, supprimer
+ou modifier des utilisateurs ou des groupes. Le serveur Apache
+utilise le module approprié (PostgreSQL ou LDAP) pour contrôler
+l'accès à cette application.  WebAuth utilise le module Tcl pour
+toutes les fonctions de gestion des utilisateurs.
+
+Les autres applications souhaitant utiliser l'authentification peuvent
+le faire selon deux méthodes~:
+
+\begin {itemize}
+    \item soit, sans modification de l'application existante, en
+	ne faisant que contrôler l'accès à certaines parties de
+	l'arborescence Web. Ceci est réalisé simplement par une
+	configuration du serveur Apache, et convient bien aux pages
+	statiques (pages à accès restreint) ou aux applications qu'il
+	serait trop complexe de modifier~;
+
+    \item soit en modifiant l'application pour y intégrer le module
+	Tcl de gestion des comptes, ce qui est le cas des applications
+	distribuées par le CRC. L'application peut alors dynamiquement
+	créer, supprimer ou modifier des comptes, et les utilisateurs
+	peuvent changer leur mot de passe.
+
+\end {itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
+% Structure de la distribution
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titreA {Structure de la distribution}
+
+La distribution de l'application WebAuth est organisée comme suit~:
+
+\begin {tabular} {|l|l|} \hline
+    \texttt {doc/}
+	& documentation
+	\\ \hline
+    \texttt {dump/}
+	& répertoire de sauvegarde quotidienne de la base
+	\\ \hline
+    \texttt {expl/}
+	& scripts de maintenance et d'exploitation de la base
+	\\ \hline
+    \texttt {htg/}
+	& générateur de pages Web
+	\\
+	& (répertoire commun à toutes les applications développées au CRC)
+	\\ \hline
+    \texttt {inst/}
+	& scripts d'installation de la base
+	\\ \hline
+    \texttt {pkgtcl/}
+	& paquetages Tcl utilisés par les divers scripts
+	\\
+	& (répertoire commun à toutes les applications développées au CRC)
+	\\ \hline
+    \texttt {www/}
+	& les 2 applications web proprement dites
+	\\ \hline
+    \texttt {www/auth/}
+	& l'application de gestion des utilisateurs
+	\\ \hline
+    \texttt {www/auth/bin}
+	& l'application Web elle-même : les scripts CGI
+	\\ \hline
+    \texttt {www/auth/lib}
+	& fichiers utilisés par les scripts, y compris les pages HTML
+	    à trous
+	\\ \hline
+    \texttt {www/passwd/}
+	& l'application de changement de mot de passe
+	\\ \hline
+    \texttt {www/passwd/bin}
+	& l'application Web elle-même : les scripts CGI
+	\\ \hline
+    \texttt {www/passwd/lib}
+	& fichiers utilisés par les scripts, y compris les pages HTML
+	    à trous
+	\\ \hline
+\end {tabular}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
+% Pré-requis
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titreA {Pré-requis}
+
+Cette section décrit les pré-requis avant d'entamer l'installation.
+
+\titreB {Composants nécessaires}
+
+Les composants logiciels nécessaires pour l'application WebAuth sont
+décrits ci-après.
+
+\titreC {Apache}
+
+Le premier composant indispensable est un serveur Web.  En théorie,
+tout serveur Web disposant d'une interface CGI est utilisable. En
+pratique, l'application a été testée avec Apache (versions 1 et 2).
+Par ailleurs, il est conseillé d'utiliser une extension SSL pour
+bénéficier d'un bon niveau de sécurité.
+
+Disponibilité~: \htmlurl {http://httpd.apache.org/}
+
+\titreC {Tcl}
+
+Le langage utilisé par l'application et nombre de scripts auxiliaires
+est le langage Tcl (Tool Control Language) développé à l'origine par
+John Ousterhout. WebAuth a été développé avec la version 8.4.
+
+Il faut noter que Tcl est souvent associé à la boîte à outils
+graphique Tk.  Cette dernière n'est pas utilisée par WebAuth.
+Cependant, il est possible que la compilation de PostgreSQL (voir
+ci-après) nécessite Tk.
+
+Disponibilité~: \htmlurl {http://tcl.activestate.com/}
+
+
+\titreC {PostgreSQL}
+
+Le moteur de base de données utilisé est PostgreSQL. Il faut utiliser
+une version supérieure ou égale à 7.4.
+
+Disponibilité~: \htmlurl {http://www.postgresql.org/}
+
+Attention~: la compilation de PostgreSQL doit être réalisée avec
+le support de Tcl.  Sous FreeBSD, cela signifie qu'il faut charger
+les ports de \texttt {postgresql} et \texttt {postgresql-tcltk}.
+
+Pour vérifier si le support de Tcl est bien compilé, faire~:
+
+\begin {quote}
+\begin {verbatim}
+$ tclsh8.4      # ou "tclsh" simplement
+% package require Pgtcl
+1.4
+\end{verbatim}
+\end {quote}
+
+Si vous rencontrez une erreur à la place d'un numéro de version (ici
+1.4), le support Tcl pour PostgreSQL n'est pas correctement installé.
+
+Vous devez également compiler le support du langage <<~PL/Tcl~>>.
+Sous FreeBSD, cela signifie qu'il faut charger le port de \texttt
+{postgresql-pltcl}. Pour tester si cela fonctionne, utilisez la
+commande \texttt {createlang} fournie avec PostgreSQL~:
+
+\begin {quote}
+\begin {verbatim}
+$ createlang pltcl
+\end{verbatim}
+\end {quote}
+
+Si vous rencontrez une erreur, le support de PL/Tcl n'est pas
+correctement installé.
+
+
+\titreC {mod\_auth\_pgsql}
+
+L'authentification des utilisateurs dans l'application est réalisée
+par le serveur Apache. Pour le moment, la seule authentification
+définie repose sur une base PostgreSQL, ainsi que sur le module
+\texttt {mod\_auth\_pgsql}.
+
+Disponibilité~: \htmlurl {http://www.giuseppetanzilli.it/mod\_auth\_pgsql/}
+    (pour Apache 1)
+
+Disponibilité~: \htmlurl {http://www.giuseppetanzilli.it/mod\_auth\_pgsql2/}
+    (pour Apache 2)
+
+
+\titreC {pwgen}
+    \label {pwgen}
+
+Le programme \texttt {pwgen} permet de générer des mots de passe.
+
+Disponibilité~: \htmlurl {http://www.tricknology.org/ports/pwgen-1.15.tar.gz}
+
+\titreC {LaTeX}
+    \label {latex}
+
+Pour accéder aux impressions (génération de fichiers PDF), il faut
+également une distribution LaTeX contenant au moins le programme
+\texttt {pdflatex} ainsi que les paquetages
+    \texttt {babel},
+    \texttt {fontenc},
+    \texttt {palatino},
+    \texttt {geometry}, et
+    \texttt {supertabular}.
+
+Tout ceci figure dans l'excellente distribution teTeX que nous
+vous recommandons par ailleurs.
+
+Disponibilité~: \htmlurl {http://www.tug.org/teTeX/}
+
+Si vous ne souhaitez pas installer teTeX, vous ne pourrez pas accéder
+aux impressions. Nous vous conseillons alors de modifier les pages
+Web pour ne pas afficher les boutons correspondants.
+
+%\titreC {OpenLDAP (facultatif)}
+%
+%Si vous souhaitez utiliser votre annuaire LDAP, il faut également
+%installer OpenLDAP. Plus précisément, il faut installer le programme
+%\texttt {ldapsearch}.
+%
+%Disponibilité~: \htmlurl {http://www.openldap.org}
+
+
+\titreB {Contexte système}
+
+\titreC {Activer les mots de passe PostgreSQL}
+
+À moins que votre serveur Web ne soit hébergé sur une machine sans
+compte utilisateur (autre que les administrateurs), il est souhaitable
+de configurer PostgreSQL pour que les connexions au moteur nécessitent
+un mot de passe.
+
+Pour cela, il faut éditer le fichier \texttt {\~{}pgsql/data/pg\_hba.conf}
+installé avec PostgreSQL, et modifier les lignes~:
+\begin {quote}
+\begin {verbatim}
+local all all                           trust
+host  all all 127.0.0.1 255.255.255.255 trust
+host  all all ::1       ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff trust
+\end{verbatim}
+\end {quote}
+en~:
+\begin {quote}
+\begin {verbatim}
+local all all                           password
+host  all all 127.0.0.1 255.255.255.255 password
+host  all all ::1       ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff password
+\end{verbatim}
+\end {quote}
+
+Il faut également modifier certains des scripts de démarrage, et
+attribuer des mots de passe aux utilisateurs déjà créés à l'aide
+de l'utilitaire \texttt {psql} et de la directive SQL <<~\texttt
+{ALTER...USER}~>>. Par exemple~:
+
+\begin {quote}
+    \verb|ALTER USER pda WITH PASSWORD 'toto' ;|
+\end {quote}
+
+Consultez \htmlurl
+{http://www.postgresql.org/docs/current/static/client-authentication.html}
+pour plus d'informations.
+
+Vous pouvez néanmoins procéder au reste de l'installation sans
+activer la protection par mot de passe, au prix d'une sécurité
+amoindrie.
+
+\titreC {Utilisateurs PostgreSQL}
+
+Il est conseillé de créer des comptes PostgreSQL (avec l'utilitaire
+\texttt {createuser}) pour les utilisateurs pouvant intervenir lors
+des opérations d'administration de la base. La création de comptes
+spécifiques simplifie les opérations.
+
+En outre, les divers scripts et exemples de configuration nécessitent
+la création d'un utilisateur PostgreSQL nommé <<~\texttt {auth}~>>,
+avec le minimum de droits (en particulier, pas le droit de créer
+une base ou de nouveaux utilisateurs).  Toutes les opérations
+d'authentification ainsi que les opérations effectuées par l'application
+le seront sous cette identité.  Il n'y a pas besoin de créer un
+compte Unix pour \texttt {auth}.
+
+Une fois créés, vous pouvez affecter des mots de passe à ces
+utilisateurs.
+
+
+\titreC {Accès à PostgreSQL depuis le serveur Apache}
+
+Si vous localisez le serveur Apache et le serveur PostgreSQL sur des
+machines différentes, prenez bien soin à autoriser l'accès du serveur
+Apache sur le serveur PostgreSQL. Pour cela, modifiez le fichier \texttt
+{pg\_hba.conf} et insérez la ligne suivante~:
+
+\begin {quote}
+\begin {verbatim}
+host auth auth 192.168.1.2 255.255.255.255 password
+\end{verbatim}
+\end {quote}
+
+Cette ligne autorise l'accès à la base \texttt {auth} par l'utilisateur
+\texttt {auth} depuis la machine d'adresse IPv4 192.168.1.2. Bien
+sûr, si l'accès se fait par IPv6, vous remplacerez l'adresse et le
+masque par les valeurs appropriées.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
+% Personnalisation des pages HTML
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titreA {Personnalisation des pages HTML et LaTeX}
+
+Parmi les possibilités de personnalisation de l'application WebAuth
+figure en bonne place la faculté de modifier les pages HTML et LaTeX
+de l'application.
+
+En effet, la présentation est largement indépendante de la logique
+des scripts, et repose sur le concept de <<~page à trous~>>.
+
+
+\titreB {Principe des <<~pages à trous~>>}
+
+Lorsqu'un script CGI souhaite afficher une information, il la place
+dans un fond de page HTML à un endroit déterminé par un <<~trou~>>.
+
+Par exemple, une page servant à confirmer l'enregistrement d'une
+demande pourrait se limiter à~:
+
+\begin {quote}
+\begin {verbatim}
+<HTML>
+<TITLE>Demande enregistrée</TITLE>
+<BODY>
+    <H1>Demande enregistrée</H1>
+    <STRONG>%MESSAGE%</STRONG>
+    <P>
+    <A HREF="%HOMEURL%">Revenir au menu principal</A>
+</BODY>
+</HTML>
+\end{verbatim}
+\end {quote}
+
+Cette page contient deux trous~: à la place du premier,
+<<~\verb|%MESSAGE%|~>>, les scripts de l'application insèrent le
+contenu du message de confirmation. À la place du second,
+<<~\verb|%HOMEURL%|~>>, les scripts insèrent l'adresse Web de
+l'application.
+
+Ce principe s'applique également aux fichiers LaTeX utilisés pour
+générer les fichiers PDF, lors des demandes d'impression.
+
+L'annexe~\ref {anx-trous} décrit les fichiers HTML et les trous que
+les scripts CGI de l'application utilisent.
+
+
+\titreB {Utilisation du générateur <<~htg~>>}
+    \label {htg:principe}
+
+Les pages HTML, au CRC, sont générées automatiquement à partir d'un
+mini-langage (HTG, pour HTML Generator). L'outil HTG, qui permet
+de transformer un source HTG en fichier HTML, est fourni (répertoire
+\verb|./htg|) ainsi que sa documentation (répertoire \verb|./htg/doc|).
+
+L'intérêt de l'utilisation de HTG est de dissocier complètement le
+fond de la forme. L'utilisateur de HTG ne spécifie que le fond, et HTG
+s'occupe de la forme par le biais de \textit {modèles}. Trois types de
+modèles sont fournis~:
+
+\begin {itemize}
+    \item modèle <<~crc~>>~: utilisé au Centre Réseau Communication
+	de l'Université Louis Pasteur de Strasbourg~;
+
+    \item modèle <<~csi~>>~: utilisé au Centre de Services Informatiques
+	de l'Université de Versailles/St-Quentin-en-Yvelines~;
+
+    \item modèle <<~vide~>>~: utilisé comme exemple, avec le minimum de
+	fioritures d'affichage.
+
+\end {itemize}
+
+Pour compiler <<~\texttt {htg}~>>, allez dans le répertoire
+\verb|./htg/src|~:
+
+\begin {itemize}
+    \item éditez le fichier \texttt {Makefile} et lancez
+	la compilation avec \texttt {make}~;
+
+    \item éditez le fichier \texttt {htg} pour modifier, en première
+	ligne, la localisation exacte du fichier \texttt {htgtcl}
+	compilé dans la précédente étape.
+
+\end {itemize}
+
+Ensuite, sélectionnez le type de modèle que vous préférez en changeant
+le lien \verb|./htg/modeles|.
+
+
+\titreB {Quelles pages HTML utiliser~?}
+
+Plusieurs solutions s'offrent à vous~:
+
+\begin {itemize}
+    \item utiliser HTG~: dans ce cas, il vous suffit de reprendre les
+	pages du CRC, en les modifiant éventuellement pour indiquer des
+	titres plus représentatifs de votre service.
+
+	Concernant le choix du modèle, vous pouvez alors~:
+	\begin {itemize}
+	    \item reprendre le modèle <<~crc~>>
+	    \item reprendre le modèle <<~vide~>>
+	    \item concevoir un nouveau modèle (cette option
+		n'est pas documentée ici)
+	\end {itemize}
+
+    \item utiliser des fonds de page HTML que vous aurez conçus
+	vous-même.
+\end {itemize}
+
+La section~\ref {install-auth} fournit plus de détails sur
+l'installation de l'application.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
+% Installation de la base d'authentification
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titreA {Installation de la base d'authentification}
+
+Vous n'avez pas besoin des droits de <<~\texttt {root}~>> pour
+effectuer les opérations décrites dans cette section.
+
+
+\titreB {Installation de la base PostgreSQL}
+
+Ce chapitre décrit la mise en place minimale de la base de données
+utilisée comme support de l'application WebAuth. Il s'agit de créer la
+base et d'y introduire le minimum d'information nécessaire pour
+pouvoir effectuer le paramétrage dans le menu d'administration.
+
+\titreC {Création de la base}
+
+Examinez le script \texttt {./inst/creer-base}. Dans ce script~:
+
+\begin {itemize}
+    \item modifiez votre mot de passe PostgreSQL~;
+
+    \item mettez en commentaire la ligne <<~\verb|exit 0|~>> située
+	vers le début du fichier. Lorsque vous aurez exécuté le
+	script, remettez le \verb|#| qui vous protégera ainsi d'une
+	maladresse si vite arrivée~!
+
+    \item modifiez les logins des utilisateurs privilégiés. Ces
+	utilisateurs (PostgreSQL) doivent pouvoir réaliser toutes les
+	opérations dans la base. Pour cela, tous les droits sont donnés
+	aux tables de l'application.
+
+\end {itemize}
+
+Vous pouvez à présent exécuter le script (après avoir changé de
+répertoire dans \texttt {./inst}).
+
+Pour vérifier si tout s'est bien passé, vous pouvez utiliser
+<<~\verb|psql|~>> pour passer les deux commandes \verb|\dt| (afficher
+les tables) et \verb|\q| (sortir)~:
+
+\begin {quote}
+\begin {verbatim}
+$ psql auth
+auth=# \dt
+     List of relations
+ Schema |     Name     | Type  | Owner
+--------+--------------+-------+-------
+ public | config       | table | pda
+ public | groupes      | table | pda
+ public | membres      | table | pda
+ public | utilisateurs | table | pda
+(4 rows)
+
+auth=# \q
+\end{verbatim}
+\end {quote}
+
+
+\titreC {Installation des données minimales}
+
+Le script \texttt {./inst/init-base} contient le minimum, c'est à
+dire l'insertion d'un groupe (\texttt {authadmin}) et d'un utilisateur
+dans ce groupe.
+
+Dans ce script~:
+
+\begin {itemize}
+    \item modifiez le login, le mot de passe, le nom et le prénom
+	par vos coordonnées. Il s'agit ici d'insérer le minimum
+	pour pouvoir ajouter les autres utilisateur par l'application
+	Web.  Le mot de passe doit être chiffré~: reprenez par
+	exemple celui qui est dans votre fichier \texttt {/etc/passwd}
+	ou équivalent.  Si vous laissez le mot de passe par défaut,
+	pensez à le changer le plus rapidement possible lorsque
+	l'application sera opérationnelle.
+
+    \item modifiez également la ligne affectant votre nom de login
+	au groupe \texttt {authadmin}.
+
+    \item mettez en commentaire la ligne <<~\verb|exit 0|~>> située
+	vers le début du fichier. Lorsque vous aurez exécuté le
+	script, remettez le \verb|#| qui vous protégera ainsi d'une
+	maladresse si vite arrivée~!
+
+\end {itemize}
+
+Lancez le script.
+
+Pour vérifier si l'installation s'est bien passée, vous pouvez
+utiliser <<~\verb|psql|~>> pour consulter ce qui a été mis dans la
+base~:
+
+\begin {quote}
+\begin {verbatim}
+$ psql auth
+auth=# \encoding latin9
+
+auth=# SELECT * FROM groupes ;
+  groupe   |              descr
+-----------+---------------------------------
+ authadmin | Administrateurs de la base Auth
+(1 row)
+
+auth=# SELECT login, password, nom, prenom, phnom, phprenom FROM utilisateurs ;
+ login |   password   |  nom  | prenom | phnom | phprenom
+-------+--------------+-------+--------+-------+----------
+ pda   | xxxxxxxxxxxx | DAVID | Pierre | D930  | P600
+(1 row)
+
+auth=# SELECT * FROM membres ;
+ login |  groupe
+-------+-----------
+ pda   | authadmin
+(1 row)
+
+auth=# \q
+\end{verbatim}
+\end {quote}
+
+Vous pouvez constater que les colonnes \texttt {phnom} et \texttt
+{phprenom} ont été mises à jour automatiquement~: elles contiennent
+une chaîne représentant la forme phonétique du nom et du prénom,
+ce qui permettra ultérieurement des recherches par approximation.
+
+\titreC {Regénération de votre mot de passe}
+
+Si vous perdez votre mot de passe, vous pouvez le regénérer simplement
+avec la commande \texttt {psql}~:
+
+\begin {quote}
+\begin {verbatim}
+$ psql auth
+auth=# UPDATE utilisateurs SET password = 'xxxx' WHERE login = 'pda' ;
+UPDATE 1
+
+auth=# \q
+\end{verbatim}
+\end {quote}
+
+Dans cet exemple, la chaîne <<~\texttt {xxxx}~>> représente le mot
+de passe chiffré tel qu'il figure dans le fichier \texttt
+{/etc/master.passwd} ou équivalent.
+
+
+\titreB {Installation de la base LDAP}
+
+Cette section est à écrire lorsque l'application sera portée sur
+LDAP.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Installation de l'application de gestion des utilisateurs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titreA {Installation de l'application de gestion des utilisateurs}
+
+Hormis le paramétrage du serveur Apache, vous n'avez pas besoin des
+droits de <<~\texttt {root}~>> pour effectuer les opérations décrites
+dans cette section.
+
+\titreB {Compilation du programme trpw}
+    \label {trpw}
+
+Le programme \texttt {trpw} affiche sur la sortie standard la forme
+chiffrée d'un mot de passe donné en argument. Pour le compiler,
+faire~:
+
+\begin {quote}
+\begin {verbatim}
+$ cd ./pkgtcl
+$ cc -o trpw trpw.c -lcrypt
+\end{verbatim}
+\end {quote}
+
+Suivant le type et la version de système que vous utilisez, vous
+devrez éventuellement changer la librairie.
+
+Une fois compilé, vérifiez que le programme fonctionne bien~:
+
+\begin {quote}
+\begin {verbatim}
+$ cd ./pkgtcl
+$ ./trpw toto
+G(aXj3KElrHaU
+$
+\end{verbatim}
+\end {quote}
+
+La chaîne affichée correspond au mot de passe chiffré, qui varie
+car le <<~sel~>> est généré aléatoirement.
+
+\titreB {Configuration du package d'authentification}
+
+Modifiez les deux lignes du fichier \texttt {./pktcl/auth.tcl}~:
+
+\begin {quote}
+\begin {verbatim}
+    variable trpw       "/local/services/www/pkgtcl/trpw"
+    variable genpw      "/usr/local/bin/pwgen --numerals 8"
+\end{verbatim}
+\end {quote}
+
+pour refléter la localisation des commandes~:
+
+\begin {itemize}
+    \item \texttt {trpw} (voir~\ref {trpw}, page~\pageref {trpw})
+    \item \texttt {pwgen} (voir~\ref {pwgen}, page~\pageref {pwgen})
+\end {itemize}
+
+
+\titreB {Configuration du package des applications Web}
+
+Modifiez les lignes du fichier \texttt {./pktcl/webapp.tcl}~:
+
+\begin {quote}
+\begin {verbatim}
+    variable pdflatex   /usr/local/bin/pdflatex
+    variable sendmail   {/usr/sbin/sendmail -t}
+\end{verbatim}
+\end {quote}
+
+pour refléter la localisation des commandes~:
+
+\begin {itemize}
+    \item \texttt {pdflatex} (voir~\ref {latex}, page~\pageref {latex})
+    \item \texttt {sendmail}, utilisé pour envoyer un mail lorsqu'un mot
+	de passe est réinitialisé.
+\end {itemize}
+
+
+\titreB {Installation des fichiers de l'application}
+    \label {install-auth}
+
+Choisissez un répertoire pour placer les pages Web et les scripts
+CGI de l'application de gestion des utilisateurs, qui ne doit pas être le répertoire dans lequel
+vous avez détarré l'application. Dans l'installation par défaut,
+ce répertoire est nommé \verb|/local/services/www/applis/auth/|.
+
+\begin {itemize}
+    \item si vous souhaitez utiliser HTG (voir~\ref {htg:principe},
+	page~\pageref {htg:principe}), utilisez les fichiers
+	<<~\verb|.htgt|~>> du répertoire \verb|./www/auth/lib/| en
+	modifiant éventuellement les parties <<~bannière~>>,
+	<<~titrepage~>> et <<~bandeau~>>~;
+
+    \item si vous souhaitez concevoir des nouvelles pages à trous,
+	installez-les dans le répertoire \verb|./www/auth/lib/|. Vous
+	devrez supprimer chaque fichier <<~.htgt~>> et le remplacer
+	par un fichier <<~.html~>> équivalent, en respectant le nom
+	des trous que les scripts CGI s'attendent à trouver (voir
+	annexe~\ref {anx-trous}). Vous prendrez soin également à
+	adapter le fichier LaTeX \verb|utiliste.tex|.
+
+\end {itemize}
+
+Rendez-vous ensuite dans le répertoire \verb|./www/auth| et éditez le
+fichier \texttt {Makefile}. Modifiez en particulier les variables~:
+
+\begin {tabular} {|l|l|} \hline
+    \multicolumn {1} {|c|} {\textbf {Variable}}
+	& \multicolumn {1} {|c|} {\textbf {Signification}}
+	\\ \hline
+    \texttt {TCLSH} &
+	localisation de l'exécutable \texttt {tclsh}
+	\\ \hline
+    \texttt {AUTH} &
+	paramètres d'accès à la base d'authentification
+	\\ \hline
+    \texttt {HOMEURL} &
+	chemin relatif à la racine de l'arborescence Web
+	\\ \hline
+    \texttt {DESTDIR} &
+	localisation de l'application dans l'arborescence Web
+	\\ \hline
+    \texttt {PKGTCL} &
+	localisation des packages Tcl inclus avec l'application
+	\\ \hline
+    \texttt {HTG} &
+	localisation de l'exécutable \texttt {htg}
+	\\ \hline
+    \texttt {ROOT} &
+	utilisateurs habilités à intervenir en mode
+	<<~maintenance~>>
+	\\ \hline
+    \texttt {NOLOGIN} &
+	nom du fichier à créer pour rentrer en mode
+	<<~maintenance~>>
+	\\ \hline
+\end {tabular}
+
+Puis, lancez \texttt {make} (dans le répertoire \verb|./www/auth|)
+pour installer tous les fichiers de l'application dans l'arborescence
+Web.
+
+
+
+\titreB {Configuration du serveur Apache}
+    \label {config-apache-auth}
+
+Le serveur Apache doit être configuré pour~:
+
+\begin {itemize}
+    \item autoriser l'accès en consultation à
+	\verb|/local/services/www/applis/auth/|
+    \item autoriser l'accès en exécution CGI à
+	\verb|/local/services/www/applis/auth/bin|
+    \item interdire tout accès à
+	\verb|/local/services/www/applis/auth/lib|
+\end {itemize}
+
+\titreC {Avec l'authentification PostgreSQL}
+
+Ceci peut être réalisé grâce aux quelques lignes suivantes (voir
+première partie du fichier \verb|./inst/httpd.conf|) dans le fichier
+\texttt {httpd.conf} de configuration d'Apache, que vous prendrez
+soin d'adapter~:
+
+\begin {quote}
+\small
+\begin {verbatim}
+ScriptAlias "/applis/auth/bin/" "/local/services/www/applis/auth/bin/"
+
+<Directory /local/services/www/applis/auth>
+    #
+    # Ces lignes peuvent astucieusement être mises en commun
+    # en les déclarant dans le répertoire racine de votre
+    # serveur Web.
+    #
+    AuthName		    "Intranet CRC"
+    Auth_PG_host            localhost
+    Auth_PG_port            5432
+    Auth_PG_database        auth
+    Auth_PG_user            auth
+    Auth_PG_pwd             mot-de-passe-en-clair-de-auth
+    Auth_PG_pwd_table       utilisateurs
+    Auth_PG_uid_field       login
+    Auth_PG_pwd_field       password
+    Auth_PG_grp_table       membres
+
+    # Attention : version avec mod_auth_pgsql
+    #Auth_PG_gid_field       groupe
+    # Attention : version avec mod_auth_pgsql2
+    Auth_PG_grp_group_field groupe
+    Auth_PG_grp_user_field  login
+
+    #
+    # Fin des lignes pouvant être mises en commun dans le
+    # répertoire racine de votre serveur Web.
+    #
+
+    AuthType            Basic
+    require             group authadmin
+
+    # si vous avez une page prévue pour signaler les erreurs, mettez-la ici
+    ErrorDocument       401 /errauth/erreur.html
+</Directory>
+
+<Directory /local/services/www/applis/auth/lib>
+    order deny,allow
+    deny from all
+</Directory>
+
+Alias "/applis/auth" "/local/services/www/applis/auth"
+
+#
+# Pour effectuer en une seule opération
+# - l'accès via l'url /applis/auth, qui redirige en réalité vers un script
+# - les redirections vers HTTPS
+#
+RedirectMatch permanent ^/applis/auth/$ \
+                https://www-crc.u-strasbg.fr/applis/auth/bin/accueil
+RedirectMatch permanent ^/applis/auth/index.html$ \
+                https://www-crc.u-strasbg.fr/applis/auth/bin/accueil
+\end{verbatim}
+\end {quote}
+
+\titreC {Avec l'authentification LDAP}
+
+Cette section est à écrire lorsque l'application sera portée sur
+LDAP.
+
+
+\titreB {Paramétrage de l'application}
+
+Une fois les étapes précédentes effectuées, vous devriez être en mesure
+d'accéder à l'URL de votre application.
+
+\titreC {Paramètres de configuration}
+
+La première étape consiste à rentrer dans le module <<~administration~>>
+(modification des paramètres) afin de finaliser les paramétrages.
+
+L'aide en ligne intégrée (lien correspondant à chaque paramètre)
+fournit des exemples que vous pouvez facilement adapter.
+
+\titreC {Configuration des groupes et des utilisateurs}
+
+Un groupe correspond à un ensemble de pages Web accessibles sur
+votre serveur Web. En ce sens, la notion de groupe correspond à un
+<<~domaine Web~>>\footnote {Tant que le nom du <<~royaume
+d'authentification, correspondant à la directive Apache <<~\texttt
+{AuthName}~>>, est le même, l'utilisateur n'aura pas à re-saisir son mot
+de passe.}.
+
+Avant de créer un groupe, il faut donc réfléchir au périmètre auquel
+les utilisateurs de ce groupe auront accès.
+
+Le premier groupe créé correspond aux utilisateurs ayant droit à
+accéder à l'application WebAuth, et donc par là à gérer les comptes.
+
+Le deuxième groupe que vous allez créer correspondra vraisemblablement
+aux utilisateurs de l'autre application du CRC que vous souhaitez
+installer (voir introduction).
+
+L'ajout des utilisateurs peut être réalisé soit par l'interface Web
+(conseillé), soit par l'écriture d'un script comparable à celui
+fourni pour le remplissage initial (voir fichier \texttt
+{./inst/init-base}).
+
+\titreB {Script auxiliaire de maintenance de la base}
+
+L'application WebAuth est complétée par un script auxiliaire, lancé
+par \texttt {cron} pour réaliser les opérations de maintenance et
+de sauvegarde de la base PostgreSQL. Ce script, \verb|./expl/quotidien|,
+effectue une sauvegarde dans le répertoire \texttt {./dump}, ainsi
+qu'un <<~\texttt {VACUUM}~>> (spécifique PostgreSQL) sur la base.
+
+De plus, il permet également de créer une copie de la base
+d'exploitation dans une base de développement, mais ceci n'est pas
+activé par défaut.
+
+Après l'avoir modifié selon vos besoins, vous pouvez le lancer
+toutes les nuits par \texttt {cron}, de préférence avant minuit
+pour avoir des noms de fichiers de sauvegarde représentatifs du
+jour sauvegardé.  Voici, pour exemple, une ligne de \texttt {crontab}
+possible (voir fichier \texttt {./expl/crontab.auth})~:
+
+\begin {quote}
+\begin {verbatim}
+30 22 * * * $HOME/expl/quotidien
+\end{verbatim}
+\end {quote}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Installation de l'application de changement de mot de passe
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titreA {Installation de l'application de changement de mot de passe}
+
+L'application WebAuth vient avec un exemple d'application de
+changement de mot de passe, accessible par n'importe quel utilisateur.
+Si vous choisissez de l'installer, voici comment procéder. La démarche
+est très similaire à l'installation de l'application de gestion des
+utilisateurs.
+
+\titreB  {Installation des fichiers de l'application}
+
+Choisissez un répertoire pour placer les pages Web et les scripts
+CGI de l'application, qui ne doit pas être le répertoire dans lequel
+vous avez détarré l'application. Dans l'installation par défaut,
+ce répertoire est nommé \verb|/local/services/www/applis/passwd/|.
+
+Comme précédemment (voir~\ref {install-auth}, page~\pageref
+{install-auth}), choisissez la manière dont vous voulez construire
+les pages HTML, puis éditez le fichier \texttt {Makefile} du
+répertoire \verb|./www/passwd| (les variables sont les mêmes).
+
+Enfin, lancez \texttt {make} (dans le répertoire \verb|./www/passwd|)
+pour installer tous les fichiers de l'application dans l'arborescence
+Web.
+
+
+\titreB {Configuration du serveur Apache}
+
+Comme précédemment (voir~\ref {config-apache-auth}, page~\pageref
+{config-apache-auth}), le serveur Apache doit être configuré pour~:
+
+\begin {itemize}
+    \item autoriser l'accès en consultation à
+	\verb|/local/services/www/applis/passwd/|
+    \item autoriser l'accès en exécution CGI à
+	\verb|/local/services/www/applis/passwd/bin|
+    \item interdire tout accès à
+	\verb|/local/services/www/applis/passwd/lib|
+\end {itemize}
+
+\titreC {Avec l'authentification PostgreSQL}
+
+Ceci peut être réalisé grâce aux quelques lignes suivantes (voir
+deuxième partie du fichier \verb|./inst/httpd.conf|) dans le fichier
+\texttt {httpd.conf} de configuration d'Apache, que vous prendrez
+soin d'adapter~:
+
+\begin {quote}
+\small
+\begin {verbatim}
+ScriptAlias "/applis/passwd/bin/" "/local/services/www/applis/passwd/bin/"
+
+<Directory /local/services/www/applis/passwd>
+    #
+    # Ces lignes peuvent astucieusement être mises en commun
+    # en les déclarant dans le répertoire racine de votre
+    # serveur Web.
+    #
+    AuthName		    "Intranet CRC"
+    Auth_PG_host            localhost
+    Auth_PG_port            5432
+    Auth_PG_database        auth
+    Auth_PG_user            auth
+    Auth_PG_pwd             mot-de-passe-en-clair-de-auth
+    Auth_PG_pwd_table       utilisateurs
+    Auth_PG_uid_field       login
+    Auth_PG_pwd_field       password
+    Auth_PG_grp_table       membres
+
+    # Attention : version avec mod_auth_pgsql
+    #Auth_PG_gid_field       groupe
+    # Attention : version avec mod_auth_pgsql2
+    Auth_PG_grp_group_field groupe
+    Auth_PG_grp_user_field  login
+
+    #
+    # Fin des lignes pouvant être mises en commun dans le
+    # répertoire racine de votre serveur Web.
+    #
+
+    AuthType            Basic
+    require             valid-user
+
+    # si vous avez une page prévue pour signaler les erreurs, mettez-la ici
+    ErrorDocument       401 /errauth/erreur.html
+</Directory>
+
+<Directory /local/services/www/applis/passwd/lib>
+    order deny,allow
+    deny from all
+</Directory>
+
+Alias "/applis/passwd" "/local/services/www/applis/passwd"
+
+#
+# Pour effectuer en une seule opération
+# - l'accès via l'url /applis/passwd, qui redirige en réalité vers un script
+# - les redirections vers HTTPS
+#
+RedirectMatch permanent ^/applis/passwd/$ \
+                https://www-crc.u-strasbg.fr/applis/passwd/bin/passwd
+RedirectMatch permanent ^/applis/passwd/index.html$ \
+                https://www-crc.u-strasbg.fr/applis/passwd/bin/passwd
+\end{verbatim}
+\end {quote}
+
+\titreC {Avec l'authentification LDAP}
+
+Cette section est à écrire lorsque l'application sera portée sur
+LDAP.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Conclusion
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titreA {Conclusion}
+
+Si ça marche, n'oubliez pas d'envoyer une bouteille de champagne aux
+auteurs...
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Annexe A - pages à trous de l'application de gestion des utilisateurs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\appendix
+\titreA {Pages à trous de l'application de gestion des utilisateurs}
+    \label {anx-trous}
+
+{\small
+    \tablehead {\hline
+	\multicolumn {1} {|c|} {\textbf {Fichier}} &
+		\multicolumn {1} {|c|} {\textbf {Trou}} &
+		\multicolumn {1} {|c|} {\textbf {Signification}}
+	\\ \hline
+    }
+    \tabletail {\hline}
+\begin {supertabular} {|l|l|p{100mm}|}
+    (tous)
+	& \texttt {\%HOMEURL\%}
+	& adresse relative de la page d'accueil par rapport
+	    à la racine du serveur Web
+	\\ \hline
+    (beaucoup)
+	& \texttt {\%URL\%}
+	& URL du script de gestion des utilisateurs
+	\\ \hline
+    actionok.html
+	& \texttt {\%TITREACTION\%}
+	& titre de l'action effectuée
+	\\ \cline {2-3}
+	& \texttt {\%COMPLEMENT\%}
+	& texte apportant un complément d'information le cas échéant.
+	\\ \hline
+    admparliste.html
+	& \texttt {\%TAB\%}
+	& tableau contenant les paramètres éditables de l'application
+	\\ \hline
+    erreur.html
+	& \texttt {\%MESSAGE\%}
+	& message d'erreur
+	\\ \hline
+    grpajout.html
+	& \texttt {\%GROUPES\%}
+	& liste des groupes existant dans la base
+	\\ \hline
+    grpconsult.html
+	& \texttt {\%GROUPES\%}
+	& liste des groupes existant dans la base
+	\\ \hline
+    grpmodif.html
+	& \texttt {\%MENUGROUPE\%}
+	& menu HTML permettant de sélectionner le groupe à modifier
+	\\ \hline
+    grpsuppr.html
+	& \texttt {\%MENUGROUPE\%}
+	& menu HTML permettant de sélectionner le groupe à modifier
+	\\ \hline
+    grptraitemodif.html
+	& \texttt {\%GROUPE\%}
+	& groupe en cours de modification
+	\\ \cline {2-3}
+	& \texttt {\%VRAISMEMBRES\%}
+	& liste actuelle des membres du groupe en cours de modication
+	\\ \cline {2-3}
+	& \texttt {\%DESCR\%}
+	& description du groupe en cours de modification
+	\\ \cline {2-3}
+	& \texttt {\%LISTETOUS\%}
+	& liste HTML des utilisateurs hors du groupe dans le groupe
+	\\ \cline {2-3}
+	& \texttt {\%LISTEMEMBRES\%}
+	& liste HTML des utilisateurs membres du le groupe
+	\\ \hline
+    utichoix.html
+	& \texttt {\%MESSAGE\%}
+	& message affiché au cas où plusieurs utilisateurs ont été trouvés
+	\\ \cline {2-3}
+	& \texttt {\%LISTEUTILISATEURS\%}
+	& liste des utilisateurs trouvés
+	\\ \cline {2-3}
+	& \texttt {\%AUCUN\%}
+	& formulaire de re-sélection si aucun utilisateur n'a été trouvé
+	\\ \hline
+    utiliste.html
+	& \texttt {\%NBUTILISATEURS\%}
+	& nombre d'utilisateurs trouvés
+	\\ \cline {2-3}
+    et
+	& \texttt {\%S\%}
+	& <<~s~>> si plusieurs utilisateurs ont été trouvés
+	\\ \cline {2-3}
+    utiliste.tex
+	& \texttt {\%DATE\%}
+	& date
+	\\ \cline {2-3}
+	& \texttt {\%HEURE\%}
+	& heure
+	\\ \cline {2-3}
+	& \texttt {\%TABLEAU\%}
+	& tableau HTML présentant la liste des utilisateurs
+	\\ \hline
+    utimodif.html
+	& \texttt {\%TITRE\%}
+	& nom de l'action qui va être effectuée
+	\\ \cline {2-3}
+	& \texttt {\%ACTION\%}
+	& action à effectuer à la suite de la modification des paramètres
+	\\ \cline {2-3}
+	& \texttt {\%ETAT\%}
+	& état 
+	\\ \cline {2-3}
+	& \texttt {\%PARAMUTILISATEUR\%}
+	& formulaire d'édition des paramètres de l'utilisateur
+	\\ \hline
+    utipasswd.html
+	& \texttt {\%LOGIN\%}
+	& nom de login de l'utilisateur
+	\\ \cline {2-3}
+	& \texttt {\%PRENOM\%}
+	& prénom de l'utilisateur
+	\\ \cline {2-3}
+	& \texttt {\%NOM\%}
+	& nom de l'utilisateur
+	\\ \hline
+    utisel.html
+	& \texttt {\%MESSAGE\%}
+	& message préalable aux critères de sélection
+	\\ \cline {2-3}
+	& \texttt {\%ACTION\%}
+	& action à effectuer après la sélection
+	\\ \cline {2-3}
+	& \texttt {\%CRITERES\%}
+	& formulaire de saisie des critères de sélection
+	\\ \hline
+    utisuppr.html
+	& \texttt {\%LOGIN\%}
+	& nom de login de l'utilisateur
+	\\ \hline
+\end {supertabular}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Annexe B - pages à trous de l'application de changement de mot de passe
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\titreA {Pages à trous de l'application de changement de mot de passe}
+
+{\small
+    \tablehead {\hline
+	\multicolumn {1} {|c|} {\textbf {Fichier}} &
+		\multicolumn {1} {|c|} {\textbf {Trou}} &
+		\multicolumn {1} {|c|} {\textbf {Signification}}
+	\\ \hline
+    }
+    \tabletail {\hline}
+\begin {supertabular} {|l|l|p{100mm}|}
+    (tous)
+	& \texttt {\%HOMEURL\%}
+	& adresse relative de la page d'accueil par rapport
+	    à la racine du serveur Web
+	\\ \hline
+    erreur.html
+	& \texttt {\%MESSAGE\%}
+	& message d'erreur
+	\\ \hline
+    pwdchoix.html
+	& (aucun)
+	& (aucun)
+	\\ \hline
+    pwdok.html
+	& (aucun)
+	& (aucun)
+	\\ \hline
+\end {supertabular}
+}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
+% % Annexe B - MCD
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \clearpage
+% \titreA {Modèle des données}
+% 
+% La figure ci-dessous présente le modèle des données utilisé dans la base
+% PostgreSQL.
+% 
+% \figpswidth {mcd-auth} {120mm}
+
+\end {document}

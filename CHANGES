@@ -17,6 +17,7 @@ version 1.4 - ??/??/2007
     - centralisation de la gestion des groupes et des correspondants
     - log des modifications de la base
     - intégration de webauth pour ceux qui veulent conserver l'auth PostgreSQL
+	sous le nom pgauth
 
 version 1.3 - 13/04/2005
     - bug : adresses IPv6 avec une longueur de préfixe acceptées à tort
@@ -44,4 +45,4 @@ Verison 1.1 - 20/01/2004
 Version 1.0 - xx/05/2002
     - version initiale
 
-$Id: CHANGES,v 1.6 2007-11-29 15:48:46 pda Exp $
+$Id: CHANGES,v 1.7 2007-11-29 16:53:29 pda Exp $

@@ -1,0 +1,76 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {21/03/2004}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - Changement de mot de passe
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	CRC - Mot de passe
+    } {
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}      {/osiris/}}
+	    \reference {\lien {CRC} {/crc/}}
+	}
+    }
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Modification de mot de passe}
+
+    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/passwd">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {
+		    \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {Saisissez un nouveau mot de passe}
+	    }
+	    \lignetableau {
+		\casetableau {} {
+		    Veuillez saisir le nouveau mot de passe (entre
+		    6 et 8 caractères, au moins un caractère
+		    non alphabétique).
+		}
+		\casetableau {} {
+		    <INPUT TYPE="PASSWORD" NAME="pw1" SIZE="8">
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {
+		    Confirmez le nouveau mot de passe
+		}
+		\casetableau {} {
+		    <INPUT TYPE="PASSWORD" NAME="pw2" SIZE="8">
+		}
+	    }
+	    \lignetableau {
+		\multicasetableau {2} {
+		    \couleurfond {#10C090}
+		    \centragehorizontal {CENTER}
+		} {<INPUT TYPE="SUBMIT" NAME="valider" VALUE="Changer">}
+	    }
+	}
+    </FORM>
+}
+
+}

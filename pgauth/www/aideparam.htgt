@@ -1,0 +1,148 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {14/12/2003}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - Authentification
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Auth
+    } {
+\elementbandeau {Voir aussi} {
+\reference {\lien {Osiris}      {/osiris/}}
+\reference {\lien {CRC} {/crc/}}
+}
+\elementbandeau {Mots de passe} {
+\reference {\lien {Modifier}  {%HOMEURL%/bin/uti?action=passwd}}
+}
+\elementbandeau {Utilisateurs} {
+\reference {\lien {Consulter} {%HOMEURL%/bin/uti?action=consult}}
+\reference {\lien {Imprimer}  {%HOMEURL%/bin/uti?action=impr}}
+\reference {\lien {Ajouter}   {%HOMEURL%/bin/uti?action=ajout}}
+\reference {\lien {Modifier}  {%HOMEURL%/bin/uti?action=modif}}
+\reference {\lien {Supprimer} {%HOMEURL%/bin/uti?action=suppr}}
+}
+\elementbandeau {Groupes} {
+\reference {\lien {Consulter} {%HOMEURL%/bin/grpconsult}}
+\reference {\lien {Ajouter}   {%HOMEURL%/bin/grpajout}}
+\reference {\lien {Modifier}  {%HOMEURL%/bin/grpmodif}}
+\reference {\lien {Supprimer} {%HOMEURL%/bin/grpsuppr}}
+}
+\elementbandeau {Administration} {
+\reference {\lien {Paramètres} {%HOMEURL%/bin/admparliste}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Paramètres de l'application}
+
+    \titre {2} {\ancre {mailfrom} {"From" des mails de modification de mot de passe}}
+
+	Champ <<~From~>> des mails envoyés par l'application à un
+	utilisateur lors des changements de mot de passe.
+
+	Exemple~:
+	    \retrait {\verbatim {aide-osiris@crc.u-strasbg.fr}}
+
+    \titre {2} {\ancre {mailreplyto} {"Reply-To" des mails de modification de mot de passe}}
+
+	Champ <<~Reply-To~>> des mails envoyés par l'application à un
+	utilisateur lors des changements de mot de passe.
+
+	Exemple~:
+	    \retrait {(vide)}
+
+    \titre {2} {\ancre {mailcc} {"Cc" des mails de modification de mot de passe}}
+
+	Destinataire(s) auxiliaires des mail envoyés par l'application
+	à un utilisateur lors des changements de mot de passe.
+
+	Cela peut éventuellement être une liste d'adresses,
+	l'espace faisant office de séparateur.
+
+	Exemple~:
+	    \retrait {(vide)}
+
+    \titre {2} {\ancre {mailbcc} {"Bcc" des mails de modification de mot de passe}}
+
+	Destinataire(s) caché(s) des mail envoyés par l'application
+	à un utilisateur lors des changements de mot de passe.
+
+	Cela peut éventuellement être une liste d'adresses,
+	l'espace faisant office de séparateur.
+
+	Exemple~:
+	    \retrait {\verbatim {aide-osiris@crc.u-strasbg.fr}}
+
+    \titre {2} {\ancre {mailsubject} {"Subject" des mails de modification de mot de passe}}
+
+	Champ <<~Subject~>> des mails envoyés par l'application à un
+	utilisateur lors des changements de mot de passe.
+
+	Exemple~:
+	    \retrait {\verbatim {Accès à l'intranet du CRC}}
+
+    \titre {2} {\ancre {mailbody} {Corps des mails de modification de mot de passe}}
+
+	Corps des mails envoyés par l'application
+	à un utilisateur lors des changements de mot de passe.
+	Il est possible d'utiliser les codes suivants~:
+
+	\retrait {
+	    \tableau {
+		\bordure {1}
+		\taille {100}
+	    } {
+		\casedefauttableau {\centragehorizontal {LEFT}}
+		\casedefauttableau {\centragehorizontal {LEFT}}
+	    } {
+		\lignetableau {
+		    \casetableau {} {%1$s}
+		    \casetableau {} {login de l'utilisateur}
+		}
+		\lignetableau {
+		    \casetableau {} {%2$s}
+		    \casetableau {} {mot de passe généré}
+		}
+	    }
+	}
+
+
+	Exemple~:
+	    \retrait {
+		\verbatim {
+    Bonjour,
+
+    Votre compte pour accéder à l'intranet du CRC a été
+    réinitialisé. Vos paramètres pour y accéder sont les
+    suivants :
+	
+	login        : %1$s
+	mot de passe : %2$s
+
+    Merci de vérifier si vos droits sont corrects et de signaler
+    toute inexactitude.
+
+    Cordialement,
+
+    L'équipe du CRC
+		}
+	    }
+
+}
+
+}
