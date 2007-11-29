@@ -1,0 +1,4 @@
+#
+# Opérations de maintenance quotidienne de la base
+#
+30 22 * * * $HOME/expl/quotidien

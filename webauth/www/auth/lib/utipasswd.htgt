@@ -1,0 +1,177 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {30/07/2003}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - Authentification - Changement de mot de passe
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Authentification
+    } {
+\elementbandeau {Voir aussi} {
+\reference {\lien {Osiris}      {/osiris/}}
+\reference {\lien {CRC} {/crc/}}
+}
+\elementbandeau {Mots de passe} {
+\reference {\lien {Modifier}  {%HOMEURL%/bin/uti?action=passwd}}
+}
+\elementbandeau {Utilisateurs} {
+\reference {\lien {Consulter} {%HOMEURL%/bin/uti?action=consult}}
+\reference {\lien {Imprimer}  {%HOMEURL%/bin/uti?action=impr}}
+\reference {\lien {Ajouter}   {%HOMEURL%/bin/uti?action=ajout}}
+\reference {\lien {Modifier}  {%HOMEURL%/bin/uti?action=modif}}
+\reference {\lien {Supprimer} {%HOMEURL%/bin/uti?action=suppr}}
+}
+\elementbandeau {Groupes} {
+\reference {\lien {Consulter} {%HOMEURL%/bin/grpconsult}}
+\reference {\lien {Ajouter}   {%HOMEURL%/bin/grpajout}}
+\reference {\lien {Modifier}  {%HOMEURL%/bin/grpmodif}}
+\reference {\lien {Supprimer} {%HOMEURL%/bin/grpsuppr}}
+}
+\elementbandeau {Administration} {
+\reference {\lien {Paramètres} {%HOMEURL%/bin/admparliste}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Modification de mot de passe de '%LOGIN%'}
+
+    Utilisateur '%LOGIN%' (%PRENOM% %NOM%).
+
+    <FORM METHOD="POST" ACTION="%URL%">
+	<INPUT TYPE="HIDDEN" NAME="action" VALUE="passwd">
+	<INPUT TYPE="HIDDEN" NAME="etat"   VALUE="ok">
+	<INPUT TYPE="HIDDEN" NAME="login"  VALUE="%LOGIN%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {CENTER}}
+	    \casedefauttableau {\centragehorizontal {CENTER}}
+	} {
+	    \lignetableau {
+		\casetableau {\taille {50}} {
+		    \**************************************************
+		    \* case en haut à gauche (bloquer)
+		    \tableau {
+			\bordure {0} {}
+			\taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {
+				\couleurfond {#C0C0C0}
+				\centragehorizontal {CENTER}
+			    } {Bloquer l'accès au compte}
+			}
+			\lignetableau {
+			    \casetableau {} {Bloquer l'accès en mettant <<~*~>>
+				comme mot de passe}
+			}
+			\lignetableau {
+			    \casetableau {
+				\couleurfond {#10C090}
+				\centragehorizontal {CENTER}
+			    } {<INPUT TYPE="SUBMIT" NAME="valider" VALUE="Bloquer">}
+			}
+		    }
+		}
+		\casetableau {\taille {50}} {
+		    \**************************************************
+		    \* case en haut à droite (générer)
+		    \tableau {
+			\bordure {0} {}
+			\taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {
+				\couleurfond {#C0C0C0}
+				\centragehorizontal {CENTER}
+			    } {Générer un mot de passe}
+			}
+			\lignetableau {
+			    \casetableau {} {Générer un mot de passe aléatoire
+				et l'envoyer par mail à l'utilisateur
+			    }
+			}
+			\lignetableau {
+			    \casetableau {
+				\couleurfond {#10C090}
+				\centragehorizontal {CENTER}
+			    } {<INPUT TYPE="SUBMIT" NAME="valider" VALUE="Générer">}
+			}
+		    }
+		}
+	    }
+	    \lignetableau {
+		\**************************************************
+		\* case en bas (modifier)
+		\multicasetableau {2} {
+		    \centragehorizontal {CENTER}
+		} {
+		    \tableau {
+			\bordure {0} {}
+			\taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {\br}
+			    \casetableau {} {\br}
+			}
+			\lignetableau {
+			    \multicasetableau {2} {
+				\couleurfond {#C0C0C0}
+				\centragehorizontal {CENTER}
+			    } {Saisir un nouveau mot de passe}
+			}
+			\lignetableau {
+			    \casetableau {} {
+				Veuillez saisir le nouveau mot de passe (entre
+				6 et 8 caractères, au moins un caractère
+				non alphabétique).
+			    }
+			    \casetableau {} {
+				<INPUT TYPE="PASSWORD" NAME="pw1" SIZE="8">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {
+				Confirmer le nouveau mot de passe
+			    }
+			    \casetableau {} {
+				<INPUT TYPE="PASSWORD" NAME="pw2" SIZE="8">
+			    }
+			}
+			\lignetableau {
+			    \multicasetableau {2} {
+				\couleurfond {#10C090}
+				\centragehorizontal {CENTER}
+			    } {<INPUT TYPE="SUBMIT" NAME="valider" VALUE="Changer">}
+			}
+		    }
+		}
+	    }
+	}
+    </FORM>
+}
+
+}

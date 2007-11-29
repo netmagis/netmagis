@@ -1,0 +1,38 @@
+#!/bin/sh
+
+#
+# Initialisation minimale de la base d'authentification
+#
+# Syntaxe :
+#	init-base
+# (pas d'argument)
+#
+# Historique
+#   2004/03/07 : pda        : conception
+#
+
+PGPASSWORD="mot-de-passe-de-auth"
+export PGPASSWORD
+
+BASE=auth
+
+##############################################################################
+# POUR EVITER LES ERREURS (LANCEMENT MALENCONTREUX DE CE SCRIPT)
+
+exit 0
+
+##############################################################################
+
+psql -q $BASE <<'EOF'
+
+    INSERT INTO groupes (groupe, descr)
+		VALUES ('authadmin', 'Administrateurs de la base Auth') ;
+
+    -- mot de passe = "a-changer"
+    INSERT INTO utilisateurs (login, password, nom, prenom)
+		VALUES ('pda', 'qN.mLR7i6WogM', 'DAVID', 'Pierre') ;
+
+    INSERT INTO membres (login, groupe)
+		VALUES ('pda', 'authadmin') ;
+
+EOF

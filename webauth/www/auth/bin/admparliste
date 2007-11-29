@@ -1,0 +1,170 @@
+#!%TCLSH%
+
+#
+# Script de présentation de la page des paramètres de la base
+#
+# Appelé par : index.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2003/12/08 : pda     : création à partir de sos
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libauth)	$conf(lib)/libauth.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admparliste.html
+set conf(aide)		$conf(homeurl)/aideparam.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(nologin)	%NOLOGIN%
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require auth
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# Le tableau servant à présenter les paramètres
+#
+
+set conf(tableau) {
+    global {
+	chars {12 normal}
+	columns {50 50}
+    }
+    pattern {Normal2} {
+	vbar {no}
+	column {
+	    align {right}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+	column {
+	    align {left}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+    }
+    pattern {Normal1} {
+	vbar {no}
+	column {
+	    multicolumn {2}
+	    color {10C090}
+	    align {center}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+    }
+}
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libauth)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-auth $conf(nologin) $conf(auth) $conf(err) {} ftab login
+
+    #
+    # Mise en forme des données dans le formulaire
+    #
+
+    set donnees {}
+
+    foreach attribut {
+	{mailfrom	{"From" des mails de modification de passwd}	string}
+	{mailreplyto	{"Reply-To" des mails de modification de passwd} string}
+	{mailcc		{"Cc" des mails de modification de passwd}	string}
+	{mailbcc	{"Bcc" des mails de modification de passwd}	string}
+	{mailsubject	{"Subject" des mails de moditication de passwd}	string}
+	{mailbody	{Corps du mail de modification de passwd}	text}
+	} {
+
+	set clef	[lindex $attribut 0]
+	set nom		[lindex $attribut 1]
+	set type	[lindex $attribut 2]
+
+	set curval [::auth::getconfig $clef]
+
+	switch -- $type {
+	    bool {
+		set html [::webapp::form-yesno $clef $curval {%1$sOui %2$sNon}]
+	    }
+	    string {
+		set html [::webapp::form-text $clef 1 60 0 $curval]
+	    }
+	    text {
+		set html [::webapp::form-text $clef 20 70 0 $curval]
+	    }
+	    menu {
+		set lmenu [lindex $attribut 3]
+		set html [::webapp::form-menu $clef 1 0 $lmenu {}]
+	    }
+	    default {
+		set html "<FONT COLOR=#FF0000>ERREUR : type de '$attribut'</FONT>"
+	    }
+	}
+
+	set aide "<A HREF=\"$conf(aide)#$clef\">$nom</A>"
+	lappend donnees [list Normal2 $aide $html]
+    }
+    set html "<INPUT TYPE=submit VALUE=\"Enregistrer\">"
+    append html " <INPUT TYPE=reset VALUE=\"Réinitialiser\">"
+    lappend donnees [list Normal1 $html]
+
+    #
+    # Génération de la page contenant le formulaire
+    #
+
+    set subst {}
+    lappend subst [list %TAB% [::arrgen::output "html" $conf(tableau) $donnees]]
+
+    ::webapp::send html [::webapp::file-subst $conf(page) $subst]
+
+    #
+    # Déconnexion de la base
+    #
+
+    ::auth::close
+}
+
+::webapp::cgi-exec main %DEBUG%
