@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.5 2007-10-23 14:18:11 pda Exp $
+# $Id: webapp.tcl,v 1.6 2007-11-29 15:24:48 pda Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -2182,7 +2182,7 @@ snit::type ::webapp::log {
 	}	
     }
 
-    method log {event login ip msg} {
+    method log {date event login ip msg} {
 
 	switch $options(-method) {
 	    postgresql {
@@ -2190,13 +2190,29 @@ snit::type ::webapp::log {
 		    if {[string equal [set $c] ""]} then {
 			set t($c) NULL
 		    } else {
-			set t($c) "'[::pgsql::quote [set $c]]'"
+			switch $c {
+			    date {
+				set t($c) "to_timestamp([set $c])"
+			    }
+			    default {
+				set t($c) "'[::pgsql::quote [set $c]]'"
+			    }
+			}
 		    }
 		}
+		if {[string equal $date ""]} then {
+		    set datecol ""
+		    set dateval ""
+		} else {
+		    set datecol "date,"
+		    set dateval "to_timestamp($date),"
+		}
 		set t(subsys) "'[::pgsql::quote $options(-subsys)]'"
-		set sql "INSERT INTO $table (subsys,event,login,ip,msg)
-			    VALUES ($t(subsys),$t(event),$t(login),
-				    $t(ip),$t(msg))"
+		set sql "INSERT INTO $table
+				($datecol subsys, event, login, ip, msg)
+			    VALUES (
+				$dateval $t(subsys), $t(event), $t(login),
+				    $t(ip), $t(msg))"
 		if {! [::pgsql::execsql $handle $sql m]} then {
 		    error "Cannot write log ($m)"
 		}
