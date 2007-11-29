@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsaddalias,v 1.4 2007-11-14 15:27:31 pda Exp $
+# $Id: dnsaddalias,v 1.5 2007-11-29 15:54:35 pda Exp $
 
 #
 # Script pour ajouter un alias dans la base
@@ -40,7 +40,6 @@ set conf(defuser)	%DEFUSER%
 
 lappend auto_path $conf(pkg)
 package require pgsql
-package require auth
 
 #
 # On y va !
