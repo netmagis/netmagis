@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: mkdist,v 1.1 2007-11-27 14:58:29 pda Exp $
+# $Id: mkdist,v 1.2 2007-11-29 15:45:41 pda Exp $
 #
 # Création d'une arborescence pour distribuer WebDNS
 #
@@ -167,11 +167,18 @@ copie_repertoire $WORKDIR 	htg		$DESTDIR
 #
 
 mkdir $DESTDIR/pkgtcl
-copie_fichiers	 $WORKDIR/pkgtcl $DESTDIR \
-			Makefile \
+copie_fichiers	 $WORKDIR/pkgtcl $DESTDIR/pkgtcl \
 			arrgen.n arrgen.tcl \
 			webapp.n webapp.tcl \
 			pgsql.n pgsql.tcl
+(
+    cd $DESTDIR/pkgtcl
+    make \
+	-f $WORKDIR/pkgtcl/Makefile \
+	LISTE="webapp.tcl arrgen.tcl pgsql.tcl" \
+	pkgIndex.tcl \
+	> /dev/null
+)
 
 #
 # Création des répertoires vides
