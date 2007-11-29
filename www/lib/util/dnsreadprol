@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsreadprol,v 1.5 2007-11-29 15:54:35 pda Exp $
+# $Id: dnsreadprol,v 1.6 2007-11-29 15:58:42 pda Exp $
 
 #
 # Script pour lire le prologue d'une zone
@@ -38,6 +38,7 @@ set conf(defuser)	%DEFUSER%
 #
 
 lappend auto_path $conf(pkg)
+package require webapp
 package require pgsql
 
 #

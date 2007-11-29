@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsmodattr,v 1.5 2007-11-29 15:54:35 pda Exp $
+# $Id: dnsmodattr,v 1.6 2007-11-29 15:58:42 pda Exp $
 
 #
 # Script pour modifier les attributs d'un RR dans la base
@@ -49,6 +49,7 @@ set conf(attrs)		{mac hinfo respnom respmel commentaire dhcpprofil}
 #
 
 lappend auto_path $conf(pkg)
+package require webapp
 package require pgsql
 
 #
