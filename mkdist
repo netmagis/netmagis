@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: mkdist,v 1.2 2007-11-29 15:45:41 pda Exp $
+# $Id: mkdist,v 1.3 2007-11-29 15:50:35 pda Exp $
 #
 # Création d'une arborescence pour distribuer WebDNS
 #
@@ -153,6 +153,7 @@ copie_repertoire $WORKDIR/dns	expl		$DESTDIR
 copie_repertoire $WORKDIR/dns	inst		$DESTDIR
 copie_repertoire $WORKDIR/dns	upgrade		$DESTDIR
 copie_repertoire $WORKDIR/dns	www		$DESTDIR
+copie_repertoire $WORKDIR/dns	webauth		$DESTDIR
 
 copie_fichiers	 $WORKDIR/dns $DESTDIR CHANGES README
 
