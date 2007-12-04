@@ -50,7 +50,6 @@ set conf(form)          {
 #
 
 lappend auto_path $conf(pkg)
-package require auth
 package require webapp
 package require pgsql
 
