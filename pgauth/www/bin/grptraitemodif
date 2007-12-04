@@ -31,6 +31,7 @@
 # Historique
 #   2003/06/03 : pda/jean : création
 #   2003/06/27 : pda      : utilisation de cgi-exec
+#   2007/12/04 : pda/jean : intégration dans webdns
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -57,6 +58,7 @@ set conf(ok)		$conf(lib)/actionok.html
 
 set conf(auth)		%AUTH%
 set conf(nologin)	%NOLOGIN%
+set conf(admin)		%GRPROOT%
 
 set conf(taille)	20
 
@@ -112,7 +114,7 @@ proc actualiser {groupe descr vraismembres} {
     #
 
     set liste {}
-    foreach u [::auth::searchuser nonexistentarray {+login}] {
+    foreach u [auth-searchuser nonexistentarray {+login}] {
 	if {! [info exists tab($u)]} then {
 	    lappend liste [list $u $u]
 	}
@@ -183,7 +185,7 @@ proc main {} {
     # Initialisation
     #
 
-    init-auth $conf(nologin) $conf(auth) $conf(err) $conf(form) ftab login
+    init-auth $conf(nologin) $conf(auth) $conf(admin) $conf(err) $conf(form) ftab login
 
     set valider [lindex $ftab(valider) 0]
     set groupe [lindex $ftab(groupe) 0]
@@ -192,7 +194,7 @@ proc main {} {
     # Vérifier les informations du groupe
     #
 
-    if {! [::auth::lsgroup tabgrp]} then {
+    if {! [auth-lsgroup tabgrp]} then {
 	::webapp::error-exit $conf(err) "Récupération des groupes impossible."
     }
 
@@ -254,7 +256,7 @@ proc main {} {
 	    # Enregistrer les modifications du groupe
 	    #
 
-	    if {! [::auth::setgroup $groupe $descr $vraismembres msg]} then {
+	    if {! [auth-setgroup $groupe $descr $vraismembres msg]} then {
 		::webapp::error-exit $conf(err) $msg
 	    }
 
@@ -284,7 +286,7 @@ proc main {} {
     # Déconnexion de la base
     #
 
-    ::auth::close
+    end-auth
 }
 
 ::webapp::cgi-exec main %DEBUG%

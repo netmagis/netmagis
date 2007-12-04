@@ -8,7 +8,8 @@
 # Paramètres (formulaire ou URL) : les paramètres
 #
 # Historique
-#   2003/12/08 : pda     : création à partir de sos
+#   2003/12/08 : pda      : création à partir de sos
+#   2007/12/04 : pda/jean : intégration dans webdns
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -34,6 +35,7 @@ set conf(page)		$conf(lib)/actionok.html
 
 set conf(auth)		%AUTH%
 set conf(nologin)	%NOLOGIN%
+set conf(admin)		%GRPROOT%
 
 set conf(form)	{
 	{mailfrom		1 1}
@@ -72,7 +74,7 @@ proc main {} {
     # Initialisation
     #
 
-    init-auth $conf(nologin) $conf(auth) $conf(err) $conf(form) ftab login
+    init-auth $conf(nologin) $conf(auth) $conf(admin) $conf(err) $conf(form) ftab login
 
     #
     # Enregistrement des paramètres du formulaire
@@ -81,7 +83,7 @@ proc main {} {
     foreach element $conf(form) {
 	set clef [lindex $element 0]
 	set val [lindex $ftab($clef) 0]
-	if {! [::auth::setconfig $clef $val msg]} then {
+	if {! [auth-setconfig $clef $val msg]} then {
 	    ::webapp::error-exit $conf(err) "Ereur dans l'enregistrement de '$clef' ('$msg')"
 	}
     }
@@ -107,7 +109,7 @@ proc main {} {
     # Déconnexion de la base
     #
 
-    ::auth::close
+    end-auth
 }
 
 ::webapp::cgi-exec main %DEBUG%

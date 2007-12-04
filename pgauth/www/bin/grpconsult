@@ -10,6 +10,7 @@
 # Historique
 #   2003/05/30 : pda/jean : création
 #   2003/06/27 : pda      : utilisation de cgi-exec
+#   2007/12/04 : pda/jean : intégration dans webdns
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -35,6 +36,7 @@ set conf(page)		$conf(lib)/grpconsult.html
 
 set conf(auth)		%AUTH%
 set conf(nologin)	%NOLOGIN%
+set conf(admin)		%GRPROOT%
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -95,13 +97,13 @@ proc main {} {
     # Initialisation
     #
 
-    init-auth $conf(nologin) $conf(auth) $conf(err) {} ftab login
+    init-auth $conf(nologin) $conf(auth) $conf(admin) $conf(err) {} ftab login
 
     #
     # Récupérer la liste des groupes
     #
 
-    if {! [::auth::lsgroup tabgrp]} then {
+    if {! [auth-lsgroup tabgrp]} then {
 	::webapp::error-exit $conf(err) \
 			"Impossible de récupérer la liste des groupes."
     }
@@ -138,7 +140,7 @@ proc main {} {
     # Déconnexion de la base
     #
 
-    ::auth::close
+    end-auth
 }
 
 ::webapp::cgi-exec main %DEBUG%

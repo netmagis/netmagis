@@ -7,7 +7,7 @@ TCLSH	= /usr/local/bin/tclsh8.4
 #DEBUG	= 1
 DEBUG	= 0
 
-AUTH    = {postgresql {dbname=auth user=auth password=mot-de-passe-de-auth}}
+AUTH    = {dbname=auth user=auth password=mot-de-passe-de-auth}
 HOMEURL	= /applis/auth
 NOLOGIN	= /local/etc/nologin.auth
 
@@ -17,6 +17,7 @@ PKGTCL	= /local/services/www/pkgtcl
 HTG	= /local/services/www/utils/htg
 
 ROOT	= {pda jean}
+GRPROOT = authadmin
 
 
 #
@@ -30,6 +31,7 @@ SUBST	= \
 	-e 's|%PKGTCL%|$(PKGTCL)|' \
 	-e 's|%HOMEURL%|$(HOMEURL)|' \
 	-e 's|%ROOT%|$(ROOT)|' \
+	-e 's|%GRPROOT%|$(GRPROOT)|' \
 	-e 's|%NOLOGIN%|$(NOLOGIN)|' \
 	-e 's|%AUTH%|$(AUTH)|'
 

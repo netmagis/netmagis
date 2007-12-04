@@ -17,10 +17,158 @@
 #   2007/11/29 : pda/jean : fusion ancien package auth.tcl et librairie libauth
 #
 
-package require Pgtcl
-package require pgsql
-package require webapp
-package require arrgen
+set libconf(champs)	{login password nom prenom mel tel mobile fax adr}
+
+# pour chiffrer les mots de passe
+set libconf(trpw)	"/usr/bin/openssl passwd -1"
+
+# pour générer un mot de passe aléatoire
+set libconf(genpw)	"/usr/local/bin/pwgen --numerals 8"
+
+# caractéristique exigée pour les mots de passe fournis par les utilisateurs
+set libconf(minpwlen)	6
+set libconf(maxpwlen)	16
+
+# Champs : <titre> <type du champ> <nom de var pour le formulaire> <user>
+#	avec <user> = 1 pour des informations sur l'utilisateur
+set libconf(editfields) {
+    {Login 	{string 10} login	1}
+    {Nom	{string 40} nom		1}
+    {Méthode	{yesno {%1$s Exp. régulière %2$s Phonétique}} phren 0}
+    {Prénom	{string 40} prenom	1}
+    {Méthode	{yesno {%1$s Exp. régulière %2$s Phonétique}} phrep 0}
+    {Adresse	{text 3 40} adr		1}
+    {Mél	{string 40} mel		1}
+    {Tél	{string 15} tel		1}
+    {Fax	{string 15} fax		1}
+    {GSM	{string 15} mobile	1}
+}
+set libconf(editgroups) {
+    {{Groupes Web}	{list multi ...} groupes 1}
+}
+
+#
+# Tableaux (cf arrgen(n)) utilisés dans ce package :
+#	- choix : liste de choix d'utilisateurs avec login en url pour sélection
+#	- modif : formulaire d'ajout/modification d'un utilisateur
+#	- liste : liste d'utilisateurs (pour consultation ou impression)
+#
+
+set libconf(tabchoix) {
+	global {
+	    chars {10 normal}
+	    align {left}
+	    botbar {yes}
+	    columns {11 26 35 28 10}
+	    latex {
+		linewidth {267}
+	    }
+	}
+	pattern Titre {
+	    title {yes}
+	    topbar {yes}
+	    chars {bold}
+	    align {center}
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	}
+	pattern Utilisateur {
+	    vbar {yes}
+	    column {
+		format {raw}
+	    }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	}
+    }
+
+set libconf(tabmodif) {
+	global {
+	    align {left}
+	    botbar {no}
+	    columns {25 75}
+	}
+	pattern {Normal} {
+	    vbar {no}
+	    column { }
+	    vbar {no}
+	    column {
+		format {raw}
+	    }
+	    vbar {no}
+	}
+    }
+
+set libconf(tabliste) {
+	global {
+	    chars {10 normal}
+	    align {left}
+	    botbar {yes}
+	    columns {8 16 32 10 10 10 14 10}
+	    latex {
+		linewidth {267}
+	    }
+	}
+	pattern Titre {
+	    title {yes}
+	    topbar {yes}
+	    chars {bold}
+	    align {center}
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	}
+	pattern Utilisateur {
+	    chars {8}
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	    column { }
+	    vbar {yes}
+	}
+    }
 
 ##############################################################################
 # Accès à la base
@@ -82,14 +230,23 @@ proc init-auth {nologin base groupe pagerr form ftabvar loginvar} {
 		"Pas de login : l'authentification a échoué."
     }
 
-    ########################################## XXX
     #
     # Vérifier le groupe exigé si nécessaire
     #
 
     if {! [string equal $groupe ""]} then {
-	############################################## XXX
-	erreur PAS ENCORE CODE
+	set qlogin  [::pgsql::quote $login]
+	set qgroupe [::pgsql::quote $groupe]
+	set sql "SELECT * FROM membres
+			WHERE login = '$qlogin' AND groupe = '$qgroupe'"
+	set trouve 0
+	pg_select $authfd $sql tab {
+	    set trouve 1
+	}
+	if {! $trouve} then {
+	    ::webapp::error-exit $pagerr \
+		    "Droits insuffisants pour l'opération."
+	}
     }
 
     #
@@ -126,201 +283,6 @@ proc end-auth {} {
 }
 
 ##############################################################################
-
-namespace eval auth {
-    namespace export init \
-		getuser setuser deluser searchuser showuser \
-			edituser htmledituser \
-		lsgroup addgroup delgroup setgroup htmlgrpmenu \
-		getconfig setconfig \
-		close crypt genpw chpw \
-		usermanage \
-		gethandle
-
-    variable champs {login password nom prenom mel tel mobile fax adr}
-
-    # pour chiffrer les mots de passe
-    variable trpw	"/usr/bin/openssl passwd -1"
-    variable genpw	"/usr/local/bin/pwgen --numerals 8"
-
-    variable minpwlen	6
-    variable maxpwlen	16
-
-    array set titres {
-		    login	Login
-		    nom		Nom
-		    prenom	Prénom
-		    adr		Adresse
-		    mel		Mél
-		    tel		Tél
-		    fax		Fax
-		    mobile	Mobile
-		    groupes	{Groupes Web}
-		}
-
-    # Champs : <titre> <type du champ> <nom de var pour le formulaire> <user>
-    #	avec <user> = 1 pour des informations sur l'utilisateur
-    variable editfields {
-	{Login 		{string 10} login	1}
-	{Nom		{string 40} nom		1}
-	{Méthode	{yesno {%1$s Exp. régulière %2$s Phonétique}} phren 0}
-	{Prénom		{string 40} prenom	1}
-	{Méthode	{yesno {%1$s Exp. régulière %2$s Phonétique}} phrep 0}
-	{Adresse	{text 3 40} adr		1}
-	{Mél		{string 40} mel		1}
-	{Tél		{string 15} tel		1}
-	{Fax		{string 15} fax		1}
-	{GSM		{string 15} mobile	1}
-    }
-    variable editgroups {
-	{{Groupes Web}	{list multi ...} groupes 1}
-    }
-
-    #
-    # Tableaux (cf arrgen(n)) utilisés dans ce package :
-    #	- show : affichage d'un utilisateur (cf fct showuser)
-    #	- choix : liste de choix d'utilisateurs avec login en url pour sélection
-    #	- modif : formulaire d'ajout/modification d'un utilisateur
-    #	- liste : liste d'utilisateurs (pour consultation ou impression)
-    #
-    array set arrgen {
-	show {
-	    global {
-		align {left}
-		botbar {yes}
-		columns {33 67}
-	    }
-	    pattern Info {
-		topbar {yes}
-		vbar {yes}
-		column {
-		    chars {bold}
-		}
-		vbar {yes}
-		column { }
-		vbar {yes}
-	    }
-	}
-
-	choix {
-	    global {
-		chars {10 normal}
-		align {left}
-		botbar {yes}
-		columns {11 26 35 28 10}
-		latex {
-		    linewidth {267}
-		}
-	    }
-	    pattern Titre {
-		title {yes}
-		topbar {yes}
-		chars {bold}
-		align {center}
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-	    }
-	    pattern Utilisateur {
-		vbar {yes}
-		column {
-		    format {raw}
-		}
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-	    }
-	}
-
-	modif {
-	    global {
-		align {left}
-		botbar {no}
-		columns {25 75}
-	    }
-	    pattern {Normal} {
-		vbar {no}
-		column { }
-		vbar {no}
-		column {
-		    format {raw}
-		}
-		vbar {no}
-	    }
-	}
-
-	liste {
-	    global {
-		chars {10 normal}
-		align {left}
-		botbar {yes}
-		columns {8 16 32 10 10 10 14 10}
-		latex {
-		    linewidth {267}
-		}
-	    }
-	    pattern Titre {
-		title {yes}
-		topbar {yes}
-		chars {bold}
-		align {center}
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-	    }
-	    pattern Utilisateur {
-		chars {8}
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-		column { }
-		vbar {yes}
-	    }
-	}
-    }
-}
-
-##############################################################################
 # Gestion des transactions
 ##############################################################################
 
@@ -338,35 +300,26 @@ namespace eval auth {
 #
 # Historique :
 #   2003/08/04 : pda      : conception
+#   2007/12/04 : pda/jean : spécialisation pgsql
 #
 
-proc ::auth::transact {kwd msg} {
+proc auth-transact {kwd msg} {
     upvar $msg m
+    global authfd
 
     set r 0
-    switch -- $::auth::method {
-	postgresql {
-	    switch -- [string tolower $kwd] {
-		begin {
-		    set r [::pgsql::lock $::auth::dbfd {utilisateurs membres} m]
-		}
-		commit {
-		    set r [::pgsql::unlock $::auth::dbfd "commit" m]
-		}
-		abort {
-		    set r [::pgsql::unlock $::auth::dbfd "abort" m]
-		}
-		default {
-		    set m "Unknown mode '$kwd'"
-		}
-	    }
+    switch -- [string tolower $kwd] {
+	begin {
+	    set r [::pgsql::lock $authfd {utilisateurs membres} m]
 	}
-	ldap {
-	    # On fait semblant...
-	    set r 1
+	commit {
+	    set r [::pgsql::unlock $authfd "commit" m]
+	}
+	abort {
+	    set r [::pgsql::unlock $authfd "abort" m]
 	}
 	default {
-	    set m "Accès invalide"
+	    set m "Unknown mode '$kwd'"
 	}
     }
     return $r
@@ -402,71 +355,29 @@ proc ::auth::transact {kwd msg} {
 #   2003/05/13 : pda/jean : conception
 #   2003/05/30 : pda/jean : ajout des groupes
 #   2005/05/25 : pda/jean : ldapisation
+#   2007/12/04 : pda/jean : dé-ldapisation
 #
 
-proc ::auth::getuser {login tab} {
+proc auth-getuser {login tab} {
     upvar $tab t
+    global authfd libconf
 
     set trouve 0
-    switch -- $::auth::method {
-	postgresql {
-	    set qlogin [::pgsql::quote $login]
-	    set sql "SELECT * FROM utilisateurs WHERE login = '$qlogin'"
-	    pg_select $::auth::dbfd $sql tabsql {
-		foreach c $::auth::champs {
-		    set t($c) $tabsql($c)
-		}
-		set trouve 1
-	    }
-	    set t(groupes) {}
-	    set sql "SELECT groupe FROM membres WHERE login = '$qlogin'"
-	    pg_select $::auth::dbfd $sql tabsql {
-		lappend t(groupes) $tabsql(groupe)
-	    }
+    set qlogin [::pgsql::quote $login]
+    set sql "SELECT * FROM utilisateurs WHERE login = '$qlogin'"
+    pg_select $authfd $sql tabsql {
+	foreach c $libconf(champs) {
+	    set t($c) $tabsql($c)
 	}
-	ldap {
-	    set filtre [format $::auth::ldapfilter $login]
-	    set base $::auth::ldapsearchperson_ou
-	    set attr {}
-	    foreach c [array names ::auth::ldapfields] {
-		lappend attr $::auth::ldapfields($c)
-	    }
-	    set nb [ldap-lire-entree $::auth::ldapfd $base $filtre x $attr]
-
-	    if {$nb==1} then {
-		set trouve 1
-		foreach c [array names ::auth::ldapfields] {
-		    set ldapc $::auth::ldapfields($c)
-
-		    if {[info exists x($ldapc)]} then {
-			if {[string equal -nocase $ldapc "userpassword"]} {
-			    set ldappassword [lindex $x($ldapc) 0]
-			    if {[regexp {{([0-9a-zA-Z]+)}(.+)} $ldappassword \
-					bidon encryption password]} {
-				set t(encryption) $encryption
-				set t($c)         $password
-			    }
-			} elseif {[string equal -nocase $ldapc "webgroup"]} {
-			    # ce champ est multivalué, on récupère donc une liste
-			    set t($c) $x($ldapc)
-			} else {
-			    set t($c) [lindex $x($ldapc) 0]
-			}
-		    } else {
-			set t($c) ""
-		    }
-		}
-	    } else {
-		set trouve 0
-	    }
-	}
-	default {
-	    set trouve 0
-	}
+	set trouve 1
+    }
+    set t(groupes) {}
+    set sql "SELECT groupe FROM membres WHERE login = '$qlogin'"
+    pg_select $authfd $sql tabsql {
+	lappend t(groupes) $tabsql(groupe)
     }
     return $trouve
 }
-
 
 #
 # Modifie (ou crée) l'entrée d'un utilisateur
@@ -485,10 +396,12 @@ proc ::auth::getuser {login tab} {
 #   2003/05/13 : pda/jean : conception
 #   2003/05/30 : pda/jean : ajout des groupes
 #   2003/08/05 : pda      : ajout des transactions
+#   2007/12/04 : pda/jean : spécialisation pgsql
 #
 
-proc ::auth::setuser {tab {transact transaction}} {
+proc auth-setuser {tab {transact transaction}} {
     upvar $tab t
+    global authfd libconf
 
     if {! [regexp -- {^[a-z][-a-z0-9\.]*$} $t(login)]} then {
 	return "Syntaxe invalide pour le login (^\[a-z\]\[-a-z0-9\.\]*$)"
@@ -503,342 +416,71 @@ proc ::auth::setuser {tab {transact transaction}} {
 	set tr 0
     }
 
-    switch -- $::auth::method {
-	postgresql {
-	    #
-	    # Début de la transaction
-	    #
-	    if {$tr} then {
-		if {![::auth::transact "begin" m]} then {
-		    return $m
-		}
-	    }
-
-	    #
-	    # Détruit l'utilisateur.
-	    #
-	    set m [::auth::deluser $t(login) "pas-de-transaction"]
-	    if {! [string equal $m ""]} then {
-		if {$tr} then { ::auth::transact "abort" msg }
-		return $m
-	    }
-
-	    #
-	    # Précaution : si le mot de passe n'existe pas, invalider
-	    # le login
-	    #
-	    if {! [info exists t(password)]} then {
-		set t(password) "*"
-	    }
-
-	    #
-	    # Insérer les données existantes de l'utilisateur dans
-	    # la base.
-	    #
-	    set cols {}
-	    set vals {}
-	    foreach c $::auth::champs {
-		if {[info exists t($c)]} then {
-		    lappend cols $c
-		    lappend vals "'[::pgsql::quote $t($c)]'"
-		}
-	    }
-	    set cols [join $cols ","]
-	    set vals [join $vals ","]
-	    set sql "INSERT INTO utilisateurs ($cols) VALUES ($vals)"
-	    if {![::pgsql::execsql $::auth::dbfd $sql msg]} then {
-		if {$tr} then { ::auth::transact "abort" msg }
-		return "Insertion de '$t(login)' impossible : $msg"
-	    }
-
-	    #
-	    # Insérer l'appartenance aux groupes
-	    #
-	    set sql ""
-	    foreach g $t(groupes) {
-		append sql "INSERT INTO membres (login, groupe) VALUES
-				('$t(login)', '$g') ;"
-	    }
-	    if {![::pgsql::execsql $::auth::dbfd $sql msg]} then {
-		if {$tr} then { ::auth::transact "abort" msg }
-		return "Insertion des groupes de '$t(login)' impossible : $msg"
-	    }
-
-	    #
-	    # Fin de la transaction
-	    #
-	    if {$tr} then {
-		if {![::auth::transact "commit" m]} then {
-		    return $m
-		}
-	    }
-	}
-	ldap {
-
-	    # 
-	    # On construit la liste des attributs ldap à lire
-	    # 
-
-	    set attr {}
-	    foreach a [array names ::auth::ldapfields] {
-		lappend attr $::auth::ldapfields($a)
-	    }
-
-	    # 
-	    # On fait une lecture de l'enregistrement ldap actuel
-	    # 
-
-	    set fd $::auth::ldapfd
-	    set filtre [format $::auth::ldapfilter $t(login)]
-	    set base $::auth::ldapsearchperson_ou
-	    set nb [ldap-lire-entree $fd $base $filtre x $attr]
-
-	    #
-	    # Si l'utilisateur n'existe pas, on crée un enregistrement minimum
-	    # et refait une lecture de l'enregistrement juste après
-	    #
-
-	    if {$nb == 0} then {
-
-		set ou $::auth::ldapcreateperson_ou
-		set oc $::auth::ldapperson_oc
-		set m  [creer-uti-ldap $fd "uid=$t(login),$ou" $oc t ]
-
-		if {![string equal $m ""]} {
-		    return "creation de l'utilisateur impossible ($m)"
-		} else {
-		    set filtre [format $::auth::ldapfilter $t(login)]
-		    set base $::auth::ldapcreateperson_ou
-		    array unset x
-		    if {[ldap-lire-entree $fd $base $filtre x $attr] != 1} {
-			return "erreur de relecture de l'utilisateur $t(login)"
-		    }
-		}
-	    }
-
-	    #
-	    # Préparation de la nouvelle entree pour ldap-ecrire-entree
-	    #
-
-	    array set new {}
-	    set new(copie:orig) [array get x]
-	    set new(dn) $x(dn)
-
-	    #
-	    # Conversion des champs pour ldap (y compris les groupes)
-	    #
-
-	    foreach c [concat $::auth::champs "groupes"] {
-		set ldapfield $::auth::ldapfields($c)
-
-		if {![string equal $ldapfield ""] && \
-			[info exists t($c)] && \
-			![string equal $t($c) ""]} then {
-
-		    #
-		    # separer le format d'encryption et le mot de passe
-		    #
-		    if {[string equal $c "password"]} {
-			if {[info exists t(encryption)]} then {
-			    set new($ldapfield) \
-				    [list "{$t(encryption)}$t(password)"]
-			} else {
-			    set new($ldapfield) [list $t(password)]
-			}
-		    #
-		    # construire une liste des groupes (champ multivalue)
-		    #
-		    } elseif {[string equal $c "groupes"]} {
-			set new($ldapfield) [split $t($c)]
-		    } else {
-			set new($ldapfield) [list $t($c)]
-		    }
-		}
-	    }
-
-	    #
-	    # Traite le cas du champs 'prenomnom' (cn) a part
-	    #
-	    set prenomnom ""
-	    if {[info exists t(prenom)]} {
-		append prenomnom "$t(prenom) "
-	    }
-	    if {[info exists t(nom)]} {
-		append prenomnom $t(nom)
-	    }
-	    set ldapfield $::auth::ldapfields(prenomnom)
-	    set new($ldapfield) [list [string trim $prenomnom]]
-
-	    #
-	    # On ecrit l'entrée
-	    #
-
-	    return ""
-	}
-
-	default {
-	    return "Accès invalide"
-	}
-    }
-    return ""
-}
-
-
-#
-# Récupération d'une entrée LDAP
-#
-# Entrée :
-#   - paramètres :
-#       - fd     : accès a l'annuaire
-#       - base   : le DN de base
-#       - filtre : le filtre de recherche
-#       - tabvar : les attributs LDAP renvoyés dans le tableau
-#       - attr   : liste des attributs à lire
-# Sortie :
-#   - valeur de retour : nb d'entrées trouvés (devrait être 1 si ok)
-#
-# Historique
-#   2005/05/26 : pda/jean/zamboni : conception
-#   2005/06/08 : pda/jean/zamboni : mise en commun des fonctions de bas niveau
-#
-
-proc ldap-lire-entree {fd base filtre tabvar attr} {
-    upvar $tabvar tab
-
-    set trouve 0
-    foreach e [::ldap::search $fd $base $filtre $attr] {
-        incr trouve
-        set tab(dn) [lindex $e 0]
-        array set tab [lindex $e 1]
-
-        foreach a [array names tab] {
-            set l {}
-            foreach v $tab($a) {
-                lappend l [encoding convertfrom utf-8 $v]
-            }
-            set tab($a) $l
-        }
-    }
-    return $trouve
-}
-
-#
-# Crée un utilisateur minimal dans ldap.
-# Seuls les champs obligatoires pour un objectClass de
-# de type "personne" (uid, sn, cn) sont créés
-#
-# Entrée :
-#   - paramètres :
-#	- fd          : accès à l'annuaire
-#	- dn          : dn a creer
-#	- objectclass : objectclass des personnes
-#	- tabvar      : tableau indexe des attributs 
-# Sortie :
-#   - valeur de retour : message d'erreur, ou chaîne vide
-#
-
-proc creer-uti-ldap {fd dn objectclass tabvar} {
-    upvar $tabvar tab
-
-    set     l {}
-    lappend l "objectClass" $objectclass
-    lappend l "uid"         $tab(login)
-    lappend l "sn"          $tab(nom)
-    lappend l "cn"          "$tab(prenom) $tab(nom)"
-
-    return [::ldap::add $fd $dn $l]
-}
-
-
-#
-#
-# Enregistrer les modifications d'une entrée LDAP
-#
-# Entrée :
-#   - paramètres :
-#	- fd : accès aux bases
-#	- tabvar : les attributs LDAP originaux
-# Sortie :
-#   - valeur de retour : message d'erreur, ou chaîne vide
-#
-# Historique
-#   2005/06/01 : pda/jean/zamboni : conception
-#
-
-proc ldap-ecrire-entree {fd tabvar} {
-    upvar $tabvar tab
-
-    if {! [info exists tab(copie:orig)]} then {
-	return "Tableau non préparé"
-    }
-
-    array set old $tab(copie:orig)
-    unset tab(copie:orig)
-    array set new [array get tab]
-
     #
-    # Tri des valeurs des attributs
+    # Début de la transaction
     #
-
-    foreach a [array names old] {
-	set old($a) [lsort $old($a)]
-    }
-    foreach a [array names new] {
-	set new($a) [lsort $new($a)]
-    }
-
-    #
-    # Extraire tous les attributs non modifiés
-    # ainsi que les attributs à remplacer (on ne remplace que le premier
-    # en cas de multivalué, les autres seront ajoutés)
-    #
-
-    set rep {}
-    set add {}
-    foreach a [array names old] {
-	if {[info exists new($a)]} then {
-	    if {! [string equal $old($a) $new($a)]} then {
-		#
-		# Prendre la première valeur pour le remplacement
-		#
-		lappend rep $a
-		lappend rep [encoding convertto utf-8 [lindex $new($a) 0]]
-
-		#
-		# Les n-1 autres valeurs sont ajoutées
-		#
-		foreach v [lreplace $new($a) 0 0] {
-		    lappend add $a
-		    lappend add [encoding convertto utf-8 $v]
-		}
-	    }
-	    unset new($a)
-	    unset old($a)
+    if {$tr} then {
+	if {![auth-transact "begin" m]} then {
+	    return $m
 	}
     }
 
     #
-    # Rechercher les attributs supprimés
+    # Détruit l'utilisateur.
     #
-
-    set del [array names old]
-
-    #
-    # Rechercher les attributs ajoutés
-    #
-
-    foreach a [array names new] {
-	foreach v $new($a) {
-	    lappend add $a
-	    lappend add [encoding convertto utf-8 $v]
-	}
+    set m [auth-deluser $t(login) "pas-de-transaction"]
+    if {! [string equal $m ""]} then {
+	if {$tr} then { auth-transact "abort" msg }
+	return $m
     }
 
-    if {[llength $del] > 0 || [llength $add] > 0 || [llength $rep] > 0} then {
-	set dn $tab(dn) 
+    #
+    # Précaution : si le mot de passe n'existe pas, invalider
+    # le login
+    #
+    if {! [info exists t(password)]} then {
+	set t(password) "*"
+    }
 
-	if {[catch {::ldap::modify $fd $dn $rep $del $add} msg]} then {
-	    return "$dn: cannot MOD attributes ($msg)\nrep = $rep, del=$del\n add=$add"
+    #
+    # Insérer les données existantes de l'utilisateur dans
+    # la base.
+    #
+    set cols {}
+    set vals {}
+    foreach c $libconf(champs) {
+	if {[info exists t($c)]} then {
+	    lappend cols $c
+	    lappend vals "'[::pgsql::quote $t($c)]'"
+	}
+    }
+    set cols [join $cols ","]
+    set vals [join $vals ","]
+    set sql "INSERT INTO utilisateurs ($cols) VALUES ($vals)"
+    if {![::pgsql::execsql $authfd $sql msg]} then {
+	if {$tr} then { auth-transact "abort" msg }
+	return "Insertion de '$t(login)' impossible : $msg"
+    }
+
+    #
+    # Insérer l'appartenance aux groupes
+    #
+    set sql ""
+    foreach g $t(groupes) {
+	append sql "INSERT INTO membres (login, groupe) VALUES
+			('$t(login)', '$g') ;"
+    }
+    if {![::pgsql::execsql $authfd $sql msg]} then {
+	if {$tr} then { auth-transact "abort" msg }
+	return "Insertion des groupes de '$t(login)' impossible : $msg"
+    }
+
+    #
+    # Fin de la transaction
+    #
+    if {$tr} then {
+	if {![auth-transact "commit" m]} then {
+	    return $m
 	}
     }
 
@@ -858,9 +500,12 @@ proc ldap-ecrire-entree {fd tabvar} {
 # Historique :
 #   2003/05/13 : pda/jean : conception
 #   2003/05/30 : pda/jean : ajout des groupes
+#   2007/12/04 : pda/jean : spécialisation pgsql
 #
 
-proc ::auth::deluser {login {transact transaction}} {
+proc auth-deluser {login {transact transaction}} {
+    global authfd
+
     #
     # Pour se simplifier la vie...
     #
@@ -870,56 +515,32 @@ proc ::auth::deluser {login {transact transaction}} {
 	set tr 0
     }
 
-    switch -- $::auth::method {
-	postgresql {
-	    if {$tr} then {
-		if {![::auth::transact "begin" m]} then {
-		    return $m
-		}
-	    }
-
-	    set qlogin [::pgsql::quote $login]
-	    set sql "DELETE FROM membres WHERE login = '$qlogin'"
-	    if {! [::pgsql::execsql $::auth::dbfd $sql msg]} then {
-		if {$tr} then { ::auth::transact "abort" m }
-		return "Suppression des groupes de '$login' impossible : $msg"
-	    }
-
-	    set sql "DELETE FROM utilisateurs WHERE login = '$qlogin'"
-	    if {! [::pgsql::execsql $::auth::dbfd $sql msg]} then {
-		if {$tr} then { ::auth::transact "abort" m }
-		return "Suppression de '$login' impossible : $msg"
-	    }
-
-
-	    if {$tr} then {
-		if {![::auth::transact "commit" m]} then {
-		    return $m
-		}
-	    }
-	}
-	ldap {
-	    set fd $::auth::ldapfd
-	    set filtre "(&(uid=$login)(objectClass=$::auth::ldapperson_oc))"
-	    set base $::auth::ldapsearchperson_ou
-	    set nb [ldap-lire-entree $fd  $base $filtre x "uid"]
-
-	    if {$nb==0} then {
-		return "Utilisateur '$login' inexistant"
-	    } elseif {$nb>1} then {
-		return "Utilisateur '$login' existe plusieurs fois"
-	    }
-
-	    set msg [::ldap::delete $fd $x(dn)]
-	    if {![string equal $msg ""]} then {
-		return "Suppression de '$login' impossible ($msg)"
-	    }
-	    
-	}
-	default {
-	    return "Accès invalide"
+    if {$tr} then {
+	if {![auth-transact "begin" m]} then {
+	    return $m
 	}
     }
+
+    set qlogin [::pgsql::quote $login]
+    set sql "DELETE FROM membres WHERE login = '$qlogin'"
+    if {! [::pgsql::execsql $authfd $sql msg]} then {
+	if {$tr} then { auth-transact "abort" m }
+	return "Suppression des groupes de '$login' impossible : $msg"
+    }
+
+    set sql "DELETE FROM utilisateurs WHERE login = '$qlogin'"
+    if {! [::pgsql::execsql $authfd $sql msg]} then {
+	if {$tr} then { auth-transact "abort" m }
+	return "Suppression de '$login' impossible : $msg"
+    }
+
+
+    if {$tr} then {
+	if {![auth-transact "commit" m]} then {
+	    return $m
+	}
+    }
+
     return ""
 }
 
@@ -943,229 +564,116 @@ proc ::auth::deluser {login {transact transaction}} {
 #   2003/06/06 : pda/jean : conception
 #   2003/08/01 : pda/jean : critère de sélection phonétique
 #   2003/08/11 : pda      : recherche "or" sur plusieurs groupes
+#   2007/12/04 : pda/jean : spécialisation pgsql
 #
 
-proc ::auth::searchuser {tabcrit {tri {+nom +prenom}}} {
+proc auth-searchuser {tabcrit {tri {+nom +prenom}}} {
     upvar $tabcrit tabcriteres
+    global authfd
 
-    switch -- $::auth::method {
-	postgresql {
-	    #
-	    # Constituer la clause "where"
-	    #
+    #
+    # Constituer la clause "where"
+    #
 
-	    set clauses {}
-	    set nwheres 0
-	    set from ""
-	    foreach c {login phnom phprenom nom prenom adr mel tel mobile
-					fax groupe} {
-		if {[info exists tabcriteres($c)]} then {
-		    set re $tabcriteres($c)
-		    if {! [string equal $re ""]} then {
-			set re [::pgsql::quote $re]
-			# quoter les caractères spéciaux de SQL
-			regsub -all -- {%} $re {\\%} re
-			regsub -all -- {_} $re {\\_} re
-			# transformer *nos* caractères génériques
-			regsub -all -- {\*} $re {%} re
-			regsub -all -- {\?} $re {_} re
+    set clauses {}
+    set nwheres 0
+    set from ""
+    foreach c {login phnom phprenom nom prenom adr mel tel mobile
+				fax groupe} {
+	if {[info exists tabcriteres($c)]} then {
+	    set re $tabcriteres($c)
+	    if {! [string equal $re ""]} then {
+		set re [::pgsql::quote $re]
+		# quoter les caractères spéciaux de SQL
+		regsub -all -- {%} $re {\\%} re
+		regsub -all -- {_} $re {\\_} re
+		# transformer *nos* caractères génériques
+		regsub -all -- {\*} $re {%} re
+		regsub -all -- {\?} $re {_} re
 
-			if {[string equal $c "groupe"]} then {
-			    set from ", membres"
-			    set table "membres"
-			    lappend clauses "utilisateurs.login = membres.login"
-			} else {
-			    set table "utilisateurs"
-			}
+		if {[string equal $c "groupe"]} then {
+		    set from ", membres"
+		    set table "membres"
+		    lappend clauses "utilisateurs.login = membres.login"
+		} else {
+		    set table "utilisateurs"
+		}
 
-			if {[string equal $c "phnom"] || [string equal $c "phprenom"]} then {
-			    lappend clauses "$table.$c = SOUNDEX('$re')"
-			} elseif {[string equal $c "groupe"]} then {
-			    set or {}
-			    foreach g $tabcriteres(groupe) {
-				set qg [::pgsql::quote $g]
-				lappend or "$table.groupe = '$qg'"
-			    }
-			    if {[llength $or] > 0} then {
-				set sor [join $or " OR "]
-				lappend clauses "($sor)"
-			    }
-			} else {
-			    # ILIKE = LIKE sans tenir compte de la casse
-			    lappend clauses "$table.$c ILIKE '$re'"
-			}
-			incr nwheres
+		if {[string equal $c "phnom"] || [string equal $c "phprenom"]} then {
+		    lappend clauses "$table.$c = SOUNDEX('$re')"
+		} elseif {[string equal $c "groupe"]} then {
+		    set or {}
+		    foreach g $tabcriteres(groupe) {
+			set qg [::pgsql::quote $g]
+			lappend or "$table.groupe = '$qg'"
 		    }
-		}
-	    }
-	    if {$nwheres > 0} then {
-		set where [join $clauses " AND "]
-		set where "WHERE $where"
-	    } else {
-		set where ""
-	    }
-
-	    #
-	    # Constituer le tri
-	    #
-
-	    set sqltri {}
-	    set sqldistinct {}
-	    foreach t $tri {
-		set sens [string range $t 0 0]
-		set colonne [string range $t 1 end]
-		switch -- $sens {
-		    -		{ set sens "DESC" }
-		    +  		-
-		    default	{ set sens "ASC" }
-		}
-		if {[lsearch $colonne {login nom prenom mel tel adr mobile fax}]} then {
-		    lappend sqltri "utilisateurs.$colonne $sens"
-		    lappend sqldistinct utilisateurs.$colonne
-		}
-	    }
-	    if {[llength $sqltri] == 0} then {
-		set orderby ""
-	    } else {
-		set orderby [join $sqltri ", "]
-		set orderby "ORDER BY $orderby"
-	    }
-
-	    if {[llength $sqldistinct] == 0} then {
-		set distinct ""
-	    } else {
-		set distinct [join $sqldistinct ", "]
-		set distinct "DISTINCT ON ($distinct)"
-	    }
-
-	    #
-	    # Construire la liste des logins trouvés
-	    #
-
-	    set lusers {}
-	    set sql "SELECT $distinct utilisateurs.login
-			FROM utilisateurs $from
-			$where
-			$orderby"
-	    pg_select $::auth::dbfd $sql tab {
-		lappend lusers $tab(login)
-	    }
-	}
-	ldap {
-	    set attrsel ""
-	    set groupesel ""
-	    set lusers {}
-
-	    #
-	    # Pour chaque critere potentiel, on convertit en filtre ldap
-	    #
-
-	    foreach c {login phnom phprenom nom prenom adr mel tel mobile
-					fax groupes} {
-		if {[info exists tabcriteres($c)]} then {
-		    set val $tabcriteres($c)
-
-		    if {! [string equal $val ""]} then {
-
-			if {[info exists ::auth::ldapfields($c)]} {
-			    set ldapc $::auth::ldapfields($c)
-			    switch -- $c {
-				"groupes"    {
-				    foreach g $val {
-					append groupesel "($ldapc=$g)"
-				    }
-				}
-				"phnom"	    -
-				"phprenom"  {
-				    append attrsel "($ldapc~=$val)"
-				}
-				default	    {
-				    append attrsel "($ldapc=$val)"
-				}
-			    }
-			}
+		    if {[llength $or] > 0} then {
+			set sor [join $or " OR "]
+			lappend clauses "($sor)"
 		    }
+		} else {
+		    # ILIKE = LIKE sans tenir compte de la casse
+		    lappend clauses "$table.$c ILIKE '$re'"
 		}
-	    }
-
-	    #
-	    # Le champ groupe est obligatoire. S'il n'existe pas en tant
-	    # que critere de recherche, on l'ajoute.
-	    #
-
-	    if {[string equal $groupesel ""]} {
-		set groupesel "($::auth::ldapfields(groupes)=*)"
-	    }
-
-	    set fd $::auth::ldapfd
-	    set base $::auth::ldapsearchperson_ou 
-	    set filtre \
-		"(& objectclass=$::auth::ldapperson_oc (|$groupesel) $attrsel)"
-	    foreach e [::ldap::search $fd $base $filtre "uid"] {
-		array unset x
-		array set x [lindex $e 1]
-		lappend lusers $x(uid)
+		incr nwheres
 	    }
 	}
-	default {
-	    set lusers {}
+    }
+    if {$nwheres > 0} then {
+	set where [join $clauses " AND "]
+	set where "WHERE $where"
+    } else {
+	set where ""
+    }
+
+    #
+    # Constituer le tri
+    #
+
+    set sqltri {}
+    set sqldistinct {}
+    foreach t $tri {
+	set sens [string range $t 0 0]
+	set colonne [string range $t 1 end]
+	switch -- $sens {
+	    -		{ set sens "DESC" }
+	    +  		-
+	    default	{ set sens "ASC" }
 	}
+	if {[lsearch $colonne {login nom prenom mel tel adr mobile fax}]} then {
+	    lappend sqltri "utilisateurs.$colonne $sens"
+	    lappend sqldistinct utilisateurs.$colonne
+	}
+    }
+    if {[llength $sqltri] == 0} then {
+	set orderby ""
+    } else {
+	set orderby [join $sqltri ", "]
+	set orderby "ORDER BY $orderby"
+    }
+
+    if {[llength $sqldistinct] == 0} then {
+	set distinct ""
+    } else {
+	set distinct [join $sqldistinct ", "]
+	set distinct "DISTINCT ON ($distinct)"
+    }
+
+    #
+    # Construire la liste des logins trouvés
+    #
+
+    set lusers {}
+    set sql "SELECT $distinct utilisateurs.login
+		FROM utilisateurs $from
+		$where
+		$orderby"
+    pg_select $authfd $sql tab {
+	lappend lusers $tab(login)
     }
 
     return $lusers
 }
-
-
-#
-# Retourne le code HTML pour afficher les informations d'un utilisateur.
-#
-# Entrée :
-#   - paramètres :
-#	- tab : tableau contenant les informations, à la fois celles
-#		qui sont propres au système d'authentification (login,
-#		nom, prenom, adr, mel, tel, mobile, fax et groupe) et
-#		celles qui sont propres à l'application.
-#	- champs : champs à afficher, sous la forme d'une liste de
-#		couples {index description}, où :
-#			index : indice dans le tableau associatif tab
-#			description : titre de l'information (à afficher)
-#		Cas particuliers :
-#			- la description est facultative pour les informations
-#				propres au système d'authentification
-#			- l'index "::auth" est un raccourci pour afficher
-#				toutes les informations standard
-# Sortie :
-#   - valeur de retour : code HTML contenant un tableau "prêt à l'emploi"
-#
-# Historique :
-#   2003/06/13 : pda/jean : conception
-#
-
-proc ::auth::showuser {tab champs} {
-    upvar $tab t
-
-    set donnees {}
-    foreach c $champs {
-	set index [lindex $c 0]
-	set descr [lindex $c 1]
-	if {[string equal $index "::auth"]} then {
-	    foreach i {login nom prenom adr mel tel fax mobile groupes} {
-		lappend donnees [list Info $::auth::titres($i) $t($i)]
-	    }
-	} else {
-	    if {[string equal $descr ""]} then {
-		if {[info exist ::auth::titres($index)]} then {
-		    set descr $::auth::titres($index)
-		} else {
-		    set descr $index
-		}
-	    }
-	    lappend donnees [list Info $descr $t($index)]
-	}
-    }
-    return [::arrgen::output "html" $::auth::arrgen(show) $donnees]
-}
-
 
 #
 # Chiffre un mot de passe
@@ -1181,9 +689,11 @@ proc ::auth::showuser {tab champs} {
 #   2005/07/22 : pda/jean : sécurisation des caractères spéciaux
 #
 
-proc ::auth::crypt {chaine} {
+proc auth-crypt {chaine} {
+    global libconf
+
     regsub -all {['\\]} $chaine {\\&} chaine
-    set c [exec sh -c "$::auth::trpw '$chaine'"]
+    set c [exec sh -c "$libconf(trpw) '$chaine'"]
     return $c
 }
 
@@ -1201,8 +711,10 @@ proc ::auth::crypt {chaine} {
 #   2003/06/13 : pda/jean : conception
 #
 
-proc ::auth::genpw {} {
-    set p [exec sh -c $::auth::genpw]
+proc auth-genpw {} {
+    global libconf
+
+    set p [exec sh -c $libconf(genpw)]
     return $p
 }
 
@@ -1231,24 +743,22 @@ proc ::auth::genpw {} {
 #   2003/12/08 : pda      : paramètre "mail" plus complet
 #
 
-proc ::auth::chpw {login action mail newpwvar} {
+proc auth-chpw {login action mail newpwvar} {
     upvar $newpwvar newpw
+    global libconf
 
-    if {! [::auth::getuser $login tab]} then {
+    if {! [auth-getuser $login tab]} then {
 	return "Login '$login' inexistant"
     }
 
-    if {[string equal $::auth::method "ldap"]} {
-	set tab(encryption) "crypt"
-    }
     switch -- [lindex $action 0] {
 	block {
 	    set newpw "<invalid>"
 	    set tab(password) "*"
 	}
 	generate {
-	    set newpw [::auth::genpw]
-	    set tab(password) [::auth::crypt $newpw]
+	    set newpw [auth-genpw]
+	    set tab(password) [auth-crypt $newpw]
 	}
 	change {
 	    set pw1 [lindex $action 1]
@@ -1263,12 +773,12 @@ proc ::auth::chpw {login action mail newpwvar} {
 		return "Utilisation de caractères interdits"
 	    }
 
-	    if {[string length $newpw] < $::auth::minpwlen} then {
-		return "Mot de passe trop court (< $::auth::minpwlen caractères)"
+	    if {[string length $newpw] < $libconf(minpwlen)} then {
+		return "Mot de passe trop court (< $libconf(minpwlen) caractères)"
 	    }
-	    set newpw [string range $newpw 0 [expr $::auth::maxpwlen-1]]
+	    set newpw [string range $newpw 0 [expr $libconf(maxpwlen)-1]]
 
-	    set tab(password) [::auth::crypt $newpw]
+	    set tab(password) [auth-crypt $newpw]
 	}
 	default {
 	    return "Paramètre 'action' non valide ($action)"
@@ -1292,7 +802,7 @@ proc ::auth::chpw {login action mail newpwvar} {
 	}
     }
 
-    return [::auth::setuser tab]
+    return [auth-setuser tab]
 }
 
 ##############################################################################
@@ -1311,55 +821,25 @@ proc ::auth::chpw {login action mail newpwvar} {
 #
 # Historique :
 #   2003/05/30 : pda/jean : conception
+#   2007/12/04 : pda/jean : spécialisation pgsql
 #
 
-proc ::auth::lsgroup {tab} {
+proc auth-lsgroup {tab} {
     upvar $tab t
+    global authfd
 
-    switch -- $::auth::method {
-	postgresql {
-	    set sql "SELECT * FROM groupes"
-	    pg_select $::auth::dbfd $sql tabsql {
-		set groupe $tabsql(groupe)
-		set descr $tabsql(descr)
-		set membres {}
-		set sqlm "SELECT login FROM membres WHERE groupe = '$groupe'"
-		pg_select $::auth::dbfd $sqlm tabm {
-		    lappend membres $tabm(login)
-		}
-		set t($groupe) [list $descr $membres]
-	    }
-	    set r 1
+    set sql "SELECT * FROM groupes"
+    pg_select $authfd $sql tabsql {
+	set groupe $tabsql(groupe)
+	set descr $tabsql(descr)
+	set membres {}
+	set sqlm "SELECT login FROM membres WHERE groupe = '$groupe'"
+	pg_select $authfd $sqlm tabm {
+	    lappend membres $tabm(login)
 	}
-	ldap {
-	    set grpfield $::auth::ldapfields(groupes)
-	    
-	    set fd $::auth::ldapfd
-	    set base $::auth::ldapgroup_ou
-	    set filtre "(objectClass=$::auth::ldapgroup_oc)"
-	    foreach e [::ldap::search $fd $base $filtre ""] {
-		array unset x
-		array set x [lindex $e 1]
-		set groupe $x(uid)
-		if {[info exists x(groupDescription)]} {
-		    set descr [encoding convertfrom utf-8 $x(groupDescription)]
-		}
-		set membres {}
-		set base $::auth::ldapsearchperson_ou
-		foreach m [::ldap::search $fd $base "$grpfield=$groupe" "uid"] {
-		    array unset z
-		    array set z [lindex $m 1]
-		    lappend membres $z(uid)
-		}
-		set t($groupe) [list $descr $membres]
-	    }
-	    set r 1
-	}
-	default {
-	    set r 0
-	}
+	set t($groupe) [list $descr $membres]
     }
-    return $r
+    return 1
 }
 
 #
@@ -1376,47 +856,26 @@ proc ::auth::lsgroup {tab} {
 #
 # Historique :
 #   2003/05/30 : pda/jean : conception
+#   2007/12/04 : pda/jean : spécialisation pgsql
 #
 
-proc ::auth::addgroup {groupe descr msgvar} {
+proc auth-addgroup {groupe descr msgvar} {
     upvar $msgvar msg
+    global authfd
 
     if {! [regexp -- {^[a-z][-a-z0-9]*$} $groupe]} then {
 	set msg "Syntaxe invalide pour le groupe (^\[a-z\]\[-a-z0-9\]*$)"
 	return 0
     }
 
-    switch -- $::auth::method {
-	postgresql {
-	    set qgroupe [::pgsql::quote $groupe]
-	    set qdescr  [::pgsql::quote $descr]
-	    set sql "INSERT INTO groupes VALUES ('$qgroupe', '$qdescr')"
-	    if {! [::pgsql::execsql $::auth::dbfd $sql m]} then {
-		set msg "Insertion du groupe '$groupe' impossible ($m)"
-		set r 0
-	    } else {
-		set r 1
-	    }
-	}
-	ldap {
-	    set dn "uid=$groupe,$::auth::ldapgroup_ou"
-	    set     l  {}
-	    lappend l  "objectClass"      $::auth::ldapgroup_oc
-	    lappend l  "uid"              $groupe
-	    lappend l  "groupDescription" [encoding convertto utf-8 $descr]
-
-	    set m [::ldap::add $auth::ldapfd $dn $l]
-
-	    if {! [string equal $m ""]} then {
-		set msg "Echec de creation du groupe '$groupe' ($m)"
-		set r 0
-	    } else {
-		set r 1
-	    }
-	}
-	default {
-	    set r 0
-	}
+    set qgroupe [::pgsql::quote $groupe]
+    set qdescr  [::pgsql::quote $descr]
+    set sql "INSERT INTO groupes VALUES ('$qgroupe', '$qdescr')"
+    if {! [::pgsql::execsql $authfd $sql m]} then {
+	set msg "Insertion du groupe '$groupe' impossible ($m)"
+	set r 0
+    } else {
+	set r 1
     }
     return $r
 }
@@ -1437,37 +896,20 @@ proc ::auth::addgroup {groupe descr msgvar} {
 #
 # Historique :
 #   2003/05/30 : pda/jean : conception
+#   2007/12/04 : pda/jean : spécialisation pgsql
 #
 
-proc ::auth::delgroup {groupe msgvar} {
+proc auth-delgroup {groupe msgvar} {
     upvar $msgvar msg
+    global authfd
 
-    switch -- $::auth::method {
-	postgresql {
-	    set qgroupe [::pgsql::quote $groupe]
-	    set sql "DELETE FROM groupes WHERE groupe = '$qgroupe'"
-	    if {! [::pgsql::execsql $::auth::dbfd $sql m]} then {
-		set msg "Suppression du groupe '$groupe' impossible ($m)"
-		set r 0
-	    } else {
-		set r 1
-	    }
-	}
-	ldap {
-	    set dn "uid=$groupe,$::auth::ldapgroup_ou"
-
-	    set m [::ldap::delete $auth::ldapfd $dn]
-
-	    if {! $string equal $m ""]} then {
-		set msg "Echec de suppression du groupe $groupe dans ldap ($m)"
-		set r 0
-	    } else {
-		set r 1
-	    }
-	}
-	default {
-	    set r 0
-	}
+    set qgroupe [::pgsql::quote $groupe]
+    set sql "DELETE FROM groupes WHERE groupe = '$qgroupe'"
+    if {! [::pgsql::execsql $authfd $sql m]} then {
+	set msg "Suppression du groupe '$groupe' impossible ($m)"
+	set r 0
+    } else {
+	set r 1
     }
     return $r
 }
@@ -1487,155 +929,83 @@ proc ::auth::delgroup {groupe msgvar} {
 #
 # Historique :
 #   2003/06/04 : pda/jean : conception
+#   2007/12/04 : pda/jean : spécialisation pgsql
 #
 
-proc ::auth::setgroup {groupe descr membres msgvar} {
+proc auth-setgroup {groupe descr membres msgvar} {
     upvar $msgvar msg
+    global authfd
 
-    switch -- $::auth::method {
-	postgresql {
-	    set qgroupe [::pgsql::quote $groupe]
+    set qgroupe [::pgsql::quote $groupe]
 
-	    #
-	    # Début de la transaction
-	    #
-	    if {![::auth::transact "begin" msg]} then {
-		return 0
-	    }
+    #
+    # Début de la transaction
+    #
+    if {![auth-transact "begin" msg]} then {
+	return 0
+    }
 
-	    #
-	    # Si le groupe n'existe pas, le créer
-	    # S'il existe, modifier la description.
-	    #
-	    set sql "SELECT groupe FROM groupes WHERE groupe = '$qgroupe'"
-	    set trouve 0
-	    pg_select $::auth::dbfd $sql tab {
-		set trouve 1
-	    }
-	    if {! $trouve} then {
-		if {! [::auth::addgroup $groupe $descr msg]} then {
-		    set msg "Impossible de créer '$groupe' ($msg)"
-		    ::auth::transact "abort" bidon
-		    return 0
-		}
-	    } else {
-		set qdescr [::pgsql::quote $descr]
-		set sql "UPDATE groupes
-				SET descr = '$qdescr'
-				WHERE groupe = '$qgroupe'"
-		if {! [::pgsql::execsql $::auth::dbfd $sql m]} then {
-		    set msg "Mise à jour de '$groupe' impossible ($m)"
-		    ::auth::transact "abort" bidon
-		    return 0
-		}
-	    }
-
-	    #
-	    # Détruire la liste des membres du groupe
-	    #
-	    set sql "DELETE FROM membres WHERE groupe = '$qgroupe'"
-	    if {! [::pgsql::execsql $::auth::dbfd $sql m]} then {
-		set msg "Suppression des membres de '$groupe' impossible ($m)"
-		::auth::transact "abort" bidon
-		return 0
-	    }
-
-	    #
-	    # Actualiser la liste des membres
-	    #
-	    foreach login $membres {
-		set qlogin [::pgsql::quote $login]
-		set sql "INSERT INTO membres (login, groupe)
-				VALUES ('$qlogin', '$qgroupe')"
-		if {! [::pgsql::execsql $::auth::dbfd $sql m]} then {
-		    set msg "Mise à jour de '$login/$groupe' impossible ($m)"
-		    ::auth::transact "abort" bidon
-		    return 0
-		}
-	    }
-
-	    #
-	    # Fin de la transaction
-	    #
-	    if {! [::auth::transact "commit" m]} then {
-		set msg "Transaction pour '$groupe' impossible ($m)"
-		::auth::transact "abort" bidon
-		return 0
-	    }
-
-	    set r 1
+    #
+    # Si le groupe n'existe pas, le créer
+    # S'il existe, modifier la description.
+    #
+    set sql "SELECT groupe FROM groupes WHERE groupe = '$qgroupe'"
+    set trouve 0
+    pg_select $authfd $sql tab {
+	set trouve 1
+    }
+    if {! $trouve} then {
+	if {! [auth-addgroup $groupe $descr msg]} then {
+	    set msg "Impossible de créer '$groupe' ($msg)"
+	    auth-transact "abort" bidon
+	    return 0
 	}
-
-	ldap {
-
-	    set grpfield $::auth::ldapfields(groupes)
-	    #
-	    # Si le groupe n'existe pas, le créer
-	    # S'il existe, modifier la description.
-	    #
-	    set trouve 0
-	    set fd $::auth::ldapfd
-	    set base $::auth::ldapgroup_ou
-	    foreach g [::ldap::search $fd $base "$grpfield=$groupe" "uid"] {
-		set trouve 1
-	    }
-	    if {! $trouve} then {
-		if {! [::auth::addgroup $groupe $descr msg]} then {
-		    return 0
-		}
-	    } else {
-		set dn "uid=$groupe,$base"
-		array set x {groupDescription $descr}
-		set m [::ldap::modify $fd $dn x {} {}]
-
-		if {! [string equal $m ""]} then {
-		    set msg "Mise à jour de '$groupe' impossible ($m)"
-		    return 0
-		}
-	    }
-
-	    #
-	    # Détermine les logins des membres actuels et
-	    # génère un tableau indexé
-	    #
-
-	    foreach m [::ldap::search $fd $base "$grpfield=$groupe" "uid"] {
-		array set z [lindex $m 1]
-		set login $z(uid)
-		set current($login) 1
-	    }
-	    
-	    #
-	    # Met à jour le groupe pour les nouveaux membres
-	    #
-
-	    foreach login $membres {
-		if {![info exists current($login)]} {
-		    ::auth::getuser $login tab
-		    set tab(groupe) $groupe
-		    ::auth::setuser tab
-		}
-	    }
-
-	    #
-	    # Supprime l'appartenance au groupe des anciens membres
-	    #
-
-	    foreach login [array names current] {
-		if {[lsearch -exact $membres $login] == -1} {
-		    ::auth::getuser $login tab
-		    set tab(groupe) ""
-		    ::auth::setuser tab
-		}
-	    }
-	    set r 1
-	}
-
-	default {
-	    set r 0
+    } else {
+	set qdescr [::pgsql::quote $descr]
+	set sql "UPDATE groupes
+			SET descr = '$qdescr'
+			WHERE groupe = '$qgroupe'"
+	if {! [::pgsql::execsql $authfd $sql m]} then {
+	    set msg "Mise à jour de '$groupe' impossible ($m)"
+	    auth-transact "abort" bidon
+	    return 0
 	}
     }
-    return $r
+
+    #
+    # Détruire la liste des membres du groupe
+    #
+    set sql "DELETE FROM membres WHERE groupe = '$qgroupe'"
+    if {! [::pgsql::execsql $authfd $sql m]} then {
+	set msg "Suppression des membres de '$groupe' impossible ($m)"
+	auth-transact "abort" bidon
+	return 0
+    }
+
+    #
+    # Actualiser la liste des membres
+    #
+    foreach login $membres {
+	set qlogin [::pgsql::quote $login]
+	set sql "INSERT INTO membres (login, groupe)
+			VALUES ('$qlogin', '$qgroupe')"
+	if {! [::pgsql::execsql $authfd $sql m]} then {
+	    set msg "Mise à jour de '$login/$groupe' impossible ($m)"
+	    auth-transact "abort" bidon
+	    return 0
+	}
+    }
+
+    #
+    # Fin de la transaction
+    #
+    if {! [auth-transact "commit" m]} then {
+	set msg "Transaction pour '$groupe' impossible ($m)"
+	auth-transact "abort" bidon
+	return 0
+    }
+
+    return 1
 }
 
 #
@@ -1655,7 +1025,7 @@ proc ::auth::setgroup {groupe descr membres msgvar} {
 #   2003/06/27 : pda      : mise en package
 #
 
-proc ::auth::htmlgrpmenu {var multiple groupesel} {
+proc auth-htmlgrpmenu {var multiple groupesel} {
     #
     # Mémoriser les groupes pré-sélectionnés
     #
@@ -1666,7 +1036,7 @@ proc ::auth::htmlgrpmenu {var multiple groupesel} {
     #
     # Récupérer la liste des groupes dans la base
     #
-    if {! [::auth::lsgroup tabgrp]} then {
+    if {! [auth-lsgroup tabgrp]} then {
 	return ""
     }
 
@@ -1698,7 +1068,6 @@ proc ::auth::htmlgrpmenu {var multiple groupesel} {
     return [::webapp::form-menu $var $taille $multiple $liste $lsel]
 }
 
-
 ##############################################################################
 # Gestion des paramètres de configuration
 ##############################################################################
@@ -1715,33 +1084,16 @@ proc ::auth::htmlgrpmenu {var multiple groupesel} {
 #
 # Historique :
 #   2003/12/14 : pda      : conception
+#   2007/12/04 : pda/jean : spécialisation pgsql
 #
 
-proc ::auth::getconfig {clef} {
-    switch -- $::auth::method {
-	postgresql {
-	    set sql "SELECT * FROM config WHERE clef = '$clef'"
-	    set valeur {}
-	    pg_select $::auth::dbfd $sql tab {
-		set valeur $tab(valeur)
-	    }
-	}
-	ldap {
-	    set valeur {}
-	    set fd $::auth::ldapfd 
-	    set base $::auth::ldapparam_ou
-	    foreach e [::ldap::search $fd $base "uid=$clef" "paramValue"] {
-		array unset x
-		array set x [lindex $e 1]
-		if {[info exists x(paramValue)]} {
-		    set v [lindex $x(paramValue) 0]
-		    set valeur [encoding convertfrom utf-8 $v]
-		}
-	    }
-	}
-	default {
-	    set valeur {}
-	}
+proc auth-getconfig {clef} {
+    global authfd
+
+    set sql "SELECT * FROM config WHERE clef = '$clef'"
+    set valeur {}
+    pg_select $authfd $sql tab {
+	set valeur $tab(valeur)
     }
     return $valeur
 }
@@ -1761,51 +1113,20 @@ proc ::auth::getconfig {clef} {
 #
 # Historique :
 #   2003/12/14 : pda      : début de la conception
+#   2007/12/04 : pda/jean : spécialisation pgsql
 #
 
-proc ::auth::setconfig {clef val varmsg} {
+proc auth-setconfig {clef val varmsg} {
     upvar $varmsg msg
+    global authfd
 
-    switch -- $::auth::method {
-	postgresql {
-	    set r 0
-	    set sql "DELETE FROM config WHERE clef = '$clef'"
-	    if {[::pgsql::execsql $::auth::dbfd $sql msg]} then {
-		set v [::pgsql::quote $val]
-		set sql "INSERT INTO config VALUES ('$clef', '$v')"
-		if {[::pgsql::execsql $::auth::dbfd $sql msg]} then {
-		    set r 1
-		}
-	    }
-	}
-	ldap {
-	    set trouve 0
-	    set fd $::auth::ldapfd
-	    set base $::auth::ldapparam_ou
-	    foreach e [::ldap::search $fd $base "uid=$clef" "uid"] {
-		set trouve 1
-	    }
-	    if {$trouve} {
-		set dn "uid=$clef,$::auth::param_ou"
-		array set x {paramValue $val}
-		set msg [::ldap::modify $fd $dn x {} {}]
-		if {[string equal $msg ""]} then {
-		    set r 1
-		}
-	    } else {
-		set dn "uid=$clef,$::auth::param_ou"
-		set     l  {}
-		lappend l  "objectClass"      $::auth::ldapparam_oc
-		lappend l  "uid"              $clef
-		lappend l  "paramValue"       [encoding convertto utf-8 $val]
-		set msg [::ldap::add $fd $dn $l]
-		if {[string equal $msg ""]} {
-		    set r 1
-		} 
-	    }
-	}
-	default {
-	    set r 0
+    set r 0
+    set sql "DELETE FROM config WHERE clef = '$clef'"
+    if {[::pgsql::execsql $authfd $sql msg]} then {
+	set v [::pgsql::quote $val]
+	set sql "INSERT INTO config VALUES ('$clef', '$v')"
+	if {[::pgsql::execsql $authfd $sql msg]} then {
+	    set r 1
 	}
     }
     return $r
@@ -1874,25 +1195,25 @@ proc ::auth::setconfig {clef val varmsg} {
 #   2003/12/14 : pda      : ajout de mail*
 #
 
-proc ::auth::usermanage {evar} {
+proc auth-usermanage {evar} {
     upvar $evar e
 
     set form {
 	{action 0 1}
 	{etat   0 1}
     }
-    ::auth::get-data ftab $form $e(page-erreur)
+    auth-get-data ftab $form $e(page-erreur)
     set action [lindex $ftab(action) 0]
     set etat   [lindex $ftab(etat)   0]
 
     switch -- $action {
-	ajout   { set l [::auth::um-ajout     e ftab $etat] }
+	ajout   { set l [auth-um-ajout     e ftab $etat] }
 	consult -
-	impr    { set l [::auth::um-consimpr  e ftab $etat $action] }
+	impr    { set l [auth-um-consimpr  e ftab $etat $action] }
 	suppr   -
 	modif   -
-	passwd  { set l [::auth::um-supmodpwd e ftab $etat $action] }
-	default { set l [::auth::um-rien      e ftab $etat] }
+	passwd  { set l [auth-um-supmodpwd e ftab $etat $action] }
+	default { set l [auth-um-rien      e ftab $etat] }
     }
     set format [lindex $l 0]
     set page   [lindex $l 1]
@@ -1904,7 +1225,7 @@ proc ::auth::usermanage {evar} {
     exit 0
 }
 
-proc ::auth::get-data {ftabvar form err} {
+proc auth-get-data {ftabvar form err} {
     upvar $ftabvar ftab
 
     if {[llength [::webapp::get-data ftab $form]] != [llength $form]} then {
@@ -1912,14 +1233,14 @@ proc ::auth::get-data {ftabvar form err} {
     }
 }
 
-proc ::auth::um-rien {evar ftabvar etat} {
+proc auth-um-rien {evar ftabvar etat} {
     upvar $evar e
     upvar $ftabvar ftab
 
     return [list "html" $e(page-menu) {}]
 }
 
-proc ::auth::um-ajout {evar ftabvar etat} {
+proc auth-um-ajout {evar ftabvar etat} {
     upvar $evar e
     upvar $ftabvar ftab
 
@@ -1933,11 +1254,11 @@ proc ::auth::um-ajout {evar ftabvar etat} {
 	    set form {
 		    {nom 1 1}
 		}
-	    ::auth::get-data ftab $form $e(page-erreur)
+	    auth-get-data ftab $form $e(page-erreur)
 
 	    set nom [lindex $ftab(nom) 0]
 	    set tabcrit(phnom) $nom
-	    set lut [::auth::searchuser tabcrit {+nom +prenom}]
+	    set lut [auth-searchuser tabcrit {+nom +prenom}]
 	    set nbut [llength $lut]
 
 	    if {$nbut > 0} then {
@@ -1960,7 +1281,7 @@ proc ::auth::um-ajout {evar ftabvar etat} {
 
 		set url "$e(url)?action=ajout&etat=plusdun"
 		lappend lsubst [list %LISTEUTILISATEURS% \
-				    [::auth::um-afficher-choix e $url $lut] \
+				    [auth-um-afficher-choix e $url $lut] \
 				]
 
 		set aucun "<FORM METHOD=POST ACTION=\"$e(url)\">\n"
@@ -1984,7 +1305,7 @@ proc ::auth::um-ajout {evar ftabvar etat} {
 		#	%PARAMUTILISATEUR%
 		#	%TITRE%
 		#
-		set lsubst [::auth::um-afficher-modif e "_nouveau" $nom]
+		set lsubst [auth-um-afficher-modif e "_nouveau" $nom]
 		set page $e(page-modif)
 	    }
 	}
@@ -2003,10 +1324,10 @@ proc ::auth::um-ajout {evar ftabvar etat} {
 	    set form {
 		    {login 1 1}
 		}
-	    ::auth::get-data ftab $form $e(page-erreur)
+	    auth-get-data ftab $form $e(page-erreur)
 
 	    set login [lindex $ftab(login) 0]
-	    set lsubst [::auth::um-afficher-modif e $login ""]
+	    set lsubst [auth-um-afficher-modif e $login ""]
 	    set page $e(page-modif)
 	}
 	nouveau {
@@ -2022,11 +1343,11 @@ proc ::auth::um-ajout {evar ftabvar etat} {
 	    set form {
 		    {nom 0 1}
 		}
-	    ::auth::get-data ftab $form $e(page-erreur)
+	    auth-get-data ftab $form $e(page-erreur)
 
 	    set nom [lindex $ftab(nom) 0]
 
-	    set lsubst [::auth::um-afficher-modif e "_nouveau" $nom]
+	    set lsubst [auth-um-afficher-modif e "_nouveau" $nom]
 	    set page $e(page-modif)
 	}
 	creation {
@@ -2042,10 +1363,10 @@ proc ::auth::um-ajout {evar ftabvar etat} {
 	    set form {
 		    {login 1 1}
 	    }
-	    ::auth::get-data ftab $form $e(page-erreur)
+	    auth-get-data ftab $form $e(page-erreur)
 
 	    set login [lindex $ftab(login) 0]
-	    if {[::auth::getuser $login u]} then {
+	    if {[auth-getuser $login u]} then {
 		::webapp::error-exit $e(page-erreur) \
 			"Le login '$login' existe déjà."
 	    }
@@ -2055,9 +1376,9 @@ proc ::auth::um-ajout {evar ftabvar etat} {
 	    # passe tout de suite à la page de modification de mot
 	    # de passe.
 	    #
-	    ::auth::um-enregistrer-modif e ftab $login
+	    auth-um-enregistrer-modif e ftab $login
 
-	    set lsubst [concat $lsubst [::auth::um-afficher-passwd e $login]]
+	    set lsubst [concat $lsubst [auth-um-afficher-passwd e $login]]
 	    set page $e(page-passwd)
 	}
 	ok {
@@ -2071,10 +1392,10 @@ proc ::auth::um-ajout {evar ftabvar etat} {
 	    set form {
 		    {login 1 1}
 	    }
-	    ::auth::get-data ftab $form $e(page-erreur)
+	    auth-get-data ftab $form $e(page-erreur)
 
 	    set login [lindex $ftab(login) 0]
-	    if {! [::auth::getuser $login u]} then {
+	    if {! [auth-getuser $login u]} then {
 		::webapp::error-exit $e(page-erreur) \
 			"Le login '$login' n'existe pas."
 	    }
@@ -2082,7 +1403,7 @@ proc ::auth::um-ajout {evar ftabvar etat} {
 	    #
 	    # Utilisateur existant dans la base
 	    #
-	    set lsubst [::auth::um-enregistrer-modif e ftab $login]
+	    set lsubst [auth-um-enregistrer-modif e ftab $login]
 	    set page $e(page-ok)
 	}
 	default {
@@ -2092,9 +1413,10 @@ proc ::auth::um-ajout {evar ftabvar etat} {
     return [list "html" $page $lsubst]
 }
 
-proc ::auth::um-consimpr {evar ftabvar etat mode} {
+proc auth-um-consimpr {evar ftabvar etat mode} {
     upvar $evar e
     upvar $ftabvar ftab
+    global libconf
 
     set lsubst {}
     set format "html"
@@ -2111,13 +1433,13 @@ proc ::auth::um-consimpr {evar ftabvar etat mode} {
 	    #	%TABLEAU%
 	    #
 
-	    set lut [::auth::um-chercher-criteres e ftab]
+	    set lut [auth-um-chercher-criteres e ftab]
 	    if {[llength $lut] == 0} then {
 		#
 		# Aucun utilisateur trouvé. Présenter de nouveau
 		# la page de sélection de critères
 		#
-		set lsubst [::auth::um-afficher-criteres e ftab \
+		set lsubst [auth-um-afficher-criteres e ftab \
 				    "Aucun utilisateur trouvé"]
 		set page $e(page-sel)
 	    } else {
@@ -2145,8 +1467,8 @@ proc ::auth::um-consimpr {evar ftabvar etat mode} {
 		lappend donnees {Titre Login {Nom et prénom}
 					Adresse Mél Tél Fax GSM {Groupes Web}}
 		foreach login $lut {
-		    if {[::auth::getuser $login tab]} then {
-			set mesgroupes [::auth::um-mes-groupes e $tab(groupes)]
+		    if {[auth-getuser $login tab]} then {
+			set mesgroupes [auth-um-mes-groupes e $tab(groupes)]
 			lappend donnees [list Utilisateur \
 					    $tab(login) \
 					    "$tab(nom) $tab(prenom)" \
@@ -2157,7 +1479,7 @@ proc ::auth::um-consimpr {evar ftabvar etat mode} {
 					] \
 		    }
 		}
-		set tableau [::arrgen::output $tabfmt $::auth::arrgen(liste) $donnees]
+		set tableau [::arrgen::output $tabfmt $libconf(tabliste) $donnees]
 
 		#
 		# Cosmétique : nb d'utilisateurs avec ou sans s...
@@ -2190,14 +1512,14 @@ proc ::auth::um-consimpr {evar ftabvar etat mode} {
 	    #	%MESSAGE%
 	    #	%CRITERES%
 	    #
-	    set lsubst [::auth::um-afficher-criteres e ftab ""]
+	    set lsubst [auth-um-afficher-criteres e ftab ""]
 	    set page $e(page-sel)
 	}
     }
     return [list $format $page $lsubst]
 }
 
-proc ::auth::um-supmodpwd {evar ftabvar etat action} {
+proc auth-um-supmodpwd {evar ftabvar etat action} {
     upvar $evar e
     upvar $ftabvar ftab
 
@@ -2212,14 +1534,14 @@ proc ::auth::um-supmodpwd {evar ftabvar etat action} {
 	    #	%PRENOM%
 	    #
 
-	    set lut [::auth::um-chercher-criteres e ftab]
+	    set lut [auth-um-chercher-criteres e ftab]
 	    switch [llength $lut] {
 		0 {
 		    #
 		    # Aucun utilisateur trouvé. Présenter de nouveau
 		    # la page de sélection de critères
 		    #
-		    set lsubst [::auth::um-afficher-criteres e ftab \
+		    set lsubst [auth-um-afficher-criteres e ftab \
 					"Aucun utilisateur trouvé"]
 		    set page $e(page-sel)
 		}
@@ -2230,15 +1552,15 @@ proc ::auth::um-supmodpwd {evar ftabvar etat action} {
 		    set login [lindex $lut 0]
 		    switch -- $action {
 			suppr {
-			    set lsubst [::auth::um-afficher-suppr e $login]
+			    set lsubst [auth-um-afficher-suppr e $login]
 			    set page $e(page-suppr)
 			}
 			modif {
-			    set lsubst [::auth::um-afficher-modif e $login ""]
+			    set lsubst [auth-um-afficher-modif e $login ""]
 			    set page $e(page-modif)
 			}
 			passwd {
-			    set lsubst [::auth::um-afficher-passwd e $login]
+			    set lsubst [auth-um-afficher-passwd e $login]
 			    set page $e(page-passwd)
 			}
 			default {
@@ -2264,7 +1586,7 @@ proc ::auth::um-supmodpwd {evar ftabvar etat action} {
 
 		    set url "$e(url)?action=$action&etat=plusdun"
 		    lappend lsubst [list %LISTEUTILISATEURS% \
-					[::auth::um-afficher-choix e $url $lut] \
+					[auth-um-afficher-choix e $url $lut] \
 				    ]
 
 		    lappend lsubst [list %AUCUN% ""]
@@ -2279,26 +1601,26 @@ proc ::auth::um-supmodpwd {evar ftabvar etat action} {
 	    set form {
 		{login 1 1}
 	    }
-	    ::auth::get-data ftab $form $e(page-erreur)
+	    auth-get-data ftab $form $e(page-erreur)
 
 	    set login [lindex $ftab(login) 0]
 
-	    if {! [::auth::getuser $login u]} then {
+	    if {! [auth-getuser $login u]} then {
 		::webapp::error-exit $e(page-erreur) \
 			"Le compte '$login' n'existe pas."
 	    }
 
 	    switch -- $action {
 		suppr {
-		    set lsubst [::auth::um-afficher-suppr e $login]
+		    set lsubst [auth-um-afficher-suppr e $login]
 		    set page $e(page-suppr)
 		}
 		modif {
-		    set lsubst [::auth::um-afficher-modif e $login ""]
+		    set lsubst [auth-um-afficher-modif e $login ""]
 		    set page $e(page-modif)
 		}
 		passwd {
-		    set lsubst [::auth::um-afficher-passwd e $login]
+		    set lsubst [auth-um-afficher-passwd e $login]
 		    set page $e(page-passwd)
 		}
 		default {
@@ -2316,11 +1638,11 @@ proc ::auth::um-supmodpwd {evar ftabvar etat action} {
 	    set form {
 		{login 1 1}
 	    }
-	    ::auth::get-data ftab $form $e(page-erreur)
+	    auth-get-data ftab $form $e(page-erreur)
 
 	    set login [lindex $ftab(login) 0]
 
-	    if {! [::auth::getuser $login u]} then {
+	    if {! [auth-getuser $login u]} then {
 		::webapp::error-exit $e(page-erreur) \
 			"Le login '$login' n'existe pas."
 	    }
@@ -2328,13 +1650,13 @@ proc ::auth::um-supmodpwd {evar ftabvar etat action} {
 	    set page $e(page-ok)
 	    switch -- $action {
 		suppr {
-		    set lsubst [::auth::um-supprime-utilisateur e ftab $login]
+		    set lsubst [auth-um-supprime-utilisateur e ftab $login]
 		}
 		modif {
-		    set lsubst [::auth::um-enregistrer-modif e ftab $login]
+		    set lsubst [auth-um-enregistrer-modif e ftab $login]
 		}
 		passwd {
-		    set lsubst [::auth::um-enregistrer-passwd e ftab $login]
+		    set lsubst [auth-um-enregistrer-passwd e ftab $login]
 		}
 		default {
 		    set lsubst [list %MESSAGE% "Formulaire non conforme"]
@@ -2351,7 +1673,7 @@ proc ::auth::um-supmodpwd {evar ftabvar etat action} {
 	    #	%MESSAGE%
 	    #	%CRITERES%
 	    #
-	    set lsubst [::auth::um-afficher-criteres e ftab ""]
+	    set lsubst [auth-um-afficher-criteres e ftab ""]
 	    set page $e(page-sel)
 	}
     }
@@ -2360,7 +1682,7 @@ proc ::auth::um-supmodpwd {evar ftabvar etat action} {
 }
 
 #
-# Procédures auxiliaires de ::auth::usermanage
+# Procédures auxiliaires de auth-usermanage
 #
 
 #
@@ -2369,7 +1691,7 @@ proc ::auth::um-supmodpwd {evar ftabvar etat action} {
 # avec tous les groupes si e(groupes) est vide.
 #
 
-proc ::auth::um-mes-groupes {evar groupes} {
+proc auth-um-mes-groupes {evar groupes} {
     upvar $evar e
 
     if {[llength $e(groupes)] == 0} then {
@@ -2394,24 +1716,25 @@ proc ::auth::um-mes-groupes {evar groupes} {
 # Retour : valeur pour le trou %LISTEUTILISATEURS%
 #
 
-proc ::auth::um-afficher-choix {evar url lut} {
+proc auth-um-afficher-choix {evar url lut} {
     upvar $evar e
+    global libconf
 
     set donnes {}
     lappend donnees {Titre Login {Nom et prénom} Adresse Mél {Groupes Web}}
     foreach login $lut {
-	if {[::auth::getuser $login tab]} then {
+	if {[auth-getuser $login tab]} then {
 	    set qlogin [::webapp::post-string $login]
 	    set hlogin [::webapp::html-string $login]
 	    set urllogin "<A HREF=\"$url&login=$qlogin\">$hlogin</A>"
-	    set mesgroupes [::auth::um-mes-groupes e $tab(groupes)]
+	    set mesgroupes [auth-um-mes-groupes e $tab(groupes)]
 	    lappend donnees [list Utilisateur \
 					$urllogin "$tab(nom) $tab(prenom)" \
 					$tab(adr) $tab(mel) $mesgroupes
 				    ]
 	}
     }
-    return [::arrgen::output "html" $::auth::arrgen(choix) $donnees]
+    return [::arrgen::output "html" $libconf(tabchoix) $donnees]
 }
 
 #
@@ -2422,8 +1745,9 @@ proc ::auth::um-afficher-choix {evar url lut} {
 #	%ETAT% et %TITRE%
 #
 
-proc ::auth::um-afficher-modif {evar login nom} {
+proc auth-um-afficher-modif {evar login nom} {
     upvar $evar e
+    global libconf
 
     #
     # Récupérer les informations d'auth pour l'utilisateur, ou en
@@ -2447,7 +1771,7 @@ proc ::auth::um-afficher-modif {evar login nom} {
 	set etat  "creation"
 	set titre "Ajout"
     } else {
-	if {! [::auth::getuser $login u]} then {
+	if {! [auth-getuser $login u]} then {
 	    ::webapp::error-exit $e(page-erreur) \
 		"L'utilisateur '$login' n'existe pas !"
 	}
@@ -2459,7 +1783,7 @@ proc ::auth::um-afficher-modif {evar login nom} {
     # Choix de l'édition des groupes
     #
 
-    set menugroupes [::auth::build-group-menu "list" \
+    set menugroupes [auth-build-group-menu "list" \
 				0 $e(groupes) $e(maxgroupes) gidx]
 
     #
@@ -2476,7 +1800,7 @@ proc ::auth::um-afficher-modif {evar login nom} {
 
     set donnees {}
 
-    foreach c [concat $::auth::editfields $::auth::editgroups] {
+    foreach c [concat $libconf(editfields) $libconf(editgroups)] {
 	set ctitre [lindex $c 0]
 	set spec   [lindex $c 1]
 	set var    [lindex $c 2]
@@ -2534,7 +1858,7 @@ proc ::auth::um-afficher-modif {evar login nom} {
 	lappend donnees [list Normal $ctitre [::webapp::form-field $spec $var $v]]
     }
 
-    set paramutilisateur [::arrgen::output html $::auth::arrgen(modif) $donnees]
+    set paramutilisateur [::arrgen::output html $libconf(tabmodif) $donnees]
 
     #
     # Générer les listes de substitution
@@ -2554,10 +1878,10 @@ proc ::auth::um-afficher-modif {evar login nom} {
 # Retour : liste de substitution pour les trous %TITREACTION% et %COMPLEMENT%
 #
 
-proc ::auth::um-enregistrer-modif {evar ftabvar login} {
+proc auth-um-enregistrer-modif {evar ftabvar login} {
     upvar $evar e
     upvar $ftabvar ftab
-
+    global libconf
 
     #
     # Vérifier si le script a bien le droit de modifier l'utilisateur
@@ -2573,20 +1897,20 @@ proc ::auth::um-enregistrer-modif {evar ftabvar login} {
     # mais on le re-récupère quand même).
     #
 
-    set form [::auth::build-form-spec "modif" \
-			[concat $::auth::editfields $::auth::editgroups] \
+    set form [auth-build-form-spec "modif" \
+			[concat $libconf(editfields) $libconf(editgroups)] \
 			$e(specif) \
 		    ]
 
-    ::auth::get-data ftab $form $e(page-erreur)
+    auth-get-data ftab $form $e(page-erreur)
 
     #
     # Récupérer les informations pré-existantes dans la base
     #
     set u(groupes) {}
-    set nouveau [expr ! [::auth::getuser $login u]]
+    set nouveau [expr ! [auth-getuser $login u]]
 
-    if {! [::auth::transact "begin" m]} then {
+    if {! [auth-transact "begin" m]} then {
 	::webapp::error-exit $e(page-erreur) "Transaction invalide ($m)"
     }
 
@@ -2594,7 +1918,7 @@ proc ::auth::um-enregistrer-modif {evar ftabvar login} {
     # Positionner les champs d'utilisateur, par défaut. On n'inclut
     # pas les groupes, car on le fait après.
     #
-    foreach c $::auth::editfields {
+    foreach c $libconf(editfields) {
 	set var  [lindex $c 2]
 	set user [lindex $c 3]
 	if {$user} then {
@@ -2614,7 +1938,7 @@ proc ::auth::um-enregistrer-modif {evar ftabvar login} {
     #		prendre les groupes du formulaire, et positionner dans
     #		la base tous les groupes de e(groupes)
     #
-    ::auth::lsgroup tabgrp
+    auth-lsgroup tabgrp
     switch [llength $e(groupes)] {
 	0 {
 	    #
@@ -2682,9 +2006,9 @@ proc ::auth::um-enregistrer-modif {evar ftabvar login} {
     #
     # Effectuer le stockage de l'utilisateur dans l'authentification
     #
-    set msg [::auth::setuser u "pas de transaction"]
+    set msg [auth-setuser u "pas de transaction"]
     if {! [string equal $msg ""]} then {
-	::auth::transact "abort" m
+	auth-transact "abort" m
 	::webapp::error-exit $e(page-erreur) \
 		"Impossible d'ajouter '$login' dans auth ($msg)"
     }
@@ -2702,7 +2026,7 @@ proc ::auth::um-enregistrer-modif {evar ftabvar login} {
 
     set msg [uplevel 3 [format $e(script-setuser) $login $lval]]
     if {! [string equal $msg ""]} then {
-	::auth::transact "abort" m
+	auth-transact "abort" m
     	::webapp::error-exit $e(page-erreur) \
 		"Impossible d'ajouter '$login' dans l'application ($msg)"
     }
@@ -2710,8 +2034,8 @@ proc ::auth::um-enregistrer-modif {evar ftabvar login} {
     #
     # C'est fini, on y va !
     #
-    if {! [::auth::transact "commit" m]} then {
-	::auth::transact "abort" msg
+    if {! [auth-transact "commit" m]} then {
+	auth-transact "abort" msg
     	::webapp::error-exit $e(page-erreur) "Erreur lors de l'ajout de '$login' ($m)"
     }
 
@@ -2733,15 +2057,16 @@ proc ::auth::um-enregistrer-modif {evar ftabvar login} {
 # Retour : liste de substitution pour les trous %CRITERES% et %MESSAGE%
 #
 
-proc ::auth::um-afficher-criteres {evar ftabvar msg} {
+proc auth-um-afficher-criteres {evar ftabvar msg} {
     upvar $evar e
     upvar $ftabvar ftab
+    global libconf
 
     #
     # Gestion des groupes
     #
 
-    set menugroupes [::auth::build-group-menu "menu" 1 $e(groupes) 1 {}]
+    set menugroupes [auth-build-group-menu "menu" 1 $e(groupes) 1 {}]
     if {[llength $menugroupes] == 0} then {
 	set menugroupes {hidden}
     }
@@ -2751,7 +2076,7 @@ proc ::auth::um-afficher-criteres {evar ftabvar msg} {
     #
 
     set donnees {}
-    foreach c [concat $::auth::editfields $::auth::editgroups] {
+    foreach c [concat $libconf(editfields) $libconf(editgroups)] {
 	set titre [lindex $c 0]
 	set spec  [lindex $c 1]
 	set var   [lindex $c 2]
@@ -2766,7 +2091,7 @@ proc ::auth::um-afficher-criteres {evar ftabvar msg} {
 	    lappend donnees $l
 	}
     }
-    set criteres [::arrgen::output html $::auth::arrgen(modif) $donnees]
+    set criteres [::arrgen::output html $libconf(tabmodif) $donnees]
 
     set lsubst {}
     lappend lsubst [list %CRITERES% $criteres]
@@ -2782,19 +2107,20 @@ proc ::auth::um-afficher-criteres {evar ftabvar msg} {
 # Retour : liste de logins des utilisateurs trouvés
 #
 
-proc ::auth::um-chercher-criteres {evar ftabvar} {
+proc auth-um-chercher-criteres {evar ftabvar} {
     upvar $evar e
     upvar $ftabvar ftab
+    global libconf
 
     #
     # Récupérer les paramètres
     #
 
-    set form [::auth::build-form-spec "critere" \
-			[concat $::auth::editfields $::auth::editgroups] \
+    set form [auth-build-form-spec "critere" \
+			[concat $libconf(editfields) $libconf(editgroups)] \
 			{} \
 		    ]
-    ::auth::get-data ftab $form $e(page-erreur)
+    auth-get-data ftab $form $e(page-erreur)
 
     foreach f $form {
 	set var [lindex $f 0]
@@ -2864,7 +2190,7 @@ proc ::auth::um-chercher-criteres {evar ftabvar} {
     } else {
 	set lg $e(groupes)
 	if {[llength $lg] == 0} then {
-	    ::auth::lsgroup tabgrp
+	    auth-lsgroup tabgrp
 	    set lg [array names tabgrp]
 	}
 	if {[lsearch -exact $lg $groupes] == -1} then {
@@ -2873,7 +2199,7 @@ proc ::auth::um-chercher-criteres {evar ftabvar} {
 	set tabcrit(groupe) $groupes
     }
 
-    return [::auth::searchuser tabcrit {+nom +prenom}]
+    return [auth-searchuser tabcrit {+nom +prenom}]
 }
 
 #
@@ -2882,10 +2208,10 @@ proc ::auth::um-chercher-criteres {evar ftabvar} {
 # Retour : liste de substitution pour les trous %LOGIN%, %NOM% et %PRENOM%.
 #
 
-proc ::auth::um-afficher-passwd {evar login} {
+proc auth-um-afficher-passwd {evar login} {
     upvar $evar e
 
-    if {! [::auth::getuser $login u]} then {
+    if {! [auth-getuser $login u]} then {
 	::webapp::error-exit $e(page-erreur) \
 	    "L'utilisateur '$login' n'existe pas !"
     }
@@ -2908,7 +2234,7 @@ proc ::auth::um-afficher-passwd {evar login} {
 # Retour : liste de substitution pour les trous %TITREACTION% et %COMPLEMENT%
 #
 
-proc ::auth::um-enregistrer-passwd {evar ftabvar login} {
+proc auth-um-enregistrer-passwd {evar ftabvar login} {
     upvar $evar e
     upvar $ftabvar ftab
 
@@ -2930,14 +2256,14 @@ proc ::auth::um-enregistrer-passwd {evar ftabvar login} {
 	{pw2     0 1}
     }
 
-    ::auth::get-data ftab $form $e(page-erreur)
+    auth-get-data ftab $form $e(page-erreur)
 
     set valider  [string trim [lindex $ftab(valider) 0]]
     set hlogin [::webapp::html-string $login]
 
     switch -- $valider {
 	Bloquer {
-	    set msg [::auth::chpw $login {block} "nomail" {}]
+	    set msg [auth-chpw $login {block} "nomail" {}]
 	    set res "de blocage du compte '$hlogin'"
 	    set comp ""
 	}
@@ -2946,14 +2272,14 @@ proc ::auth::um-enregistrer-passwd {evar ftabvar login} {
 				$e(mailcc) $e(mailbcc) \
 				[encoding convertto iso8859-1 $e(mailsubject)] \
 				[encoding convertto iso8859-1 $e(mailbody)]]
-	    set msg [::auth::chpw $login {generate} $mail newpw]
+	    set msg [auth-chpw $login {generate} $mail newpw]
 	    set res "de génération de mot de passe ($newpw) pour '$hlogin'"
 	    set comp "Le mot de passe a été envoyé par mél."
 	}
 	Changer {
 	    set pw1 [lindex $ftab(pw1) 0]
 	    set pw2 [lindex $ftab(pw2) 0]
-	    set msg [::auth::chpw $login [list "change" $pw1 $pw2] "nomail" {}]
+	    set msg [auth-chpw $login [list "change" $pw1 $pw2] "nomail" {}]
 	    set res "de changement de mot de passe pour '$hlogin'"
 	    set comp ""
 	}
@@ -2983,13 +2309,13 @@ proc ::auth::um-enregistrer-passwd {evar ftabvar login} {
 # Retour : liste de substitution pour le trou %UTILISATEUR%
 #
 
-proc ::auth::um-afficher-suppr {evar login} {
+proc auth-um-afficher-suppr {evar login} {
     upvar $evar e
 
     #
     # Vérifications élémentaires
     #
-    if {! [::auth::getuser $login u]} then {
+    if {! [auth-getuser $login u]} then {
 	::webapp::error-exit $e(page-erreur) \
 	    "L'utilisateur '$login' n'existe pas !"
     }
@@ -3010,7 +2336,7 @@ proc ::auth::um-afficher-suppr {evar login} {
 # Retour : liste de substitution pour les trous %TITREACTION% et %COMPLEMENT%
 #
 
-proc ::auth::um-supprime-utilisateur {evar ftabvar login} {
+proc auth-um-supprime-utilisateur {evar ftabvar login} {
     upvar $evar e
     upvar $ftabvar ftab
 
@@ -3040,7 +2366,7 @@ proc ::auth::um-supprime-utilisateur {evar ftabvar login} {
     #
     # Suppression du ou des groupes sélectionnés
     #
-    if {! [::auth::getuser $login u]} then {
+    if {! [auth-getuser $login u]} then {
 	set comp "Le compte n'existait pas dans le sous-système d'authentification"
     } else {
 	set rmg {}
@@ -3056,7 +2382,7 @@ proc ::auth::um-supprime-utilisateur {evar ftabvar login} {
 	}
 	if {[llength $ng] != [llength $u(groupes)]} then {
 	    set u(groupes) $ng
-	    set m [::auth::setuser u]
+	    set m [auth-setuser u]
 	    if {[string equal $m ""]} then {
 		set rmg [join $rmg ", "]
 		set comp "Le compte a été supprimé des groupes ci-après : $rmg"
@@ -3081,13 +2407,13 @@ proc ::auth::um-supprime-utilisateur {evar ftabvar login} {
 #
 # Entrée :
 #	- modif : "modif" ou "critere"
-#	- spec1 : cf variable ::auth::editfields
-#	- spec2 : cf e(specif) dans ::auth::usermanage
+#	- spec1 : cf variable libconf(editfields)
+#	- spec2 : cf e(specif) dans auth-usermanage
 # Sortie :
 #	- une liste prête à être fournie à get-data
 #
 
-proc ::auth::build-form-spec {modif spec1 spec2} {
+proc auth-build-form-spec {modif spec1 spec2} {
     set form {}
 
     foreach c $spec1 {
@@ -3136,10 +2462,10 @@ proc ::auth::build-form-spec {modif spec1 spec2} {
 #	- champ prêt à être affiché avec form-field
 #
 
-proc ::auth::build-group-menu {type tous grplist maxgrp gidxvar} {
+proc auth-build-group-menu {type tous grplist maxgrp gidxvar} {
     upvar $gidxvar gidx
 
-    ::auth::lsgroup tabgrp
+    auth-lsgroup tabgrp
 
     set menugroupes {}
     set i 0
@@ -3223,7 +2549,7 @@ proc ::auth::build-group-menu {type tous grplist maxgrp gidxvar} {
 #   2003/09/27 : pda      : début de la conception
 #
 
-proc ::auth::pwdmanage {evar} {
+proc auth-pwdmanage {evar} {
     upvar $evar e
 
     set login [::webapp::user]
@@ -3235,7 +2561,7 @@ proc ::auth::pwdmanage {evar} {
 	{pw1     0 1}
 	{pw2     0 1}
     }
-    ::auth::get-data ftab $form $e(page-erreur)
+    auth-get-data ftab $form $e(page-erreur)
 
     set pw1 [string trim [lindex $ftab(pw1) 0]]
     set pw2 [string trim [lindex $ftab(pw2) 0]]
@@ -3243,7 +2569,7 @@ proc ::auth::pwdmanage {evar} {
     if {[string equal $pw1 ""] && [string equal $pw2 ""]} then {
 	set page $e(page-choix)
     } else {
-	set msg [::auth::chpw $login [list change $pw1 $pw2] "nomail" {}]
+	set msg [auth-chpw $login [list change $pw1 $pw2] "nomail" {}]
 	if {! [string equal $msg ""]} then {
 	    ::webapp::error-exit $e(page-erreur) $msg
 	} else {

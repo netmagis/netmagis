@@ -16,8 +16,8 @@ version 1.4 - ??/??/2007
     - suppression du script passwd et redirection vers un script externe
     - centralisation de la gestion des groupes et des correspondants
     - log des modifications de la base
-    - intégration de webauth pour ceux qui veulent conserver l'auth PostgreSQL
-	sous le nom pgauth
+    - intégration de webauth sous le nom pgauth, pour ceux qui souhaitent
+	conserver l'auth PostgreSQL
 
 version 1.3 - 13/04/2005
     - bug : adresses IPv6 avec une longueur de préfixe acceptées à tort
@@ -45,4 +45,4 @@ Verison 1.1 - 20/01/2004
 Version 1.0 - xx/05/2002
     - version initiale
 
-$Id: CHANGES,v 1.7 2007-11-29 16:53:29 pda Exp $
+$Id: CHANGES,v 1.8 2007-12-04 13:23:52 pda Exp $

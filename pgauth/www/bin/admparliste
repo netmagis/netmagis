@@ -8,7 +8,8 @@
 # Paramètres (formulaire ou URL) : aucun
 #
 # Historique
-#   2003/12/08 : pda     : création à partir de sos
+#   2003/12/08 : pda      : création à partir de sos
+#   2007/12/04 : pda/jean : intégration dans webdns
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -35,13 +36,13 @@ set conf(aide)		$conf(homeurl)/aideparam.html
 
 set conf(auth)		%AUTH%
 set conf(nologin)	%NOLOGIN%
+set conf(admin)		%GRPROOT%
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path $conf(pkg)
-package require auth
 package require webapp
 package require pgsql
 package require arrgen
@@ -102,7 +103,7 @@ proc main {} {
     # Initialisation
     #
 
-    init-auth $conf(nologin) $conf(auth) $conf(err) {} ftab login
+    init-auth $conf(nologin) $conf(auth) $conf(admin) $conf(err) {} ftab login
 
     #
     # Mise en forme des données dans le formulaire
@@ -123,7 +124,7 @@ proc main {} {
 	set nom		[lindex $attribut 1]
 	set type	[lindex $attribut 2]
 
-	set curval [::auth::getconfig $clef]
+	set curval [auth-getconfig $clef]
 
 	switch -- $type {
 	    bool {
@@ -164,7 +165,7 @@ proc main {} {
     # Déconnexion de la base
     #
 
-    ::auth::close
+    end-auth
 }
 
 ::webapp::cgi-exec main %DEBUG%
