@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.2 2007-03-13 21:08:01 pda Exp $
+# $Id: html.tcl,v 1.3 2007-12-16 20:33:45 pda Exp $
 #
 # Modèle "texte"
 #
@@ -26,10 +26,10 @@ proc htg_titre {} {
     if [catch {set texte  [htg getnext]} v] then {error $v}
     switch $niveau {
 	1	{
-	    set texte "<CENTER><FONT COLOR=\"#286B7A\"><H2><BR>$texte</H2></FONT></CENTER>"
+            set texte  "<table cellpadding=0 cellspacing=0 border=0 width=100%><tr><td align=\"center\" valign=\"top\" class=\"print_image\"><img src=\"/images/logo_osiris_print.jpeg\"></td><td align=\"center\" valign=\"middle\"><H2>$texte</H2></td></tr></table>"
 	}
 	2	{
-	    set texte "<FONT COLOR=\"#FF3D3D\"><H3>$texte</H3></FONT>"
+	    set texte "<H3>$texte</H3>"
 	}
 	default	{
 	    incr niveau

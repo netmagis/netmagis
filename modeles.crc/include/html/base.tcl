@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.2 2007-03-13 21:07:58 pda Exp $
+# $Id: base.tcl,v 1.3 2007-12-16 20:33:45 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -73,6 +73,7 @@ proc htg_titre {} {
     if [catch {set niveau [htg getnext]} v] then {error $v}
     if [catch {set texte  [htg getnext]} v] then {error $v}
     check-int $niveau
+
     return "<H$niveau>$texte</H$niveau>"
 }
 
@@ -105,6 +106,12 @@ proc htg_lien {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
     if [catch {set url   [htg getnext]} v] then {error $v}
     return "<A HREF=\"$url\">$texte</A>"
+}
+
+proc htg_liensecurise {} {
+    if [catch {set texte [htg getnext]} v] then {error $v}
+    if [catch {set url   [htg getnext]} v] then {error $v}
+    return "<A HREF=\"$url\" class=\"orange_accueil\">$texte</A>"
 }
 
 proc htg_ancre {} {
@@ -240,6 +247,11 @@ proc htg_centragehorizontal {} {
     return "ALIGN=$centrage "
 }
 
+proc htg_padding {} {
+    if [catch {set padding [htg getnext]} v] then {error $v}
+    return "CELLPADDING=$padding% "
+}
+
 proc htg_taille {} {
     if [catch {set taille [htg getnext]} v] then {error $v}
     return "WIDTH=$taille% "
@@ -303,6 +315,8 @@ proc htg_multicasetableau {} {
 
 # valeur par défaut de "meta"
 set partie(meta) ""
+set partie(soustitre) 0
+set partie(currentcol) 0
 
 proc htg_metarefresh {} {
     global partie
