@@ -1,0 +1,9 @@
+{
+% $Id: fond.latex,v 1.1 2007-12-16 20:52:08 pda Exp $
+% un fond neutre pour latex
+% (note : inclus par la plupart des styles latex)
+%
+\include {include/latex/preambule.latex}
+\recuperer {texte}
+\\end \{document\}
+}
