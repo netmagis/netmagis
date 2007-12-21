@@ -1,7 +1,7 @@
 #
 # Makefile de la doc d'installation de l'application SOS
 #
-# $Id: Makefile,v 1.3 2007-11-27 14:55:54 pda Exp $
+# $Id: Makefile,v 1.4 2007-12-21 10:57:47 pda Exp $
 #
 #
 # Cibles possibles :
@@ -23,7 +23,9 @@ SRCS = install.tex
 
 FIGS = \
 	multitiers.ps \
-	mcd-dns.ps
+	auth.ps \
+	mcd-dns.ps \
+	mcd-auth.ps
 
 .SUFFIXES:	.fig .tex .dvi .ps .pdf .txt
 

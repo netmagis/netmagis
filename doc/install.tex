@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.6 2007-12-07 14:03:55 pda Exp $
+% $Id: install.tex,v 1.7 2007-12-21 10:57:47 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -52,23 +52,6 @@
     \newcommand {\fichier} [1] {\texttt{#1}\xspace}
 
     \newcommand {\slashslash} {\char92\char92}
-
-    \renewcommand {\fig} [2]
-    {
-	\begin {figure} [htbp]
-	    \hrule
-	    \vspace {3mm}
-	    % Attention : pas de \figps pour latex2html
-	    \begin {center}
-		\epsfig {figure=#1.ps}
-	    \end {center}
-	    \vspace {2mm}
-	    \caption {#2}
-	    \vspace {2mm}
-	    \hrule
-	    \label {fig:#1}
-	\end {figure}
-    }
 
 \begin {document}
 
@@ -139,6 +122,7 @@
 
     \begin {center}
 	Version 1.4, ???? 2007 \\
+	\verb|$Id: install.tex,v 1.7 2007-12-21 10:57:47 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -174,7 +158,7 @@ motivé les auteurs à rentrer dans une logique de diffusion pour la
 communauté.
 
 L'objectif premier de WebDNS était de déléguer la gestion du DNS à
-un public de <<~correspondants réseau~>> sur un réseau, qu'il soit
+un public de «~correspondants réseau~» sur un réseau, qu'il soit
 de laboratoire, de campus, métropolitain, etc.
 
 Par la suite, de nouvelles fonctionnalités sont apparues~: gestion
@@ -201,15 +185,15 @@ de WebDNS et l'application a été ouverte en juin 2002.
 
 Ce document décrit en détail l'installation de l'application, ainsi
 que certains éléments du paramétrage. Une bonne connaissance du DNS,
-du système Unix, et de la configuration d'un serveur Web sont
-requises.
+du système Unix et de la configuration d'un serveur Web est
+requise.
 
 \vspace* {10mm}
 
 La liste de diffusion \texttt {webdns@u-strasbg.fr} est ouverte à
 tous les utilisateurs de l'application WebDNS. Pour s'y abonner,
 il suffit d'envoyer un message à \texttt {sympa@u-strasbg.fr}
-avec <<~\verb|SUBSCRIBE webdns|~>> dans le corps du message.
+avec «~\verb|SUBSCRIBE webdns|~» dans le corps du message.
 Les archives sont consultables sur
 \htmlurl {http://listes.u-strasbg.fr/}.
 
@@ -225,7 +209,7 @@ Les archives sont consultables sur
 L'application WebDNS est une application permettant de gérer une
 ou plusieurs zones DNS, et d'en déléguer tout ou partie à une
 population d'utilisateurs (les correspondants réseaux) par un
-mécanisme de droits assez fin.
+mécanisme de droits fin.
 
 Plus précisément, l'application WebDNS permet de gérer des informations
 associées à un parc de machines, comme le nom, l'adresse IP, l'adresse
@@ -233,7 +217,7 @@ MAC (ou adresse Ethernet), mais également le type de système
 d'exploitation, la personne responsable ou un commentaire à usage
 général.
 
-Le système de droits fins permet de déléguer l'administration d'un
+Le système de droits permet de déléguer l'administration d'un
 sous-réseau (ou une partie de sous-réseau, à l'adresse IP près si
 l'administrateur le souhaite) et d'un domaine à une ou plusieurs
 personnes, réunies dans un ou plusieurs groupes.
@@ -255,8 +239,7 @@ comme par exemple le nom et l'adresse électronique de la personne
 responsable de la machine.
 
 
-Au delà de ces applications particulières,
-l'application WebDNS
+Au delà de ces applications particulières, l'application WebDNS
 constitue le c{\oe}ur d'un système complet de gestion d'un réseau
 universitaire (qu'il soit de laboratoire, de campus, métropolitain
 ou régional).
@@ -268,15 +251,15 @@ L'application WebDNS est une application multitiers. Son principe
 de fonctionnement est résumé sur la figure ci-après, qui illustre plus
 particulièrement l'aspect de la génération de zones DNS~:
 
-\figpswidth {multitiers} {130mm}
+\figpswidth {multitiers} {140mm}
 
-Dans cette figure, l'utilisateur accède à ses données par l'intermédiaire
-de son navigateur Web, via le protocole HTTPS. Le \textbf
-{serveur Web} (typiquement Apache) ne fait que mettre en forme des
-données, qui elles-mêmes stockées sur le \textbf {serveur de données}.
-Le serveur de données abrite la base de données PostgreSQL, et le
-serveur Web communique avec le serveur de données par l'intermédiaire
-du protocole PostgreSQL.
+On peut voir sur cette figure que l'utilisateur accède à ses données
+par l'intermédiaire de son navigateur Web, via le protocole HTTPS.
+Le \textbf {serveur Web} (typiquement Apache) ne fait que mettre
+en forme des données, qui elles-mêmes stockées sur le \textbf
+{serveur de données}.  Le serveur de données abrite la base de
+données PostgreSQL, et le serveur Web communique avec le serveur
+de données par l'intermédiaire du protocole PostgreSQL.
 
 Le serveur DNS (typiquement Bind) récupère périodiquement (via
 \texttt {cron}) les informations qui ont changé dans la base de
@@ -292,6 +275,18 @@ typiquement le serveur d'ISC, est client PostgreSQL du serveur de
 données), ou pour la génération de la table de routage de messagerie
 (où le serveur de messagerie est également client PostgreSQL du
 serveur de données).
+
+\cbstart
+Enfin, l'authentification à l'application est réalisée par le serveur
+Web à partir d'une base externe (typiquement une base PostgreSQL
+ou un annuaire LDAP). L'authentification LDAP est conçue pour
+s'adapter à des environnements divers, mais complexes et disposant
+de leur propre gestion (annuaire d'établissement ou d'entreprise).
+Pour les cas plus simples, une application est fournie dans la
+distribution de WebDNS pour gérer les utilisateurs avec une base
+PostgreSQL.  Voir la section~\ref {auth} (page~\pageref {auth})
+pour plus d'informations.
+\cbend
 
 
 \titreB {Fonctionnalités}
@@ -338,7 +333,7 @@ sont~:
 \begin {itemize}
     \item l'association statique d'une adresse MAC à un nom (et une
 	adresse IP)~; cette association peut être complétée par un
-	<<~profil DHCP~>>, c'est à dire un ensemble d'options de
+	«~profil DHCP~», c'est à dire un ensemble d'options de
 	configuration du serveur DHCP communes à plusieurs machines
 	(comme par exemple l'adresse du serveur de \textit {boot}
 	d'un PC sans disque)~;
@@ -358,11 +353,102 @@ par groupe de correspondant.
 
 
 \titreB {Authentification}
+    \label {auth}
+
+\cbstart%1.4
+\titreC {Principes}
 
 L'authentification des utilisateurs est réalisée par le serveur
-Web. La base des utilisateurs, externe à l'application WebDNS,
-repose sur le logiciel WebAuth (voir~\ref {webauth}, page~\pageref
-{webauth}).
+Web, à partir d'une base d'authentification externe à l'application
+WebDNS, comme l'illustre la figure suivante~:
+
+\figpswidth {auth} {140mm}
+
+Sur cette figure sont représentées les deux bases. La première est
+la base PostgreSQL pour WebDNS. Celle-ci ne contient d'autre
+information sur les utilisateurs que leur login.
+
+La deuxième base est dédiée à l'authentification. Elle peut s'appuyer
+sur un serveur PostgreSQL ou un annuaire LDAP\footnote {Le support
+d'autres types de base se fait par ajout du code correspondant dans
+le fichier \texttt {pkgtcl/webapp.tcl}.}. Elle contient quatre types
+d'informations pour chaque utilisateur~:
+
+\begin {itemize}
+    \item le login
+    \item les informations relatives au nom de l'utilisateurs, à
+	son adresse, etc. que WebDNS pourra utiliser, par exemple,
+	pour trouver le correspondant en charge d'un réseau
+    \item les informations d'authentification (mot de passe chiffré)
+    \item les informations d'autorisation (pour donner les droits
+	d'accès à une partie spécifique du serveur Web)
+
+\end {itemize}
+
+Cette base est externe à WebDNS pour permettre l'intégration facile
+de l'application dans des environnements structurés autour d'un
+annuaire d'établissement existant, le plus souvent basé sur le
+protocole LDAP. Les opérations sur la base d'authentification se
+font alors via le système d'information existant dans l'organisation.
+Dès lors, WebDNS se contente d'un login pour représenter l'utilisateur,
+déterminer ses droits par l'intermédiaire de son enregistrement
+dans un groupe (notion spécifique à l'application WebDNS), et
+permettre l'accès aux objets gérés par l'application.
+
+
+\titreC {WebAuth}
+    \label {sec:intro-webauth}
+
+Dans les environnements où un annuaire centralisé n'est pas déjà
+disponible, l'application WebAuth (voir~\ref {install-webauth},
+page~\pageref {install-webauth}) est également fournie\footnote
+{Disponible dans la distribution de WebDNS~: répertoire \texttt
+{pgauth/}} pour gérer la base d'authentification dans une base
+PostgreSQL.
+
+Les opérations que WebAuth permet de réaliser sont~:
+
+\begin {itemize}
+    \item changement du mot de passe (pour tous les utilisateurs)
+    \item ajout, modification ou suppression des comptes utilisateurs
+    \item gestion de groupe pour définir les domaines gérés par le
+	serveur Web
+
+\end {itemize}
+
+
+\titreC {Authentification}
+
+L'authentification à l'application (que ce soit pour WebDNS ou
+WebAuth) est donc réalisée par le serveur Web, qui communique ensuite
+le login de l'utilisateur aux scripts CGI.
+
+Les systèmes de validation de l'authentification sont spécifiques
+au serveur Web utilisé. On peut néanmoins citer pour Apache~:
+
+\begin {itemize}
+    \item \verb|mod_ldap|
+    \item \verb|mod_cas|
+    \item \verb|mod_pgsql|
+\end {itemize}
+
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+
+\cbend%1.4
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
@@ -375,7 +461,7 @@ La distribution de l'application WebDNS est organisée comme suit~:
 
 \begin {tabular} {|l|l|} \hline
     \texttt {doc/}
-	& documentation
+	& documentation (y compris ce document)
 	\\ \hline
     \texttt {dump/}
 	& répertoire de sauvegarde quotidienne de la base
@@ -398,11 +484,16 @@ La distribution de l'application WebDNS est organisée comme suit~:
     \texttt {upgrade/12-13/}
 	& ... de la version 1.2 vers la version 1.3
 	\\ \hline
+    \texttt {upgrade/13-14/}
+		\cbstart%1.4
+	& ... de la version 1.3 vers la version 1.4
+		\cbend%1.4
+	\\ \hline
     \texttt {www/}
-	& arborescence visible par le serveur Web, fichiers HTML
+	& application WebDNS
 	\\ \hline
     \texttt {www/bin/}
-	& l'application Web elle-même : les scripts CGI
+	& les scripts CGI de WebDNS
 	\\ \hline
     \texttt {www/lib/}
 	& fichiers utilisés par les scripts, y compris les pages HTML
@@ -411,6 +502,27 @@ La distribution de l'application WebDNS est organisée comme suit~:
     \texttt {www/lib/util/}
 	& utilitaires non liés au Web, mais placés ici pour
 	    profiter du Makefile
+	\\ \hline
+    \texttt {pgauth/}
+		\cbstart%1.4
+	& application WebAuth pour l'authentification PostgreSQL
+	\\ \hline
+    \texttt {pgauth/expl/}
+	& scripts de maintenance de WebAuth
+	\\ \hline
+    \texttt {pgauth/expl/}
+	& scripts d'installation de WebAuth
+	\\ \hline
+    \texttt {pgauth/www/}
+	& arborescence Web de Webauth
+	\\ \hline
+    \texttt {pgauth/www/bin/}
+	& les scripts CGI de WebAuth
+	\\ \hline
+    \texttt {pgauth/www/lib/}
+	& fichiers utilisés par les scripts, y compris les pages HTML
+	    à trous
+		\cbend%1.4
 	\\ \hline
 \end {tabular}
 
@@ -427,67 +539,278 @@ Cette section décrit les pré-requis avant d'entamer l'installation.
 \titreB {Composants nécessaires}
 
 Les composants logiciels nécessaires pour l'application WebDNS sont
-décrits ci-après.
+décrits ci-après. Certains prérequis sont spécifiques à un type
+d'authentification (PostgreSQL ou LDAP), il n'y a donc pas lieu de
+les installer si vous n'utilisez pas le type d'authentification
+correspondant.
 
-\titreC {WebAuth}
-    \label {webauth}
-
-L'authentification des utilisateurs repose sur une base externe à
-l'application, gérée par l'application\footnote {Également développée
-par les mêmes auteurs.} <<~WebAuth~>>.
-
-L'installation de WebAuth est un prérequis indispensable pour
-l'installation de WebDNS. Le lecteur attentif pourra noter que
-beaucoup d'éléments (comme notamment ces prérequis et leur installation)
-sont communs entre les deux applications. Par conséquent, beaucoup
-d'éléments de cette documentation font référence directement à la
-documentation de WebAuth.
-
-Disponibilité~: \htmlurl {http://www-crc.u-strasbg.fr/webdns/}
 
 \titreC {Apache}
 
-Voir WebAuth.
+Le premier composant indispensable est un serveur Web.  En théorie,
+tout serveur Web disposant d'une interface CGI est utilisable. En
+pratique, l'application a été testée avec Apache (versions 1 et 2).
+Par ailleurs, il est impératif d'utiliser une extension SSL pour
+bénéficier d'un bon niveau de sécurité.
 
+Disponibilité~: \htmlurl {http://httpd.apache.org/}
 
 \titreC {Tcl}
 
-Voir WebAuth.
+Le langage utilisé par l'application et nombre de scripts auxiliaires
+est le langage Tcl (Tool Control Language) développé à l'origine par
+John Ousterhout. WebDNS a été développé avec la version 8.4.
+
+Il faut noter que Tcl est souvent associé à la boîte à outils
+graphique Tk.  Cette dernière n'est pas utilisée par WebDNS.
+Cependant, il est possible que la compilation de PostgreSQL (voir
+ci-après) nécessite Tk.
+
+Disponibilité~: \htmlurl {http://tcl.activestate.com/}
+
 
 \titreC {PostgreSQL}
 
-Voir WebAuth.
+Le moteur de base de données utilisé est PostgreSQL. Il faut utiliser
+une version supérieure ou égale à 7.4\footnote {La gestion des
+adresses IPv6 dans WebDNS repose sur le type de données «~INET~»
+de PostgreSQL, et plus spécifiquement sur son extension aux adresses
+IPv6 à partir de PostgreSQL version 7.4.}.
 
-Note~: la gestion des adresses IPv6 dans WebDNS repose sur le type
-de données <<~INET~>> de PostgreSQL, et plus spécifiquement sur son
-extension aux adresses IPv6 à partir de PostgreSQL version 7.4.
+
+Disponibilité~: \htmlurl {http://www.postgresql.org/}
+
+Attention~: la compilation de PostgreSQL doit être réalisée avec
+le support de Tcl.  Sous FreeBSD, cela signifie qu'il faut charger
+les ports de \texttt {postgresql} et \texttt {postgresql-tcltk}.
+
+Pour vérifier si le support de Tcl est bien compilé, faire~:
+
+\begin {quote}
+\begin {verbatim}
+$ tclsh8.4      # ou "tclsh" simplement
+% package require Pgtcl
+1.4
+\end{verbatim}
+\end {quote}
+
+Si vous rencontrez une erreur à la place d'un numéro de version (ici
+1.4), le support Tcl pour PostgreSQL n'est pas correctement installé.
+
+Vous devez également compiler le support du langage «~PL/Tcl~».
+Sous FreeBSD, cela signifie qu'il faut charger le port de \texttt
+{postgresql-pltcl}. Pour tester si cela fonctionne, utilisez la
+commande \texttt {createlang} fournie avec PostgreSQL~:
+
+\begin {quote}
+\begin {verbatim}
+$ createlang pltcl
+\end{verbatim}
+\end {quote}
+
+Si vous rencontrez une erreur, le support de PL/Tcl n'est pas
+correctement installé.
 
 
-\titreC {mod\_auth\_pgsql}
+\titreC {mod\_auth\_pgsql (authentification PostgreSQL)}
 
-Voir WebAuth.
+L'authentification des utilisateurs dans l'application est réalisée
+par le serveur Apache. Pour le moment, la seule authentification
+définie repose sur une base PostgreSQL, ainsi que sur le module
+\texttt {mod\_auth\_pgsql}.
+
+Disponibilité~: \htmlurl {http://www.giuseppetanzilli.it/mod\_auth\_pgsql/}
+    (pour Apache 1)
+
+Disponibilité~: \htmlurl {http://www.giuseppetanzilli.it/mod\_auth\_pgsql2/}
+    (pour Apache 2)
+
+\titreC {mod\_auth\_ldap (authentification LDAP)}
+
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+
+
+\titreC {mod\_cas (authentification LDAP)}
+
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+
+
+\titreC {OpenSSL (authentification PostgreSQL)}
+
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+A COMPLETER
+
+\titreC {pwgen (authentification PostgreSQL)}
+    \label {pwgen}
+
+Le programme \texttt {pwgen} permet de générer des mots de passe.
+
+Disponibilité~: \htmlurl {http://www.tricknology.org/ports/pwgen-1.15.tar.gz}
 
 \titreC {LaTeX}
+    \label {latex}
 
-Voir WebAuth.
+Pour accéder aux impressions (génération de fichiers PDF), il faut
+également une distribution LaTeX contenant au moins le programme
+\texttt {pdflatex} ainsi que les paquetages
+    \texttt {babel},
+    \texttt {fontenc},
+    \texttt {palatino},
+    \texttt {geometry}, et
+    \texttt {supertabular}.
+
+Tout ceci figure dans l'excellente distribution teTeX que nous
+vous recommandons par ailleurs.
+
+Disponibilité~: \htmlurl {http://www.tug.org/teTeX/}
+
+Si vous ne souhaitez pas installer teTeX, vous ne pourrez pas accéder
+aux impressions. Nous vous conseillons alors de modifier les pages
+Web pour ne pas afficher les boutons correspondants.
 
 
 \titreB {Contexte système}
 
 \titreC {Activer les mots de passe PostgreSQL}
 
-Voir WebAuth.
+À moins que votre serveur Web ne soit hébergé sur une machine sans
+compte utilisateur (autre que les administrateurs), il est souhaitable
+de configurer PostgreSQL pour que les connexions au moteur nécessitent
+un mot de passe.
 
-\titreC {Utilisateur PostgreSQL}
+Pour cela, il faut éditer le fichier \texttt {\~{}pgsql/data/pg\_hba.conf}
+installé avec PostgreSQL, et modifier les lignes~:
+\begin {quote}
+\begin {verbatim}
+local all all                           trust
+host  all all 127.0.0.1 255.255.255.255 trust
+host  all all ::1       ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff trust
+\end{verbatim}
+\end {quote}
+en~:
+\begin {quote}
+\begin {verbatim}
+local all all                           password
+host  all all 127.0.0.1 255.255.255.255 password
+host  all all ::1       ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff password
+\end{verbatim}
+\end {quote}
 
-Voir WebAuth.
+Il faut également modifier certains des scripts de démarrage, et
+attribuer des mots de passe aux utilisateurs déjà créés à l'aide
+de l'utilitaire \texttt {psql} et de la directive SQL «~\texttt
+{ALTER...USER}~». Par exemple~:
 
-L'application WebDNS utilise l'utilisateur PostgreSQL nommé <<~\texttt
-{dns}~>>. Comme dans WebAuth, il n'y a pas besoin de créer un compte
-Unix pour cet utilisateur.
+\begin {quote}
+    \verb|ALTER USER pda WITH PASSWORD 'toto' ;|
+\end {quote}
+
+Consultez \htmlurl
+{http://www.postgresql.org/docs/current/static/client-authentication.html}
+pour plus d'informations.
+
+Vous pouvez néanmoins procéder au reste de l'installation sans
+activer la protection par mot de passe, au prix d'une sécurité
+amoindrie.
+
+
+\titreC {Utilisateurs PostgreSQL}
+
+Il est conseillé de créer des comptes PostgreSQL (avec l'utilitaire
+\texttt {createuser}) pour les utilisateurs pouvant intervenir lors
+des opérations d'administration de la base. La création de comptes
+spécifiques simplifie les opérations.
+
+En outre, les divers scripts et exemples de configuration nécessitent
+la création d'un utilisateur PostgreSQL nommé «~\texttt {dns}~»,
+avec le minimum de droits (en particulier, pas le droit de créer
+une base ou de nouveaux utilisateurs).  Toutes les opérations
+d'authentification ainsi que les opérations effectuées par l'application
+le seront sous cette identité.  Il n'y a pas besoin de créer un
+compte Unix pour \texttt {dns}.
+
+Une fois créés, vous pouvez affecter des mots de passe à ces
+utilisateurs.
+
+
+\titreC {Accès à PostgreSQL depuis le serveur Apache}
+
+Si vous localisez le serveur Apache et le serveur PostgreSQL sur des
+machines différentes, prenez bien soin à autoriser l'accès du serveur
+Apache sur le serveur PostgreSQL. Pour cela, modifiez le fichier \texttt
+{pg\_hba.conf} et insérez la ligne suivante~:
+
+\begin {quote}
+\begin {verbatim}
+host dns dns 192.168.1.2 255.255.255.255 password
+\end{verbatim}
+\end {quote}
+
+Cette ligne autorise l'accès à la base «~\texttt {dns}~» par
+l'utilisateur «~\texttt {dns}~» depuis la machine d'adresse IPv4
+192.168.1.2. Bien sûr, si l'accès se fait par IPv6, vous remplacerez
+l'adresse et le masque par les valeurs appropriées.
+
+
+L'application WebAuth (pour l'authentification PostgreSQL) utilise
+en outre l'utilisateur «~\texttt {auth}~» pour accéder à la base
+«~\texttt {auth}~». Comme précédemment, il n'y a pas besoin de
+créer un compte Unix pour cet utilisateur.
+
 
 \titreC {Accès à PostgreSQL depuis les autres serveurs}
     \label {acces-pgsql}
+
+
+DOUBLON ?
+DOUBLON ?
+DOUBLON ?
+DOUBLON ?
+DOUBLON ?
+DOUBLON ?
+DOUBLON ?
+DOUBLON ?
 
 La plupart du temps, vous séparerez diverses fonctions sur des serveurs
 physiquement différents~:
@@ -495,8 +818,8 @@ physiquement différents~:
 \begin {itemize}
     \item le serveur Web~;
     \item le serveur DNS~;
-    \item le relais de messagerie, si vous utilisez les <<~rôles de
-	messagerie~>> (voir~\ref {anx-rolemail}, page~\pageref
+    \item le relais de messagerie, si vous utilisez les «~rôles de
+	messagerie~» (voir~\ref {anx-rolemail}, page~\pageref
 	{anx-rolemail})
     \item
 	le serveur DHCP.
@@ -525,14 +848,596 @@ masque par les valeurs appropriées.
 
 \titreA {Personnalisation des pages HTML et LaTeX}
 
-Voir WebAuth.
+Parmi les possibilités de personnalisation de l'application WebDNS
+figure en bonne place la faculté de modifier les pages HTML et LaTeX
+de l'application.
+
+En effet, la présentation est largement indépendante de la logique
+des scripts, et repose sur le concept de «~page à trous~».
+
+
+\titreB {Principe des «~pages à trous~»}
+
+Lorsqu'un script CGI souhaite afficher une information, il la place
+dans un fond de page HTML à un endroit déterminé par un «~trou~»,
+matérialisé par une chaîne de la forme \verb|%nom%|.
+
+Par exemple, une page servant à confirmer l'enregistrement d'une
+demande pourrait se limiter à~:
+
+\begin {quote}
+\begin {verbatim}
+<HTML>
+<TITLE>Demande enregistrée</TITLE>
+<BODY>
+    <H1>Demande enregistrée</H1>
+    <STRONG>%MESSAGE%</STRONG>
+    <P>
+    <A HREF="%HOMEURL%">Revenir au menu principal</A>
+</BODY>
+</HTML>
+\end{verbatim}
+\end {quote}
+
+Cette page contient deux trous~: à la place du premier,
+«~\verb|%MESSAGE%|~», les scripts de l'application insèrent le
+contenu du message de confirmation. À la place du second,
+«~\verb|%HOMEURL%|~», les scripts insèrent l'adresse Web de
+l'application.
+
+Ce principe s'applique également aux fichiers LaTeX utilisés pour
+générer les fichiers PDF, lors des demandes d'impression.
+
+L'annexe~\ref {anx-trous} décrit les fichiers HTML et les trous que
+les scripts CGI de l'application utilisent.
+
+
+\titreB {Utilisation du générateur «~htg~»}
+    \label {htg:principe}
+
+Les pages HTML, au CRC, sont générées automatiquement à partir d'un
+mini-langage (HTG, pour HTML Generator). L'outil HTG, qui permet
+de transformer un source HTG en fichier HTML, est fourni (répertoire
+\verb|./htg|) ainsi que sa documentation (répertoire \verb|./htg/doc|).
+
+L'intérêt de l'utilisation de HTG est de dissocier complètement le
+fond de la forme. L'utilisateur de HTG ne spécifie que le fond, et HTG
+s'occupe de la forme par le biais de \textit {modèles}. Trois types de
+modèles sont fournis~:
+
+\begin {itemize}
+    \item modèle «~crc~»~: utilisé au Centre Réseau Communication
+	de l'Université Louis Pasteur de Strasbourg~;
+
+    \item modèle «~csi~»~: utilisé au Centre de Services Informatiques
+	de l'Université de Versailles/St-Quentin-en-Yvelines~;
+
+    \item modèle «~vide~»~: utilisé comme exemple, avec le minimum de
+	fioritures d'affichage.
+
+\end {itemize}
+
+Pour compiler «~\texttt {htg}~», allez dans le répertoire
+\verb|./htg/src|~:
+
+\begin {itemize}
+    \item éditez le fichier \texttt {Makefile} et lancez
+	la compilation avec \texttt {make}~;
+
+    \item éditez le fichier \texttt {htg} pour modifier, en première
+	ligne, la localisation exacte du fichier \texttt {htgtcl}
+	compilé dans la précédente étape.
+
+\end {itemize}
+
+Ensuite, sélectionnez le type de modèle que vous préférez en changeant
+le lien \verb|./htg/modeles|.
+
+
+\titreB {Quelles pages HTML utiliser~?}
+
+Plusieurs solutions s'offrent à vous~:
+
+\begin {itemize}
+    \item utiliser HTG~: dans ce cas, il vous suffit de reprendre les
+	pages du CRC, en les modifiant éventuellement pour indiquer des
+	titres plus représentatifs de votre service.
+
+	Concernant le choix du modèle, vous pouvez alors~:
+	\begin {itemize}
+	    \item reprendre le modèle «~crc~»
+	    \item reprendre le modèle «~vide~»
+	    \item concevoir un nouveau modèle (cette option
+		n'est pas documentée ici)
+	\end {itemize}
+
+    \item utiliser des fonds de page HTML que vous aurez conçus
+	vous-même.
+\end {itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
+% Installation de l'application WebAuth
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titreA {Installation de l'application WebAuth}
+    \label {install-webauth}
+
+\cbstart%1.4
+L'application WebAuth (voir~\ref {sec:intro-webauth}, page~\pageref
+{sec:intro-webauth}) n'est utile que si vous n'avez pas déjà un
+système d'annuaire centralisé de vos utilisateurs (comme un annuaire
+LDAP d'établissement, par exemple). Ce chapitre explique comment
+installer un système d'authentification reposant sur une base
+PostgreSQL.
+
+Si vous utilisez un annuaire LDAP, passez directement au chapitre
+suivant.
+
+Hormis le paramétrage du serveur Apache, vous n'avez pas besoin des
+droits de «~\texttt {root}~» pour effectuer les opérations décrites
+dans ce chapitre.
+
+\cbend%1.4
+
+
+\titreB {Installation de la base PostgreSQL}
+
+Cette section décrit la mise en place minimale de la base de données
+utilisée comme support de l'application WebAuth. Il s'agit de créer la
+base et d'y introduire le minimum d'informations nécessaire pour
+pouvoir effectuer le paramétrage dans le menu d'administration.
+
+\titreC {Création de la base}
+
+Examinez le script \texttt {./pgauth/inst/creer-base}. Dans ce script~:
+
+\begin {itemize}
+    \item modifiez votre mot de passe PostgreSQL~;
+
+    \item mettez en commentaire la ligne «~\verb|exit 0|~» située
+	vers le début du fichier. Lorsque vous aurez exécuté le
+	script, remettez le \verb|#| qui vous protégera ainsi d'une
+	maladresse si vite arrivée~!
+
+    \item modifiez les logins des utilisateurs privilégiés. Ces
+	utilisateurs (PostgreSQL) doivent pouvoir réaliser toutes les
+	opérations dans la base. Pour cela, tous les droits sont donnés
+	aux tables de l'application.
+
+\end {itemize}
+
+Vous pouvez à présent exécuter le script (après avoir changé de
+répertoire dans \texttt {./pgauth/inst}).
+
+Pour vérifier si tout s'est bien passé, vous pouvez utiliser
+«~\verb|psql|~» pour passer les deux commandes \verb|\dt| (afficher
+les tables) et \verb|\q| (sortir)~:
+
+\begin {quote}
+\begin {verbatim}
+$ psql auth
+auth=# \dt
+     List of relations
+ Schema |     Name     | Type  | Owner
+--------+--------------+-------+-------
+ public | config       | table | pda
+ public | groupes      | table | pda
+ public | membres      | table | pda
+ public | utilisateurs | table | pda
+(4 rows)
+
+auth=# \q
+\end{verbatim}
+\end {quote}
+
+
+\titreC {Installation des données minimales}
+
+Le script \texttt {./pgauth/inst/init-base} contient le minimum, c'est à
+dire l'insertion d'un groupe (\texttt {authadmin}) et d'un utilisateur
+dans ce groupe.
+
+Dans ce script~:
+
+\begin {itemize}
+    \item modifiez le login, le mot de passe, le nom et le prénom
+	par vos coordonnées. Il s'agit ici d'insérer le minimum
+	pour pouvoir ajouter les autres utilisateur par l'application
+	Web.  Le mot de passe doit être chiffré~: reprenez par
+	exemple celui qui est dans votre fichier \texttt {/etc/passwd}
+	ou équivalent.  Si vous laissez le mot de passe par défaut,
+	pensez à le changer le plus rapidement possible lorsque
+	l'application sera opérationnelle.
+
+    \item modifiez également la ligne affectant votre nom de login
+	au groupe \texttt {authadmin}.
+
+    \item mettez en commentaire la ligne «~\verb|exit 0|~» située
+	vers le début du fichier. Lorsque vous aurez exécuté le
+	script, remettez le \verb|#| qui vous protégera ainsi d'une
+	maladresse si vite arrivée~!
+
+\end {itemize}
+
+Lancez le script.
+
+Pour vérifier si l'installation s'est bien passée, vous pouvez
+utiliser «~\verb|psql|~» pour consulter ce qui a été mis dans la
+base~:
+
+\begin {quote}
+\begin {verbatim}
+$ psql auth
+auth=# \encoding latin9
+
+auth=# SELECT * FROM groupes ;
+  groupe   |              descr
+-----------+---------------------------------
+ authadmin | Administrateurs de la base Auth
+(1 row)
+
+auth=# SELECT login, password, nom, prenom, phnom, phprenom FROM utilisateurs ;
+ login |   password   |  nom  | prenom | phnom | phprenom
+-------+--------------+-------+--------+-------+----------
+ pda   | xxxxxxxxxxxx | DAVID | Pierre | D930  | P600
+(1 row)
+
+auth=# SELECT * FROM membres ;
+ login |  groupe
+-------+-----------
+ pda   | authadmin
+(1 row)
+
+auth=# \q
+\end{verbatim}
+\end {quote}
+
+Vous pouvez constater que les colonnes \texttt {phnom} et \texttt
+{phprenom} ont été mises à jour automatiquement~: elles contiennent
+une chaîne représentant la forme phonétique du nom et du prénom,
+ce qui permettra ultérieurement des recherches par approximation.
+
+\titreC {Regénération de votre mot de passe}
+
+Si vous perdez votre mot de passe, vous pouvez le regénérer simplement
+avec la commande \texttt {psql}~:
+
+\begin {quote}
+\begin {verbatim}
+$ psql auth
+auth=# UPDATE utilisateurs SET password = 'xxxx' WHERE login = 'pda' ;
+UPDATE 1
+
+auth=# \q
+\end{verbatim}
+\end {quote}
+
+Dans cet exemple, la chaîne «~\texttt {xxxx}~» représente le mot
+de passe chiffré tel qu'il figure dans le fichier \texttt
+{/etc/master.passwd} ou équivalent.
+
+
+\titreB {Configuration du package d'authentification}
+
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+
+Modifiez les deux lignes du fichier \texttt {./pktcl/auth.tcl}~:
+
+\begin {quote}
+\begin {verbatim}
+    variable trpw       "/local/services/www/pkgtcl/trpw"
+    variable genpw      "/usr/local/bin/pwgen --numerals 8"
+\end{verbatim}
+\end {quote}
+
+pour refléter la localisation des commandes~:
+
+\begin {itemize}
+    \item \texttt {trpw} (voir~\ref {trpw}, page~\pageref {trpw})
+    \item \texttt {pwgen} (voir~\ref {pwgen}, page~\pageref {pwgen})
+\end {itemize}
+
+
+\titreB {Configuration du package des applications Web}
+
+Modifiez les lignes du fichier \texttt {./pktcl/webapp.tcl}~:
+
+\begin {quote}
+\begin {verbatim}
+    variable pdflatex   /usr/local/bin/pdflatex
+    variable sendmail   {/usr/sbin/sendmail -t}
+\end{verbatim}
+\end {quote}
+
+pour refléter la localisation des commandes~:
+
+\begin {itemize}
+    \item \texttt {pdflatex} (voir~\ref {latex}, page~\pageref {latex})
+    \item \texttt {sendmail}, utilisé pour envoyer un mail lorsqu'un mot
+	de passe est réinitialisé.
+\end {itemize}
+
+
+\titreB {Installation des fichiers de l'application WebAuth}
+
+Choisissez un répertoire pour placer les pages Web et les scripts
+CGI de l'application de gestion des utilisateurs, qui ne doit pas
+être le répertoire dans lequel vous avez détarré l'application.
+Dans l'installation par défaut, ce répertoire est nommé
+\verb|/local/services/www/applis/auth/|.
+
+\begin {itemize}
+    \item si vous souhaitez utiliser HTG (voir~\ref {htg:principe},
+	page~\pageref {htg:principe}), utilisez les fichiers
+	«~\verb|.htgt|~» du répertoire \verb|./pgauth/www/lib/| en
+	modifiant éventuellement les parties «~bannière~»,
+	«~titrepage~» et «~bandeau~»~;
+
+    \item si vous souhaitez concevoir des nouvelles pages à trous,
+	installez-les dans le répertoire \verb|./pgauth/www/lib/|. Vous
+	devrez supprimer chaque fichier «~.htgt~» et le remplacer
+	par un fichier «~.html~» équivalent, en respectant le nom
+	des trous que les scripts CGI s'attendent à trouver (voir
+	annexe~\ref {anx-trous}). Vous prendrez soin également à
+	adapter le fichier LaTeX \verb|utiliste.tex|.
+
+\end {itemize}
+
+Rendez-vous ensuite dans le répertoire \verb|./pgauth/www| et éditez le
+fichier \texttt {Makefile}. Modifiez en particulier les variables~:
+
+\begin {tabular} {|l|l|} \hline
+    \multicolumn {1} {|c|} {\textbf {Variable}}
+	& \multicolumn {1} {|c|} {\textbf {Signification}}
+	\\ \hline
+    \texttt {TCLSH} &
+	localisation de l'exécutable \texttt {tclsh}
+	\\ \hline
+    \texttt {AUTH} &
+	paramètres d'accès à la base d'authentification
+	\\ \hline
+    \texttt {HOMEURL} &
+	chemin relatif à la racine de l'arborescence Web
+	\\ \hline
+    \texttt {DESTDIR} &
+	localisation de l'application dans l'arborescence Web
+	\\ \hline
+    \texttt {PKGTCL} &
+	localisation des packages Tcl inclus avec l'application
+	\\ \hline
+    \texttt {HTG} &
+	localisation de l'exécutable \texttt {htg}
+	\\ \hline
+    \texttt {ROOT} &
+	utilisateurs habilités à intervenir en mode
+	«~maintenance~»
+	\\ \hline
+    \texttt {NOLOGIN} &
+	nom du fichier à créer pour rentrer en mode
+	«~maintenance~»
+	\\ \hline
+\end {tabular}
+
+Puis, lancez \texttt {make} (dans le répertoire \verb|./pgauth/www|)
+pour installer tous les fichiers de l'application dans l'arborescence
+Web.
+
+
+\titreB {Configuration du serveur Apache}
+    \label {config-apache-auth}
+
+Le serveur Apache doit être configuré pour~:
+
+\begin {itemize}
+    \item autoriser l'accès en consultation à
+	\verb|/local/services/www/applis/auth/|
+    \item autoriser l'accès en exécution CGI à
+	\verb|/local/services/www/applis/auth/bin|
+    \item interdire tout accès à
+	\verb|/local/services/www/applis/auth/lib|
+\end {itemize}
+
+Ceci peut être réalisé grâce aux quelques lignes suivantes (voir
+première partie du fichier \verb|./pgauth/inst/httpd.conf|) dans le fichier
+\texttt {httpd.conf} de configuration d'Apache, que vous prendrez
+soin d'adapter~:
+
+\begin {quote}
+\small
+\begin {verbatim}
+ScriptAlias "/applis/auth/bin/" "/local/services/www/applis/auth/bin/"
+
+<Directory /local/services/www/applis/auth>
+    #
+    # Ces lignes peuvent astucieusement être mises en commun
+    # en les déclarant dans le répertoire racine de votre
+    # serveur Web.
+    #
+    AuthName		    "Intranet CRC"
+    Auth_PG_host            localhost
+    Auth_PG_port            5432
+    Auth_PG_database        auth
+    Auth_PG_user            auth
+    Auth_PG_pwd             mot-de-passe-en-clair-de-auth
+    Auth_PG_pwd_table       utilisateurs
+    Auth_PG_uid_field       login
+    Auth_PG_pwd_field       password
+    Auth_PG_grp_table       membres
+
+    # Attention : version avec mod_auth_pgsql
+    #Auth_PG_gid_field       groupe
+    # Attention : version avec mod_auth_pgsql2
+    Auth_PG_grp_group_field groupe
+    Auth_PG_grp_user_field  login
+
+    #
+    # Fin des lignes pouvant être mises en commun dans le
+    # répertoire racine de votre serveur Web.
+    #
+
+    AuthType            Basic
+    require             group authadmin
+
+    # si vous avez une page prévue pour signaler les erreurs, mettez-la ici
+    ErrorDocument       401 /errauth/erreur.html
+</Directory>
+
+<Directory /local/services/www/applis/auth/lib>
+    order deny,allow
+    deny from all
+</Directory>
+
+Alias "/applis/auth" "/local/services/www/applis/auth"
+
+#
+# Pour effectuer en une seule opération
+# - l'accès via l'url /applis/auth, qui redirige en réalité vers un script
+# - les redirections vers HTTPS
+#
+RedirectMatch permanent ^/applis/auth/$ \
+                https://www-crc.u-strasbg.fr/applis/auth/bin/accueil
+RedirectMatch permanent ^/applis/auth/index.html$ \
+                https://www-crc.u-strasbg.fr/applis/auth/bin/accueil
+\end{verbatim}
+\end {quote}
+
+
+\titreB {Paramétrage de l'application}
+
+Une fois les étapes précédentes effectuées, vous devriez être en mesure
+d'accéder à l'URL de votre application.
+
+\titreC {Paramètres de configuration}
+
+La première étape consiste à rentrer dans le module «~administration~»
+(modification des paramètres) afin de finaliser les paramétrages.
+
+L'aide en ligne intégrée (lien correspondant à chaque paramètre)
+fournit des exemples que vous pouvez facilement adapter.
+
+\titreC {Configuration des groupes et des utilisateurs}
+
+Un groupe correspond à un ensemble de pages Web accessibles sur
+votre serveur Web. En ce sens, la notion de groupe correspond à un
+«~domaine Web~»\footnote {Tant que le nom du «~royaume
+d'authentification, correspondant à la directive Apache «~\texttt
+{AuthName}~», est le même, l'utilisateur n'aura pas à re-saisir son mot
+de passe.}.
+
+Ceci permet d'avoir des applications différentes sur le serveur
+Web, dont l'accès est contrôlé par la simple appartenance à un
+groupe dans la base PostgreSQL.
+
+Avant de créer un groupe, il faut donc réfléchir au périmètre auquel
+les utilisateurs de ce groupe auront accès.
+
+
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+
+Le premier groupe créé correspond aux utilisateurs ayant droit à
+accéder à l'application WebAuth, et donc par là à gérer les comptes.
+
+Le deuxième groupe que vous allez créer correspondra vraisemblablement
+aux utilisateurs de l'autre application du CRC que vous souhaitez
+installer (voir introduction).
+
+L'ajout des utilisateurs peut être réalisé soit par l'interface Web
+(conseillé), soit par l'écriture d'un script comparable à celui
+fourni pour le remplissage initial (voir fichier \texttt
+{./inst/init-base}).
+
+\titreB {Script auxiliaire de maintenance de la base}
+
+L'application WebAuth est complétée par un script auxiliaire, lancé
+par \texttt {cron} pour réaliser les opérations de maintenance et
+de sauvegarde de la base PostgreSQL. Ce script, \verb|./pgauth/expl/quotidien|,
+effectue une sauvegarde dans le répertoire \texttt {./dump}, ainsi
+qu'un «~\texttt {VACUUM}~» (spécifique PostgreSQL) sur la base.
+
+De plus, il permet également de créer une copie de la base
+d'exploitation dans une base de développement, mais ceci n'est pas
+activé par défaut.
+
+Après l'avoir modifié selon vos besoins, vous pouvez le lancer
+toutes les nuits par \texttt {cron}, de préférence avant minuit
+pour avoir des noms de fichiers de sauvegarde représentatifs du
+jour sauvegardé.  Voici, pour exemple, une ligne de \texttt {crontab}
+possible (voir fichier \texttt {./pgauth/expl/crontab.auth})~:
+
+\begin {quote}
+\begin {verbatim}
+30 22 * * * $HOME/expl/quotidien
+\end{verbatim}
+\end {quote}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Installation de la base PostgreSQL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\titreA {Installation et chargement de la base PostgreSQL}
+\titreA {Installation et chargement de la base PostgreSQL de WebDNS}
 
 Ce chapitre décrit la mise en place de la base de données.
 
@@ -553,7 +1458,7 @@ défi majeur. L'insertion des données dans une base, avec les
 contraintes que cela représente, nécessite un effort important de
 rationalisation dont vous n'avez pas forcément conscience à ce
 stade. C'est pour cela que les opérations de reprise de l'existant
-sont effectuées par des scripts que vous pouvez <<~rejouer~>> autant
+sont effectuées par des scripts que vous pouvez «~rejouer~» autant
 de fois que vous le souhaitez. En tout état de cause, ne vous
 découragez pas~: le résultat en vaut la peine\footnote {Sinon, vous
 ne liriez pas cette documentation, n'est-ce pas~?}.
@@ -580,10 +1485,10 @@ Si, si, regardez encore. Vraiment. C'est indispensable.
 
 Il faut maintenant créer un groupe dans la base d'authentification
 pour les utilisateurs de l'application WebDNS. Ceci est réalisé au
-moyen de l'application WebAuth (menu <<~Groupes/Ajouter~>>).
+moyen de l'application WebAuth (menu «~Groupes/Ajouter~»).
 
 Par exemple, les correspondants du réseau métropolitain strasbourgeois
-<<~Osiris~>> sont regroupés dans le groupe <<~\texttt {osiris}~>>.
+«~Osiris~» sont regroupés dans le groupe «~\texttt {osiris}~».
 
 Le groupe choisi devra être spécifié dans la configuration Apache
 d'accès à l'application (voir~\ref {config-apache}, page~\pageref
@@ -592,7 +1497,7 @@ bas, \ref {remplir-config}, page~\pageref {remplir-config}) pour
 la création de nouveaux correspondants.
 
 Une fois le groupe créé avec WebAuth, n'oubliez pas de vous y ajouter
-(par l'intermédiaire du menu <<~Groupes/Modifier~>> par exemple).
+(par l'intermédiaire du menu «~Groupes/Modifier~» par exemple).
 
 
 \titreB {Création de la base}
@@ -602,7 +1507,7 @@ Examinez le script \texttt {./inst/creer-base}. Dans ce script~:
 \begin {itemize}
     \item modifiez votre mot de passe PostgreSQL~;
 
-    \item mettez en commentaire la ligne <<~\verb|exit 0|~>> située
+    \item mettez en commentaire la ligne «~\verb|exit 0|~» située
 	vers le début du fichier. Lorsque vous aurez exécuté le
 	script, remettez le \verb|#| qui vous protégera ainsi d'une
 	maladresse si vite arrivée~!
@@ -618,7 +1523,7 @@ Après avoir changé votre répertoire courant pour \texttt {./inst},
 vous pouvez à présent exécuter le script.
 
 Pour vérifier si tout s'est bien passé, vous pouvez utiliser
-<<~\verb|psql|~>> pour passer les deux commandes \verb|\dt| (afficher
+«~\verb|psql|~» pour passer les deux commandes \verb|\dt| (afficher
 les tables) et \verb|\q| (sortir)~:
 
 
@@ -764,8 +1669,8 @@ qui sont schématisées dans le tableau ci-après~:
 	    \\ \hline
 	\texttt {remplir-triggers}
 	    & Crée les \textit {triggers} et les fonctions PL/SQL qui
-		seront appelés pour marquer une zone comme étant <<~à
-		générer~>> lorsqu'un nom ou une adresse IP est
+		seront appelés pour marquer une zone comme étant «~à
+		générer~» lorsqu'un nom ou une adresse IP est
 		modifiée.
 	    & (aucune)
 	    & (aucun)
@@ -890,10 +1795,10 @@ groupes=lma
 	(\textit {broadcast} et routeur par défaut)~; il vaut mieux
 	introduire, après le chargement initial, des droits d'accès
 	agrégés pour l'ensemble des réseaux gérés.  Par exemple,
-	le réseau <<~Osiris~>> étant constitué d'une classe~B, le
+	le réseau «~Osiris~» étant constitué d'une classe~B, le
 	groupe des administrateurs n'est pas listé dans les réseaux
 	individuellement décrits dans \texttt {subnet.txt}, mais
-	le droit <<~allow 130.79/16~>> a été ajouté a posteriori
+	le droit «~allow 130.79/16~» a été ajouté a posteriori
 	grâce au menu de \textit {modification des caractéristiques
 	d'un groupe}.
 
@@ -904,10 +1809,10 @@ Le script \texttt {remplir-grpnet} doit être modifié pour~:
 \begin {itemize}
     \item le chemin de l'interprète Tcl~;
     \item le mot de passe d'accès à la base DNS~;
-    \item la liste des établissements (en laissant la chaîne <<~\texttt
-	{INCONNU}~>> en fin de liste)~;
-    \item la liste des communautés (en laissant la chaîne <<~\texttt
-	{INCONNUE}~>> en fin de liste)~;
+    \item la liste des établissements (en laissant la chaîne «~\texttt
+	{INCONNU}~» en fin de liste)~;
+    \item la liste des communautés (en laissant la chaîne «~\texttt
+	{INCONNUE}~» en fin de liste)~;
     \item la liste des groupes ayant l'autorisation de paramétrer
 	l'application (il n'y aura vraisemblablement qu'un seul
 	groupe, le vôtre).
@@ -941,7 +1846,7 @@ DNS pendant que vous mettez au point le chargement de la base.
 Attention~: les RR doivent avoir une syntaxe valide pour le nom en
 partie gauche. En particulier, le nom ne doit comporter aucun point.
 Un problème souvent rencontré est la tentative de chargement d'un
-RR de type <<~\verb|www.truc IN CNAME www.univ-machin.fr|~>>~: la
+RR de type «~\verb|www.truc IN CNAME www.univ-machin.fr|~»~: la
 partie gauche n'est pas valide puisque \texttt {www.truc} n'est pas
 un nom valide. Si vous rencontrez ce cas, vous avez deux solutions~:
 soit créer une nouvelle zone pour \texttt {truc.univ-machin.fr},
@@ -1031,8 +1936,8 @@ Ce script est dirigé par deux fichiers. Le premier est \texttt
     \textit {adresse} [ \textit {nom-de-l'hébergeur} ]
 \end {quote}
 
-L'<<~\textit {adresse}~>> est l'adresse de messagerie pour laquelle
-un MX doit être publié, et le <<~\textit {nom-de-l'hébergeur}~>>
+L'«~\textit {adresse}~» est l'adresse de messagerie pour laquelle
+un MX doit être publié, et le «~\textit {nom-de-l'hébergeur}~»
 est le nom de la machine hébergeant les boîtes aux lettres. Si ce
 dernier n'est pas fourni, il correspondant par défaut à l'adresse
 de messagerie.
@@ -1074,7 +1979,7 @@ et le type (normale, reverse IPv4 ou reverse IPv6) de la zone, le
 critère de sélection des RR devant figurer dans la zone, le numéro
 de version initial, le fichier de zone contenant le prologue, les
 RR supplémentaires éventuels ainsi que la valeur initiale du flag
-<<~générer~>>.
+«~générer~».
 
 Comme dans le script \texttt {remplir-domaine}, la fin du prologue
 est déterminée par recherche d'une expression régulière dans le
@@ -1095,11 +2000,11 @@ version.
 
 Le prologue contient le RR de type SOA de la zone. Ce SOA contient
 en particulier le numéro de version. Lors de la génération des
-zones, la chaîne <<~\texttt {\%VERSION\%}~>> sera substituée par
+zones, la chaîne «~\texttt {\%VERSION\%}~» sera substituée par
 le numéro de version courant dans la base (en l'actualisant bien
 sûr). Pour cette raison, le script \texttt {remplir-zone} recherche
 dans le SOA le numéro de version courant et le substitue par la
-chaîne <<~\texttt {\%VERSION\%}~>> lors du remplissage du prologue
+chaîne «~\texttt {\%VERSION\%}~» lors du remplissage du prologue
 dans la base. Ceci est réalisé grâce à une expression régulière,
 qui vaut par défaut~:
 
@@ -1110,10 +2015,10 @@ qui vaut par défaut~:
 Cette expression recherche une ligne décomposée en trois parties
 par les parenthèses~: la première est située avant le numéro de
 version, la deuxième est le numéro de version lui-même et la troisième
-est ce qui suit (soit le commentaire <<~\texttt {; Version}~>> ici).
+est ce qui suit (soit le commentaire «~\texttt {; Version}~» ici).
 Grâce à cette expression régulière, la cohérence du numéro de version
 actuel est vérifiée, puis il est remplacé par la fameuse chaîne
-<<~\texttt {\%VERSION\%}~>>.
+«~\texttt {\%VERSION\%}~».
 
 Le script \texttt {remplir-domaine} doit être modifié pour~:
 
@@ -1158,7 +2063,7 @@ Une fois tous les scripts modifiés selon vos souhaits, lancez le
 script \texttt {./inst/init-base}. Lorsque vous n'aurez plus d'erreurs
 et que vous saurez expliquer tous les messages d'avertissement, vous
 pourrez vérifier si l'installation s'est bien passée. Par exemple, vous
-pouvez utiliser <<~\verb|psql|~>> pour vérifier quelques tables~:
+pouvez utiliser «~\verb|psql|~» pour vérifier quelques tables~:
 
 \begin {quote}
 \begin {verbatim}
@@ -1198,7 +2103,7 @@ maintenant passer à la suite.
 % Installation de l'application
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\titreA {Installation de l'application}
+\titreA {Installation de l'application WebDNS}
 
 \titreB {Installation des fichiers de l'application}
     \label {install-dns}
@@ -1211,12 +2116,12 @@ ce répertoire est nommé \verb|/local/services/www/applis/dns/|.
 \begin {itemize}
     \item si vous souhaitez utiliser HTG, recopiez les fichiers
 	du répertoire \verb|./www/lib/| en modifiant éventuellement
-	les parties <<~bannière~>>, <<~titrepage~>> et <<~bandeau~>>~;
+	les parties «~bannière~», «~titrepage~» et «~bandeau~»~;
 
     \item si vous souhaitez concevoir des nouvelles pages à trous,
 	installez-les dans le répertoire  \verb|./www/lib/|.
-	Vous devrez supprimer chaque fichier <<~.htgt~>> et le remplacer
-	par un fichier <<~.html~>> équivalent, en respectant le nom des
+	Vous devrez supprimer chaque fichier «~.htgt~» et le remplacer
+	par un fichier «~.html~» équivalent, en respectant le nom des
 	trous que les scripts CGI s'attendent à trouver (voir
 	annexe~\ref {anx-trous}, page~\pageref {anx-trous}).  Vous
 	prendrez soin également à adapter les fichiers LaTeX
@@ -1245,7 +2150,7 @@ fichier \texttt {Makefile}. Modifiez les variables~:
 	\\ \hline
     \texttt {NOLOGIN} &
 	nom du fichier à créer pour rentrer en mode
-	<<~maintenance~>>
+	«~maintenance~»
 	\\ \hline
     \texttt {DEFUSER} &
 	utilisateur par défaut dans les scripts auxiliaires de
@@ -1263,7 +2168,7 @@ fichier \texttt {Makefile}. Modifiez les variables~:
 	\\ \hline
     \texttt {ROOT} &
 	utilisateurs (Apache) habilités à intervenir en mode
-	<<~maintenance~>>
+	«~maintenance~»
 	\\ \hline
     \texttt {INTERVALLE} &
 	intervalle entre deux générations de zones (doit correspondre à
@@ -1379,7 +2284,7 @@ doit forcément être externe à l'application, supprimez la ligne~;
 
 Une fois les étapes précédentes effectuées, vous devriez être en mesure
 d'accéder à l'URL de votre application.  Vous pouvez alors rentrer
-dans le module <<~administration~>> pour finaliser les paramétrages.
+dans le module «~administration~» pour finaliser les paramétrages.
 
 En particulier, pensez à vérifier et modifier les droits de votre
 groupe, pour avoir accès à tous les réseaux que vous êtes susceptible
@@ -1407,11 +2312,11 @@ Le script \texttt {generer-zone} a deux comportements différents~:
     \item sans argument, il affiche sur la sortie standard la liste
 	des zones qui ont été modifiées depuis la dernière génération
 	(c'est-à-dire la liste des zones pour lesquelles l'attribut
-	<<~generer~>> vaut 1)~;
+	«~generer~» vaut 1)~;
 
     \item avec un argument (un nom de zone), il procède à la
 	génération de la zone sur la sortie standard, et remet
-	l'attribut <<~generer~>> à 0).
+	l'attribut «~generer~» à 0).
 
 \end {itemize}
 
@@ -1484,7 +2389,7 @@ Pour être installé~:
 \titreB {Génération des routages de messagerie}
     \label {generer-routages}
 
-Si vous utilisez les <<~rôles de messagerie~>> (voir~\ref {anx-rolemail},
+Si vous utilisez les «~rôles de messagerie~» (voir~\ref {anx-rolemail},
 page~\pageref {anx-rolemail}), vous souhaitez sans doute générer
 dynamiquement le fichier de routage de messagerie utilisé par \texttt
 {sendmail} ou équivalent.
@@ -1511,7 +2416,7 @@ de lignes de la forme~:
 	\texttt {smtp.[}\textit {relais\/}\texttt {]}
 \end {quote}
 
-où \textit {adresse} est le nom du <<~rôle de messagerie~>>, \textit
+où \textit {adresse} est le nom du «~rôle de messagerie~», \textit
 {relais} est l'adresse de l'hébergeur des boîtes aux lettres pour
 cette adresse de messagerie, telle que définie dans la base. Enfin,
 le mot-clef \texttt {smtp} indique que le \textit {mailer} SMTP de
@@ -1601,7 +2506,7 @@ adresses MAC, ainsi que les plages d'adresses réservées pour
 l'allocation dynamique. Vous pouvez donc facilement générer la
 configuration d'un serveur DHCP.
 
-De plus, grâce au mécanisme standard du <<~relayage DHCP~>> sur les
+De plus, grâce au mécanisme standard du «~relayage DHCP~» sur les
 routeurs, vous pouvez offrir un service DHCP centralisé sur un
 campus.
 
@@ -1721,7 +2626,7 @@ en particulier~:
     \item les déclarations des machines individuelles~;
 
     \item de plus, si des profils DHCP sont définis dans la base,
-	ceux-ci sont restitués dans un bloc <<~\textit {group}~>>
+	ceux-ci sont restitués dans un bloc «~\textit {group}~»
 	avec le texte défini pour ce profil. Les déclarations des
 	machines individuelles avec ce profil sont ensuite listées
 	dans ce bloc.
@@ -1896,7 +2801,7 @@ les opérations de maintenance et de sauvegarde de la base PostgreSQL
 
 Le premier script,
 \verb|./expl/quotidien|, effectue une sauvegarde dans le répertoire
-\texttt {./dump}, ainsi qu'un <<~\texttt {VACUUM}~>> (spécifique
+\texttt {./dump}, ainsi qu'un «~\texttt {VACUUM}~» (spécifique
 PostgreSQL) sur la base.
 
 De plus, il permet également de créer une copie de la base
@@ -1953,17 +2858,21 @@ aux auteurs...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \appendix
-\clearpage
-\titreA {Modèle des données}
+\titreA {Modèles des données}
     \label {anx-mcd}
 
+\titreB {WebDNS}
+
 \figpswidth {mcd-dns} {150mm}
+
+\titreB {WebAuth}
+
+\figpswidth {mcd-auth} {100mm}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Annexe - Paramétrage de l'application
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\clearpage
 \titreA {Paramétrage de WebDNS}
     \label {parametrage}
 
@@ -1976,14 +2885,14 @@ des données, fourni en annexe~\ref {anx-mcd} (page~\pageref {anx-mcd}).
 
 \titreB {Les réseaux}
 
-Un réseau doit être compris comme un <<~domaine de broadcast~>>\footnote
+Un réseau doit être compris comme un «~domaine de broadcast~»\footnote
 {Évitez d'identifier votre classe B comme un seul réseau...},
 autrement dit un réseau relie un ensemble de machines qui peuvent
 communiquer entre elles sans utiliser de routeur intermédiaire.
 
 À chaque réseau sont associées deux \textbf {adresses}~: un CIDR \textbf
-{IPv4} (de la forme <<~130.79.201.128/25~>>, par exemple) et
-l'équivalent \textbf {IPv6} (de la forme <<~2001:660:2402:1::/64~>>
+{IPv4} (de la forme «~130.79.201.128/25~», par exemple) et
+l'équivalent \textbf {IPv6} (de la forme «~2001:660:2402:1::/64~»
 par exemple). L'une des deux adresses peut bien évidemment être
 vide.
 
@@ -1997,7 +2906,7 @@ Les autres attributs d'un réseau sont~:
 	régional), vous pourrez remplacer la notion d'établissement par
 	la notion de service, de laboratoire, de client, etc.
 
-    \item sa <<~\textbf {communauté}~>>~: cette notion nous permet, sur Osiris,
+    \item sa «~\textbf {communauté}~»~: cette notion nous permet, sur Osiris,
 	d'identifier les réseaux d'enseignement, de recherche,
 	d'administration, de backbone, d'interconnexion, etc.  Vous
 	pouvez l'utiliser de cette manière, ou ne pas considérer
@@ -2123,9 +3032,9 @@ Chaque RR porte un \textbf {nom} (sans point à l'intérieur), conforme
 \end {itemize}
 
 Il faut insister sur le fait qu'un nom de RR ne comporte pas de
-point.  Ainsi, vous ne pouvez pas ajouter <<~www.labo~>> dans le
-domaine <<~domaine.fr~>>, par exemple. Pour cela, il faut créer le
-domaine <<~labo.domaine.fr~>> et y rentrer le RR de nom <<~www~>>
+point.  Ainsi, vous ne pouvez pas ajouter «~www.labo~» dans le
+domaine «~domaine.fr~», par exemple. Pour cela, il faut créer le
+domaine «~labo.domaine.fr~» et y rentrer le RR de nom «~www~»
 (ou alors gérer ceci comme une exception à l'aide du \textit
 {prologue} de la zone, comme décrit ci-après).
 
@@ -2151,8 +3060,8 @@ membres ne verront qu'un champ fixe au lieu d'un menu déroulant.
 
 En second lieu, un groupe a accès à des plages d'adresses IP (IPv4
 ou IPv6, via la table \texttt {dr\_ip}). Une plage d'adresses IP
-est définie comme une suite de droits de type <<~\texttt {allow}~>>
-ou <<~\texttt {deny}~>> sur des préfixes IP. Ainsi, pour permettre
+est définie comme une suite de droits de type «~\texttt {allow}~»
+ou «~\texttt {deny}~» sur des préfixes IP. Ainsi, pour permettre
 aux membres d'un groupe de déclarer des machines dans toute une
 plage d'adresses, sauf l'adresse de \textit {broadcast} et l'adresse
 du routeur (définie par exemple comme la dernière adresse du réseau),
@@ -2180,27 +3089,27 @@ du correspondant.
 
 \titreB {Les zones}
 
-Les <<~zones~>> ne doivent pas être confondues avec les <<~domaines~>>~:
-si les <<~domaines~>> regroupent des RR dans la base, les <<~zones~>>
+Les «~zones~» ne doivent pas être confondues avec les «~domaines~»~:
+si les «~domaines~» regroupent des RR dans la base, les «~zones~»
 quant à elles contiennent les renseignements nécessaires pour générer
 les fichiers de zone sur votre serveur DNS.
 
 Les zones comprennent entre autres~:
 
 \begin {itemize}
-    \item le \textbf {nom de la zone} (<<~\texttt {u-strasbg.fr}~>>,
-	ou <<~\texttt {79.130.in-addr.arpa}~>> par exemple)~;
+    \item le \textbf {nom de la zone} («~\texttt {u-strasbg.fr}~»,
+	ou «~\texttt {79.130.in-addr.arpa}~» par exemple)~;
 
     \item le \textbf {critère} servant, lors de la génération, à sélectionner
 	les informations dans la base~:
 
 	\begin {itemize}
-	    \item pour une zone <<~inverse~>> (dans \texttt
+	    \item pour une zone «~inverse~» (dans \texttt
 		{in-addr.arpa} ou \texttt {ip6.arpa}), il s'agit
 		d'un préfixe de réseau (par exemple \texttt
 		{130.79.201.128/25}),
 
-	    \item pour une zone <<~normale~>>, il s'agit du domaine
+	    \item pour une zone «~normale~», il s'agit du domaine
 		associé à chaque nom (\texttt {u-strasbg.fr} pour
 		sélectionner les RR devant figurer dans la zone \texttt
 		{u-strasbg.fr})~;
@@ -2222,7 +3131,7 @@ Les zones comprennent entre autres~:
 	type A ou AAAA. Il s'agit d'une chaîne de caractères (sur
 	plusieurs lignes éventuellement si vous avez plusieurs RR
 	à ajouter) dans laquelle toutes les occurrences de la chaîne
-	<<~\texttt {\%NOM\%}~>> sont substituées par le nom du RR
+	«~\texttt {\%NOM\%}~» sont substituées par le nom du RR
 	de type A ou AAAA. Pour l'utilisation de ce champ, voir~\ref
 	{anx-rrsup} (page~\pageref {anx-rrsup})~;
 
@@ -2234,7 +3143,7 @@ Les zones comprennent entre autres~:
 Le script de génération de zone (\texttt {generer-zone}, voir~\ref
 {generer-zone}, page~\pageref {generer-zone}) calcule un nouveau
 numéro de version à partir de celui qui figure dans la base, puis
-il extrait le prologue, y recherche la chaîne <<~\texttt {\%VERSION\%}~>>
+il extrait le prologue, y recherche la chaîne «~\texttt {\%VERSION\%}~»
 et la substitue par le nouveau numéro de version calculé précédemment,
 et enfin génère les RR associés à la zone en les sélectionnant à
 partir du critère, et en y ajoutant éventuellement les RR supplémentaires
@@ -2243,8 +3152,8 @@ associés à la zone.
 Le prologue ne contient habituellement que les informations liées
 à la zone elle-même, soit les RR de type SOA, NS et MX associés au
 domaine. Dans la pratique, le prologue peut également contenir tous
-les cas particuliers\footnote {Certains diront les <<~scories de
-l'histoire d'un site~>>.} qui ne peuvent être pris en compte dans
+les cas particuliers\footnote {Certains diront les «~scories de
+l'histoire d'un site~».} qui ne peuvent être pris en compte dans
 le modèle.
 
 
@@ -2289,7 +3198,7 @@ sur Osiris, nous utilisions~:
 Ainsi, après tout RR de type A ou AAAA, le script de génération de
 zone (\texttt {generer-zone}, voir~\ref {generer-zone}, page~\pageref
 {generer-zone}) ajoute le texte ci-dessus en remplaçant la chaîne
-<<~\texttt {\%NOM\%} par le nom du RR de type A ou AAAA.
+«~\texttt {\%NOM\%} par le nom du RR de type A ou AAAA.
 
 Afin de permettre de créer des RR de type MX qui ne sont pas associés
 à des adresses IP (comme par exemple pour des adresses de messagerie
@@ -2305,15 +3214,15 @@ Il est bien sûr possible de déclarer plusieurs MX pour un nom
 donné.
 
 Cette possibilité est restreinte aux administrateurs de l'application.
-Elle permet de gérer des cas particuliers à la règle <<~une adresse,
-un MX~>>, comme notamment les adresses virtuelles de messagerie.
+Elle permet de gérer des cas particuliers à la règle «~une adresse,
+un MX~», comme notamment les adresses virtuelles de messagerie.
 
 
 \titreC {Utilisation des rôles de messagerie}
     \label {anx-rolemail}
 
-La deuxième méthode de gestion des MX s'appelle les <<~rôles de
-messagerie~>>. Elle est nettement plus souple, car elle permet aux
+La deuxième méthode de gestion des MX s'appelle les «~rôles de
+messagerie~». Elle est nettement plus souple, car elle permet aux
 correspondant autorisés de gérer eux-mêmes, de manière contrôlée,
 les adresses de messagerie.
 
@@ -2371,7 +3280,7 @@ repose sur l'attribut \textbf {dhcp} du réseau, mais également sur
 la présence d'une adresse MAC.
 
 Si un profil DHCP est défini pour le RR considéré, l'association
-statique est placée dans un <<~\textit {groupe}~>> (au sens du
+statique est placée dans un «~\textit {groupe}~» (au sens du
 serveur ISC).
 
 
@@ -2474,7 +3383,7 @@ Pour supprimer un correspondant, il faut utiliser le menu de \textit
 {gestion des correspondants}. La suppression échouera sur une
 contrainte d'intégrité de la base si le correspondant a modifié des
 RR. Dans ce cas, il ne faut pas supprimer le correspondant, mais
-le rendre <<~absent~>> (i.e. non présent) par le menu de \textit
+le rendre «~absent~» (i.e. non présent) par le menu de \textit
 {modification d'un correspondant}.
 
 
@@ -2526,8 +3435,8 @@ Il faut donc~:
 \begin {itemize}
     \item vérifier que le réseau a bien la capacité d'utiliser DHCP,
 	en se rendant dans le menu de \textit {modification des réseaux}
-	(regarder en particulier les colonnes <<~Passerelle IPv4~>> et
-	<<~DHCP activé~>>)~;
+	(regarder en particulier les colonnes «~Passerelle IPv4~» et
+	«~DHCP activé~»)~;
 
     \item vérifier sur le routeur concerné que le relayage DHCP est
 	activé~;
@@ -2540,9 +3449,9 @@ Il faut donc~:
     \item par l'intermédiaire du menu de \textit {modification des
 	caractéristiques des groupes}, vérifier d'une part que le
 	groupe du correspondant réseau a accès à la gestion DHCP
-	(case <<~Accès à la gestion DHCP~>> dans la partie <<~Réseaux
-	autorisés~>>), et lui associer d'autre part le profil DHCP
-	(partie <<~Profils DHCP visibles~>>).
+	(case «~Accès à la gestion DHCP~» dans la partie «~Réseaux
+	autorisés~»), et lui associer d'autre part le profil DHCP
+	(partie «~Profils DHCP visibles~»).
 
 \end {itemize}
 
@@ -2570,7 +3479,7 @@ précédente sont~:
 
 \begin {itemize}
     \item correction d'un bug affectant la génération des zones
-	lorsqu'une adresse IPv6 était mal saisie (avec un <<~/64~>>
+	lorsqu'une adresse IPv6 était mal saisie (avec un «~/64~»
 	à la fin par exemple). Ce type d'adresse est maintenant
 	interdit à la saisie. Patch diffusé dans la liste webdns
 	le 28 octobre 2004.
@@ -2613,7 +3522,7 @@ précédente sont~:
 	\end {itemize}
 
 	Les deux derniers utilitaires ont été envoyés, dans une version
-	<<~shell~>> sur la liste WebDNS le 25 mai 2004. Ils ont été
+	«~shell~» sur la liste WebDNS le 25 mai 2004. Ils ont été
 	réécrits en Tcl pour bénéficier de la substitution automatique
 	des variables opérée par le \texttt {Makefile} de l'application
 	Web.
@@ -3090,7 +3999,7 @@ presse).
 	\\ \cline {2-3}
     liste.tex
 	& \texttt {\%S\%}
-	& <<~\texttt {s}~>> si le nombre de machine est supérieur à 1
+	& «~\texttt {s}~» si le nombre de machine est supérieur à 1
 	\\ \cline {2-3}
 	& \texttt {\%DATE\%}
 	& date de l'extraction
