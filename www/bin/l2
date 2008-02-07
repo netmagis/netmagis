@@ -118,7 +118,8 @@ proc match-eq {type_model} {
 	cisco/38*  {
 	    set attr {shape=octagon style=filled fillcolor=orange1}
 	}
-	cisco/*routeur {
+	cisco/*routeur -
+	cisco/7206* {
 	    set attr {shape=circle
 				style=filled fillcolor=lightgrey
 				fixedsize height=1}
