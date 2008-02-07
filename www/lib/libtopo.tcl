@@ -117,7 +117,7 @@ proc init-topo {nologin base pageerr attr form _ftab _dbfd _uid _tabuid _ouid _t
 	}
 	
 	#
-	# On vérifie si la classe de l'utilisteur est autorisé 
+	# On vérifie si la classe de l'utilisateur est autorisée
 	# à accéder cgi, en fonction du niveau demandé par le cgi ($attr)
 	# 
 	#

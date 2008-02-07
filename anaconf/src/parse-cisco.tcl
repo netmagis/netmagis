@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.9 2007-10-20 19:13:56 pda Exp $
+# $Id: parse-cisco.tcl,v 1.10 2008-02-07 15:17:27 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -14,6 +14,7 @@
 #   2007/06/15 : pda/jean : ajout desc vlan local
 #   2007/07/12 : pda      : debut codage ios router
 #   2007/07/13 : pda      : retrait cisco_debug et ajout flag debug en global
+#   2008/02/07 : pda/jean : correction ios router
 #
 
 ###############################################################################
@@ -1327,6 +1328,7 @@ proc cisco-post-process {model fdout eq tab} {
 	#######################################################################
 	# IOS Router
 	#######################################################################
+parray t
 
 	set ip4 {}
 	set ip6 {}
@@ -1485,8 +1487,12 @@ proc cisco-post-process {model fdout eq tab} {
 		#
 
 		foreach bgid $lbridge {
-		    set t(eq!$eq!bridge!$bgid!node) $nodeB
-		    puts $fdout "link $nodeL2 $nodeB"
+		    if {[info exists t(eq!$eq!if!$iface!bridge)]} then {
+			if {$t(eq!$eq!if!$iface!bridge) == $bgid} then {
+			    set t(eq!$eq!bridge!$bgid!node) $nodeB
+			    puts $fdout "link $nodeL2 $nodeB"
+			}
+		    }
 		}
 	    }
 	}

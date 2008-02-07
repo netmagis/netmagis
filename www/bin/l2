@@ -97,6 +97,11 @@ proc match-eq {type_model} {
 				style=filled fillcolor=lightgrey
 				fixedsize height=1}
 	}
+	cisco/12000* {
+	    set attr {shape=doublecircle
+				style=filled fillcolor=lightgrey
+				fixedsize height=1}
+	}
 	cisco/WS-C45* {
 	    set attr {shape=box style=filled fillcolor=lightblue}
 	}
@@ -112,6 +117,11 @@ proc match-eq {type_model} {
 	}
 	cisco/38*  {
 	    set attr {shape=octagon style=filled fillcolor=orange1}
+	}
+	cisco/*routeur {
+	    set attr {shape=circle
+				style=filled fillcolor=lightgrey
+				fixedsize height=1}
 	}
 	alcatel/switch {
 	    set attr {shape=box height=.35}
@@ -506,7 +516,7 @@ proc main {} {
 
 		switch -- $format {
 		    pdf {
-			set fd [open "|$prog -Tps $tmp.dot | $conf(ps2pdf) - -" "r"]
+			set fd [open "|$prog -Tps $tmp.dot 2> /dev/null | $conf(ps2pdf) - -" "r"]
 			fconfigure $fd -translation binary
 			set pdf [read $fd]
 			close $fd
@@ -521,7 +531,7 @@ proc main {} {
 			exit 0
 		    }
 		    default {
-			set map [exec sh -c "$prog -Tcmapx < $tmp.dot"]
+			set map [exec sh -c "$prog -Tcmapx < $tmp.dot 2> /dev/null"]
 			::webapp::send html [::webapp::file-subst $conf(page1) \
 						    [list \
 							    [list %DESC%  $desc] \

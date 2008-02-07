@@ -357,6 +357,15 @@ proc main {} {
 					]
     } else {
 	#
+	# Valider l'adresse IP
+	#
+
+	set msg [syntaxe-ip $dbfd $addr "inet"]
+	if {! [string equal $msg ""]} then {
+	    ::webapp::error-exit $conf(err) $msg
+	}
+
+	#
 	# Rechercher l'adresse IP fournie et obtenir le réseau
 	#
 
