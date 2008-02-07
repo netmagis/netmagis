@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.10 2008-02-07 15:17:27 pda Exp $
+# $Id: parse-cisco.tcl,v 1.11 2008-02-07 15:24:45 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -1328,7 +1328,6 @@ proc cisco-post-process {model fdout eq tab} {
 	#######################################################################
 	# IOS Router
 	#######################################################################
-parray t
 
 	set ip4 {}
 	set ip6 {}
