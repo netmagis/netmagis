@@ -1,17 +1,35 @@
 #
-# $Id: base.tcl,v 1.5 2008-02-11 16:09:42 pda Exp $
+# $Id: base.tcl,v 1.6 2008-02-11 16:46:39 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
 # Peut être complété par des procédures issues du modèle spécifique
 #
 # Historique
-#   1999/06/20 : pda : séparation pour permettre d'autres langages
-#   1999/07/02 : pda : simplification
-#   1999/07/26 : pda : ajout de lt et gt
-#   1999/09/12 : pda : gestion minimale d'erreur
-#   2001/10/19 : pda : ajout des "meta"
+#   1999/06/20 : pda          : séparation pour permettre d'autres langages
+#   1999/07/02 : pda          : simplification
+#   1999/07/26 : pda          : ajout de lt et gt
+#   1999/09/12 : pda          : gestion minimale d'erreur
+#   2001/10/19 : pda          : ajout des "meta"
+#   2008/02/11 : pda/moindrot : ajout de rss et logo, et helem
 #
+
+##############################################################################
+# valeurs par défaut
+##############################################################################
+
+set partie(logo) "<a href=\"/\"><img src=\"/images/osiris.gif\" alt=\"sommaire\"></img></a>"
+set partie(rss)  ""
+
+# valeur par défaut de "meta"
+set partie(meta) ""
+set partie(soustitre) 0
+set partie(currentcol) 0
+
+##############################################################################
+# procédures utilitaires
+##############################################################################
+
 
 proc check-int {v} {
     if {! [regexp {^[0-9]+$} $v]} then {
@@ -339,11 +357,6 @@ proc htg_multicasetableau {} {
 # Gestion des tags "meta"
 ##############################################################################
 
-# valeur par défaut de "meta"
-set partie(meta) ""
-set partie(soustitre) 0
-set partie(currentcol) 0
-
 proc htg_metarefresh {} {
     global partie
 
@@ -378,8 +391,6 @@ proc htg_rss {} {
     set partie(rss) $r
     return {}
 }
-
-set partie(rss) ""
 
 proc htg_partie {} {
     global partie

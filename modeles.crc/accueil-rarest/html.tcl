@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.4 2008-02-11 14:45:30 pda Exp $
+# $Id: html.tcl,v 1.5 2008-02-11 16:46:38 pda Exp $
 #
 # Modèle "page d'accueil"
 #
@@ -13,6 +13,8 @@
 #
 
 inclure-tcl include/html/base.tcl
+
+set partie(logo) "<a href=\"/rarest\"><img src=\"/images/rarest.gif\" alt=\"sommaire\"></img></a>"
 
 set script_info {
     var mois = new Array(13);

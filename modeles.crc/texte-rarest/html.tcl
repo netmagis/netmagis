@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.3 2007-12-16 20:33:45 pda Exp $
+# $Id: html.tcl,v 1.4 2008-02-11 16:46:43 pda Exp $
 #
 # Modèle "texte"
 #
@@ -15,6 +15,8 @@
 #
 
 inclure-tcl include/html/base.tcl
+
+set partie(logo) "<a href=\"/rarest\"><img src=\"/images/rarest.gif\" alt=\"sommaire\"></img></a>"
 
 ###############################################################################
 # Procédures de conversion HTML spécifiques au modèle
