@@ -11,15 +11,17 @@
 	\recuperer {meta}
 	<SCRIPT type="text/javascript">
 	<!--
-	window.onload=montre;
-	function montre(id) \{
+	window.onload=developper;
+	function developper(id) \{
 	var d = document.getElementById(id);
 	if (d) \{
 		if (d.style.display=='block') 
 			d.style.display='none';
 		else \{
 			for (var i = 1; i<=50; i++) \{
-				if (document.getElementById('smenu'+i)) \{document.getElementById('smenu'+i).style.display='none';\}
+				if (document.getElementById('smenu'+i)) \{
+					document.getElementById('smenu'+i).style.display='none';
+				\}
 			\}
 			d.style.display='block';
 		\}
@@ -28,7 +30,7 @@
 	//-->
 	</SCRIPT>
 </HEAD>
-<BODY onload="javascript:montre('smenu1')">
+<BODY onload="javascript:developper('smenu1')">
 <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="0" WIDTH="100%">
 <TR>
 <TD CLASS="fond_bleu" ALIGN="CENTER" VALIGN="TOP">
