@@ -1,5 +1,5 @@
 /*
- * $Id: base.c,v 1.2 2007-03-13 21:08:19 pda Exp $
+ * $Id: base.c,v 1.3 2008-02-11 14:50:53 pda Exp $
  *
  * Copyright (c) 1998-1999
  *	Pierre David
@@ -70,7 +70,6 @@ struct
 
     char *actchar [256] ;
 } htgctxt ;
-
 
 /******************************************************************************
 Command "htg reset"
@@ -525,7 +524,7 @@ int HTG_Getdate (Tcl_Interp *interp, int argc, char *argv [])
 	return TCL_ERROR ;
     }
 
-    sprintf (filedate, "%ld", stbuf.st_mtime) ;
+    sprintf (filedate, "%ld", (unsigned long int) stbuf.st_mtime) ;
     Tcl_SetResult (interp, filedate, TCL_VOLATILE) ;
 
     return TCL_OK ;
@@ -625,7 +624,8 @@ Initialization procedure
 
 int HTG_Init (Tcl_Interp *interp)
 {
-    Tcl_CreateCommand (interp, "htg", HTG_Cmd,
+    Tcl_CreateCommand (interp, "htg",
+		(Tcl_CmdProc *) HTG_Cmd,
 		(ClientData) NULL,
 		(Tcl_CmdDeleteProc *) NULL) ;
 
