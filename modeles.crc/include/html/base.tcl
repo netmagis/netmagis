@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.4 2008-02-11 14:45:30 pda Exp $
+# $Id: base.tcl,v 1.5 2008-02-11 16:09:42 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -19,54 +19,75 @@ proc check-int {v} {
     }
 }
 
+# HTML element
+proc helem {tag content args} {
+    set tag [string tolower $tag]
+    set r "<$tag"
+    foreach {attr value} $args {
+	set attr [string tolower $attr]
+	append r " $attr=\"$value\""
+    }
+    append r ">$content</$tag>"
+    return $r
+}
+
 ###############################################################################
 # Mise en forme du texte
 ###############################################################################
 
 proc htg_gras {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
-    return "<STRONG>$arg</STRONG>"
+    set r [helem B $arg]
+    return $r
 }
 
 proc htg_teletype {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
-    return "<TT>$arg</TT>"
+    set r [helem TT $arg]
+    return $r
 }
 
 proc htg_italique {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
-    return "<I>$arg</I>"
+    set r [helem I $arg]
+    return $r
 }
 
 proc htg_souligne {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
-    return "<U>$arg</U>"
+    set r [helem U $arg]
+    return $r
 }
 
 proc htg_retrait {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
-    return "<BLOCKQUOTE>$arg</BLOCKQUOTE>"
+    set r [helem BLOCKQUOTE $arg]
+    return $r
 }
 
 proc htg_image {} {
     if [catch {set source [htg getnext]} v] then {error $v}
     if [catch {set texte  [htg getnext]} v] then {error $v}
-    return "<IMG SRC=\"$source\" ALT=\"$texte\">"
+    set r [helem IMG "" SRC $source ALT $texte]
+    return $r
 }
 
 proc htg_liste {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
-    return "<UL>$arg</UL>"
+    set r [helem UL $arg]
+    return $r
 }
 
 proc htg_enumeration {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
-    return "<OL>$arg</OL>"
+    set r [helem OL $arg]
+    return $r
 }
 
 proc htg_item {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
-    return "<LI>$arg</LI>"
+    set r [helem LI $arg]
+    return $r
 }
 
 proc htg_titre {} {
@@ -74,12 +95,14 @@ proc htg_titre {} {
     if [catch {set texte  [htg getnext]} v] then {error $v}
     check-int $niveau
 
-    return "<H$niveau>$texte</H$niveau>"
+    set r [helem H$niveau $texte]
+    return $r
 }
 
 proc htg_verbatim {} {
     if [catch {set texte  [htg getnext]} v] then {error $v}
-    return "<PRE>$texte</PRE>"
+    set r [helem PRE $texte]
+    return $r
 }
 
 ###############################################################################
@@ -105,19 +128,22 @@ proc htg_br {} {
 proc htg_lien {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
     if [catch {set url   [htg getnext]} v] then {error $v}
-    return "<A HREF=\"$url\">$texte</A>"
+    set r [helem A $texte HREF $url]
+    return $r
 }
 
 proc htg_liensecurise {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
     if [catch {set url   [htg getnext]} v] then {error $v}
-    return "<A HREF=\"$url\" class=\"orange_accueil\">$texte</A>"
+    set r [helem A $texte CLASS orange_accueil HREF $url]
+    return $r
 }
 
 proc htg_ancre {} {
     if [catch {set nom   [htg getnext]} v] then {error $v}
     if [catch {set texte [htg getnext]} v] then {error $v}
-    return "<A NAME=\"$nom\">$texte</A>"
+    set r [helem A $texte NAME $nom]
+    return $r
 }
 
 ###############################################################################
@@ -322,8 +348,8 @@ proc htg_metarefresh {} {
     global partie
 
     if [catch {set temps [htg getnext]} v] then {error $v}
-    append partie(meta) "<META HTTP-EQUIV=\"refresh\" CONTENT=\"$temps\">\n"
-    append partie(meta) "<META HTTP-EQUIV=\"pragma\" CONTENT=\"no-cache\">\n"
+    append partie(meta) "<meta http-equiv=\"refresh\" content=\"$temps\">\n"
+    append partie(meta) "<meta http-equiv=\"pragma\" content=\"no-cache\">\n"
     return ""
 }
 
@@ -338,6 +364,22 @@ proc htg_set {} {
     if [catch {set partie($variable) [htg getnext]} v] then {error $v}
     return {}
 }
+
+# ceci doit être défini au début de la page pour indiquer les paramètres
+# du flux RSS.
+proc htg_rss {} {
+    global partie
+
+    if [catch {set titre [htg getnext]} v] then {error $v}
+    if [catch {set lien  [htg getnext]} v] then {error $v}
+    set titre [nettoyer-html $titre]
+    regsub -all "\n\n+" $titre "<P>" titre
+    set r "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$titre\" href=\"$lien\">"
+    set partie(rss) $r
+    return {}
+}
+
+set partie(rss) ""
 
 proc htg_partie {} {
     global partie
@@ -357,6 +399,7 @@ proc htg_recuperer {} {
     if {! [info exists partie($id)]} then {error "missing part '$id'"}
     return $partie($id)
 }
+
 
 ##############################################################################
 # Mise en forme HTML
