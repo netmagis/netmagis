@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.3 2007-12-16 20:33:45 pda Exp $
+# $Id: base.tcl,v 1.4 2008-02-11 14:45:30 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -275,9 +275,9 @@ array set tabcouleurs {
 proc test-couleur {couleur} {
     global tabcouleurs
 
-    set couleur [string tolower $couleur]
-    if {[info exists tabcouleurs($couleur)]} then {
-	set couleur $tabcouleurs($couleur)
+    set c [string tolower $couleur]
+    if {[info exists tabcouleurs($c)]} then {
+	set couleur $tabcouleurs($c)
     }
     return $couleur
 }

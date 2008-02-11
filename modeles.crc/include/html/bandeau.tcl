@@ -1,4 +1,4 @@
-# $Id: bandeau.tcl,v 1.3 2007-12-16 20:33:45 pda Exp $
+# $Id: bandeau.tcl,v 1.4 2008-02-11 14:45:30 pda Exp $
 
 set numsommaire 5
 set sommaire(0) "<dt class=\"sous-menu-spacer\"></dt> \
@@ -94,9 +94,18 @@ proc htg_bandeau {} {
     for {set i 0} {$i < $numsommaire} {incr i 1} {
         incr partie(soustitre)
         set sousmenu "smenu$partie(soustitre)"
-	set tempsommaire [ format $sommaire($i) $sousmenu $sousmenu" ]
+	set tempsommaire [ format $sommaire($i) $sousmenu $sousmenu ]
     	set sommairegeneral $sommairegeneral$tempsommaire
     }
+    
+    set sommairemeteo  "<dt class=\"sous-menu-spacer\"></dt> \
+			<dt class=\"sous-menu-orange\">Météo Osiris</dt> \
+			<dt class=\"sous-menu-spacer\"></dt> \
+			<span id=\"meteo\">
+                        <A HREF=\"/osiris/meteo\"><IMG SRC=\"/weathermap/weathermap-small.png\"
+			ALT=\"Météo Osiris\"></A></span>"
+    set sommairegeneral $sommairegeneral$sommairemeteo
+
     set contenu "$contenu\n$sommairegeneral"
     
 #    set retour "<dt><A HREF=\"/\">ACCUEIL</A></dt>"

@@ -1,4 +1,4 @@
-# $Id: bandeau-rarest.tcl,v 1.1 2007-12-16 20:52:08 pda Exp $
+# $Id: bandeau-rarest.tcl,v 1.2 2008-02-11 14:45:30 pda Exp $
 
 set numsommaire 4
 set sommaire(0) "<dt onclick=\"javascript:montre('%s');\">Le réseau RAREST </dt> \
@@ -73,7 +73,7 @@ proc htg_bandeau {} {
     for {set i 0} {$i < $numsommaire} {incr i 1} {
         incr partie(soustitre)
         set sousmenu "smenu$partie(soustitre)"
-	set tempsommaire [ format $sommaire($i) $sousmenu $sousmenu" ]
+	set tempsommaire [format $sommaire($i) $sousmenu $sousmenu]
     	set sommairegeneral $sommairegeneral$tempsommaire
     }
     set contenu "$contenu\n$sommairegeneral"

@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.3 2007-12-16 20:33:45 pda Exp $
+# $Id: html.tcl,v 1.4 2008-02-11 14:45:30 pda Exp $
 #
 # Modèle "page d'accueil"
 #
@@ -14,6 +14,34 @@
 
 inclure-tcl include/html/base.tcl
 
+set script_info {
+    var mois = new Array(13);
+    var time = new Date();
+    var year = time.getYear();
+    var heures = time.getHours(); 
+    var minutes = time.getMinutes();
+    mois[1]="janvier";
+    mois[2]="février";
+    mois[3]="mars";
+    mois[4]="avril";
+    mois[5]="mai";
+    mois[6]="juin";
+    mois[7]="juillet";
+    mois[8]="août";
+    mois[9]="septembre";
+    mois[10]="octobre";
+    mois[11]="novembre";
+    mois[12]="décembre";
+    var month = mois[time.getMonth() + 1];
+    if (year < 2000) year = 1900 + year;
+    if (heures < 10) heures = "0" + heures ;
+    if (minutes < 10) minutes = "0" + minutes ; 
+    document.write ("<DIV CLASS=\"cadre_orange\"><B>Bonjour, nous sommes le "
+		+ time.getDate() + " " + month + " " + year + " ");
+    document.write (", il est " + heures  + ":" + minutes + ".<BR>");
+    document.write ("%s</B></DIV>");
+}
+
 ###############################################################################
 # Procédures de conversion HTML spécifiques au modèle
 ###############################################################################
@@ -25,9 +53,13 @@ proc htg_image {} {
 }
 proc htg_nouveautes {} {
     global partie
+    global script_info
+
     if [catch {set titre [htg getnext]} v] then {error $v}
 
-    return "<script language=\"javascript\">\n <!-- \n var mois=new Array(13);\n mois\[1\]=\"janvier\";\n mois\[2\]=\"février\";\n mois\[3\]=\"mars\";\n mois\[4\]=\"avril\";\n mois\[5\]=\"mai\";\n mois\[6\]=\"juin\";\n mois\[7\]=\"juillet\";\n mois\[8\]=\"août\";\n mois\[9\]=\"septembre\";\n mois\[10\]=\"octobre\";\n mois\[11\]=\"novembre\";\n mois\[12\]=\"décembre\";\n var time=new Date();\n var month=mois\[time.getMonth() + 1\];\n var year= 1900 + time.getYear();\n var minutes = time.getMinutes();\n if (minutes < 10) minutes = \"0\"+minutes ; \n document.write(\"<div class=cadre_orange><b>Bonjour, nous sommes le \"+time.getDate() +\" \" +month +\" \" +year + \" \");\n document.write(\", il est \"+time.getHours() +\":\" +minutes +\".<BR>$titre</b></div>\");\n //--> \n </script>"
+    set script [format $script_info $titre]
+
+    return "<script language=\"javascript\">\n<!--$script//-->\n</script>"
 }
 
 proc htg_tableau {} {
@@ -37,7 +69,10 @@ proc htg_tableau {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
 
     set partie(currentcol) 0
-    return "<TABLE COLS=$nbcol WIDTH=\"100%\" height=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><TR>$texte</TR></TABLE>"
+    set taillcol 100
+    set taillcol [ expr $taillcol / $nbcol ]
+#    return "<TABLE COLS=$nbcol WIDTH=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><TR>$texte</TR></TABLE>"
+    return "<TABLE WIDTH=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><COLGROUP WIDTH=\"$taillcol%\" SPAN=\"$nbcol\"></COLGROUP><TR>$texte</TR></TABLE>"
 }
 
 proc htg_colonne {} {
@@ -81,20 +116,27 @@ proc htg_element {} {
 proc htg_item {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
 
+    return "<span class=\"accueil_item\">$texte</span>\n<BR>"
+}
+
+proc htg_itemimage {} {
+    if [catch {set texte [htg getnext]} v] then {error $v}
+
     return "$texte\n<BR>"
 }
 
 proc htg_fakecolonne {} {
 
     if [catch {set taillecol [htg getnext]} v] then {error $v}
-    return "<TD WIDTH=\"$taillecol%\" ALIGN=\"center\" VALIGN=\"top\"></TD>"
+#    return "<td width=\"$taillecol%\" align=\"center\" valign=\"top\"> </td>"
+    return "<td CLASS=\"fakecolonne\" align=\"center\" valign=\"top\"> </td>"
 
 }
 
 
 proc htg_greytab {} {
 
-    return "<table class=\"tab_middle\" bgcolor=\"#ffffff\" border=\"0\" cellpadding=\"5\" cellspacing=\"0\" width=\"100%\">\n<tr>\n<td align=\"center\" valign=\"middle\"></td>\n</tr></table>"
+    return "<table class=\"tab_middle\" border=\"0\" cellpadding=\"5\" cellspacing=\"0\" width=\"100%\">\n<tr>\n<td align=\"center\" valign=\"middle\"></td>\n</tr></table>"
 
 }
 

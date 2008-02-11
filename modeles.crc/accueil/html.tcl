@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.3 2007-12-16 20:33:45 pda Exp $
+# $Id: html.tcl,v 1.4 2008-02-11 14:45:30 pda Exp $
 #
 # Modèle "page d'accueil"
 #
@@ -69,7 +69,8 @@ proc htg_tableau {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
 
     set partie(currentcol) 0
-    return "<TABLE COLS=$nbcol WIDTH=\"100%\" height=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><TR>$texte</TR></TABLE>"
+    set taillcol [expr 100 / $nbcol]
+    return "<TABLE WIDTH=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><COLGROUP WIDTH=\"$taillcol%\" SPAN=\"$nbcol\"></COLGROUP><TR>$texte</TR></TABLE>"
 }
 
 proc htg_colonne {} {
@@ -125,14 +126,14 @@ proc htg_itemimage {} {
 proc htg_fakecolonne {} {
 
     if [catch {set taillecol [htg getnext]} v] then {error $v}
-    return "<TD WIDTH=\"$taillecol%\" ALIGN=\"center\" VALIGN=\"top\"></TD>"
+    return "<td CLASS=\"fakecolonne\" align=\"center\" valign=\"top\"> </td>"
 
 }
 
 
 proc htg_greytab {} {
 
-    return "<table class=\"tab_middle\" bgcolor=\"#ffffff\" border=\"0\" cellpadding=\"5\" cellspacing=\"0\" width=\"100%\">\n<tr>\n<td align=\"center\" valign=\"middle\"></td>\n</tr></table>"
+    return "<table class=\"tab_middle\" border=\"0\" cellpadding=\"5\" cellspacing=\"0\" width=\"100%\">\n<tr>\n<td align=\"center\" valign=\"middle\"></td>\n</tr></table>"
 
 }
 
