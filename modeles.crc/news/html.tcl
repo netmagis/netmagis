@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.2 2008-02-11 14:45:30 pda Exp $
+# $Id: html.tcl,v 1.3 2008-02-12 10:52:20 pda Exp $
 #
 # Modèle "news"
 #
@@ -39,19 +39,26 @@ proc htg_titre {} {
     if [catch {set niveau [htg getnext]} v] then {error $v}
     check-int $niveau
     if [catch {set texte  [htg getnext]} v] then {error $v}
-    switch $niveau {
-	1	{
-            set texte  "<table cellpadding=0 cellspacing=0 border=0 width=\"100%\"><tr><td align=\"center\" valign=\"top\" class=\"print_image\"><img src=\"/images/logo_osiris_print.jpeg\" alt=\"\"></td><td align=\"center\" valign=\"middle\"><H2>$texte</H2></td></tr></table>"
-	}
-	2	{
-	    set texte "<H3>$texte</H3>"
-	}
-	default	{
-	    incr niveau
-	    set texte "<H$niveau>$texte</H$niveau>"
-	}
+
+    if {$niveau == 1} then {
+	set logo [helem TD \
+			[helem IMG "" \
+			    SRC /images/logo_osiris_print.jpeg \
+			    ALT "logo" \
+			] \
+			ALIGN center VALIGN top CLASS print_image \
+		    ]
+	set titre [helem TD [helem H2 $texte] ALIGN center VALIGN middle]
+	set r [helem TABLE \
+		    [helem TR "$logo$titre"] \
+		    CELLPADDING 0 CELLSPACING 0 BORDER 0 WIDTH 100% \
+		]
+    } else {
+	incr niveau
+	set r [helem H$niveau $texte]
     }
-    return $texte
+
+    return $r
 }
 
 proc htg_partie {} {
