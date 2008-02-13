@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.6 2008-02-11 16:46:39 pda Exp $
+# $Id: base.tcl,v 1.7 2008-02-13 08:57:12 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -110,8 +110,8 @@ proc htg_item {} {
 
 proc htg_titre {} {
     if [catch {set niveau [htg getnext]} v] then {error $v}
-    if [catch {set texte  [htg getnext]} v] then {error $v}
     check-int $niveau
+    if [catch {set texte  [htg getnext]} v] then {error $v}
 
     set r [helem H$niveau $texte]
     return $r

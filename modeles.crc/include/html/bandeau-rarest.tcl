@@ -1,25 +1,25 @@
-# $Id: bandeau-rarest.tcl,v 1.2 2008-02-11 14:45:30 pda Exp $
+# $Id: bandeau-rarest.tcl,v 1.3 2008-02-13 08:57:12 pda Exp $
 
 set numsommaire 4
-set sommaire(0) "<dt onclick=\"javascript:montre('%s');\">Le réseau RAREST </dt> \
+set sommaire(0) "<dt onclick=\"javascript:developper('%s');\">Le réseau RAREST </dt> \
    	     <dd id=\"%s\"> \
 	      <ul><li><a href=\"/rarest/intro.html\">Introduction</a></li></ul> \
 	      <ul><li><a href=\"/rarest/part.html\">Partenaires</a></li></ul> \
 	      <ul><li><a href=\"/rarest/etabl.html\">Etablissements</a></li></ul> \
 	      <ul><li><a href=\"/rarest/infra.html\">Infrastructure</a></li></ul> \
 	     </dd>"
-set sommaire(1) "<dt onclick=\"javascript:montre('%s');\">Le CRC</dt> \
+set sommaire(1) "<dt onclick=\"javascript:developper('%s');\">Le CRC</dt> \
              <dd id=\"%s\"> \
               <ul><li><a href=\"/crc/\">Introduction</a></li></ul> \
               <ul><li><a href=\"/crc/equipe/\">L'équipe</a></li></ul> \
               <ul><li><a href=\"/crc/contact.html\">Comment nous joindre</a></li></ul> \
              </dd>"
-set sommaire(2) "<dt onclick=\"javascript:montre('%s');\">Accès restreint</dt> \
+set sommaire(2) "<dt onclick=\"javascript:developper('%s');\">Accès restreint</dt> \
              <dd id=\"%s\"> \
               <ul><li><a href=\"/rarest/corresp/\">Intranet correspondants</a></li></ul> \
               <ul><li><a href=\"/rarest/bex\">Intranet du groupe d'experts</a></li></ul> \
              </dd>"
-set sommaire(3) "<dt onclick=\"javascript:montre('%s');\">Au secours !</dt> \
+set sommaire(3) "<dt onclick=\"javascript:developper('%s');\">Au secours !</dt> \
              <dd id=\"%s\"> \
               <ul><li><a href=\"/rarest/aide-rarest.html\">Aide Rarest</a></li></ul> \
              </dd>"
@@ -36,7 +36,7 @@ proc xxx_elementtableau {bgcoul titre texte} {
     if {[string length $titre] > 0} then {
         incr partie(soustitre)
 	set sousmenu $sousmenu$partie(soustitre)
-	set titre "<dt onclick=\"javascript:montre('$sousmenu');\">$titre</dt>"
+	set titre "<dt onclick=\"javascript:developper('$sousmenu');\">$titre</dt>"
     }
 
     #

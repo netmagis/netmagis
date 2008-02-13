@@ -1,10 +1,10 @@
-# $Id: bandeau.tcl,v 1.4 2008-02-11 14:45:30 pda Exp $
+# $Id: bandeau.tcl,v 1.5 2008-02-13 08:57:12 pda Exp $
 
 set numsommaire 5
 set sommaire(0) "<dt class=\"sous-menu-spacer\"></dt> \
 		<dt class=\"sous-menu-orange\">Sommaire</dt> \
             <dt><A HREF=\"/\">ACCUEIL</A></dt>\
-	    <dt onclick=\"javascript:montre('%s');\">Espace Utilisateurs </dt> \
+	    <dt onclick=\"javascript:developper('%s');\">Espace Utilisateurs </dt> \
    	     <dd id=\"%s\"> \
 	      <ul><li><a href=\"https://webmail.u-strasbg.fr\">Webmail</a></li></ul> \
 	      <ul><li><a href=\"/osiris/services/bal\">Messagerie</a></li></ul> \
@@ -13,7 +13,7 @@ set sommaire(0) "<dt class=\"sous-menu-spacer\"></dt> \
 	      <ul><li><a href=\"/osiris/services/\">Autres services...</a></li></ul> \
 	      <ul><li><a href=\"https://www-crc.u-strasbg.fr/applis/authiris/bin/accueil\" class=\"orange_menu\">Mon compte Osiris</a></li></ul> \
 	     </dd>"
-set sommaire(1) "<dt onclick=\"javascript:montre('%s');\">Espace Technique</dt> \
+set sommaire(1) "<dt onclick=\"javascript:developper('%s');\">Espace Technique</dt> \
              <dd id=\"%s\"> \
               <ul><li><a href=\"/osiris/intro-tech.html\">Introduction</a></li></ul> \
               <ul><li><a href=\"/formations\">Formations</a></li></ul> \
@@ -22,7 +22,7 @@ set sommaire(1) "<dt onclick=\"javascript:montre('%s');\">Espace Technique</dt> 
               <ul><li><a href=\"/corresp/\" class=\"orange_menu\">Intranet des correspondants</a></li></ul> \
              </dd>"
 
-set sommaire(2) "<dt onclick=\"javascript:montre('%s');\">Le téléphone à l'ULP</dt> \
+set sommaire(2) "<dt onclick=\"javascript:developper('%s');\">Le téléphone à l'ULP</dt> \
              <dd id=\"%s\"> \
               <ul><li><a href=\"http://siig2.u-strasbg.fr/cgi-bin/WebObjects/Annuaire.woa\">Annuaire</a></li></ul> \
               <ul><li><a href=\"/telulp/flash_info/index.html\">Marché d'extension</a></li></ul> \
@@ -30,7 +30,7 @@ set sommaire(2) "<dt onclick=\"javascript:montre('%s');\">Le téléphone à l'ULP</
               <ul><li><a href=\"https://www-crc.u-strasbg.fr/applis/pabx/bin/index\" class=\"orange_menu\">Consultation des PABX</a></li></ul> \
              </dd>"
 
-set sommaire(3) "<dt onclick=\"javascript:montre('%s');\">Le Réseau Osiris</dt> \
+set sommaire(3) "<dt onclick=\"javascript:developper('%s');\">Le Réseau Osiris</dt> \
              <dd id=\"%s\"> \
               <ul><li><a href=\"/osiris\">Introduction</a></li></ul> \
               <ul><li><a href=\"/portail\">Etablissement</a></li></ul> \
@@ -38,7 +38,7 @@ set sommaire(3) "<dt onclick=\"javascript:montre('%s');\">Le Réseau Osiris</dt> 
               <ul><li><a href=\"/osiris/technique.html\">Documentation technique</a></li></ul> \
              </dd>"
 
-set sommaire(4) "<dt onclick=\"javascript:montre('%s');\">Le CRC</dt> \
+set sommaire(4) "<dt onclick=\"javascript:developper('%s');\">Le CRC</dt> \
              <dd id=\"%s\"> \
               <ul><li><a href=\"/crc/aide-osiris.html\">Aide Osiris</a></li></ul> \
               <ul><li><a href=\"/crc/equipe/\">L'équipe</a></li></ul> \
@@ -57,7 +57,7 @@ proc xxx_elementtableau {bgcoul titre texte} {
     if {[string length $titre] > 0} then {
         incr partie(soustitre)
 	set sousmenu $sousmenu$partie(soustitre)
-	set titre "<dt onclick=\"javascript:montre('$sousmenu');\">$titre</dt>"
+	set titre "<dt onclick=\"javascript:developper('$sousmenu');\">$titre</dt>"
     }
 
     #

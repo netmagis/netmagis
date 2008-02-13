@@ -1,4 +1,4 @@
-# $Id: bandeau-sans-sommaire.tcl,v 1.1 2007-12-16 20:52:08 pda Exp $
+# $Id: bandeau-sans-sommaire.tcl,v 1.2 2008-02-13 08:57:12 pda Exp $
 
 proc xxx_elementtableau {bgcoul titre texte} {
     global partie
@@ -10,7 +10,7 @@ proc xxx_elementtableau {bgcoul titre texte} {
     if {[string length $titre] > 0} then {
         incr partie(soustitre)
 	set sousmenu $sousmenu$partie(soustitre)
-	set titre "<dt onclick=\"javascript:montre('$sousmenu');\">$titre</dt>"
+	set titre "<dt onclick=\"javascript:developper('$sousmenu');\">$titre</dt>"
     }
 
     #
