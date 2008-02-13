@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.4 2008-02-13 08:17:20 pda Exp $
+# $Id: html.tcl,v 1.5 2008-02-13 08:24:04 pda Exp $
 #
 # Modèle "news"
 #
@@ -159,7 +159,7 @@ proc htg_news {} {
 	set r6 [helem P "Voir aussi&nbsp;: $r5"]
     }
 
-    set r [helem DIV "$r2\n$4\n$r6" CLASS news]
+    set r [helem DIV "$r2\n$r4\n$r6\n" CLASS news]
 
     return $r
 }
