@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.7 2007-11-14 15:27:30 pda Exp $
+# $Id: libdns.tcl,v 1.8 2008-02-13 15:25:10 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -2246,6 +2246,28 @@ proc lire-groupe {dbfd idcor} {
 	set idgrp	$tab(idgrp)
     }
     return $idgrp
+}
+
+#
+# Vérifie la syntaxe d'un nom de groupe
+#
+# Entrée :
+#   - paramètres :
+#       - groupe : nom du groupe
+# Sortie :
+#   - valeur de retour : chaîne vide (ok) ou non vide (message d'erreur)
+#
+# Historique
+#   2008/02/13 : pda/jean : conception
+#
+
+proc syntaxe-groupe {groupe} {
+    if {[regexp {^[-A-Za-z0-9]*$} $groupe]} then {
+	set r ""
+    } else {
+	set r "Nom de groupe '$groupe' invalide (autorisés : lettres, chiffres et caractère moins)"
+    }
+    return $r
 }
 
 

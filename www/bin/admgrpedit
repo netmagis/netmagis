@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpedit,v 1.2 2007-11-13 16:44:05 pda Exp $
+# $Id: admgrpedit,v 1.3 2008-02-13 15:25:09 pda Exp $
 
 #
 # Script pour présenter les caractéristiques associées à un groupe
@@ -8,7 +8,7 @@
 # Appelé par : index.htgt
 #
 # Paramètres (formulaire ou URL) :
-#	- groupe : nom du groupe
+#	- orggrp : nom du groupe original, ou "::nouveau"
 #
 # Historique
 #   2002/05/21 : pda/jean : création
@@ -50,7 +50,7 @@ set conf(log)		%LOG%
 set conf(hauteur)	20
 
 set conf(form) {
-	{groupe		1 1}
+	{orggrp		1 1}
 }
 
 set conf(tabcorresp) {
@@ -235,21 +235,19 @@ proc main {} {
     # Valider le nom du groupe, et récupérer son identifiant numérique
     #
 
-    set groupe [lindex $ftab(groupe) 0]
-    if {[string equal $groupe "::nouveau"]} then {
-	set idgrp -1
+    set orggrp [lindex $ftab(orggrp) 0]
+    if {[string equal $orggrp "::nouveau"]} then {
 	set titre "Création d'un nouveau groupe"
-	set nouvgroupe ""
-	set groupe ""
-	set qgroupe ""
-	set admin 0
+	set newgrp ""
 	set messagegroupe "Entrez le nom du groupe à créer"
+	set idgrp -1
+	set admin 0
     } else {
-	set qgroupe [::webapp::html-string $groupe]
+	set qgroupe [::webapp::html-string $orggrp]
 	set titre "Édition du groupe '$qgroupe'"
-	set nouvgroupe $qgroupe
+	set newgrp $qgroupe
 	set messagegroupe "Modifiez le nom du groupe ou effacez la case pour le supprimer"
-	set pqgroupe [::pgsql::quote $groupe]
+	set pqgroupe [::pgsql::quote $orggrp]
 	set idgrp -1
 	set sql "SELECT idgrp,admin FROM groupe WHERE nom = '$pqgroupe'"
 	pg_select $dbfd $sql tab {
@@ -258,7 +256,7 @@ proc main {} {
 	}
 
 	if {$idgrp == -1} then {
-	    ::webapp::error-exit $conf(err) "Groupe '$groupe' non trouvé"
+	    ::webapp::error-exit $conf(err) "Groupe '$orggrp' non trouvé"
 	}
     }
 
@@ -501,8 +499,8 @@ proc main {} {
     ::webapp::send html [::webapp::file-subst $conf(page) \
 				[list \
 					[list %TITRE% $titre] \
-					[list %GROUPE% $qgroupe] \
-					[list %NOUVGROUPE% $nouvgroupe] \
+					[list %ORGGRP% $orggrp] \
+					[list %NEWGRP% $newgrp] \
 					[list %ADMIN% $admin] \
 					[list %MESSAGEGROUPE% $messagegroupe] \
 					[list %LISTECOR% $listecor] \

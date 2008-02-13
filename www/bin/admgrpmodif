@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpmodif,v 1.7 2007-11-13 16:44:05 pda Exp $
+# $Id: admgrpmodif,v 1.8 2008-02-13 15:25:09 pda Exp $
 
 #
 # Script pour enregistrer les caractéristiques associées à un groupe
@@ -8,8 +8,8 @@
 # Appelé par : index.htgt
 #
 # Paramètres (formulaire ou URL) :
-#	- groupe : nom du groupe originel
-#	- nouvgroupe : nom du groupe modifié (eventuellement)
+#	- orggrp : nom du groupe originel ou "::nouveau"
+#	- newgrp : nom du groupe modifié (eventuellement)
 #	- admin : droit d'administration (0 ou 1)
 #	- confirm : oui ou non
 #	- loginN : les logins des membres du groupe
@@ -67,8 +67,8 @@ set conf(log)		%LOG%
 
 set conf(form) {
 	{confirm		1 1}
-	{groupe			1 1}
-	{nouvgroupe		1 1}
+	{orggrp			1 1}
+	{newgrp			1 1}
 	{admin			1 1}
 	{login[0-9]+		0 9999}
 	{tridom[0-9]+		0 9999}
@@ -126,6 +126,12 @@ proc valide-groupe {dbfd groupe existant} {
 	}
     } else {
 	# On veut que le groupe n'existe pas encore
+	# Vérifier d'abord la syntaxe...
+	set msg [syntaxe-groupe $groupe]
+	if {! [string equal $msg ""]} then {
+	    ::webapp::error-exit $conf(err) $msg
+	}
+	# ... et ensuite, vérifier que le groupe est inconnu
 	if {$idgrp != -1} then {
 	    ::webapp::error-exit $conf(err) "Le groupe '$groupe' existe déjà"
 	}
@@ -165,6 +171,7 @@ proc supprime-groupe {dbfd idgrp idorphelin} {
 		WHERE corresp.idgrp = $idgrp AND rr.idcor = corresp.idcor
 		GROUP BY corresp.idcor"
     
+    set lidcor {}
     pg_select $dbfd $sql tab {
 	lappend lidcor $tab(idcor)
     }
@@ -217,9 +224,9 @@ proc main {} {
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
 			$conf(form) ftab dbfd login tabcor $conf(log)
 
-    set groupe     [lindex $ftab(groupe) 0]
-    set nouvgroupe [lindex $ftab(nouvgroupe) 0]
-    set confirm    [lindex $ftab(confirm) 0]
+    set orggrp  [lindex $ftab(orggrp) 0]
+    set newgrp  [lindex $ftab(newgrp) 0]
+    set confirm [lindex $ftab(confirm) 0]
 
     #
     # Créer le groupe des orphelins si nécessaire
@@ -245,7 +252,7 @@ proc main {} {
     # Déterminer dans quel cas on se trouve
     #
 
-    set etat [string equal $groupe ""][string equal $nouvgroupe ""] 
+    set etat [string equal $orggrp "::nouveau"][string equal $newgrp ""] 
     switch $etat {
 	11 {
 	    ::webapp::error-exit $conf(err) "Il faut saisir un nom de groupe"
@@ -255,16 +262,18 @@ proc main {} {
 	}
 	10 {
 	    set action "création"
-	    valide-groupe $dbfd $nouvgroupe 0
+	    valide-groupe $dbfd $newgrp 0
+	    set msgact "création du groupe $newgrp"
 	    set idgrp -1
 	}
 	00 {
 	    set action "édition"
-	    set idgrp [valide-groupe $dbfd $groupe 1]
+	    set msgact "modification du groupe $orggrp"
+	    set idgrp [valide-groupe $dbfd $orggrp 1]
 
 	    # Renommage
-	    if {! [string equal $groupe $nouvgroupe]} then {
-		valide-groupe $dbfd $nouvgroupe 0
+	    if {! [string equal $orggrp $newgrp]} then {
+		valide-groupe $dbfd $newgrp 0
 	    }
 	}
     }
@@ -274,7 +283,7 @@ proc main {} {
     #
 
     if {[string equal $action "suppression"]} then {
-	set idgrp [valide-groupe $dbfd $groupe 1]
+	set idgrp [valide-groupe $dbfd $orggrp 1]
 	if {! [string equal $confirm "oui"]} then {
 	    # Demander confirmation
 	    set ftab(confirm)	{oui}
@@ -282,7 +291,7 @@ proc main {} {
 	    set hidden  [::webapp::hide-parameters $lchamps ftab]
 	    ::webapp::send html [::webapp::file-subst $conf(confsuppr) \
 				[list \
-					[list %GROUPE%	$groupe] \
+					[list %ORGGRP%	$orggrp] \
 					[list %HIDDEN%	$hidden] \
 				    ] \
 			    ]
@@ -295,7 +304,7 @@ proc main {} {
 	    }
 	    ::webapp::send html [::webapp::file-subst $conf(supprok) \
 				[list \
-					[list %GROUPE%	$groupe] \
+					[list %ORGGRP%	$orggrp] \
 				    ] \
 			    ]
 	}
@@ -659,7 +668,8 @@ proc main {} {
 	    set message [join $incoherences "<BR>\n"]
 	    ::webapp::send html [::webapp::file-subst $conf(confirm) \
 				[list \
-					[list %GROUPE%	$groupe] \
+					[list %MSGACT%	$msgact] \
+					[list %ORGGRP%	$orggrp] \
 					[list %HIDDEN%	$hidden] \
 					[list %MESSAGE%	$message] \
 				    ] \
@@ -686,9 +696,9 @@ proc main {} {
     # Création du groupe si nécessaire
 
     if {[string equal $action "création"]} then {
-	set ngroupe [::pgsql::quote $nouvgroupe]
+	set qnewgrp [::pgsql::quote $newgrp]
 	set sql "INSERT INTO groupe (nom,admin)
-		    VALUES ('$ngroupe',$admin)"
+		    VALUES ('$qnewgrp',$admin)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    return $msg
@@ -697,31 +707,30 @@ proc main {} {
 
 	# Édition d'un groupe existant
 
-	set qgroupe [::pgsql::quote $groupe]
+	set qorggrp [::pgsql::quote $orggrp]
 
-	if {! [string equal $groupe $nouvgroupe]} then {
+	if {! [string equal $orggrp $newgrp]} then {
 
 	    # Renommage du groupe
-	    set ngroupe [::pgsql::quote $nouvgroupe]
-	    set sql "UPDATE groupe SET nom = '$ngroupe' WHERE nom = '$qgroupe'"
+	    set qnewgrp [::pgsql::quote $newgrp]
+	    set sql "UPDATE groupe SET nom = '$qnewgrp' WHERE nom = '$qorggrp'"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
 		return $msg
 	    }
-	    set groupe $nouvgroupe
 	}
     }
 
     # Récupère l'identifiant du groupe
 
-    set qgroupe [::pgsql::quote $groupe]
+    set qnewgrp [::pgsql::quote $newgrp]
     set idgrp -1
-    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$qgroupe'" tab {
+    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$qnewgrp'" tab {
 	set idgrp $tab(idgrp)
     }
     if {$idgrp == -1} then {
 	::webapp::error-exit $conf(err) \
-		"Erreur interne : groupe '$groupe' non trouvé"
+		"Erreur interne : groupe '$newgrp' non trouvé"
     }
 
     # Mettre a jour les attributs du groupe
@@ -842,7 +851,7 @@ proc main {} {
 
     ::webapp::send html [::webapp::file-subst $conf(page) \
 		    [list \
-			[list %GROUPE% $groupe] \
+			[list %NEWGRP% $newgrp] \
 			[list %TABLOGINS% $tablogins] \
 			[list %TABRESEAUX% $tabreseaux] \
 			[list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \

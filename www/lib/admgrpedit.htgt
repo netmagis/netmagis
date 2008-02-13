@@ -1,5 +1,5 @@
 {
-\* $Id: admgrpedit.htgt,v 1.2 2007-11-14 19:48:48 pda Exp $
+\* $Id: admgrpedit.htgt,v 1.3 2008-02-13 15:25:10 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -46,7 +46,7 @@
 
     <FORM METHOD="POST" ACTION="%HOMEURL%/bin/admgrpmodif">
 	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
-	<INPUT TYPE="HIDDEN" NAME="groupe" VALUE="%GROUPE%">
+	<INPUT TYPE="HIDDEN" NAME="orggrp" VALUE="%ORGGRP%">
 	\tableau {
 	    \bordure {0} {}
 	    \taille {100}
@@ -62,7 +62,7 @@
 	    \lignetableau {
 		\casetableau {} {%MESSAGEGROUPE%
 
-		    <INPUT TYPE="TEXT" NAME="nouvgroupe" VALUE="%NOUVGROUPE%">
+		    <INPUT TYPE="TEXT" NAME="newgrp" VALUE="%NEWGRP%">
 		    ~ ~ ~ ~ ~ ~ Administration de l'application : %ADMIN% 
 		}
 	    }

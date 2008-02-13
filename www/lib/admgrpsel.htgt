@@ -1,5 +1,5 @@
 {
-\* $Id: admgrpsel.htgt,v 1.4 2007-10-10 16:06:18 jean Exp $
+\* $Id: admgrpsel.htgt,v 1.5 2008-02-13 15:25:10 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -45,7 +45,7 @@
     \titre {1} {Modification des groupes et des correspondants}
 
     <FORM METHOD="POST" ACTION="%HOMEURL%/bin/admgrpedit">
-	Sélectionnez le groupe à modifier~: %MENUGROUPE%
+	Sélectionnez le groupe à modifier~: %MENUORGGRP%
 	<INPUT TYPE="SUBMIT" VALUE="Ok">
     </FORM>
 }

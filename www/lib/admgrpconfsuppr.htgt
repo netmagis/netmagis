@@ -1,9 +1,9 @@
 {
-\* $Id: admgrpmodif.htgt,v 1.4 2008-02-13 15:25:10 pda Exp $
+\* $Id: admgrpconfsuppr.htgt,v 1.1 2008-02-13 15:25:10 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {21/05/2002}
+\set {date}   {13/02/2008}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
@@ -21,6 +21,7 @@
 \bandeau {
 	DNS v%VERSION%
     } {
+
 	\elementbandeau {Actions} {
 	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
 	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
@@ -29,6 +30,8 @@
 	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
 	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
 	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
+	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
 	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
 	}
 	\elementbandeau {Voir aussi} {
@@ -40,29 +43,14 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Modification effectuée}
+    \titre {1} {Suppression du groupe %ORGGRP%}
 
-    Les informations du groupe '\gras {%NEWGRP%}' ont été mises à jour~:
+    Voulez-vous vraiment supprimer le groupe '%ORGGRP%'~?
 
-    \titre {2} {Correspondants}
-
-    %TABLOGINS%
-
-    \titre {2} {Réseaux}
-
-    %TABRESEAUX%
-
-    \titre {2} {Droits non rattachés à des réseaux}
-
-    %TABCIDRHORSRESEAU%
-
-    \titre {2} {Domaines}
-
-    %TABDOMAINES%
-
-    \titre {2} {Profils DHCP}
-
-    %TABDHCPPROFILS%
+    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/admgrpmodif">
+	%HIDDEN%
+	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
+    </FORM>
 }
 
 }

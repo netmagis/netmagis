@@ -1,9 +1,9 @@
 {
-\* $Id: admgrpmodif.htgt,v 1.4 2008-02-13 15:25:10 pda Exp $
+\* $Id: admgrpsupprok.htgt,v 1.1 2008-02-13 15:25:10 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {21/05/2002}
+\set {date}   {13/02/2008}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
@@ -40,29 +40,9 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Modification effectuée}
+    \titre {1} {Suppression effectuée}
 
-    Les informations du groupe '\gras {%NEWGRP%}' ont été mises à jour~:
-
-    \titre {2} {Correspondants}
-
-    %TABLOGINS%
-
-    \titre {2} {Réseaux}
-
-    %TABRESEAUX%
-
-    \titre {2} {Droits non rattachés à des réseaux}
-
-    %TABCIDRHORSRESEAU%
-
-    \titre {2} {Domaines}
-
-    %TABDOMAINES%
-
-    \titre {2} {Profils DHCP}
-
-    %TABDHCPPROFILS%
+    Le groupe '\gras {%ORGGRP%}' a été supprimé.
 }
 
 }
