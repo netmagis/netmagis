@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.3 2008-02-12 10:52:20 pda Exp $
+# $Id: html.tcl,v 1.4 2008-02-13 08:17:20 pda Exp $
 #
 # Modèle "news"
 #
@@ -121,32 +121,58 @@ proc htg_news {} {
     close $fd
 
     #
-    # Générer le code HTML
+    # Générer le code HTML :
     #
+    #   <div class="news">
+    #     <a name="$date_ancre/$auteur">
+    #       <h3>
+    #         <span class="news-date">[$date]</span>
+    #         <span class="news-titre">$titre</span>
+    #         <span class="news-theme">($theme)</span>
+    #       </h3>
+    #     </a>
+    #     <p>$contenu <span class="news-qui">[$auteur]</span></p>
+    #     <p>Voir aussi&nbsp;: <a href="$lien">$lien</a></p>
+    #   </div>
+    #
+
     regsub -all " " $date "/" date_ancre
 
-    set html ""
-    append html "<div class=\"news\">\n"
-    append html "<a name=\"$date_ancre/$auteur\">"
-    append html   "<h3>\n"
-    append html     "<span class=\"news-date\">\[$date\]</span>\n"
-    append html     "<span class=\"news-titre\">$titre</span>\n"
-    append html     "<span class=\"news-theme\">($theme)</span>\n"
-    append html   "</h3>\n"
-    append html "</a>\n"
-    append html   "<p>$contenu <span class=\"news-qui\">\[$auteur\]</span></p>\n"
-    if {! [string equal [string trim $lien] ""]} then {
-	append html "<p>Voir aussi&nbsp;: <a href=\"$lien\">$lien</a></p>\n"
-    }
-    append html "</div>\n"
 
-    return $html
+    set r1 ""
+    append r1 [helem SPAN "\[$date\]" CLASS news-date]
+    append r1 [helem SPAN $titre      CLASS news-titre]
+    append r1 [helem SPAN "($theme)"  CLASS news-theme]
+
+    set r2 [helem A [helem H3 $r1] NAME "$date_ancre/$auteur"]
+
+    set r3 $contenu
+    append r3 " "
+    append r3 [helem SPAN "\[$auteur\]" CLASS news-qui]
+
+    set r4 [helem P $r3]
+
+    if {[string equal [string trim $lien] ""]} then {
+	set r6 ""
+    } else {
+	set r5 [helem A $lien HREF $lien]
+	set r6 [helem P "Voir aussi&nbsp;: $r5"]
+    }
+
+    set r [helem DIV "$r2\n$4\n$r6" CLASS news]
+
+    return $r
 }
 
 proc htg_greytab {} {
-
-    return "<table class=\"tab_middle\" border=\"0\" cellpadding=\"5\" cellspacing=\"0\" width=\"100%\">\n<tr>\n<td align=\"center\" valign=\"middle\"></td>\n</tr></table>"
-
+    set r [helem TABLE \
+		[helem TR \
+		    [helem TD "" ALIGN center VALIGN middle] \
+		] \
+		CLASS tab_middle \
+		BORDER 0 CELLPADDING 5 CELLSPACING 0 WIDTH 100% \
+	    ]
+    return $r
 }
 
 
