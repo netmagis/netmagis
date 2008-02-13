@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traiteajout,v 1.5 2007-11-14 15:27:28 pda Exp $
+# $Id: traiteajout,v 1.6 2008-02-13 16:26:42 pda Exp $
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
@@ -42,6 +42,7 @@
 #   2004/08/04 : pda/jean : ajout mac
 #   2005/04/08 : pda/jean : ajout dhcpprofil
 #   2007/10/25 : jean     : log des actions de modification
+#   2008/02/13 : pda/jean : le responsable est le correspondant si pas précisé
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -128,9 +129,13 @@ source $conf(libdns)
 #   2005/04/08 : pda/jean : ajout iddhcpprofil
 #
 
-proc traiteajout-machine {dbfd idcor ft login} {
+proc traiteajout-machine {dbfd tc ft} {
     global conf
     upvar $ft ftab
+    upvar $tc tabcor
+
+    set login $tabcor(login)
+    set idcor $tabcor(idcor)
 
     #
     # Valider les champs du formulaire
@@ -178,6 +183,11 @@ proc traiteajout-machine {dbfd idcor ft login} {
 	set rrexiste 1
 	if {! [string equal $trr(ip) ""]} then {
 	    set dejaip 1
+	}
+    } else {
+	if {[string equal $respnom ""] && [string equal $respmel ""]} then {
+	    set respnom "$tabcor(nom) $tabcor(prenom)"
+	    set respmel $tabcor(mel)
 	}
     }
 
@@ -428,9 +438,13 @@ proc traiteajout-machine {dbfd idcor ft login} {
 # Historique
 #   2002/04/19 : pda/jean : conception
 #
-proc traiteajout-alias {dbfd idcor ft login} {
+proc traiteajout-alias {dbfd tc ft} {
     global conf
     upvar $ft ftab
+    upvar $tc tabcor
+
+    set login $tabcor(login)
+    set idcor $tabcor(idcor)
 
     #
     # Valider les champs du formulaire
@@ -551,7 +565,7 @@ proc main {} {
 	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
     }
 
-    traite$action $dbfd $tabcor(idcor) ftab $tabcor(login)
+    traite$action $dbfd tabcor ftab
 
     #
     # Déconnexion de la base
