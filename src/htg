@@ -1,7 +1,7 @@
 #!/local/services/www/htg/src/htgtcl
 
 #
-# $Id: htg,v 1.2 2007-03-13 21:08:19 pda Exp $
+# $Id: htg,v 1.3 2008-02-13 11:06:16 pda Exp $
 #
 # HTG : HTml (and other languages) Generator
 #
@@ -28,23 +28,31 @@
 #	et c'est ce qui est renvoyé par "htg getnext".
 # - le programme principal est "htg"
 #	- il lit les arguments
-#	- il charge les fonctions par défaut du langage
-#		(mise en gras, en italiques, etc.)
-#		qui sont dans le répertoire .../modeles/def/
-#		Ces fonctions peuvent être redéfinies par le modèle
-#		particulier spécifié par le document .htgt
-#	- il commence à lire le document .htgt
-#		celui-ci peut faire appel à un modèle M, auquel cas le
-#		fichier .../modeles/M/L.tcl est chargé (où L est le langage)
+#	- il commence à lire le document .htgt, qui doit contenir
+#		comme première directive : \modele {M} (M est le nom du modèle)
+#		Cette directive appelle htg_modele définie dans ce fichier.
+#	- htg_modele lit le fichier .../modeles/M/L.tcl (L est le langage)
+#		ce qui a pour effet :
+#		- d'inclure .../modeles/includes/L/base.tcl
+#		- puis de charger les fonctions htg_* spécifiques du modèle
+#	- htg continue d'analyser le document .htgt
+#		ce qui fait que le reste du fichier htgt est analysé
+#		et le code HTML généré par les htg_* est mis dans des
+#		variables. Note : dans les modèles fournis, ce sont les
+#		éléments du tableau partie().
+#	- htg lit ensuite le fond du modèle (fichier .../modeles/M/fond.L)
+#		et l'analyse. Cette analyse va provoquer, suivant l'écriture
+#		du modèle, la récupération des variables générées lors de
+#		l'analyse du fichier .htgt.
+#	- le résultat généré provient de cette lecture du fond du modèle
 #
 # Historique
-#   1998/06/06 : pda : conception
-#   1999/06/15 : pda : généralisation à d'autres types de sortie
-#   1999/06/20 : pda : reconception des premiers modèles HTML
-#   1999/07/26 : pda : ajout de -i (pas encore utilisé)
+#   1998/06/06 : pda          : conception
+#   1999/06/15 : pda          : généralisation à d'autres types de sortie
+#   1999/06/20 : pda          : reconception des premiers modèles HTML
+#   1999/07/26 : pda          : ajout de -i (pas encore utilisé)
+#   2008/02/13 : pda/moindrot : meilleure documentation du principe
 #
-
-
 
 
 
@@ -62,7 +70,7 @@ set conf(version)	1.0
 # Paramètres à ne pas changer
 #
 
-set conf(langages)	{html latex lout}
+set conf(langages)	{html latex}
 set conf(usage)		{htg [-v 0|1] [-l lang] [-d modèles] [-i rép] [fichier]}
 
 ##############################################################################
