@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traitemodif,v 1.6 2008-02-13 16:26:42 pda Exp $
+# $Id: traitemodif,v 1.7 2008-02-13 16:46:01 pda Exp $
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
@@ -184,16 +184,13 @@ proc traitemodif-infos {dbfd tc ft} {
     }
 
     #
-    # Si le responsable n'est pas spécifié dans le RR, et si le
-    # correspondant ne le précise pas ici, mettre par défaut le
+    # Si le responsable n'est pas spécifié, mettre par défaut le
     # correspondant Tant pis pour lui.
     #
 
-    if {[string equal $trr(respnom) ""] && [string equal $trr(respmel) ""]} then {
-	if {[string equal $respnom ""] && [string equal $respmel ""]} then {
-	    set respnom "$tabcor(nom) $tabcor(prenom)"
-	    set respmel $tabcor(mel)
-	}
+    if {[string equal $respnom ""] && [string equal $respmel ""]} then {
+	set respnom "$tabcor(nom) $tabcor(prenom)"
+	set respmel $tabcor(mel)
     }
 
     #
