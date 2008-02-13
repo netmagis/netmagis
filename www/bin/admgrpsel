@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpsel,v 1.5 2007-11-13 16:44:05 pda Exp $
+# $Id: admgrpsel,v 1.6 2008-02-13 14:01:15 pda Exp $
 
 #
 # Script pour sélectionner un groupe dont il faut modifier les caractéristiques
@@ -77,7 +77,7 @@ proc main {} {
 
     set lgroupe [liste-groupes $dbfd 2]
     set lgroupe [linsert $lgroupe 0 {::nouveau {Créer un groupe...}}]
-    set menugroupe [::webapp::form-menu groupe 1 0 $lgroupe {1}]
+    set menugroupe [::webapp::form-menu groupe 1 0 $lgroupe {0}]
 
     #
     # Sortie du résultat
