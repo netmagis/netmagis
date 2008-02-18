@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.4 2008-02-18 16:28:36 pda Exp $
+# $Id: html.tcl,v 1.5 2008-02-18 17:00:01 pda Exp $
 #
 # Modèle "page de présentation d'une personne"
 #
@@ -41,20 +41,9 @@ proc htg_titre {} {
     check-int $niveau
     if [catch {set texte  [htg getnext]} v] then {error $v}
 
-    switch $niveau {
-	1	{
-	    set texte "<H2>$texte</H2>"
-	}
-	2	{
-	    set texte "<H3>$texte</H3>"
-	}
-	default	{
-	    incr niveau
-	    set texte "<H$niveau>$texte</H$niveau>"
-	}
-    }
-
-    return $texte
+    incr niveau
+    set r [helem H$niveau $texte]
+    return $r
 }
 
 proc htg_partie {} {

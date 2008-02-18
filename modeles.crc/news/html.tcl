@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.6 2008-02-18 16:28:35 pda Exp $
+# $Id: html.tcl,v 1.7 2008-02-18 16:59:56 pda Exp $
 #
 # Modèle "news"
 #
@@ -71,10 +71,10 @@ proc htg_partie {} {
     switch -exact $id {
 	banniere	-
 	titrepage	{
-	    regsub -all "\n" $texte "<BR>\n" texte
+	    regsub -all "\n" $texte "<br>\n" texte
 	}
 	default {
-	    regsub -all "\n\n+" $texte "<P>" texte
+	    regsub -all "\n\n+" $texte "<p>" texte
 	}
     }
 
@@ -93,7 +93,7 @@ proc htg_news {} {
     if [catch {set lien [htg getnext]} v] then {error $v}
     if [catch {set auteur [htg getnext]} v] then {error $v}
 
-    regsub -all "\n\n" $contenu "<BR /><BR />" contenu
+    regsub -all "\n\n" $contenu "<br /><br />" contenu
 
     #
     # Vérifier le format de la date et de l'heure

@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.6 2008-02-18 16:25:34 pda Exp $
+# $Id: html.tcl,v 1.7 2008-02-18 16:59:54 pda Exp $
 #
 # Modèle "page d'accueil"
 #
@@ -95,13 +95,13 @@ proc htg_item {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
 
     set r [helem SPAN $texte CLASS accueil_item]
-    return "$r\n<BR>"
+    return "$r\n<br>"
 }
 
 proc htg_itemimage {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
 
-    return "$texte\n<BR>"
+    return "$texte\n<br>"
 }
 
 proc htg_fakecolonne {} {

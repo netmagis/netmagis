@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.5 2008-02-18 16:25:37 pda Exp $
+# $Id: html.tcl,v 1.6 2008-02-18 17:00:03 pda Exp $
 #
 # Modèle "texte"
 #
@@ -28,7 +28,7 @@ proc htg_titre {} {
     switch $niveau {
 	1	{
 	    if {[dans-contexte "rarest"]} then {
-		set r [helem H2 "<BR>$texte"]
+		set r [helem H2 "<br>$texte"]
 	    } else {
 		set r1 [helem TD \
 			    [helem IMG \
@@ -47,7 +47,7 @@ proc htg_titre {} {
 	}
 	default	{
 	    incr niveau
-	    set r "<H$niveau>$texte</H$niveau>"
+	    set r [helem H$niveau $texte]
 	}
     }
     return $r
@@ -63,10 +63,10 @@ proc htg_partie {} {
     switch -exact $id {
 	banniere	-
 	titrepage	{
-	    regsub -all "\n" $texte "<BR>\n" texte
+	    regsub -all "\n" $texte "<br>\n" texte
 	}
 	default {
-	    regsub -all "\n\n+" $texte "<P>" texte
+	    regsub -all "\n\n+" $texte "<p>" texte
 	}
     }
 

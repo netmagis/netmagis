@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.8 2008-02-18 16:25:36 pda Exp $
+# $Id: base.tcl,v 1.9 2008-02-18 16:59:55 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -45,7 +45,12 @@ proc helem {tag content args} {
 	set attr [string tolower $attr]
 	append r " $attr=\"$value\""
     }
-    append r ">$content</$tag>"
+    append r ">$content"
+    # ne mettre une fermeture que pour les tags qui ne figurent pas
+    # dans la liste ci-dessous
+    if {[lsearch {img} $tag] == -1} then {
+	append r "</$tag>"
+    }
     return $r
 }
 
@@ -136,7 +141,7 @@ proc htg_gt {} {
 }
 
 proc htg_br {} {
-    return "<BR>"
+    return "<br>"
 }
 
 ###############################################################################
@@ -364,7 +369,7 @@ proc htg_bandeau {} {
     if [catch {set contenu [htg getnext]} v] then {error $v}
 
     set titre [nettoyer-html $titre]
-    regsub -all "\n" $titre "<BR>" titre
+    regsub -all "\n" $titre "<br>" titre
 
     set partie(titrebandeau) $titre
     set partie(contenubandeau) $contenu
@@ -383,16 +388,19 @@ proc htg_elementbandeau {} {
 	set id $partie(soustitre)
         incr partie(soustitre)
 
-	set titre "<dt onclick=\"javascript:developper($id);\">$titre</dt>"
+	set titre [helem DT $titre ONCLICK "javascript:developper($id);"]
 	append sousmenu $id
     }
 
-    return "$titre<dd id=\"$sousmenu\"><ul>$refs</ul></dd>"
+    set dd [helem DD [helem UL $refs] ID $sousmenu]
+
+    return "$titre$dd"
 }
 
 proc htg_reference {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
-    return "<li>$texte</li>"
+    set r [helem LI $texte]
+    return $r
 }
 
 ##############################################################################
@@ -476,7 +484,7 @@ proc htg_rss {} {
     if [catch {set titre [htg getnext]} v] then {error $v}
     if [catch {set lien  [htg getnext]} v] then {error $v}
     set titre [nettoyer-html $titre]
-    regsub -all "\n\n+" $titre "<P>" titre
+    regsub -all "\n\n+" $titre "<p>" titre
     set r "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$titre\" href=\"$lien\">"
     set partie(rss) $r
     return {}
@@ -488,7 +496,7 @@ proc htg_partie {} {
     if [catch {set id [htg getnext]} v] then {error $v}
     if [catch {set texte [htg getnext]} v] then {error $v}
     set texte [nettoyer-html $texte]
-    regsub -all "\n\n+" $texte "<P>" texte
+    regsub -all "\n\n+" $texte "<p>" texte
     set partie(id) $texte
     return {}
 }
