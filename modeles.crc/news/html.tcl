@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.5 2008-02-13 08:24:04 pda Exp $
+# $Id: html.tcl,v 1.6 2008-02-18 16:28:35 pda Exp $
 #
 # Modèle "news"
 #
@@ -174,11 +174,3 @@ proc htg_greytab {} {
 	    ]
     return $r
 }
-
-
-
-###############################################################################
-# Procédures du bandeau, communes à tous les modèles
-###############################################################################
-
-inclure-tcl include/html/bandeau.tcl

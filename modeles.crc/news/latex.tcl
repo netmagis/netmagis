@@ -1,5 +1,5 @@
 #
-# $Id: latex.tcl,v 1.1 2007-12-16 20:52:08 pda Exp $
+# $Id: latex.tcl,v 1.2 2008-02-18 16:28:35 pda Exp $
 #
 # Modèle "texte"
 #
@@ -33,9 +33,3 @@ proc htg_partie {} {
     set partie($id) $texte  
     return {}
 }
-
-###############################################################################
-# Procédures du bandeau, communes à tous les modèles
-###############################################################################
-
-inclure-tcl include/latex/bandeau.tcl

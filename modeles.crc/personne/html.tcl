@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.3 2007-12-16 20:33:45 pda Exp $
+# $Id: html.tcl,v 1.4 2008-02-18 16:28:36 pda Exp $
 #
 # Modèle "page de présentation d'une personne"
 #
@@ -79,9 +79,3 @@ proc htg_partie {} {
 
     return {}
 }
-
-###############################################################################
-# Procédures du bandeau, communes à tous les modèles
-###############################################################################
-
-inclure-tcl include/html/bandeau.tcl
