@@ -1,3 +1,4 @@
+\contextepardefaut {osiris}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <HTML lang="fr">
 <HEAD>
@@ -12,13 +13,19 @@
 	<SCRIPT type="text/javascript">
 	<!--
 	window.onload=developper;
+	// developper le premier sous-menu valide a partir de 'id'
 	function developper(id) \{
-	var d = document.getElementById(id);
+	var d = document.getElementById('smenu' + id);
+	// trouver le premier sous-menu valide a partir de id
+	while (! d && id<30) \{
+	    id++;
+	    d = document.getElementById('smenu'+id);
+	\}
 	if (d) \{
 		if (d.style.display=='block') 
 			d.style.display='none';
 		else \{
-			for (var i = 1; i<=50; i++) \{
+			for (var i=1; i<30; i++) \{
 				if (document.getElementById('smenu'+i)) \{
 					document.getElementById('smenu'+i).style.display='none';
 				\}
@@ -30,7 +37,7 @@
 	//-->
 	</SCRIPT>
 </HEAD>
-<BODY onload="javascript:developper('smenu1')">
+<BODY onload="javascript:developper(1)">
 <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="0" WIDTH="100%">
 <TR>
 <TD CLASS="fond_bleu" ALIGN="CENTER" VALIGN="TOP">
@@ -43,7 +50,15 @@
 
                 <TR>
 		<TD CLASS="osiris" align="center" valign="top">
-			\recuperer {logo}
+\sicontexte {osiris} {
+	<a href="/"><img src="/images/osiris.gif" alt="sommaire"></img></a>
+}
+\sicontexte {osiris-sans-sommaire} {
+	<a href="/"><img src="/images/osiris.gif" alt="sommaire"></img></a>
+}
+\sicontexte {rarest} {
+	<a href="/rarest"><img src="/images/rarest.gif" alt="sommaire"></img></a>
+}
 		</TD>
 
 		\*********************** TITRE DE LA PAGE
@@ -77,12 +92,96 @@
 				</dd>
 			</dl>
 			<dl CLASS="menu">
+\sicontexte {rarest} {
+	<dt><a href="/rarest/">Accueil</a></dt>
+}
 			\recuperer {contenubandeau}
-
+\sicontexte {osiris} {
+	<dt class="sous-menu-spacer"></dt>  
+	<dt class="sous-menu-orange">Sommaire</dt>  
+	<dt><a href="/">Accueil</a></dt> 
+	<dt onclick="javascript:developper(20);">Espace Utilisateurs</dt>  
+	<dd id="smenu20">  
+		<ul><li><a href="https://webmail.u-strasbg.fr">Webmail</a></li></ul>  
+		<ul><li><a href="/osiris/services/bal">Messagerie</a></li></ul>  
+		<ul><li><a href="/osiris/services/wifi">Wifi</a></li></ul>  
+		<ul><li><a href="/osiris/services/vpn">Accès VPN</a></li></ul>  
+		<ul><li><a href="/osiris/services/">Autres services...</a></li></ul>  
+		<ul><li><a href="https://www-crc.u-strasbg.fr/applis/authiris/bin/accueil" class="orange_menu"
+			>Mon compte Osiris</a></li></ul>  
+	</dd>
+	<dt onclick="javascript:developper(21);">Espace Technique</dt>  
+	<dd id="smenu21">  
+		<ul><li><a href="/osiris/intro-tech.html">Introduction</a></li></ul>  
+		<ul><li><a href="/formations">Formations</a></li></ul>  
+		<ul><li><a href="/securite/">La sécurité</a></li></ul>  
+		<ul><li><a href="/osiris/services">Les services offerts</a></li></ul>  
+		<ul><li><a href="/corresp/" class="orange_menu"
+			>Intranet des correspondants</a></li></ul>  
+	</dd>
+	<dt onclick="javascript:developper(22);">Le téléphone à l'ULP</dt>  
+	<dd id="smenu22">  
+		<ul><li><a href="http://siig2.u-strasbg.fr/cgi-bin/WebObjects/Annuaire.woa">Annuaire</a></li></ul>  
+		<ul><li><a href="/telulp/flash_info/index.html">Marché d'extension</a></li></ul>  
+		<ul><li><a href="/telulp/mode_emploi/">Mode d'emploi</a></li></ul>  
+		<ul><li><a href="https://www-crc.u-strasbg.fr/applis/pabx/bin/index" class="orange_menu"
+			>Consultation des PABX</a></li></ul>  
+	</dd>
+	<dt onclick="javascript:developper(23);">Le Réseau Osiris</dt>  
+	<dd id="smenu23">  
+		<ul><li><a href="/osiris">Introduction</a></li></ul>  
+		<ul><li><a href="/portail">Etablissement</a></li></ul>  
+		<ul><li><a href="/securite/charte-osiris.html">Charte Osiris</a></li></ul>  
+		<ul><li><a href="/osiris/technique.html">Documentation technique</a></li></ul>  
+	</dd>
+	<dt onclick="javascript:developper(24);">Le CRC</dt>  
+	<dd id="smenu24">  
+		<ul><li><a href="/crc/aide-osiris.html">Aide Osiris</a></li></ul>  
+		<ul><li><a href="/crc/equipe/">L'équipe</a></li></ul>  
+		<ul><li><a href="/crc/contact.html">Comment nous joindre</a></li></ul>  
+		<ul><li><a href="/intra" class="orange_menu">Intranet CRC</a></li></ul>  
+	</dd>
+	<dt class="sous-menu-spacer"></dt>  
+	<dt class="sous-menu-orange">Météo Osiris</dt>  
+	<dt class="sous-menu-spacer"></dt>  
+	<span id="meteo">
+		<A HREF="/osiris/meteo"><IMG SRC="/weathermap/weathermap-small.png" ALT="Météo Osiris"></A>
+	</span>
+}
+\sicontexte {osiris-sans-sommaire} {
+	\* rien
+}
+\sicontexte {rarest} {
+	<dt onclick="javascript:developper(20);">Le réseau RAREST</dt>
+	<dd id="smenu20">
+		<ul><li><a href="/rarest/intro.html">Introduction</a></li></ul>
+		<ul><li><a href="/rarest/part.html">Partenaires</a></li></ul>
+		<ul><li><a href="/rarest/etabl.html">Etablissements</a></li></ul>
+		<ul><li><a href="/rarest/infra.html">Infrastructure</a></li></ul>
+	</dd>
+	<dt onclick="javascript:developper(21);">Le CRC</dt>
+	<dd id="smenu21">
+		<ul><li><a href="/crc/">Introduction</a></li></ul>
+		<ul><li><a href="/crc/equipe/">L'équipe</a></li></ul>
+		<ul><li><a href="/crc/contact.html">Comment nous joindre</a></li></ul>
+	</dd>
+	<dt onclick="javascript:developper(22);">Accès restreint</dt>
+	<dd id="smenu22">
+		<ul><li><a href="/rarest/corresp/">Intranet correspondants</a></li></ul>
+		<ul><li><a href="/rarest/bex">Intranet du groupe d'experts</a></li></ul>
+	</dd>
+	<dt onclick="javascript:developper(23);">Au secours !</dt>
+	<dd id="smenu23">
+		<ul><li><a href="/rarest/aide-rarest.html">Aide Rarest</a></li></ul>
+	</dd>
+}
 			</dl>
 			<dl CLASS="menu-spacer">
 				<dd></dd>
 			</dl>
+
+
+
 		</TD>
 
 

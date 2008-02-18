@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.5 2008-02-11 16:09:41 pda Exp $
+# $Id: html.tcl,v 1.6 2008-02-18 16:25:34 pda Exp $
 #
 # Modèle "page d'accueil"
 #
@@ -153,9 +153,3 @@ proc htg_partie {} {
 
     return {}
 }
-
-###############################################################################
-# Procédures du bandeau, communes à tous les modèles
-###############################################################################
-
-inclure-tcl include/html/bandeau.tcl

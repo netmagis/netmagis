@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.7 2008-02-13 08:57:12 pda Exp $
+# $Id: base.tcl,v 1.8 2008-02-18 16:25:36 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -12,18 +12,18 @@
 #   1999/09/12 : pda          : gestion minimale d'erreur
 #   2001/10/19 : pda          : ajout des "meta"
 #   2008/02/11 : pda/moindrot : ajout de rss et logo, et helem
+#   2008/02/18 : pda/moindrot : intégration des bandeaux
 #
 
 ##############################################################################
 # valeurs par défaut
 ##############################################################################
 
-set partie(logo) "<a href=\"/\"><img src=\"/images/osiris.gif\" alt=\"sommaire\"></img></a>"
 set partie(rss)  ""
 
 # valeur par défaut de "meta"
 set partie(meta) ""
-set partie(soustitre) 0
+set partie(soustitre) 10
 set partie(currentcol) 0
 
 ##############################################################################
@@ -351,6 +351,96 @@ proc htg_multicasetableau {} {
     if [catch {set texte     [htg getnext]} v] then {error $v}
 
     return [list [list $nbcol $attributs $texte]]
+}
+
+##############################################################################
+# Gestion des bandeaux
+##############################################################################
+
+proc htg_bandeau {} {
+    global partie
+
+    if [catch {set titre   [htg getnext]} v] then {error $v}
+    if [catch {set contenu [htg getnext]} v] then {error $v}
+
+    set titre [nettoyer-html $titre]
+    regsub -all "\n" $titre "<BR>" titre
+
+    set partie(titrebandeau) $titre
+    set partie(contenubandeau) $contenu
+
+    return {}
+}
+
+proc htg_elementbandeau {} {
+    global partie
+
+    if [catch {set titre [htg getnext]} v] then {error $v}
+    if [catch {set refs  [htg getnext]} v] then {error $v}
+
+    set sousmenu "smenu" 
+    if {[string length $titre] > 0} then {
+	set id $partie(soustitre)
+        incr partie(soustitre)
+
+	set titre "<dt onclick=\"javascript:developper($id);\">$titre</dt>"
+	append sousmenu $id
+    }
+
+    return "$titre<dd id=\"$sousmenu\"><ul>$refs</ul></dd>"
+}
+
+proc htg_reference {} {
+    if [catch {set texte [htg getnext]} v] then {error $v}
+    return "<li>$texte</li>"
+}
+
+##############################################################################
+# Gestion des contextes
+##############################################################################
+
+# à spécifier dans le fichier .htgt
+proc htg_contexte {} {
+    global ctxt
+
+    if [catch {set valeur [htg getnext]} v] then {error $v}
+    set ctxt $valeur
+    return ""
+}
+
+# à spécifier dans le fond de page
+proc htg_contextepardefaut {} {
+    global ctxt
+
+    if [catch {set valeur [htg getnext]} v] then {error $v}
+    if {! [info exists ctxt]} then {
+	set ctxt $valeur
+    }
+    return ""
+}
+
+# procédure utilitaire
+proc dans-contexte {valeur} {
+    global ctxt
+
+    set r 0
+    if {[info exists ctxt]} then {
+	if {[lsearch $ctxt $valeur] != -1} then {
+	    set r 1
+	}
+    }
+    return $r
+}
+
+# à spécifier dans le fond de page
+proc htg_sicontexte {} {
+    if [catch {set valeur [htg getnext]} v] then {error $v}
+    if [catch {set code   [htg getnext]} v] then {error $v}
+    set r ""
+    if {[dans-contexte $valeur]} then {
+	set r $code
+    }
+    return $r
 }
 
 ##############################################################################

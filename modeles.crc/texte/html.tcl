@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.4 2008-02-11 14:45:30 pda Exp $
+# $Id: html.tcl,v 1.5 2008-02-18 16:25:37 pda Exp $
 #
 # Modèle "texte"
 #
@@ -27,17 +27,30 @@ proc htg_titre {} {
     if [catch {set texte  [htg getnext]} v] then {error $v}
     switch $niveau {
 	1	{
-            set texte  "<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" valign=\"top\" class=\"print_image\"><img src=\"/images/logo_osiris_print.jpeg\" alt=\"\"></td><td align=\"center\" valign=\"middle\"><H2>$texte</H2></td></tr></table>"
-	}
-	2	{
-	    set texte "<H3>$texte</H3>"
+	    if {[dans-contexte "rarest"]} then {
+		set r [helem H2 "<BR>$texte"]
+	    } else {
+		set r1 [helem TD \
+			    [helem IMG \
+				"" \
+				SRC /images/logo_osiris_print.jpeg ALT "" \
+				] \
+			    ALIGN center VALIGN top CLASS print_image \
+			    ]
+		set r2 [helem TD [helem H2 $texte] ALIGN center VALIGN middle]
+		set r [helem TABLE \
+			    [helem TR "$r1$r2"] \
+			    CELLPADDING 0 CELLSPACING 0 BORDER 0 WIDTH 100% \
+			    ]
+	    }
+
 	}
 	default	{
 	    incr niveau
-	    set texte "<H$niveau>$texte</H$niveau>"
+	    set r "<H$niveau>$texte</H$niveau>"
 	}
     }
-    return $texte
+    return $r
 }
 
 proc htg_partie {} {
@@ -60,9 +73,3 @@ proc htg_partie {} {
     set partie($id) $texte
     return {}
 }
-
-###############################################################################
-# Procédures du bandeau, communes à tous les modèles
-###############################################################################
-
-inclure-tcl include/html/bandeau.tcl
