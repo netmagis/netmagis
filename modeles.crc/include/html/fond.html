@@ -1,0 +1,181 @@
+\contextepardefaut {osiris}
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+\* $Id: fond.html,v 1.1 2008-02-22 21:31:39 pda Exp $
+<html lang="fr">
+<head>
+  <title>\recuperer {banniere}</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
+  \* <link rel="stylesheet" media="print" href="/css/print.css" type="text/css">
+  <link rel="stylesheet" media="screen" href="/css/crc.css" type="text/css">
+  \recuperer {rss}
+  <meta name="Author" content="\recuperer {auteur}">
+  <meta name="Generator" content="htg">
+  \recuperer {meta}
+  <script type="text/javascript">
+    <!--
+      window.onload=developper;
+      // developper le premier sous-menu valide a partir de 'id'
+      function developper(id) \{
+        var d = document.getElementById('smenu' + id);
+        // trouver le premier sous-menu valide a partir de id
+        while (! d && id<30) \{
+          id++;
+          d = document.getElementById('smenu'+id);
+        \}
+        if (d) \{
+          if (d.style.display=='block') 
+            d.style.display='none';
+          else \{
+            for (var i=1; i<30; i++) \{
+	      if (document.getElementById('smenu'+i)) \{
+	        document.getElementById('smenu'+i).style.display='none';
+              \}
+            \}
+            d.style.display='block';
+          \}
+        \}
+      \}
+    //-->
+  </script>
+</head>
+<body onload="javascript:developper(1)">
+  <table id="fond-page" cellspacing="0">
+    \************************ logo et titre
+    <tr>
+      <td id="logo">
+        \sicontexte {osiris} {
+          <a href="/"><img src="/images/osiris.gif" alt="sommaire"></a>
+        }
+        \sicontexte {osiris-sans-sommaire} {
+          <a href="/"><img src="/images/osiris.gif" alt="sommaire"></a>
+        }
+        \sicontexte {rarest} {
+          <a href="/rarest"><img src="/images/rarest.gif" alt="sommaire"></a>
+        }
+      </td>
+      <td id="titre-page">
+        <h1>\recuperer {titrepage}</h1>
+      </td>
+    </tr>
+    \************************ ligne de séparation
+    <tr><td id="separation-haut" colspan="2"><div></div></td></tr>
+    \************************ bandeau et texte
+    <tr>
+      <td id="bandeau">
+	<dl class="menu">
+	  <dt class="menu-separation"></dt>
+	  <dt class="menu-titre">\recuperer {titrebandeau}</dt>
+	  \recuperer{contenubandeau}
+	  \sicontexte {osiris} {
+	    <dt class="menu-separation"></dt>
+	    <dt class="menu-titre">Sommaire</dt>  
+	    <dt><a href="/">Accueil</a></dt> 
+	    <dt onclick="javascript:developper(20);">Espace Utilisateurs</dt>  
+	    <dd id="smenu20">
+	      <ul><li><a href="https://webmail.u-strasbg.fr">Webmail</a></li></ul>  
+	      <ul><li><a href="/osiris/services/bal">Messagerie</a></li></ul>  
+	      <ul><li><a href="/osiris/services/wifi">Wifi</a></li></ul>  
+	      <ul><li><a href="/osiris/services/vpn">Accès VPN</a></li></ul>  
+	      <ul><li><a href="/osiris/services/">Autres services...</a></li></ul>  
+	      <ul><li><a href="https://www-crc.u-strasbg.fr/applis/authiris/bin/accueil"
+		class="menu-auth">Mon compte Osiris</a></li></ul>  
+	    </dd>
+	    <dt onclick="javascript:developper(21);">Espace Technique</dt>  
+	    <dd id="smenu21">  
+	      <ul><li><a href="/osiris/intro-tech.html">Introduction</a></li></ul>  
+	      <ul><li><a href="/formations">Formations</a></li></ul>  
+	      <ul><li><a href="/securite/">La sécurité</a></li></ul>  
+	      <ul><li><a href="/osiris/services">Les services offerts</a></li></ul>  
+	      <ul><li><a href="/corresp/"
+		class="menu-auth">Intranet des correspondants</a></li></ul>  
+	    </dd>
+	    <dt onclick="javascript:developper(22);">Le téléphone à l'ULP</dt>  
+	    <dd id="smenu22">  
+	      <ul><li><a href="http://siig2.u-strasbg.fr/cgi-bin/WebObjects/Annuaire.woa">Annuaire</a></li></ul>  
+	      <ul><li><a href="/telulp/flash_info/index.html">Marché d'extension</a></li></ul>  
+	      <ul><li><a href="/telulp/mode_emploi/">Mode d'emploi</a></li></ul>  
+	      <ul><li><a href="https://www-crc.u-strasbg.fr/applis/pabx/bin/index"
+		class="menu-auth">Consultation des PABX</a></li></ul>  
+	    </dd>
+	    <dt onclick="javascript:developper(23);">Le Réseau Osiris</dt>  
+	    <dd id="smenu23">  
+	      <ul><li><a href="/osiris">Introduction</a></li></ul>  
+	      <ul><li><a href="/portail">Etablissement</a></li></ul>  
+	      <ul><li><a href="/securite/charte-osiris.html">Charte Osiris</a></li></ul>  
+	      <ul><li><a href="/osiris/technique.html">Documentation technique</a></li></ul>  
+	    </dd>
+	    <dt onclick="javascript:developper(24);">Le CRC</dt>  
+	    <dd id="smenu24">  
+	      <ul><li><a href="/crc/aide-osiris.html">Aide Osiris</a></li></ul>  
+	      <ul><li><a href="/crc/equipe/">L'équipe</a></li></ul>  
+	      <ul><li><a href="/crc/contact.html">Comment nous joindre</a></li></ul>  
+	      <ul><li><a href="/intra" class="menu-auth">Intranet CRC</a></li></ul>  
+	    </dd>
+	    <dt class="menu-separation"></dt>  
+	    <dt class="menu-titre">Météo Osiris</dt>  
+	    <dt class="menu-separation"></dt>  
+	    <dt class="menu-meteo">
+	      <a href="/osiris/meteo">
+		<img src="/weathermap/weathermap-small.png" alt="Météo Osiris">
+	      </a>
+	    </dt>
+	    <dt class="menu-separation"></dt>  
+	  }
+	  \sicontexte {osiris-sans-sommaire} {
+	    \* rien
+	  }
+	  \sicontexte {rarest} {
+	    <dt class="menu-separation"></dt>
+	    <dt class="menu-titre">Sommaire</dt>  
+	    <dt><a href="/rarest">Accueil</a></dt> 
+	    <dt onclick="javascript:developper(20);">Le réseau RAREST</dt>
+	    <dd id="smenu20">
+	      <ul><li><a href="/rarest/intro.html">Introduction</a></li></ul>
+	      <ul><li><a href="/rarest/part.html">Partenaires</a></li></ul>
+	      <ul><li><a href="/rarest/etabl.html">Etablissements</a></li></ul>
+	      <ul><li><a href="/rarest/infra.html">Infrastructure</a></li></ul>
+	    </dd>
+	    <dt onclick="javascript:developper(21);">Le CRC</dt>
+	    <dd id="smenu21">
+	      <ul><li><a href="/crc/">Introduction</a></li></ul>
+	      <ul><li><a href="/crc/equipe/">L'équipe</a></li></ul>
+	      <ul><li><a href="/crc/contact.html">Comment nous joindre</a></li></ul>
+	    </dd>
+	    <dt onclick="javascript:developper(22);">Accès restreint</dt>
+	    <dd id="smenu22">
+	      <ul><li><a href="/rarest/corresp/">Intranet correspondants</a></li></ul>
+	      <ul><li><a href="/rarest/bex">Intranet du groupe d'experts</a></li></ul>
+	    </dd>
+	    <dt onclick="javascript:developper(23);">Au secours !</dt>
+	    <dd id="smenu23">
+	      <ul><li><a href="/rarest/aide-rarest.html">Aide Rarest</a></li></ul>
+	    </dd>
+\*	    <dt class="menu-separation"></dt>  
+\*	    <dt class="menu-titre">Météo Rarest</dt>  
+\*	    <dt class="menu-separation"></dt>  
+\*	    <dt class="menu-meteo">
+\*	      <a href="/rarest/meteo"><img src="/weathermap/weathermap-small.png" alt="Météo Rarest"></a>
+\*	    </dt>
+	    <dt class="menu-separation"></dt>  
+	  }
+	</dl>
+      </td>
+      <td id="texte-page">
+        \recuperer {texte}
+      </td>
+    </tr>
+    \************************ ligne de séparation
+    <tr><td id="separation-bas" colspan="2"><div></div></td></tr>
+    \************************ pied de page
+    <tr id="pied-page">
+      <td align="left">
+        <a href="/serweb/">Informations sur ce serveur</a>
+      </td>
+      <td align="right">
+        Dernière mise à jour le \recuperer {date} - Contactez
+        <a href="mailto:Webmaster@crc.u-strasbg.fr">Webmaster@crc.u-strasbg.fr</a>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
