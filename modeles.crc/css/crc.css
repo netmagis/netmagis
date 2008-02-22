@@ -1,4 +1,4 @@
-/* $Id: crc.css,v 1.1 2008-02-22 21:36:00 pda Exp $ */
+/* $Id: crc.css,v 1.2 2008-02-22 21:49:13 pda Exp $ */
 
 /*****************************************************************************
  * Les grands éléments structurants de la page
@@ -137,7 +137,7 @@ td#texte-page {
 dl.menu {
 	width: 160px;
   	text-align: left;
-	list-style: none none none;
+	list-style: none;
 }
 
 /* les sous-titres du menu, éléments clickables pour les "déployer" */
@@ -571,9 +571,8 @@ a:active {
 dl, dt, dd, ul, li {
 	margin: 0px;
 	padding: 0px;
-  	width: 160;
+  	width: 160px;
   	text-align:left;
-	list-style-position: none;
-	list-style-type: none;
+	list-style: none;
 }
 
