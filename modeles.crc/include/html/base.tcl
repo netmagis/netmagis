@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.9 2008-02-18 16:59:55 pda Exp $
+# $Id: base.tcl,v 1.10 2008-02-26 19:48:35 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -48,7 +48,7 @@ proc helem {tag content args} {
     append r ">$content"
     # ne mettre une fermeture que pour les tags qui ne figurent pas
     # dans la liste ci-dessous
-    if {[lsearch {img} $tag] == -1} then {
+    if {[lsearch {img meta link} $tag] == -1} then {
 	append r "</$tag>"
     }
     return $r
@@ -459,8 +459,9 @@ proc htg_metarefresh {} {
     global partie
 
     if [catch {set temps [htg getnext]} v] then {error $v}
-    append partie(meta) "<meta http-equiv=\"refresh\" content=\"$temps\">\n"
-    append partie(meta) "<meta http-equiv=\"pragma\" content=\"no-cache\">\n"
+    append partie(meta) [helem META "" HTTP-EQUIV refresh CONTENT $temps]
+    append partie(meta) [helem META "" HTTP-EQUIV pragma  CONTENT "no-cache"]
+    append partie(meta) "\n"
     return ""
 }
 
@@ -485,8 +486,10 @@ proc htg_rss {} {
     if [catch {set lien  [htg getnext]} v] then {error $v}
     set titre [nettoyer-html $titre]
     regsub -all "\n\n+" $titre "<p>" titre
-    set r "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$titre\" href=\"$lien\">"
-    set partie(rss) $r
+    set partie(rss) [helem LINK "" \
+			    REL "alternate" TYPE "application/rss+xml" \
+			    TITLE $titre HREF $lien \
+			]
     return {}
 }
 
