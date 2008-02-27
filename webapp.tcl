@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.6 2007-11-29 15:24:48 pda Exp $
+# $Id: webapp.tcl,v 1.7 2008-02-27 16:15:05 zamboni Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -1461,6 +1461,7 @@ proc ::webapp::random {} {
 #   - paramètres :
 #	- type : le type de sortie, html ou pdf
 #	- page : la page (en html si html, en latex si pdf)
+#	- fichier : nom de fichier à renvoyer
 # Sortie :   
 #   - envoi direct sur la sortie standard
 #
@@ -1468,17 +1469,35 @@ proc ::webapp::random {} {
 #   2002/05/20 : pda : conception
 #   2002/06/21 : pda : ajout de types
 #   2002/10/24 : pda : ajout de la sortie csv
+#   2008/02/27 : jean/zamboni : gestion des extensions 
+#				nom de fichiers
 #
 
-proc ::webapp::send {type page} {
+proc ::webapp::send {type page {fichier "output"}} {
+    #
+    # Détermine l'extension du fichier
+    #
+    switch -- $type {
+	rawpdf	{ set ext "pdf" }
+	jpeg 	{ set ext "jpg" }
+	default { set ext $type }
+    }
+    
+    #
+    # on rajoute une extension au nom de fichier si necessaire
+    #
+    if {! [regexp "\.$ext\$" $fichier] } then {
+	append fichier "." $ext
+    }
+
     switch -- $type {
 	html 	{ ::webapp::sortie-html $page }
-	csv	{ ::webapp::sortie-csv $page }
-	png 	{ ::webapp::sortie-bin image/png $page }
-	gif 	{ ::webapp::sortie-bin image/gif $page }
-	jpeg 	{ ::webapp::sortie-bin image/jpeg $page }
-	rawpdf 	{ ::webapp::sortie-bin application/pdf $page }
-	pdf 	{ ::webapp::sortie-latex $page }
+	csv	{ ::webapp::sortie-csv $page $fichier }
+	png 	{ ::webapp::sortie-bin image/png $page $fichier }
+	gif 	{ ::webapp::sortie-bin image/gif $page $fichier }
+	jpeg 	{ ::webapp::sortie-bin image/jpeg $page $fichier }
+	rawpdf 	{ ::webapp::sortie-bin application/pdf $page $fichier }
+	pdf 	{ ::webapp::sortie-latex $page $fichiet }
     }
 }
 
@@ -1507,15 +1526,18 @@ proc ::webapp::sortie-html {page} {
 # Entrée :
 #   - paramètres :
 #	- page : le fichier CSV, sans le content-type
+#	- fichier : nom de fichier à renvoyer
 # Sortie :   
 #   - envoi direct sur la sortie standard
 #
 # Historique
 #   2002/10/24 : pda : conception et codage
+#   2008/02/27 : jean/zamboni : Content-type et filename
 #
 
-proc ::webapp::sortie-csv {page} {
-    puts stdout "Content-type: application/vnd.ms-excel"
+proc ::webapp::sortie-csv {page fichier} {
+    puts stdout "Content-type: text/csv"
+    puts stdout "Content-Disposition: attachment; filename=$fichier"
     puts stdout ""
     puts stdout $page
 }
@@ -1527,15 +1549,18 @@ proc ::webapp::sortie-csv {page} {
 #   - paramètres :
 #	- type : type MIME
 #	- page : le fichier
+#	- fichier : nom de fichier à renvoyer
 # Sortie :   
 #   - envoi direct sur la sortie standard
 #
 # Historique
 #   2002/05/21 : pda : conception et codage
+#   2008/02/27 : jean/zamboni : ajout filename
 #
 
-proc ::webapp::sortie-bin {type page} {
+proc ::webapp::sortie-bin {type page fichier} {
     puts stdout "Content-type: $type"
+    puts stdout "Content-Disposition: attachment; filename=$fichier"
     puts stdout ""
     flush stdout
     fconfigure stdout -translation binary
@@ -1549,6 +1574,7 @@ proc ::webapp::sortie-bin {type page} {
 # Entrée :
 #   - paramètres :
 #	- page : le source latex, prêt à être compilé
+#	- fichier : nom de fichier à renvoyer
 #   - variable globale debuginfos : valeur latexfiles
 # Sortie :   
 #   - envoi direct sur la sortie standard
@@ -1556,9 +1582,10 @@ proc ::webapp::sortie-bin {type page} {
 # Historique
 #   2002/05/11 : pda : conception et codage
 #   2002/05/12 : pda : ajout de debuginfos
+#   2008/02/27 : jean/zamboni : ajout filename
 #
 
-proc ::webapp::sortie-latex {page} {
+proc ::webapp::sortie-latex {page fichier} {
     global errorInfo
 
     if {[lsearch $::webapp::debuginfos latexsource] != -1} then {
@@ -1621,6 +1648,7 @@ proc ::webapp::sortie-latex {page} {
     close $fd
 
     puts stdout "Content-Type: application/pdf"
+    puts stdout "Content-Disposition: attachment; filename=$fichier"
     puts stdout ""
     flush stdout
     fconfigure stdout -translation binary
