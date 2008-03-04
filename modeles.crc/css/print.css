@@ -1,4 +1,4 @@
-/* $Id: print.css,v 1.3 2008-03-04 10:09:33 pda Exp $ */
+/* $Id: print.css,v 1.4 2008-03-04 16:30:50 pda Exp $ */
 
 /*
  * Les couleurs utilisées dans cette feuille de style :
@@ -71,6 +71,7 @@ td#titre-page h1 {
 
 td#separation-haut,
 td#separation-bas {
+	display: none;
 	margin: 0px;
 	padding: 0px;
 	border-top: #c7d2e2;		/* bleu clair */
@@ -78,18 +79,15 @@ td#separation-bas {
 	border-style: solid none none none;
 }
 td#separation-haut div {
-/*	margin: 0px; */
-/*	padding: 0px; */
 	height: 8px;
 }
 td#separation-bas div {
-/*	margin: 0px;*/
-/*	padding: 0px;*/
 	height: 10px;
 }
 
 /* Le bandeau à gauche */
 td#bandeau {
+	display: none;
 	vertical-align: top;
 	background-color: #eaf0f8;	/* bleu clair */
 	margin: 0px;
