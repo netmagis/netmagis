@@ -1,0 +1,125 @@
+#!/bin/sh
+
+#
+# $Id: creer-base,v 1.3 2008-03-04 21:04:42 pda Exp $
+#
+# Création de la base d'authentification
+#
+# Syntaxe :
+#	creer-base
+# (pas d'argument)
+#
+# Historique
+#   2003/05/13 : pda/jean   : conception
+#   2003/05/30 : pda/jean   : ajout des groupes
+#   2004/03/07 : pda        : préparation pour distribution
+#
+
+PGPASSWORD="mot-de-passe-de-auth"
+export PGPASSWORD
+
+BASE=auth
+
+NOBODY="auth"			# utilisateur(s) non privilégié(s)
+ROOT="pda jean"			# utilisateur(s) privilégié(s)
+
+SQL="soundex.sql trigger.sql"
+
+##############################################################################
+# POUR EVITER LES ERREURS (LANCEMENT MALENCONTREUX DE CE SCRIPT)
+
+#exit 0
+
+##############################################################################
+
+for f in $SQL
+do
+    if [ ! -f $f ]
+    then
+	echo "Le fichier '$f' n'est pas accessible" >&2
+	exit 1
+    fi
+done
+
+
+dropdb $BASE > /dev/null 2> /dev/null
+
+createdb -E unicode $BASE
+
+psql -q $BASE <<'EOF'
+
+    CREATE TABLE utilisateurs (
+	login		TEXT,		-- nom de login
+	password	TEXT,		-- mot de passe (crypté)
+	nom		TEXT,		-- nom
+	prenom		TEXT,		-- prénom
+	mel		TEXT,		-- adresse électronique
+	tel		TEXT,		-- numéro de téléphone fixe
+	mobile		TEXT,		-- numéro de téléphone mobile
+	fax		TEXT,		-- numéro de fax
+	adr		TEXT,		-- adresse
+
+	-- champs gérés automatiquement par trigger
+	phnom		TEXT,		-- nom phonétique
+	phprenom	TEXT,		-- prénom phonétique
+
+	PRIMARY KEY (login)
+    ) ;
+
+    CREATE TABLE groupes (
+	groupe		TEXT,		-- nom du groupe
+	descr		TEXT,		-- texte en clair
+
+	PRIMARY KEY (groupe)
+    ) ;
+
+    CREATE TABLE membres (
+	login		TEXT,		-- nom de login
+	groupe		TEXT,		-- groupe auquel appartient ce login
+
+	FOREIGN KEY (login)  REFERENCES utilisateurs (login),
+	FOREIGN KEY (groupe) REFERENCES groupes      (groupe),
+	PRIMARY KEY (login, groupe)
+    ) ;
+
+    CREATE TABLE config (
+	clef		TEXT,		-- la clef de configuration
+	valeur		TEXT,		-- valeur de la clef
+
+	PRIMARY KEY (clef)
+    ) ;
+EOF
+
+##############################################################################
+# Les droits pour les administrateurs de la base
+##############################################################################
+
+for root in $ROOT
+do
+    psql -q $BASE<<EOF
+	GRANT ALL ON utilisateurs, groupes, membres, config TO $root ;
+EOF
+done
+
+##############################################################################
+# Les droits pour l'interface Web (utilisateur nobody)
+##############################################################################
+
+for nobody in $NOBODY
+do
+    psql -q $BASE <<EOF
+	GRANT ALL ON utilisateurs, groupes, membres, config TO $nobody ;
+EOF
+done
+
+##############################################################################
+# Activation des langages, puis des fonctions et des triggers
+##############################################################################
+
+createlang pltcl $BASE
+createlang plpgsql $BASE
+
+for f in $SQL
+do
+    psql -f $f $BASE
+done
