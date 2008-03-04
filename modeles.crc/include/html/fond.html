@@ -1,11 +1,11 @@
 \contextepardefaut {osiris}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
-\* $Id: fond.html,v 1.1 2008-02-22 21:31:39 pda Exp $
+\* $Id: fond.html,v 1.2 2008-03-04 08:51:29 pda Exp $
 <html lang="fr">
 <head>
   <title>\recuperer {banniere}</title>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
-  \* <link rel="stylesheet" media="print" href="/css/print.css" type="text/css">
+  <link rel="stylesheet" media="print" href="/css/print.css" type="text/css">
   <link rel="stylesheet" media="screen" href="/css/crc.css" type="text/css">
   \recuperer {rss}
   <meta name="Author" content="\recuperer {auteur}">
@@ -37,8 +37,9 @@
       \}
     //-->
   </script>
+  \recuperer {header}
 </head>
-<body onload="javascript:developper(1)">
+<body onload="javascript:developper(1) ; \recuperer {body-onload}"  onunload="\recuperer {body-onunload}">
   <table id="fond-page" cellspacing="0">
     \************************ logo et titre
     <tr>

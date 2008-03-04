@@ -1,418 +1,574 @@
-/* $Id: print.css,v 1.1 2008-02-22 21:36:00 pda Exp $ */
+/* $Id: print.css,v 1.2 2008-03-04 08:51:26 pda Exp $ */
 
-/* folding */
-table {
-	margin-bottom: 30px;
-	padding: 0 0 0 0;
-}
+/*
+ * Les couleurs utilisées dans cette feuille de style :
+ * - 313131 (gris presque noir) : titres h4
+ * - 515151 (gris normal)       : texte "normal" de la page
+ * - 818181 (gris clair)	: titre de la page
+ * - 00536c (bleu foncé Osiris) : titres h2 + liens dans le texte
+ * - 63798d (gris bleu)		: texte du pied de page
+ * - c7d2e2 (bleu clair)	: lignes de séparation
+ * - cc5229 (orange)		: blocs, liens, titres h3, etc.
+ * - d3dde5 (bleu soutenu)	: liséré bleu de la page, sous-titres du bandeau
+ * - eaf0f8 (bleu clair)	: fond des éléments du bandeau
+ */
+
+/*****************************************************************************
+ * Les grands éléments structurants de la page
+ */
+
+/* Le fond de la page et son cadre bi-couleur */
 body {
-	color: #515151;
-	background-color: #EFF2F7;
-        font-family: Verdana, Arial, Helvetica, sans-serif;
-	margin: 0px;
-	padding: 0% 0 0% 0;
-	text-align : justify;
+	color: #515151;			/* texte : gris */
+	background-color: #eff2f7;	/* fond bleu clair */
+	margin: 3% 2% 3% 2%;		/* cadre bleu clair */
+	padding: 0px;
+  	border: 1px solid #d3dde5;	/* liséré bleu soutenu */
+	vertical-align: top;
+	text-align: justify;
 	font-size: 12px;
+        font-family: Verdana, Arial, Helvetica, sans-serif;
 }
 
-h1 {
-	text-align : center;
+table#fond-page {
+	background-color: white;
+	width: 100%;
+	border-spacing: 0px;
+  	border: 10px solid white;	/* cadre blanc autour du tableau */
+}
+
+img {
+  	border: 0px; 
+}
+
+/* Les logo, titre de page et lignes de séparation */
+td#logo {
+	border: 0px;
+	text-align: center;
+	vertical-align: top;
+        display: none;
+}
+
+td#titre-page {
+	border: 0px;
+	background-image: url(/images/fond-titre.gif);
+	background-repeat: repeat-y;
+	background-position: 100% 0%;
+	text-align: center;
+	vertical-align: middle;
+        display: none;
+}
+
+td#titre-page h1 {
+	text-align: center;
 	text-transform: uppercase;
-	color: #818181;
-        font-family: Verdana, Arial, Helvetica, sans-serif;
+	color: #818181;			/* gris clair */
 	font-weight: bold;
 	font-size: 18px;
 	letter-spacing: 2px;
 	line-height: 30px;
-
 }
 
-h2 {
-        text-align : center;
-        text-transform: uppercase;
-        color: #00536c;
-        font-family: Verdana, Arial, Helvetica, sans-serif;
-        font-weight: bold;
-        font-size: 16px;
-	line-height: 110%;
-        margin-bottom: 10px;
-        margin-top: 10px;
-        margin-left: 10px;
-        margin-right: 10px;
-}
-
-
-h3 {
-	text-align : left;
-	display: list-item;
-	color: #cc5229;
-  	list-style-image: url(/images/fleche5.gif);
-	list-style-position: inside;
-        font-family: Verdana, Arial, Helvetica, sans-serif;
-	font-size: 13px;
-	font-weight: bold;
-}
-h4 {
-	text-align : left;
-	color: #313131;
-        font-family: Verdana, Arial, Helvetica, sans-serif;
-	font-size: 13px;
-	font-weight: bold;
-}
-
-
-.cadre_principal {
-#  	background-image: url(/images/logo_osiris_print.jpeg);
-#	background-repeat: no-repeat;
-  	margin-left: 10px;
-  	margin-right: 10px;
-  	margin-top: 10px;
-  	margin-bottom: 10px;
-  	padding: 0px 30px 0px 30px;
-        font-family: Verdana, Arial, Helvetica, sans-serif;
-	text-align : justify;
-	font-size: 12px;
-	line-height: 115%;
-}
-
-.cadre_principal tt {
-        font-size: 12px;
-}
-
-.cadre_principal pre {
-        font-size: 12px;
-}
-
-.cadre_principal a {
-        color: #00536c;
-        text-decoration: none;
-}
-.cadre_principal a:link {
-        color: #00536c;
-        text-decoration: none;
-}
-.cadre_principal a:visited {
-        color: #00536c;
-        text-decoration: none;
-}
-.cadre_principal a:active {
-        color: #00536c;
-        text-decoration: none;
-}
-.cadre_principal a:hover {
-	color: #cc5229;
-	text-decoration: none;
-}
-
-.cadre_principal li {
-        text-align: justify;
-	padding-left: 5%;
-        display: list-item ; 
-	list-style-position: inside;
-	list-style-type: disc;
-}
-.cadre_principal li ul {
-        text-align: justify;
-        display: list-item;
-	list-style-position: inside;
-	list-style-type: none;
-}
-.cadre_principal li ul li {
-        text-align: justify;
-        display: list-item;
-	list-style-position: inside;
-	list-style-type: circle;
-}
-.cadre_principal li ul li ul li{
-        text-align: justify;
-        display: list-item;
-	list-style-position: inside;
-	list-style-type: square;
-}
-
-
-.accueil_titre {
-	display: list-item;
-	list-style-image: url(/images/fleche5.gif);
-	list-style-position: inside;
-	color: #cc5229;
-	font-weight: bold;
-	margin-left: 35px;
-	margin-top: 15px;
-	text-align: left;
-	padding: 0px 0px 0px 0px;
-}
-
-.accueil_image {
-  	text-align: left;
-  	border: 0px; 
-  	padding: 30px 0px 30px 0px;
-}
-
-
-.accueil {
-	color: #616161;
-	margin-top: 15px;
-	margin-bottom: 15px;
-	margin-left: 35px;
-	margin-right: 15px;
-        font-family: Verdana, Arial, Helvetica, sans-serif;
-	text-align: left;
-}
-.accueil a {
-	color: #616161;
-	text-decoration: none;
-        font-weight: bold;
-	line-height: 140%;
-	width: 100%;
-}
-.accueil a:visited {
-	color: #616161;
-	text-decoration: none;
-	border-style: none none none none;
-}
-.accueil a:active {
-	color: #616161;
-	text-decoration: none;
-	border-style: none none none none;
-}
-.accueil a:link {
-	color: #616161;
-	text-decoration: none;
-	border-style: none none none none;
-}
-.accueil a:hover {
-	color: #cc5229;
-        font-weight: bold;
-  	vertical-align: bottom;
-	border-style: none none none none;
-}
-
-
-.separator {
-	border-left: #C7D2E2;
-	border-width: 0 0 0 1px;
-	border-style: none none none solid;
-}
-
-.navbar {
-	background-color: #C7D2E2;
-	padding: 0px 10px 1px 10px;
+td#separation-haut,
+td#separation-bas {
 	margin: 0px;
-}
-.header {
-	display: none;
-}
-.print_image {
-}
-.footer {
-        display: none;
-	color: #63798d;
-	font-size: 8px;
-}
-
-.footer a:link {
-	color: #cc5229;
-}
-.footer a:active {
-	color: #cc5229;
-}
-.footer a:hover {
-	color: #cc5229;
-}
-.footer a:visited {
-	color: #cc5229;
-}
-
-.tab_middle {
-	margin: 10px 10px 0px 10px;
-	padding: 0 0 0 0;
-	border-top: #C7D2E2;
+	padding: 0px;
+	border-top: #c7d2e2;		/* bleu clair */
 	border-width: 1px 0 0 0;
 	border-style: solid none none none;
 }
+td#separation-haut div {
+/*	margin: 0px; */
+/*	padding: 0px; */
+	height: 8px;
+}
+td#separation-bas div {
+/*	margin: 0px;*/
+/*	padding: 0px;*/
+	height: 10px;
+}
 
-.tab_footer {
+/* Le bandeau à gauche */
+td#bandeau {
+	vertical-align: top;
+	background-color: #eaf0f8;	/* bleu clair */
 	margin: 0px;
-	padding: 2px 0 0 0;
-	border-top: #C7D2E2;
-	border-width: 1px 0 0 0;
-	border-style: solid none none none;
-}
-
-.tab_border {
-  border : 1px solid #d3dde5;
-}
-
-
-.cadre_orange {
-	border-bottom: 1px solid #cc5229; 
-	border-top: 1px solid #cc5229; 
-	border-left: 1px solid #cc5229; 
-	border-right: 1px solid #cc5229; 
-	padding: 10px 10px 10px 10px;
-  	margin-top: 20px;
-  	margin-bottom: 30px;
-  	margin-left: 30px;
-  	margin-right: 30px;
-}
-
-a:link {
-	text-decoration: none;
-}
-a:visited {
-	text-decoration: none;
-}
-a:hover {
-        text-decoration: underline;
-}
-a:active {
-	text-decoration: none;
-}
-
-
-
-
-
-.menu-background {
-	display: none ;
-	background-color: #eaf0f8;
-  	padding: 0 0 0 0;
+	padding: 0px;
+	border: 0px;
+	border-top: 10px solid white;
         font-size: 10px;
         font-weight: bold;
 }
 
-
-dl, dt, dd, ul, li {
-	margin: 0px;
-	padding: 0px;
-  	width: 160;
-  	text-align:left;
-	list-style-position: none;
-	list-style-type: none;
+/* Le texte de la page */
+td#texte-page {
+	vertical-align: top;
+  	padding: 0px 20px 20px 20px;
+	text-align : justify;
+	line-height: 140%;
+	width: 100%;
 }
 
-
-#menu-spacer {
-  	height: 10px;
-  	background-color: #ffffff;
-  	margin: 0px;
-  	text-align:left;
+/* Le pied de page */
+#pied-page {
+	color: #63798d;			/* gris bleu */
+	font-size: 8px;
+	vertical-align: middle;
+        display: none;
 }
 
-#menu-orange {
-  	display: block;
-  	text-transform: uppercase;
-  	text-align:left;
-	padding: 3px 5px 3px 5px;
-	font-weight: bold;
-  	width: 160;
-  	margin: 0px;
-  	color: #FFFFFF;
-  	background-color: #cc5229;
-  	text-decoration: none;
+#pied-page a:link,
+#pied-page a:active,
+#pied-page a:hover,
+#pied-page a:visited {
+	color: #cc5229;			/* orange */
 }
-#menu {
+
+/******************************************************************************
+ * La définition des menus dans le bandeau de gauche, et des éléments qui
+ * les composent
+ *
+ * dl.menu
+ *  `-- dt.menu-separation	(ligne de séparation blanche)
+ *  |    `-- pas de texte
+ *  `-- dt.menu-titre		(texte blanc sur fond orange)
+ *  |    `-- texte
+ *  `-- dt			(pas de classe, texte orange sur fond bleu soutenu)
+ *  |    `-- texte
+ *  |    `-- a
+ *  |        `-- texte
+ *  `-- dd			(par défaut : pas affiché, pas de classe
+ *  |	 `-- ul				 pour simplifier l'écriture des menus)
+ *  |	      `-- li
+ *  |		   `-- a	(texte gris sur fond bleu clair)   
+ *  |		   `-- a.menu-auth (texte orange sur fond bleu clair)   
+ *  `-- dt.menu-meteo
+ *       `-- a
+ *            `-- img
+ */
+
+/*
+ * le dl initial et tout ce qui en hérite, en particulier les éléments
+ * des menus (ce qui est en dessous des menu-titre et menu-stitre, qui
+ * n'a pas de 'class').
+ */
+dl.menu {
 	width: 160px;
-  	text-align:left;
 	padding: 0px;
 	margin: 0px;
-	list-style-position: none;
-	list-style-type: none;
+  	text-align: left;
+	list-style: none;
+        display: none;
 }
-#menu dt {
+
+/* les sous-titres du menu, éléments clickables pour les "déployer" */
+.menu dt {
 	cursor: pointer;
-	color: #cc5229;
-	background-color: #d3dde5;
+	color: #cc5229;			/* orange */
+	background-color: #d3dde5;	/* bleu soutenu (cf liséré) */
         display: list-item;
-  	list-style-image: url(/images/fleche5.gif);
-	list-style-position: inside;
-        font-family: Verdana, Arial, Helvetica, sans-serif;
+	list-style: disc inside url(/images/puce1.gif);
 	font-weight: bold;
-	padding: 3px 0px 3px 5px;
+	padding: 0px 0px 3px 5px;
 	margin-top: 10px;
 	text-transform: uppercase;
-	text-align: left;
-	border-top: #8296BB;
+	border-top: #8296bb;
 	border-width: 1px 0 0 0;
 	border-style: solid none none none;
-  	width: 160;
-}
-#menu dt a {
-	color: #cc5229;
-	background-color: #d3dde5;
-}
-#menu dt a:hover {
-	color: #cc5229;
-	background-color: #d3dde5;
-	text-decoration: none;
-}
-#menu dd {
-  	text-align:left;
-  	display: none;
-}
-#menu li {
-	list-style-type: none;
-	list-style-position: none;
-  	vertical-align: bottom;
-  	display: block;
-  	text-align:left;
-  	background-color: #eaf0f8;
-  	margin: 0px 0px 0px 0px;
-        padding: 0px 0px 1px 0px;
-}
-#menu li a:link {
-	list-style-type: none;
-	list-style-position: none;
-  	vertical-align: bottom;
-  	display: block;
-  	text-align:left;
-	font-weight: bold;
-	padding: 3px 0px 3px 6px;
-  	background-color: #eaf0f8;
-  	margin: 0px 0px 0px 0px;
-}
-#menu li a:active {
-	list-style-type: none;
-	list-style-position: none;
-  	vertical-align: bottom;
-  	display: block;
-  	text-align:left;
-	font-weight: bold;
-	padding: 3px 0px 3px 6px;
-  	background-color: #eaf0f8;
-  	margin: 0px 0px 0px 0px;
-	border-style: none none none none;
-}
-#menu li a:visited {
-	list-style-type: none;
-	list-style-position: none;
-  	vertical-align: bottom;
-  	display: block;
-  	text-align:left;
-	font-weight: bold;
-	padding: 3px 0px 3px 6px;
-  	background-color: #eaf0f8;
-  	margin: 0px 0px 0px 0px;
-	border-style: none none none none;
-}
-#menu li a:hover {
-	color: #FFFFFF;
-	background-color: #cc5229;
-	text-decoration: none;
-  	vertical-align: bottom;
-	border-style: none none none none;
 }
 
-a.orange_menu { font-family: Verdana, Arial, Helvetica, sans-serif; color: #cc5229; text-decoration: none; font-weight: bold;}
-a.orange_menu:link { font-family: Verdana, Arial, Helvetica, sans-serif; color: #cc5229; text-decoration: none; font-weight: bold;}
-a.orange_menu:active { font-family: Verdana, Arial, Helvetica, sans-serif; color: #cc5229; text-decoration: none; font-weight: bold;}
-a.orange_menu:visited { font-family: Verdana, Arial, Helvetica, sans-serif; color: #cc5229; text-decoration: none; font-weight: bold;}
-a.orange_menu:hover { font-family: Verdana, Arial, Helvetica, sans-serif; color: #ffffff ; background-color: #cc5229; text-decoration: none; font-weight: bold;}
+/* quand ces sous-titres sont des liens, pas de changement de couleur */
+.menu dt a:link, .menu dt a:visited, .menu dt a:hover, .menu dt a:active {
+	color: #cc5229;			/* orange */
+	background-color: #d3dde5;	/* bleu soutenu (cf liséré) */
+	text-decoration: none;
+}
 
-a.orange_accueil { font-family: Verdana, Arial, Helvetica, sans-serif; color: #cc5229; text-decoration: none; font-weight: bold;}
-a.orange_accueil:link { font-family: Verdana, Arial, Helvetica, sans-serif; color: #cc5229; text-decoration: none; font-weight: bold;}
-a.orange_accueil:active { font-family: Verdana, Arial, Helvetica, sans-serif; color: #cc5229; text-decoration: none; font-weight: bold;}
-a.orange_accueil:visited { font-family: Verdana, Arial, Helvetica, sans-serif; color: #cc5229; text-decoration: none; font-weight: bold;}
-a.orange_accueil:hover { font-family: Verdana, Arial, Helvetica, sans-serif; color: #cc5229; font-weight: bold;}
+dl.menu ul,
+dl.menu ul li {
+	margin: 0px;
+	padding: 0px;
+	text-align: left;
+	list-style: none;
+}
+
+dl.menu dd {
+        display: none;
+	margin: 0px;
+	padding: 0px;
+	text-align: left;
+	list-style: none;
+}
+
+
+/* éléments des menus, hérités du dl initial, pour en simplifier l'écriture */
+dl.menu ul li a {
+  	vertical-align: bottom;
+  	display: block;
+	padding: 3px 0px 3px 5px;
+	text-decoration: none;
+	color: #515151;			/* gris */
+}
+
+dl.menu ul li a:hover {
+	color: white;
+	background-color: #cc5229;	/* orange */
+}
+
+/* cas spécial pour les éléments en accès restreint : couleur différente */
+a.menu-auth:link,
+a.menu-auth:visited,
+a.menu-auth:active {
+	color: #cc5229;			/* orange */
+}
+a.menu-auth:hover {
+	color: white;
+	background-color: #cc5229;	/* orange */
+}
+
+
+/* ligne blanche de séparation dans les grandes parties du menu */
+dt.menu-separation {
+	display: block;
+	cursor: auto;
+  	height: 8px;
+  	background-color: white;
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+/* les titres des grandes parties du menu */
+dt.menu-titre {
+  	display: block;
+	cursor: auto;
+  	text-transform: uppercase;
+  	text-align: left;
+	padding: 3px 0px 3px 5px;
+  	margin: 0px;
+  	color: white;
+  	background-color: #cc5229;	/* orange */
+  	text-decoration: none;
+	border: 0px;
+}
+
+/* image météo dans le menu */
+dt.menu-meteo {
+	display: block;
+	cursor: auto;
+  	text-align: center;
+	padding: 0px;
+	margin: 0px;
+  	background-color: white;
+  	text-decoration: none;
+	border: 0px;
+}
+
+dt.menu-meteo a {
+	padding: 0px;
+	margin: 0px;
+  	background-color: white;
+}
+
+dt.menu-meteo a img {
+  	background-color: white;
+	display: block;
+}
+
+/******************************************************************************
+ * Les éléments du texte
+ * (cf ci-dessous pour cas spécial des news)
+ */
+
+#texte-page h2 {
+        padding: 15px 0px 0px 0px;
+        margin-bottom: 20px;
+        color: #00536c;			/* bleu foncé */
+        text-align: center;
+        vertical-align: middle;
+        font-size: 16px;
+        font-weight: bold;
+}
+
+/* accolée au h2, htg met une image qui ne servira que pour l'impression */
+#texte-page #image-a-imprimer-seulement {
+}
+
+#texte-page h3 {
+	display: list-item;
+	color: #cc5229;			/* orange */
+	list-style: disc inside url(/images/puce1.gif);
+	text-align: left;
+	font-size: 13px;
+	font-weight: bold;
+}
+
+#texte-page h4 {
+	text-align: left;
+	color: #313131;			/* gris presque noirs */
+	font-size: 13px;
+	font-weight: bold;
+}
+
+#texte-page a:link,
+#texte-page a:active,
+#texte-page a:visited {
+        color: #00536c;			/* bleu foncé */
+        text-decoration: underline;
+        margin: 0px 15px 10px 15px;
+}
+#texte-page a:hover {
+	color: #cc5229;			/* orange */
+	text-decoration: none;
+}
+
+#texte-page li {
+        text-align: justify;
+	margin-left: 15px;
+        padding-bottom: 3px; 
+        display: list-item ; 
+	list-style: disc outside url(/images/puce2.gif);
+}
+
+#texte-page ul {
+	margin-left: 15px;
+	padding-left: 0px;
+}
+
+#texte-page li ul li {
+        text-align: justify;
+        display: list-item;
+	margin-left: 0px;
+        padding-left: 0px;
+	list-style: circle outside url(/images/puce3.gif);
+}
+
+#texte-page li ul li ul li {
+        text-align: justify;
+	margin-left: 0px;
+        padding-left: 0px;
+        display: list-item;
+	list-style: square outside url(/images/puce4.gif);
+}
+
+.separation-milieu {
+	padding: 0px;
+	margin: 10px 0px 10px 0px;
+	width: 100%;
+	border-bottom: #c7d2e2;		/* bleu clair */
+	border-width: 0 0 1px 0;
+	border-style: none none solid none;
+}
+
+/* pour le package arrgen */
+.tab-text8 { font-size: 10px; }
+.tab-text10 { font-size: 12px; }
+.tab-text12 { font-size: 14px; }
+.tab-text14 { font-size: 16px; }
+.tab-text16 { font-size: 20px; }
+.tab-text18 { font-size: 24px; }
+
+
+/******************************************************************************
+ * Présentation des pages d'accueil
+ */
+
+.alerte {
+	padding: 10px;
+	margin: 20px 30px 30px 30px;
+	border: 1px solid #cc5229; 	/* orange */
+  	text-align: center;
+}
+
+#texte-page .accueil {
+	padding: 0px;
+	margin: 0px 0px 0px 15px;
+	width: 100%;
+}
+
+#texte-page .accueil td {
+	vertical-align: top;
+	padding: 5px 2px 5px 10px;
+}
+
+#texte-page .accueil .separation-verticale {
+	padding: 0px;
+	margin: 0px;
+        border-left: #c7d2e2;		/* bleu clair */
+        border-width: 0 1px 0 0;
+        border-style: none solid none none;
+	color: #c7d2e2;			/* bleu clair */
+}
+#texte-page .accueil .separation-verticale div {
+	margin: 0px;
+	padding: 0px;
+	width: 1px;
+}
+
+#texte-page .accueil ul {
+	padding: 0px 0px 0px 5px;
+        margin: 0px;
+}
+
+#texte-page .accueil ul li {
+	padding: 15px 0px 0px 0px;
+        margin: 0px;
+        color: #cc5229;			/* orange */
+        text-align: left;
+        font-weight: bold;
+	list-style: disc inside url(/images/puce1.gif);
+}
+
+#texte-page .accueil ul li ul {
+	padding: 10px 0px 0px 0px;
+}
+
+#texte-page .accueil ul li ul li {
+	padding: 0px 0px 0px 0px;
+	margin: 0px 0px 0px 20px;
+	color: #515151;			/* texte : gris */
+  	text-align: left;
+	font-weight: normal;
+	list-style: disc outside url(/images/puce2.gif);
+}
+
+#texte-page .accueil img.icone {
+	padding-left: 20px;
+	margin: 0px;
+}
+
+#texte-page .accueil a {
+	color: #515151;			/* gris */
+	text-decoration: none;
+	text-align: left;
+        font-weight: bold;
+}
+
+#texte-page .accueil a:link,
+#texte-page .accueil a:active,
+#texte-page .accueil a:visited {
+	text-decoration: none;
+}
+
+#texte-page .accueil a:hover {
+	color: #cc5229;			/* orange */
+}
+
+#texte-page .accueil a.auth {
+	color: #cc5229;			/* orange */
+	text-decoration: none;
+	text-align: left;
+        font-weight: bold;
+}
+
+#texte-page .accueil a.auth:link,
+#texte-page .accueil a.auth:active,
+#texte-page .accueil a.auth:visited,
+#texte-page .accueil a.auth:hover {
+	text-decoration: none;
+}
+
+/******************************************************************************
+ * Les actus du CRC : les classes sont utilisées à la fois dans les pages
+ * d'accueil et dans les pages de texte classique.
+ *
+ * Les "document-trees" sont (dans une page normale) :
+ *
+ * td.texte-page			(page de texte normale)
+ *  `-- (le titre de la page)
+ *  `-- div.texte-news
+ *  |    `-- a				(ancre)
+ *  |    |    `-- h3
+ *  |    |         `-- span.news-date
+ *  |    |         |    `-- texte
+ *  |    |         `-- span.news-titre
+ *  |    |         |    `-- texte
+ *  |    |         `-- span.news-theme
+ *  |    |              `-- texte
+ *  |    `-- p
+ *  |    |    `-- texte
+ *  |    |         `-- span.news-qui
+ *  |    |              `-- texte
+ *  |    `-- p
+ *  |         `-- texte			(voir aussi)
+ *  |         `-- a
+ *  |             `-- texte
+ *  `-- div.texte-news
+ *  ...
+ *
+ * et (dans une page d'accueil) :
+ *
+ * td.texte-page			(page de texte normale)
+ *  `-- table + tr
+ *  |    `-- td.accueil-news
+ *  |         `-- h3
+ *  |         |    `-- span.news-date
+ *  |         |    |    `-- texte
+ *  |         |    `-- span.news-titre
+ *  |         |    |    `-- texte
+ *  |         |    `-- span.news-theme
+ *  |         |         `-- texte
+ *  |         `-- h3
+ *  |         ...
+ *  |         `-- a
+ *  |         |    `-- texte		(toutes les actualités)
+ *  |         `-- a			(lien vers le flux rss)
+ *  |              `-- img
+ */
+
+.news-date {
+	font-size: 90%;
+	font-weight: bold;
+}
+.news-theme {
+	color: #515151;			/* gris */
+	font-size: 85%;
+	font-weight: normal;
+}
+.news-qui {
+	font-size: 85%;
+}
+.texte-news a {
+	font-weight: normal;
+}
+
+td#texte-page .accueil-news {
+	padding: 20px 0px 0px 130px;
+	font-size: 9px;
+        margin: 0px;
+	background-image: url(/images/journal.png);
+	background-repeat: no-repeat;
+	background-position: 0% 0%;
+}
+td#texte-page .accueil-news h3 {
+	display: block;
+	padding: 0px;
+        margin: 0px;
+        color: #515151;			/* gris */
+        text-align: left;
+	font-size: 10px;
+	font-weight: normal;
+}
+
+#texte-page .wifi {
+        font-size:9px;
+}
+
+#texte-page a.wifi,
+#texte-page a.wifi:link,
+#texte-page a.wifi:active,
+#texte-page a.wifi:visited {
+        color: #818181;
+}
+
+#texte-page a.wifi:hover {
+        color: #cc5229;
+        text-decoration: none;
+}
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
 

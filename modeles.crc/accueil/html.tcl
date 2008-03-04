@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.7 2008-02-18 16:59:54 pda Exp $
+# $Id: html.tcl,v 1.8 2008-03-04 08:51:25 pda Exp $
 #
 # Modèle "page d'accueil"
 #
@@ -15,6 +15,11 @@
 
 inclure-tcl include/html/base.tcl
 
+# nb maximum de colonnes dans une ligne de l'accueil
+set maxcol 1
+# largeur (fixe) d'une colonne (en fonction du nb max)
+set largeur 1
+set currentcol 0
 
 ###############################################################################
 # Procédures de conversion HTML spécifiques au modèle
@@ -23,101 +28,131 @@ inclure-tcl include/html/base.tcl
 # XXX : pourquoi cette procédure est-elle ici et pas en commun ?
 # (la CLASS ne justifie pas tout)
 
-proc htg_image {} {
-    if [catch {set source [htg getnext]} v] then {error $v}
-    if [catch {set texte  [htg getnext]} v] then {error $v}
-    set r [helem SPAN \
-		[helem IMG "" SRC $source ALT $texte] \
-		CLASS accueil_image]
-    return $r
-}
-
-# \nouveautes {message}
-
 proc htg_nouveautes {} {
     global partie
 
     if [catch {set titre [htg getnext]} v] then {error $v}
-    set r [helem DIV [helem B $titre] CLASS "cadre_orange"]
+    set r [helem DIV [helem B $titre] CLASS "alerte"]
     return $r
 }
 
-proc htg_tableau {} {
+proc htg_maxaccueil {} {
+    global maxcol largeur
+
+    if [catch {set maxcol [htg getnext]} v] then {error $v}
+    check-int $maxcol
+    set largeur [expr int((100-($maxcol-1))/$maxcol)]
+    return ""
+}
+
+proc htg_ligneaccueil {} {
     global partie
+    global largeur maxcol currentcol
 
     if [catch {set nbcol [htg getnext]} v] then {error $v}
     check-int $nbcol
     if [catch {set texte [htg getnext]} v] then {error $v}
 
-    set partie(currentcol) 0
-    set taillcol [expr 100 / $nbcol]
+    #
+    # Détermination des largeurs des colonnes
+    # 1- on cacule :
+    #	largeur = (100 - (maxcol - 1)) / maxcol
+    #
+    # 2- suivant nbcol par rapport à maxcol
+    #	- si nbcol > maxcol
+    #        erreur
+    #	- si nbcol == maxcol
+    #	     les nbcol colonnes sont de largeurs :
+    #		largeur% 1% largeur% 1% ... largeur%
+    #	- si nbcol < maxcol
+    #	     on calcule une largeur L = (100 - nbcol * largeur - (nbcol-1))/2
+    #         
 
-    set colgroup [helem COLGROUP "" WIDTH "$taillcol%" SPAN $nbcol]
-    set tr       [helem TR $texte]
+    set L [expr int((100 - ($nbcol * $largeur) - ($maxcol-1))/2)]
+    set bourrage ""
+    set currentcol 0
 
-    set r [helem TABLE "$colgroup$tr" WIDTH 100% CELLPADDING 0 CELLSPACING 0]
+    set colgroup ""
+    if {$nbcol > $maxcol} then {
+	error "Nb de colonnes incorrect ($nbcol > $maxcol)"
+    }
+
+    if {$nbcol < $maxcol} then {
+	append colgroup [helem COLGROUP "" WIDTH "$L%"]
+	# On est obligé de mettre une largeur sous cette forme à cause de Safari.
+	set bourrage [helem TD " " STYLE "width: $L%"]
+    }
+
+    for {set i 0} {$i < $nbcol} {incr i} {
+	if {$i > 0} then {
+	    append colgroup [helem COLGROUP "" WIDTH "1%"]
+	}
+	append colgroup [helem COLGROUP "" WIDTH "$largeur%"]
+    }
+
+    if {$nbcol < $maxcol} then {
+	append colgroup [helem COLGROUP "" WIDTH "$L%"]
+    }
+
+    set tr [helem TR "$bourrage$texte$bourrage"]
+
+    set r [helem TABLE "$colgroup$tr" \
+		CLASS accueil \
+		WIDTH 100% CELLPADDING 0 CELLSPACING 0]
 
     return $r
 }
 
-proc htg_colonne {} {
-    global partie
-    if [catch {set texte [htg getnext]} v] then {error $v}
-    
-    if {$partie(currentcol) == 0} {
-	set r [helem TD $texte ALIGN center VALIGN top]
-    } else {
-	set r [helem TD $texte ALIGN center VALIGN top CLASS separator]
-    }
-    incr partie(currentcol)
+proc htg_colonneaccueil {} {
+    global currentcol
 
-    return $r
+    if [catch {set texte [htg getnext]} v] then {error $v}
+
+    # le séparateur vertical
+    set sep ""
+    if {$currentcol > 0} {
+    	set sep [helem TD [helem DIV ""] CLASS "separation-verticale"]
+    } 
+    incr currentcol
+
+    set td [helem TD $texte]
+
+    return "$sep$td"
 }
 
 proc htg_element {} {
-    if [catch {set nblignes [htg getnext]} v] then {error $v}
-    check-int $nblignes
     if [catch {set titre    [htg getnext]} v] then {error $v}
+    if [catch {set image    [htg getnext]} v] then {error $v}
     if [catch {set texte    [htg getnext]} v] then {error $v}
 
-    # sauts de lignes
-    set r ""
+    # l'image
+    set img ""
+    if {! [string equal $image ""]} then {
+        append img [helem P ""] 
+        append img [helem IMG "" SRC $image CLASS icone ALT ""]
+    }
 
-    # le titre
-    append r [helem SPAN $titre CLASS accueil_titre]
+    # les éléments
+    set els [helem UL $texte]
 
-    # le texte de l'élément
-    append r [helem P $texte CLASS accueil]
+    # le titre + l'image + les éléments
+    set r [helem UL [helem LI "$titre$img$els"]]
 
     return $r
 }
+
 proc htg_item {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
 
-    set r [helem SPAN $texte CLASS accueil_item]
-    return "$r\n<br>"
-}
-
-proc htg_itemimage {} {
-    if [catch {set texte [htg getnext]} v] then {error $v}
-
-    return "$texte\n<br>"
-}
-
-proc htg_fakecolonne {} {
-    if [catch {set taillecol [htg getnext]} v] then {error $v}
-
-    set r [helem TD " " CLASS fakecolonne ALIGN center VALIGN top]
-    return $r
+    set r [helem LI $texte]
+    return "$r"
 }
 
 
-proc htg_greytab {} {
-    set r [helem TABLE \
-		[helem TR [helem TD " " ALIGN center VALIGN middle]] \
-		CLASS tab_middle \
-		BORDER 0 CELLPADDING 5 CELLSPACING 0 WIDTH 100% \
-	    ]
+proc htg_separation {} {
+
+    set r [helem DIV "" CLASS separation-milieu] 
+
     return $r
 }
 

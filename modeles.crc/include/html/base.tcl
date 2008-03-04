@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.10 2008-02-26 19:48:35 pda Exp $
+# $Id: base.tcl,v 1.11 2008-03-04 08:51:29 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -20,6 +20,9 @@
 ##############################################################################
 
 set partie(rss)  ""
+set partie(header)  ""
+set partie(body-onload)  ""
+set partie(body-onunload)  ""
 
 # valeur par défaut de "meta"
 set partie(meta) ""
@@ -97,18 +100,30 @@ proc htg_image {} {
 
 proc htg_liste {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
+    # Bidouille pour éviter de mettre des <P> à l'extérieur des <LI>
+    # On annule tous les sauts de paragraphe (qui sont hors des \item)
+    # et on remplace tous les "marqueurs" (cf htg_item) par des sauts de
+    # paragraphe
+    regsub -all "\n\n+" $arg "" arg
+    regsub -all "\r" $arg "\n\n" arg
     set r [helem UL $arg]
     return $r
 }
 
 proc htg_enumeration {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
+    # Même bidouille que dans htg_liste
+    regsub -all "\n\n+" $arg "" arg
+    regsub -all "\r" $arg "\n\n" arg
     set r [helem OL $arg]
     return $r
 }
 
 proc htg_item {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
+    # Bidouille pour éviter de mettre des <P> à l'extérieur des <LI>
+    # On remplace tous les sauts de paragraphes par un caractère "marqueur"
+    regsub -all "\n\n+" $arg "\r" arg
     set r [helem LI $arg]
     return $r
 }
@@ -158,7 +173,7 @@ proc htg_lien {} {
 proc htg_liensecurise {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
     if [catch {set url   [htg getnext]} v] then {error $v}
-    set r [helem A $texte CLASS orange_accueil HREF $url]
+    set r [helem A $texte CLASS auth HREF $url]
     return $r
 }
 
