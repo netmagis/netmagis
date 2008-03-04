@@ -1,19 +1,32 @@
 #
-# $Id: base.tcl,v 1.1 2008-02-26 20:35:15 pda Exp $
+# $Id: base.tcl,v 1.2 2008-03-04 10:46:58 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
 # Peut être complété par des procédures issues du modèle spécifique
 #
 # Historique
-#   2008/02/26 : pda          : conception d'un modèle exemple
+#   1999/06/20 : pda          : séparation pour permettre d'autres langages
+#   1999/07/02 : pda          : simplification
+#   1999/07/26 : pda          : ajout de lt et gt
+#   1999/09/12 : pda          : gestion minimale d'erreur
+#   2001/10/19 : pda          : ajout des "meta"
+#   2008/02/11 : pda/moindrot : ajout de rss et logo, et helem
+#   2008/02/18 : pda/moindrot : intégration des bandeaux
 #
 
 ##############################################################################
 # valeurs par défaut
 ##############################################################################
 
-# aucune
+set partie(header)  ""
+set partie(body-onload)  ""
+set partie(body-onunload)  ""
+
+# valeur par défaut de "meta"
+set partie(meta) ""
+set partie(soustitre) 10
+set partie(currentcol) 0
 
 ##############################################################################
 # procédures utilitaires
@@ -86,18 +99,30 @@ proc htg_image {} {
 
 proc htg_liste {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
+    # Bidouille pour éviter de mettre des <P> à l'extérieur des <LI>
+    # On annule tous les sauts de paragraphe (qui sont hors des \item)
+    # et on remplace tous les "marqueurs" (cf htg_item) par des sauts de
+    # paragraphe
+    regsub -all "\n\n+" $arg "" arg
+    regsub -all "\r" $arg "\n\n" arg
     set r [helem UL $arg]
     return $r
 }
 
 proc htg_enumeration {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
+    # Même bidouille que dans htg_liste
+    regsub -all "\n\n+" $arg "" arg
+    regsub -all "\r" $arg "\n\n" arg
     set r [helem OL $arg]
     return $r
 }
 
 proc htg_item {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
+    # Bidouille pour éviter de mettre des <P> à l'extérieur des <LI>
+    # On remplace tous les sauts de paragraphes par un caractère "marqueur"
+    regsub -all "\n\n+" $arg "\r" arg
     set r [helem LI $arg]
     return $r
 }
@@ -147,7 +172,7 @@ proc htg_lien {} {
 proc htg_liensecurise {} {
     if [catch {set texte [htg getnext]} v] then {error $v}
     if [catch {set url   [htg getnext]} v] then {error $v}
-    set r [helem A $texte CLASS orange_accueil HREF $url]
+    set r [helem A $texte CLASS auth HREF $url]
     return $r
 }
 
@@ -210,9 +235,7 @@ proc htg_tableau {} {
 	    set attrcase [lindex $case 1]
 	    set texte    [lindex $case 2]
 
-	    if {[string compare $attrcase ""] == 0} then {
-		set attrcase [fusion-attributs $attrcol($numcol) $attrcase]
-	    }
+	    set attrcase [fusion-attributs $attrcol($numcol) $attrcase]
 
 	    set colspan ""
 	    if {$nbcol > 1} then { set colspan "COLSPAN=$nbcol " }
@@ -258,7 +281,7 @@ proc fusion-attributs {a1 a2} {
 
 proc htg_casedefauttableau {} {
     if [catch {set attributs [htg getnext]} v] then {error $v}
-    return [list [list $attributs]]
+    return [list $attributs]
 }
 
 proc htg_bordure {} {
@@ -267,7 +290,7 @@ proc htg_bordure {} {
     if [catch {set couleur [htg getnext]} v] then {error $v}
 
     set bordercolor [test-couleur $couleur]
-    if {[string compare $bordercolor ""] != 0 } {
+    if {! [string equal $bordercolor ""]} {
 	set bordercolor "BORDERCOLOR=$bordercolor "
     }
     return "BORDER=$largeur $bordercolor"
@@ -377,7 +400,7 @@ proc htg_elementbandeau {} {
 	set id $partie(soustitre)
         incr partie(soustitre)
 
-	set titre [helem DT $titre ONCLICK "javascript:developper($id);"]
+	set titre [helem DT $titre]
 	append sousmenu $id
     }
 

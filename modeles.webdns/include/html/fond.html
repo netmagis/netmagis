@@ -1,6 +1,6 @@
 \contextepardefaut {osiris}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
-\* $Id: fond.html,v 1.1 2008-02-26 20:35:15 pda Exp $
+\* $Id: fond.html,v 1.2 2008-03-04 10:46:58 pda Exp $
 <html lang="fr">
 <head>
   <title>\recuperer {banniere}</title>
@@ -10,8 +10,9 @@
   <meta name="Author" content="\recuperer {auteur}">
   <meta name="Generator" content="htg">
   \recuperer {meta}
+  \recuperer {header}
 </head>
-<body>
+<body onload="\recuperer {body-onload}"  onunload="\recuperer {body-onunload}">
   <table id="fond-page" cellspacing="0">
     \************************ logo et titre
     <tr>
