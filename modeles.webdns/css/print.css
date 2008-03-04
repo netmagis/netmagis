@@ -1,4 +1,4 @@
-/* $Id: screen.css,v 1.2 2008-03-04 14:20:45 pda Exp $ */
+/* $Id: print.css,v 1.1 2008-03-04 14:20:45 pda Exp $ */
 
 /*
  * Les couleurs utilisées dans cette feuille de style :
@@ -46,6 +46,7 @@ td#logo {
 	border: 0px;
 	text-align: center;
 	vertical-align: top;
+        display: none;
 }
 
 td#titre-page {
@@ -55,6 +56,7 @@ td#titre-page {
 	background-position: 100% 0%;
 	text-align: center;
 	vertical-align: middle;
+        display: none;
 }
 
 td#titre-page h1 {
@@ -76,9 +78,13 @@ td#separation-bas {
 	border-style: solid none none none;
 }
 td#separation-haut div {
+/*	margin: 0px; */
+/*	padding: 0px; */
 	height: 8px;
 }
 td#separation-bas div {
+/*	margin: 0px;*/
+/*	padding: 0px;*/
 	height: 10px;
 }
 
@@ -108,6 +114,7 @@ td#texte-page {
 	color: #63798d;			/* gris bleu */
 	font-size: 8px;
 	vertical-align: middle;
+        display: none;
 }
 
 #pied-page a:link,
@@ -151,6 +158,7 @@ dl.menu {
 	margin: 0px;
   	text-align: left;
 	list-style: none;
+        display: none;
 }
 
 /* les sous-titres du menu, éléments clickables pour les "déployer" */
@@ -185,7 +193,7 @@ dl.menu ul li {
 }
 
 dl.menu dd {
-        display: block;
+        display: none;
 	margin: 0px;
 	padding: 0px;
 	text-align: left;
@@ -284,7 +292,6 @@ dt.menu-meteo a img {
 
 /* accolée au h2, htg met une image qui ne servira que pour l'impression */
 #texte-page #image-a-imprimer-seulement {
-	display: none;
 }
 
 #texte-page h3 {
@@ -308,6 +315,7 @@ dt.menu-meteo a img {
 #texte-page a:visited {
         color: #00536c;			/* bleu foncé */
         text-decoration: underline;
+        margin: 0px 15px 10px 15px;
 }
 #texte-page a:hover {
 	color: #cc5229;			/* orange */
@@ -550,10 +558,17 @@ td#texte-page .accueil-news h3 {
 #texte-page a.wifi:link,
 #texte-page a.wifi:active,
 #texte-page a.wifi:visited {
-        color: #818181;			/* gris clair */
+        color: #818181;
 }
 
 #texte-page a.wifi:hover {
-        color: #cc5229;			/* orange */
+        color: #cc5229;
         text-decoration: none;
 }
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+
