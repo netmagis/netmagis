@@ -1,49 +1,51 @@
 #!/bin/sh
 
 #
-# $Id: htg2html,v 1.2 2007-03-13 21:08:19 pda Exp $
+# $Id: htg2html,v 1.3 2008-03-04 11:12:28 pda Exp $
 #
 # htg2html
 #
 # But : convertit toute une arborescence HTG en une arborescence HTML
 #
 # Syntaxe :
-#    htg2html [-l] rep-sources-htg rep-temporaire rep-destination-html
+#    htg2html [-h][-v 0|1][-g rep-htg][-d rep-modèles][-l] rep-wsrc rep-wtmp rep-wobj
 #
 # Entree :
+#   - option -h : heeeeeelp !
+#   - option -v : verbose
+#   - option -g : répertoire HTG (là où sont placés les scripts et les modèles)
+#   - option -d : répertoire contenant les modèles
 #   - option -l : fait un lien symbolique vers les fichiers non HTG
-#   - rep-sources-htg : repertoire des textes HTG (et autres fichiers
+#   - rep-wsrc : repertoire des textes HTG (et autres fichiers
 #	recopies purement et simplement)
-#   - rep-temporaire : repertoire temporaire
-#   - rep-destination-html : repertoire de destination
+#   - rep-wtmp : repertoire temporaire utilisé pour la compilation
+#   - rep-wobj : repertoire de destination, là où sont placés les fichiers HTML
 #
 # Sortie :
 #   - sortie standard : messages d'erreur et fichiers en erreur
 #   - repertoire de destination : peuplé avec les fichiers convertis
 #
 # Historique
-#   1998/12/10 : pda : adaptation d'un Makefile+script particuliers
-#   1999/07/13 : pda : paramétrage de la localisation de HTG
-#   1999/07/13 : pda : conservation des dates des fichiers
-#   1999/07/27 : pda : affiche le nom du fichier seulement en cas d'erreur
-#   2000/06/07 : pda : protection contre les noms de fichiers avec des espaces
-#   2001/11/26 : pda : ajout de l'option "-l" pour lier les fichiers non htg
+#   1998/12/10 : pda          : adaptation d'un Makefile+script particuliers
+#   1999/07/13 : pda          : paramétrage de la localisation de HTG
+#   1999/07/13 : pda          : conservation des dates des fichiers
+#   1999/07/27 : pda          : affiche le nom du fichier seulement en cas d'erreur
+#   2000/06/07 : pda          : protection contre les noms de fichiers avec des espaces
+#   2001/11/26 : pda          : ajout de l'option "-l" pour lier les fichiers non htg
+#   2008/03/04 : pda/moindrot : options -h/-g/-d
 #
 
 #
-# Localisation des éléments de HTG
+# Localisation par défaut des éléments de HTG
 #
 
-HTGDIR=/local/services/www/htg
-HTG="$HTGDIR/src/htg -d $HTGDIR/modeles"
+HTGDIRDEF=/local/services/www/htg
 
 #
 # Mode verbeux ou non (affichage de tous les fichiers traités)
-# Décommenter l'une ou l'autre des deux lignes "VERBOSE=" suivantes :
 #
 
-#VERBOSE=echo				# afficher tous les fichiers
-VERBOSE=:				# commande nulle : ne rien afficher
+VERBOSE=0
 
 # set -x
 
@@ -94,7 +96,7 @@ autres ()
 	grep -v '.htgt$' | 
 	while read f
 	do 
-	    $VERBOSE "$wsrc/$f"
+	    $cmdverbose "$wsrc/$f"
 	    if [ $link = 1 ]
 	    then
 		ln -s "$wsrc/$f" "$wobj/$f"
@@ -120,8 +122,9 @@ htmliser ()
     ) | 
 	while read f ; do 
 	    h=`echo $f | sed 's/.htgt$//'`
-	    $VERBOSE "$wsrc/$f"
-	    $HTG "$wsrc/$f" > "$wobj/$h.html"
+	    $cmdverbose "$wsrc/$f"
+	    "$htgdir/src/htg" -v $verbose -d "$modeldir" \
+			"$wsrc/$f" > "$wobj/$h.html"
 	    if [ $? != 0 ]
 	    then
 		echo Problème sur "$wsrc/$f"
@@ -151,15 +154,23 @@ deplacersinonvide ()
 
 usage ()
 {
-    echo "usage: $0 [-l] <srcdir> <tmpdir> <objdir>" >&2
+    echo "usage: $0 [-h][-g <htgdir>][-d <modeldir>][-l] <srcdir> <tmpdir> <objdir>" >&2
     exit 1
 }
+
+#
+# Valeurs par défaut des options
+#
+
+htgdir=$HTGDIRDEF
+modeldir=$htgdir/modeles
+verbose=$VERBOSE
 
 #
 # Analyse des options
 #
 
-set -- `getopt l $*`
+set -- `getopt hg:d:v:l $*`
 
 if [ $? != 0 ]
 then usage
@@ -170,10 +181,19 @@ link=0
 for i
 do
     case $i in
+	-h)	usage ;;
+	-g)	htgdir=$2 ; shift 2 ;;
+	-d)	modeldir=$2 ; shift 2 ;;
 	-l)	link=1 ; shift ;;
+	-v)	verbose=$2 ; shift 2 ;;
 	--)	shift ; break ;;
     esac
 done
+
+case $verbose in
+    0)	cmdverbose=":" ;;
+    1)	cmdverbose="echo" ;;
+esac
 
 if [ $# != 3 ]
 then usage
