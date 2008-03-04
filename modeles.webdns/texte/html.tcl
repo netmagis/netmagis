@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.1 2008-02-26 20:35:15 pda Exp $
+# $Id: html.tcl,v 1.2 2008-03-04 16:31:13 pda Exp $
 #
 # Modèle "texte"
 #
@@ -29,7 +29,7 @@ proc htg_titre {} {
 		set logo [helem TD \
 			    [helem IMG \
 				"" \
-				SRC /images/logo_osiris_print.jpeg ALT "logo" \
+				SRC /css/images/logo.png ALT "logo" \
 				] \
 			    ALIGN center VALIGN top \
 			    ID image-a-imprimer-seulement \
