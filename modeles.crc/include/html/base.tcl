@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.11 2008-03-04 08:51:29 pda Exp $
+# $Id: base.tcl,v 1.12 2008-03-04 10:09:38 pda Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -236,9 +236,7 @@ proc htg_tableau {} {
 	    set attrcase [lindex $case 1]
 	    set texte    [lindex $case 2]
 
-	    if {[string compare $attrcase ""] == 0} then {
-		set attrcase [fusion-attributs $attrcol($numcol) $attrcase]
-	    }
+	    set attrcase [fusion-attributs $attrcol($numcol) $attrcase]
 
 	    set colspan ""
 	    if {$nbcol > 1} then { set colspan "COLSPAN=$nbcol " }
@@ -284,7 +282,7 @@ proc fusion-attributs {a1 a2} {
 
 proc htg_casedefauttableau {} {
     if [catch {set attributs [htg getnext]} v] then {error $v}
-    return [list [list $attributs]]
+    return [list $attributs]
 }
 
 proc htg_bordure {} {
@@ -293,7 +291,7 @@ proc htg_bordure {} {
     if [catch {set couleur [htg getnext]} v] then {error $v}
 
     set bordercolor [test-couleur $couleur]
-    if {[string compare $bordercolor ""] != 0 } {
+    if {! [string equal $bordercolor ""]} {
 	set bordercolor "BORDERCOLOR=$bordercolor "
     }
     return "BORDER=$largeur $bordercolor"
