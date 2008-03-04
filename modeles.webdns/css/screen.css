@@ -1,4 +1,4 @@
-/* $Id: screen.css,v 1.2 2008-03-04 14:20:45 pda Exp $ */
+/* $Id: screen.css,v 1.3 2008-03-04 16:23:21 pda Exp $ */
 
 /*
  * Les couleurs utilisées dans cette feuille de style :
@@ -9,7 +9,8 @@
  * - 63798d (gris bleu)		: texte du pied de page
  * - c7d2e2 (bleu clair)	: lignes de séparation
  * - cc5229 (orange)		: blocs, liens, titres h3, etc.
- * - d3dde5 (bleu soutenu)	: liséré bleu de la page, sous-titres du bandeau
+ * - d3dde5 (bleu soutenu)	: lisere bleu de la page, sous-titres du bandeau
+ * - 63698d (bleu soutenu)	: bleu du logo webdns 
  * - eaf0f8 (bleu clair)	: fond des éléments du bandeau
  */
 
@@ -60,7 +61,7 @@ td#titre-page {
 td#titre-page h1 {
 	text-align: center;
 	text-transform: uppercase;
-	color: #818181;			/* gris clair */
+	color: #63698d;			/*  bleu logo*/
 	font-weight: bold;
 	font-size: 18px;
 	letter-spacing: 2px;
