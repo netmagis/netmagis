@@ -1,0 +1,79 @@
+$Id: TODO,v 1.1 2008-03-11 16:50:28 pda Exp $
+
+Analyse de la conf des points d'accès
+    - extraire la puissance d'émission
+	interface Dot11Radio0
+	 ...
+	 power local ofdm 20
+    - extraire le canal
+	interface Dot11Radio0
+	 ...
+	 channel 2462
+    - extraire les ssid
+	interface Dot11Radio0
+	 ...
+	 ssid osiris
+	 ssid osiris-sec
+
+=> générer
+    node ... type L1 ... radio <channel>/<power> ssid ... ssid ... ssid ...
+=> dans l'appel à http://idris.u-strasbg.fr/setgraph
+    => passer les habituels (avec le type "trafic" en plus)
+	"trafic M.... ...."
+    => passer en plus (avec le type "nbassoc")
+	"nbassoc Minsa-ap1.assoc.osiris insa-ap1 Dot11Radio0 <ssid> <communaute>"
+=> dans la page topo/bin/eq
+    => présenter les paramètres radio
+    => présenter les infos spécifiques wifi
+
+Voir si on peut bien mettre des points de métrologie sur les
+    sous-interfaces des Cisco
+
+www/bin/wifi
+    présente la liste de "mes" bâtiments :
+	med-bat1 [_Trafic] [_N Assoc]
+	    _med-bat1-ap1 [_Trafic] [_N Assoc]
+	    _med-bat1-ap2 [_Trafic] [_N Assoc]
+	    ...
+	med-bat2 [_Trafic] [_N Assoc]
+	    _med-bat2-ap1 [_Trafic] [_N Assoc]
+	    _med-bat2-ap2 [_Trafic] [_N Assoc]
+	    ...
+
+    N est le nombre d'associations actuelles
+
+    Lien "Trafic" d'un AP
+	Trafic de l'AP par SSID sur l'interface radio (en supposant
+	    qu'il n'y en a qu'une seule)
+	http://idris/bin/gengraph?
+		&id=Minsa-ap1.osiris&id=insa-ap1.osiris-sec&id=Minsa-ap1.eduroam&id=Minsa-ap1.osiris-lab
+		&debut=...&fin=
+
+    Lien "Trafic" d'un bâtiment
+	Trafic cumulé des AP par SSID 
+	http://idris/bin/gengraph?
+		&id=Minsa-ap1.osiris+Minsa-ap2.osiris+....
+		&id=Minsa-ap2.osiris-sec+Minsa-ap2.osiris-sec+...
+		&debut=...&fin=
+
+    Lien "Assoc" d'un AP
+	Nb d'associations actuelles par SSID (osiris, osiris-lab,
+	    osiris-sec, eduroam, osiris-non-auth)
+	http://idris/bin/gengraph?
+		&id=Minsa-ap1.osiris+Minsa-ap2.osiris+....
+		&id=Minsa-ap2.osiris-sec+Minsa-ap2.osiris-sec+...
+		&debut=...&fin=
+
+    Lien "Assoc" d'un bâtiment
+	Nb total d'associations actuelles par SSID
+
+    Lien _xxx-ap1
+	Pointe vers www/bin/eq?id=xxx-ap1
+
+www/bin/eq
+    (en global, ou par i/f radio)
+	=> nb d'associations + liens vers sondes de trafic
+
+
+
+Lien vers la métro
