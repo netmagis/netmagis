@@ -1,4 +1,4 @@
-$Id: TODO,v 1.1 2008-03-11 16:50:28 pda Exp $
+$Id: TODO,v 1.2 2008-03-11 16:51:16 pda Exp $
 
 Analyse de la conf des points d'accès
     - extraire la puissance d'émission
@@ -74,6 +74,10 @@ www/bin/eq
     (en global, ou par i/f radio)
 	=> nb d'associations + liens vers sondes de trafic
 
+TODO topo
+- rendre clickables les no de liens et afficher les Vlans transportés
+- faire une page de description d'un lien Lxx
+- injecter le nom du vlan dans la desc des i/f des switches
+- trouver les vlans non utilisés
+- dresser l'état dynamique de tous les liens
 
-
-Lien vers la métro
