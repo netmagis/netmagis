@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: creer-base,v 1.4 2007-11-27 16:25:18 pda Exp $
+# $Id: creer-base,v 1.5 2008-03-12 09:17:11 pda Exp $
 
 #
 # Création de la base DNS
@@ -243,7 +243,7 @@ psql --quiet $BASE <<'EOF'
 	respmel		TEXT,		-- adresse du responsable
 
 	idcor		INT,		-- auteur de la dernière modification
-	date		TIMESTAMP WITHOUT TIME ZONE	-- date dernière modif.
+	date		TIMESTAMP (0) WITHOUT TIME ZONE	-- date dernière modif.
 			    DEFAULT CURRENT_TIMESTAMP,
 
 	FOREIGN KEY (idcor)        REFERENCES corresp    (idcor),
@@ -369,7 +369,7 @@ psql --quiet $BASE <<'EOF'
 
     -- les entrées dans le log
     CREATE TABLE log (
-	date		TIMESTAMP WITHOUT TIME ZONE
+	date		TIMESTAMP (0) WITHOUT TIME ZONE
 				    DEFAULT CURRENT_TIMESTAMP
 				    NOT NULL,
 	subsys		TEXT NOT NULL,	-- sous-système ("dns" ici)
