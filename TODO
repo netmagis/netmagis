@@ -1,6 +1,12 @@
-$Id: TODO,v 1.2 2008-03-11 16:51:16 pda Exp $
+$Id: TODO,v 1.3 2008-03-13 10:55:17 pda Exp $
 
 Analyse de la conf des points d'accès
+    - les SSID supportés et leur caractéristiques (open ou auth)
+	dot11 ssid osiris
+	  ...
+	  authentication open
+	    <ou bien>
+	  authentication authentication open [a-z].*
     - extraire la puissance d'émission
 	interface Dot11Radio0
 	 ...
@@ -17,11 +23,17 @@ Analyse de la conf des points d'accès
 
 => générer
     node ... type L1 ... radio <channel>/<power> ssid ... ssid ... ssid ...
+	chaque ssid est de la forme
+	    ssid <ssid> <"open"|"auth">
 => dans l'appel à http://idris.u-strasbg.fr/setgraph
     => passer les habituels (avec le type "trafic" en plus)
 	"trafic M.... ...."
-    => passer en plus (avec le type "nbassoc")
-	"nbassoc Minsa-ap1.assoc.osiris insa-ap1 Dot11Radio0 <ssid> <communaute>"
+    => passer en plus (avec deux nouveaux type "nbassocwifi"/"nbauthwifi")
+	"nbassocwifi Minsa-ap1.assocwifi.osiris insa-ap1 Dot11Radio0 <ssid> <communaute>"
+	"nbauthwifi Minsa-ap1.authwifi.osiris ..."
+	    nom des sondes :
+		M<eq>.authwifi.<ssid>		[associés authentifiés]
+		M<eq>.assocwifi.<ssid>		[associés non authentifiés]
 => dans la page topo/bin/eq
     => présenter les paramètres radio
     => présenter les infos spécifiques wifi
@@ -52,8 +64,10 @@ www/bin/wifi
     Lien "Trafic" d'un bâtiment
 	Trafic cumulé des AP par SSID 
 	http://idris/bin/gengraph?
-		&id=Minsa-ap1.osiris+Minsa-ap2.osiris+....
-		&id=Minsa-ap2.osiris-sec+Minsa-ap2.osiris-sec+...
+		&id1=Minsa-ap1.osiris+Minsa-ap2.osiris+....
+		&legende1=a
+		&id2=Minsa-ap2.osiris-sec+Minsa-ap2.osiris-sec+...
+		&legende2=b
 		&debut=...&fin=
 
     Lien "Assoc" d'un AP
