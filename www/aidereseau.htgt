@@ -1,5 +1,5 @@
 {
-\* $Id: aidereseau.htgt,v 1.2 2007-08-29 10:51:56 pda Exp $
+\* $Id: aidereseau.htgt,v 1.3 2008-03-13 08:22:59 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda}
@@ -21,15 +21,21 @@
 \bandeau {
 	DNS v%VERSION%
     } {
-	\elementbandeau {Voir aussi} {
-	    \reference {\lien {Osiris}	{/osiris/}}
-	    \reference {\lien {CRC}	{/crc/}}
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
 	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
 	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
 	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
 	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
-	    \reference {\lien {Mot de passe}  {%HOMEURL%/bin/passwd}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
+	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
 	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
+	}
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
+	    \reference {\lien {CRC}	{http://www-crc.u-strasbg.fr/crc/}}
 	}
 }
 

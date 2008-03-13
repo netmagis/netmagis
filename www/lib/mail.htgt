@@ -1,5 +1,5 @@
 {
-\* $Id: mail.htgt,v 1.3 2007-10-09 12:28:14 jean Exp $
+\* $Id: mail.htgt,v 1.4 2008-03-13 08:23:00 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -33,8 +33,8 @@
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
 	}
 	\elementbandeau {Voir aussi} {
-	    \reference {\lien {Osiris}	{/osiris/}}
-	    \reference {\lien {CRC}	{/crc/}}
+	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
+	    \reference {\lien {CRC}	{http://www-crc.u-strasbg.fr/crc/}}
 	}
 }
 

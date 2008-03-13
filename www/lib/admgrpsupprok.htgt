@@ -1,5 +1,5 @@
 {
-\* $Id: admgrpsupprok.htgt,v 1.1 2008-02-13 15:25:10 pda Exp $
+\* $Id: admgrpsupprok.htgt,v 1.2 2008-03-13 08:23:00 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -32,8 +32,8 @@
 	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
 	}
 	\elementbandeau {Voir aussi} {
-	    \reference {\lien {Osiris}	{/osiris/}}
-	    \reference {\lien {CRC}	{/crc/}}
+	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
+	    \reference {\lien {CRC}	{http://www-crc.u-strasbg.fr/crc/}}
 	}
 }
 
