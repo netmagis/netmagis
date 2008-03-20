@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.8 2008-03-14 20:45:37 pda Exp $
+% $Id: install.tex,v 1.9 2008-03-20 11:41:09 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -121,8 +121,8 @@
 %    \end {quote}
 
     \begin {center}
-	Version 1.4, ???? 2007 \\
-	\verb|$Id: install.tex,v 1.8 2008-03-14 20:45:37 pda Exp $| \\
+	Version 1.4, ???? 2008 \\
+	\verb|$Id: install.tex,v 1.9 2008-03-20 11:41:09 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -189,6 +189,9 @@ du système Unix et de la configuration d'un serveur Web est
 requise.
 
 \vspace* {10mm}
+
+La dernière version de ce document est disponible sur \htmlurl
+{http://webdns.u-strasbg.fr}.
 
 La liste de diffusion \texttt {webdns@u-strasbg.fr} est ouverte à
 tous les utilisateurs de l'application WebDNS. Pour s'y abonner,
@@ -625,26 +628,16 @@ Disponibilité~: \htmlurl {http://www.giuseppetanzilli.it/mod\_auth\_pgsql/}
 Disponibilité~: \htmlurl {http://www.giuseppetanzilli.it/mod\_auth\_pgsql2/}
     (pour Apache 2)
 
+\cbstart%1.4
 \titreC {mod\_auth\_ldap (authentification LDAP)}
 
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
+Ce module étant déjà inclus dans la distribution du serveur Apache
+(version $\geq$ 2), il est cité ici pour mémoire.
 
 
 \titreC {mod\_cas (authentification LDAP)}
+
+XXX
 
 A COMPLETER
 A COMPLETER
@@ -665,26 +658,27 @@ A COMPLETER
 
 \titreC {OpenSSL (authentification PostgreSQL)}
 
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
+Lorsqu'un utilisateur souhaite changer son mot de passe, avec
+l'authentification PostgreSQL et l'application WebAuth (voir \ref
+{sec:intro-webauth}, \pageref {sec:intro-webauth}), la commande
+\texttt {openssl} permet de chiffrer le nouveau mot de passe avant
+de l'insérer dans la base.
+
+Le logiciel Openssl est fourni avec la quasi-totalité des Unix
+distribués actuellement.
+
+Disponibilité~: \htmlurl {http://www.openssl.org/}
+
+\cbend%1.4
 
 \titreC {pwgen (authentification PostgreSQL)}
     \label {pwgen}
 
 Le programme \texttt {pwgen} permet de générer des mots de passe.
+
+
+XXX
+PROBLEME PROBLEME PROBLEME PROBLEME 
 
 Disponibilité~: \htmlurl {http://www.tricknology.org/ports/pwgen-1.15.tar.gz}
 
@@ -700,12 +694,14 @@ Pour accéder aux impressions (génération de fichiers PDF), il faut
     \texttt {geometry}, et
     \texttt {supertabular}.
 
-Tout ceci figure dans l'excellente distribution teTeX que nous
-vous recommandons par ailleurs.
+\cbstart%1.4
+Tout ceci figure soit dans la distribution teTeX (obsolète), soit
+dans la distribution TeXLive.
 
-Disponibilité~: \htmlurl {http://www.tug.org/teTeX/}
+Disponibilité~: \htmlurl {http://www.tug.org/texlive/}
+\cbend%1.4
 
-Si vous ne souhaitez pas installer teTeX, vous ne pourrez pas accéder
+Si vous ne souhaitez pas installer LaTeX, vous ne pourrez pas accéder
 aux impressions. Nous vous conseillons alors de modifier les pages
 Web pour ne pas afficher les boutons correspondants.
 
@@ -802,6 +798,8 @@ créer un compte Unix pour cet utilisateur.
 \titreC {Accès à PostgreSQL depuis les autres serveurs}
     \label {acces-pgsql}
 
+
+XXX
 
 DOUBLON ?
 DOUBLON ?
@@ -902,15 +900,23 @@ de transformer un source HTG en fichier HTML, est fourni (répertoire
 
 L'intérêt de l'utilisation de HTG est de dissocier complètement le
 fond de la forme. L'utilisateur de HTG ne spécifie que le fond, et HTG
-s'occupe de la forme par le biais de \textit {modèles}. Trois types de
+s'occupe de la forme par le biais de \textit {modèles}. Quatre types de
 modèles sont fournis~:
 
 \begin {itemize}
+    \item
+	\cbstart%1.4
+	modèle «~webdns~»~: inspiré du modèle «~crc~» ci-après sans
+	les spécificités locales, et utilisé pour le site \htmlurl
+	{http://webdns.u-strasbg.fr}.
+	\cbend%1.4
+
     \item modèle «~crc~»~: utilisé au Centre Réseau Communication
 	de l'Université Louis Pasteur de Strasbourg~;
 
-    \item modèle «~csi~»~: utilisé au Centre de Services Informatiques
-	de l'Université de Versailles/St-Quentin-en-Yvelines~;
+    \item modèle «~csi~»~: utilisé autrefois au Centre de Services
+	Informatiques de l'Université de
+	Versailles/St-Quentin-en-Yvelines~;
 
     \item modèle «~vide~»~: utilisé comme exemple, avec le minimum de
 	fioritures d'affichage.
@@ -944,17 +950,43 @@ Plusieurs solutions s'offrent à vous~:
 	titres plus représentatifs de votre service.
 
 	Concernant le choix du modèle, vous pouvez alors~:
+	\cbstart%1.4
 	\begin {itemize}
-	    \item reprendre le modèle «~crc~»
-	    \item reprendre le modèle «~vide~»
+	    \item reprendre le modèle «~webdns~»~;
 	    \item concevoir un nouveau modèle (cette option
-		n'est pas documentée ici)
+		n'est pas documentée ici) en vous inspirant
+		du modèle «~webdns~».
 	\end {itemize}
+	\cbend%1.4
 
     \item utiliser des fonds de page HTML que vous aurez conçus
 	vous-même.
 \end {itemize}
 
+
+\cbstart%1.4
+\titreB {Installation de « htg » et du modèle « webdns »}
+
+XXX
+
+A COMPLETER
+
+\cbend%1.4
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
+% Installation des paquetages Tcl
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\cbstart%1.4
+\titreA {Installation des paquetages Tcl}
+    \label {install-pkgtcl}
+
+
+XXX
+
+A COMPLETER
+
+\cbend%1.4
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Installation de l'application WebAuth
@@ -1361,6 +1393,7 @@ groupe dans la base PostgreSQL.
 Avant de créer un groupe, il faut donc réfléchir au périmètre auquel
 les utilisateurs de ce groupe auront accès.
 
+XXX
 
 A VOIR
 A VOIR
