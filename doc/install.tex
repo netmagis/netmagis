@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.9 2008-03-20 11:41:09 pda Exp $
+% $Id: install.tex,v 1.10 2008-03-20 16:37:55 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -44,6 +44,7 @@
     \newcommand {\titreANN} [1] {\cleardoublepage\chapter* {#1}
 	    \addcontentsline {toc} {chapter} {#1}}
     \newcommand {\titreA} {\cleardoublepage\chapter}
+    \newcommand {\titreAN} {\chapter}
     \newcommand {\titreB} {\section}
     \newcommand {\titreC} {\subsection}
     \newcommand {\titreD} {\subsubsection}
@@ -122,7 +123,7 @@
 
     \begin {center}
 	Version 1.4, ???? 2008 \\
-	\verb|$Id: install.tex,v 1.9 2008-03-20 11:41:09 pda Exp $| \\
+	\verb|$Id: install.tex,v 1.10 2008-03-20 16:37:55 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -572,6 +573,17 @@ ci-après) nécessite Tk.
 Disponibilité~: \htmlurl {http://tcl.activestate.com/}
 
 
+\cbstart%1.4
+\titreC {Tcllib}
+
+La bibliothèque de fonctions Tcllib permet d'utiliser l'extension
+objet «~Snit~» et d'accéder éventuellement à un annuaire LDAP. Soyez
+sûr d'utiliser une version 1.10 ou supérieure.
+
+Disponibilité~: \htmlurl {http://www.tcl.tk/software/tcllib/}
+\cbend%1.4
+
+
 \titreC {PostgreSQL}
 
 Le moteur de base de données utilisé est PostgreSQL. Il faut utiliser
@@ -657,6 +669,7 @@ A COMPLETER
 
 
 \titreC {OpenSSL (authentification PostgreSQL)}
+    \label {openssl}
 
 Lorsqu'un utilisateur souhaite changer son mot de passe, avec
 l'authentification PostgreSQL et l'application WebAuth (voir \ref
@@ -981,10 +994,83 @@ A COMPLETER
 \titreA {Installation des paquetages Tcl}
     \label {install-pkgtcl}
 
+L'application inclut des paquetages Tcl rédigés afin de simplifier
+l'écriture d'applications. Ce chapitre décrit l'installation de ces
+paquetages.
 
-XXX
+\titreB {Choix du répertoire d'installation}
 
-A COMPLETER
+Tous les paquetages décrits ici doivent être installés dans un seul
+et même répertoire, dont le chemin sera indiqué lors de l'installation
+de l'application. Vous êtes donc libre de les installer où vous le
+souhaitez, voire même de les laisser dans le répertoire à partir
+duquel vous avez détarré les sources.
+
+Si vous choisissez un répertoire d'installation différent de celui
+où vous avez détarré les sources, prenez soin de copier les fichiers
+d'extension «~\texttt {.tcl}~» ainsi que le fichier \texttt {Makefile}.
+
+Vous pouvez également copier les pages de manuel (fichiers d'extension
+«~\texttt {.n}~»), mais ce n'est pas nécessaire.
+
+
+\titreB {Modification des paquetages}
+
+Les paquetages doivent éventuellement être modifiés pour tenir
+compte de la configuration de votre système, des chemins, etc. Les
+sections suivantes donnent l'ensemble des modifications nécessaires.
+
+\titreC {Modifications du paquetage webapp}
+
+Modifiez les lignes du fichier \texttt {./pktcl/webapp.tcl}~:
+
+\begin {quote}
+\begin {verbatim}
+    variable pdflatex   /usr/local/bin/pdflatex
+    variable sendmail   {/usr/sbin/sendmail -t}
+\end{verbatim}
+\end {quote}
+
+pour refléter la localisation des commandes~:
+
+\begin {itemize}
+    \item \texttt {pdflatex} (voir~\ref {latex}, page~\pageref {latex})
+    \item \texttt {sendmail}, utilisé pour envoyer un mail lorsqu'un mot
+	de passe est réinitialisé (si vous utilisez l'authentification
+	PostgreSQL)
+\end {itemize}
+
+
+\titreC {Modifications du paquetage arrgen}
+
+Aucune modification n'est nécessaire.
+
+\titreC {Modifications du paquetage pgsql}
+
+Aucune modification n'est nécessaire.
+
+\titreC {Modifications du paquetage auth}
+
+Si vous devez utiliser l'application WebAuth (et seulement dans ce
+cas là) pour utiliser l'authentification PostgreSQL, vous devez
+modifier les deux lignes du fichier \texttt {./pktcl/auth.tcl}~:
+
+\begin {quote}
+\begin {verbatim}
+    variable trpw       "/usr/bin/openssl passwd -1"
+    variable genpw      "/usr/local/bin/pwgen --numerals 8"
+\end{verbatim}
+\end {quote}
+
+pour refléter la localisation des commandes~:
+
+\begin {itemize}
+    \item \texttt {trpw}~: pour chiffrer un mot de passe
+	(voir~\ref {openssl}, page~\pageref {openssl})
+    \item \texttt {pwgen}~: pour générer un nouveau mot de passe
+	(voir~\ref {pwgen}, page~\pageref {pwgen})
+\end {itemize}
+
 
 \cbend%1.4
 
@@ -1150,75 +1236,7 @@ de passe chiffré tel qu'il figure dans le fichier \texttt
 {/etc/master.passwd} ou équivalent.
 
 
-\titreB {Configuration du package d'authentification}
-
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-
-Modifiez les deux lignes du fichier \texttt {./pktcl/auth.tcl}~:
-
-\begin {quote}
-\begin {verbatim}
-    variable trpw       "/local/services/www/pkgtcl/trpw"
-    variable genpw      "/usr/local/bin/pwgen --numerals 8"
-\end{verbatim}
-\end {quote}
-
-pour refléter la localisation des commandes~:
-
-\begin {itemize}
-    \item \texttt {trpw} (voir~\ref {trpw}, page~\pageref {trpw})
-    \item \texttt {pwgen} (voir~\ref {pwgen}, page~\pageref {pwgen})
-\end {itemize}
-
-
-\titreB {Configuration du package des applications Web}
-
-Modifiez les lignes du fichier \texttt {./pktcl/webapp.tcl}~:
-
-\begin {quote}
-\begin {verbatim}
-    variable pdflatex   /usr/local/bin/pdflatex
-    variable sendmail   {/usr/sbin/sendmail -t}
-\end{verbatim}
-\end {quote}
-
-pour refléter la localisation des commandes~:
-
-\begin {itemize}
-    \item \texttt {pdflatex} (voir~\ref {latex}, page~\pageref {latex})
-    \item \texttt {sendmail}, utilisé pour envoyer un mail lorsqu'un mot
-	de passe est réinitialisé.
-\end {itemize}
-
+\cbdelete%1.4
 
 \titreB {Installation des fichiers de l'application WebAuth}
 
@@ -2891,7 +2909,8 @@ aux auteurs...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \appendix
-\titreA {Modèles des données}
+% le premier titre de l'annexe est un titreAN pour éviter un cleardoublepage
+\titreAN {Modèles des données}
     \label {anx-mcd}
 
 \titreB {WebDNS}
@@ -3497,15 +3516,26 @@ saisir l'adresse MAC et le profil que vous aurez défini. Il verra
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \clearpage
-\titreA {Version 1.3}
-    \label {upgr12-13}
+\titreA {Release notes}
+
+\cbstart%1.4
+\titreB {Version 1.4}
+
+\titreC {Changements apparus dans la version 1.4}
+
+\titreC {Migration de la version 1.3 vers la version 1.4}
+    \label {upgr13-14}
+
+\cbend%1.4
+
+\titreB {Version 1.3}
 
 La version 1.3 de l'application représente un pas supplémentaire
 vers l'utilisation de la base DNS pour d'autres applications que
 la simple gestion du DNS. Le support de DHCP, très demandé par les
 utilisateurs, est la principale innovation de cette version.
 
-\titreB {Changements apparus dans la version 1.3}
+\titreC {Changements apparus dans la version 1.3}
 
 Les changements de la version 1.3 par rapport à la version
 précédente sont~:
@@ -3580,7 +3610,7 @@ précédente sont~:
 \end {itemize}
 
 
-\titreB {Migration de la version 1.2 vers la version 1.3}
+\titreC {Migration de la version 1.2 vers la version 1.3}
     \label {upgr12-13}
 
 La migration de la version 1.2 vers la version 1.3 nécessite une
