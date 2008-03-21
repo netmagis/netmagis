@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.10 2008-03-20 16:37:55 pda Exp $
+% $Id: install.tex,v 1.11 2008-03-21 22:00:38 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -123,12 +123,12 @@
 
     \begin {center}
 	Version 1.4, ???? 2008 \\
-	\verb|$Id: install.tex,v 1.10 2008-03-20 16:37:55 pda Exp $| \\
+	\verb|$Id: install.tex,v 1.11 2008-03-21 22:00:38 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
 %		{mailto:pda+dockit@crc.u-strasbg.fr},
-	    2004-2007
+	    2004-2008
     \end {center}
 %\end {titlepage}
 \setcounter {page} {0}
@@ -768,8 +768,8 @@ amoindrie.
 
 Il est conseillé de créer des comptes PostgreSQL (avec l'utilitaire
 \texttt {createuser}) pour les utilisateurs pouvant intervenir lors
-des opérations d'administration de la base. La création de comptes
-spécifiques simplifie les opérations.
+des opérations d'administration de la base (hors applications Web).
+La création de comptes spécifiques simplifie les opérations.
 
 En outre, les divers scripts et exemples de configuration nécessitent
 la création d'un utilisateur PostgreSQL nommé «~\texttt {dns}~»,
@@ -801,30 +801,21 @@ l'utilisateur «~\texttt {dns}~» depuis la machine d'adresse IPv4
 192.168.1.2. Bien sûr, si l'accès se fait par IPv6, vous remplacerez
 l'adresse et le masque par les valeurs appropriées.
 
-
+\cbstart%1.4
 L'application WebAuth (pour l'authentification PostgreSQL) utilise
 en outre l'utilisateur «~\texttt {auth}~» pour accéder à la base
 «~\texttt {auth}~». Comme précédemment, il n'y a pas besoin de
 créer un compte Unix pour cet utilisateur.
+\cbend%1.4
 
 
 \titreC {Accès à PostgreSQL depuis les autres serveurs}
     \label {acces-pgsql}
 
-
-XXX
-
-DOUBLON ?
-DOUBLON ?
-DOUBLON ?
-DOUBLON ?
-DOUBLON ?
-DOUBLON ?
-DOUBLON ?
-DOUBLON ?
-
-La plupart du temps, vous séparerez diverses fonctions sur des serveurs
-physiquement différents~:
+\cbstart%1.4
+La conception de WebDNS et WebAuth vous permet de séparer les
+diverses fonctions sur des serveurs physiquement différents~:
+\cbend%1.4
 
 \begin {itemize}
     \item le serveur Web~;
@@ -979,6 +970,7 @@ Plusieurs solutions s'offrent à vous~:
 
 \cbstart%1.4
 \titreB {Installation de « htg » et du modèle « webdns »}
+    \label {htg-webdns}
 
 XXX
 
@@ -1002,16 +994,17 @@ paquetages.
 
 Tous les paquetages décrits ici doivent être installés dans un seul
 et même répertoire, dont le chemin sera indiqué lors de l'installation
-de l'application. Vous êtes donc libre de les installer où vous le
+de l'application (variable \texttt {PKGTCL} des fichiers \texttt
+{Makefile}). Vous êtes donc libre de les installer où vous le
 souhaitez, voire même de les laisser dans le répertoire à partir
 duquel vous avez détarré les sources.
 
 Si vous choisissez un répertoire d'installation différent de celui
 où vous avez détarré les sources, prenez soin de copier les fichiers
-d'extension «~\texttt {.tcl}~» ainsi que le fichier \texttt {Makefile}.
+«~.tcl~» ainsi que le fichier \texttt {Makefile}.
 
-Vous pouvez également copier les pages de manuel (fichiers d'extension
-«~\texttt {.n}~»), mais ce n'est pas nécessaire.
+Vous pouvez également copier les pages de manuel (fichiers «~.n~»),
+mais ce n'est pas nécessaire.
 
 
 \titreB {Modification des paquetages}
@@ -1020,7 +1013,7 @@ Les paquetages doivent éventuellement être modifiés pour tenir
 compte de la configuration de votre système, des chemins, etc. Les
 sections suivantes donnent l'ensemble des modifications nécessaires.
 
-\titreC {Modifications du paquetage webapp}
+\titreC {Modification du paquetage \texttt {webapp}}
 
 Modifiez les lignes du fichier \texttt {./pktcl/webapp.tcl}~:
 
@@ -1041,15 +1034,15 @@ pour refléter la localisation des commandes~:
 \end {itemize}
 
 
-\titreC {Modifications du paquetage arrgen}
+\titreC {Modifications du paquetage \texttt {arrgen}}
 
 Aucune modification n'est nécessaire.
 
-\titreC {Modifications du paquetage pgsql}
+\titreC {Modifications du paquetage \texttt {pgsql}}
 
 Aucune modification n'est nécessaire.
 
-\titreC {Modifications du paquetage auth}
+\titreC {Modifications du paquetage \texttt {auth}}
 
 Si vous devez utiliser l'application WebAuth (et seulement dans ce
 cas là) pour utiliser l'authentification PostgreSQL, vous devez
@@ -1065,9 +1058,9 @@ modifier les deux lignes du fichier \texttt {./pktcl/auth.tcl}~:
 pour refléter la localisation des commandes~:
 
 \begin {itemize}
-    \item \texttt {trpw}~: pour chiffrer un mot de passe
+    \item \texttt {trpw}, pour chiffrer un mot de passe
 	(voir~\ref {openssl}, page~\pageref {openssl})
-    \item \texttt {pwgen}~: pour générer un nouveau mot de passe
+    \item \texttt {pwgen}, pour générer un nouveau mot de passe
 	(voir~\ref {pwgen}, page~\pageref {pwgen})
 \end {itemize}
 
@@ -1085,9 +1078,9 @@ pour refléter la localisation des commandes~:
 L'application WebAuth (voir~\ref {sec:intro-webauth}, page~\pageref
 {sec:intro-webauth}) n'est utile que si vous n'avez pas déjà un
 système d'annuaire centralisé de vos utilisateurs (comme un annuaire
-LDAP d'établissement, par exemple). Ce chapitre explique comment
-installer un système d'authentification reposant sur une base
-PostgreSQL.
+LDAP d'établissement, par exemple). Si c'est le cas, ce chapitre
+explique comment installer un système d'authentification reposant
+sur une base PostgreSQL.
 
 Si vous utilisez un annuaire LDAP, passez directement au chapitre
 suivant.
@@ -1249,12 +1242,12 @@ Dans l'installation par défaut, ce répertoire est nommé
 \begin {itemize}
     \item si vous souhaitez utiliser HTG (voir~\ref {htg:principe},
 	page~\pageref {htg:principe}), utilisez les fichiers
-	«~\verb|.htgt|~» du répertoire \verb|./pgauth/www/lib/| en
-	modifiant éventuellement les parties «~bannière~»,
+	«~\verb|.htgt|~» situés dans le répertoire \verb|./pgauth/www/lib/|
+	en modifiant éventuellement les parties «~bannière~»,
 	«~titrepage~» et «~bandeau~»~;
 
     \item si vous souhaitez concevoir des nouvelles pages à trous,
-	installez-les dans le répertoire \verb|./pgauth/www/lib/|. Vous
+	installez-les dans \verb|./pgauth/www/lib/|. Vous
 	devrez supprimer chaque fichier «~.htgt~» et le remplacer
 	par un fichier «~.html~» équivalent, en respectant le nom
 	des trous que les scripts CGI s'attendent à trouver (voir
@@ -1318,9 +1311,11 @@ Le serveur Apache doit être configuré pour~:
 \end {itemize}
 
 Ceci peut être réalisé grâce aux quelques lignes suivantes (voir
-première partie du fichier \verb|./pgauth/inst/httpd.conf|) dans le fichier
-\texttt {httpd.conf} de configuration d'Apache, que vous prendrez
-soin d'adapter~:
+\verb|./pgauth/inst/httpd.conf|, notamment la première partie) dans
+le fichier \texttt {httpd.conf} de configuration d'Apache, que vous
+prendrez soin d'adapter~:
+
+XXX : AUTH DOIT ETRE ACCESSIBLE A TOUS (CHGT MOT DE PASSE)
 
 \begin {quote}
 \small
@@ -1411,47 +1406,41 @@ groupe dans la base PostgreSQL.
 Avant de créer un groupe, il faut donc réfléchir au périmètre auquel
 les utilisateurs de ce groupe auront accès.
 
-XXX
-
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-
 Le premier groupe créé correspond aux utilisateurs ayant droit à
 accéder à l'application WebAuth, et donc par là à gérer les comptes.
 
-Le deuxième groupe que vous allez créer correspondra vraisemblablement
-aux utilisateurs de l'autre application du CRC que vous souhaitez
-installer (voir introduction).
+XXX
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+
+Le deuxième groupe que vous allez créer correspondra aux utilisateurs
+de WebDNS que vous souhaitez installer (voir introduction).
 
 L'ajout des utilisateurs peut être réalisé soit par l'interface Web
 (conseillé), soit par l'écriture d'un script comparable à celui
@@ -1534,6 +1523,30 @@ Si, si, regardez encore. Vraiment. C'est indispensable.
 
 \titreB {Création d'un groupe dans la base d'authentification}
 
+XXX
+
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+A VOIR
+
 Il faut maintenant créer un groupe dans la base d'authentification
 pour les utilisateurs de l'application WebDNS. Ceci est réalisé au
 moyen de l'application WebAuth (menu «~Groupes/Ajouter~»).
@@ -1600,6 +1613,7 @@ dns=# \dt
  public | etablissement | table | pda
  public | groupe        | table | pda
  public | hinfo         | table | pda
+ public | log           | table | pda
  public | relais_dom    | table | pda
  public | reseau        | table | pda
  public | role_mail     | table | pda
@@ -1612,7 +1626,7 @@ dns=# \dt
  public | zone_normale  | table | pda
  public | zone_reverse4 | table | pda
  public | zone_reverse6 | table | pda
-(27 rows)
+(28 rows)
 
 dns=# \q
 \end{verbatim}
@@ -2236,6 +2250,10 @@ fichier \texttt {Makefile}. Modifiez les variables~:
     \cbstart%1.4
     \texttt {COULEUR} &
 	Couleur de fond des boutons de validation. Normalement pas à modifier.
+	\\ \hline
+    \texttt {PASSWDURL} &
+	URL de changement de mot de passe, doit pointer vers WebAuth
+	ou vers votre application de changement de mot de passe
 	\cbend%1.4
 	\\ \hline
 \end {tabular}
@@ -3521,11 +3539,152 @@ saisir l'adresse MAC et le profil que vous aurez défini. Il verra
 \cbstart%1.4
 \titreB {Version 1.4}
 
+La principale innovation de la version 1.4 de WebDNS est la remise
+en cause du schéma d'authentification jusque là bâti sur WebAuth
+et une base PostgreSQL.
+
+
 \titreC {Changements apparus dans la version 1.4}
+
+Le couplage entre WebDNS et la base d'authentification est maintenant
+beaucoup plus lâche. Cela se traduit par~:
+
+\begin {itemize}
+    \item l'ajout d'un mode LDAP pour obtenir des informations
+	sur l'identité d'un utilisateur~;
+
+    \item la suppression des liens directs dans WebDNS pour gérer
+	les utilisateurs (création, suppression, etc.), ainsi que
+	pour le changement de mot de passe~;
+
+    \item la refonte de l'interface de gestion des utilisateurs~:
+	celle-ci suppose que les utilisateurs sont déjà créés dans
+	la base d'authentification externe (LDAP ou PostgreSQL via
+	WebAuth), et WebDNS ne fait plus qu'associer des logins à
+	des groupes~;
+
+    \item le changement de mot de passe figure juste comme un lien
+	vers une application externe (la vôtre, dans le cas LDAP,
+	ou WebAuth).
+
+    \item l'application WebAuth est maintenant fournie dans la
+	distribution de WebDNS (et non plus séparée comme auparavant).
+
+\end {itemize}
+
+Les autres changements de la version 1.4 par rapport à la version
+précédente sont~:
+
+\begin {itemize}
+    \item correction de bugs~:
+	\begin {itemize}
+	    \item lors de l'édition des plages DHCP, les valeurs par
+		défaut n'étaient pas prises en compte,
+	    \item suppression d'une uerreur de syntaxe dans une
+		portion de code très rarement utilisée du script
+		\texttt {traiteajout},
+	    \item il y avait un cas non traité dans la vérification
+		des droits, lors de l'ajout d'un alias sur une
+		machine qui n'existe pas~;
+	\end {itemize}
+
+    \item inversion des bandeaux de gauche «~voir aussi~» et
+	«~actions~»~;
+
+    \item plusieurs scripts sont maintenant accessibles à tous (et plus
+	seulement aux administrateurs)~:
+	\begin {itemize}
+	    \item liste des correspondants,
+	    \item liste des réseaux~: ce dernier script n'est
+		toutefois pas accessible aux utilisateurs «~normaux~»
+		qui ne connaissent pas son URL~;
+	\end {itemize}
+
+    \item lors de l'affichage du ou des correspondants associés à
+	une machine, lister les correspondants non administrateurs en
+	premier (les administrateurs ayant le plus souvent les
+	droits sur tous les réseaux, ils sont toujours listés)~;
+
+    \item explicitation du message d'erreur en cas d'ajout sur un
+	alias~;
+
+    \item paramétrisation de la couleur du fond des boutons
+	«~valider~»~;
+
+    \item journalisation des actions dans la table «~log~» de WebDNS.
+	Cette table est pour l'instant seulement remplie. Elle n'est
+	jamais vidée, ni consultée~;
+
+    \item si le responsable d'une machine n'est pas précisé, lors de
+	l'ajout ou de la modification, inscrire par défaut le
+	correspondant réalisant l'action.
+
+\end {itemize}
+
 
 \titreC {Migration de la version 1.3 vers la version 1.4}
     \label {upgr13-14}
 
+La migration de la version 1.3 vers la version 1.4 nécessite une
+légère modification de la base pour y ajouter la table «~log~».
+Pour cela, suivez les étapes ci-après~:
+
+\begin {enumerate}
+    \item \textbf {Arrêt de l'application}
+
+	Commencez par interdire aux utilisateur l'accès à l'application
+	en mettant en message dans le fichier défini par la variable
+	\texttt {NOLOGIN} (voir~\ref {install-dns}, page~\pageref
+	{install-dns}) sur le serveur Web. À ce stade, seuls les
+	utilisateurs définis par la variabble \texttt {ROOT} sont
+	habilités à utiliser l'application.
+
+    \item \textbf {Sauvegarde}
+
+	Sauvegardez la base~:
+
+	\begin {quote}
+	    \verb|pg_dump dns > /tmp/dns.dump|
+	\end {quote}
+
+    \item \textbf {Modification de la base}
+
+	Rendez-vous dans le répertoire de migration \verb|./upgrade/13-14/|
+	sur le serveur de données. Éditez le fichier \texttt
+	{upgrade.sql} et modifiez y les directives \texttt {GRANT}
+	pour les adapter aux utilisateurs actifs (les utilisateurs
+	de PostgreSQL, pas les utilisateurs de l'application).
+	Lorsque vous avez fini, vous pouvez exécuter la commande~:
+
+	\begin {quote}
+	    \verb|psql -f upgrade.sql dns|
+	\end {quote}
+
+    \item \textbf {Installation de la nouvelle application}
+
+	Installez les fichiers de l'application Web, tels que définis
+	en~\ref {install-dns} (page~\pageref {install-dns}), en
+	prenant soin d'adapter les pages à trous si vous en éprouvez
+	le besoin.
+
+	Notez que le nouveau modèle conseillé est le modèle \texttt
+	{webdns}, incluant une feuille de style CSS et des images
+	associées. Il faudra donc les installer dans votre arborescence
+	Web comme indiqué en~\ref {htg-webdns} (page~\pageref
+	{htg-webdns}).
+
+    \item \textbf {Installation des autres fichiers}
+
+	Reprenez les scripts de génération des zones, des routages de
+	messagerie, et de génération DHCP.
+
+    \item \textbf {Redémarrage}
+
+	Supprimez le fichier défini par la variable \texttt {NOLOGIN}
+	pour autoriser les utilisateurs à accéder de nouveau à
+	l'application.
+
+\end {enumerate}
 \cbend%1.4
 
 \titreB {Version 1.3}
