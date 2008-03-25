@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.11 2008-03-21 22:00:38 pda Exp $
+% $Id: install.tex,v 1.12 2008-03-25 16:14:02 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -95,16 +95,9 @@
 
 	La dernière version de ce document est accessible à l'adresse : \\
 	\hspace* {10mm}
-	    \htmlurl {ftp://ftp.u-strasbg.fr/pub/crc/webdns/}
-%	    \htmladdnormallink
-%	    {\texttt {ftp://ftp.u-strasbg.fr/pub/crc/webdns/}}
-%	    {ftp://ftp.u-strasbg.fr/pub/crc/webdns/}
-
-%	La version HTML de ce document est accessible à l'adresse : \\
-%	\hspace* {10mm} \htmladdnormallink
-%	    {\texttt {\urldoc}}
-%	    {\urldoc}
-
+	\cbstart%1.4
+	\htmlurl {http://webdns.u-strasbg.fr/}
+	\cbend%1.4
     \end {quote}
 
     \vspace {160mm}
@@ -123,7 +116,7 @@
 
     \begin {center}
 	Version 1.4, ???? 2008 \\
-	\verb|$Id: install.tex,v 1.11 2008-03-21 22:00:38 pda Exp $| \\
+	\verb|$Id: install.tex,v 1.12 2008-03-25 16:14:02 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -362,9 +355,12 @@ par groupe de correspondant.
 \cbstart%1.4
 \titreC {Principes}
 
-L'authentification des utilisateurs est réalisée par le serveur
-Web, à partir d'une base d'authentification externe à l'application
-WebDNS, comme l'illustre la figure suivante~:
+Comme toute application manipulant des données critiques, les accès
+à l'application WebDNS sont basés sur une authentification préalable.
+
+Cette authentification à l'application est réalisée par le serveur
+Web.  Elle repose sur une base d'authentification externe à
+l'application. La figure suivante illustre le principe~:
 
 \figpswidth {auth} {140mm}
 
@@ -432,7 +428,6 @@ au serveur Web utilisé. On peut néanmoins citer pour Apache~:
 
 \begin {itemize}
     \item \verb|mod_ldap|
-    \item \verb|mod_cas|
     \item \verb|mod_pgsql|
 \end {itemize}
 
@@ -645,27 +640,6 @@ Disponibilité~: \htmlurl {http://www.giuseppetanzilli.it/mod\_auth\_pgsql2/}
 
 Ce module étant déjà inclus dans la distribution du serveur Apache
 (version $\geq$ 2), il est cité ici pour mémoire.
-
-
-\titreC {mod\_cas (authentification LDAP)}
-
-XXX
-
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
 
 
 \titreC {OpenSSL (authentification PostgreSQL)}
