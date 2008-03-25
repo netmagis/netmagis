@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.7 2008-02-27 16:15:05 zamboni Exp $
+# $Id: webapp.tcl,v 1.8 2008-03-25 16:41:07 pda Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -1497,7 +1497,7 @@ proc ::webapp::send {type page {fichier "output"}} {
 	gif 	{ ::webapp::sortie-bin image/gif $page $fichier }
 	jpeg 	{ ::webapp::sortie-bin image/jpeg $page $fichier }
 	rawpdf 	{ ::webapp::sortie-bin application/pdf $page $fichier }
-	pdf 	{ ::webapp::sortie-latex $page $fichiet }
+	pdf 	{ ::webapp::sortie-latex $page $fichier }
     }
 }
 

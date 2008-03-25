@@ -1,5 +1,5 @@
 #
-# $Id: auth.tcl,v 1.4 2007-10-05 13:01:03 jean Exp $
+# $Id: auth.tcl,v 1.5 2008-03-25 16:41:07 pda Exp $
 #
 # Librairie de fonctions TCL d'authentification utilisables dans les scripts CGI
 #
@@ -57,7 +57,7 @@ namespace eval auth {
     # pour chiffrer les mots de passe
     #variable trpw	"/local/services/www/pkgtcl/trpw"
     variable trpw	"/usr/bin/openssl passwd -1"
-    variable genpw	"/usr/local/bin/pwgen --numerals 8"
+    variable genpw	"/usr/local/bin/pwgen --numerals 8 1"
 
     variable minpwlen	6
     variable maxpwlen	16
