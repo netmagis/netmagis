@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.12 2008-03-25 16:14:02 pda Exp $
+% $Id: install.tex,v 1.13 2008-03-26 12:09:01 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -116,7 +116,7 @@
 
     \begin {center}
 	Version 1.4, ???? 2008 \\
-	\verb|$Id: install.tex,v 1.12 2008-03-25 16:14:02 pda Exp $| \\
+	\verb|$Id: install.tex,v 1.13 2008-03-26 12:09:01 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -431,21 +431,10 @@ au serveur Web utilisé. On peut néanmoins citer pour Apache~:
     \item \verb|mod_pgsql|
 \end {itemize}
 
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
-A COMPLETER
+Vous pouvez également utiliser le module CAS (\verb|mod_auth_cas|)
+pour Apache pour offrir du «~Single Sign On~» à vos utilisateurs.
+Cependant, les auteurs n'ont pas encore la pratique de ce module,
+et ne peuvent fournir d'assistance.
 
 \cbend%1.4
 
@@ -663,11 +652,9 @@ Disponibilité~: \htmlurl {http://www.openssl.org/}
 
 Le programme \texttt {pwgen} permet de générer des mots de passe.
 
-
-XXX
-PROBLEME PROBLEME PROBLEME PROBLEME 
-
-Disponibilité~: \htmlurl {http://www.tricknology.org/ports/pwgen-1.15.tar.gz}
+\cbstart%1.4
+Disponibilité~: \htmlurl {http://sourceforge.net/projects/pwgen/}
+\cbend%1.4
 
 \titreC {LaTeX}
     \label {latex}
@@ -1025,7 +1012,7 @@ modifier les deux lignes du fichier \texttt {./pktcl/auth.tcl}~:
 \begin {quote}
 \begin {verbatim}
     variable trpw       "/usr/bin/openssl passwd -1"
-    variable genpw      "/usr/local/bin/pwgen --numerals 8"
+    variable genpw      "/usr/local/bin/pwgen --numerals 8 1"
 \end{verbatim}
 \end {quote}
 
