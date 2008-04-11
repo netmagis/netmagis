@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.12 2008-03-04 10:09:38 pda Exp $
+# $Id: base.tcl,v 1.13 2008-04-11 07:33:28 moindrot Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -156,7 +156,7 @@ proc htg_gt {} {
 }
 
 proc htg_br {} {
-    return "<br>"
+    return "<br/>"
 }
 
 ###############################################################################
@@ -229,7 +229,7 @@ proc htg_tableau {} {
 
     set resultat ""
     foreach ligne $contenu {
-	append resultat "<TR>"
+	append resultat "<tr>"
 	set numcol 0
 	foreach case $ligne {
 	    set nbcol    [lindex $case 0]
@@ -239,15 +239,15 @@ proc htg_tableau {} {
 	    set attrcase [fusion-attributs $attrcol($numcol) $attrcase]
 
 	    set colspan ""
-	    if {$nbcol > 1} then { set colspan "COLSPAN=$nbcol " }
-	    append resultat "<TD $colspan$attrcase>$texte</TD>"
+	    if {$nbcol > 1} then { set colspan "colspan=$nbcol " }
+	    append resultat "<td $colspan$attrcase>$texte</td>"
 
 	    incr numcol $nbcol
 	}
-	append resultat "</TR>"
+	append resultat "</tr>"
     }
 
-    return "<TABLE $attributs>$resultat</TABLE>"
+    return "<table $attributs>$resultat</table>"
 }
 
 proc fusion-attributs {a1 a2} {
@@ -294,35 +294,40 @@ proc htg_bordure {} {
     if {! [string equal $bordercolor ""]} {
 	set bordercolor "BORDERCOLOR=$bordercolor "
     }
-    return "BORDER=$largeur $bordercolor"
+    return "border=$largeur $bordercolor"
 }
 
 # BASELINE/BOTTOM/CENTER/TOP
 proc htg_centragevertical {} {
     if [catch {set centrage [htg getnext]} v] then {error $v}
-    return "VALIGN=$centrage "
+    return "valign=$centrage "
 }
 
 # CENTER/LEFT/RIGHT
 proc htg_centragehorizontal {} {
     if [catch {set centrage [htg getnext]} v] then {error $v}
-    return "ALIGN=$centrage "
+    return "align=$centrage "
 }
 
 proc htg_padding {} {
     if [catch {set padding [htg getnext]} v] then {error $v}
-    return "CELLPADDING=$padding% "
+    return "cellpadding=$padding"
+}
+
+proc htg_spacing {} {
+    if [catch {set spacing [htg getnext]} v] then {error $v}
+    return "cellspacing=$spacing"
 }
 
 proc htg_taille {} {
     if [catch {set taille [htg getnext]} v] then {error $v}
-    return "WIDTH=$taille% "
+    return "width=$taille% "
 }
 
 proc htg_couleurfond {} {
     if [catch {set couleur [htg getnext]} v] then {error $v}
     set couleur [test-couleur $couleur]
-    return "BGCOLOR=$couleur "
+    return "bgcolor=$couleur "
 }
 
 array set tabcouleurs {
