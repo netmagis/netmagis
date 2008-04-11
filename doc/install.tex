@@ -1,11 +1,12 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.14 2008-04-11 10:31:51 pda Exp $
+% $Id: install.tex,v 1.15 2008-04-11 21:11:15 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
 %   2005/04/08 : pda : rédaction de la version 1.3
+%   2008/04/11 : pda : rédaction de la version 1.4
 %
 
 \documentclass [twoside] {report}
@@ -61,25 +62,9 @@
     \author {\bf Pierre David, Jean Benoit}
     % \date {Version 1.2 -- 12 avril 2004}
     % \date {Version 1.3 -- 13 avril 2005}
-    \date {Version 1.4 -- 13 avril 2005}
+    \date {Version 1.4 -- 13 avril 2008}
 
 \maketitle
-
-% \begin {center}
-% 
-%     {
-%     \huge\bf
-%     Installation de l'application WebDNS
-%     \par
-%     }
-% 
-%     \cbstart%1.3
-%     % Version 1.2 -- 12 avril 2004 \\
-%     Version 1.3 -- 13 avril 2005 \\
-%     \cbend%1.3
-%     Pierre David, Jean Benoit
-% 
-% \end {center}
 
 \thispagestyle {empty}
     \begin {quote}
@@ -116,7 +101,7 @@
 
     \begin {center}
 	Version 1.4, ???? 2008 \\
-	\verb|$Id: install.tex,v 1.14 2008-04-11 10:31:51 pda Exp $| \\
+	\verb|$Id: install.tex,v 1.15 2008-04-11 21:11:15 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -162,7 +147,7 @@ du routage de messagerie sur un campus, et plus récemment intégration
 des informations liées au protocole DHCP. WebDNS constitue, de ce
 fait, la brique de base d'un système d'information orienté vers la
 gestion du réseau, concept qui a été développé lors d'une
-présentation\footnote {\htmlurl {http://2005.jres.org/URL A VERIFIER.pdf}}
+présentation\footnote {\htmlurl {http://2005.jres.org/paper/82.pdf}}
 aux Jres 2005 à Marseille
 
 Jusqu'en 2002, le réseau métropolitain strasbourgeois Osiris\footnote
@@ -274,7 +259,7 @@ données), ou pour la génération de la table de routage de messagerie
 (où le serveur de messagerie est également client PostgreSQL du
 serveur de données).
 
-\cbstart
+\cbstart%1.4
 Enfin, l'authentification à l'application est réalisée par le serveur
 Web à partir d'une base externe (typiquement une base PostgreSQL
 ou un annuaire LDAP). L'authentification LDAP est conçue pour
@@ -284,7 +269,7 @@ Pour les cas plus simples, une application est fournie dans la
 distribution de WebDNS pour gérer les utilisateurs avec une base
 PostgreSQL.  Voir la section~\ref {auth} (page~\pageref {auth})
 pour plus d'informations.
-\cbend
+\cbend%1.4
 
 
 \titreB {Fonctionnalités}
@@ -893,6 +878,8 @@ modèles sont fournis~:
 
 \end {itemize}
 
+    \label {htg-webdns}
+
 Pour compiler «~\texttt {htg}~», allez dans le répertoire
 \verb|./htg/src|~:
 
@@ -908,6 +895,13 @@ Pour compiler «~\texttt {htg}~», allez dans le répertoire
 
 Ensuite, sélectionnez le type de modèle que vous préférez en changeant
 le lien \verb|./htg/modeles|.
+
+\cbstart%1.4
+Enfin, si vous utilisez le modèle «~crc~» ou «~webdns~», vous devez
+recopier le contenu du répertoire \verb|./htg/modeles/css|, y compris
+le sous-répertoire \texttt {images}, dans le répertoire \texttt
+{/css} de votre arborescence Web.
+\cbend%1.4
 
 
 \titreB {Quelles pages HTML utiliser~?}
@@ -934,24 +928,14 @@ Plusieurs solutions s'offrent à vous~:
 \end {itemize}
 
 
-\cbstart%1.4
-\titreB {Installation de « htg » et du modèle « webdns »}
-    \label {htg-webdns}
-
-XXX
-
-A COMPLETER
-
-\cbend%1.4
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Installation des paquetages Tcl
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\cbstart%1.4
 \titreA {Installation des paquetages Tcl}
     \label {install-pkgtcl}
 
+\cbstart%1.4
 L'application inclut des paquetages Tcl rédigés afin de simplifier
 l'écriture d'applications. Ce chapitre décrit l'installation de ces
 paquetages.
@@ -1380,12 +1364,12 @@ fournit des exemples que vous pouvez facilement adapter.
 \titreC {Configuration des groupes et des utilisateurs}
     \label {grp-webauth}
 
-Un groupe correspond à un ensemble de pages Web accessibles sur
-votre serveur Web. En ce sens, la notion de groupe correspond à un
-«~domaine Web~»\footnote {Tant que le nom du «~royaume
+Un groupe WebAuth correspond à un ensemble de pages Web accessibles
+sur votre serveur Web. En ce sens, la notion de groupe correspond
+à un «~domaine Web~»\footnote {Tant que le nom du «~royaume
 d'authentification, correspondant à la directive Apache «~\texttt
-{AuthName}~», est le même, l'utilisateur n'aura pas à re-saisir son mot
-de passe.}.
+{AuthName}~», est le même, l'utilisateur n'aura pas à re-saisir son
+mot de passe.}.
 
 Ceci permet d'avoir des applications différentes sur le serveur
 Web, dont l'accès est contrôlé par la simple appartenance à un
@@ -1448,6 +1432,17 @@ possible (voir fichier \texttt {./pgauth/expl/crontab.auth})~:
 \end {quote}
 
 
+\cbstart%1.4
+\titreB {Groupes WebAuth et groupes WebDNS}
+
+Dans la suite de ce document, il sera fait mention de groupes dans
+le contexte de WebDNS. Ces groupes correspondent à des droits de
+l'application WebDNS (droits sur les adresses IP, sur les domaines,
+etc.) et ne doivent absolument pas être confondus avec les groupes
+WebAuth, dont le but est de restreindre l'accès à certaines parties
+de l'arborescence Web.
+
+\cbend%1.4
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Installation de la base PostgreSQL
@@ -1601,8 +1596,10 @@ qui sont schématisées dans le tableau ci-après~:
 	    \\ \hline
 	\texttt {remplir-grpnet}
 	    & Charge les réseaux, crée les correspondants (qui sont
+		\cbstart%1.4
 		censés pré-exister dans la base d'authentification,
 		qu'elle soit PostgreSQL ou LDAP), crée les groupes
+		\cbend%1.4
 		WebDNS et leur affecte les réseaux et les adresses
 		IP autorisées.
 	    &
@@ -2143,7 +2140,10 @@ fichier \texttt {Makefile}. Modifiez les variables~:
 	nom de la base de données et paramètres d'ouverture
 	\\ \hline
     \texttt {AUTH} &
-	méthode d'authentification et paramètres
+	\cbstart%1.4
+	méthode d'authentification (\texttt {postgresql} ou \texttt
+	{ldap}) et paramètres spécifiques
+	\cbend%1.4
 	\\ \hline
     \texttt {HOMEURL} &
 	chemin relatif à la racine de l'arborescence Web
@@ -3437,9 +3437,9 @@ saisir l'adresse MAC et le profil que vous aurez défini. Il verra
 \cbstart%1.4
 \titreB {Version 1.4}
 
-La principale innovation de la version 1.4 de WebDNS est la remise
-en cause du schéma d'authentification jusque là bâti sur WebAuth
-et une base PostgreSQL.
+La principale innovation de la version 1.4 de WebDNS est la séparation
+du schéma d'authentification jusque là bâti sur WebAuth et une base
+PostgreSQL.
 
 
 \titreC {Changements apparus dans la version 1.4}
@@ -3810,6 +3810,9 @@ presse).
 \titreA {Pages à trous}
     \label {anx-trous}
 
+\cbstart%1.4
+\titreB {Pages à trous de WebDNS}
+
 {\small
     \tablehead {\hline
 	\multicolumn {1} {|c|} {\textbf {Fichier}} &
@@ -3824,8 +3827,18 @@ presse).
 	& adresse relative de la page d'accueil par rapport
 	    à la racine du serveur Web
 	\\ \cline {2-3}
+	& \texttt {\%PASSWDURL\%}
+	& adresse de la page de changement de mot de passe
+	    accessible aux utilisateurs (soit WebAuth, soit
+	    votre propre application)
+	\\ \cline {2-3}
 	& \texttt {\%VERSION\%}
 	& numéro de version de l'application WebDNS
+	\\ \hline
+    (beaucoup)
+	& \texttt {\%COULEUR\%}
+	& couleur de la bande de fond des boutons de validation
+	    dans les formulaires
 	\\ \hline
     accueil.html
 	& \texttt {\%ADMIN\%}
@@ -3854,19 +3867,28 @@ presse).
 	    DNS.
 	\\ \hline
     admgrpconfirm.html
-	& \texttt {\%GROUPE\%}
-	& nom du groupe à modifier
-	\\ \cline {2-3}
 	& \texttt {\%HIDDEN\%}
 	& liste de paramètres cachés pour propager les informations
 	    sélectionnées par l'utilisateur.
 	\\ \cline {2-3}
 	& \texttt {\%MESSAGE\%}
 	& incohérences trouvées dans la demande de l'utilisateur
+	\\ \cline {2-3}
+	& \texttt {\%MSGACT\%}
+	& message synthétisant les actions à effectuer sur le groupe
 	\\ \hline
-    admgrpliste.html
-	& \texttt {\%GROUPE\%}
-	& nom du groupe en cours de modification
+    admgrpconfsuppr.html
+	& \texttt {\%HIDDEN\%}
+	& liste de paramètres cachés pour propager les informations
+	    sélectionnées par l'utilisateur.
+	\\ \cline {2-3}
+	& \texttt {\%ORGGRP\%}
+	& nom du groupe original
+	\\ \hline
+    admgrpedit.html
+	& \texttt {\%ADMIN\%}
+	& bouton pour activer ou non le droit d'administrer
+	    l'application
 	\\ \cline {2-3}
 	& \texttt {\%LISTECOR\%}
 	& liste des correspondants inscrits dans le groupe
@@ -3882,30 +3904,46 @@ presse).
 	\\ \cline {2-3}
 	& \texttt {\%LISTERESEAUX\%}
 	& tableau de réseaux sélectionnables
+	\\ \cline {2-3}
+	& \texttt {\%MESSAGEGROUPE\%}
+	& message pour aider à la saisie du nom du groupe
+	\\ \cline {2-3}
+	& \texttt {\%NEWGRP\%}
+	& nom du groupe à créer ou nouveau nom du groupe en cas de
+	    renommage
+	\\ \cline {2-3}
+	& \texttt {\%ORGGRP\%}
+	& nom original du groupe
+	\\ \cline {2-3}
+	& \texttt {\%TITRE\%}
+	& titre de la page (édition ou création)
 	\\ \hline
     admgrpmodif.html
-	& \texttt {\%GROUPE\%}
+	& \texttt {\%NEWGRP\%}
 	& nom du groupe modifié
-	\\ \cline {2-3}
-	& \texttt {\%TABDOMAINES\%}
-	& liste des domaines saisis
-	\\ \cline {2-3}
-	& \texttt {\%TABRESEAUX\%}
-	& liste des réseaux sélectionnés
-	\\ \cline {2-3}
-	& \texttt {\%TITRECIDRHORSRESEAU\%}
-	& titre inscrit s'il y a des plages hors des réseaux
-	    sélectionnés
 	\\ \cline {2-3}
 	& \texttt {\%TABCIDRHORSRESEAU\%}
 	& liste des plages hors des réseaux sélectionnés
 	\\ \cline {2-3}
 	& \texttt {\%TABDHCPPROFILS\%}
 	& liste des profils DHCP visibles
+	\\ \cline {2-3}
+	& \texttt {\%TABDOMAINES\%}
+	& liste des domaines saisis
+	\\ \cline {2-3}
+	& \texttt {\%TABLOGINS\%}
+	& liste des membres du groupe
+	\\ \cline {2-3}
+	& \texttt {\%TABRESEAUX\%}
+	& liste des réseaux sélectionnés
 	\\ \hline
     admgrpsel.html
-	& \texttt {\%MENUGROUPE\%}
+	& \texttt {\%MENUORGGRP\%}
 	& menu de sélection du groupe à modifier
+	\\ \hline
+    admgrpsupprok.html
+	& \texttt {\%ORGGRP\%}
+	& nom du groupe à supprimer
 	\\ \hline
     admmxedit.html
 	& \texttt {\%DOMAINE\%}
@@ -3963,34 +4001,6 @@ presse).
 	& \texttt {\%DOMAINE\%}
 	& menu de sélection du domaine
 	\\ \hline
-    admutiajoutinit.html
-	& \multicolumn {2} {|l|} {voir WebAuth}
-	\\ \hline
-    admutichoix.html
-	& \multicolumn {2} {|l|} {voir WebAuth, page utichoix.html}
-	\\ \hline
-    admutiliste.html
-	& \multicolumn {2} {|l|} {voir WebAuth, page utiliste.html}
-	\\ \hline
-    admutimenu.html
-	& \texttt {\%URL\%}
-	& lien vers le script de gestion des utilisateurs
-	\\ \hline
-    admutimodif.html
-	& \multicolumn {2} {|l|} {voir WebAuth, page utimodif.html}
-	\\ \hline
-    admutiok.html
-	& \multicolumn {2} {|l|} {voir WebAuth, page actionok.html}
-	\\ \hline
-    admutipasswd.html
-	& \multicolumn {2} {|l|} {voir WebAuth, page utipasswd.html}
-	\\ \hline
-    admutisel.html
-	& \multicolumn {2} {|l|} {voir WebAuth, page utisel.html}
-	\\ \hline
-    admutisuppr.html
-	& \multicolumn {2} {|l|} {voir WebAuth, page utisuppr.html}
-	\\ \hline
     admvalide.html
 	& \texttt {\%TYPEENCLAIR\%}
 	& type de l'objet modifié
@@ -3999,6 +4009,9 @@ presse).
 	& lien vers le script de modification du type d'objet modifié
 	\\ \hline
     ajout.html
+	& \texttt {\%DHCPPROFIL\%}
+	& menu de sélection de profil DHCP (ou champ caché)
+	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
 	& menu de présentation des domaines
 	\\ \cline {2-3}
@@ -4007,9 +4020,6 @@ presse).
 	\\ \cline {2-3}
 	& \texttt {\%MENUHINFO\%}
 	& menu des types de machines
-	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& menu de sélection de profil DHCP (ou champ caché)
 	\\ \hline
     consulter.html
 	& \texttt {\%CORRESP\%}
@@ -4043,12 +4053,12 @@ presse).
 	& résultat d'une précédente recherche d'une machine
 	\\ \hline
     dhcpedit.html
+	& \texttt {\%IDRESEAU\%}
+	& champ caché contenant l'identificateur du réseau en cours d'édition
+	\\ \cline {2-3}
 	& \texttt {\%RESEAU\%}
 	& réseau pour lequel les intervalles DHCP dynamiques sont
 	    en cours d'édition
-	\\ \cline {2-3}
-	& \texttt {\%IDRESEAU\%}
-	& champ caché contenant l'identificateur du réseau en cours d'édition
 	\\ \cline {2-3}
 	& \texttt {\%TABLEAU\%}
 	& tableau d'édition des intervalles
@@ -4065,25 +4075,28 @@ presse).
 	& \texttt {\%CORRESP\%}
 	& tableau contenant l'identité du correspondant
 	\\ \cline {2-3}
-	& \texttt {\%TABRESEAUX\%}
-	& liste des réseaux autorisés en consultation
-	\\ \cline {2-3}
-	& \texttt {\%TABDOMAINES\%}
-	& liste des domaines autorisés
-	\\ \cline {2-3}
-	& \texttt {\%TITRECIDRHORSRESEAU\%}
-	& le cas échéant, titre de la section des plages hors des
-	    réseaux enregistrés
-	\\ \cline {2-3}
 	& \texttt {\%TABCIDRHORSRESEAU\%}
 	& le cas échéant, liste des plages hors des réseaux enregistrés
 	\\ \cline {2-3}
 	& \texttt {\%TABDHCPPROFIL\%}
 	& le cas échéant, récapitulatif des profils DHCP visibles
+	\\ \cline {2-3}
+	& \texttt {\%TABDOMAINES\%}
+	& liste des domaines autorisés
+	\\ \cline {2-3}
+	& \texttt {\%TABRESEAUX\%}
+	& liste des réseaux autorisés en consultation
+	\\ \cline {2-3}
+	& \texttt {\%TITRECIDRHORSRESEAU\%}
+	& le cas échéant, titre de la section des plages hors des
+	    réseaux enregistrés
 	\\ \hline
     editmodif-infos.html
-	& \texttt {\%NOM\%}
-	& nom du RR en cours de modification
+	& \texttt {\%COMMENTAIRE\%}
+	& champ de saisie du commentaire
+	\\ \cline {2-3}
+	& \texttt {\%DHCPPROFIL\%}
+	& menu de saisie du profil DHCP ou champ caché
 	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
 	& domaine du RR en cours de modification
@@ -4091,87 +4104,84 @@ presse).
 	& \texttt {\%MAC\%}
 	& champ de saisie de l'adresse MAC
 	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& menu de saisie du profil DHCP ou champ caché
-	\\ \cline {2-3}
 	& \texttt {\%MENUHINFO\%}
 	& menu des types de machines
 	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& champ de saisie du commentaire
-	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& dchamp de saisie du nom du responsable de la machine
+	& \texttt {\%NOM\%}
+	& nom du RR en cours de modification
 	\\ \cline {2-3}
 	& \texttt {\%RESPMEL\%}
 	& champ de saisie de l'adresse électronique du responsable de la
 	    machine
+	\\ \cline {2-3}
+	& \texttt {\%RESPNOM\%}
+	& dchamp de saisie du nom du responsable de la machine
 	\\ \hline
     erreur.html
 	& \texttt {\%MESSAGE\%}
 	& message d'erreur
 	\\ \hline
     liste.html
-	& \texttt {\%ORIENTATION\%}
-	& \texttt {portrait} ou \texttt {landscape} (pour liste.tex
-	    uniquement)
+	& \texttt {\%DATE\%}
+	& date de l'extraction
 	\\ \cline {2-3}
     et
 	& \texttt {\%NBMACHINES\%}
 	& nombre de machines trouvées
 	\\ \cline {2-3}
     liste.tex
+	& \texttt {\%ORIENTATION\%}
+	& \texttt {portrait} ou \texttt {landscape} (pour liste.tex
+	    uniquement)
+	\\ \cline {2-3}
 	& \texttt {\%S\%}
 	& «~\texttt {s}~» si le nombre de machine est supérieur à 1
-	\\ \cline {2-3}
-	& \texttt {\%DATE\%}
-	& date de l'extraction
 	\\ \cline {2-3}
 	& \texttt {\%TABLEAU\%}
 	& liste des machines trouvées
 	\\ \hline
     listecorresp.html
-	& \texttt {\%TITREPAGE\%}
-	& titre de la page
-	\\ \cline {2-3}
 	& \texttt {\%LISTECOR\%}
 	& liste des correspondants trouvés
+	\\ \cline {2-3}
+	& \texttt {\%TITREPAGE\%}
+	& titre de la page
 	\\ \hline
     listedes.html
+	& \texttt {\%DATE\%}
+	& date de l'extraction
+	\\ \cline {2-3}
+    et
 	& \texttt {\%ORIENTATION\%}
 	& \texttt {portrait} ou \texttt {landscape} (pour liste.tex
 	    uniquement)
 	\\ \cline {2-3}
-    et
+    liste.tex
+	& \texttt {\%TABLEAU\%}
+	& liste extraite
+	\\ \cline {2-3}
 	& \texttt {\%TITRE\%}
 	& type d'objet dont on a la liste
 	\\ \cline {2-3}
-    liste.tex
-	& \texttt {\%DATE\%}
-	& date de l'extraction
-	\\ \cline {2-3}
 	& \texttt {\%TXT\%}
 	& texte d'explication sur les paramètres de l'extraction
-	\\ \cline {2-3}
-	& \texttt {\%TABLEAU\%}
-	& liste extraite
 	\\ \hline
     mail.html
 	& \texttt {\%DOMAINE\%}
 	& menu de sélection d'un domaine
 	\\ \hline
     mailheberg-edit.html
-	& \texttt {\%NOM\%}
-	& nom de l'adresse de messagerie en cours d'édition
-	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
 	& domaine de l'adresse de messagerie en cours d'édition
 	\\ \cline {2-3}
-	& \texttt {\%NOMH\%}
-	& nom éditable de l'hébergeur trouvé
-	\\ \cline {2-3}
 	& \texttt {\%DOMAINEH\%}
 	& menu pour modifier l'hébergeur trouvé
+	\\ \cline {2-3}
+	& \texttt {\%NOM\%}
+	& nom de l'adresse de messagerie en cours d'édition
+	\\ \cline {2-3}
+	& \texttt {\%NOMH\%}
+	& nom éditable de l'hébergeur trouvé
 	\\ \hline
     mailheberg-liste.html
 	& \texttt {\%DOMAINE\%}
@@ -4181,11 +4191,11 @@ presse).
 	& liste des adresses de messagerie, avec les hébergeurs
 	\\ \hline
     mailmodif.html
-	& \texttt {\%NOM\%}
-	& nom (complet) de l'adresse de messagerie modifiée
-	\\ \cline {2-3}
 	& \texttt {\%ACTION\%}
 	& type d'action (ajout, modification, suppression) effectuée
+	\\ \cline {2-3}
+	& \texttt {\%NOM\%}
+	& nom (complet) de l'adresse de messagerie modifiée
 	\\ \hline
     modif.html
 	& \texttt {\%DOMAINE\%}
@@ -4208,6 +4218,12 @@ presse).
 	& adresse d'une page publique (hors de l'application)
 	    décrivant la documentation de votre service DNS.
 	\\ \cline {2-3}
+	& \texttt {\%DOMAINE\%}
+	& domaine de l'alias
+	\\ \cline {2-3}
+	& \texttt {\%DOMAINEREF\%}
+	& domaine de la machine
+	\\ \cline {2-3}
 	& \texttt {\%INTERVALLE\%}
 	& intervalle entre deux générations de zones sur le serveur
 	    DNS.
@@ -4215,21 +4231,27 @@ presse).
 	& \texttt {\%NOM\%}
 	& nom de l'alias
 	\\ \cline {2-3}
-	& \texttt {\%DOMAINE\%}
-	& domaine de l'alias
-	\\ \cline {2-3}
 	& \texttt {\%NOMREF\%}
 	& nom de la machine
-	\\ \cline {2-3}
-	& \texttt {\%DOMAINEREF\%}
-	& domaine de la machine
 	\\ \hline
     traiteajout-existe.html
-	& \texttt {\%NOM\%}
-	& nom de la machine existante
+	& \texttt {\%ADR\%}
+	& nouvelle adresse à ajouter
+	\\ \cline {2-3}
+	& \texttt {\%COMMENTAIRE\%}
+	& commentaire sur la machine existante
+	\\ \cline {2-3}
+	& \texttt {\%DHCPPROFIL\%}
+	& profil DHCP
 	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
 	& nom du domaine de la machine existante
+	\\ \cline {2-3}
+	& \texttt {\%HINFO\%}
+	& type de la machine existante
+	\\ \cline {2-3}
+	& \texttt {\%IDDHCPPROFIL\%}
+	& identificateur du profil DHCP
 	\\ \cline {2-3}
 	& \texttt {\%LISTEADR\%}
 	& liste des adresses déjà affectées à la machine
@@ -4237,118 +4259,115 @@ presse).
 	& \texttt {\%MAC\%}
 	& adresse MAC
 	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& profil DHCP
-	\\ \cline {2-3}
-	& \texttt {\%IDDHCPPROFIL\%}
-	& identificateur du profil DHCP
-	\\ \cline {2-3}
-	& \texttt {\%HINFO\%}
-	& type de la machine existante
-	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& commentaire sur la machine existante
-	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable de la machine existante
+	& \texttt {\%NOM\%}
+	& nom de la machine existante
 	\\ \cline {2-3}
 	& \texttt {\%RESPMEL\%}
 	& adresse électronique du responsable de la machine existante
 	\\ \cline {2-3}
-	& \texttt {\%ADR\%}
-	& nouvelle adresse à ajouter
+	& \texttt {\%RESPNOM\%}
+	& nom du responsable de la machine existante
 	\\ \hline
     traiteajout-machine.html
-	& \texttt {\%DOCDNS\%}
-	& adresse d'une page publique (hors de l'application)
-	    décrivant la documentation de votre service DNS.
-	\\ \cline {2-3}
-	& \texttt {\%INTERVALLE\%}
-	& intervalle entre deux générations de zones sur le serveur
-	    DNS.
-	\\ \cline {2-3}
-	& \texttt {\%NOM\%}
-	& nom de la machine ajoutée
-	\\ \cline {2-3}
-	& \texttt {\%DOMAINE\%}
-	& domaine de la machine ajoutée
-	\\ \cline {2-3}
 	& \texttt {\%ADR\%}
 	& adresse IP de la machine ajoutée
-	\\ \cline {2-3}
-	& \texttt {\%MAC\%}
-	& adresse MAC de la machine ajoutée
-	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& profil DHCP de la machine ajoutée
-	\\ \cline {2-3}
-	& \texttt {\%HINFO\%}
-	& type de la machine ajouée
 	\\ \cline {2-3}
 	& \texttt {\%COMMENTAIRE\%}
 	& commentaire sur la machine ajoutée
 	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable de la machine ajoutée
+	& \texttt {\%DHCPPROFIL\%}
+	& profil DHCP de la machine ajoutée
 	\\ \cline {2-3}
-	& \texttt {\%RESPMEL\%}
-	& adresse électronique du responsable de la machine ajoutée
-	\\ \hline
-    traitemodif-infos.html
 	& \texttt {\%DOCDNS\%}
 	& adresse d'une page publique (hors de l'application)
 	    décrivant la documentation de votre service DNS.
+	\\ \cline {2-3}
+	& \texttt {\%DOMAINE\%}
+	& domaine de la machine ajoutée
+	\\ \cline {2-3}
+	& \texttt {\%HINFO\%}
+	& type de la machine ajouée
 	\\ \cline {2-3}
 	& \texttt {\%INTERVALLE\%}
 	& intervalle entre deux générations de zones sur le serveur
 	    DNS.
 	\\ \cline {2-3}
-	& \texttt {\%NOM\%}
-	& nom de la machine modifiée
-	\\ \cline {2-3}
-	& \texttt {\%DOMAINE\%}
-	& domaine de la machine modifiée
-	\\ \cline {2-3}
 	& \texttt {\%MAC\%}
-	& adresse MAC de la machine modifiée
+	& adresse MAC de la machine ajoutée
+	\\ \cline {2-3}
+	& \texttt {\%NOM\%}
+	& nom de la machine ajoutée
+	\\ \cline {2-3}
+	& \texttt {\%RESPMEL\%}
+	& adresse électronique du responsable de la machine ajoutée
+	\\ \cline {2-3}
+	& \texttt {\%RESPNOM\%}
+	& nom du responsable de la machine ajoutée
+	\\ \hline
+    traitemodif-infos.html
+	& \texttt {\%COMMENTAIRE\%}
+	& commentaire sur la machine modifiée
 	\\ \cline {2-3}
 	& \texttt {\%DHCPPROFIL\%}
 	& profil DHCP de la machine modifiée
 	\\ \cline {2-3}
+	& \texttt {\%DOCDNS\%}
+	& adresse d'une page publique (hors de l'application)
+	    décrivant la documentation de votre service DNS.
+	\\ \cline {2-3}
+	& \texttt {\%DOMAINE\%}
+	& domaine de la machine modifiée
+	\\ \cline {2-3}
 	& \texttt {\%HINFO\%}
 	& type de la machine modifiée
 	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& commentaire sur la machine modifiée
+	& \texttt {\%INTERVALLE\%}
+	& intervalle entre deux générations de zones sur le serveur
+	    DNS.
 	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable de la machine modifiée
+	& \texttt {\%MAC\%}
+	& adresse MAC de la machine modifiée
+	\\ \cline {2-3}
+	& \texttt {\%NOM\%}
+	& nom de la machine modifiée
 	\\ \cline {2-3}
 	& \texttt {\%RESPMEL\%}
 	& adresse électronique du responsable de la machine modifiée
+	\\ \cline {2-3}
+	& \texttt {\%RESPNOM\%}
+	& nom du responsable de la machine modifiée
 	\\ \hline
     traitesuppr-alias.html
-	& \texttt {\%NOM\%}
-	& nom de l'alias à supprimer
-	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
 	& domaine de l'alias à supprimer
 	\\ \cline {2-3}
-	& \texttt {\%NOMREF\%}
-	& nom de la machine
-	\\ \cline {2-3}
 	& \texttt {\%DOMAINEREF\%}
 	& domaine de la machine
+	\\ \cline {2-3}
+	& \texttt {\%NOM\%}
+	& nom de l'alias à supprimer
+	\\ \cline {2-3}
+	& \texttt {\%NOMREF\%}
+	& nom de la machine
 	\\ \hline
     traitesuppr-ip-objet.html
 	& \texttt {\%ADR\%}
 	& adresse dont la suppression est demandée
 	\\ \cline {2-3}
-	& \texttt {\%NOM\%}
-	& nom correspondant à l'adresse
+	& \texttt {\%ALIASES\%}
+	& aliases éventuels sur la machine
+	\\ \cline {2-3}
+	& \texttt {\%COMMENTAIRE\%}
+	& commentaire sur la machine
+	\\ \cline {2-3}
+	& \texttt {\%DHCPPROFIL\%}
+	& profil DHCP
 	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
 	& domaine correspondant à l'adresse
+	\\ \cline {2-3}
+	& \texttt {\%HINFO\%}
+	& type de la machine
 	\\ \cline {2-3}
 	& \texttt {\%LISTEADR\%}
 	& adresses trouvées pour cette machine
@@ -4356,33 +4375,33 @@ presse).
 	& \texttt {\%MAC\%}
 	& adresse MAC de la machine
 	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& profil DHCP
-	\\ \cline {2-3}
-	& \texttt {\%HINFO\%}
-	& type de la machine
-	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& commentaire sur la machine
-	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable
+	& \texttt {\%NOM\%}
+	& nom correspondant à l'adresse
 	\\ \cline {2-3}
 	& \texttt {\%RESPMEL\%}
 	& adresse électronique du responsable
 	\\ \cline {2-3}
-	& \texttt {\%ALIASES\%}
-	& aliases éventuels sur la machine
+	& \texttt {\%RESPNOM\%}
+	& nom du responsable
 	\\ \hline
     traitesuppr-ip-uneip.html
 	& \texttt {\%ADR\%}
 	& adresse dont la suppression est demandée
 	\\ \cline {2-3}
-	& \texttt {\%NOM\%}
-	& nom correspondant à l'adresse
+	& \texttt {\%ALIASES\%}
+	& aliases éventuels sur la machine
+	\\ \cline {2-3}
+	& \texttt {\%COMMENTAIRE\%}
+	& commentaire sur la machine
+	\\ \cline {2-3}
+	& \texttt {\%DHCPPROFIL\%}
+	& profil DHCP
 	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
 	& domaine correspondant à l'adresse
+	\\ \cline {2-3}
+	& \texttt {\%HINFO\%}
+	& type de la machine
 	\\ \cline {2-3}
 	& \texttt {\%LISTEADR\%}
 	& adresses trouvées pour cette machine
@@ -4390,30 +4409,30 @@ presse).
 	& \texttt {\%MAC\%}
 	& adresse MAC de la machine
 	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& profil DHCP
-	\\ \cline {2-3}
-	& \texttt {\%HINFO\%}
-	& type de la machine
-	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& commentaire sur la machine
-	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable
+	& \texttt {\%NOM\%}
+	& nom correspondant à l'adresse
 	\\ \cline {2-3}
 	& \texttt {\%RESPMEL\%}
 	& adresse électronique du responsable
 	\\ \cline {2-3}
-	& \texttt {\%ALIASES\%}
-	& aliases éventuels sur la machine
+	& \texttt {\%RESPNOM\%}
+	& nom du responsable
 	\\ \hline
     traitesuppr-nom.html
-	& \texttt {\%NOM\%}
-	& nom dont la suppression est demandée
+	& \texttt {\%ALIASES\%}
+	& aliases éventuels sur la machine
+	\\ \cline {2-3}
+	& \texttt {\%COMMENTAIRE\%}
+	& commentaire sur la machine
+	\\ \cline {2-3}
+	& \texttt {\%DHCPPROFIL\%}
+	& profil DHCP
 	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
-	& domaine correspondant
+	& domaine correspondant à la suppression demandée
+	\\ \cline {2-3}
+	& \texttt {\%HINFO\%}
+	& type de la machine
 	\\ \cline {2-3}
 	& \texttt {\%LISTEADR\%}
 	& adresses trouvées pour ce nom
@@ -4421,23 +4440,14 @@ presse).
 	& \texttt {\%MAC\%}
 	& adresse MAC de la machine
 	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& profil DHCP
-	\\ \cline {2-3}
-	& \texttt {\%HINFO\%}
-	& type de la machine
-	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& commentaire sur la machine
-	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable
+	& \texttt {\%NOM\%}
+	& nom dont la suppression est demandée
 	\\ \cline {2-3}
 	& \texttt {\%RESPMEL\%}
 	& adresse électronique du responsable
 	\\ \cline {2-3}
-	& \texttt {\%ALIASES\%}
-	& aliases éventuels sur la machine
+	& \texttt {\%RESPNOM\%}
+	& nom du responsable
 	\\ \hline
     traitesuppr-ok.html
 	& \texttt {\%DOCDNS\%}
@@ -4453,5 +4463,173 @@ presse).
 	\\ \cline {2-3}
 \end {supertabular}
 }
+
+\clearpage
+\titreB {Pages à trous de WebAuth}
+
+{\small
+    \tablehead {\hline
+	\multicolumn {1} {|c|} {\textbf {Fichier}} &
+		\multicolumn {1} {|c|} {\textbf {Trou}} &
+		\multicolumn {1} {|c|} {\textbf {Signification}}
+	\\ \hline
+    }
+    \tabletail {\hline}
+\begin {supertabular} {|l|l|p{100mm}|}
+    (tous)
+	& \texttt {\%HOMEURL\%}
+	& adresse relative de la page d'accueil par rapport
+	    à la racine du serveur Web
+	\\ \hline
+    actionok.html
+	& \texttt {\%COMPLEMENT\%}
+	& texte apportant un complément d'information le cas échéant.
+	\\ \cline {2-3}
+	& \texttt {\%TITREACTION\%}
+	& titre de l'action effectuée
+	\\ \hline
+    admparliste.html
+	& \texttt {\%TAB\%}
+	& tableau contenant les paramètres éditables de l'application
+	\\ \hline
+    erreur.html
+	& \texttt {\%MESSAGE\%}
+	& message d'erreur
+	\\ \hline
+    grpajout.html
+	& \texttt {\%GROUPES\%}
+	& liste des groupes existant dans la base
+	\\ \hline
+    grpconsult.html
+	& \texttt {\%GROUPES\%}
+	& liste des groupes existant dans la base
+	\\ \hline
+    grpmodif.html
+	& \texttt {\%MENUGROUPE\%}
+	& menu HTML permettant de sélectionner le groupe à modifier
+	\\ \hline
+    grpsuppr.html
+	& \texttt {\%MENUGROUPE\%}
+	& menu HTML permettant de sélectionner le groupe à modifier
+	\\ \hline
+    grptraitemodif.html
+	& \texttt {\%DESCR\%}
+	& description du groupe en cours de modification
+	\\ \cline {2-3}
+	& \texttt {\%GROUPE\%}
+	& groupe en cours de modification
+	\\ \cline {2-3}
+	& \texttt {\%LISTEMEMBRES\%}
+	& liste HTML des utilisateurs membres du le groupe
+	\\ \cline {2-3}
+	& \texttt {\%LISTETOUS\%}
+	& liste HTML des utilisateurs hors du groupe dans le groupe
+	\\ \cline {2-3}
+	& \texttt {\%VRAISMEMBRES\%}
+	& liste actuelle des membres du groupe en cours de modication
+	\\ \hline
+    pwdchoix.html
+	& (aucun)
+	& (aucun)
+	\\ \hline
+    pwderr.html
+	& \texttt {\%MESSAGE\%}
+	& message d'erreur
+	\\ \hline
+    pwdok.html
+	& (aucun)
+	& (aucun)
+	\\ \hline
+    utiajoutinit.htgt
+	& \texttt {\%URL\%}
+	& URL du script \texttt {uti}
+	\\ \hline
+    utichoix.html
+	& \texttt {\%AUCUN\%}
+	& formulaire de re-sélection si aucun utilisateur n'a été trouvé
+	\\ \cline {2-3}
+	& \texttt {\%LISTEUTILISATEURS\%}
+	& liste des utilisateurs trouvés
+	\\ \cline {2-3}
+	& \texttt {\%MESSAGE\%}
+	& message affiché au cas où plusieurs utilisateurs ont été trouvés
+	\\ \hline
+    utiliste.html
+	& \texttt {\%DATE\%}
+	& date
+	\\ \cline {2-3}
+    et
+	& \texttt {\%HEURE\%}
+	& heure
+	\\ \cline {2-3}
+    utiliste.tex
+	& \texttt {\%NBUTILISATEURS\%}
+	& nombre d'utilisateurs trouvés
+	\\ \cline {2-3}
+	& \texttt {\%S\%}
+	& <<~s~>> si plusieurs utilisateurs ont été trouvés
+	\\ \cline {2-3}
+	& \texttt {\%TABLEAU\%}
+	& tableau HTML présentant la liste des utilisateurs
+	\\ \hline
+    utimenu.htgt
+	& \texttt {\%URL\%}
+	& URL du script \texttt {uti}
+	\\ \hline
+    utimodif.html
+	& \texttt {\%ACTION\%}
+	& action à effectuer à la suite de la modification des paramètres
+	\\ \cline {2-3}
+	& \texttt {\%ETAT\%}
+	& état 
+	\\ \cline {2-3}
+	& \texttt {\%PARAMUTILISATEUR\%}
+	& formulaire d'édition des paramètres de l'utilisateur
+	\\ \cline {2-3}
+	& \texttt {\%TITRE\%}
+	& nom de l'action qui va être effectuée
+	\\ \cline {2-3}
+	& \texttt {\%URL\%}
+	& URL du script \texttt {uti}
+	\\ \hline
+    utipasswd.html
+	& \texttt {\%LOGIN\%}
+	& nom de login de l'utilisateur
+	\\ \cline {2-3}
+	& \texttt {\%NOM\%}
+	& nom de l'utilisateur
+	\\ \cline {2-3}
+	& \texttt {\%PRENOM\%}
+	& prénom de l'utilisateur
+	\\ \cline {2-3}
+	& \texttt {\%URL\%}
+	& URL du script \texttt {uti}
+	\\ \hline
+    utisel.html
+	& \texttt {\%ACTION\%}
+	& action à effectuer après la sélection
+	\\ \cline {2-3}
+	& \texttt {\%CRITERES\%}
+	& formulaire de saisie des critères de sélection
+	\\ \cline {2-3}
+	& \texttt {\%MESSAGE\%}
+	& message préalable aux critères de sélection
+	\\ \cline {2-3}
+	& \texttt {\%URL\%}
+	& URL du script \texttt {uti}
+	\\ \hline
+    utisuppr.html
+	& \texttt {\%LOGIN\%}
+	& nom de login de l'utilisateur
+	\\ \cline {2-3}
+	& \texttt {\%URL\%}
+	& URL du script \texttt {uti}
+	\\ \cline {2-3}
+	& \texttt {\%UTILISATEUR\%}
+	& login de l'utilisateur à supprimer
+	\\ \hline
+\end {supertabular}
+}
+\cbend%1.4
 
 \end {document}
