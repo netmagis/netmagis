@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.13 2008-03-26 12:09:01 pda Exp $
+% $Id: install.tex,v 1.14 2008-04-11 10:31:51 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -116,7 +116,7 @@
 
     \begin {center}
 	Version 1.4, ???? 2008 \\
-	\verb|$Id: install.tex,v 1.13 2008-03-26 12:09:01 pda Exp $| \\
+	\verb|$Id: install.tex,v 1.14 2008-04-11 10:31:51 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -144,6 +144,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \titreA {Introduction}
+    \label {liste-diff}
 
 L'application WebDNS a été présentée\footnote {\htmlurl
 {http://2003.jres.org/actes/paper.144.pdf}} pour la première fois
@@ -433,8 +434,11 @@ au serveur Web utilisé. On peut néanmoins citer pour Apache~:
 
 Vous pouvez également utiliser le module CAS (\verb|mod_auth_cas|)
 pour Apache pour offrir du «~Single Sign On~» à vos utilisateurs.
-Cependant, les auteurs n'ont pas encore la pratique de ce module,
-et ne peuvent fournir d'assistance.
+Si les auteurs n'ont pas encore la pratique de ce module, et ne
+peuvent fournir d'assistance, plusieurs utilisateurs en revanche
+ont indiqué sur la liste de diffusion Webdns (voir chapitre~\ref
+{liste-diff}, page~\pageref {liste-diff}) qu'ils avaient pratiqué
+cette authentification.
 
 \cbend%1.4
 
@@ -571,10 +575,10 @@ Disponibilité~: \htmlurl {http://www.tcl.tk/software/tcllib/}
 \titreC {PostgreSQL}
 
 Le moteur de base de données utilisé est PostgreSQL. Il faut utiliser
-une version supérieure ou égale à 7.4\footnote {La gestion des
+une version supérieure ou égale à 8.0\footnote {La gestion des
 adresses IPv6 dans WebDNS repose sur le type de données «~INET~»
 de PostgreSQL, et plus spécifiquement sur son extension aux adresses
-IPv6 à partir de PostgreSQL version 7.4.}.
+IPv6 à partir de PostgreSQL version 8.0.}.
 
 
 Disponibilité~: \htmlurl {http://www.postgresql.org/}
@@ -612,6 +616,7 @@ correctement installé.
 
 
 \titreC {mod\_auth\_pgsql (authentification PostgreSQL)}
+    \label {mod-auth-pgsql}
 
 L'authentification des utilisateurs dans l'application est réalisée
 par le serveur Apache. Pour le moment, la seule authentification
@@ -995,15 +1000,15 @@ pour refléter la localisation des commandes~:
 \end {itemize}
 
 
-\titreC {Modifications du paquetage \texttt {arrgen}}
+\titreC {Modification du paquetage \texttt {arrgen}}
 
 Aucune modification n'est nécessaire.
 
-\titreC {Modifications du paquetage \texttt {pgsql}}
+\titreC {Modification du paquetage \texttt {pgsql}}
 
 Aucune modification n'est nécessaire.
 
-\titreC {Modifications du paquetage \texttt {auth}}
+\titreC {Modification du paquetage \texttt {auth}}
 
 Si vous devez utiliser l'application WebAuth (et seulement dans ce
 cas là) pour utiliser l'authentification PostgreSQL, vous devez
@@ -1050,6 +1055,64 @@ Hormis le paramétrage du serveur Apache, vous n'avez pas besoin des
 droits de «~\texttt {root}~» pour effectuer les opérations décrites
 dans ce chapitre.
 
+\titreB {Introduction}
+
+L'application WebAuth a initialement été conçue comme un moyen de
+gérer une base d'authentification utilisée par des applications
+Web. Parmi ses fonctionnalités figurait la possibilité d'adjoindre
+à n'importe quelle application Web une interface de gestion des
+utilisateurs, grâce à seulement quelques lignes de code.
+
+\begin {itemize}
+    \item
+	avec le développement de l'authentification basée sur des
+	annuaires LDAP, une telle application est devenue progressivement
+	inutile pour la plupart des organismes ayant adopté WebDNS,
+	voire même un frein dans la mesure où cela nécessitait une
+	double saisie des utilisateurs (une fois avec LDAP et une
+	fois avec WebAuth)~;
+
+    \item
+	les autres applications développées au CRC n'ont pas connu
+	une diffusion telle que WebAuth puisse être utilisée dans
+	d'autres contextes.
+
+\end {itemize}
+
+Il est donc devenu clair que WebDNS devait s'affranchir de la gestion
+de ses utilisateurs. Pour les organisations qui n'ont pas mis en
+place un annuaire LDAP, WebAuth est dorénavant fourni avec WebDNS,
+et continue de fournir un mode d'authentification basé sur une base
+PostgreSQL.
+
+WebAuth gère des utilisateurs et des groupes. Les utilisateurs sont
+identifiés par un «~login~», possèdent un mot de passe pour
+l'authentification et possèdent également des coordonnées (adresse,
+mail, téléphone, etc.).
+
+WebAuth ne traite pas directement l'authentification aux applications~:
+les utilisateurs étant stockés dans une base PostgreSQL, un module
+auxiliaire (voir~\ref {mod-auth-pgsql}, page~\pageref {mod-auth-pgsql})
+permet à Apache de valider l'authentification d'un utilisateur à
+WebDNS et à WebAuth.
+
+Par ailleurs, un utilisateur participe à un ou plusieurs groupes.
+Les groupes ont pour but de délimiter des «~espaces Web~» (voir~\ref
+{grp-webauth}, page~\pageref {grp-webauth}), c'est à dire des
+portions de l'arborescence Web. Attention~: ces groupes ne doivent
+pas être confondus avec ceux de WebDNS, qui servent à définir des
+droits sur des adresses IP, des réseaux, des domaines, etc.
+
+Typiquement, un seul groupe WebAuth est nécessaire pour délimiter
+tous les utilisateurs de WebDNS. Un autre groupe WebAuth (groupe
+«~\texttt {authadmin}~») est requis pour identifier les utilisateurs
+de WebAuth ayant le droit de gérer les utilisateurs.
+
+Vous pouvez utiliser le principe de WebAuth pour vos propres besoins,
+et ainsi délimiter d'autres espaces Web (intranet de populations
+délimitées, tels que des correspondants réseau par exemple). Le
+fait qu'un utilisateur puisse être dans plusieurs groupes vous
+permet dès lors une très grande souplesse.
 \cbend%1.4
 
 
@@ -1271,72 +1334,35 @@ Le serveur Apache doit être configuré pour~:
 	\verb|/local/services/www/applis/auth/lib|
 \end {itemize}
 
-Ceci peut être réalisé grâce aux quelques lignes suivantes (voir
-\verb|./pgauth/inst/httpd.conf|, notamment la première partie) dans
-le fichier \texttt {httpd.conf} de configuration d'Apache, que vous
-prendrez soin d'adapter~:
+\cbstart%1.4
 
-XXX : AUTH DOIT ETRE ACCESSIBLE A TOUS (CHGT MOT DE PASSE)
+Ceci peut être réalisé grâce aux quelques lignes suivantes (voir
+\verb|./pgauth/inst/httpd.conf|) dans la partie «~https~» du fichier
+\texttt {httpd.conf} de configuration d'Apache, que vous prendrez
+soin d'adapter~:
 
 \begin {quote}
-\small
-\begin {verbatim}
-ScriptAlias "/applis/auth/bin/" "/local/services/www/applis/auth/bin/"
-
-<Directory /local/services/www/applis/auth>
-    #
-    # Ces lignes peuvent astucieusement être mises en commun
-    # en les déclarant dans le répertoire racine de votre
-    # serveur Web.
-    #
-    AuthName		    "Intranet CRC"
-    Auth_PG_host            localhost
-    Auth_PG_port            5432
-    Auth_PG_database        auth
-    Auth_PG_user            auth
-    Auth_PG_pwd             mot-de-passe-en-clair-de-auth
-    Auth_PG_pwd_table       utilisateurs
-    Auth_PG_uid_field       login
-    Auth_PG_pwd_field       password
-    Auth_PG_grp_table       membres
-
-    # Attention : version avec mod_auth_pgsql
-    #Auth_PG_gid_field       groupe
-    # Attention : version avec mod_auth_pgsql2
-    Auth_PG_grp_group_field groupe
-    Auth_PG_grp_user_field  login
-
-    #
-    # Fin des lignes pouvant être mises en commun dans le
-    # répertoire racine de votre serveur Web.
-    #
-
-    AuthType            Basic
-    require             group authadmin
-
-    # si vous avez une page prévue pour signaler les erreurs, mettez-la ici
-    ErrorDocument       401 /errauth/erreur.html
-</Directory>
-
-<Directory /local/services/www/applis/auth/lib>
-    order deny,allow
-    deny from all
-</Directory>
-
-Alias "/applis/auth" "/local/services/www/applis/auth"
-
-#
-# Pour effectuer en une seule opération
-# - l'accès via l'url /applis/auth, qui redirige en réalité vers un script
-# - les redirections vers HTTPS
-#
-RedirectMatch permanent ^/applis/auth/$ \
-                https://www-crc.u-strasbg.fr/applis/auth/bin/accueil
-RedirectMatch permanent ^/applis/auth/index.html$ \
-                https://www-crc.u-strasbg.fr/applis/auth/bin/accueil
-\end{verbatim}
+    \small
+    \verbatiminput {../pgauth/inst/httpd.conf}
 \end {quote}
 
+Ces lignes font également référence à la directive \texttt
+{ErrorDocument} pour renvoyer une page d'erreur appropriée en cas
+d'échec d'authentification~; si vous n'avez pas une telle page, qui
+doit forcément être externe à l'application, supprimez la ligne.
+
+Il est également fait référence à un fichier d'inclusion \texttt
+{auth-pgsql.conf} (voir \verb|./inst/httpd.conf|, situé dans le
+répertoire WebDNS et non de WebAuth) que vous prendrez également
+soin d'adapter~:
+    \label {auth-pgsql.conf}
+
+\begin {quote}
+    \small
+    \verbatiminput {../inst/auth-pgsql.conf}
+\end {quote}
+
+\cbend%1.4
 
 \titreB {Paramétrage de l'application}
 
@@ -1352,6 +1378,7 @@ L'aide en ligne intégrée (lien correspondant à chaque paramètre)
 fournit des exemples que vous pouvez facilement adapter.
 
 \titreC {Configuration des groupes et des utilisateurs}
+    \label {grp-webauth}
 
 Un groupe correspond à un ensemble de pages Web accessibles sur
 votre serveur Web. En ce sens, la notion de groupe correspond à un
@@ -1367,46 +1394,34 @@ groupe dans la base PostgreSQL.
 Avant de créer un groupe, il faut donc réfléchir au périmètre auquel
 les utilisateurs de ce groupe auront accès.
 
-Le premier groupe créé correspond aux utilisateurs ayant droit à
-accéder à l'application WebAuth, et donc par là à gérer les comptes.
+\cbstart%1.4
+Le premier groupe, «~\texttt {authadmin}~», créé lors de l'étape
+précédente d'installation des données minimales correspond aux
+utilisateurs ayant droit à gérer les utilisateurs grâce à l'application
+WebAuth, et donc à gérer les comptes.
 
-XXX
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
+\titreC {Création du groupe pour WebDNS}
 
-Le deuxième groupe que vous allez créer correspondra aux utilisateurs
-de WebDNS que vous souhaitez installer (voir introduction).
+Il faut maintenant créer un deuxième groupe dans la base
+d'authentification pour les utilisateurs de l'application WebDNS.
+Par exemple, les correspondants du réseau métropolitain strasbourgeois
+«~Osiris~» sont regroupés dans le groupe «~\texttt {osiris}~».
 
-L'ajout des utilisateurs peut être réalisé soit par l'interface Web
-(conseillé), soit par l'écriture d'un script comparable à celui
-fourni pour le remplissage initial (voir fichier \texttt
-{./inst/init-base}).
+Ceci est réalisé soit au moyen de l'application WebAuth (menu
+«~Groupes/Ajouter~»). Ensuite, il faudra y ajouter les utilisateurs,
+soit par l'application (menu «~Utilisateurs/Ajouter~»), soit par
+l'écriture d'un script comparable à celui fourni pour le remplissage
+initial (voir fichier \texttt {./pgauth/inst/init-base}).  N'oubliez
+pas de vous ajouter dans ce deuxième groupe (par l'intermédiaire
+du menu «~Groupes/Modifier~» par exemple).
+
+Le groupe choisi devra être spécifié dans la configuration Apache
+d'accès à l'application WebDNS (voir~\ref {config-apache}, page~\pageref
+{config-apache}), ainsi que dans l'application elle-même (voir plus
+bas, \ref {remplir-config}, page~\pageref {remplir-config}) pour
+la création de nouveaux correspondants.
+
+\cbend%1.4
 
 \titreB {Script auxiliaire de maintenance de la base}
 
@@ -1480,49 +1495,6 @@ pour cela~:
 \end {itemize}
 
 Si, si, regardez encore. Vraiment. C'est indispensable.
-
-
-\titreB {Création d'un groupe dans la base d'authentification}
-
-XXX
-
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-A VOIR
-
-Il faut maintenant créer un groupe dans la base d'authentification
-pour les utilisateurs de l'application WebDNS. Ceci est réalisé au
-moyen de l'application WebAuth (menu «~Groupes/Ajouter~»).
-
-Par exemple, les correspondants du réseau métropolitain strasbourgeois
-«~Osiris~» sont regroupés dans le groupe «~\texttt {osiris}~».
-
-Le groupe choisi devra être spécifié dans la configuration Apache
-d'accès à l'application (voir~\ref {config-apache}, page~\pageref
-{config-apache}), ainsi que dans l'application elle-même (voir plus
-bas, \ref {remplir-config}, page~\pageref {remplir-config}) pour
-la création de nouveaux correspondants.
-
-Une fois le groupe créé avec WebAuth, n'oubliez pas de vous y ajouter
-(par l'intermédiaire du menu «~Groupes/Modifier~» par exemple).
 
 
 \titreB {Création de la base}
@@ -1629,8 +1601,10 @@ qui sont schématisées dans le tableau ci-après~:
 	    \\ \hline
 	\texttt {remplir-grpnet}
 	    & Charge les réseaux, crée les correspondants (qui sont
-		censés pré-exister dans WebAuth), crée les groupes et
-		leur affecte les réseaux et les adresses IP autorisées.
+		censés pré-exister dans la base d'authentification,
+		qu'elle soit PostgreSQL ou LDAP), crée les groupes
+		WebDNS et leur affecte les réseaux et les adresses
+		IP autorisées.
 	    &
 		\texttt {communaute},
 		\texttt {corresp},
@@ -2219,6 +2193,7 @@ fichier \texttt {Makefile}. Modifiez les variables~:
 	\\ \hline
 \end {tabular}
 
+
 Puis, lancez \texttt {make} (dans le répertoire \verb|./www/|) pour
 installer tous les fichiers de l'application dans l'arborescence
 Web.
@@ -2242,73 +2217,35 @@ Ceci peut être réalisé grâce aux quelques lignes suivantes (voir
 \verb|./inst/httpd.conf|) dans le fichier \texttt {httpd.conf} de
 configuration d'Apache, que vous prendrez soin d'adapter~:
 
+\cbstart%1.4
 \begin {quote}
-\begin {verbatim}
-ScriptAlias "/applis/dns/bin/" "/local/services/www/applis/dns/bin/"
-
-<Directory /local/services/www/applis/dns>
-    #
-    # Ces lignes peuvent astucieusement être mises en commun
-    # en les déclarant dans le répertoire racine de votre
-    # serveur Web.
-    #
-    AuthName		"Intranet CRC"
-    Auth_PG_host             localhost
-    Auth_PG_port             5432
-    Auth_PG_database         auth
-    Auth_PG_user             auth
-    Auth_PG_pwd              mot-de-passe-en-clair-de-auth
-    Auth_PG_pwd_table        utilisateurs
-    Auth_PG_uid_field        login
-    Auth_PG_pwd_field        password
-    Auth_PG_grp_table        membres
-
-    # Attention : version avec mod_auth_pgsql
-    #Auth_PG_gid_field       groupe
-    # Attention : version avec mod_auth_pgsql2
-    Auth_PG_grp_group_field  password
-    Auth_PG_grp_user_field   membres
-
-    #
-    # Fin des lignes pouvant être mises en commun dans le
-    # répertoire racine de votre serveur Web.
-    #
-
-    AuthType            Basic
-
-    # Attention : adaptez les groupes ci-dessous en conséquence
-    # Ici : sont autorisés les groupes "osiris" (correspondants réseau
-    #    Osiris) et "crc" (personnels du CRC)
-    require             group osiris crc
-
-    # si vous avez une page prévue pour signaler les erreurs, mettez-la ici
-    ErrorDocument       401 /errauth/cor.html
-</Directory>
-
-<Directory /local/services/www/applis/dns/lib>
-    order deny,allow
-    deny from all
-</Directory>
-
-Alias "/applis/dns" "/local/services/www/applis/dns"
-
-#
-# Pour effectuer en une seule opération
-# - l'accès via l'url /applis/dns, qui redirige en réalité vers un script
-# - les redirections vers HTTPS
-#
-RedirectMatch permanent ^/applis/dns/$ \
-                https://www-crc.u-strasbg.fr/applis/dns/bin/accueil
-RedirectMatch permanent ^/applis/dns/index.html$ \
-                https://www-crc.u-strasbg.fr/applis/dns/bin/accueil
-\end{verbatim}
+    \small
+    \verbatiminput {../inst/httpd.conf}
 \end {quote}
 
-Ces lignes font également référence à la directive \texttt
-{ErrorDocument} pour renvoyer une page d'erreur appropriée en cas
-d'échec d'authentification~; si vous n'avez pas une telle page, qui
-doit forcément être externe à l'application, supprimez la ligne~;
+Ces lignes font référence à la directive \texttt {ErrorDocument}
+pour renvoyer une page d'erreur appropriée en cas d'échec
+d'authentification~; si vous n'avez pas une telle page, qui doit
+forcément être externe à l'application, supprimez la ligne.
 
+\titreC {Authentification PostgreSQL}
+
+Si vous utilisez WebAuth, vous pouvez configurer l'authentification
+pour l'accès à WebDNS de manière similaire (voir~\ref {auth-pgsql.conf},
+page~\pageref {auth-pgsql.conf}).
+
+\titreC {Authentification LDAP}
+
+Si vous utilisez une authentification LDAP, vous pouvez vous inspirer
+de la configuration suivante, que vous adapterez en fonction de
+votre DIT et de votre schéma LDAP~:
+
+\begin {quote}
+    \small
+    \verbatiminput {../inst/auth-ldap.conf}
+\end {quote}
+
+\cbend%1.4
 
 \titreB {Paramétrage de l'application}
 
@@ -3578,7 +3515,10 @@ précédente sont~:
 
     \item si le responsable d'une machine n'est pas précisé, lors de
 	l'ajout ou de la modification, inscrire par défaut le
-	correspondant réalisant l'action.
+	correspondant réalisant l'action~;
+
+    \item plus de support de la version 7 de PostgreSQL. WebDNS
+	nécessite au minimum la version 8.0.
 
 \end {itemize}
 

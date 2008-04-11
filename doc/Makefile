@@ -1,7 +1,7 @@
 #
 # Makefile de la doc d'installation de l'application SOS
 #
-# $Id: Makefile,v 1.4 2007-12-21 10:57:47 pda Exp $
+# $Id: Makefile,v 1.5 2008-04-11 10:31:51 pda Exp $
 #
 #
 # Cibles possibles :
@@ -26,6 +26,12 @@ FIGS = \
 	auth.ps \
 	mcd-dns.ps \
 	mcd-auth.ps
+
+LISTINGS = \
+	../inst/httpd.conf \
+	../inst/auth-ldap.conf \
+	../inst/auth-pgsql.conf \
+	../pgauth/inst/httpd.conf
 
 .SUFFIXES:	.fig .tex .dvi .ps .pdf .txt
 
@@ -54,7 +60,7 @@ ps:	install.ps
 pdf:	install.pdf
 html:	install/install.html
 
-install.dvi:	install.tex $(FIGS)
+install.dvi:	install.tex $(FIGS) $(LISTINGS)
 	cp /dev/null install.cb
 	$(LATEX) install
 	$(LATEX) install
