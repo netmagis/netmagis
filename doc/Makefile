@@ -1,7 +1,7 @@
 #
 # Makefile de la doc d'installation de l'application SOS
 #
-# $Id: Makefile,v 1.6 2008-04-12 20:20:53 pda Exp $
+# $Id: Makefile,v 1.7 2008-04-12 21:10:59 pda Exp $
 #
 #
 # Cibles possibles :
@@ -54,7 +54,7 @@ LISTINGS = \
 # Fin des regles classiques
 #
 
-all:	ps pdf # html
+all:	ps pdf install/install.html
 
 ps:	install.ps
 pdf:	install.pdf
@@ -73,8 +73,10 @@ install.txt:	install.dvi
 install/install.html:	install.dvi
 	$(LATEX2HTML) \
 	    -verbosity 0 \
-	    -show_section_numbers \
 	    -iso_language FR \
+	    -no_footnode \
+	    -show_section_numbers \
+	    -local_icons \
 	    -up_url http://webdns.u-strasbg.fr/doc.html \
 	    -up_title "WebDNS" \
 	    install
