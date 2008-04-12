@@ -1,7 +1,7 @@
 #
 # Makefile de la doc d'installation de l'application SOS
 #
-# $Id: Makefile,v 1.5 2008-04-11 10:31:51 pda Exp $
+# $Id: Makefile,v 1.6 2008-04-12 20:20:53 pda Exp $
 #
 #
 # Cibles possibles :
@@ -73,11 +73,15 @@ install.txt:	install.dvi
 install/install.html:	install.dvi
 	$(LATEX2HTML) \
 	    -verbosity 0 \
+	    -show_section_numbers \
+	    -iso_language FR \
+	    -up_url http://webdns.u-strasbg.fr/doc.html \
+	    -up_title "WebDNS" \
 	    install
 
 clean:
 	cleantex -a $(SRCS)
-	rm -f $(FIGS) *.ps *.bak *.cb *.pdf
+	rm -f $(FIGS) *.ps *.bak *.cb *.pdf *.out
 	rm -rf install
 
 dist:	clean install.pdf

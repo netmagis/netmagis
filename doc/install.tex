@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.15 2008-04-11 21:11:15 pda Exp $
+% $Id: install.tex,v 1.16 2008-04-12 20:20:53 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -11,11 +11,26 @@
 
 \documentclass [twoside] {report}
 
+    \usepackage {epsfig}
     \usepackage {verbatim}
     % \usepackage {makeidx}
 
-    \usepackage [a4,palatino] {my2e}	% style "à moi-même personnellement je"
+    \usepackage [francais] {babel}
+    \usepackage [latin9] {inputenc}
+    \usepackage [T1] {fontenc}
+
+    \raggedbottom
+
+    \usepackage {palatino}
+    \usepackage [paper=a4paper,margin=22mm] {geometry}
+
+%    \usepackage [a4,palatino] {my2e}	% style "à moi-même personnellement je"
     \NoAutoSpaceBeforeFDP		% pas d'espace automatique avant ":"
+
+    \frenchspacing
+    \parskip=5mm
+    \parindent=0mm
+    \renewcommand {\arraystretch} {1.4}
 
     \usepackage {supertabular}
 
@@ -28,35 +43,43 @@
     %
     % Les particularités liées à l'utilisation de latex2html
     %
-%    \usepackage {html}
+    \usepackage {html}
 
-%    \begin {htmlonly}
-%	\renewcommand {\cbstart} {}
-%	\renewcommand {\cbend} {}
-%	\renewcommand {\cbdelete} {}
-%    \end {htmlonly}
+    \begin {htmlonly}
+	\renewcommand {\cbstart} {}
+	\renewcommand {\cbend} {}
+	\renewcommand {\cbdelete} {}
 
-    % texte noir sur fond blanc, liens non parcourus en rouge
-    % \bodytext {TEXT="#000000" BGCOLOR="#ffffff" LINK="#ff0000"}
-    % texte noir sur fond blanc
-%    \bodytext {TEXT="#000000" BGCOLOR="#ffffff"}
-\newcommand {\htmlurl} [1] {#1}
+	% texte noir sur fond blanc, liens non parcourus en rouge
+	% \bodytext {TEXT="#000000" BGCOLOR="#ffffff" LINK="#ff0000"}
+	% texte noir sur fond blanc
+	\bodytext {TEXT="#000000" BGCOLOR="#ffffff"}
+    \end {htmlonly}
+
+    % \newcommand {\htmlurl} [1] {#1}
 
     \newcommand {\titreANN} [1] {\cleardoublepage\chapter* {#1}
 	    \addcontentsline {toc} {chapter} {#1}}
-    \newcommand {\titreA} {\cleardoublepage\chapter}
-    \newcommand {\titreAN} {\chapter}
-    \newcommand {\titreB} {\section}
-    \newcommand {\titreC} {\subsection}
-    \newcommand {\titreD} {\subsubsection}
-    \newcommand {\titreE} {\paragraph}
+    \newcommand {\titreA} [1] {\cleardoublepage\chapter {#1}}
+    \newcommand {\titreAN} [1] {\chapter {#1}}
+    \newcommand {\titreB} [1] {\section {#1}}
+    \newcommand {\titreC} [1] {\subsection {#1}}
+    \newcommand {\titreD} [1] {\subsubsection {#1}}
+    \newcommand {\titreE} [1] {\paragraph {#1}}
 
     \newcommand {\fichier} [1] {\texttt{#1}\xspace}
 
     \newcommand {\slashslash} {\char92\char92}
 
-\begin {document}
+    % Cette commande est normalement dans my2e.sty, mais
+    % il faut que latex2html puisse la "voir"
+    \newcommand {\figpswidth} [2] {
+	\begin {center}
+	    \epsfig {figure=#1.ps,width=#2}
+	\end {center}
+    }
 
+\begin {document}
 
     \title {\Huge\bf Application WebDNS \\ Installation et configuration}
     \author {\bf Pierre David, Jean Benoit}
@@ -65,6 +88,8 @@
     \date {Version 1.4 -- 13 avril 2008}
 
 \maketitle
+
+\rm
 
 \thispagestyle {empty}
     \begin {quote}
@@ -75,8 +100,8 @@
 	figures ont été dessinées sous X-Window (logiciel libre) avec
 	le logiciel {\tt xfig} (logiciel libre) et intégrées
 	directement dans le document final.
-	% La version HTML a été générée avec \latextohtml{} (logiciel
-	% libre).
+	La version HTML a été générée avec \latextohtml{} (logiciel
+	libre).
 
 	La dernière version de ce document est accessible à l'adresse : \\
 	\hspace* {10mm}
@@ -100,8 +125,8 @@
 %    \end {quote}
 
     \begin {center}
-	Version 1.4, ???? 2008 \\
-	\verb|$Id: install.tex,v 1.15 2008-04-11 21:11:15 pda Exp $| \\
+	Version 1.4, avril 2008 \\
+	\verb|$Id: install.tex,v 1.16 2008-04-12 20:20:53 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -119,10 +144,6 @@
     % \listoffigures
     % \listoftables
 }
-
-
-
-% \tassertoc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Introduction
