@@ -1,7 +1,7 @@
 #
 # Makefile pour lancer l'installation de l'application dns
 #
-# $Id: Makefile,v 1.5 2008-04-11 19:16:08 pda Exp $
+# $Id: Makefile,v 1.6 2008-04-13 16:29:04 pda Exp $
 #
 
 TCLSH	= /usr/local/bin/tclsh8.4
@@ -40,7 +40,7 @@ DOCDNS	= /osiris/services/dns.html
 COULEUR = "\#10C090"
 
 # Version de l'application
-VERSION = 1.3.9
+VERSION = 1.4
 
 # URL pour modifier le mot de passe
 PASSWDURL = https://www-crc.u-strasbg.fr/applis/passwd/bin/passwd

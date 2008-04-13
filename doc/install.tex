@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.17 2008-04-12 21:22:10 pda Exp $
+% $Id: install.tex,v 1.18 2008-04-13 16:29:04 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -24,7 +24,6 @@
     \usepackage {mathpazo}		% palatino
     \usepackage [paper=a4paper,margin=22mm] {geometry}
 
-%    \usepackage [a4,palatino] {my2e}	% style "à moi-même personnellement je"
     \NoAutoSpaceBeforeFDP		% pas d'espace automatique avant ":"
 
     \frenchspacing
@@ -71,8 +70,6 @@
 
     \newcommand {\slashslash} {\char92\char92}
 
-    % Cette commande est normalement dans my2e.sty, mais
-    % il faut que latex2html puisse la "voir"
     \newcommand {\figpswidth} [2] {
 	\begin {center}
 	    \epsfig {figure=#1.ps,width=#2}
@@ -125,8 +122,8 @@
 %    \end {quote}
 
     \begin {center}
-	Version 1.4, avril 2008 \\
-	\verb|$Id: install.tex,v 1.17 2008-04-12 21:22:10 pda Exp $| \\
+	Version 1.4, 13 avril 2008 \\
+	\verb|$Id: install.tex,v 1.18 2008-04-13 16:29:04 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -596,6 +593,7 @@ les ports de \texttt {postgresql} et \texttt {postgresql-tcltk}.
 Pour vérifier si le support de Tcl est bien compilé, faire~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 $ tclsh8.4      # ou "tclsh" simplement
 % package require Pgtcl
@@ -612,6 +610,7 @@ Sous FreeBSD, cela signifie qu'il faut charger le port de \texttt
 commande \texttt {createlang} fournie avec PostgreSQL~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 $ createlang pltcl
 \end{verbatim}
@@ -703,6 +702,7 @@ un mot de passe.
 Pour cela, il faut éditer le fichier \texttt {\~{}pgsql/data/pg\_hba.conf}
 installé avec PostgreSQL, et modifier les lignes~:
 \begin {quote}
+\small
 \begin {verbatim}
 local all all                           trust
 host  all all 127.0.0.1 255.255.255.255 trust
@@ -711,6 +711,7 @@ host  all all ::1       ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff trust
 \end {quote}
 en~:
 \begin {quote}
+\small
 \begin {verbatim}
 local all all                           password
 host  all all 127.0.0.1 255.255.255.255 password
@@ -763,6 +764,7 @@ Apache sur le serveur PostgreSQL. Pour cela, modifiez le fichier \texttt
 {pg\_hba.conf} et insérez la ligne suivante~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 host dns dns 192.168.1.2 255.255.255.255 password
 \end{verbatim}
@@ -805,6 +807,7 @@ depuis ces différents serveurs. Pour cela, modifiez le fichier
 la forme~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 host dns dns 192.168.1.2 255.255.255.255 password
 \end{verbatim}
@@ -840,6 +843,7 @@ Par exemple, une page servant à confirmer l'enregistrement d'une
 demande pourrait se limiter à~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 <HTML>
 <TITLE>Demande enregistrée</TITLE>
@@ -989,6 +993,7 @@ sections suivantes donnent l'ensemble des modifications nécessaires.
 Modifiez les lignes du fichier \texttt {./pktcl/webapp.tcl}~:
 
 \begin {quote}
+\small
 \begin {verbatim}
     variable pdflatex   /usr/local/bin/pdflatex
     variable sendmail   {/usr/sbin/sendmail -t}
@@ -1020,6 +1025,7 @@ cas là) pour utiliser l'authentification PostgreSQL, vous devez
 modifier les deux lignes du fichier \texttt {./pktcl/auth.tcl}~:
 
 \begin {quote}
+\small
 \begin {verbatim}
     variable trpw       "/usr/bin/openssl passwd -1"
     variable genpw      "/usr/local/bin/pwgen --numerals 8 1"
@@ -1029,7 +1035,7 @@ modifier les deux lignes du fichier \texttt {./pktcl/auth.tcl}~:
 pour refléter la localisation des commandes~:
 
 \begin {itemize}
-    \item \texttt {trpw}, pour chiffrer un mot de passe
+    \item \texttt {openssl}, pour chiffrer un mot de passe
 	(voir~\ref {openssl}, page~\pageref {openssl})
     \item \texttt {pwgen}, pour générer un nouveau mot de passe
 	(voir~\ref {pwgen}, page~\pageref {pwgen})
@@ -1155,6 +1161,7 @@ Pour vérifier si tout s'est bien passé, vous pouvez utiliser
 les tables) et \verb|\q| (sortir)~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 $ psql auth
 auth=# \dt
@@ -1207,6 +1214,7 @@ utiliser «~\verb|psql|~» pour consulter ce qui a été mis dans la
 base~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 $ psql auth
 auth=# \encoding latin9
@@ -1244,6 +1252,7 @@ Si vous perdez votre mot de passe, vous pouvez le regénérer simplement
 avec la commande \texttt {psql}~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 $ psql auth
 auth=# UPDATE utilisateurs SET password = 'xxxx' WHERE login = 'pda' ;
@@ -1447,6 +1456,7 @@ jour sauvegardé.  Voici, pour exemple, une ligne de \texttt {crontab}
 possible (voir fichier \texttt {./pgauth/expl/crontab.auth})~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 30 22 * * * $HOME/expl/quotidien
 \end{verbatim}
@@ -1541,6 +1551,7 @@ les tables) et \verb|\q| (sortir)~:
 
 
 \begin {quote}
+\small
 \begin {verbatim}
 $ psql dns dns
 dns=# \dt
@@ -1758,6 +1769,7 @@ Ce script est sans doute un des plus complexes. Il crée~:
 	Par exemple~:
 
 	\begin {quote}
+	\small
 \begin {verbatim}
 sysadm pda jean
 lma    marcel
@@ -1778,6 +1790,7 @@ lma    marcel
 	contenant des entrées de la forme~:
 
 	\begin {quote}
+	\small
 \begin {verbatim}
 nom=LMA
 subnet=172.16.11.0
@@ -2084,6 +2097,7 @@ pourrez vérifier si l'installation s'est bien passée. Par exemple, vous
 pouvez utiliser «~\verb|psql|~» pour vérifier quelques tables~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 $ psql dns dns
 dns=# \encoding latin9
@@ -2335,6 +2349,7 @@ jusqu'au lendemain.} modifications par jour), avec une entrée de
 la forme~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 #
 # La crontab de l'utilisateur "bind"
@@ -2438,6 +2453,7 @@ Le script \texttt {mkroutages} est conçu pour être lancé par \texttt
 entrée de la forme~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 #
 # La crontab de "root"
@@ -2506,6 +2522,7 @@ L'exemple de configuration ci-dessous repose sur l'utilisation du
 serveur DHCP de l'ISC\footnote {\htmlurl {http://www.isc.org/}}.
 
 \begin {quote}
+\small
 \begin {verbatim}
 log-facility local2 ;    # logs distincts des autres démons
 authoritative ;
@@ -2544,10 +2561,11 @@ quelques éléments pour
 
 \titreD {Activation du relayage DHCP sur Juniper}
 
-Pour activer le relayage sur un routeur Juniper (avec JunOS 6.4), vous
-devez saisir les lignes suivantes dans la configuration~:
+Pour activer le relayage sur un routeur Juniper, vous devez saisir
+les lignes suivantes dans la configuration~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 forwarding-options {
   helpers {
@@ -2574,7 +2592,19 @@ ne sont pas filtrés.
 
 \titreD {Activation du relayage DHCP sur Cisco}
 
-Partie à rédiger.
+Pour activer le relayage sur un routeur Cisco, vous devez saisir
+les lignes suivantes dans la configuration, au niveau de l'interface
+sur laquelle sont diffusées les requêtes DHCP/BOOTP~:
+
+\cbstart%1.4
+\begin {quote}
+\small
+\begin {verbatim}
+interface FastEthernet0/0
+  ip helper-address 130.79.200.2
+\end{verbatim}
+\end {quote}
+\cbend%1.4
 
 
 \titreD {Activation du relayage DHCP sur des PC}
@@ -2645,6 +2675,7 @@ Le script \texttt {mkdhcp} est conçu pour être lancé par \texttt
 entrée de la forme~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 #
 # La crontab de "root"
@@ -2803,6 +2834,7 @@ jour sauvegardé. Par exemple, voici un exemple de \texttt {crontab}
 utilisé (voir fichier \texttt {./expl/crontab.dns})~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 40 22 * * * $HOME/expl/quotidien
 \end{verbatim}
@@ -2818,6 +2850,7 @@ sauvegarde toutes les heures~; celle-ci peut par exemple être lancée
 par \texttt {cron}~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 #
 # Sauvegarde toutes les heures ouvrées du lundi au vendredi
@@ -3178,6 +3211,7 @@ RR supplémentaires pour la ou les zones correspondantes. Par exemple,
 sur Osiris, nous utilisions~:
 
 \begin {quote}
+\small
 \begin {verbatim}
 %NOM%	IN	MX	10 ns1.u-strasbg.fr.
 %NOM%	IN	MX	10 ns2.u-strasbg.fr.
@@ -3499,7 +3533,7 @@ précédente sont~:
 	\begin {itemize}
 	    \item lors de l'édition des plages DHCP, les valeurs par
 		défaut n'étaient pas prises en compte,
-	    \item suppression d'une uerreur de syntaxe dans une
+	    \item suppression d'une erreur de syntaxe dans une
 		portion de code très rarement utilisée du script
 		\texttt {traiteajout},
 	    \item il y avait un cas non traité dans la vérification
