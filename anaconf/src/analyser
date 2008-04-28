@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.4
 
 #
-# $Id: analyser,v 1.5 2007-07-17 12:55:39 pda Exp $
+# $Id: analyser,v 1.6 2008-04-28 19:31:58 pda Exp $
 #
 # Analyse un fichier de configuration d'un équipement réseau
 # et renvoie la modélisation de cet équipement sous forme de
@@ -99,6 +99,8 @@ proc parse-desc {desc _linkname _statname _descname _msg} {
 	    }
 	}
 	set descname [string trim "[string trim $p1] [string trim $p2]"]
+    } elseif {[regexp {^".*"$} $desc bidon linkname p1]} {
+	set msg "description must not be quoted"
     } elseif {[regexp {^(\S+)(\s+.*)?$} $desc bidon linkname p1]} {
 	set descname [string trim $p1]
     } else {
