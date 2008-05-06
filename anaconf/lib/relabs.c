@@ -1,5 +1,5 @@
 /*
- * $Id: relabs.c,v 1.4 2007-06-27 15:03:35 pda Exp $
+ * $Id: relabs.c,v 1.5 2008-05-06 19:55:30 pda Exp $
  */
 
 #include "graph.h"
@@ -56,6 +56,7 @@ void rel_to_abs (MOBJ *graph [])
 	RELTOABS (eqtab [i].type, strtab) ;
 	RELTOABS (eqtab [i].model, strtab) ;
 	RELTOABS (eqtab [i].snmp, strtab) ;
+	RELTOABS (eqtab [i].location, strtab) ;
 	RELTOABS (eqtab [i].next, eqtab) ;
     }
 

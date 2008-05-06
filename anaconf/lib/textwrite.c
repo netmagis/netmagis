@@ -1,5 +1,5 @@
 /*
- * $Id: textwrite.c,v 1.6 2007-06-27 15:03:35 pda Exp $
+ * $Id: textwrite.c,v 1.7 2008-05-06 19:55:30 pda Exp $
  */
 
 #include "graph.h"
@@ -27,11 +27,12 @@ static void text_write_eq (FILE *fp)
 	selected = MK_ISSELECTED (n) || MK_ISSELECTED (eq) ;
 	if (selected && ! MK_ISSET (eq, MK_PRINTED))
 	{
-	    fprintf (fp, "eq %s type %s model %s snmp %s\n",
+	    fprintf (fp, "eq %s type %s model %s snmp %s location %s\n",
 				eq->name,
 				eq->type,
 				eq->model,
-				(eq->snmp == NULL ? "-" : eq->snmp)
+				(eq->snmp == NULL ? "-" : eq->snmp),
+				(eq->location == NULL ? "-" : eq->location)
 			    ) ;
 	    MK_SET (eq, MK_PRINTED) ;
 	}

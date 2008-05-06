@@ -1,5 +1,5 @@
 /*
- * $Id: graph.h,v 1.7 2007-06-27 15:03:35 pda Exp $
+ * $Id: graph.h,v 1.8 2008-05-06 19:55:30 pda Exp $
  */
 
 /*
@@ -11,6 +11,7 @@
  *   2004/06/22 : pda/jean : design
  *   2006/05/26 : pda/jean : collect points
  *   2007/06/15 : pda/jean : local vlan descriptions
+ *   2008/05/06 : pda      : equipement location
  */
 
 /******************************************************************************
@@ -378,6 +379,7 @@ struct eq
     char *type ;
     char *model ;
     char *snmp ;
+    char *location ;
 
     int mark ;				/* used by drawl2 */
 
@@ -477,6 +479,7 @@ struct graphhdr
 #define	VERSION2	2
 #define	VERSION3	3
 #define	VERSION4	4		/* lvlan */
+#define	VERSION5	5		/* equipement location */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

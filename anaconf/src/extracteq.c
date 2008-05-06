@@ -1,5 +1,5 @@
 /*
- * $Id: extracteq.c,v 1.7 2007-01-16 09:51:43 pda Exp $
+ * $Id: extracteq.c,v 1.8 2008-05-06 19:55:30 pda Exp $
  */
 
 #include "graph.h"
@@ -8,7 +8,7 @@
 Example of output format
 
 
-eq crc-cc1 cisco/WS-C4506
+eq crc-cc1 cisco/WS-C4506 45464748
 iface GigaEthernet0/1 <M123 ou ->  <Ether ou Trunk> {X / L33 crc-rc1 ge-0/0/0}
     {0 {} <ip> ...} {7 <vlan-desc-en-hexa> 130.79.....} ...
 <all ifaces>
@@ -23,7 +23,9 @@ Output routines
 
 void output_eq (FILE *fp, struct eq *eq)
 {
-    fprintf (fp, "eq %s %s %s\n", eq->name, eq->type, eq->model) ;
+    fprintf (fp, "eq %s %s %s %s\n", eq->name, eq->type, eq->model,
+			    (eq->location == NULL ? "-" : eq->location)
+		) ;
 }
 
 void output_iface (FILE *fp, struct node *n)

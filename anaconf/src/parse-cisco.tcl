@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.11 2008-02-07 15:24:45 pda Exp $
+# $Id: parse-cisco.tcl,v 1.12 2008-05-06 19:55:30 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -317,6 +317,7 @@ array set cisco_kwtab {
     shutdown				{CALL cisco-parse-shutdown}
     snmp-server				NEXT
     snmp-server-community		{CALL cisco-parse-snmp-community}
+    snmp-server-location		{CALL cisco-parse-snmp-location}
     encapsulation			NEXT
     encapsulation-dot1Q			{CALL cisco-parse-encapsulation-dot1q}
     bridge-group			{CALL cisco-parse-bridge-group}
@@ -934,6 +935,33 @@ proc cisco-parse-snmp-community {active line tab idx} {
 }
 
 #
+# Entrée :
+#   - line = <localisation> <blah blah>
+#   - idx = eq!<eqname>
+# Remplit :
+#   - tab(eq!<nom eq>!location) {<localisation> ...}
+#
+# Historique
+#   2008/05/06 : pda      : conception
+#
+
+proc cisco-parse-snmp-location {active line tab idx} {
+    upvar $tab t
+
+    set error 0
+    if {[parse-location $line location blablah msg]} then {
+	if {! [string equal $location ""]} then {
+	    set t($idx!location) [list $location $blablah]
+	}
+    } else {
+	cisco-warning "$idx: $msg ($line)"
+	set error 1
+    }
+
+    return $error
+}
+
+#
 #
 # Entrée :
 #   - line = "<bg-id> [ ... ]"
@@ -1168,7 +1196,13 @@ proc cisco-post-process {model fdout eq tab} {
     } else {
 	set c "-"
     }
-    puts $fdout "eq $eq type cisco model $model snmp $c"
+    if {[info exists t(eq!$eq!location)]} then {
+	# XXX : on ne prend que la partie reconnue <...>
+	set l [lindex $t(eq!$eq!location) 0]
+    } else {
+	set l "-"
+    }
+    puts $fdout "eq $eq type cisco model $model snmp $c location $l"
 
     #
     # Sortir tous les vlans locaux

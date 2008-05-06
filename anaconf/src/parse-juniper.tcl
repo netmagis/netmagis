@@ -1,5 +1,5 @@
 #
-# $Id: parse-juniper.tcl,v 1.6 2007-09-12 13:42:40 jean Exp $
+# $Id: parse-juniper.tcl,v 1.7 2008-05-06 19:55:30 pda Exp $
 #
 # Package d'analyse de fichiers de configuration JunOS
 #
@@ -835,6 +835,7 @@ proc juniper-parse-route-entry {conf tab idx} {
 #
 # Historique :
 #   2006/06/01 : pda/jean : conception
+#   2008/05/06 : pda      : ajout location
 #
 
 proc juniper-parse-snmp {conf tab idx} {
@@ -842,6 +843,7 @@ proc juniper-parse-snmp {conf tab idx} {
 
     array set kwtab {
 	community	{2	juniper-parse-snmp-community}
+	location	{2	juniper-parse-snmp-location}
 	*		{1	ERROR}
     }
 
@@ -866,6 +868,32 @@ proc juniper-parse-snmp-community {conf tab idx} {
     return 0
 }
 
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - tab(eq!<eqname>!location) {<location> <blablah> }
+#
+# Historique :
+#   2008/05/06 : pda      : conception
+#
+
+proc juniper-parse-snmp-location {conf tab idx} {
+    upvar $tab t
+
+    set error 0
+    set line [lindex $conf 1]
+    if {[parse-location $line location blablah msg]} then {
+	if {! [string equal $location ""]} then {
+	    set t($idx!location) [list $location $blablah]
+	}
+    } else {
+	juniper-warning "$idx: $msg ($line)"
+	set error 1
+    }
+
+    return $error
+}
 
 
 ###############################################################################
@@ -910,7 +938,13 @@ proc juniper-post-process {model fdout eq tab} {
     } else {
 	set c "-"
     }
-    puts $fdout "eq $eq type juniper model $model snmp $c"
+    if {[info exists t(eq!$eq!location)]} then {
+	# XXX : on ne prend que la partie reconnue <...>
+	set l [lindex $t(eq!$eq!location) 0]
+    } else {
+	set l "-"
+    }
+    puts $fdout "eq $eq type juniper model $model snmp $c location $l"
 
     #
     # Chercher tous les liens. Pour cela, parcourir la liste

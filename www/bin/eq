@@ -16,6 +16,7 @@
 #   2007/01/04 : pda      : ajout du paramètre uti
 #   2007/01/11 : pda      : mutualisation initialisation
 #   2007/01/11 : pda      : substitution possible d'un uid
+#   2008/05/06 : pda      : ajout localisation
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -198,7 +199,11 @@ proc main {} {
 			set nomeq  [lindex $ligne 1]
 			set type   [lindex $ligne 2]
 			set modele [lindex $ligne 3]
+			set location [lindex $ligne 4]
 			set titre "Équipement $nomeq $type $modele"
+			if {! [string equal $location "-"]} then {
+			    append titre " (localisation $location)"
+			}
 		    }
 		    iface {
 			set if [lindex $ligne 1]

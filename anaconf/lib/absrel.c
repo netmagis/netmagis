@@ -1,5 +1,5 @@
 /*
- * $Id: absrel.c,v 1.5 2007-06-27 15:03:35 pda Exp $
+ * $Id: absrel.c,v 1.6 2008-05-06 19:55:30 pda Exp $
  */
 
 #include "graph.h"
@@ -59,6 +59,7 @@ void abs_to_rel (MOBJ *graph [])
 	ABSTOREL (eqtab [i].type, strtab) ;
 	ABSTOREL (eqtab [i].model, strtab) ;
 	ABSTOREL (eqtab [i].snmp, strtab) ;
+	ABSTOREL (eqtab [i].location, strtab) ;
 	ABSTOREL (eqtab [i].next, eqtab) ;
     }
 

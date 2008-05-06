@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.5 2007-06-27 15:03:35 pda Exp $
+ * $Id: textread.c,v 1.6 2008-05-06 19:55:30 pda Exp $
  */
 
 #include "graph.h"
@@ -486,12 +486,14 @@ static void process_eq (char *tab [0], int ntab)
     char *eqtype ;
     char *eqmodel ;
     char *eqsnmp ;
+    char *eqlocation ;
     struct attrtab *attrtab ;			/* head of attribute table */
     struct attrvallist *av ;
     static struct attrcheck eqattr [] = {
 	{ "type", 1, 1},
 	{ "model", 1, 1},
 	{ "snmp", 1, 1},
+	{ "location", 1, 1},
 	{ NULL, 0, 0}
     } ;
 
@@ -552,11 +554,23 @@ static void process_eq (char *tab [0], int ntab)
 	exit (1) ;
     }
 
+    av = attr_get_vallist (attrtab, "snmp") ;
+    if (av != NULL)
+	eqlocation = attr_get_val (av) ;
+    else
+    {
+	inconsistency ("Should not happen : 'eq %s' without location", eqname) ;
+	exit (1) ;
+    }
+
     eq->type = symtab_to_name (symtab_get (eqtype)) ;
     eq->model = symtab_to_name (symtab_get (eqmodel)) ;
     if (strcmp (eqsnmp, "-") == 0)
 	eq->snmp = NULL ;
     else eq->snmp = symtab_to_name (symtab_get (eqsnmp)) ;
+    if (strcmp (eqlocation, "-") == 0)
+	eq->location = NULL ;
+    else eq->location = symtab_to_name (symtab_get (eqlocation)) ;
 
     attr_close (attrtab) ;
 }
