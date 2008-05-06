@@ -1,10 +1,10 @@
 /*
- * $Id: binwrite.c,v 1.3 2007-06-27 15:03:35 pda Exp $
+ * $Id: binwrite.c,v 1.4 2008-05-06 22:08:55 pda Exp $
  */
 
 #include "graph.h"
 
-static struct graphhdr hdr = { MAGIC, VERSION4, NB_MOBJ, } ;
+static struct graphhdr hdr = { MAGIC, VERSION5, NB_MOBJ, } ;
 
 void bin_write (FILE *fpout, MOBJ *graph [])
 {

@@ -196,12 +196,13 @@ proc main {} {
 	    while {[gets $fd ligne] > -1} {
 		switch [lindex $ligne 0] {
 		    eq {
-			set nomeq  [lindex $ligne 1]
-			set type   [lindex $ligne 2]
-			set modele [lindex $ligne 3]
+			set nomeq    [lindex $ligne 1]
+			set type     [lindex $ligne 2]
+			set modele   [lindex $ligne 3]
 			set location [lindex $ligne 4]
 			set titre "Équipement $nomeq $type $modele"
 			if {! [string equal $location "-"]} then {
+			    set location [binary format H* $location]
 			    append titre " (localisation $location)"
 			}
 		    }

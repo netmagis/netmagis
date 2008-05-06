@@ -1,5 +1,5 @@
 /*
- * $Id: dupgraph.c,v 1.5 2007-06-27 15:03:35 pda Exp $
+ * $Id: dupgraph.c,v 1.6 2008-05-06 22:08:55 pda Exp $
  */
 
 #include "graph.h"
@@ -362,6 +362,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	TRANSPTR (neweqtab [i].type) ;
 	TRANSPTR (neweqtab [i].model) ;
 	TRANSPTR (neweqtab [i].snmp) ;
+	TRANSPTR (neweqtab [i].location) ;
 	TRANSPTR (neweqtab [i].next) ;
     }
     TRANSHEAD (new [EQMOBJIDX], old [EQMOBJIDX]) ;

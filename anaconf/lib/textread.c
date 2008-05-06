@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.6 2008-05-06 19:55:30 pda Exp $
+ * $Id: textread.c,v 1.7 2008-05-06 22:08:55 pda Exp $
  */
 
 #include "graph.h"
@@ -227,6 +227,7 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	{ "snmp",	1, },
 	{ "incoming",	1, },
 	{ "declared",	1, },
+	{ "location",	1, },
     } ;
 
 
@@ -493,7 +494,7 @@ static void process_eq (char *tab [0], int ntab)
 	{ "type", 1, 1},
 	{ "model", 1, 1},
 	{ "snmp", 1, 1},
-	{ "location", 1, 1},
+	{ "location", 0, 1},
 	{ NULL, 0, 0}
     } ;
 
@@ -554,7 +555,7 @@ static void process_eq (char *tab [0], int ntab)
 	exit (1) ;
     }
 
-    av = attr_get_vallist (attrtab, "snmp") ;
+    av = attr_get_vallist (attrtab, "location") ;
     if (av != NULL)
 	eqlocation = attr_get_val (av) ;
     else
