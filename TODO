@@ -1,4 +1,4 @@
-$Id: TODO,v 1.4 2008-05-06 14:39:04 pda Exp $
+$Id: TODO,v 1.5 2008-05-06 15:52:37 pda Exp $
 
 Analyse de la conf des points d'accès
     - les SSID supportés et leur caractéristiques (open ou auth)
@@ -92,6 +92,8 @@ www/bin/wifi
 	    idX = <ptmetro> [+ <ptmetro> [+ <ptmetro> ...]]
 	    [ legendeX = <legende> ]
 		=> si pas indiquée : légende par défaut déterminée par idris
+	    [ taille = <petit|moyen|grand> ]
+		=> si pas indiquée : moyen
 	    debut = <date en format time_t>
 	    fin = <date en format time_t>
 
