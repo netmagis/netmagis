@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.12 2008-05-06 19:55:30 pda Exp $
+# $Id: parse-cisco.tcl,v 1.13 2008-05-19 20:59:39 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -322,6 +322,15 @@ array set cisco_kwtab {
     encapsulation-dot1Q			{CALL cisco-parse-encapsulation-dot1q}
     bridge-group			{CALL cisco-parse-bridge-group}
     router				{CALL cisco-parse-router}
+    dot11				NEXT
+    dot11-ssid				{CALL cisco-parse-dot11}
+    authentication			NEXT
+    authentication-open			{CALL cisco-parse-auth}
+    ssid				{CALL cisco-parse-iface-ssid}
+    channel				{CALL cisco-parse-iface-channel}
+    power				NEXT
+    power-local				NEXT
+    power-local-ofdm			{CALL cisco-parse-iface-power}
 }
 
 #
@@ -415,42 +424,49 @@ proc cisco-parse-line {line tab idx} {
 #   - tab(eq!<nom eq>!lvlan) {<id> ... <id>}
 #   - tab(eq!<nom eq>!lvlan!lastid) <id>
 #   - tab(eq!<nom eq>!lvlan!<id>!desc) ""  (sera remplacé par parse-vlan-name)
+# ou alors
+#   - tab(eq!<nom eq>!ssid!<ssid>!vlan) <id>
 #
 # Historique
 #   2007/06/15 : pda/jean : conception
+#   2008/05/19 : pda      : ajout cas ssid
 #
 
 proc cisco-parse-vlan {active line tab idx} {
     upvar $tab t
 
-    set idx "$idx!lvlan"
-
     set line [string trim $line]
-    if {[regexp {^[-,0-9]+$} $line]} then {
-	set lvlan [split $line ","]
-	foreach lv $lvlan {
-	    set rg [split $lv "-"]
-	    switch [llength $rg] {
-		1 {
-		    set v [lindex $rg 0]
-		    set min $v
-		    set max $v
+    if {[info exists t($idx!current!ssid)]} then {
+	set ssid $t($idx!current!ssid)
+	set t($idx!ssid!$ssid!vlan) $line
+    } else {
+	set idx "$idx!lvlan"
+	if {[regexp {^[-,0-9]+$} $line]} then {
+	    set lvlan [split $line ","]
+	    foreach lv $lvlan {
+		set rg [split $lv "-"]
+		switch [llength $rg] {
+		    1 {
+			set v [lindex $rg 0]
+			set min $v
+			set max $v
+		    }
+		    2 {
+			set min [lindex $rg 0]
+			set max [lindex $rg 1]
+		    }
+		    default {
+			cisco-warning "Unrecognized vlan range ($vr) on $ifname"
+			set error 1
+			break
+		    }
 		}
-		2 {
-		    set min [lindex $rg 0]
-		    set max [lindex $rg 1]
+		for {set v $min} {$v <= $max} {incr v} {
+		    lappend t($idx) $v
+		    set t($idx!$v!desc) ""
 		}
-		default {
-		    cisco-warning "Unrecognized vlan range ($vr) on $ifname"
-		    set error 1
-		    break
-		}
+		set t($idx!lastid) $max
 	    }
-	    for {set v $min} {$v <= $max} {incr v} {
-		lappend t($idx) $v
-		set t($idx!$v!desc) ""
-	    }
-	    set t($idx!lastid) $max
 	}
     }
 
@@ -500,6 +516,8 @@ proc cisco-parse-vlan-name {active line tab idx} {
 #   - tab(eq!<nom eq>!if!<physifname>!subif) { <ifname> ...} (liste des sous-i/f)
 # Remplit dans tous les cas :
 #   - tab(eq!<nom eq>!current!if) <ifname>
+# Vide :
+#   - tab(eq!<nom eq>!current!ssid)
 #
 # Historique
 #   2004/03/26 : pda/jean : conception
@@ -539,6 +557,7 @@ proc cisco-parse-interface {active line tab idx} {
     #
 
     set t($idx!current!if) $ifname
+    catch {unset t($idx!current!ssid)}
 
     return $error
 }
@@ -909,6 +928,76 @@ proc cisco-parse-mode {active line tab idx} {
     return $error
 }
 
+#
+# Entrée :
+#   - line = <ssid>
+#   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!current!if) <ifname>
+# Remplit :
+#   - tab(eq!<nom eq>!if!<ifname>!ssid) {<ssid> ...}
+#
+# Historique
+#   2008/05/19 : pda      : conception
+#
+
+proc cisco-parse-iface-ssid {active line tab idx} {
+    upvar $tab t
+
+    set error 0
+    set line [string trim $line]
+    set ifname $t($idx!current!if)
+    lappend t($idx!if!$ifname!ssid) $line
+    if {! [info exists t($idx!ssid!$line!auth)]} then {
+	cisco-warning "Inconsistent SSID ($line)"
+	set error 1
+    }
+
+    return $error
+}
+
+#
+# Entrée :
+#   - line = <ssid>
+#   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!current!if) <ifname>
+# Remplit :
+#   - tab(eq!<nom eq>!if!<ifname>!channel) <channel>
+#
+# Historique
+#   2008/05/19 : pda      : conception
+#
+
+proc cisco-parse-iface-channel {active line tab idx} {
+    upvar $tab t
+
+    set line [string trim $line]
+    set ifname $t($idx!current!if)
+    set t($idx!if!$ifname!channel) $line
+
+    return 0
+}
+
+#
+# Entrée :
+#   - line = <power>
+#   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!current!if) <ifname>
+# Remplit :
+#   - tab(eq!<nom eq>!if!<ifname>!power) <power>
+#
+# Historique
+#   2008/05/19 : pda      : conception
+#
+
+proc cisco-parse-iface-power {active line tab idx} {
+    upvar $tab t
+
+    set line [string trim $line]
+    set ifname $t($idx!current!if)
+    set t($idx!if!$ifname!power) $line
+
+    return 0
+}
 
 #
 # Entrée :
@@ -1009,6 +1098,63 @@ proc cisco-parse-router {active line tab idx} {
 
     set t($idx!current!if) ""
     set t($idx!current!physif) ""
+    return 0
+}
+
+#
+# Entrée :
+#   - line = <ssid>
+#   - idx = eq!<eqname>
+# Remplit
+#   - tab(eq!<nom eq>!ssid) {<ssid> ... <ssid>}
+#   - tab(eq!<nom eq>!current!ssid) <ssid>
+#   - tab(eq!<nom eq>!ssid!<ssid>!auth) "open"
+# Vide
+#   - tab(eq!<nom eq>!current!if)
+#
+# Historique
+#   2008/05/19 : pda      : conception
+#
+
+proc cisco-parse-dot11 {active line tab idx} {
+    upvar $tab t
+
+    set ssid [string trim $line]
+
+    lappend t($idx!ssid) $ssid
+    set t($idx!ssid!$ssid!auth) "open"
+
+    set t($idx!current!ssid) $ssid
+    catch {unset t($idx!current!if)}
+
+    return 0
+}
+
+#
+# Entrée :
+#   - line = <> ou "eap..."
+#   - idx = eq!<eqname>
+# Remplit
+#   - tab(eq!<nom eq>!ssid!<ssid>!auth) "open"|"auth"
+#
+# Historique
+#   2008/05/19 : pda      : conception
+#
+
+proc cisco-parse-auth {active line tab idx} {
+    upvar $tab t
+
+    set line [string trim $line]
+    if {[info exists t($idx!current!ssid)]} then {
+	set ssid $t($idx!current!ssid)
+	if {[string equal $line ""]} then {
+	    set mode "open"
+	} else {
+	    set mode "auth"
+	}
+	set t($idx!ssid!$ssid!auth) $mode
+    }
+
     return 0
 }
 
@@ -1174,6 +1320,7 @@ proc cisco-sanitize {model eq tab} {
 #   2006/08/21 : pda/pegon : liens X+X+X+...+X deviennent X
 #   2007/06/15 : pda/jean  : description des vlans locaux
 #   2007/07/12 : pda       : debut conception sous-interface (ios router)
+#   2008/05/19 : pda       : ajout paramètres radio
 #
 
 proc cisco-post-process {model fdout eq tab} {
@@ -1280,22 +1427,37 @@ proc cisco-post-process {model fdout eq tab} {
 
     foreach iface $t(eq!$eq!if) {
 	if {! [regexp {^(Vlan|Tunnel|Null|Loopback|BVI)([0-9]+)$} $iface bidon type vlan]} then {
-	    if {[info exists t(eq!$eq!if!$iface!link!name)]} then {
-		set linkname $t(eq!$eq!if!$iface!link!name)
-		set linktype $t(eq!$eq!if!$iface!link!type)
-		set statname $t(eq!$eq!if!$iface!link!stat)
+	    set ifx "eq!$eq!if!$iface"
+	    if {[info exists t($ifx!link!name)]} then {
+		set linkname $t($ifx!link!name)
+		set linktype $t($ifx!link!type)
+		set statname $t($ifx!link!stat)
 		if {[string equal $statname ""]} then {
 		    set statname "-"
 		}
-		set descname $t(eq!$eq!if!$iface!link!desc)
+		set descname $t($ifx!link!desc)
 		if {[string equal $descname ""]} then {
 		    set descname "-"
 		}
 
-		set nodeL1 [newnode]
-		puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname"
+		set radio ""
+		if {[info exists t($ifx!channel)] && [info exists t($ifx!power)]} then {
+		    append radio " radio"
+		    append radio " $t($ifx!channel)"
+		    append radio " $t($ifx!power)"
 
-		set t(eq!$eq!if!$iface!node) $nodeL1
+		}
+		if {[info exists t($ifx!ssid)]} then {
+		    foreach ssid $t($ifx!ssid) {
+			set authmode $t(eq!$eq!ssid!$ssid!auth)
+			append radio " ssid $ssid $authmode"
+		    }
+		}
+
+		set nodeL1 [newnode]
+		puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $descname$radio"
+
+		set t($ifx!node) $nodeL1
 	    }
 	}
     }

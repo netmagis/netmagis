@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.7 2008-05-06 22:08:55 pda Exp $
+ * $Id: textread.c,v 1.8 2008-05-19 20:59:39 pda Exp $
  */
 
 #include "graph.h"
@@ -228,6 +228,8 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	{ "incoming",	1, },
 	{ "declared",	1, },
 	{ "location",	1, },
+	{ "radio",	2, },
+	{ "ssid",	2, },
     } ;
 
 
@@ -577,7 +579,7 @@ static void process_eq (char *tab [0], int ntab)
 }
 
 
-#define MAXKWBYTYPE 10
+#define MAXKWBYTYPE 20
 
 static void process_node (char *tab [], int ntab)
 {
@@ -604,6 +606,8 @@ static void process_node (char *tab [], int ntab)
 		        { "link", 1, 1 },
 		        { "stat", 1, 1 },
 		        { "encap", 1, 1 },
+		        { "radio", 0, 1 },
+		        { "ssid", 0, 1000000 },
 			{ "net", 0, 1000000 },
 		        { NULL, 0 },
 	       },
