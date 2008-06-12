@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.9 2008-06-12 09:58:11 pda Exp $
+# $Id: webapp.tcl,v 1.10 2008-06-12 10:00:31 pda Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -475,7 +475,6 @@ proc ::webapp::helem {tag content args} {
 	append r "</$tag>"
     }
     return $r
-}
 }
 
 #
