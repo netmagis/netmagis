@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.11 2008-06-12 19:37:43 pda Exp $
+# $Id: webapp.tcl,v 1.12 2008-06-12 19:52:06 pda Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -114,12 +114,12 @@ namespace eval webapp {
 	      if (ul.style.display == "none") {
 		// dérouler
 		ul.style.display = "block" ;
-		img.src = "img/minus.gif" ;
+		img.src = "%TREEIMAGES%/tree-minus.gif" ;
 		img.alt = "[-]" ;
 	      } else {
 		// enrouler
 		ul.style.display = "none" ;
-		img.src = "img/plus.gif" ;
+		img.src = "%TREEIMAGES%/tree-plus.gif" ;
 		img.alt = "[+]" ;
 	      }
 	      return 'OK' ;
@@ -146,7 +146,7 @@ namespace eval webapp {
 	}
 
 	#%ID% ul {
-	  background: url("%TREEIMAGES%/line.gif") repeat-y 0px 0px;
+	  background: url("%TREEIMAGES%/tree-line.gif") repeat-y 0px 0px;
 	  padding-left: 24px;
 	}
 
@@ -811,6 +811,7 @@ proc ::webapp::interactive-tree {id tree} {
     #
 
     set head1 $::webapp::treejs
+    regsub -all "%TREEIMAGES%" $head1 $::webapp::treeimages head1
 
     #
     # Générer le code HTML de l'en-tête spécifique à cet arbre
@@ -862,15 +863,15 @@ proc ::webapp::interactive-tree-rec {level tree last} {
 
     if {$nchildren == 0} then {
 	if {$last} then {
-	    set file "$::webapp::treeimages/joinbotton.gif"
+	    set file "$::webapp::treeimages/tree-joinbotton.gif"
 	} else {
-	    set file "$::webapp::treeimages/join.gif"
+	    set file "$::webapp::treeimages/tree-join.gif"
 	}
 	set img [helem "img" "" src $file]
 	set li [helem "li" "$img\n$root\n"]
     } else {
 	set img [helem "img" "" \
-				"src" "$::webapp::treeimages/plus.gif" \
+				"src" "$::webapp::treeimages/tree-plus.gif" \
 				"alt" "+" \
 				"onclick" "de(this)" \
 				"class" "clic" \
