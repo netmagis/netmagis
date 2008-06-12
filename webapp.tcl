@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.10 2008-06-12 10:00:31 pda Exp $
+# $Id: webapp.tcl,v 1.11 2008-06-12 19:37:43 pda Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -824,7 +824,7 @@ proc ::webapp::interactive-tree {id tree} {
     # Générer le code Javascript du "body onload"
     #
 
-    set onload "javascript:multide('$id'");"
+    set onload "javascript:multide('$id');"
 
     #
     # Générer le code HTML de l'arbre
