@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.8 2008-03-25 16:41:07 pda Exp $
+# $Id: webapp.tcl,v 1.9 2008-06-12 09:58:11 pda Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -23,6 +23,7 @@
 #   2006/08/29 : pda : ajout de import-vars
 #   2007/10/05 : pda/jean : ajout des objets auth et user
 #   2007/10/23 : pda/jean : ajout de l'objet log
+#   2008/06/12 : pda/jean : ajout de interactive-tree et helem
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -33,7 +34,7 @@ package require pgsql ;			# package local
 
 # package require Pgtcl
 
-package provide webapp 1.10
+package provide webapp 1.11
 
 #
 # Candidates à suppression
@@ -44,6 +45,7 @@ namespace eval webapp {
     namespace export log pathinfo user \
 	form-field form-yesno form-bool form-menu form-text form-hidden \
 	hide-parameters file-subst \
+	helem interactive-tree \
 	get-data import-vars valid-email \
 	post-string html-string \
 	call-cgi \
@@ -61,6 +63,173 @@ namespace eval webapp {
     variable pdflatex	/usr/local/bin/pdflatex
     variable debuginfos {}
     variable sendmail	{/usr/sbin/sendmail -t}
+
+    # element HTML (4.01) sans tag de fermeture
+    # cf http://www.w3.org/TR/1999/REC-html401-19991224/index/elements.html
+    variable noendtags	{area base basefont br col frame hr img input isindex
+				link meta param}
+    # url des images (pour la génération d'arbre interactif)
+    # relativement à la racine du serveur web
+    variable treeimages	/images
+
+    # code Javascript de l'arbre interactif
+    variable treejs {
+	<script type="text/javascript">
+	  <!--
+	    // fonction pour initialiser la vue de l'arborescence
+	    // id : id de l'ul de l'arborescence à initialiser
+	    // disp : "none" ou "block"
+	    // Cette fonction masque tous les ul compris sous l'id,
+	    // puis affiche juste l'ul correspondant à l'id
+	    function multide(id, disp) {
+	      var x = document.getElementById (id) ;
+	      // vérification de cohérence
+	      if (! x || x.nodeName != "UL")
+		return 'PAS UN UL' ;
+	      tab = x.getElementsByTagName ("UL") ;
+	      for (var i = 0 ; i < tab.length ; i++) {
+		tab [i].style.display = disp ;
+	      }
+	      x.style.display = "block" ;
+	    }
+
+	    // fonction de déroulement/enroulement
+	    // img : un objet de type IMG (élément HTML) dont on
+	    //   veut dérouler/enrouler la liste associée
+	    //	 Typiquement, img est l'image "+" ou "-", et
+	    //   on veut dérouler/enrouler le ul qui suit
+	    //   dans la liste des frères
+	    function de(img) {
+	      var ul ;
+	      // vérification de cohérence
+	      if (img.nodeName != "IMG")
+		return 'PAS UN IMG'
+	      // parcourir tous les frères pour trouver l'UL qui doit suivre
+	      ul = img ;
+	      while (ul && ul.nodeName != "UL")
+		ul = ul.nextSibling ;
+	      if (! ul || ul.nodeName != "UL")
+		return 'PAS UN UL'
+	      // dérouler ou enrouler ?
+	      if (ul.style.display == "none") {
+		// dérouler
+		ul.style.display = "block" ;
+		img.src = "img/minus.gif" ;
+		img.alt = "[-]" ;
+	      } else {
+		// enrouler
+		ul.style.display = "none" ;
+		img.src = "img/plus.gif" ;
+		img.alt = "[+]" ;
+	      }
+	      return 'OK' ;
+	    }
+	  //-->
+	</script>
+    }
+
+    # CSS de l'arbre interactif (avec un trou correspondant à l'id)
+    variable treecss {
+	<style type="text/css">
+	<!--
+
+	#%ID% li {
+	  list-style-type: none;
+	  list-style-image: none;
+	  padding: 0;
+	  margin: 0;
+	  /* border: 1px solid red; */
+	}
+
+	#%ID% img.clic {
+	  cursor: pointer;
+	}
+
+	#%ID% ul {
+	  background: url("%TREEIMAGES%/line.gif") repeat-y 0px 0px;
+	  padding-left: 24px;
+	}
+
+	#%ID% ul.last {
+	  background: none;
+	}
+
+	#%ID% a {
+	  padding: 0;
+	  margin: 0;
+	  /* border: 1px solid green; */
+	}
+
+	#%ID% img {
+	  padding: 0;
+	  margin: 0;
+	  /* border: 1px solid blue; */
+	}
+
+	/*******************
+	#arborescence {
+		padding: 5px;
+		background-color: #CCC;
+		width: 250px;
+	}
+
+	#arborescence ul#racine {
+		margin: 0px;
+		padding: 0px;
+		/* margin-left: -20px; */
+	}
+
+	#arborescence ul, #arborescence li {
+		text-align: left;
+		list-style-type: none;
+		list-style-image: none;
+	}
+
+	#arborescence li {
+		position: relative;
+		margin: 0;
+		padding: 0;
+		/* margin-left: -10px; */
+	}
+
+	#arborescence ul.niv1 ul {
+		background: url("images/arborescence/line.gif") repeat-y 0px 0px;
+		/* display: none; */
+	}
+
+	#arborescence li ul.active {
+		display: block;
+	}
+
+	#arborescence li ul.last {
+		background: none;
+	}
+
+	#arborescence img {
+		position: relative;
+		width: 19px;
+		height: 20px;
+		margin: 0;
+		margin-bottom: -4px;
+		margin-right: 2px;
+		padding: 0px;
+		display: inline;
+		border: none;
+	}
+
+	#arborescence img.clic {
+		cursor: pointer;
+	}
+
+	#arborescence a {
+		color: #000;
+		text-decoration: underline;
+		border: none;
+	}
+	*******************/
+	-->
+	</style>
+    }
 }
 
 ##############################################################################
@@ -272,6 +441,41 @@ proc ::webapp::generer-menu {var taille multiple liste lsel} {
     append html "</SELECT>"
 
     return $html
+}
+
+#
+# Génération de balises HTML conformes à HTML 4.01
+#
+# Entrée :
+#   - paramètres :
+#	- tag : balise HTML ("img", "ul", "a", etc.)
+#	- content : texte associé au tag (entre les balises)
+#	- args : attributs de la balise
+# Sortie :
+#   - code HTML généré
+#
+# Exemple :
+#   puts [helem "a" "cliquer ici" "href" "http://www.tcl.tk"]
+#
+# Historique :
+#   2008/06/12 : pda/jean/lauce : intégration webapp
+#
+
+proc ::webapp::helem {tag content args} {
+    set tag [string tolower $tag]
+    set r "<$tag"
+    foreach {attr value} $args {
+	set attr [string tolower $attr]
+	append r " $attr=\"$value\""
+    }
+    append r ">$content"
+    # ne mettre une fermeture que pour les tags qui ne figurent pas
+    # dans la liste des tags sans fermeture
+    if {[lsearch $::webapp::noendtags $tag] == -1} then {
+	append r "</$tag>"
+    }
+    return $r
+}
 }
 
 #
@@ -554,6 +758,146 @@ proc ::webapp::form-hidden {var defval} {
     set v [::webapp::html-string $defval]
     return "<INPUT TYPE=HIDDEN NAME=\"$var\" VALUE=\"$v\">"
 }
+
+#
+# Génération d'un arbre interactif (avec Javascript)
+#
+# Entrée :
+#   - paramètres :
+#	- id : id de l'élément racine (tag html "ul") de l'arbre généré
+#	- tree : arbre, au format :
+#		{<code-html> <arbre-fils> <arbre-fils> ... <arbre-fils>}
+#	    chaque <arbre-fils> pouvant être lui-même un arbre.
+#	    Si un arbre n'a pas de racine unique, le <code-html> de la
+#	    racine est vide, et chaque fils constitue une racine.
+# Sortie :
+#   - valeur de retour : liste contenant les éléments suivants :
+#		{head1 head2 onload html}
+#	où :
+#	- head1 : code HTML prêt à être inséré dans l'en-tête HTML
+#		de la page. Ce code est toujours le même quel que
+#		soit l'arbre (fonctions Javascript)
+#	- head2 : code HTML prêt à être inséré dans l'en-tête HTML
+#		de la page. Ce code est spécifique à l'arbre
+#		(spécifications CSS dépendant de l'id)
+#	- onload : code Javascript pour l'état initial (enroulé ou déroulé)
+#		initial de l'arbre
+#	- html : code HTML pour l'arbre lui-même
+#
+# Exemple d'arbre :
+#	{/
+#	    {/bin
+#		ls sh rm mkdir rmdir }
+#	    {/etc passwd
+#		{/etc/mail sendmail.cf submit.cf}}
+#	    {/usr
+#		{/usr/include
+#		    {/usr/include/sys types.h}
+#		    stdio.h}
+#		{/usr/bin ...}
+#	    }
+#	}
+#
+# Historique :
+#   2008/06/12 : pda/jean : conception
+#
+
+proc ::webapp::interactive-tree {id tree} {
+    set root      [lindex $tree 0]
+    set children  [lreplace $tree 0 0]
+    set nchildren [llength $children]
+
+    #
+    # Générer le code HTML non spécifique de l'en-tête
+    #
+
+    set head1 $::webapp::treejs
+
+    #
+    # Générer le code HTML de l'en-tête spécifique à cet arbre
+    #
+
+    set head2 $::webapp::treecss
+    regsub -all "%ID%" $head2 $id head2
+    regsub -all "%TREEIMAGES%" $head2 $::webapp::treeimages head2
+
+    #
+    # Générer le code Javascript du "body onload"
+    #
+
+    set onload "javascript:multide('$id'");"
+
+    #
+    # Générer le code HTML de l'arbre
+    #
+
+    if {$root eq ""} then {
+	set li ""
+	for {set i 0} {$i < $nchildren} {incr i} {
+	    set lastnext [expr {$i == $nchildren-1}]
+	    append li [::webapp::interactive-tree-rec 1 \
+						      [lindex $children $i] \
+						      $lastnext \
+						      ]
+	    append li "\n"
+	}
+    } else {
+	set li [::webapp::interactive-tree-rec 1 $tree 1]
+    }
+    set ul [helem ul $li "id" $id]
+
+    #
+    # Résultat final : assemblage des quatre éléments
+    #
+
+    return [list $head1 $head2 $onload $ul]
+}
+
+# level : profondeur (1 .. n) de l'arbre en cours
+# tree : arbre en cours
+# last : 1 si l'arbre est le dernier des fils de l'arbre père
+proc ::webapp::interactive-tree-rec {level tree last} {
+    set root [lindex $tree 0]
+    set children [lreplace $tree 0 0]
+    set nchildren [llength $children]
+
+    if {$nchildren == 0} then {
+	if {$last} then {
+	    set file "$::webapp::treeimages/joinbotton.gif"
+	} else {
+	    set file "$::webapp::treeimages/join.gif"
+	}
+	set img [helem "img" "" src $file]
+	set li [helem "li" "$img\n$root\n"]
+    } else {
+	set img [helem "img" "" \
+				"src" "$::webapp::treeimages/plus.gif" \
+				"alt" "+" \
+				"onclick" "de(this)" \
+				"class" "clic" \
+			    ]
+
+	set li ""
+	for {set i 0} {$i < $nchildren} {incr i} {
+	    set lastnext [expr {$i == $nchildren-1}]
+	    append li [::webapp::interactive-tree-rec [expr $level+1] \
+						      [lindex $children $i] \
+						      $lastnext \
+						      ]
+	    append li "\n"
+	}
+	set class "niv$level"
+	if {$last} then {
+	    append class " last"
+	}
+	set ul [helem "ul" $li "class" $class]
+
+	set li [helem "li" "$img\n$root\n$ul\n"]
+    }
+
+    return $li
+}
+
 
 ##############################################################################
 # Cacher des paramètres dans une liste de champs INPUT HIDDEN
