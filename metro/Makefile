@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.2 2008-06-13 09:26:05 pda Exp $
+# $Id: Makefile,v 1.3 2008-06-13 09:28:15 pda Exp $
 #
 # Le Makefile pour installer tous les constituants du serveur
 # de métrologie.
@@ -16,7 +16,8 @@ LIBMETRO  = /local/obj999/lib/libmetro.pl
 PASSWDMAC = pas-fou-non-?
 PASSWDDNS = pas-fou-non-?
 
-USER	  = www:obj999
+WWWUSER	  = www:obj999
+BINUSER   = obj999:obj999
 
 SUBST	= \
 	-e 's|%CONF%|$(CONF)|' \
@@ -42,6 +43,6 @@ install-metro:
 		$$i > $(DESTMETRO)/$$i \
 	    && chmod +x $(DESTMETRO)/$$i ; \
 	done )
-	chown -R $(USER) $(DESTMETRO)
+	chown -R $(WWWUSER) $(DESTMETRO)
 
 install-bin:
