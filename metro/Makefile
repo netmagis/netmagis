@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.5 2008-06-13 09:46:08 pda Exp $
+# $Id: Makefile,v 1.6 2008-06-13 10:01:06 pda Exp $
 #
 # Le Makefile pour installer tous les constituants du serveur
 # de métrologie.
@@ -28,21 +28,24 @@ SUBST	= \
 install: install-idris install-metro install-bin
 
 install-idris:
-	[ -d $(DESTIDRIS) ] || mkdir $(DESTIDRIS)
-	[ -d $(DESTIDRIS)/bin ] || mkdir $(DESTIDRIS)/bin
-	(cd metro ; for i in bin/[a-z]* ; do \
+	for d in $(DESTIDRIS) $(DESTIDRIS)/bin $(DESTIDRIS)/images ; do \
+	    [ -d $$d ] || mkdir $$d ; \
+	done
+	(cd www ; for i in bin/[a-z]* ; do \
 	    sed \
 		-e "s:%CONF%:$(CONF):" \
 		-e "s:%LIBMETRO%:$(LIBMETRO):" \
 		$$i > $(DESTIDRIS)/$$i ; \
 	done )
 	chmod +x $(DESTIDRIS)/bin/*
+	cp www/images/*.* $(DESTIDRIS)/images
 	chown -R $(WWWUSER) $(DESTIDRIS)
 
 
 install-metro:
-	[ -d $(DESTMETRO) ] || mkdir $(DESTMETRO)
-	[ -d $(DESTMETRO)/bin ] || mkdir $(DESTMETRO)/bin
+	for d in $(DESTMETRO) $(DESTMETRO)/bin ; do \
+	    [ -d $$d ] || mkdir $$d ; \
+	done
 	(cd metro ; for i in bin/[a-z]* ; do \
 	    sed \
 		-e "s:%CONF%:$(CONF):" \

@@ -17,8 +17,8 @@ $interval="300";
 $log = $ARGV[0];
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "/local/obj999/etc/obj999.conf";
-require "/local/obj999/bin/fonctions-bases-rrd";
+our $conf_file = "%CONF%";
+require "%LIBMETRO%";
 #
 $server_hostname = read_conf_file($conf_file,"WWW_IDRIS_HOSTNAME");
 $www_root = read_conf_file($conf_file,"WWW_IDRIS_DIR_ROOT");

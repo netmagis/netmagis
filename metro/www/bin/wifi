@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: wifi,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# $Id: wifi,v 1.2 2008-06-13 10:01:06 pda Exp $
 #
 #
 # ###################################################################
@@ -16,8 +16,8 @@ use CGI qw/:standard/;
 use CGI::Pretty qw( :html3 );
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "/local/obj999/etc/obj999.conf";
-require "/local/obj999/bin/fonctions-bases-rrd";
+our $conf_file = "%CONF%";
+require "%LIBMETRO%";
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($conf_file);
 
