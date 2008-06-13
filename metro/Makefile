@@ -1,11 +1,12 @@
 #
-# $Id: Makefile,v 1.4 2008-06-13 09:40:37 pda Exp $
+# $Id: Makefile,v 1.5 2008-06-13 09:46:08 pda Exp $
 #
 # Le Makefile pour installer tous les constituants du serveur
 # de métrologie.
 #
 # Historique
 #   2008/05/06 : boggia/pda : conception
+#   2008/06/13 : boggia/pda : debut de la rédaction effective
 #
 
 DESTIDRIS = /local/services/www-idris
@@ -49,6 +50,6 @@ install-metro:
 		$$i > $(DESTMETRO)/$$i ; \
 	done )
 	chmod +x $(DESTMETRO)/bin/*
-	chown -R $(WWWUSER) $(DESTMETRO)
+	chown $(WWWUSER) $(DESTMETRO) $(DESTMETRO)/bin $(DESTMETRO)/bin/*
 
 install-bin:
