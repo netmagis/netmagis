@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: genere-rrdgraph,v 1.2 2008-06-13 10:16:50 pda Exp $
+# $Id: genere-rrdgraph,v 1.3 2008-06-13 10:21:14 pda Exp $
 # ###################################################################
 # boggia : Creation : 21/05/08
 #
@@ -47,7 +47,6 @@ my $legendes = $ARGV[6];
 # fichier de configuration principal et chargement des fonctions de base
 my $conf_file = "%CONF%";
 require "%LIBMETRO%";
-require "/local/obj999/bin/fonctions-graph-rrd";
 #
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($conf_file);
@@ -56,6 +55,8 @@ our %global_var = read_global_conf_file($conf_file);
 my $rep_modeles = $global_var{"DIR_BIN_MODELS"};
 # fichiers dans lesquels se trouvent la liste des graphiques existants avec le modele a utiliser
 our @files_rrd_graph = split(/,/,$global_var{"FILES_RRD_GRAPHS"});
+
+require $global_var{"LIBGRAPH%};
 
 if($id ne "-")
 {
