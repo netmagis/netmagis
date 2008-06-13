@@ -1,0 +1,203 @@
+#!/usr/bin/perl
+# $Id: calc-util-ap,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# ###################################################################
+#  boggia : Creation : 25/03/08
+#
+# Permet de faire des statistiques sur l'utilisation des AP
+# genere dans dans chaque repertoire de rapport d'utilisation
+# de chaque AP les fichiers :
+#	- derniere_mesure
+#	- utilisation_AP
+#
+
+# fichier de configuration principal et chargement des focntions de base
+$conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/bin/fonctions-bases-rrd";
+#
+
+$dir_ap_logs = read_conf_file("$conf_file","DIR_AP_REPORT");
+
+#teste si le repertoire existe deja
+opendir(DIR_RAPPORTS,$dir_ap_logs);
+@liste_ap=grep(!/^\.\.?$/, readdir DIR_RAPPORTS);
+closedir(DIR_RAPPORTS);
+
+foreach $elem (@liste_ap)
+{
+	if($elem=~m/-ap[0-9]+$/)
+	{	
+		open(LOG,"$dir_ap_logs/$elem/assoc.log");
+		($derniere_ligne) = reverse <LOG>;
+		close(LOG);
+		chomp $derniere_ligne;
+		#print "derniere ligne = $derniere_ligne\n";
+
+
+		@liste_assoc = split(/\|/,$derniere_ligne);
+		$t_liste_assoc = @liste_assoc;
+
+		#$date = `date "+%Y-%m-%d %H:%M"`;
+		#chomp $date;
+		chomp $liste_assoc[0];
+		($date_liste,$heure_liste)=(split(/\s+/,$liste_assoc[0]))[0,1];
+
+		open(LAST,"$dir_ap_logs/$elem/derniere_mesure");
+		$dernier_log = <LAST>;
+		chomp $dernier_log;
+		$cumul_assoc = <LAST>;
+		chomp $cumul_assoc;
+		$cumul_temps = <LAST>;
+		chomp $cumul_temps;
+		close(LAST);
+	
+		@liste_assoc_dernier = split(/\|/,$dernier_log);
+		$t_liste_assoc_dernier = @liste_assoc_dernier;
+		
+		($date_dernierlog)=(split(/\s+/,$dernier_log))[0];
+		#si la derniere mesure correspond a l'heure qu'il est
+		print "$liste_assoc_dernier[0] eq $liste_assoc[0]\n";
+		if($liste_assoc_dernier[0] ne $liste_assoc[0])
+		{
+			print "ok\n";
+			#Si la mesure précédente date du même jour
+			if($date_dernierlog eq $date_liste)
+			{
+				print "meme jour\n";
+				%associations = ();
+                                %temps = ();
+				
+				for($i=1;$i<$t_liste_assoc;$i++)
+                                {
+					($mac,$ssid)=(split(/\s+/,$liste_assoc[$i]))[1,2];
+					if(defined $associations{$ssid})
+                                        {
+                                                $associations{$ssid} = $associations{$ssid} + 1;
+                                        }
+                                        else
+                                        {
+                                                $associations{$ssid} = 1;
+                                        }
+                                        if(defined $temps{$ssid})
+                                        {
+                                                $temps{$ssid} = $temps{$ssid} + 5;
+                                        }
+                                        else
+                                        {
+						$temps{$ssid} = 5;
+                                        }
+					if($dernier_log ne "")
+					{
+						$t_liste_assoc_dernier = @liste_assoc_dernier;
+						for($j=1;$j<$t_liste_assoc_dernier;$j++)
+						{
+							($mac_dernier,$ssid_dernier)=(split(/\s+/,$liste_assoc_dernier[$j]))[1,2];
+							if($mac_dernier eq $mac && $ssid_dernier eq $ssid)
+							{
+								$associations{$ssid} = $associations{$ssid} - 1;
+							}
+						}
+					}
+				}
+				@liste_cumul_assoc = split(/;/,$cumul_assoc);
+				$t_liste_cumul_assoc = @liste_cumul_assoc;
+	
+				for($i=1;$i<$t_liste_cumul_assoc;$i++)
+				{
+					($ss,$nb)=(split(/=/,$liste_cumul_assoc[$i]))[0,1];
+					if(defined $associations{$ss})
+                                        {
+                                                $associations{$ss} = $associations{$ss} + $nb;
+                                        }
+                                        else
+                                        {
+                                                $associations{$ss} = $nb;
+                                        }
+	
+				}
+
+				@liste_cumul_temps = split(/;/,$cumul_temps);
+				$t_liste_cumul_temps = @liste_cumul_temps;
+			
+				for($i=1;$i<$t_liste_cumul_temps;$i++)
+                                {
+					($ss,$tmp)=(split(/=/,$liste_cumul_temps[$i]))[0,1];
+					if(defined $temps{$ss})
+                                        {
+                                                $temps{$ss} = $temps{$ss} + $tmp;
+                                        }
+                                        else
+                                        {
+                                                $temps{$ss} = $tmp;
+                                        }
+                                }
+
+				open(LAST,">$dir_ap_logs/$elem/derniere_mesure");
+                                print LAST "$derniere_ligne\n";
+                                print LAST "cumul_assoc";
+                                foreach $ssid (keys %associations)
+                                {
+                                        print LAST ";$ssid=$associations{$ssid}";
+                                }
+                                print LAST "\ncumul_temps";
+                                foreach $ssid (keys %temps)
+                                {
+                                        print LAST ";$ssid=$temps{$ssid}";
+                                }
+
+			}
+			else
+			#changement de jour
+			{
+				#Ecriture dans le recapitulation annuel
+				open(INPUT, "$dir_ap_logs/$elem/utilisation_ap");
+				
+				open(RECAP,">$dir_ap_logs/$elem/utilisation_ap.tmp");
+				print RECAP "$date_dernierlog | $cumul_assoc | $cumul_temps\n";
+				while($line = <INPUT>)
+				{
+					print RECAP "$line";
+				}
+				close(RECAP);
+				close(INPUT);
+
+				system("cp $dir_ap_logs/$elem/utilisation_ap.tmp $dir_ap_logs/$elem/utilisation_ap");
+				unlink "$dir_ap_logs/$elem/utilisation_ap.tmp";
+				%associations = ();
+				%temps = ();
+				for($i=1;$i<$t_liste_assoc;$i++)
+				{
+					($mac,$ssid)=(split(/\s+/,$liste_assoc[$i]))[1,2];
+					if(defined $associations{$ssid})
+					{
+						$associations{$ssid} = $associations{$ssid} + 1;
+					}
+					else
+					{
+						$associations{$ssid} = 1;
+					}
+					if(defined $temps{$ssid})
+					{
+						$temps{$ssid} = $temps{$ssid} + 5;
+					}
+					else
+                                        {
+						$temps{$ssid} = 5;
+					}
+				}
+				open(LAST,">$dir_ap_logs/$elem/derniere_mesure");
+				print LAST "$derniere_ligne\n";
+				print LAST "cumul_assoc";
+				foreach $ssid (keys %associations)
+				{
+					print LAST ";$ssid=$associations{$ssid}";
+				}
+				print LAST "\ncumul_temps";
+				foreach $ssid (keys %temps)
+				{
+					print LAST ";$ssid=$temps{$ssid}";
+				}
+				
+			}
+		}
+	}
+}

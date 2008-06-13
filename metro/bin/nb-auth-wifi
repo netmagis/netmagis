@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+
+# $Id: nb-auth-wifi,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+#
+#
+# ###################################################################
+# boggia : Creation : 27/03/08
+#
+#
+# Interroge la base de données des connexions sur le reseau WIFI 
+# et en déduit le nombre de connectés
+# renvoie le nombre de connexions simultanées sur le portail captif 
+# et en 802.1X
+#
+use DBI;
+
+$rrd_file = $ARGV[0];
+
+# fichier de configuration principal et chargement des focntions de base
+my $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/bin/fonctions-bases-rrd";
+
+$rep_etc = read_conf_file("$conf_file","DIR_ETC");
+$rep_bin = read_conf_file("$conf_file","DIR_BIN");
+
+require "$rep_bin/fonctions-bases-rrd";
+
+# arguments de connexion a la base PSQL
+$dbhost = read_conf_file("$conf_file","MAC_PSQL_SERVER");
+$dbname = read_conf_file("$conf_file","PG_DATABASE_MAC");
+$dbuser = read_conf_file("$conf_file","PG_USER_MAC");
+$dbpass = read_conf_file("$conf_file","PG_PASSWORD_MAC");
+
+$db =  DBI->connect("dbi:Pg:dbname=$dbname;host=$dbhost", $dbuser, $dbpass )
+        or print STDERR "$DBI::errstr";
+
+$sql = "SELECT COUNT(*) FROM sessionauthaccess,authaccess WHERE close=0 AND sessionauthaccess.idauthaccess = authaccess.idauthaccess AND ideq=(SELECT ideq FROM eq WHERE nom='ash.u-strasbg.fr');";
+$cursor = $db->prepare($sql);
+$cursor->execute;
+$nb_ash = $cursor->fetchrow;
+
+$sql = "SELECT COUNT(*) FROM sessionauthaccess,authaccess WHERE close=0 AND sessionauthaccess.idauthaccess = authaccess.idauthaccess AND ideq=(SELECT ideq FROM eq WHERE nom='nephtys.u-strasbg.fr');";
+$cursor = $db->prepare($sql);
+$cursor->execute;
+$nb_nephtys = $cursor->fetchrow;
+
+$time = time;
+$modulo_time = $time % 300;
+$time = $time - $modulo_time;
+
+#print "nb_ash = $nb_ash\n nb_nephtys = $nb_nephtys\n";
+system("/usr/local/bin/rrdtool update $rrd_file $time:$nb_nephtys:$nb_ash");
+#print "/usr/local/bin/rrdtool update $rrd_file $time:$nb_connect[0]\n";

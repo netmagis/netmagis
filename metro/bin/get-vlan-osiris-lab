@@ -1,0 +1,175 @@
+#! /usr/local/bin/perl
+
+# $Id: get-vlan-osiris-lab,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# ###################################################################
+# boggia : Creation : 25/03/08
+#
+# Interrogation des equipements WiFi qui se trouvent dans le fichier
+# liste_sites_wifi, et recuperation du vlan associé au SSID 
+# Osiris-lab.
+# Le fichier list_access_vlans est genere en sortie
+
+use Net::SNMP;
+use Socket;
+use Net::hostent;
+use strict;
+
+# fichier de configuration principal et chargement des focntions de base
+my $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/bin/fonctions-bases-rrd";
+#
+
+my $community = read_conf_file("$conf_file","O2_SNMP_COMMUNITY");
+my $ssid = read_conf_file("$conf_file","SSID_WIFI_LAB");
+
+# liste des points d'accès
+my $ap_list = read_conf_file("$conf_file","FILE_LISTE_SITES_WIFI");
+# fichier généré en sortie avec les numeros de vlans d'accès
+my $file_out = read_conf_file("$conf_file","FILE_LIST_ACCESS_VLANS");
+
+my %vlan_by_ap;
+my %ipaddr_by_ap;
+
+# chargement de la liste des AP en exploitation
+# exemple : api-batd:api-batd-ap1;api-batd-ap2:ULP
+open(FILE,$ap_list);
+while(<FILE>)
+{
+    chomp;
+    my ($liste_ap_site) = (split(/:/,$_))[1];
+    my @liste_ap = split(/;/,$liste_ap_site);
+
+    my $i;
+    for($i=0;$i<@liste_ap;$i++)
+    {
+	$vlan_by_ap{$liste_ap[$i]} = -1;
+	$ipaddr_by_ap{$liste_ap[$i]} = -1;
+    }    
+}
+close(FILE);
+
+# chargement du fichier de correspondance precedant
+open(FILE,$file_out);
+while(<FILE>)
+{
+    chomp;
+    my ($hostname,$ipaddr,$vlan) = split(/;/,$_);
+
+    if(defined($vlan_by_ap{$hostname}))
+    {
+	$vlan_by_ap{$hostname} = $vlan;
+	$ipaddr_by_ap{$hostname} = $ipaddr;
+    }
+}
+close(FILE);
+
+# mise a jour du fichier de correspondance en interrogeant les AP
+foreach my $key (keys(%vlan_by_ap))
+{
+    my $ip = get_host_by_name($key);
+    if($ip)
+    {
+	$ipaddr_by_ap{$key} = $ip;
+    }
+
+    my $access_vlan = get_vlan_by_ssid($ipaddr_by_ap{$key},$community,$ssid);
+    if($access_vlan > 0)
+    {
+	$vlan_by_ap{$key} = $access_vlan;
+    }    
+}
+
+# reecriture du fichier de correspondance
+open(FILE,">$file_out");
+print FILE "#\n# Fichier des NAS et des vlans d'acces associes\n#\n\n";
+foreach my $key (sort keys(%vlan_by_ap))
+{
+    print FILE "$ipaddr_by_ap{$key}\t$vlan_by_ap{$key}\t# $key\n";
+}
+close(FILE);
+
+
+
+
+# fonction
+# cherche adresse IP correspondante un nom
+sub get_host_by_name
+{
+    my ($hostname) = @_;
+    
+    my $h;
+    if($h = gethostbyname($hostname))
+    {
+	my $ip_addr = inet_ntoa($h->addr);
+	
+	return $ip_addr;
+    }
+    else
+    {
+	return 0;
+    }
+}
+
+
+# fonction qui recupere le numero du vlan d'acces 
+# sur une borne pour le wifi lab
+sub get_vlan_by_ssid
+{
+	my ($host,$community,$ssid) = @_;
+
+	my $vlan = 0;
+
+	my ($session, $error) = Net::SNMP->session(
+   		-hostname  	=> $host,
+   		-community 	=> $community,
+   		-port      	=> 161,
+   		-timeout   	=> 3,
+   		-version     => "2c" 
+	);
+
+	if (!defined($session)) {
+   		printf("ERROR: %s.\n", $error);
+		return $vlan;
+	}
+
+	# oid pour lister les SSID avec le numéro d'index de l'interface
+	my $oidSsid = '1.3.6.1.4.1.9.9.272.1.1.1.6.1.2';
+	my $index_iface;
+
+	my $result = $session->get_table($oidSsid);
+
+	if (!defined($result)) 
+	{
+   		printf("ERROR: %s.\n", $session->error);
+	}
+	else
+	{
+   		foreach my $key (keys %{$result}) 
+   		{
+			if($result->{$key} eq $ssid)
+			{
+				my @decomp_oid = split(/\./,$key);
+				$index_iface = $decomp_oid[@decomp_oid - 1];
+   				#print "$key = $result->{$key}, index = $index_iface\n"
+			}
+   		}
+
+   		my $oidVlan = "1.3.6.1.4.1.9.9.272.1.1.1.7.1.4.1.$index_iface.1";
+
+   		$result = $session->get_request($oidVlan);
+
+   		if (!defined($result)) 
+   		{
+   			printf("ERROR: %s.\n", $session->error);
+   		}
+   		else
+   		{	
+			$vlan = $result->{$oidVlan};
+   		}
+	}	
+
+	$session->close;
+
+	return $vlan;
+}
+exit 0;

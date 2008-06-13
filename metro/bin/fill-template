@@ -1,0 +1,81 @@
+#!/usr/local/bin/perl
+
+# $Id: fill-template,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# ###################################################################
+# saillard : Creation : 29/04/08
+#
+# Remplace des variables définies dans un template par leurs valeurs
+# déclarées dans /local/obj999/etc/obj999.conf 
+
+use strict;
+
+# On récupère le nombre d'arguments
+my $nb_args=@ARGV;
+
+if($nb_args==0 || $nb_args>2 || ($nb_args==1) && ($ARGV[0]=~ /-h/ || $ARGV[0]=~ /--help/)) 
+{
+   print "usage : fill_template <fichier_template> <fichier_rempli>\n";
+   exit 0;
+}
+
+# Fichier de configuration principal et chargement des focntions de base
+my $conf_file = "/local/obj999/etc/obj999.conf";
+
+# Template du fichier de conf à remplir avec les bonnes valeurs
+my $template_file = $ARGV[0];
+
+# Template rempli (on vire l'extension ".template") 
+my $template_filled_file;
+if($nb_args==1)
+{
+   $template_filled_file = $ARGV[0]; 
+   $template_filled_file =~ s/.template/.new/;
+}
+# Ou on utilise le fichier pointé par le 2ème paramètre donné à l'appel du script
+else
+{
+   $template_filled_file = $ARGV[1];
+}
+
+require "/local/obj999/bin/fonctions-bases-rrd";
+
+chomp $template_file;
+
+if ( -f $template_file && -R $template_file)
+{
+   open(TEMPLATE,"$template_file");
+}
+else
+{
+   print "Erreur :\n";
+   print "le fichier $template_file n'existe pas ou les droits en lecture ne sont pas autorisés\n";
+   exit 0;
+} 
+
+if ( -W $template_filled_file)
+{
+   open(FILLED_TEMPLATE,">$template_filled_file");
+}
+else
+{
+   print "Erreur :\n";
+   print "Écriture impossible dans le fichier $template_filled_file\n";
+   exit 0;
+}
+
+
+
+my $line;
+
+while($line=<TEMPLATE>)
+{
+   if ($line =~ /<([^>]*)>/)
+   {
+      my $variable=$1;
+      my $contenu_variable = read_conf_file("$conf_file",$variable);
+      $line =~ s/<$variable>/$contenu_variable/;
+   }
+   print FILLED_TEMPLATE "$line";
+}
+close(TEMPLATE);
+close(FILLED_TEMPLATE);

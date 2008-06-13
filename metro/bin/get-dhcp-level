@@ -1,0 +1,153 @@
+#!/usr/bin/perl
+
+# $Id: get-dhcp-level,v 1.1.1.1 2008-06-13 08:55:50 pda Exp $
+#
+#
+# ###################################################################
+# boggia : Creation : 27/03/08
+#
+# Programme de creation et de remplissage de bases rrdtools contenant
+# en temps réel le nombres d'adresses IP distribuées par le serveur
+# DHCP Osiris pour chaque réseau.
+#
+#
+
+use DBI ;
+use strict ;
+use Socket ;
+
+# fichier de configuration principal et chargement des focntions de base
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/bin/fonctions-bases-rrd";
+#
+
+my $dbname_dns = read_conf_file("$conf_file","PG_DATABASE_DNS");
+my $dbuser_dns = read_conf_file("$conf_file","PG_USER_DNS");
+my $dbhost_dns = read_conf_file("$conf_file","DNS_PSQL_SERVER");
+my $dbpass_dns = read_conf_file("$conf_file","PG_PASSWORD_DNS");
+my $dbname_mac = read_conf_file("$conf_file","PG_DATABASE_MAC");
+my $dbuser_mac = read_conf_file("$conf_file","PG_USER_MAC");
+my $dbhost_mac = read_conf_file("$conf_file","MAC_PSQL_SERVER");
+my $dbpass_mac = read_conf_file("$conf_file","PG_PASSWORD_MAC");
+
+my $dbdns = DBI->connect("dbi:Pg:dbname=$dbname_dns;host=$dbhost_dns","$dbuser_dns","$dbpass_dns")
+	    or die ($DBI::errstr);
+my $dbmac = DBI->connect("dbi:Pg:dbname=$dbname_mac;host=$dbhost_mac","$dbuser_mac","$dbpass_mac")
+	    or die ($DBI::errstr);
+#
+# Pour chaque reseaux faisant du DHCP
+#
+my $cursor = $dbdns->prepare(
+    "SELECT r.nom, r.adr4 FROM reseau r, dr_reseau d
+     WHERE  r.idreseau = d.idreseau
+	    AND d.dhcp = 1
+	    GROUP BY r.nom, r.adr4"
+) ;
+$cursor->execute;
+
+my $nomreseau = ""; my $reseau = "";
+while ( ($nomreseau, $reseau) = $cursor->fetchrow ) {
+
+    #
+    # Recupere tous les intervalles dhcp de ce reseau
+    #
+    my $cursor2 = $dbdns->prepare("SELECT min,max FROM dhcprange
+				WHERE dhcprange.min <<= '$reseau'") ;
+    $cursor2->execute;
+
+    my $min ; my $max ;
+    my $avail = 0 ;
+    while ( ($min, $max) = $cursor2->fetchrow ) {
+	$avail += (ip2number($max) - ip2number($min)) ;
+    }
+    $cursor2 -> finish ;
+
+    if ($avail > 0 ) {
+	#
+	# Récupère le nombre d'adresse attribuées dans ce réseau
+	#
+	my $cursor3 = $dbmac->prepare("SELECT count(*) FROM baildhcp b, sessionbaildhcp s
+					WHERE   b.ip <<= '$reseau'
+					AND s.idbaildhcp = b.idbaildhcp
+					AND s.close = 0") ;
+	$cursor3->execute;
+	my $inuse = 0 ;
+	if ( ($inuse) = $cursor3->fetchrow ) {
+	    #print "ID : ", "dhcp-", $reseau ," |\t";
+	    #print "utilisées : ", $inuse," |\t";
+	    #print "total : ", $avail,"|\t";
+	    #print "(réseau : ", $nomreseau, ")\n";
+
+	    create_or_update_rrd($reseau,$inuse,$avail,$nomreseau);
+	}
+	$cursor3 -> finish ;
+    }
+}
+
+$cursor -> finish ;
+
+exit ;
+
+# Convertit une adresse ipv4 en entier long
+sub ip2number {
+    my $ip = pop(@_) ;
+
+    my $s = "0x" ;
+    my $o ;
+    foreach $o (split (/\./,$ip)) {
+        $s = $s . sprintf ("%02X",$o) ;
+    }
+
+    return hex($s) ;
+}
+
+# fonction qui permet de créer une base RRD Tools 
+# et/ou d'insérer des données
+sub create_or_update_rrd 
+{
+    my ($reseau,$inuse,$avail,$nomreseau) = @_;
+
+    my $fichier_index = read_conf_file("$conf_file","FILE_INDEX_GRAPHS");
+    my $rep_db = read_conf_file("$conf_file","DIR_RRD_DB");
+    my $modele_graphe = read_conf_file("$conf_file","DIR_BIN_MODELS") . "/GaugeDHCPuse";
+    my $id;
+
+    $reseau=~s/\//_/;
+    $id = "dhcp_$reseau";
+
+    #print "Nom de la base : $id\n";
+
+    # creation ou mise a jour d'une base RRD
+    my $nom_fichier_rrd = "$rep_db/DHCP/$id.rrd";
+    if(-e $nom_fichier_rrd)
+    {
+	my $time = time;
+	my $modulo_time = $time % 300;
+	$time = $time - $modulo_time;
+        system("/usr/local/bin/rrdtool update $nom_fichier_rrd $time:$inuse:$avail");
+    }
+    else
+    {
+        system("/usr/local/bin/rrdtool create $nom_fichier_rrd DS:inuse:GAUGE:600:U:U DS:avail:GAUGE:600:U:U RRA:AVERAGE:0.5:1:420480 RRA:MAX:0.5:1:420480"); 
+	
+	# mise à jour du fichier index.graph pour la création du graph
+	open(INDEX,$fichier_index);
+	my $ligne;
+	my $graph_def = 0;
+
+	while($ligne=<INDEX>)
+	{
+	    if($ligne=~m/^$id;/)
+	    {
+		$graph_def = 1;
+	    }
+	}
+	close(INDEX);
+
+	if($graph_def == 0)
+	{
+	    my $ligne_def = "$id;GaugeDHCPuse;1;$nom_fichier_rrd;Baux DHCP : $nomreseau";
+	    system("echo \"$ligne_def\" >> $fichier_index");
+	}
+    }   
+}

@@ -1,0 +1,203 @@
+#!/usr/bin/perl -w 
+
+use strict;
+use Sys::Syslog;                          # Misses setlogsock.
+use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
+use Net::SNMP;
+use SNMP_util;
+use Socket;
+use RRDs;
+use DBI;
+
+our %config = ( 'debug'                 => 1,
+                'defaultdomain'         => 'u-strasbg.fr',
+                'snmp_timeout'          => 4,
+                'conf_file'             => "obj999.conf",
+                'syslog_facility'       => "local0",
+                'logopt'                => ""
+);
+
+
+require "/local/obj999/bin/fonctions-bases-rrd";
+
+$config{'path_root'} = read_conf_file("$config{'conf_file'}","PATH_ROOT");
+$config{'path_etc'} = read_conf_file("$config{'conf_file'}","DIR_ETC");
+$config{'path_bin'} = read_conf_file("$config{'conf_file'}","DIR_BIN");
+$config{'path_var'} = read_conf_file("$config{'conf_file'}","DIR_VAR");
+$config{'path_sondes'} = read_conf_file("$config{'conf_file'}","DIR_BIN_PROBES");
+$config{'path_poll'} = read_conf_file("$config{'conf_file'}","DIR_PROBES");
+$config{'path_rrd_db'} = read_conf_file("$config{'conf_file'}","DIR_RRD_DB");
+$config{'path_syslog'} = read_conf_file("$config{'conf_file'}","DIR_SYSLOG_POLLER");
+$config{'path_rapport_ap'} = read_conf_file("$config{'conf_file'}","DIR_AP_REPORT");
+$config{'path_cache_probes'} = read_conf_file("$config{'conf_file'}","DIR_CACHE_PROBES");
+$config{'dir_lock'} = read_conf_file("$config{'conf_file'}","DIR_LOCK");
+$config{'dir_res_stp'} = read_conf_file("$config{'conf_file'}","DIR_RES_STP");
+# arguments de connexion a la base PSQL
+$config{'PGHOST'} = read_conf_file("$config{'conf_file'}","MAC_PSQL_SERVER");
+$config{'PGDATABASE'} = read_conf_file("$config{'conf_file'}","PG_DATABASE_MAC");
+$config{'PGUSER'} = read_conf_file("$config{'conf_file'}","PG_USER_MAC");
+$config{'PGPASSWORD'} = read_conf_file("$config{'conf_file'}","PG_PASSWORD_MAC");
+# fichiers de cache
+$config{'index_ap_file'} = $config{'path_cache_probes'} . "/interf_ap.txt";
+$config{'index_if64'} = $config{'path_cache_probes'} . "/if64.txt";
+$config{'index_if32'} = $config{'path_cache_probes'} . "/if32.txt";
+$config{'index_disk'} = $config{'path_cache_probes'} . "/disk.txt";
+$config{'index_url'} = $config{'path_cache_probes'} . "/url.txt";
+$config{'fichier_etat'} = $config{'path_var'} . "/wifi/ap_state.txt";
+
+require "$config{'path_sondes'}/sonde-generic-gauge.pl";
+
+our $logopt;
+our $lock_liste_ap = 0;
+our $lock_liste_if64 = 0;
+our $lock_liste_if32 = 0;
+our $lock_liste_disk = 0;
+our $maj_if_ap_file = 0;
+our $maj_if64_file = 0;
+our $maj_if32_file = 0;
+our $maj_disk_file = 0;
+our $maj_url_file = 0;
+
+our %collsess;
+our %liste_ap;
+our %liste_ap_state;
+our @total_activesess = ();
+
+# Creation d'une socket syslog unix
+setlogsock("unix");
+
+# Message des logs demarrage du démon ####################
+writelog("super_poller",$config{'logopt'},"info",
+	"\t #######################################");
+writelog("super_poller",$config{'logopt'},"info",
+	"\t -> START. Demarrage du polling");
+
+
+##########################################################
+# lancement de programmes externes interrogeant les bases
+# PSQL
+#start_foreign_prog();
+
+
+opendir(MAJDIR, $config{'path_poll'});
+our @FICHIERS=grep(!/^\.\.?$/, readdir MAJDIR);
+closedir(MAJDIR);
+
+open(URL,$config{'index_url'});
+our @liste_url=<URL>;
+close(URL);
+
+#$index = 0;
+my $elem;
+my $compteur = 0;
+foreach $elem (@FICHIERS)
+{
+        #print "$elem";
+        if($elem=~m/^majDB/ || $elem=~m/^majMETRO$/)
+        {
+		$compteur += ouvre_fichier_conf($elem);
+        }
+}
+
+writelog("super_poller",$config{'logopt'},"info",
+        "\t -> $compteur sondes");
+
+Net::SNMP->snmp_dispatcher();
+
+##################################################################
+# ecriture des fichiers qui stockent les index snmp des interfaces
+maj_if_files();
+
+writelog("super_poller",$config{'logopt'},"info",
+        "\t #######################################");
+
+
+##################################################################
+# FONCTIONS
+##################################################################
+
+
+##################################################################
+# mise à jour des fichiers contenant les index SNMP des interfaces
+# des équipements connus
+sub maj_if_files
+{
+	my $i;
+	my @fichier;
+	if($maj_url_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/url\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+                writelog("super_poller",$config{'logopt'},"info",
+                        "\t -> REECRITURE DU FICHIER D'INDEX DES JAUGES");
+
+                if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/url.lock");
+                        close(LOCK);
+
+                        my $t_liste_url = @liste_url;
+
+                        open(BD,">$config{'index_url'}");
+
+                        for($i=0;$i<$t_liste_url;$i++)
+                        {
+                                print BD "$liste_url[$i]\n";
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/url.lock";
+                }
+        }
+}
+
+
+###############################################################
+# lecture des fichiers contenant les ordres de polling
+sub ouvre_fichier_conf
+{
+	my ($file) = @_;
+	my ($sonde,$base,$host,$community,$l_param);
+	my $ok = 0;
+
+	open(FILE, "$config{'path_poll'}/$file");
+	
+	while(<FILE>)
+	{
+		if(! /^#/ && ! /^\s+/)
+		{
+		    chomp;
+		    ($sonde,$base,$host,$community,$l_param) = (split(/\s+/,$_))[0,1,2,3,4];
+		    $ok ++;
+
+		    if($sonde=~/get_fast_rep_time/)
+		    {
+			    get_url($base,$host,$community,$l_param,$sonde);
+		    }   
+		    else
+		    {
+			# aucune sonde trouvee, n'a rien fait
+			$ok --;
+		    }
+		}
+	}
+	close(FILE);
+
+	return $ok;
+}
+
+
+###########################################################
+# fonction d'ecriture des messages syslog
+sub writelog
+{
+	my ($program,$logopt,$level,$message) = @_;
+
+#	openlog($program,$logopt,$config{'syslog_facility'});
+#	syslog($level,$message);
+#	closelog();
+}
+

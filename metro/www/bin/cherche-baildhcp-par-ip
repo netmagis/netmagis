@@ -1,0 +1,315 @@
+#!/usr/bin/perl
+
+# $Id: cherche-baildhcp-par-ip,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+#
+#
+# ###################################################################
+# boggia : Creation : 31/03/08
+#
+# page permettant d'afficher les baux DHCP pour une adresse IP
+#
+#
+
+use CGI qw/:standard/;
+use CGI::Pretty qw( :html3 );
+use DBI;
+
+# fichier de configuration principal et chargement des focntions de base
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/bin/fonctions-bases-rrd";
+#
+$server_hostname = read_conf_file($conf_file,"WWW_IDRIS_HOSTNAME");
+$www_root = read_conf_file($conf_file,"WWW_IDRIS_DIR_ROOT");
+$www_bin = read_conf_file($conf_file,"WWW_IDRIS_DIR_BIN");
+$www_img = read_conf_file($conf_file,"WWW_IDRIS_DIR_IMG");
+$www_graph = read_conf_file($conf_file,"WWW_IDRIS_DIR_GRAPHS");
+# repertoire des binaires
+$rep_bin = read_conf_file($conf_file,"DIR_BIN");
+#repertoire dans lequel se trouve la liste des graphiques existants avec le modele a utiliser
+$rep_etc = read_conf_file($conf_file,"DIR_ETC");
+
+# arguments de connexion a la base PSQL
+$dbhost = read_conf_file($conf_file,"MAC_PSQL_SERVER");
+$dbname = read_conf_file($conf_file,"PG_DATABASE_MAC");
+$dbuser = read_conf_file($conf_file,"PG_USER_MAC");
+$dbpass = read_conf_file($conf_file,"PG_PASSWORD_MAC");
+
+@liste_annees = qw(2004 2005 2006 2007 2008);
+@liste_mois = qw(01 02 03 04 05 06 07 08 09 10 11 12);
+@liste_jours = qw(01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31);
+@heures = qw(00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23);
+
+$interval="300";
+
+$log = $ARGV[0];
+
+$defaultdomain="u-strasbg.fr";
+
+# Récupération de l'heure d'aujourd'hui
+$time_fin = time + 3600;
+$time_debut = $time_fin - 2592000;
+($sec_dep,$min_dep,$heure_dep,$jour_dep,$mois_dep,$annee_dep)=localtime($time_debut);
+($sec_fin,$min_fin,$heure_fin,$jour_fin,$mois_fin,$annee_fin)=localtime($time_fin);
+$mois_dep ++;
+$mois_fin ++;
+$annee_dep = $annee_dep + 1900;
+$annee_fin = $annee_fin + 1900;
+
+print header();
+
+if (param(-name=>'go!'))
+{
+	$ip = (param('ip'));
+	$liste_graph = (param('liste_graph'));
+	$heure_dep = (param('heure_dep'));
+        $jour_dep = (param('jour_dep'));
+        $mois_dep = (param('mois_dep'));
+	$annee_dep = (param('annee_dep'));
+	$heure_fin = (param('heure_fin'));
+        $jour_fin = (param('jour_fin'));
+        $mois_fin = (param('mois_fin'));
+        $annee_fin = (param('annee_fin'));
+
+
+	ecrit_formulaire($ip,$heure_dep,$jour_dep,$mois_dep,$annee_dep,$heure_fin,$jour_fin,$mois_fin,$annee_fin);
+}
+else
+{
+	$ip = (param('ip'));
+
+        ecrit_formulaire($ip,$heure_dep,$jour_dep,$mois_dep,$annee_dep,$heure_fin,$jour_fin,$mois_fin,$annee_fin);
+
+}
+
+
+sub ecrit_formulaire {
+        ($ip,$heure_dep,$jour_dep,$mois_dep,$annee_dep,$heure_fin,$jour_fin,$mois_fin,$annee_fin)=@_;
+	
+	print "<HTML><HEAD><TITLE>cherche bail DHCP par IP</TITLE>
+        <META HTTP-EQUIV=\"Cache-Control\" content=\"no-cache\">
+        <META HTTP-EQUIV=\"Pragma\" CONTENT=\"no-cache\">
+        </HEAD>
+        <BODY>
+        <form>
+        chercher les baux DHCP pour <b><u>l'adresse IP</u></b> suivante : <INPUT TYPE=\"TEXT\" NAME=\"ip\" SIZE=\"20\" VALUE=$ip>
+        <br>
+	<br>
+        de :<br>
+        <select name=heure_dep>";
+                foreach $e (@heures)
+                {
+                        if($heure_dep == $e)
+                        {
+                                print "<option selected>$e";
+                                $heure_dep = "$e";
+                        }
+                        else
+                        {
+                                print "<option>$e";
+                        }
+                }
+        print "</select>heures, le&nbsp;
+        <select name=jour_dep>";
+                foreach $e (@liste_jours)
+                {
+                        if($jour_dep == $e)
+                        {
+                                print "<option selected>$e";
+                                $jour_dep = "$e";
+                        }
+                        else
+                        {
+                                print "<option>$e";
+                        }
+                }
+        print "</select>
+        <select name=mois_dep>";
+                foreach $e (@liste_mois)
+                {
+                        if($mois_dep == $e)
+                        {
+                                print "<option selected>$e";
+                                $mois_dep ="$e";
+                        }
+                        else
+                        {
+                                print "<option>$e";
+                        }
+                }
+        print "</select>
+	<select name=annee_dep>";
+                foreach $e (@liste_annees)
+                {
+                        if($annee_dep == $e)
+                        {
+                                print "<option selected>$e";
+                                $annee_dep = "$e";
+                        }
+                        else
+                        {
+                                print "<option>$e";
+                        }
+                }
+        print "</select>
+        <br>
+        à :<br>
+        <select name=heure_fin>";
+                foreach $e (@heures)
+                {
+                        if($heure_fin == $e)
+                        {
+                                print "<option selected>$e";
+                                $heure_fin = "$e";
+                        }
+                        else
+                        {
+                                print "<option>$e";
+                        }
+                }
+        print "</select>heures, le&nbsp;
+        <select name=jour_fin>";
+                foreach $e (@liste_jours)
+                {
+                        if($jour_fin == $e)
+                        {
+                                print "<option selected>$e";
+                                $jour_fin = "$e";
+                        }
+                        else
+                        {
+                                print "<option>$e";
+                        }
+                }
+        print "</select>
+	<select name=mois_fin>";
+                foreach $e (@liste_mois)
+                {
+                        if($mois_fin == $e)
+                        {
+                                print "<option selected>$e";
+                                $mois_fin = "$e";
+                        }
+                        else
+                        {
+                                print "<option>$e";
+                        }
+                }
+        print "</select>
+        <select name=annee_fin>";
+                foreach $e (@liste_annees)
+                {
+                        if($annee_fin == $e)
+                        {
+                                print "<option selected>$e";
+                                $annee_fin = "$e";
+                        }
+                        else
+                        {
+                                print "<option>$e";
+                        }
+                }
+        print "</select>
+        <br><br>
+        <input type=submit name=\"go!\" value=\"go!\">
+        </form>";
+
+	if($ip=~/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/)
+	{
+	    $db =  DBI->connect("dbi:Pg:dbname=$dbname;host=$dbhost", $dbuser, $dbpass )
+	    or print STDERR "$DBI::errstr";
+
+	    $debut = "$annee_dep-$mois_dep-$jour_dep $heure_dep:00:00";
+	    $fin = "$annee_fin-$mois_fin-$jour_fin $heure_fin:00:00";
+
+	    $sql = "SELECT baildhcp.mac,sessionbaildhcp.debut,sessionbaildhcp.fin
+		FROM baildhcp,sessionbaildhcp
+		WHERE baildhcp.idbaildhcp = sessionbaildhcp.idbaildhcp
+		AND baildhcp.ip = '$ip'
+		AND sessionbaildhcp.fin > '$debut'
+		AND sessionbaildhcp.debut < '$fin'
+		ORDER by sessionbaildhcp.debut
+        	";
+
+	    $cursor = $db->prepare($sql);
+	    $cursor->execute;
+
+	    @tab = ();
+	    @tempo = ();
+	    $i = 0;
+	
+	    print "<table align=center CELLPADDING=0 CELLSPACING=0 BORDER=1>
+                        <tr BGCOLOR=#CCCCCCC><td align=center>mac</td>
+			<td align=center>debut bail dhcp</td>
+                        <td align=center>fin bail dhcp</td>
+                        <TD>&nbsp;</TD>";
+	    while( ($tab[$i][0],$tab[$i][1],$tab[$i][2]) = $cursor->fetchrow )
+	    {
+                ($tab[$i][1]) = (split(/\./,$tab[$i][1]))[0];
+                ($tab[$i][2]) = (split(/\./,$tab[$i][2]))[0];
+		
+		for($j=0;$j<3;$j++)
+		{
+			if($j == 0)
+			{
+				$tab[$i][$j] = "<a href=\"https://$server_hostname$www_bin/cherche-baildhcp-par-mac?mac=$tab[$i][$j]&heure_dep=$heure_dep&jour_dep=$jour_dep&mois_dep=$mois_dep&annee_dep=$annee_dep&heure_fin=$heure_fin&jour_fin=$jour_fin&mois_fin=$mois_fin&annee_fin=$annee_fin&go%21=go%21\">$tab[$i][$j]</a>";
+			}
+			$tampon_donnee = $tab[$i][$j];
+			if($tempo[$j] eq $tab[$i][$j])
+			{
+				$tab[$i][$j] = "|";
+			}
+			$tempo[$j] = $tampon_donnee;
+		}
+		
+                $i++;
+	    }
+
+	    $t_table = @tab;
+	    for($i=0;$i<$t_table-1;$i++)
+	    {
+		print "<tr>";
+		for($j=0;$j<3;$j++)
+                {
+			$rowspan = 1;
+			if($tab[$i][$j] ne "|" && $j < 3)
+			{
+				$k = 1;
+				while($tab[$i+$k][$j] eq "|" && $j < 3)
+				{
+					$rowspan ++;
+					$k++;	
+				}
+			}
+			if($rowspan > 1 )
+			{
+				print"<td align=center rowspan=$rowspan>&nbsp;$tab[$i][$j]&nbsp;</td>";
+			}
+			else
+			{
+				if($tab[$i][$j] eq "|" && $j < 3)
+				{
+				}
+				else
+				{
+                                        print"<td align=center>&nbsp;$tab[$i][$j]&nbsp;</td>";
+				}
+			}
+		}	
+                print "<TD><img src=https://$server_hostname$www_img/tournesol20.jpg></img></TD></tr>";
+	    }
+
+	    print "</table>";
+
+	    $cursor->finish;
+	    $db->disconnect;
+	}
+	else
+	{
+	    print "<br><br><h3>Une adresse IP doit avoir la forme suivante : XXX.XXX.XXX.XXX</h3>";
+	}
+	print "
+        <br>
+        </BODY></HTML> ";
+
+}
+

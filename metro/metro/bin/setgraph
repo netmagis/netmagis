@@ -1,0 +1,508 @@
+#!/usr/bin/perl
+
+# $Id: setgraph,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# ###################################################################
+#  boggia : Creation : 25/03/08
+#  boggia : Modification : 02/05/08
+#		Prise en charges des nouvelles sondes consacrées a la
+#		métrologie du reaseau sans fil
+#
+# Application METRO
+# génération de la configuration 
+#	- des fichier de polling
+#	- du fichier de configuration des graphiques 
+#
+# prend en paramètres :	    liste des graphiques et des points de collecte
+#			    envoyés par CRC sur forme de requete cgi get
+#
+# exemple :
+#
+# http://idris.u-strasbg.fr/cgi-bin/setgraph.cgi?graph_1=M1&sonde_1_nom=M1&
+# sonde_1_type=trafic&sonde_1_ip=130.79.15.76&sonde_1_community=toto&so
+# nde_1_param_1=GigaEthernet1/0/1&typegraph_1=trafic&commentaire_1=hoplaboum&
+# graph_2_nom=M2M3&sonde_2_1_nom=M2&sonde_2_1_type=trafic&sonde_2_1_ip
+# =130.79.14.253&sonde_2_1_community=toto&sonde_2_1_param_1=ge-1/1/0&sonde_2_2_nom=M3&
+# sonde_2_2_type=trafic&sonde_2_2_ip=130.79.14.254&sonde_2_2_community=toto&
+# _community=toto&sonde_2_2_param_1=ge-0/3/0&typegraph_2=aggreg_trafic&graph_3_nom=M4&
+# sonde_3_ip=130.79.22.1&sonde_3_community=toto&sonde_3_param_1=ge-0/3/0
+# graph_1=M1
+#
+# On obtient la sonde M1 de type trafic qui donne le graphique M1
+#
+# sonde_1_nom=M1
+# sonde_1_type=trafic
+# sonde_1_ip=130.79.15.76
+# sonde_1_community=toto
+# sonde_1_param_1=GigaEthernet1/0/1
+# typegraph_1=trafic
+# commentaire_1=hoplaboum
+# 
+# On obtient les sondes M2 et M3 qui donnent un graphique M2M3 qui les aggrège.
+#
+# graph_2_nom=M2M3
+# sonde_2_1_nom=M2
+# sonde_2_1_type=trafic
+# sonde_2_1_ip=130.79.14.253
+# sonde_2_1_community=toto
+# sonde_2_1_param_1=ge-1/1/0
+# sonde_2_2_nom=M3
+# sonde_2_2_type=trafic
+# sonde_2_2_ip=130.79.14.254
+# sonde_2_2_community=toto
+# sonde_2_2_param_1=ge-0/3/0
+# typegraph_2=aggreg_trafic
+#
+# On obtient la sonde M4 qui donne le graphique M4 de type trafic qui est le type par défaut
+#
+# graph_3_nom=M4
+# sonde_3_ip=130.79.22.1
+# sonde_3_community=toto
+# sonde_3_param_1=ge-0/3/0
+#
+# On obtient la sonde M5 de type nbassocwifi sur l'interface Dot11radio0 ssid osiris
+#
+# graph_4_nom=M5 (optionel)
+# sonde_4_nom=M5
+# sonde_4_type=nbassocwifi
+# sonde_4_ip=172.27.0.1
+# sonde_4_community=toto
+# sonde_4_param_1=Dot11radio0
+# sonde_4_param_2=osiris
+
+# On obtient la sonde M6 de type nbauthwifi sur l'interface Dot11radio0 ssid osiris
+#
+# graph_5_nom=M6 (optionel)
+# sonde_5_nom=M6
+# sonde_5_type=nbauthwifi
+# sonde_5_ip=172.27.0.1
+# sonde_5_community=toto
+# sonde_5_param_1=Dot11radio0
+# sonde_5_param_2=osiris
+
+
+use CGI qw/:standard/;
+use CGI::Pretty qw( :html3 );
+use Net::hostent;
+use Sys::Syslog;                          # Misses setlogsock.
+use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
+use Socket;
+use strict;
+
+#fichier de configuration principal et chargement des focntions de base
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/bin/fonctions-bases-rrd";
+
+
+# Creation d'une socket syslog unix
+setlogsock("unix");
+
+our $file_graph = read_conf_file("$conf_file","FILE_METRO_GRAPHS");
+our $file_maj_sondes  = read_conf_file("$conf_file","FILE_METRO_UPDATE_PROBES");
+our $rep_db = read_conf_file("$conf_file","DIR_RRD_DB_METRO");
+our $rep_lock = read_conf_file("$conf_file","DIR_LOCK") . "/majMETRO";
+our $file_graph_tmp = read_conf_file("$conf_file","DIR_TMP") . "/metro.graph";
+
+our %liste_graph;
+our %liste_sondes;
+our %liste_typegraph;
+our %liste_commentaire;
+our @sondes;
+
+# Message de log, démarrage du programme ####################
+writelog("setgraph","","info",
+    "\t #######################################");
+writelog("setgraph","","info",
+    "\t Chargement de la liste des sondes de METRO");
+
+#lecture de index.graph contenant la liste des graphiques
+my @liste = (param());
+my $message_erreur = "OK";
+
+print header();
+capture_liste(@liste);
+
+# creation de la liste des graphiques à créer
+cree_liste_graphiques();
+
+# ecrit fichier sonde
+ecrit_fichier_sonde();
+
+print $message_erreur;
+
+writelog("setgraph","","info",
+        "\t Fin du programme ######################");
+
+
+# fonction qui classifie les parametres CGI
+# et les classe dans des tableaux nominatifs
+sub capture_liste
+{
+    my (@liste) = @_;
+
+    my $elem;
+    my $arg;
+    my %param;
+
+    foreach $elem (@liste)
+    {
+	$arg = param($elem);
+
+	my @split_arg = split(/_/,$elem);
+	
+	if($split_arg[0] eq "graph" && $split_arg[1]=~/[0-9]+/)
+	{
+	    $liste_graph{$split_arg[1]} = $arg;
+	}
+	elsif($split_arg[0] eq "sonde" && $split_arg[1]=~/[0-9]+/)
+	{
+	    my $indice = 1;
+	    my $ref = $split_arg[$indice];
+	    if($split_arg[$indice+1]=~/[0-9]+/)
+	    {
+		$indice ++;
+		$ref = "$ref:$split_arg[$indice]";
+	    }
+	    $indice ++;
+	    if($split_arg[$indice] eq "param")
+	    {
+		$indice ++;
+		$param{"$ref:$split_arg[$indice]"} = $arg;
+	    }
+	    else
+	    {
+		$ref = "$ref" . "_$split_arg[$indice]";
+		$liste_sondes{$ref} = $arg;
+		#print "liste_sondes{$ref} = $arg<br>";
+	    } 
+	}
+	elsif($split_arg[0] eq "typegraph" && $split_arg[1]=~/[0-9]+/)
+	{
+	    $liste_typegraph{$split_arg[1]} = $arg;
+	    #print "type_graph{$split_arg[1]} = $arg<br>";
+	}
+	elsif($split_arg[0] eq "commentaire" && $split_arg[1]=~/[0-9]+/)
+	{
+	    $liste_commentaire{$split_arg[1]} = $arg;
+	    #print "commentaire{$split_arg[1]} = $arg<br>";
+	}
+    }
+   
+    my $key;
+    foreach $key (keys %liste_sondes)
+    {
+	#print "<br>sondes{$key} = $liste_sondes{$key}";
+	if($key=~/^([0-9:]+)_ip$/)
+	{
+	    my $i=1;
+	    #print "      $1";
+	    while($i>-1)
+	    {
+		#print "<br> param{\"$1:$i\"} = $param{\"$1:$i\"}";
+		if(defined($param{"$1:$i"}))
+		{
+		    if($i == 1)
+		    {
+			$liste_sondes{"$1_param"} = $param{"$1:$i"};
+		    }
+		    else
+		    {
+			$liste_sondes{"$1_param"} = $liste_sondes{"$1_param"} . " " . $param{"$1:$i"};
+		    }
+		    $i++;
+		} 
+		else
+		{
+		    $i = -1;
+		}
+	    }
+	}
+	elsif($key=~/^([0-9]+)_nom$/ && !exists $liste_graph{$key})
+	{
+	    $liste_graph{$key} = $liste_sondes{$key};
+	}
+    }
+}
+
+# fonction qui cree la liste des graphiques qui doivent etre crees a partir des 
+# sondes rrdtools
+sub cree_liste_graphiques
+{
+    my $key;
+    # chargement de la liste des graphiques existants
+    my @tab_graph = charger_liste_existante();
+   
+    # ajouter ou mettre à jour les graphiques
+    foreach $key (keys %liste_graph)
+    {
+	my $i;
+	my $t_tab_graph;
+
+	# cree la ligne a ajouter dans index.metro
+	my @ligne_graph = cree_ligne_graph($key,$liste_graph{$key});
+
+	if($ligne_graph[0])
+	{
+	    # cherche si le graphique existe déjà et le met a jour
+	    my $graph_existe = 0;
+	    $t_tab_graph = @tab_graph;
+	    for($i=0;$i<$t_tab_graph;$i++)
+	    {
+		if($liste_graph{$key} eq $tab_graph[$i][0])
+		{
+		    $tab_graph[$i][1] = $ligne_graph[1];
+		    $tab_graph[$i][2] = $ligne_graph[2];
+		    $tab_graph[$i][3] = $ligne_graph[3];
+		    $tab_graph[$i][4] = $ligne_graph[4];
+		    $graph_existe = 1;
+		} 
+	    }
+	    # s'il n'existe pas, ajoute la nouvelle ligne 
+	    if($graph_existe == 0)
+	    {
+		push @{$tab_graph[$t_tab_graph]},@ligne_graph;
+	    }
+	}
+    }
+
+    ecrit_fichier_graph(@tab_graph);
+}
+
+# ouvre le fichier index.metro et le charge en mémoire 
+# dans lequel se trouve la liste des graphs existants
+sub charger_liste_existante
+{
+    my @tab_graph = ();
+    my %nom_g = ();
+    my $index = 0;
+
+    open(LISTE,$file_graph);
+    while(<LISTE>)
+    {
+	chomp;
+	if(/^(.+);(.+);(.+);(.+);(.+)$/)
+	{
+	    # supprime les doublons
+	    if(!defined($nom_g{$1}))
+	    {
+		push @{$tab_graph[$index]},$1;
+		push @{$tab_graph[$index]},$2;
+		push @{$tab_graph[$index]},$3;
+		push @{$tab_graph[$index]},$4;
+		push @{$tab_graph[$index]},$5;
+		$index ++;
+		$nom_g{$1}=1;
+	    }
+	}
+    }
+    close(LISTE);
+
+    return @tab_graph;
+}
+
+# crée la ligne à ajouter dans le fichier index.metro
+sub cree_ligne_graph
+{
+    my ($index,$nom_graph) = @_;
+   
+    my $nb_bases = 0;
+    my $liste_bases; 
+    my $type_graph = $liste_typegraph{$index};
+    my $commentaire = $liste_commentaire{$index};
+
+    # un seule database
+    if(defined($liste_sondes{"$index" . "_nom"}))
+    {
+	$nb_bases = 1;
+	$liste_bases = "$rep_db/$liste_sondes{\"$index\" . \"_nom\"}.rrd";
+
+	#conversion du nom en adresse ip
+	my $ip_addr = host_to_ip($liste_sondes{"$index" . "_ip"});
+
+	# création de la sonde
+	my $t_sondes = @sondes;
+	
+	if($type_graph ne "")
+	{
+	    push @{$sondes[$t_sondes]},$type_graph;
+	}
+	else
+	{
+	    push @{$sondes[$t_sondes]},$liste_sondes{"$index" . "_type"};
+	}
+	push @{$sondes[$t_sondes]},$liste_bases;
+	push @{$sondes[$t_sondes]},$ip_addr;
+	push @{$sondes[$t_sondes]},$liste_sondes{"$index" . "_community"};
+	push @{$sondes[$t_sondes]},$liste_sondes{"$index" . "_param"};
+    }
+    # plusieurs databases
+    elsif(defined($liste_sondes{"$index:1_nom"}))
+    {	
+	$nb_bases = 1;
+	$liste_bases = "$rep_db/$liste_sondes{\"$index:1\" . \"_nom\"}.rrd";
+
+	#conversion du nom en adresse ip
+        my $ip_addr = host_to_ip($liste_sondes{"$index:1" . "_ip"});
+
+	# création de la sonde
+	my $t_sondes = @sondes;
+	push @{$sondes[$t_sondes]},$type_graph;
+	push @{$sondes[$t_sondes]},"$rep_db/$liste_sondes{\"$index:1\" . \"_nom\"}.rrd";
+	push @{$sondes[$t_sondes]},$ip_addr;
+	push @{$sondes[$t_sondes]},$liste_sondes{"$index:1" . "_community"};
+	push @{$sondes[$t_sondes]},$liste_sondes{"$index:1" . "_param"};
+
+	my $i = 2;
+	while(defined($liste_sondes{"$index:$i" . "_nom"}))
+	{
+	    $liste_bases = "$liste_bases,$rep_db/$liste_sondes{\"$index:$i\" . \"_nom\"}.rrd";
+
+	    #conversion du nom en adresse ip
+	    my $ip_addr = host_to_ip($liste_sondes{"$index:$i" . "_ip"});
+   
+	    # création de la sonde
+	    my $t_sondes = @sondes;
+	    push @{$sondes[$t_sondes]},$type_graph;
+	    push @{$sondes[$t_sondes]},"$rep_db/$liste_sondes{\"$index:$i\" . \"_nom\"}.rrd";
+	    push @{$sondes[$t_sondes]},$ip_addr;
+	    push @{$sondes[$t_sondes]},$liste_sondes{"$index:$i" . "_community"};
+	    push @{$sondes[$t_sondes]},$liste_sondes{"$index:$i" . "_param"};
+
+	    $i ++;
+	    $nb_bases ++;
+	}
+    }
+    # y'a un probleme, par défaut on cree un graph et une sonde de trafic
+    elsif(defined($liste_sondes{"$index" . "_ip"}) && defined($liste_sondes{"$index" . "_community"})
+	    && defined($liste_sondes{"$index" . "_param"}))
+    {
+	$type_graph = "trafic";
+	$nb_bases = 1;
+	$liste_bases = "$rep_db/$nom_graph.rrd";
+   
+	#conversion du nom en adresse ip
+        my $ip_addr = host_to_ip($liste_sondes{"$index" . "_ip"}); 
+	
+	# création de la sonde
+	my $t_sondes = @sondes;
+	push @{$sondes[$t_sondes]},$type_graph;
+	push @{$sondes[$t_sondes]},$liste_bases;
+	push @{$sondes[$t_sondes]},$ip_addr;
+	push @{$sondes[$t_sondes]},$liste_sondes{"$index" . "_community"};
+	push @{$sondes[$t_sondes]},$liste_sondes{"$index" . "_param"};
+    }
+    else
+    {
+	return;
+    }
+    
+    return ($nom_graph,$type_graph,$nb_bases,$liste_bases,$commentaire);
+}
+
+# ecriture du nouveau fichier index.metro
+sub ecrit_fichier_graph
+{
+    my (@tab_graph) = @_;
+   
+    my $i; 
+    my $t_tab = @tab_graph;
+
+    open(LISTE,">$file_graph_tmp.temp");
+    for($i=0;$i<$t_tab;$i++)
+    {
+	print LISTE "$tab_graph[$i][0];$tab_graph[$i][1];$tab_graph[$i][2];$tab_graph[$i][3];$tab_graph[$i][4]\n";
+    }
+    close(LISTE);
+
+    system("cp $file_graph $file_graph_tmp.old");
+    system("cp $file_graph_tmp.temp $file_graph");
+    unlink "$file_graph_tmp.temp";
+}
+
+
+# ecrit le fichier qui contient les nouvelles sondes à créer
+# par idris avec le programme /local/obj999/bin/cree-base-metro
+sub ecrit_fichier_sonde
+{
+    my @fichier;
+    
+    # teste si le fichier de lock est toujours ouvert
+    opendir(REPLOCK,$rep_lock);
+    @fichier = grep(/maj_sondes/,readdir REPLOCK);
+    closedir(REPLOCK);
+
+    # si la base n'est pas lockée
+    if($fichier[0] eq "")
+    {
+	# on locke le fichier pour le mettre à jour
+	open(LOCK,">$rep_lock/maj_sondes.lock");
+        close(LOCK);
+	# on écrit le fichier contenant les ordres de mise à jour des sondes et des bases
+	
+	open(FILE,">>$file_maj_sondes");
+	my $i;
+	my $t_sondes = @sondes;
+	for($i=0;$i<$t_sondes;$i++)
+	{
+	    print FILE "$sondes[$i][0];$sondes[$i][1];$sondes[$i][2];$sondes[$i][3];$sondes[$i][4]\n";
+	}	
+	close(FILE);
+
+	# on enlève le lock
+	unlink "$rep_lock/maj_sondes.lock";
+    }
+    # sinon, envoie d'un message d'erreur
+    else
+    {
+	#print "ERREUR : Le fichier de mise à jour des sondes est bloqué par $rep_lock/lock_maj_sondes. Attendre un peu";
+    } 
+}
+
+
+sub host_to_ip
+{    
+    my ($host) = @_;
+        
+    my $h = gethostbyname($host);
+    if(!$?)
+    # erreur, renvoyee dans $?
+    {
+	my $ip_addr = inet_ntoa($h->addr);
+	return $ip_addr;
+    }
+    else
+    # 2eme test
+    {	
+	$h = gethostbyname($host);
+	if(!$?)
+	{
+	    my $ip_addr = inet_ntoa($h->addr);
+	    return $ip_addr;
+	}
+	else
+	{
+	    writelog("setgraph","","info",
+		"\t WARNING : impossible de resoudre $host");
+	    $? = "";
+	    return "undef";
+	}
+    }
+}
+
+
+###########################################################
+# fonction d'ecriture des messages syslog
+sub writelog
+{
+        my ($program,$logopt,$level,$message_mail) = @_;
+
+        if(openlog($program,$logopt,""))
+        {
+            syslog("local2.$level",$message_mail);
+            closelog();
+        }
+        else
+        {
+            #print "Impossible de loger\n";
+        }
+}
+

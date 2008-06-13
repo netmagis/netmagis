@@ -1,0 +1,266 @@
+#!/usr/bin/perl
+
+# $Id: site-wifi-stats,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+#
+#
+# ###################################################################
+# boggia : Creation : 27/03/08
+#
+# page des statistiques WiFi pour un site
+#
+
+use CGI qw/:standard/;
+use CGI::Pretty qw( :html3 );
+use DBI;
+
+# fichier de configuration principal et chargement des focntions de base
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/bin/fonctions-bases-rrd";
+#
+$server_hostname = read_conf_file($conf_file,"WWW_IDRIS_HOSTNAME");
+$www_root = read_conf_file($conf_file,"WWW_IDRIS_DIR_ROOT");
+$www_bin = read_conf_file($conf_file,"WWW_IDRIS_DIR_BIN");
+$www_img = read_conf_file($conf_file,"WWW_IDRIS_DIR_IMG");
+$www_graph = read_conf_file($conf_file,"WWW_IDRIS_DIR_GRAPHS");
+# repertoire des binaires
+$rep_bin = read_conf_file($conf_file,"DIR_BIN");
+#repertoire dans lequel sont stockes les scripts de generation de graphs
+$rep_modeles = read_conf_file($conf_file,"DIR_BIN_MODELS");
+#repertoire dans lequel se trouve la liste des graphiques existants avec le modele a utiliser
+$rep_etc = read_conf_file($conf_file,"DIR_ETC");
+#repertoire des bases de données
+$rep_db = read_conf_file($conf_file,"DIR_RRD_DB");
+#repertoire du fichier de supervision des AP
+$rep_var = read_conf_file($conf_file,"DIR_VAR");
+#fichier de liste des sites WiFi avec l'ensemble des AP
+$liste_sites_wifi = read_conf_file($conf_file,"FILE_LISTE_SITES_WIFI");
+#repertoire dans lequel se trouvents les rapports des sites authentifies
+$rep_auth = read_conf_file($conf_file,"DIR_AP_REPORT") . "/snmp";
+#font size
+$font_size = "2";
+
+#liste des ssid utilisés
+%ssid = ();
+$ssid{'osiris'} = 0;
+$ssid{'osiris-sec'} = 0;
+
+%liste_ap_state = ();
+
+# lecture du fichier des états
+open(STATE,"$rep_var/wifi/ap_state.txt");
+while(<STATE>)
+{
+	chomp $_;
+	($nom_ap,$state)=(split(/=/,$_))[0,1];
+	$liste_ap_state{$nom_ap}=$state;
+}
+close(STATE);
+
+
+print header();
+
+$nom_site = (param('nom_site'));
+
+print "<HTML><HEAD><TITLE>infos sur le bâtiment $nom_site</TITLE>
+       <META HTTP-EQUIV=\"Refresh\" CONTENT=\"300\">
+       <META HTTP-EQUIV=\"Cache-Control\" content=\"no-cache\">
+       <META HTTP-EQUIV=\"Pragma\" CONTENT=\"no-cache\">
+       </HEAD><BODY>
+       <h2 align=center>Quelques infos sur le bâtiment $nom_site</h2>";
+
+#lecture du fichier contenant la liste des bâtiments
+open(LISTE,"$rep_etc/liste_sites_wifi");
+while(<LISTE>)
+{
+	($bat,$liste) = (split(/:/,$_))[0,1];
+	if($bat eq $nom_site)
+	{
+		$liste_ap = $liste;
+		close(LISTE);
+	}
+}
+close(LISTE);
+chomp $liste_ap;
+
+#lecture du fichier contenant toutes les assocs pour un batiment ...
+$tab_ap = ();
+$i_tab_ap = 0;
+open(LISTE,"$rep_auth/$bat");
+while(<LISTE>)
+{
+	chomp $_;
+        ($tab_ap[$i_tab_ap][0],$tab_ap[$i_tab_ap][1]) = (split(/=/,$_))[0,1];
+	$i_tab_ap ++;
+}
+close(LISTE);
+
+# recupération du préfixe des AP
+%prefix = ();
+%assoc = ();
+@liste_des_ap = split(/;/,$liste_ap);
+
+foreach $elem (@liste_des_ap)
+{
+	%$elem = ();	
+	for($i=0;$i<$i_tab_ap;$i++)
+	{
+	    if($tab_ap[$i][0] eq $elem)
+	    {
+		@liste_ssid = split(/;/,$tab_ap[$i][1]);
+	
+		$t_liste_ssid = @liste_ssid;
+
+		for($j=0;$j<$t_liste_ssid;$j++)
+		{
+		    ($essid,$nb_s)=(split(/,/,$liste_ssid[$j]))[0,1];
+		    $cle = "$tab_ap[$i][0] $essid";
+		    $assoc{$cle} = $assoc{$cle} + $nb_s;
+		    $ssid{$essid} = $ssid{$essid} + $nb_s;
+		    $$elem{$essid} = $$elem{$essid} + $nb_s;
+		}
+	    }
+	}
+}
+
+print "<table align=center BORDER=0>
+    <tr>
+	<td>
+	    Quelle est sa frequentation?<br><br>
+            <li><a href=https://$server_hostname$www_bin/cherche-wifiap?nom_ap=$nom_site-ap>
+            Avec le detail des connexions</a></li>
+            <li><a href=https://$server_hostname$www_bin/stat-wifi-ap?nom_ap=$nom_site-ap>
+            Format CSV</a></li>
+            <br><br>
+            <a href=https://$server_hostname$www_bin/wifi>Retour a la page d'accueil</a>
+	</td>
+	<td>
+	    <table align=center ALIGN=\"CENTER\" CELLPADDING=0 CELLSPACING=0 BORDER=1>
+                <tr>
+		    <td><font name=\"arial\" size=$font_size>SSID</font></td>";
+		    foreach $key(keys %ssid)
+		    {
+			print "<td align=center><font name=\"arial\" size=$font_size><i>$key</i></font></td>";
+		    }   
+print "		    <td align=center><font name=\"arial\" size=$font_size>&nbsp;&nbsp;&nbsp;<b>total</b>&nbsp;&nbsp;&nbsp;</font></td>";
+print "		</tr>
+		<tr>
+		    <td><font name=\"arial\" size=$font_size>Authentifies</font></td>
+                ";
+$total = 0;
+foreach $key(keys %ssid)
+{
+        $couleur = "111111";
+        if($key eq "osiris")
+        {
+                $couleur = "#00FF00";
+        }
+        if($key eq "osiris-sec")
+        {
+                $couleur = "#FF0000";
+        }
+        print "<td align=center><font size=5 color=$couleur><b>$ssid{$key}</b></font></td>";
+        $total = $total + $ssid{$key};
+}
+
+print "<td align=center><font size=5 color=\"111111\"><b>$total</b></font></td>";
+print "</tr></table><br>";
+
+#recuperation de la date actuelle
+$date_fin = time;
+$date_fin = int($date_fin/300)*300;
+
+$date_dep_daily = $date_fin - 86400;
+
+#print "$nom_g!!-!!daily<br>";
+$nom_g = "wifi-$nom_site";
+$nom_g = "$nom_g" . "_trafic";
+$nom_gr = "$nom_g" . "!!-!!daily";
+$nom_gr_auth = "wifi_authentifications_" . "$nom_site";
+
+
+print "	    </td>
+	</tr>
+	<tr>
+            <td>
+		<table>
+		    <tr>
+			<td>";
+
+print "<br><a href=https://$server_hostname$www_bin/stats?nom_graph=$nom_gr_auth>
+        <IMG BORDER=0 src=\"https://$server_hostname$www_bin/gengraph?id=$nom_gr_auth&debut=$date_dep_daily&fin=$date_fin&titre=clients authentifiés&taille=550x150\" alt=\"Authentifies\"></a>
+			</td>
+		    </tr>
+		    <tr>
+			<td>";
+
+print "<br><a href=https://$server_hostname$www_bin/stats?nom_graph=$nom_g>
+        <IMG BORDER=0 src=\"https://$server_hostname$www_bin/gengraph?id=$nom_g&debut=$date_dep_daily&fin=$date_fin&titre=trafic wifi&taille=550x150\" alt=\"Trafic\"></a>
+			</td>
+		    </tr>
+		</table>
+	    </td>
+	    <td>";
+ 
+print "<table align=center ALIGN=\"CENTER\" CELLPADDING=0 CELLSPACING=0 BORDER=1>
+		<tr>
+			<td align=center><font name=\"arial\" size=$font_size>AP</font></td>
+			<td align=center><font name=\"arial\" size=$font_size>etat</font></td>";
+foreach $key(keys %ssid)
+{
+        $couleur = "111111";
+        print "<td align=center><font name=\"arial\" size=$font_size>$key</font></td>";
+}
+print "<td align=center><font name=\"arial\" size=$font_size><b>total</b></font></td>";
+print "</tr>";
+
+foreach $elem (@liste_des_ap)
+{
+	if($liste_ap_state{$elem} == -1)
+	{
+		$fichier_image = "ap_nok.jpg";
+	}
+	elsif($liste_ap_state{$elem} == 0)
+	{
+		$fichier_image = "ap_dodo.jpg";
+        }
+        elsif($liste_ap_state{$elem} < 10)
+	{
+		$fichier_image = "ap_ok.jpg";
+	}
+	else
+	{
+		$fichier_image = "ap_full.jpg";
+	}
+	$total = 0;
+	print "<tr>
+			<td><img src=https://$server_hostname$www_img/$fichier_image></td>
+                        <td><a href=https://$server_hostname$www_bin/ap-stats?nom_ap=$elem><font name=\"arial\" size=$font_size>$elem</font></a></td>";
+
+	foreach $key(keys %ssid)
+	{
+        	$couleur = "111111";
+        	if($key eq "osiris")
+        	{
+                	$couleur = "#00FF00";
+        	}
+        	if($key eq "osiris-sec")
+        	{
+                	$couleur = "#FF0000";
+        	}
+		if($$elem{$key} eq "")
+		{
+			$$elem{$key} = 0;
+		}
+        	print "<td align=center><font name=\"arial\" size=$font_size color=$couleur><b>$$elem{$key}</b></font></td>";
+        	$total = $total + $$elem{$key};
+	}
+	print "<td align=center><font name=\"arial\" size=$font_size color=\"111111\"><b>$total</b></font></td>";
+	print "</tr>";
+}
+print "</table>";
+print "		</td>
+	</tr>
+	</table>";
+
+print "</boby></html>";	
+

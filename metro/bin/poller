@@ -1,0 +1,574 @@
+#!/usr/bin/perl -w 
+
+# $Id: poller,v 1.1.1.1 2008-06-13 08:55:50 pda Exp $
+###################################################################
+#  boggia : Creation : 20/03/08
+#  boggia : Modification : 16/05/08
+#	    Ajout d'une fonction de lecture globale du fichier de
+#	    configuration obj999.conf
+#
+# Processus d'interrogation de l'ensemble des equipements Osiris
+# - Interrogation SNMP + generation de graphes rrdtools
+# - Mise a jour de la base d'association Postgres pour les AP WiFi
+# - Mise a jour des fichiers d'etat du spanning tree pour l'ensemble
+#   des commutateurs du parc Osiris
+#
+# Ce processus travaille avec des sondes qui interrogent les
+# equipements.
+#
+# parametres :
+# option :  indique si le processus travaille sur l'ensemble des sondes, sur
+#           une liste de type de sonde executer ou a ignorer
+#
+# Les 2 parametres suivants determinent la maniere dont les processus
+# vont se partager l'execution des sondes
+# num_process   : donne le numero du process
+# nb_process    : donne le nombre total de processus
+
+use strict;
+use Sys::Syslog;                          # Misses setlogsock.
+use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
+use Net::SNMP;
+use SNMP_util;
+use Socket;
+use RRDs;
+use DBI;
+
+our $group = $ARGV[0];
+our $num_process = $ARGV[1];
+our $nb_process = $ARGV[2];
+
+# configuration par defaut
+our %config = ( 'debug'        		=> 1,
+		'defaultdomain' 	=> 'u-strasbg.fr', 
+          	'snmp_timeout'  	=> 4,
+		'conf_file'		=> "/local/obj999/etc/obj999.conf",
+          	'syslog_facility'	=> "local0",
+		'logopt'		=> "" 
+);
+
+# liste des sondes
+our %function_probes = (
+		'ifNom-ap'		=> \&ifNom_ap,
+                'ifNom-snmp64'		=> \&ifNom_counter64,
+                'ifNom-snmp32'		=> \&ifNom_counter32,
+                'CPU-serveur'		=> \&get_CPU_server,
+                'assoc_ap'		=> \&get_assoc_ap,
+                'Interrupt-serveur'	=> \&get_Interrupt_server,
+                'nb_connect_portcap'	=> \&get_nb_connect_portcap,
+                'ifIP-snmp'		=> \&get_if_by_ip,
+                'LOAD-serveur'		=> \&get_Load_server,
+                'get-bind-stat'		=> \&get_bind_stat,
+                'get_tps_disk'		=> \&tps_disk,
+                'get_mailq'		=> \&get_mailq,
+                'get_CPU_cisco'		=> \&get_CPU_cisco,
+		'get_tempsRep'		=> \&get_url,
+		'get_memory_by_proc'	=> \&get_url,
+		'get_nb_mbuf_juniper'	=> \&get_url,
+		'get_value_generic'	=> \&get_url,
+		'stp_catalyst'          => \&get_stp_catalyst,
+		'nbauthwifi'		=> \&get_nbauthwifi,
+		'nbassocwifi'		=> \&get_nbassocwifi
+);
+
+
+require "/local/obj999/bin/fonctions-bases-rrd";
+
+# lecture du fichier de configuration general
+our %global_var = read_global_conf_file($config{'conf_file'});
+
+$config{'path_root'} = $global_var{"PATH_ROOT"};
+$config{'path_etc'} = $global_var{"DIR_ETC"};
+$config{'path_bin'} = $global_var{"DIR_BIN"};
+$config{'path_var'} = $global_var{"DIR_VAR"};
+$config{'path_sondes'} = $global_var{"DIR_BIN_PROBES"};
+$config{'path_poll'} = $global_var{"DIR_PROBES"};
+$config{'path_rrd_db'} = $global_var{"DIR_RRD_DB"};
+$config{'path_syslog'} = $global_var{"DIR_SYSLOG_POLLER"};
+$config{'path_rapport_ap'} = $global_var{"DIR_AP_REPORT"};
+$config{'path_cache_probes'} = $global_var{"DIR_CACHE_PROBES"};
+$config{'dir_lock'} = $global_var{"DIR_LOCK"};
+$config{'dir_res_stp'} = $global_var{"DIR_RES_STP"};
+# recuperation du groupe de pollers
+$config{'options'} = $global_var{"OPTIONS_GROUP_$group"};
+# arguments de connexion a la base PSQL
+$config{'PGHOST'} = $global_var{"MAC_PSQL_SERVER"};
+$config{'PGDATABASE'} = $global_var{"PG_DATABASE_MAC"};
+$config{'PGUSER'} = $global_var{"PG_USER_MAC"};
+$config{'PGPASSWORD'} = $global_var{"PG_PASSWORD_MAC"};
+# fichiers de cache
+$config{'index_ap_file'} = $config{'path_cache_probes'} . "/interf_ap.txt";
+$config{'index_if64'} = $config{'path_cache_probes'} . "/if64.txt";
+$config{'index_if32'} = $config{'path_cache_probes'} . "/if32.txt";
+$config{'index_disk'} = $config{'path_cache_probes'} . "/disk.txt";
+$config{'index_url'} = $config{'path_cache_probes'} . "/url.txt";
+$config{'fichier_etat'} = $config{'path_var'} . "/wifi/ap_state.txt";
+# liste des ssid du reseau sans fil
+$config{'list_ssid_wifi'} = read_conf_file("$config{'conf_file'}","LIST_SSID_WIFI");
+
+require "$config{'path_sondes'}/sonde-if-snmp-ap.pl";
+require "$config{'path_sondes'}/sonde-if-snmp64.pl";
+require "$config{'path_sondes'}/sonde-if-snmp32.pl";
+require "$config{'path_sondes'}/sonde-cpu-server.pl";
+require "$config{'path_sondes'}/sonde-assoc-ap.pl";
+require "$config{'path_sondes'}/sonde-interrupt-server.pl";
+require "$config{'path_sondes'}/sonde-nb-connect-portcap.pl";
+require "$config{'path_sondes'}/sonde-if-by-ip.pl";
+require "$config{'path_sondes'}/sonde-load-server.pl";
+require "$config{'path_sondes'}/sonde-bind-stat.pl";
+require "$config{'path_sondes'}/sonde-tps-disk.pl";
+require "$config{'path_sondes'}/sonde-mailq.pl";
+require "$config{'path_sondes'}/sonde-cpu-cisco.pl";
+require "$config{'path_sondes'}/sonde-generic-gauge.pl";
+require "$config{'path_sondes'}/sonde-stp-catalyst.pl";
+
+our $logopt;
+our $lock_liste_ap = 0;
+our $lock_liste_if64 = 0;
+our $lock_liste_if32 = 0;
+our $lock_liste_disk = 0;
+our $maj_if_ap_file = 0;
+our $maj_if64_file = 0;
+our $maj_if32_file = 0;
+our $maj_disk_file = 0;
+our $maj_url_file = 0;
+
+our %collsess;
+our %liste_ap;
+our %liste_ap_state;
+our %ApSnmpHashref = ();
+our %APSupSSID = ();
+our @total_activesess = ();
+our @total_authsess = ();
+our %mac_auth;
+
+our %stpInfos;
+our %stpPorts;
+our %BridgeID;
+
+our %ok_sondes;
+our %nok_sondes;
+
+our %ssid_osiris = init_list_ssid($config{'list_ssid_wifi'});
+
+init_test_sondes();
+
+# lectures des options passees en parametres
+$ok_sondes{'all'} = 1;
+
+my @liste_options = split(/,/,$config{'options'});
+foreach my $elem (@liste_options)
+{
+    if($elem=~m/^!(.*)/)
+    {
+	$nok_sondes{$1} = 1;
+    }
+    else    
+    {
+	$ok_sondes{$elem} = 1;
+	$ok_sondes{'all'} = 0;
+    }
+}
+
+# multiprocessus calcul du resultat du modulo pour matcher une sonde
+our $modulo_match = $num_process % $nb_process;
+
+# Creation d'une socket syslog unix
+setlogsock("unix");
+
+# Message des logs demarrage du démon ####################
+writelog("poller_$group$num_process",$config{'logopt'},"info",
+	"\t -> START. Demarrage du polling ########");
+
+
+##################################################################
+# gestion specifique pour les AP WiFi
+# recuperation de la liste des authentifies sur le WiFi
+if($ok_sondes{'assoc_ap'} == 1)
+{
+    writelog("poller_$group$num_process",$config{'logopt'},"info",
+        "\t -> INFO : Recuperation des authentifies du reseau sans fil ...");
+    
+    get_authaccess();
+}
+
+
+#################################################################
+# Traitement des sondes
+#
+# lecture des fichiers en cache
+opendir(MAJDIR, $config{'path_poll'});
+our @FICHIERS=grep(!/^\.\.?$/, readdir MAJDIR);
+closedir(MAJDIR);
+
+open(IF_AP,$config{'index_ap_file'});
+our @liste_if_ap=<IF_AP>;
+close(IF_AP);
+
+open(IF_64,$config{'index_if64'});
+our @liste_if64=<IF_64>;
+close(IF_64);
+
+open(IF_32,$config{'index_if32'});
+our @liste_if32=<IF_32>;
+close(IF_32);
+
+open(DISK,$config{'index_disk'});
+our @liste_disk=<DISK>;
+close(DISK);
+
+open(URL,$config{'index_url'});
+our @liste_url=<URL>;
+close(URL);
+
+my $elem;
+my $compteur = 0;
+foreach $elem (@FICHIERS)
+{
+        #print "$elem";
+        if($elem=~m/^majDB/ || $elem=~m/^majMETRO$/)
+        {
+		$compteur += ouvre_fichier_conf($elem);
+        }
+}
+
+writelog("poller_$group$num_process",$config{'logopt'},"info",
+        "\t -> $compteur sondes");
+
+Net::SNMP->snmp_dispatcher();
+
+# ecriture des fichiers qui stockent les index snmp des interfaces
+maj_if_files();
+
+########
+
+
+##################################################################
+# gestion specifique pour les AP WiFi
+if($ok_sondes{'assoc_ap'} == 1)
+{
+    ###################################
+    # création du tableau d'état des AP
+    writelog("poller_$group$num_process",$config{'logopt'},"info",
+        "\t -> Ecriture du fichier de supervision des AP");
+
+    maj_liste_ap_state();
+
+    ################################################################
+    ## mise à jour de la base des associations WiFi
+    writelog("poller_$group$num_process",$config{'logopt'},"info",
+        "\t -> MAJ de la base des associations WIFI");
+    
+    set_assoc_ap_base();
+}
+########
+
+
+##################################################################
+ # gestion specifique pour la metrologie du spanning Tree
+if($ok_sondes{'stp_catalyst'} == 1)
+{
+     writelog("poller_$group$num_process",$config{'logopt'},"info",
+         "\t -> Detection des mouvements dans le Spanning Tree");
+
+     compare_stp_state();
+}
+
+
+writelog("poller_$group$num_process",$config{'logopt'},"info",
+                "\t -> STOP. Fin du polling ###############");
+########
+
+
+
+##################################################################
+# FONCTIONS
+##################################################################
+
+##################################################################
+# mise à jour des fichiers contenant les index SNMP des interfaces
+# des équipements connus
+sub maj_if_files
+{
+	my $i;
+	my @fichier;
+	if($maj_if_ap_file == 1)
+	{
+		opendir(REPLOCK,$config{'dir_lock'});
+        	@fichier = grep(/ap32/,readdir REPLOCK);
+        	closedir(REPLOCK);
+
+		writelog("poller_$group$num_process",$config{'logopt'},"info",
+                	"\t -> REECRITURE DU FICHIER INDEX AP");
+
+        	if($fichier[0] eq "")
+        	{
+        		open(LOCK,">$config{'dir_lock'}/ap32.lock");
+                	close(LOCK);
+
+			my $t_liste_if_ap = @liste_if_ap;
+                        
+			open(BD,">$config{'index_ap_file'}");
+	
+			for($i=0;$i<$t_liste_if_ap;$i++)
+			{
+				print BD "$liste_if_ap[$i]\n";
+			}
+                
+			close(BD);
+
+                	unlink "$config{'dir_lock'}/ap32.lock";
+        	}
+	}
+	if($maj_if64_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/if64\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+		writelog("poller_$group$num_process",$config{'logopt'},"info",
+                        "\t -> REECRITURE DU FICHIER INDEX 64");
+                
+		if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/if64.lock");
+                        close(LOCK);
+
+                        my $t_liste_if64 = @liste_if64;
+
+                        open(BD,">$config{'index_if64'}");
+
+                        for($i=0;$i<$t_liste_if64;$i++)
+                        {
+                                print BD "$liste_if64[$i]\n";
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/if64.lock";
+                }
+        }
+	if($maj_if32_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/if32\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+		writelog("poller_$group$num_process",$config{'logopt'},"info",
+                        "\t -> REECRITURE DU FICHIER INDEX 32");
+                
+		if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/if32.lock");
+                        close(LOCK);
+
+                        my $t_liste_if32 = @liste_if32;
+
+                        open(BD,">$config{'index_if32'}");
+
+                        for($i=0;$i<$t_liste_if32;$i++)
+                        {
+                                print BD "$liste_if32[$i]\n";
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/if32.lock";
+                }
+        }
+	if($maj_disk_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/disk\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+                writelog("poller_$group$num_process",$config{'logopt'},"info",
+                        "\t -> REECRITURE DU FICHIER D'INDEX DES DISQUES");
+
+                if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/disk.lock");
+                        close(LOCK);
+
+                        my $t_liste_disk = @liste_disk;
+
+                        open(BD,">$config{'index_disk'}");
+
+                        for($i=0;$i<$t_liste_disk;$i++)
+                        {
+                                print BD "$liste_disk[$i]\n";
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/disk.lock";
+                }
+        }
+	if($maj_url_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/url\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+                writelog("poller_$group$num_process",$config{'logopt'},"info",
+                        "\t -> REECRITURE DU FICHIER D'INDEX DES URL");
+
+                if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/url.lock");
+                        close(LOCK);
+
+                        my $t_liste_url = @liste_url;
+
+                        open(BD,">$config{'index_url'}");
+
+                        for($i=0;$i<$t_liste_url;$i++)
+                        {
+                                print BD "$liste_url[$i]\n";
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/url.lock";
+                }
+        }
+}
+
+
+###############################################################
+# lecture des fichiers contenant les ordres de polling
+sub ouvre_fichier_conf
+{
+	my ($file) = @_;
+	my ($sonde,$base,$host,$community,$l_param);
+	my $ok = 0;
+	my $num_ligne = 0;
+
+	open(FILE, "$config{'path_poll'}/$file");
+	
+	while(<FILE>)
+	{
+		if(! /^#/ && ! /^\s+/)
+		{
+		    chomp;
+		    ($sonde,$base,$host,$community,$l_param) = (split(/\s+/,$_))[0,1,2,3,4];
+		    $num_ligne ++;
+
+		    # multiprocessus : ce processus doit-il traiter cette ligne?
+		    my $test_modulo = $num_ligne % $nb_process;
+		    
+		    if($test_modulo == $modulo_match)
+		    {
+			$ok ++;
+			# nettoyage du nom de la sonde
+			$sonde = clean_probe($sonde);
+		    
+			# parametres a appliquer dans l'appel de chaque fonction
+			# $base,$host,$community,$l_param,$sonde
+			if(defined($function_probes{$sonde}))
+			{
+			    if(($ok_sondes{'all'} == 1 || $ok_sondes{$sonde} == 1) && $nok_sondes{$sonde} != 1)
+			    {
+				$function_probes{$sonde}->($base,$host,$community,$l_param,$sonde);
+
+			    }
+			    else
+			    {
+				$ok --;
+			    }
+			}
+			else
+			{
+			    if(($ok_sondes{'all'} == 1 || $ok_sondes{$sonde} == 1) && $nok_sondes{$sonde} != 1)
+                            {
+				writelog("poller_$group$num_process",$config{'logopt'},"info",
+				    "\t -> WARNING: Sonde $sonde inexistante");
+				# aucune sonde trouvee, n'a rien fait
+				$ok --;
+			    }
+			}
+		    }
+		}
+	}
+	close(FILE);
+
+	return $ok;
+}
+
+
+######################################
+# Nettoie le nom des sondes dans update_rrd qui disposent encore 
+# du chemin /local/obj999 ....
+sub clean_probe
+{
+    my ($sonde) = @_;
+    
+    my @decomp_rep = split(/\//,$sonde);
+    my $t_decomp_rep = @decomp_rep;
+    ($sonde) = (split(/\.pl/,$decomp_rep[$t_decomp_rep - 1]))[0];
+
+    return $sonde;
+}
+
+
+
+###########################################################
+# fonction d'ecriture des messages syslog
+sub writelog
+{
+	my ($program,$logopt,$level,$message) = @_;
+
+	openlog($program,$logopt,$config{'syslog_facility'});
+	syslog($level,$message);
+	closelog();
+	#print "$message\n";
+}
+
+
+##########################################################
+# fonction de mise à jour du fichier de supervision des AP
+sub maj_liste_ap_state
+{
+    my $key;
+
+    open(STATE,">$config{'fichier_etat'}");
+    foreach $key (keys %liste_ap_state)
+    {
+	    print STATE "$key=$liste_ap_state{$key}\n";
+    }
+    close(STATE);
+}
+
+
+############################################################
+# initialisation des booleens qui indiquent au programme
+# les types de sondes a executer
+sub init_test_sondes()
+{
+    foreach my $key (keys %function_probes)
+    {
+        $ok_sondes{$key} = 0;
+        $nok_sondes{$key} = 0;
+    }
+}
+
+############################################################
+# cree un tableau nominatif avec les index sql des tous les
+# ssid du reseau wifi
+sub init_list_ssid
+{
+    my ($l) = @_;
+
+    my %l_ssid;
+
+    chomp $l;
+    my @ll = split(/,/,$l);
+
+    foreach my $s (@ll)
+    {
+        $l_ssid{$s} = read_conf_file("$config{'conf_file'}","ID_SQL_$s");
+    }
+    
+    return %l_ssid;
+}
+

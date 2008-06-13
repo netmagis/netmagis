@@ -1,0 +1,203 @@
+#!/usr/bin/perl
+
+# $Id: wifi,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+#
+#
+# ###################################################################
+#  boggia : Creation : 27/03/08
+#  boggia : Modification : 16/05/08
+#	    Ajout d'une fonction de lecture du fichier de configuration
+#
+# Page d'accueil du portail de supervision du reseau sans fil Osiris
+#
+#
+
+use CGI qw/:standard/;
+use CGI::Pretty qw( :html3 );
+
+# fichier de configuration principal et chargement des focntions de base
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/bin/fonctions-bases-rrd";
+# lecture du fichier de configuration general
+our %global_var = read_global_conf_file($conf_file);
+
+$server_hostname = $global_var{"WWW_IDRIS_HOSTNAME"};
+$www_root = $global_var{"WWW_IDRIS_DIR_ROOT"};
+$www_bin = $global_var{"WWW_IDRIS_DIR_BIN"};
+$www_img = $global_var{"WWW_IDRIS_DIR_IMG"};
+$www_graph = $global_var{"WWW_IDRIS_DIR_GRAPHS"};
+# repertoire des binaires
+$rep_bin = $global_var{"DIR_BIN"};
+#repertoire dans lequel sont stockes les scripts de generation de graphs
+$rep_modeles = $global_var{"DIR_BIN_MODELS"};
+#repertoire dans lequel se trouve la liste des graphiques existants avec le modele a utiliser
+$rep_etc = $global_var{"DIR_ETC"};
+#repertoire des bases de données
+$rep_db = $global_var{"DIR_RRD_DB"};
+#repertoire du fichier de supervision des AP
+$rep_var = $global_var{"DIR_VAR"};
+#fichier de liste des sites WiFi avec l'ensemble des AP
+$liste_sites_wifi = $global_var{"FILE_LISTE_SITES_WIFI"};
+
+#liste des ssid utilisés
+%ssid = ();
+$ssid{'osiris'} = 0;
+$ssid{'osiris-sec'} = 0;
+$entites = ();
+
+%liste_ap_state = ();
+# lecture du fichier des états
+open(STATE,"$rep_var/wifi/ap_state.txt");
+while(<STATE>)
+{
+        chomp $_;
+        ($nom_ap,$state)=(split(/=/,$_))[0,1];
+        $liste_ap_state{$nom_ap}=$state;
+}
+close(STATE);
+
+
+print header();
+
+$nom_site = (param('nom_site'));
+
+print "<HTML><HEAD><TITLE>Statistiques WiFi</TITLE>
+       <META HTTP-EQUIV=\"Refresh\" CONTENT=\"300\">
+       <META HTTP-EQUIV=\"Cache-Control\" content=\"no-cache\">
+       <META HTTP-EQUIV=\"Pragma\" CONTENT=\"no-cache\">
+       </HEAD><BODY>
+       <h2 align=center>Statistiques WiFi</h2>";
+
+@batiments = ();
+$i=0;
+#lecture du fichier contenant la liste des bâtiments
+open(LISTE,"$liste_sites_wifi");
+while(<LISTE>)
+{
+	chomp;
+	if(!/^#/ && !/^\s+/)
+	{
+		($bat,$liste_ap,$universite) = (split(/:/,$_))[0,1,2];
+		$entites{$universite}++;
+		$batiments[$i][0] = $bat;
+		$batiments[$i][1] = $universite;
+		$batiments[$i][2] = $liste_ap;
+		$i++;		
+	}
+}
+close(LISTE);
+
+$t_batiments = @batiments;
+
+print "<table align=center border=0>
+	<tr><td>";
+print "<table align=center align=center ALIGN=\"CENTER\" CELLPADDING=0 CELLSPACING=0 BORDER=1>";
+foreach $key (keys %entites)
+{
+	$total_univ = 0;
+	$wpa_univ = 0;
+	$clair_univ = 0;
+	print "<tr><td colspan=5 align=center><font name=\"arial\" size=2><u><b>$key<b></u></font></td></tr>";
+	for($i=0;$i<$t_batiments;$i++)
+	{
+		if($batiments[$i][1] eq $key)
+		{
+			print "<tr><td align=center>
+			<a href=https://$server_hostname$www_bin/site-wifi-stats?nom_site=$batiments[$i][0]>
+			<font name=\"arial\" size=2>$batiments[$i][0]</font></a></td>";
+
+			$nb_auth = `/usr/local/bin/rrdtool fetch $rep_db/$batiments[$i][0]/authentifies_wifi.rrd MAX -s -900s`;
+                        ($nb_auth) = (split(/\n/,$nb_auth))[2];
+                        ($clair,$wpa) = (split(/\s+/,$nb_auth))[1,2];
+                        $wpa = int($wpa);
+                        $clair = int($clair);
+			$total = $wpa + $clair;
+			$wpa_univ = $wpa_univ + $wpa;
+        		$clair_univ = $clair_univ + $clair;
+			$total_univ = $total_univ + $total;
+                        print "<td align=right>&nbsp&nbsp<font name=\"arial\" size=2 color=red><b>$wpa</b></font>&nbsp&nbsp</td>";
+                        print "<td align=right>&nbsp&nbsp<font name=\"arial\" size=2 color=green><b>$clair</b></font>&nbsp&nbsp</td>";
+                        print "<td align=right>&nbsp&nbsp<font name=\"arial\" size=2 color=grey><b>$total</b></font>&nbsp&nbsp</td>";
+			@liste_des_ap = split(/;/,$batiments[$i][2]);
+			$t_liste_des_ap = @liste_des_ap;
+			$nb_indispo = 0;
+			for($j=0;$j<$t_liste_des_ap;$j++)
+			{
+				if($liste_ap_state{$liste_des_ap[$j]} == -1)
+				{
+					$nb_indispo ++;
+				}
+			}
+			if($nb_indispo == 0)
+			{
+				$image_etat = "vert.gif";
+			}
+			elsif($nb_indispo < $t_liste_des_ap)
+			{
+				$image_etat = "orange.gif";
+			}
+			elsif($nb_indispo == $t_liste_des_ap)
+                        {
+                                $image_etat = "rouge.gif";
+                        }
+			print "<td align=center><img src=https://$server_hostname/images/$image_etat></td>";
+                        print "</tr>";
+		}
+	}
+	if($key eq "ULP" || $key eq "URS" || $key eq "UMB")
+        {
+        	print "<tr bgcolor=\"#dddddd\"><td align=center><font name=\"arial\" size=2><i>Ensemble</i></font></td>";
+                print "<td align=right>&nbsp&nbsp<font color=red name=\"arial\" size=2><b>$wpa_univ</b></font>&nbsp&nbsp</td>";
+                print "<td align=right>&nbsp&nbsp<font color=green name=\"arial\" size=2><b>$clair_univ</b></font>&nbsp&nbsp</td>";
+                print "<td align=right>&nbsp&nbsp<font color=grey name=\"arial\" size=2><b>$total_univ</b></font>&nbsp&nbsp</td>";
+		print "<td></td>";
+                print "</tr>";
+	}
+}
+
+print "</table>
+	<td bgcolor=\"#eeeeee\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+	</td><td valign=top>";
+
+#recuperation de la date actuelle
+$date_fin = time;
+$date_fin = int($date_fin/300)*300;
+
+$date_dep_daily = $date_fin - 86400;
+
+#print "$nom_g!!-!!daily<br>";
+$nom_gr_auth = "wifi_authentifications";
+print " <table align=center border=0>
+	<tr>
+	<td align=center><a href=https://www-crc.u-strasbg.fr/applis/wifi/associations/>
+        <img BORDER=0 src=https://$server_hostname$www_img/associations.jpg></a></td>
+	<td align=center><a href=https://$server_hostname$www_bin/cherche-wifiuser>
+	<img BORDER=0 src=https://$server_hostname$www_img/bonhomme.jpg></a></td>
+	<td align=center><a href=https://$server_hostname$www_bin/cherche-wifimac>
+	<img BORDER=0 src=https://$server_hostname$www_img/pc_mac.jpg></a></td>
+	<td align=center><a href=https://$server_hostname$www_bin/cherche-wifi-login-par-ip>
+	<img border=0 src=https://$server_hostname$www_img/pc_IP.jpg></a></td>
+	<td align=center><a href=https://$server_hostname$www_bin/top-wifi-user>
+	<img border=0 src=https://$server_hostname$www_img/podium.jpg></a></td>
+	<td align=center><a href=https://$server_hostname$www_bin/wifi-associations>
+	<img border=0 src=https://$server_hostname$www_img/podium_ap.jpg></a></td>
+	</tr>";
+print "<tr align=center>
+		<td colspan=6 align=center>";
+
+print "<br><br><a href=https://$server_hostname$www_bin/stats?nom_graph=$nom_gr_auth>
+        <IMG BORDER=0 src=\"https://$server_hostname$www_bin/gengraph?id=$nom_gr_auth&debut=$date_dep_daily&fin=$date_fin&titre=Utilisateurs atuthentifiés&taille=550x150\" alt=\"Associations\"></a>
+                </td>
+        </tr>
+	<tr>
+		<td colspan=6 align=center>";
+	
+print "<br><a href=https://$server_hostname$www_bin/stats?nom_graph=wifi_trafic>
+	<IMG BORDER=0 src=\"https://$server_hostname$www_bin/gengraph?id=wifi_trafic&debut=$date_dep_daily&fin=$date_fin&titre=trafic wifi global&taille=550x150\" alt=\"Trafic\"></a>
+        	</td>
+       	</tr>
+	</table>";	
+
+print "</td></tr>
+	</boby></html>";	
+
