@@ -1,11 +1,11 @@
 #!/usr/local/bin/perl
 
-# $Id: fill-template,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# $Id: fill-template,v 1.2 2008-06-13 10:16:50 pda Exp $
 # ###################################################################
 # saillard : Creation : 29/04/08
 #
 # Remplace des variables définies dans un template par leurs valeurs
-# déclarées dans /local/obj999/etc/obj999.conf 
+# déclarées dans %CONF% 
 
 use strict;
 
@@ -19,7 +19,7 @@ if($nb_args==0 || $nb_args>2 || ($nb_args==1) && ($ARGV[0]=~ /-h/ || $ARGV[0]=~ 
 }
 
 # Fichier de configuration principal et chargement des focntions de base
-my $conf_file = "/local/obj999/etc/obj999.conf";
+my $conf_file = "%CONF%";
 
 # Template du fichier de conf à remplir avec les bonnes valeurs
 my $template_file = $ARGV[0];
@@ -37,7 +37,7 @@ else
    $template_filled_file = $ARGV[1];
 }
 
-require "/local/obj999/bin/fonctions-bases-rrd";
+require "%LIBMETRO%";
 
 chomp $template_file;
 

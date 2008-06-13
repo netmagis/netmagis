@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cree-base-rrd,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# $Id: cree-base-rrd,v 1.2 2008-06-13 10:16:50 pda Exp $
 #
 #
 # ###################################################################
@@ -12,8 +12,8 @@
 #
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "/local/obj999/etc/obj999.conf";
-require "/local/obj999/bin/fonctions-bases-rrd";
+our $conf_file = "%CONF%";
+require "%LIBMETRO%";
 #
 
 use SNMP_util;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: wifi-get-distinct-users-by-bat,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# $Id: wifi-get-distinct-users-by-bat,v 1.2 2008-06-13 10:16:50 pda Exp $
 #
 # ###################################################################
 # boggia : Creation : 04/04/08
@@ -20,8 +20,8 @@ use DBI;
 @liste = @ARGV;
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "/local/obj999/etc/obj999.conf";
-require "/local/obj999/bin/fonctions-bases-rrd";
+our $conf_file = "%CONF%";
+require "%LIBMETRO%";
 #
 
 our $file_maj_sondes = read_conf_file("$conf_file","FILE_METRO_UPDATE_PROBES");

@@ -5,7 +5,7 @@ use Sys::Syslog;                          # Misses setlogsock.
 use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
 
 our %config = ( 'NB_PROCESS'            => 3,
-		'conf_file'             => "/local/obj999/etc/obj999.conf",
+		'conf_file'             => "%CONF%",
                 'syslog_facility'       => "local0",
                 'logopt'                => ""
 );

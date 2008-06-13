@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w 
 
-# $Id: poller,v 1.1.1.1 2008-06-13 08:55:50 pda Exp $
+# $Id: poller,v 1.2 2008-06-13 10:16:50 pda Exp $
 ###################################################################
 #  boggia : Creation : 20/03/08
 #  boggia : Modification : 16/05/08
@@ -42,7 +42,7 @@ our $nb_process = $ARGV[2];
 our %config = ( 'debug'        		=> 1,
 		'defaultdomain' 	=> 'u-strasbg.fr', 
           	'snmp_timeout'  	=> 4,
-		'conf_file'		=> "/local/obj999/etc/obj999.conf",
+		'conf_file'		=> "%CONF%",
           	'syslog_facility'	=> "local0",
 		'logopt'		=> "" 
 );
@@ -72,7 +72,7 @@ our %function_probes = (
 );
 
 
-require "/local/obj999/bin/fonctions-bases-rrd";
+require "%LIBMETRO%";
 
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($config{'conf_file'});

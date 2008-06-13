@@ -18,7 +18,7 @@ our %config = ( 'debug'                 => 1,
 );
 
 
-require "/local/obj999/bin/fonctions-bases-rrd";
+require "%LIBMETRO%";
 
 $config{'path_root'} = read_conf_file("$config{'conf_file'}","PATH_ROOT");
 $config{'path_etc'} = read_conf_file("$config{'conf_file'}","DIR_ETC");
