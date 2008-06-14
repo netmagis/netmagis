@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.9 2008-06-14 21:05:49 pda Exp $
+ * $Id: textread.c,v 1.10 2008-06-14 21:36:15 pda Exp $
  */
 
 #include "graph.h"
@@ -399,9 +399,9 @@ static void process_L1 (struct attrtab *attrtab, struct node *n)
 	char *m = NULL ;
 
 	if (avlr == NULL)
-	    m = "Radio parameters without ssid on %s/%s" ;
-	if (avls == NULL)
 	    m = "SSID parameter without radio information on %s/%s" ;
+	if (avls == NULL)
+	    m = "Radio parameters without ssid on %s/%s" ;
 	if (m != NULL)
 	{
 	    inconsistency (m, n->eq->name, n->u.l1.ifname) ;
