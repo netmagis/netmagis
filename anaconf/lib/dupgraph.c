@@ -1,5 +1,5 @@
 /*
- * $Id: dupgraph.c,v 1.6 2008-05-06 22:08:55 pda Exp $
+ * $Id: dupgraph.c,v 1.7 2008-06-14 21:05:49 pda Exp $
  */
 
 #include "graph.h"
@@ -128,6 +128,8 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     struct route *newroutetab ;
     int maxroute ;
     struct vlan *oldvlan, *newvlan ;
+    int maxssid ;
+    struct ssid *ossid, *newssidtab ;
 
     /*************************************************************
      * First pass : copy all structures
@@ -178,6 +180,21 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     }
     if (j != mobj_count (old [STRMOBJIDX]))
 	error (0, "Panic. Wrong number of strtab mobj") ;
+
+    /*
+     * Ssid list
+     */
+
+    newssidtab = mobj_data (new [SSIDMOBJIDX]) ;
+
+    j = 0 ;
+    for (onode = mobj_head (old [NODEMOBJIDX]) ; onode != NULL ; onode = onode->next)
+	if (onode->nodetype == NT_L1)
+	    for (ossid = onode->u.l1.radio.ssid ; ossid != NULL ; ossid = ossid->next)
+		TRANSNEW (newssidtab, j, ossid) ;
+    if (j != mobj_count (old [SSIDMOBJIDX]))
+	error (0, "Panic. Wrong number of ssid mobj") ;
+    maxssid = j ;
 
     /*
      * Nodelist
@@ -353,6 +370,18 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     }
 
     /*
+     * Ssid
+     */
+
+    for (i = 0 ; i < maxssid ; i++)
+    {
+	TRANSPTR (newssidtab [i].name) ;
+	TRANSPTR (newssidtab [i].next) ;
+    }
+    TRANSHEAD (new [SSIDMOBJIDX], old [SSIDMOBJIDX]) ;
+
+
+    /*
      * Equipements
      */
 
@@ -385,6 +414,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 		TRANSPTR (newnodetab [i].u.l1.ifdesc) ;
 		TRANSPTR (newnodetab [i].u.l1.link) ;
 		TRANSPTR (newnodetab [i].u.l1.stat) ;
+		TRANSPTR (newnodetab [i].u.l1.radio.ssid) ;
 		break ;
 	    case NT_L2 :
 		TRANSPTR (newnodetab [i].u.l2.stat) ;

@@ -1,5 +1,5 @@
 /*
- * $Id: node.c,v 1.3 2007-01-16 09:51:42 pda Exp $
+ * $Id: node.c,v 1.4 2008-06-14 21:05:49 pda Exp $
  */
 
 #include "graph.h"
@@ -18,6 +18,7 @@ struct node *create_node (char *name, struct eq *eq, enum nodetype nodetype)
 
     s = symtab_to_name (p) ;
     MOBJ_ALLOC_INSERT (n, nodemobj) ;
+    memset (n, 0, sizeof n) ;
     n->name = s ;
     n->eq = eq ;
     n->nodetype = nodetype ;

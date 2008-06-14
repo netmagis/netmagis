@@ -1,5 +1,5 @@
 /*
- * $Id: graph.h,v 1.8 2008-05-06 19:55:30 pda Exp $
+ * $Id: graph.h,v 1.9 2008-06-14 21:05:49 pda Exp $
  */
 
 /*
@@ -118,7 +118,8 @@ int mobj_write (FILE *fp, MOBJ *d) ;
 #define	NLISTMOBJIDX	10
 #define	RNETMOBJIDX	11
 #define	ROUTEMOBJIDX	12
-#define	NB_MOBJ		(ROUTEMOBJIDX+1)
+#define SSIDMOBJIDX	13
+#define	NB_MOBJ		(SSIDMOBJIDX+1)
 
 #define	hashmobj	(mobjlist [HASHMOBJIDX])
 #define	symmobj		(mobjlist [SYMMOBJIDX])
@@ -133,6 +134,7 @@ int mobj_write (FILE *fp, MOBJ *d) ;
 #define	nlistmobj	(mobjlist [NLISTMOBJIDX])
 #define	rnetmobj	(mobjlist [RNETMOBJIDX])
 #define	routemobj	(mobjlist [ROUTEMOBJIDX])
+#define	ssidmobj	(mobjlist [SSIDMOBJIDX])
 
 extern MOBJ *mobjlist [] ;
 
@@ -260,12 +262,20 @@ enum L1type
     L1T_ETHER,
 } ;
 
+struct radio
+{
+    struct ssid *ssid ;			/* SSID list or NULL if no radio */
+    int channel ;			/* channel frequency */
+    int power ;				/* radio power */
+} ;
+
 struct L1
 {
     char *ifname ;			/* physical interface name */
     char *ifdesc ;			/* description */
     char *link ;			/* physical link name */
     char *stat ;			/* collect point */
+    struct radio radio ;		/* radio parameters */
     enum L1type l1type ;
 } ;
 
@@ -456,6 +466,24 @@ struct rnet
 } ;
 
 /******************************************************************************
+radio parameters seen on interfaces
+******************************************************************************/
+
+enum ssid_mode
+{
+    SSID_OPEN,				/* without authentication */
+    SSID_AUTH,				/* with authentication */
+} ;
+
+/* list of ssid on an L1 (radio) interface */
+struct ssid
+{
+    char *name ;			/* SSID name */
+    enum ssid_mode mode ;		/* open or auth */
+    struct ssid *next ;			/* next in list for this interface */
+} ;
+
+/******************************************************************************
 Graph-file binary format
 ******************************************************************************/
 
@@ -480,6 +508,7 @@ struct graphhdr
 #define	VERSION3	3
 #define	VERSION4	4		/* lvlan */
 #define	VERSION5	5		/* equipement location */
+#define	VERSION6	6		/* radio parameters & ssid */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

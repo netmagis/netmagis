@@ -1,5 +1,5 @@
 /*
- * $Id: textwrite.c,v 1.7 2008-05-06 19:55:30 pda Exp $
+ * $Id: textwrite.c,v 1.8 2008-06-14 21:05:49 pda Exp $
  */
 
 #include "graph.h"
@@ -51,7 +51,7 @@ static void text_write_nodes (FILE *fp)
 	    switch (n->nodetype)
 	    {
 		case NT_L1 :
-		    fprintf (fp, "node %s type L1 eq %s name %s link %s encap %s stat %s desc %s\n",
+		    fprintf (fp, "node %s type L1 eq %s name %s link %s encap %s stat %s desc %s",
 				    n->name,
 				    n->eq->name,
 				    n->u.l1.ifname,
@@ -60,6 +60,28 @@ static void text_write_nodes (FILE *fp)
 				    (n->u.l1.stat == NULL ? "-" : n->u.l1.stat),
 				    (n->u.l1.ifdesc == NULL ? "-" : n->u.l1.ifdesc)
 				) ;
+		    if (n->u.l1.radio.ssid != NULL)
+		    {
+			struct radio *r ;
+			struct ssid *s ;
+
+			r = &(n->u.l1.radio) ;
+			fprintf (fp, " radio %d %d", r->channel, r->power) ;
+
+			for (s = r->ssid ; s != NULL ; s = s->next)
+			{
+			    char *m ;
+
+			    switch (s->mode)
+			    {
+				case SSID_OPEN : m = "open" ; break ;
+				case SSID_AUTH : m = "auth" ; break ;
+				default :        m = "???" ;  break ;
+			    }
+			    fprintf (fp, " ssid %s %s", s->name, m) ;
+			}
+		    }
+		    fprintf (fp, "\n") ;
 		    break ;
 		case NT_L2 :
 		    fprintf (fp, "node %s type L2 eq %s vlan %d stat %s\n",

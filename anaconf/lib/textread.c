@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.8 2008-05-19 20:59:39 pda Exp $
+ * $Id: textread.c,v 1.9 2008-06-14 21:05:49 pda Exp $
  */
 
 #include "graph.h"
@@ -77,6 +77,33 @@ struct link *create_link (char *name, char *n1, char *n2)
     }
 
     return l ;
+}
+
+/******************************************************************************
+Ssid management
+******************************************************************************/
+
+struct ssid *create_ssid (char *name, char *mode)
+{
+    struct ssid *s ;
+
+    s = mobj_alloc (ssidmobj, 1) ;
+
+    if (name != NULL)
+	name = symtab_to_name (symtab_get (name)) ;
+    s->name = name ;
+
+    if (strcmp (mode, "open"))
+	s->mode = SSID_OPEN ;
+    else if (strcmp (mode, "auth"))
+	s->mode = SSID_AUTH ;
+    else
+    {
+	inconsistency ("Invalid mode '%s' for ssid '%s'", mode, name) ;
+	exit (1) ;
+    }
+
+    return s ;
 }
 
 /******************************************************************************
@@ -331,6 +358,7 @@ static void process_L1 (struct attrtab *attrtab, struct node *n)
     char *link ;
     char *encap ;
     char *stat ;
+    struct attrvallist *avlr, *avls ;
 
     ifname = attr_get_val (attr_get_vallist (attrtab, "name")) ;
     n->u.l1.ifname = symtab_to_name (symtab_get (ifname)) ;
@@ -361,6 +389,49 @@ static void process_L1 (struct attrtab *attrtab, struct node *n)
     {
 	inconsistency ("Invalid encap type (%s)", encap) ;
 	exit (1) ;
+    }
+
+    avlr = attr_get_vallist (attrtab, "radio") ;
+    avls = attr_get_vallist (attrtab, "ssid") ;
+    if (avlr != NULL || avls != NULL)
+    {
+	struct radio *r ;
+	char *m = NULL ;
+
+	if (avlr == NULL)
+	    m = "Radio parameters without ssid on %s/%s" ;
+	if (avls == NULL)
+	    m = "SSID parameter without radio information on %s/%s" ;
+	if (m != NULL)
+	{
+	    inconsistency (m, n->eq->name, n->u.l1.ifname) ;
+	    return ;
+	}
+
+	r = &(n->u.l1.radio) ;
+
+	if (sscanf (attr_get_val (avlr), "%d %d", &r->channel, &r->power) != 2)
+	    inconsistency ("Invalid radio parameters (%s)", attr_get_val (avlr)) ;
+
+	/* process ssid list */
+	while (avls != NULL)
+	{
+	    char *ssidname, *ssidmode ;
+	    struct ssid *s ;
+
+	    ssidmode = ssidname = attr_get_val (avls) ;
+	    while (*ssidmode != ' ' && *ssidmode != '\0')
+		ssidmode ++ ;
+	    if (*ssidmode == '\0')
+		error (0, "Internal error : no mode found for ssid") ;
+	    *ssidmode++ = '\0' ;
+
+	    s = create_ssid (ssidname, ssidmode) ;
+	    s->next = r->ssid ;
+	    r->ssid = s ;
+
+	    avls = avls->next ;
+	}
     }
 }
 
@@ -995,6 +1066,7 @@ void text_read (FILE *fpin)
     rnetmobj  = mobj_init (sizeof (struct rnet    ), MOBJ_MALLOC) ;
     routemobj = mobj_init (sizeof (struct route   ), MOBJ_MALLOC) ;
     vlistmobj = mobj_init (sizeof (struct vlanlist), MOBJ_MALLOC) ;
+    ssidmobj  = mobj_init (sizeof (struct ssid    ), MOBJ_MALLOC) ;
 
     vlanmobj  = mobj_init (sizeof (struct vlan    ), MOBJ_CONST) ;
     mobj_alloc (vlanmobj, MAXVLAN) ;

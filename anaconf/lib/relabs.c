@@ -1,5 +1,5 @@
 /*
- * $Id: relabs.c,v 1.5 2008-05-06 19:55:30 pda Exp $
+ * $Id: relabs.c,v 1.6 2008-06-14 21:05:49 pda Exp $
  */
 
 #include "graph.h"
@@ -30,6 +30,7 @@ void rel_to_abs (MOBJ *graph [])
     struct lvlan *lvlantab	= mobj_data (graph [LVLANMOBJIDX]) ;
     struct rnet *rnettab	= mobj_data (graph [RNETMOBJIDX]) ;
     struct route *routetab	= mobj_data (graph [ROUTEMOBJIDX]) ;
+    struct ssid *ssidtab	= mobj_data (graph [SSIDMOBJIDX]) ;
 
     PROLOGABS (max, graph [HASHMOBJIDX], hashtab) ;
     for (i = 0 ; i < max ; i++)
@@ -48,6 +49,13 @@ void rel_to_abs (MOBJ *graph [])
 
     PROLOGABS (max, graph [STRMOBJIDX], strtab) ;
     /* nothing for strmobj */
+
+    PROLOGABS (max, graph [SSIDMOBJIDX], ssidtab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	RELTOABS (ssidtab [i].name, strtab) ;
+	RELTOABS (ssidtab [i].next, ssidtab) ;
+    }
 
     PROLOGABS (max, graph [EQMOBJIDX], eqtab) ;
     for (i = 0 ; i < max ; i++)
@@ -75,6 +83,7 @@ void rel_to_abs (MOBJ *graph [])
 		RELTOABS (nodetab [i].u.l1.ifdesc, strtab) ;
 		RELTOABS (nodetab [i].u.l1.link, strtab) ;
 		RELTOABS (nodetab [i].u.l1.stat, strtab) ;
+		RELTOABS (nodetab [i].u.l1.radio.ssid, ssidtab) ;
 		break ;
 	    case NT_L2 :
 		RELTOABS (nodetab [i].u.l2.stat, strtab) ;

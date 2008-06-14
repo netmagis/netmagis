@@ -1,5 +1,5 @@
 /*
- * $Id: absrel.c,v 1.6 2008-05-06 19:55:30 pda Exp $
+ * $Id: absrel.c,v 1.7 2008-06-14 21:05:49 pda Exp $
  */
 
 #include "graph.h"
@@ -33,6 +33,7 @@ void abs_to_rel (MOBJ *graph [])
     struct lvlan *lvlantab	= mobj_data (graph [LVLANMOBJIDX]) ;
     struct rnet *rnettab	= mobj_data (graph [RNETMOBJIDX]) ;
     struct route *routetab	= mobj_data (graph [ROUTEMOBJIDX]) ;
+    struct ssid *ssidtab	= mobj_data (graph [SSIDMOBJIDX]) ;
 
     PROLOGREL (max, graph [HASHMOBJIDX], hashtab) ;
     for (i = 0 ; i < max ; i++)
@@ -51,6 +52,13 @@ void abs_to_rel (MOBJ *graph [])
 
     PROLOGREL (max, graph [STRMOBJIDX], strtab) ;
     /* nothing for strmobj */
+
+    PROLOGREL (max, graph [SSIDMOBJIDX], ssidtab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	ABSTOREL (ssidtab [i].name, strtab) ;
+	ABSTOREL (ssidtab [i].next, ssidtab) ;
+    }
 
     PROLOGREL (max, graph [EQMOBJIDX], eqtab) ;
     for (i = 0 ; i < max ; i++)
@@ -78,6 +86,7 @@ void abs_to_rel (MOBJ *graph [])
 		ABSTOREL (nodetab [i].u.l1.ifdesc, strtab) ;
 		ABSTOREL (nodetab [i].u.l1.link, strtab) ;
 		ABSTOREL (nodetab [i].u.l1.stat, strtab) ;
+		ABSTOREL (nodetab [i].u.l1.radio.ssid, ssidtab) ;
 		break ;
 	    case NT_L2 :
 		ABSTOREL (nodetab [i].u.l2.stat, strtab) ;

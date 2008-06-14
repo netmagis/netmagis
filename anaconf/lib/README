@@ -1,4 +1,4 @@
-$Id: README,v 1.1 2008-05-07 21:07:22 pda Exp $
+$Id: README,v 1.2 2008-06-14 21:05:49 pda Exp $
 
 Quelques indications pour faciliter les modifications de structure
 du graphe.
@@ -72,5 +72,44 @@ III - Ajout d'un attribut complexe ou d'un nouvel objet
 
 L'ajout d'un attribut complexe (multi-valué) à un objet existant
 correspond à l'ajout d'un attribut simple (cas précédent), mais
-l'attribut correspondant sera le plus souvent la tête d'une liste
+la valeur correspondante sera le plus souvent la tête d'une liste
 vers de nouveaux objets.
+
+Pour ajouter un nouvel objet :
+
+    Première action : changer le numéro de version du fichier
+    ".graph". Voir ci-dessus (I-).
+
+    graph.h
+	ajouter la nouvelle structure. Appelons-la "struct xxx"
+
+	ajouter #define XXXMOBJIDX
+	ajouter #define xxxmobj
+	changer #define NB_MOBJ
+
+	adapter les références (i.e. si une structure existante
+	doit faire référence à la nouvelle struct xxx).
+
+    textread.c
+	ajouter éventuellement une fonction
+	    struct xxx *create_xxx (...)
+
+	ajouter le code pour traiter la création d'une struct xxx
+
+    textwrite.c
+	ajouter le code pour afficher les struct xxx
+
+    absrel.c
+	ajouter un bloc pour convertir l'adresse en index lors
+	de bin_write().
+
+    relabs.c
+	idem absrel.c, dans l'autre sens (bin_read()).
+
+    dupgraph.c
+	ajouter le code pour réaliser la copie de cette structure.
+	Pour ce faire, il faut partir des références à cette nouvelle
+	structure. Pour donner un exemple, les SSID ne sont référencés
+	que par les noeuds de type L1. Il faut donc parcourir tous les
+	L1 pour pouvoir dupliquer les SSID. Attention : il y a deux
+	passes dans la fonction.
