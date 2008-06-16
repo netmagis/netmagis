@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: nb-auth-wifi,v 1.2 2008-06-13 10:16:50 pda Exp $
+# $Id: nb-auth-wifi,v 1.3 2008-06-16 15:42:44 boggia Exp $
 #
 #
 # ###################################################################
@@ -21,9 +21,10 @@ my $conf_file = "%CONF%";
 require "%LIBMETRO%";
 
 $rep_etc = read_conf_file("$conf_file","DIR_ETC");
-$rep_bin = read_conf_file("$conf_file","DIR_BIN");
+$rep_lib = read_conf_file("$conf_file","DIR_LIB");
 
-require "$rep_bin/fonctions-bases-rrd";
+
+require "$rep_lib/libmetro.pl";
 
 # arguments de connexion a la base PSQL
 $dbhost = read_conf_file("$conf_file","MAC_PSQL_SERVER");
