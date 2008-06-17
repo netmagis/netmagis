@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.12 2008-06-12 19:52:06 pda Exp $
+# $Id: webapp.tcl,v 1.13 2008-06-17 21:51:36 jean Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -133,100 +133,36 @@ namespace eval webapp {
 	<style type="text/css">
 	<!--
 
-	#%ID% li {
-	  list-style-type: none;
-	  list-style-image: none;
-	  padding: 0;
-	  margin: 0;
-	  /* border: 1px solid red; */
-	}
-
-	#%ID% img.clic {
-	  cursor: pointer;
-	}
-
-	#%ID% ul {
+	ul#%ID% ul {
 	  background: url("%TREEIMAGES%/tree-line.gif") repeat-y 0px 0px;
 	  padding-left: 24px;
+	  margin-left: 0;
 	}
 
-	#%ID% ul.last {
+	ul#%ID% ul.last {
 	  background: none;
 	}
 
-	#%ID% a {
+	ul#%ID% li {
+	  list-style: none;
 	  padding: 0;
 	  margin: 0;
-	  /* border: 1px solid green; */
 	}
 
-	#%ID% img {
+	ul#%ID% a {
 	  padding: 0;
 	  margin: 0;
-	  /* border: 1px solid blue; */
 	}
 
-	/*******************
-	#arborescence {
-		padding: 5px;
-		background-color: #CCC;
-		width: 250px;
+	ul#%ID% img {
+	  padding: 0;
+	  margin: 0;
 	}
 
-	#arborescence ul#racine {
-		margin: 0px;
-		padding: 0px;
-		/* margin-left: -20px; */
+	ul#%ID% img.click {
+	  cursor: pointer;
 	}
 
-	#arborescence ul, #arborescence li {
-		text-align: left;
-		list-style-type: none;
-		list-style-image: none;
-	}
-
-	#arborescence li {
-		position: relative;
-		margin: 0;
-		padding: 0;
-		/* margin-left: -10px; */
-	}
-
-	#arborescence ul.niv1 ul {
-		background: url("images/arborescence/line.gif") repeat-y 0px 0px;
-		/* display: none; */
-	}
-
-	#arborescence li ul.active {
-		display: block;
-	}
-
-	#arborescence li ul.last {
-		background: none;
-	}
-
-	#arborescence img {
-		position: relative;
-		width: 19px;
-		height: 20px;
-		margin: 0;
-		margin-bottom: -4px;
-		margin-right: 2px;
-		padding: 0px;
-		display: inline;
-		border: none;
-	}
-
-	#arborescence img.clic {
-		cursor: pointer;
-	}
-
-	#arborescence a {
-		color: #000;
-		text-decoration: underline;
-		border: none;
-	}
-	*******************/
 	-->
 	</style>
     }
@@ -825,7 +761,7 @@ proc ::webapp::interactive-tree {id tree} {
     # Générer le code Javascript du "body onload"
     #
 
-    set onload "javascript:multide('$id');"
+    set onload "javascript:multide('$id','none');"
 
     #
     # Générer le code HTML de l'arbre
@@ -863,7 +799,7 @@ proc ::webapp::interactive-tree-rec {level tree last} {
 
     if {$nchildren == 0} then {
 	if {$last} then {
-	    set file "$::webapp::treeimages/tree-joinbotton.gif"
+	    set file "$::webapp::treeimages/tree-joinbottom.gif"
 	} else {
 	    set file "$::webapp::treeimages/tree-join.gif"
 	}
@@ -874,7 +810,7 @@ proc ::webapp::interactive-tree-rec {level tree last} {
 				"src" "$::webapp::treeimages/tree-plus.gif" \
 				"alt" "+" \
 				"onclick" "de(this)" \
-				"class" "clic" \
+				"class" "click" \
 			    ]
 
 	set li ""
