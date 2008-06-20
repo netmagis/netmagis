@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: setgraph,v 1.2 2008-06-13 09:26:05 pda Exp $
+# $Id: setgraph,v 1.3 2008-06-20 08:27:35 boggia Exp $
 # ###################################################################
 #  boggia : Creation : 25/03/08
 #  boggia : Modification : 02/05/08
@@ -88,18 +88,21 @@ use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
 use Socket;
 use strict;
 
-#fichier de configuration principal et chargement des focntions de base
+#fichier de configuration principal et chargement des fonctions de base
 our $conf_file = "%CONF%";
 require "%LIBMETRO%";
 
 # Creation d'une socket syslog unix
 setlogsock("unix");
 
-our $file_graph = read_conf_file("$conf_file","FILE_METRO_GRAPHS");
-our $file_maj_sondes  = read_conf_file("$conf_file","FILE_METRO_UPDATE_PROBES");
-our $rep_db = read_conf_file("$conf_file","DIR_RRD_DB_METRO");
-our $rep_lock = read_conf_file("$conf_file","DIR_LOCK") . "/majMETRO";
-our $file_graph_tmp = read_conf_file("$conf_file","DIR_TMP") . "/metro.graph";
+# lecture du fichier de configuration general
+our %global_var = read_global_conf_file($conf_file);
+
+our $file_graph = $global_var{"FILE_METRO_GRAPHS"};
+our $file_maj_sondes  = $global_var{"FILE_METRO_UPDATE_PROBES"};
+our $rep_db = $global_var{"DIR_RRD_DB_METRO"};
+our $rep_lock = $global_var{"DIR_LOCK"} . "/majMETRO";
+our $file_graph_tmp = $global_var{"DIR_TMP"} . "/metro.graph";
 
 our %liste_graph;
 our %liste_sondes;
