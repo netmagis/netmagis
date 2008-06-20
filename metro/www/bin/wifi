@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: wifi,v 1.2 2008-06-13 10:01:06 pda Exp $
+# $Id: wifi,v 1.3 2008-06-20 08:13:22 boggia Exp $
 #
 #
 # ###################################################################
@@ -21,7 +21,7 @@ require "%LIBMETRO%";
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($conf_file);
 
-$server_hostname = $global_var{"WWW_IDRIS_HOSTNAME"};
+$server_hostname = $global_var{"WWW_METRO_HOSTNAME"};
 $www_root = $global_var{"WWW_IDRIS_DIR_ROOT"};
 $www_bin = $global_var{"WWW_IDRIS_DIR_BIN"};
 $www_img = $global_var{"WWW_IDRIS_DIR_IMG"};
