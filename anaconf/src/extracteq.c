@@ -1,5 +1,5 @@
 /*
- * $Id: extracteq.c,v 1.8 2008-05-06 19:55:30 pda Exp $
+ * $Id: extracteq.c,v 1.9 2008-06-22 21:02:23 pda Exp $
  */
 
 #include "graph.h"
@@ -9,9 +9,11 @@ Example of output format
 
 
 eq crc-cc1 cisco/WS-C4506 45464748
-iface GigaEthernet0/1 <M123 ou ->  <Ether ou Trunk> {X / L33 crc-rc1 ge-0/0/0}
+iface GigaEthernet0/1 <radio> <M123 ou ->  <Ether ou Trunk> {X / L33 crc-rc1 ge-0/0/0}
     {0 {} <ip> ...} {7 <vlan-desc-en-hexa> 130.79.....} ...
 <all ifaces>
+
+with <radio> = {<channel> <power> <ssid> <ssid> ...} ou {}
 ******************************************************************************/
 
 #define	LB	'{'
@@ -40,7 +42,18 @@ void output_iface (FILE *fp, struct node *n)
     stat = (n->u.l1.stat == NULL) ? "-" : n->u.l1.stat ;
     type = (n->u.l1.l1type == L1T_TRUNK) ? "Trunk" : "Ether" ;
 
-    fprintf (fp, "iface %s %s %s", ifname, stat, type) ;
+    fprintf (fp, "iface %s %c", ifname, LB) ;
+
+    if (n->u.l1.radio.ssid != NULL)
+    {
+	struct ssid *s ;
+
+	fprintf (fp, "%d %d", n->u.l1.radio.channel, n->u.l1.radio.power) ;
+	for (s = n->u.l1.radio.ssid ; s != NULL ; s = s->next)
+	    fprintf (fp, " %s", s->name) ;
+    }
+
+    fprintf (fp, "%c %s %s", RB, stat, type) ;
 
     peer = get_neighbour (n, NT_L1) ;
     if (peer == NULL)

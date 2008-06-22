@@ -226,26 +226,35 @@ proc main {} {
 	    # Mettre en forme toutes ces informations
 	    #
 
-	    set txt "<UL>\n"
+	    set texte ""
 	    foreach i $iflist {
-		append txt "<LI><P>"
+		set txt ""
 		set ligne $tabiface($i)
 
-		set nom  [lindex $ligne 1]
-		set stat [lindex $ligne 2]
-		set mode [lindex $ligne 3]
-		set lien [lindex $ligne 4]
-		set ligne [lreplace $ligne 0 4]
+		set nom   [lindex $ligne 1]
+		set radio [lindex $ligne 2]
+		set stat  [lindex $ligne 3]
+		set mode  [lindex $ligne 4]
+		set lien  [lindex $ligne 5]
+		set ligne [lreplace $ligne 0 5]
+
 
 		if {[string equal $iface $nom]} then {
-		    append txt "<B>$nom</B>"
+		    append txt [::webapp::helem "b" $nom]
 		} else {
 		    append txt "$nom"
 		}
 
+		if {[llength $radio] > 0} then {
+		    set channel [lindex $radio 0]
+		    set power   [lindex $radio 1]
+		    append txt " (channel $channel power $power)"
+		}
+
 		if {! [string equal $stat "-"]} then {
 		    set url [format $conf(urlstat) [::webapp::post-string $stat] $u1]
-		    append txt [format " <A HREF=\"%s\">\[Trafic\]</A>" $url]
+		    append txt " "
+		    append txt [::webapp::helem "a" {[Trafic]} "href" $url]
 		}
 
 		append txt " $mode"
@@ -256,8 +265,8 @@ proc main {} {
 		    set if2 [lindex $lien 2]
 
 		    set urleqiface [format $conf(urleqiface) $eq2 $if2 $u1]
-		    append txt [format " $via vers <A HREF=\"%s\">$eq2 $if2</A>" \
-				    $urleqiface]
+		    append txt " $via vers "
+		    append txt [::webapp::helem "a" "$eq2 $if2" "href" $urleqiface]
 		}
 
 		set nvlan [llength $ligne]
@@ -275,22 +284,27 @@ proc main {} {
 
 		    if {$nvlan > 1 || $vlanid != 0} then {
 			set urll2 [format $conf(urll2) $nomeq $i $vlanid $u1]
-			append txt [format "Vlan <A HREF=\"%s\">$vlanid ($desc)</A>" $urll2]
+			append txt "Vlan "
+			append txt [::webapp::helem "a" "$vlanid ($desc)" \
+						"href" $urll2]
 
 			if {! [string equal $stat "-"]} then {
 			    set url [format $conf(urlstat) $stat $u1]
-			    append txt [format " <A HREF=\"%s\">\[Trafic\]</A>" $url]
+			    append txt " "
+			    append txt [::webapp::helem "a" {[Trafic]} \
+						"href" $url]
 			}
 		    }
 
 		    foreach ip [lsort [lindex $vlan 3]] {
 			set urll3 [format $conf(urll3) $ip $u1]
-			append txt [format " <A HREF=\"%s\">$ip</A>" $urll3]
+			append txt " "
+			append txt [::webapp::helem "a" $ip "href" $urll3]
 		    }
 		}
-		append txt "</P>"
+		append texte [::webapp::helem "li" [::webapp::helem "p" $txt]]
 	    }
-	    append txt "</UL>"
+	    set texte [::webapp::helem "ul" $texte]
 
 	    #
 	    # Sortie de la page
@@ -299,7 +313,7 @@ proc main {} {
 	    ::webapp::send html [::webapp::file-subst $conf(page1) \
 						[list \
 							[list %TITRE% $titre] \
-							[list %TEXTE% $txt] \
+							[list %TEXTE% $texte] \
 							[list %EQ%    $eq] \
 							[list %VLAN%  ""] \
 							[list %ADDR%  ""] \
@@ -312,14 +326,16 @@ proc main {} {
 	    # Trier les équipements pour les présenter dans le bon ordre
 	    #
 
-	    set liste "<UL>\n"
+	    set liste ""
 	    foreach e [lsort [array names tabeq]] {
 		set type   [lindex $tabeq($e) 0]
 		set modele [lindex $tabeq($e) 1]
 		set url [format $conf(urleq) $e $u1]
-		append liste [format "<LI><A HREF=\"%s\">$e</A> $type $modele\n" $url]
+
+		set lien [::webapp::helem "a" $e "href" $url]
+		append liste [::webapp::helem "li" "$lien $type $modele"]
 	    }
-	    append liste "</UL>"
+	    set liste [::webapp::helem "ul" $liste]
 
 	    #
 	    # Sortie de la page
