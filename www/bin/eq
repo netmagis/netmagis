@@ -58,6 +58,24 @@ set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
 set conf(urll2)		"$conf(homeurl)/bin/l2?eq=%s&iface=%s&vlan=%d%s"
 set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
 
+#
+# Les fréquences radio
+#
+
+array set conf {
+    freq:2412	1
+    freq:2417	2
+    freq:2422	3
+    freq:2427	4
+    freq:2432	5
+    freq:2437	6
+    freq:2442	7
+    freq:2447	8
+    freq:2452	9
+    freq:2457	10
+    freq:2462	11
+}
+
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -248,7 +266,14 @@ proc main {} {
 		if {[llength $radio] > 0} then {
 		    set channel [lindex $radio 0]
 		    set power   [lindex $radio 1]
-		    append txt " (channel $channel power $power)"
+
+		    if {[info exists conf(freq:$channel)]} then {
+			set channel $conf(freq:$channel)
+		    } else {
+			set channel "$channel MHz"
+		    }
+
+		    append txt " (channel $channel power $power mW)"
 		}
 
 		if {! [string equal $stat "-"]} then {
