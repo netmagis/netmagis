@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: setgraph,v 1.3 2008-06-20 08:27:35 boggia Exp $
+# $Id: setgraph,v 1.4 2008-06-25 12:42:46 boggia Exp $
 # ###################################################################
 #  boggia : Creation : 25/03/08
 #  boggia : Modification : 02/05/08
@@ -220,7 +220,7 @@ sub capture_liste
 	}
 	elsif($key=~/^([0-9]+)_nom$/ && !exists $liste_graph{$key})
 	{
-	    $liste_graph{$key} = $liste_sondes{$key};
+	    $liste_graph{$1} = $liste_sondes{$key};
 	}
     }
 }
@@ -281,7 +281,7 @@ sub charger_liste_existante
     while(<LISTE>)
     {
 	chomp;
-	if(/^(.+);(.+);(.+);(.+);(.+)$/)
+	if(/^(.*);(.*);(.*);(.*);(.*)$/)
 	{
 	    # supprime les doublons
 	    if(!defined($nom_g{$1}))
@@ -329,7 +329,8 @@ sub cree_ligne_graph
 	}
 	else
 	{
-	    push @{$sondes[$t_sondes]},$liste_sondes{"$index" . "_type"};
+	    $type_graph = $liste_sondes{"$index" . "_type"};
+	    push @{$sondes[$t_sondes]},$type_graph;
 	}
 	push @{$sondes[$t_sondes]},$liste_bases;
 	push @{$sondes[$t_sondes]},$ip_addr;
