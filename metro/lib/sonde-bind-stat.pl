@@ -1,4 +1,4 @@
-# $Id: sonde-bind-stat.pl,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# $Id: sonde-bind-stat.pl,v 1.2 2008-06-26 07:13:14 boggia Exp $
 # ###################################################################
 # boggia : Creation : 25/03/08
 #
@@ -69,8 +69,29 @@ sub get_snmp_bind_stat
 		{
 			writelog("get_bind_stat",$config{'logopt'},"info",
 				"\t -> ERROR while updating $base: $ERR");
-		}
-        }
+	
+			# si il y eu erreur parce que la base n'existe pas
+			# il faut la créer
+			if($ERR =~/No such file or directory/)
+            		{
+                		if($base =~/$config{'path_rrd_db'}/)
+                		{
+					# creation d'une nouvelle base
+                        		creeBaseBind_stat($base);
+					
+                        		writelog("get_bind_stat",$config{'logopt'},"info",
+                             			"\t -> create $base");
+					
+					# on veut le nom de l'AP pour la supervision de l'etat de l'AP
+                			my $iaddr = inet_aton($host);
+                			my $hostname  = gethostbyaddr($iaddr, AF_INET);
+                			($hostname)=(split(/\./,$hostname))[0];
+					# insertion de la ligne dans index.graph
+                        		system("echo \"$hostname-bind;bind;1;$base;Statistiques de Bind sur $hostname\" >> $config{'path_etc'}/index.graph");
+				}
+			}
+        	}
+	}
 }
 
 return 1;

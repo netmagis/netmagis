@@ -1,4 +1,4 @@
-# $Id: libmetro.pl,v 1.1 2008-06-13 09:26:05 pda Exp $
+# $Id: libmetro.pl,v 1.2 2008-06-26 07:13:14 boggia Exp $
 ###########################################################
 #   Creation : 26/03/08 : boggia
 # 
@@ -223,6 +223,9 @@ sub creeBaseCPUCisco
     system("chown obj999:obj999 $fichier");
 }
 
+###########################################################
+# fonction  qui crée une base qui stocke les stats du démon
+# bind
 sub creeBaseBind_stat
 {
 ($fichier)=@_;
