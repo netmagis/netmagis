@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cree-base-rrd,v 1.2 2008-06-13 10:16:50 pda Exp $
+# $Id: cree-base-rrd,v 1.3 2008-06-26 14:57:00 boggia Exp $
 #
 #
 # ###################################################################
@@ -678,6 +678,7 @@ sub cree_rrd_serveur
 		}
 
 		$commande = "ifNom-snmp32 $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute $desc_inter";
+		$param_graph = "$nom_equip-trafic-$desc_inter;trafic;1;$dir_bases/$repertoire/$nom_fichier_base;trafic sur $desc_inter de $nom_equip";
 	}
 	elsif($choix_sonde == 2)
 	{
@@ -720,6 +721,8 @@ sub cree_rrd_serveur
 
 			print "\nNom de la base : $nom_base\n";
 			$commande = "$dir_sondes/CPU-serveur.pl $dir_bases/$repertoire/$nom_base $ip_addr $communaute $n";
+			$param_graph = "$nom_equip-cpu;GaugeCPU;1;$dir_bases/$repertoire/$nom_base;Utilisation CPU de $nom_equip";
+
 			$param1 = "$dir_bases/$repertoire";
 			$existe_base = test_base_existe($param1,$nom_base);
 			
@@ -740,10 +743,7 @@ sub cree_rrd_serveur
                 	}
 
                 	######mise a jour des fichiers lancant les actions d'update des bases
-                	maj_fichier_update($dir_majdb,$commande,$nb_MAX_lignes);
-
-			system("echo \"$nom_equip-cpu;GaugeCPU;1;$dir_bases/$repertoire/$nom_base;Utilisation CPU de ash\" >> $dir_etc/index.graph");
-	
+                	maj_fichier_update($dir_majdb,$commande,$nb_MAX_lignes,$param_graph);
 		}
 
 	}
@@ -815,6 +815,7 @@ sub cree_rrd_serveur
 		
 		print "\nNom de la base : $nom_fichier_base\n";
                 $commande = "$dir_sondes/LOAD-serveur.pl $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute";
+		$param_graph = "$nom_equip-load;GaugeLoadAverage;1;$dir_bases/$repertoire/$nom_base;Load Average de $nom_equip";
 	}
 	elsif($choix_sonde == 6)
 	{
@@ -838,6 +839,7 @@ sub cree_rrd_serveur
 
                 print "\nNom de la base : $nom_fichier_base\n";
                 $commande = "get-bind-stat $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute";
+		$param_graph = "$nom_equip-bind;bind;1;$dir_bases/$repertoire/$nom_base;Statistiques de Bind sur $nom_equip";
 	}
 	# transaction par secondes sur un disque
 	elsif($choix_sonde == 7)
@@ -905,6 +907,7 @@ sub cree_rrd_serveur
                 $desc_disque = $tab[$choix_inter-1][1];
 
                 $commande = "get_tps_disk $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute $desc_disque";
+		$param_graph = "$nom_equip-tps-$nom_disque;tpsDisk;1;$dir_bases/$rpertoire/$nom_base;Transitions par secondes sur $nom_disque de $nom_equip";
 	}
 	elsif($choix_sonde == 8)
         {
@@ -928,6 +931,7 @@ sub cree_rrd_serveur
 
                 print "\nNom de la base : $nom_fichier_base\n";
                 $commande = "get_mailq $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute";
+		$param_graph = "$nom_equip-mailq;GaugeMailq;1;$dir_bases/$repertoire/$nom_fichier_base;mailq sur $nom_equip";
         }
 
 	
@@ -978,7 +982,7 @@ sub cree_rrd_serveur
         	}
 
  		######mise a jour des fichiers lancant les actions d'update des bases
-        	maj_fichier_update($dir_majdb,$commande,$nb_MAX_lignes);
+        	maj_fichier_update($dir_majdb,$commande,$nb_MAX_lignes,$param_graph);
 	}
 }
 
@@ -1432,7 +1436,7 @@ sub question_ecraser_fichier
 
 sub maj_fichier_update
 {
-($dir_majdb,$commande,$nb_MAX_lignes)=@_;
+($dir_majdb,$commande,$nb_MAX_lignes,$param_graph)=@_;
         opendir(DIR_MAJDB,$dir_majdb);
         @majdb=grep(/^majDB/, readdir DIR_MAJDB);
         closedir(DIR_MAJDB);
@@ -1521,6 +1525,9 @@ sub maj_fichier_update
                         print "Le fichier $fich a ete mis a jour.\n";
                 }
         }
+
+	system("echo \"$param_graph\" >> $dir_etc/index.graph");
+
 }
 
 
