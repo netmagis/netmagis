@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.13 2008-05-19 20:59:39 pda Exp $
+# $Id: parse-cisco.tcl,v 1.14 2008-06-27 14:27:15 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -15,6 +15,7 @@
 #   2007/07/12 : pda      : debut codage ios router
 #   2007/07/13 : pda      : retrait cisco_debug et ajout flag debug en global
 #   2008/02/07 : pda/jean : correction ios router
+#   2008/06/27 : pda/jean : ajout traitement des gigastack
 #
 
 ###############################################################################
@@ -1321,6 +1322,7 @@ proc cisco-sanitize {model eq tab} {
 #   2007/06/15 : pda/jean  : description des vlans locaux
 #   2007/07/12 : pda       : debut conception sous-interface (ios router)
 #   2008/05/19 : pda       : ajout paramètres radio
+#   2008/06/27 : pda/jean  : ajout traitement des gigastacks
 #
 
 proc cisco-post-process {model fdout eq tab} {
@@ -1365,6 +1367,54 @@ proc cisco-post-process {model fdout eq tab} {
 		puts $fdout " desc $desc"
 	    }
 	}
+    }
+
+    #
+    # Chercher les interfaces "Gigastack" : deux liens multiplexés
+    # sur la même interface physique. On les repère avec Lx|Ly,
+    # et on crée deux interfaces fictives
+    #
+
+    set error 0
+    foreach iface $t(eq!$eq!if) {
+	if {[regexp {^(Vlan|Tunnel|BVI|Null|Loopback)[0-9]+} $iface]} then {
+	    # rien. On ignore l'absence de description pour
+	    # ces interfaces.
+	} elseif {[info exists t(eq!$eq!if!$iface!link!name)]} then {
+	    set linkname $t(eq!$eq!if!$iface!link!name)
+	    set l [split $linkname "|"]
+	    switch [llength $l] {
+		1 {
+		    # interface normale, on ne fait rien
+		}
+		2 {
+		    # Gigastack trouvé
+		    # On crée une interface fictive nommée ".../2"
+		    set niface "$iface/2"
+
+		    set t(eq!$eq!if!$iface!link!name) [lindex $l 0]
+
+		    set t(eq!$eq!if!$niface!link!name) [lindex $l 1]
+		    set t(eq!$eq!if!$niface!link!stat) "-"
+
+		    foreach x {allowedvlans desc type} {
+			if {[info exists t(eq!$eq!if!$iface!link!$x)]} then {
+			    set t(eq!$eq!if!$niface!link!$x) \
+					$t(eq!$eq!if!$iface!link!$x)
+			}
+		    }
+
+		    lappend t(eq!$eq!if) $niface
+		}
+		default {
+		    cisco-warning "$eq/$iface : too many '|' in link name ($linkname)"
+		    set error 1
+		}
+	    }
+	}
+    }
+    if {$error} then {
+	return 1
     }
 
     #
