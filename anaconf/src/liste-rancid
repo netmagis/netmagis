@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: liste-rancid,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+# $Id: liste-rancid,v 1.2 2008-07-07 16:49:24 pda Exp $
 #
 # Analyse un fichier de configuration de rancid, et en extrait
 # le nom et le type de chaque équipement, et extrait de chaque
@@ -13,6 +13,7 @@
 #
 # Historique :
 #   2004/06/08 : pda/jean : conception
+#   2008/07/07 : pda      : ajout hp
 #
 
 if [ $# != 2 ]
@@ -29,6 +30,11 @@ fetch_model_cisco ()
     sed -n "/^!Chassis type:/s/!Chassis type: \([^ ]*\) .*/\1/p" "$1"
 }
 
+fetch_model_hp ()
+{
+    sed -n "/^;Chassis type:/s/;Chassis type: \([^ ]*\).*/\1/p" "$1"
+}
+
 fetch_model_juniper ()
 {
     sed -n "/^# Chassis/s/.* \([^ ]*\)$/\1/p" "$1"
@@ -41,6 +47,9 @@ grep ":up$" $DB |
 	case "$type" in
 	    cisco)
 		model=`fetch_model_cisco "$DIR/$eq"`
+		;;
+	    hp)
+		model=`fetch_model_hp "$DIR/$eq"`
 		;;
 	    juniper)
 		model=`fetch_model_juniper "$DIR/$eq"`
