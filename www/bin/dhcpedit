@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dhcpedit,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: dhcpedit,v 1.5 2008-07-12 23:40:01 jean Exp $
 
 #
 # Script de présentation des paramètres DHCP d'un réseau
@@ -94,11 +94,12 @@ proc main {} {
     # Préparer les éléments du tableau n+5
     #
 
-    set largeurs {30 30 20 10 10}
+    set largeurs {25 25 20 10 10 10}
     set titre {{texte Min} {texte Max}
 		{texte Domaine}
 		{texte {Durée par défaut du bail}}
 		{texte {Durée maximum du bail}}
+		{texte Profil DHCP}
 	    }
 
     set menudom {}
@@ -110,6 +111,19 @@ proc main {} {
 	lappend menudom [list $tab(iddom) $tab(nom)]
     }
 
+    set menudhcp {}
+    set sql "	(SELECT 0 AS iddhcpprofil, 'Aucun profil' AS nom)
+		UNION
+		(SELECT p.iddhcpprofil AS iddhcpprofil, p.nom AS nom
+		    FROM dr_dhcpprofil dr, dhcpprofil p, corresp c
+		    WHERE c.idcor = $tabcor(idcor)
+			AND dr.idgrp = c.idgrp
+			AND dr.iddhcpprofil = p.iddhcpprofil
+		    ORDER BY dr.tri ASC)
+		ORDER BY nom"
+    pg_select $dbfd $sql tab {
+	lappend menudhcp [list $tab(iddhcpprofil) $tab(nom)]
+    }
 
     set spec {
 	    {min		{string 15}	{}}
@@ -117,8 +131,10 @@ proc main {} {
 	    {iddom		{menu {%MENUDOM%}}	{}}
 	    {default_lease_time	{string 10}	0}
 	    {max_lease_time	{string 10}	0}
+	    {iddhcpprofil	{menu {%MENUDHCP%}}	0}
 	}
     regsub -- "%MENUDOM%" $spec "$menudom" spec
+    regsub -- "%MENUDHCP%" $spec "$menudhcp" spec
     set sql "SELECT * FROM dhcprange
 			WHERE min <<= '$lcidr'
 			    AND max <<= '$lcidr'

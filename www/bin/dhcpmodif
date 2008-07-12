@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dhcpmodif,v 1.5 2007-11-14 15:27:28 pda Exp $
+# $Id: dhcpmodif,v 1.6 2008-07-12 23:40:01 jean Exp $
 
 #
 # Script de modification des paramètres DHCP d'un réseau
@@ -43,12 +43,14 @@ set conf(form)	{
 	{iddom[0-9]+			0 9999}
 	{default_lease_time[0-9]+	0 9999}
 	{max_lease_time[0-9]+		0 9999}
+	{iddhcpprofil[0-9]+		0 9999}
 
 	{minn[0-9]+			1 9999}
 	{maxn[0-9]+			1 9999}
 	{iddomn[0-9]+			1 9999}
 	{default_lease_timen[0-9]+	1 9999}
 	{max_lease_timen[0-9]+		1 9999}
+	{iddhcpprofiln[0-9]+		1 9999}
 }
 
 #
@@ -199,7 +201,7 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
 	    default	{ set new 0 }
 	}
 
-	foreach c {min max iddom default_lease_time max_lease_time} {
+	foreach c {min max iddom default_lease_time max_lease_time iddhcpprofil} {
 	    if {! [info exists ftab($c$i)]} then {
 		return "Formulaire non conforme (champ '$c$i' non trouvé)"
 	    }
@@ -210,6 +212,16 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
 	set max			[string trim [lindex $ftab(max$i) 0]]
 	set default_lease_time	[string trim [lindex $ftab(default_lease_time$i) 0]]
 	set max_lease_time	[string trim [lindex $ftab(max_lease_time$i) 0]]
+	set iddhcpprofil	[string trim [lindex $ftab(iddhcpprofil$i) 0]]
+
+	#
+	# Cas spécial : lorsque le profil dhcp vaut 0 (Aucun profil)
+	# il faut remplacer sa valeur par une chaine vide
+	#
+
+	if {$iddhcpprofil == 0} {
+	    set ftab(iddhcpprofil$i) [lreplace $ftab(iddhcpprofil$i) 0 0 ""]
+	}
 
 	#
 	# Valider que l'on a bien le droit de modifier l'intervalle
@@ -236,6 +248,14 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
 	    set msg [valide-domaine $dbfd $idcor $tabdom($iddom) bidon "tri"]
 	    if {! [string equal $msg ""]} then {
 		return $msg
+	    }
+
+	    #
+	    # Vérifier le profil DHCP
+	    #
+
+	    if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
+		return "Profil DHCP invalide ($msg)"
 	    }
 
 	    #
@@ -386,6 +406,7 @@ proc main {} {
 	{iddom}
 	{default_lease_time}
 	{max_lease_time}
+	{iddhcpprofil}
     }
 
     set msg [enregistrer-tableau $dbfd $spec iddhcprange dhcprange ftab]
