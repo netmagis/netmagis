@@ -1,6 +1,6 @@
 #!/usr/local/bin/tclsh8.4
 
-# $Id: generer-dhcp,v 1.2 2007-08-29 10:51:47 pda Exp $
+# $Id: generer-dhcp,v 1.3 2008-07-12 23:39:32 jean Exp $
 
 #
 # Script de génération d'une configuration DHCP
@@ -170,8 +170,19 @@ proc generer-dhcp {dbfd} {
 		    [list $tab(dom) \
 			    $tab(min) $tab(max) \
 			    $tab(default_lease_time) $tab(max_lease_time) \
+			    $tab(iddhcpprofil) \
 			]
     }
+
+    #
+    # Récupérer les profils DHCP
+    #
+
+    set sql "SELECT iddhcpprofil, nom, texte FROM dhcpprofil"
+    pg_select $dbfd $sql tab {
+	set dhcpprofil($tab(iddhcpprofil)) $tab(texte)
+    }
+
 
     #
     # Générer chaque réseau trouvé
@@ -193,8 +204,12 @@ proc generer-dhcp {dbfd} {
 		set max                [lindex $pool 2]
 		set default_lease_time [lindex $pool 3]
 		set max_lease_time     [lindex $pool 4]
+		set iddhcpprofil       [lindex $pool 5]
 
 		puts stdout "\tpool $accg"
+		if {[info exists dhcpprofil($iddhcpprofil)]} then {
+		    puts stdout "\t\t$dhcpprofil($iddhcpprofil)"
+		}
 		puts stdout "\t\trange $min $max ;"
 		puts stdout "\t\toption domain-name \"$dom\" ;"
 		if {$max_lease_time < $dhcpdef(min_lease_time)} then {
@@ -214,16 +229,6 @@ proc generer-dhcp {dbfd} {
 	}
 	puts stdout "$accd"
 	puts stdout ""
-    }
-
-    #
-    # Récupérer les paramètres des groupes pour utilisation dans
-    # la boucle d'après.
-    #
-
-    set sql "SELECT iddhcpprofil, nom, texte FROM dhcpprofil"
-    pg_select $dbfd $sql tab {
-	set dhcpprofil($tab(iddhcpprofil)) $tab(texte)
     }
 
 
