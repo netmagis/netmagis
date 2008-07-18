@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: libgraph.pl,v 1.1 2008-06-13 09:26:05 pda Exp $
+# $Id: libgraph.pl,v 1.2 2008-07-18 12:57:22 boggia Exp $
 ###########################################################
 # Creation : 21/05/08 : boggia
 #
@@ -307,7 +307,7 @@ sub aggreg_trafic
     my ($width,$height) = split(/x/,$size);
 
     my $couleur_cumul = "c9c9c9";
-    my @couleurs_flux = qw(e207ff 0010ff ffbb00 32bc2d ff8800 ff0000 00ffaa);
+    my @couleurs_flux = qw(e207ff 0010ff ffbb00 32bc2d ff8800 ff0000 00ffaa 000000 fb96be 795634);
 
     my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
 
