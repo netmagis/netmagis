@@ -1,5 +1,5 @@
 #
-# $Id: parse-juniper.tcl,v 1.7 2008-05-06 19:55:30 pda Exp $
+# $Id: parse-juniper.tcl,v 1.8 2008-07-21 15:12:37 pda Exp $
 #
 # Package d'analyse de fichiers de configuration JunOS
 #
@@ -207,6 +207,7 @@ proc juniper-match-network {adr cidr} {
 
 #
 # Entrée :
+#   - libdir : répertoire contenant les greffons d'analyse
 #   - model : modèle de l'équipement (ex: M20)
 #   - fdin : descripteur de fichier en entrée
 #   - fdout : descripteur de fichier pour la génération
@@ -218,9 +219,10 @@ proc juniper-match-network {adr cidr} {
 # Historique
 #   2004/03/23 : pda/jean : conception
 #   2004/06/08 : pda/jean : ajout de model
+#   2008/07/07 : pda/jean : ajout paramètre libdir
 #
 
-proc juniper-parse {model fdin fdout tab eq} {
+proc juniper-parse {libdir model fdin fdout tab eq} {
     upvar $tab t
 
     array set kwtab {

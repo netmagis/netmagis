@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.14 2008-06-27 14:27:15 pda Exp $
+# $Id: parse-cisco.tcl,v 1.15 2008-07-21 15:12:37 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -261,6 +261,7 @@ proc cisco-match-network {adr cidr} {
 
 #
 # Entrée :
+#   - libdir : répertoire contenant les greffons d'analyse
 #   - model : modèle de l'équipement (ex: M20)
 #   - fdin : descripteur de fichier en entrée
 #   - fdout : fichier de sortie pour la génération
@@ -273,149 +274,56 @@ proc cisco-match-network {adr cidr} {
 #   2004/03/23 : pda/jean : conception
 #   2004/06/08 : pda/jean : ajout de model
 #   2007/07/12 : pda      : ajout de ios
+#   2008/07/07 : pda/jean : ajout paramètre libdir
 #
 
-proc cisco-parse {model fdin fdout tab eq} {
+proc cisco-parse {libdir model fdin fdout tab eq} {
     upvar $tab t
-
-    set error 0
-
-    lappend t(eq) $eq
-    set idx "eq!$eq"
-    set t($idx!if) {}
-    set t($idx!ios) "unsure"
-    while {[gets $fdin line] > -1} {
-	if {! [regexp {^!} $line]} then {
-	    set error [cisco-parse-line $line t $idx]
-	}
+    array set kwtab {
+	-COMMENT			^!
+	interface			{CALL cisco-parse-interface}
+	vlan				{CALL cisco-parse-vlan}
+	name				{CALL cisco-parse-vlan-name}
+	switchport			NEXT
+	switchport-access		NEXT
+	switchport-access-vlan		{CALL cisco-parse-access-vlan}
+	switchport-mode			{CALL cisco-parse-mode}
+	switchport-trunk		NEXT
+	switchport-trunk-encapsulation	{CALL cisco-parse-encap}
+	switchport-trunk-allowed	NEXT
+	switchport-trunk-allowed-vlan	{CALL cisco-parse-allowed-vlan}
+	ip				NEXT
+	ip-address			{CALL cisco-parse-ip-address}
+	ipv6				NEXT
+	ipv6-address			{CALL cisco-parse-ipv6-address}
+	description			{CALL cisco-parse-desc}
+	channel-group			{CALL cisco-parse-channel-group}
+	shutdown			{CALL cisco-parse-shutdown}
+	snmp-server			NEXT
+	snmp-server-community		{CALL cisco-parse-snmp-community}
+	snmp-server-location		{CALL cisco-parse-snmp-location}
+	encapsulation			NEXT
+	encapsulation-dot1Q		{CALL cisco-parse-encapsulation-dot1q}
+	bridge-group			{CALL cisco-parse-bridge-group}
+	router				{CALL cisco-parse-router}
+	dot11				NEXT
+	dot11-ssid			{CALL cisco-parse-dot11}
+	authentication			NEXT
+	authentication-open		{CALL cisco-parse-auth}
+	ssid				{CALL cisco-parse-iface-ssid}
+	channel				{CALL cisco-parse-iface-channel}
+	power				NEXT
+	power-local			NEXT
+	power-local-ofdm		{CALL cisco-parse-iface-power}
     }
 
+    set error [ios-parse $libdir $model $fdin $fdout t $eq kwtab]
     if {! $error} then {
 	set error [cisco-post-process $model $fdout $eq t]
     }
 
     return $error
 }
-
-array set cisco_kwtab {
-    interface				{CALL cisco-parse-interface}
-    vlan				{CALL cisco-parse-vlan}
-    name				{CALL cisco-parse-vlan-name}
-    switchport				NEXT
-    switchport-access			NEXT
-    switchport-access-vlan		{CALL cisco-parse-access-vlan}
-    switchport-mode			{CALL cisco-parse-mode}
-    switchport-trunk			NEXT
-    switchport-trunk-encapsulation	{CALL cisco-parse-encap}
-    switchport-trunk-allowed		NEXT
-    switchport-trunk-allowed-vlan	{CALL cisco-parse-allowed-vlan}
-    ip					NEXT
-    ip-address				{CALL cisco-parse-ip-address}
-    ipv6				NEXT
-    ipv6-address			{CALL cisco-parse-ipv6-address}
-    description				{CALL cisco-parse-desc}
-    channel-group			{CALL cisco-parse-channel-group}
-    shutdown				{CALL cisco-parse-shutdown}
-    snmp-server				NEXT
-    snmp-server-community		{CALL cisco-parse-snmp-community}
-    snmp-server-location		{CALL cisco-parse-snmp-location}
-    encapsulation			NEXT
-    encapsulation-dot1Q			{CALL cisco-parse-encapsulation-dot1q}
-    bridge-group			{CALL cisco-parse-bridge-group}
-    router				{CALL cisco-parse-router}
-    dot11				NEXT
-    dot11-ssid				{CALL cisco-parse-dot11}
-    authentication			NEXT
-    authentication-open			{CALL cisco-parse-auth}
-    ssid				{CALL cisco-parse-iface-ssid}
-    channel				{CALL cisco-parse-iface-channel}
-    power				NEXT
-    power-local				NEXT
-    power-local-ofdm			{CALL cisco-parse-iface-power}
-}
-
-#
-# Analyse une ligne de conf IOS
-#
-# Entrée :
-#   - line : extrait de conf
-#   - tab : tableau contenant les informations résultant de l'analyse
-#   - idx : index dans le tableau tab
-#   - variable globale debug : affiche les mots-clefs
-# Sortie :
-#   - valeur de retour : 1 si erreur, 0 sinon
-#
-# Historique
-#   2004/03/26 : pda/jean : conception (ouh la la !)
-#
-
-proc cisco-parse-line {line tab idx} {
-    global debug
-    global cisco_kwtab
-    upvar $tab t
-
-    if {$debug & 0x01} then {
-	cisco-debug "$line"
-    }
-
-    set active 1
-    set error 0
-    set first 1
-    set kwlist {}
-    set finished 0
-    while {! $finished} {
-	#
-	# Prendre le premier élément de la ligne
-	#
-	if {[regexp {^\s*(\S+)\s*(.*)$} $line bidon kw line]} then {
-	    #
-	    # cas spécial de "no ..." : on passe au suivant
-	    #
-	    if {$first} then {
-		set first 0
-		if {[string equal $kw "no"]} then {
-		    set active 0
-		    continue
-		}
-	    }
-
-	    #
-	    # Chercher
-	    #
-
-	    lappend kwlist $kw
-	    set fullkw [join $kwlist "-"]
-	    if {[info exists cisco_kwtab($fullkw)]} then {
-		if {$debug & 0x01} then {
-		    cisco-debug "match $fullkw ($line) -> $cisco_kwtab($fullkw)"
-		}
-		set action $cisco_kwtab($fullkw)
-		switch [lindex $action 0] {
-		    NEXT {
-			# rien
-		    }
-		    CALL {
-			set fct [lindex $action 1]
-			set error [$fct $active $line t $idx]
-			set finished 1
-		    }
-		    default {
-			cisco-warning "Unvalid value in kwtab($fullkw) ($action)"
-			set error 1
-			set finished 1
-		    }
-		}
-	    } else {
-		set finished 1
-	    }
-	} else {
-	    set finished 1
-	}
-    }
-
-    return $error
-}
-
 
 #
 # Entrée :
@@ -680,27 +588,7 @@ proc cisco-parse-allowed-vlan {active line tab idx} {
     }
 
     if {! $error} then {
-	set alvlan [split [lindex $line 0] ","]
-	foreach vr $alvlan {
-	    set rg [split $vr "-"]
-	    switch [llength $rg] {
-		1 {
-		    set v [lindex $rg 0]
-		    lappend l [list $v $v]
-		}
-		2 {
-		    lappend l $rg
-		}
-		default {
-		    cisco-warning "Unrecognized vlan range ($vr) on $ifname"
-		    set error 1
-		    break
-		}
-	    }
-	}
-    }
-
-    if {! $error} then {
+	set l [concat $l [parse-list [lindex $line 0] no]]
 	set error [cisco-set-ifattr t $idx!if!$ifname allowed-vlans $l]
     }
 
@@ -1430,7 +1318,7 @@ proc cisco-post-process {model fdout eq tab} {
     # les interfaces sans description
     set error 0
     foreach iface $t(eq!$eq!if) {
-	if {[regexp {^(Vlan|Tunnel|BVI|Null|Loopback)[0-9]+} $iface]} then {
+	if {[regexp {^(Vlan|Tunnel|BVI|Null|Loopback|Trk)[0-9]+} $iface]} then {
 	    # rien. On ignore l'absence de description pour
 	    # ces interfaces.
 	} elseif {[info exists t(eq!$eq!if!$iface!link!name)]} then {

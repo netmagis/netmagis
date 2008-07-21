@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.4
 
 #
-# $Id: analyser,v 1.7 2008-05-06 19:55:30 pda Exp $
+# $Id: analyser,v 1.8 2008-07-21 15:12:37 pda Exp $
 #
 # Analyse un fichier de configuration d'un équipement réseau
 # et renvoie la modélisation de cet équipement sous forme de
@@ -30,6 +30,18 @@
 
 set debug 0
 
+##############################################################################
+# Fonctions de debug & co
+##############################################################################
+
+proc warning {msg} {
+    puts stderr "$msg"
+}
+
+proc debug {msg} {
+    warning $msg
+}
+
 # inspiré de parray.tcl dans la lib tcl
 # la seule différence est la sortie sur stderr (et non sur stdout)
 proc debug-array {a {pattern *}} {
@@ -50,6 +62,10 @@ proc debug-array {a {pattern *}} {
     }
 }
 
+##############################################################################
+# Analyse des descriptions d'interfaces
+##############################################################################
+
 proc parse-desc {desc _linkname _statname _descname _msg} {
     upvar $_linkname linkname
     upvar $_statname statname
@@ -67,6 +83,16 @@ proc parse-desc {desc _linkname _statname _descname _msg} {
     set linkname ""
     set statname ""
     set descname ""
+
+    #
+    # Retirer les guillemets s'il y en a
+    #
+
+    regsub {^"?(.*)"?\s*$} $desc {\1} desc
+
+    #
+    # Analyser le mini-langage
+    #
 
     set r 1
     if {[regexp {([^<]*)<\s*([^<>]+)>(.*)} $desc bidon p1 liste p2]} then {
@@ -121,6 +147,10 @@ proc parse-desc {desc _linkname _statname _descname _msg} {
     return $r
 }
 
+##############################################################################
+# Analyse des localisations d'équipement
+##############################################################################
+
 proc parse-location {desc _location _blablah _msg} {
     upvar $_location location
     upvar $_blablah blablah
@@ -159,30 +189,262 @@ proc parse-location {desc _location _blablah _msg} {
     return $r
 }
 
-proc parse {libdir type modele fdin fdout tab eq} {
-    upvar $tab t
+##############################################################################
+# Analyse d'une liste d'intervalles
+##############################################################################
 
-    global loadedfiles
+#
+# Analyse une liste d'intervalles ou de valeurs
+#
+# Entrée :
+#   - spec : liste d'intervalles (n-m) ou de valeurs (p) séparées par des ","
+#   - expanser : 0 s'il faut retourner une liste d'intervalles,
+#	ou 1 s'il faut retourner une liste de valeurs (intervalles expansés)
+# Sortie :
+#   - valeur de retour : liste au format {{n m} {p p} ...} ou liste au
+#	format {n1 n2 n3 ...}
+#
+# Exemple :
+#	parse-list "17-20,25,27-28" 0
+#		=> {{17 20} {25 25} {27 28}}
+#	parse-list "17-20,25,27-28" 1
+#		=> {17 18 19 20 25 27 28}
+#
+# Historique :
+#   2008/07/07 : pda/jean : conception
+#
 
-    set error 0
-    if {[string equal $libdir ""]} then {
-	set file "parse-$type.tcl"
-    } else {
-	set file "$libdir/parse-$type.tcl"
-    }
-
-    if {! [info exists loadedfiles($file)]} then {
-	if {[file exists $file]} then {
-	    uplevel #0 source $file
-	    set loadedfiles($file) 1
-	} else {
-	    puts stderr "Fichier '$file' inexistant"
-	    set error 1
+proc parse-list {spec expanser} {
+    set l {}
+    foreach v [split $spec ","] {
+	set rg [split $v "-"]
+	switch [llength $rg] {
+	    1 {
+		set v [lindex $rg 0]
+		lappend l [list $v $v]
+	    }
+	    2 {
+		lappend l $rg
+	    }
+	    default {
+		warning "Incorrect list specification ($spec)"
+		return {}
+	    }
 	}
     }
 
+    if {$expanser} then {
+	set l2 {}
+	foreach c $l {
+	    set min [lindex $c 0]
+	    set max [lindex $c 1]
+
+	    if {! [regexp {^([^0-9]*)([0-9]+)} $min bidon prefmin min]} then {
+		warning "Incorrect list specification ($spec)"
+		return {}
+	    }
+	    if {! [regexp {^([^0-9]*)([0-9]+)} $max bidon prefmax max]} then {
+		warning "Incorrect list specification ($spec)"
+		return {}
+	    }
+	    if {! [string equal $prefmin $prefmax]} then {
+		warning "Incorrect list specification ($spec) : prefix '$prefmin' != '$prefmax'"
+		return {}
+	    }
+
+	    for {set i $min} {$i <= $max} {incr i} {
+		lappend l2 "$prefmin$i"
+	    }
+	}
+	set l $l2
+    }
+
+    return $l
+}
+
+###############################################################################
+# Analyse du fichier de configuration pour les équipements "type IOS"
+###############################################################################
+
+#
+# Analyse un fichier de configuration de type IOS
+#
+# Entrée :
+#   - libdir : répertoire contenant les greffons d'analyse
+#   - model : modèle de l'équipement (ex: M20)
+#   - fdin : descripteur de fichier en entrée
+#   - fdout : fichier de sortie pour la génération
+#   - eq = <eqname>
+#   - _kwtab : tableau guidant l'analyse syntaxique (cf note ci-dessous)
+# Remplit :
+#   - tab(eq)	{<eqname> ... <eqname>}
+#   - tab(eq!ios) "unsure|router|switch"
+#
+# Note :
+#   - kwtab est un tableau indexé par <chaine-de-mots-clef> et dont
+#     les valeurs sont des <action>
+#   - Une <chaine-de-mots-clef> est la suite de mots-clefs apparaissant sur
+#     la ligne, séparés par des "-".
+#   - <action> est soit :
+#     	NEXT : pour continuer l'analyse de la ligne
+#     	{CALL f} : pour appeler la fonction f lorsque cette suite
+#     		est reconnue
+#   - exemple : pour analyser une ligne de type :
+#     	ip address 192.168.1.2 255.255.255.0
+#	il faut indiquer :
+#		ip		NEXT
+#		ip-address	{CALL machin-parse-ip-address}
+#   - cas spécial : les commentaires sont spécifiés par la ligne
+#	-COMMENT	<regexp>
+#	où "-COMMENT" est un mot-clef et <regexp> est une expression
+#	régulière utilisée pour trouver un commentaire dans la ligne
+#   - exemple :
+#		-COMMENT	^!
+#
+#
+# Historique
+#   2004/03/23 : pda/jean : conception
+#   2004/06/08 : pda/jean : ajout de model
+#   2007/07/12 : pda      : ajout de ios
+#   2008/07/07 : pda/jean : ajout paramètre libdir
+#   2008/07/07 : pda/jean : mise en commun avec HP
+#
+
+proc ios-parse {libdir model fdin fdout tab eq _kwtab} {
+    upvar $tab t
+    upvar $_kwtab kwtab
+
+    set error 0
+
+    set commentaire "^!"
+    if {[info exists kwtab(-COMMENT)]} then {
+	set commentaire $kwtab(-COMMENT)
+    }
+
+    lappend t(eq) $eq
+    set idx "eq!$eq"
+    set t($idx!if) {}
+    set t($idx!ios) "unsure"
+    while {[gets $fdin line] > -1} {
+	if {! [regexp $commentaire $line]} then {
+	    set error [ios-parse-line $line t $idx kwtab]
+	}
+    }
+
+    return $error
+}
+
+#
+# Analyse une ligne de conf IOS
+#
+# Entrée :
+#   - line : extrait de conf
+#   - tab : tableau contenant les informations résultant de l'analyse
+#   - idx : index dans le tableau tab
+#   - variable globale debug : affiche les mots-clefs
+#   - _kwtab : tableau guidant l'analyse syntaxique
+# Sortie :
+#   - valeur de retour : 1 si erreur, 0 sinon
+#
+# Historique
+#   2004/03/26 : pda/jean : conception (ouh la la !)
+#   2008/07/07 : pda/jean : ajout kwtab en paramètre pour généricité
+#
+
+proc ios-parse-line {line tab idx _kwtab} {
+    global debug
+    upvar $_kwtab kwtab
+    upvar $tab t
+
+    if {$debug & 0x01} then {
+	debug "$line"
+    }
+
+    set active 1
+    set error 0
+    set first 1
+    set kwlist {}
+    set finished 0
+    while {! $finished} {
+	#
+	# Prendre le premier élément de la ligne
+	#
+	if {[regexp {^\s*(\S+)\s*(.*)$} $line bidon kw line]} then {
+	    #
+	    # cas spécial de "no ..." : on passe au suivant
+	    #
+	    if {$first} then {
+		set first 0
+		if {[string equal $kw "no"]} then {
+		    set active 0
+		    continue
+		}
+	    }
+
+	    #
+	    # Chercher
+	    #
+
+	    lappend kwlist $kw
+	    set fullkw [join $kwlist "-"]
+	    if {[info exists kwtab($fullkw)]} then {
+		if {$debug & 0x01} then {
+		    debug "match $fullkw ($line) -> $kwtab($fullkw)"
+		}
+		set action $kwtab($fullkw)
+		switch [lindex $action 0] {
+		    NEXT {
+			# rien
+		    }
+		    CALL {
+			set fct [lindex $action 1]
+			set error [$fct $active $line t $idx]
+			set finished 1
+		    }
+		    default {
+			warning "Unvalid value in kwtab($fullkw) ($action)"
+			set error 1
+			set finished 1
+		    }
+		}
+	    } else {
+		set finished 1
+	    }
+	} else {
+	    set finished 1
+	}
+    }
+
+    return $error
+}
+
+##############################################################################
+# Fonctions d'appel aux greffons
+##############################################################################
+
+proc charger {libdir file} {
+    set error 0
+
+    if {! [string equal $libdir ""]} then {
+	set file "$libdir/$file"
+    }
+
+    if {[file exists $file]} then {
+	uplevel #0 source $file
+    } else {
+	puts stderr "Fichier '$file' inexistant"
+	set error 1
+    }
+
+    return $error
+}
+
+proc parse {libdir type modele fdin fdout tab eq} {
+    upvar $tab t
+
+    set error [charger $libdir "parse-$type.tcl"]
     if {! $error} then {
-	set error [$type-parse $modele $fdin $fdout t $eq]
+	set error [$type-parse $libdir $modele $fdin $fdout t $eq]
     }
 
     return $error
@@ -201,9 +463,13 @@ proc newnode {} {
     return [format $fmtnode [incr numnode]]
 }
 
+##############################################################################
+# Fonction principale
+##############################################################################
+
 proc usage {argv0} {
     puts stderr \
-	"$argv0 libdir cisco|juniper modele fichier-conf eq-name \[debug\]"
+	"$argv0 libdir cisco|hp|juniper modele fichier-conf eq-name \[debug\]"
 }
 
 proc main {argv0 argv} {
