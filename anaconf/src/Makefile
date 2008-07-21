@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.2 2007-07-18 15:09:53 pda Exp $
+# $Id: Makefile,v 1.3 2008-07-21 15:14:46 pda Exp $
 #
 
 DESTDIR=/local/applis/topo
@@ -29,6 +29,7 @@ SCRIPTS = \
 	doteq		\
 	liste-rancid	\
 	liste-vlans	\
+	parse-hp.tcl	\
 	parse-cisco.tcl	\
 	parse-juniper.tcl	\
 	sendcoll
