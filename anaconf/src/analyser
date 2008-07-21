@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.4
 
 #
-# $Id: analyser,v 1.8 2008-07-21 15:12:37 pda Exp $
+# $Id: analyser,v 1.9 2008-07-21 15:17:41 pda Exp $
 #
 # Analyse un fichier de configuration d'un équipement réseau
 # et renvoie la modélisation de cet équipement sous forme de
@@ -88,7 +88,7 @@ proc parse-desc {desc _linkname _statname _descname _msg} {
     # Retirer les guillemets s'il y en a
     #
 
-    regsub {^"?(.*)"?\s*$} $desc {\1} desc
+    regsub {^\s*"?(.*)"?\s*$} $desc {\1} desc
 
     #
     # Analyser le mini-langage
