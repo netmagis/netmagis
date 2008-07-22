@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.8 2008-02-13 15:25:10 pda Exp $
+# $Id: libdns.tcl,v 1.9 2008-07-22 09:31:20 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -1387,9 +1387,15 @@ proc syntaxe-nom {nom} {
 # Entrée :
 #   - paramètres :
 #	- adr : l'adresse à tester
-#	- type : "inet" ou "cidr" ou "macaddr" ou "inet4"
+#	- type : "inet" ou "cidr" ou "loosecidr" ou "macaddr" ou "inet4"
 # Sortie :
 #   - valeur de retour : chaîne vide (ok) ou non vide (message d'erreur)
+#
+# Note :
+#   - le type "cidr" est strict au sens où les bits spécifiant la
+#	partie "machine" doivent être à 0 (i.e. : "1.1.1.0/24" est
+#	valide, mais pas "1.1.1.1/24")
+#   - le type "loosecidr" accepte les bits de machine non à 0
 #
 # Historique
 #   2002/04/11 : pda/jean : conception
@@ -1398,21 +1404,27 @@ proc syntaxe-nom {nom} {
 #   2004/01/09 : pda/jean : ajout du cas IPv6 et simplification radicale
 #   2004/10/08 : pda/jean : ajout du cas inet4
 #   2004/10/20 : jean     : interdit le / pour autre chose que le type cidr
+#   2008/07/22 : pda      : nouveau type loosecidr (autorise /)
 #
 
 proc syntaxe-ip {dbfd adr type} {
 
     switch $type {
 	inet4 {
-	    set type "inet"
+	    set cast "inet"
 	    set fam  4
 	}
+	loosecidr {
+	    set cast "inet"
+	    set fam ""
+	}
 	default {
+	    set cast $type
 	    set fam ""
 	}
     }
     set adr [::pgsql::quote $adr]
-    set sql "SELECT $type\('$adr'\) ;"
+    set sql "SELECT $cast\('$adr'\) ;"
     set r ""
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	if {! [string equal $fam ""]} then {
@@ -1422,7 +1434,7 @@ proc syntaxe-ip {dbfd adr type} {
 		}
 	    }
 	}
-	if {! [string equal $type "cidr"]} then {
+	if {! ([string equal $type "cidr"] || [string equal $type "loosecidr"])} then {
 	    if {[regexp {/}  $adr ]} then {
 		set r "Le caractère '/' est interdit dans l'adresse"
 	    }
