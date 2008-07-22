@@ -360,9 +360,7 @@ proc main {} {
 	# Valider l'adresse IP
 	#
 
-	#XX# set msg [syntaxe-ip $dbfd $addr "inet"]
 	set msg [syntaxe-ip $dbfd $addr "loosecidr"]
-puts stderr "msg=<$msg>"
 	if {! [string equal $msg ""]} then {
 	    ::webapp::error-exit $conf(err) $msg
 	}
@@ -395,7 +393,6 @@ puts stderr "msg=<$msg>"
 	    }
 	}
 	set xl3 [format $conf(extractl3) $tabuid(flags) [join $lnet " "] $bb]
-puts stderr "xl3=<$xl3>"
 	set dot [generer-dot $format $xl3 $conf(urleq) $conf(urll2) $u1]
 	set fd [open "$tmp.dot" "w"]
 	puts $fd $dot
