@@ -4,7 +4,7 @@
 -- Méthode :
 --	- psql dns < upgrade.sql
 --
--- $Id: upgrade.sql,v 1.2 2008-07-23 08:58:28 pda Exp $
+-- $Id: upgrade.sql,v 1.3 2008-07-23 09:48:38 pda Exp $
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
@@ -23,8 +23,27 @@ ALTER TABLE dhcprange
 ------------------------------------------------------------------------------
 
 ALTER TABLE rr
-	ADD COLUMN droitsmtp BOOLEAN ;
+	ADD COLUMN droitsmtp INTEGER ;
+
 ALTER TABLE rr
 	ALTER COLUMN droitsmtp
-	SET DEFAULT FALSE ;
+	SET DEFAULT 0 ;
 
+UPDATE rr
+	SET droitsmtp = 0
+	WHERE droitsmtp IS NULL ;
+
+------------------------------------------------------------------------------
+-- ajout du champ "droitsmtp" dans la table groupe
+------------------------------------------------------------------------------
+
+ALTER TABLE groupe
+	ADD COLUMN droitsmtp INTEGER ;
+
+ALTER TABLE groupe
+	ALTER COLUMN droitsmtp
+	SET DEFAULT 0 ;
+
+UPDATE groupe
+	SET droitsmtp = 0
+	WHERE droitsmtp IS NULL ;
