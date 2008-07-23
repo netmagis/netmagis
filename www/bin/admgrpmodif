@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpmodif,v 1.9 2008-07-23 10:14:16 pda Exp $
+# $Id: admgrpmodif,v 1.10 2008-07-23 14:02:33 pda Exp $
 
 #
 # Script pour enregistrer les caractéristiques associées à un groupe
@@ -864,8 +864,8 @@ proc main {} {
     ::webapp::send html [::webapp::file-subst $conf(page) \
 		    [list \
 			[list %NEWGRP% $newgrp] \
-			[list %TABDROITS% $tabdroits] \
 			[list %TABLOGINS% $tablogins] \
+			[list %TABDROITS% $tabdroits] \
 			[list %TABRESEAUX% $tabreseaux] \
 			[list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
 			[list %TABDOMAINES% $tabdomaines] \

@@ -1,5 +1,5 @@
 {
-\* $Id: traiteajout-existe.htgt,v 1.5 2008-07-23 14:02:35 pda Exp $
+\* $Id: traiteajout-smtp.htgt,v 1.1 2008-07-23 14:02:35 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -41,70 +41,39 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Le nom existe déjà}
+    \titre {1} {Autorisation d'émission SMTP}
 
-    Il existe déjà une machine de nom '%NOM%.%DOMAINE%'.
+    Vous avez coché la case «~Émettre en SMTP~».
 
-    Ses caractéristiques sont~:
+    Vous ne pouvez cocher cette case que si vous remplissez une
+    des deux conditions suivantes~:
 
-    \tableau {
-	\bordure {1} {}
-	\taille {100}
-    } {
-	\casedefauttableau {\centragehorizontal {LEFT}}
-	\casedefauttableau {\centragehorizontal {LEFT}}
-    } {
-	\lignetableau {
-	    \casetableau {} {Nom}
-	    \casetableau {} {%NOM%.%DOMAINE%}
+    \liste {
+	\item {vous certifiez que la machine ajoutée n'accepte que
+	    des mails authentifiés, et vous êtes capables de tracer
+	    l'utilisateur responsable en cas d'incident de sécurité
 	}
-	\lignetableau {
-	    \casetableau {} {Liste des adresses IP}
-	    \casetableau {} {%LISTEADR%}
-	}
-	\lignetableau {
-	    \casetableau {} {Adresse MAC}
-	    \casetableau {} {%MAC%}
-	}
-	\lignetableau {
-	    \casetableau {} {Profil DHCP}
-	    \casetableau {} {%DHCPPROFIL%}
-	}
-	\lignetableau {
-	    \casetableau {} {Machine}
-	    \casetableau {} {%HINFO%}
-	}
-	\lignetableau {
-	    \casetableau {} {Infos complémentaires}
-	    \casetableau {} {%COMMENTAIRE%}
-	}
-	\lignetableau {
-	    \casetableau {} {Responsable (nom + prénom)}
-	    \casetableau {} {%RESPNOM%}
-	}
-	\lignetableau {
-	    \casetableau {} {Responsable (mél)}
-	    \casetableau {} {%RESPMEL%}
+	\item {vous certifiez que la machine ajoutée n'accepte aucun
+	    mail, et ne peut elle-même authentifier les mails qu'elle
+	    envoie (cas d'un copieur par exemple)
 	}
     }
 
-    \gras {Voulez-vous vraiment ajouter la nouvelle adresse '%ADR%'
-    à la machine '%NOM%.%DOMAINE%'~?}
+    \gras {Confirmez-vous que vous remplissez l'une des conditions
+	ci-dessus~?
+    }
 
     <FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
 	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="oui">
-	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
-	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
-	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
-	<INPUT TYPE="HIDDEN" NAME="mac" VALUE="">
-	<INPUT TYPE="HIDDEN" NAME="hinfo" VALUE="%HINFO%">
-	<INPUT TYPE="HIDDEN" NAME="commentaire" VALUE="">
-	<INPUT TYPE="HIDDEN" NAME="respnom" VALUE="">
-	<INPUT TYPE="HIDDEN" NAME="respmel" VALUE="">
-	<INPUT TYPE="HIDDEN" NAME="iddhcpprofil" VALUE="%IDDHCPPROFIL%">
+	%HIDDEN%
 	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
     </FORM>
+
+    \gras {Si vous ne confirmez pas, utilisez simplement votre
+	navigateur pour revenir à la page précédente, et décochez
+	la case «~Émettre en SMTP~».
+    }
 }
 
 }

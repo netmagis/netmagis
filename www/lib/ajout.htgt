@@ -1,5 +1,5 @@
 {
-\* $Id: ajout.htgt,v 1.5 2008-07-23 10:14:28 pda Exp $
+\* $Id: ajout.htgt,v 1.6 2008-07-23 14:02:35 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -59,17 +59,19 @@
 	    \casetableau {} {
 		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
-		    <INPUT TYPE="HIDDEN" NAME="multiadresses" VALUE="non">
+		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
 		    \tableau {
 			\bordure {0} {}
 			\* \taille {100}
 		    } {
 			\casedefauttableau {\centragehorizontal {LEFT}}
 			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {RIGHT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
 			    \casetableau {} {Nom}
-			    \casetableau {} {
+			    \multicasetableau {3} {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
 				%DOMAINE%
@@ -77,7 +79,7 @@
 			}
 			\lignetableau {
 			    \casetableau {} {Adresse IP}
-			    \casetableau {} {
+			    \multicasetableau {3} {} {
 				<INPUT TYPE="TEXT" NAME="adr" SIZE="45">
 			    }
 			}
@@ -85,41 +87,37 @@
 			    \casetableau {} {Adresse MAC}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="mac" SIZE="20 MAXLENGTH="17">
-				~
-				~
-				%DHCPPROFIL%
 			    }
+			    \casetableau {} {%DHCPPROFILLIBELLE%}
+			    \casetableau {} {%DHCPPROFILMENU%}
 			}
 			\lignetableau {
 			    \casetableau {} {Type de machine}
-			    \casetableau {} {
-				%MENUHINFO%
-				~
-				~
-				%DROITSMTP%
-			    }
+			    \casetableau {} {%MENUHINFO%}
+			    \casetableau {} {%DROITSMTPLIBELLE%}
+			    \casetableau {} {%DROITSMTPMENU%}
 			}
 			\lignetableau {
 			    \casetableau {} {Infos complémentaires}
-			    \casetableau {} {
+			    \multicasetableau {3} {} {
 				<INPUT TYPE="TEXT" NAME="commentaire" SIZE="50">
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {Responsable (nom et prénom)}
-			    \casetableau {} {
+			    \multicasetableau {3} {} {
 				<INPUT TYPE="TEXT" NAME="respnom" SIZE="50">
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {Responsable (mél)}
-			    \casetableau {} {
+			    \multicasetableau {3} {} {
 				<INPUT TYPE="TEXT" NAME="respmel" SIZE="50">
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {~}
-			    \casetableau {} {
+			    \multicasetableau {3} {} {
 				<INPUT TYPE="SUBMIT" VALUE="Valider">
 			    }
 			}

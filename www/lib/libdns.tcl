@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.10 2008-07-23 10:14:28 pda Exp $
+# $Id: libdns.tcl,v 1.11 2008-07-23 14:02:35 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -30,7 +30,7 @@ set libconf(tabdroits) {
     pattern DROIT {
 	vbar {yes}
 	column { }
-	vbar {no}
+	vbar {yes}
 	column { }
 	vbar {yes}
     }
@@ -2403,10 +2403,12 @@ proc menu-hinfo {dbfd champ defval} {
 #   - iddhcpprofil : identification du profil à sélectionner (le profil
 #	pré-existant) ou 0
 # Sortie :
-#   - valeur de retour : code HTML prêt à l'emploi
+#   - valeur de retour : liste avec deux éléments de code HTML prêt à l'emploi
+#	(intitulé, menu de sélection)
 #
 # Historique
 #   2005/04/08 : pda/jean : conception
+#   2008/07/23 : pda/jean : changement format sortie
 #
 
 proc menu-dhcpprofil {dbfd champ idcor iddhcpprofil} {
@@ -2462,19 +2464,56 @@ proc menu-dhcpprofil {dbfd champ idcor iddhcpprofil} {
 
 	set lprof [linsert $lprof 0 {0 {Aucun profil}}]
 
-	set html "Profil DHCP&nbsp;: "
-	append html [::webapp::form-menu iddhcpprofil 1 0 $lprof $lsel]
+	set intitule "Profil DHCP"
+	set html [::webapp::form-menu iddhcpprofil 1 0 $lprof $lsel]
 
     } else {
 	#
 	# Aucun profil trouvé. On cache l'information
 	#
 
+	set intitule ""
 	set html "<INPUT TYPE=HIDDEN NAME=\"$champ\" VALUE=\"$iddhcpprofil\">"
     }
 
-    return $html
+    return [list $intitule $html]
 }
+
+#
+# Récupère le droit d'émettre en SMTP d'une machine, ou un champ caché
+# si le groupe n'a pas accès à la fonctionnalité
+#
+# Entrée :
+#   - dbfd : accès à la base
+#   - champ : champ de formulaire (variable du CGI suivant)
+#   - idgrp : identification du groupe
+#   - droitsmtp : valeur actuelle (donc à présélectionner)
+# Sortie :
+#   - valeur de retour : liste avec deux éléments de code HTML prêt à l'emploi
+#	(intitulé, choix de sélection)
+#
+# Historique
+#   2008/07/23 : pda/jean : conception
+#
+
+proc menu-droitsmtp {dbfd champ idgrp droitsmtp} {
+    #
+    # Récupérer le droit SMTP pour afficher ou non le bouton
+    # d'autorisation d'émettre en SMTP non authentifié
+    #
+
+    set grdroitsmtp [droit-groupe-smtp $dbfd $idgrp]
+    if {$grdroitsmtp} then {
+	set intitule "Émettre en SMTP"
+	set html [::webapp::form-bool $champ $droitsmtp]
+    } else {
+	set intitule ""
+	set html "<INPUT TYPE=HIDDEN NAME=\"$champ\" VALUE=\"$droitsmtp\">"
+    }
+
+    return [list $intitule $html]
+}
+
 
 #
 # Fournit le code HTML pour une sélection de liste de domaines, soit
@@ -2602,7 +2641,7 @@ proc liste-groupes {dbfd {n 1}} {
 
 #
 # Fournit du code HTML pour chaque groupe d'informations associé à un
-# groupe - les droits généraux du groupe, les correspondants, les
+# groupe : les droits généraux du groupe, les correspondants, les
 # réseaux, les droits hors réseaux, les domaines, les profils DHCP
 #
 # Entrée :
@@ -2612,7 +2651,7 @@ proc liste-groupes {dbfd {n 1}} {
 #   - variable globale libconf(tabreseaux) : spéc. de tableau
 #   - variable globale libconf(tabdomaines) : spéc. de tableau
 # Sortie :
-#   - valeur de retour : liste à 5 éléments, chaque élément étant
+#   - valeur de retour : liste à 6 éléments, chaque élément étant
 #	le code HTML associé.
 #
 # Historique
@@ -2629,8 +2668,8 @@ proc info-groupe {dbfd idgrp} {
     # Récupération des droits particuliers : admin et droitsmtp
     #
 
-    set sql "SELECT admin, droitsmtp FROM groupe WHERE idgrp = $idgrp"
     set donnees {}
+    set sql "SELECT admin, droitsmtp FROM groupe WHERE idgrp = $idgrp"
     pg_select $dbfd $sql tab {
 	if {$tab(admin)} then {
 	    set admin "oui"
@@ -3028,6 +3067,30 @@ proc valide-idreseau {dbfd idreseau idgrp droit version msgvar} {
 
     return $lcidr
 }
+
+#
+# Indique si le groupe a le droit d'autoriser des émetteurs SMTP.
+#
+# Entrée :
+#   - paramètres :
+#       - dbfd : accès à la base
+#	- idgrp : le groupe
+# Sortie :
+#   - valeur de retour : 1 si ok, 0 sinon
+#
+# Historique
+#   2008/07/23 : pda/jean : conception
+#
+
+proc droit-groupe-smtp {dbfd idgrp} {
+    set sql "SELECT droitsmtp FROM groupe WHERE idgrp = $idgrp"
+    set r 0
+    pg_select $dbfd $sql tab {
+	set r $tab(droitsmtp)
+    }
+    return $r
+}
+
 
 ##############################################################################
 # Edition de valeurs de tableau
