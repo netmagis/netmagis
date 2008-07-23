@@ -1,6 +1,6 @@
 #!/usr/local/bin/tclsh8.4
 
-# $Id: generer-dhcp,v 1.4 2008-07-16 10:08:25 jean Exp $
+# $Id: generer-dhcp,v 1.5 2008-07-23 08:48:15 pda Exp $
 
 #
 # Script de génération d'une configuration DHCP
@@ -16,6 +16,8 @@
 #   2004/08/05 : pda/jean : spécification
 #   2004/08/06 : pda/jean : conception
 #   2005/03/31 : pda      : ajout des groupes DHCP
+#   2008/07/12 : jean     : integration des profils dans les intervalles
+#   2008/07/16 : jean     : integration du failover pour les intervalles
 #
 
 
@@ -31,9 +33,12 @@ set conf(base)		{host=crc.u-strasbg.fr dbname=dns
 package require Pgtcl
 
 #
-# chaine de configuration pour la redondance dhcp
+# Chaine de configuration pour la redondance dhcp
 #
-set conf(failover)      "failover peer \"dhcp\"; "
+# Pour un serveur isc-dhcp sans redondance
+#set conf(failover)	{}
+# Pour un serveur isc-dhcp avec redondance
+set conf(failover)      {failover peer "dhcp"; }
 
 #
 # Neutralise les caractères spéciaux figurant dans une chaîne,
