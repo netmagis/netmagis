@@ -1,5 +1,5 @@
 {
-\* $Id: admgrpmodif.htgt,v 1.6 2008-07-23 10:14:28 pda Exp $
+\* $Id: admgrpmodif.htgt,v 1.7 2008-07-23 11:48:06 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -44,7 +44,7 @@
 
     Les informations du groupe '\gras {%NEWGRP%}' ont été mises à jour~:
 
-    \titre {2} {Informations générales}
+    \titre {2} {Attributs généraux}
 
     %TABDROITS%
 
