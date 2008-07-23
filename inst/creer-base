@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: creer-base,v 1.5 2008-03-12 09:17:11 pda Exp $
+# $Id: creer-base,v 1.6 2008-07-23 14:02:16 pda Exp $
 
 #
 # Création de la base DNS
@@ -67,7 +67,8 @@ psql --quiet $BASE <<'EOF'
 	idgrp		INT		-- identifiant du correspondant
 		DEFAULT NEXTVAL ('seq_groupe'),
 	nom		TEXT,		-- login sur le serveur
-	admin		INT,		-- 1 si root, 0 si utilisateur normal
+	admin		INT DEFAULT 0,	-- 1 si root, 0 si utilisateur normal
+	droitsmtp	INT DEFAULT 0,	-- 1 si droit de gérer les émetteur SMTP
 
 	UNIQUE (nom),
 	PRIMARY KEY (idgrp)
@@ -218,9 +219,11 @@ psql --quiet $BASE <<'EOF'
 	iddom		INT,		-- domaine fourni par DHCP
 	default_lease_time INT DEFAULT 0, -- en secondes
 	max_lease_time	INT DEFAULT 0,	-- en secondes
+	iddhcpprofil	INT,		-- profil autorisé pour dhcprange
 
 	CHECK (min <= max),
 	FOREIGN KEY (iddom) REFERENCES domaine (iddom),
+	FOREIGN KEY (iddhcpprofil) REFERENCES dhcpprofil(iddhcpprofil),
 	PRIMARY KEY (iddhcprange)
     ) ;
 
@@ -245,6 +248,7 @@ psql --quiet $BASE <<'EOF'
 	idcor		INT,		-- auteur de la dernière modification
 	date		TIMESTAMP (0) WITHOUT TIME ZONE	-- date dernière modif.
 			    DEFAULT CURRENT_TIMESTAMP,
+	droitsmtp	INT DEFAULT 0,	-- émetteur SMTP autorisé
 
 	FOREIGN KEY (idcor)        REFERENCES corresp    (idcor),
 	FOREIGN KEY (iddom)        REFERENCES domaine    (iddom),
