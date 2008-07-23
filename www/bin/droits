@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: droits,v 1.5 2007-11-13 16:44:05 pda Exp $
+# $Id: droits,v 1.6 2008-07-23 10:14:16 pda Exp $
 
 #
 # Script pour consulter les droits associés à un correspondant
@@ -116,10 +116,10 @@ proc main {} {
     #
 
     set grospaquet [info-groupe $dbfd $tabcor(idgrp)]
-    set tabreseaux        [lindex $grospaquet 1]
-    set tabcidrhorsreseau [lindex $grospaquet 2]
-    set tabdomaines       [lindex $grospaquet 3]
-    set tabdhcpprofil     [lindex $grospaquet 4]
+    set tabreseaux        [lindex $grospaquet 2]
+    set tabcidrhorsreseau [lindex $grospaquet 3]
+    set tabdomaines       [lindex $grospaquet 4]
+    set tabdhcpprofil     [lindex $grospaquet 5]
 
     if {[string length $tabcidrhorsreseau] == 0} then {
 	set titrecidrhorsreseau ""

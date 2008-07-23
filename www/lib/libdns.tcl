@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.9 2008-07-22 09:31:20 pda Exp $
+# $Id: libdns.tcl,v 1.10 2008-07-23 10:14:28 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -19,6 +19,22 @@
 ##############################################################################
 # Paramètres de la librairie
 ##############################################################################
+
+set libconf(tabdroits) {
+    global {
+	chars {12 normal}
+	align {left}
+	botbar {yes}
+	columns {75 25}
+    }
+    pattern DROIT {
+	vbar {yes}
+	column { }
+	vbar {no}
+	column { }
+	vbar {yes}
+    }
+}
 
 set libconf(tabreseaux) {
     global {
@@ -2586,8 +2602,8 @@ proc liste-groupes {dbfd {n 1}} {
 
 #
 # Fournit du code HTML pour chaque groupe d'informations associé à un
-# groupe - les correspondants, les réseaux, les droits hors réseaux, les
-# domaines et les profils DHCP.
+# groupe - les droits généraux du groupe, les correspondants, les
+# réseaux, les droits hors réseaux, les domaines, les profils DHCP
 #
 # Entrée :
 #   - paramètres :
@@ -2596,17 +2612,44 @@ proc liste-groupes {dbfd {n 1}} {
 #   - variable globale libconf(tabreseaux) : spéc. de tableau
 #   - variable globale libconf(tabdomaines) : spéc. de tableau
 # Sortie :
-#   - valeur de retour : liste à 4 éléments, chaque élément étant
+#   - valeur de retour : liste à 5 éléments, chaque élément étant
 #	le code HTML associé.
 #
 # Historique
 #   2002/05/23 : pda/jean : spécification et conception
 #   2005/04/06 : pda      : ajout des profils dhcp
 #   2007/10/23 : pda/jean : ajout des correspondants
+#   2008/07/23 : pda/jean : ajout des droits du groupe
 #
 
 proc info-groupe {dbfd idgrp} {
     global libconf
+
+    #
+    # Récupération des droits particuliers : admin et droitsmtp
+    #
+
+    set sql "SELECT admin, droitsmtp FROM groupe WHERE idgrp = $idgrp"
+    set donnees {}
+    pg_select $dbfd $sql tab {
+	if {$tab(admin)} then {
+	    set admin "oui"
+	} else {
+	    set admin "non"
+	}
+	if {$tab(droitsmtp)} then {
+	    set droitsmtp "oui"
+	} else {
+	    set droitsmtp "non"
+	}
+	lappend donnees [list DROIT "Administration de l'application" $admin]
+	lappend donnees [list DROIT "Gestion des émetteurs SMTP" $droitsmtp]
+    }
+    if {[llength $donnees] == 2} then {
+	set tabdroits [::arrgen::output "html" $libconf(tabdroits) $donnees]
+    } else {
+	set tabdroits "Erreur sur les droits du groupe"
+    }
 
     #
     # Récupération des correspondants
@@ -2782,7 +2825,8 @@ proc info-groupe {dbfd idgrp} {
 	set tabdhcpprofil "Aucun profil DHCP autorisé"
     }
 
-    return [list    $tabcorresp \
+    return [list    $tabdroits \
+		    $tabcorresp \
 		    $tabreseaux \
 		    $tabcidrhorsreseau \
 		    $tabdomaines \

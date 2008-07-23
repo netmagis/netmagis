@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpedit,v 1.3 2008-02-13 15:25:09 pda Exp $
+# $Id: admgrpedit,v 1.4 2008-07-23 10:14:16 pda Exp $
 
 #
 # Script pour présenter les caractéristiques associées à un groupe
@@ -18,6 +18,7 @@
 #   2005/04/08 : pda/jean : ajout dhcpprofil
 #   2007/10/09 : pda/jean : renommage en admgrpedit
 #   2007/10/10 : pda/jean : centralisation de l'administration des groupes
+#   2008/07/23 : pda/jean : ajout droitsmtp
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -249,10 +250,11 @@ proc main {} {
 	set messagegroupe "Modifiez le nom du groupe ou effacez la case pour le supprimer"
 	set pqgroupe [::pgsql::quote $orggrp]
 	set idgrp -1
-	set sql "SELECT idgrp,admin FROM groupe WHERE nom = '$pqgroupe'"
+	set sql "SELECT idgrp,admin,droitsmtp FROM groupe WHERE nom = '$pqgroupe'"
 	pg_select $dbfd $sql tab {
 	    set idgrp $tab(idgrp)
 	    set admin $tab(admin)
+	    set droitsmtp $tab(droitsmtp)
 	}
 
 	if {$idgrp == -1} then {
@@ -261,6 +263,8 @@ proc main {} {
     }
 
     set admin [::webapp::form-yesno "admin" $admin \
+		    {%1$s oui &nbsp; &nbsp; &nbsp;   %2$s non}]
+    set droitsmtp [::webapp::form-yesno "droitsmtp" $droitsmtp \
 		    {%1$s oui &nbsp; &nbsp; &nbsp;   %2$s non}]
 
     #
@@ -502,6 +506,7 @@ proc main {} {
 					[list %ORGGRP% $orggrp] \
 					[list %NEWGRP% $newgrp] \
 					[list %ADMIN% $admin] \
+					[list %DROITSMTP% $droitsmtp] \
 					[list %MESSAGEGROUPE% $messagegroupe] \
 					[list %LISTECOR% $listecor] \
 					[list %LISTEDOMAINES% $listedomaines] \

@@ -1,5 +1,5 @@
 {
-\* $Id: ajout.htgt,v 1.4 2008-03-13 08:23:00 pda Exp $
+\* $Id: ajout.htgt,v 1.5 2008-07-23 10:14:28 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -94,6 +94,9 @@
 			    \casetableau {} {Type de machine}
 			    \casetableau {} {
 				%MENUHINFO%
+				~
+				~
+				%DROITSMTP%
 			    }
 			}
 			\lignetableau {

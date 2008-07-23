@@ -1,5 +1,5 @@
 {
-\* $Id: admgrpedit.htgt,v 1.4 2008-03-13 08:23:00 pda Exp $
+\* $Id: admgrpedit.htgt,v 1.5 2008-07-23 10:14:28 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -57,13 +57,33 @@
 		\casetableau {
 		    \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
-		} {\gras {Nom du groupe}}
+		} {\gras {Attributs généraux du groupe}}
 	    }
 	    \lignetableau {
-		\casetableau {} {%MESSAGEGROUPE%
-
-		    <INPUT TYPE="TEXT" NAME="newgrp" VALUE="%NEWGRP%">
-		    ~ ~ ~ ~ ~ ~ Administration de l'application : %ADMIN% 
+		\casetableau {} {
+		    \tableau {
+			\bordure {0} {}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {%MESSAGEGROUPE%}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="newgrp" VALUE="%NEWGRP%">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Administration de l'application}
+			    \casetableau {} {%ADMIN%}
+			}
+			\lignetableau {
+			    \casetableau {} {Accès à la gestion des
+				droits d'émission SMTP
+			    }
+			    \casetableau {} {%DROITSMTP%}
+			}
+		    }
 		}
 	    }
 	    \lignetableau {
