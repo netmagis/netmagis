@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admparmodif,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: admparmodif,v 1.5 2008-07-23 09:20:57 pda Exp $
 
 #
 # Script d'enregistrement des modifications des paramètres de la base
@@ -10,8 +10,8 @@
 # Paramètres (formulaire ou URL) : les paramètres
 #
 # Historique
-#   2003/12/08 : pda     : création à partir de sos
-#   2004/10/13 : pda     : ajout des paramètres DHCP
+#   2003/12/08 : pda      : création à partir de sos
+#   2004/10/13 : pda      : ajout des paramètres DHCP
 #   2007/10/25 : jean     : log des actions de modification
 #
 
