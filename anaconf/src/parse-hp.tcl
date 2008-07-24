@@ -1,5 +1,5 @@
 #
-# $Id: parse-hp.tcl,v 1.1 2008-07-21 15:12:37 pda Exp $
+# $Id: parse-hp.tcl,v 1.2 2008-07-24 12:43:51 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS HP
 #
@@ -61,6 +61,7 @@ proc hp-parse {libdir model fdin fdout tab eq} {
 	interface			{CALL hp-parse-interface}
 	vlan				{CALL hp-parse-vlan}
 	exit				{CALL hp-parse-exit}
+	disable				{CALL hp-parse-disable}
 	name				{CALL hp-parse-name}
 	trunk				{CALL hp-parse-trunk}
 	snmp-server			NEXT
@@ -85,13 +86,17 @@ proc hp-parse {libdir model fdin fdout tab eq} {
 
     set t(eq!$eq!context) ""
     set t(eq!$eq!if) {}
+    set t(eq!$eq!if!disabled) {}
 
     set error [ios-parse $libdir $model $fdin $fdout t $eq kwtab]
 
     if {! $error} then {
-	set error [cisco-post-process $model $fdout $eq t]
+	set error [hp-prepost-process $eq t]
     }
 
+    if {! $error} then {
+	set error [cisco-post-process $model $fdout $eq t]
+    }
     return $error
 }
 
@@ -162,6 +167,7 @@ proc hp-parse-vlan {active line tab idx} {
 # Entrée :
 #   - line = <>
 #   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!context) iface
 # Remplit
 #   - tab(eq!<nom eq>!context) ""
 #
@@ -173,6 +179,32 @@ proc hp-parse-exit {active line tab idx} {
     upvar $tab t
 
     set t($idx!context) ""
+    return 0
+}
+
+#
+# Entrée :
+#   - line = <>
+#   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!context) iface
+#   - tab(eq!<nom eq>!current!if) <ifname>
+# Remplit
+#   - tab(eq!<nom eq>!context) ""
+#   - tab(eq!<nom eq>!if!disabled) {... <ifname>}
+#
+# Note : on ne peut pas simplement supprimer l'interface, car elle
+#   réapparaîtra plus tard lors de l'analyse des vlans
+#
+# Historique
+#   2008/07/24 : pda      : conception
+#
+
+proc hp-parse-disable {active line tab idx} {
+    upvar $tab t
+
+    if {[string equal $t($idx!context) "iface"]} then {
+	lappend t($idx!if!disabled) $t($idx!current!if)
+    }
     return 0
 }
 
@@ -455,5 +487,40 @@ proc hp-set-ifattr {tab idx attr val} {
 	    set error 1
 	}
     }
+    return $error
+}
+
+###############################################################################
+# Post-traitement (ou plus exactement, phase préalable au post-traitement)
+###############################################################################
+
+#
+# Traite le tableau avant d'appeler la génération
+#
+# Entrée :
+#   - eq : nom de l'équipement
+#   - tab : nom du tableau
+#
+# Sortie :
+# - suppression des interfaces désactivées
+#
+# Historique
+#   2008/07/24 : pda      : conception
+#
+
+proc hp-prepost-process {eq tab} {
+    upvar $tab t
+
+    set error 0
+    set idx "eq!$eq"
+
+    #
+    # Supprimer les interfaces marquées comme "disable"
+    #
+
+    foreach iface $t($idx!if!disabled) {
+	set error [cisco-remove-if t($idx!if) $iface]
+    }
+
     return $error
 }
