@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: ajout,v 1.5 2008-07-23 14:02:33 pda Exp $
+# $Id: ajout,v 1.6 2008-07-24 12:16:33 pda Exp $
 
 #
 # Script pour présenter la page d'ajout d'une machine/alias
@@ -85,7 +85,7 @@ proc main {} {
     # d'autorisation d'émettre en SMTP non authentifié
     #
 
-    set droitsmtp [menu-droitsmtp $dbfd "droitsmtp" $tabcor(idgrp) 0]
+    set droitsmtp [menu-droitsmtp $dbfd "droitsmtp" $tabcor(idcor) 0]
     set droitsmtplibelle [lindex $droitsmtp 0]
     set droitsmtpmenu    [lindex $droitsmtp 1]
 

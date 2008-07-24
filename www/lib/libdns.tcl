@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.11 2008-07-23 14:02:35 pda Exp $
+# $Id: libdns.tcl,v 1.12 2008-07-24 12:16:35 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -827,6 +827,7 @@ proc lire-rr-par-ip {dbfd adr tabrr} {
 #	tabrr(dhcpprofil) : le nom du profil DHCP, ou "Aucun profil DHCP"
 #	tabrr(idhinfo) : le type de machine sous forme d'id
 #	tabrr(hinfo) : le type de machine sous forme de texte
+#	tabrr(droitsmtp) : la machine a le droit d'émission SMTP non authentifié
 #	tabrr(commentaire) : les infos complémentaires sous forme de texte
 #	tabrr(respnom) : le nom+prénom du responsable
 #	tabrr(respmel) : le mél du responsable
@@ -846,13 +847,14 @@ proc lire-rr-par-ip {dbfd adr tabrr} {
 #   2004/02/06 : pda/jean : ajout de rolemail, adrmail et roleweb
 #   2004/08/05 : pda/jean : legere simplification et ajout de mac
 #   2005/04/08 : pda/jean : ajout de dhcpprofil
+#   2008/07/24 : pda/jean : ajout de droitsmtp
 #
 
 proc lire-rr-par-id {dbfd idrr tabrr} {
     upvar $tabrr trr
 
     set fields {nom iddom
-	mac iddhcpprofil idhinfo commentaire respnom respmel
+	mac iddhcpprofil idhinfo droitsmtp commentaire respnom respmel
 	idcor date}
 
     catch {unset trr}
@@ -1223,6 +1225,7 @@ proc supprimer-rr-si-orphelin {dbfd idrr} {
 #	- mac : adresse MAC, ou vide
 #	- iddhcpprofil : id du profil DHCP, ou 0
 #	- idhinfo : HINFO ou chaîne vide (le défaut est pris dans la base)
+#	- droitsmtp : 1 si droit d'émettre en SMTP non authentifié, ou 0
 #	- comment : les infos complémentaires sous forme de texte
 #	- respnom : le nom+prénom du responsable
 #	- respmel : le mél du responsable
@@ -1240,9 +1243,11 @@ proc supprimer-rr-si-orphelin {dbfd idrr} {
 #   2004/08/05 : pda/jean : ajout mac
 #   2004/10/05 : pda      : changement du format de date
 #   2005/04/08 : pda/jean : ajout dhcpprofil
+#   2008/07/24 : pda/jean : ajout droitsmtp
 #
 
-proc ajouter-rr {dbfd nom iddom mac iddhcpprofil idhinfo comment respnom respmel idcor tabrr} {
+proc ajouter-rr {dbfd nom iddom mac iddhcpprofil idhinfo droitsmtp
+				comment respnom respmel idcor tabrr} {
     upvar $tabrr trr
 
     if {[string equal $mac ""]} then {
@@ -1267,14 +1272,14 @@ proc ajouter-rr {dbfd nom iddom mac iddhcpprofil idhinfo comment respnom respmel
 			mac,
 			iddhcpprofil,
 			$hinfodef
-			commentaire, respnom, respmel,
+			droitsmtp, commentaire, respnom, respmel,
 			idcor)
 		VALUES
 		    ('$nom', $iddom,
 			$qmac,
 			$iddhcpprofil,
 			$hinfoval
-			'$qcomment', '$qrespnom', '$qrespmel',
+			$droitsmtp, '$qcomment', '$qrespnom', '$qrespmel',
 			$idcor)
 		    "
     if {[::pgsql::execsql $dbfd $sql msg]} then {
@@ -2486,7 +2491,7 @@ proc menu-dhcpprofil {dbfd champ idcor iddhcpprofil} {
 # Entrée :
 #   - dbfd : accès à la base
 #   - champ : champ de formulaire (variable du CGI suivant)
-#   - idgrp : identification du groupe
+#   - idcor : identification du correspondant
 #   - droitsmtp : valeur actuelle (donc à présélectionner)
 # Sortie :
 #   - valeur de retour : liste avec deux éléments de code HTML prêt à l'emploi
@@ -2494,15 +2499,16 @@ proc menu-dhcpprofil {dbfd champ idcor iddhcpprofil} {
 #
 # Historique
 #   2008/07/23 : pda/jean : conception
+#   2008/07/24 : pda/jean : utilisation de idcor plutôt que idgrp
 #
 
-proc menu-droitsmtp {dbfd champ idgrp droitsmtp} {
+proc menu-droitsmtp {dbfd champ idcor droitsmtp} {
     #
     # Récupérer le droit SMTP pour afficher ou non le bouton
     # d'autorisation d'émettre en SMTP non authentifié
     #
 
-    set grdroitsmtp [droit-groupe-smtp $dbfd $idgrp]
+    set grdroitsmtp [droit-correspondant-smtp $dbfd $idcor]
     if {$grdroitsmtp} then {
 	set intitule "Émettre en SMTP"
 	set html [::webapp::form-bool $champ $droitsmtp]
@@ -3069,21 +3075,24 @@ proc valide-idreseau {dbfd idreseau idgrp droit version msgvar} {
 }
 
 #
-# Indique si le groupe a le droit d'autoriser des émetteurs SMTP.
+# Indique si le groupe du correspondant a le droit d'autoriser des
+# émetteurs SMTP.
 #
 # Entrée :
 #   - paramètres :
 #       - dbfd : accès à la base
-#	- idgrp : le groupe
+#	- idcor : le correspondant
 # Sortie :
 #   - valeur de retour : 1 si ok, 0 sinon
 #
 # Historique
 #   2008/07/23 : pda/jean : conception
+#   2008/07/24 : pda/jean : changement de idgrp en idcor
 #
 
-proc droit-groupe-smtp {dbfd idgrp} {
-    set sql "SELECT droitsmtp FROM groupe WHERE idgrp = $idgrp"
+proc droit-correspondant-smtp {dbfd idcor} {
+    set sql "SELECT droitsmtp FROM groupe g, corresp c 
+				WHERE g.idgrp = c.idgrp AND c.idcor = $idcor"
     set r 0
     pg_select $dbfd $sql tab {
 	set r $tab(droitsmtp)

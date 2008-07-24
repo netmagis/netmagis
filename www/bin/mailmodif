@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: mailmodif,v 1.5 2007-11-14 15:27:28 pda Exp $
+# $Id: mailmodif,v 1.6 2008-07-24 12:16:33 pda Exp $
 
 #
 # Script pour présenter la page de saisie de l'hébergeur d'une adresse
@@ -163,7 +163,7 @@ proc main {} {
 		# Le nom de "l'adresse de messagerie" n'existe pas encore.
 		# Ajouter le RR correspondant
 		#
-		set msg [ajouter-rr $dbfd $nom $trr(iddom) "" 0 "" "" "" "" $idcor trr]
+		set msg [ajouter-rr $dbfd $nom $trr(iddom) "" 0 "" 0 "" "" "" $idcor trr]
 		if {! [string equal $msg ""]} then {
 		    ::webapp::error-exit $conf(err) \
 			    "Insertion de '$toutnom' impossible ($msg)"

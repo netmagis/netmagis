@@ -1,5 +1,5 @@
 {
-\* $Id: traiteajout-existe.htgt,v 1.5 2008-07-23 14:02:35 pda Exp $
+\* $Id: traiteajout-existe.htgt,v 1.6 2008-07-24 12:16:35 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -73,6 +73,10 @@
 	\lignetableau {
 	    \casetableau {} {Machine}
 	    \casetableau {} {%HINFO%}
+	}
+	\lignetableau {
+	    \casetableau {} {Droit d'émission SMTP}
+	    \casetableau {} {%DROITSMTP%}
 	}
 	\lignetableau {
 	    \casetableau {} {Infos complémentaires}

@@ -1,5 +1,5 @@
 {
-\* $Id: editmodif-infos.htgt,v 1.4 2008-03-13 08:23:00 pda Exp $
+\* $Id: editmodif-infos.htgt,v 1.5 2008-07-24 12:16:35 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -48,39 +48,41 @@
 	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
 	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
 	\tableau {
-	    \bordure {1} {}
+	    \bordure {0} {}
 	    \taille {100}
 	} {
 	    \casedefauttableau {\centragehorizontal {LEFT}}
 	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {RIGHT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
 	} {
 	    \lignetableau {
 		\casetableau {} {Nom}
-		\casetableau {} {%NOM%.%DOMAINE%}
+		\multicasetableau {3} {} {%NOM%.%DOMAINE%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Adresse MAC}
-		\casetableau {} {%MAC%
-		    ~
-		    ~
-		    %DHCPPROFIL%
-		}
+		\casetableau {} {%MAC%}
+		\casetableau {} {%DHCPPROFILLIBELLE%}
+		\casetableau {} {%DHCPPROFILMENU%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Machine}
 		\casetableau {} {%MENUHINFO%}
+		\casetableau {} {%DROITSMTPLIBELLE%}
+		\casetableau {} {%DROITSMTPMENU%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Infos complémentaires}
-		\casetableau {} {%COMMENTAIRE%}
+		\multicasetableau {3} {} {%COMMENTAIRE%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Responsable (nom + prénom)}
-		\casetableau {} {%RESPNOM%}
+		\multicasetableau {3} {} {%RESPNOM%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Responsable (mél)}
-		\casetableau {} {%RESPMEL%}
+		\multicasetableau {3} {} {%RESPMEL%}
 	    }
 	}
 	<INPUT TYPE="SUBMIT" VALUE="Valider">

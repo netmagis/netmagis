@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traiteajout,v 1.7 2008-07-23 14:02:33 pda Exp $
+# $Id: traiteajout,v 1.8 2008-07-24 12:16:33 pda Exp $
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
@@ -89,7 +89,7 @@ set conf(form-ajout-machine)	{
 	{adr		1 1}
 	{mac		1 1}
 	{iddhcpprofil	1 1}
-	{droitsmtp	1 1}
+	{droitsmtp	0 1}
 	{hinfo		1 1}
 	{commentaire	1 1}
 	{respnom	1 1}
@@ -255,11 +255,12 @@ proc traiteajout-machine {dbfd tc ft} {
     # Vérifier le droit d'émission SMTP
     #
 
-    set grdroitsmtp [droit-groupe-smtp $dbfd $tabcor(idgrp)]
+    set grdroitsmtp [droit-correspondant-smtp $dbfd $tabcor(idcor)]
     if {$grdroitsmtp} then {
-	if {! [regexp -- {^[01]$} $droitsmtp]} then {
-	    ::webapp::error-exit $conf(err) \
-			"Valeur invalide ($droitsmtp) pour le champ 'droitsmtp'"
+	if {[string equal $droitsmtp ""]} then {
+	    set droitsmtp 0
+	} else {
+	    set droitsmtp 1
 	}
     } else {
 	set droitsmtp 0
@@ -293,7 +294,9 @@ proc traiteajout-machine {dbfd tc ft} {
 	# Sortir une page de confirmation
 	#
 
-	set hidden [::webapp::hide-parameters $conf(form-ajout-machine) ftab]
+	set l {nom domaine adr mac iddhcpprofil droitsmtp hinfo commentaire
+				respnom respmel}
+	set hidden [::webapp::hide-parameters $l ftab]
 	::webapp::send html [::webapp::file-subst $conf(page-ajout-smtp) \
 						[list \
 							[list %HIDDEN% $hidden] \
@@ -324,6 +327,11 @@ proc traiteajout-machine {dbfd tc ft} {
 	set respnom     [html-tab-string $trr(respnom)]
 	set respmel     [html-tab-string $trr(respmel)]
 	set dhcpprofil  [html-tab-string $trr(dhcpprofil)]
+	if {$trr(droitsmtp)} then {
+	    set droitsmtp "Oui"
+	} else {
+	    set droitsmtp "Non"
+	}
 
 	::webapp::send html [::webapp::file-subst $conf(page-ajout-existe) \
 				[list \
@@ -361,7 +369,7 @@ proc traiteajout-machine {dbfd tc ft} {
 	# RR.
 	#
 	set msg [ajouter-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
-		    $commentaire $respnom $respmel $idcor trr]
+		    $droitsmtp $commentaire $respnom $respmel $idcor trr]
 	if {! [string equal $msg ""]} then {
 	    ::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
 	}
@@ -382,6 +390,7 @@ proc traiteajout-machine {dbfd tc ft} {
 	    if {! ([string equal $mac $trr(mac)] &&
 		    [string equal $iddhcpprofil $trr(iddhcpprofil)] &&
 		    [string equal $hinfo $trr(hinfo)] &&
+		    [string equal $droitsmtp $trr(droitsmtp)] &&
 		    [string equal $commentaire $trr(commentaire)] &&
 		    [string equal $respnom $trr(respnom)] &&
 		    [string equal $respmel $trr(respmel)])} then {
@@ -400,6 +409,7 @@ proc traiteajout-machine {dbfd tc ft} {
 					mac = $qmac,
 					iddhcpprofil = $iddhcpprofil,
 					idhinfo = $idhinfo,
+					droitsmtp = $droitsmtp,
 					commentaire = '$qcommentaire',
 					respnom = '$qrespnom',
 					respmel = '$qrespmel'
@@ -422,6 +432,7 @@ proc traiteajout-machine {dbfd tc ft} {
 	    set commentaire  $trr(commentaire)
 	    set respnom      $trr(respnom)
 	    set respmel      $trr(respmel)
+	    set droitsmtp    $trr(droitsmtp)
 	}
     }
 
@@ -455,6 +466,11 @@ proc traiteajout-machine {dbfd tc ft} {
     set commentaire [html-tab-string $commentaire]
     set respnom     [html-tab-string $respnom]
     set respmel     [html-tab-string $respmel]
+    if {$droitsmtp} then {
+	set droitsmtp "Oui"
+    } else {
+	set droitsmtp "Non"
+    }
 
     if {$dejaip} then {
 	set anciennesip [join $trr(ip) " "]
@@ -473,6 +489,7 @@ proc traiteajout-machine {dbfd tc ft} {
 					[list %MAC%         $mac] \
 					[list %DHCPPROFIL%  $dhcpprofil] \
 					[list %HINFO%       $hinfo] \
+					[list %DROITSMTP%   $droitsmtp] \
 					[list %COMMENTAIRE% $commentaire] \
 					[list %RESPNOM%     $respnom] \
 					[list %RESPMEL%     $respmel] \
@@ -550,7 +567,7 @@ proc traiteajout-alias {dbfd tc ft} {
     # RR.
     #
 
-    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" "" "" "" $idcor newrr]
+    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 "" "" "" $idcor newrr]
     if {! [string equal $msg ""]} then {
 	::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
     }

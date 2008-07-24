@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admmxmodif,v 1.5 2007-11-14 15:27:28 pda Exp $
+# $Id: admmxmodif,v 1.6 2008-07-24 12:16:33 pda Exp $
 
 #
 # Script pour enregistrer une modification de mx
@@ -302,7 +302,7 @@ proc main {} {
 	    #
 
 	    # XXX : pas de commentaire ni de responsable... peut-être plus tard
-	    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" "" "" "" \
+	    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 "" "" "" \
 				$tabcor(idcor) tabrr]
 	    if {! [string equal $msg ""]} then {
 		::webapp::error-exit $conf(err) \

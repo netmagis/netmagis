@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traitesuppr,v 1.5 2007-11-14 15:27:28 pda Exp $
+# $Id: traitesuppr,v 1.6 2008-07-24 12:16:33 pda Exp $
 
 #
 # Script pour enregistrer les suppressions demandées par un correspondant.
@@ -28,6 +28,7 @@
 #   2004/08/05 : pda/jean : ajout MAC
 #   2005/04/08 : pda/jean : ajout dhcpprofil
 #   2007/10/25 : jean     : log des actions de modification
+#   2008/07/24 : pda/jean : ajout droitsmtp
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -191,6 +192,11 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	    set mac $trr(mac)
 	    set dhcpprofil $trr(dhcpprofil)
 	    set hinfo $trr(hinfo)
+	    if {$trr(droitsmtp)} then {
+		set droitsmtp "Oui"
+	    } else {
+		set droitsmtp "Non"
+	    }
 	    set listeadr [join $trr(ip) " "]
 	    set laliases {}
 	    foreach a $trr(aliases) {
@@ -211,6 +217,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 					[list %MAC% $mac] \
 					[list %DHCPPROFIL% $dhcpprofil] \
 					[list %HINFO% $hinfo] \
+					[list %DROITSMTP% $droitsmtp] \
 					[list %COMMENTAIRE% $commentaire] \
 					[list %RESPNOM% $respnom] \
 					[list %RESPMEL% $respmel] \
@@ -350,6 +357,11 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     set mac	    $trr(mac)
     set dhcpprofil  $trr(dhcpprofil)
     set hinfo	    $trr(hinfo)
+    if {$trr(droitsmtp)} then {
+	set droitsmtp "Oui"
+    } else {
+	set droitsmtp "Non"
+    }
     set commentaire [html-tab-string $trr(commentaire)]
     set respnom     [html-tab-string $trr(respnom)]
     set respmel     [html-tab-string $trr(respmel)]
@@ -481,6 +493,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 				[list %DHCPPROFIL%  $dhcpprofil] \
 				[list %LISTEADR%    $listeadr] \
 				[list %HINFO%       $hinfo] \
+				[list %DROITSMTP%   $droitsmtp] \
 				[list %COMMENTAIRE% $commentaire] \
 				[list %RESPNOM%     $respnom] \
 				[list %RESPMEL%     $respmel] \

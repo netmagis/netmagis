@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: editmodif,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: editmodif,v 1.5 2008-07-24 12:16:33 pda Exp $
 
 #
 # Script pour saisir les modifications demandées par un correspondant.
@@ -127,8 +127,14 @@ proc editmodif-infos {dbfd idcor ft} {
     set val [::webapp::html-string $trr(mac)]
     set mac [::webapp::form-text mac 1 20 17 $val]
     set dhcpprofil [menu-dhcpprofil $dbfd iddhcpprofil $idcor $trr(iddhcpprofil)]
+    set dhcpprofillibelle [lindex $dhcpprofil 0]
+    set dhcpprofilmenu    [lindex $dhcpprofil 1]
 
     set menuhinfo [menu-hinfo $dbfd hinfo $trr(hinfo)]
+
+    set droitsmtp [menu-droitsmtp $dbfd "droitsmtp" $idcor $trr(droitsmtp)]
+    set droitsmtplibelle [lindex $droitsmtp 0]
+    set droitsmtpmenu    [lindex $droitsmtp 1]
 
     set val [::webapp::html-string $trr(commentaire)]
     set commentaire [::webapp::form-text commentaire 1 50 50 $val]
@@ -148,8 +154,11 @@ proc editmodif-infos {dbfd idcor ft} {
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
 					[list %MAC% $mac] \
-					[list %DHCPPROFIL% $dhcpprofil] \
+					[list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
+					[list %DHCPPROFILMENU% $dhcpprofilmenu] \
 					[list %MENUHINFO% $menuhinfo] \
+					[list %DROITSMTPLIBELLE% $droitsmtplibelle] \
+					[list %DROITSMTPMENU% $droitsmtpmenu] \
 					[list %COMMENTAIRE% $commentaire] \
 					[list %RESPNOM% $respnom] \
 					[list %RESPMEL% $respmel] \
