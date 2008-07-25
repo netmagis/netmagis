@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: corresp,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: corresp,v 1.5 2008-07-25 14:02:05 pda Exp $
 
 #
 # Script pour chercher le ou les correspondants associés à un
@@ -252,7 +252,7 @@ proc main {} {
     #
 
     if {[info exists tabrr(idrr)]} then {
-	append resultat [html-machine $dbfd tabrr]
+	append resultat [presenter-rr $dbfd -1 tabrr]
 	append resultat "<P>"
     }
 

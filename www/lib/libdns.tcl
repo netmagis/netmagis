@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.12 2008-07-24 12:16:35 pda Exp $
+# $Id: libdns.tcl,v 1.13 2008-07-25 14:02:06 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -127,9 +127,7 @@ set libconf(tabmachine) {
 	vbar {yes}
 	column { }
 	vbar {yes}
-	column {
-	    chars {gras}
-	}
+	column { }
 	vbar {yes}
     }
 }
@@ -176,55 +174,6 @@ proc html-tab-string {string} {
 	set v "&nbsp;"
     }
     return $v
-}
-
-#
-# Affiche toutes les caractéristiques d'une machine dans un tableau HTML.
-#
-# Entrée :
-#   - paramètres :
-#	- dbfd : accès à la base
-#	- tabrr : tableau contenant toutes les infos, voir lire-rr-par-id
-#   - variables globales :
-#	- libconf(tabmachine) : spécification du tableau utilisé
-# Sortie :
-#   - valeur de retour : tableau html prêt à l'emploi
-#
-# Historique
-#   2002/07/25 : pda      : conception
-#
-
-proc html-machine {dbfd tabrr} {
-    global libconf
-    upvar $tabrr trr
-
-    set donnees {}
-
-    lappend donnees [list Normal Nom "$trr(nom).$trr(domaine)"]
-
-    set laliases ""
-    foreach idalias $trr(aliases) {
-	if {[lire-rr-par-id $dbfd $idalias arr]} then {
-	    lappend laliases "$arr(nom).$arr(domaine)"
-	    unset arr
-	}
-    }
-    set aliases [join $laliases " "]
-    lappend donnees [list Normal Aliases $aliases]
-
-    lappend donnees [list Normal Adresses $trr(ip)]
-
-    lappend donnees [list Normal Machine $trr(hinfo)]
-
-    lappend donnees [list Normal Commentaire $trr(commentaire)]
-
-    set resp $trr(respnom)
-    if {! [string equal $trr(respmel) ""]} then {
-	append resp " <$trr(respmel)>"
-    }
-    lappend donnees [list Normal Responsable $resp]
-
-    return [::arrgen::output "html" $libconf(tabmachine) $donnees]
 }
 
 #
@@ -1319,6 +1268,93 @@ proc touch-rr {dbfd idrr idcor} {
 	set msg "Mise à jour du RR impossible : $msg"
     }
     return $msg
+}
+
+#
+# Présente un RR sous forme HTML
+#
+# Entrée :
+#   - paramètres :
+#	- dbfd : accès la base
+#	- idrr : l'id du rr à chercher ou -1 si tabrr contient déjà tout
+#	- tabrr : tableau vide (ou déjà rempli si idrr = -1)
+# Sortie :
+#   - valeur de retour : chaîne vide (erreur) ou code HTML
+#   - paramètre tabrr : cf lire-rr-par-id
+#   - variables globales :
+#	- libconf(tabmachine) : spécification du tableau utilisé
+#
+# Historique
+#   2008/07/25 : pda/jean : conception
+#
+
+proc presenter-rr {dbfd idrr tabrr} {
+    global libconf
+    upvar $tabrr trr
+
+    #
+    # Lire le RR si besoin est
+    #
+
+    if {$idrr != -1 && [lire-rr-par-id $dbfd $idrr trr] == -1} then {
+	return ""
+    }
+
+    #
+    # Présenter les différents champs
+    #
+
+    set donnees {}
+
+    # nom
+    lappend donnees [list Normal "Nom" "$trr(nom).$trr(domaine)"]
+
+    # adresse(s) IP
+    switch [llength $trr(ip)] then {
+	0 { lappend donnees [list Normal "Adresse IP" "(aucune)"] }
+	1 { lappend donnees [list Normal "Adresse IP" $trr(ip)] }
+	default { lappend donnees [list Normal "Adresses IP" $trr(ip)] }
+    }
+
+    # adresse MAC
+    lappend donnees [list Normal "Adresse MAC" $trr(mac)]
+
+    # profil DHCP
+    lappend donnees [list Normal "Profil DHCP" $trr(dhcpprofil)]
+
+    # type de machine
+    lappend donnees [list Normal "Machine" $trr(hinfo)]
+
+    # droit d'émission SMTP
+    if {$trr(droitsmtp)} then {
+	set droitsmtp "Oui"
+    } else {
+	set droitsmtp "Non"
+    }
+    lappend donnees [list Normal "Doit d'émission SMTP" $droitsmtp]
+
+    # infos complémentaires
+    lappend donnees [list Normal "Infos complémentaires" $trr(commentaire)]
+
+    # responsable (nom + prénom)
+    lappend donnees [list Normal "Responsable (nom + prénom)" $trr(respnom)]
+
+    # responsable (mél)
+    lappend donnees [list Normal "Responsable (mél)" $trr(respmel)]
+
+    # aliases
+    set la {}
+    foreach idalias $trr(aliases) {
+	if {[lire-rr-par-id $dbfd $idalias ta]} then {
+	    lappend la "$ta(nom).$ta(domaine)"
+	}
+    }
+    if {[llength $la] > 0} then {
+	lappend donnees [list Normal "Aliases" [join $la " "]]
+    }
+
+    set html [::arrgen::output "html" $libconf(tabmachine) $donnees]
+    return $html
 }
 
 ##############################################################################
