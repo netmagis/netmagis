@@ -5,7 +5,7 @@
 --	- psql dns < upgrade.sql
 --		(attention : la mise à jour est lente)
 --
--- $Id: upgrade.sql,v 1.4 2008-07-23 14:02:17 pda Exp $
+-- $Id: upgrade.sql,v 1.5 2008-07-25 10:33:52 pda Exp $
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
@@ -20,21 +20,6 @@ ALTER TABLE dhcprange
 	FOREIGN KEY (iddhcpprofil) REFERENCES dhcpprofil(iddhcpprofil) ;
 
 ------------------------------------------------------------------------------
--- ajout du champ "droitsmtp" dans la table RR
-------------------------------------------------------------------------------
-
-ALTER TABLE rr
-	ADD COLUMN droitsmtp INT ;
-
-ALTER TABLE rr
-	ALTER COLUMN droitsmtp
-	SET DEFAULT 0 ;
-
-UPDATE rr
-	SET droitsmtp = 0
-	WHERE droitsmtp IS NULL ;
-
-------------------------------------------------------------------------------
 -- ajout du champ "droitsmtp" dans la table groupe
 ------------------------------------------------------------------------------
 
@@ -46,6 +31,21 @@ ALTER TABLE groupe
 	SET DEFAULT 0 ;
 
 UPDATE groupe
+	SET droitsmtp = 0
+	WHERE droitsmtp IS NULL ;
+
+------------------------------------------------------------------------------
+-- ajout du champ "droitsmtp" dans la table RR
+------------------------------------------------------------------------------
+
+ALTER TABLE rr
+	ADD COLUMN droitsmtp INT ;
+
+ALTER TABLE rr
+	ALTER COLUMN droitsmtp
+	SET DEFAULT 0 ;
+
+UPDATE rr
 	SET droitsmtp = 0
 	WHERE droitsmtp IS NULL ;
 
