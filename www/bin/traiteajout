@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traiteajout,v 1.8 2008-07-24 12:16:33 pda Exp $
+# $Id: traiteajout,v 1.9 2008-07-25 12:06:25 pda Exp $
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
@@ -17,7 +17,7 @@
 #	- mac : adresse MAC
 #	- iddhcpprofil : l'id du profil DHCP, ou 0
 #	- hinfo : type de machine (texte)
-#	- droitsmtp : 0 ou 1
+#	- droitsmtp : inexistant ou non vide
 #	- commentaire : informations complémentaires
 #	- respnom : nom et prénom du responsable
 #	- respmel : adresse électronique du responsable
@@ -252,6 +252,15 @@ proc traiteajout-machine {dbfd tc ft} {
     }
 
     #
+    # Récupérer le type de machine en clair
+    #
+
+    set idhinfo [lire-hinfo $dbfd $hinfo]
+    if {$idhinfo == -1} then {
+	::webapp::error-exit $conf(err) "Le type de machine '$hinfo' n'existe pas."
+    }
+
+    #
     # Vérifier le droit d'émission SMTP
     #
 
@@ -264,15 +273,6 @@ proc traiteajout-machine {dbfd tc ft} {
 	}
     } else {
 	set droitsmtp 0
-    }
-
-    #
-    # Récupérer le type de machine en clair
-    #
-
-    set idhinfo [lire-hinfo $dbfd $hinfo]
-    if {$idhinfo == -1} then {
-	::webapp::error-exit $conf(err) "Le type de machine '$hinfo' n'existe pas."
     }
 
     #

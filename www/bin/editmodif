@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: editmodif,v 1.5 2008-07-24 12:16:33 pda Exp $
+# $Id: editmodif,v 1.6 2008-07-25 12:05:56 pda Exp $
 
 #
 # Script pour saisir les modifications demandées par un correspondant.
@@ -20,6 +20,7 @@
 #   2003/05/13 : pda/jean : utilisation de la base d'authentification
 #   2004/08/05 : pda/jean : ajout MAC
 #   2005/04/08 : pda/jean : ajout dhcpprofil
+#   2008/07/25 : pda/jean : ajout du droit d'émission SMTP
 #
 
 set conf(homeurl)	%HOMEURL%
