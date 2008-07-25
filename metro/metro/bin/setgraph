@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: setgraph,v 1.4 2008-06-25 12:42:46 boggia Exp $
+# $Id: setgraph,v 1.5 2008-07-25 07:54:16 boggia Exp $
 # ###################################################################
 #  boggia : Creation : 25/03/08
 #  boggia : Modification : 02/05/08
@@ -221,6 +221,13 @@ sub capture_liste
 	elsif($key=~/^([0-9]+)_nom$/ && !exists $liste_graph{$key})
 	{
 	    $liste_graph{$1} = $liste_sondes{$key};
+
+	    # si aucun type de sonde n'est spécifié
+            if(!exists $liste_sondes{"$1_type"})
+            {
+                # on utilise le type trafic
+                $liste_sondes{"$1_type"} = "trafic";
+            }
 	}
     }
 }
