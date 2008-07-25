@@ -1,5 +1,5 @@
 {
-\* $Id: editmodif-infos.htgt,v 1.5 2008-07-24 12:16:35 pda Exp $
+\* $Id: editmodif-infos.htgt,v 1.6 2008-07-25 12:08:04 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -45,6 +45,7 @@
 
     <FORM METHOD="POST" ACTION="%HOMEURL%/bin/traitemodif">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="modif-infos">
+	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
 	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
 	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
 	\tableau {
