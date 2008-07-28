@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.3 2008-07-21 15:14:46 pda Exp $
+# $Id: Makefile,v 1.4 2008-07-28 15:02:25 pda Exp $
 #
 
 DESTDIR=/local/applis/topo
@@ -19,7 +19,6 @@ PROGS = \
 	extractl3	\
 	extracteq	\
 	extractcoll	\
-	locatecoll	\
 	getnetif
 
 SCRIPTS = \
@@ -44,7 +43,6 @@ extractl2:	extractl2.c	$(LIBDIR)/libgraph.a
 extractl3:	extractl3.c	$(LIBDIR)/libgraph.a
 extracteq:	extracteq.c	$(LIBDIR)/libgraph.a
 extractcoll:	extractcoll.c	$(LIBDIR)/libgraph.a
-locatecoll:	locatecoll.c	$(LIBDIR)/libgraph.a
 getnetif:	getnetif.c	$(LIBDIR)/libgraph.a
 
 install: $(PROGS) $(SCRIPTS)
