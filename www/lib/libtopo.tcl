@@ -418,56 +418,6 @@ proc ip-in {ip net} {
 }
 
 #
-# Récupère une liste de points de collecte pour un ensemble de CIDR
-# (IPv4 et/ou IPv6) donné
-#
-# Entrée :
-#   - paramètres :
-#	- cidr4 : adresse IPv4 du réseau
-#	- cidr6 : adresse IPv6 du réseau
-#	- regexp : expression régulière sur les noms d'équipements
-# Sortie :
-#   - valeur de retour : liste dont le premier élément est "erreur" ou "ok"
-#	- si "erreur", le deuxième élément est le message
-#	- si "ok", le deuxième élément est la liste trouvée, au format :
-#		{{id eq if vlan} ...}
-#
-# XXX : n'est plus utilisé que par l'accueil de la métrologie (obsolète)
-#
-# Historique
-#   2006/05/24 : pda/jean/boggia : conception
-#   2006/08/10 : pda/boggia      : ajout regexp
-#
-
-proc extraire-collecte {cidr4 cidr6 regexp} {
-    global libconf
-
-    if {! [string equal $cidr4 ""]} then {
-	set parm "-n $cidr4"
-    } elseif {! [string equal $cidr6 ""]} then {
-	set parm "-n $cidr6"
-    } elseif {! [string equal $regexp ""]} then {
-	set parm "-e $regexp"
-    } else {
-	return {erreur {Erreur interne : extraction de point de collecte sans critère (cidr4=$cidr4, cidr6=$cidr6, regexp=$regexp}}
-    }
-
-    set cmd "$libconf(topodir)/bin/extractcoll $parm < $libconf(graph)"
-
-    if {[catch {set fd [open "| $cmd" "r"]} msg]} then {
-	return [list "erreur" $msg]
-    } else {
-	set res {}
-	while {[gets $fd ligne] > -1} {
-	    lappend res $ligne
-	}
-	close $fd
-    }
-
-    return [list "ok" $res]
-}
-
-#
 # Valide l'id du point de collecte par rapport aux droits du correspondant.
 #
 # Entrée :
@@ -492,7 +442,6 @@ proc extraire-collecte {cidr4 cidr6 regexp} {
 # XXX pour l'instant, on ne vérifie que la cohérence de l'id
 # du graphe
 #
-# XXX : voir avec extraire-collecte : il y a des choses à mettre en commun !
 
 proc verifier-metro-id {dbfd id _tabuid _eq _iface _vlan} {
     upvar $_tabuid tabuid
