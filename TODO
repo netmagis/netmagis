@@ -1,4 +1,4 @@
-$Id: TODO,v 1.5 2008-05-06 15:52:37 pda Exp $
+$Id: TODO,v 1.6 2008-07-28 08:00:29 pda Exp $
 
 Analyse de la conf des points d'accès
     - les SSID supportés et leur caractéristiques (open ou auth)
@@ -22,7 +22,7 @@ Analyse de la conf des points d'accès
 	 ssid osiris-sec
 
 => générer
-    node ... type L1 ... radio <channel>/<power> ssid ... ssid ... ssid ...
+    node ... type L1 ... radio <channel> <power> ssid ... ssid ... ssid ...
 	chaque ssid est de la forme
 	    ssid <ssid> <"open"|"auth">
 => dans l'appel à http://idris.u-strasbg.fr/setgraph
