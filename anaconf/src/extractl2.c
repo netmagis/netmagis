@@ -1,5 +1,5 @@
 /*
- * $Id: extractl2.c,v 1.6 2007-01-16 09:51:43 pda Exp $
+ * $Id: extractl2.c,v 1.7 2008-07-28 14:10:53 pda Exp $
  */
 
 #include "graph.h"
@@ -210,7 +210,8 @@ int main (int argc, char *argv [])
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "n:e:")) != -1) {
+    while ((c = getopt (argc, argv, "n:e:")) != -1)
+    {
 	switch (c)
 	{
 	    case 'n' :

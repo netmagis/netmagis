@@ -1,14 +1,15 @@
-#!/bin/sh
+#!/usr/local/bin/tclsh8.4
+
 
 #
-# $Id: sendcoll,v 1.2 2008-07-24 14:47:42 pda Exp $
+# $Id: sendcoll,v 1.3 2008-07-28 14:10:53 pda Exp $
 #
 # Prend sur l'entrée standard une liste des points de collecte
-# (telle que générée par dumpcoll), et la présente au métrologiseur
+# (telle que générée par dumpcoll -s -w), et la présente au métrologiseur
 # par l'intermédiaire du service Web.
 #
 # Syntaxe :
-#	sendcoll <url>
+#	sendcoll [-v] <url>
 #
 # Exemple :
 #	sendcoll http://metro.u-strasbg.fr/bin/setgraph
@@ -17,100 +18,281 @@
 #   2006/06/19 : pda/boggia : conception
 #   2006/08/09 : pda        : paramétrisation de l'emplacement de wget
 #   2008/07/24 : pda        : envoi des data via un fichier (et non plus argv)
+#   2008/07/28 : pda/boggia : recodage en tcl
 #
 
-VERBOSE=0
-WGET=/usr/local/bin/wget
+# nb de sondes envoyées par requête HTTP
+set conf(httplimit)	1000
 
-if [ $# != 1 ]
-then
-    echo "usage: $0 <url>" >&2
-    exit 1
-fi
+# verbose (cf option -v)
+set conf(verbose)	0
 
-URL="$1"
-TMPFILE=/tmp/sendcoll.$$
 
-verbositer ()
-{
-    if [ "$VERBOSE" != "0" ]
-    then
-	echo "$*"
-    fi
-}
+package require http
 
 #
-# Envoyer les données toutes prêtes au métrologiseur
+# Extrait la liste des sondes qu'Osiris met sur chaque point
+# d'accès. Cette fonction implémente une politique spécifique
+# Osiris.
 #
-# Paramètres
-#	1 : URL à interroger
-#	2 : data prêtes à êtres postées
+# Entrée :
+#   - eq : nom de l'équipement
+#   - iface : nom de l'interface
+#   - comm : communauté SNMP
+#   - ssid : nom du ssid
+#   - mode : "open" ou "auth"
 # Sortie :
-#	sortie standard : HTML résultant de l'envoi des spéc de métrologie
+#   - valeur de retour : liste de listes de la forme
+#	{<id> <type> <eq> <communaute> <iface> <ssid>}
+#
+# Historique :
+#   2008/07/28 : pda/boggia : conception
 #
 
-send_data ()
-{
-    rm -f $TMPFILE
-    echo "$2" > $TMPFILE
-    $WGET --quiet --output-document=- --post-file=$TMPFILE "$1" \
-	&& rm -f $TMPFILE
+proc sondes-wifi {eq iface comm ssid mode} {
+    switch $mode {
+	open {
+	    set id "M$eq.assocwifi.$ssid"
+	    set l1 [list $id "nbassocwifi" $eq $comm $iface $ssid]
+
+	    set id "M$eq.authwifi.$ssid"
+	    set l2 [list $id "nbauthwifi"  $eq $comm $iface $ssid]
+
+	    set l [list $l1 $l2]
+	}
+	auth {
+	    set id "M$eq.authwifi.$ssid"
+	    set l1 [list $id "nbauthwifi"  $eq $comm $iface $ssid]
+
+	    set l [list $l1]
+	}
+	default {
+	    set l {}
+	}
+    }
+    return $l
 }
 
 #
-# Convertir les données extraites de "dumpcoll" en format
-# pour le métrologiseur.
+# Lit les lignes issues de "dumpcoll -s -w" et en extrait la liste
+# des sondes à métrologiser.
 #
-# Données en entrée (entrée standard) :
-#	<id> <eq> <iface-avec-vlan-eventuellement> <communauté-snmp>
-# Données en sortie (sortie standard) :
-#	graph_<X>_nom=<point_de_collecte>
-#	sonde_<X>_ip=<adresse_ip_eq ou nom_eq>
-#	sonde_<X>_community=<communauté SNMP>
-#	sonde_<X>_param_<Y>=<paramètre de collecte>
+# Entrée :
+#   - fd : descripteur de fichier en entrée
+#   - _tab : tableau contenant en sortie les informations
+# Sortie :
+#   - valeur de retour : message d'erreur ou chaîne vide
+#   - paramètre tab : tableau, indexé par les noms de points de métrologie,
+#	contenant pour chaque case une liste de la forme :
+#	{<type> <eq> <communaute> [<param1> [<param2>]]}
+#
+# Note :
+#   Le format attendu en entrée est composé de deux types de ligne :
+#	traffic <id coll> <eq> <iface[.vlan]> <community>
+#	wifi <eq> <iface> <community> <ssid> <mode>
+#
+# Historique :
+#   2008/07/28 : pda/boggia : conception
 #
 
-post_data ()
-{
-    i=1
-    echo -n "verbose=0"
-    while read id eq iface comm
-    do
-	echo -n "&graph_${i}_nom=$id"
-	echo -n "&sonde_${i}_ip=$eq"
-	echo -n "&sonde_${i}_community=$comm"
-	echo -n "&sonde_${i}_param_1=$iface"
-	i=`expr $i + 1`
-    done
+proc read-coll {fd _tab} {
+    upvar $_tab tab
+
+    while {[gets $fd l] >= 0} {
+	switch [lindex $l 0] {
+	    traffic {
+		set id    [lindex $l 1]
+		set eq    [lindex $l 2]
+		set iface [lindex $l 3]
+		set comm  [lindex $l 4]
+
+		set lsondes [list [list $id "trafic" $eq $comm $iface]]
+	    }
+	    wifi {
+		set eq    [lindex $l 1]
+		set iface [lindex $l 2]
+		set comm  [lindex $l 3]
+		set ssid  [lindex $l 4]
+		set mode  [lindex $l 5]
+
+		set lsondes [sondes-wifi $eq $iface $comm $ssid $mode]
+	    }
+	    default {
+		return "Type de sonde inconnu ($l)"
+	    }
+	}
+	foreach s $lsondes {
+	    set id [lindex $s 0]
+	    if {[info exists tab($id)]} then {
+		return "Sonde '$id' présente plusieurs fois"
+	    }
+	    set tab($id) [lreplace $s 0 0]
+	}
+    }
+
+    return ""
 }
 
-DATA="`post_data`"
-if [ $? != 0 ]
-then
-    echo "Metrology points not dumped" >&2
+#
+# Envoi d'une requête HTTP
+#
+# Entrée :
+#   - url : url pour l'envoi
+#   - query : les données à POSTer
+# Sortie :
+#   - valeur de retour : message d'erreu ou chaîne vide
+#
+# Historique :
+#   2008/07/28 : pda/boggia : conception
+#
+
+proc send {url query} {
+    global conf
+
+    set token [::http::geturl $url -query $query]
+    switch [::http::status $token] {
+	ok {
+	    set data [::http::data $token]
+	    switch -glob -- $data {
+		OK* {
+		    set msg ""
+		}
+		default {
+		    set msg $data
+		}
+	    }
+	}
+	default {
+	    set msg [::http::code $token]
+	}
+    }
+    ::http::cleanup $token
+    if {$conf(verbose)} then {
+	puts stderr "$query\n-> '$msg'"
+    }
+    return $msg
+}
+
+#
+# Envoi la liste des sondes au métrologiseur
+#
+# Entrée :
+#   - url : url pour l'envoi
+#   - _tab : tableau contenant les points de métrologie (voir read-coll)
+# Sortie :
+#   - valeur de retour : message d'erreur ou chaîne vide
+#
+# Historique :
+#   2008/07/28 : pda/boggia : conception
+#
+
+proc send-coll {url _tab} {
+    global conf
+    upvar $_tab tab
+
+    set n 0
+    set larg {}
+    foreach id [array names tab] {
+	# {<type> <eq> <communaute> [<param1> [<param2>]]}
+	set l $tab($id)
+	set type   [lindex $l 0]
+	set eq     [lindex $l 1]
+	set comm   [lindex $l 2]
+	set param1 [lindex $l 3]
+	set param2 [lindex $l 4]
+
+	lappend larg [::http::formatQuery \
+				"sonde_${n}_nom"	$id \
+				"sonde_${n}_type"	$type \
+				"sonde_${n}_ip"		$eq \
+				"sonde_${n}_community"	$comm \
+				"sonde_${n}_param_1"	$param1 \
+				"sonde_${n}_param_2"	$param2 \
+			    ]
+	incr n
+	if {$n % $conf(httplimit) == 0} then {
+	    set query [join $larg "&"]
+	    set msg [send $url $query]
+	    if {! [string equal $msg ""]} then {
+		return $msg
+	    }
+	    set larg {}
+	}
+    }
+
+    if {$n % $conf(httplimit) != 0} then {
+	set query [join $larg "&"]
+	set msg [send $url $query]
+	if {! [string equal $msg ""]} then {
+	    return $msg
+	}
+    }
+
+    return ""
+}
+
+#
+# Procédure principale
+#
+# Historique :
+#   2008/07/28 : pda/boggia : conception
+#
+
+
+proc usage {argv0} {
+    puts stderr "usage: $argv0 url"
     exit 1
-fi
+}
 
-verbositer "Sending $DATA"
+proc main {argv0 argv} {
+    global conf
 
-# Les quotes sont un peu "tricky", mais bon...
-RES="`send_data \"$URL\" \"$DATA\"`"
+    #
+    # Vérification des arguments
+    #
 
-verbositer "Received $RES"
+    set conf(verbose) 0
 
-if [ $? != 0 ]
-then
-    echo "Metrology points not sent" >&2
-    exit 1
-fi
+    while {[llength $argv] > 0} {
+	switch -- [lindex $argv 0] {
+	    -v {
+		set conf(verbose) 1
+		set argv [lreplace $argv 0 0]
+	    }
+	    default {
+		break
+	    }
+	}
+    }
 
-case "$RES" in
-    OK*)    ;;
-    ERROR*)
-	    echo "Error sending metrology points" >&2
-	    echo "$RES" >&2
-	    exit 1
-	    ;;
-esac
+    if {[llength $argv] != 1} then {
+	usage $argv0
+	return 1
+    }
+    set url [lindex $argv 0]
 
-exit 0
+    #
+    # Lecture des informations sur l'entrée standard et stockage
+    # intermédiaire
+    #
+
+    set msg [read-coll stdin tab]
+    if {! [string equal $msg ""]} then {
+	puts stderr "Erreur lors de la lecture des données\n$msg"
+	return 1
+    }
+
+    #
+    # Envoi des données au métrologiseur et récupération du résultat
+    #
+
+    set msg [send-coll $url tab]
+    if {! [string equal $msg ""]} then {
+	puts stderr "Erreur lors de l'envoi des données à $url\n$msg"
+	return 1
+    }
+
+    return 0
+}
+
+exit [main $argv0 $argv]
