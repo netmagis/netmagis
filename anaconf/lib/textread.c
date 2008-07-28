@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.10 2008-06-14 21:36:15 pda Exp $
+ * $Id: textread.c,v 1.11 2008-07-28 08:08:59 pda Exp $
  */
 
 #include "graph.h"
@@ -93,9 +93,9 @@ struct ssid *create_ssid (char *name, char *mode)
 	name = symtab_to_name (symtab_get (name)) ;
     s->name = name ;
 
-    if (strcmp (mode, "open"))
+    if (strcmp (mode, "open") == 0)
 	s->mode = SSID_OPEN ;
-    else if (strcmp (mode, "auth"))
+    else if (strcmp (mode, "auth") == 0)
 	s->mode = SSID_AUTH ;
     else
     {
