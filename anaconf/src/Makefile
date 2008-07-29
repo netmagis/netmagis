@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.4 2008-07-28 15:02:25 pda Exp $
+# $Id: Makefile,v 1.5 2008-07-29 13:25:05 pda Exp $
 #
 
 DESTDIR=/local/applis/topo
@@ -26,6 +26,7 @@ SCRIPTS = \
 	analyser	\
 	checkdns	\
 	doteq		\
+	ssidprobes	\
 	liste-rancid	\
 	liste-vlans	\
 	parse-hp.tcl	\
