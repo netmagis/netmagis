@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traitesuppr,v 1.6 2008-07-24 12:16:33 pda Exp $
+# $Id: traitesuppr,v 1.7 2008-07-29 15:52:51 pda Exp $
 
 #
 # Script pour enregistrer les suppressions demandées par un correspondant.
@@ -29,6 +29,7 @@
 #   2005/04/08 : pda/jean : ajout dhcpprofil
 #   2007/10/25 : jean     : log des actions de modification
 #   2008/07/24 : pda/jean : ajout droitsmtp
+#   2008/07/29 : pda      : utilisation presenter-rr
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -85,6 +86,7 @@ set conf(form-suppr-ip)	{
 lappend auto_path $conf(pkg)
 package require webapp
 package require pgsql
+package require arrgen
 
 #
 # On y va !
@@ -168,11 +170,10 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 
 	if {$alias} then {
 	    #
-	    # Sortie de la page de confirmation pour un alias
+	    # Sortir la page de confirmation pour un alias
 	    #
 	    ::webapp::send html \
-		    [::webapp::file-subst \
-				$conf(page-suppr-alias) \
+		    [::webapp::file-subst $conf(page-suppr-alias) \
 				[list \
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
@@ -182,46 +183,15 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 			    ]
 	} else {
 	    #
-	    # Sortie de la page de confirmation pour une machine
-	    # (y compris toutes ses dépendances)
+	    # Sortir la page de confirmation pour une machine
 	    #
-	    set commentaire [html-tab-string $trr(commentaire)]
-	    set respnom     [html-tab-string $trr(respnom)]
-	    set respmel     [html-tab-string $trr(respmel)]
-
-	    set mac $trr(mac)
-	    set dhcpprofil $trr(dhcpprofil)
-	    set hinfo $trr(hinfo)
-	    if {$trr(droitsmtp)} then {
-		set droitsmtp "Oui"
-	    } else {
-		set droitsmtp "Non"
-	    }
-	    set listeadr [join $trr(ip) " "]
-	    set laliases {}
-	    foreach a $trr(aliases) {
-		lire-rr-par-id $dbfd $a t
-		lappend laliases "$t(nom).$t(domaine)"
-	    }
-	    set aliases [join $laliases " "]
-	    if {[string length $aliases] == 0} then {
-		set aliases "&nbsp;"
-	    }
+	    set machine [presenter-rr $dbfd -1 trr]
 	    ::webapp::send html \
-		    [::webapp::file-subst \
-				$conf(page-suppr-nom) \
+		    [::webapp::file-subst $conf(page-suppr-nom) \
 				[list \
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
-					[list %LISTEADR% $listeadr] \
-					[list %MAC% $mac] \
-					[list %DHCPPROFIL% $dhcpprofil] \
-					[list %HINFO% $hinfo] \
-					[list %DROITSMTP% $droitsmtp] \
-					[list %COMMENTAIRE% $commentaire] \
-					[list %RESPNOM% $respnom] \
-					[list %RESPMEL% $respmel] \
-					[list %ALIASES% $aliases] \
+					[list %MACHINE% $machine] \
 				    ] \
 			    ]
 	}
@@ -354,27 +324,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     #
 
     set objet ""
-    set mac	    $trr(mac)
-    set dhcpprofil  $trr(dhcpprofil)
-    set hinfo	    $trr(hinfo)
-    if {$trr(droitsmtp)} then {
-	set droitsmtp "Oui"
-    } else {
-	set droitsmtp "Non"
-    }
-    set commentaire [html-tab-string $trr(commentaire)]
-    set respnom     [html-tab-string $trr(respnom)]
-    set respmel     [html-tab-string $trr(respmel)]
-    set listeadr [join $trr(ip) " "]
-    set laliases {}
-    foreach a $trr(aliases) {
-	lire-rr-par-id $dbfd $a t
-	lappend laliases "$t(nom).$t(domaine)"
-    }
-    set aliases [join $laliases " "]
-    if {[string length $aliases] == 0} then {
-	set aliases "&nbsp;"
-    }
+    set machine [presenter-rr $dbfd -1 trr]
 
     #
     # Effectuer l'action de suppression seulement si confirmation
@@ -489,15 +439,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 				[list %NOM%         $nom] \
 				[list %DOMAINE%     $domaine] \
 				[list %ADR%         $adr] \
-				[list %MAC%         $mac] \
-				[list %DHCPPROFIL%  $dhcpprofil] \
-				[list %LISTEADR%    $listeadr] \
-				[list %HINFO%       $hinfo] \
-				[list %DROITSMTP%   $droitsmtp] \
-				[list %COMMENTAIRE% $commentaire] \
-				[list %RESPNOM%     $respnom] \
-				[list %RESPMEL%     $respmel] \
-				[list %ALIASES%     $aliases] \
+				[list %MACHINE%     $machine] \
 				[list %OBJET%       $objet] \
 			    ] \
 		    ]

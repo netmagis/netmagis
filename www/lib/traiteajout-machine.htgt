@@ -1,5 +1,5 @@
 {
-\* $Id: traiteajout-machine.htgt,v 1.5 2008-07-24 12:16:35 pda Exp $
+\* $Id: traiteajout-machine.htgt,v 1.6 2008-07-29 15:52:52 pda Exp $
 \modele {texte}
 
 \set {auteur} {pda/jean}
@@ -49,50 +49,7 @@
     \lien {serveurs de nom Osiris} {%DOCDNS%}
     d'ici %INTERVALLE% minutes.
 
-    \tableau {
-	\bordure {1} {}
-	\taille {100}
-    } {
-	\casedefauttableau {\centragehorizontal {LEFT}}
-	\casedefauttableau {\centragehorizontal {LEFT}}
-    } {
-	\lignetableau {
-	    \casetableau {} {Nom}
-	    \casetableau {} {%NOM%.%DOMAINE%}
-	}
-	\lignetableau {
-	    \casetableau {} {Adresse IP}
-	    \casetableau {} {%ADR%}
-	}
-	\lignetableau {
-	    \casetableau {} {Adresse MAC}
-	    \casetableau {} {%MAC%}
-	}
-	\lignetableau {
-	    \casetableau {} {Profil DHCP}
-	    \casetableau {} {%DHCPPROFIL%}
-	}
-	\lignetableau {
-	    \casetableau {} {Machine}
-	    \casetableau {} {%HINFO%}
-	}
-	\lignetableau {
-	    \casetableau {} {Droit d'émission SMTP}
-	    \casetableau {} {%DROITSMTP%}
-	}
-	\lignetableau {
-	    \casetableau {} {Infos complémentaires}
-	    \casetableau {} {%COMMENTAIRE%}
-	}
-	\lignetableau {
-	    \casetableau {} {Responsable (nom + prénom)}
-	    \casetableau {} {%RESPNOM%}
-	}
-	\lignetableau {
-	    \casetableau {} {Responsable (mél)}
-	    \casetableau {} {%RESPMEL%}
-	}
-    }
+    %MACHINE%
 }
 
 }

@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.13 2008-07-25 14:02:06 pda Exp $
+# $Id: libdns.tcl,v 1.14 2008-07-29 15:52:52 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -118,7 +118,7 @@ set libconf(tabdhcpprofil) {
 
 set libconf(tabmachine) {
     global {
-	chars {12 normal}
+	chars {10 normal}
 	align {left}
 	botbar {yes}
 	columns {20 80}
@@ -134,7 +134,7 @@ set libconf(tabmachine) {
 
 set libconf(tabcorresp) {
     global {
-	chars {12 normal}
+	chars {10 normal}
 	align {left}
 	botbar {yes}
 	columns {20 80}
@@ -1310,11 +1310,14 @@ proc presenter-rr {dbfd idrr tabrr} {
     lappend donnees [list Normal "Nom" "$trr(nom).$trr(domaine)"]
 
     # adresse(s) IP
-    switch [llength $trr(ip)] then {
-	0 { lappend donnees [list Normal "Adresse IP" "(aucune)"] }
-	1 { lappend donnees [list Normal "Adresse IP" $trr(ip)] }
-	default { lappend donnees [list Normal "Adresses IP" $trr(ip)] }
+    set at "Adresse IP"
+    set aa $trr(ip)
+    switch [llength $trr(ip)] {
+	0 { set aa "(aucune)" }
+	1 { }
+	default { set at "Adresses IP" }
     }
+    lappend donnees [list Normal $at $aa]
 
     # adresse MAC
     lappend donnees [list Normal "Adresse MAC" $trr(mac)]
@@ -1325,13 +1328,21 @@ proc presenter-rr {dbfd idrr tabrr} {
     # type de machine
     lappend donnees [list Normal "Machine" $trr(hinfo)]
 
-    # droit d'émission SMTP
-    if {$trr(droitsmtp)} then {
-	set droitsmtp "Oui"
-    } else {
-	set droitsmtp "Non"
+    # droit d'émission SMTP : ne le présenter que si c'est utilisé
+    # (i.e. s'il y a au moins un groupe qui a les droits)
+    set sql "SELECT COUNT(*) AS ndroitsmtp FROM groupe WHERE droitsmtp = 1"
+    set ndroitsmtp 0
+    pg_select $dbfd $sql tab {
+	set ndroitsmtp $tab(ndroitsmtp)
     }
-    lappend donnees [list Normal "Doit d'émission SMTP" $droitsmtp]
+    if {$ndroitsmtp > 0} then {
+	if {$trr(droitsmtp)} then {
+	    set droitsmtp "Oui"
+	} else {
+	    set droitsmtp "Non"
+	}
+	lappend donnees [list Normal "Doit d'émission SMTP" $droitsmtp]
+    }
 
     # infos complémentaires
     lappend donnees [list Normal "Infos complémentaires" $trr(commentaire)]

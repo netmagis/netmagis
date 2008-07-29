@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traiteajout,v 1.9 2008-07-25 12:06:25 pda Exp $
+# $Id: traiteajout,v 1.10 2008-07-29 15:52:51 pda Exp $
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
@@ -45,6 +45,7 @@
 #   2007/10/25 : jean     : log des actions de modification
 #   2008/02/13 : pda/jean : le responsable est le correspondant si pas précisé
 #   2008/07/23 : pda/jean : ajout du droit d'émission SMTP
+#   2008/07/29 : pda      : utilisation presenter-rr
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -110,6 +111,7 @@ set conf(form-ajout-alias)	{
 lappend auto_path $conf(pkg)
 package require webapp
 package require pgsql
+package require arrgen
 
 #
 # On y va !
@@ -286,6 +288,14 @@ proc traiteajout-machine {dbfd tc ft} {
     #
 
     #
+    # Code en commun pour le cas où il y ait demande de confirmation
+    #
+
+    set l {nom domaine adr mac iddhcpprofil droitsmtp hinfo commentaire
+			    respnom respmel}
+    set hidden [::webapp::hide-parameters $l ftab]
+
+    #
     # Demander confirmation s'il y a demande d'émission SMTP
     #
 
@@ -294,15 +304,11 @@ proc traiteajout-machine {dbfd tc ft} {
 	# Sortir une page de confirmation
 	#
 
-	set l {nom domaine adr mac iddhcpprofil droitsmtp hinfo commentaire
-				respnom respmel}
-	set hidden [::webapp::hide-parameters $l ftab]
 	::webapp::send html [::webapp::file-subst $conf(page-ajout-smtp) \
 						[list \
 							[list %HIDDEN% $hidden] \
 						    ] \
 					    ]
-
 	return 0
     }
 
@@ -319,36 +325,16 @@ proc traiteajout-machine {dbfd tc ft} {
 	# liste des adresses.
 	#
 
-	set listeadr [join $trr(ip) " "]
-
-	set mac         [html-tab-string $trr(mac)]
-	set hinfo       [html-tab-string $trr(hinfo)]
-	set commentaire [html-tab-string $trr(commentaire)]
-	set respnom     [html-tab-string $trr(respnom)]
-	set respmel     [html-tab-string $trr(respmel)]
-	set dhcpprofil  [html-tab-string $trr(dhcpprofil)]
-	if {$trr(droitsmtp)} then {
-	    set droitsmtp "Oui"
-	} else {
-	    set droitsmtp "Non"
-	}
-
+	set machine [presenter-rr $dbfd -1 trr]
 	::webapp::send html [::webapp::file-subst $conf(page-ajout-existe) \
-				[list \
-					[list %NOM%         $nom] \
-					[list %DOMAINE%     $domaine] \
-					[list %ADR%         $adr] \
-					[list %MAC%         $mac] \
-					[list %DHCPPROFIL%  $dhcpprofil] \
-					[list %IDDHCPPROFIL% $iddhcpprofil] \
-					[list %DROITSMTP%   $droitsmtp] \
-					[list %HINFO%       $hinfo] \
-					[list %COMMENTAIRE% $commentaire] \
-					[list %RESPNOM%     $respnom] \
-					[list %RESPMEL%     $respmel] \
-					[list %LISTEADR%    $listeadr] \
-				    ] \
-			]
+					    [list \
+						[list %NOM%     $nom] \
+						[list %DOMAINE% $domaine] \
+						[list %ADR%     $adr] \
+						[list %HIDDEN%  $hidden] \
+						[list %MACHINE% $machine] \
+					    ] \
+					]
 	return 0
     }
 
@@ -418,21 +404,6 @@ proc traiteajout-machine {dbfd tc ft} {
 		    ::webapp::error-exit $conf(err) "Mise à jour impossible HINFO : $msg"
 		}
 	    }
-	} else {
-	    #
-	    # Il y a déjà une adresse IP, on en ajoute une. On ignore
-	    # donc les attributs venus du formulaire.
-	    # Pour l'affichage final des caractéristiques, on recharge
-	    # ces attributs à partir de la base.
-	    #
-
-	    set mac          $trr(mac)
-	    set iddhcpprofil $trr(iddhcpprofil)
-	    set hinfo        $trr(hinfo)
-	    set commentaire  $trr(commentaire)
-	    set respnom      $trr(respnom)
-	    set respmel      $trr(respmel)
-	    set droitsmtp    $trr(droitsmtp)
 	}
     }
 
@@ -462,39 +433,15 @@ proc traiteajout-machine {dbfd tc ft} {
     # Sortie du résultat
     #
 
-    set dhcpprofil  [html-tab-string $dhcpprofil]
-    set commentaire [html-tab-string $commentaire]
-    set respnom     [html-tab-string $respnom]
-    set respmel     [html-tab-string $respmel]
-    if {$droitsmtp} then {
-	set droitsmtp "Oui"
-    } else {
-	set droitsmtp "Non"
-    }
-
-    if {$dejaip} then {
-	set anciennesip [join $trr(ip) " "]
-	set alladr "$adr ($anciennesip)"
-    } else {
-	set alladr "$adr"
-    }
+    set machine [presenter-rr $dbfd $trr(idrr) trr]
 
     writelog "ajoutmachine" $login "ajout de $nom.$domaine ($adr)"
 
     ::webapp::send html [::webapp::file-subst $conf(page-ajout-machine) \
-				[list \
-					[list %NOM%         $nom] \
-					[list %DOMAINE%     $domaine] \
-					[list %ADR%         $alladr] \
-					[list %MAC%         $mac] \
-					[list %DHCPPROFIL%  $dhcpprofil] \
-					[list %HINFO%       $hinfo] \
-					[list %DROITSMTP%   $droitsmtp] \
-					[list %COMMENTAIRE% $commentaire] \
-					[list %RESPNOM%     $respnom] \
-					[list %RESPMEL%     $respmel] \
-				    ] \
-			    ]
+					[list \
+					    [list %MACHINE% $machine] \
+					] \
+				    ]
     return 0
 }
 
