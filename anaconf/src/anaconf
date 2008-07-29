@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: anaconf,v 1.10 2008-07-28 14:10:53 pda Exp $
+# $Id: anaconf,v 1.11 2008-07-29 13:24:20 pda Exp $
 #
 # Enchaîne les différentes phases pour constituer le graphe du
 # réseau donné.
@@ -175,7 +175,9 @@ done
 #
 
 verbositer "génération du graphe"
-cat $EQGEN/* | $BINDIR/buildgraph > $DESTFILE.tmp \
+cat $EQGEN/* \
+    | $BINDIR/ssidprobes \
+    | $BINDIR/buildgraph > $DESTFILE.tmp \
 	&& mv $DESTFILE.tmp $DESTFILE
 abort_if_error $?
 
