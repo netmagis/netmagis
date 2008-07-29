@@ -1,5 +1,5 @@
 /*
- * $Id: relabs.c,v 1.6 2008-06-14 21:05:49 pda Exp $
+ * $Id: relabs.c,v 1.7 2008-07-29 12:54:03 pda Exp $
  */
 
 #include "graph.h"
@@ -31,6 +31,7 @@ void rel_to_abs (MOBJ *graph [])
     struct rnet *rnettab	= mobj_data (graph [RNETMOBJIDX]) ;
     struct route *routetab	= mobj_data (graph [ROUTEMOBJIDX]) ;
     struct ssid *ssidtab	= mobj_data (graph [SSIDMOBJIDX]) ;
+    struct ssidprobe *ssidprobetab = mobj_data (graph [SSIDPROBEMOBJIDX]) ;
 
     PROLOGABS (max, graph [HASHMOBJIDX], hashtab) ;
     for (i = 0 ; i < max ; i++)
@@ -156,5 +157,15 @@ void rel_to_abs (MOBJ *graph [])
     for (i = 0 ; i < max ; i++)
     {
 	RELTOABS (routetab [i].next, routetab) ;
+    }
+
+    PROLOGABS (max, graph [SSIDPROBEMOBJIDX], ssidprobetab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	RELTOABS (ssidprobetab [i].name, strtab) ;
+	RELTOABS (ssidprobetab [i].eq, eqtab) ;
+	RELTOABS (ssidprobetab [i].l1, nodetab) ;
+	RELTOABS (ssidprobetab [i].ssid, ssidtab) ;
+	RELTOABS (ssidprobetab [i].next, ssidprobetab) ;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: graph.h,v 1.9 2008-06-14 21:05:49 pda Exp $
+ * $Id: graph.h,v 1.10 2008-07-29 12:54:03 pda Exp $
  */
 
 /*
@@ -8,10 +8,11 @@
  * Definitions used to represent a graph of a network
  *
  * History
- *   2004/06/22 : pda/jean : design
- *   2006/05/26 : pda/jean : collect points
- *   2007/06/15 : pda/jean : local vlan descriptions
- *   2008/05/06 : pda      : equipement location
+ *   2004/06/22 : pda/jean   : design
+ *   2006/05/26 : pda/jean   : collect points
+ *   2007/06/15 : pda/jean   : local vlan descriptions
+ *   2008/05/06 : pda        : equipement location
+ *   2008/07/29 : pda/boggia : ssid based metrology
  */
 
 /******************************************************************************
@@ -105,21 +106,22 @@ int mobj_write (FILE *fp, MOBJ *d) ;
  * Global dynamic objects (saved in compiled files)
  */
 
-#define	HASHMOBJIDX	0
-#define	SYMMOBJIDX	1
-#define	STRMOBJIDX	2
-#define	NODEMOBJIDX	3
-#define	LINKMOBJIDX	4
-#define	LLISTMOBJIDX	5
-#define	EQMOBJIDX	6
-#define	VLANMOBJIDX	7
-#define	LVLANMOBJIDX	8
-#define	NETMOBJIDX	9
-#define	NLISTMOBJIDX	10
-#define	RNETMOBJIDX	11
-#define	ROUTEMOBJIDX	12
-#define SSIDMOBJIDX	13
-#define	NB_MOBJ		(SSIDMOBJIDX+1)
+#define	HASHMOBJIDX		0
+#define	SYMMOBJIDX		1
+#define	STRMOBJIDX		2
+#define	NODEMOBJIDX		3
+#define	LINKMOBJIDX		4
+#define	LLISTMOBJIDX		5
+#define	EQMOBJIDX		6
+#define	VLANMOBJIDX		7
+#define	LVLANMOBJIDX		8
+#define	NETMOBJIDX		9
+#define	NLISTMOBJIDX		10
+#define	RNETMOBJIDX		11
+#define	ROUTEMOBJIDX		12
+#define SSIDMOBJIDX		13
+#define SSIDPROBEMOBJIDX	14
+#define	NB_MOBJ		(SSIDPROBEMOBJIDX+1)
 
 #define	hashmobj	(mobjlist [HASHMOBJIDX])
 #define	symmobj		(mobjlist [SYMMOBJIDX])
@@ -135,6 +137,7 @@ int mobj_write (FILE *fp, MOBJ *d) ;
 #define	rnetmobj	(mobjlist [RNETMOBJIDX])
 #define	routemobj	(mobjlist [ROUTEMOBJIDX])
 #define	ssidmobj	(mobjlist [SSIDMOBJIDX])
+#define	ssidprobemobj	(mobjlist [SSIDPROBEMOBJIDX])
 
 extern MOBJ *mobjlist [] ;
 
@@ -484,6 +487,27 @@ struct ssid
 } ;
 
 /******************************************************************************
+ssid based metrology
+******************************************************************************/
+
+enum ssidprobe_mode
+{
+    SSIDPROBE_ASSOC,			/* number of associated machines */
+    SSIDPROBE_AUTH,			/* number of authenticated users */
+} ;
+
+/* list of all ssid probes for metrology */
+struct ssidprobe
+{
+    char *name ;			/* name of probe */
+    struct eq *eq ;
+    struct node *l1 ;
+    struct ssid *ssid ;
+    enum ssidprobe_mode mode ;		/* #associated or #authentified */
+    struct ssidprobe *next ;		/* next in list */
+} ;
+
+/******************************************************************************
 Graph-file binary format
 ******************************************************************************/
 
@@ -509,6 +533,7 @@ struct graphhdr
 #define	VERSION4	4		/* lvlan */
 #define	VERSION5	5		/* equipement location */
 #define	VERSION6	6		/* radio parameters & ssid */
+#define	VERSION7	7		/* ssid based metrology */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

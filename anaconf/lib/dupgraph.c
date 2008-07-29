@@ -1,5 +1,5 @@
 /*
- * $Id: dupgraph.c,v 1.7 2008-06-14 21:05:49 pda Exp $
+ * $Id: dupgraph.c,v 1.8 2008-07-29 12:54:03 pda Exp $
  */
 
 #include "graph.h"
@@ -130,6 +130,8 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     struct vlan *oldvlan, *newvlan ;
     int maxssid ;
     struct ssid *ossid, *newssidtab ;
+    int maxssidprobe ;
+    struct ssidprobe *osp, *newssidprobetab ;
 
     /*************************************************************
      * First pass : copy all structures
@@ -346,6 +348,19 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	error (0, "Panic. Wrong number of route mobj") ;
     maxroute = j ;
 
+    /*
+     * Ssid probes
+     */
+
+    newssidprobetab = mobj_data (new [SSIDPROBEMOBJIDX]) ;
+
+    j = 0 ;
+    for (osp = mobj_head (old [SSIDPROBEMOBJIDX]) ; osp != NULL ; osp = osp->next)
+	TRANSNEW (newssidprobetab, j, osp) ;
+    if (j != mobj_count (old [SSIDPROBEMOBJIDX]))
+	error (0, "Panic. Wrong number of ssidprobe mobj") ;
+    maxssidprobe = j ;
+
     /*************************************************************
      * Second pass : update all pointers in new arrays
      */
@@ -521,6 +536,20 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     {
 	TRANSPTR (newroutetab [i].next) ;
     }
+
+    /*
+     * Ssid probes
+     */
+
+    for (i = 0 ; i < maxssidprobe ; i++)
+    {
+	TRANSPTR (newssidprobetab [i].name) ;
+	TRANSPTR (newssidprobetab [i].eq) ;
+	TRANSPTR (newssidprobetab [i].l1) ;
+	TRANSPTR (newssidprobetab [i].ssid) ;
+	TRANSPTR (newssidprobetab [i].next) ;
+    }
+    TRANSHEAD (new [SSIDPROBEMOBJIDX], old [SSIDPROBEMOBJIDX]) ;
 }
 
 

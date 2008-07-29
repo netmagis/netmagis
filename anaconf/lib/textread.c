@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.11 2008-07-28 08:08:59 pda Exp $
+ * $Id: textread.c,v 1.12 2008-07-29 12:54:03 pda Exp $
  */
 
 #include "graph.h"
@@ -257,6 +257,9 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	{ "location",	1, },
 	{ "radio",	2, },
 	{ "ssid",	2, },
+	{ "iface",	1, },
+	{ "ssidname",	1, },
+	{ "mode",	1, },
     } ;
 
 
@@ -1038,6 +1041,137 @@ static void process_lvlan (char *tab [], int ntab)
     attr_close (attrtab) ;
 }
 
+static void process_ssidprobe (char *tab [0], int ntab)
+{
+    char *name ;				/* name of probe */
+    char *eqname ;
+    struct eq *eq ;
+    char *ifname ;
+    struct node *iface ;
+    char *ssidname ;
+    struct ssid *ssid ;
+    char *mode ;
+    enum ssidprobe_mode m ;
+    struct ssidprobe *sp ;
+    struct attrtab *attrtab ;			/* head of attribute table */
+    struct attrvallist *av ;
+    static struct attrcheck eqattr [] = {
+	{ "eq", 1, 1},
+	{ "iface", 1, 1},
+	{ "ssidname", 1, 1},
+	{ "mode", 1, 1},
+	{ NULL, 0, 0}
+    } ;
+
+
+    if (ntab < 2)
+    {
+	inconsistency ("Ssidprobe declaration has not enough attributes") ;
+	exit (1) ;
+    }
+
+    name = symtab_to_name (symtab_get (tab [1])) ;
+    tab += 2 ;
+    ntab -= 2 ;
+
+    /*
+     * Parse all attributes
+     */
+
+    attrtab = attr_init () ;
+    parse_attr (tab, ntab, &attrtab) ;
+
+    if (! check_attr (attrtab, eqattr))
+    {
+	inconsistency ("Incorrect eq attribute list") ;
+	exit (1) ;
+    }
+
+    av = attr_get_vallist (attrtab, "eq") ;
+    if (av != NULL)
+	eqname = attr_get_val (av) ;
+    else
+    {
+	inconsistency ("Should not happen : 'ssidprobe %s' without eq", name) ;
+	exit (1) ;
+    }
+    eq = eq_get (eqname, 0) ;
+
+    av = attr_get_vallist (attrtab, "iface") ;
+    if (av != NULL)
+	ifname = attr_get_val (av) ;
+    else
+    {
+	inconsistency ("Should not happen : 'ssidprobe %s' without iface", name) ;
+	exit (1) ;
+    }
+    iface = symtab_to_node (symtab_get (ifname)) ;
+    if (iface == NULL)
+    {
+	inconsistency ("Interface '%s' not found for ssidprobe '%s'", ifname, name) ;
+	exit (1) ;
+    }
+    if (iface->eq != eq || iface->nodetype != NT_L1)
+    {
+	inconsistency ("Interface '%s' not found on '%s' for ssidprobe '%s'", ifname, eq->name, name) ;
+	exit (1) ;
+    }
+
+    av = attr_get_vallist (attrtab, "ssidname") ;
+    if (av != NULL)
+	ssidname = attr_get_val (av) ;
+    else
+    {
+	inconsistency ("Should not happen : 'ssidprobe %s' without ssidname", name) ;
+	exit (1) ;
+    }
+    ssidname = symtab_to_name (symtab_get (ssidname)) ;
+    for (ssid = iface->u.l1.radio.ssid ; ssid != NULL ; ssid = ssid->next)
+    {
+	if (ssid->name == ssidname)
+	    break ;
+    }
+    if (ssid == NULL)
+    {
+	inconsistency ("Ssid '%s' not found for ssidprobe '%s'", ssidname, name) ;
+	exit (1) ;
+    }
+
+    av = attr_get_vallist (attrtab, "mode") ;
+    if (av != NULL)
+	mode = attr_get_val (av) ;
+    else
+    {
+	inconsistency ("Should not happen : 'ssidprobe %s' without mode", name) ;
+	exit (1) ;
+    }
+    if (strcmp (mode, "assoc") == 0)
+	m = SSIDPROBE_ASSOC ;
+    else if (strcmp (mode, "auth") == 0)
+	m = SSIDPROBE_AUTH ;
+    else
+    {
+	inconsistency ("Invalid mode '%s' for ssidprobe '%s'", mode, name) ;
+	exit (1) ;
+    }
+
+    /*
+     * Object creation
+     */
+
+    MOBJ_ALLOC_INSERT (sp, ssidprobemobj) ;
+
+    sp->name = name ;
+    sp->eq = eq ;
+    sp->l1 = iface ;
+    sp->ssid = ssid ;
+    sp->mode = m ;
+
+    attr_close (attrtab) ;
+}
+
+
+
 /******************************************************************************
 The real function of this file
 ******************************************************************************/
@@ -1054,19 +1188,20 @@ void text_read (FILE *fpin)
     hashmobj  = mobj_init (sizeof (struct symtab *), MOBJ_CONST) ;
     symtab_init () ;
 
-    symmobj   = mobj_init (sizeof (struct symtab  ), MOBJ_MALLOC) ;
-    strmobj   = mobj_init (sizeof (char           ), MOBJ_MALLOC) ;
-    nodemobj  = mobj_init (sizeof (struct node    ), MOBJ_MALLOC) ;
-    linkmobj  = mobj_init (sizeof (struct link    ), MOBJ_MALLOC) ;
-    llistmobj = mobj_init (sizeof (struct linklist), MOBJ_MALLOC) ;
-    eqmobj    = mobj_init (sizeof (struct eq      ), MOBJ_MALLOC) ;
-    lvlanmobj = mobj_init (sizeof (struct lvlan),    MOBJ_MALLOC) ;
-    netmobj   = mobj_init (sizeof (struct network ), MOBJ_MALLOC) ;
-    nlistmobj = mobj_init (sizeof (struct netlist ), MOBJ_MALLOC) ;
-    rnetmobj  = mobj_init (sizeof (struct rnet    ), MOBJ_MALLOC) ;
-    routemobj = mobj_init (sizeof (struct route   ), MOBJ_MALLOC) ;
-    vlistmobj = mobj_init (sizeof (struct vlanlist), MOBJ_MALLOC) ;
-    ssidmobj  = mobj_init (sizeof (struct ssid    ), MOBJ_MALLOC) ;
+    symmobj       = mobj_init (sizeof (struct symtab   ), MOBJ_MALLOC) ;
+    strmobj       = mobj_init (sizeof (char            ), MOBJ_MALLOC) ;
+    nodemobj      = mobj_init (sizeof (struct node     ), MOBJ_MALLOC) ;
+    linkmobj      = mobj_init (sizeof (struct link     ), MOBJ_MALLOC) ;
+    llistmobj     = mobj_init (sizeof (struct linklist ), MOBJ_MALLOC) ;
+    eqmobj        = mobj_init (sizeof (struct eq       ), MOBJ_MALLOC) ;
+    lvlanmobj     = mobj_init (sizeof (struct lvlan    ), MOBJ_MALLOC) ;
+    netmobj       = mobj_init (sizeof (struct network  ), MOBJ_MALLOC) ;
+    nlistmobj     = mobj_init (sizeof (struct netlist  ), MOBJ_MALLOC) ;
+    rnetmobj      = mobj_init (sizeof (struct rnet     ), MOBJ_MALLOC) ;
+    routemobj     = mobj_init (sizeof (struct route    ), MOBJ_MALLOC) ;
+    vlistmobj     = mobj_init (sizeof (struct vlanlist ), MOBJ_MALLOC) ;
+    ssidmobj      = mobj_init (sizeof (struct ssid     ), MOBJ_MALLOC) ;
+    ssidprobemobj = mobj_init (sizeof (struct ssidprobe), MOBJ_MALLOC) ;
 
     vlanmobj  = mobj_init (sizeof (struct vlan    ), MOBJ_CONST) ;
     mobj_alloc (vlanmobj, MAXVLAN) ;
@@ -1125,6 +1260,8 @@ void text_read (FILE *fpin)
 		process_vlan (argv, n) ;
 	    else if (strcmp (argv [0], "lvlan") == 0)
 		process_lvlan (argv, n) ;
+	    else if (strcmp (argv [0], "ssidprobe") == 0)
+		process_ssidprobe (argv, n) ;
 	    else
 	    {
 		inconsistency ("Unknown directive '%s'", argv [0]) ;

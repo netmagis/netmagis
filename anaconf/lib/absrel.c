@@ -1,5 +1,5 @@
 /*
- * $Id: absrel.c,v 1.7 2008-06-14 21:05:49 pda Exp $
+ * $Id: absrel.c,v 1.8 2008-07-29 12:54:03 pda Exp $
  */
 
 #include "graph.h"
@@ -34,6 +34,7 @@ void abs_to_rel (MOBJ *graph [])
     struct rnet *rnettab	= mobj_data (graph [RNETMOBJIDX]) ;
     struct route *routetab	= mobj_data (graph [ROUTEMOBJIDX]) ;
     struct ssid *ssidtab	= mobj_data (graph [SSIDMOBJIDX]) ;
+    struct ssidprobe *ssidprobetab = mobj_data (graph [SSIDPROBEMOBJIDX]) ;
 
     PROLOGREL (max, graph [HASHMOBJIDX], hashtab) ;
     for (i = 0 ; i < max ; i++)
@@ -160,4 +161,15 @@ void abs_to_rel (MOBJ *graph [])
     {
 	ABSTOREL (routetab [i].next, routetab) ;
     }
+
+    PROLOGREL (max, graph [SSIDPROBEMOBJIDX], ssidprobetab) ;
+    for (i = 0 ; i < max ; i++)
+    {
+	ABSTOREL (ssidprobetab [i].name, strtab) ;
+	ABSTOREL (ssidprobetab [i].eq, eqtab) ;
+	ABSTOREL (ssidprobetab [i].l1, nodetab) ;
+	ABSTOREL (ssidprobetab [i].ssid, ssidtab) ;
+	ABSTOREL (ssidprobetab [i].next, ssidprobetab) ;
+    }
+
 }

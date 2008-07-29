@@ -1,5 +1,5 @@
 /*
- * $Id: textwrite.c,v 1.8 2008-06-14 21:05:49 pda Exp $
+ * $Id: textwrite.c,v 1.9 2008-07-29 12:54:03 pda Exp $
  */
 
 #include "graph.h"
@@ -247,6 +247,30 @@ static void text_write_lvlans (FILE *fp)
     }
 }
 
+static void text_write_ssidprobes (FILE *fp)
+{
+    struct ssidprobe *sp ;
+
+    for (sp = mobj_head (ssidprobemobj) ; sp != NULL ; sp = sp->next)
+    {
+	char *m ;
+
+	switch (sp->mode)
+	{
+	    case SSIDPROBE_ASSOC : m = "assoc" ; break ;
+	    case SSIDPROBE_AUTH  : m = "auth"  ; break ;
+	    default              : m = "???"   ; break ;
+	}
+
+	fprintf (fp, "ssidprobe %s eq %s iface %s ssidname %s mode %s\n",
+			    sp->name,
+			    sp->eq->name,
+			    sp->l1->name ,
+			    sp->ssid->name,
+			    m) ;
+    }
+}
+
 void text_write (FILE *fp)
 {
     text_write_eq (fp) ;
@@ -255,4 +279,5 @@ void text_write (FILE *fp)
     text_write_rnet (fp) ;
     text_write_vlans (fp) ;
     text_write_lvlans (fp) ;
+    text_write_ssidprobes (fp) ;
 }
