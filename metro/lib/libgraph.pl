@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: libgraph.pl,v 1.3 2008-07-30 07:30:42 boggia Exp $
+# $Id: libgraph.pl,v 1.4 2008-07-30 15:49:32 boggia Exp $
 ###########################################################
 # Creation : 21/05/08 : boggia
 #
@@ -10,6 +10,8 @@
 sub genere_graph
 {
     my ($type,$nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
+
+    system("echo \"$type,$nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire\" > /var/tmp/gengraph.out");
 
     # liste des fonction de création de graphiques
     my %function_graph = (
@@ -31,6 +33,8 @@ sub genere_graph
 	'GaugeGeneric'		=> \&GaugeGeneric,
 	'GaugeMailq'		=> \&GaugeMailq,
 	'GaugeMemByProc'	=> \&GaugeMemByProc,
+	'nbauthwifi'		=> \&nbauthwifi,
+	'nbassocwifi'		=> \&nbassocwifi,
     );
     
     
@@ -48,8 +52,8 @@ sub genere_graph
     
     if($size !~ m/[0-9]+x[0-9]+/)
     {
-	# le paramètre taill est malformé
-	print "Erreur : Paramètre $size incorrect";	
+	# le paramètre taille est malformé
+	#print "Erreur : Paramètre $size incorrect";	
     }
     else
     {
@@ -57,6 +61,236 @@ sub genere_graph
 	$function_graph{$type}->($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire);
     }
 }
+
+
+
+###########################################################
+# Graph des authentifications WiFi
+sub nbauthwifi
+{
+	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
+
+	my $label = "authentifiés";
+	if($commentaire eq "")
+	{
+		$commentaire = "Authentifiés WiFi";
+		
+	}
+	
+	GaugeWiFi($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire,$label);
+}
+
+
+
+###########################################################
+# Graph des associations WiFi
+sub nbassocwifi
+{
+	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
+
+	my $label = "associés";	
+	if($commentaire eq "")
+        {
+                $commentaire = "Associés WiFi";
+        }
+
+	GaugeWiFi($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire,$label);
+}
+
+
+###########################################################
+# Fonction générique qui graphe les utilisateurs WiFi  
+sub GaugeWiFi
+{
+	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire,$vertical_label) = @_;
+
+	# dereferencement
+    	my @l = @$ref_l;
+
+    	if(@l == 1)
+	{
+		my ($width,$height) = split(/x/,$size);
+
+        	my %color_lines = ( 	'avg'  => "00dd00",
+                            		'max'  => "b8ff4d",
+        	);
+
+        	my $rrd = RRDTool::OO->new(
+            		file => "$ref_l->[0]->[0]->{'base'}" );
+
+        	my @liste_arg;
+        	my $plusline="";
+        	my $drawlineavg,$drawlinemax;
+
+        	my $ttl = @{$l[0]};
+
+		for(my $j=0;$j<$ttl;$j++)
+        	{
+			# dsname des bases a definir
+
+            		my ($drawavg,$drawmax);
+            		$drawavg->{'file'} = $l[0][$j]{'base'};
+            		$drawavg->{'type'} = "hidden";
+            		#$drawavg->{'dsname'} = "$ssid";
+            		$drawavg->{'name'} = "avg$j";
+            		$drawavg->{'cfunc'} = "AVERAGE";
+           	 	$drawmax->{'file'} = $l[0][$j]{'base'};
+            		$drawmax->{'type'} = "hidden";
+            		#$drawmax->{'dsname'} = "$ssid";
+           	 	$drawmax->{'name'} = "max$j";
+            		$drawmax->{'cfunc'} = "MAX";
+					
+            		# calcul du cumul pour les donnes bases explicitement aggregees
+            		# ex : Mescape-ap3.osiris.authwifi+Mescape-ap1.osiris.authwifi
+            		# (afficher sous forme de ligne)
+			if(exists $drawlineavg->{'cdef'})
+            		{
+                		$drawlineavg->{'cdef'}="$drawlineavg->{'cdef'},$drawavg->{'name'}";
+                		$drawlinemax->{'cdef'}="$drawlinemax->{'cdef'},$drawmax->{'name'}";
+                		$plusline = "$plusline,+";
+            		}
+            		else
+            		{
+                		$drawlineavg->{'cdef'}=$drawavg->{'name'};
+                		$drawlinemax->{'cdef'}=$drawmax->{'name'};
+            		}
+    
+            		push @liste_arg,"draw";
+            		push @liste_arg,$drawavg;
+            		push @liste_arg,"draw";
+            		push @liste_arg,$drawmax;
+		}
+		
+		# pour additionner le resultat des valeurs
+		$drawlineavg->{'cdef'}="$drawlineavg->{'cdef'}$plusline";
+		$drawlinemax->{'cdef'}="$drawlinemax->{'cdef'}$plusline";
+
+		# comparaison des legendes pour la mise en page
+        	my @legend;
+		my $t_legend;
+		my $maxlengthlengend = 0;
+
+        	if($l[0][0]{'legend'} ne "")
+        	{
+            		@legend = split(//,$l[0][0]{'legend'});
+            		$maxlengthlengend = @legend;
+			$t_legend = $maxlengthlengend;
+        	}
+        	$maxlengthlengend = $maxlengthlengend + 6;
+	
+		# ecriture de la legende en entree
+        	my $spaces = get_spaces(0,$maxlengthlengend,11);
+        	push @liste_arg,"comment";
+        	push @liste_arg,"$spaces      min      max     moyen   actuel\\n";
+        	my $gprintavg,$gprintmax;
+        	$spaces = get_spaces($t_legend,$maxlengthlengend,8);
+        	# ecriture de la courbe en input
+        	$drawlineavg->{'type'} = "area";
+        	$drawlineavg->{'color'} = $color_lines{'avg'};
+        	$drawlineavg->{'name'} = "clients_avg";
+		if($l[0][0]{'legend'} ne "")
+		{
+        		$drawlineavg->{'legend'} = "$l[0][0]{'legend'}";
+		}
+		else
+		{
+			$drawlineavg->{'legend'} = "clients";
+		}
+        	push @liste_arg,"draw";
+        	push @liste_arg,$drawlineavg;
+		# legende trafic in
+        	push @liste_arg,"comment";
+        	push @liste_arg,$spaces;
+        	$gprintavg->{0}->{'draw'}="clients_avg";
+        	$gprintavg->{0}->{'format'}="MIN:%5.0lf %S";
+        	push @liste_arg,"gprint";
+        	push @liste_arg,$gprintavg->{0};
+        	$gprintavg->{1}->{'draw'}="clients_avg";
+        	$gprintavg->{1}->{'format'}="MAX:%5.0lf %S";
+        	push @liste_arg,"gprint";
+        	push @liste_arg,$gprintavg->{1};
+		$gprintavg->{2}->{'draw'}="clients_avg";
+                $gprintavg->{2}->{'format'}="AVERAGE:%5.0lf %S";
+                push @liste_arg,"gprint";
+                push @liste_arg,$gprintavg->{2};
+		$gprintavg->{3}->{'draw'}="clients_avg";
+                $gprintavg->{3}->{'format'}="LAST:%5.0lf %S\\n";
+                push @liste_arg,"gprint";
+                push @liste_arg,$gprintavg->{3};
+
+		# ecriture de la valeur MAX selon l'intervalle de temps
+        	if(($end - $start) > 800000)
+        	{
+	                $spaces = get_spaces($t_legend,$maxlengthlengend,0);
+	                # ecriture de la courbe en input
+	                $drawlinemax->{'type'} = "line";
+	                $drawlinemax->{'color'} = $color_lines{'max'};
+	                $drawlinemax->{'name'} = "clients_max";
+	                if($l[0][0]{'legend'} ne "")
+	                {
+	                        $drawlinemax->{'legend'} = "$l[0][0]{'legend'} (crête)";
+	                }
+	                else
+	                {
+	                        $drawlinemax->{'legend'} = "clients (crête)";
+	                }
+	                push @liste_arg,"draw";
+	                push @liste_arg,$drawlinemax;
+	                # legende trafic in
+	                push @liste_arg,"comment";
+	                push @liste_arg,$spaces;
+	                $gprintmax->{0}->{'draw'}="clients_max";
+	                $gprintmax->{0}->{'format'}="MIN:%5.0lf %S";
+	                push @liste_arg,"gprint";
+	                push @liste_arg,$gprintmax->{0};
+	                $gprintmax->{1}->{'draw'}="clients_max";
+	                $gprintmax->{1}->{'format'}="MAX:%5.0lf %S";
+	                push @liste_arg,"gprint";
+	                push @liste_arg,$gprintmax->{1};
+	                $gprintmax->{2}->{'draw'}="clients_max";
+	                $gprintmax->{2}->{'format'}="AVERAGE:%5.0lf %S";
+	                push @liste_arg,"gprint";
+	                push @liste_arg,$gprintmax->{2};
+	                $gprintmax->{3}->{'draw'}="clients_max";
+	                $gprintmax->{3}->{'format'}="LAST:%5.0lf %S";
+	                push @liste_arg,"gprint";
+	                push @liste_arg,$gprintmax->{3};
+		}
+
+		$rrd->graph(
+			image           => "-",
+        		title           => "$commentaire",
+        		vertical_label  => "$vertical_label",
+       	 		lower_limit     => 0,
+        		units_exponent  => 0,
+       			height          => $height,
+        		width           => $width,
+        		start           => $start,
+        		end             => $end,
+            		@liste_arg,
+        	);
+
+	}
+    	elsif($nb_rrd_bases > 1 && $nb_rrd_bases < 40)
+    	{
+        	aggregGaugeWiFi($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire);
+    	}
+    	else
+    	{
+        	print "nombre de bases rrd incorrect : $nb_rrd_bases";
+    	}
+}
+
+
+
+###########################################################
+# Fonction générique qui graphe les utilisateurs WiFi
+sub aggregGaugeWiFi
+{
+	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_
+
+}
+
 
 
 ###########################################################
