@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.5 2008-07-29 13:25:05 pda Exp $
+# $Id: Makefile,v 1.6 2008-07-30 08:48:49 pda Exp $
 #
 
 DESTDIR=/local/applis/topo
@@ -12,7 +12,6 @@ LDLIBS = -lgraph
 
 PROGS = \
 	dumpgraph	\
-	dumpcoll	\
 	buildgraph	\
 	extractl1	\
 	extractl2	\
@@ -37,7 +36,6 @@ SCRIPTS = \
 all:	$(PROGS)
 
 dumpgraph:	dumpgraph.c	$(LIBDIR)/libgraph.a
-dumpcoll:	dumpcoll.c	$(LIBDIR)/libgraph.a
 buildgraph:	buildgraph.c	$(LIBDIR)/libgraph.a
 extractl1:	extractl1.c	$(LIBDIR)/libgraph.a
 extractl2:	extractl2.c	$(LIBDIR)/libgraph.a

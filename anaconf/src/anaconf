@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: anaconf,v 1.11 2008-07-29 13:24:20 pda Exp $
+# $Id: anaconf,v 1.12 2008-07-30 08:48:49 pda Exp $
 #
 # Enchaîne les différentes phases pour constituer le graphe du
 # réseau donné.
@@ -210,7 +210,7 @@ $BINDIR/getnetif < $DESTFILE > /dev/null
 if [ $TESTONLY != true ]
 then
     verbositer "envoi des points de collecte au métrologiseur"
-    $BINDIR/dumpcoll -s -w < $DESTFILE | \
+    $BINDIR/extractcoll -s -w < $DESTFILE | \
 		$BINDIR/sendcoll $URLSETGRAPH
     abort_if_error $?
 fi
