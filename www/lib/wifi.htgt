@@ -1,0 +1,80 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {06/06/2006}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - Topologie
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+\set {header} {
+    %HEADER%
+}
+
+\set {body-onload} {%ONLOAD%}
+
+\*******************************************************************************
+\bandeau {
+	Topologie v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    \* \reference {\lien {Accueil}     {%HOMEURL%/}}
+	    \reference {\lien {Équipements} {%HOMEURL%/bin/eq%URLUID%}}
+	    \reference {\lien {Vlans}       {%HOMEURL%/bin/l2%URLUID%}}
+	    \reference {\lien {Réseaux}     {%HOMEURL%/bin/l3%URLUID%}}
+	    \* \reference {\lien {Métrologie}  {%HOMEURL%/bin/metro%URLUID%}}
+	}
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{/osiris/}}
+	    \reference {\lien {CRC}	{/crc/}}
+	    \reference {\lien {DNS}	{/applis/dns/}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Statistiques Wifi}
+
+    <TABLE>
+	<TR>
+	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/eq%URLUID%">
+		<TD>Choisir un équipement</TD>
+		<TD>
+		    <INPUT TYPE="TEXT" NAME="eq" VALUE="%EQ%">
+		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
+		</TD>
+	    </FORM>
+	</TR>
+	<TR>
+	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/l2%URLUID%">
+		<TD>Choisir un vlan</TD>
+		<TD>
+		    <INPUT TYPE="TEXT" NAME="vlan" VALUE="%VLAN%">
+		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
+		</TD>
+	    </FORM>
+	</TR>
+	<TR>
+	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/l3%URLUID%">
+		<TD>Choisir une adresse IP</TD>
+		<TD>
+		    <INPUT TYPE="TEXT" NAME="addr" VALUE="%ADDR%">
+		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
+		</TD>
+	    </FORM>
+	</TR>
+    </TABLE>
+
+    %ARBRE%
+}
+
+}

@@ -1,0 +1,224 @@
+#!%TCLSH%
+
+#
+# Script pour afficher la liste des équipements présentant des stats Wifi
+#
+# Appelé par : /applis/topo/<tous les scripts>
+#
+# Paramètres (formulaire ou URL) :
+#	- (aucun)
+#
+# Historique
+#   2008/07/30 : pda      : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	%LIBDNS%
+set conf(libtopo)	$conf(lib)/libtopo.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/wifi.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+}
+
+set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
+set conf(extracteq)	"%TOPODIR%/bin/extracteq %s %s < %GRAPH%"
+set conf(urlstat)	"$conf(homeurl)/bin/metro?id=%s%s"
+set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
+set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
+set conf(urll2)		"$conf(homeurl)/bin/l2?eq=%s&iface=%s&vlan=%d%s"
+set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+source $conf(libtopo)
+
+proc formatter {eq urluid _idtab} {
+    global conf
+    upvar $_idtab idtab
+
+    set url [format $conf(urleq) $eq $urluid]
+    set html [::webapp::helem "a" $eq "href" $url]
+
+    foreach i [lsort [array names idtab "$eq:*"]] {
+	set l $idtab($i)
+
+	set kw    [lindex $l 0]
+	set id    [lindex $l 1]
+	set iface [lindex $l 3]
+	set ssid  [lindex $l 4]
+
+	set url [format $conf(urlstat) [::webapp::post-string $id] $urluid]
+	append html " "
+	append html [::webapp::helem "a" "\[$ssid $kw\]" "href" $url]
+    }
+
+    return $html
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
+			$conf(form) ftab dbfd uid tabuid ouid tabouid urluid
+
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	set $var [string trim [lindex [set $var] 0]]
+    }
+
+    set u1 ""
+    set u2 ""
+    if {! [string equal $urluid ""]} then {
+	set u1 "&$urluid"
+	set u2 "?$urluid"
+    }
+
+    #
+    # Récupérer la liste des points de collecte Wifi
+    # et stocker dans :
+    #	preftab()
+    #		indexé par "<prefixe>" (ex: "isis-ap")
+    #		contient la liste des suffixes pour le préfixe donné
+    #	eqtab()
+    #		indexé par "<prefixe>:<suffixe>" (ex: "isis-ap:1")
+    #		ne contient rien d'intéressant
+    #   leq
+    #		contient la liste des équipements n'ayant pas de suffixe
+    #	idtab()
+    #		indexé par les "<eq>:<nbassocwifi|nbauthwifi>:<id coll>"
+    #		contient la description du point de collecte telle que
+    #		renvoyée par extractcoll (à quelques exception près)
+    #
+
+    set leq {}
+    set cmd [format $conf(extractcoll) $tabuid(flags)]
+    set fd [open "|$cmd" "r"]
+    while {[gets $fd ligne] > -1} {
+	set kw [lindex $ligne 0]
+	switch $kw {
+	    nbassocwifi -
+	    nbauthwifi {
+		set id    [lindex $ligne 1]
+		set eq    [lindex $ligne 2]
+		set iface [lindex $ligne 4]
+		set ssid  [lindex $ligne 5]
+
+		if {[regexp {(.*[^0-9])([0-9]*)$} $eq bidon prefix suffix]} then {
+		    if {! [info exists eqtab($prefix:$suffix)]} then {
+			lappend preftab($prefix) $suffix
+			set eqtab($prefix:$suffix) 1
+		    }
+		} else {
+		    set leq $eq
+		}
+		set idtab($eq:$kw:$id) [list $kw $id $eq $iface $ssid]
+	    }
+	    default {
+		::webapp::error-exit $conf(err) \
+			"Erreur lors de la lecture des équipements (msg)"
+	    }
+	}
+    }
+
+    if {[catch {close $fd} msg]} then {
+	::webapp::error-exit $conf(err) \
+		"Erreur lors de la lecture des points de collecte wifi (msg)"
+    }
+
+    #
+    # Constituer l'arborescence
+    #
+
+    set arbre {{}}
+    foreach n1 [lsort [concat $leq [array names preftab]]] {
+	if {[info exists preftab($n1)]} then {
+	    set sarbre [list $n1]
+	    foreach suf [lsort -integer $preftab($n1)] {
+		set ligne [list [formatter ${n1}${suf} $u1 idtab]]
+		lappend sarbre $ligne
+	    }
+	    lappend arbre $sarbre
+	} else {
+	    set ligne [formatter $n1 $u1 idtab]
+	    lappend arbre $ligne
+	}
+    }
+
+    #
+    # Générer l'arbre avec javascript et tout ça
+    #
+
+    set t [::webapp::interactive-tree "wifi" $arbre]
+
+    set head1  [lindex $t 0]
+    set head2  [lindex $t 1]
+    set onload [lindex $t 2]
+    set html   [lindex $t 3]
+
+    set header "$head1\n$head2\n"
+
+    #
+    # Sortie de la page
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+					[list \
+						[list %EQ%     ""] \
+						[list %VLAN%   ""] \
+						[list %ADDR%   ""] \
+						[list %HEADER% $header] \
+						[list %ONLOAD% $onload] \
+						[list %ARBRE%  $html] \
+						[list %URLUID% $u2] \
+					    ] \
+				    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%
