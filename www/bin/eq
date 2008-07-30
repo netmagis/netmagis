@@ -65,36 +65,6 @@ set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
 lappend auto_path $conf(pkg)
 package require webapp
 package require pgsql
-package require arrgen
-
-#
-# Spécification du tableau pour l'affichage des points de collecte
-# par réseau.
-#
-
-set conf(tabreseau) {
-    global {
-	chars {12 normal}
-	align {left}
-	botbar {yes}
-	columns {100}
-    }
-    pattern Titre {
-	vbar {yes}
-	column {
-	    align {center}
-	    chars {14 bold}
-	}
-	vbar {yes}
-    }
-    pattern Normal {
-	vbar {yes}
-	column {
-	    format {raw}
-	}
-	vbar {yes}
-    }
-}
 
 #
 # On y va !
