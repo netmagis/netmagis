@@ -1,4 +1,4 @@
-# $Id: libmetro.pl,v 1.2 2008-06-26 07:13:14 boggia Exp $
+# $Id: libmetro.pl,v 1.3 2008-07-30 07:30:42 boggia Exp $
 ###########################################################
 #   Creation : 26/03/08 : boggia
 # 
@@ -62,6 +62,24 @@ sub read_global_conf_file
     close(CONFFILE);
 
     return %var;
+}
+
+###########################################################
+# fonction de nettoyage de chaines de caractères
+# enlève les espaces à la fin d'une chaine de char
+sub clean_var
+{
+    my ($string) = @_;
+
+    my $s = $string;
+    my $test = chop $s;
+    
+    if($test eq " ")
+    {
+	$string = $s;	
+    }
+
+    return $string;
 }
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cree-base-metro,v 1.2 2008-06-13 10:16:50 pda Exp $
+# $Id: cree-base-metro,v 1.3 2008-07-30 07:30:42 boggia Exp $
 #
 # 
 # ###################################################################
@@ -26,8 +26,8 @@ use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
 use strict;
 
 # fichier de configuration principal et chargement des fonctions de base
-our $conf_file = "%CONF%";
-require "%LIBMETRO%";
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
 #
 
 # tunning du module SNMP pour ne pas afficher les erreurs sur la sortie
@@ -138,11 +138,18 @@ if($fichier[0] eq "")
 	# teste si la sonde existe déjà dans la table majMETRO (mise a jour des sondes)
 	if(defined($param_majMETRO{$key}))
 	{
+	    my $param_existant = $param_majMETRO{$key};
+	    # remplacement des , dans les arguments par des espaces
+            if($param_existant =~/,/)
+            {
+		$param_existant =~tr/,/ /;
+            }
+
 	    # la sonde existe deja. On regarde si les parametres ont change.
-	    if($param_majMETRO{$key} ne $param_maj_sonde{$key})
+	    if($param_existant ne $param_maj_sonde{$key})
 	    {
 		# les parametres de la sonde ont changes, on met a jour.
-		my $p1 = supprimer_com_snmp($param_majMETRO{$key});
+		my $p1 = supprimer_com_snmp($param_existant);
 		my $p2 = supprimer_com_snmp($param_maj_sonde{$key});
 
 		if($p2!~/undef/)
@@ -151,7 +158,7 @@ if($fichier[0] eq "")
 		    message_erreur("MODIFICATION : point de metrologie \"$nom_pt_metro\". Nouveaux paramètres ($p1) => ($p2)");
 		}
 		writelog("cree-base-metro","","info",
-		    "\t WARNING : changement des parametres ($param_majMETRO{$key} != $param_maj_sonde{$key})");
+		    "\t WARNING : changement des parametres ($param_existant != $param_maj_sonde{$key})");
 		
 		ajouter_sonde($param_maj_sonde{$key},$sonde_maj_sonde{$key},$key);
 	    }
@@ -385,6 +392,8 @@ sub trafic
     my $inverse = 0;
     my ($i,$speed,$sonde_polling);
     my $param = $com."@".$ip;
+    
+    chomp $if;
     my $interf = $if;
 
     #print "$ip,$com,$if\n";
@@ -549,12 +558,13 @@ sub charger_liste_maj_sondes
 	    chomp;
 	    if(/^(.+?);(.+?);(.+?);(.+?);(.+?)$/ && !/echec$/)
 	    {
+		my $param = clean_var($5);
 		# supprime les doublons
 		# si la sonde n'existe pas alors on la cree
 		if(!defined($sonde_maj_sonde{$2}))
 		{
 		    $sonde_maj_sonde{$2} = $1;
-		    $param_maj_sonde{$2} = "$3 $4 $5";
+		    $param_maj_sonde{$2} = "$3 $4 $param";
 		    $compteur ++;
 		}
 		# si elle existe deja dans la nouvelle liste ...
@@ -564,7 +574,7 @@ sub charger_liste_maj_sondes
 		    {
 			# il y a un doublon dans les nouvelles sondes
 		    
-			if($param_maj_sonde{$2} eq "$3 $4 $5")
+			if($param_maj_sonde{$2} eq "$3 $4 $param")
 			{
 			    # la sonde en doublon a ecactement les memes parametres.
 			    # on ignore
@@ -577,9 +587,9 @@ sub charger_liste_maj_sondes
 			    # suppression par securite de la communaute snmp pour ne pas l'afficher dans le mail
 			    my $p1 = supprimer_com_snmp($param_maj_sonde{$2});
 			    my $nom_pt_metro = get_nom_pt_metro($2);
-			    message_erreur("ERREUR DOUBLON : point de métrologie \"$nom_pt_metro\". Sonde présente sur ($3 $5) et ($p1)");	
+			    message_erreur("ERREUR DOUBLON : point de métrologie \"$nom_pt_metro\". Sonde présente sur ($3 $param) et ($p1)");	
 			    writelog("cree-base-metro","","info",
-				"\t ERREUR : Doublon. $2 : Sonde presente sur ($3 $4 $5) et ($param_maj_sonde{$2})");
+				"\t ERREUR : Doublon. $2 : Sonde presente sur ($3 $4 $param) et ($param_maj_sonde{$2})");
 			}
 		    }
 		    else
@@ -587,21 +597,22 @@ sub charger_liste_maj_sondes
 			# sinon on verifie si il n'y avait pas un probleme de communaute
 			# SNMP dans une sonde trouvée en tête de fichier.
 			my ($ip,$com,$if) = split(/\s+/,$param_maj_sonde{$2});
-			if($ip eq $3 && $if eq $5 && $com ne $4)
+			if($ip eq $3 && $if eq $param && $com ne $4)
 			{
-			    $param_maj_sonde{$2} = "$3 $4 $5";
+			    $param_maj_sonde{$2} = "$3 $4 $param";
 			}
 		    }
 		}
 	    }
 	    elsif(/^(.+?);(.+?);(.+?);(.+?);(.+?);echec/)
 	    {
+		my $param = clean_var($5);
 		# il s'agit d'une sonde dont l'installation a echoue
 		# lors du precedant passage
 		if(!defined($sonde_maj_sonde{$2}))
                 {
                     $sonde_maj_sonde{$2} = $1;
-                    $param_maj_sonde{$2} = "$3 $4 $5";
+                    $param_maj_sonde{$2} = "$3 $4 $param";
 		    $sursis_maj_sondes{$2} = 1;
                     $compteur ++;
                 }
@@ -866,10 +877,10 @@ sub supprimer_com_snmp
 	{
 	    $p = "$p $tab_params[$i]";
 	}
-	else
-	{
-	    $p = "$p com_snmp";
-	}
+#	else
+#	{
+#	    $p = "$p com_snmp";
+#	}
     }
 
     return $p;    
