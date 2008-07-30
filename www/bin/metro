@@ -18,6 +18,7 @@
 #   2006/08/10 : pda/boggia      : ajout du paramètre uti
 #   2007/01/12 : pda             : mutualisation initialisation
 #   2008/07/30 : pda             : généralisation aux graphes wifi
+#   2008/07/30 : pda             : plus de souplesse dans les dates/heures
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -106,47 +107,62 @@ proc main {} {
     }
 
     #
-    # Valider l'intervalle de temps
+    # Valider l'intervalle de temps : début
     #
 
-    set nsaisis 0
-    foreach c {jdebut hdebut jfin hfin} {
-	if {! [string equal [set $c] ""]} then {
-	    incr nsaisis
-	}
-    }
+    set aujourdhui [clock format [clock seconds] -format "%d/%m/%Y"]
 
-    switch $nsaisis {
-	0 {
-	    set debut [clock scan "-1 day -12 hours"]
-	    set fin   [clock seconds]
-	}
-	4 {
+    set debut ""
+    switch -regexp -- "$jdebut-$hdebut" {
+	{^[0-9/]+-[0-9:]+$} {
+	    # spéc exacte
 	    set debut [decoder-date $jdebut $hdebut]
-	    if {[string equal $debut ""]} then {
-		::webapp::error-exit $conf(err) \
-		    "Date ou heure de début incorrecte"
-	    }
-	    set debut [clock scan $debut]
-
-	    set jdebut [clock format $debut -format "%d/%m/%Y"]
-	    set hdebut [clock format $debut -format "%H"]
-
-	    set fin [decoder-date $jfin $hfin]
-	    if {[string equal $fin ""]} then {
-		::webapp::error-exit $conf(err) \
-		    "Date ou heure de fin incorrecte"
-	    }
-	    set fin [clock scan $fin]
-
-	    set jfin [clock format $fin -format "%d/%m/%Y"]
-	    set hfin [clock format $fin -format "%H"]
 	}
-	default {
-	    ::webapp::error-exit $conf(err) \
-		"Vous devez remplir tous les champs ou bien aucun"
+	{^-[0-9:]+$} {
+	    # aujourd'hui à x heures
+	    set debut [decoder-date $aujourdhui $hdebut]
+	}
+	{^[0-9/]+-$} {
+	    # tel jour à 0 heure
+	    set debut [decoder-date $jdebut "00:00:00"]
+	}
+	{^-$} {
+	    # il y a 36 heures
+	    set debut "-1 day -12 hours"
 	}
     }
+    if {[string equal $debut ""]} then {
+	::webapp::error-exit $conf(err) "Date ou heure de début incorrecte"
+    }
+    set debut [clock scan $debut]
+
+    #
+    # Valider l'intervalle de temps : fin
+    #
+
+    set fin ""
+    switch -regexp -- "$jfin-$hfin" {
+	{^[0-9/]+-[0-9:]+$} {
+	    # spéc exacte
+	    set fin [decoder-date $jfin $hfin]
+	}
+	{^-[0-9:]+$} {
+	    # aujourd'hui à x heures
+	    set fin [decoder-date $aujourdhui $hfin]
+	}
+	{^[0-9/]+-$} {
+	    # tel jour à minuit
+	    set fin [decoder-date $jfin "23:59:59"]
+	}
+	{^-$} {
+	    # maintenant
+	    set fin "now"
+	}
+    }
+    if {[string equal $fin ""]} then {
+	::webapp::error-exit $conf(err) "Date ou heure de fin incorrecte"
+    }
+    set fin [clock scan $fin]
 
     #
     # Sortie de la page

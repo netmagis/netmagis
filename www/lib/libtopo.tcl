@@ -607,12 +607,16 @@ proc gengraph {url err} {
 #   2000/07/18 : pda : conception
 #   2000/07/23 : pda : ajout de l'heure
 #   2001/03/12 : pda : mise en librairie
+#   2008/07/30 : pda : ajout cas spécial pour 24h (= 23:59:59)
 #
 
 proc decoder-date {date heure} {
     set date [string trim $date]
     if {[string length $date] == 0} then {
 	set datepg ""
+    }
+    if {[string equal $heure "24"]} then {
+	set heure "23:59:59"
     }
     set liste [split $date /]
     switch [llength $liste] {
