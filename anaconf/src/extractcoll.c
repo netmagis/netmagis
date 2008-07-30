@@ -1,5 +1,5 @@
 /*
- * $Id: extractcoll.c,v 1.3 2007-01-11 15:31:23 pda Exp $
+ * $Id: extractcoll.c,v 1.4 2008-07-30 08:16:16 pda Exp $
  */
 
 #include "graph.h"
@@ -7,33 +7,64 @@
 /******************************************************************************
 Example of output format
 
-<id coll> <eq> <phys iface> <vlan id>
+trafic      <id coll> <eq> <community> <phys iface> <vlan id|->
+nbassocwifi <id coll> <eq> <community> <phys iface> <ssid>
+nbauthwifi  <id coll> <eq> <community> <phys iface> <ssid>
 
-M123 crc-rc1 ge-1/2/3 58
-M124 le7-rc1 ge-4/5/6 58
-M125 crc-cc1 GigaMachin-4/5/6 58
-M125 toto-ce1 GigaMachin-0/1 -
+
+trafic M123 crc-rc1 commsnmp ge-1/2/3 58
+trafic M125 crc-cc1 commsnmp GigaMachin-4/5/6 58
+trafic M125 toto-ce1 commsnmp GigaMachin-0/1 -
+nbassocwifi Mtruc.asso titi-ap1 commsnmp Dot11Radio0 osiris
+nbauthwifi  Mtruc.auth titi-ap1 commsnmp Dot11Radio0 osiris
 ******************************************************************************/
+
+/******************************************************************************
+Output wifi probes marked for this network
+******************************************************************************/
+
+void output_ssidprobe (FILE *fp, struct ssidprobe *sp)
+{
+    char *t ;
+
+    switch (sp->mode)
+    {
+	case SSIDPROBE_ASSOC : t = "nbassocwifi" ; break ;
+	case SSIDPROBE_AUTH  : t = "nbauthwifi"  ; break ;
+	default : t = "???" ; break ;
+    }
+
+    /* nbassocwifi <id coll> <eq> <community> <phys iface> <ssid> */
+    fprintf (fp, "%s %s %s %s %s %s\n",
+		    t,
+		    sp->name,
+		    sp->eq->name,
+		    sp->eq->snmp,
+		    sp->l1->u.l1.ifname,
+		    sp->ssid->name
+		) ;
+}
 
 /******************************************************************************
 Output interfaces (L2 or L1 with restrictions) marked for this network
 ******************************************************************************/
 
-void output_collect_L1 (FILE *fp, struct node *L1node, int mark)
+void output_collect_L1 (FILE *fp, struct node *L1node)
 {
     if (L1node->u.l1.stat)
     {
-	/* <id collect> <eq> <iface> - */
-	fprintf (fp, "%s %s %s -\n",
+	/* trafic <id collect> <eq> <comm> <phys iface> - */
+	fprintf (fp, "trafic %s %s %s %s -\n",
 			L1node->u.l1.stat,
 			L1node->eq->name,
+			L1node->eq->snmp,
 			L1node->u.l1.ifname
 		    ) ;
-	L1node->mark = mark ;
+	L1node->mark = 0 ;
     }
 }
 
-void output_collect_L2 (FILE *fp, struct node *L2node, int mark)
+void output_collect_L2 (FILE *fp, struct node *L2node)
 {
     struct node *L1node ;
 
@@ -46,14 +77,15 @@ void output_collect_L2 (FILE *fp, struct node *L2node, int mark)
 
 	if (L2node->u.l2.stat != NULL)
 	{
-	    /* <id collect> <eq> <iface> <vlan> */
-	    fprintf (fp, "%s %s %s %d\n",
+	    /* trafic <id collect> <eq> <comm> <phys iface> <vlan id> */
+	    fprintf (fp, "trafic %s %s %s %s %d\n",
 			    L2node->u.l2.stat,
 			    L1node->eq->name,
+			    L1node->eq->snmp,
 			    L1node->u.l1.ifname,
 			    L2node->u.l2.vlan
 			) ;
-	    L2node->mark = mark ;
+	    L2node->mark = 0 ;
 	}
 
 	/*
@@ -61,7 +93,7 @@ void output_collect_L2 (FILE *fp, struct node *L2node, int mark)
 	 */
 
 	if (L1node->u.l1.stat && L1node->u.l1.l1type == L1T_ETHER)
-	    output_collect_L1 (fp, L1node, mark) ;
+	    output_collect_L1 (fp, L1node) ;
     }
 }
 
@@ -71,7 +103,7 @@ Main function
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]*\n", progname) ;
+    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]* [-s] [-w] [eq]\n", progname) ;
     exit (1) ;
 }
 
@@ -81,7 +113,10 @@ int main (int argc, char *argv [])
 {
     char *prog ;
     int c, err ;
+    char *eqname ;
+    struct eq *eq ;
     struct node *n ;
+    int dumpstat, dumpwifi ;
 
     /*
      * Analyzes arguments
@@ -89,10 +124,12 @@ int main (int argc, char *argv [])
 
     prog = argv [0] ;
     err = 0 ;
+    dumpstat = 0 ;
+    dumpwifi = 0 ;
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "n:e:")) != -1) {
+    while ((c = getopt (argc, argv, "n:e:sw")) != -1) {
 	switch (c)
 	{
 	    case 'n' :
@@ -109,6 +146,12 @@ int main (int argc, char *argv [])
 		    err = 1 ;
 		}
 		break ;
+	    case 's' :
+		dumpstat = 1 ;
+		break ;
+	    case 'w' :
+		dumpwifi = 1 ;
+		break ;
 	    case '?' :
 	    default :
 		usage (prog) ;
@@ -118,11 +161,27 @@ int main (int argc, char *argv [])
     if (err)
 	exit (1) ;
 
+    if (dumpstat == 0 && dumpwifi == 0)
+    {
+	dumpstat = 1 ;
+	dumpwifi = 1 ;
+    }
+
     argc -= optind ;
     argv += optind ;
 
-    if (argc != 0)
-	usage (prog) ;
+    switch (argc)
+    {
+	case 0 :
+	    eqname = NULL ;
+	    break ;
+	case 1 :
+	    eqname = argv [0] ;
+	    break ;
+	default :
+	    usage (prog) ;
+	    break ;
+    }
 
     /*
      * Read the graph and process selection
@@ -139,15 +198,48 @@ int main (int argc, char *argv [])
     sel_mark () ;
 
     /*
-     * Output the final result
+     * Lookup the equipment, if any
      */
 
-    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+    if (eqname != NULL)
     {
-	if (n->nodetype == NT_L2 && (n->mark & MK_SELECTED))
-	    output_collect_L2 (stdout, n, 0) ;
-	if (n->nodetype == NT_L1 && (n->mark & MK_SELECTED))
-	    output_collect_L1 (stdout, n, 0) ;
+	eq = eq_lookup (eqname) ;
+	if (eq == NULL)
+	{
+	    fprintf (stderr, "%s : equipement '%s' not found\n", prog, eqname) ;
+	    exit (1) ;
+	}
+    }
+    else eq = NULL ;
+
+    /*
+     * Output the wifi probes first, since stat dump will reset marks
+     */
+
+    if (dumpwifi)
+    {
+	struct ssidprobe *sp ;
+
+	for (sp = mobj_head (ssidprobemobj) ; sp != NULL ; sp = sp->next)
+	{
+	    if (eq == NULL || sp->eq == eq)
+		if (MK_ISSELECTED (sp->l1))
+		    output_ssidprobe (stdout, sp) ;
+	}
+    }
+
+    if (dumpstat)
+    {
+	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	{
+	    if (eq == NULL || n->eq == eq)
+	    {
+		if (n->nodetype == NT_L2 && MK_ISSELECTED (n))
+		    output_collect_L2 (stdout, n) ;
+		if (n->nodetype == NT_L1 && MK_ISSELECTED (n))
+		    output_collect_L1 (stdout, n) ;
+	    }
+	}
     }
 
     sel_end () ;

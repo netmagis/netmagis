@@ -425,27 +425,20 @@ proc ip-in {ip net} {
 #	- dbfd : accès à la base
 #	- id : id du point de collecte
 #	- _tabcor : infos sur le correspondant
-#	- _eq : en sortie, nom de l'équipement
-#	- _iface : en sortie, nom de l'interface
-#	- _vlan : en sortie, numéro du vlan
+#	- _titre : titre du graphe
 # Sortie :
 #   - valeur de retour : message d'erreur ou chaîne vide
-#   - paramètre _eq : nom de l'équipement trouvé
-#   - paramètre _iface : nom de l'interface trouvée
-#   - paramètre _vlan : numéro du vlan trouvé, ou "-"
+#   - paramètre _titre : titre du graphe trouvé
 #
 # Historique
 #   2006/08/09 : pda/boggia      : conception
 #   2006/12/29 : pda             : parametre vlan passé par variable
+#   2008/07/30 : pda             : adaptation au nouvel extractcoll
 #
 
-# XXX pour l'instant, on ne vérifie que la cohérence de l'id
-# du graphe
-#
-
-proc verifier-metro-id {dbfd id _tabuid _eq _iface _vlan} {
+proc verifier-metro-id {dbfd id _tabuid _titre} {
     upvar $_tabuid tabuid
-    upvar $_eq eq  $_iface iface  $_vlan vlan
+    upvar $_titre titre
     global libconf
 
     #
@@ -459,32 +452,43 @@ proc verifier-metro-id {dbfd id _tabuid _eq _iface _vlan} {
     } else {
 	set r "Point de collecte '$id' non trouvé"
 	while {[gets $fd ligne] > -1} {
-	    #
-	    # Découper la ligne
-	    #	<id> <eq> <iface> <vlan>
-	    # en éléments de liste
-	    #
 	    set l [split $ligne]
+	    if {[string equal [lindex $l 1] $id]} then {
+		set kw [lindex $l 0]
+		switch $kw {
+		    trafic {
+			set eq    [lindex $l 2]
+			set iface [lindex $l 4]
+			set vlan  [lindex $l 5]
 
-	    #
-	    # Vérification simpliste
-	    #
+			set titre "Trafic sur"
+			if {[string equal $vlan "-"]} then {
+			    append titre " le vlan $vlan"
+			}
+			append titre " de l'interface $iface de $eq"
 
-	    if {[llength $l] != 4} then {
-		set r "Erreur interne sur extractcoll"
-		break
-	    }
+			set r ""
+		    }
+		    nbauthwifi -
+		    nbassocwifi {
+			set eq    [lindex $l 2]
+			set iface [lindex $l 4]
+			set ssid  [lindex $l 5]
 
-	    #
-	    # On sort si on trouve, en positionnant les variables
-	    # eq et iface
-	    #
+			set titre "Nombre"
+			if {[string equal $kw "nbauthwifi"]} then {
+			    append titre " d'utilisateurs authentifiés" 
+			} else {
+			    append titre " de machines associées" 
+			}
+			append titre " sur le ssid $ssid de l'interface $iface de $eq"
 
-	    if {[string equal [lindex $l 0] $id]} then {
-		set eq    [lindex $l 1]
-		set iface [lindex $l 2]
-		set vlan  [lindex $l 3]
-		set r ""
+			set r ""
+		    }
+		    default {
+			set r "Erreur interne sur extractcoll"
+		    }
+		}
 		break
 	    }
 	}

@@ -17,6 +17,7 @@
 #   2006/05/24 : pda/jean/boggia : création
 #   2006/08/10 : pda/boggia      : ajout du paramètre uti
 #   2007/01/12 : pda             : mutualisation initialisation
+#   2008/07/30 : pda             : généralisation aux graphes wifi
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -99,7 +100,7 @@ proc main {} {
     # valider l'id du graphe en fonction des droits
     #
 
-    set msg [verifier-metro-id $dbfd $id tabuid eq iface vlan]
+    set msg [verifier-metro-id $dbfd $id tabuid titre]
     if {! [string equal $msg ""]} then {
 	::webapp::error-exit $conf(err) $msg
     }
@@ -160,9 +161,7 @@ proc main {} {
     ::webapp::send html [::webapp::file-subst $conf(page) \
 					[list \
 						[list %ADMIN%  "admin (future use)"] \
-						[list %EQ%     $eq] \
-						[list %IFACE%  $iface] \
-						[list %VLAN%   $vlan] \
+						[list %TITRE%  $titre] \
 						[list %ID%     $id] \
 						[list %JDEBUT% $jdebut] \
 						[list %HDEBUT% $hdebut] \
