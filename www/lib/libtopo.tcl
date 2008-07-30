@@ -437,7 +437,7 @@ proc ip-in {ip net} {
 # Entrée :
 #   - paramètres :
 #	- dbfd : accès à la base
-#	- id : id du point de collecte
+#	- id : id du point de collecte (ou id+id+...)
 #	- _tabcor : infos sur le correspondant
 #	- _titre : titre du graphe
 # Sortie :
@@ -448,6 +448,7 @@ proc ip-in {ip net} {
 #   2006/08/09 : pda/boggia      : conception
 #   2006/12/29 : pda             : parametre vlan passé par variable
 #   2008/07/30 : pda             : adaptation au nouvel extractcoll
+#   2008/07/30 : pda             : codage de multiples id
 #
 
 proc verifier-metro-id {dbfd id _tabuid _titre} {
@@ -456,60 +457,138 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
     global libconf
 
     #
+    # Au cas où les id seraient multiples
+    #
+
+    set lid [split $id "+"]
+
+    #
     # Récupérer la liste des points de collecte
     #
 
     set cmd [format $libconf(extractcoll) $tabuid(flags)]
 
     if {[catch {set fd [open "| $cmd" "r"]} msg]} then {
-	set r "Impossible de lire les points de collecte: $msg"
-    } else {
-	set r "Point de collecte '$id' non trouvé"
-	while {[gets $fd ligne] > -1} {
-	    set l [split $ligne]
-	    if {[string equal [lindex $l 1] $id]} then {
-		set kw [lindex $l 0]
-		switch $kw {
-		    trafic {
+	return "Impossible de lire les points de collecte: $msg"
+    }
+
+    while {[gets $fd ligne] > -1} {
+	set l [split $ligne]
+	set kw [lindex $l 0]
+	set i  [lindex $l 1]
+	set n [lsearch -exact $lid $i]
+	if {$n >= 0} then {
+	    set idtab($i) $ligne
+	    if {[info exists firstkw]} then {
+		if {! [string equal $firstkw $kw]} then {
+		    return "Types de points de collecte divergents" 
+		}
+	    } else {
+		set firstkw $kw
+	    }
+	    set lid [lreplace $lid $n $n]
+	}
+    }
+    catch {close $fd}
+
+    #
+    # Erreur si id pas trouvé
+    #
+
+    if {[llength $lid] > 0} then {
+	return "Point de collecte '$id' non trouvé"
+    }
+
+    #
+    # Essayer de trouver un titre convenable
+    # 
+
+    set lid [array names idtab]
+    switch [llength $lid] {
+	0 {
+	    return "Aucun point de collecte sélectionné"
+	}
+	1 {
+	    set i [lindex $lid 0]
+	    set l $idtab($i)
+	    switch $firstkw {
+		trafic {
+		    set eq    [lindex $l 2]
+		    set iface [lindex $l 4]
+		    set vlan  [lindex $l 5]
+
+		    set titre "Trafic sur"
+		    if {! [string equal $vlan "-"]} then {
+			append titre " le vlan $vlan"
+		    }
+		    append titre " de l'interface $iface de $eq"
+		}
+		nbauthwifi -
+		nbassocwifi {
+		    set eq    [lindex $l 2]
+		    set iface [lindex $l 4]
+		    set ssid  [lindex $l 5]
+
+		    set titre "Nombre"
+		    if {[string equal $firstkw "nbauthwifi"]} then {
+			append titre " d'utilisateurs authentifiés" 
+		    } else {
+			append titre " de machines associées" 
+		    }
+		    append titre " sur le ssid $ssid de l'interface $iface de $eq"
+		}
+		default {
+		    return "Erreur interne sur extractcoll"
+		}
+	    }
+	}
+	default {
+	    switch $firstkw {
+		trafic {
+		    set titre "Trafic"
+		    set le {}
+		    foreach i $lid {
+			set l $idtab($i)
 			set eq    [lindex $l 2]
 			set iface [lindex $l 4]
 			set vlan  [lindex $l 5]
 
-			set titre "Trafic sur"
+			set e "$eq/$iface"
 			if {! [string equal $vlan "-"]} then {
-			    append titre " le vlan $vlan"
+			    append e ".$vlan"
 			}
-			append titre " de l'interface $iface de $eq"
-
-			set r ""
+			lappend le $e
 		    }
-		    nbauthwifi -
-		    nbassocwifi {
+		    set le [join $le " et "]
+		    append titre " sur $le"
+		}
+		nbauthwifi -
+		nbassocwifi {
+		    if {[string equal $firstkw "nbauthwifi"]} then {
+			set titre "Nombre d'utilisateurs authentifiés"
+		    } else {
+			set titre "Nombre de machines associées"
+		    }
+		    foreach i $lid {
+			set l $idtab($i)
 			set eq    [lindex $l 2]
 			set iface [lindex $l 4]
 			set ssid  [lindex $l 5]
 
-			set titre "Nombre"
-			if {[string equal $kw "nbauthwifi"]} then {
-			    append titre " d'utilisateurs authentifiés" 
-			} else {
-			    append titre " de machines associées" 
-			}
-			append titre " sur le ssid $ssid de l'interface $iface de $eq"
-
-			set r ""
+			set e "$eq/$iface ($ssid)"
+			lappend le $e
 		    }
-		    default {
-			set r "Erreur interne sur extractcoll"
-		    }
+		    set le [join $le " et "]
+		    append titre " sur $le"
 		}
-		break
+		default {
+		    return "Erreur interne sur extractcoll"
+		}
 	    }
 	}
-	catch {close $fd}
     }
 
-    return $r
+    return ""
 }
 
 #
