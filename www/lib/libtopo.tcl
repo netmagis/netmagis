@@ -12,6 +12,20 @@ set libconf(graph)	%GRAPH%
 
 set libconf(extractcoll)	"%TOPODIR%/bin/extractcoll %s < %GRAPH%"
 
+array set libconf {
+    freq:2412	1
+    freq:2417	2
+    freq:2422	3
+    freq:2427	4
+    freq:2432	5
+    freq:2437	6
+    freq:2442	7
+    freq:2447	8
+    freq:2452	9
+    freq:2457	10
+    freq:2462	11
+}
+
 #
 # Initialiser l'accès à la topo pour les scripts CGI
 #
@@ -649,4 +663,29 @@ proc decoder-date {date heure} {
 	}
     }
     return $datepg
+}
+
+#
+# Convertit une fréquence radio 802.11b/g (bande des 2,4 GHz)
+# en canal 802.11b/g
+#
+# Entrée :
+#   - paramètres :
+#       - freq : la fréquence
+# Sortie :
+#   - valeur de retour : chaîne exprimant le canal
+#
+# Historique
+#   2008/07/30 : pda : conception
+#
+
+proc conv-channel {freq} {
+    global libconv
+
+    if {[info exists conf(freq:$freq)]} then {
+	set channel $conf(freq:$freq)
+    } else {
+	set channel "$freq MHz"
+    }
+    return $channel
 }
