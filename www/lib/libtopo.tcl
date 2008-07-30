@@ -680,10 +680,10 @@ proc decoder-date {date heure} {
 #
 
 proc conv-channel {freq} {
-    global libconv
+    global libconf
 
-    if {[info exists conf(freq:$freq)]} then {
-	set channel $conf(freq:$freq)
+    if {[info exists libconf(freq:$freq)]} then {
+	set channel $libconf(freq:$freq)
     } else {
 	set channel "$freq MHz"
     }
