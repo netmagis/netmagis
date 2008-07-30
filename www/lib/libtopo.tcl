@@ -462,7 +462,7 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
 			set vlan  [lindex $l 5]
 
 			set titre "Trafic sur"
-			if {[string equal $vlan "-"]} then {
+			if {! [string equal $vlan "-"]} then {
 			    append titre " le vlan $vlan"
 			}
 			append titre " de l'interface $iface de $eq"

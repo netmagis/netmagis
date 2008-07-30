@@ -152,12 +152,6 @@ proc main {} {
     # Sortie de la page
     #
 
-    if {[string equal $vlan "-"]} then {
-	set vlan ""
-    } else {
-	set vlan "le vlan $vlan de"
-    }
-
     ::webapp::send html [::webapp::file-subst $conf(page) \
 					[list \
 						[list %ADMIN%  "admin (future use)"] \
