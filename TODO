@@ -1,45 +1,8 @@
-$Id: TODO,v 1.6 2008-07-28 08:00:29 pda Exp $
+$Id: TODO,v 1.7 2008-07-30 14:55:08 pda Exp $
 
-Analyse de la conf des points d'accès
-    - les SSID supportés et leur caractéristiques (open ou auth)
-	dot11 ssid osiris
-	  ...
-	  authentication open
-	    <ou bien>
-	  authentication authentication open [a-z].*
-    - extraire la puissance d'émission
-	interface Dot11Radio0
-	 ...
-	 power local ofdm 20
-    - extraire le canal
-	interface Dot11Radio0
-	 ...
-	 channel 2462
-    - extraire les ssid
-	interface Dot11Radio0
-	 ...
-	 ssid osiris
-	 ssid osiris-sec
-
-=> générer
-    node ... type L1 ... radio <channel> <power> ssid ... ssid ... ssid ...
-	chaque ssid est de la forme
-	    ssid <ssid> <"open"|"auth">
-=> dans l'appel à http://idris.u-strasbg.fr/setgraph
-    => passer les habituels (avec le type "trafic" en plus)
-	"trafic M.... ...."
-    => passer en plus (avec deux nouveaux type "nbassocwifi"/"nbauthwifi")
-	"nbassocwifi Minsa-ap1.assocwifi.osiris insa-ap1 Dot11Radio0 <ssid> <communaute>"
-	"nbauthwifi Minsa-ap1.authwifi.osiris ..."
-	    nom des sondes :
-		M<eq>.authwifi.<ssid>		[associés authentifiés]
-		M<eq>.assocwifi.<ssid>		[associés non authentifiés]
 => dans la page topo/bin/eq
     => présenter les paramètres radio
     => présenter les infos spécifiques wifi
-
-Voir si on peut bien mettre des points de métrologie sur les
-    sous-interfaces des Cisco
 
 www/bin/wifi
     présente la liste de "mes" bâtiments :
