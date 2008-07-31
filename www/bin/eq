@@ -11,12 +11,13 @@
 #	- iface : si fourni, nom d'une interface à souligner
 #
 # Historique
-#   2006/06/05 : pda      : création
-#   2006/08/14 : pda      : fusion script listeq
-#   2007/01/04 : pda      : ajout du paramètre uti
-#   2007/01/11 : pda      : mutualisation initialisation
-#   2007/01/11 : pda      : substitution possible d'un uid
-#   2008/05/06 : pda      : ajout localisation
+#   2006/06/05 : pda        : création
+#   2006/08/14 : pda        : fusion script listeq
+#   2007/01/04 : pda        : ajout du paramètre uti
+#   2007/01/11 : pda        : mutualisation initialisation
+#   2007/01/11 : pda        : substitution possible d'un uid
+#   2008/05/06 : pda        : ajout localisation
+#   2008/07/31 : pda/boggia : vue arborescente
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -75,6 +76,178 @@ package require pgsql
 source $conf(libdns)
 source $conf(libtopo)
 
+#
+# Hierarchiser un élément dans un tableau en vue de consituer une
+# arborescence
+#
+# Entrée :
+#   - _thier : tableau passé par nom, contenant l'arborescence
+#   - liste : liste d'éléments par niveau
+#   - cumul : 1 si les éléments doivent être cumulés, 0 sinon (cf ci-dessous)
+# Sortie :
+#   - valeur de retour : aucune
+#   - tableau _thier : réactualisé
+#
+# Exemple 1 :
+#   si liste = {anapat -ap 3} et cumul = 1
+#   et tableau vaut :
+#	t()		= {anapat}
+#	t(anapat)	= {anapat-ap}
+#	t(anapat-ap)	= {anapat-ap1}
+#	t(anapat-ap1)	= {}
+#   alors le tableau est actualisé avec :
+#	t()		= {anapat}
+#	t(anapat)	= {anapat-ap}
+#	t(anapat-ap)	= {anapat-ap1 anapat-ap3} (peu importe l'ordre 3/1 ou 1/3)
+#	t(anapat-ap1)	= {}
+#	t(anapat-ap3)	= {}
+#
+# Exemple 2 :
+#   pour l'exemple ci-dessus, si cumul = 0, il faudrait avoir la
+#   liste {anapat anapat-ap anapat-ap3}
+#
+# Exemple 3 :
+#   si liste = {horus}
+#   et tableau vaut :
+#	(rien)
+#   alors le tableau est actualisé avec :
+#	t()		= {horus}
+#	t(horus)	= {}
+#
+# Historique :
+#   2008/07/31 : pda/boggia : conception
+#
+
+proc hierarchiser-un-element {_thier liste cumul} {
+    upvar $_thier thier
+
+    set racine ""
+    set idx ""
+    foreach mot $liste {
+	if {$cumul} then {
+	    append idx $mot
+	} else {
+	    set idx $mot
+	}
+	if {! [info exists thier($idx)]} then {
+	    lappend thier($racine) $idx
+	}
+	set racine $idx
+    }
+    lappend thier($racine) {}
+}
+
+#
+# Hiérarchiser une liste d'équipements 
+#
+# Entrée :
+#   - _t : tableau passé par nom, contenant l'arborescence
+#   - leq : liste d'équipements
+# Sortie :
+#   - valeur de retour : aucune
+#   - tableau _t : réactualisé
+#
+# Note : le regroupement en arbre est réalisé sur le nom d'équipement
+#   qui est découpé suivant une politique spécifique Osiris, à savoir
+#	[xxx] [-tt] [nn]
+#   où xxx est le préfixe, -tt le type d'équipement et nn le numéro
+#   dans le type. Par exemple, "anapat-ap3" est découpé en :
+#	anapat -ap 3
+#
+# Historique :
+#   2008/07/31 : pda/boggia : conception
+#
+
+proc hiearchiser-liste-equipements {_t leq} {
+    upvar $_t t
+
+    catch {unset t}
+
+    #
+    # Première phase : hiérarchiser tous les éléments
+    #
+
+    foreach eq $leq {
+	if {[regexp  {(.*)(-[a-z]+)([0-9]+)$} $eq bidon n1 n2 n3]} then {
+	    hierarchiser-un-element t [list $n1 $n2 $n3] 1
+	} else {
+	    hierarchiser-un-element t [list $eq] 1
+	}
+    }
+
+    #
+    # Deuxième phase : remonter d'un niveau (récursivement) tous
+    # les éléments qui sont seuls sur leur niveau (sauf les -ap)
+    #
+
+    # XXX : il manque quelque chose là, vous ne trouvez pas ?
+
+    #
+    # Troisième phase : trier chaque niveau
+    #
+
+    foreach i [array names t] {
+	set t($i) [lsort $t($i)]
+    }
+}
+
+#
+# Générer un arbre à l'aide d'un tableau hiérarchisé
+#
+# Entrée :
+#   - racine : racine de l'arbre
+#   - _thier : tableau passé par nom, contenant l'arborescence
+#   - _tabeq : tableau passé par nom, contenant les équipements
+#   - u1 : fragment d'url pour le paramètre "uid=..." le cas échéant
+# Sortie :
+#   - valeur de retour : liste des arbres dont la racine est à ce
+#	niveau)
+#
+# Historique :
+#   2008/07/31 : pda/boggia : conception
+#
+
+proc generer-arbre-eq {racine _thier _tabeq u1} {
+    global conf
+    upvar $_thier thier
+    upvar $_tabeq tabeq
+
+    set arbre {}
+    foreach fils $thier($racine) {
+	#
+	# Cette boucle a pour but d'éviter de faire des niveaux
+	# multiples s'il n'y a qu'un seul fils à chaque niveau.
+	#
+	set prec $racine
+	while {! [string equal $fils ""] && [llength $thier($fils)] <= 1} {
+	    set prec $fils
+	    set fils [lindex $thier($fils) 0]
+	}
+
+	#
+	# Noeud ou feuille ?
+	#
+
+	if {[string equal $fils ""]} then {
+	    #
+	    # Feuille : c'est donc un équipement
+	    #
+	    set type   [lindex $tabeq($prec) 0]
+	    set modele [lindex $tabeq($prec) 1]
+	    set url [format $conf(urleq) $prec $u1]
+
+	    set lien [::webapp::helem "a" $prec "href" $url]
+	    lappend arbre [list "$lien $type $modele"]
+	} else {
+	    #
+	    # Noeud : on recommence récursivement
+	    #
+	    lappend arbre [generer-arbre-eq $fils thier tabeq $u1]
+	}
+    }
+    return [linsert $arbre 0 $racine]
+}
+
 ##############################################################################
 # Programme principal
 ##############################################################################
@@ -129,11 +302,18 @@ proc main {} {
     # dans le bon ordre
     #
 
-    switch [llength [array names tabeq]] {
-	0 {
+    # 1 si aucun eq cherché, 0 si recherche d'un éq
+    set ceq [string equal $eq ""]
+
+    # nb d'équipements trouvés
+    set neq [llength [array names tabeq]]
+
+    switch -glob "$ceq-$neq" {
+	*-0 {
 	    #
 	    # Aucun équipement trouvé. Faire comme pour une liste, mais
 	    # une liste vide ;-)
+	    # Peu importe qu'on ait cherché ou non un équipement.
 	    #
 
 	    set liste "Aucun équipement trouvé"
@@ -150,11 +330,16 @@ proc main {} {
 							[list %VLAN%   ""] \
 							[list %ADDR%   ""] \
 							[list %URLUID% $u2] \
+							[list %HEADER% ""] \
+							[list %ONLOAD% ""] \
 						    ] \
 					    ]
 	}
-	1 {
+	*-1 {
 	    #
+	    # On n'a trouvé qu'un seul équipement. Peu importe
+	    # qu'on l'ait cherché ou non (le réseau peut être
+	    # tout petit ;-)
 	    # Récupérer les informations lues dans le graphe
 	    #
 
@@ -290,9 +475,12 @@ proc main {} {
 						    ] \
 					    ]
 	}
-	default {
+	0-* {
 	    #
+	    # On a cherché un équipement (via une expression régulière
+	    # par exemple), et on en a trouvé plusieurs.
 	    # Trier les équipements pour les présenter dans le bon ordre
+	    # dans une liste bien linéaire.
 	    #
 
 	    set liste ""
@@ -318,6 +506,45 @@ proc main {} {
 							[list %VLAN%   ""] \
 							[list %ADDR%   ""] \
 							[list %URLUID% $u2] \
+							[list %HEADER% ""] \
+							[list %ONLOAD% ""] \
+						    ] \
+					    ]
+	}
+	1-* {
+	    #
+	    # On n'a cherché aucun équipement, on veut juste voir
+	    # la liste (arborescente).
+	    # Regrouper les équipements par leur nom, en attendant
+	    # de faire mieux.
+	    #
+
+	    hiearchiser-liste-equipements thier [array names tabeq]
+	    set arbre [generer-arbre-eq "" thier tabeq $u1]
+	    set t [::webapp::interactive-tree "leq" $arbre]
+
+	    set head1  [lindex $t 0]
+	    set head2  [lindex $t 1]
+	    set onload [lindex $t 2]
+	    set html   [lindex $t 3]
+
+	    set header "$head1\n$head2\n"
+
+
+	    #
+	    # Sortie de la page
+	    #
+
+	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
+						[list \
+							[list %OBJETS% "équipements"] \
+							[list %LISTE%  $html] \
+							[list %EQ%     $eq] \
+							[list %VLAN%   ""] \
+							[list %ADDR%   ""] \
+							[list %URLUID% $u2] \
+							[list %HEADER% $header] \
+							[list %ONLOAD% $onload] \
 						    ] \
 					    ]
 	}

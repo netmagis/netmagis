@@ -353,6 +353,8 @@ proc main {} {
 						    [list %VLAN%   ""] \
 						    [list %ADDR%   ""] \
 						    [list %URLUID% $u2] \
+						    [list %HEADER% ""] \
+						    [list %ONLOAD% ""] \
 						] \
 					]
     } else {

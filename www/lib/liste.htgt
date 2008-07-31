@@ -15,6 +15,11 @@
     CENTRE RÉSEAU COMMUNICATION
 }
 
+\set {header} {
+    %HEADER%
+}
+
+\set {body-onload} {%ONLOAD%}
 
 \*******************************************************************************
 \bandeau {

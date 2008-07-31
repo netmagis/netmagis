@@ -458,6 +458,8 @@ proc main {} {
 							[list %VLAN%   $qvlan] \
 							[list %ADDR%   ""] \
 							[list %URLUID% $u2] \
+							[list %HEADER% ""] \
+							[list %ONLOAD% ""] \
 						    ] \
 					    ]
 	}
@@ -494,6 +496,8 @@ proc main {} {
 						    [list %VLAN%   $qvlan] \
 						    [list %ADDR%   ""] \
 						    [list %URLUID% $u2] \
+						    [list %HEADER% ""] \
+						    [list %ONLOAD% ""] \
 						    ] \
 					    ]
 	    } else {
@@ -584,6 +588,8 @@ proc main {} {
 							[list %VLAN%   $qvlan] \
 							[list %ADDR%   ""] \
 							[list %URLUID% $u2] \
+							[list %HEADER% ""] \
+							[list %ONLOAD% ""] \
 						    ] \
 					    ]
 
