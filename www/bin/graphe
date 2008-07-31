@@ -58,7 +58,7 @@ set conf(form)	{
     {taille		0 1}
 }
 
-set conf(idrfmt)	"http://%IDRHOST%/bin/gengraph?id=%s&debut=%d&fin=%d"
+set conf(idrfmt)	"http://%IDRHOST%/bin/gengraph?%s&debut=%d&fin=%d"
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -170,10 +170,24 @@ proc main {} {
     }
 
     #
+    # Gestion des id. Deux cas sont possibles :
+    # - plusieurs séparés par des "|"
+    #	dans ce cas, on fait id= ... & id=... & ...
+    # - plusieurs séparés par "+" ou un seul : 
+    #	dans ce cas, on fait id=...
+    #
+
+    set lid {}
+    foreach i [split $id "|"] {
+	lappend lid "id=[::webapp::post-string $i]"
+    }
+    set hid [join $lid "&"]
+
+    #
     # Sortie de la page
     #
 
-    set url [format $conf(idrfmt) [::webapp::post-string $id] $debut $fin]
+    set url [format $conf(idrfmt) $hid $debut $fin]
     append url $urltaille
     gengraph $url $conf(err)
 

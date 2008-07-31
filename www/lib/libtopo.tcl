@@ -449,6 +449,7 @@ proc ip-in {ip net} {
 #   2006/12/29 : pda             : parametre vlan passé par variable
 #   2008/07/30 : pda             : adaptation au nouvel extractcoll
 #   2008/07/30 : pda             : codage de multiples id
+#   2008/07/31 : pda             : ajout de |
 #
 
 proc verifier-metro-id {dbfd id _tabuid _titre} {
@@ -460,7 +461,7 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
     # Au cas où les id seraient multiples
     #
 
-    set lid [split $id "+"]
+    set lid [split $id "+|"]
 
     #
     # Récupérer la liste des points de collecte
