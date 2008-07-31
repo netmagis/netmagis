@@ -7,6 +7,7 @@
 #
 # Paramètres (formulaire ou URL) :
 #   - id : id du point de collecte sélectionné
+#	ou plusieurs id, séparés par soit des "+", soit des "|"
 #   - taille : taille du graphe : "petit", "moyen", "grand"
 #   - un intervalle de temps :
 #	- soit periode
@@ -24,6 +25,7 @@
 #   2006/12/12 : jean/boggia     : ajout du paramètre periode et taille
 #   2007/01/12 : pda             : mutualisation initialisation
 #   2008/07/30 : pda             : généralisation aux graphes wifi
+#   2008/07/31 : pda             : plusieurs courbes sur le même graphe avec "|"
 #
 
 set conf(homeurl)	%HOMEURL%
