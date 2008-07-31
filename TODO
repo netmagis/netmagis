@@ -1,21 +1,31 @@
-$Id: TODO,v 1.7 2008-07-30 14:55:08 pda Exp $
+$Id: TODO,v 1.8 2008-07-31 14:57:37 pda Exp $
 
 => dans la page topo/bin/eq
     => présenter les paramètres radio
     => présenter les infos spécifiques wifi
 
-www/bin/wifi
+www/bin/eq
+    (infos spécifiques wifi)
     présente la liste de "mes" bâtiments :
-	med-bat1 [_Trafic] [_N Assoc]
+	med-bat1-ap [_Trafic] [_N Assoc] <graphes>
 	    _med-bat1-ap1 [_Trafic] [_N Assoc]
 	    _med-bat1-ap2 [_Trafic] [_N Assoc]
 	    ...
-	med-bat2 [_Trafic] [_N Assoc]
-	    _med-bat2-ap1 [_Trafic] [_N Assoc]
-	    _med-bat2-ap2 [_Trafic] [_N Assoc]
+	med-bat2-ap [_Trafic] [_N Assoc] <graphes>
+	    _med-bat2-ap1
+	    _med-bat2-ap2
 	    ...
 
     N est le nombre d'associations actuelles
+
+    <graphes>
+	Cumul [Auh][Assoc] Détail/ssid [Auth][Assoc] Détail/ap [Auth][Assoc]
+
+    Graphes accessibles dans la page d'un ap spécifiques :
+			.../bin/eq?eq=insa-ap1
+	sur l'i/f Dot11Radio0
+	    Cumul [Auth][Assoc] (avec moyenne + crète)
+	    Détail/ssid [Auth][Assoc] (les moyennes de chaque ssid)
 
     Lien "Trafic" d'un AP
 	Trafic de l'AP par SSID sur l'interface radio (en supposant
