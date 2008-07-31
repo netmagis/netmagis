@@ -177,11 +177,18 @@ proc main {} {
     #	dans ce cas, on fait id=...
     #
 
-    set lid {}
-    foreach i [split $id "|"] {
-	lappend lid "id=[::webapp::post-string $i]"
+    set lid [split $id "|"]
+    if {[llength $lid] <= 1} then {
+	set lid "id=[::webapp::post-string $id]"
+    } else {
+	set n 1
+	set hid {}
+	foreach i $lid {
+	    lappend hid "id$n=[::webapp::post-string $i]"
+	    incr n
+	}
+	set hid [join $hid "&"]
     }
-    set hid [join $lid "&"]
 
     #
     # Sortie de la page
