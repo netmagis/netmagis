@@ -247,7 +247,7 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 	    #
 	    # Noeud : on recommence récursivement
 	    #
-	    lappend arbre [generer-arbre-eq $fils thier tabeq $u1]
+	    lappend arbre [generer-arbre-eq $fils thier tabeq tabwifi $u1]
 	}
     }
     return [linsert $arbre 0 $racine]
