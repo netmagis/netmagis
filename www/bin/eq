@@ -18,6 +18,7 @@
 #   2007/01/11 : pda        : substitution possible d'un uid
 #   2008/05/06 : pda        : ajout localisation
 #   2008/07/31 : pda/boggia : vue arborescente
+#   2008/08/01 : pda        : stats wifi sur la page d'un équipement
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -53,6 +54,7 @@ set conf(form)	{
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
 set conf(extracteq)	"%TOPODIR%/bin/extracteq %s %s < %GRAPH%"
+set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
 set conf(urlstat)	"$conf(homeurl)/bin/metro?id=%s%s"
 set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
 set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
@@ -198,6 +200,7 @@ proc hiearchiser-liste-equipements {_t leq} {
 #   - racine : racine de l'arbre
 #   - _thier : tableau passé par nom, contenant l'arborescence
 #   - _tabeq : tableau passé par nom, contenant les équipements
+#   - _tabwifi : tableau passé par nom, contenant les sondes wifi
 #   - u1 : fragment d'url pour le paramètre "uid=..." le cas échéant
 # Sortie :
 #   - valeur de retour : liste des arbres dont la racine est à ce
@@ -205,12 +208,14 @@ proc hiearchiser-liste-equipements {_t leq} {
 #
 # Historique :
 #   2008/07/31 : pda/boggia : conception
+#   2008/08/01 : pda/boggia : ajout tabwifi
 #
 
-proc generer-arbre-eq {racine _thier _tabeq u1} {
+proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
     global conf
     upvar $_thier thier
     upvar $_tabeq tabeq
+    upvar $_tabwifi tabwifi
 
     set arbre {}
     foreach fils $thier($racine) {
@@ -275,7 +280,7 @@ proc main {} {
     }
 
     #
-    # Récupérer les informations lues dans le graphe
+    # Récupérer les informations sur les équipements lues dans le graphe
     #
 
     set cmd [format $conf(dumpgraph) $tabuid(flags)]
@@ -295,6 +300,34 @@ proc main {} {
     if {[catch {close $fd} msg]} then {
 	::webapp::error-exit $conf(err) \
 		"Erreur lors de la lecture des équipements (msg)"
+    }
+
+    #
+    # Récupérer les stats wifi sur ces équipements
+    #
+
+    set cmd [format $conf(extractcoll) $tabuid(flags)]
+    set fd [open "|$cmd" "r"]
+    while {[gets $fd ligne] > -1} {
+	set kw [lindex $ligne 0]
+	switch $kw {
+	    nbassocwifi -
+	    nbauthwifi {
+		set id    [lindex $ligne 1]
+		set weq   [lindex $ligne 2]
+		set iface [lindex $ligne 4]
+		set ssid  [lindex $ligne 5]
+
+		if {[info exists tabeq($weq)]} then {
+		    lappend tabwifi($weq) [list $kw $id $ssid]
+		    lappend tabwifi($weq:$iface) [list $kw $id $ssid]
+		}
+	    }
+	}
+    }
+    if {[catch {close $fd} msg]} then {
+	::webapp::error-exit $conf(err) \
+		"Erreur lors de la lecture des sondes wifi (msg)"
     }
 
     #
@@ -383,6 +416,11 @@ proc main {} {
 	    set texte ""
 	    foreach i $iflist {
 		set txt ""
+
+		#
+		# Nom de l'interface et paramètres associés (Ethernet, radio)
+		#
+
 		set ligne $tabiface($i)
 
 		set nom   [lindex $ligne 1]
@@ -423,6 +461,96 @@ proc main {} {
 		    append txt [::webapp::helem "a" "$eq2 $if2" "href" $urleqiface]
 		}
 
+		#
+		# Récapitulatif des stats wifi
+		#
+
+		if {[info exists tabwifi($nomeq:$i)]} then {
+		    #
+		    # Cumuler les graphes d'associations et d'authentification
+		    # Cumuler les graphes par ssid
+		    #
+		    set cumulkw(assoc) {}
+		    set cumulkw(auth)  {}
+		    foreach l $tabwifi($nomeq:$i) {
+			# kw id ssid
+			set kw [lindex $l 0]
+			set id [lindex $l 1]
+			set ssid [lindex $l 2]
+
+			switch $kw {
+			    nbassocwifi {
+				lappend cumulkw(assoc) $id
+				lappend detailassoc($ssid) $id
+			    }
+			    nbauthwifi  {
+				lappend cumulkw(auth) $id
+				lappend detailauth($ssid) $id
+			    }
+			}
+		    }
+
+		    append txt " "
+
+		    #
+		    # Cumuls
+		    #
+
+		    if {[llength $cumulkw(assoc)] > 1} then {
+			set hid [join $cumulkw(assoc) "+"]
+			set url [format $conf(urlstat) \
+					[::webapp::post-string $hid] $u1]
+			append txt " "
+			append txt [::webapp::helem "a" {[Cumul Assoc]} \
+							"href" $url]
+		    }
+		    if {[llength $cumulkw(auth)] > 1} then {
+			set hid [join $cumulkw(auth) "+"]
+			set url [format $conf(urlstat) \
+					[::webapp::post-string $hid] $u1]
+			append txt " "
+			append txt [::webapp::helem "a" {[Cumul Auth]} \
+							"href" $url]
+		    }
+
+		    #
+		    # Détails par SSID
+		    #
+
+		    set l [array names detailassoc]
+		    if {[llength $l] > 1} then {
+			set lid {}
+			foreach ssid $l {
+			    lappend lid $detailassoc($ssid)
+			}
+			set hid [join $lid "|"]
+			set url [format $conf(urlstat) \
+					[::webapp::post-string $hid] $u1]
+			append txt " "
+			append txt [::webapp::helem "a" {[Détail Assoc]} \
+							"href" $url]
+		    }
+
+		    set l [array names detailauth]
+		    if {[llength $l] > 1} then {
+			set lid {}
+			foreach ssid $l {
+			    lappend lid $detailauth($ssid)
+			}
+			set hid [join $lid "|"]
+			set url [format $conf(urlstat) \
+					[::webapp::post-string $hid] $u1]
+			append txt " "
+			append txt [::webapp::helem "a" {[Détail Auth]} \
+							"href" $url]
+		    }
+
+		}
+
+		#
+		# Parcours des vlans présents sur cette interface
+		#
+
 		set nvlan [llength $ligne]
 		foreach vlan [lsort -index 0 -integer $ligne] {
 		    set vlanid [lindex $vlan 0]
@@ -456,6 +584,39 @@ proc main {} {
 			append txt [::webapp::helem "a" $ip "href" $urll3]
 		    }
 		}
+
+		#
+		# Pour les interfaces radio, parcourir les points
+		# de métrologie pour les ssid trouvés
+		#
+
+		set ssidprec ""
+		if {[info exists tabwifi($nomeq:$i)]} then {
+		    foreach l [lsort -index 2 $tabwifi($nomeq:$i)] {
+			# kw id ssid
+			set kw [lindex $l 0]
+			set id [lindex $l 1]
+			set ssid [lindex $l 2]
+
+			switch $kw {
+			    nbassocwifi { set k "assoc" }
+			    nbauthwifi  { set k "auth" }
+			    default     { set k "???" }
+			}
+
+			set url [format $conf(urlstat) $id $u1]
+			if {! [string equal $ssid $ssidprec]} then {
+			    append txt "\n<BR>\nSsid $ssid "
+			}
+			append txt [::webapp::helem "a" "\[$k\]" "href" $url]
+
+			set ssidprec $ssid
+		    }
+		}
+
+		#
+		# Résultat final
+		#
 		append texte [::webapp::helem "li" [::webapp::helem "p" $txt]]
 	    }
 	    set texte [::webapp::helem "ul" $texte]
@@ -520,7 +681,7 @@ proc main {} {
 	    #
 
 	    hiearchiser-liste-equipements thier [array names tabeq]
-	    set arbre [generer-arbre-eq "" thier tabeq $u1]
+	    set arbre [generer-arbre-eq "" thier tabeq tabwifi $u1]
 	    set t [::webapp::interactive-tree "leq" $arbre]
 
 	    set head1  [lindex $t 0]

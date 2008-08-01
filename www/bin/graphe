@@ -181,7 +181,7 @@ proc main {} {
 
     set lid [split $id "|"]
     if {[llength $lid] <= 1} then {
-	set lid "id=[::webapp::post-string $id]"
+	set hid "id=[::webapp::post-string $id]"
     } else {
 	set n 1
 	set hid {}
