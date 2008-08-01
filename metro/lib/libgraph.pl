@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: libgraph.pl,v 1.4 2008-07-30 15:49:32 boggia Exp $
+# $Id: libgraph.pl,v 1.5 2008-08-01 12:11:38 boggia Exp $
 ###########################################################
 # Creation : 21/05/08 : boggia
 #
@@ -11,7 +11,7 @@ sub genere_graph
 {
     my ($type,$nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
 
-    system("echo \"$type,$nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire\" > /var/tmp/gengraph.out");
+    #system("echo \"$type,$nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire\" > /var/tmp/gengraph.out");
 
     # liste des fonction de création de graphiques
     my %function_graph = (
@@ -271,9 +271,9 @@ sub GaugeWiFi
         	);
 
 	}
-    	elsif($nb_rrd_bases > 1 && $nb_rrd_bases < 40)
+    	elsif(@l > 1)
     	{
-        	aggregGaugeWiFi($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire);
+        	aggregGaugeWiFi($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire,$vertical_label);
     	}
     	else
     	{
@@ -287,7 +287,172 @@ sub GaugeWiFi
 # Fonction générique qui graphe les utilisateurs WiFi
 sub aggregGaugeWiFi
 {
-	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_
+	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire,$vertical_label) = @_;
+
+    	my ($width,$height) = split(/x/,$size);
+
+    	my $couleur_cumul = "c9c9c9";
+    	my @couleurs_flux = qw(e207ff 0010ff ffbb00 32bc2d ff8800 ff0000 00ffaa 000000 fb96be 795634);
+
+    	my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
+
+    	my @liste_arg1;
+    	my @liste_total;
+
+    	# creation des parametres pour le cumul total
+    	my $drawtotal;
+    	$drawtotal->{'type'} = "area";
+    	$drawtotal->{'color'} = $couleur_cumul;
+    	$drawtotal->{'name'} = "total";
+    	$drawtotal->{'legend'} = "cummul";
+   
+    	my $drawline;
+    	# dereferencement
+    	my @l = @$ref_l;
+   
+    	# creation d'objets draw de type hidden pour chaque courbe
+    	my $tl = @l;
+    	my $plus;
+   	for(my $i=0;$i<$tl;$i++)
+    	{
+		my $ttl = @{$l[$i]};
+		my $plusline="";
+		for(my $j=0;$j<$ttl;$j++)
+		{  
+	    		my $draw;
+	    		$draw->{'file'} = $l[$i][$j]{'base'};
+	    		$draw->{'type'} = "hidden";
+	    		#$drawin->{'dsname'} = "input";
+	    		$draw->{'name'} = "$l[$i][$j]{'graph'}__clients";
+	    		$draw->{'cfunc'} = "AVERAGE";
+	    		$draw->{'name'} =~ s/\./__/g;
+	    		# calcul du cumul total (afficher sour forme d'une aire)
+	    		if(exists $drawtotal->{'cdef'})
+	    		{
+				$drawtotal->{'cdef'}="$drawtotal->{'cdef'},$draw->{'name'}";
+				$plus = "$plus,+";
+	    		}
+	    		else
+	    		{
+				$drawtotal->{'cdef'}=$draw->{'name'};
+	    		}
+	    		# calcul du cumul seulement pour les donnes bases explicitement aggregees
+	    		# ex : Mescarpe-ap3.authwifi.osiris+Mescarpe-ap3.authwifi.osiris-sec
+	    		# (afficher sous forme de ligne)
+	    		if(exists $drawline->{$i}->{'cdef'})
+	    		{		   
+				$drawline->{$i}->{'cdef'}="$drawline->{$i}->{'cdef'},$draw->{'name'}";
+				$plusline = "$plusline,+"; 
+	    		}
+	    		else
+	    		{
+				$drawline->{$i}->{'cdef'}=$draw->{'name'};
+	    		}
+
+	    		push @liste_arg1,"draw";
+	    		push @liste_arg1,$draw;
+		}
+		# pour additionner les valeurs aggregees
+		$drawline->{$i}->{'cdef'}="$drawline->{$i}->{'cdef'}$plusline";
+    	} 
+    
+    	# pour additionner les valeurs aggregees pour le cummul 
+    	$drawtotal->{'cdef'}="$drawtotal->{'cdef'}$plus";
+    
+    	# ecriture du graphique de cumul en entree
+    	push @liste_total,"draw";
+    	push @liste_total,$drawtotal;
+
+    	# comparaison des legendes pour la mise en page
+    	my %llegend;
+    	$llegend{'total'} = split(//,$drawtotal->{'legend'});
+    	my $maxlengthlengend = $llegend{'total'};
+
+    	for($i=0;$i<$tl;$i++)
+    	{
+        	if($l[$i][0]{'legend'} eq "")
+        	{
+            		$l[$i][0]{'legend'} = $l[$i][0]{'graph'};
+        	}
+        	$llegend{$i} = split(//,$l[$i][0]{'legend'});
+        	if($maxlengthlengend < $llegend{$i})
+        	{
+            		$maxlengthlengend = $llegend{$i};
+        	}
+    	}
+    	$maxlengthlengend = $maxlengthlengend + 4;
+
+    	# ecriture de la legende en entree
+    	my $spaces = get_spaces(0,$maxlengthlengend,8);
+    	push @liste_arg1,"comment";
+    	push @liste_arg1,"$spaces min      max     moyen   actuel\\n";
+    	my $gprinttotal;
+    	$spaces = get_spaces($llegend{'total'},$maxlengthlengend,0);
+    	push @liste_total,"comment";
+    	push @liste_total,$spaces;
+	$gprinttotal->{0}->{'draw'}="total";
+        $gprinttotal->{0}->{'format'}="MIN:%5.0lf %S";
+        push @liste_total,"gprint";
+        push @liste_total,$gprinttotal->{0};
+    	$gprinttotal->{1}->{'draw'}="total";
+    	$gprinttotal->{1}->{'format'}="MAX:%5.0lf %S";
+    	push @liste_total,"gprint";
+    	push @liste_total,$gprinttotal->{1};
+    	$gprinttotal->{2}->{'draw'}="total";
+    	$gprinttotal->{2}->{'format'}="AVERAGE:%5.0lf %S";
+    	push @liste_total,"gprint";
+    	push @liste_total,$gprinttotal->{2};
+    	$gprinttotal->{3}->{'draw'}="total";
+    	$gprinttotal->{3}->{'format'}="LAST:%5.0lf %S\\n";
+    	push @liste_total,"gprint";
+    	push @liste_total,$gprinttotal->{3};
+    	
+	my $gprint;
+    	# on cree les objets draw pour afficher les lignes
+    	for($i=0;$i<$tl;$i++)
+    	{
+		# ecriture de la courbe en input
+		$drawline->{$i}->{'type'} = "line";
+    		$drawline->{$i}->{'color'} = $couleurs_flux[$i];
+		$drawline->{$i}->{'name'} = "ssid$i";
+		# insertion de la legende
+		$drawline->{$i}->{'legend'} = "$l[$i][0]{'legend'}";
+		push @liste_total,"draw";
+		push @liste_total,$drawline->{$i};
+		$gprint->{$i}->{0}->{'draw'}=$drawline->{$i}->{'name'};
+		$gprint->{$i}->{0}->{'format'}="MIN:%5.0lf %S";
+		$spaces = get_spaces($llegend{$i},$maxlengthlengend,0);
+		push @liste_total,"comment";
+		push @liste_total,$spaces;
+		push @liste_total,"gprint";
+		push @liste_total,$gprint->{$i}->{0};
+		$gprint->{$i}->{1}->{'draw'}=$drawline->{$i}->{'name'};
+        	$gprint->{$i}->{1}->{'format'}="MAX:%5.0lf %S";
+        	push @liste_total,"gprint";
+        	push @liste_total,$gprint->{$i}->{1};
+		$gprint->{$i}->{2}->{'draw'}=$drawline->{$i}->{'name'};
+        	$gprint->{$i}->{2}->{'format'}="AVERAGE:%5.0lf %S";
+        	push @liste_total,"gprint";
+        	push @liste_total,$gprint->{$i}->{2};
+		$gprint->{$i}->{3}->{'draw'}=$drawline->{$i}->{'name'};
+                $gprint->{$i}->{3}->{'format'}="LAST:%5.0lf %S\\n";
+                push @liste_total,"gprint";
+                push @liste_total,$gprint->{$i}->{3};
+    	}
+	
+	$rrd->graph(
+        	image           => "-",
+        	title           => "$commentaire",
+        	vertical_label  => "$vertical_label",
+        	lower_limit     => 0,
+        	units_exponent  => 0,
+       	 	height          => $height,
+        	width           => $width,
+        	start           => $start,
+        	end             => $end,
+        	@liste_arg1,
+		@liste_total,
+        );
 
 }
 
