@@ -1,4 +1,4 @@
-# $Id: sonde-assoc-ap.pl,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# $Id: sonde-assoc-ap.pl,v 1.2 2008-08-01 13:11:53 boggia Exp $
 # ###################################################################
 # boggia : Creation : 25/03/08
 # boggia : Modification : Creation de la fonction get_authaccess_list
@@ -926,11 +926,11 @@ sub set_auth_db
 	    {
 		
 	    }
-	    elsif(($time - 300) > $tab_trouveactiveauth[$j][4])
+	    elsif(($time - 600) > $tab_trouveactiveauth[$j][4])
 	    {
 		# l'adresse MAC de l'authentifie n'existe pas dans la table des associes
 		# on ferme la session
-		print RAP "<> test ($time - 300) > $tab_trouveactiveauth[$j][4] ok\n";
+		print RAP "<> test ($time - 600) > $tab_trouveactiveauth[$j][4] ok\n";
 		print RAP "===> close $tab_trouveactiveauth[$j][2], set fin = now and close = 1\n";
 
 		my $r = $db->prepare( "
