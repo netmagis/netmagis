@@ -204,7 +204,7 @@ proc hiearchiser-liste-equipements {_t leq} {
 #   - u1 : fragment d'url pour le paramètre "uid=..." le cas échéant
 # Sortie :
 #   - valeur de retour : liste des arbres dont la racine est à ce
-#	niveau)
+#	niveau
 #
 # Historique :
 #   2008/07/31 : pda/boggia : conception
