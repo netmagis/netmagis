@@ -79,6 +79,81 @@ source $conf(libdns)
 source $conf(libtopo)
 
 #
+# Cumuler les stats wifi pour un point d'accès
+#
+# Entrée :
+#   - sondes : liste des sondes wifi pour ce point d'accès
+#	au format {{<nbauthwifi|nbassocwifi> <id> <ssid>}
+#   - _tab : nom d'un tableau contenant en retour les stats accumulées
+# Sortie :
+#   - valeur de retour : aucune
+#   - paramètre _tab : contient
+#	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:nssid)	<nb d'id>
+#	tab(:assoc:cumul)	<id>+<id>+...
+#	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:<ssid>)	<id>	ou ""
+#	(idem avec :auth en plus de :assoc)
+#
+# Historique :
+#   2008/08/02 : pda        : conception
+#
+
+proc cumul-wifi {sondes _tab} {
+    upvar $_tab tab
+
+    catch {unset tab}
+    set lclefs {assoc auth}
+
+    #
+    # Cumuler les graphes d'associations et d'authentification
+    # Cumuler les graphes par ssid
+    #
+
+    set tab(:ssid)	   {}
+
+    foreach clef $lclefs {
+	set tab(:$clef:cumul)  {}
+	set tab(:$clef:nssid)  0
+    }
+
+    foreach l $sondes {
+	# kw id ssid
+	set kw [lindex $l 0]
+	set id [lindex $l 1]
+	set ssid [lindex $l 2]
+
+	if {! [info exists seen($ssid)]} then {
+	    lappend tab(:ssid) $ssid
+	    set seen($ssid) 1
+	    foreach clef $lclefs {
+		set tab(:$clef:$ssid) ""
+	    }
+	}
+
+	switch $kw {
+	    nbassocwifi { set clef "assoc" }
+	    nbauthwifi  { set clef "auth" }
+	    default     { set clef "???" }
+	}
+
+	incr tab(:$clef:nssid)
+	lappend tab(:$clef:cumul) $id
+	set tab(:$clef:$ssid) $id
+	lappend tab(:$clef:ssid) $ssid
+    }
+
+    foreach clef $lclefs {
+	set tab(:$clef:cumul) [join $tab(:$clef:cumul) "+"]
+    }
+
+    set tab(:ssid) [lsort $tab(:ssid)]
+    foreach clef $lclefs {
+	set tab(:$clef:ssid) [lsort $tab(:$clef:ssid)]
+    }
+}
+
+#
 # Hierarchiser un élément dans un tableau en vue de consituer une
 # arborescence
 #
@@ -470,81 +545,39 @@ proc main {} {
 		    # Cumuler les graphes d'associations et d'authentification
 		    # Cumuler les graphes par ssid
 		    #
-		    set cumulkw(assoc) {}
-		    set cumulkw(auth)  {}
-		    foreach l $tabwifi($nomeq:$i) {
-			# kw id ssid
-			set kw [lindex $l 0]
-			set id [lindex $l 1]
-			set ssid [lindex $l 2]
-
-			switch $kw {
-			    nbassocwifi {
-				lappend cumulkw(assoc) $id
-				lappend detailassoc($ssid) $id
-			    }
-			    nbauthwifi  {
-				lappend cumulkw(auth) $id
-				lappend detailauth($ssid) $id
-			    }
-			}
-		    }
+		    cumul-wifi $tabwifi($nomeq:$i) tw
 
 		    append txt " "
 
-		    #
-		    # Cumuls
-		    #
+		    foreach k {assoc auth} {
+			if {$tw(:$k:nssid) > 1} then {
+			    #
+			    # Cumuls (seulement si plus d'un ssid)
+			    #
 
-		    if {[llength $cumulkw(assoc)] > 1} then {
-			set hid [join $cumulkw(assoc) "+"]
-			set url [format $conf(urlstat) \
-					[::webapp::post-string $hid] $u1]
-			append txt " "
-			append txt [::webapp::helem "a" {[Cumul Assoc]} \
-							"href" $url]
-		    }
-		    if {[llength $cumulkw(auth)] > 1} then {
-			set hid [join $cumulkw(auth) "+"]
-			set url [format $conf(urlstat) \
-					[::webapp::post-string $hid] $u1]
-			append txt " "
-			append txt [::webapp::helem "a" {[Cumul Auth]} \
-							"href" $url]
-		    }
+			    set hid $tw(:$k:cumul)
+			    set url [format $conf(urlstat) \
+					    [::webapp::post-string $hid] $u1]
+			    append txt " "
+			    append txt [::webapp::helem "a" "\[Cumul $k\]" \
+							    "href" $url]
 
-		    #
-		    # Détails par SSID
-		    #
+			    #
+			    # Détails par SSID (seulement si plus d'un ssid)
+			    #
 
-		    set l [array names detailassoc]
-		    if {[llength $l] > 1} then {
-			set lid {}
-			foreach ssid $l {
-			    lappend lid $detailassoc($ssid)
+			    set lid {}
+			    foreach ssid $tw(:$k:ssid) {
+				lappend lid $tw(:$k:$ssid)
+			    }
+			    set hid [join $lid "|"]
+			    set url [format $conf(urlstat) \
+					    [::webapp::post-string $hid] $u1]
+			    append txt " "
+			    append txt [::webapp::helem "a" "\[Détail $k\]" \
+							    "href" $url]
 			}
-			set hid [join $lid "|"]
-			set url [format $conf(urlstat) \
-					[::webapp::post-string $hid] $u1]
-			append txt " "
-			append txt [::webapp::helem "a" {[Détail Assoc]} \
-							"href" $url]
 		    }
-
-		    set l [array names detailauth]
-		    if {[llength $l] > 1} then {
-			set lid {}
-			foreach ssid $l {
-			    lappend lid $detailauth($ssid)
-			}
-			set hid [join $lid "|"]
-			set url [format $conf(urlstat) \
-					[::webapp::post-string $hid] $u1]
-			append txt " "
-			append txt [::webapp::helem "a" {[Détail Auth]} \
-							"href" $url]
-		    }
-
 		}
 
 		#
@@ -590,27 +623,17 @@ proc main {} {
 		# de métrologie pour les ssid trouvés
 		#
 
-		set ssidprec ""
 		if {[info exists tabwifi($nomeq:$i)]} then {
-		    foreach l [lsort -index 2 $tabwifi($nomeq:$i)] {
-			# kw id ssid
-			set kw [lindex $l 0]
-			set id [lindex $l 1]
-			set ssid [lindex $l 2]
-
-			switch $kw {
-			    nbassocwifi { set k "assoc" }
-			    nbauthwifi  { set k "auth" }
-			    default     { set k "???" }
+		    foreach ssid $tw(:ssid) {
+			append txt "\n<BR>\nSsid $ssid "
+			foreach k {assoc auth} {
+			    set id $tw(:$k:$ssid)
+			    if {! [string equal $id ""]} then {
+				set url [format $conf(urlstat) $id $u1]
+				append txt [::webapp::helem "a" "\[$k\]" \
+							"href" $url]
+			    }
 			}
-
-			set url [format $conf(urlstat) $id $u1]
-			if {! [string equal $ssid $ssidprec]} then {
-			    append txt "\n<BR>\nSsid $ssid "
-			}
-			append txt [::webapp::helem "a" "\[$k\]" "href" $url]
-
-			set ssidprec $ssid
 		    }
 		}
 
