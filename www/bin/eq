@@ -78,6 +78,52 @@ package require pgsql
 source $conf(libdns)
 source $conf(libtopo)
 
+##############################################################################
+# Cumuls de stats wifi
+##############################################################################
+
+#
+# Note générale :
+# Le format des statistiques wifi est un tableau contenant les clefs
+# suivantes ::
+#	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:nssid)	<nb d'id>
+#	tab(:assoc:cumul)	<id>+<id>+...
+#	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:<ssid>)	<id>	ou ""
+#	(idem avec :auth en plus de :assoc)
+# La fonction "cumul-wifi" accumule ces stats
+#
+
+#
+# Initialiser des stats wifi
+#
+# Entrée :
+#   - _tab : nom d'un tableau contenant en retour les stats accumulées
+# Sortie :
+#   - valeur de retour : aucune
+#   - paramètre _tab : contient
+#
+# Historique :
+#   2008/08/03 : pda        : conception
+#
+
+proc init-cumul-wifi {_tab} {
+    upvar $_tab tab
+
+    catch {unset tab}
+
+    set lclefs {assoc auth}
+
+    set tab(:ssid)	   {}
+
+    foreach k $lclefs {
+	set tab(:$k:cumul)  {}
+	set tab(:$k:nssid)  0
+	set tab(:$k:ssid)   {}
+    }
+}
+
 #
 # Cumuler les stats wifi pour un point d'accès
 #
@@ -92,7 +138,7 @@ source $conf(libtopo)
 #	tab(:assoc:nssid)	<nb d'id>
 #	tab(:assoc:cumul)	<id>+<id>+...
 #	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:<ssid>)	<id>	ou ""
+#	tab(:assoc:<ssid>)	{<id>}	ou {}
 #	(idem avec :auth en plus de :assoc)
 #
 # Historique :
@@ -102,20 +148,9 @@ source $conf(libtopo)
 proc cumul-wifi {sondes _tab} {
     upvar $_tab tab
 
-    catch {unset tab}
+    init-cumul-wifi tab
+
     set lclefs {assoc auth}
-
-    #
-    # Cumuler les graphes d'associations et d'authentification
-    # Cumuler les graphes par ssid
-    #
-
-    set tab(:ssid)	   {}
-
-    foreach clef $lclefs {
-	set tab(:$clef:cumul)  {}
-	set tab(:$clef:nssid)  0
-    }
 
     foreach l $sondes {
 	# kw id ssid
@@ -126,32 +161,81 @@ proc cumul-wifi {sondes _tab} {
 	if {! [info exists seen($ssid)]} then {
 	    lappend tab(:ssid) $ssid
 	    set seen($ssid) 1
-	    foreach clef $lclefs {
-		set tab(:$clef:$ssid) ""
+	    foreach k $lclefs {
+		set tab(:$k:$ssid) {}
 	    }
 	}
 
 	switch $kw {
-	    nbassocwifi { set clef "assoc" }
-	    nbauthwifi  { set clef "auth" }
-	    default     { set clef "???" }
+	    nbassocwifi { set k "assoc" }
+	    nbauthwifi  { set k "auth" }
+	    default     { set k "???" }
 	}
 
-	incr tab(:$clef:nssid)
-	lappend tab(:$clef:cumul) $id
-	set tab(:$clef:$ssid) $id
-	lappend tab(:$clef:ssid) $ssid
+	incr tab(:$k:nssid)
+	lappend tab(:$k:cumul) $id
+	lappend tab(:$k:$ssid) $id
+	lappend tab(:$k:ssid) $ssid
     }
 
-    foreach clef $lclefs {
-	set tab(:$clef:cumul) [join $tab(:$clef:cumul) "+"]
+    foreach k $lclefs {
+	set tab(:$k:cumul) [join $tab(:$k:cumul) "+"]
     }
 
     set tab(:ssid) [lsort $tab(:ssid)]
-    foreach clef $lclefs {
-	set tab(:$clef:ssid) [lsort $tab(:$clef:ssid)]
+    foreach k $lclefs {
+	set tab(:$k:ssid) [lsort $tab(:$k:ssid)]
     }
 }
+
+#
+# Accumuler les stats wifi de plusieurs points d'accès
+#
+# Entrée :
+#   - _tr : tableau résumé
+#   - _t1 : tableau d'un point d'accès
+# Sortie :
+#   - valeur de retour : aucune
+#   - paramètre _tab : contient
+#	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:nssid)	<nb d'id>
+#	tab(:assoc:cumul)	<id>+<id>+...
+#	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:<ssid>)	<id>	ou ""
+#	(idem avec :auth en plus de :assoc)
+#
+# Historique :
+#   2008/08/04 : pda        : spécification
+#
+
+proc accumuler {_tr _t1} {
+    upvar $_tr tr
+    upvar $_t1 t1
+
+    set lclefs {assoc auth}
+    foreach ssid $t1(:ssid) {
+	if {[lsearch $ssid $tr(:ssid)]} then {
+	    lappend tr(:ssid) $ssid
+	}
+    }
+
+    foreach k $lclefs {
+	foreach ssid $t1(:$k:ssid) {
+	    if {! [info exists tr(:$k:$ssid)]} then {
+#		set tr(:$k:$ssid) [concat $tr(:$k:$ssid) $t1(:$k:$ssid)]
+	    }
+	}
+    }
+
+    set tr(:ssid) [lsort $tr(:ssid)]
+    foreach k $lclefs {
+	set tr(:$k:ssid) [lsort $tr(:$k:ssid)]
+    }
+}
+
+##############################################################################
+# Arborisation d'une liste d'équipements
+##############################################################################
 
 #
 # Hierarchiser un élément dans un tableau en vue de consituer une
@@ -278,8 +362,7 @@ proc hiearchiser-liste-equipements {_t leq} {
 #   - _tabwifi : tableau passé par nom, contenant les sondes wifi
 #   - u1 : fragment d'url pour le paramètre "uid=..." le cas échéant
 # Sortie :
-#   - valeur de retour : liste des arbres dont la racine est à ce
-#	niveau
+#   - valeur de retour : liste des arbres dont la racine est à ce niveau
 #
 # Historique :
 #   2008/07/31 : pda/boggia : conception
@@ -293,6 +376,9 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
     upvar $_tabwifi tabwifi
 
     set arbre {}
+    set nwifi 0
+    init-cumul-wifi tab
+
     foreach fils $thier($racine) {
 	#
 	# Cette boucle a pour but d'éviter de faire des niveaux
@@ -318,6 +404,15 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 
 	    set lien [::webapp::helem "a" $prec "href" $url]
 	    lappend arbre [list "$lien $type $modele"]
+
+	    #
+	    # Stats wifi
+	    #
+	    if {[info exists tabwifi($prec)]} then {
+		incr nwifi
+		cumul-wifi $tabwifi($prec) tw
+		accumuler tab tw
+	    }
 	} else {
 	    #
 	    # Noeud : on recommence récursivement
@@ -325,6 +420,20 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 	    lappend arbre [generer-arbre-eq $fils thier tabeq tabwifi $u1]
 	}
     }
+
+    #
+    # Affichage de la racine
+    #
+
+    set rhtml $racine
+    if {$nwifi == [llength $thier($racine)]} then {
+	#
+	# Affichage des stats wifi si toutes les feuilles sont
+	# des points d'accès
+	#
+
+    }
+
     return [linsert $arbre 0 $racine]
 }
 
@@ -568,7 +677,7 @@ proc main {} {
 
 			    set lid {}
 			    foreach ssid $tw(:$k:ssid) {
-				lappend lid $tw(:$k:$ssid)
+				set lid [concat $lid $tw(:$k:$ssid)]
 			    }
 			    set hid [join $lid "|"]
 			    set url [format $conf(urlstat) \
