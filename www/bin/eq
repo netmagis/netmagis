@@ -890,7 +890,8 @@ proc main {} {
 
 	    hiearchiser-liste-equipements thier [array names tabeq]
 	    set arbre [generer-arbre-eq "" thier tabeq tabwifi $u1]
-	    set t [::webapp::interactive-tree "leq" $arbre]
+	    set expcoll {{tout dérouler} {tout enrouler}}
+	    set t [::webapp::interactive-tree "leq" $arbre $expcoll]
 
 	    set head1  [lindex $t 0]
 	    set head2  [lindex $t 1]
