@@ -87,10 +87,9 @@ source $conf(libtopo)
 # Le format des statistiques wifi est un tableau contenant les clefs
 # suivantes ::
 #	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:nssid)	<nb d'id>
 #	tab(:assoc:cumul)	<id>+<id>+...
 #	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:<ssid>)	<id>	ou ""
+#	tab(:assoc:ssid:<ssid>)	{<id>}	ou {}
 #	(idem avec :auth en plus de :assoc)
 # La fonction "cumul-wifi" accumule ces stats
 #
@@ -119,8 +118,8 @@ proc init-cumul-wifi {_tab} {
 
     foreach k $lclefs {
 	set tab(:$k:cumul)  {}
-	set tab(:$k:nssid)  0
 	set tab(:$k:ssid)   {}
+	set tab(:$k:ap)     {}
     }
 }
 
@@ -135,10 +134,9 @@ proc init-cumul-wifi {_tab} {
 #   - valeur de retour : aucune
 #   - paramètre _tab : contient
 #	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:nssid)	<nb d'id>
 #	tab(:assoc:cumul)	<id>+<id>+...
 #	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:<ssid>)	{<id>}	ou {}
+#	tab(:assoc:ssid:<ssid>)	{<id>}	ou {}
 #	(idem avec :auth en plus de :assoc)
 #
 # Historique :
@@ -162,7 +160,7 @@ proc cumul-wifi {sondes _tab} {
 	    lappend tab(:ssid) $ssid
 	    set seen($ssid) 1
 	    foreach k $lclefs {
-		set tab(:$k:$ssid) {}
+		set tab(:$k:ssid:$ssid) {}
 	    }
 	}
 
@@ -172,9 +170,8 @@ proc cumul-wifi {sondes _tab} {
 	    default     { set k "???" }
 	}
 
-	incr tab(:$k:nssid)
 	lappend tab(:$k:cumul) $id
-	lappend tab(:$k:$ssid) $id
+	lappend tab(:$k:ssid:$ssid) $id
 	lappend tab(:$k:ssid) $ssid
     }
 
@@ -189,7 +186,7 @@ proc cumul-wifi {sondes _tab} {
 }
 
 #
-# Accumuler les stats wifi de plusieurs points d'accès
+# Accumuler les stats wifi d'un nouveau point d'accès
 #
 # Entrée :
 #   - _tr : tableau résumé
@@ -198,14 +195,15 @@ proc cumul-wifi {sondes _tab} {
 #   - valeur de retour : aucune
 #   - paramètre _tab : contient
 #	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:nssid)	<nb d'id>
 #	tab(:assoc:cumul)	<id>+<id>+...
 #	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:<ssid>)	<id>	ou ""
+#	tab(:assoc:ssid:<ssid>)	{<id>}	ou {}
+#	tab(:assoc:ap)		{{<id>+...} {<id>+...} ...}
 #	(idem avec :auth en plus de :assoc)
 #
 # Historique :
 #   2008/08/04 : pda        : spécification
+#   2008/08/14 : pda        : fin du codage
 #
 
 proc accumuler {_tr _t1} {
@@ -213,19 +211,60 @@ proc accumuler {_tr _t1} {
     upvar $_t1 t1
 
     set lclefs {assoc auth}
+
+    #
+    # Ajouter le ssid à la liste totale des ssid si besoin est
+    #
+
     foreach ssid $t1(:ssid) {
 	if {[lsearch $ssid $tr(:ssid)]} then {
 	    lappend tr(:ssid) $ssid
 	}
     }
 
+    #
+    # Ajouter les stats par ssid
+    #
+
     foreach k $lclefs {
 	foreach ssid $t1(:$k:ssid) {
-	    if {! [info exists tr(:$k:$ssid)]} then {
-#		set tr(:$k:$ssid) [concat $tr(:$k:$ssid) $t1(:$k:$ssid)]
+	    set c ":$k:ssid:$ssid"
+	    if {[info exists tr($c)]} then {
+		set l [concat $tr($c) $t1($c)]
+	    } else {
+		set l $t1($c)
 	    }
+	    set tr($c) $l
 	}
     }
+
+    #
+    # Ajouter les stats par ap
+    #
+
+    foreach k $lclefs {
+	set l {}
+	foreach ssid $t1(:$k:ssid) {
+	    lappend l $t1(:$k:ssid:$ssid)
+	}
+	lappend tr(:$k:ap) [join $l "+"]
+    }
+
+    #
+    # Cumuler le cumul
+    #
+
+    foreach k $lclefs {
+	if {[string equal $tr(:$k:cumul) ""]} then {
+	    set tr(:$k:cumul) $t1(:$k:cumul)
+	} else {
+	    append tr(:$k:cumul) "+$t1(:$k:cumul)"
+	}
+    }
+
+    #
+    # Trier les listes finales
+    #
 
     set tr(:ssid) [lsort $tr(:ssid)]
     foreach k $lclefs {
@@ -377,7 +416,7 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 
     set arbre {}
     set nwifi 0
-    init-cumul-wifi tab
+    init-cumul-wifi twa
 
     foreach fils $thier($racine) {
 	#
@@ -411,7 +450,7 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 	    if {[info exists tabwifi($prec)]} then {
 		incr nwifi
 		cumul-wifi $tabwifi($prec) tw
-		accumuler tab tw
+		accumuler twa tw
 	    }
 	} else {
 	    #
@@ -426,15 +465,52 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
     #
 
     set rhtml $racine
-    if {$nwifi == [llength $thier($racine)]} then {
+    if {$nwifi > 1 && $nwifi == [llength $thier($racine)]} then {
 	#
 	# Affichage des stats wifi si toutes les feuilles sont
 	# des points d'accès
 	#
 
+	#
+	# Cumuls
+	#
+
+	append rhtml " (cumuls "
+	foreach k {assoc auth} {
+	    set hid $twa(:$k:cumul)
+	    set url [format $conf(urlstat) [::webapp::post-string $hid] $u1]
+	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
+	}
+
+	#
+	# Détails par SSID
+	#
+
+	append rhtml ", détail/SSID "
+	foreach k {assoc auth} {
+	    set lid {}
+	    foreach ssid $twa(:$k:ssid) {
+		set lid [concat $lid $twa(:$k:ssid:$ssid)]
+	    }
+	    set hid [join $lid "|"]
+	    set url [format $conf(urlstat) [::webapp::post-string $hid] $u1]
+	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
+	}
+
+	#
+	# Détails par point d'accès
+	#
+
+	append rhtml ", détail/AP "
+	foreach k {assoc auth} {
+	    set hid [join $twa(:$k:ap) "|"]
+	    set url [format $conf(urlstat) [::webapp::post-string $hid] $u1]
+	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
+	}
+	append rhtml ")"
     }
 
-    return [linsert $arbre 0 $racine]
+    return [linsert $arbre 0 $rhtml]
 }
 
 ##############################################################################
@@ -659,7 +735,7 @@ proc main {} {
 		    append txt " "
 
 		    foreach k {assoc auth} {
-			if {$tw(:$k:nssid) > 1} then {
+			if {[llength $tw(:$k:ssid)] > 1} then {
 			    #
 			    # Cumuls (seulement si plus d'un ssid)
 			    #
@@ -677,7 +753,7 @@ proc main {} {
 
 			    set lid {}
 			    foreach ssid $tw(:$k:ssid) {
-				set lid [concat $lid $tw(:$k:$ssid)]
+				set lid [concat $lid $tw(:$k:ssid:$ssid)]
 			    }
 			    set hid [join $lid "|"]
 			    set url [format $conf(urlstat) \
@@ -736,7 +812,7 @@ proc main {} {
 		    foreach ssid $tw(:ssid) {
 			append txt "\n<BR>\nSsid $ssid "
 			foreach k {assoc auth} {
-			    set id $tw(:$k:$ssid)
+			    set id [lindex $tw(:$k:ssid:$ssid) 0]
 			    if {! [string equal $id ""]} then {
 				set url [format $conf(urlstat) $id $u1]
 				append txt [::webapp::helem "a" "\[$k\]" \
