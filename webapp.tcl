@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.13 2008-06-17 21:51:36 jean Exp $
+# $Id: webapp.tcl,v 1.14 2008-08-14 17:18:40 pda Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -147,6 +147,7 @@ namespace eval webapp {
 	  list-style: none;
 	  padding: 0;
 	  margin: 0;
+	  line-height: 100%;
 	}
 
 	ul#%ID% a {
@@ -705,6 +706,8 @@ proc ::webapp::form-hidden {var defval} {
 #	    chaque <arbre-fils> pouvant être lui-même un arbre.
 #	    Si un arbre n'a pas de racine unique, le <code-html> de la
 #	    racine est vide, et chaque fils constitue une racine.
+#	- expcoll : liste de deux textes à afficher (pour tout dérouler
+#	    et tout enrouler, dans l'ordre)
 # Sortie :
 #   - valeur de retour : liste contenant les éléments suivants :
 #		{head1 head2 onload html}
@@ -735,9 +738,10 @@ proc ::webapp::form-hidden {var defval} {
 #
 # Historique :
 #   2008/06/12 : pda/jean : conception
+#   2008/08/14 : pda      : ajout expcoll
 #
 
-proc ::webapp::interactive-tree {id tree} {
+proc ::webapp::interactive-tree {id tree expcoll} {
     set root      [lindex $tree 0]
     set children  [lreplace $tree 0 0]
     set nchildren [llength $children]
@@ -781,6 +785,29 @@ proc ::webapp::interactive-tree {id tree} {
 	set li [::webapp::interactive-tree-rec 1 $tree 1]
     }
     set ul [helem ul $li "id" $id]
+
+    #
+    # Afficher les boutons "tout enrouler" et "tout dérouler"
+    #
+
+    if {[llength $expcoll] == 0} then {
+	set de [lindex $expcoll 0]
+	set en [lindex $expcoll 1]
+
+	set i1 [helem "img" "" \
+			    "src" "$::webapp::treeimages/tree-plus-only.png" \
+			    "alt" "+" \
+			    "onclick" "multide('$id', 'block')" \
+			    "class" "click" \
+			]
+	set i2 [helem "img" "" \
+			    "src" "$::webapp::treeimages/tree-minus-only.png" \
+			    "alt" "+" \
+			    "onclick" "multide('$id', 'none')" \
+			    "class" "click" \
+			]
+	set ul "$i1 $de &nbsp;&nbsp;&nbsp; $i2 $en\n$ul"
+    }
 
     #
     # Résultat final : assemblage des quatre éléments
