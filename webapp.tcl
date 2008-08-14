@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.14 2008-08-14 17:18:40 pda Exp $
+# $Id: webapp.tcl,v 1.15 2008-08-14 17:20:56 pda Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -790,7 +790,7 @@ proc ::webapp::interactive-tree {id tree expcoll} {
     # Afficher les boutons "tout enrouler" et "tout dérouler"
     #
 
-    if {[llength $expcoll] == 0} then {
+    if {[llength $expcoll] > 0} then {
 	set de [lindex $expcoll 0]
 	set en [lindex $expcoll 1]
 
