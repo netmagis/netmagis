@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: libgraph.pl,v 1.5 2008-08-01 12:11:38 boggia Exp $
+# $Id: libgraph.pl,v 1.6 2008-09-02 11:54:02 boggia Exp $
 ###########################################################
 # Creation : 21/05/08 : boggia
 #
@@ -111,7 +111,7 @@ sub GaugeWiFi
 	{
 		my ($width,$height) = split(/x/,$size);
 
-        	my %color_lines = ( 	'avg'  => "00dd00",
+        	my %color_lines = ( 	'avg'  => "3d8d8d",
                             		'max'  => "b8ff4d",
         	);
 
@@ -292,7 +292,7 @@ sub aggregGaugeWiFi
     	my ($width,$height) = split(/x/,$size);
 
     	my $couleur_cumul = "c9c9c9";
-    	my @couleurs_flux = qw(e207ff 0010ff ffbb00 32bc2d ff8800 ff0000 00ffaa 000000 fb96be 795634);
+    	my @couleurs_flux = qw(ff0000 0055ff 00ff00 ffff00 000000 ff00ff 00c6ff 009800 ffa400 7f0000 ff6b01 7f007f a29951 ffa7cc 00007f 007f7f 007f00 a29900 827f00 4c4c4c 666666 665166 fbcbfb ffff8b ffc68b a2ffff ff5e5e fffdfc dec7c6 deebc6 deebee a299ea);
 
     	my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
 
@@ -304,7 +304,7 @@ sub aggregGaugeWiFi
     	$drawtotal->{'type'} = "area";
     	$drawtotal->{'color'} = $couleur_cumul;
     	$drawtotal->{'name'} = "total";
-    	$drawtotal->{'legend'} = "cummul";
+    	$drawtotal->{'legend'} = "cumul";
    
     	my $drawline;
     	# dereferencement
@@ -356,7 +356,7 @@ sub aggregGaugeWiFi
 		$drawline->{$i}->{'cdef'}="$drawline->{$i}->{'cdef'}$plusline";
     	} 
     
-    	# pour additionner les valeurs aggregees pour le cummul 
+    	# pour additionner les valeurs aggregees pour le cumul 
     	$drawtotal->{'cdef'}="$drawtotal->{'cdef'}$plus";
     
     	# ecriture du graphique de cumul en entree
