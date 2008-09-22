@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpedit,v 1.4 2008-07-23 10:14:16 pda Exp $
+# $Id: admgrpedit,v 1.5 2008-09-22 09:59:46 zamboni Exp $
 
 #
 # Script pour présenter les caractéristiques associées à un groupe
@@ -243,6 +243,7 @@ proc main {} {
 	set messagegroupe "Entrez le nom du groupe à créer"
 	set idgrp -1
 	set admin 0
+	set droitsmtp 0
     } else {
 	set qgroupe [::webapp::html-string $orggrp]
 	set titre "Édition du groupe '$qgroupe'"
