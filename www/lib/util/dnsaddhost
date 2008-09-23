@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsaddhost,v 1.6 2007-11-29 15:58:42 pda Exp $
+# $Id: dnsaddhost,v 1.7 2008-09-23 13:43:32 zamboni Exp $
 
 #
 # Script pour ajouter une machine dans la base
@@ -156,7 +156,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
 	# Rien n'existait pour ce nom, donc on insère un nouveau
 	# RR.
 	#
-	set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" "" "" "" $idcor trr]
+	set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 "" "" "" $idcor trr]
 	if {! [string equal $msg ""]} then {
 	    return "Impossible d'insérer : $msg"
 	}

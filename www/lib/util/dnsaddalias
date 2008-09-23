@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsaddalias,v 1.6 2007-11-29 15:58:42 pda Exp $
+# $Id: dnsaddalias,v 1.7 2008-09-23 13:43:32 zamboni Exp $
 
 #
 # Script pour ajouter un alias dans la base
@@ -126,7 +126,7 @@ proc add-alias {dbfd login idcor fqdnalias fqdnref} {
     # RR.
     #
 
-    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" "" "" "" $idcor newrr]
+    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 "" "" "" $idcor newrr]
     if {! [string equal $msg ""]} then {
 	return "Impossible d'insérer : $msg"
     }
