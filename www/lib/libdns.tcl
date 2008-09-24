@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.14 2008-07-29 15:52:52 pda Exp $
+# $Id: libdns.tcl,v 1.15 2008-09-24 07:33:51 pda Exp $
 #
 # Historique
 #   2002/03/27 : pda/jean : conception
@@ -1341,7 +1341,7 @@ proc presenter-rr {dbfd idrr tabrr} {
 	} else {
 	    set droitsmtp "Non"
 	}
-	lappend donnees [list Normal "Doit d'émission SMTP" $droitsmtp]
+	lappend donnees [list Normal "Droit d'émission SMTP" $droitsmtp]
     }
 
     # infos complémentaires
