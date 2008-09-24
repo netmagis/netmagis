@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: liste,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id: liste,v 1.5 2008-09-24 13:35:42 pda Exp $
 
 #
 # Script pour lister les machines d'un ou plusieurs domaines
@@ -26,6 +26,7 @@
 #   2004/01/14 : pda/jean : ajout IPv6
 #   2004/08/05 : pda/jean : ajout MAC
 #   2004/08/06 : pda/jean : extension des droits sur les réseaux
+#   2008/09/24 : pda/jean : ajout droitsmtp
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -76,7 +77,7 @@ set conf(form)		{
 set conf(tableau) {
     global {
 	chars {10 normal}
-	columns {21 17 10 9 13 17 6 7}
+	columns {21 17 12 9 13 17 6 6 7}
 	botbar {yes}
 	align {left}
 	latex {
@@ -87,6 +88,8 @@ set conf(tableau) {
 	title {yes}
 	topbar {yes}
 	chars {bold}
+	vbar {yes}
+	colonne { }
 	vbar {yes}
 	colonne { }
 	vbar {yes}
@@ -121,7 +124,13 @@ set conf(tableau) {
 	vbar {yes}
 	colonne { }
 	vbar {yes}
-	colonne { }
+	colonne {
+	    align {center}
+	}
+	vbar {yes}
+	colonne {
+	    align {center}
+	}
 	vbar {yes}
 	colonne { }
 	vbar {yes}
@@ -221,6 +230,7 @@ proc main {} {
 			  {Système}
 			  {Commentaire}
 			  {Responsable}
+			  {Émission SMTP}
 			  {Login}
 			  {Date}
 			}
@@ -273,7 +283,7 @@ proc main {} {
 	set sql "SELECT rr.nom || '.' || domaine.nom AS nom,
 			rr_ip.adr,
 			rr.commentaire, rr.respnom, rr.respmel, rr.date,
-			rr.mac, hinfo.texte, corresp.login
+			rr.droitsmtp, rr.mac, hinfo.texte, corresp.login
 		    FROM rr_ip, rr, domaine, hinfo, corresp
 		    WHERE rr.idrr = rr_ip.idrr
 			AND rr_ip.adr <<= ANY ($sqlallow)
@@ -291,6 +301,7 @@ proc main {} {
 	    set commentaire	$tab(commentaire)
 	    set respnom    	$tab(respnom)
 	    set respmel    	$tab(respmel)
+	    set droitsmtp	$tab(droitsmtp)
 	    set date		$tab(date)
 	    set login		$tab(login)
 	    if {[info exists cname($adr)]} then {
@@ -304,6 +315,11 @@ proc main {} {
 		set responsable $respnom
 	    }
 	    set date [clock format [clock scan $date] -format $jourfmt]
+	    if {$droitsmtp} then {
+		set droitsmtp "Oui"
+	    } else {
+		set droitsmtp "-"
+	    }
 	    switch -- $format {
 		html {
 		    set nom "$nomprimaire <I>$nomssecondaires</I>"
@@ -315,6 +331,7 @@ proc main {} {
 	    lappend donnees [list Normal \
 				$adr $nom $mac \
 				$hinfo $commentaire $responsable \
+				$droitsmtp \
 				$login $date]
 	    incr nbmachines
 	}
