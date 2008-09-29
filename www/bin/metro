@@ -165,6 +165,12 @@ proc main {} {
     set fin [clock scan $fin]
 
     #
+    # Remettre l'id en forme
+    #
+
+    set id [::webapp::post-string $id]
+
+    #
     # Sortie de la page
     #
 
