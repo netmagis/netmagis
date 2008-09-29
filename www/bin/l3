@@ -409,7 +409,7 @@ proc main {} {
 
 	switch -- $format {
 	    pdf {
-		set fd [open "|$prog -Tps $tmp.dot | $conf(ps2pdf) - -" "r"]
+		set fd [open "|$prog -Tps $tmp.dot 2> /dev/null | $conf(ps2pdf) - -" "r"]
 		fconfigure $fd -translation binary
 		set pdf [read $fd]
 		close $fd
@@ -424,7 +424,7 @@ proc main {} {
 		exit 0
 	    }
 	    default {
-		set map [exec sh -c "$prog -Tcmapx < $tmp.dot"]
+		set map [exec sh -c "$prog -Tcmapx < $tmp.dot 2> /dev/null"]
 		::webapp::send html [::webapp::file-subst $conf(page1) \
 					    [list \
 						    [list %EQ%     ""] \
