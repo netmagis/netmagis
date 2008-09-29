@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.15 2008-07-21 15:12:37 pda Exp $
+# $Id: parse-cisco.tcl,v 1.16 2008-09-29 16:45:56 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -319,7 +319,7 @@ proc cisco-parse {libdir model fdin fdout tab eq} {
 
     set error [ios-parse $libdir $model $fdin $fdout t $eq kwtab]
     if {! $error} then {
-	set error [cisco-post-process $model $fdout $eq t]
+	set error [cisco-post-process "cisco" $model $fdout $eq t]
     }
 
     return $error
@@ -1194,6 +1194,7 @@ proc cisco-sanitize {model eq tab} {
 # gérés par cet équipement
 #
 # Entrée :
+#   - type : "cisco" ou "hp"
 #   - model : modèle de l'équipement
 #   - fdout : fichier de sortie pour la génération
 #   - eq : nom de l'équipement
@@ -1213,7 +1214,7 @@ proc cisco-sanitize {model eq tab} {
 #   2008/06/27 : pda/jean  : ajout traitement des gigastacks
 #
 
-proc cisco-post-process {model fdout eq tab} {
+proc cisco-post-process {type model fdout eq tab} {
     global debug
     upvar $tab t
 
@@ -1239,7 +1240,7 @@ proc cisco-post-process {model fdout eq tab} {
     } else {
 	set l "-"
     }
-    puts $fdout "eq $eq type cisco model $model snmp $c location $l"
+    puts $fdout "eq $eq type $type model $model snmp $c location $l"
 
     #
     # Sortir tous les vlans locaux
