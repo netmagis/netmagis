@@ -1,4 +1,4 @@
-$Id: TODO,v 1.8 2008-07-31 14:57:37 pda Exp $
+$Id: TODO,v 1.9 2008-10-01 15:06:34 pda Exp $
 
 => dans la page topo/bin/eq
     => présenter les paramètres radio
@@ -83,3 +83,53 @@ TODO topo
 - trouver les vlans non utilisés
 - dresser l'état dynamique de tous les liens
 
+
+Gestion des noms de vlans et suppression de VTP
+
+    - exploitation :
+	sur tous les -cc et les -ci, on déclare :
+	    vlan 1-4095
+	pour pré-instancier tous les vlans et ne plus se poser le problème
+	de la continuité de l'instanciation sur le chemin entre un -ce
+	et le -rc
+
+    - exploitation :
+	crc-cc1 contient tous les noms des vlans : c'est le commutateur
+	de référence.
+
+    - ajout de lignes "lvlan" dans le graphe :
+	
+	lvlan <eq> <id> desc <desc> declared <yes/no> incoming <yes/no>
+
+	    => "declared" : déclaré dans la conf (i.e. vlan instancié
+		sur l'équipement)
+	    => "incoming" : vlan arrivant sur l'équipement via un
+		lien trunk par exemple
+
+	Combinaisons possibles
+
+	decl.	incom. signification
+	no	no	ok : vlan non présent
+	no	yes	sur un -ce : allow trop large sur le -cc correspondant
+			sur un -cc : pas possible
+			=> dans tous les cas : erreur
+	yes	no	sur un -ce : sans doute un reste de vieux vlan
+			sur un -cc : normal
+	yes	yes	ok : vlan transporté
+
+Scripts à écrire
+
+    instancier-vlan <eq> <id>
+	modification de la conf de l'équipement pour instancier le vlan
+	    et positionner la description en fct du graphe de topo
+
+    creer-vlan <id> <desc>
+	modification de la conf de crc-cc1 pour mettre le nom du vlan
+
+    supprimer-vlan <id>
+	modification de la conf de crc-cc1 pour supprimer le nom du vlan
+
+    vlan-libre [<id> ... <id>]
+	donne tous les vlans qui ont une description et pas de port
+	    access dans le graphe. Si un id est donné en argument,
+	    indique si le vlan correspondant est libre.
