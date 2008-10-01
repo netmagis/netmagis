@@ -44,6 +44,8 @@
 
     \titre {1} {Liste des %OBJETS%}
 
+    %MSGSTA%
+
     <TABLE>
 	<TR>
 	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/eq%URLUID%">

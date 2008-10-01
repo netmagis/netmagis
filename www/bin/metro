@@ -83,7 +83,7 @@ proc main {} {
     #
 
     init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
-			$conf(form) ftab dbfd uid tabuid ouid tabouid urluid
+		    $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
 
     foreach f $conf(form) {
 	set var [lindex $f 0]
@@ -177,6 +177,7 @@ proc main {} {
     ::webapp::send html [::webapp::file-subst $conf(page) \
 					[list \
 						[list %ADMIN%  "admin (future use)"] \
+						[list %MSGSTA% $msgsta] \
 						[list %TITRE%  $titre] \
 						[list %ID%     $id] \
 						[list %JDEBUT% $jdebut] \

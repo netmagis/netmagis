@@ -296,7 +296,7 @@ proc main {} {
     #
 
     init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
-			$conf(form) ftab dbfd uid tabuid ouid tabouid urluid
+		    $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
 
     foreach f $conf(form) {
 	set var [lindex $f 0]
@@ -347,6 +347,7 @@ proc main {} {
 
 	::webapp::send html [::webapp::file-subst $conf(pagen) \
 					    [list \
+						    [list %MSGSTA% $msgsta] \
 						    [list %OBJETS% "réseaux IP"] \
 						    [list %LISTE%  $liste] \
 						    [list %EQ%     ""] \
@@ -427,6 +428,7 @@ proc main {} {
 		set map [exec sh -c "$prog -Tcmapx < $tmp.dot 2> /dev/null"]
 		::webapp::send html [::webapp::file-subst $conf(page1) \
 					    [list \
+						    [list %MSGSTA% $msgsta] \
 						    [list %EQ%     ""] \
 						    [list %VLAN%   ""] \
 						    [list %RESEAU% $lnet] \

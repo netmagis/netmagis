@@ -5,10 +5,12 @@
 #   2006/06/05 : pda             : conception de la partie topo
 #   2006/05/24 : pda/jean/boggia : conception de la partie metro
 #   2007/01/11 : pda             : fusion des deux parties
+#   2008/10/01 : pda             : ajout de message de statut de la topo
 #
 
 set libconf(topodir)	%TOPODIR%
 set libconf(graph)	%GRAPH%
+set libconf(status)	%STATUS%
 
 set libconf(extractcoll)	"%TOPODIR%/bin/extractcoll %s < %GRAPH%"
 
@@ -44,10 +46,11 @@ array set libconf {
 #	- _ouid : login de l'utilisateur original, si substitué, ou chaîne vide
 #	- _tabouid : idem tabuid pour l'utilisateur original
 #	- _urluid : élément d'url à ajouter en cas de subsitution d'uid
+#	- _msgsta : message de status
 # Sortie :
 #   - valeur de retour : aucune
 #   - paramètres :
-#	- _ftab, _dbfd, _uid, _tabuid, _ouid, _tabouid : cf ci-dessus
+#	- _ftab, _dbfd, _uid, _tabuid, _ouid, _tabouid, _msgsta : cf ci-dessus
 #   - variables dont le nom est défini dans $form : modifiées
 #
 # Remarque
@@ -55,9 +58,10 @@ array set libconf {
 #
 # Historique
 #   2007/01/11 : pda              : conception
+#   2008/10/01 : pda              : ajout msgsta
 #
 
-proc init-topo {nologin base pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urluid} {
+proc init-topo {nologin base pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urluid _msgsta} {
     global libconf
 
     upvar $_ftab ftab
@@ -67,6 +71,7 @@ proc init-topo {nologin base pageerr attr form _ftab _dbfd _uid _tabuid _ouid _t
     upvar $_ouid ouid
     upvar $_tabouid tabouid
     upvar $_urluid urluid
+    upvar $_msgsta msgsta
 
     #
     # Pour le cas où on est en mode maintenance
@@ -186,6 +191,33 @@ proc init-topo {nologin base pageerr attr form _ftab _dbfd _uid _tabuid _ouid _t
 	    }
 
 	    set urluid "uid=[::webapp::post-string $uid]"
+	}
+    }
+
+    #
+    # Lit le statut général de la topo
+    # (seulement si l'utilisateur cible est admin)
+    #
+
+    set msgsta ""
+    if {$tabuid(admin)} then {
+	set f $libconf(status)
+	if {[file exists $f] && ![catch {set fd [open $f "r"]}]} then {
+	    if {[gets $fd date] > 0} then {
+		set msg [::webapp::html-string [read $fd]]
+		regsub -all "\n" $msg "<br>" msg
+
+		set texte [::webapp::helem "p" "Erreur de topo"]
+		append texte [::webapp::helem "p" \
+					    [::webapp::helem "font" $msg \
+						    "color" "#ff0000" \
+						] \
+				    ]
+		append texte [::webapp::helem "p" "... depuis $date"]
+
+		set msgsta [::webapp::helem "div" $texte "class" "alerte"]
+	    }
+	    close $fd
 	}
     }
 }

@@ -39,6 +39,8 @@
 
     \titre {1} {Vlan %VLAN% : %DESC%}
 
+    %MSGSTA%
+
     <TABLE>
 	<TR>
 	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/eq%URLUID%">

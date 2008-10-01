@@ -39,6 +39,8 @@
 
     \titre {1} {Interfaces de %EQ%}
 
+    %MSGSTA%
+
     <TABLE>
 	<TR>
 	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/eq%URLUID%">

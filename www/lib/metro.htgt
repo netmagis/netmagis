@@ -39,6 +39,8 @@
 
     \titre {1} {%TITRE%}
 
+    %MSGSTA%
+
     <FORM METHOD="POST" ACTION="%HOMEURL%/bin/metro%URLUID%">
 	<INPUT TYPE="HIDDEN" NAME="id" VALUE="%ID%">
 	Afficher les statistiques entre
