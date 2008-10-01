@@ -1,13 +1,19 @@
 #!/bin/sh
 
 #
-# $Id: anaconf,v 1.12 2008-07-30 08:48:49 pda Exp $
+# $Id: anaconf,v 1.13 2008-10-01 14:38:01 pda Exp $
 #
 # Enchaîne les différentes phases pour constituer le graphe du
 # réseau donné.
 #
 # Syntaxe :
-#	$0		(sans argument, fichier généré dans osiris.graph)
+#	$0 [-v] [-1] [-t]
+#
+# Génération du fichier d'état
+# - ce fichier est généré en cas d'erreur
+# - il contient en première ligne la date et dans les lignes suivantes
+#	la sortie d'erreur des commandes
+# - la partie 'erreur' est remise à zéro s'il n'y a pas d'erreur
 #
 # Historique :
 #   2004/06/08 : pda/jean   : conception
@@ -15,9 +21,11 @@
 #   2006/06/01 : pda/jean   : test communauté snmp
 #   2006/06/19 : pda/boggia : envoi des points de collecte
 #   2007/07/17 : pda        : non-détection par rancid du modèle d'ap cisco
+#   2008/10/01 : pda        : ajout du mode -1 (mode "une fois")
 #
 
-TMP=/tmp/p1.$$
+TMP=/tmp/topo.$$
+TMPERR=/tmp/topoerr.$$
 
 RANCIDDIR=/local/idr/conf/osiris
 RANCIDDB=$RANCIDDIR/router.db
@@ -29,10 +37,15 @@ DATADIR=$BASE/osiris
 EQVIRT=$DATADIR/eqvirt
 EQGEN=$DATADIR/eqgen
 DESTFILE=$DATADIR/osiris.graph
+STATUS=$DATADIR/osiris.status
 VLANFILE=$EQGEN/_vlan.eq
 URLSETGRAPH=http://metro.u-strasbg.fr/bin/setgraph
 
 VERBOSE=0
+
+##############################################################################
+# Fonctions utilitaires
+##############################################################################
 
 verbositer ()
 {
@@ -43,17 +56,8 @@ verbositer ()
 
 usage ()
 {
-    echo "usage: anaconf [-v] [-t]" >&2
+    echo "usage: anaconf [-v][-1][-t]" >&2
     exit 1
-}
-
-abort_if_error ()
-{
-    if [ $1 != 0 ]
-    then
-	echo "Abort" >&2
-	exit 1
-    fi
 }
 
 sortie ()
@@ -65,11 +69,249 @@ sortie ()
     exit 1
 }
 
+##############################################################################
+# Les actions du script
+##############################################################################
+
+#
+# Récupérer la liste des équipements dans le fichier de configuration
+# de rancid, avec le modèle de chaque équipement extrait du fichier de
+# l'équipement lui-même.
+#
+
+liste_rancid ()
+{
+    verbositer "appel à 'liste-rancid'"
+    $BINDIR/liste-rancid $RANCIDDB $RANCIDCONFDIR > $TMP
+    return $?
+}
+
+#
+# Nettoyer le répertoire de génération, au cas où d'anciens
+# équipements auraient été enlevés de rancid.
+#
+
+supprimer_eqgen ()
+{
+    rm -f $EQGEN/*
+    return 0
+}
+
+#
+# Récupérer la liste des vlans sur le serveur VTP, en explorant le
+# fichier de configuration de rancid et les différentes configurations
+# des équipements.
+#
+
+liste_vlans ()
+{
+    verbositer "appel à 'liste-vlans'"
+    $BINDIR/liste-vlans $RANCIDDB $RANCIDCONFDIR > $VLANFILE
+    return $?
+}
+
+#
+# Extraire les informations utiles des fichiers de configuration
+#
+
+analyser_confs ()
+{
+    while read name type model
+    do
+	# retirer le nom de domaine (simplification pour l'installation locale)
+	n=`echo $name | sed 's/\..*//'`
+
+	verbositer "analyse de $name"
+	# pour une raison que j'ignore, rancid ne détecte pas le modèle
+	# pour certains AP Cisco (et seulement pour certains).
+	if [ x"$model" = x ]
+	then model="INCONNU"
+	fi
+	$BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
+	    > $EQGEN/$n.eq
+    done < $TMP
+    return 0
+}
+
+#
+# Pour les équipements non gérés par rancid, copier les fichiers
+# "résultats d'analyse générés à la main".
+#
+
+copier_eqgen ()
+{
+    for nameeq in `ls $EQVIRT | grep '\.eq$'`
+    do
+	cp $EQVIRT/$nameeq $EQGEN/$nameeq
+    done
+    return 0
+}
+
+#
+# Génération du graphe
+# On construit dans un fichier temporaire afin de ne pas perturber
+# les autres applications qui pourraient tourner en ce moment
+# (interface Web par exemple).
+#
+
+generer_graphe ()
+{
+    verbositer "génération du graphe"
+    cat $EQGEN/* \
+	| $BINDIR/ssidprobes \
+	| $BINDIR/buildgraph > $DESTFILE.tmp \
+	    && mv $DESTFILE.tmp $DESTFILE
+    return $?
+}
+
+#
+# Vérification que la communauté SNMP est définie sur chaque équipement
+#
+
+verif_snmp ()
+{
+    verbositer "vérification des communautés SNMP"
+    r=0
+    WITHOUTSNMP=`$BINDIR/dumpgraph < $DESTFILE \
+	| sed -n '/^eq .* snmp -$/s/eq \([^ ]*\) .*/\1/p'`
+    if [ "$WITHOUTSNMP" != "" ]
+    then
+	(
+	    echo "Warning : equipements without any SNMP community string"
+	    echo "$WITHOUTSNMP" | sed 's/^/	/'
+	) >&2
+	r=1
+    fi
+    return $r
+}
+
+#
+# Vérification que les routeurs sont déclarés dans le DNS
+#
+
+verif_dns ()
+{
+    verbositer "vérification de la déclaration DNS des interfaces des routeurs"
+    $BINDIR/getnetif < $DESTFILE > /dev/null
+    #  | $BINDIR/checkdns
+    return 0
+}
+
+#
+# Envoi des points de collecte au métrologiseur
+#
+
+envoi_collecte ()
+{
+    r=0
+    if [ "$TESTONLY" != true ]
+    then
+	verbositer "envoi des points de collecte au métrologiseur"
+	$BINDIR/extractcoll -s -w < $DESTFILE | \
+		    $BINDIR/sendcoll $URLSETGRAPH
+	r=$?
+    fi
+    return $r
+}
+
+##############################################################################
+# Enchainement des actions
+##############################################################################
+
+#
+# Plusieurs modes possibles
+# - mode "normal"
+#	s'il y a une erreur
+#	alors
+#		si c'est une erreur différente de la dernière erreur vue
+#			dans le fichier d'état
+#		alors
+#			actualiser le fichier d'état avec l'erreur
+#			et la date de l'erreur
+#		fin si
+#		afficher l'erreur
+#	sinon
+#		ne rien afficher
+#	fin si
+# - mode "interactif"
+#	tout afficher
+# - mode "test"
+#	tout afficher
+#	
+
+enchainer ()
+{
+    liste_rancid		\
+	&& supprimer_eqgen	\
+	&& liste_vlans		\
+	&& analyser_confs	\
+	&& copier_eqgen		\
+	&& generer_graphe	\
+	&& verif_snmp		\
+	&& verif_dns		\
+	&& envoi_collecte
+    return $?
+}
+
+executer ()
+{
+    if [ "$UNEFOIS" = true -o "$TESTONLY" = true ]
+    then
+	enchainer
+	erreur=$?
+    else
+	rm -f $TMPERR
+	enchainer 2> $TMPERR
+
+	#
+	# On considère qu'il y a erreur dès que le code de retour
+	# l'indique, ou bien s'il y a sortie d'un message sur stderr
+	#
+
+	erreur=$?
+	if [ $erreur != 0 ]
+	then
+	    if [ -s $TMPERR ]
+	    then NEWERR="`cat $TMPERR`"
+	    else NEWERR="Erreur inconnue (pas de message d'erreur)"
+	    fi
+	else
+	    if [ -s $TMPERR ]
+	    then
+		erreur=1
+		NEWERR="`cat $TMPERR`"
+	    fi
+	fi
+
+	if [ $erreur = 0 ]
+	then
+	    rm -f $STATUS
+	else
+	    OLDERR="`sed 1d $STATUS`"
+	    if [ "$OLDERR" != "$NEWERR" ]
+	    then
+		(
+		    date
+		    echo "$NEWERR"
+		) > $STATUS
+	    fi
+	fi
+
+	cat $TMPERR
+    fi
+
+    return $erreur
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
 #
 # Vérification de syntaxe
 #
 
-set -- `getopt vt $*`
+set -- `getopt vt1 $*`
 
 if [ $? != 0 ]
 then usage
@@ -83,6 +325,9 @@ do
 		shift
 		;;
 	-t)	TESTONLY=true
+		shift
+		;;
+	-1)	UNEFOIS=true
 		shift
 		;;
 	--)	shift
@@ -113,111 +358,15 @@ then
 fi
 
 #
-# Récupérer la liste des équipements dans le fichier de configuration
-# de rancid, avec le modèle de chaque équipement extrait du fichier de
-# l'équipement lui-même.
+# On y va !
 #
 
-verbositer "appel à 'liste-rancid'"
-$BINDIR/liste-rancid $RANCIDDB $RANCIDCONFDIR > $TMP
-abort_if_error $?
-
-#
-# Nettoyer le répertoire de génération, au cas où d'anciens
-# équipements auraient été enlevés de rancid.
-#
-rm -f $EQGEN/*
-
-#
-# Récupérer la liste des vlans sur le serveur VTP, en explorant le
-# fichier de configuration de rancid et les différentes configurations
-# des équipements.
-#
-
-verbositer "appel à 'liste-vlans'"
-$BINDIR/liste-vlans $RANCIDDB $RANCIDCONFDIR > $VLANFILE
-abort_if_error $?
-
-#
-# Extraire les informations utiles des fichiers de configuration
-#
-
-while read name type model
-do
-    # retirer le nom de domaine (simplification pour l'installation locale)
-    n=`echo $name | sed 's/\..*//'`
-
-    verbositer "analyse de $name"
-    # pour une raison que j'ignore, rancid ne détecte pas le modèle
-    # pour certains AP Cisco (et seulement pour certains).
-    if [ x"$model" = x ]
-    then model="INCONNU"
-    fi
-    $BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
-	> $EQGEN/$n.eq
-done < $TMP
-
-#
-# Pour les équipements non gérés par rancid, copier les fichiers
-# "résultats d'analyse générés à la main".
-#
-
-for nameeq in `ls $EQVIRT | grep '\.eq$'`
-do
-    cp $EQVIRT/$nameeq $EQGEN/$nameeq
-done
-
-#
-# Génération du graphe
-# On construit dans un fichier temporaire afin de ne pas perturber
-# les autres applications qui pourraient tourner en ce moment
-# (interface Web par exemple).
-#
-
-verbositer "génération du graphe"
-cat $EQGEN/* \
-    | $BINDIR/ssidprobes \
-    | $BINDIR/buildgraph > $DESTFILE.tmp \
-	&& mv $DESTFILE.tmp $DESTFILE
-abort_if_error $?
-
-#
-# Vérification que la communauté SNMP est définie sur chaque équipement
-#
-
-verbositer "vérification des communautés SNMP"
-WITHOUTSNMP=`$BINDIR/dumpgraph < $DESTFILE | sed -n '/^eq .* snmp -$/s/eq \([^ ]*\) .*/\1/p'`
-if [ "$WITHOUTSNMP" != "" ]
-then
-    (
-	echo "Warning : equipements without any SNMP community string"
-	echo "$WITHOUTSNMP" | sed 's/^/	/'
-    ) >&2
-fi
-
-#
-# Vérification que les routeurs sont déclarés dans le DNS
-#
-
-verbositer "vérification de la déclaration DNS des interfaces des routeurs"
-$BINDIR/getnetif < $DESTFILE > /dev/null
-#  | $BINDIR/checkdns
-
-#
-# Envoi des points de collecte au métrologiseur
-#
-
-if [ $TESTONLY != true ]
-then
-    verbositer "envoi des points de collecte au métrologiseur"
-    $BINDIR/extractcoll -s -w < $DESTFILE | \
-		$BINDIR/sendcoll $URLSETGRAPH
-    abort_if_error $?
-fi
+executer
+erreur=$?
 
 #
 # Nettoyage de sortie
 #
 
-rm -f $TMP
-exit 0
+rm -f $TMP $TMPERR
+exit $erreur
