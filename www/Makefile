@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.9 2008-10-01 20:55:55 pda Exp $
+# $Id: Makefile,v 1.10 2008-10-01 21:06:08 pda Exp $
 #
 # Makefile pour lancer l'installation de l'application topo
 # Ce Makefile n'est normalement jamais appelé lui-même, mais
@@ -43,7 +43,7 @@ DOT	= /usr/local/bin/dot
 PS2PDF	= sh $(DESTDIR)/lib/ps2pdf
 
 # Version de l'application
-VERSION = 0.3
+VERSION = 0.4
 
 #
 # Motif de substitution à appliquer à chaque fichier installé
