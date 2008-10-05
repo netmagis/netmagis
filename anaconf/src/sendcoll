@@ -2,7 +2,7 @@
 
 
 #
-# $Id: sendcoll,v 1.4 2008-07-30 08:48:49 pda Exp $
+# $Id: sendcoll,v 1.5 2008-10-05 09:17:20 pda Exp $
 #
 # Prend sur l'entrée standard une liste des points de collecte
 # (telle que générée par extractcoll -s -w), et la présente au
@@ -108,35 +108,39 @@ proc read-coll {fd _tab} {
 #   - url : url pour l'envoi
 #   - query : les données à POSTer
 # Sortie :
-#   - valeur de retour : message d'erreu ou chaîne vide
+#   - valeur de retour : message d'erreur ou chaîne vide
 #
 # Historique :
 #   2008/07/28 : pda/boggia : conception
+#   2008/10/05 : pda        : meilleur message d'erreur
 #
 
 proc send-http {url query} {
     global conf
 
-    set token [::http::geturl $url -query $query]
-    switch [::http::status $token] {
-	ok {
-	    set data [::http::data $token]
-	    switch -glob -- $data {
-		OK* {
-		    set msg ""
-		}
-		default {
-		    set msg $data
+    if {[catch {set token [::http::geturl $url -query $query]} m]} then {
+	set msg "Erreur de connexion vers $url\n$m"
+    } else {
+	switch [::http::status $token] {
+	    ok {
+		set data [::http::data $token]
+		switch -glob -- $data {
+		    OK* {
+			set msg ""
+		    }
+		    default {
+			set msg $data
+		    }
 		}
 	    }
+	    default {
+		set msg [::http::code $token]
+	    }
 	}
-	default {
-	    set msg [::http::code $token]
+	::http::cleanup $token
+	if {$conf(verbose)} then {
+	    puts stderr "$query\n-> '$msg'"
 	}
-    }
-    ::http::cleanup $token
-    if {$conf(verbose)} then {
-	puts stderr "$query\n-> '$msg'"
     }
     return $msg
 }
