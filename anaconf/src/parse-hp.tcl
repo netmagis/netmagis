@@ -1,5 +1,5 @@
 #
-# $Id: parse-hp.tcl,v 1.3 2008-09-29 16:45:56 pda Exp $
+# $Id: parse-hp.tcl,v 1.4 2008-10-10 18:57:21 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS HP
 #
@@ -114,6 +114,7 @@ proc hp-parse {libdir model fdin fdout tab eq} {
 #
 # Historique
 #   2008/07/07 : pda/jean : conception
+#   2008/10/10 : pda      : correction bug si plusieurs occurrences de l'i/f
 #
 
 proc hp-parse-interface {active line tab idx} {
@@ -122,13 +123,28 @@ proc hp-parse-interface {active line tab idx} {
     set line [string trim $line]
     if {[regexp {^[-A-Za-z0-9]+$} $line]} then {
 	set t($idx!context) "iface"
-	lappend t($idx!if) $line
 	set t($idx!current!if) $line
-	set t($idx!if!$line!link!name) ""
-	set t($idx!if!$line!link!desc) ""
-	set t($idx!if!$line!link!stat) ""
+	#
+	# Il est possible que l'interface apparaisse deux fois
+	# dans le fichier de configuration :
+	#	interface 1
+	#	  name "..."
+	#	  no lacp
+	#	exit
+	#	...
+	#	interface 1
+	#	  mdix-mode mdix
+	#	exit
+	# => ne pas tout mettre à zéro.
+	#
+	if {! [info exists t($idx!if!$line!link!name)]} then {
+	    lappend t($idx!if) $line
+	    set t($idx!if!$line!link!name) ""
+	    set t($idx!if!$line!link!desc) ""
+	    set t($idx!if!$line!link!stat) ""
 
-	hp-ajouter-iface t $idx $line
+	    hp-ajouter-iface t $idx $line
+	}
     }
 
     return 0
