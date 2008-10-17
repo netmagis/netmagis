@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.12 2008-07-29 12:54:03 pda Exp $
+ * $Id: textread.c,v 1.13 2008-10-17 20:41:04 pda Exp $
  */
 
 #include "graph.h"
@@ -400,6 +400,7 @@ static void process_L1 (struct attrtab *attrtab, struct node *n)
     {
 	struct radio *r ;
 	char *m = NULL ;
+	char *p, *q ;
 
 	if (avlr == NULL)
 	    m = "SSID parameter without radio information on %s/%s" ;
@@ -413,8 +414,30 @@ static void process_L1 (struct attrtab *attrtab, struct node *n)
 
 	r = &(n->u.l1.radio) ;
 
-	if (sscanf (attr_get_val (avlr), "%d %d", &r->channel, &r->power) != 2)
-	    inconsistency ("Invalid radio parameters (%s)", attr_get_val (avlr)) ;
+	/* process radio parameters */
+
+	p = attr_get_val (avlr) ;
+	while (isspace (*p))
+	    p++ ;
+	/* first word */
+	q = p ;
+	while (! isspace (*p) && *p != '\0')
+	    p++ ;
+	if (*p == '\0')
+	{
+	    inconsistency ("Too few radio parameters on %s/%s", n->eq->name, n->u.l1.ifname) ;
+	    return ;
+	}
+	*p++ = '\0' ;
+	if (strcmp (q, "dfs") == 0)
+	    r->channel = CHAN_DFS ;
+	else if (sscanf (q, "%d", &r->channel) != 1)
+	    inconsistency ("Invalid radio channel (%s) on %s/%s", q, n->eq->name, n->u.l1.ifname) ;
+	/* second word */
+	while (isspace (*p))
+	    p++ ;
+	if (sscanf (p, "%d", &r->power) != 2)
+	    inconsistency ("Invalid radio power (%s) on %s/%s", p, n->eq->name, n->u.l1.ifname) ;
 
 	/* process ssid list */
 	while (avls != NULL)

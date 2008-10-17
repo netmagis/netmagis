@@ -1,5 +1,5 @@
 /*
- * $Id: textwrite.c,v 1.9 2008-07-29 12:54:03 pda Exp $
+ * $Id: textwrite.c,v 1.10 2008-10-17 20:41:04 pda Exp $
  */
 
 #include "graph.h"
@@ -66,7 +66,17 @@ static void text_write_nodes (FILE *fp)
 			struct ssid *s ;
 
 			r = &(n->u.l1.radio) ;
-			fprintf (fp, " radio %d %d", r->channel, r->power) ;
+			fprintf (fp, "radio ") ;
+			switch (r->channel)
+			{
+			    case CHAN_DFS :
+				fprintf (fp, " dfs") ;
+				break ;
+			    default :
+				fprintf (fp, " %d", r->channel) ;
+				break ;
+			}
+			fprintf (fp, " %d", r->power) ;
 
 			for (s = r->ssid ; s != NULL ; s = s->next)
 			{

@@ -1,5 +1,5 @@
 /*
- * $Id: graph.h,v 1.10 2008-07-29 12:54:03 pda Exp $
+ * $Id: graph.h,v 1.11 2008-10-17 20:41:04 pda Exp $
  */
 
 /*
@@ -265,10 +265,12 @@ enum L1type
     L1T_ETHER,
 } ;
 
+#define	CHAN_DFS	-1
+
 struct radio
 {
     struct ssid *ssid ;			/* SSID list or NULL if no radio */
-    int channel ;			/* channel frequency */
+    int channel ;			/* channel frequency ou CHAN_* */
     int power ;				/* radio power */
 } ;
 
