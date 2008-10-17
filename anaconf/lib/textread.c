@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.13 2008-10-17 20:41:04 pda Exp $
+ * $Id: textread.c,v 1.14 2008-10-17 21:02:44 pda Exp $
  */
 
 #include "graph.h"
@@ -436,7 +436,7 @@ static void process_L1 (struct attrtab *attrtab, struct node *n)
 	/* second word */
 	while (isspace (*p))
 	    p++ ;
-	if (sscanf (p, "%d", &r->power) != 2)
+	if (sscanf (p, "%d", &r->power) != 1)
 	    inconsistency ("Invalid radio power (%s) on %s/%s", p, n->eq->name, n->u.l1.ifname) ;
 
 	/* process ssid list */
