@@ -1,5 +1,5 @@
 /*
- * $Id: extracteq.c,v 1.9 2008-06-22 21:02:23 pda Exp $
+ * $Id: extracteq.c,v 1.10 2008-10-17 21:24:12 pda Exp $
  */
 
 #include "graph.h"
@@ -48,7 +48,15 @@ void output_iface (FILE *fp, struct node *n)
     {
 	struct ssid *s ;
 
-	fprintf (fp, "%d %d", n->u.l1.radio.channel, n->u.l1.radio.power) ;
+	switch (n->u.l1.radio.channel)
+	{
+	    case CHAN_DFS :
+		fprintf (fp, "dfs") ;
+		break ;
+	    default :
+		fprintf (fp, "%d", n->u.l1.radio.channel) ;
+	}
+	fprintf (fp, " %d", n->u.l1.radio.power) ;
 	for (s = n->u.l1.radio.ssid ; s != NULL ; s = s->next)
 	    fprintf (fp, " %s", s->name) ;
     }
