@@ -789,15 +789,23 @@ proc decoder-date {date heure} {
 #
 # Historique
 #   2008/07/30 : pda : conception
+#   2008/10/17 : pda : canal "dfs"
 #
 
 proc conv-channel {freq} {
     global libconf
 
-    if {[info exists libconf(freq:$freq)]} then {
-	set channel $libconf(freq:$freq)
-    } else {
-	set channel "$freq MHz"
+    switch -- $freq {
+	dfs {
+	    set channel "auto"
+	}
+	default {
+	    if {[info exists libconf(freq:$freq)]} then {
+		set channel $libconf(freq:$freq)
+	    } else {
+		set channel "$freq MHz"
+	    }
+	}
     }
     return $channel
 }
