@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.17 2008-10-14 19:59:32 pda Exp $
+# $Id: parse-cisco.tcl,v 1.18 2008-10-17 20:24:39 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -849,10 +849,11 @@ proc cisco-parse-iface-ssid {active line tab idx} {
 #   - idx = eq!<eqname>
 #   - tab(eq!<nom eq>!current!if) <ifname>
 # Remplit :
-#   - tab(eq!<nom eq>!if!<ifname>!channel) <channel>
+#   - tab(eq!<nom eq>!if!<ifname>!channel) <channel> | dfs
 #
 # Historique
 #   2008/05/19 : pda      : conception
+#   2008/10/17 : pda      : les ap1130 autorisent "channel dfs" en 802.11a
 #
 
 proc cisco-parse-iface-channel {active line tab idx} {
