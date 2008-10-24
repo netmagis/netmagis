@@ -1,5 +1,5 @@
 #
-# $Id: parse-hp.tcl,v 1.5 2008-10-24 19:32:36 pda Exp $
+# $Id: parse-hp.tcl,v 1.6 2008-10-24 20:02:31 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS HP
 #
@@ -536,6 +536,60 @@ proc hp-prepost-process {eq tab} {
 
     foreach iface $t($idx!if!disabled) {
 	set error [cisco-remove-if t($idx!if) $iface]
+    }
+
+    #
+    # Sur les HP, on ne peut pas mettre de description sur
+    # les interfaces Trk. Donc, on ne peut y mettre de point
+    # de métrologie.
+    # Pour y remédier, mettre le point de métrologie que l'on
+    # voit sur toutes les interfaces qui participent au Trk,
+    # ou râler si ce point de métrologie n'est pas le même partout.
+    #
+
+    foreach iface $t(eq!$eq!if) {
+	if {[info exists t(eq!$eq!if!$iface!link!parentif)]
+		&& [info exists t(eq!$eq!if!$iface!link!stat)]} then {
+	    set parentif $t(eq!$eq!if!$iface!link!parentif)
+	    lappend tag($parentif) $t(eq!$eq!if!$iface!link!stat)
+	}
+    }
+
+    foreach parentif [array names tag] {
+	set sold ""
+	set ok 0
+	foreach snew $tag($parentif) {
+	    set s1 [string equal $sold ""]
+	    set s2 [string equal $snew ""]
+	    switch -- "$s1/$s2" {
+		1/1 {
+		    # les deux sont vides : on ne fait rien
+		}
+		1/0 {
+		    # le nouveau point de métro est le premier valide :
+		    # on initialise le point de métro de l'interface
+		    set sold $snew
+		    set ok 1
+		}
+		0/1 {
+		    # le nouveau point de métro est vide (et l'ancien
+		    # ne l'est pas) : on ne modifie donc rien.
+		}
+		0/0 {
+		    # le point de métro déjà vu est valide, de même
+		    # que le nouveau rencontré : il faut tester s'ils
+		    # sont identiques.
+		    if {! [string equal $sold $snew]} then {
+			warning "Inconsistent stat names for subinterfaces of $eq/$parentif ($sold != $snew)"
+			set ok 0
+			break
+		    }
+		}
+	    }
+	}
+	if {$ok} then {
+	    set t(eq!$eq!if!$parentif!link!stat) $sold
+	}
     }
 
     return $error
