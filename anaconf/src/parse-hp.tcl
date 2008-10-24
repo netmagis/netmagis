@@ -1,5 +1,5 @@
 #
-# $Id: parse-hp.tcl,v 1.4 2008-10-10 18:57:21 pda Exp $
+# $Id: parse-hp.tcl,v 1.5 2008-10-24 19:32:36 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS HP
 #
@@ -304,7 +304,7 @@ proc hp-parse-trunk {active line tab idx} {
 
 	set lsubif [parse-list $subifs yes]
 	foreach subif $lsubif {
-	    set error [hp-set-ifattr t $subif parentif $parentif]
+	    set error [hp-set-ifattr t $idx!if!$subif parentif $parentif]
 	    if {$error} then {
 		break
 	    }
@@ -365,11 +365,11 @@ proc hp-parse-untagged {active line tab idx} {
 	set vlanid $t($idx!lvlan!lastid)
 	set liface [parse-list $line yes]
 	foreach iface $liface {
-	    set error [hp-set-ifattr t $iface "type" "ether"]
+	    set error [hp-set-ifattr t $idx!if!$iface "type" "ether"]
 	    if {$error} then {
 		break
 	    }
-	    set error [hp-set-ifattr t $iface "vlan" $vlanid]
+	    set error [hp-set-ifattr t $idx!if!$iface "vlan" $vlanid]
 	    if {$error} then {
 		break
 	    }
@@ -389,11 +389,11 @@ proc hp-parse-tagged {active line tab idx} {
 	set vlanid $t($idx!lvlan!lastid)
 	set liface [parse-list $line yes]
 	foreach iface $liface {
-	    set error [hp-set-ifattr t $iface "type" "trunk"]
+	    set error [hp-set-ifattr t $idx!if!$iface "type" "trunk"]
 	    if {$error} then {
 		break
 	    }
-	    set error [hp-set-ifattr t $iface "vlan" $vlanid]
+	    set error [hp-set-ifattr t $idx!if!$iface "vlan" $vlanid]
 	    if {$error} then {
 		break
 	    }
