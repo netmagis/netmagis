@@ -1,4 +1,4 @@
-# $Id: sonde-generic-gauge.pl,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# $Id: sonde-generic-gauge.pl,v 1.2 2008-10-28 11:28:11 boggia Exp $
 #
 #
 # ###################################################################
@@ -274,7 +274,7 @@ sub get_time_url
     {
 	my $error  = $session->error;
 
-        writelog("get_time_www",$config{'logopt'},"info",
+        writelog("get_gauge_generic",$config{'logopt'},"info",
 	    "\t -> ERROR: get_time_www($host) Error: $error");
     }
     else
@@ -285,10 +285,10 @@ sub get_time_url
         my $ERR=RRDs::error;
         if ($ERR)
         {
-	    writelog("get_time_www",$config{'logopt'},"info",
+	    writelog("get_gauge_generic",$config{'logopt'},"info",
 		"\t -> ERROR while updating $base: $ERR");
 
-            if($ERR =~/No such file or directory/)
+            if($ERR =~/$base': No such file or directory/)
             {
 		if($base =~/$config{'path_rrd_db'}/)
                 {
