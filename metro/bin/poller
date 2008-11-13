@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w 
 
-# $Id: poller,v 1.2 2008-06-13 10:16:50 pda Exp $
+# $Id: poller,v 1.3 2008-11-13 16:11:19 boggia Exp $
 ###################################################################
 #  boggia : Creation : 20/03/08
 #  boggia : Modification : 16/05/08
@@ -42,7 +42,7 @@ our $nb_process = $ARGV[2];
 our %config = ( 'debug'        		=> 1,
 		'defaultdomain' 	=> 'u-strasbg.fr', 
           	'snmp_timeout'  	=> 4,
-		'conf_file'		=> "%CONF%",
+		'conf_file'		=> "/local/obj999/etc/obj999.conf",
           	'syslog_facility'	=> "local0",
 		'logopt'		=> "" 
 );
@@ -72,7 +72,7 @@ our %function_probes = (
 );
 
 
-require "%LIBMETRO%";
+require "/local/obj999/lib/libmetro.pl";
 
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($config{'conf_file'});
@@ -146,8 +146,8 @@ our %stpInfos;
 our %stpPorts;
 our %BridgeID;
 
-our %ok_sondes;
-our %nok_sondes;
+our %ok_sondes = ();
+our %nok_sondes = ();
 
 our %ssid_osiris = init_list_ssid($config{'list_ssid_wifi'});
 
@@ -192,7 +192,6 @@ if($ok_sondes{'assoc_ap'} == 1)
     get_authaccess();
 }
 
-
 #################################################################
 # Traitement des sondes
 #
@@ -221,11 +220,11 @@ open(URL,$config{'index_url'});
 our @liste_url=<URL>;
 close(URL);
 
+
 my $elem;
 my $compteur = 0;
 foreach $elem (@FICHIERS)
 {
-        #print "$elem";
         if($elem=~m/^majDB/ || $elem=~m/^majMETRO$/)
         {
 		$compteur += ouvre_fichier_conf($elem);
@@ -241,7 +240,6 @@ Net::SNMP->snmp_dispatcher();
 maj_if_files();
 
 ########
-
 
 ##################################################################
 # gestion specifique pour les AP WiFi
@@ -292,6 +290,10 @@ sub maj_if_files
 {
 	my $i;
 	my @fichier;
+
+	writelog("poller_$group$num_process",$config{'logopt'},"info",
+	    "\t -> INFO : Mise à jour des fichiers de cache");
+
 	if($maj_if_ap_file == 1)
 	{
 		opendir(REPLOCK,$config{'dir_lock'});
@@ -312,7 +314,10 @@ sub maj_if_files
 	
 			for($i=0;$i<$t_liste_if_ap;$i++)
 			{
-				print BD "$liste_if_ap[$i]\n";
+				if($liste_if_ap[$i] =~/.*;.*;.*/)
+                                {
+				    print BD "$liste_if_ap[$i]\n";
+				}
 			}
                 
 			close(BD);
@@ -340,7 +345,10 @@ sub maj_if_files
 
                         for($i=0;$i<$t_liste_if64;$i++)
                         {
-                                print BD "$liste_if64[$i]\n";
+				if($liste_if64[$i] =~/.*;.*;.*/)
+                                {
+				    print BD "$liste_if64[$i]\n";
+				}
                         }
 
                         close(BD);
@@ -367,8 +375,12 @@ sub maj_if_files
                         open(BD,">$config{'index_if32'}");
 
                         for($i=0;$i<$t_liste_if32;$i++)
-                        {
-                                print BD "$liste_if32[$i]\n";
+                        {   
+				# controle de la validite de la string
+				if($liste_if32[$i] =~/.*;.*;.*/)
+				{
+				    print BD "$liste_if32[$i]\n";
+				}
                         }
 
                         close(BD);
@@ -396,7 +408,11 @@ sub maj_if_files
 
                         for($i=0;$i<$t_liste_disk;$i++)
                         {
-                                print BD "$liste_disk[$i]\n";
+				# controle de la validite de la string
+                                if($liste_disk[$i] =~/.*;.*;.*/)
+                                {
+				    print BD "$liste_disk[$i]\n";
+				}
                         }
 
                         close(BD);
@@ -424,7 +440,10 @@ sub maj_if_files
 
                         for($i=0;$i<$t_liste_url;$i++)
                         {
-                                print BD "$liste_url[$i]\n";
+				if($liste_url[$i] =~/.*;.*;.*/)
+                                {
+				    print BD "$liste_url[$i]\n";
+				}
                         }
 
                         close(BD);
@@ -521,7 +540,6 @@ sub writelog
 	openlog($program,$logopt,$config{'syslog_facility'});
 	syslog($level,$message);
 	closelog();
-	#print "$message\n";
 }
 
 
