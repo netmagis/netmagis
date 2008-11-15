@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.18 2008-10-17 20:24:39 pda Exp $
+# $Id: parse-cisco.tcl,v 1.19 2008-11-15 20:29:07 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -1436,30 +1436,28 @@ proc cisco-post-process {type model fdout eq tab} {
 		set nodeL1 $t(eq!$eq!if!$iface!node)
 		set nodeL2 [newnode]
 
-		if {! [string equal $linktype "aggregate"]} then {
-		    switch $t(eq!$eq!if!$iface!link!type) {
-			ether {
-			    # il ne peut y avoir qu'un seul "vlan" sur un lien natif
-			    set arg $t(eq!$eq!if!$iface!link!vlans)
+		switch $t(eq!$eq!if!$iface!link!type) {
+		    ether {
+			# il ne peut y avoir qu'un seul "vlan" sur un lien natif
+			set arg $t(eq!$eq!if!$iface!link!vlans)
 
-			    puts $fdout "node $nodeL2 type L2 eq $eq vlan $arg stat -"
-			}
-			trunk {
-			    # Liste des vlans pour ce lien
-			    set av $t(eq!$eq!if!$iface!link!allowedvlans)
-			    puts -nonewline $fdout "node $nodeL2 type L2pat eq $eq"
-			    foreach a $av {
-				puts -nonewline $fdout " allow $a"
-			    }
-			    puts $fdout ""
-			}
-			default {
-			    cisco-warning "Unknown link type for '$eq/$iface"
-			}
+			puts $fdout "node $nodeL2 type L2 eq $eq vlan $arg stat -"
 		    }
-		    puts $fdout "link $nodeL1 $nodeL2"
-		    puts $fdout "link $nodeL2 $nodeB"
+		    trunk {
+			# Liste des vlans pour ce lien
+			set av $t(eq!$eq!if!$iface!link!allowedvlans)
+			puts -nonewline $fdout "node $nodeL2 type L2pat eq $eq"
+			foreach a $av {
+			    puts -nonewline $fdout " allow $a"
+			}
+			puts $fdout ""
+		    }
+		    default {
+			cisco-warning "Unknown link type for '$eq/$iface"
+		    }
 		}
+		puts $fdout "link $nodeL1 $nodeL2"
+		puts $fdout "link $nodeL2 $nodeB"
 	    }
 	}
     } else {

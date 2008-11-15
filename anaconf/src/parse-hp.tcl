@@ -1,5 +1,5 @@
 #
-# $Id: parse-hp.tcl,v 1.6 2008-10-24 20:02:31 pda Exp $
+# $Id: parse-hp.tcl,v 1.7 2008-11-15 20:29:07 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS HP
 #
@@ -89,6 +89,8 @@ proc hp-parse {libdir model fdin fdout tab eq} {
     set t(eq!$eq!if!disabled) {}
 
     set error [ios-parse $libdir $model $fdin $fdout t $eq kwtab]
+
+    set t(eq!$eq!ios) "switch"
 
     if {! $error} then {
 	set error [hp-prepost-process $eq t]
@@ -456,10 +458,10 @@ proc hp-set-ifattr {tab idx attr val} {
 			set t($idx!link!type) "trunk"
 			if {[info exists t($idx!link!vlans)]} then {
 			    set ov [lindex $t($idx!link!vlans) 0]
-			    set t($idx!link!allowed-vlans) [list $ov $ov]
+			    set t($idx!link!allowedvlans) [list [list $ov $ov]]
 			    unset t($idx!link!vlans)
 			} else {
-			    set t($idx!link!allowed-vlans) {}
+			    set t($idx!link!allowedvlans) {}
 			}
 		    }
 		    trunk-ether {
@@ -484,7 +486,7 @@ proc hp-set-ifattr {tab idx attr val} {
 	    if {[info exists t($idx!link!type)]} then {
 		switch $t($idx!link!type) {
 		    trunk {
-			lappend t($idx!link!allowed-vlans) [list $val $val]
+			lappend t($idx!link!allowedvlans) [list $val $val]
 		    }
 		    ether {
 			set t($idx!link!vlans) [list $val]
