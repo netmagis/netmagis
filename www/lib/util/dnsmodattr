@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsmodattr,v 1.7 2008-12-09 00:42:34 jean Exp $
+# $Id: dnsmodattr,v 1.8 2008-12-09 11:39:57 jean Exp $
 
 #
 # Script pour modifier les attributs d'un RR dans la base
@@ -141,13 +141,18 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
     # Valider les attributs qui le nécessitent
     #
 
+    # Valeur maximale pour le TTL = 2^31 - 1
     # Cf. RFC 3181
+    # Pour supprimer le TTL, passer une chaine vide
+    #
     set maxttl [expr 0x7FFFFFFF]
-
     if {[info exists tattr(ttl)]} then {
 	set ttlval $tattr(ttl)
-	if {![regexp {^[0-9]+$} $ttlval] || $ttlval<0 || $ttlval>$maxttl} {
-	    return "TTL invalide (doit être un nombre entier entre 0 et $maxttl)"
+	if {![string equal $ttlval ""] && (![regexp {^[0-9]+$} $ttlval]
+	    || $ttlval<0 || $ttlval>$maxttl)} {
+	    set msg "TTL invalide : doit être un nombre entier "
+	    append msg "compris entre 0 et $maxttl, ou bien une chaine vide"
+	    return $msg
 	}
     }
 
@@ -190,7 +195,11 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
 		lappend modif "iddhcpprofil = $v"
 	    }
 	} elseif {[string equal $c "ttl"]} then {
-	    lappend modif "$c = $v"
+	    if {[string equal $v ""]} then {
+		lappend modif "$c = NULL"
+	    } else {
+		lappend modif "$c = $v"
+	    }
 	} else {
 	    if {[string equal $v ""]} then {
 		lappend modif "$c = NULL"
@@ -228,7 +237,6 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
 
     return ""
 }
-
 
 ##############################################################################
 # Programme principal
