@@ -1,6 +1,6 @@
 #!/usr/local/bin/tclsh8.4
 
-# $Id: generer-zone,v 1.2 2007-08-29 10:51:47 pda Exp $
+# $Id: generer-zone,v 1.3 2008-12-09 00:42:22 jean Exp $
 
 #
 # Script de génération d'une zone DNS
@@ -21,6 +21,7 @@
 #   2004/01/14 : pda/jean : passage en IPv6
 #   2004/01/20 : pda/jean : mise en production de la nouvelle version
 #   2004/03/09 : pda/jean : génération des rôles de messagerie
+#   2008/12/09 : jean     : gestion du TTL
 #
 
 
@@ -289,20 +290,21 @@ proc generer-normal {dbfd domaine selection rrsup} {
     # Sortir toutes les adresses IP (v4 ou v6)
     #
 
-    set sql "SELECT rr.nom, rr_ip.adr, family(rr_ip.adr) AS family \
+    set sql "SELECT rr.nom, rr.ttl, rr_ip.adr, family(rr_ip.adr) AS family \
 			FROM rr, rr_ip \
 			WHERE rr.iddom = $iddom \
 			    AND rr.idrr = rr_ip.idrr \
 			ORDER BY rr.nom"
     pg_select $dbfd $sql tab {
 	set nom    $tab(nom)
+	set ttl    $tab(ttl)
 	set family $tab(family)
 	if {$family == 4} then {
 	    set a "A"
 	} else {
 	    set a "AAAA"
 	}
-	puts stdout "$nom	IN	$a	$tab(adr)"
+	puts stdout "$nom   $ttl    IN	$a	$tab(adr)"
 
 	if {! [info exists affiche($nom)]} then {
 	    set affiche($nom) ""
@@ -319,7 +321,7 @@ proc generer-normal {dbfd domaine selection rrsup} {
     #		rr2 décrit b
     #
 
-    set sql "SELECT rr1.nom,rr_mx.priorite,rr2.nom AS nom2,rr2.iddom AS iddom2 \
+    set sql "SELECT rr1.nom,rr1.ttl,rr_mx.priorite,rr2.nom AS nom2,rr2.iddom AS iddom2 \
 			FROM rr rr1, rr_mx, rr rr2 \
 			WHERE rr1.iddom = $iddom \
 			    AND rr1.idrr = rr_mx.idrr \
@@ -327,9 +329,10 @@ proc generer-normal {dbfd domaine selection rrsup} {
 			ORDER BY rr1.nom"
     pg_select $dbfd $sql tab {
 	set nom $tab(nom)
+	set ttl $tab(ttl)
 	set d $tab(iddom2)
 	set complet "$tab(nom2).$tabdom($d)."
-	puts stdout "$nom	IN	MX	$tab(priorite) $complet"
+	puts stdout "$nom   $ttl    IN	MX	$tab(priorite) $complet"
     }
 
     #
@@ -339,7 +342,7 @@ proc generer-normal {dbfd domaine selection rrsup} {
     #		rr2 décrit b
     #
 
-    set sql "SELECT rr1.nom, rr2.nom AS nom2, rr2.iddom AS iddom2 \
+    set sql "SELECT rr1.nom,rr1.ttl,rr2.nom AS nom2,rr2.iddom AS iddom2 \
 			FROM rr rr1, rr_cname, rr rr2 \
 			WHERE rr1.iddom = $iddom \
 			    AND rr1.idrr = rr_cname.idrr \
@@ -348,7 +351,8 @@ proc generer-normal {dbfd domaine selection rrsup} {
     pg_select $dbfd $sql tab {
 	set d $tab(iddom2)
 	set complet "$tab(nom2).$tabdom($d)."
-	puts stdout "$tab(nom)	IN	CNAME	$complet"
+	set ttl $tab(ttl)
+	puts stdout "$tab(nom)	$ttl	IN	CNAME	$complet"
     }
 
     #
@@ -373,7 +377,7 @@ proc generer-normal {dbfd domaine selection rrsup} {
     #
 
     if {[llength $relais] > 0} then {
-	set sql "SELECT rr.nom
+	set sql "SELECT rr.nom,rr.ttl
 			FROM role_mail, rr
 			WHERE role_mail.idrr = rr.idrr
 			    AND rr.iddom = $iddom
@@ -381,7 +385,8 @@ proc generer-normal {dbfd domaine selection rrsup} {
 			"
 	pg_select $dbfd $sql tab {
 	    foreach r $relais {
-		puts stdout "$tab(nom)	$r"
+		set ttl $tab(ttl)
+		puts stdout "$tab(nom)	$ttl	$r"
 	    }
 	}
     }
@@ -434,7 +439,7 @@ proc generer-ipv4 {dbfd domaine selection rrsup} {
 	set first 1
     }
 
-    set sql "SELECT rr_ip.adr, rr.nom, rr.iddom FROM rr_ip, rr \
+    set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom FROM rr_ip, rr \
 			WHERE rr_ip.adr <<= '$selection' \
 			    AND rr_ip.idrr = rr.idrr \
 			ORDER BY rr_ip.adr"
@@ -452,7 +457,8 @@ proc generer-ipv4 {dbfd domaine selection rrsup} {
 	}
 	set gauche [join $lgauche "."]
 
-	puts "$gauche	IN	PTR	$droite"
+	set ttl $tab(ttl)
+	puts "$gauche	$ttl	IN	PTR	$droite"
 
     }
 
@@ -504,7 +510,7 @@ proc generer-ipv6 {dbfd domaine selection rrsup} {
     
     set nbq [expr 32 - ($prefixlen / 4)]
 
-    set sql "SELECT rr_ip.adr, rr.nom, rr.iddom FROM rr_ip, rr \
+    set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom FROM rr_ip, rr \
 			WHERE rr_ip.adr <<= '$selection' \
 			    AND rr_ip.idrr = rr.idrr \
 			ORDER BY rr_ip.adr"
@@ -575,7 +581,8 @@ proc generer-ipv6 {dbfd domaine selection rrsup} {
 
 	set droite "$tab(nom).$tabdom($tab(iddom))."
 
-	puts "$gauche	IN	PTR	$droite"
+	set ttl $tab(ttl)
+	puts "$gauche	$ttl	IN	PTR	$droite"
     }
 
     return 1

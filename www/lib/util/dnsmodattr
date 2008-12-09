@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsmodattr,v 1.6 2007-11-29 15:58:42 pda Exp $
+# $Id: dnsmodattr,v 1.7 2008-12-09 00:42:34 jean Exp $
 
 #
 # Script pour modifier les attributs d'un RR dans la base
@@ -13,13 +13,14 @@
 #   dnsmodattr crc.u-strasbg.fr HINFO "PC/Unix"
 #
 # Les attributs modifiables sont :
-#   MAC, HINFO, RESPNOM, RESPMEL, COMMENTAIRE, DHCPPROFIL
+#   MAC, HINFO, RESPNOM, RESPMEL, COMMENTAIRE, DHCPPROFIL, TTL
 #
 # Historique
 #   2004/09/29 : pda/jean : spécification
 #   2004/10/01 : pda/jean : codage
 #   2005/04/08 : pda/jean : ajout du profil DHCP
 #   2007/10/25 : jean     : log des actions de modification
+#   2008/12/09 : jean     : modification du TTL
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -42,7 +43,7 @@ set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
 set conf(defuser)	%DEFUSER%
 
-set conf(attrs)		{mac hinfo respnom respmel commentaire dhcpprofil}
+set conf(attrs)		{mac hinfo respnom respmel commentaire dhcpprofil ttl}
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -140,6 +141,16 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
     # Valider les attributs qui le nécessitent
     #
 
+    # Cf. RFC 3181
+    set maxttl [expr 0x7FFFFFFF]
+
+    if {[info exists tattr(ttl)]} then {
+	set ttlval $tattr(ttl)
+	if {![regexp {^[0-9]+$} $ttlval] || $ttlval<0 || $ttlval>$maxttl} {
+	    return "TTL invalide (doit être un nombre entier entre 0 et $maxttl)"
+	}
+    }
+
     if {[info exists tattr(mac)]} then {
 	set msg [valide-attr-mac $dbfd $tattr(mac) trr]
 	if {! [string equal $msg ""]} then {
@@ -178,6 +189,8 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
 	    } else {
 		lappend modif "iddhcpprofil = $v"
 	    }
+	} elseif {[string equal $c "ttl"]} then {
+	    lappend modif "$c = $v"
 	} else {
 	    if {[string equal $v ""]} then {
 		lappend modif "$c = NULL"
