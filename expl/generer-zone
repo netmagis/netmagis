@@ -1,6 +1,6 @@
 #!/usr/local/bin/tclsh8.4
 
-# $Id: generer-zone,v 1.3 2008-12-09 00:42:22 jean Exp $
+# $Id: generer-zone,v 1.4 2008-12-10 16:16:40 jean Exp $
 
 #
 # Script de génération d'une zone DNS
@@ -310,7 +310,9 @@ proc generer-normal {dbfd domaine selection rrsup} {
 	    set affiche($nom) ""
 	    set r $rrsup
 	    regsub -all -- {%NOM%} $r $nom r
-	    puts stdout $r
+	    if {![string equal $r ""]} then {
+		puts stdout $r
+	    }
 	}
     }
 
