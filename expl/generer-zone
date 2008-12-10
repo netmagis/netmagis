@@ -1,6 +1,6 @@
 #!/usr/local/bin/tclsh8.4
 
-# $Id: generer-zone,v 1.4 2008-12-10 16:16:40 jean Exp $
+# $Id: generer-zone,v 1.5 2008-12-10 16:59:17 jean Exp $
 
 #
 # Script de génération d'une zone DNS
@@ -294,7 +294,7 @@ proc generer-normal {dbfd domaine selection rrsup} {
 			FROM rr, rr_ip \
 			WHERE rr.iddom = $iddom \
 			    AND rr.idrr = rr_ip.idrr \
-			ORDER BY rr.nom"
+			ORDER BY rr.nom, rr_ip.adr"
     pg_select $dbfd $sql tab {
 	set nom    $tab(nom)
 	set ttl    $tab(ttl)
@@ -306,13 +306,11 @@ proc generer-normal {dbfd domaine selection rrsup} {
 	}
 	puts stdout "$nom   $ttl    IN	$a	$tab(adr)"
 
-	if {! [info exists affiche($nom)]} then {
+	if {! [string equal $rrsup ""] && ! [info exists affiche($nom)]} then {
 	    set affiche($nom) ""
 	    set r $rrsup
 	    regsub -all -- {%NOM%} $r $nom r
-	    if {![string equal $r ""]} then {
-		puts stdout $r
-	    }
+	    puts stdout $r
 	}
     }
 
