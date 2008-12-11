@@ -1,4 +1,4 @@
-# $Id: libmetro.pl,v 1.3 2008-07-30 07:30:42 boggia Exp $
+# $Id: libmetro.pl,v 1.4 2008-12-11 14:15:03 boggia Exp $
 ###########################################################
 #   Creation : 26/03/08 : boggia
 # 
@@ -137,24 +137,71 @@ sub setBaseMaxSpeed
 
 ###########################################################
 # retourne la vitesse d'une interface
+#sub get_snmp_ifspeed
+#{
+#    my ($param,$index) = @_;
+
+#    &snmpmapOID("speed","1.3.6.1.2.1.2.2.1.5.$index");
+#    my @speed = &snmpget($param, "speed");
+
+#    if($speed[0] ne "")
+#    {
+#        return $speed[0];
+#    }
+#    else
+#    {
+#        writelog("cree-base-metro","","info",
+#            "\t ERREUR : Vitesse de ($param,index : $index) non definie, force ï¿½ 100 Mb/s");
+#        return 100000000;
+#    }
+#}
+
+
+###########################################################
+# retourne la vitesse d'une interface
 sub get_snmp_ifspeed
 {
-    my ($param,$index) = @_;
+    my ($param,$index,$interf) = @_;
 
-    &snmpmapOID("speed","1.3.6.1.2.1.2.2.1.5.$index");
-    my @speed = &snmpget($param, "speed");
+    my $speed;
 
-    if($speed[0] ne "")
+    # recherche de l'interface dans le tableau des interfaces
+    foreach my $key (keys %if_speed)
     {
-        return $speed[0];
+        if($interf=~/$key/)
+        {
+                $speed = $if_speed{$key};
+        }
+    }
+
+    # si le nom de l'interface ne matche pas les interfaces connues
+    if($speed eq "")
+    {
+        if($index eq "")
+        {
+                # recuperation de l'oid de l'interface
+                $index = get_snmp_ifindex($param,$interf);
+        }
+        #&snmpmapOID("speed","1.3.6.1.2.1.2.2.1.5.$index");
+        &snmpmapOID("speed","1.3.6.1.2.1.31.1.1.1.15.$index");
+        my @speed = &snmpget($param, "speed");
+        $speed = $speed[0];
+    }
+
+    if($speed ne "")
+    {
+        $speed = $speed*1000000;
+
+        return $speed;
     }
     else
     {
         writelog("cree-base-metro","","info",
-            "\t ERREUR : Vitesse de ($param,index : $index) non definie, force ï¿½ 100 Mb/s");
+            "\t ERREUR : Vitesse de ($param,$interf,index : $index) non definie, force à 100 Mb/s");
         return 100000000;
     }
 }
+
 
 
 ###########################################################

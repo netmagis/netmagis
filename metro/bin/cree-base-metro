@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cree-base-metro,v 1.3 2008-07-30 07:30:42 boggia Exp $
+# $Id: cree-base-metro,v 1.4 2008-12-11 14:15:03 boggia Exp $
 #
 # 
 # ###################################################################
@@ -62,6 +62,14 @@ our %equipements = (
                 '1.3.6.0.0.0.0.0.0.0'   =>  "FreeBSD_6",
                 '1.3.6.1.4.1.9.1.507'   =>  "aironet_1100",
                 '1.3.6.1.4.1.9.1.525'   =>  "aironet_1200"
+);
+
+# liste des types d'interface avec la vitesse associee
+our %if_speed = (
+		'GigabitEthernet'	=>  "1000",
+		'FastEthernet'		=>  "100",
+		'Dot11Radio'		=>  "100",
+		'ge-'			=>  "1000",
 );
 
 our %sonde_majMETRO;
@@ -132,9 +140,11 @@ if($fichier[0] eq "")
     test_bases_expirees();
 
     my $key;
+    my $compteur_keys;
     # liste toute les sondes envoyees par TOPO
     foreach $key (keys %param_maj_sonde)
     {
+	$compteur_keys ++;
 	# teste si la sonde existe déjà dans la table majMETRO (mise a jour des sondes)
 	if(defined($param_majMETRO{$key}))
 	{
@@ -148,7 +158,7 @@ if($fichier[0] eq "")
 	    # la sonde existe deja. On regarde si les parametres ont change.
 	    if($param_existant ne $param_maj_sonde{$key})
 	    {
-		# les parametres de la sonde ont changes, on met a jour.
+		# les parametres de la sonde ont change, on met a jour.
 		my $p1 = supprimer_com_snmp($param_existant);
 		my $p2 = supprimer_com_snmp($param_maj_sonde{$key});
 
@@ -158,18 +168,41 @@ if($fichier[0] eq "")
 		    message_erreur("MODIFICATION : point de metrologie \"$nom_pt_metro\". Nouveaux paramètres ($p1) => ($p2)");
 		}
 		writelog("cree-base-metro","","info",
-		    "\t WARNING : changement des parametres ($param_existant != $param_maj_sonde{$key})");
+		    "\t WARNING : sonde $compteur_keys, changement des parametres ($param_existant != $param_maj_sonde{$key})");
 		
 		ajouter_sonde($param_maj_sonde{$key},$sonde_maj_sonde{$key},$key);
 	    }
 	    else
 	    {
+		# les parametres n'ont pas change 
 		# on teste l'existance de la sonde
 		if(-e $key)
 		{
-		    # la sonde existe deja avec les bons parametres. Pas de mise a jour a effectuer.
-		    delete $param_maj_sonde{$key};
-                    delete $sonde_maj_sonde{$key};
+		    # on est en presence d'une sonde de trafic	
+		    if($sonde_maj_sonde{$key} eq "trafic")
+		    {
+		    	# controle de la vitesse de l'interface par rapport a la sonde
+		    	if(check_if_speed($sonde_majMETRO{$key},$param_maj_sonde{$key}) == 1)
+			{
+				# la vitesse est ok, pas de mise a jour a effectuer.
+                        	delete $param_maj_sonde{$key};
+                        	delete $sonde_maj_sonde{$key};	
+			}
+			else
+			{
+				# la vitesse n'est pas bonne, il faut mettre la sonde a jour				
+				writelog("cree-base-metro","","info",
+		                        "\t WARNING : sonde $compteur_keys, changement du type de sonde pour $key");
+
+                    		ajouter_sonde($param_maj_sonde{$key},$sonde_maj_sonde{$key},$key);
+			}
+		    }
+		    else
+		    {
+		    	# la sonde existe deja avec les bons parametres. Pas de mise a jour a effectuer.
+		    	delete $param_maj_sonde{$key};
+                    	delete $sonde_maj_sonde{$key};
+		    }
 		}
 		else
 		{
@@ -179,7 +212,7 @@ if($fichier[0] eq "")
 		    
 		    message_erreur("NOUVEAU point de métrologie : \"$nom_pt_metro\". Paramètres ($p1)");
 		    writelog("cree-base-metro","","info",
-                        "\t WARNING : La base $key n'existe pas, procedure d'ajout de sonde");
+                        "\t WARNING : sonde $compteur_keys, la base $key n'existe pas, procedure d'ajout de sonde");
 
                     ajouter_sonde($param_maj_sonde{$key},$sonde_maj_sonde{$key},$key);
 		}
@@ -191,7 +224,7 @@ if($fichier[0] eq "")
 	    my $nom_pt_metro = get_nom_pt_metro($key);
 	    my $p1 = supprimer_com_snmp($param_maj_sonde{$key});
 	    
-	    message_erreur("NOUVEAU point de métrologie : \"$nom_pt_metro\". Paramètres ($p1)");
+	    message_erreur("NOUVEAU point de métrologie : \"$nom_pt_metro\". Paramètres ($p1), sonde $compteur_keys");
 	    
 	    ajouter_sonde($param_maj_sonde{$key},$sonde_maj_sonde{$key},$key);
 	}
@@ -380,6 +413,61 @@ sub authassocwifi
 
 
 ###########################################################
+# controle le type de sonde de trafic
+# compteur 32 bits ou compteur 64 bits
+# 1 la sonde est ok
+# 0 la vitesse de l'interface a change il faut modifier le
+# compteur, il y a une erreur
+sub check_if_speed
+{
+	my ($sonde,$param) = @_;
+
+    	if($sonde eq "ifNom-snmp32" || $sonde eq "ifNom-snmp64")
+    	{
+        	if($param=~/^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+) (.+) (.+)$/)
+        	{
+            		#les paramètres sont justes
+			my $snmp_param = $2."@".$1;
+
+			# recuperation de la vitesse de l'interface
+            		my $speed = get_snmp_ifspeed($snmp_param,"",$3);
+
+			if($sonde eq "ifNom-snmp32")
+			{
+				if($speed > 100000000)
+				{
+					return 0;
+					# la vitesse n'est pas bonne, il faut mettre la sonde a jour
+                                	writelog("cree-base-metro","","info",
+                                        	"\t WARNING : $sonde inadapte a $speed");
+				}
+				else
+				{
+					return 1;
+				}
+			}
+			elsif($sonde eq "ifNom-snmp64")
+			{
+				if($speed > 100000000)
+                                {
+                                        return 1;
+                                }
+                                else
+                                {
+                                        return 0;
+					# la vitesse n'est pas bonne, il faut mettre la sonde a jour
+                                	writelog("cree-base-metro","","info",
+                                        	"\t WARNING : $sonde inadapte a $speed");
+                                }
+			}
+		}
+		return 0;
+	}
+	return 0;
+}
+
+
+###########################################################
 # cree une sonde de trafic
 # codes erreur 
 # 0 ok
@@ -416,7 +504,7 @@ sub trafic
 	if($index != -1)
 	{
 	    # recuperation de la vitesse de l'interface   
-	    $speed = get_snmp_ifspeed($param,$index);	    
+	    $speed = get_snmp_ifspeed($param,$index,$interf);	    
 
 	    if($equipements{$oid}=~/BSD/ || $speed <= 100000000)
 	    {
@@ -478,28 +566,6 @@ sub trafic
 
 
 ###########################################################
-# retourne la vitesse d'une interface
-sub get_snmp_ifspeed
-{
-    my ($param,$index) = @_;
-    
-    &snmpmapOID("speed","1.3.6.1.2.1.2.2.1.5.$index");
-    my @speed = &snmpget($param, "speed");
-
-    if($speed[0] ne "")
-    {
-	return $speed[0];
-    }
-    else
-    {
-	writelog("cree-base-metro","","info",
-	    "\t ERREUR : Vitesse de ($param,index : $index) non definie, force à 100 Mb/s");
-	return 100000000;
-    }
-}
-
-
-###########################################################
 # retourne de l'oid d'un équipement
 sub get_snmp_oid
 {
@@ -510,7 +576,6 @@ sub get_snmp_oid
     @sys_oid = &snmpget($param,"oid");
     if($sys_oid[0] ne "")
     {
-	#print "$param => $sys_oid[0]\n";
 	return $sys_oid[0];
     }
     else
@@ -614,7 +679,6 @@ sub charger_liste_maj_sondes
                     $sonde_maj_sonde{$2} = $1;
                     $param_maj_sonde{$2} = "$3 $4 $param";
 		    $sursis_maj_sondes{$2} = 1;
-                    $compteur ++;
                 }
 	    }
 	}
