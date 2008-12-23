@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: libgraph.pl,v 1.6 2008-09-02 11:54:02 boggia Exp $
+# $Id: libgraph.pl,v 1.7 2008-12-23 09:15:04 boggia Exp $
 ###########################################################
 # Creation : 21/05/08 : boggia
 #
@@ -11,8 +11,8 @@ sub genere_graph
 {
     my ($type,$nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
 
-    #system("echo \"$type,$nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire\" > /var/tmp/gengraph.out");
-
+    #system("echo \"$type,$nb_rrd_bases,,$output,$start,$end,$size,$commentaire\" >> /tmp/genere_graph.out");
+    
     # liste des fonction de création de graphiques
     my %function_graph = (
         'trafic'		=> \&trafic,
@@ -466,7 +466,7 @@ sub trafic
 
     # dereferencement
     my @l = @$ref_l;
-
+    
     if(@l == 1)
     {
 	my ($width,$height) = split(/x/,$size);
@@ -480,7 +480,9 @@ sub trafic
 	$vertical_label = "Trafic Réseau";
 
 	my $rrd = RRDTool::OO->new(
-            file => "$ref_l->[0]->[0]->{'base'}" );
+            file => "$ref_l->[0]->[0]->{'base'}",
+	    #raise_error => 0,
+	);
 
 	my @liste_arg;
         my $plusline="";
@@ -501,8 +503,8 @@ sub trafic
             $drawout->{'dsname'} = "output";
             $drawout->{'name'} = "$l[0][$j]{'graph'}__outputbytes";
             $drawout->{'cfunc'} = "AVERAGE";
-            $drawin->{'name'} =~ s/\./__/;
-            $drawout->{'name'} =~ s/\./__/;
+            $drawin->{'name'} =~ s/\./__/g;
+            $drawout->{'name'} =~ s/\./__/g;
 	    $drawinmax->{'file'} = $l[0][$j]{'base'};
             $drawinmax->{'type'} = "hidden";
             $drawinmax->{'dsname'} = "input";
@@ -513,8 +515,8 @@ sub trafic
             $drawoutmax->{'dsname'} = "output";
             $drawoutmax->{'name'} = "$l[0][$j]{'graph'}__maxoutputbytes";
             $drawoutmax->{'cfunc'} = "MAX";
-            $drawinmax->{'name'} =~ s/\./__/;
-            $drawoutmax->{'name'} =~ s/\./__/;
+            $drawinmax->{'name'} =~ s/\./__/g;
+            $drawoutmax->{'name'} =~ s/\./__/g;
 	    
             # calcul du cumul pour les donnes bases explicitement aggregees
             # ex : Mcrc-rc1.wifi-sec+Mle7-rc1.wifi-sec
@@ -671,7 +673,7 @@ sub trafic
         $gprintout->{2}->{'format'}="LAST:%7.2lf %Sb/s\\n";
         push @liste_arg,"gprint";
         push @liste_arg,$gprintout->{2};
-	
+
 	$rrd->graph(
             image           => "-",
             title           => "$commentaire",
@@ -683,6 +685,7 @@ sub trafic
             @liste_arg,
     	);
 
+	$rrd->error_message();
     }
     elsif($nb_rrd_bases > 1 && $nb_rrd_bases < 20)
     {
@@ -749,8 +752,8 @@ sub aggreg_trafic
             $drawout->{'dsname'} = "output";
             $drawout->{'name'} = "$l[$i][$j]{'graph'}__outputbytes";
             $drawout->{'cfunc'} = "AVERAGE";
-	    $drawin->{'name'} =~ s/\./__/;
-	    $drawout->{'name'} =~ s/\./__/;
+	    $drawin->{'name'} =~ s/\./__/g;
+	    $drawout->{'name'} =~ s/\./__/g;
 	    # calcul du cumul total (afficher sour forme d'une aire)
 	    if(exists $drawtotalin->{'cdef'})
 	    {
