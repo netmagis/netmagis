@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: ap-stats,v 1.2 2008-06-13 10:01:06 pda Exp $
+# $Id: ap-stats,v 1.3 2008-12-23 15:00:12 boggia Exp $
 #
 #
 # ###################################################################
@@ -15,8 +15,8 @@ use CGI::Pretty qw( :html3 );
 use DBI;
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "%CONF%";
-require "%LIBMETRO%";
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
 #
 
 $server_hostname = read_conf_file($conf_file,"WWW_IDRIS_HOSTNAME");
@@ -189,11 +189,29 @@ print "<br><a href=https://$server_hostname/bin/stats?nom_graph=$nom_assoc>
         	</td>
        	</tr>
 	<tr>
-		<td>";
-$nom_gr = "$nom_trafic!!-!!daily";
-print "<br><a href=https://$server_hostname/bin/stats?nom_graph=$nom_trafic>
-        <IMG BORDER=0 src=\"https://$server_hostname/bin/gengraph?id=$nom_trafic&debut=$date_dep_daily&fin=$date_fin&titre=trafic sur $nom_ap&taille=550x150\" alt=\"Trafic bits/s\"></a>
+                <td>";
+		$params_graph = "id=M$nom_ap.Dot11Radio0&titre=trafic global sur dot11Radio0 de $nom_ap";
+		$params = $params_graph;
+		
+		$params =~ s/&/,/g;
+		$params =~ s/\s+/_/g;
+		
+		print "
+		<a href=https://$server_hostname/bin/stats?params_graph=$params>
+                <IMG BORDER=0 src=\"https://$server_hostname/bin/gengraph?$params_graph&taille=550x150&debut=$date_dep_daily&fin=$date_fin\"></a>
                 </td>
+        </tr>
+	<tr>
+                <td>";
+		$params_graph = "id1=M$nom_ap.Dot11Radio0.osiris&id2=M$nom_ap.Dot11Radio0.osiris-sec&id3=M$nom_ap.Dot11Radio0.osiris-lab&id4=M$nom_ap.Dot11Radio0.eduroam&titre=trafic par SSID sur dot11Radio0 de $nom_ap&legende1=osiris&legende2=osiris-sec&legende3=osiris-lab&legende4=eduroam";
+                $params = $params_graph;
+
+                $params =~ s/&/,/g;
+                $params =~ s/\s+/_/g; 
+		print"
+		<a href=https://$server_hostname/bin/stats?params_graph=$params>
+		<IMG BORDER=0 src=\"https://$server_hostname/bin/gengraph?$params_graph&debut=$date_dep_daily&fin=$date_fin&taille=550x150\"></a>
+		</td>
         </tr>
 	</table>";	
 

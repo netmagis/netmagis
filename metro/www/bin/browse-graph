@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: browse-graph,v 1.2 2008-06-13 10:01:06 pda Exp $
+# $Id: browse-graph,v 1.3 2008-12-23 15:00:12 boggia Exp $
 #
 #
 # ###################################################################
@@ -15,8 +15,8 @@ use CGI qw/:standard/;
 use CGI::Pretty qw( :html3 );
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "%CONF%";
-require "%LIBMETRO%";
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
 #
 $server_hostname = read_conf_file($conf_file,"WWW_IDRIS_HOSTNAME");
 $www_root = read_conf_file($conf_file,"WWW_IDRIS_DIR_ROOT");
@@ -35,7 +35,7 @@ $index_graph = read_conf_file($conf_file,"FILE_INDEX_GRAPHS");
 
 
 @descr_erreurs = (' ','ok','disconnected','overThreshold','timeout','busy','notConnected','dropped','sequenceError','verifyError','applicationSpecific','dnsServerTimeout','tcpConnectTimeout','httpTransactionTimeout','dnsQueryError','httpError','error','shadow_injoignable');
-@liste_annees = qw(2004 2005 2006 2007 2008);
+@liste_annees = qw(2004 2005 2006 2007 2008 2009);
 @liste_mois = qw(01 02 03 04 05 06 07 08 09 10 11 12);
 @liste_jours = qw(01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31);
 @heures = qw(00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23);
@@ -62,6 +62,8 @@ print header();
 if (param(-name=>'go!'))
 {
 	$nom_graph = (param('nom_graph'));
+	$param_graph = (param('params_graph'));
+	$param_graph =~s/,/&/g;
 	$liste_graph = (param('liste_graph'));
 	$heure_dep = (param('heure_dep'));
         $jour_dep = (param('jour_dep'));
@@ -90,7 +92,7 @@ if (param(-name=>'go!'))
         {
                 $nom_graph = $liste_graph;
         }
-        elsif($nom_graph eq "" && $liste_graph eq "--aucun--")
+        elsif($nom_graph eq "" && $liste_graph eq "--aucun--" && $param_graph eq "")
         {
                 $message_erreur = "<br><h3>Donner un nom de graphique</h3>";
         }
@@ -103,6 +105,7 @@ if (param(-name=>'go!'))
         <BODY>
         <form>
 	Inscrire le nom : <INPUT TYPE=\"TEXT\" NAME=\"nom_graph\" SIZE=\"20\" VALUE=$nom_graph> ou bien :
+	<input type=\"hidden\" name=\"params_graph\" value=\"$param_graph\"/>
 	<select name=liste_graph><option selected>$liste_graph";
 		for($z=0;$z<$taille_tmg;$z++)
 		{
@@ -237,15 +240,25 @@ if (param(-name=>'go!'))
 			}
                 }
 
-		print "<br>
-		<img src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">
-		<br>";
+		print "<br>";
+		if($nom_graph ne "")
+		{
+		    print "<img src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+		}
+		else
+		{
+		    print "<img src=\"https://$server_hostname$www_bin/gengraph?$param_graph&debut=$date_dep&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+		}
+		print "<br>";
 	}
 	print "<br></BODY></HTML> ";
 }
 else
 {
 	$nom_graph = (param('nom_graph'));
+	$param_graph = (param('params_graph'));
+	$param_graph =~s/,/&/g;
+
 	$liste_graph = "--aucun--";
 
 	$date = `date +%F-%H`;
@@ -266,6 +279,7 @@ else
 	<BODY>
 	<form>
 	Inscrire le nom : <INPUT TYPE=\"TEXT\" NAME=\"nom_graph\" SIZE=\"20\" VALUE=$nom_graph> ou bien :
+	<input type=\"hidden\" name=\"params_graph\" value=\"$param_graph\"/>
 	<select name=liste_graph><option selected>$liste_graph";
 	 for($z=0;$z<$taille_tmg;$z++)
          {
@@ -377,8 +391,15 @@ else
 	<br><br>
 	<input type=submit name=\"go!\" value=\"go!\">
 	</form>";
-	print "<img src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">
-	<br>
+	if($param_graph eq "")
+	{
+	    print "<img src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+	}
+	else
+	{
+	    print "<img src=\"https://$server_hostname$www_bin/gengraph?$param_graph&debut=$date_dep&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+	}
+	print "<br>
 	</BODY></HTML> ";
 }
 

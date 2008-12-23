@@ -1,11 +1,11 @@
 #!/usr/bin/perl
 
-# $Id: stats,v 1.2 2008-06-13 10:01:06 pda Exp $
+# $Id: stats,v 1.3 2008-12-23 15:00:12 boggia Exp $
 #
 #
 # ###################################################################
 # boggia : Creation : 27/03/08
-#
+# 
 # page de génération des pages de graphiques rrdtools 
 #
 #
@@ -14,8 +14,8 @@ use CGI qw/:standard/;
 use CGI::Pretty qw( :html3 );
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "%CONF%";
-require "%LIBMETRO%";
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
 #
 $server_hostname = read_conf_file($conf_file,"WWW_IDRIS_HOSTNAME");
 $www_root = read_conf_file($conf_file,"WWW_IDRIS_DIR_ROOT");
@@ -35,7 +35,6 @@ $rep_var = read_conf_file($conf_file,"DIR_VAR");
 #fichier de liste des sites WiFi avec l'ensemble des AP
 $liste_sites_wifi = read_conf_file($conf_file,"FILE_LISTE_SITES_WIFI");
 
-@descr_erreurs = (' ','ok','disconnected','overThreshold','timeout','busy','notConnected','dropped','sequenceError','verifyError','applicationSpecific','dnsServerTimeout','tcpConnectTimeout','httpTransactionTimeout','dnsQueryError','httpError','error','shadow_injoignable');
 
 #lecture de index.graph contenant la liste des graphiques
 @tab_modeles_graph = ();
@@ -45,73 +44,114 @@ $taille_tmg = @tab_modeles_graph;
 print header();
 
 $nom_graph = (param('nom_graph'));
-#lecture du fichier des modeles pour recuperation des commentaires
-$index = 0;
-open(MODELE, "$rep_etc/index.graph");
-while(<MODELE>)
+$param_graph = (param('params_graph'));
+$param_g = $param_graph;
+$param_g =~s/,/&/g;
+
+if($nom_graph ne "")
 {
+    #lecture du fichier des modeles pour recuperation des commentaires
+    $index = 0;
+    open(MODELE, "$rep_etc/index.graph");
+    while(<MODELE>)
+    {
         ($nom,$commentaire) = (split(/;/,$_))[0,4];
         #push @tab_modeles_graph, $nom_graph;
 	if($nom eq $nom_graph)
 	{
 		$titre = $commentaire;
 	}
+    }
+    close(MODELE);
 }
-close(MODELE);
 
 #recuperation de la date actuelle
 $date_fin = time;
 $date_fin = int($date_fin/300)*300;
-
 $date_dep_daily = $date_fin - 86400;
 $date_dep_weekly = $date_fin -  604800;
 $date_dep_monthly = $date_fin - 2678400;
 $date_dep_yearly = $date_fin - 34560000;
 
+# ecriture de la page cgi
 print "<HTML><HEAD><TITLE>$titre</TITLE>
        <META HTTP-EQUIV=\"Refresh\" CONTENT=\"300\">
        <META HTTP-EQUIV=\"Cache-Control\" content=\"no-cache\">
        <META HTTP-EQUIV=\"Pragma\" CONTENT=\"no-cache\">
        </HEAD><BODY>
-	<h2>$titre</h2>
-	<a href=https://$server_hostname$www_bin/browse-graph?nom_graph=$nom_graph>BROWSER</a><br>";
-	
+	<h2>$titre</h2>";
+
+if($nom_graph ne "")
+{
+    print "<a href=https://$server_hostname$www_bin/browse-graph?nom_graph=$nom_graph>BROWSER</a><br>";
+}
+else
+{
+    print "<a href=https://$server_hostname$www_bin/browse-graph?params_graph=$param_graph>BROWSER</a><br>";
+}
 
 $nom_g = "$nom_graph!!-!!daily";
-#system("$rep_bin/genere-commande-rrdgraph $www_root$www_graph $nom_g $date_dep_daily $date_fin");
+print "<table>
+       <tr>
+	    <td>";
+	if($nom_graph ne "")
+	{
+	    print "<IMG src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep_daily&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+	}
+	else
+	{
+	    print "<IMG src=\"https://$server_hostname$www_bin/gengraph?$param_g&debut=$date_dep_daily&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+	}
+        print "</td></tr>";
+
+
+$nom_g = "$nom_graph!!-!!weekly";
+print "<table>
+       <tr>
+            <td>";
+        if($nom_graph ne "")
+        {
+            print "<IMG src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep_weekly&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+        }
+        else
+        {
+            print "<IMG src=\"https://$server_hostname$www_bin/gengraph?$param_g&debut=$date_dep_weekly&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+        }
+        print "</td></tr>";
+
+
+$nom_g = "$nom_graph!!-!!monthly";
+
 
 print "<table>
        <tr>
-       		<td>
-                <IMG src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep_daily&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">
-                </td>
-	</tr>";
-$nom_g = "$nom_graph!!-!!weekly";
-#system("$rep_bin/genere-commande-rrdgraph $www_root$www_graph $nom_g $date_dep_weekly $date_fin");
+            <td>";
+        if($nom_graph ne "")
+        {
+            print "<IMG src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep_monthly&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+        }
+        else
+        {
+            print "<IMG src=\"https://$server_hostname$www_bin/gengraph?$param_g&debut=$date_dep_monthly&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+        }
+        print "</td></tr>";
 
-print "<tr>
-                <td>
-                <IMG src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep_weekly&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">
-                </td>
-        </tr>";
-
-$nom_g = "$nom_graph!!-!!monthly";
-#system("$rep_bin/genere-commande-rrdgraph $www_root$www_graph $nom_g $date_dep_monthly $date_fin");
-
-print "<tr>
-                <td>
-                <IMG src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep_monthly&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">
-                </td>
-        </tr>";
 
 $nom_g = "$nom_graph!!-!!yearly";
-#system("$rep_bin/genere-commande-rrdgraph $www_root$www_graph $nom_g $date_dep_yearly $date_fin");
 
-print "<tr>
-                <td>
-                <IMG src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep_yearly&fin=$date_fin&taille=650x180\"\" alt=\"Trafic bits/s\">
-                </td>
-        </tr>
-	</table>
-	</boby></html>";
+
+print "<table>
+       <tr>
+            <td>";
+        if($nom_graph ne "")
+        {
+            print "<IMG src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep_yearly&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+        }
+        else
+        {
+            print "<IMG src=\"https://$server_hostname$www_bin/gengraph?$param_g&debut=$date_dep_yearly&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+        }
+        print "</td></tr>";
+
+print "</table></boby></html>";
 
