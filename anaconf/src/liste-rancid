@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: liste-rancid,v 1.2 2008-07-07 16:49:24 pda Exp $
+# $Id: liste-rancid,v 1.3 2009-01-07 19:45:47 pda Exp $
 #
 # Analyse un fichier de configuration de rancid, et en extrait
 # le nom et le type de chaque équipement, et extrait de chaque
@@ -14,6 +14,7 @@
 # Historique :
 #   2004/06/08 : pda/jean : conception
 #   2008/07/07 : pda      : ajout hp
+#   2008/12/15 : jean     : ajout d'un motif des types d'équipement à ignorer
 #
 
 if [ $# != 2 ]
@@ -24,6 +25,8 @@ fi
 
 DB="$1"
 DIR="$2"
+
+IGNORE="^[a-zA-Z0-9][-a-zA-Z0-9.]*:wrapper\."
 
 fetch_model_cisco ()
 {
@@ -41,7 +44,7 @@ fetch_model_juniper ()
 }
 
 IFS=":"
-grep ":up$" $DB |
+grep ":up$" $DB | egrep -v "$IGNORE" |
     while read eq type up
     do
 	case "$type" in
