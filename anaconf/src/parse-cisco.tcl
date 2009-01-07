@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.19 2008-11-15 20:29:07 pda Exp $
+# $Id: parse-cisco.tcl,v 1.20 2009-01-07 22:04:43 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -16,6 +16,7 @@
 #   2007/07/13 : pda      : retrait cisco_debug et ajout flag debug en global
 #   2008/02/07 : pda/jean : correction ios router
 #   2008/06/27 : pda/jean : ajout traitement des gigastack
+#   2009/01/07 : pda      : conversion dBm->mW et puissance max sur i/f radio
 #
 
 ###############################################################################
@@ -25,6 +26,8 @@
 proc cisco-init {} {
     global cisco_masques
     global cisco_rfc1878
+    global cisco_80211_dbm
+    global cisco_80211_maxpower
 
     # masques(24) {0xff 0xff 0xff 0x00 0x00 ... 0x00 }
     # masques(25) {0xff 0xff 0xff 0x80 0x00 ... 0x00 }
@@ -79,6 +82,31 @@ proc cisco-init {} {
 	255.255.255.252	30
 	255.255.255.254	31
 	255.255.255.255	32
+    }
+
+    # Conversion dBm -> mw
+    # Le tableau contient deux types d'information :
+    # - types d'équipements (regexp) pour lesquels la conversion est nécessaire
+    # - valeurs dBm à convertir
+    # tableau de conversion dBm -> mW
+    array set cisco_80211_dbm {
+	eq	AIR-AP1131AG.*
+	17	50
+	15	30
+	14	25
+	11	12
+	8	6
+	5	3
+	2	2
+	-1	1
+    }
+
+    # Puissances maximum :
+    #	regexp "type d'éq/interface" -> puissance max (en mW)
+    array set cisco_80211_maxpower {
+	AIR-AP1121G.*			30
+	AIR-AP1131AG.*/Dot11Radio0	25
+	AIR-AP1131AG.*/Dot11Radio1	50
     }
 
 }
@@ -318,7 +346,7 @@ proc cisco-parse {libdir model fdin fdout tab eq} {
 
     set error [ios-parse $libdir $model $fdin $fdout t $eq kwtab]
     if {! $error} then {
-	set error [cisco-post-process "cisco" $model $fdout $eq t]
+	set error [cisco-post-process "cisco" $fdout $eq t]
     }
 
     return $error
@@ -1198,7 +1226,6 @@ proc cisco-sanitize {model eq tab} {
 #
 # Entrée :
 #   - type : "cisco" ou "hp"
-#   - model : modèle de l'équipement
 #   - fdout : fichier de sortie pour la génération
 #   - eq : nom de l'équipement
 #   - tab : tableau rempli au cours de l'analyse
@@ -1215,21 +1242,25 @@ proc cisco-sanitize {model eq tab} {
 #   2007/07/12 : pda       : debut conception sous-interface (ios router)
 #   2008/05/19 : pda       : ajout paramètres radio
 #   2008/06/27 : pda/jean  : ajout traitement des gigastacks
+#   2009/01/07 : pda       : retrait model, qui est dans le tableau
 #
 
-proc cisco-post-process {type model fdout eq tab} {
+proc cisco-post-process {type fdout eq tab} {
     global debug
+    global cisco_80211_dbm
+    global cisco_80211_maxpower
     upvar $tab t
 
     if {$debug & 0x02} then {
 	debug-array t
     }
 
+    set ios $t(eq!$eq!ios)
+    set model $t(eq!$eq!model)
+
     if {[cisco-sanitize $model $eq t]} then {
 	return 1
     }
-
-    set ios $t(eq!$eq!ios)
 
     if {[info exists t(eq!$eq!snmp)]} then {
 	# XXX : on ne prend que la première communauté trouvée
@@ -1382,12 +1413,51 @@ proc cisco-post-process {type model fdout eq tab} {
 		    set descname "-"
 		}
 
-		set radio ""
-		if {[info exists t($ifx!channel)] && [info exists t($ifx!power)]} then {
-		    append radio " radio"
-		    append radio " $t($ifx!channel)"
-		    append radio " $t($ifx!power)"
+		#
+		# Traitement des interfaces radio
+		# On se base sur le canal pour décider qu'il y a
+		# une interface radio, car toutes les interfaces
+		# radio n'ont pas forcément de puissance (paramètre
+		# implicite si puissance max).
+		#
 
+		set radio ""
+		if {[info exists t($ifx!channel)]} then {
+		    if {[info exists t($ifx!power)]} then {
+			set power $t($ifx!power)
+			#
+			# La puissance est fournie. Voir si elle
+			# est en dBm, auquel cas il faut la convertir
+			#
+			if {[regexp -nocase $cisco_80211_dbm(eq) $model]} then {
+			    # conversion nécessaire
+			    if {[info exists cisco_80211_dbm($power)]} then {
+				set power $cisco_80211_dbm($power)
+			    } else {
+				cisco-warning "Christophe Saillard, ta table de conversion dBm->mW est foireuse. Manque $power dBm !"
+			    }
+			}
+		    } else {
+			#
+			# La puissance n'est pas fournie. C'est donc
+			# le max. Chercher model/iface dans le tableau
+			# (via des regexp) pour obtenir la puissance
+			# max en mW.
+			#
+			set clef "$model/$iface"
+			set trouve 0
+			foreach c [array names cisco_80211_maxpower] {
+			    if {[regexp -nocase $c $clef]} then {
+				set power $cisco_80211_maxpower($c)
+				set trouve 1
+				break
+			    }
+			}
+			if {! $trouve} then {
+			    cisco-warning "Interface '$eq/$iface': no power information"
+			}
+		    }
+		    append radio " radio $t($ifx!channel) $power"
 		}
 		if {[info exists t($ifx!ssid)]} then {
 		    foreach ssid $t($ifx!ssid) {

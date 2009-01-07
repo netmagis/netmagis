@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.4
 
 #
-# $Id: analyser,v 1.10 2008-07-21 15:20:18 pda Exp $
+# $Id: analyser,v 1.11 2009-01-07 22:04:43 pda Exp $
 #
 # Analyse un fichier de configuration d'un équipement réseau
 # et renvoie la modélisation de cet équipement sous forme de
@@ -310,6 +310,7 @@ proc parse-list {spec expanser} {
 #   2007/07/12 : pda      : ajout de ios
 #   2008/07/07 : pda/jean : ajout paramètre libdir
 #   2008/07/07 : pda/jean : mise en commun avec HP
+#   2009/01/07 : pda      : ajout du modele dans le tableau
 #
 
 proc ios-parse {libdir model fdin fdout tab eq _kwtab} {
@@ -327,6 +328,7 @@ proc ios-parse {libdir model fdin fdout tab eq _kwtab} {
     set idx "eq!$eq"
     set t($idx!if) {}
     set t($idx!ios) "unsure"
+    set t($idx!model) $model
     while {[gets $fdin line] > -1} {
 	if {! [regexp $commentaire $line]} then {
 	    set error [ios-parse-line $line t $idx kwtab]

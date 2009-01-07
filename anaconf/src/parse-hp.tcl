@@ -1,5 +1,5 @@
 #
-# $Id: parse-hp.tcl,v 1.7 2008-11-15 20:29:07 pda Exp $
+# $Id: parse-hp.tcl,v 1.8 2009-01-07 22:04:43 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS HP
 #
@@ -97,7 +97,7 @@ proc hp-parse {libdir model fdin fdout tab eq} {
     }
 
     if {! $error} then {
-	set error [cisco-post-process "hp" $model $fdout $eq t]
+	set error [cisco-post-process "hp" $fdout $eq t]
     }
     return $error
 }

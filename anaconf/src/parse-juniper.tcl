@@ -1,5 +1,5 @@
 #
-# $Id: parse-juniper.tcl,v 1.8 2008-07-21 15:12:37 pda Exp $
+# $Id: parse-juniper.tcl,v 1.9 2009-01-07 22:04:43 pda Exp $
 #
 # Package d'analyse de fichiers de configuration JunOS
 #
@@ -1079,7 +1079,7 @@ proc juniper-post-process {model fdout eq tab} {
 		    # pour déterminer celles qui sont dans *ce* réseau
 		    if {[info exists t(eq!$eq!static!gw)]} then {
 			foreach gw $t(eq!$eq!static!gw) {
-			    set r [ juniper-match-network $gw $cidr]
+			    set r [juniper-match-network $gw $cidr]
 			    if {$r == -1} then {
 				return 1
 			    } elseif {$r} then {
