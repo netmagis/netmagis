@@ -278,7 +278,7 @@ Disponibilité~: \htmlurl {http://httpd.apache.org/}
 
 Le langage utilisé par l'application et nombre de scripts auxiliaires
 est le langage Tcl (Tool Control Language) développé à l'origine par
-John Ousterhout. WebAuth a été développé avec la version 8.4.
+John Ousterhout. WebAuth a été développé avec la version 8.5.
 
 Il faut noter que Tcl est souvent associé à la boîte à outils
 graphique Tk.  Cette dernière n'est pas utilisée par WebAuth.
@@ -297,20 +297,20 @@ Disponibilité~: \htmlurl {http://www.postgresql.org/}
 
 Attention~: la compilation de PostgreSQL doit être réalisée avec
 le support de Tcl.  Sous FreeBSD, cela signifie qu'il faut charger
-les ports de \texttt {postgresql} et \texttt {postgresql-tcltk}.
+les ports de \texttt {postgresql} et \texttt {pgtcl}.
 
 Pour vérifier si le support de Tcl est bien compilé, faire~:
 
 \begin {quote}
 \begin {verbatim}
-$ tclsh8.4      # ou "tclsh" simplement
+$ tclsh8.5      # ou "tclsh" simplement
 % package require Pgtcl
-1.4
+1.6
 \end{verbatim}
 \end {quote}
 
 Si vous rencontrez une erreur à la place d'un numéro de version (ici
-1.4), le support Tcl pour PostgreSQL n'est pas correctement installé.
+1.6), le support Tcl pour PostgreSQL n'est pas correctement installé.
 
 Vous devez également compiler le support du langage <<~PL/Tcl~>>.
 Sous FreeBSD, cela signifie qu'il faut charger le port de \texttt
