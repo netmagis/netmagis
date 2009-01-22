@@ -1,7 +1,7 @@
 %
 % Documentation d'installation de WebDNS
 %
-% $Id: install.tex,v 1.19 2009-01-22 19:02:05 pda Exp $
+% $Id: install.tex,v 1.20 2009-01-22 19:02:52 pda Exp $
 %
 % Historique
 %   2003/11/30 : pda : début de la rédaction
@@ -121,7 +121,7 @@
 
     \begin {center}
 	Version 1.4, 13 avril 2008 \\
-	\verb|$Id: install.tex,v 1.19 2009-01-22 19:02:05 pda Exp $| \\
+	\verb|$Id: install.tex,v 1.20 2009-01-22 19:02:52 pda Exp $| \\
 	\copyright
 	    Pierre David et Jean Benoit,
 %	    \htmladdnormallink {Pierre David et Jean Benoit}
@@ -579,6 +579,7 @@ les ports de \texttt {postgresql} et \texttt {pgtcl}.
 
 Pour vérifier si le support de Tcl est bien compilé, faire~:
 
+\cbstart%1.5
 \begin {quote}
 \small
 \begin {verbatim}
@@ -590,6 +591,7 @@ $ tclsh8.5      # ou "tclsh" simplement
 
 Si vous rencontrez une erreur à la place d'un numéro de version (ici
 1.6), le support Tcl pour PostgreSQL n'est pas correctement installé.
+\cbend%1.5
 
 Vous devez également compiler le support du langage «~PL/Tcl~».
 Sous FreeBSD, cela signifie qu'il faut charger le port de \texttt
