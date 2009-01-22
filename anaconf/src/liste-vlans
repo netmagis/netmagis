@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: liste-vlans,v 1.3 2008-10-15 13:59:02 jean Exp $
+# $Id: liste-vlans,v 1.4 2009-01-22 20:20:21 pda Exp $
 #
 # Analyse un fichier de configuration de rancid, et en extrait
 # le nom du commutateur serveur VTP, ainsi que la liste des
@@ -25,7 +25,7 @@ fi
 DB="$1"
 DIR="$2"
 
-TCLSH=/usr/local/bin/tclsh8.4
+TCLSH=/usr/local/bin/tclsh8.5
 
 is_vtp_server ()
 {

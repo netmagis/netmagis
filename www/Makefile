@@ -1,12 +1,12 @@
 #
-# $Id: Makefile,v 1.10 2008-10-01 21:06:08 pda Exp $
+# $Id: Makefile,v 1.11 2009-01-22 20:20:25 pda Exp $
 #
 # Makefile pour lancer l'installation de l'application topo
 # Ce Makefile n'est normalement jamais appelé lui-même, mais
 # il est appelé
 #
 
-TCLSH	= /usr/local/bin/tclsh8.4
+TCLSH	= /usr/local/bin/tclsh8.5
 
 DEBUG  = 0
 BASE    = {host=dbcrc.u-strasbg.fr dbname=dns user=dns password=pas-fou-non-?}

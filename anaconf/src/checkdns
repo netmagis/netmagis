@@ -1,7 +1,7 @@
-#!/usr/local/bin/tclsh8.4
+#!/usr/local/bin/tclsh8.5
 
 #
-# $Id: checkdns,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+# $Id: checkdns,v 1.2 2009-01-22 20:20:21 pda Exp $
 #
 # Vérifie les enregistrement DNS de la base DNS, en fonction de ce qui
 # est trouvé dans la configuration des routeurs

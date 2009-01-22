@@ -1,8 +1,8 @@
-#!/usr/local/bin/tclsh8.4
+#!/usr/local/bin/tclsh8.5
 
 
 #
-# $Id: sendcoll,v 1.5 2008-10-05 09:17:20 pda Exp $
+# $Id: sendcoll,v 1.6 2009-01-22 20:20:21 pda Exp $
 #
 # Prend sur l'entrée standard une liste des points de collecte
 # (telle que générée par extractcoll -s -w), et la présente au

@@ -1,7 +1,7 @@
-#!/usr/local/bin/tclsh8.4
+#!/usr/local/bin/tclsh8.5
 
 #
-# $Id: analyser,v 1.11 2009-01-07 22:04:43 pda Exp $
+# $Id: analyser,v 1.12 2009-01-22 20:20:21 pda Exp $
 #
 # Analyse un fichier de configuration d'un équipement réseau
 # et renvoie la modélisation de cet équipement sous forme de
