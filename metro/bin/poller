@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w 
 
-# $Id: poller,v 1.3 2008-11-13 16:11:19 boggia Exp $
+# $Id: poller,v 1.4 2009-02-06 11:29:43 boggia Exp $
 ###################################################################
 #  boggia : Creation : 20/03/08
 #  boggia : Modification : 16/05/08
@@ -68,7 +68,8 @@ our %function_probes = (
 		'get_value_generic'	=> \&get_url,
 		'stp_catalyst'          => \&get_stp_catalyst,
 		'nbauthwifi'		=> \&get_nbauthwifi,
-		'nbassocwifi'		=> \&get_nbassocwifi
+		'nbassocwifi'		=> \&get_nbassocwifi,
+		'juniper_filter_counter'	=> \&get_juniper_filter_counter
 );
 
 
@@ -102,7 +103,8 @@ $config{'index_if64'} = $config{'path_cache_probes'} . "/if64.txt";
 $config{'index_if32'} = $config{'path_cache_probes'} . "/if32.txt";
 $config{'index_disk'} = $config{'path_cache_probes'} . "/disk.txt";
 $config{'index_url'} = $config{'path_cache_probes'} . "/url.txt";
-$config{'fichier_etat'} = $config{'path_var'} . "/wifi/ap_state.txt";
+$config{'index_url'} = $config{'path_cache_probes'} . "/url.txt";
+$config{'index_juniper_filter'} = $config{'path_cache_probes'} . "/juniper_filter.txt";
 # liste des ssid du reseau sans fil
 $config{'list_ssid_wifi'} = read_conf_file("$config{'conf_file'}","LIST_SSID_WIFI");
 
@@ -121,17 +123,20 @@ require "$config{'path_sondes'}/sonde-mailq.pl";
 require "$config{'path_sondes'}/sonde-cpu-cisco.pl";
 require "$config{'path_sondes'}/sonde-generic-gauge.pl";
 require "$config{'path_sondes'}/sonde-stp-catalyst.pl";
+require "$config{'path_sondes'}/sonde-juniper-filter-counter.pl";
 
 our $logopt;
 our $lock_liste_ap = 0;
 our $lock_liste_if64 = 0;
 our $lock_liste_if32 = 0;
 our $lock_liste_disk = 0;
+our $lock_liste_juniper_filter = 0;
 our $maj_if_ap_file = 0;
 our $maj_if64_file = 0;
 our $maj_if32_file = 0;
 our $maj_disk_file = 0;
 our $maj_url_file = 0;
+our $maj_juniper_filter_file = 0;
 
 our %collsess;
 our %liste_ap;
@@ -219,6 +224,10 @@ close(DISK);
 open(URL,$config{'index_url'});
 our @liste_url=<URL>;
 close(URL);
+
+open(JUNFILTER,$config{'index_juniper_filter'});
+our @liste_juniper_filter=<JUNFILTER>;
+close(JUNFILTER);
 
 
 my $elem;
@@ -449,6 +458,37 @@ sub maj_if_files
                         close(BD);
 
                         unlink "$config{'dir_lock'}/url.lock";
+                }
+        }
+	if($maj_juniper_filter_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/juniper_filter\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+                writelog("poller_$group$num_process",$config{'logopt'},"info",
+                        "\t -> REECRITURE DU FICHIER D'INDEX DES FILTRES JUNIPER");
+
+                if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/juniper_filter.lock");
+                        close(LOCK);
+
+                        my $t_liste_juniper_filter = @liste_juniper_filter;
+
+                        open(BD,">$config{'index_juniper_filter'}");
+
+                        for($i=0;$i<$t_liste_juniper_filter;$i++)
+                        {
+                                if($liste_juniper_filter[$i] =~/.*;.*;.*/)
+                                {
+                                    print BD "$liste_juniper_filter[$i]\n";
+                                }
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/juniper_filter.lock";
                 }
         }
 }

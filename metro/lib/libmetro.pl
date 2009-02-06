@@ -1,4 +1,4 @@
-# $Id: libmetro.pl,v 1.4 2008-12-11 14:15:03 boggia Exp $
+# $Id: libmetro.pl,v 1.5 2009-02-06 11:29:43 boggia Exp $
 ###########################################################
 #   Creation : 26/03/08 : boggia
 # 
@@ -210,8 +210,18 @@ sub get_snmp_ifspeed
 sub creeBaseTrafic
 {
     my ($fichier,$speed)=@_;
-    system("/usr/local/bin/rrdtool create $fichier  DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U DS:erreur:GAUGE:600:U:U DS:ticket:GAUGE:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    system("/usr/local/bin/rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U DS:erreur:GAUGE:600:U:U DS:ticket:GAUGE:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     setBaseMaxSpeed($fichier,$speed);
+}
+
+###########################################################
+# creation d'une base rrd pour un compteur generique
+sub creeBaseCounter
+{
+    my ($fichier,$speed) = @_;
+    system("/usr/local/bin/rrdtool create $fichier DS:value:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    my $maxspeed = convert_nb_to_exp($speed);
+    system("/usr/local/bin/rrdtool tune $fichier --maximum value:$maxspeed");
 }
 
 ###########################################################
