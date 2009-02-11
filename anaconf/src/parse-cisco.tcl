@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.20 2009-01-07 22:04:43 pda Exp $
+# $Id: parse-cisco.tcl,v 1.21 2009-02-11 22:52:42 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -615,7 +615,7 @@ proc cisco-parse-allowed-vlan {active line tab idx} {
     }
 
     if {! $error} then {
-	set l [concat $l [parse-list [lindex $line 0] no]]
+	set l [concat $l [parse-list [lindex $line 0] no {}]]
 	set error [cisco-set-ifattr t $idx!if!$ifname allowed-vlans $l]
     }
 

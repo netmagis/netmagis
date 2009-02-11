@@ -1,11 +1,33 @@
 #
-# $Id: parse-hp.tcl,v 1.8 2009-01-07 22:04:43 pda Exp $
+# $Id: parse-hp.tcl,v 1.9 2009-02-11 22:52:42 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS HP
 #
 # Historique
 #   2008/07/07 : pda/jean : début de la conception
+#   2009/02/11 : pda      : analyse des listes de la forme C24-D2
 #
+
+#
+# Nombre de ports sur les modules des HP
+#   J4820A XL 10/100-TX module
+#   J4821A XL 100/1000-T module
+#   J4821B XL 100/1000-T module
+#   J4878A XL mini-GBIC module
+#   J4878B XL mini-GBIC module
+#   J4907A XL Gig-T/GBIC module
+#   J8702A 24p Gig-T zl Module
+#
+
+array set hpmodules {
+    J4820A	24
+    J4821A	4
+    J4821B	4
+    J4878A	4
+    J4878B	4
+    J4907A	16
+    J8702A	24
+}
 
 ###############################################################################
 # Fonctions utilitaires
@@ -58,6 +80,7 @@ proc hp-parse {libdir model fdin fdout tab eq} {
     upvar $tab t
     array set kwtab {
 	-COMMENT			^;
+	module				{CALL hp-parse-module}
 	interface			{CALL hp-parse-interface}
 	vlan				{CALL hp-parse-vlan}
 	exit				{CALL hp-parse-exit}
@@ -87,6 +110,7 @@ proc hp-parse {libdir model fdin fdout tab eq} {
     set t(eq!$eq!context) ""
     set t(eq!$eq!if) {}
     set t(eq!$eq!if!disabled) {}
+    set t(eq!$eq!modules) {}
 
     set error [ios-parse $libdir $model $fdin $fdout t $eq kwtab]
 
@@ -100,6 +124,42 @@ proc hp-parse {libdir model fdin fdout tab eq} {
 	set error [cisco-post-process "hp" $fdout $eq t]
     }
     return $error
+}
+
+#
+# Entrée :
+#   - line = "<position> type <ref>"
+#   - idx = eq!<eqname>
+# Remplit
+#   - tab(eq!<nom eq>!modules) {{A <ports>} {B <nports>} ...}
+#
+# Historique
+#   2009/02/11 : pda      : conception
+#
+
+proc hp-parse-module {active line tab idx} {
+    upvar $tab t
+    global hpmodules
+
+    set line [string trim $line]
+    if {[regexp {^([0-9]+) type (.*)$} $line bidon pos ref]} then {
+	if {[info exists hpmodules($ref)]} then {
+	    #
+	    # les vieilles magouilles sur les codes ASCII sont
+	    # encore les meilleurs moyens de convertir des codes
+	    # numériques vers des lettres
+	    #
+	    set lettre [format "%c" [expr 64 + $pos]]
+	    lappend t($idx!modules) [list $lettre $hpmodules($ref)]
+	    set t($idx!modules) [lsort -index 0 $t($idx!modules)]
+	} else {
+	    warning "$idx: incorrect 'module' specification (module $line)"
+	}
+    } else {
+	warning "$idx: incorrect 'module' specification (module $line)"
+    }
+
+    return 0
 }
 
 #
@@ -304,7 +364,7 @@ proc hp-parse-trunk {active line tab idx} {
     if {[regexp {^\s*([-A-Za-z0-9,]+)\s+(\S+)} $line bidon subifs parentif]} then {
 	hp-ajouter-iface t $idx $parentif
 
-	set lsubif [parse-list $subifs yes]
+	set lsubif [parse-list $subifs yes $t($idx!modules)]
 	foreach subif $lsubif {
 	    set error [hp-set-ifattr t $idx!if!$subif parentif $parentif]
 	    if {$error} then {
@@ -365,7 +425,7 @@ proc hp-parse-untagged {active line tab idx} {
 
     if {$active} then {
 	set vlanid $t($idx!lvlan!lastid)
-	set liface [parse-list $line yes]
+	set liface [parse-list $line yes $t($idx!modules)]
 	foreach iface $liface {
 	    set error [hp-set-ifattr t $idx!if!$iface "type" "ether"]
 	    if {$error} then {
@@ -389,7 +449,7 @@ proc hp-parse-tagged {active line tab idx} {
 
     if {$active} then {
 	set vlanid $t($idx!lvlan!lastid)
-	set liface [parse-list $line yes]
+	set liface [parse-list $line yes $t($idx!modules)]
 	foreach iface $liface {
 	    set error [hp-set-ifattr t $idx!if!$iface "type" "trunk"]
 	    if {$error} then {

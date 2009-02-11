@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.5
 
 #
-# $Id: analyser,v 1.12 2009-01-22 20:20:21 pda Exp $
+# $Id: analyser,v 1.13 2009-02-11 22:52:42 pda Exp $
 #
 # Analyse un fichier de configuration d'un équipement réseau
 # et renvoie la modélisation de cet équipement sous forme de
@@ -23,9 +23,10 @@
 #   0x20 (32)  : -
 #
 # Historique :
-#   2007/01/05 : pda : intégration dans le CVS
-#   2007/07/13 : pda : documentation
-#   2007/07/13 : pda : ajout syntaxe debug
+#   2007/01/05 : pda      : intégration dans le CVS
+#   2007/07/13 : pda      : documentation
+#   2007/07/13 : pda      : ajout syntaxe debug
+#   2009/02/11 : pda      : analyse des listes de la forme C24-D2
 #
 
 set debug 0
@@ -202,6 +203,8 @@ proc parse-location {desc _location _blablah _msg} {
 #   - spec : liste d'intervalles (n-m) ou de valeurs (p) séparées par des ","
 #   - expanser : 0 s'il faut retourner une liste d'intervalles,
 #	ou 1 s'il faut retourner une liste de valeurs (intervalles expansés)
+#   - preflist : une liste de la forme {{A 4} {B 16} ...} où chaque
+#	lettre est un nom de module et la valeur le nombre de ports du module
 # Sortie :
 #   - valeur de retour : liste au format {{n m} {p p} ...} ou liste au
 #	format {n1 n2 n3 ...}
@@ -214,9 +217,10 @@ proc parse-location {desc _location _blablah _msg} {
 #
 # Historique :
 #   2008/07/07 : pda/jean : conception
+#   2009/02/11 : pda      : ajout de preflist
 #
 
-proc parse-list {spec expanser} {
+proc parse-list {spec expanser preflist} {
     set l {}
     foreach v [split $spec ","] {
 	set rg [split $v "-"]
@@ -249,13 +253,53 @@ proc parse-list {spec expanser} {
 		warning "Incorrect list specification ($spec)"
 		return {}
 	    }
-	    if {! [string equal $prefmin $prefmax]} then {
-		warning "Incorrect list specification ($spec) : prefix '$prefmin' != '$prefmax'"
-		return {}
-	    }
+	    if {[string equal $prefmin $prefmax]} then {
+		# A5-A9
+		for {set i $min} {$i <= $max} {incr i} {
+		    lappend l2 "$prefmin$i"
+		}
+	    } else {
+		# A5-C2
+		if {[llength $preflist] == 0} then {
+		    warning "Incorrect list specification ($spec) : prefix '$prefmin' != '$prefmax'"
+		    return {}
+		} else {
+		    #
+		    # Chercher le nombre de ports de chaque module
+		    # et râler si les modules ne sont pas trouvés
+		    #
+		    set imin [lsearch -index 0 $preflist $prefmin]
+		    if {$imin == -1} then {
+			warning "Incorrect prefix '$prefmin' in '$spec'"
+		    }
+		    set imax [lsearch -index 0 $preflist $prefmax]
+		    if {$imax == -1} then {
+			warning "Incorrect prefix '$prefmax' in '$spec'"
+		    }
 
-	    for {set i $min} {$i <= $max} {incr i} {
-		lappend l2 "$prefmin$i"
+		    #
+		    # Expanser la liste
+		    #
+
+		    set i $min
+		    for {set j $imin} {$j <= $imax} {incr j} {
+			set pref   [lindex [lindex $preflist $j] 0]
+			set nports [lindex [lindex $preflist $j] 1]
+
+			# pour les préfixes intermédiaires : aller
+			# jusqu'au port max. Quand on arrive au
+			# dernier préfixe : prendre la valeur spécifiée.
+			set k [expr "$j < $imax ? $nports : $max"]
+
+			# expanser
+			for {} {$i <= $k} {incr i} {
+			    lappend l2 "$pref$i"
+			}
+
+			# remettre les compteurs à 1 pour la suite
+			set i 1
+		    }
+		}
 	    }
 	}
 	set l $l2
