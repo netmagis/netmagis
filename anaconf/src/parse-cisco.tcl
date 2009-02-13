@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.21 2009-02-11 22:52:42 pda Exp $
+# $Id: parse-cisco.tcl,v 1.22 2009-02-13 22:16:39 pda Exp $
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #
@@ -905,13 +905,14 @@ proc cisco-parse-iface-channel {active line tab idx} {
 # Historique
 #   2008/05/19 : pda      : conception
 #   2008/10/14 : pda      : ofdm est optionnel sur les ap1130
+#   2009/02/13 : pda      : les puissances peuvent être -1 sur ap1131
 #
 
 proc cisco-parse-iface-power {active line tab idx} {
     upvar $tab t
 
     set line [string trim $line]
-    if {[regexp {^(ofdm\s+)?([0-9]+)$} $line bidon ofdm power]} then {
+    if {[regexp {^(ofdm\s+)?(-?[0-9]+)$} $line bidon ofdm power]} then {
 	set ifname $t($idx!current!if)
 	set t($idx!if!$ifname!power) $power
     }
