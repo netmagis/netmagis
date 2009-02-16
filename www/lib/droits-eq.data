@@ -16,6 +16,7 @@
 
 crctdi			.*
 crcgti			.*
+digp			.*
 api			^api-
 archi			^archi-
 bacterio		^microbio-
