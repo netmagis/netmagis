@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.15 2008-08-14 17:20:56 pda Exp $
+# $Id: webapp.tcl,v 1.16 2009-02-23 13:02:04 pda Exp $
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #
@@ -1644,15 +1644,17 @@ proc ::webapp::valid-email {email} {
 #	- bcc : destinataire caché, si besoin est
 #	- subject : le sujet
 #	- texte : le texte
+#	- type : le type du mail, par défaut 'text/plain; charset="iso8859-15"'
 #
 # Sortie :
 #   - valeur de retour : aucune
 #
 # Historique :
 #   2003/09/29 : pda : conception et codage
+#   2009/02/23 : pda : ajout paramètre optionnel type
 #
 
-proc ::webapp::mail {from replyto to cc bcc subject texte} {
+proc ::webapp::mail {from replyto to cc bcc subject texte {type {}}} {
     set fd [open "|$::webapp::sendmail" "w"]
 
     set to [join $to ", "]
@@ -1668,9 +1670,12 @@ proc ::webapp::mail {from replyto to cc bcc subject texte} {
     if {! [string equal $replyto ""]} then {
 	puts $fd "Reply-to: $replyto"
     }
+    if {[string equal $type ""]} then {
+	set type {text/plain; charset="iso-8859-15"}
+    }
     puts $fd "Subject: $subject"
     puts $fd "Mime-Version: 1.0"
-    puts $fd "Content-Type: text/plain; charset=\"iso-8859-15\""
+    puts $fd "Content-Type: $type"
     puts $fd "Content-Transfer-Encoding: 8bit"
     puts $fd ""
     puts $fd $texte
