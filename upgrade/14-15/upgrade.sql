@@ -5,7 +5,7 @@
 --	- psql dns < upgrade.sql
 --		(attention : la mise à jour est lente)
 --
--- $Id: upgrade.sql,v 1.6 2008-12-09 00:42:34 jean Exp $
+-- $Id: upgrade.sql,v 1.7 2009-03-20 22:59:51 jean Exp $
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
@@ -55,6 +55,18 @@ UPDATE rr
 
 ALTER TABLE rr
 	ADD COLUMN ttl INT ;
+
+------------------------------------------------------------------------------
+-- ajout d'un trigger sur la table DHCPPROFIL
+------------------------------------------------------------------------------
+
+CREATE TRIGGER tr_modifier_dhcpprofil
+    AFTER UPDATE
+    ON dhcpprofil
+    FOR EACH ROW
+    EXECUTE PROCEDURE generer_dhcp ()
+    ;
+
 
 ------------------------------------------------------------------------------
 -- divers
