@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.13 2008-04-11 07:33:28 moindrot Exp $
+# $Id: base.tcl,v 1.14 2009-03-25 16:58:02 moindrot Exp $
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
@@ -64,6 +64,14 @@ proc helem {tag content args} {
 proc htg_gras {} {
     if [catch {set arg [htg getnext]} v] then {error $v}
     set r [helem B $arg]
+    return $r
+}
+
+proc htg_color {} {
+    if [catch {set color [htg getnext]} v] then {error $v}
+    if [catch {set texte  [htg getnext]} v] then {error $v}
+
+    set r [helem "FONT COLOR=$color" $texte]
     return $r
 }
 
