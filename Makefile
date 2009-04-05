@@ -10,7 +10,7 @@ LISTE =	\
 all:	pkgIndex.tcl
 
 pkgIndex.tcl:	$(LISTE)
-	echo "pkg_mkIndex ." | tclsh8.4
+	echo "pkg_mkIndex ." | tclsh8.5
 	chmod g+w pkgIndex.tcl
 
 clean:
