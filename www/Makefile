@@ -70,7 +70,7 @@ SUBST	= \
 	-e 's|%PS2PDF%|$(PS2PDF)|' \
 	-e 's|%IDRHOST%|$(IDRHOST)|'
 
-EXCL = \./doc|CVS
+EXCL = \./doc|\.svn
 #
 # La documentation (succinte) de l'application
 #
