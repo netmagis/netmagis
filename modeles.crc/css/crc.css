@@ -272,7 +272,7 @@ dt.menu-meteo a img {
  * (cf ci-dessous pour cas spécial des news)
  */
 
-#texte-page h2 {
+h2 {
         padding: 15px 0px 0px 0px;
         margin-bottom: 20px;
         color: #00536c;			/* bleu foncé */
@@ -283,11 +283,11 @@ dt.menu-meteo a img {
 }
 
 /* accolée au h2, htg met une image qui ne servira que pour l'impression */
-#texte-page #image-a-imprimer-seulement {
+#image-a-imprimer-seulement {
 	display: none;
 }
 
-#texte-page h3 {
+h3 {
 	display: list-item;
 	color: #cc5229;			/* orange */
 	list-style: disc inside url(images/puce1.gif);
@@ -296,7 +296,7 @@ dt.menu-meteo a img {
 	font-weight: bold;
 }
 
-#texte-page h4 {
+h4 {
 	text-align: left;
 	color: #313131;			/* gris presque noirs */
 	font-size: 13px;
@@ -314,7 +314,7 @@ dt.menu-meteo a img {
 	text-decoration: none;
 }
 
-#texte-page li {
+li {
         text-align: justify;
 	margin-left: 15px;
         padding-bottom: 0px; 
@@ -322,12 +322,12 @@ dt.menu-meteo a img {
 	list-style: disc outside url(images/puce2.gif);
 }
 
-#texte-page ul {
+ul {
 	margin-left: 15px;
 	padding-left: 0px;
 }
 
-#texte-page ol li {
+ol li {
         text-align: justify;
 	margin-left: 15px;
         padding-bottom: 3px; 
@@ -335,28 +335,28 @@ dt.menu-meteo a img {
         list-style: decimal outside none;
 }
 
-#texte-page ol li ol li {
+ol li ol li {
         text-align: justify;
 	margin-left: 0px;
         padding-left: 0px;
 	list-style: lower-alpha outside none;
 }
 
-#texte-page ol li ol li ol li {
+ol li ol li ol li {
         text-align: justify;
 	margin-left: 0px;
         padding-left: 0px;
 	list-style: lower-roman outside none;
 }
 
-#texte-page ol li ul li {
+ol li ul li {
         text-align: justify;
 	margin-left: 0px;
         padding-left: 0px;
 	list-style: disc outside url(images/puce2.gif);
 }
 
-#texte-page li ul li {
+li ul li {
         text-align: justify;
         display: list-item;
 	margin-left: 0px;
@@ -364,7 +364,7 @@ dt.menu-meteo a img {
 	list-style: circle outside url(images/puce3.gif);
 }
 
-#texte-page li ul li ul li {
+li ul li ul li {
         text-align: justify;
 	margin-left: 0px;
         padding-left: 0px;
@@ -401,18 +401,18 @@ dt.menu-meteo a img {
   	text-align: center;
 }
 
-#texte-page .accueil {
+.accueil {
 	padding: 0px;
 	margin: 0px 0px 0px 15px;
 	width: 100%;
 }
 
-#texte-page .accueil td {
+.accueil td {
 	vertical-align: top;
 	padding: 5px 2px 5px 10px;
 }
 
-#texte-page .accueil .separation-verticale {
+.accueil .separation-verticale {
 	padding: 0px;
 	margin: 0px;
         border-left: #c7d2e2;		/* bleu clair */
@@ -420,18 +420,18 @@ dt.menu-meteo a img {
         border-style: none solid none none;
 	color: #c7d2e2;			/* bleu clair */
 }
-#texte-page .accueil .separation-verticale div {
+.accueil .separation-verticale div {
 	margin: 0px;
 	padding: 0px;
 	width: 1px;
 }
 
-#texte-page .accueil ul {
+.accueil ul {
 	padding: 0px 0px 0px 5px;
         margin: 0px;
 }
 
-#texte-page .accueil ul li {
+.accueil ul li {
 	padding: 15px 0px 0px 0px;
         margin: 0px;
         color: #cc5229;			/* orange */
@@ -440,11 +440,11 @@ dt.menu-meteo a img {
 	list-style: disc inside url(images/puce1.gif);
 }
 
-#texte-page .accueil ul li ul {
+.accueil ul li ul {
 	padding: 10px 0px 0px 0px;
 }
 
-#texte-page .accueil ul li ul li {
+.accueil ul li ul li {
 	padding: 0px 0px 0px 0px;
 	margin: 0px 0px 0px 20px;
 	color: #515151;			/* texte : gris */
@@ -453,7 +453,7 @@ dt.menu-meteo a img {
 	list-style: disc outside url(images/puce2.gif);
 }
 
-#texte-page .accueil img.icone {
+.accueil img.icone {
 	padding-left: 20px;
 	margin: 0px;
 }

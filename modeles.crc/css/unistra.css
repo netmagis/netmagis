@@ -1,4 +1,4 @@
-/* $Id: print.css,v 1.4 2008-03-04 16:30:50 pda Exp $ */
+/* $Id: crc.css,v 1.6 2008/04/11 07:33:20 moindrot Exp $ */
 
 /*
  * Les couleurs utilisées dans cette feuille de style :
@@ -46,7 +46,6 @@ td#logo {
 	border: 0px;
 	text-align: center;
 	vertical-align: top;
-        display: none;
 }
 
 td#titre-page {
@@ -56,7 +55,6 @@ td#titre-page {
 	background-position: 100% 0%;
 	text-align: center;
 	vertical-align: middle;
-        display: none;
 }
 
 td#titre-page h1 {
@@ -71,7 +69,6 @@ td#titre-page h1 {
 
 td#separation-haut,
 td#separation-bas {
-	display: none;
 	margin: 0px;
 	padding: 0px;
 	border-top: #c7d2e2;		/* bleu clair */
@@ -87,7 +84,6 @@ td#separation-bas div {
 
 /* Le bandeau à gauche */
 td#bandeau {
-	display: none;
 	vertical-align: top;
 	background-color: #eaf0f8;	/* bleu clair */
 	margin: 0px;
@@ -112,7 +108,6 @@ td#texte-page {
 	color: #63798d;			/* gris bleu */
 	font-size: 8px;
 	vertical-align: middle;
-        display: none;
 }
 
 #pied-page a:link,
@@ -156,7 +151,6 @@ dl.menu {
 	margin: 0px;
   	text-align: left;
 	list-style: none;
-        display: none;
 }
 
 /* les sous-titres du menu, éléments clickables pour les "déployer" */
@@ -290,6 +284,7 @@ h2 {
 
 /* accolée au h2, htg met une image qui ne servira que pour l'impression */
 #image-a-imprimer-seulement {
+	display: none;
 }
 
 h3 {
@@ -313,7 +308,6 @@ h4 {
 #texte-page a:visited {
         color: #00536c;			/* bleu foncé */
         text-decoration: underline;
-        margin: 0px 15px 10px 15px;
 }
 #texte-page a:hover {
 	color: #cc5229;			/* orange */
@@ -323,7 +317,7 @@ h4 {
 li {
         text-align: justify;
 	margin-left: 15px;
-        padding-bottom: 3px; 
+        padding-bottom: 0px; 
         display: list-item ; 
 	list-style: disc outside url(images/puce2.gif);
 }
@@ -331,6 +325,35 @@ li {
 ul {
 	margin-left: 15px;
 	padding-left: 0px;
+}
+
+ol li {
+        text-align: justify;
+	margin-left: 15px;
+        padding-bottom: 3px; 
+        display: list-item ; 
+        list-style: decimal outside none;
+}
+
+ol li ol li {
+        text-align: justify;
+	margin-left: 0px;
+        padding-left: 0px;
+	list-style: lower-alpha outside none;
+}
+
+ol li ol li ol li {
+        text-align: justify;
+	margin-left: 0px;
+        padding-left: 0px;
+	list-style: lower-roman outside none;
+}
+
+ol li ul li {
+        text-align: justify;
+	margin-left: 0px;
+        padding-left: 0px;
+	list-style: disc outside url(images/puce2.gif);
 }
 
 li ul li {
@@ -556,17 +579,10 @@ td#texte-page .accueil-news h3 {
 #texte-page a.wifi:link,
 #texte-page a.wifi:active,
 #texte-page a.wifi:visited {
-        color: #818181;
+        color: #818181;			/* gris clair */
 }
 
 #texte-page a.wifi:hover {
-        color: #cc5229;
+        color: #cc5229;			/* orange */
         text-decoration: none;
 }
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
-
