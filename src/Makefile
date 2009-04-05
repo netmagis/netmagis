@@ -2,8 +2,8 @@
 
 CC		= gcc -Wall
 DEBUG		= -g
-TCLCFLAGS	= -I/usr/local/include/tcl8.4
-TCLLFLAGS	= -L/usr/local/lib -ltcl84 -lm
+TCLCFLAGS	= -I/usr/local/include/tcl8.5
+TCLLFLAGS	= -L/usr/local/lib -ltcl85 -lm
 
 
 CFLAGS		= $(DEBUG) $(TCLCFLAGS)
