@@ -10,7 +10,7 @@ Example of output format
 
 eq crc-cc1 cisco/WS-C4506 45464748
 iface GigaEthernet0/1 <radio> <M123 ou ->  <Ether ou Trunk> {X / L33 crc-rc1 ge-0/0/0}
-    {0 {} <ip> ...} {7 <vlan-desc-en-hexa> 130.79.....} ...
+    <desc> {0 {} <ip> ...} {7 <vlan-desc-en-hexa> 130.79.....} ...
 <all ifaces>
 
 with <radio> = {<channel> <power> <ssid> <ssid> ...} ou {}
@@ -35,12 +35,14 @@ void output_iface (FILE *fp, struct node *n)
     char *ifname ;
     char *stat ;
     char *type ;
+    char *desc ;
     struct node *peer ;
     struct linklist *ll1, *ll2, *ll3 ;
 
     ifname = n->u.l1.ifname ;
     stat = (n->u.l1.stat == NULL) ? "-" : n->u.l1.stat ;
     type = (n->u.l1.l1type == L1T_TRUNK) ? "Trunk" : "Ether" ;
+    desc = (n->u.l1.ifdesc == NULL) ? "-" : n->u.l1.ifdesc ;
 
     fprintf (fp, "iface %s %c", ifname, LB) ;
 
@@ -61,7 +63,7 @@ void output_iface (FILE *fp, struct node *n)
 	    fprintf (fp, " %s", s->name) ;
     }
 
-    fprintf (fp, "%c %s %s", RB, stat, type) ;
+    fprintf (fp, "%c %s %s %s", RB, stat, type, desc) ;
 
     peer = get_neighbour (n, NT_L1) ;
     if (peer == NULL)

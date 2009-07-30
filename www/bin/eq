@@ -688,8 +688,9 @@ proc main {} {
 		set radio [lindex $ligne 2]
 		set stat  [lindex $ligne 3]
 		set mode  [lindex $ligne 4]
-		set lien  [lindex $ligne 5]
-		set ligne [lreplace $ligne 0 5]
+		set desc  [lindex $ligne 5]
+		set lien  [lindex $ligne 6]
+		set ligne [lreplace $ligne 0 6]
 
 
 		if {[string equal $iface $nom]} then {
@@ -764,6 +765,12 @@ proc main {} {
 							    "href" $url]
 			}
 		    }
+		}
+
+		if {$desc ne "-"} then {
+		    append txt " ("
+		    append txt [::webapp:post-string $desc]
+		    append txt ")"
 		}
 
 		#
