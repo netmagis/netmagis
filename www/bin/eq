@@ -713,6 +713,12 @@ proc main {} {
 
 		append txt " $mode"
 
+		if {$desc ne "-"} then {
+		    append txt " ("
+		    append txt [::webapp::html-string [binary format H* $desc]]
+		    append txt ")"
+		}
+
 		if {[llength $lien] > 1} then {
 		    set via [lindex $lien 0]
 		    set eq2 [lindex $lien 1]
@@ -765,12 +771,6 @@ proc main {} {
 							    "href" $url]
 			}
 		    }
-		}
-
-		if {$desc ne "-"} then {
-		    append txt " ("
-		    append txt [::webapp:post-string $desc]
-		    append txt ")"
 		}
 
 		#
