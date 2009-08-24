@@ -1,4 +1,4 @@
-# $Id: sonde-juniper-filter-counter.pl,v 1.1 2009-02-06 15:01:39 boggia Exp $
+# $Id: sonde-juniper-filter-counter.pl,v 1.2 2009-08-24 08:02:58 boggia Exp $
 #
 #
 # ###################################################################
@@ -57,10 +57,10 @@ sub get_juniper_filter_counter
 	                       	#on remplit la variable index
 	                    	if($inter eq $filter && $ip eq $host && $ind ne "")
 	                        {
+					system("echo \"TROUVE : $inter eq $filter && $ip eq $host && $ind ne rien\" >> /var/tmp/cache");
                         		$trouve_filter = 1;
                         	      	$index_filter = $ind;
 					$i = $t_liste_juniper_filter;
-        	                       	#print "\non trouve l'interface $index_filter\n";
  	                     	}
 	               }
 		}
@@ -214,9 +214,11 @@ sub get_filter_name
 				my $t_liste_juniper_filter = @liste_juniper_filter;
 				
 				my $i;
+				# cherche le nom du filtre dans le cache
 				for($i=0;$i<$t_liste_juniper_filter;$i++)
 				{
 					(my $ip, my $inter, my $ind) = split(/;/,$liste_juniper_filter[$i]);
+
 					if($ip eq $host && $filter eq $inter)
 					{
 						$liste_juniper_filter[$i] = "$ip;$filter;$index_filter";
@@ -284,6 +286,8 @@ sub get_juniper_filter
                             creeBaseCounter($base,$speed);
                             writelog("get_juniper_filter_$group$num_process",$config{'logopt'},"info",
 				"\t -> create $base,$host,$if,$oid,$speed");
+    
+			    system("echo \"$hostname-$if;counter_generic;1;$base;\" >> $config{'path_etc'}/index.graph");
                         }
                     }
                 }

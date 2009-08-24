@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cree-base-rrd,v 1.4 2008-06-26 15:20:21 boggia Exp $
+# $Id: cree-base-rrd,v 1.5 2009-08-24 08:02:58 boggia Exp $
 #
 #
 # ###################################################################
@@ -12,8 +12,8 @@
 #
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "%CONF%";
-require "%LIBMETRO%";
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
 #
 
 use SNMP_util;
@@ -21,8 +21,8 @@ use Socket;
 use Net::hostent;
 
 #liste des Catalysts
-@liste_oids_commuts_cisco = qw(1.3.6.1.4.1.9.1.516 1.3.6.1.4.1.9.1.502 1.3.6.1.4.1.9.1.501 1.3.6.1.4.1.9.1.503 1.3.6.1.4.1.9.1.325 1.3.6.1.4.1.9.1.359 1.3.6.1.4.1.9.1.527 1.3.6.1.4.1.9.1.563 1.3.6.1.4.1.9.1.614);
-@liste_nom_commuts_cisco = qw(catalyst_3750 catalyst_4506 catalyst_4507 catalyst_4503 catalyst_2950 catalyst_2950T catalyst_2970 catalyst_3560 catalyst_3560Giga);
+@liste_oids_commuts_cisco = qw(1.3.6.1.4.1.9.1.516 1.3.6.1.4.1.9.1.502 1.3.6.1.4.1.9.1.501 1.3.6.1.4.1.9.1.503 1.3.6.1.4.1.9.1.325 1.3.6.1.4.1.9.1.359 1.3.6.1.4.1.9.1.527 1.3.6.1.4.1.9.1.563 1.3.6.1.4.1.9.1.614 1.3.6.1.4.1.9.1.716 1.3.6.1.4.1.9.1.561);
+@liste_nom_commuts_cisco = qw(catalyst_3750 catalyst_4506 catalyst_4507 catalyst_4503 catalyst_2950 catalyst_2950T catalyst_2970 catalyst_3560 catalyst_3560Giga catalyst_2960 catalyst_2970);
 
 #liste des Routeurs Juniper
 @liste_oids_routeurs_juniper = qw(1.3.6.1.4.1.2636.1.1.1.2.2);
@@ -1657,7 +1657,7 @@ sub ecrete_valeur
 		open(NEWFILE,">$liste_bases[$i].xml.new");
 		while(<FILE>)
 		{
-			if(/(e\+10)/ || /(e\+11)/ || /(e\+12)/ || /(e\+13)/ || /(e\+14)/ || /(e\+15)/ || /(e\+16)/ || /(e\+17)/ || /(e\+18)/)
+			if(/(e\+19)/ || /(e\+11)/ || /(e\+12)/ || /(e\+13)/ || /(e\+14)/ || /(e\+15)/ || /(e\+16)/ || /(e\+17)/ || /(e\+18)/)
 			{
 				$qqch = $1;
 				$qqch =~ s/\+/\\+/;
@@ -1665,7 +1665,7 @@ sub ecrete_valeur
 				s/$qqch/e\+00/;
 				print "MODIFIE  : $_";
 
-				if(/(e\+10)/ || /(e\+11)/ || /(e\+12)/ || /(e\+13)/ || /(e\+14)/ || /(e\+15)/ || /(e\+16)/ || /(e\+17)/ || /(e\+18)/)
+				if(/(e\+19)/ || /(e\+11)/ || /(e\+12)/ || /(e\+13)/ || /(e\+14)/ || /(e\+15)/ || /(e\+16)/ || /(e\+17)/ || /(e\+18)/)
 				{	
 					$qqch = $1;
                                 	$qqch =~ s/\+/\\+/;

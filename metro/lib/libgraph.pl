@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: libgraph.pl,v 1.7 2008-12-23 09:15:04 boggia Exp $
+# $Id: libgraph.pl,v 1.8 2009-08-24 08:02:58 boggia Exp $
 ###########################################################
 # Creation : 21/05/08 : boggia
 #
@@ -11,9 +11,7 @@ sub genere_graph
 {
     my ($type,$nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
 
-    #system("echo \"$type,$nb_rrd_bases,,$output,$start,$end,$size,$commentaire\" >> /tmp/genere_graph.out");
-    
-    # liste des fonction de création de graphiques
+    # liste des fonction de crÃ©ation de graphiques
     my %function_graph = (
         'trafic'		=> \&trafic,
 	'trafic-moyen'          => \&trafic,
@@ -25,6 +23,7 @@ sub genere_graph
 	'GaugeNbAuthWifi'	=> \&GaugeAuthWiFi,
 	'GaugeDHCPuse'		=> \&GaugeDHCPleases,
 	'GaugeCPUCisco'		=> \&GaugeCPUCisco,
+	'GaugeCPUJuniper'	=> \&GaugeCPUJuniper,
 	'GaugeCPU'		=> \&GaugeCPUServer,
 	'GaugeLoadAverage'	=> \&GaugeLoadAverage,
 	'GaugeTempsReponse'	=> \&GaugeRespTime,
@@ -35,6 +34,7 @@ sub genere_graph
 	'GaugeMemByProc'	=> \&GaugeMemByProc,
 	'nbauthwifi'		=> \&nbauthwifi,
 	'nbassocwifi'		=> \&nbassocwifi,
+	'counter_generic'	=> \&counter_generic,
     );
     
     
@@ -52,8 +52,8 @@ sub genere_graph
     
     if($size !~ m/[0-9]+x[0-9]+/)
     {
-	# le paramètre taille est malformé
-	#print "Erreur : Paramètre $size incorrect";	
+	# le paramÃ¨tre taille est malformÃ©
+	#print "Erreur : ParamÃ¨tre $size incorrect";	
     }
     else
     {
@@ -70,10 +70,10 @@ sub nbauthwifi
 {
 	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
 
-	my $label = "authentifiés";
+	my $label = "authentifiÃ©s";
 	if($commentaire eq "")
 	{
-		$commentaire = "Authentifiés WiFi";
+		$commentaire = "AuthentifiÃ©s WiFi";
 		
 	}
 	
@@ -88,10 +88,10 @@ sub nbassocwifi
 {
 	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
 
-	my $label = "associés";	
+	my $label = "associÃ©s";	
 	if($commentaire eq "")
         {
-                $commentaire = "Associés WiFi";
+                $commentaire = "AssociÃ©s WiFi";
         }
 
 	GaugeWiFi($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire,$label);
@@ -99,7 +99,7 @@ sub nbassocwifi
 
 
 ###########################################################
-# Fonction générique qui graphe les utilisateurs WiFi  
+# Fonction gÃ©nÃ©rique qui graphe les utilisateurs WiFi  
 sub GaugeWiFi
 {
 	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire,$vertical_label) = @_;
@@ -228,11 +228,11 @@ sub GaugeWiFi
 	                $drawlinemax->{'name'} = "clients_max";
 	                if($l[0][0]{'legend'} ne "")
 	                {
-	                        $drawlinemax->{'legend'} = "$l[0][0]{'legend'} (crête)";
+	                        $drawlinemax->{'legend'} = "$l[0][0]{'legend'} (crÃªte)";
 	                }
 	                else
 	                {
-	                        $drawlinemax->{'legend'} = "clients (crête)";
+	                        $drawlinemax->{'legend'} = "clients (crÃªte)";
 	                }
 	                push @liste_arg,"draw";
 	                push @liste_arg,$drawlinemax;
@@ -284,7 +284,7 @@ sub GaugeWiFi
 
 
 ###########################################################
-# Fonction générique qui graphe les utilisateurs WiFi
+# Fonction gÃ©nÃ©rique qui graphe les utilisateurs WiFi
 sub aggregGaugeWiFi
 {
 	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire,$vertical_label) = @_;
@@ -477,7 +477,7 @@ sub trafic
                             'maxoutput'  => "ffa1e9",
 	);
 
-	$vertical_label = "Trafic Réseau";
+	$vertical_label = "Trafic RÃ©seau";
 
 	my $rrd = RRDTool::OO->new(
             file => "$ref_l->[0]->[0]->{'base'}",
@@ -605,7 +605,7 @@ sub trafic
 	    $drawlineinmax->{'type'} = "line";
 	    $drawlineinmax->{'color'} = $color_lines{'maxinput'};
 	    $drawlineinmax->{'name'} = "maxinputbits";
-	    $drawlineinmax->{'legend'} = "$l[0][0]{'legend'} entrant crête";
+	    $drawlineinmax->{'legend'} = "$l[0][0]{'legend'} entrant crÃªte";
 	    push @liste_arg,"draw";
 	    push @liste_arg,$drawlineinmax;
 	    # legende trafic in
@@ -630,7 +630,7 @@ sub trafic
             $drawlineoutmax->{'type'} = "line";
             $drawlineoutmax->{'color'} = $color_lines{'maxoutput'};
             $drawlineoutmax->{'name'} = "maxoutputbits";
-            $drawlineoutmax->{'legend'} = "$l[0][0]{'legend'} sortant crête";
+            $drawlineoutmax->{'legend'} = "$l[0][0]{'legend'} sortant crÃªte";
             push @liste_arg,"draw";
             push @liste_arg,$drawlineoutmax;
             # legende trafic in
@@ -699,12 +699,12 @@ sub trafic
 
 
 ###########################################################
-# Graph de trafic aggrégé
+# Graph de trafic aggrÃ©gÃ©
 sub aggreg_trafic
 {
     my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
-    # parametre détail :    0 : n'affiche que le cumul de l'ensemble des bases
-    #			    1 : affiche le détail pour chaque base
+    # parametre dÃ©tail :    0 : n'affiche que le cumul de l'ensemble des bases
+    #			    1 : affiche le dÃ©tail pour chaque base
    
     my ($width,$height) = split(/x/,$size);
 
@@ -944,8 +944,8 @@ sub aggreg_trafic
 }
 
 
-# cree une chaine de caracteres avec des espaces pour aligner les légendes
-# parametres : nombre de caracteres de la legende, nombre de car. de la légende
+# cree une chaine de caracteres avec des espaces pour aligner les lÃ©gendes
+# parametres : nombre de caracteres de la legende, nombre de car. de la lÃ©gende
 #		la plus longue, ajustement en nombre de blancs.
 sub get_spaces
 {
@@ -985,7 +985,7 @@ sub GaugeAuthWiFi
 
     if($commentaire eq "")  
     {
-	$commentaire = "Clients WiFi authentifiés";
+	$commentaire = "Clients WiFi authentifiÃ©s";
     }
 
     my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
@@ -1006,7 +1006,7 @@ sub GaugeAuthWiFi
 	$rrd->graph(
 	image           => "-",
         title           => "$commentaire",
-        vertical_label  => "nb authentifiés",
+        vertical_label  => "nb authentifiÃ©s",
 	lower_limit	=> 0, 
 	units_exponent	=> 0,
         height          => $height,
@@ -1103,7 +1103,7 @@ sub GaugeAuthWiFi
         $rrd->graph(
         image           => "-",
         title           => "$commentaire",
-        vertical_label  => "nb authentifiés",
+        vertical_label  => "nb authentifiÃ©s",
         lower_limit     => 0,
         units_exponent  => 0,
         height          => $height,
@@ -1140,7 +1140,7 @@ sub GaugeAuthWiFi
             color       => $couleur_cumul_max,
             name        => "cumulmax",
             cdef        => "maxosiris,maxosiris-sec,+",
-            legend      => 'total crête',
+            legend      => 'total crÃªte',
         },
 	comment        => '  ',
 	gprint         => {
@@ -1187,7 +1187,7 @@ sub GaugeAuthWiFi
             type        => 'line',
             color       => $couleur_osiris_max,
             cdef        => "maxosiris",
-            legend      => 'osiris crête',
+            legend      => 'osiris crÃªte',
         },
 	comment        => ' ',
         gprint         => {
@@ -1210,7 +1210,7 @@ sub GaugeAuthWiFi
             type        => 'line',
             color       => $couleur_osirissec_max,
             cdef        => "maxosiris-sec",
-            legend      => '802.1X crête',
+            legend      => '802.1X crÃªte',
         },
 	comment        => ' ',
         gprint         => {
@@ -1298,7 +1298,7 @@ sub GaugeAssocWiFi
 
     if($commentaire eq "")
     {
-        $commentaire = "Clients WiFi associés";
+        $commentaire = "Clients WiFi associÃ©s";
     }
 
     my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
@@ -1308,7 +1308,7 @@ sub GaugeAssocWiFi
 	$rrd->graph(
 	image           => "-",
         title           => "$commentaire",
-        vertical_label  => "nb authentifiés",
+        vertical_label  => "nb authentifiÃ©s",
 	lower_limit	=> 0, 
 	units_exponent	=> 0,
         height          => $height,
@@ -1405,7 +1405,7 @@ sub GaugeAssocWiFi
         $rrd->graph(
         image           => "-",
         title           => "$commentaire",
-        vertical_label  => "nb authentifiés",
+        vertical_label  => "nb authentifiÃ©s",
         lower_limit     => 0,
         units_exponent  => 0,
         height          => $height,
@@ -1442,7 +1442,7 @@ sub GaugeAssocWiFi
             color       => $couleur_cumul_max,
             name        => "cumulmax",
             cdef        => "maxosiris,maxosiris-sec,+",
-            legend      => 'total crête',
+            legend      => 'total crÃªte',
         },
 	comment        => '  ',
 	gprint         => {
@@ -1489,7 +1489,7 @@ sub GaugeAssocWiFi
             type        => 'line',
             color       => $couleur_osiris_max,
             cdef        => "maxosiris",
-            legend      => 'osiris crête',
+            legend      => 'osiris crÃªte',
         },
 	comment        => ' ',
         gprint         => {
@@ -1512,7 +1512,7 @@ sub GaugeAssocWiFi
             type        => 'line',
             color       => $couleur_osirissec_max,
             cdef        => "maxosiris-sec",
-            legend      => '802.1X crête',
+            legend      => '802.1X crÃªte',
         },
 	comment        => ' ',
         gprint         => {
@@ -1650,7 +1650,7 @@ sub GaugeDHCPleases
             type        => 'line',
             color       => $couleur_inuse,
             cdef        => "inuse",
-            legend      => 'Adresses IP allouées',
+            legend      => 'Adresses IP allouÃ©es',
         },
 	comment        => '    ',
         gprint         => {
@@ -1721,7 +1721,7 @@ sub GaugeDHCPleases
             type        => 'line',
             color       => $couleur_inuse_max,
             cdef        => "maxinuse",
-            legend      => 'Adresses IP allouées (en crête)',
+            legend      => 'Adresses IP allouÃ©es (en crÃªte)',
         },
         comment        => '   ',
         gprint         => {
@@ -1740,7 +1740,7 @@ sub GaugeDHCPleases
             type        => 'line',
             color       => $couleur_inuse,
             cdef        => "inuse",
-            legend      => 'Adresses IP allouées (en moyenne)',
+            legend      => 'Adresses IP allouÃ©es (en moyenne)',
         },
         comment        => ' ',
         gprint         => {
@@ -1757,6 +1757,100 @@ sub GaugeDHCPleases
         },
 	);
     }
+}
+
+
+# afficher l'utilisation moyenne de la CPU des equipements Juniper
+# sur les slots O et 1 des ssb et RE
+sub GaugeCPUJuniper
+{
+    my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
+
+    # dereferencement
+    my @l = @$ref_l;
+
+    my ($width,$height) = split(/x/,$size);
+
+    my $couleur0 = "8888ff";
+    my $couleur1 = "0000ff";
+
+    if($commentaire eq "")
+    {
+        $commentaire = "Utilisation CPU en %";
+    }
+
+    my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
+
+    $rrd->graph(
+	image           => "-",
+        title           => "$commentaire",
+        vertical_label  => "% CPU",
+	lower_limit	=> 0, 
+	units_exponent	=> 0,
+        height          => $height,
+        width           => $width,
+        start           => $start,
+        end             => $end,
+        draw            => {
+	    type        => "hidden",
+	    dsname      => "cpu0",
+	    name        => 'cpu0',
+	    cfunc       => 'AVERAGE',
+        },
+        draw            => {
+            type        => "hidden",
+            dsname      => "cpu1",
+            name        => 'cpu1',
+            cfunc       => 'AVERAGE',
+        },
+        comment        => '                         min    max   moyen  actuel\n',
+        draw            => {
+            type        => 'line',
+            color       => $couleur0,
+            cdef        => "cpu0",
+	    legend      => 'CPU sur le slot 0',
+        },
+	comment        => ' ',
+	gprint         => {
+            draw      => 'cpu0',
+            format    => 'MIN:%3.0lf %S',
+        },
+	gprint         => {
+            draw      => 'cpu0',
+            format    => 'MAX:%3.0lf %S',
+        },
+        gprint         => {
+            draw      => 'cpu0',
+            format    => 'AVERAGE:%3.0lf %S',
+        },
+        gprint         => {
+            draw      => 'cpu0',
+            format    => 'LAST:%3.0lf %S\\n',
+        },
+        draw            => {
+            type        => 'line',
+            color       => $couleur1,
+            cdef        => "cpu1",
+            legend      => 'CPU sur le slot 1',
+        },
+        comment        => ' ',
+        gprint         => {
+            draw      => 'cpu1',
+            format    => 'MIN:%3.0lf %S',
+        },
+        gprint         => {
+            draw      => 'cpu1',
+            format    => 'MAX:%3.0lf %S',
+        },
+        gprint         => {
+            draw      => 'cpu1',
+            format    => 'AVERAGE:%3.0lf %S',
+        },
+        gprint         => {
+            draw      => 'cpu1',
+            format    => 'LAST:%3.0lf %S\\n',
+        },
+    );
 }
 
 
@@ -1855,7 +1949,7 @@ sub GaugeCPUCisco
 
 
 # afficher pour un serveur l'utilisation moyenne de la CPU 
-# par le système et en mode user
+# par le systÃ¨me et en mode user
 sub GaugeCPUServer
 {
     my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
@@ -2081,7 +2175,7 @@ sub GaugeRespTime
 
     if($commentaire eq "")
     {
-        $commentaire = "Temps de réponse";
+        $commentaire = "Temps de rÃ©ponse";
     }
 
     my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
@@ -2089,7 +2183,7 @@ sub GaugeRespTime
     $rrd->graph(
 	image           => "-",
         title           => "$commentaire",
-        vertical_label  => "Temps de réponse (sec)",
+        vertical_label  => "Temps de rÃ©ponse (sec)",
 	lower_limit	=> 0, 
 	units_exponent	=> 0,
         height          => $height,
@@ -2107,7 +2201,7 @@ sub GaugeRespTime
             type        => 'line',
             color       => $couleur,
             cdef        => "time",
-	    legend      => 'temps de réponse (s)',
+	    legend      => 'temps de rÃ©ponse (s)',
         },
 	comment        => '  ',
 	gprint         => {
@@ -2271,7 +2365,7 @@ sub GaugeBind
 
     if($commentaire eq "")
     {
-        $commentaire = "Statistiques des requêtes DNS";
+        $commentaire = "Statistiques des requÃªtes DNS";
     }
 
     my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
@@ -2279,7 +2373,7 @@ sub GaugeBind
     $rrd->graph(
 	image           => "-",
         title           => "$commentaire",
-        vertical_label  => "Requêtes/s",
+        vertical_label  => "RequÃªtes/s",
 	lower_limit	=> 0, 
 	units_exponent	=> 0,
         height          => $height,
@@ -2505,7 +2599,7 @@ sub GaugeGeneric
 
     if($commentaire eq "")
     {
-        $commentaire = "unités";
+        $commentaire = "unitÃ©s";
     }
 
     my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
@@ -2583,7 +2677,7 @@ sub GaugeGeneric
             type        => 'line',
             color       => $couleur_max,
             cdef        => "maxvalue",
-            legend      => "$commentaire (en crête)",
+            legend      => "$commentaire (en crÃªte)",
         },
 	comment        => '    ',
         gprint         => {
@@ -2724,7 +2818,7 @@ sub GaugeMailq
             type        => 'area',
             color       => $couleur_max,
             cdef        => "maxmailq",
-            legend      => "$commentaire (en crête)",
+            legend      => "$commentaire (en crÃªte)",
         },
 	comment        => '    ',
         gprint         => {
@@ -2772,7 +2866,7 @@ sub GaugeMailq
 
 
 
-# affichage de la mémoire utilisée par un process
+# affichage de la mÃ©moire utilisÃ©e par un process
 # 
 sub GaugeMemByProc
 {
@@ -2788,7 +2882,7 @@ sub GaugeMemByProc
 
     if($commentaire eq "")
     {
-        $commentaire = "place en mémoire";
+        $commentaire = "place en mÃ©moire";
     }
 
     my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
@@ -2864,7 +2958,7 @@ sub GaugeMemByProc
             type        => 'area',
             color       => $couleur_max,
             cdef        => "maxoctets",
-            legend      => "$commentaire (en crête)",
+            legend      => "$commentaire (en crÃªte)",
         },
 	comment        => '    ',
         gprint         => {
@@ -2908,6 +3002,160 @@ sub GaugeMemByProc
         },
         );
     }
+}
+
+
+###########################################################
+# Graph generique pour les compteurs
+sub counter_generic
+{
+    my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
+
+    my ($width,$height) = split(/x/,$size);
+
+    my @couleurs_flux = qw(00dd00 0000ff 0010ff ffbb00 32bc2d ff8800 );
+    my @couleurs_max_flux = qw(b8ff4d ffa1e9 ff0000 000000 fb96be 795634);
+
+    my $rrd = RRDTool::OO->new(file => "$ref_l->[0]->[0]->{'base'}");
+
+    my @liste_arg1;
+
+    my $drawline;
+    my $drawlinemax;
+    # dereferencement
+    my @l = @$ref_l;
+
+    # creation d'objets draw de type hidden pour chaque courbe de trafic
+    my $tl = @l;
+    for(my $i=0;$i<$tl;$i++)
+    {
+        my $ttl = @{$l[$i]};
+        my $plusline="";
+        for(my $j=0;$j<$ttl;$j++)
+        {
+            my $draw;
+	    my $drawmax;
+
+            $draw->{'file'} = $l[$i][$j]{'base'};
+	    $drawmax->{'file'} = $l[$i][$j]{'base'};
+	    
+	    system("echo \"i=$i, j=$j, $l[$i][$j]{'base'}\" >> /tmp/genere_graph.out");
+            
+	    $draw->{'type'} = "hidden";
+            $draw->{'dsname'} = "value";
+            $draw->{'name'} = "$l[$i][$j]{'graph'}__value";
+            $draw->{'cfunc'} = "AVERAGE";
+            $draw->{'name'} =~ s/\./__/g;
+            $drawmax->{'type'} = "hidden";
+            $drawmax->{'dsname'} = "value";
+            $drawmax->{'name'} = "$l[$i][$j]{'graph'}__maxvalue";
+            $drawmax->{'cfunc'} = "MAX";
+            $drawmax->{'name'} =~ s/\./__/g;
+
+	    # pour convertir les valeurs de trafic des lignes en bits
+	    $drawline->{$i}->{'cdef'}="$draw->{'name'}$plusline,8,*";
+	    $drawlinemax->{$i}->{'cdef'}="$drawmax->{'name'}$plusline,8,*";
+
+            push @liste_arg1,"draw";
+            push @liste_arg1,$draw;
+	    push @liste_arg1,"draw";
+            push @liste_arg1,$drawmax;
+        }
+    }
+    for($i=0;$i<$tl;$i++)
+    {
+        if($l[$i][0]{'legend'} eq "")
+        {
+            $l[$i][0]{'legend'} = $l[$i][0]{'graph'};
+        }
+        $llegend{$i} = split(//,$l[$i][0]{'legend'});
+        if($maxlengthlengend < $llegend{$i})
+        {
+            $maxlengthlengend = $llegend{$i};
+        }
+    }
+    $maxlengthlengend = $maxlengthlengend + 4;
+
+    # ecriture de la legende en entree
+    my $spaces = get_spaces(0,$maxlengthlengend,10);
+    push @liste_arg1,"comment";
+    push @liste_arg1,"$spaces maximum          moyen        actuel\\n";
+    my $gprint,$gprintmax;
+
+    # on cree les objets draw pour afficher les lignes
+    for($i=0;$i<$tl;$i++)
+    {
+        # ecriture de la courbe en input
+	if($i == 0)
+	{
+	    $drawline->{$i}->{'type'} = "area";
+	}
+	else
+	{
+	    $drawline->{$i}->{'type'} = "line";
+	}
+        $drawline->{$i}->{'color'} = $couleurs_flux[$i];
+        $drawline->{$i}->{'name'} = "value$i";
+        # insertion de la legende
+        $drawline->{$i}->{'legend'} = "$l[$i][0]{'legend'}";
+        push @liste_total,"draw";
+        push @liste_total,$drawline->{$i};
+        $gprint->{$i}->{0}->{'draw'}=$drawline->{$i}->{'name'};
+        $gprint->{$i}->{0}->{'format'}="MAX:%7.2lf %Sb/s";
+        $spaces = get_spaces($llegend{$i},$maxlengthlengend,-3);
+        push @liste_total,"comment";
+        push @liste_total,$spaces;
+        push @liste_total,"gprint";
+        push @liste_total,$gprint->{$i}->{0};
+        $gprint->{$i}->{1}->{'draw'}=$drawline->{$i}->{'name'};
+        $gprint->{$i}->{1}->{'format'}="AVERAGE:%7.2lf %Sb/s";
+        push @liste_total,"gprint";
+        push @liste_total,$gprint->{$i}->{1};
+        $gprint->{$i}->{2}->{'draw'}=$drawline->{$i}->{'name'};
+        $gprint->{$i}->{2}->{'format'}="LAST:%7.2lf %Sb/s\\n";
+        push @liste_total,"gprint";
+        push @liste_total,$gprint->{$i}->{2};
+
+	# ecriture des valeurs MAX selon l'intervalle de temps
+        if(($end - $start) > 800000)
+	{
+#	    # ecriture de la courbe en input
+	    $drawlinemax->{$i}->{'type'} = "line";
+	    $drawlinemax->{$i}->{'color'} = $couleurs_max_flux[$i];
+	    $drawlinemax->{$i}->{'name'} = "valuemax$i";
+#	    # insertion de la legende
+	    $drawlinemax->{$i}->{'legend'} = "$l[$i][0]{'legend'}";
+	    push @liste_total,"draw";
+	    push @liste_total,$drawlinemax->{$i};
+	    $gprintmax->{$i}->{0}->{'draw'}=$drawlinemax->{$i}->{'name'};
+	    $gprintmax->{$i}->{0}->{'format'}="MAX:%7.2lf %Sb/s";
+	    $spaces = get_spaces($llegend{$i},$maxlengthlengend,-3);
+	    push @liste_total,"comment";
+	    push @liste_total,$spaces;
+	    push @liste_total,"gprint";
+	    push @liste_total,$gprintmax->{$i}->{0};
+	    $gprintmax->{$i}->{1}->{'draw'}=$drawlinemax->{$i}->{'name'};
+	    $gprintmax->{$i}->{1}->{'format'}="AVERAGE:%7.2lf %Sb/s";
+	    push @liste_total,"gprint";
+	    push @liste_total,$gprintmax->{$i}->{1};
+	    $gprintmax->{$i}->{2}->{'draw'}=$drawlinemax->{$i}->{'name'};
+	    $gprintmax->{$i}->{2}->{'format'}="LAST:%7.2lf %Sb/s\\n";
+	    push @liste_total,"gprint";
+	    push @liste_total,$gprintmax->{$i}->{2};
+	}
+    }
+        
+    $rrd->graph(
+            image           => "-",
+            title           => "$commentaire",
+            vertical_label  => "trafic",
+            height          => $height,
+            width           => $width,
+            start           => $start,
+            end             => $end,
+            @liste_arg1,
+            @liste_total,
+    );
 }
 
 

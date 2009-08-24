@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: genere-rrdgraph,v 1.4 2008-06-13 10:29:18 pda Exp $
+# $Id: genere-rrdgraph,v 1.5 2009-08-24 08:02:58 boggia Exp $
 # ###################################################################
 # boggia : Creation : 21/05/08
 #
@@ -29,7 +29,7 @@
 #   taille	    => dimensions du graphique
 #			    petit, moyen, grand ou <largeur>x<hauteur> (330x150)
 #   commentaire	    => (optionnel) Commentaire qui s'affiche en titre (ex : interface ge-1/0/1)
-#   légendes	    => (optionnel) Légendes qui accompagne chaque ligne. A envoyer 
+#   legendes	    => (optionnel) Légendes qui accompagne chaque ligne. A envoyer 
 #		       sous forme de liste, ex: 
 #		       "ssid osiris,ssid osiris-sec"
 
@@ -44,9 +44,11 @@ my $taille = $ARGV[4];
 my $commentaire = $ARGV[5];
 my $legendes = $ARGV[6];
 
+#system("echo $id >> /tmp/genere_graph.out");
+
 # fichier de configuration principal et chargement des fonctions de base
-my $conf_file = "%CONF%";
-require "%LIBMETRO%";
+my $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
 #
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($conf_file);
@@ -86,7 +88,7 @@ if($id ne "-")
 		$incoherence = 1;
 	    }
 	    $type = $l_bases[$l][$j]{'type'};
-	   
+
 	    # insertion de la legende
 	    if($legends[$l])
 	    {
@@ -111,7 +113,7 @@ if($id ne "-")
 
 	my $l_ref = \@l_bases;
 
-	genere_graph($type,$nb_rrd_bases,$l_ref,'-',$date_dep,$date_fin,$taille,$commentaire);	
+	genere_graph($type,$nb_rrd_bases,$l_ref,'-',$date_dep,$date_fin,$taille,$commentaire);
     } 
 }
 else

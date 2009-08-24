@@ -1,4 +1,4 @@
-# $Id: libmetro.pl,v 1.5 2009-02-06 11:29:43 boggia Exp $
+# $Id: libmetro.pl,v 1.6 2009-08-24 08:02:58 boggia Exp $
 ###########################################################
 #   Creation : 26/03/08 : boggia
 # 
@@ -80,6 +80,20 @@ sub clean_var
     }
 
     return $string;
+}
+
+
+###########################################################
+# resolution de nom inverse.
+sub gethostnamebyaddr
+{
+    my ($ip) = @_;
+
+    my $iaddr = inet_aton($ip);
+    my $hostname  = gethostbyaddr($iaddr, AF_INET);
+    ($hostname)=(split(/\./,$hostname))[0];
+
+    return $hostname;
 }
 
 
@@ -295,6 +309,17 @@ sub creeBaseCPUCisco
 {
     my ($fichier)=@_;
     system("/usr/local/bin/rrdtool create $fichier DS:cpu_1min:GAUGE:600:U:U DS:cpu_5min:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    system("chown obj999:obj999 $fichier");
+}
+
+
+###########################################################
+# fonction de creation d'une base RRD pour la collecte de
+# l'utilisation de la CPU de la routing Engine d'un Juniper M20
+sub creeBaseCPUJuniper
+{
+    my ($fichier)=@_;
+    system("/usr/local/bin/rrdtool create $fichier DS:cpu0:GAUGE:600:U:U DS:cpu1:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     system("chown obj999:obj999 $fichier");
 }
 

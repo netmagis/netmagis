@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: wifi,v 1.3 2008-06-20 08:13:22 boggia Exp $
+# $Id: wifi,v 1.4 2009-08-24 08:02:58 boggia Exp $
 #
 #
 # ###################################################################
@@ -16,12 +16,12 @@ use CGI qw/:standard/;
 use CGI::Pretty qw( :html3 );
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "%CONF%";
-require "%LIBMETRO%";
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($conf_file);
 
-$server_hostname = $global_var{"WWW_METRO_HOSTNAME"};
+$server_hostname = $global_var{"WWW_IDRIS_HOSTNAME"};
 $www_root = $global_var{"WWW_IDRIS_DIR_ROOT"};
 $www_bin = $global_var{"WWW_IDRIS_DIR_BIN"};
 $www_img = $global_var{"WWW_IDRIS_DIR_IMG"};
@@ -38,11 +38,22 @@ $rep_db = $global_var{"DIR_RRD_DB"};
 $rep_var = $global_var{"DIR_VAR"};
 #fichier de liste des sites WiFi avec l'ensemble des AP
 $liste_sites_wifi = $global_var{"FILE_LISTE_SITES_WIFI"};
+#repertoire dans lequel se trouvents les rapports des sites authentifies
+$rep_auth = $global_var{"DIR_AP_REPORT"} . "/snmp";
 
-#liste des ssid utilisés
+# init des liste de ssid utilisés
+# et de l'etat des AP
 %ssid = ();
 $ssid{'osiris'} = 0;
 $ssid{'osiris-sec'} = 0;
+$ssid{'osiris-lab'} = 0;
+$ssid{'eduroam'} = 0;
+%ap_state = ();
+$ap_state{'ok'} = 0;
+$ap_state{'full'} = 0;
+$ap_state{'dodo'} = 0;
+$ap_state{'nok'} = 0;
+
 $entites = ();
 
 %liste_ap_state = ();
@@ -82,16 +93,119 @@ while(<LISTE>)
 		$batiments[$i][0] = $bat;
 		$batiments[$i][1] = $universite;
 		$batiments[$i][2] = $liste_ap;
-		$i++;		
+		$i++;	
+
+		#lecture du fichier contenant toutes les assocs pour un batiment ...
+		open(L2,"$rep_auth/$bat");
+		while($data = <L2>)
+		{
+		    chomp $data;
+		    ($n_ap,$listessid) = (split(/=/,$data))[0,1];
+		    # si l'ap ne repond pas
+		    if($liste_ap_state{$n_ap} == -1)
+		    {
+			$ap_state{'nok'} ++;
+		    }
+		    # sinon on compte le nombre d'authentifies par ssid
+		    else
+		    {
+			$total_auth = 0;
+			@l_ssid = split(/;/,$listessid);
+			$t_l_ssid = @l_ssid;
+			for($t=0;$t<$t_l_ssid;$t++)
+			{
+			    ($n_ssid,$nb_ordi)=split(/,/,$l_ssid[$t]);
+			    $ssid{$n_ssid} = $ssid{$n_ssid} + $nb_ordi;
+			    $total_auth = $total_auth + $nb_ordi;
+			}	
+			if($total_auth == 0)
+			{
+			    $ap_state{'dodo'} ++;
+			}
+			elsif($total_auth < 10)
+			{
+			    $ap_state{'ok'} ++;
+			}
+			elsif($total_auth > 10)
+			{
+			    $ap_state{'full'} ++;
+			}
+		    }
+		}
+		close(L2);
 	}
 }
 close(LISTE);
 
 $t_batiments = @batiments;
 
-print "<table align=center border=0>
-	<tr><td>";
-print "<table align=center align=center ALIGN=\"CENTER\" CELLPADDING=0 CELLSPACING=0 BORDER=1>";
+print "<table align=center CELLPADDING=0 CELLSPACING=0 BORDER=0>
+	<tr><td>
+	<table align=center CELLPADDING=0 CELLSPACING=0 border=0>
+        <tr>
+            <td>
+                <table align=center CELLPADDING=0 CELLSPACING=0 BORDER=0>
+                    <tr>";
+                    if($ap_state{'nok'} > 0)
+                    {
+                        print"<td width=40 valign=bottom align=center>
+                        <img src=https://$server_hostname$www_img/ap_nok.jpg>
+                        </td>";
+                    }
+                    print"<td width=40 valign=bottom align=center>
+                        <img src=https://$server_hostname$www_img/ap_full.jpg>
+                        </td>
+                        <td width=40 valign=bottom align=center>
+                        <img src=https://$server_hostname$www_img/ap_ok.jpg>
+                        </td>
+                        <td width=40 valign=bottom align=center>
+                        <img src=https://$server_hostname$www_img/ap_dodo.jpg>
+                        </td>
+			<td rowspan=2>
+			<font name=\"arial\" size=2>
+			<table align=center CELLPADDING=0 CELLSPACING=0 BORDER=0>
+			    <tr>
+				<td><font name=\"arial\" size=2>osiris</font></td>
+				<td width=40 align=right><font name=\"arial\" size=2><b>$ssid{'osiris'}</b></font></td>
+			    </tr>
+			    <tr>
+                                <td><font name=\"arial\" size=2>osiris-sec</font></td>
+                                <td width=40 align=right><font name=\"arial\" size=2><b>$ssid{'osiris-sec'}</b></font></td>
+                            </tr>
+			    <tr>
+                                <td><font name=\"arial\" size=2>osiris-lab</font></td>
+                                <td width=40 align=right><font name=\"arial\" size=2><b>$ssid{'osiris-lab'}</b></font></td>
+                            </tr>
+			    <tr>
+                                <td><font name=\"arial\" size=2>eduroam</font></td>
+                                <td width=40 align=right><font name=\"arial\" size=2><b>$ssid{'eduroam'}</b></font></td>
+                            </tr>
+			</table>
+			</td>
+                    </tr>
+                    <tr>";
+                    if($ap_state{'nok'} > 0)
+                    {
+                        print"<td align=center>
+                        <font name=\"arial\" size=2><b>$ap_state{'nok'}</b></font>
+                        </td>";
+                    }
+                    print"<td align=center>
+                        <font name=\"arial\" size=2><b>$ap_state{'full'}</b></font>
+                        </td>
+                        <td align=center>
+                        <font name=\"arial\" size=2><b>$ap_state{'ok'}</b></font>
+                        </td>
+                        <td align=center>
+                        <font name=\"arial\" size=2><b>$ap_state{'dodo'}</b></font>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <table align=center CELLPADDING=0 CELLSPACING=0 border=1>";
+
+ 
 foreach $key (keys %entites)
 {
 	$total_univ = 0;
@@ -186,7 +300,7 @@ print "<tr align=center>
 		<td colspan=6 align=center>";
 
 print "<br><br><a href=https://$server_hostname$www_bin/stats?nom_graph=$nom_gr_auth>
-        <IMG BORDER=0 src=\"https://$server_hostname$www_bin/gengraph?id=$nom_gr_auth&debut=$date_dep_daily&fin=$date_fin&titre=Utilisateurs atuthentifiés&taille=550x150\" alt=\"Associations\"></a>
+        <IMG BORDER=0 src=\"https://$server_hostname$www_bin/gengraph?id=$nom_gr_auth&debut=$date_dep_daily&fin=$date_fin&titre=Utilisateurs authentifiés&taille=550x150\" alt=\"Associations\"></a>
                 </td>
         </tr>
 	<tr>

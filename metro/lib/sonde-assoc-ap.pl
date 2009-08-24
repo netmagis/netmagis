@@ -1,4 +1,4 @@
-# $Id: sonde-assoc-ap.pl,v 1.2 2008-08-01 13:11:53 boggia Exp $
+# $Id: sonde-assoc-ap.pl,v 1.3 2009-08-24 08:02:58 boggia Exp $
 # ###################################################################
 # boggia : Creation : 25/03/08
 # boggia : Modification : Creation de la fonction get_authaccess_list
@@ -298,6 +298,12 @@ sub get_snmp_assoc_ap
                         foreach my $key3 (keys %{$APSupSSID{$host}{$key}{$key2}})
                         {
 				RRDs::update ("$APSupSSID{$host}{$key}{$key2}{$key3}{'base'}","$time_rrddb:$APSupSSID{$host}{$key}{$key2}{$key3}{'nb_clients'}");
+				my $E=RRDs::error;
+				if($E)
+	    			{
+				    writelog("get_assoc_ap",$config{'logopt'},"info",
+					"\t -> ERROR while updating $base: $E");
+				}
                         }
                 }
         }

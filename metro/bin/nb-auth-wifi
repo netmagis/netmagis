@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: nb-auth-wifi,v 1.4 2008-06-16 15:47:04 boggia Exp $
+# $Id: nb-auth-wifi,v 1.5 2009-08-24 08:02:58 boggia Exp $
 #
 #
 # ###################################################################
@@ -17,8 +17,8 @@ use DBI;
 $rrd_file = $ARGV[0];
 
 # fichier de configuration principal et chargement des focntions de base
-my $conf_file = "%CONF%";
-require "%LIBMETRO%";
+my $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
 
 $rep_etc = read_conf_file("$conf_file","DIR_ETC");
 $rep_lib = read_conf_file("$conf_file","DIR_LIB");
@@ -48,5 +48,6 @@ $modulo_time = $time % 300;
 $time = $time - $modulo_time;
 
 #print "nb_ash = $nb_ash\n nb_nephtys = $nb_nephtys\n";
+#system("/usr/local/bin/rrdtool update $rrd_file $time:$nb_nephtys:$nb_ash");
 system("/usr/local/bin/rrdtool update $rrd_file $time:$nb_nephtys:$nb_ash");
 #print "/usr/local/bin/rrdtool update $rrd_file $time:$nb_connect[0]\n";

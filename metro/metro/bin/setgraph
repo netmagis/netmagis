@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: setgraph,v 1.5 2008-07-25 07:54:16 boggia Exp $
+# $Id: setgraph,v 1.6 2009-08-24 08:02:58 boggia Exp $
 # ###################################################################
 #  boggia : Creation : 25/03/08
 #  boggia : Modification : 02/05/08
@@ -89,8 +89,8 @@ use Socket;
 use strict;
 
 #fichier de configuration principal et chargement des fonctions de base
-our $conf_file = "%CONF%";
-require "%LIBMETRO%";
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
 
 # Creation d'une socket syslog unix
 setlogsock("unix");
@@ -135,7 +135,7 @@ writelog("setgraph","","info",
         "\t Fin du programme ######################");
 
 
-# fonction qui classifie les parametres CGI
+# fonction qui récupere les parametres CGI
 # et les classe dans des tableaux nominatifs
 sub capture_liste
 {
@@ -148,6 +148,8 @@ sub capture_liste
     foreach $elem (@liste)
     {
 	$arg = param($elem);
+
+	chomp $arg;
 
 	my @split_arg = split(/_/,$elem);
 	
@@ -223,11 +225,11 @@ sub capture_liste
 	    $liste_graph{$1} = $liste_sondes{$key};
 
 	    # si aucun type de sonde n'est spécifié
-            if(!exists $liste_sondes{"$1_type"})
-            {
-                # on utilise le type trafic
-                $liste_sondes{"$1_type"} = "trafic";
-            }
+	    if(!exists $liste_sondes{"$1_type"})
+	    {
+		# on utilise le type trafic
+		$liste_sondes{"$1_type"} = "trafic";	
+	    }
 	}
     }
 }
