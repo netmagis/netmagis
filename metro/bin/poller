@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w 
 
-# $Id: poller,v 1.4 2009-02-06 11:29:43 boggia Exp $
+# $Id: poller,v 1.5 2009-08-24 07:51:31 boggia Exp $
 ###################################################################
 #  boggia : Creation : 20/03/08
 #  boggia : Modification : 16/05/08
@@ -62,6 +62,7 @@ our %function_probes = (
                 'get_tps_disk'		=> \&tps_disk,
                 'get_mailq'		=> \&get_mailq,
                 'get_CPU_cisco'		=> \&get_CPU_cisco,
+                'get_CPU_juniper'	=> \&get_CPU_juniper,
 		'get_tempsRep'		=> \&get_url,
 		'get_memory_by_proc'	=> \&get_url,
 		'get_nb_mbuf_juniper'	=> \&get_url,
@@ -104,6 +105,7 @@ $config{'index_if32'} = $config{'path_cache_probes'} . "/if32.txt";
 $config{'index_disk'} = $config{'path_cache_probes'} . "/disk.txt";
 $config{'index_url'} = $config{'path_cache_probes'} . "/url.txt";
 $config{'index_url'} = $config{'path_cache_probes'} . "/url.txt";
+$config{'fichier_etat'} = $config{'path_var'} . "/wifi/ap_state.txt";
 $config{'index_juniper_filter'} = $config{'path_cache_probes'} . "/juniper_filter.txt";
 # liste des ssid du reseau sans fil
 $config{'list_ssid_wifi'} = read_conf_file("$config{'conf_file'}","LIST_SSID_WIFI");
@@ -121,6 +123,7 @@ require "$config{'path_sondes'}/sonde-bind-stat.pl";
 require "$config{'path_sondes'}/sonde-tps-disk.pl";
 require "$config{'path_sondes'}/sonde-mailq.pl";
 require "$config{'path_sondes'}/sonde-cpu-cisco.pl";
+require "$config{'path_sondes'}/sonde-cpu-juniper.pl";
 require "$config{'path_sondes'}/sonde-generic-gauge.pl";
 require "$config{'path_sondes'}/sonde-stp-catalyst.pl";
 require "$config{'path_sondes'}/sonde-juniper-filter-counter.pl";
