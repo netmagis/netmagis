@@ -211,7 +211,7 @@ proc main {argv0 argv} {
 	return 1
     }
 
-    set fqdn [lindex $argv 0]
+    set fqdn [string tolower [lindex $argv 0]]
 
     set msg [del-host $dbfd $tabcor(login) $tabcor(idcor) $fqdn]
     if {! [string equal $msg ""]} then {

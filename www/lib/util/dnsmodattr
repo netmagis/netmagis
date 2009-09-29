@@ -280,7 +280,7 @@ proc main {argv0 argv} {
     # Valider le domaine, le nom (qui ne doit pas être un alias, un MX, etc)
     #
 
-    set fqdn [lindex $argv 0]
+    set fqdn [string tolower [lindex $argv 0]]
     set msg [syntaxe-fqdn $dbfd $fqdn nom domaine iddom]
     if {! [string equal $msg ""]} then {
 	puts stderr $msg
