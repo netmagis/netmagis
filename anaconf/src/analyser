@@ -166,10 +166,26 @@ proc parse-location {desc _location _blablah _msg} {
     set blablah  ""
 
     set r 1
-    if {[regexp {([^<]*)<\s*([^<>]+)>(.*)} $desc bidon p1 liste p2]} then {
+    if {[regexp {X .*} $desc]} {
+	#
+	# Si la description commence par X, on ne fait rien
+	#
+
+    } elseif {[regexp {([^<]*)<\s*([^<>]+)>(.*)} $desc bidon p1 liste p2]} then {
 	if {[regexp -nocase {C[0-9]+B[0-9]+L[0-9]+A[0-9]+} $liste]} then {
 	    set location $liste
 	    set blablah [string trim "[string trim $p1] [string trim $p2]"]
+
+	    #
+	    # Conversion de la description en chaîne de chiffres hexa
+	    # pour éviter d'avoir à quoter les éléments.
+	    # Cette chaîne sera propagée dans le graphe, et chaque outil
+	    # utilisant le graphe devra faire la conversion inverse
+	    # avec une commande comme par exemple : "binary format H* $desc"
+	    #
+
+	    binary scan $location H* location
+
 	} else {
 	    set msg "invalid location syntax '<$liste>'"
 	    set r 0
@@ -178,16 +194,6 @@ proc parse-location {desc _location _blablah _msg} {
 	set msg "invalid location syntax '$desc'"
 	set r 0
     }
-
-    #
-    # Conversion de la description en chaîne de chiffres hexa
-    # pour éviter d'avoir à quoter les éléments.
-    # Cette chaîne sera propagée dans le graphe, et chaque outil
-    # utilisant le graphe devra faire la conversion inverse
-    # avec une commande comme par exemple : "binary format H* $desc"
-    #
-
-    binary scan $location H* location
 
     return $r
 }

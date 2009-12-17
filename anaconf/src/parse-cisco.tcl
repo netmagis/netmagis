@@ -1127,8 +1127,8 @@ proc cisco-set-ifattr {tab idx attr val} {
 		if {[string equal $t($idx!link!type) $val]} then {
 		    set error 0
 		} else {
-		    cisco-warning "Incoherent switchport-mode ($val) for $idx"
-		    set error 1
+		    #cisco-warning "Incoherent switchport-mode ($val) for $idx"
+		    #set error 1
 		}
 	    } else {
 		set t($idx!link!type) $val
@@ -1163,10 +1163,10 @@ proc cisco-set-ifattr {tab idx attr val} {
 	}
 	allowed-vlans {
 	    if {[info exists t($idx!link!type)]} then {
-		if {! [string equal $t($idx!link!type) "trunk"]} then {
-		    cisco-warning "Allowed vlans for a not-trunk interface ($idx)"
-		    set error 1
-		}
+		# if {! [string equal $t($idx!link!type) "trunk"]} then {
+		#    cisco-warning "Allowed vlans for a not-trunk interface ($idx)"
+		#    set error 1
+		#}
 	    } else {
 		set t($idx!link!type) "trunk"
 	    }

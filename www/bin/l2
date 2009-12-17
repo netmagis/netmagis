@@ -148,6 +148,9 @@ proc match-eq {type_model} {
 	switch* {
 	    set attr {shape=box style=filled fillcolor=lightgrey height=.25}
 	}
+	hp* {
+	    set attr {shape=box style=filled fillcolor=pink height=.25}
+	}
 	default {
 	    set attr {shape=triangle}
 	}
