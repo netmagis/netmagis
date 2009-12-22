@@ -13,6 +13,7 @@
 #   2006/05/26 : pda/jean : ajout des points de collecte de métrologie
 #   2006/06/01 : pda/jean : ajout snmp
 #   2007/01/06 : pda      : ajout desc interface
+#   2009/12/21 : pda/jean : debut analyse junos switch
 #
 
 ###############################################################################
@@ -220,6 +221,7 @@ proc juniper-match-network {adr cidr} {
 #   2004/03/23 : pda/jean : conception
 #   2004/06/08 : pda/jean : ajout de model
 #   2008/07/07 : pda/jean : ajout paramètre libdir
+#   2009/12/21 : pda/jean : debut analyse junos switch
 #
 
 proc juniper-parse {libdir model fdin fdout tab eq} {
@@ -230,6 +232,7 @@ proc juniper-parse {libdir model fdin fdout tab eq} {
 	interfaces	{1	juniper-parse-interfaces}
 	routing-options	{1	juniper-parse-routing-options}
 	snmp		{1	juniper-parse-snmp}
+	vlans		{1	juniper-parse-vlans}
 	*		{1	NOP}
 
     }
@@ -238,6 +241,8 @@ proc juniper-parse {libdir model fdin fdout tab eq} {
 
     # le nom de l'équipement en cours d'analyse
     lappend t(eq) $eq
+
+    set t(eq!$eq!ranges) {}
 
     set error [juniper-parse-list kwtab $conf t "eq!$eq"]
 
@@ -302,6 +307,12 @@ proc juniper-parse-list {kwtab conf tab idx} {
 	    }
 	    if {! $inactive} then {
 		set fct  [lindex $l 1]
+		if {$debug & 0x04} then {
+		    juniper-debug "kw = <$kw>, fct = <$fct>"
+		}
+		if {$debug & 0x08} then {
+		    juniper-debug "kw = <$kw>, fct = <$fct>, conf 0/1 = <[lindex $conf 0]><[lindex $conf 1]>"
+		}
 		switch $fct {
 		    NOP {
 			set error 0
@@ -350,6 +361,7 @@ proc juniper-parse-interfaces {conf tab idx} {
 	lo0		{1	NOP}
 	tap		{1	NOP}
 	traceoptions	{1	NOP}
+	interface-range	{2	juniper-parse-if-range}
 	*		{1	juniper-parse-if}
     }
 
@@ -359,13 +371,15 @@ proc juniper-parse-interfaces {conf tab idx} {
 
 #
 # Entrée :
-#   - idx = eq!<eqname>
-#   - conf = { description <desc> unit <nb> { ... } etc }
+#   - idx = eq!<eqname> ou eq!<eqname>!ifrange!<nom>
+#   - conf = {ge-0/0/0 { description <desc> unit <nb> { ... }} ... }
+#	ou {<range> { description <desc> unit <nb> { ... }} ... } si range
 # Remplit :
-#   A VOIR
-#   - tab(eq!<nom eq>!if!<ifname>!units) { <unitnb> ... }
-#   - tab(eq!<nom eq>!if!<ifname>!link!name) <link-name>
-#   - tab(eq!<nom eq>!if!<ifname>!link!vlans) {<vlanid> ... <vlanid>}
+#   - t(eq!<eqname>!ranges) {<range> ... <range>}
+#   - t(eq!<eqname>!if) {<ifname> ... <ifname>}
+#
+# Historique :
+#   2009/12/21 : pda/jean : debut analyse junos switch
 #
 
 proc juniper-parse-if {conf tab idx} {
@@ -375,43 +389,94 @@ proc juniper-parse-if {conf tab idx} {
 	description		{2	juniper-parse-if-descr}
 	unit			{2	juniper-parse-if-unit}
 	gigether-options	{1	juniper-parse-if-gigopt}
+	ether-options		{1	juniper-parse-if-gigopt}
 	aggregated-ether-options {1	NOP}
 	vlan-tagging		{1	juniper-parse-if-vlan-tagging}
 	traceoptions		{1	NOP}
+	member-range		{4	juniper-parse-member-range}
+	member			{2	juniper-parse-member}
 	*			{2	ERROR}
     }
 
+    # ifname peut être un nom d'interface ou d'intervalle (range)
     set ifname [lindex $conf 0]
     set ifparm [lindex $conf 1]
 
-    lappend t($idx!if) $ifname
-    set idx "$idx!if!$ifname"
+    if {[info exists t(in-range)]} then {
+	lappend t($idx!ranges) $ifname
+	set idx "$idx!range!$ifname"
+    } else {
+	lappend t($idx!if) $ifname
+	set idx "$idx!if!$ifname"
+    }
 
     set error [juniper-parse-list kwtab $ifparm t $idx]
-
-    if {! [info exists t($idx!link!type)]} then {
-	set t($idx!link!type) "ether"
-    }
-
-    if {! $error} then {
-	foreach l {
-			{!link!name {link name in 'description'}}
-		    } {
-	set v [lindex $l 0]
-	set d [lindex $l 1]
-	    if {! [info exists t($idx$v)]} then {
-		juniper-warning "$idx: $d not found"
-		set error 1
-	    }
-	}
-    }
 
     return $error
 }
 
 #
 # Entrée :
-#   - idx = eq!<eqname>!if!<ifname>
+#   - idx = eq!<eqname>
+# Remplit :
+#   - <plein de choses>
+#
+# Historique :
+#   2009/12/21 : pda/jean : conception
+#
+
+proc juniper-parse-if-range {conf tab idx} {
+    upvar $tab t
+
+    set t(in-range) "n'importe quoi"
+    set r [juniper-parse-if [lreplace $conf 0 0] t $idx]
+    unset t(in-range)
+
+    return $r
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!range!<range>
+#   - conf = { member-range <if1> to <if2> ... }
+# Remplit :
+#   - t(eq!<eqname>!range!<range>!members) {{<ifstart> <ifend>} ...}
+#
+# Historique :
+#   2009/12/21 : pda/jean : conception
+#
+
+proc juniper-parse-member-range {conf tab idx} {
+    upvar $tab t
+
+    set if1 [lindex $conf 1]
+    set if2 [lindex $conf 3]
+    lappend t($idx!members) [list $if1 $if2]
+    return 0
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!range!<range>
+#   - conf = { member <if> ... }
+# Remplit :
+#   - t(eq!<eqname>!range!<range>!members) {{<if> <if>} ...}
+#
+# Historique :
+#   2009/12/21 : pda/jean : conception
+#
+
+proc juniper-parse-member {conf tab idx} {
+    upvar $tab t
+
+    set if [lindex $conf 1]
+    lappend t($idx!members) [list $if $if]
+    return 0
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
 # Remplit :
 #   tab(eq!<eqname>!if!<ifname>!link!name) <linkname>
 #   tab(eq!<nom eq>!if!<ifname>!link!stat) <statname> ou vide
@@ -448,10 +513,8 @@ proc juniper-parse-if-descr {conf tab idx} {
 
 #
 # Entrée :
-#   - idx = eq!<eqname>!if!<ifname>
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
 # Remplit :
-#   tab(eq!<eqname>!if!<ifname>!vlans) {<vlan-id> ...}
-#   A VOIR
 #
 
 proc juniper-parse-if-unit {conf tab idx} {
@@ -478,7 +541,7 @@ proc juniper-parse-if-unit {conf tab idx} {
 
 #
 # Entrée :
-#   - idx = eq!<eqname>!if!<ifname>
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
 #   - tab(current!unitnb) = <unit number>
 # Remplit :
 #   tab(eq!<nom eq>!if!<ifname>!vlan!<vlan-id>!stat) <statname> ou vide
@@ -515,7 +578,7 @@ proc juniper-parse-unit-descr {conf tab idx} {
 
 #
 # Entrée :
-#   - idx = eq!<eqname>!if!<ifname>
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
 #   - tab(current!unitnb) = <unit number>
 # Remplit :
 #   tab(eq!<eqname>!if!<ifname>!vlans) {<vlan-id> ...}
@@ -542,7 +605,7 @@ proc juniper-parse-vlan-id {conf tab idx} {
 
 #
 # Entrée :
-#   - idx = eq!<eqname>!if!<ifname>
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
 #   - tab(current!unitnb) = <unit number>
 # Remplit :
 #   tab(eq!<eqname>!if!<ifname>!vlan!<unitnb>!adr) {<adr46> ...}
@@ -573,12 +636,113 @@ proc juniper-parse-family {conf tab idx} {
 	iso {
 	    set error 0
 	}
+	ethernet-switching {
+	    array set kwtab {
+		port-mode	{2	juniper-parse-l2switch-portmode}
+		vlan		{1	juniper-parse-l2switch-vlan}
+		native-vlan-id	{2	juniper-parse-l2switch-nativevlan}
+		*		{2	NOP}
+	    }
+	    set t($idx!l2switch) on
+	    set parm [lindex $conf 2]
+	    set error [juniper-parse-list kwtab $parm t $idx]
+	    set error 0
+	}
 	default {
-	    juniper-warning "$idx: family '$kw' not supported"
+	    juniper-warning "$idx: family '$fam' not supported"
 	    set error 1
 	}
     }
     return $error
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+#
+# Historique
+#   2009/12/22 : pda/jean : conception
+#
+
+proc juniper-parse-l2switch-portmode {conf tab idx} {
+    upvar $tab t
+
+    set error 0
+    set mode [lindex $conf 1]
+    switch $mode {
+	trunk {
+	    set t($idx!link!type) "trunk"
+	}
+	access {
+	    set t($idx!link!type) "ether"
+	}
+	default {
+	    juniper-warning "$idx: port-mode '$mode' not supported"
+	    set error 1
+	}
+    }
+    return $error
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+#
+# Historique
+#   2009/12/22 : pda/jean : conception
+#
+
+proc juniper-parse-l2switch-vlan {conf tab idx} {
+    upvar $tab t
+
+    array set kwtab {
+	members		{3	juniper-parse-l2switch-vlan-members}
+	*		{1	ERROR}
+    }
+    set error [juniper-parse-list kwtab [lindex $conf 1] t "$idx"]
+    return $error
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+#
+# Historique
+#   2009/12/22 : pda/jean : conception
+#
+
+proc juniper-parse-l2switch-vlan-members {conf tab idx} {
+    upvar $tab t
+
+    set vlans [lindex $conf 1]
+    foreach v $vlans {
+	if {[regexp {^(\d+)-(\d+)$} $v bidon min max]} then {
+	    set l [list $min $max]
+	} else {
+	    set l [list $v $v]
+	}
+	lappend t($idx!link!allowedvlans) $l
+    }
+    return 0
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+#   - tab(current!unitnb) = <unit number>
+# Remplit :
+#   tab(eq!<eqname>!if!<ifname>!vlan!<unitnb>!adr) {<adr46> ...}
+#
+# Historique
+#   2009/12/22 : pda/jean : conception
+#
+
+proc juniper-parse-l2switch-nativevlan {conf tab idx} {
+    upvar $tab t
+
+    set vlan [lindex $conf 1]
+    lappend t($idx!link!allowedvlans) [list $vlan $vlan]
+    return 0
 }
 
 
@@ -897,6 +1061,49 @@ proc juniper-parse-snmp-location {conf tab idx} {
     return $error
 }
 
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - rien
+#
+# Historique :
+#   2009/12/21 : pda/jean : conception
+#
+
+proc juniper-parse-vlans {conf tab idx} {
+    upvar $tab t
+
+    array set kwtab {
+	*		{1	juniper-parse-vlans-entry}
+    }
+
+    return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - rien
+#
+# Historique :
+#   2009/12/21 : pda/jean : conception
+#
+
+proc juniper-parse-vlans-entry {conf tab idx} {
+    upvar $tab t
+
+    array set kwtab {
+	*		{1	NOP}
+    }
+
+    set name [lindex $conf 0]
+    set t($idx!current-vlan-name) $name
+
+    return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
+}
+
 
 ###############################################################################
 # Traitement après analyse
@@ -947,6 +1154,37 @@ proc juniper-post-process {model fdout eq tab} {
 	set l "-"
     }
     puts $fdout "eq $eq type juniper model $model snmp $c location $l"
+
+    #
+    # Parcourir la liste des interfaces, dont on complétera les
+    # caractéristiques selon les définitions des intervalles définis.
+    # (JunOS switch)
+    #
+
+    foreach if $t(eq!$eq!if) {
+	set ranges [juniper-find-ranges t $eq $if]
+	foreach r $ranges {
+	    juniper-completer-iface t $eq $if $r
+	}
+
+	#
+	# Les interfaces non typées sont "ether" par défaut
+	#
+
+	set idx "eq!$eq!if!$if"
+	if {! [info exists t($idx!link!type)]} then {
+	    set t($idx!link!type) "ether"
+	}
+
+	#
+	# Vérifier que chaque interface a une description
+	# 
+
+	if {! [info exists t($idx!link!name)]} then {
+	    juniper-warning "$eq/$if: link name in 'description' not found"
+	    set error 1
+	}
+    }
 
     #
     # Chercher tous les liens. Pour cela, parcourir la liste
@@ -1104,6 +1342,67 @@ proc juniper-post-process {model fdout eq tab} {
     }
 
     return 0
+}
+
+proc juniper-find-ranges {tab eq if} {
+    upvar $tab t
+
+    set lr {}
+    foreach r $t(eq!$eq!ranges) {
+	set lc $t(eq!$eq!range!$r!members)
+	foreach c $lc {
+	    set min [lindex $c 0]
+	    set max [lindex $c 1]
+	    if {[juniper-iface-cmp $if $min]>=0 && [juniper-iface-cmp $if $max]<=0} then {
+		lappend lr $r
+		break
+	    }
+	}
+    }
+    return $lr
+}
+
+proc juniper-iface-cmp {i1 i2} {
+    if {! [regexp {^([A-Za-z]+)-(.*)} $i1 bidon n1 r1]} then {
+	puts stderr "Invalid interface name '$i1'"
+	return -1
+    }
+    if {! [regexp {^([A-Za-z]+)-(.*)} $i2 bidon n2 r2]} then {
+	puts stderr "Invalid interface name '$i2'"
+	return -1
+    }
+
+    set l1 [split $r1 "/"]
+    set l2 [split $r2 "/"]
+
+    set r [string compare $n1 $n2]
+    if {$r == 0} then {
+	foreach e1 $l1 e2 $l2 {
+	    if {$e1 < $e2} then {
+		set r -1
+		break
+	    } elseif {$e1 > $e2} then {
+		set r 1
+		break
+	    }
+	}
+    }
+
+    return $r
+}
+
+proc juniper-completer-iface {tab eq if range} {
+    upvar $tab t
+
+    foreach e {link!name link!desc link!stat link!type} {
+	if {[info exists t(eq!$eq!if!$if!$e)] && ! [string equal $t(eq!$eq!if!$if!$e) ""]} then {
+	    # rien à faire
+	} else {
+	    if {[info exists t(eq!$eq!range!$range!$e)]} then {
+		set t(eq!$eq!if!$if!$e) $t(eq!$eq!range!$range!$e)
+	    }
+	}
+    }
 }
 
 ###############################################################################
