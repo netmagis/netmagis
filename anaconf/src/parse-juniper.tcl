@@ -402,6 +402,8 @@ proc juniper-parse-if {conf tab idx} {
     set ifname [lindex $conf 0]
     set ifparm [lindex $conf 1]
 
+    set t(current!iface) $ifname
+
     if {[info exists t(in-range)]} then {
 	lappend t($idx!ranges) $ifname
 	set idx "$idx!range!$ifname"
@@ -411,6 +413,8 @@ proc juniper-parse-if {conf tab idx} {
     }
 
     set error [juniper-parse-list kwtab $ifparm t $idx]
+
+    unset t(current!iface)
 
     return $error
 }
@@ -859,7 +863,6 @@ proc juniper-parse-if-gigopt {conf tab idx} {
 	802.3ad		{2	juniper-parse-802-3ad}
 	*		{2	ERROR}
     }
-
     return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
 }
 
@@ -880,6 +883,7 @@ proc juniper-parse-802-3ad {conf tab idx} {
     set ifname [lindex $conf 1]
     set t($idx!link!type) "aggregate"
     set t($idx!link!ifname) $ifname
+
     return 0
 }
 
@@ -1085,23 +1089,69 @@ proc juniper-parse-vlans {conf tab idx} {
 # Entrée :
 #   - idx = eq!<eqname>
 # Remplit :
-#   - rien
+#   - tab(eq!<eqname>!vlans!names) {<nom> <nom> ...}
 #
 # Historique :
-#   2009/12/21 : pda/jean : conception
+#   2010/01/04 : pda/jean : conception
 #
 
 proc juniper-parse-vlans-entry {conf tab idx} {
     upvar $tab t
 
     array set kwtab {
-	*		{1	NOP}
+	vlan-id		{2	juniper-parse-vlans-entry-vlan-id}
+	l3-interface	{2	juniper-parse-vlans-entry-l3-interface}
     }
 
-    set name [lindex $conf 0]
-    set t($idx!current-vlan-name) $name
+    set nom [lindex $conf 0]
+    set t(current!vlan-name) $nom
 
-    return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
+    lappend t($idx!vlans!names) $nom
+
+    set r [juniper-parse-list kwtab [lindex $conf 1] t "$idx!vlans!name!$nom"]
+    unset t(current!vlan-name)
+
+    return $r
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!vlans!name!<nom>
+# Remplit :
+#   - tab(eq!<eqname>!vlans!name!<nom>!id) <vlanid>
+#
+# Historique :
+#   2010/01/04 : pda/jean : conception
+#
+
+proc juniper-parse-vlans-entry-vlan-id {conf tab idx} {
+    upvar $tab t
+
+    set vlanid [lindex $conf 1]
+    set t($idx!id) $vlanid
+    return 0
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!vlans!name!<nom>
+# Remplit :
+#   - tab(eq!<eqname>!vlans!name!<nom>!l3) {<iface> <unit>}
+#
+# Historique :
+#   2010/01/04 : pda/jean : conception
+#
+
+proc juniper-parse-vlans-entry-l3-interface {conf tab idx} {
+    upvar $tab t
+
+    set ifaceunit [lindex $conf 1]
+    if {! [regexp {^(vlan)\.([0-9]+)} $ifaceunit bidon iface unit]} then {
+	juniper-warning "$idx: invalid l3-interface '$ifaceunit'"
+    } else {
+	set t($idx!l3) [list $iface $unit]
+    }
+    return 0
 }
 
 
@@ -1187,6 +1237,58 @@ proc juniper-post-process {model fdout eq tab} {
     }
 
     #
+    # Convertir les noms de vlans en id numériques
+    # Mettre les interfaces vlan.<unit> dans le bon vlan-id
+    # (JunOS switch)
+    #
+
+    if {[info exists t(eq!$eq!vlans!names)]} then {
+	foreach nom $t(eq!$eq!vlans!names) {
+	    #
+	    # Conversion des noms de vlans : parcourir toutes les
+	    # "!allowedvlans" pour convertir les noms
+	    #
+	    foreach i [array names t -glob "*!link!allowedvlans"] {
+		set l {}
+		foreach c $t($i) {
+		    set v1 [lindex $c 0]
+		    if {[info exists t(eq!$eq!vlans!name!$v1!id)]} then {
+			set v1 $t(eq!$eq!vlans!name!$v1!id)
+		    }
+		    set v2 [lindex $c 1]
+		    if {[info exists t(eq!$eq!vlans!name!$v2!id)]} then {
+			set v2 $t(eq!$eq!vlans!name!$v2!id)
+		    }
+		    lappend l [list $v1 $v2]
+		}
+		set t($i) $l
+	    }
+
+	    #
+	    # Inscription des interfaces vlan.<unit> dans le bon
+	    # vlan-id
+	    #
+	    set nt(eq!$eq!if!vlan!vlans) {}
+	    if {[info exists t(eq!$eq!vlans!name!$nom!l3)]} then {
+		set ifaceunit $t(eq!$eq!vlans!name!$nom!l3)
+		set iface [lindex $ifaceunit 0]
+		set unit  [lindex $ifaceunit 1]
+		set vlanid $t(eq!$eq!vlans!name!$nom!id)
+
+		lappend nt(eq!$eq!if!vlan!vlans) $vlanid
+		foreach i [array names t -glob "eq!$eq!if!$iface!vlan!$unit!*"] {
+		    regexp "!$iface!vlan!$unit!(.*)" $i bidon reste
+		    set nt(eq!$eq!if!$iface!vlan!$vlanid!$reste) $t($i)
+		    unset t($i)
+		}
+		foreach i [array names nt] {
+		    set t($i) $nt($i)
+		}
+	    }
+	}
+    }
+
+    #
     # Chercher tous les liens. Pour cela, parcourir la liste
     # des interfaces
     #
@@ -1210,10 +1312,13 @@ proc juniper-post-process {model fdout eq tab} {
     set nodeR6 ""
 
     #
-    # deuxième boucle pour retrouver les liens de niveau 2
+    # Boucle principale : retrouver les liens de niveau 2
     # (sans le détail des constituants d'un lien agrégé)
     # Parcourir la liste des interfaces.
     #
+
+    # par défaut, pas de brpat
+    set nodebrpat 0
 
     foreach iface $t(eq!$eq!if) {
 	if {[info exists agtab($iface)]} then {
@@ -1246,96 +1351,188 @@ proc juniper-post-process {model fdout eq tab} {
 	}
 	set linktype $t(eq!$eq!if!$iface!link!type)
 
-	if {! [string equal $linktype "aggregate"]} then {
-	    switch $linktype {
-		ether {
-		    # VLAN = 0 pour un lien Ether
-		    set arg 0
-		}
-		trunk {
-		    # Liste des vlans pour ce lien
-		    set arg $t(eq!$eq!if!$iface!vlans)
-		}
-		default {
-		    juniper-warning "Unknown link type for '$eq/$iface"
+	if {[string equal $iface "vlan"]} then {
+	    #
+	    # Traitement spécial pour les interface "vlan" qu'on
+	    # trouve sur les JunOS switch
+	    # Cas réduit du cas d'une interface physique sur JunOS routeur
+	    #
+
+	    if {[info exists t(eq!$eq!if!$iface!vlans)]} then {
+		foreach v $t(eq!$eq!if!$iface!vlans) {
+
+		    set nodeL2 [newnode]
+		    set t(eq!$eq!if!$iface!vlan!$v!node) $nodeL2
+		    set statname $t(eq!$eq!if!$iface!vlan!$v!stat)
+		    if {[string equal $statname ""]} then {
+			set statname "-"
+		    }
+		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname"
+		    puts $fdout "link $nodeL2 $nodebrpat"
+
+		    #
+		    # Parcourir la liste des réseaux supportés par cette
+		    # sous-interface.
+		    #
+		    foreach cidr $t(eq!$eq!if!$iface!vlan!$v!networks) {
+			set ifname "$iface.$v"
+			set idx "eq!$eq!if!$iface!vlan!$v!net!$cidr"
+
+			# récupérer l'adresse du routeur dans ce réseau
+			# (i.e. l'adresse IP de l'interface)
+			set gwadr $t($idx)
+			set preflen $t($idx!preflen)
+			set nodeL3 [newnode]
+
+			puts $fdout "node $nodeL3 type L3 eq $eq addr $gwadr/$preflen"
+			puts $fdout "link $nodeL3 $nodeL2"
+		    }
 		}
 	    }
 
-	    set nodeL1 [newnode]
+	} elseif {! [string equal $linktype "aggregate"]} then {
+	    #
+	    # Cas standard pour toutes les interfaces physiques
+	    # (non constituant un lien aggrégé)
+	    #
 
+	    set nodeL1 [newnode]
 	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link $linkname encap $linktype stat $statname desc $desc"
 
-	    foreach v $arg {
+	    if {[info exists t(eq!$eq!if!$iface!l2switch)]} then {
 		#
-		# Interconnexion des VLAN aux interfaces physiques
+		# Interface de JunOS switch : "family ethernet-switching"
 		#
+
 		set nodeL2 [newnode]
-		set t(eq!$eq!if!$iface!vlan!$v!node) $nodeL2
-		set statname $t(eq!$eq!if!$iface!vlan!$v!stat)
-		if {[string equal $statname ""]} then {
-		    set statname "-"
-		}
-		puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname"
-		puts $fdout "link $nodeL1 $nodeL2"
 
-		#
-		# Parcourir la liste des réseaux supportés par cette
-		# sous-interface.
-		#
-		foreach cidr $t(eq!$eq!if!$iface!vlan!$v!networks) {
-		    set ifname "$iface.$v"
-		    set idx "eq!$eq!if!$iface!vlan!$v!net!$cidr"
-
-		    # récupérer l'adresse du routeur dans ce réseau
-		    # (i.e. l'adresse IP de l'interface)
-		    set gwadr $t($idx)
-		    set preflen $t($idx!preflen)
-		    set nodeL3 [newnode]
-
-		    puts $fdout "node $nodeL3 type L3 eq $eq addr $gwadr/$preflen"
-		    puts $fdout "link $nodeL3 $nodeL2"
-
-		    if {[string first ":" $gwadr] != -1} then {
-			if {[string equal $nodeR6 ""]} then {
-			    set nodeR6 [newnode]
-			    puts $fdout "node $nodeR6 type router eq $eq instance _v6"
+		switch -- $t(eq!$eq!if!$iface!link!type) {
+		    ether {
+			if {[info exists t(eq!$eq!if!$iface!link!allowedvlans)]} then {
+			    set a [lindex $t(eq!$eq!if!$iface!link!allowedvlans) 0]
+			    set v [lindex $a 0]
+			    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname"
+			} else {
+			    set nodeL2 ""
 			}
-			set nodeR $nodeR6
-		    } else {
-			if {[string equal $nodeR4 ""]} then {
-			    set nodeR4 [newnode]
-			    puts $fdout "node $nodeR4 type router eq $eq instance _v4"
-			}
-			set nodeR $nodeR4
 		    }
+		    trunk {
+			puts -nonewline $fdout "node $nodeL2 type L2pat eq $eq"
+			foreach allowedvlans $t(eq!$eq!if!$iface!link!allowedvlans) {
+			    set v1 [lindex $allowedvlans 0]
+			    set v2 [lindex $allowedvlans 1]
+			    puts -nonewline $fdout " allow $v1 $v2"
+			}
+			puts $fdout ""
+		    }
+		    default {
+			juniper-warning "Unknown link type for '$eq/$iface"
+		    }
+		}
 
-		    puts $fdout "link $nodeL3 $nodeR"
+		if {! [string equal $nodeL2 ""]} then {
+		    puts $fdout "link $nodeL1 $nodeL2"
+		    if {$nodebrpat == 0} then {
+			set nodebrpat [newnode]
+			puts $fdout "node $nodebrpat type brpat eq $eq"
+		    }
+		    puts $fdout "link $nodeL2 $nodebrpat"
+		}
 
-		    set static {}
+	    } else {
+		#
+		# Interface de JunOS routeur : "family inet[6]"
+		#
 
-		    # parcourir les passerelles citées dans les routes statiques,
-		    # pour déterminer celles qui sont dans *ce* réseau
-		    if {[info exists t(eq!$eq!static!gw)]} then {
-			foreach gw $t(eq!$eq!static!gw) {
-			    set r [juniper-match-network $gw $cidr]
-			    if {$r == -1} then {
-				return 1
-			    } elseif {$r} then {
-				foreach n $t(eq!$eq!static!$gw) {
-				    append static "$n $gw "
+		switch $linktype {
+		    ether {
+			# VLAN = 0 pour un lien Ether
+			set arg 0
+		    }
+		    trunk {
+			set arg {}
+			if {[info exists t(eq!$eq!if!$iface!vlans)]} then {
+			    # Liste des vlans pour ce lien
+			    set arg $t(eq!$eq!if!$iface!vlans)
+			}
+		    }
+		    default {
+			juniper-warning "Unknown link type for '$eq/$iface"
+		    }
+		}
+
+		foreach v $arg {
+		    #
+		    # Interconnexion des VLAN aux interfaces physiques
+		    #
+		    set nodeL2 [newnode]
+		    set t(eq!$eq!if!$iface!vlan!$v!node) $nodeL2
+		    set statname $t(eq!$eq!if!$iface!vlan!$v!stat)
+		    if {[string equal $statname ""]} then {
+			set statname "-"
+		    }
+		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname"
+		    puts $fdout "link $nodeL1 $nodeL2"
+
+		    #
+		    # Parcourir la liste des réseaux supportés par cette
+		    # sous-interface.
+		    #
+		    foreach cidr $t(eq!$eq!if!$iface!vlan!$v!networks) {
+			set ifname "$iface.$v"
+			set idx "eq!$eq!if!$iface!vlan!$v!net!$cidr"
+
+			# récupérer l'adresse du routeur dans ce réseau
+			# (i.e. l'adresse IP de l'interface)
+			set gwadr $t($idx)
+			set preflen $t($idx!preflen)
+			set nodeL3 [newnode]
+
+			puts $fdout "node $nodeL3 type L3 eq $eq addr $gwadr/$preflen"
+			puts $fdout "link $nodeL3 $nodeL2"
+
+			if {[string first ":" $gwadr] != -1} then {
+			    if {[string equal $nodeR6 ""]} then {
+				set nodeR6 [newnode]
+				puts $fdout "node $nodeR6 type router eq $eq instance _v6"
+			    }
+			    set nodeR $nodeR6
+			} else {
+			    if {[string equal $nodeR4 ""]} then {
+				set nodeR4 [newnode]
+				puts $fdout "node $nodeR4 type router eq $eq instance _v4"
+			    }
+			    set nodeR $nodeR4
+			}
+
+			puts $fdout "link $nodeL3 $nodeR"
+
+			set static {}
+
+			# parcourir les passerelles citées dans les routes statiques,
+			# pour déterminer celles qui sont dans *ce* réseau
+			if {[info exists t(eq!$eq!static!gw)]} then {
+			    foreach gw $t(eq!$eq!static!gw) {
+				set r [juniper-match-network $gw $cidr]
+				if {$r == -1} then {
+				    return 1
+				} elseif {$r} then {
+				    foreach n $t(eq!$eq!static!$gw) {
+					append static "$n $gw "
+				    }
 				}
 			    }
 			}
-		    }
 
-		    # est-ce qu'il y a du VRRP sur cette interface pour ce réseau ?
-		    if {[info exists t($idx!vrrp!virtual)]} then {
-			set vrrp "$t($idx!vrrp!virtual) $t($idx!vrrp!priority)"
-		    } else {
-			set vrrp "- -"
-		    }
+			# est-ce qu'il y a du VRRP sur cette interface pour ce réseau ?
+			if {[info exists t($idx!vrrp!virtual)]} then {
+			    set vrrp "$t($idx!vrrp!virtual) $t($idx!vrrp!priority)"
+			} else {
+			    set vrrp "- -"
+			}
 
-		    puts $fdout "rnet $cidr $nodeR $nodeL3 $nodeL2 $nodeL1 $vrrp $static"
+			puts $fdout "rnet $cidr $nodeR $nodeL3 $nodeL2 $nodeL1 $vrrp $static"
+		    }
 		}
 	    }
 	}
@@ -1348,14 +1545,16 @@ proc juniper-find-ranges {tab eq if} {
     upvar $tab t
 
     set lr {}
-    foreach r $t(eq!$eq!ranges) {
-	set lc $t(eq!$eq!range!$r!members)
-	foreach c $lc {
-	    set min [lindex $c 0]
-	    set max [lindex $c 1]
-	    if {[juniper-iface-cmp $if $min]>=0 && [juniper-iface-cmp $if $max]<=0} then {
-		lappend lr $r
-		break
+    if {[regexp {^[A-Za-z]+-.*} $if]} then {
+	foreach r $t(eq!$eq!ranges) {
+	    set lc $t(eq!$eq!range!$r!members)
+	    foreach c $lc {
+		set min [lindex $c 0]
+		set max [lindex $c 1]
+		if {[juniper-iface-cmp $if $min]>=0 && [juniper-iface-cmp $if $max]<=0} then {
+		    lappend lr $r
+		    break
+		}
 	    }
 	}
     }
@@ -1364,7 +1563,7 @@ proc juniper-find-ranges {tab eq if} {
 
 proc juniper-iface-cmp {i1 i2} {
     if {! [regexp {^([A-Za-z]+)-(.*)} $i1 bidon n1 r1]} then {
-	puts stderr "Invalid interface name '$i1'"
+	puts stderr "Invalid interface name '$i1' (range $i1 $i2)"
 	return -1
     }
     if {! [regexp {^([A-Za-z]+)-(.*)} $i2 bidon n2 r2]} then {
@@ -1394,7 +1593,7 @@ proc juniper-iface-cmp {i1 i2} {
 proc juniper-completer-iface {tab eq if range} {
     upvar $tab t
 
-    foreach e {link!name link!desc link!stat link!type} {
+    foreach e {link!name link!desc link!stat link!type link!ifname} {
 	if {[info exists t(eq!$eq!if!$if!$e)] && ! [string equal $t(eq!$eq!if!$if!$e) ""]} then {
 	    # rien à faire
 	} else {
