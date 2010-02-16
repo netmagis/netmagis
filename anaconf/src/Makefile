@@ -2,7 +2,7 @@
 # $Id: Makefile,v 1.6 2008-07-30 08:48:49 pda Exp $
 #
 
-DESTDIR=/local/applis/topo
+TOPODIR=/local/applis/topo
 
 LIBDIR = ../lib
 
@@ -33,6 +33,10 @@ SCRIPTS = \
 	parse-juniper.tcl	\
 	sendcoll
 
+SUBST = \
+        -e 's|%TOPODIR%|$(TOPODIR)|'
+
+
 all:	$(PROGS)
 
 dumpgraph:	dumpgraph.c	$(LIBDIR)/libgraph.a
@@ -45,11 +49,16 @@ extractcoll:	extractcoll.c	$(LIBDIR)/libgraph.a
 getnetif:	getnetif.c	$(LIBDIR)/libgraph.a
 
 install: $(PROGS) $(SCRIPTS)
-	test -d $(DESTDIR)/bin || mkdir $(DESTDIR)/bin
-	chmod 775 $(DESTDIR)/bin
-	for i in $(PROGS) $(SCRIPTS) ; \
+	test -d $(TOPODIR)/bin || mkdir $(TOPODIR)/bin
+	chmod 775 $(TOPODIR)/bin
+	for i in $(SCRIPTS) ; \
 	do \
-		install -m 0775 $$i $(DESTDIR)/bin ; \
+		sed $(SUBST) $$i > $(TOPODIR)/bin/$$i ; \
+		chmod 0775 $(TOPODIR)/bin/$$i ; \
+	done
+	for i in $(PROGS) ; \
+	do \
+		install -m 0775 $$i $(TOPODIR)/bin ; \
 	done
 
 clean:

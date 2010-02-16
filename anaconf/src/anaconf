@@ -31,7 +31,7 @@ RANCIDDIR=/local/idr/conf/osiris
 RANCIDDB=$RANCIDDIR/router.db
 RANCIDCONFDIR=$RANCIDDIR/configs
 
-BASE=/local/applis/topo
+BASE=%TOPODIR%
 BINDIR=$BASE/bin
 DATADIR=$BASE/osiris
 EQVIRT=$DATADIR/eqvirt

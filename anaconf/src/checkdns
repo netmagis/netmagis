@@ -27,7 +27,7 @@ set conf(base) {host=HOST dbname=DB user=USER password=PASSWORD}
 set conf(domain) "u-strasbg.fr"
 
 # Script où sont placées les modifications du DNS
-set conf(script) "/local/applis/topo/update-dns.sh"
+set conf(script) "%TOPODIR%/bin/update-dns.sh"
 
 # Répertoire où trouver les commandes d'ajout et de suppression dans WebDNS
 set conf(path)	"/local/services/www/applis/devdns/lib/util"
