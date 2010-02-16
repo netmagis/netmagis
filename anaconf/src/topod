@@ -1,0 +1,311 @@
+#! %TCLSH%
+
+#  
+#  Recette pour accélérer le déroulement de rancid+topo pour permettre
+#  la modification de conf par interface Web topo
+#  
+#  Il faut trois spools (répertoires) différents :
+#      - spool des modifications à propager
+#      - spool des modifications effectuées
+#      - spool des détections de modification
+#  
+#  Lorsqu'une modification est effectuée sur l'interface Web :
+#  
+#      Un fichier est généré par modification effectuée (ex: chgt
+#      d'affectation d'un port dans un vlan) avec une ligne :
+#
+#  	eq <eq> iface <iface> [vlan <vlanid>] [desc <desc en hexa>]
+#
+#      Le fichier est mis dans un spool (i.e. répertoire) des modifications
+#      à propager. Le nom du fichier est au format nomeq.YYYYmmddHHMMSS
+#  
+#      Lorsque la modification est propagée sur l'équipement, le fichier
+#      est déplacé dans un spool différent contenant les modifications
+#      effectuées (mais pas encore enregistrées par topo).
+#  
+#  Lorsqu'une modification sur un équipement est détectée :
+#  
+#      La modification peut être soit une modification automatique
+#      poussée à partir de l'interface Web, soit une modification
+#      manuelle par un très doué ingénieur réseau.
+#  
+#      La détection peut-être réalisée via une trappe SNMP ou via
+#      l'analyse des fichiers de log. Un fichier doit être généré,
+#      dont le nom correspond au nom de l'équipement, dans un spool
+#      (différent du précédent).  La présence du fichier toto.u-strasbg.fr
+#      indique que l'équipement toto a été modifié.
+#  
+#  Rancid est remplacé par le programme, constitué d'une boucle infinie
+#  (démon), dont le corps est :
+#  
+#      - une fois par nuit, faire une récupération des confs (rancid original)
+#  	et une analyse des confs (topo) complètes
+#  
+#      - analyser le spool de modifications à effectuer, en regroupant
+#  	les modifications par équipement (mais en conservant la
+#  	séquence des modifications)
+#  
+#  	- tester si l'équipement est accessible (fping)
+#  	    => l'idée est de ne pas attendre le timeout TCP si
+#  		l'équipement est éteint/crashé/etc
+#  
+#  	- propager ces modifications sur l'équipement s'il est
+#  	    accessible (normalement, ces modifications entrainent
+#  	    l'apparition d'une entrée dans le spool des modifications
+#  	    détectées)
+#  
+#  	- si la propagation s'est passée sans problème, déplacer les
+#  	    fichiers dans le spool des modifications effectuées.
+#  
+#  	- conserver la liste des équipements pour lesquels la
+#  	    propagation des modifications s'est effectuée sans
+#  	    problème.
+#  
+#      - analyser le spool des détections de modifications
+#  
+#  	- si l'équipement n'est pas dans routers.db, alors râler
+#  
+#  	- si l'équipement est accessible, alors lancer rancid pour
+#  	    récupérer sa configuration
+#  
+#      - si la configuration d'un équipement a été modifiée/propagée
+#  	avec succès, mais que cet équipement n'apparaît pas dans
+#  	le spool des détections de modifications, alors râler
+#  
+#      - lancer topo en restreignant l'analyse aux seuls équipements
+#  	modifiés
+#  
+#      - supprimer les fichiers du spool des modifications effectuées
+#  
+#
+# Historique :
+#  2010/02/16 : pda/jean : création
+#
+
+set conf(spooldir) "%TOPODIR%/spool"
+
+set conf(spoolmodifies) "$conf(spooldir)/modifies"
+set conf(spoolapropager) "$conf(spooldir)/apropager"
+set conf(spooleffectues) "$conf(spooldir)/effectues"
+
+set conf(fping) "%FPING% -q %s"
+
+#
+# Commandes de modification à envoyer pour chaque équipement
+#
+
+array set confcmd {
+    cisco:*:prologue {
+	configure terminal
+    }
+    cisco:*:configifvlan {
+	interface %1$s
+	 switchport access vlan %2$s
+	exit
+    }
+    cisco:*:configifdesc {
+	interface %1$s
+	 description "%2$s
+	exit
+    }
+    cisco:*:epilogue {
+	exit
+	copy running-config config
+    }
+
+    juniper:*:prologue {
+	configure
+    }
+    juniper:*:configifvlan {
+	top set interface %1$s unit 0 family ethernet-switching vlan members %2$s
+    }
+    juniper:*:configifdesc {
+	top set interface %1$s description "%2$s"
+    }
+    juniper:*:epilogue {
+	exit configuration
+	commit
+    }
+
+    hp:*:prologue {
+	configure terminal
+    }
+    hp:*:configifvlan {
+	vlan %2$s
+	untagged %1$s
+	exit
+    }
+    hp:*:configifdesc {
+	interface %1$s
+	name "%2$s"
+	exit
+    }
+    hp:*:epilogue {
+	exit
+	write memory
+    }
+}
+
+#
+# Lit le spool des modifications à propager
+#
+# Entrée :
+#  _tab : nom du tableau à remplir
+#  dir : répertoire du spool
+# Sortie :
+#   tab : tableau indexé suivant le nom de l'équipement contenant
+#          la liste des fichiers de modification à propager
+#
+# Historique : 
+#  2010/02/16 : pda/jean : création
+#
+
+proc lire-apropager {_tab dir} {
+    upvar $_tab tab
+    
+    set lfile [glob -nocomplain -directory $dir "*"]
+    foreach file [lsort $lfile] {
+	if {[regexp {(.+)\.(\d+)$} $file bidon eq date]} then {
+	    lappend tab($eq) "$dir/$file"
+	}
+    }
+}
+
+#
+# Propage un ensemble de modifications sur un équipement
+#
+# Entrée :
+#  eq : nom de l'équipement
+#  type : type d'équipement (ex: cisco, juniper etc.)
+#  model : modèle d'équipement (ex: 3750, M20 etc.)
+#  lfile : liste triée de fichiers de modifications à appliquer
+# Sortie :
+#   valeur de retour : liste de fichiers correctement appliqués
+#
+# Historique : 
+#  2010/02/16 : pda/jean : création
+#
+
+proc propager {eq type model lfile} {
+    global conf
+    
+    set r {}
+
+    # 
+    # Teste si l'équipement est joignable
+    # 
+
+    set cmd [format $conf(fping) $eq]
+
+    if {! [catch {exec $cmd}]} {
+	foreach file $lfile {
+	    if {[catch {set fd [open $file "r"]} msg]} then {
+		puts stderr "cannot open $file ($msg)"
+		# XXXXXXXXXXXXXXXXXXXXXX affiner le traitement des erreurs
+		exit 1
+	    } else {
+		set line [read $fd]
+		close $fd
+
+		set msg [envoyer-cmd $eq $type $model $line]
+		if {! [string equal $msg ""]} then {
+		    puts stderr "envoi de la modification impossible ($msg)"
+		    exit 1
+		}
+		
+		lappend r $file
+	    }
+	}
+    }
+
+    return $r
+}
+
+#
+# Envoi une commande a un equipement
+#
+# Entrée :
+#  eq : nom de l'équipement
+#  type : type d'équipement (ex: cisco, juniper etc.)
+#  model : modèle d'équipement (ex: 3750, M20 etc.)
+#  line : modification au format 
+#	  	eq <eq> iface <iface> [vlan <vlanid>] [desc <desc en hexa>]
+# Sortie :
+#   valeur de retour : message d'erreur ou chaîne vide si ok
+#
+# Historique : 
+#  2010/02/16 : pda/jean : création
+#
+
+proc envoyer-cmd {eq type model line} {
+    global conf 
+
+    array set t $line
+
+    #
+    # Vérification de la syntaxe
+    #
+
+    if {[info exists t(eq)] &&
+	    [info exists t(iface)] &&
+	    ([info exists t(vlan)] || [info exists t(desc)])} then {
+	
+	#
+	# Constituer la chaine de commandes à envoyer
+	#
+
+	set txt ""
+
+	set prologue [fetchconf $type $model "prologue"]
+
+	append txt "$prologue\n"
+
+	if {[info exists t(vlan)]} then {
+
+	    set fmt [fetchconf $type $model "configifvlan"]
+	    append txt [format $fmt $t(iface) $t(vlan)]
+	    append txt "\n"
+	}
+	if {[info exists t(desc)]} then {
+	    set fmt [fetchconf $type $model "configifdesc"]
+	    append txt [format $fmt $t(iface) [binary format "H*" $t(desc)]]
+	    append txt "\n"
+	}
+	set epilogue [fetchconf $type $model "epilogue"]
+	append txt "$epilogue\n"
+
+    } else {
+	puts stderr "bad format for $file"
+	# XXXXXXXXXXXXXXXXXXXXXX affiner le traitement des erreurs
+	exit 1
+    }
+
+}
+
+#
+# Renvoie la commande associée à un type d'équipement
+# et un type de configuration
+#
+# Entrée :
+#  type : type d'équipement (ex: cisco, juniper etc.)
+#  model : modèle d'équipement (ex: 3750, M20 etc.)
+#  context : prologue, configifvlan, configifdesc, epilogue
+# Sortie
+#  valeur de retour : commande à exécuter
+#
+
+proc fetchconf {type model context} {
+    global confcmd
+    
+    set r ""
+    if {[info exists confcmd($type:*:$context)]} then {
+	set r $confcmd($type:*:$context)
+    } elseif {[info exists confcmd($type:$model:$context)]} then {
+	set r $confcmd($type:$model:$context)
+    } else {
+	puts stderr "type de configuration non trouvé : $type:$model:$context"
+	exit 1
+    }
+
+    return $r
+}
