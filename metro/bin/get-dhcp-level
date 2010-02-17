@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: get-dhcp-level,v 1.2 2008-06-13 10:16:50 pda Exp $
+# $Id: get-dhcp-level,v 1.2 2008/06/13 10:16:50 pda Exp $
 #
 #
 # ###################################################################
@@ -15,78 +15,29 @@
 use DBI ;
 use strict ;
 use Socket ;
+use SNMP_util;
 
 # fichier de configuration principal et chargement des focntions de base
 our $conf_file = "%CONF%";
 require "%LIBMETRO%";
 #
 
-my $dbname_dns = read_conf_file("$conf_file","PG_DATABASE_DNS");
-my $dbuser_dns = read_conf_file("$conf_file","PG_USER_DNS");
-my $dbhost_dns = read_conf_file("$conf_file","DNS_PSQL_SERVER");
-my $dbpass_dns = read_conf_file("$conf_file","PG_PASSWORD_DNS");
-my $dbname_mac = read_conf_file("$conf_file","PG_DATABASE_MAC");
-my $dbuser_mac = read_conf_file("$conf_file","PG_USER_MAC");
-my $dbhost_mac = read_conf_file("$conf_file","MAC_PSQL_SERVER");
-my $dbpass_mac = read_conf_file("$conf_file","PG_PASSWORD_MAC");
+my $snmp_community = read_conf_file("$conf_file","O2_SNMP_COMMUNITY");
 
-my $dbdns = DBI->connect("dbi:Pg:dbname=$dbname_dns;host=$dbhost_dns","$dbuser_dns","$dbpass_dns")
-	    or die ($DBI::errstr);
-my $dbmac = DBI->connect("dbi:Pg:dbname=$dbname_mac;host=$dbhost_mac","$dbuser_mac","$dbpass_mac")
-	    or die ($DBI::errstr);
-#
-# Pour chaque reseaux faisant du DHCP
-#
-my $cursor = $dbdns->prepare(
-    "SELECT r.nom, r.adr4 FROM reseau r, dr_reseau d
-     WHERE  r.idreseau = d.idreseau
-	    AND d.dhcp = 1
-	    GROUP BY r.nom, r.adr4"
-) ;
-$cursor->execute;
+my $dhcp_server  = "ns1a.u-strasbg.fr";
+my $leases_oid = "1.3.6.1.4.1.2021.8.1.101";
+our %tab_net = ();
 
-my $nomreseau = ""; my $reseau = "";
-while ( ($nomreseau, $reseau) = $cursor->fetchrow ) {
 
-    #
-    # Recupere tous les intervalles dhcp de ce reseau
-    #
-    my $cursor2 = $dbdns->prepare("SELECT min,max FROM dhcprange
-				WHERE dhcprange.min <<= '$reseau'") ;
-    $cursor2->execute;
+get_leases_list($dhcp_server,$snmp_community,$leases_oid);
 
-    my $min ; my $max ;
-    my $avail = 0 ;
-    while ( ($min, $max) = $cursor2->fetchrow ) {
-	$avail += (ip2number($max) - ip2number($min)) ;
-    }
-    $cursor2 -> finish ;
 
-    if ($avail > 0 ) {
-	#
-	# Récupère le nombre d'adresse attribuées dans ce réseau
-	#
-	my $cursor3 = $dbmac->prepare("SELECT count(*) FROM baildhcp b, sessionbaildhcp s
-					WHERE   b.ip <<= '$reseau'
-					AND s.idbaildhcp = b.idbaildhcp
-					AND s.close = 0") ;
-	$cursor3->execute;
-	my $inuse = 0 ;
-	if ( ($inuse) = $cursor3->fetchrow ) {
-	    #print "ID : ", "dhcp-", $reseau ," |\t";
-	    #print "utilisées : ", $inuse," |\t";
-	    #print "total : ", $avail,"|\t";
-	    #print "(réseau : ", $nomreseau, ")\n";
-
-	    create_or_update_rrd($reseau,$inuse,$avail,$nomreseau);
-	}
-	$cursor3 -> finish ;
-    }
+foreach my $key (keys %tab_net)
+{
+    create_or_update_rrd($key,$tab_net{$key}{"inuse"},$tab_net{$key}{"avail"},$tab_net{$key}{"nom"});
 }
 
-$cursor -> finish ;
 
-exit ;
 
 # Convertit une adresse ipv4 en entier long
 sub ip2number {
@@ -150,4 +101,30 @@ sub create_or_update_rrd
 	    system("echo \"$ligne_def\" >> $fichier_index");
 	}
     }   
+}
+
+
+sub get_leases_list
+{
+    my ($dhcp_server,$community,$oid) = @_;
+ 
+    my $param = $community."@".$dhcp_server;
+
+    &snmpmapOID("oid_leases",$oid);
+    my @liste = &snmpwalk($param, "oid_leases");
+
+    my $t_liste = @liste;
+    my $i;
+    for($i=0;$i<$t_liste;$i++)
+    {
+	my ($reste,$ligne)=(split(/:/,$liste[$i]))[0,1];
+
+	chomp $ligne;
+	if($ligne =~/(.*);([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\/[0-9]+);([0-9]+);([0-9]+)/) 
+	{
+	    $tab_net{$2}{"nom"} = $1;
+	    $tab_net{$2}{"inuse"} = $3;
+	    $tab_net{$2}{"avail"} = $4;
+	}
+    }
 }

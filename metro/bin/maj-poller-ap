@@ -15,8 +15,8 @@ use Net::hostent;
 use strict;
 
 # fichier de configuration principal et chargement des focntions de base
-my $conf_file = "/local/obj999/etc/obj999.conf";
-require "/local/obj999/lib/libmetro.pl";
+my $conf_file = "%CONF%";
+require "%LIBMETRO%";
 #
 
 our $liste_sites_wifi = read_conf_file("$conf_file","FILE_LISTE_SITES_WIFI");

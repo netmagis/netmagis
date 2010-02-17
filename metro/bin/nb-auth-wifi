@@ -17,8 +17,8 @@ use DBI;
 $rrd_file = $ARGV[0];
 
 # fichier de configuration principal et chargement des focntions de base
-my $conf_file = "/local/obj999/etc/obj999.conf";
-require "/local/obj999/lib/libmetro.pl";
+my $conf_file = "%CONF%";
+require "%LIBMETRO%";
 
 $rep_etc = read_conf_file("$conf_file","DIR_ETC");
 $rep_lib = read_conf_file("$conf_file","DIR_LIB");

@@ -47,8 +47,8 @@ my $legendes = $ARGV[6];
 #system("echo $id >> /tmp/genere_graph.out");
 
 # fichier de configuration principal et chargement des fonctions de base
-my $conf_file = "/local/obj999/etc/obj999.conf";
-require "/local/obj999/lib/libmetro.pl";
+my $conf_file = "%CONF%";
+require "%LIBMETRO%";
 #
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($conf_file);

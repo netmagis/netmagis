@@ -26,8 +26,8 @@ use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
 use strict;
 
 # fichier de configuration principal et chargement des fonctions de base
-our $conf_file = "/local/obj999/etc/obj999.conf";
-require "/local/obj999/lib/libmetro.pl";
+our $conf_file = "%CONF%";
+require "%LIBMETRO%";
 #
 
 # tunning du module SNMP pour ne pas afficher les erreurs sur la sortie

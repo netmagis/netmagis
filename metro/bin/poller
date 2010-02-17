@@ -73,8 +73,7 @@ our %function_probes = (
 		'juniper_filter_counter'	=> \&get_juniper_filter_counter
 );
 
-
-require "/local/obj999/lib/libmetro.pl";
+require "%LIBMETRO%";
 
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($config{'conf_file'});
