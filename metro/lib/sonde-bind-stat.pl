@@ -1,4 +1,4 @@
-# $Id: sonde-bind-stat.pl,v 1.2 2008-06-26 07:13:14 boggia Exp $
+# $Id: sonde-bind-stat.pl,v 1.2 2008/06/26 07:13:14 boggia Exp $
 # ###################################################################
 # boggia : Creation : 25/03/08
 #

@@ -1,4 +1,4 @@
-# $Id: sonde-nbassoc-wifi.pl,v 1.1.1.1 2008-06-13 08:55:51 pda Exp $
+# $Id: sonde-nbassoc-wifi.pl,v 1.1.1.1 2008/06/13 08:55:51 pda Exp $
 # ###################################################################
 # boggia : Creation : 25/03/08
 # boggia : Modification : Creation de la fonction get_authaccess_list

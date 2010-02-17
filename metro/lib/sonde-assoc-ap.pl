@@ -1,4 +1,4 @@
-# $Id: sonde-assoc-ap.pl,v 1.3 2009-08-24 08:02:58 boggia Exp $
+# $Id: sonde-assoc-ap.pl,v 1.1.1.1 2008/06/13 08:55:51 pda Exp $
 # ###################################################################
 # boggia : Creation : 25/03/08
 # boggia : Modification : Creation de la fonction get_authaccess_list
@@ -110,7 +110,7 @@ sub get_assoc
 		}
 		else
 		{
-		    my $assoc_oid = '1.3.6.1.4.1.9.9.273.1.2.1.1.6';
+		    my $assoc_oid = '1.3.6.1.4.1.9.9.273.1.2.1.1.23';
 		    my $res = $snmp->get_table(
 		    $assoc_oid,
 		    -callback   => [ \&get_snmp_assoc_ap,$snmp,$base,$host,$assoc_oid,%liste_if] );
@@ -178,9 +178,9 @@ sub get_snmp_assoc_ap
 		foreach $key (keys %$hashref) 
 		{
 			# wpa ou non
-        		$securise=$hashref->{$key};
+        		$securise= hex ($hashref->{$key});
 
-        		if($securise == 1)
+        		if($securise >= 1)
         		{
                 		$tab[$i][2] = 1;
                 		$nb_wpa ++;
@@ -244,7 +244,19 @@ sub get_snmp_assoc_ap
         		$tab[$i][0] = $mac;
         		$tab[$i][1] = $ssid;
 			$tab[$i][3] = $iface;
-        	
+
+			##############################################
+			# hack contre mauvaise implementation des mibs
+			if($ssid eq "osiris" && $tab[$i][2] != 0)
+			{
+			    $tab[$i][2] == 0;
+			}
+			elsif(($ssid eq "osiris-sec" || $ssid eq "osiris-lab" || $ssid eq "eduroam") && $tab[$i][2] != 1)
+			{
+			    $tab[$i][2] == 1;
+			}
+			##############################################
+         	
                         if(exists $APSupSSID{$host}{$liste_if{$iface}}{$ssid})
                         {
                                 foreach my $key2 (keys %{$APSupSSID{$host}{$liste_if{$iface}}{$ssid}})
@@ -350,12 +362,12 @@ sub get_snmp_assoc_ap
 			    $tab_temp[$k][0] = $1; 
 			    $tab_temp[$k][1] = $2;
 			    $tab_temp[$k][2] = $3;
-			    print "temp = $tab_temp[$k][0],$tab_temp[$k][1],$tab_temp[$k][2]\n";
+			    #print "temp = $tab_temp[$k][0],$tab_temp[$k][1],$tab_temp[$k][2]\n";
 			    $k ++;
 			}
 			else
 			{
-			    print "liste_conn = $liste_connexions[$i]\n";
+			    #print "liste_conn = $liste_connexions[$i]\n";
 			}
                 }
                 #on vide les connexions disparues de tab_temp

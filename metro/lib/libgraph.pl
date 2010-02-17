@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: libgraph.pl,v 1.8 2009-08-24 08:02:58 boggia Exp $
+# $Id: libgraph.pl,v 1.4 2008/07/30 15:49:32 boggia Exp $
 ###########################################################
 # Creation : 21/05/08 : boggia
 #
@@ -147,7 +147,7 @@ sub GaugeWiFi
             		{
                 		$drawlineavg->{'cdef'}="$drawlineavg->{'cdef'},$drawavg->{'name'}";
                 		$drawlinemax->{'cdef'}="$drawlinemax->{'cdef'},$drawmax->{'name'}";
-                		$plusline = "$plusline,+";
+                		$plusline = "$plusline,ADDNAN";
             		}
             		else
             		{
@@ -330,7 +330,7 @@ sub aggregGaugeWiFi
 	    		if(exists $drawtotal->{'cdef'})
 	    		{
 				$drawtotal->{'cdef'}="$drawtotal->{'cdef'},$draw->{'name'}";
-				$plus = "$plus,+";
+				$plus = "$plus,ADDNAN";
 	    		}
 	    		else
 	    		{
@@ -342,7 +342,7 @@ sub aggregGaugeWiFi
 	    		if(exists $drawline->{$i}->{'cdef'})
 	    		{		   
 				$drawline->{$i}->{'cdef'}="$drawline->{$i}->{'cdef'},$draw->{'name'}";
-				$plusline = "$plusline,+"; 
+				$plusline = "$plusline,ADDNAN"; 
 	    		}
 	    		else
 	    		{
@@ -527,7 +527,7 @@ sub trafic
                 $drawlineout->{'cdef'}="$drawlineout->{'cdef'},$drawout->{'name'}";
 		$drawlineinmax->{'cdef'}="$drawlineinmax->{'cdef'},$drawinmax->{'name'}";
                 $drawlineoutmax->{'cdef'}="$drawlineoutmax->{'cdef'},$drawoutmax->{'name'}";
-                $plusline = "$plusline,+";
+                $plusline = "$plusline,ADDNAN";
             }
             else
             {
@@ -759,7 +759,7 @@ sub aggreg_trafic
 	    {
 		$drawtotalin->{'cdef'}="$drawtotalin->{'cdef'},$drawin->{'name'}";
 		$drawtotalout->{'cdef'}="$drawtotalout->{'cdef'},$drawout->{'name'}";
-		$plus = "$plus,+";
+		$plus = "$plus,ADDNAN";
 	    }
 	    else
 	    {
@@ -773,7 +773,7 @@ sub aggreg_trafic
 	    {		   
 		$drawlinein->{$i}->{'cdef'}="$drawlinein->{$i}->{'cdef'},$drawin->{'name'}";
 		$drawlineout->{$i}->{'cdef'}="$drawlineout->{$i}->{'cdef'},$drawout->{'name'}";
-		$plusline = "$plusline,+"; 
+		$plusline = "$plusline,ADDNAN"; 
 	    }
 	    else
 	    {
@@ -1030,7 +1030,7 @@ sub GaugeAuthWiFi
             type        => 'area',
             color       => $couleur_cumul,
             name        => "cumul",
-            cdef        => "osiris,osiris-sec,+",
+            cdef        => "osiris,osiris-sec,ADDNAN",
             legend      => 'total',
         },
 	comment        => '  ',
@@ -1139,7 +1139,7 @@ sub GaugeAuthWiFi
             type        => 'area',
             color       => $couleur_cumul_max,
             name        => "cumulmax",
-            cdef        => "maxosiris,maxosiris-sec,+",
+            cdef        => "maxosiris,maxosiris-sec,ADDNAN",
             legend      => 'total crête',
         },
 	comment        => '  ',
@@ -1163,7 +1163,7 @@ sub GaugeAuthWiFi
             type        => 'area',
             color       => $couleur_cumul,
             name        => "cumul",
-            cdef        => "osiris,osiris-sec,+",
+            cdef        => "osiris,osiris-sec,ADDNAN",
             legend      => 'total',
         },
 	comment        => '        ',
@@ -1332,7 +1332,7 @@ sub GaugeAssocWiFi
             type        => 'area',
             color       => $couleur_cumul,
             name        => "cumul",
-            cdef        => "osiris,osiris-sec,+",
+            cdef        => "osiris,osiris-sec,ADDNAN",
             legend      => 'total',
         },
 	comment        => '  ',
@@ -1441,7 +1441,7 @@ sub GaugeAssocWiFi
             type        => 'area',
             color       => $couleur_cumul_max,
             name        => "cumulmax",
-            cdef        => "maxosiris,maxosiris-sec,+",
+            cdef        => "maxosiris,maxosiris-sec,ADDNAN",
             legend      => 'total crête',
         },
 	comment        => '  ',
@@ -1465,7 +1465,7 @@ sub GaugeAssocWiFi
             type        => 'area',
             color       => $couleur_cumul,
             name        => "cumul",
-            cdef        => "osiris,osiris-sec,+",
+            cdef        => "osiris,osiris-sec,ADDNAN",
             legend      => 'total',
         },
 	comment        => '        ',
@@ -1997,7 +1997,7 @@ sub GaugeCPUServer
             type        => 'area',
             color       => $couleur_cumul,
             name        => "total",
-            cdef        => "cpu_system,cpu_user,+",
+            cdef        => "cpu_system,cpu_user,ADDNAN",
             legend      => 'total',
         },
         comment        => '   ',
