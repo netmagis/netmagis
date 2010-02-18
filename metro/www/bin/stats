@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: stats,v 1.3 2008-12-23 15:00:12 boggia Exp $
+# $Id: stats,v 1.2 2008/06/13 10:01:06 pda Exp $
 #
 #
 # ###################################################################
@@ -14,8 +14,8 @@ use CGI qw/:standard/;
 use CGI::Pretty qw( :html3 );
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "/local/obj999/etc/obj999.conf";
-require "/local/obj999/lib/libmetro.pl";
+our $conf_file = "%CONF%";
+require "%LIBMETRO%";
 #
 $server_hostname = read_conf_file($conf_file,"WWW_IDRIS_HOSTNAME");
 $www_root = read_conf_file($conf_file,"WWW_IDRIS_DIR_ROOT");

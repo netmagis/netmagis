@@ -17,7 +17,7 @@ LIBMETRO  = $(DESTEXPL)/lib/libmetro.pl
 PASSWDMAC = pas-fou-non-?
 PASSWDDNS = pas-fou-non-?
 
-WWWUSER	  = www:obj999
+WWWUSER	  = www-data:obj999
 BINUSER   = obj999:obj999
 
 SUBST	= \

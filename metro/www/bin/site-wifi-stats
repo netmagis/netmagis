@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: site-wifi-stats,v 1.2 2008-06-13 10:01:06 pda Exp $
+# $Id: site-wifi-stats,v 1.2 2008/06/13 10:01:06 pda Exp $
 #
 #
 # ###################################################################
@@ -16,6 +16,7 @@ use DBI;
 # fichier de configuration principal et chargement des focntions de base
 our $conf_file = "%CONF%";
 require "%LIBMETRO%";
+
 #
 $server_hostname = read_conf_file($conf_file,"WWW_IDRIS_HOSTNAME");
 $www_root = read_conf_file($conf_file,"WWW_IDRIS_DIR_ROOT");
@@ -30,6 +31,7 @@ $rep_modeles = read_conf_file($conf_file,"DIR_BIN_MODELS");
 $rep_etc = read_conf_file($conf_file,"DIR_ETC");
 #repertoire des bases de données
 $rep_db = read_conf_file($conf_file,"DIR_RRD_DB");
+$rep_db_metro = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
 #repertoire du fichier de supervision des AP
 $rep_var = read_conf_file($conf_file,"DIR_VAR");
 #fichier de liste des sites WiFi avec l'ensemble des AP
@@ -43,6 +45,8 @@ $font_size = "2";
 %ssid = ();
 $ssid{'osiris'} = 0;
 $ssid{'osiris-sec'} = 0;
+$ssid{'osiris-lab'} = 0;
+$ssid{'eduroam'} = 0;
 
 %liste_ap_state = ();
 
@@ -99,6 +103,11 @@ close(LISTE);
 %assoc = ();
 @liste_des_ap = split(/;/,$liste_ap);
 
+$liste_id = "";
+$liste_cumul_id = "";
+$liste_legend = "";
+
+$k=0;
 foreach $elem (@liste_des_ap)
 {
 	%$elem = ();	
@@ -120,6 +129,20 @@ foreach $elem (@liste_des_ap)
 		}
 	    }
 	}
+	# on forme l'url pour la generation des graphes
+        if($k==0)
+        {
+            $liste_id = "id0=M$elem.Dot11Radio0";
+	    $liste_cumul_id = "id=M$elem.Dot11Radio0";
+            $liste_legend = "legende0=$elem";
+        }
+        else
+        {
+            $liste_id = "$liste_id&id$k=M$elem.Dot11Radio0";
+	    $liste_cumul_id = "$liste_cumul_id+M$elem.Dot11Radio0";
+            $liste_legend = "$liste_legend&legende$k=$elem";
+        }
+	$k++;
 }
 
 print "<table align=center BORDER=0>
@@ -189,17 +212,48 @@ print "	    </td>
 print "<br><a href=https://$server_hostname$www_bin/stats?nom_graph=$nom_gr_auth>
         <IMG BORDER=0 src=\"https://$server_hostname$www_bin/gengraph?id=$nom_gr_auth&debut=$date_dep_daily&fin=$date_fin&titre=clients authentifiés&taille=550x150\" alt=\"Authentifies\"></a>
 			</td>
-		    </tr>
-		    <tr>
-			<td>";
+		    </tr>";
+#		    <tr>
+#			<td>";
 
-print "<br><a href=https://$server_hostname$www_bin/stats?nom_graph=$nom_g>
-        <IMG BORDER=0 src=\"https://$server_hostname$www_bin/gengraph?id=$nom_g&debut=$date_dep_daily&fin=$date_fin&titre=trafic wifi&taille=550x150\" alt=\"Trafic\"></a>
-			</td>
-		    </tr>
+#print "<br><a href=https://$server_hostname$www_bin/stats?nom_graph=$nom_g>
+#        <IMG BORDER=0 src=\"https://$server_hostname$www_bin/gengraph?id=$nom_g&debut=$date_dep_daily&fin=$date_fin&titre=trafic wifi&taille=550x150\" alt=\"Trafic\"></a>
+#			</td>
+#		    </tr>
+print   "           <tr>
+                        <td>";
+                            $params_graph = "$liste_cumul_id&titre=trafic_global&legende=trafic";
+                            $params = $params_graph;
+
+                            $params =~ s/&/,/g;
+                            $params =~ s/\s+/_/g;
+
+                            print "
+                            <a href=https://$server_hostname/bin/stats?params_graph=$params>
+                            <IMG BORDER=0 src=\"https://$server_hostname/bin/gengraph?$params_graph&taille=550x150&debut=$date_dep_daily&fin=$date_fin\"></a>
+
+                        </td>
+                    </tr>
+            ";
+
+
+print	"	    <tr>
+                        <td>";
+			    $params_graph = "$liste_id&titre=trafic_par_AP&$liste_legend";
+			    $params = $params_graph;
+
+			    $params =~ s/&/,/g;
+			    $params =~ s/\s+/_/g;
+
+			    print "
+			    <a href=https://$server_hostname/bin/stats?params_graph=$params>
+			    <IMG BORDER=0 src=\"https://$server_hostname/bin/gengraph?$params_graph&taille=550x150&debut=$date_dep_daily&fin=$date_fin\"></a>
+		
+		        </td>
+                    </tr>
 		</table>
 	    </td>
-	    <td>";
+	    <td valign=top><br/><br/>";
  
 print "<table align=center ALIGN=\"CENTER\" CELLPADDING=0 CELLSPACING=0 BORDER=1>
 		<tr>
