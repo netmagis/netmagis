@@ -3,6 +3,7 @@
 #
 
 TOPODIR=/local/applis/topo
+GRAPH=$(TOPODIR)/osiris/osiris.graph
 
 LIBDIR = ../lib
 
@@ -25,15 +26,19 @@ SCRIPTS = \
 	analyser	\
 	checkdns	\
 	doteq		\
-	ssidprobes	\
 	liste-rancid	\
 	liste-vlans	\
 	parse-hp.tcl	\
 	parse-cisco.tcl	\
 	parse-juniper.tcl	\
-	sendcoll
+	sendcoll \
+	ssidprobes \
+	topod
 
 SUBST = \
+        -e 's|%TCLSH%|$(TCLSH)|' \
+        -e 's|%FPING%|$(FPING)|' \
+        -e 's|%GRAPH%|$(GRAPH)|' \
         -e 's|%TOPODIR%|$(TOPODIR)|'
 
 

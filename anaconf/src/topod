@@ -88,61 +88,70 @@ set conf(spoolmodifies) "$conf(spooldir)/modifies"
 set conf(spoolapropager) "$conf(spooldir)/apropager"
 set conf(spooleffectues) "$conf(spooldir)/effectues"
 
-set conf(fping) "%FPING% -q %s"
+#set conf(fping) "%FPING% -q %s"
+set conf(fping) "%FPING% %s"
+
+set conf(extracteq)	"%TOPODIR%/bin/extracteq %s < %GRAPH%"
 
 #
 # Commandes de modification à envoyer pour chaque équipement
 #
 
 array set confcmd {
+    cisco:*:exec /usr/local/libexec/rancid/clogin
     cisco:*:prologue {
-	configure terminal
+	{configure terminal}
     }
     cisco:*:configifvlan {
-	interface %1$s
-	 switchport access vlan %2$s
-	exit
+	{interface %1$s}
+	{switchport access vlan %2$s}
+	{exit}
     }
     cisco:*:configifdesc {
-	interface %1$s
-	 description "%2$s
-	exit
+	{interface %1$s}
+	{description "%2$s}
+	{exit}
     }
     cisco:*:epilogue {
-	exit
-	copy running-config config
+	{exit}
+	{write memory}
+	{logout}
     }
 
+    juniper:*:exec /usr/local/libexec/rancid/jlogin
     juniper:*:prologue {
-	configure
+	{configure}
     }
     juniper:*:configifvlan {
-	top set interface %1$s unit 0 family ethernet-switching vlan members %2$s
+	{top set interface %1$s unit 0 family ethernet-switching vlan members %2$s}
     }
     juniper:*:configifdesc {
-	top set interface %1$s description "%2$s"
+	{top set interface %1$s description "%2$s"}
     }
     juniper:*:epilogue {
-	exit configuration
-	commit
+	{exit configuration}
+	{commit}
+	{exit}
     }
 
+    hp:*:exec /usr/local/libexec/rancid/hlogin
     hp:*:prologue {
-	configure terminal
+	{configure terminal}
     }
     hp:*:configifvlan {
-	vlan %2$s
-	untagged %1$s
-	exit
+	{vlan %2$s}
+	{untagged %1$s}
+	{exit}
     }
     hp:*:configifdesc {
-	interface %1$s
-	name "%2$s"
-	exit
+	{interface %1$s}
+	{name "%2$s"}
+	{exit}
     }
     hp:*:epilogue {
-	exit
-	write memory
+	{exit}
+	{write memory}
+	{logout}
     }
 }
 
@@ -165,8 +174,8 @@ proc lire-apropager {_tab dir} {
     
     set lfile [glob -nocomplain -directory $dir "*"]
     foreach file [lsort $lfile] {
-	if {[regexp {(.+)\.(\d+)$} $file bidon eq date]} then {
-	    lappend tab($eq) "$dir/$file"
+	if {[regexp {([^/]+)\.(\d+)$} $file bidon eq date]} then {
+	    lappend tab($eq) $file
 	}
     }
 }
@@ -197,7 +206,7 @@ proc propager {eq type model lfile} {
 
     set cmd [format $conf(fping) $eq]
 
-    if {! [catch {exec $cmd}]} {
+    if {! [catch {exec sh -c $cmd} m]} then {
 	foreach file $lfile {
 	    if {[catch {set fd [open $file "r"]} msg]} then {
 		puts stderr "cannot open $file ($msg)"
@@ -216,6 +225,8 @@ proc propager {eq type model lfile} {
 		lappend r $file
 	    }
 	}
+    } else {
+	puts stderr "équipement $eq injoignable (fping) ($m)"
     }
 
     return $r
@@ -240,6 +251,7 @@ proc propager {eq type model lfile} {
 proc envoyer-cmd {eq type model line} {
     global conf 
 
+    set msg ""
     array set t $line
 
     #
@@ -251,35 +263,78 @@ proc envoyer-cmd {eq type model line} {
 	    ([info exists t(vlan)] || [info exists t(desc)])} then {
 	
 	#
-	# Constituer la chaine de commandes à envoyer
+	# Constituer la liste de commandes à envoyer
 	#
 
-	set txt ""
+	set lcmd {}
 
-	set prologue [fetchconf $type $model "prologue"]
+	set prologue [fetch-conf $type $model "prologue"]
 
-	append txt "$prologue\n"
+	set lcmd [concat $lcmd $prologue]
 
 	if {[info exists t(vlan)]} then {
 
-	    set fmt [fetchconf $type $model "configifvlan"]
-	    append txt [format $fmt $t(iface) $t(vlan)]
-	    append txt "\n"
+	    foreach fmt [fetch-conf $type $model "configifvlan"] {
+		lappend lcmd [format $fmt $t(iface) $t(vlan)]
+	    }
 	}
 	if {[info exists t(desc)]} then {
-	    set fmt [fetchconf $type $model "configifdesc"]
-	    append txt [format $fmt $t(iface) [binary format "H*" $t(desc)]]
-	    append txt "\n"
+	    foreach fmt [fetch-conf $type $model "configifdesc"] {
+		lappend lcmd [format $fmt $t(iface) [binary format "H*" $t(desc)]
+	    }
 	}
-	set epilogue [fetchconf $type $model "epilogue"]
-	append txt "$epilogue\n"
+	set epilogue [fetch-conf $type $model "epilogue"]
+	set lcmd [concat $lcmd $epilogue]
 
+	#
+	# Envoyer la commande
+	#
+
+	set msg [execute-cmd $eq $type $model $lcmd]
+	
     } else {
-	puts stderr "bad format for $file"
-	# XXXXXXXXXXXXXXXXXXXXXX affiner le traitement des erreurs
-	exit 1
+	set msg "bad format for $file"
     }
 
+    return $msg
+}
+
+#
+# Execute une séquence de commandes sur un équipement
+#
+# Entrée :
+#  eq : nom de l'équipement
+#  type : type d'équipement (ex: cisco, juniper etc.)
+#  model : modèle d'équipement (ex: 3750, M20 etc.)
+#  lcmd : liste des commandes à exécuter
+# Sortie
+#  valeur de retour : message d'erreur éventuel, ou chaîne vide
+#
+# Historique : 
+#  2010/02/18 : pda/jean : création
+#
+
+proc execute-cmd {eq type model lcmd} {
+    global conf
+
+    set r ""
+
+    set cmd [join $lcmd ";"]
+    
+    set time [clock format [clock seconds] -format "%Y%m%d%H%M%S"]
+    set file "$conf(spooleffectues)/$eq.log.$time"
+
+    set exec [fetch-conf $type $model "exec"]
+
+    if {[catch {exec $exec -c $cmd $eq > $file} m]} then {
+	set r "erreur interne d'exécution de la commande '$exec -c $cmd $eq>$file' ($m)"
+    }
+
+    #
+    # XXXXXXXXXX : interpréter le fichier résultant de l'exécution
+    #
+
+    return $r
 }
 
 #
@@ -293,8 +348,11 @@ proc envoyer-cmd {eq type model line} {
 # Sortie
 #  valeur de retour : commande à exécuter
 #
+# Historique : 
+#  2010/02/16 : pda/jean : création
+#
 
-proc fetchconf {type model context} {
+proc fetch-conf {type model context} {
     global confcmd
     
     set r ""
@@ -309,3 +367,79 @@ proc fetchconf {type model context} {
 
     return $r
 }
+
+#
+# Recherche le type et le modèle d'un équipement dans le graphe
+#
+# Entrée :
+#  eq : nom complet de l'équipement
+#  _type : nom de la variable
+#  _model : nom de la variable
+# Sortie :
+#  type : type d'équipement (ex: cisco, juniper etc.)
+#  model : modèle d'équipement (ex: 3750, M20 etc.)
+#  valeur de retour : message d'erreur ou chaîne vide si ok
+# 
+# Historique : 
+#  2010/02/16 : pda/jean : création
+#
+
+proc chercher-eq {eq _type _model} {
+    global conf
+    upvar $_type type
+    upvar $_model model
+
+    set msg ""
+
+    set leq [list $eq]
+    if {[regexp {^([^.]+)} $eq bidon nqdn]} then {
+	lappend leq $nqdn
+    }
+
+    set reussi 0
+    foreach nomeq $leq {
+	set cmd [format $conf(extracteq) $nomeq]
+	if {! [catch {exec sh -c $cmd } output]} then {
+	    set reussi 1
+	    foreach ligne [split $output "\n"] {
+		switch [lindex $ligne 0] {
+		    eq {
+			set nomeq    [lindex $ligne 1]
+			set type     [lindex $ligne 2]
+			set model   [lindex $ligne 3]
+		    }
+		}
+	    }
+	    break
+	}
+    }
+
+    if {! $reussi} then {
+	set msg "équipement $eq non trouvé"
+    }
+
+    return $msg
+}
+
+#
+# Programme principal
+#
+
+proc main {argv0 argv} {
+    global conf
+
+    lire-apropager tab $conf(spoolapropager)
+
+    foreach eq [array names tab] {
+	set msg [chercher-eq $eq type model]
+	if {[string equal $msg ""]} then {
+	    set lf [propager $eq $type $model $tab($eq)]
+	} else {
+	    puts stderr $msg
+	}
+    }
+
+    return 0
+}
+
+exit [main $argv0 $argv]

@@ -25,7 +25,7 @@ fi
 DB="$1"
 DIR="$2"
 
-TCLSH=/usr/local/bin/tclsh8.5
+TCLSH=%TCLSH%
 
 is_vtp_server ()
 {
