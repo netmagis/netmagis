@@ -1,5 +1,26 @@
 $Id: TODO,v 1.9 2008-10-01 15:06:34 pda Exp $
 
+Modifications dans le graphe :
+    mettre les noms FQDN complets dans le graphe
+	=> retirer les domaines dans les affichages de l'interface
+	    Web)
+    intégrer les ports "shut" dans le graphe
+	=> dans un premier temps, vérifier les descriptions : ça
+	    doit être "X" ou "Lxxx"
+	=> statuer sur les cas contraires ou s'il n'y a rien
+	    => soit respecter la règle d'intégrité forte (on doit
+		explicitement mettre une desc "X ..." pour marquer
+		un port "edge")
+	    => soit assouplir la règle et mettre une description
+		"X ..." par défaut (soit sur l'équipement, soit
+		uniquement dans le graphe)
+
+Dans topod
+    Permettre la modification de mode Trunk/Access et une liste
+	de vlans
+
+
+
 => dans la page topo/bin/eq
     => présenter les paramètres radio
     => présenter les infos spécifiques wifi
