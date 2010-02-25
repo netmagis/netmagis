@@ -91,7 +91,7 @@ set conf(spooleffectues) "$conf(spooldir)/effectues"
 #set conf(fping) "%FPING% -q %s"
 set conf(fping) "%FPING% %s"
 
-set conf(extracteq)	"%TOPODIR%/bin/extracteq %s < %GRAPH%"
+set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
 
 #
 # Commandes de modification à envoyer pour chaque équipement
@@ -115,7 +115,6 @@ array set confcmd {
     cisco:*:epilogue {
 	{exit}
 	{write memory}
-	{logout}
     }
 
     juniper:*:exec /usr/local/libexec/rancid/jlogin
@@ -131,7 +130,6 @@ array set confcmd {
     juniper:*:epilogue {
 	{exit configuration}
 	{commit}
-	{exit}
     }
 
     hp:*:exec /usr/local/libexec/rancid/hlogin
@@ -151,7 +149,6 @@ array set confcmd {
     hp:*:epilogue {
 	{exit}
 	{write memory}
-	{logout}
     }
 }
 
@@ -369,53 +366,41 @@ proc fetch-conf {type model context} {
 }
 
 #
-# Recherche le type et le modèle d'un équipement dans le graphe
+# Recherche le type et le modèle des équipements connus dans le graphe
 #
 # Entrée :
-#  eq : nom complet de l'équipement
-#  _type : nom de la variable
-#  _model : nom de la variable
+#  _tabtype : nom du tableau contenant en retour les types
 # Sortie :
-#  type : type d'équipement (ex: cisco, juniper etc.)
-#  model : modèle d'équipement (ex: 3750, M20 etc.)
+#  tabtype : tableau, indexé par nom court de l'équipement, contenant
+#	tabtype(<eq>) {<type> <model>}
 #  valeur de retour : message d'erreur ou chaîne vide si ok
 # 
 # Historique : 
-#  2010/02/16 : pda/jean : création
+#  2010/02/25 : pda/jean : création
 #
 
-proc chercher-eq {eq _type _model} {
+proc lire-type-eq {_tabtype} {
     global conf
-    upvar $_type type
-    upvar $_model model
+    upvar $_tabtype tabtype
 
     set msg ""
 
-    set leq [list $eq]
-    if {[regexp {^([^.]+)} $eq bidon nqdn]} then {
-	lappend leq $nqdn
-    }
+    set cmd $conf(dumpgraph)
+    if {! [catch {set fd [open "|$cmd" "r"]} msg]} then {
+	while {[gets $fd ligne] > -1} {
+	    switch [lindex $ligne 0] {
+		eq {
+		    array set t $ligne
+		    set eq $t(eq)
+		    set type $t(type)
+		    set model $t(model)
 
-    set reussi 0
-    foreach nomeq $leq {
-	set cmd [format $conf(extracteq) $nomeq]
-	if {! [catch {exec sh -c $cmd } output]} then {
-	    set reussi 1
-	    foreach ligne [split $output "\n"] {
-		switch [lindex $ligne 0] {
-		    eq {
-			set nomeq    [lindex $ligne 1]
-			set type     [lindex $ligne 2]
-			set model   [lindex $ligne 3]
-		    }
+		    set tabtype($eq) [list $type $model]
+		    array unset t
 		}
 	    }
-	    break
 	}
-    }
-
-    if {! $reussi} then {
-	set msg "équipement $eq non trouvé"
+	close $fd
     }
 
     return $msg
@@ -429,13 +414,17 @@ proc main {argv0 argv} {
     global conf
 
     lire-apropager tab $conf(spoolapropager)
+    lire-type-eq tabtype
 
     foreach eq [array names tab] {
-	set msg [chercher-eq $eq type model]
-	if {[string equal $msg ""]} then {
+	# supprimer le nom de domaine pour ne garder que le nom court
+	regsub {\..*} $eq "" eqcourt
+	if {[info exists tabtype($eqcourt)]} then {
+	    set type  [lindex $tabtype($eqcourt) 0]
+	    set model [lindex $tabtype($eqcourt) 1]
 	    set lf [propager $eq $type $model $tab($eq)]
 	} else {
-	    puts stderr $msg
+	    puts stderr "Type/model inconnus pour l'équipement '$eq'"
 	}
     }
 

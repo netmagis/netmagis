@@ -11,7 +11,7 @@ all:
 	cd src ; make
 
 install: all
-	cd src ; make TOPODIR=$(TOPODIR) install
+	cd src ; make TOPODIR=$(TOPODIR) TCLSH=$(TCLSH) FPING=$(FPING) install
 
 clean:
 	cd lib ; make clean
