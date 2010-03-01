@@ -415,6 +415,31 @@ sub creeBaseVolumeOctetsFast
     system("/usr/local/bin/rrdtool create $fichier DS:octets:GAUGE:120:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
+###########################################################
+#
+# Renvoie la date decomposee par champs dans un tableau nominatif. 
+# Prend en parametre l'heure en time_t
+# Sinon utilise l'heure d'execution de la fonction
+#
+sub get_time
+{
+        my $time = @_;
+
+        my %t;
+
+        if($time !=/[0-9]+/)
+        {
+                $time = time;
+        }
+
+        ($t{SEC},$t{MIN},$t{HOUR},$t{MDAY},$t{MON},$t{YEAR},$t{WDAY},$t{YDAY},$t{isDST}) = localtime(time);
+
+        $t{YEAR} += 1900;
+        $t{MON} += 1;
+
+        return %t;
+}
+
 
 
 return 1;
