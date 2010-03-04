@@ -25,6 +25,7 @@ SCRIPTS = \
 	anaconf		\
 	analyser	\
 	checkdns	\
+	decodename	\
 	doteq		\
 	liste-rancid	\
 	liste-vlans	\
