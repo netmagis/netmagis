@@ -380,6 +380,7 @@ proc juniper-parse-interfaces {conf tab idx} {
 #
 # Historique :
 #   2009/12/21 : pda/jean : debut analyse junos switch
+#   2010/03/24 : pda      : interfaces désactivées
 #
 
 proc juniper-parse-if {conf tab idx} {
@@ -387,6 +388,7 @@ proc juniper-parse-if {conf tab idx} {
 
     array set kwtab {
 	description		{2	juniper-parse-if-descr}
+	disable			{1	juniper-parse-if-disable}
 	unit			{2	juniper-parse-if-unit}
 	gigether-options	{1	juniper-parse-if-gigopt}
 	ether-options		{1	juniper-parse-if-gigopt}
@@ -408,11 +410,22 @@ proc juniper-parse-if {conf tab idx} {
 	lappend t($idx!ranges) $ifname
 	set idx "$idx!range!$ifname"
     } else {
-	lappend t($idx!if) $ifname
+	# on diffère l'ajout de l'interface dans la liste
+	# des interfaces après l'analyse, pour le cas où
+	# l'interface serait désactivée.
+	set lifidx "$idx!if"
 	set idx "$idx!if!$ifname"
     }
 
     set error [juniper-parse-list kwtab $ifparm t $idx]
+
+    # ajout de l'interface dans la liste des interfaces
+    # si elle n'est pas désactivée
+    if {! [info exists t(in-range)]} then {
+	if {! [info exists t($idx!if!$ifname!disable)]} then {
+	    lappend t($lifidx) $ifname
+	}
+    }
 
     unset t(current!iface)
 
@@ -513,6 +526,23 @@ proc juniper-parse-if-descr {conf tab idx} {
     }
 
     return $error
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+# Remplit :
+#   tab(eq!<eqname>!if!<ifname>!disable) 1
+#
+# Historique :
+#   2010/03/24 : pda      : conception
+#
+
+proc juniper-parse-if-disable {conf tab idx} {
+    upvar $tab t
+
+    set t($idx!disable) yes
+    return 0
 }
 
 #
@@ -1099,6 +1129,7 @@ proc juniper-parse-vlans-entry {conf tab idx} {
     upvar $tab t
 
     array set kwtab {
+	description	{2	juniper-parse-vlans-entry-desc}
 	vlan-id		{2	juniper-parse-vlans-entry-vlan-id}
 	l3-interface	{2	juniper-parse-vlans-entry-l3-interface}
     }
@@ -1112,6 +1143,24 @@ proc juniper-parse-vlans-entry {conf tab idx} {
     unset t(current!vlan-name)
 
     return $r
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - tab(eq!<eqname>!vlans!names) {<nom> <nom> ...}
+#
+# Historique :
+#   2010/03/24 : pda      : conception
+#
+
+proc juniper-parse-vlans-entry-desc {conf tab idx} {
+    upvar $tab t
+
+    # NOP pour l'instant
+
+    return 0
 }
 
 #
