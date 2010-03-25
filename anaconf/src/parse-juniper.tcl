@@ -1230,6 +1230,7 @@ proc juniper-parse-vlans-entry-l3-interface {conf tab idx} {
 #   2006/08/21 : pda/pegon : liens X+X+X+...+X deviennent X
 #   2007/01/06 : pda       : ajout desc interface
 #   2007/07/13 : pda       : ajout sortie tableau si debug
+#   2010/03/25 : pda       : ajout "members all"
 #
 
 proc juniper-post-process {model fdout eq tab} {
@@ -1286,7 +1287,61 @@ proc juniper-post-process {model fdout eq tab} {
     }
 
     #
-    # Convertir les noms de vlans en id numériques
+    # Convertir les noms de vlans en id numériques, phase 0
+    # Déterminer les intervalles dans la liste des vlan-id trouvés
+    # sur cet équipement
+    #
+
+    if {[info exists t(eq!$eq!vlans!names)]} then {
+	# déterminer les vlan-id
+	set lid {}
+	foreach id [array names t -glob "*!vlans!name!*!id"] {
+	    lappend lid $t($id)
+	}
+	set lid [lsort -integer $lid]
+
+	# déterminer les intervalles
+	set ranges {}
+	set min [lindex $lid 0]
+	set max [lindex $lid 0]
+	foreach id [lreplace $lid 0 0] {
+	    if {$max != $id - 1} then {
+		lappend ranges [list $min $max]
+		set min $id
+	    }
+	    set max $id
+	}
+	lappend ranges [list $min $max]
+	set t(eq!$eq!vlans!ranges) $ranges
+    }
+
+    #
+    # Convertir les noms de vlans en id numériques, phase 1
+    # Remplacer "all" (members all) par la liste des vlans
+    # connus dans la section "vlans"
+    # (JunOS switch)
+    #
+
+    if {[info exists t(eq!$eq!vlans!names)] && [info exists t(eq!$eq!vlans!ranges)]} then {
+	# Parcourir toutes les "!allowedvlans" positionnés
+	# à "all all"
+	foreach i [array names t -glob "*!link!allowedvlans"] {
+	    set l {}
+	    foreach c $t($i) {
+		set v1 [lindex $c 0]
+		set v2 [lindex $c 1]
+		if {[string equal $v1 "all"] && [string equal $v2 "all"]} then {
+		    set l [concat $l $t(eq!$eq!vlans!ranges)]
+		} else {
+		    lappend l [list $v1 $v2]
+		}
+	    }
+	    set t($i) $l
+	}
+    }
+
+    #
+    # Convertir les noms de vlans en id numériques, phase 2
     # Mettre les interfaces vlan.<unit> dans le bon vlan-id
     # (JunOS switch)
     #
