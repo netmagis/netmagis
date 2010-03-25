@@ -102,6 +102,7 @@ proc match-eq {type_model} {
 				style=filled fillcolor=lightgrey
 				fixedsize height=1}
 	}
+	juniper/EX* -
 	cisco/WS-C45* {
 	    set attr {shape=box style=filled fillcolor=lightblue}
 	}
