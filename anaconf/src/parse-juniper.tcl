@@ -408,22 +408,21 @@ proc juniper-parse-if {conf tab idx} {
 
     if {[info exists t(in-range)]} then {
 	lappend t($idx!ranges) $ifname
-	set idx "$idx!range!$ifname"
+	set idxin "$idx!range!$ifname"
     } else {
 	# on diffère l'ajout de l'interface dans la liste
 	# des interfaces après l'analyse, pour le cas où
 	# l'interface serait désactivée.
-	set lifidx "$idx!if"
-	set idx "$idx!if!$ifname"
+	set idxin "$idx!if!$ifname"
     }
 
-    set error [juniper-parse-list kwtab $ifparm t $idx]
+    set error [juniper-parse-list kwtab $ifparm t $idxin]
 
     # ajout de l'interface dans la liste des interfaces
     # si elle n'est pas désactivée
     if {! [info exists t(in-range)]} then {
 	if {! [info exists t($idx!if!$ifname!disable)]} then {
-	    lappend t($lifidx) $ifname
+	    lappend t($idx!if) $ifname
 	}
     }
 
