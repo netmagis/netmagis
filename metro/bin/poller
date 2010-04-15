@@ -310,7 +310,7 @@ sub maj_if_files
 	my @fichier;
 
 	writelog("poller_$group$num_process",$config{'logopt'},"info",
-	    "\t -> INFO : Mise à jour des fichiers de cache");
+	    "\t -> INFO : Mise a jour des fichiers de cache");
 
 	if($maj_if_ap_file == 1)
 	{
