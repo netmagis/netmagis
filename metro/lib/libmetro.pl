@@ -97,6 +97,41 @@ sub gethostnamebyaddr
 }
 
 
+#########################################################
+# Convertit une chaine de date de la base SQL
+# au format time_t en heure locale
+#
+sub dateSQL2time 
+{
+    my ($date) = @_ ;
+
+    my $gmt = 0;
+    my @ltime ;
+    my $t = 0;
+    my ($a, $m, $j, $h, $mi, $s) ;
+
+    # Format :
+    # 2005-05-18 10:02:53.980149
+    # 2007-04-27 12:03:17.980149
+    if($date=~ /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/) 
+    {
+        $a = $1 - 1900;
+        $m = $2 - 1 ;
+        $j = $3 ;
+        $h = $4 ; $mi= $5 ; $s = $6 ;
+
+        if($a < 70 || !$a)
+        {
+            $a = 70;
+            $m = 0;
+        }
+
+        $t=mktime($s,$mi,$h,$j,$m,$a,0,0,0);
+    }
+    return $t ;
+}
+
+
 ###########################################################
 # conversion des débits max en bits/s en X*10eY
 # 100000000 -> 1.0000000000+e08
@@ -413,31 +448,6 @@ sub creeBaseVolumeOctetsFast
 {
 ($fichier)=@_;
     system("/usr/local/bin/rrdtool create $fichier DS:octets:GAUGE:120:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-}
-
-###########################################################
-#
-# Renvoie la date decomposee par champs dans un tableau nominatif. 
-# Prend en parametre l'heure en time_t
-# Sinon utilise l'heure d'execution de la fonction
-#
-sub get_time
-{
-        my $time = @_;
-
-        my %t;
-
-        if($time !=/[0-9]+/)
-        {
-                $time = time;
-        }
-
-        ($t{SEC},$t{MIN},$t{HOUR},$t{MDAY},$t{MON},$t{YEAR},$t{WDAY},$t{YDAY},$t{isDST}) = localtime(time);
-
-        $t{YEAR} += 1900;
-        $t{MON} += 1;
-
-        return %t;
 }
 
 

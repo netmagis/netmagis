@@ -656,7 +656,7 @@ sub get_authaccess
 # dans la base SQL
 sub set_assoc_ap_base
 {
-    my ($sql,$cursor,$ideq,$nb_ap,$idassocwifi,$mac,$essid);
+    my ($sql,$cursor,$ideq,$nb_ap,$idassocwifi,$mac,$essid,$datefinassoc);
  
     #ouverture de la base PSQL
     my $db =  DBI->connect("dbi:Pg:dbname=$config{'PGDATABASE'};host=$config{'PGHOST'}", $config{'PGUSER'}, $config{'PGPASSWORD'});
@@ -695,14 +695,15 @@ sub set_assoc_ap_base
 	#
         # Détermine les dernière sessions actives pour tous les AP
         #
-	# idassocwifi | ideq |        mac        |   essid
-	#-------------+------+-------------------+------------
-	#       21978 |  450 | 00:08:d3:04:15:ff | osiris
-        #       30124 |  645 | 00:0c:f1:53:b6:88 | osiris-sec
+	# idassocwifi | ideq |        mac        |   fin   |   essid
+	#-------------+------+-------------------+---------+------------
+	#       21978 |  450 | 00:08:d3:04:15:ff |         | osiris
+        #       30124 |  645 | 00:0c:f1:53:b6:88 |         | osiris-sec
         $sql = "SELECT assocwifi.idassocwifi,
 		assocwifi.ideq,
                 assocwifi.mac,
-                assocwifi.essid
+                assocwifi.essid,
+		sessionassocwifi.fin
                 FROM assocwifi,sessionassocwifi
                 WHERE sessionassocwifi.close=0
                 AND assocwifi.idassocwifi = sessionassocwifi.idassocwifi";
@@ -710,17 +711,35 @@ sub set_assoc_ap_base
         $cursor = $db->prepare($sql);
         $cursor->execute;
 
-	my $index = 0;
-        while( ($idassocwifi,$ideq,$mac,$essid) = $cursor->fetchrow )
-        {
-                $total_activesess[$index][0] = $idassocwifi;
-		$total_activesess[$index][1] = $ideq;
-		$total_activesess[$index][2] = $mac;
-		$total_activesess[$index][3] = $essid;
-		$index ++;
+	my $time_t_now = time;
 
-		#### DEBUG
-		print RAP "total_activesess : $idassocwifi\t$ideq\t$mac\t$essid\n";
+	my $index = 0;
+        while( ($idassocwifi,$ideq,$mac,$essid,$datefinassoc) = $cursor->fetchrow )
+        {
+		if(balai_assoc($datefinassoc,$time_t_now) == 1)
+		{
+		    $total_activesess[$index][0] = $idassocwifi;
+		    $total_activesess[$index][1] = $ideq;
+		    $total_activesess[$index][2] = $mac;
+		    $total_activesess[$index][3] = $essid;
+		    $index ++;
+		    
+		    #### DEBUG
+		    print RAP "total_activesess : $idassocwifi\t$ideq\t$mac\t$essid\t$datefinassoc\n";
+		}
+		else
+		{
+			my $r = $db->prepare( "
+                        UPDATE sessionassocwifi
+                        SET close=1
+                        WHERE idassocwifi=$idassocwifi
+                        AND close=0" );
+                        if(! $r->execute)
+                        {
+                               writelog("get_assoc_ap",$config{'logopt'},"info",
+                               "\t\t -> ERREUR DB : impossible des fermer la session d'association ($idassocwifi,$mac,$essid,$datefinassoc)");
+                        }
+		}
         }
 
 	$cursor->finish;
@@ -761,6 +780,25 @@ sub set_assoc_ap_base
                 "\t\t -> ERREUR DB : Impossible d'ouvrir $config{'PGDATABASE'} : $DBI::errstr");
     }
 }
+
+
+# nettoie les associations oubliées encore actives
+#
+sub balai_assoc
+{
+    my ($datefinassoc,$time_t_now) = @_;
+
+    # si la date en parametre + 1 jour est inferieure a la date 
+    if((dateSQL2time($datefinassoc) + 86400) < $time_t_now)
+    {
+	return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
 
 # fonction qui controle la fermeture des sessions des authentifies 
 # par rapport aux associations sur les points d'accès
