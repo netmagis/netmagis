@@ -557,6 +557,7 @@ proc juniper-parse-if-unit {conf tab idx} {
 	description	{2	juniper-parse-unit-descr}
 	vlan-id		{2	juniper-parse-vlan-id}
 	family		{2	juniper-parse-family}
+	disable		{1	juniper-parse-unit-disable}
 	tunnel		{1	NOP}
 	*		{2	ERROR}
     }
@@ -571,6 +572,26 @@ proc juniper-parse-if-unit {conf tab idx} {
 
     return $error
 }
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+# Remplit :
+#   tab(eq!<eqname>!if!<ifname>!disable) 1
+#
+# Historique :
+#   2010/03/24 : pda      : conception
+#
+
+proc juniper-parse-unit-disable {conf tab idx} {
+    upvar $tab t
+
+    set unit $t(current!unitnb)
+    set t($idx!vlan!$unit!disable) yes
+
+    return 0
+}
+
 
 #
 # Entrée :
@@ -1463,7 +1484,6 @@ proc juniper-post-process {model fdout eq tab} {
 
 	    if {[info exists t(eq!$eq!if!$iface!vlans)]} then {
 		foreach v $t(eq!$eq!if!$iface!vlans) {
-
 		    set nodeL2 [newnode]
 		    set t(eq!$eq!if!$iface!vlan!$v!node) $nodeL2
 		    set statname $t(eq!$eq!if!$iface!vlan!$v!stat)
@@ -1565,76 +1585,78 @@ proc juniper-post-process {model fdout eq tab} {
 		}
 
 		foreach v $arg {
-		    #
-		    # Interconnexion des VLAN aux interfaces physiques
-		    #
-		    set nodeL2 [newnode]
-		    set t(eq!$eq!if!$iface!vlan!$v!node) $nodeL2
-		    set statname $t(eq!$eq!if!$iface!vlan!$v!stat)
-		    if {[string equal $statname ""]} then {
-			set statname "-"
-		    }
-		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname"
-		    puts $fdout "link $nodeL1 $nodeL2"
-
-		    #
-		    # Parcourir la liste des réseaux supportés par cette
-		    # sous-interface.
-		    #
-		    foreach cidr $t(eq!$eq!if!$iface!vlan!$v!networks) {
-			set ifname "$iface.$v"
-			set idx "eq!$eq!if!$iface!vlan!$v!net!$cidr"
-
-			# récupérer l'adresse du routeur dans ce réseau
-			# (i.e. l'adresse IP de l'interface)
-			set gwadr $t($idx)
-			set preflen $t($idx!preflen)
-			set nodeL3 [newnode]
-
-			puts $fdout "node $nodeL3 type L3 eq $eq addr $gwadr/$preflen"
-			puts $fdout "link $nodeL3 $nodeL2"
-
-			if {[string first ":" $gwadr] != -1} then {
-			    if {[string equal $nodeR6 ""]} then {
-				set nodeR6 [newnode]
-				puts $fdout "node $nodeR6 type router eq $eq instance _v6"
-			    }
-			    set nodeR $nodeR6
-			} else {
-			    if {[string equal $nodeR4 ""]} then {
-				set nodeR4 [newnode]
-				puts $fdout "node $nodeR4 type router eq $eq instance _v4"
-			    }
-			    set nodeR $nodeR4
+		    if {! [info exists t(eq!$eq!if!$iface!vlan!$v!disable)]} then {
+			#
+			# Interconnexion des VLAN aux interfaces physiques
+			#
+			set nodeL2 [newnode]
+			set t(eq!$eq!if!$iface!vlan!$v!node) $nodeL2
+			set statname $t(eq!$eq!if!$iface!vlan!$v!stat)
+			if {[string equal $statname ""]} then {
+			    set statname "-"
 			}
+			puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname"
+			puts $fdout "link $nodeL1 $nodeL2"
 
-			puts $fdout "link $nodeL3 $nodeR"
+			#
+			# Parcourir la liste des réseaux supportés par cette
+			# sous-interface.
+			#
+			foreach cidr $t(eq!$eq!if!$iface!vlan!$v!networks) {
+			    set ifname "$iface.$v"
+			    set idx "eq!$eq!if!$iface!vlan!$v!net!$cidr"
 
-			set static {}
+			    # récupérer l'adresse du routeur dans ce réseau
+			    # (i.e. l'adresse IP de l'interface)
+			    set gwadr $t($idx)
+			    set preflen $t($idx!preflen)
+			    set nodeL3 [newnode]
 
-			# parcourir les passerelles citées dans les routes statiques,
-			# pour déterminer celles qui sont dans *ce* réseau
-			if {[info exists t(eq!$eq!static!gw)]} then {
-			    foreach gw $t(eq!$eq!static!gw) {
-				set r [juniper-match-network $gw $cidr]
-				if {$r == -1} then {
-				    return 1
-				} elseif {$r} then {
-				    foreach n $t(eq!$eq!static!$gw) {
-					append static "$n $gw "
+			    puts $fdout "node $nodeL3 type L3 eq $eq addr $gwadr/$preflen"
+			    puts $fdout "link $nodeL3 $nodeL2"
+
+			    if {[string first ":" $gwadr] != -1} then {
+				if {[string equal $nodeR6 ""]} then {
+				    set nodeR6 [newnode]
+				    puts $fdout "node $nodeR6 type router eq $eq instance _v6"
+				}
+				set nodeR $nodeR6
+			    } else {
+				if {[string equal $nodeR4 ""]} then {
+				    set nodeR4 [newnode]
+				    puts $fdout "node $nodeR4 type router eq $eq instance _v4"
+				}
+				set nodeR $nodeR4
+			    }
+
+			    puts $fdout "link $nodeL3 $nodeR"
+
+			    set static {}
+
+			    # parcourir les passerelles citées dans les routes statiques,
+			    # pour déterminer celles qui sont dans *ce* réseau
+			    if {[info exists t(eq!$eq!static!gw)]} then {
+				foreach gw $t(eq!$eq!static!gw) {
+				    set r [juniper-match-network $gw $cidr]
+				    if {$r == -1} then {
+					return 1
+				    } elseif {$r} then {
+					foreach n $t(eq!$eq!static!$gw) {
+					    append static "$n $gw "
+					}
 				    }
 				}
 			    }
-			}
 
-			# est-ce qu'il y a du VRRP sur cette interface pour ce réseau ?
-			if {[info exists t($idx!vrrp!virtual)]} then {
-			    set vrrp "$t($idx!vrrp!virtual) $t($idx!vrrp!priority)"
-			} else {
-			    set vrrp "- -"
-			}
+			    # est-ce qu'il y a du VRRP sur cette interface pour ce réseau ?
+			    if {[info exists t($idx!vrrp!virtual)]} then {
+				set vrrp "$t($idx!vrrp!virtual) $t($idx!vrrp!priority)"
+			    } else {
+				set vrrp "- -"
+			    }
 
-			puts $fdout "rnet $cidr $nodeR $nodeL3 $nodeL2 $nodeL1 $vrrp $static"
+			    puts $fdout "rnet $cidr $nodeR $nodeL3 $nodeL2 $nodeL1 $vrrp $static"
+			}
 		    }
 		}
 	    }
