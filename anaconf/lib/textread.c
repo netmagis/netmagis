@@ -467,15 +467,16 @@ static void process_L2 (struct attrtab *attrtab, struct node *n)
     char *s ;
     vlan_t vlan ;
     char *stat ;
+    struct attrvallist *av ;
 
-    s = attr_get_val (attr_get_vallist (attrtab, "native")) ;
-    if (s == NULL)
+    av = attr_get_vallist (attrtab, "native") ;
+    if (av == NULL)
     {
 	n->u.l2.native = 0 ;
-    } 
+    }
     else
-    { 
-	n->u.l2.native = atoi (s) ;
+    {
+	n->u.l2.native = atoi (attr_get_val (av)) ;
     }
 
     s = attr_get_val (attr_get_vallist (attrtab, "vlan")) ;
