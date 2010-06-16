@@ -94,11 +94,12 @@ static void text_write_nodes (FILE *fp)
 		    fprintf (fp, "\n") ;
 		    break ;
 		case NT_L2 :
-		    fprintf (fp, "node %s type L2 eq %s vlan %d stat %s\n",
+		    fprintf (fp, "node %s type L2 eq %s vlan %d stat %s native %d\n",
 				    n->name,
 				    n->eq->name,
 				    n->u.l2.vlan,
-				    (n->u.l2.stat == NULL ? "-" : n->u.l2.stat)
+				    (n->u.l2.stat == NULL ? "-" : n->u.l2.stat),
+				    n->u.l2.native
 				) ;
 		    break ;
 		case NT_L3 :

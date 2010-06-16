@@ -318,6 +318,8 @@ proc cisco-parse {libdir model fdin fdout tab eq} {
 	switchport-mode			{CALL cisco-parse-mode}
 	switchport-trunk		NEXT
 	switchport-trunk-encapsulation	{CALL cisco-parse-encap}
+	switchport-trunk-native		NEXT
+	switchport-trunk-native-vlan	{CALL cisco-parse-native-vlan}
 	switchport-trunk-allowed	NEXT
 	switchport-trunk-allowed-vlan	{CALL cisco-parse-allowed-vlan}
 	ip				NEXT
@@ -621,6 +623,31 @@ proc cisco-parse-allowed-vlan {active line tab idx} {
 
     return $error
 }
+
+#
+# Entrée :
+#   - line = "811" 
+#   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!current!if) <ifname>
+# Remplit
+#   - tab(eq!<nom eq>!if!<ifname>!link!native) 811
+#
+# Historique
+#   2010/06/16 : pda/jean : conception
+#
+
+proc cisco-parse-native-vlan {active line tab idx} {
+    upvar $tab t
+
+    set error 0
+
+    set ifname $t($idx!current!if)
+    set vlanid [lindex $line 0]
+    set error [cisco-set-ifattr t $idx!if!$ifname native $vlanid]
+
+    return $error
+}
+
 
 #
 # Entrée :
@@ -1106,6 +1133,7 @@ proc cisco-parse-auth {active line tab idx} {
 # Historique
 #   2004/06/09 : pda/jean : conception
 #   2006/05/23 : pda/jean : ajout des points de collecte (stat)
+#   2010/06/16 : pda/jean : ajout du native vlan
 #
 
 proc cisco-set-ifattr {tab idx attr val} {
@@ -1171,6 +1199,9 @@ proc cisco-set-ifattr {tab idx attr val} {
 		set t($idx!link!type) "trunk"
 	    }
 	    set t($idx!link!allowedvlans) $val
+	}
+	native {
+	    set t($idx!link!native) $val
 	}
 	default {
 	    cisco-warning "Incorrect attribute type for $idx (internal error)"
@@ -1518,6 +1549,10 @@ proc cisco-post-process {type fdout eq tab} {
 			# Liste des vlans pour ce lien
 			set av $t(eq!$eq!if!$iface!link!allowedvlans)
 			puts -nonewline $fdout "node $nodeL2 type L2pat eq $eq"
+			if {[info exists t(eq!$eq!if!$iface!link!native)]} then {
+			    set vlanid $t(eq!$eq!if!$iface!link!native)
+			    puts -nonewline $fdout " native $vlanid"
+			}
 			foreach a $av {
 			    puts -nonewline $fdout " allow $a"
 			}

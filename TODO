@@ -1,5 +1,13 @@
 $Id: TODO,v 1.9 2008-10-01 15:06:34 pda Exp $
 
+Configuration des ports des switches
+    Terminer le support des native vlan pour HP et Juniper
+    Permettre de configurer les native vlans et les trunk dans le
+      spool (modifier la syntaxe et la configuration des équipements)
+    Tester les erreurs de configuration des équipements
+    Terminer topod
+    Faire l'interface web
+
 Modifications dans le graphe :
     mettre les noms FQDN complets dans le graphe
 	=> retirer les domaines dans les affichages de l'interface
@@ -21,42 +29,8 @@ Dans topod
 
 
 
-=> dans la page topo/bin/eq
-    => présenter les paramètres radio
-    => présenter les infos spécifiques wifi
 
 www/bin/eq
-    (infos spécifiques wifi)
-    présente la liste de "mes" bâtiments :
-	med-bat1-ap [_Trafic] [_N Assoc] <graphes>
-	    _med-bat1-ap1 [_Trafic] [_N Assoc]
-	    _med-bat1-ap2 [_Trafic] [_N Assoc]
-	    ...
-	med-bat2-ap [_Trafic] [_N Assoc] <graphes>
-	    _med-bat2-ap1
-	    _med-bat2-ap2
-	    ...
-
-    N est le nombre d'associations actuelles
-
-    <graphes>
-	Cumul [Auh][Assoc] Détail/ssid [Auth][Assoc] Détail/ap [Auth][Assoc]
-
-    Graphes accessibles dans la page d'un ap spécifiques :
-			.../bin/eq?eq=insa-ap1
-	sur l'i/f Dot11Radio0
-	    Cumul [Auth][Assoc] (avec moyenne + crète)
-	    Détail/ssid [Auth][Assoc] (les moyennes de chaque ssid)
-
-    Lien "Trafic" d'un AP
-	Trafic de l'AP par SSID sur l'interface radio (en supposant
-	    qu'il n'y en a qu'une seule)
-	http://idris/bin/gengraph?
-		&id1=Minsa-ap1.osiris
-		&id2=insa-ap1.osiris-sec
-		&id3=Minsa-ap1.eduroam
-		&id4=Minsa-ap1.osiris-lab
-		&debut=...&fin=
 
     Lien "Trafic" d'un bâtiment
 	Trafic cumulé des AP par SSID 

@@ -30,6 +30,8 @@ void bin_read (FILE *fpin, MOBJ *graph [])
 	case VERSION6 :
 	    error (0, "Cannot recognize version 6 binary files") ;
 	case VERSION7 :
+	    error (0, "Cannot recognize version 7 binary files") ;
+	case VERSION8 :
 	    for (i = 0 ; i < hdr.nbmobj ; i++)
 	    {
 		int objsiz, objcnt ;

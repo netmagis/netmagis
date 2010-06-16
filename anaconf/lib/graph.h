@@ -287,6 +287,7 @@ struct L1
 struct L2
 {
     vlan_t vlan ;
+    int	native ;			/* true if native vlan */
     char *stat ;			/* collect point */
 } ;
 
@@ -310,6 +311,7 @@ struct router
 struct L2pat
 {
     struct vlanlist *allowed ;
+    vlan_t native ;			/* native vlan or -1 */
 } ;
 
 struct node
@@ -536,6 +538,7 @@ struct graphhdr
 #define	VERSION5	5		/* equipement location */
 #define	VERSION6	6		/* radio parameters & ssid */
 #define	VERSION7	7		/* ssid based metrology */
+#define	VERSION8	8		/* native vlans */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

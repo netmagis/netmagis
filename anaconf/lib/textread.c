@@ -260,6 +260,7 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	{ "iface",	1, },
 	{ "ssidname",	1, },
 	{ "mode",	1, },
+	{ "native",	1, },
     } ;
 
 
@@ -467,6 +468,16 @@ static void process_L2 (struct attrtab *attrtab, struct node *n)
     vlan_t vlan ;
     char *stat ;
 
+    s = attr_get_val (attr_get_vallist (attrtab, "native")) ;
+    if (s == NULL)
+    {
+	n->u.l2.native = 0 ;
+    } 
+    else
+    { 
+	n->u.l2.native = atoi (s) ;
+    }
+
     s = attr_get_val (attr_get_vallist (attrtab, "vlan")) ;
     vlan = atoi (s) ;
     if (vlan < 0)
@@ -514,6 +525,22 @@ static void process_router (struct attrtab *attrtab, struct node *n)
 static void process_L2pat (struct attrtab *attrtab, struct node *n)
 {
     struct attrvallist *av ;
+    vlan_t native ;
+
+    av = attr_get_vallist (attrtab, "native") ;
+    if (av != NULL)
+    {
+	if (sscanf (attr_get_val (av), "%d", &native) != 1)
+	{
+	    inconsistency ("Unrecognized native vlan (%s)", attr_get_val (av)) ;
+	    exit (1) ;
+	}
+	n->u.l2pat.native = native ;
+    }
+    else
+    {
+	n->u.l2pat.native = -1 ;
+    }
 
     av = attr_get_vallist (attrtab, "allow") ;
     while (av != NULL)
@@ -714,6 +741,7 @@ static void process_node (char *tab [], int ntab)
 			{ "eq", 1, 1 },
 			{ "vlan", 1, 1 },
 		        { "stat", 1, 1 },
+			{ "native", 0, 1 },
 			{ NULL, 0 },
 		},
 	},
@@ -740,6 +768,7 @@ static void process_node (char *tab [], int ntab)
 	{ "L2pat" , NT_L2PAT,  process_L2pat, {
 			{ "type", 1, 1 },
 			{ "eq", 1, 1 },
+			{ "native", 0, 1 },
 			{ "allow", 0, 1000000 },
 			{ NULL, 0 },
 		    },

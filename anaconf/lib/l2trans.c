@@ -151,6 +151,7 @@ static void transport_vlan_on_L2pat (struct node *n, vlan_t v, struct node *prev
     l2node = create_node (new_nodename (n->eq->name), n->eq,  NT_L2) ;
     l2node->u.l2.vlan = v ;
     l2node->u.l2.stat = NULL ;
+    l2node->u.l2.native = (n->u.l2pat.native == v) ;
     (void) create_link (NULL, prev->name, l2node->name) ;
 
     vlan_set (l2node->vlanset, v) ;
