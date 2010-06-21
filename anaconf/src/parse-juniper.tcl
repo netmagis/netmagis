@@ -988,6 +988,7 @@ proc juniper-parse-routing-options {conf tab idx} {
 #
 # Historique :
 #   2004/03/25 : pda/jean : conception
+#   2010/06/21 : pda      : ignorer rib-group
 #
 
 proc juniper-parse-static-routes {conf tab idx} {
@@ -995,6 +996,7 @@ proc juniper-parse-static-routes {conf tab idx} {
 
     array set kwtab {
 	route		{juniper-parse-count-route juniper-parse-route-entry}
+	rib-group	{2	NOP}
 	*		{1	ERROR}
     }
 
