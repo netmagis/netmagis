@@ -4,7 +4,8 @@
 
 #include "graph.h"
 
-#define	CONVABS(idx,base)	(((int)(idx))==-1 ? NULL : ((int)(idx))+(base))
+#define	CONVABS(idx,base)	\
+	(((intptr_t)(idx))==-1 ? NULL : ((intptr_t)(idx))+(base))
 #define	RELTOABS(ptr,base)	((ptr)= CONVABS ((ptr), (base)))
 #define	PROLOGABS(m,d,base)	\
 	do { \

@@ -42,7 +42,8 @@ void bin_read (FILE *fpin, MOBJ *graph [])
 
 		graph [i] = mobj_init (objsiz, MOBJ_CONST) ;
 		data = mobj_alloc (graph [i], objcnt) ;
-		mobj_sethead (graph [i], (void *) hdr.mobjhdr [i].listhead) ;
+		mobj_sethead (graph [i],
+			(void *) (intptr_t) hdr.mobjhdr [i].listhead) ;
 		if (fread (data, objsiz, objcnt, fpin) != objcnt)
 		    error (1, "Cannot read mobj in binary file") ;
 	    }

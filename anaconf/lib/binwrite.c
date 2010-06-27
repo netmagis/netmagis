@@ -20,7 +20,7 @@ void bin_write (FILE *fpout, MOBJ *graph [])
     {
 	hdr.mobjhdr [i].objsiz = mobj_size (graph [i]) ;
 	hdr.mobjhdr [i].objcnt = mobj_count (graph [i]) ;
-	hdr.mobjhdr [i].listhead = (int) mobj_head (graph [i]) ;
+	hdr.mobjhdr [i].listhead = (intptr_t) mobj_head (graph [i]) ;
     }
 
     if (fwrite (&hdr, sizeof hdr, 1, fpout) != 1)

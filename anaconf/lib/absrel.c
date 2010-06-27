@@ -4,8 +4,8 @@
 
 #include "graph.h"
 
-#define	CONVREL(ptr,base)	((void *) ((ptr) == NULL ? -1 : \
-					(((__typeof__ (base))(ptr)) - (base))))
+#define	CONVREL(ptr,base)	\
+	((void *) ((ptr) == NULL ? -1 : (((__typeof__ (base))(ptr)) - (base))))
 #define	ABSTOREL(ptr,base)	((ptr)= CONVREL ((ptr), (base)))
 #define	PROLOGREL(m,d,base)	\
 	do { \
