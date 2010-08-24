@@ -1,89 +1,43 @@
-#!/bin/sh
+#!%TCLSH%
 
 #
 # $Id: liste-vlans,v 1.4 2009-01-22 20:20:21 pda Exp $
 #
-# Analyse un fichier de configuration de rancid, et en extrait
-# le nom du commutateur serveur VTP, ainsi que la liste des
-# Vlans diffusés par VTP.
-# Présente le tout sur la sortie standard.
+# Formatte la liste des vlans pour topo
 #
 # Syntaxe :
-#	liste-vlans <fichierdb> <confdir>	> <fichier de sortie>
+#	liste-vlans <fichiersrcvlan> > <fichier de sortie>
 #
 # Historique :
-#   2004/07/09 : pda/jean : conception
-#   2007/01/08 : pda      : changement du format de sortie
+#   2004/07/09 : pda/jean      : conception
+#   2007/01/08 : pda           : changement du format de sortie
+#   2010/01/08 : jean/saillard : changement du format d'entree, plus de vtp
 #
 
-if [ $# != 2 ]
-then
-    echo "usage: $0 <fichierdb> <confdir>" >&2
+if {[llength $argv] != 1} {
+    puts stderr "usage: $argv0 <fichier_src_vlan>"
     exit 1
-fi
-
-DB="$1"
-DIR="$2"
-
-TCLSH=%TCLSH%
-
-is_vtp_server ()
-{
-    grep "!VTP: VTP Operating Mode.*Server" "$1" > /dev/null
 }
 
-# en entrée : lignes "<vlanid> <desc-en-ascii>"
-# en sortie : lignes "vlan <vlanid> desc <desc-en-hexa>"
-formatter ()
-{
-    (
-	cat <<'EOF'
-	    while {[gets stdin ligne] > -1} {
-		if {[regexp {^([0-9]+) (.*)$} $ligne bidon id desc]} then {
-		    binary scan $desc H* desc
-		    puts "vlan $id desc $desc"
-		}
-	    }
-EOF
-	# avec tclsh, il faut envoyer le caractère ^Z pour signaler
-	# la fin du programme et le début des données
-	echo -e "\032"
-	cat
-    ) | $TCLSH
+set filename [lindex $argv 0]
+
+if {[catch {open $filename} fd]} {
+    puts stderr $fd
+    exit 2
 }
 
-liste_vlans ()
-{
-    grep "^!VLAN: *[0-9][0-9]*.* active" "$1" \
-	| sed "s/^!VLAN: *\([0-9][0-9]*\) *\([^ ].*[^ ][^ ]*\)  *active.*/\1 \2/" \
-	| grep -v "^1 " \
-	| formatter
+set format {/+. a-zA-Z0-9()<>_-}
+set n 1
+while {[gets $fd ligne] > -1} {
+    if {[regexp "^(\[0-9\]+);(\[$format\]+)\$" $ligne bidon id desc]} then {
+	binary scan $desc H* desc
+	puts "vlan $id desc $desc"
+    } else {
+	puts -nonewline stderr "Ligne $n dans $filename : "
+	puts -nonewline stderr "erreur de format dans la liste des vlans : "
+	puts stderr "'$ligne' caracteres permis : '$format'"
+    }
+    incr n
 }
 
-search_vtp ()
-{
-    dir="$1"
-    IFS=":"
-    while read eq type up
-    do
-	if [ "$type" = cisco ] && is_vtp_server "$dir/$eq"
-	then
-	    # echo $eq
-	    liste_vlans "$dir/$eq"
-	    #
-	    # On a trouvé : on sort tout de suite
-	    # (on aimerait pouvoir faire var=0, mais la variable
-	    # ne serait pas exportée à l'extérieur du sous-shell
-	    # utilisé pour cette boucle "while").
-	    #
-	    return 0
-	fi
-    done
-    echo "VTP server not found" >&2
-    return 1
-}
-
-
-grep ":up$" $DB | search_vtp $DIR
-
-exit $?
+exit 0

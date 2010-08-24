@@ -38,6 +38,7 @@ EQVIRT=$DATADIR/eqvirt
 EQGEN=$DATADIR/eqgen
 DESTFILE=$DATADIR/osiris.graph
 STATUS=$DATADIR/osiris.status
+SRCVLANFILE=$RANCIDCONFDIR/vlan
 VLANFILE=$EQGEN/_vlan.eq
 URLSETGRAPH=http://metro.u-strasbg.fr/bin/setgraph
 
@@ -106,7 +107,7 @@ supprimer_eqgen ()
 liste_vlans ()
 {
     verbositer "appel à 'liste-vlans'"
-    $BINDIR/liste-vlans $RANCIDDB $RANCIDCONFDIR > $VLANFILE
+    $BINDIR/liste-vlans $SRCVLANFILE  > $VLANFILE
     return $?
 }
 
