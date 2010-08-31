@@ -9,7 +9,12 @@ Example of output format
 
 
 eq crc-cc1 cisco/WS-C4506 45464748
-iface GigaEthernet0/1 <radio> <M123 ou ->  <Ether ou Trunk> {X / L33 crc-rc1 ge-0/0/0}
+iface GigaEthernet0/1
+    <radio>
+    <M123 ou ->
+    <Ether ou Trunk>
+    {X / L33 crc-rc1 ge-0/0/0}
+    <nativevlan ou -1> 
     <desc> {0 {} <ip> ...} {7 <vlan-desc-en-hexa> 130.79.....} ...
 <all ifaces>
 
@@ -38,6 +43,7 @@ void output_iface (FILE *fp, struct node *n)
     char *desc ;
     struct node *peer ;
     struct linklist *ll1, *ll2, *ll3 ;
+    vlan_t native ;
 
     ifname = n->u.l1.ifname ;
     stat = (n->u.l1.stat == NULL) ? "-" : n->u.l1.stat ;
@@ -79,6 +85,24 @@ void output_iface (FILE *fp, struct node *n)
 			    peer->eq->name,
 			    peer->u.l1.ifname) ;
     }
+
+    /*
+     * Search all L2 interfaces to detect native vlan if any
+     */
+
+    native = -1 ;
+    for (ll2 = n->linklist ; ll2 != NULL ; ll2 = ll2->next)
+    {
+	struct node *peer2 ;
+
+	peer2 = getlinkpeer (ll2->link, n) ;
+	if (peer2->nodetype == NT_L2 && MK_ISSELECTED (peer2))
+	{
+	    if (peer2->u.l2.native)
+		native = peer2->u.l2.vlan ;
+	}
+    }
+    fprintf (fp, " %d", native) ;
 
     /*
      * Search all L2 interfaces

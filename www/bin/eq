@@ -19,6 +19,7 @@
 #   2008/05/06 : pda        : ajout localisation
 #   2008/07/31 : pda/boggia : vue arborescente
 #   2008/08/01 : pda        : stats wifi sur la page d'un équipement
+#   2010/08/31 : pda/jean   : ajout de l'information "vlan natif"
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -690,7 +691,8 @@ proc main {} {
 		set mode  [lindex $ligne 4]
 		set desc  [lindex $ligne 5]
 		set lien  [lindex $ligne 6]
-		set ligne [lreplace $ligne 0 6]
+		set natif [lindex $ligne 7]
+		set ligne [lreplace $ligne 0 7]
 
 
 		if {[string equal $iface $nom]} then {
@@ -786,6 +788,10 @@ proc main {} {
 		    } else {
 			set desc [binary format H* $desc]
 		    }
+		    set native ""
+		    if {$vlanid == $natif} then {
+			set native " (vlan natif)"
+		    }
 		    set stat   [lindex $vlan 2]
 
 		    append txt "\n<BR>\n"
@@ -793,7 +799,7 @@ proc main {} {
 		    if {$nvlan > 1 || $vlanid != 0} then {
 			set urll2 [format $conf(urll2) $nomeq $i $vlanid $u1]
 			append txt "Vlan "
-			append txt [::webapp::helem "a" "$vlanid ($desc)" \
+			append txt [::webapp::helem "a" "$vlanid ($desc)$native" \
 						"href" $urll2]
 
 			if {! [string equal $stat "-"]} then {
