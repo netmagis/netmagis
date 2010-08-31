@@ -799,8 +799,9 @@ proc main {} {
 		    if {$nvlan > 1 || $vlanid != 0} then {
 			set urll2 [format $conf(urll2) $nomeq $i $vlanid $u1]
 			append txt "Vlan "
-			append txt [::webapp::helem "a" "$vlanid ($desc)$native" \
+			append txt [::webapp::helem "a" "$vlanid ($desc)" \
 						"href" $urll2]
+			append txt $native
 
 			if {! [string equal $stat "-"]} then {
 			    set url [format $conf(urlstat) $stat $u1]
