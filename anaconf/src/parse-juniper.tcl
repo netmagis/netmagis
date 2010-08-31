@@ -785,10 +785,12 @@ proc juniper-parse-l2switch-vlan-members {conf tab idx} {
 #   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
 #   - tab(current!unitnb) = <unit number>
 # Remplit :
-#   tab(eq!<eqname>!if!<ifname>!vlan!<unitnb>!adr) {<adr46> ...}
+#   tab(eq!<eqname>!if!<ifname>!link!allowedvlans) {<vlan-id|vlan-name> ...}
+#   tab(eq!<eqname>!if!<ifname>!native-vlan) <vlan-id|vlan-name>
 #
 # Historique
 #   2009/12/22 : pda/jean : conception
+#   2010/08/31 : pda/jean : gestion effective du vlan natif
 #
 
 proc juniper-parse-l2switch-nativevlan {conf tab idx} {
@@ -796,6 +798,7 @@ proc juniper-parse-l2switch-nativevlan {conf tab idx} {
 
     set vlan [lindex $conf 1]
     lappend t($idx!link!allowedvlans) [list $vlan $vlan]
+    set t($idx!native-vlan) $vlan
     return 0
 }
 
@@ -1418,6 +1421,27 @@ proc juniper-post-process {model fdout eq tab} {
     }
 
     #
+    # Convertir les noms de vlans en id numériques, phase 3
+    # Convertir les native-vlan
+    # (JunOS switch)
+    #
+
+    if {[info exists t(eq!$eq!vlans!names)]} then {
+	foreach nom $t(eq!$eq!vlans!names) {
+	    #
+	    # Conversion des noms de vlans : parcourir toutes les
+	    # "!allowedvlans" pour convertir les noms
+	    #
+	    set vlanid $t(eq!$eq!vlans!name!$nom!id)
+	    foreach i [array names t -glob "*!native-vlan"] {
+		if {[string equal $nom $t($i)]} then {
+		    set t($i) $vlanid
+		}
+	    }
+	}
+    }
+
+    #
     # Chercher tous les liens. Pour cela, parcourir la liste
     # des interfaces
     #
@@ -1484,7 +1508,7 @@ proc juniper-post-process {model fdout eq tab} {
 	    #
 	    # Traitement spécial pour les interface "vlan" qu'on
 	    # trouve sur les JunOS switch
-	    # Cas réduit du cas d'une interface physique sur JunOS routeur
+	    # Cas réduit d'une interface physique sur JunOS routeur
 	    #
 
 	    if {[info exists t(eq!$eq!if!$iface!vlans)]} then {
@@ -1495,7 +1519,7 @@ proc juniper-post-process {model fdout eq tab} {
 		    if {[string equal $statname ""]} then {
 			set statname "-"
 		    }
-		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname"
+		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname native 0"
 		    puts $fdout "link $nodeL2 $nodebrpat"
 
 		    #
@@ -1539,7 +1563,7 @@ proc juniper-post-process {model fdout eq tab} {
 			if {[info exists t(eq!$eq!if!$iface!link!allowedvlans)]} then {
 			    set a [lindex $t(eq!$eq!if!$iface!link!allowedvlans) 0]
 			    set v [lindex $a 0]
-			    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat -"
+			    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat - native 0"
 			} else {
 			    set nodeL2 ""
 			}
@@ -1550,6 +1574,10 @@ proc juniper-post-process {model fdout eq tab} {
 			    set v1 [lindex $allowedvlans 0]
 			    set v2 [lindex $allowedvlans 1]
 			    puts -nonewline $fdout " allow $v1 $v2"
+			}
+			if {[info exists t(eq!$eq!if!$iface!native-vlan)]} then {
+			    set nv $t(eq!$eq!if!$iface!native-vlan)
+			    puts -nonewline $fdout " native $nv"
 			}
 			puts $fdout ""
 		    }
@@ -1600,7 +1628,7 @@ proc juniper-post-process {model fdout eq tab} {
 			if {[string equal $statname ""]} then {
 			    set statname "-"
 			}
-			puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname"
+			puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname native 0"
 			puts $fdout "link $nodeL1 $nodeL2"
 
 			#
