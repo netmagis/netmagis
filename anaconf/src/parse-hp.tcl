@@ -427,11 +427,19 @@ proc hp-parse-untagged {active line tab idx} {
 	set vlanid $t($idx!lvlan!lastid)
 	set liface [parse-list $line yes $t($idx!modules)]
 	foreach iface $liface {
+	    set kw "vlan"
+	    if {[info exists t($idx!if!$iface!link!type)]} then {
+		if {[string equal $t($idx!if!$iface!link!type) "trunk"]} then {
+		    # le vlan est natif sur cette interface
+		    set kw "nativevlan"
+		}
+	    }
+
 	    set error [hp-set-ifattr t $idx!if!$iface "type" "ether"]
 	    if {$error} then {
 		break
 	    }
-	    set error [hp-set-ifattr t $idx!if!$iface "vlan" $vlanid]
+	    set error [hp-set-ifattr t $idx!if!$iface $kw $vlanid]
 	    if {$error} then {
 		break
 	    }
@@ -519,13 +527,15 @@ proc hp-set-ifattr {tab idx attr val} {
 			if {[info exists t($idx!link!vlans)]} then {
 			    set ov [lindex $t($idx!link!vlans) 0]
 			    set t($idx!link!allowedvlans) [list [list $ov $ov]]
+			    set t($idx!link!native) $ov
 			    unset t($idx!link!vlans)
 			} else {
 			    set t($idx!link!allowedvlans) {}
 			}
 		    }
 		    trunk-ether {
-			# rien
+			# le type trunk ne change pas, on ajoutera
+			# juste un vlan-natif
 		    }
 		    ether-ether {
 			warning "incoherent 'untagged' vlan for $idx"
@@ -550,6 +560,22 @@ proc hp-set-ifattr {tab idx attr val} {
 		    }
 		    ether {
 			set t($idx!link!vlans) [list $val]
+		    }
+		    default {
+			warning "incoherent type for $idx"
+		    }
+		}
+	    } else {
+		warning "Unknown transport-type for $idx"
+	    }
+	    set error 0
+	}
+	nativevlan {
+	    if {[info exists t($idx!link!type)]} then {
+		switch $t($idx!link!type) {
+		    trunk {
+			lappend t($idx!link!allowedvlans) [list $val $val]
+			set t($idx!link!native) $val
 		    }
 		    default {
 			warning "incoherent type for $idx"
