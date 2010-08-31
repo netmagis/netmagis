@@ -143,9 +143,10 @@ get_if_ip4 ()
     # cas simple : le préfixe est indiqué dans l'adresse IP (1.2.3.4/16)
     pref=`echo "$ip" | sed -n "s|.*/\([[:digit:]][[:digit:]]*\)|\1|p"`
 
-    # cas complexe : il faut aller le chercher dans le netmask, s'il est présent
     if [ "${pref}" = "" ]
     then
+	# cas complexe : il faut aller le chercher dans le netmask,
+	# du moins s'il est présent
 	nm=`get_kw_value netmask "$a"`
 	case "$nm" in
 	    "")
@@ -175,15 +176,12 @@ get_if_ip4 ()
 			    erreur "netmask '$nm' non standard"
 			    ;;
 		    esac
-		    pref=`expr $pref + $p`
+		    pref=`expr ${pref} + ${p}`
 		done
 		;;
 	    *)
 		# en décimal
 		pref=0
-		po=`echo $nm | sed 's/\..*//'`
-		nm=`echo $nm | sed 's/\([[:digit:]]*\)\..*/\1/'`
-		stop=non
 		for i in `(IFS=. ; echo $nm)`
 		do
 		    case "$i" in
@@ -200,7 +198,7 @@ get_if_ip4 ()
 			    erreur "netmask '$nm' non standard"
 			    ;;
 		    esac
-		    pref=`expr $pref + $p`
+		    pref=`expr ${pref} + ${p}`
 		done
 		;;
 	esac
@@ -211,6 +209,36 @@ get_if_ip4 ()
 
 get_if_ip6 ()
 {
+    local i a ip
+
+    i="$1"
+    case `uname -r` in
+	6*)
+	    a=`get_if_var "$i" ipv6_ifconfig_IF`
+	    ;;
+	8*|9*)
+	    a=`ifconfig_getargs $i ipv6`
+	    ;;
+	*)
+	    erreur "Version de FreeBSD non encore supportée"
+	    ;;
+    esac
+
+    if [ "x$a" != x ]
+    then
+	ip=`echo $a | sed 's/ .*//'`
+
+	# cas simple : le préfixe est indiqué dans l'adresse IP (2001:.../64)
+	pref=`echo "$ip" | sed -n "s|.*/\([[:digit:]][[:digit:]]*\)|\1|p"`
+
+	if [ "${pref}" = "" ]
+	then
+	    pref=`get_kw_value prefixlen "$a"`
+	fi
+
+	ip="${ip}/${pref}"
+    fi
+    echo "${ip}"
 }
 
 get_if ()
@@ -232,7 +260,7 @@ get_if ()
 		a=`rm_kw vlandev "$a"`
 		a=`rm_kw vlan "$a"`
 		ip4=`get_if_ip4 "$a"`
-		ip6=`get_if_ip6 "$a"`
+		ip6=`get_if_ip6 "$i"`
 
 		# Ajouter l'interface physique si elle n'y est pas déjà
 		if [ "x`echo $c_if | sed -n '/[[:<:]]${phys}[[:>:]]/p'`" != x ]
@@ -257,14 +285,14 @@ get_if ()
 		#
 
 		ip4=`get_if_ip4 "$a"`
-		ip6=`get_if_ip6 "$a"`
+		ip6=`get_if_ip6 "$i"`
 
 		c_if="${c_if} $i"
 		####### TROUVER LA DESC DE $phys
-		eval "c_if_${phys}_desc=\"X\""
-		eval "c_if_${phys}_vlans=\"\""
-		eval "c_if_${phys}_ip4=\"$ip4\""
-		eval "c_if_${phys}_ip6=\"$ip6\""
+		eval "c_if_${i}_desc=\"X\""
+		eval "c_if_${i}_vlans=\"\""
+		eval "c_if_${i}_ip4=\"$ip4\""
+		eval "c_if_${i}_ip6=\"$ip6\""
 		;;
 	esac
     done
