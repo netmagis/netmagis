@@ -1620,45 +1620,48 @@ proc juniper-post-process {model fdout eq tab} {
     #
 
     foreach iface $t(eq!$eq!voip!if!list) {
-	set id $t(eq!$eq!voip!iface!$iface!vlan)
-	set new "id"
-	if {[string equal $id "untagged"]} then {
-	    set new "untagged"
-	}
-
-	set linktype $t(eq!$eq!if!$iface!link!type)
-
-	switch "$linktype-$new" {
-	    ether-id {
-		set t(eq!$eq!if!$iface!link!type) trunk
-
-		set a [lindex $t(eq!$eq!if!$iface!link!allowedvlans) 0]
-		set oldvlan [lindex $a 0]
-		set t(eq!$eq!if!$iface!native-vlan) $oldvlan
-		lappend t(eq!$eq!if!$iface!link!allowedvlans) [list $id $id]
+	set disabled [info exists t(eq!$eq!if!$iface!disable)]
+	if {! $disabled} then {
+	    set id $t(eq!$eq!voip!iface!$iface!vlan)
+	    set new "id"
+	    if {[string equal $id "untagged"]} then {
+		set new "untagged"
 	    }
-	    ether-untagged {
-		# aucun changement
-	    }
-	    trunk-id {
-		set found 0
-		foreach c $t(eq!$eq!if!$iface!link!allowedvlans) {
-		    set v1 [lindex $c 0]
-		    set v2 [lindex $c 1]
-		    if {$id >= $v1 && $id <= $v2} then {
-			set found 1
-			break
-		    }
-		}
-		if {! $found} then {
+
+	    set linktype $t(eq!$eq!if!$iface!link!type)
+
+	    switch "$linktype-$new" {
+		ether-id {
+		    set t(eq!$eq!if!$iface!link!type) trunk
+
+		    set a [lindex $t(eq!$eq!if!$iface!link!allowedvlans) 0]
+		    set oldvlan [lindex $a 0]
+		    set t(eq!$eq!if!$iface!native-vlan) $oldvlan
 		    lappend t(eq!$eq!if!$iface!link!allowedvlans) [list $id $id]
 		}
-	    }
-	    trunk-untagged {
-		juniper-warning "Inconsistent voip specification on '$eq/$iface'"
-	    }
-	    default {
-		juniper-warning "Internal error for voip on '$eq/$iface'"
+		ether-untagged {
+		    # aucun changement
+		}
+		trunk-id {
+		    set found 0
+		    foreach c $t(eq!$eq!if!$iface!link!allowedvlans) {
+			set v1 [lindex $c 0]
+			set v2 [lindex $c 1]
+			if {$id >= $v1 && $id <= $v2} then {
+			    set found 1
+			    break
+			}
+		    }
+		    if {! $found} then {
+			lappend t(eq!$eq!if!$iface!link!allowedvlans) [list $id $id]
+		    }
+		}
+		trunk-untagged {
+		    juniper-warning "Inconsistent voip specification on '$eq/$iface'"
+		}
+		default {
+		    juniper-warning "Internal error for voip on '$eq/$iface'"
+		}
 	    }
 	}
     }
