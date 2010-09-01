@@ -87,6 +87,73 @@ void l1graph (void)
 }
 
 /******************************************************************************
+Expands L2PAT nodes at edge of our graph, such as these new L2 nodes become
+producers of Vlans
+******************************************************************************/
+
+void l1prodl2pat (void)
+{
+    struct node *n ;
+    struct linklist *ll ;
+
+    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+    {
+	if (n->nodetype == NT_L1 && strcmp (n->u.l1.link, EXTLINK) != 0)
+	{
+	    struct node *l2pat ;
+
+	    l2pat = get_neighbour (n, NT_L2PAT) ;
+	    if (l2pat != NULL)
+	    {
+		struct vlanlist *a ;
+
+		/*
+		 * Instantiate this L2pat into each allowed vlan
+		 */
+
+		for (a = l2pat->u.l2pat.allowed ; a != NULL ; a = a->next)
+		{
+		    int v ;
+
+		    for (v = a->min ; v <= a->max ; v++)
+		    {
+			struct node *l2 ;
+
+			l2 = create_node (new_nodename (l2pat->eq->name),
+			    l2pat->eq, NT_L2) ;
+			l2->u.l2.vlan = v ;
+			l2->u.l2.stat = NULL ;
+			l2->u.l2.native = (l2pat->u.l2pat.native == v) ; ;
+
+			for (ll = l2pat->linklist ; ll != NULL ; ll = ll->next)
+			{
+			    struct link *l ;
+			    struct node *o ;		/* other node */
+
+			    l = ll->link ;
+			    o = getlinkpeer (l, l2pat) ;
+
+			    (void) create_link (NULL, o->name, l2->name) ;
+			}
+		    }
+		}
+
+		/*
+		 * This L2pat is no longer needed.
+		 * Removing it is too complex.
+		 * We just remove all allowed vlans
+		 * This is a memory leak (the vlanlist), but this is not
+		 * important since this memory block will not be saved
+		 * in the generated graph.
+		 */
+
+		l2pat->u.l2pat.allowed = NULL ;
+	    }
+	}
+    }
+}
+
+/******************************************************************************
 Computes the list of Vlan-ids transported on each link
 ******************************************************************************/
 
@@ -324,6 +391,7 @@ int main (int argc, char *argv [])
     text_read (stdin) ;
     l1graph () ;
     check_links () ;
+    l1prodl2pat () ;
     l2graph () ;
     update_lvlans () ;
     check_inconsistencies () ;
