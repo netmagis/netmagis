@@ -14,6 +14,7 @@
 #   2006/06/01 : pda/jean : ajout snmp
 #   2007/01/06 : pda      : ajout desc interface
 #   2009/12/21 : pda/jean : debut analyse junos switch
+#   2010/09/01 : pda/jean : analyse des directives voip
 #
 
 ###############################################################################
@@ -228,12 +229,13 @@ proc juniper-parse {libdir model fdin fdout tab eq} {
     upvar $tab t
 
     array set kwtab {
-	version		{2	NOP}
-	interfaces	{1	juniper-parse-interfaces}
-	routing-options	{1	juniper-parse-routing-options}
-	snmp		{1	juniper-parse-snmp}
-	vlans		{1	juniper-parse-vlans}
-	*		{1	NOP}
+	version				{2	NOP}
+	interfaces			{1	juniper-parse-interfaces}
+	snmp				{1	juniper-parse-snmp}
+	routing-options			{1	juniper-parse-routing-options}
+	ethernet-switching-options	{1	juniper-parse-ethernet-swopt}
+	vlans				{1	juniper-parse-vlans}
+	*				{1	NOP}
 
     }
 
@@ -243,6 +245,7 @@ proc juniper-parse {libdir model fdin fdout tab eq} {
     lappend t(eq) $eq
 
     set t(eq!$eq!ranges) {}
+    set t(eq!$eq!voip!if!list) {}
 
     set error [juniper-parse-list kwtab $conf t "eq!$eq"]
 
@@ -1130,6 +1133,113 @@ proc juniper-parse-snmp-location {conf tab idx} {
 #   - rien
 #
 # Historique :
+#   2010/09/01 : pda/jean : conception
+#
+
+proc juniper-parse-ethernet-swopt {conf tab idx} {
+    upvar $tab t
+
+    array set kwtab {
+	voip		{1	juniper-parse-voip}
+	*		{1	NOP}
+    }
+
+    return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - rien
+#
+# Historique :
+#   2010/09/01 : pda/jean : conception
+#
+
+proc juniper-parse-voip {conf tab idx} {
+    upvar $tab t
+
+    array set kwtab {
+	interface	{2	juniper-parse-voip-iface}
+	*		{1	NOP}
+    }
+
+    return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - tab(eq!<eqname>!voip!if!list) {ge-0/0/0 ...}
+#   - tab(eq!<eqname>!voip!if!all) <existe ou non>
+#   - tab(eq!<eqname>!voip!if!access-ports) <existe ou non>
+#
+# Historique :
+#   2010/09/01 : pda/jean : conception
+#
+
+proc juniper-parse-voip-iface {conf tab idx} {
+    upvar $tab t
+
+    array set kwtab {
+	vlan		{2	juniper-parse-voip-iface-vlan}
+	*		{2	NOP}
+    }
+
+    #
+    # l'interface peut être
+    #	- all
+    #	- access-ports : tous les ports access déclarés sur le switch
+    #   - ge-n/n/n.0 : supprimer la "unit"
+    #
+
+    set iface [lindex $conf 1]
+
+    switch $iface {
+	all		{ set t($idx!voip!if!all) "yes" }
+	access-ports	{ set t($idx!voip!if!access-ports) "yes" }
+	default		{
+	    if {[regexp {(.*)\.(\d)$} $iface bidon iface unit]} then {
+		if {$unit != 0} then {
+		    juniper-warning "$idx: invalid unit '$iface.$unit'"
+		}
+	    }
+	    lappend t($idx!voip!if!list) $iface
+	}
+    }
+
+    set idx "$idx!voip!iface!$iface"
+
+    return [juniper-parse-list kwtab [lindex $conf 2] t $idx]
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!voip!iface!<iface>
+# Remplit :
+#   - tab(eq!<eqname>!voip!iface!<iface>!vlan) <id|nom|"untagged">
+#
+# Historique :
+#   2010/09/01 : pda/jean : conception
+#
+
+proc juniper-parse-voip-iface-vlan {conf tab idx} {
+    upvar $tab t
+
+    set vlan [lindex $conf 1]
+    set t($idx!vlan) $vlan
+    return 0
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - rien
+#
+# Historique :
 #   2009/12/21 : pda/jean : conception
 #
 
@@ -1259,6 +1369,7 @@ proc juniper-parse-vlans-entry-l3-interface {conf tab idx} {
 #   2007/01/06 : pda       : ajout desc interface
 #   2007/07/13 : pda       : ajout sortie tableau si debug
 #   2010/03/25 : pda       : ajout "members all"
+#   2010/09/01 : pda/jean  : ajout voip
 #
 
 proc juniper-post-process {model fdout eq tab} {
@@ -1442,6 +1553,117 @@ proc juniper-post-process {model fdout eq tab} {
     }
 
     #
+    # Convertir les noms de vlans en id numériques, phase 4
+    # Convertir les vlans spécifiés dans les blocs "voip"
+    # (JunOS switch)
+    #
+
+    foreach iface [concat $t(eq!$eq!voip!if!list) {access-ports all}]] {
+	if {[info exists t(eq!$eq!voip!iface!$iface!vlan)]} then {
+	    set vlan $t(eq!$eq!voip!iface!$iface!vlan)
+	    if {[info exists t(eq!$eq!vlans!name!$vlan!id)]} then {
+		set vlanid $t(eq!$eq!vlans!name!$vlan!id)
+		set t(eq!$eq!voip!iface!$iface!vlan) $vlanid
+	    }
+	}
+    }
+
+    #
+    # Traiter les spécifications "voip" sur les interfaces, phase 1
+    # Généraliser les directives "access-ports" et "all" aux
+    # interfaces concernées.
+    #
+
+    # pré-traitement des access-ports
+    if {[info exists t(eq!$eq!voip!if!access-ports)]} then {
+	set vlanid $t(eq!$eq!voip!iface!access-ports!vlan)
+	foreach iface $t(eq!$eq!if) {
+	    if {! [string equal $iface "vlan"]} then {
+		set linktype $t(eq!$eq!if!$iface!link!type)
+		if {[string equal $linktype "ether"]} then {
+		    if {! [info exists t(eq!$eq!voip!iface!$iface!vlan)]} then {
+			set t(eq!$eq!voip!iface!$iface!vlan) $vlanid
+			lappend t(eq!$eq!voip!if!list) $iface
+		    }
+
+		}
+	    }
+	}
+    }
+
+    # pré-traitement des all
+    if {[info exists t(eq!$eq!voip!if!all)]} then {
+	set vlanid $t(eq!$eq!voip!iface!all!vlan)
+	foreach iface $t(eq!$eq!if) {
+	    if {! [string equal $iface "vlan"]} then {
+		set linktype $t(eq!$eq!if!$iface!link!type)
+		if {! [info exists t(eq!$eq!voip!iface!$iface!vlan)]} then {
+		    set t(eq!$eq!voip!iface!$iface!vlan) $vlanid
+		    lappend t(eq!$eq!voip!if!list) $iface
+		}
+	    }
+	}
+    }
+
+    # Traiter les spécifications "voip" sur les interfaces, phase 2
+    #
+    # Ce qui est à faire dépend du statut actuel de l'interface
+    #	type	directive	action
+    #	actuel	voip->vlan
+    #	-------	------------	----------------------------------
+    #	ether	<id>		passer en trunk pour <id> + native pour
+    #				le vlan déclaré en ether
+    #	ether	untagged	aucun changement
+    #	trunk	<id>		aucun changement de type + vérifier que
+    #				<id> figure dans les "allowedvlans"
+    #	trunk	untagged	erreur
+    #
+
+    foreach iface $t(eq!$eq!voip!if!list) {
+	set id $t(eq!$eq!voip!iface!$iface!vlan)
+	set new "id"
+	if {[string equal $id "untagged"]} then {
+	    set new "untagged"
+	}
+
+	set linktype $t(eq!$eq!if!$iface!link!type)
+
+	switch "$linktype-$new" {
+	    ether-id {
+		set t(eq!$eq!if!$iface!link!type) trunk
+
+		set a [lindex $t(eq!$eq!if!$iface!link!allowedvlans) 0]
+		set oldvlan [lindex $a 0]
+		set t(eq!$eq!if!$iface!native-vlan) $oldvlan
+		lappend t(eq!$eq!if!$iface!link!allowedvlans) [list $id $id]
+	    }
+	    ether-untagged {
+		# aucun changement
+	    }
+	    trunk-id {
+		set found 0
+		foreach c $t(eq!$eq!if!$iface!link!allowedvlans) {
+		    set v1 [lindex $c 0]
+		    set v2 [lindex $c 1]
+		    if {$id >= $v1 && $id <= $v2} then {
+			set found 1
+			break
+		    }
+		}
+		if {! $found} then {
+		    lappend t(eq!$eq!if!$iface!link!allowedvlans) [list $id $id]
+		}
+	    }
+	    trunk-untagged {
+		juniper-warning "Inconsistent voip specification on '$eq/$iface'"
+	    }
+	    default {
+		juniper-warning "Internal error for voip on '$eq/$iface'"
+	    }
+	}
+    }
+
+    #
     # Chercher tous les liens. Pour cela, parcourir la liste
     # des interfaces
     #
@@ -1582,7 +1804,7 @@ proc juniper-post-process {model fdout eq tab} {
 			puts $fdout ""
 		    }
 		    default {
-			juniper-warning "Unknown link type for '$eq/$iface"
+			juniper-warning "Unknown link type for '$eq/$iface'"
 		    }
 		}
 
