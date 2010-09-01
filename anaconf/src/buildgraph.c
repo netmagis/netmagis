@@ -4,6 +4,8 @@
 
 #include "graph.h"
 
+int verbose ;
+
 /******************************************************************************
 Match physical interfaces between equipements (i.e. physical links)
 ******************************************************************************/
@@ -95,6 +97,9 @@ void l1prodl2pat (void)
 {
     struct node *n ;
     struct linklist *ll ;
+    int nl2pat, nl2 ;
+
+    nl2pat = nl2 = 0 ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
@@ -111,6 +116,8 @@ void l1prodl2pat (void)
 		 * Instantiate this L2pat into each allowed vlan
 		 */
 
+		nl2pat++ ;				/* verbose stats */
+
 		for (a = l2pat->u.l2pat.allowed ; a != NULL ; a = a->next)
 		{
 		    int v ;
@@ -124,6 +131,8 @@ void l1prodl2pat (void)
 			l2->u.l2.vlan = v ;
 			l2->u.l2.stat = NULL ;
 			l2->u.l2.native = (l2pat->u.l2pat.native == v) ; ;
+			
+			nl2++ ;				/* verbose stats */
 
 			for (ll = l2pat->linklist ; ll != NULL ; ll = ll->next)
 			{
@@ -151,6 +160,10 @@ void l1prodl2pat (void)
 	    }
 	}
     }
+
+    if (verbose)
+	fprintf (stderr, "l1prodl2pat : %d L2PAT expanded in %d L2\n",
+				nl2pat, nl2) ;
 }
 
 /******************************************************************************
@@ -386,8 +399,43 @@ Main function
 
 MOBJ *newmobj [NB_MOBJ] ;
 
+void usage (char *progname)
+{
+    fprintf (stderr, "Usage : %s [-v]\n", progname) ;
+    exit (1) ;
+}
+
 int main (int argc, char *argv [])
 {
+    char *prog ;
+    int c, err ;
+
+    prog = argv [0] ;
+    err = 0 ;
+    verbose = 0 ;
+
+    while ((c = getopt (argc, argv, "v")) != -1)
+    {
+	switch (c)
+	{
+	    case 'v' :
+		verbose = 1 ;
+		break ;
+	    case '?' :
+	    default :
+		usage (prog) ;
+	}
+    }
+
+    if (err)
+	exit (1) ;
+
+    argc -= optind ;
+    argv += optind ;
+
+    if (argc != 0)
+	usage (prog) ;
+
     text_read (stdin) ;
     l1graph () ;
     check_links () ;
