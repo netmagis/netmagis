@@ -244,6 +244,7 @@ proc juniper-parse {libdir model fdin fdout tab eq} {
     # le nom de l'équipement en cours d'analyse
     lappend t(eq) $eq
 
+    set t(eq!$eq!if!disabled) {}
     set t(eq!$eq!ranges) {}
     set t(eq!$eq!voip!if!list) {}
 
