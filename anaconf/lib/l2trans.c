@@ -67,18 +67,21 @@ static void transport_vlan_on_L1 (struct node *n, vlan_t v)
 		transport_vlan_on_L1 (other, v) ;
 		break ;
 	    case NT_L2 :
-		if (n->u.l1.l1type == L1T_TRUNK)
+		switch (n->u.l1.l1type)
 		{
-		    if (other->u.l2.vlan == v)
-		    {
+		    case L1T_DISABLED :
+			break ;
+		    case L1T_TRUNK :
+			if (other->u.l2.vlan == v)
+			{
+			    l2seen = 1 ;
+			    transport_vlan_on_L2 (other, v) ;
+			}
+			break ;
+		    case L1T_ETHER :
 			l2seen = 1 ;
-			transport_vlan_on_L2 (other, v) ;
-		    }
-		}
-		else
-		{
-		    l2seen = 1 ;
-		    transport_vlan_on_L2 (other, other->u.l2.vlan) ;
+			transport_vlan_on_L2 (other, other->u.l2.vlan) ;
+			break ;
 		}
 		break ;
 	    case NT_L3 :
@@ -366,10 +369,17 @@ void transport_vlan_on_L2 (struct node *n, vlan_t v)
 	switch (other->nodetype)
 	{
 	    case NT_L1 :
-		if (other->u.l1.l1type == L1T_TRUNK)
-		    transport_vlan_on_L1 (other, v) ;
-		else
-		    transport_vlan_on_L1 (other, 0) ;
+		switch (other->u.l1.l1type)
+		{
+		    case L1T_DISABLED :
+			break ;
+		    case L1T_TRUNK :
+			transport_vlan_on_L1 (other, v) ;
+			break ;
+		    case L1T_ETHER :
+			transport_vlan_on_L1 (other, 0) ;
+			break ;
+		}
 		break ;
 	    case NT_L2 :
 		inconsistency ("L2-L2 : Should not happen") ;

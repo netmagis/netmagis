@@ -12,7 +12,7 @@ eq crc-cc1 cisco/WS-C4506 45464748
 iface GigaEthernet0/1
     <radio>
     <M123 ou ->
-    <Ether ou Trunk>
+    <Ether ou Trunk ou Disabled>
     {X / L33 crc-rc1 ge-0/0/0}
     <nativevlan ou -1> 
     <desc> {0 {} <ip> ...} {7 <vlan-desc-en-hexa> 130.79.....} ...
@@ -47,7 +47,18 @@ void output_iface (FILE *fp, struct node *n)
 
     ifname = n->u.l1.ifname ;
     stat = (n->u.l1.stat == NULL) ? "-" : n->u.l1.stat ;
-    type = (n->u.l1.l1type == L1T_TRUNK) ? "Trunk" : "Ether" ;
+    switch (n->u.l1.l1type)
+    {
+	case L1T_DISABLED :
+	    type = "Disabled" ;
+	    break ;
+	case L1T_TRUNK :
+	    type = "Trunk" ;
+	    break ;
+	case L1T_ETHER :
+	    type = "Ether" ;
+	    break ;
+    }
     desc = (n->u.l1.ifdesc == NULL) ? "-" : n->u.l1.ifdesc ;
 
     fprintf (fp, "iface %s %c", ifname, LB) ;

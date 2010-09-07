@@ -361,6 +361,7 @@ proc parse-list {spec expanser preflist} {
 #   2008/07/07 : pda/jean : ajout paramètre libdir
 #   2008/07/07 : pda/jean : mise en commun avec HP
 #   2009/01/07 : pda      : ajout du modele dans le tableau
+#   2010/09/07 : pda/jean : ajout de la liste des interfaces "disabled"
 #
 
 proc ios-parse {libdir model fdin fdout tab eq _kwtab} {
@@ -377,6 +378,7 @@ proc ios-parse {libdir model fdin fdout tab eq _kwtab} {
     lappend t(eq) $eq
     set idx "eq!$eq"
     set t($idx!if) {}
+    set t($idx!disabled) {}
     set t($idx!ios) "unsure"
     set t($idx!model) $model
     while {[gets $fdin line] > -1} {

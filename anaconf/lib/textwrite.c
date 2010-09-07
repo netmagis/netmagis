@@ -43,6 +43,7 @@ static void text_write_nodes (FILE *fp)
 {
     struct node *n ;
     iptext_t ipaddr ;
+    char *l1type ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
@@ -51,12 +52,25 @@ static void text_write_nodes (FILE *fp)
 	    switch (n->nodetype)
 	    {
 		case NT_L1 :
+		    switch (n->u.l1.l1type)
+		    {
+			case L1T_DISABLED :
+			    l1type = "disabled" ;
+			    break ;
+			case L1T_TRUNK :
+			    l1type = "trunk" ;
+			    break ;
+			case L1T_ETHER :
+			    l1type = "ether" ;
+			    break ;
+		    }
+
 		    fprintf (fp, "node %s type L1 eq %s name %s link %s encap %s stat %s desc %s",
 				    n->name,
 				    n->eq->name,
 				    n->u.l1.ifname,
 				    n->u.l1.link,
-				    (n->u.l1.l1type == L1T_TRUNK ? "trunk" : "ether"),
+				    l1type,
 				    (n->u.l1.stat == NULL ? "-" : n->u.l1.stat),
 				    (n->u.l1.ifdesc == NULL ? "-" : n->u.l1.ifdesc)
 				) ;

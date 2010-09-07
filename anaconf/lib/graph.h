@@ -261,6 +261,7 @@ enum nodetype
 
 enum L1type
 {
+    L1T_DISABLED,
     L1T_TRUNK,
     L1T_ETHER,
 } ;
@@ -539,6 +540,7 @@ struct graphhdr
 #define	VERSION6	6		/* radio parameters & ssid */
 #define	VERSION7	7		/* ssid based metrology */
 #define	VERSION8	8		/* native vlans */
+#define	VERSION9	9		/* disabled interfaces */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

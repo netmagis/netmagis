@@ -801,6 +801,7 @@ proc cisco-parse-channel-group {active line tab idx} {
 #   - idx = eq!<eqname>
 #   - tab(eq!<nom eq>!current!if) <ifname>
 # Enleve le nom de l'interface courante de tab(eq!<nom eq>!if)
+# Ajoute le nom de l'interface courante dans tab(eq!<nom eq>!disabled)
 #
 # Historique
 #   2004/03/26 : pda/jean : conception
@@ -811,11 +812,13 @@ proc cisco-parse-shutdown {active line tab idx} {
     upvar $tab t
 
     set error 0
+    set ifname $t($idx!current!if)
     if {$active
-	    && ![string equal $t($idx!current!if) ""]
-	    && [string equal $t($idx!current!if) $t($idx!current!physif)]
+	    && ![string equal $ifname ""]
+	    && [string equal $ifname $t($idx!current!physif)]
 	    } then {
-	set error [cisco-remove-if t($idx!if) $t($idx!current!if)]
+	set error [cisco-remove-if t($idx!if) $ifname]
+	lappend t($idx!disabled) $ifname
     }
     return $error
 }
@@ -1275,6 +1278,7 @@ proc cisco-sanitize {model eq tab} {
 #   2008/05/19 : pda       : ajout paramètres radio
 #   2008/06/27 : pda/jean  : ajout traitement des gigastacks
 #   2009/01/07 : pda       : retrait model, qui est dans le tableau
+#   2010/09/07 : pda/jean  : ajout interfaces disabled
 #
 
 proc cisco-post-process {type fdout eq tab} {
@@ -1427,7 +1431,7 @@ proc cisco-post-process {type fdout eq tab} {
     unset -nocomplain agtab
 
     #
-    # Sortir la liste des interfaces physiques
+    # Sortir la liste des interfaces physiques actives
     #
 
     foreach iface $t(eq!$eq!if) {
@@ -1505,6 +1509,17 @@ proc cisco-post-process {type fdout eq tab} {
 
 		set t($ifx!node) $nodeL1
 	    }
+	}
+    }
+
+    #
+    # Sortir la liste des interfaces physiques désactivées
+    #
+
+    foreach iface $t(eq!$eq!disabled) {
+	if {! [regexp {^(Vlan|Tunnel|Null|Loopback|BVI)([0-9]+)$} $iface bidon type vlan]} then {
+	    set nodeL1 [newnode]
+	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link X encap disabled stat - desc -"
 	}
     }
 

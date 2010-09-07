@@ -385,7 +385,9 @@ static void process_L1 (struct attrtab *attrtab, struct node *n)
     n->u.l1.stat = stat ;
 
     encap = attr_get_val (attr_get_vallist (attrtab, "encap")) ;
-    if (strcmp (encap, "trunk") == 0)
+    if (strcmp (encap, "disabled") == 0)
+	n->u.l1.l1type = L1T_DISABLED ;
+    else if (strcmp (encap, "trunk") == 0)
 	n->u.l1.l1type = L1T_TRUNK ;
     else if (strcmp (encap, "ether") == 0)
 	n->u.l1.l1type = L1T_ETHER ;
