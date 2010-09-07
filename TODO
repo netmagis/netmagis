@@ -5,29 +5,24 @@ Configuration des ports des switches
       spool (modifier la syntaxe et la configuration des équipements)
     Tester les erreurs de configuration des équipements
     Terminer topod
-    Faire l'interface web
+    Faire l'interface web, composée des champs suivants :
+	Description [texte]
+	Vlan Access [listbox à sélection unique] (liste = intersection des
+	    vlans arrivant sur ce commutateur avec les vlans autorisés
+	    pour le correspondant)
+	Vlan VoIP [listbox à sélection unique] (liste = idem liste précédente
+	    intersectée avec les vlans marqués comme VoIP)
+	=> pour désactiver, les deux listboxes ont l'item "Aucun Vlan"
 
 Modifications dans le graphe :
+    ajouter les vlans spécifiques VoIP
     mettre les noms FQDN complets dans le graphe
 	=> retirer les domaines dans les affichages de l'interface
 	    Web)
-    intégrer les ports "shut" dans le graphe
-	=> dans un premier temps, vérifier les descriptions : ça
-	    doit être "X" ou "Lxxx"
-	=> statuer sur les cas contraires ou s'il n'y a rien
-	    => soit respecter la règle d'intégrité forte (on doit
-		explicitement mettre une desc "X ..." pour marquer
-		un port "edge")
-	    => soit assouplir la règle et mettre une description
-		"X ..." par défaut (soit sur l'équipement, soit
-		uniquement dans le graphe)
 
 Dans topod
     Permettre la modification de mode Trunk/Access et une liste
 	de vlans
-
-
-
 
 www/bin/eq
 
@@ -127,3 +122,8 @@ Scripts à écrire
 	donne tous les vlans qui ont une description et pas de port
 	    access dans le graphe. Si un id est donné en argument,
 	    indique si le vlan correspondant est libre.
+
+------------------------------------------------------------------------------
+Fait
+    - gestion des interfaces "disable"
+	la description est systématiquement "X"
