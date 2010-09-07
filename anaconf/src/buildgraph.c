@@ -4,8 +4,6 @@
 
 #include "graph.h"
 
-int verbose ;
-
 /******************************************************************************
 Match physical interfaces between equipements (i.e. physical links)
 ******************************************************************************/
@@ -93,7 +91,7 @@ Expands L2PAT nodes at edge of our graph, such as these new L2 nodes become
 producers of Vlans
 ******************************************************************************/
 
-void l1prodl2pat (void)
+void l1prodl2pat (int verbose, int limitl2pat)
 {
     struct node *n ;
     struct linklist *ll ;
@@ -103,7 +101,7 @@ void l1prodl2pat (void)
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	if (n->nodetype == NT_L1 && strcmp (n->u.l1.link, EXTLINK) != 0)
+	if (n->nodetype == NT_L1 && strcmp (n->u.l1.link, EXTLINK) == 0)
 	{
 	    struct node *l2pat ;
 
@@ -111,6 +109,7 @@ void l1prodl2pat (void)
 	    if (l2pat != NULL)
 	    {
 		struct vlanlist *a ;
+		int thisl2pat = 0 ;
 
 		/*
 		 * Instantiate this L2pat into each allowed vlan
@@ -133,6 +132,7 @@ void l1prodl2pat (void)
 			l2->u.l2.native = (l2pat->u.l2pat.native == v) ; ;
 			
 			nl2++ ;				/* verbose stats */
+			thisl2pat++ ;			/* # of expanded L2 for this L2pat */
 
 			for (ll = l2pat->linklist ; ll != NULL ; ll = ll->next)
 			{
@@ -145,6 +145,14 @@ void l1prodl2pat (void)
 			    (void) create_link (NULL, o->name, l2->name) ;
 			}
 		    }
+		}
+
+		if (limitl2pat > 0 && thisl2pat >= limitl2pat)
+		{
+		    fprintf (stderr, "%s/%s : %d vlans expanded\n",
+				n->eq->name,
+				n->u.l1.ifname,
+				thisl2pat) ;
 		}
 
 		/*
@@ -401,7 +409,7 @@ MOBJ *newmobj [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-v]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-l <vlan threshold for node display>] [-v]\n", progname) ;
     exit (1) ;
 }
 
@@ -409,15 +417,20 @@ int main (int argc, char *argv [])
 {
     char *prog ;
     int c, err ;
+    int verbose, limitl2pat ;
 
     prog = argv [0] ;
     err = 0 ;
     verbose = 0 ;
+    limitl2pat = 0 ;
 
-    while ((c = getopt (argc, argv, "v")) != -1)
+    while ((c = getopt (argc, argv, "l:v")) != -1)
     {
 	switch (c)
 	{
+	    case 'l' :
+		limitl2pat = atoi (optarg) ;
+		break ;
 	    case 'v' :
 		verbose = 1 ;
 		break ;
@@ -439,7 +452,7 @@ int main (int argc, char *argv [])
     text_read (stdin) ;
     l1graph () ;
     check_links () ;
-    l1prodl2pat () ;
+    l1prodl2pat (verbose, limitl2pat) ;
     l2graph () ;
     update_lvlans () ;
     check_inconsistencies () ;
