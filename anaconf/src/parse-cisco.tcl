@@ -801,7 +801,7 @@ proc cisco-parse-channel-group {active line tab idx} {
 #   - idx = eq!<eqname>
 #   - tab(eq!<nom eq>!current!if) <ifname>
 # Enleve le nom de l'interface courante de tab(eq!<nom eq>!if)
-# Ajoute le nom de l'interface courante dans tab(eq!<nom eq>!disabled)
+# Ajoute le nom de l'interface courante dans tab(eq!<nom eq>!if!disabled)
 #
 # Historique
 #   2004/03/26 : pda/jean : conception
@@ -818,7 +818,7 @@ proc cisco-parse-shutdown {active line tab idx} {
 	    && [string equal $ifname $t($idx!current!physif)]
 	    } then {
 	set error [cisco-remove-if t($idx!if) $ifname]
-	lappend t($idx!disabled) $ifname
+	lappend t($idx!if!disabled) $ifname
     }
     return $error
 }
@@ -1516,7 +1516,7 @@ proc cisco-post-process {type fdout eq tab} {
     # Sortir la liste des interfaces physiques désactivées
     #
 
-    foreach iface $t(eq!$eq!disabled) {
+    foreach iface $t(eq!$eq!if!disabled) {
 	if {! [regexp {^(Vlan|Tunnel|Null|Loopback|BVI)([0-9]+)$} $iface bidon type vlan]} then {
 	    set nodeL1 [newnode]
 	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link X encap disabled stat - desc -"

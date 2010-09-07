@@ -422,10 +422,12 @@ proc juniper-parse-if {conf tab idx} {
     set error [juniper-parse-list kwtab $ifparm t $idxin]
 
     # ajout de l'interface dans la liste des interfaces
-    # si elle n'est pas désactivée
+    # activées ou désactivées
     if {! [info exists t(in-range)]} then {
 	if {! [info exists t($idx!if!$ifname!disable)]} then {
 	    lappend t($idx!if) $ifname
+	} else {
+	    lappend t($idx!if!disabled) $ifname
 	}
     }
 
@@ -1918,6 +1920,17 @@ proc juniper-post-process {model fdout eq tab} {
 		    }
 		}
 	    }
+	}
+    }
+
+    #
+    # Parcourir la liste des interfaces marquées "disable"
+    #
+
+    foreach iface $t(eq!$eq!if!disabled) {
+	if {! [string equal $iface "vlan"]} then {
+	    set nodeL1 [newnode]
+	    puts $fdout "node $nodeL1 type L1 eq $eq name $iface link X encap disabled stat - desc -"
 	}
     }
 

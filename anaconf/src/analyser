@@ -378,7 +378,7 @@ proc ios-parse {libdir model fdin fdout tab eq _kwtab} {
     lappend t(eq) $eq
     set idx "eq!$eq"
     set t($idx!if) {}
-    set t($idx!disabled) {}
+    set t($idx!if!disabled) {}
     set t($idx!ios) "unsure"
     set t($idx!model) $model
     while {[gets $fdin line] > -1} {
