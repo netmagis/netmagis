@@ -1467,6 +1467,7 @@ proc cisco-post-process {type fdout eq tab} {
 				set power $cisco_80211_dbm($power)
 			    } else {
 				cisco-warning "Christophe Saillard, ta table de conversion dBm->mW est foireuse. Manque $power dBm !"
+				set power -1
 			    }
 			}
 		    } else {
@@ -1487,6 +1488,7 @@ proc cisco-post-process {type fdout eq tab} {
 			}
 			if {! $trouve} then {
 			    cisco-warning "Interface '$eq/$iface': no power information"
+			    set power -1
 			}
 		    }
 		    append radio " radio $t($ifx!channel) $power"
