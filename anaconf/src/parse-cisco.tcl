@@ -103,10 +103,12 @@ proc cisco-init {} {
 
     # Puissances maximum :
     #	regexp "type d'éq/interface" -> puissance max (en mW)
+    # NB : le type d'equipement est extrait par liste-rancid de la configuration
     array set cisco_80211_maxpower {
 	AIR-AP1121G.*			30
 	AIR-AP1131AG.*/Dot11Radio0	25
 	AIR-AP1131AG.*/Dot11Radio1	50
+	AIR-AP1142N.*			50
     }
 
 }
