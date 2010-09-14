@@ -914,16 +914,19 @@ proc juniper-parse-vrrp-prio {conf tab idx} {
 # Historique :
 #   2004/03/23 : pda/jean : conception
 #   2010/06/17 : pda      : ajout link-mode
+#   2010/09/?? : saillard : ajout no-auto-nego + no-flow-control
 #
 
 proc juniper-parse-if-gigopt {conf tab idx} {
     upvar $tab t
 
     array set kwtab {
-	802.3ad		{2	juniper-parse-802-3ad}
-	link-mode	{2	NOP}
-	speed		{1	NOP}
-	*		{2	ERROR}
+	802.3ad			{2	juniper-parse-802-3ad}
+	link-mode		{2	NOP}
+	speed			{1	NOP}
+        no-auto-negotiation	{1	NOP}
+        no-flow-control		{1	NOP}
+	*			{2	ERROR}
     }
     return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
 }
