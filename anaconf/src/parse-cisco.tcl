@@ -338,6 +338,7 @@ proc cisco-parse {libdir model fdin fdout tab eq} {
 	encapsulation-dot1Q		{CALL cisco-parse-encapsulation-dot1q}
 	bridge-group			{CALL cisco-parse-bridge-group}
 	router				{CALL cisco-parse-router}
+	ipc				{CALL cisco-parse-ipc}
 	dot11				NEXT
 	dot11-ssid			{CALL cisco-parse-dot11}
 	authentication			NEXT
@@ -808,19 +809,22 @@ proc cisco-parse-channel-group {active line tab idx} {
 # Historique
 #   2004/03/26 : pda/jean : conception
 #   2006/09/25 : lauce    : ajout if {$active} pour le "no shutdown"
+#   2010/09/14 : pda      : il y a aussi des shutdown ailleurs que dans les i/f
 #
 
 proc cisco-parse-shutdown {active line tab idx} {
     upvar $tab t
 
     set error 0
-    set ifname $t($idx!current!if)
-    if {$active
-	    && ![string equal $ifname ""]
-	    && [string equal $ifname $t($idx!current!physif)]
-	    } then {
-	set error [cisco-remove-if t($idx!if) $ifname]
-	lappend t($idx!if!disabled) $ifname
+    if {[info exists t($idx!current!if)]} then {
+	set ifname $t($idx!current!if)
+	if {$active
+		&& ![string equal $ifname ""]
+		&& [string equal $ifname $t($idx!current!physif)]
+		} then {
+	    set error [cisco-remove-if t($idx!if) $ifname]
+	    lappend t($idx!if!disabled) $ifname
+	}
     }
     return $error
 }
@@ -1047,6 +1051,26 @@ proc cisco-parse-bridge-group {active line tab idx} {
 #
 
 proc cisco-parse-router {active line tab idx} {
+    upvar $tab t
+
+    set t($idx!current!if) ""
+    set t($idx!current!physif) ""
+    return 0
+}
+
+#
+# Entrée :
+#   - line = ""
+#   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!current!if) <ifname>
+#   - tab(eq!<nom eq>!current!physif) <ifname>
+# Vilain hack pour supprimer la notion d'interface courante
+#
+# Historique
+#   2010/09/14 : pda      : conception
+#
+
+proc cisco-parse-ipc {active line tab idx} {
     upvar $tab t
 
     set t($idx!current!if) ""
