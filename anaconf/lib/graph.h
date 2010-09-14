@@ -24,6 +24,7 @@ Include files for items specific to this file
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <limits.h>
 
 /*
  * For IP address manipulation functions
@@ -160,6 +161,8 @@ struct vlanlist
 typedef unsigned char vlanset_t [NBYTESVLAN] ;
 #define vlan_zero(tab)		do { int i ; for (i=0;i<NBYTESVLAN;i++) \
 					tab[i]=0 ; } while (0)
+#define vlan_fill(tab)		do { int i ; for (i=0;i<NBYTESVLAN;i++) \
+					tab[i]=UCHAR_MAX ; } while (0)
 #define	vlan_isset(tab,n)	(tab [n/8] & (1 << (n%8)))
 #define	vlan_set(tab,n)		(tab [n/8] |= (1 << (n%8)))
 #define	vlan_clear(tab,n)	(tab [n/8] &= ~(1 << (n%8)))

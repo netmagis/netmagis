@@ -91,13 +91,21 @@ Expands L2PAT nodes at edge of our graph, such as these new L2 nodes become
 producers of Vlans
 ******************************************************************************/
 
-void l1prodl2pat (int verbose, int limitl2pat)
+/*
+ * limit2pat : limit l2pat expansion to this threshold (-l option)
+ * allvlans : don't limit l2pat expansion to named vlans (-a option)
+ */
+
+void l1prodl2pat (int verbose, int limitl2pat, int allvlans)
 {
     struct node *n ;
     struct linklist *ll ;
     int nl2pat, nl2 ;
+    struct vlan *tabvlan ;
 
     nl2pat = nl2 = 0 ;
+
+    tabvlan = mobj_data (vlanmobj) ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
@@ -125,24 +133,27 @@ void l1prodl2pat (int verbose, int limitl2pat)
 		    {
 			struct node *l2 ;
 
-			l2 = create_node (new_nodename (l2pat->eq->name),
-			    l2pat->eq, NT_L2) ;
-			l2->u.l2.vlan = v ;
-			l2->u.l2.stat = NULL ;
-			l2->u.l2.native = (l2pat->u.l2pat.native == v) ; ;
-			
-			nl2++ ;				/* verbose stats */
-			thisl2pat++ ;			/* # of expanded L2 for this L2pat */
-
-			for (ll = l2pat->linklist ; ll != NULL ; ll = ll->next)
+			if (allvlans || tabvlan [v].name != NULL)
 			{
-			    struct link *l ;
-			    struct node *o ;		/* other node */
+			    l2 = create_node (new_nodename (l2pat->eq->name),
+				l2pat->eq, NT_L2) ;
+			    l2->u.l2.vlan = v ;
+			    l2->u.l2.stat = NULL ;
+			    l2->u.l2.native = (l2pat->u.l2pat.native == v) ; ;
+			    
+			    nl2++ ;				/* verbose stats */
+			    thisl2pat++ ;			/* # of expanded L2 for this L2pat */
 
-			    l = ll->link ;
-			    o = getlinkpeer (l, l2pat) ;
+			    for (ll = l2pat->linklist ; ll != NULL ; ll = ll->next)
+			    {
+				struct link *l ;
+				struct node *o ;		/* other node */
 
-			    (void) create_link (NULL, o->name, l2->name) ;
+				l = ll->link ;
+				o = getlinkpeer (l, l2pat) ;
+
+				(void) create_link (NULL, o->name, l2->name) ;
+			    }
 			}
 		    }
 		}
@@ -409,7 +420,10 @@ MOBJ *newmobj [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-l <vlan threshold for node display>] [-v]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-l <threshold>] [-n] [-v]\n", progname) ;
+    fprintf (stderr, "\t-a           : all vlans (including unnamed vlans)\n") ;
+    fprintf (stderr, "\t-l threshold : vlan threshold for node display\n") ;
+    fprintf (stderr, "\t-v           : verbose\n") ;
     exit (1) ;
 }
 
@@ -417,17 +431,21 @@ int main (int argc, char *argv [])
 {
     char *prog ;
     int c, err ;
-    int verbose, limitl2pat ;
+    int verbose, allvlans, limitl2pat ;
 
     prog = argv [0] ;
     err = 0 ;
     verbose = 0 ;
     limitl2pat = 0 ;
+    allvlans = 0 ;
 
-    while ((c = getopt (argc, argv, "l:v")) != -1)
+    while ((c = getopt (argc, argv, "al:v")) != -1)
     {
 	switch (c)
 	{
+	    case 'a' :
+		allvlans = 1 ;
+		break ;
 	    case 'l' :
 		limitl2pat = atoi (optarg) ;
 		break ;
@@ -452,7 +470,7 @@ int main (int argc, char *argv [])
     text_read (stdin) ;
     l1graph () ;
     check_links () ;
-    l1prodl2pat (verbose, limitl2pat) ;
+    l1prodl2pat (verbose, limitl2pat, allvlans) ;
     l2graph () ;
     update_lvlans () ;
     check_inconsistencies () ;
