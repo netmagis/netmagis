@@ -15,12 +15,6 @@ Configuration des ports des switches
 	=> pour désactiver, les deux listboxes ont l'item "Aucun Vlan"
 
 Modifications dans le graphe :
-    ajouter les vlans spécifiques VoIP
-	Colonne supplémentaire "Voice" dans la liste des vlans (fichier csv)
-	modifier buildgraph 
-    analyser voice vlan sur cisco et HP
-	Ne pas générer d'erreur en cas d'incohérence (vlan "voice"
-	et pas de mot-clef "voice" ou inversement) pour HP et cisco
     mettre les noms FQDN complets dans le graphe
 	=> retirer les domaines dans les affichages de l'interface
 	    Web)
@@ -132,3 +126,10 @@ Scripts à écrire
 Fait
     - gestion des interfaces "disable"
 	la description est systématiquement "X"
+
+    ajouter les vlans spécifiques VoIP
+	Colonne supplémentaire "Voice" dans la liste des vlans (fichier csv)
+	modifier buildgraph 
+    analyser voice vlan sur cisco et HP
+	Ne pas générer d'erreur en cas d'incohérence (vlan "voice"
+	et pas de mot-clef "voice" ou inversement) pour HP et cisco

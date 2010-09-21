@@ -430,6 +430,7 @@ struct netlist
 struct vlan
 {
     char *name ;
+    int voice ;				/* 1 if voice vlan */
     int mark ;
     struct netlist *netlist ;
     struct lvlan *lvlan ;		/* local vlan descriptions */
@@ -544,6 +545,7 @@ struct graphhdr
 #define	VERSION7	7		/* ssid based metrology */
 #define	VERSION8	8		/* native vlans */
 #define	VERSION9	9		/* disabled interfaces */
+#define	VERSION10	10		/* voice vlans */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

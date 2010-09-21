@@ -261,6 +261,7 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	{ "ssidname",	1, },
 	{ "mode",	1, },
 	{ "native",	1, },
+	{ "voice",	1, },
     } ;
 
 
@@ -956,6 +957,7 @@ static void process_vlan (char *tab [], int ntab)
     struct attrvallist *av ;
     static struct attrcheck vlanattr [] = {
 	{ "desc", 1, 1},
+	{ "voice",  1, 1},
 	{ "net",  0, 100000},
 	{ NULL, 0, 0}
     } ;
@@ -994,8 +996,10 @@ static void process_vlan (char *tab [], int ntab)
     if (av != NULL)
 	desc = symtab_to_name (symtab_get (attr_get_val (av))) ;
     else desc = NULL ;
-
     tabvlan [vlanid].name = desc ;
+
+    av = attr_get_vallist (attrtab, "voice") ;
+    tabvlan [vlanid].voice = (av == NULL) ? 0 : atoi (attr_get_val (av)) ;
 
     process_netlist (&tabvlan [vlanid].netlist, attrtab) ;
 
