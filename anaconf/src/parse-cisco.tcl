@@ -324,6 +324,8 @@ proc cisco-parse {libdir model fdin fdout tab eq} {
 	switchport-trunk-native-vlan	{CALL cisco-parse-native-vlan}
 	switchport-trunk-allowed	NEXT
 	switchport-trunk-allowed-vlan	{CALL cisco-parse-allowed-vlan}
+	switchport-voice		NEXT
+	switchport-voice-vlan		{CALL cisco-parse-voice-vlan}
 	ip				NEXT
 	ip-address			{CALL cisco-parse-ip-address}
 	ipv6				NEXT
@@ -624,6 +626,31 @@ proc cisco-parse-allowed-vlan {active line tab idx} {
 	set error [cisco-set-ifattr t $idx!if!$ifname allowed-vlans $l]
     }
 
+    return $error
+}
+
+#
+# Entrée :
+#   - line = "<vlanid>" ou "dot1p"
+#   - idx = eq!<eqname>
+#   - tab(eq!<nom eq>!current!if) <ifname>
+# Remplit
+#   - tab(eq!<nom eq>!if!<ifname>!link!voice) <vlanid>
+#
+# Historique
+#   2010/09/21 : pda/jean : conception
+#
+
+proc cisco-parse-voice-vlan {active line tab idx} {
+    upvar $tab t
+
+    set error 0
+
+    set ifname $t($idx!current!if)
+    set vlanid [lindex $line 0]
+    if {[regexp {^[0-9]+$} $vlanid]} then {
+	set error [cisco-set-ifattr t $idx!if!$ifname voice $vlanid]
+    }
     return $error
 }
 
@@ -1163,6 +1190,7 @@ proc cisco-parse-auth {active line tab idx} {
 #   2004/06/09 : pda/jean : conception
 #   2006/05/23 : pda/jean : ajout des points de collecte (stat)
 #   2010/06/16 : pda/jean : ajout du native vlan
+#   2010/09/21 : pda/jean : ajout du voice vlan
 #
 
 proc cisco-set-ifattr {tab idx attr val} {
@@ -1231,6 +1259,9 @@ proc cisco-set-ifattr {tab idx attr val} {
 	}
 	native {
 	    set t($idx!link!native) $val
+	}
+	voice {
+	    set t($idx!link!voice) $val
 	}
 	default {
 	    cisco-warning "Incorrect attribute type for $idx (internal error)"
@@ -1305,6 +1336,7 @@ proc cisco-sanitize {model eq tab} {
 #   2008/06/27 : pda/jean  : ajout traitement des gigastacks
 #   2009/01/07 : pda       : retrait model, qui est dans le tableau
 #   2010/09/07 : pda/jean  : ajout interfaces disabled
+#   2010/09/21 : pda/jean  : ajout voice vlan
 #
 
 proc cisco-post-process {type fdout eq tab} {
@@ -1337,6 +1369,51 @@ proc cisco-post-process {type fdout eq tab} {
 	set l "-"
     }
     puts $fdout "eq $eq type $type model $model snmp $c location $l"
+
+    #
+    # Convertir tous les ports marqués "voice vlan" en ports
+    # trunk avec les bons vlans autorisés
+    #
+
+    foreach idx [array names t "*!link!voice"] {
+	regsub {!link!voice} $idx {} idx
+	if {[regexp {.*!if!([^!]+)} $idx bidon iface]} then {
+	    #
+	    # Passer l'interface en mode trunk, l'ancien vlan en
+	    # mode natif, et les deux vlans (l'ancien et le voice)
+	    # deviennent "allowed"
+	    #
+	    set native [lindex $t($idx!link!vlans) 0]
+	    unset t($idx!link!vlans)
+
+	    set voice $t($idx!link!voice)
+
+	    set t($idx!link!type) "trunk"
+
+	    cisco-set-ifattr t $idx native $native
+
+	    if {[info exists t($idx!link!allowedvlans)]} then {
+		foreach av $t($idx!link!allowedvlans) {
+		    set a1 [lindex $av 0]
+		    set a2 [lindex $av 1]
+
+		    if {$voice >= $a1 && $voice <= $a2} then {
+			set voice -1
+		    }
+		    if {$native >= $a1 && $native <= $a2} then {
+			set native -1
+		    }
+		}
+	    }
+
+	    if {$voice != -1} then {
+		lappend t($idx!link!allowedvlans) [list $voice $voice]
+	    }
+	    if {$native != -1} then {
+		lappend t($idx!link!allowedvlans) [list $native $native]
+	    }
+	}
+    }
 
     #
     # Sortir tous les vlans locaux
