@@ -48,7 +48,7 @@ Pour ajouter un attribut simple (mono-valué) à un objet existant :
 
 	si le nom de l'attribut textuel est nouveau, ne pas oublier
 	de l'ajouter dans la fonction parse_attr(), avec le nombre
-	de paramètres associées.
+	de paramètres associés.
 
     textwrite.c
 	ajouter l'affichage de l'attribut au bon endroit.
