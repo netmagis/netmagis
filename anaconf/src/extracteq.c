@@ -180,14 +180,14 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]* eq\n", progname) ;
+    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]* eq [iface]\n", progname) ;
     exit (1) ;
 }
 
 int main (int argc, char *argv [])
 {
     struct node *n ;
-    char *eqname, *prog ;
+    char *eqname, *prog, *iface ;
     struct eq *eq ;
     int c, err ;
     int selected ;
@@ -226,10 +226,19 @@ int main (int argc, char *argv [])
     argc -= optind ;
     argv += optind ;
 
-    if (argc != 1)
-	usage (prog) ;
-
-    eqname = argv [0] ;
+    switch (argc)   
+    {
+	case 1 :
+	    eqname = argv [0] ;
+	    iface = NULL ;
+	    break ;
+	case 2 :
+	    eqname = argv [0] ;
+	    iface = argv [1] ;
+	    break ;
+	default :
+	    usage (prog) ;
+    }
 
     /*
      * Read the graph
@@ -271,11 +280,13 @@ int main (int argc, char *argv [])
      * Output the final result
      */
 
-    output_eq (stdout, eq) ;
+    if (iface == NULL) 
+	output_eq (stdout, eq) ;
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
 	if (n->eq == eq && n->nodetype == NT_L1 && MK_ISSELECTED (n))
-	    output_iface (stdout, n) ;
+	    if (iface != NULL && strcmp (iface, n->u.l1.ifname) == 0)
+		output_iface (stdout, n) ;
 
     sel_end () ;
     exit (0) ;
