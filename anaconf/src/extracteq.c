@@ -285,7 +285,7 @@ int main (int argc, char *argv [])
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
 	if (n->eq == eq && n->nodetype == NT_L1 && MK_ISSELECTED (n))
-	    if (iface != NULL && strcmp (iface, n->u.l1.ifname) == 0)
+	    if (iface == NULL || strcmp (iface, n->u.l1.ifname) == 0)
 		output_iface (stdout, n) ;
 
     sel_end () ;
