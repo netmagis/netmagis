@@ -14,7 +14,8 @@
 #      Un fichier est généré par modification effectuée (ex: chgt
 #      d'affectation d'un port dans un vlan) avec une ligne :
 #
-#  	eq <eq> iface <iface> [vlan <vlanid>] [desc <desc en hexa>]
+#  	eq <eq> iface <iface> [desc <desc en hexa>] 
+#               [ether <vlanid>] [voice <vlanid>]
 #
 #      Le fichier est mis dans un spool (i.e. répertoire) des modifications
 #      à propager. Le nom du fichier est au format nomeq.YYYYmmddHHMMSS
@@ -92,61 +93,166 @@ set conf(spooleffectues) "$conf(spooldir)/effectues"
 set conf(fping) "%FPING% %s"
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
+set conf(extracteq)	{%TOPODIR%/bin/extracteq %1$s %2$s < %GRAPH%}
 
 #
 # Commandes de modification à envoyer pour chaque équipement
 #
+# Ces quatre actions doivent être paramétrées en fonction du
+# type d'équipement. Pour cela, le tableau confcmd contient
+# les commandes à passer sur chaque type d'équipement.
+#
+# La clef est de la forme :
+#   type:modele:action
+# Le modèle peut être "*"
+# Exemple :
+#   confcmd(cisco:3750:ifaccess) ...
+#   confcmd(cisco:*:ifaccess) ...
+#
+# La valeur est une liste de lignes à passer sur l'équipement.
+# Ces lignes sont paramétrés.
+#
+# Les différentes actions sont :
+#   
+#   exec
+#	commande shell a appeler pour envoyer des commandes à exécuter sur
+#	l'équipement. Les autres actions sont exécutées sur l'équipement
+#	lui-même.
+#   prologue
+#	entrer en mode configuration sur l'équipement
+#   ifreset
+#	remettre l'interface dans un mode connu (la plupart du temps par
+#	suppression de tous les vlans sur l'interface).
+#	Paramètres :
+#	    %1$ : nom de l'interface
+#   resetvlans
+#	dans le cas où on ne peut pas remettre l'interface dans un mode
+#	connu (par exemple sur HP), commande à passer pour tous les vlans
+#	pour retirer l'interface de ces vlans.
+#	Paramètres :
+#	    %1$ : nom de l'interface
+#	    %2$ : numéro de vlan
+#   ifaccess
+#	positionner un vlan d'accès donné sur une interface.
+#	Paramètres :
+#	    %1$ : nom de l'interface
+#	    %2$ : numéro de vlan
+#   ifvoice
+#	positionner un voice vlan donné sur une interface.
+#	Paramètres :
+#	    %1$ : nom de l'interface
+#	    %2$ : numéro de vlan
+#   ifdesc
+#	positionner la description sur une interface.
+#	Paramètres :
+#	    %1$ : nom de l'interface
+#	    %2$ : description
+#   epilogue
+#	quitter le mode de configuration et enregistrer la configuration saisie
+#
+#
 
 array set confcmd {
     cisco:*:exec /usr/local/libexec/rancid/clogin
+
     cisco:*:prologue {
-	{configure terminal}
+	  {configure terminal}
     }
-    cisco:*:configifvlan {
+    cisco:*:ifreset {
+	  {interface %1$s}
+	  {no switchport}
+	  {switchport}
+    }
+    cisco:*:ifdisable {
 	{interface %1$s}
-	{switchport access vlan %2$s}
-	{exit}
+	{shutdown}
     }
-    cisco:*:configifdesc {
+    cisco:*:ifenable {
 	{interface %1$s}
-	{description "%2$s}
-	{exit}
+	{no shutdown}
     }
+    cisco:*:ifaccess {
+	      {interface %1$s}
+	      {switchport access vlan %2$s}
+	  }
+    cisco:*:ifvoice {
+	      {interface %1$s}
+	      {switchport voice vlan %2$s}
+	  }
+    cisco:*:ifdesc {
+	      {interface %1$s}
+	      {description %2$s}
+	  }
     cisco:*:epilogue {
-	{exit}
-	{write memory}
-    }
+	      {line con 0}
+	      {exit}
+	      {exit}
+	      {write memory}
+	  }
 
     juniper:*:exec /usr/local/libexec/rancid/jlogin
+
     juniper:*:prologue {
 	{configure}
     }
-    juniper:*:configifvlan {
-	{top set interface %1$s unit 0 family ethernet-switching vlan members %2$s}
+    juniper:*:ifreset {
+	{delete interfaces %1$s unit 0 family ethernet-switching}
+	{delete ethernet-switching-options voip interface %1$s}
     }
-    juniper:*:configifdesc {
-	{top set interface %1$s description "%2$s"}
+    juniper:*:ifdisable {
+	{set interfaces %1$s disable}
+    }
+    juniper:*:ifenable {
+	{delete interfaces %1$s disable}
+    }
+    juniper:*:ifaccess {
+	{set interfaces %1$s unit 0 family ethernet-switching port-mode access}
+	{set interfaces %1$s unit 0 family ethernet-switching vlan members %2$s}
+    }
+    juniper:*:ifdesc {
+	{set interfaces %1$s description "%2$s"}
+    }
+    juniper:*:ifvoice {
+	{set ethernet-switching-options voip interface %1$s vlan %2$s}
     }
     juniper:*:epilogue {
-	{exit configuration}
 	{commit}
+	{exit configuration}
     }
 
     hp:*:exec /usr/local/libexec/rancid/hlogin
     hp:*:prologue {
 	{configure terminal}
     }
-    hp:*:configifvlan {
+    hp:*:resetvlans {
+	{vlan %2$s}
+	{no tagged %1$s}
+	{no untagged %1$s}
+    }
+
+    hp:*:ifenable {
+	{interface %1$s}
+	{enable}
+    }
+    hp:*:ifdisable {
+	{interface %1$s}
+	{disable}
+    }
+    hp:*:ifaccess {
 	{vlan %2$s}
 	{untagged %1$s}
-	{exit}
     }
-    hp:*:configifdesc {
+    hp:*:ifvoice {
+	{vlan %2$s}
+	{tagged %1$s}
+    }
+    hp:*:ifdesc {
 	{interface %1$s}
 	{name "%2$s"}
-	{exit}
     }
     hp:*:epilogue {
+	{vlan 1}
+	{exit}
 	{exit}
 	{write memory}
     }
@@ -213,7 +319,7 @@ proc propager {eq type model lfile} {
 		set line [read $fd]
 		close $fd
 
-		set msg [envoyer-cmd $eq $type $model $line]
+		set msg [envoyer-modif $eq $type $model $line]
 		if {! [string equal $msg ""]} then {
 		    puts stderr "envoi de la modification impossible ($msg)"
 		    exit 1
@@ -230,14 +336,13 @@ proc propager {eq type model lfile} {
 }
 
 #
-# Envoi une commande a un equipement
+# Envoi une modification a un equipement
 #
 # Entrée :
 #  eq : nom de l'équipement
 #  type : type d'équipement (ex: cisco, juniper etc.)
 #  model : modèle d'équipement (ex: 3750, M20 etc.)
-#  line : modification au format 
-#	  	eq <eq> iface <iface> [vlan <vlanid>] [desc <desc en hexa>]
+#  line : modification au format spécifié au début de ce fichier
 # Sortie :
 #   valeur de retour : message d'erreur ou chaîne vide si ok
 #
@@ -245,7 +350,7 @@ proc propager {eq type model lfile} {
 #  2010/02/16 : pda/jean : création
 #
 
-proc envoyer-cmd {eq type model line} {
+proc envoyer-modif {eq type model line} {
     global conf 
 
     set msg ""
@@ -255,9 +360,10 @@ proc envoyer-cmd {eq type model line} {
     # Vérification de la syntaxe
     #
 
-    if {[info exists t(eq)] &&
-	    [info exists t(iface)] &&
-	    ([info exists t(vlan)] || [info exists t(desc)])} then {
+    if {[info exists t(eq)] && [info exists t(iface)] &&
+	    (	[info exists t(ether)] ||
+		[info exists t(voice)] ||
+		[info exists t(desc)])} then {
 	
 	#
 	# Constituer la liste de commandes à envoyer
@@ -269,17 +375,57 @@ proc envoyer-cmd {eq type model line} {
 
 	set lcmd [concat $lcmd $prologue]
 
-	if {[info exists t(vlan)]} then {
-
-	    foreach fmt [fetch-conf $type $model "configifvlan"] {
-		lappend lcmd [format $fmt $t(iface) $t(vlan)]
-	    }
-	}
 	if {[info exists t(desc)]} then {
-	    foreach fmt [fetch-conf $type $model "configifdesc"] {
-		lappend lcmd [format $fmt $t(iface) [binary format "H*" $t(desc)]
+	    foreach fmt [fetch-conf $type $model "ifdesc"] {
+		lappend lcmd [format $fmt $t(iface) [binary format "H*" $t(desc)]]
 	    }
 	}
+
+	#
+	# On remet l'interface dans un état connu dans tous les cas
+	#
+
+	set lcmd [concat $lcmd [resetif $eq $type $model $t(iface)]]
+
+	# 
+	# En fonction de ce qui se trouve dans le fichier spool, on 
+	# execute des commandes sur l'équipement. 
+	# 
+	#   Ether	    Voice	Opération
+	#   -----------------------------------------------------
+	#   Non		    Non		Désactiver l'interface
+	#   Non		    Oui		Voice vlan uniquement
+	#   Oui		    Non		Vlan d'accès uniquement
+	#   Oui		    Oui		Vlan d'accès + Voice Vlan
+	#
+
+	set ether [info exists t(ether)]
+	set voice [info exists t(voice)]
+	
+	switch -- "$ether$voice" {
+	    00	{
+		# Rien
+	    }
+	    01	{
+		foreach fmt [fetch-conf $type $model "ifvoice"] {
+		    lappend lcmd [format $fmt $t(iface) $t(voice)]
+		}
+	    }
+	    10	{
+		foreach fmt [fetch-conf $type $model "ifaccess"] {
+		    lappend lcmd [format $fmt $t(iface) $t(ether)]
+		}
+	    }
+	    11  {
+		foreach fmt [fetch-conf $type $model "ifvoice"] {
+		    lappend lcmd [format $fmt $t(iface) $t(voice)]
+		}
+		foreach fmt [fetch-conf $type $model "ifaccess"] {
+		    lappend lcmd [format $fmt $t(iface) $t(ether)]
+		}
+	    }
+	}
+
 	set epilogue [fetch-conf $type $model "epilogue"]
 	set lcmd [concat $lcmd $epilogue]
 
@@ -290,10 +436,92 @@ proc envoyer-cmd {eq type model line} {
 	set msg [execute-cmd $eq $type $model $lcmd]
 	
     } else {
-	set msg "bad format for $file"
+	set msg "bad format for '$line'"
     }
 
     return $msg
+}
+
+#
+# Genere une liste de commande pour remettre une interface
+# dans un état connu et l'activer
+#
+# Entrée :
+#  eq : nom de l'équipement
+#  type : type d'équipement (ex: cisco, juniper etc.)
+#  model : modèle d'équipement (ex: 3750, M20 etc.)
+#  iface : nom de l'interface
+#
+# Sortie
+#  valeur de retour : liste des commandes à passer sur l'équipement
+#
+# Historique : 
+#  2010/09/23 : pda/jean : création
+#
+
+proc resetif {eq type model iface} {
+
+    #
+    # Cherche la sequence de commande pour remettre l'interface
+    # dans un mode connu
+    #
+
+    set lcmd {}
+    foreach fmt [fetch-conf $type $model "ifreset"] {
+	lappend lcmd [format $fmt $iface]
+    }
+
+    set l2 [fetch-conf $type $model "resetvlans"]
+    if {[llength $l2]>0} then {
+	foreach vlan [get-vlans $eq $iface] {
+	    foreach fmt $l2 {
+		lappend lcmd [format $fmt $iface $vlan]
+	    }
+	}
+    }
+
+    #
+    # Active l'interface
+    #
+
+    foreach fmt [fetch-conf $type $model "ifenable"] {
+	lappend lcmd [format $fmt $iface]
+    }
+    
+    return $lcmd
+}
+
+#
+# Liste les vlans pour un équipement et une interface donnée
+#
+# Entrée :
+#  eq : nom de l'équipement
+#  iface : nom de l'interface
+# Sortie
+#  valeur de retour : liste des vlans trouvés
+#
+
+proc get-vlans {eq iface} {
+    global conf
+
+    set lvlans {}
+
+    # supprimer le nom de domaine pour ne garder que le nom court
+    regsub {\..*} $eq "" eqcourt
+
+    set cmd [format $conf(extracteq) $eqcourt $iface]
+    if {! [catch {set fd [open "|$cmd" "r"]} msg]} then {
+	while {[gets $fd ligne] > -1} {
+	    foreach vlan [lreplace $ligne 0 7] {
+		lappend lvlans [lindex $vlan 0]
+	    }
+	}
+	close $fd
+    } else {
+	puts stderr "extracteq : $msg"
+    }
+
+    return $lvlans
 }
 
 #
@@ -341,9 +569,9 @@ proc execute-cmd {eq type model lcmd} {
 # Entrée :
 #  type : type d'équipement (ex: cisco, juniper etc.)
 #  model : modèle d'équipement (ex: 3750, M20 etc.)
-#  context : prologue, configifvlan, configifdesc, epilogue
+#  context : prologue, ifaccess, ifdesc, epilogue
 # Sortie
-#  valeur de retour : commande à exécuter
+#  valeur de retour : commande à exécuter ou liste vide si non trouvé
 #
 # Historique : 
 #  2010/02/16 : pda/jean : création
@@ -352,14 +580,11 @@ proc execute-cmd {eq type model lcmd} {
 proc fetch-conf {type model context} {
     global confcmd
     
-    set r ""
+    set r {}
     if {[info exists confcmd($type:*:$context)]} then {
 	set r $confcmd($type:*:$context)
     } elseif {[info exists confcmd($type:$model:$context)]} then {
 	set r $confcmd($type:$model:$context)
-    } else {
-	puts stderr "type de configuration non trouvé : $type:$model:$context"
-	exit 1
     }
 
     return $r
