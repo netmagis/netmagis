@@ -576,6 +576,17 @@ proc juniper-parse-if-unit {conf tab idx} {
     set error [juniper-parse-list kwtab $unitparm t "$idx"]
     unset t(current!unitnb)
 
+    #
+    # Cas particulier : s'il n'y a aucun network, l'interface
+    # est considérée comme participant à un JunOS switch.
+    # Ce cas est nécessaire pour gérer la désactivation de
+    # port via l'interface Web.
+    #
+
+    if {! [info exists t($idx!vlan!$unitnb!networks)]} then {
+	set t($idx!l2switch) on
+    }
+
     return $error
 }
 
