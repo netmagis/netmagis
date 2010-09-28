@@ -21,6 +21,22 @@
 #	- commentaire : informations complémentaires
 #	- respnom : nom et prénom du responsable
 #	- respmel : adresse électronique du responsable
+#   - recherche d'une plage consécutive
+#	- action : "ajout-multi"
+#	- tri : tri par nbadr ou adr
+#	- plage : idreseau de la plage sélectionnée
+#	- nbadr : nb d'adresses souhaitées
+#   - ajout en masse (dans une série trouvée par la recherche de plage)
+#	- action : "ajout-serie"
+#	- adr : adresse à inscrire (+1 à chaque tour)
+#	- nbadr : nb d'adresses souhaitées (-1 à chaque tour)
+#	- domaine : domaine dans lequel la machine doit être ajoutée (optionnel)
+#	- iddhcpprofil : l'id du profil DHCP, ou 0 (optionnel)
+#	- hinfo : type de machine (texte) (optionnel)
+#	- droitsmtp : inexistant ou non vide (optionnel)
+#	- commentaire : informations complémentaires (optionnel)
+#	- respnom : nom et prénom du responsable (optionnel)
+#	- respmel : adresse électronique du responsable (optionnel)
 #   - ajout d'un alias
 #	- action : "ajout-alias"
 #	- nom : nom de l'alias à ajouter
@@ -46,6 +62,7 @@
 #   2008/02/13 : pda/jean : le responsable est le correspondant si pas précisé
 #   2008/07/23 : pda/jean : ajout du droit d'émission SMTP
 #   2008/07/29 : pda      : utilisation presenter-rr
+#   2010/01/01 : pda      : codage ajout-multi
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -65,6 +82,7 @@ set conf(libdns)	$conf(lib)/libdns.tcl
 set conf(page-ajout-machine)	$conf(lib)/traiteajout-machine.html
 set conf(page-ajout-existe)	$conf(lib)/traiteajout-existe.html
 set conf(page-ajout-smtp)	$conf(lib)/traiteajout-smtp.html
+set conf(page-ajout-multi)	$conf(lib)/traiteajout-multi.html
 set conf(page-ajout-alias)	$conf(lib)/traiteajout-alias.html
 set conf(err)			$conf(lib)/erreur.html
 
@@ -76,6 +94,9 @@ set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
+
+# nb max d'adresses IP pour une recherche d'adresses IP consécutives
+set conf(maxip)		1024
 
 # le champ discriminant pour la suite
 set conf(form)		{
@@ -102,6 +123,57 @@ set conf(form-ajout-alias)	{
 	{domaine	1 1}
 	{nomref		1 1}
 	{domaineref	1 1}
+}
+
+set conf(form-ajout-multi)	{
+	{tri		0 1}
+	{plage		1 1}
+	{nbadr		1 1}
+}
+
+set conf(form-ajout-serie)	{
+	{adr		1 1}
+	{nbadr		1 1}
+	{domaine	0 1}
+	{iddhcpprofil	0 1}
+	{droitsmtp	0 1}
+	{hinfo		0 1}
+	{commentaire	0 1}
+	{respnom	0 1}
+	{respmel	0 1}
+}
+
+set conf(tableau-multi) {
+    global {
+	chars {12 normal}
+	align {left}
+	botbar {yes}
+	columns {40 20 40}
+    }
+    pattern Entete {
+	vbar {yes}
+	column {
+	    format {raw}
+	}
+	vbar {yes}
+	column {
+	    format {raw}
+	}
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+    pattern Normal {
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column {
+	    format {raw}
+	}
+	vbar {yes}
+    }
 }
 
 #
@@ -445,6 +517,165 @@ proc traiteajout-machine {dbfd tc ft} {
     return 0
 }
 
+
+##############################################################################
+# Recherche d'un espace consécutif
+##############################################################################
+
+# Historique
+#   2010/01/01 : pda      : conception
+#
+proc traiteajout-multi {dbfd tc ft} {
+    global conf
+    upvar $ft ftab
+    upvar $tc tabcor
+
+    set login $tabcor(login)
+    set idcor $tabcor(idcor)
+    set idgrp $tabcor(idgrp)
+
+    #
+    # Valider les champs du formulaire
+    #
+
+    set tri   [string trim [lindex $ftab(tri) 0]]
+    set plage [string trim [lindex $ftab(plage) 0]]
+    set nbadr [string trim [lindex $ftab(nbadr) 0]]
+
+    if {! [regexp {^[0-9]+$} $nbadr] || $nbadr < 1} then {
+       ::webapp::error-exit $conf(err) "Mauvais nombre d'adresses ($nbadr)"
+    }
+
+    set lcidr [valide-idreseau $dbfd $plage $idgrp "consult" {4} msg]
+    if {[llength $lcidr] != 1} then {
+       ::webapp::error-exit $conf(err) $msg
+    }
+    set cidr [lindex $lcidr 0]
+
+    switch -- $tri {
+	nbadr {
+	    set order "ORDER BY n ASC, a ASC"
+	}
+	adr -
+	default {
+	    set order "ORDER BY a ASC, n ASC"
+	}
+    }
+
+    #
+    # Recherche les plages libres
+    #
+
+    set sql "SELECT *
+		FROM unusedip ('$cidr', $conf(maxip), $idgrp)
+		WHERE n >= $nbadr
+		$order"
+    set lranges {}
+    pg_select $dbfd $sql tab {
+	lappend lranges [list $tab(a) $tab(n)]
+    }
+
+    if {[llength $lranges] == 0} then {
+       ::webapp::error-exit $conf(err) "Aucune plage consécutive de $nbadr adresse(s) IPv4"
+    }
+
+    #
+    # Mise en forme
+    #
+
+    set donnees {}
+
+    set burl "%HOMEURL%/bin/traiteajout?action=ajout-multi&plage=$plage&nbadr=$nbadr"
+
+    set c1 [::webapp::helem "a" "Adresse IP" "href" "$burl&tri=adr"]
+    set c2 [::webapp::helem "a" "Taille" "href" "$burl&tri=nbadr"]
+    set c3 ""
+
+    lappend donnees [list Entete $c1 $c2 $c3]
+
+    set hid1 [::webapp::form-hidden "action" "ajout-serie"]
+
+    set liste ""
+    foreach l $lranges {
+	set a [lindex $l 0]
+	set n [lindex $l 1]
+
+	set hid2 [::webapp::form-hidden "adr" $a]
+	set hid3 [::webapp::form-hidden "nbadr" $n]
+
+	# un peu de cosmétique pour que la signification du
+	# bouton de choix soit clairement explicitée
+	if {$nbadr == $n} then {
+	    if {$nbadr == 1} then {
+		set msg "Choisir cette adresse"
+	    } else {
+		set msg "Choisir ces $n adresses"
+	    }
+	} elseif {$nbadr < $n} then {
+	    if {$nbadr == 1} then {
+		set msg "Choisir la première adresse"
+	    } else {
+		set msg "Choisir les $nbadr premières adresses"
+	    }
+	}
+	set hid4 "<input type=\"submit\" value=\"$msg\">"
+
+	set c [::webapp::helem "form" "$hid1$hid2$hid3$hid4" \
+				"method" "post" \
+				"action" "%HOMEURL%/bin/traiteajout" \
+		    ]
+
+	lappend donnees [list Normal $a $n $c]
+    }
+
+    set liste [::arrgen::output "html" $conf(tableau-multi) $donnees]
+
+    #
+    # Sortie de la page
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page-ajout-multi) \
+					[list \
+					    [list %LISTE% $liste] \
+					] \
+				    ]
+    return 0
+}
+
+##############################################################################
+# Ajout de machines après une recherche consécutive
+##############################################################################
+
+# Historique
+#   2010/01/03 : pda      : début
+#
+proc traiteajout-serie {dbfd tc ft} {
+    global conf
+    upvar $ft ftab
+    upvar $tc tabcor
+
+    set login $tabcor(login)
+    set idcor $tabcor(idcor)
+    set idgrp $tabcor(idgrp)
+
+    #
+    # Valider les champs du formulaire
+    #
+
+    set adr   [string trim [lindex $ftab(adr) 0]]
+    set nbadr [string trim [lindex $ftab(nbadr) 0]]
+
+    #
+    # Sortie de la page
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(err) \
+					[list \
+					    [list %MESSAGE% "pas encore codé"] \
+					] \
+				    ]
+    return 0
+}
 
 ##############################################################################
 # Ajout d'un alias

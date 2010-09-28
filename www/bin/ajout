@@ -16,6 +16,7 @@
 #   2003/05/13 : pda/jean : utilisation de la base d'authentification
 #   2005/04/08 : pda/jean : ajout des profils DHCP
 #   2008/07/23 : pda/jean : ajout du droit d'émission SMTP
+#   2009/12/31 : pda      : ajout de l'ajout multiple
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -106,6 +107,18 @@ proc main {} {
     set dhcpprofilmenu    [lindex $dhcpprofil 1]
 
     #
+    # Récupérer les plages sous forme d'une liste déroulante
+    #
+
+    set lres [liste-reseaux $dbfd $tabcor(idgrp) "consult"]
+    set taille [llength $lres]
+    if {$taille == 0} then {
+	set menuplage "Aucun réseau sélectionnable"
+    } else {
+	set menuplage [::webapp::form-menu "plage" 1 0 $lres {}]
+    }
+
+    #
     # Sortie du résultat
     #
 
@@ -118,6 +131,7 @@ proc main {} {
 					    [list %DROITSMTPMENU% $droitsmtpmenu] \
 					    [list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
 					    [list %DHCPPROFILMENU% $dhcpprofilmenu] \
+					    [list %MENUPLAGE% $menuplage] \
 					] \
 				]
 

@@ -93,8 +93,9 @@ dirs:
 
 autres:
 	find . \( -type f -o -type l \) -print | \
-	    grep -v '.htgt$$' | \
-	    grep -v '.gif$$' | \
+	    grep -v '/\.svn/' | \
+	    grep -v '\.gif$$' | \
+	    grep -v '\.gif$$' | \
 	    grep -v Makefile | \
 	    while read f ; do \
 		echo $$f ; \
@@ -113,6 +114,7 @@ mcd-dns.gif: mcd-dns.fig
 
 html:
 	find . -name "*.htgt" -print | \
+	    grep -v '/\.svn/' | \
 	    while read f ; do \
 		h=`echo $$f | sed 's/.htgt$$//'` ; \
 		echo $$f ; \

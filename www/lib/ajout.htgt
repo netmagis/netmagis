@@ -130,6 +130,47 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
+	    } {\gras {Recherche de plusieurs adresses IPv4 disponibles}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-multi">
+		    <INPUT TYPE="HIDDEN" NAME="tri" VALUE="adr">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Réseau IPv4 à chercher}
+			    \casetableau {} {
+				%MENUPLAGE%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Nombre d'adresses consécutives}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nbadr" SIZE="30" VALUE="1">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Rechercher">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
 	    } {\gras {Ajout d'un alias}}
 	}
 	\lignetableau {
