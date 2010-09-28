@@ -385,7 +385,6 @@ proc juniper-parse-interfaces {conf tab idx} {
 # Historique :
 #   2009/12/21 : pda/jean : debut analyse junos switch
 #   2010/03/24 : pda      : interfaces désactivées
-#   2010/09/28 : pda      : vérification de l'existence de la description
 #
 
 proc juniper-parse-if {conf tab idx} {
@@ -422,21 +421,6 @@ proc juniper-parse-if {conf tab idx} {
     }
 
     set error [juniper-parse-list kwtab $ifparm t $idxin]
-
-    # vérification de l'existence de la description
-    # pour éviter une sale erreur à la fin
-    if {! [info exists t(in-range)]} then {
-	if {! [info exists t($idx!if!$ifname!link!name)]} then {
-	    juniper-warning "$idx: no description for interface '$ifname'"
-	    set t($idx!if!$ifname!link!name) "X"
-	}
-	if {! [info exists t($idx!if!$ifname!link!stat)]} then {
-	    set t($idx!if!$ifname!link!stat) ""
-	}
-	if {! [info exists t($idx!if!$ifname!link!desc)]} then {
-	    set t($idx!if!$ifname!link!desc) ""
-	}
-    }
 
     # ajout de l'interface dans la liste des interfaces
     # activées ou désactivées
