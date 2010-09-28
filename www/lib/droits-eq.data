@@ -79,7 +79,7 @@ medecine		^((hemato-ce1)|(forum-med|med-bat3|chu|poincare|med-bat2|ophtalmo|hygi
 misha			^misha-
 neurochem		^$
 obs			^obs-
-pege			^sceco-
+pege			^(sceco-|iecs-|pege-)
 pharma			^pharma-
 pharma-umr7034		^$
 pharma-umr7514		^$
