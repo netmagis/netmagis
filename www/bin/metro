@@ -168,7 +168,7 @@ proc main {} {
     # Remettre l'id en forme
     #
 
-    set id [::webapp::post-string $id]
+    set id [::webapp::html-string $id]
 
     #
     # Sortie de la page
