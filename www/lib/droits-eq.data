@@ -70,6 +70,7 @@ isu			^isu-
 iufm			(^(iufm-|guebwiller-ce|selestat-ce|colmar-ce|strasbourg-ce)|-c[ci].$)
 iutlptbiasioa		^(iut-nord-|iut-poe|iut-ap)
 iutsud			^iut-sud-
+pole-sud-informatique 	^iut-sud-
 kastler			^$
 lablang			^$
 labo-u			^$
