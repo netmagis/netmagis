@@ -95,6 +95,7 @@ autres:
 	find . \( -type f -o -type l \) -print | \
 	    grep -v '.htgt$$' | \
 	    grep -v '.gif$$' | \
+	    grep -v '.svn' | \
 	    grep -v Makefile | \
 	    while read f ; do \
 		echo $$f ; \
