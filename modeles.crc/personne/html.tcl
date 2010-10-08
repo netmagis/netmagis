@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.6 2008-02-26 17:44:53 pda Exp $
+# $Id$
 #
 # Modèle "page de présentation d'une personne"
 #

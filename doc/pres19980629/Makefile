@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.2 2007-03-13 21:07:44 pda Exp $
+# $Id$
 
 HTML2PS = html2ps
 HTML2PSCONF = html2ps.conf

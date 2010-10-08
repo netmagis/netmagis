@@ -1,5 +1,5 @@
 /*
- * $Id: base.c,v 1.3 2008-02-11 14:50:53 pda Exp $
+ * $Id$
  *
  * Copyright (c) 1998-1999
  *	Pierre David

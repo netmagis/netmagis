@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.2 2007-03-13 21:08:10 pda Exp $
+# $Id$
 #
 # Modèle "transp" (transparents)
 #

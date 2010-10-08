@@ -1,4 +1,4 @@
-# $Id: bandeau.tcl,v 1.2 2007-03-13 21:08:06 pda Exp $
+# $Id$
 
 proc xxx_elementtableau {bgcoul titre texte} {
     #

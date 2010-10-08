@@ -1,5 +1,5 @@
 #
-# $Id: bandeau.tcl,v 1.2 2007-03-13 21:08:15 pda Exp $
+# $Id$
 #
 # Procédures bidon pour le bandeau
 # (le bandeau n'est pas affiché dans les documents papier)

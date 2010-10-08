@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.2 2007-03-13 21:08:19 pda Exp $
+# $Id$
 
 CC		= gcc -Wall
 DEBUG		= -g

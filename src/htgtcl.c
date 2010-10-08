@@ -1,5 +1,5 @@
 /*
- * $Id: htgtcl.c,v 1.2 2007-03-13 21:08:19 pda Exp $
+ * $Id$
  *
  * Copyright (c) 1998
  *	Pierre David

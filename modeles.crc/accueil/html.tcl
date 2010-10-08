@@ -1,5 +1,5 @@
 #
-# $Id: html.tcl,v 1.8 2008-03-04 08:51:25 pda Exp $
+# $Id$
 #
 # Modèle "page d'accueil"
 #

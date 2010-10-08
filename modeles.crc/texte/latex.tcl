@@ -1,5 +1,5 @@
 #
-# $Id: latex.tcl,v 1.3 2008-02-18 16:28:37 pda Exp $
+# $Id$
 #
 # Modèle "texte"
 #

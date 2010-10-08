@@ -1,5 +1,5 @@
 {
-\* $Id: transp.htgt,v 1.2 2007-03-13 21:07:44 pda Exp $
+\* $Id$
 \modele {transp}
 
 \set {template} {preshtg%2.2d.html}

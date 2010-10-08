@@ -1,5 +1,5 @@
 #
-# $Id: base.tcl,v 1.2 2008-03-04 10:46:58 pda Exp $
+# $Id$
 #
 # Modèle HTG de base pour la génération de pages HTML
 # Doit être inclus en premier par le modèle
