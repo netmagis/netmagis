@@ -176,8 +176,17 @@ CREATE OR REPLACE FUNCTION markcidr (reseau CIDR, lim INTEGER, grp INTEGER)
 	    RAISE EXCEPTION 'Too many addresses' ;
 	END IF ;
 
-	DROP TABLE IF EXISTS allip ;
-	CREATE TEMP TABLE allip (
+	-- All this exception machinery is here since we can't use :
+	--    DROP TABLE IF EXISTS allip ;
+	-- It raises a notice exception, which prevents
+	-- script "ajout" to function
+	BEGIN
+	    DROP TABLE allip ;
+	EXCEPTION
+	    WHEN OTHERS THEN -- nothing
+	END ;
+
+	CREATE TEMPORARY TABLE allip (
 	    adr INET,
 	    avail INTEGER		-- 1 : avail, 2 : busy, 0 : unavailable
 	) ;
