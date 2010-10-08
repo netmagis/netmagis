@@ -70,7 +70,7 @@
 
     \titre {1} {Liste des %TITRE%}
 
-    Adresses %QUOI% au %DATE% : %NBADR%
+    Liste au %DATE%.
 
     %TABLEAU%
 }
