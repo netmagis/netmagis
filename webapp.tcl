@@ -1781,8 +1781,7 @@ proc ::webapp::random {} {
 #   2002/05/20 : pda : conception
 #   2002/06/21 : pda : ajout de types
 #   2002/10/24 : pda : ajout de la sortie csv
-#   2008/02/27 : jean/zamboni : gestion des extensions 
-#				nom de fichiers
+#   2008/02/27 : jean/zamboni : gestion des extensions de nom de fichiers
 #
 
 proc ::webapp::send {type page {fichier "output"}} {
