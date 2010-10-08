@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.3 2007-11-29 15:27:45 pda Exp $
+# $Id$
 
 LISTE =	\
 	webapp.tcl \

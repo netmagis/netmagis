@@ -1,5 +1,5 @@
 #
-# $Id: webapp.tcl,v 1.16 2009-02-23 13:02:04 pda Exp $
+# $Id$
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #

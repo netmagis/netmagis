@@ -1,5 +1,5 @@
 #
-# $Id: auth.tcl,v 1.5 2008-03-25 16:41:07 pda Exp $
+# $Id$
 #
 # Librairie de fonctions TCL d'authentification utilisables dans les scripts CGI
 #

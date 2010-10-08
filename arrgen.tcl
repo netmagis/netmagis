@@ -1,5 +1,5 @@
 #
-# $Id: arrgen.tcl,v 1.2 2007-02-27 13:04:48 pda Exp $
+# $Id$
 #
 # Librairie de fonctions TCL pour la génération de tableaux
 #

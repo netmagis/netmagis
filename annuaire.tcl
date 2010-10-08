@@ -1,5 +1,5 @@
 #
-# $Id: annuaire.tcl,v 1.4 2007-08-17 10:18:39 zamboni Exp $
+# $Id$
 #  
 # Librairie de fonctions TCL pour faciliter l'accès à l'annuaire LDAP
 #
