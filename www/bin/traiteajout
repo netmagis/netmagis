@@ -21,6 +21,7 @@
 #	- commentaire : informations complémentaires
 #	- respnom : nom et prénom du responsable
 #	- respmel : adresse électronique du responsable
+#	- next : suite du parcours (en cas d'ajout depuis la carte)
 #   - recherche d'une plage consécutive
 #	- action : "ajout-multi"
 #	- redirect : bouton "Rechercher" ou "Consulter la carte" (cf ajout.htgt)
@@ -120,6 +121,7 @@ set conf(form-ajout-machine)	{
 	{commentaire	1 1}
 	{respnom	1 1}
 	{respmel	1 1}
+	{next		0 1}
 }
 
 set conf(form-ajout-alias)	{
@@ -235,6 +237,7 @@ proc traiteajout-machine {dbfd tc ft} {
     set respnom       [string trim [lindex $ftab(respnom) 0]]
     set respmel       [string trim [lindex $ftab(respmel) 0]]
     set confirm       [string trim [lindex $ftab(confirm) 0]]
+    set next          [string trim [lindex $ftab(next) 0]]
 
     #
     # Valider la syntaxe du nom au sens de la RFC ????
@@ -369,7 +372,7 @@ proc traiteajout-machine {dbfd tc ft} {
     #
 
     set l {nom domaine adr mac iddhcpprofil droitsmtp hinfo commentaire
-			    respnom respmel}
+			    respnom respmel next}
     set hidden [::webapp::hide-parameters $l ftab]
 
     #
@@ -506,19 +509,33 @@ proc traiteajout-machine {dbfd tc ft} {
        ::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
     }
 
-    #
-    # Sortie du résultat
-    #
-
-    set machine [presenter-rr $dbfd $trr(idrr) trr]
-
     writelog "ajoutmachine" $login "ajout de $nom.$domaine ($adr)"
 
-    ::webapp::send html [::webapp::file-subst $conf(page-ajout-machine) \
-					[list \
-					    [list %MACHINE% $machine] \
-					] \
-				    ]
+    if {[string equal $next ""]} then {
+	#
+	# Sortie du résultat
+	#
+
+	set machine [presenter-rr $dbfd $trr(idrr) trr]
+	::webapp::send html [::webapp::file-subst $conf(page-ajout-machine) \
+					    [list \
+						[list %MACHINE% $machine] \
+					    ] \
+					]
+    } else {
+	#
+	# Retour à la carte des adresses libres
+	#
+
+	foreach p [split $next "&"] {
+	    if {[regexp {([^=]+)=(.*)} $p bidon k v]} then {
+		lappend nftab($k) $v
+	    }
+	}
+	lappend nftab(format) "Adresses libres"
+	puts stdout [::webapp::call-cgi $conf(script-map) nftab]
+    }
+
     return 0
 }
 
