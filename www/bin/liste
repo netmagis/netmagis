@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: liste,v 1.5 2008-09-24 13:35:42 pda Exp $
+# $Id$
 
 #
 # Script pour lister les machines d'un ou plusieurs domaines

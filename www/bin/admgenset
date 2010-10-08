@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgenset,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id$
 
 #
 # Script pour forcer la génération d'une ou plusieurs zones.

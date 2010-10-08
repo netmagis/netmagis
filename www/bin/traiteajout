@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traiteajout,v 1.10 2008-07-29 15:52:51 pda Exp $
+# $Id$
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.

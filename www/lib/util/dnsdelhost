@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsdelhost,v 1.6 2007-11-29 15:58:42 pda Exp $
+# $Id$
 
 #
 # Script pour supprimer une machine (ou un alias) dans la base

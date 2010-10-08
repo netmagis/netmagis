@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: editmodif,v 1.6 2008-07-25 12:05:56 pda Exp $
+# $Id$
 
 #
 # Script pour saisir les modifications demandées par un correspondant.

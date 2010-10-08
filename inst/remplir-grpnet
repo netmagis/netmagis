@@ -1,6 +1,6 @@
 #!/usr/local/bin/tclsh8.5
 
-# $Id: remplir-grpnet,v 1.3 2009-01-22 19:07:11 pda Exp $
+# $Id$
 
 #
 # Remplit les domaines, les groupes et les correspondants

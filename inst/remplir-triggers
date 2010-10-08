@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: remplir-triggers,v 1.3 2009-03-20 22:59:46 jean Exp $
+# $Id$
 
 #
 # Installe les triggers nécessaires pour que la modification d'un RR

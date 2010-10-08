@@ -1,4 +1,4 @@
--- $Id: upgrade.sql,v 1.2 2007-08-29 10:51:55 pda Exp $
+-- $Id$
 
 ------------------------------------------------------------------------------
 -- changement de type de rr.date : devient une vraie date

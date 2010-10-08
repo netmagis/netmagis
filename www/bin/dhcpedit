@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dhcpedit,v 1.5 2008-07-12 23:40:01 jean Exp $
+# $Id$
 
 #
 # Script de présentation des paramètres DHCP d'un réseau

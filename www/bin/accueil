@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: accueil,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id$
 
 #
 # Script pour définir l'accueil général du module

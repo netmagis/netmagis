@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: droits,v 1.6 2008-07-23 10:14:16 pda Exp $
+# $Id$
 
 #
 # Script pour consulter les droits associés à un correspondant

@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traitesuppr,v 1.7 2008-07-29 15:52:51 pda Exp $
+# $Id$
 
 #
 # Script pour enregistrer les suppressions demandées par un correspondant.

@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admparmodif,v 1.5 2008-07-23 09:20:57 pda Exp $
+# $Id$
 
 #
 # Script d'enregistrement des modifications des paramètres de la base

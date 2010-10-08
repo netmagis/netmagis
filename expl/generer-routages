@@ -1,6 +1,6 @@
 #!/usr/local/bin/tclsh8.5
 
-# $Id: generer-routages,v 1.3 2009-01-22 19:07:10 pda Exp $
+# $Id$
 
 #
 # Script de génération du fichier de routages pour sendmail

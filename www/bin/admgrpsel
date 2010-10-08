@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpsel,v 1.7 2008-02-13 15:25:09 pda Exp $
+# $Id$
 
 #
 # Script pour sélectionner un groupe dont il faut modifier les caractéristiques

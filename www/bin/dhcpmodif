@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dhcpmodif,v 1.6 2008-07-12 23:40:01 jean Exp $
+# $Id$
 
 #
 # Script de modification des paramètres DHCP d'un réseau

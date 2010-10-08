@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsaddhost,v 1.7 2008-09-23 13:43:32 zamboni Exp $
+# $Id$
 
 #
 # Script pour ajouter une machine dans la base

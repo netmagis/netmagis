@@ -1,7 +1,7 @@
 ;
 ; Zone univ-machin.fr
 ;
-; $Id: univ-machin.fr,v 1.2 2007-08-29 10:51:54 pda Exp $
+; $Id$
 ;
 ; Historique
 ;   2004/04/13 : pda : conception d'une zone exemple

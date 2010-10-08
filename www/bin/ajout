@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: ajout,v 1.6 2008-07-24 12:16:33 pda Exp $
+# $Id$
 
 #
 # Script pour présenter la page d'ajout d'une machine/alias
