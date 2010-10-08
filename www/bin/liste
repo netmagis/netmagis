@@ -13,7 +13,7 @@
 #	- plages6 : liste de plages IPv6 (idreseau dans tables reseau/plage)
 #	- cidr : cidr saisi par l'utilisateur
 #   - format de sortie
-#	- format : "Consulter" ou "Imprimer"
+#	- format : "Consulter" ou "Imprimer" ou "Adresses libres"
 #
 # Historique
 #   2002/03/27 : pda/jean : création
@@ -27,6 +27,7 @@
 #   2004/08/05 : pda/jean : ajout MAC
 #   2004/08/06 : pda/jean : extension des droits sur les réseaux
 #   2008/09/24 : pda/jean : ajout droitsmtp
+#   2010/10/07 : pda      : début ajout adresses libres
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -61,6 +62,12 @@ set conf(form)		{
 	{cidr		1 1}
 	{format		0 1}
 }
+
+# taille max des blocs d'adresses IPv4 dans lesquelles on cherche 
+# des adresses non déclarées
+set conf(limit-unused)	1024
+# nb d'adresses par ligne dans une "carte" d'adresses libres
+set conf(max-per-row)	16
 
 #
 # Le tableau servant à présenter le résultat
@@ -156,68 +163,12 @@ package require arrgen
 source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Fonctions
 ##############################################################################
 
-proc main {} {
+proc output-list {dbfd lcidr _tabcor format} {
+    upvar $_tabcor tabcor
     global conf
-
-    #
-    # Initialisation
-    #
-
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor $conf(log)
-
-    #
-    # Analyse et validation des arguments
-    #
-
-    # format de sortie
-    switch -- [lindex $ftab(format) 0] {
-	Imprimer	{ set format latex }
-	Consulter	-
-	default		{ set format html }
-    }
-
-    # le CIDR demandé par le correspondant
-    set cidr [string trim [lindex $ftab(cidr) 0]]
-    if {[string length $cidr] > 0} then {
-	set m [syntaxe-ip $dbfd $cidr "cidr"]
-	if {[string length $m] > 0} then {
-	    ::webapp::error-exit $conf(err) $m
-	}
-    }
-
-    # les plages demandées par le correspondant
-    set nplages [llength $ftab(plages)]
-
-    # compatibilité entre les deux arguments
-    if {[string length $cidr] == 0 && $nplages == 0} then {
-	::webapp::error-exit $conf(err) "Vous devez choisir un CIDR ou au moins une plage"
-    }
-    if {[string length $cidr] > 0 && $nplages > 0} then {
-	::webapp::error-exit $conf(err) "Vous ne pouvez pas choisir un CIDR et une plage"
-    }
-
-    #
-    # Valider les idreseaux fournis, et récupérer les CIDR correspondants
-    #
-
-    set lcidr {}
-    if {[string length $cidr] > 0} then {
-	lappend lcidr $cidr
-    }
-    if {$nplages > 0} then {
-	foreach idreseau $ftab(plages) {
-	    set l [valide-idreseau $dbfd $idreseau \
-					$tabcor(idgrp) "consult" {4 6} msg]
-	    if {[llength $l] == 0} then {
-		::webapp::error-exit $conf(err) $msg
-	    }
-	    set lcidr [concat $lcidr $l]
-	}
-    }
 
     #
     # Boucle externe : pour chaque plage demandée dans le formulaire
@@ -338,19 +289,10 @@ proc main {} {
     }
 
     #
-    # Cosmétique...
-    #
-    set s ""
-    if {$nbmachines > 1} then {
-	set s "s"
-    }
-
-    #
     # Générer le zoli tableau
     #
 
     set tableau [::arrgen::output $format $conf(tableau) $donnees]
-
 
     #
     # Sortie du résultat
@@ -365,8 +307,8 @@ proc main {} {
 					    [list %TITRE%	"machines"] \
 					    [list %TABLEAU%	$tableau] \
 					    [list %DATE%	$date] \
-					    [list %NBMACHINES%	$nbmachines] \
-					    [list %S%		$s] \
+					    [list %QUOI%	"déclarées"] \
+					    [list %NBADR%	$nbmachines] \
 					] \
 				]
 	}
@@ -377,11 +319,200 @@ proc main {} {
 					    [list %TITRE%	"machines"] \
 					    [list %TABLEAU%	$tableau] \
 					    [list %DATE%	$date] \
-					    [list %NBMACHINES%	$nbmachines] \
-					    [list %S%		$s] \
+					    [list %QUOI%	"déclarées"] \
+					    [list %NBADR%	$nbmachines] \
 					] \
 				]
 	}
+    }
+}
+
+proc output-map {dbfd lcidr _tabcor format} {
+    upvar $_tabcor tabcor
+    global conf
+
+    #
+    # Ne conserver dans lcidr que les plages IPv4 (et pas IPv6)
+    # car la fonction SQL availip() ne fonctionne qu'en IPv4.
+    #
+
+    set lcidrv4 {}
+    set m ""
+    foreach cidrplage $lcidr {
+	set r [syntaxe-ip $dbfd $cidrplage "cidr4"]
+	if {[string eq $r ""]} then {
+	    lappend lcidrv4 $cidrplage
+	} else {
+	    append m "$r<br>"
+	}
+    }
+
+    if {[llength $lcidrv4] == 0} then {
+	::webapp::error-exit $conf(err) "Aucun CIDR valide ($m)"
+    }
+
+    #
+    # Parcourir toutes les adresses
+    # - revenir à la ligne toutes les 16 adresses
+    # - afficher la bonne couleur
+    #
+
+    set tableau ""
+    set limite $conf(limit-unused)
+    set navail 0
+    set maxrow $conf(max-per-row)
+
+    foreach cidr $lcidrv4 {
+	set html ""
+	set n 0
+	set sql "SELECT * FROM markcidr ('$cidr', $limite, $tabcor(idgrp))"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    ::webapp::error-exit $conf(err) "Erreur dans le cidr '$cidr' ($msg)"
+	}
+
+	set sql "SELECT * FROM allip ORDER BY adr"
+
+	pg_select $dbfd $sql tab {
+	    set adr   $tab(adr)
+	    set avail $tab(avail)
+
+	    # extract last byte of address
+	    set last ""
+	    regexp {[^.]*$} $adr last
+
+	    if {$n % $maxrow == 0} then {
+		set line [::webapp::helem td $adr]
+	    }
+
+	    append line "\n"
+	    switch -- $avail {
+		0	{
+		    # not available (user has not the right, addr does'nt exists)
+		    append line [::webapp::helem "td" $last "class" "notav"]
+		}
+		1	{
+		    # free
+		    set h [::webapp::helem "a" $last \
+			    "href" "$conf(homeurl)/bin/traiteajout?adr=$adr"]
+		    append line [::webapp::helem "td" $h "class" "free"]
+		    incr navail
+		}
+		2	{
+		    # busy
+		    set h [::webapp::helem "a" $last \
+			    "href" "$conf(homeurl)/bin/XXXXXXXXXXX?adr=$adr"]
+		    append line [::webapp::helem "td" $h "class" "busy"]
+		}
+		default {
+		    ::webapp::error-exit $conf(err) "Erreur interne pour '$adr' : avail = $avail"
+		}
+	    }
+
+	    incr n
+	    if {$n % $maxrow == 0} then {
+		append html "\n"
+		append html [::webapp::helem "tr" $line]
+	    }
+	}
+	if {$n % $maxrow != 0} then {
+	    for {set i $n} {$i % $maxrow != 0} {incr i} {
+		append line [::webapp::helem "td" "&nbsp;"]
+	    }
+	    append html "\n"
+	    append html [::webapp::helem "tr" $line]
+	}
+
+	append tableau [::webapp::helem "table" $html "id" "map"]
+	append tableau "\n<p>\n"
+    }
+
+    #
+    # Fioritures
+    #
+
+    set datefmt [getconfig $dbfd "datefmt"]
+    set date  [clock format [clock seconds] -format $datefmt]
+
+    ::webapp::send html [::webapp::file-subst $conf(liste) \
+				[list \
+				    [list %TITRE%	"adresses IPv4 disponibles"] \
+				    [list %TABLEAU%	$tableau] \
+				    [list %DATE%	$date] \
+				    [list %QUOI%	"disponibles"] \
+				    [list %NBADR%	$navail] \
+				] \
+			]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor $conf(log)
+
+    #
+    # Analyse et validation des arguments
+    #
+
+    # le CIDR demandé par le correspondant
+    set cidr [string trim [lindex $ftab(cidr) 0]]
+    if {[string length $cidr] > 0} then {
+	set m [syntaxe-ip $dbfd $cidr "cidr"]
+	if {[string length $m] > 0} then {
+	    ::webapp::error-exit $conf(err) $m
+	}
+    }
+
+    # les plages demandées par le correspondant
+    set nplages [llength $ftab(plages)]
+
+    # compatibilité entre les deux arguments
+    if {[string length $cidr] == 0 && $nplages == 0} then {
+	::webapp::error-exit $conf(err) "Vous devez choisir un CIDR ou au moins une plage"
+    }
+    if {[string length $cidr] > 0 && $nplages > 0} then {
+	::webapp::error-exit $conf(err) "Vous ne pouvez pas choisir un CIDR et une plage"
+    }
+
+    #
+    # Valider les idreseaux fournis, et récupérer les CIDR correspondants
+    #
+
+    set lcidr {}
+    if {[string length $cidr] > 0} then {
+	lappend lcidr $cidr
+    }
+    if {$nplages > 0} then {
+	foreach idreseau $ftab(plages) {
+	    set l [valide-idreseau $dbfd $idreseau \
+					$tabcor(idgrp) "consult" {4 6} msg]
+	    if {[llength $l] == 0} then {
+		::webapp::error-exit $conf(err) $msg
+	    }
+	    set lcidr [concat $lcidr $l]
+	}
+    }
+
+    # format de sortie
+    switch -glob -nocase -- [lindex $ftab(format) 0] {
+	Adresses*	{ set format plage }
+	Imprimer	{ set format latex }
+	Consulter	-
+	*		{ set format html }
+    }
+
+    if {[string eq $format "plage"]} then {
+	output-map $dbfd $lcidr tabcor $format
+    } else {
+	output-list $dbfd $lcidr tabcor $format
     }
 
     #

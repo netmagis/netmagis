@@ -661,9 +661,27 @@ proc traiteajout-serie {dbfd tc ft} {
     #
     # Valider les champs du formulaire
     #
+#	- action : "ajout-serie"
+#	- adr : adresse à inscrire (+1 à chaque tour)
+#	- nbadr : nb d'adresses souhaitées (-1 à chaque tour)
+#	- domaine : domaine dans lequel la machine doit être ajoutée (optionnel)
+#	- iddhcpprofil : l'id du profil DHCP, ou 0 (optionnel)
+#	- hinfo : type de machine (texte) (optionnel)
+#	- droitsmtp : inexistant ou non vide (optionnel)
+#	- commentaire : informations complémentaires (optionnel)
+#	- respnom : nom et prénom du responsable (optionnel)
+#	- respmel : adresse électronique du responsable (optionnel)
 
-    set adr   [string trim [lindex $ftab(adr) 0]]
-    set nbadr [string trim [lindex $ftab(nbadr) 0]]
+    set adr          [string trim [lindex $ftab(adr) 0]]
+    set nbadr        [string trim [lindex $ftab(nbadr) 0]]
+    set domaine      [string trim [lindex $ftab(domaine) 0]]
+    set iddhcpprofil [string trim [lindex $ftab(iddhcpprofil) 0]]
+    set hinfo        [string trim [lindex $ftab(hinfo) 0]]
+    set droitsmtp    [string trim [lindex $ftab(droitsmtp) 0]]
+    set commentaire  [string trim [lindex $ftab(commentaire) 0]]
+    set respnom      [string trim [lindex $ftab(respnom) 0]]
+    set respmel      [string trim [lindex $ftab(respmel) 0]]
+
 
     #
     # Sortie de la page

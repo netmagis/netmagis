@@ -38,12 +38,39 @@
 	}
 }
 
+\* cas particulier pour l'affichage de la "carte" des adresses disponibles
+
+\set {header} {
+    <style type="text/css">
+	#map td.notav \{
+	    text-align: center;
+	    background-color: silver;
+	    width: 6%;
+	\}
+	#map td.free  \{
+	    text-align: center;
+	    background-color: palegreen;
+	    text-decoration:none;
+	    width: 6%;
+	\}
+	#map td.busy  \{
+	    text-align: center;
+	    background-color: red;
+	    width: 6%;
+	\}
+	#map a:link, #map a:visited, #map a:hover, #map a:active \{
+	    text-decoration: none;
+	    color: black;
+	\}
+    </style>
+}
+
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
     \titre {1} {Liste des %TITRE%}
 
-    %NBMACHINES% machine%S% au %DATE%
+    Adresses %QUOI% au %DATE% : %NBADR%
 
     %TABLEAU%
 }
