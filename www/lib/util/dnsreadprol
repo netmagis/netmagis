@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dnsreadprol,v 1.6 2007-11-29 15:58:42 pda Exp $
+# $Id$
 
 #
 # Script pour lire le prologue d'une zone

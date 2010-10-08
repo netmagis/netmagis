@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: liste,v 1.5 2008-09-24 13:35:42 pda Exp $
+# $Id$
 
 #
 # Script pour lister les machines d'un ou plusieurs domaines
@@ -59,7 +59,7 @@ set conf(log)		%LOG%
 
 set conf(form)		{
 	{plages		0 99999}
-	{cidr		1 1}
+	{cidr		1 99999}
 	{format		0 1}
 }
 

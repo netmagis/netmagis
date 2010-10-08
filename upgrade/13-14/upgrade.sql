@@ -5,7 +5,7 @@
 --    - modifier ce fichier pour indiquer les utilisateurs (lignes GRANT)
 --    - psql dns < upgrade.sql 
 --
--- $Id: upgrade.sql,v 1.3 2008-07-23 08:50:43 pda Exp $
+-- $Id$
 ------------------------------------------------------------------------------
 
 CREATE TABLE log (

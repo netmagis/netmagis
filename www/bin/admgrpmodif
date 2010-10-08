@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admgrpmodif,v 1.10 2008-07-23 14:02:33 pda Exp $
+# $Id$
 
 #
 # Script pour enregistrer les caractéristiques associées à un groupe

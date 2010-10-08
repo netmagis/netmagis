@@ -1,7 +1,7 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id: libdns.tcl,v 1.15 2008-09-24 07:33:51 pda Exp $
+# $Id$
 #
 # Historique
 #   2002/03/27 : pda/jean : conception

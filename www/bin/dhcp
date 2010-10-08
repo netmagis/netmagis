@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: dhcp,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id$
 
 #
 # Script pour demander le réseau pour lequel il faut présenter la page

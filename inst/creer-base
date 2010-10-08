@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: creer-base,v 1.6 2008-07-23 14:02:16 pda Exp $
+# $Id$
 
 #
 # Création de la base DNS

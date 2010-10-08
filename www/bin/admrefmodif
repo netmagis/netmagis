@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: admrefmodif,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id$
 
 #
 # Script d'enregistrement des modifications de tables constituant le

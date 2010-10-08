@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traiteajout,v 1.10 2008-07-29 15:52:51 pda Exp $
+# $Id$
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
@@ -23,6 +23,7 @@
 #	- respmel : adresse électronique du responsable
 #   - recherche d'une plage consécutive
 #	- action : "ajout-multi"
+#	- redirect : bouton "Rechercher" ou "Consulter la carte" (cf ajout.htgt)
 #	- tri : tri par nbadr ou adr
 #	- plage : idreseau de la plage sélectionnée
 #	- nbadr : nb d'adresses souhaitées
@@ -95,6 +96,9 @@ set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
 
+# script cgi pour avoir la carte des adresses libres
+set conf(script-map)	%DESTDIR%/bin/liste
+
 # nb max d'adresses IP pour une recherche d'adresses IP consécutives
 set conf(maxip)		1024
 
@@ -126,6 +130,7 @@ set conf(form-ajout-alias)	{
 }
 
 set conf(form-ajout-multi)	{
+	{redirect	0 1}
 	{tri		0 1}
 	{plage		1 1}
 	{nbadr		1 1}
@@ -538,19 +543,39 @@ proc traiteajout-multi {dbfd tc ft} {
     # Valider les champs du formulaire
     #
 
-    set tri   [string trim [lindex $ftab(tri) 0]]
-    set plage [string trim [lindex $ftab(plage) 0]]
-    set nbadr [string trim [lindex $ftab(nbadr) 0]]
-
-    if {! [regexp {^[0-9]+$} $nbadr] || $nbadr < 1} then {
-       ::webapp::error-exit $conf(err) "Mauvais nombre d'adresses ($nbadr)"
-    }
+    set redirect [string trim [lindex $ftab(redirect) 0]]
+    set tri      [string trim [lindex $ftab(tri) 0]]
+    set plage    [string trim [lindex $ftab(plage) 0]]
+    set nbadr    [string trim [lindex $ftab(nbadr) 0]]
 
     set lcidr [valide-idreseau $dbfd $plage $idgrp "consult" {4} msg]
     if {[llength $lcidr] != 1} then {
        ::webapp::error-exit $conf(err) $msg
     }
     set cidr [lindex $lcidr 0]
+
+    #
+    # Cas spécial pour l'appel à la carte des adresses disponibles
+    # On redirige alors vers un autre script CGI.
+    #
+
+    if {[string match -nocase {consulter*} $redirect]} then {
+	set nftab(cidr) {}
+	foreach cidr $lcidr {
+	    lappend nftab(cidr) $cidr
+	}
+	set nftab(format) [list "Adresses libres"]
+	puts stdout [::webapp::call-cgi $conf(script-map) nftab]
+	return 0
+    }
+
+    #
+    # Continuer la validation des champ de formulaire
+    #
+
+    if {! [regexp {^[0-9]+$} $nbadr] || $nbadr < 1} then {
+       ::webapp::error-exit $conf(err) "Mauvais nombre d'adresses ($nbadr)"
+    }
 
     switch -- $tri {
 	nbadr {

@@ -1,7 +1,7 @@
 #
 # Makefile pour lancer l'installation de l'application dns
 #
-# $Id: Makefile,v 1.7 2009-01-22 19:07:16 pda Exp $
+# $Id$
 #
 
 TCLSH	= /usr/local/bin/tclsh8.5

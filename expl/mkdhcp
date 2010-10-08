@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: mkdhcp,v 1.2 2007-08-29 10:51:47 pda Exp $
+# $Id$
 
 #
 # Script de génération du fichier utilise par dhcpd.conf a partir des

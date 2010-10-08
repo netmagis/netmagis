@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: consulter,v 1.4 2007-11-13 16:44:05 pda Exp $
+# $Id$
 
 #
 # Script pour demander les paramètres de consultation d'une zone

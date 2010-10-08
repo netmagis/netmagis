@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: statcor,v 1.5 2007-11-13 16:44:05 pda Exp $
+# $Id$
 
 #
 # Script pour consulter des stats sur les correspondants
