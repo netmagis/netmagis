@@ -1,7 +1,7 @@
 #
 # Makefile principale pour l'analyseur de configurations
 #
-# $Id: Makefile,v 1.4 2007-07-18 15:09:53 pda Exp $
+# $Id$
 #
 
 TOPODIR	= /local/applis/topo

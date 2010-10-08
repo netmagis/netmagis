@@ -1,5 +1,5 @@
 /*
- * $Id: mobj.c,v 1.1.1.1 2007-01-05 15:12:00 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

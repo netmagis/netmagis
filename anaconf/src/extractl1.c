@@ -1,5 +1,5 @@
 /*
- * $Id: extractl1.c,v 1.3 2007-01-11 15:31:23 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

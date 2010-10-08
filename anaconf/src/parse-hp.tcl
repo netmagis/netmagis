@@ -1,5 +1,5 @@
 #
-# $Id: parse-hp.tcl,v 1.9 2009-02-11 22:52:42 pda Exp $
+# $Id$
 #
 # Package d'analyse de fichiers de configuration IOS HP
 #

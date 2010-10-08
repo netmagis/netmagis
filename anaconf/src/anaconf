@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# $Id: anaconf,v 1.14 2008-10-01 15:53:13 pda Exp $
+# $Id$
 #
 # Enchaîne les différentes phases pour constituer le graphe du
 # réseau donné.

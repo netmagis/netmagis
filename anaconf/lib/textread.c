@@ -1,5 +1,5 @@
 /*
- * $Id: textread.c,v 1.14 2008-10-17 21:02:44 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

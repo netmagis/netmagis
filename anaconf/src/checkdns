@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# $Id: checkdns,v 1.2 2009-01-22 20:20:21 pda Exp $
+# $Id$
 #
 # Vérifie les enregistrement DNS de la base DNS, en fonction de ce qui
 # est trouvé dans la configuration des routeurs

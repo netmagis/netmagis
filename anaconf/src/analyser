@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# $Id: analyser,v 1.13 2009-02-11 22:52:42 pda Exp $
+# $Id$
 #
 # Analyse un fichier de configuration d'un équipement réseau
 # et renvoie la modélisation de cet équipement sous forme de

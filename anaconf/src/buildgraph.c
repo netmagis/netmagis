@@ -1,5 +1,5 @@
 /*
- * $Id: buildgraph.c,v 1.8 2007-07-11 13:56:06 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

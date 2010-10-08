@@ -1,5 +1,5 @@
 /*
- * $Id: eq.c,v 1.2 2007-01-16 09:51:42 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.6 2008-07-30 08:48:49 pda Exp $
+# $Id$
 #
 
 TOPODIR=/local/applis/topo

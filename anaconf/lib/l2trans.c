@@ -1,5 +1,5 @@
 /*
- * $Id: l2trans.c,v 1.4 2007-07-11 20:21:04 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

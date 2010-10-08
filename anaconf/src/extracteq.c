@@ -1,5 +1,5 @@
 /*
- * $Id: extracteq.c,v 1.10 2008-10-17 21:24:12 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

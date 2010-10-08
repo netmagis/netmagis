@@ -2,7 +2,7 @@
 
 
 #
-# $Id: ssidprobes,v 1.2 2009-01-22 20:20:21 pda Exp $
+# $Id$
 #
 # Prend sur l'entrée standard un fichier d'entrée compatible "buildgraph",
 # ajoute les points de métrologie wifi spécifiques à la politique Osiris,

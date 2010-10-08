@@ -1,5 +1,5 @@
 /*
- * $Id: ip.c,v 1.2 2007-01-09 10:46:10 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

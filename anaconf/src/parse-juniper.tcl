@@ -1,5 +1,5 @@
 #
-# $Id: parse-juniper.tcl,v 1.9 2009-01-07 22:04:43 pda Exp $
+# $Id$
 #
 # Package d'analyse de fichiers de configuration JunOS
 #

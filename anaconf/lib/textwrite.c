@@ -1,5 +1,5 @@
 /*
- * $Id: textwrite.c,v 1.10 2008-10-17 20:41:04 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

@@ -1,5 +1,5 @@
 /*
- * $Id: printvlans.c,v 1.3 2007-01-09 15:36:12 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

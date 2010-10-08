@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.3 2007-01-10 16:49:53 pda Exp $
+# $Id$
 #
 
 CFLAGS = -g -Wall

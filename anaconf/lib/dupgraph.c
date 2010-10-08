@@ -1,5 +1,5 @@
 /*
- * $Id: dupgraph.c,v 1.8 2008-07-29 12:54:03 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

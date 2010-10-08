@@ -1,5 +1,5 @@
 /*
- * $Id: node.c,v 1.4 2008-06-14 21:05:49 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"

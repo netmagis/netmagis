@@ -1,5 +1,5 @@
 #
-# $Id: parse-cisco.tcl,v 1.22 2009-02-13 22:16:39 pda Exp $
+# $Id$
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #

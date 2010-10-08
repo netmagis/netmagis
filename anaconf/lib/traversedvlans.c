@@ -1,5 +1,5 @@
 /*
- * $Id: traversedvlans.c,v 1.2 2007-01-11 15:31:22 pda Exp $
+ * $Id$
  */
 
 #include "graph.h"
