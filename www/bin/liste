@@ -65,7 +65,7 @@ set conf(form)		{
 
 # taille max des blocs d'adresses IPv4 dans lesquelles on cherche 
 # des adresses non déclarées
-set conf(limit-unused)	1024
+set conf(limit-unused)	16384
 # nb d'adresses par ligne dans une "carte" d'adresses libres
 set conf(max-per-row)	16
 
