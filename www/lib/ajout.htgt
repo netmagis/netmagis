@@ -38,6 +38,14 @@
 	}
 }
 
+\set {header} {
+    <style type="text/css">
+	#nextpart \{
+	    display: %DISPLAY%;
+	\}
+    </style>
+}
+
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
@@ -57,7 +65,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {
-		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout">
+		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout%NEXT%">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
 		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
 		    \tableau {
@@ -80,7 +88,7 @@
 			\lignetableau {
 			    \casetableau {} {Adresse IP}
 			    \multicasetableau {3} {} {
-				<INPUT TYPE="TEXT" NAME="adr" SIZE="45">
+				<INPUT TYPE="TEXT" NAME="adr" SIZE="45" VALUE="%ADR%">
 			    }
 			}
 			\lignetableau {
@@ -123,9 +131,17 @@
 			}
 		    }
 		</FORM>
-		\br
 	    }
 	}
+    }
+
+    <div id="nextpart">
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
 	\lignetableau {
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
@@ -216,6 +232,7 @@
 	    }
 	}
     }
+    </div>
 }
 
 }

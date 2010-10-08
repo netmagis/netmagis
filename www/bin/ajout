@@ -5,9 +5,16 @@
 #
 # Script pour présenter la page d'ajout d'une machine/alias
 #
-# Appelé par : index.htgt
+# Appelé par : index.htgt ou script liste ou script traiteajout
 #
-# Paramètres (formulaire ou URL) : aucun
+# Paramètres (formulaire ou URL) :
+#   - lorsque appelé depuis l'accueil : aucun
+#   - lorsque appelé depuis la carte des adresses libres (script liste)
+#	- adr : adresse IP
+#	- next : paramètres pour la suite
+#   - lorsque appelé depuis la carte des adresses libres (script traiteajout)
+#	XXX
+#
 #
 # Historique
 #   2002/04/11 : pda/jean : création
@@ -17,6 +24,7 @@
 #   2005/04/08 : pda/jean : ajout des profils DHCP
 #   2008/07/23 : pda/jean : ajout du droit d'émission SMTP
 #   2009/12/31 : pda      : ajout de l'ajout multiple
+#   2010/10/08 : pda      : ajout du cas de suite de script
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -33,8 +41,9 @@ set conf(libdns)	$conf(lib)/libdns.tcl
 # Définition des noms des pages "à trous"
 #
 
-set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/ajout.html
+set conf(pageadr)	$conf(lib)/ajout-adr.html
+set conf(err)		$conf(lib)/erreur.html
 
 #
 # Quelques paramètres du script
@@ -44,6 +53,12 @@ set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
+
+# les champ discriminant pour la suite
+set conf(form)	{
+	{adr		0 1}
+	{next		0 1}
+}
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -73,7 +88,7 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			{} ftab dbfd login tabcor $conf(log)
+			$conf(form) ftab dbfd login tabcor $conf(log)
 
     #
     # Récupération des types de machines
@@ -119,6 +134,24 @@ proc main {} {
     }
 
     #
+    # Cas d'une adresse déjà fournie
+    #
+
+    set adr [string trim [lindex $ftab(adr) 0]]
+    if {[string equal $adr ""]} then {
+	# show rest of page
+	set display "block"
+	set next ""
+    } else {
+	# hide rest of page
+	set display "none"
+	set next [lindex $ftab(next) 0]
+	if {! [string equal $next ""]} then {
+	    set next "?next=[::webapp::post-string $next]"
+	}
+    }
+
+    #
     # Sortie du résultat
     #
 
@@ -132,6 +165,9 @@ proc main {} {
 					    [list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
 					    [list %DHCPPROFILMENU% $dhcpprofilmenu] \
 					    [list %MENUPLAGE% $menuplage] \
+					    [list %DISPLAY% $display] \
+					    [list %ADR% $adr] \
+					    [list %NEXT% $next] \
 					] \
 				]
 

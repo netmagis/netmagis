@@ -354,6 +354,18 @@ proc output-map {dbfd lcidr _tabcor format} {
     }
 
     #
+    # Construire la suite, c'est à dire l'url que devra suivre
+    # le script traiteajout une fois la machine ajoutée.
+    #
+
+    set next {}
+    foreach cidr $lcidrv4 {
+	lappend next cidr=$cidr
+    }
+    set next [::webapp::post-string [join $next "&"]]
+    set next "next=$next"
+
+    #
     # Parcourir toutes les adresses
     # - revenir à la ligne toutes les 16 adresses
     # - afficher la bonne couleur
@@ -399,7 +411,7 @@ proc output-map {dbfd lcidr _tabcor format} {
 		1	{
 		    # free
 		    set h [::webapp::helem "a" $last \
-			    "href" "$conf(homeurl)/bin/traiteajout?adr=$adr"]
+			    "href" "$conf(homeurl)/bin/ajout?adr=$adr&$next"]
 		    append line [::webapp::helem "td" $h "class" "free"]
 		    incr navail
 		}
