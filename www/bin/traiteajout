@@ -21,24 +21,14 @@
 #	- commentaire : informations complémentaires
 #	- respnom : nom et prénom du responsable
 #	- respmel : adresse électronique du responsable
-#	- nextprog, nextargs : suite du parcours (en cas d'ajout depuis la carte)
+#	- nextprog, nextargs : suite du parcours (en cas d'ajout la carte
+#		ou depuis la recherche de plage consécutive)
 #   - recherche d'une plage consécutive
 #	- action : "ajout-multi"
 #	- redirect : bouton "Rechercher" ou "Consulter la carte" (cf ajout.htgt)
 #	- tri : tri par nbadr ou adr
 #	- plage : idreseau de la plage sélectionnée
 #	- nbadr : nb d'adresses souhaitées
-#   - ajout en masse (dans une série trouvée par la recherche de plage)
-#	- action : "ajout-serie"
-#	- adr : adresse à inscrire (+1 à chaque tour)
-#	- nbadr : nb d'adresses souhaitées (-1 à chaque tour)
-#	- domaine : domaine dans lequel la machine doit être ajoutée (optionnel)
-#	- iddhcpprofil : l'id du profil DHCP, ou 0 (optionnel)
-#	- hinfo : type de machine (texte) (optionnel)
-#	- droitsmtp : inexistant ou non vide (optionnel)
-#	- commentaire : informations complémentaires (optionnel)
-#	- respnom : nom et prénom du responsable (optionnel)
-#	- respmel : adresse électronique du responsable (optionnel)
 #   - ajout d'un alias
 #	- action : "ajout-alias"
 #	- nom : nom de l'alias à ajouter
@@ -141,18 +131,6 @@ set conf(form-ajout-multi)	{
 	{tri		0 1}
 	{plage		1 1}
 	{nbadr		1 1}
-}
-
-set conf(form-ajout-serie)	{
-	{adr		1 1}
-	{nbadr		1 1}
-	{domaine	0 1}
-	{iddhcpprofil	0 1}
-	{droitsmtp	0 1}
-	{hinfo		0 1}
-	{commentaire	0 1}
-	{respnom	0 1}
-	{respmel	0 1}
 }
 
 set conf(tableau-multi) {
@@ -580,11 +558,13 @@ proc traiteajout-machine {dbfd tc ft} {
 
 # Historique
 #   2010/01/01 : pda      : conception
+#   2010/10/09 : pda      : fin de la conception
 #
-proc traiteajout-multi {dbfd tc ft} {
+
+proc traiteajout-multi {dbfd _tabcor _ftab} {
     global conf
-    upvar $ft ftab
-    upvar $tc tabcor
+    upvar $_ftab ftab
+    upvar $_tabcor tabcor
 
     set login $tabcor(login)
     set idcor $tabcor(idcor)

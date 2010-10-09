@@ -136,30 +136,6 @@ CREATE OR REPLACE FUNCTION unusedip (reseau CIDR, lim INTEGER, grp INTEGER)
     END ;
     $$ LANGUAGE plpgsql ;
 
-DROP TYPE IF EXISTS availip_t CASCADE ;
-CREATE TYPE availip_t AS (adr INET, avail INTEGER) ;
-
-CREATE OR REPLACE FUNCTION availip (reseau CIDR, lim INTEGER, grp INTEGER)
-    RETURNS SETOF availip_t AS $$
-    DECLARE
-    BEGIN
-	RETURN QUERY (SELECT * FROM
-		    (
-			SELECT a AS adr, 1 AS avail
-			    FROM allip (reseau, lim) AS tuple
-			    WHERE tuple.a NOT IN (SELECT adr FROM rr_ip)
-				AND valide_ip_grp (tuple.a, grp)
-			UNION
-			SELECT a AS adr, 0 AS avail
-			    FROM allip (reseau, lim) AS tuple
-			    WHERE tuple.a IN (SELECT adr FROM rr_ip)
-				OR NOT valide_ip_grp (tuple.a, grp)
-		    ) AS foo
-		    ORDER BY foo.adr) ;
-	RETURN ;
-    END ;
-    $$ LANGUAGE plpgsql ;
-
 ------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION markcidr (reseau CIDR, lim INTEGER, grp INTEGER)
@@ -200,8 +176,6 @@ CREATE OR REPLACE FUNCTION markcidr (reseau CIDR, lim INTEGER, grp INTEGER)
 
 	UPDATE allip SET avail = 0
 	    WHERE adr = min OR adr = max OR NOT valide_ip_grp (adr, grp) ;
-
-	-- UPDATE allip SET avail = 2 WHERE adr IN (SELECT adr FROM rr_ip) ;
 
 	UPDATE allip
 	    SET fqdn = rr.nom || '.' || domaine.nom,
