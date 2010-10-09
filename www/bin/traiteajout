@@ -511,30 +511,28 @@ proc traiteajout-machine {dbfd tc ft} {
 
     writelog "ajoutmachine" $login "ajout de $nom.$domaine ($adr)"
 
+
+    #
+    # Préparer la suite
+    #
+     
     if {[string equal $next ""]} then {
-	#
-	# Sortie du résultat
-	#
-
-	set machine [presenter-rr $dbfd $trr(idrr) trr]
-	::webapp::send html [::webapp::file-subst $conf(page-ajout-machine) \
-					    [list \
-						[list %MACHINE% $machine] \
-					    ] \
-					]
+	set suite "$conf(homeurl)/bin/ajout"
     } else {
-	#
-	# Retour à la carte des adresses libres
-	#
-
-	foreach p [split $next "&"] {
-	    if {[regexp {([^=]+)=(.*)} $p bidon k v]} then {
-		lappend nftab($k) $v
-	    }
-	}
-	lappend nftab(format) "Adresses libres"
-	puts stdout [::webapp::call-cgi $conf(script-map) nftab]
+	set suite "$conf(homeurl)/bin/liste?format=adresses&$next"
     }
+
+    #
+    # Sortie du résultat
+    #
+
+    set machine [presenter-rr $dbfd $trr(idrr) trr]
+    ::webapp::send html [::webapp::file-subst $conf(page-ajout-machine) \
+					[list \
+					    [list %MACHINE% $machine] \
+					    [list %SUITE% $suite] \
+					] \
+				    ]
 
     return 0
 }
