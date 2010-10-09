@@ -393,6 +393,7 @@ proc output-map {dbfd lcidr _tabcor format} {
 	pg_select $dbfd $sql tab {
 	    set adr   $tab(adr)
 	    set avail $tab(avail)
+	    set fqdn  $tab(fqdn)
 
 	    # extract last byte of address
 	    set last ""
@@ -418,7 +419,8 @@ proc output-map {dbfd lcidr _tabcor format} {
 		2	{
 		    # busy
 		    set h [::webapp::helem "a" $last \
-			    "href" "$conf(homeurl)/bin/XXXXXXXXXXX?adr=$adr"]
+			    "href" "$conf(homeurl)/bin/XXXXXXXXXXX?adr=$adr" \
+			    "title" $fqdn]
 		    append line [::webapp::helem "td" $h "class" "busy"]
 		}
 		default {
