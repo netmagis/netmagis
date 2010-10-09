@@ -363,7 +363,7 @@ proc output-map {dbfd lcidr _tabcor format} {
 	lappend next cidr=$cidr
     }
     set next [::webapp::post-string [join $next "&"]]
-    set next "next=$next"
+    set next "nextprog=map&nextargs=$next"
 
     #
     # Parcourir toutes les adresses

@@ -21,7 +21,7 @@
 #	- commentaire : informations complémentaires
 #	- respnom : nom et prénom du responsable
 #	- respmel : adresse électronique du responsable
-#	- next : suite du parcours (en cas d'ajout depuis la carte)
+#	- nextprog, nextargs : suite du parcours (en cas d'ajout depuis la carte)
 #   - recherche d'une plage consécutive
 #	- action : "ajout-multi"
 #	- redirect : bouton "Rechercher" ou "Consulter la carte" (cf ajout.htgt)
@@ -65,6 +65,8 @@
 #   2008/07/23 : pda/jean : ajout du droit d'émission SMTP
 #   2008/07/29 : pda      : utilisation presenter-rr
 #   2010/01/01 : pda      : codage ajout-multi
+#   2010/10/08 : pda      : codage parcours (via next)
+#   2010/10/09 : pda      : fin codage ajout-multi
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -97,8 +99,10 @@ set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
 
-# script cgi pour avoir la carte des adresses libres
-set conf(script-map)	%DESTDIR%/bin/liste
+# scripts cgi
+set conf(script-map)	bin/liste
+set conf(script-seq)	bin/traiteajout
+set conf(script-ajout)	bin/ajout
 
 # nb max d'adresses IP pour une recherche d'adresses IP consécutives
 set conf(maxip)		1024
@@ -121,7 +125,8 @@ set conf(form-ajout-machine)	{
 	{commentaire	1 1}
 	{respnom	1 1}
 	{respmel	1 1}
-	{next		0 1}
+	{nextprog	0 1}
+	{nextargs	0 1}
 }
 
 set conf(form-ajout-alias)	{
@@ -237,7 +242,8 @@ proc traiteajout-machine {dbfd tc ft} {
     set respnom       [string trim [lindex $ftab(respnom) 0]]
     set respmel       [string trim [lindex $ftab(respmel) 0]]
     set confirm       [string trim [lindex $ftab(confirm) 0]]
-    set next          [string trim [lindex $ftab(next) 0]]
+    set nextprog      [string trim [lindex $ftab(nextprog) 0]]
+    set nextargs      [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Valider la syntaxe du nom au sens de la RFC ????
@@ -372,7 +378,7 @@ proc traiteajout-machine {dbfd tc ft} {
     #
 
     set l {nom domaine adr mac iddhcpprofil droitsmtp hinfo commentaire
-			    respnom respmel next}
+			    respnom respmel nextprog nextargs}
     set hidden [::webapp::hide-parameters $l ftab]
 
     #
@@ -516,10 +522,40 @@ proc traiteajout-machine {dbfd tc ft} {
     # Préparer la suite
     #
      
-    if {[string equal $next ""]} then {
-	set suite "$conf(homeurl)/bin/ajout"
-    } else {
-	set suite "$conf(homeurl)/bin/liste?format=adresses&$next"
+    switch -- $nextprog {
+	{} {
+	    set suite "$conf(homeurl)/bin/ajout"
+	}
+	map {
+	    set suite "$conf(homeurl)/$conf(script-map)?format=adresses&$nextargs"
+	}
+	sequence {
+	    foreach kv [split $nextargs "&"] {
+		if {[regexp {^([^=]+)=(.*)} $kv bidon k v]} then {
+		    lappend nf($k) $v
+		}
+	    }
+	    set nbadr 0
+	    if {[info exists nf(nbadr)]} then {
+		set nbadr $nf(nbadr)
+	    }
+
+	    if {$nbadr > 0} then {
+		incr nbadr -1
+		set sql "SELECT INET('$adr')+1 AS adr"
+		pg_select $dbfd $sql tab {
+		    set nadr $tab(adr)
+		}
+
+		set suite "$conf(homeurl)/$conf(script-ajout)"
+		append suite "?adr=$nadr"
+		append suite "&nextprog=sequence"
+		append suite "&nextargs="
+		append suite [::webapp::post-string "nbadr=$nbadr"]
+	    } else {
+		set suite "$conf(homeurl)/$conf(script-ajout)"
+	    }
+	}
     }
 
     #
@@ -580,7 +616,7 @@ proc traiteajout-multi {dbfd tc ft} {
 	    lappend nftab(cidr) $cidr
 	}
 	set nftab(format) [list "Adresses libres"]
-	puts stdout [::webapp::call-cgi $conf(script-map) nftab]
+	puts stdout [::webapp::call-cgi %DESTDIR%/$conf(script-map) nftab]
 	return 0
     }
 
@@ -603,7 +639,7 @@ proc traiteajout-multi {dbfd tc ft} {
     }
 
     #
-    # Recherche les plages libres
+    # Rechercher les plages libres
     #
 
     set sql "SELECT *
@@ -625,23 +661,22 @@ proc traiteajout-multi {dbfd tc ft} {
 
     set donnees {}
 
-    set burl "%HOMEURL%/bin/traiteajout?action=ajout-multi&plage=$plage&nbadr=$nbadr"
+    # url de base pour réaliser les tris
+    set burl "$conf(homeurl)/bin/traiteajout?action=ajout-multi&plage=$plage&nbadr=$nbadr"
 
+    # titre du tableau (avec les urls de tri)
     set c1 [::webapp::helem "a" "Adresse IP" "href" "$burl&tri=adr"]
     set c2 [::webapp::helem "a" "Taille" "href" "$burl&tri=nbadr"]
-    set c3 ""
+    lappend donnees [list Entete $c1 $c2 ""]
 
-    lappend donnees [list Entete $c1 $c2 $c3]
-
-    set hid1 [::webapp::form-hidden "action" "ajout-serie"]
-
-    set liste ""
+    # parcours des intervalles trouvés
     foreach l $lranges {
 	set a [lindex $l 0]
 	set n [lindex $l 1]
 
-	set hid2 [::webapp::form-hidden "adr" $a]
-	set hid3 [::webapp::form-hidden "nbadr" $n]
+	set hidden    [::webapp::form-hidden "adr" $a]
+	append hidden [::webapp::form-hidden "nextprog" "sequence"]
+	append hidden [::webapp::form-hidden "nextargs" "nbadr=$nbadr"]
 
 	# un peu de cosmétique pour que la signification du
 	# bouton de choix soit clairement explicitée
@@ -658,11 +693,11 @@ proc traiteajout-multi {dbfd tc ft} {
 		set msg "Choisir les $nbadr premières adresses"
 	    }
 	}
-	set hid4 "<input type=\"submit\" value=\"$msg\">"
+	set bouton "<input type=\"submit\" value=\"$msg\">"
 
-	set c [::webapp::helem "form" "$hid1$hid2$hid3$hid4" \
+	set c [::webapp::helem "form" "$hidden$bouton" \
 				"method" "post" \
-				"action" "%HOMEURL%/bin/traiteajout" \
+				"action" "$conf(homeurl)/$conf(script-ajout)" \
 		    ]
 
 	lappend donnees [list Normal $a $n $c]
@@ -677,59 +712,6 @@ proc traiteajout-multi {dbfd tc ft} {
     ::webapp::send html [::webapp::file-subst $conf(page-ajout-multi) \
 					[list \
 					    [list %LISTE% $liste] \
-					] \
-				    ]
-    return 0
-}
-
-##############################################################################
-# Ajout de machines après une recherche consécutive
-##############################################################################
-
-# Historique
-#   2010/01/03 : pda      : début
-#
-proc traiteajout-serie {dbfd tc ft} {
-    global conf
-    upvar $ft ftab
-    upvar $tc tabcor
-
-    set login $tabcor(login)
-    set idcor $tabcor(idcor)
-    set idgrp $tabcor(idgrp)
-
-    #
-    # Valider les champs du formulaire
-    #
-#	- action : "ajout-serie"
-#	- adr : adresse à inscrire (+1 à chaque tour)
-#	- nbadr : nb d'adresses souhaitées (-1 à chaque tour)
-#	- domaine : domaine dans lequel la machine doit être ajoutée (optionnel)
-#	- iddhcpprofil : l'id du profil DHCP, ou 0 (optionnel)
-#	- hinfo : type de machine (texte) (optionnel)
-#	- droitsmtp : inexistant ou non vide (optionnel)
-#	- commentaire : informations complémentaires (optionnel)
-#	- respnom : nom et prénom du responsable (optionnel)
-#	- respmel : adresse électronique du responsable (optionnel)
-
-    set adr          [string trim [lindex $ftab(adr) 0]]
-    set nbadr        [string trim [lindex $ftab(nbadr) 0]]
-    set domaine      [string trim [lindex $ftab(domaine) 0]]
-    set iddhcpprofil [string trim [lindex $ftab(iddhcpprofil) 0]]
-    set hinfo        [string trim [lindex $ftab(hinfo) 0]]
-    set droitsmtp    [string trim [lindex $ftab(droitsmtp) 0]]
-    set commentaire  [string trim [lindex $ftab(commentaire) 0]]
-    set respnom      [string trim [lindex $ftab(respnom) 0]]
-    set respmel      [string trim [lindex $ftab(respmel) 0]]
-
-
-    #
-    # Sortie de la page
-    #
-
-    ::webapp::send html [::webapp::file-subst $conf(err) \
-					[list \
-					    [list %MESSAGE% "pas encore codé"] \
 					] \
 				    ]
     return 0
