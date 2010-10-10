@@ -1,0 +1,85 @@
+{
+\* $Id: ajout.htgt 404 2010-10-08 20:09:57Z pda $
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {10/10/2010}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    CRC - DNS
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    RÉSEAU OSIRIS
+    CENTRE RÉSEAU COMMUNICATION
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
+	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
+	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
+	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
+	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
+	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
+	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
+	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
+	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
+	}
+	\elementbandeau {Voir aussi} {
+	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
+	    \reference {\lien {CRC}	{http://www-crc.u-strasbg.fr/crc/}}
+	}
+}
+
+\* affichage ou non des différentes puces
+
+\set {header} {
+    <style type="text/css">
+	#suppruneip \{
+	    display: %DISPUNEIP%;
+	\}
+    </style>
+}
+
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Édition de l'adresse %ADR%}
+
+    Que souhaitez-vous faire~?
+
+    <ul>
+	<li>
+	    <a href="%HOMEURL%/bin/traitesuppr?action=suppr-nom&confirm=oui&nom=%NOM%&domaine=%DOMAINE%"
+		>Supprimer</a>
+		la machine '%NOM%.%DOMAINE%'.
+	    </li>
+	<li id="suppruneip">
+	    <a href="%HOMEURL%/bin/traitesuppr?action=suppr-nom&confirm=oui&nom=%NOM%&domaine=%DOMAINE%"
+		>Supprimer l'adresse</a>
+		'%ADR%' de '%NOM%.%DOMAINE%'
+		(mais il restera les autres adresses).
+	    </li>
+	<li>
+	    <a href="%HOMEURL%/bin/editmodif?action=modif-infos&nom=%NOM%&domaine=%DOMAINE%"
+		>Éditer les informations</a>
+		de '%NOM%.%DOMAINE%'.
+	    </li>
+	<li>
+	    <a href="%HOMEURL%/bin/liste?format=adresses&%NEXTARGS%"
+		>Revenir à la carte</a>
+	    </li>
+    </ul>
+
+    %MACHINE%
+}
+
+}
