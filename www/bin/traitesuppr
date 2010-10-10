@@ -302,6 +302,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     #
     # Valider l'accès à ce nom
     #
+
     set nom     $trr(nom)
     set domaine $trr(domaine)
     set msg [valide-droit-nom $dbfd $idcor $nom $domaine bidon "supprimer-un-nom"]
