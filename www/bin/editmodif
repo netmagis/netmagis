@@ -9,7 +9,6 @@
 #
 # Paramètres (formulaire ou URL) :
 #   - édition des informations d'une machine
-#	- action : "modif-infos"
 #	- nom : nom de la machine à ajouter
 #	- domaine : domaine dans lequel elle doit être ajoutée
 #
