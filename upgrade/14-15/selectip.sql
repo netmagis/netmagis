@@ -164,8 +164,13 @@ CREATE OR REPLACE FUNCTION markcidr (reseau CIDR, lim INTEGER, grp INTEGER)
 
 	CREATE TEMPORARY TABLE allip (
 	    adr INET,
-	    avail INTEGER,		-- 1 : avail, 2 : busy, 0 : unavailable
-	    fqdn TEXT			-- if 2, then fqdn else NULL
+	    avail INTEGER,
+		-- 0 : unavailable (broadcast addr, no right on addr, etc.)
+		-- 1 : not declared and not in a dhcp range
+		-- 2 : declared and not in a dhcp range
+		-- 3 : not declared and in a dhcp range
+		-- 4 : declared and in a dhcp range
+	    fqdn TEXT			-- if 2 or 4, then fqdn else NULL
 	) ;
 
 	a := min ; 
@@ -185,6 +190,17 @@ CREATE OR REPLACE FUNCTION markcidr (reseau CIDR, lim INTEGER, grp INTEGER)
 		AND rr_ip.idrr = rr.idrr
 		AND rr.iddom = domaine.iddom
 		;
+
+	UPDATE allip
+	    SET avail = CASE
+			    WHEN avail = 1 THEN 3
+			    WHEN avail = 2 THEN 4
+			END
+	    FROM dhcprange
+	    WHERE (avail = 1 OR avail = 2)
+		AND adr >= dhcprange.min
+		AND adr <= dhcprange.max
+	    ;
 
 	RETURN ;
 

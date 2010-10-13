@@ -42,21 +42,35 @@
 
 \set {header} {
     <style type="text/css">
-	#map td.notav \{
+	td.notav \{
 	    text-align: center;
 	    background-color: silver;
 	    width: 6%;
 	\}
-	#map td.free  \{
+	td.noname-nodhcp  \{
 	    text-align: center;
 	    background-color: palegreen;
 	    text-decoration:none;
 	    width: 6%;
 	\}
-	#map td.busy  \{
+	td.name-nodhcp  \{
 	    text-align: center;
 	    background-color: red;
 	    width: 6%;
+	\}
+	td.noname-dhcp  \{
+	    text-align: center;
+	    background-color: darkorange;
+	    text-decoration:none;
+	    width: 6%;
+	\}
+	td.name-dhcp  \{
+	    text-align: center;
+	    background-color: darkred;
+	    width: 6%;
+	\}
+	#legend table \{
+	    border: 1px solid black;
 	\}
 	#map a:link, #map a:visited, #map a:hover, #map a:active \{
 	    text-decoration: none;
