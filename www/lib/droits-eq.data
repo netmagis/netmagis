@@ -76,7 +76,7 @@ lablang			^$
 labo-u			^$
 lse-ulp			^$
 math			^irma-poe
-medecine		^((hemato-ce1)|(forum-med|med-bat3|chu|poincare|med-bat2|ophtalmo|hygiene|chirb|lab-medb|chira|dentaire|dermato|orl|medical|anapat|neurologie|clovis|parodonto|chu-imagerie)-)
+medecine		^((hemato-ce1)|(microbio|med-bat2|forum-med|med-bat3|chu|poincare|med-bat2|ophtalmo|hygiene|chirb|lab-medb|chira|dentaire|dermato|orl|medical|anapat|neurologie|clovis|parodonto|chu-imagerie)-)
 misha			^misha-
 neurochem		^$
 obs			^obs-
