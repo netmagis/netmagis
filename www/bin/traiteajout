@@ -148,6 +148,7 @@ set conf(tableau-multi) {
 	vbar {yes}
 	column {
 	    format {raw}
+	    align {center}
 	}
 	vbar {yes}
 	column { }
@@ -157,7 +158,9 @@ set conf(tableau-multi) {
 	vbar {yes}
 	column { }
 	vbar {yes}
-	column { }
+	column {
+	    align {center}
+	}
 	vbar {yes}
 	column {
 	    format {raw}
@@ -645,8 +648,8 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
     set burl "$conf(homeurl)/bin/traiteajout?action=ajout-multi&plage=$plage&nbadr=$nbadr"
 
     # titre du tableau (avec les urls de tri)
-    set c1 [::webapp::helem "a" "Adresse IP" "href" "$burl&tri=adr"]
-    set c2 [::webapp::helem "a" "Taille" "href" "$burl&tri=nbadr"]
+    set c1 [::webapp::helem "a" "Première adresse IP" "href" "$burl&tri=adr"]
+    set c2 [::webapp::helem "a" "Taille de l'intervalle" "href" "$burl&tri=nbadr"]
     lappend donnees [list Entete $c1 $c2 ""]
 
     # parcours des intervalles trouvés
