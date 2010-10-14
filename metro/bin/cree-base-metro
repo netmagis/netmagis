@@ -28,6 +28,7 @@ use strict;
 # fichier de configuration principal et chargement des fonctions de base
 our $conf_file = "%CONF%";
 require "%LIBMETRO%";
+
 #
 
 # tunning du module SNMP pour ne pas afficher les erreurs sur la sortie
@@ -43,6 +44,7 @@ our $rep_bin = read_conf_file("$conf_file","DIR_BIN");
 our $rep_sondes = read_conf_file("$conf_file","DIR_BIN_PROBES");
 our $rep_majdb = read_conf_file("$conf_file","DIR_PROBES");
 our $file_quarantaine = read_conf_file("$conf_file","FILE_METRO_QUARANTINE");
+our $file_sup_eq = read_conf_file("$conf_file","FILE_SUP_EQ");
 
 # liste des oids des equipements du réseau Osiris
 our %equipements = (
@@ -56,6 +58,8 @@ our %equipements = (
                 '1.3.6.1.4.1.9.1.563'   =>  "catalyst_3560",
                 '1.3.6.1.4.1.9.1.614'   =>  "catalyst_3560Giga",
                 '1.3.6.1.4.1.2636.1.1.1.2.2'    =>  "M20",
+                '1.3.6.1.4.1.2636.1.1.1.2.32'    =>  "EX8208",
+                '1.3.6.1.4.1.2636.1.1.1.2.25'    =>  "MX480",
                 '1.3.6.1.4.1.2021.250.255'  =>  "OpenBSD_3.5",
                 '1.3.6.1.4.1.8072.3.2.255'  =>  "FreeBSD_4.10",
                 '1.3.6.1.4.1.8072.3.2.8'    =>  "FreeBSD_5.4",
@@ -68,9 +72,15 @@ our %equipements = (
 our %if_speed = (
 		'GigabitEthernet'	=>  "1000",
 		'FastEthernet'		=>  "100",
-		'Dot11Radio'		=>  "100",
+		'Dot11Radio'		=>  "300",
 		'ge-'			=>  "1000",
+		'xe-'			=>  "10000",
 );
+
+# liste eq en supervision
+our %sonde_sup_prod;
+# liste eq integres dans appli TOPO
+our %sonde_sup_new;
 
 our %sonde_majMETRO;
 our %param_majMETRO;
@@ -80,7 +90,7 @@ our %sursis_maj_sondes;
 our %quarantaine;
 our %error_msg;
 
-# durée (jours) avant destruction d'une base d'un point de metro
+# duree (jours) avant destruction d'une base d'un point de metro
 # qui n'existe plus dans topo
 our $duree_quarantaine = read_conf_file("$conf_file","METRO_DAY_QUARANTINE");
 # message envoye par mail
@@ -114,17 +124,18 @@ if($fichier[0] eq "")
 
     # chargement de la liste des sondes en place
     charger_liste_majMETRO();
+    charger_liste_sup_prod();
 
     # chargement de la liste des nouvelles sondes
     my $lecture_maj_sondes = charger_liste_maj_sondes();
 
-    # effacement des novellees entrées dans metro.maj_sondes
+    # effacement des nouvellees entrées dans metro.maj_sondes
     open(LISTE,">$file_maj_sondes");
-    close(LISTE);    
+    close(LISTE);
 
     # suppression du verrou
     unlink "$rep_lock/maj_sondes.lock";
-
+ 
     # si le chargement de la liste des nouvelles sondes echoue.
     if($lecture_maj_sondes == -1)
     {
@@ -136,6 +147,12 @@ if($fichier[0] eq "")
 			"\t Fin du programme ######################");
 	exit(0);
     }
+ 
+    # installations des hotes supervises a partir de TOPO
+    cmp_listes_hotes_supervises();
+
+    # ecriture du fichier des hostes supervises
+    ecrit_liste_sup_eq();
 
     test_bases_expirees();
 
@@ -566,7 +583,7 @@ sub trafic
 
 
 ###########################################################
-# retourne de l'oid d'un équipement
+# retourne le sysoid d'un équipement
 sub get_snmp_oid
 {
     my ($param) = @_;
@@ -618,16 +635,27 @@ sub charger_liste_maj_sondes
     if(open(LISTE,$file_maj_sondes))
     {
 	my $compteur = 0;
+
 	while(<LISTE>)
 	{
 	    chomp;
 	    if(/^(.+?);(.+?);(.+?);(.+?);(.+?)$/ && !/echec$/)
 	    {
+
+		# traitement supervision		
+		if(ctrl_ip($3) == 1 && $4 ne "")
+                {
+	#		print "sonde_sup_new ($3) =$4\n";
+			$sonde_sup_new{$3}=$4;
+                }
+
+		# traitement appli METRO
 		my $param = clean_var($5);
 		# supprime les doublons
 		# si la sonde n'existe pas alors on la cree
 		if(!defined($sonde_maj_sonde{$2}))
 		{
+		    # traitement appli METRO
 		    $sonde_maj_sonde{$2} = $1;
 		    $param_maj_sonde{$2} = "$3 $4 $param";
 		    $compteur ++;
@@ -647,7 +675,7 @@ sub charger_liste_maj_sondes
 			elsif(($param_maj_sonde{$2} !~/undef/) && ($3 !~/undef/))
 			{
 			    # sinon, on alerte pour une intervention humaine
-			    # a condition que l'@ ip de l'equipement ai ete trouvee
+			    # a condition que l'@ ip de l'equipement ait ete trouvee
     
 			    # suppression par securite de la communaute snmp pour ne pas l'afficher dans le mail
 			    my $p1 = supprimer_com_snmp($param_maj_sonde{$2});
@@ -712,11 +740,13 @@ sub charger_liste_majMETRO
     if(open(LISTE,$file_majMETRO))
     {
 	my $compteur = 0;
+
 	while(<LISTE>)
 	{
 	    chomp;
 	    my @liste = split(/\s+/,$_);
        
+	    # Traitement METRO
 	    if($liste[1]=~/(.+).rrd$/)
 	    {
 		# supprime les doublons
@@ -742,6 +772,38 @@ sub charger_liste_majMETRO
 	writelog("cree-base-metro","","info",
 	    "\t ERREUR : ouverture du fichier $file_majMETRO echouee");
     }
+}
+
+###########################################################
+# chargement des lignes du fichier des equipements 
+# supervises
+sub charger_liste_sup_prod
+{
+	if(open(LISTE,$file_sup_eq))
+    	{
+		my $compteur_sup = 0;
+        	while(<LISTE>)
+        	{
+			#print $_;
+            		chomp;
+            		my @l = split(/,/,$_);
+			
+			if(ctrl_ip($l[1]) == 1 && $l[2] ne "")
+        		{
+				# supprime les doublons
+                        	if(!defined($sonde_sup_prod{$l[0]}))
+				{
+					$compteur_sup ++;
+					$sonde_sup_prod{$l[0]}{'ip'} = $l[1];
+					$sonde_sup_prod{$l[0]}{'snmp_com'} = $l[2];
+					$sonde_sup_prod{$l[0]}{'host_tmpl'} = $l[3];
+					$sonde_sup_prod{$l[0]}{'topo_enabled'} = $l[4];
+					$sonde_sup_prod{$l[0]}{'quarantine'} = $l[5];
+				}
+			}
+                }
+	}
+	close(LISTE);
 }
 
 
@@ -822,7 +884,7 @@ sub writelog
 	}
 	else
 	{
-	    #print "Impossible de loger\n";
+	    print "Impossible de loger\n";
 	}
 }
 
@@ -976,3 +1038,176 @@ sub message_erreur
     $message_mail = 1; 
     $error_msg{$msg_err} = 1;
 }
+
+
+#############################################################
+# synchronisation de la liste des host integres dans TOPO 
+# et ceux integres dans la plateforme de supervision
+sub cmp_listes_hotes_supervises
+{
+	# controle des hosts a partir de la liste des hosts en supervision
+	foreach my $key (keys %sonde_sup_prod)
+	{
+		# teste si l'equipement est integre a TOPO
+		if(defined($sonde_sup_new{$sonde_sup_prod{$key}{'ip'}}))
+		{
+			# si dans la liste de TOPO on controle les infos et on les met a jour
+			update_sup_host($key,$sonde_sup_new{$sonde_sup_prod{$key}{'ip'}});
+		}
+		# si l'equipement n'est plus integre dans TOPO
+		else
+		{
+			del_sup_host($key);
+		}
+	}
+
+	# controle des hosts a partir du reste de la liste envoyée par TOPO
+	# il ne s'agit plus que de nouvelles machines non supervisees
+	foreach my $key (keys %sonde_sup_new)
+	{
+		my $oid = check_host($key,$sonde_sup_new{$key});
+		# le host repond
+		if($oid != -1)
+		{
+			my $hostname = gethostnamebyaddr($key);
+			
+			# si la resolution dns fonctionne
+			if($hostname ne "")
+			{
+		        	# ecriture dans la liste des machines a superviser
+				$sonde_sup_prod{$hostname}{'ip'} = $key;
+				$sonde_sup_prod{$hostname}{'topo_enabled'} = 1;
+                        	$sonde_sup_prod{$hostname}{'quarantine'} = 0;
+                        	$sonde_sup_prod{$hostname}{'snmp_com'} = $sonde_sup_new{$key};
+				$sonde_sup_prod{$hostname}{'oid'} = $oid;
+		
+				 writelog("cree-base-metro","","info",
+                                        "\t INFO SUP : Intergration en supervision de ($key,$sonde_sup_new{$key})");
+			}
+			# sinon message d'erreur
+			else
+			{
+				writelog("cree-base-metro","","info",
+                                	"\t ERREUR SUP : Integration en supervision de ($key,$sonde_sup_new{$key}), echec resolution DNS");
+			}
+		}
+		# le host ne repond pas en snmp
+		else
+		{
+			writelog("cree-base-metro","","info",
+                		"\t ERREUR SUP : Impossible d'integrer en supervision l'equipement ($key,$sonde_sup_new{$key})");	
+		}
+	}
+}
+
+sub update_sup_host
+{
+	my ($host,$snmp_com) = @_;
+	
+	my $hostname = gethostnamebyaddr($sonde_sup_prod{$host}{'ip'});
+
+	my $oid = check_host($sonde_sup_prod{$host}{'ip'},$snmp_com);
+
+	# si la machine est declaree dans le DNS
+	if($hostname ne "")
+	{
+		if($host eq $hostname)
+		{
+			$sonde_sup_prod{$hostname}{'topo_enabled'} = 1;
+			$sonde_sup_prod{$hostname}{'quarantine'} = 0;
+			$sonde_sup_prod{$hostname}{'snmp_com'} = $snmp_com;
+		}
+		else
+		# si le nom du host a change
+		{
+			$sonde_sup_prod{$hostname}{'ip'} = $sonde_sup_prod{$host}{'ip'};
+			$sonde_sup_prod{$hostname}{'snmp_com'} = $snmp_com;
+			$sonde_sup_prod{$hostname}{'topo_enabled'} = 1;
+			$sonde_sup_prod{$hostname}{'quarantine'} = 0;
+			delete $sonde_sup_prod{$host};
+
+			writelog("cree-base-metro","","info",
+                                        "\t WARNING SUP : le nom du host a change $host -> $hostname : suppression de $host");
+		}
+	}
+	# si la machine n'est pas declaree ou que le DNS ne repond pas
+	else
+	{
+		$sonde_sup_prod{$hostname}{'snmp_com'} = $snmp_com;
+		$sonde_sup_prod{$hostname}{'topo_enabled'} = 1;
+                $sonde_sup_prod{$hostname}{'quarantine'} = 0;		
+	}
+
+	if($oid != -1)
+        {
+        	$sonde_sup_prod{$hostname}{'oid'} = $oid;
+        }
+        else
+        {
+                 writelog("cree-base-metro","","info",
+                        "\t ERREUR SUP : echec SNMP get sysOID ($sonde_sup_prod{$hostname}{'ip'},$snmp_com), on laisse en supervision");
+        }
+	
+	# nettoyage de sonde_sup_new
+	delete $sonde_sup_new{$sonde_sup_prod{$host}{'ip'}};
+}
+
+sub del_sup_host
+{
+	my ($key) = @_;
+
+	my $jours_max_quarantaine = read_conf_file("$conf_file","METRO_DAY_QUARANTINE");
+	
+	# si le host n'a pas depasse la periode de max de quarantaine ...
+	if(($jours_max_quarantaine * 24) > $sonde_sup_prod{$key}{'quarantine'})
+	{
+		$sonde_sup_prod{$key}{'quarantine'} ++;
+		$sonde_sup_prod{$key}{'topo_enabled'} = 0;
+
+		if($sonde_sup_prod{$key}{'quarantine'} == 1)
+		{
+			writelog("cree-base-metro","","info",
+                                "\t INFO SUP : Hote disparu de TOPO, mise en quarantaine de $key,$sonde_sup_prod{$key}");	
+		}
+	}
+	# sinon, on supprime le host de la supervision
+	else
+	{
+		writelog("cree-base-metro","","info",
+                                "\t INFO SUP : suppression definitive de $key,$sonde_sup_prod{$key}");
+		delete $sonde_sup_prod{$key};
+	}
+}
+
+
+###########################################################
+# ecriture du fichier FILLE_SUP_EQ
+sub ecrit_liste_sup_eq
+{
+    my $key;
+
+    # ecriture des sondes qui n'ont pas pu etre installees
+    if(open(LISTE,">$file_sup_eq"))
+    {
+	#print LISTE "HOSTNAME,HOST_IP_ADDRESS,SNMP_COMMUNITY,HOST_TEMPLATE,TOPO_ENABLED,QUARANTINE\n";
+
+        foreach $key (keys %sonde_sup_prod)
+        {
+		if($sonde_sup_prod{$key}{'ip'} ne "" && $sonde_sup_prod{$key}{'snmp_com'} ne "")
+		{
+            		print LISTE "$key,$sonde_sup_prod{$key}{'ip'},$sonde_sup_prod{$key}{'snmp_com'},$sonde_sup_prod{$key}{'oid'},$sonde_sup_prod{$key}{'topo_enabled'},$sonde_sup_prod{$key}{'quarantine'}\n";
+		}
+        }
+
+        close(LISTE);
+        
+	writelog("cree-base-metro","","info",
+            "\t INFO SUP : Ecriture du fichier $file_sup_eq");
+    }
+    else
+    {
+        writelog("cree-base-metro","","info",
+            "\t ERREUR SUP : ouverture du fichier $file_sup_eq en ecriture impossible");
+    }
+}
+ 

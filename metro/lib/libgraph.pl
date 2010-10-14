@@ -35,6 +35,7 @@ sub genere_graph
 	'nbauthwifi'		=> \&nbauthwifi,
 	'nbassocwifi'		=> \&nbassocwifi,
 	'counter_generic'	=> \&counter_generic,
+	'packets'		=> \&packets,
     );
     
     
@@ -1813,19 +1814,19 @@ sub GaugeCPUJuniper
 	comment        => ' ',
 	gprint         => {
             draw      => 'cpu0',
-            format    => 'MIN:%3.0lf %S',
+            format    => 'MIN:%5.0lf %S',
         },
 	gprint         => {
             draw      => 'cpu0',
-            format    => 'MAX:%3.0lf %S',
+            format    => 'MAX:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu0',
-            format    => 'AVERAGE:%3.0lf %S',
+            format    => 'AVERAGE:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu0',
-            format    => 'LAST:%3.0lf %S\\n',
+            format    => 'LAST:%5.0lf %S\\n',
         },
         draw            => {
             type        => 'line',
@@ -1836,19 +1837,19 @@ sub GaugeCPUJuniper
         comment        => ' ',
         gprint         => {
             draw      => 'cpu1',
-            format    => 'MIN:%3.0lf %S',
+            format    => 'MIN:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu1',
-            format    => 'MAX:%3.0lf %S',
+            format    => 'MAX:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu1',
-            format    => 'AVERAGE:%3.0lf %S',
+            format    => 'AVERAGE:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu1',
-            format    => 'LAST:%3.0lf %S\\n',
+            format    => 'LAST:%5.0lf %S\\n',
         },
     );
 }
@@ -1907,19 +1908,19 @@ sub GaugeCPUCisco
 	comment        => '  ',
 	gprint         => {
             draw      => 'cpu_1min',
-            format    => 'MIN:%3.0lf %S',
+            format    => 'MIN:%5.0lf %S',
         },
 	gprint         => {
             draw      => 'cpu_1min',
-            format    => 'MAX:%3.0lf %S',
+            format    => 'MAX:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu_1min',
-            format    => 'AVERAGE:%3.0lf %S',
+            format    => 'AVERAGE:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu_1min',
-            format    => 'LAST:%3.0lf %S\\n',
+            format    => 'LAST:%5.0lf %S\\n',
         },
         draw            => {
             type        => 'line',
@@ -1930,19 +1931,19 @@ sub GaugeCPUCisco
         comment        => ' ',
         gprint         => {
             draw      => 'cpu_5min',
-            format    => 'MIN:%3.0lf %S',
+            format    => 'MIN:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu_5min',
-            format    => 'MAX:%3.0lf %S',
+            format    => 'MAX:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu_5min',
-            format    => 'AVERAGE:%3.0lf %S',
+            format    => 'AVERAGE:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu_5min',
-            format    => 'LAST:%3.0lf %S\\n',
+            format    => 'LAST:%5.0lf %S\\n',
         },
     );
 }
@@ -2003,19 +2004,19 @@ sub GaugeCPUServer
         comment        => '   ',
 	gprint         => {
             draw      => 'total',
-            format    => 'MIN:%3.0lf %S',
+            format    => 'MIN:%5.0lf %S',
         },
         gprint         => {
             draw      => 'total',
-            format    => 'MAX:%3.0lf %S',
+            format    => 'MAX:%5.0lf %S',
         },
         gprint         => {
             draw      => 'total',
-            format    => 'AVERAGE:%3.0lf %S',
+            format    => 'AVERAGE:%5.0lf %S',
         },
         gprint         => {
             draw      => 'total',
-            format    => 'LAST:%3.0lf %S\\n',
+            format    => 'LAST:%5.0lf %S\\n',
         },
         draw            => {
             type        => 'line',
@@ -2026,19 +2027,19 @@ sub GaugeCPUServer
 	comment        => '  ',
 	gprint         => {
             draw      => 'cpu_system',
-            format    => 'MIN:%3.0lf %S',
+            format    => 'MIN:%5.0lf %S',
         },
 	gprint         => {
             draw      => 'cpu_system',
-            format    => 'MAX:%3.0lf %S',
+            format    => 'MAX:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu_system',
-            format    => 'AVERAGE:%3.0lf %S',
+            format    => 'AVERAGE:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu_system',
-            format    => 'LAST:%3.0lf %S\\n',
+            format    => 'LAST:%5.0lf %S\\n',
         },
         draw            => {
             type        => 'line',
@@ -2049,19 +2050,19 @@ sub GaugeCPUServer
         comment        => '    ',
         gprint         => {
             draw      => 'cpu_user',
-            format    => 'MIN:%3.0lf %S',
+            format    => 'MIN:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu_user',
-            format    => 'MAX:%3.0lf %S',
+            format    => 'MAX:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu_user',
-            format    => 'AVERAGE:%3.0lf %S',
+            format    => 'AVERAGE:%5.0lf %S',
         },
         gprint         => {
             draw      => 'cpu_user',
-            format    => 'LAST:%3.0lf %S\\n',
+            format    => 'LAST:%5.0lf %S\\n',
         },
     );
 }
@@ -3158,5 +3159,231 @@ sub counter_generic
     );
 }
 
+
+
+###########################################################
+# Graph de packets (in et out)
+sub packets
+{
+    	my ($nb_rrd_bases,$ref_l,$output,$start,$end,$size,$commentaire) = @_;
+
+    	# dereferencement
+   	my @l = @$ref_l;
+    
+    	my ($width,$height) = split(/x/,$size);
+	
+    	my %color_lines = ( 'input'  => "00dd00",
+		    'output'  => "0000ff",
+		    'maxinput'  => "b8ff4d",
+                    'maxoutput'  => "ffa1e9",
+	);
+
+	$vertical_label = "nombre de paquets";
+
+	my $rrd = RRDTool::OO->new(
+            file => "$ref_l->[0]->[0]->{'base'}",
+	);
+
+	my @liste_arg;
+        my $plusline="";
+	my $drawlinein,$drawlineout;
+
+	my $ttl = @{$l[0]};
+
+        for(my $j=0;$j<$ttl;$j++)
+        {
+            my ($drawin,$drawout,$drawinmax,$drawoutmax);
+            $drawin->{'file'} = $l[0][$j]{'base'};
+            $drawin->{'type'} = "hidden";
+            $drawin->{'dsname'} = "input";
+            $drawin->{'name'} = "$l[0][$j]{'graph'}__inputbytes";
+            $drawin->{'cfunc'} = "AVERAGE";
+            $drawout->{'file'} = $l[0][$j]{'base'};
+            $drawout->{'type'} = "hidden";
+            $drawout->{'dsname'} = "output";
+            $drawout->{'name'} = "$l[0][$j]{'graph'}__outputbytes";
+            $drawout->{'cfunc'} = "AVERAGE";
+            $drawin->{'name'} =~ s/\./__/g;
+            $drawout->{'name'} =~ s/\./__/g;
+	    $drawinmax->{'file'} = $l[0][$j]{'base'};
+            $drawinmax->{'type'} = "hidden";
+            $drawinmax->{'dsname'} = "input";
+            $drawinmax->{'name'} = "$l[0][$j]{'graph'}__maxinputbytes";
+            $drawinmax->{'cfunc'} = "MAX";
+            $drawoutmax->{'file'} = $l[0][$j]{'base'};
+            $drawoutmax->{'type'} = "hidden";
+            $drawoutmax->{'dsname'} = "output";
+            $drawoutmax->{'name'} = "$l[0][$j]{'graph'}__maxoutputbytes";
+            $drawoutmax->{'cfunc'} = "MAX";
+            $drawinmax->{'name'} =~ s/\./__/g;
+            $drawoutmax->{'name'} =~ s/\./__/g;
+	    
+            # calcul du cumul pour les donnes bases explicitement aggregees
+            # ex : Mcrc-rc1.wifi-sec+Mle7-rc1.wifi-sec
+            # (afficher sous forme de ligne)
+            if(exists $drawlinein->{'cdef'})
+            {
+                $drawlinein->{'cdef'}="$drawlinein->{'cdef'},$drawin->{'name'}";
+                $drawlineout->{'cdef'}="$drawlineout->{'cdef'},$drawout->{'name'}";
+		$drawlineinmax->{'cdef'}="$drawlineinmax->{'cdef'},$drawinmax->{'name'}";
+                $drawlineoutmax->{'cdef'}="$drawlineoutmax->{'cdef'},$drawoutmax->{'name'}";
+                $plusline = "$plusline,ADDNAN";
+            }
+            else
+            {
+                $drawlinein->{'cdef'}=$drawin->{'name'};
+                $drawlineout->{'cdef'}=$drawout->{'name'};
+		$drawlineinmax->{'cdef'}=$drawinmax->{'name'};
+                $drawlineoutmax->{'cdef'}=$drawoutmax->{'name'};
+            }
+
+            push @liste_arg,"draw";
+            push @liste_arg,$drawin;
+            push @liste_arg,"draw";
+            push @liste_arg,$drawout;
+	    push @liste_arg,"draw";
+            push @liste_arg,$drawinmax;
+	    push @liste_arg,"draw";
+            push @liste_arg,$drawoutmax;
+        }
+        # pour convertir les valeurs de trafic des lignes en bits
+        $drawlinein->{'cdef'}="$drawlinein->{'cdef'}$plusline";
+        $drawlineout->{'cdef'}="$drawlineout->{'cdef'}$plusline";
+	$drawlineinmax->{'cdef'}="$drawlineinmax->{'cdef'}$plusline";
+        $drawlineoutmax->{'cdef'}="$drawlineoutmax->{'cdef'}$plusline";
+
+	# comparaison des legendes pour la mise en page
+	my %llegend;
+	if($l[0][0]{'legend'} ne "")
+        {
+	    $llegend{'in'} = split(//,$l[0][0]{'legend'});
+	    my $maxlengthlengend = $llegend{'in'};
+	    $llegend{'out'} = split(//,$l[0][0]{'legend'});
+	}
+	else
+	{
+	    $llegend{'in'} = 0;
+	    $llegend{'out'} = 0;
+	}
+	$maxlengthlengend = $maxlengthlengend + 2;
+
+	# ecriture de la legende en entree
+	my $spaces = get_spaces(0,$maxlengthlengend,14);
+	push @liste_arg,"comment";
+	push @liste_arg,"$spaces maximum          moyen        actuel\\n";
+	my $gprintin,$gprintout,$gprintinmax,$gprintoutmax;
+	$spaces = get_spaces($llegend{'in'},$maxlengthlengend,-12);
+	# ecriture de la courbe en input
+	$drawlinein->{'type'} = "area";
+	$drawlinein->{'color'} = $color_lines{'input'};
+	$drawlinein->{'name'} = "inputbits";
+	$drawlinein->{'legend'} = "$l[0][0]{'legend'} entrant";
+	push @liste_arg,"draw";
+	push @liste_arg,$drawlinein;
+	# legende trafic in
+	push @liste_arg,"comment";
+	push @liste_arg,$spaces;
+	$gprintin->{0}->{'draw'}="inputbits";
+	$gprintin->{0}->{'format'}="MAX:%5.0lf %SPkts/s";
+	push @liste_arg,"gprint";
+	push @liste_arg,$gprintin->{0};
+	$gprintin->{1}->{'draw'}="inputbits";
+	$gprintin->{1}->{'format'}="AVERAGE:%5.0lf %SPkts/s";
+	push @liste_arg,"gprint";
+	push @liste_arg,$gprintin->{1};
+	$gprintin->{2}->{'draw'}="inputbits";
+	$gprintin->{2}->{'format'}="LAST:%5.0lf %SPkts/s\\n";
+	push @liste_arg,"gprint";
+	push @liste_arg,$gprintin->{2};
+	
+	# ecriture des valeurs MAX selon l'intervalle de temps
+	if(($end - $start) > 800000)
+        {
+	    # ecriture de la legende en entree
+	    $spaces = get_spaces($llegend{'in'},$maxlengthlengend,-12);
+	    # ecriture de la courbe en input
+	    $drawlineinmax->{'type'} = "line";
+	    $drawlineinmax->{'color'} = $color_lines{'maxinput'};
+	    $drawlineinmax->{'name'} = "maxinputbits";
+	    $drawlineinmax->{'legend'} = "$l[0][0]{'legend'} entrant crête";
+	    push @liste_arg,"draw";
+	    push @liste_arg,$drawlineinmax;
+	    # legende trafic in
+	    push @liste_arg,"comment";
+	    push @liste_arg,$spaces;
+	    $gprintinmax->{0}->{'draw'}="maxinputbits";
+	    $gprintinmax->{0}->{'format'}="MAX:%5.0lf %SPkts/s";
+	    push @liste_arg,"gprint";
+	    push @liste_arg,$gprintinmax->{0};
+	    $gprintinmax->{1}->{'draw'}="maxinputbits";
+	    $gprintinmax->{1}->{'format'}="AVERAGE:%5.0lf %SPkts/s";
+	    push @liste_arg,"gprint";
+	    push @liste_arg,$gprintinmax->{1};
+	    $gprintinmax->{2}->{'draw'}="maxinputbits";
+	    $gprintinmax->{2}->{'format'}="LAST:%5.0lf %SPkts/s\\n";
+	    push @liste_arg,"gprint";
+	    push @liste_arg,$gprintinmax->{2};
+
+	    # ecriture de la legende en entree
+            $spaces = get_spaces($llegend{'out'},$maxlengthlengend,-12);
+            # ecriture de la courbe en input
+            $drawlineoutmax->{'type'} = "line";
+            $drawlineoutmax->{'color'} = $color_lines{'maxoutput'};
+            $drawlineoutmax->{'name'} = "maxoutputbits";
+            $drawlineoutmax->{'legend'} = "$l[0][0]{'legend'} sortant crête";
+            push @liste_arg,"draw";
+            push @liste_arg,$drawlineoutmax;
+            # legende trafic in
+            push @liste_arg,"comment";
+            push @liste_arg,$spaces;
+            $gprintoutmax->{0}->{'draw'}="maxoutputbits";
+            $gprintoutmax->{0}->{'format'}="MAX:%5.0lf %SPkts/s";
+            push @liste_arg,"gprint";
+            push @liste_arg,$gprintoutmax->{0};
+            $gprintoutmax->{1}->{'draw'}="maxoutputbits";
+            $gprintoutmax->{1}->{'format'}="AVERAGE:%5.0lf %SPkts/s";
+            push @liste_arg,"gprint";
+            push @liste_arg,$gprintoutmax->{1};
+            $gprintoutmax->{2}->{'draw'}="maxoutputbits";
+            $gprintoutmax->{2}->{'format'}="LAST:%5.0lf %SPkts/s\\n";
+            push @liste_arg,"gprint";
+            push @liste_arg,$gprintoutmax->{2};
+        }
+
+	# ecriture de la courbe en output
+	$spaces = get_spaces($llegend{'out'},$maxlengthlengend,-12);
+	$drawlineout->{'type'} = "line";
+        $drawlineout->{'color'} = $color_lines{'output'};
+        $drawlineout->{'name'} = "outputbits";
+	$drawlineout->{'legend'} = "$l[0][0]{'legend'} sortant";
+	push @liste_arg,"draw";
+        push @liste_arg,$drawlineout;
+        # legende trafic out
+        push @liste_arg,"comment";
+        push @liste_arg,$spaces;
+        $gprintout->{0}->{'draw'}="outputbits";
+        $gprintout->{0}->{'format'}="MAX:%5.0lf %SPkts/s";
+        push @liste_arg,"gprint";
+        push @liste_arg,$gprintout->{0};
+        $gprintout->{1}->{'draw'}="outputbits";
+        $gprintout->{1}->{'format'}="AVERAGE:%5.0lf %SPkts/s";
+        push @liste_arg,"gprint";
+        push @liste_arg,$gprintout->{1};
+        $gprintout->{2}->{'draw'}="outputbits";
+        $gprintout->{2}->{'format'}="LAST:%5.0lf %SPkts/s\\n";
+        push @liste_arg,"gprint";
+        push @liste_arg,$gprintout->{2};
+
+	$rrd->graph(
+            image           => "-",
+            title           => "$commentaire",
+            vertical_label  => "trafic (Paquets/s)",
+            height          => $height,
+            width           => $width,
+            start           => $start,
+            end             => $end,
+            @liste_arg,
+    	);
+}
 
 return 1;

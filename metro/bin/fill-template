@@ -9,6 +9,11 @@
 
 use strict;
 
+# Fichier de configuration principal et chargement des focntions de base
+my $conf_file = "%CONF%";
+require "%LIBMETRO%";
+
+
 # On récupère le nombre d'arguments
 my $nb_args=@ARGV;
 
@@ -17,9 +22,6 @@ if($nb_args==0 || $nb_args>2 || ($nb_args==1) && ($ARGV[0]=~ /-h/ || $ARGV[0]=~ 
    print "usage : fill_template <fichier_template> <fichier_rempli>\n";
    exit 0;
 }
-
-# Fichier de configuration principal et chargement des focntions de base
-my $conf_file = "%CONF%";
 
 # Template du fichier de conf à remplir avec les bonnes valeurs
 my $template_file = $ARGV[0];
@@ -36,8 +38,6 @@ else
 {
    $template_filled_file = $ARGV[1];
 }
-
-require "%LIBMETRO%";
 
 chomp $template_file;
 

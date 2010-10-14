@@ -126,6 +126,28 @@ sub get_if_octet
                                 {
                                         writelog("poller_$group$num_process",$config{'logopt'},"info",
                                                 "\t -> ERROR while updating $base: $ERR");
+					# s'il n'y a pas de base on en cree une
+                                    	if($ERR =~/No such file or directory/)
+                                    	{
+                                        	if($base =~/$config{'path_rrd_db'}/)
+                                        	{
+                                            		my @decomp_oid = split(/\./,$oidin);
+                                            		my $t_decomp_oid = @decomp_oid;
+                                            		my $speed = get_snmp_ifspeed("$community\@$host",$decomp_oid[$t_decomp_oid-1]);
+							# si OID compteur de broadcast
+							if($oidin =~/1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.3\./)
+							{
+                                            			creeBaseBroadcast($base,$speed);
+							}
+							# sinon compteur de trafic
+							else
+							{	
+								creeBaseTrafic($base,$speed);
+							}
+                                            		writelog("get_if_snmp_$group$num_process",$config{'logopt'},"info",
+                                                	"\t -> create $base,$host,$if,$oidin,$oidout,$inverse,$arg,$speed");
+                                        	}
+                                    	}
                                 }
                                 #print "maj base rrd $base\n";
                         }
@@ -162,8 +184,31 @@ sub get_if_octet
                                 my $ERR=RRDs::error;
                                 if ($ERR)
                                 {
-                                        writelog("poller_$group$num_process",$config{'logopt'},"info",
+					writelog("poller_$group$num_process",$config{'logopt'},"info",
                                                 "\t -> ERROR while updating $base: $ERR");
+					# s'il n'y a pas de base, on en cree une
+					if($ERR =~/No such file or directory/)
+                                        {
+                                                if($base =~/$config{'path_rrd_db'}/)
+                                                {
+                                                        my @decomp_oid = split(/\./,$oidin);
+                                                        my $t_decomp_oid = @decomp_oid;
+                                                        my $speed = get_snmp_ifspeed("$community\@$host",$decomp_oid[$t_decomp_oid-1]);
+                                                        # si OID compteur de broadcast
+
+                                                        if($oidin =~/1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.3\./)
+                                                        {
+                                                                creeBaseBroadcast($base,$speed);
+                                                        }
+                                                        # sinon compteur de trafic
+                                                        else
+                                                        {
+                                                                creeBaseTrafic($base,$speed);
+                                                        }
+                                                        writelog("get_if_snmp_$group$num_process",$config{'logopt'},"info",
+                                                        "\t -> create $base,$host,$if,$oidin,$oidout,$inverse,$arg,$speed");
+                                                }
+                                        }
                                 }
                                 #print "maj base inverse rrd $base\n";
                         }

@@ -13,10 +13,11 @@
 
 use CGI qw/:standard/;
 use CGI::Pretty qw( :html3 );
+use POSIX;
 
 # fichier de configuration principal et chargement des focntions de base
-our $conf_file = "%CONF%";
-require "%LIBMETRO%";
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
 #
 $server_hostname = read_conf_file($conf_file,"WWW_IDRIS_HOSTNAME");
 $www_root = read_conf_file($conf_file,"WWW_IDRIS_DIR_ROOT");
@@ -74,13 +75,9 @@ if (param(-name=>'go!'))
         $mois_fin = (param('mois_fin'));
         $annee_fin = (param('annee_fin'));
 
-	$chaine_date = "date -v$jour_dep" . "d -v$mois_dep" . "m -v$annee_dep" . "y -v$heure_dep" . "H -v00M -v00S";
-	$date_dep = `$chaine_date +%s`;
-	chomp($date_dep);
-
-	$chaine_date = "date -v$jour_fin" . "d -v$mois_fin" . "m -v$annee_fin" . "y -v$heure_fin" . "H -v00M -v00S";
-        $date_fin = `$chaine_date +%s`;
-	chomp($date_dep);
+	$date_dep = dateSQL2time("$annee_dep-$mois_dep-$jour_dep $heure_dep:00:00");
+		
+	$date_fin = dateSQL2time("$annee_fin-$mois_fin-$jour_fin $heure_fin:00:00");
 
         $message_erreur = "";
 
@@ -243,11 +240,11 @@ if (param(-name=>'go!'))
 		print "<br>";
 		if($nom_graph ne "")
 		{
-		    print "<img src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+		    print "<img src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep&fin=$date_fin&taille=850x180\" alt=\"Trafic bits/s\">";
 		}
 		else
 		{
-		    print "<img src=\"https://$server_hostname$www_bin/gengraph?$param_graph&debut=$date_dep&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+		    print "<img src=\"https://$server_hostname$www_bin/gengraph?$param_graph&debut=$date_dep&fin=$date_fin&taille=850x180\" alt=\"Trafic bits/s\">";
 		}
 		print "<br>";
 	}
@@ -262,15 +259,13 @@ else
 	$liste_graph = "--aucun--";
 
 	$date = `date +%F-%H`;
+	chomp $date;
 
 	($a,$m,$j,$h) = (split(/-/,$date))[0,1,2,3];
 
-	$chaine_date = "date -v$j" . "d -v$m" . "m -v$a" . "y -v00H -v00M -v00S";
-	$date_dep = `$chaine_date +%s`;
-	chomp($date_dep);
-	$chaine_date = "date -v$j" . "d -v$m" . "m -v$a" . "y -v$heure_fin" . "H -v00M -v00S";
-        $date_fin = `$chaine_date +%s`;
-	chomp($date_fin);
+	$date_dep = dateSQL2time("$a-$m-$j 00:00:00");
+
+        $date_fin = dateSQL2time("$a-$m-$j $h:00:00");
 
 	print "<HTML><HEAD><TITLE>browser</TITLE>
 	<META HTTP-EQUIV=\"Cache-Control\" content=\"no-cache\">
@@ -393,11 +388,11 @@ else
 	</form>";
 	if($param_graph eq "")
 	{
-	    print "<img src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+	    print "<img src=\"https://$server_hostname$www_bin/gengraph?id=$nom_graph&debut=$date_dep&fin=$date_fin&taille=850x180\" alt=\"Trafic bits/s\">";
 	}
 	else
 	{
-	    print "<img src=\"https://$server_hostname$www_bin/gengraph?$param_graph&debut=$date_dep&fin=$date_fin&taille=650x180\" alt=\"Trafic bits/s\">";
+	    print "<img src=\"https://$server_hostname$www_bin/gengraph?$param_graph&debut=$date_dep&fin=$date_fin&taille=850x180\" alt=\"Trafic bits/s\">";
 	}
 	print "<br>
 	</BODY></HTML> ";
