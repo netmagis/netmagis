@@ -1,99 +1,116 @@
 #! %TCLSH%
 
 #  
-#  Recette pour accélérer le déroulement de rancid+topo pour permettre
-#  la modification de conf par interface Web topo
+# Recette pour accélérer le déroulement de rancid+topo pour permettre
+# la modification de conf par interface Web topo
 #  
-#  Il faut trois spools (répertoires) différents :
-#      - spool des modifications à propager
-#      - spool des modifications effectuées
-#      - spool des détections de modification
+# Il faut deux spools différents :
+#	- spool des détections de modification d'équipement
+#	- spool des modifications (à propager, puis ensuite effectuées)
 #  
-#  Lorsqu'une modification est effectuée sur l'interface Web :
-#  
-#      Un fichier est généré par modification effectuée (ex: chgt
-#      d'affectation d'un port dans un vlan) avec une ligne :
+# Lorsqu'une modification est effectuée sur l'interface Web :
 #
-#  	eq <eq> iface <iface> [desc <desc en hexa>] 
-#               [ether <vlanid>] [voice <vlanid>]
+#	Une entrée est générée par modification effectuée (ex: chgt
+#	d'affectation d'un port dans un vlan) avec les attributs
+#	suivants :
+#	- login de l'utilisateur
+#	- date de la requête de modification
+#	- équipement (RR)
+#	- interface
+#	- description d'interface
+#	- vlan d'accès
+#	- vlan voix
+#	L'entrée est une ligne dans la table topo.ifchanges de la base
+#	WebDNS.
 #
-#      Le fichier est mis dans un spool (i.e. répertoire) des modifications
-#      à propager. Le nom du fichier est au format nomeq.YYYYmmddHHMMSS
-#  
-#      Lorsque la modification est propagée sur l'équipement, le fichier
-#      est déplacé dans un spool différent contenant les modifications
-#      effectuées (mais pas encore enregistrées par topo).
+#	Lorsque la modification est propagée sur l'équipement, les
+#	attributs suivants sont actualisés :
+#	- date de modification
+#	- log de la modification (sortie de la commande de modification)
 #  
 #  Lorsqu'une modification sur un équipement est détectée :
 #  
-#      La modification peut être soit une modification automatique
-#      poussée à partir de l'interface Web, soit une modification
-#      manuelle par un très doué ingénieur réseau.
+#	La modification peut être soit une modification automatique
+#	poussée à partir de l'interface Web, soit une modification
+#	manuelle par un très doué ingénieur réseau.
 #  
-#      La détection peut-être réalisée via une trappe SNMP ou via
-#      l'analyse des fichiers de log. Un fichier doit être généré,
-#      dont le nom correspond au nom de l'équipement, dans un spool
-#      (différent du précédent).  La présence du fichier toto.u-strasbg.fr
-#      indique que l'équipement toto a été modifié.
+#	La détection peut-être réalisée via une trappe SNMP, via
+#	l'analyse des fichiers de log ou via l'accounting Radius.
+#	Dans tous les cas, une entrée est générée par modification
+#	détectée, avec les attributs suivants :
+#	- équipement (fqdn ou nom incomplet)
+#	- login
+#	- date de détection de l'événement
+#	L'entrée est une ligne dans la table topo.modeq de la base
+#	WebDNS.
+#
+#	Lorsque l'entrée est traitée, l'attribut suivant est actualisé :
+#	- booléen "traité"
 #  
 #  Rancid est remplacé par le programme, constitué d'une boucle infinie
 #  (démon), dont le corps est :
 #  
-#      - une fois par nuit, faire une récupération des confs (rancid original)
-#  	et une analyse des confs (topo) complètes
+#   1- une fois par nuit, faire une récupération des confs
+#	(rancid original) et une analyse des confs (topo) complètes
 #  
-#      - analyser le spool de modifications à effectuer, en regroupant
-#  	les modifications par équipement (mais en conservant la
+#   2- analyser le spool de modifications à effectuer, en regroupant
+#	les modifications par équipement (mais en conservant la
 #  	séquence des modifications)
 #  
-#  	- tester si l'équipement est accessible (fping)
+#	a- tester si l'équipement est accessible (fping)
 #  	    => l'idée est de ne pas attendre le timeout TCP si
 #  		l'équipement est éteint/crashé/etc
 #  
-#  	- propager ces modifications sur l'équipement s'il est
+#	b- propager ces modifications sur l'équipement s'il est
 #  	    accessible (normalement, ces modifications entrainent
 #  	    l'apparition d'une entrée dans le spool des modifications
 #  	    détectées)
 #  
-#  	- si la propagation s'est passée sans problème, déplacer les
+#	c- si la propagation s'est passée sans problème, déplacer les
 #  	    fichiers dans le spool des modifications effectuées.
 #  
-#  	- conserver la liste des équipements pour lesquels la
+#	d- conserver la liste des équipements pour lesquels la
 #  	    propagation des modifications s'est effectuée sans
 #  	    problème.
 #  
-#      - analyser le spool des détections de modifications
+#   3- analyser le spool des détections de modifications
 #  
-#  	- si l'équipement n'est pas dans routers.db, alors râler
+#  	a- si l'équipement n'est pas dans routers.db, alors râler
 #  
-#  	- si l'équipement est accessible, alors lancer rancid pour
+#  	b- si l'équipement est accessible, alors lancer rancid pour
 #  	    récupérer sa configuration
 #  
-#      - si la configuration d'un équipement a été modifiée/propagée
-#  	avec succès, mais que cet équipement n'apparaît pas dans
-#  	le spool des détections de modifications, alors râler
+#	c- si la configuration d'un équipement a été modifiée/propagée
+#  	    avec succès, mais que cet équipement n'apparaît pas dans
+#  	    le spool des détections de modifications, alors râler
 #  
-#      - lancer topo en restreignant l'analyse aux seuls équipements
-#  	modifiés
+#	d- lancer topo en restreignant l'analyse aux seuls équipements
+#  	    modifiés
 #  
-#      - supprimer les fichiers du spool des modifications effectuées
+#	e- supprimer les fichiers du spool des modifications effectuées
 #  
 #
 # Historique :
 #  2010/02/16 : pda/jean : création
 #
 
-set conf(spooldir) "%TOPODIR%/spool"
-
-set conf(spoolmodifies) "$conf(spooldir)/modifies"
-set conf(spoolapropager) "$conf(spooldir)/apropager"
-set conf(spooleffectues) "$conf(spooldir)/effectues"
-
-#set conf(fping) "%FPING% -q %s"
 set conf(fping) "%FPING% %s"
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
 set conf(extracteq)	{%TOPODIR%/bin/extracteq %1$s %2$s < %GRAPH%}
+
+set conf(delay)		%DELAY%
+
+set conf(pkg)		%PKGTCL%
+set conf(libdns)	%LIBDNS%
+
+set conf(base)		%BASE%
+
+lappend auto_path $conf(pkg)
+
+package require pgsql
+
+source $conf(libdns)
 
 #
 # Commandes de modification à envoyer pour chaque équipement
@@ -153,7 +170,7 @@ set conf(extracteq)	{%TOPODIR%/bin/extracteq %1$s %2$s < %GRAPH%}
 #
 
 array set confcmd {
-    cisco:*:exec /usr/local/libexec/rancid/clogin
+    cisco:*:exec {/usr/local/libexec/rancid/clogin -autoenable -u %RANCIDMODUSER% -p %RANCIDMODPASS%}
 
     cisco:*:prologue {
 	  {configure terminal}
@@ -190,7 +207,7 @@ array set confcmd {
 	      {write memory}
 	  }
 
-    juniper:*:exec /usr/local/libexec/rancid/jlogin
+    juniper:*:exec {/usr/local/libexec/rancid/jlogin -autoenable -u %RANCIDMODUSER% -p %RANCIDMODPASS%}
 
     juniper:*:prologue {
 	{configure}
@@ -220,7 +237,7 @@ array set confcmd {
 	{exit configuration}
     }
 
-    hp:*:exec /usr/local/libexec/rancid/hlogin
+    hp:*:exec {/usr/local/libexec/rancid/hlogin -autoenable -u %RANCIDMODUSER% -p %RANCIDMODPASS%}
     hp:*:prologue {
 	{configure terminal}
     }
@@ -259,201 +276,89 @@ array set confcmd {
 }
 
 #
-# Lit le spool des modifications à propager
+# Exécute une séquence de commandes sur un équipement
 #
 # Entrée :
-#  _tab : nom du tableau à remplir
-#  dir : répertoire du spool
-# Sortie :
-#   tab : tableau indexé suivant le nom de l'équipement contenant
-#          la liste des fichiers de modification à propager
+#  - fqdn : nom complet de l'équipement
+#  - type : type d'équipement (ex: cisco, juniper etc.)
+#  - model : modèle d'équipement (ex: 3750, M20 etc.)
+#  - lcmd : liste des commandes à exécuter
+#  - _msg : en retour, message d'erreur ou sortie de la commande
+# Sortie
+#  - valeur de retour : 1 si ok, 0 si erreur
 #
 # Historique : 
-#  2010/02/16 : pda/jean : création
+#  2010/02/18 : pda/jean : création
 #
 
-proc lire-apropager {_tab dir} {
-    upvar $_tab tab
-    
-    set lfile [glob -nocomplain -directory $dir "*"]
-    foreach file [lsort $lfile] {
-	if {[regexp {([^/]+)\.(\d+)$} $file bidon eq date]} then {
-	    lappend tab($eq) $file
-	}
-    }
-}
-
-#
-# Propage un ensemble de modifications sur un équipement
-#
-# Entrée :
-#  eq : nom de l'équipement
-#  type : type d'équipement (ex: cisco, juniper etc.)
-#  model : modèle d'équipement (ex: 3750, M20 etc.)
-#  lfile : liste triée de fichiers de modifications à appliquer
-# Sortie :
-#   valeur de retour : liste de fichiers correctement appliqués
-#
-# Historique : 
-#  2010/02/16 : pda/jean : création
-#
-
-proc propager {eq type model lfile} {
+proc execute-cmd {fqdn type model lcmd _msg} {
     global conf
+    upvar $_msg msg
+
+    # set cmd [join $lcmd ";"]
+
+    set tmp "/tmp/topod.[pid]"
+    set fd [open $tmp "w"]
+    puts $fd [join $lcmd "\n"]
+    close $fd
     
-    set r {}
+    set exec [fetch-conf $type $model "exec"]
 
-    # 
-    # Teste si l'équipement est joignable
-    # 
-
-    set cmd [format $conf(fping) $eq]
-
-    if {! [catch {exec sh -c $cmd} m]} then {
-	foreach file $lfile {
-	    if {[catch {set fd [open $file "r"]} msg]} then {
-		puts stderr "cannot open $file ($msg)"
-		# XXXXXXXXXXXXXXXXXXXXXX affiner le traitement des erreurs
-		exit 1
-	    } else {
-		set line [read $fd]
-		close $fd
-
-		set msg [envoyer-modif $eq $type $model $line]
-		if {! [string equal $msg ""]} then {
-		    puts stderr "envoi de la modification impossible ($msg)"
-		    exit 1
-		}
-		
-		lappend r $file
-	    }
-	}
+    if {[catch {exec sh -c "$exec -x $tmp $fqdn"} msg]} then {
+	set r 0
     } else {
-	puts stderr "équipement $eq injoignable (fping) ($m)"
+	set r 1
     }
+
+    file delete -force $tmp
+
+    #
+    # XXXXXXXXXX : interpréter le fichier résultant de l'exécution
+    #
 
     return $r
 }
 
 #
-# Envoi une modification a un equipement
+# Renvoie la commande associée à un type d'équipement
+# et un type de configuration
 #
 # Entrée :
-#  eq : nom de l'équipement
-#  type : type d'équipement (ex: cisco, juniper etc.)
-#  model : modèle d'équipement (ex: 3750, M20 etc.)
-#  line : modification au format spécifié au début de ce fichier
-# Sortie :
-#   valeur de retour : message d'erreur ou chaîne vide si ok
+#  - type : type d'équipement (ex: cisco, juniper etc.)
+#  - model : modèle d'équipement (ex: 3750, M20 etc.)
+#  - context : voir description du tableau confcmd
+# Sortie
+#  - valeur de retour : commande à exécuter ou liste vide si non trouvé
 #
 # Historique : 
 #  2010/02/16 : pda/jean : création
 #
 
-proc envoyer-modif {eq type model line} {
-    global conf 
-
-    set msg ""
-    array set t $line
-
-    #
-    # Vérification de la syntaxe
-    #
-
-    if {[info exists t(eq)] && [info exists t(iface)] &&
-	    (	[info exists t(ether)] ||
-		[info exists t(voice)] ||
-		[info exists t(desc)])} then {
-	
-	#
-	# Constituer la liste de commandes à envoyer
-	#
-
-	set lcmd {}
-
-	set prologue [fetch-conf $type $model "prologue"]
-
-	set lcmd [concat $lcmd $prologue]
-
-	if {[info exists t(desc)]} then {
-	    foreach fmt [fetch-conf $type $model "ifdesc"] {
-		lappend lcmd [format $fmt $t(iface) [binary format "H*" $t(desc)]]
-	    }
-	}
-
-	#
-	# On remet l'interface dans un état connu dans tous les cas
-	#
-
-	set lcmd [concat $lcmd [resetif $eq $type $model $t(iface)]]
-
-	# 
-	# En fonction de ce qui se trouve dans le fichier spool, on 
-	# execute des commandes sur l'équipement. 
-	# 
-	#   Ether	    Voice	Opération
-	#   -----------------------------------------------------
-	#   Non		    Non		Désactiver l'interface
-	#   Non		    Oui		Voice vlan uniquement
-	#   Oui		    Non		Vlan d'accès uniquement
-	#   Oui		    Oui		Vlan d'accès + Voice Vlan
-	#
-
-	set ether [info exists t(ether)]
-	set voice [info exists t(voice)]
-	
-	switch -- "$ether$voice" {
-	    00	{
-		# Rien
-	    }
-	    01	{
-		foreach fmt [fetch-conf $type $model "ifvoice"] {
-		    lappend lcmd [format $fmt $t(iface) $t(voice)]
-		}
-	    }
-	    10	{
-		foreach fmt [fetch-conf $type $model "ifaccess"] {
-		    lappend lcmd [format $fmt $t(iface) $t(ether)]
-		}
-	    }
-	    11  {
-		foreach fmt [fetch-conf $type $model "ifvoice"] {
-		    lappend lcmd [format $fmt $t(iface) $t(voice)]
-		}
-		foreach fmt [fetch-conf $type $model "ifaccess"] {
-		    lappend lcmd [format $fmt $t(iface) $t(ether)]
-		}
-	    }
-	}
-
-	set epilogue [fetch-conf $type $model "epilogue"]
-	set lcmd [concat $lcmd $epilogue]
-
-	#
-	# Envoyer la commande
-	#
-
-	set msg [execute-cmd $eq $type $model $lcmd]
-	
-    } else {
-	set msg "bad format for '$line'"
+proc fetch-conf {type model context} {
+    global confcmd
+    
+    set r {}
+    if {[info exists confcmd($type:*:$context)]} then {
+	set r $confcmd($type:*:$context)
+    } elseif {[info exists confcmd($type:$model:$context)]} then {
+	set r $confcmd($type:$model:$context)
     }
 
-    return $msg
+    return $r
 }
 
+
 #
-# Genere une liste de commande pour remettre une interface
+# Génère une liste de commande pour remettre une interface
 # dans un état connu et l'activer
 #
 # Entrée :
-#  eq : nom de l'équipement
-#  type : type d'équipement (ex: cisco, juniper etc.)
-#  model : modèle d'équipement (ex: 3750, M20 etc.)
-#  iface : nom de l'interface
-#
-# Sortie
-#  valeur de retour : liste des commandes à passer sur l'équipement
+#  - eq : nom de l'équipement
+#  - type : type d'équipement (ex: cisco, juniper etc.)
+#  - model : modèle d'équipement (ex: 3750, M20 etc.)
+#  - iface : nom de l'interface
+# Sortie :
+#  - valeur de retour : liste des commandes à passer sur l'équipement
 #
 # Historique : 
 #  2010/09/23 : pda/jean : création
@@ -495,10 +400,13 @@ proc resetif {eq type model iface} {
 # Liste les vlans pour un équipement et une interface donnée
 #
 # Entrée :
-#  eq : nom de l'équipement
-#  iface : nom de l'interface
+#  - eq : nom de l'équipement
+#  - iface : nom de l'interface
 # Sortie
-#  valeur de retour : liste des vlans trouvés
+#  - valeur de retour : liste des vlans trouvés
+#
+# Historique : 
+#  2010/09/23 : pda/jean : création
 #
 
 proc get-vlans {eq iface} {
@@ -524,71 +432,6 @@ proc get-vlans {eq iface} {
     return $lvlans
 }
 
-#
-# Execute une séquence de commandes sur un équipement
-#
-# Entrée :
-#  eq : nom de l'équipement
-#  type : type d'équipement (ex: cisco, juniper etc.)
-#  model : modèle d'équipement (ex: 3750, M20 etc.)
-#  lcmd : liste des commandes à exécuter
-# Sortie
-#  valeur de retour : message d'erreur éventuel, ou chaîne vide
-#
-# Historique : 
-#  2010/02/18 : pda/jean : création
-#
-
-proc execute-cmd {eq type model lcmd} {
-    global conf
-
-    set r ""
-
-    set cmd [join $lcmd ";"]
-    
-    set time [clock format [clock seconds] -format "%Y%m%d%H%M%S"]
-    set file "$conf(spooleffectues)/$eq.log.$time"
-
-    set exec [fetch-conf $type $model "exec"]
-
-    if {[catch {exec $exec -c $cmd $eq > $file} m]} then {
-	set r "erreur interne d'exécution de la commande '$exec -c $cmd $eq>$file' ($m)"
-    }
-
-    #
-    # XXXXXXXXXX : interpréter le fichier résultant de l'exécution
-    #
-
-    return $r
-}
-
-#
-# Renvoie la commande associée à un type d'équipement
-# et un type de configuration
-#
-# Entrée :
-#  type : type d'équipement (ex: cisco, juniper etc.)
-#  model : modèle d'équipement (ex: 3750, M20 etc.)
-#  context : prologue, ifaccess, ifdesc, epilogue
-# Sortie
-#  valeur de retour : commande à exécuter ou liste vide si non trouvé
-#
-# Historique : 
-#  2010/02/16 : pda/jean : création
-#
-
-proc fetch-conf {type model context} {
-    global confcmd
-    
-    set r {}
-    if {[info exists confcmd($type:*:$context)]} then {
-	set r $confcmd($type:*:$context)
-    } elseif {[info exists confcmd($type:$model:$context)]} then {
-	set r $confcmd($type:$model:$context)
-    }
-
-    return $r
-}
 
 #
 # Recherche le type et le modèle des équipements connus dans le graphe
@@ -612,6 +455,7 @@ proc lire-type-eq {_tabtype} {
 
     set cmd $conf(dumpgraph)
     if {! [catch {set fd [open "|$cmd" "r"]} msg]} then {
+	set msg ""
 	while {[gets $fd ligne] > -1} {
 	    switch [lindex $ligne 0] {
 		eq {
@@ -632,25 +476,386 @@ proc lire-type-eq {_tabtype} {
 }
 
 #
+# Teste l'accessibilité d'un équipement
+#
+# Entrée :
+#   - eq : nom de l'équipement
+# Sortie :
+#   - valeur de retour : vide si ok, ou message d'erreur si pas accessible
+#
+# Historique
+#   2010/10/14 : pda/jean : fonction séparée
+#
+
+proc test-ping {eq} {
+    global conf
+
+    # 
+    # Teste si l'équipement est joignable
+    # 
+
+    set cmd [format $conf(fping) $eq]
+
+    if {[catch {exec sh -c $cmd} msg]} then {
+	set r $msg
+    } else {
+	set r ""
+    }
+
+    return $r
+}
+
+#
+# Conserve une trace de l'échec d'une tentative de configuration
+# d'un équipement
+#
+# Entrée :
+#   - idrr : id de l'équipement
+#   - msg : message d'erreur suite à la tentative
+#   - ctxt(dbfd) : accès à la base
+# Sortie :
+#   - aucune
+# 
+# Historique : 
+#  2010/10/14 : pda/jean : création
+#
+
+proc update-modlog {idrr msg} {
+    global ctxt
+
+    set qmsg [::pgsql::quote $msg]
+    set sql "UPDATE topo.ifchanges
+		    SET modlog = '$qmsg', moddate = now ()
+		    WHERE idrr = $idrr AND processed = 0"
+    if {! [::pgsql::execsql $ctxt(dbfd) $sql m]} then {
+	puts stderr "XXX cannot update database in update-modlog ($m)"
+    }
+}
+
+#
+# Marquer les changements comme étant traités, en y inscrivant 
+# le log des lignes envoyées à l'équipement
+#
+# Entrée :
+#   - idrr : id de l'équipement
+#   - lreqdate : liste des dates des changements
+#   - msg : message de log
+#   - ctxt(dbfd) : accès à la base
+# Sortie :
+#   - aucune
+# 
+# Historique : 
+#  2010/10/14 : pda/jean : création
+#
+
+proc mark-processed {idrr lreqdate msg} {
+    global ctxt
+
+    set reqdate [join $lreqdate "', '"]
+
+    set qmsg [::pgsql::quote $msg]
+    set sql "UPDATE topo.ifchanges
+		    SET processed = 1, modlog = '$qmsg', moddate = now ()
+		    WHERE idrr = $idrr AND reqdate IN ('$reqdate')"
+    if {! [::pgsql::execsql $ctxt(dbfd) $sql m]} then {
+	puts stderr "XXX cannot update database in mark-processed ($m)"
+    }
+}
+
+#
+# Traduit les changements demandés dans le spool en une suite
+# de lignes pour l'équipement donné
+#
+# Entrée :
+#   - idrr : id de l'équipement
+#   - eq : nom court de l'équipement
+#   - type : type d'équipement (ex: cisco, juniper etc.)
+#   - model : modèle d'équipement (ex: 3750, M20 etc.)
+#   - lreqdate : en retour, liste des demandes trouvées (i.e. les dates)
+#   - ctxt(dbfd) : accès à la base
+# Sortie :
+#   - valeur de retour : liste des lignes de commandes à passer sur l'équipement
+#   - paramètre lreqdate : cf ci-dessus
+# 
+# Historique : 
+#  2010/10/14 : pda/jean : création
+#
+
+proc traduire-changements {idrr eq type model _lreqdate} {
+    upvar $_lreqdate lreqdate
+    global ctxt
+
+    set lreqdate {}
+    set lcmd {}
+
+    #
+    # prologue
+    #
+
+    set prologue [fetch-conf $type $model "prologue"]
+    set lcmd [concat $lcmd $prologue]
+
+    #
+    # Chercher toutes les modifications
+    #
+
+    set sql "SELECT c.*
+		FROM topo.ifchanges c
+		WHERE c.idrr = $idrr AND c.processed = 0
+		ORDER BY c.reqdate ASC"
+
+    pg_select $ctxt(dbfd) $sql tab {
+	set reqdate $tab(reqdate)
+	set iface $tab(iface)
+	set ifdesc $tab(ifdesc)
+	set ethervlan $tab(ethervlan)
+	set voicevlan $tab(voicevlan)
+
+	lappend lreqdate $reqdate
+
+	#
+	# Description de l'interface
+	#
+
+	if {! [string equal $ifdesc ""]} then {
+	    foreach fmt [fetch-conf $type $model "ifdesc"] {
+		lappend lcmd [format $fmt $iface $ifdesc]
+	    }
+	}
+
+	#
+	# On remet l'interface dans un état connu dans tous les cas
+	#
+
+	set lcmd [concat $lcmd [resetif $eq $type $model $iface]]
+
+	# 
+	# En fonction de ce qui se trouve dans le fichier spool, on 
+	# execute des commandes sur l'équipement. 
+	# 
+	#   Ether	    Voice	Opération
+	#   -----------------------------------------------------
+	#   Non		    Non		Désactiver l'interface
+	#   Non		    Oui		Voice vlan uniquement
+	#   Oui		    Non		Vlan d'accès uniquement
+	#   Oui		    Oui		Vlan d'accès + Voice Vlan
+	#
+
+	set ether [expr ![string equal $ethervlan ""]]
+	set voice [expr ![string equal $voicevlan ""]]
+	
+	switch -- "$ether$voice" {
+	    00	{
+		# Rien
+	    }
+	    01	{
+		foreach fmt [fetch-conf $type $model "ifvoice"] {
+		    lappend lcmd [format $fmt $iface $voicevlan]
+		}
+	    }
+	    10	{
+		foreach fmt [fetch-conf $type $model "ifaccess"] {
+		    lappend lcmd [format $fmt $iface $ethervlan]
+		}
+	    }
+	    11  {
+		foreach fmt [fetch-conf $type $model "ifvoice"] {
+		    lappend lcmd [format $fmt $iface $voicevlan]
+		}
+		foreach fmt [fetch-conf $type $model "ifaccess"] {
+		    lappend lcmd [format $fmt $iface $ethervlan]
+		}
+	    }
+	}
+    }
+
+    #
+    # Épilogue
+    #
+
+    set epilogue [fetch-conf $type $model "epilogue"]
+    set lcmd [concat $lcmd $epilogue]
+
+    return $lcmd
+}
+
+#
+# Propage les modifications demandées (dans le spool) vers les
+# équipements
+#
+# Entrée :
+#   - _tabtype : nom du tableau contenant les types d'équipements
+#   - ctxt(dbfd) : accès à la base
+# Sortie :
+#   - aucune
+# 
+# Historique : 
+#  2010/10/14 : pda/jean : création
+#
+
+proc propager {_tabtype} {
+    upvar $_tabtype tabtype
+    global ctxt
+
+    #
+    # Trouver les équipements modifiés
+    #
+
+    set sql "SELECT DISTINCT (c.idrr) AS idrr,
+			rr.nom || '.' || d.nom AS fqdn
+		    FROM topo.ifchanges c, rr, domaine d
+		    WHERE c.processed = 0
+			AND c.idrr = rr.idrr
+			AND rr.iddom = d.iddom"
+    pg_select $ctxt(dbfd) $sql t1 {
+	set idrr $t1(idrr)
+	set fqdn $t1(fqdn)
+	
+	#
+	# Rechercher le type et le modèle de l'équipement
+	#
+
+	# XXX : nom court
+	regsub {\..*} $fqdn {} eq
+
+	if {! [info exists tabtype($eq)]} then {
+	    update-modlog $idrr "Unknown equipement type for '$eq'"
+	    continue
+	}
+	set type  [lindex $tabtype($eq) 0]
+	set model [lindex $tabtype($eq) 1]
+
+	#
+	# Test d'accessibilité
+	#
+
+	set msg [test-ping $fqdn]
+	if {! [string equal $msg ""]} then {
+	    update-modlog $idrr $msg
+	    continue
+	}
+
+	#
+	# L'équipement est accessible.
+	# Récupérer toutes les modifications non traitées pour
+	# cet équipement, les traduire en lignes de configuration,
+	# les envoyer sur l'équipement, et marquer les modifications
+	# comme étant traitées
+	#
+
+	set lcmd [traduire-changements $idrr $eq $type $model lreqdate]
+	if {[execute-cmd $fqdn $type $model $lcmd msg]} then {
+	    mark-processed $idrr $lreqdate $msg
+	} else {
+	    update-modlog $idrr $msg
+	}
+    }
+}
+
+proc lazy-connect {base} {
+    global ctxt
+
+    set r 1
+    if {[string equal $ctxt(dbfd) ""]} then {
+	if {[catch {set ctxt(dbfd) [pg_connect -conninfo $base]} msg]} then {
+	    puts stderr "XXX : cannot connect to database ($msg)"
+	    set r 0
+	}
+    }
+    return $r
+}
+
+proc init-ctxt {} {
+    global conf
+    global ctxt
+
+    set ctxt(dbfd) ""
+}
+
+#
 # Programme principal
 #
 
 proc main {argv0 argv} {
     global conf
+    global ctxt
 
-    lire-apropager tab $conf(spoolapropager)
-    lire-type-eq tabtype
+#######################################
+#    lire-apropager tab $conf(spoolapropager)
+#    lire-type-eq tabtype
+#
+#    foreach eq [array names tab] {
+#	# supprimer le nom de domaine pour ne garder que le nom court
+#	regsub {\..*} $eq "" eqcourt
+#	if {[info exists tabtype($eqcourt)]} then {
+#	    set type  [lindex $tabtype($eqcourt) 0]
+#	    set model [lindex $tabtype($eqcourt) 1]
+#	    set lf [propager $eq $type $model $tab($eq)]
+#	} else {
+#	    puts stderr "Type/model inconnus pour l'équipement '$eq'"
+#	}
+#    }
+#######################################
 
-    foreach eq [array names tab] {
-	# supprimer le nom de domaine pour ne garder que le nom court
-	regsub {\..*} $eq "" eqcourt
-	if {[info exists tabtype($eqcourt)]} then {
-	    set type  [lindex $tabtype($eqcourt) 0]
-	    set model [lindex $tabtype($eqcourt) 1]
-	    set lf [propager $eq $type $model $tab($eq)]
-	} else {
-	    puts stderr "Type/model inconnus pour l'équipement '$eq'"
+
+    init-ctxt
+
+    set tabtype(_graph_modified) true
+
+    set delay [expr $conf(delay)*1000]
+
+    while {true} {
+	#
+	# Se reconnecter à la base si besoin est
+	#
+
+	if {! [lazy-connect $conf(base)]} then {
+	    after $delay
+	    continue
 	}
+
+	#
+	# Détecter s'il faut faire un passage complet sur toutes
+	# les conf (i.e. si on n'a pas encore fait de lecture complète
+	# depuis cette nuit à 2h du matin par ex).
+	#
+
+	# XXX rien du tout pour l'instant
+	    set tabtype(_graph_modified) true
+
+	#
+	# Détecter s'il faut relire les types d'équipements
+	#
+
+	if {$tabtype(_graph_modified)} then {
+	    set msg [lire-type-eq tabtype]
+	    if {! [string equal $msg ""]} then {
+		puts stderr "cannot read equipment types ($msg)"
+		after $delay
+		continue
+	    }
+	}
+
+	#
+	# Chercher les modifications demandées par l'interface Web
+	# et les propager
+	#
+
+	propager tabtype
+
+	#
+	# Chercher les modifications des équipements et reconstituer
+	# le graphe
+	#
+
+#	detectmod
+#	    set tabtype(_graph_modified) true
+
+	#
+	# Attendre
+	#
+
+	after $delay
     }
 
     return 0

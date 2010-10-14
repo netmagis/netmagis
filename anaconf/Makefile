@@ -11,7 +11,12 @@ all:
 	cd src ; make
 
 install: all
-	cd src ; make TOPODIR=$(TOPODIR) TCLSH=$(TCLSH) FPING=$(FPING) install
+	cd src ; make \
+		TOPODIR=$(TOPODIR) TCLSH=$(TCLSH) BASE="$(BASE)" \
+		LIBDNS=$(LIBDNS) PKGTCL=$(PKGTCL) \
+		RANCIDMODUSER=$(RANCIDMODUSER) RANCIDMODPASS="$(RANCIDMODPASS)" \
+		FPING=$(FPING) \
+		install
 
 clean:
 	cd lib ; make clean

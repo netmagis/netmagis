@@ -5,6 +5,15 @@
 TOPODIR=/local/applis/topo
 GRAPH=$(TOPODIR)/osiris/osiris.graph
 
+# pour topod
+BASE="{host=dbcrc.u-strasbg.fr dbname=dns user=dns password=pas-fou-non}"
+DELAY=5					# delai entre itérations de topod
+PKGTCL=
+LIBDNS=
+FPING=
+
+
+
 LIBDIR = ../lib
 
 CFLAGS = -g -Wall -I$(LIBDIR)
@@ -40,7 +49,13 @@ SUBST = \
         -e 's|%TCLSH%|$(TCLSH)|' \
         -e 's|%FPING%|$(FPING)|' \
         -e 's|%GRAPH%|$(GRAPH)|' \
-        -e 's|%TOPODIR%|$(TOPODIR)|'
+        -e 's|%TOPODIR%|$(TOPODIR)|' \
+        -e 's|%BASE%|$(BASE)|' \
+        -e 's|%LIBDNS%|$(LIBDNS)|' \
+        -e 's|%PKGTCL%|$(PKGTCL)|' \
+        -e 's|%DELAY%|$(DELAY)|' \
+	-e 's|%RANCIDMODUSER%|$(RANCIDMODUSER)|' \
+	-e 's|%RANCIDMODPASS%|$(RANCIDMODPASS)|'
 
 
 all:	$(PROGS)
