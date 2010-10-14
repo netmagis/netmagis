@@ -76,62 +76,39 @@
 DROP TYPE IF EXISTS iprange_t CASCADE ;
 CREATE TYPE iprange_t AS (a INET, n INTEGER) ;
 
-CREATE OR REPLACE FUNCTION allip (reseau CIDR, lim INTEGER)
+CREATE OR REPLACE FUNCTION ipranges (reseau CIDR, lim INTEGER, grp INTEGER)
     RETURNS SETOF iprange_t AS $$
     DECLARE
-	min INET ;
-	max INET ;
-	q iprange_t%ROWTYPE ;
-    BEGIN
-	min := INET (HOST (reseau)) + 1 ;
-	max := INET (HOST (BROADCAST (reseau))) ;
-
-	IF max - min > lim THEN
-	    RAISE EXCEPTION 'Too many addresses' ;
-	END IF ;
-
-	q.a := min ;
-	q.n := 1 ;
-	WHILE q.a < max LOOP
-	    RETURN NEXT q ;
-	    q.a := q.a + 1 ;
-	END LOOP ;
-
-	RETURN ;
-
-    END ;
-    $$ LANGUAGE plpgsql ;
-
-CREATE OR REPLACE FUNCTION unusedip (reseau CIDR, lim INTEGER, grp INTEGER)
-    RETURNS SETOF iprange_t AS $$
-    DECLARE
-	b BOOLEAN ;
+	inarange BOOLEAN ;
 	r RECORD ;
 	q iprange_t%ROWTYPE ;
     BEGIN
-	b := FALSE ;
-	FOR r IN (SELECT * FROM allip (reseau, lim) AS tuple
-			WHERE tuple.a NOT IN (SELECT adr FROM rr_ip)
-			AND valide_ip_grp (tuple.a, grp)
-		    ORDER BY tuple.a)
+	PERFORM markcidr (reseau, lim, grp) ;
+	inarange := FALSE ;
+	FOR r IN (SELECT adr, avail FROM allip ORDER BY adr)
 	LOOP
-	    IF b THEN
-		IF q.a + q.n = r.a THEN
+	    IF inarange THEN
+		-- (q.a, q.n) is already a valid range
+		IF r.avail = 1 THEN
 		    q.n := q.n + 1 ;
 		ELSE
 		    RETURN NEXT q ;
-		    b := FALSE ;
+		    inarange := FALSE ;
+		END IF ;
+	    ELSE
+		-- not inside a range
+		IF r.avail = 1 THEN
+		    -- start a new range (q.a, q.n)
+		    q.a := r.adr ;
+		    q.n := 1 ;
+		    inarange := TRUE ;
 		END IF ;
 	    END IF ;
-	    IF NOT b THEN
-		b := TRUE ;
-		q.a := r.a ;
-		q.n := r.n ;
-	    END IF ;
 	END LOOP ;
-	IF b THEN
+	IF inarange THEN
 	    RETURN NEXT q ;
 	END IF ;
+	DROP TABLE allip ;
 	RETURN ;
     END ;
     $$ LANGUAGE plpgsql ;

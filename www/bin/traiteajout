@@ -623,7 +623,7 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
     #
 
     set sql "SELECT *
-		FROM unusedip ('$cidr', $conf(maxip), $idgrp)
+		FROM ipranges ('$cidr', $conf(maxip), $idgrp)
 		WHERE n >= $nbadr
 		$order"
     set lranges {}
