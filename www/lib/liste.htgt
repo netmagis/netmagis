@@ -82,7 +82,7 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Liste des %TITRE%}
+    \titre {1} {%TITRE%}
 
     Liste au %DATE%.
 

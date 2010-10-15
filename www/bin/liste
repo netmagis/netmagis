@@ -332,7 +332,7 @@ proc output-list {dbfd lcidr _tabcor format} {
 
 	    ::webapp::send html [::webapp::file-subst $conf(liste) \
 					[list \
-					    [list %TITRE%	"adresses IPv4 disponibles"] \
+					    [list %TITRE%	"Liste des adresses déclarées"] \
 					    [list %TABLEAU%	$tableau] \
 					    [list %DATE%	$date] \
 					    [list %NBADR%	$nbmachines] \
