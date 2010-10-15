@@ -167,7 +167,7 @@ proc main {} {
 
     switch -- $nextprog {
 	map {
-	    set suite "$conf(homeurl)/$conf(script-map)?format=adresses&$nextargs"
+	    set suite "$conf(homeurl)/$conf(script-map)?format=carte&$nextargs"
 	}
 	list {
 	    set suite "$conf(homeurl)/$conf(script-liste)?format=consulter&$nextargs"

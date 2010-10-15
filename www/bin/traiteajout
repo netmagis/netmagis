@@ -505,7 +505,7 @@ proc traiteajout-machine {dbfd tc ft} {
      
     switch -- $nextprog {
 	map {
-	    set suite "$conf(homeurl)/$conf(script-map)?format=adresses&$nextargs"
+	    set suite "$conf(homeurl)/$conf(script-map)?format=carte&$nextargs"
 	}
 	sequence {
 	    foreach kv [split $nextargs "&"] {
@@ -598,7 +598,7 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
 	foreach cidr $lcidr {
 	    lappend nftab(cidr) $cidr
 	}
-	set nftab(format) [list "Adresses libres"]
+	set nftab(format) [list "Carte des adresses"]
 	puts stdout [::webapp::call-cgi %DESTDIR%/$conf(script-map) nftab]
 	return 0
     }

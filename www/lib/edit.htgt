@@ -74,7 +74,7 @@
 		de '%NOM%.%DOMAINE%'.
 	    </li>
 	<li>
-	    <a href="%HOMEURL%/bin/liste?format=adresses&%NEXTARGS%"
+	    <a href="%HOMEURL%/bin/liste?format=carte&%NEXTARGS%"
 		>Revenir à l'affichage précédent</a>
 	    </li>
     </ul>

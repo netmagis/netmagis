@@ -78,7 +78,7 @@
 		} {
 		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Consulter">
 		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Imprimer">
-		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Adresses libres">
+		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Carte des adresses">
 		}
 	    }
 	}

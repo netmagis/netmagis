@@ -519,8 +519,8 @@ proc output-map {dbfd lcidr _tabcor format} {
 		0 notav {adresse non accessible}
 		1 noname-nodhcp {adresse disponible}
 		2 name-nodhcp {adresse déclarée}
-		3 noname-dhcp {adresse déclarée, figurant dans un intervalle DHCP}
-		4 name-dhcp {adresse non déclarée, figurant dans un intervalle DHCP}
+		3 noname-dhcp {adresse non déclarée, figurant dans un intervalle DHCP}
+		4 name-dhcp {adresse déclarée, figurant dans un intervalle DHCP}
 	    } {
 	if {$legend($i) > 0} then {
 	    set l [::webapp::helem "td" "&nbsp;" "class" $class]
@@ -543,7 +543,7 @@ proc output-map {dbfd lcidr _tabcor format} {
 
     ::webapp::send html [::webapp::file-subst $conf(liste) \
 				[list \
-				    [list %TITRE%	"adresses IPv4 disponibles"] \
+				    [list %TITRE%	"Carte des adresses IPv4"] \
 				    [list %TABLEAU%	$tableau] \
 				    [list %DATE%	$date] \
 				] \
@@ -609,13 +609,13 @@ proc main {} {
 
     # format de sortie
     switch -glob -nocase -- [lindex $ftab(format) 0] {
-	Adresses*	{ set format plage }
+	Carte*		{ set format carte }
 	Imprimer	{ set format latex }
 	Consulter	-
 	*		{ set format html }
     }
 
-    if {[string eq $format "plage"]} then {
+    if {[string eq $format "carte"]} then {
 	output-map $dbfd $lcidr tabcor $format
     } else {
 	output-list $dbfd $lcidr tabcor $format
