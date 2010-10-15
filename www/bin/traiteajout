@@ -518,7 +518,7 @@ proc traiteajout-machine {dbfd tc ft} {
 		set nbadr $nf(nbadr)
 	    }
 
-	    if {$nbadr > 0} then {
+	    if {$nbadr > 1} then {
 		incr nbadr -1
 		set sql "SELECT INET('$adr')+1 AS adr"
 		pg_select $dbfd $sql tab {
