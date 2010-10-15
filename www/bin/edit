@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-# $Id: traiteajout 410 2010-10-09 21:15:03Z pda $
+# $Id$
 
 #
 # Script pour permettre au correspondant de choisir la modification
@@ -42,6 +42,11 @@ set conf(auth)		%AUTH%
 set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
+
+# scripts cgi
+set conf(script-map)	bin/liste
+set conf(script-liste)	bin/liste
+set conf(script-accueil) bin/accueil
 
 #
 # Les paramètres du formulaire
@@ -160,6 +165,18 @@ proc main {} {
     set next [::webapp::post-string $nextargs]
     set next "nextprog=$nextprog&nextargs=$next"
 
+    switch -- $nextprog {
+	map {
+	    set suite "$conf(homeurl)/$conf(script-map)?format=adresses&$nextargs"
+	}
+	list {
+	    set suite "$conf(homeurl)/$conf(script-liste)?format=consulter&$nextargs"
+	}
+	default {
+	    set suite "$conf(homeurl)/$conf(script-accueil)"
+	}
+    }
+
     #
     # Sortie de la page de choix d'édition
     #
@@ -173,6 +190,7 @@ proc main {} {
 				[list %MACHINE%     $machine] \
 				[list %NEXTARGS%    $nextargs] \
 				[list %NEXT%        $next] \
+				[list %SUITE%       $suite] \
 				[list %DISPUNEIP%   $dispuneip] \
 			    ] \
 		    ]

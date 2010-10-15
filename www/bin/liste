@@ -58,6 +58,9 @@ set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
 
+# scripts cgi
+set conf(script-edit)	bin/edit
+
 set conf(form)		{
 	{plages		0 99999}
 	{cidr		1 99999}
@@ -118,7 +121,9 @@ set conf(tableau) {
     }
     motif {Normal} {
 	vbar {yes}
-	colonne { }
+	colonne {
+	    format {raw}
+	}
 	vbar {yes}
 	colonne {
 	    format {raw}
@@ -187,6 +192,22 @@ proc output-list {dbfd lcidr _tabcor format} {
 			  {Date}
 			}
     set nbmachines 0
+
+    #
+    # Construire la suite, c'est à dire l'url que devra suivre
+    # le script edit & co une fois la machine ajoutée.
+    #
+
+    set next {}
+    foreach cidr $lcidr {
+	lappend next cidr=$cidr
+    }
+    set next [::webapp::post-string [join $next "&"]]
+    set next "nextprog=list&nextargs=$next"
+
+    #
+    # Parcourir les plages demandées
+    #
 
     foreach cidrplage $lcidr {
 	#
@@ -274,7 +295,10 @@ proc output-list {dbfd lcidr _tabcor format} {
 	    }
 	    switch -- $format {
 		html {
-		    set nom "$nomprimaire <I>$nomssecondaires</I>"
+		    set nom "$nomprimaire "
+		    append nom [::webapp::helem "i" $nomssecondaires]
+		    set url "$conf(homeurl)/$conf(script-edit)?adr=$adr&$next"
+		    set adr [::webapp::helem "a" $adr "href" $url]
 		}
 		latex {
 		    set nom "$nomprimaire \\textit \{$nomssecondaires\}"

@@ -75,7 +75,7 @@
 	    </li>
 	<li>
 	    <a href="%HOMEURL%/bin/liste?format=adresses&%NEXTARGS%"
-		>Revenir à la carte</a>
+		>Revenir à l'affichage précédent</a>
 	    </li>
     </ul>
 

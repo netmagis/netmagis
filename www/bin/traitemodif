@@ -66,6 +66,7 @@ set conf(log)		%LOG%
 
 # scripts cgi
 set conf(script-map)	bin/liste
+set conf(script-liste)	bin/liste
 set conf(script-edit)	bin/edit
 
 # le champ discriminant pour la suite
@@ -330,6 +331,9 @@ proc traitemodif-infos {dbfd tc ft} {
     switch -- $nextprog {
 	map {
 	    set suite "$conf(homeurl)/$conf(script-map)?format=adresses&$nextargs"
+	}
+	list {
+	    set suite "$conf(homeurl)/$conf(script-liste)?format=consulter&$nextargs"
 	}
 	default {
 	    set suite "$conf(homeurl)/$conf(script-edit)"

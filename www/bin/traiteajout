@@ -504,9 +504,6 @@ proc traiteajout-machine {dbfd tc ft} {
     #
      
     switch -- $nextprog {
-	{} {
-	    set suite "$conf(homeurl)/bin/ajout"
-	}
 	map {
 	    set suite "$conf(homeurl)/$conf(script-map)?format=adresses&$nextargs"
 	}
@@ -536,6 +533,9 @@ proc traiteajout-machine {dbfd tc ft} {
 	    } else {
 		set suite "$conf(homeurl)/$conf(script-ajout)"
 	    }
+	}
+	default {
+	    set suite "$conf(homeurl)/bin/ajout"
 	}
     }
 

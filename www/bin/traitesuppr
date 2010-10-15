@@ -69,6 +69,7 @@ set conf(log)		%LOG%
 
 # scripts cgi
 set conf(script-map)	bin/liste
+set conf(script-liste)	bin/liste
 set conf(script-suppr)	bin/suppr
 
 # le champ discriminant pour la suite
@@ -266,6 +267,9 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	    map {
 		set suite "$conf(homeurl)/$conf(script-map)?format=adresses&$nextargs"
 	    }
+	    list {
+		set suite "$conf(homeurl)/$conf(script-liste)?format=consulter&$nextargs"
+	    }
 	    default {
 		set suite "$conf(homeurl)/$conf(script-suppr)"
 	    }
@@ -436,6 +440,9 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     switch -- $nextprog {
 	map {
 	    set suite "$conf(homeurl)/$conf(script-map)?format=adresses&$nextargs"
+	}
+	list {
+	    set suite "$conf(homeurl)/$conf(script-liste)?format=consulter&$nextargs"
 	}
 	default {
 	    set suite "$conf(homeurl)/$conf(script-suppr)"
