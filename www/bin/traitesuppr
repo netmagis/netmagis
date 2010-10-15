@@ -13,10 +13,14 @@
 #	- confirm : "non" ou "oui" (si confirmation ok)
 #	- nom : nom de l'objet à supprimer
 #	- domaine : domaine dans lequel l'objet existait
+#	- nextprog, nextargs : suite du parcours (en cas d'édition depuis
+#		la carte ou depuis la recherche de plage consécutive)
 #   - suppression d'une adresse IP
 #	- action : "suppr-ip"
 #	- confirm : "non" ou "oui" (si confirmation ok)
 #	- adr : adresse IP
+#	- nextprog, nextargs : suite du parcours (en cas d'édition depuis
+#		la carte ou depuis la recherche de plage consécutive)
 #
 # Historique
 #   2002/04/11 : pda/jean : création
@@ -30,6 +34,7 @@
 #   2007/10/25 : jean     : log des actions de modification
 #   2008/07/24 : pda/jean : ajout droitsmtp
 #   2008/07/29 : pda      : utilisation presenter-rr
+#   2010/10/15 : pda      : ajout parcours
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -62,6 +67,10 @@ set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
 
+# scripts cgi
+set conf(script-map)	bin/liste
+set conf(script-suppr)	bin/suppr
+
 # le champ discriminant pour la suite
 set conf(form)		{
 	{action		1 1}
@@ -72,11 +81,15 @@ set conf(form-suppr-nom)	{
 	{confirm	1 1}
 	{nom		1 1}
 	{domaine	1 1}
+	{nextprog	0 1}
+	{nextargs	0 1}
 }
 
 set conf(form-suppr-ip)	{
 	{confirm	1 1}
 	{adr		1 1}
+	{nextprog	0 1}
+	{nextargs	0 1}
 }
 
 #
@@ -114,6 +127,8 @@ proc traitesuppr-nom {dbfd idcor login ft} {
     set confirm       [string trim [lindex $ftab(confirm) 0]]
     set nom           [string trim [lindex $ftab(nom) 0]]
     set domaine       [string trim [lindex $ftab(domaine) 0]]
+    set nextprog      [string trim [lindex $ftab(nextprog) 0]]
+    set nextargs      [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Valider le nom fourni
@@ -179,6 +194,8 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 					[list %DOMAINE% $domaine] \
 					[list %NOMREF% $trrref(nom)] \
 					[list %DOMAINEREF% $trrref(domaine)] \
+					[list %NEXTPROG% $nextprog] \
+					[list %NEXTARGS% $nextargs] \
 				    ] \
 			    ]
 	} else {
@@ -192,6 +209,8 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
 					[list %MACHINE% $machine] \
+					[list %NEXTPROG% $nextprog] \
+					[list %NEXTARGS% $nextargs] \
 				    ] \
 			    ]
 	}
@@ -240,6 +259,19 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	writelog $logevt $login $logmsg
 
 	#
+	# Préparer la suite du parcours
+	#
+
+	switch -- $nextprog {
+	    map {
+		set suite "$conf(homeurl)/$conf(script-map)?format=adresses&$nextargs"
+	    }
+	    default {
+		set suite "$conf(homeurl)/$conf(script-suppr)"
+	    }
+	}
+
+	#
 	# Sortie du résultat pour dire que la suppression a été effectuée
 	# correctement.
 	#
@@ -247,6 +279,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	::webapp::send html [::webapp::file-subst $conf(page-suppr-ok) \
 					[list \
 						[list %OBJET% $objet] \
+						[list %SUITE% $suite] \
 					    ] \
 				    ]
     }
@@ -271,6 +304,8 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 
     set confirm       [string trim [lindex $ftab(confirm) 0]]
     set adr           [string trim [lindex $ftab(adr) 0]]
+    set nextprog      [string trim [lindex $ftab(nextprog) 0]]
+    set nextargs      [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Vérifier la syntaxe de l'adresse IP
@@ -395,6 +430,19 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     }
 
     #
+    # Préparer la suite du parcours
+    #
+
+    switch -- $nextprog {
+	map {
+	    set suite "$conf(homeurl)/$conf(script-map)?format=adresses&$nextargs"
+	}
+	default {
+	    set suite "$conf(homeurl)/$conf(script-suppr)"
+	}
+    }
+
+    #
     # Préparer l'affichage de la page
     #
 
@@ -442,6 +490,9 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 				[list %ADR%         $adr] \
 				[list %MACHINE%     $machine] \
 				[list %OBJET%       $objet] \
+				[list %NEXTPROG%    $nextprog] \
+				[list %NEXTARGS%    $nextargs] \
+				[list %SUITE%       $suite] \
 			    ] \
 		    ]
 }

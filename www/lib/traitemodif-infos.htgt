@@ -89,6 +89,8 @@
 	    \casetableau {} {%RESPMEL%}
 	}
     }
+
+    Cliquer <a href="%SUITE%">ici pour continuer</a>.
 }
 
 }

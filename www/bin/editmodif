@@ -57,6 +57,8 @@ set conf(form)		{
 set conf(form-modif-infos)	{
 	{nom		1 1}
 	{domaine	1 1}
+	{nextprog	0 1}
+	{nextargs	0 1}
 }
 
 #
@@ -92,6 +94,8 @@ proc editmodif-infos {dbfd idcor ft} {
 
     set nom           [string trim [lindex $ftab(nom) 0]]
     set domaine       [string trim [lindex $ftab(domaine) 0]]
+    set nextprog      [string trim [lindex $ftab(nextprog) 0]]
+    set nextargs      [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Valider la syntaxe du nom au sens de la RFC ????
@@ -162,6 +166,8 @@ proc editmodif-infos {dbfd idcor ft} {
 					[list %COMMENTAIRE% $commentaire] \
 					[list %RESPNOM% $respnom] \
 					[list %RESPMEL% $respmel] \
+					[list %NEXTPROG% $nextprog] \
+					[list %NEXTARGS% $nextargs] \
 				    ] \
 			    ]
 }

@@ -154,6 +154,13 @@ proc main {} {
     set machine [presenter-rr $dbfd -1 trr]
 
     #
+    # Préparer la suite du parcours
+    #
+
+    set next [::webapp::post-string $nextargs]
+    set next "nextprog=$nextprog&nextargs=$next"
+
+    #
     # Sortie de la page de choix d'édition
     #
 
@@ -165,6 +172,7 @@ proc main {} {
 				[list %DOMAINE%     $domaine] \
 				[list %MACHINE%     $machine] \
 				[list %NEXTARGS%    $nextargs] \
+				[list %NEXT%        $next] \
 				[list %DISPUNEIP%   $dispuneip] \
 			    ] \
 		    ]

@@ -49,14 +49,7 @@
     \lien {serveurs de nom Osiris} {%DOCDNS%}
     d'ici %INTERVALLE% minutes.
 
-    Vous pouvez demander à~:
-
-    \liste {
-	\item {\lien {consulter les informations} {%HOMEURL%/bin/consulter}}
-	\item {\lien {supprimer une autre machine} {%HOMEURL%/bin/suppr}}
-	\item {\lien {ajouter une machine} {%HOMEURL%/bin/ajout}}
-	\item {\lien {modifier une machine} {%HOMEURL%/bin/modif}}
-    }
+    Cliquer <a href="%SUITE%">ici pour continuer</a>.
 }
 
 }
