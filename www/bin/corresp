@@ -17,6 +17,7 @@
 #   2004/01/14 : pda/jean : ajout IPv6
 #   2004/08/06 : pda/jean : extension des droits sur les réseaux
 #   2005/02/24 : pda      : ajout cas rôle mail sans adresse IP
+#   2010/10/17 : pda      : ajout recherche "où suis-je"
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -120,7 +121,7 @@ proc main {} {
 
 	if {[info exists env(REMOTE_ADDR)]} then {
 	    set adr $env(REMOTE_ADDR)
-	    set critere ""
+	    set critere $adr
 	    lire-rr-par-ip $dbfd $adr tabrr
 	} else {
 	    corresp-erreur "" ""
