@@ -31,6 +31,7 @@
 	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
 	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
+	    \reference {\lien {Où suis-je~?} {%HOMEURL%/bin/consulter?critere=_}}
 	    %ADMIN%
 	}
 	\elementbandeau {Voir aussi} {
@@ -90,6 +91,7 @@
 	\* \item {\lien {de gérer les "rôles web"}	{%HOMEURL%/bin/web}}
 	\item {\lien {de gérer les plages DHCP}		{%HOMEURL%/bin/dhcp}}
 	\item {\lien {de rechercher un correspondant}	{%HOMEURL%/bin/corresp}}
+ 	\item {\lien {de localiser mon adresse}		{%HOMEURL%/bin/corresp?critere=_}}
     }
 
     \titre {2} {Autres opérations}

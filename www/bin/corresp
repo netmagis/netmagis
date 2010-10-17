@@ -9,7 +9,7 @@
 # Appelé par : index.htgt
 #
 # Paramètres (formulaire ou URL) :
-#	- critere : critere de recherche (ip, cidr, ou fqdn)
+#	- critere : critere de recherche (ip, cidr, ou fqdn, ou _ pour ici)
 #
 # Historique
 #   2002/07/25 : pda      : création
@@ -47,6 +47,7 @@ set conf(log)		%LOG%
 
 set conf(form)	{
 	{critere	0 1 {}}
+	{ousuisje	0 1 {}}
 }
 
 #
@@ -114,6 +115,16 @@ proc main {} {
 	#
 	corresp-erreur "" ""
 
+    } elseif {[string equal $critere "_"]} then {
+	global env
+
+	if {[info exists env(REMOTE_ADDR)]} then {
+	    set adr $env(REMOTE_ADDR)
+	    set critere ""
+	    lire-rr-par-ip $dbfd $adr tabrr
+	} else {
+	    corresp-erreur "" ""
+	}
     } elseif {[string equal [syntaxe-ip $dbfd $critere "inet"] ""]} then {
 	#
 	# Adresse IP

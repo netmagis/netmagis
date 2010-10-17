@@ -31,6 +31,7 @@
 	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
 	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
+	    \reference {\lien {Où suis-je~?} {%HOMEURL%/bin/consulter?critere=_}}
 	}
 	\elementbandeau {Voir aussi} {
 	    \reference {\lien {Osiris}      {http://www-crc.u-strasbg.fr/osiris/}}
