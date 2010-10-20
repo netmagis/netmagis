@@ -7,10 +7,11 @@ GRAPH=$(TOPODIR)/osiris/osiris.graph
 
 # pour topod
 BASE="{host=dbcrc.u-strasbg.fr dbname=dns user=dns password=pas-fou-non}"
-DELAY=5					# delai entre itérations de topod
+DELAY=5					# delai entre itérations de topod (sec)
 PKGTCL=
 LIBDNS=
 FPING=
+RANCIDCMD=
 
 
 
@@ -48,6 +49,7 @@ SCRIPTS = \
 SUBST = \
         -e 's|%TCLSH%|$(TCLSH)|' \
         -e 's|%FPING%|$(FPING)|' \
+        -e 's|%RANCIDCMD%|$(RANCIDCMD)|' \
         -e 's|%GRAPH%|$(GRAPH)|' \
         -e 's|%TOPODIR%|$(TOPODIR)|' \
         -e 's|%BASE%|$(BASE)|' \

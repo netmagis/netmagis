@@ -98,6 +98,8 @@ set conf(fping) "%FPING% %s"
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
 set conf(extracteq)	{%TOPODIR%/bin/extracteq %1$s %2$s < %GRAPH%}
+set conf(rancid)	{%TOPODIR%/bin/start-rancid %1$s}
+set conf(anaconf)	{%TOPODIR%/bin/anaconf}
 
 set conf(delay)		%DELAY%
 
@@ -109,6 +111,7 @@ set conf(base)		%BASE%
 lappend auto_path $conf(pkg)
 
 package require pgsql
+package require webapp
 
 source $conf(libdns)
 
@@ -275,179 +278,358 @@ array set confcmd {
     }
 }
 
+##############################################################################
+# Fonctions utilitaires
+##############################################################################
+
 #
-# Exécute une séquence de commandes sur un équipement
+# Génère un message d'erreur dans le log
+#
+# Entrée : 
+#   - msg : message d'erreur
+# Sortie : aucune
+#
+# Historique
+#   2010/10/20 : pda/jean : conception minimale
+#
+
+proc log-error {msg} {
+    # XXXXX : syslog
+    puts stderr $msg
+}
+
+##############################################################################
+# Accès à la base
+##############################################################################
+
+#
+# Réalise la connexion à la base de données si nécessaire.
 #
 # Entrée :
-#  - fqdn : nom complet de l'équipement
-#  - type : type d'équipement (ex: cisco, juniper etc.)
-#  - model : modèle d'équipement (ex: 3750, M20 etc.)
-#  - lcmd : liste des commandes à exécuter
-#  - _msg : en retour, message d'erreur ou sortie de la commande
-# Sortie
-#  - valeur de retour : 1 si ok, 0 si erreur
+#   - ctxt(dbfd) : accès à la base
+# Sortie :
+#   - ctxt(dbfd) : accès réactualisé
+#
+# Historique
+#   2010/10/20 : pda/jean : documentation
+#
+
+proc lazy-connect {} {
+    global ctxt
+    global conf
+
+    set r 1
+    if {[string equal $ctxt(dbfd) ""]} then {
+	set d [catch {set ctxt(dbfd) [pg_connect -conninfo $conf(base)]} msg]
+	if {$d} then {
+	    log-error "XXX : cannot connect to database ($msg)"
+	    set r 0
+	}
+    }
+    return $r
+}
+
+#
+# Exécute une requête SELECT et gère la reconnexion à la base
+#
+# Entrée : 
+#   - sql : requete SQL à exécuter
+#   - arrayname : tableau utilisé dans le script
+#   - script : procédure ou script
+# Sortie : 
+#   - valeur de retour : 1 si réussi, 0 si erreur
+#
+# Historique
+#   2010/10/20 : pda/jean : conception (woaw !)
+#
+
+proc myselect {sql arrayname script} {
+    global ctxt
+
+    if {[lazy-connect]} {
+	set cmd [list pg_select $ctxt(dbfd) $sql $arrayname $script]
+	if {[catch {uplevel 1 $cmd} err]} then {
+	    log-error $err
+	    catch {pg_disconnect $ctxt(dbfd)}
+	    set ctxt(dbfd) ""
+	    set r 0
+	} else {
+	    set r 1
+	}
+    } else {
+	set r 0
+    }
+    return $r
+}
+
+#
+# Exécute une requête de modification (INSERT, UPDATE ou DELETE)
+# et gère la reconnexion à la base
+#
+# Entrée : 
+#   - sql : requete SQL à exécuter
+# Sortie : 
+#   - valeur de retour : 1 si réussi, 0 si erreur
+#
+# Historique
+#   2010/10/20 : pda/jean : conception
+#
+
+proc myexec {sql} {
+    global ctxt
+
+    if {[lazy-connect]} {
+	if {[catch {pg_exec $ctxt(dbfd) $cmd} res]} then {
+	    log-error $res
+	    catch {pg_disconnect $ctxt(dbfd)}
+	    set ctxt(dbfd) ""
+	    set r 0
+	} else {
+	    switch -- [pg_result $res -status] {
+		PGRES_COMMAND_OK -
+		PGRES_TUPLES_OK -
+		PGRES_EMPTY_QUERY {
+		    set r 1
+		}
+		default {
+		    log-error [pg_result $res -error]
+		    catch {pg_disconnect $ctxt(dbfd)}
+		    set ctxt(dbfd) ""
+		    set r 0
+		}
+	    }
+	    pg_result $res -clear
+	}
+    } else {
+	set r 0
+    }
+    return $r
+}
+
+
+##############################################################################
+# Mise à jour du graphe
+##############################################################################
+
+#
+# Détermine si un passage complet de rancid est nécessaire
+#
+# Entrée : aucune
+# Sortie : 
+#   - valeur de retour :
+#	-1 : erreur
+#	0 : pas de passage nécessaire
+#	1 : passage nécessaire
 #
 # Historique : 
-#  2010/02/18 : pda/jean : création
+#   2010/10/15 : pda/jean : création
 #
 
-proc execute-cmd {fqdn type model lcmd _msg} {
+proc full-rancid-needed {} {
+    set sql "SELECT topo.lastrun.date IS NULL
+		    OR (
+			(date_trunc('day',topo.lastrun.date)
+			    <> date_trunc('day',now())
+			AND extract(hour from now())>=2
+			AND extract(hour from now())<=4)
+		    )
+	       AS result
+	       FROM topo.lastrun"
+
+    # by default, this is an error
+    set r -1
+
+    # if selects succeeds, returns the result of SQL query,
+    # while translating it to 1 (true) or 0 (false)
+    myselect $sql tab { set r [expr $tab(result) ? 1 : 0]}
+
+    return $r
+}
+
+#
+# Mise à jour du graphe topo à partir des configuration des équipements
+#
+# Entrée :
+#   - _tabtype : tableau contenant en retour les types/modèles des équipements
+#   - leq : liste des équipements (optionnel)
+# Sortie :
+#   - valeur de retour : 1 si ok, 0 en cas d'erreur
+#
+# Historique : 
+#   2010/10/15 : pda/jean : conception
+#   2010/10/20 : pda/jean : codage
+#
+
+proc update-graph {_tabtype {leq {}}} {
+    upvar $_tabtype tabtype
     global conf
-    upvar $_msg msg
-
-    # set cmd [join $lcmd ";"]
-
-    set tmp "/tmp/topod.[pid]"
-    set fd [open $tmp "w"]
-    puts $fd [join $lcmd "\n"]
-    close $fd
     
-    set exec [fetch-conf $type $model "exec"]
+    #
+    # Lancer rancid et envoyer un mail si nécessaire
+    # XXX : keepstate
+    #
 
-    if {[catch {exec sh -c "$exec -x $tmp $fqdn"} msg]} then {
+    if {! [rancid $leq]} then {
+	return 0
+    }
+
+    #
+    # Mettre à jour le graphe et envoyer un mail si nécessaire
+    # XXX : keepstate
+    #
+
+    if {! [anaconf $leq]} then {
+	return 0
+    }
+
+    #
+    # Mettre à jour la date du dernier passage complet
+    # (si c'est un passage complet bien sûr)
+    #
+
+    if {[llength $leq] == 0} then {
+	if {! [myexec "UPDATE topo.lastrun SET date = now ()"]} then {
+	    return 0
+	}
+    }
+
+    #
+    # Relire les types d'équipements
+    #
+
+    set msg [read-eq-type tabtype]
+    if {! [string equal $msg ""]} then {
+	puts stderr "cannot read equipment types ($msg)"
+	# XXX : que faire ici ? Arrêter ou continuer ?
+	return 0
+    }
+
+    return 1
+}
+
+#
+# Appelle rancid
+#
+# Entrée :
+#   - leq : liste d'équipements modifiés, à interroger (optionnel)
+# Sortie : 
+#   - valeur de retour : 1 si ok, 0 si erreur
+#
+# Historique : 
+#   2010/10/20 : pda/jean : création
+#
+
+proc rancid {{leq {}}} {
+    global conf
+
+    set text ""
+
+    #
+    # Appel à rancid
+    #
+
+    set r 1
+
+    if {[llength $leq] > 0} then {
+	foreach eq $leq {
+	    set cmd [format $conf(rancid) $eq]
+	    if {[catch {exec sh -c $cmd} msg]} then {
+		set msg "Erreur dans l'exécution de $cmd\n$msg"
+		set r 0
+	    } else {
+		# pas d'erreur : rien à faire
+	    }
+	    append text $msg
+	    append text "\n"
+	}
+    } else {
+	set cmd [format $conf(rancid) ""]
+	if {[catch {exec sh -c $cmd} msg]} then {
+	    # erreur
+	    set msg "Erreur dans l'exécution de $cmd\n$msg"
+	    set r 0
+	} else {
+	    # pas d'erreur : rien à faire
+	}
+	set text $msg
+    }
+
+    #
+    # Envoyer le mail
+    #
+
+    ::webapp::mail pda@unistra.fr \
+			"" \
+			{jean@unistra.fr pda@unistrafr} \
+			"" \
+			"topod/rancid" \
+			$msg
+
+    return $r
+}
+
+#
+# Appelle anaconf pour reconstruire le graphe
+#
+# Entrée :
+#   - leq : liste d'équipements modifiés (optionnel)
+# Sortie : 
+#   - valeur de retour : 1 si ok, 0 si erreur
+#
+# Historique : 
+#   2010/10/20 : pda/jean : création
+#
+
+proc anaconf {{leq {}}} {
+    global conf
+
+    set text ""
+
+    set cmd $conf(anaconf)
+
+    set r 1
+    foreach eq $leq {
+	append cmd " $eq"
+    }
+
+    if {[catch {exec sh -c $cmd} msg]} then {
+	# erreur
+	set msg "Erreur dans l'exécution de $cmd\n$msg"
 	set r 0
     } else {
-	set r 1
+	# pas d'erreur
     }
-
-    file delete -force $tmp
+    set text $msg
 
     #
-    # XXXXXXXXXX : interpréter le fichier résultant de l'exécution
+    # Envoyer le mail
     #
+
+    ::webapp::mail pda@unistra.fr \
+			"" \
+			{jean@unistra.fr pda@unistrafr} \
+			"" \
+			"topod/anaconf" \
+			$msg
 
     return $r
 }
-
-#
-# Renvoie la commande associée à un type d'équipement
-# et un type de configuration
-#
-# Entrée :
-#  - type : type d'équipement (ex: cisco, juniper etc.)
-#  - model : modèle d'équipement (ex: 3750, M20 etc.)
-#  - context : voir description du tableau confcmd
-# Sortie
-#  - valeur de retour : commande à exécuter ou liste vide si non trouvé
-#
-# Historique : 
-#  2010/02/16 : pda/jean : création
-#
-
-proc fetch-conf {type model context} {
-    global confcmd
-    
-    set r {}
-    if {[info exists confcmd($type:*:$context)]} then {
-	set r $confcmd($type:*:$context)
-    } elseif {[info exists confcmd($type:$model:$context)]} then {
-	set r $confcmd($type:$model:$context)
-    }
-
-    return $r
-}
-
-
-#
-# Génère une liste de commande pour remettre une interface
-# dans un état connu et l'activer
-#
-# Entrée :
-#  - eq : nom de l'équipement
-#  - type : type d'équipement (ex: cisco, juniper etc.)
-#  - model : modèle d'équipement (ex: 3750, M20 etc.)
-#  - iface : nom de l'interface
-# Sortie :
-#  - valeur de retour : liste des commandes à passer sur l'équipement
-#
-# Historique : 
-#  2010/09/23 : pda/jean : création
-#
-
-proc resetif {eq type model iface} {
-
-    #
-    # Cherche la sequence de commande pour remettre l'interface
-    # dans un mode connu
-    #
-
-    set lcmd {}
-    foreach fmt [fetch-conf $type $model "ifreset"] {
-	lappend lcmd [format $fmt $iface]
-    }
-
-    set l2 [fetch-conf $type $model "resetvlans"]
-    if {[llength $l2]>0} then {
-	foreach vlan [get-vlans $eq $iface] {
-	    foreach fmt $l2 {
-		lappend lcmd [format $fmt $iface $vlan]
-	    }
-	}
-    }
-
-    #
-    # Active l'interface
-    #
-
-    foreach fmt [fetch-conf $type $model "ifenable"] {
-	lappend lcmd [format $fmt $iface]
-    }
-    
-    return $lcmd
-}
-
-#
-# Liste les vlans pour un équipement et une interface donnée
-#
-# Entrée :
-#  - eq : nom de l'équipement
-#  - iface : nom de l'interface
-# Sortie
-#  - valeur de retour : liste des vlans trouvés
-#
-# Historique : 
-#  2010/09/23 : pda/jean : création
-#
-
-proc get-vlans {eq iface} {
-    global conf
-
-    set lvlans {}
-
-    # supprimer le nom de domaine pour ne garder que le nom court
-    regsub {\..*} $eq "" eqcourt
-
-    set cmd [format $conf(extracteq) $eqcourt $iface]
-    if {! [catch {set fd [open "|$cmd" "r"]} msg]} then {
-	while {[gets $fd ligne] > -1} {
-	    foreach vlan [lreplace $ligne 0 7] {
-		lappend lvlans [lindex $vlan 0]
-	    }
-	}
-	close $fd
-    } else {
-	puts stderr "extracteq : $msg"
-    }
-
-    return $lvlans
-}
-
 
 #
 # Recherche le type et le modèle des équipements connus dans le graphe
 #
 # Entrée :
-#  _tabtype : nom du tableau contenant en retour les types
+#   - _tabtype : nom du tableau contenant en retour les types
 # Sortie :
-#  tabtype : tableau, indexé par nom court de l'équipement, contenant
+#   - valeur de retour : message d'erreur ou chaîne vide si ok
+#   - tabtype : tableau, indexé par nom court de l'équipement, contenant
 #	tabtype(<eq>) {<type> <model>}
-#  valeur de retour : message d'erreur ou chaîne vide si ok
 # 
 # Historique : 
-#  2010/02/25 : pda/jean : création
+#   2010/02/25 : pda/jean : création
 #
 
-proc lire-type-eq {_tabtype} {
+proc read-eq-type {_tabtype} {
     global conf
     upvar $_tabtype tabtype
 
@@ -475,90 +657,81 @@ proc lire-type-eq {_tabtype} {
     return $msg
 }
 
-#
-# Teste l'accessibilité d'un équipement
-#
-# Entrée :
-#   - eq : nom de l'équipement
-# Sortie :
-#   - valeur de retour : vide si ok, ou message d'erreur si pas accessible
-#
-# Historique
-#   2010/10/14 : pda/jean : fonction séparée
-#
 
-proc test-ping {eq} {
-    global conf
-
-    # 
-    # Teste si l'équipement est joignable
-    # 
-
-    set cmd [format $conf(fping) $eq]
-
-    if {[catch {exec sh -c $cmd} msg]} then {
-	set r $msg
-    } else {
-	set r ""
-    }
-
-    return $r
-}
+##############################################################################
+# Propagation des modifications sur les équipements
+##############################################################################
 
 #
-# Conserve une trace de l'échec d'une tentative de configuration
-# d'un équipement
+# Propage les modifications demandées (dans le spool) vers les
+# équipements
 #
 # Entrée :
-#   - idrr : id de l'équipement
-#   - msg : message d'erreur suite à la tentative
+#   - _tabtype : nom du tableau contenant les types d'équipements
 #   - ctxt(dbfd) : accès à la base
 # Sortie :
 #   - aucune
 # 
 # Historique : 
-#  2010/10/14 : pda/jean : création
+#   2010/10/14 : pda/jean : création
 #
 
-proc update-modlog {idrr msg} {
+proc send-changes {_tabtype} {
+    upvar $_tabtype tabtype
     global ctxt
 
-    set qmsg [::pgsql::quote $msg]
-    set sql "UPDATE topo.ifchanges
-		    SET modlog = '$qmsg', moddate = now ()
-		    WHERE idrr = $idrr AND processed = 0"
-    if {! [::pgsql::execsql $ctxt(dbfd) $sql m]} then {
-	puts stderr "XXX cannot update database in update-modlog ($m)"
-    }
-}
+    #
+    # Trouver les équipements modifiés
+    #
 
-#
-# Marquer les changements comme étant traités, en y inscrivant 
-# le log des lignes envoyées à l'équipement
-#
-# Entrée :
-#   - idrr : id de l'équipement
-#   - lreqdate : liste des dates des changements
-#   - msg : message de log
-#   - ctxt(dbfd) : accès à la base
-# Sortie :
-#   - aucune
-# 
-# Historique : 
-#  2010/10/14 : pda/jean : création
-#
+    set sql "SELECT DISTINCT (c.idrr) AS idrr,
+			rr.nom || '.' || d.nom AS fqdn
+		    FROM topo.ifchanges c, rr, domaine d
+		    WHERE c.processed = 0
+			AND c.idrr = rr.idrr
+			AND rr.iddom = d.iddom"
+    pg_select $ctxt(dbfd) $sql t1 {
+	set idrr $t1(idrr)
+	set fqdn $t1(fqdn)
+	
+	#
+	# Rechercher le type et le modèle de l'équipement
+	#
 
-proc mark-processed {idrr lreqdate msg} {
-    global ctxt
+	# XXX : nom court
+	regsub {\..*} $fqdn {} eq
 
-    set reqdate [join $lreqdate "', '"]
+	if {! [info exists tabtype($eq)]} then {
+	    update-modlog $idrr "Unknown equipement type for '$eq'"
+	    continue
+	}
+	set type  [lindex $tabtype($eq) 0]
+	set model [lindex $tabtype($eq) 1]
 
-    set qmsg [::pgsql::quote $msg]
-    set sql "UPDATE topo.ifchanges
-		    SET processed = 1, modlog = '$qmsg', moddate = now ()
-		    WHERE idrr = $idrr AND reqdate IN ('$reqdate')"
-    if {! [::pgsql::execsql $ctxt(dbfd) $sql m]} then {
-	puts stderr "XXX cannot update database in mark-processed ($m)"
+	#
+	# Test d'accessibilité
+	#
+
+	set msg [test-ping $fqdn]
+	if {! [string equal $msg ""]} then {
+	    update-modlog $idrr $msg
+	    continue
+	}
+
+	#
+	# L'équipement est accessible.
+	# Récupérer toutes les modifications non traitées pour
+	# cet équipement, les traduire en lignes de configuration,
+	# les envoyer sur l'équipement, et marquer les modifications
+	# comme étant traitées
+	#
+
+	set lcmd [mod-to-conf $idrr $eq $type $model lreqdate]
+	if {[execute-cmd $fqdn $type $model $lcmd msg]} then {
+	    mark-processed $idrr $lreqdate $msg
+	} else {
+	    update-modlog $idrr $msg
+	}
     }
 }
 
@@ -578,10 +751,10 @@ proc mark-processed {idrr lreqdate msg} {
 #   - paramètre lreqdate : cf ci-dessus
 # 
 # Historique : 
-#  2010/10/14 : pda/jean : création
+#   2010/10/14 : pda/jean : création
 #
 
-proc traduire-changements {idrr eq type model _lreqdate} {
+proc mod-to-conf {idrr eq type model _lreqdate} {
     upvar $_lreqdate lreqdate
     global ctxt
 
@@ -680,97 +853,252 @@ proc traduire-changements {idrr eq type model _lreqdate} {
 }
 
 #
-# Propage les modifications demandées (dans le spool) vers les
-# équipements
+# Exécute une séquence de commandes sur un équipement
 #
 # Entrée :
-#   - _tabtype : nom du tableau contenant les types d'équipements
+#   - fqdn : nom complet de l'équipement
+#   - type : type d'équipement (ex: cisco, juniper etc.)
+#   - model : modèle d'équipement (ex: 3750, M20 etc.)
+#   - lcmd : liste des commandes à exécuter
+#   - _msg : en retour, message d'erreur ou sortie de la commande
+# Sortie
+#   - valeur de retour : 1 si ok, 0 si erreur
+#
+# Historique : 
+#   2010/02/18 : pda/jean : création
+#
+
+proc execute-cmd {fqdn type model lcmd _msg} {
+    global conf
+    upvar $_msg msg
+
+    # set cmd [join $lcmd ";"]
+
+    set tmp "/tmp/topod.[pid]"
+    set fd [open $tmp "w"]
+    puts $fd [join $lcmd "\n"]
+    close $fd
+    
+    set exec [fetch-conf $type $model "exec"]
+
+    if {[catch {exec sh -c "$exec -x $tmp $fqdn"} msg]} then {
+	set r 0
+    } else {
+	set r 1
+    }
+
+    file delete -force $tmp
+
+    #
+    # XXXXXXXXXX : interpréter le fichier résultant de l'exécution
+    #
+
+    return $r
+}
+
+#
+# Renvoie la commande associée à un type d'équipement
+# et un type de configuration
+#
+# Entrée :
+#   - type : type d'équipement (ex: cisco, juniper etc.)
+#   - model : modèle d'équipement (ex: 3750, M20 etc.)
+#   - context : voir description du tableau confcmd
+# Sortie
+#   - valeur de retour : commande à exécuter ou liste vide si non trouvé
+#
+# Historique : 
+#   2010/02/16 : pda/jean : création
+#
+
+proc fetch-conf {type model context} {
+    global confcmd
+    
+    set r {}
+    if {[info exists confcmd($type:*:$context)]} then {
+	set r $confcmd($type:*:$context)
+    } elseif {[info exists confcmd($type:$model:$context)]} then {
+	set r $confcmd($type:$model:$context)
+    }
+
+    return $r
+}
+
+
+#
+# Génère une liste de commande pour remettre une interface
+# dans un état connu et l'activer
+#
+# Entrée :
+#   - eq : nom de l'équipement
+#   - type : type d'équipement (ex: cisco, juniper etc.)
+#   - model : modèle d'équipement (ex: 3750, M20 etc.)
+#   - iface : nom de l'interface
+# Sortie :
+#   - valeur de retour : liste des commandes à passer sur l'équipement
+#
+# Historique : 
+#   2010/09/23 : pda/jean : création
+#
+
+proc resetif {eq type model iface} {
+
+    #
+    # Cherche la sequence de commande pour remettre l'interface
+    # dans un mode connu
+    #
+
+    set lcmd {}
+    foreach fmt [fetch-conf $type $model "ifreset"] {
+	lappend lcmd [format $fmt $iface]
+    }
+
+    set l2 [fetch-conf $type $model "resetvlans"]
+    if {[llength $l2]>0} then {
+	foreach vlan [get-vlans $eq $iface] {
+	    foreach fmt $l2 {
+		lappend lcmd [format $fmt $iface $vlan]
+	    }
+	}
+    }
+
+    #
+    # Active l'interface
+    #
+
+    foreach fmt [fetch-conf $type $model "ifenable"] {
+	lappend lcmd [format $fmt $iface]
+    }
+    
+    return $lcmd
+}
+
+#
+# Liste les vlans pour un équipement et une interface donnée
+#
+# Entrée :
+#   - eq : nom de l'équipement
+#   - iface : nom de l'interface
+# Sortie
+#   - valeur de retour : liste des vlans trouvés
+#
+# Historique : 
+#   2010/09/23 : pda/jean : création
+#
+
+proc get-vlans {eq iface} {
+    global conf
+
+    set lvlans {}
+
+    # supprimer le nom de domaine pour ne garder que le nom court
+    regsub {\..*} $eq "" eqcourt
+
+    set cmd [format $conf(extracteq) $eqcourt $iface]
+    if {! [catch {set fd [open "|$cmd" "r"]} msg]} then {
+	while {[gets $fd ligne] > -1} {
+	    foreach vlan [lreplace $ligne 0 7] {
+		lappend lvlans [lindex $vlan 0]
+	    }
+	}
+	close $fd
+    } else {
+	puts stderr "extracteq : $msg"
+    }
+
+    return $lvlans
+}
+
+#
+# Teste l'accessibilité d'un équipement
+#
+# Entrée :
+#   - eq : nom de l'équipement
+# Sortie :
+#   - valeur de retour : vide si ok, ou message d'erreur si pas accessible
+#
+# Historique
+#   2010/10/14 : pda/jean : fonction séparée
+#
+
+proc test-ping {eq} {
+    global conf
+
+    # 
+    # Teste si l'équipement est joignable
+    # 
+
+    set cmd [format $conf(fping) $eq]
+
+    if {[catch {exec sh -c $cmd} msg]} then {
+	set r $msg
+    } else {
+	set r ""
+    }
+
+    return $r
+}
+
+#
+# Conserve une trace de l'échec d'une tentative de configuration
+# d'un équipement
+#
+# Entrée :
+#   - idrr : id de l'équipement
+#   - msg : message d'erreur suite à la tentative
 #   - ctxt(dbfd) : accès à la base
 # Sortie :
 #   - aucune
 # 
 # Historique : 
-#  2010/10/14 : pda/jean : création
+#   2010/10/14 : pda/jean : création
 #
 
-proc propager {_tabtype} {
-    upvar $_tabtype tabtype
+proc update-modlog {idrr msg} {
     global ctxt
 
-    #
-    # Trouver les équipements modifiés
-    #
-
-    set sql "SELECT DISTINCT (c.idrr) AS idrr,
-			rr.nom || '.' || d.nom AS fqdn
-		    FROM topo.ifchanges c, rr, domaine d
-		    WHERE c.processed = 0
-			AND c.idrr = rr.idrr
-			AND rr.iddom = d.iddom"
-    pg_select $ctxt(dbfd) $sql t1 {
-	set idrr $t1(idrr)
-	set fqdn $t1(fqdn)
-	
-	#
-	# Rechercher le type et le modèle de l'équipement
-	#
-
-	# XXX : nom court
-	regsub {\..*} $fqdn {} eq
-
-	if {! [info exists tabtype($eq)]} then {
-	    update-modlog $idrr "Unknown equipement type for '$eq'"
-	    continue
-	}
-	set type  [lindex $tabtype($eq) 0]
-	set model [lindex $tabtype($eq) 1]
-
-	#
-	# Test d'accessibilité
-	#
-
-	set msg [test-ping $fqdn]
-	if {! [string equal $msg ""]} then {
-	    update-modlog $idrr $msg
-	    continue
-	}
-
-	#
-	# L'équipement est accessible.
-	# Récupérer toutes les modifications non traitées pour
-	# cet équipement, les traduire en lignes de configuration,
-	# les envoyer sur l'équipement, et marquer les modifications
-	# comme étant traitées
-	#
-
-	set lcmd [traduire-changements $idrr $eq $type $model lreqdate]
-	if {[execute-cmd $fqdn $type $model $lcmd msg]} then {
-	    mark-processed $idrr $lreqdate $msg
-	} else {
-	    update-modlog $idrr $msg
-	}
+    set qmsg [::pgsql::quote $msg]
+    set sql "UPDATE topo.ifchanges
+		    SET modlog = '$qmsg', moddate = now ()
+		    WHERE idrr = $idrr AND processed = 0"
+    if {! [::pgsql::execsql $ctxt(dbfd) $sql m]} then {
+	puts stderr "XXX cannot update database in update-modlog ($m)"
     }
 }
 
-proc lazy-connect {base} {
+#
+# Marquer les changements comme étant traités, en y inscrivant 
+# le log des lignes envoyées à l'équipement
+#
+# Entrée :
+#   - idrr : id de l'équipement
+#   - lreqdate : liste des dates des changements
+#   - msg : message de log
+#   - ctxt(dbfd) : accès à la base
+# Sortie :
+#   - aucune
+# 
+# Historique : 
+#   2010/10/14 : pda/jean : création
+#
+
+proc mark-processed {idrr lreqdate msg} {
     global ctxt
 
-    set r 1
-    if {[string equal $ctxt(dbfd) ""]} then {
-	if {[catch {set ctxt(dbfd) [pg_connect -conninfo $base]} msg]} then {
-	    puts stderr "XXX : cannot connect to database ($msg)"
-	    set r 0
-	}
+    set reqdate [join $lreqdate "', '"]
+
+    set qmsg [::pgsql::quote $msg]
+    set sql "UPDATE topo.ifchanges
+		    SET processed = 1, modlog = '$qmsg', moddate = now ()
+		    WHERE idrr = $idrr AND reqdate IN ('$reqdate')"
+    if {! [::pgsql::execsql $ctxt(dbfd) $sql m]} then {
+	puts stderr "XXX cannot update database in mark-processed ($m)"
     }
-    return $r
 }
 
-proc init-ctxt {} {
-    global conf
-    global ctxt
-
-    set ctxt(dbfd) ""
-}
+##############################################################################
+# Programme principal
+##############################################################################
 
 #
 # Programme principal
@@ -780,38 +1108,37 @@ proc main {argv0 argv} {
     global conf
     global ctxt
 
-#######################################
-#    lire-apropager tab $conf(spoolapropager)
-#    lire-type-eq tabtype
-#
-#    foreach eq [array names tab] {
-#	# supprimer le nom de domaine pour ne garder que le nom court
-#	regsub {\..*} $eq "" eqcourt
-#	if {[info exists tabtype($eqcourt)]} then {
-#	    set type  [lindex $tabtype($eqcourt) 0]
-#	    set model [lindex $tabtype($eqcourt) 1]
-#	    set lf [propager $eq $type $model $tab($eq)]
-#	} else {
-#	    puts stderr "Type/model inconnus pour l'équipement '$eq'"
-#	}
-#    }
-#######################################
-
-
-    init-ctxt
-
-    set tabtype(_graph_modified) true
+    set ctxt(dbfd) ""
 
     set delay [expr $conf(delay)*1000]
+    set first true
+
+    #
+    # Initialiser la liste des équipements (qui sera réactualisée à chaque
+    # mise à jour du graphe)
+    #
+
+    set msg [read-eq-type tabtype]
+    if {! [string equal $msg ""]} then {
+	puts stderr "cannot read equipment types ($msg)"
+	# XXX : quelle attitude adopter ? Quitter le démon ou attendre que
+	# le graphe soit accessible ?
+	exit 1
+    }
+
+    #
+    # Boucle principale du démon
+    #
 
     while {true} {
 	#
-	# Se reconnecter à la base si besoin est
+	# Gestion de l'attente : avant chaque tour de boucle, sauf
+	# la première fois, attendre le délai demandé.
 	#
 
-	if {! [lazy-connect $conf(base)]} then {
+	if {! $first} then {
 	    after $delay
-	    continue
+	    set first false
 	}
 
 	#
@@ -819,20 +1146,23 @@ proc main {argv0 argv} {
 	# les conf (i.e. si on n'a pas encore fait de lecture complète
 	# depuis cette nuit à 2h du matin par ex).
 	#
-
-	# XXX rien du tout pour l'instant
-	    set tabtype(_graph_modified) true
-
-	#
-	# Détecter s'il faut relire les types d'équipements
-	#
-
-	if {$tabtype(_graph_modified)} then {
-	    set msg [lire-type-eq tabtype]
-	    if {! [string equal $msg ""]} then {
-		puts stderr "cannot read equipment types ($msg)"
-		after $delay
+    
+	set r [full-rancid-needed]
+	switch $r {
+	    -1 {
+		# error
 		continue
+	    }
+	    0 {
+		# not needed
+		# rien à faire
+	    }
+	    1 {
+		# il faut mettre à jour le graphe complet
+		# et (re-)lire la liste des types d'équipements
+		if {! [update-graph tabtype]} then {
+		    continue
+		}
 	    }
 	}
 
@@ -841,21 +1171,17 @@ proc main {argv0 argv} {
 	# et les propager
 	#
 
-	propager tabtype
+	send-changes tabtype
 
 	#
 	# Chercher les modifications des équipements et reconstituer
 	# le graphe
 	#
 
-#	detectmod
-#	    set tabtype(_graph_modified) true
-
-	#
-	# Attendre
-	#
-
-	after $delay
+	set leq [detectmod]
+	if {[llength $leq] > 0} then {
+	    update-graph tabtype $leq
+	}
     }
 
     return 0
