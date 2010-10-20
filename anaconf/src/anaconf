@@ -7,7 +7,7 @@
 # réseau donné.
 #
 # Syntaxe :
-#	$0 [-v] [-1] [-t]
+#	$0 [-v] [-1] [-t] [eq ... eq]
 #
 # Génération du fichier d'état
 # - ce fichier est généré en cas d'erreur
@@ -57,7 +57,7 @@ verbositer ()
 
 usage ()
 {
-    echo "usage: anaconf [-v][-1][-t]" >&2
+    echo "usage: anaconf [-v][-1][-t] [eq ...eq]" >&2
     exit 1
 }
 
@@ -94,7 +94,9 @@ liste_rancid ()
 
 supprimer_eqgen ()
 {
-    rm -f $EQGEN/*
+    if [ $# != 0 ]
+    then rm -f $EQGEN/*
+    fi
     return 0
 }
 
@@ -117,20 +119,41 @@ liste_vlans ()
 
 analyser_confs ()
 {
-    while read name type model
-    do
-	# retirer le nom de domaine (simplification pour l'installation locale)
-	n=`echo $name | sed 's/\..*//'`
+    if [ $# = 0 ]
+    then
+	while read name type model
+	do
+	    # retirer le nom de domaine (simplification pour l'installation locale)
+	    n=`echo $name | sed 's/\..*//'`
 
-	verbositer "analyse de $name"
-	# pour une raison que j'ignore, rancid ne détecte pas le modèle
-	# pour certains AP Cisco (et seulement pour certains).
-	if [ x"$model" = x ]
-	then model="INCONNU"
-	fi
-	$BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
-	    > $EQGEN/$n.eq
-    done < $TMP
+	    verbositer "analyse de $name"
+	    # pour une raison que j'ignore, rancid ne détecte pas le modèle
+	    # pour certains AP Cisco (et seulement pour certains).
+	    if [ x"$model" = x ]
+	    then model="INCONNU"
+	    fi
+	    $BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
+		> $EQGEN/$n.eq
+	done < $TMP
+    else
+	for eq in `cat $TMP`
+	do
+	    grep "^$eq " $TMP | read name type model
+	    if [ "$name" != "" ]
+	    then
+		verbositer "analyse de $name"
+		# pour une raison que j'ignore, rancid ne détecte pas le modèle
+		# pour certains AP Cisco (et seulement pour certains).
+		if [ x"$model" = x ]
+		then model="INCONNU"
+		fi
+		$BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
+		    > $EQGEN/$n.eq
+	    else
+		echo "$eq not found in liste-rancid result" >&2
+	    fi
+	done
+    fi
     return 0
 }
 
@@ -243,9 +266,9 @@ envoi_collecte ()
 enchainer ()
 {
     liste_rancid		\
-	&& supprimer_eqgen	\
+	&& supprimer_eqgen $*	\
 	&& liste_vlans		\
-	&& analyser_confs	\
+	&& analyser_confs $*	\
 	&& copier_eqgen		\
 	&& generer_graphe	\
 	&& verif_snmp		\
@@ -258,11 +281,11 @@ executer ()
 {
     if [ "$UNEFOIS" = true -o "$TESTONLY" = true ]
     then
-	enchainer
+	enchainer $*
 	erreur=$?
     else
 	rm -f $TMPERR
-	enchainer 2> $TMPERR
+	enchainer $* 2> $TMPERR
 
 	#
 	# On considère qu'il y a erreur dès que le code de retour
@@ -316,11 +339,13 @@ executer ()
 # Vérification de syntaxe
 #
 
-set -- `getopt vt1 $*`
+args=`getopt vt1 $*`
 
 if [ $? != 0 ]
 then usage
 fi
+
+set -- $args
 
 TESTONLY=false
 for i in $*
@@ -366,7 +391,7 @@ fi
 # On y va !
 #
 
-executer
+executer $*
 erreur=$?
 
 #
