@@ -2,7 +2,7 @@
 -- Topo Schema
 --
 -- Method :
---	- psql dns < topo.sql
+--	- psql -f topo.sql dns
 --
 -- $Id$
 ------------------------------------------------------------------------------
@@ -13,6 +13,8 @@
 
 CREATE USER detecteq ;
 ALTER USER detecteq UNENCRYPTED PASSWORD 'XXXXXX' ;
+
+GRANT SELECT ON rr, rr_ip, domaine TO detecteq ;
 
 CREATE SCHEMA topo ;
 
@@ -44,12 +46,43 @@ CREATE TABLE topo.ifchanges (
 	ifdesc		TEXT,		-- interface description
 	ethervlan	INT,		-- access vlan id
 	voicevlan	INT,		-- voice vlan id
-	moddate		TIMESTAMP (0)	-- modification date
+	processed	INT DEFAULT 0,	-- modification processed
+	moddate		TIMESTAMP (0)	-- modification (or last attempt) date
 			    WITHOUT TIME ZONE,
-	modlog		TEXT,		-- modification log
+	modlog		TEXT,		-- modification (or last attempt) log
 	FOREIGN KEY (idrr) REFERENCES rr (idrr),
 	PRIMARY KEY (idrr, reqdate)
 ) ;
+
+------------------------------------------------------------------------------
+-- Last rancid run
+------------------------------------------------------------------------------
+
+CREATE TABLE topo.lastrun (
+	date		TIMESTAMP (0)	-- detection date
+			    WITHOUT TIME ZONE
+) ;
+
+DELETE FROM topo.lastrun ;
+INSERT INTO topo.lastrun VALUES (NULL) ;
+
+------------------------------------------------------------------------------
+-- Keepstate events
+------------------------------------------------------------------------------
+
+CREATE TABLE topo.keepstate (
+    type	TEXT,		-- "rancid", "anaconf"
+    message	TEXT,		-- last message
+    date	TIMESTAMP (0)	-- first occurrence of this message
+			WITHOUT TIME ZONE
+			DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (type)
+) ;
+
+INSERT INTO topo.keepstate (type) VALUES ('rancid') ;
+INSERT INTO topo.keepstate (type) VALUES ('fullrancid') ;
+INSERT INTO topo.keepstate (type) VALUES ('anaconf') ;
 
 ------------------------------------------------------------------------------
 -- Users to ignore : don't log any event in the modified equipement spool
@@ -73,4 +106,6 @@ GRANT CREATE ON SCHEMA topo TO pda, jean ;
 GRANT SELECT ON topo.ignoreequsers TO detecteq ;
 GRANT INSERT ON topo.modeq TO detecteq ;
 
-GRANT ALL ON topo.modeq, topo.ifchanges TO dns, pda, jean ;
+GRANT ALL
+    ON topo.modeq, topo.ifchanges, topo.lastrun, topo.keepstate
+    TO dns, pda, jean ;
