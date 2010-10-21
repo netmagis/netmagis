@@ -14,6 +14,7 @@ PKGTCL	= /local/services/www/pkgtcl
 LIBDNS	= /local/services/www/applis/dns/lib/libdns.tcl
 
 SCRIPTS = detectconfmod
+DEFDOM	= u-strasbg.fr
 
 #
 # Motif de substitution à appliquer à chaque fichier installé
@@ -23,7 +24,8 @@ SUBST	= \
 	-e 's|%TCLSH%|$(TCLSH)|' \
 	-e 's|%BASE%|$(BASE)|' \
 	-e 's|%PKGTCL%|$(PKGTCL)|' \
-	-e 's|%LIBDNS%|$(LIBDNS)|'
+	-e 's|%LIBDNS%|$(LIBDNS)|' \
+	-e 's|%DEFDOM%|$(DEFDOM)|' \
 
 install:
 	test -d $(TOPODIR)/bin || mkdir $(TOPODIR)/bin

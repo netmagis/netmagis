@@ -11,7 +11,7 @@ DELAY=5					# delai entre itérations de topod (sec)
 PKGTCL=
 LIBDNS=
 FPING=
-RANCIDCMD=
+RANCID=
 
 
 
@@ -44,12 +44,14 @@ SCRIPTS = \
 	parse-juniper.tcl	\
 	sendcoll \
 	ssidprobes \
-	topod
+	topod \
+	start-rancid \
+	sendmail
 
 SUBST = \
         -e 's|%TCLSH%|$(TCLSH)|' \
         -e 's|%FPING%|$(FPING)|' \
-        -e 's|%RANCIDCMD%|$(RANCIDCMD)|' \
+        -e 's|%RANCID%|$(RANCID)|' \
         -e 's|%GRAPH%|$(GRAPH)|' \
         -e 's|%TOPODIR%|$(TOPODIR)|' \
         -e 's|%BASE%|$(BASE)|' \

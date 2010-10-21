@@ -280,6 +280,20 @@ array set confcmd {
     }
 }
 
+
+##############################################################################
+# Debug
+##############################################################################
+
+proc report-enter {cmd enter} {
+    puts "> $cmd"
+}
+
+proc report-leave {cmd code result leave} {
+    puts "< $cmd -> $code/$result"
+}
+
+
 ##############################################################################
 # Fonctions utilitaires
 ##############################################################################
@@ -298,6 +312,46 @@ array set confcmd {
 proc log-error {msg} {
     # XXXXX : syslog
     puts stderr $msg
+}
+
+#
+# Positionne le niveau de verbosité
+#
+# Entrée : 
+#   - niveau : niveau de verbosité maximum à afficher
+# Sortie :
+#   - valeur de retour : aucune
+#   - ctxt(verbose) : niveau de "verbosité" maximum à afficher
+#
+# Historique
+#   2010/10/21 : pda/jean : conception
+#
+
+proc set-verbose {niveau} {
+    global ctxt
+
+    set ctxt(verbose) $niveau
+}
+
+#
+# Affichage de debug suivant le niveau de verbosité
+#
+# Entrée : 
+#   - msg : message d'erreur
+#   - niveau : niveau de verbosité du message
+#   - ctxt(verbose) : niveau de "verbosité" maximum à afficher
+# Sortie : aucune
+#
+# Historique
+#   2010/10/21 : pda/jean : conception
+#
+
+proc verbositer {msg niveau} {
+    global ctxt
+
+    if {$niveau < $ctxt(verbose)} then {
+	puts stderr $msg
+    }
 }
 
 ##############################################################################
@@ -345,7 +399,7 @@ proc lazy-connect {} {
 #   2010/10/20 : pda/jean : conception (woaw !)
 #
 
-proc myselect {sql arrayname script} {
+proc myselect {sql arrayname script {iferror {}} {errscript {}}} {
     global ctxt
 
     if {[lazy-connect]} {
@@ -381,7 +435,7 @@ proc myexec {sql} {
     global ctxt
 
     if {[lazy-connect]} {
-	if {[catch {pg_exec $ctxt(dbfd) $cmd} res]} then {
+	if {[catch {pg_exec $ctxt(dbfd) $sql} res]} then {
 	    log-error $res
 	    catch {pg_disconnect $ctxt(dbfd)}
 	    set ctxt(dbfd) ""
@@ -406,6 +460,105 @@ proc myexec {sql} {
 	set r 0
     }
     return $r
+}
+
+#
+# Exécute une requête de début de transaction
+# et gère la reconnexion à la base
+#
+# Entrée : 
+#   - aucune
+# Sortie : 
+#   - valeur de retour : 1 si réussi, 0 si erreur
+#
+# Historique
+#   2010/10/21 : pda/jean : conception
+#
+
+proc mylock {} {
+    return [myexec "START TRANSACTION"]
+}
+
+#
+# Exécute une requête de début de transaction
+# et gère la reconnexion à la base
+#
+# Entrée : 
+#   - commit : "commit" ou "abort"
+# Sortie : 
+#   - valeur de retour : 1 si réussi, 0 si erreur
+#
+# Historique
+#   2010/10/21 : pda/jean : conception
+#
+
+proc myunlock {commit} {
+    switch $commit {
+	commit { set sql "COMMIT WORK" }
+	abort  { set sql "ABORT WORK" }
+    }
+    return [myexec $sql]
+}
+
+
+##############################################################################
+# Gestion des mails
+##############################################################################
+
+#
+# Envoie un mail si le message produit par un événement a changé par
+# rapport au précédent événement
+#
+# Entrée :
+#   - ev : événement considéré ("rancid", "anaconf")
+#   - msg : message de l'événement
+#   - ctxt(dbfd) : accès à la base
+# Sortie :
+#   - aucune
+#
+# Historique
+#   2010/10/21 : pda/jean : conception
+#
+
+proc keep-state-mail {ev msg} {
+    #
+    # Récupérer l'ancien message
+    #
+
+    set oldmsg ""
+    set qev [::pgsql::quote $ev]
+    set sql "SELECT message FROM topo.keepstate WHERE type = '$qev'"
+    if {! [myselect $sql tab { set oldmsg $tab(message) }]} then {
+	# on ne sait pas quoi faire...
+	return
+    }
+
+    if {! [string equal $msg $oldmsg]} then {
+	#
+	# Le nouveau message est différent de l'ancien. Il faut l'envoyer
+	# par mail et l'enregistrer dans le keepstate.
+	#
+
+	set qmsg [::pgsql::quote $msg]
+	set sql "UPDATE topo.keepstate
+			SET message = '$qmsg', date = NOW ()
+			WHERE type = '$qev'"
+	if {! [myexec $sql]} then {
+	    log-error "Cannot write '$ev' keepstate log for '$msg'"
+	}
+
+	#
+	# Envoyer le mail
+	#
+
+	set from	"pda@unistra.fr"
+	set to	 	 {jean@unistra.fr pda@unistra.fr}
+	set replyto	""
+	set cc		""
+	set bcc		""
+	set subject	"\[auto\] topod status changed for $ev"
+	::webapp::mail $from $replyto $to $cc $bcc $subject $msg
+    }
 }
 
 
@@ -443,6 +596,7 @@ proc full-rancid-needed {} {
 
     # if selects succeeds, returns the result of SQL query,
     # while translating it to 1 (true) or 0 (false)
+    # There is no need to test the return value of next command
     myselect $sql tab { set r [expr $tab(result) ? 1 : 0]}
 
     return $r
@@ -452,7 +606,7 @@ proc full-rancid-needed {} {
 # Mise à jour du graphe topo à partir des configuration des équipements
 #
 # Entrée :
-#   - _tabtype : tableau contenant en retour les types/modèles des équipements
+#   - _tabeq : tableau contenant en retour les types/modèles des équipements
 #   - leq : liste des équipements (optionnel)
 # Sortie :
 #   - valeur de retour : 1 si ok, 0 en cas d'erreur
@@ -462,25 +616,44 @@ proc full-rancid-needed {} {
 #   2010/10/20 : pda/jean : codage
 #
 
-proc update-graph {_tabtype {leq {}}} {
-    upvar $_tabtype tabtype
+proc update-graph {_tabeq {leq {}}} {
+    upvar $_tabeq tabeq
     global conf
     
     #
+    # Remettre à zéro les équipements marqués comme modifiés
+    # dans le spool
+    #
+
+    if {! [mylock]} then {
+	return 0
+    }
+
+    if {[llength $leq] == 0} then {
+	set sql "UPDATE topo.modeq SET processed = 1"
+    } else {
+	set inlist [join $leq "', '"]
+	set sql "UPDATE topo.modeq SET processed = 1 WHERE eq IN ('$inlist')"
+    }
+    if {! [myexec $sql]} then {
+	return 0
+    }
+
+    #
     # Lancer rancid et envoyer un mail si nécessaire
-    # XXX : keepstate
     #
 
     if {! [rancid $leq]} then {
+	myunlock "abort"
 	return 0
     }
 
     #
     # Mettre à jour le graphe et envoyer un mail si nécessaire
-    # XXX : keepstate
     #
 
     if {! [anaconf $leq]} then {
+	myunlock "abort"
 	return 0
     }
 
@@ -494,12 +667,13 @@ proc update-graph {_tabtype {leq {}}} {
 	    return 0
 	}
     }
+    myunlock "commit"
 
     #
-    # Relire les types d'équipements
+    # Relire les équipements et leur type/modèle
     #
 
-    set msg [read-eq-type tabtype]
+    set msg [read-eq-type tabeq]
     if {! [string equal $msg ""]} then {
 	puts stderr "cannot read equipment types ($msg)"
 	# XXX : que faire ici ? Arrêter ou continuer ?
@@ -524,48 +698,33 @@ proc update-graph {_tabtype {leq {}}} {
 proc rancid {{leq {}}} {
     global conf
 
-    set text ""
-
     #
-    # Appel à rancid
+    # Appeler rancid
     #
 
-    set r 1
+    set cmd [format $conf(rancid) $leq]
+    verbositer "rancid : cmd=<$cmd>" 2
 
-    if {[llength $leq] > 0} then {
-	foreach eq $leq {
-	    set cmd [format $conf(rancid) $eq]
-	    if {[catch {exec sh -c $cmd} msg]} then {
-		set msg "Erreur dans l'exécution de $cmd\n$msg"
-		set r 0
-	    } else {
-		# pas d'erreur : rien à faire
-	    }
-	    append text $msg
-	    append text "\n"
-	}
+    if {[catch {exec sh -c $cmd} msg]} then {
+	# erreur
+	set msg "Erreur dans l'exécution de $cmd\n$msg"
+	set r 0
     } else {
-	set cmd [format $conf(rancid) ""]
-	if {[catch {exec sh -c $cmd} msg]} then {
-	    # erreur
-	    set msg "Erreur dans l'exécution de $cmd\n$msg"
-	    set r 0
-	} else {
-	    # pas d'erreur : rien à faire
-	}
-	set text $msg
+	# pas d'erreur
+	set r 1
     }
 
     #
-    # Envoyer le mail
+    # Envoyer le mail si nécessaire
     #
 
-    ::webapp::mail pda@unistra.fr \
-			"" \
-			{jean@unistra.fr pda@unistrafr} \
-			"" \
-			"topod/rancid" \
-			$msg
+    if {[llength $leq] == 0} then {
+	set ev "fullrancid"
+    } else {
+	set ev "rancid"
+    }
+
+    keep-state-mail $ev $msg
 
     return $r
 }
@@ -594,6 +753,7 @@ proc anaconf {{leq {}}} {
 	append cmd " $eq"
     }
 
+    verbositer "anaconf : cmd=<$cmd>" 2
     if {[catch {exec sh -c $cmd} msg]} then {
 	# erreur
 	set msg "Erreur dans l'exécution de $cmd\n$msg"
@@ -604,15 +764,10 @@ proc anaconf {{leq {}}} {
     set text $msg
 
     #
-    # Envoyer le mail
+    # Envoyer le mail si nécessaire
     #
 
-    ::webapp::mail pda@unistra.fr \
-			"" \
-			{jean@unistra.fr pda@unistrafr} \
-			"" \
-			"topod/anaconf" \
-			$msg
+    keep-state-mail "anaconf" $msg
 
     return $r
 }
@@ -621,19 +776,20 @@ proc anaconf {{leq {}}} {
 # Recherche le type et le modèle des équipements connus dans le graphe
 #
 # Entrée :
-#   - _tabtype : nom du tableau contenant en retour les types
+#   - _tabeq : nom du tableau contenant en retour les types
 # Sortie :
 #   - valeur de retour : message d'erreur ou chaîne vide si ok
-#   - tabtype : tableau, indexé par nom court de l'équipement, contenant
-#	tabtype(<eq>) {<type> <model>}
+#   - tabeq : tableau, indexé par nom complet de l'équipement, contenant
+#	tabeq(<eq>) {<type> <model>}
 # 
 # Historique : 
 #   2010/02/25 : pda/jean : création
+#   2010/10/21 : pda/jean : modification pour ne gérer que des noms complets
 #
 
-proc read-eq-type {_tabtype} {
+proc read-eq-type {_tabeq} {
     global conf
-    upvar $_tabtype tabtype
+    upvar $_tabeq tabeq
 
     set msg ""
 
@@ -648,7 +804,11 @@ proc read-eq-type {_tabtype} {
 		    set type $t(type)
 		    set model $t(model)
 
-		    set tabtype($eq) [list $type $model]
+		    #### BEQUILLE
+		    append eq ".u-strasbg.fr"
+
+		    set tabeq($eq) [list $type $model]
+
 		    array unset t
 		}
 	    }
@@ -669,52 +829,52 @@ proc read-eq-type {_tabtype} {
 # équipements
 #
 # Entrée :
-#   - _tabtype : nom du tableau contenant les types d'équipements
-#   - ctxt(dbfd) : accès à la base
+#   - _tabeq : nom du tableau contenant les types d'équipements
 # Sortie :
-#   - aucune
+#   - valeur de retour : 1 si ok, 0 si erreur
 # 
 # Historique : 
 #   2010/10/14 : pda/jean : création
 #
 
-proc send-changes {_tabtype} {
-    upvar $_tabtype tabtype
-    global ctxt
+proc send-changes {_tabeq} {
+    upvar $_tabeq tabeq
 
     #
     # Trouver les équipements modifiés
+    # et constituer une liste de couples {{idrr fqdn} ...}
     #
 
+    set lc {}
     set sql "SELECT DISTINCT (c.idrr) AS idrr,
 			rr.nom || '.' || d.nom AS fqdn
 		    FROM topo.ifchanges c, rr, domaine d
 		    WHERE c.processed = 0
 			AND c.idrr = rr.idrr
 			AND rr.iddom = d.iddom"
-    pg_select $ctxt(dbfd) $sql t1 {
-	set idrr $t1(idrr)
-	set fqdn $t1(fqdn)
-	
+    if {! [myselect $sql tab { lappend lc [list $tab(idrr) $tab(fqdn)] }]} then {
+	return 0
+    }
+
+    foreach c $lc {
+	lassign $c idrr eq
+
 	#
-	# Rechercher le type et le modèle de l'équipement
+	# Rechercher le type et le modèle de l'équipement à partir
+	# du fqdn
 	#
 
-	# XXX : nom court
-	regsub {\..*} $fqdn {} eq
-
-	if {! [info exists tabtype($eq)]} then {
+	if {! [info exists tabeq($eq)]} then {
 	    update-modlog $idrr "Unknown equipement type for '$eq'"
 	    continue
 	}
-	set type  [lindex $tabtype($eq) 0]
-	set model [lindex $tabtype($eq) 1]
+	lassign $tabeq($eq) type model
 
 	#
 	# Test d'accessibilité
 	#
 
-	set msg [test-ping $fqdn]
+	set msg [test-ping $eq]
 	if {! [string equal $msg ""]} then {
 	    update-modlog $idrr $msg
 	    continue
@@ -729,12 +889,18 @@ proc send-changes {_tabtype} {
 	#
 
 	set lcmd [mod-to-conf $idrr $eq $type $model lreqdate]
-	if {[execute-cmd $fqdn $type $model $lcmd msg]} then {
+	if {[llength $lcmd] == 0} then {
+	    continue
+	}
+
+	if {[execute-cmd $eq $type $model $lcmd msg]} then {
 	    mark-processed $idrr $lreqdate $msg
 	} else {
 	    update-modlog $idrr $msg
 	}
     }
+
+    return 1
 }
 
 #
@@ -743,13 +909,13 @@ proc send-changes {_tabtype} {
 #
 # Entrée :
 #   - idrr : id de l'équipement
-#   - eq : nom court de l'équipement
+#   - eq : nom complet (fqdn) de l'équipement
 #   - type : type d'équipement (ex: cisco, juniper etc.)
 #   - model : modèle d'équipement (ex: 3750, M20 etc.)
 #   - lreqdate : en retour, liste des demandes trouvées (i.e. les dates)
-#   - ctxt(dbfd) : accès à la base
 # Sortie :
 #   - valeur de retour : liste des lignes de commandes à passer sur l'équipement
+#		ou liste vide en cas d'erreur
 #   - paramètre lreqdate : cf ci-dessus
 # 
 # Historique : 
@@ -758,7 +924,6 @@ proc send-changes {_tabtype} {
 
 proc mod-to-conf {idrr eq type model _lreqdate} {
     upvar $_lreqdate lreqdate
-    global ctxt
 
     set lreqdate {}
     set lcmd {}
@@ -779,12 +944,14 @@ proc mod-to-conf {idrr eq type model _lreqdate} {
 		WHERE c.idrr = $idrr AND c.processed = 0
 		ORDER BY c.reqdate ASC"
 
-    pg_select $ctxt(dbfd) $sql tab {
-	set reqdate $tab(reqdate)
-	set iface $tab(iface)
-	set ifdesc $tab(ifdesc)
-	set ethervlan $tab(ethervlan)
-	set voicevlan $tab(voicevlan)
+    set l {}
+    if {! [myselect $sql tab { lappend l [list $tab(reqdate) $tab(iface) \
+			$tab(ifdesc) $tab(ethervlan) $tab(voicevlan)] }]} then {
+	return {}
+    }
+
+    foreach e $l {
+	lassign $e reqdate iface ifdesc ethervlan voicevlan
 
 	lappend lreqdate $reqdate
 
@@ -979,7 +1146,7 @@ proc resetif {eq type model iface} {
 # Liste les vlans pour un équipement et une interface donnée
 #
 # Entrée :
-#   - eq : nom de l'équipement
+#   - eq : nom complet de l'équipement
 #   - iface : nom de l'interface
 # Sortie
 #   - valeur de retour : liste des vlans trouvés
@@ -993,7 +1160,7 @@ proc get-vlans {eq iface} {
 
     set lvlans {}
 
-    # supprimer le nom de domaine pour ne garder que le nom court
+    # BEQUILLE supprimer le nom de domaine pour ne garder que le nom court
     regsub {\..*} $eq "" eqcourt
 
     set cmd [format $conf(extracteq) $eqcourt $iface]
@@ -1015,7 +1182,7 @@ proc get-vlans {eq iface} {
 # Teste l'accessibilité d'un équipement
 #
 # Entrée :
-#   - eq : nom de l'équipement
+#   - eq : nom complet de l'équipement
 # Sortie :
 #   - valeur de retour : vide si ok, ou message d'erreur si pas accessible
 #
@@ -1099,8 +1266,67 @@ proc mark-processed {idrr lreqdate msg} {
 }
 
 ##############################################################################
+# Détection des modifications effectuées sur les équipements
+##############################################################################
+
+#
+# Détecter les modifications effectuées sur les équipements afin de
+# provoquer la reconstruction partielle du graphe.
+#
+# Entrée :
+#   - tabeq : tableau des types d'équipements, indexé par fqdn d'équipement
+# Sortie :
+#   - valeur de retour : liste d'équipements modifiés, ou liste vide
+# 
+# Historique : 
+#   2010/10/21 : pda/jean : création
+#
+
+proc detect-mod {_tabeq} {
+    upvar $_tabeq tabeq
+
+    set l {}
+    set sql "SELECT DISTINCT(eq) AS eq FROM topo.modeq WHERE processed = 0"
+    if {! [myselect $sql tab { lappend l $tab(eq) }]} then {
+	return {}
+    }
+
+    #
+    # Vérifier que l'équipement est bien un équipement géré par notre
+    # rancid.
+    # Note : selon les types d'équipements, les versions de syslogd,
+    # et les configurations de ces équipements, les noms récupérés
+    # peuvent être des noms courts. Dans ces cas, on considère que
+    # l'équipement n'est pas géré (c'est sans doute une erreur dans
+    # le script de détection des équipements modifiés).
+    #
+
+    set leq {}
+    foreach eq $l {
+	if {[info exists tabeq($eq)]} then {
+	    lappend leq $eq
+	} else {
+	    log-error "Change detected on an unknown equipment ($eq)"
+	}
+    }
+
+    return $leq
+}
+
+##############################################################################
 # Programme principal
 ##############################################################################
+
+set usage {usage: %1$s [-h][-v <n>]
+    -h         : affiche ce texte
+    -v <n>     : niveau de verbosité (0 = aucun, 1 = minimum, 99 = max)
+}
+
+proc usage {argv0} {
+    global usage
+
+    puts stderr [format $usage $argv0]
+}
 
 #
 # Programme principal
@@ -1111,16 +1337,66 @@ proc main {argv0 argv} {
     global ctxt
 
     set ctxt(dbfd) ""
+    set verbose 0
 
     set delay [expr $conf(delay)*1000]
-    set first true
+
+    #
+    # Analyse des arguments
+    #
+
+    while {[llength $argv] > 0} {
+	switch -glob -- [lindex $argv 0] {
+	    -h {
+		usage $argv0
+		return 0
+	    }
+	    -v {
+		set verbose [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+
+	    }
+	    -* {
+		usage $argv0
+		return 1
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    if {[llength $argv] != 0} then {
+	usage $argv0
+	return 1
+    }
+
+    #
+    # Valeurs par défaut
+    #
+
+    set-verbose $verbose
+
+    if {$verbose > 0} then {
+	foreach c {
+			myselect myexec mylock myunlock
+			keep-state-mail
+			full-rancid-needed update-graph
+			rancid anaconf read-eq-type send-changes mod-to-conf
+			execute-cmd fetch-conf resetif get-vlans test-ping
+			update-modlog mark-processed detect-mod
+		} {
+	    trace add execution $c enter report-enter
+	    trace add execution $c leave report-leave
+	}
+    }
 
     #
     # Initialiser la liste des équipements (qui sera réactualisée à chaque
     # mise à jour du graphe)
     #
 
-    set msg [read-eq-type tabtype]
+    set msg [read-eq-type tabeq]
     if {! [string equal $msg ""]} then {
 	puts stderr "cannot read equipment types ($msg)"
 	# XXX : quelle attitude adopter ? Quitter le démon ou attendre que
@@ -1132,16 +1408,19 @@ proc main {argv0 argv} {
     # Boucle principale du démon
     #
 
+    set first 1
+
     while {true} {
 	#
 	# Gestion de l'attente : avant chaque tour de boucle, sauf
 	# la première fois, attendre le délai demandé.
 	#
 
+	verbositer "delay : first=$first delay=$delay" 10
 	if {! $first} then {
 	    after $delay
-	    set first false
 	}
+	set first 0
 
 	#
 	# Détecter s'il faut faire un passage complet sur toutes
@@ -1149,8 +1428,7 @@ proc main {argv0 argv} {
 	# depuis cette nuit à 2h du matin par ex).
 	#
     
-	set r [full-rancid-needed]
-	switch $r {
+	switch [full-rancid-needed] {
 	    -1 {
 		# error
 		continue
@@ -1162,7 +1440,7 @@ proc main {argv0 argv} {
 	    1 {
 		# il faut mettre à jour le graphe complet
 		# et (re-)lire la liste des types d'équipements
-		if {! [update-graph tabtype]} then {
+		if {! [update-graph tabeq]} then {
 		    continue
 		}
 	    }
@@ -1173,16 +1451,16 @@ proc main {argv0 argv} {
 	# et les propager
 	#
 
-	send-changes tabtype
+	send-changes tabeq
 
 	#
 	# Chercher les modifications des équipements et reconstituer
 	# le graphe
 	#
 
-	set leq [detectmod]
+	set leq [detect-mod tabeq]
 	if {[llength $leq] > 0} then {
-	    update-graph tabtype $leq
+	    update-graph tabeq $leq
 	}
     }
 
@@ -1190,3 +1468,8 @@ proc main {argv0 argv} {
 }
 
 exit [main $argv0 $argv]
+
+
+
+
+

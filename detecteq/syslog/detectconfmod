@@ -24,6 +24,8 @@ set conf(pkg)		%PKGTCL%
 set conf(libdns)	%LIBDNS%
 set conf(base)		%BASE%
 
+set conf(defdom)	%DEFDOM%
+
 lappend auto_path $conf(pkg)
 
 package require pgsql
@@ -61,6 +63,28 @@ while {[gets stdin line] >= 0} {
 	}
 
 	if {$found} then {
+	    #
+	    # If host name is not fully qualified, qualify it.
+	    # The case of a not fully qualified host name occurs if
+	    # - either the originating syslog do not send a FQDN 
+	    #	(not a best practice according to RFC 5424)
+	    # - or the originating syslog do not send a hostname
+	    #	and the local syslog daemon performs a reverse-lookup
+	    #	and strips the domain part.
+	    #
+
+	    if {! [regexp {\.} $host]} then {
+		#
+		# Append the default domain
+		#
+		append host ".$conf(defdom)"
+	    }
+
+
+	    #
+	    # Insert this entry in the database
+	    #
+
 	    set qhost [::pgsql::quote $host]
 	    set qlogin [::pgsql::quote $login]
 	    set sql "INSERT INTO topo.modeq (eq, login) VALUES ('$qhost', '$qlogin')"

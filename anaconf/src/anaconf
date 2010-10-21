@@ -288,8 +288,10 @@ executer ()
 	enchainer $* 2> $TMPERR
 
 	#
-	# On considère qu'il y a erreur dès que le code de retour
-	# l'indique, ou bien s'il y a sortie d'un message sur stderr
+	# Distinguer les vrais plantages (code retour != 0) des
+	# incohérences détectées par les divers outils (dont buildgraph) :
+	# elles génèrent un message, mais n'empêchent pas la construction
+	# du graphe.
 	#
 
 	erreur=$?
@@ -301,13 +303,15 @@ executer ()
 	    fi
 	else
 	    if [ -s $TMPERR ]
-	    then
-		erreur=1
-		NEWERR="`cat $TMPERR`"
+	    then NEWERR="`cat $TMPERR`"
 	    fi
 	fi
 
-	if [ $erreur = 0 ]
+	#
+	# Mémoriser l'erreur ou le warning dans le fichier de status
+	#
+
+	if [ -z "$NEWERR" ]
 	then
 	    rm -f $STATUS
 	else
