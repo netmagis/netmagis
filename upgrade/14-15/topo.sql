@@ -63,9 +63,6 @@ CREATE TABLE topo.lastrun (
 			    WITHOUT TIME ZONE
 ) ;
 
-DELETE FROM topo.lastrun ;
-INSERT INTO topo.lastrun VALUES (NULL) ;
-
 ------------------------------------------------------------------------------
 -- Keepstate events
 ------------------------------------------------------------------------------
@@ -79,10 +76,6 @@ CREATE TABLE topo.keepstate (
 
     PRIMARY KEY (type)
 ) ;
-
-INSERT INTO topo.keepstate (type) VALUES ('rancid') ;
-INSERT INTO topo.keepstate (type) VALUES ('fullrancid') ;
-INSERT INTO topo.keepstate (type) VALUES ('anaconf') ;
 
 ------------------------------------------------------------------------------
 -- Users to ignore : don't log any event in the modified equipement spool
