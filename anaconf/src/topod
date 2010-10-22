@@ -102,6 +102,7 @@ set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
 set conf(extracteq)	{%TOPODIR%/bin/extracteq %1$s %2$s < %GRAPH%}
 set conf(rancid)	{%TOPODIR%/bin/start-rancid %1$s}
 set conf(anaconf)	{%TOPODIR%/bin/anaconf}
+set conf(logger)	%LOGGER%
 
 set conf(delay)		%DELAY%
 
@@ -310,8 +311,14 @@ proc report-leave {cmd code result leave} {
 #
 
 proc log-error {msg} {
-    # XXXXX : syslog
-    puts stderr $msg
+    global conf
+
+    if {[catch {open "|$conf(logger)" "w"} fd]} then {
+	puts stderr "$msg (log to syslog: $fd)"
+    } else {
+	puts $fd $msg
+	close $fd
+    }
 }
 
 #
@@ -378,8 +385,9 @@ proc lazy-connect {} {
     if {[string equal $ctxt(dbfd) ""]} then {
 	set d [catch {set ctxt(dbfd) [pg_connect -conninfo $conf(base)]} msg]
 	if {$d} then {
-	    log-error "XXX : cannot connect to database ($msg)"
 	    set r 0
+	} else {
+	    log-error "Connexion to database succeeded"
 	}
     }
     return $r
@@ -405,7 +413,7 @@ proc myselect {sql arrayname script {iferror {}} {errscript {}}} {
     if {[lazy-connect]} {
 	set cmd [list pg_select $ctxt(dbfd) $sql $arrayname $script]
 	if {[catch {uplevel 1 $cmd} err]} then {
-	    log-error $err
+	    log-error "Connexion to database lost in myselect ($err)"
 	    catch {pg_disconnect $ctxt(dbfd)}
 	    set ctxt(dbfd) ""
 	    set r 0
@@ -436,7 +444,7 @@ proc myexec {sql} {
 
     if {[lazy-connect]} {
 	if {[catch {pg_exec $ctxt(dbfd) $sql} res]} then {
-	    log-error $res
+	    log-error "Connexion to database lost in myexec ($res)"
 	    catch {pg_disconnect $ctxt(dbfd)}
 	    set ctxt(dbfd) ""
 	    set r 0
@@ -448,7 +456,8 @@ proc myexec {sql} {
 		    set r 1
 		}
 		default {
-		    log-error [pg_result $res -error]
+		    set err [pg_result $res -error]
+		    log-error "Internal error in myexec. Connexion to database lost ($err)"
 		    catch {pg_disconnect $ctxt(dbfd)}
 		    set ctxt(dbfd) ""
 		    set r 0
@@ -538,26 +547,34 @@ proc keep-state-mail {ev msg} {
 	# Le nouveau message est différent de l'ancien. Il faut l'envoyer
 	# par mail et l'enregistrer dans le keepstate.
 	#
+	# Parti pris : si l'accès à la base est HS et qu'on ne peut
+	# donc pas avoir accès au keepstate de l'événement, on
+	# n'envoie plus de mail. Le risque est de ne pas avoir
+	# connaissance par mail des événements lorsque la base est
+	# HS, mais le gain est ne pas avoir un nouveau mail identique
+	# toutes les X secondes... D'un autre côté, on ne risque rien
+	# puisqu'il n'y aura pas de changement détecté ou traité tant
+	# que la base est HS.
+	#
 
 	set qmsg [::pgsql::quote $msg]
-	set sql "UPDATE topo.keepstate
-			SET message = '$qmsg', date = NOW ()
-			WHERE type = '$qev'"
-	if {! [myexec $sql]} then {
-	    log-error "Cannot write '$ev' keepstate log for '$msg'"
+	set sql "DELETE FROM topo.keepstate WHERE type = '$qev' ;
+		    INSERT INTO topo.keepstate (type, message)
+			    VALUES ('$qev', '$qmsg')"
+	if {[myexec $sql]} then {
+	    #
+	    # Si on arrive ici, c'est que la base est vivante.
+	    # Envoyer le mail.
+	    #
+
+	    set from		"pda@unistra.fr"
+	    set to	 	 {jean@unistra.fr pda@unistra.fr}
+	    set replyto		""
+	    set cc		""
+	    set bcc		""
+	    set subject		"\[auto\] topod status changed for $ev"
+	    ::webapp::mail $from $replyto $to $cc $bcc $subject $msg
 	}
-
-	#
-	# Envoyer le mail
-	#
-
-	set from	"pda@unistra.fr"
-	set to	 	 {jean@unistra.fr pda@unistra.fr}
-	set replyto	""
-	set cc		""
-	set bcc		""
-	set subject	"\[auto\] topod status changed for $ev"
-	::webapp::mail $from $replyto $to $cc $bcc $subject $msg
     }
 }
 
@@ -663,7 +680,9 @@ proc update-graph {_tabeq {leq {}}} {
     #
 
     if {[llength $leq] == 0} then {
-	if {! [myexec "UPDATE topo.lastrun SET date = now ()"]} then {
+	set sql "DELETE FROM topo.lastrun ;
+		    INSERT INTO topo.lastrun (date) VALUES (NOW ())"
+	if {! [myexec $sql]} then {
 	    return 0
 	}
     }
@@ -675,8 +694,7 @@ proc update-graph {_tabeq {leq {}}} {
 
     set msg [read-eq-type tabeq]
     if {! [string equal $msg ""]} then {
-	puts stderr "cannot read equipment types ($msg)"
-	# XXX : que faire ici ? Arrêter ou continuer ?
+	keep-state-mail "read-eq-type" "Cannot read equipment types ($msg)"
 	return 0
     }
 
@@ -1041,8 +1059,6 @@ proc execute-cmd {fqdn type model lcmd _msg} {
     global conf
     upvar $_msg msg
 
-    # set cmd [join $lcmd ";"]
-
     set tmp "/tmp/topod.[pid]"
     set fd [open $tmp "w"]
     puts $fd [join $lcmd "\n"]
@@ -1059,7 +1075,26 @@ proc execute-cmd {fqdn type model lcmd _msg} {
     file delete -force $tmp
 
     #
-    # XXXXXXXXXX : interpréter le fichier résultant de l'exécution
+    # Interpréter le fichier résultant de l'exécution
+    #
+    # Pistes :
+    # 1- analyser le fichier en supprimant toutes les lignes connues
+    #	(ex: "cisco(Fa1/0)# switchport blablabla" -> supprimer)
+    #	ce qui reste est une erreur
+    #	-> pb : stratégie peu maintenable dans le temps
+    # 2- chercher des patterns d'erreur
+    #	-> pb : le nombre d'erreurs non connues est non dénombrable
+    # 3- ignorer le résultat de l'exécution, et détecter les modifications
+    #	non prises en compte dans le graphe reconstruit après
+    #	-> pb : délai entre la modif et la vérification
+    #	-> pb : complexité du code de vérification
+    # 4- ignorer le résultat de l'exécution, et laisser l'être humain
+    #	détecter les problèmes (par ex: affichage de l'erreur dans une
+    #	page web de diagnostic, ou la page web de l'équipement)
+    #	-> pb : codage dans l'appli web
+    #
+    # On privilégie la piste 4 pour le moment. L'expérience nous dira
+    # si c'est une bonne idée ou non.
     #
 
     return $r
@@ -1230,9 +1265,11 @@ proc update-modlog {idrr msg} {
     set sql "UPDATE topo.ifchanges
 		    SET modlog = '$qmsg', moddate = now ()
 		    WHERE idrr = $idrr AND processed = 0"
-    if {! [::pgsql::execsql $ctxt(dbfd) $sql m]} then {
-	puts stderr "XXX cannot update database in update-modlog ($m)"
+    if {! [myexec $sql]} then {
+	log-error "Cannot update modlog for idrr=$idrr"
     }
+
+    return
 }
 
 #
@@ -1260,8 +1297,8 @@ proc mark-processed {idrr lreqdate msg} {
     set sql "UPDATE topo.ifchanges
 		    SET processed = 1, modlog = '$qmsg', moddate = now ()
 		    WHERE idrr = $idrr AND reqdate IN ('$reqdate')"
-    if {! [::pgsql::execsql $ctxt(dbfd) $sql m]} then {
-	puts stderr "XXX cannot update database in mark-processed ($m)"
+    if {! [$myexec $sql]} then {
+	log-error "Cannot update 'processed' flag for idrr=$idrr"
     }
 }
 
@@ -1306,7 +1343,8 @@ proc detect-mod {_tabeq} {
 	if {[info exists tabeq($eq)]} then {
 	    lappend leq $eq
 	} else {
-	    log-error "Change detected on an unknown equipment ($eq)"
+	    keep-state-mail "detectunknw" \
+			"Change detected on an unknown equipment ($eq)"
 	}
     }
 
@@ -1398,9 +1436,11 @@ proc main {argv0 argv} {
 
     set msg [read-eq-type tabeq]
     if {! [string equal $msg ""]} then {
-	puts stderr "cannot read equipment types ($msg)"
-	# XXX : quelle attitude adopter ? Quitter le démon ou attendre que
-	# le graphe soit accessible ?
+	#
+	# C'est une erreur fatale qui empêche le démon de démarrer.
+	#
+
+	puts stderr "Cannot read equipment types. Abort. ($msg)"
 	exit 1
     }
 

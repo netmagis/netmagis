@@ -12,6 +12,7 @@ PKGTCL=
 LIBDNS=
 FPING=
 RANCID=
+LOGGER=
 
 
 
@@ -52,6 +53,7 @@ SUBST = \
         -e 's|%TCLSH%|$(TCLSH)|' \
         -e 's|%FPING%|$(FPING)|' \
         -e 's|%RANCID%|$(RANCID)|' \
+        -e 's|%LOGGER%|$(LOGGER)|' \
         -e 's|%GRAPH%|$(GRAPH)|' \
         -e 's|%TOPODIR%|$(TOPODIR)|' \
         -e 's|%BASE%|$(BASE)|' \
