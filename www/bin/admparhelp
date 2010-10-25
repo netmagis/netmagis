@@ -1,0 +1,161 @@
+#!%TCLSH%
+
+# $Id$
+
+#
+# Script de présentation de la page d'aide
+#
+# Appelé par : script admparlist
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2010/10/25 : pda      : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admparhelp.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# Le tableau servant à présenter les paramètres
+#
+
+set conf(tableau) {
+    global {
+	chars {12 normal}
+	columns {50 50}
+    }
+    pattern {Normal1} {
+	vbar {no}
+	column {
+	    multicolumn {2}
+	    color {909090}
+	    align {center}
+	    botbar {no}
+	}
+	vbar {no}
+    }
+    pattern {Normal2} {
+	vbar {no}
+	column {
+	    align {right}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+	column {
+	    align {left}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+    }
+    pattern {Boutons} {
+	vbar {no}
+	column {
+	    multicolumn {2}
+	    color {10C090}
+	    align {center}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+    }
+}
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
+			{} ftab dbfd login tabcor $conf(log)
+
+    #
+    # Mise en forme des données dans le formulaire
+    #
+
+    set html {}
+
+    foreach class [dnsconfig class] {
+	append html [::webapp::helem "h3" [dnsconfig desc $class]]
+	append html "\n"
+
+	foreach key [dnsconfig keys $class] {
+
+	    set desc [dnsconfig desc $key]
+	    set help [dnsconfig keyhelp $key]
+
+	    append html [::webapp::helem "h4" \
+				[::webapp::helem "a" $desc "name" $key]]
+
+	    append html "\n"
+	    append html [::webapp::helem "p" $help]
+	    append html "\n"
+			
+	}
+    }
+
+    #
+    # Génération de la page contenant le formulaire
+    #
+
+    set subst {}
+    lappend subst [list %TEXTE% $html]
+
+    ::webapp::send html [::webapp::file-subst $conf(page) $subst]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%
