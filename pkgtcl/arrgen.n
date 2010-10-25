@@ -1,0 +1,533 @@
+'\" 
+'\" $Id$
+'\" 
+'\" Copyright (c) 2002 by Pierre David <Pierre.David@crc.u-strasbg.fr>
+'\" All rights reserved.
+'\" 
+'\" The definitions below are for supplemental macros used in Tcl/Tk
+'\" manual entries.
+'\"
+'\" .AP type name in/out ?indent?
+'\"	Start paragraph describing an argument to a library procedure.
+'\"	type is type of argument (int, etc.), in/out is either "in", "out",
+'\"	or "in/out" to describe whether procedure reads or modifies arg,
+'\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+'\"	needed;  use .AS below instead)
+'\"
+'\" .AS ?type? ?name?
+'\"	Give maximum sizes of arguments for setting tab stops.  Type and
+'\"	name are examples of largest possible arguments that will be passed
+'\"	to .AP later.  If args are omitted, default tab stops are used.
+'\"
+'\" .BS
+'\"	Start box enclosure.  From here until next .BE, everything will be
+'\"	enclosed in one large box.
+'\"
+'\" .BE
+'\"	End of box enclosure.
+'\"
+'\" .CS
+'\"	Begin code excerpt.
+'\"
+'\" .CE
+'\"	End code excerpt.
+'\"
+'\" .VS ?version? ?br?
+'\"	Begin vertical sidebar, for use in marking newly-changed parts
+'\"	of man pages.  The first argument is ignored and used for recording
+'\"	the version when the .VS was added, so that the sidebars can be
+'\"	found and removed when they reach a certain age.  If another argument
+'\"	is present, then a line break is forced before starting the sidebar.
+'\"
+'\" .VE
+'\"	End of vertical sidebar.
+'\"
+'\" .DS
+'\"	Begin an indented unfilled display.
+'\"
+'\" .DE
+'\"	End of indented unfilled display.
+'\"
+'\" .SO
+'\"	Start of list of standard options for a Tk widget.  The
+'\"	options follow on successive lines, in four columns separated
+'\"	by tabs.
+'\"
+'\" .SE
+'\"	End of list of standard options for a Tk widget.
+'\"
+'\" .OP cmdName dbName dbClass
+'\"	Start of description of a specific option.  cmdName gives the
+'\"	option's name as specified in the class command, dbName gives
+'\"	the option's name in the option database, and dbClass gives
+'\"	the option's class in the option database.
+'\"
+'\" .UL arg1 arg2
+'\"	Print arg1 underlined, then print arg2 normally.
+'\"
+'\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+'\"	# Start an argument description
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ta \\n()Au \\n()Bu
+.ie !"\\$3"" \{\
+\&\\$1	\\fI\\$2\\fP	(\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+'\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+.AS Tcl_Interp Tcl_CreateInterp in/out
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\"	# VS - start vertical sidebar
+'\"	# ^Y = starting y location
+'\"	# ^v = 1 (for troff;  for nroff this doesn't matter)
+.de VS
+.if !"\\$2"" .br
+.mk ^Y
+.ie n 'mc \s12\(br\s0
+.el .nr ^v 1u
+..
+'\"	# VE - end of vertical sidebar
+.de VE
+.ie n 'mc
+.el \{\
+.ev 2
+.nf
+.ti 0
+.mk ^t
+\h'|\\n(^lu+3n'\L'|\\n(^Yu-1v\(bv'\v'\\n(^tu+1v-\\n(^Yu'\h'-|\\n(^lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.nr ^v 0
+..
+'\"	# Special macro to handle page bottom:  finish off current
+'\"	# box/sidebar if in box/sidebar mode, then invoked standard
+'\"	# page bottom macro.
+.de ^B
+.ev 2
+'ti 0
+'nf
+.mk ^t
+.if \\n(^b \{\
+.\"	Draw three-sided box if this is the box's first page,
+.\"	draw two sides but no top otherwise.
+.ie !\\n(^b-1 \h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.el \h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.\}
+.if \\n(^v \{\
+.nr ^x \\n(^tu+1v-\\n(^Yu
+\kx\h'-\\nxu'\h'|\\n(^lu+3n'\ky\L'-\\n(^xu'\v'\\n(^xu'\h'|0u'\c
+.\}
+.bp
+'fi
+.ev
+.if \\n(^b \{\
+.mk ^y
+.nr ^b 2
+.\}
+.if \\n(^v \{\
+.mk ^Y
+.\}
+..
+'\"	# DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+'\"	# DE - end display
+.de DE
+.fi
+.RE
+.sp
+..
+'\"	# SO - start of list of standard options
+.de SO
+.SH "STANDARD OPTIONS"
+.LP
+.nf
+.ta 4c 8c 12c
+.ft B
+..
+'\"	# SE - end of list of standard options
+.de SE
+.fi
+.ft R
+.LP
+See the \\fBoptions\\fR manual entry for details on the standard options.
+..
+'\"	# OP - start of full description for a single option
+.de OP
+.LP
+.nf
+.ta 4c
+Command-Line Name:	\\fB\\$1\\fR
+Database Name:	\\fB\\$2\\fR
+Database Class:	\\fB\\$3\\fR
+.fi
+.IP
+..
+'\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+'\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.de UL
+\\$1\l'|0\(ul'\\$2
+..
+.TH arrgen n 1.0 Arrgen "Array generator"
+.BS
+'\" Note: do not modify the .SH NAME line immediately below!
+.SH NAME
+::arrgen \- Procedures to generate formatted output for an array
+.SH SYNOPSIS
+\fBpackage require Tcl 8\fR
+.sp
+\fBpackage require arrgen ?1.0?\fR
+.sp
+\fB::arrgen::debug\fR \fIlist\fR
+.sp
+\fB::arrgen::parse\fR \fIarray\fR \fIstyle\fR \fImessage\fR
+.sp
+\fB::arrgen::output\fR \fIformat\fR \fIstyle\fR \fIdata\fR
+.BE
+.SH DESCRIPTION
+.PP
+This package provides procedures to generate output in various
+formats (CSV, HTML or LATEX/PDF) from tabular data, according to a
+high level specification independant of the actual output format.
+.TP
+\fB::arrgen::debug\fR \fIlist\fR
+Set the debug characteristics. This is a list, which may contains
+the values \fBerrors\fR (to report a stack trace when an error occurs)
+and \fBsyntax\fR (to dump the result of syntax analysis on stderr).
+The empty list disables any debug activity.
+.TP
+\fB::arrgen::parse\fR \fIarray\fR \fIstyle\fR \fImessage\fR
+Parses a \fIstyle\fR specification (see STYLE SPECIFICATION below)
+and stores it into the \fIarray \fR and returns 0. If an error
+occurs, the \fImessage\fR parameter is set to the text of the error
+and the value -1 is returned.
+.TP
+\fB::arrgen::output\fR \fIformat\fR \fIstyle\fR \fIdata\fR
+Returns the array in the \fIformat\fR specified (see OUTPUT FORMATS
+below). The \fIstyle\fR parameter is either an called-by-name array
+containing the parsed style, or the style specification itself: in
+this case, the specification is parsed first. The \fIdata\fR parameter
+is a list, where each element represents a line of the array.  This
+element is itself a list, whose first element is the name of a
+pattern in the style specification, and the remaining elements are
+the cell values.
+.SH "STYLE SPECIFICATION"
+.PP
+The style specification is a TCL list, structured as a sequence of
+elements organized in pairs: a \fIkeyword\fR followed by a list of
+\fIattributes\fR. The only exception is the \fBpattern\fR keyword,
+which is organized in three values.
+.PP
+For example:
+.CS
+{
+    global {
+        chars {12 normal}
+        align {left}
+        columns {70 30}
+    }
+    pattern Title {
+        topbar {yes}
+        vbar {yes}
+        align {center}
+        column {
+            chars {bold italic}
+        }
+        vbar {yes}
+        column {
+            chars {bold}
+        }
+        vbar {yes}
+    }
+    pattern Normal {
+        vbar {yes}
+        column { }
+        vbar {yes}
+        column {
+            align {right}
+        }
+        vbar {yes}
+    }
+}
+.CE
+This specification contains a \fBglobal\fR keyword whose attributes
+specify the default values for the whole array: character
+size and style (\fBchars\fR keyword), alignment inside each cell
+(\fBalign\fR keyword), and two columns, the size of the first is
+70% of the array size, and the size of the second is 30% of the
+array size.
+.PP
+Next, the pattern \fBTitle\fR is defined. Since it will probably
+be used to typeset title lines, each column definition overrides
+the default character style to use a bold font. The default alignment
+is redefined for all columns. Last, there are three vertical bars,
+one on each side of the two columns.
+.PP
+Last, the pattern \fBNormal\fR is defined, in order to typeset
+normal lines. Default values are used nearly everywhere, except in
+the second column where the text in the cell must be aligned on the
+right, which is useful to typeset formatted numbers, for example.
+.PP
+The keywords and their attributes are:
+.TP
+\fBglobal\fR { \fIattributes\fR }
+Attributes for the \fBglobal\fR keyword define default values for
+the whole array. Some of them are inherited in other sections
+(\fBpattern\fR and \fBcolumns\fR), and may be redefined everywhere.
+Global keywords and attributes are:
+.sp
+.RS
+.TP
+\fBchars\fR { \fIattributes\fR }
+Attributes are a font size (integer) and font style (\fBnormal\fR,
+\fBbold\fR, \fBitalic\fR and \fBbold italic\fR). These values can be
+specified in any order.
+Default: \fB12 normal\fR
+.TP
+\fBcolor\fR { \fIvalue\fR }
+The \fBcolor\fR keyword specifies the background color of the cells.
+The \fIvalue\fR is either the \fBtransparent\fR keyword, or a
+hexadecimal value (see the X Window System specification or the
+HTML specification for syntax).
+Default: \fBtransparent\fR
+.TP
+\fBalign\fR { \fIvalue\fR }
+The \fBalign\fR specified the alignment of the text inside the cells.
+The \fIvalue\fR can be \fBleft\fR, \fBcenter\fR, \fBright\fR or
+\fBjustify\fR.
+Default: \fBleft\fR
+.TP
+\fBformat\fR { \fImethod\fR }
+Specifies how the cell texts must be formatted. The \fImethod\fR is
+one of these values:
+.RS
+.TP
+\fBcooked\fR
+All special characters are escaped such as they loose their special
+meaning in the output language.
+.TP
+\fBline\fR
+Same as \fBcooked\fR, but newline characters and paragraphs (double
+newline) are honored.
+.TP
+\fBraw\fR
+The text is typeset as it is given. Used to include HTML links or
+any other special feature.
+.TP
+\fIprocname\fR
+The TCL procedure \fIprocname\fR is called with three arguments. The first
+is the name of the format (see OUTPUT FORMATS below), the second is the
+alignement (see the \fBalign\fR keyword) and the third is
+the cell text. Return value must be the text to be inserted verbatim
+in the cell.
+.PP
+Default: \fBcooked\fR
+.RE
+.TP
+\fBcolumns\fR { \fIsize\fR ... \fIsize\fR }
+The \fBcolumns\fR gives the number of columns in the array, and the
+individual size of each column expressed in percent of the whole
+array size. Each size must be an integer value, and the sum must be 100.
+If the sum is not equal to 100, all column widths are approximated such
+that the sum is 100.
+No default value.
+.TP
+\fBcsv\fR { \fIattributes\fR }
+Sets the CSV (see OUTPUT FORMATS below) specific parameters. Keywords in
+this section are:
+.sp
+.RS
+.TP
+\fBseparator\fR { \fIcharacter\fR }
+Sets the column separator for CSV files.
+Default: \fB,\fR (comma character).
+.RE
+.TP
+\fBlatex\fR { \fIattributes\fR }
+Sets the LaTeX (see OUTPUT FORMATS below) specific parameters.
+Dimensions cannot be guessed by this package. Keywords in
+this section are:
+.sp
+.RS
+.TP
+\fBlinewidth\fR { \fIwidth\fR }
+Sets the width (floating number) of the text, which should match
+the contents of the LaTeX variable \fB\\linewidth\fR. Units are
+unimportant, as long as they are the same as the \fBbordersep\fR
+width.
+Default: \fB175mm\fR.
+.TP
+\fBbordersep\fR { \fIwidth\fR }
+Sets the width between the border of the cell and the text box.
+Default: \fB2.3mm\fR.
+.PP
+These values allow for fine tuning of the printed material. Default
+values should give acceptable arrays in almost every situation.
+.RE
+.RE
+.TP
+\fBpattern\fR \fIname\fR  { \fIattributes\fR }
+The \fBpattern\fR keyword introduces a new pattern called \fIname\fR.
+The name of the pattern is used in the data list to typeset each
+individual line. The definition of \fIattributes\fR are:
+.RS
+.TP
+\fBchars\fR, \fBcolor\fR, \fBalign\fR, \fBformat\fR
+See description in the \fBglobal\fR section. Default values are
+inherited from this section.
+.TP
+\fBtopbar\fR { \fIvalue\fR }
+A horizontal bar must be drawn on the top of the whole line. The
+\fIvalue\fR is either \fByes\fR or \fBno\fR.
+Default: \fBno\fR
+.TP
+\fBtitle\fR { \fIvalue\fR }
+Considers this line as a title line. This implies that all lines
+matching this pattern will be printed on the top of new pages if
+the generated array goes on multiple pages.
+The \fIvalue\fR is either \fByes\fR or \fBno\fR.
+Default: \fBno\fR
+.TP
+\fBvbar\fR { \fIvalue\fR }
+Puts a vertical bar at this position (after the first column, between
+columns of after the last column).
+The \fIvalue\fR is either \fByes\fR or \fBno\fR.
+Default: \fBno\fR.
+.TP
+\fBcolumn\fR { \fIattributes\fR }
+Specifies a column. Even if the \fIattributes\fR list is empty (such
+as when all inherited attributes are ok), this keyword and the empty
+attribute list must be specified.
+No default.
+.RS
+.TP
+\fBchars\fR, \fBcolor\fR, \fBalign\fR, \fBformat\fR
+See description in the \fBglobal\fR section. Default values are
+inherited from the current pattern.
+.TP
+\fBmulticolumn\fR { \fIvalue\fR }
+This cell spans on multiple columns. The \fIvalue\fR is an integer
+number of columns.
+Default: \fB1\fR.
+.TP
+\fBbotbar\fR { \fIvalue\fR }
+This cell has a horizontal bar under the text.
+Puts a horizontal bar below this column.
+The \fIvalue\fR is either \fByes\fR or \fBno\fR.
+Default: \fBno\fR.
+.RE
+.RE
+.SH "OUTPUT FORMATS"
+.TP
+\fB csv\fR
+"comma separated values".
+Values are separated by commas. When a comma, a double quote, or a
+newline character is present in one cell, the entire value is surrounded
+by double quotes ("). Double-quotes in the cell are doubled.
+.TP
+\fB html\fR
+"hypertext markup language".
+Output in this format is a complete <TABLE> ... </TABLE> fragment.
+Vertical and horizontal bars in the specifications are not used, except
+to decide if the whole HTML array must have a border or not.
+.TP
+\fB latex\fR
+This format is used to generate a fragment of LaTeX code (using the
+latex \fBsupertabular\fR package) suitable for insertion in a complete
+LaTeX document, which in turn can be used to generate a PDF file.
+.SH EXAMPLES
+.PP
+The first example shows the use of the \fB::arrgen::parse\fR function.
+.CS
+	set style { ... }
+	if {[\fB::arrgen::parse\fR tabstyle $style msg] == -1} then {
+		 puts stderr $msg
+	}
+	set data {}
+	for ...
+		lappend data [list pattern val1 val2 ... valn]
+	puts [\fB::arrgen::output\fR "html" tabstyle $data]
+.CE
+.PP
+The second example shows the simplest use of the package:
+.CS
+	set style { ... }
+	set data {}
+	for ...
+		lappend data [list pattern val1 val2 ... valn]
+	puts [\fB::arrgen::output\fR "html" $style $data]
+.CE
+.SH "SEE ALSO"
+webapp(n)
+.SH AUTHOR
+Pierre David (Pierre.David@crc.u-strasbg.fr)
