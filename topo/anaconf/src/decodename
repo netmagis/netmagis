@@ -1,0 +1,3 @@
+#!%TCLSH%
+
+puts [binary format H* [lindex $argv 0]]

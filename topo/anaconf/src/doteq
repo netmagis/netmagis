@@ -1,0 +1,167 @@
+#!%TCLSH%
+
+#
+# $Id$
+#
+# Script pour analyser la sortie de l'analyse de configuration
+# et la présenter sous forme graphique à l'aide de "neato".
+#
+# Usage :
+#	analyser ... | doteq > /tmp/eq.ps
+#
+# Historique
+#   2007/07/16 : pda : reconception
+#
+
+proc dot-init {} {
+    global dottxt
+
+    set dottxt ""
+}
+
+proc dot-kw {lattrval} {
+    global dottxt
+
+    foreach {a v} $lattrval {
+	append dottxt "$a = $v ;\n"
+    }
+}
+
+proc dot-add-node {node lattrval} {
+    global dottxt
+
+    if {[string equal $node ""]} then {
+	append dottxt "node"
+    } else {
+	append dottxt "\"$node\""
+    }
+
+    if {[llength lattrval] > 0} then {
+	set lattr {}
+	foreach {a v} $lattrval {
+	    lappend lattr "$a=$v"
+	}
+	set attr [join $lattr ", "]
+	append dottxt " \[$attr\]"
+    }
+
+    append dottxt ";\n"
+}
+
+proc dot-add-link {n1 n2} {
+    global dottxt
+
+    append dottxt "\"$n1\" -- \"$n2\" ;\n"
+}
+
+proc dot-get {} {
+    global dottxt
+
+    return $dottxt
+}
+
+proc prologue {} {
+    dot-init
+    dot-kw {
+		center		true
+		size		\"7.5,10.5\"
+		fontname	Helvetica
+		fontsize	10
+		ratio		compress
+	    }
+    dot-add-node "" {
+			fontname	Helvetica
+			fontsize	10
+		}
+}
+
+proc epilogue {} {
+    return
+}
+
+proc titre {eq type model} {
+    dot-kw [list "label" "\"$eq ($type / $model)\""]
+}
+
+proc node {name shape label {sup {}}} {
+    dot-add-node $name [concat \
+			    [list shape $shape label "\"$label\""] \
+			    $sup
+			]
+}
+
+proc main {argv0 argv} {
+    dot-init
+
+    prologue
+
+    while {[gets stdin l] >= 0} {
+	switch [lindex $l 0] {
+	    eq {
+		array set t $l
+		append r [titre $t(eq) $t(type) $t(model)]
+		array unset t
+	    }
+	    node {
+		set node [lindex $l 1]
+		set type [lindex $l 3]
+		switch $type {
+		    L1 {
+			array set t $l
+			set iface $t(name)
+			set link  $t(link)
+			append r [node $node "rectangle" "$iface\\n$link"]
+			array unset t
+		    }
+		    L2 {
+			array set t $l
+			set vlan $t(vlan)
+			append r [node $node "diamond" "$vlan"]
+			array unset t
+		    }
+		    L2pat {
+			append r [node $node "Mdiamond" ""]
+		    }
+		    bridge {
+			append r [node $node "box" "" {regular true}]
+		    }
+		    brpat {
+			append r [node $node "Msquare" ""]
+		    }
+		    L3 {
+			set ip [lindex $l 7]
+			append r [node $node "ellipse" "$ip"]
+		    }
+		    router {
+			set instance [lindex $l 7]
+			append r [node $node "circle" "$instance"]
+		    }
+		}
+	    }
+	    link {
+		set l1 [lindex $l 1]
+		set l2 [lindex $l 2]
+		dot-add-link $l1 $l2
+	    }
+	}
+    }
+
+    epilogue
+
+    set tmp "/tmp/doteq.[pid]"
+    set fd [open $tmp "w"]
+    puts $fd "graph G \{\n[dot-get] \}"
+    close $fd
+
+    set fd [open "|neato -Tps < $tmp" "r"]
+    set ps [read $fd]
+    close $fd
+
+    file delete $tmp
+
+    puts stdout $ps
+
+    return 0
+}
+
+exit [main $argv0 $argv]

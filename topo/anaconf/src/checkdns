@@ -1,0 +1,615 @@
+#!%TCLSH%
+
+#
+# $Id$
+#
+# Vérifie les enregistrement DNS de la base DNS, en fonction de ce qui
+# est trouvé dans la configuration des routeurs
+#
+# Entrée :
+#   - arguments : aucun
+#   - fichier (entrée standard) au format 
+#	    vlan <id> <long description>
+#	    iface <eq> <if> <vlan-id> <ip>
+#	    vrrp <vlan-id> <ip>
+# Sortie :
+#   - message avec liste des commandes à appliquer
+#
+# Historique
+#   2004/06/11 : jean     : modif juniper-parse-if-address pour verif DNS
+#   2004/09/06 : jean     : adaptation au nouveau schéma de nommage des routeurs
+#   2004/09/24 : pda/jean : re-conception
+#  
+
+
+set conf(pkg)	"/local/services/www/pkgtcl"
+set conf(base) {host=HOST dbname=DB user=USER password=PASSWORD}
+set conf(domain) "u-strasbg.fr"
+
+# Script où sont placées les modifications du DNS
+set conf(script) "%TOPODIR%/bin/update-dns.sh"
+
+# Répertoire où trouver les commandes d'ajout et de suppression dans WebDNS
+set conf(path)	"/local/services/www/applis/devdns/lib/util"
+
+#
+# Les routeurs
+#  - tout RR DNS commençant par ces noms est pris en considération
+#  - toute interface fournie avec cet équipement est prise en considération
+#
+set conf(routers) {api-rc1 crc-rc1 ecpm-rc1 le7-rc1 hemato-rc1}
+
+array set vlan {
+	2	infoapi
+	3	curri
+	4	crc
+	5	crc
+	6	obs
+	7	pabx
+	8	forummed
+	9	forummedvideo
+	10	isis
+	11	ipcms
+	12	medecinenucleaire
+	14	visconti
+	15	ifare
+	16	iutnord
+	17	ecpm
+	18	jardinsciences
+	19	misha
+	20	hemato
+	21	wifi-infoetu
+	22	wifi-infopers
+	23	wifi-infoguest
+	24	ics
+	25	synthe163
+	26	kyliasys
+	27	semia
+	28	imfs
+	29	pixium
+	30	ixelis
+	31	maitrise-physique
+	32	eost
+	33	irma
+	34	interco-adm
+	35	interco-adm
+	36	interco-adm
+	37	interco-adm
+	38	interco-adm
+	39	physique
+	40	musee-sismo
+	41	scd
+	42	inserm-adr16
+	43	bnus
+	44	ipst
+	45	iufm-dmz
+	46	iufm-vpn
+	47	cnrs-dr10
+	48	neurochimie
+	49	zoologie
+	50	sfc
+	51	efs
+	52	iutsud
+	53	iutsud-info
+	54	geologie
+	55	efs-hautepierre
+	56	ulp-pege
+	57	urs-pege
+	58	pharma
+	59	entomede
+	60	ens-pharma
+	61	umr7034
+	62	lebel-haut
+	63	lebel-bas
+	64	chimie
+	65	ibmc
+	66	archi
+	67	admarchi
+	68	engees
+	69	inserm-u381
+	70	imageville
+	71	geographie
+	72	lsiit
+	73	ensps
+	74	dess-info
+	75	sertit
+	76	ensps
+	77	ensps
+	78	igbmc
+	79	esbs
+	80	icps
+	81	biovaley
+	82	igbmc
+	83	psycho
+	84	icps
+	85	insa
+	86	insa
+	87	r2cisco
+	88	suas
+	89	bota
+	90	ulpmm
+	91	ibmp
+	92	ibmpbota
+	93	isu
+	94	insttrav
+	95	ipcb
+	96	umb
+	97	umb
+	98	umb
+	99	umb
+	100	dptinfo
+	101	dptinfo
+	102	labo-u
+	103	ipb
+	104	ihee
+	105	medbat2
+	106	primato
+	107	maisonjapon
+	108	ircad
+	109	medbat3
+	110	medbat4
+	112	suas-plongee
+	113	dermato-chira
+	114	ophtalmo-meda
+	115	dentaire
+	116	poincare-lab-medb-chirb
+	117	amicale-dentaire
+	118	ires
+	120	crous-adm-interco
+	121	medb-anapat-clovis-neuro
+	122	psychiatrie
+	123	vpn-interne
+	199	vpn
+	666	vplstest
+	667	netflowtest
+	700	renater
+	701	o1espla
+	702	belwue
+	703	o1api
+	704	o1hemato
+	705	o1le7
+	706	o1ipv6
+	710	crousadm
+	800	mgmtreseau
+	801	crc
+	802	onduleurs
+	803	telephone
+	804	admmed
+	805	admespla
+	806	admnord
+	807	admsud
+	808	admumb
+	809	admurs
+	810	admurs
+	811	wifi
+	812	medtrav-cnrs
+	813	neurochimie
+	814	urs
+	815	ensurs
+	816	ensurs
+	817	ensulp
+	819	test-adminterne
+	820	univ-r
+	821	wifi-test
+	822	palais-u
+	823	adm-labo-u
+	824	pfsync-fwadm
+	825	interco-fwadm
+	826	siigadm
+	827	siigdmz
+	828	admcrous
+	829	crous
+	830	crous
+	831	crous
+	832	crous
+	833	crous
+	999	remotespan
+}
+
+lappend auto_path $conf(pkg)
+package require pgsql
+
+
+###############################################################################
+# Fonctions utilitaires
+###############################################################################
+
+proc ouvrir-base {base varmsg} {
+    upvar $varmsg msg
+
+    if {[catch {set dbfd [pg_connect -conninfo $base]} msg]} then {
+        set dbfd ""
+    }   
+
+    return $dbfd
+}
+
+#
+# Lit le fichier en sortie de "getnetif" et retourne une liste
+# d'association <nom, adrip>
+#
+# Entrée :
+#   - fd : descripteur de fichier pour la lecture de la sortie de getnetif
+#   - tab : tableau passé par nom
+# Sortie :
+#   - valeur de retour : 1 si ok, 0 si erreur
+#   - paramètre tab
+#	tableau de noms indexés par les adresses IP (tab(ip) = nom)
+#
+# Historique :
+#   2004/09/21 : pda/jean : conception
+#
+
+proc lire-ifaces {fd tab} {
+    upvar $tab t
+
+    # par défaut : pas d'erreur
+    set r 1
+
+    while {[gets $fd ligne] > 0} {
+	switch -- [lindex $ligne 0] {
+	    vlan {
+		# vlan <id> <long description>
+		set vlanid [lindex $ligne 1]
+		set tabvlan($vlanid) [lreplace $ligne 0 1]
+	    }
+	    vrrp {
+		# vrrp <vlan-id> <ip>
+		set vlanid [lindex $ligne 1]
+		set tabvrrp($vlanid) [lindex $ligne 2]
+	    }
+	    iface {
+		# iface <eq> <if> <vlan-id> <ip>
+		set eq     [lindex $ligne 1]
+		set iface  [lindex $ligne 2]
+		set vlanid [lindex $ligne 3]
+		set ip     [lindex $ligne 4]
+		set tabip($ip) [list $eq $iface $vlanid]
+	    }
+	}
+    }
+
+    ######### XXX : EN ATTENDANT UNE CONVENTION DE NOMMAGE DES VLANS
+    global vlan
+    catch {unset tabvlan}
+    array set tabvlan [array get vlan]
+
+    #
+    # Politique : établir les associations ip-nom pour les interfaces
+    #
+
+    foreach ip [array names tabip] {
+	set eq     [lindex $tabip($ip) 0]
+	set iface  [lindex $tabip($ip) 1]
+	set vlanid [lindex $tabip($ip) 2]
+
+	regsub -all {/} $iface {-} iface
+	set nom    "$eq-$iface-$vlanid"
+
+	if {[info exists t($ip)]} then {
+	    puts stderr "$ip a plusieurs nom : '$t($ip)' et '$nom'"
+	    set r 0
+	} else {
+	    set t($ip) $nom
+	}
+    }
+
+    #
+    # Politique : établir les associations ip-nom pour les routeurs VRRP
+    #
+
+    set lvrrp {}
+    foreach vlanid [array names tabvrrp] {
+	set ip [lindex $tabvrrp($vlanid) 0]
+
+	if {[info exists tabvlan($vlanid)]} then {
+	    set nom "r-$tabvlan($vlanid)-$vlanid"
+
+	    if {[info exists t($ip)]} then {
+		puts stderr "$ip a plusieurs nom : '$t($ip)' et '$nom'"
+		set r 0
+	    } else {
+		set t($ip) $nom
+	    }
+	} else {
+	    puts stderr "Description missing for vlan $vlanid"
+	    set r 0
+	}
+    }
+
+    return $r
+}
+
+#
+# Lit les informations nécessaires dans la base
+#
+# Entrée :
+#   - base : paramètres de connexion à la base DNS
+#   - domain : nom de domaine
+#   - routers : nom des routeurs considérés
+#   - tabfic : tableau issu de lire-ifaces
+#   - tabdns : tableau passé par nom
+# Sortie :
+#   - valeur de retour : 1 si ok, 0 si erreur
+#   - paramètre tabdns
+#	tableau de noms indexés par les adresses IP (tab(ip) = nom)
+#
+# Historique :
+#   2004/09/21 : pda/jean : conception
+#
+
+proc lire-dns {base domain routers tabfic tabdns} {
+    upvar $tabfic tfic
+    upvar $tabdns tdns
+
+    # par défaut : pas d'erreur
+    set r 1
+
+    set dbfd [ouvrir-base $base msg]
+    if {[string length $dbfd] == 0} then {
+        puts stderr "Cannot open database ($msg)"
+	exit 1
+    }
+
+    #
+    # Récupère iddom
+    #
+
+    pg_select $dbfd "SELECT iddom FROM domaine WHERE nom = '$domain'" t {
+	set iddom $t(iddom)
+    }
+
+    #
+    # Chercher les noms d'interface
+    #
+
+    set lpat {}
+    foreach rtr $routers {
+	lappend lpat "nom LIKE '$rtr-%'"
+    }
+    set lpat [join $lpat " OR "]
+
+    set sql "SELECT rr.nom AS nom, rr_ip.adr AS adr
+			FROM rr, rr_ip 
+			WHERE rr.idrr = rr_ip.idrr
+			    AND rr.iddom = $iddom
+			    AND ( $lpat )"
+    pg_select $dbfd $sql tab {
+	set nom $tab(nom)
+	set ip  $tab(adr)
+	set tdns($ip) $nom
+    }
+
+    #
+    # Chercher les adresses IP
+    #
+
+    set lif {}
+    foreach ip [array names tfic] {
+	lappend lif "'$ip'"
+    }
+    set lif [join $lif ","]
+
+    set sql "SELECT rr.nom AS nom, rr_ip.adr AS adr,
+			    rr.iddom AS iddom, domaine.nom AS domaine
+			FROM rr, rr_ip, domaine
+			WHERE rr.idrr = rr_ip.idrr
+			    AND rr.iddom = domaine.iddom
+			    AND rr_ip.adr IN ($lif)"
+    pg_select $dbfd $sql tab {
+	set nom $tab(nom)
+	set ip  $tab(adr)
+	set dom $tab(domaine)
+	if {$tab(iddom) != $iddom} then {
+	    puts stderr "$ip ($nom.$dom)) n'est pas dans $domain"
+	    set r 0
+	} elseif {[info exists tdns($ip)]} then {
+	    if {! [string equal $tdns($ip) $nom]} then {
+		puts stderr "$ip a plusieurs nom : '$tdns($ip)' et '$nom'"
+		set r 0
+	    }
+	} else {
+	    set tdns($ip) $nom
+	}
+    }
+
+    return $r
+}
+
+#
+# Supprime toutes les adresses équivalentes dans les deux tableaux
+#
+# Entrée :
+#   - tabfic : tableau issu de lire-ifaces
+#   - tabdns : tableau issu de lire-dns
+# Sortie :
+#   - valeur de retour : aucune
+#   - paramètres tabfic et tabdns : modifiés
+#
+# Historique :
+#   2004/09/21 : pda/jean : conception
+#
+
+proc check-common {tabfic tabdns} {
+    upvar $tabfic tfic
+    upvar $tabdns tdns
+
+    foreach ip [array names tfic] {
+	if {[info exists tdns($ip)]} then {
+	    if {[string equal $tfic($ip) $tdns($ip)]} then {
+		unset tfic($ip)
+		unset tdns($ip)
+	    }
+	}
+    }
+}
+
+
+#
+# Affiche la liste des adresses IP à supprimer
+#
+# Entrée :
+#   - fdmsg : descripteur de fichier pour le message
+#   - fdscript : descripteur de fichier pour le script
+#   - tab : tableau (issu de lire-dns)
+# Sortie :
+#   - valeur de retour : aucune
+#
+# Historique :
+#   2004/09/21 : pda/jean : conception
+#
+
+proc output-del {fdmsg fdscript tabdns} {
+    upvar $tabdns tdns
+
+    puts $fdmsg ""
+    puts $fdmsg "###########################################################"
+    puts $fdmsg "\t\tSuppressions"
+    puts $fdmsg "###########################################################"
+    foreach ip [lsort [array names tdns]] {
+	puts $fdmsg [format "\t%-30s (%s)" $ip $tdns($ip)]
+    }
+
+    puts $fdscript ""
+    puts $fdscript "# Suppressions"
+    foreach ip [lsort [array names tdns]] {
+	puts $fdscript [format "dnsdelip %-30s # %s" $ip $tdns($ip)]
+    }
+}
+
+#
+# Affiche la liste des adresses IP à ajouter
+#
+# Entrée :
+#   - fdmsg : descripteur de fichier pour le message
+#   - fdscript : descripteur de fichier pour le script
+#   - tab : tableau (issu de lire-fic)
+#   - domaine : domaine à ajouter à tous les noms
+# Sortie :
+#   - valeur de retour : aucune
+#
+# Historique :
+#   2004/09/21 : pda/jean : conception
+#   2004/10/01 : pda/jean : ajout du paramètre domaine
+#
+
+proc output-add {fdmsg fdscript tabfic domaine} {
+    upvar $tabfic tfic
+
+    puts $fdmsg ""
+    puts $fdmsg "###########################################################"
+    puts $fdmsg "\t\tAjouts"
+    puts $fdmsg "###########################################################"
+    foreach ip [lsort [array names tfic]] {
+	puts $fdmsg [format "\t%-30s (%s)" $ip $tfic($ip)]
+    }
+
+    puts $fdscript ""
+    puts $fdscript "# Ajouts"
+    foreach ip [lsort [array names tfic]] {
+	puts $fdscript [format "dnsaddhost %-40s %s" "$tfic($ip).$domaine" $ip]
+    }
+}
+
+
+
+
+proc main {argv0 argv} {
+    global conf
+    global dbfd
+
+    if {[llength $argv] != 0} then {
+        puts stderr "usage: $argv0"
+	return 1
+    }
+
+    #
+    # Lire les informations issues du graphe
+    #
+
+    if {! [lire-ifaces stdin tabfic]} then {
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Lire les informations dans la base DNS
+    #
+
+    if {! [lire-dns $conf(base) $conf(domain) $conf(routers) tabfic tabdns]} then {
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Retirer toutes les adresses équivalentes dans les deux tableaux
+    #
+
+    check-common tabfic tabdns
+
+    #
+    # Y a-t'il un prologue à afficher ?
+    #
+
+    if {[llength [array names tabfic]] || [llength [array names tabdns]]} then {
+	#
+	# Créer le script
+	#
+
+	set new "$conf(script).new"
+	if {[catch {open $new "w"} fdscript]} then {
+	    puts stderr "Erreur d'ouverture de $new ($fdscript)"
+	    return 1
+	}
+
+	puts $fdscript "#!/bin/sh"
+	puts $fdscript ""
+	puts $fdscript "# Script de modification DNS."
+	puts $fdscript "# Ce script s'autodétruira après exécution."
+	puts $fdscript ""
+	puts $fdscript "PATH=$conf(path):\$PATH"
+
+	#
+	# Afficher un beau message
+	#
+	puts stdout "Des modifications sont nécessaires dans la base DNS."
+	puts stdout "Pour les enregistrer, exécutez le programme ci-dessous :"
+	puts stdout ""
+	puts stdout "\tsh -x $conf(script)"
+	puts stdout ""
+
+	#
+	# Sortir toutes les adresses à supprimer
+	#
+
+	output-del stdout $fdscript tabdns
+
+	#
+	# Sortir toutes les adresses à ajouter
+	#
+
+	output-add stdout $fdscript tabfic $conf(domain)
+
+	#
+	# Epilogue du script
+	#
+
+	puts $fdscript ""
+	puts $fdscript "# Suppression du script pour éviter un deuxième passage"
+	puts $fdscript "rm $conf(script)"
+	puts $fdscript ""
+	puts $fdscript "# Et pouf ! Plus de script !"
+
+	close $fdscript
+
+	if {[catch {file rename -force $new $conf(script)} msg]} then {
+	    puts stderr "Erreur de renomage de $new en $conf(script) ($msg)"
+	    return 1
+	}
+    }
+
+    return 0
+}
+
+
+exit [main $argv0 $argv]

@@ -1,0 +1,113 @@
+#
+# Droits des groupes (définis dans la base DNS) sur les équipements
+#
+# Ce fichier est une maquette, en attendant d'intégrer ces informations
+# de droits dans la base DNS.
+#
+# Attention : ce fichier doit être modifié dans
+#	/local/services/www/sap/metro/lib/droits-eq.data
+# et doit être compilé par :
+#	cd /local/services/www/sap/metro
+#	make
+#
+# Historique
+#    2006/08/17 : pda : documentation
+#
+
+di-infra		.*
+crctdi			.*
+crcgti			.*
+digp			.*
+api			^api-
+archi			^archi-
+bacterio		^microbio-
+bnus			^bnus-
+bota			^bota-(poe|ap)
+bve-ulp			^$
+chimie-isis		^(chimie|isis|kfet)-
+chimie-lebel		^chimie-
+chimie-tour		^$
+cnrs-upr9010		^$
+cnrsdr10		^cnrs-dr-
+crih			^$
+crous			^(crous|paul-appell|flamboyants|visconti|heliotropes|cattleyas|gallia|robertsau|somme)-
+curri			^le7-(ce|poe|ap)
+currivisu		^$
+demo			^$
+depulp			^depulp-(poe|ap)
+dermato			^$
+dptinfo			^dpt-info-
+dptinfo-api		^$
+drrt			^$
+ecpm			^ecpm-(ce|poe|ap)
+ena			^ena-
+engees			^engees-
+eost			^(eost|musee-sismo)-
+esbs			^$
+etss			^efs-
+forumfa			^$
+geographie		^geographie-
+geologie		^geologie-
+gersulp			^$
+haguenau		^$
+hemato			^hemato-(ce|poe|ap)
+hydro			^$
+ibmc			^ibmc-
+ibmp			^ibmp-
+icps			^$
+ics			^ics-
+igbmc			^igbmc-
+image-ville		^geographie-
+imfs			^imfs-
+insa			^insa-
+inserm-adr16		^inserm-adr16-
+inserm-u381		^inserm-u381-
+ipcb			^ipcb-
+ipcms			^ipcms-
+ipst			^ipst-
+ircad			^ircad-
+isu			^isu-
+iufm			(^(iufm-|guebwiller-ce|selestat-ce|colmar-ce|strasbourg-ce)|-c[ci].$)
+iutlptbiasioa		^(iut-nord-|iut-poe|iut-ap)
+iutsud			^iut-sud-
+pole-sud-informatique 	^iut-sud-
+kastler			^$
+lablang			^$
+labo-u			^$
+lse-ulp			^$
+math			^irma-poe
+medecine		^((hemato-ce1)|(microbio|med-bat2|forum-med|med-bat3|chu|poincare|med-bat2|ophtalmo|hygiene|chirb|lab-medb|chira|dentaire|dermato|orl|medical|anapat|neurologie|clovis|parodonto|chu-imagerie)-)
+misha			^misha-
+neurochem		^$
+obs			^obs-
+pege			^(sceco-|iecs-|pege-)
+pharma			^pharma-
+pharma-umr7034		^$
+pharma-umr7514		^$
+physbio			^ipb-
+physique		^(physique|srnu)-
+physique-maitrise	^$
+pole			^$
+primato			^$
+psychiatrie		^psychiatrie-
+psycho			^psycho-
+psycho-ln2c		^$
+radiologie		^$
+scd			^scd-
+sciences-vie-tp		^$
+semia			^$
+siig			^siig-
+siuaps			^siuaps-
+srnu			^srnu-
+syndicatfo		^$
+tpipv6			^$
+ulpmm			^atrium-
+umb			^(palais-u|platane|patio|pangloss|portique)-
+urs			^(escarpe|droit|biblio|sfc-urs|sciller|st-georges|instra-urs|iae|iecs)
+urs-fc			^$
+urs-iep			^$
+urs-pege		^$
+virologie		^microbio-
+wifidefault		^$
+zoologie		^zoologie-
+ires			^iphc-

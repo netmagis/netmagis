@@ -1,0 +1,42 @@
+#!/bin/sh
+
+#
+# Lance rancid en affichant le résultat sur la sortie standard
+# au lieu de l'envoyer par mail.
+#
+# Syntaxe :
+#	start-rancid [eq ... eq]
+#
+# Historique
+#   2007/07/03 : pda/jean : conception
+#   2010/10/20 : pda/jean : intégration dans topo
+#
+
+# Dans le répertoire SENDMAILDIR, il y a un vrai-faux-programme sendmail
+# qui envoie le resultat sur le descripteur numéro 3 (au lieu de l'envoyer
+# par mail)
+# Il faudra collecter ces mails prétendument envoyés par rancid
+# (récupérés sur ce descripteur 3) et les rediriger vers la sortie
+# standard
+
+SENDMAILDIR=%TOPODIR%/bin
+
+PATH=$SENDMAILDIR:$PATH
+export PATH
+
+if [ $# = 0 ]
+then
+    # XXX : SUPPRIMER "test" lorsque les tests seront terminés
+    exec %RANCID% test 3>&1
+else
+    erreur=0
+    for eq in $*
+    do
+	# XXX : SUPPRIMER "test" lorsque les tests seront terminés
+	%RANCID% -r $eq test 3>&1
+	if [ $? != 0 ]
+	then erreur=1
+	fi
+    done
+    exit $erreur
+fi

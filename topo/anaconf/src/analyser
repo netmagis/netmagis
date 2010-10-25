@@ -1,0 +1,563 @@
+#!%TCLSH%
+
+#
+# $Id$
+#
+# Analyse un fichier de configuration d'un équipement réseau
+# et renvoie la modélisation de cet équipement sous forme de
+# la représentation comprise par buildgraph & co.
+#
+# Syntaxe :
+#   analyser <libdir> <cisco|juniper> <modele> <fichier conf> <eq name> [<debug>]
+#
+# Exemple :
+#   analyser $PWD cisco 4506 \
+#		/local/idr/conf/osiris/configs/crc-ce1.u-strasbg.fr crc-ce1 15
+#
+# Flags de debug : combinaison binaire de :
+#   0x01 (1)   : analyse de syntaxe
+#   0x02 (2)   : affichage du tableau intermédiaire
+#   0x04 (4)   : -
+#   0x08 (8)   : -
+#   0x10 (16)  : -
+#   0x20 (32)  : -
+#
+# Historique :
+#   2007/01/05 : pda      : intégration dans le CVS
+#   2007/07/13 : pda      : documentation
+#   2007/07/13 : pda      : ajout syntaxe debug
+#   2009/02/11 : pda      : analyse des listes de la forme C24-D2
+#
+
+set debug 0
+
+##############################################################################
+# Fonctions de debug & co
+##############################################################################
+
+proc warning {msg} {
+    puts stderr "$msg"
+}
+
+proc debug {msg} {
+    warning $msg
+}
+
+# inspiré de parray.tcl dans la lib tcl
+# la seule différence est la sortie sur stderr (et non sur stdout)
+proc debug-array {a {pattern *}} {
+    upvar 1 $a array
+    if {![array exists array]} {
+	error "\"$a\" isn't an array"
+    }
+    set maxl 0
+    foreach name [lsort [array names array $pattern]] {
+	if {[string length $name] > $maxl} {
+	    set maxl [string length $name]
+	}
+    }
+    set maxl [expr {$maxl + [string length $a] + 2}]
+    foreach name [lsort [array names array $pattern]] {
+	set nameString [format %s(%s) $a $name]
+	puts stderr [format "%-*s = %s" $maxl $nameString $array($name)]
+    }
+}
+
+##############################################################################
+# Analyse des descriptions d'interfaces
+##############################################################################
+
+proc parse-desc {desc _linkname _statname _descname _msg} {
+    upvar $_linkname linkname
+    upvar $_statname statname
+    upvar $_descname descname
+    upvar $_msg msg
+
+    # exemples de syntaxe admises :
+    # Lnnn vers toto 			ancienne syntaxe
+    # <Lnnn> vers toto			nouvelle syntaxe
+    # <Lnnn MLnnn.crc> vers toto	nouvelle syntaxe avec métrologie
+    # X rch ulp bidule			ancienne syntaxe
+    # <X> rch ulp bidule		nouvelle syntaxe
+    # <X MXnnn> rch ulp bidule		nouvelle syntaxe avec métrologie
+
+    set linkname ""
+    set statname ""
+    set descname ""
+
+    #
+    # Retirer les guillemets s'il y en a
+    #
+
+    if {[regexp {^\s*"(.*)"\s*$} $desc bidon ndesc]} then {
+	set desc $ndesc
+    }
+
+    #
+    # Analyser le mini-langage
+    #
+
+    set r 1
+    if {[regexp {([^<]*)<\s*([^<>]+)>(.*)} $desc bidon p1 liste p2]} then {
+	while {[regexp {^(\S+)(\s+(.*))?$} $liste bidon premier bidon liste]} {
+	    switch -glob -- $premier {
+		X* -
+		L* {
+		    if {[string equal $linkname ""]} then {
+			set linkname $premier
+		    } else {
+			set msg "duplicate link name"
+			set r 0
+			break
+		    }
+		}
+		M* {
+		    if {[string equal $statname ""]} then {
+			set statname $premier
+		    } else {
+			set msg "duplicate stat name"
+			set r 0
+			break
+		    }
+		}
+		* {
+		    set msg "invalid interface description '<$premier>'"
+		    set r 0
+		    break
+		}
+	    }
+	}
+	set descname [string trim "[string trim $p1] [string trim $p2]"]
+    } elseif {[regexp {^".*"$} $desc bidon linkname p1]} {
+	set msg "description must not be quoted"
+    } elseif {[regexp {^(\S+)(\s+.*)?$} $desc bidon linkname p1]} {
+	set descname [string trim $p1]
+    } else {
+	set msg "invalid link name"
+	set r 0
+    }
+
+    #
+    # Conversion de la description en chaîne de chiffres hexa
+    # pour éviter d'avoir à quoter les éléments.
+    # Cette chaîne sera propagée dans le graphe, et chaque outil
+    # utilisant le graphe devra faire la conversion inverse
+    # avec une commande comme par exemple : "binary format H* $desc"
+    #
+
+    binary scan $descname H* descname
+
+    return $r
+}
+
+##############################################################################
+# Analyse des localisations d'équipement
+##############################################################################
+
+proc parse-location {desc _location _blablah _msg} {
+    upvar $_location location
+    upvar $_blablah blablah
+    upvar $_msg msg
+
+    # exemples de syntaxe admises :
+    # <CxxBxxLxxAxx> blablah
+
+    set location ""
+    set blablah  ""
+
+    set r 1
+    if {[regexp {X .*} $desc]} {
+	#
+	# Si la description commence par X, on ne fait rien
+	#
+
+    } elseif {[regexp {([^<]*)<\s*([^<>]+)>(.*)} $desc bidon p1 liste p2]} then {
+	if {[regexp -nocase {C[0-9]+B[0-9]+L[0-9]+A[0-9]+} $liste]} then {
+	    set location $liste
+	    set blablah [string trim "[string trim $p1] [string trim $p2]"]
+
+	    #
+	    # Conversion de la description en chaîne de chiffres hexa
+	    # pour éviter d'avoir à quoter les éléments.
+	    # Cette chaîne sera propagée dans le graphe, et chaque outil
+	    # utilisant le graphe devra faire la conversion inverse
+	    # avec une commande comme par exemple : "binary format H* $desc"
+	    #
+
+	    binary scan $location H* location
+
+	} else {
+	    set msg "invalid location syntax '<$liste>'"
+	    set r 0
+	}
+    } else {
+	set msg "invalid location syntax '$desc'"
+	set r 0
+    }
+
+    return $r
+}
+
+##############################################################################
+# Analyse d'une liste d'intervalles
+##############################################################################
+
+#
+# Analyse une liste d'intervalles ou de valeurs
+#
+# Entrée :
+#   - spec : liste d'intervalles (n-m) ou de valeurs (p) séparées par des ","
+#   - expanser : 0 s'il faut retourner une liste d'intervalles,
+#	ou 1 s'il faut retourner une liste de valeurs (intervalles expansés)
+#   - preflist : une liste de la forme {{A 4} {B 16} ...} où chaque
+#	lettre est un nom de module et la valeur le nombre de ports du module
+# Sortie :
+#   - valeur de retour : liste au format {{n m} {p p} ...} ou liste au
+#	format {n1 n2 n3 ...}
+#
+# Exemple :
+#	parse-list "17-20,25,27-28" 0
+#		=> {{17 20} {25 25} {27 28}}
+#	parse-list "17-20,25,27-28" 1
+#		=> {17 18 19 20 25 27 28}
+#
+# Historique :
+#   2008/07/07 : pda/jean : conception
+#   2009/02/11 : pda      : ajout de preflist
+#
+
+proc parse-list {spec expanser preflist} {
+    set l {}
+    foreach v [split $spec ","] {
+	set rg [split $v "-"]
+	switch [llength $rg] {
+	    1 {
+		set v [lindex $rg 0]
+		lappend l [list $v $v]
+	    }
+	    2 {
+		lappend l $rg
+	    }
+	    default {
+		warning "Incorrect list specification ($spec)"
+		return {}
+	    }
+	}
+    }
+
+    if {$expanser} then {
+	set l2 {}
+	foreach c $l {
+	    set min [lindex $c 0]
+	    set max [lindex $c 1]
+
+	    if {! [regexp {^([^0-9]*)([0-9]+)} $min bidon prefmin min]} then {
+		warning "Incorrect list specification ($spec)"
+		return {}
+	    }
+	    if {! [regexp {^([^0-9]*)([0-9]+)} $max bidon prefmax max]} then {
+		warning "Incorrect list specification ($spec)"
+		return {}
+	    }
+	    if {[string equal $prefmin $prefmax]} then {
+		# A5-A9
+		for {set i $min} {$i <= $max} {incr i} {
+		    lappend l2 "$prefmin$i"
+		}
+	    } else {
+		# A5-C2
+		if {[llength $preflist] == 0} then {
+		    warning "Incorrect list specification ($spec) : prefix '$prefmin' != '$prefmax'"
+		    return {}
+		} else {
+		    #
+		    # Chercher le nombre de ports de chaque module
+		    # et râler si les modules ne sont pas trouvés
+		    #
+		    set imin [lsearch -index 0 $preflist $prefmin]
+		    if {$imin == -1} then {
+			warning "Incorrect prefix '$prefmin' in '$spec'"
+		    }
+		    set imax [lsearch -index 0 $preflist $prefmax]
+		    if {$imax == -1} then {
+			warning "Incorrect prefix '$prefmax' in '$spec'"
+		    }
+
+		    #
+		    # Expanser la liste
+		    #
+
+		    set i $min
+		    for {set j $imin} {$j <= $imax} {incr j} {
+			set pref   [lindex [lindex $preflist $j] 0]
+			set nports [lindex [lindex $preflist $j] 1]
+
+			# pour les préfixes intermédiaires : aller
+			# jusqu'au port max. Quand on arrive au
+			# dernier préfixe : prendre la valeur spécifiée.
+			set k [expr "$j < $imax ? $nports : $max"]
+
+			# expanser
+			for {} {$i <= $k} {incr i} {
+			    lappend l2 "$pref$i"
+			}
+
+			# remettre les compteurs à 1 pour la suite
+			set i 1
+		    }
+		}
+	    }
+	}
+	set l $l2
+    }
+
+    return $l
+}
+
+###############################################################################
+# Analyse du fichier de configuration pour les équipements "type IOS"
+###############################################################################
+
+#
+# Analyse un fichier de configuration de type IOS
+#
+# Entrée :
+#   - libdir : répertoire contenant les greffons d'analyse
+#   - model : modèle de l'équipement (ex: M20)
+#   - fdin : descripteur de fichier en entrée
+#   - fdout : fichier de sortie pour la génération
+#   - eq = <eqname>
+#   - _kwtab : tableau guidant l'analyse syntaxique (cf note ci-dessous)
+# Remplit :
+#   - tab(eq)	{<eqname> ... <eqname>}
+#   - tab(eq!ios) "unsure|router|switch"
+#
+# Note :
+#   - kwtab est un tableau indexé par <chaine-de-mots-clef> et dont
+#     les valeurs sont des <action>
+#   - Une <chaine-de-mots-clef> est la suite de mots-clefs apparaissant sur
+#     la ligne, séparés par des "-".
+#   - <action> est soit :
+#     	NEXT : pour continuer l'analyse de la ligne
+#     	{CALL f} : pour appeler la fonction f lorsque cette suite
+#     		est reconnue
+#   - exemple : pour analyser une ligne de type :
+#     	ip address 192.168.1.2 255.255.255.0
+#	il faut indiquer :
+#		ip		NEXT
+#		ip-address	{CALL machin-parse-ip-address}
+#   - cas spécial : les commentaires sont spécifiés par la ligne
+#	-COMMENT	<regexp>
+#	où "-COMMENT" est un mot-clef et <regexp> est une expression
+#	régulière utilisée pour trouver un commentaire dans la ligne
+#   - exemple :
+#		-COMMENT	^!
+#
+#
+# Historique
+#   2004/03/23 : pda/jean : conception
+#   2004/06/08 : pda/jean : ajout de model
+#   2007/07/12 : pda      : ajout de ios
+#   2008/07/07 : pda/jean : ajout paramètre libdir
+#   2008/07/07 : pda/jean : mise en commun avec HP
+#   2009/01/07 : pda      : ajout du modele dans le tableau
+#   2010/09/07 : pda/jean : ajout de la liste des interfaces "disabled"
+#
+
+proc ios-parse {libdir model fdin fdout tab eq _kwtab} {
+    upvar $tab t
+    upvar $_kwtab kwtab
+
+    set error 0
+
+    set commentaire "^!"
+    if {[info exists kwtab(-COMMENT)]} then {
+	set commentaire $kwtab(-COMMENT)
+    }
+
+    lappend t(eq) $eq
+    set idx "eq!$eq"
+    set t($idx!if) {}
+    set t($idx!if!disabled) {}
+    set t($idx!ios) "unsure"
+    set t($idx!model) $model
+    while {[gets $fdin line] > -1} {
+	if {! [regexp $commentaire $line]} then {
+	    set error [ios-parse-line $line t $idx kwtab]
+	}
+    }
+
+    return $error
+}
+
+#
+# Analyse une ligne de conf IOS
+#
+# Entrée :
+#   - line : extrait de conf
+#   - tab : tableau contenant les informations résultant de l'analyse
+#   - idx : index dans le tableau tab
+#   - variable globale debug : affiche les mots-clefs
+#   - _kwtab : tableau guidant l'analyse syntaxique
+# Sortie :
+#   - valeur de retour : 1 si erreur, 0 sinon
+#
+# Historique
+#   2004/03/26 : pda/jean : conception (ouh la la !)
+#   2008/07/07 : pda/jean : ajout kwtab en paramètre pour généricité
+#
+
+proc ios-parse-line {line tab idx _kwtab} {
+    global debug
+    upvar $_kwtab kwtab
+    upvar $tab t
+
+    if {$debug & 0x01} then {
+	debug "$line"
+    }
+
+    set active 1
+    set error 0
+    set first 1
+    set kwlist {}
+    set finished 0
+    while {! $finished} {
+	#
+	# Prendre le premier élément de la ligne
+	#
+	if {[regexp {^\s*(\S+)\s*(.*)$} $line bidon kw line]} then {
+	    #
+	    # cas spécial de "no ..." : on passe au suivant
+	    #
+	    if {$first} then {
+		set first 0
+		if {[string equal $kw "no"]} then {
+		    set active 0
+		    continue
+		}
+	    }
+
+	    #
+	    # Chercher
+	    #
+
+	    lappend kwlist $kw
+	    set fullkw [join $kwlist "-"]
+	    if {[info exists kwtab($fullkw)]} then {
+		if {$debug & 0x01} then {
+		    debug "match $fullkw ($line) -> $kwtab($fullkw)"
+		}
+		set action $kwtab($fullkw)
+		switch [lindex $action 0] {
+		    NEXT {
+			# rien
+		    }
+		    CALL {
+			set fct [lindex $action 1]
+			set error [$fct $active $line t $idx]
+			set finished 1
+		    }
+		    default {
+			warning "Unvalid value in kwtab($fullkw) ($action)"
+			set error 1
+			set finished 1
+		    }
+		}
+	    } else {
+		set finished 1
+	    }
+	} else {
+	    set finished 1
+	}
+    }
+
+    return $error
+}
+
+##############################################################################
+# Fonctions d'appel aux greffons
+##############################################################################
+
+proc charger {libdir file} {
+    set error 0
+
+    if {! [string equal $libdir ""]} then {
+	set file "$libdir/$file"
+    }
+
+    if {[file exists $file]} then {
+	uplevel #0 source $file
+    } else {
+	puts stderr "Fichier '$file' inexistant"
+	set error 1
+    }
+
+    return $error
+}
+
+proc parse {libdir type modele fdin fdout tab eq} {
+    upvar $tab t
+
+    set error [charger $libdir "parse-$type.tcl"]
+    if {! $error} then {
+	set error [$type-parse $libdir $modele $fdin $fdout t $eq]
+    }
+
+    return $error
+}
+
+proc initnode {eq} {
+    global numnode fmtnode
+
+    set fmtnode "$eq:%d"
+    set numnode 0
+}
+
+proc newnode {} {
+    global numnode fmtnode
+
+    return [format $fmtnode [incr numnode]]
+}
+
+##############################################################################
+# Fonction principale
+##############################################################################
+
+proc usage {argv0} {
+    puts stderr \
+	"$argv0 libdir cisco|hp|juniper modele fichier-conf eq-name \[debug\]"
+}
+
+proc main {argv0 argv} {
+    global debug
+
+    switch [llength $argv] {
+	5 {
+	    # rien
+	}
+	6 {
+	    set debug [lindex $argv 5]
+	}
+	default {
+	    usage $argv0
+	    return 1
+	}
+    }
+
+    set libdir  [lindex $argv 0]
+    set type    [lindex $argv 1]
+    set modele  [lindex $argv 2]
+    set fichier [lindex $argv 3]
+    set eq      [lindex $argv 4]
+
+    initnode $eq
+
+    set fd [open $fichier "r"]
+    set error [parse $libdir $type $modele $fd stdout tab $eq]
+    close $fd
+
+    return 0
+}
+
+
+exit [main $argv0 $argv]

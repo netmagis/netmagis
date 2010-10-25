@@ -1,0 +1,406 @@
+#!/bin/sh
+
+#
+# $Id$
+#
+# Enchaîne les différentes phases pour constituer le graphe du
+# réseau donné.
+#
+# Syntaxe :
+#	$0 [-v] [-1] [-t] [eq ... eq]
+#
+# Génération du fichier d'état
+# - ce fichier est généré en cas d'erreur
+# - il contient en première ligne la date et dans les lignes suivantes
+#	la sortie d'erreur des commandes
+# - la partie 'erreur' est remise à zéro s'il n'y a pas d'erreur
+#
+# Historique :
+#   2004/06/08 : pda/jean   : conception
+#   2004/09/29 : pda/jean   : rm fichiers générés avant nouvelle génération
+#   2006/06/01 : pda/jean   : test communauté snmp
+#   2006/06/19 : pda/boggia : envoi des points de collecte
+#   2007/07/17 : pda        : non-détection par rancid du modèle d'ap cisco
+#   2008/10/01 : pda        : ajout du mode -1 (mode "une fois")
+#
+
+TMP=/tmp/topo.$$
+TMPERR=/tmp/topoerr.$$
+
+RANCIDDIR=/local/idr/conf/osiris
+RANCIDDB=$RANCIDDIR/router.db
+RANCIDCONFDIR=$RANCIDDIR/configs
+
+BASE=%TOPODIR%
+BINDIR=$BASE/bin
+DATADIR=$BASE/osiris
+EQVIRT=$DATADIR/eqvirt
+EQGEN=$DATADIR/eqgen
+DESTFILE=$DATADIR/osiris.graph
+STATUS=$DATADIR/osiris.status
+SRCVLANFILE=$RANCIDCONFDIR/vlan
+VLANFILE=$EQGEN/_vlan.eq
+URLSETGRAPH=http://metro.u-strasbg.fr/bin/setgraph
+
+VERBOSE=0
+
+##############################################################################
+# Fonctions utilitaires
+##############################################################################
+
+verbositer ()
+{
+    if [ $VERBOSE != 0 ]
+    then echo "$*" >&2
+    fi
+}
+
+usage ()
+{
+    echo "usage: anaconf [-v][-1][-t] [eq ...eq]" >&2
+    exit 1
+}
+
+sortie ()
+{
+    if [ "$TESTONLY" = true ]
+    then
+	rm -rf $TESTDIR
+    fi
+    exit 1
+}
+
+##############################################################################
+# Les actions du script
+##############################################################################
+
+#
+# Récupérer la liste des équipements dans le fichier de configuration
+# de rancid, avec le modèle de chaque équipement extrait du fichier de
+# l'équipement lui-même.
+#
+
+liste_rancid ()
+{
+    verbositer "appel à 'liste-rancid'"
+    $BINDIR/liste-rancid $RANCIDDB $RANCIDCONFDIR > $TMP
+    return $?
+}
+
+#
+# Nettoyer le répertoire de génération, au cas où d'anciens
+# équipements auraient été enlevés de rancid.
+#
+
+supprimer_eqgen ()
+{
+    if [ $# != 0 ]
+    then rm -f $EQGEN/*
+    fi
+    return 0
+}
+
+#
+# Récupérer la liste des vlans sur le serveur VTP, en explorant le
+# fichier de configuration de rancid et les différentes configurations
+# des équipements.
+#
+
+liste_vlans ()
+{
+    verbositer "appel à 'liste-vlans'"
+    $BINDIR/liste-vlans $SRCVLANFILE  > $VLANFILE
+    return $?
+}
+
+#
+# Extraire les informations utiles des fichiers de configuration
+#
+
+analyser_confs ()
+{
+    if [ $# = 0 ]
+    then
+	while read name type model
+	do
+	    # retirer le nom de domaine (simplification pour l'installation locale)
+	    n=`echo $name | sed 's/\..*//'`
+
+	    verbositer "analyse de $name"
+	    # pour une raison que j'ignore, rancid ne détecte pas le modèle
+	    # pour certains AP Cisco (et seulement pour certains).
+	    if [ x"$model" = x ]
+	    then model="INCONNU"
+	    fi
+	    $BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
+		> $EQGEN/$n.eq
+	done < $TMP
+    else
+	for eq in `cat $TMP`
+	do
+	    grep "^$eq " $TMP | read name type model
+	    if [ "$name" != "" ]
+	    then
+		verbositer "analyse de $name"
+		# pour une raison que j'ignore, rancid ne détecte pas le modèle
+		# pour certains AP Cisco (et seulement pour certains).
+		if [ x"$model" = x ]
+		then model="INCONNU"
+		fi
+		$BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
+		    > $EQGEN/$n.eq
+	    else
+		echo "$eq not found in liste-rancid result" >&2
+	    fi
+	done
+    fi
+    return 0
+}
+
+#
+# Pour les équipements non gérés par rancid, copier les fichiers
+# "résultats d'analyse générés à la main".
+#
+
+copier_eqgen ()
+{
+    for nameeq in `ls $EQVIRT | grep '\.eq$'`
+    do
+	cp $EQVIRT/$nameeq $EQGEN/$nameeq
+    done
+    return 0
+}
+
+#
+# Génération du graphe
+# On construit dans un fichier temporaire afin de ne pas perturber
+# les autres applications qui pourraient tourner en ce moment
+# (interface Web par exemple).
+#
+
+generer_graphe ()
+{
+    verbositer "génération du graphe"
+    cat $EQGEN/* \
+	| $BINDIR/ssidprobes \
+	| $BINDIR/buildgraph > $DESTFILE.tmp \
+	    && mv $DESTFILE.tmp $DESTFILE
+    return $?
+}
+
+#
+# Vérification que la communauté SNMP est définie sur chaque équipement
+#
+
+verif_snmp ()
+{
+    verbositer "vérification des communautés SNMP"
+    r=0
+    WITHOUTSNMP=`$BINDIR/dumpgraph < $DESTFILE \
+	| sed -n '/^eq .* snmp -$/s/eq \([^ ]*\) .*/\1/p'`
+    if [ "$WITHOUTSNMP" != "" ]
+    then
+	(
+	    echo "Warning : equipements without any SNMP community string"
+	    echo "$WITHOUTSNMP" | sed 's/^/	/'
+	) >&2
+	r=1
+    fi
+    return $r
+}
+
+#
+# Vérification que les routeurs sont déclarés dans le DNS
+#
+
+verif_dns ()
+{
+    verbositer "vérification de la déclaration DNS des interfaces des routeurs"
+    $BINDIR/getnetif < $DESTFILE > /dev/null
+    #  | $BINDIR/checkdns
+    return 0
+}
+
+#
+# Envoi des points de collecte au métrologiseur
+#
+
+envoi_collecte ()
+{
+    r=0
+    if [ "$TESTONLY" != true ]
+    then
+	verbositer "envoi des points de collecte au métrologiseur"
+	$BINDIR/extractcoll -s -w < $DESTFILE | \
+		    $BINDIR/sendcoll $URLSETGRAPH
+	r=$?
+    fi
+    return $r
+}
+
+##############################################################################
+# Enchainement des actions
+##############################################################################
+
+#
+# Plusieurs modes possibles
+# - mode "normal"
+#	s'il y a une erreur
+#	alors
+#		si c'est une erreur différente de la dernière erreur vue
+#			dans le fichier d'état
+#		alors
+#			actualiser le fichier d'état avec l'erreur
+#			et la date de l'erreur
+#		fin si
+#		afficher l'erreur
+#	sinon
+#		ne rien afficher
+#	fin si
+# - mode "interactif"
+#	tout afficher
+# - mode "test"
+#	tout afficher
+#	
+
+enchainer ()
+{
+    liste_rancid		\
+	&& supprimer_eqgen $*	\
+	&& liste_vlans		\
+	&& analyser_confs $*	\
+	&& copier_eqgen		\
+	&& generer_graphe	\
+	&& verif_snmp		\
+	&& verif_dns		\
+	&& envoi_collecte
+    return $?
+}
+
+executer ()
+{
+    if [ "$UNEFOIS" = true -o "$TESTONLY" = true ]
+    then
+	enchainer $*
+	erreur=$?
+    else
+	rm -f $TMPERR
+	enchainer $* 2> $TMPERR
+
+	#
+	# Distinguer les vrais plantages (code retour != 0) des
+	# incohérences détectées par les divers outils (dont buildgraph) :
+	# elles génèrent un message, mais n'empêchent pas la construction
+	# du graphe.
+	#
+
+	erreur=$?
+	if [ $erreur != 0 ]
+	then
+	    if [ -s $TMPERR ]
+	    then NEWERR="`cat $TMPERR`"
+	    else NEWERR="Erreur inconnue (pas de message d'erreur)"
+	    fi
+	else
+	    if [ -s $TMPERR ]
+	    then NEWERR="`cat $TMPERR`"
+	    fi
+	fi
+
+	#
+	# Mémoriser l'erreur ou le warning dans le fichier de status
+	#
+
+	if [ -z "$NEWERR" ]
+	then
+	    rm -f $STATUS
+	else
+	    if [ -s $STATUS ]
+	    then OLDERR="`sed 1d $STATUS`"
+	    else OLDERR=""
+	    fi
+
+	    if [ "$OLDERR" != "$NEWERR" ]
+	    then
+		(
+		    date
+		    echo "$NEWERR"
+		) > $STATUS
+	    fi
+	fi
+
+	cat $TMPERR
+    fi
+
+    return $erreur
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+#
+# Vérification de syntaxe
+#
+
+args=`getopt vt1 $*`
+
+if [ $? != 0 ]
+then usage
+fi
+
+set -- $args
+
+TESTONLY=false
+for i in $*
+do
+    case "$i" in
+	-v)	VERBOSE=1
+		shift
+		;;
+	-t)	TESTONLY=true
+		shift
+		;;
+	-1)	UNEFOIS=true
+		shift
+		;;
+	--)	shift
+		break
+		;;
+    esac
+done
+
+if [ $? != 0 ]
+then usage
+fi
+
+#
+# Tests
+#
+
+if [ $TESTONLY = true ]
+then
+    VERBOSE=1
+    TESTDIR=/tmp/anaconf$$
+    EQGEN=$TESTDIR/eqgen
+    DESTFILE=$TESTDIR/osiris.graph
+    VLANFILE=$TESTDIR/_vlan.eq
+
+    mkdir $TESTDIR $EQGEN
+
+    trap sortie EXIT
+fi
+
+#
+# On y va !
+#
+
+executer $*
+erreur=$?
+
+#
+# Nettoyage de sortie
+#
+
+rm -f $TMP $TMPERR
+exit $erreur

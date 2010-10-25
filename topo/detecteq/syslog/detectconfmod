@@ -1,0 +1,97 @@
+#!%TCLSH%
+
+# 
+# $Id$
+# 
+# This script is called from syslogd daemon, with a line such as:
+# 
+#     local2.*       |exec /local/applis/topo/bin/detectconfmod
+# 
+# This script reads informations on a line by line basis, detects
+# configuration modification events and sends them to the DNS database.
+# It looks for these patterns:
+# - Cisco
+#	Sep 30 10:56:33 crc-cg1 373: Sep 30 10:56:31: %SYS-5-CONFIG_I: Configured from console by jean on vty0 (130.79.202.1)
+# - Juniper :
+#	Sep 30 10:57:55 espla-rc1 mgd[91730]: UI_COMMIT: User 'jean' requested 'commit' operation (comment: none)
+#
+# History:
+#   2010/10/14 : pda/jean : design
+#
+
+
+set conf(pkg)		%PKGTCL%
+set conf(libdns)	%LIBDNS%
+set conf(base)		%BASE%
+
+set conf(defdom)	%DEFDOM%
+
+lappend auto_path $conf(pkg)
+
+package require pgsql
+
+source $conf(libdns)
+
+
+set dbfd [ouvrir-base $conf(base) msg]
+if {[string equal $dbfd ""]} then {
+    puts stderr "$argv0: cannot connect to database ($msg)"
+    exit 1
+}
+
+while {[gets stdin line] >= 0} {
+    #
+    # Extract host name
+    #
+
+    if {[regexp {^\S+\s+\d+\s+\d+:\d+:\d+\s+(\S+)} $line dummy host]} then {
+
+	set found 0
+
+	if {[regexp {.*Configured from \S+ by (\S+)} $line dummy login]} then {
+	    #
+	    # Cisco
+	    #
+
+	    set found 1
+	} elseif {[regexp {.*User '(\S+)' requested 'commit'} $line dummy login]} then {
+	    #
+	    # Juniper
+	    #
+
+	    set found 1
+	}
+
+	if {$found} then {
+	    #
+	    # If host name is not fully qualified, qualify it.
+	    # The case of a not fully qualified host name occurs if
+	    # - either the originating syslog do not send a FQDN 
+	    #	(not a best practice according to RFC 5424)
+	    # - or the originating syslog do not send a hostname
+	    #	and the local syslog daemon performs a reverse-lookup
+	    #	and strips the domain part.
+	    #
+
+	    if {! [regexp {\.} $host]} then {
+		#
+		# Append the default domain
+		#
+		append host ".$conf(defdom)"
+	    }
+
+
+	    #
+	    # Insert this entry in the database
+	    #
+
+	    set qhost [::pgsql::quote $host]
+	    set qlogin [::pgsql::quote $login]
+	    set sql "INSERT INTO topo.modeq (eq, login) VALUES ('$qhost', '$qlogin')"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		puts stderr "$argv0: cannot write '$eq/$login' to database ($msg)"
+		exit 1
+	    }
+	}
+    }
+}

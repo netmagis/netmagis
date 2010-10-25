@@ -1,0 +1,614 @@
+#!%TCLSH%
+
+#
+# Script pour lister les vlans, ou les détails d'un vlan
+#
+# Appelé par : /applis/topo/<tous>
+#
+# Paramètres (formulaire ou URL) :
+#	- eq : nom de l'équipement
+#	- iface : nom d'une interface à souligner
+#	- vlan : numéro d'un vlan sur l'interface, ou partie de description
+#	- format : rien, ou "pdf" ou "png"
+#
+# Historique
+#   2006/06/05 : pda      : création
+#   2006/06/20 : pda      : prologue dépendant du format
+#   2006/06/22 : pda      : correction d'un bug sur les numéros de liens
+#   2006/06/22 : pda      : sortie dépendante du format
+#   2006/08/09 : pda      : ps2pdf avec chemin complet
+#   2006/08/14 : pda      : fusion avec listl2
+#   2007/01/04 : pda      : ajout du paramètre uti
+#   2007/01/11 : pda      : mutualisation initialisation
+#   2007/01/11 : pda      : substitution possible d'un uid
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	%LIBDNS%
+set conf(libtopo)	$conf(lib)/libtopo.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page1)		$conf(lib)/l2.html
+set conf(pagen)		$conf(lib)/liste.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+    {eq			0 1}
+    {iface		0 1}
+    {vlan		0 1}
+    {format		0 1}
+}
+
+set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
+set conf(extractl2)	"%TOPODIR%/bin/extractl2 %s %s %s %d < %GRAPH%"
+set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
+set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
+set conf(urll2)		"$conf(homeurl)/bin/l2?vlan=%s%s"
+set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
+set conf(dot)		"%DOT%"
+set conf(neato)		"%NEATO%"
+set conf(ps2pdf)	"%PS2PDF%"
+
+set conf(maxdot)	12
+
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+source $conf(libtopo)
+
+##############################################################################
+# Fonctions utilitaires
+##############################################################################
+
+proc match-eq {type_model} {
+    switch -glob -- $type_model {
+	juniper/M* {
+	    set attr {shape=circle
+				style=filled fillcolor=lightgrey
+				fixedsize height=1}
+	}
+	cisco/12000* {
+	    set attr {shape=doublecircle
+				style=filled fillcolor=lightgrey
+				fixedsize height=1}
+	}
+	juniper/EX8* -
+	cisco/WS-C45* {
+	    set attr {shape=box style=filled fillcolor=lightblue}
+	}
+	cisco/WS-C37* -
+	cisco/WS-C29* {
+	    set attr {shape=box style=filled fillcolor=lightblue height=.25}
+	}
+	cisco/WS-*PS  {
+	    set attr {shape=box style=filled fillcolor=yellow height=.25}
+	}
+	cisco/37*  {
+	    set attr {shape=octagon style=filled fillcolor=orange1 height=.25}
+	}
+	cisco/38*  {
+	    set attr {shape=octagon style=filled fillcolor=orange1}
+	}
+	cisco/*routeur -
+	cisco/1605* -
+	cisco/1721* -
+	cisco/7206* {
+	    set attr {shape=circle
+				style=filled fillcolor=lightgrey
+				fixedsize height=1}
+	}
+	alcatel/switch {
+	    set attr {shape=box height=.35}
+	}
+	nuage/* {
+	    set attr {shape=ellipse style=filled fillcolor=palegreen width=1.5}
+	}
+	fwroutebridge* {
+	    set attr {shape=Mcircle
+				style=filled fillcolor=tomato
+				height=1}
+	}
+	fwroute* {
+	    set attr {shape=circle
+				style=filled fillcolor=tomato
+				height=1}
+	}
+	fw* {
+	    set attr {shape=box style=filled fillcolor=tomato height=.25}
+	}
+	switch* {
+	    set attr {shape=box style=filled fillcolor=lightgrey height=.25}
+	}
+	hp* {
+	    set attr {shape=box style=filled fillcolor=pink height=.25}
+	}
+	default {
+	    set attr {shape=triangle}
+	}
+    }
+    return $attr
+}
+
+proc conv-ifname {ifname} {
+    foreach p {
+		{ GigabitEthernet Gi}
+		{ FastEthernet Fa}
+		{ Port-channel Po}
+		{ (ge-.*)/0$ \\1}
+		} {
+	set pattern [lindex $p 0]
+	set subst   [lindex $p 1]
+	regsub -all $pattern $ifname $subst ifname
+    }
+    return $ifname
+}
+
+proc prologue {format} {
+    set g "graph l2graph \{"
+    switch $format {
+	pdf {
+	    append g {
+		fontsize = 14 ;
+		fontname = "Helvetica" ;
+		margin = .3 ;
+		center = true ;
+		page="8.26,11.69" ;
+
+		size="11,7.6" ;
+		orientation = landscape ;
+
+		fontname = Helvetica ;
+
+		node [fontname = Helvetica, fontsize = 10,
+			    color = grey
+			] ;
+		edge [fontname = Helvetica, fontsize = 8,
+			    len = 1.4,
+			    labelfontname = Helvetica, labelfontsize = 6,
+			    color = grey
+			] ;
+
+		overlap = false ;
+		spline = true ;
+	    }
+	}
+	png -
+	default {
+	    append g {
+		fontsize = 14 ;
+		fontname = "Helvetica" ;
+		margin = .3 ;
+		center = true ;
+
+		orientation = portrait ;
+
+		fontname = Helvetica ;
+
+		node [fontname = Helvetica, fontsize = 10,
+			    color = grey
+			] ;
+		edge [fontname = Helvetica, fontsize = 8,
+			    len = 1.4,
+			    labelfontname = Helvetica, labelfontsize = 6,
+			    color = grey
+			] ;
+
+		overlap = false ;
+		spline = true ;
+	    }
+	}
+    }
+    return "$g\n"
+}
+
+proc title {vlanlist _tabvlan} {
+    upvar $_tabvlan tabvlan
+
+    set vlan0 0
+    set vl ""
+    foreach v $vlanlist {
+	set vlanid   [lindex $v 0]
+	if {[info exists tabvlan($v)]} then {
+	    set vlandesc [lindex $tabvlan($v) 0]
+	} else {
+	    set vlandesc "(pas de description)"
+	}
+	switch -- $vlanid {
+	    0 {
+		set vlan0 1
+	    }
+	    1 {
+		# rien
+	    }
+	    default {
+		if {! [string equal $vl ""]} then {
+		    append vl "\\n"
+		}
+		append vl "Vlan $vlanid : $vlandesc"
+	    }
+	}
+    }
+    if {[string equal $vl ""] && $vlan0} then {
+	set vl "Vlan 0"
+    }
+    return "label = \"$vl\" ;\n"
+}
+
+proc epilogue {format} {
+    return "\}\n"
+}
+
+
+proc generer-dot {format eq iface vlan prog urlfmt u1 _tabvlan _nnodes} {
+    upvar $_nnodes nnodes
+    upvar $_tabvlan tabvlan
+
+    set nnodes 0
+    set fd [open "|$prog" "r"]
+    while {[gets $fd ligne] > -1} {
+	switch [lindex $ligne 0] {
+	    vlans {
+		set vlans [lreplace $ligne 0 0]
+	    }
+	    eq {
+		set nomeq      [lindex $ligne 1]
+		set typemodele [lindex $ligne 2]
+		set tabeq($nomeq) $typemodele
+		incr nnodes
+	    }
+	    link {
+		set linkname [lindex $ligne 1]
+		set eq1      [lindex $ligne 2]
+		set iface1   [lindex $ligne 3]
+		set eq2      [lindex $ligne 4]
+		set iface2   [lindex $ligne 5]
+		set tablink($linkname) [list $eq1 $iface1 $eq2 $iface2]
+	    }
+	}
+    }
+    if {[catch {close $fd}]} then {
+	return ""
+    }
+
+    #
+    # Mettre en forme toutes ces informations
+    #
+
+    set dot [prologue $format]
+    append dot [title $vlans tabvlan]
+
+    foreach nomeq [array names tabeq] {
+	set attrlist [match-eq $tabeq($nomeq)]
+
+	set url [format $urlfmt $nomeq $u1]
+	lappend attrlist "href=\"$url\""
+
+	set attr [join $attrlist ", "]
+	append dot "\"$nomeq\" \[$attr\] ;\n"
+    }
+
+    foreach link [array names tablink] {
+	set eq1 [lindex $tablink($link) 0]
+	set if1 [conv-ifname [lindex $tablink($link) 1]]
+	set eq2 [lindex $tablink($link) 2]
+	set if2 [conv-ifname [lindex $tablink($link) 3]]
+
+	set attrlist [list label=\"$link\" \
+				headlabel=\"$if2\" \
+				taillabel=\"$if1\" \
+			    ]
+	set attr [join $attrlist ", "]
+	append dot "\"$eq1\" -- \"$eq2\" \[$attr\] ;\n"
+    }
+
+    append dot [epilogue $format]
+
+    return $dot
+}
+
+proc chercher-vlans {vlan _tabvlan} {
+    upvar $_tabvlan tabvlan
+
+    set r {}
+    if {[string equal $vlan ""]} then {
+	#
+	# Par défaut : liste de tous les vlans
+	#
+	set r [lsort -integer [array names tabvlan]]
+
+    } elseif {[catch {expr $vlan+0}]} then {
+	#
+	# Pas un entier : il faut donc chercher le texte dans les
+	# descriptions
+	#
+	set pattern "*${vlan}*"
+	foreach v [lsort -integer [array names tabvlan]] {
+	    set desc [lindex $tabvlan($v) 0]
+	    if {[string match -nocase $pattern $desc]} then {
+		lappend r $v
+	    }
+	}
+    } else {
+	lappend r $vlan
+
+    }
+    return $r
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
+		    $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
+
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	set $var [string trim [lindex [set $var] 0]]
+    }
+
+    set tmp /tmp/l2-[pid]
+
+    set u1 ""
+    set u2 ""
+    if {! [string equal $urluid ""]} then {
+	set u1 "&$urluid"
+	set u2 "?$urluid"
+    }
+
+
+    #
+    # Récupération des descriptions de vlans
+    #
+
+    set cmd [format $conf(dumpgraph) $tabuid(flags)]
+    set fd [open "|$cmd" "r"]
+
+    while {[gets $fd ligne] > -1} {
+	switch [lindex $ligne 0] {
+	    vlan {
+		set id [lindex $ligne 1]
+		set reste [lreplace $ligne 0 1]
+		set desc ""
+		set lnet {}
+		while {[llength $reste] > 0} {
+		    set key [lindex $reste 0]
+		    set val [lindex $reste 1]
+		    switch $key {
+			desc {
+			    if {[string equal $val "-"]} then {
+				set desc ""
+			    } else {
+				set desc [binary format H* $val]
+			    }
+			}
+			net {
+			    lappend lnet $val
+			}
+		    }
+		    set reste [lreplace $reste 0 1]
+		}
+		set tabvlan($id) [list $desc $lnet]
+	    }
+	}
+    }
+    if {[catch {close $fd} msg]} then {
+	::webapp::error-exit $conf(err) \
+		"Erreur lors de la lecture des vlans ($msg)"
+    }
+
+    #
+    # Chercher la liste des vlans demandés
+    #
+
+    set lvlans [chercher-vlans $vlan tabvlan]
+
+    set qvlan [::webapp::html-string $vlan]
+
+    #
+    # Est-ce un affichage de tous les vlans, ou d'un vlan en particulier ?
+    #
+
+    set nvlans [llength $lvlans]
+    switch $nvlans {
+	0 {
+	    #
+	    # Aucun vlan trouvé
+	    #
+
+	    set liste "Vlan '$qvlan' non trouvé sur les équipements"
+	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
+						[list \
+							[list %MSGSTA% $msgsta] \
+							[list %OBJETS% "Vlans"] \
+							[list %LISTE%  $liste] \
+							[list %EQ%     ""] \
+							[list %VLAN%   $qvlan] \
+							[list %ADDR%   ""] \
+							[list %URLUID% $u2] \
+							[list %HEADER% ""] \
+							[list %ONLOAD% ""] \
+						    ] \
+					    ]
+	}
+	1 {
+	    #
+	    # Récupérer le nom du vlan
+	    #
+
+	    set v [lindex $lvlans 0]
+	    set desc "(pas de description)"
+	    if {[info exists tabvlan($v)]} then {
+		set desc [lindex $tabvlan($v) 0]
+		set nets [join [lindex $tabvlan($v) 1] " "]
+		if {! [string equal $nets ""]} then {
+		    append desc " ($nets)"
+		}
+	    }
+	    set qvlan [::webapp::html-string $vlan]
+
+	    #
+	    # Récupérer les informations lues dans le graphe
+	    #
+
+	    set xl2 [format $conf(extractl2) $tabuid(flags) $eq $iface $v]
+	    set dot [generer-dot $format \
+				$eq $iface $v $xl2 $conf(urleq) $u1 tabvlan nnodes]
+	    if {[string equal $dot ""]} then {
+		set liste "Vlan '$qvlan' non trouvé sur les équipements"
+		::webapp::send html [::webapp::file-subst $conf(pagen) \
+						[list \
+						    [list %MSGSTA% $msgsta] \
+						    [list %OBJETS% "Vlans"] \
+						    [list %LISTE%  $liste] \
+						    [list %EQ%     ""] \
+						    [list %VLAN%   $qvlan] \
+						    [list %ADDR%   ""] \
+						    [list %URLUID% $u2] \
+						    [list %HEADER% ""] \
+						    [list %ONLOAD% ""] \
+						    ] \
+					    ]
+	    } else {
+		set fd [open "$tmp.dot" "w"]
+		puts $fd $dot
+		close $fd
+
+		#
+		# Sélectionner le générateur de graphe
+		#
+
+		if {$nnodes > $conf(maxdot)} then {
+		    set prog "$conf(neato) -Gmaxiter=10000"
+		} else {
+		    set prog "$conf(dot)"
+		}
+
+		set url "eq=$eq&iface=$iface&vlan=$v$u1"
+
+		#
+		# Sélectionner le format et sortir la page
+		#
+
+		switch -- $format {
+		    pdf {
+			set fd [open "|$prog -Tps $tmp.dot 2> /dev/null | $conf(ps2pdf) - -" "r"]
+			fconfigure $fd -translation binary
+			set pdf [read $fd]
+			close $fd
+			::webapp::send rawpdf $pdf
+		    }
+		    png {
+			set fd [open "| $prog -Tpng $tmp.dot 2>/dev/null" "r"]
+			fconfigure $fd -translation binary
+			set img [read $fd]
+			close $fd
+			::webapp::send png $img
+			exit 0
+		    }
+		    default {
+			set map [exec sh -c "$prog -Tcmapx < $tmp.dot 2> /dev/null"]
+			::webapp::send html [::webapp::file-subst $conf(page1) \
+						    [list \
+							    [list %MSGSTA% $msgsta] \
+							    [list %DESC%  $desc] \
+							    [list %URL%   $url] \
+							    [list %MAP%   $map] \
+							    [list %EQ%    ""] \
+							    [list %VLAN%  $qvlan] \
+							    [list %ADDR%  ""] \
+							    [list %URLUID% $u2] \
+							] \
+						]
+		    }
+		}
+
+		file delete -force -- $tmp.dot
+	    }
+	}
+	default {
+	    #
+	    # Afficher la liste (celle qui nous est retournée par
+	    # chercher-vlans est déjà triée)
+	    #
+
+	    set liste "<UL>\n"
+	    foreach id $lvlans {
+		set desc [lindex $tabvlan($id) 0]
+		set nets [lindex $tabvlan($id) 1]
+		if {[llength $nets] > 0} then {
+		    append desc " : $nets"
+		}
+		set desc [::webapp::html-string $desc]
+		set url [format $conf(urll2) $id $u1]
+		append liste [format "<LI><A HREF=\"%s\">$id ($desc)</A>\n" \
+					$url]
+	    }
+	    append liste "</UL>"
+
+	    #
+	    # Sortie de la page
+	    #
+
+	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
+						[list \
+							[list %MSGSTA% $msgsta] \
+							[list %OBJETS% "Vlans"] \
+							[list %LISTE%  $liste] \
+							[list %EQ%     ""] \
+							[list %VLAN%   $qvlan] \
+							[list %ADDR%   ""] \
+							[list %URLUID% $u2] \
+							[list %HEADER% ""] \
+							[list %ONLOAD% ""] \
+						    ] \
+					    ]
+
+	}
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

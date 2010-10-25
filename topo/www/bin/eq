@@ -1,0 +1,948 @@
+#!%TCLSH%
+
+#
+# Script pour afficher la liste des équipements,
+# ou les détails d'un équipement
+#
+# Appelé par : /applis/topo/<tous les scripts>
+#
+# Paramètres (formulaire ou URL) :
+#	- eq : si fourni, nom (ou pattern glob) de l'équipement
+#	- iface : si fourni, nom d'une interface à souligner
+#
+# Historique
+#   2006/06/05 : pda        : création
+#   2006/08/14 : pda        : fusion script listeq
+#   2007/01/04 : pda        : ajout du paramètre uti
+#   2007/01/11 : pda        : mutualisation initialisation
+#   2007/01/11 : pda        : substitution possible d'un uid
+#   2008/05/06 : pda        : ajout localisation
+#   2008/07/31 : pda/boggia : vue arborescente
+#   2008/08/01 : pda        : stats wifi sur la page d'un équipement
+#   2010/08/31 : pda/jean   : ajout de l'information "vlan natif"
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	%LIBDNS%
+set conf(libtopo)	$conf(lib)/libtopo.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page1)		$conf(lib)/eq.html
+set conf(pagen)		$conf(lib)/liste.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+    {eq			0 1}
+    {iface		0 1}
+}
+
+set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
+set conf(extracteq)	"%TOPODIR%/bin/extracteq %s %s < %GRAPH%"
+set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
+set conf(urlstat)	"$conf(homeurl)/bin/metro?id=%s%s"
+set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
+set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
+set conf(urll2)		"$conf(homeurl)/bin/l2?eq=%s&iface=%s&vlan=%d%s"
+set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+source $conf(libtopo)
+
+##############################################################################
+# Cumuls de stats wifi
+##############################################################################
+
+#
+# Note générale :
+# Le format des statistiques wifi est un tableau contenant les clefs
+# suivantes ::
+#	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:cumul)	<id>+<id>+...
+#	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:ssid:<ssid>)	{<id>}	ou {}
+#	(idem avec :auth en plus de :assoc)
+# La fonction "cumul-wifi" accumule ces stats
+#
+
+#
+# Initialiser des stats wifi
+#
+# Entrée :
+#   - _tab : nom d'un tableau contenant en retour les stats accumulées
+# Sortie :
+#   - valeur de retour : aucune
+#   - paramètre _tab : contient
+#
+# Historique :
+#   2008/08/03 : pda        : conception
+#
+
+proc init-cumul-wifi {_tab} {
+    upvar $_tab tab
+
+    catch {unset tab}
+
+    set lclefs {assoc auth}
+
+    set tab(:ssid)	   {}
+
+    foreach k $lclefs {
+	set tab(:$k:cumul)  {}
+	set tab(:$k:ssid)   {}
+	set tab(:$k:ap)     {}
+    }
+}
+
+#
+# Cumuler les stats wifi pour un point d'accès
+#
+# Entrée :
+#   - sondes : liste des sondes wifi pour ce point d'accès
+#	au format {{<nbauthwifi|nbassocwifi> <id> <ssid>}
+#   - _tab : nom d'un tableau contenant en retour les stats accumulées
+# Sortie :
+#   - valeur de retour : aucune
+#   - paramètre _tab : contient
+#	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:cumul)	<id>+<id>+...
+#	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:ssid:<ssid>)	{<id>}	ou {}
+#	(idem avec :auth en plus de :assoc)
+#
+# Historique :
+#   2008/08/02 : pda        : conception
+#
+
+proc cumul-wifi {sondes _tab} {
+    upvar $_tab tab
+
+    init-cumul-wifi tab
+
+    set lclefs {assoc auth}
+
+    foreach l $sondes {
+	# kw id ssid
+	set kw [lindex $l 0]
+	set id [lindex $l 1]
+	set ssid [lindex $l 2]
+
+	if {! [info exists seen($ssid)]} then {
+	    lappend tab(:ssid) $ssid
+	    set seen($ssid) 1
+	    foreach k $lclefs {
+		set tab(:$k:ssid:$ssid) {}
+	    }
+	}
+
+	switch $kw {
+	    nbassocwifi { set k "assoc" }
+	    nbauthwifi  { set k "auth" }
+	    default     { set k "???" }
+	}
+
+	lappend tab(:$k:cumul) $id
+	lappend tab(:$k:ssid:$ssid) $id
+	lappend tab(:$k:ssid) $ssid
+    }
+
+    foreach k $lclefs {
+	set tab(:$k:cumul) [join $tab(:$k:cumul) "+"]
+    }
+
+    set tab(:ssid) [lsort $tab(:ssid)]
+    foreach k $lclefs {
+	set tab(:$k:ssid) [lsort $tab(:$k:ssid)]
+    }
+}
+
+#
+# Accumuler les stats wifi d'un nouveau point d'accès
+#
+# Entrée :
+#   - _tr : tableau résumé
+#   - _t1 : tableau d'un point d'accès
+# Sortie :
+#   - valeur de retour : aucune
+#   - paramètre _tab : contient
+#	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:cumul)	<id>+<id>+...
+#	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:ssid:<ssid>)	{<id>}	ou {}
+#	tab(:assoc:ap)		{{<id>+...} {<id>+...} ...}
+#	(idem avec :auth en plus de :assoc)
+#
+# Historique :
+#   2008/08/04 : pda        : spécification
+#   2008/08/14 : pda        : fin du codage
+#
+
+proc accumuler {_tr _t1} {
+    upvar $_tr tr
+    upvar $_t1 t1
+
+    set lclefs {assoc auth}
+
+    #
+    # Ajouter le ssid à la liste totale des ssid si besoin est
+    #
+
+    foreach ssid $t1(:ssid) {
+	if {[lsearch $ssid $tr(:ssid)]} then {
+	    lappend tr(:ssid) $ssid
+	}
+    }
+
+    #
+    # Ajouter les stats par ssid
+    #
+
+    foreach k $lclefs {
+	foreach ssid $t1(:$k:ssid) {
+	    set c ":$k:ssid:$ssid"
+	    if {[info exists tr($c)]} then {
+		set l [concat $tr($c) $t1($c)]
+	    } else {
+		set l $t1($c)
+	    }
+	    set tr($c) $l
+	}
+    }
+
+    #
+    # Ajouter les stats par ap
+    #
+
+    foreach k $lclefs {
+	set l {}
+	foreach ssid $t1(:$k:ssid) {
+	    lappend l $t1(:$k:ssid:$ssid)
+	}
+	lappend tr(:$k:ap) [join $l "+"]
+    }
+
+    #
+    # Cumuler le cumul
+    #
+
+    foreach k $lclefs {
+	if {[string equal $tr(:$k:cumul) ""]} then {
+	    set tr(:$k:cumul) $t1(:$k:cumul)
+	} else {
+	    append tr(:$k:cumul) "+$t1(:$k:cumul)"
+	}
+    }
+
+    #
+    # Trier les listes finales
+    #
+
+    set tr(:ssid) [lsort $tr(:ssid)]
+    foreach k $lclefs {
+	set tr(:$k:ssid) [lsort $tr(:$k:ssid)]
+    }
+}
+
+##############################################################################
+# Arborisation d'une liste d'équipements
+##############################################################################
+
+#
+# Hierarchiser un élément dans un tableau en vue de consituer une
+# arborescence
+#
+# Entrée :
+#   - _thier : tableau passé par nom, contenant l'arborescence
+#   - liste : liste d'éléments par niveau
+#   - cumul : 1 si les éléments doivent être cumulés, 0 sinon (cf ci-dessous)
+# Sortie :
+#   - valeur de retour : aucune
+#   - tableau _thier : réactualisé
+#
+# Exemple 1 :
+#   si liste = {anapat -ap 3} et cumul = 1
+#   et tableau vaut :
+#	t()		= {anapat}
+#	t(anapat)	= {anapat-ap}
+#	t(anapat-ap)	= {anapat-ap1}
+#	t(anapat-ap1)	= {}
+#   alors le tableau est actualisé avec :
+#	t()		= {anapat}
+#	t(anapat)	= {anapat-ap}
+#	t(anapat-ap)	= {anapat-ap1 anapat-ap3} (peu importe l'ordre 3/1 ou 1/3)
+#	t(anapat-ap1)	= {}
+#	t(anapat-ap3)	= {}
+#
+# Exemple 2 :
+#   pour l'exemple ci-dessus, si cumul = 0, il faudrait avoir la
+#   liste {anapat anapat-ap anapat-ap3}
+#
+# Exemple 3 :
+#   si liste = {horus}
+#   et tableau vaut :
+#	(rien)
+#   alors le tableau est actualisé avec :
+#	t()		= {horus}
+#	t(horus)	= {}
+#
+# Historique :
+#   2008/07/31 : pda/boggia : conception
+#
+
+proc hierarchiser-un-element {_thier liste cumul} {
+    upvar $_thier thier
+
+    set racine ""
+    set idx ""
+    foreach mot $liste {
+	if {$cumul} then {
+	    append idx $mot
+	} else {
+	    set idx $mot
+	}
+	if {! [info exists thier($idx)]} then {
+	    lappend thier($racine) $idx
+	}
+	set racine $idx
+    }
+    lappend thier($racine) {}
+}
+
+#
+# Hiérarchiser une liste d'équipements 
+#
+# Entrée :
+#   - _t : tableau passé par nom, contenant l'arborescence
+#   - leq : liste d'équipements
+# Sortie :
+#   - valeur de retour : aucune
+#   - tableau _t : réactualisé
+#
+# Note : le regroupement en arbre est réalisé sur le nom d'équipement
+#   qui est découpé suivant une politique spécifique Osiris, à savoir
+#	[xxx] [-tt] [nn]
+#   où xxx est le préfixe, -tt le type d'équipement et nn le numéro
+#   dans le type. Par exemple, "anapat-ap3" est découpé en :
+#	anapat -ap 3
+#
+# Historique :
+#   2008/07/31 : pda/boggia : conception
+#
+
+proc hiearchiser-liste-equipements {_t leq} {
+    upvar $_t t
+
+    catch {unset t}
+
+    #
+    # Première phase : hiérarchiser tous les éléments
+    #
+
+    foreach eq $leq {
+	if {[regexp  {(.*)(-[a-z]+)([0-9]+)$} $eq bidon n1 n2 n3]} then {
+	    hierarchiser-un-element t [list $n1 $n2 $n3] 1
+	} else {
+	    hierarchiser-un-element t [list $eq] 1
+	}
+    }
+
+    #
+    # Deuxième phase : remonter d'un niveau (récursivement) tous
+    # les éléments qui sont seuls sur leur niveau (sauf les -ap)
+    #
+
+    # XXX : il manque quelque chose là, vous ne trouvez pas ?
+
+    #
+    # Troisième phase : trier chaque niveau
+    #
+
+    foreach i [array names t] {
+	set t($i) [lsort $t($i)]
+    }
+}
+
+#
+# Générer un arbre à l'aide d'un tableau hiérarchisé
+#
+# Entrée :
+#   - racine : racine de l'arbre
+#   - _thier : tableau passé par nom, contenant l'arborescence
+#   - _tabeq : tableau passé par nom, contenant les équipements
+#   - _tabwifi : tableau passé par nom, contenant les sondes wifi
+#   - u1 : fragment d'url pour le paramètre "uid=..." le cas échéant
+# Sortie :
+#   - valeur de retour : liste des arbres dont la racine est à ce niveau
+#
+# Historique :
+#   2008/07/31 : pda/boggia : conception
+#   2008/08/01 : pda/boggia : ajout tabwifi
+#
+
+proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
+    global conf
+    upvar $_thier thier
+    upvar $_tabeq tabeq
+    upvar $_tabwifi tabwifi
+
+    set arbre {}
+    set nwifi 0
+    init-cumul-wifi twa
+
+    foreach fils $thier($racine) {
+	#
+	# Cette boucle a pour but d'éviter de faire des niveaux
+	# multiples s'il n'y a qu'un seul fils à chaque niveau.
+	#
+	set prec $racine
+	while {! [string equal $fils ""] && [llength $thier($fils)] <= 1} {
+	    set prec $fils
+	    set fils [lindex $thier($fils) 0]
+	}
+
+	#
+	# Noeud ou feuille ?
+	#
+
+	if {[string equal $fils ""]} then {
+	    #
+	    # Feuille : c'est donc un équipement
+	    #
+	    set type   [lindex $tabeq($prec) 0]
+	    set modele [lindex $tabeq($prec) 1]
+	    set url [format $conf(urleq) $prec $u1]
+
+	    set lien [::webapp::helem "a" $prec "href" $url]
+	    lappend arbre [list "$lien $type $modele"]
+
+	    #
+	    # Stats wifi
+	    #
+	    if {[info exists tabwifi($prec)]} then {
+		incr nwifi
+		cumul-wifi $tabwifi($prec) tw
+		accumuler twa tw
+	    }
+	} else {
+	    #
+	    # Noeud : on recommence récursivement
+	    #
+	    lappend arbre [generer-arbre-eq $fils thier tabeq tabwifi $u1]
+	}
+    }
+
+    #
+    # Affichage de la racine
+    #
+
+    set rhtml $racine
+    if {$nwifi > 1 && $nwifi == [llength $thier($racine)]} then {
+	#
+	# Affichage des stats wifi si toutes les feuilles sont
+	# des points d'accès
+	#
+
+	#
+	# Cumuls
+	#
+
+	append rhtml " (cumuls "
+	foreach k {assoc auth} {
+	    set hid $twa(:$k:cumul)
+	    set url [format $conf(urlstat) [::webapp::post-string $hid] $u1]
+	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
+	}
+
+	#
+	# Détails par SSID
+	#
+
+	append rhtml ", détail/SSID "
+	foreach k {assoc auth} {
+	    set lid {}
+	    foreach ssid $twa(:$k:ssid) {
+		set lid [concat $lid $twa(:$k:ssid:$ssid)]
+	    }
+	    set hid [join $lid "|"]
+	    set url [format $conf(urlstat) [::webapp::post-string $hid] $u1]
+	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
+	}
+
+	#
+	# Détails par point d'accès
+	#
+
+	append rhtml ", détail/AP "
+	foreach k {assoc auth} {
+	    set hid [join $twa(:$k:ap) "|"]
+	    set url [format $conf(urlstat) [::webapp::post-string $hid] $u1]
+	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
+	}
+	append rhtml ")"
+    }
+
+    return [linsert $arbre 0 $rhtml]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
+		    $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
+
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	set $var [string trim [lindex [set $var] 0]]
+    }
+
+    set u1 ""
+    set u2 ""
+    if {! [string equal $urluid ""]} then {
+	set u1 "&$urluid"
+	set u2 "?$urluid"
+    }
+
+    #
+    # Récupérer les informations sur les équipements lues dans le graphe
+    #
+
+    set cmd [format $conf(dumpgraph) $tabuid(flags)]
+    set fd [open "|$cmd" "r"]
+    while {[gets $fd ligne] > -1} {
+	switch [lindex $ligne 0] {
+	    eq {
+		set nomeq  [lindex $ligne 1]
+		if {[string equal $eq ""] || [string match -nocase $eq $nomeq]} then {
+		    set type   [lindex $ligne 3]
+		    set modele [lindex $ligne 5]
+		    set tabeq($nomeq) [list $type $modele]
+		}
+	    }
+	}
+    }
+    if {[catch {close $fd} msg]} then {
+	::webapp::error-exit $conf(err) \
+		"Erreur lors de la lecture des équipements (msg)"
+    }
+
+    #
+    # Récupérer les stats wifi sur ces équipements
+    #
+
+    set cmd [format $conf(extractcoll) $tabuid(flags)]
+    set fd [open "|$cmd" "r"]
+    while {[gets $fd ligne] > -1} {
+	set kw [lindex $ligne 0]
+	switch $kw {
+	    nbassocwifi -
+	    nbauthwifi {
+		set id    [lindex $ligne 1]
+		set weq   [lindex $ligne 2]
+		set iface [lindex $ligne 4]
+		set ssid  [lindex $ligne 5]
+
+		if {[info exists tabeq($weq)]} then {
+		    lappend tabwifi($weq) [list $kw $id $ssid]
+		    lappend tabwifi($weq:$iface) [list $kw $id $ssid]
+		}
+	    }
+	}
+    }
+    if {[catch {close $fd} msg]} then {
+	::webapp::error-exit $conf(err) \
+		"Erreur lors de la lecture des sondes wifi (msg)"
+    }
+
+    #
+    # S'il y a plusieurs équipements trouvés, les présenter
+    # dans le bon ordre
+    #
+
+    # 1 si aucun eq cherché, 0 si recherche d'un éq
+    set ceq [string equal $eq ""]
+
+    # nb d'équipements trouvés
+    set neq [llength [array names tabeq]]
+
+    switch -glob "$ceq-$neq" {
+	*-0 {
+	    #
+	    # Aucun équipement trouvé. Faire comme pour une liste, mais
+	    # une liste vide ;-)
+	    # Peu importe qu'on ait cherché ou non un équipement.
+	    #
+
+	    set liste "Aucun équipement trouvé"
+
+	    #
+	    # Sortie de la page
+	    #
+
+	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
+						[list \
+							[list %MSGSTA% $msgsta] \
+							[list %OBJETS% "équipements"] \
+							[list %LISTE%  $liste] \
+							[list %EQ%     $eq] \
+							[list %VLAN%   ""] \
+							[list %ADDR%   ""] \
+							[list %URLUID% $u2] \
+							[list %HEADER% ""] \
+							[list %ONLOAD% ""] \
+						    ] \
+					    ]
+	}
+	*-1 {
+	    #
+	    # On n'a trouvé qu'un seul équipement. Peu importe
+	    # qu'on l'ait cherché ou non (le réseau peut être
+	    # tout petit ;-)
+	    # Récupérer les informations lues dans le graphe
+	    #
+
+	    set nomeq [lindex [array names tabeq] 0]
+
+	    set cmd [format $conf(extracteq) $tabuid(flags) $nomeq]
+	    set fd [open "|$cmd" "r"]
+	    while {[gets $fd ligne] > -1} {
+		switch [lindex $ligne 0] {
+		    eq {
+			set nomeq    [lindex $ligne 1]
+			set type     [lindex $ligne 2]
+			set modele   [lindex $ligne 3]
+			set location [lindex $ligne 4]
+			set titre "Équipement $nomeq $type $modele"
+			if {! [string equal $location "-"]} then {
+			    set location [binary format H* $location]
+			    append titre " (localisation $location)"
+			}
+		    }
+		    iface {
+			set if [lindex $ligne 1]
+			set tabiface($if) $ligne
+		    }
+		}
+	    }
+	    close $fd
+
+	    #
+	    # Trier les interfaces pour les présenter dans le bon ordre
+	    #
+
+	    set iflist [lsort -command compare-interfaces \
+					[array names tabiface] \
+				    ]
+
+	    #
+	    # Mettre en forme toutes ces informations
+	    #
+
+	    set texte ""
+	    foreach i $iflist {
+		set txt ""
+
+		#
+		# Nom de l'interface et paramètres associés (Ethernet, radio)
+		#
+
+		set ligne $tabiface($i)
+
+		set nom   [lindex $ligne 1]
+		set radio [lindex $ligne 2]
+		set stat  [lindex $ligne 3]
+		set mode  [lindex $ligne 4]
+		set desc  [lindex $ligne 5]
+		set lien  [lindex $ligne 6]
+		set natif [lindex $ligne 7]
+		set ligne [lreplace $ligne 0 7]
+
+
+		if {[string equal $iface $nom]} then {
+		    append txt [::webapp::helem "b" $nom]
+		} else {
+		    append txt "$nom"
+		}
+
+		if {[llength $radio] > 0} then {
+		    set channel [conv-channel [lindex $radio 0]]
+		    set power   [lindex $radio 1]
+		    append txt " (channel $channel power $power mW)"
+		}
+
+		if {! [string equal $stat "-"]} then {
+		    set url [format $conf(urlstat) [::webapp::post-string $stat] $u1]
+		    append txt " "
+		    append txt [::webapp::helem "a" {[Trafic]} "href" $url]
+		}
+
+		append txt " $mode"
+
+		if {$desc ne "-"} then {
+		    append txt " ("
+		    append txt [::webapp::html-string [binary format H* $desc]]
+		    append txt ")"
+		}
+
+		if {[llength $lien] > 1} then {
+		    set via [lindex $lien 0]
+		    set eq2 [lindex $lien 1]
+		    set if2 [lindex $lien 2]
+
+		    set urleqiface [format $conf(urleqiface) $eq2 $if2 $u1]
+		    append txt " $via vers "
+		    append txt [::webapp::helem "a" "$eq2 $if2" "href" $urleqiface]
+		}
+
+		#
+		# Récapitulatif des stats wifi
+		#
+
+		if {[info exists tabwifi($nomeq:$i)]} then {
+		    #
+		    # Cumuler les graphes d'associations et d'authentification
+		    # Cumuler les graphes par ssid
+		    #
+		    cumul-wifi $tabwifi($nomeq:$i) tw
+
+		    append txt " "
+
+		    foreach k {assoc auth} {
+			if {[llength $tw(:$k:ssid)] > 1} then {
+			    #
+			    # Cumuls (seulement si plus d'un ssid)
+			    #
+
+			    set hid $tw(:$k:cumul)
+			    set url [format $conf(urlstat) \
+					    [::webapp::post-string $hid] $u1]
+			    append txt " "
+			    append txt [::webapp::helem "a" "\[Cumul $k\]" \
+							    "href" $url]
+
+			    #
+			    # Détails par SSID (seulement si plus d'un ssid)
+			    #
+
+			    set lid {}
+			    foreach ssid $tw(:$k:ssid) {
+				set lid [concat $lid $tw(:$k:ssid:$ssid)]
+			    }
+			    set hid [join $lid "|"]
+			    set url [format $conf(urlstat) \
+					    [::webapp::post-string $hid] $u1]
+			    append txt " "
+			    append txt [::webapp::helem "a" "\[Détail $k\]" \
+							    "href" $url]
+			}
+		    }
+		}
+
+		#
+		# Parcours des vlans présents sur cette interface
+		#
+
+		set nvlan [llength $ligne]
+		foreach vlan [lsort -index 0 -integer $ligne] {
+		    set vlanid [lindex $vlan 0]
+		    set desc   [lindex $vlan 1]
+		    if {[string equal $desc "-"]} then {
+			set desc "pas de description"
+		    } else {
+			set desc [binary format H* $desc]
+		    }
+		    set native ""
+		    if {$vlanid == $natif} then {
+			set native " (vlan natif)"
+		    }
+		    set stat   [lindex $vlan 2]
+
+		    append txt "\n<BR>\n"
+
+		    if {$nvlan > 1 || $vlanid != 0} then {
+			set urll2 [format $conf(urll2) $nomeq $i $vlanid $u1]
+			append txt "Vlan "
+			append txt [::webapp::helem "a" "$vlanid ($desc)" \
+						"href" $urll2]
+			append txt $native
+
+			if {! [string equal $stat "-"]} then {
+			    set url [format $conf(urlstat) $stat $u1]
+			    append txt " "
+			    append txt [::webapp::helem "a" {[Trafic]} \
+						"href" $url]
+			}
+		    }
+
+		    foreach ip [lsort [lindex $vlan 3]] {
+			set urll3 [format $conf(urll3) $ip $u1]
+			append txt " "
+			append txt [::webapp::helem "a" $ip "href" $urll3]
+		    }
+		}
+
+		#
+		# Pour les interfaces radio, parcourir les points
+		# de métrologie pour les ssid trouvés
+		#
+
+		if {[info exists tabwifi($nomeq:$i)]} then {
+		    foreach ssid $tw(:ssid) {
+			append txt "\n<BR>\nSsid $ssid "
+			foreach k {assoc auth} {
+			    set id [lindex $tw(:$k:ssid:$ssid) 0]
+			    if {! [string equal $id ""]} then {
+				set url [format $conf(urlstat) $id $u1]
+				append txt [::webapp::helem "a" "\[$k\]" \
+							"href" $url]
+			    }
+			}
+		    }
+		}
+
+		#
+		# Résultat final
+		#
+		append texte [::webapp::helem "li" [::webapp::helem "p" $txt]]
+	    }
+	    set texte [::webapp::helem "ul" $texte]
+
+	    #
+	    # Sortie de la page
+	    #
+
+	    ::webapp::send html [::webapp::file-subst $conf(page1) \
+						[list \
+							[list %MSGSTA% $msgsta] \
+							[list %TITRE% $titre] \
+							[list %TEXTE% $texte] \
+							[list %EQ%    $eq] \
+							[list %VLAN%  ""] \
+							[list %ADDR%  ""] \
+							[list %URLUID% $u2] \
+						    ] \
+					    ]
+	}
+	0-* {
+	    #
+	    # On a cherché un équipement (via une expression régulière
+	    # par exemple), et on en a trouvé plusieurs.
+	    # Trier les équipements pour les présenter dans le bon ordre
+	    # dans une liste bien linéaire.
+	    #
+
+	    set liste ""
+	    foreach e [lsort [array names tabeq]] {
+		set type   [lindex $tabeq($e) 0]
+		set modele [lindex $tabeq($e) 1]
+		set url [format $conf(urleq) $e $u1]
+
+		set lien [::webapp::helem "a" $e "href" $url]
+		append liste [::webapp::helem "li" "$lien $type $modele"]
+	    }
+	    set liste [::webapp::helem "ul" $liste]
+
+	    #
+	    # Sortie de la page
+	    #
+
+	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
+						[list \
+							[list %MSGSTA% $msgsta] \
+							[list %OBJETS% "équipements"] \
+							[list %LISTE%  $liste] \
+							[list %EQ%     $eq] \
+							[list %VLAN%   ""] \
+							[list %ADDR%   ""] \
+							[list %URLUID% $u2] \
+							[list %HEADER% ""] \
+							[list %ONLOAD% ""] \
+						    ] \
+					    ]
+	}
+	1-* {
+	    #
+	    # On n'a cherché aucun équipement, on veut juste voir
+	    # la liste (arborescente).
+	    # Regrouper les équipements par leur nom, en attendant
+	    # de faire mieux.
+	    #
+
+	    hiearchiser-liste-equipements thier [array names tabeq]
+	    set arbre [generer-arbre-eq "" thier tabeq tabwifi $u1]
+	    set expcoll {{tout dérouler} {tout enrouler}}
+	    set t [::webapp::interactive-tree "leq" $arbre $expcoll]
+
+	    set head1  [lindex $t 0]
+	    set head2  [lindex $t 1]
+	    set onload [lindex $t 2]
+	    set html   [lindex $t 3]
+
+	    set header "$head1\n$head2\n"
+
+
+	    #
+	    # Sortie de la page
+	    #
+
+	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
+						[list \
+							[list %MSGSTA% $msgsta] \
+							[list %OBJETS% "équipements"] \
+							[list %LISTE%  $html] \
+							[list %EQ%     $eq] \
+							[list %VLAN%   ""] \
+							[list %ADDR%   ""] \
+							[list %URLUID% $u2] \
+							[list %HEADER% $header] \
+							[list %ONLOAD% $onload] \
+						    ] \
+					    ]
+	}
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%
