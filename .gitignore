@@ -1,2 +1,10 @@
 # Compiled files
 *.[oa]
+topo/anaconf/src/buildgraph
+topo/anaconf/src/dumpgraph
+topo/anaconf/src/extractcoll
+topo/anaconf/src/extracteq
+topo/anaconf/src/extractl1
+topo/anaconf/src/extractl2
+topo/anaconf/src/extractl3
+topo/anaconf/src/getnetif
