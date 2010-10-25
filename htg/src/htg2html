@@ -1,0 +1,213 @@
+#!/bin/sh
+
+#
+# $Id$
+#
+# htg2html
+#
+# But : convertit toute une arborescence HTG en une arborescence HTML
+#
+# Syntaxe :
+#    htg2html [-h][-v 0|1][-g rep-htg][-d rep-modèles][-l] rep-wsrc rep-wtmp rep-wobj
+#
+# Entree :
+#   - option -h : heeeeeelp !
+#   - option -v : verbose
+#   - option -g : répertoire HTG (là où sont placés les scripts et les modèles)
+#   - option -d : répertoire contenant les modèles
+#   - option -l : fait un lien symbolique vers les fichiers non HTG
+#   - rep-wsrc : repertoire des textes HTG (et autres fichiers
+#	recopies purement et simplement)
+#   - rep-wtmp : repertoire temporaire utilisé pour la compilation
+#   - rep-wobj : repertoire de destination, là où sont placés les fichiers HTML
+#
+# Sortie :
+#   - sortie standard : messages d'erreur et fichiers en erreur
+#   - repertoire de destination : peuplé avec les fichiers convertis
+#
+# Historique
+#   1998/12/10 : pda          : adaptation d'un Makefile+script particuliers
+#   1999/07/13 : pda          : paramétrage de la localisation de HTG
+#   1999/07/13 : pda          : conservation des dates des fichiers
+#   1999/07/27 : pda          : affiche le nom du fichier seulement en cas d'erreur
+#   2000/06/07 : pda          : protection contre les noms de fichiers avec des espaces
+#   2001/11/26 : pda          : ajout de l'option "-l" pour lier les fichiers non htg
+#   2008/03/04 : pda/moindrot : options -h/-g/-d
+#
+
+#
+# Localisation par défaut des éléments de HTG
+#
+
+HTGDIRDEF=/local/services/www/htg
+
+#
+# Mode verbeux ou non (affichage de tous les fichiers traités)
+#
+
+VERBOSE=0
+
+# set -x
+
+#
+# Création des répertoires de l'arborescence source vers l'arborscence
+# temporaire.
+#
+
+repertoires ()
+{
+    wsrc=$1
+    wobj=$2
+    (
+	cd $wsrc
+	find . -type d -print
+    ) |
+	while read d
+	do
+	    if [ ! -d $wobj/$d ]
+	    then
+		mkdir -p $wobj/$d
+	    fi
+	done
+}
+
+#
+# Initialise la date d'un fichier à une date de référence
+#
+
+copie_date ()
+{
+    touch -r "$1" "$2"
+}
+
+#
+# Copie des fichiers "non-htgt" vers l'arborescence temporaire.
+#
+
+autres ()
+{
+    link=$1
+    wsrc=$2
+    wobj=$3
+    (
+	cd $wsrc
+	find . -type f -print
+    ) |
+	grep -v '.htgt$' | 
+	while read f
+	do 
+	    $cmdverbose "$wsrc/$f"
+	    if [ $link = 1 ]
+	    then
+		ln -s "$wsrc/$f" "$wobj/$f"
+	    else
+		cp "$wsrc/$f" "$wobj/$f"
+		copie_date "$wsrc/$f" "$wobj/$f"
+	    fi
+	done
+}
+
+#
+# HTML-isation des fichiers htgt de l'arborescence source vers
+# l'arborescence temporaire.
+#
+
+htmliser ()
+{
+    wsrc=$1
+    wobj=$2
+    (
+	cd $wsrc
+	find . -name "*.htgt" -print
+    ) | 
+	while read f ; do 
+	    h=`echo $f | sed 's/.htgt$//'`
+	    $cmdverbose "$wsrc/$f"
+	    "$htgdir/src/htg" -v $verbose -d "$modeldir" \
+			"$wsrc/$f" > "$wobj/$h.html"
+	    if [ $? != 0 ]
+	    then
+		echo Problème sur "$wsrc/$f"
+		echo
+	    fi
+	    copie_date "$wsrc/$f" "$wobj/$h.html"
+	done
+}
+
+#
+# Déplace le contenu d'un répertoire vers une destination.
+# Si le répertoire est vide, ne fait rien.
+#
+
+deplacersinonvide ()
+{
+    src=$1
+    dst=$2
+    if [ x"`ls $src`" != x ]
+    then mv $src/* $dst
+    fi
+}
+
+#
+# Beau message d'erreur
+#
+
+usage ()
+{
+    echo "usage: $0 [-h][-g <htgdir>][-d <modeldir>][-l] <srcdir> <tmpdir> <objdir>" >&2
+    exit 1
+}
+
+#
+# Valeurs par défaut des options
+#
+
+htgdir=$HTGDIRDEF
+modeldir=$htgdir/modeles
+verbose=$VERBOSE
+
+#
+# Analyse des options
+#
+
+set -- `getopt hg:d:v:l $*`
+
+if [ $? != 0 ]
+then usage
+fi
+
+link=0
+
+for i
+do
+    case $i in
+	-h)	usage ;;
+	-g)	htgdir=$2 ; shift 2 ;;
+	-d)	modeldir=$2 ; shift 2 ;;
+	-l)	link=1 ; shift ;;
+	-v)	verbose=$2 ; shift 2 ;;
+	--)	shift ; break ;;
+    esac
+done
+
+case $verbose in
+    0)	cmdverbose=":" ;;
+    1)	cmdverbose="echo" ;;
+esac
+
+if [ $# != 3 ]
+then usage
+fi
+
+WSRC=$1
+WTMP=$2
+WOBJ=$3
+
+rm -rf $WTMP/new $WTMP/old
+mkdir  $WTMP $WTMP/new $WTMP/old 2> /dev/null
+
+repertoires $WSRC $WTMP/new &&
+    autres $link $WSRC $WTMP/new &&
+    htmliser $WSRC $WTMP/new &&
+    deplacersinonvide $WOBJ $WTMP/old &&
+    mv $WTMP/new/* $WOBJ

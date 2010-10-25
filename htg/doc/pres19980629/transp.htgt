@@ -1,0 +1,213 @@
+{
+\* $Id$
+\modele {transp}
+
+\set {template} {preshtg%2.2d.html}
+
+\transparent {Titre} {
+    \alias {index.html}
+    \titre {HTG -- The HTML Generator}
+
+    <BR><BR><BR><BR>
+
+    <CENTER>Pierre DAVID</CENTER>
+
+    <CENTER>29 juin 1998</CENTER>
+}
+
+
+\transparent {Plan} {
+    \titre {HTG - Présentation}
+
+    Plan :
+
+    \liste {
+	\item {\lien {Introduction} {intro.html}}
+	\item {\lien {Principe} {principe.html}}
+	\item {\lien {Implémentation} {impl.html}}
+	\item {\lien {Documentations du CSI} {doc.html}}
+	\item {\lien {Conclusion} {conc.html}}
+    }
+}
+
+\******************************************************************************
+
+\transparent {Introduction} {
+    \alias {intro.html}
+    \titre {Introduction}
+
+    Contexte~:
+
+    \liste {
+	\* \item {\lien {Serveur Web du CSI} {file:/users/pda/wcsi/wobj/index.html}}
+	\item {\lien {Serveur Web du CSI} {http://www.csi.uvsq.fr/}}
+	\item {Langage HTML}
+    }
+
+    Souhaits~:
+
+    \liste {
+	\item {Taper du texte au kilomètre}
+	\item {Ne pas se soucier de la présentation}
+    }
+}
+
+\transparent {Introduction} {
+    \alias {intro.html}
+    \titre {Introduction}
+
+    Solutions~:
+
+    \liste {
+	\item {Word et son mode <<~HTML~>>}
+	\item {SGML}
+	\item {HTML et CSS1}
+	\item {XML}
+	\item {LaTeX, puis traduction en HTML}
+    }
+
+    Aucune solution n'est vraiment satisfaisante...
+}
+
+\transparent {Principe} {
+    \alias {principe.html}
+    \titre {Principe}
+
+    Taper du texte au kilomètre, c'est bien, mais...
+    il faut indiquer où sont les titres, ce qu'il faut
+    placer en italiques, etc~: \gras {balises + délimiteurs}
+
+    Exemples~:
+
+    \liste {
+    	\item {\\italique \{coucou\} ... devient ... \italique {coucou}}
+    	\item {\\liste \{ \\item \{a\} \\item \{b\} \} ... devient ...
+	    \liste {\item {a} \item {b}}
+	}
+    	\item {\\lien \{UVSQ\} \{http://www.uvsq.fr\} ... devient ...
+	    \lien {UVSQ} {http://www.uvsq.fr}
+	}
+    }
+
+}
+
+\transparent {Principe} {
+    \titre {Principe}
+
+    \image {princ.gif} {Principe de HTG}
+}
+
+
+\transparent {Principe} {
+    \titre {Principe}
+
+    Fichiers~:
+
+    \tableau {
+	\centragehorizontal {CENTER}
+	\bordure {1} {jaune}
+    } {
+	\casedefauttableau {\centragehorizontal {CENTER}}
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {} {*.htgt}
+	    \casetableau {} {HTG texte : contenant le texte à hachetéhèméliser}
+	}
+	\lignetableau {
+	    \casetableau {} {*.htgm}
+	    \casetableau {} {HTG modèle : un fond de page HTML avec des <<~trous~>>}
+	}
+	\lignetableau {
+	    \casetableau {} {*.tcl}
+	    \casetableau {} {Procédures correspondant aux balises}
+	}
+    }
+}
+
+\transparent {Principe} {
+    \alias {impl.html}
+    \titre {Principe}
+
+    Une balise (\\italique) correspond à une procédure
+    TCL~: htg_italique.
+
+    La plupart des procédures sont extrêmement simples.
+    Voir les \lien {balises utilisées pour ces transparents}
+	{macros.txt}.
+
+    Voir aussi le \lien {fond de page pour ces transparents}
+	{fond.txt}
+
+}
+
+\transparent {Implémentation} {
+    \titre {Implémentation}
+
+    Implémentation~:
+
+    \liste {
+	\item {langage C~: ~~300 lignes}
+	\item {procédures TCL~: ~~300 lignes pour ces transparents (~~500 lignes
+	    pour www.csi.uvsq.fr)
+	}
+    }
+
+    Note~: choix de TCL (embarquer un langage dans une application)
+}
+
+
+\transparent {Documentations du CSI} {
+    \titre {Documentations du CSI}
+
+    Problème~:
+
+    \liste {
+	\item {disposer de documentations CSI}
+	\item {mettre ces documentations à disposition sur le Web}
+	\item {pouvoir imprimer ces documentations}
+	\item {laisser aux utilisateurs la possibilité de les imprimer}
+    }
+
+    Formats existants~:
+
+    \liste {
+	\item {PostScript : pas utilisable facilement sur PC}
+	\item {Word : nécessite d'avoir Word...}
+	\item {LaTeX : nécessite d'avoir LaTeX...}
+	\item {PDF : pas facile à générer}
+	\item {Web CSI : trop de fioritures lors de l'impression}
+    }
+}
+
+
+\transparent {Documentations du CSI} {
+    \alias {doc.html}
+    \titre {Documentations du CSI}
+
+    Solution~:
+
+    \image {doccsi.gif} {Documentations du CSI}
+
+}
+
+
+\transparent {Conclusion} {
+    \alias {conc.html}
+    \titre {Conclusion}
+
+    HTG : format \gras {très} simple
+
+    Il reste des imperfections~:
+
+    \liste {
+	\item {messages d'erreur peu lisibles...}
+	\item {peu de documentation à l'heure actuelle}
+	\item {système jeune : il évoluera sans doute encore un peu}
+    }
+
+    Il faut que le CSI soit visible sur le Web !
+}
+
+
+}

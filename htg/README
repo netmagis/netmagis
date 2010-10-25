@@ -1,0 +1,40 @@
+Ce répertoire contient l'outil HTG (HTml Generator).
+
+Il est décomposé en :
+
+    doc/
+	la doc (en format HTG)
+
+    src/
+	les sources du programme lui-même
+	Attention : nécessite TCL >= 8.0
+
+    modeles/
+	les modèles
+
+Installation :
+
+    mkdir /usr/local/htg
+	=> ou ailleurs, cf restriction ci-dessous
+
+    cd /usr/local
+    gzip -d < htg.tar.gz | tar xvf -
+    cd htg/src
+    vi Makefile
+	=> modifier les chemins des librairies TCL et les options de cc
+    make
+    vi htg
+	=> changer le chemin d'accès au programme htgtcl en première ligne
+	=> RESTRICTION : le chemin d'accès doit faire moins de 32 caractères !
+	=> changer les lignes conf(...) en fonction des chemins locaux
+
+Test :
+
+    cd /usr/local/htg/doc
+    vi Makefile
+	=> changer le chemin d'accès à htg
+    make
+	=> puis lire les pages avec un navigateur web
+
+Auteur :
+    Pierre David (Pierre.David@csi.uvsq.fr)

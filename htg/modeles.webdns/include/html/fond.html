@@ -1,0 +1,54 @@
+\contextepardefaut {osiris}
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+\* $Id$
+<html lang="fr">
+<head>
+  <title>\recuperer {banniere}</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
+  <link rel="stylesheet" media="print" href="/css/print.css" type="text/css">
+  <link rel="stylesheet" media="screen" href="/css/screen.css" type="text/css">
+  <meta name="Author" content="\recuperer {auteur}">
+  <meta name="Generator" content="htg">
+  \recuperer {meta}
+  \recuperer {header}
+</head>
+<body onload="\recuperer {body-onload}"  onunload="\recuperer {body-onunload}">
+  <table id="fond-page" cellspacing="0">
+    \************************ logo et titre
+    <tr>
+      <td id="logo">
+	<a href="/"><img src="/css/images/logo.png" alt="sommaire"></a>
+      </td>
+      <td id="titre-page">
+        <h1>\recuperer {titrepage}</h1>
+      </td>
+    </tr>
+    \************************ ligne de séparation
+    <tr><td id="separation-haut" colspan="2"><div></div></td></tr>
+    \************************ bandeau et texte
+    <tr>
+      <td id="bandeau">
+	<dl class="menu">
+	  <dt class="menu-titre">\recuperer {titrebandeau}</dt>
+	  \recuperer{contenubandeau}
+	</dl>
+      </td>
+      <td id="texte-page">
+        \recuperer {texte}
+      </td>
+    </tr>
+    \************************ ligne de séparation
+    <tr><td id="separation-bas" colspan="2"><div></div></td></tr>
+    \************************ pied de page
+    <tr id="pied-page">
+      <td align="left">
+        <a href="http://www-crc.u-strasbg.fr/serweb/">Informations sur ce serveur</a>
+      </td>
+      <td align="right">
+        Dernière mise à jour le \recuperer {date} - Contactez
+        <a href="mailto:Webmaster@crc.u-strasbg.fr">Webmaster@crc.u-strasbg.fr</a>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
