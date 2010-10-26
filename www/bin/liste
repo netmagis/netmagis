@@ -264,7 +264,9 @@ proc output-list {dbfd lcidr _tabcor format} {
 			rr.commentaire, rr.respnom, rr.respmel, rr.date,
 			rr.droitsmtp, rr.mac, dhcpprofil.nom AS dhcp,
 			hinfo.texte, corresp.login
-		    FROM rr_ip, rr, domaine, hinfo, corresp, dhcpprofil
+		    FROM rr_ip, domaine, hinfo, corresp,
+			rr LEFT OUTER JOIN dhcpprofil
+			    ON rr.iddhcpprofil = dhcpprofil.iddhcpprofil
 		    WHERE rr.idrr = rr_ip.idrr
 			AND rr_ip.adr <<= ANY ($sqlallow)
 			AND NOT rr_ip.adr <<= ANY ($sqldeny)
@@ -272,7 +274,6 @@ proc output-list {dbfd lcidr _tabcor format} {
 			AND domaine.iddom = rr.iddom
 			AND rr.idhinfo = hinfo.idhinfo
 			AND rr.idcor = corresp.idcor
-			AND rr.iddhcpprofil = dhcpprofil.iddhcpprofil
 		    ORDER BY rr_ip.adr"
 	pg_select $dbfd $sql tab {
 	    set nomprimaire	$tab(nom)
@@ -547,7 +548,7 @@ proc output-map {dbfd lcidr _tabcor format} {
     # Fioritures
     #
 
-    set datefmt [getconfig $dbfd "datefmt"]
+    set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
 
     ::webapp::send html [::webapp::file-subst $conf(liste) \
