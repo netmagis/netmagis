@@ -254,6 +254,18 @@ proc output-list {dbfd lcidr _tabcor format} {
 	}
 
 	#
+	# Récupérer tous les noms de profils DHCP.
+	# On pourrait les obtenir dans la grande requête
+	# suivante sur les rr, mais ça la rendrait très
+	# compliquée, et franchement illisible.
+	#
+
+	set sql "SELECT iddhcpprofil, nom FROM dhcpprofil"
+	pg_select $dbfd $sql tab {
+	    set nomprofildhcp($tab(iddhcpprofil)) $tab(nom)
+	}
+
+	#
 	# Récupérer toutes les adresses IP autorisées et les
 	# ajouter au tableau.
 	#
@@ -262,11 +274,14 @@ proc output-list {dbfd lcidr _tabcor format} {
 	set sql "SELECT rr.nom || '.' || domaine.nom AS nom,
 			rr_ip.adr,
 			rr.commentaire, rr.respnom, rr.respmel, rr.date,
-			rr.droitsmtp, rr.mac, dhcpprofil.nom AS dhcp,
+			rr.droitsmtp, rr.mac,
+			rr.iddhcpprofil AS dhcp1,
+			dhcprange.iddhcpprofil AS dhcp2,
 			hinfo.texte, corresp.login
-		    FROM rr_ip, domaine, hinfo, corresp,
-			rr LEFT OUTER JOIN dhcpprofil
-			    ON rr.iddhcpprofil = dhcpprofil.iddhcpprofil
+		    FROM rr, domaine, hinfo, corresp,
+			rr_ip LEFT OUTER JOIN dhcprange
+			    ON (rr_ip.adr >= dhcprange.min
+				AND rr_ip.adr <= dhcprange.max)
 		    WHERE rr.idrr = rr_ip.idrr
 			AND rr_ip.adr <<= ANY ($sqlallow)
 			AND NOT rr_ip.adr <<= ANY ($sqldeny)
@@ -279,7 +294,8 @@ proc output-list {dbfd lcidr _tabcor format} {
 	    set nomprimaire	$tab(nom)
 	    set adr		$tab(adr)
 	    set mac		$tab(mac)
-	    set dhcp		$tab(dhcp)
+	    set dhcp1		$tab(dhcp1)
+	    set dhcp2		$tab(dhcp2)
 	    set hinfo		$tab(texte)
 	    set commentaire	$tab(commentaire)
 	    set respnom    	$tab(respnom)
@@ -287,22 +303,35 @@ proc output-list {dbfd lcidr _tabcor format} {
 	    set droitsmtp	$tab(droitsmtp)
 	    set date		$tab(date)
 	    set login		$tab(login)
+
 	    if {[info exists cname($adr)]} then {
 		set nomssecondaires $cname($adr)
 	    } else {
 		set nomssecondaires ""
 	    }
+
 	    if {! [string equal $respmel ""]} then {
 		set responsable "$respnom <$respmel>"
 	    } else {
 		set responsable $respnom
 	    }
+
+	    if {[info exists nomprofildhcp($dhcp2)]} then {
+		set dhcp $nomprofildhcp($dhcp2)
+	    } elseif {[info exists nomprofildhcp($dhcp1)]} then {
+		set dhcp $nomprofildhcp($dhcp1)
+	    } else {
+		set dhcp ""
+	    }
+
 	    set date [clock format [clock scan $date] -format $jourfmt]
+
 	    if {$droitsmtp} then {
 		set droitsmtp "Oui"
 	    } else {
 		set droitsmtp "-"
 	    }
+
 	    switch -- $format {
 		html {
 		    set nom "$nomprimaire "
