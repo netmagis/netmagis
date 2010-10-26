@@ -52,7 +52,16 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 	- codage effectué, installé dans l'appli de test (cf url de type devdns)
 	- en attente de validation/information par l'infra et la GP
 
-3- Modification des ports d'un équipement
+3- Ajout du profil DHCP dans la liste des machines d'un sous-réseau
+
+    Page accessible via :
+	https://www-crc.u-strasbg.fr/applis/dns/bin/consulter
+
+    Statut :
+	- codage effectué, installé dans l'appli de test (cf url de type devdns)
+	- difficulté = facile
+
+4- Modification des ports d'un équipement
 
     Il est proposé une interface Web partant de l'actuel topo
 	https://www-crc.u-strasbg.fr/applis/topo/bin/eq
@@ -149,7 +158,7 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 	- mise en production du back-office avant fin octobre
 	- codage interface Web : mi-novembre
 
-4- Fluidifier la navigation entre les différents composants
+5- Fluidifier la navigation entre les différents composants
 
     Actuellement, les applications WebDNS, topo et métro, mac, dhcp
     sont des modules séparés et non communicants.
@@ -193,15 +202,6 @@ X- Localisation géographique des équipements réseau
 	- pas encore codé
 	- difficulté : moyenne, mais développement important et long
 	    (hors saisie des informations dans Abyla et les équipements)
-
-X- Ajout du profil DHCP dans la liste des machines d'un sous-réseau
-
-    Page accessible via :
-	https://www-crc.u-strasbg.fr/applis/dns/bin/consulter
-
-    Statut :
-	- pas encore codé
-	- difficulté = facile
 
 X- Ajout de l'équipement et du numéro de port dans la liste des
     machines d'un sous-réseau
