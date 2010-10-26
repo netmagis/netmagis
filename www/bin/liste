@@ -79,6 +79,7 @@ set conf(max-per-row)	16
 #	- adr IP
 #	- nom machine et aliases
 #	- adr MAC
+#	- profil dhcp
 #	- type de machine (hinfo)
 #	- informations complémentaires (texte libre)
 #	- correspondant (login)
@@ -88,7 +89,7 @@ set conf(max-per-row)	16
 set conf(tableau) {
     global {
 	chars {10 normal}
-	columns {21 17 12 9 13 17 6 6 7}
+	columns {21 17 12 9 9 13 17 6 6 7}
 	botbar {yes}
 	align {left}
 	latex {
@@ -118,6 +119,8 @@ set conf(tableau) {
 	vbar {yes}
 	colonne { }
 	vbar {yes}
+	colonne { }
+	vbar {yes}
     }
     motif {Normal} {
 	vbar {yes}
@@ -128,6 +131,8 @@ set conf(tableau) {
 	colonne {
 	    format {raw}
 	}
+	vbar {yes}
+	colonne { }
 	vbar {yes}
 	colonne { }
 	vbar {yes}
@@ -184,6 +189,7 @@ proc output-list {dbfd lcidr _tabcor format} {
     lappend donnees {Gras {Adresse IP}
 			  {Noms et aliases}
 			  {Adresse MAC}
+			  {Profil DHCP}
 			  {Système}
 			  {Commentaire}
 			  {Responsable}
@@ -256,8 +262,9 @@ proc output-list {dbfd lcidr _tabcor format} {
 	set sql "SELECT rr.nom || '.' || domaine.nom AS nom,
 			rr_ip.adr,
 			rr.commentaire, rr.respnom, rr.respmel, rr.date,
-			rr.droitsmtp, rr.mac, hinfo.texte, corresp.login
-		    FROM rr_ip, rr, domaine, hinfo, corresp
+			rr.droitsmtp, rr.mac, dhcpprofil.nom AS dhcp,
+			hinfo.texte, corresp.login
+		    FROM rr_ip, rr, domaine, hinfo, corresp, dhcpprofil
 		    WHERE rr.idrr = rr_ip.idrr
 			AND rr_ip.adr <<= ANY ($sqlallow)
 			AND NOT rr_ip.adr <<= ANY ($sqldeny)
@@ -265,11 +272,13 @@ proc output-list {dbfd lcidr _tabcor format} {
 			AND domaine.iddom = rr.iddom
 			AND rr.idhinfo = hinfo.idhinfo
 			AND rr.idcor = corresp.idcor
+			AND rr.iddhcpprofil = dhcpprofil.iddhcpprofil
 		    ORDER BY rr_ip.adr"
 	pg_select $dbfd $sql tab {
 	    set nomprimaire	$tab(nom)
 	    set adr		$tab(adr)
 	    set mac		$tab(mac)
+	    set dhcp		$tab(dhcp)
 	    set hinfo		$tab(texte)
 	    set commentaire	$tab(commentaire)
 	    set respnom    	$tab(respnom)
@@ -305,7 +314,7 @@ proc output-list {dbfd lcidr _tabcor format} {
 		}
 	    }
 	    lappend donnees [list Normal \
-				$adr $nom $mac \
+				$adr $nom $mac $dhcp \
 				$hinfo $commentaire $responsable \
 				$droitsmtp \
 				$login $date]
