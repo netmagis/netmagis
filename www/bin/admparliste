@@ -12,6 +12,7 @@
 # Historique
 #   2003/12/08 : pda      : création à partir de sos
 #   2004/10/13 : pda      : ajout des paramètres DHCP
+#   2010/10/25 : pda      : librairisation des paramètres
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -30,7 +31,7 @@ set conf(libdns)	$conf(lib)/libdns.tcl
 
 set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/admparliste.html
-set conf(aide)		$conf(homeurl)/aideparam.html
+set conf(aide)		$conf(homeurl)/bin/admparhelp
 
 #
 # Quelques paramètres du script
@@ -59,6 +60,16 @@ set conf(tableau) {
 	chars {12 normal}
 	columns {50 50}
     }
+    pattern {Normal1} {
+	vbar {no}
+	column {
+	    multicolumn {2}
+	    color {909090}
+	    align {center}
+	    botbar {no}
+	}
+	vbar {no}
+    }
     pattern {Normal2} {
 	vbar {no}
 	column {
@@ -74,7 +85,7 @@ set conf(tableau) {
 	}
 	vbar {no}
     }
-    pattern {Normal1} {
+    pattern {Boutons} {
 	vbar {no}
 	column {
 	    multicolumn {2}
@@ -115,58 +126,41 @@ proc main {} {
 
     set donnees {}
 
-    foreach attribut {
-	{datefmt	{Format d'affichage des dates/heures}		string}
-	{jourfmt	{Format d'affichage des jours}			string}
-	{authmailfrom   {Utiliser le "From" spécifié dans "auth"}	bool}
-	{mailfrom	{"From" des mails de modification de passwd}	string}
-	{authmailreplyto  {Utiliser le "Reply-To" spécifié dans "auth"}	bool}
-	{mailreplyto	{"Reply-To" des mails de modification de passwd} string}
-	{authmailcc	{Utiliser le "Cc" spécifié dans "auth"}	bool}
-	{mailcc		{"Cc" des mails de modification de passwd}	string}
-	{authmailbcc	{Utiliser le "Bcc" spécifié dans "auth"}	bool}
-	{mailbcc	{"Bcc" des mails de modification de passwd}	string}
-	{authmailsubject {Utiliser le "Subject" spécifié dans "auth"}	bool}
-	{mailsubject	{"Subject" des mails de moditication de passwd}	string}
-	{authmailbody	{Utiliser le corps spécifié dans "auth"}	bool}
-	{mailbody	{Corps du mail de modification de passwd}	text}
-	{groupes	{Groupes Web autorisés}				string}
-	{default_lease_time {default_lease_time}			string}
-	{max_lease_time	{max_lease_time}				string}
-	{min_lease_time	{min_lease_time}				string}
-	} {
+    foreach class [dnsconfig class] {
+	lappend donnees [list Normal1 [dnsconfig desc $class]]
 
-	set clef	[lindex $attribut 0]
-	set nom		[lindex $attribut 1]
-	set type	[lindex $attribut 2]
+	foreach key [dnsconfig keys $class] {
 
-	set curval [getconfig $dbfd $clef]
+	    set type   [dnsconfig keytype $key]
+	    set desc   [dnsconfig desc $key]
+	    set curval [dnsconfig get $key]
 
-	switch -- $type {
-	    bool {
-		set html [::webapp::form-yesno $clef $curval {%1$sOui %2$sNon}]
+	    switch -- [lindex $type 0] {
+		bool {
+		    set html [::webapp::form-yesno $key $curval {%1$sOui %2$sNon}]
+		}
+		string {
+		    set html [::webapp::form-text $key 1 60 0 $curval]
+		}
+		text {
+		    set html [::webapp::form-text $key 20 70 0 $curval]
+		}
+		menu {
+		    set lmenu [lindex $type 1]
+		    set html [::webapp::form-menu $key 1 0 $lmenu {}]
+		}
+		default {
+		    set html "<FONT COLOR=#FF0000>ERREUR : type de '$key'</FONT>"
+		}
 	    }
-	    string {
-		set html [::webapp::form-text $clef 1 60 0 $curval]
-	    }
-	    text {
-		set html [::webapp::form-text $clef 20 70 0 $curval]
-	    }
-	    menu {
-		set lmenu [lindex $attribut 3]
-		set html [::webapp::form-menu $clef 1 0 $lmenu {}]
-	    }
-	    default {
-		set html "<FONT COLOR=#FF0000>ERREUR : type de '$attribut'</FONT>"
-	    }
+
+	    set aide "<A HREF=\"$conf(aide)#$key\">$desc</A>"
+	    lappend donnees [list Normal2 $aide $html]
 	}
-
-	set aide "<A HREF=\"$conf(aide)#$clef\">$nom</A>"
-	lappend donnees [list Normal2 $aide $html]
     }
     set html "<INPUT TYPE=submit VALUE=\"Enregistrer\">"
     append html " <INPUT TYPE=reset VALUE=\"Réinitialiser\">"
-    lappend donnees [list Normal1 $html]
+    lappend donnees [list Boutons $html]
 
     #
     # Génération de la page contenant le formulaire

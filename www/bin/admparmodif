@@ -41,27 +41,6 @@ set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
 
-set conf(form)	{
-	{datefmt		1 1}
-	{jourfmt		1 1}
-	{authmailfrom		1 1}
-	{mailfrom		1 1}
-	{authmailreplyto	1 1}
-	{mailreplyto		1 1}
-	{authmailcc		1 1}
-	{mailcc			1 1}
-	{authmailbcc		1 1}
-	{mailbcc		1 1}
-	{authmailsubject	1 1}
-	{mailsubject		1 1}
-	{authmailbody		1 1}
-	{mailbody		1 1}
-	{groupes		1 1}
-	{default_lease_time	1 1}
-	{max_lease_time		1 1}
-	{min_lease_time		1 1}
-}
-
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
@@ -90,7 +69,20 @@ proc main {} {
     #
 
     init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			$conf(form) ftab dbfd login tabcor $conf(log)
+			{} ftab dbfd login tabcor $conf(log)
+
+    #
+    # Création d'une liste de contrôle de formulaire à partir
+    # des clefs de configuration
+    #
+
+    set form {}
+    foreach key [dnsconfig keys] {
+	lappend form [list $key 1 1]
+    }
+    if {[llength [::webapp::get-data ftab $form]] == 0} then {
+	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
+    }
 
     #
     # Enregistrement des paramètres du formulaire
@@ -101,14 +93,14 @@ proc main {} {
     }
 
     set lm {}
-    foreach element $conf(form) {
-	set clef [lindex $element 0]
-	set val [lindex $ftab($clef) 0]
-	if {[setconfig $dbfd $clef $val msg]} then {
-	    lappend lm "$clef ($val)"
+    foreach key [dnsconfig keys] {
+	set val [lindex $ftab($key) 0]
+	set msg [dnsconfig set $key $val]
+	if {[string equal $msg ""]} then {
+	    lappend lm "$key ($val)"
 	} else {
 	    ::pgsql::unlock $dbfd "abort" m
-	    ::webapp::error-exit $conf(err) "Ereur dans l'enregistrement de '$clef' ('$msg')"
+	    ::webapp::error-exit $conf(err) "Ereur dans l'enregistrement de '$key' ('$msg')"
 	}
     }
 

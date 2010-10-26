@@ -16,9 +16,15 @@
 # set debug(base)	dbname=dns-debug
 # set debug(mail)	{pda@crc.u-strasbg.fr}
 
+package require snit			;# tcllib
+
 ##############################################################################
 # Paramètres de la librairie
 ##############################################################################
+
+#
+# Divers formats de tabeaux
+#
 
 set libconf(tabdroits) {
     global {
@@ -299,6 +305,7 @@ proc fermer-base {dbfd} {
 #   2003/05/13 : pda/jean : intégration dans dns et utilisation de auth
 #   2007/10/05 : pda/jean : adaptation aux objets "authuser" et "authbase"
 #   2007/10/26 : jean     : ajout du log
+#   2010/10/25 : pda      : ajout du dnsconfig
 #
 
 proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabcorvar logparam} {
@@ -339,6 +346,14 @@ proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabc
     set logmethod [lindex $logparam 1]
     set logmedium [lindex $logparam 2]
     set log [::webapp::log create %AUTO% -subsys $logsubsys -method $logmethod -medium $logmedium]
+
+    #
+    # Initialisation des paramètres de configuration
+    #
+
+    config dnsconfig
+    dnsconfig setdb $dbfd
+    dnsconfig setlang "fr"
 
     #
     # Le login de l'utilisateur (la page est protégée par mot de passe)
@@ -3735,58 +3750,335 @@ proc ajouter-entree {dbfd msg table tabvalvar} {
 ##############################################################################
 
 #
-# Lecture des paramètres de configuration
+# Classe d'accès aux paramètres de configuration
 #
-# Entrée :
-#   - paramètres :
-#	- dbfd : accès à la base
-#	- clef : clef de configuration
-# Sortie :
-#   - valeur de retour : clef de configuration
+# Cette classe représente un moyen simple d'accéder aux paramètres
+# de configuration de l'application stockés dans la base WebDNS.
 #
-# Historique
-#   2001/03/21 : pda     : conception
-#   2003/12/08 : pda     : reprise de sos
-#
-
-proc getconfig {dbfd clef} {
-    set valeur {}
-    pg_select $dbfd "SELECT * FROM config WHERE clef = '$clef'" tab {
-	set valeur $tab(valeur)
-    }
-    return $valeur
-}
-
-#
-# Écriture des paramètres de configuration
-#
-# Entrée :
-#   - paramètres :
-#	- dbfd : accès à la base
-#	- clef : clef de configuration
-#	- valeur : la valeur de la clef
-#	- varmsg : message d'erreur lors de l'écriture, si besoin
-# Sortie :
-#   - valeur de retour : 1 si ok, ou 0 en cas d'erreur
-#   - paramètre varmsg : message d'erreur éventuel
+# Méthodes :
+# - setdb $dbfd
+#	positionne l'accès à la base de données dans laquelle sont
+#	stockés les paramètres
+# - setlang
+#	positionne la langue utilisée pour rechercher les descriptions
+# - class
+#	renvoie toutes les classes connues
+# - desc class-or-key
+#	renvoie la description associée à la classe ou à la clef
+# - keys [ class ]
+#	renvoie toutes les clefs associées à la classe, ou toutes
+#	les clefs connues
+# - keytype key
+#	renvoie le type de la clef données, sous la forme d'une
+#	liste {string|bool|text|menu x}. X n'est présent que pour
+#	le type menu
+# - keyhelp key
+#	renvoie le message d'aide associé à une clef
+# - get key
+#	renvoie la valeur valeur associée à une clef
+# - set key val
+#	positionne la valeur associée à une clef, et retourne une
+#	chaîne vide, ou un message d'erreur
 #
 # Historique
-#   2001/03/21 : pda     : conception
-#   2003/12/08 : pda     : reprise de sos
+#   2001/03/21 : pda     : conception de getconfig/setconfig
+#   2003/12/08 : pda     : reprise depuis sos
+#   2010/10/25 : pda     : transformation sous forme de classe
 #
 
-proc setconfig {dbfd clef valeur varmsg} {
-    upvar $varmsg msg
+snit::type ::config {
+    # database handle
+    variable db ""
 
-    set r 0
-    set sql "DELETE FROM config WHERE clef = '$clef'"
-    if {[::pgsql::execsql $dbfd $sql msg]} then {
-	set v [::pgsql::quote $valeur]
-	set sql "INSERT INTO config VALUES ('$clef', '$v')"
-	if {[::pgsql::execsql $dbfd $sql msg]} then {
-	    set r 1
+    # default language
+    variable lang "fr"
+
+    # configuration parameter specification
+    variable configspec {
+	{dns
+	    {
+		fr {Paramètres généraux}
+		en {General parameters}
+	    }
+	    {datefmt {string}
+		fr {{Format d'affichage des dates/heures}
+		    {Format d'affichage des dates et des heures,
+			utilisé dans l'édition et l'affichage des
+			données. Voir la page de manuel clock(n)
+			de Tcl.}
+		}
+	    }
+	    {jourfmt {string}
+		fr {{Format d'affichage des jours}
+		    {Format d'affichage des dates (sans l'heure).
+		    Voir la page de manuel clock(n) de Tcl.}
+		}
+	    }
+	}
+	{dhcp
+	    {
+		fr {Paramètres DHCP}
+		en {DHCP parameters}
+	    }
+	    {default_lease_time {string}
+		fr {{default_lease_time}
+		    {Valeur du paramètre DHCP "default_lease_time"
+			utilisé lors de la génération d'intervalles
+			dynamiques, en secondes. Cette valeur est
+			utilisée si le paramètre spécifique de
+			l'intervalle est nul.}
+		}
+	    }
+	    {max_lease_time {string}
+		fr {{max_lease_time}
+		    {Valeur du paramètre DHCP "max_lease_time"
+		    utilisé lors de la génération d'intervalles
+		    dynamiques, en secondes.  Cette valeur est
+		    utilisée si le paramètre spécifique de l'intervalle
+		    est nul.}
+		}
+	    }
+	    {min_lease_time {string}
+		fr {{min_lease_time}
+		    {Valeur minimale des paramètres DHCP spécifiés
+			dans les intervalles dynamiques. Cette
+			valeur permet uniquement d'éviter qu'un
+			correspondant réseau précise des paramètres
+			de bail trop petits et génère un trafic
+			important.}
+		}
+	    }
+	}
+	{auth
+	    {
+		fr {Paramètres d'authentification}
+		en {Authentification parameters}
+	    }
+	    {authmailfrom {bool}
+		fr {{Utiliser le "From" spécifié dans "auth"}
+		    {Utiliser l'information provenant de l'application
+			"auth" plutôt que le champ suivant.}
+		}
+	    }
+	    {mailfrom {string}
+		fr {{"From" des mails de modification de passwd}
+		    {Champ "From" des mails envoyés par l'application
+			à un utilisateur lors des changements de
+			mot de passe.}
+		}
+	    }
+	    {authmailreplyto {bool}
+		fr {{Utiliser le "Reply-To" spécifié dans "auth"}
+		    {Utiliser l'information provenant de l'application
+			"auth" plutôt que le champ suivant.}
+		}
+	    }
+	    {mailreplyto {string}
+		fr {{"Reply-To" des mails de modification de passwd}
+		    {Champ "Reply-To" des mails envoyés par
+			l'application à un utilisateur lors des
+			changements de mot de passe.}
+		}
+	    }
+	    {authmailcc {bool}
+		fr {{Utiliser le "Cc" spécifié dans "auth"}
+		    {tiliser l'information provenant de l'application
+			"auth" plutôt que le champ suivant.}
+		}
+	    }
+	    {mailcc {string}
+		fr {{"Cc" des mails de modification de passwd}
+		    {Destinataire(s) auxiliaires des mail envoyés
+			par l'application à un utilisateur lors des
+			changements de mot de passe.
+			Cela peut éventuellement être une liste d'adresses,
+			l'espace faisant office de séparateur.}
+		}
+	    }
+	    {authmailbcc {bool}
+		fr {{Utiliser le "Bcc" spécifié dans "auth"}
+		    {Utiliser l'information provenant de l'application
+			"auth" plutôt que le champ suivant.}
+		}
+	    }
+	    {mailbcc {string}
+		fr {{"Bcc" des mails de modification de passwd}
+		    {Destinataire(s) caché(s) des mail envoyés par
+			l'application à un utilisateur lors des
+			changements de mot de passe.  Cela peut
+			éventuellement être une liste d'adresses,
+			l'espace faisant office de séparateur.}
+		}
+	    }
+	    {authmailsubject {bool}
+		fr {{Utiliser le "Subject" spécifié dans "auth"}
+		    {Utiliser l'information provenant de l'application
+			"auth" plutôt que le champ suivant.}
+		}
+	    }
+	    {mailsubject {string}
+		fr {{"Subject" des mails de moditication de passwd}
+		    {Champ "Subject" des mails envoyés par
+			l'application à un utilisateur lors des
+			changements de mot de passe.}
+		}
+	    }
+	    {authmailbody {bool}
+		fr {{Utiliser le corps spécifié dans "auth"}
+		    {Utiliser l'information provenant de l'application
+			"auth" plutôt que le champ suivant.}
+		}
+	    }
+	    {mailbody {text}
+		fr {{Corps du mail de modification de passwd}
+		    {Corps des mails envoyés par l'application à
+			un utilisateur lors des changements de mot
+			de passe. Les paramètres suivants sont
+			substitués: <ul><li>%1$s : login de
+			l'utilisateur</li> <li>%2$s : mot de passe
+			généré</li></ul>.}
+		}
+	    } {groupes {string}
+		fr {{Groupes Web autorisés}
+		    {Liste de groupes (conformément à l'authentification
+			Apache) autorisés pour la création d'un
+			utilisateur.  Si la liste est vide, tous
+			les groupes existants dans la base
+			d'authentification sont autorisés.}
+		}
+	    }
 	}
     }
 
-    return $r
+    #
+    # Internal representation of parameter specification
+    #
+    # (class)			{<cl1> ... <cln>}
+    # (class:<cl1>)		{<k1> ... <kn>}
+    # (class:<cl1>:desc:<lang>)	<desc>
+    # (key:<k1>:type)		{string|bool|text|menu ...}
+    # (key:<k1>:desc:<lang>)	<desc>
+    # (key:<k1>:help:<lang>)	<text>
+    #
+
+    variable internal -array {}
+
+    constructor {} {
+	set internal(class) {}
+	foreach class $configspec {
+	    lassign $class classname classdesc
+
+	    lappend internal(class) $classname
+	    set internal(class:$classname) {}
+
+	    array set t $classdesc
+	    foreach lang [array names t] {
+		set internal(class:$classname:desc:$lang) $t($lang)
+	    }
+	    unset t
+
+	    foreach key [lreplace $class 0 1] {
+		lassign $key keyname keytype
+
+		lappend internal(class:$classname) $keyname
+		set internal(key:$keyname:type) $keytype
+
+		array set t [lreplace $key 0 1]
+		foreach lang [array names t] {
+		    lassign $t($lang) desc help
+		    set internal(key:$keyname:desc:$lang) $desc
+		    set internal(key:$keyname:help:$lang) $help
+		}
+		unset t
+	    }
+	}
+    }
+
+    method setdb {dbfd} {
+	set db $dbfd
+    }
+
+    method setlang {lg} {
+	set lang $lang
+    }
+
+    # returns all classes
+    method class {} {
+	return $internal(class)
+    }
+
+    # returns textual description of the given class or key
+    method desc {cork} {
+	set r $cork
+	if {[info exists internal(class:$cork)]} then {
+	    if {[info exists internal(class:$cork:desc:$lang)]} then {
+		set r $internal(class:$cork:desc:$lang)
+	    }
+	} elseif {[info exists internal(key:$cork:type)]} {
+	    if {[info exists internal(key:$cork:desc:$lang)]} then {
+		set r $internal(key:$cork:desc:$lang)
+	    }
+	}
+	return $r
+    }
+
+    # returns all keys associated with a class (default  : all classes)
+    method keys {{class {}}} {
+	if {[llength $class] == 0} then {
+	    set class $internal(class)
+	}
+	set lk {}
+	foreach c $class {
+	    set lk [concat $lk $internal(class:$c)]
+	}
+	return $lk
+    }
+
+    # returns key type
+    method keytype {key} {
+	set r ""
+	if {[info exists internal(key:$key:type)]} then {
+	    set r $internal(key:$key:type)
+	}
+	return $r
+    }
+
+    # returns key help
+    method keyhelp {key} {
+	set r $key
+	if {[info exists internal(key:$key:type)]} {
+	    if {[info exists internal(key:$key:help:$lang)]} then {
+		set r $internal(key:$key:help:$lang)
+	    }
+	}
+	return $r
+    }
+
+    # returns key value
+    method get {key} {
+	set val {}
+	pg_select $db "SELECT * FROM config WHERE clef = '$key'" tab {
+	    set val $tab(valeur)
+	}
+	return $val
+    }
+
+    # set key value
+    # returns empty string if ok, or an error message
+    method set {key val} {
+	set r ""
+	set k [::pgsql::quote $key]
+	set sql "DELETE FROM config WHERE clef = '$k'"
+	if {[::pgsql::execsql $db $sql msg]} then {
+	    set v [::pgsql::quote $val]
+	    set sql "INSERT INTO config VALUES ('$k', '$v')"
+	    if {! [::pgsql::execsql $db $sql msg]} then {
+		set r "Cannot set '$key' to '$val': $msg"
+	    }
+	} else {
+	    set r "Cannot fetch '$key': $msg"
+	}
+
+	return $r
+    }
 }

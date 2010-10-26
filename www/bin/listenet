@@ -309,7 +309,7 @@ proc main {} {
     # Sortie du résultat
     #
 
-    set datefmt [getconfig $dbfd "datefmt"]
+    set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
     switch -- $format  {
 	html	{

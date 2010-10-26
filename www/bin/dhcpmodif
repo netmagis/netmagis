@@ -139,7 +139,7 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
     # Récupérer le paramètre minimal des baux DHCP
     #
 
-    set min_lease_time [getconfig $dbfd "min_lease_time"]
+    set min_lease_time [dnsconfig get "min_lease_time"]
 
     #
     # Récupérer la liste des id d'intervalles pré-existants trouvés

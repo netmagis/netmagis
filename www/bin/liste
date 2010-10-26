@@ -279,7 +279,7 @@ proc main {} {
 	# ajouter au tableau.
 	#
 
-	set jourfmt [getconfig $dbfd "jourfmt"]
+	set jourfmt [dnsconfig get "jourfmt"]
 	set sql "SELECT rr.nom || '.' || domaine.nom AS nom,
 			rr_ip.adr,
 			rr.commentaire, rr.respnom, rr.respmel, rr.date,
@@ -356,7 +356,7 @@ proc main {} {
     # Sortie du résultat
     #
 
-    set datefmt [getconfig $dbfd "datefmt"]
+    set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
     switch -- $format  {
 	html	{
