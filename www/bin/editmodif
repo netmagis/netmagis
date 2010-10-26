@@ -126,6 +126,13 @@ proc editmodif-infos {dbfd idcor ft} {
     }
 
     #
+    # Pour l'affichage du nom original de la machine
+    #
+
+    set vnom $nom
+    set vdomaine $domaine
+
+    #
     # Pré-saisir les champs à éditer
     #
 
@@ -160,6 +167,8 @@ proc editmodif-infos {dbfd idcor ft} {
     ::webapp::send html [::webapp::file-subst $conf(page-edit-infos) \
 				[list \
 					[list %IDRR% $trr(idrr)] \
+					[list %VNOM% $vnom] \
+					[list %VDOMAINE% $vdomaine] \
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
 					[list %MAC% $mac] \

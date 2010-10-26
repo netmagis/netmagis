@@ -42,7 +42,7 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Modification des informations}
+    \titre {1} {Modification des informations de %VNOM%.%VDOMAINE%}
 
     <FORM METHOD="POST" ACTION="%HOMEURL%/bin/traitemodif">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="modif-infos">
@@ -90,6 +90,10 @@
 	}
 	<INPUT TYPE="SUBMIT" VALUE="Valider">
     </FORM>
+
+    Astuce : pour changer l'adresse IP d'une machine, il suffit
+    d'\lien {ajouter une nouvelle adresse} {%HOMEURL%/bin/ajout},
+    puis de \lien {supprimer l'ancienne adresse} {%HOMEURL%/bin/suppr}.
 }
 
 }
