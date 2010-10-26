@@ -9,7 +9,7 @@
 # Appelé par : index.htgt
 #
 # Paramètres (formulaire ou URL) :
-#	- critere : critere de recherche (ip, cidr, ou fqdn)
+#	- critere : critere de recherche (ip, cidr, ou fqdn, ou _ pour ici)
 #
 # Historique
 #   2002/07/25 : pda      : création
@@ -17,6 +17,7 @@
 #   2004/01/14 : pda/jean : ajout IPv6
 #   2004/08/06 : pda/jean : extension des droits sur les réseaux
 #   2005/02/24 : pda      : ajout cas rôle mail sans adresse IP
+#   2010/10/17 : pda      : ajout recherche "où suis-je"
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -47,6 +48,7 @@ set conf(log)		%LOG%
 
 set conf(form)	{
 	{critere	0 1 {}}
+	{ousuisje	0 1 {}}
 }
 
 #
@@ -114,6 +116,16 @@ proc main {} {
 	#
 	corresp-erreur "" ""
 
+    } elseif {[string equal $critere "_"]} then {
+	global env
+
+	if {[info exists env(REMOTE_ADDR)]} then {
+	    set adr $env(REMOTE_ADDR)
+	    set critere $adr
+	    lire-rr-par-ip $dbfd $adr tabrr
+	} else {
+	    corresp-erreur "" ""
+	}
     } elseif {[string equal [syntaxe-ip $dbfd $critere "inet"] ""]} then {
 	#
 	# Adresse IP

@@ -114,6 +114,7 @@ mcd-dns.gif: mcd-dns.fig
 
 html:
 	find . -name "*.htgt" -print | \
+	    grep -v '/\.svn/' | \
 	    while read f ; do \
 		h=`echo $$f | sed 's/.htgt$$//'` ; \
 		echo $$f ; \

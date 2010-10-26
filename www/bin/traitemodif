@@ -20,6 +20,8 @@
 #	- commentaire : informations complémentaires
 #	- respnom : nom+prénom du responsable
 #	- respmel : mél du responsable
+#	- nextprog, nextargs : suite du parcours (en cas d'édition depuis
+#		la carte ou depuis la recherche de plage consécutive)
 #
 # Historique
 #   2002/05/03 : pda/jean : création
@@ -32,6 +34,7 @@
 #   2007/10/25 : jean     : log des actions de modification
 #   2008/02/13 : pda/jean : le responsable est le correspondant si pas précisé
 #   2008/07/25 : pda/jean : ajout du droit d'émission SMTP et confirmation
+#   2010/10/14 : pda      : codage parcours (via next*)
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -61,6 +64,11 @@ set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
 
+# scripts cgi
+set conf(script-map)	bin/liste
+set conf(script-liste)	bin/liste
+set conf(script-edit)	bin/edit
+
 # le champ discriminant pour la suite
 set conf(form)		{
 	{action		1 1}
@@ -78,6 +86,8 @@ set conf(form-modif-infos)	{
 	{commentaire	1 1}
 	{respnom	1 1}
 	{respmel	1 1}
+	{nextprog	1 1}
+	{nextargs	1 1}
 }
 
 #
@@ -125,6 +135,8 @@ proc traitemodif-infos {dbfd tc ft} {
     set respnom       [string trim [lindex $ftab(respnom) 0]]
     set respmel       [string trim [lindex $ftab(respmel) 0]]
     set confirm       [string trim [lindex $ftab(confirm) 0]]
+    set nextprog      [string trim [lindex $ftab(nextprog) 0]]
+    set nextargs      [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Vérifier la syntaxe de l'adresse MAC
@@ -227,7 +239,7 @@ proc traitemodif-infos {dbfd tc ft} {
 	#
 
 	set l {nom domaine mac iddhcpprofil hinfo droitsmtp
-			commentaire respnom respmel}
+			commentaire respnom respmel nextprog nextargs}
 	set hidden [::webapp::hide-parameters $l ftab]
 	::webapp::send html [::webapp::file-subst $conf(page-modif-smtp) \
 					[list \
@@ -289,7 +301,7 @@ proc traitemodif-infos {dbfd tc ft} {
     }
 
     #
-    # Sortie du résultat
+    # Préparer la sortie du résultat
     #
 
     set commentaire [html-tab-string $commentaire]
@@ -302,11 +314,35 @@ proc traitemodif-infos {dbfd tc ft} {
 	set droitsmtp "Non"
     }
 
+    #
+    # Se rappeler du correspondant qui a affectué la modification
+    #
+
     set m "modification de $nom.$domaine :"
     foreach c {mac dhcpprofil hinfo droitsmtp commentaire respnom respmel} {
 	append m " $c=[set $c]"
     }
     writelog "modifrr" $login $m
+
+    #
+    # Préparer la suite du parcours
+    #
+
+    switch -- $nextprog {
+	map {
+	    set suite "$conf(homeurl)/$conf(script-map)?format=carte&$nextargs"
+	}
+	list {
+	    set suite "$conf(homeurl)/$conf(script-liste)?format=consulter&$nextargs"
+	}
+	default {
+	    set suite "$conf(homeurl)/$conf(script-edit)"
+	}
+    }
+
+    #
+    # Sortie du résultat
+    #
 
     ::webapp::send html [::webapp::file-subst $conf(page-modif-infos) \
 				[list \
@@ -319,6 +355,7 @@ proc traitemodif-infos {dbfd tc ft} {
 					[list %COMMENTAIRE% $commentaire] \
 					[list %RESPNOM% $respnom] \
 					[list %RESPMEL% $respmel] \
+					[list %SUITE% $suite] \
 				    ] \
 			    ]
 

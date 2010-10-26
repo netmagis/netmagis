@@ -1,13 +1,13 @@
 {
-\* $Id$
+\* $Id: ajout.htgt 404 2010-10-08 20:09:57Z pda $
 \modele {texte}
 
-\set {auteur} {pda/jean}
-\set {date}   {23/05/2002}
+\set {auteur} {pda}
+\set {date}   {10/10/2010}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    CRC - DNS - Groupes
+    CRC - DNS
 }
 
 \*******************************************************************************
@@ -21,7 +21,6 @@
 \bandeau {
 	DNS v%VERSION%
     } {
-
 	\elementbandeau {Actions} {
 	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
 	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
@@ -33,7 +32,6 @@
 	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
 	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
-	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
 	}
 	\elementbandeau {Voir aussi} {
 	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
@@ -41,28 +39,48 @@
 	}
 }
 
+\* affichage ou non des différentes puces
+
+\set {header} {
+    <style type="text/css">
+	#suppruneip \{
+	    display: %DISPUNEIP%;
+	\}
+    </style>
+}
+
+
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Incohérences dans la %MSGACT%}
+    \titre {1} {Édition de l'adresse %ADR%}
 
-    Les incohérences suivantes ont été détectées~:
+    Que souhaitez-vous faire~?
 
-    \retrait {<FONT COLOR="#FF0000">%MESSAGE%</FONT>}
+    <ul>
+	<li>
+	    <a href="%HOMEURL%/bin/traitesuppr?action=suppr-nom&confirm=oui&nom=%NOM%&domaine=%DOMAINE%&%NEXT%"
+		>Supprimer</a>
+		la machine '%NOM%.%DOMAINE%'.
+	    </li>
+	<li id="suppruneip">
+	    <a href="%HOMEURL%/bin/traitesuppr?action=suppr-ip&confirm=oui&adr=%ADR%&%NEXT%"
+		>Supprimer l'adresse</a>
+		'%ADR%' de '%NOM%.%DOMAINE%'
+		(mais il restera les autres adresses).
+	    </li>
+	<li>
+	    <a href="%HOMEURL%/bin/editmodif?action=modif-infos&nom=%NOM%&domaine=%DOMAINE%&%NEXT%"
+		>Éditer les informations</a>
+		de '%NOM%.%DOMAINE%'.
+	    </li>
+	<li>
+	    <a href="%HOMEURL%/bin/liste?format=carte&%NEXTARGS%"
+		>Revenir à l'affichage précédent</a>
+	    </li>
+    </ul>
 
-    Vous pouvez~:
-
-    \liste {
-	\item {passer outre et demander quand même la modification~:
-	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/admgrpmodif">
-		%HIDDEN%
-		<INPUT TYPE="SUBMIT" VALUE="Je confirme">
-	    </FORM>
-	}
-	\item {utiliser votre navigateur pour revenir à la page
-	    précédente et modifier votre demande
-	}
-    }
+    %MACHINE%
 }
 
 }

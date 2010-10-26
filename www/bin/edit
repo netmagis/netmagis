@@ -1,0 +1,205 @@
+#!%TCLSH%
+
+# $Id$
+
+#
+# Script pour permettre au correspondant de choisir la modification
+# qu'il veut effectuer sur l'adresse sélectionnée.
+#
+# Appelé par : script liste (carte des adresses disponibles)
+#
+# Paramètres (formulaire ou URL) :
+#   - adr : adresse IP (v4 en l'occurrence sélectionnée)
+#   - nextprog, nextargs : suite du parcours (en cas d'ajout la carte
+#		ou depuis la recherche de plage consécutive)
+#
+# Historique
+#   2010/10/10 : pda      : spécification
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(page)		$conf(lib)/edit.html
+set conf(err)		$conf(lib)/erreur.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(auth)		%AUTH%
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+set conf(log)		%LOG%
+
+# scripts cgi
+set conf(script-map)	bin/liste
+set conf(script-liste)	bin/liste
+set conf(script-accueil) bin/accueil
+
+#
+# Les paramètres du formulaire
+#
+
+set conf(form)		{
+	{adr		1 1}
+	{nextprog	1 1}
+	{nextargs	1 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require webapp
+package require pgsql
+package require arrgen
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor $conf(log)
+
+    set idcor $tabcor(idcor)
+
+    #
+    # Lire les champs du formulaire
+    #
+
+    set adr      [string trim [lindex $ftab(adr) 0]]
+    set nextprog [string trim [lindex $ftab(nextprog) 0]]
+    set nextargs [string trim [lindex $ftab(nextargs) 0]]
+
+    #
+    # Vérifier la syntaxe de l'adresse IP
+    #
+
+    set m [syntaxe-ip $dbfd $adr "inet"]
+    if {[string length $m] > 0} then {
+	::webapp::error-exit $conf(err) "Erreur sur l'adresse '$adr': $m"
+    }
+
+    #
+    # Vérifier que l'adresse IP appartient bien à une des plages
+    # autorisées pour le correspondant
+    #
+
+    if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
+	::webapp::error-exit $conf(err) "Vous n'avez pas accès à l'adresse '$adr'"
+    }
+
+    #
+    # Vérifier que l'adresse existe, en récupérant toutes les
+    # informations de l'objet.
+    #
+
+    if {! [lire-rr-par-ip $dbfd $adr trr]} then {
+	::webapp::error-exit $conf(err) "L'adresse '$adr' n'existe pas dans la base."
+    }
+
+    #
+    # Valider l'accès à ce nom
+    #
+
+    set nom     $trr(nom)
+    set domaine $trr(domaine)
+    set msg [valide-droit-nom $dbfd $idcor $nom $domaine bidon "supprimer-un-nom"]
+    if {! [string equal $msg ""]} then {
+	::webapp::error-exit $conf(err) $msg
+    }
+
+    #
+    # Est-ce qu'il y a une seule adresse IP ?
+    # Si = 1 : supprimer l'adresse revient à supprimer l'ensemble
+    # Si > 1 : supprimer l'adresse ne fait que supprimer *une* des adresses
+    # On fait ce test essentiellement pour différencier le message.
+    #
+
+    if {[llength $trr(ip)] == 1} then {
+	# ne pas afficher l'action "supprimer une ip mais pas le nom"
+	set dispuneip "none"
+    } else {
+	# afficher l'action "supprimer une ip mais pas le nom"
+	set dispuneip "block"
+    }
+
+    #
+    # Préparer l'affichage des informations à afficher le cas échéant
+    #
+
+    set machine [presenter-rr $dbfd -1 trr]
+
+    #
+    # Préparer la suite du parcours
+    #
+
+    set next [::webapp::post-string $nextargs]
+    set next "nextprog=$nextprog&nextargs=$next"
+
+    switch -- $nextprog {
+	map {
+	    set suite "$conf(homeurl)/$conf(script-map)?format=carte&$nextargs"
+	}
+	list {
+	    set suite "$conf(homeurl)/$conf(script-liste)?format=consulter&$nextargs"
+	}
+	default {
+	    set suite "$conf(homeurl)/$conf(script-accueil)"
+	}
+    }
+
+    #
+    # Sortie de la page de choix d'édition
+    #
+
+    ::webapp::send html \
+	    [::webapp::file-subst $conf(page) \
+			[list \
+				[list %ADR%         $adr] \
+				[list %NOM%         $nom] \
+				[list %DOMAINE%     $domaine] \
+				[list %MACHINE%     $machine] \
+				[list %NEXTARGS%    $nextargs] \
+				[list %NEXT%        $next] \
+				[list %SUITE%       $suite] \
+				[list %DISPUNEIP%   $dispuneip] \
+			    ] \
+		    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

@@ -31,6 +31,7 @@
 	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
 	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
+	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
 	}
 	\elementbandeau {Voir aussi} {
 	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
@@ -38,12 +39,53 @@
 	}
 }
 
+\* cas particulier pour l'affichage de la "carte" des adresses disponibles
+
+\set {header} {
+    <style type="text/css">
+	td.notav \{
+	    text-align: center;
+	    background-color: silver;
+	    width: 6%;
+	\}
+	td.noname-nodhcp  \{
+	    text-align: center;
+	    background-color: palegreen;
+	    text-decoration:none;
+	    width: 6%;
+	\}
+	td.name-nodhcp  \{
+	    text-align: center;
+	    background-color: red;
+	    width: 6%;
+	\}
+	td.noname-dhcp  \{
+	    text-align: center;
+	    background-color: darkorange;
+	    text-decoration:none;
+	    width: 6%;
+	\}
+	td.name-dhcp  \{
+	    text-align: center;
+	    background-color: darkred;
+	    width: 6%;
+	\}
+	#legend table \{
+	    border: 1px solid black;
+	\}
+	#map a:link, #map a:visited, #map a:hover, #map a:active \{
+	    text-decoration: none;
+	    color: black;
+	\}
+    </style>
+}
+
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Liste des %TITRE%}
+    \titre {1} {%TITRE%}
 
-    %NBMACHINES% machine%S% au %DATE%
+    Liste au %DATE%.
 
     %TABLEAU%
 }

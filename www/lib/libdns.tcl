@@ -1470,7 +1470,7 @@ proc syntaxe-nom {nom} {
 # Entrée :
 #   - paramètres :
 #	- adr : l'adresse à tester
-#	- type : "inet" ou "cidr" ou "loosecidr" ou "macaddr" ou "inet4"
+#	- type : "inet", "cidr", "loosecidr", "macaddr", "inet4", "cidr4"
 # Sortie :
 #   - valeur de retour : chaîne vide (ok) ou non vide (message d'erreur)
 #
@@ -1488,6 +1488,7 @@ proc syntaxe-nom {nom} {
 #   2004/10/08 : pda/jean : ajout du cas inet4
 #   2004/10/20 : jean     : interdit le / pour autre chose que le type cidr
 #   2008/07/22 : pda      : nouveau type loosecidr (autorise /)
+#   2010/10/07 : pda      : nouveau type cidr4
 #
 
 proc syntaxe-ip {dbfd adr type} {
@@ -1495,6 +1496,11 @@ proc syntaxe-ip {dbfd adr type} {
     switch $type {
 	inet4 {
 	    set cast "inet"
+	    set fam  4
+	}
+	cidr4 {
+	    set cast "cidr"
+	    set type "cidr"
 	    set fam  4
 	}
 	loosecidr {

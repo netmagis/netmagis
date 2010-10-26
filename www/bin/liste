@@ -13,7 +13,7 @@
 #	- plages6 : liste de plages IPv6 (idreseau dans tables reseau/plage)
 #	- cidr : cidr saisi par l'utilisateur
 #   - format de sortie
-#	- format : "Consulter" ou "Imprimer"
+#	- format : "Consulter" ou "Imprimer" ou "Adresses libres"
 #
 # Historique
 #   2002/03/27 : pda/jean : création
@@ -27,6 +27,8 @@
 #   2004/08/05 : pda/jean : ajout MAC
 #   2004/08/06 : pda/jean : extension des droits sur les réseaux
 #   2008/09/24 : pda/jean : ajout droitsmtp
+#   2010/10/07 : pda      : début ajout adresses libres
+#   2010/10/13 : pda      : added dhcp ranges in map
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -56,11 +58,20 @@ set conf(base)		%BASE%
 set conf(nologin)	%NOLOGIN%
 set conf(log)		%LOG%
 
+# scripts cgi
+set conf(script-edit)	bin/edit
+
 set conf(form)		{
 	{plages		0 99999}
-	{cidr		1 1}
+	{cidr		1 99999}
 	{format		0 1}
 }
+
+# taille max des blocs d'adresses IPv4 dans lesquelles on cherche 
+# des adresses non déclarées
+set conf(limit-unused)	16384
+# nb d'adresses par ligne dans une "carte" d'adresses libres
+set conf(max-per-row)	16
 
 #
 # Le tableau servant à présenter le résultat
@@ -68,6 +79,7 @@ set conf(form)		{
 #	- adr IP
 #	- nom machine et aliases
 #	- adr MAC
+#	- profil dhcp
 #	- type de machine (hinfo)
 #	- informations complémentaires (texte libre)
 #	- correspondant (login)
@@ -77,7 +89,7 @@ set conf(form)		{
 set conf(tableau) {
     global {
 	chars {10 normal}
-	columns {21 17 12 9 13 17 6 6 7}
+	columns {21 17 12 9 9 13 17 6 6 7}
 	botbar {yes}
 	align {left}
 	latex {
@@ -107,14 +119,20 @@ set conf(tableau) {
 	vbar {yes}
 	colonne { }
 	vbar {yes}
+	colonne { }
+	vbar {yes}
     }
     motif {Normal} {
-	vbar {yes}
-	colonne { }
 	vbar {yes}
 	colonne {
 	    format {raw}
 	}
+	vbar {yes}
+	colonne {
+	    format {raw}
+	}
+	vbar {yes}
+	colonne { }
 	vbar {yes}
 	colonne { }
 	vbar {yes}
@@ -156,68 +174,12 @@ package require arrgen
 source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Fonctions
 ##############################################################################
 
-proc main {} {
+proc output-list {dbfd lcidr _tabcor format} {
+    upvar $_tabcor tabcor
     global conf
-
-    #
-    # Initialisation
-    #
-
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor $conf(log)
-
-    #
-    # Analyse et validation des arguments
-    #
-
-    # format de sortie
-    switch -- [lindex $ftab(format) 0] {
-	Imprimer	{ set format latex }
-	Consulter	-
-	default		{ set format html }
-    }
-
-    # le CIDR demandé par le correspondant
-    set cidr [string trim [lindex $ftab(cidr) 0]]
-    if {[string length $cidr] > 0} then {
-	set m [syntaxe-ip $dbfd $cidr "cidr"]
-	if {[string length $m] > 0} then {
-	    ::webapp::error-exit $conf(err) $m
-	}
-    }
-
-    # les plages demandées par le correspondant
-    set nplages [llength $ftab(plages)]
-
-    # compatibilité entre les deux arguments
-    if {[string length $cidr] == 0 && $nplages == 0} then {
-	::webapp::error-exit $conf(err) "Vous devez choisir un CIDR ou au moins une plage"
-    }
-    if {[string length $cidr] > 0 && $nplages > 0} then {
-	::webapp::error-exit $conf(err) "Vous ne pouvez pas choisir un CIDR et une plage"
-    }
-
-    #
-    # Valider les idreseaux fournis, et récupérer les CIDR correspondants
-    #
-
-    set lcidr {}
-    if {[string length $cidr] > 0} then {
-	lappend lcidr $cidr
-    }
-    if {$nplages > 0} then {
-	foreach idreseau $ftab(plages) {
-	    set l [valide-idreseau $dbfd $idreseau \
-					$tabcor(idgrp) "consult" {4 6} msg]
-	    if {[llength $l] == 0} then {
-		::webapp::error-exit $conf(err) $msg
-	    }
-	    set lcidr [concat $lcidr $l]
-	}
-    }
 
     #
     # Boucle externe : pour chaque plage demandée dans le formulaire
@@ -227,6 +189,7 @@ proc main {} {
     lappend donnees {Gras {Adresse IP}
 			  {Noms et aliases}
 			  {Adresse MAC}
+			  {Profil DHCP}
 			  {Système}
 			  {Commentaire}
 			  {Responsable}
@@ -235,6 +198,22 @@ proc main {} {
 			  {Date}
 			}
     set nbmachines 0
+
+    #
+    # Construire la suite, c'est à dire l'url que devra suivre
+    # le script edit & co une fois la machine ajoutée.
+    #
+
+    set next {}
+    foreach cidr $lcidr {
+	lappend next cidr=$cidr
+    }
+    set next [::webapp::post-string [join $next "&"]]
+    set next "nextprog=list&nextargs=$next"
+
+    #
+    # Parcourir les plages demandées
+    #
 
     foreach cidrplage $lcidr {
 	#
@@ -283,8 +262,9 @@ proc main {} {
 	set sql "SELECT rr.nom || '.' || domaine.nom AS nom,
 			rr_ip.adr,
 			rr.commentaire, rr.respnom, rr.respmel, rr.date,
-			rr.droitsmtp, rr.mac, hinfo.texte, corresp.login
-		    FROM rr_ip, rr, domaine, hinfo, corresp
+			rr.droitsmtp, rr.mac, dhcpprofil.nom AS dhcp,
+			hinfo.texte, corresp.login
+		    FROM rr_ip, rr, domaine, hinfo, corresp, dhcpprofil
 		    WHERE rr.idrr = rr_ip.idrr
 			AND rr_ip.adr <<= ANY ($sqlallow)
 			AND NOT rr_ip.adr <<= ANY ($sqldeny)
@@ -292,11 +272,13 @@ proc main {} {
 			AND domaine.iddom = rr.iddom
 			AND rr.idhinfo = hinfo.idhinfo
 			AND rr.idcor = corresp.idcor
+			AND rr.iddhcpprofil = dhcpprofil.iddhcpprofil
 		    ORDER BY rr_ip.adr"
 	pg_select $dbfd $sql tab {
 	    set nomprimaire	$tab(nom)
 	    set adr		$tab(adr)
 	    set mac		$tab(mac)
+	    set dhcp		$tab(dhcp)
 	    set hinfo		$tab(texte)
 	    set commentaire	$tab(commentaire)
 	    set respnom    	$tab(respnom)
@@ -322,14 +304,17 @@ proc main {} {
 	    }
 	    switch -- $format {
 		html {
-		    set nom "$nomprimaire <I>$nomssecondaires</I>"
+		    set nom "$nomprimaire "
+		    append nom [::webapp::helem "i" $nomssecondaires]
+		    set url "$conf(homeurl)/$conf(script-edit)?adr=$adr&$next"
+		    set adr [::webapp::helem "a" $adr "href" $url]
 		}
 		latex {
 		    set nom "$nomprimaire \\textit \{$nomssecondaires\}"
 		}
 	    }
 	    lappend donnees [list Normal \
-				$adr $nom $mac \
+				$adr $nom $mac $dhcp \
 				$hinfo $commentaire $responsable \
 				$droitsmtp \
 				$login $date]
@@ -338,19 +323,10 @@ proc main {} {
     }
 
     #
-    # Cosmétique...
-    #
-    set s ""
-    if {$nbmachines > 1} then {
-	set s "s"
-    }
-
-    #
     # Générer le zoli tableau
     #
 
     set tableau [::arrgen::output $format $conf(tableau) $donnees]
-
 
     #
     # Sortie du résultat
@@ -358,15 +334,17 @@ proc main {} {
 
     set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
+
     switch -- $format  {
 	html	{
+	    set tableau "<p>Adresses déclarées (IPv4 + IPv6) : $nbmachines</p>$tableau"
+
 	    ::webapp::send html [::webapp::file-subst $conf(liste) \
 					[list \
-					    [list %TITRE%	"machines"] \
+					    [list %TITRE%	"Liste des adresses déclarées"] \
 					    [list %TABLEAU%	$tableau] \
 					    [list %DATE%	$date] \
-					    [list %NBMACHINES%	$nbmachines] \
-					    [list %S%		$s] \
+					    [list %NBADR%	$nbmachines] \
 					] \
 				]
 	}
@@ -377,11 +355,279 @@ proc main {} {
 					    [list %TITRE%	"machines"] \
 					    [list %TABLEAU%	$tableau] \
 					    [list %DATE%	$date] \
-					    [list %NBMACHINES%	$nbmachines] \
-					    [list %S%		$s] \
+					    [list %QUOI%	"déclarées"] \
+					    [list %NBADR%	$nbmachines] \
 					] \
 				]
 	}
+    }
+}
+
+proc output-map {dbfd lcidr _tabcor format} {
+    upvar $_tabcor tabcor
+    global conf
+
+    #
+    # Ne conserver dans lcidr que les plages IPv4 (et pas IPv6)
+    # car la fonction SQL availip() ne fonctionne qu'en IPv4.
+    #
+
+    set lcidrv4 {}
+    set m ""
+    foreach cidrplage $lcidr {
+	set r [syntaxe-ip $dbfd $cidrplage "cidr4"]
+	if {[string eq $r ""]} then {
+	    lappend lcidrv4 $cidrplage
+	} else {
+	    append m "$r<br>"
+	}
+    }
+
+    if {[llength $lcidrv4] == 0} then {
+	::webapp::error-exit $conf(err) "Aucun CIDR valide ($m)"
+    }
+
+    #
+    # Construire la suite, c'est à dire l'url que devra suivre
+    # le script traiteajout une fois la machine ajoutée.
+    #
+
+    set next {}
+    foreach cidr $lcidrv4 {
+	lappend next cidr=$cidr
+    }
+    set next [::webapp::post-string [join $next "&"]]
+    set next "nextprog=map&nextargs=$next"
+
+    #
+    # Legend
+    #
+
+    for {set i 0} {$i < 5} {incr i} {
+	set legend($i) 0
+    }
+
+    #
+    # Parcourir toutes les adresses
+    # - revenir à la ligne toutes les 16 adresses
+    # - afficher la bonne couleur
+    #
+
+    set tableau ""
+    set limite $conf(limit-unused)
+    set maxrow $conf(max-per-row)
+
+    foreach cidr $lcidrv4 {
+	set html ""
+	set n 0
+	set navail 0
+	set sql "SELECT * FROM markcidr ('$cidr', $limite, $tabcor(idgrp))"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    ::webapp::error-exit $conf(err) "Erreur dans le cidr '$cidr' ($msg)"
+	}
+
+	set sql "SELECT * FROM allip ORDER BY adr"
+
+	#
+	# Explore all adresses (not available, free, or busy)
+	#
+
+	pg_select $dbfd $sql tab {
+	    set adr   $tab(adr)
+	    set avail $tab(avail)
+	    set fqdn  $tab(fqdn)
+
+	    # need this legend
+	    incr legend($avail)
+
+	    # extract last byte of address
+	    set last ""
+	    regexp {[^.]*$} $adr last
+
+	    if {$n % $maxrow == 0} then {
+		set line [::webapp::helem td $adr]
+	    }
+
+	    append line "\n"
+	    switch -- $avail {
+		0	{
+		    # not available (user has not the right, addr does'nt exists)
+		    append line [::webapp::helem "td" $last "class" "notav"]
+		}
+		1	{
+		    # not declared and not in a dhcp range
+		    set h [::webapp::helem "a" $last \
+			    "href" "$conf(homeurl)/bin/ajout?adr=$adr&$next"]
+		    append line [::webapp::helem "td" $h "class" "noname-nodhcp"]
+		    incr navail
+		}
+		2	{
+		    # declared and not in a dhcprange
+		    set h [::webapp::helem "a" $last \
+			    "href" "$conf(homeurl)/bin/edit?adr=$adr&$next" \
+			    "title" $fqdn]
+		    append line [::webapp::helem "td" $h "class" "name-nodhcp"]
+		}
+		3	{
+		    # not declared and in a dhcp range
+		    set h [::webapp::helem "a" $last \
+			    "href" "$conf(homeurl)/bin/ajout?adr=$adr&$next"]
+		    append line [::webapp::helem "td" $h "class" "noname-dhcp"]
+		}
+		4	{
+		    # declared and in a dhcprange
+		    set h [::webapp::helem "a" $last \
+			    "href" "$conf(homeurl)/bin/edit?adr=$adr&$next" \
+			    "title" $fqdn]
+		    append line [::webapp::helem "td" $h "class" "name-dhcp"]
+		}
+		default {
+		    ::webapp::error-exit $conf(err) "Erreur interne pour '$adr' : avail = $avail"
+		}
+	    }
+
+	    incr n
+	    if {$n % $maxrow == 0} then {
+		append html "\n"
+		append html [::webapp::helem "tr" $line]
+	    }
+	}
+	if {$n % $maxrow != 0} then {
+	    for {set i $n} {$i % $maxrow != 0} {incr i} {
+		append line [::webapp::helem "td" "&nbsp;"]
+	    }
+	    append html "\n"
+	    append html [::webapp::helem "tr" $line]
+	}
+
+	#
+	# Titles, stats & co
+	#
+
+	append tableau "\n"
+	if {[llength $lcidrv4] > 1} then {
+	    append tableau [::webapp::helem "h3" "Réseau '$cidr'"]
+	}
+
+	set p "$navail adresses disponibles / $n total "
+	append p [::webapp::helem "a" {[Détail]} \
+		    "href" "$conf(homeurl)/bin/liste?cidr=$cidr&format=consulter"]
+
+	append tableau [::webapp::helem "p" $p]
+	append tableau "\n"
+	append tableau [::webapp::helem "table" $html "id" "map"]
+	append tableau "\n"
+    }
+
+    #
+    # Build legend
+    #
+
+    set hlegend ""
+    foreach {i class txt} {
+		0 notav {adresse non accessible}
+		1 noname-nodhcp {adresse disponible}
+		2 name-nodhcp {adresse déclarée}
+		3 noname-dhcp {adresse non déclarée, figurant dans un intervalle DHCP}
+		4 name-dhcp {adresse déclarée, figurant dans un intervalle DHCP}
+	    } {
+	if {$legend($i) > 0} then {
+	    set l [::webapp::helem "td" "&nbsp;" "class" $class]
+	    append l [::webapp::helem "td" $txt]
+	    append l "\n"
+	    append hlegend [::webapp::helem "tr" $l]
+	}
+    }
+    set hlegend [::webapp::helem "div" \
+			[::webapp::helem "table" $hlegend "border" "0"] \
+			"id" "legend"]
+    set tableau "$hlegend\n$tableau"
+
+    #
+    # Fioritures
+    #
+
+    set datefmt [getconfig $dbfd "datefmt"]
+    set date  [clock format [clock seconds] -format $datefmt]
+
+    ::webapp::send html [::webapp::file-subst $conf(liste) \
+				[list \
+				    [list %TITRE%	"Carte des adresses IPv4"] \
+				    [list %TABLEAU%	$tableau] \
+				    [list %DATE%	$date] \
+				] \
+			]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
+			$conf(form) ftab dbfd login tabcor $conf(log)
+
+    #
+    # Analyse et validation des arguments
+    #
+
+    # le ou les CIDR(s) demandé(s) par le correspondant
+    set lcidr {}
+    set l $ftab(cidr)
+    foreach cidr $l {
+	if {! [string eq [string trim $cidr] ""]} then {
+	    set m [syntaxe-ip $dbfd $cidr "cidr"]
+	    if {[string length $m] > 0} then {
+		::webapp::error-exit $conf(err) $m
+	    }
+	    lappend lcidr $cidr
+	}
+    }
+
+    # les plages demandées par le correspondant
+    set nplages [llength $ftab(plages)]
+
+    # compatibilité entre les deux arguments
+    if {[string length $lcidr] == 0 && $nplages == 0} then {
+	::webapp::error-exit $conf(err) "Vous devez choisir un CIDR ou au moins une plage"
+    }
+    if {[string length $lcidr] > 0 && $nplages > 0} then {
+	::webapp::error-exit $conf(err) "Vous ne pouvez pas choisir un CIDR et une plage"
+    }
+
+    #
+    # Valider les idreseaux fournis, et récupérer les CIDR correspondants
+    #
+
+    if {$nplages > 0} then {
+	foreach idreseau $ftab(plages) {
+	    set l [valide-idreseau $dbfd $idreseau \
+					$tabcor(idgrp) "consult" {4 6} msg]
+	    if {[llength $l] == 0} then {
+		::webapp::error-exit $conf(err) $msg
+	    }
+	    set lcidr [concat $lcidr $l]
+	}
+    }
+
+    # format de sortie
+    switch -glob -nocase -- [lindex $ftab(format) 0] {
+	Carte*		{ set format carte }
+	Imprimer	{ set format latex }
+	Consulter	-
+	*		{ set format html }
+    }
+
+    if {[string eq $format "carte"]} then {
+	output-map $dbfd $lcidr tabcor $format
+    } else {
+	output-list $dbfd $lcidr tabcor $format
     }
 
     #

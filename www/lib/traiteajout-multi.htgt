@@ -2,12 +2,12 @@
 \* $Id$
 \modele {texte}
 
-\set {auteur} {pda/jean}
-\set {date}   {23/05/2002}
+\set {auteur} {pda}
+\set {date}   {01/01/2010}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    CRC - DNS - Groupes
+    CRC - DNS
 }
 
 \*******************************************************************************
@@ -21,7 +21,6 @@
 \bandeau {
 	DNS v%VERSION%
     } {
-
 	\elementbandeau {Actions} {
 	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
 	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
@@ -33,7 +32,6 @@
 	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
 	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
-	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
 	}
 	\elementbandeau {Voir aussi} {
 	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
@@ -44,25 +42,9 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Incohérences dans la %MSGACT%}
+    \titre {1} {Recherche d'adresses consécutives}
 
-    Les incohérences suivantes ont été détectées~:
-
-    \retrait {<FONT COLOR="#FF0000">%MESSAGE%</FONT>}
-
-    Vous pouvez~:
-
-    \liste {
-	\item {passer outre et demander quand même la modification~:
-	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/admgrpmodif">
-		%HIDDEN%
-		<INPUT TYPE="SUBMIT" VALUE="Je confirme">
-	    </FORM>
-	}
-	\item {utiliser votre navigateur pour revenir à la page
-	    précédente et modifier votre demande
-	}
-    }
+    %LISTE%
 }
 
 }

@@ -31,11 +31,20 @@
 	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
 	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
+	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
 	}
 	\elementbandeau {Voir aussi} {
 	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
 	    \reference {\lien {CRC}	{http://www-crc.u-strasbg.fr/crc/}}
 	}
+}
+
+\set {header} {
+    <style type="text/css">
+	#nextpart \{
+	    display: %DISPLAY%;
+	\}
+    </style>
 }
 
 \*******************************************************************************
@@ -57,7 +66,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {
-		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout">
+		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout%NEXT%">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
 		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
 		    \tableau {
@@ -80,7 +89,7 @@
 			\lignetableau {
 			    \casetableau {} {Adresse IP}
 			    \multicasetableau {3} {} {
-				<INPUT TYPE="TEXT" NAME="adr" SIZE="45">
+				<INPUT TYPE="TEXT" NAME="adr" SIZE="45" VALUE="%ADR%">
 			    }
 			}
 			\lignetableau {
@@ -119,6 +128,59 @@
 			    \casetableau {} {~}
 			    \multicasetableau {3} {} {
 				<INPUT TYPE="SUBMIT" VALUE="Valider">
+			    }
+			}
+		    }
+		</FORM>
+	    }
+	}
+    }
+
+    <div id="nextpart">
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Recherche de plusieurs adresses IPv4 disponibles}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-multi">
+		    <INPUT TYPE="HIDDEN" NAME="tri" VALUE="adr">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Réseau IPv4 à chercher}
+			    \casetableau {} {
+				%MENUPLAGE%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Nombre d'adresses consécutives}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nbadr" SIZE="30" VALUE="1">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" NAME="redirect" VALUE="Rechercher">
+				~ ~ ~ ~
+				ou 
+				~ ~ ~ ~
+				<INPUT TYPE="SUBMIT" NAME="redirect" VALUE="Consulter la carte">
 			    }
 			}
 		    }
@@ -171,6 +233,7 @@
 	    }
 	}
     }
+    </div>
 }
 
 }

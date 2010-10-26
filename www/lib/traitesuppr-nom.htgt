@@ -31,6 +31,7 @@
 	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
 	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
+	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
 	}
 	\elementbandeau {Voir aussi} {
 	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
@@ -54,6 +55,8 @@
 	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="oui">
 	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
 	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
+	<INPUT TYPE="HIDDEN" NAME="nextprog" VALUE="%NEXTPROG%">
+	<INPUT TYPE="HIDDEN" NAME="nextargs" VALUE="%NEXTARGS%">
 	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
     </FORM>
 }

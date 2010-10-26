@@ -31,6 +31,7 @@
 	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
 	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
+	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
 	}
 	\elementbandeau {Voir aussi} {
 	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
@@ -49,14 +50,7 @@
     \lien {serveurs de nom Osiris} {%DOCDNS%}
     d'ici %INTERVALLE% minutes.
 
-    Vous pouvez demander à~:
-
-    \liste {
-	\item {\lien {consulter les informations} {%HOMEURL%/bin/consulter}}
-	\item {\lien {supprimer une autre machine} {%HOMEURL%/bin/suppr}}
-	\item {\lien {ajouter une machine} {%HOMEURL%/bin/ajout}}
-	\item {\lien {modifier une machine} {%HOMEURL%/bin/modif}}
-    }
+    Cliquer <a href="%SUITE%">ici pour continuer</a>.
 }
 
 }
