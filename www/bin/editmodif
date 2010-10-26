@@ -20,6 +20,7 @@
 #   2004/08/05 : pda/jean : ajout MAC
 #   2005/04/08 : pda/jean : ajout dhcpprofil
 #   2008/07/25 : pda/jean : ajout du droit d'émission SMTP
+#   2010/10/26 : pda      : rendre le nom+domaine éditable
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -128,6 +129,9 @@ proc editmodif-infos {dbfd idcor ft} {
     # Pré-saisir les champs à éditer
     #
 
+    set nom [::webapp::form-text nom 1 20 64 $nom]
+    set domaine [menu-domaine $dbfd $idcor domaine "" $domaine $conf(err)]
+
     set val [::webapp::html-string $trr(mac)]
     set mac [::webapp::form-text mac 1 20 17 $val]
     set dhcpprofil [menu-dhcpprofil $dbfd iddhcpprofil $idcor $trr(iddhcpprofil)]
@@ -155,6 +159,7 @@ proc editmodif-infos {dbfd idcor ft} {
 
     ::webapp::send html [::webapp::file-subst $conf(page-edit-infos) \
 				[list \
+					[list %IDRR% $trr(idrr)] \
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
 					[list %MAC% $mac] \

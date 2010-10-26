@@ -11,8 +11,9 @@
 #   - modifications des informations d'une machine
 #	- action : "modif-infos"
 #	- confirm : "non" ou "oui" (si confirmation ok)
-#	- nom : nom de la machine à ajouter
-#	- domaine : domaine dans lequel elle doit être ajoutée
+#	- idrr : idrr original de la machine à modifier
+#	- nom : nom modifié de la machine
+#	- domaine : domaine modifié de la machine 
 #	- mac : adresse mac
 #	- iddhcpprofil : l'id du profil DHCP, ou 0
 #	- hinfo : type de machine (id)
@@ -36,6 +37,7 @@
 #   2008/07/25 : pda/jean : ajout du droit d'émission SMTP et confirmation
 #   2010/10/14 : pda      : codage parcours (via next*)
 #   2010/10/26 : pda      : vérification dhcpprofil sans adresse mac
+#   2010/10/26 : pda      : rendre le nom+domaine éditable
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -68,7 +70,7 @@ set conf(log)		%LOG%
 # scripts cgi
 set conf(script-map)	bin/liste
 set conf(script-liste)	bin/liste
-set conf(script-edit)	bin/edit
+set conf(script-edit)	bin/modif
 
 # le champ discriminant pour la suite
 set conf(form)		{
@@ -78,6 +80,7 @@ set conf(form)		{
 # les champs utilisés pour chacune des actions
 set conf(form-modif-infos)	{
 	{confirm	1 1}
+	{idrr		1 1}
 	{nom		1 1}
 	{domaine	1 1}
 	{mac		1 1}
@@ -126,6 +129,7 @@ proc traitemodif-infos {dbfd tc ft} {
     # Valider les champs du formulaire
     #
 
+    set idrr          [string trim [lindex $ftab(idrr) 0]]
     set nom           [string trim [lindex $ftab(nom) 0]]
     set domaine       [string trim [lindex $ftab(domaine) 0]]
     set mac           [string trim [lindex $ftab(mac) 0]]
@@ -138,6 +142,57 @@ proc traitemodif-infos {dbfd tc ft} {
     set confirm       [string trim [lindex $ftab(confirm) 0]]
     set nextprog      [string trim [lindex $ftab(nextprog) 0]]
     set nextargs      [string trim [lindex $ftab(nextargs) 0]]
+
+    #
+    # Vérifier l'idrr
+    # Tester si l'idrr n'est pas un alias, et que le correspondant
+    # est bien propriétaire de toutes les adresses associées au nom.
+    #
+
+    # tester la syntaxe du champ de formulaire qui nous est donné
+    if {! [regexp {^\d+$} $idrr]} then {
+	::webapp::error-exit $conf(err) "Erreur interne sur idrr"
+    }
+    if {! [lire-rr-par-id $dbfd $idrr trr]} then {
+	::webapp::error-exit $conf(err) "Erreur de lecture de idrr"
+    }
+    # tester si la machine existe
+    if {[string equal $trr(idrr) ""]} then {
+	::webapp::error-exit $conf(err) "La machine d'id $idrr n'existe pas"
+    }
+
+    # tester les droits
+    set m [valide-droit-nom $dbfd $idcor $trr(nom) $trr(domaine) trr "machine-existante"]
+    if {! [string equal $m ""]} then {
+	::webapp::error-exit $conf(err) "Erreur de droit sur idrr"
+    }
+
+    #
+    # Vérifier le nouveau nom et le nouveau domaine
+    #
+
+    set m [syntaxe-nom $nom]
+    if {[string length $m] > 0} then {
+	::webapp::error-exit $conf(err) "Erreur sur le nom '$nom': $m"
+    }
+    set nom [string tolower $nom]
+
+    set m [valide-droit-nom $dbfd $idcor $nom $domaine ntrr "machine"]
+    if {! [string equal $m ""]} then {
+	::webapp::error-exit $conf(err) \
+		"Vous n'avez pas les droits sur $nom.$domaine"
+    }
+    if {$ntrr(idrr) != $idrr} then {
+	#
+	# Cas d'un nouveau nom de machine ou de domaine : il faut
+	# vérifier que ce n'est pas une machine existante
+	#
+    	if {[info exists ntrr(ip)] && [llength $ntrr(ip)] > 0} then {
+	    ::webapp::error-exit $conf(err) \
+		    "La machine $nom.$domaine existe déjà"
+	}
+    }
+    set iddom $ntrr(iddom)
 
     #
     # Vérifier la syntaxe de l'adresse MAC
@@ -188,34 +243,6 @@ proc traitemodif-infos {dbfd tc ft} {
     }
 
     #
-    # Valider la syntaxe du nom au sens de la RFC ????
-    #
-
-    set m [syntaxe-nom $nom]
-    if {[string length $m] > 0} then {
-	::webapp::error-exit $conf(err) "Erreur sur le nom '$nom': $m"
-    }
-    set nom [string tolower $nom]
-
-    #
-    # Tester si le nom n'est pas un alias, et que le correspondant
-    # est bien propriétaire de toutes les adresses associées au nom.
-    #
-
-    set m [valide-droit-nom $dbfd $idcor $nom $domaine trr "machine-existante"]
-    if {! [string equal $m ""]} then {
-	::webapp::error-exit $conf(err) "$m.\nModification refusée"
-    }
-
-    #
-    # Tester si la machine existe
-    #
-
-    if {[string equal $trr(idrr) ""]} then {
-	::webapp::error-exit $conf(err) "Le nom '$nom' n'existe pas"
-    }
-
-    #
     # Tester si la machine doit être ajoutée statiquement comme adresse DHCP
     #
 
@@ -244,7 +271,7 @@ proc traitemodif-infos {dbfd tc ft} {
 	# Sortir une page de confirmation
 	#
 
-	set l {nom domaine mac iddhcpprofil hinfo droitsmtp
+	set l {idrr nom domaine mac iddhcpprofil hinfo droitsmtp
 			commentaire respnom respmel nextprog nextargs}
 	set hidden [::webapp::hide-parameters $l ftab]
 	::webapp::send html [::webapp::file-subst $conf(page-modif-smtp) \
@@ -278,10 +305,13 @@ proc traitemodif-infos {dbfd tc ft} {
 	set droitsmtp $trr(droitsmtp)
     }
 
+    set qnom         [::pgsql::quote $nom]
     set qcommentaire [::pgsql::quote $commentaire]
     set qrespnom     [::pgsql::quote $respnom]
     set qrespmel     [::pgsql::quote $respmel]
     set sql "UPDATE rr SET
+			    nom = '$qnom',
+			    iddom = $iddom,
 			    mac = $qmac,
 			    iddhcpprofil = $qiddhcpprofil,
 			    idhinfo = $idhinfo,
@@ -324,8 +354,8 @@ proc traitemodif-infos {dbfd tc ft} {
     # Se rappeler du correspondant qui a affectué la modification
     #
 
-    set m "modification de $nom.$domaine :"
-    foreach c {mac dhcpprofil hinfo droitsmtp commentaire respnom respmel} {
+    set m "modification de $trr(nom).$trr(domaine) :"
+    foreach c {nom domaine mac dhcpprofil hinfo droitsmtp commentaire respnom respmel} {
 	append m " $c=[set $c]"
     }
     writelog "modifrr" $login $m

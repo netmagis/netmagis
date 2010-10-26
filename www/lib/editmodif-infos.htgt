@@ -47,8 +47,7 @@
     <FORM METHOD="POST" ACTION="%HOMEURL%/bin/traitemodif">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="modif-infos">
 	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
-	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
-	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
+	<INPUT TYPE="HIDDEN" NAME="idrr" VALUE="%IDRR%">
 	<INPUT TYPE="HIDDEN" NAME="nextprog" VALUE="%NEXTPROG%">
 	<INPUT TYPE="HIDDEN" NAME="nextargs" VALUE="%NEXTARGS%">
 	\tableau {
