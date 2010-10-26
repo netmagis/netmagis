@@ -57,6 +57,7 @@
 #   2010/01/01 : pda      : codage ajout-multi
 #   2010/10/08 : pda      : codage parcours (via next)
 #   2010/10/09 : pda      : fin codage ajout-multi
+#   2010/10/26 : pda      : vérification dhcpprofil sans adresse mac
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -318,6 +319,11 @@ proc traiteajout-machine {dbfd tc ft} {
 
     if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
 	::webapp::error-exit $conf(err) "Profil DHCP invalide ($msg)"
+    }
+
+    if {[string equal $mac ""] && $iddhcpprofil != 0} then {
+	::webapp::error-exit $conf(err) \
+		"Impossible de configurer un profil DHCP sans adresse MAC"
     }
 
     #

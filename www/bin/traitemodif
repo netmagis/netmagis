@@ -35,6 +35,7 @@
 #   2008/02/13 : pda/jean : le responsable est le correspondant si pas précisé
 #   2008/07/25 : pda/jean : ajout du droit d'émission SMTP et confirmation
 #   2010/10/14 : pda      : codage parcours (via next*)
+#   2010/10/26 : pda      : vérification dhcpprofil sans adresse mac
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -142,7 +143,7 @@ proc traitemodif-infos {dbfd tc ft} {
     # Vérifier la syntaxe de l'adresse MAC
     #
 
-    if {! [string equal $mac  ""]} then {
+    if {! [string equal $mac ""]} then {
 	set m [syntaxe-mac $dbfd $mac]
 	if {[string length $m] > 0} then {
 	    ::webapp::error-exit $conf(err) "Erreur sur l'adresse MAC : $m"
@@ -155,6 +156,11 @@ proc traitemodif-infos {dbfd tc ft} {
 
     if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
 	::webapp::error-exit $conf(err) "Profil DHCP invalide ($msg)"
+    }
+
+    if {[string equal $mac ""] && $iddhcpprofil != 0} then {
+	::webapp::error-exit $conf(err) \
+		"Impossible de configurer un profil DHCP sans adresse MAC"
     }
 
     #
