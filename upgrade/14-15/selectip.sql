@@ -156,9 +156,6 @@ CREATE OR REPLACE FUNCTION markcidr (reseau CIDR, lim INTEGER, grp INTEGER)
 	    a := a + 1 ;
 	END LOOP ;
 
-	UPDATE allip SET avail = 0
-	    WHERE adr = min OR adr = max OR NOT valide_ip_grp (adr, grp) ;
-
 	UPDATE allip
 	    SET fqdn = rr.nom || '.' || domaine.nom,
 		avail = 2
@@ -178,6 +175,9 @@ CREATE OR REPLACE FUNCTION markcidr (reseau CIDR, lim INTEGER, grp INTEGER)
 		AND adr >= dhcprange.min
 		AND adr <= dhcprange.max
 	    ;
+
+	UPDATE allip SET avail = 0
+	    WHERE adr = min OR adr = max OR NOT valide_ip_grp (adr, grp) ;
 
 	RETURN ;
 
