@@ -7,19 +7,18 @@
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    CRC - DNS - Erreur !
+    WebDNS - Erreur !
 }
 
 \*******************************************************************************
 \partie {titrepage} { \* Titre de la page
-    RÉSEAU OSIRIS
-    CENTRE RÉSEAU COMMUNICATION
+    Application WebDNS
 }
 
 
 \*******************************************************************************
 \bandeau {
-	CRC - DNS
+	WebDNS
     } {
 	\elementbandeau {Actions} {
 	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
@@ -32,10 +31,6 @@
 	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
 	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
-	}
-	\elementbandeau {Voir aussi} {
-	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
-	    \reference {\lien {CRC}	{http://www-crc.u-strasbg.fr/crc/}}
 	}
 }
 

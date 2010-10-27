@@ -7,19 +7,18 @@
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    CRC - DNS - Liste des correspondants
+    WebDNS - Liste des correspondants
 }
 
 \*******************************************************************************
 \partie {titrepage} { \* Titre de la page
-    RÉSEAU OSIRIS
-    CENTRE RÉSEAU COMMUNICATION
+    Application WebDNS
 }
 
 
 \*******************************************************************************
 \bandeau {
-	DNS v%VERSION%
+	WebDNS v%VERSION%
     } {
 	\elementbandeau {Actions} {
 	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
@@ -33,10 +32,6 @@
 	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
 	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
 	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
-	}
-	\elementbandeau {Voir aussi} {
-	    \reference {\lien {Osiris}	{http://www-crc.u-strasbg.fr/osiris/}}
-	    \reference {\lien {CRC}	{http://www-crc.u-strasbg.fr/crc/}}
 	}
 }
 
