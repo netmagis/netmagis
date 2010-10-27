@@ -40,7 +40,7 @@ DOCDNS	= /osiris/services/dns.html
 COULEUR = "\#10C090"
 
 # Version de l'application
-VERSION = 1.4
+VERSION = 1.5
 
 # URL pour modifier le mot de passe
 PASSWDURL = https://www-crc.u-strasbg.fr/applis/passwd/bin/passwd
