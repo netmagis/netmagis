@@ -59,9 +59,20 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 
     Statut :
 	- codage effectué, installé dans l'appli de test (cf url de type devdns)
+	- en attente de mise en production
 	- difficulté = facile
 
-4- Modification des ports d'un équipement
+4- Renommage facile d'une machine
+
+    Page accessible via :
+	https://www-crc.u-strasbg.fr/applis/dns/bin/modif
+
+    Statut :
+	- codage effectué, installé dans l'appli de test (cf url de type devdns)
+	- en attente de mise en production
+	- difficulté = facile
+
+5- Modification des ports d'un équipement
 
     Il est proposé une interface Web partant de l'actuel topo
 	https://www-crc.u-strasbg.fr/applis/topo/bin/eq
@@ -158,7 +169,7 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 	- mise en production du back-office avant fin octobre
 	- codage interface Web : mi-novembre
 
-5- Fluidifier la navigation entre les différents composants
+6- Fluidifier la navigation entre les différents composants
 
     Actuellement, les applications WebDNS, topo et métro, mac, dhcp
     sont des modules séparés et non communicants.
@@ -170,6 +181,19 @@ topo et mac) dans les prochaines semaines et de prioriser ces
     Statut :
 	- difficulté : très difficile
 	- priorité haute
+
+7- Internationaliser l'application
+
+    Actuellement, tout est rédigé en français. Il faudrait rendre
+    l'application utilisable au moins par des anglophones, ce qui
+    implique :
+	- d'implémenter des mécanismes d'internationalisation (i.e.
+	    détection de la langue du client Web)
+	- de traduire tous les messages codés en dur dans les scripts
+	- de traduire toutes les pages Web
+    Dans le futur, il serait bien que tous les commentaires des
+    scripts soient rédigés en anglais, afin de faciliter le partage
+    du code.
 
 X- Localisation géographique des équipements réseau
 
