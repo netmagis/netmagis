@@ -2263,7 +2263,7 @@ proc valide-dhcp-statique {dbfd mac lip} {
 			    FROM dhcprange
 			    WHERE '$ip' >= min AND '$ip' <= max"
 	    pg_select $dbfd $sql tab {
-		set r "$ip est dans l'intervalle DHCP \[$tab(min)..$tab(max)\]"
+		set r "Impossible d'affecter l'adresse MAC '$mac' car l'adresse IP $ip figure dans un intervalle DHCP dynamique \[$tab(min)..$tab(max)\]"
 	    }
 	    if {! [string equal $r ""]} then {
 		break
