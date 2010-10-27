@@ -7,7 +7,7 @@
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    WebDNS
+    WebDNS - Recherche de correspondant
 }
 
 \*******************************************************************************
@@ -37,7 +37,7 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Recherche de correspondant}
+    \titre {1} {Recherche des correspondants associés à une machine}
 
     <FORM METHOD="POST" ACTION="%HOMEURL%/bin/corresp">
 	Adresse ou machine (avec domaine)~:
