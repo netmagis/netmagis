@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (c) 1998-1999
  *	Pierre David

@@ -1,7 +1,6 @@
 #
 # Génération du fichier routages à partir de la base DNS
 #
-# $Id$
 #
 # Cette crontab doit être installée sur les relais de messagerie
 #

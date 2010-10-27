@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# $Id$
 
 #
 # Installe les triggers nécessaires pour que la modification d'un RR

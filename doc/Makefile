@@ -1,7 +1,6 @@
 #
 # Makefile de la doc d'installation de l'application SOS
 #
-# $Id$
 #
 #
 # Cibles possibles :

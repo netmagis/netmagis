@@ -1,7 +1,6 @@
 #!%TCLSH%
 
 #
-# $Id$
 #
 # Analyse un fichier de configuration d'un équipement réseau
 # et renvoie la modélisation de cet équipement sous forme de

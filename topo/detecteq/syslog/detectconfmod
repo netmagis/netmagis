@@ -1,7 +1,6 @@
 #!%TCLSH%
 
 # 
-# $Id$
 # 
 # This script is called from syslogd daemon, with a line such as:
 # 

@@ -1,6 +1,5 @@
 #!/usr/local/bin/tclsh8.5
 
-# $Id$
 
 #
 # Script de génération du fichier de routages pour sendmail

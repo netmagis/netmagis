@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# $Id$
 
 #
 # recharge une base à partir d'un dump

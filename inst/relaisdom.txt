@@ -2,7 +2,6 @@
 # Relais de messagerie associés à un domaine, pour
 # la gestion des roles de messagerie
 #
-# $Id$
 #
 # Historique
 #   2004/04/12 : pda      : conception

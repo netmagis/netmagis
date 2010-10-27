@@ -1,7 +1,6 @@
 #
 # La crontab de l'utilisateur "bind" (sur le serveur DNS)
 #
-# $Id$
 #
 # Historique
 #   2002/05/02 : pda/jean : génération des zones DNS à partir de la base

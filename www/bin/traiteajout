@@ -1,6 +1,5 @@
 #!%TCLSH%
 
-# $Id$
 
 #
 # Script pour enregistrer les modifications demandées par un correspondant.

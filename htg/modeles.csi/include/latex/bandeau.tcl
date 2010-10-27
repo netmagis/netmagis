@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 # Procédures bidon pour le bandeau
 # (le bandeau n'est pas affiché dans les documents papier)

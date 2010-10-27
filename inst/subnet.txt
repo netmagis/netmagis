@@ -1,7 +1,6 @@
 #
 # Description des réseaux gérés par l'application
 #
-# $Id$
 #
 
 nom=Dorsale

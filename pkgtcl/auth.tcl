@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 # Librairie de fonctions TCL d'authentification utilisables dans les scripts CGI
 #

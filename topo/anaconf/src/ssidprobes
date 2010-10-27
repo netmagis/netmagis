@@ -2,7 +2,6 @@
 
 
 #
-# $Id$
 #
 # Prend sur l'entrée standard un fichier d'entrée compatible "buildgraph",
 # ajoute les points de métrologie wifi spécifiques à la politique Osiris,

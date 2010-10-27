@@ -1,5 +1,4 @@
 #
-# $Id$
 #  
 # Librairie de fonctions TCL pour faciliter l'accès à l'annuaire LDAP
 #

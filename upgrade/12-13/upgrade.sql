@@ -1,4 +1,3 @@
--- $Id$
 
 ------------------------------------------------------------------------------
 -- changement de type de rr.date : devient une vraie date

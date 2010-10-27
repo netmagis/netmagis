@@ -1,6 +1,5 @@
 #!%TCLSH%
 
-# $Id$
 
 #
 # Script pour modifier les attributs d'un RR dans la base

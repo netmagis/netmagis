@@ -1,4 +1,3 @@
-# $Id$
 
 HTML2PS = html2ps
 HTML2PSCONF = html2ps.conf

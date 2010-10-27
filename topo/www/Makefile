@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 # Makefile pour lancer l'installation de l'application topo
 # Ce Makefile n'est normalement jamais appelé lui-même, mais

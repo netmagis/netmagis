@@ -2,7 +2,6 @@
 # Element de crontab à insérer dans la crontab de root sur le serveur DHCP
 # (/etc/crontab sous FreeBSD)
 #
-# $Id$
 #
 
 MAILTO = hostmaster@u-strasbg.fr

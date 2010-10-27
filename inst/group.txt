@@ -1,7 +1,6 @@
 #
 # Fichier des groupes
 #
-# $Id$
 #
 # Format :
 #	<groupe> <login> ... <login>

@@ -1,6 +1,5 @@
 #!%TCLSH%
 
-# $Id$
 
 #
 # Script pour lister les machines d'un ou plusieurs domaines

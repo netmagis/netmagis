@@ -2,7 +2,6 @@
 
 
 #
-# $Id$
 #
 # Prend sur l'entrée standard une liste des points de collecte
 # (telle que générée par extractcoll -s -w), et la présente au

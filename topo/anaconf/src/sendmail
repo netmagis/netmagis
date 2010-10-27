@@ -1,7 +1,6 @@
 #!/bin/sh
 
 #
-# $Id$
 #
 # Ce script est un faux "sendmail" utilisé pour collecter les mails
 # envoyés par le vrai "rancid" et les rediriger vers la sortie 3

@@ -1,7 +1,6 @@
 #!/bin/sh
 
 #
-# $Id$
 #
 # Enchaîne les différentes phases pour constituer le graphe du
 # réseau donné.

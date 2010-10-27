@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 # Modèle "page de présentation d'une personne"
 #

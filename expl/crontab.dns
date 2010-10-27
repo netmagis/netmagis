@@ -1,7 +1,6 @@
 #
 # La crontab de l'utilisateur DNS (sur le serveur de données)
 #
-# $Id$
 #
 # Maintenance quotidienne toutes les nuits.
 #

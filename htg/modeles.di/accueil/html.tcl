@@ -1,5 +1,4 @@
 #
-# $Id: html.tcl 401 2010-10-08 13:03:58Z pda $
 #
 # Modèle "page d'accueil"
 #

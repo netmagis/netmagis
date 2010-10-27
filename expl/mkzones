@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# $Id$
 
 #
 # Script de génération de tous les fichiers zone ayant le flag "generer"

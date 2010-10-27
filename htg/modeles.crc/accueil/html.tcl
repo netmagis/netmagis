@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 # Modèle "page d'accueil"
 #

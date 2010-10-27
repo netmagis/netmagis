@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 # Package d'analyse de fichiers de configuration IOS Cisco
 #

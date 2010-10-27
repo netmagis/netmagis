@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 
 CFLAGS = -g -Wall

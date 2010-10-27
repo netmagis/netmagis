@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 # Librairie de fonctions TCL pour faciliter l'accès à une base PostgreSQL
 #

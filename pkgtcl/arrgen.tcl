@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 # Librairie de fonctions TCL pour la génération de tableaux
 #

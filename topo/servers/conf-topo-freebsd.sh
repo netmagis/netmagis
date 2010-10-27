@@ -1,7 +1,6 @@
 #!/bin/sh
 
 #
-# $Id$
 #
 # Génère un fichier de conf "simili-IOS Cisco" synthétisant l'ensemble
 # des informations de configuration du serveur.

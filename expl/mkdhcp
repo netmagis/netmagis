@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# $Id$
 
 #
 # Script de génération du fichier utilise par dhcpd.conf a partir des

@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 # Librairie de fonctions TCL utilisables dans les scripts CGI
 #

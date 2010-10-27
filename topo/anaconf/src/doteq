@@ -1,7 +1,6 @@
 #!%TCLSH%
 
 #
-# $Id$
 #
 # Script pour analyser la sortie de l'analyse de configuration
 # et la présenter sous forme graphique à l'aide de "neato".

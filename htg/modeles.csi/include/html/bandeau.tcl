@@ -1,4 +1,3 @@
-# $Id$
 
 proc xxx_elementtableau {bgcoul titre texte} {
     #

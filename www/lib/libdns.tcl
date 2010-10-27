@@ -1,7 +1,6 @@
 #
 # Librairie TCL pour l'application de gestion DNS.
 #
-# $Id$
 #
 # Historique
 #   2002/03/27 : pda/jean : conception

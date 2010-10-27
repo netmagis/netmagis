@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 
 TOPODIR=/local/applis/topo

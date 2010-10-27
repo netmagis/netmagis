@@ -1,4 +1,3 @@
-# $Id$
 
 CC		= gcc -Wall
 DEBUG		= -g

@@ -1,5 +1,4 @@
 '\" 
-'\" $Id$
 '\" 
 '\" Copyright (c) 2002 by Pierre David <Pierre.David@crc.u-strasbg.fr>
 '\" All rights reserved.

@@ -1,5 +1,4 @@
 {
-\* $Id$
 \modele {transp}
 
 \set {template} {preshtg%2.2d.html}

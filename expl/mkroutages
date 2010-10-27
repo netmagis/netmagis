@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# $Id$
 
 #
 # Script de génération des routages de messagerie.

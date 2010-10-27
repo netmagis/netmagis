@@ -1,5 +1,4 @@
 #
-# $Id$
 #
 # Modèle HTG de base pour la génération de pages LaTeX
 # Doit être inclus en premier par le modèle

@@ -1,7 +1,6 @@
 #!/bin/sh
 
 #
-# $Id$
 #
 # Analyse un fichier de configuration de rancid, et en extrait
 # le nom et le type de chaque équipement, et extrait de chaque

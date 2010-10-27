@@ -1,7 +1,6 @@
 #
 # Makefile principale pour l'analyseur de configurations
 #
-# $Id$
 #
 
 TOPODIR	= /local/applis/topo

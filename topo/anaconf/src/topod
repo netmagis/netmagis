@@ -1,7 +1,6 @@
 #! %TCLSH%
 
 #
-# $Id$
 #  
 # Recette pour accélérer le déroulement de rancid+topo pour permettre
 # la modification de conf par interface Web topo

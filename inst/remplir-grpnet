@@ -1,6 +1,5 @@
 #!/usr/local/bin/tclsh8.5
 
-# $Id$
 
 #
 # Remplit les domaines, les groupes et les correspondants
