@@ -1,10 +1,20 @@
 version 1.5 - ??/??/????
     - ajout du profil DHCP dans la gestion des plages dynamiques
+    - affichage du profil DHCP dans la liste des machines par réseau
     - ajout d'une option dans la procédure syntaxe-ip utilisée par d'autres
 	applications (notamment l'application topo, cf jres 2005)
     - ajout du droit "droitsmtp" par groupe, permettant à ses membres
 	d'éditer les autorisations d'émettre en SMTP machine par machine,
 	lors de l'ajout de la modification d'une machine
+    - possibilité de renommer une machine dans la page de modification
+    - affichage de la "carte" des adresses disponibles (seulement pour IPv4)
+	à partir des deux pages : consultation des réseau, et ajout d'une
+	machine
+    - recherche de plage consécutive d'adresses disponibles accessible
+	à partir de la page d'ajout d'une machine
+    - bug : les profils DHCP ne sont plus acceptés sur les RR qui n'ont
+	pas d'adresse MAC configurée
+    - formalisation de la licence CeCILL-B
 
 
 version 1.4 - 13/04/2008
