@@ -13,6 +13,7 @@ AUTH    = {-method postgresql -db {host=dbcrc.u-strasbg.fr dbname=auth user=auth
 # AUTH	= {-method ldap -db {url ldap://ldap.domaine.fr binddn cn=admin,dc=domaine,dc=fr bindpw mot-de-passe-ldap base ou=people,dc=domaine,dc=fr searchuid (\&(objectClass=inetOrgPerson)(uid=%s))} -attrmap {login uid password userPassword nom sn prenom givenName mel mail tel telephoneNumber mobile {} fax facsimileTelephoneNumber adr {postalAddress postalCode l}}}
 HOMEURL	= /applis/dns
 NOLOGIN	= /local/etc/nologin.dns
+MODLHTG	= vide
 
 #BASE    = {dbname=devdns user=dns password=mot-de-passe-de-dns}
 #AUTH    = {postgresql {dbname=auth user=auth password=mot-de-passe-de-auth}}
@@ -25,7 +26,7 @@ DEFUSER	= crc
 DESTDIR	= /local/services/www$(HOMEURL)
 PKGTCL	= /local/services/www/pkgtcl
 
-HTG	= /local/services/www/utils/htg
+HTG	= /local/services/www/htg/bin/htg
 
 ROOT	= {pda jean}
 
@@ -117,7 +118,8 @@ html:
 	    while read f ; do \
 		h=`echo $$f | sed 's/.htgt$$//'` ; \
 		echo $$f ; \
-		$(HTG) $$f | sed $(SUBST) > $(DESTDIR)/$$h.html ; \
+		$(HTG) -m $(MODLHTG) $$f | \
+		    sed $(SUBST) > $(DESTDIR)/$$h.html ; \
 	    done
 
 exec:
