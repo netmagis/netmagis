@@ -1,4 +1,4 @@
-#!/local/services/www/htg/src/htgtcl
+#!%DESTDIR%/bin/htgtcl
 
 #
 #
@@ -51,6 +51,7 @@
 #   1999/06/20 : pda          : reconception des premiers modèles HTML
 #   1999/07/26 : pda          : ajout de -i (pas encore utilisé)
 #   2008/02/13 : pda/moindrot : meilleure documentation du principe
+#   2010/10/29 : pda/moindrot/jean : installation mieux parametree
 #
 
 
@@ -60,17 +61,18 @@
 #
 
 set conf(lang)		html
-set conf(modeles)	/local/services/www/htg/modeles
+set conf(repmodel)	%DESTDIR%/modeles
+set conf(defmodel)	default
 set conf(verbose)	0
 set conf(images)	{}
-set conf(version)	1.0
+set conf(version)	1.1
 
 #
 # Paramètres à ne pas changer
 #
 
 set conf(langages)	{html latex}
-set conf(usage)		{htg [-v 0|1] [-l lang] [-d modèles] [-i rép] [fichier]}
+set conf(usage)		{htg [-v 0|1] [-l lang] [-d repmodeles] [-m model] [-i rép] [fichier]}
 
 ##############################################################################
 # Première procédure appelée par un fichier modèle
@@ -94,8 +96,8 @@ proc htg_modele {} {
     # le nom du modele
     set m [htg getnext]
 
-    set conf(macros)  "$conf(modeles)/$m/$conf(lang).tcl"
-    set conf(fond)    "$conf(modeles)/$m/fond.$conf(lang)"
+    set conf(macros)  "$conf(repmodel)/$conf(defmodel)/$m/$conf(lang).tcl"
+    set conf(fond)    "$conf(repmodel)/$conf(defmodel)/$m/fond.$conf(lang)"
 
     if {! [file exists $conf(macros)]} then {
 	error "Fichier '$conf(macros)' non trouvé"
@@ -137,7 +139,7 @@ proc htg_modele {} {
 proc trouver-fichier {fichier} {
     global conf
 
-    foreach d [list {} . $conf(modeles)] {
+    foreach d [list {} . $conf(repmodel)/$conf(defmodel)] {
 	set f $d/$fichier
 	if [file exists $f] then {
 	    return $f
@@ -229,7 +231,8 @@ proc erreur {msg} {
 	puts stderr "usage: $conf(usage)"
 	puts stderr "\toptions par défaut :"
 	puts stderr "\t\t-l : $conf(lang)"
-	puts stderr "\t\t-d : $conf(modeles)"
+	puts stderr "\t\t-d : $conf(repmodel)"
+	puts stderr "\t\t-m : $conf(defmodel)"
 	puts stderr "\t\t-v : $conf(verbose)"
 	puts stderr "\t\t-i : $conf(images)"
     }
@@ -264,7 +267,11 @@ proc main {} {
 		set argv [lreplace $argv 0 1]
 	    }
 	    -d {
-		set conf(modeles) $arg
+		set conf(repmodel) $arg
+		set argv [lreplace $argv 0 1]
+	    }
+	    -m {
+		set conf(defmodel) $arg
 		set argv [lreplace $argv 0 1]
 	    }
 	    -i {
@@ -284,8 +291,12 @@ proc main {} {
     # Vérification de validité des arguments
     #
 
-    if {! [file isdirectory $conf(modeles)]} then {
-	erreur "Répertoire de modèles '$conf(modeles)' inexistant"
+    if {! [file isdirectory $conf(repmodel)]} then {
+	erreur "Répertoire de modèles '$conf(repmodel)' inexistant"
+    }
+
+    if {! [file isdirectory $conf(repmodel)/$conf(defmodel)]} then {
+	erreur "Modèle '$conf(defmodel)' inexistant dans '$conf(repmodel)'"
     }
 
     if {[lsearch -exact $conf(langages) $conf(lang)] == -1} then {

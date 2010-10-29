@@ -32,13 +32,14 @@
 #   2000/06/07 : pda          : protection contre les noms de fichiers avec des espaces
 #   2001/11/26 : pda          : ajout de l'option "-l" pour lier les fichiers non htg
 #   2008/03/04 : pda/moindrot : options -h/-g/-d
+#   2010/10/29 : pda/moindrot/jean : option -m et parametrisation du script
 #
 
 #
 # Localisation par défaut des éléments de HTG
 #
 
-HTGDIRDEF=/local/services/www/htg
+HTGDIRDEF=%DESTDIR%
 
 #
 # Mode verbeux ou non (affichage de tous les fichiers traités)
@@ -122,7 +123,7 @@ htmliser ()
 	while read f ; do 
 	    h=`echo $f | sed 's/.htgt$//'`
 	    $cmdverbose "$wsrc/$f"
-	    "$htgdir/src/htg" -v $verbose -d "$modeldir" \
+	    "$htgdir/bin/htg" -v $verbose -d "$modeldir" $optm \
 			"$wsrc/$f" > "$wobj/$h.html"
 	    if [ $? != 0 ]
 	    then
@@ -153,7 +154,7 @@ deplacersinonvide ()
 
 usage ()
 {
-    echo "usage: $0 [-h][-g <htgdir>][-d <modeldir>][-l] <srcdir> <tmpdir> <objdir>" >&2
+    echo "usage: $0 [-h][-g <htgdir>][-d <modeldir>][-m <model>][-l] <srcdir> <tmpdir> <objdir>" >&2
     exit 1
 }
 
@@ -164,12 +165,13 @@ usage ()
 htgdir=$HTGDIRDEF
 modeldir=$htgdir/modeles
 verbose=$VERBOSE
+optm=""
 
 #
 # Analyse des options
 #
 
-set -- `getopt hg:d:v:l $*`
+set -- `getopt hg:d:m:v:l $*`
 
 if [ $? != 0 ]
 then usage
@@ -183,6 +185,7 @@ do
 	-h)	usage ;;
 	-g)	htgdir=$2 ; shift 2 ;;
 	-d)	modeldir=$2 ; shift 2 ;;
+	-m)	optm="-m $2" ; shift 2 ;;
 	-l)	link=1 ; shift ;;
 	-v)	verbose=$2 ; shift 2 ;;
 	--)	shift ; break ;;
