@@ -15,6 +15,7 @@ version 1.5 - ??/??/????
     - titres de page plus explicites, notamment pour naviguer dans
 	les menus d'historique de la plupart des navigateurs
     - suppression des références à Osiris et au CRC
+    - restructuration des modèles HTG et modèle paramétrable
     - bug : les profils DHCP ne sont plus acceptés sur les RR qui n'ont
 	pas d'adresse MAC configurée
     - formalisation de la licence CeCILL-B
