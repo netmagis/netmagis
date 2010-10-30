@@ -1,3 +1,11 @@
+# TeX output files
+*.ps
+*.cb
+*.aux
+*.dvi
+*.pdf
+*.out
+*.toc
 # Compiled files
 *.[oa]
 topo/anaconf/src/buildgraph
