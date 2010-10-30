@@ -6,6 +6,7 @@
 *.pdf
 *.out
 *.toc
+*.log
 # Compiled files
 *.[oa]
 topo/anaconf/src/buildgraph
