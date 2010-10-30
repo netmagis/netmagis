@@ -6,6 +6,7 @@
 %   2003/11/30 : pda : début de la rédaction
 %   2005/04/08 : pda : rédaction de la version 1.3
 %   2008/04/11 : pda : rédaction de la version 1.4
+%   2010/10/28 : pda : rédaction de la version 1.5
 %
 
 \documentclass [twoside] {report}
@@ -81,7 +82,8 @@
     \author {\bf Pierre David, Jean Benoit}
     % \date {Version 1.2 -- 12 avril 2004}
     % \date {Version 1.3 -- 13 avril 2005}
-    \date {Version 1.4 -- 13 avril 2008}
+    % \date {Version 1.4 -- 13 avril 2008}
+    \date {Version 1.5 -- xx novembre 2010}
 
 \maketitle
 
@@ -119,11 +121,9 @@
 %    \end {quote}
 
     \begin {center}
-	Version 1.4, 13 avril 2008 \\
+	Version 1.5, xx novembre 2010 \\
 	\copyright
 	    Pierre David et Jean Benoit,
-%	    \htmladdnormallink {Pierre David et Jean Benoit}
-%		{mailto:pda+dockit@crc.u-strasbg.fr},
 	    2004-2008
     \end {center}
 %\end {titlepage}
@@ -162,7 +162,14 @@ des informations liées au protocole DHCP. WebDNS constitue, de ce
 fait, la brique de base d'un système d'information orienté vers la
 gestion du réseau, concept qui a été développé lors d'une
 présentation\footnote {\htmlurl {http://2005.jres.org/paper/82.pdf}}
-aux Jres 2005 à Marseille
+aux Jres 2005 à Marseille.
+\cbstart%1.5
+La disponibilité de WebDNS a également constitué un facilitateur
+pour migrer l'architecture de messagerie d'un campus vers
+SMTP-Authentifié comme cela a été présenté dans un article\footnote
+{\htmlurl {http://2009.jres.org/planning_files/article/pdf/124.pdf}}
+aux Jres 2009 à Nantes.
+\cbend%1.5
 
 Jusqu'en 2002, le réseau métropolitain strasbourgeois Osiris\footnote
 {\htmlurl {http://www-crc.u-strasbg.fr/osiris}} fonctionnait sans
@@ -318,6 +325,11 @@ aspects liés au routage de la messagerie~:
 	relais de messagerie (MX) pour une zonne donnée~;
 
 \end {itemize}
+
+\cbstart%1.5
+De plus, la migration 
+
+\cbend%1.5
 
 
 \titreC {Utilisation de DHCP}
@@ -3431,11 +3443,143 @@ saisir l'adresse MAC et le profil que vous aurez défini. Il verra
 également le texte du profil DHCP s'il consulte ses droits.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
-% Annexe - Migration de la version 1.2 vers la version 1.3
+% Annexe - Migration vers la version courante
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \clearpage
 \titreA {Release notes}
+
+\cbstart%1.5
+\titreB {Version 1.5}
+
+Hormis l'ajout de la notion de «~droit d'émettre en SMTP non
+authentifié~» utilisé pour verrouiller au maximum l'utilisation de
+SMTP non authentifié sur un domaine, les principales modifications
+introduites dans la version 1.5 de WebDNS ont pour objet une meilleure
+ergonomie.
+
+\titreC {Changements apparus dans la version 1.5}
+
+L'ajout du «~droit d'émettre en SMTP non authentifié~» est matérialisé
+par une case à cocher supplémentaire dans les attributs d'un groupe
+de correspondants (cf menu «~Modifier les groupes et les
+correspondants~»). Si le groupe est autorisé, les pages d'ajout et
+de modification de machine sont modifiées pour ajouter une case
+«~Émettre en SMTP~». Cocher cette case impose une confirmation
+formelle de la part du correspondant réseau.
+
+Les profils DHCP ont également connu quelques modifications~:
+\begin {itemize}
+    \item le profil DHCP est dorénavant un paramètre des plages
+	DHCP dynamiques et non plus seulement un paramètre des
+	associations statiques
+
+    \item l'affectation d'un profil DHCP sur une machine sans adresse
+	MAC (c'est à dire sans association DHCP statique) est
+	maintenant refusée, car cela n'a aucun sens. La procédure
+	de mise à jour de la base supprime d'ailleurs tous les
+	profils DHCP des machines sans adresse MAC.
+
+    \item le profil DHCP est maintenant affiché dans la liste des
+	machines d'un réseau (page de consultation). Cette nouvelle
+	colonne est également présente dans le fichier PDF généré
+	pour l'impression.
+
+\end {itemize}
+
+Il est maintenant possible de renommer (nom et domaine) une machine
+depuis la page de modification des informations d'une machine. Par
+ailleurs, le changement d'adresse IP, souvent demandé, peut être
+facilement réalisé avec une astuce (ajout de la nouvelle adresse,
+puis suppression de l'ancienne) qui est rappelée dans cette page.
+
+Une «~carte des adresses~» (IPv4 seulement, pour des raisons
+évidentes) est maintenant disponible. Elle est accessible depuis
+la page de consultation des réseaux (bouton «~carte des adresses~»)
+et depuis la page d'ajout de machine (section «~Recherche de plusieurs
+adresses IPv4 disponibles~», puis bouton «~Consulter la carte~»).
+Cette carte présente l'ensemble de l'espace d'adressage
+pour repérer les adresses disponibles (i.e. non déclarées et
+ne figurant pas dans un intervalle DHCP dynamique). À partir de là~:
+
+\begin {itemize}
+    \item  cliquer sur une adresse non déclarée permet de déclarer
+	une machine
+    \item cliquer sur une adresse déclarée permet d'éditer les
+	informations (nom, type de machine, adresse MAC, etc.) ou
+	de supprimer la machine. Cette fonctionnalité est également
+	accessible dans la liste des machines d'un sous-réseau.
+\end {itemize}
+
+Il est également possible de rechercher automatiquement un bloc
+d'adresses IPv4 consécutives disponibles, et de procéder à l'ajout
+des machines correspondantes. Depuis la page d'ajout de machine,
+dans la section ~Recherche de plusieurs adresses IPv4 disponibles~»,
+il suffit d'indiquer le réseau et le nombre d'adresses souhaité
+pour commencer à saisir les machines.
+
+Enfin, les titres de pages ont été explicités, notamment pour se
+repérer plus facilement dans les menus d'historique de la plupart
+des navigateurs.
+
+\titreC {Migration de la version 1.4 vers la version 1.5}
+    \label {upgr14-15}
+
+RR. TTL XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+La migration de la version 1.4 vers la version 1.5 nécessite
+des modifications de la base.
+Pour cela, suivez les étapes ci-après~:
+
+\begin {enumerate}
+    \item \textbf {Arrêt de l'application}
+
+	Commencez par interdire aux utilisateur l'accès à l'application
+	en mettant en message dans le fichier défini par la variable
+	\texttt {NOLOGIN} (voir~\ref {install-dns}, page~\pageref
+	{install-dns}) sur le serveur Web. À ce stade, seuls les
+	utilisateurs définis par la variabble \texttt {ROOT} sont
+	habilités à utiliser l'application.
+
+    \item \textbf {Sauvegarde}
+
+	Sauvegardez la base~:
+
+	\begin {quote}
+	    \verb|pg_dump dns > /tmp/dns.dump|
+	\end {quote}
+
+    \item \textbf {Modification de la base}
+
+	Rendez-vous dans le répertoire de migration \verb|./upgrade/14-15/|
+	sur le serveur de données, et exécutez la commande~:
+
+	\begin {quote}
+	    \verb|psql -f upgrade.sql dns|
+	\end {quote}
+
+    \item \textbf {Installation de la nouvelle application}
+
+	Installez les fichiers de l'application Web, tels que définis
+	en~\ref {install-dns} (page~\pageref {install-dns}), en
+	prenant soin d'adapter les pages à trous si vous en éprouvez
+	le besoin.
+
+    \item \textbf {Installation des autres fichiers}
+
+	Reprenez les scripts de génération des zones, des routages de
+	messagerie, et de génération DHCP.
+
+    \item \textbf {Redémarrage}
+
+	Supprimez le fichier défini par la variable \texttt {NOLOGIN}
+	pour autoriser les utilisateurs à accéder de nouveau à
+	l'application.
+
+\end {enumerate}
+
+\cbend%1.5
+
 
 \titreB {Version 1.4}
 
