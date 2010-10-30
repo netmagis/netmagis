@@ -4,12 +4,12 @@ Application WebDNS
 Objectif
 --------
 
-Déléguer la gestion du DNS et de DHCP à un ensemble de correspondants
-réseau, et constituer le début d'un système d'information réseau.
+DÃ©lÃ©guer la gestion du DNS et de DHCP Ã  un ensemble de correspondants
+rÃ©seau, et constituer le dÃ©but d'un systÃ¨me d'information rÃ©seau.
 Voir
-    - l'article présenté aux Jres 2003
+    - l'article prÃ©sentÃ© aux Jres 2003
 	http://2003.jres.org/actes/paper.144.pdf
-    - l'article présenté aux Jres 2005
+    - l'article prÃ©sentÃ© aux Jres 2005
 	http://2005.jres.org/paper/82.pdf
 
 
@@ -35,9 +35,9 @@ Consultez doc/install/install.pdf
 Liste de diffusion
 ------------------
 
-La liste webdns@u-strasbg.fr (faible trafic) est destinée à
+La liste webdns@u-strasbg.fr (faible trafic) est destinÃ©e Ã 
 accueillir toutes les discussions sur l'application et ses
-à-côtés.
+Ã -cÃ´tÃ©s.
 
 
 Contributions externes
