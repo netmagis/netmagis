@@ -101,6 +101,11 @@
 	La version HTML a été générée avec \latextohtml{} (logiciel
 	libre).
 
+	\cbstart%1.5
+	L'ensemble de l'application WebDNS, ainsi que ce document,
+	est sous licence CeCILL-B (voir annexe~\ref {licence}).
+	\cbend%1.5
+
 	La dernière version de ce document est accessible à l'adresse : \\
 	\hspace* {10mm}
 	\htmlurl {http://webdns.u-strasbg.fr/}
@@ -123,8 +128,8 @@
     \begin {center}
 	Version 1.5, xx novembre 2010 \\
 	\copyright
-	    Pierre David et Jean Benoit,
-	    2004-2008
+	    Université de Strasbourg, Pierre David et Jean Benoit,
+	    2004-2010
     \end {center}
 %\end {titlepage}
 \setcounter {page} {0}
@@ -339,11 +344,8 @@ sont~:
 
 \begin {itemize}
     \item l'association statique d'une adresse MAC à un nom (et une
-	adresse IP)~; cette association peut être complétée par un
-	«~profil DHCP~», c'est à dire un ensemble d'options de
-	configuration du serveur DHCP communes à plusieurs machines
-	(comme par exemple l'adresse du serveur de \textit {boot}
-	d'un PC sans disque)~;
+	adresse IP)~;
+	\cbdelete%1.5
 
     \item la déclaration d'intervalles d'adresses IP réservés pour
 	l'allocation dynamique~; il est possible de déclarer des
@@ -353,6 +355,14 @@ sont~:
 	l'allocation statique.
 
 \end {itemize}
+
+\cbstart%1.5
+À chaque association DHCP (statique ou dynamique) est associé
+éventuellement un «~profil DHCP~», c'est à dire un ensemble d'options
+de configuration du serveur DHCP communes à plusieurs machines
+(comme par exemple l'adresse du serveur de \textit {boot} d'un PC
+sans disque)~;
+\cbend%1.5
 
 Ces fonctionnalités sont offertes réseau par réseau (dans l'application,
 mais également sur les routeurs concernés) et groupe de correspondant
@@ -485,6 +495,11 @@ La distribution de l'application WebDNS est organisée comme suit~:
     \texttt {upgrade/13-14/}
 	& ... de la version 1.3 vers la version 1.4
 	\\ \hline
+    \cbstart%1.5
+    \texttt {upgrade/14-15/}
+	& ... de la version 1.4 vers la version 1.5
+	\cbend%1.5
+	\\ \hline
     \texttt {www/}
 	& application WebDNS
 	\\ \hline
@@ -553,7 +568,10 @@ Disponibilité~: \htmlurl {http://httpd.apache.org/}
 
 Le langage utilisé par l'application et nombre de scripts auxiliaires
 est le langage Tcl (Tool Control Language) développé à l'origine par
-John Ousterhout. WebDNS a été développé avec la version 8.4.
+John Ousterhout. WebDNS a été développé avec la version
+\cbstart%1.5
+8.5.
+\cbend%1.5
 
 Il faut noter que Tcl est souvent associé à la boîte à outils
 graphique Tk.  Cette dernière n'est pas utilisée par WebDNS.
@@ -575,10 +593,10 @@ Disponibilité~: \htmlurl {http://www.tcl.tk/software/tcllib/}
 \titreC {PostgreSQL}
 
 Le moteur de base de données utilisé est PostgreSQL. Il faut utiliser
-une version supérieure ou égale à 8.0\footnote {La gestion des
-adresses IPv6 dans WebDNS repose sur le type de données «~INET~»
-de PostgreSQL, et plus spécifiquement sur son extension aux adresses
-IPv6 à partir de PostgreSQL version 8.0.}.
+une version supérieure ou égale à
+\cbstart%1.5
+8.3.
+\cbend%1.5
 
 
 Disponibilité~: \htmlurl {http://www.postgresql.org/}
@@ -3518,6 +3536,14 @@ dans la section ~Recherche de plusieurs adresses IPv4 disponibles~»,
 il suffit d'indiquer le réseau et le nombre d'adresses souhaité
 pour commencer à saisir les machines.
 
+Une nouvelle fonctionnalité, «~où suis-je~?~», affiche l'adresse
+IP du navigateur Web. Si l'adresse est dans un des réseaux gérés
+avec WebDNS, les responsables du réseau sont affichés. Si l'adresse
+correspond de plus à un nom, le RR correspondant est affiché. Ceci
+a pour but de permettre à un administrateur d'identifier la machine
+à partir de laquelle il se connecte (par exemple depuis une salle
+de ressources ou depuis une borne interactive).
+
 Enfin, les titres de pages ont été explicités, notamment pour se
 repérer plus facilement dans les menus d'historique de la plupart
 des navigateurs.
@@ -4775,5 +4801,77 @@ presse).
 	\\ \hline
 \end {supertabular}
 }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
+% Annexe - Licence
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\cbstart%1.5
+\titreA {Licence}
+    \label {licence}
+
+\begin {verbatim}
+Copyright Université de Strasbourg
+Contributeurs : Pierre David (pda@unistra.fr) & Jean Benoit (jean@unistra.fr)
+
+Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
+respectant les principes de diffusion des logiciels libres. Vous pouvez
+utiliser, modifier et/ou redistribuer ce programme sous les conditions
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+sur le site "http://www.cecill.info".
+
+En contrepartie de l'accessibilité au code source et des droits de copie,
+de modification et de redistribution accordés par cette licence, il n'est
+offert aux utilisateurs qu'une garantie limitée.  Pour les mêmes raisons,
+seule une responsabilité restreinte pèse sur l'auteur du programme,  le
+titulaire des droits patrimoniaux et les concédants successifs.
+
+A cet égard  l'attention de l'utilisateur est attirée sur les risques
+associés au chargement,  à l'utilisation,  à la modification et/ou au
+développement et à la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
+manipuler et qui le réserve donc à des développeurs et des professionnels
+avertis possédant  des  connaissances  informatiques approfondies.  Les
+utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
+logiciel à leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
+à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+
+Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
+termes.
+------------------------------------------------------------------------------
+Copyright Université de Strasbourg
+Contributors : Pierre David (pda@unistra.fr) & Jean Benoit (jean@unistra.fr)
+
+This software is governed by the CeCILL-B license under French law and
+abiding by the rules of distribution of free software.  You can  use, 
+modify and/ or redistribute the software under the terms of the CeCILL-B
+license as circulated by CEA, CNRS and INRIA at the following URL
+"http://www.cecill.info". 
+
+As a counterpart to the access to the source code and  rights to copy,
+modify and redistribute granted by the license, users are provided only
+with a limited warranty  and the software's author,  the holder of the
+economic rights,  and the successive licensors  have only  limited
+liability. 
+
+In this respect, the user's attention is drawn to the risks associated
+with loading,  using,  modifying and/or developing or reproducing the
+software by the user in light of its specific status of free software,
+that may mean  that it is complicated to manipulate,  and  that  also
+therefore means  that it is reserved for developers  and  experienced
+professionals having in-depth computer knowledge. Users are therefore
+encouraged to load and test the software's suitability as regards their
+requirements in conditions enabling the security of their systems and/or 
+data to be ensured and,  more generally, to use and operate it in the 
+same conditions as regards security. 
+
+The fact that you are presently reading this means that you have had
+knowledge of the CeCILL-B license and that you accept its terms.
+\end{verbatim}
+\cbend%1.5
 
 \end {document}
