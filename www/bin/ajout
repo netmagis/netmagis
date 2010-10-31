@@ -24,6 +24,7 @@
 #   2008/07/23 : pda/jean : ajout du droit d'émission SMTP
 #   2009/12/31 : pda      : ajout de l'ajout multiple
 #   2010/10/08 : pda      : ajout du cas de suite de script
+#   2010/10/31 : pda      : ajout ttl
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -106,6 +107,15 @@ proc main {} {
     set droitsmtpmenu    [lindex $droitsmtp 1]
 
     #
+    # Récupération du droit TTL pour afficher ou non le champ
+    # d'édition du TTL
+    #
+
+    set ttl [menu-ttl $dbfd "ttl" $tabcor(idcor) ""]
+    set ttllibelle [lindex $ttl 0]
+    set ttlval     [lindex $ttl 1]
+
+    #
     # Récupération des domaines auxquels le correspond a accès
     # et construction du code HTML approprié.
     #
@@ -163,6 +173,8 @@ proc main {} {
 					    [list %DOMAINE% $domaine] \
 					    [list %DOMAINEREF% $domaineref] \
 					    [list %MENUHINFO% $menuhinfo] \
+					    [list %TTLLIBELLE% $ttllibelle] \
+					    [list %TTLVAL% $ttlval] \
 					    [list %DROITSMTPLIBELLE% $droitsmtplibelle] \
 					    [list %DROITSMTPMENU% $droitsmtpmenu] \
 					    [list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \

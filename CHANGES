@@ -15,6 +15,8 @@ version 1.5 - ??/??/????
     - titres de page plus explicites, notamment pour naviguer dans
 	les menus d'historique de la plupart des navigateurs
     - fonctionnalité « où suis-je ? » pour afficher l'adresse IP du client
+    - édition des TTL pour les machines (ajout, modification) selon
+	l'attribut "droit ttl" du correspondant
     - suppression des références à Osiris et au CRC
     - restructuration des modèles HTG et modèle paramétrable
     - bug : les profils DHCP ne sont plus acceptés sur les RR qui n'ont

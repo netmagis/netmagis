@@ -155,7 +155,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
 	# Rien n'existait pour ce nom, donc on insère un nouveau
 	# RR.
 	#
-	set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 "" "" "" $idcor trr]
+	set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 0 "" "" "" $idcor trr]
 	if {! [string equal $msg ""]} then {
 	    return "Impossible d'insérer : $msg"
 	}

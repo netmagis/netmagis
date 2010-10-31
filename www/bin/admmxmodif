@@ -301,7 +301,7 @@ proc main {} {
 	    #
 
 	    # XXX : pas de commentaire ni de responsable... peut-être plus tard
-	    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 "" "" "" \
+	    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 0 "" "" "" \
 				$tabcor(idcor) tabrr]
 	    if {! [string equal $msg ""]} then {
 		::webapp::error-exit $conf(err) \

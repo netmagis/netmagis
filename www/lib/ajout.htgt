@@ -84,6 +84,8 @@
 			    \casetableau {} {Adresse IP}
 			    \multicasetableau {3} {} {
 				<INPUT TYPE="TEXT" NAME="adr" SIZE="45" VALUE="%ADR%">
+				~ ~ ~
+				%TTLLIBELLE% %TTLVAL%
 			    }
 			}
 			\lignetableau {

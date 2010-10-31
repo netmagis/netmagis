@@ -791,6 +791,7 @@ proc lire-rr-par-ip {dbfd adr tabrr} {
 #	tabrr(idhinfo) : le type de machine sous forme d'id
 #	tabrr(hinfo) : le type de machine sous forme de texte
 #	tabrr(droitsmtp) : la machine a le droit d'émission SMTP non authentifié
+#	tabrr(ttl) : ttl associé à la machine (pour toutes les adresses ip)
 #	tabrr(commentaire) : les infos complémentaires sous forme de texte
 #	tabrr(respnom) : le nom+prénom du responsable
 #	tabrr(respmel) : le mél du responsable
@@ -811,13 +812,14 @@ proc lire-rr-par-ip {dbfd adr tabrr} {
 #   2004/08/05 : pda/jean : legere simplification et ajout de mac
 #   2005/04/08 : pda/jean : ajout de dhcpprofil
 #   2008/07/24 : pda/jean : ajout de droitsmtp
+#   2010/10/31 : pda      : ajout de ttl
 #
 
 proc lire-rr-par-id {dbfd idrr tabrr} {
     upvar $tabrr trr
 
     set fields {nom iddom
-	mac iddhcpprofil idhinfo droitsmtp commentaire respnom respmel
+	mac iddhcpprofil idhinfo droitsmtp ttl commentaire respnom respmel
 	idcor date}
 
     catch {unset trr}
@@ -1189,6 +1191,7 @@ proc supprimer-rr-si-orphelin {dbfd idrr} {
 #	- iddhcpprofil : id du profil DHCP, ou 0
 #	- idhinfo : HINFO ou chaîne vide (le défaut est pris dans la base)
 #	- droitsmtp : 1 si droit d'émettre en SMTP non authentifié, ou 0
+#	- ttl : valeur de ttl ou "" pour la valeur nulle
 #	- comment : les infos complémentaires sous forme de texte
 #	- respnom : le nom+prénom du responsable
 #	- respmel : le mél du responsable
@@ -1207,9 +1210,10 @@ proc supprimer-rr-si-orphelin {dbfd idrr} {
 #   2004/10/05 : pda      : changement du format de date
 #   2005/04/08 : pda/jean : ajout dhcpprofil
 #   2008/07/24 : pda/jean : ajout droitsmtp
+#   2010/10/31 : pda      : ajout ttl
 #
 
-proc ajouter-rr {dbfd nom iddom mac iddhcpprofil idhinfo droitsmtp
+proc ajouter-rr {dbfd nom iddom mac iddhcpprofil idhinfo droitsmtp ttl
 				comment respnom respmel idcor tabrr} {
     upvar $tabrr trr
 
@@ -1230,19 +1234,22 @@ proc ajouter-rr {dbfd nom iddom mac iddhcpprofil idhinfo droitsmtp
     if {$iddhcpprofil == 0} then {
 	set iddhcpprofil NULL
     }
+    if {[string equal $ttl ""] || $ttl == 0} then {
+	set ttl NULL
+    }
     set sql "INSERT INTO rr
 		    (nom, iddom,
 			mac,
 			iddhcpprofil,
 			$hinfodef
-			droitsmtp, commentaire, respnom, respmel,
+			droitsmtp, ttl, commentaire, respnom, respmel,
 			idcor)
 		VALUES
 		    ('$nom', $iddom,
 			$qmac,
 			$iddhcpprofil,
 			$hinfoval
-			$droitsmtp, '$qcomment', '$qrespnom', '$qrespmel',
+			$droitsmtp, $ttl, '$qcomment', '$qrespnom', '$qrespmel',
 			$idcor)
 		    "
     if {[::pgsql::execsql $dbfd $sql msg]} then {
@@ -1300,6 +1307,7 @@ proc touch-rr {dbfd idrr idcor} {
 #
 # Historique
 #   2008/07/25 : pda/jean : conception
+#   2010/10/31 : pda      : ajout ttl
 #
 
 proc presenter-rr {dbfd idrr tabrr} {
@@ -1356,6 +1364,21 @@ proc presenter-rr {dbfd idrr tabrr} {
 	    set droitsmtp "Non"
 	}
 	lappend donnees [list Normal "Droit d'émission SMTP" $droitsmtp]
+    }
+
+    # TTL : ne le présenter que si c'est utilisé
+    # (i.e. s'il y a au moins un groupe qui a les droits)
+    # et s'il y a une valeur
+    set sql "SELECT COUNT(*) AS ndroitttl FROM groupe WHERE droitttl = 1"
+    set ndroitttl 0
+    pg_select $dbfd $sql tab {
+	set ndroitttl $tab(ndroitttl)
+    }
+    if {$ndroitttl > 0} then {
+	set ttl $trr(ttl)
+	if {! [string equal $ttl ""]} then {
+	    lappend donnees [list Normal "TTL" $ttl]
+	}
     }
 
     # infos complémentaires
@@ -2587,6 +2610,40 @@ proc menu-droitsmtp {dbfd champ idcor droitsmtp} {
     return [list $intitule $html]
 }
 
+#
+# Récupère le TTL d'une machine, ou un champ caché
+# si le groupe n'a pas accès à la fonctionnalité
+#
+# Entrée :
+#   - dbfd : accès à la base
+#   - champ : champ de formulaire (variable du CGI suivant)
+#   - idcor : identification du correspondant
+#   - ttl : valeur actuelle
+# Sortie :
+#   - valeur de retour : code HTML prêt à l'emploi
+#
+# Historique
+#   2010/10/31 : pda      : conception
+#
+
+proc menu-ttl {dbfd champ idcor ttl} {
+    #
+    # Récupérer le droit TTL pour afficher ou non le champ de formulaire
+    #
+
+    set grdroitttl [droit-correspondant-ttl $dbfd $idcor]
+    if {$grdroitttl} then {
+	set intitule "TTL"
+	set html [::webapp::form-text $champ 1 6 6 $ttl]
+	append html " (en secondes)"
+    } else {
+	set intitule ""
+	set html "<INPUT TYPE=HIDDEN NAME=\"$champ\" VALUE=\"$ttl\">"
+    }
+
+    return [list $intitule $html]
+}
+
 
 #
 # Fournit le code HTML pour une sélection de liste de domaines, soit
@@ -3170,6 +3227,30 @@ proc droit-correspondant-smtp {dbfd idcor} {
     set r 0
     pg_select $dbfd $sql tab {
 	set r $tab(droitsmtp)
+    }
+    return $r
+}
+
+#
+# Indique si le groupe du correspondant a le droit d'éditer les TTL
+#
+# Entrée :
+#   - paramètres :
+#       - dbfd : accès à la base
+#	- idcor : le correspondant
+# Sortie :
+#   - valeur de retour : 1 si ok, 0 sinon
+#
+# Historique
+#   2010/10/31 : pda/jean : conception
+#
+
+proc droit-correspondant-ttl {dbfd idcor} {
+    set sql "SELECT droitttl FROM groupe g, corresp c 
+				WHERE g.idgrp = c.idgrp AND c.idcor = $idcor"
+    set r 0
+    pg_select $dbfd $sql tab {
+	set r $tab(droitttl)
     }
     return $r
 }

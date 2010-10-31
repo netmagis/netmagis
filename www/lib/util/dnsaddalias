@@ -125,7 +125,7 @@ proc add-alias {dbfd login idcor fqdnalias fqdnref} {
     # RR.
     #
 
-    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 "" "" "" $idcor newrr]
+    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 0 "" "" "" $idcor newrr]
     if {! [string equal $msg ""]} then {
 	return "Impossible d'insérer : $msg"
     }

@@ -81,6 +81,10 @@
 		\casetableau {} {Responsable (mél)}
 		\multicasetableau {3} {} {%RESPMEL%}
 	    }
+	    \lignetableau {
+		\casetableau {} {%TTLLIBELLE%}
+		\multicasetableau {3} {} {%TTLVAL%}
+	    }
 	}
 	<INPUT TYPE="SUBMIT" VALUE="Valider">
     </FORM>

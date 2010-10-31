@@ -72,6 +72,10 @@
 	    \casetableau {} {%DROITSMTP%}
 	}
 	\lignetableau {
+	    \casetableau {} {TTL}
+	    \casetableau {} {%TTL%}
+	}
+	\lignetableau {
 	    \casetableau {} {Infos complémentaires}
 	    \casetableau {} {%COMMENTAIRE%}
 	}

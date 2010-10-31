@@ -17,6 +17,7 @@
 #	- iddhcpprofil : l'id du profil DHCP, ou 0
 #	- hinfo : type de machine (texte)
 #	- droitsmtp : inexistant ou non vide
+#	- ttl : valeur (ou vide si pas autorisé)
 #	- commentaire : informations complémentaires
 #	- respnom : nom et prénom du responsable
 #	- respmel : adresse électronique du responsable
@@ -111,6 +112,7 @@ set conf(form-ajout-machine)	{
 	{mac		1 1}
 	{iddhcpprofil	1 1}
 	{droitsmtp	0 1}
+	{ttl		1 1}
 	{hinfo		1 1}
 	{commentaire	1 1}
 	{respnom	1 1}
@@ -198,6 +200,7 @@ source $conf(libdns)
 #   2003/04/24 : pda/jean : interdiction d'ajout d'ip à un mx
 #   2004/08/04 : pda/jean : ajout mac
 #   2005/04/08 : pda/jean : ajout iddhcpprofil
+#   2010/10/31 : pda      : ajout ttl
 #
 
 proc traiteajout-machine {dbfd tc ft} {
@@ -218,6 +221,7 @@ proc traiteajout-machine {dbfd tc ft} {
     set mac           [string trim [lindex $ftab(mac) 0]]
     set iddhcpprofil  [string trim [lindex $ftab(iddhcpprofil) 0]]
     set droitsmtp     [string trim [lindex $ftab(droitsmtp) 0]]
+    set ttl           [string trim [lindex $ftab(ttl) 0]]
     set hinfo         [string trim [lindex $ftab(hinfo) 0]]
     set commentaire   [string trim [lindex $ftab(commentaire) 0]]
     set respnom       [string trim [lindex $ftab(respnom) 0]]
@@ -350,6 +354,19 @@ proc traiteajout-machine {dbfd tc ft} {
     }
 
     #
+    # Vérifier le droit TTL
+    #
+
+    set grdroitttl [droit-correspondant-ttl $dbfd $tabcor(idcor)]
+    if {$grdroitttl} then {
+	if {! [regexp {^\d*$} $ttl]} then {
+	    ::webapp::error-exit $conf(err) "TTL '$ttl' non valide"
+	}
+    } else {
+	set ttl ""
+    }
+
+    #
     # À ce niveau là :
     # - si le nom n'existe pas encore, et qu'on a demandé l'émission SMTP
     #		=> demander confirmation
@@ -363,7 +380,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Code en commun pour le cas où il y ait demande de confirmation
     #
 
-    set l {nom domaine adr mac iddhcpprofil droitsmtp hinfo commentaire
+    set l {nom domaine adr mac iddhcpprofil droitsmtp ttl hinfo commentaire
 			    respnom respmel nextprog nextargs}
     set hidden [::webapp::hide-parameters $l ftab]
 
@@ -427,7 +444,7 @@ proc traiteajout-machine {dbfd tc ft} {
 	# RR.
 	#
 	set msg [ajouter-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
-		    $droitsmtp $commentaire $respnom $respmel $idcor trr]
+		    $droitsmtp $ttl $commentaire $respnom $respmel $idcor trr]
 	if {! [string equal $msg ""]} then {
 	    ::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
 	}
@@ -449,6 +466,7 @@ proc traiteajout-machine {dbfd tc ft} {
 		    [string equal $iddhcpprofil $trr(iddhcpprofil)] &&
 		    [string equal $hinfo $trr(hinfo)] &&
 		    [string equal $droitsmtp $trr(droitsmtp)] &&
+		    [string equal $ttl $trr(ttl)] &&
 		    [string equal $commentaire $trr(commentaire)] &&
 		    [string equal $respnom $trr(respnom)] &&
 		    [string equal $respmel $trr(respmel)])} then {
@@ -463,11 +481,15 @@ proc traiteajout-machine {dbfd tc ft} {
 		if {$iddhcpprofil == 0} then {
 		    set iddhcpprofil NULL
 		}
+		if {[string equal $ttl ""] || $ttl == 0} then {
+		    set ttl NULL
+		}
 		set sql "UPDATE rr SET
 					mac = $qmac,
 					iddhcpprofil = $iddhcpprofil,
 					idhinfo = $idhinfo,
 					droitsmtp = $droitsmtp,
+					ttl = $ttl,
 					commentaire = '$qcommentaire',
 					respnom = '$qrespnom',
 					respmel = '$qrespmel'
@@ -773,7 +795,7 @@ proc traiteajout-alias {dbfd tc ft} {
     # RR.
     #
 
-    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 "" "" "" $idcor newrr]
+    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 0 "" "" "" $idcor newrr]
     if {! [string equal $msg ""]} then {
 	::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
     }

@@ -162,7 +162,8 @@ proc main {} {
 		# Le nom de "l'adresse de messagerie" n'existe pas encore.
 		# Ajouter le RR correspondant
 		#
-		set msg [ajouter-rr $dbfd $nom $trr(iddom) "" 0 "" 0 "" "" "" $idcor trr]
+		set msg [ajouter-rr $dbfd $nom $trr(iddom) "" 0 "" 0 0 \
+						"" "" "" $idcor trr]
 		if {! [string equal $msg ""]} then {
 		    ::webapp::error-exit $conf(err) \
 			    "Insertion de '$toutnom' impossible ($msg)"

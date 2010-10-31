@@ -17,6 +17,7 @@
 #	- iddhcpprofil : l'id du profil DHCP, ou 0
 #	- hinfo : type de machine (id)
 #	- droitsmtp : inexistant ou non vide
+#	- ttl : valeur (ou vide si pas autorisé)
 #	- commentaire : informations complémentaires
 #	- respnom : nom+prénom du responsable
 #	- respmel : mél du responsable
@@ -37,6 +38,7 @@
 #   2010/10/14 : pda      : codage parcours (via next*)
 #   2010/10/26 : pda      : vérification dhcpprofil sans adresse mac
 #   2010/10/26 : pda      : rendre le nom+domaine éditable
+#   2010/10/31 : pda      : ajout ttl
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -86,6 +88,7 @@ set conf(form-modif-infos)	{
 	{iddhcpprofil	1 1}
 	{hinfo		1 1}
 	{droitsmtp	0 1}
+	{ttl		1 1}
 	{commentaire	1 1}
 	{respnom	1 1}
 	{respmel	1 1}
@@ -135,6 +138,7 @@ proc traitemodif-infos {dbfd tc ft} {
     set iddhcpprofil  [string trim [lindex $ftab(iddhcpprofil) 0]]
     set hinfo         [string trim [lindex $ftab(hinfo) 0]]
     set droitsmtp     [string trim [lindex $ftab(droitsmtp) 0]]
+    set ttl           [string trim [lindex $ftab(ttl) 0]]
     set commentaire   [string trim [lindex $ftab(commentaire) 0]]
     set respnom       [string trim [lindex $ftab(respnom) 0]]
     set respmel       [string trim [lindex $ftab(respmel) 0]]
@@ -242,6 +246,19 @@ proc traitemodif-infos {dbfd tc ft} {
     }
 
     #
+    # Vérifier le droit TTL
+    #
+
+    set grdroitttl [droit-correspondant-ttl $dbfd $tabcor(idcor)]
+    if {$grdroitttl} then {
+	if {! [regexp {^\d*$} $ttl]} then {
+	    ::webapp::error-exit $conf(err) "TTL '$ttl' non valide"
+	}
+    } else {
+	set ttl ""
+    }
+
+    #
     # Tester si la machine doit être ajoutée statiquement comme adresse DHCP
     #
 
@@ -270,7 +287,7 @@ proc traitemodif-infos {dbfd tc ft} {
 	# Sortir une page de confirmation
 	#
 
-	set l {idrr nom domaine mac iddhcpprofil hinfo droitsmtp
+	set l {idrr nom domaine mac iddhcpprofil hinfo droitsmtp ttl
 			commentaire respnom respmel nextprog nextargs}
 	set hidden [::webapp::hide-parameters $l ftab]
 	::webapp::send html [::webapp::file-subst $conf(page-modif-smtp) \
@@ -289,6 +306,13 @@ proc traitemodif-infos {dbfd tc ft} {
 	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
     }
 
+    if {! $grdroitsmtp} then {
+	set droitsmtp $trr(droitsmtp)
+    }
+    if {! $grdroitttl} then {
+	set ttl $trr(ttl)
+    }
+
     if {[string equal $mac ""]} then {
 	set qmac NULL
     } else {
@@ -299,9 +323,12 @@ proc traitemodif-infos {dbfd tc ft} {
     } else {
 	set qiddhcpprofil $iddhcpprofil
     }
-
-    if {! $grdroitsmtp} then {
-	set droitsmtp $trr(droitsmtp)
+    if {[string equal $ttl ""] || $ttl == 0} then {
+	set qttl NULL
+	set httl "(valeur par défaut de la zone)"
+    } else {
+	set qttl $ttl
+	set httl $ttl
     }
 
     set qnom         [::pgsql::quote $nom]
@@ -315,6 +342,7 @@ proc traitemodif-infos {dbfd tc ft} {
 			    iddhcpprofil = $qiddhcpprofil,
 			    idhinfo = $idhinfo,
 			    droitsmtp = $droitsmtp,
+			    ttl = $qttl,
 			    commentaire = '$qcommentaire',
 			    respnom = '$qrespnom',
 			    respmel = '$qrespmel'
@@ -354,7 +382,7 @@ proc traitemodif-infos {dbfd tc ft} {
     #
 
     set m "modification de $trr(nom).$trr(domaine) :"
-    foreach c {nom domaine mac dhcpprofil hinfo droitsmtp commentaire respnom respmel} {
+    foreach c {nom domaine mac dhcpprofil hinfo droitsmtp ttl commentaire respnom respmel} {
 	append m " $c=[set $c]"
     }
     writelog "modifrr" $login $m
@@ -387,6 +415,7 @@ proc traitemodif-infos {dbfd tc ft} {
 					[list %DHCPPROFIL% $dhcpprofil] \
 					[list %HINFO% $hinfo] \
 					[list %DROITSMTP% $droitsmtp] \
+					[list %TTL% $httl] \
 					[list %COMMENTAIRE% $commentaire] \
 					[list %RESPNOM% $respnom] \
 					[list %RESPMEL% $respmel] \

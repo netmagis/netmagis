@@ -20,6 +20,7 @@
 #   2005/04/08 : pda/jean : ajout dhcpprofil
 #   2008/07/25 : pda/jean : ajout du droit d'émission SMTP
 #   2010/10/26 : pda      : rendre le nom+domaine éditable
+#   2010/10/31 : pda      : ajout ttl
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -150,6 +151,10 @@ proc editmodif-infos {dbfd idcor ft} {
     set droitsmtplibelle [lindex $droitsmtp 0]
     set droitsmtpmenu    [lindex $droitsmtp 1]
 
+    set ttl [menu-ttl $dbfd "ttl" $idcor $trr(ttl)]
+    set ttllibelle [lindex $ttl 0]
+    set ttlval     [lindex $ttl 1]
+
     set val [::webapp::html-string $trr(commentaire)]
     set commentaire [::webapp::form-text commentaire 1 50 50 $val]
 
@@ -176,6 +181,8 @@ proc editmodif-infos {dbfd idcor ft} {
 					[list %MENUHINFO% $menuhinfo] \
 					[list %DROITSMTPLIBELLE% $droitsmtplibelle] \
 					[list %DROITSMTPMENU% $droitsmtpmenu] \
+					[list %TTLLIBELLE% $ttllibelle] \
+					[list %TTLVAL% $ttlval] \
 					[list %COMMENTAIRE% $commentaire] \
 					[list %RESPNOM% $respnom] \
 					[list %RESPMEL% $respmel] \
