@@ -2732,17 +2732,18 @@ proc liste-groupes {dbfd {n 1}} {
 #   2005/04/06 : pda      : ajout des profils dhcp
 #   2007/10/23 : pda/jean : ajout des correspondants
 #   2008/07/23 : pda/jean : ajout des droits du groupe
+#   2010/10/31 : pda      : ajout des droits ttl
 #
 
 proc info-groupe {dbfd idgrp} {
     global libconf
 
     #
-    # Récupération des droits particuliers : admin et droitsmtp
+    # Récupération des droits particuliers : admin, droitsmtp et droitttl
     #
 
     set donnees {}
-    set sql "SELECT admin, droitsmtp FROM groupe WHERE idgrp = $idgrp"
+    set sql "SELECT admin, droitsmtp, droitttl FROM groupe WHERE idgrp = $idgrp"
     pg_select $dbfd $sql tab {
 	if {$tab(admin)} then {
 	    set admin "oui"
@@ -2754,10 +2755,16 @@ proc info-groupe {dbfd idgrp} {
 	} else {
 	    set droitsmtp "non"
 	}
+	if {$tab(droitttl)} then {
+	    set droitttl "oui"
+	} else {
+	    set droitttl "non"
+	}
 	lappend donnees [list DROIT "Administration de l'application" $admin]
 	lappend donnees [list DROIT "Gestion des émetteurs SMTP" $droitsmtp]
+	lappend donnees [list DROIT "Édition des TTL" $droitttl]
     }
-    if {[llength $donnees] == 2} then {
+    if {[llength $donnees] > 0} then {
 	set tabdroits [::arrgen::output "html" $libconf(tabdroits) $donnees]
     } else {
 	set tabdroits "Erreur sur les droits du groupe"

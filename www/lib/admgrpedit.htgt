@@ -78,6 +78,12 @@
 			    }
 			    \casetableau {} {%DROITSMTP%}
 			}
+			\lignetableau {
+			    \casetableau {} {Accès à la gestion des
+				TTL
+			    }
+			    \casetableau {} {%DROITTTL%}
+			}
 		    }
 		}
 	    }
