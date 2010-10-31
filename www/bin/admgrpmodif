@@ -11,6 +11,7 @@
 #	- newgrp : nom du groupe modifié (eventuellement)
 #	- admin : droit d'administration (0 ou 1)
 #	- droitsmtp : droit d'autoriser des machines à émettre en smtp (0 ou 1)
+#	- droitttl : droit de modifier les TTL des machines (0 ou 1)
 #	- confirm : oui ou non
 #	- loginN : les logins des membres du groupe
 #	- domaineN : les noms des domaines validés pour ce groupe
@@ -35,6 +36,7 @@
 #   2005/04/08 : pda/jean : profils dhcp
 #   2007/10/10 : pda/jean : centralisation de l'administration des groupes
 #   2008/07/23 : pda/jean : ajout droitsmtp
+#   2010/10/31 : pda      : ajout droitttl
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -72,6 +74,7 @@ set conf(form) {
 	{newgrp			1 1}
 	{admin			1 1}
 	{droitsmtp		1 1}
+	{droitttl		1 1}
 	{login[0-9]+		0 9999}
 	{tridom[0-9]+		0 9999}
 	{domaine[0-9]+		0 9999}
@@ -240,7 +243,8 @@ proc main {} {
     }
     
     if {$idorphelin == -1} then {
-	set sql "INSERT INTO groupe (nom,admin,droitsmtp) VALUES ('',0,0)"
+	set sql "INSERT INTO groupe (nom, admin, droitsmtp, droitttl)
+			    VALUES ('', 0, 0, 0)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    return $msg
@@ -335,6 +339,15 @@ proc main {} {
     set droitsmtp [lindex $ftab(droitsmtp) 0]
     if {! ([string equal $droitsmtp 0] || [string equal $droitsmtp 1])} then {
 	::webapp::error-exit $conf(err) "Champ 'droitsmtp' invalide"
+    }
+
+    #
+    # Tester le champ droitttl
+    #
+
+    set droitttl [lindex $ftab(droitttl) 0]
+    if {! ([string equal $droitttl 0] || [string equal $droitttl 1])} then {
+	::webapp::error-exit $conf(err) "Champ 'droitttl' invalide"
     }
 
     #
@@ -706,8 +719,8 @@ proc main {} {
 
     if {[string equal $action "création"]} then {
 	set qnewgrp [::pgsql::quote $newgrp]
-	set sql "INSERT INTO groupe (nom,admin,droitsmtp)
-		    VALUES ('$qnewgrp',$admin,$droitsmtp)"
+	set sql "INSERT INTO groupe (nom, admin, droitsmtp, droitttl)
+			VALUES ('$qnewgrp', $admin, $droitsmtp, $droitttl)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    return $msg
@@ -743,8 +756,11 @@ proc main {} {
     }
 
     # Mettre a jour les attributs du groupe
-    lappend cmd "UPDATE groupe SET admin = $admin, droitsmtp = $droitsmtp
-				WHERE idgrp = $idgrp"
+    lappend cmd "UPDATE groupe
+		    SET admin = $admin,
+			droitsmtp = $droitsmtp,
+			droitttl = $droitttl
+		    WHERE idgrp = $idgrp"
 
     # Créer ou affecter les correspondants
 

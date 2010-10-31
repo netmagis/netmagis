@@ -33,6 +33,21 @@ UPDATE groupe
 	WHERE droitsmtp IS NULL ;
 
 ------------------------------------------------------------------------------
+-- ajout du champ "ttl" dans la table groupe
+------------------------------------------------------------------------------
+
+ALTER TABLE groupe
+	ADD COLUMN droitttl INT ;
+
+ALTER TABLE groupe
+	ALTER COLUMN droitttl
+	SET DEFAULT 0 ;
+
+UPDATE groupe
+	SET droitttl = 0
+	WHERE droitttl IS NULL ;
+
+------------------------------------------------------------------------------
 -- ajout du champ "droitsmtp" dans la table RR
 ------------------------------------------------------------------------------
 
