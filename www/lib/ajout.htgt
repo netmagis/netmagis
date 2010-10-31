@@ -89,7 +89,7 @@
 			\lignetableau {
 			    \casetableau {} {Adresse MAC}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="mac" SIZE="20 MAXLENGTH="17">
+				<INPUT TYPE="TEXT" NAME="mac" SIZE="20" MAXLENGTH="17">
 			    }
 			    \casetableau {} {%DHCPPROFILLIBELLE%}
 			    \casetableau {} {%DHCPPROFILMENU%}
