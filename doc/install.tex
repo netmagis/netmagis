@@ -596,14 +596,35 @@ Le moteur de base de données utilisé est PostgreSQL. Il faut utiliser
 une version supérieure ou égale à
 \cbstart%1.5
 8.3.
-\cbend%1.5
 
+Note~: si vous choisissez d'utiliser l'application WebAuth pour
+authentifier les utilisateurs via une base PostgreSQL, il faut
+compiler le support du langage «~PL/Tcl~» dans le moteur PostgreSQL
+pour profiter de la recherche approximative de nom dans cette
+application.
+\cbend%1.5
+Sous FreeBSD, cela signifie qu'il faut charger le
+port de \texttt {postgresql-pltcl}. Pour tester si cela fonctionne,
+utilisez la commande \texttt {createlang} fournie avec PostgreSQL~:
+
+\begin {quote}
+\small
+\begin {verbatim}
+$ createlang pltcl
+\end{verbatim}
+\end {quote}
+
+Si vous rencontrez une erreur, le support de PL/Tcl n'est pas
+correctement installé.
 
 Disponibilité~: \htmlurl {http://www.postgresql.org/}
 
-Attention~: la compilation de PostgreSQL doit être réalisée avec
-le support de Tcl.  Sous FreeBSD, cela signifie qu'il faut charger
-les ports de \texttt {postgresql} et \texttt {pgtcl}.
+
+\cbstart%1.5
+\titreC {Pgtclng}
+
+Le support de PostgreSQL pour les applications rédigées avec Tcl
+nécessite le paquet pgtclng, au moins dans sa version 1.6.
 
 Pour vérifier si le support de Tcl est bien compilé, faire~:
 
@@ -618,24 +639,10 @@ $ tclsh8.5      # ou "tclsh" simplement
 \end {quote}
 
 Si vous rencontrez une erreur à la place d'un numéro de version (ici
-1.6), le support Tcl pour PostgreSQL n'est pas correctement installé.
+1.6.2), le support Tcl pour PostgreSQL n'est pas correctement installé.
+
+Disponibilité~: \htmlurl {http://pgtclng.projects.postgresql.org/}
 \cbend%1.5
-
-Vous devez également compiler le support du langage «~PL/Tcl~».
-Sous FreeBSD, cela signifie qu'il faut charger le port de \texttt
-{postgresql-pltcl}. Pour tester si cela fonctionne, utilisez la
-commande \texttt {createlang} fournie avec PostgreSQL~:
-
-\begin {quote}
-\small
-\begin {verbatim}
-$ createlang pltcl
-\end{verbatim}
-\end {quote}
-
-Si vous rencontrez une erreur, le support de PL/Tcl n'est pas
-correctement installé.
-
 
 \titreC {mod\_auth\_pgsql (authentification PostgreSQL)}
     \label {mod-auth-pgsql}
@@ -3511,6 +3518,13 @@ ailleurs, le changement d'adresse IP, souvent demandé, peut être
 facilement réalisé avec une astuce (ajout de la nouvelle adresse,
 puis suppression de l'ancienne) qui est rappelée dans cette page.
 
+Les TTL (Time To Live) des RR DNS peuvent être paramétrés. Pour
+cela, un nouveau droit est associé à chaque groupe de correspondants
+(accessible par la page d'édition des groupes). Si ce droit est
+activé, un nouveau champ est visible dans les pages d'ajout et de
+modification de machine. Ce champ est pris en compte dans la
+génération de zones sur le serveur DNS.
+
 Une «~carte des adresses~» (IPv4 seulement, pour des raisons
 évidentes) est maintenant disponible. Elle est accessible depuis
 la page de consultation des réseaux (bouton «~carte des adresses~»)
@@ -3550,8 +3564,6 @@ des navigateurs.
 
 \titreC {Migration de la version 1.4 vers la version 1.5}
     \label {upgr14-15}
-
-RR. TTL XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 La migration de la version 1.4 vers la version 1.5 nécessite
 des modifications de la base.
