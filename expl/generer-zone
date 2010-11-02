@@ -303,6 +303,9 @@ proc generer-normal {dbfd domaine selection rrsup} {
 	} else {
 	    set a "AAAA"
 	}
+	if {$ttl == -1} then {
+	    set ttl ""
+	}
 	puts stdout "$nom   $ttl    IN	$a	$tab(adr)"
 
 	if {! [string equal $rrsup ""] && ! [info exists affiche($nom)]} then {
@@ -331,6 +334,9 @@ proc generer-normal {dbfd domaine selection rrsup} {
 	set ttl $tab(ttl)
 	set d $tab(iddom2)
 	set complet "$tab(nom2).$tabdom($d)."
+	if {$ttl == -1} then {
+	    set ttl ""
+	}
 	puts stdout "$nom   $ttl    IN	MX	$tab(priorite) $complet"
     }
 
@@ -351,6 +357,9 @@ proc generer-normal {dbfd domaine selection rrsup} {
 	set d $tab(iddom2)
 	set complet "$tab(nom2).$tabdom($d)."
 	set ttl $tab(ttl)
+	if {$ttl == -1} then {
+	    set ttl ""
+	}
 	puts stdout "$tab(nom)	$ttl	IN	CNAME	$complet"
     }
 
@@ -385,6 +394,9 @@ proc generer-normal {dbfd domaine selection rrsup} {
 	pg_select $dbfd $sql tab {
 	    foreach r $relais {
 		set ttl $tab(ttl)
+		if {$ttl == -1} then {
+		    set ttl ""
+		}
 		puts stdout "$tab(nom)	$ttl	$r"
 	    }
 	}
@@ -457,6 +469,9 @@ proc generer-ipv4 {dbfd domaine selection rrsup} {
 	set gauche [join $lgauche "."]
 
 	set ttl $tab(ttl)
+	if {$ttl == -1} then {
+	    set ttl ""
+	}
 	puts "$gauche	$ttl	IN	PTR	$droite"
 
     }
@@ -581,6 +596,9 @@ proc generer-ipv6 {dbfd domaine selection rrsup} {
 	set droite "$tab(nom).$tabdom($tab(iddom))."
 
 	set ttl $tab(ttl)
+	if {$ttl == -1} then {
+	    set ttl ""
+	}
 	puts "$gauche	$ttl	IN	PTR	$droite"
     }
 

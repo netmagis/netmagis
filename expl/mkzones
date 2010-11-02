@@ -14,21 +14,19 @@
 #   2002/05/24 : pda/jean : mise en exploitation
 #   2002/05/28 : jean     : ajout de sudo (root possède le pipe de ndc)
 #   2004/04/26 : pda/jean/pegon : utilisation bind9 pour ipv6
+#   2010/11/02 : pda/jean : toilettage
 #
 
 # Chemin complet du script de génération d'une zone
 GENERER=/local/sbin/generer-zone
 
 # Répertoire où Bind s'attend à trouver les zones générées dynamiquement
-OUTDIR=/local/named/prim
+OUTDIR=/local/named/master
 
 # Répertoire temporaire pour la génération des zones
-TMPDIR=/local/named/prim.tmp
+TMPDIR=/local/named/master.tmp
 
 # Commande pour demander au serveur Bind de lire les nouvelles zones
-# Bind 8
-#NDC="/usr/local/bin/sudo /usr/sbin/ndc -s"
-# Bind 9
 NDC="/usr/local/sbin/rndc"
 
 if [ $# != 0 ]

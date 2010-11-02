@@ -359,11 +359,16 @@ proc traiteajout-machine {dbfd tc ft} {
 
     set grdroitttl [droit-correspondant-ttl $dbfd $tabcor(idcor)]
     if {$grdroitttl} then {
-	if {! [regexp {^\d*$} $ttl]} then {
-	    ::webapp::error-exit $conf(err) "TTL '$ttl' non valide"
+	if {[string equal $ttl ""]} then {
+	    set ttl -1
+	} else
+	    set msg [valide-ttl $ttl]
+	    if {! [string equal $msg ""]} then {
+		::webapp::error-exit $conf(err) $msg
+	    }
 	}
     } else {
-	set ttl ""
+	set ttl -1
     }
 
     #
@@ -480,9 +485,6 @@ proc traiteajout-machine {dbfd tc ft} {
 		set qrespmel     [::pgsql::quote $respmel]
 		if {$iddhcpprofil == 0} then {
 		    set iddhcpprofil NULL
-		}
-		if {[string equal $ttl ""] || $ttl == 0} then {
-		    set ttl NULL
 		}
 		set sql "UPDATE rr SET
 					mac = $qmac,
@@ -795,7 +797,7 @@ proc traiteajout-alias {dbfd tc ft} {
     # RR.
     #
 
-    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 0 "" "" "" $idcor newrr]
+    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor newrr]
     if {! [string equal $msg ""]} then {
 	::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
     }

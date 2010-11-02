@@ -69,6 +69,15 @@ UPDATE rr
 ALTER TABLE rr
 	ADD COLUMN ttl INT ;
 
+ALTER TABLE rr
+	ALTER COLUMN ttl
+	SET DEFAULT -1 ;
+
+UPDATE rr
+	SET ttl = -1
+	;
+
+
 ------------------------------------------------------------------------------
 -- ajout d'un trigger sur la table DHCPPROFIL
 ------------------------------------------------------------------------------

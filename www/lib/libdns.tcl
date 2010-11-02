@@ -1191,7 +1191,7 @@ proc supprimer-rr-si-orphelin {dbfd idrr} {
 #	- iddhcpprofil : id du profil DHCP, ou 0
 #	- idhinfo : HINFO ou chaîne vide (le défaut est pris dans la base)
 #	- droitsmtp : 1 si droit d'émettre en SMTP non authentifié, ou 0
-#	- ttl : valeur de ttl ou "" pour la valeur nulle
+#	- ttl : valeur de ttl ou -1 pour la valeur par défaut
 #	- comment : les infos complémentaires sous forme de texte
 #	- respnom : le nom+prénom du responsable
 #	- respmel : le mél du responsable
@@ -1233,9 +1233,6 @@ proc ajouter-rr {dbfd nom iddom mac iddhcpprofil idhinfo droitsmtp ttl
     }
     if {$iddhcpprofil == 0} then {
 	set iddhcpprofil NULL
-    }
-    if {[string equal $ttl ""] || $ttl == 0} then {
-	set ttl NULL
     }
     set sql "INSERT INTO rr
 		    (nom, iddom,
@@ -1376,7 +1373,7 @@ proc presenter-rr {dbfd idrr tabrr} {
     }
     if {$ndroitttl > 0} then {
 	set ttl $trr(ttl)
-	if {! [string equal $ttl ""]} then {
+	if {$ttl != -1} then {
 	    lappend donnees [list Normal "TTL" $ttl]
 	}
     }
@@ -2296,6 +2293,33 @@ proc valide-dhcp-statique {dbfd mac lip} {
     return $r
 }
 
+#
+# Valide les valeurs possibles d'un TTL (au sens de la RFC 2181)
+#
+# Entrée :
+#   - paramètres :
+#	- ttl : le ttl à valider
+# Sortie :
+#   - valeur de retour : chaîne vide (ok) ou non vide (message d'erreur)
+#
+# Historique
+#   2010/11/02 : pda/jean : conception à partir d'un code de jean
+#
+
+proc valide-ttl {ttl} {
+    set r ""
+    # 2^31-1
+    set maxttl [expr 0x7fffffff]
+    if {! [regexp {^\d+$} $ttl]} then {
+	set r "TTL invalide : doit être un nombre entier positif"
+    } else {
+	if {$ttl > $maxttl} then {
+	    set r "TTL invalide : doit être inférieur à $maxttl"
+	}
+    }
+    return $r
+}
+
 ##############################################################################
 # Validation des correspondants
 ##############################################################################
@@ -2618,7 +2642,7 @@ proc menu-droitsmtp {dbfd champ idcor droitsmtp} {
 #   - dbfd : accès à la base
 #   - champ : champ de formulaire (variable du CGI suivant)
 #   - idcor : identification du correspondant
-#   - ttl : valeur actuelle
+#   - ttl : valeur actuelle issue de la base
 # Sortie :
 #   - valeur de retour : code HTML prêt à l'emploi
 #
@@ -2627,6 +2651,14 @@ proc menu-droitsmtp {dbfd champ idcor droitsmtp} {
 #
 
 proc menu-ttl {dbfd champ idcor ttl} {
+    #
+    # Convertir la valeur de TTL issue de la base en valeur "affichable"
+    #
+
+    if {$ttl == -1} then {
+	set ttl ""
+    }
+
     #
     # Récupérer le droit TTL pour afficher ou non le champ de formulaire
     #

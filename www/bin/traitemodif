@@ -251,11 +251,16 @@ proc traitemodif-infos {dbfd tc ft} {
 
     set grdroitttl [droit-correspondant-ttl $dbfd $tabcor(idcor)]
     if {$grdroitttl} then {
-	if {! [regexp {^\d*$} $ttl]} then {
-	    ::webapp::error-exit $conf(err) "TTL '$ttl' non valide"
+	if {[string equal $ttl ""]} then {
+	    set ttl -1
+	} else
+	    set msg [valide-ttl $ttl]
+	    if {! [string equal $msg ""]} then {
+		::webapp::error-exit $conf(err) $msg
+	    }
 	}
     } else {
-	set ttl ""
+	set ttl -1
     }
 
     #
@@ -323,11 +328,9 @@ proc traitemodif-infos {dbfd tc ft} {
     } else {
 	set qiddhcpprofil $iddhcpprofil
     }
-    if {[string equal $ttl ""] || $ttl == 0} then {
-	set qttl NULL
+    if {$ttl == -1} then {
 	set httl "(valeur par défaut de la zone)"
     } else {
-	set qttl $ttl
 	set httl $ttl
     }
 
@@ -342,7 +345,7 @@ proc traitemodif-infos {dbfd tc ft} {
 			    iddhcpprofil = $qiddhcpprofil,
 			    idhinfo = $idhinfo,
 			    droitsmtp = $droitsmtp,
-			    ttl = $qttl,
+			    ttl = $ttl,
 			    commentaire = '$qcommentaire',
 			    respnom = '$qrespnom',
 			    respmel = '$qrespmel'

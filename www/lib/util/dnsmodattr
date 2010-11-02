@@ -10,6 +10,8 @@
 # Exemples :
 #   dnsmodattr crc.u-strasbg.fr MAC 00:68:fe....
 #   dnsmodattr crc.u-strasbg.fr HINFO "PC/Unix"
+#   dnsmodattr crc.u-strasbg.fr TTL 3600      # 1 heure
+#   dnsmodattr crc.u-strasbg.fr TTL ""        # remettre valeur par défaut
 #
 # Les attributs modifiables sont :
 #   MAC, HINFO, RESPNOM, RESPMEL, COMMENTAIRE, DHCPPROFIL, TTL
@@ -153,14 +155,14 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
     # Cf. RFC 3181
     # Pour supprimer le TTL, passer une chaine vide
     #
-    set maxttl [expr 0x7FFFFFFF]
     if {[info exists tattr(ttl)]} then {
-	set ttlval $tattr(ttl)
-	if {![string equal $ttlval ""] && (![regexp {^[0-9]+$} $ttlval]
-	    || $ttlval<0 || $ttlval>$maxttl)} {
-	    set msg "TTL invalide : doit être un nombre entier "
-	    append msg "compris entre 0 et $maxttl, ou bien une chaine vide"
-	    return $msg
+	if {[string equal $tattr(ttl) ""]} then {
+	    set tattr(ttl) -1
+	}  else {
+	    set msg [valide-ttl $tattr(ttl)]
+	    if {! [string equal $msg ""]} then {
+		return $msg
+	    }
 	}
     }
 
