@@ -596,16 +596,16 @@ Le moteur de base de données utilisé est PostgreSQL. Il faut utiliser
 une version supérieure ou égale à
 \cbstart%1.5
 8.3.
-
-Note~: si vous choisissez d'utiliser l'application WebAuth pour
-authentifier les utilisateurs via une base PostgreSQL, il faut
-compiler le support du langage «~PL/Tcl~» dans le moteur PostgreSQL
-pour profiter de la recherche approximative de nom dans cette
-application.
 \cbend%1.5
-Sous FreeBSD, cela signifie qu'il faut charger le
-port de \texttt {postgresql-pltcl}. Pour tester si cela fonctionne,
-utilisez la commande \texttt {createlang} fournie avec PostgreSQL~:
+
+
+Disponibilité~: \htmlurl {http://www.postgresql.org/}
+
+Attention~: la compilation de PostgreSQL doit être réalisée avec
+le support du langage «~PL/Tcl~» dans le moteur. 
+Sous FreeBSD, cela signifie qu'il faut charger le port de \texttt
+{postgresql-pltcl}. Pour tester si cela fonctionne, utilisez la
+commande \texttt {createlang} fournie avec PostgreSQL~:
 
 \begin {quote}
 \small
@@ -616,8 +616,6 @@ $ createlang pltcl
 
 Si vous rencontrez une erreur, le support de PL/Tcl n'est pas
 correctement installé.
-
-Disponibilité~: \htmlurl {http://www.postgresql.org/}
 
 
 \cbstart%1.5
@@ -776,10 +774,11 @@ utilisateurs.
 
 \titreC {Accès à PostgreSQL depuis le serveur Apache}
 
-Si vous localisez le serveur Apache et le serveur PostgreSQL sur des
-machines différentes, prenez bien soin à autoriser l'accès du serveur
-Apache sur le serveur PostgreSQL. Pour cela, modifiez le fichier \texttt
-{pg\_hba.conf} et insérez la ligne suivante~:
+Si vous localisez le serveur Apache et le serveur PostgreSQL sur
+des machines différentes, prenez bien soin de configurer le serveur
+PostgreSQL pour accepter les connexions depuis le serveur Apache.
+PostgreSQL. Pour cela, modifiez le fichier \texttt {pg\_hba.conf}
+et insérez la ligne suivante~:
 
 \begin {quote}
 \small
@@ -887,10 +886,11 @@ les scripts CGI de l'application utilisent.
 \titreB {Utilisation du générateur «~htg~»}
     \label {htg:principe}
 
-Les pages HTML, au CRC, sont générées automatiquement à partir d'un
-mini-langage (HTG, pour HTML Generator). L'outil HTG, qui permet
-de transformer un source HTG en fichier HTML, est fourni (répertoire
-\verb|./htg|) ainsi que sa documentation (répertoire \verb|./htg/doc|).
+\cbstart%1.5
+Les pages HTML sont générées automatiquement à partir d'un mini-langage
+(HTG, pour HTML Generator). L'outil HTG, qui permet de transformer
+un source HTG en fichier HTML, est fourni (répertoire \verb|./htg|)
+ainsi que sa documentation (répertoire \verb|./htg/doc|).
 
 L'intérêt de l'utilisation de HTG est de dissocier complètement le
 fond de la forme. L'utilisateur de HTG ne spécifie que le fond, et HTG
@@ -915,29 +915,7 @@ modèles sont fournis~:
 
 \end {itemize}
 
-    \label {htg-webdns}
-
-Pour compiler «~\texttt {htg}~», allez dans le répertoire
-\verb|./htg/src|~:
-
-\begin {itemize}
-    \item éditez le fichier \texttt {Makefile} et lancez
-	la compilation avec \texttt {make}~;
-
-    \item éditez le fichier \texttt {htg} pour modifier, en première
-	ligne, la localisation exacte du fichier \texttt {htgtcl}
-	compilé dans la précédente étape.
-
-\end {itemize}
-
-Ensuite, sélectionnez le type de modèle que vous préférez en changeant
-le lien \verb|./htg/modeles|.
-
-Enfin, si vous utilisez le modèle «~crc~» ou «~webdns~», vous devez
-recopier le contenu du répertoire \verb|./htg/modeles/css|, y compris
-le sous-répertoire \texttt {images}, dans le répertoire \texttt
-{/css} de votre arborescence Web.
-
+\cbdelete%1.5
 
 \titreB {Quelles pages HTML utiliser~?}
 
@@ -945,20 +923,51 @@ Plusieurs solutions s'offrent à vous~:
 
 \begin {itemize}
     \item utiliser HTG~: dans ce cas, il vous suffit de reprendre les
-	pages du CRC, en les modifiant éventuellement pour indiquer des
-	titres plus représentatifs de votre service.
+	pages actuelles, en les modifiant éventuellement pour
+	indiquer des titres plus représentatifs de votre service.
 
 	Concernant le choix du modèle, vous pouvez alors~:
 	\begin {itemize}
 	    \item reprendre le modèle «~webdns~»~;
 	    \item concevoir un nouveau modèle (cette option
 		n'est pas documentée ici) en vous inspirant
-		du modèle «~webdns~».
+		des modèles existants.
 	\end {itemize}
 
     \item utiliser des fonds de page HTML que vous aurez conçus
 	vous-même.
 \end {itemize}
+
+
+\cbstart%1.5
+\titreB {Installation du générateur «~htg~»}
+    \label {htg-webdns}
+
+Pour compiler «~\texttt {htg}~», allez dans le répertoire
+\verb|./htg/src|, éditez le fichier \texttt {Makefile} et lancez
+la compilation avec \texttt {make}.
+
+Ensuite, sélectionnez le type de modèle que vous préférez en changeant
+le lien \verb|./htg/modeles/default|\footnote {Si vous démarrez,
+nous vous conseillons de choisir le modèle «~webdns~».}.
+
+Installez maintenant l'ensemble dans le répertoire de votre
+choix\footnote {Il n'y a pas de contrainte par rapport à ce
+répertoire. Il peut être (et il vaut mieux qu'il soit) situé à
+l'extérieur de votre arborescence Web servie par votre serveur
+Apache.}.  Pour cela, allez dans le répertoire \verb|./htg|, éditez
+le fichier \texttt {Makefile}, modifiez la variable \verb|DESTDIR|
+et lancez l'installation avec \texttt {make}.
+
+Enfin, si vous utilisez le modèle «~crc~» ou «~webdns~», vous devez
+recopier (ou rendre accessible en utilisant un lien symbolique) le
+contenu du répertoire \verb|./htg/modeles/default/css| (ou sa version
+installée), y compris le sous-répertoire \texttt {images}, dans le
+répertoire \texttt {/css} de votre arborescence Web.
+
+\cbend%1.5
+
+%%%%% XXX manque une étape de vérification
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
@@ -1082,10 +1091,10 @@ utilisateurs, grâce à seulement quelques lignes de code.
     \item
 	avec le développement de l'authentification basée sur des
 	annuaires LDAP, une telle application est devenue progressivement
-	inutile pour la plupart des organismes ayant adopté WebDNS,
-	voire même un frein dans la mesure où cela nécessitait une
-	double saisie des utilisateurs (une fois avec LDAP et une
-	fois avec WebAuth)~;
+	inutile pour la plupart des organisations ayant adopté
+	WebDNS, voire même un frein dans la mesure où cela nécessitait
+	une double saisie des utilisateurs (une fois avec LDAP et
+	une fois avec WebAuth)~;
 
     \item
 	les autres applications développées au CRC n'ont pas connu
@@ -1095,9 +1104,9 @@ utilisateurs, grâce à seulement quelques lignes de code.
 \end {itemize}
 
 Il est donc devenu clair que WebDNS devait s'affranchir de la gestion
-de ses utilisateurs. Pour les organisations qui n'ont pas mis en
-place un annuaire LDAP, WebAuth est dorénavant fourni avec WebDNS,
-et continue de fournir un mode d'authentification basé sur une base
+des utilisateurs. Pour les organisations qui n'ont pas mis en place
+un annuaire LDAP, WebAuth est dorénavant fourni avec WebDNS, et
+continue de fournir un mode d'authentification basé sur une base
 PostgreSQL.
 
 WebAuth gère des utilisateurs et des groupes. Les utilisateurs sont
@@ -2913,12 +2922,13 @@ Les autres attributs d'un réseau sont~:
 	régional), vous pourrez remplacer la notion d'établissement par
 	la notion de service, de laboratoire, de client, etc.
 
-    \item sa «~\textbf {communauté}~»~: cette notion nous permet, sur Osiris,
-	d'identifier les réseaux d'enseignement, de recherche,
+    \item sa «~\textbf {communauté}~»~: cette notion permet, sur
+	Osiris, d'identifier les réseaux d'enseignement, de recherche,
 	d'administration, de backbone, d'interconnexion, etc.  Vous
-	pouvez l'utiliser de cette manière, ou ne pas considérer
-	ce champ. Cet attribut n'a pas d'autre utilité, pour l'instant,
-	que la documentation des réseaux.
+	pouvez l'utiliser de cette manière, l'utiliser comme un
+	«~tag~» pour un autre usage, ou ne pas considérer ce champ.
+	Cet attribut n'a pas d'autre utilité que la documentation
+	des réseaux.
 
     \item sa \textbf {localisation} géographique~: texte libre,
 	par exemple une adresse, un bâtiment, un étage, etc.
