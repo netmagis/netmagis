@@ -18,7 +18,7 @@ ALTER TABLE dhcprange
 	FOREIGN KEY (iddhcpprofil) REFERENCES dhcpprofil(iddhcpprofil) ;
 
 ------------------------------------------------------------------------------
--- ajout du champ "droitsmtp" dans la table groupe
+-- ajout des colonnes "droitsmtp" et "ttl" dans la table groupe
 ------------------------------------------------------------------------------
 
 ALTER TABLE groupe
@@ -32,9 +32,7 @@ UPDATE groupe
 	SET droitsmtp = 0
 	WHERE droitsmtp IS NULL ;
 
-------------------------------------------------------------------------------
 -- ajout du champ "ttl" dans la table groupe
-------------------------------------------------------------------------------
 
 ALTER TABLE groupe
 	ADD COLUMN droitttl INT ;
@@ -48,8 +46,11 @@ UPDATE groupe
 	WHERE droitttl IS NULL ;
 
 ------------------------------------------------------------------------------
--- ajout du champ "droitsmtp" dans la table RR
+-- ajout des colonnes "droitsmtp" et "ttl" dans la table RR
 ------------------------------------------------------------------------------
+
+-- supprimer le trigger temporairement pour accélérer les grosses modifications
+DROP TRIGGER tr_modifier_rr ON rr ;
 
 ALTER TABLE rr
 	ADD COLUMN droitsmtp INT ;
@@ -62,9 +63,7 @@ UPDATE rr
 	SET droitsmtp = 0
 	WHERE droitsmtp IS NULL ;
 
-------------------------------------------------------------------------------
 -- ajout du champ "ttl" dans la table RR
-------------------------------------------------------------------------------
 
 ALTER TABLE rr
 	ADD COLUMN ttl INT ;
@@ -75,15 +74,23 @@ ALTER TABLE rr
 
 UPDATE rr
 	SET ttl = -1
-	;
+	WHERE ttl IS NULL ;
 
+-- remettre le trigger dans l'état initial
+
+CREATE TRIGGER tr_modifier_rr
+    AFTER INSERT OR UPDATE OR DELETE
+    ON rr
+    FOR EACH ROW
+    EXECUTE PROCEDURE modifier_rr ()
+    ;
 
 ------------------------------------------------------------------------------
 -- ajout d'un trigger sur la table DHCPPROFIL
 ------------------------------------------------------------------------------
 
 CREATE TRIGGER tr_modifier_dhcpprofil
-    AFTER UPDATE
+    BEFORE UPDATE
     ON dhcpprofil
     FOR EACH ROW
     EXECUTE PROCEDURE generer_dhcp ()

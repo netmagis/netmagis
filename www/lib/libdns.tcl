@@ -2666,7 +2666,7 @@ proc menu-ttl {dbfd champ idcor ttl} {
     set grdroitttl [droit-correspondant-ttl $dbfd $idcor]
     if {$grdroitttl} then {
 	set intitule "TTL"
-	set html [::webapp::form-text $champ 1 6 6 $ttl]
+	set html [::webapp::form-text $champ 1 6 10 $ttl]
 	append html " (en secondes)"
     } else {
 	set intitule ""
