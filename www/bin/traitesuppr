@@ -387,7 +387,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 	    # Suppression d'une adresse seulement
 	    #
 
-	    set sql "DELETE FROM rr_ip WHERE adr = '$adr'"
+	    set sql "DELETE FROM dns.rr_ip WHERE adr = '$adr'"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	       ::pgsql::unlock $dbfd "abort" m
 		::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"

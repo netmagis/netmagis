@@ -80,7 +80,7 @@ proc main {} {
     # Forcer la génération
     #
 
-    if {! [::pgsql::lock $dbfd {zone} msg]} then {
+    if {! [::pgsql::lock $dbfd {dns.zone} msg]} then {
 	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
     }
 

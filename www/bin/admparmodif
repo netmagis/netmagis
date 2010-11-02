@@ -87,7 +87,7 @@ proc main {} {
     # Enregistrement des paramètres du formulaire
     #
 
-    if {! [::pgsql::lock $dbfd {config} msg]} then {
+    if {! [::pgsql::lock $dbfd {global.config} msg]} then {
 	::webapp::error-exit $conf(err) "Verrouillage impossible ('$msg')"
     }
 

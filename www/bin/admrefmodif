@@ -183,7 +183,7 @@ proc main {} {
 		{nom}
 	    }
 	    set idnum idetabl
-	    set table etablissement
+	    set table dns.etablissement
 	}
 	commu	{
 	    set typeenclair "nom des communautés"
@@ -192,7 +192,7 @@ proc main {} {
 		{nom}
 	    }
 	    set idnum idcommu
-	    set table communaute
+	    set table dns.communaute
 	}
 	hinfo {
 	    set typeenclair "types de machines"
@@ -203,7 +203,7 @@ proc main {} {
 		{present}
 	    }
 	    set idnum idhinfo
-	    set table hinfo
+	    set table dns.hinfo
 	}
 	reseau	{
 	    set typeenclair "réseaux"
@@ -221,7 +221,7 @@ proc main {} {
 		{commentaire}
 	    }
 	    set idnum idreseau
-	    set table reseau
+	    set table dns.reseau
 	}
 	domaine {
 	    set typeenclair "domaines"
@@ -230,7 +230,7 @@ proc main {} {
 		{nom}
 	    }
 	    set idnum iddom
-	    set table domaine
+	    set table dns.domaine
 	}
 	zone -
 	zone4 -
@@ -245,9 +245,9 @@ proc main {} {
 	    }
 	    set idnum idzone
 	    switch -- $type {
-		zone  { set table zone_normale }
-		zone4 { set table zone_reverse4 }
-		zone6 { set table zone_reverse6 }
+		zone  { set table dns.zone_normale }
+		zone4 { set table dns.zone_reverse4 }
+		zone6 { set table dns.zone_reverse6 }
 	    }
 	}
 	groupe {
@@ -258,7 +258,7 @@ proc main {} {
 		{admin}
 	    }
 	    set idnum idgrp
-	    set table groupe
+	    set table global.groupe
 	}
 	dhcpprofil {
 	    set typeenclair "dhcpprofil"
@@ -268,7 +268,7 @@ proc main {} {
 		{texte}
 	    }
 	    set idnum iddhcpprofil
-	    set table dhcpprofil
+	    set table dns.dhcpprofil
 	}
 	default	{
 	    ::webapp::error-exit $conf(err) "Type de modification invalide ($type)"

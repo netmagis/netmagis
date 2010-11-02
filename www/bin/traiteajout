@@ -439,7 +439,7 @@ proc traiteajout-machine {dbfd tc ft} {
     #
     # Insérer l'objet (RR + adr IP) ou seulement l'adr IP dans la base
     #
-    if {! [::pgsql::lock $dbfd {rr rr_ip} msg]} then {
+    if {! [::pgsql::lock $dbfd {dns.rr dns.rr_ip} msg]} then {
 	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
     }
 
@@ -503,7 +503,7 @@ proc traiteajout-machine {dbfd tc ft} {
 	}
     }
 
-    set sql "INSERT INTO rr_ip VALUES ($trr(idrr), '$adr')"
+    set sql "INSERT INTO dns.rr_ip VALUES ($trr(idrr), '$adr')"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
        ::pgsql::unlock $dbfd "abort" m
 	::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
@@ -788,7 +788,7 @@ proc traiteajout-alias {dbfd tc ft} {
     # Tous les tests sont ok, il faut insérer l'alias
     #
 
-    if {! [::pgsql::lock $dbfd {rr rr_cname} msg]} then {
+    if {! [::pgsql::lock $dbfd {dns.rr dns.rr_cname} msg]} then {
 	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
     }
 
@@ -806,7 +806,7 @@ proc traiteajout-alias {dbfd tc ft} {
     # Ajouter l'alias proprement dit
     #
 
-    set sql "INSERT INTO rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
+    set sql "INSERT INTO dns.rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	::webapp::error-exit $conf(err) "Impossible d'insérer l'alias : $msg"
     }

@@ -354,7 +354,7 @@ proc lire-dns {base domain routers tabfic tabdns} {
     # Récupère iddom
     #
 
-    pg_select $dbfd "SELECT iddom FROM domaine WHERE nom = '$domain'" t {
+    pg_select $dbfd "SELECT iddom FROM dns.domaine WHERE nom = '$domain'" t {
 	set iddom $t(iddom)
     }
 
@@ -369,7 +369,7 @@ proc lire-dns {base domain routers tabfic tabdns} {
     set lpat [join $lpat " OR "]
 
     set sql "SELECT rr.nom AS nom, rr_ip.adr AS adr
-			FROM rr, rr_ip 
+			FROM dns.rr, dns.rr_ip 
 			WHERE rr.idrr = rr_ip.idrr
 			    AND rr.iddom = $iddom
 			    AND ( $lpat )"
@@ -391,7 +391,7 @@ proc lire-dns {base domain routers tabfic tabdns} {
 
     set sql "SELECT rr.nom AS nom, rr_ip.adr AS adr,
 			    rr.iddom AS iddom, domaine.nom AS domaine
-			FROM rr, rr_ip, domaine
+			FROM dns.rr, dns.rr_ip, dns.domaine
 			WHERE rr.idrr = rr_ip.idrr
 			    AND rr.iddom = domaine.iddom
 			    AND rr_ip.adr IN ($lif)"

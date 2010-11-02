@@ -120,7 +120,7 @@ proc inserer-mx {dbfd idrr lmx} {
     foreach mx $lmx {
 	set prio [lindex $mx 0]
 	set idmx [lindex $mx 1]
-	set sql "INSERT INTO rr_mx (idrr, priorite, mx)
+	set sql "INSERT INTO dns.rr_mx (idrr, priorite, mx)
 				VALUES ($idrr, $prio, $idmx)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    return "Insertion du MX impossible ($msg)"
@@ -254,7 +254,7 @@ proc main {} {
 	# Supprimer tous les MX éventuels au préalable.
 	#
 
-	set sql "DELETE FROM rr_mx WHERE idrr = $tabrr(idrr)"
+	set sql "DELETE FROM dns.rr_mx WHERE idrr = $tabrr(idrr)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    ::webapp::error-exit $conf(err) "Suppression des anciens MX impossible: $msg"
@@ -268,7 +268,7 @@ proc main {} {
 	    #
 	    # Supprimer le RR
 	    #
-	    set sql "DELETE FROM rr WHERE idrr = $tabrr(idrr)"
+	    set sql "DELETE FROM dns.rr WHERE idrr = $tabrr(idrr)"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
 		::webapp::error-exit $conf(err) "Suppression du RR '$nom.$domaine' impossible: $msg"

@@ -142,14 +142,14 @@ proc lire-role-mail {dbfd idcor nom domaine} {
     set sql "
 	SELECT r1.nom AS noma, d1.nom AS domainea,
 		r2.nom AS nomh, d2.nom AS domaineh
-	    FROM role_mail, rr r1, domaine d1, rr r2, domaine d2, corresp
+	    FROM dns.role_mail, dns.rr r1, dns.domaine d1, dns.rr r2, dns.domaine d2, global.corresp
 	    WHERE corresp.idcor = $idcor
 		$nom
 		AND role_mail.idrr = r1.idrr
 		AND r1.iddom = d1.iddom
 		AND d1.nom = '$domaine'
 		AND r1.iddom =
-			(SELECT dd1.iddom FROM dr_dom dd1
+			(SELECT dd1.iddom FROM dns.dr_dom dd1
 					WHERE dd1.idgrp = corresp.idgrp
 					    AND dd1.iddom = r1.iddom
 					    AND dd1.rolemail > 0
@@ -157,17 +157,17 @@ proc lire-role-mail {dbfd idcor nom domaine} {
 		AND role_mail.heberg = r2.idrr
 		AND r2.iddom = d2.iddom
 		AND r2.iddom =
-			(SELECT dd2.iddom FROM dr_dom dd2
+			(SELECT dd2.iddom FROM dns.dr_dom dd2
 					WHERE dd2.idgrp = corresp.idgrp
 					    AND dd2.iddom = r2.iddom
 			    )
 		AND r2.idrr IN
-			(SELECT r3.idrr FROM rr_ip r3
+			(SELECT r3.idrr FROM dns.rr_ip r3
 					WHERE valide_ip_cor(adr, $idcor)
 					    AND r3.idrr = r2.idrr
 			    )
 		AND r2.idrr NOT IN
-			(SELECT r4.idrr FROM rr_ip r4
+			(SELECT r4.idrr FROM dns.rr_ip r4
 					WHERE NOT valide_ip_cor(adr, $idcor)
 					    AND r4.idrr = r2.idrr
 			    )

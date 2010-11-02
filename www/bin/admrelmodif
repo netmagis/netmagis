@@ -117,7 +117,7 @@ proc inserer-relais {dbfd iddom lrel} {
     foreach rel $lrel {
 	set prio [lindex $rel 0]
 	set idmx [lindex $rel 1]
-	set sql "INSERT INTO relais_dom (iddom, priorite, mx)
+	set sql "INSERT INTO dns.relais_dom (iddom, priorite, mx)
 				    VALUES ($iddom, $prio, $idmx)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    return "Insertion du relais impossible ($msg)"
@@ -204,7 +204,7 @@ proc main {} {
     # Supprimer tous les relais éventuels au préalable.
     #
 
-    set sql "DELETE FROM relais_dom WHERE iddom = $iddom"
+    set sql "DELETE FROM dns.relais_dom WHERE iddom = $iddom"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	::pgsql::unlock $dbfd "abort" m
 	::webapp::error-exit $conf(err) "Suppression des anciens relais impossible: $msg"

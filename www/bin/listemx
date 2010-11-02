@@ -196,15 +196,15 @@ proc main {} {
 	# dernier MX et le sortir différemment dans le tableau.
 	#
 
-	set sql "SELECT r1.nom || '.' || d1.nom AS gauche, \
-			m.priorite, \
-			r2.nom || '.' || d2.nom AS droite \
-		    FROM rr r1, domaine d1, rr_mx m, rr r2, domaine d2 \
-		    WHERE r1.iddom = d1.iddom \
-			AND r1.idrr = m.idrr \
-			AND m.mx = r2.idrr \
-			AND r2.iddom = d2.iddom \
-			AND r1.iddom = $iddom \
+	set sql "SELECT r1.nom || '.' || d1.nom AS gauche,
+			m.priorite,
+			r2.nom || '.' || d2.nom AS droite
+		    FROM dns.rr r1, dns.domaine d1, dns.rr_mx m, dns.rr r2, dns.domaine d2
+		    WHERE r1.iddom = d1.iddom
+			AND r1.idrr = m.idrr
+			AND m.mx = r2.idrr
+			AND r2.iddom = d2.iddom
+			AND r1.iddom = $iddom
 		    ORDER BY r1.nom ASC, m.priorite ASC"
 	pg_select $dbfd $sql tab {
 	    set gauche $tab(gauche)

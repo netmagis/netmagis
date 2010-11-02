@@ -168,7 +168,7 @@ proc main {} {
 	set idrr -1
 	set iddom -1
 	set sql "SELECT d.iddom, d.nom
-			FROM corresp c, groupe g, dr_dom dd, domaine d
+			FROM global.corresp c, global.groupe g, dns.dr_dom dd, dns.domaine d
 			WHERE c.idcor = $tabcor(idcor)
 			    AND c.idgrp = g.idgrp
 			    AND g.idgrp = dd.idgrp
@@ -274,7 +274,7 @@ proc main {} {
     #
 
     set sql "SELECT c.idcor
-		    FROM corresp c, groupe g, dr_reseau d, reseau r
+		    FROM global.corresp c, global.groupe g, dns.dr_reseau d, dns.reseau r
 		    WHERE c.idgrp = g.idgrp
 			AND g.idgrp = d.idgrp
 			AND d.idreseau = r.idreseau

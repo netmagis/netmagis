@@ -211,7 +211,7 @@ proc main {} {
     if {[info exists ftab(etabl)]} then {
 	set lsqletabl {}
 	set ltxtetabl {}
-	pg_select $dbfd "SELECT * FROM etablissement" tab {
+	pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
 	    set te($tab(idetabl)) $tab(nom)
 	}
 	foreach idetabl $ftab(etabl) {
@@ -233,7 +233,7 @@ proc main {} {
     # liste des communautés
     if {[info exists ftab(commu)]} then {
 	set lsqlcommu {}
-	pg_select $dbfd "SELECT * FROM communaute" tab {
+	pg_select $dbfd "SELECT * FROM dns.communaute" tab {
 	    set tc($tab(idcommu)) $tab(nom)
 	}
 	foreach idcommu $ftab(commu) {
@@ -268,7 +268,7 @@ proc main {} {
     set sql "SELECT r.idreseau,
 		    r.nom, r.localisation, r.adr4, r.adr6, 
 		    e.nom AS etabl, c.nom AS commu, r.commentaire
-		FROM reseau r, etablissement e, communaute c
+		FROM dns.reseau r, dns.etablissement e, dns.communaute c
 		WHERE r.idetabl = e.idetabl AND r.idcommu = c.idcommu
 			$selection
 		ORDER BY $sqltri1, $sqltri2"

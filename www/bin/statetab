@@ -147,11 +147,11 @@ proc main {} {
 
     set sql "SELECT e.nom,
 		    COUNT (rr_ip.adr) AS declarees
-		FROM etablissement e, rr_ip
+		FROM dns.etablissement e, dns.rr_ip
 		WHERE rr_ip.adr << ANY
-		    (SELECT adr4 FROM reseau WHERE reseau.idetabl = e.idetabl
+		    (SELECT adr4 FROM dns.reseau WHERE reseau.idetabl = e.idetabl
 			UNION
-		     SELECT adr6 FROM reseau WHERE reseau.idetabl = e.idetabl)
+		     SELECT adr6 FROM dns.reseau WHERE reseau.idetabl = e.idetabl)
 		GROUP BY e.nom
 		"
     set totaldecl 0
@@ -168,7 +168,7 @@ proc main {} {
 
     set sql "SELECT e.nom,
 		    SUM (2^(32 - MASKLEN (r.adr4))) AS allouees
-		FROM etablissement e, reseau r
+		FROM dns.etablissement e, dns.reseau r
 		WHERE e.idetabl = r.idetabl
 		GROUP BY e.nom
 		"

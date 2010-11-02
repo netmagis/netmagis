@@ -865,7 +865,7 @@ proc send-changes {_tabeq} {
     set lc {}
     set sql "SELECT DISTINCT (c.idrr) AS idrr,
 			rr.nom || '.' || d.nom AS fqdn
-		    FROM topo.ifchanges c, rr, domaine d
+		    FROM topo.ifchanges c, dns.rr, dns.domaine d
 		    WHERE c.processed = 0
 			AND c.idrr = rr.idrr
 			AND rr.iddom = d.iddom"

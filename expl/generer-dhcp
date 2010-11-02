@@ -112,7 +112,7 @@ proc execsql {dbfd cmd result} {
 
 proc tester-dhcp {dbfd} {
     set r 0
-    pg_select $dbfd "SELECT generer FROM dhcp" tab {
+    pg_select $dbfd "SELECT generer FROM dns.dhcp" tab {
 	if {$tab(generer) > 0} then {
 	    set r 1
 	}
@@ -153,7 +153,7 @@ proc generer-dhcp {dbfd} {
 
     foreach clef {default_lease_time max_lease_time min_lease_time} {
 	set dhcpdef($clef) -1
-	set sql "SELECT valeur FROM config WHERE clef = '$clef'"
+	set sql "SELECT valeur FROM global.config WHERE clef = '$clef'"
 	pg_select $dbfd $sql tab {
 	    set dhcpdef($clef) $tab(valeur)
 	}
@@ -165,7 +165,7 @@ proc generer-dhcp {dbfd} {
     # appartient.
     #
     set sql "SELECT HOST (reseau.adr4) AS adr, domaine.nom AS dom, dhcprange.*
-		FROM reseau, dhcprange, domaine
+		FROM dns.reseau, dns.dhcprange, dns.domaine
 		WHERE reseau.dhcp > 0
 		    AND domaine.iddom = dhcprange.iddom
 		    AND dhcprange.min <<= reseau.adr4
@@ -190,7 +190,7 @@ proc generer-dhcp {dbfd} {
     # Récupérer les profils DHCP
     #
 
-    set sql "SELECT iddhcpprofil, nom, texte FROM dhcpprofil"
+    set sql "SELECT iddhcpprofil, nom, texte FROM dns.dhcpprofil"
     pg_select $dbfd $sql tab {
 	set dhcpprofil($tab(iddhcpprofil)) $tab(texte)
     }
@@ -201,7 +201,7 @@ proc generer-dhcp {dbfd} {
     #
 
     set sql "SELECT HOST (adr4) AS adr, NETMASK (adr4) AS netmask, gw4
-		FROM reseau
+		FROM dns.reseau
 		WHERE dhcp > 0 AND gw4 IS NOT NULL
 		ORDER BY adr
 		"
@@ -257,7 +257,7 @@ proc generer-dhcp {dbfd} {
     set sql "SELECT rr.nom || '.' || domaine.nom AS host,
 		    rr.mac,
 		    rr.iddhcpprofil
-		FROM rr, domaine, rr_ip, reseau
+		FROM dns.rr, dns.domaine, dns.rr_ip, dns.reseau
 		WHERE rr.iddom = domaine.iddom
 		    AND rr.idrr = rr_ip.idrr
 		    AND rr_ip.adr <<= reseau.adr4
@@ -308,7 +308,7 @@ proc generer-dhcp {dbfd} {
     # généré le fichier
     #
 
-    set sql "UPDATE dhcp SET generer = 0"
+    set sql "UPDATE dns.dhcp SET generer = 0"
     if {! [execsql $dbfd $sql m]} then {
 	puts stderr $m
 	return 0

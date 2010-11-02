@@ -174,7 +174,7 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
     # vérification des droits.
     # 
 
-    pg_select $dbfd "SELECT iddom, nom FROM domaine" tab {
+    pg_select $dbfd "SELECT iddom, nom FROM dns.domaine" tab {
 	set tabdom($tab(iddom)) $tab(nom)
     }
 
@@ -184,7 +184,7 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
     #
 
     set sql "SELECT iddhcprange, min, max
-			FROM dhcprange
+			FROM dns.dhcprange
 			WHERE min <<= '$cidr' AND max <<= '$cidr'"
     pg_select $dbfd $sql tab {
 	set tabrange($tab(iddhcprange)) [list $tab(min) $tab(max)]
@@ -314,7 +314,7 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
 	    #
 
 	    set sql "SELECT count(*) AS nb
-			    FROM rr, rr_ip
+			    FROM dns.rr, dns.rr_ip
 			    WHERE rr.mac IS NOT NULL
 				AND rr.idrr = rr_ip.idrr
 				AND rr_ip.adr >= '$min'
@@ -408,7 +408,7 @@ proc main {} {
 	{iddhcpprofil}
     }
 
-    set msg [enregistrer-tableau $dbfd $spec iddhcprange dhcprange ftab]
+    set msg [enregistrer-tableau $dbfd $spec iddhcprange dns.dhcprange ftab]
     if {! [string equal $msg ""]} then {
 	::webapp::error-exit $conf(err) $msg
     }

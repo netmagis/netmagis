@@ -144,7 +144,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
     # Début de l'insertion
     #
 
-    if {! [::pgsql::lock $dbfd {rr rr_ip} msg]} then {
+    if {! [::pgsql::lock $dbfd {dns.rr dns.rr_ip} msg]} then {
 	return "Transaction impossible : $msg"
     }
 
@@ -166,7 +166,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
     # Insérer la nouvelle adresse
     #
 
-    set sql "INSERT INTO rr_ip VALUES ($trr(idrr), '$adr')"
+    set sql "INSERT INTO dns.rr_ip VALUES ($trr(idrr), '$adr')"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
        ::pgsql::unlock $dbfd "abort" m
 	return "Impossible d'insérer : $msg"

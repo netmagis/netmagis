@@ -75,7 +75,7 @@ proc main {} {
     # Récupérer la liste des zones
     #
 
-    set lz [::pgsql::getcols $dbfd zone "" "domaine ASC" {domaine domaine}]
+    set lz [::pgsql::getcols $dbfd dns.zone "" "domaine ASC" {domaine domaine}]
     set h [llength $lz]
     set zones [::webapp::form-menu zones $h 1 $lz {}]
 

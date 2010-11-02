@@ -116,7 +116,7 @@ proc add-alias {dbfd login idcor fqdnalias fqdnref} {
     # Tous les tests sont ok, il faut insérer l'alias
     #
 
-    if {! [::pgsql::lock $dbfd {rr rr_cname} msg]} then {
+    if {! [::pgsql::lock $dbfd {dns.rr dns.rr_cname} msg]} then {
 	return "Transaction impossible : $msg"
     }
 
@@ -134,7 +134,7 @@ proc add-alias {dbfd login idcor fqdnalias fqdnref} {
     # Ajouter l'alias proprement dit
     #
 
-    set sql "INSERT INTO rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
+    set sql "INSERT INTO dns.rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	return "Impossible d'insérer l'alias : $msg"
     }

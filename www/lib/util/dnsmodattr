@@ -222,7 +222,7 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
     }
 
     set modif [join $modif ", "]
-    set sql "UPDATE rr SET $modif WHERE idrr = $trr(idrr)"
+    set sql "UPDATE dns.rr SET $modif WHERE idrr = $trr(idrr)"
 
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	return "Impossible de modifier : $msg"
@@ -283,7 +283,7 @@ proc main {argv0 argv} {
     # Début de la modification
     #
 
-    if {! [::pgsql::lock $dbfd {rr rr_ip} msg]} then {
+    if {! [::pgsql::lock $dbfd {dns.rr dns.rr_ip} msg]} then {
 	puts stderr "Transaction impossible : $msg"
 	return 1
     }

@@ -74,7 +74,7 @@ proc main {} {
     # Extraire la liste des domaines (tous, sans exception)
     #
 
-    set ld [::pgsql::getcols $dbfd domaine "" "nom ASC" {nom nom}]
+    set ld [::pgsql::getcols $dbfd dns.domaine "" "nom ASC" {nom nom}]
     set h [llength $ld]
     set listedomaines [::webapp::form-menu domaine $h 1 $ld {}]
 

@@ -115,7 +115,7 @@ proc liste-zones {dbfd tout} {
 	set critere "WHERE generer = 1"
     }
     set liste {}
-    pg_select $dbfd "SELECT domaine FROM zone $critere" tab {
+    pg_select $dbfd "SELECT domaine FROM dns.zone $critere" tab {
 	lappend liste $tab(domaine)
     }
     return $liste
@@ -140,13 +140,15 @@ proc liste-zones {dbfd tout} {
 proc generer-zone {dbfd domaine} {
     set qdomaine [quote $domaine]
 
-    set sql "SELECT pg_class.relname, \
-			zone.version, zone.prologue, zone.rrsup, zone.generer \
-		    FROM zone, pg_class \
-		    WHERE domaine = '$qdomaine' \
-			AND pg_class.oid = zone.tableoid"
+    set sql "SELECT n.nspname || '.' || c.relname AS table,
+			zone.version, zone.prologue, zone.rrsup, zone.generer
+		    FROM dns.zone, pg_class c, pg_namespace n
+		    WHERE domaine = '$qdomaine'
+			AND c.oid = zone.tableoid
+			AND c.relnamespace = n.oid
+			"
     pg_select $dbfd $sql tab {
-	set table	$tab(relname)	;# zone_normale, zone_reverse[46]
+	set table	$tab(table)	;# dns.zone_normale, dns.zone_reverse[46]
 	set version	$tab(version)
 	set prologue	$tab(prologue)
 	set rrsup	$tab(rrsup)
@@ -234,9 +236,7 @@ proc generer-zone {dbfd domaine} {
     # que du fait que nous avons généré la zone
     #
 
-    set sql "UPDATE zone SET \
-			version = $nversion, \
-			generer = 0 \
+    set sql "UPDATE dns.zone SET version = $nversion, generer = 0
 		    WHERE domaine = '$qdomaine'"
     if {! [execsql $dbfd $sql m]} then {
 	puts stderr $m
@@ -277,7 +277,7 @@ proc generer-normal {dbfd domaine selection rrsup} {
     # Récupérer l'ID du domaine sur lequel on travaille
     #
     set iddom -1
-    pg_select $dbfd "SELECT iddom FROM domaine WHERE nom = '$domaine'" tab {
+    pg_select $dbfd "SELECT iddom FROM dns.domaine WHERE nom = '$domaine'" tab {
 	set iddom $tab(iddom)
     }
     if {$iddom == -1} then {
@@ -289,10 +289,10 @@ proc generer-normal {dbfd domaine selection rrsup} {
     # Sortir toutes les adresses IP (v4 ou v6)
     #
 
-    set sql "SELECT rr.nom, rr.ttl, rr_ip.adr, family(rr_ip.adr) AS family \
-			FROM rr, rr_ip \
-			WHERE rr.iddom = $iddom \
-			    AND rr.idrr = rr_ip.idrr \
+    set sql "SELECT rr.nom, rr.ttl, rr_ip.adr, family(rr_ip.adr) AS family
+			FROM dns.rr, dns.rr_ip
+			WHERE rr.iddom = $iddom
+			    AND rr.idrr = rr_ip.idrr
 			ORDER BY rr.nom, rr_ip.adr"
     pg_select $dbfd $sql tab {
 	set nom    $tab(nom)
@@ -323,11 +323,11 @@ proc generer-normal {dbfd domaine selection rrsup} {
     #		rr2 décrit b
     #
 
-    set sql "SELECT rr1.nom,rr1.ttl,rr_mx.priorite,rr2.nom AS nom2,rr2.iddom AS iddom2 \
-			FROM rr rr1, rr_mx, rr rr2 \
-			WHERE rr1.iddom = $iddom \
-			    AND rr1.idrr = rr_mx.idrr \
-			    AND rr2.idrr = rr_mx.mx \
+    set sql "SELECT rr1.nom,rr1.ttl,rr_mx.priorite,rr2.nom AS nom2,rr2.iddom AS iddom2
+			FROM dns.rr rr1, dns.rr_mx, dns.rr rr2
+			WHERE rr1.iddom = $iddom
+			    AND rr1.idrr = rr_mx.idrr
+			    AND rr2.idrr = rr_mx.mx
 			ORDER BY rr1.nom"
     pg_select $dbfd $sql tab {
 	set nom $tab(nom)
@@ -347,11 +347,11 @@ proc generer-normal {dbfd domaine selection rrsup} {
     #		rr2 décrit b
     #
 
-    set sql "SELECT rr1.nom,rr1.ttl,rr2.nom AS nom2,rr2.iddom AS iddom2 \
-			FROM rr rr1, rr_cname, rr rr2 \
-			WHERE rr1.iddom = $iddom \
-			    AND rr1.idrr = rr_cname.idrr \
-			    AND rr2.idrr = rr_cname.cname \
+    set sql "SELECT rr1.nom,rr1.ttl,rr2.nom AS nom2,rr2.iddom AS iddom2
+			FROM dns.rr rr1, dns.rr_cname, dns.rr rr2
+			WHERE rr1.iddom = $iddom
+			    AND rr1.idrr = rr_cname.idrr
+			    AND rr2.idrr = rr_cname.cname
 			ORDER BY rr1.nom"
     pg_select $dbfd $sql tab {
 	set d $tab(iddom2)
@@ -369,7 +369,7 @@ proc generer-normal {dbfd domaine selection rrsup} {
 
     set sql "SELECT relais_dom.priorite,
 			rr.nom || '.' || domaine.nom || '.' AS nom
-		    FROM relais_dom, rr, domaine
+		    FROM dns.relais_dom, dns.rr, dns.domaine
 		    WHERE relais_dom.iddom = $iddom
 			AND relais_dom.mx = rr.idrr
 			AND rr.iddom = domaine.iddom
@@ -386,7 +386,7 @@ proc generer-normal {dbfd domaine selection rrsup} {
 
     if {[llength $relais] > 0} then {
 	set sql "SELECT rr.nom,rr.ttl
-			FROM role_mail, rr
+			FROM dns.role_mail, dns.rr
 			WHERE role_mail.idrr = rr.idrr
 			    AND rr.iddom = $iddom
 			ORDER BY rr.nom ASC
@@ -450,9 +450,10 @@ proc generer-ipv4 {dbfd domaine selection rrsup} {
 	set first 1
     }
 
-    set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom FROM rr_ip, rr \
-			WHERE rr_ip.adr <<= '$selection' \
-			    AND rr_ip.idrr = rr.idrr \
+    set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom
+			FROM dns.rr_ip, dns.rr
+			WHERE rr_ip.adr <<= '$selection'
+			    AND rr_ip.idrr = rr.idrr
 			ORDER BY rr_ip.adr"
     pg_select $dbfd $sql tab {
 	#
@@ -524,9 +525,10 @@ proc generer-ipv6 {dbfd domaine selection rrsup} {
     
     set nbq [expr 32 - ($prefixlen / 4)]
 
-    set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom FROM rr_ip, rr \
-			WHERE rr_ip.adr <<= '$selection' \
-			    AND rr_ip.idrr = rr.idrr \
+    set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom
+			FROM dns.rr_ip, dns.rr
+			WHERE rr_ip.adr <<= '$selection'
+			    AND rr_ip.idrr = rr.idrr
 			ORDER BY rr_ip.adr"
     pg_select $dbfd $sql tab {
 	#
@@ -623,7 +625,7 @@ proc generer-ipv6 {dbfd domaine selection rrsup} {
 proc recuperer-domaines {dbfd tabdom} {
     upvar $tabdom td
 
-    pg_select $dbfd "SELECT iddom, nom FROM domaine" tab {
+    pg_select $dbfd "SELECT iddom, nom FROM dns.domaine" tab {
 	set iddom $tab(iddom)
 	set td($iddom) $tab(nom)
     }

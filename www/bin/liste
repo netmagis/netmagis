@@ -221,11 +221,11 @@ proc output-list {dbfd lcidr _tabcor format} {
 	# du numéro de réseau spécifié par le CIDR obtenu ci-dessus.
 	# 
 
-	set sqlallow "SELECT adr FROM dr_ip WHERE
+	set sqlallow "SELECT adr FROM dns.dr_ip WHERE
 			    (adr <<= '$cidrplage' OR adr >>= '$cidrplage')
 			    AND allow_deny = 1
 			    AND idgrp = $tabcor(idgrp)"
-	set sqldeny "SELECT adr FROM dr_ip WHERE
+	set sqldeny "SELECT adr FROM dns.dr_ip WHERE
 			    (adr <<= '$cidrplage' OR adr >>= '$cidrplage')
 			    AND allow_deny = 0
 			    AND idgrp = $tabcor(idgrp)"
@@ -239,7 +239,7 @@ proc output-list {dbfd lcidr _tabcor format} {
 	#
 
 	set sql "SELECT alias.nom || '.' || domaine.nom AS nom, rr_ip.adr
-		    FROM rr alias, rr canonique, rr_ip, rr_cname, domaine
+		    FROM dns.rr alias, dns.rr canonique, dns.rr_ip, dns.rr_cname, dns.domaine
 		    WHERE canonique.idrr = rr_cname.cname
 			AND rr_cname.idrr = alias.idrr
 			AND rr_ip.idrr = canonique.idrr
@@ -259,7 +259,7 @@ proc output-list {dbfd lcidr _tabcor format} {
 	# compliquée, et franchement illisible.
 	#
 
-	set sql "SELECT iddhcpprofil, nom FROM dhcpprofil"
+	set sql "SELECT iddhcpprofil, nom FROM dns.dhcpprofil"
 	pg_select $dbfd $sql tab {
 	    set nomprofildhcp($tab(iddhcpprofil)) $tab(nom)
 	}
@@ -277,7 +277,7 @@ proc output-list {dbfd lcidr _tabcor format} {
 			rr.iddhcpprofil AS dhcp1,
 			dhcprange.iddhcpprofil AS dhcp2,
 			hinfo.texte, corresp.login
-		    FROM rr, domaine, hinfo, corresp,
+		    FROM dns.rr, dns.domaine, dns.hinfo, global.corresp,
 			rr_ip LEFT OUTER JOIN dhcprange
 			    ON (rr_ip.adr >= dhcprange.min
 				AND rr_ip.adr <= dhcprange.max)

@@ -145,7 +145,7 @@ proc main {} {
     set u [::webapp::authuser create %AUTO%]
 
     set sql "SELECT login, present, groupe.nom \
-		FROM corresp, groupe \
+		FROM global.corresp, global.groupe \
 		WHERE groupe.idgrp = corresp.idgrp \
 		ORDER BY login"
 

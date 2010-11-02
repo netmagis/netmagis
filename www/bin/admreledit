@@ -99,7 +99,7 @@ proc main {} {
 		[list domaine [list menu $menudom] {}] \
 	    ]
     set sql "SELECT rd.mx, rd.priorite, r.nom, d.nom AS domaine
-		FROM relais_dom rd, rr r, domaine d
+		FROM dns.relais_dom rd, dns.rr r, dns.domaine d
 		WHERE rd.iddom = $iddom
 			AND r.iddom = d.iddom
 			AND rd.mx = r.idrr

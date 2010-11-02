@@ -88,7 +88,7 @@ proc main {argv0 argv} {
 
     set zone [lindex $argv 0]
     set qzone [::pgsql::quote $zone]
-    set sql "SELECT prologue FROM zone WHERE domaine = '$qzone'"
+    set sql "SELECT prologue FROM dns.zone WHERE domaine = '$qzone'"
 
     set trouve 0
     pg_select $dbfd $sql tab {

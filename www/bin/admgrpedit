@@ -253,7 +253,7 @@ proc main {} {
 	set pqgroupe [::pgsql::quote $orggrp]
 	set idgrp -1
 	set sql "SELECT idgrp, admin, droitsmtp, droitttl
-			FROM groupe
+			FROM global.groupe
 			WHERE nom = '$pqgroupe'"
 	pg_select $dbfd $sql tab {
 	    set idgrp $tab(idgrp)
@@ -282,7 +282,7 @@ proc main {} {
 
     set u [::webapp::authuser create %AUTO%]
     set nlogin 1
-    foreach login [::pgsql::getcols $dbfd corresp "idgrp = $idgrp" "login ASC" \
+    foreach login [::pgsql::getcols $dbfd global.corresp "idgrp = $idgrp" "login ASC" \
 		{login}] {
 
 	if {[catch {set n [$ah getuser $login $u]} m]} then {
@@ -326,10 +326,10 @@ proc main {} {
 			{Édition des rôles de messagerie}
 			{Édition des rôles Web}
 		    }
-    set ldom [::pgsql::getcols $dbfd domaine "" "nom ASC" {nom nom}]
+    set ldom [::pgsql::getcols $dbfd dns.domaine "" "nom ASC" {nom nom}]
     set sql "SELECT domaine.nom AS nom, dr_dom.tri AS tri,
 				dr_dom.rolemail, dr_dom.roleweb
-			FROM domaine, dr_dom
+			FROM dns.domaine, dns.dr_dom
 			WHERE domaine.iddom = dr_dom.iddom
 				AND dr_dom.idgrp = $idgrp
 			ORDER BY dr_dom.tri ASC, domaine.nom ASC"
@@ -378,7 +378,7 @@ proc main {} {
 		    }
     set lres {}
     set idx 0
-    set sql "SELECT idreseau, nom, adr4, adr6 FROM reseau ORDER BY adr4, adr6"
+    set sql "SELECT idreseau, nom, adr4, adr6 FROM dns.reseau ORDER BY adr4, adr6"
     pg_select $dbfd $sql tab {
 	set res [format "%s\t%s\t(%s)" \
 			    $tab(adr4) $tab(adr6) \
@@ -393,7 +393,7 @@ proc main {} {
 			dr_reseau.tri,
 			dr_reseau.dhcp,
 			dr_reseau.acl
-		FROM reseau, dr_reseau
+		FROM dns.reseau, dns.dr_reseau
 		WHERE reseau.idreseau = dr_reseau.idreseau
 			AND dr_reseau.idgrp = $idgrp
 		ORDER BY dr_reseau.tri ASC, reseau.adr4 ASC, reseau.adr6 ASC"
@@ -437,7 +437,7 @@ proc main {} {
     set donnees {}
     set n 1
     set sql "SELECT adr, allow_deny \
-			FROM dr_ip \
+			FROM dns.dr_ip \
 			WHERE idgrp = $idgrp \
 			ORDER BY adr"
     pg_select $dbfd $sql tab {
@@ -472,9 +472,9 @@ proc main {} {
 			{Classe de tri}
 			{Profil DHCP}
 		    }
-    set lprof [::pgsql::getcols $dbfd dhcpprofil "" "nom ASC" {nom nom}]
+    set lprof [::pgsql::getcols $dbfd dns.dhcpprofil "" "nom ASC" {nom nom}]
     set sql "SELECT p.nom AS nom, dr.tri AS tri
-			FROM dr_dhcpprofil dr, dhcpprofil p
+			FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p
 			WHERE dr.idgrp = $idgrp
 			    AND dr.iddhcpprofil = p.iddhcpprofil
 			ORDER BY dr.tri ASC, p.nom ASC"

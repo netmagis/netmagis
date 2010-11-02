@@ -102,7 +102,7 @@ proc execsql {dbfd cmd result} {
 proc generer-routages {dbfd} {
     set sql "SELECT r1.nom || '.' || d1.nom AS nom,
 		    r2.nom || '.' || d2.nom AS nomh
-		FROM rr r1, domaine d1, rr r2, domaine d2, role_mail
+		FROM dns.rr r1, dns.domaine d1, dns.rr r2, dns.domaine d2, dns.role_mail
 		WHERE role_mail.idrr = r1.idrr
 		    AND r1.iddom = d1.iddom
 		    AND role_mail.heberg = r2.idrr

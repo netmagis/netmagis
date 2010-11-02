@@ -75,11 +75,11 @@ proc main {} {
     # et en faire des listes à choix multiples.
     #
 
-    set le [::pgsql::getcols $dbfd etablissement "" "nom ASC" {idetabl nom}]
+    set le [::pgsql::getcols $dbfd dns.etablissement "" "nom ASC" {idetabl nom}]
     set h [llength $le]
     set listeetabl [::webapp::form-menu etabl $h 1 $le {}]
 
-    set lc [::pgsql::getcols $dbfd communaute "" "nom ASC" {idcommu nom}]
+    set lc [::pgsql::getcols $dbfd dns.communaute "" "nom ASC" {idcommu nom}]
     set h [llength $le]
     set listecommu [::webapp::form-menu commu $h 1 $lc {}]
 

@@ -147,7 +147,7 @@ proc main {} {
     #
 
     set sql "SELECT c.login, count(*) AS nb
-		    FROM rr r, corresp c
+		    FROM dns.rr r, global.corresp c
 		    WHERE r.idcor = c.idcor
 		    GROUP BY c.login
 		"

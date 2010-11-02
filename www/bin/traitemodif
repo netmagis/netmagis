@@ -307,7 +307,7 @@ proc traitemodif-infos {dbfd tc ft} {
     # Enregistrer les modifications
     #
 
-    if {! [::pgsql::lock $dbfd {rr} msg]} then {
+    if {! [::pgsql::lock $dbfd {dns.rr} msg]} then {
 	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
     }
 

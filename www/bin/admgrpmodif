@@ -120,7 +120,7 @@ proc valide-groupe {dbfd groupe existant} {
 
     set qgroupe [::pgsql::quote $groupe]
     set idgrp -1
-    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$qgroupe'" tab {
+    pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = '$qgroupe'" tab {
 	set idgrp $tab(idgrp)
     }
 
@@ -151,7 +151,8 @@ proc valide-groupe {dbfd groupe existant} {
 
 proc supprime-groupe {dbfd idgrp idorphelin} {
 
-    set ltab {groupe corresp dr_reseau dr_mbox dr_ip dr_dom dr_dhcpprofil} 
+    set ltab {global.groupe global.corresp
+		dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom dns.dr_dhcpprofil}
     if {! [::pgsql::lock $dbfd $ltab msg]} then {
 	return $msg
     } 
@@ -160,7 +161,7 @@ proc supprime-groupe {dbfd idgrp idorphelin} {
     # Supprime les droits
     #
 
-    foreach table {dr_reseau dr_mbox dr_ip dr_dom dr_dhcpprofil} {
+    foreach table {dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom dns.dr_dhcpprofil} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
@@ -172,7 +173,8 @@ proc supprime-groupe {dbfd idgrp idorphelin} {
     # Extrait tous les correspondants qui doivent rester orphelins
     #
 
-    set sql "SELECT corresp.idcor FROM corresp, rr
+    set sql "SELECT corresp.idcor
+		FROM global.corresp, dns.rr
 		WHERE corresp.idgrp = $idgrp AND rr.idcor = corresp.idcor
 		GROUP BY corresp.idcor"
     
@@ -187,7 +189,7 @@ proc supprime-groupe {dbfd idgrp idorphelin} {
 
     if {[llength $lidcor] > 0} then {
 	set lcor [join $lidcor ","]
-	set sql "UPDATE corresp SET idgrp = $idorphelin, present = 0
+	set sql "UPDATE global.corresp SET idgrp = $idorphelin, present = 0
 		    WHERE idcor IN ($lcor)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
@@ -199,7 +201,7 @@ proc supprime-groupe {dbfd idgrp idorphelin} {
     # Supprime les correspondants restants et le groupe
     #
 
-    foreach table {corresp groupe} {
+    foreach table {global.corresp global.groupe} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
@@ -238,18 +240,18 @@ proc main {} {
     #
 
     set idorphelin -1
-    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = ''" tab {
+    pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = ''" tab {
 	set idorphelin $tab(idgrp)
     }
     
     if {$idorphelin == -1} then {
-	set sql "INSERT INTO groupe (nom, admin, droitsmtp, droitttl)
+	set sql "INSERT INTO global.groupe (nom, admin, droitsmtp, droitttl)
 			    VALUES ('', 0, 0, 0)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    return $msg
 	} 
-	pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = ''" tab {
+	pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = ''" tab {
 	    set idorphelin $tab(idgrp)
 	}
     }
@@ -362,7 +364,7 @@ proc main {} {
     # On récupère tous les correspondants
 
     set sql "SELECT corresp.login, groupe.nom, groupe.idgrp
-		FROM corresp, groupe
+		FROM global.corresp, global.groupe
 		WHERE corresp.idgrp = groupe.idgrp"
     pg_select $dbfd $sql tab {
 	if {[string equal $tab(nom) ""]} then {
@@ -406,7 +408,7 @@ proc main {} {
     # des identificateurs de domaines
     #
 
-    foreach ld [::pgsql::getcols $dbfd domaine "" "" {iddom nom}] {
+    foreach ld [::pgsql::getcols $dbfd dns.domaine "" "" {iddom nom}] {
 	set iddom [lindex $ld 0]
 	set nom   [lindex $ld 1]
 	set tabdom($nom) $iddom
@@ -453,7 +455,7 @@ proc main {} {
     # la liste des identificateurs de réseaux
     #
 
-    foreach ld [::pgsql::getcols $dbfd reseau "" "" {idreseau adr4 adr6 dhcp}] {
+    foreach ld [::pgsql::getcols $dbfd dns.reseau "" "" {idreseau adr4 adr6 dhcp}] {
 	set idreseau [lindex $ld 0]
 	set ladr {}
 	foreach i {1 2} {
@@ -537,7 +539,7 @@ proc main {} {
     # Tester la validité des noms de profils DHCP
     #
 
-    foreach ld [::pgsql::getcols $dbfd dhcpprofil "" "" {iddhcpprofil nom}] {
+    foreach ld [::pgsql::getcols $dbfd dns.dhcpprofil "" "" {iddhcpprofil nom}] {
 	set iddhcpprofil [lindex $ld 0]
 	set nom          [lindex $ld 1]
 	set tabdhcpprofil($nom) $iddhcpprofil
@@ -710,7 +712,8 @@ proc main {} {
     # fourni dans le formulaire
     #
 
-    set ltab {groupe corresp dr_reseau dr_mbox dr_ip dr_dom dr_dhcpprofil} 
+    set ltab {global.groupe global.corresp
+		dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom dns.dr_dhcpprofil} 
     if {! [::pgsql::lock $dbfd $ltab msg]} then {
 	return $msg
     } 
@@ -719,7 +722,7 @@ proc main {} {
 
     if {[string equal $action "création"]} then {
 	set qnewgrp [::pgsql::quote $newgrp]
-	set sql "INSERT INTO groupe (nom, admin, droitsmtp, droitttl)
+	set sql "INSERT INTO global.groupe (nom, admin, droitsmtp, droitttl)
 			VALUES ('$qnewgrp', $admin, $droitsmtp, $droitttl)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
@@ -735,7 +738,7 @@ proc main {} {
 
 	    # Renommage du groupe
 	    set qnewgrp [::pgsql::quote $newgrp]
-	    set sql "UPDATE groupe SET nom = '$qnewgrp' WHERE nom = '$qorggrp'"
+	    set sql "UPDATE global.groupe SET nom = '$qnewgrp' WHERE nom = '$qorggrp'"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
 		return $msg
@@ -747,7 +750,7 @@ proc main {} {
 
     set qnewgrp [::pgsql::quote $newgrp]
     set idgrp -1
-    pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$qnewgrp'" tab {
+    pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = '$qnewgrp'" tab {
 	set idgrp $tab(idgrp)
     }
     if {$idgrp == -1} then {
@@ -756,7 +759,7 @@ proc main {} {
     }
 
     # Mettre a jour les attributs du groupe
-    lappend cmd "UPDATE groupe
+    lappend cmd "UPDATE global.groupe
 		    SET admin = $admin,
 			droitsmtp = $droitsmtp,
 			droitttl = $droitttl
@@ -767,14 +770,14 @@ proc main {} {
     if {[llength $lcorcreate] > 0} then {
 	foreach login $lcorcreate {
 	    set qlogin [::pgsql::quote $login]
-	    lappend cmd "INSERT INTO corresp (login,present,idgrp)
+	    lappend cmd "INSERT INTO global.corresp (login,present,idgrp)
 			    VALUES ('$qlogin',1,$idgrp)"
 	}
     }
     if {[llength $lcoraffect] > 0} then {
 	foreach login $lcoraffect {
 	    set qlogin [::pgsql::quote $login]
-	    lappend cmd "UPDATE corresp SET idgrp = $idgrp
+	    lappend cmd "UPDATE global.corresp SET idgrp = $idgrp
 			    WHERE login = '$qlogin'"
 	}
     }
@@ -784,61 +787,61 @@ proc main {} {
     if {[llength $lcordelete] > 0} then {
 	foreach login $lcordelete {
 	    set qlogin [::pgsql::quote $login]
-	    lappend cmd "UPDATE corresp SET idgrp = $idorphelin
+	    lappend cmd "UPDATE global.corresp SET idgrp = $idorphelin
 			    WHERE login = '$qlogin'"
 	}
     }
 
     # On nettoie tous les correspondants inutiles
 
-    lappend cmd "DELETE FROM corresp 
+    lappend cmd "DELETE FROM global.corresp 
 			WHERE idgrp = $idorphelin 
-			    AND idcor NOT IN (SELECT DISTINCT idcor FROM rr)"
+			    AND idcor NOT IN (SELECT DISTINCT idcor FROM dns.rr)"
 
     # Les domaines autorisés pour le groupe
 
-    lappend cmd "DELETE FROM dr_dom WHERE idgrp = $idgrp"
+    lappend cmd "DELETE FROM dns.dr_dom WHERE idgrp = $idgrp"
 
     foreach e $liddom {
 	set tri      [lindex $e 0]
 	set iddom    [lindex $e 1]
 	set rolemail [lindex $e 2]
 	set roleweb  [lindex $e 3]
-	lappend cmd "INSERT INTO dr_dom (idgrp, iddom, tri, rolemail, roleweb)
+	lappend cmd "INSERT INTO dns.dr_dom (idgrp, iddom, tri, rolemail, roleweb)
 			VALUES ($idgrp, $iddom, $tri, $rolemail, $roleweb)"
     }
 
     # Les réseaux autorisés pour le groupe
 
-    lappend cmd "DELETE FROM dr_reseau WHERE idgrp = $idgrp"
+    lappend cmd "DELETE FROM dns.dr_reseau WHERE idgrp = $idgrp"
 
     foreach r $lidres {
 	set tri      [lindex $r 0]
 	set idreseau [lindex $r 1]
 	set dhcp     [lindex $r 2]
 	set acl      [lindex $r 3]
-	lappend cmd "INSERT INTO dr_reseau (idgrp, idreseau, tri, dhcp, acl)
+	lappend cmd "INSERT INTO dns.dr_reseau (idgrp, idreseau, tri, dhcp, acl)
 			VALUES ($idgrp, $idreseau, $tri, $dhcp, $acl)"
     }
 
     # Les droits IP associés au groupe
 
-    lappend cmd "DELETE FROM dr_ip WHERE idgrp = $idgrp"
+    lappend cmd "DELETE FROM dns.dr_ip WHERE idgrp = $idgrp"
 
     foreach e $ldrip {
 	set allow_deny [lindex $e 0]
 	set adr        [lindex $e 1]
-	lappend cmd "INSERT INTO dr_ip VALUES ($idgrp, '$adr', $allow_deny)"
+	lappend cmd "INSERT INTO dns.dr_ip VALUES ($idgrp, '$adr', $allow_deny)"
     }
 
     # Les profils DHCP visibles par le groupe
 
-    lappend cmd "DELETE FROM dr_dhcpprofil WHERE idgrp = $idgrp"
+    lappend cmd "DELETE FROM dns.dr_dhcpprofil WHERE idgrp = $idgrp"
 
     foreach e $lidprof {
 	set tri          [lindex $e 0]
 	set iddhcpprofil [lindex $e 1]
-	lappend cmd "INSERT INTO dr_dhcpprofil (idgrp, iddhcpprofil, tri)
+	lappend cmd "INSERT INTO dns.dr_dhcpprofil (idgrp, iddhcpprofil, tri)
 			VALUES ($idgrp, $iddhcpprofil, $tri)"
     }
 

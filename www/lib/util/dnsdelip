@@ -141,7 +141,7 @@ proc del-ip {dbfd login idcor adr} {
 	# Suppression d'une adresse seulement
 	#
 
-	set sql "DELETE FROM rr_ip WHERE adr = '$adr'"
+	set sql "DELETE FROM dns.rr_ip WHERE adr = '$adr'"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	   ::pgsql::unkock $dbfd "abort" m
 	    return "La suppression a échoué.\n$msg"

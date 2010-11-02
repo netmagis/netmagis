@@ -267,7 +267,7 @@ proc lire-utilisateur {dbfd uid _tabuid} {
 
     set quid [::pgsql::quote $uid]
     set tabuid(idcor) -1
-    set sql "SELECT * FROM corresp, groupe
+    set sql "SELECT * FROM global.corresp, global.groupe
 			WHERE corresp.login = '$quid'
 			     AND corresp.idgrp = groupe.idgrp"
     pg_select $dbfd $sql tab {

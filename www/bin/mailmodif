@@ -141,7 +141,7 @@ proc main {} {
     set videoldnomh [string equal $oldnomh ""]
     set videnewnomh [string equal $nomh ""]
 
-    if {! [::pgsql::lock $dbfd {rr role_mail} msg]} then {
+    if {! [::pgsql::lock $dbfd {dns.rr dns.role_mail} msg]} then {
 	::webapp::error-exit $conf(err) "Transaction impossible\n$msg"
     }
 
@@ -174,7 +174,7 @@ proc main {} {
 	    # Ajouter le rôle dans la base
 	    #
 
-	    set sql "INSERT INTO role_mail (idrr, heberg)
+	    set sql "INSERT INTO dns.role_mail (idrr, heberg)
 			    VALUES ($trr(idrr), $newtrrh(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
@@ -187,7 +187,7 @@ proc main {} {
 	    # faisant cette création.
 	    #
 
-	    set sql "INSERT INTO dr_mbox (idgrp, idmail)
+	    set sql "INSERT INTO dns.dr_mbox (idgrp, idmail)
 				VALUES ($tabcor(idgrp), $trr(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
@@ -207,8 +207,8 @@ proc main {} {
 
 	    set idrr $trr(idrr)
 
-	    set sql "DELETE FROM dr_mbox WHERE idmail = $idrr ;
-		    DELETE FROM role_mail WHERE idrr = $idrr"
+	    set sql "DELETE FROM dns.dr_mbox WHERE idmail = $idrr ;
+		    DELETE FROM dns.role_mail WHERE idrr = $idrr"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
 		::webapp::error-exit $conf(err) "Impossible de supprimer\n$msg"

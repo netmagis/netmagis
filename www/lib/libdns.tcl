@@ -554,7 +554,7 @@ proc writelog {evenement login msg} {
 proc attribut-correspondant {dbfd idcor attribut} {
     set v 0
     set sql "SELECT groupe.$attribut \
-			FROM groupe, corresp \
+			FROM global.groupe, global.corresp \
 			WHERE corresp.idcor = $idcor \
 			    AND corresp.idgrp = groupe.idgrp"
     pg_select $dbfd $sql tab {
@@ -619,7 +619,7 @@ proc lire-correspondant-par-login {dbfd login tabcorvar} {
 
     set qlogin [::pgsql::quote $login]
     set tabcor(idcor) -1
-    set sql "SELECT * FROM corresp, groupe
+    set sql "SELECT * FROM global.corresp, global.groupe
 			WHERE corresp.login = '$qlogin'
 			    AND corresp.idgrp = groupe.idgrp"
     pg_select $dbfd $sql tab {
@@ -648,7 +648,7 @@ proc lire-correspondant-par-id {dbfd idcor tabcorvar} {
     #
 
     set tabcor(idcor) -1
-    set sql "SELECT * FROM corresp, groupe
+    set sql "SELECT * FROM global.corresp, global.groupe
 			WHERE corresp.idcor = $idcor
 			    AND corresp.idgrp = groupe.idgrp"
     pg_select $dbfd $sql tab {
@@ -722,7 +722,7 @@ proc lire-rr-par-nom {dbfd nom iddom tabrr} {
 
     set qnom [::pgsql::quote $nom]
     set trouve 0
-    set sql "SELECT idrr FROM rr WHERE nom = '$qnom' AND iddom = $iddom"
+    set sql "SELECT idrr FROM dns.rr WHERE nom = '$qnom' AND iddom = $iddom"
     pg_select $dbfd $sql tab {
 	set trouve 1
 	set idrr $tab(idrr)
@@ -757,7 +757,7 @@ proc lire-rr-par-ip {dbfd adr tabrr} {
     upvar $tabrr trr
 
     set trouve 0
-    set sql "SELECT idrr FROM rr_ip WHERE adr = '$adr'"
+    set sql "SELECT idrr FROM dns.rr_ip WHERE adr = '$adr'"
     pg_select $dbfd $sql tab {
 	set trouve 1
 	set idrr $tab(idrr)
@@ -827,7 +827,7 @@ proc lire-rr-par-id {dbfd idrr tabrr} {
 
     set trouve 0
     set columns [join $fields ", "]
-    set sql "SELECT $columns FROM rr WHERE idrr = $idrr"
+    set sql "SELECT $columns FROM dns.rr WHERE idrr = $idrr"
     pg_select $dbfd $sql tab {
 	set trouve 1
 	foreach v $fields {
@@ -841,46 +841,46 @@ proc lire-rr-par-id {dbfd idrr tabrr} {
 	    set trr(iddhcpprofil) 0
 	    set trr(dhcpprofil) "Aucun profil"
 	} else {
-	    set sql "SELECT nom FROM dhcpprofil
+	    set sql "SELECT nom FROM dns.dhcpprofil
 				WHERE iddhcpprofil = $trr(iddhcpprofil)"
 	    pg_select $dbfd $sql tab {
 		set trr(dhcpprofil) $tab(nom)
 	    }
 	}
-	set sql "SELECT texte FROM hinfo WHERE idhinfo = $trr(idhinfo)"
+	set sql "SELECT texte FROM dns.hinfo WHERE idhinfo = $trr(idhinfo)"
 	pg_select $dbfd $sql tab {
 	    set trr(hinfo) $tab(texte)
 	}
-	set sql "SELECT nom FROM domaine WHERE iddom = $trr(iddom)"
+	set sql "SELECT nom FROM dns.domaine WHERE iddom = $trr(iddom)"
 	pg_select $dbfd $sql tab {
 	    set trr(domaine) $tab(nom)
 	}
 	set trr(ip) {}
-	pg_select $dbfd "SELECT adr FROM rr_ip WHERE idrr = $idrr" tab {
+	pg_select $dbfd "SELECT adr FROM dns.rr_ip WHERE idrr = $idrr" tab {
 	    lappend trr(ip) $tab(adr)
 	}
 	set trr(mx) {}
-	pg_select $dbfd "SELECT priorite,mx FROM rr_mx WHERE idrr = $idrr" tab {
+	pg_select $dbfd "SELECT priorite,mx FROM dns.rr_mx WHERE idrr = $idrr" tab {
 	    lappend trr(mx) [list $tab(priorite) $tab(mx)]
 	}
 	set trr(cname) ""
-	pg_select $dbfd "SELECT cname FROM rr_cname WHERE idrr = $idrr" tab {
+	pg_select $dbfd "SELECT cname FROM dns.rr_cname WHERE idrr = $idrr" tab {
 	    set trr(cname) $tab(cname)
 	}
 	set trr(aliases) {}
-	pg_select $dbfd "SELECT idrr FROM rr_cname WHERE cname = $idrr" tab {
+	pg_select $dbfd "SELECT idrr FROM dns.rr_cname WHERE cname = $idrr" tab {
 	    lappend trr(aliases) $tab(idrr)
 	}
 	set trr(rolemail) ""
-	pg_select $dbfd "SELECT heberg FROM role_mail WHERE idrr = $idrr" tab {
+	pg_select $dbfd "SELECT heberg FROM dns.role_mail WHERE idrr = $idrr" tab {
 	    set trr(rolemail) $tab(heberg)
 	}
 	set trr(adrmail) {}
-	pg_select $dbfd "SELECT idrr FROM role_mail WHERE heberg = $idrr" tab {
+	pg_select $dbfd "SELECT idrr FROM dns.role_mail WHERE heberg = $idrr" tab {
 	    lappend trr(adrmail) $tab(idrr)
 	}
 	set trr(roleweb) 0
-	pg_select $dbfd "SELECT 1 FROM role_web WHERE idrr = $idrr" tab {
+	pg_select $dbfd "SELECT 1 FROM dns.role_web WHERE idrr = $idrr" tab {
 	    set trr(roleweb) 1
 	}
     }
@@ -907,7 +907,7 @@ proc lire-rr-par-id {dbfd idrr tabrr} {
 proc supprimer-rr-par-id {dbfd idrr msg} {
     upvar $msg m
 
-    set sql "DELETE FROM rr WHERE idrr = $idrr"
+    set sql "DELETE FROM dns.rr WHERE idrr = $idrr"
     return [::pgsql::execsql $dbfd $sql m]
 }
 
@@ -931,7 +931,7 @@ proc supprimer-alias-par-id {dbfd idrr msg} {
     upvar $msg m
 
     set ok 0
-    set sql "DELETE FROM rr_cname WHERE idrr = $idrr"
+    set sql "DELETE FROM dns.rr_cname WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql m]} then {
 	if {[supprimer-rr-par-id $dbfd $idrr m]} then {
 	    set ok 1
@@ -961,7 +961,7 @@ proc supprimer-ip-par-adresse {dbfd idrr adr msg} {
     upvar $msg m
 
     set ok 0
-    set sql "DELETE FROM rr_ip WHERE idrr = $idrr AND adr = '$adr'"
+    set sql "DELETE FROM dns.rr_ip WHERE idrr = $idrr AND adr = '$adr'"
     if {[::pgsql::execsql $dbfd $sql m]} then {
 	set ok 1
     }
@@ -988,7 +988,7 @@ proc supprimer-mx-par-id {dbfd idrr msg} {
     upvar $msg m
 
     set ok 0
-    set sql "DELETE FROM rr_mx WHERE idrr = $idrr"
+    set sql "DELETE FROM dns.rr_mx WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql m]} then {
 	set ok 1
     }
@@ -1015,7 +1015,7 @@ proc supprimer-rolemail-par-id {dbfd idrr msg} {
     upvar $msg m
 
     set ok 0
-    set sql "DELETE FROM role_mail WHERE idrr = $idrr"
+    set sql "DELETE FROM dns.role_mail WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql m]} then {
 	set ok 1
     }
@@ -1042,7 +1042,7 @@ proc supprimer-roleweb-par-id {dbfd idrr msg} {
     upvar $msg m
 
     set ok 0
-    set sql "DELETE FROM role_web WHERE idrr = $idrr"
+    set sql "DELETE FROM dns.role_web WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql m]} then {
 	set ok 1
     }
@@ -1234,7 +1234,7 @@ proc ajouter-rr {dbfd nom iddom mac iddhcpprofil idhinfo droitsmtp ttl
     if {$iddhcpprofil == 0} then {
 	set iddhcpprofil NULL
     }
-    set sql "INSERT INTO rr
+    set sql "INSERT INTO dns.rr
 		    (nom, iddom,
 			mac,
 			iddhcpprofil,
@@ -1279,7 +1279,7 @@ proc ajouter-rr {dbfd nom iddom mac iddhcpprofil idhinfo droitsmtp ttl
 
 proc touch-rr {dbfd idrr idcor} {
     set date [clock format [clock seconds]]
-    set sql "UPDATE rr SET idcor = $idcor, date = '$date' WHERE idrr = $idrr"
+    set sql "UPDATE dns.rr SET idcor = $idcor, date = '$date' WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
        set msg ""
     } else {
@@ -1349,7 +1349,7 @@ proc presenter-rr {dbfd idrr tabrr} {
 
     # droit d'émission SMTP : ne le présenter que si c'est utilisé
     # (i.e. s'il y a au moins un groupe qui a les droits)
-    set sql "SELECT COUNT(*) AS ndroitsmtp FROM groupe WHERE droitsmtp = 1"
+    set sql "SELECT COUNT(*) AS ndroitsmtp FROM global.groupe WHERE droitsmtp = 1"
     set ndroitsmtp 0
     pg_select $dbfd $sql tab {
 	set ndroitsmtp $tab(ndroitsmtp)
@@ -1366,7 +1366,7 @@ proc presenter-rr {dbfd idrr tabrr} {
     # TTL : ne le présenter que si c'est utilisé
     # (i.e. s'il y a au moins un groupe qui a les droits)
     # et s'il y a une valeur
-    set sql "SELECT COUNT(*) AS ndroitttl FROM groupe WHERE droitttl = 1"
+    set sql "SELECT COUNT(*) AS ndroitttl FROM global.groupe WHERE droitttl = 1"
     set ndroitttl 0
     pg_select $dbfd $sql tab {
 	set ndroitttl $tab(ndroitttl)
@@ -1598,7 +1598,7 @@ proc check-iddhcpprofil {dbfd iddhcpprofil dhcpprofilvar msgvar} {
 	set msg "Syntaxe invalide pour le profil DHCP"
     } else {
 	if {$iddhcpprofil != 0} then {
-	    set sql "SELECT nom FROM dhcpprofil
+	    set sql "SELECT nom FROM dns.dhcpprofil
 				WHERE iddhcpprofil = $iddhcpprofil"
 	    set msg "Profil DHCP invalide ($iddhcpprofil)"
 	    pg_select $dbfd $sql tab {
@@ -1634,7 +1634,7 @@ proc check-iddhcpprofil {dbfd iddhcpprofil dhcpprofilvar msgvar} {
 proc lire-domaine {dbfd domaine} {
     set domaine [::pgsql::quote $domaine]
     set iddom -1
-    pg_select $dbfd "SELECT iddom FROM domaine WHERE nom = '$domaine'" tab {
+    pg_select $dbfd "SELECT iddom FROM dns.domaine WHERE nom = '$domaine'" tab {
 	set iddom $tab(iddom)
     }
     return $iddom
@@ -1668,7 +1668,7 @@ proc droit-correspondant-domaine {dbfd idcor iddom roles} {
     }
 
     set r 0
-    set sql "SELECT dr_dom.iddom FROM dr_dom, corresp
+    set sql "SELECT dr_dom.iddom FROM dns.dr_dom, global.corresp
 			WHERE corresp.idcor = $idcor
 				AND corresp.idgrp = dr_dom.idgrp
 				AND dr_dom.iddom = $iddom
@@ -2178,7 +2178,7 @@ proc valide-domaine-et-relais {dbfd idcor domaine iddomvar} {
     #
 
     set sql "SELECT r.nom AS nom, d.nom AS domaine
-		FROM relais_dom rd, rr r, domaine d
+		FROM dns.relais_dom rd, dns.rr r, dns.domaine d
 		WHERE rd.iddom = $iddom
 			AND r.iddom = d.iddom
 			AND rd.mx = r.idrr
@@ -2279,7 +2279,7 @@ proc valide-dhcp-statique {dbfd mac lip} {
     if {! [string equal $mac ""]} then {
 	foreach ip $lip {
 	    set sql "SELECT min, max
-			    FROM dhcprange
+			    FROM dns.dhcprange
 			    WHERE '$ip' >= min AND '$ip' <= max"
 	    pg_select $dbfd $sql tab {
 		set r "Impossible d'affecter l'adresse MAC '$mac' car l'adresse IP $ip figure dans un intervalle DHCP dynamique \[$tab(min)..$tab(max)\]"
@@ -2355,7 +2355,7 @@ proc valide-correspondant {dbfd pageerr} {
 
     set qlogin [::pgsql::quote $login]
     set idcor -1
-    set sql "SELECT idcor, present FROM corresp WHERE login = '$qlogin'"
+    set sql "SELECT idcor, present FROM global.corresp WHERE login = '$qlogin'"
     pg_select $dbfd $sql tab {
 	set idcor	$tab(idcor)
 	set present	$tab(present)
@@ -2388,7 +2388,7 @@ proc valide-correspondant {dbfd pageerr} {
 
 proc lire-groupe {dbfd idcor} {
     set idgrp -1
-    set sql "SELECT idgrp FROM corresp WHERE idcor = $idcor"
+    set sql "SELECT idgrp FROM global.corresp WHERE idcor = $idcor"
     pg_select $dbfd $sql tab {
 	set idgrp	$tab(idgrp)
     }
@@ -2438,7 +2438,7 @@ proc syntaxe-groupe {groupe} {
 proc lire-hinfo {dbfd texte} {
     set qtexte [::pgsql::quote $texte]
     set idhinfo -1
-    pg_select $dbfd "SELECT idhinfo FROM hinfo WHERE texte = '$qtexte'" tab {
+    pg_select $dbfd "SELECT idhinfo FROM dns.hinfo WHERE texte = '$qtexte'" tab {
 	set idhinfo $tab(idhinfo)
     }
     return $idhinfo
@@ -2466,7 +2466,7 @@ proc lire-dhcpprofil {dbfd texte} {
 	set iddhcpprofil 0
     } else {
 	set qtexte [::pgsql::quote $texte]
-	set sql "SELECT iddhcpprofil FROM dhcpprofil WHERE nom = '$qtexte'"
+	set sql "SELECT iddhcpprofil FROM dns.dhcpprofil WHERE nom = '$qtexte'"
 	set iddhcpprofil -1
 	pg_select $dbfd $sql tab {
 	    set iddhcpprofil $tab(iddhcpprofil)
@@ -2495,7 +2495,7 @@ proc lire-dhcpprofil {dbfd texte} {
 
 proc menu-hinfo {dbfd champ defval} {
     set lhinfo {}
-    set sql "SELECT texte FROM hinfo \
+    set sql "SELECT texte FROM dns.hinfo \
 				WHERE present = 1 \
 				ORDER BY tri, texte"
     set i 0
@@ -2537,7 +2537,7 @@ proc menu-dhcpprofil {dbfd champ idcor iddhcpprofil} {
     #
 
     set sql "SELECT p.iddhcpprofil, p.nom
-		FROM dr_dhcpprofil dr, dhcpprofil p, corresp c
+		FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p, global.corresp c
 		WHERE c.idcor = $idcor
 		    AND dr.idgrp = c.idgrp
 		    AND dr.iddhcpprofil = p.iddhcpprofil
@@ -2569,7 +2569,7 @@ proc menu-dhcpprofil {dbfd champ idcor iddhcpprofil} {
 	    # le profil pré-existant
 	    #
 	    set sql "SELECT iddhcpprofil, nom
-			    FROM dhcpprofil
+			    FROM dns.dhcpprofil
 			    WHERE iddhcpprofil = $iddhcpprofil"
 	    pg_select $dbfd $sql tab {
 		lappend lprof [list $tab(iddhcpprofil) $tab(nom)]
@@ -2761,7 +2761,7 @@ proc couple-domaine-par-corresp {dbfd idcor where} {
 
     set lcouples {}
     set sql "SELECT domaine.nom
-		FROM domaine, dr_dom, corresp
+		FROM dns.domaine, dns.dr_dom, global.corresp
 		WHERE domaine.iddom = dr_dom.iddom
 		    AND dr_dom.idgrp = corresp.idgrp
 		    AND corresp.idcor = $idcor
@@ -2798,7 +2798,7 @@ proc liste-groupes {dbfd {n 1}} {
     for {set i 0} {$i < $n} {incr i} {
 	lappend l "nom"
     }
-    return [::pgsql::getcols $dbfd groupe "nom <> ''" "nom ASC" $l]
+    return [::pgsql::getcols $dbfd global.groupe "nom <> ''" "nom ASC" $l]
 }
 
 #
@@ -2832,7 +2832,9 @@ proc info-groupe {dbfd idgrp} {
     #
 
     set donnees {}
-    set sql "SELECT admin, droitsmtp, droitttl FROM groupe WHERE idgrp = $idgrp"
+    set sql "SELECT admin, droitsmtp, droitttl
+			FROM global.groupe
+			WHERE idgrp = $idgrp"
     pg_select $dbfd $sql tab {
 	if {$tab(admin)} then {
 	    set admin "oui"
@@ -2864,7 +2866,7 @@ proc info-groupe {dbfd idgrp} {
     #
 
     set lcor {}
-    set sql "SELECT login FROM corresp WHERE idgrp=$idgrp ORDER BY login"
+    set sql "SELECT login FROM global.corresp WHERE idgrp=$idgrp ORDER BY login"
     pg_select $dbfd $sql tab {
 	lappend lcor [::webapp::html-string $tab(login)]
     }
@@ -2880,7 +2882,7 @@ proc info-groupe {dbfd idgrp} {
 			d.dhcp, d.acl,
 			e.nom AS etabl,
 			c.nom AS commu
-		FROM reseau r, dr_reseau d, etablissement e, communaute c
+		FROM dns.reseau r, dns.dr_reseau d, dns.etablissement e, dns.communaute c
 		WHERE d.idgrp = $idgrp
 			AND d.idreseau = r.idreseau
 			AND e.idetabl = r.idetabl
@@ -2922,7 +2924,7 @@ proc info-groupe {dbfd idgrp} {
 	    lappend droits [join $dres ", "]
 	}
 	set sql2 "SELECT adr, allow_deny
-			FROM dr_ip
+			FROM dns.dr_ip
 			WHERE ($where)
 			    AND idgrp = $idgrp
 			ORDER BY adr"
@@ -2952,15 +2954,15 @@ proc info-groupe {dbfd idgrp} {
     set donnees {}
     set trouve 0
     set sql "SELECT adr, allow_deny
-		    FROM dr_ip
+		    FROM dns.dr_ip
 		    WHERE NOT (adr <<= ANY (
 				SELECT r.adr4
-					FROM reseau r, dr_reseau d
+					FROM dns.reseau r, dns.dr_reseau d
 					WHERE r.idreseau = d.idreseau
 						AND d.idgrp = $idgrp
 				UNION
 				SELECT r.adr6
-					FROM reseau r, dr_reseau d
+					FROM dns.reseau r, dns.dr_reseau d
 					WHERE r.idreseau = d.idreseau
 						AND d.idgrp = $idgrp
 				    ) )
@@ -2992,7 +2994,7 @@ proc info-groupe {dbfd idgrp} {
 
     set donnees {}
     set sql "SELECT domaine.nom AS nom, dr_dom.rolemail, dr_dom.roleweb \
-			FROM dr_dom, domaine
+			FROM dns.dr_dom, dns.domaine
 			WHERE dr_dom.iddom = domaine.iddom \
 				AND dr_dom.idgrp = $idgrp \
 			ORDER BY dr_dom.tri, domaine.nom"
@@ -3020,7 +3022,7 @@ proc info-groupe {dbfd idgrp} {
 
     set donnees {}
     set sql "SELECT p.nom, dr.tri, p.texte \
-			FROM dhcpprofil p, dr_dhcpprofil dr
+			FROM dns.dhcpprofil p, dns.dr_dhcpprofil dr
 			WHERE p.iddhcpprofil = dr.iddhcpprofil \
 				AND dr.idgrp = $idgrp \
 			ORDER BY dr.tri, p.nom"
@@ -3087,7 +3089,7 @@ proc liste-reseaux-autorises {dbfd idgrp droit} {
 
     set lres {}
     set sql "SELECT r.idreseau, r.nom, r.adr4, r.adr6
-			FROM reseau r, dr_reseau d
+			FROM dns.reseau r, dns.dr_reseau d
 			WHERE r.idreseau = d.idreseau
 			    AND d.idgrp = $idgrp
 			    $w1 $w2
@@ -3196,7 +3198,7 @@ proc valide-idreseau {dbfd idreseau idgrp droit version msgvar} {
     set msg ""
 
     set sql "SELECT r.adr4, r.adr6
-		    FROM dr_reseau d, reseau r
+		    FROM dns.dr_reseau d, dns.reseau r
 		    WHERE d.idgrp = $idgrp
 			AND d.idreseau = r.idreseau
 			AND r.idreseau = $idreseau
@@ -3254,7 +3256,7 @@ proc valide-idreseau {dbfd idreseau idgrp droit version msgvar} {
 #
 
 proc droit-correspondant-smtp {dbfd idcor} {
-    set sql "SELECT droitsmtp FROM groupe g, corresp c 
+    set sql "SELECT droitsmtp FROM global.groupe g, global.corresp c 
 				WHERE g.idgrp = c.idgrp AND c.idcor = $idcor"
     set r 0
     pg_select $dbfd $sql tab {
@@ -3278,7 +3280,7 @@ proc droit-correspondant-smtp {dbfd idcor} {
 #
 
 proc droit-correspondant-ttl {dbfd idcor} {
-    set sql "SELECT droitttl FROM groupe g, corresp c 
+    set sql "SELECT droitttl FROM global.groupe g, global.corresp c 
 				WHERE g.idgrp = c.idgrp AND c.idcor = $idcor"
     set r 0
     pg_select $dbfd $sql tab {
@@ -4182,7 +4184,7 @@ snit::type ::config {
     # returns key value
     method get {key} {
 	set val {}
-	pg_select $db "SELECT * FROM config WHERE clef = '$key'" tab {
+	pg_select $db "SELECT * FROM global.config WHERE clef = '$key'" tab {
 	    set val $tab(valeur)
 	}
 	return $val
@@ -4193,10 +4195,10 @@ snit::type ::config {
     method set {key val} {
 	set r ""
 	set k [::pgsql::quote $key]
-	set sql "DELETE FROM config WHERE clef = '$k'"
+	set sql "DELETE FROM global.config WHERE clef = '$k'"
 	if {[::pgsql::execsql $db $sql msg]} then {
 	    set v [::pgsql::quote $val]
-	    set sql "INSERT INTO config VALUES ('$k', '$v')"
+	    set sql "INSERT INTO global.config VALUES ('$k', '$v')"
 	    if {! [::pgsql::execsql $db $sql msg]} then {
 		set r "Cannot set '$key' to '$val': $msg"
 	    }

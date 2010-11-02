@@ -93,7 +93,7 @@ proc main {argv0 argv} {
     set file [lindex $argv 1]
 
     set qzone [::pgsql::quote $zone]
-    set sql "SELECT prologue FROM zone WHERE domaine = '$qzone'"
+    set sql "SELECT prologue FROM dns.zone WHERE domaine = '$qzone'"
 
     set trouve 0
     pg_select $dbfd $sql tab {
@@ -169,7 +169,7 @@ proc main {argv0 argv} {
     #
 
     set txt [::pgsql::quote $new]
-    set sql "UPDATE zone SET prologue = '$txt' WHERE domaine = '$qzone'"
+    set sql "UPDATE dns.zone SET prologue = '$txt' WHERE domaine = '$qzone'"
 
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	return "Impossible de modifier : $msg"

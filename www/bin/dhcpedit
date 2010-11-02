@@ -102,7 +102,7 @@ proc main {} {
 	    }
 
     set menudom {}
-    set sql "SELECT d.iddom, d.nom FROM domaine d, dr_dom dr
+    set sql "SELECT d.iddom, d.nom FROM dns.domaine d, dns.dr_dom dr
 			WHERE d.iddom = dr.iddom
 				AND dr.idgrp = $idgrp
 			ORDER BY dr.tri ASC, d.nom ASC"
@@ -114,7 +114,7 @@ proc main {} {
     set sql "	(SELECT 0 AS iddhcpprofil, 'Aucun profil' AS nom)
 		UNION
 		(SELECT p.iddhcpprofil AS iddhcpprofil, p.nom AS nom
-		    FROM dr_dhcpprofil dr, dhcpprofil p, corresp c
+		    FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p, global.corresp c
 		    WHERE c.idcor = $tabcor(idcor)
 			AND dr.idgrp = c.idgrp
 			AND dr.iddhcpprofil = p.iddhcpprofil
@@ -134,7 +134,7 @@ proc main {} {
 	}
     regsub -- "%MENUDOM%" $spec "$menudom" spec
     regsub -- "%MENUDHCP%" $spec "$menudhcp" spec
-    set sql "SELECT * FROM dhcprange
+    set sql "SELECT * FROM dns.dhcprange
 			WHERE min <<= '$lcidr'
 			    AND max <<= '$lcidr'
 			    AND valide_dhcprange_grp ($idgrp, min, max)
