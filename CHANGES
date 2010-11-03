@@ -1,3 +1,7 @@
+Version 2.0 - ??/??/????
+    - intégration du module topo
+    - utilisation de schémas pour mieux séparer les données des modules
+
 version 1.5 - ??/??/????
     - ajout du profil DHCP dans la gestion des plages dynamiques
     - affichage du profil DHCP dans la liste des machines par réseau
