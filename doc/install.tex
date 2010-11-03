@@ -3568,6 +3568,13 @@ a pour but de permettre à un administrateur d'identifier la machine
 à partir de laquelle il se connecte (par exemple depuis une salle
 de ressources ou depuis une borne interactive).
 
+Le source (en langage C) de HTG utilisait des caractéristiques
+datant des versions de Tcl 7.x, et toujours supportées jusqu'à la
+version 8.5 de Tcl. La version 8.6 de Tcl, actuellement en version
+bêta, arrête le support de ces anciennes caractéristiques. Le source
+de HTG a donc été changé, et le fonctionnement validé tant avec Tcl
+8.5 qu'avec 8.6.
+
 Enfin, les titres de pages ont été explicités, notamment pour se
 repérer plus facilement dans les menus d'historique de la plupart
 des navigateurs.
