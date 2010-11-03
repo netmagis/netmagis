@@ -113,21 +113,21 @@ void reset_ctxt (int all)
     }
 }
 
-int HTG_Reset (Tcl_Interp *interp, int argc, char *argv [])
+int HTG_Reset (Tcl_Interp *interp, int objc, Tcl_Obj *const objv [])
 {
     int all ;
 
-    if (argc == 1)
+    if (objc == 2)
     {
 	all = 0 ;
     }
-    else if (argc == 2 && strcmp (argv [1], "all") == 0)
+    else if (objc == 3 && strcmp (Tcl_GetString (objv [2]), "all") == 0)
     {
 	all = 1 ;
     }
     else
     {
-	interp->result = "wrong # args: should be htg reset ?all?" ;
+	Tcl_WrongNumArgs (interp, 2, objv, "?all?") ;
 	return TCL_ERROR ;
     }
 
@@ -151,23 +151,21 @@ char *malloc_string (char *string)
     return p ;
 }
 
-int HTG_Insert (Tcl_Interp *interp, int argc, char *argv [])
+int HTG_Insert (Tcl_Interp *interp, int objc, Tcl_Obj *const objv [])
 {
-    char *arg_string, *arg_filename, *arg_lineno ;
+    char *arg_string, *arg_filename ;
     int lineno ;
     struct position *pos ;
 
-    if (argc != 4)
+    if (objc != 5)
     {
-	interp->result = "wrong # args: should be htg insert string filename lineno" ;
+	Tcl_WrongNumArgs (interp, 2, objv, "string filename lineno") ;
 	return TCL_ERROR ;
     }
 
-    arg_string   = argv [1] ;
-    arg_filename = argv [2] ;
-    arg_lineno   = argv [3] ;
-
-    if (Tcl_GetInt (interp, arg_lineno, &lineno) != TCL_OK)
+    arg_string   = Tcl_GetString (objv [2]) ;
+    arg_filename = Tcl_GetString (objv [3]) ;
+    if (Tcl_GetIntFromObj (interp, objv [4], &lineno) != TCL_OK)
 	return TCL_ERROR ;
 
     /*
@@ -177,7 +175,7 @@ int HTG_Insert (Tcl_Interp *interp, int argc, char *argv [])
     pos = (struct position *) malloc (sizeof *pos) ;
     if (pos == NULL)
     {
-	interp->result = "cannot allocate new position element" ;
+	Tcl_SetResult (interp, "cannot allocate new position element", TCL_STATIC) ;
 	return TCL_ERROR ;
     }
 
@@ -185,7 +183,7 @@ int HTG_Insert (Tcl_Interp *interp, int argc, char *argv [])
     if (pos->filename == NULL)
     {
 	free (pos) ;
-	interp->result = "cannot allocate new file name" ;
+	Tcl_SetResult (interp, "cannot allocate new file name", TCL_STATIC) ;
 	return TCL_ERROR ;
     }
 
@@ -194,7 +192,7 @@ int HTG_Insert (Tcl_Interp *interp, int argc, char *argv [])
     {
 	free (pos) ;
 	free (pos->filename) ;
-	interp->result = "cannot allocate new string" ;
+	Tcl_SetResult (interp, "cannot allocate new string", TCL_STATIC) ;
 	return TCL_ERROR ;
     }
     pos->curptr = pos->buffer ;
@@ -212,7 +210,7 @@ int HTG_Insert (Tcl_Interp *interp, int argc, char *argv [])
      * That's all, folks !
      */
 
-    interp->result = "" ;
+    Tcl_ResetResult (interp) ;
     return TCL_OK ;
 }
 
@@ -226,7 +224,7 @@ int error (Tcl_Interp *interp, char *msg, char *filename, int lineno)
     char tmp [1000], *p ;
 
     p = tmp ;
-    if (strcmp (interp->result, "") != 0)
+    if (strcmp (Tcl_GetStringResult (interp), "") != 0)
 	*p++ = '\n' ;
     sprintf (p, "%s(%d): %s", filename, lineno, msg) ;
     Tcl_AppendResult (interp, tmp, NULL) ;
@@ -321,8 +319,11 @@ void skip_space (void)
 
 int normal_char (Tcl_Interp *interp, unschar c)
 {
-    interp->result [0] = c ;
-    interp->result [1] = '\0' ;
+    char tmp [2] ;
+
+    tmp [0] = c ;
+    tmp [1] = '\0' ;
+    Tcl_SetResult (interp, tmp, TCL_VOLATILE) ;
     advance_char () ;
 
     return TCL_OK ;
@@ -343,7 +344,7 @@ int engine (Tcl_Interp *interp)
 
     if (cc == '\0')
     {
-	interp->result = "" ;
+	Tcl_ResetResult (interp) ;
 	rcode = TCL_OK ;
     }
     else if (cc == '\\')
@@ -403,7 +404,7 @@ int engine (Tcl_Interp *interp)
 	    rcode = engine (interp) ;
 	    if (rcode == TCL_ERROR)
 		Tcl_DStringFree (&resultat) ;
-	    else Tcl_DStringAppend (&resultat, interp->result, -1) ;
+	    else Tcl_DStringAppend (&resultat, Tcl_GetStringResult (interp), -1) ;
 	}
 	if (rcode == TCL_OK)
 	{
@@ -446,13 +447,13 @@ int engine (Tcl_Interp *interp)
     return rcode ;
 }
 
-int HTG_Getnext (Tcl_Interp *interp, int argc, char *argv [])
+int HTG_Getnext (Tcl_Interp *interp, int objc, Tcl_Obj *const objv [])
 {
     int r ;
 
-    if (argc != 1)
+    if (objc != 2)
     {
-	interp->result = "wrong # args: should be htg getnext" ;
+	Tcl_WrongNumArgs (interp, 2, objv, "") ;
 	return TCL_ERROR ;
     }
 
@@ -467,11 +468,11 @@ int HTG_Getnext (Tcl_Interp *interp, int argc, char *argv [])
 Command "htg position"
 ******************************************************************************/
 
-int HTG_Position (Tcl_Interp *interp, int argc, char *argv [])
+int HTG_Position (Tcl_Interp *interp, int objc, Tcl_Obj *const objv [])
 {
-    if (argc != 1)
+    if (objc != 2)
     {
-	interp->result = "wrong # args: should be htg position" ;
+	Tcl_WrongNumArgs (interp, 2, objv, "") ;
 	return TCL_ERROR ;
     }
 
@@ -488,11 +489,11 @@ int HTG_Position (Tcl_Interp *interp, int argc, char *argv [])
 
     if (htgctxt.pos != NULL)
     {
-	char tmp [100] ;
+	Tcl_Obj *e [2] ;
 
-	Tcl_AppendElement (interp, htgctxt.pos->filename) ;
-	sprintf (tmp, "%d", htgctxt.pos->lineno) ;
-	Tcl_AppendElement (interp, tmp) ;
+	e [0] = Tcl_NewStringObj (htgctxt.pos->filename, -1) ;
+	e [1] = Tcl_NewIntObj (htgctxt.pos->lineno) ;
+	Tcl_SetObjResult (interp, Tcl_NewListObj (2, e)) ;
     }
 
     return TCL_OK ;
@@ -502,24 +503,26 @@ int HTG_Position (Tcl_Interp *interp, int argc, char *argv [])
 Command "htg getdate"
 ******************************************************************************/
 
-int HTG_Getdate (Tcl_Interp *interp, int argc, char *argv [])
+int HTG_Getdate (Tcl_Interp *interp, int objc, Tcl_Obj *const objv [])
 {
     FILE *fp ;
     struct stat stbuf ;
     char filedate [100] ;
+    const char *cid ;
 
-    if (argc != 2)
+    if (objc != 3)
     {
-	interp->result = "wrong # args: should be htg getdate channelId" ;
+	Tcl_WrongNumArgs (interp, 2, objv, "channelId") ;
 	return TCL_ERROR ;
     }
 
-    if (Tcl_GetOpenFile (interp, argv [1], 0, 0, (ClientData *) &fp) != TCL_OK)
+    cid = Tcl_GetString (objv [2]) ;
+    if (Tcl_GetOpenFile (interp, cid, 0, 0, (ClientData *) &fp) != TCL_OK)
 	return TCL_ERROR ;
 
     if (fstat (fileno (fp), &stbuf) == -1)
     {
-	interp->result = "cannot stat file" ;
+	Tcl_SetResult (interp, "cannot stat file", TCL_STATIC) ;
 	return TCL_ERROR ;
     }
 
@@ -533,36 +536,39 @@ int HTG_Getdate (Tcl_Interp *interp, int argc, char *argv [])
 Command "htg defchar"
 ******************************************************************************/
 
-int HTG_Defchar (Tcl_Interp *interp, int argc, char *argv [])
+int HTG_Defchar (Tcl_Interp *interp, int objc, Tcl_Obj *const objv [])
 {
     int c ;
+    char *s, *cmd ;
 
-    if (argc != 3)
+    if (objc != 4)
     {
-	interp->result = "wrong # args: should be htg defchar char cmd" ;
+	Tcl_WrongNumArgs (interp, 2, objv, "char cmd") ;
 	return TCL_ERROR ;
     }
 
-    if (strlen (argv [1]) != 1)
+    s = Tcl_GetString (objv [2]) ;
+    if (strlen (s) != 1)
     {
-	interp->result = "must give a char" ;
+	Tcl_SetResult (interp, "must give a char", TCL_STATIC) ;
 	return TCL_ERROR ;
     }
 
-    c = (unschar) (*argv [1]) ;
+    c = (unschar) (*s) ;
 
     if (htgctxt.actchar [c] != NULL)
 	free (htgctxt.actchar [c]) ;
 
-    htgctxt.actchar [c] = malloc (strlen (argv [2] + 1)) ;
+    cmd = Tcl_GetString (objv [3]) ;
+    htgctxt.actchar [c] = malloc (strlen (cmd) + 1) ;
     if (htgctxt.actchar [c] == NULL)
     {
-	interp->result = "not enough memory" ;
+	Tcl_SetResult (interp, "not enough memory", TCL_STATIC) ;
 	return TCL_ERROR ;
     }
-    strcpy (htgctxt.actchar [c], argv [2]) ;
+    strcpy (htgctxt.actchar [c], cmd) ;
 
-    Tcl_SetResult (interp, argv [1], TCL_VOLATILE) ;
+    Tcl_SetResult (interp, s, TCL_VOLATILE) ;
 
     return TCL_OK ;
 }
@@ -572,12 +578,12 @@ Driver procedure
 ******************************************************************************/
 
 int HTG_Cmd (ClientData clientdata, Tcl_Interp *interp,
-						int argc, char *argv [])
+					int objc, Tcl_Obj *const objv [])
 {
     static struct
     {
 	char *command ;
-	int (*procedure) (Tcl_Interp *, int, char * []) ;
+	int (*procedure) (Tcl_Interp *, int, Tcl_Obj *const []) ;
     } optable [] =
     {
 	{ "reset",    HTG_Reset   , },
@@ -587,14 +593,19 @@ int HTG_Cmd (ClientData clientdata, Tcl_Interp *interp,
 	{ "getdate",  HTG_Getdate , },
 	{ "defchar",  HTG_Defchar , },
     } ;
+    const char *s ;
     int i, r ;
 
-    for (i = 0 ; i < NTAB (optable) ; i++)
+    if (objc > 1)
     {
-	if (strcmp (argv [1], optable [i].command) == 0)
+	s = Tcl_GetString (objv [1]) ;
+	for (i = 0 ; i < NTAB (optable) ; i++)
 	{
-	    r = (*optable [i].procedure) (interp, argc - 1, argv + 1) ;
-	    break ;
+	    if (strcmp (s, optable [i].command) == 0)
+	    {
+		r = (*optable [i].procedure) (interp, objc, objv) ;
+		break ;
+	    }
 	}
     }
 
@@ -602,7 +613,9 @@ int HTG_Cmd (ClientData clientdata, Tcl_Interp *interp,
     {
 	char tmp [200] ;
 
-	sprintf (tmp, "bad option \"%s\": should be ", argv [1]) ;
+	if (objc <= 1)
+	    sprintf (tmp, "should give an option among: ") ;
+	else sprintf (tmp, "bad option \"%s\": should be ", s) ;
 	for (i = 0 ; i < NTAB (optable) ; i++)
 	{
 	    if (i != 0)
@@ -623,8 +636,8 @@ Initialization procedure
 
 int HTG_Init (Tcl_Interp *interp)
 {
-    Tcl_CreateCommand (interp, "htg",
-		(Tcl_CmdProc *) HTG_Cmd,
+    Tcl_CreateObjCommand (interp, "htg",
+		(Tcl_ObjCmdProc *) HTG_Cmd,
 		(ClientData) NULL,
 		(Tcl_CmdDeleteProc *) NULL) ;
 

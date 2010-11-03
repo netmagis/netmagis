@@ -4,7 +4,6 @@
 
 
 DESTDIR		= /local/services/www/htg
-DESTDIR		= /tmp/htg
 
 SUBST	= \
 	-e 's|%DESTDIR%|$(DESTDIR)|'
