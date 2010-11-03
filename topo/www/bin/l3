@@ -316,7 +316,7 @@ proc main {} {
     # Récupérer les réseaux IP déclarés dans le graphe
     #
 
-    set cmd [format $conf(dumpgraph) $tabuid(flags)]
+    set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
 
     while {[gets $fd ligne] > -1} {
@@ -395,7 +395,7 @@ proc main {} {
 		set bb $conf(bb4)
 	    }
 	}
-	set xl3 [format $conf(extractl3) $tabuid(flags) [join $lnet " "] $bb]
+	set xl3 [format $conf(extractl3) $tabuid(flagsr) [join $lnet " "] $bb]
 	set dot [generer-dot $format $xl3 $conf(urleq) $conf(urll2) $u1]
 	set fd [open "$tmp.dot" "w"]
 	puts $fd $dot

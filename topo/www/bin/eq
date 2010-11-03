@@ -54,13 +54,13 @@ set conf(form)	{
 }
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
-set conf(extracteq)	"%TOPODIR%/bin/extracteq %s %s < %GRAPH%"
 set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
 set conf(urlstat)	"$conf(homeurl)/bin/metro?id=%s%s"
 set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
 set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
 set conf(urll2)		"$conf(homeurl)/bin/l2?eq=%s&iface=%s&vlan=%d%s"
 set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
+set conf(urlifchg)	"$conf(homeurl)/bin/ifchg?eq=%s&iface=%s%s"
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -515,6 +515,217 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 }
 
 ##############################################################################
+# Affichage d'un équipement
+##############################################################################
+
+proc format-one-eq {nomeq iface _tabuid u1 u2} {
+    global conf
+    upvar $_tabuid tabuid
+
+    #
+    # Lire les informations de l'équipement dans le graphe
+    # Ces informations sont filtrées par tabuid qui n'affiche
+    # que les vlans autorisés.
+    #
+
+    set l [eq-iflist $nomeq tabuid $conf(err)]
+
+    lassign $l nomeq type model location iflist array
+    array set tabiface $array
+
+    set titre "Équipement $nomeq $type $model"
+    if {$location ne ""} then {
+	append titre " (localisation $location)"
+    }
+
+    #
+    # Mettre en forme toutes ces informations
+    #
+
+    set eqmod 0
+    set texte ""
+    foreach i $iflist {
+	set txt ""
+
+	#
+	# Nom de l'interface et paramètres associés (Ethernet, radio)
+	#
+
+	lassign $tabiface($i) nom edit radio stat mode desc lien natif
+	set ligne [lreplace $tabiface($i) 0 7]
+
+	if {[string equal $iface $nom]} then {
+	    append txt [::webapp::helem "b" $nom]
+	} else {
+	    append txt "$nom"
+	}
+
+	if {[llength $radio] > 0} then {
+	    set channel [conv-channel [lindex $radio 0]]
+	    set power   [lindex $radio 1]
+	    append txt " (channel $channel power $power mW)"
+	}
+
+	if {! [string equal $stat "-"]} then {
+	    set url [format $conf(urlstat) [::webapp::post-string $stat] $u1]
+	    append txt " "
+	    append txt [::webapp::helem "a" {[Trafic]} "href" $url]
+	}
+
+	append txt " $mode"
+
+	if {$desc ne "-"} then {
+	    append txt " ("
+	    append txt [::webapp::html-string [binary format H* $desc]]
+	    append txt ")"
+	}
+
+	if {[llength $lien] > 1} then {
+	    set via [lindex $lien 0]
+	    set eq2 [lindex $lien 1]
+	    set if2 [lindex $lien 2]
+
+	    set urleqiface [format $conf(urleqiface) $eq2 $if2 $u1]
+	    append txt " $via vers "
+	    append txt [::webapp::helem "a" "$eq2 $if2" "href" $urleqiface]
+	}
+
+	#
+	# Récapitulatif des stats wifi
+	#
+
+	if {[info exists tabwifi($nomeq:$i)]} then {
+	    #
+	    # Cumuler les graphes d'associations et d'authentification
+	    # Cumuler les graphes par ssid
+	    #
+	    cumul-wifi $tabwifi($nomeq:$i) tw
+
+	    append txt " "
+
+	    foreach k {assoc auth} {
+		if {[llength $tw(:$k:ssid)] > 1} then {
+		    #
+		    # Cumuls (seulement si plus d'un ssid)
+		    #
+
+		    set hid $tw(:$k:cumul)
+		    set url [format $conf(urlstat) \
+				    [::webapp::post-string $hid] $u1]
+		    append txt " "
+		    append txt [::webapp::helem "a" "\[Cumul $k\]" "href" $url]
+
+		    #
+		    # Détails par SSID (seulement si plus d'un ssid)
+		    #
+
+		    set lid {}
+		    foreach ssid $tw(:$k:ssid) {
+			set lid [concat $lid $tw(:$k:ssid:$ssid)]
+		    }
+		    set hid [join $lid "|"]
+		    set url [format $conf(urlstat) \
+				    [::webapp::post-string $hid] $u1]
+		    append txt " "
+		    append txt [::webapp::helem "a" "\[Détail $k\]" "href" $url]
+		}
+	    }
+	}
+
+	#
+	# Édition des interfaces.
+	# Si c'est une interface modifiable, activer le
+	# bouton pour la modifier
+	# Critères :
+	#  1- le lien de l'interface doit être "X"
+	#  2- le correspondant doit avoir accès à tous les vlans
+	#
+
+	if {$edit eq "edit"} then {
+	    set url [format $conf(urlifchg) $nomeq $i $u1]
+	    append txt " "
+	    append txt [::webapp::helem "a" {[Modifier]} "href" $url]
+	    incr eqmod
+	}
+
+	#
+	# Parcours des vlans présents sur cette interface
+	#
+
+	set nvlan [llength $ligne]
+	foreach vlan [lsort -index 0 -integer $ligne] {
+	    set vlanid [lindex $vlan 0]
+	    set desc   [lindex $vlan 1]
+	    if {[string equal $desc "-"]} then {
+		set desc "pas de description"
+	    } else {
+		set desc [binary format H* $desc]
+	    }
+	    set native ""
+	    if {$vlanid == $natif} then {
+		set native " (vlan natif)"
+	    }
+	    set stat   [lindex $vlan 2]
+
+	    append txt "\n<BR>\n"
+
+	    if {$nvlan > 1 || $vlanid != 0} then {
+		set urll2 [format $conf(urll2) $nomeq $i $vlanid $u1]
+		append txt "Vlan "
+		append txt [::webapp::helem "a" "$vlanid ($desc)" "href" $urll2]
+		append txt $native
+
+		if {! [string equal $stat "-"]} then {
+		    set url [format $conf(urlstat) $stat $u1]
+		    append txt " "
+		    append txt [::webapp::helem "a" {[Trafic]} "href" $url]
+		}
+	    }
+
+	    foreach ip [lsort [lindex $vlan 3]] {
+		set urll3 [format $conf(urll3) $ip $u1]
+		append txt " "
+		append txt [::webapp::helem "a" $ip "href" $urll3]
+	    }
+	}
+
+	#
+	# Pour les interfaces radio, parcourir les points
+	# de métrologie pour les ssid trouvés
+	#
+
+	if {[info exists tabwifi($nomeq:$i)]} then {
+	    foreach ssid $tw(:ssid) {
+		append txt "\n<BR>\nSsid $ssid "
+		foreach k {assoc auth} {
+		    set id [lindex $tw(:$k:ssid:$ssid) 0]
+		    if {! [string equal $id ""]} then {
+			set url [format $conf(urlstat) $id $u1]
+			append txt [::webapp::helem "a" "\[$k\]" "href" $url]
+		    }
+		}
+	    }
+	}
+
+	#
+	# Résultat final
+	#
+	append texte [::webapp::helem "li" [::webapp::helem "p" $txt]]
+    }
+
+    set texte [::webapp::helem "ul" $texte]
+
+    if {$eqmod > 1} then {
+	set url [format $conf(urlifchg) $nomeq "" $u1]
+	append titre " "
+	append titre [::webapp::helem "a" {[Modifier les interfaces]} \
+					"href" $url]
+    }
+
+    return [list $titre $texte]
+}
+
+##############################################################################
 # Programme principal
 ##############################################################################
 
@@ -544,7 +755,7 @@ proc main {} {
     # Récupérer les informations sur les équipements lues dans le graphe
     #
 
-    set cmd [format $conf(dumpgraph) $tabuid(flags)]
+    set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
     while {[gets $fd ligne] > -1} {
 	switch [lindex $ligne 0] {
@@ -567,7 +778,7 @@ proc main {} {
     # Récupérer les stats wifi sur ces équipements
     #
 
-    set cmd [format $conf(extractcoll) $tabuid(flags)]
+    set cmd [format $conf(extractcoll) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
     while {[gets $fd ligne] > -1} {
 	set kw [lindex $ligne 0]
@@ -640,209 +851,8 @@ proc main {} {
 
 	    set nomeq [lindex [array names tabeq] 0]
 
-	    set cmd [format $conf(extracteq) $tabuid(flags) $nomeq]
-	    set fd [open "|$cmd" "r"]
-	    while {[gets $fd ligne] > -1} {
-		switch [lindex $ligne 0] {
-		    eq {
-			set nomeq    [lindex $ligne 1]
-			set type     [lindex $ligne 2]
-			set modele   [lindex $ligne 3]
-			set location [lindex $ligne 4]
-			set titre "Équipement $nomeq $type $modele"
-			if {! [string equal $location "-"]} then {
-			    set location [binary format H* $location]
-			    append titre " (localisation $location)"
-			}
-		    }
-		    iface {
-			set if [lindex $ligne 1]
-			set tabiface($if) $ligne
-		    }
-		}
-	    }
-	    close $fd
-
-	    #
-	    # Trier les interfaces pour les présenter dans le bon ordre
-	    #
-
-	    set iflist [lsort -command compare-interfaces \
-					[array names tabiface] \
-				    ]
-
-	    #
-	    # Mettre en forme toutes ces informations
-	    #
-
-	    set texte ""
-	    foreach i $iflist {
-		set txt ""
-
-		#
-		# Nom de l'interface et paramètres associés (Ethernet, radio)
-		#
-
-		set ligne $tabiface($i)
-
-		set nom   [lindex $ligne 1]
-		set radio [lindex $ligne 2]
-		set stat  [lindex $ligne 3]
-		set mode  [lindex $ligne 4]
-		set desc  [lindex $ligne 5]
-		set lien  [lindex $ligne 6]
-		set natif [lindex $ligne 7]
-		set ligne [lreplace $ligne 0 7]
-
-
-		if {[string equal $iface $nom]} then {
-		    append txt [::webapp::helem "b" $nom]
-		} else {
-		    append txt "$nom"
-		}
-
-		if {[llength $radio] > 0} then {
-		    set channel [conv-channel [lindex $radio 0]]
-		    set power   [lindex $radio 1]
-		    append txt " (channel $channel power $power mW)"
-		}
-
-		if {! [string equal $stat "-"]} then {
-		    set url [format $conf(urlstat) [::webapp::post-string $stat] $u1]
-		    append txt " "
-		    append txt [::webapp::helem "a" {[Trafic]} "href" $url]
-		}
-
-		append txt " $mode"
-
-		if {$desc ne "-"} then {
-		    append txt " ("
-		    append txt [::webapp::html-string [binary format H* $desc]]
-		    append txt ")"
-		}
-
-		if {[llength $lien] > 1} then {
-		    set via [lindex $lien 0]
-		    set eq2 [lindex $lien 1]
-		    set if2 [lindex $lien 2]
-
-		    set urleqiface [format $conf(urleqiface) $eq2 $if2 $u1]
-		    append txt " $via vers "
-		    append txt [::webapp::helem "a" "$eq2 $if2" "href" $urleqiface]
-		}
-
-		#
-		# Récapitulatif des stats wifi
-		#
-
-		if {[info exists tabwifi($nomeq:$i)]} then {
-		    #
-		    # Cumuler les graphes d'associations et d'authentification
-		    # Cumuler les graphes par ssid
-		    #
-		    cumul-wifi $tabwifi($nomeq:$i) tw
-
-		    append txt " "
-
-		    foreach k {assoc auth} {
-			if {[llength $tw(:$k:ssid)] > 1} then {
-			    #
-			    # Cumuls (seulement si plus d'un ssid)
-			    #
-
-			    set hid $tw(:$k:cumul)
-			    set url [format $conf(urlstat) \
-					    [::webapp::post-string $hid] $u1]
-			    append txt " "
-			    append txt [::webapp::helem "a" "\[Cumul $k\]" \
-							    "href" $url]
-
-			    #
-			    # Détails par SSID (seulement si plus d'un ssid)
-			    #
-
-			    set lid {}
-			    foreach ssid $tw(:$k:ssid) {
-				set lid [concat $lid $tw(:$k:ssid:$ssid)]
-			    }
-			    set hid [join $lid "|"]
-			    set url [format $conf(urlstat) \
-					    [::webapp::post-string $hid] $u1]
-			    append txt " "
-			    append txt [::webapp::helem "a" "\[Détail $k\]" \
-							    "href" $url]
-			}
-		    }
-		}
-
-		#
-		# Parcours des vlans présents sur cette interface
-		#
-
-		set nvlan [llength $ligne]
-		foreach vlan [lsort -index 0 -integer $ligne] {
-		    set vlanid [lindex $vlan 0]
-		    set desc   [lindex $vlan 1]
-		    if {[string equal $desc "-"]} then {
-			set desc "pas de description"
-		    } else {
-			set desc [binary format H* $desc]
-		    }
-		    set native ""
-		    if {$vlanid == $natif} then {
-			set native " (vlan natif)"
-		    }
-		    set stat   [lindex $vlan 2]
-
-		    append txt "\n<BR>\n"
-
-		    if {$nvlan > 1 || $vlanid != 0} then {
-			set urll2 [format $conf(urll2) $nomeq $i $vlanid $u1]
-			append txt "Vlan "
-			append txt [::webapp::helem "a" "$vlanid ($desc)" \
-						"href" $urll2]
-			append txt $native
-
-			if {! [string equal $stat "-"]} then {
-			    set url [format $conf(urlstat) $stat $u1]
-			    append txt " "
-			    append txt [::webapp::helem "a" {[Trafic]} \
-						"href" $url]
-			}
-		    }
-
-		    foreach ip [lsort [lindex $vlan 3]] {
-			set urll3 [format $conf(urll3) $ip $u1]
-			append txt " "
-			append txt [::webapp::helem "a" $ip "href" $urll3]
-		    }
-		}
-
-		#
-		# Pour les interfaces radio, parcourir les points
-		# de métrologie pour les ssid trouvés
-		#
-
-		if {[info exists tabwifi($nomeq:$i)]} then {
-		    foreach ssid $tw(:ssid) {
-			append txt "\n<BR>\nSsid $ssid "
-			foreach k {assoc auth} {
-			    set id [lindex $tw(:$k:ssid:$ssid) 0]
-			    if {! [string equal $id ""]} then {
-				set url [format $conf(urlstat) $id $u1]
-				append txt [::webapp::helem "a" "\[$k\]" \
-							"href" $url]
-			    }
-			}
-		    }
-		}
-
-		#
-		# Résultat final
-		#
-		append texte [::webapp::helem "li" [::webapp::helem "p" $txt]]
-	    }
-	    set texte [::webapp::helem "ul" $texte]
+	    set l [format-one-eq $nomeq $iface tabuid $u1 $u2]
+	    lassign $l titre texte
 
 	    #
 	    # Sortie de la page
@@ -858,7 +868,7 @@ proc main {} {
 							[list %ADDR%  ""] \
 							[list %URLUID% $u2] \
 						    ] \
-					    ]
+					]
 	}
 	0-* {
 	    #

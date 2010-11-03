@@ -61,6 +61,10 @@
     \titre {2} {Profils DHCP}
 
     %TABDHCPPROFILS%
+
+    \titre {2} {Équipements}
+
+    %TABDREQ%
 }
 
 }

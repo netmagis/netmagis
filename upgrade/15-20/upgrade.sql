@@ -142,6 +142,19 @@ CREATE TABLE topo.ignoreequsers (
 INSERT INTO topo.ignoreequsers VALUES ('conf') ;
 
 ------------------------------------------------------------------------------
+-- Access rights to equipements
+------------------------------------------------------------------------------
+
+CREATE TABLE topo.dr_eq (
+    idgrp	INT,		-- group upon which this access right applies
+    rw		INT,		-- 0 : read, 1 : write
+    pattern	TEXT NOT NULL,	-- regular expression
+    allow_deny	INT,		-- 1 = allow, 0 = deny
+
+    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp)
+) ;
+
+------------------------------------------------------------------------------
 -- Authorizations
 ------------------------------------------------------------------------------
 
@@ -149,7 +162,7 @@ GRANT SELECT ON topo.ignoreequsers, dns.rr, dns.rr_ip, dns.domaine TO detecteq ;
 GRANT INSERT ON topo.modeq TO detecteq ;
 
 GRANT ALL
-    ON topo.modeq, topo.ifchanges, topo.lastrun, topo.keepstate
+    ON topo.modeq, topo.ifchanges, topo.lastrun, topo.keepstate, topo.dr_eq
     TO dns, pda, jean ;
 
 ------------------------------------------------------------------------------

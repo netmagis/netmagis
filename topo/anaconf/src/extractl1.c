@@ -86,7 +86,7 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]* [-b|-t]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-n cidr|-e regexp|-E regexp]* [-b|-t]\n", progname) ;
     exit (1) ;
 }
 
@@ -96,6 +96,7 @@ int main (int argc, char *argv [])
     int termif, backif ;
     int c, err ;
     char *prog ;
+    int allow_deny ;
 
 
     prog = argv [0] ;
@@ -104,7 +105,7 @@ int main (int argc, char *argv [])
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "n:e:tb")) != -1) {
+    while ((c = getopt (argc, argv, "n:e:E:tb")) != -1) {
 	switch (c)
 	{
 	    case 'n' :
@@ -115,7 +116,9 @@ int main (int argc, char *argv [])
 		}
 		break ;
 	    case 'e' :
-		if (! sel_regexp (optarg))
+	    case 'E' :
+		allow_deny = (c == 'e') ;
+		if (! sel_regexp (optarg, allow_deny))
 		{
 		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
 		    err = 1 ;

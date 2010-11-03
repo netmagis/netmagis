@@ -17,6 +17,7 @@ struct selnet
 struct selrex
 {
     regex_t rc ;
+    int allow_deny ;
     struct selrex *next ;
 } ;
 
@@ -75,7 +76,7 @@ int sel_network (iptext_t addr)
     return r ;
 }
 
-int sel_regexp (char *rex)
+int sel_regexp (char *rex, int allow_deny)
 {
     regex_t rc ;
     struct selrex *s ;
@@ -86,6 +87,7 @@ int sel_regexp (char *rex)
     {
 	MOBJ_ALLOC_INSERT (s, selrexmobj) ;
 	s->rc = rc ;
+	s->allow_deny = allow_deny ;
 	r = 1 ;
     }
 
@@ -117,13 +119,19 @@ static void sel_mark_net (ip_t *addr)
 	    MK_SELECT (n) ;
 }
 
-static void sel_mark_regexp (regex_t *rc)
+static void sel_mark_regexp (regex_t *rc, int allow_deny)
 {
     struct eq *eq ;
 
     for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
+    {
 	if (regexec (rc, eq->name, 0, NULL, 0) == 0)
-	    MK_SELECT (eq) ;
+	{
+	    if (allow_deny)
+		MK_SELECT (eq) ;
+	    else MK_DESELECT (eq) ;
+	}
+    }
 }
 
 
@@ -184,7 +192,12 @@ void sel_mark (void)
 	 */
 
 	for (sr = mobj_head (selrexmobj) ; sr != NULL ; sr = sr->next)
-	    sel_mark_regexp (&sr->rc) ;
+	    if (sr->allow_deny)
+		sel_mark_regexp (&sr->rc, 1) ;
+
+	for (sr = mobj_head (selrexmobj) ; sr != NULL ; sr = sr->next)
+	    if (! sr->allow_deny)
+		sel_mark_regexp (&sr->rc, 0) ;
 
 	/*
 	 * Select all nodes on selected equipements

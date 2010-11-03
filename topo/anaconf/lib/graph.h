@@ -351,6 +351,7 @@ struct node
 #define	MK_ISSET(p,b)		((p)->mark & (b))
 
 #define	MK_SELECT(p)		MK_SET ((p), MK_SELECTED)
+#define	MK_DESELECT(p)		MK_CLEAR ((p), MK_SELECTED)
 #define	MK_ISSELECTED(p)	MK_ISSET ((p), MK_SELECTED)
 
 struct node *create_node (char *name, struct eq *eq, enum nodetype nodetype) ;
@@ -566,5 +567,5 @@ Sub-graph selection functions
 void sel_init (void) ;
 void sel_end (void) ;
 int sel_network (iptext_t addr) ;
-int sel_regexp (char *rex) ;
+int sel_regexp (char *rex, int allow_deny) ;
 void sel_mark (void) ;

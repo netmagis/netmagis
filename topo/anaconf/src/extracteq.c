@@ -9,6 +9,7 @@ Example of output format
 
 eq crc-cc1 cisco/WS-C4506 45464748
 iface GigaEthernet0/1
+    <edit ou ->
     <radio>
     <M123 ou ->
     <Ether ou Trunk ou Disabled>
@@ -43,6 +44,7 @@ void output_iface (FILE *fp, struct node *n)
     struct node *peer ;
     struct linklist *ll1, *ll2, *ll3 ;
     vlan_t native ;
+    int editable ;
 
     ifname = n->u.l1.ifname ;
     stat = (n->u.l1.stat == NULL) ? "-" : n->u.l1.stat ;
@@ -60,8 +62,39 @@ void output_iface (FILE *fp, struct node *n)
     }
     desc = (n->u.l1.ifdesc == NULL) ? "-" : n->u.l1.ifdesc ;
 
-    fprintf (fp, "iface %s %c", ifname, LB) ;
+    fprintf (fp, "iface %s", ifname) ;
 
+    /*
+     * For an interface to be editable, the following requirements
+     * must be met :
+     * - its linkname must be "X"
+     * - all L2 neighbours must be marked
+     */
+
+    if (strcmp (n->u.l1.link, EXTLINK) == 0)
+    {
+	editable = 1 ;
+	for (ll2 = n->linklist ; ll2 != NULL ; ll2 = ll2->next)
+	{
+	    struct node *peer2 ;
+
+	    peer2 = getlinkpeer (ll2->link, n) ;
+	    if (peer2->nodetype == NT_L2 && ! MK_ISSELECTED (peer2))
+	    {
+		editable = 0 ;
+		break ;
+	    }
+	}
+    }
+    else editable = 0 ;
+
+    fprintf (fp, " %s", (editable ? "edit" : "-")) ;
+
+    /*
+     * Check radio parameters
+     */
+
+    fprintf (fp, " %c", LB) ;
     if (n->u.l1.radio.ssid != NULL)
     {
 	struct ssid *s ;
@@ -179,7 +212,7 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]* eq [iface]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-n cidr|-e regexp|-E regexp]* eq [iface]\n", progname) ;
     exit (1) ;
 }
 
@@ -190,13 +223,14 @@ int main (int argc, char *argv [])
     struct eq *eq ;
     int c, err ;
     int selected ;
+    int allow_deny ;
 
     prog = argv [0] ;
     err = 0 ;
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "n:e:")) != -1) {
+    while ((c = getopt (argc, argv, "n:e:E:")) != -1) {
 	switch (c)
 	{
 	    case 'n' :
@@ -207,7 +241,9 @@ int main (int argc, char *argv [])
 		}
 		break ;
 	    case 'e' :
-		if (! sel_regexp (optarg))
+	    case 'E' :
+		allow_deny = (c == 'e') ;
+		if (! sel_regexp (optarg, allow_deny))
 		{
 		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
 		    err = 1 ;

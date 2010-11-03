@@ -13,6 +13,7 @@ set libconf(graph)	%GRAPH%
 set libconf(status)	%STATUS%
 
 set libconf(extractcoll)	"%TOPODIR%/bin/extractcoll %s < %GRAPH%"
+set libconf(extracteq)		"%TOPODIR%/bin/extracteq %s %s < %GRAPH%"
 
 array set libconf {
     freq:2412	1
@@ -239,13 +240,15 @@ proc init-topo {nologin base pageerr attr form _ftab _dbfd _uid _tabuid _ouid _t
 #		admin	1 si admin
 #		reseaux	liste des réseaux autorisés
 #		eq	regexp des équipements autorisés
-#		flags	flags -n/-e à utiliser dans les commandes topo
+#		flagsr	flags -n/-e/-E à utiliser dans les commandes topo
+#		flagsw	flags -n/-e/-E à utiliser dans les commandes topo
 # Sortie :
 #   - valeur de retour : message d'erreur ou chaîne vide
 #   - paramètre _tabuid : cf ci-dessus
 #
 # Historique
 #   2007/01/11 : pda             : conception
+#   2010/11/03 : pda             : conception
 #
 
 proc lire-utilisateur {dbfd uid _tabuid} {
@@ -292,29 +295,40 @@ proc lire-utilisateur {dbfd uid _tabuid} {
     # Lire les équipements
     #
 
-    set tabuid(eq) [lire-eq-autorises $dbfd $tabuid(groupe)]
+    set tabuid(eqr) [lire-eq-autorises $dbfd 0 $tabuid(idgrp)]
+    set tabuid(eqw) [lire-eq-autorises $dbfd 1 $tabuid(idgrp)]
 
     #
     # Construire les flags
     #
 
-    set flags {}
-    if {! $tabuid(admin)} then {
-	if {! [string equal $tabuid(eq) ""]} then {
-	    lappend flags "-e" $tabuid(eq)
-	}
-	foreach r $tabuid(reseaux) {
-	    set r4 [lindex $r 1]
-	    if {! [string equal $r4 ""]} then {
-		lappend flags "-n" $r4
+    set flagsr {}
+    set flagsw {}
+    foreach rw {r w} {
+	set flags {}
+	if {! $tabuid(admin)} then {
+	    lassign $tabuid(eq$rw) lallow ldeny
+	    foreach pat $lallow {
+		lappend flags "-e" $pat
 	    }
-	    set r6 [lindex $r 2]
-	    if {! [string equal $r6 ""]} then {
-		lappend flags "-n" $r6
+	    foreach pat $ldeny {
+		lappend flags "-E" $pat
+	    }
+	    if {$rw eq "r"} then {
+		foreach r $tabuid(reseaux) {
+		    set r4 [lindex $r 1]
+		    if {! [string equal $r4 ""]} then {
+			lappend flags "-n" $r4
+		    }
+		    set r6 [lindex $r 2]
+		    if {! [string equal $r6 ""]} then {
+			lappend flags "-n" $r6
+		    }
+		}
 	    }
 	}
+	set tabuid(flags$rw) [join $flags " "]
     }
-    set tabuid(flags) [join $flags " "]
 
     return ""
 }
@@ -499,7 +513,7 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
     # Récupérer la liste des points de collecte
     #
 
-    set cmd [format $libconf(extractcoll) $tabuid(flags)]
+    set cmd [format $libconf(extractcoll) $tabuid(flagsr)]
 
     if {[catch {set fd [open "| $cmd" "r"]} msg]} then {
 	return "Impossible de lire les points de collecte: $msg"
@@ -628,36 +642,40 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
 # Récupère une expression régulière caractérisant la liste des
 # équipements autorisés.
 #
-# XXX : cette fonction est à réécrire pour utiliser la base DNS
-#	et à intégrer dans la libdns.tcl
-# XXX : remplacer groupe par idgrp
-#
 # Entrée :
 #   - paramètres :
 #       - dbfd : accès à la base DNS
-#	- groupe : nom du groupe DNS (XXX : à supprimer ASAP)
-#	- idgrp : id du groupe dans la base DNS (XXX : à utiliser à la place)
+#	- rw : read (0) ou write (1)
+#	- idgrp : id du groupe dans la base DNS
 # Sortie :
-#   - valeur de retour : expression régulière, ou chaîne vide
+#   - valeur de retour : liste de listes de la forme
+#		{{re_allow_1 ... re_allow_n} {re_deny_1 ... re_deny_n}}
 #
 # Historique
-#   2006/08/10 : pda/boggia      : création
+#   2006/08/10 : pda/boggia      : création avec un fichier sur disque
+#   2010/11/03 : pda/jean        : les données sont dans la base
 #
 
-proc lire-eq-autorises {dbfd groupe} {
-    set fd [open "%DESTDIR%/lib/droits-eq.data" "r"]
-    set r ""
-    while {[gets $fd ligne] > -1} {
-	regsub "#.*" $ligne "" $ligne
-	set ligne [string trim $ligne]
-	if {[regexp {^([^\s]+)\s+(.*)} $ligne bidon g re]} then {
-	    if {[string equal $g $groupe]} then {
-		set r $re
-		break
-	    }
+proc lire-eq-autorises {dbfd rw idgrp} {
+
+    set r {}
+
+    #
+    # Traiter d'abord les allow, puis les deny
+    #
+
+    foreach allow_deny {1 0} {
+	set sql "SELECT pattern
+			FROM topo.dr_eq
+			WHERE idgrp = $idgrp
+			    AND rw = $rw
+			    AND allow_deny = $allow_deny"
+	set d {}
+	pg_select $dbfd $sql tab {
+	    lappend d $tab(pattern)
 	}
+	lappend r $d
     }
-    close $fd
     return $r
 }
 
@@ -808,4 +826,78 @@ proc conv-channel {freq} {
 	}
     }
     return $channel
+}
+
+#
+# Récupère la liste des interfaces d'un équipement
+#
+# Entrée :
+#   - paramètres :
+#	- eq : nom de l'équipement
+#	- tabuid() : tableau contenant les flags de restriction pour l'utilisateur
+#	- pageerr : nom de la page d'erreur
+#   - variables globales :
+#	- libconf(extracteq) : appel à extracteq
+# Sortie :
+#   - valeur de retour : liste de la forme
+#		{eq type model location iflist array}
+#	où iflist est la liste triée des interfaces
+#	et array est prêt pour "array set" pour donner un tableau de la forme
+#	tab(iface) {nom edit radio stat mode desc lien natif {vlan...}}
+#	(cf sortie de extracteq)
+#
+# Historique
+#   2010/11/03 : pda : création
+#
+
+proc eq-iflist {eq _tabuid pageerr} {
+    global libconf
+    upvar $_tabuid tabuid
+
+    #
+    # Lire les informations de l'équipement dans le graphe
+    # Ces informations sont filtrées par tabuid qui n'affiche
+    # que les vlans autorisés.
+    #
+
+    set cmd [format $libconf(extracteq) $tabuid(flagsr) $eq]
+    set fd [open "|$cmd" "r"]
+    while {[gets $fd ligne] > -1} {
+	switch [lindex $ligne 0] {
+	    eq {
+		set r [lreplace $ligne 0 0]
+
+		set location [lindex $r 3]
+		if {$location eq "-"} then {
+		    set location ""
+		} else {
+		    set location [binary format H* $location]
+		}
+		set r [lreplace $r 3 3 $location]
+	    }
+	    iface {
+		set if [lindex $ligne 1]
+		set tabiface($if) [lreplace $ligne 0 0]
+	    }
+	}
+    }
+    if {[catch {close $fd} msg]} then {
+	::webapp::error-exit $pageerr \
+		"Erreur lors de la lecture de l'équipement '$eq'"
+    }
+
+    #
+    # Trier les interfaces pour les présenter dans le bon ordre
+    #
+
+    set iflist [lsort -command compare-interfaces [array names tabiface]]
+
+    #
+    # Présenter la valeur de retour
+    #
+
+    lappend r $iflist
+    lappend r [array get tabiface]
+
+    return $r
 }

@@ -27,7 +27,7 @@ package require snit			;# tcllib
 
 set libconf(tabdroits) {
     global {
-	chars {12 normal}
+	chars {10 normal}
 	align {left}
 	botbar {yes}
 	columns {75 25}
@@ -41,9 +41,28 @@ set libconf(tabdroits) {
     }
 }
 
+set libconf(tabdreq) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {20 80}
+    }
+    pattern DroitEq {
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column {
+	    chars {bold}
+	    format {lines}
+	}
+	vbar {yes}
+    }
+}
+
 set libconf(tabreseaux) {
     global {
-	chars {12 normal}
+	chars {10 normal}
 	align {left}
 	botbar {yes}
 	columns {15 35 15 35}
@@ -87,7 +106,7 @@ set libconf(tabreseaux) {
 
 set libconf(tabdomaines) {
     global {
-	chars {12 normal}
+	chars {10 normal}
 	align {left}
 	botbar {yes}
 	columns {50 25 25}
@@ -105,7 +124,7 @@ set libconf(tabdomaines) {
 
 set libconf(tabdhcpprofil) {
     global {
-	chars {12 normal}
+	chars {10 normal}
 	align {left}
 	botbar {yes}
 	columns {25 75}
@@ -2813,7 +2832,7 @@ proc liste-groupes {dbfd {n 1}} {
 #   - variable globale libconf(tabreseaux) : spéc. de tableau
 #   - variable globale libconf(tabdomaines) : spéc. de tableau
 # Sortie :
-#   - valeur de retour : liste à 6 éléments, chaque élément étant
+#   - valeur de retour : liste à 7 éléments, chaque élément étant
 #	le code HTML associé.
 #
 # Historique
@@ -2822,6 +2841,7 @@ proc liste-groupes {dbfd {n 1}} {
 #   2007/10/23 : pda/jean : ajout des correspondants
 #   2008/07/23 : pda/jean : ajout des droits du groupe
 #   2010/10/31 : pda      : ajout des droits ttl
+#   2010/11/03 : pda/jean : ajout des droits sur les équipements
 #
 
 proc info-groupe {dbfd idgrp} {
@@ -3021,10 +3041,10 @@ proc info-groupe {dbfd idgrp} {
     #
 
     set donnees {}
-    set sql "SELECT p.nom, dr.tri, p.texte \
+    set sql "SELECT p.nom, dr.tri, p.texte
 			FROM dns.dhcpprofil p, dns.dr_dhcpprofil dr
-			WHERE p.iddhcpprofil = dr.iddhcpprofil \
-				AND dr.idgrp = $idgrp \
+			WHERE p.iddhcpprofil = dr.iddhcpprofil
+				AND dr.idgrp = $idgrp
 			ORDER BY dr.tri, p.nom"
     pg_select $dbfd $sql tab {
 	lappend donnees [list DHCP $tab(nom) $tab(texte)]
@@ -3035,12 +3055,43 @@ proc info-groupe {dbfd idgrp} {
 	set tabdhcpprofil "Aucun profil DHCP autorisé"
     }
 
+    #
+    # Sélectionner les droits sur les équipements
+    #
+
+    set donnees {}
+    foreach {rw text} {0 Lecture 1 Modification} {
+	set sql "SELECT allow_deny, pattern
+			    FROM topo.dr_eq
+			    WHERE idgrp = $idgrp AND rw = $rw
+			    ORDER BY rw, allow_deny DESC, pattern"
+	set dr ""
+	pg_select $dbfd $sql tab {
+	    if {$tab(allow_deny) eq "0"} then {
+		set allow_deny "-"
+	    } else {
+		set allow_deny "+"
+	    }
+	    append dr "$allow_deny $tab(pattern)\n"
+	}
+	if {$dr eq ""} then {
+	    set dr "Aucun droit"
+	}
+	lappend donnees [list DroitEq $text $dr]
+    }
+    set tabdreq [::arrgen::output "html" $libconf(tabdreq) $donnees]
+
+    #
+    # Renvoyer les informations
+    #
+
     return [list    $tabdroits \
 		    $tabcorresp \
 		    $tabreseaux \
 		    $tabcidrhorsreseau \
 		    $tabdomaines \
 		    $tabdhcpprofil \
+		    $tabdreq \
 	    ]
 }
 

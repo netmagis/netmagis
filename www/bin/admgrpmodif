@@ -25,6 +25,9 @@
 #	- adrN et allow_denyN : droits IP associés à ce groupe
 #	- tridhcpprofN : classe de tri d'un profil DHCP (si vide, suppression)
 #	- nomdhcpprofN : nom du profil DHCP
+#	- eqrwN : type de droit sur l'équipement (0 ou 1)
+#	- eqallowN : allow/deny sur l'équipement (0 ou 1)
+#	- eqpatN : pattern de droit sur l'équipement (regexp, si vide : suppr)
 #
 # Historique
 #   2002/05/21 : pda/jean : création
@@ -37,6 +40,7 @@
 #   2007/10/10 : pda/jean : centralisation de l'administration des groupes
 #   2008/07/23 : pda/jean : ajout droitsmtp
 #   2010/10/31 : pda      : ajout droitttl
+#   2010/11/03 : pda/jean : ajout dr_eq
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -88,6 +92,9 @@ set conf(form) {
 	{allow[0-9]+		0 9999}
 	{tridhcpprof[0-9]+	0 9999}
 	{nomdhcpprof[0-9]+	0 9999}
+	{eqrw[0-9]+		0 9999}
+	{eqallow[0-9]+		0 9999}
+	{eqpat[0-9]+		0 9999}
 }
 
 #
@@ -536,6 +543,40 @@ proc main {} {
     }
 
     #
+    # Tester la validité syntaxique des droits sur les équipements
+    #
+
+    set n 1
+    set ldreq {}
+    while {[info exists ftab(eqpat$n)] &&
+		[info exists ftab(eqrw$n)] &&
+		[info exists ftab(eqallow$n)]} {
+
+	set rw [lindex $ftab(eqrw$n) 0]
+	if {!($rw eq "0" || $rw eq "1")} then {
+	    ::webapp::error-exit $conf(err) \
+			"Valeur incorrecte pour read/write '$rw'"
+	}
+
+	set allow_deny [lindex $ftab(eqallow$n) 0]
+	if {!($allow_deny eq "0" || $allow_deny eq "1")} then {
+	    ::webapp::error-exit $conf(err) \
+			"Valeur incorrecte pour allow/deny '$allow_deny'"
+	}
+
+	set pattern [string trim [lindex $ftab(eqpat$n) 0]]
+	if {$pattern ne ""} then {
+	    if {[catch {regexp $pattern ""} msg]} then {
+		::webapp::error-exit $conf(err) "Incorrect pattern '$msg'"
+	    }
+
+	    lappend ldreq [list $rw $allow_deny $pattern]
+	}
+
+	incr n
+    }
+
+    #
     # Tester la validité des noms de profils DHCP
     #
 
@@ -567,7 +608,7 @@ proc main {} {
 	incr n
     }
 
-## FIN VALIDATION EXISTANCE ET DROITS ####################################
+    ## FIN VALIDATION EXISTANCE ET DROITS ####################################
 
     #
     # Tester la cohérence des données
@@ -701,7 +742,8 @@ proc main {} {
 	    exit 0
 	}
     }
-## FIN VALIDATION COHERENCE ####################################
+
+    ## FIN VALIDATION COHERENCE ####################################
 
     #
     # Si on arrive ici, c'est que les données sont cohérentes,
@@ -834,6 +876,17 @@ proc main {} {
 	lappend cmd "INSERT INTO dns.dr_ip VALUES ($idgrp, '$adr', $allow_deny)"
     }
 
+    # Les droits sur les équipements (topo) associés au groupe
+
+    lappend cmd "DELETE FROM topo.dr_eq WHERE idgrp = $idgrp"
+
+    foreach e $ldreq {
+	lassign $e rw allow_deny pattern
+	set pattern [::pgsql::quote $pattern]
+	lappend cmd "INSERT INTO topo.dr_eq (idgrp, rw, allow_deny, pattern)
+				VALUES ($idgrp, $rw, $allow_deny, '$pattern')"
+    }
+
     # Les profils DHCP visibles par le groupe
 
     lappend cmd "DELETE FROM dns.dr_dhcpprofil WHERE idgrp = $idgrp"
@@ -868,12 +921,9 @@ proc main {} {
     #
 
     set grospaquet [info-groupe $dbfd $idgrp]
-    set tabdroits         [lindex $grospaquet 0]
-    set tablogins         [lindex $grospaquet 1]
-    set tabreseaux        [lindex $grospaquet 2]
-    set tabcidrhorsreseau [lindex $grospaquet 3]
-    set tabdomaines       [lindex $grospaquet 4]
-    set tabdhcpprofils    [lindex $grospaquet 5]
+    lassign $grospaquet \
+		tabdroits tablogins tabreseaux tabcidrhorsreseau \
+		tabdomaines tabdhcpprofils tabdreq
 
     #
     # Sortie du résultat
@@ -888,6 +938,7 @@ proc main {} {
 			[list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
 			[list %TABDOMAINES% $tabdomaines] \
 			[list %TABDHCPPROFILS% $tabdhcpprofils] \
+			[list %TABDREQ% $tabdreq] \
 			] \
 		    ]
 

@@ -136,6 +136,22 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
+		} {\gras {Droits d'accès sur les équipements réseau}}
+	    }
+	    \lignetableau {
+		\casetableau {} {Décrire les droits d'accès sur les
+		    équipements sous forme d'expression régulière
+		    (ERE indépendante de la casse).
+
+		    Pour supprimer un droit, vider la case correspondant
+		    à l'expression régulière.
+
+		    %LISTEDREQ%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
 		} {\gras {Profils DHCP visibles}}
 	    }
 	    \lignetableau {

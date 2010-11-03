@@ -1,6 +1,9 @@
 Version 2.0 - ??/??/????
     - intégration du module topo
     - utilisation de schémas pour mieux séparer les données des modules
+    - droits sur les équipements maintenant placés dans la base de données
+	dans une table specifique (topo.dr_eq) et modifiée dans la page
+	d'édition des groupes
 
 version 1.5 - ??/??/????
     - ajout du profil DHCP dans la gestion des plages dynamiques

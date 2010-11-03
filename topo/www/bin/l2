@@ -398,7 +398,7 @@ proc main {} {
     # Récupération des descriptions de vlans
     #
 
-    set cmd [format $conf(dumpgraph) $tabuid(flags)]
+    set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
 
     while {[gets $fd ligne] > -1} {
@@ -488,7 +488,7 @@ proc main {} {
 	    # Récupérer les informations lues dans le graphe
 	    #
 
-	    set xl2 [format $conf(extractl2) $tabuid(flags) $eq $iface $v]
+	    set xl2 [format $conf(extractl2) $tabuid(flagsr) $eq $iface $v]
 	    set dot [generer-dot $format \
 				$eq $iface $v $xl2 $conf(urleq) $u1 tabvlan nnodes]
 	    if {[string equal $dot ""]} then {

@@ -102,7 +102,7 @@ Main function
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-n cidr|-e regexp]* [-s] [-w] [eq]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-n cidr|-e regexp|-E regexp]* [-s] [-w] [eq]\n", progname) ;
     exit (1) ;
 }
 
@@ -116,6 +116,7 @@ int main (int argc, char *argv [])
     struct eq *eq ;
     struct node *n ;
     int dumpstat, dumpwifi ;
+    int allow_deny ;
 
     /*
      * Analyzes arguments
@@ -128,7 +129,7 @@ int main (int argc, char *argv [])
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "n:e:sw")) != -1) {
+    while ((c = getopt (argc, argv, "n:e:E:sw")) != -1) {
 	switch (c)
 	{
 	    case 'n' :
@@ -139,7 +140,9 @@ int main (int argc, char *argv [])
 		}
 		break ;
 	    case 'e' :
-		if (! sel_regexp (optarg))
+	    case 'E' :
+		allow_deny = (c == 'e') ;
+		if (! sel_regexp (optarg, allow_deny))
 		{
 		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
 		    err = 1 ;

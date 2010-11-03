@@ -1,0 +1,211 @@
+#!%TCLSH%
+
+#
+# Script pour présenter la page de modification d'une ou plusieurs
+# interfaces de l'équipement.
+#
+# Appelé par : /applis/topo/eq
+#
+# Paramètres (formulaire ou URL) :
+#	- eq : nom de l'équipement
+#	- iface : nom de l'interface, ou vide pour toutes interfaces
+#
+# Historique
+#   2010/11/03 : pda        : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(pkg)		%PKGTCL%
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	%LIBDNS%
+set conf(libtopo)	$conf(lib)/libtopo.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/ifchg.html
+
+#
+# Quelques paramètres du script
+#
+
+set conf(base)		%BASE%
+set conf(nologin)	%NOLOGIN%
+
+set conf(form)	{
+    {eq			1 1}
+    {iface		1 1}
+}
+
+####set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
+####set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
+####set conf(urlstat)	"$conf(homeurl)/bin/metro?id=%s%s"
+####set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
+####set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
+####set conf(urll2)		"$conf(homeurl)/bin/l2?eq=%s&iface=%s&vlan=%d%s"
+####set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
+####set conf(urlifchgiface)	"$conf(homeurl)/bin/ifchg?eq=%s&iface=%s%s"
+
+set conf(urlifchg)	"$conf(homeurl)/bin/ifchg?eq=%s&iface=%s%s"
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path $conf(pkg)
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+source $conf(libtopo)
+
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
+		    $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
+
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	set $var [string trim [lindex [set $var] 0]]
+    }
+
+    set u1 ""
+    set u2 ""
+    if {! [string equal $urluid ""]} then {
+	set u1 "&$urluid"
+	set u2 "?$urluid"
+    }
+
+    #
+    # Lire les informations de l'équipement dans le graphe
+    # Ces informations sont filtrées par tabuid qui n'affiche
+    # que les vlans autorisés.
+    #
+
+    set l [eq-iflist $eq tabuid $conf(err)]
+
+    lassign $l eq type model location iflist array
+    array set tabiface $array
+
+    #
+    # Chercher les vlans accessibles sur l'équipement
+    #
+
+    # XXX
+
+    #
+    # Est-ce qu'il faut présenter toutes les interfaces ou juste une ?
+    #
+
+    if {$iface ne ""} then {
+	#
+	# Il y a un nom d'interface. Présenter juste cette interface
+	#
+
+	if {! [info exists tabiface($iface)]} then {
+	    ::webapp::errror-exit $conf(err) \
+			"L'interface $iface n'est pas trouvée sur $eq"
+	}
+
+	#
+	# Récupérer les caractéristiques de l'interface
+	#
+
+	lassign $tabiface($iface) nom edit radio stat mode desc lien natif
+	set ligne [lreplace $tabiface($iface) 0 7]
+
+	if {$edit ne "edit"} then {
+	    ::webapp::errror-exit $conf(err) \
+			"Vous ne pouvez modifier l'interface $iface sur $eq"
+	}
+
+	#
+	# Préparer les informations
+	#
+
+	set titre "Modification de l'interface $iface sur $eq"
+	set menuif [::webapp::form-hidden iface $iface]
+
+	# proposer l'option "plusieurs interfaces"
+	set url [format $conf(urlifchg) $eq "" $u1]
+	set multi [::webapp::helem "p" \
+			[::webapp::helem "a" {Modifier plusieurs interfaces} \
+					"href" $url] ]
+
+	# proposer le menu de description d'interface
+	set desc [::webapp::html-string [binary format H* $desc]]
+	set menudesc "Description "
+	append menudesc [::webapp::form-text desc 1 80 80 $desc]
+
+	# proposer les différents vlans
+	# XXX
+
+    } else {
+	#
+	# Présenter toutes les interfaces
+	#
+
+	set titre "Modification des interfaces de $eq"
+
+	# liste des interfaces
+	set lif {}
+	foreach i $iflist {
+	    set edit [lindex $tabiface($i) 1]
+	    if {$edit eq "edit"} then {
+		lappend lif [list $i $i]
+	    }
+	}
+	set nif [llength $lif]
+	set menuif [::webapp::form-menu iface $nif 1 $lif {}]
+	set multi ""
+	set menudesc ""
+
+	# proposer les différents vlans
+    }
+
+
+    #
+    # Sortie de la page
+    #
+
+    ::webapp::send html [::webapp::file-subst $conf(page) \
+					[list \
+						[list %EQ%     $eq] \
+						[list %TITRE% $titre] \
+						[list %MULTI% $multi] \
+						[list %MENUIF% $menuif] \
+						[list %MENUDESC% $menudesc] \
+					    ] \
+				    ]
+
+    #
+    # Déconnexion de la base
+    #
+
+    fermer-base $dbfd
+}
+
+::webapp::cgi-exec main %DEBUG%

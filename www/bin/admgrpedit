@@ -19,6 +19,7 @@
 #   2007/10/10 : pda/jean : centralisation de l'administration des groupes
 #   2008/07/23 : pda/jean : ajout droitsmtp
 #   2010/10/31 : pda      : ajout droitttl
+#   2010/11/03 : pda/jean : ajout dr_eq
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -154,6 +155,31 @@ set conf(tabdrip) {
     }
     pattern Normal {
 	topbar {no}
+	vbar {no}
+	column {
+	    align {right}
+	}
+	vbar {no}
+	column {
+	    align {left}
+	}
+	vbar {no}
+    }
+}
+
+set conf(tabdreq) {
+    global {
+	chars {12 normal}
+	botbar {no}
+	columns {10 10 80}
+	format {raw}
+    }
+    pattern Normal {
+	topbar {no}
+	vbar {no}
+	column {
+	    align {right}
+	}
 	vbar {no}
 	column {
 	    align {right}
@@ -464,6 +490,48 @@ proc main {} {
     set listedroits [::arrgen::output "html" $conf(tabdrip) $donnees]
 
     #
+    # Les droits sur les équipements (topo)
+    #
+
+    set donnees {}
+    set n 1
+    set sql "SELECT rw, pattern, allow_deny \
+			FROM topo.dr_eq \
+			WHERE idgrp = $idgrp \
+			ORDER BY rw, allow_deny DESC, pattern"
+    pg_select $dbfd $sql tab {
+	set a $tab(rw)
+	set menurw    [::webapp::form-menu eqrw$n 1 0 \
+					{{0 read} {1 write}} \
+					[list $a] \
+				    ]
+	set a $tab(allow_deny)
+	set menuallow [::webapp::form-menu eqallow$n 1 0 \
+					{{1 allow} {0 deny}} \
+					[list [expr 1 - $a]] \
+				    ]
+	set pattern [::webapp::form-text eqpat$n 1 70 200 $tab(pattern)]
+	lappend donnees [list Normal $menurw $menuallow $pattern]
+	incr n
+    }
+
+    for {set i 0} {$i < 5} {incr i} {
+	set menurw [::webapp::form-menu eqrw$n 1 0 \
+					{{0 read} {1 write}} \
+					{0} \
+				    ]
+	set menuallow [::webapp::form-menu eqallow$n 1 0 \
+					{{1 allow} {0 deny}} \
+					{0} \
+				    ]
+	set pattern [::webapp::form-text eqpat$n 1 70 200 ""]
+	lappend donnees [list Normal $menurw $menuallow $pattern]
+	incr n
+    }
+
+    set listedreq [::arrgen::output "html" $conf(tabdreq) $donnees]
+
+    #
     # Les profils DHCP visibles
     #
 
@@ -520,6 +588,7 @@ proc main {} {
 					[list %LISTEDOMAINES% $listedomaines] \
 					[list %LISTERESEAUX% $listereseaux] \
 					[list %LISTEDROITS% $listedroits] \
+					[list %LISTEDREQ% $listedreq] \
 					[list %LISTEDHCPPROFILS% $listedhcpprof] \
 				    ] \
 			    ]
