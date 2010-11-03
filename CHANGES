@@ -19,6 +19,7 @@ version 1.5 - ??/??/????
 	l'attribut "droit ttl" du correspondant
     - suppression des références à Osiris et au CRC
     - restructuration des modèles HTG et modèle paramétrable
+    - htg est prêt pour les versions de Tcl >= 8.6
     - bug : les profils DHCP ne sont plus acceptés sur les RR qui n'ont
 	pas d'adresse MAC configurée
     - formalisation de la licence CeCILL-B
