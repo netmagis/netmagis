@@ -146,7 +146,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     #
     # Analyse et validation des arguments

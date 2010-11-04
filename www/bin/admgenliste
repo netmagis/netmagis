@@ -63,8 +63,8 @@ proc main {} {
     # Initialisation
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			{} ftab dbfd login tabcor $conf(log)
+    ::dnscontext create d
+    d init-cgi $conf(err) "admin" {} ftab dbfd login tabcor
 
     #
     # Récupérer la liste des zones
