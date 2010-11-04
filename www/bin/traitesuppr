@@ -42,7 +42,6 @@ set conf(homeurl)	%HOMEURL%
 # Chemins utilisés par les scripts
 #
 
-set conf(pkg)		%PKGTCL%
 set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
@@ -60,11 +59,6 @@ set conf(err)			$conf(lib)/erreur.html
 #
 # Quelques paramètres du script
 #
-
-set conf(auth)		%AUTH%
-set conf(base)		%BASE%
-set conf(nologin)	%NOLOGIN%
-set conf(log)		%LOG%
 
 # scripts cgi
 set conf(script-map)	bin/liste
@@ -96,7 +90,7 @@ set conf(form-suppr-ip)	{
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
-lappend auto_path $conf(pkg)
+lappend auto_path %PKGTCL%
 package require webapp
 package require pgsql
 package require arrgen
@@ -514,8 +508,8 @@ proc main {} {
     # Initialisation
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor $conf(log)
+    ::dnscontext create d
+    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     #
     # Valider l'action, lire les autres champs du formulaire,

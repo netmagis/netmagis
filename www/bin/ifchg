@@ -20,10 +20,8 @@ set conf(homeurl)	%HOMEURL%
 # Chemins utilisés par les scripts
 #
 
-set conf(pkg)		%PKGTCL%
 set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	%LIBDNS%
-set conf(libtopo)	$conf(lib)/libtopo.tcl
+set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
 # Définition des noms des pages "à trous"
@@ -36,8 +34,6 @@ set conf(page)		$conf(lib)/ifchg.html
 # Quelques paramètres du script
 #
 
-set conf(base)		%BASE%
-set conf(nologin)	%NOLOGIN%
 
 set conf(form)	{
     {eq			1 1}
@@ -59,7 +55,7 @@ set conf(urlifchg)	"$conf(homeurl)/bin/ifchg?eq=%s&iface=%s%s"
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
-lappend auto_path $conf(pkg)
+lappend auto_path %PKGTCL%
 package require webapp
 package require pgsql
 
@@ -70,7 +66,6 @@ package require pgsql
 # ::webapp::cgidebug ; exit
 
 source $conf(libdns)
-source $conf(libtopo)
 
 
 ##############################################################################

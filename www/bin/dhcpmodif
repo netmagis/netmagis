@@ -21,18 +21,12 @@ set conf(homeurl)	%HOMEURL%
 # Chemins utilisés par les scripts
 #
 
-set conf(pkg)		%PKGTCL%
 set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
 # Quelques paramètres du script
 #
-
-set conf(auth)		%AUTH%
-set conf(base)		%BASE%
-set conf(nologin)	%NOLOGIN%
-set conf(log)		%LOG%
 
 set conf(form)	{
 	{idreseau			1 1}
@@ -63,7 +57,7 @@ set conf(page)		$conf(lib)/dhcpmodif.html
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
-lappend auto_path $conf(pkg)
+lappend auto_path %PKGTCL%
 package require webapp
 package require pgsql
 
@@ -367,8 +361,8 @@ proc main {} {
     # Initialisation, avec récupération du type de modification.
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "" \
-			$conf(form) ftab dbfd login tabcor $conf(log)
+    ::dnscontext create d
+    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     #
     # Valider le réseau

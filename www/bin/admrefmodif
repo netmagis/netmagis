@@ -33,18 +33,12 @@ set conf(homeurl)	%HOMEURL%
 # Chemins utilisés par les scripts
 #
 
-set conf(pkg)		%PKGTCL%
 set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
 # Quelques paramètres du script
 #
-
-set conf(auth)		%AUTH%
-set conf(base)		%BASE%
-set conf(nologin)	%NOLOGIN%
-set conf(log)		%LOG%
 
 set conf(form)	{
 	{type			1 1}
@@ -142,7 +136,7 @@ set conf(page)		$conf(lib)/admvalide.html
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
-lappend auto_path $conf(pkg)
+lappend auto_path %PKGTCL%
 package require webapp
 package require pgsql
 
@@ -165,8 +159,8 @@ proc main {} {
     # Initialisation, avec récupération du type de modification.
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			$conf(form) ftab dbfd login tabcor $conf(log)
+    ::dnscontext create d
+    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     #
     # La spécification du formulaire est minimale, et ne comprend

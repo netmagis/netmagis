@@ -11,14 +11,10 @@ DEBUG  = 0
 BASE    = {host=dbcrc.u-strasbg.fr dbname=dns user=dns password=mot-de-passe-de-dns}
 AUTH    = {-method postgresql -db {host=dbcrc.u-strasbg.fr dbname=auth user=auth password=mot-de-passe-de-auth}}
 # AUTH	= {-method ldap -db {url ldap://ldap.domaine.fr binddn cn=admin,dc=domaine,dc=fr bindpw mot-de-passe-ldap base ou=people,dc=domaine,dc=fr searchuid (\&(objectClass=inetOrgPerson)(uid=%s))} -attrmap {login uid password userPassword nom sn prenom givenName mel mail tel telephoneNumber mobile {} fax facsimileTelephoneNumber adr {postalAddress postalCode l}}}
+LOG     = {devdns postgresql {host dbcrc dbname devdns table global.log user dns password toto27}}
 HOMEURL	= /applis/dns
 NOLOGIN	= /local/etc/nologin.dns
-MODLHTG	= vide
-
-#BASE    = {dbname=devdns user=dns password=mot-de-passe-de-dns}
-#AUTH    = {postgresql {dbname=auth user=auth password=mot-de-passe-de-auth}}
-#HOMEURL	= /applis/devdns
-#NOLOGIN	= /local/etc/nologin.devdns
+MODLHTG	= webdns
 
 # utilisateur par défaut pour les scripts non web
 DEFUSER	= crc
@@ -38,6 +34,16 @@ DOCDNS	= /osiris/services/dns.html
 
 # Couleur de fond des boutons "valider"
 COULEUR = "\#10C090"
+
+TOPODIR	= /local/applis/topo
+GRAPH	= $(TOPODIR)/osiris/osiris.graph
+STATUS	= $(TOPODIR)/osiris/osiris.status
+IDRHOST	= metro.u-strasbg.fr
+
+NEATO	= /usr/local/bin/neato
+DOT	= /usr/local/bin/dot
+# le problème avec ps2pdf, c'est qu'il appelle plein de scripts dans /usr/local
+PS2PDF	= sh $(DESTDIR)/lib/ps2pdf
 
 # Version de l'application
 VERSION = 1.5
@@ -65,7 +71,17 @@ SUBST	= \
 	-e 's|%AUTH%|$(AUTH)|' \
 	-e 's|%PASSWDURL%|$(PASSWDURL)|' \
 	-e 's|%BASE%|$(BASE)|' \
-	-e 's|%LOG%|$(LOG)|'
+	-e 's|%LOG%|$(LOG)|' \
+	-e 's|%TOPODIR%|$(TOPODIR)|' \
+	-e 's|%GRAPH%|$(GRAPH)|' \
+	-e 's|%STATUS%|$(STATUS)|' \
+	-e 's|%DEFUSER%|$(DEFUSER)|' \
+	-e 's|%NEATO%|$(NEATO)|' \
+	-e 's|%DOT%|$(DOT)|' \
+	-e 's|%PS2PDF%|$(PS2PDF)|' \
+	-e 's|%IDRHOST%|$(IDRHOST)|'
+
+EXCL = \./doc|\.svn
 
 #
 # La documentation (succinte) de l'application
@@ -87,12 +103,14 @@ pre:
 dirs:
 	if [ ! -d $(DESTDIR) ] ; then mkdir $(DESTDIR) ; fi
 	find . -type d -print | \
+	    egrep -v "$(EXCL)" | \
 	    while read d ; do \
 		if [ ! -d $(DESTDIR)/$$d ] ; then mkdir -p $(DESTDIR)/$$d ; fi ; \
 	    done
 
 autres:
 	find . \( -type f -o -type l \) -print | \
+	    egrep -v "$(EXCL)" | \
 	    grep -v '.htgt$$' | \
 	    grep -v '.gif$$' | \
 	    grep -v '.svn' | \

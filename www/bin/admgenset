@@ -22,7 +22,6 @@ set conf(homeurl)	%HOMEURL%
 # Chemins utilisés par les scripts
 #
 
-set conf(pkg)		%PKGTCL%
 set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
@@ -37,11 +36,6 @@ set conf(page)		$conf(lib)/admgenset.html
 # Quelques paramètres du script
 #
 
-set conf(auth)		%AUTH%
-set conf(base)		%BASE%
-set conf(nologin)	%NOLOGIN%
-set conf(log)		%LOG%
-
 set conf(form)	{
     {zones		0 9999}
 }
@@ -50,7 +44,7 @@ set conf(form)	{
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
-lappend auto_path $conf(pkg)
+lappend auto_path %PKGTLC%
 package require webapp
 package require pgsql
 
@@ -73,8 +67,8 @@ proc main {} {
     # Initialisation
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) "admin" \
-			$conf(form) ftab dbfd login tabcor $conf(log)
+    ::dnscontext create d
+    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     #
     # Forcer la génération

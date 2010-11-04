@@ -22,7 +22,6 @@ set conf(homeurl)	%HOMEURL%
 # Chemins utilisés par les scripts
 #
 
-set conf(pkg)		%PKGTCL%
 set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
@@ -37,11 +36,6 @@ set conf(page)		$conf(lib)/consulter.html
 # Quelques paramètres du script
 #
 
-set conf(auth)		%AUTH%
-set conf(base)		%BASE%
-set conf(nologin)	%NOLOGIN%
-set conf(log)		%LOG%
-
 # nb maximum de plages IP affichables sans mettre d'ascenseur
 set conf(maxplages)	10
 
@@ -49,7 +43,7 @@ set conf(maxplages)	10
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
-lappend auto_path $conf(pkg)
+lappend auto_path %PKGTCL%
 package require webapp
 package require pgsql
 package require arrgen
@@ -73,8 +67,8 @@ proc main {} {
     # Initialisation
     #
 
-    init-dns $conf(nologin) $conf(auth) $conf(base) $conf(err) {} \
-		{} ftab dbfd login tabcor $conf(log)
+    ::dnscontext create d
+    d init-cgi $conf(err) "" {} ftab dbfd login tabcor
 
     #
     # Mettre en forme les informations associées au correspondant pour

@@ -1,5 +1,0 @@
-2009-07-30 pda <pda@unistra.fr>
-
-    *	ajout de l'affichage de la description de l'interface
-	dans la page "eq". Cette information était déjà présente
-	dans le graphe, il suffisait de l'exploiter.

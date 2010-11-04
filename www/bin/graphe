@@ -34,10 +34,8 @@ set conf(homeurl)	%HOMEURL%
 # Chemins utilisés par les scripts
 #
 
-set conf(pkg)		%PKGTCL%
 set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	%LIBDNS%
-set conf(libtopo)	$conf(lib)/libtopo.tcl
+set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
 # Définition des noms des pages "à trous"
@@ -49,8 +47,6 @@ set conf(err)		$conf(lib)/erreur.html
 # Quelques paramètres du script
 #
 
-set conf(base)		%BASE%
-set conf(nologin)	%NOLOGIN%
 
 set conf(form)	{
     {id			1 1}
@@ -66,7 +62,7 @@ set conf(idrfmt)	"http://%IDRHOST%/bin/gengraph?%s&debut=%d&fin=%d"
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
-lappend auto_path $conf(pkg)
+lappend auto_path %PKGTCL%
 package require webapp
 package require pgsql
 
@@ -77,7 +73,6 @@ package require pgsql
 # ::webapp::cgidebug ; exit
 
 source $conf(libdns)
-source $conf(libtopo)
 
 ##############################################################################
 # Programme principal

@@ -23,6 +23,7 @@
 #   2007/10/05 : pda/jean : ajout des objets auth et user
 #   2007/10/23 : pda/jean : ajout de l'objet log
 #   2008/06/12 : pda/jean : ajout de interactive-tree et helem
+#   2010/11/05 : pda      : méthode opened-postgresql pour l'objet log
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -2456,6 +2457,9 @@ snit::type ::webapp::log {
     #	user ...
     #	password ...
     #   (table must contain the columns : date, subsys, event, login, ip, msg)
+    # medium for opened-postgresql
+    #   dbfd ...
+    #   table ...
     # medium for file :
     #   file ...
     # medium for syslog :
@@ -2489,6 +2493,16 @@ snit::type ::webapp::log {
 		if {[catch {set handle [pg_connect -conninfo $db]} msg]} then {
 		    error "Cannot connect: $msg"
 		}
+		if {[info exists x(table)]} then {
+		    set table $x(table)
+		}
+	    }
+	    opened-postgresql {
+		array set x $options(-medium)
+		if {! [info exists x(db)]} then {
+		    error "db is a mandatory parameter"
+		}
+		set db $x(db)
 		if {[info exists x(table)]} then {
 		    set table $x(table)
 		}
