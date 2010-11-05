@@ -1,6 +1,5 @@
 #!/usr/local/bin/tclsh8.5
 
-
 #
 # Script de génération d'une configuration DHCP
 #
@@ -29,15 +28,15 @@ set conf(base)		{host=crc.u-strasbg.fr dbname=dns
 #set conf(base)		{host=crc.u-strasbg.fr dbname=devdns
 #				user=dns password=mot-de-passe-de-dns}
 
-package require Pgtcl
-
 #
 # Chaine de configuration pour la redondance dhcp
 #
 # Pour un serveur isc-dhcp sans redondance
 #set conf(failover)	{}
 # Pour un serveur isc-dhcp avec redondance
-set conf(failover)      {failover peer "dhcp"; }
+set conf(failover)	{failover peer "dhcp"; }
+
+package require Pgtcl
 
 #
 # Neutralise les caractères spéciaux figurant dans une chaîne,
@@ -107,7 +106,7 @@ proc execsql {dbfd cmd result} {
 #   - valeur de retour : 0 ou 1
 #
 # Historique :
-#   200F4/8/05 : pda/jean : conception
+#   2004/08/05 : pda/jean : conception
 #
 
 proc tester-dhcp {dbfd} {
@@ -200,17 +199,20 @@ proc generer-dhcp {dbfd} {
     # Générer chaque réseau trouvé
     #
 
-    set sql "SELECT HOST (adr4) AS adr, NETMASK (adr4) AS netmask, gw4
+    set sql "SELECT HOST (adr4) AS reseau, MASKLEN (adr4) AS masklen,
+		    NETMASK (adr4) AS netmask, gw4, nom
 		FROM dns.reseau
 		WHERE dhcp > 0 AND gw4 IS NOT NULL
-		ORDER BY adr
+		ORDER BY reseau
 		"
     pg_select $dbfd $sql tab {
-	set adr $tab(adr)
-	puts stdout "subnet $adr netmask $tab(netmask) $accg"
+	set reseau  $tab(reseau)
+	set masklen $tab(masklen)
+	puts stdout "# $tab(nom)"
+	puts stdout "subnet $reseau netmask $tab(netmask) $accg"
 	puts stdout "\toption routers $tab(gw4) ;"
-	if {[info exists range($adr)]} then {
-	    foreach pool $range($adr) {
+	if {[info exists range($reseau)]} then {
+	    foreach pool $range($reseau) {
 		set dom                [lindex $pool 0]
 		set min                [lindex $pool 1]
 		set max                [lindex $pool 2]
@@ -219,8 +221,9 @@ proc generer-dhcp {dbfd} {
 		set iddhcpprofil       [lindex $pool 5]
 
 		puts stdout "\tpool $accg"
-		if {[info exists conf(failover)]} then {
-		    puts stdout "\t\t$conf(failover)";
+		if {[info exists conf(failover)] &&
+		    ![string equal $conf(failover) ""] } then {
+			puts stdout "\t\t$conf(failover)"
 		}
 		if {[info exists dhcpprofil($iddhcpprofil)]} then {
 		    puts stdout "\t\t$dhcpprofil($iddhcpprofil)"
@@ -243,64 +246,72 @@ proc generer-dhcp {dbfd} {
 		puts stdout "\t$accd"
 	    }
 	}
-	puts stdout "$accd"
-	puts stdout ""
-    }
 
+	#
+	# Générer tous les hosts qui ont une adresse MAC valide dans
+	# le réseau courant
+	#
 
-    #
-    # Générer tous les hosts qui ont une adresse MAC valide dans
-    # les réseaux dont on doit faire la génération.
-    #
+	set curgrp ""
+	set sql2 "SELECT rr.nom || '.' || domaine.nom AS host,
+			rr.mac,
+			rr_ip.adr,
+			rr.iddhcpprofil
+		    FROM dns.rr, dns.domaine, dns.rr_ip, dns.reseau
+		    WHERE rr.iddom = domaine.iddom
+			AND rr.idrr = rr_ip.idrr
+			AND rr_ip.adr <<= '$reseau/$masklen'
+			AND reseau.adr4 = '$reseau/$masklen'
+			AND reseau.dhcp > 0
+			AND rr.mac IS NOT NULL
+		    ORDER BY rr.iddhcpprofil
+		    "
+	pg_select $dbfd $sql2 tab2 {
+	    set ip $tab2(adr)
+	    set host $tab2(host)
+	    set newgrp $tab2(iddhcpprofil)
+	    if {! [string equal $curgrp $newgrp]} then {
+		# changement de groupe
+		if {! [string equal $curgrp ""]} then {
+		    # fin du groupe précédent
+		    puts stdout "\t$accd"
+		}
 
-    set curgrp ""
-    set sql "SELECT rr.nom || '.' || domaine.nom AS host,
-		    rr.mac,
-		    rr.iddhcpprofil
-		FROM dns.rr, dns.domaine, dns.rr_ip, dns.reseau
-		WHERE rr.iddom = domaine.iddom
-		    AND rr.idrr = rr_ip.idrr
-		    AND rr_ip.adr <<= reseau.adr4
-		    AND reseau.dhcp > 0
-		    AND rr.mac IS NOT NULL
-		GROUP BY host, rr.mac, rr.iddhcpprofil
-		ORDER BY rr.iddhcpprofil
-		"
-    pg_select $dbfd $sql tab {
-	set host $tab(host)
-
-	set newgrp $tab(iddhcpprofil)
-	if {! [string equal $curgrp $newgrp]} then {
-	    # changement de groupe
-	    if {! [string equal $curgrp ""]} then {
-		# fin du groupe précédent
-		puts stdout "$accd"
-	    }
-
-	    set curgrp $newgrp
-	    if {! [string equal $curgrp ""]} then {
-		# début du nouveau groupe
-		puts stdout "group $accg"
-		if {[info exists dhcpprofil($curgrp)]} then {
-		    puts stdout $dhcpprofil($curgrp)
-		} else {
-		    puts stderr "$host reference un groupe DHCP inexistant ($newgrp)"
-		    return 0
+		set curgrp $newgrp
+		if {! [string equal $curgrp ""]} then {
+		    # début du nouveau groupe
+		    puts stdout "\tgroup $accg"
+		    if {[info exists dhcpprofil($curgrp)]} then {
+			puts stdout "\t$dhcpprofil($curgrp)"
+		    } else {
+			puts stderr "$host reference un groupe DHCP inexistant ($newgrp)"
+			return 0
+		    }
 		}
 	    }
 
+	    set i ""
+	    if {[info exists occur($host)]} {
+		set i $occur($host)
+		incr occur($host)
+	    } else {
+		set occur($host) 1
+	    }
+	    puts stdout "\thost $host$i $accg"
+	    puts stdout "\t\tstash-agent-options true ;"
+	    puts stdout "\t\thardware ethernet $tab2(mac) ;"
+	    puts stdout "\t\tfixed-address $tab2(adr) ;"
+	    puts stdout "\t\toption host-name \"$host\" ;"
+	    puts stdout "\t$accd"
 	}
 
-	puts stdout "host $host $accg"
-	puts stdout "\thardware ethernet $tab(mac) ;"
-	puts stdout "\tfixed-address $host ;"
-	puts stdout "\toption host-name \"$host\" ;"
-	puts stdout "$accd"
-    }
+	if {! [string equal $curgrp ""]} then {
+	    # fin du dernier groupe
+	    puts stdout "\t$accd # end group"
+	}
 
-    if {! [string equal $curgrp ""]} then {
-	# fin du dernier groupe
-	puts stdout "$accd"
+	puts stdout "$accd # end subnet"
+	puts stdout ""
     }
 
     #

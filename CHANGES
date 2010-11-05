@@ -4,6 +4,10 @@ Version 2.0 - ??/??/????
     - droits sur les équipements maintenant placés dans la base de données
 	dans une table specifique (topo.dr_eq) et modifiée dans la page
 	d'édition des groupes
+    - la génération DHCP autorise une même machine à obtenir une
+	adresse IP différente en fonction du réseau auquel elle est
+	connectée
+    - la génération DHCP supporte la redondance du serveur DHCP
 
 version 1.5 - ??/??/????
     - ajout du profil DHCP dans la gestion des plages dynamiques
