@@ -110,6 +110,8 @@ set conf(libdns)	%LIBDNS%
 
 set conf(base)		%BASE%
 
+set conf(maxstatus)	100
+
 lappend auto_path $conf(pkg)
 
 package require pgsql
@@ -358,6 +360,54 @@ proc verbositer {msg niveau} {
     if {$niveau < $ctxt(verbose)} then {
 	puts stderr $msg
     }
+}
+
+#
+# Actualise le statut donnant les derniers niveaux de progression
+# du démon topod, afin de donner une visibilité sur les actions
+# entreprises.
+#
+# Entrée : 
+#   - status : statut actuel
+# Sortie : aucune
+#
+# Note : le statut est dans la table keepstate, sous forme d'une
+# liste {{date1 msg1} {date2 msg2} ...} où 1 est l'entrée la plus
+# récente. On ne garde que les 10 dernières entrées (valeur codée
+# en dur)
+#
+# Historique
+#   2010/11/05 : pda/jean : conception
+#
+
+proc reset-status {} {
+    set sql "DELETE FROM topo.keepstate WHERE type = 'status'"
+    myexec $sql
+}
+
+proc set-status {status} {
+    global conf
+
+    set cur {}
+    set sql "SELECT message FROM topo.keepstate WHERE type = 'status'"
+    if {! [myselect $sql tab { set cur $tab(message) }]} then {
+	return
+    }
+
+    # retirer l'entrée la plus vieille, s'il y a plus de maxstatus entrées
+    set last [expr $conf(maxstatus)-1]
+    catch {set cur [lreplace $last $last]}
+
+    # introduire la nouvelle entrée en tête
+    set date [clock format [clock seconds]]
+    set cur [linsert $cur 0 [list $date $status]]
+
+    set qcur [::pgsql::quote $cur]
+
+    set sql "DELETE FROM topo.keepstate WHERE type = 'status' ;
+		INSERT INTO topo.keepstate (type, message)
+			VALUES ('status', '$qcur')"
+    myexec $sql
 }
 
 ##############################################################################
@@ -635,7 +685,7 @@ proc full-rancid-needed {} {
 proc update-graph {_tabeq {leq {}}} {
     upvar $_tabeq tabeq
     global conf
-    
+
     #
     # Remettre à zéro les équipements marqués comme modifiés
     # dans le spool
@@ -715,6 +765,12 @@ proc update-graph {_tabeq {leq {}}} {
 proc rancid {{leq {}}} {
     global conf
 
+    if {[llength $leq] == 0} then {
+	set-status "Ranciding all equipements"
+    } else {
+	set-status "Ranciding $leq"
+    }
+
     #
     # Appeler rancid
     #
@@ -760,6 +816,12 @@ proc rancid {{leq {}}} {
 
 proc anaconf {{leq {}}} {
     global conf
+
+    if {[llength $leq] == 0} then {
+	set-status "Rebuild graph for all equipements"
+    } else {
+	set-status "Rebuild graph for $leq"
+    }
 
     set text ""
 
@@ -807,6 +869,8 @@ proc anaconf {{leq {}}} {
 proc read-eq-type {_tabeq} {
     global conf
     upvar $_tabeq tabeq
+
+    set-status "Reading equipement types"
 
     set msg ""
 
@@ -1057,6 +1121,8 @@ proc mod-to-conf {idrr eq type model _lreqdate} {
 proc execute-cmd {fqdn type model lcmd _msg} {
     global conf
     upvar $_msg msg
+
+    set-status "Sending command to $fqdn"
 
     set tmp "/tmp/topod.[pid]"
     set fd [open $tmp "w"]
@@ -1408,6 +1474,9 @@ proc main {argv0 argv} {
 	return 1
     }
 
+    reset-status
+    set-status "Starting"
+
     #
     # Valeurs par défaut
     #
@@ -1507,8 +1576,3 @@ proc main {argv0 argv} {
 }
 
 exit [main $argv0 $argv]
-
-
-
-
-
