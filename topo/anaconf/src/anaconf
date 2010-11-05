@@ -135,7 +135,7 @@ analyser_confs ()
 		> $EQGEN/$n.eq
 	done < $TMP
     else
-	for eq in `cat $TMP`
+	for eq
 	do
 	    grep "^$eq " $TMP | read name type model
 	    if [ "$name" != "" ]

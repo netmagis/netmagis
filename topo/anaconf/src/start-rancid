@@ -26,14 +26,12 @@ export PATH
 
 if [ $# = 0 ]
 then
-    # XXX : SUPPRIMER "test" lorsque les tests seront terminés
-    exec %RANCID% test 3>&1
+    exec %RANCID% 3>&1
 else
     erreur=0
     for eq in $*
     do
-	# XXX : SUPPRIMER "test" lorsque les tests seront terminés
-	%RANCID% -r $eq test 3>&1
+	%RANCID% -r $eq 3>&1
 	if [ $? != 0 ]
 	then erreur=1
 	fi

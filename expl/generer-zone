@@ -210,17 +210,17 @@ proc generer-zone {dbfd domaine} {
     #
 
     switch -- $table {
-	zone_normale {
+	dns.zone_normale {
 	    if {! [generer-normal $dbfd $domaine $selection $rrsup]} then {
 		return 0
 	    }
 	}
-	zone_reverse4 {
+	dns.zone_reverse4 {
 	    if {! [generer-ipv4 $dbfd $domaine $selection $rrsup]} then {
 		return 0
 	    }
 	}
-	zone_reverse6 {
+	dns.zone_reverse6 {
 	    if {! [generer-ipv6 $dbfd $domaine $selection $rrsup]} then {
 		return 0
 	    }

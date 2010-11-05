@@ -115,6 +115,9 @@ CREATE TABLE topo.lastrun (
 			    WITHOUT TIME ZONE
 ) ;
 
+-- insert an empty value to bootstrap the full rancid run
+INSERT INTO topo.lastrun (date) VALUES (NULL) ;
+
 ------------------------------------------------------------------------------
 -- Keepstate events
 ------------------------------------------------------------------------------
