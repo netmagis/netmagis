@@ -93,7 +93,7 @@ liste_rancid ()
 
 supprimer_eqgen ()
 {
-    if [ $# != 0 ]
+    if [ $# = 0 ]
     then rm -f $EQGEN/*
     fi
     return 0
@@ -120,40 +120,38 @@ analyser_confs ()
 {
     if [ $# = 0 ]
     then
-	while read name type model
-	do
-	    # retirer le nom de domaine (simplification pour l'installation locale)
-	    n=`echo $name | sed 's/\..*//'`
-
-	    verbositer "analyse de $name"
-	    # pour une raison que j'ignore, rancid ne détecte pas le modèle
-	    # pour certains AP Cisco (et seulement pour certains).
-	    if [ x"$model" = x ]
-	    then model="INCONNU"
-	    fi
-	    $BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
-		> $EQGEN/$n.eq
-	done < $TMP
+	analyser_eq < $TMP
     else
 	for eq
 	do
-	    grep "^$eq " $TMP | read name type model
-	    if [ "$name" != "" ]
-	    then
-		verbositer "analyse de $name"
-		# pour une raison que j'ignore, rancid ne détecte pas le modèle
-		# pour certains AP Cisco (et seulement pour certains).
-		if [ x"$model" = x ]
-		then model="INCONNU"
-		fi
-		$BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
-		    > $EQGEN/$n.eq
-	    else
-		echo "$eq not found in liste-rancid result" >&2
+	    if grep "^$eq " $TMP | analyser_eq
+	    then :
+	    else echo "$eq not found in liste-rancid result" >&2
 	    fi
 	done
     fi
     return 0
+}
+
+analyser_eq ()
+{
+    r=1				# restera à 1 si pas d'équipement trouvé
+    while read name type model
+    do
+	# retirer le nom de domaine (simplification pour l'installation locale)
+	n=`echo $name | sed 's/\..*//'`
+
+	verbositer "analyse de $name"
+	# pour une raison que j'ignore, rancid ne détecte pas le modèle
+	# pour certains AP Cisco (et seulement pour certains).
+	if [ x"$model" = x ]
+	then model="INCONNU"
+	fi
+	$BINDIR/analyser $BINDIR $type "$model" $RANCIDCONFDIR/$name $n \
+	    > $EQGEN/$n.eq
+	r=0			# au moins un équipement trouvé
+    done
+    return $r
 }
 
 #
