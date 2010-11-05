@@ -2502,7 +2502,7 @@ snit::type ::webapp::log {
 		if {! [info exists x(db)]} then {
 		    error "db is a mandatory parameter"
 		}
-		set db $x(db)
+		set handle $x(db)
 		if {[info exists x(table)]} then {
 		    set table $x(table)
 		}
@@ -2518,9 +2518,10 @@ snit::type ::webapp::log {
 	    }
 	}
     }
-    
+
     destructor {
 	switch $options(-method) {
+	    opened-postgresql -
 	    postgresql {
 		pg_disconnect $handle
 	    }
@@ -2537,6 +2538,7 @@ snit::type ::webapp::log {
     method log {date event login ip msg} {
 
 	switch $options(-method) {
+	    opened-postgresql -
 	    postgresql {
 		foreach c {event login ip msg} {
 		    if {[string equal [set $c] ""]} then {

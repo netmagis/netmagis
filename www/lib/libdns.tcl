@@ -260,14 +260,14 @@ snit::type ::dnscontext {
 	set log [::webapp::log create %AUTO% \
 				    -subsys webdns \
 				    -method opened-postgresql \
-				    -medium [list "db" $dbfd table log] \
+				    -medium [list "db" $dbfd table global.log] \
 			]
 
 	#
 	# Initialisation des paramètres de configuration
 	#
 
-	config dnsconfig
+	config ::dnsconfig
 	dnsconfig setdb $dbfd
 	dnsconfig setlang "fr"
 

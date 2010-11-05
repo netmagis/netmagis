@@ -44,7 +44,7 @@ set conf(form)	{
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
-lappend auto_path %PKGTLC%
+lappend auto_path %PKGTCL%
 package require webapp
 package require pgsql
 

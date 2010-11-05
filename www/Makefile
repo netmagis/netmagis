@@ -11,7 +11,6 @@ DEBUG  = 0
 BASE    = {host=dbcrc.u-strasbg.fr dbname=dns user=dns password=mot-de-passe-de-dns}
 AUTH    = {-method postgresql -db {host=dbcrc.u-strasbg.fr dbname=auth user=auth password=mot-de-passe-de-auth}}
 # AUTH	= {-method ldap -db {url ldap://ldap.domaine.fr binddn cn=admin,dc=domaine,dc=fr bindpw mot-de-passe-ldap base ou=people,dc=domaine,dc=fr searchuid (\&(objectClass=inetOrgPerson)(uid=%s))} -attrmap {login uid password userPassword nom sn prenom givenName mel mail tel telephoneNumber mobile {} fax facsimileTelephoneNumber adr {postalAddress postalCode l}}}
-LOG     = {devdns postgresql {host dbcrc dbname devdns table global.log user dns password toto27}}
 HOMEURL	= /applis/dns
 NOLOGIN	= /local/etc/nologin.dns
 MODLHTG	= webdns
@@ -71,7 +70,6 @@ SUBST	= \
 	-e 's|%AUTH%|$(AUTH)|' \
 	-e 's|%PASSWDURL%|$(PASSWDURL)|' \
 	-e 's|%BASE%|$(BASE)|' \
-	-e 's|%LOG%|$(LOG)|' \
 	-e 's|%TOPODIR%|$(TOPODIR)|' \
 	-e 's|%GRAPH%|$(GRAPH)|' \
 	-e 's|%STATUS%|$(STATUS)|' \
