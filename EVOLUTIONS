@@ -283,3 +283,25 @@ X- Création d'un profil DHCP
     Statut :
 	- pas encore codé
 	- difficulté : moyenne
+
+X- Exploitation des logs
+
+    L'application génère des logs des modifications de WebDNS dans
+    une table. Pour l'instant, pour lire ces logs, il faut utiliser
+    psql et faire des interrogations en SQL.
+    La proposition consiste à rendre ces logs visibles par les
+    administrateurs de l'applcation dans l'interface Web.
+
+    Statut :
+	- pas encore codé
+	- difficulté : facile
+
+X- Convergence des logs
+
+    La mise en exploitation de topod, anaconf et la modification
+    des ports des équipements génèrent des informations de statut
+    qu'il faudrait faire converger avec le log de WebDNS.
+
+    Statut :
+	- pas encore codé
+	- difficulté : moyenne
