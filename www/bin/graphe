@@ -85,8 +85,7 @@ proc main {} {
     # Initialisation
     #
 
-    init-topo $conf(nologin) $conf(base) $conf(err) "corresp" \
-		    $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
+    init-topo $conf(err) "corresp" $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
 
     foreach f $conf(form) {
 	set var [lindex $f 0]

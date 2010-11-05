@@ -4444,8 +4444,6 @@ array set libconf {
 #
 # Entrée :
 #   - paramètres :
-#	- nologin : nom du fichier testé pour le mode "maintenance"
-#	- base : nom de la base
 #	- pageerr : fichier HTML contenant une page d'erreur
 #	- attr : attribut nécessaire pour exécuter le script ("corresp"/"admin")
 #	- form : les paramètres du formulaire
@@ -4470,9 +4468,10 @@ array set libconf {
 # Historique
 #   2007/01/11 : pda              : conception
 #   2008/10/01 : pda              : ajout msgsta
+#   2010/11/05 : pda/jean         : suppression paramètres
 #
 
-proc init-topo {nologin base pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urluid _msgsta} {
+proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urluid _msgsta} {
     global libconf
 
     upvar $_ftab ftab
@@ -4488,13 +4487,13 @@ proc init-topo {nologin base pageerr attr form _ftab _dbfd _uid _tabuid _ouid _t
     # Pour le cas où on est en mode maintenance
     #
 
-    ::webapp::nologin $nologin %ROOT% $pageerr
+    ::webapp::nologin %NOLOGIN% %ROOT% $pageerr
 
     #
     # Accès à la base SQL DNS
     #
 
-    set dbfd [ouvrir-base $base msg]
+    set dbfd [ouvrir-base %BASE% msg]
     if {[string length $dbfd] == 0} then {
 	::webapp::error-exit $pageerr $msg
     }
