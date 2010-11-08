@@ -1,7 +1,7 @@
 for i in *
 do
 
-    sed -e 's/mot-de-passe-de-dns/azertyuiop/'
+    sed -e 's/mot-de-passe-de-dns/azertyuiop/' \
 	-e 's:^#!/usr/local/bin/tclsh8.5:#!/usr/local/bin/tclsh8.5:' \
 	$i > $i.NEW && mv $i.NEW $i
 

@@ -196,27 +196,35 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
     set modif {}
     foreach c [array names tattr] {
 	set v $tattr($c)
-	if {[string equal $c "hinfo"]} then {
-	    lappend modif "idhinfo = $v"
-	} elseif {[string equal $c "droitsmtp"]} then {
-	    lappend modif "droitsmtp = $v"
-	} elseif {[string equal $c "dhcpprofil"]} then {
-	    if {$v == 0} then {
-		lappend modif "iddhcpprofil = NULL"
-	    } else {
-		lappend modif "iddhcpprofil = $v"
-	    }
-	} elseif {[string equal $c "ttl"]} then {
-	    if {[string equal $v ""]} then {
-		lappend modif "$c = NULL"
-	    } else {
+	switch $c {
+	    hinfo -
+	    droitsmtp {
+		# valeur numérique
 		lappend modif "$c = $v"
 	    }
-	} else {
-	    if {[string equal $v ""]} then {
-		lappend modif "$c = NULL"
-	    } else {
-		lappend modif "$c = '[::pgsql::quote $v]'"
+	    dhcpprofil {
+		# valeur numérique ou vide
+		if {[string equal $v ""] || $v == 0} then {
+		    lappend modif "$c = NULL"
+		} else {
+		    lappend modif "$c = $v"
+		}
+	    }
+	    ttl {
+		# valeur numérique ou vide
+		if {[string equal $v ""]} then {
+		    lappend modif "$c = -1"
+		} else {
+		    lappend modif "$c = $v"
+		}
+	    }
+	    default {
+		# chaîne
+		if {[string equal $v ""]} then {
+		    lappend modif "$c = NULL"
+		} else {
+		    lappend modif "$c = '[::pgsql::quote $v]'"
+		}
 	    }
 	}
     }
