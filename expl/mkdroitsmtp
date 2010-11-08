@@ -1,0 +1,106 @@
+#!/bin/sh
+
+PGPASSWORD="mot-de-passe-de-dns"
+PGDATABASE="dns"
+PGHOST="dbcrc.u-strasbg.fr"
+PGUSER="dns"
+
+export PGPASSWORD PGDATABASE PGHOST PGUSER
+
+PSQL=/usr/local/bin/psql		# chemin de l'exécutable si pas ds PATH
+
+TABLEPF="/local/mail/droitsmtp.pf"	# nom du fichier à générer
+EXCEPT="/local/mail/except.pf"		# exceptions à inclure dans la table
+
+# script pour envoyer les tables sur les autres relayeurs
+# à modifier selon vos besoins
+CPMH="/local/sbin/cpmh"
+
+
+#
+# Recupere sur la sortie standard la liste des adresses IPv4 et v6
+# des machines autorisees a emettre des mails en SMTP vers mailhost.
+# Note : on fait un "order by" pour mettre les adresses toujours dans
+# le meme ordre, afin que d'une execution a l'autre, le fichier soit
+# identique s'il n'y a pas de modification.
+# Arguments :
+#	- aucun
+#
+
+recuperer-liste ()
+{
+    SQL="SELECT rr_ip.adr FROM rr, rr_ip
+			WHERE rr.droitsmtp = 1 AND rr.idrr = rr_ip.idrr
+			ORDER BY rr_ip.adr"
+    $PSQL $PGDATABASE -q --tuples-only -c "$SQL"
+}
+
+#
+# Installer la liste des machines autorisees dans le fichier
+# de la table pf, en tenant compte des exceptions
+# Arguments :
+#	- nom du fichier à installer
+#	- nom du fichier contenant les exceptions
+#
+
+recuperer-liste-et-installer-fichier ()
+{
+    FICHIER="$1"
+    EXCEPT="$2"
+    rm -f "$FICHIER.tmp"
+    cp $EXCEPT "$FICHIER.tmp"
+    recuperer-liste >> "$FICHIER.tmp"
+    if [ $? = 0 ]
+    then
+	mv "$FICHIER.tmp" "$FICHIER"
+	r=$?
+    else
+	r=1
+    fi
+    return $r
+}
+
+#
+# Installer la table dans les filtres pf du relayeur principal
+# pour verifier la validite syntaxique et egalement pour assurer
+# la coherence de configuration avec les relayeurs secondaires.
+# Arguments :
+#	- nom du fichier contenant la table
+#
+
+charger-pf-principal ()
+{
+    FICHIER="$1"
+    # tester d'abord
+    pfctl -q -n -t droitsmtp -T replace -f "$FICHIER"
+    if [ $? = 0 ]
+    then
+	# installer ensuite
+	pfctl -q -t droitsmtp -T replace -f "$FICHIER"
+	r=$?
+    else
+	r=1
+    fi
+    return $r
+}
+
+
+#
+# Lancer la copie vers les autres relayeurs
+# Arguments :
+#	- nom du fichier contenant la table
+#
+
+copier-secondaires ()
+{
+    FICHIER="$1"
+    $CPMH "$FICHIER"
+}
+
+###############################################################################
+# Programme principal
+#
+
+recuperer-liste-et-installer-fichier $TABLEPF $EXCEPT \
+	&& charger-pf-principal $TABLEPF \
+	&& copier-secondaires $TABLEPF
