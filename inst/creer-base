@@ -35,7 +35,7 @@ ROOT="pda jean"			# utilisateur(s) privilégié(s)
 ##############################################################################
 # POUR EVITER LES ERREURS (LANCEMENT MALENCONTREUX DE CE SCRIPT)
 
-#exit 0
+exit 0
 
 ##############################################################################
 
@@ -523,8 +523,6 @@ psql --quiet $BASE <<'EOF'
     -- élégante)
     --------------------------------------------------------------------------
 
-    -- ne pas tenir compte du warning si le type n'existe pas.
-    DROP TYPE IF EXISTS iprange_t CASCADE ;
     CREATE TYPE iprange_t AS (a INET, n INTEGER) ;
 
     CREATE OR REPLACE FUNCTION ipranges (reseau CIDR, lim INTEGER, grp INTEGER)

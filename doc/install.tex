@@ -343,10 +343,10 @@ En effet, la migration de tout un domaine à SMTP authentifié
 nécessite~:
 
 \begin {itemize}
-    \item une mise à jour de l'ensemble du parc de clients SMTP
+    \item la mise à jour de l'ensemble du parc de clients SMTP
 	(sur les serveurs, mais également sur les postes clients)~;
 
-    \item une mise à jour de l'ensemble du parc de serveurs SMTP
+    \item la mise à jour de l'ensemble du parc de serveurs SMTP
 	pour interdire les connexions non authentifiées (sauf en
 	provenance du ou des relayeurs de messagerie du domaine)~;
 
@@ -675,9 +675,10 @@ correctement installé.
 \titreC {Pgtclng}
 
 Le support de PostgreSQL pour les applications rédigées avec Tcl
-nécessite le paquet pgtclng, au moins dans sa version 1.6.
+nécessite le paquet pgtclng, dans une version supérieure ou égale
+à 1.6.
 
-Pour vérifier si le support de Tcl est bien compilé, faire~:
+Pour vérifier si ce paquet est bien installé, faire~:
 
 \begin {quote}
 \small
@@ -895,7 +896,8 @@ figure en bonne place la faculté de modifier les pages HTML et LaTeX
 de l'application.
 
 En effet, la présentation est largement indépendante de la logique
-des scripts, et repose sur le concept de «~page à trous~».
+des scripts, et repose des «~templates~», appelés «~pages à trous~»
+dans la suite de ce document.
 
 
 \titreB {Principe des «~pages à trous~»}
@@ -955,8 +957,8 @@ modèles sont fournis~:
 	les spécificités locales, et utilisé pour le site \htmlurl
 	{http://webdns.u-strasbg.fr}.
 
-    \item modèle «~crc~»~: utilisé au Centre Réseau Communication
-	de l'Université Louis Pasteur de Strasbourg~;
+    \item modèle «~crc~»~: utilisé autrefois au Centre Réseau
+	Communication de l'Université Louis Pasteur de Strasbourg~;
 
     \item modèle «~csi~»~: utilisé autrefois au Centre de Services
 	Informatiques de l'Université de
@@ -1004,12 +1006,12 @@ le lien \verb|./htg/modeles/default|\footnote {Si vous démarrez,
 nous vous conseillons de choisir le modèle «~webdns~».}.
 
 Installez maintenant l'ensemble dans le répertoire de votre
-choix\footnote {Il n'y a pas de contrainte par rapport à ce
-répertoire. Il peut être (et il vaut mieux qu'il soit) situé à
-l'extérieur de votre arborescence Web servie par votre serveur
-Apache.}.  Pour cela, allez dans le répertoire \verb|./htg|, éditez
-le fichier \texttt {Makefile}, modifiez la variable \verb|DESTDIR|
-et lancez l'installation avec \texttt {make}.
+choix\footnote {Il n'y a pas de contrainte par rapport à ce répertoire.
+Il peut être (et il vaut mieux qu'il soit) situé à l'extérieur de
+l'arborescence Web servie par votre serveur Apache.}.  Pour cela,
+allez dans le répertoire \verb|./htg|, éditez le fichier \texttt
+{Makefile}, modifiez la variable \verb|DESTDIR| et lancez l'installation
+avec \texttt {make}.
 
 Enfin, si vous utilisez le modèle «~crc~» ou «~webdns~», vous devez
 recopier (ou rendre accessible en utilisant un lien symbolique) le
@@ -1041,13 +1043,7 @@ de l'application (variable \texttt {PKGTCL} des fichiers \texttt
 {Makefile}). Vous êtes donc libre de les installer où vous le
 souhaitez, voire même de les laisser dans le répertoire à partir
 duquel vous avez détarré les sources.
-
-Si vous choisissez un répertoire d'installation différent de celui
-où vous avez détarré les sources, prenez soin de copier les fichiers
-«~.tcl~» ainsi que le fichier \texttt {Makefile}.
-
-Vous pouvez également copier les pages de manuel (fichiers «~.n~»),
-mais ce n'est pas nécessaire.
+\cbdelete%1.5
 
 
 \titreB {Modification des paquetages}
@@ -1109,6 +1105,21 @@ pour refléter la localisation des commandes~:
 	(voir~\ref {pwgen}, page~\pageref {pwgen})
 \end {itemize}
 
+
+\cbstart%1.5
+\titreB {Installation des paquetages}
+
+Modifiez le fichier \texttt {Makefile} pour refléter le nom et la
+version de l'exécutable \texttt {tclsh}.
+
+Tapez ensuite \texttt {make} dans le répertoire courant pour générer
+le fichier \texttt {pkgIndex.tcl}.
+
+Si vous avez décidé d'installer les paquetages dans un autre
+répertoire, copiez tout les fichiers (y compris \texttt {pkgIndex.tcl})
+vers cet autre répertoire.
+
+\cbend%1.5
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Installation de l'application WebAuth
@@ -1207,8 +1218,8 @@ Examinez le script \texttt {./pgauth/inst/creer-base}. Dans ce script~:
 
     \item mettez en commentaire la ligne «~\verb|exit 0|~» située
 	vers le début du fichier. Lorsque vous aurez exécuté le
-	script, remettez le \verb|#| qui vous protégera ainsi d'une
-	maladresse si vite arrivée~!
+	script, supprimez ce \verb|#| ce qui vous protégera ainsi
+	d'une maladresse si vite arrivée~!
 
     \item modifiez les logins des utilisateurs privilégiés. Ces
 	utilisateurs (PostgreSQL) doivent pouvoir réaliser toutes les
@@ -1266,8 +1277,8 @@ Dans ce script~:
 
     \item mettez en commentaire la ligne «~\verb|exit 0|~» située
 	vers le début du fichier. Lorsque vous aurez exécuté le
-	script, remettez le \verb|#| qui vous protégera ainsi d'une
-	maladresse si vite arrivée~!
+	script, supprimez ce \verb|#| ce qui vous protégera ainsi
+	d'une maladresse si vite arrivée~!
 
 \end {itemize}
 
@@ -1880,7 +1891,7 @@ groupes=lma
 	(\textit {broadcast} et routeur par défaut)~; il vaut mieux
 	introduire, après le chargement initial, des droits d'accès
 	agrégés pour l'ensemble des réseaux gérés.  Par exemple,
-	le réseau «~Osiris~» étant constitué d'une classe~B, le
+	le réseau «~Osiris~» étant constitué d'réseau de classe~B, le
 	groupe des administrateurs n'est pas listé dans les réseaux
 	individuellement décrits dans \texttt {subnet.txt}, mais
 	le droit «~allow 130.79/16~» a été ajouté a posteriori
@@ -2200,9 +2211,13 @@ vous avez détarré l'application. Dans l'installation par défaut,
 ce répertoire est nommé \verb|/local/services/www/applis/dns/|.
 
 \begin {itemize}
-    \item si vous souhaitez utiliser HTG, recopiez les fichiers
-	du répertoire \verb|./www/lib/| en modifiant éventuellement
-	les parties «~bannière~», «~titrepage~» et «~bandeau~»~;
+    \item
+	\cbstart%1.5
+	si vous souhaitez utiliser HTG, vous n'avez rien à faire~:
+	les fichiers sont déjà dans le répertoire \verb|./www/lib/|.
+	Vous pouvez éventuellement modifier les parties «~bannière~»,
+	«~titrepage~» et «~bandeau~» à votre convenance~;
+	\cbend%1.5
 
     \item si vous souhaitez concevoir des nouvelles pages à trous,
 	installez-les dans le répertoire  \verb|./www/lib/|.
@@ -2218,10 +2233,10 @@ ce répertoire est nommé \verb|/local/services/www/applis/dns/|.
 Rendez-vous ensuite dans le répertoire \verb|./www/| et éditez le
 fichier \texttt {Makefile}. Modifiez les variables~:
 
-\begin {tabular} {|l|p{130mm}|} \hline
-    \multicolumn {1} {|c|} {\textbf {Variable}}
-	& \multicolumn {1} {|c|} {\textbf {Signification}}
-	\\ \hline
+\begin {tabular} {|l|p{140mm}|} \hline
+    \multicolumn {1} {|c|} {\textbf {Variable}} &
+	    \multicolumn {1} {|c|} {\textbf {Signification}}
+    \\ \hline
     \texttt {TCLSH} &
 	localisation de l'exécutable \texttt {tclsh}
 	\\ \hline
@@ -2575,7 +2590,7 @@ exception dûment enregistrée et validée dans WebDNS.
 Sur les relayeurs de messagerie de votre domaine, vous devez donc
 activer des filtres TCP en fonction des informations de WebDNS.
 
-\titreC {Script mkdroitsmtp}
+\titreC {Script \texttt {mkdroitsmtp}}
 
 Le script \texttt {mkdroitsmtp} est fourni à titre d'exemple. Il
 fonctionne sur FreeBSD version 8 (minimum), et utilise \texttt {pf}
@@ -2901,6 +2916,11 @@ Les programmes sont les suivants~:
 	    \item \texttt {respnom}~: le nom du responsable
 	    \item \texttt {respmel}~: l'adresse électronique du responsable
 	    \item \texttt {commentaire}~: le commentaire associé à la machine
+	    \cbstart%1.5
+	    \item \texttt {droitsmtp}~: le droit (1) ou non (0)
+		d'émettre en SMTP non authentifié
+	    \item \texttt {ttl}~: le TTL de la machine (ou vide)
+	    \cbend%1.5
 	\end {itemize}
 
 	Chaque attribut peut être cité au plus une fois. Plusieurs
@@ -2984,8 +3004,8 @@ Il est vivement conseillé d'appliquer cette politique de sauvegarde...
 
 \titreA {Conclusion}
 
-Si ça marche, n'oubliez pas d'envoyer une bouteille de champagne
-aux auteurs...
+Si tout fonctionne correctement, n'oubliez pas d'envoyer une bouteille
+de champagne aux auteurs...
 
 
 
@@ -3087,8 +3107,9 @@ est donc la personne physique qui va réaliser les opérations d'ajout,
 de modification et de suppression des informations dans la base.
 
 Peu d'informations sont associées à un correspondant dans la base,
-car la plupart sont inscrites dans l'application WebAuth. Les
-informations spécifiques à WebDNS sont~:
+car la plupart sont inscrites dans le système d'authentification
+externe (annuaire LDAP, ou base PostgreSQL gérée par l'application
+WebAuth). Les informations spécifiques à WebDNS sont~:
 
 \begin {itemize}
     \item le \textbf {login} du correspondant, faisant ainsi la
@@ -3118,17 +3139,21 @@ attribués aux correspondants. Ces droits peuvent être~:
     \item le droit de déclarer des adresses IP dans un intervalle
     \item le droit de consulter des réseaux
     \item le droit de déclarer des rôles de messagerie pour un domaine
-    \item
-	le droit d'administrer des intervalles d'allocation DHCP
+    \item le droit d'administrer des intervalles d'allocation DHCP
 	dynamique et d'utiliser des profils DHCP
+    \cbstart%1.5
+    \item le droit d'autoriser des machines à émettre en sMTP non
+	authentifié
+    \item le droit d'éditer le TTL des machines individuelles
+    \cbend%1.5
     \item le droit d'administrer la base
 \end {itemize}
 
 Deux groupes différents peuvent avoir des droits qui se chevauchent.
 Par exemple, on peut imaginer un droit sur un réseau pour les
 correspondants d'une composante ou d'un laboratoire (formant un
-groupe), et des droits sur ce même réseau pour les personnes du CRI
-d'établissement (formant un autre groupe).
+groupe), et des droits sur ce même réseau pour les personnes du
+service informatique d'établissement (formant un autre groupe).
 
 Les groupes décrits ici (appelés groupes WebDNS) ne doivent pas
 être confondus avec les groupes de l'application WebAuth~: les
@@ -3163,6 +3188,15 @@ Chaque RR porte un \textbf {nom} (sans point à l'intérieur), conforme
 	est associé éventuellement à une \textbf {adresse MAC} et
 	à un \textbf {profil DHCP}. Ces informations permettent de
 	générer des allocations statiques avec DHCP.
+
+    \cbstart%1.5
+    \item dipose d'un \textbf {TTL} (exprimé en secondes), qui sera
+	le plus souvent égal à -1 pour signifier que le TTL par
+	défaut de la zone s'applique.
+
+    \item a éventuellement le \textbf {droit d'émettre en SMTP non
+	authentifié}.
+    \cbend%1.5
 
     \item contient la référence du \textbf {dernier correspondant} ayant
 	modifié le RR, ainsi que la \textbf {date}.
@@ -3449,7 +3483,11 @@ configurer des intervalles DHCP dynamiques, via le champ \textbf
 Pour pouvoir configurer un intervalle dynamique, un correspondant
 réseau doit avoir l'accessibilité sur \textit {toutes} les adresses
 entre l'adresse \textbf {min} et l'adresse \textbf {max}. L'intervalle
-est associé à un \textbf {domaine} par défaut, ainsi que des
+est associé à un \textbf {domaine} par défaut,
+\cbstart%1.5
+un \textbf {profil DHCP} éventuel,
+\cbend%1.5
+ainsi que des
 paramètres spécifiques (\textbf {default\_lease\_time} et \textbf
 {max\_lease\_time}) qui sont transmis au serveur DHCP et ne peuvent
 être hors de l'intervalle défini par les paramètres de configuration
@@ -3595,7 +3633,7 @@ Il faut donc~:
 \end {itemize}
 
 Une fois ces modifications effectuées, le correspondant réseau peut
-saisir l'adresse MAC et le profil que vous aurez défini. Il verra
+saisir l'adresse MAC et le profil que vous aurez définis. Il verra
 également le texte du profil DHCP s'il consulte ses droits.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
@@ -4064,65 +4102,66 @@ ci-après~:
 
 \end {enumerate}
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
-% Annexe - Contributions
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\clearpage
-\titreA {Contributions}
-    \label {contrib}
-
-L'application WebDNS suscite des contributions qui peuvent intéresser
-la communauté des utilisateurs, via la liste \texttt
-{webdns@u-strasbg.fr}
-
-Ces contributions sont décrites dans cette documentation pour
-faciliter votre information. Elles n'engagement pas les auteurs de
-WebDNS, qui n'assurent en outre bien évidemment pas leur support.
-
-
-\titreB {Canal pour Esup-Portail}
-
-Cette contribution provient de Philippe Martin (\texttt {philippe.martin
-at univ-pau.fr}) du CRI de l'Université de Pau et des Pays de
-l'Adour.
-
-L'université ayant mis en place le portail Esup\footnote {\htmlurl
-{http://www.esup-portail.org}}, le CRI a développé un canal pour
-ce portail. Il permet aux correspondants d'effectuer, pour les
-plages qui les concernent, les opérations d'ajout et modification
-d'adresse.
-
-Les fonctionnalités accessibles par ce canal concernent uniquement
-les correspondants~:
-
-\begin {itemize}
-    \item consultation de la liste des réseaux autorisés~;
-    \item consultation de la liste des machines dans un des réseaux
-	autorisés~;
-    \item ajout d'une machine (nom et adresse IPv4)~;
-    \item ajout d'une liste de machines (noms et adresses IPv4)~;
-    \item pour une machine autorisée, les possibilités offertes sont~:
-	\begin {itemize}
-	    \item supprimer la machine,
-	    \item modifier les informations (système, commentaire, responsable, email),
-	    \item modifier l'adresse IPv4,
-	    \item ajouter une adresse IPv6,
-	    \item modifier l'adresse IPv6,
-	    \item supprimer l'adresse IPv6,
-	    \item ajouter un alias,
-	    \item supprimer un alias.
-	\end {itemize}
-\end {itemize}
-
-L'administration de l'application continue à se faire par l'application
-WebDNS elle-même.
-
-Le canal est téléchargeable sur~:
-	\htmlurl {ftp://ftp.univ-pau.fr/pub/ACO/canaux/}
-(disponible pour la version 1.2 de WebDNS à l'heure de mise sous
-presse).
+\cbdelete%1.5
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
+% % Annexe - Contributions
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \clearpage
+% \titreA {Contributions}
+%     \label {contrib}
+% 
+% L'application WebDNS suscite des contributions qui peuvent intéresser
+% la communauté des utilisateurs, via la liste \texttt
+% {webdns@u-strasbg.fr}
+% 
+% Ces contributions sont décrites dans cette documentation pour
+% faciliter votre information. Elles n'engagement pas les auteurs de
+% WebDNS, qui n'assurent en outre bien évidemment pas leur support.
+% 
+% 
+% \cbdelete%1.5
+% \titreB {Canal pour Esup-Portail}
+% 
+% Cette contribution provient de Philippe Martin (\texttt {philippe.martin
+% at univ-pau.fr}) du CRI de l'Université de Pau et des Pays de
+% l'Adour.
+% 
+% L'université ayant mis en place le portail Esup\footnote {\htmlurl
+% {http://www.esup-portail.org}}, le CRI a développé un canal pour
+% ce portail. Il permet aux correspondants d'effectuer, pour les
+% plages qui les concernent, les opérations d'ajout et modification
+% d'adresse.
+% 
+% Les fonctionnalités accessibles par ce canal concernent uniquement
+% les correspondants~:
+% 
+% \begin {itemize}
+%     \item consultation de la liste des réseaux autorisés~;
+%     \item consultation de la liste des machines dans un des réseaux
+% 	autorisés~;
+%     \item ajout d'une machine (nom et adresse IPv4)~;
+%     \item ajout d'une liste de machines (noms et adresses IPv4)~;
+%     \item pour une machine autorisée, les possibilités offertes sont~:
+% 	\begin {itemize}
+% 	    \item supprimer la machine,
+% 	    \item modifier les informations (système, commentaire, responsable, email),
+% 	    \item modifier l'adresse IPv4,
+% 	    \item ajouter une adresse IPv6,
+% 	    \item modifier l'adresse IPv6,
+% 	    \item supprimer l'adresse IPv6,
+% 	    \item ajouter un alias,
+% 	    \item supprimer un alias.
+% 	\end {itemize}
+% \end {itemize}
+% 
+% L'administration de l'application continue à se faire par l'application
+% WebDNS elle-même.
+% 
+% Le canal est téléchargeable sur~:
+% 	\htmlurl {ftp://ftp.univ-pau.fr/pub/ACO/canaux/}
+% (disponible pour la version 1.2 de WebDNS à l'heure de mise sous
+% presse).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%}}
 % Annexe - Pages à trous

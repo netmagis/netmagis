@@ -14,7 +14,7 @@ NOLOGIN	= /local/etc/nologin.auth
 DESTDIR	= /local/services/www$(HOMEURL)
 PKGTCL	= /local/services/www/pkgtcl
 
-HTG	= /local/services/www/utils/htg
+HTG	= /local/services/www/htg/bin/htg
 
 ROOT	= {pda jean}
 GRPROOT = authadmin

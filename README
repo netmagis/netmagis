@@ -4,14 +4,23 @@ Application WebDNS
 Objectif
 --------
 
-Déléguer la gestion du DNS et de DHCP à un ensemble de correspondants
-réseau, et constituer le début d'un système d'information réseau.
-Voir
-    - l'article présenté aux Jres 2003
-	http://2003.jres.org/actes/paper.144.pdf
-    - l'article présenté aux Jres 2005
-	http://2005.jres.org/paper/82.pdf
+L'objectif premier est de déléguer la gestion du DNS et de DHCP
+d'un ensemble de domaines et de réseaux IPv4/IPv6 à des correspondants
+réseau
 
+Avec l'utilisation de WebDNS, il est également possible de :
+    - constituer le début d'un système d'information réseau.
+    - gérer les routages de messagerie d'un domaine
+    - gérer les exceptions dans le cadre de la mise en place de SMTP
+	authentifié sur un domaine
+
+Voir
+    - l'article présenté aux JRES 2003
+	http://2003.jres.org/actes/paper.144.pdf
+    - l'article présenté aux JRES 2005
+	http://2005.jres.org/paper/82.pdf
+    - l'article présenté aux JRES 2009
+	http://2009.jres.org/planning_files/article/pdf/124.pdf
 
 Auteurs
 -------
@@ -26,25 +35,13 @@ Version
 1.5
 
 
-Installation
-------------
+Site Web
+--------
 
-Consultez doc/install/install.pdf
-
-
-Liste de diffusion
-------------------
-
-La liste webdns@u-strasbg.fr (faible trafic) est destinée à
-accueillir toutes les discussions sur l'application et ses
-à-côtés.
+http://webdns.u-strasbg.fr 
 
 
-Contributions externes
-----------------------
+Forge
+-----
 
-- Canal DNS pour le portail Esup
-    ftp://ftp.univ-pau.fr/pub/ACO/canaux/
-    Auteur : Philippe Martin (philippe.martin@univ-pau.fr)
-
-
+http://github.com/pdav/webdns
