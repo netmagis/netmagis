@@ -1,0 +1,11 @@
+#
+# Génération de la table droitsmtp de pf pour autoriser les
+# connexions entrantes sur le port SMTP non authentifiees seulement
+# aux machines dument autorisees.
+#
+# Cette crontab doit être installée sur les relais de messagerie
+#
+
+MAILTO = hostmaster@u-strasbg.fr
+*/1	* * * *	root /local/sbin/mkdroitsmtp
+
