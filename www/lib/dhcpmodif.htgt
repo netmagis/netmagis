@@ -39,8 +39,6 @@
     \titre {1} {Modification effectuée}
 
     Les intervalles DHCP du réseau '%RESEAU%' ont été mis à jour.
-
-    \* %TABLEAU%
 }
 
 }
