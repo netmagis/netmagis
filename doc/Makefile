@@ -30,6 +30,7 @@ LISTINGS = \
 	../inst/httpd.conf \
 	../inst/auth-ldap.conf \
 	../inst/auth-pgsql.conf \
+	../inst/pf.conf \
 	../pgauth/inst/httpd.conf
 
 .SUFFIXES:	.fig .tex .dvi .ps .pdf .txt

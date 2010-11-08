@@ -152,7 +152,7 @@
 
 L'application WebDNS a été présentée\footnote {\htmlurl
 {http://2003.jres.org/actes/paper.144.pdf}} pour la première fois
-aux Jres 2003 à Lille. Depuis, elle a suscité un intérêt qui a
+aux JRES 2003 à Lille. Depuis, elle a suscité un intérêt qui a
 motivé les auteurs à rentrer dans une logique de diffusion pour la
 communauté.
 
@@ -167,13 +167,13 @@ des informations liées au protocole DHCP. WebDNS constitue, de ce
 fait, la brique de base d'un système d'information orienté vers la
 gestion du réseau, concept qui a été développé lors d'une
 présentation\footnote {\htmlurl {http://2005.jres.org/paper/82.pdf}}
-aux Jres 2005 à Marseille.
+aux JRES 2005 à Marseille.
 \cbstart%1.5
 La disponibilité de WebDNS a également constitué un facilitateur
 pour migrer l'architecture de messagerie d'un campus vers
 SMTP-Authentifié comme cela a été présenté dans un article\footnote
 {\htmlurl {http://2009.jres.org/planning_files/article/pdf/124.pdf}}
-aux Jres 2009 à Nantes.
+aux JRES 2009 à Nantes.
 \cbend%1.5
 
 Jusqu'en 2002, le réseau métropolitain strasbourgeois Osiris\footnote
@@ -332,8 +332,61 @@ aspects liés au routage de la messagerie~:
 \end {itemize}
 
 \cbstart%1.5
-De plus, la migration 
+\titreC {Gestion de SMTP authentifié}
+    \label {pres-droitsmtp}
 
+WebDNS est également utile pour permettre l'utilisation de SMTP
+authentifié. Plus exactement, WebDNS peut gérer les exceptions à
+la règle de filtrage du port SMTP non authentifié.
+
+En effet, la migration de tout un domaine à SMTP authentifié
+nécessite~:
+
+\begin {itemize}
+    \item une mise à jour de l'ensemble du parc de clients SMTP
+	(sur les serveurs, mais également sur les postes clients)~;
+
+    \item une mise à jour de l'ensemble du parc de serveurs SMTP
+	pour interdire les connexions non authentifiées (sauf en
+	provenance du ou des relayeurs de messagerie du domaine)~;
+
+    \item une politique de filtrage interdisant les connexions SMTP
+	non authentifiées.
+
+\end {itemize}
+
+Une solution simple pour distinguer les connexions SMTP authentifiées
+des connexions non authentifiées consiste à n'utiliser le port SMTP
+standard (port TCP 25) que pour SMTP non authentifié, et le port
+587 (ou 465 pour tenir compte des limitations de certaines versions
+du client Outlook) pour SMTP authentifié. Avec cette politique, il
+est facile d'interdire le port 25 :
+
+\begin {itemize}
+    \item entre réseaux, sauf vers les relayeurs centraux.
+
+    \item sur les relayeurs centraux, depuis toute machine qui
+	n'héberge pas de boîtes aux lettres~;
+
+\end {itemize}
+
+Malgré tout le soin apporté à la mise à jour de l'ensemble du parc,
+il reste toujours quelques machines ne pouvant pas utiliser SMTP
+authentifié. Il s'agit par exemple de systèmes embarqués
+(photocopieurs-scanneurs ou autres machines spécialisées), voire
+de serveurs (ou d'administrateurs système) obsolètes.
+
+Pour gérer ces exceptions, WebDNS permet d'attribuer à des groupes
+de correspondants un droit spécifique~: celui-ci leur permet de
+déclarer une machine comme ayant le droit d'émettre en SMTP non
+authentifié. L'attribut correspondant peut ensuite être utilisé pour
+alimenter une table de filtres IP sur le relayeur de messagerie.
+
+Pour plus d'information sur la migration vers un service SMTP
+authentifié, le lecteur intéressé est invité à se référer à
+l'article\footnote {\htmlurl
+{http://2009.jres.org/planning_files/article/pdf/124.pdf}} présenté
+aux JRES 2009.
 \cbend%1.5
 
 
@@ -626,7 +679,6 @@ nécessite le paquet pgtclng, au moins dans sa version 1.6.
 
 Pour vérifier si le support de Tcl est bien compilé, faire~:
 
-\cbstart%1.5
 \begin {quote}
 \small
 \begin {verbatim}
@@ -915,7 +967,7 @@ modèles sont fournis~:
 
 \end {itemize}
 
-\cbdelete%1.5
+\cbend%1.5
 
 \titreB {Quelles pages HTML utiliser~?}
 
@@ -1299,8 +1351,8 @@ Dans l'installation par défaut, ce répertoire est nommé
 	devrez supprimer chaque fichier «~.htgt~» et le remplacer
 	par un fichier «~.html~» équivalent, en respectant le nom
 	des trous que les scripts CGI s'attendent à trouver (voir
-	annexe~\ref {anx-trous}). Vous prendrez soin également à
-	adapter le fichier LaTeX \verb|utiliste.tex|.
+	annexe~\ref {anx-trous}). Vous prendrez soin également
+	d'adapter le fichier LaTeX \verb|utiliste.tex|.
 
 \end {itemize}
 
@@ -2158,7 +2210,7 @@ ce répertoire est nommé \verb|/local/services/www/applis/dns/|.
 	par un fichier «~.html~» équivalent, en respectant le nom des
 	trous que les scripts CGI s'attendent à trouver (voir
 	annexe~\ref {anx-trous}, page~\pageref {anx-trous}).  Vous
-	prendrez soin également à adapter les fichiers LaTeX
+	prendrez soin également d'adapter les fichiers LaTeX
 	\verb|liste.tex| et \verb|listedes.tex|.
 
 \end {itemize}
@@ -2180,6 +2232,11 @@ fichier \texttt {Makefile}. Modifiez les variables~:
 	méthode d'authentification (\texttt {postgresql} ou \texttt
 	{ldap}) et paramètres spécifiques
 	\\ \hline
+    \cbstart%1.5
+    \texttt {LOG} &
+	paramètres d'accès au journal des modifications de l'application
+	\cbend%1.5
+	\\ \hline
     \texttt {HOMEURL} &
 	chemin relatif à la racine de l'arborescence Web
 	\\ \hline
@@ -2200,6 +2257,13 @@ fichier \texttt {Makefile}. Modifiez les variables~:
 	\\ \hline
     \texttt {HTG} &
 	localisation de l'exécutable \texttt {htg}
+	\\ \hline
+    \cbstart%1.5
+    \texttt {MODLHTG} &
+	modèle à utiliser. Ceci n'est normalement pas à modifier car
+	le modèle utilisé est défini lors de l'installation de HTG
+	(voir~\ref {htg-webdns}, page~\pageref {htg-webdns})
+	\cbend%1.5
 	\\ \hline
     \texttt {ROOT} &
 	utilisateurs (Apache) habilités à intervenir en mode
@@ -2497,6 +2561,63 @@ Pour être installé~:
 
 \end {itemize}
 
+
+\cbstart%1.5
+\titreB {Gestion de SMTP authentifié}
+    \label {generer-droitsmtp}
+
+Si vous souhaitez utiliser SMTP authentifié dans votre environnement,
+comme indiqué en~\ref {pres-droitsmtp} (page~\pageref {pres-droitsmtp}),
+vous devez implémenter une politique de filtrage interdisant les
+connexions en provenance de clients SMTP non authentifiés, sauf
+exception dûment enregistrée et validée dans WebDNS.
+
+Sur les relayeurs de messagerie de votre domaine, vous devez donc
+activer des filtres TCP en fonction des informations de WebDNS.
+
+\titreC {Script mkdroitsmtp}
+
+Le script \texttt {mkdroitsmtp} est fourni à titre d'exemple. Il
+fonctionne sur FreeBSD version 8 (minimum), et utilise \texttt {pf}
+(PacketFilter) issu d'OpenBSD comme outil de filtrage IP.
+
+Par exemple, les règles de filtrage \texttt {pf} peuvent être les
+suivantes~:
+
+\begin {quote}
+    \small
+    \verbatiminput {../inst/pf.conf}
+\end {quote}
+
+Le rôle du script consiste à créer un fichier pour stocker la table
+\texttt {droitsmtp} et à activer cette table. Il commence par
+récupérer une liste d'exceptions (sous forme d'un fichier contenant
+une liste d'adresses à systématiquement autoriser), puis ajoute la
+liste des adresses IP ayant l'attribut «~droit d'émettre en SMTP
+non authentifié~». Ensuite, le fichier ainsi constitué est testé
+en utilisant l'utilitaire \texttt {pfctl}. Enfin, le fichier est
+envoyé et activé vers les autres relayeurs via un script \texttt
+{cpmh} (non fourni).
+
+Le script \texttt {mkdroitsmtp} doit être lancé par \texttt {cron},
+par exemple toutes les minutes, avec une entrée de la forme~·
+
+\begin {quote}
+\small
+\begin {verbatim}
+#
+# La crontab de "root"
+#
+SHELL = /bin/sh
+MAILTO = hostmaster@u-strasbg.fr
+
+* * * * *  lockf -t 30 /tmp/droitsmtp.lock /local/sbin/mkdroitsmtp
+\end{verbatim}
+\end {quote}
+
+La commande \texttt {lockf} empêche l'exécution simultanée de deux
+instances du script.
+\cbend%1.5
 
 \titreB {Génération de la configuration DHCP}
     \label {generer-dhcp}
@@ -4090,6 +4211,14 @@ presse).
 	& bouton pour activer ou non le droit d'administrer
 	    l'application
 	\\ \cline {2-3}
+	\cbstart%1.5
+	& \texttt {\%DROITSMTP\%}
+	& case à cocher pour le droit d'émettre en SMTP non authentifié
+	\\ \cline {2-3}
+	& \texttt {\%DROITTTL\%}
+	& case à cocher pour le droit d'éditer le TTL d'une machine
+	\cbend%1.5
+	\\ \cline {2-3}
 	& \texttt {\%LISTECOR\%}
 	& liste des correspondants inscrits dans le groupe
 	\\ \cline {2-3}
@@ -4131,6 +4260,11 @@ presse).
 	& \texttt {\%TABDOMAINES\%}
 	& liste des domaines saisis
 	\\ \cline {2-3}
+	\cbstart%1.5
+	& \texttt {\%TABDROITS\%}
+	& tableau des attributs généraux du groupe (droits SMTP et TTL)
+	\cbend%1.5
+	\\ \cline {2-3}
 	& \texttt {\%TABLOGINS\%}
 	& liste des membres du groupe
 	\\ \cline {2-3}
@@ -4168,6 +4302,12 @@ presse).
     admmxsel.html
 	& \texttt {\%DOMAINE\%}
 	& menu des domaines autorisés
+	\\ \hline
+    \cbstart%1.5
+    admparhelp.html
+	& \texttt {\%TEXTE\%}
+	& texte de l'aide en ligne des paramètres de l'application
+	\cbend%1.5
 	\\ \hline
     admparliste.html
 	& \texttt {\%TAB\%}
@@ -4209,8 +4349,21 @@ presse).
 	& lien vers le script de modification du type d'objet modifié
 	\\ \hline
     ajout.html
-	& \texttt {\%DHCPPROFIL\%}
+	\cbstart%1.5
+	& \texttt {\%ADR\%}
+	& adresse IP à ajouter
+	\\ \cline {2-3}
+	& \texttt {\%DHCPPROFILLIBELLE\%}
+	& libellé du menu de sélection de profil DHCP, ou vide
+	\\ \cline {2-3}
+	& \texttt {\%DHCPPROFILMENU\%}
 	& menu de sélection de profil DHCP (ou champ caché)
+	\\ \cline {2-3}
+	& \texttt {\%DISPLAY\%}
+	& valeur d'attribut CSS pour afficher (\texttt {block}) ou
+	    non (\texttt {none}) les parties «~recherche de plusieurs
+	    adresses~» et «~ajout d'un alias~», comme par exemple
+	    lors de l'ajout de plusieurs adresses consécutives
 	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
 	& menu de présentation des domaines
@@ -4218,8 +4371,31 @@ presse).
 	& \texttt {\%DOMAINEREF\%}
 	& menu de présentation des domaines, pour l'ajout d'alias
 	\\ \cline {2-3}
+	& \texttt {\%DROITSMTPLIBELLE\%}
+	& libellé de la case à cocher d'émission en SMTP, ou vide
+	\\ \cline {2-3}
+	& \texttt {\%DROITSMTPMENU\%}
+	& code HTML pour la case à cocher d'émission en SMTP (ou
+	    champ caché)
+	\\ \cline {2-3}
 	& \texttt {\%MENUHINFO\%}
 	& menu des types de machines
+	\\ \cline {2-3}
+	& \texttt {\%MENUPLAGE\%}
+	& menu de sélection d'une plage d'adresses IP pour la
+	    recherche d'adresses IPv4 consécutives
+	\\ \cline {2-3}
+	& \texttt {\%NEXT\%}
+	& fragment d'URL pour indiquer l'action qui suivra l'ajout
+	    de cette machine (pour revenir à la carte des adresses
+	    ou continuer l'ajout de machines successives)
+	\\ \cline {2-3}
+	& \texttt {\%TTLLIBELLE\%}
+	&  libellé de la case d'édition du TTL, ou vide
+	\\ \cline {2-3}
+	& \texttt {\%TTLVAL\%}
+	& code HTML pour la valeur du TTL (ou champ caché)
+	\cbend%1.5
 	\\ \hline
     consulter.html
 	& \texttt {\%CORRESP\%}
@@ -4291,15 +4467,61 @@ presse).
 	& le cas échéant, titre de la section des plages hors des
 	    réseaux enregistrés
 	\\ \hline
+    \cbstart%1.5
+    edit.html
+	& \texttt {\%ADR\%}
+	Adresse IP sur laquelle a cliqué l'utilisateur
+	& 
+	\\ \cline {2-3}
+	& \texttt {\%DISPUNEIP\%}
+	& valeur d'attribut CSS pour afficher (\texttt {block}) ou
+	    non (\texttt {none}) la puce «~supprimer une adresse
+	    IP~» selon que la machine a plusieurs adresses IP ou
+	    non
+	\\ \cline {2-3}
+	& \texttt {\%DOMAINE\%}
+	& nom du domaine correspondant à l'adresse IP sélectionnée
+	\\ \cline {2-3}
+	& \texttt {\%MACHINE\%}
+	& tableau rappelant l'ensemble des attributs de la machine
+	    sélectionnée
+	\\ \cline {2-3}
+	& \texttt {\%NEXT\%}
+	& fragment d'URL pour indiquer l'action qui suivra l'édition
+	    de cette machine (pour revenir à la carte des adresses
+	    ou à la liste détaillée des machines)
+	\\ \cline {2-3}
+	& \texttt {\%NEXTARGS\%}
+	& arguments de l'action de suite
+	\\ \cline {2-3}
+	& \texttt {\%NOM\%}
+	& nom de machine correspondant à l'adresse IP sélectionnée
+	\cbend%1.5
+	\\ \hline
+    \cbstart%1.5
     editmodif-infos.html
 	& \texttt {\%COMMENTAIRE\%}
 	& champ de saisie du commentaire
 	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& menu de saisie du profil DHCP ou champ caché
+	& \texttt {\%DHCPPROFILLIBELLE\%}
+	& libellé du menu de sélection de profil DHCP, ou vide
+	\\ \cline {2-3}
+	& \texttt {\%DHCPPROFILMENU\%}
+	& menu de sélection de profil DHCP (ou champ caché)
 	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
-	& domaine du RR en cours de modification
+	& nouveau domaine du RR en cours de modification
+	\\ \cline {2-3}
+	& \texttt {\%DROITSMTPLIBELLE\%}
+	& libellé de la case à cocher d'émission en SMTP, ou vide
+	\\ \cline {2-3}
+	& \texttt {\%DROITSMTPMENU\%}
+	& code HTML pour la case à cocher d'émission en SMTP (ou
+	    champ caché)
+	\\ \cline {2-3}
+	& \texttt {\%IDRR\%}
+	& champ caché : référence interne de la machine
+	    en cours d'édition
 	\\ \cline {2-3}
 	& \texttt {\%MAC\%}
 	& champ de saisie de l'adresse MAC
@@ -4307,38 +4529,63 @@ presse).
 	& \texttt {\%MENUHINFO\%}
 	& menu des types de machines
 	\\ \cline {2-3}
+	& \texttt {\%NEXTARGS\%}
+	& arguments de l'action de suite
+	\\ \cline {2-3}
+	& \texttt {\%NEXTPROG\%}
+	& action de suite
+	\\ \cline {2-3}
 	& \texttt {\%NOM\%}
-	& nom du RR en cours de modification
+	& nouveau nom du RR en cours de modification
 	\\ \cline {2-3}
 	& \texttt {\%RESPMEL\%}
 	& champ de saisie de l'adresse électronique du responsable de la
 	    machine
 	\\ \cline {2-3}
 	& \texttt {\%RESPNOM\%}
-	& dchamp de saisie du nom du responsable de la machine
+	& champ de saisie du nom du responsable de la machine
+	\\ \cline {2-3}
+	& \texttt {\%TTLLIBELLE\%}
+	&  libellé de la case d'édition du TTL, ou vide
+	\\ \cline {2-3}
+	& \texttt {\%TTLVAL\%}
+	& code HTML pour la valeur du TTL (ou champ caché)
+	\\ \cline {2-3}
+	& \texttt {\%VDOMAINE\%}
+	& nom original de domaine de la machine en cours d'édition
+	\\ \cline {2-3}
+	& \texttt {\%VNOM\%}
+	& nom original de la machine en cours d'édition
+	\cbend%1.5
 	\\ \hline
     erreur.html
 	& \texttt {\%MESSAGE\%}
 	& message d'erreur
 	\\ \hline
+    \cbstart%.15
     liste.html
 	& \texttt {\%DATE\%}
 	& date de l'extraction
 	\\ \cline {2-3}
-    et
-	& \texttt {\%NBMACHINES\%}
-	& nombre de machines trouvées
+	& \texttt {\%TABLEAU\%}
+	& liste des machines trouvées
 	\\ \cline {2-3}
+	& \texttt {\%TITRE\%}
+	& titre de la page
+	\\ \hline
     liste.tex
-	& \texttt {\%ORIENTATION\%}
-	& \texttt {portrait} ou \texttt {landscape} (pour liste.tex
-	    uniquement)
+	& \texttt {\%DATE\%}
+	& date de l'extraction
 	\\ \cline {2-3}
-	& \texttt {\%S\%}
-	& «~\texttt {s}~» si le nombre de machine est supérieur à 1
+	& \texttt {\%NBMACHINES\%}
+	& nombre d'adresses déclarées
+	\\ \cline {2-3}
+	& \texttt {\%ORIENTATION\%}
+	& \texttt {portrait} ou \texttt {landscape}
 	\\ \cline {2-3}
 	& \texttt {\%TABLEAU\%}
 	& liste des machines trouvées
+	\cbend%1.5
 	\\ \hline
     listecorresp.html
 	& \texttt {\%LISTECOR\%}
@@ -4356,7 +4603,7 @@ presse).
 	& \texttt {portrait} ou \texttt {landscape} (pour liste.tex
 	    uniquement)
 	\\ \cline {2-3}
-    liste.tex
+    listedes.tex
 	& \texttt {\%TABLEAU\%}
 	& liste extraite
 	\\ \cline {2-3}
@@ -4434,75 +4681,48 @@ presse).
 	& \texttt {\%NOMREF\%}
 	& nom de la machine
 	\\ \hline
+    \cbstart%1.5
     traiteajout-existe.html
 	& \texttt {\%ADR\%}
 	& nouvelle adresse à ajouter
 	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& commentaire sur la machine existante
-	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& profil DHCP
-	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
 	& nom du domaine de la machine existante
 	\\ \cline {2-3}
-	& \texttt {\%HINFO\%}
-	& type de la machine existante
+	& \texttt {\%HIDDEN\%}
+	& champs cachés véhiculant la requête d'ajout
 	\\ \cline {2-3}
-	& \texttt {\%IDDHCPPROFIL\%}
-	& identificateur du profil DHCP
-	\\ \cline {2-3}
-	& \texttt {\%LISTEADR\%}
-	& liste des adresses déjà affectées à la machine
-	\\ \cline {2-3}
-	& \texttt {\%MAC\%}
-	& adresse MAC
+	& \texttt {\%MACHINE\%}
+	& tableau récapitulant toutes les informations
+	    sur la machine en cours d'ajout
 	\\ \cline {2-3}
 	& \texttt {\%NOM\%}
 	& nom de la machine existante
-	\\ \cline {2-3}
-	& \texttt {\%RESPMEL\%}
-	& adresse électronique du responsable de la machine existante
-	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable de la machine existante
 	\\ \hline
     traiteajout-machine.html
-	& \texttt {\%ADR\%}
-	& adresse IP de la machine ajoutée
-	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& commentaire sur la machine ajoutée
-	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& profil DHCP de la machine ajoutée
-	\\ \cline {2-3}
 	& \texttt {\%DOCDNS\%}
 	& adresse d'une page publique (hors de l'application)
 	    décrivant la documentation de votre service DNS.
-	\\ \cline {2-3}
-	& \texttt {\%DOMAINE\%}
-	& domaine de la machine ajoutée
-	\\ \cline {2-3}
-	& \texttt {\%HINFO\%}
-	& type de la machine ajouée
 	\\ \cline {2-3}
 	& \texttt {\%INTERVALLE\%}
 	& intervalle entre deux générations de zones sur le serveur
 	    DNS.
 	\\ \cline {2-3}
-	& \texttt {\%MAC\%}
-	& adresse MAC de la machine ajoutée
+	& \texttt {\%MACHINE\%}
+	& tableau récapitulant toutes les informations
+	    sur la machine en cours d'ajout
 	\\ \cline {2-3}
-	& \texttt {\%NOM\%}
-	& nom de la machine ajoutée
-	\\ \cline {2-3}
-	& \texttt {\%RESPMEL\%}
-	& adresse électronique du responsable de la machine ajoutée
-	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable de la machine ajoutée
+	& \texttt {\%SUITE\%}
+	& URL de l'action de continuation
+	\\ \hline
+    traiteajout-multi.html
+	& \texttt {\%LISTE\%}
+	& tableau donnant les blocs d'adresses IPv4 consécutives
+	\\ \hline
+    traiteajout-smtp.html
+	& \texttt {\%HIDDEN\%}
+	& champs cachés véhiculant la requête d'ajout
+	\cbend%.15
 	\\ \hline
     traitemodif-infos.html
 	& \texttt {\%COMMENTAIRE\%}
@@ -4536,6 +4756,20 @@ presse).
 	\\ \cline {2-3}
 	& \texttt {\%RESPNOM\%}
 	& nom du responsable de la machine modifiée
+	\\ \cline {2-3}
+	\cbstart%1.5
+	& \texttt {\%SUITE\%}
+	& URL de l'action de continuation
+	\\ \cline {2-3}
+	& \texttt {\%TTL\%}
+	& valeur de TTL de la machine modifiée
+	\cbend%1.5
+	\\ \hline
+    \cbstart%1.5
+    traitemodif-smtp.html
+	& \texttt {\%HIDDEN\%}
+	& champs cachés véhiculant la requête de modification
+	\cbend%.15
 	\\ \hline
     traitesuppr-alias.html
 	& \texttt {\%DOMAINE\%}
@@ -4544,110 +4778,54 @@ presse).
 	& \texttt {\%DOMAINEREF\%}
 	& domaine de la machine
 	\\ \cline {2-3}
+	\cbstart%1.5
+	& \texttt {\%NEXTARGS\%}
+	& arguments de l'action de suite
+	\\ \cline {2-3}
+	& \texttt {\%NEXTPROG\%}
+	& action de suite
+	\cbend%1.5
+	\\ \cline {2-3}
 	& \texttt {\%NOM\%}
 	& nom de l'alias à supprimer
 	\\ \cline {2-3}
 	& \texttt {\%NOMREF\%}
 	& nom de la machine
 	\\ \hline
+    \cbstart%1.5
     traitesuppr-ip-objet.html
 	& \texttt {\%ADR\%}
 	& adresse dont la suppression est demandée
 	\\ \cline {2-3}
-	& \texttt {\%ALIASES\%}
-	& aliases éventuels sur la machine
+    et
+	& \texttt {\%MACHINE\%}
+	& tableau récapitulant toutes les informations
+	    sur la machine en cours de suppression
 	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& commentaire sur la machine
-	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& profil DHCP
-	\\ \cline {2-3}
-	& \texttt {\%DOMAINE\%}
-	& domaine correspondant à l'adresse
-	\\ \cline {2-3}
-	& \texttt {\%HINFO\%}
-	& type de la machine
-	\\ \cline {2-3}
-	& \texttt {\%LISTEADR\%}
-	& adresses trouvées pour cette machine
-	\\ \cline {2-3}
-	& \texttt {\%MAC\%}
-	& adresse MAC de la machine
-	\\ \cline {2-3}
-	& \texttt {\%NOM\%}
-	& nom correspondant à l'adresse
-	\\ \cline {2-3}
-	& \texttt {\%RESPMEL\%}
-	& adresse électronique du responsable
-	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable
-	\\ \hline
     traitesuppr-ip-uneip.html
-	& \texttt {\%ADR\%}
-	& adresse dont la suppression est demandée
+	& \texttt {\%NEXTARGS\%}
+	& arguments de l'action de suite
 	\\ \cline {2-3}
-	& \texttt {\%ALIASES\%}
-	& aliases éventuels sur la machine
-	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& commentaire sur la machine
-	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& profil DHCP
-	\\ \cline {2-3}
-	& \texttt {\%DOMAINE\%}
-	& domaine correspondant à l'adresse
-	\\ \cline {2-3}
-	& \texttt {\%HINFO\%}
-	& type de la machine
-	\\ \cline {2-3}
-	& \texttt {\%LISTEADR\%}
-	& adresses trouvées pour cette machine
-	\\ \cline {2-3}
-	& \texttt {\%MAC\%}
-	& adresse MAC de la machine
-	\\ \cline {2-3}
-	& \texttt {\%NOM\%}
-	& nom correspondant à l'adresse
-	\\ \cline {2-3}
-	& \texttt {\%RESPMEL\%}
-	& adresse électronique du responsable
-	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable
+	& \texttt {\%NEXTPROG\%}
+	& action de suite
 	\\ \hline
     traitesuppr-nom.html
-	& \texttt {\%ALIASES\%}
-	& aliases éventuels sur la machine
-	\\ \cline {2-3}
-	& \texttt {\%COMMENTAIRE\%}
-	& commentaire sur la machine
-	\\ \cline {2-3}
-	& \texttt {\%DHCPPROFIL\%}
-	& profil DHCP
-	\\ \cline {2-3}
 	& \texttt {\%DOMAINE\%}
 	& domaine correspondant à la suppression demandée
 	\\ \cline {2-3}
-	& \texttt {\%HINFO\%}
-	& type de la machine
+	& \texttt {\%MACHINE\%}
+	& tableau récapitulant toutes les informations
+	    sur la machine en cours de suppression
 	\\ \cline {2-3}
-	& \texttt {\%LISTEADR\%}
-	& adresses trouvées pour ce nom
+	& \texttt {\%NEXTARGS\%}
+	& arguments de l'action de suite
 	\\ \cline {2-3}
-	& \texttt {\%MAC\%}
-	& adresse MAC de la machine
+	& \texttt {\%NEXTPROG\%}
+	& action de suite
 	\\ \cline {2-3}
 	& \texttt {\%NOM\%}
 	& nom dont la suppression est demandée
-	\\ \cline {2-3}
-	& \texttt {\%RESPMEL\%}
-	& adresse électronique du responsable
-	\\ \cline {2-3}
-	& \texttt {\%RESPNOM\%}
-	& nom du responsable
+	\cbend%1.5
 	\\ \hline
     traitesuppr-ok.html
 	& \texttt {\%DOCDNS\%}
@@ -4661,6 +4839,11 @@ presse).
 	& \texttt {\%OBJET\%}
 	& type d'objet (adresse IP, nom) supprimé
 	\\ \cline {2-3}
+	\cbstart%1.5
+	& \texttt {\%SUITE\%}
+	& URL de l'action de continuation
+	\cbend%1.5
+	\\ \hline
 \end {supertabular}
 }
 
