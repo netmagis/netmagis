@@ -298,7 +298,7 @@ proc main {} {
 	    set ftab(confirm)	{oui}
 	    set lchamps [array names ftab]
 	    set hidden  [::webapp::hide-parameters $lchamps ftab]
-	    d result $conf(suppr) [list \
+	    d result $conf(confsuppr) [list \
 					[list %ORGGRP%	$orggrp] \
 					[list %HIDDEN%	$hidden] \
 				    ]
