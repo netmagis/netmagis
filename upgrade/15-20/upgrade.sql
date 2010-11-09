@@ -207,6 +207,14 @@ GRANT ALL
     TO dns, pda, jean ;
 
 ------------------------------------------------------------------------------
+-- New configuration values
+------------------------------------------------------------------------------
+
+INSERT INTO global.config (clef, valeur) VALUES ('topofrom', 'pda@unistra.fr') ;
+INSERT INTO global.config (clef, valeur) VALUES
+	('topoto', 'di-infra-expl-res@unistra.fr pda@unistra.fr') ;
+
+------------------------------------------------------------------------------
 -- Adapt functions to new schemas
 ------------------------------------------------------------------------------
 

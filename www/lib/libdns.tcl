@@ -4107,6 +4107,26 @@ snit::type ::config {
 		}
 	    }
 	}
+	{topo
+	    {
+		fr {Paramètres de topo}
+		en {Topology parameters}
+	    }
+	    {topofrom {string}
+		fr {{"From" des mails de topo}
+		    {Champ "From" des mails envoyés par le démon topod
+			lors des détections de modification ou
+			d'anomalie.}
+		}
+	    }
+	    {topoto {string}
+		fr {{Destinataire des mails de topo}
+		    {Champ "To" des mails envoyés par
+			le démon topod lors des détection de
+			modification ou d'anomalie.}
+		}
+	    }
+	}
 	{auth
 	    {
 		fr {Paramètres d'authentification}

@@ -439,6 +439,7 @@ proc lazy-connect {} {
 	if {$d} then {
 	    set r 0
 	} else {
+	    ::dnsconfig setdb $ctxt(dbfd)
 	    log-error "Connexion to database succeeded"
 	}
     }
@@ -619,12 +620,12 @@ proc keep-state-mail {ev msg} {
 	    # Envoyer le mail.
 	    #
 
-	    set from		"pda@unistra.fr"
-	    set to	 	 {jean@unistra.fr pda@unistra.fr}
-	    set replyto		""
-	    set cc		""
-	    set bcc		""
-	    set subject		"\[auto\] topod status changed for $ev"
+	    set from    [::dnsconfig get "topofrom"]
+	    set to	[::dnsconfig get "topoto"]
+	    set replyto	""
+	    set cc	""
+	    set bcc	""
+	    set subject	"\[auto\] topod status changed for $ev"
 	    ::webapp::mail $from $replyto $to $cc $bcc $subject $msg
 	}
     }
@@ -962,7 +963,7 @@ proc sensors {} {
 
     if {[llength $lunmod] > 0} then {
 	set l [join $lunmod ","]
-	lappend sql "UPDATE topo.sensor SET lastmod = DEFAULT WHERE id IN ($l)"
+	lappend sql "UPDATE topo.sensor SET lastseen = DEFAULT WHERE id IN ($l)"
     }
 
     #
@@ -1043,7 +1044,7 @@ proc read-coll {_tab} {
 			set iface "$iface.$vlan"
 		    }
 
-		    set sonde [list $type $eq $comm $iface]
+		    set sonde [list $type $eq $comm $iface {}]
 		}
 		nbassocwifi -
 		nbauthwifi {
@@ -1672,6 +1673,8 @@ proc main {argv0 argv} {
 
     set ctxt(dbfd) ""
     set verbose 0
+
+    config ::dnsconfig
 
     set delay [expr $conf(delay)*1000]
 
