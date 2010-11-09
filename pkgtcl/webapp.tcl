@@ -24,6 +24,7 @@
 #   2007/10/23 : pda/jean : ajout de l'objet log
 #   2008/06/12 : pda/jean : ajout de interactive-tree et helem
 #   2010/11/05 : pda      : méthode opened-postgresql pour l'objet log
+#   2010/11/09 : pda      : suppression generer-menu
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -34,12 +35,7 @@ package require pgsql ;			# package local
 
 # package require Pgtcl
 
-package provide webapp 1.11
-
-#
-# Candidates à suppression
-#	generer-menu	-> pb
-#	
+package provide webapp 1.12
 
 namespace eval webapp {
     namespace export log pathinfo user \
@@ -55,7 +51,7 @@ namespace eval webapp {
 	debug \
 	cgidebug \
 	\
-	generer-menu cacher-parametres substituer \
+	cacher-parametres substituer \
 	\
 	cgi-exec
 
@@ -333,52 +329,6 @@ proc ::webapp::user {} {
 ##############################################################################
 # Génération de fragments de code HTML
 ##############################################################################
-
-#
-# Génération du code HTML pour réaliser un menu déroulant ou une
-# liste à choix multiples
-# A SUPPRIMER DES QUE POSSIBLE (form-menu est mieux)
-#
-# Entrée :
-#   - paramètres :
-#	- var : variable du formulaire pour ce menu
-#	- taille : taille de la liste (1 si menu déroulant)
-#	- multiple : 1 si choix multiple autorisé, 0 sinon
-#	- liste : liste d'items
-#	- lsel : liste des indices des items sélectionnés
-# Sortie :
-#   - code HTML généré
-#
-# Historique :
-#   2000/07/19 : pda : conception
-#   2000/07/24 : pda : ajout du paramètre multiple
-#
-
-proc ::webapp::generer-menu {var taille multiple liste lsel} {
-    set indice 0
-
-    set optsel [lindex $lsel 0]
-    set lsel [lreplace $lsel 0 0]
-
-    set m ""
-    if {$multiple} then { set m "MULTIPLE" }
-
-    set html "<SELECT SIZE=\"$taille\" NAME=\"$var\" $m>\n"
-
-    foreach item $liste {
-	append html "<OPTION"
-	if {[string equal $indice $optsel]} then {
-	    append html " SELECTED"
-	    set optsel [lindex $lsel 0]
-	    set lsel [lreplace $lsel 0 0]
-	}
-	append html ">[::webapp::html-string $item]\n"
-	incr indice
-    }
-    append html "</SELECT>"
-
-    return $html
-}
 
 #
 # Génération de balises HTML conformes à HTML 4.01
@@ -1704,11 +1654,11 @@ proc ::webapp::mail {from replyto to cc bcc subject texte {type {}}} {
 #   2002/05/12 : pda : suppression de \ comme caractère spécial
 #
 
-proc ::webapp::file-subst {fichier subst} {
-    return [::webapp::substituer $fichier $subst]
+proc ::webapp::substituer {fichier subst} {
+    return [::webapp::file-subst $fichier $subst]
 }
 
-proc ::webapp::substituer {fichier subst} {
+proc ::webapp::file-subst {fichier subst} {
     set fd [open $fichier r]
     set string [read $fd]
     close $fd
