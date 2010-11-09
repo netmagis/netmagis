@@ -158,6 +158,43 @@ CREATE TABLE topo.dr_eq (
 ) ;
 
 ------------------------------------------------------------------------------
+-- Sensor definition
+------------------------------------------------------------------------------
+
+-- type 1 sensors : traffic
+--	param1 = iface[.vlan]
+--	param2 = NULL
+-- type 2 sensors : # assoc wifi
+--	param1 = iface
+--	ssid
+-- type 3 sensors : # auth wifi
+--	param1 = iface
+--	ssid
+-- type 4 sensors : broadcast traffic
+--	param1 = iface[.vlan]
+--	param2 = NULL
+-- type 5 sensors : multicast traffic
+--	param1 = iface[.vlan]
+--	param2 = NULL
+
+CREATE TABLE topo.sensor (
+    id		TEXT,		-- M1234
+    type	INTEGER,	-- 1: traffic, 2: nbassocwifi, 3:nbauthwifi, etc.
+    eq		TEXT,		-- fqdn
+    comm	TEXT,		-- snmp communuity
+    param1	TEXT,
+    param2	TEXT,
+    lastmod	TIMESTAMP (0)	-- last modification date
+		    WITHOUT TIME ZONE
+		    DEFAULT CURRENT_TIMESTAMP,
+    lastseen	TIMESTAMP (0)	-- last detection date
+		    WITHOUT TIME ZONE
+		    DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id)
+) ;
+
+------------------------------------------------------------------------------
 -- Authorizations
 ------------------------------------------------------------------------------
 
@@ -165,7 +202,8 @@ GRANT SELECT ON topo.ignoreequsers, dns.rr, dns.rr_ip, dns.domaine TO detecteq ;
 GRANT INSERT ON topo.modeq TO detecteq ;
 
 GRANT ALL
-    ON topo.modeq, topo.ifchanges, topo.lastrun, topo.keepstate, topo.dr_eq
+    ON topo.modeq, topo.ifchanges, topo.lastrun, topo.keepstate, topo.dr_eq,
+	topo.sensor
     TO dns, pda, jean ;
 
 ------------------------------------------------------------------------------

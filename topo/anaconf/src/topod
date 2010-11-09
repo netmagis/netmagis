@@ -99,6 +99,7 @@ set conf(fping) "%FPING% %s"
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
 set conf(extracteq)	{%TOPODIR%/bin/extracteq %1$s %2$s < %GRAPH%}
+set conf(extractcoll)	{%TOPODIR%/bin/extractcoll -s -w < %GRAPH%}
 set conf(rancid)	{%TOPODIR%/bin/start-rancid %1$s}
 set conf(anaconf)	{%TOPODIR%/bin/anaconf}
 set conf(logger)	%LOGGER%
@@ -111,6 +112,8 @@ set conf(libdns)	%LIBDNS%
 set conf(base)		%BASE%
 
 set conf(maxstatus)	100
+
+set conf(sensorexpire)	"30 days"
 
 lappend auto_path $conf(pkg)
 
@@ -724,6 +727,15 @@ proc update-graph {_tabeq {leq {}}} {
     }
 
     #
+    # Mettre à jour la liste des points de collecte
+    #
+
+    if {! [sensors]} then {
+	myunlock "abort"
+	return 0
+    }
+
+    #
     # Mettre à jour la date du dernier passage complet
     # (si c'est un passage complet bien sûr)
     #
@@ -850,6 +862,220 @@ proc anaconf {{leq {}}} {
 
     return $r
 }
+
+#
+# Lit les points de collecte et les met à jour dans la base
+#
+# Entrée : aucune
+# Sortie : 
+#   - valeur de retour : 1 si ok, 0 si erreur
+#
+# Historique : 
+#   2010/11/09 : pda/jean : création
+#
+
+proc sensors {} {
+    global conf
+
+    set-status "Updating sensor list"
+
+    #
+    # Lecture des points de collecte existants dans la base
+    #
+
+    set sql "SELECT * FROM topo.sensor"
+    set r [myselect $sql tab {
+				set id $tab(id)
+				set told($id) [list $tab(type) $tab(eq) \
+					$tab(comm) $tab(param1) $tab(param2)]
+			    } ]
+    if {! $r} then {
+	keep-state-mail "sensors" "Cannot read sensor list from database"
+	return 0
+    }
+
+    #
+    # Lecture des nouveaux points de collecte à partir du graphe
+    #
+
+    set msg [read-coll tnew]
+    if {$msg ne ""} then {
+	keep-state-mail "sensors" "Cannot read sensor list from graph\n$msg"
+	return 0
+    }
+
+    #
+    # Analyse des différences
+    #
+
+    set lunmod {}
+    set sql {}
+
+    foreach id [array names tnew] {
+	lassign $tnew($id) type eq comm param1 param2
+	set qid [::pgsql::quote $id]
+	set qeq [::pgsql::quote $eq]
+	set qcomm [::pgsql::quote $comm]
+	set qparam1 [::pgsql::quote $param1]
+	set qparam2 [::pgsql::quote $param2]
+
+	if {[info exists told($id)]} then {
+	    #
+	    # Mise à jour des sondes communes
+	    #
+
+	    if {$tnew($id) eq $told($id)} then {
+		#
+		# identique : on ne fait qu'actualiser la date de dernière
+		# lecture
+		#
+		lappend lunmod "'$qid'"
+	    } else {
+		#
+		# différente : on met à jour (y compris les dates)
+		#
+		lappend sql "UPDATE topo.sensor
+				    SET type = $type,
+					eq = '$qeq',
+					comm = '$qcomm',
+					param1 = '$qparam1',
+					param2 = '$qparam2',
+					lastmod = DEFAULT,
+					lastseen = DEFAULT
+				    WHERE id = '$qid'"
+	    }
+
+	    unset told($id)
+	} else {
+	    #
+	    # Nouvelle sonde
+	    #
+	    lappend sql \
+		"INSERT INTO topo.sensor (id, type, eq, comm, param1, param2)
+		    VALUES ('$qid',$type,'$qeq','$qcomm','$qparam1','$qparam2')"
+	}
+    }
+
+    #
+    # Mise à jour de la date des sondes vues, mais non modifiées
+    #
+
+    if {[llength $lunmod] > 0} then {
+	set l [join $lunmod ","]
+	lappend sql "UPDATE topo.sensor SET lastmod = DEFAULT WHERE id IN ($l)"
+    }
+
+    #
+    # Suppression des anciennes sondes au bout d'un certain délai
+    #
+
+    lappend sql "DELETE FROM topo.sensor
+			WHERE lastseen + interval '$conf(sensorexpire)' < now()"
+
+    #
+    # Passer la groooooooosse commande SQL
+    # 
+
+    if {[llength $sql] > 0} then {
+	set sql [join $sql ";"]
+	if {! [myexec $sql]} then {
+	    keep-state-mail "sensors" "Cannot write sensors in database"
+	    return 0
+	}
+    }
+
+    #
+    # Envoyer le mail si nécessaire
+    #
+
+    keep-state-mail "sensors" ""
+
+    return 1
+}
+
+#
+# Lit les lignes issues de "extractcoll -s -w" et en extrait la liste
+# des sondes à métrologiser.
+#
+# Entrée :
+#   - _tab : tableau contenant en sortie les informations
+# Sortie :
+#   - valeur de retour : message d'erreur ou chaîne vide
+#   - paramètre tab : tableau, indexé par les noms de points de métrologie,
+#	contenant pour chaque case une liste de la forme :
+#	{<type> <eq> <communaute> [<param1> [<param2>]]}
+#
+# Note :
+#   Le format attendu en entrée est composé de trois types de ligne :
+#	trafic      <id coll> <eq> <community> <phys iface> <vlan|->
+#	nbassocwifi <id coll> <eq> <community> <phys iface> <ssid>
+#	nbauthwifi  <id coll> <eq> <community> <phys iface> <ssid>
+#
+# Historique :
+#   2008/07/28 : pda/boggia : conception
+#   2008/07/30 : pda        : adaptation au nouveau format d'entrée
+#   2010/11/09 : pda/jean   : intégration dans topod
+#
+
+proc read-coll {_tab} {
+    global conf
+    upvar $_tab tab
+
+    set cmd $conf(extractcoll)
+    if {! [catch {set fd [open "|$cmd" "r"]} msg]} then {
+	set msg ""
+
+	set r ""
+	while {[gets $fd ligne] >= 0} {
+	    set l [split $ligne]
+
+	    set kw [lindex $l 0]
+	    switch $kw {
+		trafic {
+		    set id    [lindex $l 1]
+		    set eq    [lindex $l 2]
+		    set comm  [lindex $l 3]
+		    set iface [lindex $l 4]
+		    set vlan  [lindex $l 5]
+		    set type  1
+
+		    if {! [string equal $vlan "-"]} then {
+			set iface "$iface.$vlan"
+		    }
+
+		    set sonde [list $type $eq $comm $iface]
+		}
+		nbassocwifi -
+		nbauthwifi {
+		    set id    [lindex $l 1]
+		    set eq    [lindex $l 2]
+		    set comm  [lindex $l 3]
+		    set iface [lindex $l 4]
+		    set ssid  [lindex $l 5]
+		    if {$kw eq "nbassocwifi"} then {
+			set type 2
+		    } else {
+			set type 3
+		    }
+
+		    set sonde [list $type $eq $comm $iface $ssid]
+		}
+		default {
+		    return "Type de sonde inconnu ($l)"
+		}
+	    }
+
+	    if {[info exists tab($id)]} then {
+		return "Sonde '$id' présente plusieurs fois"
+	    }
+	    set tab($id) $sonde
+	}
+	close $fd
+    }
+
+    return $msg
+}
+
 
 #
 # Recherche le type et le modèle des équipements connus dans le graphe
@@ -1404,13 +1630,18 @@ proc detect-mod {_tabeq} {
     #
 
     set leq {}
+    set lunk {}
     foreach eq $l {
 	if {[info exists tabeq($eq)]} then {
 	    lappend leq $eq
 	} else {
-	    keep-state-mail "detectunknw" \
-			"Change detected on an unknown equipment ($eq)"
+	    lappend lunk $eq
 	}
+    }
+
+    if {[llength $lunk] > 0} then {
+	keep-state-mail "detectunknw" \
+			"Change detected on unknown equipments ($lunk)"
     }
 
     return $leq
