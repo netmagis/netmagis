@@ -625,233 +625,6 @@ proc fermer-base {dbfd} {
     pg_disconnect $dbfd
 }
 
-#
-# Initialiser l'accès à DNS pour les scripts CGI
-#
-# Entrée :
-#   - paramètres :
-#	- nologin : nom du fichier testé pour le mode "maintenance"
-#	- auth : paramètres d'authentification
-#	- base : nom de la base
-#	- pageerr : fichier HTML contenant une page d'erreur
-#	- attr : attribut nécessaire pour exécuter le script (XXX : un seul attr)
-#	- form : les paramètres du formulaire
-#	- ftabvar : tableau contenant en retour les champs du formulaire
-#	- dbfdvar : accès à la base en retour
-#	- loginvar : login de l'utilisateur, en retour
-#	- tabcorvar : tableau contenant les caractéristiques de l'utilisateur
-#		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
-#			idcor, idgrp, present)
-#	- logparam : paramètres de log (subsys, méthode, paramètres de la méth)
-# Sortie :
-#   - valeur de retour : aucune
-#   - paramètres :
-#	- ftabvar : cf ci-dessus
-#	- dbfdvar : cf ci-dessus
-#	- loginvar : cf ci-dessus
-#	- tabcorvar : cf ci-dessus
-#
-# Historique
-#   2001/06/18 : pda      : conception
-#   2002/12/26 : pda      : actualisation et mise en service
-#   2003/05/13 : pda/jean : intégration dans dns et utilisation de auth
-#   2007/10/05 : pda/jean : adaptation aux objets "authuser" et "authbase"
-#   2007/10/26 : jean     : ajout du log
-#   2010/10/25 : pda      : ajout du dnsconfig
-#
-
-proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabcorvar logparam} {
-    global ah
-    global log
-    upvar $ftabvar ftab
-    upvar $dbfdvar dbfd
-    upvar $loginvar login
-    upvar $tabcorvar tabcor
-
-    #
-    # Pour le cas où on est en mode maintenance
-    #
-
-    ::webapp::nologin $nologin %ROOT% $pageerr
-
-    #
-    # Accès à la base d'authentification
-    #
-
-    set ah [::webapp::authbase create %AUTO%]
-    $ah configurelist $auth
-
-    #
-    # Accès à la base
-    #
-
-    set dbfd [ouvrir-base $base msg]
-    if {[string length $dbfd] == 0} then {
-	::webapp::error-exit $pageerr $msg
-    }
-
-    #
-    # Initialisation du log
-    #
-
-    set logsubsys [lindex $logparam 0]
-    set logmethod [lindex $logparam 1]
-    set logmedium [lindex $logparam 2]
-    set log [::webapp::log create %AUTO% -subsys $logsubsys -method $logmethod -medium $logmedium]
-
-    #
-    # Initialisation des paramètres de configuration
-    #
-
-    config dnsconfig
-    dnsconfig setdb $dbfd
-    dnsconfig setlang "fr"
-
-    #
-    # Le login de l'utilisateur (la page est protégée par mot de passe)
-    #
-
-    set login [::webapp::user]
-    if {[string compare $login ""] == 0} then {
-	::webapp::error-exit $pageerr \
-		"Pas de login : l'authentification a échoué."
-    }
-
-    #
-    # Lire toutes les caractéristiques du correspondant
-    #
-
-    set msg [lire-correspondant $dbfd $login tabcor]
-    if {! [string equal $msg ""]} then {
-	::webapp::error-exit $pageerr $msg
-    }
-
-    #
-    # Si le correspondant n'est plus marqué comme "présent" dans la base,
-    # on ne lui autorise pas l'accès à l'application
-    #
-
-    if {! $tabcor(present)} then {
-	::webapp::error-exit $pageerr \
-	    "Désolé, $tabcor(prenom) $tabcor(nom), mais vous n'êtes pas habilité."
-    }
-
-    #
-    # Page accessible seulement en mode "admin"
-    #
-
-    if {[llength $attr] > 0} then {
-	#
-	# XXX : pour l'instant, test d'un seul attribut seulement
-	#
-
-	if {! [attribut-correspondant $dbfd $tabcor(idcor) $attr]} then {
-	    ::webapp::error-exit $pageerr \
-		"Désolé,  $login, mais vous n'avez pas les droits suffisants"
-	}
-    }
-
-    #
-    # Récupération des paramètres du formulaire
-    #
-
-    if {[string length $form] > 0} then {
-	if {[llength [::webapp::get-data ftab $form]] == 0} then {
-	    ::webapp::error-exit $pageerr \
-		"Formulaire non conforme aux spécifications"
-	}
-    }
-}
-
-#
-# Initialiser l'accès à DNS pour les scripts "batch"
-#
-# Entrée :
-#   - paramètres :
-#	- nologin : nom du fichier testé pour le mode "maintenance"
-#	- auth : paramètres d'authentification
-#	- base : nom de la base
-#	- dbfdvar : accès à la base en retour
-#	- login : login de l'utilisateur
-#	- tabcorvar : tableau contenant les caractéristiques de l'utilisateur
-#		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
-#			idcor, idgrp, present)
-#	- logparam : paramètres de log (subsys, méthode, paramètres de la méth)
-# Sortie :
-#   - valeur de retour : message d'erreur, ou chaîne vide si pas d'erreur
-#   - paramètres :
-#	- dbfdvar : cf ci-dessus
-#	- tabcorvar : cf ci-dessus
-#
-# Historique
-#   2004/09/24 : pda/jean : conception
-#   2007/10/05 : pda/jean : adaptation aux objets "authuser" et "authbase"
-#   2007/10/26 : jean     : ajout du log
-#
-
-proc init-dns-util {nologin auth base dbfdvar login tabcorvar logparam} {
-    global ah
-    global log
-    upvar $dbfdvar dbfd
-    upvar $tabcorvar tabcor
-
-    #
-    # Pour le cas où on est en mode maintenance
-    #
-
-    if {[file exists $nologin]} then {
-	set fd [open $nologin r]
-	set message [read $fd]
-	close $fd
-	return "Connexion refusée.\n$message"
-    }
-
-    #
-    # Accès à la base d'authentification
-    #
-
-    set ah [::webapp::authbase create %AUTO%]
-    $ah configurelist $auth
-
-    #
-    # Accès à la base
-    #
-
-    set dbfd [ouvrir-base $base msg]
-    if {[string length $dbfd] == 0} then {
-	return "Accès à la base DNS impossible\n$msg"
-    }
-
-    #
-    # Initialisation du log
-    #
-
-    set logsubsys [lindex $logparam 0]
-    set logmethod [lindex $logparam 1]
-    set logmedium [lindex $logparam 2]
-    set log [::webapp::log create %AUTO% -subsys $logsubsys -method $logmethod -medium $logmedium]
-
-    #
-    # Lire toutes les caractéristiques du correspondant
-    #
-
-    set msg [lire-correspondant $dbfd $login tabcor]
-    if {! [string equal $msg ""]} then {
-	return "Utilisateur '$login' : $msg"
-    }
-
-    #
-    # Si le correspondant n'est plus marqué comme "présent" dans la base,
-    # on ne lui autorise pas l'accès à l'application
-    #
-
-    if {! $tabcor(present)} then {
-	return "Utilisateur '$login' non présent"
-    }
-
-    return ""
-}
-
 ##############################################################################
 # Gestion des droits des correspondants
 ##############################################################################
@@ -4636,6 +4409,7 @@ array set libconf {
 #
 
 proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urluid _msgsta} {
+    global ah
     global libconf
 
     upvar $_ftab ftab
@@ -4652,6 +4426,13 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
     #
 
     ::webapp::nologin %NOLOGIN% %ROOT% $pageerr
+
+    #
+    # En attendant de converger init-topo avec dnscontext
+    #
+
+    set ah [::webapp::authbase create %AUTO%]
+    $ah configurelist %AUTH%
 
     #
     # Accès à la base SQL DNS
