@@ -33,7 +33,7 @@ set conf(libdns)	$conf(lib)/libdns.tcl
 #
 
 set conf(err)		$conf(lib)/erreur.html
-set conf(pageok)	$conf(lib)/mailmodif.html
+set conf(page)		$conf(lib)/mailmodif.html
 
 #
 # Quelques paramètres du script
@@ -250,24 +250,16 @@ proc main {} {
 	::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
     }
 
-    writelog "modifrolemail" $tabcor(login) $lm
+    d writelog "modifrolemail" $lm
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(pageok) \
-					[list \
-						[list %NOM% $toutnom] \
-						[list %ACTION% $action] \
-					    ] \
-				    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+				[list %NOM% $toutnom] \
+				[list %ACTION% $action] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

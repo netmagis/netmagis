@@ -362,26 +362,22 @@ proc output-list {dbfd lcidr _tabcor format} {
 	html	{
 	    set tableau "<p>Adresses déclarées (IPv4 + IPv6) : $nbmachines</p>$tableau"
 
-	    ::webapp::send html [::webapp::file-subst $conf(liste) \
-					[list \
-					    [list %TITRE%	"Liste des adresses déclarées"] \
-					    [list %TABLEAU%	$tableau] \
-					    [list %DATE%	$date] \
-					    [list %NBADR%	$nbmachines] \
-					] \
-				]
+	    d result $conf(liste) [list \
+					[list %TITRE%	"Liste des adresses déclarées"] \
+					[list %TABLEAU%	$tableau] \
+					[list %DATE%	$date] \
+					[list %NBADR%	$nbmachines] \
+				    ]
 	}
 	latex	{
-	    ::webapp::send pdf [::webapp::file-subst $conf(listetex) \
-					[list \
-					    [list %ORIENTATION%	"landscape"] \
-					    [list %TITRE%	"machines"] \
-					    [list %TABLEAU%	$tableau] \
-					    [list %DATE%	$date] \
-					    [list %QUOI%	"déclarées"] \
-					    [list %NBADR%	$nbmachines] \
-					] \
-				]
+	    d result $conf(listetex) [list \
+					[list %ORIENTATION% "landscape"] \
+					[list %TITRE%	"machines"] \
+					[list %TABLEAU%	$tableau] \
+					[list %DATE%	$date] \
+					[list %QUOI%	"déclarées"] \
+					[list %NBADR%	$nbmachines] \
+				    ]
 	}
     }
 }
@@ -573,13 +569,11 @@ proc output-map {dbfd lcidr _tabcor format} {
     set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
 
-    ::webapp::send html [::webapp::file-subst $conf(liste) \
-				[list \
-				    [list %TITRE%	"Carte des adresses IPv4"] \
-				    [list %TABLEAU%	$tableau] \
-				    [list %DATE%	$date] \
-				] \
-			]
+    d result $conf(liste) [list \
+				[list %TITRE%	"Carte des adresses IPv4"] \
+				[list %TABLEAU%	$tableau] \
+				[list %DATE%	$date] \
+			    ]
 }
 
 ##############################################################################
@@ -652,12 +646,6 @@ proc main {} {
     } else {
 	output-list $dbfd $lcidr tabcor $format
     }
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

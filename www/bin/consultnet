@@ -90,23 +90,15 @@ proc main {} {
     set menutri2 [::webapp::form-menu tri2 1 0 $tri 1]
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-					[list %LISTEETABL% $listeetabl] \
-					[list %LISTECOMMU% $listecommu] \
-					[list %MENUTRI1%   $menutri1] \
-					[list %MENUTRI2%   $menutri2] \
-				    ] \
+    d result $conf(page) [list \
+				[list %LISTEETABL% $listeetabl] \
+				[list %LISTECOMMU% $listecommu] \
+				[list %MENUTRI1%   $menutri1] \
+				[list %MENUTRI2%   $menutri2] \
 			    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

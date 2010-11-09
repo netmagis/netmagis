@@ -145,22 +145,14 @@ proc main {} {
     }
 
     #
-    # Génération de la page contenant le formulaire
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-					[list %IDRESEAU% $idreseau] \
-					[list %RESEAU% $lcidr] \
-					[list %TABLEAU% $tableau] \
-				    ] \
+    d result $conf(page) [list \
+				[list %IDRESEAU% $idreseau] \
+				[list %RESEAU% $lcidr] \
+				[list %TABLEAU% $tableau] \
 			    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

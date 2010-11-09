@@ -148,8 +148,7 @@ proc add-alias {dbfd login idcor fqdnalias fqdnref} {
     # Écrire le log
     #
 
-    writelog "ajoutalias" $login \
-	"ajout de l'alias $fqdnalias -> $fqdnref (ligne de commande)"
+    d writelog "ajoutalias" "ajout de l'alias $fqdnalias -> $fqdnref (ligne de commande)"
 
     #
     # Sortie du résultat
@@ -169,10 +168,10 @@ proc main {argv0 argv} {
     # Initialisation des accès
     #
 
-    set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
-				    dbfd $conf(defuser) tabcor $conf(log)]
-    if {! [string equal $errmsg ""]} then {
-	puts stderr "$errmsg"
+    ::dnscontext create d
+    set msg [d init-script dbfd $conf(defuser) tabcor]
+    if {$msg ne ""} then {
+	puts stderr "$msg"
 	puts stderr "Aborted."
 	return 1
     }
@@ -200,8 +199,7 @@ proc main {argv0 argv} {
     # Déconnexion de la base
     #
 
-    fermer-base $dbfd
-
+    d end
     return 0
 }
 

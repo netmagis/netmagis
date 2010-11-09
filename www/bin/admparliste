@@ -158,13 +158,7 @@ proc main {} {
     set subst {}
     lappend subst [list %TAB% [::arrgen::output "html" $conf(tableau) $donnees]]
 
-    ::webapp::send html [::webapp::file-subst $conf(page) $subst]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) $subst
 }
 
 ::webapp::cgi-exec main %DEBUG%

@@ -159,32 +159,24 @@ proc main {} {
     }
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				    [list \
-					    [list %DOMAINE% $domaine] \
-					    [list %DOMAINEREF% $domaineref] \
-					    [list %MENUHINFO% $menuhinfo] \
-					    [list %TTLLIBELLE% $ttllibelle] \
-					    [list %TTLVAL% $ttlval] \
-					    [list %DROITSMTPLIBELLE% $droitsmtplibelle] \
-					    [list %DROITSMTPMENU% $droitsmtpmenu] \
-					    [list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
-					    [list %DHCPPROFILMENU% $dhcpprofilmenu] \
-					    [list %MENUPLAGE% $menuplage] \
-					    [list %DISPLAY% $display] \
-					    [list %ADR% $adr] \
-					    [list %NEXT% $next] \
-					] \
-				]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+				[list %DOMAINE% $domaine] \
+				[list %DOMAINEREF% $domaineref] \
+				[list %MENUHINFO% $menuhinfo] \
+				[list %TTLLIBELLE% $ttllibelle] \
+				[list %TTLVAL% $ttlval] \
+				[list %DROITSMTPLIBELLE% $droitsmtplibelle] \
+				[list %DROITSMTPMENU% $droitsmtpmenu] \
+				[list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
+				[list %DHCPPROFILMENU% $dhcpprofilmenu] \
+				[list %MENUPLAGE% $menuplage] \
+				[list %DISPLAY% $display] \
+				[list %ADR% $adr] \
+				[list %NEXT% $next] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

@@ -286,25 +286,18 @@ proc main {} {
 	::webapp::error-exit $conf(err) $errmsg
     }
 
-    writelog "modifref" $tabcor(login) "modification de la table $table"
+    d writelog "modifref" "modification de la table $table"
 
     #
     # C'est fini !
     #
 
     set url "$conf(homeurl)/bin/admrefliste?type=$type"
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-					[list %TYPEENCLAIR% $typeenclair] \
-					[list %URL% $url] \
-				    ] \
-				]
 
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+				[list %TYPEENCLAIR% $typeenclair] \
+				[list %URL% $url] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

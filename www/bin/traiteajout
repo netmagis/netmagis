@@ -392,11 +392,9 @@ proc traiteajout-machine {dbfd tc ft} {
 	# Sortir une page de confirmation
 	#
 
-	::webapp::send html [::webapp::file-subst $conf(page-ajout-smtp) \
-						[list \
-							[list %HIDDEN% $hidden] \
-						    ] \
-					    ]
+	d result $conf(page-ajout-smtp) [list \
+					    [list %HIDDEN% $hidden] \
+				]
 	return 0
     }
 
@@ -414,15 +412,13 @@ proc traiteajout-machine {dbfd tc ft} {
 	#
 
 	set machine [presenter-rr $dbfd -1 trr]
-	::webapp::send html [::webapp::file-subst $conf(page-ajout-existe) \
-					    [list \
+	d result $conf(page-ajout-existe) [list \
 						[list %NOM%     $nom] \
 						[list %DOMAINE% $domaine] \
 						[list %ADR%     $adr] \
 						[list %HIDDEN%  $hidden] \
 						[list %MACHINE% $machine] \
-					    ] \
-					]
+			    ]
 	return 0
     }
 
@@ -519,7 +515,7 @@ proc traiteajout-machine {dbfd tc ft} {
        ::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
     }
 
-    writelog "ajoutmachine" $login "ajout de $nom.$domaine ($adr)"
+    d writelog "ajoutmachine" "ajout de $nom.$domaine ($adr)"
 
 
     #
@@ -567,13 +563,10 @@ proc traiteajout-machine {dbfd tc ft} {
     #
 
     set machine [presenter-rr $dbfd $trr(idrr) trr]
-    ::webapp::send html [::webapp::file-subst $conf(page-ajout-machine) \
-					[list \
+    d result $conf(page-ajout-machine) [list \
 					    [list %MACHINE% $machine] \
 					    [list %SUITE% $suite] \
-					] \
-				    ]
-
+			    ]
     return 0
 }
 
@@ -715,11 +708,9 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
     # Sortie de la page
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page-ajout-multi) \
-					[list \
+    d result $conf(page-ajout-multi) [list \
 					    [list %LISTE% $liste] \
-					] \
-				    ]
+			    ]
     return 0
 }
 
@@ -815,17 +806,15 @@ proc traiteajout-alias {dbfd tc ft} {
     # Sortie du résultat
     #
 
-    writelog "ajoutalias" $login \
-	"ajout de l'alias $nom.$domaine -> $nomref.$domaineref"
+    d writelog "ajoutalias" "ajout de l'alias $nom.$domaine -> $nomref.$domaineref"
 
-    ::webapp::send html [::webapp::file-subst $conf(page-ajout-alias) \
-				    [list \
+    d result $conf(page-ajout-alias) [list \
 					    [list %NOM%        $nom] \
 					    [list %DOMAINE%    $domaine] \
 					    [list %NOMREF%     $nomref] \
 					    [list %DOMAINEREF% $domaineref] \
-					] \
-				]
+			    ]
+    return 0
 }
 
 ##############################################################################
@@ -858,12 +847,6 @@ proc main {} {
     }
 
     traite$action $dbfd tabcor ftab
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

@@ -97,8 +97,7 @@ proc main {} {
 	::webapp::error-exit $conf(err) "Déverrouillage impossible ('$msg')"
     }
 
-    writelog "admparmodif" $tabcor(login) \
-	    "modification des parametres de l'application : [join $lm ,]"
+    d writelog "admparmodif" "modification des parametres de l'application : [join $lm ,]"
 
     #
     # Génération de la page d'accusé de modification
@@ -107,18 +106,10 @@ proc main {} {
     set url "$conf(homeurl)/bin/admparliste"
     set typeenclair "paramètres de l'application"
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-					[list %TYPEENCLAIR% $typeenclair] \
-					[list %URL% $url] \
-				    ] \
-				]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+				[list %TYPEENCLAIR% $typeenclair] \
+				[list %URL% $url] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

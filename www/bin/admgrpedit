@@ -566,32 +566,24 @@ proc main {} {
     set listedhcpprof [::arrgen::output "html" $conf(tabdhcpprofil) $donnees]
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-					[list %TITRE% $titre] \
-					[list %ORGGRP% $orggrp] \
-					[list %NEWGRP% $newgrp] \
-					[list %ADMIN% $admin] \
-					[list %DROITSMTP% $droitsmtp] \
-					[list %DROITTTL% $droitttl] \
-					[list %MESSAGEGROUPE% $messagegroupe] \
-					[list %LISTECOR% $listecor] \
-					[list %LISTEDOMAINES% $listedomaines] \
-					[list %LISTERESEAUX% $listereseaux] \
-					[list %LISTEDROITS% $listedroits] \
-					[list %LISTEDREQ% $listedreq] \
-					[list %LISTEDHCPPROFILS% $listedhcpprof] \
-				    ] \
+    d result $conf(page) [list \
+				[list %TITRE% $titre] \
+				[list %ORGGRP% $orggrp] \
+				[list %NEWGRP% $newgrp] \
+				[list %ADMIN% $admin] \
+				[list %DROITSMTP% $droitsmtp] \
+				[list %DROITTTL% $droitttl] \
+				[list %MESSAGEGROUPE% $messagegroupe] \
+				[list %LISTECOR% $listecor] \
+				[list %LISTEDOMAINES% $listedomaines] \
+				[list %LISTERESEAUX% $listereseaux] \
+				[list %LISTEDROITS% $listedroits] \
+				[list %LISTEDREQ% $listedreq] \
+				[list %LISTEDHCPPROFILS% $listedhcpprof] \
 			    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

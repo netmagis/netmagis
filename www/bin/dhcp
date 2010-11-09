@@ -81,23 +81,15 @@ proc main {} {
 	    set idreseau [lindex [lindex $lres 0] 0]
 	    set ftab(idreseau) [list $idreseau]
 	    puts stdout [::webapp::call-cgi $conf(script-edit) ftab]
+	    d end
 	}
 	default {
 	    set menureseau [::webapp::form-menu "idreseau" 1 0 $lres {}]
-	    ::webapp::send html [::webapp::file-subst $conf(page) \
-					[list \
-					    [list %MENURESEAU% $menureseau] \
-					    ] \
+	    d result $conf(page) [list \
+					[list %MENURESEAU% $menureseau] \
 				    ]
 	}
     }
-
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

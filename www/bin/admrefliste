@@ -285,22 +285,14 @@ proc main {} {
     }
 
     #
-    # Génération de la page contenant le formulaire
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-					[list %TYPE% $type] \
-					[list %TABLEAU% $tab] \
-					[list %TITREPAGE% $titrepage] \
-				    ] \
+    d result $conf(page) [list \
+				[list %TYPE% $type] \
+				[list %TABLEAU% $tab] \
+				[list %TITREPAGE% $titrepage] \
 			    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

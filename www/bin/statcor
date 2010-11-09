@@ -190,20 +190,12 @@ proc main {} {
     set nbrrcor [::arrgen::output "html" $conf(tabrrcor) $donnees]
 
     #
-    # Sortie de la page
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-				    [list %NBRRCOR% $nbrrcor] \
-				] \
+    d result $conf(page) [list \
+				[list %NBRRCOR% $nbrrcor] \
 			    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

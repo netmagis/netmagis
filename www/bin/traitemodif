@@ -289,11 +289,9 @@ proc traitemodif-infos {dbfd tc ft} {
 	set l {idrr nom domaine mac iddhcpprofil hinfo droitsmtp ttl
 			commentaire respnom respmel nextprog nextargs}
 	set hidden [::webapp::hide-parameters $l ftab]
-	::webapp::send html [::webapp::file-subst $conf(page-modif-smtp) \
-					[list \
+	d result $conf(page-modif-smtp) [list \
 						[list %HIDDEN% $hidden] \
-					    ] \
-				]
+			    ]
 	return 0
     }
 
@@ -382,7 +380,7 @@ proc traitemodif-infos {dbfd tc ft} {
     foreach c {nom domaine mac dhcpprofil hinfo droitsmtp ttl commentaire respnom respmel} {
 	append m " $c=[set $c]"
     }
-    writelog "modifrr" $login $m
+    d writelog "modifrr" $m
 
     #
     # Préparer la suite du parcours
@@ -404,8 +402,7 @@ proc traitemodif-infos {dbfd tc ft} {
     # Sortie du résultat
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page-modif-infos) \
-				[list \
+    d result $conf(page-modif-infos) [list \
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
 					[list %MAC% $mac] \
@@ -417,9 +414,7 @@ proc traitemodif-infos {dbfd tc ft} {
 					[list %RESPNOM% $respnom] \
 					[list %RESPMEL% $respmel] \
 					[list %SUITE% $suite] \
-				    ] \
 			    ]
-
     return 0
 }
 
@@ -453,12 +448,6 @@ proc main {} {
     }
 
     traite$action $dbfd tabcor ftab
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

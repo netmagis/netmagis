@@ -92,22 +92,14 @@ proc main {} {
 	::webapp::error-exit $conf(err) "L'opération a échoué. Abandon.\n$msg"
     }
 
-    writelog "forcegeneration" $tabcor(login) "zones $ftab(zones)"
+    d writelog "forcegeneration" "zones $ftab(zones)"
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				    [list \
-					] \
+    d result $conf(page) [list \
 			    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

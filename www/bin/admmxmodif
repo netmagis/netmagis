@@ -340,30 +340,21 @@ proc main {} {
 	    lappend lm "$tabmx(nom).$tabmx(domaine)"
 	}
 	set tableau [::arrgen::output "html" $conf(tableau) $donnees]
-	writelog "ajoutmx" $tabcor(login) \
-		"ajout des mx [join $lm {, }] pour $nom.$domaine"
+	d writelog "ajoutmx" "ajout des mx [join $lm {, }] pour $nom.$domaine"
     } else {
 	set tableau "RR supprimé."
-	writelog "supprmx" $tabcor(login) "suppression du RR pour $nom.$domaine"
+	d writelog "supprmx" "suppression du RR pour $nom.$domaine"
     }
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				    [list \
-					    [list %TABLEAU% $tableau] \
-					    [list %NOM%     $nom] \
-					    [list %DOMAINE% $domaine] \
-					] \
+    d result $conf(page) [list \
+				[list %TABLEAU% $tableau] \
+				[list %NOM%     $nom] \
+				[list %DOMAINE% $domaine] \
 			    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

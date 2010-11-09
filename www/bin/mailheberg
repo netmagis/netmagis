@@ -286,16 +286,10 @@ proc main {} {
     }
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $page $lsubst]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $page $lsubst
 }
 
 ::webapp::cgi-exec main %DEBUG%

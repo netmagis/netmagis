@@ -173,22 +173,13 @@ proc main {} {
     set tab [::arrgen::output "html" $conf(tableau) $donnees]
 
     #
-    # Sortie du résultat
-    #
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-                    [list \
-                          [list %TITREPAGE%       $titrepage ] \
-                          [list %LISTECOR%        $tab ] \
-                    ] \
-    ]
-    
-
-
-    #
-    # Déconnexion de la base
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    fermer-base $dbfd
+    d result $conf(page) [list \
+				[list %TITREPAGE%       $titrepage ] \
+				[list %LISTECOR%        $tab ] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

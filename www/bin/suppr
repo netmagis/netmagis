@@ -69,20 +69,12 @@ proc main {} {
     set domaine [menu-domaine $dbfd $tabcor(idcor) domaine "" "" $conf(err)]
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				    [list \
-					    [list %DOMAINE% $domaine] \
-					] \
-				]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+				[list %DOMAINE% $domaine] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

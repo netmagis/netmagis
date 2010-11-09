@@ -69,20 +69,12 @@ proc main {} {
     set listedomaines [::webapp::form-menu domaine $h 1 $ld {}]
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-					[list %LISTEDOMAINES% $listedomaines] \
-				    ] \
+    d result $conf(page) [list \
+				[list %LISTEDOMAINES% $listedomaines] \
 			    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

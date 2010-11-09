@@ -159,11 +159,10 @@ proc editmodif-infos {dbfd idcor ft} {
     set respmel [::webapp::form-text respmel 1 50 50 $val]
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page-edit-infos) \
-				[list \
+    d result $conf(page-edit-infos) [list \
 					[list %IDRR% $trr(idrr)] \
 					[list %VNOM% $vnom] \
 					[list %VDOMAINE% $vdomaine] \
@@ -182,7 +181,6 @@ proc editmodif-infos {dbfd idcor ft} {
 					[list %RESPMEL% $respmel] \
 					[list %NEXTPROG% $nextprog] \
 					[list %NEXTARGS% $nextargs] \
-				    ] \
 			    ]
 }
 
@@ -216,12 +214,6 @@ proc main {} {
     }
 
     edit$action $dbfd $tabcor(idcor) ftab
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

@@ -71,20 +71,12 @@ proc main {} {
     }
 
     #
-    # Sortie de la page
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-					[list \
-						[list %ADMIN% $admin] \
-					    ] \
-				    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+				[list %ADMIN% $admin] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

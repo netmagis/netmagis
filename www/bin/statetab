@@ -203,20 +203,12 @@ proc main {} {
     set nbmachetabl [::arrgen::output "html" $conf(tabmachetabl) $donnees]
 
     #
-    # Sortie de la page
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-				    [list %NBMACHETABL% $nbmachetabl] \
-				] \
+    d result $conf(page) [list \
+				[list %NBMACHETABL% $nbmachetabl] \
 			    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

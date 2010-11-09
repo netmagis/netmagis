@@ -94,21 +94,13 @@ proc main {} {
     }
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-					[list %CORRESP% $corresp] \
-					[list %PLAGES%  $plages] \
-				    ] \
+    d result $conf(page) [list \
+				[list %CORRESP% $corresp] \
+				[list %PLAGES%  $plages] \
 			    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

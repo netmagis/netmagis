@@ -73,11 +73,9 @@ proc corresp-erreur {critere msg} {
     set qmsg     [::webapp::html-string $msg]
     set qcritere [::webapp::unpost-string $critere]
     set resultat "<FONT COLOR=\"FF0000\">$qmsg</FONT>"
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-			    [list \
-				    [list %CRITERE% $qcritere] \
-				    [list %RESULTAT% $resultat] \
-				] \
+    d result $conf(page) [list \
+				[list %CRITERE% $qcritere] \
+				[list %RESULTAT% $resultat] \
 			    ]
     exit 0
 }
@@ -267,17 +265,18 @@ proc main {} {
     # il y a cette adresse.
     #
 
-    set sql "SELECT c.idcor
-		    FROM global.corresp c, global.groupe g, dns.dr_reseau d, dns.reseau r
+    set sql "SELECT c.login, c.idcor
+		    FROM global.corresp c, global.groupe g,
+			dns.dr_reseau d, dns.reseau r
 		    WHERE c.idgrp = g.idgrp
 			AND g.idgrp = d.idgrp
 			AND d.idreseau = r.idreseau
 			AND ('$adr' <<= r.adr4 OR '$adr' <<= r.adr6)
 			ORDER BY g.admin, g.nom
 			"
-    set lidcor {}
+    set lcor {}
     pg_select $dbfd $sql tab {
-	lappend lidcor $tab(idcor)
+	lappend lcor [list $tab(login) $tab(idcor)]
     }
 
     #
@@ -286,9 +285,10 @@ proc main {} {
     #
 
     set trouve 0
-    foreach idcor $lidcor {
+    foreach cor $lcor {
+	lassign $cor login idcor
 	if {[droit-correspondant-ip $dbfd $idcor $adr]} then {
-	    set msg [lire-correspondant-par-id $dbfd $idcor tabcor]
+	    set msg [lire-correspondant $dbfd $login tabcor]
 	    if {! [string equal $msg ""]} then {
 		::webapp::error-exit $conf(err) "Erreur interne ($msg)"
 	    }
@@ -299,21 +299,13 @@ proc main {} {
     }
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-		    [list \
-			    [list %CRITERE% $critere] \
-			    [list %RESULTAT% $resultat] \
-			] \
-	    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+				[list %CRITERE% $critere] \
+				[list %RESULTAT% $resultat] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

@@ -298,12 +298,10 @@ proc main {} {
 	    set ftab(confirm)	{oui}
 	    set lchamps [array names ftab]
 	    set hidden  [::webapp::hide-parameters $lchamps ftab]
-	    ::webapp::send html [::webapp::file-subst $conf(confsuppr) \
-				[list \
+	    d result $conf(suppr) [list \
 					[list %ORGGRP%	$orggrp] \
 					[list %HIDDEN%	$hidden] \
-				    ] \
-			    ]
+				    ]
 	} else {
 	    # Procéder à la suppression
 	    set msg [supprime-groupe $dbfd $idgrp $idorphelin]
@@ -311,11 +309,9 @@ proc main {} {
 		::webapp::error-exit $conf(err) \
 				    "Suppression impossible ($msg)"
 	    }
-	    ::webapp::send html [::webapp::file-subst $conf(supprok) \
-				[list \
+	    d result $conf(supprok) [list \
 					[list %ORGGRP%	$orggrp] \
-				    ] \
-			    ]
+				    ]
 	}
 	exit 0
     }
@@ -725,13 +721,11 @@ proc main {} {
 	    set lchamps [array names ftab]
 	    set hidden  [::webapp::hide-parameters $lchamps ftab]
 	    set message [join $incoherences "<BR>\n"]
-	    ::webapp::send html [::webapp::file-subst $conf(confirm) \
-				[list \
+	    d result $conf(page) [list \
 					[list %MSGACT%	$msgact] \
 					[list %ORGGRP%	$orggrp] \
 					[list %HIDDEN%	$hidden] \
 					[list %MESSAGE%	$message] \
-				    ] \
 			    ]
 	    exit 0
 	}
@@ -920,27 +914,19 @@ proc main {} {
 		tabdomaines tabdhcpprofils tabdreq
 
     #
-    # Sortie du résultat
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-		    [list \
-			[list %NEWGRP% $newgrp] \
-			[list %TABLOGINS% $tablogins] \
-			[list %TABDROITS% $tabdroits] \
-			[list %TABRESEAUX% $tabreseaux] \
-			[list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
-			[list %TABDOMAINES% $tabdomaines] \
-			[list %TABDHCPPROFILS% $tabdhcpprofils] \
-			[list %TABDREQ% $tabdreq] \
-			] \
-		    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+			    [list %NEWGRP% $newgrp] \
+			    [list %TABLOGINS% $tablogins] \
+			    [list %TABDROITS% $tabdroits] \
+			    [list %TABRESEAUX% $tabreseaux] \
+			    [list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
+			    [list %TABDOMAINES% $tabdomaines] \
+			    [list %TABDHCPPROFILS% $tabdhcpprofils] \
+			    [list %TABDREQ% $tabdreq] \
+			]
 }
 
 ::webapp::cgi-exec main %DEBUG%

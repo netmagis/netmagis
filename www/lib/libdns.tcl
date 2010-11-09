@@ -185,8 +185,12 @@ set libconf(tabcorresp) {
 # Méthodes :
 #   init-cgi
 #	initialise le contexte pour un script cgi
-#   init-util
+#   init-script
 #	initialise le contexte pour un programme hors cgi
+#   writelog
+#	affiche une ligne dans le log
+#   makeurl
+#	crée une URL à partir d'un chemin et d'un tableau
 #
 # Historique
 #   2001/06/18 : pda      : conception
@@ -196,6 +200,7 @@ set libconf(tabcorresp) {
 #   2007/10/26 : jean     : ajout du log
 #   2010/10/25 : pda      : ajout du dnsconfig
 #   2010/11/05 : pda      : transformation sous forme de classe
+#   2010/11/09 : pda      : ajout init-script
 #
 
 snit::type ::dnscontext {
@@ -205,37 +210,21 @@ snit::type ::dnscontext {
     # default language
     variable lang "fr"
 
-    variable internal -array {}
+    # log access
+    variable log
 
-    # nologin : nom du fichier testé pour le mode "maintenance"
-    # auth : paramètres d'authentification
-    # base : nom de la base
-    # pageerr : fichier HTML contenant une page d'erreur
-    # attr : attribut nécessaire pour exécuter le script (XXX : un seul attr)
-    # form : les paramètres du formulaire
-    # _ftab : tableau contenant en retour les champs du formulaire
-    # _dbfd : accès à la base en retour
-    # _login : login de l'utilisateur, en retour
-    # _tabcor : tableau contenant les caractéristiques de l'utilisateur
-    #	(login, password, nom, prenom, mel, tel, fax, mobile, adr,
-    #		idcor, idgrp, present)
-    # logparam : paramètres de log (subsys, méthode, paramètres de la méth)
+    # uid
+    variable uid ""
+    variable euid ""
 
-    # method init-cgi {nologin auth base pageerr attr form _ftab _login _tabcor logparam}
-    #                  ^       ^    ^                                           ^
-    method init-cgi {pageerr attr form _ftab _dbfd _login _tabcor} {
+    #
+    # Procédure interne : tout le travail commun d'initialisation
+    #
+
+    proc init-common {selfns _dbfd login _tabuid} {
 	global ah
-	global log
-	upvar $_ftab ftab
 	upvar $_dbfd dbfd
-	upvar $_login login
-	upvar $_tabcor tabcor
-
-	#
-	# Pour le cas où on est en mode maintenance
-	#
-
-	::webapp::nologin %NOLOGIN% %ROOT% $pageerr
+	upvar $_tabuid tabuid
 
 	#
 	# Accès à la base d'authentification
@@ -249,9 +238,10 @@ snit::type ::dnscontext {
 	#
 
 	set dbfd [ouvrir-base %BASE% msg]
-	if {[string length $dbfd] == 0} then {
-	    ::webapp::error-exit $pageerr $msg
+	if {$dbfd eq ""} then {
+	    return "Erreur accessing database: $msg
 	}
+	set db $dbfd
 
 	#
 	# Initialisation du log
@@ -262,6 +252,8 @@ snit::type ::dnscontext {
 				    -method opened-postgresql \
 				    -medium [list "db" $dbfd table global.log] \
 			]
+	set uid $login
+	set euid $login
 
 	#
 	# Initialisation des paramètres de configuration
@@ -272,36 +264,105 @@ snit::type ::dnscontext {
 	dnsconfig setlang "fr"
 
 	#
+	# Lire toutes les caractéristiques du correspondant
+	# et le renvoyer s'il n'est pas présent.
+	#
+
+	set msg [lire-correspondant $dbfd $login tabuid]
+	if {$msg ne ""} then {
+	    return $msg
+	}
+	if {! $tabuid(present)} then {
+	    return "User '$login' not authorized"
+	}
+
+	return ""
+    }
+
+    #
+    # Initialise l'accès à l'application, pour un script CGI
+    #
+    # Entrée :
+    #   - pageerr : fichier HTML contenant une page d'erreur
+    #   - attr : attribut nécessaire pour exécuter le script (XXX : un seul attr)
+    #   - form : les paramètres du formulaire
+    #   - _ftab : tableau contenant en retour les champs du formulaire
+    #   - _dbfd : accès à la base en retour
+    #   - _login : login de l'utilisateur, en retour
+    #   - _tabcor : tableau contenant les caractéristiques de l'utilisateur
+    #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
+    #			idcor, idgrp, present)
+    # Sortie :
+    #   - valeur de retour : aucune
+    #   - objet d : contexte DNS
+    #   - objet $ah : accès à l'authentification
+    #
+
+    method init-cgi {pageerr attr form _ftab _dbfd _login _tabuid} {
+	upvar $_ftab ftab
+	upvar $_dbfd dbfd
+	upvar $_login login
+	upvar $_tabuid tabuid
+
+	#
+	# Pour le cas où on est en mode maintenance
+	#
+
+	::webapp::nologin %NOLOGIN% %ROOT% $pageerr
+
+	#
 	# Le login de l'utilisateur (la page est protégée par mot de passe)
 	#
 
 	set login [::webapp::user]
-	if {[string compare $login ""] == 0} then {
+	if {$login eq ""} then {
 	    ::webapp::error-exit $pageerr \
 		    "Pas de login : l'authentification a échoué."
 	}
 
 	#
-	# Lire toutes les caractéristiques du correspondant
+	# Travail commun d'initialisation
 	#
 
-	set msg [lire-correspondant-par-login $dbfd $login tabcor]
-	if {! [string equal $msg ""]} then {
+	set msg [init-common $selfns dbfd $login tabuid]
+	if {$msg ne ""} then {
 	    ::webapp::error-exit $pageerr $msg
 	}
 
 	#
-	# Si le correspondant n'est plus marqué comme "présent" dans la base,
-	# on ne lui autorise pas l'accès à l'application
+	# Ajouter le paramètre "uid" dans les champs de formulaire
+	# et récupérer les paramètres du formulaire
 	#
 
-	if {! $tabcor(present)} then {
+	lappend form {uid 0 1}
+	if {[llength [::webapp::get-data ftab $form]] == 0} then {
 	    ::webapp::error-exit $pageerr \
-		"Désolé, $tabcor(prenom) $tabcor(nom), mais vous n'êtes pas habilité."
+		"Formulaire non conforme aux spécifications"
 	}
 
 	#
-	# Page accessible seulement en mode "admin"
+	# Traiter la substitution d'utilisateur (à travers le
+	# paramètre uid)
+	#
+
+	set nuid [string trim [lindex $ftab(uid) 0]]
+	if {$nuid ne "" && $tabuid(admin)} then {
+	    array set tabouid [array get tabuid]
+	    array unset tabuid
+
+	    set uid $nuid
+
+	    set msg [lire-correspondant $dbfd $uid tabuid]
+	    if {$msg ne ""} then {
+		::webapp::error-exit $pageerr $msg
+	    }
+	    if {! $tabuid(present)} then {
+		return "User '$login' not authorized"
+	    }
+	}
+
+	#
+	# Page accessible seulement en mode "admin" ?
 	#
 
 	if {[llength $attr] > 0} then {
@@ -309,22 +370,152 @@ snit::type ::dnscontext {
 	    # XXX : pour l'instant, test d'un seul attribut seulement
 	    #
 
-	    if {! [attribut-correspondant $dbfd $tabcor(idcor) $attr]} then {
+	    if {! [attribut-correspondant $dbfd $tabuid(idcor) $attr]} then {
 		::webapp::error-exit $pageerr \
 		    "Désolé,  $login, mais vous n'avez pas les droits suffisants"
 	    }
 	}
+    }
+
+    #
+    # Initialise l'accès à l'application, pour un programme autonome
+    # (utilitaire en ligne de commande, démon, etc.)
+    #
+    # Entrée :
+    #   - _dbfd : accès à la base en retour
+    #   - login : login de l'utilisateur
+    #   - _tabuid : tableau contenant les caractéristiques de l'utilisateur
+    #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
+    #			idcor, idgrp, present)
+    # Sortie :
+    #   - valeur de retour : message d'erreur ou chaîne vide
+    #
+
+    method init-script {_dbfd login _tabuid} {
+	upvar $_dbfd dbfd
+	upvar $_tabuid tabuid
 
 	#
-	# Récupération des paramètres du formulaire
+	# Pour le cas où on est en mode maintenance
 	#
 
-	if {[string length $form] > 0} then {
-	    if {[llength [::webapp::get-data ftab $form]] == 0} then {
-		::webapp::error-exit $pageerr \
-		    "Formulaire non conforme aux spécifications"
+	if {[file exists %NOLOGIN%]} then {
+	    set fd [open %NOLOGIN% "r"]
+	    set message [read $fd]
+	    close $fd
+	    return "Connection refused.\n$message"
+	}
+
+	#
+	# Travail commun d'initialisation
+	#
+
+	set msg [init-common $selfns dbfd $login tabuid]
+	if {$msg ne ""} then {
+	    return $msg
+	}
+
+	return ""
+    }
+
+    #
+    # Termine l'accès à l'application (script CGI ou exécutable autonome)
+    #
+    # Entrée :
+    #   - aucune
+    # Sortie :
+    #   - valeur de retour : aucune
+    #
+
+    method end {} {
+	fermer-base $db
+    }
+
+    #
+    # Constitue une URL
+    #
+    # Entrée :
+    #   - path : chemin de l'URL
+    #   - _ftab : tableau des valeurs à indiquer dans l'URL
+    # Sortie :
+    #   - valeur de retour : URL constituée
+    #
+
+    method make-url {path _ftab} {
+	upvar $_ftab ftab
+
+	if {$uid ne $euid} then {
+	    lappend ftab(uid) [list $uid]
+	}
+	set l {}
+	foreach c [array names ftab] {
+	    foreach v $ftab($c) {
+		set v [::webapp::post-string $v]
+		lappend l "$c=$v"
 	    }
 	}
+	if {[llength $l] == 0} then {
+	    set url $path
+	} else {
+	    set url [format "%s?%s" $path [join $l "&"]]
+	}
+
+	return $url
+    }
+
+    #
+    # Renvoie un résultat et termine l'application
+    # La base est fermée par cette fonction
+    #
+    # Entrée :
+    #   - page : page HTML ou LaTeX contenant les trous
+    #   - lsubst : liste de substitution pour remplir les trous
+    # Sortie :
+    #   - valeur de retour : aucune
+    #
+
+    method result {page lsubst} {
+	switch -glob $page {
+	    *.html {
+		set fmt html
+	    }
+	    *.tex {
+		set fmt pdf
+	    }
+	    default {
+		set fmt "unknown"
+	    }
+	}
+	::webapp::send $fmt [::webapp::file-subst $page $lsubst]
+	$self end
+    }
+
+    # 
+    # Écrire une ligne dans le système de log
+    # 
+    # Entrée :
+    #   - paramètres :
+    #	- evenement : nom de l'evenement (exemples : supprhost, suppralias etc.)
+    #	- message   : message de log (par exemple les parametres de l'evenement)
+    #
+    # Sortie :
+    #   rien
+    #
+    # Historique :
+    #   2007/10/?? : jean : conception
+    #   2010/11/09 : pda  : objet dnscontext et suppression parametre login
+    #
+
+    method writelog {evenement msg} {
+	global env
+
+	if {[info exists env(REMOTE_ADDR) ]} then {
+	    set ip $env(REMOTE_ADDR)    
+	} else {
+	    set ip ""
+	}
+
+	$log log "" $evenement $euid $ip $msg
     }
 }
 
@@ -530,7 +721,7 @@ proc init-dns {nologin auth base pageerr attr form ftabvar dbfdvar loginvar tabc
     # Lire toutes les caractéristiques du correspondant
     #
 
-    set msg [lire-correspondant-par-login $dbfd $login tabcor]
+    set msg [lire-correspondant $dbfd $login tabcor]
     if {! [string equal $msg ""]} then {
 	::webapp::error-exit $pageerr $msg
     }
@@ -644,7 +835,7 @@ proc init-dns-util {nologin auth base dbfdvar login tabcorvar logparam} {
     # Lire toutes les caractéristiques du correspondant
     #
 
-    set msg [lire-correspondant-par-login $dbfd $login tabcor]
+    set msg [lire-correspondant $dbfd $login tabcor]
     if {! [string equal $msg ""]} then {
 	return "Utilisateur '$login' : $msg"
     }
@@ -659,36 +850,6 @@ proc init-dns-util {nologin auth base dbfdvar login tabcorvar logparam} {
     }
 
     return ""
-}
-
-# 
-# Écrire une ligne dans le système de log
-# 
-# Entrée :
-#   - paramètres :
-#	- evenement : nom de l'evenement (exemples : supprhost, suppralias etc.)
-#	- login     : identifiant du correspondant effectuant l'action
-#	- message   : message de log (par exemple les parametres de l'evenement)
-#
-# Sortie :
-#   rien
-#
-# Historique :
-#   2007/10/?? : jean : conception
-#
-
-proc writelog {evenement login msg} {
-    global log
-    global env
-
-    if {[info exists env(REMOTE_ADDR) ]} then {
-	set ip $env(REMOTE_ADDR)    
-    } else {
-	set ip ""
-    }
-
-    $log log "" $evenement $login $ip $msg
-    
 }
 
 ##############################################################################
@@ -732,7 +893,17 @@ proc attribut-correspondant {dbfd idcor attribut} {
 #   - paramètres :
 #	- dbfd : accès à la base contenant les tickets
 #	- login : le login du correspondant
-#	- tabcorvar : tableau des attributs du correspondant (en retour)
+#	- _tabuid : tableau en retour, contenant les champs
+#		login	login demandé
+#		idcor	id dans la base
+#		idgrp	id du groupe dans la base
+#		groupe	nom du groupe
+#		present	1 si marqué "présent" dans la base
+#		admin	1 si admin
+#		reseaux	liste des réseaux autorisés
+#		eq	regexp des équipements autorisés
+#		flagsr	flags -n/-e/-E à utiliser dans les commandes topo
+#		flagsw	flags -n/-e/-E à utiliser dans les commandes topo
 # Sortie :
 #   - valeur de retour : message d'erreur ou chaîne vide
 #   - paramètre tabcorvar : les attributs en retour
@@ -740,13 +911,14 @@ proc attribut-correspondant {dbfd idcor attribut} {
 # Historique
 #   2003/05/13 : pda/jean : conception
 #   2007/10/05 : pda/jean : adaptation aux objets "authuser" et "authbase"
+#   2010/11/09 : pda      : renommage (car plus de recherche par id)
 #
 
-proc lire-correspondant-par-login {dbfd login tabcorvar} {
+proc lire-correspondant {dbfd login _tabuid} {
     global ah
-    upvar $tabcorvar tabcor
+    upvar $_tabuid tabuid
 
-    catch {unset tabcor}
+    catch {unset tabuid}
 
     #
     # Lire les caractéristiques communes à toutes les applications
@@ -770,7 +942,7 @@ proc lire-correspondant-par-login {dbfd login tabcorvar} {
     }
 
     foreach c {login password nom prenom mel tel mobile fax adr} {
-	set tabcor($c) [$u get $c]
+	set tabuid($c) [$u get $c]
     }
 
     $u destroy
@@ -780,78 +952,70 @@ proc lire-correspondant-par-login {dbfd login tabcorvar} {
     #
 
     set qlogin [::pgsql::quote $login]
-    set tabcor(idcor) -1
+    set tabuid(idcor) -1
     set sql "SELECT * FROM global.corresp, global.groupe
 			WHERE corresp.login = '$qlogin'
 			    AND corresp.idgrp = groupe.idgrp"
     pg_select $dbfd $sql tab {
-	set tabcor(idcor)	$tab(idcor)
-	set tabcor(idgrp)	$tab(idgrp)
-	set tabcor(present)	$tab(present)
-	set tabcor(groupe)	$tab(nom)
-	set tabcor(admin)	$tab(admin)
+	set tabuid(idcor)	$tab(idcor)
+	set tabuid(idgrp)	$tab(idgrp)
+	set tabuid(present)	$tab(present)
+	set tabuid(groupe)	$tab(nom)
+	set tabuid(admin)	$tab(admin)
     }
 
-    if {$tabcor(idcor) == -1} then {
+    if {$tabuid(idcor) == -1} then {
 	return "'$login' n'est pas dans la base des correspondants."
     }
 
-    return ""
-}
-
-proc lire-correspondant-par-id {dbfd idcor tabcorvar} {
-    global ah
-    upvar $tabcorvar tabcor
-
-    catch {unset tabcor}
+    ######################################################################""
+    # CE QUI SUIT EST SPECIFIQUE DE LA TOPO
+    ######################################################################""
 
     #
-    # Lire les caractéristiques, propres à cette application.
+    # Lire les CIDR des réseaux autorisés (fonction de la libdns)
     #
 
-    set tabcor(idcor) -1
-    set sql "SELECT * FROM global.corresp, global.groupe
-			WHERE corresp.idcor = $idcor
-			    AND corresp.idgrp = groupe.idgrp"
-    pg_select $dbfd $sql tab {
-	set tabcor(login)	$tab(login)
-	set tabcor(idcor)	$tab(idcor)
-	set tabcor(idgrp)	$tab(idgrp)
-	set tabcor(present)	$tab(present)
-	set tabcor(groupe)	$tab(nom)
-	set tabcor(admin)	$tab(admin)
-    }
-
-    if {$tabcor(idcor) == -1} then {
-	return "Le correspondant d'id $idcor n'est pas dans la base des correspondants."
-    }
+    set tabuid(reseaux) [liste-reseaux-autorises $dbfd $tabuid(idgrp) "dhcp"]
 
     #
-    # Lire les caractéristiques communes à toutes les applications
+    # Lire les équipements
     #
 
-    set u [::webapp::authuser create %AUTO%]
-    if {[catch {set n [$ah getuser $tabcor(login) $u]} m]} then {
-	return "Problème dans la base d'authentification ($m)"
-    }
-    
-    switch $n {
-	0 {
-	    return "'$tabcor(login)' n'est pas dans la base d'authentification."
+    set tabuid(eqr) [lire-eq-autorises $dbfd 0 $tabuid(idgrp)]
+    set tabuid(eqw) [lire-eq-autorises $dbfd 1 $tabuid(idgrp)]
+
+    #
+    # Construire les flags
+    #
+
+    set flagsr {}
+    set flagsw {}
+    foreach rw {r w} {
+	set flags {}
+	if {! $tabuid(admin)} then {
+	    lassign $tabuid(eq$rw) lallow ldeny
+	    foreach pat $lallow {
+		lappend flags "-e" $pat
+	    }
+	    foreach pat $ldeny {
+		lappend flags "-E" $pat
+	    }
+	    if {$rw eq "r"} then {
+		foreach r $tabuid(reseaux) {
+		    set r4 [lindex $r 1]
+		    if {! [string equal $r4 ""]} then {
+			lappend flags "-n" $r4
+		    }
+		    set r6 [lindex $r 2]
+		    if {! [string equal $r6 ""]} then {
+			lappend flags "-n" $r6
+		    }
+		}
+	    }
 	}
-	1 { 
-	    # Rien
-	}
-	default {
-	    return "Trop d'utilisateurs trouvés"
-	}
+	set tabuid(flags$rw) [join $flags " "]
     }
-
-    foreach c {login password nom prenom mel tel mobile fax adr} {
-	set tabcor($c) [$u get $c]
-    }
-
-    $u destroy
 
     return ""
 }
@@ -4512,7 +4676,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
     # Les informations relatives à l'utilisateur
     #
 
-    set msg [lire-utilisateur $dbfd $uid tabuid]
+    set msg [lire-correspondant $dbfd $uid tabuid]
     if {! [string equal $msg ""]} then {
 	::webapp::error-exit $pageerr $msg
     }
@@ -4526,7 +4690,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
     if {! [string equal $attr ""]} then {
 	#
 	# Si l'utilisateur n'est pas trouvé dans la base DNS
-	# alors erreur (reproduit l'erreur dans lire-correspondant-...
+	# alors erreur (reproduit l'erreur dans lire-correspondant
 	# que nous ignorons plus haut).
 	#
 
@@ -4595,7 +4759,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
 	    set ouid $uid
 	    set uid $nuid
 
-	    set msg [lire-utilisateur $dbfd $uid tabuid]
+	    set msg [lire-correspondant $dbfd $uid tabuid]
 	    if {! [string equal $msg ""]} then {
 		::webapp::error-exit $pageerr $msg
 	    }
@@ -4630,116 +4794,6 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
 	    close $fd
 	}
     }
-}
-
-
-#
-# Lit les informations d'un utilisateur
-#
-# Entrée :
-#   - paramètres :
-#	- dbfd : commande pour afficher le graphe en ascii
-#	- uid : login de l'utilisateur
-#	- _tabuid : tableau en retour, contenant les champs
-#		login	login demandé
-#		idcor	id dans la base
-#		idgrp	id du groupe dans la base
-#		groupe	nom du groupe
-#		present	1 si marqué "présent" dans la base
-#		admin	1 si admin
-#		reseaux	liste des réseaux autorisés
-#		eq	regexp des équipements autorisés
-#		flagsr	flags -n/-e/-E à utiliser dans les commandes topo
-#		flagsw	flags -n/-e/-E à utiliser dans les commandes topo
-# Sortie :
-#   - valeur de retour : message d'erreur ou chaîne vide
-#   - paramètre _tabuid : cf ci-dessus
-#
-# Historique
-#   2007/01/11 : pda             : conception
-#   2010/11/03 : pda             : conception
-#
-
-proc lire-utilisateur {dbfd uid _tabuid} {
-    upvar $_tabuid tabuid
-
-    #
-    # Le segment de code qui suit a des ressemblances avec
-    # la fonction "lire-correspondant-par-login" de la libdns,
-    # mais celle-ci utilise le package auth que nous ne pouvons
-    # pas utiliser.
-    #
-
-    set tabuid(login)		$uid
-
-    #
-    # Essayer de lire les caractéristiques de l'utilisateur dans la
-    # base DNS : c'est alors un correspondant.
-    #
-
-    set quid [::pgsql::quote $uid]
-    set tabuid(idcor) -1
-    set sql "SELECT * FROM global.corresp, global.groupe
-			WHERE corresp.login = '$quid'
-			     AND corresp.idgrp = groupe.idgrp"
-    pg_select $dbfd $sql tab {
-	set tabuid(idcor)	$tab(idcor)
-	set tabuid(idgrp)	$tab(idgrp)
-	set tabuid(present)	$tab(present)
-	set tabuid(groupe)	$tab(nom)
-	set tabuid(admin)	$tab(admin)
-    }
-
-    if {$tabuid(idcor) == -1} then {
-	return ""
-    }
-
-    #
-    # Lire les CIDR des réseaux autorisés (fonction de la libdns)
-    #
-
-    set tabuid(reseaux) [liste-reseaux-autorises $dbfd $tabuid(idgrp) "dhcp"]
-
-    #
-    # Lire les équipements
-    #
-
-    set tabuid(eqr) [lire-eq-autorises $dbfd 0 $tabuid(idgrp)]
-    set tabuid(eqw) [lire-eq-autorises $dbfd 1 $tabuid(idgrp)]
-
-    #
-    # Construire les flags
-    #
-
-    set flagsr {}
-    set flagsw {}
-    foreach rw {r w} {
-	set flags {}
-	if {! $tabuid(admin)} then {
-	    lassign $tabuid(eq$rw) lallow ldeny
-	    foreach pat $lallow {
-		lappend flags "-e" $pat
-	    }
-	    foreach pat $ldeny {
-		lappend flags "-E" $pat
-	    }
-	    if {$rw eq "r"} then {
-		foreach r $tabuid(reseaux) {
-		    set r4 [lindex $r 1]
-		    if {! [string equal $r4 ""]} then {
-			lappend flags "-n" $r4
-		    }
-		    set r6 [lindex $r 2]
-		    if {! [string equal $r6 ""]} then {
-			lappend flags "-n" $r6
-		    }
-		}
-	    }
-	}
-	set tabuid(flags$rw) [join $flags " "]
-    }
-
-    return ""
 }
 
 #

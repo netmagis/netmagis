@@ -407,24 +407,15 @@ proc main {} {
 	::webapp::error-exit $conf(err) $msg
     }
 
-    writelog "modifdhcp" $tabcor(login) \
-		"intervalles dhcp modifies : [join $lcidr {, }]"
+    d writelog "modifdhcp" "intervalles dhcp modifies : [join $lcidr {, }]"
 
     #
-    # C'est fini !
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-				[list \
-					[list %RESEAU% $lcidr] \
-				    ] \
-				]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+				[list %RESEAU% $lcidr] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

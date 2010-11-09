@@ -253,7 +253,7 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
     foreach c [array names tattr] {
 	append m " $c=$tattr($c)"
     }
-    writelog "modifrr" $login "$m (ligne de commande)"
+    d writelog "modifrr" "$m (ligne de commande)"
 
     return ""
 }
@@ -269,10 +269,10 @@ proc main {argv0 argv} {
     # Initialisation des accès
     #
 
-    set errmsg [init-dns-util $conf(nologin) $conf(auth) $conf(base) \
-				    dbfd $conf(defuser) tabcor $conf(log)]
-    if {! [string equal $errmsg ""]} then {
-	puts stderr "$errmsg"
+    ::dnscontext create d
+    set msg [d init-script dbfd $conf(defuser) tabcor]
+    if {$msg ne ""} then {
+	puts stderr "$msg"
 	puts stderr "Aborted."
 	return 1
     }
@@ -351,8 +351,8 @@ proc main {argv0 argv} {
        ::pgsql::unlock $dbfd "abort" m
        return "La modification a échoué ($msg)"
     }
-    fermer-base $dbfd
 
+    d end
     return 0
 }
 

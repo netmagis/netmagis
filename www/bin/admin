@@ -63,16 +63,11 @@ proc main {} {
     d init-cgi $conf(err) "admin" {} ftab dbfd login tabcor
 
     #
-    # Sortie de la page
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) {} ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

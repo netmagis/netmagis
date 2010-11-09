@@ -138,13 +138,11 @@ proc main {} {
     set subst {}
     lappend subst [list %TEXTE% $html]
 
-    ::webapp::send html [::webapp::file-subst $conf(page) $subst]
-
     #
-    # Déconnexion de la base
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    fermer-base $dbfd
+    d result $conf(page) $subst
 }
 
 ::webapp::cgi-exec main %DEBUG%

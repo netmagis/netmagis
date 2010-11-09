@@ -171,12 +171,10 @@ proc main {} {
     }
 
     #
-    # Sortie de la page de choix d'édition
+    # Fin du script : sortie de la page et fermeture de la base
     #
 
-    ::webapp::send html \
-	    [::webapp::file-subst $conf(page) \
-			[list \
+    d result $conf(page) [list \
 				[list %ADR%         $adr] \
 				[list %NOM%         $nom] \
 				[list %DOMAINE%     $domaine] \
@@ -185,14 +183,7 @@ proc main {} {
 				[list %NEXT%        $next] \
 				[list %SUITE%       $suite] \
 				[list %DISPUNEIP%   $dispuneip] \
-			    ] \
-		    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

@@ -181,32 +181,26 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	    #
 	    # Sortir la page de confirmation pour un alias
 	    #
-	    ::webapp::send html \
-		    [::webapp::file-subst $conf(page-suppr-alias) \
-				[list \
+	    d result $conf(page-suppr-alias) [list \
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
 					[list %NOMREF% $trrref(nom)] \
 					[list %DOMAINEREF% $trrref(domaine)] \
 					[list %NEXTPROG% $nextprog] \
 					[list %NEXTARGS% $nextargs] \
-				    ] \
-			    ]
+				    ]
 	} else {
 	    #
 	    # Sortir la page de confirmation pour une machine
 	    #
 	    set machine [presenter-rr $dbfd -1 trr]
-	    ::webapp::send html \
-		    [::webapp::file-subst $conf(page-suppr-nom) \
-				[list \
+	    d result $conf(page-suppr-nom) [list \
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
 					[list %MACHINE% $machine] \
 					[list %NEXTPROG% $nextprog] \
 					[list %NEXTARGS% $nextargs] \
-				    ] \
-			    ]
+				    ]
 	}
     } else {
 	#
@@ -250,7 +244,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	   ::webapp::error-exit $conf(err) "La suppression a échoué. Abandon.\n$msg"
 	}
 
-	writelog $logevt $login $logmsg
+	d writelog $logevt $logmsg
 
 	#
 	# Préparer la suite du parcours
@@ -273,12 +267,10 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	# correctement.
 	#
 	set objet "$nom.$domaine"
-	::webapp::send html [::webapp::file-subst $conf(page-suppr-ok) \
-					[list \
+	d result $conf(page-suppr-ok) [list \
 						[list %OBJET% $objet] \
 						[list %SUITE% $suite] \
-					    ] \
-				    ]
+			    ]
     }
 }
 
@@ -422,7 +414,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 	   ::webapp::error-exit $conf(err) "La suppression a échoué. Abandon.\n$msg"
 	}
     
-	writelog $logevt $login $logmsg
+	d writelog $logevt $logmsg
 
     }
 
@@ -481,19 +473,15 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 	}
     }
 
-    ::webapp::send html \
-	    [::webapp::file-subst \
-			$page \
-			[list \
-				[list %NOM%         $nom] \
-				[list %DOMAINE%     $domaine] \
-				[list %ADR%         $adr] \
-				[list %MACHINE%     $machine] \
-				[list %OBJET%       $objet] \
-				[list %NEXTPROG%    $nextprog] \
-				[list %NEXTARGS%    $nextargs] \
-				[list %SUITE%       $suite] \
-			    ] \
+    d result $page [list \
+			[list %NOM%         $nom] \
+			[list %DOMAINE%     $domaine] \
+			[list %ADR%         $adr] \
+			[list %MACHINE%     $machine] \
+			[list %OBJET%       $objet] \
+			[list %NEXTPROG%    $nextprog] \
+			[list %NEXTARGS%    $nextargs] \
+			[list %SUITE%       $suite] \
 		    ]
 }
 
@@ -527,12 +515,6 @@ proc main {} {
     }
 
     traite$action $dbfd $tabcor(idcor) $tabcor(login) ftab
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%
