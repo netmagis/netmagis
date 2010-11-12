@@ -12,6 +12,8 @@ LIBDNS=
 FPING=
 RANCID=
 LOGGER=
+RANCIDDIR=
+EQVIRT=
 
 
 
@@ -60,7 +62,9 @@ SUBST = \
         -e 's|%PKGTCL%|$(PKGTCL)|' \
         -e 's|%DELAY%|$(DELAY)|' \
 	-e 's|%RANCIDMODUSER%|$(RANCIDMODUSER)|' \
-	-e 's|%RANCIDMODPASS%|$(RANCIDMODPASS)|'
+	-e 's|%RANCIDMODPASS%|$(RANCIDMODPASS)|' \
+	-e 's|%RANCIDDIR%|$(RANCIDDIR)|' \
+	-e 's|%EQVIRT%|$(EQVIRT)|'
 
 
 all:	$(PROGS)

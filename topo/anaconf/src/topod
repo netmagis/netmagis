@@ -104,6 +104,14 @@ set conf(rancid)	{%TOPODIR%/bin/start-rancid %1$s}
 set conf(anaconf)	{%TOPODIR%/bin/anaconf}
 set conf(logger)	%LOGGER%
 
+# horaires pendant lesquels un full-rancid doit être provoqué
+# pour avoir une synchronisation complète une fois par jour
+set conf(fullrancidmin)	2
+set conf(fullrancidmax)	4
+
+set conf(routerdb)	%RANCIDDIR%/router.db
+set conf(eqvirt)	%EQVIRT%
+
 set conf(delay)		%DELAY%
 
 set conf(pkg)		%PKGTCL%
@@ -360,7 +368,7 @@ proc set-verbose {niveau} {
 proc verbositer {msg niveau} {
     global ctxt
 
-    if {$niveau < $ctxt(verbose)} then {
+    if {$niveau <= $ctxt(verbose)} then {
 	puts stderr $msg
     }
 }
@@ -385,15 +393,17 @@ proc verbositer {msg niveau} {
 
 proc reset-status {} {
     set sql "DELETE FROM topo.keepstate WHERE type = 'status'"
-    myexec $sql
+    myexec $sql 2
 }
 
 proc set-status {status} {
     global conf
 
+set fd [open "/tmp/topod.status" a] ; puts $fd "[clock format [clock seconds]] $status" ; close $fd
+
     set cur {}
     set sql "SELECT message FROM topo.keepstate WHERE type = 'status'"
-    if {! [myselect $sql tab { set cur $tab(message) }]} then {
+    if {! [myselect $sql tab { set cur $tab(message) } 2]} then {
 	return
     }
 
@@ -410,7 +420,7 @@ proc set-status {status} {
     set sql "DELETE FROM topo.keepstate WHERE type = 'status' ;
 		INSERT INTO topo.keepstate (type, message)
 			VALUES ('status', '$qcur')"
-    myexec $sql
+    myexec $sql 2
 }
 
 ##############################################################################
@@ -421,25 +431,26 @@ proc set-status {status} {
 # Réalise la connexion à la base de données si nécessaire.
 #
 # Entrée :
-#   - ctxt(dbfd) : accès à la base
+#   - chan : canal (1 par défaut)
+#   - ctxt(dbfd1), ctxt(dbfd2) : accès à la base
 # Sortie :
-#   - ctxt(dbfd) : accès réactualisé
+#   - ctxt(dbfd<n>) : accès réactualisé
 #
 # Historique
 #   2010/10/20 : pda/jean : documentation
 #
 
-proc lazy-connect {} {
+proc lazy-connect {{chan 1}} {
     global ctxt
     global conf
 
     set r 1
-    if {[string equal $ctxt(dbfd) ""]} then {
-	set d [catch {set ctxt(dbfd) [pg_connect -conninfo $conf(base)]} msg]
+    if {[string equal $ctxt(dbfd$chan) ""]} then {
+	set d [catch {set ctxt(dbfd$chan) [pg_connect -conninfo $conf(base)]} msg]
 	if {$d} then {
 	    set r 0
 	} else {
-	    ::dnsconfig setdb $ctxt(dbfd)
+	    ::dnsconfig setdb $ctxt(dbfd$chan)
 	    log-error "Connexion to database succeeded"
 	}
     }
@@ -460,15 +471,15 @@ proc lazy-connect {} {
 #   2010/10/20 : pda/jean : conception (woaw !)
 #
 
-proc myselect {sql arrayname script {iferror {}} {errscript {}}} {
+proc myselect {sql arrayname script {chan 1}} {
     global ctxt
 
-    if {[lazy-connect]} {
-	set cmd [list pg_select $ctxt(dbfd) $sql $arrayname $script]
+    if {[lazy-connect $chan]} {
+	set cmd [list pg_select $ctxt(dbfd$chan) $sql $arrayname $script]
 	if {[catch {uplevel 1 $cmd} err]} then {
 	    log-error "Connexion to database lost in myselect ($err)"
-	    catch {pg_disconnect $ctxt(dbfd)}
-	    set ctxt(dbfd) ""
+	    catch {pg_disconnect $ctxt(dbfd$chan)}
+	    set ctxt(dbfd$chan) ""
 	    set r 0
 	} else {
 	    set r 1
@@ -492,14 +503,14 @@ proc myselect {sql arrayname script {iferror {}} {errscript {}}} {
 #   2010/10/20 : pda/jean : conception
 #
 
-proc myexec {sql} {
+proc myexec {sql {chan 1}} {
     global ctxt
 
     if {[lazy-connect]} {
-	if {[catch {pg_exec $ctxt(dbfd) $sql} res]} then {
-	    log-error "Connexion to database lost in myexec ($res)"
-	    catch {pg_disconnect $ctxt(dbfd)}
-	    set ctxt(dbfd) ""
+	if {[catch {pg_exec $ctxt(dbfd$chan) $sql} res]} then {
+	    log-error "Connection to database lost in myexec ($res)"
+	    catch {pg_disconnect $ctxt(dbfd$chan)}
+	    set ctxt(dbfd$chan) ""
 	    set r 0
 	} else {
 	    switch -- [pg_result $res -status] {
@@ -507,16 +518,17 @@ proc myexec {sql} {
 		PGRES_TUPLES_OK -
 		PGRES_EMPTY_QUERY {
 		    set r 1
+		    pg_result $res -clear
 		}
 		default {
 		    set err [pg_result $res -error]
+		    pg_result $res -clear
 		    log-error "Internal error in myexec. Connexion to database lost ($err)"
-		    catch {pg_disconnect $ctxt(dbfd)}
-		    set ctxt(dbfd) ""
+		    catch {pg_disconnect $ctxt(dbfd$chan)}
+		    set ctxt(dbfd$chan) ""
 		    set r 0
 		}
 	    }
-	    pg_result $res -clear
 	}
     } else {
 	set r 0
@@ -537,8 +549,8 @@ proc myexec {sql} {
 #   2010/10/21 : pda/jean : conception
 #
 
-proc mylock {} {
-    return [myexec "START TRANSACTION"]
+proc mylock {{chan 1}} {
+    return [myexec "START TRANSACTION" $chan]
 }
 
 #
@@ -554,12 +566,12 @@ proc mylock {} {
 #   2010/10/21 : pda/jean : conception
 #
 
-proc myunlock {commit} {
+proc myunlock {commit {chan 1}} {
     switch $commit {
 	commit { set sql "COMMIT WORK" }
 	abort  { set sql "ABORT WORK" }
     }
-    return [myexec $sql]
+    return [myexec $sql $chan]
 }
 
 
@@ -574,7 +586,6 @@ proc myunlock {commit} {
 # Entrée :
 #   - ev : événement considéré ("rancid", "anaconf")
 #   - msg : message de l'événement
-#   - ctxt(dbfd) : accès à la base
 # Sortie :
 #   - aucune
 #
@@ -590,7 +601,7 @@ proc keep-state-mail {ev msg} {
     set oldmsg ""
     set qev [::pgsql::quote $ev]
     set sql "SELECT message FROM topo.keepstate WHERE type = '$qev'"
-    if {! [myselect $sql tab { set oldmsg $tab(message) }]} then {
+    if {! [myselect $sql tab { set oldmsg $tab(message) } 2]} then {
 	# on ne sait pas quoi faire...
 	return
     }
@@ -639,35 +650,71 @@ proc keep-state-mail {ev msg} {
 #
 # Détermine si un passage complet de rancid est nécessaire
 #
-# Entrée : aucune
+# Entrée :
+#   - routerdbmod : en retour, structure résultant de detect-filemod
 # Sortie : 
 #   - valeur de retour :
 #	-1 : erreur
 #	0 : pas de passage nécessaire
 #	1 : passage nécessaire
+#   - paramètre routerdbmod : structure résultant de detect-filemod
 #
 # Historique : 
 #   2010/10/15 : pda/jean : création
 #
 
-proc full-rancid-needed {} {
+proc full-rancid-needed {_routerdbmod} {
+    global conf
+    upvar $_routerdbmod routerdbmod
+
     set sql "SELECT topo.lastrun.date IS NULL
 		    OR (
 			(date_trunc('day',topo.lastrun.date)
 			    <> date_trunc('day',now())
-			AND extract(hour from now())>=2
-			AND extract(hour from now())<=4)
+			AND extract(hour from now())>=$conf(fullrancidmin)
+			AND extract(hour from now())<=$conf(fullrancidmax))
 		    )
 	       AS result
 	       FROM topo.lastrun"
 
-    # by default, this is an error
-    set r -1
-
     # if selects succeeds, returns the result of SQL query,
     # while translating it to 1 (true) or 0 (false)
-    # There is no need to test the return value of next command
-    myselect $sql tab { set r [expr $tab(result) ? 1 : 0]}
+    set r2 1
+    set r [myselect $sql tab { set r2 [expr $tab(result) ? 1 : 0]}]
+    if {$r} then {
+	set r $r2
+
+	# detect if router.db has been modified
+	set routerdbmod {}
+	set fmod [detect-filemod $conf(routerdb)]
+	if {[llength $fmod] > 0} then {
+	    lassign $fmod code path date
+	    switch $code {
+		err {
+		    set msg $date
+		    set r -1
+		}
+		add {
+		    set msg "File router.db added"
+		    set r 1
+		}
+		mod {
+		    set msg "Resuming normal operation"
+		    set r 1
+		}
+		del {
+		    set msg "File router.db deleted"
+		    set r -1
+		}
+	    }
+	    keep-state-mail "router.db" $msg
+	    if {$r == 1} then {
+		set routerdbmod $fmod
+	    }
+	} else {
+	    keep-state-mail "router.db" "Resuming normal operation"
+	}
+    }
 
     return $r
 }
@@ -676,17 +723,23 @@ proc full-rancid-needed {} {
 # Mise à jour du graphe topo à partir des configuration des équipements
 #
 # Entrée :
+#   - full : 1 s'il faut lancer rancid+anaconf sur tous les équipements, 0 sinon
 #   - _tabeq : tableau contenant en retour les types/modèles des équipements
-#   - leq : liste des équipements (optionnel)
+#   - routerdbmod : liste résultant de detect-filemod, ou vide si pas d'update
+#   - leq : liste des équipements dont la modification a été détectée
+#	avec éventuellement l'"équipement" fictif "_vlan"
+#   - leqvirt : équipements virtuels modifiés, dont la date doit être mise à
+#	jour dans la base. Cette liste est au format de detect-dirmod
 # Sortie :
 #   - valeur de retour : 1 si ok, 0 en cas d'erreur
 #
 # Historique : 
 #   2010/10/15 : pda/jean : conception
 #   2010/10/20 : pda/jean : codage
+#   2010/11/12 : pda/jean : ajout leqvirt
 #
 
-proc update-graph {_tabeq {leq {}}} {
+proc update-graph {full _tabeq routerdbmod leq leqvirt} {
     upvar $_tabeq tabeq
     global conf
 
@@ -713,16 +766,77 @@ proc update-graph {_tabeq {leq {}}} {
     # Lancer rancid et envoyer un mail si nécessaire
     #
 
-    if {! [rancid $leq]} then {
-	myunlock "abort"
-	return 0
+    if {$full} then {
+	set callrancid 1
+	set leqrancid {}
+    } else {
+	# Ce n'est pas un full-rancid.
+	# Retirer _vlan des équipements. Si après cela, il ne reste
+	# plus d'équipement, ne pas confondre avec un full-rancid.
+	set pos [lsearch -exact $leq "_vlan"]
+	if {$pos != -1} then {
+	    set leqrancid [lreplace $leq $pos $pos]
+	} else {
+	    set leqrancid $leq
+	}
+	if {[llength $leqrancid] == 0} then {
+	    set callrancid 0
+	} else {
+	    set callrancid 1
+	}
+    }
+
+    if {$callrancid} then {
+	if {! [rancid $leqrancid]} then {
+	    myunlock "abort"
+	    return 0
+	}
+    }
+
+    #
+    # Actualiser la date de modification de router.db si nécessaire
+    #
+
+    if {[llength $routerdbmod] > 0} then {
+	if {! [sync-filemonitor [list $routerdbmod]]} then {
+	    myunlock "abort"
+	    return 0
+	}
+    }
+
+    # si ce n'est pas un "full-anaconf", ajouter les équipements
+    # virtuels
+
+    if {$full} then {
+	set leqanaconf {}
+    } else {
+	set leqanaconf $leq
+	foreach meq $leqvirt {
+	    verbositer "processing $meq" 9
+	    lassign $meq code path date
+	    if {$code eq "add" || $code eq "mod"} then {
+		if {[regexp {([^/]+)\.eq$} $path bidon eq]} then {
+		    verbositer "adding virtual $eq to leqanaconf" 9
+		    lappend leqanaconf $eq
+		}
+	    }
+	}
     }
 
     #
     # Mettre à jour le graphe et envoyer un mail si nécessaire
     #
 
-    if {! [anaconf $leq]} then {
+    if {! [anaconf $leqanaconf]} then {
+	myunlock "abort"
+	return 0
+    }
+
+    #
+    # Actualiser la date de modification des équipements virtuels
+    #
+
+    if {! [sync-filemonitor $leqvirt]} then {
 	myunlock "abort"
 	return 0
     }
@@ -793,9 +907,10 @@ proc rancid {{leq {}}} {
 
     if {[catch {exec sh -c $cmd} msg]} then {
 	# erreur
-	set msg "Erreur dans l'exécution de $cmd\n$msg"
+	set msg "Error while running '$cmd'\n$msg"
 	set r 0
     } else {
+	set msg "Resuming normal operation"
 	# pas d'erreur
 	set r 1
     }
@@ -831,9 +946,9 @@ proc anaconf {{leq {}}} {
     global conf
 
     if {[llength $leq] == 0} then {
-	set-status "Rebuild graph for all equipements"
+	set-status "Building graph for all equipements"
     } else {
-	set-status "Rebuild graph for $leq"
+	set-status "Building graph for $leq"
     }
 
     set text ""
@@ -1542,7 +1657,6 @@ proc test-ping {eq} {
 # Entrée :
 #   - idrr : id de l'équipement
 #   - msg : message d'erreur suite à la tentative
-#   - ctxt(dbfd) : accès à la base
 # Sortie :
 #   - aucune
 # 
@@ -1572,7 +1686,6 @@ proc update-modlog {idrr msg} {
 #   - idrr : id de l'équipement
 #   - lreqdate : liste des dates des changements
 #   - msg : message de log
-#   - ctxt(dbfd) : accès à la base
 # Sortie :
 #   - aucune
 # 
@@ -1592,6 +1705,180 @@ proc mark-processed {idrr lreqdate msg} {
     if {! [$myexec $sql]} then {
 	log-error "Cannot update 'processed' flag for idrr=$idrr"
     }
+}
+
+##############################################################################
+# Détection des modifications effectuées dans les fichiers
+##############################################################################
+
+#
+# Détecter les modifications dans un répertoire
+#
+# Entrée :
+#   - dir : chemin d'accès au répertoire
+#   - _err : en retour, message d'erreur ou chaîne vide
+# Sortie :
+#   - valeur de retour : liste de la forme
+#		{{<code> <file> <date>} {<code> <file> <date>}...}
+#	où <code> = "add", "del", "mod" ou "err"
+#	et <date> = la date en format clock_t
+#	dans le cas où <code> = "err", le message d'erreur est dans "<date>"
+#   - paramètre err : en retour, tous les messages d'erreur
+# 
+# Historique : 
+#   2010/11/12 : pda/jean : création
+#
+
+proc detect-dirmod {dir _err} {
+    upvar $_err err
+
+    set err ""
+
+    #
+    # Premier passage : récupérer tous les fichiers du répertoire
+    # et les stocker dans un tableau au format :
+    #	ntab(<file>) <date>
+    #
+    foreach file [glob "$dir/*.eq"] {
+	if {[catch {file mtime $file} date]} then {
+	    append err "$date\n"
+	} else {
+	    set ntab($file) $date
+	}
+    }
+
+    #
+    # Deuxième passage : récupérer tous les fichiers décrits dans la
+    # base pour ce répertoire et les stocker dans un tableau au format :
+    #	otab(<file>) <date>
+    #
+    set sql "SELECT path, date FROM topo.filemonitor
+				WHERE path ~ '^$dir/\[^/\]+$'"
+    if {! [myselect $sql tab { set otab($tab(path)) [clock scan $tab(date)] }]} then {
+	append err "Cannot execute SQL SELECT query for $dir\n"
+	return {}
+    }
+
+    #
+    # Comparaison
+    #
+    set r {}
+    if {$err eq ""} then {
+	foreach f [array names otab] {
+	    if {[info exists ntab($f)]} then {
+		if {$otab($f) != $ntab($f)} then {
+		    lappend r [list "mod" $f $ntab($f)]
+		}
+		unset ntab($f)
+	    } else {
+		lappend r [list "del" $f ""]
+	    }
+	    unset otab($f)
+	}
+
+	foreach f [array names ntab] {
+	    lappend r [list "add" $f $ntab($f)]
+	}
+    }
+
+    return $r
+}
+
+#
+# Détecter si un fichier a été modifié
+#
+# Entrée :
+#   - path : chemin d'accès au répertoire
+# Sortie :
+#   - valeur de retour : au format de detect-dirmod
+#
+# Historique : 
+#   2010/11/12 : pda/jean : création
+#
+
+proc detect-filemod {path} {
+    set oldfmod -1
+    set qpath [::pgsql::quote $path]
+    set sql "SELECT date FROM topo.filemonitor WHERE path = '$qpath'"
+    if {[myselect $sql tab {set oldfmod [clock scan $tab(date)]}]} then {
+	if {[catch {file mtime $path} newfmod]} then {
+	    #
+	    # Erreur : on suppose que c'est parce que le fichier
+	    # n'existe pas
+	    #
+	    if {$oldfmod == -1} then {
+		# fichier n'existait ni avant, ni maintenant
+		set r [list "err" $path "Error on '$path': $newfmod"]
+	    } else {
+		# le fichier existait avant, mais plus maintenant
+		set r [list "del" $path ""]
+	    }
+	    set newfmod ""
+	} else {
+	    #
+	    # Le fichier existe
+	    #
+	    if {$oldfmod == -1} then {
+		# le fichier est créé
+		set r [list "add" $path $newfmod]
+	    } elseif {$oldfmod == $newfmod} then {
+		# les dates concordent : le fichier n'a pas été modifié
+		set r {}
+	    } else {
+		# le fichier est modifié
+		set r [list "mod" $path $newfmod]
+	    }
+	}
+    } else {
+	set r [list $path "err" "Error on '$path' : SQL query failed"]
+    }
+    verbositer "detect-filemod: $path => $r" 9
+
+    return $r
+}
+
+#
+# Actualiser dans la base la date de modification d'un ou plusieurs fichiers
+#
+# Entrée :
+#   - lf : liste de la forme renvoyée par detect-dirmod
+# Sortie :
+#   - valeur de retour : 1 si réussi, 0 si erreur
+# 
+# Historique : 
+#   2010/11/12 : pda/jean : création
+#
+
+proc sync-filemonitor {lf} {
+    set sql {}
+    foreach f $lf {
+	lassign $f code path date
+	set qpath [::pgsql::quote $path]
+	switch $code {
+	    add {
+		set qdate [clock format $date]
+		lappend sql "INSERT INTO topo.filemonitor (path, date)
+					VALUES ('$qpath', '$qdate')"
+	    }
+	    mod {
+		set qdate [clock format $date]
+		lappend sql "UPDATE topo.filemonitor
+					SET date = '$qdate'
+					WHERE path = '$qpath'"
+	    }
+	    del {
+		lappend sql "DELETE FROM topo.filemonitor
+					WHERE path = '$qpath'"
+	    }
+	}
+    }
+    set r 1
+    if {[llength $sql] > 0} then {
+	set sql [join $sql ";"]
+	set r [myexec $sql]
+    }
+
+    return $r
 }
 
 ##############################################################################
@@ -1671,7 +1958,8 @@ proc main {argv0 argv} {
     global conf
     global ctxt
 
-    set ctxt(dbfd) ""
+    set ctxt(dbfd1) ""
+    set ctxt(dbfd2) ""
     set verbose 0
 
     config ::dnsconfig
@@ -1725,6 +2013,7 @@ proc main {argv0 argv} {
 			rancid anaconf read-eq-type send-changes mod-to-conf
 			execute-cmd fetch-conf resetif get-vlans test-ping
 			update-modlog mark-processed detect-mod
+			detect-filemod detect-dirmod sync-filemonitor
 		} {
 	    trace add execution $c enter report-enter
 	    trace add execution $c leave report-leave
@@ -1770,7 +2059,7 @@ proc main {argv0 argv} {
 	# depuis cette nuit à 2h du matin par ex).
 	#
     
-	switch [full-rancid-needed] {
+	switch [full-rancid-needed routerdbmod] {
 	    -1 {
 		# error
 		continue
@@ -1782,7 +2071,17 @@ proc main {argv0 argv} {
 	    1 {
 		# il faut mettre à jour le graphe complet
 		# et (re-)lire la liste des types d'équipements
-		if {! [update-graph tabeq]} then {
+
+		# faire un point sur les dates de modification
+		# des équipements virtuels, pour les mettre à
+		# jour après la lecture des configurations
+		set leqvirt [detect-dirmod $conf(eqvirt) err]
+		if {$err ne ""} then {
+		    keep-state-mail "eqvirt" $err
+		    continue
+		}
+
+		if {! [update-graph 1 tabeq $routerdbmod {} $leqvirt]} then {
 		    continue
 		}
 	    }
@@ -1800,9 +2099,16 @@ proc main {argv0 argv} {
 	# le graphe
 	#
 
+	# équipements virtuels
+	set leqvirt [detect-dirmod $conf(eqvirt) err]
+	if {$err ne ""} then {
+	    keep-state-mail "eqvirt" $err
+	    continue
+	}
+
 	set leq [detect-mod tabeq]
-	if {[llength $leq] > 0} then {
-	    update-graph tabeq $leq
+	if {[llength $leq] > 0 || [llength $leqvirt] > 0} then {
+	    update-graph 0 tabeq {} $leq $leqvirt
 	}
     }
 

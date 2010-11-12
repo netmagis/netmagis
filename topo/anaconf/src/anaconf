@@ -21,19 +21,20 @@
 #   2006/06/19 : pda/boggia : envoi des points de collecte
 #   2007/07/17 : pda        : non-détection par rancid du modèle d'ap cisco
 #   2008/10/01 : pda        : ajout du mode -1 (mode "une fois")
+#   2008/11/12 : pda/jean   : ajout de l'équipement spécial _vlan
 #
 
 TMP=/tmp/topo.$$
 TMPERR=/tmp/topoerr.$$
 
-RANCIDDIR=/local/idr/conf/osiris
+RANCIDDIR=%RANCIDDIR%
 RANCIDDB=$RANCIDDIR/router.db
 RANCIDCONFDIR=$RANCIDDIR/configs
 
 BASE=%TOPODIR%
 BINDIR=$BASE/bin
 DATADIR=$BASE/osiris
-EQVIRT=$DATADIR/eqvirt
+EQVIRT=%EQVIRT%
 EQGEN=$DATADIR/eqgen
 DESTFILE=$DATADIR/osiris.graph
 STATUS=$DATADIR/osiris.status
@@ -124,7 +125,11 @@ analyser_confs ()
     else
 	for eq
 	do
-	    if grep "^$eq " $TMP | analyser_eq
+	    if [ "$eq" = "_vlan" ]
+	    then :
+	    elif [ -f "$EQVIRT/$eq.eq" ]
+	    then :
+	    elif grep "^$eq " $TMP | analyser_eq
 	    then :
 	    else echo "$eq not found in liste-rancid result" >&2
 	    fi
