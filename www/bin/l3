@@ -297,11 +297,7 @@ proc main {} {
     ::dnscontext create d
     d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
-    ######################################## XXX
-    set msgsta ""
-    if {$tabcor(admin)} then {
-	set msgsta "PENSER A CHANGER CELA"
-    }
+    set msgsta [topo-status tabcor]
 
     ::webapp::import-vars ftab
     foreach f $conf(form) {

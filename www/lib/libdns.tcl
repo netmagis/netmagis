@@ -189,8 +189,6 @@ set libconf(tabcorresp) {
 #	initialise le contexte pour un programme hors cgi
 #   writelog
 #	affiche une ligne dans le log
-#   make-url
-#	crée une URL à partir d'un chemin et d'une liste d'arguments
 #   links
 #	positionne les éléments du bandeau recensant les liens
 #
@@ -408,6 +406,87 @@ snit::type ::dnscontext {
 	set eidcor $tabuid(idcor)
 
 	return ""
+    }
+
+    #
+    # Constituer
+    #
+    # Entrée :
+    #   - path : chemin de l'URL
+    #   - largs : liste {{clef val} {clef val} ...} à ajouter à l'URL
+    # Sortie :
+    #   - valeur de retour : URL constituée
+    #
+    # Note : chaque élément {clef val} peut également être de la forme
+    #	clef=val (encodée en post-string, donc sans espace)
+    #
+
+    proc make-url {_urltab name u eu} {
+	upvar $_urltab urltab
+
+	set path [lindex $urltab($name) 0]
+	set largs [lreplace $urltab($name) 0 0]
+
+	#
+	# Deux cas possibles : l'URL est "locale" (commence par un "/")
+	# ou externe (http://....). Dans ce dernier cas, il ne faut pas
+	# chercher à ajouter les arguments par défaut qui sont propres
+	# à cette application.
+	#
+
+	if {[regexp {^/} $path]} then {
+	    #
+	    # Ajouter les arguments "par défaut"
+	    #
+
+	    # substitution d'utilisateur
+	    if {$u ne $eu} then {
+		lappend largs [list "uid" $u]
+	    }
+
+	    # le parcours dans l'application
+	    if {$urltab($name:nextprog) ne ""} then {
+		lappend largs [list "nextprog" $urltab($name:nextprog)]
+		lappend largs [list "nextargs" $urltab($name:nextargs)]
+	    }
+
+	    #
+	    # Constituer la liste d'arguments
+	    #
+
+	    set l {}
+	    foreach clefval $largs {
+		if {[llength $clefval] == 1} then {
+		    lappend l $clefval
+		} else {
+		    lassign $clefval c v
+		    set v [::webapp::post-string $v]
+		    lappend l "$c=$v"
+		}
+	    }
+
+	    #
+	    # Constituer l'URL à partir du chemin et des arguments
+	    #
+
+	    if {[llength $l] == 0} then {
+		# pas d'argument : cas simple
+		set url $path
+	    } else {
+		if {[string match {*\?*} $path]} then {
+		    # déjà un argument dans le path
+		    set url [format "%s&%s" $path [join $l "&"]]
+		} else {
+		    # pas déjà d'argument dans le path
+		    set url [format "%s?%s" $path [join $l "&"]]
+		}
+	    }
+	} else {
+	    set url $path
+	}
+
+	unset urltab($name)
+	return $url
     }
 
     ###########################################################################
@@ -643,7 +722,7 @@ snit::type ::dnscontext {
     }
 
     ###########################################################################
-    # Constitue une URL
+    # URL framework
     #
     # Entrée :
     #   - path : chemin de l'URL
@@ -655,59 +734,13 @@ snit::type ::dnscontext {
     #	clef=val (encodée en post-string, donc sans espace)
     #
 
-    method make-url {path largs} {
-	#
-	# Ajouter les arguments "par défaut"
-	#
-
-	if {$uid ne $euid} then {
-	    lappend largs [list "uid" $uid]
-	}
-
-	#
-	# Constituer la liste d'arguments
-	#
-
-	set l {}
-	foreach clefval $largs {
-	    if {[llength $clefval] == 1} then {
-		lappend l $clefval
-	    } else {
-		lassign $clefval c v
-		set v [::webapp::post-string $v]
-		lappend l "$c=$v"
-	    }
-	}
-
-	#
-	# Constituer l'URL à partir du chemin et des arguments
-	#
-
-	if {[llength $l] == 0 || [regexp {^[^/]} $path]} then {
-	    # pas d'argument : cas simple
-	    set url $path
-	} else {
-	    if {[string match {*\?*} $path]} then {
-		# déjà un argument dans l'url
-		set url [format "%s&%s" $path [join $l "&"]]
-	    } else {
-		# pas déjà d'argument dans l'url
-		set url [format "%s?%s" $path [join $l "&"]]
-	    }
-	}
-
-	return $url
-    }
-
     method urlset {name path {largs {}}} {
-	lappend urllist
-
 	set urltab($name) [linsert $largs 0 $path]
 	set urltab($name:nextprog) ""
     }
 
     method urladd {name largs} {
-	lappend url($name)
+	set url($name) [concat $url($name) $largs]
     }
 
     method urlsetnext {name nextprog nextargs} {
@@ -737,17 +770,8 @@ snit::type ::dnscontext {
 
     method urlget {name} {
 	set path [lindex $urltab($name) 0]
-	if {[regexp {^/} $path]} then {
-	    set largs [lreplace $urltab($name) 0 0]
-	    if {$urltab($name:nextprog) ne ""} then {
-		lappend largs [list "nextprog" $urltab($name:nextprog)]
-		lappend largs [list "nextargs" $urltab($name:nextargs)]
-	    }
-	    set url [$self make-url $path $largs]
-	} else {
-	    set url $path
-	}
-	unset urltab($name)
+	set largs [lreplace $urltab($name) 0 0]
+	set url [make-url urltab $name $uid $euid]
 	return $url
     }
 
@@ -851,8 +875,10 @@ snit::type ::dnscontext {
 		    }
 		}
 	    } else {
-		set url [lindex $lks 0]
-		set url [$self make-url $url {}]
+		set path [lindex $lks 0]
+		$self urlset "U" $path {}
+		set url [make-url urltab "U" $uid $euid]
+
 		array set trans [lreplace $lks 0 0]
 		set lg $lang
 		if {! [info exists trans($lg)]} then {
@@ -4778,176 +4804,23 @@ array set libconf {
 }
 
 #
-# Initialiser l'accès à la topo pour les scripts CGI
+# Lire l'état de topo
 #
 # Entrée :
 #   - paramètres :
-#	- pageerr : fichier HTML contenant une page d'erreur
-#	- attr : attribut nécessaire pour exécuter le script ("corresp"/"admin")
-#	- form : les paramètres du formulaire
-#	- _ftab : tableau contenant en retour les champs du formulaire
-#	- _dbfd : accès à la base en retour
-#	- _uid : login de l'utilisateur, en retour
 #	- _tabuid : tableau contenant les caractéristiques de l'utilisateur
 #		(cf lire-utilisateur)
-#	- _ouid : login de l'utilisateur original, si substitué, ou chaîne vide
-#	- _tabouid : idem tabuid pour l'utilisateur original
-#	- _urluid : élément d'url à ajouter en cas de subsitution d'uid
-#	- _msgsta : message de status
 # Sortie :
-#   - valeur de retour : aucune
-#   - paramètres :
-#	- _ftab, _dbfd, _uid, _tabuid, _ouid, _tabouid, _msgsta : cf ci-dessus
-#   - variables dont le nom est défini dans $form : modifiées
-#
-# Remarque
-#  - le champ de formulaire uid est systématiquement ajouté aux champs
+#   - valeur de retour : message de statut, ou chaîne vide (si l'utilisateur
+#	n'est pas admin, ou s'il n'y a aucun message)
 #
 # Historique
-#   2007/01/11 : pda              : conception
-#   2008/10/01 : pda              : ajout msgsta
-#   2010/11/05 : pda/jean         : suppression paramètres
+#   2010/11/15 : pda      : séparation dans une fonction autonome
 #
 
-proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urluid _msgsta} {
-    global ah
-    global libconf
-
-    upvar $_ftab ftab
-    upvar $_dbfd dbfd
-    upvar $_uid uid
+proc topo-status {_tabuid} {
     upvar $_tabuid tabuid
-    upvar $_ouid ouid
-    upvar $_tabouid tabouid
-    upvar $_urluid urluid
-    upvar $_msgsta msgsta
-
-    #
-    # Pour le cas où on est en mode maintenance
-    #
-
-    ::webapp::nologin %NOLOGIN% %ROOT% $pageerr
-
-    #
-    # En attendant de converger init-topo avec dnscontext
-    #
-
-    set ah [::webapp::authbase create %AUTO%]
-    $ah configurelist %AUTH%
-
-    #
-    # Accès à la base SQL DNS
-    #
-
-    set dbfd [ouvrir-base %BASE% msg]
-    if {[string length $dbfd] == 0} then {
-	d error $msg
-    }
-
-    #
-    # Le login de l'utilisateur (la page est protégée par mot de passe)
-    #
-
-    set uid [::webapp::user]
-    if {[string equal $uid ""]} then {
-	d error "Pas de login : l'authentification a échoué."
-    }
-
-    #
-    # Les informations relatives à l'utilisateur
-    #
-
-    set msg [lire-correspondant $dbfd $uid tabuid]
-    if {! [string equal $msg ""]} then {
-	d error $msg
-    }
-
-    #
-    # Est-ce que la page est réservée à des administrateurs
-    # (correspondant ou administrateur) ? Si oui, l'utilisateur
-    # doit être dans la base DNS et présent.
-    #
-
-    if {! [string equal $attr ""]} then {
-	#
-	# Si l'utilisateur n'est pas trouvé dans la base DNS
-	# alors erreur (reproduit l'erreur dans lire-correspondant
-	# que nous ignorons plus haut).
-	#
-
-	if {$tabuid(idcor) == -1} then {
-	    d error "'$uid' n'est pas dans la base des correspondants."
-	}
-
-	#
-	# Si le correspondant n'est plus marqué comme "présent" dans la base,
-	# on ne lui autorise pas l'accès à l'application
-	#
-
-	if {! $tabuid(present)} then {
-	    d error "Désolé, $uid, mais vous n'êtes pas habilité."
-	}
-	
-	#
-	# On vérifie si la classe de l'utilisateur est autorisée
-	# à accéder cgi, en fonction du niveau demandé par le cgi ($attr)
-	# 
-	#
-
-        switch -- $attr {
-            corresp {
-		# si on arrive là, c'est qu'on est correspondant
-            }
-            admin {
-		if {! $tabuid(admin)} then {
-                    d error "Désolé, $uid, mais vous n'avez pas les droits suffisants"
-                }
-            }
-            default {
-                d error "Erreur interne sur demande d'attribut '$attr'"
-            }
-        }
-    }
-
-    #
-    # Récupération des paramètres du formulaire et importation des
-    # valeurs dans des variables.
-    #
-
-    lappend form {uid 0 1}
-    if {[llength [::webapp::get-data ftab $form]] == 0} then {
-	d error "Formulaire non conforme aux spécifications"
-    }
-
-    uplevel 1 [list ::webapp::import-vars $_ftab]
-
-    #
-    # Substitution d'utilisateur
-    #
-
-    set nuid [string trim [lindex $ftab(uid) 0]]
-    set urluid ""
-    if {! [string equal $nuid ""]} then {
-	if {$tabuid(admin)} then {
-	    array set tabouid [array get tabuid]
-	    array unset tabuid
-
-	    set ouid $uid
-	    set uid $nuid
-
-	    set msg [lire-correspondant $dbfd $uid tabuid]
-	    if {! [string equal $msg ""]} then {
-		d error $msg
-	    }
-
-	    set urluid "uid=[::webapp::post-string $uid]"
-	}
-    }
-
-    #
-    # Lit le statut général de la topo
-    # (seulement si l'utilisateur cible est admin)
-    #
+    global libconf
 
     set msgsta ""
     if {$tabuid(admin)} then {
@@ -4970,6 +4843,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
 	    close $fd
 	}
     }
+    return $msgsta
 }
 
 #
