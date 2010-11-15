@@ -36,6 +36,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/mailmodif.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+# aucun (page en cul de sac)
+
+#
 # Quelques paramètres du script
 #
 
@@ -74,7 +80,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     set idcor $tabcor(idcor)
 
@@ -93,7 +99,7 @@ proc main {} {
 
     set msg [valide-role-mail $dbfd $idcor $nom $domaine trr oldtrrh]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     set rrexiste [expr ! [string equal $trr(idrr) ""]]
@@ -107,7 +113,7 @@ proc main {} {
 
     set msg [valide-droit-nom $dbfd $idcor $nomh $domaineh newtrrh "machine"]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) "$msg\nAction refusée."
+	d error "$msg\nAction refusée."
     }
 
     #
@@ -116,8 +122,7 @@ proc main {} {
 
     if {! [string equal $nomh ""]} then {
 	if {[string equal $newtrrh(idrr) ""]} then {
-	    ::webapp::error-exit $conf(err) \
-			"Nom d'hébergeur '$toutheb' non valide (n'existe pas)."
+	    d error "Nom d'hébergeur '$toutheb' non valide (n'existe pas)."
 	}
     }
 
@@ -135,14 +140,13 @@ proc main {} {
     set videnewnomh [string equal $nomh ""]
 
     if {! [::pgsql::lock $dbfd {dns.rr dns.role_mail} msg]} then {
-	::webapp::error-exit $conf(err) "Transaction impossible\n$msg"
+	d error "Transaction impossible\n$msg"
     }
 
     set lm ""
     switch "$videoldnomh-$videnewnomh" {
 	1-1 {
-	    ::webapp::error-exit $conf(err) \
-			"Le rôle '$toutnom' n'existe pas. Vous ne pouvez pas le supprimer."
+	    d error "Le rôle '$toutnom' n'existe pas. Vous ne pouvez pas le supprimer."
 	}
 	1-0 {
 	    #
@@ -158,8 +162,7 @@ proc main {} {
 		set msg [ajouter-rr $dbfd $nom $trr(iddom) "" 0 "" 0 -1 \
 						"" "" "" $idcor trr]
 		if {! [string equal $msg ""]} then {
-		    ::webapp::error-exit $conf(err) \
-			    "Insertion de '$toutnom' impossible ($msg)"
+		    d error "Insertion de '$toutnom' impossible ($msg)"
 		} 
 	    }
 
@@ -171,7 +174,7 @@ proc main {} {
 			    VALUES ($trr(idrr), $newtrrh(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "Impossible d'insérer\n$msg"
+		d error "Impossible d'insérer\n$msg"
 	    }
 
 	    #
@@ -184,7 +187,7 @@ proc main {} {
 				VALUES ($tabcor(idgrp), $trr(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "Impossible d'insérer\n$msg"
+		d error "Impossible d'insérer\n$msg"
 	    }
 
 	    set lm "ajout role mail $toutnom -> $toutheb"
@@ -204,7 +207,7 @@ proc main {} {
 		    DELETE FROM dns.role_mail WHERE idrr = $idrr"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "Impossible de supprimer\n$msg"
+		d error "Impossible de supprimer\n$msg"
 	    }
 
 	    #
@@ -213,7 +216,7 @@ proc main {} {
 	    set msg [supprimer-rr-si-orphelin $dbfd $idrr]
 	    if {! [string equal $msg ""]} then {
 		::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "Impossible de supprimer\n$msg"
+		d error "Impossible de supprimer\n$msg"
 	    }
 
 	    set lm "suppression du role mail $toutnom"
@@ -234,7 +237,7 @@ proc main {} {
 				WHERE idrr = $idrr"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "Impossible de modifier\n$msg"
+		d error "Impossible de modifier\n$msg"
 	    }
 	    set lm "modification du role mail $toutnom -> $toutheb"
 	}
@@ -247,7 +250,7 @@ proc main {} {
 
     if {! [::pgsql::unlock $dbfd "commit" msg]} then {
 	::pgsql::unlock $dbfd "abort" m
-	::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
+	d error "L'insertion a échoué. Abandon.\n$msg"
     }
 
     d writelog "modifrolemail" $lm

@@ -63,6 +63,12 @@ set conf(confsuppr)	$conf(lib)/admgrpconfsuppr.html
 set conf(supprok)	$conf(lib)/admgrpsupprok.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/admgrpmodif"
+
+#
 # Quelques paramètres du script
 #
 
@@ -128,18 +134,18 @@ proc valide-groupe {dbfd groupe existant} {
     if {$existant} then {
 	# On veut que le groupe existe
 	if {$idgrp == -1} then {
-	    ::webapp::error-exit $conf(err) "Groupe '$groupe' non trouvé"
+	    d error "Groupe '$groupe' non trouvé"
 	}
     } else {
 	# On veut que le groupe n'existe pas encore
 	# Vérifier d'abord la syntaxe...
 	set msg [syntaxe-groupe $groupe]
 	if {! [string equal $msg ""]} then {
-	    ::webapp::error-exit $conf(err) $msg
+	    d error $msg
 	}
 	# ... et ensuite, vérifier que le groupe est inconnu
 	if {$idgrp != -1} then {
-	    ::webapp::error-exit $conf(err) "Le groupe '$groupe' existe déjà"
+	    d error "Le groupe '$groupe' existe déjà"
 	}
     }
 
@@ -230,7 +236,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     set orggrp  [lindex $ftab(orggrp) 0]
     set newgrp  [lindex $ftab(newgrp) 0]
@@ -264,7 +270,7 @@ proc main {} {
     set etat [string equal $orggrp "::nouveau"][string equal $newgrp ""] 
     switch $etat {
 	11 {
-	    ::webapp::error-exit $conf(err) "Il faut saisir un nom de groupe"
+	    d error "Il faut saisir un nom de groupe"
 	}
 	01 {
 	    set action "suppression"
@@ -298,6 +304,7 @@ proc main {} {
 	    set ftab(confirm)	{oui}
 	    set lchamps [array names ftab]
 	    set hidden  [::webapp::hide-parameters $lchamps ftab]
+	    d urlset "%URLFORM%" $conf(next) {}
 	    d result $conf(confsuppr) [list \
 					[list %ORGGRP%	$orggrp] \
 					[list %HIDDEN%	$hidden] \
@@ -306,8 +313,7 @@ proc main {} {
 	    # Procéder à la suppression
 	    set msg [supprime-groupe $dbfd $idgrp $idorphelin]
 	    if {! [string equal $msg ""]} then {
-		::webapp::error-exit $conf(err) \
-				    "Suppression impossible ($msg)"
+		d error "Suppression impossible ($msg)"
 	    }
 	    d result $conf(supprok) [list \
 					[list %ORGGRP%	$orggrp] \
@@ -328,7 +334,7 @@ proc main {} {
 
     set admin [lindex $ftab(admin) 0]
     if {! ([string equal $admin 0] || [string equal $admin 1])} then {
-	::webapp::error-exit $conf(err) "Champ 'admin' invalide"
+	d error "Champ 'admin' invalide"
     }
 
     #
@@ -337,7 +343,7 @@ proc main {} {
 
     set droitsmtp [lindex $ftab(droitsmtp) 0]
     if {! ([string equal $droitsmtp 0] || [string equal $droitsmtp 1])} then {
-	::webapp::error-exit $conf(err) "Champ 'droitsmtp' invalide"
+	d error "Champ 'droitsmtp' invalide"
     }
 
     #
@@ -346,7 +352,7 @@ proc main {} {
 
     set droitttl [lindex $ftab(droitttl) 0]
     if {! ([string equal $droitttl 0] || [string equal $droitttl 1])} then {
-	::webapp::error-exit $conf(err) "Champ 'droitttl' invalide"
+	d error "Champ 'droitttl' invalide"
     }
 
     #
@@ -383,8 +389,7 @@ proc main {} {
 	    } elseif {[info exists tcor($login)]} then {
 		if {$idgrp != [lindex $tcor($login) 0]} then {
 		    set g [lindex $tcor($login) 1]
-		    ::webapp::error-exit $conf(err) \
-			"Login '$login' déjà affecté au groupe '$g'"
+		    d error "Login '$login' déjà affecté au groupe '$g'"
 		}
 		unset tcor($login)
 	    } else {
@@ -417,12 +422,12 @@ proc main {} {
 	set tri [string trim [lindex $ftab(tridom$n) 0]]
 	if {[string length $tri] > 0} then {
 	    if {! [regexp -- {^[0-9]+$} $tri]} then {
-		::webapp::error-exit $conf(err) "Classe de tri de domaine invalide ($tri)"
+		d error "Classe de tri de domaine invalide ($tri)"
 	    }
 
 	    set domaine [string trim [lindex $ftab(domaine$n) 0]]
 	    if {! [info exists tabdom($domaine)]} then {
-		::webapp::error-exit $conf(err) "Domaine invalide ($domaine)"
+		d error "Domaine invalide ($domaine)"
 	    }
 
 	    if {! [info exists ftab(rolemail$n)]} then {
@@ -430,7 +435,7 @@ proc main {} {
 	    }
 	    set rolemail [string trim [lindex $ftab(rolemail$n) 0]]
 	    if {! [regexp -- {^[01]$} $rolemail]} then {
-		::webapp::error-exit $conf(err) "Role mail invalide ($rolemail)"
+		d error "Role mail invalide ($rolemail)"
 	    }
 
 	    if {! [info exists ftab(roleweb$n)]} then {
@@ -438,7 +443,7 @@ proc main {} {
 	    }
 	    set roleweb [string trim [lindex $ftab(roleweb$n) 0]]
 	    if {! [regexp -- {^[01]$} $roleweb]} then {
-		::webapp::error-exit $conf(err) "Role web invalide ($roleweb)"
+		d error "Role web invalide ($roleweb)"
 	    }
 
 	    lappend liddom [list $tri $tabdom($domaine) $rolemail $roleweb]
@@ -471,12 +476,12 @@ proc main {} {
 	set tri [string trim [lindex $ftab(trires$n) 0]]
 	if {[string length $tri] > 0} then {
 	    if {! [regexp -- {^[0-9]+$} $tri]} then {
-		::webapp::error-exit $conf(err) "Classe de tri de réseau invalide ($tri)"
+		d error "Classe de tri de réseau invalide ($tri)"
 	    }
 
 	    set idreseau [string trim [lindex $ftab(reseau$n) 0]]
 	    if {! [info exists tabres($idreseau)]} then {
-		::webapp::error-exit $conf(err) "Réseau invalide ($idreseau)"
+		d error "Réseau invalide ($idreseau)"
 	    }
 
 	    if {! [info exists ftab(dhcp$n)]} then {
@@ -484,7 +489,7 @@ proc main {} {
 	    }
 	    set dhcp [string trim [lindex $ftab(dhcp$n) 0]]
 	    if {! [regexp -- {^[01]$} $dhcp]} then {
-		::webapp::error-exit $conf(err) "Droit DHCP invalide ($dhcp)"
+		d error "Droit DHCP invalide ($dhcp)"
 	    }
 
 	    if {! [info exists ftab(acl$n)]} then {
@@ -492,7 +497,7 @@ proc main {} {
 	    }
 	    set acl [string trim [lindex $ftab(acl$n) 0]]
 	    if {! [regexp -- {^[01]$} $acl]} then {
-		::webapp::error-exit $conf(err) "Droit ACL invalide ($acl)"
+		d error "Droit ACL invalide ($acl)"
 	    }
 
 	    lappend lidres [list $tri $idreseau $dhcp $acl]
@@ -512,15 +517,14 @@ proc main {} {
 	set allow_deny [lindex $ftab(allow$n) 0]
 	if {!([string equal $allow_deny "0"] || \
 		[string equal $allow_deny "1"])} then {
-	    ::webapp::error-exit $conf(err) \
-			"Valeur incorrecte pour allow/deny '$allow_deny'"
+	    d error "Valeur incorrecte pour allow/deny '$allow_deny'"
 	}
 
 	set adr [string trim [lindex $ftab(adr$n) 0]]
 	if {[string length $adr] != 0} then {
 	    set m [syntaxe-ip $dbfd $adr "cidr"]
 	    if {[string length $m] > 0} then {
-		::webapp::error-exit $conf(err) "CIDR incorrect '$adr'"
+		d error "CIDR incorrect '$adr'"
 	    }
 
 	    lappend ldrip [list $allow_deny $adr]
@@ -544,20 +548,18 @@ proc main {} {
 
 	set rw [lindex $ftab(eqrw$n) 0]
 	if {!($rw eq "0" || $rw eq "1")} then {
-	    ::webapp::error-exit $conf(err) \
-			"Valeur incorrecte pour read/write '$rw'"
+	    d error "Valeur incorrecte pour read/write '$rw'"
 	}
 
 	set allow_deny [lindex $ftab(eqallow$n) 0]
 	if {!($allow_deny eq "0" || $allow_deny eq "1")} then {
-	    ::webapp::error-exit $conf(err) \
-			"Valeur incorrecte pour allow/deny '$allow_deny'"
+	    d error "Valeur incorrecte pour allow/deny '$allow_deny'"
 	}
 
 	set pattern [string trim [lindex $ftab(eqpat$n) 0]]
 	if {$pattern ne ""} then {
 	    if {[catch {regexp $pattern ""} msg]} then {
-		::webapp::error-exit $conf(err) "Incorrect pattern '$msg'"
+		d error "Incorrect pattern '$msg'"
 	    }
 
 	    lappend ldreq [list $rw $allow_deny $pattern]
@@ -582,14 +584,12 @@ proc main {} {
 	set tri [string trim [lindex $ftab(tridhcpprof$n) 0]]
 	if {[string length $tri] > 0} then {
 	    if {! [regexp -- {^[0-9]+$} $tri]} then {
-		::webapp::error-exit $conf(err) \
-			"Classe de tri de profil DHCP invalide ($tri)"
+		d error "Classe de tri de profil DHCP invalide ($tri)"
 	    }
 
 	    set dhcpprofil [string trim [lindex $ftab(nomdhcpprof$n) 0]]
 	    if {! [info exists tabdhcpprofil($dhcpprofil)]} then {
-		::webapp::error-exit $conf(err) \
-			"Profil DHCP invalide ($dhcpprofil)"
+		d error "Profil DHCP invalide ($dhcpprofil)"
 	    }
 
 	    lappend lidprof [list $tri $tabdhcpprofil($dhcpprofil)]
@@ -631,8 +631,7 @@ proc main {} {
 	    set login [string trim [lindex $ftab(login$n) 0]]
 	    if {[string length $login] > 0} then {
 		if {[catch {set nb [$ah getuser $login $u]} m]} then {
-		    ::webapp::error-exit $conf(err) \
-			"Problème dans la base d'authentification ($m)"
+		    d error "Problème dans la base d'authentification ($m)"
 		}
 		switch $nb {
 		    0 {
@@ -642,7 +641,7 @@ proc main {} {
 			# rien
 		    }
 		    default {
-			::webapp::error-exit $conf(err) "Login '$login' ambigu"
+			d error "Login '$login' ambigu"
 		    }
 		}
 	    }
@@ -721,7 +720,8 @@ proc main {} {
 	    set lchamps [array names ftab]
 	    set hidden  [::webapp::hide-parameters $lchamps ftab]
 	    set message [join $incoherences "<BR>\n"]
-	    d result $conf(page) [list \
+	    d urlset "%URLFORM%" $conf(next) {}
+	    d result $conf(confirm) [list \
 					[list %MSGACT%	$msgact] \
 					[list %ORGGRP%	$orggrp] \
 					[list %HIDDEN%	$hidden] \
@@ -784,8 +784,7 @@ proc main {} {
 	set idgrp $tab(idgrp)
     }
     if {$idgrp == -1} then {
-	::webapp::error-exit $conf(err) \
-		"Erreur interne : groupe '$newgrp' non trouvé"
+	d error "Erreur interne : groupe '$newgrp' non trouvé"
     }
 
     # Mettre a jour les attributs du groupe
@@ -893,14 +892,13 @@ proc main {} {
     foreach sql $cmd {
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	   ::pgsql::unlock $dbfd "abort" m
-	   ::webapp::error-exit $conf(err) \
-			"L'opération '$sql' a échoué. Abandon.\n$msg"
+	   d error "L'opération '$sql' a échoué. Abandon.\n$msg"
 	}
     }
 
     if {! [::pgsql::unlock $dbfd "commit" msg]} then {
        ::pgsql::unlock $dbfd "abort" m
-       ::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
+       d error "L'insertion a échoué. Abandon.\n$msg"
     }
 
     #

@@ -30,6 +30,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/dhcpsel.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/dhcpedit"
+
+#
 # Quelques paramètres du script
 #
 
@@ -64,7 +70,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
 
     #
     # Récupération des réseaux auxquels a droit le correspondant
@@ -74,8 +80,7 @@ proc main {} {
     set taille [llength $lres]
     switch $taille {
 	0 {
-	    ::webapp::error-exit $conf(err) \
-			"Vous n'avez accès à aucun réseau avec le droit DHCP"
+	    d error "Vous n'avez accès à aucun réseau avec le droit DHCP"
 	}
 	1 {
 	    set idreseau [lindex [lindex $lres 0] 0]
@@ -85,6 +90,7 @@ proc main {} {
 	}
 	default {
 	    set menureseau [::webapp::form-menu "idreseau" 1 0 $lres {}]
+	    d urlset "%URLFORM%" $conf(next) {}
 	    d result $conf(page) [list \
 					[list %MENURESEAU% $menureseau] \
 				    ]

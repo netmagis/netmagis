@@ -240,7 +240,7 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
     # Mettre à jour la modification du RR
     #
 
-    set msg [touch-rr $dbfd $trr(idrr) $idcor]
+    set msg [touch-rr $dbfd $trr(idrr)]
     if {! [string equal $msg ""]} then {
 	return $msg
     }

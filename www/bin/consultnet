@@ -31,6 +31,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/consultnet.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/listenet"
+
+#
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
@@ -58,7 +64,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
 
     #
     # Extraire la liste des établissements et des communautés
@@ -93,11 +99,12 @@ proc main {} {
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %LISTEETABL% $listeetabl] \
 				[list %LISTECOMMU% $listecommu] \
-				[list %MENUTRI1%   $menutri1] \
-				[list %MENUTRI2%   $menutri2] \
+				[list %MENUTRI1% $menutri1] \
+				[list %MENUTRI2% $menutri2] \
 			    ]
 }
 

@@ -38,6 +38,15 @@ set conf(page1)		$conf(lib)/l3.html
 set conf(pagen)		$conf(lib)/topoliste.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(nexteq)	"%HOMEURL%/bin/eq"
+set conf(nextl2)	"%HOMEURL%/bin/l2"
+set conf(nextl3)	"%HOMEURL%/bin/l3"
+
+
+#
 # Quelques paramètres du script
 #
 
@@ -48,18 +57,11 @@ set conf(form)	{
 }
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
-set conf(extractl3)	"%TOPODIR%/bin/extractl3 %s %s %s < %GRAPH%"
-set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
-set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
-set conf(urll2)		"$conf(homeurl)/bin/l2?vlan=%d%s"
-set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
+set conf(extractl3)	"%TOPODIR%/bin/extractl3 %s %s < %GRAPH%"
+
 set conf(dot)		"%DOT%"
 set conf(neato)		"%NEATO%"
 set conf(ps2pdf)	"%PS2PDF%"
-
-set conf(bb4)		"130.79.20.0/28 130.79.20.16/29"
-set conf(bb6)		"2001:660:2402::/61"
-
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -153,7 +155,8 @@ proc epilogue {format} {
     return "\}\n"
 }
 
-proc generer-dot {format prog urleq urll2 u1} {
+proc generer-dot {format prog} {
+    global conf
 
     set dot [prologue $format]
 
@@ -194,7 +197,8 @@ proc generer-dot {format prog urleq urll2 u1} {
 		    }
 		}
 
-		set url [format $urleq $eqname $u1]
+		d urlset "U" $conf(nexteq) [list [list "eq" $eqname]]
+		set url [d urlget "U"]
 		lappend attrlist "href=\"$url\""
 
 		set attr [join $attrlist ", "]
@@ -247,7 +251,8 @@ proc generer-dot {format prog urleq urll2 u1} {
 		lappend attrlist "label=\"$label\""
 
 		if {$vlanid != -1} then {
-		    set url [format $urll2 $vlanid $u1]
+		    d urlset "U" $conf(nextl2) [list [list "vlan" $vlanid]]
+		    set url [d urlget "U"]
 		    lappend attrlist "href=\"$url\""
 		}
 
@@ -289,8 +294,16 @@ proc main {} {
     # Initialisation
     #
 
-    init-topo $conf(err) "corresp" $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
+    ::dnscontext create d
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
+    ######################################## XXX
+    set msgsta ""
+    if {$tabcor(admin)} then {
+	set msgsta "PENSER A CHANGER CELA"
+    }
+
+    ::webapp::import-vars ftab
     foreach f $conf(form) {
 	set var [lindex $f 0]
 	set $var [string trim [lindex [set $var] 0]]
@@ -298,18 +311,19 @@ proc main {} {
 
     set tmp /tmp/l3-[pid]
 
-    set u1 ""
-    set u2 ""
-    if {! [string equal $urluid ""]} then {
-	set u1 "&$urluid"
-	set u2 "?$urluid"
-    }
+    #
+    #  URL des formulaires
+    #
+
+    d urlset "%URLFORMEQ%" $conf(nexteq) {}
+    d urlset "%URLFORML2%" $conf(nextl2) {}
+    d urlset "%URLFORML3%" $conf(nextl3) {}
 
     #
     # Récupérer les réseaux IP déclarés dans le graphe
     #
 
-    set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
+    set cmd [format $conf(dumpgraph) $tabcor(flagsr)]
     set fd [open "|$cmd" "r"]
 
     while {[gets $fd ligne] > -1} {
@@ -318,8 +332,7 @@ proc main {} {
 	}
     }
     if {[catch {close $fd} msg]} then {
-	::webapp::error-exit $conf(err) \
-		"Erreur lors de la lecture des réseaux (msg)"
+	d error "Erreur lors de la lecture des réseaux (msg)"
     }
 
     if {[string equal $addr ""]} then {
@@ -327,30 +340,29 @@ proc main {} {
 	# Trier les adresses IP pour les présenter dans le bon ordre
 	#
 
-	set liste "<UL>\n"
+	set liste {}
 	foreach addr [lsort -command comparer-ip [array names tabip]] {
-	    set url [format $conf(urll3) $addr $u1]
-	    append liste [format "<LI><A HREF=\"%s\">$addr</A>\n" $url]
+	    d urlset "U" $conf(nextl3) [list [list "addr" $addr]]
+	    set url [d urlget "U"]
+	    lappend liste [::webapp::helem "li" \
+				[::webapp::helem "a" $addr "href" $url]]
 	}
-	append liste "</UL>"
+	set liste [::webapp::helem "ul" [join $liste "\n"]]
 
 	#
 	# Sortie de la page
 	#
 
-	::webapp::send html [::webapp::file-subst $conf(pagen) \
-					    [list \
-						    [list %MSGSTA% $msgsta] \
-						    [list %OBJETS% "réseaux IP"] \
-						    [list %LISTE%  $liste] \
-						    [list %EQ%     ""] \
-						    [list %VLAN%   ""] \
-						    [list %ADDR%   ""] \
-						    [list %URLUID% $u2] \
-						    [list %HEADER% ""] \
-						    [list %ONLOAD% ""] \
-						] \
-					]
+	d result $conf(pagen) [list \
+				    [list %MSGSTA% $msgsta] \
+				    [list %OBJETS% "réseaux IP"] \
+				    [list %LISTE%  $liste] \
+				    [list %EQ%     ""] \
+				    [list %VLAN%   ""] \
+				    [list %ADDR%   ""] \
+				    [list %HEADER% ""] \
+				    [list %ONLOAD% ""] \
+				]
     } else {
 	#
 	# Valider l'adresse IP
@@ -358,7 +370,7 @@ proc main {} {
 
 	set msg [syntaxe-ip $dbfd $addr "loosecidr"]
 	if {! [string equal $msg ""]} then {
-	    ::webapp::error-exit $conf(err) $msg
+	    d error $msg
 	}
 
 	#
@@ -379,17 +391,8 @@ proc main {} {
 	# Récupérer les informations lues dans le graphe
 	#
 
-	if {! [string equal $urluid ""]} then {
-	    set bb ""
-	} else {
-	    if {[::ip::version $addr] == 6} then {
-		set bb $conf(bb6)
-	    } else {
-		set bb $conf(bb4)
-	    }
-	}
-	set xl3 [format $conf(extractl3) $tabuid(flagsr) [join $lnet " "] $bb]
-	set dot [generer-dot $format $xl3 $conf(urleq) $conf(urll2) $u1]
+	set xl3 [format $conf(extractl3) $tabcor(flagsr) [join $lnet " "]]
+	set dot [generer-dot $format $xl3]
 	set fd [open "$tmp.dot" "w"]
 	puts $fd $dot
 	close $fd
@@ -398,8 +401,19 @@ proc main {} {
 	# Sélectionner le format et sortir la page
 	#
 
-	set url "addr=$addr$u1"
 	set prog "$conf(neato) -Gmaxiter=10000"
+
+	d urlset "U" $conf(nextl3) [list \
+					[list "format" "png"] \
+					[list "addr" $addr] \
+				    ]
+	set urlimg [d urlget "U"]
+
+	d urlset "U" $conf(nextl3) [list \
+					[list "format" "pdf"] \
+					[list "addr" $addr] \
+				    ]
+	set urlpdf [d urlget "U"]
 
 	switch -- $format {
 	    pdf {
@@ -415,33 +429,24 @@ proc main {} {
 		set img [read $fd]
 		close $fd
 		::webapp::send png $img
-		exit 0
 	    }
 	    default {
 		set map [exec sh -c "$prog -Tcmapx < $tmp.dot 2> /dev/null"]
-		::webapp::send html [::webapp::file-subst $conf(page1) \
-					    [list \
-						    [list %MSGSTA% $msgsta] \
-						    [list %EQ%     ""] \
-						    [list %VLAN%   ""] \
-						    [list %RESEAU% $lnet] \
-						    [list %ADDR%   $addr] \
-						    [list %URL%    $url] \
-						    [list %MAP%    $map] \
-						    [list %URLUID% $u2] \
-						] \
+		d result $conf(page1) [list \
+					    [list %MSGSTA% $msgsta] \
+					    [list %EQ%     ""] \
+					    [list %VLAN%   ""] \
+					    [list %RESEAU% $lnet] \
+					    [list %ADDR%   $addr] \
+					    [list %URLIMG% $urlimg] \
+					    [list %URLPDF% $urlpdf] \
+					    [list %MAP%    $map] \
 					]
 	    }
 	}
 
 	file delete -force -- $tmp.dot
     }
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

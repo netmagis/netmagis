@@ -9,8 +9,6 @@
 #
 # Paramètres (formulaire ou URL) :
 #   - adr : adresse IP (v4 en l'occurrence sélectionnée)
-#   - nextprog, nextargs : suite du parcours (en cas d'ajout la carte
-#		ou depuis la recherche de plage consécutive)
 #
 # Historique
 #   2010/10/10 : pda      : spécification
@@ -33,6 +31,14 @@ set conf(page)		$conf(lib)/edit.html
 set conf(err)		$conf(lib)/erreur.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(nextsuppr)	"%HOMEURL%/bin/traitesuppr"
+set conf(nextedit)	"%HOMEURL%/bin/editmodif"
+set conf(nextlist)	"%HOMEURL%/bin/liste"
+
+#
 # Quelques paramètres du script
 #
 
@@ -47,8 +53,6 @@ set conf(script-accueil) bin/accueil
 
 set conf(form)		{
 	{adr		1 1}
-	{nextprog	1 1}
-	{nextargs	1 1}
 }
 
 #
@@ -80,7 +84,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     set idcor $tabcor(idcor)
 
@@ -89,8 +93,6 @@ proc main {} {
     #
 
     set adr      [string trim [lindex $ftab(adr) 0]]
-    set nextprog [string trim [lindex $ftab(nextprog) 0]]
-    set nextargs [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Vérifier la syntaxe de l'adresse IP
@@ -98,7 +100,7 @@ proc main {} {
 
     set m [syntaxe-ip $dbfd $adr "inet"]
     if {[string length $m] > 0} then {
-	::webapp::error-exit $conf(err) "Erreur sur l'adresse '$adr': $m"
+	d error "Erreur sur l'adresse '$adr': $m"
     }
 
     #
@@ -107,7 +109,7 @@ proc main {} {
     #
 
     if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
-	::webapp::error-exit $conf(err) "Vous n'avez pas accès à l'adresse '$adr'"
+	d error "Vous n'avez pas accès à l'adresse '$adr'"
     }
 
     #
@@ -116,7 +118,7 @@ proc main {} {
     #
 
     if {! [lire-rr-par-ip $dbfd $adr trr]} then {
-	::webapp::error-exit $conf(err) "L'adresse '$adr' n'existe pas dans la base."
+	d error "L'adresse '$adr' n'existe pas dans la base."
     }
 
     #
@@ -127,7 +129,7 @@ proc main {} {
     set domaine $trr(domaine)
     set msg [valide-droit-nom $dbfd $idcor $nom $domaine bidon "supprimer-un-nom"]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -155,20 +157,37 @@ proc main {} {
     # Préparer la suite du parcours
     #
 
-    set next [::webapp::post-string $nextargs]
-    set next "nextprog=$nextprog&nextargs=$next"
+    d urlset "%URLSUPPR%" $conf(nextsuppr) [list \
+						[list "action" "suppr-nom"] \
+						[list "confirm" "oui"] \
+						[list "nom" $nom] \
+						[list "domaine" $domaine] \
+					    ]
+    d urladdnext "%URLSUPPR%"
 
-    switch -- $nextprog {
-	map {
-	    set suite "$conf(homeurl)/$conf(script-map)?format=carte&$nextargs"
-	}
-	list {
-	    set suite "$conf(homeurl)/$conf(script-liste)?format=consulter&$nextargs"
-	}
-	default {
-	    set suite "$conf(homeurl)/$conf(script-accueil)"
-	}
+    d urlset "%URLSUPPRIP%" $conf(nextsuppr) [list \
+						[list "action" "suppr-ip"] \
+						[list "confirm" "oui"] \
+						[list "adr" $adr] \
+					    ]
+    d urladdnext "%URLSUPPRIP%"
+
+    d urlset "%URLEDIT%" $conf(nextedit) [list \
+						[list "action" "modif-infos"] \
+						[list "nom" $nom] \
+						[list "domaine" $domaine] \
+					    ]
+    d urladdnext "%URLEDIT%"
+
+    switch -- [d nextprog] {
+	map { set format "carte" }
+	list -
+	default { set format "consulter" }
     }
+    d urlset "%URLBACK%" $conf(nextlist) [list \
+						[list "format" $format] \
+						[d nextargs] \
+					    ]
 
     #
     # Fin du script : sortie de la page et fermeture de la base
@@ -179,9 +198,6 @@ proc main {} {
 				[list %NOM%         $nom] \
 				[list %DOMAINE%     $domaine] \
 				[list %MACHINE%     $machine] \
-				[list %NEXTARGS%    $nextargs] \
-				[list %NEXT%        $next] \
-				[list %SUITE%       $suite] \
 				[list %DISPUNEIP%   $dispuneip] \
 			    ]
 }

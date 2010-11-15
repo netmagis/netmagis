@@ -31,6 +31,13 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/ifchg.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/traiteifchg"
+set conf(nextifchg)	"%HOMEURL%/bin/ifchg"
+
+#
 # Quelques paramètres du script
 #
 
@@ -39,17 +46,6 @@ set conf(form)	{
     {eq			1 1}
     {iface		1 1}
 }
-
-####set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
-####set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
-####set conf(urlstat)	"$conf(homeurl)/bin/metro?id=%s%s"
-####set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
-####set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
-####set conf(urll2)		"$conf(homeurl)/bin/l2?eq=%s&iface=%s&vlan=%d%s"
-####set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
-####set conf(urlifchgiface)	"$conf(homeurl)/bin/ifchg?eq=%s&iface=%s%s"
-
-set conf(urlifchg)	"$conf(homeurl)/bin/ifchg?eq=%s&iface=%s%s"
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -79,27 +75,22 @@ proc main {} {
     # Initialisation
     #
 
-    init-topo $conf(err) "corresp" $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
+    ::dnscontext create d
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
+    ::webapp::import-vars ftab
     foreach f $conf(form) {
 	set var [lindex $f 0]
 	set $var [string trim [lindex [set $var] 0]]
     }
 
-    set u1 ""
-    set u2 ""
-    if {! [string equal $urluid ""]} then {
-	set u1 "&$urluid"
-	set u2 "?$urluid"
-    }
-
     #
     # Lire les informations de l'équipement dans le graphe
-    # Ces informations sont filtrées par tabuid qui n'affiche
+    # Ces informations sont filtrées par tabcor qui n'affiche
     # que les vlans autorisés.
     #
 
-    set l [eq-iflist $eq tabuid $conf(err)]
+    set l [eq-iflist $eq tabcor]
 
     lassign $l eq type model location iflist array
     array set tabiface $array
@@ -120,8 +111,7 @@ proc main {} {
 	#
 
 	if {! [info exists tabiface($iface)]} then {
-	    ::webapp::errror-exit $conf(err) \
-			"L'interface $iface n'est pas trouvée sur $eq"
+	    d error "L'interface $iface n'est pas trouvée sur $eq"
 	}
 
 	#
@@ -132,8 +122,7 @@ proc main {} {
 	set ligne [lreplace $tabiface($iface) 0 7]
 
 	if {$edit ne "edit"} then {
-	    ::webapp::errror-exit $conf(err) \
-			"Vous ne pouvez modifier l'interface $iface sur $eq"
+	    d error "Vous ne pouvez modifier l'interface $iface sur $eq"
 	}
 
 	#
@@ -144,7 +133,8 @@ proc main {} {
 	set menuif [::webapp::form-hidden iface $iface]
 
 	# proposer l'option "plusieurs interfaces"
-	set url [format $conf(urlifchg) $eq "" $u1]
+	d urlset "U" $conf(nextifchg) [list [list "eq" $eq]]
+	set url [d urlget "U"]
 	set multi [::webapp::helem "p" \
 			[::webapp::helem "a" {Modifier plusieurs interfaces} \
 					"href" $url] ]
@@ -180,26 +170,23 @@ proc main {} {
 	# proposer les différents vlans
     }
 
+    #
+    # Script suivant
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
 
     #
     # Sortie de la page
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-					[list \
-						[list %EQ%     $eq] \
-						[list %TITRE% $titre] \
-						[list %MULTI% $multi] \
-						[list %MENUIF% $menuif] \
-						[list %MENUDESC% $menudesc] \
-					    ] \
-				    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+			    [list %EQ%     $eq] \
+			    [list %TITRE% $titre] \
+			    [list %MULTI% $multi] \
+			    [list %MENUIF% $menuif] \
+			    [list %MENUDESC% $menudesc] \
+			]
 }
 
 ::webapp::cgi-exec main %DEBUG%

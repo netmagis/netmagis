@@ -44,6 +44,12 @@ set conf(libdns)	$conf(lib)/libdns.tcl
 set conf(err)		$conf(lib)/erreur.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+# aucun (page en cul de sac)
+
+#
 # Quelques paramètres du script
 #
 
@@ -85,27 +91,22 @@ proc main {} {
     # Initialisation
     #
 
-    init-topo $conf(err) "corresp" $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
+    ::dnscontext create d
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
+    ::webapp::import-vars ftab
     foreach f $conf(form) {
 	set var [lindex $f 0]
 	set $var [string trim [lindex [set $var] 0]]
-    }
-
-    set u1 ""
-    set u2 ""
-    if {! [string equal $urluid ""]} then {
-	set u1 "&$urluid"
-	set u2 "?$urluid"
     }
 
     #
     # valider l'id du graphe en fonction des droits
     #
 
-    set msg [verifier-metro-id $dbfd $id tabuid titre]
-    if {! $tabuid(admin) && ! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+    set msg [verifier-metro-id $dbfd $id tabcor titre]
+    if {! $tabcor(admin) && ! [string equal $msg ""]} then {
+	d error $msg
     }
 
     #
@@ -129,7 +130,7 @@ proc main {} {
 		set debut [clock scan "last year"]
 	    }
 	    default {
-		::webapp::error-exit $conf(err) "Période '$periode' invalide"
+		d error "Période '$periode' invalide"
 	    }
 	}
     } elseif {[string equal $debut ""] && [string equal $fin ""]} then {
@@ -137,13 +138,13 @@ proc main {} {
 	set debut [clock scan "yesterday"]
     } else {
 	if {[catch {clock format $debut}]} then {
-	    ::webapp::error-exit $conf(err) "Date de début invalide '$debut'"
+	    d error "Date de début invalide '$debut'"
 	}
 	if {[catch {clock format $fin}]} then {
-	    ::webapp::error-exit $conf(err) "Date de fin invalide '$fin'"
+	    d error "Date de fin invalide '$fin'"
 	}
 	if {$debut >= $fin} then {
-	    ::webapp::error-exit $conf(err) "Date de début postérieure à la date de fin"
+	    d error "Date de début postérieure à la date de fin"
 	}
     }
 
@@ -161,7 +162,7 @@ proc main {} {
 	    set urltaille ""
 	}
 	default {
-	    ::webapp::error-exit $conf(err) "Taille du graphe invalide '$taille'"
+	    d error "Taille du graphe invalide '$taille'"
 	}
     }
 
@@ -192,13 +193,13 @@ proc main {} {
 
     set url [format $conf(idrfmt) $hid $debut $fin]
     append url $urltaille
-    gengraph $url $conf(err)
+    gengraph $url
 
     #
     # Déconnexion de la base
     #
 
-    fermer-base $dbfd
+    d end
 }
 
 ::webapp::cgi-exec main %DEBUG%

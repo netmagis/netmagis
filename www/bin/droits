@@ -35,6 +35,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/droits.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+# (aucun : page cul de sac)
+
+#
 # Quelques paramètres du script
 #
 
@@ -71,7 +77,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     #
     # Si l'utilisateur est un administrateur, l'autoriser à consulter
@@ -90,7 +96,7 @@ proc main {} {
 	    unset tabcor
 	    set msg [lire-correspondant $dbfd $login tabcor]
 	    if {! [string equal $msg ""]} then {
-		::webapp::error-exit $conf(err) "'$login' non trouvé ($msg)"
+		d error "'$login' non trouvé ($msg)"
 	    }
 	}
     }

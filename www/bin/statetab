@@ -31,6 +31,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/statetab.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+# aucun (page en cul de sac)
+
+#
 # Le tableau servant à présenter le nb de machines et d'adresses
 # par établissement
 # Colonnes
@@ -129,7 +135,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
 
     #
     # Nb d'adresses (v4 ou v6) enregistrées par établissement dans la base.

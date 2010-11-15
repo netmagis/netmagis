@@ -39,6 +39,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/admgrpedit.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/admgrpmodif"
+
+#
 # Quelques paramètres du script
 #
 
@@ -250,7 +256,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     #
     # Valider le nom du groupe, et récupérer son identifiant numérique
@@ -283,7 +289,7 @@ proc main {} {
 	}
 
 	if {$idgrp == -1} then {
-	    ::webapp::error-exit $conf(err) "Groupe '$orggrp' non trouvé"
+	    d error "Groupe '$orggrp' non trouvé"
 	}
     }
 
@@ -362,8 +368,7 @@ proc main {} {
 
 	set idx [lsearch -exact $ldom [list $d $d]]
 	if {$idx == -1} then {
-	    ::webapp::error-exit $conf(err) \
-		"Le groupe à accès au domaine '$d' qui n'existe pas dans la base"
+	    d error "Le groupe à accès au domaine '$d' qui n'existe pas dans la base"
 	}
 	set htri  [::webapp::form-text tridom$ndom 1 5 5 $tri]
 	set hdom  [::webapp::form-menu domaine$ndom 1 0 $ldom [list $idx]]
@@ -425,8 +430,7 @@ proc main {} {
 	set acl      $tab(acl)
 
 	if {! [info exists idxreseau($idreseau)]} then {
-	    ::webapp::error-exit $conf(err) \
-		"Le groupe à accès au réseau '$idreseau' qui n'existe pas dans la base"
+	    d error "Le groupe à accès au réseau '$idreseau' qui n'existe pas dans la base"
 	}
 	set idx $idxreseau($idreseau)
 
@@ -547,8 +551,7 @@ proc main {} {
 
 	set idx [lsearch -exact $lprof [list $p $p]]
 	if {$idx == -1} then {
-	    ::webapp::error-exit $conf(err) \
-		"Le groupe à accès au profil '$d' qui n'existe pas dans la base"
+	    d error "Le groupe à accès au profil '$d' qui n'existe pas dans la base"
 	}
 	set htri  [::webapp::form-text tridhcpprof$nprof 1 5 5 $tri]
 	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof [list $idx]]
@@ -569,6 +572,7 @@ proc main {} {
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %TITRE% $titre] \
 				[list %ORGGRP% $orggrp] \

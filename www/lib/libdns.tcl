@@ -189,8 +189,10 @@ set libconf(tabcorresp) {
 #	initialise le contexte pour un programme hors cgi
 #   writelog
 #	affiche une ligne dans le log
-#   makeurl
-#	crée une URL à partir d'un chemin et d'un tableau
+#   make-url
+#	crée une URL à partir d'un chemin et d'une liste d'arguments
+#   links
+#	positionne les éléments du bandeau recensant les liens
 #
 # Historique
 #   2001/06/18 : pda      : conception
@@ -216,9 +218,137 @@ snit::type ::dnscontext {
     # uid
     variable uid ""
     variable euid ""
+    variable eidcor -1
+
+    # page d'erreur
+    variable errorpage ""
+
+    # parcours
+    variable dnextprog ""
+    variable dnextargs ""
+
+    # liste des URL déclarées dans le script
+    # urltab(<nom>) = {path {clef val} {clef val} {clef val...}}
+    # <nom> = %[A-Z0-9]+%
+    # urltab(<nom>:nextprog) = <nextprog> ou chaîne vide
+    # urltab(<nom>:nextargs) = <nextargs> (si <nextprog> != chaîne vide)
+    variable urltab -array {}
+
+    # où est-on dans l'application ?
+    # valeurs possibles : dns topo admin
+    variable curmodule	""
+
+    # capacités actuelles (i.e. les droits du correspondant où le
+    # paramétrage de l'application)
+    # valeurs possibles : admin dns topo
+    variable curcap	{}
+
+    # liens du bandeau
+    # Le tableau contient plusieurs types d'indices qui constituent une
+    # structure d'arbre
+    #	tab(:<module>)	{{<element>|:<module> <cap>}..{<element>|:<module> <cap>}}
+    #   tab(<element>)	{<url> <lang> <desc> <lang> <desc> ...}
+    #
+    # Le premier type correspond à l'ordre d'affichage d'un module
+    #	- un module correspond normalement à l'une des valeurs de la
+    #		variable curmodule
+    #	- chaque élément ou module n'est affiché que si la condition
+    #		matérialisée par la capacité est vraie, la capacité
+    #		fictive "always" indiquant que cet élément ou module
+    #		est toujours affiché
+    #	- si dans la liste figure un module, celui-ci est recherché
+    #		récursivement (ce qui donne la structure d'arbre, les
+    #		feuilles étant les éléments)
+    # Le deuxième type correspond à l'affichage de l'élément du contexte
+
+    variable links -array {
+	:dns		{
+			    {accueil always}
+			    {consulter always}
+			    {ajouter always}
+			    {supprimer always}
+			    {modifier always}
+			    {rôlesmail always}
+			    {dhcprange always}
+			    {passwd always}
+			    {corresp always}
+			    {whereami always}
+			    {topotitle topo}
+			    {admtitle admin}
+			}
+	accueil		{%HOMEURL%/bin/accueil fr Accueil en Welcome}
+	consulter	{%HOMEURL%/bin/consulter fr Consulter en Consult}
+	ajouter		{%HOMEURL%/bin/ajout fr Ajouter en Add}
+	supprimer	{%HOMEURL%/bin/suppr fr Supprimer en Delete}
+	modifier	{%HOMEURL%/bin/modif fr Modifier en Modify}
+	rôlesmail	{%HOMEURL%/bin/mail fr {Rôles mail} en {Mail roles}}
+	dhcprange	{%HOMEURL%/bin/dhcp fr {Plages DHCP} en {DHCP ranges}}
+	passwd		{%PASSWDURL% fr {Mot de passe} en Password}
+	corresp		{%HOMEURL%/bin/corr fr Rechercher en Search}
+	whereami	{%HOMEURL%/bin/corresp?critere=_ fr {Où suis-je ?} en {Where am I?}}
+	topotitle	{%HOMEURL%/bin/eq fr Topo en Topology}
+	admtitle	{%HOMEURL%/bin/admin fr Admin en Admin}
+	:topo		{
+			    {eq always}
+			    {l2 always}
+			    {l3 always}
+			    {dnstitle dns}
+			    {admtitle admin}
+			}
+	eq		{%HOMEURL%/bin/eq fr Équipements en Equipments}
+	l2		{%HOMEURL%/bin/l2 fr Vlans en Vlans}
+	l3		{%HOMEURL%/bin/l3 fr Réseaux en Networks}
+	dnstitle	{%HOMEURL%/bin/accueil fr DNS/DHCP en DNS/DHCP}
+	:admin		{
+			    {consultmx always}
+			    {statcor always}
+			    {statetab always}
+			    {consultnet always}
+			    {listecorresp always}
+			    {corresp always}
+			    {modetabl always}
+			    {modcommu always}
+			    {modhinfo always}
+			    {modreseau always}
+			    {moddomaine always}
+			    {admrelsel always}
+			    {modzone always}
+			    {modzone4 always}
+			    {modzone6 always}
+			    {moddhcpprofil always}
+			    {admgrpsel always}
+			    {admgenliste always}
+			    {admparliste always}
+			    {dnstitle dns}
+			    {topotitle topo}
+			}
+	consultmx	{%HOMEURL%/bin/consultmx fr {Consulter les MX} en {Consulter MX}}
+	statcor		{%HOMEURL%/bin/statcor fr {Consulter les statistiques par correspondant} en {Statistics by user}}
+	statetab	{%HOMEURL%/bin/statetab fr {Consulter les statistiques par établissement} en {Statistics by organization}}
+	consultnet	{%HOMEURL%/bin/consultnet fr {Consulter les réseaux} en {Consult networks}}
+	listecorresp	{%HOMEURL%/bin/listecorresp fr {Lister les correspondants} en {List users}}
+	corresp		{%HOMEURL%/bin/corresp fr {Chercher un correspondant à partir d'une adresse} en {Search}}
+	modetabl	{%HOMEURL%/bin/admrefliste?type=etabl fr {Modifier les établissements} en {Modify organizations}}
+	modcommu	{%HOMEURL%/bin/admrefliste?type=commu fr {Modifier les communautés} en {Modify communities}}
+	modhinfo	{%HOMEURL%/bin/admrefliste?type=hinfo fr {Modifier les types de machines} en {Modify machine types}}
+	modreseau	{%HOMEURL%/bin/admrefliste?type=reseau fr {Modifier les réseaux} en {Modify networks}}
+	moddomaine	{%HOMEURL%/bin/admrefliste?type=domaine fr {Modifier les domaines} en {Modify domains}}
+	admrelsel	{%HOMEURL%/bin/admrelsel fr {Modifier les relais de messagerie d'un domaine} en {Modify mailhost}}
+	modzone		{%HOMEURL%/bin/admrefliste?type=zone fr {Modifier les zones normales} en {Modify zones}}
+	modzone4	{%HOMEURL%/bin/admrefliste?type=zone4 fr {Modifier les zones reverse IPv4} en {Modify reverse IPv4 zones}}
+	modzone6	{%HOMEURL%/bin/admrefliste?type=zone6 fr {Modifier les zones reverse IPv6} en {Modify reverse IPv6 zones}}
+	moddhcpprofil	{%HOMEURL%/bin/admrefliste?type=dhcpprofil fr {Modifier les profils DHCP} en {Modify DHCP profiles}}
+	admgrpsel	{%HOMEURL%/bin/admgrpsel fr {Modifier les groupes et les correspondants} en {Modify users and groups}}
+	admgenliste	{%HOMEURL%/bin/admgenliste fr {Forcer la génération de zones} en {Force zone generation}}
+	admparliste	{%HOMEURL%/bin/admparliste fr {Modifier les paramètres de l'application} en {Application parameters}}
+    }
+
+    ###########################################################################
+    # Procédures internes
+    ###########################################################################
 
     #
-    # Procédure interne : tout le travail commun d'initialisation
+    # Travail commun d'initialisation
     #
 
     proc init-common {selfns _dbfd login _tabuid} {
@@ -275,14 +405,16 @@ snit::type ::dnscontext {
 	if {! $tabuid(present)} then {
 	    return "User '$login' not authorized"
 	}
+	set eidcor $tabuid(idcor)
 
 	return ""
     }
 
-    #
+    ###########################################################################
     # Initialise l'accès à l'application, pour un script CGI
     #
     # Entrée :
+    #   - module : "dns", "admin" ou "topo"
     #   - pageerr : fichier HTML contenant une page d'erreur
     #   - attr : attribut nécessaire pour exécuter le script (XXX : un seul attr)
     #   - form : les paramètres du formulaire
@@ -298,26 +430,50 @@ snit::type ::dnscontext {
     #   - objet $ah : accès à l'authentification
     #
 
-    method init-cgi {pageerr attr form _ftab _dbfd _login _tabuid} {
+    method init-cgi {module pageerr attr form _ftab _dbfd _login _tabuid} {
 	upvar $_ftab ftab
 	upvar $_dbfd dbfd
 	upvar $_login login
 	upvar $_tabuid tabuid
 
 	#
+	# Construire un contexte factice pour pouvoir retourner
+	# des messages d'erreur
+	#
+
+	set login [::webapp::user]
+	set uid $login
+	set euid $login
+	set curmodule "dns"
+	set curcap {dns}
+	set errorpage $pageerr
+
+	#
 	# Pour le cas où on est en mode maintenance
 	#
 
-	::webapp::nologin %NOLOGIN% %ROOT% $pageerr
+	set ftest %NOLOGIN%
+	if {[file exists $ftest]} then {
+	    if {$uid eq "" || ! ($uid in %ROOT%)} then {
+		set fd [open $ftest "r"]
+		set msg [read $fd]
+		close $fd
+		$self error $msg
+	    }
+	}
+
+	#
+	# Module courant
+	#
+
+	set curmodule $module
 
 	#
 	# Le login de l'utilisateur (la page est protégée par mot de passe)
 	#
 
-	set login [::webapp::user]
 	if {$login eq ""} then {
-	    ::webapp::error-exit $pageerr \
-		    "Pas de login : l'authentification a échoué."
+	    $self error "Pas de login : l'authentification a échoué."
 	}
 
 	#
@@ -326,7 +482,7 @@ snit::type ::dnscontext {
 
 	set msg [init-common $selfns dbfd $login tabuid]
 	if {$msg ne ""} then {
-	    ::webapp::error-exit $pageerr $msg
+	    $self error $msg
 	}
 
 	#
@@ -335,10 +491,22 @@ snit::type ::dnscontext {
 	#
 
 	lappend form {uid 0 1}
+	lappend form {nextprog 0 1}
+	lappend form {nextargs 0 1}
 	if {[llength [::webapp::get-data ftab $form]] == 0} then {
-	    ::webapp::error-exit $pageerr \
-		"Formulaire non conforme aux spécifications"
+	    set msg "Formulaire non conforme aux spécifications"
+	    if {%DEBUG%} then {
+		append msg "\n$ftab(_error)"
+	    }
+	    $self error $msg
 	}
+
+	#
+	# Récupérer l'état suivant
+	#
+
+	set dnextprog [string trim [lindex $ftab(nextprog)]]
+	set dnextargs [string trim [lindex $ftab(nextargs)]]
 
 	#
 	# Traiter la substitution d'utilisateur (à travers le
@@ -351,14 +519,29 @@ snit::type ::dnscontext {
 	    array unset tabuid
 
 	    set uid $nuid
+	    set login $nuid
 
-	    set msg [lire-correspondant $dbfd $uid tabuid]
+	    set msg [lire-correspondant $dbfd $login tabuid]
 	    if {$msg ne ""} then {
-		::webapp::error-exit $pageerr $msg
+		$self error $msg
 	    }
 	    if {! $tabuid(present)} then {
-		return "User '$login' not authorized"
+		$self error "User '$login' not authorized"
 	    }
+	}
+
+	#
+	# Déterminer les capacités de l'installation locale et/ou
+	# de l'utilisateur
+	#
+
+	set curcap	{}
+	lappend curcap "dns"
+	if {[file exists %GRAPH%]} then {
+	    lappend curcap "topo"
+	}
+	if {$tabuid(admin)} then {
+	    lappend curcap "admin"
 	}
 
 	#
@@ -371,13 +554,12 @@ snit::type ::dnscontext {
 	    #
 
 	    if {! [attribut-correspondant $dbfd $tabuid(idcor) $attr]} then {
-		::webapp::error-exit $pageerr \
-		    "Désolé,  $login, mais vous n'avez pas les droits suffisants"
+		$self error "Désolé, $login, mais vous n'avez pas les droits suffisants"
 	    }
 	}
     }
 
-    #
+    ###########################################################################
     # Initialise l'accès à l'application, pour un programme autonome
     # (utilitaire en ligne de commande, démon, etc.)
     #
@@ -418,7 +600,7 @@ snit::type ::dnscontext {
 	return ""
     }
 
-    #
+    ###########################################################################
     # Termine l'accès à l'application (script CGI ou exécutable autonome)
     #
     # Entrée :
@@ -431,39 +613,179 @@ snit::type ::dnscontext {
 	fermer-base $db
     }
 
+    ###########################################################################
+    # Récupère l'élément de continuation (i.e. la page à réactiver après
+    # la fin du "parcours" en cours)
     #
+    # Entrée : aucune
+    # Sortie :
+    #   - valeur de retour : <nextprog>
+    #
+
+    method nextprog {} {
+	return $dnextprog
+    }
+
+    method nextargs {} {
+	return $dnextargs
+    }
+
+    ###########################################################################
+    # Récupère le login effectif du correspondant
+    #
+    # Entrée : aucune
+    # Sortie :
+    #   - valeur de retour : liste {login idcor}
+    #
+
+    method euid {} {
+	return [list $euid $eidcor]
+    }
+
+    ###########################################################################
     # Constitue une URL
     #
     # Entrée :
     #   - path : chemin de l'URL
-    #   - _ftab : tableau des valeurs à indiquer dans l'URL
+    #   - largs : liste {{clef val} {clef val} ...} à ajouter à l'URL
     # Sortie :
     #   - valeur de retour : URL constituée
     #
+    # Note : chaque élément {clef val} peut également être de la forme
+    #	clef=val (encodée en post-string, donc sans espace)
+    #
 
-    method make-url {path _ftab} {
-	upvar $_ftab ftab
+    method make-url {path largs} {
+	#
+	# Ajouter les arguments "par défaut"
+	#
 
 	if {$uid ne $euid} then {
-	    lappend ftab(uid) [list $uid]
+	    lappend largs [list "uid" $uid]
 	}
+
+	#
+	# Constituer la liste d'arguments
+	#
+
 	set l {}
-	foreach c [array names ftab] {
-	    foreach v $ftab($c) {
+	foreach clefval $largs {
+	    if {[llength $clefval] == 1} then {
+		lappend l $clefval
+	    } else {
+		lassign $clefval c v
 		set v [::webapp::post-string $v]
 		lappend l "$c=$v"
 	    }
 	}
-	if {[llength $l] == 0} then {
+
+	#
+	# Constituer l'URL à partir du chemin et des arguments
+	#
+
+	if {[llength $l] == 0 || [regexp {^[^/]} $path]} then {
+	    # pas d'argument : cas simple
 	    set url $path
 	} else {
-	    set url [format "%s?%s" $path [join $l "&"]]
+	    if {[string match {*\?*} $path]} then {
+		# déjà un argument dans l'url
+		set url [format "%s&%s" $path [join $l "&"]]
+	    } else {
+		# pas déjà d'argument dans l'url
+		set url [format "%s?%s" $path [join $l "&"]]
+	    }
 	}
 
 	return $url
     }
 
+    method urlset {name path {largs {}}} {
+	lappend urllist
+
+	set urltab($name) [linsert $largs 0 $path]
+	set urltab($name:nextprog) ""
+    }
+
+    method urladd {name largs} {
+	lappend url($name)
+    }
+
+    method urlsetnext {name nextprog nextargs} {
+	set urltab($name:nextprog) $nextprog
+	set urltab($name:nextargs) $nextargs
+    }
+
+    method urladdnext {name} {
+	if {$dnextprog eq ""} then {
+	    set urltab($name:nextprog) ""
+	} else {
+	    set urltab($name:nextprog) $dnextprog
+	    set urltab($name:nextargs) $dnextargs
+	}
+    }
+
+    method urlsubst {} {
+	set lsubst {}
+	foreach name [array names urltab] {
+	    if {! [string match "*:*" $name]} then {
+		set url [$self urlget $name]
+		lappend lsubst [list $name $url]
+	    }
+	}
+	return $lsubst
+    }
+
+    method urlget {name} {
+	set path [lindex $urltab($name) 0]
+	if {[regexp {^/} $path]} then {
+	    set largs [lreplace $urltab($name) 0 0]
+	    if {$urltab($name:nextprog) ne ""} then {
+		lappend largs [list "nextprog" $urltab($name:nextprog)]
+		lappend largs [list "nextargs" $urltab($name:nextargs)]
+	    }
+	    set url [$self make-url $path $largs]
+	} else {
+	    set url $path
+	}
+	unset urltab($name)
+	return $url
+    }
+
+
+    ###########################################################################
+    # Positionne le contexte servant à établir le bandeau de liens
     #
+    # Entrée :
+    #   - module : nom de module (cf variables curmodule et links)
+    # Sortie : aucune
+    #
+
+    method module {module} {
+	set idx ":$module"
+	if {! [info exists links($idx)]} then {
+	    error "'$module' is not a valid module"
+	}
+	set curmodule $module
+    }
+
+    ###########################################################################
+    # Renvoie une erreur et termine l'application
+    # La base est fermée par cette fonction
+    #
+    # Entrée :
+    #   - msg : message d'erreur
+    # Sortie :
+    #   - valeur de retour : aucune (cette méthode ne retourne pas)
+    #
+
+    method error {msg} {
+	set msg [::webapp::html-string $msg]
+	regsub -all "\n" $msg "<br>" msg
+	$self result $errorpage [list [list %MESSAGE% $msg]]
+	exit 0
+    }
+
+    ###########################################################################
     # Renvoie un résultat et termine l'application
     # La base est fermée par cette fonction
     #
@@ -475,6 +797,10 @@ snit::type ::dnscontext {
     #
 
     method result {page lsubst} {
+	#
+	# Définir le format de sortie à partir du nom de fichier
+	#
+
 	switch -glob $page {
 	    *.html {
 		set fmt html
@@ -486,11 +812,65 @@ snit::type ::dnscontext {
 		set fmt "unknown"
 	    }
 	}
+
+	#
+	# Constituer le bandeau et la liste des urls
+	#
+	if {$fmt eq "html"} then {
+
+	    set bandeau [$self get-links ":$curmodule"]
+	    lappend lsubst [list %BANDEAU% $bandeau]
+
+	    foreach s [$self urlsubst] {
+		lappend lsubst $s
+	    }
+	}
+
+	#
+	# Envoyer 
+	#
+
 	::webapp::send $fmt [::webapp::file-subst $page $lsubst]
 	$self end
     }
 
-    # 
+    # procédure récursive pour récupérer le bandeau de liens
+    # eorm = element (without ":") or module (with ":")
+
+    method get-links {eorm} {
+	set h ""
+	if {[info exists links($eorm)]} then {
+	    set lks $links($eorm)
+
+	    if {[string match ":*" $eorm]} then {
+		foreach couple $lks {
+		    lassign $couple neorm cond
+		    if {$cond eq "always" || $cond in $curcap} then {
+			append h [$self get-links $neorm]
+			append h "\n"
+		    }
+		}
+	    } else {
+		set url [lindex $lks 0]
+		set url [$self make-url $url {}]
+		array set trans [lreplace $lks 0 0]
+		set lg $lang
+		if {! [info exists trans($lg)]} then {
+		    set lg "fr"
+		}
+		append h [::webapp::helem "li" \
+				[::webapp::helem "a" $trans($lg) "href" $url]]
+		append h "\n"
+	    }
+
+	} else {
+	    append h [::webapp::helem "li" "Unknown module '$eorm'"]
+	    append h "\n"
+	}
+	return "$h"
+    }
+
+    ###########################################################################
     # Écrire une ligne dans le système de log
     # 
     # Entrée :
@@ -1367,17 +1747,18 @@ proc ajouter-rr {dbfd nom iddom mac iddhcpprofil idhinfo droitsmtp ttl
 #   - paramètres :
 #	- dbfd : accès à la base
 #	- idrr : l'index du RR
-#	- idcor : l'index du correspondant
 # Sortie :
 #   - valeur de retour : chaîne vide (ok) ou non vide (message d'erreur)
 #
 # Historique
 #   2002/05/03 : pda/jean : conception
 #   2004/10/05 : pda      : changement du format de date
+#   2010/11/13 : pda      : idcor = l'utilisateur effectif
 #
 
-proc touch-rr {dbfd idrr idcor} {
+proc touch-rr {dbfd idrr} {
     set date [clock format [clock seconds]]
+    set idcor [lindex [d euid] 1]
     set sql "UPDATE dns.rr SET idcor = $idcor, date = '$date' WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
        set msg ""
@@ -2444,7 +2825,7 @@ proc valide-correspondant {dbfd pageerr} {
 
     set login [::webapp::user]
     if {[string compare $login ""] == 0} then {
-	::webapp::error-exit $pageerr "Pas de login : l'authentification a échoué"
+	d error "Pas de login : l'authentification a échoué"
     }
 
     #
@@ -2461,10 +2842,10 @@ proc valide-correspondant {dbfd pageerr} {
     }
 
     if {$idcor == -1} then {
-	::webapp::error-exit $pageerr "Désolé, vous n'êtes pas dans la base des correspondants."
+	d error "Désolé, vous n'êtes pas dans la base des correspondants."
     }
     if {! $present} then {
-	::webapp::error-exit $pageerr "Désolé, $login, mais vous n'êtes pas habilité."
+	d error "Désolé, $login, mais vous n'êtes pas habilité."
     }
 
     return $idcor
@@ -2787,7 +3168,6 @@ proc menu-ttl {dbfd champ idcor ttl} {
 #   - champ : champ de formulaire (variable du CGI suivant)
 #   - where : clause where (sans le mot-clef "where") ou chaîne vide
 #   - sel : nom du domaine à pré-sélectionner, ou chaîne vide
-#   - err : page d'erreur
 # Sortie :
 #   - valeur de retour : code HTML généré
 #
@@ -2799,9 +3179,10 @@ proc menu-ttl {dbfd champ idcor ttl} {
 #   2003/04/24 : pda/jean : décomposition en deux procédures
 #   2004/02/06 : pda/jean : ajout de la clause where
 #   2004/02/12 : pda/jean : ajout du paramètre sel
+#   2010/11/15 : pda      : suppression paramètre pageerr
 #
 
-proc menu-domaine {dbfd idcor champ where sel err} {
+proc menu-domaine {dbfd idcor champ where sel} {
     set lcouples [couple-domaine-par-corresp $dbfd $idcor $where]
 
     set lsel [lsearch -exact $lcouples [list $sel $sel]]
@@ -2817,7 +3198,7 @@ proc menu-domaine {dbfd idcor champ where sel err} {
     set taille [llength $lcouples]
     switch -- $taille {
 	0	{
-	    ::webapp::error-exit $err "Désolé, mais vous n'avez aucun domaine actif"
+	    d error "Désolé, mais vous n'avez aucun domaine actif"
 	}
 	1	{
 	    set d [lindex [lindex $lcouples 0] 0]
@@ -4460,7 +4841,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
 
     set dbfd [ouvrir-base %BASE% msg]
     if {[string length $dbfd] == 0} then {
-	::webapp::error-exit $pageerr $msg
+	d error $msg
     }
 
     #
@@ -4469,8 +4850,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
 
     set uid [::webapp::user]
     if {[string equal $uid ""]} then {
-	::webapp::error-exit $pageerr \
-		"Pas de login : l'authentification a échoué."
+	d error "Pas de login : l'authentification a échoué."
     }
 
     #
@@ -4479,7 +4859,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
 
     set msg [lire-correspondant $dbfd $uid tabuid]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $pageerr $msg
+	d error $msg
     }
 
     #
@@ -4496,8 +4876,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
 	#
 
 	if {$tabuid(idcor) == -1} then {
-	    ::webapp::error-exit $pageerr \
-		"'$uid' n'est pas dans la base des correspondants."
+	    d error "'$uid' n'est pas dans la base des correspondants."
 	}
 
 	#
@@ -4506,8 +4885,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
 	#
 
 	if {! $tabuid(present)} then {
-	    ::webapp::error-exit $pageerr \
-		"Désolé, $uid, mais vous n'êtes pas habilité."
+	    d error "Désolé, $uid, mais vous n'êtes pas habilité."
 	}
 	
 	#
@@ -4522,13 +4900,11 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
             }
             admin {
 		if {! $tabuid(admin)} then {
-                    ::webapp::error-exit $pageerr \
-                        "Désolé, $uid, mais vous n'avez pas les droits suffisants"
+                    d error "Désolé, $uid, mais vous n'avez pas les droits suffisants"
                 }
             }
             default {
-                ::webapp::error-exit $pageerr \
-                        "Erreur interne sur demande d'attribut '$attr'"
+                d error "Erreur interne sur demande d'attribut '$attr'"
             }
         }
     }
@@ -4540,8 +4916,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
 
     lappend form {uid 0 1}
     if {[llength [::webapp::get-data ftab $form]] == 0} then {
-	::webapp::error-exit $pageerr \
-	    "Formulaire non conforme aux spécifications"
+	d error "Formulaire non conforme aux spécifications"
     }
 
     uplevel 1 [list ::webapp::import-vars $_ftab]
@@ -4562,7 +4937,7 @@ proc init-topo {pageerr attr form _ftab _dbfd _uid _tabuid _ouid _tabouid _urlui
 
 	    set msg [lire-correspondant $dbfd $uid tabuid]
 	    if {! [string equal $msg ""]} then {
-		::webapp::error-exit $pageerr $msg
+		d error $msg
 	    }
 
 	    set urluid "uid=[::webapp::post-string $uid]"
@@ -4949,27 +5324,25 @@ proc lire-eq-autorises {dbfd rw idgrp} {
 # Entrée :
 #   - paramètres :
 #       - url : l'URL pour aller chercher le graphe sur le métrologiseur
-#	- err : une page d'erreur le cas échéant
 # Sortie :
 #   - aucune sortie, le graphe est récupéré et renvoyé sur la sortie standard
 #	avec l'en-tête HTTP qui va bien
 #
 # Historique
-#   2006/05/17 : jean            : création pour dhcplog
-#   2006/08/09 : pda/boggia      : récupération, mise en fct et en librairie
+#   2006/05/17 : jean       : création pour dhcplog
+#   2006/08/09 : pda/boggia : récupération, mise en fct et en librairie
+#   2010/11/15 : pda        : suppression paramètre pageerr
 #
 
-# cf /local/services/www/sap/dhcplog/bin/gengraph
-
-proc gengraph {url err} {
-    package require http
+proc gengraph {url} {
+    package require http			;# tcllib
 
     set token [::http::geturl $url]
     set status [::http::status $token]
 
     if {![string equal $status "ok"]} then {
 	set code [::http::code $token]
-	::webapp::error-exit $err "Accès impossible ($code)"
+	d error "Accès impossible ($code)"
     }
 
     upvar #0 $token state
@@ -5099,7 +5472,6 @@ proc conv-channel {freq} {
 #   - paramètres :
 #	- eq : nom de l'équipement
 #	- tabuid() : tableau contenant les flags de restriction pour l'utilisateur
-#	- pageerr : nom de la page d'erreur
 #   - variables globales :
 #	- libconf(extracteq) : appel à extracteq
 # Sortie :
@@ -5111,10 +5483,11 @@ proc conv-channel {freq} {
 #	(cf sortie de extracteq)
 #
 # Historique
-#   2010/11/03 : pda : création
+#   2010/11/03 : pda      : création
+#   2010/11/15 : pda      : suppression paramètre pageerr
 #
 
-proc eq-iflist {eq _tabuid pageerr} {
+proc eq-iflist {eq _tabuid} {
     global libconf
     upvar $_tabuid tabuid
 
@@ -5146,8 +5519,7 @@ proc eq-iflist {eq _tabuid pageerr} {
 	}
     }
     if {[catch {close $fd} msg]} then {
-	::webapp::error-exit $pageerr \
-		"Erreur lors de la lecture de l'équipement '$eq'"
+	d error "Erreur lors de la lecture de l'équipement '$eq'"
     }
 
     #

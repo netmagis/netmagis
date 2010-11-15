@@ -30,6 +30,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/admmxsel.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/admmxedit"
+
+#
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
@@ -56,19 +62,21 @@ proc main {} {
     # Initialisation
     #
 
-    d init-cgi $conf(err) "admin" {} ftab dbfd login tabcor
+    ::dnscontext create d
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
 
     #
     # Récupération des domaines auxquels le correspond a accès
     # et construction du code HTML approprié.
     #
 
-    set domaine [menu-domaine $dbfd $tabcor(idcor) domaine "" "" $conf(err)]
+    set domaine [menu-domaine $dbfd $tabcor(idcor) domaine "" ""]
 
     #
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %DOMAINE% $domaine] \
 			    ]

@@ -11,26 +11,16 @@
 
 \*******************************************************************************
 \partie {titrepage} { \* Titre de la page
-    RÉSEAU OSIRIS
-    CENTRE RÉSEAU COMMUNICATION
+    Application WebDNS
 }
 
 
 \*******************************************************************************
 \bandeau {
-	Topologie v%VERSION%
+	WebDNS v%VERSION%
     } {
 	\elementbandeau {Actions} {
-	    \* \reference {\lien {Accueil}     {%HOMEURL%/}}
-	    \reference {\lien {Équipements} {%HOMEURL%/bin/eq%URLUID%}}
-	    \reference {\lien {Vlans}       {%HOMEURL%/bin/l2%URLUID%}}
-	    \reference {\lien {Réseaux}     {%HOMEURL%/bin/l3%URLUID%}}
-	    \* \reference {\lien {Métrologie}  {%HOMEURL%/bin/metro%URLUID%}}
-	}
-	\elementbandeau {Voir aussi} {
-	    \reference {\lien {Osiris}	{/osiris/}}
-	    \reference {\lien {CRC}	{/crc/}}
-	    \reference {\lien {DNS}	{/applis/dns/}}
+	    %BANDEAU%
 	}
 }
 
@@ -43,7 +33,7 @@
 
     <TABLE>
 	<TR>
-	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/eq%URLUID%">
+	    <FORM METHOD="POST" ACTION="%URLFORMEQ%">
 		<TD>Choisir un équipement</TD>
 		<TD>
 		    <INPUT TYPE="TEXT" NAME="eq" VALUE="%EQ%">
@@ -52,7 +42,7 @@
 	    </FORM>
 	</TR>
 	<TR>
-	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/l2%URLUID%">
+	    <FORM METHOD="POST" ACTION="%URLFORML2%">
 		<TD>Choisir un vlan</TD>
 		<TD>
 		    <INPUT TYPE="TEXT" NAME="vlan" VALUE="%VLAN%">
@@ -61,7 +51,7 @@
 	    </FORM>
 	</TR>
 	<TR>
-	    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/l3%URLUID%">
+	    <FORM METHOD="POST" ACTION="%URLFORML3%">
 		<TD>Choisir une adresse IP</TD>
 		<TD>
 		    <INPUT TYPE="TEXT" NAME="addr" VALUE="%ADDR%">

@@ -4,7 +4,7 @@
 # Script pour afficher la page contenant le graphe et le formulaire
 # d'actualisation des dates
 #
-# Appelé par : /applis/topo/bin/accueil
+# Appelé par : /applis/dns/bin/eq
 #
 # Paramètres (formulaire ou URL) :
 #   - id : id du point de collecte sélectionné
@@ -38,6 +38,13 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/metro.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(nextmetro)	"%HOMEURL%/bin/metro"
+
+
+#
 # Quelques paramètres du script
 #
 
@@ -49,6 +56,8 @@ set conf(form)	{
     {jfin		0 1}
     {hfin		0 1}
 }
+
+set conf(urlgraph)	"%HOMEURL%/bin/graphe"
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -77,27 +86,29 @@ proc main {} {
     # Initialisation
     #
 
-    init-topo $conf(err) "corresp" $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
+    ::dnscontext create d
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d module "topo"
 
+    ######################################## XXX
+    set msgsta ""
+    if {$tabcor(admin)} then {
+	set msgsta "PENSER A CHANGER CELA"
+    }
+
+    ::webapp::import-vars ftab
     foreach f $conf(form) {
 	set var [lindex $f 0]
 	set $var [string trim [lindex [set $var] 0]]
-    }
-
-    set u1 ""
-    set u2 ""
-    if {! [string equal $urluid ""]} then {
-	set u1 "&$urluid"
-	set u2 "?$urluid"
     }
 
     #
     # valider l'id du graphe en fonction des droits
     #
 
-    set msg [verifier-metro-id $dbfd $id tabuid titre]
+    set msg [verifier-metro-id $dbfd $id tabcor titre]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -126,7 +137,7 @@ proc main {} {
 	}
     }
     if {[string equal $debut ""]} then {
-	::webapp::error-exit $conf(err) "Date ou heure de début incorrecte"
+	d error "Date ou heure de début incorrecte"
     }
     set debut [clock scan $debut]
 
@@ -154,7 +165,7 @@ proc main {} {
 	}
     }
     if {[string equal $fin ""]} then {
-	::webapp::error-exit $conf(err) "Date ou heure de fin incorrecte"
+	d error "Date ou heure de fin incorrecte"
     }
     set fin [clock scan $fin]
 
@@ -162,34 +173,33 @@ proc main {} {
     # Remettre l'id en forme
     #
 
-    set id [::webapp::html-string $id]
+    set hid [::webapp::html-string $id]
+
+    #
+    # Préparer les URL
+    #
+
+    d urlset "%URLMETRO%" $conf(nextmetro) {}
+    d urlset "%URLGRAPH%" $conf(urlgraph) [list \
+						[list "id" $id] \
+						[list "debut" $debut] \
+						[list "fin" $fin] \
+					    ]
 
     #
     # Sortie de la page
     #
 
-    ::webapp::send html [::webapp::file-subst $conf(page) \
-					[list \
-						[list %ADMIN%  "admin (future use)"] \
-						[list %MSGSTA% $msgsta] \
-						[list %TITRE%  $titre] \
-						[list %ID%     $id] \
-						[list %JDEBUT% $jdebut] \
-						[list %HDEBUT% $hdebut] \
-						[list %JFIN%   $jfin] \
-						[list %HFIN%   $hfin] \
-						[list %DEBUT%  $debut] \
-						[list %FIN%    $fin] \
-						[list %URLUID% $u2] \
-						[list %URL2%   $u1] \
-					    ] \
-				    ]
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
+    d result $conf(page) [list \
+			    [list %ADMIN%  "admin (future use)"] \
+			    [list %MSGSTA% $msgsta] \
+			    [list %TITRE%  $titre] \
+			    [list %ID%     $hid] \
+			    [list %JDEBUT% $jdebut] \
+			    [list %HDEBUT% $hdebut] \
+			    [list %JFIN%   $jfin] \
+			    [list %HFIN%   $hfin] \
+			]
 }
 
 ::webapp::cgi-exec main %DEBUG%

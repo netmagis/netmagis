@@ -23,6 +23,12 @@ set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/dhcpmodif"
+
+#
 # Quelques paramètres du script
 #
 
@@ -66,7 +72,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     set idgrp $tabcor(idgrp)
 
@@ -77,10 +83,10 @@ proc main {} {
     set idreseau [lindex $ftab(idreseau) 0]
     set lcidr [valide-idreseau $dbfd $idreseau $idgrp "dhcp" 4 msg]
     if {[llength $lcidr] == 0} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
     if {[llength $lcidr] != 1} then {
-	::webapp::error-exit $conf(err) "Erreur interne: trop de CIDR trouvés !"
+	d error "Erreur interne: trop de CIDR trouvés !"
     }
 
     #
@@ -141,13 +147,14 @@ proc main {} {
 
     set errmsg [edition-tableau $largeurs $titre $spec $dbfd $sql $id tableau]
     if {[string length $errmsg] > 0} then {
-	::webapp::error-exit $conf(err) $errmsg
+	d error $errmsg
     }
 
     #
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %IDRESEAU% $idreseau] \
 				[list %RESEAU% $lcidr] \

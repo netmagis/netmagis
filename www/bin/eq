@@ -40,6 +40,16 @@ set conf(page1)		$conf(lib)/eq.html
 set conf(pagen)		$conf(lib)/topoliste.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(nexteq)	"%HOMEURL%/bin/eq"
+set conf(nextl2)	"%HOMEURL%/bin/l2"
+set conf(nextl3)	"%HOMEURL%/bin/l3"
+set conf(nextmetro)	"%HOMEURL%/bin/metro"
+set conf(nextifchg)	"%HOMEURL%/bin/ifchg"
+
+#
 # Quelques paramètres du script
 #
 
@@ -51,12 +61,6 @@ set conf(form)	{
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
 set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
-set conf(urlstat)	"$conf(homeurl)/bin/metro?id=%s%s"
-set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
-set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
-set conf(urll2)		"$conf(homeurl)/bin/l2?eq=%s&iface=%s&vlan=%d%s"
-set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
-set conf(urlifchg)	"$conf(homeurl)/bin/ifchg?eq=%s&iface=%s%s"
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -395,7 +399,6 @@ proc hiearchiser-liste-equipements {_t leq} {
 #   - _thier : tableau passé par nom, contenant l'arborescence
 #   - _tabeq : tableau passé par nom, contenant les équipements
 #   - _tabwifi : tableau passé par nom, contenant les sondes wifi
-#   - u1 : fragment d'url pour le paramètre "uid=..." le cas échéant
 # Sortie :
 #   - valeur de retour : liste des arbres dont la racine est à ce niveau
 #
@@ -404,7 +407,7 @@ proc hiearchiser-liste-equipements {_t leq} {
 #   2008/08/01 : pda/boggia : ajout tabwifi
 #
 
-proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
+proc generer-arbre-eq {racine _thier _tabeq _tabwifi} {
     global conf
     upvar $_thier thier
     upvar $_tabeq tabeq
@@ -435,7 +438,9 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 	    #
 	    set type   [lindex $tabeq($prec) 0]
 	    set modele [lindex $tabeq($prec) 1]
-	    set url [format $conf(urleq) $prec $u1]
+
+	    d urlset "U" $conf(nexteq) [list [list "eq" $prec]]
+	    set url [d urlget "U"]
 
 	    set lien [::webapp::helem "a" $prec "href" $url]
 	    lappend arbre [list "$lien $type $modele"]
@@ -452,7 +457,7 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 	    #
 	    # Noeud : on recommence récursivement
 	    #
-	    lappend arbre [generer-arbre-eq $fils thier tabeq tabwifi $u1]
+	    lappend arbre [generer-arbre-eq $fils thier tabeq tabwifi]
 	}
     }
 
@@ -474,7 +479,8 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 	append rhtml " (cumuls "
 	foreach k {assoc auth} {
 	    set hid $twa(:$k:cumul)
-	    set url [format $conf(urlstat) [::webapp::post-string $hid] $u1]
+	    d urlset "U" $conf(nextmetro) [list [list "id" $hid]]
+	    set url [d urlget "U"]
 	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
 	}
 
@@ -489,7 +495,8 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 		set lid [concat $lid $twa(:$k:ssid:$ssid)]
 	    }
 	    set hid [join $lid "|"]
-	    set url [format $conf(urlstat) [::webapp::post-string $hid] $u1]
+	    d urlset "U" $conf(nextmetro) [list [list "id" $hid]]
+	    set url [d urlget "U"]
 	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
 	}
 
@@ -500,7 +507,8 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 	append rhtml ", détail/AP "
 	foreach k {assoc auth} {
 	    set hid [join $twa(:$k:ap) "|"]
-	    set url [format $conf(urlstat) [::webapp::post-string $hid] $u1]
+	    d urlset "U" $conf(nextmetro) [list [list "id" $hid]]
+	    set url [d urlget "U"]
 	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
 	}
 	append rhtml ")"
@@ -513,17 +521,17 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi u1} {
 # Affichage d'un équipement
 ##############################################################################
 
-proc format-one-eq {nomeq iface _tabuid u1 u2} {
+proc format-one-eq {nomeq iface _tabcor} {
     global conf
-    upvar $_tabuid tabuid
+    upvar $_tabcor tabcor
 
     #
     # Lire les informations de l'équipement dans le graphe
-    # Ces informations sont filtrées par tabuid qui n'affiche
+    # Ces informations sont filtrées par tabcor qui n'affiche
     # que les vlans autorisés.
     #
 
-    set l [eq-iflist $nomeq tabuid $conf(err)]
+    set l [eq-iflist $nomeq tabcor]
 
     lassign $l nomeq type model location iflist array
     array set tabiface $array
@@ -562,7 +570,8 @@ proc format-one-eq {nomeq iface _tabuid u1 u2} {
 	}
 
 	if {! [string equal $stat "-"]} then {
-	    set url [format $conf(urlstat) [::webapp::post-string $stat] $u1]
+	    d urlset "U" $conf(nextmetro) [list [list "id" $stat]]
+	    set url [d urlget "U"]
 	    append txt " "
 	    append txt [::webapp::helem "a" {[Trafic]} "href" $url]
 	}
@@ -576,11 +585,12 @@ proc format-one-eq {nomeq iface _tabuid u1 u2} {
 	}
 
 	if {[llength $lien] > 1} then {
-	    set via [lindex $lien 0]
-	    set eq2 [lindex $lien 1]
-	    set if2 [lindex $lien 2]
-
-	    set urleqiface [format $conf(urleqiface) $eq2 $if2 $u1]
+	    lassign $lien via eq2 if2
+	    d urlset "U" $conf(nexteq) [list \
+					    [list "eq" $eq2] \
+					    [list "iface" $if2] \
+					]
+	    set urleqiface [d urlget "U"]
 	    append txt " $via vers "
 	    append txt [::webapp::helem "a" "$eq2 $if2" "href" $urleqiface]
 	}
@@ -605,8 +615,8 @@ proc format-one-eq {nomeq iface _tabuid u1 u2} {
 		    #
 
 		    set hid $tw(:$k:cumul)
-		    set url [format $conf(urlstat) \
-				    [::webapp::post-string $hid] $u1]
+		    d urlset "U" $conf(nextmetro) [list [list "id" $hid]]
+		    set url [d urlget "U"]
 		    append txt " "
 		    append txt [::webapp::helem "a" "\[Cumul $k\]" "href" $url]
 
@@ -619,8 +629,8 @@ proc format-one-eq {nomeq iface _tabuid u1 u2} {
 			set lid [concat $lid $tw(:$k:ssid:$ssid)]
 		    }
 		    set hid [join $lid "|"]
-		    set url [format $conf(urlstat) \
-				    [::webapp::post-string $hid] $u1]
+		    d urlset "U" $conf(nextmetro) [list [list "id" $hid]]
+		    set url [d urlget "U"]
 		    append txt " "
 		    append txt [::webapp::helem "a" "\[Détail $k\]" "href" $url]
 		}
@@ -637,7 +647,11 @@ proc format-one-eq {nomeq iface _tabuid u1 u2} {
 	#
 
 	if {$edit eq "edit"} then {
-	    set url [format $conf(urlifchg) $nomeq $i $u1]
+	    d urlset "U" $conf(nextifchg) [list \
+						[list "eq" $nomeq] \
+						[list "iface" $i] \
+					    ]
+	    set url [d urlget "U"]
 	    append txt " "
 	    append txt [::webapp::helem "a" {[Modifier]} "href" $url]
 	    incr eqmod
@@ -649,8 +663,8 @@ proc format-one-eq {nomeq iface _tabuid u1 u2} {
 
 	set nvlan [llength $ligne]
 	foreach vlan [lsort -index 0 -integer $ligne] {
-	    set vlanid [lindex $vlan 0]
-	    set desc   [lindex $vlan 1]
+	    lassign $vlan vlanid desc stat
+
 	    if {[string equal $desc "-"]} then {
 		set desc "pas de description"
 	    } else {
@@ -660,25 +674,31 @@ proc format-one-eq {nomeq iface _tabuid u1 u2} {
 	    if {$vlanid == $natif} then {
 		set native " (vlan natif)"
 	    }
-	    set stat   [lindex $vlan 2]
 
 	    append txt "\n<BR>\n"
 
 	    if {$nvlan > 1 || $vlanid != 0} then {
-		set urll2 [format $conf(urll2) $nomeq $i $vlanid $u1]
+		d urlset "U" $conf(nextl2) [list \
+						[list "eq" $nomeq] \
+						[list "iface" $i] \
+						[list "vlan" $vlanid] \
+					    ]
+		set urll2 [d urlget "U"]
 		append txt "Vlan "
 		append txt [::webapp::helem "a" "$vlanid ($desc)" "href" $urll2]
 		append txt $native
 
 		if {! [string equal $stat "-"]} then {
-		    set url [format $conf(urlstat) $stat $u1]
+		    d urlset "U" $conf(nextmetro) [list [list "id" $stat]]
+		    set url [d urlget "U"]
 		    append txt " "
 		    append txt [::webapp::helem "a" {[Trafic]} "href" $url]
 		}
 	    }
 
 	    foreach ip [lsort [lindex $vlan 3]] {
-		set urll3 [format $conf(urll3) $ip $u1]
+		d urlset "U" $conf(nextl3) [list [list "addr" $ip]]
+		set urll3 [d urlget "U"]
 		append txt " "
 		append txt [::webapp::helem "a" $ip "href" $urll3]
 	    }
@@ -695,7 +715,8 @@ proc format-one-eq {nomeq iface _tabuid u1 u2} {
 		foreach k {assoc auth} {
 		    set id [lindex $tw(:$k:ssid:$ssid) 0]
 		    if {! [string equal $id ""]} then {
-			set url [format $conf(urlstat) $id $u1]
+			d urlset "U" $conf(nextmetro) [list [list "id" $id]]
+			set url [d urlget "U"]
 			append txt [::webapp::helem "a" "\[$k\]" "href" $url]
 		    }
 		}
@@ -711,7 +732,8 @@ proc format-one-eq {nomeq iface _tabuid u1 u2} {
     set texte [::webapp::helem "ul" $texte]
 
     if {$eqmod > 1} then {
-	set url [format $conf(urlifchg) $nomeq "" $u1]
+	d urlset "U" $conf(nextifchg) [list [list "eq" $nomeq]]
+	set url [d urlget "U"]
 	append titre " "
 	append titre [::webapp::helem "a" {[Modifier les interfaces]} \
 					"href" $url]
@@ -731,25 +753,34 @@ proc main {} {
     # Initialisation
     #
 
-    init-topo $conf(err) "corresp" $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
+    ::dnscontext create d
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
+    ######################################## XXX
+    set msgsta ""
+    if {$tabcor(admin)} then {
+	set msgsta "PENSER A CHANGER CELA"
+    }
+
+    ::webapp::import-vars ftab
     foreach f $conf(form) {
 	set var [lindex $f 0]
 	set $var [string trim [lindex [set $var] 0]]
     }
 
-    set u1 ""
-    set u2 ""
-    if {! [string equal $urluid ""]} then {
-	set u1 "&$urluid"
-	set u2 "?$urluid"
-    }
+    #
+    #  URL des formulaires
+    #
+
+    d urlset "%URLFORMEQ%" $conf(nexteq) {}
+    d urlset "%URLFORML2%" $conf(nextl2) {}
+    d urlset "%URLFORML3%" $conf(nextl3) {}
 
     #
     # Récupérer les informations sur les équipements lues dans le graphe
     #
 
-    set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
+    set cmd [format $conf(dumpgraph) $tabcor(flagsr)]
     set fd [open "|$cmd" "r"]
     while {[gets $fd ligne] > -1} {
 	switch [lindex $ligne 0] {
@@ -764,15 +795,14 @@ proc main {} {
 	}
     }
     if {[catch {close $fd} msg]} then {
-	::webapp::error-exit $conf(err) \
-		"Erreur lors de la lecture des équipements (msg)"
+	d error "Erreur lors de la lecture des équipements (msg)"
     }
 
     #
     # Récupérer les stats wifi sur ces équipements
     #
 
-    set cmd [format $conf(extractcoll) $tabuid(flagsr)]
+    set cmd [format $conf(extractcoll) $tabcor(flagsr)]
     set fd [open "|$cmd" "r"]
     while {[gets $fd ligne] > -1} {
 	set kw [lindex $ligne 0]
@@ -792,8 +822,7 @@ proc main {} {
 	}
     }
     if {[catch {close $fd} msg]} then {
-	::webapp::error-exit $conf(err) \
-		"Erreur lors de la lecture des sondes wifi (msg)"
+	d error "Erreur lors de la lecture des sondes wifi (msg)"
     }
 
     #
@@ -821,19 +850,16 @@ proc main {} {
 	    # Sortie de la page
 	    #
 
-	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
-						[list \
-							[list %MSGSTA% $msgsta] \
-							[list %OBJETS% "équipements"] \
-							[list %LISTE%  $liste] \
-							[list %EQ%     $eq] \
-							[list %VLAN%   ""] \
-							[list %ADDR%   ""] \
-							[list %URLUID% $u2] \
-							[list %HEADER% ""] \
-							[list %ONLOAD% ""] \
-						    ] \
-					    ]
+	    d result $conf(pagen) [list \
+				    [list %MSGSTA% $msgsta] \
+				    [list %OBJETS% "équipements"] \
+				    [list %LISTE%  $liste] \
+				    [list %EQ%     $eq] \
+				    [list %VLAN%   ""] \
+				    [list %ADDR%   ""] \
+				    [list %HEADER% ""] \
+				    [list %ONLOAD% ""] \
+				]
 	}
 	*-1 {
 	    #
@@ -845,24 +871,21 @@ proc main {} {
 
 	    set nomeq [lindex [array names tabeq] 0]
 
-	    set l [format-one-eq $nomeq $iface tabuid $u1 $u2]
+	    set l [format-one-eq $nomeq $iface tabcor]
 	    lassign $l titre texte
 
 	    #
 	    # Sortie de la page
 	    #
 
-	    ::webapp::send html [::webapp::file-subst $conf(page1) \
-						[list \
-							[list %MSGSTA% $msgsta] \
-							[list %TITRE% $titre] \
-							[list %TEXTE% $texte] \
-							[list %EQ%    $eq] \
-							[list %VLAN%  ""] \
-							[list %ADDR%  ""] \
-							[list %URLUID% $u2] \
-						    ] \
-					]
+	    d result $conf(page1) [list \
+				    [list %MSGSTA% $msgsta] \
+				    [list %TITRE% $titre] \
+				    [list %TEXTE% $texte] \
+				    [list %EQ%    $eq] \
+				    [list %VLAN%  ""] \
+				    [list %ADDR%  ""] \
+				]
 	}
 	0-* {
 	    #
@@ -874,10 +897,9 @@ proc main {} {
 
 	    set liste ""
 	    foreach e [lsort [array names tabeq]] {
-		set type   [lindex $tabeq($e) 0]
-		set modele [lindex $tabeq($e) 1]
-		set url [format $conf(urleq) $e $u1]
-
+		lassign $tabeq($e) type modele
+		d urlset "U" $conf(nexteq) [list [list "eq" $e]]
+		set url [d urlget "U"]
 		set lien [::webapp::helem "a" $e "href" $url]
 		append liste [::webapp::helem "li" "$lien $type $modele"]
 	    }
@@ -887,19 +909,16 @@ proc main {} {
 	    # Sortie de la page
 	    #
 
-	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
-						[list \
-							[list %MSGSTA% $msgsta] \
-							[list %OBJETS% "équipements"] \
-							[list %LISTE%  $liste] \
-							[list %EQ%     $eq] \
-							[list %VLAN%   ""] \
-							[list %ADDR%   ""] \
-							[list %URLUID% $u2] \
-							[list %HEADER% ""] \
-							[list %ONLOAD% ""] \
-						    ] \
-					    ]
+	    d result $conf(pagen) [list \
+				    [list %MSGSTA% $msgsta] \
+				    [list %OBJETS% "équipements"] \
+				    [list %LISTE%  $liste] \
+				    [list %EQ%     $eq] \
+				    [list %VLAN%   ""] \
+				    [list %ADDR%   ""] \
+				    [list %HEADER% ""] \
+				    [list %ONLOAD% ""] \
+			    	]
 	}
 	1-* {
 	    #
@@ -910,43 +929,28 @@ proc main {} {
 	    #
 
 	    hiearchiser-liste-equipements thier [array names tabeq]
-	    set arbre [generer-arbre-eq "" thier tabeq tabwifi $u1]
+	    set arbre [generer-arbre-eq "" thier tabeq tabwifi]
 	    set expcoll {{tout dérouler} {tout enrouler}}
 	    set t [::webapp::interactive-tree "leq" $arbre $expcoll]
-
-	    set head1  [lindex $t 0]
-	    set head2  [lindex $t 1]
-	    set onload [lindex $t 2]
-	    set html   [lindex $t 3]
-
+	    lassign $t head1 head2 onload html
 	    set header "$head1\n$head2\n"
-
 
 	    #
 	    # Sortie de la page
 	    #
 
-	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
-						[list \
-							[list %MSGSTA% $msgsta] \
-							[list %OBJETS% "équipements"] \
-							[list %LISTE%  $html] \
-							[list %EQ%     $eq] \
-							[list %VLAN%   ""] \
-							[list %ADDR%   ""] \
-							[list %URLUID% $u2] \
-							[list %HEADER% $header] \
-							[list %ONLOAD% $onload] \
-						    ] \
-					    ]
+	    d result $conf(pagen) [list \
+				    [list %MSGSTA% $msgsta] \
+				    [list %OBJETS% "équipements"] \
+				    [list %LISTE%  $html] \
+				    [list %EQ%     $eq] \
+				    [list %VLAN%   ""] \
+				    [list %ADDR%   ""] \
+				    [list %HEADER% $header] \
+				    [list %ONLOAD% $onload] \
+				]
 	}
     }
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

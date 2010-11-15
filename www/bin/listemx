@@ -37,6 +37,12 @@ set conf(listetex)	$conf(lib)/listedes.tex
 set conf(err)		$conf(lib)/erreur.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+# aucun (page en cul de sac)
+
+#
 # Quelques paramètres du script
 #
 
@@ -146,7 +152,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     #
     # Analyse et validation des arguments
@@ -161,7 +167,7 @@ proc main {} {
     foreach d $ftab(domaine) {
 	set iddom [lire-domaine $dbfd $d]
 	if {$iddom == -1} then {
-	    ::webapp::error-exit $conf(err) "Domaine '$d' non trouvé"
+	    d error "Domaine '$d' non trouvé"
 	}
 	set tabdom($d) $iddom
     }

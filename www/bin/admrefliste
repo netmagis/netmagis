@@ -35,6 +35,12 @@ set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/admrefmodif"
+
+#
 # Quelques paramètres du script
 #
 
@@ -120,7 +126,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     #
     # Selon le type
@@ -275,21 +281,22 @@ proc main {} {
 	    set id iddhcpprofil
 	}
 	default	{
-	    ::webapp::error-exit $conf(err) "Type d'édition invalide ($type)"
+	    d error "Type d'édition invalide ($type)"
 	}
     }
 
     set errmsg [edition-tableau $largeurs $titre $spec $dbfd $sql $id tab]
     if {[string length $errmsg] > 0} then {
-	::webapp::error-exit $conf(err) $errmsg
+	d error $errmsg
     }
 
     #
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(next) [list [list "type" $type]]
+
     d result $conf(page) [list \
-				[list %TYPE% $type] \
 				[list %TABLEAU% $tab] \
 				[list %TITREPAGE% $titrepage] \
 			    ]

@@ -35,6 +35,13 @@ set conf(pageliste)	$conf(lib)/mailheberg-liste.html
 set conf(pageedit)	$conf(lib)/mailheberg-edit.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(nextheberg)	"%HOMEURL%/bin/mailheberg"
+set conf(nextmodif)	"%HOMEURL%/bin/mailmodif"
+
+#
 # Quelques paramètres du script
 #
 
@@ -186,7 +193,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     set idcor $tabcor(idcor)
 
@@ -200,7 +207,7 @@ proc main {} {
 
     set msg [valide-domaine $dbfd $idcor $domaine iddom "rolemail"]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -234,14 +241,16 @@ proc main {} {
 		set nomh [lindex $q 2] ; set domaineh [lindex $q 3]
 
 		# normalement, il n'y a que des caractères "compatibles RFC"...
-		set url "$baseurl?nom=$noma&domaine=$domainea"
+		d urlset "U" $conf(nextheberg) [list \
+						    [list "nom" $noma] \
+						    [list "domaine" $domainea] \
+					    ]
+		set url [d urlget "U"]
+		set html [::webapp::helem "a" "$noma.$domainea" "href" $url]
 
-		lappend donnees [list Normal \
-				    "<A HREF=\"$url\">$noma.$domainea</A>" \
-				    "$nomh.$domaineh" \
-				    ]
-		set tableau [::arrgen::output "html" $conf(tableau) $donnees]
+		lappend donnees [list Normal $html "$nomh.$domaineh"]
 	    }
+	    set tableau [::arrgen::output "html" $conf(tableau) $donnees]
 	}
 
 	lappend lsubst [list %TABLEAU% $tableau]
@@ -263,7 +272,7 @@ proc main {} {
 
 	set msg [syntaxe-nom $nom]
 	if {! [string equal $msg ""]} then {
-	    ::webapp::error-exit $conf(err) $msg
+	    d error $msg
 	}
 
 	#
@@ -272,12 +281,12 @@ proc main {} {
 
 	set msg [valide-role-mail $dbfd $idcor $nom $domaine trr trrh]
 	if {! [string equal $msg ""]} then {
-	    ::webapp::error-exit $conf(err) "$msg. Édition refusée."
+	    d error "$msg. Édition refusée."
 	}
 
 	set nomh $trrh(nom)
 	set domh $trrh(domaine)
-	set domaineh [menu-domaine $dbfd $idcor domaineh "" $domh $conf(err)]
+	set domaineh [menu-domaine $dbfd $idcor domaineh "" $domh]
 
 	lappend lsubst [list %NOM%      $nom]
 	lappend lsubst [list %DOMAINE%  $domaine]
@@ -289,6 +298,7 @@ proc main {} {
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(nextmodif) {}
     d result $page $lsubst
 }
 

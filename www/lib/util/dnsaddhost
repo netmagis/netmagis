@@ -176,7 +176,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
     # Se rappeler du correspondant qui a effectué la modification
     #
 
-    set msg [touch-rr $dbfd $trr(idrr) $idcor]
+    set msg [touch-rr $dbfd $trr(idrr)]
     if {[string length $msg] > 0} then {
        ::pgsql::unlock $dbfd "abort" m
 	return $msg

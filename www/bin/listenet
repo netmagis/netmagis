@@ -42,6 +42,13 @@ set conf(listetex)	$conf(lib)/listedes.tex
 set conf(err)		$conf(lib)/erreur.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+# aucun (page en cul de sac)
+
+
+#
 # Quelques paramètres du script
 #
 
@@ -160,7 +167,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     #
     # Analyse et validation des arguments
@@ -195,7 +202,7 @@ proc main {} {
     if {! [string equal $cidr ""]} then {
 	set msg [syntaxe-ip $dbfd $cidr "cidr"]
 	if {! [string equal $msg ""]} then {
-	    ::webapp::error-exit $conf(err) $msg
+	    d error $msg
 	}
 	append selection "AND (r.adr4 <<= '$cidr' OR r.adr6 <<= '$cidr')"
 	lappend txtsel "dont le CIDR correspond à '$cidr'"
@@ -210,8 +217,7 @@ proc main {} {
 	}
 	foreach idetabl $ftab(etabl) {
 	    if {! [info exists te($idetabl)]} then {
-		::webapp::error-exit $conf(err) \
-			"'$idetabl' n'est pas un numéro d'établissement"
+		d error "'$idetabl' n'est pas un numéro d'établissement"
 	    }
 	    lappend lsqletabl "r.idetabl = $idetabl"
 	    lappend ltxtetabl "$te($idetabl)"
@@ -232,7 +238,7 @@ proc main {} {
 	}
 	foreach idcommu $ftab(commu) {
 	    if {! [info exists tc($idcommu)]} then {
-		::webapp::error-exit $conf(err) "'$idcommu' n'est pas un numéro de communauté"
+		d error "'$idcommu' n'est pas un numéro de communauté"
 	    }
 	    lappend lsqlcommu "r.idcommu = $idcommu"
 	    lappend ltxtcommu "$tc($idcommu)"

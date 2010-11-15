@@ -31,6 +31,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/consultmx.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/listemx"
+
+#
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
@@ -58,7 +64,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
 
     #
     # Extraire la liste des domaines (tous, sans exception)
@@ -72,6 +78,7 @@ proc main {} {
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %LISTEDOMAINES% $listedomaines] \
 			    ]

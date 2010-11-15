@@ -23,6 +23,12 @@ set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+# (aucun : page cul de sac)
+
+#
 # Définition des noms des pages "à trous"
 #
 
@@ -132,7 +138,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     set domaine [lindex $ftab(domaine) 0]
 
@@ -142,7 +148,7 @@ proc main {} {
 
     set msg [valide-domaine-et-relais $dbfd $tabcor(idcor) $domaine iddom]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -173,15 +179,15 @@ proc main {} {
 					    $fprio $fnom $fdom \
 					    $tabcor(idcor) msg]
 		    if {! [string equal $msg ""]} then {
-			::webapp::error-exit $conf(err) "$msg pour $fnom.$fdom"
+			d error "$msg pour $fnom.$fdom"
 		    }
 		    if {[info exists tmx([lindex $mx 1])]} then {
-			::webapp::error-exit $conf(err) "$fnom.$fdom spécifié deux fois."
+			d error "$fnom.$fdom spécifié deux fois."
 		    }
 		    lappend lrel $mx
 		}
 	    } else {
-		::webapp::error-exit $conf(err) "Formulaire non conforme ($idxprio, $idxnom, $idxdom)"
+		d error "Formulaire non conforme ($idxprio, $idxnom, $idxdom)"
 	    }
 	}
     }
@@ -191,7 +197,7 @@ proc main {} {
     #
 
     if {! [::pgsql::lock $dbfd {} msg]} then {
-	::webapp::error-exit $conf(err) "Verrouillage de la base impossible: $msg"
+	d error "Verrouillage de la base impossible: $msg"
     }
 
     #
@@ -201,7 +207,7 @@ proc main {} {
     set sql "DELETE FROM dns.relais_dom WHERE iddom = $iddom"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	::pgsql::unlock $dbfd "abort" m
-	::webapp::error-exit $conf(err) "Suppression des anciens relais impossible: $msg"
+	d error "Suppression des anciens relais impossible: $msg"
     }
 
     #
@@ -211,7 +217,7 @@ proc main {} {
     set msg [inserer-relais $dbfd $iddom $lrel]
     if {! [string equal $msg ""]} then {
 	::pgsql::unlock $dbfd "abort" m
-	::webapp::error-exit $conf(err) "Ajout des relais impossible\n$msg"
+	d error "Ajout des relais impossible\n$msg"
     }
 
     #
@@ -246,7 +252,6 @@ proc main {} {
 	set tableau "Relais de messagerie supprimés."
 	d writelog "modifrelais" "suppression des relais pour $domaine"
     }
-
 
     #
     # Fin du script : sortie de la page et fermeture de la base

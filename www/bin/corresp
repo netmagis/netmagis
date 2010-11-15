@@ -36,6 +36,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/corresp.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/corresp"
+
+#
 # Quelques paramètres du script
 #
 
@@ -71,8 +77,9 @@ proc corresp-erreur {critere msg} {
     global conf
 
     set qmsg     [::webapp::html-string $msg]
-    set qcritere [::webapp::unpost-string $critere]
+    set qcritere [::webapp::html-string $critere]
     set resultat "<FONT COLOR=\"FF0000\">$qmsg</FONT>"
+    d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %CRITERE% $qcritere] \
 				[list %RESULTAT% $resultat] \
@@ -92,7 +99,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     set critere [string trim [lindex $ftab(critere) 0]]
 
@@ -173,7 +180,7 @@ proc main {} {
 	    set domaine $tab(nom)
 	}
 	if {$iddom == -1} then {
-	    ::webapp::error-exit $conf(err) "Pas de domaine par défaut !"
+	    d error "Pas de domaine par défaut !"
 	}
 	if {! [lire-rr-par-nom $dbfd $nom $iddom tabrr]} then {
 	    corresp-erreur $critere \
@@ -205,8 +212,7 @@ proc main {} {
 	    set idrr $tabrr(cname)
 	    unset tabrr
 	    if {! [lire-rr-par-id $dbfd $idrr tabrr]} then {
-		::webapp::error-exit $conf(err) \
-			"Erreur interne : objet pointé par l'alias non trouvé"
+		d error "Erreur interne : objet pointé par l'alias non trouvé"
 	    }
 	}
     }
@@ -221,8 +227,7 @@ proc main {} {
 	    set idrr $tabrr(rolemail)
 	    unset tabrr
 	    if {! [lire-rr-par-id $dbfd $idrr tabrr]} then {
-		::webapp::error-exit $conf(err) \
-			"Erreur interne : hébergeur du rolemail non trouvé"
+		d error "Erreur interne : hébergeur du rolemail non trouvé"
 	    }
 	}
     }
@@ -234,7 +239,7 @@ proc main {} {
 
     if {! [info exists adr]} then {
 	if {! [info exists tabrr(ip)]} then {
-	    ::webapp::error-exit $conf(err) "Erreur interne : pas d'adresse et pas de tabrr"
+	    d error "Erreur interne : pas d'adresse et pas de tabrr"
 	}
 
 	set adr [lindex $tabrr(ip) 0]
@@ -290,7 +295,7 @@ proc main {} {
 	if {[droit-correspondant-ip $dbfd $idcor $adr]} then {
 	    set msg [lire-correspondant $dbfd $login tabcor]
 	    if {! [string equal $msg ""]} then {
-		::webapp::error-exit $conf(err) "Erreur interne ($msg)"
+		d error "Erreur interne ($msg)"
 	    }
 	    append resultat [html-correspondant tabcor]
 	    append resultat "\n<P>\n"
@@ -302,6 +307,7 @@ proc main {} {
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %CRITERE% $critere] \
 				[list %RESULTAT% $resultat] \

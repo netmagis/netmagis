@@ -20,17 +20,7 @@
 	WebDNS v%VERSION%
     } {
 	\elementbandeau {Actions} {
-	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
-	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
-	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
-	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
-	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
-	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
-	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
-	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
-	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
-	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
-	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
+	    %BANDEAU%
 	}
 }
 
@@ -42,53 +32,41 @@
     \titre {2} {Consultation des données}
 
     \liste {
-	\item {Consulter les \lien {MX} {consultmx}}
-	\item {Consulter les \lien {statistiques par correspondant} {statcor}}
-	\item {Consulter les \lien {statistiques par établissement} {statetab}
-	    [Lent ! Compter 1 à 2 minutes]}
-	\item {Consulter les \lien {réseaux} {consultnet}}
-	\item {Lister les \lien {correspondants} {listecorresp}}
-	\item {Chercher un \lien {correspondant} {corresp} à partir d'une adresse}
+	\item {Consulter les \lien {MX} {%URLCONSULTMX%}}
+	\item {Consulter les \lien {statistiques par correspondant} {%URLSTATCOR%}}
+	\item {Consulter les \lien {statistiques par établissement} {%URLSTATETAB%} [Lent ! Compter 1 à 2 minutes]}
+	\item {Consulter les \lien {réseaux} {%URLCONSULTNET%}}
+	\item {Lister les \lien {correspondants} {%URLLISTECORRESP%}}
+	\item {Chercher un \lien {correspondant} {%URLCORRESP%} à partir d'une adresse}
     }
 
     \titre {2} {Administration des données}
 
     \liste {
-	\* \item {Modifier les \lien {paramètres de l'application} {admparliste}}
-	\item {Modifier les \lien {établissements}
-		{admrefliste?type=etabl}}
-	\item {Modifier les \lien {communautés}
-		{admrefliste?type=commu}}
-	\item {Modifier les \lien {types de machines}
-		{admrefliste?type=hinfo}}
-	\item {Modifier les \lien {réseaux}
-		{admrefliste?type=reseau}}
-	\item {Modifier les \lien {domaines}
-		{admrefliste?type=domaine}}
-	\item {Modifier les \lien {relais de messagerie} {admrelsel}
-		d'un domaine}
-	\item {Modifier les \lien {zones normales}
-		{admrefliste?type=zone}}
-	\item {Modifier les \lien {zones reverse IPv4}
-		{admrefliste?type=zone4}}
-	\item {Modifier les \lien {zones reverse IPv6}
-		{admrefliste?type=zone6}}
-	\item {Modifier les \lien {MX} {admmxsel}}
-	\item {Modifier les \lien {profils DHCP}
-		{admrefliste?type=dhcpprofil}}
-	\item {Modifier les \lien {groupes et les correspondants} {admgrpsel}}
+	\item {Modifier les \lien {établissements} {%URLREFETABL%}}
+	\item {Modifier les \lien {communautés} {%URLREFCOMMU%}}
+	\item {Modifier les \lien {types de machines} {%URLREFHINFO%}}
+	\item {Modifier les \lien {réseaux} {%URLREFRESEAU%}}
+	\item {Modifier les \lien {domaines} {%URLREFDOMAINE%}}
+	\item {Modifier les \lien {relais de messagerie} {%URLADMRELSEL%} d'un domaine}
+	\item {Modifier les \lien {zones normales} {%URLREFZONE%}}
+	\item {Modifier les \lien {zones reverse IPv4} {%URLREFZONE4%}}
+	\item {Modifier les \lien {zones reverse IPv6} {%URLREFZONE6%}}
+	\item {Modifier les \lien {MX} {%URLADMMXSEL%}}
+	\item {Modifier les \lien {profils DHCP} {%URLREFDHCPPROFIL%}}
+	\item {Modifier les \lien {groupes et les correspondants} {%URLADMGRPSEL%}}
     }
 
     \titre {2} {Actions}
 
     \liste {
-	\item {Forcer la \lien {génération de zones} {admgenliste}}
+	\item {Forcer la \lien {génération de zones} {%URLADMGENLISTE%}}
     }
 
     \titre {2} {Administration de la base}
 
     \liste {
-	\item {Modifier les \lien {paramètres de l'application} {admparliste}}
+	\item {Modifier les \lien {paramètres de l'application} {%URLADMPARLISTE%}}
     }
 }
 

@@ -45,14 +45,18 @@ set conf(pageadr)	$conf(lib)/ajout-adr.html
 set conf(err)		$conf(lib)/erreur.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/traiteajout"
+
+#
 # Quelques paramètres du script
 #
 
 # les champs discriminants pour la suite
 set conf(form)	{
 	{adr		0 1}
-	{nextprog	0 1}
-	{nextargs	0 1}
 }
 
 #
@@ -83,7 +87,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     #
     # Récupération des types de machines
@@ -114,8 +118,8 @@ proc main {} {
     # et construction du code HTML approprié.
     #
 
-    set domaine    [menu-domaine $dbfd $tabcor(idcor) domaine    "" "" $conf(err)]
-    set domaineref [menu-domaine $dbfd $tabcor(idcor) domaineref "" "" $conf(err)]
+    set domaine    [menu-domaine $dbfd $tabcor(idcor) domaine    "" ""]
+    set domaineref [menu-domaine $dbfd $tabcor(idcor) domaineref "" ""]
 
     #
     # Récupérer les informations de profil DHCP si besoin est
@@ -142,21 +146,21 @@ proc main {} {
     #
 
     set adr [string trim [lindex $ftab(adr) 0]]
-    set next ""
     if {[string equal $adr ""]} then {
 	# show rest of page
 	set display "block"
     } else {
 	# hide rest of page
 	set display "none"
-	set nextprog [lindex $ftab(nextprog) 0]
-	set nextargs [lindex $ftab(nextargs) 0]
-	if {! [string equal $nextprog ""]} then {
-	    set n1 "nextprog=[::webapp::post-string $nextprog]"
-	    set n2 "nextargs=[::webapp::post-string $nextargs]"
-	    set next "?$n1&$n2"
-	}
     }
+
+    #
+    # Script suivant
+    #
+
+    d urlset "%URLFORM1%" $conf(next) {}
+    d urladdnext "%URLFORM1%"
+    d urlset "%URLFORM2%" $conf(next) {}
 
     #
     # Fin du script : sortie de la page et fermeture de la base
@@ -175,7 +179,6 @@ proc main {} {
 				[list %MENUPLAGE% $menuplage] \
 				[list %DISPLAY% $display] \
 				[list %ADR% $adr] \
-				[list %NEXT% $next] \
 			    ]
 }
 

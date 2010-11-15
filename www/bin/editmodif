@@ -40,6 +40,15 @@ set conf(page-edit-infos)	$conf(lib)/editmodif-infos.html
 set conf(err)			$conf(lib)/erreur.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/traitemodif"
+set conf(nextajout)	"%HOMEURL%/bin/ajout"
+set conf(nextsuppr)	"%HOMEURL%/bin/suppr"
+
+
+#
 # Quelques paramètres du script
 #
 
@@ -52,8 +61,6 @@ set conf(form)		{
 set conf(form-modif-infos)	{
 	{nom		1 1}
 	{domaine	1 1}
-	{nextprog	0 1}
-	{nextargs	0 1}
 }
 
 #
@@ -98,7 +105,7 @@ proc editmodif-infos {dbfd idcor ft} {
 
     set m [syntaxe-nom $nom]
     if {[string length $m] > 0} then {
-	::webapp::error-exit $conf(err) "Erreur sur le nom '$nom': $m"
+	d error "Erreur sur le nom '$nom': $m"
     }
     set nom [string tolower $nom]
 
@@ -108,7 +115,7 @@ proc editmodif-infos {dbfd idcor ft} {
 
     set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "machine-existante"]
     if {[string length $msg] > 0} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -116,7 +123,7 @@ proc editmodif-infos {dbfd idcor ft} {
     #
 
     if {[string equal $trr(idrr) ""]} then {
-	::webapp::error-exit $conf(err) "Le nom '$nom' n'existe pas"
+	d error "Le nom '$nom' n'existe pas"
     }
 
     #
@@ -131,7 +138,7 @@ proc editmodif-infos {dbfd idcor ft} {
     #
 
     set nom [::webapp::form-text nom 1 20 64 $nom]
-    set domaine [menu-domaine $dbfd $idcor domaine "" $domaine $conf(err)]
+    set domaine [menu-domaine $dbfd $idcor domaine "" $domaine]
 
     set val [::webapp::html-string $trr(mac)]
     set mac [::webapp::form-text mac 1 20 17 $val]
@@ -159,6 +166,16 @@ proc editmodif-infos {dbfd idcor ft} {
     set respmel [::webapp::form-text respmel 1 50 50 $val]
 
     #
+    # Script suivant
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+    d urladdnext "%URLFORM%"
+
+    d urlset "%URLAJOUT%" $conf(nextajout) {}
+    d urlset "%URLSUPPR%" $conf(nextsuppr) {}
+
+    #
     # Fin du script : sortie de la page et fermeture de la base
     #
 
@@ -179,8 +196,6 @@ proc editmodif-infos {dbfd idcor ft} {
 					[list %COMMENTAIRE% $commentaire] \
 					[list %RESPNOM% $respnom] \
 					[list %RESPMEL% $respmel] \
-					[list %NEXTPROG% $nextprog] \
-					[list %NEXTARGS% $nextargs] \
 			    ]
 }
 
@@ -196,7 +211,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     #
     # Valider l'action, lire les autres champs du formulaire,
@@ -206,11 +221,11 @@ proc main {} {
     set action [lindex $ftab(action) 0]
 
     if {! [info exists conf(form-$action)]} then {
-	::webapp::error-exit $conf(err) "Champ 'action' non conforme : $action"
+	d error "Champ 'action' non conforme : $action"
     }
 
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
-	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
+	d error "Formulaire non conforme aux spécifications"
     }
 
     edit$action $dbfd $tabcor(idcor) ftab

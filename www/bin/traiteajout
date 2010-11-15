@@ -21,8 +21,6 @@
 #	- commentaire : informations complémentaires
 #	- respnom : nom et prénom du responsable
 #	- respmel : adresse électronique du responsable
-#	- nextprog, nextargs : suite du parcours (en cas d'ajout la carte
-#		ou depuis la recherche de plage consécutive)
 #   - recherche d'une plage consécutive
 #	- action : "ajout-multi"
 #	- redirect : bouton "Rechercher" ou "Consulter la carte" (cf ajout.htgt)
@@ -81,13 +79,20 @@ set conf(page-ajout-alias)	$conf(lib)/traiteajout-alias.html
 set conf(err)			$conf(lib)/erreur.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(nextconfirm)	"%HOMEURL%/bin/traiteajout"
+
+set conf(nextmap)	"%HOMEURL%/bin/liste"
+set conf(nextseq)	"%HOMEURL%/bin/traiteajout"
+set conf(nextajout)	"%HOMEURL%/bin/ajout"
+
+set conf(scriptmap)	"%DESTDIR%/bin/liste"
+
+#
 # Quelques paramètres du script
 #
-
-# scripts cgi
-set conf(script-map)	bin/liste
-set conf(script-seq)	bin/traiteajout
-set conf(script-ajout)	bin/ajout
 
 # nb max d'adresses IP pour une recherche d'adresses IP consécutives
 set conf(maxip)		1024
@@ -111,8 +116,6 @@ set conf(form-ajout-machine)	{
 	{commentaire	1 1}
 	{respnom	1 1}
 	{respmel	1 1}
-	{nextprog	0 1}
-	{nextargs	0 1}
 }
 
 set conf(form-ajout-alias)	{
@@ -221,8 +224,6 @@ proc traiteajout-machine {dbfd tc ft} {
     set respnom       [string trim [lindex $ftab(respnom) 0]]
     set respmel       [string trim [lindex $ftab(respmel) 0]]
     set confirm       [string trim [lindex $ftab(confirm) 0]]
-    set nextprog      [string trim [lindex $ftab(nextprog) 0]]
-    set nextargs      [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Valider la syntaxe du nom au sens de la RFC ????
@@ -230,7 +231,7 @@ proc traiteajout-machine {dbfd tc ft} {
 
     set m [syntaxe-nom $nom]
     if {! [string equal $m ""]} then {
-	::webapp::error-exit $conf(err) "Erreur sur le nom '$nom': $m"
+	d error "Erreur sur le nom '$nom': $m"
     }
     set nom [string tolower $nom]
 
@@ -240,7 +241,7 @@ proc traiteajout-machine {dbfd tc ft} {
 
     set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "machine"]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
     set iddom $trr(iddom)
 
@@ -269,7 +270,7 @@ proc traiteajout-machine {dbfd tc ft} {
 
     set m [syntaxe-ip $dbfd $adr "inet"]
     if {[string length $m] > 0} then {
-	::webapp::error-exit $conf(err) "Erreur sur l'adresse IP '$adr': $m"
+	d error "Erreur sur l'adresse IP '$adr': $m"
     }
 
     #
@@ -278,7 +279,7 @@ proc traiteajout-machine {dbfd tc ft} {
     #
 
     if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
-	::webapp::error-exit $conf(err) "Vous n'avez pas accès à l'adresse '$adr'"
+	d error "Vous n'avez pas accès à l'adresse '$adr'"
     }
 
     #
@@ -286,7 +287,7 @@ proc traiteajout-machine {dbfd tc ft} {
     #
 
     if {[lire-rr-par-ip $dbfd $adr tabrrbidon]} then {
-	::webapp::error-exit $conf(err) "L'adresse '$adr' existe déjà"
+	d error "L'adresse '$adr' existe déjà"
     }
 
     #
@@ -297,7 +298,7 @@ proc traiteajout-machine {dbfd tc ft} {
     if {! [string equal $mac  ""]} then {
 	set m [syntaxe-mac $dbfd $mac]
 	if {[string length $m] > 0} then {
-	    ::webapp::error-exit $conf(err) "Erreur sur l'adresse MAC : $m"
+	    d error "Erreur sur l'adresse MAC : $m"
 	}
     }
 
@@ -307,7 +308,7 @@ proc traiteajout-machine {dbfd tc ft} {
     }
     set m [valide-dhcp-statique $dbfd $mac_a_tester [list $adr]]
     if {[string length $m] > 0} then {
-	::webapp::error-exit $conf(err) "$m"
+	d error "$m"
     }
 
     #
@@ -315,12 +316,11 @@ proc traiteajout-machine {dbfd tc ft} {
     #
 
     if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
-	::webapp::error-exit $conf(err) "Profil DHCP invalide ($msg)"
+	d error "Profil DHCP invalide ($msg)"
     }
 
     if {[string equal $mac ""] && $iddhcpprofil != 0} then {
-	::webapp::error-exit $conf(err) \
-		"Impossible de configurer un profil DHCP sans adresse MAC"
+	d error "Impossible de configurer un profil DHCP sans adresse MAC"
     }
 
     #
@@ -329,7 +329,7 @@ proc traiteajout-machine {dbfd tc ft} {
 
     set idhinfo [lire-hinfo $dbfd $hinfo]
     if {$idhinfo == -1} then {
-	::webapp::error-exit $conf(err) "Le type de machine '$hinfo' n'existe pas."
+	d error "Le type de machine '$hinfo' n'existe pas."
     }
 
     #
@@ -358,7 +358,7 @@ proc traiteajout-machine {dbfd tc ft} {
 	} else {
 	    set msg [valide-ttl $ttl]
 	    if {! [string equal $msg ""]} then {
-		::webapp::error-exit $conf(err) $msg
+		d error $msg
 	    }
 	}
     } else {
@@ -380,7 +380,7 @@ proc traiteajout-machine {dbfd tc ft} {
     #
 
     set l {nom domaine adr mac iddhcpprofil droitsmtp ttl hinfo commentaire
-			    respnom respmel nextprog nextargs}
+			    respnom respmel}
     set hidden [::webapp::hide-parameters $l ftab]
 
     #
@@ -392,6 +392,8 @@ proc traiteajout-machine {dbfd tc ft} {
 	# Sortir une page de confirmation
 	#
 
+	d urlset "%URLFORM%" $conf(nextconfirm) {}
+	d urladdnext "%URLFORM%"
 	d result $conf(page-ajout-smtp) [list \
 					    [list %HIDDEN% $hidden] \
 				]
@@ -412,6 +414,8 @@ proc traiteajout-machine {dbfd tc ft} {
 	#
 
 	set machine [presenter-rr $dbfd -1 trr]
+	d urlset "%URLFORM%" $conf(nextconfirm) {}
+	d urladdnext "%URLFORM%"
 	d result $conf(page-ajout-existe) [list \
 						[list %NOM%     $nom] \
 						[list %DOMAINE% $domaine] \
@@ -430,7 +434,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Insérer l'objet (RR + adr IP) ou seulement l'adr IP dans la base
     #
     if {! [::pgsql::lock $dbfd {dns.rr dns.rr_ip} msg]} then {
-	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+	d error "Transaction impossible : $msg"
     }
 
     if {! $rrexiste} then {
@@ -441,7 +445,7 @@ proc traiteajout-machine {dbfd tc ft} {
 	set msg [ajouter-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
 		    $droitsmtp $ttl $commentaire $respnom $respmel $idcor trr]
 	if {! [string equal $msg ""]} then {
-	    ::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
+	    d error "Impossible d'insérer : $msg"
 	}
 
     } else {
@@ -487,7 +491,7 @@ proc traiteajout-machine {dbfd tc ft} {
 					respmel = '$qrespmel'
 				    WHERE idrr = $trr(idrr)"
 		if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		    ::webapp::error-exit $conf(err) "Mise à jour impossible HINFO : $msg"
+		    d error "Mise à jour impossible HINFO : $msg"
 		}
 	    }
 	}
@@ -496,7 +500,7 @@ proc traiteajout-machine {dbfd tc ft} {
     set sql "INSERT INTO dns.rr_ip VALUES ($trr(idrr), '$adr')"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
        ::pgsql::unlock $dbfd "abort" m
-	::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
+	d error "Impossible d'insérer : $msg"
     }
 
 
@@ -504,30 +508,30 @@ proc traiteajout-machine {dbfd tc ft} {
     # Se rappeler du correspondant qui a effectué la modification
     #
 
-    set msg [touch-rr $dbfd $trr(idrr) $idcor]
+    set msg [touch-rr $dbfd $trr(idrr)]
     if {[string length $msg] > 0} then {
        ::pgsql::unlock $dbfd "abort" m
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     if {! [::pgsql::unlock $dbfd "commit" msg]} then {
        ::pgsql::unlock $dbfd "abort" m
-       ::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
+       d error "L'insertion a échoué. Abandon.\n$msg"
     }
 
     d writelog "ajoutmachine" "ajout de $nom.$domaine ($adr)"
 
 
     #
-    # Préparer la suite
+    # Préparer la suite du parcours
     #
      
-    switch -- $nextprog {
+    switch -- [d nextprog] {
 	map {
-	    set suite "$conf(homeurl)/$conf(script-map)?format=carte&$nextargs"
+	    d urlset "%URLSUITE%" $conf(nextmap) [list {format carte} [d nextargs]]
 	}
 	sequence {
-	    foreach kv [split $nextargs "&"] {
+	    foreach kv [split [d nextargs] "&"] {
 		if {[regexp {^([^=]+)=(.*)} $kv bidon k v]} then {
 		    lappend nf($k) $v
 		}
@@ -544,17 +548,14 @@ proc traiteajout-machine {dbfd tc ft} {
 		    set nadr $tab(adr)
 		}
 
-		set suite "$conf(homeurl)/$conf(script-ajout)"
-		append suite "?adr=$nadr"
-		append suite "&nextprog=sequence"
-		append suite "&nextargs="
-		append suite [::webapp::post-string "nbadr=$nbadr"]
+		d urlset "%URLSUITE%" $conf(nextseq) [list [list "adr" $nadr]]
+		d urlsetnext "%URLSUITE%" "sequence" "nbadr=$nbadr"
 	    } else {
-		set suite "$conf(homeurl)/$conf(script-ajout)"
+		d urlset "%URLSUITE%" $conf(nextajout) {}
 	    }
 	}
 	default {
-	    set suite "$conf(homeurl)/bin/ajout"
+	    d urlset "%URLSUITE%" $conf(nextajout) {}
 	}
     }
 
@@ -565,9 +566,7 @@ proc traiteajout-machine {dbfd tc ft} {
     set machine [presenter-rr $dbfd $trr(idrr) trr]
     d result $conf(page-ajout-machine) [list \
 					    [list %MACHINE% $machine] \
-					    [list %SUITE% $suite] \
 			    ]
-    return 0
 }
 
 
@@ -600,7 +599,7 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
 
     set lcidr [valide-idreseau $dbfd $plage $idgrp "consult" {4} msg]
     if {[llength $lcidr] != 1} then {
-       ::webapp::error-exit $conf(err) $msg
+       d error $msg
     }
     set cidr [lindex $lcidr 0]
 
@@ -615,7 +614,7 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
 	    lappend nftab(cidr) $cidr
 	}
 	set nftab(format) [list "Carte des adresses"]
-	puts stdout [::webapp::call-cgi %DESTDIR%/$conf(script-map) nftab]
+	puts stdout [::webapp::call-cgi $conf(scriptmap) nftab]
 	return 0
     }
 
@@ -624,7 +623,7 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
     #
 
     if {! [regexp {^[0-9]+$} $nbadr] || $nbadr < 1} then {
-       ::webapp::error-exit $conf(err) "Mauvais nombre d'adresses ($nbadr)"
+       d error "Mauvais nombre d'adresses ($nbadr)"
     }
 
     switch -- $tri {
@@ -651,7 +650,7 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
     }
 
     if {[llength $lranges] == 0} then {
-       ::webapp::error-exit $conf(err) "Aucune plage consécutive de $nbadr adresse(s) IPv4"
+       d error "Aucune plage consécutive de $nbadr adresse(s) IPv4"
     }
 
     #
@@ -661,42 +660,42 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
     set donnees {}
 
     # url de base pour réaliser les tris
-    set burl "$conf(homeurl)/bin/traiteajout?action=ajout-multi&plage=$plage&nbadr=$nbadr"
+    set largs [list {action ajout-multi} \
+		    [list "plage" $plage] \
+		    [list "nbadr" $nbadr] \
+		]
 
     # titre du tableau (avec les urls de tri)
-    set c1 [::webapp::helem "a" "Première adresse IP" "href" "$burl&tri=adr"]
-    set c2 [::webapp::helem "a" "Taille de l'intervalle" "href" "$burl&tri=nbadr"]
+    d urlset "U" $conf(nextseq) [concat $largs {{tri adr}}]
+    set url [d urlget "U"]
+    set c1 [::webapp::helem "a" "Première adresse IP" "href" $url]
+
+    d urlset "U" $conf(nextseq) [concat $largs {{tri nbadr}}]
+    set url [d urlget "U"]
+    set c2 [::webapp::helem "a" "Taille de l'intervalle" "href" $url]
+
     lappend donnees [list Entete $c1 $c2 ""]
 
     # parcours des intervalles trouvés
     foreach l $lranges {
-	set a [lindex $l 0]
-	set n [lindex $l 1]
+	lassign $l a n
 
-	set hidden    [::webapp::form-hidden "adr" $a]
-	append hidden [::webapp::form-hidden "nextprog" "sequence"]
-	append hidden [::webapp::form-hidden "nextargs" "nbadr=$nbadr"]
+	set hidden [::webapp::form-hidden "adr" $a]
 
 	# un peu de cosmétique pour que la signification du
 	# bouton de choix soit clairement explicitée
-	if {$nbadr == $n} then {
-	    if {$nbadr == 1} then {
-		set msg "Choisir cette adresse"
-	    } else {
-		set msg "Choisir ces $n adresses"
-	    }
-	} elseif {$nbadr < $n} then {
-	    if {$nbadr == 1} then {
-		set msg "Choisir la première adresse"
-	    } else {
-		set msg "Choisir les $nbadr premières adresses"
-	    }
+	switch [expr $nbadr==$n][expr $nbadr==1] {
+	    11 { set msg "Choisir cette adresse" }
+	    10 { set msg [format "Choisir ces %d adresses" $n] }
+	    01 { set msg "Choisir la première adresse" }
+	    00 { set msg [format "Choisir les %d premières adresses" $nbadr] }
 	}
 	set bouton "<input type=\"submit\" value=\"$msg\">"
 
+	d urlset "U" $conf(nextajout) {}
+	d urlsetnext "U" "sequence" "nbadr=$nbadr"
 	set c [::webapp::helem "form" "$hidden$bouton" \
-				"method" "post" \
-				"action" "$conf(homeurl)/$conf(script-ajout)" \
+				"method" "post" "action" [d urlget "U"] \
 		    ]
 
 	lappend donnees [list Normal $a $n $c]
@@ -744,13 +743,13 @@ proc traiteajout-alias {dbfd tc ft} {
 
     set m [syntaxe-nom $nom]
     if {[string length $m] > 0} then {
-	::webapp::error-exit $conf(err) "Erreur sur le nom '$nom': $m"
+	d error "Erreur sur le nom '$nom': $m"
     }
     set nom [string tolower $nom]
 
     set m [syntaxe-nom $nomref]
     if {[string length $m] > 0} then {
-	::webapp::error-exit $conf(err) "Erreur sur le nom '$nomref': $m"
+	d error "Erreur sur le nom '$nomref': $m"
     }
     set nomref [string tolower $nomref]
 
@@ -760,13 +759,13 @@ proc traiteajout-alias {dbfd tc ft} {
 
     set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "alias"]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
     set iddom $trr(iddom)
 
     set msg [valide-droit-nom $dbfd $idcor $nomref $domaineref trrref "machine-existante"]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -774,7 +773,7 @@ proc traiteajout-alias {dbfd tc ft} {
     #
 
     if {! [::pgsql::lock $dbfd {dns.rr dns.rr_cname} msg]} then {
-	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+	d error "Transaction impossible : $msg"
     }
 
     #
@@ -784,7 +783,7 @@ proc traiteajout-alias {dbfd tc ft} {
 
     set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor newrr]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) "Impossible d'insérer : $msg"
+	d error "Impossible d'insérer : $msg"
     }
 
     #
@@ -793,13 +792,13 @@ proc traiteajout-alias {dbfd tc ft} {
 
     set sql "INSERT INTO dns.rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	::webapp::error-exit $conf(err) "Impossible d'insérer l'alias : $msg"
+	d error "Impossible d'insérer l'alias : $msg"
     }
 
     
     if {! [::pgsql::unlock $dbfd "commit" msg]} then {
        ::pgsql::unlock $dbfd "abort" m
-       ::webapp::error-exit $conf(err) "L'insertion a échoué. Abandon.\n$msg"
+       d error "L'insertion a échoué. Abandon.\n$msg"
     }
 
     #
@@ -829,7 +828,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     #
     # Valider l'action, lire les autres champs du formulaire,
@@ -839,11 +838,11 @@ proc main {} {
     set action [lindex $ftab(action) 0]
 
     if {! [info exists conf(form-$action)]} then {
-	::webapp::error-exit $conf(err) "Champ 'action' non conforme : $action"
+	d error "Champ 'action' non conforme : $action"
     }
 
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
-	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
+	d error "Formulaire non conforme aux spécifications"
     }
 
     traite$action $dbfd tabcor ftab

@@ -33,6 +33,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/consulter.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/liste"
+
+#
 # Quelques paramètres du script
 #
 
@@ -68,7 +74,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
 
     #
     # Mettre en forme les informations associées au correspondant pour
@@ -97,6 +103,7 @@ proc main {} {
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %CORRESP% $corresp] \
 				[list %PLAGES%  $plages] \

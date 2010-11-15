@@ -30,6 +30,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/admmxedit.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/admmxmodif"
+
+#
 # Quelques paramètres du script
 #
 
@@ -67,7 +73,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     set nom     [lindex $ftab(nom) 0]
     set domaine [lindex $ftab(domaine) 0]
@@ -78,12 +84,12 @@ proc main {} {
 
     set msg [syntaxe-nom $nom]
     if {[string length $msg] > 0} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     set msg [valide-domaine $dbfd $tabcor(idcor) $domaine iddom ""]
     if {[string length $msg] > 0} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -99,10 +105,10 @@ proc main {} {
 
     if {$existe} then {
 	if {[llength $tabrr(ip)] > 0} then {
-	    ::webapp::error-exit $conf(err) "'$nom' a déjà des adresses IP."
+	    d error "'$nom' a déjà des adresses IP."
 	}
 	if {[llength $tabrr(cname)] > 0} then {
-	    ::webapp::error-exit $conf(err) "'$nom' est un alias."
+	    d error "'$nom' est un alias."
 	}
 
 	#
@@ -112,11 +118,11 @@ proc main {} {
 	foreach mx $tabrr(mx) {
 	    set idmx [lindex $mx 1]
 	    if {[lire-rr-par-id $dbfd $idmx tabmx] == 0} then {
-		::webapp::error-exit $conf(err) "ERREUR INTERNE : table rr_mx référence le RR $idmx, non trouvé dans la table rr"
+		d error "ERREUR INTERNE : table rr_mx référence le RR $idmx, non trouvé dans la table rr"
 	    }
 	    set iddom $tabmx(iddom)
 	    if {! [droit-correspondant-domaine $dbfd $tabcor(idcor) $iddom ""]} then {
-		::webapp::error-exit $conf(err) "Le MX '$tabmx(nom).$tabmx(domaine)' référence un domaine auquel vous n'avez pas accès"
+		d error "Le MX '$tabmx(nom).$tabmx(domaine)' référence un domaine auquel vous n'avez pas accès"
 	    }
 	}
     }
@@ -150,13 +156,14 @@ proc main {} {
 
     set msg [edition-tableau $largeurs $titres $spec $dbfd $sql $idnum tableau]
     if {[string length $msg] > 0} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %TABLEAU% $tableau] \
 				[list %NOM%     $nom] \

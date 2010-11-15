@@ -22,13 +22,18 @@ set conf(homeurl)	%HOMEURL%
 set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
-set conf(err)		$conf(lib)/erreur.html
-
 #
 # Définition des noms des pages "à trous"
 #
 
 set conf(page)          $conf(lib)/listecorresp.html
+set conf(err)		$conf(lib)/erreur.html
+
+#
+# Scripts suivants (actions de formulaire)
+# 
+
+# aucun (page en cul de sac)
 
 #
 # Quelques paramètres du script
@@ -115,7 +120,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
 
     set titrepage "Liste des correspondants"
 

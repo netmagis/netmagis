@@ -33,6 +33,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/admgenset.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+# (aucun : page cul de sac)
+
+#
 # Quelques paramètres du script
 #
 
@@ -68,14 +74,14 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     #
     # Forcer la génération
     #
 
     if {! [::pgsql::lock $dbfd {dns.zone} msg]} then {
-	::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+	d error "Transaction impossible : $msg"
     }
 
     foreach z $ftab(zones) {
@@ -83,13 +89,13 @@ proc main {} {
 	set sql "UPDATE zone SET generer = 1 WHERE domaine = '$qz'"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
-	    ::webapp::error-exit $conf(err) "Échec pour la zone '$z'. Abandon.\n$msg"
+	    d error "Échec pour la zone '$z'. Abandon.\n$msg"
 	}
     }
 
     if {! [::pgsql::unlock $dbfd "commit" msg]} then {
 	::pgsql::unlock $dbfd "abort" m
-	::webapp::error-exit $conf(err) "L'opération a échoué. Abandon.\n$msg"
+	d error "L'opération a échoué. Abandon.\n$msg"
     }
 
     d writelog "forcegeneration" "zones $ftab(zones)"
@@ -98,8 +104,7 @@ proc main {} {
     # Fin du script : sortie de la page et fermeture de la base
     #
 
-    d result $conf(page) [list \
-			    ]
+    d result $conf(page) {}
 }
 
 ::webapp::cgi-exec main %DEBUG%

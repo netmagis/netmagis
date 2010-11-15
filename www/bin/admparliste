@@ -29,7 +29,14 @@ set conf(libdns)	$conf(lib)/libdns.tcl
 
 set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/admparliste.html
-set conf(aide)		$conf(homeurl)/bin/admparhelp
+
+#
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/admparmodif"
+set conf(help)		"%HOMEURL%/bin/admparhelp"
+
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -107,7 +114,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
 
     #
     # Mise en forme des données dans le formulaire
@@ -143,7 +150,7 @@ proc main {} {
 		}
 	    }
 
-	    set aide "<A HREF=\"$conf(aide)#$key\">$desc</A>"
+	    set aide [::webapp::helem "a" $desc "href" "$conf(help)#$key"]
 	    lappend donnees [list Normal2 $aide $html]
 	}
     }
@@ -151,14 +158,16 @@ proc main {} {
     append html " <INPUT TYPE=reset VALUE=\"Réinitialiser\">"
     lappend donnees [list Boutons $html]
 
+    set tab [::arrgen::output "html" $conf(tableau) $donnees]
+
     #
     # Génération de la page contenant le formulaire
     #
 
-    set subst {}
-    lappend subst [list %TAB% [::arrgen::output "html" $conf(tableau) $donnees]]
-
-    d result $conf(page) $subst
+    d urlset "%URLFORM%" $conf(next) {}
+    d result $conf(page) [list \
+				[list %TAB% $tab] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

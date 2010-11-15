@@ -41,6 +41,14 @@ set conf(page1)		$conf(lib)/l2.html
 set conf(pagen)		$conf(lib)/topoliste.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(nexteq)	"%HOMEURL%/bin/eq"
+set conf(nextl2)	"%HOMEURL%/bin/l2"
+set conf(nextl3)	"%HOMEURL%/bin/l3"
+
+#
 # Quelques paramètres du script
 #
 
@@ -54,10 +62,7 @@ set conf(form)	{
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
 set conf(extractl2)	"%TOPODIR%/bin/extractl2 %s %s %s %d < %GRAPH%"
-set conf(urleq)		"$conf(homeurl)/bin/eq?eq=%s%s"
-set conf(urleqiface)	"$conf(homeurl)/bin/eq?eq=%s&iface=%s%s"
-set conf(urll2)		"$conf(homeurl)/bin/l2?vlan=%s%s"
-set conf(urll3)		"$conf(homeurl)/bin/l3?addr=%s%s"
+
 set conf(dot)		"%DOT%"
 set conf(neato)		"%NEATO%"
 set conf(ps2pdf)	"%PS2PDF%"
@@ -264,7 +269,9 @@ proc epilogue {format} {
 }
 
 
-proc generer-dot {format eq iface vlan prog urlfmt u1 _tabvlan _nnodes} {
+proc generer-dot {format eq iface vlan prog _tabvlan _nnodes} {
+    global conf
+
     upvar $_nnodes nnodes
     upvar $_tabvlan tabvlan
 
@@ -305,7 +312,8 @@ proc generer-dot {format eq iface vlan prog urlfmt u1 _tabvlan _nnodes} {
     foreach nomeq [array names tabeq] {
 	set attrlist [match-eq $tabeq($nomeq)]
 
-	set url [format $urlfmt $nomeq $u1]
+	d urlset "U" $conf(nexteq) [list [list "eq" $nomeq]]
+	set url [d urlget "U"]
 	lappend attrlist "href=\"$url\""
 
 	set attr [join $attrlist ", "]
@@ -371,8 +379,16 @@ proc main {} {
     # Initialisation
     #
 
-    init-topo $conf(err) "corresp" $conf(form) ftab dbfd uid tabuid ouid tabouid urluid msgsta
+    ::dnscontext create d
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
+    ######################################## XXX
+    set msgsta ""
+    if {$tabcor(admin)} then {
+	set msgsta "PENSER A CHANGER CELA"
+    }
+
+    ::webapp::import-vars ftab
     foreach f $conf(form) {
 	set var [lindex $f 0]
 	set $var [string trim [lindex [set $var] 0]]
@@ -380,19 +396,19 @@ proc main {} {
 
     set tmp /tmp/l2-[pid]
 
-    set u1 ""
-    set u2 ""
-    if {! [string equal $urluid ""]} then {
-	set u1 "&$urluid"
-	set u2 "?$urluid"
-    }
+    #
+    #  URL des formulaires
+    #
 
+    d urlset "%URLFORMEQ%" $conf(nexteq) {}
+    d urlset "%URLFORML2%" $conf(nextl2) {}
+    d urlset "%URLFORML3%" $conf(nextl3) {}
 
     #
     # Récupération des descriptions de vlans
     #
 
-    set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
+    set cmd [format $conf(dumpgraph) $tabcor(flagsr)]
     set fd [open "|$cmd" "r"]
 
     while {[gets $fd ligne] > -1} {
@@ -424,8 +440,7 @@ proc main {} {
 	}
     }
     if {[catch {close $fd} msg]} then {
-	::webapp::error-exit $conf(err) \
-		"Erreur lors de la lecture des vlans ($msg)"
+	d error "Erreur lors de la lecture des vlans ($msg)"
     }
 
     #
@@ -448,19 +463,16 @@ proc main {} {
 	    #
 
 	    set liste "Vlan '$qvlan' non trouvé sur les équipements"
-	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
-						[list \
-							[list %MSGSTA% $msgsta] \
-							[list %OBJETS% "Vlans"] \
-							[list %LISTE%  $liste] \
-							[list %EQ%     ""] \
-							[list %VLAN%   $qvlan] \
-							[list %ADDR%   ""] \
-							[list %URLUID% $u2] \
-							[list %HEADER% ""] \
-							[list %ONLOAD% ""] \
-						    ] \
-					    ]
+	    d result $conf(pagen) [list \
+					[list %MSGSTA% $msgsta] \
+					[list %OBJETS% "Vlans"] \
+					[list %LISTE%  $liste] \
+					[list %EQ%     ""] \
+					[list %VLAN%   $qvlan] \
+					[list %ADDR%   ""] \
+					[list %HEADER% ""] \
+					[list %ONLOAD% ""] \
+				    ]
 	}
 	1 {
 	    #
@@ -482,24 +494,20 @@ proc main {} {
 	    # Récupérer les informations lues dans le graphe
 	    #
 
-	    set xl2 [format $conf(extractl2) $tabuid(flagsr) $eq $iface $v]
-	    set dot [generer-dot $format \
-				$eq $iface $v $xl2 $conf(urleq) $u1 tabvlan nnodes]
+	    set xl2 [format $conf(extractl2) $tabcor(flagsr) $eq $iface $v]
+	    set dot [generer-dot $format $eq $iface $v $xl2 tabvlan nnodes]
 	    if {[string equal $dot ""]} then {
 		set liste "Vlan '$qvlan' non trouvé sur les équipements"
-		::webapp::send html [::webapp::file-subst $conf(pagen) \
-						[list \
-						    [list %MSGSTA% $msgsta] \
-						    [list %OBJETS% "Vlans"] \
-						    [list %LISTE%  $liste] \
-						    [list %EQ%     ""] \
-						    [list %VLAN%   $qvlan] \
-						    [list %ADDR%   ""] \
-						    [list %URLUID% $u2] \
-						    [list %HEADER% ""] \
-						    [list %ONLOAD% ""] \
-						    ] \
-					    ]
+		d result $conf(pagen) [list \
+					[list %MSGSTA% $msgsta] \
+					[list %OBJETS% "Vlans"] \
+					[list %LISTE%  $liste] \
+					[list %EQ%     ""] \
+					[list %VLAN%   $qvlan] \
+					[list %ADDR%   ""] \
+					[list %HEADER% ""] \
+					[list %ONLOAD% ""] \
+				    ]
 	    } else {
 		set fd [open "$tmp.dot" "w"]
 		puts $fd $dot
@@ -515,7 +523,20 @@ proc main {} {
 		    set prog "$conf(dot)"
 		}
 
-		set url "eq=$eq&iface=$iface&vlan=$v$u1"
+		d urlset "U" $conf(nextl2) [list \
+						[list "format" "png"] \
+						[list "eq" $eq] \
+						[list "iface" $iface] \
+						[list "vlan" $vlan] \
+					    ]
+		set urlimg [d urlget "U"]
+		d urlset "U" $conf(nextl2) [list \
+						[list "format" "pdf"] \
+						[list "eq" $eq] \
+						[list "iface" $iface] \
+						[list "vlan" $vlan] \
+					    ]
+		set urlpdf [d urlget "U"]
 
 		#
 		# Sélectionner le format et sortir la page
@@ -539,17 +560,15 @@ proc main {} {
 		    }
 		    default {
 			set map [exec sh -c "$prog -Tcmapx < $tmp.dot 2> /dev/null"]
-			::webapp::send html [::webapp::file-subst $conf(page1) \
-						    [list \
-							    [list %MSGSTA% $msgsta] \
-							    [list %DESC%  $desc] \
-							    [list %URL%   $url] \
-							    [list %MAP%   $map] \
-							    [list %EQ%    ""] \
-							    [list %VLAN%  $qvlan] \
-							    [list %ADDR%  ""] \
-							    [list %URLUID% $u2] \
-							] \
+			d result $conf(page1) [list \
+						    [list %MSGSTA% $msgsta] \
+						    [list %DESC%  $desc] \
+						    [list %URLIMG% $urlimg] \
+						    [list %URLPDF% $urlpdf] \
+						    [list %MAP%   $map] \
+						    [list %EQ%    ""] \
+						    [list %VLAN%  $qvlan] \
+						    [list %ADDR%  ""] \
 						]
 		    }
 		}
@@ -563,7 +582,7 @@ proc main {} {
 	    # chercher-vlans est déjà triée)
 	    #
 
-	    set liste "<UL>\n"
+	    set liste {}
 	    foreach id $lvlans {
 		set desc [lindex $tabvlan($id) 0]
 		set nets [lindex $tabvlan($id) 1]
@@ -571,38 +590,31 @@ proc main {} {
 		    append desc " : $nets"
 		}
 		set desc [::webapp::html-string $desc]
-		set url [format $conf(urll2) $id $u1]
-		append liste [format "<LI><A HREF=\"%s\">$id ($desc)</A>\n" \
-					$url]
+
+		d urlset "U" $conf(nextl2) [list [list "vlan" $id]]
+		set url [d urlget "U"]
+		lappend liste [webapp::helem "li" \
+					[::webapp::helem "a" "$id ($desc)" \
+						    "href" $url] ]
 	    }
-	    append liste "</UL>"
+	    set liste [::webapp::helem "ul" [join $liste "\n"]]
 
 	    #
 	    # Sortie de la page
 	    #
 
-	    ::webapp::send html [::webapp::file-subst $conf(pagen) \
-						[list \
-							[list %MSGSTA% $msgsta] \
-							[list %OBJETS% "Vlans"] \
-							[list %LISTE%  $liste] \
-							[list %EQ%     ""] \
-							[list %VLAN%   $qvlan] \
-							[list %ADDR%   ""] \
-							[list %URLUID% $u2] \
-							[list %HEADER% ""] \
-							[list %ONLOAD% ""] \
-						    ] \
-					    ]
-
+	    d result $conf(pagen) [list \
+					[list %MSGSTA% $msgsta] \
+					[list %OBJETS% "Vlans"] \
+					[list %LISTE%  $liste] \
+					[list %EQ%     ""] \
+					[list %VLAN%   $qvlan] \
+					[list %ADDR%   ""] \
+					[list %HEADER% ""] \
+					[list %ONLOAD% ""] \
+				    ]
 	}
     }
-
-    #
-    # Déconnexion de la base
-    #
-
-    fermer-base $dbfd
 }
 
 ::webapp::cgi-exec main %DEBUG%

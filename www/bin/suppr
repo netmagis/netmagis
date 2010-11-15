@@ -32,6 +32,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/suppr.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/traitesuppr"
+
+#
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
@@ -59,19 +65,20 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
 
     #
     # Récupération des domaines auxquels le correspond a accès
     # et construction du code HTML approprié.
     #
 
-    set domaine [menu-domaine $dbfd $tabcor(idcor) domaine "" "" $conf(err)]
+    set domaine [menu-domaine $dbfd $tabcor(idcor) domaine "" ""]
 
     #
     # Fin du script : sortie de la page et fermeture de la base
     #
 
+    d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %DOMAINE% $domaine] \
 			    ]

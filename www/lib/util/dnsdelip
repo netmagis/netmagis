@@ -151,7 +151,7 @@ proc del-ip {dbfd login idcor adr} {
 	# Se rappeler que le correspondant a fait la modification
 	#
 
-	set msg [touch-rr $dbfd $trr(idrr) $idcor]
+	set msg [touch-rr $dbfd $trr(idrr)]
 	if {! [string equal $msg ""]} then {
 	   ::pgsql::unkock $dbfd "abort" m
 	    return "Mise à jour impossible.\n$msg"

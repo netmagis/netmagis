@@ -12,14 +12,10 @@
 #	- confirm : "non" ou "oui" (si confirmation ok)
 #	- nom : nom de l'objet à supprimer
 #	- domaine : domaine dans lequel l'objet existait
-#	- nextprog, nextargs : suite du parcours (en cas d'édition depuis
-#		la carte ou depuis la recherche de plage consécutive)
 #   - suppression d'une adresse IP
 #	- action : "suppr-ip"
 #	- confirm : "non" ou "oui" (si confirmation ok)
 #	- adr : adresse IP
-#	- nextprog, nextargs : suite du parcours (en cas d'édition depuis
-#		la carte ou depuis la recherche de plage consécutive)
 #
 # Historique
 #   2002/04/11 : pda/jean : création
@@ -57,13 +53,17 @@ set conf(page-suppr-ok)		$conf(lib)/traitesuppr-ok.html
 set conf(err)			$conf(lib)/erreur.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/traitesuppr"
+set conf(nextmap)	"%HOMEURL%/bin/liste"
+set conf(nextlist)	"%HOMEURL%/bin/liste"
+set conf(nextsuppr)	"%HOMEURL%/bin/suppr"
+
+#
 # Quelques paramètres du script
 #
-
-# scripts cgi
-set conf(script-map)	bin/liste
-set conf(script-liste)	bin/liste
-set conf(script-suppr)	bin/suppr
 
 # le champ discriminant pour la suite
 set conf(form)		{
@@ -75,15 +75,11 @@ set conf(form-suppr-nom)	{
 	{confirm	1 1}
 	{nom		1 1}
 	{domaine	1 1}
-	{nextprog	0 1}
-	{nextargs	0 1}
 }
 
 set conf(form-suppr-ip)	{
 	{confirm	1 1}
 	{adr		1 1}
-	{nextprog	0 1}
-	{nextargs	0 1}
 }
 
 #
@@ -121,8 +117,6 @@ proc traitesuppr-nom {dbfd idcor login ft} {
     set confirm       [string trim [lindex $ftab(confirm) 0]]
     set nom           [string trim [lindex $ftab(nom) 0]]
     set domaine       [string trim [lindex $ftab(domaine) 0]]
-    set nextprog      [string trim [lindex $ftab(nextprog) 0]]
-    set nextargs      [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Valider le nom fourni
@@ -130,7 +124,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 
     set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "supprimer-un-nom"]
     if {[string length $msg] > 0} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -138,7 +132,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
     #
 
     if {[string equal $trr(idrr) ""]} then {
-	::webapp::error-exit $conf(err) "Le nom '$nom.$domaine' n'existe pas."
+	d error "Le nom '$nom.$domaine' n'existe pas."
     }
 
     #
@@ -152,7 +146,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	# Si ce n'est pas un alias, il doit y avoir au moins une adresse IP
 	#
 	if {[string equal $trr(ip) ""]} then {
-	    ::webapp::error-exit $conf(err) "Le nom '$nom.$domaine' n'est pas une machine."
+	    d error "Le nom '$nom.$domaine' n'est pas une machine."
 	}
 
     } else {
@@ -163,7 +157,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	# une page éventuelle de confirmation
 	#
 	if {! [lire-rr-par-id $dbfd $trr(cname) trrref]} then {
-	    ::webapp::error-exit $conf(err) "Erreur interne. Alias non trouvé"
+	    d error "Erreur interne. Alias non trouvé"
 	}
     }
 
@@ -177,6 +171,9 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	# Envoyer la page de confirmation
 	#
 
+	d urlset "%URLFORM%" $conf(next) {}
+	d urladdnext "%URLFORM%"
+
 	if {$alias} then {
 	    #
 	    # Sortir la page de confirmation pour un alias
@@ -186,8 +183,6 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 					[list %DOMAINE% $domaine] \
 					[list %NOMREF% $trrref(nom)] \
 					[list %DOMAINEREF% $trrref(domaine)] \
-					[list %NEXTPROG% $nextprog] \
-					[list %NEXTARGS% $nextargs] \
 				    ]
 	} else {
 	    #
@@ -198,8 +193,6 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
 					[list %MACHINE% $machine] \
-					[list %NEXTPROG% $nextprog] \
-					[list %NEXTARGS% $nextargs] \
 				    ]
 	}
     } else {
@@ -208,13 +201,13 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	# la base.
 	#
 	if {! [::pgsql::lock $dbfd {} msg]} then {
-	    ::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+	    d error "Transaction impossible : $msg"
 	}
 
 	if {$alias} then {
 	    if {! [supprimer-alias-par-id $dbfd $trr(idrr) msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		 ::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
+		 d error "La suppression a échoué.\n$msg"
 	    }
 
 	    set p "$trrref(nom).$trrref(domaine)"
@@ -230,7 +223,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	    #
 	    if {! [supprimer-rr-et-dependances $dbfd trr msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
+		d error "La suppression a échoué.\n$msg"
 	    }
 	    set logevt "supprnom"
 	    set logmsg "suppression totale de $nom.$domaine"
@@ -241,7 +234,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	#
 	if {! [::pgsql::unlock $dbfd "commit" msg]} then {
 	   ::pgsql::unlock $dbfd "abort" m
-	   ::webapp::error-exit $conf(err) "La suppression a échoué. Abandon.\n$msg"
+	   d error "La suppression a échoué. Abandon.\n$msg"
 	}
 
 	d writelog $logevt $logmsg
@@ -250,15 +243,15 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	# Préparer la suite du parcours
 	#
 
-	switch -- $nextprog {
+	switch -- [d nextprog] {
 	    map {
-		set suite "$conf(homeurl)/$conf(script-map)?format=carte&$nextargs"
+		d urlset "%URLSUITE%" $conf(nextmap) [list {format carte} [d nextargs]]
 	    }
 	    list {
-		set suite "$conf(homeurl)/$conf(script-liste)?format=consulter&$nextargs"
+		d urlset "%URLSUITE%" $conf(nextlist) [list {format consulter} [d nextargs]]
 	    }
 	    default {
-		set suite "$conf(homeurl)/$conf(script-suppr)"
+		d urlset "%URLSUITE%" $conf(nextsuppr) {}
 	    }
 	}
 
@@ -269,7 +262,6 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	set objet "$nom.$domaine"
 	d result $conf(page-suppr-ok) [list \
 						[list %OBJET% $objet] \
-						[list %SUITE% $suite] \
 			    ]
     }
 }
@@ -293,8 +285,6 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 
     set confirm       [string trim [lindex $ftab(confirm) 0]]
     set adr           [string trim [lindex $ftab(adr) 0]]
-    set nextprog      [string trim [lindex $ftab(nextprog) 0]]
-    set nextargs      [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Vérifier la syntaxe de l'adresse IP
@@ -302,7 +292,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 
     set m [syntaxe-ip $dbfd $adr "inet"]
     if {[string length $m] > 0} then {
-	::webapp::error-exit $conf(err) "Erreur sur l'adresse '$adr': $m"
+	d error "Erreur sur l'adresse '$adr': $m"
     }
 
     #
@@ -311,7 +301,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     #
 
     if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
-	::webapp::error-exit $conf(err) "Vous n'avez pas accès à l'adresse '$adr'"
+	d error "Vous n'avez pas accès à l'adresse '$adr'"
     }
 
     #
@@ -320,7 +310,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     #
 
     if {! [lire-rr-par-ip $dbfd $adr trr]} then {
-	::webapp::error-exit $conf(err) "L'adresse '$adr' n'existe pas dans la base."
+	d error "L'adresse '$adr' n'existe pas dans la base."
     }
 
     #
@@ -331,7 +321,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     set domaine $trr(domaine)
     set msg [valide-droit-nom $dbfd $idcor $nom $domaine bidon "supprimer-un-nom"]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -361,7 +351,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 	#
 
 	if {! [::pgsql::lock $dbfd {} msg]} then {
-	    ::webapp::error-exit $conf(err) "Transaction impossible : $msg"
+	    d error "Transaction impossible : $msg"
 	}
 
 	#
@@ -376,17 +366,17 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 	    set sql "DELETE FROM dns.rr_ip WHERE adr = '$adr'"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	       ::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
+		d error "La suppression a échoué.\n$msg"
 	    }
 
 	    #
 	    # Se rappeler que le correspondant a fait la modification
 	    #
 
-	    set msg [touch-rr $dbfd $trr(idrr) $idcor]
+	    set msg [touch-rr $dbfd $trr(idrr)]
 	    if {! [string equal $msg ""]} then {
 	       ::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "Mise à jour impossible.\n$msg"
+		d error "Mise à jour impossible.\n$msg"
 	    }
 
 	    set logevt "suppradr"
@@ -399,7 +389,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 
 	    if {! [supprimer-rr-et-dependances $dbfd trr msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "La suppression a échoué.\n$msg"
+		d error "La suppression a échoué.\n$msg"
 	    }
 
 	    set logevt "suppradr"
@@ -411,26 +401,25 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 	#
 	if {! [::pgsql::unlock $dbfd "commit" msg]} then {
 	   ::pgsql::unlock $dbfd "abort" m
-	   ::webapp::error-exit $conf(err) "La suppression a échoué. Abandon.\n$msg"
+	   d error "La suppression a échoué. Abandon.\n$msg"
 	}
     
 	d writelog $logevt $logmsg
-
     }
 
     #
     # Préparer la suite du parcours
     #
 
-    switch -- $nextprog {
+    switch -- [d nextprog] {
 	map {
-	    set suite "$conf(homeurl)/$conf(script-map)?format=carte&$nextargs"
+	    d urlset "%URLSUITE%" $conf(nextmap) [list {format carte} [d nextargs]]
 	}
 	list {
-	    set suite "$conf(homeurl)/$conf(script-liste)?format=consulter&$nextargs"
+	    d urlset "%URLSUITE%" $conf(nextlist) [list {format consulter} [d nextargs]]
 	}
 	default {
-	    set suite "$conf(homeurl)/$conf(script-suppr)"
+	    d urlset "%URLSUITE%" $conf(nextsuppr) {}
 	}
     }
 
@@ -469,9 +458,11 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 	    set objet "$nom.$domaine"
 	}
 	default {
-	    ::webapp::error-exit $conf(err) "Cas impossible : confirm=$confirm, lastadr=$lastadr"
+	    d error "Cas impossible : confirm=$confirm, lastadr=$lastadr"
 	}
     }
+
+    d urlset "%URLFORM%" $conf(next) {}
 
     d result $page [list \
 			[list %NOM%         $nom] \
@@ -479,9 +470,6 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 			[list %ADR%         $adr] \
 			[list %MACHINE%     $machine] \
 			[list %OBJET%       $objet] \
-			[list %NEXTPROG%    $nextprog] \
-			[list %NEXTARGS%    $nextargs] \
-			[list %SUITE%       $suite] \
 		    ]
 }
 
@@ -497,7 +485,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     #
     # Valider l'action, lire les autres champs du formulaire,
@@ -507,11 +495,11 @@ proc main {} {
     set action [lindex $ftab(action) 0]
 
     if {! [info exists conf(form-$action)]} then {
-	::webapp::error-exit $conf(err) "Champ 'action' non conforme : $action"
+	d error "Champ 'action' non conforme : $action"
     }
 
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
-	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
+	d error "Formulaire non conforme aux spécifications"
     }
 
     traite$action $dbfd $tabcor(idcor) $tabcor(login) ftab

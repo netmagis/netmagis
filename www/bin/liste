@@ -48,11 +48,16 @@ set conf(listetex)	$conf(lib)/liste.tex
 set conf(err)		$conf(lib)/erreur.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(nextedit)	"%HOMEURL%/bin/edit"
+set conf(nextajout)	"%HOMEURL%/bin/ajout"
+set conf(nextlist)	"%HOMEURL%/bin/liste"
+
+#
 # Quelques paramètres du script
 #
-
-# scripts cgi
-set conf(script-edit)	bin/edit
 
 set conf(form)		{
 	{plages		0 99999}
@@ -197,12 +202,12 @@ proc output-list {dbfd lcidr _tabcor format} {
     # le script edit & co une fois la machine ajoutée.
     #
 
-    set next {}
+    set nextprog "list"
+    set nextargs {}
     foreach cidr $lcidr {
-	lappend next cidr=$cidr
+	lappend nextargs cidr=$cidr
     }
-    set next [::webapp::post-string [join $next "&"]]
-    set next "nextprog=list&nextargs=$next"
+    set nextargs [join $nextargs "&"]
 
     #
     # Parcourir les plages demandées
@@ -327,9 +332,11 @@ proc output-list {dbfd lcidr _tabcor format} {
 
 	    switch -- $format {
 		html {
+		    d urlset "U" $conf(nextedit) [list [list "adr" $adr]]
+		    d urlsetnext "U" $nextprog $nextargs
+		    set url [d urlget "U"]
 		    set nom "$nomprimaire "
 		    append nom [::webapp::helem "i" $nomssecondaires]
-		    set url "$conf(homeurl)/$conf(script-edit)?adr=$adr&$next"
 		    set adr [::webapp::helem "a" $adr "href" $url]
 		}
 		latex {
@@ -403,7 +410,7 @@ proc output-map {dbfd lcidr _tabcor format} {
     }
 
     if {[llength $lcidrv4] == 0} then {
-	::webapp::error-exit $conf(err) "Aucun CIDR valide ($m)"
+	d error "Aucun CIDR valide ($m)"
     }
 
     #
@@ -411,12 +418,12 @@ proc output-map {dbfd lcidr _tabcor format} {
     # le script traiteajout une fois la machine ajoutée.
     #
 
-    set next {}
+    set nextprog "map"
+    set nextargs {}
     foreach cidr $lcidrv4 {
-	lappend next cidr=$cidr
+	lappend nextargs cidr=$cidr
     }
-    set next [::webapp::post-string [join $next "&"]]
-    set next "nextprog=map&nextargs=$next"
+    set nextargs [join $nextargs "&"]
 
     #
     # Legend
@@ -442,7 +449,7 @@ proc output-map {dbfd lcidr _tabcor format} {
 	set navail 0
 	set sql "SELECT * FROM markcidr ('$cidr', $limite, $tabcor(idgrp))"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    ::webapp::error-exit $conf(err) "Erreur dans le cidr '$cidr' ($msg)"
+	    d error "Erreur dans le cidr '$cidr' ($msg)"
 	}
 
 	set sql "SELECT * FROM allip ORDER BY adr"
@@ -475,33 +482,39 @@ proc output-map {dbfd lcidr _tabcor format} {
 		}
 		1	{
 		    # not declared and not in a dhcp range
-		    set h [::webapp::helem "a" $last \
-			    "href" "$conf(homeurl)/bin/ajout?adr=$adr&$next"]
+		    d urlset "U" $conf(nextajout) [list [list "adr" $adr]]
+		    d urlsetnext "U" $nextprog $nextargs
+		    set url [d urlget "U"]
+		    set h [::webapp::helem "a" $last "href" $url]
 		    append line [::webapp::helem "td" $h "class" "noname-nodhcp"]
 		    incr navail
 		}
 		2	{
 		    # declared and not in a dhcprange
-		    set h [::webapp::helem "a" $last \
-			    "href" "$conf(homeurl)/bin/edit?adr=$adr&$next" \
-			    "title" $fqdn]
+		    d urlset "U" $conf(nextedit) [list [list "adr" $adr]]
+		    d urlsetnext "U" $nextprog $nextargs
+		    set url [d urlget "U"]
+		    set h [::webapp::helem "a" $last "href" $url "title" $fqdn]
 		    append line [::webapp::helem "td" $h "class" "name-nodhcp"]
 		}
 		3	{
 		    # not declared and in a dhcp range
-		    set h [::webapp::helem "a" $last \
-			    "href" "$conf(homeurl)/bin/ajout?adr=$adr&$next"]
+		    d urlset "U" $conf(nextajout) [list [list "adr" $adr]]
+		    d urlsetnext "U" $nextprog $nextargs
+		    set url [d urlget "U"]
+		    set h [::webapp::helem "a" $last "href" $url]
 		    append line [::webapp::helem "td" $h "class" "noname-dhcp"]
 		}
 		4	{
 		    # declared and in a dhcprange
-		    set h [::webapp::helem "a" $last \
-			    "href" "$conf(homeurl)/bin/edit?adr=$adr&$next" \
-			    "title" $fqdn]
+		    d urlset "U" $conf(nextedit) [list [list "adr" $adr]]
+		    d urlsetnext "U" $nextprog $nextargs
+		    set url [d urlget "U"]
+		    set h [::webapp::helem "a" $last "href" $url "title" $fqdn]
 		    append line [::webapp::helem "td" $h "class" "name-dhcp"]
 		}
 		default {
-		    ::webapp::error-exit $conf(err) "Erreur interne pour '$adr' : avail = $avail"
+		    d error "Erreur interne pour '$adr' : avail = $avail"
 		}
 	    }
 
@@ -529,8 +542,13 @@ proc output-map {dbfd lcidr _tabcor format} {
 	}
 
 	set p "$navail adresses disponibles / $n total "
-	append p [::webapp::helem "a" {[Détail]} \
-		    "href" "$conf(homeurl)/bin/liste?cidr=$cidr&format=consulter"]
+
+	d urlset "U" $conf(nextlist) [list \
+					    [list "format" "consulter"] \
+					    [list "cidr" $cidr] \
+					]
+	set url [d urlget "U"]
+	append p [::webapp::helem "a" {[Détail]} "href" $url]
 
 	append tableau [::webapp::helem "p" $p]
 	append tableau "\n"
@@ -588,7 +606,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     #
     # Analyse et validation des arguments
@@ -601,7 +619,7 @@ proc main {} {
 	if {! [string eq [string trim $cidr] ""]} then {
 	    set m [syntaxe-ip $dbfd $cidr "cidr"]
 	    if {[string length $m] > 0} then {
-		::webapp::error-exit $conf(err) $m
+		d error $m
 	    }
 	    lappend lcidr $cidr
 	}
@@ -612,10 +630,10 @@ proc main {} {
 
     # compatibilité entre les deux arguments
     if {[string length $lcidr] == 0 && $nplages == 0} then {
-	::webapp::error-exit $conf(err) "Vous devez choisir un CIDR ou au moins une plage"
+	d error "Vous devez choisir un CIDR ou au moins une plage"
     }
     if {[string length $lcidr] > 0 && $nplages > 0} then {
-	::webapp::error-exit $conf(err) "Vous ne pouvez pas choisir un CIDR et une plage"
+	d error "Vous ne pouvez pas choisir un CIDR et une plage"
     }
 
     #
@@ -627,7 +645,7 @@ proc main {} {
 	    set l [valide-idreseau $dbfd $idreseau \
 					$tabcor(idgrp) "consult" {4 6} msg]
 	    if {[llength $l] == 0} then {
-		::webapp::error-exit $conf(err) $msg
+		d error $msg
 	    }
 	    set lcidr [concat $lcidr $l]
 	}

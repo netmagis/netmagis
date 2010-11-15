@@ -37,6 +37,21 @@ set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/admvalide.html
+
+#
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(nextaccueil)	"%HOMEURL%/bin/accueil"
+set conf(nextadmin)	"%HOMEURL%/bin/admin"
+set conf(nextmodif)	"%HOMEURL%/bin/admrefliste"
+
+#
 # Quelques paramètres du script
 #
 
@@ -124,14 +139,6 @@ set conf(form-dhcpprofil) {
 	{texten[0-9]+		1 9999}
 }
 
-
-#
-# Définition des noms des pages "à trous"
-#
-
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admvalide.html
-
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
@@ -160,7 +167,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     #
     # La spécification du formulaire est minimale, et ne comprend
@@ -265,7 +272,7 @@ proc main {} {
 	    set table dns.dhcpprofil
 	}
 	default	{
-	    ::webapp::error-exit $conf(err) "Type de modification invalide ($type)"
+	    d error "Type de modification invalide ($type)"
 	}
     }
 
@@ -274,7 +281,7 @@ proc main {} {
     #
 
     if {[llength [::webapp::get-data ftab $conf($formaux)]] == 0} then {
-	::webapp::error-exit $conf(err) "Formulaire non conforme aux spécifications"
+	d error "Formulaire non conforme aux spécifications"
     }
 
     #
@@ -283,7 +290,7 @@ proc main {} {
 
     set errmsg [enregistrer-tableau $dbfd $spec $idnum $table ftab]
     if {[string length $errmsg] > 0} then {
-	::webapp::error-exit $conf(err) $errmsg
+	d error $errmsg
     }
 
     d writelog "modifref" "modification de la table $table"
@@ -292,11 +299,12 @@ proc main {} {
     # C'est fini !
     #
 
-    set url "$conf(homeurl)/bin/admrefliste?type=$type"
+    d urlset "%URL1%" $conf(nextaccueil) {}
+    d urlset "%URL2%" $conf(nextadmin) {}
+    d urlset "%URL3%" $conf(nextmodif) [list [list "type" $type]]
 
     d result $conf(page) [list \
 				[list %TYPEENCLAIR% $typeenclair] \
-				[list %URL% $url] \
 			    ]
 }
 

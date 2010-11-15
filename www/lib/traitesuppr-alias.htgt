@@ -20,16 +20,7 @@
 	WebDNS v%VERSION%
     } {
 	\elementbandeau {Actions} {
-	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
-	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
-	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
-	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
-	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
-	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
-	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
-	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
-	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
-	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
+	    %BANDEAU%
 	}
 }
 
@@ -59,13 +50,11 @@
 
     \gras {Voulez-vous vraiment supprimer cet alias~?}
 
-    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/traitesuppr">
+    <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="suppr-nom">
 	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="oui">
 	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
 	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
-	<INPUT TYPE="HIDDEN" NAME="nextprog" VALUE="%NEXTPROG%">
-	<INPUT TYPE="HIDDEN" NAME="nextargs" VALUE="%NEXTARGS%">
 	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
     </FORM>
 }

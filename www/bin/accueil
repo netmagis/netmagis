@@ -58,25 +58,23 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
 
     #
-    # Est-ce que le correspondant a le droit d'accéder à la
-    # page d'administration ?
+    # Construction des URL et de la liste de subsitution
     #
 
-    set admin ""
-    if {[attribut-correspondant $dbfd $tabcor(idcor) admin]} then {
-	set admin "<LI><A HREF=\"$conf(homeurl)/bin/admin\">Admin</A></LI>"
+    foreach script {consulter ajout modif suppr droits mail web dhcp corresp} {
+	set up [string toupper $script]
+	d urlset "%URL$up%" "%HOMEURL%/bin/$script" {}
     }
+    d urlset "%URLOUSUISJE%" "%HOMEURL%/bin/corresp" [list [list "critere" "_"]]
 
     #
     # Fin du script : sortie de la page et fermeture de la base
     #
 
-    d result $conf(page) [list \
-				[list %ADMIN% $admin] \
-			    ]
+    d result $conf(page) {}
 }
 
 ::webapp::cgi-exec main %DEBUG%

@@ -29,6 +29,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/admparhelp.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+# (aucun : page cul de sac)
+
+#
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
 
@@ -104,7 +110,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
 
     #
     # Mise en forme des données dans le formulaire

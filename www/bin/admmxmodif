@@ -32,6 +32,12 @@ set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/admmxmodif.html
 
 #
+# Scripts suivants (actions de formulaire)
+# 
+
+# (aucun : page cul de sac)
+
+#
 # Quelques paramètres du script
 #
 
@@ -135,7 +141,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
 
     set nom     [lindex $ftab(nom) 0]
     set domaine [lindex $ftab(domaine) 0]
@@ -146,12 +152,12 @@ proc main {} {
 
     set msg [syntaxe-nom $nom]
     if {[string length $msg] > 0} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     set msg [valide-domaine $dbfd $tabcor(idcor) $domaine iddom ""]
     if {[string length $msg] > 0} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -167,10 +173,10 @@ proc main {} {
 
     if {$existe} then {
 	if {[llength $tabrr(ip)] > 0} then {
-	    ::webapp::error-exit $conf(err) "'$nom' a déjà des adresses IP."
+	    d error "'$nom' a déjà des adresses IP."
 	}
 	if {[llength $tabrr(cname)] > 0} then {
-	    ::webapp::error-exit $conf(err) "'$nom' est un alias."
+	    d error "'$nom' est un alias."
 	}
 
 	#
@@ -180,11 +186,11 @@ proc main {} {
 	foreach mx $tabrr(mx) {
 	    set idmx [lindex $mx 1]
 	    if {[lire-rr-par-id $dbfd $idmx tabrrmx] == 0} then {
-		::webapp::error-exit $conf(err) "ERREUR INTERNE : table rr_mx référence le RR $idmx, non trouvé dans la table rr"
+		d error "ERREUR INTERNE : table rr_mx référence le RR $idmx, non trouvé dans la table rr"
 	    }
 	    set iddom $tabrrmx(iddom)
 	    if {! [droit-correspondant-domaine $dbfd $tabcor(idcor) $iddom ""]} then {
-		::webapp::error-exit $conf(err) "Le MX '$tabmx(nom).$tabmx(domaine)' référence un domaine auquel vous n'avez pas accès"
+		d error "Le MX '$tabmx(nom).$tabmx(domaine)' référence un domaine auquel vous n'avez pas accès"
 	    }
 	    set tabprio($idmx) [lindex $mx 0]
 	}
@@ -218,15 +224,15 @@ proc main {} {
 					    $fprio $fnom $fdom \
 					    $tabcor(idcor) msg]
 		    if {! [string equal $msg ""]} then {
-			::webapp::error-exit $conf(err) "$msg pour $fnom.$fdom"
+			d error "$msg pour $fnom.$fdom"
 		    }
 		    if {[info exists tmx([lindex $mx 1])]} then {
-			::webapp::error-exit $conf(err) "$fnom.$fdom spécifié deux fois."
+			d error "$fnom.$fdom spécifié deux fois."
 		    }
 		    lappend lmx $mx
 		}
 	    } else {
-		::webapp::error-exit $conf(err) "Formulaire non conforme ($idxprio, $idxnom, $idxdom)"
+		d error "Formulaire non conforme ($idxprio, $idxnom, $idxdom)"
 	    }
 	}
     }
@@ -236,7 +242,7 @@ proc main {} {
     #
 
     if {! [::pgsql::lock $dbfd {} msg]} then {
-	::webapp::error-exit $conf(err) "Verrouillage de la base impossible: $msg"
+	d error "Verrouillage de la base impossible: $msg"
     }
 
     #
@@ -251,7 +257,7 @@ proc main {} {
 	set sql "DELETE FROM dns.rr_mx WHERE idrr = $tabrr(idrr)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
-	    ::webapp::error-exit $conf(err) "Suppression des anciens MX impossible: $msg"
+	    d error "Suppression des anciens MX impossible: $msg"
 	}
 
 	#
@@ -265,7 +271,7 @@ proc main {} {
 	    set sql "DELETE FROM dns.rr WHERE idrr = $tabrr(idrr)"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "Suppression du RR '$nom.$domaine' impossible: $msg"
+		d error "Suppression du RR '$nom.$domaine' impossible: $msg"
 	    }
 	} else {
 	    #
@@ -274,7 +280,7 @@ proc main {} {
 	    set msg [inserer-mx $dbfd $tabrr(idrr) $lmx]
 	    if {! [string equal $msg ""]} then {
 		::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "Ajout des MX impossible: $msg"
+		d error "Ajout des MX impossible: $msg"
 	    }
 	}
     } else {
@@ -288,7 +294,7 @@ proc main {} {
 	    # MX, mais n'a saisi aucun MX.
 	    #
 	    ::pgsql::unlock $dbfd "abort" m
-	    ::webapp::error-exit $conf(err) "Pas de création de MX pour '$nom.$domaine'."
+	    d error "Pas de création de MX pour '$nom.$domaine'."
 	} else {
 	    #
 	    # Créer le RR
@@ -298,8 +304,7 @@ proc main {} {
 	    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" \
 				$tabcor(idcor) tabrr]
 	    if {! [string equal $msg ""]} then {
-		::webapp::error-exit $conf(err) \
-			"Impossible d'insérer '$nom.$domaine' : $msg($msg)"
+		d error "Impossible d'insérer '$nom.$domaine' : $msg($msg)"
 	    }
 
 	    #
@@ -308,7 +313,7 @@ proc main {} {
 	    set msg [inserer-mx $dbfd $tabrr(idrr) $lmx]
 	    if {! [string equal $msg ""]} then {
 		::pgsql::unlock $dbfd "abort" m
-		::webapp::error-exit $conf(err) "Ajout des MX impossible: $msg"
+		d error "Ajout des MX impossible: $msg"
 	    }
 	}
     }

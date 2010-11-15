@@ -20,17 +20,7 @@
 	WebDNS v%VERSION%
     } {
 	\elementbandeau {Actions} {
-	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
-	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
-	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
-	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
-	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
-	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
-	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
-	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
-	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
-	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
-	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
+	    %BANDEAU%
 	}
 }
 
@@ -41,7 +31,7 @@
 
     Entrez le MX à modifier~:
 
-    <FORM METHOD="POST" ACTION="%HOMEURL%/bin/admmxedit">
+    <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="TEXT" NAME="nom" SIZE=30 MAXLENGTH=60> .  %DOMAINE%
 	<INPUT TYPE="SUBMIT" VALUE="Sélectionner">
     </FORM>

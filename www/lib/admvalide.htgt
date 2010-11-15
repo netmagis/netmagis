@@ -20,17 +20,7 @@
 	WebDNS v%VERSION%
     } {
 	\elementbandeau {Actions} {
-	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
-	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
-	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
-	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
-	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
-	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
-	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
-	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
-	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
-	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
-	    \reference {\lien {Admin}     {%HOMEURL%/bin/admin}}
+	    %BANDEAU%
 	}
 }
 
@@ -44,12 +34,9 @@
     Vous pouvez à présent~:
 
     \liste {
-	\item {\lien {Revenir au menu principal}
-			{%HOMEURL%/}}
-	\item {\lien {Revenir au menu d'administration}
-			{%HOMEURL%/bin/admin}}
-	\item {\lien {Revenir à la modification des %TYPEENCLAIR%}
-			{%URL%}}
+	\item {\lien {Revenir au menu principal} {%URL1%}}
+	\item {\lien {Revenir au menu d'administration} {%URL2%}}
+	\item {\lien {Revenir à la modification des %TYPEENCLAIR%} {%URL3%}}
     }
 }
 

@@ -25,6 +25,19 @@ set conf(lib)		%DESTDIR%/lib
 set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/dhcpmodif.html
+
+#
+# Scripts suivants (actions de formulaire)
+# 
+
+# (aucun : page cul de sac)
+
+#
 # Quelques paramètres du script
 #
 
@@ -45,13 +58,6 @@ set conf(form)	{
 	{max_lease_timen[0-9]+		1 9999}
 	{iddhcpprofiln[0-9]+		1 9999}
 }
-
-#
-# Définition des noms des pages "à trous"
-#
-
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/dhcpmodif.html
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -362,7 +368,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
 
     #
     # Valider le réseau
@@ -371,10 +377,10 @@ proc main {} {
     set idreseau [lindex $ftab(idreseau) 0]
     set lcidr [valide-idreseau $dbfd $idreseau $tabcor(idgrp) "dhcp" 4 msg]
     if {[llength $lcidr] == 0} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
     if {[llength $lcidr] != 1} then {
-	::webapp::error-exit $conf(err) "Erreur interne: trop de CIDR trouvés !"
+	d error "Erreur interne: trop de CIDR trouvés !"
     }
 
     #
@@ -386,7 +392,7 @@ proc main {} {
 
     set msg [valide-dhcprange $dbfd ftab $tabcor(idcor) $tabcor(idgrp) $lcidr]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     #
@@ -404,7 +410,7 @@ proc main {} {
 
     set msg [enregistrer-tableau $dbfd $spec iddhcprange dns.dhcprange ftab]
     if {! [string equal $msg ""]} then {
-	::webapp::error-exit $conf(err) $msg
+	d error $msg
     }
 
     d writelog "modifdhcp" "intervalles dhcp modifies : [join $lcidr {, }]"

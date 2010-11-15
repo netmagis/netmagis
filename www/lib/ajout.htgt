@@ -20,16 +20,7 @@
 	WebDNS v%VERSION%
     } {
 	\elementbandeau {Actions} {
-	    \reference {\lien {Accueil}   {%HOMEURL%/bin/accueil}}
-	    \reference {\lien {Consulter} {%HOMEURL%/bin/consulter}}
-	    \reference {\lien {Ajouter}   {%HOMEURL%/bin/ajout}}
-	    \reference {\lien {Supprimer} {%HOMEURL%/bin/suppr}}
-	    \reference {\lien {Modifier}  {%HOMEURL%/bin/modif}}
-	    \reference {\lien {Rôles mail} {%HOMEURL%/bin/mail}}
-	    \reference {\lien {Plages DHCP} {%HOMEURL%/bin/dhcp}}
-	    \reference {\lien {Mot de passe}  {%PASSWDURL%}}
-	    \reference {\lien {Rechercher un correspondant}  {%HOMEURL%/bin/corresp}}
-	    \reference {\lien {Où suis-je ?} {%HOMEURL%/bin/corresp?critere=_}}
+	    %BANDEAU%
 	}
 }
 
@@ -60,7 +51,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {
-		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout%NEXT%">
+		<FORM METHOD="POST" ACTION="%URLFORM1%">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
 		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
 		    \tableau {
@@ -147,7 +138,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {
-		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout">
+		<FORM METHOD="POST" ACTION="%URLFORM2%">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-multi">
 		    <INPUT TYPE="HIDDEN" NAME="tri" VALUE="adr">
 		    \tableau {
@@ -192,7 +183,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {
-		<FORM METHOD="POST" ACTION="%HOMEURL%/bin/traiteajout">
+		<FORM METHOD="POST" ACTION="%URLFORM2%">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-alias">
 		    \tableau {
 			\bordure {0} {}
