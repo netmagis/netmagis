@@ -1,0 +1,536 @@
+#!%TCLSH%
+
+
+#
+# Script pour afficher le statut de topod
+#
+# Appelé par : admin
+#
+# Paramètres (formulaire ou URL) :
+#	- refresh : temps en secondes entre chaque rafraichissement de page
+#	- nrefresh : nouveau temps de rafraichissement
+#	- key : "eq", "status" ou "keepstate"
+#	- arg : "" ou nom d'équipement ou nom d'objet keepstate
+#  
+#
+# Historique
+#   2010/11/15 : pda      : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/topod.html
+
+#
+# Scripts suivants (actions de formulaire)
+# 
+
+set conf(next)		"%HOMEURL%/bin/topod"
+set conf(nextpar)	"%HOMEURL%/bin/admparliste"
+
+#
+# Quelques paramètres du script
+#
+
+set conf(form) {
+   	 {refresh	0 1}
+   	 {nrefresh	0 1}
+	 {key		0 1}
+	 {arg		0 1}
+}
+
+# nb max de lignes d'équipements traités
+set conf(maxeq)		10
+
+# nb max de lignes de statut dans l'affichage compact
+set conf(maxstatus)	10
+
+# taille maximum (en caractères) de l'affichage d'un message
+set conf(maxmsg)	50
+
+set conf(taball) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {20 20 60}
+	align {left}
+	format {raw}
+    }
+    pattern Titre {
+	topbar {yes}
+	vbar {yes}
+	column {
+	    chars {bold}
+	    align {center}
+	    multicolumn {3}
+	}
+	vbar {yes}
+    }
+    pattern Normal3 {
+	topbar {yes}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+    pattern Normal2 {
+	topbar {yes}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column {
+	    multicolumn {2}
+	}
+	vbar {yes}
+    }
+}
+
+set conf(tabeq) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {40 20 20 20}
+	align {left}
+	format {cooked}
+    }
+    pattern Titre {
+	topbar {yes}
+	vbar {yes}
+	column {
+	    chars {bold}
+	    align {center}
+	}
+	vbar {yes}
+	column {
+	    chars {bold}
+	    align {center}
+	}
+	vbar {yes}
+	column {
+	    chars {bold}
+	    align {center}
+	}
+	vbar {yes}
+	column {
+	    chars {bold}
+	    align {center}
+	}
+	vbar {yes}
+    }
+    pattern Normal4 {
+	topbar {yes}
+	vbar {yes}
+	column {
+	    format {raw}
+	}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+}
+
+set conf(tabstatus) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {30 70}
+	align {left}
+	format {cooked}
+    }
+    pattern Titre {
+	topbar {yes}
+	vbar {yes}
+	column {
+	    multicolumn {2}
+	    chars {bold}
+	    align {center}
+	}
+	vbar {yes}
+    }
+    pattern Normal2 {
+	topbar {yes}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+}
+
+set conf(tabks) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {100}
+	align {left}
+	format {cooked}
+    }
+    pattern Titre {
+	topbar {yes}
+	vbar {yes}
+	column {
+	    chars {bold}
+	    align {center}
+	}
+	vbar {yes}
+    }
+    pattern Normal1 {
+	topbar {yes}
+	vbar {yes}
+	column {
+	    format {lines}
+	}
+	vbar {yes}
+    }
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path %PKGTCL%
+package require webapp
+package require arrgen
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Fonction d'affichage de tous les éléments, en version compacte
+##############################################################################
+
+proc topod-all {dbfd datefmt arg} {
+    global conf
+
+    set donnees {}
+
+    lappend donnees [list Titre "Général"]
+
+    #
+    # Récupérer et mettre en forme l'indicateur d'activation de la
+    # fonctionnalité "topo"
+    #
+
+    if {[dnsconfig get "topoactive"]} then {
+	set active "activée"
+    } else {
+	set active "désactivée"
+    }
+    d urlset "" $conf(nextpar) {}
+    set url [d urlget ""]
+    set active [::webapp::helem "a" $active "href" $url]
+    lappend donnees [list Normal2 "Fonctionnalité Topo" $active]
+
+    #
+    # Récupérer et mettre en forme la date de dernier passage de full-rancid
+    #
+
+    set lastfull "(jamais)"
+    pg_select $dbfd "SELECT * FROM topo.lastrun" tab {
+	if {$tab(date) ne ""} then {
+	    set lastfull [clock format [clock scan $tab(date)] -format $datefmt]
+	}
+    }
+    lappend donneees [list Normal2 "Dernier full-rancid" $lastfull]
+
+    #
+    # Récupérer et mettre en forme la liste des équipements en
+    # attente de traitement
+    #
+
+    set unproc {}
+    pg_select $dbfd "SELECT * FROM topo.modeq WHERE processed = 0" tab {
+	d urlset "" $conf(next) [list {key eq} [list "arg" $eq]]
+	set url [d urlget ""]
+	lappend unproc [::webapp::helem "a" $eq "href" $url]
+    }
+    if {[llength $unproc] == 0} then {
+	set unproc "(aucun)"
+    }
+
+    d urlset "" $conf(next) [list {key eq}]
+    set url [d urlget ""]
+    set msg [::webapp::helem "a" "Équipements en attente" "href" $url]
+    lappend donnees [list Normal2 $msg $unproc]
+
+    #
+    # Mettre en forme les dernières lignes de statut
+    #
+
+    lappend donnees [list Titre "Statut"]
+
+    set status {}
+    set sql "SELECT message FROM topo.keepstate WHERE type = 'status'"
+    pg_select $dbfd $sql tab {
+	set status $tab(message)
+    }
+    d urlset "" $conf(next) [list {key status}]
+    set url [d urlget ""]
+    set statut [::webapp::helem "a" "Statut" "href" $url]
+    set ls {}
+    set i 0
+    foreach s $status {
+	lassign $s date msg
+	set date [clock format [clock scan $date] -format $datefmt]
+	set msg [::webapp::html-string $msg]
+	lappend ls "$date $msg"
+	incr i
+	if {$i >= $conf(maxstatus)} then {
+	    break
+	}
+    }
+    lappend donnees [list Normal2 $statut [join $ls "<br>"]]
+
+    #
+    # Récupérer et mettre en forme les autres messages de keepstate
+    #
+
+    set sql "SELECT * FROM topo.keepstate
+				WHERE type != 'status'
+				ORDER BY date DESC"
+    pg_select $dbfd $sql tab {
+	set type $tab(type)
+	set date [clock format [clock scan $tab(date)] -format $datefmt]
+	set mess [string range $tab(message) 0 $conf(maxmsg)]
+	regsub "\n" $mess "/" message
+	set message [::webapp::html-string $message]
+	if {$mess ne $tab(message)} then {
+	    append message "..."
+	    d urlset "" $conf(next) [list {key keepstate} [list "arg" $type]]
+	    set url [d urlget ""]
+	    set message [::webapp::helem "a" $message "href" $url]
+	}
+	lappend donnees [list Normal3 $type $date $message]
+    }
+
+    #
+    # Récupérer les derniers équipements traités
+    #
+
+    d urlset "" $conf(next) [list {key eq}]
+    set url [d urlget ""]
+    set msg [::webapp::helem "a" "Derniers équipements traités" "href" $url]
+    lappend donnees [list Titre $msg]
+
+    set sql "SELECT * FROM topo.modeq
+				WHERE processed != 0
+				ORDER BY date desc
+				LIMIT $conf(maxeq)"
+    set le {}
+    pg_select $dbfd $sql tab {
+	set eq $tab(eq)
+	set date [clock format [clock scan $tab(date)] -format $datefmt]
+	set login $tab(login)
+
+	d urlset "" $conf(next) [list {key eq} [list "arg" $eq]]
+	set url [d urlget ""]
+	set eq [::webapp::helem "a" $eq "href" $url]
+
+	lappend donnees [list Normal3 $eq $date $login]
+    }
+
+    return [::arrgen::output "html" $conf(taball) $donnees]
+}
+
+##############################################################################
+# Fonctions spécialisées pour les clefs, affichage en version longue
+##############################################################################
+
+# arg = "" ou eq
+proc topod-eq {dbfd datefmt arg} {
+    global conf
+
+    set donnees {}
+    lappend donnees [list Titre "Equipement" "Date" "Login" "Traité"]
+    if {$arg eq ""} then {
+	set where ""
+    } else {
+	set qeq [::pgsql::quote $arg]
+	set where "WHERE eq = '$qeq'"
+    }
+    set sql "SELECT * FROM topo.modeq $where ORDER BY date DESC"
+    pg_select $dbfd $sql tab {
+	set date [clock format [clock scan $tab(date)] -format $datefmt]
+	if {$tab(processed)} then {
+	    set traite "Oui"
+	} else {
+	    set traite "Non"
+	}
+	set eq $tab(eq)
+	if {$arg eq ""} then {
+	    d urlset "" $conf(next) [list {key eq} [list "arg" $eq]]
+	    set url [d urlget ""]
+	    set eq [::webapp::helem "a" $eq "href" $url]
+	}
+	lappend donnees [list Normal4 $eq $date $tab(login) $traite]
+    }
+    return [::arrgen::output "html" $conf(tabeq) $donnees]
+}
+
+# arg = ""
+proc topod-status {dbfd datefmt arg} {
+    global conf
+
+    set donnees {}
+    lappend donnees [list Titre "Statut"]
+
+    set status {}
+    set sql "SELECT message FROM topo.keepstate WHERE type = 'status'"
+    set status {}
+    pg_select $dbfd $sql tab {
+	set status $tab(message)
+    }
+    foreach s $status {
+	lassign $s date msg
+	set date [clock format [clock scan $date] -format $datefmt]
+	set msg [::webapp::html-string $msg]
+	lappend donnees [list Normal2 $date $msg]
+    }
+
+    return [::arrgen::output "html" $conf(tabstatus) $donnees]
+}
+
+# arg = type
+proc topod-keepstate {dbfd datefmt arg} {
+    global conf
+
+    set donnees {}
+
+    set qtype [::pgsql::quote $arg]
+    set sql "SELECT date, message FROM topo.keepstate WHERE type = '$qtype'"
+
+    set date ""
+    set message ""
+    pg_select $dbfd $sql tab {
+	set date [clock format [clock scan $tab(date)] -format $datefmt]
+	set message $tab(message)
+    }
+
+    set harg [::webapp::html-string $arg]
+    if {$date eq ""} then {
+	set msg [format "Aucun message pour '%s'" $harg]
+	lappend donnees [list Titre $msg]
+    } else {
+	set msg [format "Dernier message pour '%s' au '%s'" $harg $date]
+	lappend donnees [list Titre $msg]
+	lappend donnees [list Normal1 $message]
+    }
+
+    return [::arrgen::output "html" $conf(tabks) $donnees]
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    ::dnscontext create d
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+
+    ::webapp::import-vars ftab
+    if {[llength $ftab(key)] > 1} then {
+	d error "Formulaire non conforme aux spécifications ('key' présent plusieurs fois)"
+    }
+
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	set $var [string trim [lindex [set $var] 0]]
+    }
+
+    # nrefresh (le champ texte saisi par l'utilisateur) prend le pas
+    # sur la valeur refresh qui est passée dans l'url. Du coup, la
+    # nouvelle url devra tenir compte de nrefresh
+    if {$nrefresh ne ""} then {
+	set refresh $nrefresh
+    }
+
+    d urlset "%URLFORM%" $conf(next) [list \
+					    [list "key" $key] \
+					    [list "arg" $arg] \
+					    [list "refresh" $refresh] \
+					]
+
+    set datefmt [dnsconfig get "datefmt"]
+
+    set date [clock format [clock seconds] -format $datefmt]
+
+    #
+    # Activer le refresh
+    #
+
+    set meta ""
+    if {[regexp {^[0-9]+$} $refresh] && $refresh > 0} then {
+	d urlset "" $conf(next) [list \
+					    [list "key" $key] \
+					    [list "arg" $arg] \
+					    [list "refresh" $refresh] \
+					]
+	set u [d urlget ""]
+	append meta "<meta http-equiv=\"refresh\" content=\"$refresh;url=$u\">"
+	append meta "<meta http-equiv=\"pragma\" content=\"no-cache\">"
+    } else {
+	set refresh [::webapp::html-string $refresh]
+    }
+
+
+    #
+    # Activer l'affichage spécifique d'une clef
+    #
+
+    if {$key eq "" || [catch {info args topod-$key}]} then {
+	set top [topod-all $dbfd $datefmt ""]
+    } else {
+	set top [topod-$key $dbfd $datefmt $arg]
+    }
+
+    #
+    # Fin du script : sortie de la page et fermeture de la base
+    #
+
+    set key [::webapp::html-string $key]
+    set arg [::webapp::html-string $arg]
+
+    d result $conf(page) [list \
+				[list %META% $meta] \
+				[list %REFRESH% $refresh] \
+				[list %DATE% $date] \
+				[list %TOP% $top] \
+			    ]
+}
+
+::webapp::cgi-exec main %DEBUG%

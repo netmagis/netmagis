@@ -1,0 +1,46 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/11/2010}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    WebDNS - Tableau de bord de topod
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %BANDEAU%
+	}
+}
+
+\* pour faire un refresh, comme pour top(1)
+\set {header} {
+    %META%
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Tableau de bord de topod au %DATE%}
+
+    <form method="post" action="%URLFORM%">
+	Rafraîchir cette page toutes
+	les~<input type="text" name="nrefresh" value="%REFRESH%">~secondes
+	<input type="submit" value="Régler">
+    </form>
+
+    %TOP%
+}
+
+}

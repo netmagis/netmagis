@@ -292,12 +292,14 @@ snit::type ::dnscontext {
 			    {l3 always}
 			    {dnstitle dns}
 			    {admtitle admin}
+			    {topod admin}
 			}
 	eq		{%HOMEURL%/bin/eq fr Équipements en Equipments}
 	l2		{%HOMEURL%/bin/l2 fr Vlans en Vlans}
 	l3		{%HOMEURL%/bin/l3 fr Réseaux en Networks}
 	dnstitle	{%HOMEURL%/bin/accueil fr DNS/DHCP en DNS/DHCP}
 	:admin		{
+			    {admtitle always}
 			    {consultmx always}
 			    {statcor always}
 			    {statetab always}
@@ -317,28 +319,30 @@ snit::type ::dnscontext {
 			    {admgrpsel always}
 			    {admgenliste always}
 			    {admparliste always}
+			    {topod topo}
 			    {dnstitle dns}
 			    {topotitle topo}
 			}
-	consultmx	{%HOMEURL%/bin/consultmx fr {Consulter les MX} en {Consulter MX}}
-	statcor		{%HOMEURL%/bin/statcor fr {Consulter les statistiques par correspondant} en {Statistics by user}}
-	statetab	{%HOMEURL%/bin/statetab fr {Consulter les statistiques par établissement} en {Statistics by organization}}
-	consultnet	{%HOMEURL%/bin/consultnet fr {Consulter les réseaux} en {Consult networks}}
-	listecorresp	{%HOMEURL%/bin/listecorresp fr {Lister les correspondants} en {List users}}
-	corresp		{%HOMEURL%/bin/corresp fr {Chercher un correspondant à partir d'une adresse} en {Search}}
-	modetabl	{%HOMEURL%/bin/admrefliste?type=etabl fr {Modifier les établissements} en {Modify organizations}}
-	modcommu	{%HOMEURL%/bin/admrefliste?type=commu fr {Modifier les communautés} en {Modify communities}}
-	modhinfo	{%HOMEURL%/bin/admrefliste?type=hinfo fr {Modifier les types de machines} en {Modify machine types}}
-	modreseau	{%HOMEURL%/bin/admrefliste?type=reseau fr {Modifier les réseaux} en {Modify networks}}
-	moddomaine	{%HOMEURL%/bin/admrefliste?type=domaine fr {Modifier les domaines} en {Modify domains}}
-	admrelsel	{%HOMEURL%/bin/admrelsel fr {Modifier les relais de messagerie d'un domaine} en {Modify mailhost}}
-	modzone		{%HOMEURL%/bin/admrefliste?type=zone fr {Modifier les zones normales} en {Modify zones}}
-	modzone4	{%HOMEURL%/bin/admrefliste?type=zone4 fr {Modifier les zones reverse IPv4} en {Modify reverse IPv4 zones}}
-	modzone6	{%HOMEURL%/bin/admrefliste?type=zone6 fr {Modifier les zones reverse IPv6} en {Modify reverse IPv6 zones}}
-	moddhcpprofil	{%HOMEURL%/bin/admrefliste?type=dhcpprofil fr {Modifier les profils DHCP} en {Modify DHCP profiles}}
-	admgrpsel	{%HOMEURL%/bin/admgrpsel fr {Modifier les groupes et les correspondants} en {Modify users and groups}}
-	admgenliste	{%HOMEURL%/bin/admgenliste fr {Forcer la génération de zones} en {Force zone generation}}
-	admparliste	{%HOMEURL%/bin/admparliste fr {Modifier les paramètres de l'application} en {Application parameters}}
+	consultmx	{%HOMEURL%/bin/consultmx fr {MX} en {Consult MX}}
+	statcor		{%HOMEURL%/bin/statcor fr {Stats par correspondant} en {Statistics by user}}
+	statetab	{%HOMEURL%/bin/statetab fr {Stats par établissement} en {Statistics by organization}}
+	consultnet	{%HOMEURL%/bin/consultnet fr {Réseaux} en {Consult networks}}
+	listecorresp	{%HOMEURL%/bin/listecorresp fr {Correspondants} en {List users}}
+	corresp		{%HOMEURL%/bin/corresp fr {Chercher} en {Search}}
+	modetabl	{%HOMEURL%/bin/admrefliste?type=etabl fr {Modif établissements} en {Modify organizations}}
+	modcommu	{%HOMEURL%/bin/admrefliste?type=commu fr {Modif communautés} en {Modify communities}}
+	modhinfo	{%HOMEURL%/bin/admrefliste?type=hinfo fr {Modif types de machines} en {Modify machine types}}
+	modreseau	{%HOMEURL%/bin/admrefliste?type=reseau fr {Modif réseaux} en {Modify networks}}
+	moddomaine	{%HOMEURL%/bin/admrefliste?type=domaine fr {Modif domaines} en {Modify domains}}
+	admrelsel	{%HOMEURL%/bin/admrelsel fr {Modif relais de messagerie} en {Modify mailhost}}
+	modzone		{%HOMEURL%/bin/admrefliste?type=zone fr {Modif zones normales} en {Modify zones}}
+	modzone4	{%HOMEURL%/bin/admrefliste?type=zone4 fr {Modif zones IPv4} en {Modify reverse IPv4 zones}}
+	modzone6	{%HOMEURL%/bin/admrefliste?type=zone6 fr {Modif zones IPv6} en {Modify reverse IPv6 zones}}
+	moddhcpprofil	{%HOMEURL%/bin/admrefliste?type=dhcpprofil fr {Modif profils DHCP} en {Modify DHCP profiles}}
+	admgrpsel	{%HOMEURL%/bin/admgrpsel fr {Modif groupes} en {Modify users and groups}}
+	admgenliste	{%HOMEURL%/bin/admgenliste fr {Forcer zones} en {Force zone generation}}
+	admparliste	{%HOMEURL%/bin/admparliste fr {Modif les paramètres} en {Application parameters}}
+	topod		{%HOMEURL%/bin/topod fr {Topod status} en {Topod status}}
     }
 
     ###########################################################################
@@ -616,7 +620,7 @@ snit::type ::dnscontext {
 
 	set curcap	{}
 	lappend curcap "dns"
-	if {[file exists %GRAPH%]} then {
+	if {[dnsconfig get "topoactive"]} then {
 	    lappend curcap "topo"
 	}
 	if {$tabuid(admin)} then {
@@ -876,8 +880,8 @@ snit::type ::dnscontext {
 		}
 	    } else {
 		set path [lindex $lks 0]
-		$self urlset "U" $path {}
-		set url [make-url urltab "U" $uid $euid]
+		$self urlset "" $path {}
+		set url [make-url urltab "" $uid $euid]
 
 		array set trans [lreplace $lks 0 0]
 		set lg $lang
@@ -4519,6 +4523,12 @@ snit::type ::config {
 		fr {Paramètres de topo}
 		en {Topology parameters}
 	    }
+	    {topoactive {bool}
+		fr {{Activation de Topo}
+		    {Cocher cette case pour activer l'accès à la
+			fonctionnalité "Topo".}
+		}
+	    }
 	    {topofrom {string}
 		fr {{"From" des mails de topo}
 		    {Champ "From" des mails envoyés par le démon topod
@@ -4623,7 +4633,8 @@ snit::type ::config {
 			l'utilisateur</li> <li>%2$s : mot de passe
 			généré</li></ul>.}
 		}
-	    } {groupes {string}
+	    }
+	    {groupes {string}
 		fr {{Groupes Web autorisés}
 		    {Liste de groupes (conformément à l'authentification
 			Apache) autorisés pour la création d'un
@@ -4731,7 +4742,7 @@ snit::type ::config {
     # returns key help
     method keyhelp {key} {
 	set r $key
-	if {[info exists internal(key:$key:type)]} {
+	if {[info exists internal(key:$key:type)]} then {
 	    if {[info exists internal(key:$key:help:$lang)]} then {
 		set r $internal(key:$key:help:$lang)
 	    }
@@ -4741,9 +4752,23 @@ snit::type ::config {
 
     # returns key value
     method get {key} {
-	set val {}
-	pg_select $db "SELECT * FROM global.config WHERE clef = '$key'" tab {
-	    set val $tab(valeur)
+	if {[info exists internal(key:$key:type)]} then {
+	    set found 0
+	    pg_select $db "SELECT * FROM global.config WHERE clef = '$key'" tab {
+		set val $tab(valeur)
+		set found 1
+	    }
+	    if {! $found} then {
+		switch $internal(key:$key:type) {
+		    string	{ set val "" }
+		    bool	{ set val 0 }
+		    set text	{ set val "" }
+		    set menu	{ set val "" }
+		    default	{ set val "type unknown" }
+		}
+	    }
+	} else {
+	    error "Unknown configuration key '$key'"
 	}
 	return $val
     }
