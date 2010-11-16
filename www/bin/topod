@@ -269,9 +269,9 @@ proc topod-all {dbfd datefmt arg} {
 
     set unproc {}
     pg_select $dbfd "SELECT * FROM topo.modeq WHERE processed = 0" tab {
-	d urlset "" $conf(next) [list {key eq} [list "arg" $eq]]
+	d urlset "" $conf(next) [list {key eq} [list "arg" $tab(eq)]]
 	set url [d urlget ""]
-	lappend unproc [::webapp::helem "a" $eq "href" $url]
+	lappend unproc [::webapp::helem "a" $tab(eq) "href" $url]
     }
     if {[llength $unproc] == 0} then {
 	set unproc "(aucun)"
