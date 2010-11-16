@@ -316,6 +316,7 @@ snit::type ::dnscontext {
 			    {modzone4 always}
 			    {modzone6 always}
 			    {moddhcpprofil always}
+			    {modvlan always}
 			    {admgrpsel always}
 			    {admgenliste always}
 			    {admparliste always}
@@ -339,9 +340,10 @@ snit::type ::dnscontext {
 	modzone4	{%HOMEURL%/bin/admrefliste?type=zone4 fr {Modif zones IPv4} en {Modify reverse IPv4 zones}}
 	modzone6	{%HOMEURL%/bin/admrefliste?type=zone6 fr {Modif zones IPv6} en {Modify reverse IPv6 zones}}
 	moddhcpprofil	{%HOMEURL%/bin/admrefliste?type=dhcpprofil fr {Modif profils DHCP} en {Modify DHCP profiles}}
+	modvlan		{%HOMEURL%/bin/admrefliste?type=vlan fr {Modif Vlans} en {Modify Vlans}}
 	admgrpsel	{%HOMEURL%/bin/admgrpsel fr {Modif groupes} en {Modify users and groups}}
 	admgenliste	{%HOMEURL%/bin/admgenliste fr {Forcer zones} en {Force zone generation}}
-	admparliste	{%HOMEURL%/bin/admparliste fr {Modif les paramètres} en {Application parameters}}
+	admparliste	{%HOMEURL%/bin/admparliste fr {Modif paramètres} en {Application parameters}}
 	topod		{%HOMEURL%/bin/topod fr {Topod status} en {Topod status}}
     }
 
@@ -3905,6 +3907,7 @@ proc edition-tableau {largeurs titre spec dbfd sql idnum tabvar} {
     #
 
     pg_select $dbfd $sql tabsql {
+	set tabsql(:$idnum) $tabsql($idnum)
 	lappend donnees [edition-ligne $spec tabsql $idnum]
     }
 
@@ -3919,7 +3922,7 @@ proc edition-tableau {largeurs titre spec dbfd sql idnum tabvar} {
     }
 
     for {set i 1} {$i <= 5} {incr i} {
-	set tabdef($idnum) "n$i"
+	set tabdef(:$idnum) "n$i"
 	lappend donnees [edition-ligne $spec tabdef $idnum]
     }
 
@@ -4032,7 +4035,7 @@ proc edition-ligne {spec tabvar idnum} {
 	set type [lindex [lindex $s 1] 0]
 	set opt [lindex [lindex $s 1] 1]
 
-	set num $tab($idnum)
+	set num $tab(:$idnum)
 	set ref $clef$num
 
 	switch $type {

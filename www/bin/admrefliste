@@ -23,6 +23,7 @@
 #   2004/01/14 : pda/jean : ajout IPv6
 #   2004/08/06 : pda/jean : ajout flag dhcp par réseau
 #   2005/04/08 : pda/jean : ajout table dhcpprofil
+#   2010/11/16 : pda/jean : ajout table vlan
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -65,6 +66,7 @@ set conf(aide-zone4)	$conf(homeurl)/aidezone.html
 set conf(aide-zone6)	$conf(homeurl)/aidezone.html
 set conf(aide-groupe)	$conf(homeurl)/aidegroupe.html
 set conf(aide-dhcpprofil) $conf(homeurl)/aidedhcpprofil.html
+set conf(aide-vlan)	$conf(homeurl)/aidevlan.html
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -279,6 +281,20 @@ proc main {} {
 		}
 	    set sql "SELECT * FROM dns.dhcpprofil ORDER BY nom ASC"
 	    set id iddhcpprofil
+	}
+	vlan {
+	    set titrepage "Gestion des Vlans"
+	    set largeurs {20 80}
+	    set titre [prepare-titres {
+					{vlanid		{Vlan-id}}
+					{descr		{Description}}
+				    } $urlaide]
+	    set spec {
+		    {vlanid		{string 10}		{}}
+		    {descr		{string 40}		{}}
+		}
+	    set sql "SELECT * FROM topo.vlan ORDER BY vlanid ASC"
+	    set id vlanid
 	}
 	default	{
 	    d error "Type d'édition invalide ($type)"

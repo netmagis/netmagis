@@ -55,6 +55,7 @@
 	\item {Modifier les \lien {zones reverse IPv6} {%URLREFZONE6%}}
 	\item {Modifier les \lien {MX} {%URLADMMXSEL%}}
 	\item {Modifier les \lien {profils DHCP} {%URLREFDHCPPROFIL%}}
+	\item {Modifier les \lien {Vlans} {%URLREFVLAN%}}
 	\item {Modifier les \lien {groupes et les correspondants} {%URLADMGRPSEL%}}
     }
 

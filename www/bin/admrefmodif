@@ -25,6 +25,7 @@
 #   2004/08/06 : pda/jean : ajout flag dhcp par réseau
 #   2005/04/08 : pda/jean : ajout table dhcpprofil
 #   2007/10/25 : jean     : log des actions de modification
+#   2010/11/16 : pda/jean : ajout table vlan
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -137,6 +138,14 @@ set conf(form-dhcpprofil) {
 
 	{nomn[0-9]+		1 9999}
 	{texten[0-9]+		1 9999}
+}
+
+set conf(form-vlan) {
+	{vlanid[0-9]+		0 9999}
+	{descr[0-9]+		0 9999}
+
+	{vlanidn[0-9]+		1 9999}
+	{descrn[0-9]+		1 9999}
 }
 
 #
@@ -270,6 +279,16 @@ proc main {} {
 	    }
 	    set idnum iddhcpprofil
 	    set table dns.dhcpprofil
+	}
+	vlan {
+	    set typeenclair "vlan"
+	    set formaux form-vlan
+	    set spec {
+		{vlanid}
+		{descr}
+	    }
+	    set idnum vlanid
+	    set table topo.vlan
 	}
 	default	{
 	    d error "Type de modification invalide ($type)"
