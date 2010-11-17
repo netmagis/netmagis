@@ -45,7 +45,6 @@ SCRIPTS = \
 	parse-hp.tcl	\
 	parse-cisco.tcl	\
 	parse-juniper.tcl	\
-	sendcoll \
 	ssidprobes \
 	topod \
 	start-rancid \
