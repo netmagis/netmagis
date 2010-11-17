@@ -154,7 +154,7 @@
 			    à tous les équipements qui correspondent
 			    aux expressions «~write~+~allow~»
 			    (exceptés les équipements qui correspondent
-			    aux expressions «~read~+~deny~») restreints
+			    aux expressions «~write~+~deny~») restreints
 			    aux interfaces terminales et ne
 			    transportant que des réseaux autorisés
 			    (cf ci-dessus).
