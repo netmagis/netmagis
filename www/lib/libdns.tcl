@@ -290,9 +290,9 @@ snit::type ::dnscontext {
 			    {eq always}
 			    {l2 always}
 			    {l3 always}
+			    {topod admin}
 			    {dnstitle dns}
 			    {admtitle admin}
-			    {topod admin}
 			}
 	eq		{%HOMEURL%/bin/eq fr Équipements en Equipments}
 	l2		{%HOMEURL%/bin/l2 fr Vlans en Vlans}
