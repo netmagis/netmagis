@@ -40,6 +40,7 @@ set conf(libdns)	$conf(lib)/libdns.tcl
 # 
 
 set conf(next)		"%HOMEURL%/bin/admrefmodif"
+set conf(nexthelp)	"%HOMEURL%/bin/admrefhelp"
 
 #
 # Quelques paramètres du script
@@ -55,18 +56,6 @@ set conf(form)	{
 
 set conf(err)		$conf(lib)/erreur.html
 set conf(page)		$conf(lib)/admrefliste.html
-
-set conf(aide-etabl)	$conf(homeurl)/aideetabl.html
-set conf(aide-commu)	$conf(homeurl)/aidecommu.html
-set conf(aide-hinfo)	$conf(homeurl)/aidehinfo.html
-set conf(aide-reseau)	$conf(homeurl)/aidereseau.html
-set conf(aide-domaine)	$conf(homeurl)/aidedomaine.html
-set conf(aide-zone)	$conf(homeurl)/aidezone.html
-set conf(aide-zone4)	$conf(homeurl)/aidezone.html
-set conf(aide-zone6)	$conf(homeurl)/aidezone.html
-set conf(aide-groupe)	$conf(homeurl)/aidegroupe.html
-set conf(aide-dhcpprofil) $conf(homeurl)/aidedhcpprofil.html
-set conf(aide-vlan)	$conf(homeurl)/aidevlan.html
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -135,9 +124,11 @@ proc main {} {
     #
 
     set type [lindex $ftab(type) 0]
-    set pageaide $conf(aide-$type)
 
-    set urlaide "<A HREF=\"$conf(aide-$type)#%1\$s\">%2\$s</A>"
+    d urlset "" $conf(nexthelp) [list [list "type" $type] ]
+    set url [d urlget ""]
+    append url {#%1$s}
+    set urlaide [::webapp::helem "a" {%2$s} "href" $url]
 
     switch -- $type {
 	etabl	{
