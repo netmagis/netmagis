@@ -22,6 +22,8 @@
 #   2007/07/17 : pda        : non-détection par rancid du modèle d'ap cisco
 #   2008/10/01 : pda        : ajout du mode -1 (mode "une fois")
 #   2008/11/12 : pda/jean   : ajout de l'équipement spécial _vlan
+#   2010/11/17 : pda        : adaptation liste-vlans
+#   2010/11/17 : pda/jean   : suppression de l'envoi des points de collecte
 #
 
 TMP=/tmp/topo.$$
@@ -39,7 +41,6 @@ EQGEN=$DATADIR/eqgen
 DESTFILE=$DATADIR/osiris.graph
 STATUS=$DATADIR/osiris.status
 VLANFILE=$EQGEN/_vlan.eq
-URLSETGRAPH=http://metro.u-strasbg.fr/bin/setgraph
 
 VERBOSE=0
 
@@ -222,23 +223,6 @@ verif_dns ()
     return 0
 }
 
-#
-# Envoi des points de collecte au métrologiseur
-#
-
-envoi_collecte ()
-{
-    r=0
-    if [ "$TESTONLY" != true ]
-    then
-	verbositer "envoi des points de collecte au métrologiseur"
-	$BINDIR/extractcoll -s -w < $DESTFILE | \
-		    $BINDIR/sendcoll $URLSETGRAPH
-	r=$?
-    fi
-    return $r
-}
-
 ##############################################################################
 # Enchainement des actions
 ##############################################################################
@@ -273,8 +257,7 @@ enchainer ()
 	&& copier_eqgen		\
 	&& generer_graphe	\
 	&& verif_snmp		\
-	&& verif_dns		\
-	&& envoi_collecte
+	&& verif_dns
     return $?
 }
 

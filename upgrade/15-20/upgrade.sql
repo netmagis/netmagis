@@ -161,29 +161,29 @@ CREATE TABLE topo.dr_eq (
 -- Sensor definition
 ------------------------------------------------------------------------------
 
--- type 1 sensors : traffic
---	param1 = iface[.vlan]
---	param2 = NULL
--- type 2 sensors : # assoc wifi
---	param1 = iface
+-- type trafic
+--	iface = iface[.vlan]
+--	param = NULL
+-- type number of assoc wifi
+--	iface = iface
 --	ssid
--- type 3 sensors : # auth wifi
---	param1 = iface
---	ssid
--- type 4 sensors : broadcast traffic
---	param1 = iface[.vlan]
---	param2 = NULL
--- type 5 sensors : multicast traffic
---	param1 = iface[.vlan]
---	param2 = NULL
+-- type number of auth wifi
+--	iface = iface
+--	param = ssid
+-- type broadcast traffic
+--	iface = iface[.vlan]
+--	param = NULL
+-- type multicast traffic
+--	iface = iface[.vlan]
+--	param = NULL
 
 CREATE TABLE topo.sensor (
     id		TEXT,		-- M1234
-    type	INTEGER,	-- 1: traffic, 2: nbassocwifi, 3:nbauthwifi, etc.
+    type	TEXT,		-- trafic, nbassocwifi, nbauthwifi, etc.
     eq		TEXT,		-- fqdn
     comm	TEXT,		-- snmp communuity
-    param1	TEXT,
-    param2	TEXT,
+    iface	TEXT,
+    param	TEXT,
     lastmod	TIMESTAMP (0)	-- last modification date
 		    WITHOUT TIME ZONE
 		    DEFAULT CURRENT_TIMESTAMP,
