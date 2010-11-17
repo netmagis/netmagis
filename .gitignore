@@ -10,12 +10,12 @@
 *.bak
 # Compiled files
 *.[oa]
-topo/anaconf/src/buildgraph
-topo/anaconf/src/dumpgraph
-topo/anaconf/src/extractcoll
-topo/anaconf/src/extracteq
-topo/anaconf/src/extractl1
-topo/anaconf/src/extractl2
-topo/anaconf/src/extractl3
-topo/anaconf/src/getnetif
+topo/src/buildgraph
+topo/src/dumpgraph
+topo/src/extractcoll
+topo/src/extracteq
+topo/src/extractl1
+topo/src/extractl2
+topo/src/extractl3
+topo/src/getnetif
 htg/src/htgtcl

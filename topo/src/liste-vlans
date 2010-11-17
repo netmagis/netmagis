@@ -1,0 +1,116 @@
+#!%TCLSH%
+
+#
+#
+# Formatte la liste des vlans pour topo
+#
+# Syntaxe :
+#	liste-vlans [ <id> ]
+#
+# Historique :
+#   2004/07/09 : pda/jean      : conception
+#   2007/01/08 : pda           : changement du format de sortie
+#   2010/09/14 : jean/saillard : changement du format d'entree, plus de vtp
+#   2010/09/21 : pda/jean      : ajout troisième colonne voice optionnelle
+#   2010/11/17 : pda           : utilisation de la base dns
+#
+
+set conf(libdns)	%LIBDNS%
+
+set conf(chars)		{/+. a-zA-Z0-9()<>_-}
+set conf(defuser)	%DEFUSER%
+
+#
+# Les outils DNS
+#
+
+lappend auto_path %PKGTCL%
+package require webapp
+package require pgsql
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc usage {argv0} {
+    puts stderr "usage: $argv0 \[ vlanid \]"
+}
+
+
+proc main {argv0 argv} {
+    global conf
+
+    regsub {.*/} $argv0 {} argv0
+
+    #
+    # Initialisation des accès
+    #
+    ::dnscontext create d
+    set msg [d init-script dbfd $conf(defuser) tabcor]
+    if {$msg ne ""} then {
+	puts stderr "$msg"
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Validation des arguments
+    #
+
+    switch [llength $argv] {
+	0 {
+	    set where ""
+	}
+	1 {
+	    set id [lindex $argv 0]
+	    if {! [regexp {^[0-9]+$} $id] || $id < 1 || $id > 4095} then {
+		usage $argv0
+		return 1
+	    }
+	    set where "WHERE vlanid = $id"
+	}
+	default {
+	    usage $argv0
+	    return 1
+	}
+    }
+
+    #
+    # Recherche du ou des vlans
+    #
+
+    set sql "SELECT * FROM topo.vlan $where ORDER BY vlanid ASC"
+    set found 0
+    set err 0
+    pg_select $dbfd $sql tab {
+	set found 1
+
+	set desc $tab(descr)
+	set vlanid $tab(vlanid)
+	set voip $tab(voip)
+
+	if {[regexp "\[^$conf(chars)\]" $desc]} then {
+	    puts stderr "$argv0: invalid characters in vlan $vlanid (not in $conf(chars))"
+	    set err 1
+	}
+	binary scan $desc H* desc
+
+	puts stdout "vlan $vlanid desc $desc voice $voip"
+    }
+
+    if {! $found} then {
+	puts stderr "$argv0: no vlan found"
+	set err 1
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    d end
+    return $err
+}
+
+exit [main $argv0 $argv]

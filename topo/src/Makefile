@@ -14,6 +14,7 @@ RANCID=
 LOGGER=
 RANCIDDIR=
 EQVIRT=
+DEFUSER=
 
 
 
@@ -61,6 +62,7 @@ SUBST = \
         -e 's|%LIBDNS%|$(LIBDNS)|' \
         -e 's|%PKGTCL%|$(PKGTCL)|' \
         -e 's|%DELAY%|$(DELAY)|' \
+	-e 's|%DEFUSER%|$(DEFUSER)|' \
 	-e 's|%RANCIDMODUSER%|$(RANCIDMODUSER)|' \
 	-e 's|%RANCIDMODPASS%|$(RANCIDMODPASS)|' \
 	-e 's|%RANCIDDIR%|$(RANCIDDIR)|' \
