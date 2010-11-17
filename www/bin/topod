@@ -275,6 +275,8 @@ proc topod-all {dbfd datefmt arg} {
     }
     if {[llength $unproc] == 0} then {
 	set unproc "(aucun)"
+    } else {
+	set unproc [join $unproc ", "]
     }
 
     d urlset "" $conf(next) [list {key eq}]
@@ -370,7 +372,7 @@ proc topod-eq {dbfd datefmt arg} {
     global conf
 
     set donnees {}
-    lappend donnees [list Titre "Equipement" "Date" "Login" "Traité"]
+    lappend donnees [list Titre "Équipement" "Date" "Login" "Traité"]
     if {$arg eq ""} then {
 	set where ""
     } else {
