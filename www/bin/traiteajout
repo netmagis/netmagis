@@ -666,12 +666,12 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
 		]
 
     # titre du tableau (avec les urls de tri)
-    d urlset "U" $conf(nextseq) [concat $largs {{tri adr}}]
-    set url [d urlget "U"]
+    d urlset "" $conf(nextseq) [concat $largs {{tri adr}}]
+    set url [d urlget ""]
     set c1 [::webapp::helem "a" "Première adresse IP" "href" $url]
 
-    d urlset "U" $conf(nextseq) [concat $largs {{tri nbadr}}]
-    set url [d urlget "U"]
+    d urlset "" $conf(nextseq) [concat $largs {{tri nbadr}}]
+    set url [d urlget ""]
     set c2 [::webapp::helem "a" "Taille de l'intervalle" "href" $url]
 
     lappend donnees [list Entete $c1 $c2 ""]
@@ -692,10 +692,10 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
 	}
 	set bouton "<input type=\"submit\" value=\"$msg\">"
 
-	d urlset "U" $conf(nextajout) {}
-	d urlsetnext "U" "sequence" "nbadr=$nbadr"
+	d urlset "" $conf(nextajout) {}
+	d urlsetnext "" "sequence" "nbadr=$nbadr"
 	set c [::webapp::helem "form" "$hidden$bouton" \
-				"method" "post" "action" [d urlget "U"] \
+				"method" "post" "action" [d urlget ""] \
 		    ]
 
 	lappend donnees [list Normal $a $n $c]

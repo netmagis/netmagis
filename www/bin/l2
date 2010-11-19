@@ -312,8 +312,8 @@ proc generer-dot {format eq iface vlan prog _tabvlan _nnodes} {
     foreach nomeq [array names tabeq] {
 	set attrlist [match-eq $tabeq($nomeq)]
 
-	d urlset "U" $conf(nexteq) [list [list "eq" $nomeq]]
-	set url [d urlget "U"]
+	d urlset "" $conf(nexteq) [list [list "eq" $nomeq]]
+	set url [d urlget ""]
 	lappend attrlist "href=\"$url\""
 
 	set attr [join $attrlist ", "]
@@ -519,20 +519,20 @@ proc main {} {
 		    set prog "$conf(dot)"
 		}
 
-		d urlset "U" $conf(nextl2) [list \
+		d urlset "" $conf(nextl2) [list \
 						[list "format" "png"] \
 						[list "eq" $eq] \
 						[list "iface" $iface] \
 						[list "vlan" $vlan] \
 					    ]
-		set urlimg [d urlget "U"]
-		d urlset "U" $conf(nextl2) [list \
+		set urlimg [d urlget ""]
+		d urlset "" $conf(nextl2) [list \
 						[list "format" "pdf"] \
 						[list "eq" $eq] \
 						[list "iface" $iface] \
 						[list "vlan" $vlan] \
 					    ]
-		set urlpdf [d urlget "U"]
+		set urlpdf [d urlget ""]
 
 		#
 		# Sélectionner le format et sortir la page
@@ -587,8 +587,8 @@ proc main {} {
 		}
 		set desc [::webapp::html-string $desc]
 
-		d urlset "U" $conf(nextl2) [list [list "vlan" $id]]
-		set url [d urlget "U"]
+		d urlset "" $conf(nextl2) [list [list "vlan" $id]]
+		set url [d urlget ""]
 		lappend liste [webapp::helem "li" \
 					[::webapp::helem "a" "$id ($desc)" \
 						    "href" $url] ]

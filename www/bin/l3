@@ -197,8 +197,8 @@ proc generer-dot {format prog} {
 		    }
 		}
 
-		d urlset "U" $conf(nexteq) [list [list "eq" $eqname]]
-		set url [d urlget "U"]
+		d urlset "" $conf(nexteq) [list [list "eq" $eqname]]
+		set url [d urlget ""]
 		lappend attrlist "href=\"$url\""
 
 		set attr [join $attrlist ", "]
@@ -251,8 +251,8 @@ proc generer-dot {format prog} {
 		lappend attrlist "label=\"$label\""
 
 		if {$vlanid != -1} then {
-		    d urlset "U" $conf(nextl2) [list [list "vlan" $vlanid]]
-		    set url [d urlget "U"]
+		    d urlset "" $conf(nextl2) [list [list "vlan" $vlanid]]
+		    set url [d urlget ""]
 		    lappend attrlist "href=\"$url\""
 		}
 
@@ -338,8 +338,8 @@ proc main {} {
 
 	set liste {}
 	foreach addr [lsort -command comparer-ip [array names tabip]] {
-	    d urlset "U" $conf(nextl3) [list [list "addr" $addr]]
-	    set url [d urlget "U"]
+	    d urlset "" $conf(nextl3) [list [list "addr" $addr]]
+	    set url [d urlget ""]
 	    lappend liste [::webapp::helem "li" \
 				[::webapp::helem "a" $addr "href" $url]]
 	}
@@ -399,17 +399,17 @@ proc main {} {
 
 	set prog "$conf(neato) -Gmaxiter=10000"
 
-	d urlset "U" $conf(nextl3) [list \
+	d urlset "" $conf(nextl3) [list \
 					[list "format" "png"] \
 					[list "addr" $addr] \
 				    ]
-	set urlimg [d urlget "U"]
+	set urlimg [d urlget ""]
 
-	d urlset "U" $conf(nextl3) [list \
+	d urlset "" $conf(nextl3) [list \
 					[list "format" "pdf"] \
 					[list "addr" $addr] \
 				    ]
-	set urlpdf [d urlget "U"]
+	set urlpdf [d urlget ""]
 
 	switch -- $format {
 	    pdf {

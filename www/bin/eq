@@ -439,9 +439,8 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi} {
 	    set type   [lindex $tabeq($prec) 0]
 	    set modele [lindex $tabeq($prec) 1]
 
-	    d urlset "U" $conf(nexteq) [list [list "eq" $prec]]
-	    set url [d urlget "U"]
-
+	    d urlset "" $conf(nexteq) [list [list "eq" $prec]]
+	    set url [d urlget ""]
 	    set lien [::webapp::helem "a" $prec "href" $url]
 	    lappend arbre [list "$lien $type $modele"]
 
@@ -479,8 +478,8 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi} {
 	append rhtml " (cumuls "
 	foreach k {assoc auth} {
 	    set hid $twa(:$k:cumul)
-	    d urlset "U" $conf(nextmetro) [list [list "id" $hid]]
-	    set url [d urlget "U"]
+	    d urlset "" $conf(nextmetro) [list [list "id" $hid]]
+	    set url [d urlget ""]
 	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
 	}
 
@@ -495,8 +494,8 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi} {
 		set lid [concat $lid $twa(:$k:ssid:$ssid)]
 	    }
 	    set hid [join $lid "|"]
-	    d urlset "U" $conf(nextmetro) [list [list "id" $hid]]
-	    set url [d urlget "U"]
+	    d urlset "" $conf(nextmetro) [list [list "id" $hid]]
+	    set url [d urlget ""]
 	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
 	}
 
@@ -507,8 +506,8 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi} {
 	append rhtml ", détail/AP "
 	foreach k {assoc auth} {
 	    set hid [join $twa(:$k:ap) "|"]
-	    d urlset "U" $conf(nextmetro) [list [list "id" $hid]]
-	    set url [d urlget "U"]
+	    d urlset "" $conf(nextmetro) [list [list "id" $hid]]
+	    set url [d urlget ""]
 	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
 	}
 	append rhtml ")"
@@ -570,8 +569,8 @@ proc format-one-eq {nomeq iface _tabcor} {
 	}
 
 	if {! [string equal $stat "-"]} then {
-	    d urlset "U" $conf(nextmetro) [list [list "id" $stat]]
-	    set url [d urlget "U"]
+	    d urlset "" $conf(nextmetro) [list [list "id" $stat]]
+	    set url [d urlget ""]
 	    append txt " "
 	    append txt [::webapp::helem "a" {[Trafic]} "href" $url]
 	}
@@ -586,11 +585,11 @@ proc format-one-eq {nomeq iface _tabcor} {
 
 	if {[llength $lien] > 1} then {
 	    lassign $lien via eq2 if2
-	    d urlset "U" $conf(nexteq) [list \
+	    d urlset "" $conf(nexteq) [list \
 					    [list "eq" $eq2] \
 					    [list "iface" $if2] \
 					]
-	    set urleqiface [d urlget "U"]
+	    set urleqiface [d urlget ""]
 	    append txt " $via vers "
 	    append txt [::webapp::helem "a" "$eq2 $if2" "href" $urleqiface]
 	}
@@ -615,8 +614,8 @@ proc format-one-eq {nomeq iface _tabcor} {
 		    #
 
 		    set hid $tw(:$k:cumul)
-		    d urlset "U" $conf(nextmetro) [list [list "id" $hid]]
-		    set url [d urlget "U"]
+		    d urlset "" $conf(nextmetro) [list [list "id" $hid]]
+		    set url [d urlget ""]
 		    append txt " "
 		    append txt [::webapp::helem "a" "\[Cumul $k\]" "href" $url]
 
@@ -629,8 +628,8 @@ proc format-one-eq {nomeq iface _tabcor} {
 			set lid [concat $lid $tw(:$k:ssid:$ssid)]
 		    }
 		    set hid [join $lid "|"]
-		    d urlset "U" $conf(nextmetro) [list [list "id" $hid]]
-		    set url [d urlget "U"]
+		    d urlset "" $conf(nextmetro) [list [list "id" $hid]]
+		    set url [d urlget ""]
 		    append txt " "
 		    append txt [::webapp::helem "a" "\[Détail $k\]" "href" $url]
 		}
@@ -647,11 +646,11 @@ proc format-one-eq {nomeq iface _tabcor} {
 	#
 
 	if {$edit eq "edit"} then {
-	    d urlset "U" $conf(nextifchg) [list \
+	    d urlset "" $conf(nextifchg) [list \
 						[list "eq" $nomeq] \
 						[list "iface" $i] \
 					    ]
-	    set url [d urlget "U"]
+	    set url [d urlget ""]
 	    append txt " "
 	    append txt [::webapp::helem "a" {[Modifier]} "href" $url]
 	    incr eqmod
@@ -678,27 +677,27 @@ proc format-one-eq {nomeq iface _tabcor} {
 	    append txt "\n<BR>\n"
 
 	    if {$nvlan > 1 || $vlanid != 0} then {
-		d urlset "U" $conf(nextl2) [list \
+		d urlset "" $conf(nextl2) [list \
 						[list "eq" $nomeq] \
 						[list "iface" $i] \
 						[list "vlan" $vlanid] \
 					    ]
-		set urll2 [d urlget "U"]
+		set urll2 [d urlget ""]
 		append txt "Vlan "
 		append txt [::webapp::helem "a" "$vlanid ($desc)" "href" $urll2]
 		append txt $native
 
 		if {! [string equal $stat "-"]} then {
-		    d urlset "U" $conf(nextmetro) [list [list "id" $stat]]
-		    set url [d urlget "U"]
+		    d urlset "" $conf(nextmetro) [list [list "id" $stat]]
+		    set url [d urlget ""]
 		    append txt " "
 		    append txt [::webapp::helem "a" {[Trafic]} "href" $url]
 		}
 	    }
 
 	    foreach ip [lsort [lindex $vlan 3]] {
-		d urlset "U" $conf(nextl3) [list [list "addr" $ip]]
-		set urll3 [d urlget "U"]
+		d urlset "" $conf(nextl3) [list [list "addr" $ip]]
+		set urll3 [d urlget ""]
 		append txt " "
 		append txt [::webapp::helem "a" $ip "href" $urll3]
 	    }
@@ -715,8 +714,8 @@ proc format-one-eq {nomeq iface _tabcor} {
 		foreach k {assoc auth} {
 		    set id [lindex $tw(:$k:ssid:$ssid) 0]
 		    if {! [string equal $id ""]} then {
-			d urlset "U" $conf(nextmetro) [list [list "id" $id]]
-			set url [d urlget "U"]
+			d urlset "" $conf(nextmetro) [list [list "id" $id]]
+			set url [d urlget ""]
 			append txt [::webapp::helem "a" "\[$k\]" "href" $url]
 		    }
 		}
@@ -732,8 +731,8 @@ proc format-one-eq {nomeq iface _tabcor} {
     set texte [::webapp::helem "ul" $texte]
 
     if {$eqmod > 1} then {
-	d urlset "U" $conf(nextifchg) [list [list "eq" $nomeq]]
-	set url [d urlget "U"]
+	d urlset "" $conf(nextifchg) [list [list "eq" $nomeq]]
+	set url [d urlget ""]
 	append titre " "
 	append titre [::webapp::helem "a" {[Modifier les interfaces]} \
 					"href" $url]
@@ -894,8 +893,8 @@ proc main {} {
 	    set liste ""
 	    foreach e [lsort [array names tabeq]] {
 		lassign $tabeq($e) type modele
-		d urlset "U" $conf(nexteq) [list [list "eq" $e]]
-		set url [d urlget "U"]
+		d urlset "" $conf(nexteq) [list [list "eq" $e]]
+		set url [d urlget ""]
 		set lien [::webapp::helem "a" $e "href" $url]
 		append liste [::webapp::helem "li" "$lien $type $modele"]
 	    }

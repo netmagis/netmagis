@@ -35,7 +35,7 @@ set conf(page)		$conf(lib)/admparliste.html
 # 
 
 set conf(next)		"%HOMEURL%/bin/admparmodif"
-set conf(help)		"%HOMEURL%/bin/admparhelp"
+set conf(nexthelp)	"%HOMEURL%/bin/admparhelp"
 
 
 #
@@ -120,6 +120,11 @@ proc main {} {
     # Mise en forme des données dans le formulaire
     #
 
+    d seturl "" $conf(nexthelp) {}
+    set url [d geturl ""]
+    append url {#%1$s}
+    set urlaide [::webapp::helem "a" {%2$s} "href" $url]
+
     set donnees {}
 
     foreach class [dnsconfig class] {
@@ -146,11 +151,12 @@ proc main {} {
 		    set html [::webapp::form-menu $key 1 0 $lmenu {}]
 		}
 		default {
-		    set html "<FONT COLOR=#FF0000>ERREUR : type de '$key'</FONT>"
+		    set html [::webapp::helem "font" "ERREUR : type de '$key'" \
+						"color" "#ff0000"]
 		}
 	    }
 
-	    set aide [::webapp::helem "a" $desc "href" "$conf(help)#$key"]
+	    set aide [format $urlaide $key $desc]
 	    lappend donnees [list Normal2 $aide $html]
 	}
     }

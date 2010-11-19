@@ -133,8 +133,8 @@ proc main {} {
 	set menuif [::webapp::form-hidden iface $iface]
 
 	# proposer l'option "plusieurs interfaces"
-	d urlset "U" $conf(nextifchg) [list [list "eq" $eq]]
-	set url [d urlget "U"]
+	d urlset "" $conf(nextifchg) [list [list "eq" $eq]]
+	set url [d urlget ""]
 	set multi [::webapp::helem "p" \
 			[::webapp::helem "a" {Modifier plusieurs interfaces} \
 					"href" $url] ]

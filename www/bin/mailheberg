@@ -240,11 +240,11 @@ proc main {} {
 		set nomh [lindex $q 2] ; set domaineh [lindex $q 3]
 
 		# normalement, il n'y a que des caractères "compatibles RFC"...
-		d urlset "U" $conf(nextheberg) [list \
+		d urlset "" $conf(nextheberg) [list \
 						    [list "nom" $noma] \
 						    [list "domaine" $domainea] \
 					    ]
-		set url [d urlget "U"]
+		set url [d urlget ""]
 		set html [::webapp::helem "a" "$noma.$domainea" "href" $url]
 
 		lappend donnees [list Normal $html "$nomh.$domaineh"]
