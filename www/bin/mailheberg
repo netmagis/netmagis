@@ -231,7 +231,6 @@ proc main {} {
 	if {[llength $lroles] == 0} then {
 	    set tableau "Aucun rôle de messagerie n'a été trouvée pour '$domaine'"
 	} else {
-	    set baseurl "$conf(homeurl)/bin/mailheberg"
 	    set donnees {}
 	    lappend donnees [list Titre \
 				"Adresse de messagerie" "Hébergeur des boîtes"]
