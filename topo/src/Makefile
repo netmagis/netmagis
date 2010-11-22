@@ -27,7 +27,6 @@ LDLIBS = -lgraph
 PROGS = \
 	dumpgraph	\
 	buildgraph	\
-	extractl1	\
 	extractl2	\
 	extractl3	\
 	extracteq	\
@@ -72,7 +71,6 @@ all:	$(PROGS)
 
 dumpgraph:	dumpgraph.c	$(LIBDIR)/libgraph.a
 buildgraph:	buildgraph.c	$(LIBDIR)/libgraph.a
-extractl1:	extractl1.c	$(LIBDIR)/libgraph.a
 extractl2:	extractl2.c	$(LIBDIR)/libgraph.a
 extractl3:	extractl3.c	$(LIBDIR)/libgraph.a
 extracteq:	extracteq.c	$(LIBDIR)/libgraph.a
