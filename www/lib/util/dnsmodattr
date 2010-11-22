@@ -197,10 +197,13 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
     foreach c [array names tattr] {
 	set v $tattr($c)
 	switch $c {
-	    hinfo -
+	    hinfo {
+		# valeur numérique
+		lappend modif "idhinfo = $v"
+	    }
 	    droitsmtp {
 		# valeur numérique
-		lappend modif "$c = $v"
+		lappend modif "droitsmtp = $v"
 	    }
 	    dhcpprofil {
 		# valeur numérique ou vide
