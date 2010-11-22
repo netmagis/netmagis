@@ -1,3 +1,6 @@
+Version 1.6 - ??/??/????
+    - correction d'un bug de dnsmodattr dans la specification de hinfo
+
 version 1.5 - 16/11/2010
     - ajout du profil DHCP dans la gestion des plages dynamiques
     - affichage du profil DHCP dans la liste des machines par réseau
