@@ -1,4 +1,4 @@
-version 1.5 - ??/??/????
+version 1.5 - 16/11/2010
     - ajout du profil DHCP dans la gestion des plages dynamiques
     - affichage du profil DHCP dans la liste des machines par réseau
     - ajout d'une option dans la procédure syntaxe-ip utilisée par d'autres
