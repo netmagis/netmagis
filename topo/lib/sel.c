@@ -7,92 +7,125 @@
 
 #define	RE_MODE	(REG_EXTENDED | REG_ICASE)
 
+/*
+ * Selection criteria
+ */
+
+enum crittype
+{
+    CT_ALL,			/* for root only */
+    CT_NET,			/* all ifaces in this broadcast domain */
+    CT_REX,			/* all eq matching (or not) this regexp */
+    CT_TERM,			/* only keep terminal ifaces */
+    CT_OWN,			/* only keep ifaces where we own all vlans */
+} ;
 
 struct selnet
 {
     ip_t addr ;
-    struct selnet *next ;
 } ;
 
 struct selrex
 {
-    regex_t rc ;
     int allow_deny ;
-    struct selrex *next ;
+    regex_t rc ;
 } ;
 
-MOBJ *selnetmobj, *selrexmobj ;
+struct sel
+{
+    enum crittype crittype ;
+    union
+    {
+	struct selnet net ;
+	struct selrex rex ;
+    } u ;
+    struct sel *next ;
+} ;
 
+MOBJ *selmobj ;
+
+/******************************************************************************
+Initialization functions
+******************************************************************************/
 
 void sel_init (void)
 {
-    selnetmobj = mobj_init (sizeof (struct selnet), MOBJ_MALLOC) ;
-    selrexmobj = mobj_init (sizeof (struct selrex), MOBJ_MALLOC) ;
+    selmobj = mobj_init (sizeof (struct sel), MOBJ_MALLOC) ;
+}
+
+static void sel_free (MOBJ *m)
+{
+    struct sel *sl, *tmp ;
+
+    sl = mobj_head (m) ;
+    while (sl != NULL)
+    {
+	tmp = sl->next ;
+	mobj_free (m, sl) ;
+	sl = tmp ;
+    }
+    mobj_close (m) ;
 }
 
 void sel_end (void)
 {
-    struct selnet *sn ;
-    struct selrex *sr ;
-
-    sn = mobj_head (selnetmobj) ;
-    while (sn != NULL)
-    {
-	struct selnet *tmp ;
-
-	tmp = sn->next ;
-	mobj_free (selnetmobj, sn) ;
-	sn = tmp ;
-    }
-    mobj_close (selnetmobj) ;
-
-    sr = mobj_head (selrexmobj) ;
-    while (sr != NULL)
-    {
-	struct selrex *tmp ;
-
-	tmp = sr->next ;
-	regfree (&sr->rc) ;
-	mobj_free (selrexmobj, sn) ;
-	sr = tmp ;
-    }
-    mobj_close (selrexmobj) ;
+    sel_free (selmobj) ;
 }
 
-int sel_network (iptext_t addr)
+/******************************************************************************
+Register each criterium
+******************************************************************************/
+
+char *sel_register (int opt, char *arg)
 {
-    struct selnet *s ;
+    struct sel *sl ;
     ip_t a ;
-    int r ;
-
-    r = 0 ;
-    if (ip_pton (addr, &a))
-    {
-	MOBJ_ALLOC_INSERT (s, selnetmobj) ;
-	s->addr = a ;
-	r = 1 ;
-    }
-
-    return r ;
-}
-
-int sel_regexp (char *rex, int allow_deny)
-{
     regex_t rc ;
-    struct selrex *s ;
-    int r ;
+    char *r ;
+    static char errstr [100] ;
 
-    r = 0 ;
-    if (regcomp (&rc, rex, RE_MODE) == 0)
+    errstr [0] = '\0' ;
+    MOBJ_ALLOC_INSERT (sl, selmobj) ;
+    switch (opt)
     {
-	MOBJ_ALLOC_INSERT (s, selrexmobj) ;
-	s->rc = rc ;
-	s->allow_deny = allow_deny ;
-	r = 1 ;
+	case 'a' :
+	    sl->crittype = CT_ALL ;
+	    break ;
+	case 'n' :
+	    if (ip_pton (arg, &a))
+	    {
+		sl->crittype = CT_NET ;
+		sl->u.net.addr = a ;
+	    }
+	    else sprintf (errstr, "'%s' is not a valid cidr", arg) ;
+	    break ;
+	case 'e' :
+	case 'E' :
+	    if (regcomp (&rc, arg, RE_MODE) == 0)
+	    {
+		sl->crittype = CT_REX ;
+		sl->u.rex.allow_deny = (opt == 'e') ;
+		sl->u.rex.rc = rc ;
+	    }
+	    else sprintf (errstr, "'%s' is not a valid regexp", arg) ;
+	    break ;
+	case 't' :
+	    sl->crittype = CT_TERM ;
+	    break ;
+	case 'm' :
+	    sl->crittype = CT_OWN ;
+	    break ;
+	default :
+	    sprintf (errstr, "internal error : '-%c' is not a valid option", opt) ;
     }
 
+    r = (errstr [0] == '\0') ? NULL : errstr ;
     return r ;
 }
+
+/******************************************************************************
+Marking functions
+******************************************************************************/
 
 static void sel_mark_net (ip_t *addr)
 {
@@ -119,17 +152,82 @@ static void sel_mark_net (ip_t *addr)
 	    MK_SELECT (n) ;
 }
 
+static void sel_mark_eq (struct eq *eq, int allow_deny)
+{
+    struct node *n ;
+
+    if (allow_deny)
+	MK_SELECT (eq) ;
+    else MK_DESELECT (eq) ;
+
+    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+    {
+	if (n->eq == eq)
+	{
+	    if (allow_deny)
+		MK_SELECT (n) ;
+	    else MK_DESELECT (n) ;
+	}
+    }
+}
+
 static void sel_mark_regexp (regex_t *rc, int allow_deny)
 {
     struct eq *eq ;
 
     for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
-    {
 	if (regexec (rc, eq->name, 0, NULL, 0) == 0)
+	    sel_mark_eq (eq, allow_deny) ;
+}
+
+static void sel_unmark_nonterminal (void)
+{
+    struct node *n ;
+
+    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+    {
+	if (n->nodetype == NT_L1
+			&& MK_ISSELECTED (n)
+			&& strcmp (n->u.l1.link, EXTLINK) != 0)
 	{
-	    if (allow_deny)
-		MK_SELECT (eq) ;
-	    else MK_DESELECT (eq) ;
+	    MK_DESELECT (n) ;
+	}
+    }
+}
+
+static void sel_unmark_notmine (void)
+{
+    struct node *n ;
+
+    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+    {
+	if (n->nodetype == NT_L1 && MK_ISSELECTED (n))
+	{
+	    struct linklist *ll ;
+	    int mine ;
+
+	    /*
+	     * Check all L2 neighbors to check if vlan-id have
+	     * been transported on this L1.
+	     */
+
+	    mine = 1 ;
+	    for (ll = n->linklist ; ll != NULL ; ll = ll->next)
+	    {
+		struct link *l ;
+		struct node *other ;
+
+		l = ll->link ;
+		other = getlinkpeer (l, n) ;
+		if (other->nodetype == NT_L2 && ! MK_ISSET (other, MK_L2TRANSPORT))
+		{
+		    mine = 0 ;
+		    break ;
+		}
+	    }
+
+	    if (! mine)
+		MK_DESELECT (n) ;
 	}
     }
 }
@@ -137,82 +235,129 @@ static void sel_mark_regexp (regex_t *rc, int allow_deny)
 
 void sel_mark (void)
 {
-    struct selnet *sn ;
-    struct selrex *sr ;
+    struct sel *sl ;
     struct node *n ;
     struct eq *eq ;
     struct vlan *vlantab ;
     struct network *net ;
     int i ;
+    MOBJ *tmobj ;		/* temporary mobj to reverse list */
+
+    /*
+     * Create temporary list, ordered
+     */
+
+    tmobj = mobj_init (sizeof (struct sel), MOBJ_MALLOC) ;
+    for (sl = mobj_head (selmobj) ; sl != NULL ; sl = sl->next)
+    {
+	struct sel *tsl ;
+	MOBJ_ALLOC_INSERT (tsl, tmobj) ;
+	tsl->crittype = sl->crittype ;
+	tsl->u = sl->u ;
+    }
+
+    /*
+     * Initialize graph : everything must be clear
+     */
 
     vlantab = mobj_data (vlanmobj) ;
 
-    if (mobj_head (selnetmobj) == NULL && mobj_head (selrexmobj) == NULL)
+    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
     {
-	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	    n->mark = MK_SELECTED ;
-	for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
-	    eq->mark = MK_SELECTED ;
-	for (i = 0 ; i < MAXVLAN ; i++)
-	    vlantab [i].mark = MK_SELECTED ;
-	for (net = mobj_head (netmobj) ; net != NULL ; net = net->next)
-	    net->mark = MK_SELECTED ;
+	n->mark = 0 ;
+	vlan_zero (n->vlanset) ;
     }
-    else
-    {
-	/*
-	 * Preparation
-	 */
 
-	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+    for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
+	eq->mark = 0 ;
+
+    for (i = 0 ; i < MAXVLAN ; i++)
+	vlantab [i].mark = 0 ;
+
+    for (net = mobj_head (netmobj) ; net != NULL ; net = net->next)
+	net->mark = 0 ;
+
+    /*
+     * Traverse the selection criteria mobj
+     */
+
+    for (sl = mobj_head (tmobj) ; sl != NULL ; sl = sl->next)
+    {
+	switch (sl->crittype)
 	{
-	    n->mark = 0 ;
-	    vlan_zero (n->vlanset) ;
+	    case CT_ALL :
+		/*
+		 * Select all objects in the graph
+		 */
+
+		for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+		    n->mark = MK_SELECTED ;
+		for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
+		    eq->mark = MK_SELECTED ;
+		for (i = 0 ; i < MAXVLAN ; i++)
+		    vlantab [i].mark = MK_SELECTED ;
+		for (net = mobj_head (netmobj) ; net != NULL ; net = net->next)
+		    net->mark = MK_SELECTED ;
+		break ;
+
+	    case CT_NET :
+		/*
+		 * Select nodes based on network cidr
+		 * Select routed networks based on network cidr
+		 */
+
+		sel_mark_net (&sl->u.net.addr) ;
+		break ;
+
+	    case CT_REX :
+		/*
+		 * Select equipements based on regexp
+		 */
+
+		sel_mark_regexp (&sl->u.rex.rc, sl->u.rex.allow_deny) ;
+		break ;
+
+	    case CT_TERM :
+		/*
+		 * Keep only terminal interfaces
+		 */
+
+		sel_unmark_nonterminal () ;
+		break ;
+
+	    case CT_OWN :
+		/*
+		 * Keep only "my" interfaces : those which transport
+		 * only "my" networks/Vlans
+		 */
+
+		sel_unmark_notmine () ;
+		break ;
+
+	    default :
+		break ;
 	}
-
-	for (eq = mobj_head (eqmobj) ; eq != NULL ; eq = eq->next)
-	    eq->mark = 0 ;
-
-	for (i = 0 ; i < MAXVLAN ; i++)
-	    vlantab [i].mark = 0 ;
-
-	for (net = mobj_head (netmobj) ; net != NULL ; net = net->next)
-	    net->mark = 0 ;
-
-	/*
-	 * Select nodes based on network cidr
-	 * Select routed networks based on network cidr
-	 */
-
-	for (sn = mobj_head (selnetmobj) ; sn != NULL ; sn = sn->next)
-	    sel_mark_net (&sn->addr) ;
-
-	/*
-	 * Select equipements based on regexp
-	 */
-
-	for (sr = mobj_head (selrexmobj) ; sr != NULL ; sr = sr->next)
-	    if (sr->allow_deny)
-		sel_mark_regexp (&sr->rc, 1) ;
-
-	for (sr = mobj_head (selrexmobj) ; sr != NULL ; sr = sr->next)
-	    if (! sr->allow_deny)
-		sel_mark_regexp (&sr->rc, 0) ;
-
-	/*
-	 * Select all nodes on selected equipements
-	 */
-
-	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	    if (MK_ISSELECTED (n->eq))
-		MK_SELECT (n) ;
-
-	/*
-	 * Select Vlans where L2 node are selected
-	 */
-
-	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	    if (n->nodetype == NT_L2 && MK_ISSELECTED (n))
-		MK_SELECT (&vlantab [n->u.l2.vlan]) ;
     }
+
+    /*
+     * Selects all equipements where at least one L1 interface is marked
+     */
+
+    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	if (n->nodetype == NT_L1 && MK_ISSELECTED (n))
+	    MK_SELECT (n->eq) ;
+
+    /*
+     * Select Vlans where L2 node are selected
+     */
+
+    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	if (n->nodetype == NT_L2 && MK_ISSELECTED (n))
+	    MK_SELECT (&vlantab [n->u.l2.vlan]) ;
+
+    /*
+     * Close the temporary mobj
+     */
+
+    sel_free (tmobj) ;
 }

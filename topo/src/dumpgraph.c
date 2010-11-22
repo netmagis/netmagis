@@ -7,15 +7,14 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-n cidr|-e regexp|-E regexp]*\n", progname) ;
+    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]*\n", progname) ;
     exit (1) ;
 }
 
 int main (int argc, char *argv [])
 {
-    char *prog ;
+    char *prog, *errstr ;
     int c, err ;
-    int allow_deny ;
 
     /*
      * First loop to build selection specifiers from arguments
@@ -26,22 +25,19 @@ int main (int argc, char *argv [])
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "n:e:E:")) != -1) {
+    while ((c = getopt (argc, argv, "an:e:E:tm")) != -1)
+    {
 	switch (c)
 	{
+	    case 'a' :
 	    case 'n' :
-		if (! sel_network (optarg))
-		{
-		    fprintf (stderr, "%s: '%s' is not a valid cidr\n", prog, optarg) ;
-		    err = 1 ;
-		}
-		break ;
 	    case 'e' :
 	    case 'E' :
-		allow_deny = (c == 'e') ;
-		if (! sel_regexp (optarg, allow_deny))
+	    case 't' :
+	    case 'm' :
+		if ((errstr = sel_register (c, optarg)) != NULL)
 		{
-		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
+		    fprintf (stderr, "%s: %s\n", prog, errstr) ;
 		    err = 1 ;
 		}
 		break ;

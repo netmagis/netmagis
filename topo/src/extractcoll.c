@@ -102,7 +102,7 @@ Main function
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-n cidr|-e regexp|-E regexp]* [-s] [-w] [eq]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]* [-s] [-w] [eq]\n", progname) ;
     exit (1) ;
 }
 
@@ -110,13 +110,12 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 int main (int argc, char *argv [])
 {
-    char *prog ;
+    char *prog, *errstr ;
     int c, err ;
     char *eqname ;
     struct eq *eq ;
     struct node *n ;
     int dumpstat, dumpwifi ;
-    int allow_deny ;
 
     /*
      * Analyzes arguments
@@ -129,22 +128,19 @@ int main (int argc, char *argv [])
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "n:e:E:sw")) != -1) {
+    while ((c = getopt (argc, argv, "an:e:E:tmsw")) != -1)
+    {
 	switch (c)
 	{
+	    case 'a' :
 	    case 'n' :
-		if (! sel_network (optarg))
-		{
-		    fprintf (stderr, "%s: '%s' is not a valid cidr\n", prog, optarg) ;
-		    err = 1 ;
-		}
-		break ;
 	    case 'e' :
 	    case 'E' :
-		allow_deny = (c == 'e') ;
-		if (! sel_regexp (optarg, allow_deny))
+	    case 't' :
+	    case 'm' :
+		if ((errstr = sel_register (c, optarg)) != NULL)
 		{
-		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
+		    fprintf (stderr, "%s: %s\n", prog, errstr) ;
 		    err = 1 ;
 		}
 		break ;

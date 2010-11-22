@@ -212,40 +212,37 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-n cidr|-e regexp|-E regexp]* eq [iface]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]* eq [iface]\n", progname) ;
     exit (1) ;
 }
 
 int main (int argc, char *argv [])
 {
     struct node *n ;
-    char *eqname, *prog, *iface ;
+    char *prog, *errstr ;
+    char *eqname, *iface ;
     struct eq *eq ;
     int c, err ;
     int selected ;
-    int allow_deny ;
 
     prog = argv [0] ;
     err = 0 ;
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "n:e:E:")) != -1) {
+    while ((c = getopt (argc, argv, "an:e:E:tm")) != -1)
+    {
 	switch (c)
 	{
+	    case 'a' :
 	    case 'n' :
-		if (! sel_network (optarg))
-		{
-		    fprintf (stderr, "%s: '%s' is not a valid cidr\n", prog, optarg) ;
-		    err = 1 ;
-		}
-		break ;
 	    case 'e' :
 	    case 'E' :
-		allow_deny = (c == 'e') ;
-		if (! sel_regexp (optarg, allow_deny))
+	    case 't' :
+	    case 'm' :
+		if ((errstr = sel_register (c, optarg)) != NULL)
 		{
-		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
+		    fprintf (stderr, "%s: %s\n", prog, errstr) ;
 		    err = 1 ;
 		}
 		break ;

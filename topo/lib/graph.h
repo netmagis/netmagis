@@ -566,6 +566,5 @@ Sub-graph selection functions
 
 void sel_init (void) ;
 void sel_end (void) ;
-int sel_network (iptext_t addr) ;
-int sel_regexp (char *rex, int allow_deny) ;
+char *sel_register (int opt, char *arg) ;
 void sel_mark (void) ;
