@@ -1171,32 +1171,78 @@ proc lire-correspondant {dbfd login _tabuid} {
     set tabuid(eqw) [lire-eq-autorises $dbfd 1 $tabuid(idgrp)]
 
     #
-    # Construire les flags
+    # Construire les flags permettant de restreindre la visibilité
+    # du graphe selon les droits du correspondant
     #
 
     set flagsr {}
     set flagsw {}
     foreach rw {r w} {
 	set flags {}
-	if {! $tabuid(admin)} then {
+	if {$tabuid(admin)} then {
+	    #
+	    # L'administrateur a le droit de voir tout
+	    #
+	    lappend flags "-a"
+
+	    #
+	    # Malgré tout, l'administrateur n'a pas le droit
+	    # de modifier les interfaces non terminales.
+	    # XXX : ça se discute
+	    #
+	    if {$rw eq "w"} then {
+		lappend flags "-t"
+	    }
+
+	} else {
 	    lassign $tabuid(eq$rw) lallow ldeny
+
+	    #
+	    # Construire les droits réseau en premier :
+	    # le correspondant a accès à toutes les interfaces
+	    # où ses réseaux passent (sauf exclusion ultérieure)
+	    #
+
+	    foreach r $tabuid(reseaux) {
+		set r4 [lindex $r 1]
+		if {! [string equal $r4 ""]} then {
+		    lappend flags "-n" $r4
+		}
+		set r6 [lindex $r 2]
+		if {! [string equal $r6 ""]} then {
+		    lappend flags "-n" $r6
+		}
+	    }
+
+	    #
+	    # Construire les droits  sur les équipements ensuite (partie 1)
+	    # le correspondant a accès à l'ensemble de l'équipement
+	    # (interfaces comprises).
+	    #
+
 	    foreach pat $lallow {
 		lappend flags "-e" $pat
 	    }
+
+	    #
+	    # Construire les droits  sur les équipements ensuite (partie 2)
+	    # le correspondant n'a pas accès à ces équipements, même si
+	    # ça avait été sélectionné auparavant.
+	    #
+
 	    foreach pat $ldeny {
 		lappend flags "-E" $pat
 	    }
-	    if {$rw eq "r"} then {
-		foreach r $tabuid(reseaux) {
-		    set r4 [lindex $r 1]
-		    if {! [string equal $r4 ""]} then {
-			lappend flags "-n" $r4
-		    }
-		    set r6 [lindex $r 2]
-		    if {! [string equal $r6 ""]} then {
-			lappend flags "-n" $r6
-		    }
-		}
+
+	    #
+	    # Enfin, le correspondant n'a pas accès en modification :
+	    # - aux interfaces non terminales
+	    # - aux interfaces sur lesquelles transite un réseau qui
+	    #	ne lui appartient pas.
+	    #
+
+	    if {$rw eq "w"} then {
+		lappend flags "-t" "-m"
 	    }
 	}
 	set tabuid(flags$rw) [join $flags " "]
