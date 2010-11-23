@@ -5433,15 +5433,21 @@ proc conv-channel {freq} {
 #	- libconf(extracteq) : appel à extracteq
 # Sortie :
 #   - valeur de retour : liste de la forme
-#		{eq type model location iflist array}
-#	où iflist est la liste triée des interfaces
-#	et array est prêt pour "array set" pour donner un tableau de la forme
-#	tab(iface) {nom edit radio stat mode desc lien natif {vlan...}}
-#	(cf sortie de extracteq)
+#		{eq type model location iflist liferr arrayif arrayvlan}
+#	où
+#	- iflist est la liste triée des interfaces
+#	- liferr est la liste des interfaces en erreur (interface modifiable
+#		mais non consultable)
+#	- arrayif est prêt pour "array set" pour donner un tableau de la forme
+#		tab(iface) {nom edit radio stat mode desc lien natif {vlan...}}
+#		(cf sortie de extracteq)
+#	- arrayvlan est prêt pour "array set" pour donner un tableau de la
+#		forme tab(id) {desc-en-hexa voip-0-ou-1}
 #
 # Historique
 #   2010/11/03 : pda      : création
 #   2010/11/15 : pda      : suppression paramètre pageerr
+#   2010/11/23 : pda/jean : parcours des interfaces modifiables
 #
 
 proc eq-iflist {eq _tabuid} {
@@ -5449,10 +5455,10 @@ proc eq-iflist {eq _tabuid} {
     upvar $_tabuid tabuid
 
     #
-    # Lire les informations de l'équipement dans le graphe
-    # Ces informations sont filtrées par tabuid qui n'affiche
-    # que les vlans autorisés.
+    # Premier parcours : récupérer la liste des interfaces "consultables"
     #
+
+    set found 0
 
     set cmd [format $libconf(extracteq) $tabuid(flagsr) $eq]
     set fd [open "|$cmd" "r"]
@@ -5468,16 +5474,57 @@ proc eq-iflist {eq _tabuid} {
 		    set location [binary format H* $location]
 		}
 		set r [lreplace $r 3 3 $location]
+		set found 1
 	    }
 	    iface {
 		set if [lindex $ligne 1]
+		# préparer l'item "edit", qui sera positionné
+		# (éventuellement) dans le deuxième parcours
+		set ligne [linsert $ligne 2 "-"]
 		set tabiface($if) [lreplace $ligne 0 0]
 	    }
 	}
     }
     if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture de l'équipement '$eq'"
+	d error "Erreur lors de la lecture de l'équipement '$eq' (read)\n$msg"
     }
+
+    if {! $found} then {
+	d error "Equipement '$eq' not found"
+    }
+
+    #
+    # Deuxième parcours : récupérer la liste des interfaces "modifiables"
+    #
+
+    set liferr {}
+    set cmd [format $libconf(extracteq) $tabuid(flagsw) $eq]
+    set fd [open "|$cmd" "r"]
+    while {[gets $fd ligne] > -1} {
+	switch [lindex $ligne 0] {
+	    iface {
+		set if [lindex $ligne 1]
+		if {! [info exists tabiface($if)]} then {
+		    # ajouter cette interface à la liste des
+		    # interfaces en erreur
+		    lappend liferr $if
+		} else {
+		    # positionner l'item "edit" sur cette interface
+		    set tabiface($if) [lreplace $tabiface($if) 1 1 "edit"]
+		}
+	    }
+	    vlan {
+		lassign $ligne bidon id desc voip
+		set tabvlan($id) [list $desc $voip]
+	    }
+	}
+    }
+    if {[catch {close $fd} msg]} then {
+	d error "Erreur lors de la lecture de l'équipement '$eq' (write)\n$msg"
+    }
+
+    set liferr [lsort -command compare-interfaces $liferr]
+    lappend r $liferr
 
     #
     # Trier les interfaces pour les présenter dans le bon ordre
@@ -5491,6 +5538,7 @@ proc eq-iflist {eq _tabuid} {
 
     lappend r $iflist
     lappend r [array get tabiface]
+    lappend r [array get tabvlan]
 
     return $r
 }

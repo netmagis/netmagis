@@ -348,11 +348,12 @@ void sel_mark (void)
 	    MK_SELECT (n->eq) ;
 
     /*
-     * Select Vlans where L2 node are selected
+     * Select Vlans where L2 node have been selected in the
+     * L2 traversal.
      */
 
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	if (n->nodetype == NT_L2 && MK_ISSELECTED (n))
+	if (n->nodetype == NT_L2 && MK_ISSET (n, MK_L2TRANSPORT))
 	    MK_SELECT (&vlantab [n->u.l2.vlan]) ;
 
     /*

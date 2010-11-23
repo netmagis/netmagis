@@ -98,7 +98,7 @@
 set conf(fping) "%FPING% %s"
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
-set conf(extracteq)	{%TOPODIR%/bin/extracteq %1$s %2$s < %GRAPH%}
+set conf(extracteq)	{%TOPODIR%/bin/extracteq -a %1$s %2$s < %GRAPH%}
 set conf(extractcoll)	{%TOPODIR%/bin/extractcoll -s -w < %GRAPH%}
 set conf(rancid)	{%TOPODIR%/bin/start-rancid %1$s}
 set conf(anaconf)	{%TOPODIR%/bin/anaconf}
@@ -1603,8 +1603,10 @@ proc get-vlans {eq iface} {
     set cmd [format $conf(extracteq) $eqcourt $iface]
     if {! [catch {set fd [open "|$cmd" "r"]} msg]} then {
 	while {[gets $fd ligne] > -1} {
-	    foreach vlan [lreplace $ligne 0 7] {
-		lappend lvlans [lindex $vlan 0]
+	    if {[lindex $ligne 0] eq "iface"]} then {
+		foreach vlan [lreplace $ligne 0 6] {
+		    lappend lvlans [lindex $vlan 0]
+		}
 	    }
 	}
 	close $fd

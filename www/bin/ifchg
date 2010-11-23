@@ -4,11 +4,11 @@
 # Script pour présenter la page de modification d'une ou plusieurs
 # interfaces de l'équipement.
 #
-# Appelé par : /applis/topo/eq
+# Appelé par : script eq
 #
 # Paramètres (formulaire ou URL) :
 #	- eq : nom de l'équipement
-#	- iface : nom de l'interface, ou vide pour toutes interfaces
+#	- iface : nom de l'interface, ou vide pour toutes les interfaces de l'eq
 #
 # Historique
 #   2010/11/03 : pda        : création
@@ -92,8 +92,9 @@ proc main {} {
 
     set l [eq-iflist $eq tabcor]
 
-    lassign $l eq type model location iflist array
-    array set tabiface $array
+    lassign $l eq type model location liferr iflist arrayif arrayvlan
+    array set tabiface $arrayif
+    array set tabvlan  $arrayvlan
 
     #
     # Chercher les vlans accessibles sur l'équipement

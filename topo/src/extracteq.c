@@ -9,7 +9,6 @@ Example of output format
 
 eq crc-cc1 cisco/WS-C4506 45464748
 iface GigaEthernet0/1
-    <edit ou ->
     <radio>
     <M123 ou ->
     <Ether ou Trunk ou Disabled>
@@ -17,6 +16,7 @@ iface GigaEthernet0/1
     <nativevlan ou -1> 
     <desc> {0 {} <ip> ...} {7 <vlan-desc-en-hexa> 130.79.....} ...
 <all ifaces>
+vlan <id> <desc> <voip>
 
 with <radio> = {<channel> <power> <ssid> <ssid> ...} ou {}
 ******************************************************************************/
@@ -44,7 +44,6 @@ void output_iface (FILE *fp, struct node *n)
     struct node *peer ;
     struct linklist *ll1, *ll2, *ll3 ;
     vlan_t native ;
-    int editable ;
 
     ifname = n->u.l1.ifname ;
     stat = (n->u.l1.stat == NULL) ? "-" : n->u.l1.stat ;
@@ -63,32 +62,6 @@ void output_iface (FILE *fp, struct node *n)
     desc = (n->u.l1.ifdesc == NULL) ? "-" : n->u.l1.ifdesc ;
 
     fprintf (fp, "iface %s", ifname) ;
-
-    /*
-     * For an interface to be editable, the following requirements
-     * must be met :
-     * - its linkname must be "X"
-     * - all L2 neighbours must be marked
-     */
-
-    if (strcmp (n->u.l1.link, EXTLINK) == 0)
-    {
-	editable = 1 ;
-	for (ll2 = n->linklist ; ll2 != NULL ; ll2 = ll2->next)
-	{
-	    struct node *peer2 ;
-
-	    peer2 = getlinkpeer (ll2->link, n) ;
-	    if (peer2->nodetype == NT_L2 && ! MK_ISSELECTED (peer2))
-	    {
-		editable = 0 ;
-		break ;
-	    }
-	}
-    }
-    else editable = 0 ;
-
-    fprintf (fp, " %s", (editable ? "edit" : "-")) ;
 
     /*
      * Check radio parameters
@@ -204,6 +177,11 @@ void output_iface (FILE *fp, struct node *n)
     fprintf (fp, "\n") ;
 }
 
+void output_vlan (FILE *fp, vlan_t v, struct vlan *vobj)
+{
+    fprintf (fp, "vlan %d %s %d\n", v, vobj->name, vobj->voice) ;
+}
+
 /******************************************************************************
 Main function
 ******************************************************************************/
@@ -223,7 +201,8 @@ int main (int argc, char *argv [])
     char *eqname, *iface ;
     struct eq *eq ;
     int c, err ;
-    int selected ;
+    vlan_t v ;
+    struct vlan *vlantab ;
 
     prog = argv [0] ;
     err = 0 ;
@@ -280,45 +259,28 @@ int main (int argc, char *argv [])
     sel_mark () ;
 
     /*
-     * Search selected equipement, or a selected node inside this equipement
+     * Search selected equipement
      */
 
     eq = eq_lookup (eqname) ;
-    selected = 0 ;
-    if (eq != NULL)
+    if (eq != NULL && MK_ISSELECTED (eq))
     {
-	if (MK_ISSELECTED (eq))
-	    selected = 1 ;
-	else
-	{
-	    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	    {
-		if (n->eq == eq && MK_ISSELECTED (n))
-		{
-		    selected = 1 ;
-		    break ;
-		}
-	    }
-	}
-    }
+	/*
+	 * Output the final result
+	 */
 
-    if (! selected)
-    {
-	fprintf (stderr, "%s: equipement '%s' not found\n", prog, eqname) ;
-	exit (1) ;
-    }
-
-    /*
-     * Output the final result
-     */
-
-    if (iface == NULL) 
 	output_eq (stdout, eq) ;
 
-    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-	if (n->eq == eq && n->nodetype == NT_L1 && MK_ISSELECTED (n))
-	    if (iface == NULL || strcmp (iface, n->u.l1.ifname) == 0)
-		output_iface (stdout, n) ;
+	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	    if (n->eq == eq && n->nodetype == NT_L1 && MK_ISSELECTED (n))
+		if (iface == NULL || strcmp (iface, n->u.l1.ifname) == 0)
+		    output_iface (stdout, n) ;
+
+	vlantab = mobj_data (vlanmobj) ;
+	for (v = 0 ; v < MAXVLAN ; v++)
+	    if (vlantab [v].name != NULL && MK_ISSELECTED (&vlantab [v]))
+		output_vlan (stdout, v, &vlantab [v]) ;
+    }
 
     sel_end () ;
     exit (0) ;
