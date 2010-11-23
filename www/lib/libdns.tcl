@@ -373,7 +373,7 @@ snit::type ::dnscontext {
 
 	set dbfd [ouvrir-base %BASE% msg]
 	if {$dbfd eq ""} then {
-	    return "Erreur accessing database: $msg
+	    return "Erreur accessing database: $msg"
 	}
 	set db $dbfd
 
