@@ -24,6 +24,7 @@
 #   2008/11/12 : pda/jean   : ajout de l'équipement spécial _vlan
 #   2010/11/17 : pda        : adaptation liste-vlans
 #   2010/11/17 : pda/jean   : suppression de l'envoi des points de collecte
+#   2010/11/23 : pda        : suppression du fichier status (topod utilise la base)
 #
 
 TMP=/tmp/topo.$$
@@ -39,7 +40,6 @@ DATADIR=$BASE/osiris
 EQVIRT=%EQVIRT%
 EQGEN=$DATADIR/eqgen
 DESTFILE=$DATADIR/osiris.graph
-STATUS=$DATADIR/osiris.status
 VLANFILE=$EQGEN/_vlan.eq
 
 VERBOSE=0
@@ -292,25 +292,11 @@ executer ()
 	fi
 
 	#
-	# Mémoriser l'erreur ou le warning dans le fichier de status
+	# Afficher l'erreur ou le warning
 	#
 
-	if [ -z "$NEWERR" ]
-	then
-	    rm -f $STATUS
-	else
-	    if [ -s $STATUS ]
-	    then OLDERR="`sed 1d $STATUS`"
-	    else OLDERR=""
-	    fi
-
-	    if [ "$OLDERR" != "$NEWERR" ]
-	    then
-		(
-		    date
-		    echo "$NEWERR"
-		) > $STATUS
-	    fi
+	if [ ! -z "$NEWERR" ]
+	then echo "$NEWERR"
 	fi
 
 	cat $TMPERR

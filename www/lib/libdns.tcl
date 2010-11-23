@@ -4882,39 +4882,48 @@ array set libconf {
 #
 # Entrée :
 #   - paramètres :
-#	- _tabuid : tableau contenant les caractéristiques de l'utilisateur
-#		(cf lire-utilisateur)
+#	- dbfd : accès à la base
+#	- admin : 1 si l'utilisateur est admin, 0 sinon
 # Sortie :
 #   - valeur de retour : message de statut, ou chaîne vide (si l'utilisateur
 #	n'est pas admin, ou s'il n'y a aucun message)
 #
 # Historique
 #   2010/11/15 : pda      : séparation dans une fonction autonome
+#   2010/11/23 : pda      : utilisation de la table keepstate
 #
 
-proc topo-status {_tabuid} {
-    upvar $_tabuid tabuid
-    global libconf
+proc topo-status {dbfd admin} {
 
     set msgsta ""
-    if {$tabuid(admin)} then {
-	set f $libconf(status)
-	if {[file exists $f] && ![catch {set fd [open $f "r"]}]} then {
-	    if {[gets $fd date] > 0} then {
-		set msg [::webapp::html-string [read $fd]]
-		regsub -all "\n" $msg "<br>" msg
+    if {$admin} then {
+	set found 0
+	set sql "SELECT * FROM topo.keepstate WHERE type = 'anaconf'"
+	pg_select $dbfd $sql tab {
+	    set date $tab(date)
+	    set msg  $tab(message)
+	    set found 1
+	}
+	if {! $found} then {
+	    set msg "No message from anaconf"
+	    set date "(no date)"
+	} elseif {$msg eq "Resuming normal operation"} then {
+	    set msg ""
+	}
 
-		set texte [::webapp::helem "p" "Erreur de topo"]
-		append texte [::webapp::helem "p" \
-					    [::webapp::helem "font" $msg \
-						    "color" "#ff0000" \
-						] \
-				    ]
-		append texte [::webapp::helem "p" "... depuis $date"]
+	if {$msg ne ""} then {
+	    set msg [::webapp::html-string $msg]
+	    regsub -all "\n" $msg "<br>" msg
 
-		set msgsta [::webapp::helem "div" $texte "class" "alerte"]
-	    }
-	    close $fd
+	    set texte [::webapp::helem "p" "Erreur de topo"]
+	    append texte [::webapp::helem "p" \
+					[::webapp::helem "font" $msg \
+						"color" "#ff0000" \
+					    ] \
+				]
+	    append texte [::webapp::helem "p" "... depuis $date"]
+
+	    set msgsta [::webapp::helem "div" $texte "class" "alerte"]
 	}
     }
     return $msgsta
