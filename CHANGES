@@ -8,6 +8,7 @@ Version 2.0 - ??/??/????
 	adresse IP différente en fonction du réseau auquel elle est
 	connectée
     - la génération DHCP supporte la redondance du serveur DHCP
+    - correction d'un bug de dnsmodattr dans la specification de hinfo
 
 version 1.5 - ??/??/????
     - ajout du profil DHCP dans la gestion des plages dynamiques
