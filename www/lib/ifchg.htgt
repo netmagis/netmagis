@@ -35,6 +35,10 @@
 
 	%MENUDESC%
 
+	VLAN : %MENUVLAN%
+
+	VOIP : %MENUVOIP%
+
 	<input type="submit" name="Valider">
 	<input type="reset" name="Réinitialiser">
     </form>

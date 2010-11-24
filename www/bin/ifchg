@@ -44,7 +44,7 @@ set conf(nextifchg)	"%HOMEURL%/bin/ifchg"
 
 set conf(form)	{
     {eq			1 1}
-    {iface		1 1}
+    {iface		0 1}
 }
 
 #
@@ -97,10 +97,36 @@ proc main {} {
     array set tabvlan  $arrayvlan
 
     #
-    # Chercher les vlans accessibles sur l'équipement
+    # En cas d'erreur, on sort prématurément
+    # Ce cas correspond à une (ou plusieurs) interface qui serait
+    # modifiable mais non consultable.
     #
 
-    # XXX
+    if {[llength $liferr] > 0} then {
+	set texte "Incohérence sur les droits d'accès pour les interfaces : "
+	append texte [join $liferr " "]
+	return [list $titre $texte]
+    }
+
+    #
+    # Préparer les listes de vlans pour les menus
+    #
+    # Note : un vlan est soit un vlan VoIP, soit un vlan "standard".
+    #
+
+    set lvlan [list [list -1 "Désactiver le port"]]
+    set lvoip [list [list -1 "Désactiver la VoIP sur ce port"]]
+    foreach id [lsort -integer [array names tabvlan]] {
+	lassign $tabvlan($id) desc voip
+	set desc [binary format H* $desc]
+	if {$voip} then {
+	    lappend lvoip [list $id "$id ($desc)"]
+	} else {
+	    lappend lvlan [list $id "$id ($desc)"]
+	}
+    }
+
+    set nvoip [llength $lvoip]
 
     #
     # Est-ce qu'il faut présenter toutes les interfaces ou juste une ?
@@ -120,7 +146,7 @@ proc main {} {
 	#
 
 	lassign $tabiface($iface) nom edit radio stat mode desc lien natif
-	set ligne [lreplace $tabiface($iface) 0 7]
+	set trunk [lreplace $tabiface($iface) 0 7]
 
 	if {$edit ne "edit"} then {
 	    d error "Vous ne pouvez modifier l'interface $iface sur $eq"
@@ -133,20 +159,66 @@ proc main {} {
 	set titre "Modification de l'interface $iface sur $eq"
 	set menuif [::webapp::form-hidden iface $iface]
 
-	# proposer l'option "plusieurs interfaces"
-	d urlset "" $conf(nextifchg) [list [list "eq" $eq]]
-	set url [d urlget ""]
-	set multi [::webapp::helem "p" \
-			[::webapp::helem "a" {Modifier plusieurs interfaces} \
-					"href" $url] ]
+	# proposer l'option "plusieurs interfaces" s'il y a effectivement
+	# plus d'une interface modifiable
+	set nifmod 0
+	foreach i $iflist {
+	    if {[lindex $tabiface($i) 1] eq "edit"} then {
+		incr nifmod
+	    }
+	}
+	if {$nifmod > 1} then {
+	    d urlset "" $conf(nextifchg) [list [list "eq" $eq]]
+	    set url [d urlget ""]
+	    set multi [::webapp::helem "p" \
+			    [::webapp::helem "a" {Modifier plusieurs interfaces} \
+					    "href" $url] ]
+	} else {
+	    set multi ""
+	}
 
 	# proposer le menu de description d'interface
 	set desc [::webapp::html-string [binary format H* $desc]]
 	set menudesc "Description "
 	append menudesc [::webapp::form-text desc 1 80 80 $desc]
 
-	# proposer les différents vlans
-	# XXX
+	# proposer le menu de vlan
+	if {$mode eq "Disabled"} then {
+	    set pos -1
+	} else {
+	    set pos [lsearch -index 0 $lvlan $natif]
+	}
+	if {$pos == -1} then {
+	    set lsel {}
+	} else {
+	    set lsel [list $pos]
+	}
+	set menuvlan [::webapp::form-menu "vlan" 1 0 $lvlan $lsel]
+
+	# proposer le menu de vlan voip si nécessaire
+	if {$nvoip > 1} then {
+	    set pos -1
+	    if {$mode eq "Trunk"} then {
+		# rechercher, parmi les vlans taggés, celui qui
+		# est voip (le cas échéant)
+		foreach v $trunk {
+		    lassign $v id desc stat
+		    # rechercher le vlan dans la liste du menu
+		    set pos [lsearch -index 0 $lvoip $id]
+		    if {$pos != -1} then {
+			break
+		    }
+		}
+	    }
+	    if {$pos == -1} then {
+		set lsel {}
+	    } else {
+		set lsel [list $pos]
+	    }
+	    set menuvoip [::webapp::form-menu "voip" 1 0 $lvoip $lsel]
+	} else {
+	    set menuvoip "ATTENTION !"
+	}
 
     } else {
 	#
@@ -168,7 +240,15 @@ proc main {} {
 	set multi ""
 	set menudesc ""
 
-	# proposer les différents vlans
+	# proposer le menu de vlan
+	set menuvlan [::webapp::form-menu "vlan" 1 0 $lvlan {}]
+
+	# proposer le menu de vlan voip si nécessaire
+	if {$nvoip > 1} then {
+	    set menuvoip [::webapp::form-menu "voip" 1 0 $lvoip {}]
+	} else {
+	    set menuvoip "ATTENTION !"
+	}
     }
 
     #
@@ -187,6 +267,8 @@ proc main {} {
 			    [list %MULTI% $multi] \
 			    [list %MENUIF% $menuif] \
 			    [list %MENUDESC% $menudesc] \
+			    [list %MENUVLAN% $menuvlan] \
+			    [list %MENUVOIP% $menuvoip] \
 			]
 }
 
