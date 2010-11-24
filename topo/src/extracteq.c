@@ -177,9 +177,27 @@ void output_iface (FILE *fp, struct node *n)
     fprintf (fp, "\n") ;
 }
 
-void output_vlan (FILE *fp, vlan_t v, struct vlan *vobj)
+void output_vlan (FILE *fp, vlan_t v, struct vlan *vobj, struct eq *eq)
 {
-    fprintf (fp, "vlan %d %s %d\n", v, vobj->name, vobj->voice) ;
+    struct lvlan *lv ;
+    int found ;
+
+    /*
+     * Is this vlan present on this equipement ?
+     */
+
+    found = 0 ;
+    for (lv = vobj->lvlan ; lv != NULL ; lv = lv->next)
+    {
+	if (lv->eq == eq)
+	{
+	    found = 1;
+	    break ;
+	}
+    }
+
+    if (found)
+	fprintf (fp, "vlan %d %s %d\n", v, vobj->name, vobj->voice) ;
 }
 
 /******************************************************************************
@@ -279,7 +297,7 @@ int main (int argc, char *argv [])
 	vlantab = mobj_data (vlanmobj) ;
 	for (v = 0 ; v < MAXVLAN ; v++)
 	    if (vlantab [v].name != NULL && MK_ISSELECTED (&vlantab [v]))
-		output_vlan (stdout, v, &vlantab [v]) ;
+		output_vlan (stdout, v, &vlantab [v], eq) ;
     }
 
     sel_end () ;
