@@ -532,7 +532,7 @@ proc format-one-eq {nomeq iface _tabcor} {
 
     set l [eq-iflist $nomeq tabcor]
 
-    lassign $l nomeq type model location liferr iflist arrayif arrayvlan
+    lassign $l nomeq type model location manual liferr iflist arrayif arrayvlan
     array set tabiface $arrayif
 
     set titre "Équipement $nomeq $type $model"

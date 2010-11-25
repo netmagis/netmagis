@@ -5433,8 +5433,9 @@ proc conv-channel {freq} {
 #	- libconf(extracteq) : appel à extracteq
 # Sortie :
 #   - valeur de retour : liste de la forme
-#		{eq type model location iflist liferr arrayif arrayvlan}
+#		{eq type model location manual iflist liferr arrayif arrayvlan}
 #	où
+#	- manual est "manual" ou "auto"
 #	- iflist est la liste triée des interfaces
 #	- liferr est la liste des interfaces en erreur (interface modifiable
 #		mais non consultable)
@@ -5448,6 +5449,7 @@ proc conv-channel {freq} {
 #   2010/11/03 : pda      : création
 #   2010/11/15 : pda      : suppression paramètre pageerr
 #   2010/11/23 : pda/jean : parcours des interfaces modifiables
+#   2010/11/25 : pda      : ajout manual
 #
 
 proc eq-iflist {eq _tabuid} {
