@@ -1408,7 +1408,7 @@ proc juniper-post-process {model fdout eq tab} {
     } else {
 	set l "-"
     }
-    puts $fdout "eq $eq type juniper model $model snmp $c location $l"
+    puts $fdout "eq $eq type juniper model $model snmp $c location $l manual 0"
 
     #
     # Parcourir la liste des interfaces, dont on complétera les

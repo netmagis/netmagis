@@ -5,7 +5,7 @@
 
 static struct graphhdr hdr = {
     MAGIC,
-    VERSION10,				/* change me */
+    VERSION11,				/* change me */
     NB_MOBJ,
 } ;
 

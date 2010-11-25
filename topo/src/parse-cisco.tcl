@@ -1367,7 +1367,7 @@ proc cisco-post-process {type fdout eq tab} {
     } else {
 	set l "-"
     }
-    puts $fdout "eq $eq type $type model $model snmp $c location $l"
+    puts $fdout "eq $eq type $type model $model snmp $c location $l manual 0"
 
     #
     # Convertir tous les ports marqués "voice vlan" en ports

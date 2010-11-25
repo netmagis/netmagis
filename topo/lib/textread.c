@@ -261,6 +261,7 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	{ "mode",	1, },
 	{ "native",	1, },
 	{ "voice",	1, },
+	{ "manual",	1, },
     } ;
 
 
@@ -617,6 +618,7 @@ static void process_eq (char *tab [0], int ntab)
     char *eqmodel ;
     char *eqsnmp ;
     char *eqlocation ;
+    int eqmanual ;
     struct attrtab *attrtab ;			/* head of attribute table */
     struct attrvallist *av ;
     static struct attrcheck eqattr [] = {
@@ -624,6 +626,7 @@ static void process_eq (char *tab [0], int ntab)
 	{ "model", 1, 1},
 	{ "snmp", 1, 1},
 	{ "location", 0, 1},
+	{ "manual", 0, 1},
 	{ NULL, 0, 0}
     } ;
 
@@ -693,6 +696,9 @@ static void process_eq (char *tab [0], int ntab)
 	exit (1) ;
     }
 
+    av = attr_get_vallist (attrtab, "manual") ;
+    eqmanual = ((av == NULL) ? 1 : atoi (attr_get_val (av))) ;
+
     eq->type = symtab_to_name (symtab_get (eqtype)) ;
     eq->model = symtab_to_name (symtab_get (eqmodel)) ;
     if (strcmp (eqsnmp, "-") == 0)
@@ -701,6 +707,7 @@ static void process_eq (char *tab [0], int ntab)
     if (strcmp (eqlocation, "-") == 0)
 	eq->location = NULL ;
     else eq->location = symtab_to_name (symtab_get (eqlocation)) ;
+    eq->manual = eqmanual ;
 
     attr_close (attrtab) ;
 }

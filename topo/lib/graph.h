@@ -401,6 +401,7 @@ struct eq
     char *model ;
     char *snmp ;
     char *location ;
+    int manual ;			/* 1: manual config, 0: obtained from eq */
 
     int mark ;				/* used by drawl2 */
 
@@ -546,6 +547,7 @@ struct graphhdr
 #define	VERSION8	8		/* native vlans */
 #define	VERSION9	9		/* disabled interfaces */
 #define	VERSION10	10		/* voice vlans */
+#define	VERSION11	11		/* manual configuration */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

@@ -7,7 +7,7 @@
 Example of output format
 
 
-eq crc-cc1 cisco/WS-C4506 45464748
+eq crc-cc1 cisco/WS-C4506 45464748 <manual|auto>
 iface GigaEthernet0/1
     <radio>
     <M123 ou ->
@@ -30,8 +30,9 @@ Output routines
 
 void output_eq (FILE *fp, struct eq *eq)
 {
-    fprintf (fp, "eq %s %s %s %s\n", eq->name, eq->type, eq->model,
-			    (eq->location == NULL ? "-" : eq->location)
+    fprintf (fp, "eq %s %s %s %s %s\n", eq->name, eq->type, eq->model,
+			    (eq->location == NULL ? "-" : eq->location),
+			    (eq->manual ? "manual" : "auto")
 		) ;
 }
 
