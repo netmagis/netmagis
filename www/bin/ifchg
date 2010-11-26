@@ -149,7 +149,7 @@ proc main {} {
 	# Récupérer les caractéristiques de l'interface
 	#
 
-	lassign $tabiface($iface) nom edit radio stat mode desc lien natif
+	lassign $tabiface($iface) nom edit radio stat ifmode desc lien natif
 	set trunk [lreplace $tabiface($iface) 0 7]
 
 	if {$edit ne "edit"} then {
@@ -202,7 +202,7 @@ proc main {} {
 	append libifordesc [::webapp::form-hidden "iface" $iface]
 
 	# proposer le menu de vlan
-	if {$mode eq "Disabled"} then {
+	if {$ifmode eq "Disabled"} then {
 	    set pos -1
 	} else {
 	    set pos [lsearch -index 0 $lvlan $natif]
@@ -217,7 +217,7 @@ proc main {} {
 	# proposer le menu de vlan voip si nécessaire
 	if {$nvoip > 1} then {
 	    set pos -1
-	    if {$mode eq "Trunk"} then {
+	    if {$ifmode eq "Trunk"} then {
 		# rechercher, parmi les vlans taggés, celui qui
 		# est voip (le cas échéant)
 		foreach v $trunk {
