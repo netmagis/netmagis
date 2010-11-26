@@ -7,7 +7,7 @@
 Example of output format
 
 
-eq crc-cc1 cisco/WS-C4506 45464748 <manual|auto>
+eq crc-cc1 cisco WS-C4506 45464748 <manual|auto>
 iface GigaEthernet0/1
     <radio>
     <M123 ou ->
