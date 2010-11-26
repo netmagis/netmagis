@@ -1572,7 +1572,7 @@ proc cisco-post-process {type fdout eq tab} {
 			    if {[info exists cisco_80211_dbm($power)]} then {
 				set power $cisco_80211_dbm($power)
 			    } else {
-				cisco-warning "Christophe Saillard, ta table de conversion dBm->mW est foireuse. Manque $power dBm !"
+				cisco-warning "Conversion table dBm->mW lacks '$power dBm'"
 				set power -1
 			    }
 			}
