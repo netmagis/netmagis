@@ -143,9 +143,11 @@ set conf(form-dhcpprofil) {
 set conf(form-vlan) {
 	{vlanid[0-9]+		0 9999}
 	{descr[0-9]+		0 9999}
+	{voip[0-9]+		0 9999}
 
 	{vlanidn[0-9]+		1 9999}
 	{descrn[0-9]+		1 9999}
+	{voipn[0-9]+		0 9999}
 }
 
 #
@@ -286,6 +288,7 @@ proc main {} {
 	    set spec {
 		{vlanid}
 		{descr}
+		{voip}
 	    }
 	    set idnum vlanid
 	    set table topo.vlan

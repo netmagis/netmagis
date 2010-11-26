@@ -275,14 +275,16 @@ proc main {} {
 	}
 	vlan {
 	    set titrepage "Gestion des Vlans"
-	    set largeurs {20 80}
+	    set largeurs {15 75 10}
 	    set titre [prepare-titres {
 					{vlanid		{Vlan-id}}
 					{descr		{Description}}
+					{voip		{VoIP}}
 				    } $urlaide]
 	    set spec {
 		    {vlanid		{string 10}		{}}
 		    {descr		{string 40}		{}}
+		    {voip		{bool}			0}
 		}
 	    set sql "SELECT * FROM topo.vlan ORDER BY vlanid ASC"
 	    set id vlanid
