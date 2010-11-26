@@ -625,7 +625,7 @@ proc keep-state-mail {ev msg} {
 	set sql "DELETE FROM topo.keepstate WHERE type = '$qev' ;
 		    INSERT INTO topo.keepstate (type, message)
 			    VALUES ('$qev', '$qmsg')"
-	if {[myexec $sql]} then {
+	if {[myexec $sql 2]} then {
 	    #
 	    # Si on arrive ici, c'est que la base est vivante.
 	    # Envoyer le mail.
@@ -910,8 +910,7 @@ proc rancid {{leq {}}} {
 	set msg "Error while running '$cmd'\n$msg"
 	set r 0
     } else {
-	set msg "Resuming normal operation"
-	# pas d'erreur
+	# pas d'erreur : msg contient la sortie de rancid
 	set r 1
     }
 
