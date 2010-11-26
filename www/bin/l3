@@ -328,7 +328,7 @@ proc main {} {
 	}
     }
     if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture des réseaux (msg)"
+	d error "Erreur lors de la lecture des réseaux ($msg)"
     }
 
     if {[string equal $addr ""]} then {

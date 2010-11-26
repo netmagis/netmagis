@@ -42,6 +42,8 @@ DOCDNS	= /osiris/services/dns.html
 # Couleur de fond des boutons "valider"
 COULEUR = "\#10C090"
 
+DEFDOM  = u-strasbg.fr
+
 TOPODIR	= /local/applis/topo
 GRAPH	= $(TOPODIR)/osiris/osiris.graph
 STATUS	= $(TOPODIR)/osiris/osiris.status
@@ -74,6 +76,7 @@ SUBST	= \
 	-e 's|%ROOT%|$(ROOT)|' \
 	-e 's|%NOLOGIN%|$(NOLOGIN)|' \
 	-e 's|%DEFUSER%|$(DEFUSER)|' \
+	-e 's|%DEFDOM%|$(DEFDOM)|' \
 	-e 's|%COULEUR%|$(COULEUR)|' \
 	-e 's|%AUTH%|$(AUTH)|' \
 	-e 's|%PASSWDURL%|$(PASSWDURL)|' \

@@ -1,0 +1,231 @@
+#!%TCLSH%
+
+#
+# Script pour traiter la modification d'une ou plusieurs
+# interfaces de l'équipement.
+#
+# Appelé par : script ifchg
+#
+# Paramètres (formulaire ou URL) :
+#	- eq : nom de l'équipement
+#	- iface : nom de l'interface (0 .. n)
+#	- mode : "mono" ou "multi" (une seule interface ou plusieurs)
+#	- vlan : id du vlan ou -1 pour désactiver le port
+#	- voip : id du vlan ou -1 pour désactiver la voip sur l'interface
+#	- desc : description (ou vide, notamment si plusieurs interfaces)
+#
+# Historique
+#   2010/11/26 : pda/jean   : création
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/traiteifchg.html
+
+#
+# Scripts suivants (actions de formulaire)
+# 
+
+#################set conf(next)		"%HOMEURL%/bin/traiteifchg"
+#################set conf(nextifchg)	"%HOMEURL%/bin/ifchg"
+
+#
+# Quelques paramètres du script
+#
+
+
+set conf(form)	{
+    {eq			1 1}
+    {iface		0 999999}
+    {mode		1 1}
+    {vlan		1 1}
+    {voip		1 1}
+    {desc		0 1}
+}
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path %PKGTCL%
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    ::dnscontext create d
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
+
+    ::webapp::import-vars ftab
+    foreach f $conf(form) {
+	set var [lindex $f 0]
+	if {$var ne "iface"} then {
+	    set $var [string trim [lindex [set $var] 0]]
+	}
+    }
+
+    #
+    # Lire les informations de l'équipement dans le graphe
+    # Ces informations sont filtrées par tabcor qui n'affiche
+    # que les vlans autorisés.
+    #
+
+    set l [eq-iflist $eq tabcor]
+
+    lassign $l eq type model location manual liferr iflist arrayif arrayvlan
+    array set tabiface $arrayif
+    array set tabvlan  $arrayvlan
+
+    #
+    # En cas d'erreur, on sort prématurément
+    # Ce cas correspond à une (ou plusieurs) interface qui serait
+    # modifiable mais non consultable.
+    #
+
+    if {[llength $liferr] > 0} then {
+	set texte "Incohérence sur les droits d'accès pour les interfaces : "
+	append texte [join $liferr " "]
+	return [list $titre $texte]
+    }
+
+    #
+    # S'il n'y a pas d'interface, il n'y a rien à faire
+    #
+
+    if {[llength $iface] == 0} then {
+	d error "Vous n'avez pas sélectionné d'interface"
+    }
+
+    #
+    # Vérifier la cohérence et la "modifiabilité" des interfaces
+    #
+
+    foreach i $iface {
+	if {! ([info exists tabiface($i)] &&
+				[lindex $tabiface($i) 1] eq "edit")} then {
+	    d error "Modification interdite pour l'interface '$i' sur '$eq'"
+	}
+    }
+
+    #
+    # Vérifier les paramètres
+    #
+
+    # vlan
+    if {$vlan eq "-1"} then {
+	# désactiver le port
+    } elseif {[regexp {^[0-9]+$} $vlan] && [info exists tabvlan($vlan)]} then {
+	lassign $tabvlan($vlan) vlandesc isvoip
+	if {$isvoip} then {
+	    d error "Vlan '$vlan' est un VLAN VoIP"
+	}
+    } else {
+	d error "Vlan '$vlan' non trouvé"
+    }
+
+    # voip
+    if {$voip eq "-1"} then {
+	# désactiver la voip
+    } elseif {[regexp {^[0-9]+$} $voip] && [info exists tabvlan($voip)]} then {
+	lassign $tabvlan($voip) vlandesc isvoip
+	if {! $isvoip} then {
+	    d error "Vlan '$voip' n'est pas un VLAN VoIP"
+	}
+    } else {
+	d error "Vlan '$vlan' non trouvé"
+    }
+
+    # description
+    switch -- $mode {
+	multi {
+	    # topod ignore une description vide
+	    set desc ""
+	}
+	mono {
+	    # vérifier les caractères spéciaux et ajouter le X
+	    if {[regexp {[^- a-zA-Z0-9+/()&.:#_]} $desc match]} then {
+		d error "Caractère '$match' interdit dans la description"
+	    }
+	    set desc "X $desc"
+	}
+    }
+
+    #
+    # Chercher l'idrr de l'équipement
+    #
+
+    if {! [regexp {^([^.]+)\.(.+)$} $eq bidon host domain]} then {
+	set host $eq
+	set domain %DEFDOM%
+    }
+
+    set iddom [lire-domaine $dbfd $domain]
+    if {$iddom == -1} then {
+	d error "Erreur interne : domaine '$domain' non trouvé"
+    }
+    if {! [lire-rr-par-nom $dbfd $host $iddom tabrr]} then {
+	d error "Erreur interne : équipement '$eq' non trouvé"
+    }
+    set idrr $tabrr(idrr)
+
+    #
+    # Insérer la ou les modifications dans la file d'attente
+    #
+
+    # le correspondant réel (i.e. pas celui auquel on s'est éventuellement
+    # substitué)
+    set qlogin [::pgsql::quote [lindex [d euid] 0]]
+    set qifdesc [::pgsql::quote $desc]
+
+    set sql {}
+    foreach i $iface {
+	set qiface [::pgsql::quote $i]
+	lappend sql "INSERT INTO topo.ifchanges
+			    (login, idrr, iface, ifdesc, ethervlan, voicevlan)
+			VALUES ('$qlogin', $idrr, '$qiface',
+					'$qifdesc', $vlan, $voip)"
+    }
+    set sql [join $sql ";"]
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	d error "Ajout dans la file d'attente impossible\n$msg"
+    }
+
+    #
+    # Sortie de la page
+    #
+
+    d result $conf(page) [list \
+			]
+}
+
+::webapp::cgi-exec main %DEBUG%

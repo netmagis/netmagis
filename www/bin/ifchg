@@ -160,6 +160,7 @@ proc main {} {
 	# Préparer les informations
 	#
 
+	set mode "mono"
 	set titre "Modification de l'interface $iface sur $eq"
 	set menuif [::webapp::form-hidden iface $iface]
 
@@ -195,7 +196,10 @@ proc main {} {
 	    set desc [::webapp::html-string [binary format H* $desc]]
 	}
 	set libifordesc "Description"
-	set menuifordesc [::webapp::form-text desc 1 80 80 $desc]
+	set menuifordesc [::webapp::form-text desc 1 40 40 $desc]
+	append menuifordesc " (caractères spéciaux autorisés : -+/()&.:#_)"
+
+	append libifordesc [::webapp::form-hidden "iface" $iface]
 
 	# proposer le menu de vlan
 	if {$mode eq "Disabled"} then {
@@ -234,7 +238,7 @@ proc main {} {
 	    set menuvoip [::webapp::form-menu "voip" 1 0 $lvoip $lsel]
 	} else {
 	    set libvoip ""
-	    set menuvoip ""
+	    set menuvoip [::webapp::form-hidden "voip" -1]
 	}
 
     } else {
@@ -243,6 +247,7 @@ proc main {} {
 	#
 
 	set titre "Modification des interfaces de $eq"
+	set mode "multi"
 
 	# liste des interfaces
 	set lif {}
@@ -254,7 +259,7 @@ proc main {} {
 	}
 	set nif [llength $lif]
 	set libifordesc "Interfaces"
-	set menuifordesc [::webapp::form-menu iface $nif 1 $lif {}]
+	set menuifordesc [::webapp::form-menu "iface" $nif 1 $lif {}]
 	set multi ""
 
 	# proposer le menu de vlan
@@ -266,7 +271,7 @@ proc main {} {
 	    set menuvoip [::webapp::form-menu "voip" 1 0 $lvoip {}]
 	} else {
 	    set libvoip ""
-	    set menuvoip ""
+	    set menuvoip [::webapp::form-hidden "voip" -1]
 	}
     }
 
@@ -283,6 +288,7 @@ proc main {} {
     d result $conf(page) [list \
 			    [list %EQ%           $eq] \
 			    [list %TITRE%        $titre] \
+			    [list %MODE%         $mode] \
 			    [list %MULTI%        $multi] \
 			    [list %LIBIFORDESC%  $libifordesc] \
 			    [list %MENUIFORDESC% $menuifordesc] \

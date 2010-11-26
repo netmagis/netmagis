@@ -802,7 +802,7 @@ proc main {} {
 	}
     }
     if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture des équipements (msg)"
+	d error "Erreur lors de la lecture des équipements ($msg)"
     }
 
     #
@@ -829,7 +829,7 @@ proc main {} {
 	}
     }
     if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture des sondes wifi (msg)"
+	d error "Erreur lors de la lecture des sondes wifi ($msg)"
     }
 
     #

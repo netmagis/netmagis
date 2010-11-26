@@ -30,6 +30,8 @@
     \titre {1} {%TITRE%}
 
     <form method="post" action="%URLFORM%">
+	<input type="hidden" name="mode" value="%MODE%">
+	<input type="hidden" name="eq" value="%EQ%">
 	\tableau {
 	    \bordure {0} {}
 	    \taille {100}
