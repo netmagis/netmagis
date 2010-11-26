@@ -92,7 +92,7 @@ proc main {} {
 
     set l [eq-iflist $eq tabcor]
 
-    lassign $l eq type model location manual liferr iflist arrayif arrayvlan
+    lassign $l eq type model location liferr iflist arrayif arrayvlan
     array set tabiface $arrayif
     array set tabvlan  $arrayvlan
 

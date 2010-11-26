@@ -5433,9 +5433,8 @@ proc conv-channel {freq} {
 #	- libconf(extracteq) : appel à extracteq
 # Sortie :
 #   - valeur de retour : liste de la forme
-#		{eq type model location manual iflist liferr arrayif arrayvlan}
+#		{eq type model location iflist liferr arrayif arrayvlan}
 #	où
-#	- manual est "manual" ou "auto"
 #	- iflist est la liste triée des interfaces
 #	- liferr est la liste des interfaces en erreur (interface modifiable
 #		mais non consultable)
@@ -5476,6 +5475,11 @@ proc eq-iflist {eq _tabuid} {
 		    set location [binary format H* $location]
 		}
 		set r [lreplace $r 3 3 $location]
+
+		# manual = "manual" ou "auto"
+		set manual [lindex $r 4]
+		set r [lreplace $r 4 4]
+
 		set found 1
 	    }
 	    iface {
@@ -5500,32 +5504,36 @@ proc eq-iflist {eq _tabuid} {
     #
 
     set liferr {}
-    set cmd [format $libconf(extracteq) $tabuid(flagsw) $eq]
-    set fd [open "|$cmd" "r"]
-    while {[gets $fd ligne] > -1} {
-	switch [lindex $ligne 0] {
-	    iface {
-		set if [lindex $ligne 1]
-		if {! [info exists tabiface($if)]} then {
-		    # ajouter cette interface à la liste des
-		    # interfaces en erreur
-		    lappend liferr $if
-		} else {
-		    # positionner l'item "edit" sur cette interface
-		    set tabiface($if) [lreplace $tabiface($if) 1 1 "edit"]
+
+    if {$manual eq "auto"} then {
+	set cmd [format $libconf(extracteq) $tabuid(flagsw) $eq]
+	set fd [open "|$cmd" "r"]
+	while {[gets $fd ligne] > -1} {
+	    switch [lindex $ligne 0] {
+		iface {
+		    set if [lindex $ligne 1]
+		    if {! [info exists tabiface($if)]} then {
+			# ajouter cette interface à la liste des
+			# interfaces en erreur
+			lappend liferr $if
+		    } else {
+			# positionner l'item "edit" sur cette interface
+			set tabiface($if) [lreplace $tabiface($if) 1 1 "edit"]
+		    }
+		}
+		vlan {
+		    lassign $ligne bidon id desc voip
+		    set tabvlan($id) [list $desc $voip]
 		}
 	    }
-	    vlan {
-		lassign $ligne bidon id desc voip
-		set tabvlan($id) [list $desc $voip]
-	    }
 	}
-    }
-    if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture de l'équipement '$eq' (write)\n$msg"
+	if {[catch {close $fd} msg]} then {
+	    d error "Erreur lors de la lecture de l'équipement '$eq' (write)\n$msg"
+	}
+
+	set liferr [lsort -command compare-interfaces $liferr]
     }
 
-    set liferr [lsort -command compare-interfaces $liferr]
     lappend r $liferr
 
     #
