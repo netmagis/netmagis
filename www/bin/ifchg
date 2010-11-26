@@ -118,7 +118,11 @@ proc main {} {
     set lvoip [list [list -1 "Désactiver la VoIP sur ce port"]]
     foreach id [lsort -integer [array names tabvlan]] {
 	lassign $tabvlan($id) desc voip
-	set desc [binary format H* $desc]
+	if {$desc eq "-"} then {
+	    set desc ""
+	} else {
+	    set desc [binary format H* $desc]
+	}
 	if {$voip} then {
 	    lappend lvoip [list $id "$id ($desc)"]
 	} else {
@@ -171,16 +175,27 @@ proc main {} {
 	    d urlset "" $conf(nextifchg) [list [list "eq" $eq]]
 	    set url [d urlget ""]
 	    set multi [::webapp::helem "p" \
-			    [::webapp::helem "a" {Modifier plusieurs interfaces} \
-					    "href" $url] ]
+				[format {%1$s %2$s %3$s} \
+				    "Vous pouvez également" \
+				    [::webapp::helem "a" \
+						{modifier plusieurs interfaces} \
+						"href" $url \
+					] \
+				    "simultanément"
+				] \
+			    ]
 	} else {
 	    set multi ""
 	}
 
 	# proposer le menu de description d'interface
-	set desc [::webapp::html-string [binary format H* $desc]]
-	set menudesc "Description "
-	append menudesc [::webapp::form-text desc 1 80 80 $desc]
+	if {$desc eq "-"} then {
+	    set desc ""
+	} else {
+	    set desc [::webapp::html-string [binary format H* $desc]]
+	}
+	set libifordesc "Description"
+	set menuifordesc [::webapp::form-text desc 1 80 80 $desc]
 
 	# proposer le menu de vlan
 	if {$mode eq "Disabled"} then {
@@ -215,9 +230,11 @@ proc main {} {
 	    } else {
 		set lsel [list $pos]
 	    }
+	    set libvoip "VoIP"
 	    set menuvoip [::webapp::form-menu "voip" 1 0 $lvoip $lsel]
 	} else {
-	    set menuvoip "ATTENTION !"
+	    set libvoip ""
+	    set menuvoip ""
 	}
 
     } else {
@@ -236,18 +253,20 @@ proc main {} {
 	    }
 	}
 	set nif [llength $lif]
-	set menuif [::webapp::form-menu iface $nif 1 $lif {}]
+	set libifordesc "Interfaces"
+	set menuifordesc [::webapp::form-menu iface $nif 1 $lif {}]
 	set multi ""
-	set menudesc ""
 
 	# proposer le menu de vlan
 	set menuvlan [::webapp::form-menu "vlan" 1 0 $lvlan {}]
 
 	# proposer le menu de vlan voip si nécessaire
 	if {$nvoip > 1} then {
+	    set libvoip "VoIP"
 	    set menuvoip [::webapp::form-menu "voip" 1 0 $lvoip {}]
 	} else {
-	    set menuvoip "ATTENTION !"
+	    set libvoip ""
+	    set menuvoip ""
 	}
     }
 
@@ -262,13 +281,14 @@ proc main {} {
     #
 
     d result $conf(page) [list \
-			    [list %EQ%     $eq] \
-			    [list %TITRE% $titre] \
-			    [list %MULTI% $multi] \
-			    [list %MENUIF% $menuif] \
-			    [list %MENUDESC% $menudesc] \
-			    [list %MENUVLAN% $menuvlan] \
-			    [list %MENUVOIP% $menuvoip] \
+			    [list %EQ%           $eq] \
+			    [list %TITRE%        $titre] \
+			    [list %MULTI%        $multi] \
+			    [list %LIBIFORDESC%  $libifordesc] \
+			    [list %MENUIFORDESC% $menuifordesc] \
+			    [list %MENUVLAN%     $menuvlan] \
+			    [list %LIBVOIP%      $libvoip] \
+			    [list %MENUVOIP%     $menuvoip] \
 			]
 }
 

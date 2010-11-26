@@ -29,19 +29,36 @@
 
     \titre {1} {%TITRE%}
 
-    %MULTI%
     <form method="post" action="%URLFORM%">
-	%MENUIF%
-
-	%MENUDESC%
-
-	VLAN : %MENUVLAN%
-
-	VOIP : %MENUVOIP%
-
-	<input type="submit" name="Valider">
-	<input type="reset" name="Réinitialiser">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {RIGHT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {} {%LIBIFORDESC%}
+		\casetableau {} {%MENUIFORDESC%} \* listbox(interfaces) or text(desc)
+	    }
+	    \lignetableau {
+		\casetableau {} {VLAN}
+		\casetableau {} {%MENUVLAN%}
+	    }
+	    \lignetableau {
+		\casetableau {} {%LIBVOIP%}
+		\casetableau {} {%MENUVOIP%}
+	    }
+	    \lignetableau {
+		\casetableau {} {~}
+		\casetableau {} {
+		    <input type="submit" value="Valider">
+		}
+	    }
+	}
     </form>
+
+    %MULTI%
 }
 
 }
