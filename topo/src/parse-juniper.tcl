@@ -1804,7 +1804,7 @@ proc juniper-post-process {model fdout eq tab} {
 			if {[info exists t(eq!$eq!if!$iface!link!allowedvlans)]} then {
 			    set a [lindex $t(eq!$eq!if!$iface!link!allowedvlans) 0]
 			    set v [lindex $a 0]
-			    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat - native 0"
+			    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat - native 1"
 			} else {
 			    set nodeL2 ""
 			}
@@ -1869,7 +1869,12 @@ proc juniper-post-process {model fdout eq tab} {
 			if {[string equal $statname ""]} then {
 			    set statname "-"
 			}
-			puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname native 0"
+			if {$v == 0} then {
+			    set native 1
+			} else {
+			    set native 0
+			}
+			puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname native $native"
 			puts $fdout "link $nodeL1 $nodeL2"
 
 			#
