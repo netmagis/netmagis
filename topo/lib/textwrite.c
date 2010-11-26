@@ -80,7 +80,7 @@ static void text_write_nodes (FILE *fp)
 			struct ssid *s ;
 
 			r = &(n->u.l1.radio) ;
-			fprintf (fp, "radio ") ;
+			fprintf (fp, " radio ") ;
 			switch (r->channel)
 			{
 			    case CHAN_DFS :
