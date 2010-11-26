@@ -103,7 +103,7 @@ CREATE TABLE topo.ifchanges (
 			    WITHOUT TIME ZONE,
 	modlog		TEXT,		-- modification (or last attempt) log
 	FOREIGN KEY (idrr) REFERENCES dns.rr (idrr),
-	PRIMARY KEY (idrr, reqdate)
+	PRIMARY KEY (idrr, reqdate, iface)
 ) ;
 
 ------------------------------------------------------------------------------
