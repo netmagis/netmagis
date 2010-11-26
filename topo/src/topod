@@ -225,7 +225,7 @@ array set confcmd {
 	      {write memory}
 	  }
 
-    juniper:*:exec {/usr/local/libexec/rancid/jlogin -autoenable -u %RANCIDMODUSER% -p %RANCIDMODPASS%}
+    juniper:*:exec {/usr/local/libexec/rancid/jlogin -u %RANCIDMODUSER% -p %RANCIDMODPASS%}
 
     juniper:*:prologue {
 	{configure}
@@ -1395,30 +1395,30 @@ proc mod-to-conf {idrr eq type model _lreqdate} {
 	# 
 	#   Ether	    Voice	Opération
 	#   -----------------------------------------------------
-	#   Non		    Non		Désactiver l'interface
-	#   Non		    Oui		Voice vlan uniquement
-	#   Oui		    Non		Vlan d'accès uniquement
-	#   Oui		    Oui		Vlan d'accès + Voice Vlan
+	#   -1		    -1		Désactiver l'interface
+	#   -1		    > 0		Voice vlan uniquement
+	#   > 0		    -1		Vlan d'accès uniquement
+	#   > 0		    > 0		Vlan d'accès + Voice Vlan
 	#
 
-	set ether [expr ![string equal $ethervlan ""]]
-	set voice [expr ![string equal $voicevlan ""]]
+	set ether [expr $ethervlan==-1]
+	set voice [expr $voicevlan==-1]
 	
 	switch -- "$ether$voice" {
-	    00	{
+	    11	{
 		# Rien
 	    }
-	    01	{
+	    10	{
 		foreach fmt [fetch-conf $type $model "ifvoice"] {
 		    lappend lcmd [format $fmt $iface $voicevlan]
 		}
 	    }
-	    10	{
+	    01	{
 		foreach fmt [fetch-conf $type $model "ifaccess"] {
 		    lappend lcmd [format $fmt $iface $ethervlan]
 		}
 	    }
-	    11  {
+	    00  {
 		foreach fmt [fetch-conf $type $model "ifvoice"] {
 		    lappend lcmd [format $fmt $iface $voicevlan]
 		}
