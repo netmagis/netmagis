@@ -97,7 +97,7 @@
 
 set conf(fping) "%FPING% %s"
 
-set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph < %GRAPH%"
+set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph -a < %GRAPH%"
 set conf(extracteq)	{%TOPODIR%/bin/extracteq -a %1$s %2$s < %GRAPH%}
 set conf(extractcoll)	{%TOPODIR%/bin/extractcoll -s -w < %GRAPH%}
 set conf(rancid)	{%TOPODIR%/bin/start-rancid %1$s}
@@ -1603,7 +1603,7 @@ proc get-vlans {eq iface} {
     set cmd [format $conf(extracteq) $eqcourt $iface]
     if {! [catch {set fd [open "|$cmd" "r"]} msg]} then {
 	while {[gets $fd ligne] > -1} {
-	    if {[lindex $ligne 0] eq "iface"]} then {
+	    if {[lindex $ligne 0] eq "iface"} then {
 		foreach vlan [lreplace $ligne 0 6] {
 		    lappend lvlans [lindex $vlan 0]
 		}
@@ -1699,7 +1699,7 @@ proc mark-processed {idrr lreqdate msg} {
     set sql "UPDATE topo.ifchanges
 		    SET processed = 1, modlog = '$qmsg', moddate = now ()
 		    WHERE idrr = $idrr AND reqdate IN ('$reqdate')"
-    if {! [$myexec $sql]} then {
+    if {! [myexec $sql]} then {
 	log-error "Cannot update 'processed' flag for idrr=$idrr"
     }
 }
