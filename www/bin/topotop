@@ -500,8 +500,9 @@ proc topotop-eqmod {dbfd datefmt arg} {
 	set where "WHERE eq = '$qeq'"
     }
 
+    set sql "SELECT * FROM topo.modeq $where ORDER BY date DESC"
     pg_select $dbfd $sql tab {
-	set reqdate [clock format [clock scan $tab(date)] -format $datefmt]
+	set date [clock format [clock scan $tab(date)] -format $datefmt]
 	if {$tab(processed)} then {
 	    set traite "Oui"
 	} else {
