@@ -911,6 +911,9 @@ proc rancid {{leq {}}} {
 	set r 0
     } else {
 	# pas d'erreur : msg contient la sortie de rancid
+	if {$msg eq ""} then {
+	    set msg "Resuming normal operation"
+	}
 	set r 1
     }
 
@@ -1405,7 +1408,9 @@ proc mod-to-conf {idrr eq type model _lreqdate} {
 	
 	switch -- "$ether$voice" {
 	    11	{
-		# Rien
+		foreach fmt [fetch-conf $type $model "ifdisable"] {
+		    lappend lcmd [format $fmt $iface]
+		}
 	    }
 	    10	{
 		foreach fmt [fetch-conf $type $model "ifvoice"] {
