@@ -38,7 +38,7 @@
 	\item {Consulter les \lien {réseaux} {%URLCONSULTNET%}}
 	\item {Lister les \lien {correspondants} {%URLLISTECORRESP%}}
 	\item {Chercher un \lien {correspondant} {%URLCORRESP%} à partir d'une adresse}
-	\item {Consulter le \lien {tableau de bord de topod} {%URLTOPOD%}}
+	\item {Consulter le \lien {tableau de bord de topod} {%URLTOPOTOP%}}
     }
 
     \titre {2} {Administration des données}

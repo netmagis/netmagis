@@ -290,7 +290,7 @@ snit::type ::dnscontext {
 			    {eq always}
 			    {l2 always}
 			    {l3 always}
-			    {topod admin}
+			    {topotop admin}
 			    {dnstitle dns}
 			    {admtitle admin}
 			}
@@ -320,7 +320,7 @@ snit::type ::dnscontext {
 			    {admgrpsel always}
 			    {admgenliste always}
 			    {admparliste always}
-			    {topod topo}
+			    {topotop topo}
 			    {dnstitle dns}
 			    {topotitle topo}
 			}
@@ -344,7 +344,7 @@ snit::type ::dnscontext {
 	admgrpsel	{%HOMEURL%/bin/admgrpsel fr {Modif groupes} en {Modify users and groups}}
 	admgenliste	{%HOMEURL%/bin/admgenliste fr {Forcer zones} en {Force zone generation}}
 	admparliste	{%HOMEURL%/bin/admparliste fr {Modif paramètres} en {Application parameters}}
-	topod		{%HOMEURL%/bin/topod fr {Topod status} en {Topod status}}
+	topotop		{%HOMEURL%/bin/topotop fr {Topod status} en {Topod status}}
     }
 
     ###########################################################################

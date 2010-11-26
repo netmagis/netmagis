@@ -9,7 +9,7 @@
 # Paramètres (formulaire ou URL) :
 #	- refresh : temps en secondes entre chaque rafraichissement de page
 #	- nrefresh : nouveau temps de rafraichissement
-#	- key : "eq", "status" ou "keepstate"
+#	- key : "eqmod", "ifchg", "status" ou "keepstate"
 #	- arg : "" ou nom d'équipement ou nom d'objet keepstate
 #  
 #
@@ -31,13 +31,13 @@ set conf(libdns)	$conf(lib)/libdns.tcl
 #
 
 set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/topod.html
+set conf(page)		$conf(lib)/topotop.html
 
 #
 # Scripts suivants (actions de formulaire)
 # 
 
-set conf(next)		"%HOMEURL%/bin/topod"
+set conf(next)		"%HOMEURL%/bin/topotop"
 set conf(nextpar)	"%HOMEURL%/bin/admparliste"
 
 #
@@ -101,7 +101,7 @@ set conf(taball) {
     }
 }
 
-set conf(tabeq) {
+set conf(tabeqmod) {
     global {
 	chars {10 normal}
 	align {left}
@@ -146,6 +146,97 @@ set conf(tabeq) {
 	column { }
 	vbar {yes}
 	column { }
+	vbar {yes}
+    }
+}
+
+# eq
+# iface
+# reqdate
+# login
+# modif (vlan/voip/desc)
+# processed
+# moddate
+# modlog (les premiers caractères)
+
+set conf(tabifchg) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {20 20 20 10 30 5 20 20}
+	align {left}
+	format {cooked}
+    }
+    pattern Titre {
+	chars {bold}
+	align {center}
+	topbar {yes}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+    pattern Normal8 {
+	topbar {yes}
+	vbar {yes}
+	column {
+	    format {raw}
+	}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column {
+	    format {raw}
+	}
+	vbar {yes}
+    }
+    pattern Bold8 {
+	chars {bold}
+	topbar {yes}
+	vbar {yes}
+	column {
+	    format {raw}
+	}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column {
+	    format {raw}
+	}
 	vbar {yes}
     }
 }
@@ -207,6 +298,8 @@ set conf(tabks) {
     }
 }
 
+set conf(tabmodlog) $conf(tabks)
+
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
@@ -228,7 +321,7 @@ source $conf(libdns)
 # Fonction d'affichage de tous les éléments, en version compacte
 ##############################################################################
 
-proc topod-all {dbfd datefmt arg} {
+proc topotop-all {dbfd datefmt arg} {
     global conf
 
     set donnees {}
@@ -263,13 +356,13 @@ proc topod-all {dbfd datefmt arg} {
     lappend donneees [list Normal2 "Dernier full-rancid" $lastfull]
 
     #
-    # Récupérer et mettre en forme la liste des équipements en
-    # attente de traitement
+    # Récupérer et mettre en forme la liste des équipements modifiés
+    # et en attente de reconstruction du graphe
     #
 
     set unproc {}
     pg_select $dbfd "SELECT DISTINCT eq FROM topo.modeq WHERE processed=0" tab {
-	d urlset "" $conf(next) [list {key eq} [list "arg" $tab(eq)]]
+	d urlset "" $conf(next) [list {key eqmod} [list "arg" $tab(eq)]]
 	set url [d urlget ""]
 	lappend unproc [::webapp::helem "a" $tab(eq) "href" $url]
     }
@@ -279,9 +372,36 @@ proc topod-all {dbfd datefmt arg} {
 	set unproc [join $unproc ", "]
     }
 
-    d urlset "" $conf(next) [list {key eq}]
+    d urlset "" $conf(next) [list {key eqmod}]
     set url [d urlget ""]
-    set msg [::webapp::helem "a" "Équipements en attente" "href" $url]
+    set msg [::webapp::helem "a" "Équipements modifiés" "href" $url]
+    lappend donnees [list Normal2 $msg $unproc]
+
+    #
+    # Récupérer et mettre en forme la liste d'attente des modifications
+    # d'interfaces.
+    #
+
+    set unproc {}
+    set sql "SELECT DISTINCT r.nom || '.' || d.nom AS eq
+			FROM topo.ifchanges i, dns.rr r, dns.domaine d
+			WHERE i.processed = 0
+			    AND i.idrr = r.idrr
+			    AND r.iddom = d.iddom"
+    pg_select $dbfd $sql tab {
+	d urlset "" $conf(next) [list {key ifchg} [list "arg" $tab(eq)]]
+	set url [d urlget ""]
+	lappend unproc [::webapp::helem "a" $tab(eq) "href" $url]
+    }
+    if {[llength $unproc] == 0} then {
+	set unproc "(aucun)"
+    } else {
+	set unproc [join $unproc ", "]
+    }
+
+    d urlset "" $conf(next) [list {key ifchg}]
+    set url [d urlget ""]
+    set msg [::webapp::helem "a" "Changements en attente" "href" $url]
     lappend donnees [list Normal2 $msg $unproc]
 
     #
@@ -338,7 +458,7 @@ proc topod-all {dbfd datefmt arg} {
     # Récupérer les derniers équipements traités
     #
 
-    d urlset "" $conf(next) [list {key eq}]
+    d urlset "" $conf(next) [list {key eqmod}]
     set url [d urlget ""]
     set msg [::webapp::helem "a" "Derniers équipements traités" "href" $url]
     lappend donnees [list Titre $msg]
@@ -353,7 +473,7 @@ proc topod-all {dbfd datefmt arg} {
 	set date [clock format [clock scan $tab(date)] -format $datefmt]
 	set login $tab(login)
 
-	d urlset "" $conf(next) [list {key eq} [list "arg" $eq]]
+	d urlset "" $conf(next) [list {key eqmod} [list "arg" $eq]]
 	set url [d urlget ""]
 	set eq [::webapp::helem "a" $eq "href" $url]
 
@@ -364,11 +484,11 @@ proc topod-all {dbfd datefmt arg} {
 }
 
 ##############################################################################
-# Fonctions spécialisées pour les clefs, affichage en version longue
+# Fonction spécialisée pour l'affichage des équipements modifiés
 ##############################################################################
 
 # arg = "" ou eq
-proc topod-eq {dbfd datefmt arg} {
+proc topotop-eqmod {dbfd datefmt arg} {
     global conf
 
     set donnees {}
@@ -379,9 +499,9 @@ proc topod-eq {dbfd datefmt arg} {
 	set qeq [::pgsql::quote $arg]
 	set where "WHERE eq = '$qeq'"
     }
-    set sql "SELECT * FROM topo.modeq $where ORDER BY date DESC"
+
     pg_select $dbfd $sql tab {
-	set date [clock format [clock scan $tab(date)] -format $datefmt]
+	set reqdate [clock format [clock scan $tab(date)] -format $datefmt]
 	if {$tab(processed)} then {
 	    set traite "Oui"
 	} else {
@@ -389,17 +509,131 @@ proc topod-eq {dbfd datefmt arg} {
 	}
 	set eq $tab(eq)
 	if {$arg eq ""} then {
-	    d urlset "" $conf(next) [list {key eq} [list "arg" $eq]]
+	    d urlset "" $conf(next) [list {key eqmod} [list "arg" $eq]]
 	    set url [d urlget ""]
 	    set eq [::webapp::helem "a" $eq "href" $url]
 	}
 	lappend donnees [list Normal4 $eq $date $tab(login) $traite]
     }
-    return [::arrgen::output "html" $conf(tabeq) $donnees]
+    return [::arrgen::output "html" $conf(tabeqmod) $donnees]
 }
 
+##############################################################################
+# Fonction spécialisée pour l'affichage des interfaces à modifier
+##############################################################################
+
+# arg = "" ou eq
+proc topotop-ifchg {dbfd datefmt arg} {
+    global conf
+
+    set donnees {}
+    lappend donnees [list Titre "Équipement" "Interface" "Date" "Login" \
+				"Modification" "Traité" "Date d'envoi" "Log"]
+    if {$arg eq ""} then {
+	set sql "SELECT r.nom || '.' || d.nom AS eq, i.*
+			FROM topo.ifchanges i, dns.rr r, dns.domaine d
+			WHERE i.idrr = r.idrr AND r.iddom = d.iddom
+			ORDER BY reqdate DESC"
+    } else {
+	set qeq [::pgsql::quote $arg]
+	set sql "SELECT r.nom || '.' || d.nom AS eq, i.*
+			FROM topo.ifchanges i, dns.rr r, dns.domaine d
+			WHERE i.idrr = r.idrr AND r.iddom = d.iddom
+			    AND (r.nom || '.' || d.nom) = '$qeq'
+			ORDER BY reqdate DESC"
+    }
+
+    pg_select $dbfd $sql tab {
+	set reqdate [clock format [clock scan $tab(reqdate)] -format $datefmt]
+	if {$tab(processed)} then {
+	    set pattern "Normal8"
+	    set traite "Oui"
+	} else {
+	    set pattern "Bold8"
+	    set traite "Non"
+	}
+
+	d urlset "" $conf(next) [list {key ifchg} [list "arg" $tab(eq)]]
+	set url [d urlget ""]
+	set eq [::webapp::helem "a" $tab(eq) "href" $url]
+
+	set mod "vlan=$tab(ethervlan), voip=$tab(voicevlan), desc=$tab(ifdesc)"
+	set moddate $tab(moddate)
+	if {$moddate ne ""} then {
+	    set moddate [clock format [clock scan $moddate] -format $datefmt]
+	}
+
+	set modlog [string range $tab(modlog) 0 $conf(maxmsg)]
+	regsub "\n" $modlog "/" modlog
+	set modlog [::webapp::html-string $modlog]
+	if {$modlog ne $tab(modlog)} then {
+	    append modlog "..."
+	    set arg "$tab(eq)|$tab(iface)|$tab(reqdate)"
+	    d urlset "" $conf(next) [list {key modlog} [list "arg" $arg]]
+	    set url [d urlget ""]
+	    set modlog [::webapp::helem "a" $modlog "href" $url]
+	}
+
+	lappend donnees [list $pattern \
+				$eq $tab(iface) $reqdate $tab(login) \
+				$mod $traite $moddate $modlog]
+    }
+    return [::arrgen::output "html" $conf(tabifchg) $donnees]
+}
+
+##############################################################################
+# Fonction spécialisée pour l'affichage du log de modification d'interface
+##############################################################################
+
+# arg = "eq|iface|date"
+proc topotop-modlog {dbfd datefmt arg} {
+    global conf
+
+    if {! [regexp {^([^|]+)\|([^|]+)\|([^|]+)$} $arg bidon eq iface date]} then {
+	d error "invalid argument '$arg'"
+    }
+
+    set qeq [::pgsql::quote $eq]
+    set qif [::pgsql::quote $iface]
+    set qdate [::pgsql::quote $date]
+    set sql "SELECT moddate, modlog FROM topo.ifchanges,
+					dns.rr r, dns.domaine d
+			WHERE (r.nom || '.' || d.nom) = '$qeq'
+			    AND iface = '$qif'
+			    AND reqdate = '$qdate'"
+    set donnees {}
+    pg_select $dbfd $sql tab {
+	set moddate $tab(moddate)
+	set modlog $tab(modlog)
+    }
+
+    if {$moddate ne ""} then {
+	set moddate [clock format [clock scan $moddate] -format $datefmt]
+    }
+    regsub -all "\n+" $modlog "\n" modlog
+    regsub -all "\b" $modlog "" modlog
+
+    set harg [::webapp::html-string $arg]
+    if {$moddate eq ""} then {
+	set msg [format "Modification de '%s/%s' non encore effectuée" \
+				$eq $iface]
+	lappend donnees [list Titre $msg]
+    } else {
+	set msg [format "Log des modifications de '%s/%s' au %s" \
+				$eq $iface $moddate]
+	lappend donnees [list Titre $msg]
+	lappend donnees [list Normal1 $modlog]
+    }
+
+    return [::arrgen::output "html" $conf(tabmodlog) $donnees]
+}
+
+##############################################################################
+# Fonction spécialisée pour l'affichage détaillé du statut
+##############################################################################
+
 # arg = ""
-proc topod-status {dbfd datefmt arg} {
+proc topotop-status {dbfd datefmt arg} {
     global conf
 
     set donnees {}
@@ -421,8 +655,12 @@ proc topod-status {dbfd datefmt arg} {
     return [::arrgen::output "html" $conf(tabstatus) $donnees]
 }
 
+##############################################################################
+# Fonction spécialisée pour l'affichage détaillé d'un keepstate particulier
+##############################################################################
+
 # arg = type
-proc topod-keepstate {dbfd datefmt arg} {
+proc topotop-keepstate {dbfd datefmt arg} {
     global conf
 
     set donnees {}
@@ -514,10 +752,10 @@ proc main {} {
     # Activer l'affichage spécifique d'une clef
     #
 
-    if {$key eq "" || [catch {info args topod-$key}]} then {
-	set top [topod-all $dbfd $datefmt ""]
+    if {$key eq "" || [catch {info args topotop-$key}]} then {
+	set top [topotop-all $dbfd $datefmt ""]
     } else {
-	set top [topod-$key $dbfd $datefmt $arg]
+	set top [topotop-$key $dbfd $datefmt $arg]
     }
 
     #

@@ -68,7 +68,7 @@ proc main {} {
 
     foreach script {consultmx statcor statetab consultnet listecorresp
 			corresp admrelsel admmxsel admgrpsel
-			admgenliste admparliste topod} {
+			admgenliste admparliste topotop} {
 	set up [string toupper $script]
 	d urlset "%URL$up%" "%HOMEURL%/bin/$script" {}
     }
