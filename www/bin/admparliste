@@ -120,8 +120,8 @@ proc main {} {
     # Mise en forme des données dans le formulaire
     #
 
-    d seturl "" $conf(nexthelp) {}
-    set url [d geturl ""]
+    d urlset "" $conf(nexthelp) {}
+    set url [d urlget ""]
     append url {#%1$s}
     set urlaide [::webapp::helem "a" {%2$s} "href" $url]
 
