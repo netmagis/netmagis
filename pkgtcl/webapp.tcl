@@ -25,6 +25,7 @@
 #   2008/06/12 : pda/jean : ajout de interactive-tree et helem
 #   2010/11/05 : pda      : méthode opened-postgresql pour l'objet log
 #   2010/11/09 : pda      : suppression generer-menu
+#   2010/11/27 : pda      : ajout locale
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -35,10 +36,10 @@ package require pgsql ;			# package local
 
 # package require Pgtcl
 
-package provide webapp 1.12
+package provide webapp 1.13
 
 namespace eval webapp {
-    namespace export log pathinfo user \
+    namespace export log pathinfo user locale \
 	form-field form-yesno form-bool form-menu form-text form-hidden \
 	hide-parameters file-subst \
 	helem interactive-tree \
@@ -324,6 +325,64 @@ proc ::webapp::user {} {
 	set nm {}
     }
     return $nm
+}
+
+#
+# Renvoie les langues acceptées par l'utilisateur
+#
+# Entrée :
+#   - avail : locales disponibles
+#   - variables d'environnement :
+#	- HTTP_ACCEPT_LANGUAGE : une chaîne au format RFC 2616
+#		lang[;q=\d],...
+# Sortie :
+#   - valeur de retour : locale à utiliser
+#
+# Historique :
+#   2010/11/27 : pda : conception et codage
+#
+
+proc ::webapp::locale {avail} {
+    global env
+
+    if {[info exists env(HTTP_ACCEPT_LANGUAGE)]} then {
+	#
+	# Analyse la chaîne et crée un tableau indexé par
+	# le facteur de qualité (q=)
+	#
+	set accepted [string tolower $env(HTTP_ACCEPT_LANGUAGE)]
+	foreach a [split $accepted ","] {
+	    regsub -all {\s+} $a {} a
+	    set s [split $a ";"]
+	    set lang [lindex $s 0]
+	    set q 1
+	    foreach param [lreplace $s 0 0] {
+		regexp {^q=([.0-9]+)$} $param bidon q
+	    }
+	    lappend tabl($q) $lang
+	}
+	#
+	# Croise avec les langages disponibles, en tenant
+	# compte du facteur de qualité
+	#
+	set avail [string tolower $avail]
+	set locale "C"
+	foreach q [lsort -real -decreasing [array names tabl]] {
+	    foreach l $tabl($q) {
+		if {[lsearch -exact $avail $l] != -1} then {
+		    set locale $l
+		    break
+		}
+	    }
+	    if {$locale ne "C"} then {
+		break
+	    }
+	}
+    } else {
+	set locale "C"
+    }
+
+    return $locale
 }
 
 ##############################################################################

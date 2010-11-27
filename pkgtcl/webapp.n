@@ -261,6 +261,8 @@ Database Class:	\\fB\\$3\\fR
 .sp
 \fB::webapp::user\fR
 .sp
+\fB::webapp::locale\fR
+.sp
 \fB::webapp::get-data\fR \fIarray\fR \fIspec\fR
 .sp
 \fB::webapp::import-vars\fR \fIarray\fR
@@ -338,6 +340,11 @@ which holds the name of the current CGI script.
 Returns the contents of the REMOTE_USER environment variable, which
 holds the login name used for HTTP server authentication. If no
 authentication is needed, this function returns an empty string.
+.TP
+\fB::webapp::user\fR \fIavail\fR
+Returns an acceptable locale, computed from HTTP_ACCEPT_LANGUAGE
+environment variable (see RFC 2616) and available locales specified
+as a list. If no suitable locale is found, returns the "C" locale.
 .TP
 \fB::webapp::get-data\fR \fIarray\fR \fIspec\fR
 Explores CGI parameters given to this script, either as FORM input
