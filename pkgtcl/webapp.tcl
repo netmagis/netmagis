@@ -1836,7 +1836,7 @@ proc ::webapp::send {type page {fichier "output"}} {
 #
 
 proc ::webapp::sortie-html {page} {
-    fconfigure stdout --encoding utf-8
+    fconfigure stdout -encoding utf-8
     puts stdout "Content-type: text/html; charset=utf-8"
     puts stdout ""
     puts stdout $page
