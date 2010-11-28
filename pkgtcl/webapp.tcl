@@ -1484,6 +1484,7 @@ proc ::webapp::recuperer-form {formtab param} {
 #   1994/08/xx : pda : conception et codage
 #   1999/02/25 : pda : documentation
 #   2001/02/28 : pda : remplacement des \r\n par \n
+#   2010/10/28 : pda : simplification du décodage, merci Tcl
 #
 
 proc ::webapp::unpost-string {str} {
@@ -1495,20 +1496,13 @@ proc ::webapp::unpost-string {str} {
     #
     # Remplace tous les %xx par le caractère correspondant
     #
-    set l   [split $str "%"]
-    set new [lindex $l 0]
 
-    foreach p [lrange $l 1 end] {
-	set c1 [hexchar [string range $p 0 0]]
-	set c2 [hexchar [string range $p 1 1]]
-	if {$c1 != -1 && $c2 != -1} then {
-	    set v [expr "($c1*16)+$c2"]
-	    set r [string range $p 2 end]
-	    append new [format "%c%s" $v $r]
-	} else {
-	    append new "%$p"
-	}
+    while {[set pos [string first "%" $str]] > -1} { 
+        set code [scan [string range $str $pos+1 $pos+2] "%x"]
+        set str [string replace $str $pos $pos+2 [format "%c" $code]]
     }
+
+    set new [encoding convertfrom utf-8 $str]
 
     #
     # Nettoyage des mauvais caractères de fin de ligne
@@ -1517,13 +1511,6 @@ proc ::webapp::unpost-string {str} {
     regsub -all -- "\r" $new "\n" new
 
     return $new
-}
-
-proc ::webapp::hexchar {c} {
-    if {[scan $c "%x" c] == 0} then {
-	set c -1
-    }
-    return $c
 }
 
 #
@@ -1836,9 +1823,8 @@ proc ::webapp::send {type page {fichier "output"}} {
 #
 
 proc ::webapp::sortie-html {page} {
-    # fconfigure stdout -encoding utf-8
-    # puts stdout "Content-type: text/html; charset=utf-8"
-    puts stdout "Content-type: text/html"
+    fconfigure stdout -encoding utf-8
+    puts stdout "Content-type: text/html; charset=utf-8"
     puts stdout ""
     puts stdout $page
 }
@@ -1859,9 +1845,8 @@ proc ::webapp::sortie-html {page} {
 #
 
 proc ::webapp::sortie-csv {page fichier} {
-    # fconfigure stdout --encoding utf-8
-    # puts stdout "Content-type: text/csv; charset=utf-8"
-    puts stdout "Content-type: text/csv"
+    fconfigure stdout --encoding utf-8
+    puts stdout "Content-type: text/csv; charset=utf-8"
     puts stdout "Content-Disposition: attachment; filename=$fichier"
     puts stdout ""
     puts stdout $page
