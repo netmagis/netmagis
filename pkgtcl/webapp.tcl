@@ -26,6 +26,7 @@
 #   2010/11/05 : pda      : méthode opened-postgresql pour l'objet log
 #   2010/11/09 : pda      : suppression generer-menu
 #   2010/11/27 : pda      : ajout locale
+#   2010/11/27 : pda      : envoi utf-8 systématique
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -1835,7 +1836,8 @@ proc ::webapp::send {type page {fichier "output"}} {
 #
 
 proc ::webapp::sortie-html {page} {
-    puts stdout "Content-type: text/html"
+    fconfigure stdout --encoding utf-8
+    puts stdout "Content-type: text/html; charset=utf-8"
     puts stdout ""
     puts stdout $page
 }
@@ -1856,7 +1858,8 @@ proc ::webapp::sortie-html {page} {
 #
 
 proc ::webapp::sortie-csv {page fichier} {
-    puts stdout "Content-type: text/csv"
+    fconfigure stdout --encoding utf-8
+    puts stdout "Content-type: text/csv; charset=utf-8"
     puts stdout "Content-Disposition: attachment; filename=$fichier"
     puts stdout ""
     puts stdout $page
