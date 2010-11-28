@@ -1836,8 +1836,9 @@ proc ::webapp::send {type page {fichier "output"}} {
 #
 
 proc ::webapp::sortie-html {page} {
-    fconfigure stdout -encoding utf-8
-    puts stdout "Content-type: text/html; charset=utf-8"
+    # fconfigure stdout -encoding utf-8
+    # puts stdout "Content-type: text/html; charset=utf-8"
+    puts stdout "Content-type: text/html"
     puts stdout ""
     puts stdout $page
 }
@@ -1858,8 +1859,9 @@ proc ::webapp::sortie-html {page} {
 #
 
 proc ::webapp::sortie-csv {page fichier} {
-    fconfigure stdout --encoding utf-8
-    puts stdout "Content-type: text/csv; charset=utf-8"
+    # fconfigure stdout --encoding utf-8
+    # puts stdout "Content-type: text/csv; charset=utf-8"
+    puts stdout "Content-type: text/csv"
     puts stdout "Content-Disposition: attachment; filename=$fichier"
     puts stdout ""
     puts stdout $page
