@@ -68,6 +68,7 @@ set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
 
 lappend auto_path %PKGTCL%
 package require webapp
+package require arrgen
 package require pgsql
 
 #
@@ -881,12 +882,15 @@ proc main {} {
 	    set l [format-one-eq $nomeq $iface tabcor]
 	    lassign $l titre texte
 
+	    set eqsta [eq-graph-status $dbfd $eq]
+
 	    #
 	    # Sortie de la page
 	    #
 
 	    d result $conf(page1) [list \
 				    [list %MSGSTA% $msgsta] \
+				    [list %EQSTA% $eqsta] \
 				    [list %TITRE% $titre] \
 				    [list %TEXTE% $texte] \
 				    [list %EQ%    $eq] \

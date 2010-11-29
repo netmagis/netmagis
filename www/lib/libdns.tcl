@@ -171,6 +171,38 @@ set libconf(tabcorresp) {
     }
 }
 
+set libconf(tabeqstatus) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {20 10 20 50}
+    }
+    pattern Title4 {
+	chars {gras}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+    pattern Normal4 {
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+}
+
 ##############################################################################
 # Gestion des programmes WebDNS
 ##############################################################################
@@ -5551,4 +5583,115 @@ proc eq-iflist {eq _tabuid} {
     lappend r [array get tabvlan]
 
     return $r
+}
+
+#
+# Get graph and equipment status
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- eq : equipment name
+#	- iface (optional) : interface name
+# Output:
+#   - return value: HTML text giving graph and equipment status
+#
+# History:
+#   2010/11/29 : pda/jean : design
+#
+
+proc eq-graph-status {dbfd eq {iface {}}} {
+    global libconf
+
+    #
+    # Search for equipment idrr in the database
+    #
+    
+    if {! [regexp {^([^.]+)\.(.+)$} $eq bidon host domain]} then {
+        set host $eq
+        set domain %DEFDOM%
+    }
+
+    set iddom [lire-domaine $dbfd $domain]
+    if {$iddom == -1} then {
+	d error "Erreur interne : domaine '$domain' non trouvé"
+    }
+    if {! [lire-rr-par-nom $dbfd $host $iddom tabrr]} then {
+	d error "Erreur interne : équipement '$eq' non trouvé"
+    }
+    set idrr $tabrr(idrr)
+
+    #
+    # Search for unprocessed modifications and build
+    # information.
+    #
+
+    set wif ""
+    if {$iface ne ""} then {
+	set qiface [::pgsql::quote $iface]
+	set wif "AND iface = '$qiface'"
+    }
+
+    set sql "SELECT * FROM topo.ifchanges
+			WHERE idrr = $idrr AND processed = 0 $wif
+			ORDER BY reqdate DESC"
+    set lines {}
+    lappend lines [list Title4 "Date" "Login" "Interface" "Modif"]
+    pg_select $dbfd $sql tab {
+	set ifdesc $tab(ifdesc)
+	set ethervlan $tab(ethervlan)
+	set voicevlan $tab(voicevlan)
+	set modif "description='$ifdesc'"
+	if {$ethervlan == -1} then {
+	    append modif ", interface désactivée"
+	} else {
+	    append modif ", vlan=$ethervlan"
+	    if {$voicevlan != -1} then {
+		append modif ", voip=$voicevlan"
+	    }
+	}
+	lappend lines [list Normal4 $tab(reqdate) $tab(login) $tab(iface) $modif]
+    }
+    if {[llength $lines] == 1} then {
+	set ifchg ""
+    } else {
+	set ifchg [::webapp::helem "p" "Modification(s) en cours de traitement"]
+	append ifchg [::arrgen::output "html" $libconf(tabeqstatus) $lines]
+    }
+
+    #
+    # Search for current topod status
+    #
+
+    set sql "SELECT message FROM topo.keepstate WHERE type = 'status'"
+    set action ""
+    pg_select $dbfd $sql tab {
+	lassign [lindex $tab(message) 0] date action
+    }
+
+    switch -nocase -glob $action {
+	rancid* -
+	building* {
+	    set graph [::webapp::helem "p" "Reconstruction du graphe en cours.
+			Les informations fournies ne sont pas forcément
+			cohérentes avec la réalité."]
+	}
+	default {
+	    set graph ""
+	}
+    }
+
+    #
+    # Present information from $ifchg and $graph
+    #
+
+    if {$ifchg eq "" && $graph eq ""} then {
+	set html ""
+    } else {
+	set html "$graph\n$ifchg"
+	set html [::webapp::helem "font" $html "color" "#ff0000"]
+	set html "<hr>$html<hr>"
+    }
+
+    return $html
 }
