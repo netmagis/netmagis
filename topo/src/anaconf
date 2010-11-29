@@ -298,8 +298,6 @@ executer ()
 	if [ ! -z "$NEWERR" ]
 	then echo "$NEWERR"
 	fi
-
-	cat $TMPERR
     fi
 
     return $erreur
