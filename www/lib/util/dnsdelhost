@@ -81,7 +81,7 @@ proc del-host {dbfd login idcor fqdn} {
     # Validation du nom du host
     #
 
-    set msg [syntaxe-fqdn $dbfd $fqdn nom domaine iddom]
+    set msg [check-fqdn-syntax $dbfd $fqdn nom domaine iddom]
     if {! [string equal $msg ""]} then {
 	return $msg
     }
@@ -91,7 +91,7 @@ proc del-host {dbfd login idcor fqdn} {
     # Valider le nom fourni
     #
 
-    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "supprimer-un-nom"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "del-name"]
     if {[string length $msg] > 0} then {
 	return $msg
     }
@@ -128,7 +128,7 @@ proc del-host {dbfd login idcor fqdn} {
 	# C'est un alias. Lisons les informations pour afficher
 	# une page éventuelle de confirmation
 	#
-	if {! [lire-rr-par-id $dbfd $trr(cname) trrref]} then {
+	if {! [read-rr-by-id $dbfd $trr(cname) trrref]} then {
 	    return "Erreur interne. Alias non trouvé"
 	}
 
@@ -146,7 +146,7 @@ proc del-host {dbfd login idcor fqdn} {
     }
 
     if {$alias} then {
-	if {! [supprimer-alias-par-id $dbfd $trr(idrr) msg]} then {
+	if {! [del-alias-by-id $dbfd $trr(idrr) msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	     return "La suppression a échoué ($msg)"
 	}
@@ -158,7 +158,7 @@ proc del-host {dbfd login idcor fqdn} {
 	# - les MX
 	# - les adresses IP
 	#
-	if {! [supprimer-rr-et-dependances $dbfd trr msg]} then {
+	if {! [del-rr-and-dependancies $dbfd trr msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    return "La suppression a échoué ($msg)"
 	}

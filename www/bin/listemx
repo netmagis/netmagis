@@ -165,7 +165,7 @@ proc main {} {
     }
 
     foreach d $ftab(domaine) {
-	set iddom [lire-domaine $dbfd $d]
+	set iddom [read-domain $dbfd $d]
 	if {$iddom == -1} then {
 	    d error "Domaine '$d' non trouvé"
 	}

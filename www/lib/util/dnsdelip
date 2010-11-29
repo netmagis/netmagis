@@ -81,7 +81,7 @@ proc del-ip {dbfd login idcor adr} {
     # Vérifier la syntaxe de l'adresse IP
     #
 
-    set m [syntaxe-ip $dbfd $adr "inet"]
+    set m [check-ip-syntax $dbfd $adr "inet"]
     if {[string length $m] > 0} then {
 	return "Erreur sur l'adresse '$adr': $m"
     }
@@ -91,7 +91,7 @@ proc del-ip {dbfd login idcor adr} {
     # autorisées pour le correspondant
     #
 
-    if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
+    if {! [check-authorized-ip $dbfd $idcor $adr]} then {
 	return "Vous n'avez pas accès à l'adresse '$adr'"
     }
 
@@ -100,7 +100,7 @@ proc del-ip {dbfd login idcor adr} {
     # informations de l'objet.
     #
 
-    if {! [lire-rr-par-ip $dbfd $adr trr]} then {
+    if {! [read-rr-by-ip $dbfd $adr trr]} then {
 	return "L'adresse '$adr' n'existe pas dans la base."
     }
 
@@ -109,7 +109,7 @@ proc del-ip {dbfd login idcor adr} {
     #
     set nom     $trr(nom)
     set domaine $trr(domaine)
-    set msg [valide-droit-nom $dbfd $idcor $nom $domaine bidon "supprimer-un-nom"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine bidon "del-name"]
     if {! [string equal $msg ""]} then {
 	return $msg
     }
@@ -165,7 +165,7 @@ proc del-ip {dbfd login idcor adr} {
 	# Suppression de l'objet entier
 	#
 
-	if {! [supprimer-rr-et-dependances $dbfd trr msg]} then {
+	if {! [del-rr-and-dependancies $dbfd trr msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    return "La suppression a échoué.\n$msg"
 	}

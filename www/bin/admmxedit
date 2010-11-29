@@ -82,13 +82,14 @@ proc main {} {
     # Valider le nom de mx et le domaine
     #
 
-    set msg [syntaxe-nom $nom]
+    set msg [check-name-syntax $nom]
     if {[string length $msg] > 0} then {
 	d error $msg
     }
 
-    set msg [valide-domaine $dbfd $tabcor(idcor) $domaine iddom ""]
-    if {[string length $msg] > 0} then {
+    set iddom -1
+    set msg [check-domain $dbfd $tabcor(idcor) iddom domaine ""]
+    if {$msg ne ""} then {
 	d error $msg
     }
 
@@ -96,7 +97,7 @@ proc main {} {
     # Récupérer les informations sur ce nom s'il existe dans la base
     #
 
-    set existe [lire-rr-par-nom $dbfd $nom $iddom tabrr]
+    set existe [read-rr-by-name $dbfd $nom $iddom tabrr]
 
     #
     # S'il existe, vérifier que ce n'est pas déjà un A ou un CNAME
@@ -117,12 +118,14 @@ proc main {} {
 	#
 	foreach mx $tabrr(mx) {
 	    set idmx [lindex $mx 1]
-	    if {[lire-rr-par-id $dbfd $idmx tabmx] == 0} then {
+	    if {[read-rr-by-id $dbfd $idmx tabmx] == 0} then {
 		d error "ERREUR INTERNE : table rr_mx référence le RR $idmx, non trouvé dans la table rr"
 	    }
 	    set iddom $tabmx(iddom)
-	    if {! [droit-correspondant-domaine $dbfd $tabcor(idcor) $iddom ""]} then {
-		d error "Le MX '$tabmx(nom).$tabmx(domaine)' référence un domaine auquel vous n'avez pas accès"
+	    set msg [check-domain $dbfd $tabcor(idcor) iddom tabmx(domaine) ""]
+	    if {$msg ne ""} then {
+		d error [format [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s}] \
+				"$tabmx(nom).$tabmx(domaine)" $msg]
 	    }
 	}
     }

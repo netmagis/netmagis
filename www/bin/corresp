@@ -120,11 +120,11 @@ proc main {} {
 	if {[info exists env(REMOTE_ADDR)]} then {
 	    set adr $env(REMOTE_ADDR)
 	    set critere $adr
-	    lire-rr-par-ip $dbfd $adr tabrr
+	    read-rr-by-ip $dbfd $adr tabrr
 	} else {
 	    corresp-erreur "" ""
 	}
-    } elseif {[string equal [syntaxe-ip $dbfd $critere "inet"] ""]} then {
+    } elseif {[string equal [check-ip-syntax $dbfd $critere "inet"] ""]} then {
 	#
 	# Adresse IP
 	#
@@ -136,9 +136,9 @@ proc main {} {
 	# On ne se préoccupe pas du résultat (l'existence ou non
 	# de tabrr(idrr) nous suffira) par la suite.
 	#
-	lire-rr-par-ip $dbfd $critere tabrr
+	read-rr-by-ip $dbfd $critere tabrr
 
-    } elseif {[string equal [syntaxe-ip $dbfd $critere "cidr"] ""]} then {
+    } elseif {[string equal [check-ip-syntax $dbfd $critere "cidr"] ""]} then {
 	#
 	# CIDR
 	#
@@ -148,12 +148,12 @@ proc main {} {
 	#
 	# Nom et domaine
 	#
-	set iddom [lire-domaine $dbfd $domaine]
+	set iddom [read-domain $dbfd $domaine]
 	if {$iddom == -1} then {
 	    corresp-erreur $critere "Domaine '$domaine' non trouvé."
 	}
 
-	if {! [lire-rr-par-nom $dbfd $nom $iddom tabrr]} then {
+	if {! [read-rr-by-name $dbfd $nom $iddom tabrr]} then {
 	    corresp-erreur $critere \
 		"Machine '$nom' non trouvée dans le domaine '$domaine'."
 	}
@@ -182,7 +182,7 @@ proc main {} {
 	if {$iddom == -1} then {
 	    d error "Pas de domaine par défaut !"
 	}
-	if {! [lire-rr-par-nom $dbfd $nom $iddom tabrr]} then {
+	if {! [read-rr-by-name $dbfd $nom $iddom tabrr]} then {
 	    corresp-erreur $critere \
 		"Machine '$nom' non trouvée dans le domaine '$domaine'."
 	}
@@ -211,7 +211,7 @@ proc main {} {
 	if {! [string equal $tabrr(cname) ""]} then {
 	    set idrr $tabrr(cname)
 	    unset tabrr
-	    if {! [lire-rr-par-id $dbfd $idrr tabrr]} then {
+	    if {! [read-rr-by-id $dbfd $idrr tabrr]} then {
 		d error "Erreur interne : objet pointé par l'alias non trouvé"
 	    }
 	}
@@ -226,7 +226,7 @@ proc main {} {
 	if {! [string equal $tabrr(rolemail) ""]} then {
 	    set idrr $tabrr(rolemail)
 	    unset tabrr
-	    if {! [lire-rr-par-id $dbfd $idrr tabrr]} then {
+	    if {! [read-rr-by-id $dbfd $idrr tabrr]} then {
 		d error "Erreur interne : hébergeur du rolemail non trouvé"
 	    }
 	}
@@ -260,7 +260,7 @@ proc main {} {
     #
 
     if {[info exists tabrr(idrr)]} then {
-	append resultat [presenter-rr $dbfd -1 tabrr]
+	append resultat [display-rr $dbfd -1 tabrr]
 	append resultat "<P>"
     }
 
@@ -292,12 +292,12 @@ proc main {} {
     set trouve 0
     foreach cor $lcor {
 	lassign $cor login idcor
-	if {[droit-correspondant-ip $dbfd $idcor $adr]} then {
-	    set msg [lire-correspondant $dbfd $login tabcor]
-	    if {! [string equal $msg ""]} then {
-		d error "Erreur interne ($msg)"
+	if {[check-authorized-ip $dbfd $idcor $adr]} then {
+	    lassign [read-user $dbfd $login tabcor] msg arg
+	    if {$msg ne ""} then {
+		d error [format [mc $msg] $arg]
 	    }
-	    append resultat [html-correspondant tabcor]
+	    append resultat [display-user tabcor]
 	    append resultat "\n<P>\n"
 	    set trouve 1
 	}

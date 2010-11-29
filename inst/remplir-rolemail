@@ -214,7 +214,7 @@ proc lire-rolemail {dbfd} {
 # lire depuis la base tous les identificateurs de domaines                       
 # et initialiser le tableau tabdom(domaine) = iddom
 
-proc lire-domaine {dbfd} {
+proc read-domain {dbfd} {
     global tabdom
 
     set sql "SELECT iddom, nom FROM domaine"
@@ -261,7 +261,7 @@ proc remplir-rolemail {dbfd idcor fd} {
     return $r
 }
 
-proc syntaxe-nom {nom} {
+proc check-name-syntax {nom} {
     # cas général : une lettre-ou-chiffre en début, une lettre-ou-chiffre
     # à la fin (tiret interdit en fin) et lettre-ou-chiffre-ou-tiret au
     # milieu
@@ -311,7 +311,7 @@ proc separer-fqdn {fqdn tabdomvar nomvar iddomvar} {
 	return 0
     }
 
-    set msg [syntaxe-nom $nom]
+    set msg [check-name-syntax $nom]
     if {! [string equal $msg ""]} then {
 	warning "Syntaxe invalide pour le premier constituant '$nom' de '$fqdn'"
 	return 0
@@ -521,7 +521,7 @@ proc main {argv0 argv} {
     if {! ([lire-machines $dbfd] &&
 	   [lire-autres-rr $dbfd] &&
 	   [lire-rolemail $dbfd] &&
-	   [lire-domaine $dbfd] &&
+	   [read-domain $dbfd] &&
 	   [lire-alias $dbfd]) } then {
 	execsql $dbfd "ABORT WORK" m
 	pg_disconnect $dbfd

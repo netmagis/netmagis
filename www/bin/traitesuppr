@@ -28,7 +28,7 @@
 #   2005/04/08 : pda/jean : ajout dhcpprofil
 #   2007/10/25 : jean     : log des actions de modification
 #   2008/07/24 : pda/jean : ajout droitsmtp
-#   2008/07/29 : pda      : utilisation presenter-rr
+#   2008/07/29 : pda      : utilisation display-rr
 #   2010/10/15 : pda      : ajout parcours
 #
 
@@ -122,7 +122,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
     # Valider le nom fourni
     #
 
-    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "supprimer-un-nom"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "del-name"]
     if {[string length $msg] > 0} then {
 	d error $msg
     }
@@ -156,7 +156,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	# C'est un alias. Lisons les informations pour afficher
 	# une page éventuelle de confirmation
 	#
-	if {! [lire-rr-par-id $dbfd $trr(cname) trrref]} then {
+	if {! [read-rr-by-id $dbfd $trr(cname) trrref]} then {
 	    d error "Erreur interne. Alias non trouvé"
 	}
     }
@@ -188,7 +188,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	    #
 	    # Sortir la page de confirmation pour une machine
 	    #
-	    set machine [presenter-rr $dbfd -1 trr]
+	    set machine [display-rr $dbfd -1 trr]
 	    d result $conf(page-suppr-nom) [list \
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
@@ -205,7 +205,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	}
 
 	if {$alias} then {
-	    if {! [supprimer-alias-par-id $dbfd $trr(idrr) msg]} then {
+	    if {! [del-alias-by-id $dbfd $trr(idrr) msg]} then {
 		::pgsql::unlock $dbfd "abort" m
 		 d error "La suppression a échoué.\n$msg"
 	    }
@@ -221,7 +221,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	    # - les MX
 	    # - les adresses IP
 	    #
-	    if {! [supprimer-rr-et-dependances $dbfd trr msg]} then {
+	    if {! [del-rr-and-dependancies $dbfd trr msg]} then {
 		::pgsql::unlock $dbfd "abort" m
 		d error "La suppression a échoué.\n$msg"
 	    }
@@ -290,7 +290,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     # Vérifier la syntaxe de l'adresse IP
     #
 
-    set m [syntaxe-ip $dbfd $adr "inet"]
+    set m [check-ip-syntax $dbfd $adr "inet"]
     if {[string length $m] > 0} then {
 	d error "Erreur sur l'adresse '$adr': $m"
     }
@@ -300,7 +300,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     # autorisées pour le correspondant
     #
 
-    if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
+    if {! [check-authorized-ip $dbfd $idcor $adr]} then {
 	d error "Vous n'avez pas accès à l'adresse '$adr'"
     }
 
@@ -309,7 +309,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     # informations de l'objet.
     #
 
-    if {! [lire-rr-par-ip $dbfd $adr trr]} then {
+    if {! [read-rr-by-ip $dbfd $adr trr]} then {
 	d error "L'adresse '$adr' n'existe pas dans la base."
     }
 
@@ -319,7 +319,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 
     set nom     $trr(nom)
     set domaine $trr(domaine)
-    set msg [valide-droit-nom $dbfd $idcor $nom $domaine bidon "supprimer-un-nom"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine bidon "del-name"]
     if {! [string equal $msg ""]} then {
 	d error $msg
     }
@@ -339,7 +339,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     #
 
     set objet ""
-    set machine [presenter-rr $dbfd -1 trr]
+    set machine [display-rr $dbfd -1 trr]
 
     #
     # Effectuer l'action de suppression seulement si confirmation
@@ -387,7 +387,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 	    # Suppression de l'objet entier
 	    #
 
-	    if {! [supprimer-rr-et-dependances $dbfd trr msg]} then {
+	    if {! [del-rr-and-dependancies $dbfd trr msg]} then {
 		::pgsql::unlock $dbfd "abort" m
 		d error "La suppression a échoué.\n$msg"
 	    }

@@ -82,7 +82,7 @@ proc main {} {
     # modifications ;-)
     #
 
-    set corresp	[html-correspondant tabcor]
+    set corresp	[display-user tabcor]
 
     #
     # Récupération des plages auxquelles a droit le correspondant

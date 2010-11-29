@@ -170,15 +170,6 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
     set lid [concat $lid $lnid]
 
     #
-    # Récupérer la liste de tous les domaines pour faciliter la
-    # vérification des droits.
-    # 
-
-    pg_select $dbfd "SELECT iddom, nom FROM dns.domaine" tab {
-	set tabdom($tab(iddom)) $tab(nom)
-    }
-
-    #
     # Récupérer la liste de tous les intervalles DHCP pour ce
     # réseau
     #
@@ -241,12 +232,9 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
 	    # Valider le droit sur le domaine
 	    #
 
-	    if {! [info exists tabdom($iddom)]} then {
-		return "Id de domaine '$iddom' non trouvé"
-	    }
-	    set msg [valide-domaine $dbfd $idcor $tabdom($iddom) bidon "tri"]
-	    if {! [string equal $msg ""]} then {
-		return $msg
+	    set msg [check-domain $dbfd $tabcor(idcor) iddom domain ""]
+	    if {$msg ne ""} then {
+		d error $msg
 	    }
 
 	    #
@@ -261,11 +249,11 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
 	    # Valider la syntaxe des paramètres
 	    #
 
-	    set msg [syntaxe-ip $dbfd $min "inet4"]
+	    set msg [check-ip-syntax $dbfd $min "inet4"]
 	    if {! [string equal $msg ""]} then {
 		return "Adresse minimum : $msg"
 	    }
-	    set msg [syntaxe-ip $dbfd $max "inet4"]
+	    set msg [check-ip-syntax $dbfd $max "inet4"]
 	    if {! [string equal $msg ""]} then {
 		return "Adresse maximum : $msg"
 	    }

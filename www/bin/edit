@@ -98,7 +98,7 @@ proc main {} {
     # Vérifier la syntaxe de l'adresse IP
     #
 
-    set m [syntaxe-ip $dbfd $adr "inet"]
+    set m [check-ip-syntax $dbfd $adr "inet"]
     if {[string length $m] > 0} then {
 	d error "Erreur sur l'adresse '$adr': $m"
     }
@@ -108,7 +108,7 @@ proc main {} {
     # autorisées pour le correspondant
     #
 
-    if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
+    if {! [check-authorized-ip $dbfd $idcor $adr]} then {
 	d error "Vous n'avez pas accès à l'adresse '$adr'"
     }
 
@@ -117,7 +117,7 @@ proc main {} {
     # informations de l'objet.
     #
 
-    if {! [lire-rr-par-ip $dbfd $adr trr]} then {
+    if {! [read-rr-by-ip $dbfd $adr trr]} then {
 	d error "L'adresse '$adr' n'existe pas dans la base."
     }
 
@@ -127,7 +127,7 @@ proc main {} {
 
     set nom     $trr(nom)
     set domaine $trr(domaine)
-    set msg [valide-droit-nom $dbfd $idcor $nom $domaine bidon "supprimer-un-nom"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine bidon "del-name"]
     if {! [string equal $msg ""]} then {
 	d error $msg
     }
@@ -151,7 +151,7 @@ proc main {} {
     # Préparer l'affichage des informations à afficher le cas échéant
     #
 
-    set machine [presenter-rr $dbfd -1 trr]
+    set machine [display-rr $dbfd -1 trr]
 
     #
     # Préparer la suite du parcours

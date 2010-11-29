@@ -84,7 +84,7 @@ proc main {} {
     # les droits d'un autre utilisateur.
     #
 
-    if {[attribut-correspondant $dbfd $tabcor(idcor) admin]} then {
+    if {[user-attribute $dbfd $tabcor(idcor) admin]} then {
 	#
 	# A partir de maintenant, on prend le nouveau login qui est
 	# fourni dans le formulaire (s'il est fourni)
@@ -94,9 +94,9 @@ proc main {} {
 	    set login [lindex $ftab(login) 0]
 
 	    unset tabcor
-	    set msg [lire-correspondant $dbfd $login tabcor]
-	    if {! [string equal $msg ""]} then {
-		d error "'$login' non trouvé ($msg)"
+	    lassign [read-user $dbfd $login tabcor] msg arg
+	    if {$msg ne ""} then {
+		d error [format [mc $msg] $arg]
 	    }
 	}
     }
@@ -107,7 +107,7 @@ proc main {} {
     # modifications ;-)
     #
 
-    set corresp	[html-correspondant tabcor]
+    set corresp	[display-user tabcor]
 
     #
     # Récupération du code HTML d'affichage des caractéristiques

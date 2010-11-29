@@ -97,7 +97,7 @@ proc main {} {
     # et récupérer les informations sur l'hébergeur éventuel
     #
 
-    set msg [valide-role-mail $dbfd $idcor $nom $domaine trr oldtrrh]
+    set msg [check-role-mail $dbfd $idcor $nom $domaine trr oldtrrh]
     if {! [string equal $msg ""]} then {
 	d error $msg
     }
@@ -111,7 +111,7 @@ proc main {} {
     # pas une suppression).
     #
 
-    set msg [valide-droit-nom $dbfd $idcor $nomh $domaineh newtrrh "machine"]
+    set msg [check-authorized-host $dbfd $idcor $nomh $domaineh newtrrh "host"]
     if {! [string equal $msg ""]} then {
 	d error "$msg\nAction refusée."
     }
@@ -159,7 +159,7 @@ proc main {} {
 		# Le nom de "l'adresse de messagerie" n'existe pas encore.
 		# Ajouter le RR correspondant
 		#
-		set msg [ajouter-rr $dbfd $nom $trr(iddom) "" 0 "" 0 -1 \
+		set msg [add-rr $dbfd $nom $trr(iddom) "" 0 "" 0 -1 \
 						"" "" "" $idcor trr]
 		if {! [string equal $msg ""]} then {
 		    d error "Insertion de '$toutnom' impossible ($msg)"
@@ -213,7 +213,7 @@ proc main {} {
 	    #
 	    # Suppression du RR lui-même si possible
 	    #
-	    set msg [supprimer-rr-si-orphelin $dbfd $idrr]
+	    set msg [del-orphaned-rr $dbfd $idrr]
 	    if {! [string equal $msg ""]} then {
 		::pgsql::unlock $dbfd "abort" m
 		d error "Impossible de supprimer\n$msg"

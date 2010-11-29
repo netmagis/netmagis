@@ -11,7 +11,7 @@
 # Historique
 #   2003/04/24 : pda/jean : création
 #   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2004/03/04 : pda/jean : mise en commun de valide-mx
+#   2004/03/04 : pda/jean : mise en commun de check-mx
 #   2007/10/25 : jean     : log des actions de modification
 #
 
@@ -108,7 +108,7 @@ source $conf(libdns)
 #   - paramètres :
 #	- dbfd : accès à la base
 #	- idrr : id du RR
-#	- lmx : liste au format spécifié dans valide-mx
+#	- lmx : liste au format spécifié dans check-mx
 # Sortie :
 #   - valeur de retour : chaîne vide si ok, ou message d'erreur
 #
@@ -150,13 +150,14 @@ proc main {} {
     # Valider le nom du MX et le domaine
     #
 
-    set msg [syntaxe-nom $nom]
+    set msg [check-name-syntax $nom]
     if {[string length $msg] > 0} then {
 	d error $msg
     }
 
-    set msg [valide-domaine $dbfd $tabcor(idcor) $domaine iddom ""]
-    if {[string length $msg] > 0} then {
+    set iddom -1
+    set msg [check-domain $dbfd $tabcor(idcor) iddom domaine ""]
+    if {$msg ne ""} then {
 	d error $msg
     }
 
@@ -164,7 +165,7 @@ proc main {} {
     # Récupérer les informations sur ce nom s'il existe dans la base
     #
 
-    set existe [lire-rr-par-nom $dbfd $nom $iddom tabrr]
+    set existe [read-rr-by-name $dbfd $nom $iddom tabrr]
 
     #
     # S'il existe, vérifier que ce n'est pas déjà un A ou un CNAME
@@ -185,12 +186,14 @@ proc main {} {
 	#
 	foreach mx $tabrr(mx) {
 	    set idmx [lindex $mx 1]
-	    if {[lire-rr-par-id $dbfd $idmx tabrrmx] == 0} then {
+	    if {[read-rr-by-id $dbfd $idmx tabmx] == 0} then {
 		d error "ERREUR INTERNE : table rr_mx référence le RR $idmx, non trouvé dans la table rr"
 	    }
-	    set iddom $tabrrmx(iddom)
-	    if {! [droit-correspondant-domaine $dbfd $tabcor(idcor) $iddom ""]} then {
-		d error "Le MX '$tabmx(nom).$tabmx(domaine)' référence un domaine auquel vous n'avez pas accès"
+	    set iddom $tabmx(iddom)
+	    set msg [check-domain $dbfd $tabcor(idcor) iddom tabmx(domaine) ""]
+	    if {$msg ne ""} then {
+		d error [format [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s}] \
+				"$tabmx(nom).$tabmx(domaine)" $msg]
 	    }
 	    set tabprio($idmx) [lindex $mx 0]
 	}
@@ -220,7 +223,7 @@ proc main {} {
 		set fdom  [string trim [lindex $ftab($idxdom)  0]]
 		if {! [string equal $fprio ""]} then {
 		    set msg ""
-		    set mx [valide-mx $dbfd \
+		    set mx [check-mx $dbfd \
 					    $fprio $fnom $fdom \
 					    $tabcor(idcor) msg]
 		    if {! [string equal $msg ""]} then {
@@ -301,7 +304,7 @@ proc main {} {
 	    #
 
 	    # XXX : pas de commentaire ni de responsable... peut-être plus tard
-	    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" \
+	    set msg [add-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" \
 				$tabcor(idcor) tabrr]
 	    if {! [string equal $msg ""]} then {
 		d error "Impossible d'insérer '$nom.$domaine' : $msg($msg)"
@@ -337,7 +340,7 @@ proc main {} {
 	set lm {}
 	foreach mx $lmx {
 	    # priorité idmx
-	    lire-rr-par-id $dbfd [lindex $mx 1] tabmx
+	    read-rr-by-id $dbfd [lindex $mx 1] tabmx
 	    lappend donnees [list Normal \
 				[lindex $mx 0] \
 				$tabmx(nom).$tabmx(domaine) \

@@ -253,7 +253,7 @@ proc lire-subnet {fichier ts} {
 # Lecture du fichier des groupes
 #
 
-proc lire-groupes {fichier tg tcg} {
+proc read-group {fichier tg tcg} {
     upvar $tg groupes
     upvar $tcg corgrp
     global context
@@ -535,7 +535,7 @@ proc main {argv0 argv} {
     executer $dbfd $sql
     set abortfd $dbfd
 
-    lire-groupes [lindex $argv 0] groupes corgrp
+    read-group [lindex $argv 0] groupes corgrp
     lire-subnet  [lindex $argv 1] subnet
 
     inserer-etabl   $dbfd $conf(etabl) tabidetabl

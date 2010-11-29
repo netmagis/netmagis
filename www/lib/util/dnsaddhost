@@ -84,7 +84,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
     # Validation du nom du host
     #
 
-    set msg [syntaxe-fqdn $dbfd $fqdn nom domaine iddom]
+    set msg [check-fqdn-syntax $dbfd $fqdn nom domaine iddom]
     if {! [string equal $msg ""]} then {
 	return $msg
     }
@@ -94,7 +94,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
     # Valider le nom
     #
 
-    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "machine"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "host"]
     if {! [string equal $msg ""]} then {
 	return $msg
     }
@@ -118,7 +118,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
     # Vérifier la syntaxe de l'adresse IP
     #
 
-    set m [syntaxe-ip $dbfd $adr "inet"]
+    set m [check-ip-syntax $dbfd $adr "inet"]
     if {[string length $m] > 0} then {
 	return "Erreur sur l'adresse IP '$adr': $m"
     }
@@ -128,7 +128,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
     # autorisées pour le correspondant
     #
 
-    if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
+    if {! [check-authorized-ip $dbfd $idcor $adr]} then {
 	return "Vous n'avez pas accès à l'adresse '$adr'"
     }
 
@@ -136,7 +136,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
     # Vérifier enfin que l'adresse n'existe pas déjà
     #
 
-    if {[lire-rr-par-ip $dbfd $adr tabrrbidon]} then {
+    if {[read-rr-by-ip $dbfd $adr tabrrbidon]} then {
 	return "L'adresse '$adr' existe déjà"
     }
 
@@ -155,7 +155,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
 	# Rien n'existait pour ce nom, donc on insère un nouveau
 	# RR.
 	#
-	set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
+	set msg [add-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
 	if {! [string equal $msg ""]} then {
 	    return "Impossible d'insérer : $msg"
 	}

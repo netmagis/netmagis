@@ -200,7 +200,7 @@ proc main {} {
     # cidr
     set cidr [string trim [lindex $ftab(adr) 0]]
     if {! [string equal $cidr ""]} then {
-	set msg [syntaxe-ip $dbfd $cidr "cidr"]
+	set msg [check-ip-syntax $dbfd $cidr "cidr"]
 	if {! [string equal $msg ""]} then {
 	    d error $msg
 	}

@@ -150,7 +150,7 @@ proc traitemodif-infos {dbfd tc ft} {
     if {! [regexp {^\d+$} $idrr]} then {
 	d error "Erreur interne sur idrr"
     }
-    if {! [lire-rr-par-id $dbfd $idrr trr]} then {
+    if {! [read-rr-by-id $dbfd $idrr trr]} then {
 	d error "Erreur de lecture de idrr"
     }
     # tester si la machine existe
@@ -159,7 +159,7 @@ proc traitemodif-infos {dbfd tc ft} {
     }
 
     # tester les droits
-    set m [valide-droit-nom $dbfd $idcor $trr(nom) $trr(domaine) trr "machine-existante"]
+    set m [check-authorized-host $dbfd $idcor $trr(nom) $trr(domaine) trr "existing-host"]
     if {! [string equal $m ""]} then {
 	d error "Erreur de droit sur idrr"
     }
@@ -168,13 +168,13 @@ proc traitemodif-infos {dbfd tc ft} {
     # Vérifier le nouveau nom et le nouveau domaine
     #
 
-    set m [syntaxe-nom $nom]
+    set m [check-name-syntax $nom]
     if {[string length $m] > 0} then {
 	d error "Erreur sur le nom '$nom': $m"
     }
     set nom [string tolower $nom]
 
-    set m [valide-droit-nom $dbfd $idcor $nom $domaine ntrr "machine"]
+    set m [check-authorized-host $dbfd $idcor $nom $domaine ntrr "host"]
     if {! [string equal $m ""]} then {
 	d error "Vous n'avez pas les droits sur $nom.$domaine"
     }
@@ -194,7 +194,7 @@ proc traitemodif-infos {dbfd tc ft} {
     #
 
     if {! [string equal $mac ""]} then {
-	set m [syntaxe-mac $dbfd $mac]
+	set m [check-mac-syntax $dbfd $mac]
 	if {[string length $m] > 0} then {
 	    d error "Erreur sur l'adresse MAC : $m"
 	}
@@ -216,7 +216,7 @@ proc traitemodif-infos {dbfd tc ft} {
     # Récupérer le type de machine en clair
     #
 
-    set idhinfo [lire-hinfo $dbfd $hinfo]
+    set idhinfo [read-hinfo $dbfd $hinfo]
     if {$idhinfo == -1} then {
 	d error "Le type de machine '$hinfo' n'existe pas."
     }
@@ -245,8 +245,8 @@ proc traitemodif-infos {dbfd tc ft} {
 	if {[string equal $ttl ""]} then {
 	    set ttl -1
 	} else {
-	    set msg [valide-ttl $ttl]
-	    if {! [string equal $msg ""]} then {
+	    set msg [check-ttl $ttl]
+	    if {$msg ne ""} then {
 		d error $msg
 	    }
 	}
@@ -258,7 +258,7 @@ proc traitemodif-infos {dbfd tc ft} {
     # Tester si la machine doit être ajoutée statiquement comme adresse DHCP
     #
 
-    set m [valide-dhcp-statique $dbfd $mac $trr(ip)]
+    set m [check-static-dhcp $dbfd $mac $trr(ip)]
     if {! [string equal $m  ""]} then {
 	d error "$m.\nModification refusée"
     }

@@ -133,7 +133,7 @@ proc erreur {msg} {
 #   2002/04/11 : pda/jean : conception
 #
 
-proc syntaxe-nom {nom} {
+proc check-name-syntax {nom} {
     # cas général : une lettre-ou-chiffre en début, une lettre-ou-chiffre
     # à la fin (tiret interdit en fin) et lettre-ou-chiffre-ou-tiret au
     # milieu
@@ -276,7 +276,7 @@ proc analyser-rr {ligne ftab anciennom} {
 	set tab(nom) $anciennom
     }
     if {[string length $tab(nom)] > 0} then {
-	set m [syntaxe-nom $tab(nom)]
+	set m [check-name-syntax $tab(nom)]
 	if {[string length $m] > 0} then { erreur "$m $tab(nom)" }
     }
 

@@ -82,7 +82,7 @@ proc syntax-error {argv0} {
 # Entrée :
 #   - dbfd : accès à la base
 #   - mac : l'adresse MAC à tester
-#   - tabrr : cf lire-rr-par-id
+#   - tabrr : cf read-rr-by-id
 # Sortie :
 #   - valeur de retour : message d'erreur, ou chaîne vide si ok.
 #
@@ -102,13 +102,13 @@ proc valide-attr-mac {dbfd mac tabrr} {
 	return ""
     }
 
-    set msg [syntaxe-mac $dbfd $mac]
-    if {! [string equal $msg ""]} then {
+    set msg [check-mac-syntax $dbfd $mac]
+    if {$msg ne ""} then {
 	return "Erreur sur l'adresse MAC : $msg"
     }
 
-    set msg [valide-dhcp-statique $dbfd $mac $trr(ip)]
-    if {! [string equal $msg ""]} then {
+    set msg [check-static-dhcp $dbfd $mac $trr(ip)]
+    if {$msg ne ""} then {
 	return  "$msg"
     }
 
@@ -125,7 +125,7 @@ proc valide-attr-mac {dbfd mac tabrr} {
 # Entrée :
 #   - dbfd : accès à la base
 #   - idcor : id du correspondant faisant la modification
-#   - tabrr : rr à modifier (cf lire-rr-par-id)
+#   - tabrr : rr à modifier (cf read-rr-by-id)
 #   - tabattr : tableau contenant les attributs à modifier et leur valeur
 # Sortie :
 #   - valeur de retour : message d'erreur, ou chaîne vide si ok.
@@ -159,8 +159,8 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
 	if {[string equal $tattr(ttl) ""]} then {
 	    set tattr(ttl) -1
 	}  else {
-	    set msg [valide-ttl $tattr(ttl)]
-	    if {! [string equal $msg ""]} then {
+	    set msg [check-ttl $tattr(ttl)]
+	    if {$msg ne ""} then {
 		return $msg
 	    }
 	}
@@ -168,13 +168,13 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
 
     if {[info exists tattr(mac)]} then {
 	set msg [valide-attr-mac $dbfd $tattr(mac) trr]
-	if {! [string equal $msg ""]} then {
+	if {$msg ne ""} then {
 	    return $msg
 	}
     }
 
     if {[info exists tattr(hinfo)]} then {
-	set idhinfo [lire-hinfo $dbfd $tattr(hinfo)]
+	set idhinfo [read-hinfo $dbfd $tattr(hinfo)]
 	if {$idhinfo == -1} then {
 	    return "Hinfo '$tattr(hinfo)' invalide"
 	}
@@ -182,7 +182,7 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
     }
 
     if {[info exists tattr(dhcpprofil)]} then {
-	set iddhcpprofil [lire-dhcpprofil $dbfd $tattr(dhcpprofil)]
+	set iddhcpprofil [read-dhcp-profile $dbfd $tattr(dhcpprofil)]
 	if {$iddhcpprofil == -1} then {
 	    return "DHCPProfil '$tattr(dhcpprofil)' invalide"
 	}
@@ -304,14 +304,12 @@ proc main {argv0 argv} {
     #
 
     set fqdn [string tolower [lindex $argv 0]]
-    set msg [syntaxe-fqdn $dbfd $fqdn nom domaine iddom]
-    if {! [string equal $msg ""]} then {
+    set msg [check-fqdn-syntax $dbfd $fqdn nom domaine iddom]
+    if {$msg ne ""} then {
 	puts stderr $msg
 	return 1
     }
-    set msg [valide-droit-nom $dbfd $tabcor(idcor) \
-			$nom $domaine trr "machine-existante"
-]
+    set msg [check-authorized-host $dbfd $tabcor(idcor) $nom $domaine trr "existing-host"]
     if {[string length $msg] > 0} then {
         puts stderr "Modification d'attribut impossible : $msg"
 	return 1
@@ -339,7 +337,7 @@ proc main {argv0 argv} {
     #
 
     set msg [update-rr $dbfd $tabcor(login) $tabcor(idcor) trr tabattr]
-    if {! [string equal $msg ""]} then {
+    if {$msg ne ""} then {
        ::pgsql::unlock $dbfd "abort" m
 	puts stderr $msg
 	puts stderr "Aborted."

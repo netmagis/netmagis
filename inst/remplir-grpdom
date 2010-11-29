@@ -113,7 +113,7 @@ proc lire-fichier {nom tab} {
     return
 }
 
-proc lire-domaine {dbfd domaine} {
+proc read-domain {dbfd domaine} {
     set iddom -1
     pg_select $dbfd "SELECT iddom FROM domaine WHERE nom = '$domaine'" tab {
 	set iddom $tab(iddom)
@@ -123,19 +123,19 @@ proc lire-domaine {dbfd domaine} {
 
 proc ajouter-domaine {dbfd domaine} {
     set domaine [quote $domaine]
-    set iddom [lire-domaine $dbfd $domaine]
+    set iddom [read-domain $dbfd $domaine]
     if {$iddom == -1} then {
 	set sql "INSERT INTO domaine (nom) VALUES ('$domaine')"
 	if {! [execsql $dbfd $sql m]} then {
 	    puts stderr $m
 	    exit 1
 	}
-	set iddom [lire-domaine $dbfd $domaine]
+	set iddom [read-domain $dbfd $domaine]
     }
     return $iddom
 }
 
-proc lire-groupe {dbfd nom} {
+proc read-group {dbfd nom} {
     set idgrp -1
     pg_select $dbfd "SELECT idgrp FROM groupe WHERE nom = '$nom'" tab {
 	set idgrp $tab(idgrp)
@@ -165,7 +165,7 @@ proc convertir-tableau {dbfd tab} {
 
 	    set l2 {}
 	    foreach c $lgrp {
-		set idgrp [lire-groupe $dbfd $c]
+		set idgrp [read-group $dbfd $c]
 		if {$idgrp == -1} then {
 		    puts stderr "groupe '$c' non trouvé dans la base"
 		    exit 1

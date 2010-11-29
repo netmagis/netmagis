@@ -401,7 +401,7 @@ proc output-map {dbfd lcidr _tabcor format} {
     set lcidrv4 {}
     set m ""
     foreach cidrplage $lcidr {
-	set r [syntaxe-ip $dbfd $cidrplage "cidr4"]
+	set r [check-ip-syntax $dbfd $cidrplage "cidr4"]
 	if {[string eq $r ""]} then {
 	    lappend lcidrv4 $cidrplage
 	} else {
@@ -617,7 +617,7 @@ proc main {} {
     set l $ftab(cidr)
     foreach cidr $l {
 	if {! [string eq [string trim $cidr] ""]} then {
-	    set m [syntaxe-ip $dbfd $cidr "cidr"]
+	    set m [check-ip-syntax $dbfd $cidr "cidr"]
 	    if {[string length $m] > 0} then {
 		d error $m
 	    }

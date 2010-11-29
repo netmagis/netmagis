@@ -105,7 +105,7 @@ source $conf(libdns)
 #   - paramètres :
 #	- dbfd : accès à la base
 #	- iddom : id du domaine
-#	- lrel : liste au format spécifié dans valide-mx
+#	- lrel : liste au format spécifié dans check-mx
 # Sortie :
 #   - valeur de retour : chaîne vide si ok, ou message d'erreur
 #
@@ -146,8 +146,8 @@ proc main {} {
     # Valider le domaine
     #
 
-    set msg [valide-domaine-et-relais $dbfd $tabcor(idcor) $domaine iddom]
-    if {! [string equal $msg ""]} then {
+    set msg [check-domain-relay $dbfd $tabcor(idcor)  iddom$domaine]
+    if {$msg ne ""} then {
 	d error $msg
     }
 
@@ -175,7 +175,7 @@ proc main {} {
 		set fdom  [string trim [lindex $ftab($idxdom)  0]]
 		if {! [string equal $fprio ""]} then {
 		    set msg ""
-		    set mx [valide-mx $dbfd \
+		    set mx [check-mx $dbfd \
 					    $fprio $fnom $fdom \
 					    $tabcor(idcor) msg]
 		    if {! [string equal $msg ""]} then {
@@ -239,7 +239,7 @@ proc main {} {
 	lappend donnees {Titre Priorité Nom}
 	foreach mx $lrel {
 	    # priorité idmx
-	    lire-rr-par-id $dbfd [lindex $mx 1] tabmx
+	    read-rr-by-id $dbfd [lindex $mx 1] tabmx
 	    lappend donnees [list Normal \
 				[lindex $mx 0] \
 				$tabmx(nom).$tabmx(domaine) \

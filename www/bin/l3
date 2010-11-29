@@ -364,7 +364,7 @@ proc main {} {
 	# Valider l'adresse IP
 	#
 
-	set msg [syntaxe-ip $dbfd $addr "loosecidr"]
+	set msg [check-ip-syntax $dbfd $addr "loosecidr"]
 	if {! [string equal $msg ""]} then {
 	    d error $msg
 	}

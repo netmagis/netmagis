@@ -81,8 +81,8 @@ proc main {} {
     # Valider le domaine
     #
 
-    set msg [valide-domaine-et-relais $dbfd $tabcor(idcor) $domaine iddom]
-    if {[string length $msg] > 0} then {
+    set msg [check-domain-relay $dbfd $tabcor(idcor) iddom $domaine]
+    if {$msg ne ""} then {
 	d error $msg
     }
 

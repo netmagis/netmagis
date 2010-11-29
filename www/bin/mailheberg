@@ -205,8 +205,8 @@ proc main {} {
     # A-t'on le droit de déclarer des rôles mails dans ce domaine ?
     #
 
-    set msg [valide-domaine $dbfd $idcor $domaine iddom "rolemail"]
-    if {! [string equal $msg ""]} then {
+    set msg [check-domain $dbfd $idcor idom domaine "rolemail"]
+    if {$msg ne ""} then {
 	d error $msg
     }
 
@@ -269,7 +269,7 @@ proc main {} {
 	# Valider la syntaxe de l'adresse de messagerie
 	#
 
-	set msg [syntaxe-nom $nom]
+	set msg [check-name-syntax $nom]
 	if {! [string equal $msg ""]} then {
 	    d error $msg
 	}
@@ -278,7 +278,7 @@ proc main {} {
 	# Valider le droit d'éditer cette adresse de messagerie
 	#
 
-	set msg [valide-role-mail $dbfd $idcor $nom $domaine trr trrh]
+	set msg [check-role-mail $dbfd $idcor $nom $domaine trr trrh]
 	if {! [string equal $msg ""]} then {
 	    d error "$msg. Édition refusée."
 	}

@@ -103,7 +103,7 @@ proc editmodif-infos {dbfd idcor ft} {
     # Valider la syntaxe du nom au sens de la RFC ????
     #
 
-    set m [syntaxe-nom $nom]
+    set m [check-name-syntax $nom]
     if {[string length $m] > 0} then {
 	d error "Erreur sur le nom '$nom': $m"
     }
@@ -113,7 +113,7 @@ proc editmodif-infos {dbfd idcor ft} {
     # Valider le domaine, le nom (qui ne doit pas être un alias, un MX, etc)
     #
 
-    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "machine-existante"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "existing-host"]
     if {[string length $msg] > 0} then {
 	d error $msg
     }

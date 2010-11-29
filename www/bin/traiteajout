@@ -51,7 +51,7 @@
 #   2007/10/25 : jean     : log des actions de modification
 #   2008/02/13 : pda/jean : le responsable est le correspondant si pas précisé
 #   2008/07/23 : pda/jean : ajout du droit d'émission SMTP
-#   2008/07/29 : pda      : utilisation presenter-rr
+#   2008/07/29 : pda      : utilisation display-rr
 #   2010/01/01 : pda      : codage ajout-multi
 #   2010/10/08 : pda      : codage parcours (via next)
 #   2010/10/09 : pda      : fin codage ajout-multi
@@ -229,7 +229,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Valider la syntaxe du nom au sens de la RFC ????
     #
 
-    set m [syntaxe-nom $nom]
+    set m [check-name-syntax $nom]
     if {! [string equal $m ""]} then {
 	d error "Erreur sur le nom '$nom': $m"
     }
@@ -239,8 +239,8 @@ proc traiteajout-machine {dbfd tc ft} {
     # Valider le nom
     #
 
-    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "machine"]
-    if {! [string equal $msg ""]} then {
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "host"]
+    if {$msg ne ""} then {
 	d error $msg
     }
     set iddom $trr(iddom)
@@ -268,7 +268,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Vérifier la syntaxe de l'adresse IP
     #
 
-    set m [syntaxe-ip $dbfd $adr "inet"]
+    set m [check-ip-syntax $dbfd $adr "inet"]
     if {[string length $m] > 0} then {
 	d error "Erreur sur l'adresse IP '$adr': $m"
     }
@@ -278,7 +278,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # autorisées pour le correspondant
     #
 
-    if {! [droit-correspondant-ip $dbfd $idcor $adr]} then {
+    if {! [check-authorized-ip $dbfd $idcor $adr]} then {
 	d error "Vous n'avez pas accès à l'adresse '$adr'"
     }
 
@@ -286,7 +286,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Vérifier enfin que l'adresse n'existe pas déjà
     #
 
-    if {[lire-rr-par-ip $dbfd $adr tabrrbidon]} then {
+    if {[read-rr-by-ip $dbfd $adr tabrrbidon]} then {
 	d error "L'adresse '$adr' existe déjà"
     }
 
@@ -296,7 +296,7 @@ proc traiteajout-machine {dbfd tc ft} {
     #
 
     if {! [string equal $mac  ""]} then {
-	set m [syntaxe-mac $dbfd $mac]
+	set m [check-mac-syntax $dbfd $mac]
 	if {[string length $m] > 0} then {
 	    d error "Erreur sur l'adresse MAC : $m"
 	}
@@ -306,7 +306,7 @@ proc traiteajout-machine {dbfd tc ft} {
     if {$dejaip} then {
 	set mac_a_tester $trr(mac)
     }
-    set m [valide-dhcp-statique $dbfd $mac_a_tester [list $adr]]
+    set m [check-static-dhcp $dbfd $mac_a_tester [list $adr]]
     if {[string length $m] > 0} then {
 	d error "$m"
     }
@@ -327,7 +327,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Récupérer le type de machine en clair
     #
 
-    set idhinfo [lire-hinfo $dbfd $hinfo]
+    set idhinfo [read-hinfo $dbfd $hinfo]
     if {$idhinfo == -1} then {
 	d error "Le type de machine '$hinfo' n'existe pas."
     }
@@ -356,8 +356,8 @@ proc traiteajout-machine {dbfd tc ft} {
 	if {[string equal $ttl ""]} then {
 	    set ttl -1
 	} else {
-	    set msg [valide-ttl $ttl]
-	    if {! [string equal $msg ""]} then {
+	    set msg [check-ttl $ttl]
+	    if {$msg ne ""} then {
 		d error $msg
 	    }
 	}
@@ -413,7 +413,7 @@ proc traiteajout-machine {dbfd tc ft} {
 	# liste des adresses.
 	#
 
-	set machine [presenter-rr $dbfd -1 trr]
+	set machine [display-rr $dbfd -1 trr]
 	d urlset "%URLFORM%" $conf(nextconfirm) {}
 	d urladdnext "%URLFORM%"
 	d result $conf(page-ajout-existe) [list \
@@ -442,9 +442,9 @@ proc traiteajout-machine {dbfd tc ft} {
 	# Rien n'existait pour ce nom, donc on insère un nouveau
 	# RR.
 	#
-	set msg [ajouter-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
+	set msg [add-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
 		    $droitsmtp $ttl $commentaire $respnom $respmel $idcor trr]
-	if {! [string equal $msg ""]} then {
+	if {$msg ne ""} then {
 	    d error "Impossible d'insérer : $msg"
 	}
 
@@ -563,7 +563,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Sortie du résultat
     #
 
-    set machine [presenter-rr $dbfd $trr(idrr) trr]
+    set machine [display-rr $dbfd $trr(idrr) trr]
     d result $conf(page-ajout-machine) [list \
 					    [list %MACHINE% $machine] \
 			    ]
@@ -741,13 +741,13 @@ proc traiteajout-alias {dbfd tc ft} {
     # Valider la syntaxe des noms au sens de la RFC ????
     #
 
-    set m [syntaxe-nom $nom]
+    set m [check-name-syntax $nom]
     if {[string length $m] > 0} then {
 	d error "Erreur sur le nom '$nom': $m"
     }
     set nom [string tolower $nom]
 
-    set m [syntaxe-nom $nomref]
+    set m [check-name-syntax $nomref]
     if {[string length $m] > 0} then {
 	d error "Erreur sur le nom '$nomref': $m"
     }
@@ -757,14 +757,14 @@ proc traiteajout-alias {dbfd tc ft} {
     # Valider les noms d'alias et de machine.
     #
 
-    set msg [valide-droit-nom $dbfd $idcor $nom $domaine trr "alias"]
-    if {! [string equal $msg ""]} then {
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "alias"]
+    if {$msg ne ""} then {
 	d error $msg
     }
     set iddom $trr(iddom)
 
-    set msg [valide-droit-nom $dbfd $idcor $nomref $domaineref trrref "machine-existante"]
-    if {! [string equal $msg ""]} then {
+    set msg [check-authorized-host $dbfd $idcor $nomref $domaineref trrref "existing-host"]
+    if {$msg ne ""} then {
 	d error $msg
     }
 
@@ -781,8 +781,8 @@ proc traiteajout-alias {dbfd tc ft} {
     # RR.
     #
 
-    set msg [ajouter-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor newrr]
-    if {! [string equal $msg ""]} then {
+    set msg [add-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor newrr]
+    if {$msg ne ""} then {
 	d error "Impossible d'insérer : $msg"
     }
 

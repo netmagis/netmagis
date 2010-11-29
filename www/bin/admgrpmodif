@@ -139,8 +139,8 @@ proc valide-groupe {dbfd groupe existant} {
     } else {
 	# On veut que le groupe n'existe pas encore
 	# Vérifier d'abord la syntaxe...
-	set msg [syntaxe-groupe $groupe]
-	if {! [string equal $msg ""]} then {
+	set msg [check-group-syntax $groupe]
+	if {$msg ne ""} then {
 	    d error $msg
 	}
 	# ... et ensuite, vérifier que le groupe est inconnu
@@ -312,7 +312,7 @@ proc main {} {
 	} else {
 	    # Procéder à la suppression
 	    set msg [supprime-groupe $dbfd $idgrp $idorphelin]
-	    if {! [string equal $msg ""]} then {
+	    if {$msg ne ""} then {
 		d error "Suppression impossible ($msg)"
 	    }
 	    d result $conf(supprok) [list \
@@ -522,7 +522,7 @@ proc main {} {
 
 	set adr [string trim [lindex $ftab(adr$n) 0]]
 	if {[string length $adr] != 0} then {
-	    set m [syntaxe-ip $dbfd $adr "cidr"]
+	    set m [check-ip-syntax $dbfd $adr "cidr"]
 	    if {[string length $m] > 0} then {
 		d error "CIDR incorrect '$adr'"
 	    }
