@@ -1,0 +1,344 @@
+#! /usr/local/bin/tclsh8.4
+
+
+# Chemin pour les paquets tcl locaux
+set conf(pkg)           "/local/services/www/pkgtcl"
+
+# Paramètres de la base de données
+set conf(base)          {dbname=mac user=jean password=mot-de-passe-de-mac}
+
+# Chargement des paquets
+lappend auto_path $conf(pkg)
+package require Pgtcl
+package require pgsql
+
+# 
+# Procédure de mise a jour de la base
+#
+# Entree :
+#       lcoll : liste de éléments collectés
+#       type :       ipmac
+#                    portmac
+#
+# Sortie : 
+#       retourne un message d'erreur ou chaîne vide sinon
+#
+proc maj-session {dbfd lcoll type} {
+
+    # En fonction du type :
+    #
+    #       clef : nom du champ utilisé comme clé dans les tables :
+    #		    idipmac ou  idportmac
+    #       colonnes : liste des colonnes : {ip mac} ou
+    #                    {mac ideq idvlan port} 
+    #       tsession  : nom de la table de session
+    #
+    switch $type {
+	ipmac {
+	    set table "ipmac"
+	    set clef "idipmac"
+	    set colonnes {ip mac}
+	    set tsession "sessionipmac"
+	}
+	portmac {
+	    set table "portmac"
+	    set clef "idportmac"
+	    set colonnes {mac ideq idvlan port}
+	    set tsession "sessionportmac"
+	}
+    }
+
+    # 
+    # Tri et élimine les doublons de la collecte
+    # 
+    set lcoll [lsort -unique $lcoll]
+
+    #
+    # Met les elements collectes dans un tableau associatif
+    # pour accelerer le traitement
+    #
+    foreach elem $lcoll {
+	set tcoll($elem) 1
+    }
+
+
+    #
+    # Prepare la liste des colonnes pour les requetes
+    #
+    foreach c $colonnes {
+	lappend tablecolonnes "$table.$c"
+    }
+    set trows [join $tablecolonnes ","]
+    set rows [join $colonnes ","]
+
+
+    # 
+    # Verrouiller les tables (share mode pour autoriser l'accès en lecture 
+    # mais interdir le lancement d'une autre instance de ce script)
+    # 
+    set sql "BEGIN WORK ; LOCK $table, $tsession IN SHARE MODE"
+    if {! [::pgsql::execsql $dbfd $sql m]} {
+	return $m
+    }
+
+    # 
+    # Charge l'ensemble des éléments de la base
+    # 
+    set ldb {}
+    pg_select $dbfd "SELECT $clef,$rows FROM $table" tab {
+    	set id $tab($clef)
+	set lval {}
+	foreach e $colonnes {
+	    lappend lval $tab($e)
+	}
+        lappend ldb $lval
+        
+	#
+	# On ne prend que les couple qui font partie de la collecte
+	#
+	if {[info exists tcoll($lval)]} {
+	    lappend ldb $lval
+	    #
+	    # On mémorise l'id dans un tableau associatif dont l'index est
+	    # la valeur de l'élément (ex. 130.79.201.129 a:b:c:d:e:f)
+	    #
+	    set tid($lval) $id
+	}
+        
+    }
+
+    # 
+    # Charge l'ensemble des éléments actifs de la base ;
+    # 
+    set lactive {}
+    set sql "SELECT $tsession.$clef,$trows FROM $table,$tsession
+             WHERE $table.$clef = $tsession.$clef
+               AND $tsession.close<>1" 
+    pg_select $dbfd $sql tab {
+    	set id $tab($clef)
+	set lval {}
+	foreach e $colonnes {
+	    lappend lval $tab($e)
+	}
+	set tactive($lval) $id	
+    }
+
+    # 
+    # Compare les éléments collectés à ceux de la base
+    # 
+    foreach elem $lcoll {
+        #
+        # Si l'élément existe dans la base
+        #
+        if {[info exists tid($elem)]} {
+	    #
+            # Encore actif ou faut-il créer une nouvelle session ?
+	    #
+
+            if {[info exists tactive($elem)]} {
+		#
+                # On met à jour le champ "fin" dans la table session
+		#
+                set sql "UPDATE $tsession SET fin=now()
+                 WHERE $clef=$tid($elem) AND close<>1"
+                if {! [::pgsql::execsql $dbfd $sql m]} then {
+                    return $m
+                }
+
+		#
+		# On supprime l'élément dans la liste des éléments
+		# actifs car il a été traité
+		#
+                unset tactive($elem)
+
+            } else {
+	        # 
+	        # Session close, on doit créer une nouvelle session
+	        # 
+                set sql "INSERT INTO $tsession ($clef,debut,fin,close) 
+                         VALUES ($tid($elem),now(),now(),0)"
+                if {! [::pgsql::execsql $dbfd $sql m]} then {
+                    return $m
+                }
+            }
+
+        } else { # L'association ip-mac ou port-mac n'existe pas
+            #
+            # On crée l'élément
+            #
+	    set lval {}
+	    foreach v $elem {
+		lappend lval "'$v'"
+	    }
+	    set lval [join $lval ","]
+            set sql "INSERT INTO $table ($rows) VALUES ($lval)"
+            if {! [::pgsql::execsql $dbfd $sql m]} then {
+                return $m
+            }
+            #
+            # On récupère l'id de l'élément qu'on vient de créer
+            #
+	    set lcrit {}
+	    foreach e $elem c $colonnes {
+		lappend lcrit "$c='$e'"
+	    }
+	    set w [join $lcrit " AND "]
+            set sql "SELECT $clef FROM $table WHERE $w"
+            pg_select $dbfd $sql tab {
+                set id      $tab($clef)
+                set tid($elem) $id
+            }
+	    #
+            # On crée la session
+	    #
+            set sql "INSERT INTO $tsession ($clef,debut,fin,close) 
+                     VALUES ($id,now(),now(),0)"
+            if {! [::pgsql::execsql $dbfd $sql m]} then {
+                return $m
+            }
+        }
+    }
+
+    #
+    # On ferme les sessions de tous les éléments toujours actifs
+    # dans la base mais qui n'ont pas été collectés
+    #
+    # NB : il ne reste que les éléments inactifs dans cette liste ;
+    # les autres ont été supprimées au fur et à mesure du traitement
+    # des éléments collectés.
+    foreach elem [array names tactive] {
+	set sql "UPDATE $tsession SET close=1, fin=now()
+	         WHERE $clef=$tactive($elem) AND close<>1"
+	if {! [::pgsql::execsql $dbfd $sql m]} then {
+	    return $m
+	}
+    }
+
+    return ""
+}
+
+#
+# Procedure de collecte des informations :
+# execute un script de collecte ipmac ou portmac
+# pour un equipement d'un groupe donne, 
+# en appliquant les filtres s'ils existent.
+#
+#   Parametres:
+# Entree :
+# - type : ipmac ou portmac
+# - grp  : nom du  groupe
+# - eq   : nom de l'équipement
+# - policy : tableau associatif contenant 
+#            - le chemin du script de collecte
+#            - les filtres (eventuels)
+# Sortie : 
+#    retourne une liste au format {ip mac} ou {idvlan port eq mac}
+#    en fonction du type (resp. ipmac ou portmac)
+#
+proc collect {type eq grp varpolicy} {
+    upvar $varpolicy policy
+
+    set s "script.$grp.$eq"
+
+    if { ! [info exists policy($s)] } {
+        puts stderr "script de collecte non défini pour l'equipement $eq ($grp):   $policy($s)"
+	return {}
+    }
+    set script $policy($s)
+
+    if { [info exists policy(filtreplus.$grp.$eq)] } {
+        set filtreplus $policy(filtreplus.$grp.$eq)
+    } else {
+        set filtreplus "expr 1"
+    }
+    if { [info exists policy(filtremoins.$grp.$eq)] } {
+	set filtremoins $policy(filtremoins.$grp.$eq)
+    } else {
+	set filtremoins "expr 0"
+    }
+
+    set lcoll {}
+
+    if {[catch { set p [open "| $script $eq" "r"] } msg]} then {
+	puts stderr "collect, command '$script $eq' failed : $msg" 
+    } else {
+	while { [gets $p line ] != -1 } {
+	    set l [split $line]
+	    if { [eval $filtreplus] } {
+		if { ![eval $filtremoins] } {
+		    lappend lcoll $l
+		}
+	    }
+	}
+    }
+
+    return $lcoll
+}
+
+#
+# Programme principal
+#
+proc main {argv0 argv} {
+    global conf
+
+    if {[llength $argv] != 1} then {
+        puts stderr "$argv0 <path_to_pollmac.conf>"
+        return 1
+    }
+
+    set initscript [lindex $argv 0]
+
+    # Charge la politique de collecte
+    if {[catch {source $initscript} msg]} then {
+        puts stderr "$argv0: can't load initialization script $initscript ($msg)"
+        return 1
+    }
+    initpol policy
+
+    # Connexion à la base de données
+    if {[catch {set dbfd [pg_connect -conninfo $conf(base)]} msg]} then {
+        puts stderr "$argv0: cannot access base ($msg)"
+        return 1
+    }
+    
+    # Effectue les collectes pour chaque groupe 
+    foreach grp $policy(grp) {
+
+        set type $policy(type.$grp)
+	set l {}
+	# Collecte pour chaque équipement
+        foreach eq $policy(eq.$grp) {
+            set buf [collect $type $eq $grp policy]
+            set l [concat $l $buf]
+	}
+
+	if { [llength $l] > 0} {
+	    # Met à jour la base
+	    set msg [maj-session $dbfd $l $type] 
+
+	    if { ! [string equal $msg ""]} {
+		puts stderr $msg
+		if {! [::pgsql::execsql $dbfd "ROLLBACK WORK" m]} {
+		    puts stderr $m
+		    return 1
+		}
+	    } else {
+		if {! [::pgsql::execsql $dbfd "COMMIT WORK" m]} {
+		    puts stderr $m
+		    return 1
+		}
+	    }
+	}
+    }
+
+
+    pg_disconnect $dbfd
+
+    return 0
+}
+
+#
+# Tout démarre ici...
+#
+
+exit [main $argv0 $argv]

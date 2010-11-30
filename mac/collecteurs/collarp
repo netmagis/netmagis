@@ -1,0 +1,69 @@
+#! /usr/local/bin/tclsh8.4
+
+#
+# Collecte la table ARP par SNMP
+#
+
+package require Tnm
+namespace import Tnm::*
+
+# Community String par defaut
+set conf(community) "communaute-snmp"
+
+# 
+# Collecte la table ARP
+#
+# entree :
+#       addr      : adresse ip de l'equipement reseau
+#       community : community string snmp
+# sortie : 
+#       liste de couple adresse mac - adresse ip
+#
+proc collecte-arp {addr community} {
+
+    # Crée la session SNMP
+    if { [catch {snmp generator -address $addr -community $community} s ] } {
+        puts stderr "Impossible de créer la session SNMP pour $addr"
+        return 0
+    }
+
+    # Les colonnes de la table SNMP ipNetToMedia à récupérer
+    set vbl [list \
+            IP-MIB!ipNetToMediaNetAddress \
+            IP-MIB!ipNetToMediaPhysAddress 
+        ]
+    # Récupère la table arp
+    $s walk x $vbl {
+        set v      [snmp value $x]
+        set ip     [lindex $v 0]
+        set mac    [lindex $v 1]
+        puts [string tolower "$ip $mac"]
+    }
+    
+    return 1
+}
+
+#
+# Programme principal
+#
+proc main {argv0 argv} {
+    global conf
+
+    if {[llength $argv] != 1} then {
+        puts stderr "$argv0 <hostname>"
+        return 1
+    }
+
+    # Equipement sur lequel on se connecte
+    set host     [lindex $argv 0]
+
+    set r  [collecte-arp $host $conf(community)]
+
+    if {$r} {
+        return 0
+    } else {
+        return -1
+    }
+}
+
+exit [main $argv0 $argv]

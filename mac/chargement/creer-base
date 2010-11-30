@@ -1,0 +1,174 @@
+#!/bin/sh
+
+#
+# Création de la base MAC
+#
+# Syntaxe :
+#	creer-base
+# (pas d'argument)
+#
+# Historique
+#   2004/08/19 : jean       : conception
+#
+
+BASE=mac
+
+PGPASSWORD=mot-de-passe-de-mac
+export PGPASSWORD
+
+##############################################################################
+# POUR EVITER LES ERREURS (LANCEMENT MALENCONTREUX DE CE SCRIPT)
+
+exit 0
+
+##############################################################################
+
+dropdb $BASE > /dev/null 2> /dev/null
+
+createdb -E unicode $BASE
+
+psql -q $BASE <<'EOF'
+
+    -- table d'association adresse IP - adresse MAC
+    CREATE SEQUENCE seq_ipmac START 1 ;
+    CREATE TABLE ipmac (
+	idipmac		INT		-- identifiant de l'assoc. IP-MAC
+		DEFAULT NEXTVAL ('seq_ipmac'),
+	ip		INET,		-- l'adresse IP
+	mac		MACADDR,	-- l'adresse MAC
+	PRIMARY KEY (idipmac)
+    ) ;
+
+    -- table de l'historique des associations adresse IP - adresse
+    -- MAC observées sur le réseau
+    CREATE TABLE sessionipmac (
+	idipmac	    INT,   -- association IP-MAC
+	debut	    TIMESTAMP,  -- date de découverte de l'association IP-MAC
+	fin	    TIMESTAMP,  -- date où l'assoc. IP-MAC a été vue la dernière fois
+	close	    INT,   -- vaut 1 si l'assoc. IP-MAC est partie en timeout
+	PRIMARY KEY (idipmac, debut),
+	FOREIGN KEY (idipmac) REFERENCES ipmac (idipmac)
+    ) ;
+
+    -- table des équipements réseau
+    CREATE SEQUENCE seq_eq START 1 ;
+    CREATE TABLE eq (
+	ideq	INT	-- identifiant de l'équipement
+		DEFAULT NEXTVAL ('seq_eq'),
+	nom	TEXT,	-- nom de l'équipement (ex : crc-rc1.u-strasbg.fr)
+	type	TEXT,	-- type (ex : cisco, juniper ...)
+	modele	TEXT,	-- modèle (ex : M20, C3750)
+	PRIMARY KEY (ideq)
+    );
+
+    -- table des VLANs
+    CREATE TABLE vlan (
+	idvlan	INT,		-- numéro de VLAN
+	nom	TEXT,		-- nom du vlan
+	PRIMARY KEY (idvlan)
+    );
+
+
+    -- table d'association (port, vlan, équipement) - adresse MAC
+    CREATE SEQUENCE seq_portmac START 1 ;
+    CREATE TABLE portmac (
+	idportmac	INT		-- identifiant de l'assoc. port-MAC
+		DEFAULT NEXTVAL ('seq_portmac'),
+	ideq		INT,		-- l'équipement réseau
+	port		TEXT,		-- le port sur l'équipement
+	idvlan		INT,		-- le numéro de VLAN
+	mac		MACADDR,	-- l'adresse MAC
+
+	PRIMARY KEY (idportmac),
+--	FOREIGN KEY (idvlan) REFERENCES vlan (idvlan),
+	FOREIGN KEY (ideq) REFERENCES eq (ideq)
+    ) ;
+
+    -- table de l'historique des associations port - adresse MAC
+    -- observées sur le réseau.
+    CREATE TABLE sessionportmac (
+	idportmac   INT,   -- identifiant de l'association port-MAC
+	debut	    TIMESTAMP,  -- date de découverte de l'association port-MAC
+	fin	    TIMESTAMP,  -- date où assoc. port-MAC vue pour la dernière fois
+	close	    INT,   -- vaut 1 si l'assoc. port-MAC est partie en timeout
+	PRIMARY KEY (idportmac, debut),
+	FOREIGN KEY (idportmac) REFERENCES portmac (idportmac)
+    ) ;
+
+    -- table d'association accès authentifié : login - adresse MAC
+    CREATE SEQUENCE seq_authaccess START 1 ;
+    CREATE TABLE authaccess (
+	idauthaccess	INT		-- identifiant de l'assoc. login-MAC
+		DEFAULT NEXTVAL ('seq_authaccess'),
+	login		TEXT,		-- le login
+	mac		MACADDR,	-- l'adresse MAC
+
+	PRIMARY KEY (idauthaccess)
+    ) ;
+
+    -- table de l'historique des associations login - adresse MAC
+    CREATE TABLE sessionauthaccess (
+	idauthaccess   INT,   -- identifiant de l'association port-MAC
+	debut	    TIMESTAMP,  -- date de découverte de l'association port-MAC
+	fin	    TIMESTAMP,  -- date où assoc. port-MAC vue pour la dernière fois
+	close	    INT,   -- vaut 1 si l'assoc. port-MAC est partie en timeout
+	PRIMARY KEY (idauthaccess, debut),
+	FOREIGN KEY (idauthaccess) REFERENCES authaccess (idauthaccess)
+    ) ;
+
+    -- table association l'adresse MAC associée à une borne wifi
+    CREATE SEQUENCE seq_assocwifi START 1 ;
+    CREATE TABLE assocwifi (
+	idassocwifi	INT		-- identifiant de l'assoc. wifi 
+		DEFAULT NEXTVAL ('seq_assocwifi'),
+	mac		MACADDR,	-- l'adresse MAC
+	essid		TEXT,		-- le SSID
+	ideq		INT,		-- l'équipement réseau
+	crypt		BOOLEAN,	-- trafic crypté ou non
+	PRIMARY KEY (idassocwifi),
+	FOREIGN KEY (ideq) REFERENCES eq (ideq)
+    ) ;
+
+    -- table de l'historique des associations login - adresse MAC
+    CREATE TABLE sessionassocwifi (
+	idassocwifi   INT,   -- identifiant de l'association mac-borne
+	debut	    TIMESTAMP,  -- date de découverte de l'association mac-borne
+	fin	    TIMESTAMP,  -- date où assoc. assocwifi vue pour la dernière fois
+	close	    INT,   -- vaut 1 si l'assoc. assocwifi est partie en timeout
+	PRIMARY KEY (idassocwifi, debut),
+	FOREIGN KEY (idassocwifi) REFERENCES assocwifi (idassocwifi)
+    ) ;
+
+    -- table association l'adresse MAC associée à une borne wifi
+    CREATE SEQUENCE seq_baildhcp START 1 ;
+    CREATE TABLE baildhcp (
+	idbaildhcp	INT		-- identifiant de l'assoc. wifi 
+		DEFAULT NEXTVAL ('seq_baildhcp'),
+	mac		MACADDR,	-- l'adresse MAC
+	ip		INET,		-- l'adresse IP
+	clienthostname	TEXT,		-- le nom éventuel
+	PRIMARY KEY (idbaildhcp)
+    ) ;
+
+    -- table de l'historique des baildhcp login - adresse MAC
+    CREATE TABLE sessionbaildhcp (
+	idbaildhcp   INT,   -- identifiant de l'association mac-borne
+	debut	    TIMESTAMP,  -- date de découverte de l'association mac-borne
+	fin	    TIMESTAMP,  -- date où assoc. assocwifi vue pour la dernière fois
+	close	    INT,   -- vaut 1 si l'assoc. assocwifi est partie en timeout
+	PRIMARY KEY (idbaildhcp, debut),
+	FOREIGN KEY (idbaildhcp) REFERENCES baildhcp (idbaildhcp)
+    ) ;
+
+    -- les droits pour les administrateurs de la base
+    GRANT ALL
+	ON 
+	    seq_ipmac, ipmac, sessionipmac,
+	    seq_portmac, portmac, sessionportmac, seq_eq,
+	    eq, vlan,
+	    seq_authaccess, authaccess, sessionauthaccess, seq_assocwifi,
+	    assocwifi, sessionassocwifi, seq_baildhcp, baildhcp,
+	    sessionbaildhcp
+	TO jean ;
+
+EOF

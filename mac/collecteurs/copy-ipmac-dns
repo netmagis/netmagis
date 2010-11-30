@@ -1,0 +1,34 @@
+#!/bin/sh
+
+#
+# Chargement de la table ipmac
+#
+# Syntaxe :
+#	creer-table
+# (pas d'argument)
+#
+# Historique
+#   2005/04/15 : jean       : conception
+#
+
+PSQL=/usr/local/bin/psql
+
+BASESRC=mac
+# BASEDST=dns
+BASEDST=devdns
+
+TMP=/tmp/dumpipmac.$$
+
+PGPASSWORD=mot-de-passe-de-mac
+PGUSER=jean
+export PGPASSWORD PGUSER
+
+rm -f $TMP
+
+$PSQL -qt -P format=unaligned -c " 
+    SELECT ipmac.ip, ipmac.mac, max(sessionipmac.fin) 
+    FROM ipmac, sessionipmac
+    WHERE ipmac.idipmac = sessionipmac.idipmac 
+    GROUP BY ipmac.ip, ipmac.mac" $BASESRC  >$TMP
+
+$PSQL -qc "COPY ipmac FROM STDIN WITH DELIMITER '|'" $BASEDST <$TMP

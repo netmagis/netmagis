@@ -1,0 +1,115 @@
+#!/usr/local/bin/tclsh8.4
+
+# 
+# Télécharge la table de bridging d'un switch cisco
+# 
+# Paramètres :
+#
+#    en entrée :
+#        hostname (ligne de commande) : nom ou adresse ip de l'équipement réseau
+#    en sortie :
+#        ligne de la forme "adresseMAC equipementID vlandID interface"
+#        Exemple :
+#        00:20:da:9c:4b:22 93 803 Gi0/2
+#
+# Historique :
+#    2004/10/08 : jean  : conception
+#    2004/11/09 : jean  : recodage en expect
+#    2004/11/10 : jean  : affiche un équipement ID issu de la base
+#
+
+# Acces a la base de donnees
+set conf(base)          {dbname=mac user=jean password=mot-de-passe-de-mac}
+
+# Parametres pour l'acces ssh aux equipements
+set conf(user)          "conf"
+set conf(password)      "mot-de-passe-de-conf"
+
+# Commande à lancer
+set conf(command)  "show mac-address-table"
+
+# Pour extraire les différents champs de chaque ligne ; format :
+#               vlanid     adresse mac   type      protocol   interface
+set conf(pattern) {([0-9]+) +([0-9a-f.]+) +.+ +([a-zA-Z0-9\-/]+)}
+
+# Chemin pour les packages
+set conf(pkg)           "/local/services/www/pkgtcl"
+
+# Acces a la base de donnees
+set conf(domain)       "u-strasbg.fr"
+
+# Chargement des packages
+lappend auto_path $conf(pkg)
+package require Expect
+package require Pgtcl
+package require pgsql
+
+#
+# Programme principal
+#
+proc main {argv0 argv} {
+    global conf
+
+    if {[llength $argv] != 1} then {
+        puts stderr "usage:"
+        puts stderr "$argv0 <hostname>"
+        exit 1
+    }
+
+    # Equipement sur lequel on se connecte
+    set host     [lindex $argv 0]
+
+
+    # Connexion a la base de donnee
+    if {[catch {set dbfd [pg_connect -conninfo $conf(base)]} msg]} then {
+        puts stderr "$argv0: erreur d'acces a la base ($msg)"
+        return 1
+    }
+    # Recuperation de l'equipement id
+    set ideq ""
+    set h $host
+    # Ajoute le domaine
+    if { ![regexp "$conf(domain)$" $host] } then {
+	append h ".$conf(domain)"
+    }
+    pg_select $dbfd "SELECT ideq FROM eq WHERE nom='$h'" tab {
+	set ideq $tab(ideq)
+    }
+    if { [string equal $ideq ""] } {
+	puts stderr "$argv0: equipement '$h' non trouve dans la base"
+        return 2
+    }
+
+    # Ne pas sortir d'expect
+    set timeout -1
+
+    # Supprimer l'affichage d'expect
+    log_user 0
+
+    # Lance le ssh
+    spawn ssh $conf(user)@$host $conf(command)
+
+    expect {
+	"(yes/no)"  { send "yes\r" ; exp_continue }
+	"assword:" { send "$conf(password)\r" }
+    }
+
+    expect {
+	-re {([^\r]*)\r\r\n} {
+	    set line $expect_out(1,string)
+	    if {[regexp $conf(pattern) $line bidon vlanid mac iface]} {
+		if { ![string equal $iface system] } {
+		    regsub -all {^(..)(..)\.(..)(..)\.(..)(..)} $mac \
+			{\1:\2:\3:\4:\5:\6} mac
+		    puts [string tolower "$mac $ideq $vlanid $iface"]
+		}
+	    }
+	    exp_continue 
+        }
+	eof { }
+    }
+
+    return 0
+}
+
+exit [main $argv0 $argv]

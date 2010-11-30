@@ -1,0 +1,54 @@
+#!/usr/local/bin/tclsh
+
+set net "osiris"
+
+set topodir "/local/applis/topo"
+set graph "$topodir/$net/$net.graph"
+
+lappend auto_path /local/services/www/pkgtcl
+package require pgsql
+
+# Connexion a la base
+set base {host=dbcrc.u-strasbg.fr dbname=mac user=jean password=mot-de-passe-de-mac}
+
+if {[catch {set dbfd [pg_connect -conninfo $base]} msg]} then {
+    puts stderr "erreur d'ouverture de la base mac"
+    exit 1
+}
+
+set cmd "| $topodir/bin/dumpgraph  < $graph"
+if {[ catch {set fd [open $cmd "r"]}]} {
+    puts stderr "erreur d'execution de $cmd"
+    exit 1
+}
+    
+set sql "INSERT INTO vlan VALUES (1,'native vlan')"
+::pgsql::execsql $dbfd $sql msg
+while {[gets $fd ligne] > -1} {
+    if {[regexp {^vlan ([0-9]+) desc ([^ ]+)} $ligne bidon id desc]} {
+	set desc [binary format H* $desc]
+
+        set sql "SELECT * FROM vlan WHERE idvlan=$id"
+	set olddesc ""
+	set found 0
+	pg_select $dbfd $sql tab {
+	    set olddesc tab(nom)
+	    set found 1
+	}
+	if {$found} {
+	    if {! [string equal $olddesc $desc]} {
+		# si la description est differente
+		set sql "UPDATE vlan SET nom='$desc' WHERE idvlan=$id"
+		if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		   puts stderr "Impossible de modifier le vlan $id : $msg"
+		}
+	    }
+	} else {
+	    # s'il n'existe pas
+	    set sql "INSERT INTO vlan(idvlan,nom) VALUES ($id,'$desc')"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	       puts stderr "Impossible d'insérer : $msg"
+	    }
+	}
+    }
+}

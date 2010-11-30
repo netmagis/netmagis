@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# Data paths
+NET=osiris
+RANCIDDIR=/local/idr/conf
+RANCIDDB=$RANCIDDIR/$NET/router.db
+RANCIDCONFDIR=$RANCIDDIR/$NET/configs/
+
+TOPODIR=/local/applis/topo
+TOPOBINDIR=$TOPODIR/bin
+
+
+# Database param.
+BASE=mac
+PGUSER=obj999
+PGPASSWORD=mot-de-passe-de-obj999
+export PGPASSWORD
+export PGUSER
+
+
+$TOPOBINDIR/liste-rancid $RANCIDDB $RANCIDCONFDIR | \
+while read nom type modele; do \
+    r=`psql -Aqtc "SELECT * FROM eq WHERE nom='$nom'" $BASE`
+
+    if test -z "$r"
+    then
+	psql -qtc \
+	  "INSERT INTO eq (nom,type,modele) VALUES ('$nom','$type','$modele')" \
+	  $BASE
+    else
+    fi
+done 
+
+exit 0
