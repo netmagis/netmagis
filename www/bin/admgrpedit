@@ -20,6 +20,7 @@
 #   2008/07/23 : pda/jean : ajout droitsmtp
 #   2010/10/31 : pda      : ajout droitttl
 #   2010/11/03 : pda/jean : ajout dr_eq
+#   2010/11/30 : pda/jean : ajout droitmac
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -271,6 +272,7 @@ proc main {} {
 	set admin 0
 	set droitsmtp 0
 	set droitttl 0
+	set droitmac 0
     } else {
 	set qgroupe [::webapp::html-string $orggrp]
 	set titre "Édition du groupe '$qgroupe'"
@@ -278,7 +280,7 @@ proc main {} {
 	set messagegroupe "Modifiez le nom du groupe ou effacez la case pour le supprimer"
 	set pqgroupe [::pgsql::quote $orggrp]
 	set idgrp -1
-	set sql "SELECT idgrp, admin, droitsmtp, droitttl
+	set sql "SELECT idgrp, admin, droitsmtp, droitttl, droitmac
 			FROM global.groupe
 			WHERE nom = '$pqgroupe'"
 	pg_select $dbfd $sql tab {
@@ -286,6 +288,7 @@ proc main {} {
 	    set admin $tab(admin)
 	    set droitsmtp $tab(droitsmtp)
 	    set droitttl $tab(droitttl)
+	    set droitmac $tab(droitmac)
 	}
 
 	if {$idgrp == -1} then {
@@ -298,6 +301,8 @@ proc main {} {
     set droitsmtp [::webapp::form-yesno "droitsmtp" $droitsmtp \
 		    {%1$s oui &nbsp; &nbsp; &nbsp;   %2$s non}]
     set droitttl [::webapp::form-yesno "droitttl" $droitttl \
+		    {%1$s oui &nbsp; &nbsp; &nbsp;   %2$s non}]
+    set droitmac [::webapp::form-yesno "droitmac" $droitmac \
 		    {%1$s oui &nbsp; &nbsp; &nbsp;   %2$s non}]
 
     #
@@ -580,6 +585,7 @@ proc main {} {
 				[list %ADMIN% $admin] \
 				[list %DROITSMTP% $droitsmtp] \
 				[list %DROITTTL% $droitttl] \
+				[list %DROITMAC% $droitmac] \
 				[list %MESSAGEGROUPE% $messagegroupe] \
 				[list %LISTECOR% $listecor] \
 				[list %LISTEDOMAINES% $listedomaines] \

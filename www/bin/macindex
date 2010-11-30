@@ -56,7 +56,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "mac" $conf(err) "droitmac" {} ftab dbfd login tabcor
 
     #
     # Construction des URL et de la liste de subsitution

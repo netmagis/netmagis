@@ -674,7 +674,7 @@ snit::type ::dnscontext {
 	if {[dnsconfig get "topoactive"]} then {
 	    lappend curcap "topo"
 	}
-	if {[dnsconfig get "macactive"]} then {
+	if {[dnsconfig get "macactive"] && $tabuid(droitmac)} then {
 	    lappend curcap "mac"
 	}
 	if {$tabuid(admin)} then {
@@ -1137,6 +1137,9 @@ proc attribut-correspondant {dbfd idcor attribut} {
 #		groupe	nom du groupe
 #		present	1 si marqué "présent" dans la base
 #		admin	1 si admin
+#		droitsmtp 1 si droit d'ajouter des machines autorisées à émettre en SMTP
+#		droitttl 1 si droit d'éditer le TTL des machines
+#		droitmac 1 si droit d'accès au module MAC
 #		reseaux	liste des réseaux autorisés
 #		eq	regexp des équipements autorisés
 #		flagsr	flags -n/-e/-E à utiliser dans les commandes topo
@@ -1199,6 +1202,9 @@ proc lire-correspondant {dbfd login _tabuid} {
 	set tabuid(present)	$tab(present)
 	set tabuid(groupe)	$tab(nom)
 	set tabuid(admin)	$tab(admin)
+	set tabuid(droitsmtp)	$tab(droitsmtp)
+	set tabuid(droitttl)	$tab(droitttl)
+	set tabuid(droitmac)	$tab(droitmac)
     }
 
     if {$tabuid(idcor) == -1} then {
@@ -3433,17 +3439,19 @@ proc liste-groupes {dbfd {n 1}} {
 #   2008/07/23 : pda/jean : ajout des droits du groupe
 #   2010/10/31 : pda      : ajout des droits ttl
 #   2010/11/03 : pda/jean : ajout des droits sur les équipements
+#   2010/11/30 : pda/jean : ajout des droits mac
 #
 
 proc info-groupe {dbfd idgrp} {
     global libconf
 
     #
-    # Récupération des droits particuliers : admin, droitsmtp et droitttl
+    # Récupération des droits particuliers : admin, droitsmtp, droitttl
+    # et droitmac
     #
 
     set donnees {}
-    set sql "SELECT admin, droitsmtp, droitttl
+    set sql "SELECT admin, droitsmtp, droitttl, droitmac
 			FROM global.groupe
 			WHERE idgrp = $idgrp"
     pg_select $dbfd $sql tab {
@@ -3462,9 +3470,15 @@ proc info-groupe {dbfd idgrp} {
 	} else {
 	    set droitttl "non"
 	}
+	if {$tab(droitmac)} then {
+	    set droitmac "oui"
+	} else {
+	    set droitmac "non"
+	}
 	lappend donnees [list DROIT "Administration de l'application" $admin]
 	lappend donnees [list DROIT "Gestion des émetteurs SMTP" $droitsmtp]
 	lappend donnees [list DROIT "Édition des TTL" $droitttl]
+	lappend donnees [list DROIT "Accès au module MAC" $droitmac]
     }
     if {[llength $donnees] > 0} then {
 	set tabdroits [::arrgen::output "html" $libconf(tabdroits) $donnees]
@@ -3930,7 +3944,6 @@ proc droit-correspondant-ttl {dbfd idcor} {
     }
     return $r
 }
-
 
 ##############################################################################
 # Edition de valeurs de tableau

@@ -69,10 +69,12 @@
 			    \casetableau {} {%DROITSMTP%}
 			}
 			\lignetableau {
-			    \casetableau {} {Accès à la gestion des
-				TTL
-			    }
+			    \casetableau {} {Accès à la gestion des TTL}
 			    \casetableau {} {%DROITTTL%}
+			}
+			\lignetableau {
+			    \casetableau {} {Accès au module MAC}
+			    \casetableau {} {%DROITMAC%}
 			}
 		    }
 		}
