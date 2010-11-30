@@ -86,7 +86,9 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-n cidr|-e regexp|-E regexp]* [-b|-t]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]* [-b|-B]\n", progname) ;
+    fprintf (stderr, "\t-b: backbone interfaces\n") ;
+    fprintf (stderr, "\t-B: non-backbone interfaces (i.e. terminal interfaces)\n") ;
     exit (1) ;
 }
 
@@ -95,8 +97,7 @@ int main (int argc, char *argv [])
 {
     int termif, backif ;
     int c, err ;
-    char *prog ;
-    int allow_deny ;
+    char *prog, *errstr ;
 
 
     prog = argv [0] ;
@@ -105,26 +106,22 @@ int main (int argc, char *argv [])
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "n:e:E:tb")) != -1) {
+    while ((c = getopt (argc, argv, "an:e:E:tmBb")) != -1) {
 	switch (c)
 	{
+	    case 'a' :
 	    case 'n' :
-		if (! sel_network (optarg))
-		{
-		    fprintf (stderr, "%s: '%s' is not a valid cidr\n", prog, optarg) ;
-		    err = 1 ;
-		}
-		break ;
 	    case 'e' :
 	    case 'E' :
-		allow_deny = (c == 'e') ;
-		if (! sel_regexp (optarg, allow_deny))
+	    case 't' :
+	    case 'm' :
+		if ((errstr = sel_register (c, optarg)) != NULL)
 		{
-		    fprintf (stderr, "%s: '%s' is not a valid regexp\n", prog, optarg) ;
+		    fprintf (stderr, "%s: %s\n", prog, errstr) ;
 		    err = 1 ;
 		}
 		break ;
-	    case 't' :
+	    case 'B' :
 		termif = 1 ;
 		break ;
 	    case 'b' :
