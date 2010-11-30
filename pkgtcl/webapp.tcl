@@ -1497,9 +1497,11 @@ proc ::webapp::unpost-string {str} {
     # Remplace tous les %xx par le caractère correspondant
     #
 
-    while {[set pos [string first "%" $str]] > -1} { 
+    set pos 0
+    while {[set pos [string first "%" $str $pos]] > -1} { 
         set code [scan [string range $str $pos+1 $pos+2] "%x"]
         set str [string replace $str $pos $pos+2 [format "%c" $code]]
+	incr pos
     }
 
     set new [encoding convertfrom utf-8 $str]
