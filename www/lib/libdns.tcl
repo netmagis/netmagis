@@ -5655,7 +5655,7 @@ proc eq-graph-status {dbfd eq {iface {}}} {
     if {[llength $lines] == 1} then {
 	set ifchg ""
     } else {
-	set ifchg [::webapp::helem "p" "Modification(s) en cours de traitement"]
+	set ifchg [::webapp::helem "p" "Modification(s) en cours de traitement :"]
 	append ifchg [::arrgen::output "html" $libconf(tabeqstatus) $lines]
     }
 
@@ -5674,7 +5674,7 @@ proc eq-graph-status {dbfd eq {iface {}}} {
 	building* {
 	    set graph [::webapp::helem "p" "Reconstruction du graphe en cours.
 			Les informations fournies ne sont pas forcément
-			cohérentes avec la réalité."]
+			cohérentes avec la configuration actuelle du réseau."]
 	}
 	default {
 	    set graph ""
