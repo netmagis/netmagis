@@ -1,0 +1,77 @@
+#!%TCLSH%
+
+
+#
+# Script pour définir l'accueil du module Mac
+#
+# Appelé par : index.htgt
+#
+# Paramètres (formulaire ou URL) : aucun
+#
+# Historique
+#   2010/11/30 : pda/jean : design
+#
+
+set conf(homeurl)	%HOMEURL%
+
+#
+# Chemins utilisés par les scripts
+#
+
+set conf(lib)		%DESTDIR%/lib
+set conf(libdns)	$conf(lib)/libdns.tcl
+
+#
+# Définition des noms des pages "à trous"
+#
+
+set conf(err)		$conf(lib)/erreur.html
+set conf(page)		$conf(lib)/macindex.html
+
+#
+# Les outils du parfait concepteur de pages Web dynamiques...
+#
+
+lappend auto_path %PKGTCL%
+package require webapp
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    ::dnscontext create d
+    d init-cgi "mac" $conf(err) "" {} ftab dbfd login tabcor
+
+    #
+    # Construction des URL et de la liste de subsitution
+    #
+
+    foreach script {mac ipinact macstat} {
+	set up [string toupper $script]
+	d urlset "%URL$up%" "%HOMEURL%/bin/$script" {}
+    }
+
+    #
+    # Fin du script : sortie de la page et fermeture de la base
+    #
+
+    d result $conf(page) {}
+}
+
+::webapp::cgi-exec main %DEBUG%

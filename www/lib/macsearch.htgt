@@ -1,0 +1,39 @@
+{
+\modele {texte}
+
+\set {auteur} {jean}
+\set {date}   {14/11/2004}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    WebDNS - Localiser une adresse IP / MAC
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %BANDEAU%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Localiser une adresse IP / une adresse MAC}
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+    Entrer le nom ou l'adresse cherchée :
+	<INPUT TYPE="TEXT" NAME="recherche" SIZE="30"> <INPUT TYPE="SUBMIT" VALUE="Rechercher">
+    </FORM>
+
+}
+
+}

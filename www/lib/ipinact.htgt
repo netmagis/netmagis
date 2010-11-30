@@ -1,0 +1,48 @@
+{
+\modele {texte}
+
+\set {auteur} {jean}
+\set {date}   {16/09/2010}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    WebDNS - Lister les adresses inactives
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %BANDEAU%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+    \titre {1} {Lister les adresses inactives}
+
+	<FORM METHOD="POST" ACTION="%URLFORM%">
+	    <TABLE BORDER="0">
+		<TR>
+		    <TD>R&eacute;seau :</TD>
+		    <TD>%LRES%</TD>
+		</TR>
+		<TR>
+		    <TD>Derni&egrave;re occurence:</TD>
+		    <TD>%LOCCUR%</TD>
+		</TR>
+	    </TABLE>
+	    <INPUT NAME="action" TYPE="SUBMIT" VALUE="Lister">
+	</FORM>
+	%TABLEAU%
+
+}
+
+}

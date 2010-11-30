@@ -1,0 +1,269 @@
+#!%TCLSH%
+
+#
+# Script qui affiche les adresses inactives
+#
+# Historique
+#   2010/09/16 : jean : conception
+#
+
+set conf(homeurl)       %HOMEURL%
+
+#
+# Chemins utilises par les scripts
+#
+
+set conf(lib)           %DESTDIR%/lib
+set conf(libdns)        $conf(lib)/libdns.tcl
+
+
+#
+# Definition des noms des pages "a trous"
+#
+
+set conf(err)           $conf(lib)/erreur.html
+set conf(page)          $conf(lib)/ipinact.html
+
+#
+# Scripts suivants (actions de formulaire)
+#
+
+set conf(next)		"%HOMEURL%/bin/ipinact"
+set conf(nextmac)	"%HOMEURL%/bin/mac"
+set conf(nextsuppr)	"%HOMEURL%/bin/traitesuppr"
+
+
+#
+# Quelques parametres du script
+#
+
+set conf(dbmac)         %BASEMAC%
+
+set conf(occur)		{
+			    {6 {Plus de 6 mois}}
+			    {9 {Plus de 9 mois}}
+			    {12 {plus d'1 an}}
+			}
+
+set conf(form)          {
+    {reseau	    0 1}
+    {occurence	    0 1}
+}
+
+set conf(sqldateformat) {'DD/MM/YYYY HH24:MI:SS'}
+
+set conf(tableau) {
+    global {
+        chars {10 normal}
+        columns {30 30 40}
+        botbar {yes}
+        align {left}
+    }
+    motif {Gras} {
+        title {yes}
+        topbar {yes}
+        chars {bold}
+        vbar {yes}
+        colonne { }
+        vbar {yes}
+        colonne { }
+        vbar {yes}
+        colonne { }
+        vbar {yes}
+    }
+    motif {Normal} {
+        vbar {yes}
+        colonne {
+            format {raw}
+	}
+        vbar {yes}
+        colonne {
+            format {raw}
+	}
+        vbar {yes}
+        colonne { }
+    }
+}
+
+set conf(sqldateformat) {'DD/MM/YYYY HH24:MI:SS'}
+
+lappend auto_path %PKGTCL%
+package require webapp
+package require arrgen
+package require pgsql
+
+#
+# On y va !
+#
+
+# ::webapp::cgidebug ; exit
+
+source $conf(libdns)
+
+
+
+
+proc getnom {dbfd ip} {
+    set sql "SELECT rr.nom || '.' || domaine.nom AS nom
+	     FROM rr, rr_ip, domaine
+	     WHERE rr.idrr=rr_ip.idrr AND
+		   rr.iddom=domaine.iddom AND
+		   rr_ip.adr='$ip'
+	    "
+    set nom ""
+    pg_select $dbfd $sql tab {
+	set nom $tab(nom)
+    }
+    return $nom
+}
+
+#
+# Programme Principal
+#
+
+proc main {} {
+    global conf
+
+    #
+    # Initialisation
+    #
+
+    ::dnscontext create d
+    d init-cgi "mac" $conf(err) "" $conf(form) ftab dbfd login tabcor
+
+    #
+    # Acces aux bases
+    #
+
+    if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {
+        d error $msg
+    }
+
+    # 
+    # Initialisations 
+    # 
+
+    set tableau ""
+    set selres {}
+    set seloccur {}
+    set lres [liste-reseaux $dbfd $tabcor(idgrp) "consult"]
+    set loccur $conf(occur)
+
+    #
+    # Si on a choisi un reseau
+    #
+
+    if {[llength $ftab(reseau)]!=0} {
+
+	#
+	# Recupere le reseau et verifie les droits
+	#
+
+        set idreseau $ftab(reseau)
+        set cidr [valide-idreseau $dbfd $idreseau \
+                                        $tabcor(idgrp) "consult" 4 msg]
+        if {[llength $cidr] == 0} then {
+              d error $msg
+        }
+	set selres [lsearch -glob $lres "$idreseau *"]
+	if {$selres == -1} {
+              d error "reseau absent de la liste"
+	}
+
+	#
+	# Recupere et verifie l'anciennetee d'occurence
+	#
+
+	set occurence $ftab(occurence)
+	set seloccur [lsearch -glob $loccur "$occurence *"]
+	if {$seloccur == -1} {
+              d error "occurence absente de la liste"
+	}
+
+	#
+	# Genere le tableau
+	#
+	if {![regexp {^[0-9]+$} $occurence]} then {
+              d error "occurence incorrecte"
+	}
+	set donnees {}
+	lappend donnees {Gras	{Adresse IP}
+				{Nom}
+				{Derniere occurence}
+			}
+
+
+	set datefmt $conf(sqldateformat)
+	set sql "SELECT ip,to_char(most_recent_date,$datefmt) AS derndate
+		 FROM ipmac2
+		 WHERE ip <<= '$cidr' AND
+		       most_recent_date < now() - interval '$occurence month'
+		 ORDER BY ip"
+
+	set nbadr 0
+        pg_select $dbfdmac $sql tab {
+	    set ip	    $tab(ip)
+            set derndate    $tab(derndate)
+	    set nom [getnom $dbfd $ip]
+	    #
+	    # Ne tient compte que des machine presentes dans la base dns
+	    #
+	    if {! [string equal $nom ""]} then {
+		d urlset "" $conf(nextmac) [list [list "recherche" $ip]]
+		set url [d urlget ""]
+		set adr [::webapp::helem "a" $ip "href" $url]
+
+		d urlset "" $conf(nextsuppr) [list \
+						    [list "action" "suppr-ip"] \
+						    [list "confirm" "non"] \
+						    [list "adr" $ip] \
+						]
+		set url [d urlget ""]
+		set del [::webapp::helem "a" "Supprimer" "href" $url]
+
+		lappend donnees [list Normal $adr "$nom $del" $derndate]
+		incr nbadr
+	    }
+	}
+
+	set tableau "<BR>" 
+	append tableau "Machines inactives dans le reseau $cidr"
+	append tableau " depuis plus de $occurence mois :"
+	if {$nbadr >0 } then {
+	    append tableau " $nbadr machines inactives" 
+	    append tableau [::arrgen::output "html" $conf(tableau) $donnees]
+ 	} else {
+	    append tableau " aucune machine inactive trouvee" 
+	}
+    }
+
+    #
+    # Presente le menu
+    #
+
+    set menureseau ""
+    if {[llength $lres] == 0} then {
+        set menureseau "Aucun reseau selectionnable"
+    } else {
+        set menureseau [::webapp::form-menu "reseau" 1 0 $lres $selres]
+    }
+    set menuoccur [::webapp::form-menu "occurence" 1 0 $loccur $seloccur]
+
+    #
+    # Url du formulaire
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+
+    #
+    # Sortie du resultat
+    #
+
+    d result $conf(page) [list \
+                                [list %LRES%      $menureseau] \
+                                [list %LOCCUR%    $menuoccur] \
+                                [list %TABLEAU%   $tableau] \
+                            ]
+}
+
+::webapp::cgi-exec main

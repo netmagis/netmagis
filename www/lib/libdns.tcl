@@ -304,6 +304,7 @@ snit::type ::dnscontext {
 			    {corresp always}
 			    {whereami always}
 			    {topotitle topo}
+			    {mactitle mac}
 			    {admtitle admin}
 			}
 	accueil		{%HOMEURL%/bin/accueil fr Accueil en Welcome}
@@ -317,6 +318,7 @@ snit::type ::dnscontext {
 	corresp		{%HOMEURL%/bin/corr fr Rechercher en Search}
 	whereami	{%HOMEURL%/bin/corresp?critere=_ fr {Où suis-je ?} en {Where am I?}}
 	topotitle	{%HOMEURL%/bin/eq fr Topo en Topology}
+	mactitle	{%HOMEURL%/bin/macindex fr Mac en Mac}
 	admtitle	{%HOMEURL%/bin/admin fr Admin en Admin}
 	:topo		{
 			    {eq always}
@@ -324,6 +326,7 @@ snit::type ::dnscontext {
 			    {l3 always}
 			    {topotop admin}
 			    {dnstitle dns}
+			    {mactitle mac}
 			    {admtitle admin}
 			}
 	eq		{%HOMEURL%/bin/eq fr Équipements en Equipments}
@@ -355,6 +358,7 @@ snit::type ::dnscontext {
 			    {topotop topo}
 			    {dnstitle dns}
 			    {topotitle topo}
+			    {mactitle mac}
 			}
 	consultmx	{%HOMEURL%/bin/consultmx fr {MX} en {Consult MX}}
 	statcor		{%HOMEURL%/bin/statcor fr {Stats par correspondant} en {Statistics by user}}
@@ -377,6 +381,19 @@ snit::type ::dnscontext {
 	admgenliste	{%HOMEURL%/bin/admgenliste fr {Forcer zones} en {Force zone generation}}
 	admparliste	{%HOMEURL%/bin/admparliste fr {Modif paramètres} en {Application parameters}}
 	topotop		{%HOMEURL%/bin/topotop fr {Topod status} en {Topod status}}
+	:mac		{
+			    {macindex always}
+			    {mac always}
+			    {ipinact always}
+			    {macstat always}
+			    {dnstitle dns}
+			    {topotitle topo}
+			    {admtitle admin}
+			}
+	macindex	{%HOMEURL%/bin/macindex fr {Accueil} en {Welcome}}
+	mac		{%HOMEURL%/bin/mac fr {Recherche} en {Search}}
+	ipinact		{%HOMEURL%/bin/ipinact fr {Adresses inactives} en {Inactive addresses}}
+	macstat		{%HOMEURL%/bin/macstat fr {Stats Mac} en {Mac stats}}
     }
 
     ###########################################################################
@@ -656,6 +673,9 @@ snit::type ::dnscontext {
 	lappend curcap "dns"
 	if {[dnsconfig get "topoactive"]} then {
 	    lappend curcap "topo"
+	}
+	if {[dnsconfig get "macactive"]} then {
+	    lappend curcap "mac"
 	}
 	if {$tabuid(admin)} then {
 	    lappend curcap "admin"
@@ -4622,6 +4642,18 @@ snit::type ::config {
 		    {Champ "To" des mails envoyés par
 			le démon topod lors des détection de
 			modification ou d'anomalie.}
+		}
+	    }
+	}
+	{mac
+	    {
+		fr {Paramètres de mac}
+		en {Mac parameters}
+	    }
+	    {macactive {bool}
+		fr {{Activation de Mac}
+		    {Cocher cette case pour activer l'accès à la
+			fonctionnalité "Mac".}
 		}
 	    }
 	}

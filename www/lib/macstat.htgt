@@ -1,0 +1,36 @@
+{
+\modele {texte}
+
+\set {auteur} {jean}
+\set {date}   {14/11/2004}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    WebDNS - Statistiques MAC
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %BANDEAU%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+      \titre {1} {%TITRE%}
+
+    %TABLEAU%
+
+}
+
+
+}
