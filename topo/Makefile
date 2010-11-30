@@ -4,6 +4,7 @@
 #
 
 TOPODIR	= /local/applis/topo
+RCDIR	= /local/etc/rc.d
 
 all:
 	cd lib ; make
@@ -17,6 +18,9 @@ install: all
 		FPING=$(FPING) RANCID=$(RANCID) \
 		RANCIDDIR=$(RANCIDDIR) EQVIRT=$(EQVIRT) \
 		LOGERR="$(LOGERR)" DEFUSER="$(DEFUSER)" \
+		install
+	cd etc ; make \
+		TOPODIR=$(TOPODIR) DESTDIR=$(RCDIR) \
 		install
 
 clean:
