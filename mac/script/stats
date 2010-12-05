@@ -1,0 +1,34 @@
+#!/bin/sh
+
+PGDATABASE=mac 
+PGHOST=crc.u-strasbg.fr 
+PGUSER=jean 
+PGPASSWORD="mot-de-passe-de-mac"
+export PGDATABASE PGHOST PGUSER PGPASSWORD
+
+echo -n "Nombre d'adresse mac uniques :"
+psql -qt --pset format=unaligned -c "SELECT count(DISTINCT mac) FROM portmac" 
+
+echo -n "Nombre d'adresse IPv4 uniques :"
+psql -qt --pset format=unaligned -c "SELECT count(DISTINCT ip) FROM ipmac WHERE family(ip)=4"
+
+echo "Nombre d'adresse IPv6 uniques :"
+psql -qt --pset format=unaligned -c "SELECT count(DISTINCT ip) FROM ipmac WHERE family(ip)=6"
+
+(
+    IFS='^'  
+    psql -q -t --pset format=unaligned --field-separator '^' dns | \
+    while read adr4 nom
+    do      
+	echo -n "[$nom] ($adr4) :"
+	b=`echo "$adr4" | sed 's,.*/,,'`
+	dispo=`echo "2^(32-$b)"|bc`
+	util=`psql -q -t --pset format=unaligned -c "
+	    SELECT count(DISTINCT ip) FROM ipmac WHERE ip<<'$adr4'
+	"`
+	echo $util/$dispo "("`echo "$util*100/$dispo"|bc`%")"
+    done
+) <<EOF 
+    \encoding latin1    
+    SELECT adr4,nom FROM reseau
+EOF

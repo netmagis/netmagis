@@ -1,12 +1,12 @@
 {
 \modele {texte}
 
-\set {auteur} {pda/jean}
-\set {date}   {26/11/2010}
+\set {auteur} {jean}
+\set {date}   {14/11/2004}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    WebDNS - Modification effectuée
+    WebDNS - Localiser une adresse IP / MAC
 }
 
 \*******************************************************************************
@@ -27,13 +27,13 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Modification enregistrée}
+    \titre {1} {Localiser une adresse IP / une adresse MAC}
 
-    Les modifications demandées ont été enregistrées dans la
-    file d'attente. Elles seront effectives d'ici quelques
-    minutes.
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+    Entrer le nom ou l'adresse cherchée :
+	<INPUT TYPE="TEXT" NAME="recherche" SIZE="30"> <INPUT TYPE="SUBMIT" VALUE="Rechercher">
+    </FORM>
 
-    %EQSTA%
 }
 
 }

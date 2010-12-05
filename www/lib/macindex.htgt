@@ -1,12 +1,12 @@
 {
 \modele {texte}
 
-\set {auteur} {pda/jean}
-\set {date}   {26/11/2010}
+\set {auteur} {pda}
+\set {date}   {03/05/2002}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    WebDNS - Modification effectuée
+    WebDNS - Mac
 }
 
 \*******************************************************************************
@@ -26,14 +26,17 @@
 
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
+    \titre {1} {Gestion des adresses MAC}
 
-    \titre {1} {Modification enregistrée}
+    Cette applications propose une interface à la base de données
+    des adresses IP et et des adresses MAC collectées sur les
+    équipements réseau. Les possibilités suivantes vous sont offertes~:
 
-    Les modifications demandées ont été enregistrées dans la
-    file d'attente. Elles seront effectives d'ici quelques
-    minutes.
-
-    %EQSTA%
+    \liste {
+	\item {Effectuer une \lien {recherche} {%URLMAC%}}
+	\item {Lister les \lien {adresses inactives} {%URLIPINACT%}}
+	\item {Consulter les \lien {statistiques} {%URLMACSTAT%}}
+    }
 }
 
 }

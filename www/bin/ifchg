@@ -12,6 +12,7 @@
 #
 # Historique
 #   2010/11/03 : pda        : création
+#   2010/11/30 : pda/jean   : add sensor
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -53,6 +54,7 @@ set conf(form)	{
 
 lappend auto_path %PKGTCL%
 package require webapp
+package require arrgen
 package require pgsql
 
 #
@@ -146,10 +148,17 @@ proc main {} {
 	}
 
 	#
+	# Get status information relative to this equipment and this
+	# interface.
+	#
+
+	set eqsta [eq-graph-status $dbfd $eq $iface]
+
+	#
 	# Récupérer les caractéristiques de l'interface
 	#
 
-	lassign $tabiface($iface) nom edit radio stat ifmode desc lien natif
+	lassign $tabiface($iface) nom edit radio ifstat ifmode desc lien natif
 	set trunk [lreplace $tabiface($iface) 0 7]
 
 	if {$edit ne "edit"} then {
@@ -241,6 +250,18 @@ proc main {} {
 	    set menuvoip [::webapp::form-hidden "voip" -1]
 	}
 
+	# proposer le menu de modification de sonde
+	if {$tabcor(admin)} then {
+	    if {$ifstat eq "-"} then {
+		set ifstat ""
+	    }
+	    set libstat "Sondes"
+	    set menustat [::webapp::form-text "stat" 1 40 40 $ifstat]
+	} else {
+	    set libstat ""
+	    set menustat ""
+	}
+
     } else {
 	#
 	# Présenter toutes les interfaces
@@ -248,6 +269,12 @@ proc main {} {
 
 	set titre "Modification des interfaces de $eq"
 	set mode "multi"
+
+	#
+	# Get status information relative to this equipment and all
+	# its interfaces.
+	#
+	set eqsta [eq-graph-status $dbfd $eq]
 
 	# liste des interfaces
 	set lif {}
@@ -273,6 +300,10 @@ proc main {} {
 	    set libvoip ""
 	    set menuvoip [::webapp::form-hidden "voip" -1]
 	}
+
+	# le menu de modification de sonde est vide
+	set libstat ""
+	set menustat ""
     }
 
     #
@@ -286,6 +317,7 @@ proc main {} {
     #
 
     d result $conf(page) [list \
+			    [list %EQSTA%        $eqsta] \
 			    [list %EQ%           $eq] \
 			    [list %TITRE%        $titre] \
 			    [list %MODE%         $mode] \
@@ -295,6 +327,8 @@ proc main {} {
 			    [list %MENUVLAN%     $menuvlan] \
 			    [list %LIBVOIP%      $libvoip] \
 			    [list %MENUVOIP%     $menuvoip] \
+			    [list %LIBSTAT%      $libstat] \
+			    [list %MENUSTAT%     $menustat] \
 			]
 }
 

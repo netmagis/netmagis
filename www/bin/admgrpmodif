@@ -12,6 +12,7 @@
 #	- admin : droit d'administration (0 ou 1)
 #	- droitsmtp : droit d'autoriser des machines à émettre en smtp (0 ou 1)
 #	- droitttl : droit de modifier les TTL des machines (0 ou 1)
+#	- droitmac : droit d'accès au module MAC (0 ou 1)
 #	- confirm : oui ou non
 #	- loginN : les logins des membres du groupe
 #	- domaineN : les noms des domaines validés pour ce groupe
@@ -41,6 +42,7 @@
 #   2008/07/23 : pda/jean : ajout droitsmtp
 #   2010/10/31 : pda      : ajout droitttl
 #   2010/11/03 : pda/jean : ajout dr_eq
+#   2010/11/30 : pda/jean : ajout droitmac
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -79,6 +81,7 @@ set conf(form) {
 	{admin			1 1}
 	{droitsmtp		1 1}
 	{droitttl		1 1}
+	{droitmac		1 1}
 	{login[0-9]+		0 9999}
 	{tridom[0-9]+		0 9999}
 	{domaine[0-9]+		0 9999}
@@ -252,8 +255,8 @@ proc main {} {
     }
     
     if {$idorphelin == -1} then {
-	set sql "INSERT INTO global.groupe (nom, admin, droitsmtp, droitttl)
-			    VALUES ('', 0, 0, 0)"
+	set sql "INSERT INTO global.groupe (nom, admin, droitsmtp, droitttl, droitmac)
+			    VALUES ('', 0, 0, 0, 0)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    return $msg
@@ -353,6 +356,15 @@ proc main {} {
     set droitttl [lindex $ftab(droitttl) 0]
     if {! ([string equal $droitttl 0] || [string equal $droitttl 1])} then {
 	d error "Champ 'droitttl' invalide"
+    }
+
+    #
+    # Tester le champ droitmac
+    #
+
+    set droitmac [lindex $ftab(droitmac) 0]
+    if {! ([string equal $droitmac 0] || [string equal $droitmac 1])} then {
+	d error "Champ 'droitmac' invalide"
     }
 
     #
@@ -752,8 +764,8 @@ proc main {} {
 
     if {[string equal $action "création"]} then {
 	set qnewgrp [::pgsql::quote $newgrp]
-	set sql "INSERT INTO global.groupe (nom, admin, droitsmtp, droitttl)
-			VALUES ('$qnewgrp', $admin, $droitsmtp, $droitttl)"
+	set sql "INSERT INTO global.groupe (nom, admin, droitsmtp, droitttl, droitmac)
+			VALUES ('$qnewgrp', $admin, $droitsmtp, $droitttl, $droitmac)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    return $msg
@@ -791,7 +803,8 @@ proc main {} {
     lappend cmd "UPDATE global.groupe
 		    SET admin = $admin,
 			droitsmtp = $droitsmtp,
-			droitttl = $droitttl
+			droitttl = $droitttl,
+			droitmac = $droitmac
 		    WHERE idgrp = $idgrp"
 
     # Créer ou affecter les correspondants

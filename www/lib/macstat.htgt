@@ -1,12 +1,12 @@
 {
 \modele {texte}
 
-\set {auteur} {pda/jean}
-\set {date}   {26/11/2010}
+\set {auteur} {jean}
+\set {date}   {14/11/2004}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    WebDNS - Modification effectuée
+    WebDNS - Statistiques MAC
 }
 
 \*******************************************************************************
@@ -26,14 +26,11 @@
 
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
+      \titre {1} {%TITRE%}
 
-    \titre {1} {Modification enregistrée}
+    %TABLEAU%
 
-    Les modifications demandées ont été enregistrées dans la
-    file d'attente. Elles seront effectives d'ici quelques
-    minutes.
-
-    %EQSTA%
 }
+
 
 }

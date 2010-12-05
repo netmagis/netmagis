@@ -31,6 +31,11 @@
  cfg:topoto:desc {Topo mail receiver}
  cfg:topoto:help {"To" header of mails sent by the topod daemon when it detects modifications or abnormalities.}
 
+ cfg:mac {"MAC" module parameters}
+
+ cfg:macactive:desc {MAC module activation}
+ cfg:macactive:help {Check this box to activate the "MAC" module.}
+
  cfg:auth {Authentication parameters}
 
  cfg:authmailfrom:desc {Use the "From" specified in "auth"}

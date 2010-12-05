@@ -209,6 +209,7 @@ array set confcmd {
     cisco:*:ifaccess {
 	      {interface %1$s}
 	      {switchport access vlan %2$s}
+	      {spanning-tree portfast}
 	  }
     cisco:*:ifvoice {
 	      {interface %1$s}

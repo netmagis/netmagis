@@ -13,9 +13,11 @@
 #	- vlan : id du vlan ou -1 pour désactiver le port
 #	- voip : id du vlan ou -1 pour désactiver la voip sur l'interface
 #	- desc : description (ou vide, notamment si plusieurs interfaces)
+#	- stat : sondes (ou vide)
 #
 # Historique
 #   2010/11/26 : pda/jean   : création
+#   2010/11/30 : pda/jean   : add sensor
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -53,6 +55,7 @@ set conf(form)	{
     {vlan		1 1}
     {voip		1 1}
     {desc		0 1}
+    {stat		0 1}
 }
 
 #
@@ -61,6 +64,7 @@ set conf(form)	{
 
 lappend auto_path %PKGTCL%
 package require webapp
+package require arrgen
 package require pgsql
 
 #
@@ -176,7 +180,17 @@ proc main {} {
 	    if {[regexp {[^- a-zA-Z0-9+/()&.:#_]} $desc match]} then {
 		d error "Caractère '$match' interdit dans la description"
 	    }
-	    set desc "X $desc"
+	    # if user is admin, use the given sensor, else use the
+	    # old sensor
+	    if {! $tabcor(admin)} then {
+		set i [lindex $iface 0]
+		set stat [lindex $tabiface($i) 3]
+	    }
+	    if {$stat eq ""} then {
+		set desc "X $desc"
+	    } else {
+		set desc "$desc <X $stat>"
+	    }
 	}
     }
 
@@ -221,10 +235,21 @@ proc main {} {
     }
 
     #
+    # Get status for graph building and spooled equipment modifications
+    #
+
+    if {[llength $iface] == 1} then {
+	set eqsta [eq-graph-status $dbfd $eq $iface]
+    } else {
+	set eqsta [eq-graph-status $dbfd $eq]
+    }
+
+    #
     # Sortie de la page
     #
 
     d result $conf(page) [list \
+			    [list %EQSTA%        $eqsta] \
 			]
 }
 

@@ -9,6 +9,7 @@ TCLSH	= /usr/local/bin/tclsh8.5
 DEBUG  = 0
 
 BASE    = {host=dbcrc.u-strasbg.fr dbname=dns user=dns password=mot-de-passe-de-dns}
+BASEMAC = {host=dbcrc.u-strasbg.fr dbname=mac user=dns password=mot-de-passe-de-dns}
 AUTH    = {-method postgresql -db {host=dbcrc.u-strasbg.fr dbname=auth user=auth password=mot-de-passe-de-auth}}
 LOG     = {dns postgresql {table log host dbcrc dbname dns user dns password mot-de-passe-de-dns}}
 # AUTH	= {-method ldap -db {url ldap://ldap.domaine.fr binddn cn=admin,dc=domaine,dc=fr bindpw mot-de-passe-ldap base ou=people,dc=domaine,dc=fr searchuid (\&(objectClass=inetOrgPerson)(uid=%s))} -attrmap {login uid password userPassword nom sn prenom givenName mel mail tel telephoneNumber mobile {} fax facsimileTelephoneNumber adr {postalAddress postalCode l}}}
@@ -85,6 +86,7 @@ SUBST	= \
 	-e 's|%AUTH%|$(AUTH)|' \
 	-e 's|%PASSWDURL%|$(PASSWDURL)|' \
 	-e 's|%BASE%|$(BASE)|' \
+	-e 's|%BASEMAC%|$(BASEMAC)|' \
 	-e 's|%TOPODIR%|$(TOPODIR)|' \
 	-e 's|%GRAPH%|$(GRAPH)|' \
 	-e 's|%STATUS%|$(STATUS)|' \

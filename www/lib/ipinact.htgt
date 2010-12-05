@@ -1,12 +1,12 @@
 {
 \modele {texte}
 
-\set {auteur} {pda/jean}
-\set {date}   {26/11/2010}
+\set {auteur} {jean}
+\set {date}   {16/09/2010}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    WebDNS - Modification effectuée
+    WebDNS - Lister les adresses inactives
 }
 
 \*******************************************************************************
@@ -26,14 +26,23 @@
 
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
+    \titre {1} {Lister les adresses inactives}
 
-    \titre {1} {Modification enregistrée}
+	<FORM METHOD="POST" ACTION="%URLFORM%">
+	    <TABLE BORDER="0">
+		<TR>
+		    <TD>R&eacute;seau :</TD>
+		    <TD>%LRES%</TD>
+		</TR>
+		<TR>
+		    <TD>Derni&egrave;re occurence:</TD>
+		    <TD>%LOCCUR%</TD>
+		</TR>
+	    </TABLE>
+	    <INPUT NAME="action" TYPE="SUBMIT" VALUE="Lister">
+	</FORM>
+	%TABLEAU%
 
-    Les modifications demandées ont été enregistrées dans la
-    file d'attente. Elles seront effectives d'ici quelques
-    minutes.
-
-    %EQSTA%
 }
 
 }

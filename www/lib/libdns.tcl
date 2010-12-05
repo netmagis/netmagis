@@ -357,6 +357,7 @@ snit::type ::dnscontext {
 			    {corresp always}
 			    {whereami always}
 			    {topotitle topo}
+			    {mactitle mac}
 			    {admtitle admin}
 			}
 	accueil		{%HOMEURL%/bin/accueil Welcome}
@@ -370,6 +371,7 @@ snit::type ::dnscontext {
 	corresp		{%HOMEURL%/bin/corr Search}
 	whereami	{%HOMEURL%/bin/corresp?critere=_ {Where am I?}}
 	topotitle	{%HOMEURL%/bin/eq Topology}
+	mactitle	{%HOMEURL%/bin/macindex Mac}
 	admtitle	{%HOMEURL%/bin/admin Admin}
 	:topo		{
 			    {eq always}
@@ -377,6 +379,7 @@ snit::type ::dnscontext {
 			    {l3 always}
 			    {topotop admin}
 			    {dnstitle dns}
+			    {mactitle mac}
 			    {admtitle admin}
 			}
 	eq		{%HOMEURL%/bin/eq Equipments}
@@ -408,6 +411,7 @@ snit::type ::dnscontext {
 			    {topotop topo}
 			    {dnstitle dns}
 			    {topotitle topo}
+			    {mactitle mac}
 			}
 	consultmx	{%HOMEURL%/bin/consultmx {Consult MX}}
 	statcor		{%HOMEURL%/bin/statcor {Statistics by user}}
@@ -430,6 +434,19 @@ snit::type ::dnscontext {
 	admgenliste	{%HOMEURL%/bin/admgenliste {Force zone generation}}
 	admparliste	{%HOMEURL%/bin/admparliste {Application parameters}}
 	topotop		{%HOMEURL%/bin/topotop {Topod status}}
+	:mac		{
+			    {macindex always}
+			    {mac always}
+			    {ipinact always}
+			    {macstat always}
+			    {dnstitle dns}
+			    {topotitle topo}
+			    {admtitle admin}
+			}
+	macindex	{%HOMEURL%/bin/macindex {MAC index}}
+	mac		{%HOMEURL%/bin/mac fr {MAC search}}
+	ipinact		{%HOMEURL%/bin/ipinact fr {Inactive addresses}}
+	macstat		{%HOMEURL%/bin/macstat fr {MAC stats}}
     }
 
     ###########################################################################
@@ -796,6 +813,9 @@ snit::type ::dnscontext {
 	if {[dnsconfig get "topoactive"]} then {
 	    lappend curcap "topo"
 	}
+	if {[dnsconfig get "macactive"] && $tabuid(droitmac)} then {
+	    lappend curcap "mac"
+	}
 	if {$tabuid(admin)} then {
 	    lappend curcap "admin"
 	}
@@ -1117,6 +1137,9 @@ snit::type ::config {
 	    {topofrom {string}}
 	    {topoto {string}}
 	}
+	{mac
+	    {macactive {bool}}
+	}
 	{auth
 	    {authmailfrom {bool}}
 	    {mailfrom {string}}
@@ -1334,6 +1357,7 @@ proc display-user {_tabuid} {
 #   2008/07/23 : pda/jean : add group permissions
 #   2010/10/31 : pda      : add ttl permission
 #   2010/11/03 : pda/jean : add equipment permissions
+#   2010/11/30 : pda/jean : add mac permissions
 #   2010/12/01 : pda      : i18n
 #
 
@@ -1364,9 +1388,15 @@ proc display-group {dbfd idgrp} {
 	} else {
 	    set droitttl [mc "no"]
 	}
+	if {$tab(droitmac)} then {
+	    set droitmac [mc "yes"]
+	} else {
+	    set droitmac [mc "no"]
+	}
 	lappend lines [list DROIT [mc "WebDNS administration"] $admin]
 	lappend lines [list DROIT [mc "SMTP authorization management"] $droitsmtp]
 	lappend lines [list DROIT [mc "TTL management"] $droitttl]
+	lappend lines [list DROIT [mc "MAC module access"] $droitmac]
     }
     if {[llength $lines] > 0} then {
 	set tabperm [::arrgen::output "html" $libconf(tabperm) $lines]
@@ -1682,6 +1712,9 @@ proc user-attribute {dbfd idcor attr} {
 #		groupe	group name
 #		present	1 if "present" in the database
 #		admin	1 if admin
+#		droitsmtp 1 if permission to add hosts authorized to emit with SMTP
+#		droitttl 1 if permission to edit host TTL
+#		droitmac 1 if permission to use the MAC module
 #		reseaux	list of authorized networks
 #		eq	regexp matching authorized equipments
 #		flagsr	flags -n/-e/-E/etc to use in topo programs
@@ -1745,6 +1778,9 @@ proc read-user {dbfd login _tabuid} {
 	set tabuid(present)	$tab(present)
 	set tabuid(groupe)	$tab(nom)
 	set tabuid(admin)	$tab(admin)
+	set tabuid(droitsmtp)	$tab(droitsmtp)
+	set tabuid(droitttl)	$tab(droitttl)
+	set tabuid(droitmac)	$tab(droitmac)
     }
 
     if {$tabuid(idcor) == -1} then {
@@ -5367,7 +5403,7 @@ proc eq-graph-status {dbfd eq {iface {}}} {
     if {[llength $lines] == 1} then {
 	set ifchg ""
     } else {
-	set ifchg [::webapp::helem "p" [mc "Changes currently processed"]]
+	set ifchg [::webapp::helem "p" [mc "Changes currently processed:"]]
 	append ifchg [::arrgen::output "html" $libconf(tabeqstatus) $lines]
     }
 

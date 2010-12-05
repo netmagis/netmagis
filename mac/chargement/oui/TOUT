@@ -1,0 +1,10 @@
+#!/bin/sh
+
+PGDATABASE=mac
+PGPASSWORD=mot-de-passe-de-mac
+
+export PGDATABASE PGPASSWORD
+
+./dropoui
+./createoui
+./updateoui -r 

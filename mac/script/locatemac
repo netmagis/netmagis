@@ -1,0 +1,174 @@
+#!/usr/local/bin/tclsh8.4
+
+# Chemin pour les paquets tcl locaux
+set conf(pkg)           "/local/services/www/pkgtcl"
+
+# paramètres de la base de données
+set conf(base)          {dbname=mac user=jean password=mot-de-passe-de-mac}
+set conf(domaine)       "u-strasbg.fr"
+set conf(nameserver)    "130.79.200.1"
+
+# Chargement des paquets
+lappend auto_path $conf(pkg)
+package require Pgtcl
+package require pgsql
+package require dns
+
+# Résolution d'un nom de domaine en adresse ip
+# Paramètres :
+#    Entrée :
+#      host   : nom a résoudre
+#    Sortie :
+#      valeur de retour : adresse ip ou chaine vide
+#
+proc resolution {host} {
+    global conf
+
+    # adresse ip ?
+    if { [regexp {[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+} $host] } {
+	return $host
+    }
+    
+    ::dns::configure -nameserver $conf(nameserver)
+    ${::dns::log}::disable "warn"
+
+    set ip ""
+    set tok [::dns::resolve $host ]
+    if { [dns::status $tok] == "ok"} {
+        set ip [lindex [::dns::address $tok] 0]
+    } else {
+	set tok2 [::dns::resolve "$host.$conf(domaine)" ]
+	if { [dns::status $tok2] == "ok"} {
+  	    set ip [lindex [::dns::address $tok2] 0]
+	}
+	dns::cleanup $tok2
+    }
+    dns::cleanup $tok
+    
+    return $ip
+}
+
+
+# Cherche toutes les adresses mac qui ont été associées
+# à l'ip donnée
+# Paramètres :
+#    Entrée :
+#      ip    : adresse ip cherchée
+#    Sortie :
+#      valeur de retour : liste d'adresse mac ou liste vide
+#
+proc cherche-mac {dbfd ip} {
+
+    set macs {}
+    pg_select $dbfd "SELECT mac FROM ipmac WHERE ip='$ip'" tab {
+	lappend macs $tab(mac)
+    }
+    return $macs
+}
+
+# Affiche les sessions associées à une ip
+# Paramètres :
+#    Entrée :
+#      ip    : adresse ip cherchée
+#
+proc aff-session-ipmac {dbfd ip} {
+
+    pg_select $dbfd "SELECT idipmac,mac FROM ipmac WHERE ip='$ip'" tab {
+	set id  $tab(idipmac)
+	set mac $tab(mac)
+
+        puts "Adresse IP : $ip - Adresse MAC : $mac :"
+
+	pg_select $dbfd "SELECT debut,fin,close FROM sessionipmac
+			WHERE idipmac='$id' ORDER BY debut ASC" tab2 {
+	    if {$tab2(close)} {
+		set act "close"
+	    } else {
+		set act "active"
+	    }
+	    puts "\t$tab2(debut)->$tab2(fin) ($act)"
+	}
+    }
+}
+
+# Cherche les sessions associées à une ip
+# Paramètres :
+#    Entrée :
+#      mac    : adresse mac cherchée
+#    Sortie :
+#      valeur de retour : liste d'adresse mac ou liste vide
+#
+proc aff-session-portmac {dbfd mac} {
+
+    pg_select $dbfd "SELECT portmac.idportmac,
+		    eq.nom,portmac.mac,portmac.port,
+		    portmac.idvlan
+		    FROM portmac,eq WHERE mac='$mac'
+			AND eq.ideq = portmac.ideq" tab {
+	set id  $tab(idportmac)
+	set mac $tab(mac)
+	set vlan $tab(idvlan)
+	set port $tab(port)
+	set eq $tab(nom)
+
+	puts "Adresse MAC : $mac - Eq., VLAN, Port : $eq, $vlan, $port :"
+	pg_select $dbfd "SELECT debut,fin,close FROM sessionportmac
+			WHERE idportmac='$id' ORDER BY debut ASC" tab2 {
+	    if {$tab2(close)} {
+		set act "close"
+	    } else {
+		set act "active"
+	    }
+	    puts "\t$tab2(debut)->$tab2(fin) ($act)"
+	}
+    }
+}
+
+# Programme principal
+proc main {argv0 argv} {
+    global conf
+
+    # Connexion à la base de données
+    if {[catch {set dbfd [pg_connect -conninfo $conf(base)]} msg]} then {
+        puts stderr "$argv0: cannot access base ($msg)"
+        return 1
+    }
+    
+    # controle des arguments
+    if {[llength $argv] != 1} then {
+	puts stderr "$argv0 <hostname>"
+        return 1
+    }
+
+    # résolution de nom -> adresse ip
+    set host [lindex $argv 0]
+    set ip [resolution $host]
+    if {[string equal $ip ""]} {
+	puts stderr "$host : host not found"
+        return 2
+    }
+
+    # cherche les adresses mac associé à cette ip
+    set macaddrlist [cherche-mac $dbfd $ip]
+
+    # affiche les sessions ipmac
+    puts "Session IP-MAC"
+    aff-session-ipmac $dbfd $ip
+    puts ""
+
+    # affiche les sessions portmac
+    puts "Session PORT-MAC"
+    foreach mac $macaddrlist {
+         aff-session-portmac $dbfd $mac
+    }
+    
+    pg_disconnect $dbfd
+
+    return 0
+}
+
+#
+# Tout démarre ici...
+#
+
+exit [main $argv0 $argv]

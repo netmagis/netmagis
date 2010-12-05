@@ -29,6 +29,8 @@
 
     \titre {1} {%TITRE%}
 
+    %EQSTA%
+
     <form method="post" action="%URLFORM%">
 	<input type="hidden" name="mode" value="%MODE%">
 	<input type="hidden" name="eq" value="%EQ%">
@@ -50,6 +52,10 @@
 	    \lignetableau {
 		\casetableau {} {%LIBVOIP%}
 		\casetableau {} {%MENUVOIP%}
+	    }
+	    \lignetableau {
+		\casetableau {} {%LIBSTAT%}
+		\casetableau {} {%MENUSTAT%}
 	    }
 	    \lignetableau {
 		\casetableau {} {~}

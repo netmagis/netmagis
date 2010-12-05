@@ -17,6 +17,7 @@
  {Search} {Rechercher}
  {Where am I?} {Où suis-je ?}
  {Topology} {Topo}
+ {Mac} {Mac}
  {Admin} {Admin}
 
  {Equipments} {Équipements}
@@ -45,6 +46,11 @@
  {Force zone generation} {Forcer zones}
  {Application parameters} {Modif paramètres}
  {Topod status} {Topod status}
+
+ {MAC index} {Accueil MAC}
+ {MAC search} {Recherche MAC}
+ {Inactive addresses} {Adresses inactives}
+ {MAC stats} {Stats MAC}
 
  {Unknown module '%s'} {Module '%s' inconnu}
 }
@@ -76,6 +82,11 @@
  cfg:topofrom:help {Champ "From" des mails envoyés par le démon topod lors des détections de modification ou d'anomalie.}
  cfg:topoto:desc {Destinataire des mails de topo}
  cfg:topoto:help {Champ "To" des mails envoyés par le démon topod lors des détection de modification ou d'anomalie.}
+
+ cfg:mac {Paramètres du module "MAC"}
+
+ cfg:macactive:desc {Activation de Mac}
+ cfg:macactive:help {Cocher cette case pour activer l'accès à la fonctionnalité "Mac"}
 
  cfg:auth {Paramètres d'authentification}
 
@@ -199,6 +210,7 @@
  {WebDNS administration} {Administration de WebDNS}
  {SMTP authorizations management} {Gestion des émetteurs SMTP}
  {TTL management} {Gestion du TTL}
+ {MAC module access} {Accès au module MAC}
  {Error on group permissions} {Erreur sur les droits du groupe}
  {Location} {Localisation}
  {Organization} {Organisme}
@@ -254,7 +266,7 @@
  {vlan='%s'} {vlan='%s'}
  {voip='%s'} {voip='%s'}
  {deactivated interface} {interface désactivée}
- {Changes currently processed} {Modification(s) en cours de traitement}
+ {Changes currently processed:} {Modification(s) en cours de traitement :}
  {Graph currenty re-builded. Informations presented here are not necessarily consistent with current equipement configuration.} {Reconstruction du graphe en cours. Les informations fournies ne sont pas forcément cohérentes avec la configuration actuelle des équipements.}
 
 }
