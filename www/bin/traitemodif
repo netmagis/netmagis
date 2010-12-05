@@ -113,13 +113,13 @@ source $conf(libdns)
 # Historique
 #   2002/05/03 : pda/jean : conception
 #
-proc traitemodif-infos {dbfd tc ft} {
+proc traitemodif-infos {dbfd _tabuid _ftab} {
     global conf
-    upvar $ft ftab
-    upvar $tc tabcor
+    upvar $_ftab ftab
+    upvar $_tabuid tabuid
 
-    set login $tabcor(login)
-    set idcor $tabcor(idcor)
+    set login $tabuid(login)
+    set idcor $tabuid(idcor)
 
     #
     # Valider les champs du formulaire
@@ -137,8 +137,6 @@ proc traitemodif-infos {dbfd tc ft} {
     set respnom       [string trim [lindex $ftab(respnom) 0]]
     set respmel       [string trim [lindex $ftab(respmel) 0]]
     set confirm       [string trim [lindex $ftab(confirm) 0]]
-    set nextprog      [string trim [lindex $ftab(nextprog) 0]]
-    set nextargs      [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Vérifier l'idrr
@@ -225,7 +223,7 @@ proc traitemodif-infos {dbfd tc ft} {
     # Vérifier le droit d'émission SMTP
     #
 
-    if {$tabcor(droitsmtp)} then {
+    if {$tabuid(droitsmtp)} then {
 	if {[string equal $droitsmtp ""]} then {
 	    set droitsmtp 0
 	} else {
@@ -239,7 +237,7 @@ proc traitemodif-infos {dbfd tc ft} {
     # Vérifier le droit TTL
     #
 
-    if {$tabcor(droitttl)} then {
+    if {$tabuid(droitttl)} then {
 	if {[string equal $ttl ""]} then {
 	    set ttl -1
 	} else {
@@ -267,8 +265,8 @@ proc traitemodif-infos {dbfd tc ft} {
     #
 
     if {[string equal $respnom ""] && [string equal $respmel ""]} then {
-	set respnom "$tabcor(nom) $tabcor(prenom)"
-	set respmel $tabcor(mel)
+	set respnom "$tabuid(nom) $tabuid(prenom)"
+	set respmel $tabuid(mel)
     }
 
     #
@@ -300,10 +298,10 @@ proc traitemodif-infos {dbfd tc ft} {
 	d error "Transaction impossible : $msg"
     }
 
-    if {! $grdroitsmtp} then {
+    if {! $tabuid(droitsmtp)} then {
 	set droitsmtp $trr(droitsmtp)
     }
-    if {! $grdroitttl} then {
+    if {! $tabuid(droitttl)} then {
 	set ttl $trr(ttl)
     }
 
@@ -426,7 +424,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
     # Valider l'action, lire les autres champs du formulaire,
@@ -443,7 +441,7 @@ proc main {} {
 	d error "Formulaire non conforme aux spécifications"
     }
 
-    traite$action $dbfd tabcor ftab
+    traite$action $dbfd tabuid ftab
 }
 
 ::webapp::cgi-exec main %DEBUG%

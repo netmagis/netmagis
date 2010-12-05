@@ -120,7 +120,7 @@ proc chevauchement {dbfd min1 max1 min2 max2} {
 #
 # Entrée :
 #   - dbfd : accès à la base
-#   - ftabvar : tableau contenant les champs du formulaire
+#   - _ftab : tableau contenant les champs du formulaire
 #   - idcor : id du correspondant faisant la modification
 #   - idgrp : id du groupe du correspondant faisant la modification
 #   - cidr : cidr du réseau dans lequel on travaille
@@ -131,8 +131,8 @@ proc chevauchement {dbfd min1 max1 min2 max2} {
 #   2004/10/13 : pda/jean : paramètre minimum du bail
 #
 
-proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
-    upvar $ftabvar ftab
+proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
+    upvar $_ftab ftab
 
     #
     # Récupérer le paramètre minimal des baux DHCP
@@ -232,7 +232,8 @@ proc valide-dhcprange {dbfd ftabvar idcor idgrp cidr} {
 	    # Valider le droit sur le domaine
 	    #
 
-	    set msg [check-domain $dbfd $tabcor(idcor) iddom domain ""]
+	    set domain ""
+	    set msg [check-domain $dbfd $idcor iddom domain ""]
 	    if {$msg ne ""} then {
 		d error $msg
 	    }

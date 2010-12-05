@@ -444,9 +444,9 @@ snit::type ::dnscontext {
 			    {admtitle admin}
 			}
 	macindex	{%HOMEURL%/bin/macindex {MAC index}}
-	mac		{%HOMEURL%/bin/mac fr {MAC search}}
-	ipinact		{%HOMEURL%/bin/ipinact fr {Inactive addresses}}
-	macstat		{%HOMEURL%/bin/macstat fr {MAC stats}}
+	mac		{%HOMEURL%/bin/mac {MAC search}}
+	ipinact		{%HOMEURL%/bin/ipinact {Inactive addresses}}
+	macstat		{%HOMEURL%/bin/macstat {MAC stats}}
     }
 
     ###########################################################################
@@ -805,6 +805,16 @@ snit::type ::dnscontext {
 	}
 
 	#
+	# Remove additionnal default parameters
+	# If they were staying in ftab, they could be caught by a
+	# "hide all ftab paramaters" in a CGI script.
+	#
+
+	foreach p {l uid nextprog nextargs} {
+	    unset ftab($p)
+	}
+
+	#
 	# Computes capacity, given local installation and/or user rights
 	#
 
@@ -826,7 +836,7 @@ snit::type ::dnscontext {
 
 	if {[llength $attr] > 0} then {
 	    # XXX : for now, test only one attribute
-	    if {! [attribut-correspondant $dbfd $tabuid(idcor) $attr]} then {
+	    if {! [user-attribute $dbfd $tabuid(idcor) $attr]} then {
 		$self error [format [mc "User '%s' not authorized"] $login]
 	    }
 	}
@@ -1365,11 +1375,11 @@ proc display-group {dbfd idgrp} {
     global libconf
 
     #
-    # Get specific permissions: admin, droitsmtp and droitttl
+    # Get specific permissions: admin, droitsmtp, droitttl and droitmac
     #
 
     set lines {}
-    set sql "SELECT admin, droitsmtp, droitttl
+    set sql "SELECT admin, droitsmtp, droitttl, droitmac
 			FROM global.groupe
 			WHERE idgrp = $idgrp"
     pg_select $dbfd $sql tab {
@@ -1525,7 +1535,7 @@ proc display-group {dbfd idgrp} {
     if {$found} then {
 	set tabcidrnonet [::arrgen::output "html" $libconf(tabnetworks) $lines]
     } else {
-	set tabcidrnonet [mc "None (that's all right)"]
+	set tabcidrnonet [mc "None (it's all right)"]
     }
 
     #
@@ -1580,7 +1590,7 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    foreach {rw text} [list 0 [mc "Read"] Lecture 1 [mc "Write"]] {
+    foreach {rw text} [list 0 [mc "Read"] 1 [mc "Write"]] {
 	set sql "SELECT allow_deny, pattern
 			    FROM topo.dr_eq
 			    WHERE idgrp = $idgrp AND rw = $rw
@@ -1688,12 +1698,12 @@ proc fermer-base {dbfd} {
 
 proc user-attribute {dbfd idcor attr} {
     set v 0
-    set sql "SELECT groupe.$attribut \
+    set sql "SELECT groupe.$attr \
 			FROM global.groupe, global.corresp \
 			WHERE corresp.idcor = $idcor \
 			    AND corresp.idgrp = groupe.idgrp"
     pg_select $dbfd $sql tab {
-	set v "$tab($attribut)"
+	set v "$tab($attr)"
     }
     return $v
 }
@@ -2687,7 +2697,7 @@ proc check-name-syntax {name} {
 #   2002/05/23 : pda/jean : accept simplified cidr (a.b/x)
 #   2004/01/09 : pda/jean : add IPv6 et radical simplification
 #   2004/10/08 : pda/jean : add inet4
-#   2004/10/20 : jean     : forbit / for anything else than cidr type
+#   2004/10/20 : jean     : forbid / for anything else than cidr type
 #   2008/07/22 : pda      : add type loosecidr (accepts /)
 #   2010/10/07 : pda      : add type cidr4
 #
@@ -2862,12 +2872,12 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
 	if {$iddom == -1} then {
 	    set msg [format [mc "Domain '%s' not found"] $domain]
 	}
-    } elseif {$domaine eq ""} then {
+    } elseif {$domain eq ""} then {
 	set sql "SELECT domaine FROM dns.domaine WHERE iddom = $iddom"
 	pg_select $dbfd $sql tab {
 	    set domain $tab(domaine)
 	}
-	if {domaine eq ""} then {
+	if {$domain eq ""} then {
 	    set msg [format [mc "Domain-id '%s' not found"] $iddom]
 	}
     }
@@ -3264,7 +3274,7 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 			}
 		    }
 		} else {
-		    if {$parm eq "EXISTS"]} {
+		    if {$parm eq "EXISTS"} {
 			return [format [mc "Name '%s' does not exist"] $fqdn]
 		    }
 		}
@@ -3370,8 +3380,7 @@ proc check-domain-relay {dbfd idcor _iddom domain} {
     pg_select $dbfd $sql tab {
 	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domaine) trr "existing-host"]
 	if {$msg ne ""} then {
-	    return [format [mc {You don't have rights to some relays of domain '%1$s'\n%2$s}] \
-			    $domain $msg]
+	    return [format [mc {You don't have rights to some relays of domain '%1$s': %2$s}] $domain $msg]
 	}
     }
 
@@ -3697,7 +3706,7 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
 	# Special case at the beginning of the list
 	#
 
-	set lprof [linsert $lprof 0 [list 0 [mc "No profile"]]
+	set lprof [linsert $lprof 0 [list 0 [mc "No profile"]]]
 
 	set title [mc "DHCP profile"]
 	set html [::webapp::form-menu $field 1 0 $lprof $lsel]
@@ -3721,7 +3730,7 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
 # Input:
 #   - dbfd : database handle
 #   - field : field name
-#   - idcor : user id
+#   - _tabuid : user characteristics
 #   - droitsmtp : default selected value
 # Output:
 #   - return value: list with 2 HTML strings {title menu}
@@ -3730,15 +3739,18 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
 #   2008/07/23 : pda/jean : design
 #   2008/07/24 : pda/jean : use idcor instead of idgrp
 #   2010/12/01 : pda      : i18n
+#   2010/12/05 : pda      : use tabuid instead of idcor
 #
 
-proc menu-droitsmtp {dbfd field idcor droitsmtp} {
+proc menu-droitsmtp {dbfd field _tabuid droitsmtp} {
+    upvar $_tabuid tabuid
+
     #
     # Get group access right, in order to display or hide the button
     #
 
-    set grdroitsmtp [droit-correspondant-smtp $dbfd $idcor]
-    if {$grdroitsmtp} then {
+
+    if {$tabuid(droitsmtp)} then {
 	set title [mc "Use SMTP"]
 	set html [::webapp::form-bool $field $droitsmtp]
     } else {
@@ -3756,7 +3768,7 @@ proc menu-droitsmtp {dbfd field idcor droitsmtp} {
 # Input:
 #   - dbfd : database handle
 #   - field : field name
-#   - idcor : user id
+#   - _tabuid : user characteristics
 #   - ttl : default value
 # Output:
 #   - return value: ready to use HTML string
@@ -3764,9 +3776,12 @@ proc menu-droitsmtp {dbfd field idcor droitsmtp} {
 # History
 #   2010/10/31 : pda      : design
 #   2010/12/01 : pda      : i18n
+#   2010/12/05 : pda      : use tabuid instead of idcor
 #
 
-proc menu-ttl {dbfd field idcor ttl} {
+proc menu-ttl {dbfd field _tabuid ttl} {
+    upvar $_tabuid tabuid
+
     #
     # Convert the TTL value from the database in something which can be
     # displayed: the value "-1" means "no TTL set for this host", which
@@ -3781,8 +3796,7 @@ proc menu-ttl {dbfd field idcor ttl} {
     # Get the group permission.
     #
 
-    set grdroitttl [droit-correspondant-ttl $dbfd $idcor]
-    if {$grdroitttl} then {
+    if {$tabuid(droitttl)} then {
 	set title [mc "TTL"]
 	set html [::webapp::form-text $field 1 6 10 $ttl]
 	append html " "
@@ -4202,7 +4216,7 @@ proc _build-array-spec {cwidth ctitle cspec} {
 	append titpat "align {center} "
 	append titpat "column { "
 	append titpat "  botbar {yes} "
-	if {[lindex $t 0] ne "text"]} then {
+	if {[lindex $t 0] ne "text"} then {
 	    append titpat "  format {raw} "
 	}
 	append titpat "} "
@@ -4234,10 +4248,7 @@ proc _build-array-spec {cwidth ctitle cspec} {
     # Finally, global specifications
     #
 
-    set aspec "global { chars {10 normal} "
-    append aspec "columns {$cwidth} } $titpat $norpat"
-
-    return $aspec
+    return "global { chars {10 normal} columns {$cwidth} } $titpat $norpat"
 }
 
 #
@@ -4291,7 +4302,6 @@ proc _display-tabular-line {cspec _tab idnum} {
 		    set v [lindex $e 0]
 		    if {$v eq $value} then {
 			set sel $i
-			break
 		    }
 		    incr i
 		}
@@ -4299,7 +4309,7 @@ proc _display-tabular-line {cspec _tab idnum} {
 	    }
 	    textarea {
 		lassign $typeopt width height
-		set item [::webapp::form-text $ref $width $height 0 $value]
+		set item [::webapp::form-text $ref $height $width 0 $value]
 	    }
 	}
 	lappend line $item
@@ -4329,7 +4339,7 @@ proc _display-tabular-line {cspec _tab idnum} {
 # Notes :
 #   - format of "cspec" is {{column defval} ...}, where:
 #	- column is the column id in the table
-"	- defval, if present, is the default value to store in the table
+#	- defval, if present, is the default value to store in the table
 #		if the value is not provided
 #   - first column of "cspec" is the key used to know if an entry must
 #	be added or delete.
@@ -4403,20 +4413,10 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
 		#
 
 		set ok [_store-tabular-mod $dbfd msg $id $idnum $table tabval]
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
-VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
 		if {! $ok} then {
 		    ::pgsql::execsql $dbfd "ABORT WORK" m
-		    return [format [mc {Error modifying '%1$s' (%2$s)}] $oldkey $msg]
+		    return [format [mc {Error modifying '%1$s' (%2$s)}] $tabval($key) $msg]
+
 		}
 	    }
 	}
@@ -5358,11 +5358,11 @@ proc eq-graph-status {dbfd eq {iface {}}} {
         set domain %DEFDOM%
     }
 
-    set iddom [lire-domaine $dbfd $domain]
+    set iddom [read-domain $dbfd $domain]
     if {$iddom == -1} then {
 	d error [format [mc "Domain '%s' not found"] $domain]
     }
-    if {! [lire-rr-par-nom $dbfd $host $iddom tabrr]} then {
+    if {! [read-rr-by-name $dbfd $host $iddom tabrr]} then {
 	d error [format [mc "Equipment '%s' not found"] $eq]
     }
     set idrr $tabrr(idrr)
@@ -5414,7 +5414,7 @@ proc eq-graph-status {dbfd eq {iface {}}} {
     set sql "SELECT message FROM topo.keepstate WHERE type = 'status'"
     set action ""
     pg_select $dbfd $sql tab {
-	lassign [lindex $tab(message) 0] date action
+	catch {lassign [lindex $tab(message) 0] date action}
     }
 
     switch -nocase -glob $action {

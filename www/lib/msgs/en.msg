@@ -9,7 +9,6 @@
 
  cfg:datefmt:desc {Date/hour display format}
  cfg:datefmt:help {Date and time display format, used in data display and data editing. See Tcl clock(n) manual page for format specification.}
- Format d'affichage des dates et des heures, utilisé dans l'édition et l'affichage des données. Voir la page de manuel clock(n) de Tcl.}
  cfg:jourfmt:desc {Date display format}
  cfg:Jourfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
 

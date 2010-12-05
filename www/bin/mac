@@ -241,7 +241,7 @@ source $conf(libdns)
 # Détermine le type de paramètre
 #
 # Entree : 
-#   dbfd : acces a la base de donnee (utilise pour syntaxe-ip)
+#   dbfd : acces a la base de donnee (utilise pour check-ip-syntax)
 #   recherche : objet de la recherche à identifier
 # Sortie :
 #   Retourne une liste constituée de deux éléments : {type param}
@@ -285,7 +285,7 @@ proc determine-type {dbfd recherche varmsg} {
 	set param $vlan
     } elseif { [regexp {^([0-9.]+|[0-9a-f:.]+)$} $recherche] } {
 	# Adresse IP
-        set msg [syntaxe-ip $dbfd $recherche "inet"]
+        set msg [check-ip-syntax $dbfd $recherche "inet"]
         if { [string equal $msg ""]} {
   	    set type "ip"
         }
@@ -991,4 +991,4 @@ proc main {} {
     }
 }
 
-::webapp::cgi-exec main
+::webapp::cgi-exec main %DEBUG%

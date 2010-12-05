@@ -146,7 +146,7 @@ proc main {} {
     set tableau ""
     set selres {}
     set seloccur {}
-    set lres [liste-reseaux $dbfd $tabcor(idgrp) "consult"]
+    set lres [read-networks $dbfd $tabcor(idgrp) "consult"]
     set loccur $conf(occur)
 
     #
@@ -160,8 +160,7 @@ proc main {} {
 	#
 
         set idreseau $ftab(reseau)
-        set cidr [valide-idreseau $dbfd $idreseau \
-                                        $tabcor(idgrp) "consult" 4 msg]
+        set cidr [check-netid $dbfd $idreseau $tabcor(idgrp) "consult" 4 msg]
         if {[llength $cidr] == 0} then {
               d error $msg
         }
@@ -266,4 +265,4 @@ proc main {} {
                             ]
 }
 
-::webapp::cgi-exec main
+::webapp::cgi-exec main %DEBUG%

@@ -193,7 +193,7 @@
  {Domain-id '%s' not found} {Identificateur de domaine '%s' non trouvé}
  {MX '%1$s' points to a domain on which you don't have rights\n%2$s} {Le MX '%1$s' référence un domaine auquel vous n'avez pas accès\n%2$s}
  {Invalid MX priority '%s'} {Priorité de MX non valide '%s'}
- {You don't have rights to some relays of domain '%1$s'\n%2$s} {Vous n'avez pas les droits sur certains relais du domaine '%1$s'\n%2$s}
+ {You don't have rights to some relays of domain '%1$s': %2$s} {Vous n'avez pas les droits sur certains relais du domaine '%1$s' : %2$s}
  {Internal error on '%1$s': id '%2$s' of mail host not found} {Erreur interne sur '%1$s' : id de l'hébergeur '%2$s' non trouvé}
  {Impossible to use MAC address '%1$s' because IP address '%2$s' is in DHCP dynamic range [%3$s..%4$s]} {Impossible d'affecter l'adresse MAC '%1$s' car l'adresse IP '%2$s' figure dans l'intervalle DHCP dynamique [%3$s..%4$s]}
  {Invalid TTL: must be a positive integer} {TTL invalide : doit être un nombre entier positif}
@@ -218,7 +218,7 @@
  {Community} {Communauté}
  {Permissions} {Droits}
  {No allowed network} {Aucun réseau autorisé}
- {None (that's all right)} {Aucun (tout va bien)}
+ {None (it's all right)} {Aucun (tout va bien)}
  {Mail role management} {Édition des rôles de messagerie}
  {Web role management} {Édition des rôles Web}
  {No allowed domain} {Aucun domaine autorisé}

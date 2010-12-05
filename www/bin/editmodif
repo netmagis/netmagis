@@ -86,9 +86,10 @@ source $conf(libdns)
 # Historique
 #   2002/05/03 : pda/jean : conception
 #
-proc editmodif-infos {dbfd idcor ft} {
+proc editmodif-infos {dbfd _tabuid _ftab} {
     global conf
-    upvar $ft ftab
+    upvar $_tabuid tabuid
+    upvar $_ftab ftab
 
     #
     # Valider les champs du formulaire
@@ -96,8 +97,6 @@ proc editmodif-infos {dbfd idcor ft} {
 
     set nom           [string trim [lindex $ftab(nom) 0]]
     set domaine       [string trim [lindex $ftab(domaine) 0]]
-    set nextprog      [string trim [lindex $ftab(nextprog) 0]]
-    set nextargs      [string trim [lindex $ftab(nextargs) 0]]
 
     #
     # Valider la syntaxe du nom au sens de la RFC ????
@@ -113,7 +112,7 @@ proc editmodif-infos {dbfd idcor ft} {
     # Valider le domaine, le nom (qui ne doit pas être un alias, un MX, etc)
     #
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "existing-host"]
+    set msg [check-authorized-host $dbfd $tabuid(idcor) $nom $domaine trr "existing-host"]
     if {[string length $msg] > 0} then {
 	d error $msg
     }
@@ -138,21 +137,21 @@ proc editmodif-infos {dbfd idcor ft} {
     #
 
     set nom [::webapp::form-text nom 1 20 64 $nom]
-    set domaine [menu-domain $dbfd $idcor domaine "" $domaine]
+    set domaine [menu-domain $dbfd $tabuid(idcor) domaine "" $domaine]
 
     set val [::webapp::html-string $trr(mac)]
     set mac [::webapp::form-text mac 1 20 17 $val]
-    set dhcpprofil [menu-dhcp-profile $dbfd iddhcpprofil $idcor $trr(iddhcpprofil)]
+    set dhcpprofil [menu-dhcp-profile $dbfd iddhcpprofil $tabuid(idcor) $trr(iddhcpprofil)]
     set dhcpprofillibelle [lindex $dhcpprofil 0]
     set dhcpprofilmenu    [lindex $dhcpprofil 1]
 
     set menuhinfo [menu-hinfo $dbfd hinfo $trr(hinfo)]
 
-    set droitsmtp [menu-droitsmtp $dbfd "droitsmtp" $idcor $trr(droitsmtp)]
+    set droitsmtp [menu-droitsmtp $dbfd "droitsmtp" tabuid $trr(droitsmtp)]
     set droitsmtplibelle [lindex $droitsmtp 0]
     set droitsmtpmenu    [lindex $droitsmtp 1]
 
-    set ttl [menu-ttl $dbfd "ttl" $idcor $trr(ttl)]
+    set ttl [menu-ttl $dbfd "ttl" tabuid $trr(ttl)]
     set ttllibelle [lindex $ttl 0]
     set ttlval     [lindex $ttl 1]
 
@@ -228,7 +227,7 @@ proc main {} {
 	d error "Formulaire non conforme aux spécifications"
     }
 
-    edit$action $dbfd $tabcor(idcor) ftab
+    edit$action $dbfd tabcor ftab
 }
 
 ::webapp::cgi-exec main %DEBUG%

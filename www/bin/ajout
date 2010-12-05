@@ -100,7 +100,7 @@ proc main {} {
     # d'autorisation d'émettre en SMTP non authentifié
     #
 
-    set droitsmtp [menu-droitsmtp $dbfd "droitsmtp" $tabcor(idcor) 0]
+    set droitsmtp [menu-droitsmtp $dbfd "droitsmtp" tabcor 0]
     set droitsmtplibelle [lindex $droitsmtp 0]
     set droitsmtpmenu    [lindex $droitsmtp 1]
 
@@ -109,7 +109,7 @@ proc main {} {
     # d'édition du TTL
     #
 
-    set ttl [menu-ttl $dbfd "ttl" $tabcor(idcor) ""]
+    set ttl [menu-ttl $dbfd "ttl" tabcor ""]
     set ttllibelle [lindex $ttl 0]
     set ttlval     [lindex $ttl 1]
 
