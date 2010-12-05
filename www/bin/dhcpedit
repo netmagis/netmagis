@@ -81,7 +81,7 @@ proc main {} {
     #
 
     set idreseau [lindex $ftab(idreseau) 0]
-    set lcidr [valide-idreseau $dbfd $idreseau $idgrp "dhcp" 4 msg]
+    set lcidr [check-netid $dbfd $idreseau $idgrp "dhcp" 4 msg]
     if {[llength $lcidr] == 0} then {
 	d error $msg
     }
@@ -94,11 +94,11 @@ proc main {} {
     #
 
     set largeurs {25 25 20 10 10 10}
-    set titre {{texte Min} {texte Max}
-		{texte Domaine}
-		{texte {Durée par défaut du bail}}
-		{texte {Durée maximum du bail}}
-		{texte Profil DHCP}
+    set titre {{text Min} {text Max}
+		{text Domaine}
+		{text {Durée par défaut du bail}}
+		{text {Durée maximum du bail}}
+		{text Profil DHCP}
 	    }
 
     set menudom {}
@@ -145,7 +145,7 @@ proc main {} {
     # On y va !
     #
 
-    set errmsg [edition-tableau $largeurs $titre $spec $dbfd $sql $id tableau]
+    set errmsg [display-tabular $largeurs $titre $spec $dbfd $sql $id tableau]
     if {[string length $errmsg] > 0} then {
 	d error $errmsg
     }

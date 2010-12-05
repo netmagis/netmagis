@@ -642,7 +642,7 @@ proc main {} {
 
     if {$nplages > 0} then {
 	foreach idreseau $ftab(plages) {
-	    set l [valide-idreseau $dbfd $idreseau \
+	    set l [check-netid $dbfd $idreseau \
 					$tabcor(idgrp) "consult" {4 6} msg]
 	    if {[llength $l] == 0} then {
 		d error $msg

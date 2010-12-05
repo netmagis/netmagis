@@ -79,7 +79,7 @@ source $conf(libdns)
 ##############################################################################
 
 #
-# Prépare une liste de titres pour la fonction edition-tableau
+# Prépare une liste de titres pour la fonction display-tabular
 #
 # Entrée :
 #   - paramètres :
@@ -90,7 +90,7 @@ source $conf(libdns)
 #	- urlaide : url de l'aide, chaîne destinée à passer à format avec
 #		%1$s est le nom de la colonne et %2$s est le texte à afficher
 # Sortie :
-#   - valeur de retour : spécification prête pour edition-tableau
+#   - valeur de retour : spécification prête pour display-tabular
 #
 # Historique
 #   2001/11/02 : pda : conception et documentation
@@ -100,7 +100,7 @@ proc prepare-titres {colonnes urlaide} {
     foreach c $colonnes {
 	set clef    [lindex $c 0]
 	set legende [lindex $c 1]
-	lappend titres [list html [format $urlaide $clef $legende]]
+	lappend titres [list "html" [format $urlaide $clef $legende]]
     }
     return $titres
 }
@@ -294,7 +294,7 @@ proc main {} {
 	}
     }
 
-    set errmsg [edition-tableau $largeurs $titre $spec $dbfd $sql $id tab]
+    set errmsg [display-tabular $largeurs $titre $spec $dbfd $sql $id tab]
     if {[string length $errmsg] > 0} then {
 	d error $errmsg
     }

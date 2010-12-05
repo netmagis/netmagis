@@ -225,8 +225,7 @@ proc traitemodif-infos {dbfd tc ft} {
     # Vérifier le droit d'émission SMTP
     #
 
-    set grdroitsmtp [droit-correspondant-smtp $dbfd $tabcor(idcor)]
-    if {$grdroitsmtp} then {
+    if {$tabcor(droitsmtp)} then {
 	if {[string equal $droitsmtp ""]} then {
 	    set droitsmtp 0
 	} else {
@@ -240,8 +239,7 @@ proc traitemodif-infos {dbfd tc ft} {
     # Vérifier le droit TTL
     #
 
-    set grdroitttl [droit-correspondant-ttl $dbfd $tabcor(idcor)]
-    if {$grdroitttl} then {
+    if {$tabcor(droitttl)} then {
 	if {[string equal $ttl ""]} then {
 	    set ttl -1
 	} else {

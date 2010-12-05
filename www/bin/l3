@@ -337,7 +337,7 @@ proc main {} {
 	#
 
 	set liste {}
-	foreach addr [lsort -command comparer-ip [array names tabip]] {
+	foreach addr [lsort -command compare-ip [array names tabip]] {
 	    d urlset "" $conf(nextl3) [list [list "addr" $addr]]
 	    set url [d urlget ""]
 	    lappend liste [::webapp::helem "li" \

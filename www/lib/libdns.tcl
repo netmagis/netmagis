@@ -26,7 +26,7 @@ namespace import ::msgcat::*
 # Various table specifications
 #
 
-set libconf(tabdroits) {
+set libconf(tabperm) {
     global {
 	chars {10 normal}
 	align {left}
@@ -61,7 +61,7 @@ set libconf(tabdreq) {
     }
 }
 
-set libconf(tabreseaux) {
+set libconf(tabnetworks) {
     global {
 	chars {10 normal}
 	align {left}
@@ -105,7 +105,7 @@ set libconf(tabreseaux) {
     }
 }
 
-set libconf(tabdomaines) {
+set libconf(tabdomains) {
     global {
 	chars {10 normal}
 	align {left}
@@ -123,7 +123,7 @@ set libconf(tabdomaines) {
     }
 }
 
-set libconf(tabdhcpprofil) {
+set libconf(tabdhcpprofile) {
     global {
 	chars {10 normal}
 	align {left}
@@ -157,7 +157,7 @@ set libconf(tabmachine) {
     }
 }
 
-set libconf(tabcorresp) {
+set libconf(tabuser) {
     global {
 	chars {10 normal}
 	align {left}
@@ -207,8 +207,28 @@ set libconf(tabeqstatus) {
     }
 }
 
+
+set libconf(extractcoll)	"%TOPODIR%/bin/extractcoll %s < %GRAPH%"
+set libconf(extracteq)		"%TOPODIR%/bin/extracteq %s %s < %GRAPH%"
+
+# Cisco aironet frequency conversion table
+array set libconf {
+    freq:2412	1
+    freq:2417	2
+    freq:2422	3
+    freq:2427	4
+    freq:2432	5
+    freq:2437	6
+    freq:2442	7
+    freq:2447	8
+    freq:2452	9
+    freq:2457	10
+    freq:2462	11
+}
+
+
 ##############################################################################
-# Gestion des programmes WebDNS
+# WebDNS application framework
 ##############################################################################
 
 #
@@ -1039,7 +1059,203 @@ snit::type ::dnscontext {
 }
 
 ##############################################################################
-# Cosmétique
+# Configuration parameters
+##############################################################################
+
+#
+# Configuration parameters class
+#
+# This class is a simple way to access to configuration parameters
+# of the WebDNS application.
+#
+# Methods:
+# - setdb $dbfd
+#	set the database handle used to access parameters
+# - class
+#	returns all known classes
+# - desc class-or-key
+#	returns the description associated with class or key
+# - keys [ class ]
+#	returns all keys associed with the class, or all known keys
+# - keytype key
+#	returns type of a given key, under the format {string|bool|text|menu x}
+#	X is present only for the "menu" type.
+# - keyhelp key
+#	returns the help message associated with a key
+# - get key
+#	returns the value associated with a key
+# - set key val
+#	set the value associated with a key and returns an empty string or
+#	an error message.
+#
+# History
+#   2001/03/21 : pda      : design getconfig/setconfig
+#   2010/10/25 : pda      : transform into a class
+#   2010/12/04 : pda      : i18n
+#
+
+snit::type ::config {
+    # database handle
+    variable db ""
+
+    # configuration parameter specification
+    # {{class class-spec} {class class-spec} ...}
+    # class = class name
+    # class-spec = {{key type} {key type} ...}
+    variable configspec {
+	{dns
+	    {datefmt {string}}
+	    {jourfmt {string}}
+	}
+	{dhcp
+	    {default_lease_time {string}}
+	    {max_lease_time {string}}
+	    {min_lease_time {string}}
+	}
+	{topo
+	    {topoactive {bool}}
+	    {topofrom {string}}
+	    {topoto {string}}
+	}
+	{auth
+	    {authmailfrom {bool}}
+	    {mailfrom {string}}
+	    {authmailreplyto {bool}}
+	    {mailreplyto {string}}
+	    {authmailcc {bool}}
+	    {mailcc {string}}
+	    {authmailbcc {bool}}
+	    {mailbcc {string}}
+	    {authmailsubject {bool}}
+	    {mailsubject {string}}
+	    {authmailbody {bool}}
+	    {mailbody {text}}
+	    {groupes {string}}
+	}
+    }
+
+    #
+    # Internal representation of parameter specification
+    #
+    # (class)			{<cl1> ... <cln>}
+    # (class:<cl1>)		{<k1> ... <kn>}
+    # (key:<k1>:type)		{string|bool|text|menu ...}
+    #
+
+    variable internal -array {}
+
+    constructor {} {
+	set internal(class) {}
+	foreach class $configspec {
+
+	    set classname [lindex $class 0]
+	    lappend internal(class) $classname
+	    set internal(class:$classname) {}
+
+	    foreach key [lreplace $class 0 0] {
+		lassign $key keyname keytype
+
+		lappend internal(class:$classname) $keyname
+		set internal(key:$keyname:type) $keytype
+	    }
+	}
+    }
+
+    method setdb {dbfd} {
+	set db $dbfd
+    }
+
+    # returns all classes
+    method class {} {
+	return $internal(class)
+    }
+
+    # returns textual description of the given class or key
+    method desc {cork} {
+	set r $cork
+	if {[info exists internal(class:$cork)]} then {
+	    set r [mc "cfg:$cork"]
+	} elseif {[info exists internal(key:$cork:type)]} {
+	    set r [mc "cfg:$cork:desc"]
+	}
+	return $r
+    }
+
+    # returns all keys associated with a class (default  : all classes)
+    method keys {{class {}}} {
+	if {[llength $class] == 0} then {
+	    set class $internal(class)
+	}
+	set lk {}
+	foreach c $class {
+	    set lk [concat $lk $internal(class:$c)]
+	}
+	return $lk
+    }
+
+    # returns key type
+    method keytype {key} {
+	set r ""
+	if {[info exists internal(key:$key:type)]} then {
+	    set r $internal(key:$key:type)
+	}
+	return $r
+    }
+
+    # returns key help
+    method keyhelp {key} {
+	set r $key
+	if {[info exists internal(key:$key:type)]} then {
+	    set r [mc "cfg:$key:help"]
+	}
+	return $r
+    }
+
+    # returns key value
+    method get {key} {
+	if {[info exists internal(key:$key:type)]} then {
+	    set found 0
+	    pg_select $db "SELECT * FROM global.config WHERE clef = '$key'" tab {
+		set val $tab(valeur)
+		set found 1
+	    }
+	    if {! $found} then {
+		switch $internal(key:$key:type) {
+		    string	{ set val "" }
+		    bool	{ set val 0 }
+		    set text	{ set val "" }
+		    set menu	{ set val "" }
+		    default	{ set val "type unknown" }
+		}
+	    }
+	} else {
+	    error [format [mc "Unknown configuration key '%s'"] $key]
+	}
+	return $val
+    }
+
+    # set key value
+    # returns empty string if ok, or an error message
+    method set {key val} {
+	set r ""
+	set k [::pgsql::quote $key]
+	set sql "DELETE FROM global.config WHERE clef = '$k'"
+	if {[::pgsql::execsql $db $sql msg]} then {
+	    set v [::pgsql::quote $val]
+	    set sql "INSERT INTO global.config VALUES ('$k', '$v')"
+	    if {! [::pgsql::execsql $db $sql msg]} then {
+		set r [format [mc {Cannot set key '%1$s' to '%2$s': %3$s}] $key $val $msg]
+	    }
+	} else {
+	    set r [format [mc {Cannot fetch key '%1$s': %2$s}] $key $msg]
+	}
+
+	return $r
+    }
+}
+
+##############################################################################
+# Cosmetic
 ##############################################################################
 
 #
@@ -1071,7 +1287,7 @@ proc html-tab-string {string} {
 #   - parameters:
 #	- tabuid : array containing user's attributes
 #   - global variables :
-#	- libconf(tabcorresp) : array specification
+#	- libconf(tabuser) : array specification
 # Output:
 #   - return value: HTML code ready to use
 #
@@ -1097,7 +1313,276 @@ proc display-user {_tabuid} {
 		    } {
 	lappend lines [list Normal [mc $txt] $tabuid($key)]
     }
-    return [::arrgen::output "html" $libconf(tabcorresp) $lines]
+    return [::arrgen::output "html" $libconf(tabuser) $lines]
+}
+
+#
+# Display group data in an HTML array
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- idgrp : group id
+#   - global variables libconf(tab*) : array specification
+# Output:
+#   - return value: list of 7 HTML strings
+#
+# History
+#   2002/05/23 : pda/jean : specification et design
+#   2005/04/06 : pda      : add DHCP profiles
+#   2007/10/23 : pda/jean : add users
+#   2008/07/23 : pda/jean : add group permissions
+#   2010/10/31 : pda      : add ttl permission
+#   2010/11/03 : pda/jean : add equipment permissions
+#   2010/12/01 : pda      : i18n
+#
+
+proc display-group {dbfd idgrp} {
+    global libconf
+
+    #
+    # Get specific permissions: admin, droitsmtp and droitttl
+    #
+
+    set lines {}
+    set sql "SELECT admin, droitsmtp, droitttl
+			FROM global.groupe
+			WHERE idgrp = $idgrp"
+    pg_select $dbfd $sql tab {
+	if {$tab(admin)} then {
+	    set admin [mc "yes"]
+	} else {
+	    set admin [mc "no"]
+	}
+	if {$tab(droitsmtp)} then {
+	    set droitsmtp [mc "yes"]
+	} else {
+	    set droitsmtp [mc "no"]
+	}
+	if {$tab(droitttl)} then {
+	    set droitttl [mc "yes"]
+	} else {
+	    set droitttl [mc "no"]
+	}
+	lappend lines [list DROIT [mc "WebDNS administration"] $admin]
+	lappend lines [list DROIT [mc "SMTP authorization management"] $droitsmtp]
+	lappend lines [list DROIT [mc "TTL management"] $droitttl]
+    }
+    if {[llength $lines] > 0} then {
+	set tabperm [::arrgen::output "html" $libconf(tabperm) $lines]
+    } else {
+	set tabperm [mc "Error on group permissions"]
+    }
+
+    #
+    # Get the list of users in this group
+    #
+
+    set luser {}
+    set sql "SELECT login FROM global.corresp WHERE idgrp=$idgrp ORDER BY login"
+    pg_select $dbfd $sql tab {
+	lappend luser [::webapp::html-string $tab(login)]
+    }
+    set tabuser [join $luser ", "]
+
+    #
+    # Get IP ranges allowed to the group
+    #
+
+    set lines {}
+    set sql "SELECT r.idreseau,
+			r.nom, r.localisation, r.adr4, r.adr6,
+			d.dhcp, d.acl,
+			e.nom AS etabl,
+			c.nom AS commu
+		FROM dns.reseau r, dns.dr_reseau d, dns.etablissement e, dns.communaute c
+		WHERE d.idgrp = $idgrp
+			AND d.idreseau = r.idreseau
+			AND e.idetabl = r.idetabl
+			AND c.idcommu = r.idcommu
+		ORDER BY d.tri, r.adr4, r.adr6"
+    pg_select $dbfd $sql tab {
+	set r_nom 	[::webapp::html-string $tab(nom)]
+	set r_loc	[::webapp::html-string $tab(localisation)]
+	set r_etabl	$tab(etabl)
+	set r_commu	$tab(commu)
+	set r_dhcp	$tab(dhcp)
+	set r_acl	$tab(acl)
+
+	# dispaddr : used for a pleasant address formatting
+	set dispaddr {}
+	# where : part of the WHERE clause for address selection
+	set where  {}
+	foreach a {adr4 adr6} {
+	    if {$tab($a) ne ""} then {
+		lappend dispaddr $tab($a)
+		lappend where "adr <<= '$tab($a)'"
+	    }
+	}
+	set dispaddr [join $dispaddr ", "]
+	set where [join $where " OR "]
+
+	lappend lines [list Reseau $r_nom]
+	lappend lines [list Normal4 [mc "Location"] $r_loc \
+				[mc "Organization"] $r_etabl]
+	lappend lines [list Normal4 [mc "Range"] $dispaddr \
+				[mc "Community"] $r_commu]
+
+	set perm {}
+
+	set pnet {}
+	if {$r_dhcp} then { lappend pnet "dhcp" }
+	if {$r_acl} then { lappend pnet "acl" }
+	if {[llength $pnet] > 0} then {
+	    lappend perm [join $pnet ", "]
+	}
+	set sql2 "SELECT adr, allow_deny
+			FROM dns.dr_ip
+			WHERE ($where)
+			    AND idgrp = $idgrp
+			ORDER BY adr"
+	pg_select $dbfd $sql2 tab2 {
+	    if {$tab2(allow_deny)} then {
+		set x "+"
+	    } else {
+		set x "-"
+	    }
+	    lappend perm "$x $tab2(adr)"
+	}
+
+	lappend lines [list Droits [mc "Permissions"] [join $perm "\n"]]
+    }
+
+    if {[llength $lines] > 0} then {
+	set tabnetworks [::arrgen::output "html" $libconf(tabnetworks) $lines]
+    } else {
+	set tabnetworks [mc "No allowed network"]
+    }
+
+    #
+    # Get IP permissions out of network ranges identified above.
+    #
+
+    set lines {}
+    set found 0
+    set sql "SELECT adr, allow_deny
+		    FROM dns.dr_ip
+		    WHERE NOT (adr <<= ANY (
+				SELECT r.adr4
+					FROM dns.reseau r, dns.dr_reseau d
+					WHERE r.idreseau = d.idreseau
+						AND d.idgrp = $idgrp
+				UNION
+				SELECT r.adr6
+					FROM dns.reseau r, dns.dr_reseau d
+					WHERE r.idreseau = d.idreseau
+						AND d.idgrp = $idgrp
+				    ) )
+			AND idgrp = $idgrp
+		    ORDER BY adr"
+    set perm {}
+    pg_select $dbfd $sql tab {
+	set found 1
+	if {$tab(allow_deny)} then {
+	    set x "+"
+	} else {
+	    set x "-"
+	}
+	lappend perm "$x $tab(adr)"
+    }
+    lappend lines [list Droits [mc "Permissions"] [join $perm "\n"]]
+
+    if {$found} then {
+	set tabcidrnonet [::arrgen::output "html" $libconf(tabnetworks) $lines]
+    } else {
+	set tabcidrnonet [mc "None (that's all right)"]
+    }
+
+    #
+    # Get domains
+    #
+
+    set lines {}
+    set sql "SELECT domaine.nom AS nom, dr_dom.rolemail, dr_dom.roleweb \
+			FROM dns.dr_dom, dns.domaine
+			WHERE dr_dom.iddom = domaine.iddom \
+				AND dr_dom.idgrp = $idgrp \
+			ORDER BY dr_dom.tri, domaine.nom"
+    pg_select $dbfd $sql tab {
+	set rm ""
+	if {$tab(rolemail)} then {
+	    set rm [mc "Mail role management"]
+	}
+	set rw ""
+	if {$tab(roleweb)} then {
+	    set rw [mc "Web role management"]
+	}
+
+	lappend lines [list Domaine $tab(nom) $rm $rw]
+    }
+    if {[llength $lines] > 0} then {
+	set tabdomains [::arrgen::output "html" $libconf(tabdomains) $lines]
+    } else {
+	set tabdomains [mc "No allowed domain"]
+    }
+
+    #
+    # Get DHCP profiles
+    #
+
+    set lines {}
+    set sql "SELECT p.nom, dr.tri, p.texte
+			FROM dns.dhcpprofil p, dns.dr_dhcpprofil dr
+			WHERE p.iddhcpprofil = dr.iddhcpprofil
+				AND dr.idgrp = $idgrp
+			ORDER BY dr.tri, p.nom"
+    pg_select $dbfd $sql tab {
+	lappend lines [list DHCP $tab(nom) $tab(texte)]
+    }
+    if {[llength $lines] > 0} then {
+	set tabdhcpprofile [::arrgen::output "html" $libconf(tabdhcpprofile) $lines]
+    } else {
+	set tabdhcpprofile [mc "No allowed DHCP profile"]
+    }
+
+    #
+    # Get equipment permissions
+    #
+
+    set lines {}
+    foreach {rw text} [list 0 [mc "Read"] Lecture 1 [mc "Write"]] {
+	set sql "SELECT allow_deny, pattern
+			    FROM topo.dr_eq
+			    WHERE idgrp = $idgrp AND rw = $rw
+			    ORDER BY rw, allow_deny DESC, pattern"
+	set perm ""
+	pg_select $dbfd $sql tab {
+	    if {$tab(allow_deny) eq "0"} then {
+		set allow_deny "-"
+	    } else {
+		set allow_deny "+"
+	    }
+	    append perm "$allow_deny $tab(pattern)\n"
+	}
+	if {$perm eq ""} then {
+	    set perm [mc "No permission"]
+	}
+	lappend lines [list DroitEq $text $perm]
+    }
+    set tabdreq [::arrgen::output "html" $libconf(tabdreq) $lines]
+
+    #
+    # Return informations
+    #
+
+    return [list    $tabperm \
+		    $tabuser \
+		    $tabnetworks \
+		    $tabcidrnonet \
+		    $tabdomains \
+		    $tabdhcpprofile \
+		    $tabdreq \
+	    ]
 }
 
 ##############################################################################
@@ -1271,11 +1756,11 @@ proc read-user {dbfd login _tabuid} {
     #
 
     # Read authorized CIDR
-    set tabuid(reseaux) [liste-reseaux-autorises $dbfd $tabuid(idgrp) "dhcp"]
+    set tabuid(reseaux) [allowed-networks $dbfd $tabuid(idgrp) "dhcp"]
 
     # Read regexp to allow or deny access to equipments
-    set tabuid(eqr) [lire-eq-autorises $dbfd 0 $tabuid(idgrp)]
-    set tabuid(eqw) [lire-eq-autorises $dbfd 1 $tabuid(idgrp)]
+    set tabuid(eqr) [read-authorized-eq $dbfd 0 $tabuid(idgrp)]
+    set tabuid(eqw) [read-authorized-eq $dbfd 1 $tabuid(idgrp)]
 
     # Build flags to restrict graph to a subset according to
     # user rights.
@@ -1451,7 +1936,7 @@ proc read-rr-by-ip {dbfd addr _trr} {
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 #	_trr(rolemail) : id of herbegeur
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(adrmail) : les idrr des adresses de messagerie hébergées
+#	_trr(adrmail) : idrr of mail addresses hosted on this host
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 #	_trr(roleweb) : 1 si role web pour ce rr
 #
@@ -2070,21 +2555,20 @@ proc display-rr {dbfd idrr _trr} {
 ##############################################################################
 
 #
-# Valide la syntaxe d'un FQDN complet au sens de la RFC 1035
-# élargie pour accepter les chiffres en début de nom.
+# Check FQDN syntax according to RFC 1035.
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
 #	- fqdn : name to test
-#	- _name : contiendra en retour le nom de host
-#	- _domain : contiendra en retour le domaine de host
-#	- _iddom : contiendra en retour l'id du domaine
+#	- _name : host name in return
+#	- _domain : host domain in return
+#	- _iddom : domain id in return
 # Output:
 #   - return value: empty string or error message
-#   - parameter _name : le nom trouvé
-#   - parameter _domain : le domaine trouvé
-#   - parameter _iddom : l'id du domaine trouvé, ou -1 si erreur
+#   - parameter _name : host name found
+#   - parameter _domain : host domain found
+#   - parameter _iddom : domain id found, or -1 if error
 #
 # History
 #   2004/09/21 : pda/jean : design
@@ -2476,22 +2960,22 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
 #	    if name.domain is ADDRMAIL
-#		then check-all-IP-addresses (hébergeur, idcor)
+#		then check-all-IP-addresses (mail host, idcor)
 #		      check-domain (domain, idcor, "")
 #	    if name.domain has IP addresses
 #		then check-all-IP-addresses (machine, idcor)
 #	    if no test is false, then OK
 #	"existing-host"
-#	    idem "host", but the name must be have at least one IP address
+#	    identical to "host", but the name must be have at least one IP address
 #	"del-name"
 #	    check-domain (domain, idcor, "")
 #	    if name.domain is ALIAS
-#		then check-all-IP-addresses (machine pointée, idcor)
+#		then check-all-IP-addresses (pointed host, idcor)
 #	    if name.domain is MX then error
 #	    if name.domain has IP addresses
 #		then check-all-IP-addresses (machine, idcor)
 #	    if name.domain is ADDRMAIL
-#		then check-all-IP-addresses (hébergeur, idcor)
+#		then check-all-IP-addresses (mail host, idcor)
 #		      check-domain (domain, idcor, "")
 #	    if no test is false, then OK
 #	"alias"
@@ -2505,7 +2989,7 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	    check-domain (domain, idcor, "")
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX
-#		then check-all-IP-addresses (échangeurs, idcor)
+#		then check-all-IP-addresses (mail exchangers, idcor)
 #	    if name.domain is ADDRMAIL then error
 #	    if no test is false, then OK
 #	"addrmail"
@@ -2513,7 +2997,7 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
 #	    if name.domain is ADDRMAIL
-#		check-all-IP-addresses (hébergeur, idcor)
+#		check-all-IP-addresses (mail host, idcor)
 #		      check-domain (domain, idcor, "")
 #	    if name.domain is HEBERGEUR
 #		check that is does not hold mail for another host besides itself
@@ -2671,7 +3155,7 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 			    }
 			    CHECK {
 				if {! [read-rr-by-id $dbfd $idrr trrh]} then {
-				    return [format [mc "Internal error: id '%s' doesn't exists for a mailhost"] $idrr]
+				    return [format [mc "Internal error: id '%s' doesn't exists for a mail host"] $idrr]
 				}
 
 				# IP address check
@@ -2992,31 +3476,6 @@ proc check-ttl {ttl} {
 ##############################################################################
 
 #
-# XXX : NOT USED
-#
-# Lit le groupe associé à un correspondant
-#
-# Input:
-#   - parameters:
-#       - dbfd : database handle
-#	- idcor : l'id du correspondant
-# Output:
-#   - return value: id du groupe si trouvé, ou -1
-#
-# History
-#   2002/05/06 : pda/jean : design
-#
-
-proc lire-groupe {dbfd idcor} {
-    set idgrp -1
-    set sql "SELECT idgrp FROM global.corresp WHERE idcor = $idcor"
-    pg_select $dbfd $sql tab {
-	set idgrp	$tab(idgrp)
-    }
-    return $idgrp
-}
-
-#
 # Check syntax of a group name
 #
 # Input:
@@ -3100,24 +3559,25 @@ proc read-dhcp-profile {dbfd text} {
 }
 
 ##############################################################################
-# Récupération d'informations pour les menus
+# WebDNS standard HTML menus
 ##############################################################################
 
 #
-# Récupère les HINFO possibles sous forme d'un menu HTML prêt à l'emploi
+# Get a ready to use HTML menu to set HINFO values.
 #
 # Input:
 #   - dbfd : database handle
-#   - champ : champ de formulaire (variable du CGI suivant)
-#   - defval : hinfo (texte) par défaut
+#   - field : field name
+#   - defval : default hinfo (textual value)
 # Output:
-#   - return value: code HTML prêt à l'emploi
+#   - return value: ready to use HTML string
 #
 # History
 #   2002/05/03 : pda/jean : design
+#   2010/12/01 : pda      : i18n
 #
 
-proc menu-hinfo {dbfd champ defval} {
+proc menu-hinfo {dbfd field defval} {
     set lhinfo {}
     set sql "SELECT texte FROM dns.hinfo \
 				WHERE present = 1 \
@@ -3131,33 +3591,30 @@ proc menu-hinfo {dbfd champ defval} {
 	}
 	incr i
     }
-    return [::webapp::form-menu $champ 1 0 $lhinfo [list $defindex]]
+    return [::webapp::form-menu $field 1 0 $lhinfo [list $defindex]]
 }
 
 #
-# Récupère les profils DHCP accessibles par le groupe sous forme d'un
-# menu visible, ou un champ caché si le groupe n'a accès à aucun profil
-# DHCP.
+# Get a ready to use HTML menu to set DHCP profile value, or a hidden
+# field if the group do not have access to any DHCP Profile.
 #
 # Input:
 #   - dbfd : database handle
-#   - champ : champ de formulaire (variable du CGI suivant)
-#   - idcor : identification du correspondant
-#   - iddhcpprofil : identification du profil à sélectionner (le profil
-#	pré-existant) ou 0
+#   - field : field name
+#   - idcor : user id
+#   - iddhcpprofil : default selected profile, or 0
 # Output:
-#   - return value: liste avec deux éléments de code HTML prêt à l'emploi
-#	(intitulé, menu de sélection)
+#   - return value: list with 2 HTML strings {title menu}
 #
 # History
 #   2005/04/08 : pda/jean : design
-#   2008/07/23 : pda/jean : changement format sortie
+#   2008/07/23 : pda/jean : change output format
+#   2010/11/29 : pda      : i18n
 #
 
-proc menu-dhcpprofil {dbfd champ idcor iddhcpprofil} {
+proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
     #
-    # Récupérer les profils DHCP visibles par le groupe
-    # ainsi que le profil DHCP pré-existant
+    # Get all DHCP profiles for this group
     #
 
     set sql "SELECT p.iddhcpprofil, p.nom
@@ -3178,20 +3635,19 @@ proc menu-dhcpprofil {dbfd champ idcor iddhcpprofil} {
     }
 
     #
-    # A-t'on trouvé au moins un profil ?
+    # Is there at least one profile?
     #
 
     if {[llength $lprof] > 0} then {
 	#
-	# Est-ce que le profil pré-existant est bien dans notre
-	# liste ?
+	# Is the default selected profile in our list?
 	#
 
 	if {$iddhcpprofil != 0 && [llength $lsel] == 0} then {
 	    #
-	    # Non. On va donc ajouter à la fin de la liste
-	    # le profil pré-existant
+	    # We must add it at the end of the list.
 	    #
+
 	    set sql "SELECT iddhcpprofil, nom
 			    FROM dns.dhcpprofil
 			    WHERE iddhcpprofil = $iddhcpprofil"
@@ -3202,81 +3658,83 @@ proc menu-dhcpprofil {dbfd champ idcor iddhcpprofil} {
 	}
 
 	#
-	# Ajouter le cas spécial en début de liste
+	# Special case at the beginning of the list
 	#
 
-	set lprof [linsert $lprof 0 {0 {Aucun profil}}]
+	set lprof [linsert $lprof 0 [list 0 [mc "No profile"]]
 
-	set intitule "Profil DHCP"
-	set html [::webapp::form-menu iddhcpprofil 1 0 $lprof $lsel]
+	set title [mc "DHCP profile"]
+	set html [::webapp::form-menu $field 1 0 $lprof $lsel]
 
     } else {
 	#
-	# Aucun profil trouvé. On cache l'information
+	# No profile found. We hide the field.
 	#
 
-	set intitule ""
-	set html "<INPUT TYPE=HIDDEN NAME=\"$champ\" VALUE=\"$iddhcpprofil\">"
+	set title ""
+	set html [::webapp::form-hidden $field $iddhcpprofil]
     }
 
-    return [list $intitule $html]
+    return [list $title $html]
 }
 
 #
-# Récupère le droit d'émettre en SMTP d'une machine, ou un champ caché
-# si le groupe n'a pas accès à la fonctionnalité
+# Get an HTML button "SMTP emit right" for a host, or a hidden field
+# if the group do not have the according right.
 #
 # Input:
 #   - dbfd : database handle
-#   - champ : champ de formulaire (variable du CGI suivant)
-#   - idcor : identification du correspondant
-#   - droitsmtp : valeur actuelle (donc à présélectionner)
+#   - field : field name
+#   - idcor : user id
+#   - droitsmtp : default selected value
 # Output:
-#   - return value: liste avec deux éléments de code HTML prêt à l'emploi
-#	(intitulé, choix de sélection)
+#   - return value: list with 2 HTML strings {title menu}
 #
 # History
 #   2008/07/23 : pda/jean : design
-#   2008/07/24 : pda/jean : utilisation de idcor plutôt que idgrp
+#   2008/07/24 : pda/jean : use idcor instead of idgrp
+#   2010/12/01 : pda      : i18n
 #
 
-proc menu-droitsmtp {dbfd champ idcor droitsmtp} {
+proc menu-droitsmtp {dbfd field idcor droitsmtp} {
     #
-    # Récupérer le droit SMTP pour afficher ou non le bouton
-    # d'autorisation d'émettre en SMTP non authentifié
+    # Get group access right, in order to display or hide the button
     #
 
     set grdroitsmtp [droit-correspondant-smtp $dbfd $idcor]
     if {$grdroitsmtp} then {
-	set intitule "Émettre en SMTP"
-	set html [::webapp::form-bool $champ $droitsmtp]
+	set title [mc "Use SMTP"]
+	set html [::webapp::form-bool $field $droitsmtp]
     } else {
-	set intitule ""
-	set html "<INPUT TYPE=HIDDEN NAME=\"$champ\" VALUE=\"$droitsmtp\">"
+	set title ""
+	set html [::webapp::form-hidden $field $droitsmtp]
     }
 
-    return [list $intitule $html]
+    return [list $title $html]
 }
 
 #
-# Récupère le TTL d'une machine, ou un champ caché
-# si le groupe n'a pas accès à la fonctionnalité
+# Get an HTML input form for a host TTL value, or a hidden field
+# if the group do not have the according right.
 #
 # Input:
 #   - dbfd : database handle
-#   - champ : champ de formulaire (variable du CGI suivant)
-#   - idcor : identification du correspondant
-#   - ttl : valeur actuelle issue de la base
+#   - field : field name
+#   - idcor : user id
+#   - ttl : default value
 # Output:
-#   - return value: code HTML prêt à l'emploi
+#   - return value: ready to use HTML string
 #
 # History
 #   2010/10/31 : pda      : design
+#   2010/12/01 : pda      : i18n
 #
 
-proc menu-ttl {dbfd champ idcor ttl} {
+proc menu-ttl {dbfd field idcor ttl} {
     #
-    # Convertir la valeur de TTL issue de la base en valeur "affichable"
+    # Convert the TTL value from the database in something which can be
+    # displayed: the value "-1" means "no TTL set for this host", which
+    # should be displayed as an empty string.
     #
 
     if {$ttl == -1} then {
@@ -3284,50 +3742,51 @@ proc menu-ttl {dbfd champ idcor ttl} {
     }
 
     #
-    # Récupérer le droit TTL pour afficher ou non le champ de formulaire
+    # Get the group permission.
     #
 
     set grdroitttl [droit-correspondant-ttl $dbfd $idcor]
     if {$grdroitttl} then {
-	set intitule "TTL"
-	set html [::webapp::form-text $champ 1 6 10 $ttl]
-	append html " (en secondes)"
+	set title [mc "TTL"]
+	set html [::webapp::form-text $field 1 6 10 $ttl]
+	append html " "
+	append html [mc "(in seconds)"]
     } else {
-	set intitule ""
-	set html "<INPUT TYPE=HIDDEN NAME=\"$champ\" VALUE=\"$ttl\">"
+	set title ""
+	set html [::webapp::form-hidden $field $ttl]
     }
 
-    return [list $intitule $html]
+    return [list $title $html]
 }
 
 
 #
-# Fournit le code HTML pour une sélection de liste de domaines, soit
-# sous forme de menus déroulants si le nombre de domaines autorisés
-# est > 1, soit un texte simple avec un champ HIDDEN si = 1.
+# Get an HTML menu to select a domain. This may be either a simple
+# text with a hidden field if the group has access to only one domain,
+# or a dropdown menu.
 #
 # Input:
 #   - dbfd : database handle
-#   - idcor : id du correspondant
-#   - champ : champ de formulaire (variable du CGI suivant)
-#   - where : clause where (sans le mot-clef "where") ou chaîne vide
-#   - sel : nom du domaine à pré-sélectionner, ou chaîne vide
+#   - idcor : user id
+#   - field : field name
+#   - where : SQL where clause (without SQL keyword "where") or empty string
+#   - sel : name of domain to pre-select, or empty string
 # Output:
-#   - return value: code HTML généré
+#   - return value: HTML string
 #
 # History :
-#   2002/04/11 : pda/jean : codage
-#   2002/04/23 : pda      : ajout de la priorité d'affichage
-#   2002/05/03 : pda/jean : migration en librairie
-#   2002/05/06 : pda/jean : utilisation des groupes
-#   2003/04/24 : pda/jean : décomposition en deux procédures
-#   2004/02/06 : pda/jean : ajout de la clause where
-#   2004/02/12 : pda/jean : ajout du parameter sel
-#   2010/11/15 : pda      : suppression parameter err
+#   2002/04/11 : pda/jean : coding
+#   2002/04/23 : pda      : add display priority
+#   2002/05/03 : pda/jean : migrated in the libdns
+#   2002/05/06 : pda/jean : use groups
+#   2003/04/24 : pda/jean : decompose in two procedures
+#   2004/02/06 : pda/jean : add where clause
+#   2004/02/12 : pda/jean : add sel parameter
+#   2010/11/15 : pda      : delete err parameter
 #
 
-proc menu-domaine {dbfd idcor champ where sel} {
-    set lcouples [couple-domaine-par-corresp $dbfd $idcor $where]
+proc menu-domain {dbfd idcor field where sel} {
+    set lcouples [couple-domains $dbfd $idcor $where]
 
     set lsel [lsearch -exact $lcouples [list $sel $sel]]
     if {$lsel == -1} then {
@@ -3335,21 +3794,22 @@ proc menu-domaine {dbfd idcor champ where sel} {
     }
 
     #
-    # S'il n'y a qu'un seul domaine, le présenter en texte, sinon
-    # présenter tous les domaines dans un menu déroulant
+    # If there is only one domain, present it as a text. If more
+    # than one domaine, use a dropdown menu.
     #
 
-    set taille [llength $lcouples]
-    switch -- $taille {
+    set ndom [llength $lcouples]
+    switch -- $ndom {
 	0	{
-	    d error "Désolé, mais vous n'avez aucun domaine actif"
+	    d error [mc "Sorry, but you do not have any active domain"]
 	}
 	1	{
 	    set d [lindex [lindex $lcouples 0] 0]
-	    set html "$d <INPUT TYPE=\"HIDDEN\" NAME=\"$champ\" VALUE=\"$d\">"
+	    set h [::webapp::hidden $field $d]
+	    set html "$d $h"
 	}
 	default	{
-	    set html [::webapp::form-menu $champ 1 0 $lcouples $lsel]
+	    set html [::webapp::form-menu $field 1 0 $lcouples $lsel]
 	}
     }
 
@@ -3357,28 +3817,22 @@ proc menu-domaine {dbfd idcor champ where sel} {
 }
 
 #
-# Retourne une liste de couples {nom nom} pour chaque domaine
-# autorisé pour le correspondant.
+# Returns a list of couples {name name} for each authorized domain
 #
 # Input:
 #   - dbfd : database handle
-#   - idcor : id du correspondant
-#   - where : clause where (sans le mot-clef "where") ou chaîne vide
+#   - idcor : user id
+#   - where : SQL where clause (without SQL keyword "where") or empty string
 # Output:
-#   - return value: liste de couples
+#   - return value: liste of couples
 #
 # History :
-#   2003/04/24 : pda/jean : codage
-#   2004/02/06 : pda/jean : ajout de la clause where
+#   2003/04/24 : pda/jean : coding
+#   2004/02/06 : pda/jean : add where clause
+#   2010/12/01 : pda      : i18n
 #
 
-proc couple-domaine-par-corresp {dbfd idcor where} {
-    #
-    # Récupération des domaines auxquels le correspond a accès
-    # et construction d'une liste {{domaine domaine}} pour l'appel
-    # ultérieur à "form-menu"
-    #
-
+proc couple-domains {dbfd idcor where} {
     if {$where ne ""} then {
 	set where " AND $where"
     }
@@ -3399,351 +3853,53 @@ proc couple-domaine-par-corresp {dbfd idcor where} {
 }
 
 ##############################################################################
-# Récupération des informations associées à un groupe
+# Network management
 ##############################################################################
 
 #
-# Récupère la liste des groupes
+# Return list of networks for a given group and a given privilege
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- n : 1 s'il faut une liste à 1 élément, 2 s'il en faut 2, etc.
+#	- idgrp : group id
+#	- droit : "consult", "dhcp" or "acl"
 # Output:
-#   - return value: liste des noms (ou des {noms noms}) des groupes
+#   - return value: list of networks {idnet cidr4 cidr6 name}
 #
 # History
-#   2006/02/17 : pda/jean/zamboni : création
-#   2007/10/10 : pda/jean         : ignorer le groupe des orphelins
+#   2004/01/16 : pda/jean : specification and design
+#   2004/08/06 : pda/jean : extend permissions on networks
+#   2004/10/05 : pda/jean : adapt to new permissions
+#   2006/05/24 : pda/jean/boggia : extract in a primary function
+#   2010/12/01 : pda      : i18n
 #
 
-proc liste-groupes {dbfd {n 1}} {
-    set l {}
-    for {set i 0} {$i < $n} {incr i} {
-	lappend l "nom"
-    }
-    return [::pgsql::getcols $dbfd global.groupe "nom <> ''" "nom ASC" $l]
-}
-
-#
-# Fournit du code HTML pour chaque groupe d'informations associé à un
-# groupe : les droits généraux du groupe, les correspondants, les
-# réseaux, les droits hors réseaux, les domaines, les profils DHCP
-#
-# Input:
-#   - parameters:
-#	- dbfd : database handle
-#	- idgrp : identificateur du groupe
-#   - variable globale libconf(tabreseaux) : spéc. de tableau
-#   - variable globale libconf(tabdomaines) : spéc. de tableau
-# Output:
-#   - return value: liste à 7 éléments, chaque élément étant
-#	le code HTML associé.
-#
-# History
-#   2002/05/23 : pda/jean : spécification et design
-#   2005/04/06 : pda      : ajout des profils dhcp
-#   2007/10/23 : pda/jean : ajout des correspondants
-#   2008/07/23 : pda/jean : ajout des droits du groupe
-#   2010/10/31 : pda      : ajout des droits ttl
-#   2010/11/03 : pda/jean : ajout des droits sur les équipements
-#
-
-proc info-groupe {dbfd idgrp} {
-    global libconf
-
+proc allowed-networks {dbfd idgrp priv} {
     #
-    # Récupération des droits particuliers : admin, droitsmtp et droitttl
+    # Build a WHERE clause from the given privilege
     #
 
-    set lines {}
-    set sql "SELECT admin, droitsmtp, droitttl
-			FROM global.groupe
-			WHERE idgrp = $idgrp"
-    pg_select $dbfd $sql tab {
-	if {$tab(admin)} then {
-	    set admin "oui"
-	} else {
-	    set admin "non"
-	}
-	if {$tab(droitsmtp)} then {
-	    set droitsmtp "oui"
-	} else {
-	    set droitsmtp "non"
-	}
-	if {$tab(droitttl)} then {
-	    set droitttl "oui"
-	} else {
-	    set droitttl "non"
-	}
-	lappend lines [list DROIT "Administration de l'application" $admin]
-	lappend lines [list DROIT "Gestion des émetteurs SMTP" $droitsmtp]
-	lappend lines [list DROIT "Édition des TTL" $droitttl]
-    }
-    if {[llength $lines] > 0} then {
-	set tabdroits [::arrgen::output "html" $libconf(tabdroits) $lines]
-    } else {
-	set tabdroits "Erreur sur les droits du groupe"
-    }
-
-    #
-    # Récupération des correspondants
-    #
-
-    set lcor {}
-    set sql "SELECT login FROM global.corresp WHERE idgrp=$idgrp ORDER BY login"
-    pg_select $dbfd $sql tab {
-	lappend lcor [::webapp::html-string $tab(login)]
-    }
-    set tabcorresp [join $lcor ", "]
-
-    #
-    # Récupération des plages auxquelles a droit le correspondant
-    #
-
-    set lines {}
-    set sql "SELECT r.idreseau,
-			r.nom, r.localisation, r.adr4, r.adr6,
-			d.dhcp, d.acl,
-			e.nom AS etabl,
-			c.nom AS commu
-		FROM dns.reseau r, dns.dr_reseau d, dns.etablissement e, dns.communaute c
-		WHERE d.idgrp = $idgrp
-			AND d.idreseau = r.idreseau
-			AND e.idetabl = r.idetabl
-			AND c.idcommu = r.idcommu
-		ORDER BY d.tri, r.adr4, r.adr6"
-    pg_select $dbfd $sql tab {
-	set r_nom 	[::webapp::html-string $tab(nom)]
-	set r_loc	[::webapp::html-string $tab(localisation)]
-	set r_etabl	$tab(etabl)
-	set r_commu	$tab(commu)
-	set r_dhcp	$tab(dhcp)
-	set r_acl	$tab(acl)
-
-	# affadr : utilisé pour l'affichage cosmétique des adresses
-	set affadr {}
-	# where : partie de la clause WHERE pour la sélection des adresses
-	set where  {}
-	foreach a {adr4 adr6} {
-	    if {$tab($a) ne ""} then {
-		lappend affadr $tab($a)
-		lappend where  "adr <<= '$tab($a)'"
-	    }
-	}
-	set affadr [join $affadr ", "]
-	set where  [join $where  " OR "]
-
-	lappend lines [list Reseau $r_nom]
-	lappend lines [list Normal4 Localisation $r_loc \
-				Établissement $r_etabl]
-	lappend lines [list Normal4 Plage $affadr \
-				Communauté $r_commu]
-
-	set droits {}
-
-	set dres {}
-	if {$r_dhcp} then { lappend dres "dhcp" }
-	if {$r_acl} then { lappend dres "acl" }
-	if {[llength $dres] > 0} then {
-	    lappend droits [join $dres ", "]
-	}
-	set sql2 "SELECT adr, allow_deny
-			FROM dns.dr_ip
-			WHERE ($where)
-			    AND idgrp = $idgrp
-			ORDER BY adr"
-	pg_select $dbfd $sql2 tab2 {
-	    if {$tab2(allow_deny)} then {
-		set x "+"
-	    } else {
-		set x "-"
-	    }
-	    lappend droits "$x $tab2(adr)"
-	}
-
-	lappend lines [list Droits Droits [join $droits "\n"]]
-    }
-
-    if {[llength $lines] > 0} then {
-	set tabreseaux [::arrgen::output "html" $libconf(tabreseaux) $lines]
-    } else {
-	set tabreseaux "Aucun réseau autorisé"
-    }
-
-    #
-    # Sélectionner les droits hors des plages réseaux identifiées
-    # ci-dessus.
-    #
-
-    set lines {}
-    set found 0
-    set sql "SELECT adr, allow_deny
-		    FROM dns.dr_ip
-		    WHERE NOT (adr <<= ANY (
-				SELECT r.adr4
-					FROM dns.reseau r, dns.dr_reseau d
-					WHERE r.idreseau = d.idreseau
-						AND d.idgrp = $idgrp
-				UNION
-				SELECT r.adr6
-					FROM dns.reseau r, dns.dr_reseau d
-					WHERE r.idreseau = d.idreseau
-						AND d.idgrp = $idgrp
-				    ) )
-			AND idgrp = $idgrp
-		    ORDER BY adr"
-    set droits {}
-    pg_select $dbfd $sql tab {
-	set found 1
-	if {$tab(allow_deny)} then {
-	    set x "+"
-	} else {
-	    set x "-"
-	}
-	lappend droits "$x $tab(adr)"
-    }
-    lappend lines [list Droits Droits [join $droits "\n"]]
-
-    if {$found} then {
-	set tabcidrhorsreseau [::arrgen::output "html" \
-						$libconf(tabreseaux) $lines]
-    } else {
-	set tabcidrhorsreseau "Aucun (tout va bien)"
-    }
-
-
-    #
-    # Sélectionner les domaines
-    #
-
-    set lines {}
-    set sql "SELECT domaine.nom AS nom, dr_dom.rolemail, dr_dom.roleweb \
-			FROM dns.dr_dom, dns.domaine
-			WHERE dr_dom.iddom = domaine.iddom \
-				AND dr_dom.idgrp = $idgrp \
-			ORDER BY dr_dom.tri, domaine.nom"
-    pg_select $dbfd $sql tab {
-	set rm ""
-	if {$tab(rolemail)} then {
-	    set rm "Édition des rôles de messagerie"
-	}
-	set rw ""
-	if {$tab(roleweb)} then {
-	    set rw "Édition des rôles web"
-	}
-
-	lappend lines [list Domaine $tab(nom) $rm $rw]
-    }
-    if {[llength $lines] > 0} then {
-	set tabdomaines [::arrgen::output "html" $libconf(tabdomaines) $lines]
-    } else {
-	set tabdomaines "Aucun domaine autorisé"
-    }
-
-    #
-    # Sélectionner les profils DHCP
-    #
-
-    set lines {}
-    set sql "SELECT p.nom, dr.tri, p.texte
-			FROM dns.dhcpprofil p, dns.dr_dhcpprofil dr
-			WHERE p.iddhcpprofil = dr.iddhcpprofil
-				AND dr.idgrp = $idgrp
-			ORDER BY dr.tri, p.nom"
-    pg_select $dbfd $sql tab {
-	lappend lines [list DHCP $tab(nom) $tab(texte)]
-    }
-    if {[llength $lines] > 0} then {
-	set tabdhcpprofil [::arrgen::output "html" $libconf(tabdhcpprofil) $lines]
-    } else {
-	set tabdhcpprofil "Aucun profil DHCP autorisé"
-    }
-
-    #
-    # Sélectionner les droits sur les équipements
-    #
-
-    set lines {}
-    foreach {rw text} {0 Lecture 1 Modification} {
-	set sql "SELECT allow_deny, pattern
-			    FROM topo.dr_eq
-			    WHERE idgrp = $idgrp AND rw = $rw
-			    ORDER BY rw, allow_deny DESC, pattern"
-	set dr ""
-	pg_select $dbfd $sql tab {
-	    if {$tab(allow_deny) eq "0"} then {
-		set allow_deny "-"
-	    } else {
-		set allow_deny "+"
-	    }
-	    append dr "$allow_deny $tab(pattern)\n"
-	}
-	if {$dr eq ""} then {
-	    set dr "Aucun droit"
-	}
-	lappend lines [list DroitEq $text $dr]
-    }
-    set tabdreq [::arrgen::output "html" $libconf(tabdreq) $lines]
-
-    #
-    # Renvoyer les informations
-    #
-
-    return [list    $tabdroits \
-		    $tabcorresp \
-		    $tabreseaux \
-		    $tabcidrhorsreseau \
-		    $tabdomaines \
-		    $tabdhcpprofil \
-		    $tabdreq \
-	    ]
-}
-
-#
-# Fournit la liste des réseaux associés à un groupe avec un certain droit.
-#
-# Input:
-#   - parameters:
-#	- dbfd : database handle
-#	- idgrp : identificateur du groupe
-#	- droit : "consult", "dhcp" ou "acl"
-# Output:
-#   - return value: liste des réseaux sous la forme
-#		{idreseau cidr4 cidr6 nom-complet}
-#
-# History
-#   2004/01/16 : pda/jean : spécification et design
-#   2004/08/06 : pda/jean : extension des droits sur les réseaux
-#   2004/10/05 : pda/jean : adaptation aux nouveaux droits
-#   2006/05/24 : pda/jean/boggia : séparation en une fonction élémentaire
-#
-
-proc liste-reseaux-autorises {dbfd idgrp droit} {
-    #
-    # Mettre en forme les droits pour la clause where
-    #
-
-    switch -- $droit {
+    switch -- $priv {
 	consult {
 	    set w1 ""
 	    set w2 ""
 	}
 	dhcp {
-	    set w1 "AND d.$droit > 0"
-	    set w2 "AND r.$droit > 0"
+	    set w1 "AND d.$priv > 0"
+	    set w2 "AND r.$priv > 0"
 	}
 	acl {
-	    set w1 "AND d.$droit > 0"
+	    set w1 "AND d.$priv > 0"
 	    set w2 ""
 	}
     }
 
     #
-    # Récupérer tous les réseaux autorisés par le groupe selon ce droit
+    # Get all allowed networks for this group and for this privilege
     #
 
-    set lres {}
+    set lnet {}
     set sql "SELECT r.idreseau, r.nom, r.adr4, r.adr6
 			FROM dns.reseau r, dns.dr_reseau d
 			WHERE r.idreseau = d.idreseau
@@ -3751,103 +3907,96 @@ proc liste-reseaux-autorises {dbfd idgrp droit} {
 			    $w1 $w2
 			ORDER BY adr4, adr6"
     pg_select $dbfd $sql tab {
-	lappend lres [list $tab(idreseau) $tab(adr4) $tab(adr6) $tab(nom)]
+	lappend lnet [list $tab(idreseau) $tab(adr4) $tab(adr6) $tab(nom)]
     }
 
-    return $lres
+    return $lnet
 }
 
 #
-# Fournit la liste de réseaux associés à un groupe avec un certain droit,
-# prête à être utilisée dans un menu.
+# Returns the list of networks allowed for a group (with a given privilege)
+# ready to use with form-menu.
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- idgrp : identificateur du groupe
-#	- droit : "consult", "dhcp" ou "acl"
+#	- idgrp : group id
+#	- priv : "consult", "dhcp" or "acl"
 # Output:
-#   - return value: liste des réseaux sous la forme {idreseau nom-complet}
+#   - return value: list of elements {id name}
 #
 # History
-#   2006/05/24 : pda/jean/boggia : séparation du coeur de la fonction
+#   2006/05/24 : pda/jean/boggia : extract procedure heart in allowed-networks
+#   2010/12/01 : pda      : i18n
 #
 
-proc liste-reseaux {dbfd idgrp droit} {
-    #
-    # Présente la liste élémentaire retournée par liste-reseaux-autorises
-    #
-
-    set lres {}
-    foreach r [liste-reseaux-autorises $dbfd $idgrp $droit] {
-	lappend lres [list [lindex $r 0] \
-			[format "%s\t%s\t(%s)" \
-				[lindex $r 1] \
-				[lindex $r 2] \
-				[::webapp::html-string [lindex $r 3]] \
-			    ] \
-			]
+proc read-networks {dbfd idgrp priv} {
+    set lnet {}
+    foreach r [allowed-networks $dbfd $idgrp $priv] {
+	lassign $r idnet cidr4 cidr6 name
+	set name [::webapp::html-string $name]
+	lappend lnet [list $idnet [format "%s\t%s\t(%s)" $cidr4 $cidr6 $name]]
     }
-
-    return $lres
+    return $lnet
 }
 
 #
-# Valide un idreseau tel que retourné par un formulaire. Cette validation
-# est réalisé dans le contexte d'un groupe, avec test d'un droit particulier.
+# Check a network id as returned in a form field. This check is done
+# according to a given group and a given privilege.
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- idreseau : id à vérifier
-#	- idgrp : identificateur du groupe
-#	- droit : "consult", "dhcp" ou "acl"
-#	- version : 4, 6 ou {4 6}
-#	- _msg : message d'erreur en retour
+#	- netid : id of network to check
+#	- idgrp : group id
+#	- priv : "consult", "dhcp" or "acl"
+#	- version : 4, 6 or {4 6}
+#	- _msg : empty string or error message
 # Output:
-#   - return value: liste de CIDR, ou liste vide
-#   - parameter _msg : message d'erreur en retour si liste vide
+#   - return value: list of cidr
+#   - parameter _msg : empty string or error message
 #
 # History
-#   2004/10/05 : pda/jean : spécification et design
+#   2004/10/05 : pda/jean : specification and design
+#   2010/12/01 : pda      : i18n
 #
 
-proc valide-idreseau {dbfd idreseau idgrp droit version _msg} {
+proc check-netid {dbfd netid idgrp priv version _msg} {
     upvar $_msg msg
 
     #
-    # Valider le numéro de réseau au niveau syntaxique
+    # Check syntax of id
     #
-    set idreseau [string trim $idreseau]
-    if {! [regexp {^[0-9]+$} $idreseau]} then {
-	set msg "Plage réseau invalide ($idreseau)"
+    set netid [string trim $netid]
+    if {! [regexp {^[0-9]+$} $netid]} then {
+	set msg [format [mc "Invalid network id '%s'"] $netid]
 	return {}
     }
 
     #
-    # Convertir le droit en clause where
+    # Convert privilege into an sql where clause
     #
 
-    switch -- $droit {
+    switch -- $priv {
 	consult {
 	    set w1 ""
 	    set w2 ""
-	    set c "en consultation"
+	    set c [mc "You cannot read this network"]
 	}
 	dhcp {
-	    set w1 "AND d.$droit > 0"
-	    set w2 "AND r.$droit > 0"
-	    set c "pour le droit '$droit'"
+	    set w1 "AND d.$priv > 0"
+	    set w2 "AND r.$priv > 0"
+	    set c [mc "You do not have DHCP access to this network"]
 	}
 	acl {
-	    set w1 "AND d.$droit > 0"
+	    set w1 "AND d.$priv > 0"
 	    set w2 ""
-	    set c "pour le droit '$droit'"
+	    set c [mc "You do not have ACL access to this network"]
 	}
     }
 
     #
-    # Valider le numéro de réseau et récupérer le ou les CIDR associé(s)
+    # Check network and read associated CIDR(s)
     #
 
     set lcidr {}
@@ -3857,7 +4006,7 @@ proc valide-idreseau {dbfd idreseau idgrp droit version _msg} {
 		    FROM dns.dr_reseau d, dns.reseau r
 		    WHERE d.idgrp = $idgrp
 			AND d.idreseau = r.idreseau
-			AND r.idreseau = $idreseau
+			AND r.idreseau = $netid
 			$w1 $w2"
     set cidrplage4 ""
     set cidrplage6 ""
@@ -3873,12 +4022,12 @@ proc valide-idreseau {dbfd idreseau idgrp droit version _msg} {
 	set cidrplage6 ""
     }
 
-    set vide4 [string equal $cidrplage4 ""]
-    set vide6 [string equal $cidrplage6 ""]
+    set empty4 [string equal $cidrplage4 ""]
+    set empty6 [string equal $cidrplage6 ""]
 
-    switch -glob $vide4-$vide6 {
+    switch -glob $empty4-$empty6 {
 	1-1 {
-	    set msg "Vous n'avez pas accès à ce réseau $c"
+	    set msg $c
 	}
 	0-1 {
 	    lappend lcidr $cidrplage4
@@ -3895,339 +4044,280 @@ proc valide-idreseau {dbfd idreseau idgrp droit version _msg} {
     return $lcidr
 }
 
-#
-# Indique si le groupe du correspondant a le droit d'autoriser des
-# émetteurs SMTP.
-#
-# Input:
-#   - parameters:
-#       - dbfd : database handle
-#	- idcor : user id
-# Output:
-#   - return value: 1 if ok, 0 if error
-#
-# History
-#   2008/07/23 : pda/jean : design
-#   2008/07/24 : pda/jean : changement de idgrp en idcor
-#
-
-proc droit-correspondant-smtp {dbfd idcor} {
-    set sql "SELECT droitsmtp FROM global.groupe g, global.corresp c 
-				WHERE g.idgrp = c.idgrp AND c.idcor = $idcor"
-    set r 0
-    pg_select $dbfd $sql tab {
-	set r $tab(droitsmtp)
-    }
-    return $r
-}
-
-#
-# Indique si le groupe du correspondant a le droit d'éditer les TTL
-#
-# Input:
-#   - parameters:
-#       - dbfd : database handle
-#	- idcor : user id
-# Output:
-#   - return value: 1 if ok, 0 if error
-#
-# History
-#   2010/10/31 : pda/jean : design
-#
-
-proc droit-correspondant-ttl {dbfd idcor} {
-    set sql "SELECT droitttl FROM global.groupe g, global.corresp c 
-				WHERE g.idgrp = c.idgrp AND c.idcor = $idcor"
-    set r 0
-    pg_select $dbfd $sql tab {
-	set r $tab(droitttl)
-    }
-    return $r
-}
-
-
 ##############################################################################
-# Edition de valeurs de tableau
+# Edition of tabular data
 ##############################################################################
 
 #
-# Présente le contenu d'une table pour édition des valeurs qui s'y trouvent
+# Generate HTML code to displau and edit table content.
 #
 # Input:
 #   - parameters:
-#	- largeurs : largeurs des colonnes pour la spécification du tableau
-#		au format {largeur1 largeur2 ... largeurn} (en %)
-#	- titre : spécification des titres (format et valeur)
-#		au format {type valeur} où type = texte ou html
-#	- spec : spécification des lignes normales
-#		au format {id type defval} où
-#			- id : identificateur de la colonne dans la table
-#				et nom du champ de formulaire (idNNN ou idnNNN)
-#			- type : texte, string N, bool, menu L, textarea L H
-#			- defval : valeur par défaut pour les nouvelles lignes
+#	- cwidth : list of column widths {w1 w2 ... wn} (unit = %)
+#	- ctitle : list of column titles specification, each element
+#		is {type value} where type = "html" or "text"
+#	- cspec : list of column specifications, each element
+#		is {id type defval}, where
+#		- id : column id in the table, and name of firld (idNN or idnNN)
+#		- type : "text", "string N", "bool", "menu L", "textarea {W H}"
+#		- defval : default value for new lines
 #	- dbfd : database handle
-#	- sql : requête select contenant en particulier les champs "id"
-#	- idnum : nom de la colonne représentant l'identificateur numérique
-#	- _tab : tableau passé par variable, vide en entrée
+#	- sql : SQL request to get column values (notably the id column)
+#	- idnum : column name of the numeric id
+#	- _tab : in return, will contail the generated HTML code
 # Output:
 #   - return value: empty string or error message
-#   - parameter _tab : un tableau HTML complet
+#   - parameter _tab : HTML code
 #
 # History
-#   2001/11/01 : pda      : spécification et documentation
-#   2001/11/01 : pda      : codage
-#   2002/05/03 : pda/jean : type menu
-#   2002/05/06 : pda/jean : type textarea
-#   2002/05/16 : pda      : conversion à arrgen
+#   2001/11/01 : pda      : specification and documentation
+#   2001/11/01 : pda      : coding
+#   2002/05/03 : pda/jean : add type menu
+#   2002/05/06 : pda/jean : add type textarea
+#   2002/05/16 : pda      : convert to arrgen
+#   2010/12/04 : pda      : i18n
 #
 
-proc edition-tableau {largeurs titre spec dbfd sql idnum _tab} {
+proc display-tabular {cwidth ctitle cspec dbfd sql idnum _tab} {
     upvar $_tab tab
 
     #
-    # Petit test d'intégrité sur le nombre de colonnes (doit être
-    # identique dans les largeurs, dans les titres et dans les
-    # lignes normales
+    # Minimal integrity test on column number.
     #
 
-    if {[llength $titre] != [llength $spec] || \
-	[llength $titre] != [llength $largeurs]} then {
-	return "Interne (edition-tableau): Spécification de tableau invalide"
+    if {[llength $ctitle] != [llength $cspec] || \
+		[llength $ctitle] != [llength $cwidth]} then {
+	return [mc "Internal error: invalid tabular specification"]
     }
 
     #
-    # Construire la spécification du tableau : comme c'est fastidieux,
-    # on l'a mis dans une procédure à part.
+    # Build-up the arrgen array specification.
     #
 
-    set spectableau [edition-tableau-motif $largeurs $titre $spec]
+    set aspec [_build-array-spec $cwidth $ctitle $cspec]
     set lines {}
 
     #
-    # Sortir le titre
+    # Display title line
     #
 
-    set ligne {}
-    lappend ligne Titre
-    foreach t $titre {
-	lappend ligne [lindex $t 1]
+    set l {}
+    lappend l "Title"
+    foreach t $ctitle {
+	lappend l [lindex $t 1]
     }
-    lappend lines $ligne
+    lappend lines $l
 
     #
-    # Sortir les lignes du tableau
+    # Display existing lines from the database
     #
 
     pg_select $dbfd $sql tabsql {
 	set tabsql(:$idnum) $tabsql($idnum)
-	lappend lines [edition-ligne $spec tabsql $idnum]
+	lappend lines [_display-tabular-line $cspec tabsql $idnum]
     }
 
     #
-    # Ajouter de nouvelles lignes
+    # Add empty lines at the end to let user enter new values
     #
 
-    foreach s $spec {
-	set key [lindex $s 0]
-	set defval [lindex $s 2]
-	set tabdef($key) $defval
+    foreach s $cspec {
+	lassign $s id type defval
+	set tabdef($id) $defval
     }
 
     for {set i 1} {$i <= 5} {incr i} {
 	set tabdef(:$idnum) "n$i"
-	lappend lines [edition-ligne $spec tabdef $idnum]
+	lappend lines [_display-tabular-line $cspec tabdef $idnum]
     }
 
     #
-    # Transformer le tout en joli tableau
+    # Generates HTML code and returns
     #
 
-    set tab [::arrgen::output "html" $spectableau $lines]
-
-    #
-    # Tout s'est bien passé !
-    #
+    set tab [::arrgen::output "html" $aspec $lines]
 
     return ""
 }
 
 #
-# Construit une spécification de tableau pour arrgen à partir des
-# parameters passés à edition-tableau
+# Build-up a table specification (for arrgen) from display-tabular parameters
 #
 # Input:
-#   - parameters:
-#	- largeurs : largeurs des colonnes pour la spécification du tableau
-#	- titre : spécification des titres (format et valeur)
-#	- spec : spécification des lignes normales
+#   - parameters: see display-tabular
 # Output:
-#   - return value: une spécification de tableau prête pour arrgen
-#
-# Note : voir la signification des parameters dans edition-tableau
+#   - return value: an "arrgen" specification
 #
 # History
-#   2001/11/01 : pda : design et documentation
-#   2002/05/16 : pda : conversion à arrgen
+#   2001/11/01 : pda      : design and documentation
+#   2002/05/16 : pda      : convert to arrgen
+#   2010/12/04 : pda      : i18n
 #
 
-proc edition-tableau-motif {largeurs titre spec} {
+proc _build-array-spec {cwidth ctitle cspec} {
     #
-    # Construire le motif des titres d'abord
+    # First, build-up Title pattern
     #
-    set motif_titre "motif {Titre} {"
-    foreach t $titre {
-	append motif_titre "vbar {yes} "
-	append motif_titre "chars {bold} "
-	append motif_titre "align {center} "
-	append motif_titre "column { "
-	append motif_titre "  botbar {yes} "
-	if {[string compare [lindex $t 0] "texte"] != 0} then {
-	    append motif_titre "  format {raw} "
+
+    set titpat "pattern Title {"
+    foreach t $ctitle {
+	append titpat "vbar {yes} "
+	append titpat "chars {bold} "
+	append titpat "align {center} "
+	append titpat "column { "
+	append titpat "  botbar {yes} "
+	if {[lindex $t 0] ne "text"]} then {
+	    append titpat "  format {raw} "
 	}
-	append motif_titre "} "
+	append titpat "} "
     }
-    append motif_titre "vbar {yes} "
-    append motif_titre "} "
+    append titpat "vbar {yes} "
+    append titpat "} "
 
     #
-    # Ensuite, les lignes normales
+    # Next, normal lines
     #
-    set motif_normal "motif {Normal} {"
-    foreach t $spec {
-	append motif_normal "topbar {yes} "
-	append motif_normal "vbar {yes} "
-	append motif_normal "column { "
-	append motif_normal "  align {center} "
-	append motif_normal "  botbar {yes} "
+
+    set norpat "pattern Normal {"
+    foreach t $cspec {
+	append norpat "topbar {yes} "
+	append norpat "vbar {yes} "
+	append norpat "column { "
+	append norpat "  align {center} "
+	append norpat "  botbar {yes} "
 	set type [lindex [lindex $t 1] 0]
-	if {[string compare $type "texte"] != 0} then {
-	    append motif_normal "  format {raw} "
+	if {$type ne "text"} then {
+	    append norpat "  format {raw} "
 	}
-	append motif_normal "} "
+	append norpat "} "
     }
-    append motif_normal "vbar {yes} "
-    append motif_normal "} "
+    append norpat "vbar {yes} "
+    append norpat "} "
 
     #
-    # Et enfin les spécifications globales
+    # Finally, global specifications
     #
-    set spectableau "global { chars {12 normal} "
-    append spectableau "columns {$largeurs} } $motif_titre $motif_normal"
 
-    return $spectableau
+    set aspec "global { chars {10 normal} "
+    append aspec "columns {$cwidth} } $titpat $norpat"
+
+    return $aspec
 }
 
 #
-# Présente le contenu d'une ligne d'une table
+# Display a line of tabular data
 #
 # Input:
 #   - parameters:
-#	- spec : spécification des lignes normales, voir edition-tableau
-#	- tab : tableau indexé par les champs spécifiés dans spec
-#	- idnum : nom de la colonne représentant l'identificateur numérique
+#	- cspec : see display-tabular
+#	- tab : array indexed by fields specified in cspec (see display-tabular)
+#	- idnum : column name of the numeric id
 # Output:
-#   - return value: une ligne de tableau prête pour arrgen
+#   - return value: an "arrgen" line
 #
 # History
-#   2001/11/01 : pda      : spécification et documentation
+#   2001/11/01 : pda      : specification and documentation
 #   2001/11/01 : pda      : design
-#   2002/05/03 : pda/jean : ajout du type menu
-#   2002/05/06 : pda/jean : ajout du type textarea
-#   2002/05/16 : pda      : conversion à arrgen
+#   2002/05/03 : pda/jean : add type menu
+#   2002/05/06 : pda/jean : add type textarea
+#   2002/05/16 : pda      : convert to arrgen
+#   2010/12/04 : pda      : i18n
 #
 
-proc edition-ligne {spec _tab idnum} {
+proc _display-tabular-line {cspec _tab idnum} {
     upvar $_tab tab
 
-    set ligne {Normal}
-    foreach s $spec {
-	set key [lindex $s 0]
-	set valeur $tab($key)
+    set line {Normal}
+    foreach s $cspec {
+	lassign $s id type defval
 
-	set type [lindex [lindex $s 1] 0]
-	set opt [lindex [lindex $s 1] 1]
+	set value $tab($id)
+
+	lassign $type typekw typeopt
 
 	set num $tab(:$idnum)
-	set ref $key$num
+	set ref $id$num
 
-	switch $type {
-	    texte {
-		set item $valeur
+	switch $typekw {
+	    text {
+		set item $value
 	    }
 	    string {
-		set item [::webapp::form-text $ref 1 $opt 0 $valeur]
+		set item [::webapp::form-text $ref 1 $typeopt 0 $value]
 	    }
 	    bool {
-		set checked ""
-		if {$valeur} then { set checked " CHECKED" }
-		set item "<INPUT TYPE=checkbox NAME=$ref VALUE=1$checked>"
+		set item [::webapp::form-bool $ref $value]
 	    }
 	    menu {
 		set sel 0
 		set i 0
-		foreach e $opt {
-		    # recherche obligatoirement le premier élément de la liste
-		    set id [lindex $e 0]
-		    if {$id eq $valeur} then {
+		foreach e $typeopt {
+		    set v [lindex $e 0]
+		    if {$v eq $value} then {
 			set sel $i
+			break
 		    }
 		    incr i
 		}
-		set item [::webapp::form-menu $ref 1 0 $opt [list $sel]]
+		set item [::webapp::form-menu $ref 1 0 $typeopt [list $sel]]
 	    }
 	    textarea {
-		set largeur [lindex $opt 0]
-		set hauteur [lindex $opt 1]
-		set item [::webapp::form-text $ref $hauteur $largeur 0 $valeur]
+		lassign $typeopt width height
+		set item [::webapp::form-text $ref $width $height 0 $value]
 	    }
 	}
-	lappend ligne $item
+	lappend line $item
     }
 
-    return $ligne
+    return $line
 }
 
+##############################################################################
+# Storing tabular data
+##############################################################################
+
 #
-# Récupère les modifications d'un formulaire généré par edition-tableau
-# et les enregistre dans la base si nécessaire
+# Get modifications from a form generated by display-tabular and
+# store them if necessary in the database.
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- spec : spécification des colonnes à modifier (voir plus bas)
-#	- idnum : nom de la colonne représentant l'identificateur numérique
-#	- table : nom de la table à modifier
-#	- _tab : tableau contenant les champs du formulaire
+#	- cspec : column specifications (see below)
+#	- idnum : column name of the numeric id
+#	- table : name of the SQL table to modify
+#	- _ftab : array containing form field values
 # Output:
 #   - return value: empty string or error message
 #
 # Notes :
-#   - le format du parameter "spec" est {{colonne defval} ...}, où :
-#	- colonne est l'identificateur de la colonne dans la table
-#	- defval, si présent, indique la valeur par défaut à mettre dans
-#		la table car la valeur n'est pas fournie dans le formulaire
-#   - la première colonne de "spec" est utilisée pour savoir s'il faut
-#	ajouter ou supprimer l'entrée correspondante
+#   - format of "cspec" is {{column defval} ...}, where:
+#	- column is the column id in the table
+"	- defval, if present, is the default value to store in the table
+#		if the value is not provided
+#   - first column of "cspec" is the key used to know if an entry must
+#	be added or delete.
 #
 # History
-#   2001/11/02 : pda      : spécification et documentation
-#   2001/11/02 : pda      : codage
-#   2002/05/03 : pda/jean : suppression contrainte sur les tickets
+#   2001/11/02 : pda      : specification and documentation
+#   2001/11/02 : pda      : coding
+#   2002/05/03 : pda/jean : remove an old constraint
+#   2010/12/04 : pda      : i18n
 #
 
-proc enregistrer-tableau {dbfd spec idnum table _tab} {
-    upvar $_tab ftab
+proc store-tabular {dbfd cspec idnum table _ftab} {
+    upvar $_ftab ftab
 
     #
-    # Verrouillage de la table concernée
+    # Lock the table
     #
 
     if {! [::pgsql::execsql $dbfd "BEGIN WORK ; LOCK $table" msg]} then {
-	return "Verrouillage impossible ('$msg')"
+	return [format [mc "Unable to lock table (%s)"] $msg]
     }
 
     #
-    # Dernier numéro d'enregistrement attribué
+    # Last used id
     #
 
     set max 0
@@ -4236,76 +4326,83 @@ proc enregistrer-tableau {dbfd spec idnum table _tab} {
     }
 
     #
-    # La clef pour savoir si une entrée doit être détruite (pour les
-    # id existants) ou ajoutée (pour les nouveaux id)
+    # Key to know if an entry must be deleted (for existing ids) or
+    # added (for new ids)
     #
 
-
-    set key [lindex [lindex $spec 0] 0]
+    set key [lindex [lindex $cspec 0] 0]
 
     #
-    # Parcours des numéros déjà existants dans la base
+    # Traversal of existing ids in the database
     #
 
     set id 1
 
     for {set id 1} {$id <= $max} {incr id} {
 	if {[info exists ftab(${key}${id})]} {
-	    remplir-tabval $spec "" $id ftab tabval
+	    _fill-tabval $cspec "" $id ftab tabval
 
-	    if {[string length $tabval($key)] == 0} then {
+	    if {$tabval($key) eq ""} then {
 		#
-		# Destruction de l'entrée.
+		# Delete entry
 		#
 
-		set ok [retirer-entree $dbfd msg $id $idnum $table]
+		set ok [_store-tabular-del $dbfd msg $id $idnum $table]
 		if {! $ok} then {
-		    ::pgsql::execsql $dbfd "ABORT WORK" m
 		    #
-		    # En cas de destruction impossible, il faut
-		    # dire ce qu'on n'arrive pas à supprimer.
-		    # Pour cela, il faut rechercher le vieux nom dans
-		    # la base.
+		    # When deletion is not possible, we must return an
+		    # appropriate message, with the old value.
 		    #
-
 		    set oldkey ""
 		    pg_select $dbfd "SELECT $key FROM $table \
 				    WHERE $idnum = $id" t {
 			set oldkey $t($key)
 		    }
-		    return "Erreur dans la suppression de '$oldkey' ('$msg')"
+		    ::pgsql::execsql $dbfd "ABORT WORK" m
+		    return [format [mc {Error deleting '%1$s' (%2$s)}] $oldkey $msg]
 		}
 	    } else {
 		#
-		# Modification de l'entrée
+		# Modify entry
 		#
 
-		set ok [modifier-entree $dbfd msg $id $idnum $table tabval]
+		set ok [_store-tabular-mod $dbfd msg $id $idnum $table tabval]
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
+VERIFIER VERIFIER VERIFIER oldkey DANS LE MESSAGE CI-DESSOUS
 		if {! $ok} then {
 		    ::pgsql::execsql $dbfd "ABORT WORK" m
-		    return "Erreur dans la modification de '$tabval($key)' ('$msg')"
+		    return [format [mc {Error modifying '%1$s' (%2$s)}] $oldkey $msg]
 		}
 	    }
 	}
     }
 
     #
-    # Nouvelles entrées
+    # New entries
     #
 
     set idnew 1
     while {[info exists ftab(${key}n${idnew})]} {
-	remplir-tabval $spec "n" $idnew ftab tabval
+	_fill-tabval $cspec "n" $idnew ftab tabval
 
-	if {[string length $tabval($key)] > 0} then {
+	if {$tabval($key) ne ""} then {
 	    #
-	    # Ajout de l'entrée
+	    # Add entry
 	    #
 
-	    set ok [ajouter-entree $dbfd msg $table tabval]
+	    set ok [_store-tabular-add $dbfd msg $table tabval]
 	    if {! $ok} then {
 		::pgsql::execsql $dbfd "ABORT WORK" m
-		return "Erreur dans l'ajout de '$tabval($key)' ('$msg')"
+		return [format [mc {Error adding '%1$s' (%2$s)}] $tabval($key) $msg]
 	    }
 	}
 
@@ -4313,67 +4410,67 @@ proc enregistrer-tableau {dbfd spec idnum table _tab} {
     }
 
     #
-    # Déverrouillage, et enregistrement des modifications avant la sortie
+    # Unlock and commit modifications
     #
 
     if {! [::pgsql::execsql $dbfd "COMMIT WORK" msg]} then {
 	::pgsql::execsql $dbfd "ABORT WORK" m
-	return "Déverrouillage impossible, modification annulée ('$msg')"
+	return [format [mc "Unable to commit, modification cancelled (%s)"] $msg]
     }
 
     return ""
 }
 
 #
-# Lit les champs dans les formulaires, en complétant éventuellement pour
-# les champs booléens (checkbox) qui peuvent ne pas être présents.
+# Read form field values, and add default values, notably for boolean
+# types (checkboxes) which may be not present.
 #
 # Input:
 #   - parameters:
-#	- spec : voir enregistrer-tableau
-#	- prefixe : "" (entrée existante) ou "n" (nouvelle entrée)
-#	- num : numéro de l'entrée
-#	- _ftab : le tableau issu de get-data
-#	- _tabval : le tableau à remplir
+#	- cspec : see store-tabular
+#	- prefix : "" (existing entry) or "n" (new entry)
+#	- num : entry number
+#	- _ftab : form field values (see webapp/get-data)
+#	- _tabval : array to fill
 # Output:
 #   - return value: none
-#   - parameter _tabval : contient les champs
+#   - parameter _tabval : array filled with usable values
 #
-# Note :
-#   - si spec contient {{login} {nom}}, prefixe contient "n" et num "5"
-#     alors on cherche ftab(loginn5) et ftab(nomn5)
-#	 et on met ça dans tabval(login) et tabval(nom)
+# Example :
+#   - if cspec = {{login} {name}} and prefix = "n" and num = "5"
+#     then we search ftab(loginn5) et ftab(namen5) and we place found
+#	(or default) values in in tabval(login) and tabval(name)
 #
 # History :
-#   2001/04/01 : pda : design
-#   2001/04/03 : pda : documentation
-#   2001/11/02 : pda : reprise et extension
+#   2001/04/01 : pda      : design
+#   2001/04/03 : pda      : documentation
+#   2001/11/02 : pda      : extension
+#   2010/12/04 : pda      : i18n
 #
 
-proc remplir-tabval {spec prefixe num _ftab _tabval} {
+proc _fill-tabval {cspec prefix num _ftab _tabval} {
     upvar $_ftab ftab
     upvar $_tabval tabval
 
-    foreach coldefval $spec {
+    foreach coldefval $cspec {
 
 	set col [lindex $coldefval 0]
 
 	if {[llength $coldefval] == 2} then {
 	    #
-	    # Valeur par défaut : on ne la prend pas dans le formulaire
+	    # Default value: we do not get them from the form
 	    #
 
 	    set val [lindex $coldefval 1]
 
 	} else {
-
 	    #
-	    # Pas de valeur par défaut : on recherche dans le formulaire.
-	    # Si on ne trouve pas dans le formulaire, c'est un booléen
-	    # qui n'a pas été fourni, on prend 0 comme valeur.
+	    # No default value : we search a value in the form data.
+	    # If not found, it is a boolean which has not been checked.
+	    # The value is thus 0.
 	    #
 
-	    set form ${col}${prefixe}${num}
+	    set form ${col}${prefix}${num}
 
 	    if {[info exists ftab($form)]} then {
 		set val [string trim [lindex $ftab($form) 0]]
@@ -4387,42 +4484,42 @@ proc remplir-tabval {spec prefixe num _ftab _tabval} {
 }
 
 #
-# Modification d'une entrée
+# Modify an entry
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- msg : variable contenant, en retour, le message d'erreur éventuel
-#	- id : l'id (valeur) de l'entrée à modifier
-#	- idnum : nom de la colonne des id de la table
-#	- table : nom de la table à modifier
-#	- _tabval : tableau contenant les valeurs à modifier
+#	- _msg : in return, error message if any
+#	- id : id (value) of entry to modify
+#	- idnum : column name of the numeric id
+#	- table : name of the SQL table to modify
+#	- _tabval : array containing new values
 # Output:
 #   - return value: 1 if ok, 0 if error
 #   - parameters:
-#	- msg : message d'erreur si erreur
+#	- msg : error message if an error occurred
 #
 # History :
-#   2001/04/01 : pda : design
-#   2001/04/03 : pda : documentation
-#   2001/11/02 : pda : généralisation
-#   2004/01/20 : pda/jean : ajout d'un attribut NULL si chaîne vide (pour ipv6)
+#   2001/04/01 : pda      : design
+#   2001/04/03 : pda      : documentation
+#   2001/11/02 : pda      : generalization
+#   2004/01/20 : pda/jean : add NULL if empty string (for ipv6)
+#   2010/12/04 : pda      : i18n
 #
 
-proc modifier-entree {dbfd msg id idnum table _tabval} {
-    upvar $msg m
+proc _store-tabular-mod {dbfd _msg id idnum table _tabval} {
+    upvar $_msg msg
     upvar $_tabval tabval
 
     #
-    # Tout d'abord, il n'y a pas besoin de modifier quoi que ce soit
-    # si toutes les valeurs sont identiques.
+    # There is no need to modify anything if all values are identical.
     #
 
-    set different 0
+    set diff 0
     pg_select $dbfd "SELECT * FROM $table WHERE $idnum = $id" tab {
 	foreach attribut [array names tabval] {
 	    if {[string compare $tabval($attribut) $tab($attribut)] != 0} then {
-		set different 1
+		set diff 1
 		break
 	    }
 	}
@@ -4430,89 +4527,89 @@ proc modifier-entree {dbfd msg id idnum table _tabval} {
 
     set ok 1
 
-    if {$different} then {
+    if {$diff} then {
 	#
-	# C'est différent, il faut donc y aller...
+	# It's diffent, we must do the work...
 	#
 
-	set liste {}
-	foreach attribut [array names tabval] {
-	    if {$tabval($attribut) eq ""} then {
+	set l {}
+	foreach attr [array names tabval] {
+	    if {$tabval($attr) eq ""} then {
 		set v "NULL"
 	    } else {
-		set v "'[::pgsql::quote $tabval($attribut)]'"
+		set v "'[::pgsql::quote $tabval($attr)]'"
 	    }
-	    lappend liste "$attribut = $v"
+	    lappend l "$attr = $v"
 	}
-	set sql "UPDATE $table SET [join $liste ,] WHERE $idnum = $id"
-	set ok [::pgsql::execsql $dbfd $sql m]
+	set sql "UPDATE $table SET [join $l ,] WHERE $idnum = $id"
+	set ok [::pgsql::execsql $dbfd $sql msg]
     }
 
     return $ok
 }
 
 #
-# Retrait d'une entree
+# Entry deletion
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- _msg : variable contenant, en retour, le message d'erreur éventuel
-#	- id : l'id (valeur) de l'entrée à modifier
-#	- idnum : nom de la colonne des id de la table
-#	- table : nom de la table à modifier
+#	- _msg : in return, error message if any
+#	- id : id (value) of entry to delete
+#	- idnum : column name of the numeric id
+#	- table : name of the SQL table to modify
 # Output:
 #   - return value: 1 if ok, 0 if error
 #   - parameters:
-#	- msg : message d'erreur si erreur
+#	- msg : error message if an error occurred
 #
 # History :
 #   2001/04/03 : pda      : design
-#   2001/11/02 : pda      : généralisation
-#   2002/05/03 : pda/jean : suppression contrainte sur les tickets
+#   2001/11/02 : pda      : generalization
+#   2002/05/03 : pda/jean : remove an old constraint
+#   2010/12/04 : pda      : i18n
 #
 
-proc retirer-entree {dbfd _msg id idnum table} {
+proc _store-tabular-del {dbfd _msg id idnum table} {
     upvar $_msg msg
 
     set sql "DELETE FROM $table WHERE $idnum = $id"
-    set ok [::pgsql::execsql $dbfd $sql msg]
-
-    return $ok
+    return [::pgsql::execsql $dbfd $sql msg]
 }
 
 #
-# Ajout d'une entrée
+# Entry addition
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- msg : variable contenant, en retour, le message d'erreur éventuel
-#	- table : nom de la table à modifier
-#	- _tabval : tableau contenant les valeurs à ajouter
+#	- _msg : in return, error message if any
+#	- table : name of the SQL table to modify
+#	- _tabval : array containing new values
 # Output:
 #   - return value: 1 if ok, 0 if error
 #   - parameters:
-#	- msg : message d'erreur si erreur
+#	- msg : error message if an error occurred
 #
 # History :
-#   2001/04/01 : pda : design
-#   2001/04/03 : pda : documentation
-#   2001/11/02 : pda : généralisation
-#   2004/01/20 : pda/jean : ajout d'un attribut NULL si chaîne vide (pour ipv6)
+#   2001/04/01 : pda      : design
+#   2001/04/03 : pda      : documentation
+#   2001/11/02 : pda      : generalization
+#   2004/01/20 : pda/jean : add NULL attribute if empty string (for ipv6)
+#   2010/12/04 : pda      : i18n
 #
 
-proc ajouter-entree {dbfd msg table _tabval} {
-    upvar $msg m
+proc _store-tabular-add {dbfd _msg table _tabval} {
+    upvar $_msg msg
     upvar $_tabval tabval
 
     #
-    # Nom des colonnes
+    # Column names
     #
     set cols [array names tabval]
 
     #
-    # Valeur des colonnes
+    # Column values
     #
     set vals {}
     foreach c $cols {
@@ -4525,442 +4622,31 @@ proc ajouter-entree {dbfd msg table _tabval} {
     }
 
     set sql "INSERT INTO $table ([join $cols ,]) VALUES ([join $vals ,])"
-    set ok [::pgsql::execsql $dbfd $sql m]
-    return $ok
+    return [::pgsql::execsql $dbfd $sql msg]
 }
 
 ##############################################################################
-# Accès aux parameters de configuration
+# Topo library
 ##############################################################################
 
 #
-# Classe d'accès aux parameters de configuration
-#
-# Cette classe représente un moyen simple d'accéder aux parameters
-# de configuration de l'application stockés dans la base WebDNS.
-#
-# Méthodes :
-# - setdb $dbfd
-#	positionne l'database handle de données dans laquelle sont
-#	stockés les parameters
-# - setlang
-#	positionne la langue utilisée pour rechercher les descriptions
-# - class
-#	renvoie toutes les classes connues
-# - desc class-or-key
-#	renvoie la description associée à la classe ou à la clef
-# - keys [ class ]
-#	renvoie toutes les clefs associées à la classe, ou toutes
-#	les clefs connues
-# - keytype key
-#	renvoie le type de la clef données, sous la forme d'une
-#	liste {string|bool|text|menu x}. X n'est présent que pour
-#	le type menu
-# - keyhelp key
-#	renvoie le message d'aide associé à une clef
-# - get key
-#	renvoie la valeur valeur associée à une clef
-# - set key val
-#	positionne la valeur associée à une clef, et retourne une
-#	chaîne vide, ou un message d'erreur
-#
-# History
-#   2001/03/21 : pda     : design de getconfig/setconfig
-#   2003/12/08 : pda     : reprise depuis sos
-#   2010/10/25 : pda     : transformation sous forme de classe
-#
-
-snit::type ::config {
-    # database handle
-    variable db ""
-
-    # default language
-    variable lang "fr"
-
-    # configuration parameter specification
-    variable configspec {
-	{dns
-	    {
-		fr {Paramètres généraux}
-		en {General parameters}
-	    }
-	    {datefmt {string}
-		fr {{Format d'affichage des dates/heures}
-		    {Format d'affichage des dates et des heures,
-			utilisé dans l'édition et l'affichage des
-			données. Voir la page de manuel clock(n)
-			de Tcl.}
-		}
-	    }
-	    {jourfmt {string}
-		fr {{Format d'affichage des jours}
-		    {Format d'affichage des dates (sans l'heure).
-		    Voir la page de manuel clock(n) de Tcl.}
-		}
-	    }
-	}
-	{dhcp
-	    {
-		fr {Paramètres DHCP}
-		en {DHCP parameters}
-	    }
-	    {default_lease_time {string}
-		fr {{default_lease_time}
-		    {Valeur du parameter DHCP "default_lease_time"
-			utilisé lors de la génération d'intervalles
-			dynamiques, en secondes. Cette valeur est
-			utilisée si le parameter spécifique de
-			l'intervalle est nul.}
-		}
-	    }
-	    {max_lease_time {string}
-		fr {{max_lease_time}
-		    {Valeur du parameter DHCP "max_lease_time"
-		    utilisé lors de la génération d'intervalles
-		    dynamiques, en secondes.  Cette valeur est
-		    utilisée si le parameter spécifique de l'intervalle
-		    est nul.}
-		}
-	    }
-	    {min_lease_time {string}
-		fr {{min_lease_time}
-		    {Valeur minimale des parameters DHCP spécifiés
-			dans les intervalles dynamiques. Cette
-			valeur permet uniquement d'éviter qu'un
-			correspondant réseau précise des parameters
-			de bail trop petits et génère un trafic
-			important.}
-		}
-	    }
-	}
-	{topo
-	    {
-		fr {Paramètres de topo}
-		en {Topology parameters}
-	    }
-	    {topoactive {bool}
-		fr {{Activation de Topo}
-		    {Cocher cette case pour activer l'accès à la
-			fonctionnalité "Topo".}
-		}
-	    }
-	    {topofrom {string}
-		fr {{"From" des mails de topo}
-		    {Champ "From" des mails envoyés par le démon topod
-			lors des détections de modification ou
-			d'anomalie.}
-		}
-	    }
-	    {topoto {string}
-		fr {{Destinataire des mails de topo}
-		    {Champ "To" des mails envoyés par
-			le démon topod lors des détection de
-			modification ou d'anomalie.}
-		}
-	    }
-	}
-	{auth
-	    {
-		fr {Paramètres d'authentification}
-		en {Authentification parameters}
-	    }
-	    {authmailfrom {bool}
-		fr {{Utiliser le "From" spécifié dans "auth"}
-		    {Utiliser l'information provenant de l'application
-			"auth" plutôt que le champ suivant.}
-		}
-	    }
-	    {mailfrom {string}
-		fr {{"From" des mails de modification de passwd}
-		    {Champ "From" des mails envoyés par l'application
-			à un utilisateur lors des changements de
-			mot de passe.}
-		}
-	    }
-	    {authmailreplyto {bool}
-		fr {{Utiliser le "Reply-To" spécifié dans "auth"}
-		    {Utiliser l'information provenant de l'application
-			"auth" plutôt que le champ suivant.}
-		}
-	    }
-	    {mailreplyto {string}
-		fr {{"Reply-To" des mails de modification de passwd}
-		    {Champ "Reply-To" des mails envoyés par
-			l'application à un utilisateur lors des
-			changements de mot de passe.}
-		}
-	    }
-	    {authmailcc {bool}
-		fr {{Utiliser le "Cc" spécifié dans "auth"}
-		    {tiliser l'information provenant de l'application
-			"auth" plutôt que le champ suivant.}
-		}
-	    }
-	    {mailcc {string}
-		fr {{"Cc" des mails de modification de passwd}
-		    {Destinataire(s) auxiliaires des mail envoyés
-			par l'application à un utilisateur lors des
-			changements de mot de passe.
-			Cela peut éventuellement être une liste d'adresses,
-			l'espace faisant office de séparateur.}
-		}
-	    }
-	    {authmailbcc {bool}
-		fr {{Utiliser le "Bcc" spécifié dans "auth"}
-		    {Utiliser l'information provenant de l'application
-			"auth" plutôt que le champ suivant.}
-		}
-	    }
-	    {mailbcc {string}
-		fr {{"Bcc" des mails de modification de passwd}
-		    {Destinataire(s) caché(s) des mail envoyés par
-			l'application à un utilisateur lors des
-			changements de mot de passe.  Cela peut
-			éventuellement être une liste d'adresses,
-			l'espace faisant office de séparateur.}
-		}
-	    }
-	    {authmailsubject {bool}
-		fr {{Utiliser le "Subject" spécifié dans "auth"}
-		    {Utiliser l'information provenant de l'application
-			"auth" plutôt que le champ suivant.}
-		}
-	    }
-	    {mailsubject {string}
-		fr {{"Subject" des mails de moditication de passwd}
-		    {Champ "Subject" des mails envoyés par
-			l'application à un utilisateur lors des
-			changements de mot de passe.}
-		}
-	    }
-	    {authmailbody {bool}
-		fr {{Utiliser le corps spécifié dans "auth"}
-		    {Utiliser l'information provenant de l'application
-			"auth" plutôt que le champ suivant.}
-		}
-	    }
-	    {mailbody {text}
-		fr {{Corps du mail de modification de passwd}
-		    {Corps des mails envoyés par l'application à
-			un utilisateur lors des changements de mot
-			de passe. Les parameters suivants sont
-			substitués: <ul><li>%1$s : login de
-			l'utilisateur</li> <li>%2$s : mot de passe
-			généré</li></ul>.}
-		}
-	    }
-	    {groupes {string}
-		fr {{Groupes Web autorisés}
-		    {Liste de groupes (conformément à l'authentification
-			Apache) autorisés pour la création d'un
-			utilisateur.  Si la liste est vide, tous
-			les groupes existants dans la base
-			d'authentification sont autorisés.}
-		}
-	    }
-	}
-    }
-
-    #
-    # Internal representation of parameter specification
-    #
-    # (class)			{<cl1> ... <cln>}
-    # (class:<cl1>)		{<k1> ... <kn>}
-    # (class:<cl1>:desc:<lang>)	<desc>
-    # (key:<k1>:type)		{string|bool|text|menu ...}
-    # (key:<k1>:desc:<lang>)	<desc>
-    # (key:<k1>:help:<lang>)	<text>
-    #
-
-    variable internal -array {}
-
-    constructor {} {
-	set internal(class) {}
-	foreach class $configspec {
-	    lassign $class classname classdesc
-
-	    lappend internal(class) $classname
-	    set internal(class:$classname) {}
-
-	    array set t $classdesc
-	    foreach lang [array names t] {
-		set internal(class:$classname:desc:$lang) $t($lang)
-	    }
-	    unset t
-
-	    foreach key [lreplace $class 0 1] {
-		lassign $key keyname keytype
-
-		lappend internal(class:$classname) $keyname
-		set internal(key:$keyname:type) $keytype
-
-		array set t [lreplace $key 0 1]
-		foreach lang [array names t] {
-		    lassign $t($lang) desc help
-		    set internal(key:$keyname:desc:$lang) $desc
-		    set internal(key:$keyname:help:$lang) $help
-		}
-		unset t
-	    }
-	}
-    }
-
-    method setdb {dbfd} {
-	set db $dbfd
-    }
-
-    method setlang {lg} {
-	set lang $lang
-    }
-
-    # returns all classes
-    method class {} {
-	return $internal(class)
-    }
-
-    # returns textual description of the given class or key
-    method desc {cork} {
-	set r $cork
-	if {[info exists internal(class:$cork)]} then {
-	    if {[info exists internal(class:$cork:desc:$lang)]} then {
-		set r $internal(class:$cork:desc:$lang)
-	    }
-	} elseif {[info exists internal(key:$cork:type)]} {
-	    if {[info exists internal(key:$cork:desc:$lang)]} then {
-		set r $internal(key:$cork:desc:$lang)
-	    }
-	}
-	return $r
-    }
-
-    # returns all keys associated with a class (default  : all classes)
-    method keys {{class {}}} {
-	if {[llength $class] == 0} then {
-	    set class $internal(class)
-	}
-	set lk {}
-	foreach c $class {
-	    set lk [concat $lk $internal(class:$c)]
-	}
-	return $lk
-    }
-
-    # returns key type
-    method keytype {key} {
-	set r ""
-	if {[info exists internal(key:$key:type)]} then {
-	    set r $internal(key:$key:type)
-	}
-	return $r
-    }
-
-    # returns key help
-    method keyhelp {key} {
-	set r $key
-	if {[info exists internal(key:$key:type)]} then {
-	    if {[info exists internal(key:$key:help:$lang)]} then {
-		set r $internal(key:$key:help:$lang)
-	    }
-	}
-	return $r
-    }
-
-    # returns key value
-    method get {key} {
-	if {[info exists internal(key:$key:type)]} then {
-	    set found 0
-	    pg_select $db "SELECT * FROM global.config WHERE clef = '$key'" tab {
-		set val $tab(valeur)
-		set found 1
-	    }
-	    if {! $found} then {
-		switch $internal(key:$key:type) {
-		    string	{ set val "" }
-		    bool	{ set val 0 }
-		    set text	{ set val "" }
-		    set menu	{ set val "" }
-		    default	{ set val "type unknown" }
-		}
-	    }
-	} else {
-	    error "Unknown configuration key '$key'"
-	}
-	return $val
-    }
-
-    # set key value
-    # returns empty string if ok, or an error message
-    method set {key val} {
-	set r ""
-	set k [::pgsql::quote $key]
-	set sql "DELETE FROM global.config WHERE clef = '$k'"
-	if {[::pgsql::execsql $db $sql msg]} then {
-	    set v [::pgsql::quote $val]
-	    set sql "INSERT INTO global.config VALUES ('$k', '$v')"
-	    if {! [::pgsql::execsql $db $sql msg]} then {
-		set r "Cannot set '$key' to '$val': $msg"
-	    }
-	} else {
-	    set r "Cannot fetch '$key': $msg"
-	}
-
-	return $r
-    }
-}
-
-##############################################################################
-# Librairie topo
-##############################################################################
-
-#
-# Librairie TCL pour l'application de topologie
-#
-# History
-#   2006/06/05 : pda             : design de la partie topo
-#   2006/05/24 : pda/jean/boggia : design de la partie metro
-#   2007/01/11 : pda             : fusion des deux parties
-#   2008/10/01 : pda             : ajout de message de statut de la topo
-#
-
-set libconf(topodir)	%TOPODIR%
-set libconf(graph)	%GRAPH%
-set libconf(status)	%STATUS%
-
-set libconf(extractcoll)	"%TOPODIR%/bin/extractcoll %s < %GRAPH%"
-set libconf(extracteq)		"%TOPODIR%/bin/extracteq %s %s < %GRAPH%"
-
-array set libconf {
-    freq:2412	1
-    freq:2417	2
-    freq:2422	3
-    freq:2427	4
-    freq:2432	5
-    freq:2437	6
-    freq:2442	7
-    freq:2447	8
-    freq:2452	9
-    freq:2457	10
-    freq:2462	11
-}
-
-#
-# Lire l'état de topo
+# Read topo status
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- admin : 1 si l'utilisateur est admin, 0 sinon
+#	- admin : 1 if user is administrator
 # Output:
-#   - return value: message de statut, ou chaîne vide (si l'utilisateur
-#	n'est pas admin, ou s'il n'y a aucun message)
+#   - return value: HTML status message, or empty (if user is not admin
+#	or if there is no message)
 #
 # History
-#   2010/11/15 : pda      : séparation dans une fonction autonome
-#   2010/11/23 : pda      : utilisation de la table keepstate
+#   2010/11/15 : pda      : extract in an autonomous function
+#   2010/11/23 : pda      : use keepstate table
+#   2010/12/04 : pda      : i18n
 #
 
 proc topo-status {dbfd admin} {
-
     set msgsta ""
     if {$admin} then {
 	set found 0
@@ -4971,8 +4657,8 @@ proc topo-status {dbfd admin} {
 	    set found 1
 	}
 	if {! $found} then {
-	    set msg "No message from anaconf"
-	    set date "(no date)"
+	    set msg [mc "No message from anaconf"]
+	    set date [mc "(no date)"]
 	} elseif {$msg eq "Resuming normal operation"} then {
 	    set msg ""
 	}
@@ -4981,54 +4667,53 @@ proc topo-status {dbfd admin} {
 	    set msg [::webapp::html-string $msg]
 	    regsub -all "\n" $msg "<br>" msg
 
-	    set texte [::webapp::helem "p" "Erreur de topo"]
-	    append texte [::webapp::helem "p" \
-					[::webapp::helem "font" $msg \
-						"color" "#ff0000" \
-					    ] \
-				]
-	    append texte [::webapp::helem "p" "... depuis $date"]
+	    set text [::webapp::helem "p" [mc "Topod messages"]]
+	    append text [::webapp::helem "p" \
+			    [::webapp::helem "font" $msg "color" "#ff0000"] \
+			    ]
+	    append text [::webapp::helem "p" [format [mc "... since %s"] $date]]
 
-	    set msgsta [::webapp::helem "div" $texte "class" "alerte"]
+	    set msgsta [::webapp::helem "div" $text "class" "alerte"]
 	}
     }
     return $msgsta
 }
 
 #
-# Utilitaire pour le tri des interfaces : compare deux noms d'interface
+# Compare two interface names, used in sort operations.
 #
 # Input:
 #   - parameters:
-#       - i1, i2 : deux noms d'interfaces
+#       - i1, i2 : interface names
 # Output:
-#   - return value: -1, 0 ou 1 (cf string compare)
+#   - return value: -1, 0 or 1 (see string compare)
 #
 # History
-#   2006/12/29 : pda : design
+#   2006/12/29 : pda      : design
+#   2010/12/04 : pda      : i18n
 #
 
 proc compare-interfaces {i1 i2} {
     #
-    # Isoler tous les mots
-    # Ex: "GigabitEthernet1/0/1" -> " GigabitEthernet 1/0/1"
+    # Isolate all words
+    # Eg: "GigabitEthernet1/0/1" -> " GigabitEthernet 1/0/1"
     #
     regsub -all {[A-Za-z]+} $i1 { & } i1
     regsub -all {[A-Za-z]+} $i2 { & } i2
     #
-    # Retirer tous les caractères spéciaux
-    # Ex: " GigabitEthernet 1/0/1" -> " GigabitEthernet 1 0 1"
+    # Remove all special characters
+    # Eg: " GigabitEthernet 1/0/1" -> " GigabitEthernet 1 0 1"
     #
     regsub -all {[^A-Za-z0-9]+} $i1 { } i1
     regsub -all {[^A-Za-z0-9]+} $i2 { } i2
     #
-    # Retirer les espaces superflus
+    # Remove unneeded spaces
     #
     set i1 [string trim $i1]
     set i2 [string trim $i2]
 
     #
-    # Comparer mot par mot
+    # Compare word by word
     #
     set r 0
     foreach m1 [split $i1] m2 [split $i2] {
@@ -5052,20 +4737,21 @@ proc compare-interfaces {i1 i2} {
 }
 
 #
-# Utilitaire pour le tri des adresses IP : compare deux adresses IP
+# Compare two IP addresses, used in sort operations.
 #
 # Input:
 #   - parameters:
-#       - ip1, ip2 : les adresses à comparer
+#       - ip1, ip2 : IP addresses (IPv4 or IPv6)
 # Output:
-#   - return value: -1, 0 ou 1
+#   - return value: -1, 0 ou 1 (see string compare)
 #
 # History
-#   2006/06/20 : pda             : design
-#   2006/06/22 : pda             : documentation
+#   2006/06/20 : pda      : design
+#   2006/06/22 : pda      : documentation
+#   2010/12/04 : pda      : i18n
 #
 
-proc comparer-ip {ip1 ip2} {
+proc compare-ip {ip1 ip2} {
     set ip1 [::ip::normalize $ip1]
     set v1  [::ip::version $ip1]
     set ip2 [::ip::normalize $ip2]
@@ -5103,17 +4789,18 @@ proc comparer-ip {ip1 ip2} {
 }
 
 #
-# Indique si une adresse IP est dans une classe
+# Check if an IP address (IPv4 or IPv6) is in an address range
 #
 # Input:
 #   - parameters:
-#       - ip : adresse IP (ou CIDR) à tester
-#	- net : CIDR de référence
+#       - ip : IP address (or CIDR) to check
+#	- net : address range
 # Output:
-#   - return value: 0 (ip pas dans net) ou 1 (ip dans net)
+#   - return value: 0 (ip not in range) or 1 (ip is in range)
 #
 # History
-#   2006/06/22 : pda             : design
+#   2006/06/22 : pda      : design
+#   2010/12/04 : pda      : i18n
 #
 
 proc ip-in {ip net} {
@@ -5140,57 +4827,56 @@ proc ip-in {ip net} {
 }
 
 #
+# Check metrology id 
 # Valide l'id du point de collecte par rapport aux droits du correspondant.
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
 #	- id : id du point de collecte (ou id+id+...)
-#	- _tabcor : infos sur le correspondant
-#	- _titre : titre du graphe
+#	- _tabuid : user characteristics
+#	- _title : title of graph
 # Output:
 #   - return value: empty string or error message
-#   - parameter _titre : titre du graphe trouvé
+#   - parameter _title : title of graph found
 #
 # History
-#   2006/08/09 : pda/boggia      : design
-#   2006/12/29 : pda             : parametre vlan passé par variable
-#   2008/07/30 : pda             : adaptation au nouvel extractcoll
-#   2008/07/30 : pda             : codage de multiples id
-#   2008/07/31 : pda             : ajout de |
+#   2006/08/09 : pda/boggia : design
+#   2006/12/29 : pda        : parameter vlan
+#   2008/07/30 : pda        : adapt to new extractcoll
+#   2008/07/30 : pda        : multiple ids
+#   2008/07/31 : pda        : add "|"
+#   2010/12/04 : pda        : i18n
 #
 
-proc verifier-metro-id {dbfd id _tabuid _titre} {
+proc check-metro-id {dbfd id _tabuid _title} {
     upvar $_tabuid tabuid
-    upvar $_titre titre
+    upvar $_title title
     global libconf
 
     #
-    # Au cas où les id seraient multiples
+    # If ids are more than one
     #
 
     set lid [split $id "+|"]
 
     #
-    # Récupérer la liste des points de collecte
+    # Get the metrology sensor list, according to user permissions
     #
 
     set cmd [format $libconf(extractcoll) $tabuid(flagsr)]
 
     if {[catch {set fd [open "| $cmd" "r"]} msg]} then {
-	return "Impossible de lire les points de collecte: $msg"
+	return [format [mc "Cannot read sensor list: %s"] $msg]
     }
-
-    while {[gets $fd ligne] > -1} {
-	set l [split $ligne]
-	set kw [lindex $l 0]
-	set i  [lindex $l 1]
+    while {[gets $fd line] > -1} {
+	lassign [split $line] kw i
 	set n [lsearch -exact $lid $i]
 	if {$n >= 0} then {
-	    set idtab($i) $ligne
+	    set idtab($i) $line
 	    if {[info exists firstkw]} then {
 		if {$firstkw ne $kw} then {
-		    return "Types de points de collecte divergents" 
+		    return [mc "Divergent sensor types"]
 		}
 	    } else {
 		set firstkw $kw
@@ -5201,21 +4887,21 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
     catch {close $fd}
 
     #
-    # Erreur si id pas trouvé
+    # Error if id is not found
     #
 
     if {[llength $lid] > 0} then {
-	return "Point de collecte '$id' non trouvé"
+	return [format [mc "Sensor '%s' not found"] $id]
     }
 
     #
-    # Essayer de trouver un titre convenable
+    # Try to guess an appropriate title
     # 
 
     set lid [array names idtab]
     switch [llength $lid] {
 	0 {
-	    return "Aucun point de collecte sélectionné"
+	    return [mc "No sensor selected"]
 	}
 	1 {
 	    set i [lindex $lid 0]
@@ -5226,11 +4912,12 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
 		    set iface [lindex $l 4]
 		    set vlan  [lindex $l 5]
 
-		    set titre "Trafic sur"
 		    if {$vlan ne "-"} then {
-			append titre " le vlan $vlan"
+			set t [mc {Traffic on vlan %1$s of interface %2$s of %3s}]
+		    } else {
+			set t [mc {Traffic on interface %1$s of %2s}]
 		    }
-		    append titre " de l'interface $iface de $eq"
+		    set title [format $t $vlan $iface $eq]
 		}
 		nbauthwifi -
 		nbassocwifi {
@@ -5238,23 +4925,21 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
 		    set iface [lindex $l 4]
 		    set ssid  [lindex $l 5]
 
-		    set titre "Nombre"
 		    if {$firstkw eq "nbauthwifi"} then {
-			append titre " d'utilisateurs authentifiés" 
+			set t [mc {Number of auhentified users on ssid %1$s of interface %2$s of %3$s}]
 		    } else {
-			append titre " de machines associées" 
+			set t [mc {Number of associated hosts on ssid %1$s of interface %2$s of %3$s}]
 		    }
-		    append titre " sur le ssid $ssid de l'interface $iface de $eq"
+		    set title [format $t $ssid $iface $eq]
 		}
 		default {
-		    return "Erreur interne sur extractcoll"
+		    return [mc "Internal error: invalid extractcoll output format"]
 		}
 	    }
 	}
 	default {
 	    switch $firstkw {
 		trafic {
-		    set titre "Trafic"
 		    set le {}
 		    foreach i $lid {
 			set l $idtab($i)
@@ -5268,15 +4953,15 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
 			}
 			lappend le $e
 		    }
-		    set le [join $le " et "]
-		    append titre " sur $le"
+		    set le [join $le ", "]
+		    set title [format [mc "Traffic on interfaces %s"] $le]
 		}
 		nbauthwifi -
 		nbassocwifi {
 		    if {$firstkw eq "nbauthwifi"} then {
-			set titre "Nombre d'utilisateurs authentifiés"
+			set t [mc "Number of auhentified users on %s"]
 		    } else {
-			set titre "Nombre de machines associées"
+			set t [mc "Number of associated hosts on %s"]
 		    }
 		    foreach i $lid {
 			set l $idtab($i)
@@ -5287,11 +4972,11 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
 			set e "$eq/$iface ($ssid)"
 			lappend le $e
 		    }
-		    set le [join $le " et "]
-		    append titre " sur $le"
+		    set le [join $le ", "]
+		    set title [format $t $le]
 		}
 		default {
-		    return "Erreur interne sur extractcoll"
+		    return [mc "Internal error: invalid extractcoll output format"]
 		}
 	    }
 	}
@@ -5301,31 +4986,24 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
 }
 
 #
-# Récupère une expression régulière caractérisant la liste des
-# équipements autorisés.
+# Get regexp giving authorized equipments for a given group.
 #
 # Input:
 #   - parameters:
 #       - dbfd : database handle
-#	- rw : read (0) ou write (1)
-#	- idgrp : id du groupe dans la base DNS
+#	- rw : read (0) or write (1)
+#	- idgrp : group id
 # Output:
-#   - return value: liste de listes de la forme
-#		{{re_allow_1 ... re_allow_n} {re_deny_1 ... re_deny_n}}
+#   - return value: {{re_allow_1 ... re_allow_n} {re_deny_1 ... re_deny_n}}
 #
 # History
-#   2006/08/10 : pda/boggia      : création avec un fichier sur disque
-#   2010/11/03 : pda/jean        : les données sont dans la base
+#   2006/08/10 : pda/boggia : design with an on-disk file
+#   2010/11/03 : pda/jean   : data are now in the database
+#   2010/12/05 : pda        : i18n
 #
 
-proc lire-eq-autorises {dbfd rw idgrp} {
-
+proc read-authorized-eq {dbfd rw idgrp} {
     set r {}
-
-    #
-    # Traiter d'abord les allow, puis les deny
-    #
-
     foreach allow_deny {1 0} {
 	set sql "SELECT pattern
 			FROM topo.dr_eq
@@ -5342,19 +5020,19 @@ proc lire-eq-autorises {dbfd rw idgrp} {
 }
 
 #
-# Récupère un graphe du métrologiseur et le renvoie
+# Fetch a graph from the metrology host and return it back.
 #
 # Input:
 #   - parameters:
-#       - url : l'URL pour aller chercher le graphe sur le métrologiseur
+#       - url : URL of the graph on the metrology host
 # Output:
-#   - aucune sortie, le graphe est récupéré et renvoyé sur la sortie standard
-#	avec l'en-tête HTTP qui va bien
+#   - none : the fetched graph is printed on stdout with usual HTTP headers
 #
 # History
-#   2006/05/17 : jean       : création pour dhcplog
-#   2006/08/09 : pda/boggia : récupération, mise en fct et en librairie
-#   2010/11/15 : pda        : suppression parameter err
+#   2006/05/17 : jean       : design for dhcplog
+#   2006/08/09 : pda/boggia : extract and use in this library
+#   2010/11/15 : pda        : remove err parameter
+#   2010/12/05 : pda        : i18n
 #
 
 proc gengraph {url} {
@@ -5365,13 +5043,13 @@ proc gengraph {url} {
 
     if {$status ne "ok"} then {
 	set code [::http::code $token]
-	d error "Accès impossible ($code)"
+	d error [format [mc "No access: %s"] $code]
     }
 
     upvar #0 $token state
 
     # 
-    # Déterminer le type d'image
+    # Determine image type
     # 
 
     array set meta $state(meta)
@@ -5391,56 +5069,52 @@ proc gengraph {url} {
     }
 
     # 
-    # Renvoyer le résultat
+    # Return the result back
     # 
 
     ::webapp::send $contenttype $state(body)
 }
 
 #
-# Lit et décode une date entrée dans un formulaire
+# Decode a date (supposed to be input by a human)
 #
 # Input:
 #   - parameters:
-#       - date : la date saisie par l'utilisateur dans le formulaire
-#	- heure : heure (00:00:00 pour l'heure de début, 23:59:59 pour fin)
+#       - date : date imput by an user in a form
+#	- hour : hour (from 00:00:00 to 23:59:59)
 # Output:
-#   - return value: la date en format postgresql, ou "" si rien
+#   - return value: converted date in potsgresql format, or "" if no date
 #
 # History
-#   2000/07/18 : pda : design
-#   2000/07/23 : pda : ajout de l'heure
-#   2001/03/12 : pda : mise en librairie
-#   2008/07/30 : pda : ajout cas spécial pour 24h (= 23:59:59)
+#   2000/07/18 : pda      : design
+#   2000/07/23 : pda      : add hour
+#   2001/03/12 : pda      : extract in this library
+#   2008/07/30 : pda      : add special case for 24h (= 23:59:59)
+#   2010/12/05 : pda      : i18n
 #
 
-proc decoder-date {date heure} {
+proc decode-date {date hour} {
     set date [string trim $date]
-    if {[string length $date] == 0} then {
+    if {$date eq ""} then {
 	set datepg ""
     }
-    if {$heure eq "24"} then {
-	set heure "23:59:59"
+    if {$hour eq "24"} then {
+	set hour "23:59:59"
     }
-    set liste [split $date /]
-    switch [llength $liste] {
+    set l [split $date "/"]
+    lassign $l dd mm yyyy
+    switch [llength $l] {
 	1	{
-	    set jj   [lindex $liste 0]
 	    set mm   [clock format [clock seconds] -format "%m"]
 	    set yyyy [clock format [clock seconds] -format "%Y"]
-	    set datepg "$mm/$jj/$yyyy $heure"
+	    set datepg "$mm/$dd/$yyyy $hour"
 	}
 	2	{
-	    set jj   [lindex $liste 0]
-	    set mm   [lindex $liste 1]
 	    set yyyy [clock format [clock seconds] -format "%Y"]
-	    set datepg "$mm/$jj/$yyyy $heure"
+	    set datepg "$mm/$dd/$yyyy $hour"
 	}
 	3	{
-	    set jj   [lindex $liste 0]
-	    set mm   [lindex $liste 1]
-	    set yyyy [lindex $liste 2]
-	    set datepg "$mm/$jj/$yyyy $heure"
+	    set datepg "$mm/$dd/$yyyy $hour"
 	}
 	default	{
 	    set datepg ""
@@ -5456,18 +5130,19 @@ proc decoder-date {date heure} {
 }
 
 #
-# Convertit une fréquence radio 802.11b/g (bande des 2,4 GHz)
-# en canal 802.11b/g
+# Convert a 802.11b/g radio frequency (2.4 GHz band) into a channel
 #
 # Input:
 #   - parameters:
-#       - freq : la fréquence
+#       - freq : frequency
+#   - global variable libconf(freq:<frequency>) : conversion table
 # Output:
-#   - return value: chaîne exprimant le canal
+#   - return value: channel
 #
 # History
-#   2008/07/30 : pda : design
-#   2008/10/17 : pda : canal "dfs"
+#   2008/07/30 : pda      : design
+#   2008/10/17 : pda      : channel "dfs"
+#   2010/12/05 : pda      : i18n
 #
 
 proc conv-channel {freq} {
@@ -5489,32 +5164,33 @@ proc conv-channel {freq} {
 }
 
 #
-# Récupère la liste des interfaces d'un équipement
+# Read list of interfaces on an equipment
 #
 # Input:
 #   - parameters:
-#	- eq : nom de l'équipement
-#	- tabuid() : tableau contenant les flags de restriction pour l'utilisateur
+#	- eq : equipment name
+#	- _tabuid : user's characteristics (including graph flags)
 #   - global variables :
-#	- libconf(extracteq) : appel à extracteq
+#	- libconf(extracteq) : call to extracteq
 # Output:
-#   - return value: liste de la forme
-#		{eq type model location iflist liferr arrayif arrayvlan}
-#	où
-#	- iflist est la liste triée des interfaces
-#	- liferr est la liste des interfaces en erreur (interface modifiable
-#		mais non consultable)
-#	- arrayif est prêt pour "array set" pour donner un tableau de la forme
-#		tab(iface) {nom edit radio stat mode desc lien natif {vlan...}}
-#		(cf sortie de extracteq)
-#	- arrayvlan est prêt pour "array set" pour donner un tableau de la
-#		forme tab(id) {desc-en-hexa voip-0-ou-1}
+#   - return value: {eq type model location iflist liferr arrayif arrayvlan}
+#	where
+#	- iflist is the sorted list of interfaces
+#	- liferr is the list of interfaces which are are writable but not
+#		readable (e.g. this is an error)
+#	- arrayif (ready for "array set") gives an array indexed by
+#		interface name:
+#		tab(iface) {name edit radio stat mode desc link native {vlan...}}
+#		(see extracteq output format)
+#	- arrayvlan (ready for "array set") gives an array indexed by vlanid:
+#		tab(id) {desc-in-hex voip-0-or-1}
 #
 # History
-#   2010/11/03 : pda      : création
-#   2010/11/15 : pda      : suppression parameter err
-#   2010/11/23 : pda/jean : parcours des interfaces modifiables
-#   2010/11/25 : pda      : ajout manual
+#   2010/11/03 : pda      : design
+#   2010/11/15 : pda      : remove parameter err
+#   2010/11/23 : pda/jean : get writable interfaces
+#   2010/11/25 : pda      : add manual
+#   2010/12/05 : pda      : i18n
 #
 
 proc eq-iflist {eq _tabuid} {
@@ -5522,17 +5198,17 @@ proc eq-iflist {eq _tabuid} {
     upvar $_tabuid tabuid
 
     #
-    # Premier parcours : récupérer la liste des interfaces "consultables"
+    # First call to extracteq : get the list of "readable" interfaces
     #
 
     set found 0
 
     set cmd [format $libconf(extracteq) $tabuid(flagsr) $eq]
     set fd [open "|$cmd" "r"]
-    while {[gets $fd ligne] > -1} {
-	switch [lindex $ligne 0] {
+    while {[gets $fd line] > -1} {
+	switch [lindex $line 0] {
 	    eq {
-		set r [lreplace $ligne 0 0]
+		set r [lreplace $line 0 0]
 
 		set location [lindex $r 3]
 		if {$location eq "-"} then {
@@ -5542,31 +5218,31 @@ proc eq-iflist {eq _tabuid} {
 		}
 		set r [lreplace $r 3 3 $location]
 
-		# manual = "manual" ou "auto"
+		# manual = "manual" or "auto"
 		set manual [lindex $r 4]
 		set r [lreplace $r 4 4]
 
 		set found 1
 	    }
 	    iface {
-		set if [lindex $ligne 1]
-		# préparer l'item "edit", qui sera positionné
-		# (éventuellement) dans le deuxième parcours
-		set ligne [linsert $ligne 2 "-"]
-		set tabiface($if) [lreplace $ligne 0 0]
+		set if [lindex $line 1]
+		# prepare "edit" item, which may be set in the second
+		# call to extracteq
+		set line [linsert $line 2 "-"]
+		set tabiface($if) [lreplace $line 0 0]
 	    }
 	}
     }
     if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture de l'équipement '$eq' (read)\n$msg"
+	d error [format [mc {Error during extraction of readable interfaces from '%1$s': %2$s}] $eq $msg]
     }
 
     if {! $found} then {
-	d error "Equipement '$eq' not found"
+	d error [format [mc "Equipment '%s' not found"] $eq]
     }
 
     #
-    # Deuxième parcours : récupérer la liste des interfaces "modifiables"
+    # Second call to exctracteq : get the list of "writable" interfaces
     #
 
     set liferr {}
@@ -5574,27 +5250,26 @@ proc eq-iflist {eq _tabuid} {
     if {$manual eq "auto"} then {
 	set cmd [format $libconf(extracteq) $tabuid(flagsw) $eq]
 	set fd [open "|$cmd" "r"]
-	while {[gets $fd ligne] > -1} {
-	    switch [lindex $ligne 0] {
+	while {[gets $fd line] > -1} {
+	    switch [lindex $line 0] {
 		iface {
-		    set if [lindex $ligne 1]
+		    set if [lindex $line 1]
 		    if {! [info exists tabiface($if)]} then {
-			# ajouter cette interface à la liste des
-			# interfaces en erreur
+			# add this interface to the list of error interfaces
 			lappend liferr $if
 		    } else {
-			# positionner l'item "edit" sur cette interface
+			# set the "edit" attribute on this interface
 			set tabiface($if) [lreplace $tabiface($if) 1 1 "edit"]
 		    }
 		}
 		vlan {
-		    lassign $ligne bidon id desc voip
+		    lassign $line bidon id desc voip
 		    set tabvlan($id) [list $desc $voip]
 		}
 	    }
 	}
 	if {[catch {close $fd} msg]} then {
-	    d error "Erreur lors de la lecture de l'équipement '$eq' (write)\n$msg"
+	    d error [format [mc {Error during extraction of writable interfaces from '%1$s': %2$s}] $eq $msg]
 	}
 
 	set liferr [lsort -command compare-interfaces $liferr]
@@ -5603,13 +5278,13 @@ proc eq-iflist {eq _tabuid} {
     lappend r $liferr
 
     #
-    # Trier les interfaces pour les présenter dans le bon ordre
+    # Sort interfaces
     #
 
     set iflist [lsort -command compare-interfaces [array names tabiface]]
 
     #
-    # Présenter la valeur de retour
+    # Return value
     #
 
     lappend r $iflist
@@ -5632,6 +5307,7 @@ proc eq-iflist {eq _tabuid} {
 #
 # History:
 #   2010/11/29 : pda/jean : design
+#   2010/12/05 : pda      : i18n
 #
 
 proc eq-graph-status {dbfd eq {iface {}}} {
@@ -5648,16 +5324,15 @@ proc eq-graph-status {dbfd eq {iface {}}} {
 
     set iddom [lire-domaine $dbfd $domain]
     if {$iddom == -1} then {
-	d error "Erreur interne : domaine '$domain' non trouvé"
+	d error [format [mc "Domain '%s' not found"] $domain]
     }
     if {! [lire-rr-par-nom $dbfd $host $iddom tabrr]} then {
-	d error "Erreur interne : équipement '$eq' non trouvé"
+	d error [format [mc "Equipment '%s' not found"] $eq]
     }
     set idrr $tabrr(idrr)
 
     #
-    # Search for unprocessed modifications and build
-    # information.
+    # Search for unprocessed modifications and build information.
     #
 
     set wif ""
@@ -5670,26 +5345,29 @@ proc eq-graph-status {dbfd eq {iface {}}} {
 			WHERE idrr = $idrr AND processed = 0 $wif
 			ORDER BY reqdate DESC"
     set lines {}
-    lappend lines [list Title4 "Date" "Login" "Interface" "Modif"]
+    lappend lines [list Title4 [mc "Date"] [mc "Login"] [mc "Interface"] [mc "Change"]]
     pg_select $dbfd $sql tab {
 	set ifdesc $tab(ifdesc)
 	set ethervlan $tab(ethervlan)
 	set voicevlan $tab(voicevlan)
-	set modif "description='$ifdesc'"
+	set chg [format [mc "description='%s'"] $ifdesc]
 	if {$ethervlan == -1} then {
-	    append modif ", interface désactivée"
+	    append chg ", "
+	    append chg [mc "deactivated interface"]
 	} else {
-	    append modif ", vlan=$ethervlan"
+	    append chg ", "
+	    append chg [format [mc "vlan=%s"] $ethervlan]
 	    if {$voicevlan != -1} then {
-		append modif ", voip=$voicevlan"
+		append chg ", "
+		append chg [format [mc "voip=%s"] $voicevlan]
 	    }
 	}
-	lappend lines [list Normal4 $tab(reqdate) $tab(login) $tab(iface) $modif]
+	lappend lines [list Normal4 $tab(reqdate) $tab(login) $tab(iface) $chg]
     }
     if {[llength $lines] == 1} then {
 	set ifchg ""
     } else {
-	set ifchg [::webapp::helem "p" "Modification(s) en cours de traitement"]
+	set ifchg [::webapp::helem "p" [mc "Changes currently processed"]]
 	append ifchg [::arrgen::output "html" $libconf(tabeqstatus) $lines]
     }
 
@@ -5706,9 +5384,7 @@ proc eq-graph-status {dbfd eq {iface {}}} {
     switch -nocase -glob $action {
 	rancid* -
 	building* {
-	    set graph [::webapp::helem "p" "Reconstruction du graphe en cours.
-			Les informations fournies ne sont pas forcément
-			cohérentes avec la réalité."]
+	    set graph [::webapp::helem "p" [mc "Graph currenty re-builded. Informations presented here are not necessarily consistent with current equipement configuration."]]
 	}
 	default {
 	    set graph ""

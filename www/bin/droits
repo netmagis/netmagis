@@ -114,7 +114,7 @@ proc main {} {
     # du groupe auquel appartient le correspondant
     #
 
-    set grospaquet [info-groupe $dbfd $tabcor(idgrp)]
+    set grospaquet [display-group $dbfd $tabcor(idgrp)]
     set tabreseaux        [lindex $grospaquet 2]
     set tabcidrhorsreseau [lindex $grospaquet 3]
     set tabdomaines       [lindex $grospaquet 4]

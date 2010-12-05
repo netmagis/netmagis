@@ -91,8 +91,8 @@ proc main {} {
     #
 
     set largeurs {10 50 40}
-    set titres {{texte Priorité} {texte Nom} {texte Domaine}}
-    set menudom [couple-domaine-par-corresp $dbfd $tabcor(idcor) ""]
+    set titres {{text Priorité} {text Nom} {text Domaine}}
+    set menudom [couple-domains $dbfd $tabcor(idcor) ""]
     set spec [list \
 		{priorite {string 5}  {}} \
 		{nom      {string 30} {}} \
@@ -107,7 +107,7 @@ proc main {} {
 		"
     set idnum "mx"
 
-    set msg [edition-tableau $largeurs $titres $spec $dbfd $sql $idnum tableau]
+    set msg [display-tabular $largeurs $titres $spec $dbfd $sql $idnum tableau]
     if {[string length $msg] > 0} then {
 	d error $msg
     }

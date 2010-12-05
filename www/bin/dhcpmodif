@@ -363,7 +363,7 @@ proc main {} {
     #
 
     set idreseau [lindex $ftab(idreseau) 0]
-    set lcidr [valide-idreseau $dbfd $idreseau $tabcor(idgrp) "dhcp" 4 msg]
+    set lcidr [check-netid $dbfd $idreseau $tabcor(idgrp) "dhcp" 4 msg]
     if {[llength $lcidr] == 0} then {
 	d error $msg
     }
@@ -396,7 +396,7 @@ proc main {} {
 	{iddhcpprofil}
     }
 
-    set msg [enregistrer-tableau $dbfd $spec iddhcprange dns.dhcprange ftab]
+    set msg [store-tabular $dbfd $spec iddhcprange dns.dhcprange ftab]
     if {! [string equal $msg ""]} then {
 	d error $msg
     }

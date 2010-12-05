@@ -88,15 +88,15 @@ proc main {} {
     # Récupération des plages auxquelles a droit le correspondant
     #
 
-    set lres [liste-reseaux $dbfd $tabcor(idgrp) "consult"]
-    set taille [llength $lres]
-    if {$taille == 0} then {
+    set lnet [read-networks $dbfd $tabcor(idgrp) "consult"]
+    set nnet [llength $lnet]
+    if {$nnet == 0} then {
 	set plages "Aucun réseau sélectionnable"
     } else {
-	if {$taille > $conf(maxplages)} then {
-	    set taille $conf(maxplages)
+	if {$nnet > $conf(maxplages)} then {
+	    set nnet $conf(maxplages)
 	}
-	set plages [::webapp::form-menu "plages" $taille 1 $lres {}]
+	set plages [::webapp::form-menu "plages" $nnet 1 $lnet {}]
     }
 
     #

@@ -310,7 +310,7 @@ proc main {} {
     # Enregistrer les modifications dans la base
     #
 
-    set errmsg [enregistrer-tableau $dbfd $spec $idnum $table ftab]
+    set errmsg [store-tabular $dbfd $spec $idnum $table ftab]
     if {[string length $errmsg] > 0} then {
 	d error $errmsg
     }

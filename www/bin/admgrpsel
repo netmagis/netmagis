@@ -70,7 +70,8 @@ proc main {} {
     # Récupérer la liste des groupes pour la convertir en menu.
     #
 
-    set lgroupe [liste-groupes $dbfd 2]
+    set lgroupe [::pgsql::getcols $dbfd "global.groupe" "nom <> ''" "nom ASC" \
+						{nom nom}]
     set lgroupe [linsert $lgroupe 0 {::nouveau {Créer un groupe...}}]
     set menuorggrp [::webapp::form-menu orggrp 1 0 $lgroupe {0}]
 

@@ -70,7 +70,7 @@ proc main {} {
     # et construction du code HTML approprié.
     #
 
-    set domaine [menu-domaine $dbfd $tabcor(idcor) domaine "" ""]
+    set domaine [menu-domain $dbfd $tabcor(idcor) domaine "" ""]
 
     #
     # Fin du script : sortie de la page et fermeture de la base

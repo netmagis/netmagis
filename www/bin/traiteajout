@@ -336,8 +336,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Vérifier le droit d'émission SMTP
     #
 
-    set grdroitsmtp [droit-correspondant-smtp $dbfd $tabcor(idcor)]
-    if {$grdroitsmtp} then {
+    if {$tabcor(droitsmtp)} then {
 	if {[string equal $droitsmtp ""]} then {
 	    set droitsmtp 0
 	} else {
@@ -351,8 +350,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Vérifier le droit TTL
     #
 
-    set grdroitttl [droit-correspondant-ttl $dbfd $tabcor(idcor)]
-    if {$grdroitttl} then {
+    if {$tabcor(droitttl)} then {
 	if {[string equal $ttl ""]} then {
 	    set ttl -1
 	} else {
@@ -597,7 +595,7 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
     set plage    [string trim [lindex $ftab(plage) 0]]
     set nbadr    [string trim [lindex $ftab(nbadr) 0]]
 
-    set lcidr [valide-idreseau $dbfd $plage $idgrp "consult" {4} msg]
+    set lcidr [check-netid $dbfd $plage $idgrp "consult" {4} msg]
     if {[llength $lcidr] != 1} then {
        d error $msg
     }

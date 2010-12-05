@@ -70,7 +70,7 @@ proc main {} {
     #
 
     set w "dr_dom.rolemail <> 0"
-    set domaine [menu-domaine $dbfd $tabcor(idcor) domaine $w ""]
+    set domaine [menu-domain $dbfd $tabcor(idcor) domaine $w ""]
 
     #
     # Fin du script : sortie de la page et fermeture de la base

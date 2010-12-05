@@ -101,7 +101,7 @@ proc main {} {
     # valider l'id du graphe en fonction des droits
     #
 
-    set msg [verifier-metro-id $dbfd $id tabcor titre]
+    set msg [check-metro-id $dbfd $id tabcor titre]
     if {! [string equal $msg ""]} then {
 	d error $msg
     }
@@ -116,15 +116,15 @@ proc main {} {
     switch -regexp -- "$jdebut-$hdebut" {
 	{^[0-9/]+-[0-9:]+$} {
 	    # spéc exacte
-	    set debut [decoder-date $jdebut $hdebut]
+	    set debut [decode-date $jdebut $hdebut]
 	}
 	{^-[0-9:]+$} {
 	    # aujourd'hui à x heures
-	    set debut [decoder-date $aujourdhui $hdebut]
+	    set debut [decode-date $aujourdhui $hdebut]
 	}
 	{^[0-9/]+-$} {
 	    # tel jour à 0 heure
-	    set debut [decoder-date $jdebut "00:00:00"]
+	    set debut [decode-date $jdebut "00:00:00"]
 	}
 	{^-$} {
 	    # il y a 36 heures
@@ -144,15 +144,15 @@ proc main {} {
     switch -regexp -- "$jfin-$hfin" {
 	{^[0-9/]+-[0-9:]+$} {
 	    # spéc exacte
-	    set fin [decoder-date $jfin $hfin]
+	    set fin [decode-date $jfin $hfin]
 	}
 	{^-[0-9:]+$} {
 	    # aujourd'hui à x heures
-	    set fin [decoder-date $aujourdhui $hfin]
+	    set fin [decode-date $aujourdhui $hfin]
 	}
 	{^[0-9/]+-$} {
 	    # tel jour à minuit
-	    set fin [decoder-date $jfin "23:59:59"]
+	    set fin [decode-date $jfin "23:59:59"]
 	}
 	{^-$} {
 	    # maintenant

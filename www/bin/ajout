@@ -118,14 +118,14 @@ proc main {} {
     # et construction du code HTML approprié.
     #
 
-    set domaine    [menu-domaine $dbfd $tabcor(idcor) domaine    "" ""]
-    set domaineref [menu-domaine $dbfd $tabcor(idcor) domaineref "" ""]
+    set domaine    [menu-domain $dbfd $tabcor(idcor) domaine    "" ""]
+    set domaineref [menu-domain $dbfd $tabcor(idcor) domaineref "" ""]
 
     #
     # Récupérer les informations de profil DHCP si besoin est
     #
 
-    set dhcpprofil [menu-dhcpprofil $dbfd "iddhcpprofil" $tabcor(idcor) 0]
+    set dhcpprofil [menu-dhcp-profile $dbfd "iddhcpprofil" $tabcor(idcor) 0]
     set dhcpprofillibelle [lindex $dhcpprofil 0]
     set dhcpprofilmenu    [lindex $dhcpprofil 1]
 
@@ -133,12 +133,12 @@ proc main {} {
     # Récupérer les plages sous forme d'une liste déroulante
     #
 
-    set lres [liste-reseaux $dbfd $tabcor(idgrp) "consult"]
-    set taille [llength $lres]
+    set lnet [read-networks $dbfd $tabcor(idgrp) "consult"]
+    set taille [llength $lnet]
     if {$taille == 0} then {
 	set menuplage "Aucun réseau sélectionnable"
     } else {
-	set menuplage [::webapp::form-menu "plage" 1 0 $lres {}]
+	set menuplage [::webapp::form-menu "plage" 1 0 $lnet {}]
     }
 
     #

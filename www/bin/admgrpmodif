@@ -906,7 +906,7 @@ proc main {} {
     # du groupe auquel appartient le correspondant
     #
 
-    set grospaquet [info-groupe $dbfd $idgrp]
+    set grospaquet [display-group $dbfd $idgrp]
     lassign $grospaquet \
 		tabdroits tablogins tabreseaux tabcidrhorsreseau \
 		tabdomaines tabdhcpprofils tabdreq

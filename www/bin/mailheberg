@@ -285,7 +285,7 @@ proc main {} {
 
 	set nomh $trrh(nom)
 	set domh $trrh(domaine)
-	set domaineh [menu-domaine $dbfd $idcor domaineh "" $domh]
+	set domaineh [menu-domain $dbfd $idcor domaineh "" $domh]
 
 	lappend lsubst [list %NOM%      $nom]
 	lappend lsubst [list %DOMAINE%  $domaine]

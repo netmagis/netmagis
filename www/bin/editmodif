@@ -138,11 +138,11 @@ proc editmodif-infos {dbfd idcor ft} {
     #
 
     set nom [::webapp::form-text nom 1 20 64 $nom]
-    set domaine [menu-domaine $dbfd $idcor domaine "" $domaine]
+    set domaine [menu-domain $dbfd $idcor domaine "" $domaine]
 
     set val [::webapp::html-string $trr(mac)]
     set mac [::webapp::form-text mac 1 20 17 $val]
-    set dhcpprofil [menu-dhcpprofil $dbfd iddhcpprofil $idcor $trr(iddhcpprofil)]
+    set dhcpprofil [menu-dhcp-profile $dbfd iddhcpprofil $idcor $trr(iddhcpprofil)]
     set dhcpprofillibelle [lindex $dhcpprofil 0]
     set dhcpprofilmenu    [lindex $dhcpprofil 1]
 
