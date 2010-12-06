@@ -224,9 +224,11 @@ sub get_time
 sub setBaseMaxSpeed
 {
     my ($base,$speed) = @_;
+
+    my $rrdtool = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
     my $maxspeed = convert_nb_to_exp($speed);
-    system("/usr/bin/rrdtool tune $base --maximum input:$maxspeed");
-    system("/usr/bin/rrdtool tune $base --maximum output:$maxspeed");
+    system("$rrdtool tune $base --maximum input:$maxspeed");
+    system("$rrdtool tune $base --maximum output:$maxspeed");
 }
 
 ###########################################################
@@ -312,7 +314,9 @@ sub get_snmp_ifindex
 sub creeBaseTrafic
 {
     my ($fichier,$speed)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U DS:erreur:GAUGE:600:U:U DS:ticket:GAUGE:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+ 
+    my $rrdtool = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
+    system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U DS:erreur:GAUGE:600:U:U DS:ticket:GAUGE:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     setBaseMaxSpeed($fichier,$speed);
 }
 
@@ -322,7 +326,9 @@ sub creeBaseTrafic
 sub creeBaseBroadcast
 {
     my ($fichier,$speed)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:8760 RRA:MAX:0.5:24:8760");
+
+    my $rrdtool = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
+    system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:8760 RRA:MAX:0.5:24:8760");
     setBaseMaxSpeed($fichier,$speed);
 }
 
@@ -331,9 +337,11 @@ sub creeBaseBroadcast
 sub creeBaseCounter
 {
     my ($fichier,$speed) = @_;
-    system("/usr/bin/rrdtool create $fichier DS:value:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+
+    my $rrdtool = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
+    system("$rrdtool create $fichier DS:value:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     my $maxspeed = convert_nb_to_exp($speed);
-    system("/usr/bin/rrdtool tune $fichier --maximum value:$maxspeed");
+    system("$rrdtool tune $fichier --maximum value:$maxspeed");
 }
 
 ###########################################################
@@ -342,7 +350,9 @@ sub creeBaseCounter
 sub creeBaseOsirisAP
 {
     my ($fichier,$speed)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    
+    my $rrdtool = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
+    system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     setBaseMaxSpeed($fichier,$speed);
 }
 
@@ -351,7 +361,9 @@ sub creeBaseOsirisAP
 sub creeBaseApAssoc
 {
     my ($fichier)=@_;
-        system("/usr/bin/rrdtool create $fichier DS:wpa:GAUGE:600:U:U DS:clair:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+    system("$rrdtool create $fichier DS:wpa:GAUGE:600:U:U DS:clair:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
@@ -361,6 +373,7 @@ sub creeBaseAuthassocwifi
 {
     my ($fichier,$ssid)=@_;
 
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
     system("/usr/bin/rrdtool create $fichier DS:$ssid:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
@@ -370,7 +383,9 @@ sub creeBaseAuthassocwifi
 sub creeBaseCPU
 {
     my ($fichier)=@_;
-        system("/usr/bin/rrdtool create $fichier DS:cpu_system:GAUGE:600:U:U DS:cpu_user:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");	
+    system("$rrdtool create $fichier DS:cpu_system:GAUGE:600:U:U DS:cpu_user:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
@@ -379,7 +394,9 @@ sub creeBaseCPU
 sub creeBaseInterupt
 {
     my ($fichier)=@_;
-        system("/usr/bin/rrdtool create $fichier DS:interruptions:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+    system("$rrdtool create $fichier DS:interruptions:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
@@ -388,7 +405,9 @@ sub creeBaseInterupt
 sub creeBaseLoad
 {
     my ($fichier)=@_;
-        system("/usr/bin/rrdtool create $fichier DS:load_5m:GAUGE:600:U:U DS:load_15m:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");	
+    system("$rrdtool create $fichier DS:load_5m:GAUGE:600:U:U DS:load_15m:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
@@ -397,7 +416,9 @@ sub creeBaseLoad
 sub creeBaseMemory
 {
     my ($fichier)=@_;
-        system("/usr/bin/rrdtool create $fichier DS:memoire:GAUGE:600:U:U DS:swap:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+	
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+    system("$rrdtool create $fichier DS:memoire:GAUGE:600:U:U DS:swap:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
@@ -406,8 +427,9 @@ sub creeBaseMemory
 sub creeBaseCPUCisco
 {
     my ($fichier)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:cpu_1min:GAUGE:600:U:U DS:cpu_5min:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-    system("chown obj999:obj999 $fichier");
+ 
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+    system("$rrdtool create $fichier DS:cpu_1min:GAUGE:600:U:U DS:cpu_5min:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 
@@ -417,8 +439,9 @@ sub creeBaseCPUCisco
 sub creeBaseCPUJuniper
 {
     my ($fichier)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:cpu0:GAUGE:600:U:U DS:cpu1:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-    system("chown obj999:obj999 $fichier");
+ 
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+    system("$rrdtool create $fichier DS:cpu0:GAUGE:600:U:U DS:cpu1:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
@@ -426,35 +449,45 @@ sub creeBaseCPUJuniper
 # bind
 sub creeBaseBind_stat
 {
-($fichier)=@_;
-        system("/usr/bin/rrdtool create $fichier DS:success:COUNTER:600:U:U DS:failure:COUNTER:600:U:U DS:nxdomain:COUNTER:600:U:U DS:recursion:COUNTER:600:U:U DS:referral:COUNTER:600:U:U DS:nxrrset:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-        system("/usr/bin/rrdtool tune $fichier --maximum success:3.0000000000e+04");
-        system("/usr/bin/rrdtool tune $fichier --maximum failure:3.0000000000e+04");
-        system("/usr/bin/rrdtool tune $fichier --maximum nxdomain:3.0000000000e+04");
-        system("/usr/bin/rrdtool tune $fichier --maximum recursion:3.0000000000e+04");
-        system("/usr/bin/rrdtool tune $fichier --maximum referral:3.0000000000e+04");
-        system("/usr/bin/rrdtool tune $fichier --maximum nxrrset:3.0000000000e+04");
+     my ($fichier)=@_;
+    
+     my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+
+     system("$rrdtool create $fichier DS:success:COUNTER:600:U:U DS:failure:COUNTER:600:U:U DS:nxdomain:COUNTER:600:U:U DS:recursion:COUNTER:600:U:U DS:referral:COUNTER:600:U:U DS:nxrrset:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+     system("/usr/bin/rrdtool tune $fichier --maximum success:3.0000000000e+04");
+     system("/usr/bin/rrdtool tune $fichier --maximum failure:3.0000000000e+04");
+     system("/usr/bin/rrdtool tune $fichier --maximum nxdomain:3.0000000000e+04");
+     system("/usr/bin/rrdtool tune $fichier --maximum recursion:3.0000000000e+04");
+     system("/usr/bin/rrdtool tune $fichier --maximum referral:3.0000000000e+04");
+     system("/usr/bin/rrdtool tune $fichier --maximum nxrrset:3.0000000000e+04");
 }
 
 sub creeBaseTPSDisk
 {
-($fichier)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:ioreads:COUNTER:600:U:U DS:iowrites:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-    system("/usr/bin/rrdtool tune $fichier --maximum ioreads:1.0000000000e+06 iowrites:1.0000000000e+06");
+     my ($fichier)=@_;
+ 
+     my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+ 
+     system("$rrdtool create $fichier DS:ioreads:COUNTER:600:U:U DS:iowrites:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    system("$rrdtool tune $fichier --maximum ioreads:1.0000000000e+06 iowrites:1.0000000000e+06");
 }
 
 
 sub creeBaseMailq
 {
-($fichier)=@_;
-        system("/usr/bin/rrdtool create $fichier DS:mailq:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+     my ($fichier)=@_;
+     
+     my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+     system("$rrdtool create $fichier DS:mailq:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 sub creeBaseOsirisCE
 {
-($fichier)=@_;
-        system("/usr/bin/rrdtool create $fichier  DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U DS:erreur:GAUGE:600:U:U DS:ticket:GAUGE:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-        system("/usr/bin/rrdtool tune $fichier --maximum input:2.0000000000e+09 output:2.0000000000e+09");
+     my ($fichier)=@_;
+
+     my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+     system("$rrdtool create $fichier  DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U DS:erreur:GAUGE:600:U:U DS:ticket:GAUGE:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+     system("$rrdtool tune $fichier --maximum input:2.0000000000e+09 output:2.0000000000e+09");
 }
 
 ###########################################################
@@ -462,8 +495,10 @@ sub creeBaseOsirisCE
 # de valeurs en secondes sous forme de jauge
 sub creeBaseTpsRepWWW
 {
-($fichier)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:time:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+     my ($fichier)=@_;
+
+     my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+     system("$rrdtool create $fichier DS:time:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
@@ -472,8 +507,10 @@ sub creeBaseTpsRepWWW
 # interrogation toutes les minutes
 sub creeBaseTpsRepWWWFast
 {
-($fichier)=@_;
-    system("/usr/bin/rrdtool create $fichier -s 60 DS:time:GAUGE:120:U:U RRA:AVERAGE:0.5:1:1051200 RRA:AVERAGE:0.5:60:43800 RRA:MAX:0.5:60:43800");
+    my ($fichier)=@_;
+
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+    system("$rrdtool create $fichier -s 60 DS:time:GAUGE:120:U:U RRA:AVERAGE:0.5:1:1051200 RRA:AVERAGE:0.5:60:43800 RRA:MAX:0.5:60:43800");
 }
 
 ###########################################################
@@ -481,8 +518,10 @@ sub creeBaseTpsRepWWWFast
 # de valeurs en octets sous forme de jauge
 sub creeBaseVolumeOctets
 {
-($fichier)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:octets:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    my ($fichier)=@_;
+ 
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+    system("$rrdtool create $fichier DS:octets:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
@@ -490,8 +529,10 @@ sub creeBaseVolumeOctets
 # de valeurs en octets sous forme de jauge
 sub creeBaseNbMbuf
 {
-($fichier)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:mbuf:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    my ($fichier)=@_;
+
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+    system("$rrdtool create $fichier DS:mbuf:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
@@ -499,8 +540,10 @@ sub creeBaseNbMbuf
 # de valeurs en octets sous forme de jauge
 sub creeBaseNbGeneric
 {
-($fichier)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:value:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    my ($fichier)=@_;
+
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+    system("$rrdtool create $fichier DS:value:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
@@ -509,8 +552,10 @@ sub creeBaseNbGeneric
 # interrogation toutes les minutes
 sub creeBaseVolumeOctetsFast
 {
-($fichier)=@_;
-    system("/usr/bin/rrdtool create $fichier DS:octets:GAUGE:120:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    my ($fichier)=@_;
+
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
+    system("$rrdtool create $fichier DS:octets:GAUGE:120:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
