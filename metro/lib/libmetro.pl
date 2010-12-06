@@ -225,7 +225,7 @@ sub setBaseMaxSpeed
 {
     my ($base,$speed) = @_;
 
-    my $rrdtool = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
     my $maxspeed = convert_nb_to_exp($speed);
     system("$rrdtool tune $base --maximum input:$maxspeed");
     system("$rrdtool tune $base --maximum output:$maxspeed");
@@ -315,7 +315,7 @@ sub creeBaseTrafic
 {
     my ($fichier,$speed)=@_;
  
-    my $rrdtool = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
     system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U DS:erreur:GAUGE:600:U:U DS:ticket:GAUGE:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     setBaseMaxSpeed($fichier,$speed);
 }
@@ -327,7 +327,7 @@ sub creeBaseBroadcast
 {
     my ($fichier,$speed)=@_;
 
-    my $rrdtool = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
     system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:8760 RRA:MAX:0.5:24:8760");
     setBaseMaxSpeed($fichier,$speed);
 }
@@ -338,7 +338,7 @@ sub creeBaseCounter
 {
     my ($fichier,$speed) = @_;
 
-    my $rrdtool = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
+    my $rrdtool = read_conf_file($conf_file,"RRDTOOL_EXEC");
     system("$rrdtool create $fichier DS:value:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     my $maxspeed = convert_nb_to_exp($speed);
     system("$rrdtool tune $fichier --maximum value:$maxspeed");
@@ -351,7 +351,7 @@ sub creeBaseOsirisAP
 {
     my ($fichier,$speed)=@_;
     
-    my $rrdtool = read_conf_file($conf_file,"DIR_RRD_DB_METRO");
+    my $rrdtool = read_conf_file($conf_file "RRDTOOL_EXEC");
     system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     setBaseMaxSpeed($fichier,$speed);
 }
