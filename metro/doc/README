@@ -85,3 +85,16 @@ Arborescence CVS
 
 	doc/
 	    documentation, figures, etc.
+
+
+Interactions avec la base DNS :
+
+select count(*) from topo.sensor where now() - lastmod < interval '150h';
+
+select * from topo.sensor where now() - lastmod < interval '150h';
+
+select count(*) from topo.sensor;
+
+select * from topo.sensor;
+
+

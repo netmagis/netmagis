@@ -135,7 +135,9 @@ sub get_if_octet
                                             		my $t_decomp_oid = @decomp_oid;
                                             		my $speed = get_snmp_ifspeed("$community\@$host",$decomp_oid[$t_decomp_oid-1]);
 							# si OID compteur de broadcast
-							if($oidin =~/1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.3\./)
+							if($oidin =~/1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.3\./
+								|| $oidin =~/1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.2\./
+                                                                || $oidin =~/1.3.6.1.2.1.2.2.1.14/)
 							{
                                             			creeBaseBroadcast($base,$speed);
 							}
@@ -196,7 +198,9 @@ sub get_if_octet
                                                         my $speed = get_snmp_ifspeed("$community\@$host",$decomp_oid[$t_decomp_oid-1]);
                                                         # si OID compteur de broadcast
 
-                                                        if($oidin =~/1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.3\./)
+                                                        if($oidin =~/1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.3\./ 
+								|| $oidin =~/1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.2\./
+								|| $oidin =~/1.3.6.1.2.1.2.2.1.14/)
                                                         {
                                                                 creeBaseBroadcast($base,$speed);
                                                         }

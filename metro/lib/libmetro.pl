@@ -89,10 +89,30 @@ sub gethostnamebyaddr
 {
     my ($ip) = @_;
 
-    my $hostname  = gethost($ip)->name;
+    my $iaddr = inet_aton($ip);    
+#my $hostname  = gethost($ip)->name;
+    my $hostname  = gethostbyaddr($iaddr, AF_INET);
     ($hostname)=(split(/\./,$hostname))[0];
 
     return $hostname;
+}
+
+
+###########################################################
+# resolution de nom.
+sub getaddrbyhostname
+{
+    my ($hostname) = @_;
+
+    my $packed_ip = gethostbyname($hostname);
+    if (defined $packed_ip) 
+    {
+ 	return inet_ntoa($packed_ip); 
+    }
+    else
+    {
+	return -1;
+    }
 }
 
 
@@ -181,16 +201,16 @@ sub convert_nb_to_exp
 #
 sub get_time
 {
-        my $time = @_;
+        my ($time) = @_;
 
         my %t;
 
-        if($time !=/[0-9]+/)
+        if($time !~/[0-9]+/)
         {
                 $time = time;
         }
 
-        ($t{SEC},$t{MIN},$t{HOUR},$t{MDAY},$t{MON},$t{YEAR},$t{WDAY},$t{YDAY},$t{isDST}) = localtime(time);
+        ($t{SEC},$t{MIN},$t{HOUR},$t{MDAY},$t{MON},$t{YEAR},$t{WDAY},$t{YDAY},$t{isDST}) = localtime($time);
 
         $t{YEAR} += 1900;
         $t{MON} += 1;
@@ -211,28 +231,6 @@ sub setBaseMaxSpeed
 
 ###########################################################
 # retourne la vitesse d'une interface
-#sub get_snmp_ifspeed
-#{
-#    my ($param,$index) = @_;
-
-#    &snmpmapOID("speed","1.3.6.1.2.1.2.2.1.5.$index");
-#    my @speed = &snmpget($param, "speed");
-
-#    if($speed[0] ne "")
-#    {
-#        return $speed[0];
-#    }
-#    else
-#    {
-#        writelog("cree-base-metro","","info",
-#            "\t ERREUR : Vitesse de ($param,index : $index) non definie, force � 100 Mb/s");
-#        return 100000000;
-#    }
-#}
-
-
-###########################################################
-# retourne la vitesse d'une interface
 sub get_snmp_ifspeed
 {
     my ($param,$index,$interf) = @_;
@@ -240,11 +238,16 @@ sub get_snmp_ifspeed
     my $speed;
 
     # recherche de l'interface dans le tableau des interfaces
-    foreach my $key (keys %if_speed)
+    foreach my $key (keys %var)
     {
-        if($interf=~/$key/)
+        if($key=~/^IFSPEED_/)
         {
-                $speed = $if_speed{$key};
+		my $nameif = $key;
+		($nameif) = (split(/IFSPEED_/,$key))[1];
+		if($interf=~/$nameif/)
+		{
+                	$speed = $var{$key};
+		}
         }
     }
 
@@ -260,6 +263,7 @@ sub get_snmp_ifspeed
         &snmpmapOID("speed","1.3.6.1.2.1.31.1.1.1.15.$index");
         my @speed = &snmpget($param, "speed");
         $speed = $speed[0];
+	print "$param,$interf => $speed\n";
     }
 
     if($speed ne "")
@@ -276,6 +280,30 @@ sub get_snmp_ifspeed
     }
 }
 
+###########################################################
+# retourne l'index de l'interface par rapport a un nom
+sub get_snmp_ifindex
+{
+    my ($param,$if) = @_;
+
+    # recuperation de l'oid de l'interface
+    &snmpmapOID("desc","1.3.6.1.2.1.2.2.1.2");
+    my @desc_inter = &snmpwalk($param, "desc");
+    my $nb_desc = @desc_inter;
+    my $index_interface;
+    my $i;
+    for($i=0;$i<$nb_desc;$i++)
+    {
+        if($desc_inter[$i]=~m/$if/)
+        {
+            $index_interface = (split(/:/,$desc_inter[$i]))[0];
+            $index_interface = (split(/\s/,$index_interface))[0];
+
+            return $index_interface;
+        }
+    }
+    return -1;
+}
 
 
 ###########################################################
@@ -502,8 +530,8 @@ sub ctrl_ip
         }
         else
         {
-                 writelog("ctrl_ip","","info",
-                        "\t -> ERROR : READ SUP : mauvais format d'adresse IP: '$ip'");
+                # writelog("ctrl_ip","","info",
+                #        "\t -> ERROR : READ SUP : mauvais format d'adresse IP: '$ip'");
                 $return -1;
         }
         return($ip_val);
@@ -535,6 +563,24 @@ sub check_host
     	}
 }
 
+
+#############################################################
+# lecture d'un tableau associatif a 2 dimensions
+#
+sub read_tab_asso
+{
+        my (%t) = @_;
+
+        foreach my $key (sort keys %t)
+        {
+                print "$key {\n";
+                foreach my $kkey (keys %{$t{$key}})
+                {
+                        print "\t$kkey -> $t{$key}{$kkey}\n";
+                }
+                print "}\n";
+        }
+}
 
 
 
