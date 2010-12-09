@@ -27,6 +27,7 @@
 #   2010/11/09 : pda      : suppression generer-menu
 #   2010/11/27 : pda      : ajout locale
 #   2010/11/27 : pda      : envoi utf-8 systématique
+#   2010/12/09 : pda      : ajout form-submit et form-reset
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -42,6 +43,7 @@ package provide webapp 1.13
 namespace eval webapp {
     namespace export log pathinfo user locale \
 	form-field form-yesno form-bool form-menu form-text form-hidden \
+	form-submit form-reset \
 	hide-parameters file-subst \
 	helem interactive-tree \
 	get-data import-vars valid-email \
@@ -629,6 +631,40 @@ proc ::webapp::form-menu {var taille multiple liste lsel} {
     }
     append html "</SELECT>\n"
 
+    return $html
+}
+
+#
+# Génération du code HTML pour réaliser un bouton (submit ou reset)
+#
+# Entrée :
+#   - paramètres :
+#	- var : variable du formulaire pour ce menu ou {}
+#	- val : valeur par défaut (=0 ou !=0)
+# Sortie :
+#   - code HTML généré
+#
+# Historique :
+#   2010/12/09 : pda      : conception
+#
+
+proc ::webapp::form-submit {var val} {
+    set v ""
+    if {var ne ""} then {
+	set v "name=\"$var\""
+    }
+    set val [::webapp::html-string $val]
+    set html "<input type=submit $name value=\"$val\">"
+    return $html
+}
+
+proc ::webapp::form-reset {var val} {
+    set v ""
+    if {var ne ""} then {
+	set v "name=\"$var\""
+    }
+    set val [::webapp::html-string $val]
+    set html "<input type=reset $name value=\"$val\">"
     return $html
 }
 

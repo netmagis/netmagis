@@ -4,15 +4,15 @@
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
 #
-# Appelé par : script ajout (page lib/ajout.htgt)
+# Called by: script ajout (page lib/ajout.htgt)
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - ajout d'une machine
 #	- action : "ajout-machine"
 #	- confirm : "non" ou "oui" (si confirmation ok)
 #	- nom : nom de la machine à ajouter
 #	- domaine : domaine dans lequel elle doit être ajoutée
-#	- adr : adresse IP
+#	- adr: IP address
 #	- mac : adresse MAC
 #	- iddhcpprofil : l'id du profil DHCP, ou 0
 #	- hinfo : type de machine (texte)
@@ -34,21 +34,21 @@
 #	- alias : nom de l'objet existant
 #	- domaine2 : domaine dans lequel l'objet existe
 #
-# Historique
-#   2002/04/11 : pda/jean : création
+# History
+#   2002/04/11 : pda/jean : design
 #   2002/04/19 : pda/jean : ajout de la confirmation
 #   2002/05/03 : pda/jean : séparation des trois types de modifications
 #   2002/05/23 : pda/jean : ajout du responsable
-#   2002/07/09 : pda      : ajout de nologin
+#   2002/07/09 : pda      : add nologin
 #   2002/07/09 : pda      : conversion des noms en minuscules
 #   2002/10/31 : pda/jean : correction bug ajout adr ip sur alias existant
 #   2002/11/06 : pda/jean : correction de la correction du bug
 #   2003/04/24 : pda/jean : interdiction d'ajout d'ip à un mx
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2004/01/14 : pda/jean : ajout IPv6
+#   2003/05/13 : pda/jean : use auth base
+#   2004/01/14 : pda/jean : add IPv6
 #   2004/08/04 : pda/jean : ajout mac
 #   2005/04/08 : pda/jean : ajout dhcpprofil
-#   2007/10/25 : jean     : log des actions de modification
+#   2007/10/25 : jean     : log modify actions
 #   2008/02/13 : pda/jean : le responsable est le correspondant si pas précisé
 #   2008/07/23 : pda/jean : ajout du droit d'émission SMTP
 #   2008/07/29 : pda      : utilisation display-rr
@@ -58,28 +58,24 @@
 #   2010/10/26 : pda      : vérification dhcpprofil sans adresse mac
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(page-ajout-machine)	$conf(lib)/traiteajout-machine.html
-set conf(page-ajout-existe)	$conf(lib)/traiteajout-existe.html
-set conf(page-ajout-smtp)	$conf(lib)/traiteajout-smtp.html
-set conf(page-ajout-multi)	$conf(lib)/traiteajout-multi.html
-set conf(page-ajout-alias)	$conf(lib)/traiteajout-alias.html
-set conf(err)			$conf(lib)/erreur.html
+set conf(page-ajout-machine)	traiteajout-machine.html
+set conf(page-ajout-existe)	traiteajout-existe.html
+set conf(page-ajout-smtp)	traiteajout-smtp.html
+set conf(page-ajout-multi)	traiteajout-multi.html
+set conf(page-ajout-alias)	traiteajout-alias.html
+set conf(err)			erreur.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(nextconfirm)	"%HOMEURL%/bin/traiteajout"
@@ -91,18 +87,18 @@ set conf(nextajout)	"%HOMEURL%/bin/ajout"
 set conf(scriptmap)	"%DESTDIR%/bin/liste"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 # nb max d'adresses IP pour une recherche d'adresses IP consécutives
 set conf(maxip)		1024
 
-# le champ discriminant pour la suite
+# field used to determine next step
 set conf(form)		{
 	{action		1 1}
 }
 
-# les champs utilisés pour chacune des actions
+# action specific fields
 set conf(form-ajout-machine)	{
 	{confirm	1 1}
 	{nom		1 1}
@@ -169,27 +165,22 @@ set conf(tableau-multi) {
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
 # Ajout d'un nom
 ##############################################################################
 
-# Historique
+# History
 #   2002/04/11 : pda/jean : conception
 #   2002/04/19 : pda/jean : ajout de la confirmation
 #   2002/05/02 : pda/jean : modification du format de hinfo
@@ -203,13 +194,13 @@ source $conf(libdns)
 proc traiteajout-machine {dbfd tc ft} {
     global conf
     upvar $ft ftab
-    upvar $tc tabcor
+    upvar $tc tabuid
 
-    set login $tabcor(login)
-    set idcor $tabcor(idcor)
+    set login $tabuid(login)
+    set idcor $tabuid(idcor)
 
     #
-    # Valider les champs du formulaire
+    # Validate form input
     #
 
     set nom           [string trim [lindex $ftab(nom) 0]]
@@ -259,8 +250,8 @@ proc traiteajout-machine {dbfd tc ft} {
 	}
     } else {
 	if {[string equal $respnom ""] && [string equal $respmel ""]} then {
-	    set respnom "$tabcor(nom) $tabcor(prenom)"
-	    set respmel $tabcor(mel)
+	    set respnom "$tabuid(nom) $tabuid(prenom)"
+	    set respmel $tabuid(mel)
 	}
     }
 
@@ -336,7 +327,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Vérifier le droit d'émission SMTP
     #
 
-    if {$tabcor(droitsmtp)} then {
+    if {$tabuid(droitsmtp)} then {
 	if {[string equal $droitsmtp ""]} then {
 	    set droitsmtp 0
 	} else {
@@ -350,7 +341,7 @@ proc traiteajout-machine {dbfd tc ft} {
     # Vérifier le droit TTL
     #
 
-    if {$tabcor(droitttl)} then {
+    if {$tabuid(droitttl)} then {
 	if {[string equal $ttl ""]} then {
 	    set ttl -1
 	} else {
@@ -558,7 +549,7 @@ proc traiteajout-machine {dbfd tc ft} {
     }
 
     #
-    # Sortie du résultat
+    # End of script: output page and close database
     #
 
     set machine [display-rr $dbfd $trr(idrr) trr]
@@ -572,22 +563,22 @@ proc traiteajout-machine {dbfd tc ft} {
 # Recherche d'un espace consécutif
 ##############################################################################
 
-# Historique
+# History
 #   2010/01/01 : pda      : conception
 #   2010/10/09 : pda      : fin de la conception
 #
 
-proc traiteajout-multi {dbfd _tabcor _ftab} {
+proc traiteajout-multi {dbfd _tabuid _ftab} {
     global conf
     upvar $_ftab ftab
-    upvar $_tabcor tabcor
+    upvar $_tabuid tabuid
 
-    set login $tabcor(login)
-    set idcor $tabcor(idcor)
-    set idgrp $tabcor(idgrp)
+    set login $tabuid(login)
+    set idcor $tabuid(idcor)
+    set idgrp $tabuid(idgrp)
 
     #
-    # Valider les champs du formulaire
+    # Validate form input
     #
 
     set redirect [string trim [lindex $ftab(redirect) 0]]
@@ -702,7 +693,7 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
     set liste [::arrgen::output "html" $conf(tableau-multi) $donnees]
 
     #
-    # Sortie de la page
+    # End of script: output page and close database
     #
 
     d result $conf(page-ajout-multi) [list \
@@ -715,19 +706,19 @@ proc traiteajout-multi {dbfd _tabcor _ftab} {
 # Ajout d'un alias
 ##############################################################################
 
-# Historique
+# History
 #   2002/04/19 : pda/jean : conception
 #
 proc traiteajout-alias {dbfd tc ft} {
     global conf
     upvar $ft ftab
-    upvar $tc tabcor
+    upvar $tc tabuid
 
-    set login $tabcor(login)
-    set idcor $tabcor(idcor)
+    set login $tabuid(login)
+    set idcor $tabuid(idcor)
 
     #
-    # Valider les champs du formulaire
+    # Validate form input
     #
 
     set nom           [string trim [lindex $ftab(nom) 0]]
@@ -800,7 +791,7 @@ proc traiteajout-alias {dbfd tc ft} {
     }
 
     #
-    # Sortie du résultat
+    # End of script: output page and close database
     #
 
     d writelog "ajoutalias" "ajout de l'alias $nom.$domaine -> $nomref.$domaineref"
@@ -815,18 +806,18 @@ proc traiteajout-alias {dbfd tc ft} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
     # Valider l'action, lire les autres champs du formulaire,
@@ -840,10 +831,10 @@ proc main {} {
     }
 
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
-	d error "Formulaire non conforme aux spécifications"
+	d error [mc "Invalid input"]
     }
 
-    traite$action $dbfd tabcor ftab
+    traite$action $dbfd tabuid ftab
 }
 
 ::webapp::cgi-exec main %DEBUG%

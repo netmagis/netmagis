@@ -4,41 +4,37 @@
 #
 # Script de modification des paramètres DHCP d'un réseau
 #
-# Appelé par : dhcpedit
+# Called by: dhcpedit
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - iddhcprange*, min*, max*, iddom*, defaut_lease_time*, max_lease_time*
 #
-# Historique
+# History
 #   2004/10/05 : pda/jean : spécification
 #   2006/05/04 : jean     : retrait des valeurs par defaut dans 'spec'
-#   2007/10/25 : jean     : log des actions de modification
+#   2007/10/25 : jean     : log modify actions
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/dhcpmodif.html
+set conf(err)		erreur.html
+set conf(page)		dhcpmodif.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 # (aucun : page cul de sac)
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form)	{
@@ -60,20 +56,16 @@ set conf(form)	{
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
 # Valider les données du formulaire en entrée
@@ -82,12 +74,12 @@ source $conf(libdns)
 #
 # Teste s'il y a chevauchement entre deux intervalles d'adresses IP
 #
-# Entrée :
+# Input:
 #   - dbfd : accès à la base
 #   - min1, max1, min2, max2 : les bornes des deux intervalles
-# Sortie :
+# Output:
 #   - valeur de retour : 1 si chevauchement, 0 si pas de chevauchement
-# Historique :
+# History
 #   2004/10/08 : pda/jean : conception et codage
 #
 
@@ -118,15 +110,15 @@ proc chevauchement {dbfd min1 max1 min2 max2} {
 #
 # Valide les différents intervalles DHCP fournis dans le formulaire
 #
-# Entrée :
+# Input:
 #   - dbfd : accès à la base
 #   - _ftab : tableau contenant les champs du formulaire
 #   - idcor : id du correspondant faisant la modification
 #   - idgrp : id du groupe du correspondant faisant la modification
 #   - cidr : cidr du réseau dans lequel on travaille
-# Sortie :
+# Output:
 #   - valeur de retour : chaîne vide (ok) ou message d'erreur
-# Historique :
+# History
 #   2004/10/08 : pda/jean : conception et codage
 #   2004/10/13 : pda/jean : paramètre minimum du bail
 #
@@ -346,25 +338,25 @@ proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation, avec récupération du type de modification.
+    # Initialization, avec récupération du type de modification.
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
     # Valider le réseau
     #
 
     set idreseau [lindex $ftab(idreseau) 0]
-    set lcidr [check-netid $dbfd $idreseau $tabcor(idgrp) "dhcp" 4 msg]
+    set lcidr [check-netid $dbfd $idreseau $tabuid(idgrp) "dhcp" 4 msg]
     if {[llength $lcidr] == 0} then {
 	d error $msg
     }
@@ -379,7 +371,7 @@ proc main {} {
     # Valider également le domaine.
     #
 
-    set msg [valide-dhcprange $dbfd ftab $tabcor(idcor) $tabcor(idgrp) $lcidr]
+    set msg [valide-dhcprange $dbfd ftab $tabuid(idcor) $tabuid(idgrp) $lcidr]
     if {! [string equal $msg ""]} then {
 	d error $msg
     }
@@ -405,7 +397,7 @@ proc main {} {
     d writelog "modifdhcp" "intervalles dhcp modifies : [join $lcidr {, }]"
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d result $conf(page) [list \

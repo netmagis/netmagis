@@ -4,59 +4,51 @@
 #
 # Script pour définir l'accueil du module Mac
 #
-# Appelé par : index.htgt
+# Called by: index.htgt
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
+# History
 #   2010/11/30 : pda/jean : design
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/macindex.html
+set conf(err)		erreur.html
+set conf(page)		macindex.html
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "droitmac" {} ftab dbfd login tabcor
+    d init-cgi "mac" $conf(err) "droitmac" {} ftab dbfd login tabuid
 
     #
     # Construction des URL et de la liste de subsitution
@@ -68,7 +60,7 @@ proc main {} {
     }
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d result $conf(page) {}

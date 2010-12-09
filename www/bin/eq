@@ -4,14 +4,14 @@
 # Script pour afficher la liste des équipements,
 # ou les détails d'un équipement
 #
-# Appelé par : /applis/topo/<tous les scripts>
+# Called by: /applis/topo/<tous les scripts>
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #	- eq : si fourni, nom (ou pattern glob) de l'équipement
 #	- iface : si fourni, nom d'une interface à souligner
 #
-# Historique
-#   2006/06/05 : pda        : création
+# History
+#   2006/06/05 : pda        : design
 #   2006/08/14 : pda        : fusion script listeq
 #   2007/01/04 : pda        : ajout du paramètre uti
 #   2007/01/11 : pda        : mutualisation initialisation
@@ -22,25 +22,21 @@
 #   2010/08/31 : pda/jean   : ajout de l'information "vlan natif"
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page1)		$conf(lib)/eq.html
-set conf(pagen)		$conf(lib)/topoliste.html
+set conf(err)		erreur.html
+set conf(page1)		eq.html
+set conf(pagen)		topoliste.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(nexteq)	"%HOMEURL%/bin/eq"
@@ -50,7 +46,7 @@ set conf(nextmetro)	"%HOMEURL%/bin/metro"
 set conf(nextifchg)	"%HOMEURL%/bin/ifchg"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 
@@ -63,21 +59,16 @@ set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
 set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require arrgen
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
 # Cumuls de stats wifi
@@ -98,13 +89,13 @@ source $conf(libdns)
 #
 # Initialiser des stats wifi
 #
-# Entrée :
+# Input:
 #   - _tab : nom d'un tableau contenant en retour les stats accumulées
-# Sortie :
-#   - valeur de retour : aucune
+# Output:
+#   - valeur de retour : nonee
 #   - paramètre _tab : contient
 #
-# Historique :
+# History
 #   2008/08/03 : pda        : conception
 #
 
@@ -127,12 +118,12 @@ proc init-cumul-wifi {_tab} {
 #
 # Cumuler les stats wifi pour un point d'accès
 #
-# Entrée :
+# Input:
 #   - sondes : liste des sondes wifi pour ce point d'accès
 #	au format {{<nbauthwifi|nbassocwifi> <id> <ssid>}
 #   - _tab : nom d'un tableau contenant en retour les stats accumulées
-# Sortie :
-#   - valeur de retour : aucune
+# Output:
+#   - valeur de retour : nonee
 #   - paramètre _tab : contient
 #	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
 #	tab(:assoc:cumul)	<id>+<id>+...
@@ -140,7 +131,7 @@ proc init-cumul-wifi {_tab} {
 #	tab(:assoc:ssid:<ssid>)	{<id>}	ou {}
 #	(idem avec :auth en plus de :assoc)
 #
-# Historique :
+# History
 #   2008/08/02 : pda        : conception
 #
 
@@ -189,11 +180,11 @@ proc cumul-wifi {sondes _tab} {
 #
 # Accumuler les stats wifi d'un nouveau point d'accès
 #
-# Entrée :
+# Input:
 #   - _tr : tableau résumé
 #   - _t1 : tableau d'un point d'accès
-# Sortie :
-#   - valeur de retour : aucune
+# Output:
+#   - valeur de retour : nonee
 #   - paramètre _tab : contient
 #	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
 #	tab(:assoc:cumul)	<id>+<id>+...
@@ -202,7 +193,7 @@ proc cumul-wifi {sondes _tab} {
 #	tab(:assoc:ap)		{{<id>+...} {<id>+...} ...}
 #	(idem avec :auth en plus de :assoc)
 #
-# Historique :
+# History
 #   2008/08/04 : pda        : spécification
 #   2008/08/14 : pda        : fin du codage
 #
@@ -281,12 +272,12 @@ proc accumuler {_tr _t1} {
 # Hierarchiser un élément dans un tableau en vue de consituer une
 # arborescence
 #
-# Entrée :
+# Input:
 #   - _thier : tableau passé par nom, contenant l'arborescence
 #   - liste : liste d'éléments par niveau
 #   - cumul : 1 si les éléments doivent être cumulés, 0 sinon (cf ci-dessous)
-# Sortie :
-#   - valeur de retour : aucune
+# Output:
+#   - valeur de retour : nonee
 #   - tableau _thier : réactualisé
 #
 # Exemple 1 :
@@ -315,7 +306,7 @@ proc accumuler {_tr _t1} {
 #	t()		= {horus}
 #	t(horus)	= {}
 #
-# Historique :
+# History
 #   2008/07/31 : pda/boggia : conception
 #
 
@@ -341,11 +332,11 @@ proc hierarchiser-un-element {_thier liste cumul} {
 #
 # Hiérarchiser une liste d'équipements 
 #
-# Entrée :
+# Input:
 #   - _t : tableau passé par nom, contenant l'arborescence
 #   - leq : liste d'équipements
-# Sortie :
-#   - valeur de retour : aucune
+# Output:
+#   - valeur de retour : nonee
 #   - tableau _t : réactualisé
 #
 # Note : le regroupement en arbre est réalisé sur le nom d'équipement
@@ -355,7 +346,7 @@ proc hierarchiser-un-element {_thier liste cumul} {
 #   dans le type. Par exemple, "anapat-ap3" est découpé en :
 #	anapat -ap 3
 #
-# Historique :
+# History
 #   2008/07/31 : pda/boggia : conception
 #
 
@@ -395,15 +386,15 @@ proc hiearchiser-liste-equipements {_t leq} {
 #
 # Générer un arbre à l'aide d'un tableau hiérarchisé
 #
-# Entrée :
+# Input:
 #   - racine : racine de l'arbre
 #   - _thier : tableau passé par nom, contenant l'arborescence
 #   - _tabeq : tableau passé par nom, contenant les équipements
 #   - _tabwifi : tableau passé par nom, contenant les sondes wifi
-# Sortie :
+# Output:
 #   - valeur de retour : liste des arbres dont la racine est à ce niveau
 #
-# Historique :
+# History
 #   2008/07/31 : pda/boggia : conception
 #   2008/08/01 : pda/boggia : ajout tabwifi
 #
@@ -521,17 +512,17 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi} {
 # Affichage d'un équipement
 ##############################################################################
 
-proc format-one-eq {nomeq iface _tabcor} {
+proc format-one-eq {nomeq iface _tabuid} {
     global conf
-    upvar $_tabcor tabcor
+    upvar $_tabuid tabuid
 
     #
     # Lire les informations de l'équipement dans le graphe
-    # Ces informations sont filtrées par tabcor qui n'affiche
+    # Ces informations sont filtrées par tabuid qui n'affiche
     # que les vlans autorisés.
     #
 
-    set l [eq-iflist $nomeq tabcor]
+    set l [eq-iflist $nomeq tabuid]
 
     lassign $l nomeq type model location liferr iflist arrayif arrayvlan
     array set tabiface $arrayif
@@ -755,20 +746,20 @@ proc format-one-eq {nomeq iface _tabcor} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
-    set msgsta [topo-status $dbfd $tabcor(admin)]
+    set msgsta [topo-status $dbfd $tabuid(admin)]
 
     ::webapp::import-vars ftab
     foreach f $conf(form) {
@@ -788,7 +779,7 @@ proc main {} {
     # Récupérer les informations sur les équipements lues dans le graphe
     #
 
-    set cmd [format $conf(dumpgraph) $tabcor(flagsr)]
+    set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
     while {[gets $fd ligne] > -1} {
 	switch [lindex $ligne 0] {
@@ -810,7 +801,7 @@ proc main {} {
     # Récupérer les stats wifi sur ces équipements
     #
 
-    set cmd [format $conf(extractcoll) $tabcor(flagsr)]
+    set cmd [format $conf(extractcoll) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
     while {[gets $fd ligne] > -1} {
 	set kw [lindex $ligne 0]
@@ -855,7 +846,7 @@ proc main {} {
 	    set liste "Aucun équipement trouvé"
 
 	    #
-	    # Sortie de la page
+	    # End of script: output page and close database
 	    #
 
 	    d result $conf(pagen) [list \
@@ -879,13 +870,13 @@ proc main {} {
 
 	    set nomeq [lindex [array names tabeq] 0]
 
-	    set l [format-one-eq $nomeq $iface tabcor]
+	    set l [format-one-eq $nomeq $iface tabuid]
 	    lassign $l titre texte
 
 	    set eqsta [eq-graph-status $dbfd $eq]
 
 	    #
-	    # Sortie de la page
+	    # End of script: output page and close database
 	    #
 
 	    d result $conf(page1) [list \
@@ -917,7 +908,7 @@ proc main {} {
 	    set liste [::webapp::helem "ul" $liste]
 
 	    #
-	    # Sortie de la page
+	    # End of script: output page and close database
 	    #
 
 	    d result $conf(pagen) [list \
@@ -947,7 +938,7 @@ proc main {} {
 	    set header "$head1\n$head2\n"
 
 	    #
-	    # Sortie de la page
+	    # End of script: output page and close database
 	    #
 
 	    d result $conf(pagen) [list \

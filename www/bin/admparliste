@@ -1,59 +1,40 @@
 #!%TCLSH%
 
-
 #
-# Script de présentation de la page des paramètres de la base
+# Script to present application parameters to be modified
 #
-# Appelé par : index.htgt
+# Called by: admin
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2003/12/08 : pda      : création à partir de sos
-#   2004/10/13 : pda      : ajout des paramètres DHCP
-#   2010/10/25 : pda      : librairisation des paramètres
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2003/12/08 : pda      : design from sos code
+#   2004/10/13 : pda      : add DHCP parameters
+#   2010/10/25 : pda      : put parameters into library
+#   2010/12/09 : pda      : i18n
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admparliste.html
+set conf(err)		erreur.html
+set conf(page)		admparliste.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/admparmodif"
 set conf(nexthelp)	"%HOMEURL%/bin/admparhelp"
 
-
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
-#
-
-lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
-
-#
-# Le tableau servant à présenter les paramètres
+# Tabular specification
 #
 
 set conf(tableau) {
     global {
-	chars {12 normal}
+	chars {10 normal}
 	columns {50 50}
     }
     pattern {Normal1} {
@@ -81,7 +62,7 @@ set conf(tableau) {
 	}
 	vbar {no}
     }
-    pattern {Boutons} {
+    pattern {Buttons} {
 	vbar {no}
 	column {
 	    multicolumn {2}
@@ -94,41 +75,43 @@ set conf(tableau) {
     }
 }
 
+
 #
-# On y va !
+# WebDNS general library
 #
+
+lappend auto_path %PKGTCL%
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
-
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
 
     #
-    # Mise en forme des données dans le formulaire
+    # Present data in a tabular form
     #
 
     d urlset "" $conf(nexthelp) {}
     set url [d urlget ""]
     append url {#%1$s}
-    set urlaide [::webapp::helem "a" {%2$s} "href" $url]
+    set urlhelp [::webapp::helem "a" {%2$s} "href" $url]
 
-    set donnees {}
+    set lines {}
 
     foreach class [dnsconfig class] {
-	lappend donnees [list Normal1 [dnsconfig desc $class]]
+	lappend lines [list Normal1 [dnsconfig desc $class]]
 
 	foreach key [dnsconfig keys $class] {
 
@@ -151,26 +134,29 @@ proc main {} {
 		    set html [::webapp::form-menu $key 1 0 $lmenu {}]
 		}
 		default {
-		    set html [::webapp::helem "font" "ERREUR : type de '$key'" \
-						"color" "#ff0000"]
+		    set msg [format [mc "Internal error: invalid key type '%s'"] $key] \
+		    set html [::webapp::helem "font" $msg "color" "#ff0000"]
 		}
 	    }
 
-	    set aide [format $urlaide $key $desc]
-	    lappend donnees [list Normal2 $aide $html]
+	    set help [format $urlhelp $key $desc]
+	    lappend lines [list Normal2 $help $html]
 	}
     }
-    set html "<INPUT TYPE=submit VALUE=\"Enregistrer\">"
-    append html " <INPUT TYPE=reset VALUE=\"Réinitialiser\">"
-    lappend donnees [list Boutons $html]
 
-    set tab [::arrgen::output "html" $conf(tableau) $donnees]
+    lappend lines [list "Buttons" \
+			    [::webapp::form-submit "" [mc "Submit"]] \
+			    [::webapp::form-reset  "" [mc "Reset"]] \
+			]
+
+    set tab [::arrgen::output "html" $conf(tableau) $lines]
 
     #
-    # Génération de la page contenant le formulaire
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}
+
     d result $conf(page) [list \
 				[list %TAB% $tab] \
 			    ]

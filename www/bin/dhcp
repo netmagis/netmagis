@@ -5,78 +5,69 @@
 # Script pour demander le réseau pour lequel il faut présenter la page
 # d'édition des paramètres DHCP.
 #
-# Appelé par : index.htgt
+# Called by: index.htgt
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2004/10/05 : pda/jean : création
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2004/10/05 : pda/jean : design
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/dhcpsel.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		dhcpsel.html
+
+#
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/dhcpedit"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(script-edit)	%DESTDIR%/bin/dhcpedit
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
 
     #
     # Récupération des réseaux auxquels a droit le correspondant
     #
 
-    set lnet [read-networks $dbfd $tabcor(idgrp) "dhcp"]
+    set lnet [read-networks $dbfd $tabuid(idgrp) "dhcp"]
     set nnet [llength $lnet]
     switch $nnet {
 	0 {

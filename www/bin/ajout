@@ -1,161 +1,137 @@
 #!%TCLSH%
 
-
 #
-# Script pour présenter la page d'ajout d'une machine/alias
+# Script to present page for adding machine or alias
 #
-# Appelé par : index.htgt ou script liste ou script traiteajout
+# Called by: accueil, liste, traiteajout
 #
-# Paramètres (formulaire ou URL) :
-#   - lorsque appelé depuis l'accueil : aucun
-#   - lorsque appelé depuis la carte des adresses libres (script liste)
-#	- adr : adresse IP
-#	- next : paramètres pour la suite
-#   - lorsque appelé depuis la carte des adresses libres (script traiteajout)
+# Parameters (form or url):
+#   - when called from accueil : none
+#   - when called from free address map (script liste)
+#	- adr: IP address
+#   - when called from free address list (script traiteajout)
 #	XXX
 #
 #
-# Historique
-#   2002/04/11 : pda/jean : création
-#   2002/05/03 : pda/jean : séparation dans une page particulière
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2005/04/08 : pda/jean : ajout des profils DHCP
-#   2008/07/23 : pda/jean : ajout du droit d'émission SMTP
-#   2009/12/31 : pda      : ajout de l'ajout multiple
-#   2010/10/08 : pda      : ajout du cas de suite de script
-#   2010/10/31 : pda      : ajout ttl
+# History
+#   2002/04/11 : pda/jean : design
+#   2002/05/03 : pda/jean : separate in a particular page
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2005/04/08 : pda/jean : add DHCP profile
+#   2008/07/23 : pda/jean : add SMTP authorization
+#   2009/12/31 : pda      : add multiple add
+#   2010/10/08 : pda      : add next action
+#   2010/10/31 : pda      : add ttl
+#   2010/12/09 : pda      : i18n
 #
 
-set conf(homeurl)	%HOMEURL%
-
 #
-# Chemins utilisés par les scripts
+# Template pages used by this script
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
+set conf(page)		ajout.html
+set conf(pageadr)	ajout-adr.html
+set conf(err)		erreur.html
 
 #
-# Définition des noms des pages "à trous"
-#
-
-set conf(page)		$conf(lib)/ajout.html
-set conf(pageadr)	$conf(lib)/ajout-adr.html
-set conf(err)		$conf(lib)/erreur.html
-
-#
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/traiteajout"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
-# les champs discriminants pour la suite
 set conf(form)	{
 	{adr		0 1}
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
-
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
-    # Récupération des types de machines
+    # Get host types
     #
 
     set menuhinfo [menu-hinfo $dbfd hinfo ""]
 
     #
-    # Récupération du droit SMTP pour afficher ou non le bouton
-    # d'autorisation d'émettre en SMTP non authentifié
+    # Get SMTP authorization, in order to display (or not display)
+    # authorization button
     #
 
-    set droitsmtp [menu-droitsmtp $dbfd "droitsmtp" tabcor 0]
-    set droitsmtplibelle [lindex $droitsmtp 0]
-    set droitsmtpmenu    [lindex $droitsmtp 1]
+    lassign [menu-droitsmtp $dbfd "droitsmtp" tabuid 0] \
+				droitsmtplibelle droitsmtpmenu
 
     #
-    # Récupération du droit TTL pour afficher ou non le champ
-    # d'édition du TTL
+    # Get TTL permission in order to display (or not display) TTL field
     #
 
-    set ttl [menu-ttl $dbfd "ttl" tabcor ""]
-    set ttllibelle [lindex $ttl 0]
-    set ttlval     [lindex $ttl 1]
+    lassign [menu-ttl $dbfd "ttl" tabuid ""] ttllibelle ttlval
 
     #
-    # Récupération des domaines auxquels le correspond a accès
-    # et construction du code HTML approprié.
+    # Get authorized domains
     #
 
-    set domaine    [menu-domain $dbfd $tabcor(idcor) domaine    "" ""]
-    set domaineref [menu-domain $dbfd $tabcor(idcor) domaineref "" ""]
+    set domaine    [menu-domain $dbfd $tabuid(idcor) domaine    "" ""]
+    set domaineref [menu-domain $dbfd $tabuid(idcor) domaineref "" ""]
 
     #
-    # Récupérer les informations de profil DHCP si besoin est
+    # Get DHCP profile informations
     #
 
-    set dhcpprofil [menu-dhcp-profile $dbfd "iddhcpprofil" $tabcor(idcor) 0]
-    set dhcpprofillibelle [lindex $dhcpprofil 0]
-    set dhcpprofilmenu    [lindex $dhcpprofil 1]
+    lassign [menu-dhcp-profile $dbfd "iddhcpprofil" $tabuid(idcor) 0] \
+				dhcpprofillibelle dhcpprofilmenu 
 
     #
-    # Récupérer les plages sous forme d'une liste déroulante
+    # Get network addresses
     #
 
-    set lnet [read-networks $dbfd $tabcor(idgrp) "consult"]
+    set lnet [read-networks $dbfd $tabuid(idgrp) "consult"]
     set taille [llength $lnet]
     if {$taille == 0} then {
-	set menuplage "Aucun réseau sélectionnable"
+	set menuplage [mc "No authorized network"]
     } else {
 	set menuplage [::webapp::form-menu "plage" 1 0 $lnet {}]
     }
 
     #
-    # Cas d'une adresse déjà fournie
+    # Is an address already provided?
     #
 
-    set adr [string trim [lindex $ftab(adr) 0]]
-    if {[string equal $adr ""]} then {
-	# show rest of page
+    set addr [string trim [lindex $ftab(adr) 0]]
+    if {$addr eq ""} then {
+	# no: show rest of page
 	set display "block"
     } else {
-	# hide rest of page
+	# yes: hide rest of page
 	set display "none"
     }
 
     #
-    # Script suivant
+    # Next scripts
     #
 
     d urlset "%URLFORM1%" $conf(next) {}
@@ -163,7 +139,7 @@ proc main {} {
     d urlset "%URLFORM2%" $conf(next) {}
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d result $conf(page) [list \
@@ -178,7 +154,7 @@ proc main {} {
 				[list %DHCPPROFILMENU% $dhcpprofilmenu] \
 				[list %MENUPLAGE% $menuplage] \
 				[list %DISPLAY% $display] \
-				[list %ADR% $adr] \
+				[list %ADR% $addr] \
 			    ]
 }
 

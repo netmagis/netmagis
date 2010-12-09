@@ -1,37 +1,28 @@
 #!%TCLSH%
 
-
 #
-# Script d'enregistrement des modifications des paramètres de la base
+# Store new parameters in database
 #
-# Appelé par : adminliste
+# Called by: admparliste
 #
-# Paramètres (formulaire ou URL) : les paramètres
+# Parameters (form or url): parameters
 #
-# Historique
-#   2003/12/08 : pda      : création à partir de sos
-#   2004/10/13 : pda      : ajout des paramètres DHCP
-#   2007/10/25 : jean     : log des actions de modification
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2003/12/08 : pda      : design from sos code
+#   2004/10/13 : pda      : add DHCP parameters
+#   2007/10/25 : jean     : log modify actions
+#   2010/12/09 : pda      : i18n
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admvalide.html
+set conf(err)		erreur.html
+set conf(page)		admvalide.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(nextaccueil)	"%HOMEURL%/bin/accueil"
@@ -39,38 +30,30 @@ set conf(nextadmin)	"%HOMEURL%/bin/admin"
 set conf(nextmodif)	"%HOMEURL%/bin/admparliste"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
-
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
 
     #
-    # Création d'une liste de contrôle de formulaire à partir
-    # des clefs de configuration
+    # Creation of a form variable specification from configuration keys
     #
 
     set form {}
@@ -78,15 +61,15 @@ proc main {} {
 	lappend form [list $key 1 1]
     }
     if {[llength [::webapp::get-data ftab $form]] == 0} then {
-	d error "Formulaire non conforme aux spécifications"
+	d error [mc "Invalid input"]
     }
 
     #
-    # Enregistrement des paramètres du formulaire
+    # Store new values
     #
 
     if {! [::pgsql::lock $dbfd {global.config} msg]} then {
-	d error "Verrouillage impossible ('$msg')"
+	d error [format [mc "Unable to lock table (%s)"] $msg]
     }
 
     set lm {}
@@ -97,28 +80,28 @@ proc main {} {
 	    lappend lm "$key ($val)"
 	} else {
 	    ::pgsql::unlock $dbfd "abort" m
-	    d error "Ereur dans l'enregistrement de '$key' ('$msg')"
+	    d error [format [mc {Store parameter '%1$s' failed: %2$s}] $key $msg]
 	}
     }
 
     if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-	d error "Déverrouillage impossible ('$msg')"
+	d error [format [mc "Unlock failed, modification failed: %s"] $msg]
     }
 
-    d writelog "admparmodif" "modification des parametres de l'application : [join $lm ,]"
+    d writelog "admparmod" "modify parameters: [join $lm ,]"
 
     #
-    # Génération de la page d'accusé de modification
+    # End of script: output page and close database
     #
 
-    set typeenclair "paramètres de l'application"
+    set type [mc "return to application parameter modification"]
 
     d urlset "%URL1%" $conf(nextaccueil) {}
     d urlset "%URL2%" $conf(nextadmin) {}
     d urlset "%URL3%" $conf(nextmodif) {}
 
     d result $conf(page) [list \
-				[list %TYPEENCLAIR% $typeenclair] \
+				[list %TYPEENCLAIR% $type] \
 			    ]
 }
 

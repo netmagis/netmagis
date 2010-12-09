@@ -4,46 +4,42 @@
 #
 # Script pour lister les machines d'un ou plusieurs domaines
 #
-# Appelé par : script consultmx (page lib/consultmx.htgt)
+# Called by: script consultmx (page lib/consultmx.htgt)
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - critères de sélection : 
 #	- domaine : liste de domaines pour lesquels on liste les MX
 #   - format de sortie
 #	- format : "Consulter" ou "Imprimer"
 #
-# Historique
-#   2002/05/25 : pda      : création
-#   2002/07/09 : pda      : ajout de nologin
+# History
+#   2002/05/25 : pda      : design
+#   2002/07/09 : pda      : add nologin
 #   2002/10/24 : pda      : fichier à trou commun avec d'autres listes
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2003/05/13 : pda/jean : use auth base
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(liste)		$conf(lib)/listedes.html
-set conf(listetex)	$conf(lib)/listedes.tex
-set conf(err)		$conf(lib)/erreur.html
+set conf(liste)		listedes.html
+set conf(listetex)	listedes.tex
+set conf(err)		erreur.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
-# aucun (page en cul de sac)
+# none (no-return page)
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form)		{
@@ -52,7 +48,7 @@ set conf(form)		{
 }
 
 #
-# Le tableau servant à présenter le résultat
+# tabular specification for result
 # Colonnes :
 #	- machine
 #	- priorité
@@ -124,35 +120,30 @@ set conf(tableau) {
 
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
 
     #
     # Analyse et validation des arguments
@@ -257,7 +248,7 @@ proc main {} {
 
 
     #
-    # Sortie du résultat
+    # End of script: output page and close database
     #
 
     set datefmt [dnsconfig get "datefmt"]

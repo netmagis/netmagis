@@ -3,9 +3,9 @@
 #
 # Script pour récupérer et envoyer juste le graphe de la page de trafic
 #
-# Appelé par : /applis/topo/bin/metro
+# Called by: /applis/topo/bin/metro
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - id : id du point de collecte sélectionné
 #	ou plusieurs id, séparés par soit des "+", soit des "|"
 #   - taille : taille du graphe : "petit", "moyen", "grand"
@@ -19,8 +19,8 @@
 #   - fin : heure de fin (time_t)
 #
 #
-# Historique
-#   2006/08/09 : pda/boggia      : création
+# History
+#   2006/08/09 : pda/boggia      : design
 #   2006/08/10 : pda/boggia      : ajout du paramètre uti
 #   2006/12/12 : jean/boggia     : ajout du paramètre periode et taille
 #   2007/01/12 : pda             : mutualisation initialisation
@@ -28,29 +28,25 @@
 #   2008/07/31 : pda             : plusieurs courbes sur le même graphe avec "|"
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
+set conf(err)		erreur.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
-# aucun (page en cul de sac)
+# none (no-return page)
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 
@@ -65,34 +61,30 @@ set conf(form)	{
 set conf(idrfmt)	"http://%IDRHOST%/bin/gengraph?%s&debut=%d&fin=%d"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     ::webapp::import-vars ftab
     foreach f $conf(form) {
@@ -104,8 +96,8 @@ proc main {} {
     # valider l'id du graphe en fonction des droits
     #
 
-    set msg [check-metro-id $dbfd $id tabcor titre]
-    if {! $tabcor(admin) && ! [string equal $msg ""]} then {
+    set msg [check-metro-id $dbfd $id tabuid titre]
+    if {! $tabuid(admin) && ! [string equal $msg ""]} then {
 	d error $msg
     }
 
@@ -188,7 +180,7 @@ proc main {} {
     }
 
     #
-    # Sortie de la page
+    # End of script: output page and close database
     #
 
     set url [format $conf(idrfmt) $hid $debut $fin]

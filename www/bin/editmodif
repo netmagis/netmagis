@@ -4,43 +4,39 @@
 #
 # Script pour saisir les modifications demandées par un correspondant.
 #
-# Appelé par : script modif (page lib/modif.htgt)
+# Called by: script modif (page lib/modif.htgt)
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - édition des informations d'une machine
 #	- nom : nom de la machine à ajouter
 #	- domaine : domaine dans lequel elle doit être ajoutée
 #
-# Historique
-#   2002/05/03 : pda/jean : création
-#   2002/07/09 : pda      : ajout de nologin
+# History
+#   2002/05/03 : pda/jean : design
+#   2002/07/09 : pda      : add nologin
 #   2002/07/09 : pda      : conversion des noms en minuscules
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2004/08/05 : pda/jean : ajout MAC
+#   2003/05/13 : pda/jean : use auth base
+#   2004/08/05 : pda/jean : add mac
 #   2005/04/08 : pda/jean : ajout dhcpprofil
 #   2008/07/25 : pda/jean : ajout du droit d'émission SMTP
 #   2010/10/26 : pda      : rendre le nom+domaine éditable
 #   2010/10/31 : pda      : ajout ttl
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(page-edit-infos)	$conf(lib)/editmodif-infos.html
-set conf(err)			$conf(lib)/erreur.html
+set conf(page-edit-infos)	editmodif-infos.html
+set conf(err)			erreur.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/traitemodif"
@@ -49,41 +45,37 @@ set conf(nextsuppr)	"%HOMEURL%/bin/suppr"
 
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
-# le champ discriminant pour la suite
+# field used to determine next step
 set conf(form)		{
 	{action		1 1}
 }
 
-# les champs utilisés pour chacune des actions
+# action specific fields
 set conf(form-modif-infos)	{
 	{nom		1 1}
 	{domaine	1 1}
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
 # Ajout d'un nom
 ##############################################################################
 
-# Historique
+# History
 #   2002/05/03 : pda/jean : conception
 #
 proc editmodif-infos {dbfd _tabuid _ftab} {
@@ -92,7 +84,7 @@ proc editmodif-infos {dbfd _tabuid _ftab} {
     upvar $_ftab ftab
 
     #
-    # Valider les champs du formulaire
+    # Validate form input
     #
 
     set nom           [string trim [lindex $ftab(nom) 0]]
@@ -175,7 +167,7 @@ proc editmodif-infos {dbfd _tabuid _ftab} {
     d urlset "%URLSUPPR%" $conf(nextsuppr) {}
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d result $conf(page-edit-infos) [list \
@@ -199,18 +191,18 @@ proc editmodif-infos {dbfd _tabuid _ftab} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
     # Valider l'action, lire les autres champs du formulaire,
@@ -224,10 +216,10 @@ proc main {} {
     }
 
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
-	d error "Formulaire non conforme aux spécifications"
+	d error [mc "Invalid input"]
     }
 
-    edit$action $dbfd tabcor ftab
+    edit$action $dbfd tabuid ftab
 }
 
 ::webapp::cgi-exec main %DEBUG%

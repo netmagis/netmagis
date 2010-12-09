@@ -4,36 +4,32 @@
 #
 # Script pour consulter des stats sur les correspondants
 #
-# Appelé par : admin.htgt
+# Called by: admin.htgt
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2002/07/25 : pda      : création
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2002/07/25 : pda      : design
+#   2003/05/13 : pda/jean : use auth base
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/statcor.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		statcor.html
+
+#
+# Next actions
 # 
 
-# aucun (page en cul de sac)
+# none (no-return page)
 
 #
 # Le tableau servant à présenter le nb de machines par correspondant
@@ -92,21 +88,16 @@ set conf(tabrrcor) {
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
 # Comparaison de deux éléments de liste (pour les tris)
@@ -124,7 +115,7 @@ proc comparer {e1 e2} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
@@ -132,11 +123,11 @@ proc main {} {
     global ah
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
 
     #
     # Calcule les stats, et former une liste {nb nomprenom}
@@ -153,7 +144,7 @@ proc main {} {
     set u [::webapp::authuser create %AUTO%]
 
     pg_select $dbfd $sql tab {
-	catch {unset tabcor}
+	catch {unset tabuid}
 
 	if {[catch {set n [$ah getuser $tab(login) $u]} m]} then {
 	    return "Problème dans la base d'authentification ($m)"
@@ -196,7 +187,7 @@ proc main {} {
     set nbrrcor [::arrgen::output "html" $conf(tabrrcor) $donnees]
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d result $conf(page) [list \

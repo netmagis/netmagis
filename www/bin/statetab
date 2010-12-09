@@ -4,37 +4,33 @@
 #
 # Script pour consulter des stats par établissement
 #
-# Appelé par : admin.htgt
+# Called by: admin.htgt
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2002/07/25 : pda      : création
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2004/01/14 : pda/jean : ajout IPv6
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2002/07/25 : pda      : design
+#   2003/05/13 : pda/jean : use auth base
+#   2004/01/14 : pda/jean : add IPv6
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/statetab.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		statetab.html
+
+#
+# Next actions
 # 
 
-# aucun (page en cul de sac)
+# none (no-return page)
 
 #
 # Le tableau servant à présenter le nb de machines et d'adresses
@@ -107,35 +103,30 @@ set conf(tabmachetabl) {
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
 
     #
     # Nb d'adresses (v4 ou v6) enregistrées par établissement dans la base.
@@ -209,7 +200,7 @@ proc main {} {
     set nbmachetabl [::arrgen::output "html" $conf(tabmachetabl) $donnees]
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d result $conf(page) [list \

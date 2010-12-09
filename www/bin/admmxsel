@@ -1,84 +1,67 @@
 #!%TCLSH%
 
-
 #
-# Script pour sélectionner un mx dont il faut modifier les caractéristiques
+# Script to select a MX to be modified
 #
-# Appelé par : index.htgt
+# Called by: admin
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2003/04/24 : pda/jean : création
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2003/04/24 : pda/jean : design
+#   2003/05/13 : pda/jean : use auth base
+#   2010/12/09 : pda      : i18n
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admmxsel.html
+set conf(err)		erreur.html
+set conf(page)		admmxsel.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/admmxedit"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
-
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
 
     #
-    # Récupération des domaines auxquels le correspond a accès
-    # et construction du code HTML approprié.
+    # Get domains authorized for the user
     #
 
-    set domaine [menu-domain $dbfd $tabcor(idcor) domaine "" ""]
+    set domain [menu-domain $dbfd $tabuid(idcor) "domaine" "" ""]
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
-				[list %DOMAINE% $domaine] \
+				[list %DOMAINE% $domain] \
 			    ]
 }
 

@@ -4,44 +4,40 @@
 #
 # Script pour consulter les droits associés à un correspondant
 #
-# Appelé par : index.htgt
+# Called by: index.htgt
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #	- si l'utilisateur est un administrateur
 #		- login : nom de login d'un correspondant quelconque
-#	- si non : aucun paramètre
+#	- si non : none paramètre
 #
-# Historique
-#   2002/05/21 : pda/jean : création
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+# History
+#   2002/05/21 : pda/jean : design
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
 #   2005/04/06 : pda      : ajout des profils dhcp
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/droits.html
+set conf(err)		erreur.html
+set conf(page)		droits.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 # (aucun : page cul de sac)
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form)	{
@@ -49,42 +45,37 @@ set conf(form)	{
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
     # Si l'utilisateur est un administrateur, l'autoriser à consulter
     # les droits d'un autre utilisateur.
     #
 
-    if {[user-attribute $dbfd $tabcor(idcor) admin]} then {
+    if {[user-attribute $dbfd $tabuid(idcor) admin]} then {
 	#
 	# A partir de maintenant, on prend le nouveau login qui est
 	# fourni dans le formulaire (s'il est fourni)
@@ -93,10 +84,10 @@ proc main {} {
 	if {[llength $ftab(login)] > 0} then {
 	    set login [lindex $ftab(login) 0]
 
-	    unset tabcor
-	    lassign [read-user $dbfd $login tabcor] msg arg
-	    if {$msg ne ""} then {
-		d error [format [mc $msg] $arg]
+	    unset tabuid
+	    set n [read-user $dbfd $login tabuid msg]
+	    if {$n != 1} then {
+		d error $msg
 	    }
 	}
     }
@@ -107,14 +98,14 @@ proc main {} {
     # modifications ;-)
     #
 
-    set corresp	[display-user tabcor]
+    set corresp	[display-user tabuid]
 
     #
     # Récupération du code HTML d'affichage des caractéristiques
     # du groupe auquel appartient le correspondant
     #
 
-    set grospaquet [display-group $dbfd $tabcor(idgrp)]
+    set grospaquet [display-group $dbfd $tabuid(idgrp)]
     set tabreseaux        [lindex $grospaquet 2]
     set tabcidrhorsreseau [lindex $grospaquet 3]
     set tabdomaines       [lindex $grospaquet 4]
@@ -127,7 +118,7 @@ proc main {} {
     }
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d result $conf(page) [list \

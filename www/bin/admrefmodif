@@ -1,51 +1,43 @@
 #!%TCLSH%
 
-
 #
-# Script d'enregistrement des modifications de tables constituant le
-# référentiel de la base.
+# Script to store table modifications
 #
-# Appelé par : admrefliste
+# Called by: admrefliste
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - type : etabl, commu, hinfo, reseau, domaine, zone, zone4, zone6,
 #		groupe
-#   - les paramètres spécifiques de chaque type
+#   - parameters specific to types
 #
-# Historique
-#   2001/11/01 : pda      : spécifications
-#   2001/11/02 : pda      : codage
-#   2002/05/03 : pda/jean : récupération pour dns
-#   2002/05/06 : pda/jean : ajout des correspondants
-#   2002/05/21 : pda/jean : ajout des groupes
-#   2002/05/21 : pda/jean : ajout des communautes
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2003/08/12 : pda      : retrait des correspondants
-#   2004/08/06 : pda/jean : ajout flag dhcp par réseau
-#   2005/04/08 : pda/jean : ajout table dhcpprofil
-#   2007/10/25 : jean     : log des actions de modification
+# History
+#   2001/11/01 : pda      : specifications
+#   2001/11/02 : pda      : coding
+#   2002/05/03 : pda/jean : re-use in webdns
+#   2002/05/06 : pda/jean : add users
+#   2002/05/21 : pda/jean : add groups
+#   2002/05/21 : pda/jean : add communauties
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2003/08/12 : pda      : remove users
+#   2004/08/06 : pda/jean : add flag dhcp by network
+#   2005/04/08 : pda/jean : add table dhcpprofil
+#   2007/10/25 : jean     : log modify actions
 #   2010/11/16 : pda/jean : ajout table vlan
+#   2010/12/09 : pda      : i18n
+#   2010/12/09 : pda      : remove groups
+#   2010/12/09 : pda      : rewrite with conf() array
 #
 
-set conf(homeurl)	%HOMEURL%
-
 #
-# Chemins utilisés par les scripts
+# Template pages used by this script
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
+set conf(err)		erreur.html
+set conf(page)		admvalide.html
 
 #
-# Définition des noms des pages "à trous"
-#
-
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admvalide.html
-
-#
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(nextaccueil)	"%HOMEURL%/bin/accueil"
@@ -53,7 +45,7 @@ set conf(nextadmin)	"%HOMEURL%/bin/admin"
 set conf(nextmodif)	"%HOMEURL%/bin/admrefliste"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form)	{
@@ -150,175 +142,124 @@ set conf(form-vlan) {
 	{voipn[0-9]+		0 9999}
 }
 
+set conf(etabl:return) "Return to organization modification"
+set conf(etabl:form)		form-etabl
+set conf(etabl:spec)		{nom}
+set conf(etabl:idnum)		idetabl
+set conf(etabl:table)		dns.etablissement
+
+set conf(etabl:return) "Return to community modification"
+set conf(etabl:form)		form-commu
+set conf(etabl:spec)		{nom}
+set conf(etabl:idnum)		idcommu
+set conf(etabl:table)		dns.communaute
+
+set conf(hinfo:return) "Return to host information modification"
+set conf(hinfo:form)		form-hinfo
+set conf(hinfo:spec)		{texte tri present}
+set conf(hinfo:idnum)		idhinfo
+set conf(hinfo:table)		dns.hinfo
+
+set conf(reseau:return) "Return to network modification"
+set conf(reseau:form)		form-reseau
+set conf(reseau:spec)		{nom localisation adr4 gw4 dhcp adr6 gw6
+					idetabl idcommu commentaire}
+set conf(reseau:idnum)		idreseau
+set conf(reseau:table)		dns.reseau
+
+set conf(domaine:return) "Return to domain modification"
+set conf(domaine:form)		form-domaine
+set conf(domaine:spec)		{nom}
+set conf(domaine:idnum)		iddom
+set conf(domaine:table)		dns.domaine
+
+set conf(zone:return) "Return to zone modification"
+set conf(zone:form)		form-zone
+set conf(zone:spec)		{domaine prologue rrsup selection}
+set conf(zone:idnum)		idzone
+set conf(zone:table)		dns.zone_normale
+
+set conf(zone4:return) 		$conf(zone:return)
+set conf(zone4:form)		$conf(zone:form)
+set conf(zone4:spec)		$conf(zone:spec)
+set conf(zone4:idnum)		$conf(zone:idnum)
+set conf(zone4:table)		dns.zone_reverse4
+
+set conf(zone6:return) 		$conf(zone:return)
+set conf(zone6:form)		$conf(zone:form)
+set conf(zone6:spec)		$conf(zone:spec)
+set conf(zone6:idnum)		$conf(zone:idnum)
+set conf(zone6:table)		dns.zone_reverse6
+
+set conf(dhcpprofil:return) "Return to DHCP profile modification"
+set conf(dhcpprofil:form)	form-dhcpprofil
+set conf(dhcpprofil:spec)	{nom texte}
+set conf(dhcpprofil:idnum)	iddhcpprofil
+set conf(dhcpprofil:table)	dns.dhcpprofil
+
+set conf(dhcpprofil:return) "Return to Vlan modification"
+set conf(vlan:form)		form-vlan
+set conf(vlan:spec)		{vlanid descr voip}
+set conf(vlan:idnum)		vlanid
+set conf(vlan:table)		topo.vlan
+
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
-
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation, avec récupération du type de modification.
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
 
     #
-    # La spécification du formulaire est minimale, et ne comprend
-    # que le champ "type".
-    # On refera une deuxième requête get-data plus précise.
+    # Form field specification is minimalist: it includes only "type" field
+    # A second get-data request will be more precise.
     #
 
-    set type [lindex $ftab(type) 0]
-    switch -- $type {
-	etabl	{
-	    set typeenclair "nom des établissements"
-	    set formaux form-etabl
-	    set spec {
-		{nom}
-	    }
-	    set idnum idetabl
-	    set table dns.etablissement
-	}
-	commu	{
-	    set typeenclair "nom des communautés"
-	    set formaux form-etabl
-	    set spec {
-		{nom}
-	    }
-	    set idnum idcommu
-	    set table dns.communaute
-	}
-	hinfo {
-	    set typeenclair "types de machines"
-	    set formaux form-hinfo
-	    set spec {
-		{texte}
-		{tri}
-		{present}
-	    }
-	    set idnum idhinfo
-	    set table dns.hinfo
-	}
-	reseau	{
-	    set typeenclair "réseaux"
-	    set formaux form-reseau
-	    set spec {
-		{nom}
-		{localisation}
-		{adr4}
-		{gw4}
-		{dhcp}
-		{adr6}
-		{gw6}
-		{idetabl}
-		{idcommu}
-		{commentaire}
-	    }
-	    set idnum idreseau
-	    set table dns.reseau
-	}
-	domaine {
-	    set typeenclair "domaines"
-	    set formaux form-domaine
-	    set spec {
-		{nom}
-	    }
-	    set idnum iddom
-	    set table dns.domaine
-	}
-	zone -
-	zone4 -
-	zone6 {
-	    set typeenclair "zones"
-	    set formaux form-$type
-	    set spec {
-		{domaine}
-		{prologue}
-		{rrsup}
-		{selection}
-	    }
-	    set idnum idzone
-	    switch -- $type {
-		zone  { set table dns.zone_normale }
-		zone4 { set table dns.zone_reverse4 }
-		zone6 { set table dns.zone_reverse6 }
-	    }
-	}
-	groupe {
-	    set typeenclair "groupes"
-	    set formaux form-groupe
-	    set spec {
-		{nom}
-		{admin}
-	    }
-	    set idnum idgrp
-	    set table global.groupe
-	}
-	dhcpprofil {
-	    set typeenclair "dhcpprofil"
-	    set formaux form-dhcpprofil
-	    set spec {
-		{nom}
-		{texte}
-	    }
-	    set idnum iddhcpprofil
-	    set table dns.dhcpprofil
-	}
-	vlan {
-	    set typeenclair "vlan"
-	    set formaux form-vlan
-	    set spec {
-		{vlanid}
-		{descr}
-		{voip}
-	    }
-	    set idnum vlanid
-	    set table topo.vlan
-	}
-	default	{
-	    d error "Type de modification invalide ($type)"
-	}
+    set type [string trim [lindex $ftab(type) 0]]
+
+    if {! [info exists conf($type:return)]} then {
+	d error [format [mc "Type '%s' not supported"] $type]
     }
+    set ret [mc $conf($type:return)]
 
-    #
-    # Récupération de tous les champs du formulaire
-    #
-
+    set formaux $conf($type:form)
     if {[llength [::webapp::get-data ftab $conf($formaux)]] == 0} then {
-	d error "Formulaire non conforme aux spécifications"
+	d error [mc "Invalid input"]
     }
 
     #
-    # Enregistrer les modifications dans la base
+    # Store modifications in database
     #
 
-    set errmsg [store-tabular $dbfd $spec $idnum $table ftab]
-    if {[string length $errmsg] > 0} then {
-	d error $errmsg
+    set spec $conf($type:spec)
+    set idnum $conf($type:idnum)
+    set table $conf($type:table)
+
+    set msg [store-tabular $dbfd $spec $idnum $table ftab]
+    if {$msg ne ""} then {
+	d error $msg
     }
 
-    d writelog "modifref" "modification de la table $table"
+    d writelog "modref" "modification of table $table"
 
     #
-    # C'est fini !
+    # End of script: output page and close database
     #
 
     d urlset "%URL1%" $conf(nextaccueil) {}
@@ -326,7 +267,8 @@ proc main {} {
     d urlset "%URL3%" $conf(nextmodif) [list [list "type" $type]]
 
     d result $conf(page) [list \
-				[list %TYPEENCLAIR% $typeenclair] \
+				[list %TYPEENCLAIR% $ret] \
+
 			    ]
 }
 

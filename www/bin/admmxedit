@@ -1,42 +1,33 @@
 #!%TCLSH%
 
-
 #
-# Script pour présenter les informations pour une modification de mx
+# Script to present data for MX modification
 #
-# Appelé par : admmxsel.htgt
+# Called by: admmxsel
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2003/04/24 : pda/jean : création
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2003/04/24 : pda/jean : design
+#   2003/05/13 : pda/jean : use auth base
+#   2010/12/06 : pda      : i18n
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admmxedit.html
+set conf(err)		erreur.html
+set conf(page)		admmxedit.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/admmxmodif"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form) {
@@ -45,105 +36,58 @@ set conf(form) {
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require arrgen
-package require pgsql
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
-
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
 
-    set nom     [lindex $ftab(nom) 0]
-    set domaine [lindex $ftab(domaine) 0]
+    set name   [lindex $ftab(nom) 0]
+    set domain [lindex $ftab(domaine) 0]
 
     #
-    # Valider le nom de mx et le domaine
+    # Check MX 
     #
 
-    set msg [check-name-syntax $nom]
-    if {[string length $msg] > 0} then {
-	d error $msg
-    }
-
-    set iddom -1
-    set msg [check-domain $dbfd $tabcor(idcor) iddom domaine ""]
+    set msg [check-authorized-mx $dbfd $tabuid(idcor) $name $domain exists trr]
     if {$msg ne ""} then {
 	d error $msg
     }
 
     #
-    # Récupérer les informations sur ce nom s'il existe dans la base
+    # Present MX informations
     #
 
-    set existe [read-rr-by-name $dbfd $nom $iddom tabrr]
-
-    #
-    # S'il existe, vérifier que ce n'est pas déjà un A ou un CNAME
-    # ou autre chose encore qui ne soit pas des MX
-    #
-
-    if {$existe} then {
-	if {[llength $tabrr(ip)] > 0} then {
-	    d error "'$nom' a déjà des adresses IP."
-	}
-	if {[llength $tabrr(cname)] > 0} then {
-	    d error "'$nom' est un alias."
-	}
-
-	#
-	# Le MX existe, il faut maintenant vérifier que l'utilisateur
-	# a bien accès à tous les domaines des MX référencés.
-	#
-	foreach mx $tabrr(mx) {
-	    set idmx [lindex $mx 1]
-	    if {[read-rr-by-id $dbfd $idmx tabmx] == 0} then {
-		d error "ERREUR INTERNE : table rr_mx référence le RR $idmx, non trouvé dans la table rr"
-	    }
-	    set iddom $tabmx(iddom)
-	    set msg [check-domain $dbfd $tabcor(idcor) iddom tabmx(domaine) ""]
-	    if {$msg ne ""} then {
-		d error [format [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s}] \
-				"$tabmx(nom).$tabmx(domaine)" $msg]
-	    }
-	}
-    }
-
-    #
-    # Présenter les informations MX en notre possession
-    #
-
-    if {$existe} then {
-	set idrr $tabrr(idrr)
+    if {$exists} then {
+	set idrr $trr(idrr)
     } else {
 	set idrr -1
     }
 
-    set largeurs {10 50 40}
-    set titres {{text Priorité} {text Nom} {text Domaine}}
-    set menudom [couple-domains $dbfd $tabcor(idcor) ""]
-    set spec [list \
+    set cwidth {10 50 40}
+    set ctitle [list \
+		    [list "text" [mc "Priority"]] \
+		    [list "text" [mc "Name"]] \
+		    [list "text" [mc "Domain"]] \
+		    ]
+    set menudom [couple-domains $dbfd $tabuid(idcor) ""]
+    set cspec [list \
 		{priorite {string 5}  {}} \
 		{nom      {string 30} {}} \
 		[list domaine [list menu $menudom] {}] \
@@ -157,20 +101,20 @@ proc main {} {
 		"
     set idnum "mx"
 
-    set msg [display-tabular $largeurs $titres $spec $dbfd $sql $idnum tableau]
-    if {[string length $msg] > 0} then {
+    set msg [display-tabular $cwidth $ctitle $cspec $dbfd $sql $idnum tableau]
+    if {msg ne ""} then {
 	d error $msg
     }
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %TABLEAU% $tableau] \
-				[list %NOM%     $nom] \
-				[list %DOMAINE% $domaine] \
+				[list %NOM%     $name] \
+				[list %DOMAINE% $domain] \
 			    ]
 }
 

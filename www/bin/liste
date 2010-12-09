@@ -4,9 +4,9 @@
 #
 # Script pour lister les machines d'un ou plusieurs domaines
 #
-# Appelé par : script consulter (page lib/consulter.htgt)
+# Called by: script consulter (page lib/consulter.htgt)
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - critères de sélection : 
 #	- plages4 : liste de plages IPv4 (idreseau dans tables reseau/plage)
 #	- plages6 : liste de plages IPv6 (idreseau dans tables reseau/plage)
@@ -14,41 +14,37 @@
 #   - format de sortie
 #	- format : "Consulter" ou "Imprimer" ou "Adresses libres"
 #
-# Historique
-#   2002/03/27 : pda/jean : création
+# History
+#   2002/03/27 : pda/jean : design
 #   2002/05/02 : pda/jean : traitement des hinfo
 #   2002/05/06 : pda/jean : ajout du cidr
 #   2002/05/06 : pda/jean : ajout des groupes
 #   2002/05/16 : pda      : conversion à arrgen
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2004/01/14 : pda/jean : ajout IPv6
-#   2004/08/05 : pda/jean : ajout MAC
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2004/01/14 : pda/jean : add IPv6
+#   2004/08/05 : pda/jean : add mac
 #   2004/08/06 : pda/jean : extension des droits sur les réseaux
 #   2008/09/24 : pda/jean : ajout droitsmtp
 #   2010/10/07 : pda      : début ajout adresses libres
 #   2010/10/13 : pda      : added dhcp ranges in map
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(liste)		$conf(lib)/liste.html
-set conf(listetex)	$conf(lib)/liste.tex
-set conf(err)		$conf(lib)/erreur.html
+set conf(liste)		liste.html
+set conf(listetex)	liste.tex
+set conf(err)		erreur.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(nextedit)	"%HOMEURL%/bin/edit"
@@ -56,7 +52,7 @@ set conf(nextajout)	"%HOMEURL%/bin/ajout"
 set conf(nextlist)	"%HOMEURL%/bin/liste"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form)		{
@@ -72,7 +68,7 @@ set conf(limit-unused)	16384
 set conf(max-per-row)	16
 
 #
-# Le tableau servant à présenter le résultat
+# tabular specification for result
 # Colonnes :
 #	- adr IP
 #	- nom machine et aliases
@@ -155,28 +151,23 @@ set conf(tableau) {
 
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
 # Fonctions
 ##############################################################################
 
-proc output-list {dbfd lcidr _tabcor format} {
-    upvar $_tabcor tabcor
+proc output-list {dbfd lcidr _tabuid format} {
+    upvar $_tabuid tabuid
     global conf
 
     #
@@ -223,11 +214,11 @@ proc output-list {dbfd lcidr _tabcor format} {
 	set sqlallow "SELECT adr FROM dns.dr_ip WHERE
 			    (adr <<= '$cidrplage' OR adr >>= '$cidrplage')
 			    AND allow_deny = 1
-			    AND idgrp = $tabcor(idgrp)"
+			    AND idgrp = $tabuid(idgrp)"
 	set sqldeny "SELECT adr FROM dns.dr_ip WHERE
 			    (adr <<= '$cidrplage' OR adr >>= '$cidrplage')
 			    AND allow_deny = 0
-			    AND idgrp = $tabcor(idgrp)"
+			    AND idgrp = $tabuid(idgrp)"
 
 	#
 	# Récupérer tous les aliases dont l'adresse IP est
@@ -359,7 +350,7 @@ proc output-list {dbfd lcidr _tabcor format} {
     set tableau [::arrgen::output $format $conf(tableau) $donnees]
 
     #
-    # Sortie du résultat
+    # End of script: output page and close database
     #
 
     set datefmt [dnsconfig get "datefmt"]
@@ -389,8 +380,8 @@ proc output-list {dbfd lcidr _tabcor format} {
     }
 }
 
-proc output-map {dbfd lcidr _tabcor format} {
-    upvar $_tabcor tabcor
+proc output-map {dbfd lcidr _tabuid format} {
+    upvar $_tabuid tabuid
     global conf
 
     #
@@ -447,7 +438,7 @@ proc output-map {dbfd lcidr _tabcor format} {
 	set html ""
 	set n 0
 	set navail 0
-	set sql "SELECT * FROM markcidr ('$cidr', $limite, $tabcor(idgrp))"
+	set sql "SELECT * FROM markcidr ('$cidr', $limite, $tabuid(idgrp))"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d error "Erreur dans le cidr '$cidr' ($msg)"
 	}
@@ -595,18 +586,18 @@ proc output-map {dbfd lcidr _tabcor format} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
     # Analyse et validation des arguments
@@ -643,7 +634,7 @@ proc main {} {
     if {$nplages > 0} then {
 	foreach idreseau $ftab(plages) {
 	    set l [check-netid $dbfd $idreseau \
-					$tabcor(idgrp) "consult" {4 6} msg]
+					$tabuid(idgrp) "consult" {4 6} msg]
 	    if {[llength $l] == 0} then {
 		d error $msg
 	    }
@@ -660,9 +651,9 @@ proc main {} {
     }
 
     if {[string eq $format "carte"]} then {
-	output-map $dbfd $lcidr tabcor $format
+	output-map $dbfd $lcidr tabuid $format
     } else {
-	output-list $dbfd $lcidr tabcor $format
+	output-list $dbfd $lcidr tabuid $format
     }
 }
 

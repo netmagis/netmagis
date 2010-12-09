@@ -5,44 +5,40 @@
 # Script pour présenter la page de saisie de l'hébergeur d'une adresse
 # de messagerie (ou la liste des adresses de messagerie existantes)
 #
-# Appelé par : script mail (page lib/mail.htgt)
+# Called by: script mail (page lib/mail.htgt)
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - nom : nom (premier constituant) de l'adresse de
 #		messagerie (ou vide si on veut une liste)
 #   - domaine : domaine de l'adresse de messagerie (tous les
 #		constituants sauf le premier)
 #
-# Historique
-#   2004/02/06 : pda/jean : création
+# History
+#   2004/02/06 : pda/jean : design
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(pageliste)	$conf(lib)/mailheberg-liste.html
-set conf(pageedit)	$conf(lib)/mailheberg-edit.html
+set conf(err)		erreur.html
+set conf(pageliste)	mailheberg-liste.html
+set conf(pageedit)	mailheberg-edit.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(nextheberg)	"%HOMEURL%/bin/mailheberg"
 set conf(nextmodif)	"%HOMEURL%/bin/mailmodif"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 # les champs du formulaire
@@ -91,21 +87,16 @@ set conf(tableau) {
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
 # Fonctions auxiliaires
@@ -116,13 +107,13 @@ source $conf(libdns)
 # domaine. Si le nom est fourni, seul le rôle associé à l'adresse
 # spécifiée est retourné.
 #
-# Entrée :
+# Input:
 #   - dbfd : accès à la base
 #   - idcor : correspondant
 #   - nom : nom (premier constituant) de l'adresse de messagerie
 #   - domaine : nom de domaine (tous les constituants sauf le premier) de
 #	l'adresse de messagerie
-# Sortie :
+# Output:
 #   - valeur de retour : liste de quadruplets {noma domainea nomh domaineh}
 #	où :
 #	    - noma : nom de l'adresse de messagerie
@@ -130,7 +121,7 @@ source $conf(libdns)
 #	    - nomh : nom de l'hébergeur des boîtes
 #	    - domaineh : nom de domaine de l'hébergeur des boîtes
 #
-# Historique
+# History
 #   2004/02/06 : pda/jean : conception
 #   2004/02/27 : pda/jean : utilisation de l'id du correspondant
 #   2004/03/01 :     jean : requête de la mort qui tue !
@@ -182,20 +173,20 @@ proc lire-role-mail {dbfd idcor nom domaine} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
-    set idcor $tabcor(idcor)
+    set idcor $tabuid(idcor)
 
     set nom     [string trim [lindex $ftab(nom) 0]]
     set domaine [string trim [lindex $ftab(domaine) 0]]
@@ -294,7 +285,7 @@ proc main {} {
     }
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(nextmodif) {}

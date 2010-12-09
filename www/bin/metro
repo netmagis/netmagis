@@ -4,48 +4,44 @@
 # Script pour afficher la page contenant le graphe et le formulaire
 # d'actualisation des dates
 #
-# Appelé par : /applis/dns/bin/eq
+# Called by: /applis/dns/bin/eq
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - id : id du point de collecte sélectionné
 #   - hdebut : heure de début
 #   - jdebut : date de début
 #   - hfin : heure de fin
 #   - jfin : date de fin
 #
-# Historique
-#   2006/05/24 : pda/jean/boggia : création
+# History
+#   2006/05/24 : pda/jean/boggia : design
 #   2006/08/10 : pda/boggia      : ajout du paramètre uti
 #   2007/01/12 : pda             : mutualisation initialisation
 #   2008/07/30 : pda             : généralisation aux graphes wifi
 #   2008/07/30 : pda             : plus de souplesse dans les dates/heures
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/metro.html
+set conf(err)		erreur.html
+set conf(page)		metro.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(nextmetro)	"%HOMEURL%/bin/metro"
 
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 
@@ -60,36 +56,32 @@ set conf(form)	{
 set conf(urlgraph)	"%HOMEURL%/bin/graphe"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
-    set msgsta [topo-status $dbfd $tabcor(admin)]
+    set msgsta [topo-status $dbfd $tabuid(admin)]
 
     ::webapp::import-vars ftab
     foreach f $conf(form) {
@@ -101,7 +93,7 @@ proc main {} {
     # valider l'id du graphe en fonction des droits
     #
 
-    set msg [check-metro-id $dbfd $id tabcor titre]
+    set msg [check-metro-id $dbfd $id tabuid titre]
     if {! [string equal $msg ""]} then {
 	d error $msg
     }
@@ -182,7 +174,7 @@ proc main {} {
 					    ]
 
     #
-    # Sortie de la page
+    # End of script: output page and close database
     #
 
     d result $conf(page) [list \

@@ -3,14 +3,14 @@
 #
 # Script pour lister les détails d'un réseau de niveau 3
 #
-# Appelé par : /applis/topo/<tous>
+# Called by: /applis/topo/<tous>
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #	- addr : nom de l'équipement
 #	- format : rien, ou "pdf" ou "png"
 #
-# Historique
-#   2006/06/05 : pda      : création
+# History
+#   2006/06/05 : pda      : design
 #   2006/06/20 : pda      : prologue dépendant du format
 #   2006/06/22 : pda      : sortie dépendante du format
 #   2006/08/09 : pda      : ps2pdf avec chemin complet
@@ -20,25 +20,21 @@
 #   2007/01/11 : pda      : substitution possible d'un uid
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page1)		$conf(lib)/l3.html
-set conf(pagen)		$conf(lib)/topoliste.html
+set conf(err)		erreur.html
+set conf(page1)		l3.html
+set conf(pagen)		topoliste.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(nexteq)	"%HOMEURL%/bin/eq"
@@ -47,7 +43,7 @@ set conf(nextl3)	"%HOMEURL%/bin/l3"
 
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 
@@ -64,26 +60,22 @@ set conf(neato)		"%NEATO%"
 set conf(ps2pdf)	"%PS2PDF%"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 # tcllib
 package require ip
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Fonctions utilitaires
+# Utilities
 ##############################################################################
 
 proc prologue {format} {
@@ -284,20 +276,20 @@ proc generer-dot {format prog} {
 
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
-    set msgsta [topo-status $dbfd $tabcor(admin)]
+    set msgsta [topo-status $dbfd $tabuid(admin)]
 
     ::webapp::import-vars ftab
     foreach f $conf(form) {
@@ -319,7 +311,7 @@ proc main {} {
     # Récupérer les réseaux IP déclarés dans le graphe
     #
 
-    set cmd [format $conf(dumpgraph) $tabcor(flagsr)]
+    set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
 
     while {[gets $fd ligne] > -1} {
@@ -346,7 +338,7 @@ proc main {} {
 	set liste [::webapp::helem "ul" [join $liste "\n"]]
 
 	#
-	# Sortie de la page
+	# End of script: output page and close database
 	#
 
 	d result $conf(pagen) [list \
@@ -387,7 +379,7 @@ proc main {} {
 	# Récupérer les informations lues dans le graphe
 	#
 
-	set xl3 [format $conf(extractl3) $tabcor(flagsr) [join $lnet " "]]
+	set xl3 [format $conf(extractl3) $tabuid(flagsr) [join $lnet " "]]
 	set dot [generer-dot $format $xl3]
 	set fd [open "$tmp.dot" "w"]
 	puts $fd $dot

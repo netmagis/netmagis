@@ -1,119 +1,49 @@
 #!%TCLSH%
 
-
 #
-# Script de présentation de la page d'aide
+# Script to present help for administration parameters
 #
-# Appelé par : script admparlist
+# Called by: admparlist
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2010/10/25 : pda      : création
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2010/10/25 : pda      : design
+#   2010/12/09 : pda      : i18n
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admparhelp.html
+set conf(err)		erreur.html
+set conf(page)		admparhelp.html
 
 #
-# Scripts suivants (actions de formulaire)
-# 
-
-# (aucun : page cul de sac)
-
-#
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
-
-#
-# Le tableau servant à présenter les paramètres
-#
-
-set conf(tableau) {
-    global {
-	chars {12 normal}
-	columns {50 50}
-    }
-    pattern {Normal1} {
-	vbar {no}
-	column {
-	    multicolumn {2}
-	    color {909090}
-	    align {center}
-	    botbar {no}
-	}
-	vbar {no}
-    }
-    pattern {Normal2} {
-	vbar {no}
-	column {
-	    align {right}
-	    botbar {no}
-	    format {raw}
-	}
-	vbar {no}
-	column {
-	    align {left}
-	    botbar {no}
-	    format {raw}
-	}
-	vbar {no}
-    }
-    pattern {Boutons} {
-	vbar {no}
-	column {
-	    multicolumn {2}
-	    color {10C090}
-	    align {center}
-	    botbar {no}
-	    format {raw}
-	}
-	vbar {no}
-    }
-}
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
-
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
 
     #
-    # Mise en forme des données dans le formulaire
+    # Get data in the form
     #
 
     set html {}
@@ -138,17 +68,12 @@ proc main {} {
     }
 
     #
-    # Génération de la page contenant le formulaire
+    # End of script: output page and close database
     #
 
-    set subst {}
-    lappend subst [list %TEXTE% $html]
-
-    #
-    # Fin du script : sortie de la page et fermeture de la base
-    #
-
-    d result $conf(page) $subst
+    d result $conf(page) [list \
+				[list %TEXTE% $html] \
+			    ]
 }
 
 ::webapp::cgi-exec main %DEBUG%

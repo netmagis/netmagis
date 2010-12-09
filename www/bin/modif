@@ -4,78 +4,70 @@
 #
 # Script pour présenter la page de modification d'une machine
 #
-# Appelé par : index.htgt
+# Called by: index.htgt
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2002/04/11 : pda/jean : création
+# History
+#   2002/04/11 : pda/jean : design
 #   2002/05/03 : pda/jean : séparation dans une page particulière
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/modif.html
+set conf(err)		erreur.html
+set conf(page)		modif.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/editmodif"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
 
     #
     # Récupération des domaines auxquels le correspond a accès
     # et construction du code HTML approprié.
     #
 
-    set domaine [menu-domain $dbfd $tabcor(idcor) domaine "" ""]
+    set domaine [menu-domain $dbfd $tabuid(idcor) domaine "" ""]
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}

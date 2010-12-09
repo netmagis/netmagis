@@ -1,82 +1,67 @@
 #!%TCLSH%
 
-
 #
-# Script pour sélectionner un groupe dont il faut modifier les caractéristiques
+# Script to select a group to modify
 #
-# Appelé par : index.htgt
+# Called by: admin
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2002/05/21 : pda/jean : création
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2002/05/21 : pda/jean : design
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2010/12/06 : pda      : i18n
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admgrpsel.html
+set conf(err)		erreur.html
+set conf(page)		admgrpsel.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/admgrpedit"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
 
     #
-    # Récupérer la liste des groupes pour la convertir en menu.
+    # Get group list and convert it to a menu
     #
 
-    set lgroupe [::pgsql::getcols $dbfd "global.groupe" "nom <> ''" "nom ASC" \
+    set lgroup [::pgsql::getcols $dbfd "global.groupe" "nom <> ''" "nom ASC" \
 						{nom nom}]
-    set lgroupe [linsert $lgroupe 0 {::nouveau {Créer un groupe...}}]
-    set menuorggrp [::webapp::form-menu orggrp 1 0 $lgroupe {0}]
+    set lgroup [linsert $lgroup 0 [list "::nouveau" [mc "Create group..."]]]
+    set menuorggrp [::webapp::form-menu orggrp 1 0 $lgroup {0}]
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}

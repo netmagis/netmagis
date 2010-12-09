@@ -1,42 +1,27 @@
 #!%TCLSH%
 
-
 #
-# Script pour enregistrer une modification de relais de messagerie
+# Script to store a modification of mail relay
 #
-# Appelé par : admrelsel.htgt
+# Called by: admrefliste
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2004/03/04 : pda/jean : création
-#   2007/10/25 : jean     : log des actions de modification
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2004/03/04 : pda/jean : design
+#   2007/10/25 : jean     : log modify actions
+#   2010/12/09 : pda      : i18n
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
 #
-# Scripts suivants (actions de formulaire)
-# 
-
-# (aucun : page cul de sac)
-
-#
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admrelmodif.html
+set conf(err)		erreur.html
+set conf(page)		admrelmodif.html
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form) {
@@ -58,7 +43,7 @@ set conf(tableau) {
 	botbar {yes}
 	align {left}
     }
-    motif {Titre} {
+    motif {Title} {
 	title {yes}
 	topbar {yes}
 	chars {bold}
@@ -78,86 +63,77 @@ set conf(tableau) {
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require arrgen
-package require pgsql
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Fonctions utilitaires
+# Utilities
 ##############################################################################
 
 #
-# Insère une liste de mx dans la base
+# Insert a list of mail relays in the database
 #
-# Entrée :
-#   - paramètres :
-#	- dbfd : accès à la base
-#	- iddom : id du domaine
-#	- lrel : liste au format spécifié dans check-mx
-# Sortie :
-#   - valeur de retour : chaîne vide si ok, ou message d'erreur
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- iddom : domain id
+#	- lrel : list of relays
+# Output:
+#   - return value: empty string or error message
 #
-# Historique
-#   2004/03/04 : pda/jean : reprise du cas MX
+# History
+#   2004/03/04 : pda/jean : copy from MX function
 #
 
-proc inserer-relais {dbfd iddom lrel} {
+proc insert-relay {dbfd iddom lrel} {
     foreach rel $lrel {
-	set prio [lindex $rel 0]
-	set idmx [lindex $rel 1]
+	lassign $rel prio idmx
 	set sql "INSERT INTO dns.relais_dom (iddom, priorite, mx)
 				    VALUES ($iddom, $prio, $idmx)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    return "Insertion du relais impossible ($msg)"
+	    return [format [mc "Relay insertion failed: %s"] $msg]
 	}
     }
     return ""
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
 
-    set domaine [lindex $ftab(domaine) 0]
+    set domain [string trim [lindex $ftab(domaine) 0]]
 
     #
-    # Valider le domaine
+    # Check domain
     #
 
-    set msg [check-domain-relay $dbfd $tabcor(idcor)  iddom$domaine]
+    set msg [check-domain-relay $dbfd $tabuid(idcor) iddom $domain]
     if {$msg ne ""} then {
 	d error $msg
     }
 
     #
-    # Parcourir la liste des champs de formulaire et constituer une
-    # liste de la forme :
+    # Traverse list of form variables and build a list:
     #		{{prio idmx} ... }
-    # où :
-    #  - prio = priorité numérique (syntaxe entière ok)
-    #  - idmx = id d'un RR existant
+    # where :
+    #  - prio = numeric priority
+    #  - idmx = id of an existing RR
     #
 
     set lrel {}
@@ -171,95 +147,90 @@ proc main {} {
 			    [info exists ftab($idxdom)] \
 		    } then {
 		set fprio [string trim [lindex $ftab($idxprio) 0]]
-		set fnom  [string trim [lindex $ftab($idxnom)  0]]
+		set fname [string trim [lindex $ftab($idxnom)  0]]
 		set fdom  [string trim [lindex $ftab($idxdom)  0]]
-		if {! [string equal $fprio ""]} then {
-		    set msg ""
-		    set mx [check-mx $dbfd \
-					    $fprio $fnom $fdom \
-					    $tabcor(idcor) msg]
-		    if {! [string equal $msg ""]} then {
-			d error "$msg pour $fnom.$fdom"
+		if {$fprio ne ""} then {
+		    set mx [check-mx-target $dbfd $fprio $fname $fdom $tabuid(idcor) msg]
+		    if {$msg ne ""} then {
+			d error $msg
 		    }
 		    if {[info exists tmx([lindex $mx 1])]} then {
-			d error "$fnom.$fdom spécifié deux fois."
+			d error [format [mc "'%s' specified more than once"] "$fname.$fdom"]
 		    }
 		    lappend lrel $mx
 		}
 	    } else {
-		d error "Formulaire non conforme ($idxprio, $idxnom, $idxdom)"
+		d error [format [mc "Invalid form values (%s)"] "$idxprio, $idxnom, $idxdom"]
 	    }
 	}
     }
 
     #
-    # Débuter la transaction
+    # Start transaction
     #
 
     if {! [::pgsql::lock $dbfd {} msg]} then {
-	d error "Verrouillage de la base impossible: $msg"
+	d error [format [mc "Unable to lock database: %s"] $msg]
     }
 
     #
-    # Supprimer tous les relais éventuels au préalable.
+    # First, delete all previous relays
     #
 
     set sql "DELETE FROM dns.relais_dom WHERE iddom = $iddom"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	::pgsql::unlock $dbfd "abort" m
-	d error "Suppression des anciens relais impossible: $msg"
+	d error [format [mc "Old relay deletion failed: %s"] $msg]
     }
 
     #
-    # Insérer les RR des MX
+    # Insert relay RRs
     #
 
-    set msg [inserer-relais $dbfd $iddom $lrel]
-    if {! [string equal $msg ""]} then {
+    set msg [insert-relay $dbfd $iddom $lrel]
+    if {$msg ne ""} then {
 	::pgsql::unlock $dbfd "abort" m
-	d error "Ajout des relais impossible\n$msg"
+	d error $msg
     }
 
     #
-    # Déverrouillage, et enregistrement des modifications avant la sortie
+    # Unlock and commit modifications
     #
 
     if {! [::pgsql::unlock $dbfd "commit" msg]} then {
         ::pgsql::unlock $dbfd "abort" m
-        return "Déverrouillage impossible, modification annulée ('$msg')"
+        return [format [mc "Unlock failed, modification failed: %s"] $msg]
     }
 
     #
-    # Récapituler les informations ajoutées dans la base.
+    # Present informations stored in database
     #
 
     set lm {}
     if {[llength $lrel] > 0} then {
-	set donnees {}
-	lappend donnees {Titre Priorité Nom}
+	set lines {}
+	lappend lines [list "Title" [mc "Priority"] [mc "Name"]]
 	foreach mx $lrel {
-	    # priorité idmx
-	    read-rr-by-id $dbfd [lindex $mx 1] tabmx
-	    lappend donnees [list Normal \
-				[lindex $mx 0] \
-				$tabmx(nom).$tabmx(domaine) \
-			    ]
-	    lappend lm "$tabmx(nom).$tabmx(domaine)"
+	    lassign $mx prio idmx
+	    read-rr-by-id $dbfd $idmx tabmx
+	    set n "$tabmx(nom).$tabmx(domaine)"
+	    lappend lines [list Normal $prio $n]
+	    lappend lm $n
 	}
-	set tableau [::arrgen::output "html" $conf(tableau) $donnees]
-	d writelog "modifrelais" "remplacement des relais pour $domaine : [join $lm {, }]"
+	set tableau [::arrgen::output "html" $conf(tableau) $lines]
+	d writelog "modrelay" "relay replacement for $domain: [join $lm {, }]"
     } else {
-	set tableau "Relais de messagerie supprimés."
-	d writelog "modifrelais" "suppression des relais pour $domaine"
+	set tableau [mc "Mail relays deleted"]
+	d writelog "modrelay" "relay deleted for $domain"
     }
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d result $conf(page) [list \
 				[list %TABLEAU% $tableau] \
-				[list %DOMAINE% $domaine] \
+				[list %DOMAINE% $domain] \
 			    ]
 }
 

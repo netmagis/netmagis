@@ -1,313 +1,254 @@
 #!%TCLSH%
 
-
 #
-# Script de présentation des tables constituant le référentiel de la base.
+# Script to present table for edition
 #
-# Appelé par : admin.htgt
+# Called by: admin
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - type : etabl, commu, hinfo, reseau, domaine, zone, zone4, zone6,
-#	groupe
 #
-# Historique
-#   2001/11/01 : pda      : création
-#   2002/05/03 : pda/jean : récupération pour dns
-#   2002/05/06 : pda/jean : ajout des correspondants
-#   2002/05/16 : pda      : conversion à arrgen
-#   2002/05/21 : pda/jean : ajout des groupes
-#   2002/05/21 : pda/jean : ajout des communautes
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2003/08/12 : pda      : retrait des correspondants
-#   2004/01/14 : pda/jean : ajout IPv6
-#   2004/08/06 : pda/jean : ajout flag dhcp par réseau
-#   2005/04/08 : pda/jean : ajout table dhcpprofil
-#   2010/11/16 : pda/jean : ajout table vlan
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2001/11/01 : pda      : design
+#   2002/05/03 : pda/jean : re-use in webdns
+#   2002/05/06 : pda/jean : add users
+#   2002/05/16 : pda      : conversion to arrgen
+#   2002/05/21 : pda/jean : add groups
+#   2002/05/21 : pda/jean : add communauties
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2003/08/12 : pda      : remove users (they go in group edition)
+#   2004/01/14 : pda/jean : add IPv6
+#   2004/08/06 : pda/jean : add flag dhcp by network
+#   2005/04/08 : pda/jean : add table dhcpprofil
+#   2010/11/16 : pda/jean : add table vlan
+#   2010/12/09 : pda      : i18n
+#   2010/12/09 : pda      : remove groups
+#   2010/12/09 : pda      : rewrite with conf() array
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/admrefmodif"
 set conf(nexthelp)	"%HOMEURL%/bin/admrefhelp"
 
 #
-# Quelques paramètres du script
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		admrefliste.html
+
+#
+# Script parameters
 #
 
 set conf(form)	{
 	{type	1 1}
 }
 
-#
-# Définition des noms des pages "à trous"
-#
+set conf(etabl:ptitle) 	"Organization management"
+set conf(etabl:cols)		{ {100 nom {Description} {string 30} {}} }
+set conf(etabl:sql)		"SELECT * FROM dns.etablissement ORDER BY nom ASC"
+set conf(etabl:id)		idetabl
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admrefliste.html
+set conf(commu:ptitle) 	"Community management"
+set conf(commu:cols)		{ {100 nom {Description} {string 30} {}} }
+set conf(commu:sql)		"SELECT * FROM dns.communaute ORDER BY nom ASC"
+set conf(commu:id)		idcommu
+
+set conf(hinfo:ptitle) 	"Host type management"
+set conf(hinfo:cols)		{ {60 texte {Description} {string 30} {}}
+				  {20 tri {Sort} {string 10} {}}
+				  {20 present {Present} {bool} 1}
+				}
+set conf(hinfo:sql)		"SELECT * FROM dns.hinfo ORDER BY tri ASC, texte ASC"
+set conf(hinfo:id)		idhinfo
+
+set conf(reseau:ptitle)	"Network management"
+set conf(reseau:cols)		{ {1 nom	{Intitulé} {string 20} {}}
+				  {1 localisation {Location} {string 10} {}}
+				  {1 adr4	{IPv4 address} {string 15} {}}
+				  {1 gw4	{IPv4 gateway} {string 12} {}}
+				  {1 dhcp	{DHCP enabled} {bool} 0}
+				  {1 adr6	{Adr IPv6} {string 49}
+				  {1 gw6	{IPv6 gateway} {string 45} {}}
+				  {1 idetabl	{Organization} {menu {%MENUETABL%} {}}
+				  {1 idcommu	{Community} {menu {%MENUCOMMU%} {}}
+				  {1 commentaire {Comment} {string 15} {}}
+				}
+set conf(reseau:sql)		"SELECT * FROM dns.reseau ORDER BY adr4"
+set conf(reseau:id)		idreseau
+
+set conf(domaine:ptitle) "Domain management"
+set conf(domaine:cols)		{ {100 nom {Domain } {string 30} {}} }
+set conf(domaine:sql)		"SELECT * FROM dns.domaine ORDER BY nom ASC"
+set conf(domaine:id)		iddom
+
+set conf(zone:ptitle)	"Zone management"
+set conf(zone:cols)		{ {15 domaine	{Domain} {string 15} {}}
+				  {45 prologue	{Prolog} {textarea {45 10}} {}}
+				  {25 rrsup	{Addtl RR} {textarea {30 10}} {}}
+				  {15 selection	{Criterium} {string 15} {}}
+				}
+set conf(zone:sql)		"SELECT * FROM dns.zone_normale ORDER BY domaine ASC"
+set conf(zone:id)		idzone
+
+set conf(zone4:ptitle)		$conf(zone:ptitle)
+set conf(zone4:cols)		$conf(zone:cols)
+set conf(zone4:sql)		"SELECT * FROM dns.zone_reverse4 ORDER BY domaine ASC"
+set conf(zone4:id)		$conf(zone:id)
+
+set conf(zone6:ptitle)		$conf(zone:ptitle)
+set conf(zone6:cols)		$conf(zone:cols)
+set conf(zone6:sql)		"SELECT * FROM dns.zone_reverse6 ORDER BY domaine ASC"
+set conf(zone6:id)		$conf(zone:id)
+
+set conf(dhcpprofil:ptitle) "DHCP profile management"
+set conf(dhcpprofil:cols)	{ {20 nom {Name} {string 20} {}}
+				  {80 texte {Directives dhcpd.conf} {textarea {80 10}} {}}
+				}
+set conf(dhcpprofil:sql)	"SELECT * FROM dns.dhcpprofil ORDER BY nom ASC"
+set conf(dhcpprofil:id)		iddhcpprofil
+
+set conf(vlan:ptitle)	"Vlan management"
+set conf(vlan:cols)		{ {15 vlanid {Vlan-Id} {string 10} {}}
+				  {75 descr {Description} {string 40} {}}
+				  {10 voip {VoIP Vlan} {bool} 0}
+				}
+set conf(vlan:sql)		"SELECT * FROM topo.vlan ORDER BY vlanid ASC"
+set conf(vlan:id)		vlanid
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
-
 ##############################################################################
-# Configure l'aide pour les titres de colonnes
+# Help for column titles
 ##############################################################################
 
 #
-# Prépare une liste de titres pour la fonction display-tabular
+# Prepare a title list for the library function display-tabular
 #
-# Entrée :
-#   - paramètres :
-#	- colonnes : spécification des titres au format {colonne texte}
-#		où colonne est le nom de la colonne dans la table, mais aussi
-#		de l'ancre dans la page d'aide
-#		et texte est le texte qui doit être affiché
-#	- urlaide : url de l'aide, chaîne destinée à passer à format avec
-#		%1$s est le nom de la colonne et %2$s est le texte à afficher
-# Sortie :
-#   - valeur de retour : spécification prête pour display-tabular
+# Input:
+#   - parameters :
+#	- cols : title specification {{col txt} {col txt} ...} where:
+#		- col is the name of column in the SQL table, but also
+#			name of anchor in the help page
+#		- txt is the text to be displayed in the title
+#	- url : url of help page (format string where %1$s is the column
+#		name and %2$s is the text)
+# Output:
+#   - return value : specification ready for display-tabular
 #
-# Historique
-#   2001/11/02 : pda : conception et documentation
+# History
+#   2001/11/02 : pda      : design and documentation
+#   2010/12/09 : pda      : i18n
 #
-proc prepare-titres {colonnes urlaide} {
-    set titres {}
-    foreach c $colonnes {
-	set clef    [lindex $c 0]
-	set legende [lindex $c 1]
-	lappend titres [list "html" [format $urlaide $clef $legende]]
+
+proc prep-titles {cols url} {
+    set titles {}
+    foreach c $cols {
+	lassign $c key legend
+	lappend titles [list "html" [format $url $key $legend]]
     }
-    return $titres
+    return $titles
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
 
     #
-    # Selon le type
+    # Case type
     #
 
-    set type [lindex $ftab(type) 0]
+    set type [string trim [lindex $ftab(type) 0]]
+
+    #
+    # Prepare help url
+    #
 
     d urlset "" $conf(nexthelp) [list [list "type" $type] ]
     set url [d urlget ""]
     append url {#%1$s}
-    set urlaide [::webapp::helem "a" {%2$s} "href" $url]
+    set urlhelp [::webapp::helem "a" {%2$s} "href" $url]
+
+    #
+    # Analyze type specifications
+    #
+
+    if {! [info exists conf($type:ptitle)]} then {
+	d error [format [mc "Type '%s' not supported"] $type]
+    }
+
+    set ptitle [mc $conf($type:ptitle)]
+
+    set allwidths {}
+    set alltitles {}
+    foreach c $conf($type:cols) {
+	lassign $c width var desc formtype defval
+
+	lappend allwidths $width
+	lappend alltitles [list $var [mc $desc]]
+	lappend colspecs [list $var $formtype $defval]
+    }
+
+    set title [prep-titles $alltitles $urlhelp]
+
+    set sql $conf($type:sql)
+    set id $conf($type:id)
+
+    #
+    # Particular cases
+    #
 
     switch -- $type {
-	etabl	{
-	    set titrepage "Gestion des établissements"
-	    set largeurs {100}
-	    set titre [prepare-titres {
-					{nom		{Intitulé}}
-				    } $urlaide]
-	    set spec {
-		    {nom		{string 30}	{}}
-		}
-	    set sql "SELECT * FROM dns.etablissement ORDER BY nom ASC"
-	    set id idetabl
-	}
-	commu	{
-	    set titrepage "Gestion des communautés"
-	    set largeurs {100}
-	    set titre [prepare-titres {
-					{nom		{Intitulé}}
-				    } $urlaide]
-	    set spec {
-		    {nom		{string 30}	{}}
-		}
-	    set sql "SELECT * FROM dns.communaute ORDER BY nom ASC"
-	    set id idcommu
-	}
-	hinfo	{
-	    set titrepage "Gestion des types de machines"
-	    set largeurs {60 20 20}
-	    set titre [prepare-titres {
-					{texte		{Intitulé}}
-					{tri		{Tri}}
-					{present	{Présent}}
-				    } $urlaide]
-	    set spec {
-		    {texte		{string 30}	{}}
-		    {tri		{string 10}	{}}
-		    {present		{bool}		1}
-		}
-	    set sql "SELECT * FROM dns.hinfo ORDER BY tri ASC, texte ASC"
-	    set id idhinfo
-	}
 	reseau	{
-	    set titrepage "Gestion des réseaux"
-	    # set largeurs {12 15 15 15 10 10 23}
-	    set largeurs {1 1 1 1 1 1 1 1 1 1}
-	    set titre [prepare-titres {
-					{nom		{Intitulé}}
-					{localisation	{Localisation}}
-					{adr4		{Adr IPv4}}
-					{gw4		{Passerelle IPv4}}
-					{dhcp		{DHCP activé}}
-					{adr6		{Adr IPv6}}
-					{gw6		{Passerelle IPv6}}
-					{idetabl	{Établissement}}
-					{idcommu	{Communauté}}
-					{commentaire	{Commentaire}}
-				    } $urlaide]
 	    set menuetabl [::pgsql::getcols $dbfd dns.etablissement "" "nom ASC" \
 						{idetabl nom}]
 	    set menucommu [::pgsql::getcols $dbfd dns.communaute "" "nom ASC" \
 						{idcommu nom}]
-	    set spec {
-		    {nom		{string 20}	{}}
-		    {localisation	{string 10}	{}}
-		    {adr4		{string 15}	{}}
-		    {gw4		{string 12}	{}}
-		    {dhcp		{bool}		0}
-		    {adr6		{string 49}	{}}
-		    {gw6		{string 45}	{}}
-		    {idetabl		{menu {%MENUETABL%}}	{}}
-		    {idcommu		{menu {%MENUCOMMU%}}	{}}
-		    {commentaire	{string 15}	{}}
-		}
-	    regsub -- "%MENUETABL%" $spec "$menuetabl" spec
-	    regsub -- "%MENUCOMMU%" $spec "$menucommu" spec
-	    set sql "SELECT * FROM dns.reseau ORDER BY adr4"
-	    set id idreseau
+	    regsub -- "%MENUETABL%" $colspecs "$menuetabl" colspecs
+	    regsub -- "%MENUCOMMU%" $colspecs "$menucommu" colspecs
 	}
-	domaine {
-	    set titrepage "Gestion des domaines"
-	    set largeurs {100}
-	    set titre [prepare-titres {
-					{nom		{Domaine}}
-				    } $urlaide]
-	    set spec {
-		    {nom		{string 30}		{}}
-		}
-	    set sql "SELECT * FROM dns.domaine ORDER BY nom ASC"
-	    set id iddom
-	}
-	zone -
-	zone4 -
-	zone6 {
-	    switch -- $type {
-		zone  { set table dns.zone_normale }
-		zone4 { set table dns.zone_reverse4 }
-		zone6 { set table dns.zone_reverse6 }
-	    }
-	    set titrepage "Gestion des zones"
-	    set largeurs {15 45 25 15}
-	    set titre [prepare-titres {
-					{domaine	{Domaine}}
-					{prologue	{Prologue}}
-					{rrsup		{RR suppl.}}
-					{selection	{Critère}}
-				    } $urlaide]
-	    set spec {
-		    {domaine		{string 15}		{}}
-		    {prologue		{textarea {45 10}}	{}}
-		    {rrsup		{textarea {30 10}}	{}}
-		    {selection		{string 15}		{}}
-		}
-	    set sql "SELECT * FROM $table ORDER BY domaine ASC"
-	    set id idzone
-	}
-	groupe {
-	    set titrepage "Gestion des groupes"
-	    set largeurs {80 20}
-	    set titre [prepare-titres {
-					{nom	 	{Intitulé}}
-					{admin		{Admin}}
-				    } $urlaide]
-	    set spec {
-		    {nom 		{string 15}		{}}
-		    {admin		{bool}			0}
-		}
-	    set sql "SELECT * FROM global.groupe ORDER BY nom ASC"
-	    set id idgrp
-	}
-	dhcpprofil {
-	    set titrepage "Gestion des profils DHCP"
-	    set largeurs {20 80}
-	    set titre [prepare-titres {
-					{nom		{Nom}}
-					{texte		{Directives dhcpd.conf}}
-				    } $urlaide]
-	    set spec {
-		    {nom		{string 20}		{}}
-		    {texte		{textarea {80 10}}	{}}
-		}
-	    set sql "SELECT * FROM dns.dhcpprofil ORDER BY nom ASC"
-	    set id iddhcpprofil
-	}
-	vlan {
-	    set titrepage "Gestion des Vlans"
-	    set largeurs {15 75 10}
-	    set titre [prepare-titres {
-					{vlanid		{Vlan-id}}
-					{descr		{Description}}
-					{voip		{VoIP}}
-				    } $urlaide]
-	    set spec {
-		    {vlanid		{string 10}		{}}
-		    {descr		{string 40}		{}}
-		    {voip		{bool}			0}
-		}
-	    set sql "SELECT * FROM topo.vlan ORDER BY vlanid ASC"
-	    set id vlanid
-	}
-	default	{
-	    d error "Type d'édition invalide ($type)"
-	}
-    }
-
-    set errmsg [display-tabular $largeurs $titre $spec $dbfd $sql $id tab]
-    if {[string length $errmsg] > 0} then {
-	d error $errmsg
     }
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # Display data
+    #
+
+    set msg [display-tabular $allwidths $title $colspecs $dbfd $sql $id tab]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) [list [list "type" $type]]
 
     d result $conf(page) [list \
 				[list %TABLEAU% $tab] \
-				[list %TITREPAGE% $titrepage] \
+				[list %TITREPAGE% $ptitle] \
 			    ]
 }
 

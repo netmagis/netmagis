@@ -4,39 +4,35 @@
 #
 # Script pour lister les correspondants 
 #
-# Appelé par : index.htgt
+# Called by: index.htgt
 #
 #
-# Historique
-#   2002/12/05 : jean     : création
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+# History
+#   2002/12/05 : jean     : design
+#   2003/05/13 : pda/jean : use auth base
 #   2005/09/30 : jean     : autorisation aux non-admin
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(page)          $conf(lib)/listecorresp.html
-set conf(err)		$conf(lib)/erreur.html
+set conf(page)          listecorresp.html
+set conf(err)		erreur.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
-# aucun (page en cul de sac)
+# none (no-return page)
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(tableau) {
@@ -90,25 +86,20 @@ set conf(tableau) {
     }
 }
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
@@ -116,11 +107,11 @@ proc main {} {
     global ah
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
 
     set titrepage "Liste des correspondants"
 
@@ -178,7 +169,7 @@ proc main {} {
     set tab [::arrgen::output "html" $conf(tableau) $donnees]
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d result $conf(page) [list \

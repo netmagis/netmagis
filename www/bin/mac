@@ -6,34 +6,30 @@
 # sessions correspondantes (historique des occurences
 # de cette adresse sur le réseau)
 #
-# Historique
+# History
 #   2004/11/14 : jean : conception
 #   2005/06/04 : jean : optimisation de la recherche (gen-ipmac et gen-portmac)
 #                       disparition des jointures sql, 2 requetes et trait. tcl
 #   2010/11/30 : pda/jean : integration a WebDNS
 #
 
-set conf(homeurl)       %HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)           %DESTDIR%/lib
-set conf(libdns)        $conf(lib)/libdns.tcl
 
 set conf(cmdhost)	"/usr/bin/host"
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(page)          $conf(lib)/mac.html
-set conf(pagesearch)	$conf(lib)/macsearch.html
-set conf(err)           $conf(lib)/erreur.html
+set conf(page)          mac.html
+set conf(pagesearch)	macsearch.html
+set conf(err)           erreur.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 #
 
 set conf(next)		"%HOMEURL%/bin/mac"
@@ -212,7 +208,7 @@ set conf(tabmenuportmac) {
 }
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(dbmac)          %BASEMAC%
@@ -225,25 +221,21 @@ set conf(sqldateformat) {'DD/MM/YYYY HH24:MI:SS'}
 set conf(clockformat)   {%d/%m/%Y %H:%M:%S}
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require arrgen
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 #
 # Détermine le type de paramètre
 #
-# Entree : 
+# Input: 
 #   dbfd : acces a la base de donnee (utilise pour check-ip-syntax)
 #   recherche : objet de la recherche à identifier
-# Sortie :
+# Output:
 #   Retourne une liste constituée de deux éléments : {type param}
 #	- type = "ip", "nom", "mac", "idipmac", ... 
 #	- type = param : objet de la recherche après décomposition éventuelle
@@ -304,11 +296,11 @@ proc determine-type {dbfd recherche varmsg} {
 #
 # Génère un tableau html contenant le résultat de la recherche
 #
-# Entrée :
+# Input:
 #   dbfd   : accès à la base de donnée
 #   type   : type de recherche (ip, mac, etc.)
 #   param : critère de recherche
-# Sortie :
+# Output:
 #   retourne le code html de résultat
 #
 proc gen-res {dbfd type param} {
@@ -489,11 +481,11 @@ proc gen-idportmac-session {dbfd idportmac} {
 # Genere un menu cliquable des association adresses IP - adresse
 # MAC à partir d'une adresse IP ou d'une adresse MAC
 #
-# Entree :
+# Input:
 #   ip : adresse ip (éventuellement vide)
 #   mac : adresse mac (éventuellement vide)
 #
-# Sortie :
+# Output:
 #   retourne une chaine de caractère contenant un tableau html
 #
 
@@ -580,10 +572,10 @@ global conf
 # Genere un menu cliquable des association adresses MAC - 
 # équipement - port
 #
-# Entree :
+# Input:
 #   mac : adresse mac
 #
-# Sortie :
+# Output:
 #   retourne une chaine de caractère contenant un tableau html
 #
 
@@ -600,10 +592,10 @@ proc gen-mac {dbfd mac} {
 # Genere un menu cliquable des association adresse mac-equipement-port-vlan
 # pour un équipement donné
 #
-# Entree :
+# Input:
 #   eq : nom d'équipement
 #
-# Sortie :
+# Output:
 #   retourne une chaine de caractère contenant un tableau html
 #
 
@@ -621,10 +613,10 @@ proc gen-eq {dbfd eq} {
 # Genere un menu cliquable des association adresse mac-equipement-port-vlan
 # pour un vlan donné
 #
-# Entree :
+# Input:
 #   idvlan : numéro de vlan
 #
-# Sortie :
+# Output:
 #   retourne une chaine de caractère contenant un tableau html
 #
 
@@ -871,10 +863,10 @@ proc presenter-mac {dbfd mac} {
 # domaine
 #
 # Paramètres :
-#   Entree : 
+#   Input: 
 #     type : "nom" pour une resolution de nom, "ip" pour un resolution inverse
 #     arg  : objet de la resolution (nom de domaine ou adresse ip)
-#   Sortie : 
+#   Output: 
 #     Valeur de retour : liste d'adresse ip ou nom de domaine
 #
 
@@ -927,18 +919,18 @@ proc resolution {type arg} {
 
 
 #
-# Programme Principal
+# Main procedure
 #
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "mac" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {
         d error $msg
@@ -952,7 +944,7 @@ proc main {} {
 
     if {$recherche eq ""} then {
 	#
-	# Sortie du résultat
+	# End of script: output page and close database
 	#
 
 	d urlset "%URLFORM%" $conf(next) {}
@@ -981,7 +973,7 @@ proc main {} {
 	}
 
 	#
-	# Sortie du résultat
+	# End of script: output page and close database
 	#
 
 	d result $conf(page) [list \

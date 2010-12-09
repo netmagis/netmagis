@@ -4,9 +4,9 @@
 #
 # Script pour enregistrer les modifications demandées par un correspondant.
 #
-# Appelé par : script editmodif (page lib/editmodif-infos.htgt)
+# Called by: script editmodif (page lib/editmodif-infos.htgt)
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - modifications des informations d'une machine
 #	- action : "modif-infos"
 #	- confirm : "non" ou "oui" (si confirmation ok)
@@ -22,15 +22,15 @@
 #	- respnom : nom+prénom du responsable
 #	- respmel : mél du responsable
 #
-# Historique
-#   2002/05/03 : pda/jean : création
+# History
+#   2002/05/03 : pda/jean : design
 #   2002/05/23 : pda/jean : ajout du responsable
-#   2002/07/09 : pda      : ajout de nologin
+#   2002/07/09 : pda      : add nologin
 #   2002/07/09 : pda      : conversion des noms en minuscules
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+#   2003/05/13 : pda/jean : use auth base
 #   2004/08/05 : pda/jean : ajout mac
 #   2005/04/08 : pda/jean : ajout dhcppprofil
-#   2007/10/25 : jean     : log des actions de modification
+#   2007/10/25 : jean     : log modify actions
 #   2008/02/13 : pda/jean : le responsable est le correspondant si pas précisé
 #   2008/07/25 : pda/jean : ajout du droit d'émission SMTP et confirmation
 #   2010/10/14 : pda      : codage parcours (via next*)
@@ -39,25 +39,21 @@
 #   2010/10/31 : pda      : ajout ttl
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(page-modif-infos)	$conf(lib)/traitemodif-infos.html
-set conf(page-modif-smtp)	$conf(lib)/traitemodif-smtp.html
-set conf(err)			$conf(lib)/erreur.html
+set conf(page-modif-infos)	traitemodif-infos.html
+set conf(page-modif-smtp)	traitemodif-smtp.html
+set conf(err)			erreur.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(nextconfirm)	"%HOMEURL%/bin/traitemodif"
@@ -66,15 +62,15 @@ set conf(nextmap)	"%HOMEURL%/bin/liste"
 set conf(nextlist)	"%HOMEURL%/bin/liste"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
-# le champ discriminant pour la suite
+# field used to determine next step
 set conf(form)		{
 	{action		1 1}
 }
 
-# les champs utilisés pour chacune des actions
+# action specific fields
 set conf(form-modif-infos)	{
 	{confirm	1 1}
 	{idrr		1 1}
@@ -91,26 +87,22 @@ set conf(form-modif-infos)	{
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
 # Modification des informations
 ##############################################################################
 
-# Historique
+# History
 #   2002/05/03 : pda/jean : conception
 #
 proc traitemodif-infos {dbfd _tabuid _ftab} {
@@ -122,7 +114,7 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
     set idcor $tabuid(idcor)
 
     #
-    # Valider les champs du formulaire
+    # Validate form input
     #
 
     set idrr          [string trim [lindex $ftab(idrr) 0]]
@@ -394,7 +386,7 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
     }
 
     #
-    # Sortie du résultat
+    # End of script: output page and close database
     #
 
     d result $conf(page-modif-infos) [list \
@@ -413,14 +405,14 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
@@ -438,7 +430,7 @@ proc main {} {
     }
 
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
-	d error "Formulaire non conforme aux spécifications"
+	d error [mc "Invalid input"]
     }
 
     traite$action $dbfd tabuid ftab

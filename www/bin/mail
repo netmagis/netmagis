@@ -4,65 +4,57 @@
 #
 # Script pour présenter la page d'accueil de la gestion des rôles
 #
-# Appelé par : index.htgt
+# Called by: index.htgt
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2004/02/06 : pda/jean : création
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2004/02/06 : pda/jean : design
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
 #
 
-set conf(page)		$conf(lib)/mail.html
-set conf(err)		$conf(lib)/erreur.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Template pages used by this script
+#
+
+set conf(page)		mail.html
+set conf(err)		erreur.html
+
+#
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/mailheberg"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
 
     #
     # Récupération des domaines pour lesquels le correspondant peut
@@ -70,10 +62,10 @@ proc main {} {
     #
 
     set w "dr_dom.rolemail <> 0"
-    set domaine    [menu-domain $dbfd $tabcor(idcor) domaine $w ""]
+    set domaine    [menu-domain $dbfd $tabuid(idcor) domaine $w ""]
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}

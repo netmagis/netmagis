@@ -4,9 +4,9 @@
 #
 # Script pour enregistrer les suppressions demandées par un correspondant.
 #
-# Appelé par : script suppr (page lib/suppr.htgt)
+# Called by: script suppr (page lib/suppr.htgt)
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - suppression d'un nom
 #	- action : "suppr-nom"
 #	- confirm : "non" ou "oui" (si confirmation ok)
@@ -15,45 +15,41 @@
 #   - suppression d'une adresse IP
 #	- action : "suppr-ip"
 #	- confirm : "non" ou "oui" (si confirmation ok)
-#	- adr : adresse IP
+#	- adr: IP address
 #
-# Historique
-#   2002/04/11 : pda/jean : création
+# History
+#   2002/04/11 : pda/jean : design
 #   2002/04/19 : pda/jean : ajout de la multi-adresses
 #   2002/05/03 : pda/jean : séparation des trois types de modifications
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2004/01/14 : pda/jean : ajout IPv6
-#   2004/08/05 : pda/jean : ajout MAC
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2004/01/14 : pda/jean : add IPv6
+#   2004/08/05 : pda/jean : add mac
 #   2005/04/08 : pda/jean : ajout dhcpprofil
-#   2007/10/25 : jean     : log des actions de modification
+#   2007/10/25 : jean     : log modify actions
 #   2008/07/24 : pda/jean : ajout droitsmtp
 #   2008/07/29 : pda      : utilisation display-rr
 #   2010/10/15 : pda      : ajout parcours
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(page-suppr-nom)	$conf(lib)/traitesuppr-nom.html
-set conf(page-suppr-alias)	$conf(lib)/traitesuppr-alias.html
-set conf(page-suppr-ip-uneip)	$conf(lib)/traitesuppr-ip-uneip.html
-set conf(page-suppr-ip-objet)	$conf(lib)/traitesuppr-ip-objet.html
-set conf(page-suppr-ok)		$conf(lib)/traitesuppr-ok.html
-set conf(err)			$conf(lib)/erreur.html
+set conf(page-suppr-nom)	traitesuppr-nom.html
+set conf(page-suppr-alias)	traitesuppr-alias.html
+set conf(page-suppr-ip-uneip)	traitesuppr-ip-uneip.html
+set conf(page-suppr-ip-objet)	traitesuppr-ip-objet.html
+set conf(page-suppr-ok)		traitesuppr-ok.html
+set conf(err)			erreur.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/traitesuppr"
@@ -62,15 +58,15 @@ set conf(nextlist)	"%HOMEURL%/bin/liste"
 set conf(nextsuppr)	"%HOMEURL%/bin/suppr"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
-# le champ discriminant pour la suite
+# field used to determine next step
 set conf(form)		{
 	{action		1 1}
 }
 
-# les champs utilisés pour chacune des actions
+# action specific fields
 set conf(form-suppr-nom)	{
 	{confirm	1 1}
 	{nom		1 1}
@@ -83,27 +79,22 @@ set conf(form-suppr-ip)	{
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
 # Suppression d'un nom
 ##############################################################################
 
-# Historique
+# History
 #   2002/04/19 : pda/jean : conception
 #
 proc traitesuppr-nom {dbfd idcor login ft} {
@@ -111,7 +102,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
     upvar $ft ftab
 
     #
-    # Valider les champs du formulaire
+    # Validate form input
     #
 
     set confirm       [string trim [lindex $ftab(confirm) 0]]
@@ -256,7 +247,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	}
 
 	#
-	# Sortie du résultat pour dire que la suppression a été effectuée
+	# End of script: output page and close database pour dire que la suppression a été effectuée
 	# correctement.
 	#
 	set objet "$nom.$domaine"
@@ -270,7 +261,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 # Suppression d'une adresse IP
 ##############################################################################
 
-# Historique
+# History
 #   2002/04/23 : pda/jean : conception
 #   2002/04/26 : pda/jean : fin de la conception
 #   2002/05/03 : pda/jean : mémoriser la mise à jour par le correspondant
@@ -280,7 +271,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     upvar $ft ftab
 
     #
-    # Valider les champs du formulaire
+    # Validate form input
     #
 
     set confirm       [string trim [lindex $ftab(confirm) 0]]
@@ -474,18 +465,18 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
     # Valider l'action, lire les autres champs du formulaire,
@@ -499,10 +490,10 @@ proc main {} {
     }
 
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
-	d error "Formulaire non conforme aux spécifications"
+	d error [mc "Invalid input"]
     }
 
-    traite$action $dbfd $tabcor(idcor) $tabcor(login) ftab
+    traite$action $dbfd $tabuid(idcor) $tabuid(login) ftab
 }
 
 ::webapp::cgi-exec main %DEBUG%

@@ -4,32 +4,28 @@
 #
 # Script de présentation des paramètres DHCP d'un réseau
 #
-# Appelé par : script dhcp ou dchpsel
+# Called by: script dhcp ou dchpsel
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #   - reseau : id du réseau sélectionné
 #
-# Historique
-#   2004/10/05 : pda/jean : création
+# History
+#   2004/10/05 : pda/jean : design
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/dhcpmodif"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form)	{
@@ -37,44 +33,39 @@ set conf(form)	{
 }
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/dhcpedit.html
+set conf(err)		erreur.html
+set conf(page)		dhcpedit.html
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
-    set idgrp $tabcor(idgrp)
+    set idgrp $tabuid(idgrp)
 
     #
     # Valider le réseau
@@ -115,7 +106,7 @@ proc main {} {
 		UNION
 		(SELECT p.iddhcpprofil AS iddhcpprofil, p.nom AS nom
 		    FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p, global.corresp c
-		    WHERE c.idcor = $tabcor(idcor)
+		    WHERE c.idcor = $tabuid(idcor)
 			AND dr.idgrp = c.idgrp
 			AND dr.iddhcpprofil = p.iddhcpprofil
 		    ORDER BY dr.tri ASC)
@@ -142,7 +133,6 @@ proc main {} {
     set id iddhcprange
 
     #
-    # On y va !
     #
 
     set errmsg [display-tabular $largeurs $titre $spec $dbfd $sql $id tableau]
@@ -151,7 +141,7 @@ proc main {} {
     }
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}

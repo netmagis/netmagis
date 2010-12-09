@@ -4,38 +4,32 @@
 # Script qui affiche des statistiques
 # sur les informations contenues dans la base MAC
 #
-# Historique
+# History
 #   2005/05/27 : jean : conception
 #   2010/11/30 : pda/jean : integration a WebDNS
 #
 
-set conf(homeurl)       %HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)           %DESTDIR%/lib
-set conf(libdns)        $conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)           $conf(lib)/erreur.html
-set conf(page)          $conf(lib)/macstat.html
+set conf(err)           erreur.html
+set conf(page)          macstat.html
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(dbmac)          %BASEMAC%
 
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require arrgen
-package require pgsql
+package require webdns
 
 #
 # Formats du tableau
@@ -58,12 +52,10 @@ set conf(tabresultat) {
 }
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 #
 # Calcule les statistiques sur les adresses
@@ -99,18 +91,18 @@ proc stat-adr {dbfd} {
 }
 
 #
-# Programme Principal
+# Main procedure
 #
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "mac" $conf(err) "" {} ftab dbfd login tabuid
 
     #
     # Accès à la base MAC
@@ -127,7 +119,7 @@ proc main {} {
     set tableau [stat-adr $dbfdmac]
 
     #
-    # Sortie du résultat
+    # End of script: output page and close database
     #
 
     d result $conf(page) [list \

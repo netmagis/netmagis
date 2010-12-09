@@ -4,44 +4,40 @@
 #
 # Script pour afficher le statut de topod
 #
-# Appelé par : admin
+# Called by: admin
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #	- refresh : temps en secondes entre chaque rafraichissement de page
 #	- nrefresh : nouveau temps de rafraichissement
 #	- key : "eqmod", "ifchg", "status" ou "keepstate"
 #	- arg : "" ou nom d'équipement ou nom d'objet keepstate
 #  
 #
-# Historique
-#   2010/11/15 : pda      : création
+# History
+#   2010/11/15 : pda      : design
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/topotop.html
+set conf(err)		erreur.html
+set conf(page)		topotop.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/topotop"
 set conf(nextpar)	"%HOMEURL%/bin/admparliste"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form) {
@@ -301,21 +297,16 @@ set conf(tabks) {
 set conf(tabmodlog) $conf(tabks)
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require arrgen
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
 # Fonction d'affichage de tous les éléments, en version compacte
@@ -690,18 +681,18 @@ proc topotop-keepstate {dbfd datefmt arg} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
 
     ::webapp::import-vars ftab
     if {[llength $ftab(key)] > 1} then {
@@ -760,7 +751,7 @@ proc main {} {
     }
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     set key [::webapp::html-string $key]

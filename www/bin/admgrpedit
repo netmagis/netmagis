@@ -1,62 +1,53 @@
 #!%TCLSH%
 
-
 #
-# Script pour présenter les caractéristiques associées à un groupe
+# Script to present groupe characteristic for edition
 #
-# Appelé par : index.htgt
+# Called by: admgrpsel
 #
-# Paramètres (formulaire ou URL) :
-#	- orggrp : nom du groupe original, ou "::nouveau"
+# Parameters (form or url):
+#	- orggrp : original group name, or "::nouveau"
 #
-# Historique
-#   2002/05/21 : pda/jean : création
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2004/01/14 : pda/jean : ajout IPv6
-#   2005/04/08 : pda/jean : ajout dhcpprofil
-#   2007/10/09 : pda/jean : renommage en admgrpedit
-#   2007/10/10 : pda/jean : centralisation de l'administration des groupes
-#   2008/07/23 : pda/jean : ajout droitsmtp
-#   2010/10/31 : pda      : ajout droitttl
-#   2010/11/03 : pda/jean : ajout dr_eq
-#   2010/11/30 : pda/jean : ajout droitmac
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2002/05/21 : pda/jean : design
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2004/01/14 : pda/jean : add IPv6
+#   2005/04/08 : pda/jean : add dhcpprofil
+#   2007/10/09 : pda/jean : renaming admgrpedit
+#   2007/10/10 : pda/jean : centralization of group administration
+#   2008/07/23 : pda/jean : add droitsmtp
+#   2010/10/31 : pda      : add droitttl
+#   2010/11/03 : pda/jean : add dr_eq
+#   2010/11/30 : pda/jean : add droitmac
+#   2010/12/06 : pda      : i18n
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admgrpedit.html
+set conf(err)		erreur.html
+set conf(page)		admgrpedit.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/admgrpmodif"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
-# nb de lignes dans les listboxes
+# number of lines in listboxes
 set conf(hauteur)	20
 
 set conf(form) {
 	{orggrp		1 1}
 }
 
-set conf(tabcorresp) {
+set conf(tabuidresp) {
     global {
 	chars {12 normal}
 	botbar {no}
@@ -84,7 +75,7 @@ set conf(tabdomaines) {
 	align {center}
 	format {raw}
     }
-    pattern Titre {
+    pattern Title {
 	topbar {no}
 	vbar {no}
 	chars {bold}
@@ -119,7 +110,7 @@ set conf(tabreseaux) {
 	columns {14 58 14 14}
 	align {center}
     }
-    pattern Titre {
+    pattern Title {
 	topbar {no}
 	vbar {no}
 	chars {bold}
@@ -200,7 +191,7 @@ set conf(tabdhcpprofil) {
 	columns {20 80}
 	format {raw}
     }
-    pattern Titre {
+    pattern Title {
 	topbar {no}
 	vbar {no}
 	chars {bold}
@@ -228,36 +219,27 @@ set conf(tabdhcpprofil) {
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
-
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
-    global ah
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
 
     #
     # Valider le nom du groupe, et récupérer son identifiant numérique
@@ -265,9 +247,9 @@ proc main {} {
 
     set orggrp [lindex $ftab(orggrp) 0]
     if {[string equal $orggrp "::nouveau"]} then {
-	set titre "Création d'un nouveau groupe"
+	set titre [mc "New group creation"]
 	set newgrp ""
-	set messagegroupe "Entrez le nom du groupe à créer"
+	set msggrp [mc "Type the name of group to create"]
 	set idgrp -1
 	set admin 0
 	set droitsmtp 0
@@ -275,9 +257,9 @@ proc main {} {
 	set droitmac 0
     } else {
 	set qgroupe [::webapp::html-string $orggrp]
-	set titre "Édition du groupe '$qgroupe'"
+	set titre [format [mc "Edition of group '%s'"] $qgroupe
 	set newgrp $qgroupe
-	set messagegroupe "Modifiez le nom du groupe ou effacez la case pour le supprimer"
+	set msggrp [mc "Modify group name or erase it to remove the group"]
 	set pqgroupe [::pgsql::quote $orggrp]
 	set idgrp -1
 	set sql "SELECT idgrp, admin, droitsmtp, droitttl, droitmac
@@ -292,66 +274,51 @@ proc main {} {
 	}
 
 	if {$idgrp == -1} then {
-	    d error "Groupe '$orggrp' non trouvé"
+	    d error [format [mc "Group '%s' not found"] $orggrp]
 	}
     }
 
-    set admin [::webapp::form-yesno "admin" $admin \
-		    {%1$s oui &nbsp; &nbsp; &nbsp;   %2$s non}]
-    set droitsmtp [::webapp::form-yesno "droitsmtp" $droitsmtp \
-		    {%1$s oui &nbsp; &nbsp; &nbsp;   %2$s non}]
-    set droitttl [::webapp::form-yesno "droitttl" $droitttl \
-		    {%1$s oui &nbsp; &nbsp; &nbsp;   %2$s non}]
-    set droitmac [::webapp::form-yesno "droitmac" $droitmac \
-		    {%1$s oui &nbsp; &nbsp; &nbsp;   %2$s non}]
+    set yes [mc "yes"]
+    set no [mc "no"]
+    set fmt "%1\$s $yes &nbsp; &nbsp; &nbsp;   %2\$s $no"
+
+    set admin [::webapp::form-yesno "admin" $admin $fmt]
+    set droitsmtp [::webapp::form-yesno "droitsmtp" $droitsmtp $fmt]
+    set droitttl [::webapp::form-yesno "droitttl" $droitttl $fmt]
+    set droitmac [::webapp::form-yesno "droitmac" $droitmac $fmt]
 
     #
-    # Extraire la liste des correspondants pour ce groupe
+    # Extract the list of users belonging to this group
     #
 
-    set donnees {}
+    set lines {}
 
-    set u [::webapp::authuser create %AUTO%]
     set nlogin 1
-    foreach login [::pgsql::getcols $dbfd global.corresp "idgrp = $idgrp" "login ASC" \
-		{login}] {
-
-	if {[catch {set n [$ah getuser $login $u]} m]} then {
-	    set commentaire "Problème dans la base d'authentification"
-	} else {
-	    switch $n {
-		0 {
-		    set commentaire "Non trouvé dans la base d'authentification"
-		}
-		1 {
-		    set commentaire "[$u get prenom] [$u get nom]"
-		}
-		default {
-		    set commentaire "Login multiple"
-		}
-	    }
+    foreach login [::pgsql::getcols $dbfd global.corresp "idgrp = $idgrp" "login ASC" {login}] {
+	set n [read-user $dbfd $login tab comment]
+	if {$n == 1} then {
+	    set comment "$tab(prenom) $tab(nom)"
 	}
 	set hlogin [::webapp::form-text login$nlogin 1 20 50 $login]
-	lappend donnees [list Normal $hlogin "($commentaire)"]
+	lappend lines [list Normal $hlogin "($comment)"]
 	incr nlogin
     }
-    $u destroy
 
     for {set i 1} {$i <= 5} {incr i} {
 	set hlogin [::webapp::form-text login$nlogin 1 20 50 ""]
-	lappend donnees [list Normal $hlogin ""]
+	lappend lines [list Normal $hlogin ""]
 	incr nlogin
     }
 
-    set listecor [::arrgen::output "html" $conf(tabcorresp) $donnees]
+    set listecor [::arrgen::output "html" $conf(tabuidresp) $lines]
 
     #
-    # Extraire la liste des domaines, sélectionner ceux qui sont
-    # autorisés pour le groupe, et présenter tout ça dans un tableau
+    # Extract domain list, and select those which are already authorized
+    # for this group.
     #
 
-    set donnees {}
-    lappend donnees {Titre
+    set lines {}
+    lappend lines {Title
 			{Classe de tri}
 			{Domaine}
 			{Édition des rôles de messagerie}
@@ -379,7 +346,7 @@ proc main {} {
 	set hdom  [::webapp::form-menu domaine$ndom 1 0 $ldom [list $idx]]
 	set hmail [::webapp::form-bool rolemail$ndom $rolemail]
 	set hweb  [::webapp::form-bool roleweb$ndom  $roleweb]
-	lappend donnees [list Normal $htri $hdom $hmail $hweb]
+	lappend lines [list Normal $htri $hdom $hmail $hweb]
 	incr ndom
     }
 
@@ -388,19 +355,19 @@ proc main {} {
 	set hdom  [::webapp::form-menu domaine$ndom 1 0 $ldom {}]
 	set hmail [::webapp::form-bool rolemail$ndom 0]
 	set hweb  [::webapp::form-bool roleweb$ndom  0]
-	lappend donnees [list Normal $htri $hdom $hmail $hweb]
+	lappend lines [list Normal $htri $hdom $hmail $hweb]
 	incr ndom
     }
 
-    set listedomaines [::arrgen::output "html" $conf(tabdomaines) $donnees]
+    set listedomaines [::arrgen::output "html" $conf(tabdomaines) $lines]
 
     #
     # Extraire la liste des réseaux, sélectionner ceux qui sont
     # autorisés pour le groupe, et présenter tout ça dans un tableau
     #
 
-    set donnees {}
-    lappend donnees {Titre
+    set lines {}
+    lappend lines {Title
 			{Classe de tri}
 			{Réseau}
 			{Accès à la gestion DHCP}
@@ -444,7 +411,7 @@ proc main {} {
 	set hdhcp [::webapp::form-bool dhcp$nres $dhcp]
 	set hacl  [::webapp::form-bool acl$nres $acl]
 
-	lappend donnees [list Normal $htri $hres $hdhcp $hacl]
+	lappend lines [list Normal $htri $hres $hdhcp $hacl]
 	incr nres
     }
 
@@ -453,17 +420,17 @@ proc main {} {
 	set hres  [::webapp::form-menu reseau$nres 1 0 $lres {}]
 	set hdhcp [::webapp::form-bool dhcp$nres 0]
 	set hacl  [::webapp::form-bool acl$nres  0]
-	lappend donnees [list Normal $htri $hres $hdhcp $hacl]
+	lappend lines [list Normal $htri $hres $hdhcp $hacl]
 	incr nres
     }
 
-    set listereseaux [::arrgen::output "html" $conf(tabreseaux) $donnees]
+    set listereseaux [::arrgen::output "html" $conf(tabreseaux) $lines]
 
     #
     # Les droits
     #
 
-    set donnees {}
+    set lines {}
     set n 1
     set sql "SELECT adr, allow_deny \
 			FROM dns.dr_ip \
@@ -476,7 +443,7 @@ proc main {} {
 					[list [expr 1 - $a]] \
 				    ]
 	set textcidr [::webapp::form-text adr$n 1 49 49 $tab(adr)]
-	lappend donnees [list Normal $menuallow $textcidr]
+	lappend lines [list Normal $menuallow $textcidr]
 	incr n
     }
 
@@ -486,17 +453,17 @@ proc main {} {
 					{0} \
 				    ]
 	set textcidr [::webapp::form-text adr$n 1 49 49 ""]
-	lappend donnees [list Normal $menuallow $textcidr]
+	lappend lines [list Normal $menuallow $textcidr]
 	incr n
     }
 
-    set listedroits [::arrgen::output "html" $conf(tabdrip) $donnees]
+    set listedroits [::arrgen::output "html" $conf(tabdrip) $lines]
 
     #
     # Les droits sur les équipements (topo)
     #
 
-    set donnees {}
+    set lines {}
     set n 1
     set sql "SELECT rw, pattern, allow_deny \
 			FROM topo.dr_eq \
@@ -514,7 +481,7 @@ proc main {} {
 					[list [expr 1 - $a]] \
 				    ]
 	set pattern [::webapp::form-text eqpat$n 1 70 200 $tab(pattern)]
-	lappend donnees [list Normal $menurw $menuallow $pattern]
+	lappend lines [list Normal $menurw $menuallow $pattern]
 	incr n
     }
 
@@ -528,21 +495,18 @@ proc main {} {
 					{0} \
 				    ]
 	set pattern [::webapp::form-text eqpat$n 1 70 200 ""]
-	lappend donnees [list Normal $menurw $menuallow $pattern]
+	lappend lines [list Normal $menurw $menuallow $pattern]
 	incr n
     }
 
-    set listedreq [::arrgen::output "html" $conf(tabdreq) $donnees]
+    set listedreq [::arrgen::output "html" $conf(tabdreq) $lines]
 
     #
     # Les profils DHCP visibles
     #
 
-    set donnees {}
-    lappend donnees {Titre
-			{Classe de tri}
-			{Profil DHCP}
-		    }
+    set lines {}
+    lappend lines [list "Title" [mc "Sort class"] [mc "DHCP profile"]]
     set lprof [::pgsql::getcols $dbfd dns.dhcpprofil "" "nom ASC" {nom nom}]
     set sql "SELECT p.nom AS nom, dr.tri AS tri
 			FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p
@@ -556,25 +520,25 @@ proc main {} {
 
 	set idx [lsearch -exact $lprof [list $p $p]]
 	if {$idx == -1} then {
-	    d error "Le groupe à accès au profil '$d' qui n'existe pas dans la base"
+	    d error [format [mc "Group have access to DHCP profile '%s' which do not exist in the database"] $d]
 	}
 	set htri  [::webapp::form-text tridhcpprof$nprof 1 5 5 $tri]
 	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof [list $idx]]
-	lappend donnees [list Normal $htri $hprof]
+	lappend lines [list Normal $htri $hprof]
 	incr nprof
     }
 
     for {set i 1} {$i <= 5} {incr i} {
 	set htri  [::webapp::form-text tridhcpprof$nprof 1 5 5 ""]
 	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof {}]
-	lappend donnees [list Normal $htri $hprof]
+	lappend lines [list Normal $htri $hprof]
 	incr nprof
     }
 
-    set listedhcpprof [::arrgen::output "html" $conf(tabdhcpprofil) $donnees]
+    set listedhcpprof [::arrgen::output "html" $conf(tabdhcpprofil) $lines]
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}
@@ -586,7 +550,7 @@ proc main {} {
 				[list %DROITSMTP% $droitsmtp] \
 				[list %DROITTTL% $droitttl] \
 				[list %DROITMAC% $droitmac] \
-				[list %MESSAGEGROUPE% $messagegroupe] \
+				[list %MESSAGEGROUPE% $msggrp] \
 				[list %LISTECOR% $listecor] \
 				[list %LISTEDOMAINES% $listedomaines] \
 				[list %LISTERESEAUX% $listereseaux] \

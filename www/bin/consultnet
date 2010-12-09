@@ -4,67 +4,59 @@
 #
 # Script pour demander les paramètres de consultation des réseaux.
 #
-# Appelé par : admin.htgt
+# Called by: admin.htgt
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2002/10/24 : pda      : création
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
+# History
+#   2002/10/24 : pda      : design
+#   2003/05/13 : pda/jean : use auth base
 #   2004/01/20 : pda/jean : conversion ipv6
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/consultnet.html
+set conf(err)		erreur.html
+set conf(page)		consultnet.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/listenet"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
 
     #
     # Extraire la liste des établissements et des communautés
@@ -96,7 +88,7 @@ proc main {} {
     set menutri2 [::webapp::form-menu tri2 1 0 $tri 1]
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}

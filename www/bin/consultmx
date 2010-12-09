@@ -4,67 +4,59 @@
 #
 # Script pour demander les paramètres de consultation des MX.
 #
-# Appelé par : admin.htgt
+# Called by: admin.htgt
 #
-# Paramètres (formulaire ou URL) : aucun
+# Parameters (form or url): none
 #
-# Historique
-#   2002/05/25 : pda      : création
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2002/05/25 : pda      : design
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/consultmx.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		consultmx.html
+
+#
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/listemx"
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
 
     #
     # Extraire la liste des domaines (tous, sans exception)
@@ -75,7 +67,7 @@ proc main {} {
     set listedomaines [::webapp::form-menu domaine $h 1 $ld {}]
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}

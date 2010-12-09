@@ -514,8 +514,8 @@ snit::type ::dnscontext {
 	# marked "present" in the database, get him out!
 	#
 
-	set msg [read-user $dbfd $login tabuid]
-	if {$msg ne ""} then {
+	set n [read-user $dbfd $login tabuid msg]
+	if {$n != 1} then {
 	    return $msg
 	}
 	if {! $tabuid(present)} then {
@@ -795,8 +795,8 @@ snit::type ::dnscontext {
 	    set uid $nuid
 	    set login $nuid
 
-	    lassign [read-user $dbfd $login tabuid] msg arg
-	    if {$msg ne ""} then {
+	    set n [read-user $dbfd $login tabuid msg]
+	    if {n != 1} then {
 		$self error [format [mc $msg] $arg]
 	    }
 	    if {! $tabuid(present)} then {
@@ -1717,6 +1717,13 @@ proc user-attribute {dbfd idcor attr} {
 #	- login : user login
 #	- _tabuid : array containing, in return:
 #		login	login of the user
+#		nom	user name
+#		prenom	user christian name
+#		mel	user mail
+#		tel	user phone
+#		mobile	user mobile phone
+#		fax	user fax
+#		adr	user address
 #		idcor	user id in the database
 #		idgrp	group id in the database
 #		groupe	group name
@@ -1730,8 +1737,9 @@ proc user-attribute {dbfd idcor attr} {
 #		flagsr	flags -n/-e/-E/etc to use in topo programs
 #		flagsw	flags -n/-e/-E/etc to use in topo programs
 # Output:
-#   - return value: empty string or error message
+#   - return value: -1 if error, or number of found entries
 #   - parameter _tabuid : values in return
+#   - parameter _msg : empty string or error message
 #
 # History
 #   2003/05/13 : pda/jean : design
@@ -1740,9 +1748,10 @@ proc user-attribute {dbfd idcor attr} {
 #   2010/11/29 : pda      : i18n
 #
 
-proc read-user {dbfd login _tabuid} {
+proc read-user {dbfd login _tabuid _msg} {
     global ah
     upvar $_tabuid tabuid
+    upvar $_msg msg
 
     catch {unset tabuid}
 
@@ -1751,19 +1760,22 @@ proc read-user {dbfd login _tabuid} {
     #
 
     set u [::webapp::authuser create %AUTO%]
-    if {[catch {set n [$ah getuser $login $u]} msg]} then {
-	return [format [mc "Authentication base problem: %s"] $msg]
+    if {[catch {set n [$ah getuser $login $u]} m]} then {
+	set msg [format [mc "Authentication base problem: %s"] $m]
+	return -1
     }
     
     switch $n {
 	0 {
-	    return [format [mc "User '%s' is not in the authentication base"] $login]
+	    set msg [format [mc "User '%s' is not in the authentication base"] $login]
+	    return 0
 	}
 	1 { 
-	    # Rien
+	    set msg ""
 	}
 	default {
-	    return [mc "Found too many users"]
+	    set msg [format [mc "Found more than one entry for login '%s' in the authentication base"] $login]
+	    return $n
 	}
     }
 
@@ -1794,7 +1806,8 @@ proc read-user {dbfd login _tabuid} {
     }
 
     if {$tabuid(idcor) == -1} then {
-	return [format [mc "User '%s' is not in the WebDNS base"] $login]
+	set msg [format [mc "User '%s' is not in the WebDNS base"] $login]
+	return -1
     }
 
     #
@@ -1866,7 +1879,7 @@ proc read-user {dbfd login _tabuid} {
 	set tabuid(flags$rw) [join $flags " "]
     }
 
-    return {}
+    return 1
 }
 
 ##############################################################################
@@ -2021,7 +2034,7 @@ proc read-rr-by-id {dbfd idrr _trr} {
 	set trr(domaine) ""
 	if {$trr(iddhcpprofil) eq ""} then {
 	    set trr(iddhcpprofil) 0
-	    set trr(dhcpprofil) "Aucun profil"
+	    set trr(dhcpprofil) [mc "No profile"]
 	} else {
 	    set sql "SELECT nom FROM dns.dhcpprofil
 				WHERE iddhcpprofil = $trr(iddhcpprofil)"
@@ -3309,7 +3322,7 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 #   2010/11/29 : pda      : i18n
 #
 
-proc check-mx {dbfd prio name domain idcor _msg} {
+proc check-mx-target {dbfd prio name domain idcor _msg} {
     upvar $_msg msg
 
     #
@@ -3317,7 +3330,7 @@ proc check-mx {dbfd prio name domain idcor _msg} {
     #
 
     if {! [regexp {^[0-9]+$} $prio]} then {
-	set msg [format [mc "Invalid MX priority '%s'"] $prio]
+	set msg [format [mc {Invalid MX priority '%1$s' for '%2$s'}] $prio "$name.$domain"]
 	return {}
     }
 
@@ -3335,6 +3348,81 @@ proc check-mx {dbfd prio name domain idcor _msg} {
     #
 
     return [list $prio $trr(idrr)]
+}
+
+#
+# Check MX
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- name : MX name
+#	- domain : MX domain name
+#	- idcor : user id
+#	- _exists : 1 if RR exists, 0 if not
+#	- _trr : RR information read from database
+# Output:
+#   - return value: empty string or error message
+#   - parameter _trr : RR information on return
+#
+# History
+#   2010/12/09 : pda      : isolate common code
+#
+
+proc check-authorized-mx {dbfd idcor name domain _trr} {
+    upvar $_trr trr
+
+    #
+    # Validate MX name and domain
+    #
+
+    set msg [check-name-syntax $name]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    set iddom -1
+    set msg [check-domain $dbfd $tabuid(idcor) iddom domain ""]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Get information about this name if it already exists
+    #
+
+    if {[read-rr-by-name $dbfd $name $iddom trr]} then {
+	#
+	# If it already exists, check that it is not a A or CNAME or
+	# anything else which is not a MX
+	#
+
+	if {[llength $trr(ip)] > 0} then {
+	    return [format [mc "'%s' already has IP addresses"] $name]
+	}
+	if {[llength $trr(cname)] > 0} then {
+	    return [format [mc "'%s' is an alias"] $name]
+	}
+
+	#
+	# MX exists, we must check that the user has permissions
+	# to access all referenced domains.
+	#
+
+	foreach mx $trr(mx) {
+	    set idmx [lindex $mx 1]
+	    if {! [read-rr-by-id $dbfd $idmx tabmx]} then {
+		return [format [mc "Internal error: rr_mx table references RR '%s', not found in the rr table"] $idmx]
+	    }
+	    set iddom $tabmx(iddom)
+	    set msg [check-domain $dbfd $tabuid(idcor) iddom tabmx(domaine) ""]
+	    if {$msg ne ""} then {
+		return [format [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s}] "$tabmx(nom).$tabmx(domaine)" $msg]
+	    }
+	}
+    }
+
+    return ""
 }
 
 #

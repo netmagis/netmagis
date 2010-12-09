@@ -1,45 +1,30 @@
 #!%TCLSH%
 
-
 #
-# Script pour forcer la génération d'une ou plusieurs zones.
+# Script to force generation of one or more DNS zones
 #
-# Appelé par : admgenliste
+# Called by: admgenliste
 #
-# Paramètres (formulaire ou URL) :
-#	- zones : liste de noms de zones à générer
+# Parameters (form or url):
+#	- zones : list of zone names
 #
-# Historique
-#   2002/05/23 : pda/jean : création
-#   2002/07/09 : pda      : ajout de nologin
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2007/10/25 : jean     : log des actions de modification
-#
-
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
+# History
+#   2002/05/23 : pda/jean : design
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2007/10/25 : jean     : log modify actions
+#   2010/12/06 : pda      : i18n
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/admgenset.html
+set conf(err)		erreur.html
+set conf(page)		admgenset.html
 
 #
-# Scripts suivants (actions de formulaire)
-# 
-
-# (aucun : page cul de sac)
-
-#
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form)	{
@@ -47,37 +32,31 @@ set conf(form)	{
 }
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
+# WebDNS general library
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-
-#
-# On y va !
-#
+package require webdns
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabcor
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
 
     #
-    # Forcer la génération
+    # Force generation
     #
 
     if {! [::pgsql::lock $dbfd {dns.zone} msg]} then {
@@ -89,19 +68,19 @@ proc main {} {
 	set sql "UPDATE zone SET generer = 1 WHERE domaine = '$qz'"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
-	    d error "Échec pour la zone '$z'. Abandon.\n$msg"
+	    d error [format [mc {Error for zone '%1$s': %2$s}] $z $msg]
 	}
     }
 
     if {! [::pgsql::unlock $dbfd "commit" msg]} then {
 	::pgsql::unlock $dbfd "abort" m
-	d error "L'opération a échoué. Abandon.\n$msg"
+	d error [format [mc "Operation failed (%s). Abort."] $msg]
     }
 
     d writelog "forcegeneration" "zones $ftab(zones)"
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d result $conf(page) {}

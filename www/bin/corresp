@@ -5,44 +5,40 @@
 # Script pour chercher le ou les correspondants associés à un
 # réseau, à une adresse IP ou une machine.
 #
-# Appelé par : index.htgt
+# Called by: index.htgt
 #
-# Paramètres (formulaire ou URL) :
+# Parameters (form or url):
 #	- critere : critere de recherche (ip, cidr, ou fqdn, ou _ pour ici)
 #
-# Historique
-#   2002/07/25 : pda      : création
-#   2003/05/13 : pda/jean : utilisation de la base d'authentification
-#   2004/01/14 : pda/jean : ajout IPv6
+# History
+#   2002/07/25 : pda      : design
+#   2003/05/13 : pda/jean : use auth base
+#   2004/01/14 : pda/jean : add IPv6
 #   2004/08/06 : pda/jean : extension des droits sur les réseaux
 #   2005/02/24 : pda      : ajout cas rôle mail sans adresse IP
 #   2010/10/17 : pda      : ajout recherche "où suis-je"
 #
 
-set conf(homeurl)	%HOMEURL%
 
 #
-# Chemins utilisés par les scripts
 #
 
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
 
 #
-# Définition des noms des pages "à trous"
+# Template pages used by this script
 #
 
-set conf(err)		$conf(lib)/erreur.html
-set conf(page)		$conf(lib)/corresp.html
+set conf(err)		erreur.html
+set conf(page)		corresp.html
 
 #
-# Scripts suivants (actions de formulaire)
+# Next actions
 # 
 
 set conf(next)		"%HOMEURL%/bin/corresp"
 
 #
-# Quelques paramètres du script
+# Script parameters
 #
 
 set conf(form)	{
@@ -57,21 +53,16 @@ set conf(form)	{
 
 
 #
-# Les outils du parfait concepteur de pages Web dynamiques...
 #
 
 lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-package require arrgen
+package require webdns
 
 #
-# On y va !
 #
 
 # ::webapp::cgidebug ; exit
 
-source $conf(libdns)
 
 proc corresp-erreur {critere msg} {
     global conf
@@ -88,18 +79,18 @@ proc corresp-erreur {critere msg} {
 }
 
 ##############################################################################
-# Programme principal
+# Main procedure
 ##############################################################################
 
 proc main {} {
     global conf
 
     #
-    # Initialisation
+    # Initialization
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabcor
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     set critere [string trim [lindex $ftab(critere) 0]]
 
@@ -168,7 +159,7 @@ proc main {} {
 	set iddom -1
 	set sql "SELECT d.iddom, d.nom
 			FROM global.corresp c, global.groupe g, dns.dr_dom dd, dns.domaine d
-			WHERE c.idcor = $tabcor(idcor)
+			WHERE c.idcor = $tabuid(idcor)
 			    AND c.idgrp = g.idgrp
 			    AND g.idgrp = dd.idgrp
 			    AND dd.iddom = d.iddom
@@ -293,18 +284,18 @@ proc main {} {
     foreach cor $lcor {
 	lassign $cor login idcor
 	if {[check-authorized-ip $dbfd $idcor $adr]} then {
-	    lassign [read-user $dbfd $login tabcor] msg arg
-	    if {$msg ne ""} then {
-		d error [format [mc $msg] $arg]
+	    set n [read-user $dbfd $login tabuid msg]
+	    if {$n != 1} then {
+		d error $msg
 	    }
-	    append resultat [display-user tabcor]
+	    append resultat [display-user tabuid]
 	    append resultat "\n<P>\n"
 	    set trouve 1
 	}
     }
 
     #
-    # Fin du script : sortie de la page et fermeture de la base
+    # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}
