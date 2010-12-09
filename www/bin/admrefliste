@@ -68,7 +68,7 @@ set conf(hinfo:sql)		"SELECT * FROM dns.hinfo ORDER BY tri ASC, texte ASC"
 set conf(hinfo:id)		idhinfo
 
 set conf(reseau:ptitle)	"Network management"
-set conf(reseau:cols)		{ {1 nom	{Intitulé} {string 20} {}}
+set conf(reseau:cols)		{ {1 nom	{Title} {string 20} {}}
 				  {1 localisation {Location} {string 10} {}}
 				  {1 adr4	{IPv4 address} {string 15} {}}
 				  {1 gw4	{IPv4 gateway} {string 12} {}}

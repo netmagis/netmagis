@@ -166,7 +166,7 @@
  {Priority}	{Priorité}
  {Submit} {Enregistrer}
  {Reset} {Réinitialiser}
- {----------------------> Intitulé}	{Intitulé}
+ {Title}	{Intitulé}
  {Location}	{Localisation}
  {IPv4 address} {Adresse IPv4}
  {IPv4 gateway} {Passerelle IPv4}
