@@ -291,7 +291,7 @@
  {Operation failed (%s). Abort.} {L'opération a échoué (%s). Abandon.}
  {Insertion failed (%s). Abort.} {L'insertion a échoué (%s). Abandon.}
 
- {New group creation}{Création d'un nouveau groupe}
+ {New group creation} {Création d'un nouveau groupe}
  {Type the name of group to create} {Entrez le nom du groupe à créer}
  {Edition of group '%s'} {Édition du groupe '%s'}
  {Modify group name or erase it to remove the group} {Modifiez le nom du groupe ou effacez-le pour supprimer le groupe}
