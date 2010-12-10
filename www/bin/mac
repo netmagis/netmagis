@@ -220,8 +220,7 @@ set conf(form)          {
 set conf(sqldateformat) {'DD/MM/YYYY HH24:MI:SS'}
 set conf(clockformat)   {%d/%m/%Y %H:%M:%S}
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

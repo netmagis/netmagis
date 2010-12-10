@@ -30,6 +30,7 @@ DESTDIR	= /local/services/www$(HOMEURL)
 TRANSMSGS = $(DESTDIR)/lib/msgs
 TRANSHTML = $(DESTDIR)/lib/html
 PKGTCL	= /local/services/www/pkgtcl
+LIBDNS	= $(DESTDIR)/lib/libdns.tcl
 
 HTG	= /local/services/www/htg/bin/htg
 MODLHTG = default
@@ -73,6 +74,7 @@ SUBST	= \
 	-e 's|%DESTDIR%|$(DESTDIR)|' \
 	-e 's|%TRANSMSGS%|$(TRANSMSGS)|' \
 	-e 's|%TRANSHTML%|$(TRANSHTML)|' \
+	-e 's|%LIBDNS%|$(LIBDNS)|' \
 	-e 's|%PKGTCL%|$(PKGTCL)|' \
 	-e 's|%HOMEURL%|$(HOMEURL)|' \
 	-e 's|%INTERVALLE%|$(INTERVALLE)|' \

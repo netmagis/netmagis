@@ -167,8 +167,7 @@ set conf(tableau-multi) {
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

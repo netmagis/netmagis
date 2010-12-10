@@ -81,8 +81,7 @@ set conf(form-suppr-ip)	{
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

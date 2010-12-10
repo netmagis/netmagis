@@ -35,8 +35,7 @@ set conf(next)		"%HOMEURL%/bin/listemx"
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

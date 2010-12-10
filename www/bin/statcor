@@ -90,8 +90,7 @@ set conf(tabrrcor) {
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

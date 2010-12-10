@@ -39,8 +39,7 @@ set conf(maxranges)	10
 # WebDNS general library
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 # ::webapp::cgidebug ; exit
 

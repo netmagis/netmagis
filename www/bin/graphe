@@ -63,8 +63,7 @@ set conf(idrfmt)	"http://%IDRHOST%/bin/gengraph?%s&debut=%d&fin=%d"
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

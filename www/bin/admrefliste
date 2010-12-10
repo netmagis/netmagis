@@ -125,8 +125,7 @@ set conf(vlan:id)		vlanid
 # WebDNS general library
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 # ::webapp::cgidebug ; exit
 

@@ -61,8 +61,7 @@ set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

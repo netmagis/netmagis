@@ -33,8 +33,7 @@ set conf(next)		"%HOMEURL%/bin/mailheberg"
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

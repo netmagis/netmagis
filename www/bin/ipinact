@@ -84,8 +84,7 @@ set conf(tableau) {
 
 set conf(sqldateformat) {'DD/MM/YYYY HH24:MI:SS'}
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

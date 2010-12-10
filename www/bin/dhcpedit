@@ -42,8 +42,7 @@ set conf(page)		dhcpedit.html
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

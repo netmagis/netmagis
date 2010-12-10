@@ -28,8 +28,7 @@ set conf(page)          macstat.html
 set conf(dbmac)          %BASEMAC%
 
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 # Formats du tableau

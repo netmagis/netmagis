@@ -58,8 +58,7 @@ set conf(urlgraph)	"%HOMEURL%/bin/graphe"
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

@@ -27,8 +27,7 @@ set conf(page)		macindex.html
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

@@ -13,8 +13,12 @@
 #   2010/11/29 : pda      : i18n
 #
 
+lappend auto_path %PKGTCL%
+
 package require snit			;# tcllib
 package require msgcat			;# tcl
+
+package require webapp
 
 namespace import ::msgcat::*
 

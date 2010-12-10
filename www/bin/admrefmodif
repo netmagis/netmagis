@@ -207,8 +207,7 @@ set conf(vlan:table)		topo.vlan
 # WebDNS general library
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 # ::webapp::cgidebug ; exit
 

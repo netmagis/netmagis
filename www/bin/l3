@@ -65,8 +65,7 @@ set conf(ps2pdf)	"%PS2PDF%"
 # tcllib
 package require ip
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

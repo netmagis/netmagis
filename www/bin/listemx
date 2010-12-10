@@ -122,8 +122,7 @@ set conf(tableau) {
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

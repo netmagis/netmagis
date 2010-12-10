@@ -36,8 +36,7 @@ set conf(next)		"%HOMEURL%/bin/traitesuppr"
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #

@@ -36,8 +36,7 @@ set conf(next)		"%HOMEURL%/bin/editmodif"
 #
 #
 
-lappend auto_path %PKGTCL%
-package require webdns
+source %LIBDNS%
 
 #
 #
