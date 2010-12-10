@@ -81,8 +81,8 @@ proc main {} {
 			[list "text" [mc "Min"]] \
 			[list "text" [mc "Max"]] \
 			[list "text" [mc "Domain"]] \
-			[list "text" [mc "Default lease duration"]] \}
-			[list "text" [mc "Maximum lease duration"]] \}
+			[list "text" [mc "Default lease duration"]] \
+			[list "text" [mc "Maximum lease duration"]] \
 			[list "text" [mc "DHCP profile"]] \
 		    ]
 

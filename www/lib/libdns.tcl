@@ -802,8 +802,8 @@ snit::type ::dnscontext {
 	    set login $nuid
 
 	    set n [read-user $dbfd $login tabuid msg]
-	    if {n != 1} then {
-		$self error [format [mc $msg] $arg]
+	    if {$n != 1} then {
+		$self error $msg
 	    }
 	    if {! $tabuid(present)} then {
 		$self error [format [mc "User '%s' not authorized"] $login]
@@ -1748,7 +1748,7 @@ proc user-attribute {dbfd idcor attr} {
 # Output:
 #   - return value: -1 if error, or number of found entries
 #   - parameter _tabuid : values in return
-#   - parameter _msg : empty string or error message
+#   - parameter _msg : empty string (if return == 1) or message (if return != 1)
 #
 # History
 #   2003/05/13 : pda/jean : design
@@ -2758,7 +2758,7 @@ proc check-ip-syntax {dbfd addr type} {
 	}
 	if {! ($type eq "cidr" || $type eq "loosecidr")} then {
 	    if {[regexp {/}  $addr ]} then {
-		set r [mc "The '/' character is not valid in the address"]
+		set r [format [mc "The '/' character is not valid in the address '%s'"] $addr]
 	    }
 	}
     } else {

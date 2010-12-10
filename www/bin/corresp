@@ -58,7 +58,7 @@ proc user-error {crit msg} {
 
     set qmsg  [::webapp::html-string $msg]
     set qcrit [::webapp::html-string $crit]
-    set res [::webapp::helem "font" $qmsg "color" "#FF0000"]
+    set result [::webapp::helem "font" $qmsg "color" "#FF0000"]
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
 				[list %CRITERE% $qcrit] \
@@ -95,7 +95,7 @@ proc main {} {
 
 	user-error "" ""
 
-    } elseif {$crit eq "_"]} then {
+    } elseif {$crit eq "_"} then {
 	#
 	# Here
 	#
