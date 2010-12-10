@@ -2,27 +2,23 @@
 
 
 #
-# Script pour chercher le ou les correspondants associés à un
-# réseau, à une adresse IP ou une machine.
+# Script to search users associated with a network, an IP address
+# or a host name.
 #
-# Called by: index.htgt
+# Called by: accueil
 #
 # Parameters (form or url):
-#	- critere : critere de recherche (ip, cidr, ou fqdn, ou _ pour ici)
+#	- critere : search criterium (ip, cidr, or fqdn, or _ for "here")
 #
 # History
 #   2002/07/25 : pda      : design
 #   2003/05/13 : pda/jean : use auth base
 #   2004/01/14 : pda/jean : add IPv6
-#   2004/08/06 : pda/jean : extension des droits sur les réseaux
-#   2005/02/24 : pda      : ajout cas rôle mail sans adresse IP
-#   2010/10/17 : pda      : ajout recherche "où suis-je"
+#   2004/08/06 : pda/jean : extend network access rights
+#   2005/02/24 : pda      : add case role mail without IP address
+#   2010/10/17 : pda      : add search case for "here"
+#   2010/12/10 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -43,36 +39,30 @@ set conf(next)		"%HOMEURL%/bin/corresp"
 
 set conf(form)	{
 	{critere	0 1 {}}
-	{ousuisje	0 1 {}}
 }
 
 #
-# Tableau pour afficher une machine
-#
-
-
-
-#
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
 
+##############################################################################
+# Utilities
+##############################################################################
 
-proc corresp-erreur {critere msg} {
+proc user-error {crit msg} {
     global conf
 
-    set qmsg     [::webapp::html-string $msg]
-    set qcritere [::webapp::html-string $critere]
-    set resultat "<FONT COLOR=\"FF0000\">$qmsg</FONT>"
+    set qmsg  [::webapp::html-string $msg]
+    set qcrit [::webapp::html-string $crit]
+    set res [::webapp::helem "font" $qmsg "color" "#FF0000"]
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
-				[list %CRITERE% $qcritere] \
-				[list %RESULTAT% $resultat] \
+				[list %CRITERE% $qcrit] \
+				[list %RESULTAT% $result] \
 			    ]
     exit 0
 }
@@ -91,69 +81,72 @@ proc main {} {
     ::dnscontext create d
     d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
-    set critere [string trim [lindex $ftab(critere) 0]]
-
     #
-    # Est-ce que c'est une adresse IP ?
+    # Is criterium an IP address, a host name, anything else?
     #
 
-    if {[string equal $critere ""]} then {
-	#
-	# Rien. Ce n'est pas une erreur à strictement parler,
-	# mais on le traite comme tel.
-	#
-	corresp-erreur "" ""
+    set crit [string trim [lindex $ftab(critere) 0]]
 
-    } elseif {[string equal $critere "_"]} then {
+    if {$crit eq ""} then {
+	#
+	# Nothing. Not an error, strictly speaking, but treated as an
+	# error.
+	#
+
+	user-error "" ""
+
+    } elseif {$crit eq "_"]} then {
+	#
+	# Here
+	#
+
 	global env
 
 	if {[info exists env(REMOTE_ADDR)]} then {
-	    set adr $env(REMOTE_ADDR)
-	    set critere $adr
-	    read-rr-by-ip $dbfd $adr tabrr
+	    set addr $env(REMOTE_ADDR)
+	    set crit $addr
+	    read-rr-by-ip $dbfd $addr trr
 	} else {
-	    corresp-erreur "" ""
+	    user-error "" ""
 	}
-    } elseif {[string equal [check-ip-syntax $dbfd $critere "inet"] ""]} then {
+    } elseif {[check-ip-syntax $dbfd $crit "inet"] eq ""} then {
 	#
-	# Adresse IP
+	# IP address
 	#
-	set adr $critere
+	set addr $crit
 
 	#
-	# Tentative de recherche de la machine. Si elle existe,
-	# tabrr sera rempli. Si non, tabrr ne sera pas créé.
-	# On ne se préoccupe pas du résultat (l'existence ou non
-	# de tabrr(idrr) nous suffira) par la suite.
+	# Attempt to search for the host. It if exists, trr will
+	# be filled. If it does not exists, trr will not be created.
+	# We don't test result, since existence of trr(idrr) will
+	# suffice for next steps.
 	#
-	read-rr-by-ip $dbfd $critere tabrr
+	read-rr-by-ip $dbfd $crit trr
 
-    } elseif {[string equal [check-ip-syntax $dbfd $critere "cidr"] ""]} then {
+    } elseif {[check-ip-syntax $dbfd $crit "cidr"] eq ""} then {
 	#
 	# CIDR
 	#
-	set adr $critere
+	set addr $crit
 
-    } elseif {[regexp {^([^.]+)\.(.+)$} $critere bidon nom domaine]} then {
+    } elseif {[regexp {^([^.]+)\.(.+)$} $crit bidon name domain]} then {
 	#
-	# Nom et domaine
+	# Name and domain
 	#
-	set iddom [read-domain $dbfd $domaine]
+	set iddom [read-domain $dbfd $domain]
 	if {$iddom == -1} then {
-	    corresp-erreur $critere "Domaine '$domaine' non trouvé."
+	    user-error $crit [format [mc "Domain '%s' not found"] $domain]
 	}
 
-	if {! [read-rr-by-name $dbfd $nom $iddom tabrr]} then {
-	    corresp-erreur $critere \
-		"Machine '$nom' non trouvée dans le domaine '$domaine'."
+	if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
+	    user-error $crit [format [mc "Host '%s' not found"] "$name.$domain"]
 	}
 
-    } elseif {[regexp {^([^.]+)$}  $critere bidon nom]} then {
+    } elseif {[regexp {^([^.]+)$}  $crit bidon name]} then {
 	#
-	# Nom sans domaine : prendre par défaut le domaine privilégié
-	# du correspondant qui exécute ce script.
+	# Name without domain: use the preferred domain of the user.
 	#
-	set qnom [::pgsql::quote $nom]
+	set qname [::pgsql::quote $name]
 	set idrr -1
 	set iddom -1
 	set sql "SELECT d.iddom, d.nom
@@ -167,97 +160,86 @@ proc main {} {
 			"
 	pg_select $dbfd $sql tab {
 	    set iddom $tab(iddom)
-	    set domaine $tab(nom)
+	    set domain $tab(nom)
 	}
 	if {$iddom == -1} then {
-	    d error "Pas de domaine par défaut !"
+	    d error [mc "No default domain"]
 	}
-	if {! [read-rr-by-name $dbfd $nom $iddom tabrr]} then {
-	    corresp-erreur $critere \
-		"Machine '$nom' non trouvée dans le domaine '$domaine'."
+	if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
+	    user-error $crit [format [mc "Host '%s' not found"] "$name.$domain"]
 	}
 
     } else {
 	#
-	# On ne peut normalement pas arriver là : tout doit passer
-	# dans le cas précédent !
+	# We should not come here.
 	#
-	corresp-erreur $critere "Critère de recherche '$critere' invalide."
+	user-error $crit [format [mc "Invalid search criterium '%s'"] $crit]
     }
 
     #
-    # Si on arrive ici, c'est qu'on a réussi à analyser le
-    # critère de recherche.
-    #
-    # Si, de plus, tabrr(idrr) existe, c'est que le nom ou l'adresse
-    # correspond à une machine réelle.
+    # If we come here, it means that the search criterium is ok.
+    # If trr(idrr) exists, it means that name or address match a real host.
     #
 
     #
-    # Si c'est un alias, rechercher la vraie adresse
+    # If it is an alias, look for the pointed host.
     #
 
-    if {[info exists tabrr(cname)]} then {
-	if {! [string equal $tabrr(cname) ""]} then {
-	    set idrr $tabrr(cname)
-	    unset tabrr
-	    if {! [read-rr-by-id $dbfd $idrr tabrr]} then {
-		d error "Erreur interne : objet pointé par l'alias non trouvé"
+    if {[info exists trr(cname)]} then {
+	if {$trr(cname) ne ""} then {
+	    set idrr $trr(cname)
+	    unset trr
+	    if {! [read-rr-by-id $dbfd $idrr trr]} then {
+		d error [mc "Internal error: object pointed by alias is not found"]
 	    }
 	}
     }
 
     #
-    # Si c'est un rôle de messagerie, sans adresse IP, rechercher
-    # l'adresse de l'hébergeur.
+    # If it is a mail role, without IP address, look for mail host.
     #
 
-    if {[info exists tabrr(rolemail)] && [llength $tabrr(ip)] == 0} then {
-	if {! [string equal $tabrr(rolemail) ""]} then {
-	    set idrr $tabrr(rolemail)
-	    unset tabrr
-	    if {! [read-rr-by-id $dbfd $idrr tabrr]} then {
-		d error "Erreur interne : hébergeur du rolemail non trouvé"
+    if {[info exists trr(rolemail)] && [llength $trr(ip)] == 0} then {
+	if {$trr(rolemail) ne ""} then {
+	    set idrr $trr(rolemail)
+	    unset trr
+	    if {! [read-rr-by-id $dbfd $idrr trr]} then {
+		d error [mc "Internal error: mail host of role mail not found"]
 	    }
 	}
     }
 
     #
-    # Si le critère était un nom et pas une adresse IP, extraire une
-    # adresse IP (au hasard parmi celles associées au nom).
+    # If criterium was a name and not an IP address, extract one of its
+    # IP addresses (random among all IP addresses)
     #
 
-    if {! [info exists adr]} then {
-	if {! [info exists tabrr(ip)]} then {
-	    d error "Erreur interne : pas d'adresse et pas de tabrr"
+    if {! [info exists addr]} then {
+	if {! [info exists trr(ip)]} then {
+	    d error [mc "Internal error: no IP address"]
 	}
-
-	set adr [lindex $tabrr(ip) 0]
+	set addr [lindex $trr(ip) 0]
     }
 
     #
-    # Afficher l'adresse
+    # Display address
     #
 
-    set resultat ""
-
-    append resultat "Adresse recherchée&nbsp;: $adr\n"
-    append resultat "<P>\n"
+    set result ""
+    append result [format [mc "Searched address: %s"] $addr]
+    append result "<P>\n"
 
     #
-    # Si on a trouvé une machine à cette adresse, afficher les
-    # informations pertinentes
+    # If we have found a host, display pertinent informations.
     #
 
-    if {[info exists tabrr(idrr)]} then {
-	append resultat [display-rr $dbfd -1 tabrr]
-	append resultat "<P>"
+    if {[info exists trr(idrr)]} then {
+	append result [display-rr $dbfd -1 trr]
+	append result "<P>"
     }
 
     #
-    # Rechercher les différents correspondants qui peuvent
-    # potentiellement s'occuper de la plage dans laquelle
-    # il y a cette adresse.
+    # Look for users who have access to this IP address.
     #
 
     set sql "SELECT c.login, c.idcor
@@ -266,7 +248,7 @@ proc main {} {
 		    WHERE c.idgrp = g.idgrp
 			AND g.idgrp = d.idgrp
 			AND d.idreseau = r.idreseau
-			AND ('$adr' <<= r.adr4 OR '$adr' <<= r.adr6)
+			AND ('$addr' <<= r.adr4 OR '$addr' <<= r.adr6)
 			ORDER BY g.admin, g.nom
 			"
     set lcor {}
@@ -275,21 +257,19 @@ proc main {} {
     }
 
     #
-    # Parmi les correspondants sélectionnés, rechercher ceux
-    # dont les droits correspondent à l'adresse fournie.
+    # Among selected users, search for those who have access to
+    # this host (checking all other permissions).
     #
 
-    set trouve 0
     foreach cor $lcor {
 	lassign $cor login idcor
-	if {[check-authorized-ip $dbfd $idcor $adr]} then {
+	if {[check-authorized-ip $dbfd $idcor $addr]} then {
 	    set n [read-user $dbfd $login tabuid msg]
 	    if {$n != 1} then {
 		d error $msg
 	    }
-	    append resultat [display-user tabuid]
-	    append resultat "\n<P>\n"
-	    set trouve 1
+	    append result [display-user tabuid]
+	    append result "\n<P>\n"
 	}
     }
 
@@ -299,8 +279,8 @@ proc main {} {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
-				[list %CRITERE% $critere] \
-				[list %RESULTAT% $resultat] \
+				[list %CRITERE% $crit] \
+				[list %RESULTAT% $result] \
 			    ]
 }
 

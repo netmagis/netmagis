@@ -2,7 +2,7 @@
 
 
 #
-# Script de modification des paramètres DHCP d'un réseau
+# Script to modify DHCP network parameters
 #
 # Called by: dhcpedit
 #
@@ -10,15 +10,11 @@
 #   - iddhcprange*, min*, max*, iddom*, defaut_lease_time*, max_lease_time*
 #
 # History
-#   2004/10/05 : pda/jean : spécification
-#   2006/05/04 : jean     : retrait des valeurs par defaut dans 'spec'
+#   2004/10/05 : pda/jean : specification
+#   2006/05/04 : jean     : remove default values from spec
 #   2007/10/25 : jean     : log modify actions
+#   2010/12/10 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -56,33 +52,30 @@ set conf(form)	{
 }
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
 
-
 ##############################################################################
-# Valider les données du formulaire en entrée
+# Utility functions
 ##############################################################################
 
 #
-# Teste s'il y a chevauchement entre deux intervalles d'adresses IP
+# Check overlap between two IP ranges
 #
 # Input:
-#   - dbfd : accès à la base
-#   - min1, max1, min2, max2 : les bornes des deux intervalles
+#   - dbfd : database handle
+#   - min1, max1, min2, max2 : bounds of the two ranges
 # Output:
-#   - valeur de retour : 1 si chevauchement, 0 si pas de chevauchement
+#   - return value: 1 if overlap, 0 if no overlap
 # History
-#   2004/10/08 : pda/jean : conception et codage
+#   2004/10/08 : pda/jean : design
 #
 
-proc chevauchement {dbfd min1 max1 min2 max2} {
+proc overlap {dbfd min1 max1 min2 max2} {
     # On suppose que min1 <= max1 et min2 <= max2
     set sql "SELECT
 		(
@@ -96,10 +89,10 @@ proc chevauchement {dbfd min1 max1 min2 max2} {
 		    AND
 		    (inet '$min2') <= (inet '$max1')
 		)
-		AS resultat"
+		AS result"
     set r 0
     pg_select $dbfd $sql tab {
-	if {[string equal $tab(resultat) "t"]} then {
+	if {$tab(result) eq "t"} then {
 	    set r 1
 	}
     }
@@ -107,33 +100,32 @@ proc chevauchement {dbfd min1 max1 min2 max2} {
 }
 
 #
-# Valide les différents intervalles DHCP fournis dans le formulaire
+# Check various DHCP ranges
 #
 # Input:
-#   - dbfd : accès à la base
-#   - _ftab : tableau contenant les champs du formulaire
-#   - idcor : id du correspondant faisant la modification
-#   - idgrp : id du groupe du correspondant faisant la modification
-#   - cidr : cidr du réseau dans lequel on travaille
+#   - dbfd : database handle
+#   - _ftab : input values
+#   - idcor : user id
+#   - idgrp : group id
+#   - cidr : cidr of current network
 # Output:
-#   - valeur de retour : chaîne vide (ok) ou message d'erreur
+#   - return value: empty string or error message
 # History
-#   2004/10/08 : pda/jean : conception et codage
-#   2004/10/13 : pda/jean : paramètre minimum du bail
+#   2004/10/08 : pda/jean : design
+#   2004/10/13 : pda/jean : add minimum lease duration
 #
 
-proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
+proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
     upvar $_ftab ftab
 
     #
-    # Récupérer le paramètre minimal des baux DHCP
+    # Get minimum lease duration
     #
 
     set min_lease_time [dnsconfig get "min_lease_time"]
 
     #
-    # Récupérer la liste des id d'intervalles pré-existants trouvés
-    # dans le formulaire
+    # Extract list of existing ranges as they were given in the form.
     #
 
     set lid [array names ftab -regexp "^min\[0-9\]+$"]
@@ -141,12 +133,12 @@ proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
     set lid [lsort -integer -increasing $lid]
 
     #
-    # Récupérer la liste des nouveaux id trouvés dans le formulaire
+    # Get new ranges as they were given in the form.
     #
 
     set lnid {}
     foreach i [array names ftab -regexp "^minn\[0-9\]+$"] {
-	if {! [string equal [string trim [lindex $ftab($i) 0]] ""]} then {
+	if {[string trim [lindex $ftab($i) 0]] ne ""} then {
 	    lappend lnid $i
 	}
     }
@@ -155,14 +147,13 @@ proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
     regsub -all {[[:<:]]} $lnid "n" lnid
    
     # 
-    # Construit la liste complète des id 
+    # Build-up the list of all ids
     # 
 
     set lid [concat $lid $lnid]
 
     #
-    # Récupérer la liste de tous les intervalles DHCP pour ce
-    # réseau
+    # Extract the list of all existing DHCP ranges for this network
     #
 
     set sql "SELECT iddhcprange, min, max
@@ -173,7 +164,7 @@ proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
     }
 
     #
-    # Valider chaque intervalle
+    # Check each range
     #
 
     foreach i $lid {
@@ -184,7 +175,7 @@ proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
 
 	foreach c {min max iddom default_lease_time max_lease_time iddhcpprofil} {
 	    if {! [info exists ftab($c$i)]} then {
-		return "Formulaire non conforme (champ '$c$i' non trouvé)"
+		return [mc "Invalid input"]
 	    }
 	}
 
@@ -196,8 +187,8 @@ proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
 	set iddhcpprofil	[string trim [lindex $ftab(iddhcpprofil$i) 0]]
 
 	#
-	# Cas spécial : lorsque le profil dhcp vaut 0 (Aucun profil)
-	# il faut remplacer sa valeur par une chaine vide
+	# Special case: when DHCP profile equals 0 (No profile)
+	# we must replace its value by an empty string.
 	#
 
 	if {$iddhcpprofil == 0} {
@@ -205,22 +196,21 @@ proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
 	}
 
 	#
-	# Valider que l'on a bien le droit de modifier l'intervalle
-	# spécifié par cet iddhcprange
+	# Check that user has the right to modify this range
 	#
 
 	if {! $new} then {
 	    if {! [info exists tabrange($i)]} then {
-		return "Vous n'avez pas accès à l'intervalle d'Id '$i'"
+		return [format [mc "You don't have access to DHCP range id '%s'"] $i]
 	    }
 	}
 	set tabrange($i) [list $min $max]
 
-	if {[string equal $min ""]} then {
+	if {$min eq ""} then {
 	    unset tabrange($i)
 	} else {
 	    #
-	    # Valider le droit sur le domaine
+	    # Check domain permission
 	    #
 
 	    set domain ""
@@ -230,67 +220,68 @@ proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
 	    }
 
 	    #
-	    # Vérifier le profil DHCP
+	    # Check DHCP profile
 	    #
 
 	    if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
-		return "Profil DHCP invalide ($msg)"
+		return $msg
 	    }
 
 	    #
-	    # Valider la syntaxe des paramètres
+	    # Check parameter syntax
 	    #
 
 	    set msg [check-ip-syntax $dbfd $min "inet4"]
-	    if {! [string equal $msg ""]} then {
-		return "Adresse minimum : $msg"
+	    if {$msg ne ""} then {
+		return $msg
 	    }
 	    set msg [check-ip-syntax $dbfd $max "inet4"]
-	    if {! [string equal $msg ""]} then {
-		return "Adresse maximum : $msg"
+	    if {$msg ne ""} then {
+		return $msg
 	    }
 
 	    if {[catch {expr $default_lease_time+0}]} then {
-		return "Valeur default_lease_time incorrecte ($default_lease_time)"
+		return [format [mc "Invalid default_lease_time value '%s'"] $default_lease_time]
 	    } elseif {$default_lease_time != 0 &&
 				$default_lease_time < $min_lease_time} then {
-		return "Valeur default_lease_time trop petite (inférieure à $min_lease_time)"
+		return [format [mc "Default_lease_time value less than '%s'"] $min_lease_time]
 	    }
 
 	    if {[catch {expr $max_lease_time+0}]} then {
-		return "Valeur max_lease_time incorrecte ($max_lease_time)"
+		return [format [mc "Invalid max_lease_time value '%s'"] $default_lease_time]
 	    } elseif {$max_lease_time != 0 &&
 				$max_lease_time < $min_lease_time} then {
-		return "Valeur max_lease_time trop petite (inférieure à $min_lease_time)"
+		return [format [mc "Max_lease_time value less than '%s'"] $min_lease_time]
 	    }
 
 	    #
-	    # Valider que min < max
+	    # Check that min < max
 	    #
 
 	    set sql "SELECT (inet '$min') <= (inet '$max') AS resultat"
 	    pg_select $dbfd $sql tab {
-		if {[string equal $tab(resultat) "f"]} then {
-		    return "Intervalle invalide : $min est supérieur à $max"
+		if {$tab(resultat) eq "f"} then {
+		    set x $min
+		    set min $max
+		    set max $x
 		}
 	    }
 
 	    #
-	    # Valider l'intervalle par rapport aux plages autorisées par
-	    # le correspondant
+	    # Check if range do not overlap over a non authorized IP
+	    # address.
 	    #
 
-	    set sql "SELECT valide_dhcprange_grp ($idgrp, '$min', '$max') AS valide"
+	    set sql "SELECT valide_dhcprange_grp ($idgrp,'$min','$max') AS val"
 	    pg_select $dbfd $sql tab {
-		if {[string equal $tab(valide) "f"]} then {
-		    return "Intervalle non autorisé ($min, $max)"
+		if {$tab(val) eq "f"} then {
+		    return [format [mc {Range [%s] not authorized}] "$min...$max"]
 		}
 	    }
 
 	    #
-	    # Vérifier qu'il n'y a de machine avec un adressage DHCP
-	    # statique (i.e. une adresse MAC stockée dans le RR) dans
-	    # l'intervalle donné.
+	    # Check that there is no static DHCP host (i.e. with a
+	    # MAC address stored in the RR) in the range.
 	    #
 
 	    set sql "SELECT count(*) AS nb
@@ -303,34 +294,31 @@ proc valide-dhcprange {dbfd _ftab idcor idgrp cidr} {
 		set nb $tab(nb)
 	    }
 	    if {$nb > 0} then {
-		return "Conflit entre l'adressage dynamique et l'adressage statique : $nb adresse(s) IP déclarée(s) avec une adresse MAC dans l'intervalle ($min, $max)"
+		return [format [mc {Conflict between dynamic range [%1$s] and %2$s IP address(es) declared with a MAC address}] "$min...$max" $nb]
 	    }
 	}
     }
 
     #
-    # Vérifier qu'il n'y a pas de chevauchement dans les intervalles
-    # qui subsistent après cette boucle (i.e. ceux qu'on a changés,
-    # ceux qu'on a a ajoutés, et également ceux auxquels nos droits
-    # ne nous donnent pas accès).
+    # Check that no DHCP range overlap.
     #
 
     foreach i [array names tabrange] {
-	set min [lindex $tabrange($i) 0]
-	set max [lindex $tabrange($i) 1]
+	lassign $tabrange($i) min max
 	unset tabrange($i)
 
 	foreach j [array names tabrange] {
-	    set jmin [lindex $tabrange($j) 0]
-	    set jmax [lindex $tabrange($j) 1]
-	    if {[chevauchement $dbfd $min $max $jmin $jmax]} then {
-		return "L'intervalle ($min,$max) a une intersection non nulle avec l'intervalle ($jmin,$jmax)"
+	    lassign $tabrange($j) jmin jmax
+	    if {[overlap $dbfd $min $max $jmin $jmax]} then {
+		set i1 "$min...$max"
+		set i2 "$jmin...$jmax"
+		return [format [mc {Range [%1$s] intersects with range [%2$s]}] $i1 $i2]
 	    }
 	}
     }
 
     #
-    # On est arrivés jusqu'ici sans erreur ! Ouf !
+    # We arrive here without any error. Great!
     #
 
     return ""
@@ -344,39 +332,37 @@ proc main {} {
     global conf
 
     #
-    # Initialization, avec récupération du type de modification.
+    # Initialization
     #
 
     ::dnscontext create d
     d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
-    # Valider le réseau
+    # Check network
     #
 
-    set idreseau [lindex $ftab(idreseau) 0]
-    set lcidr [check-netid $dbfd $idreseau $tabuid(idgrp) "dhcp" 4 msg]
+    set idnet [string trim [lindex $ftab(idreseau) 0]]
+    set lcidr [check-netid $dbfd $idnet $tabuid(idgrp) "dhcp" 4 msg]
     if {[llength $lcidr] == 0} then {
 	d error $msg
     }
     if {[llength $lcidr] != 1} then {
-	d error "Erreur interne: trop de CIDR trouvés !"
+	d error [mc "Internal error: too many CIDR found"]
     }
 
     #
-    # Valider les données de telle sorte qu'il n'y ait pas de
-    # chevauchement des intervalles, et que chaque intervalle
-    # soit bien dans le réseau et dans les plages autorisées.
-    # Valider également le domaine.
+    # Check data such as there is no range overlap, and each
+    # range be in the network and authorized IP addresses.
     #
 
-    set msg [valide-dhcprange $dbfd ftab $tabuid(idcor) $tabuid(idgrp) $lcidr]
-    if {! [string equal $msg ""]} then {
+    set msg [check-dhcprange $dbfd ftab $tabuid(idcor) $tabuid(idgrp) $lcidr]
+    if {$msg ne ""} then {
 	d error $msg
     }
 
     #
-    # Enregistrer les modifications dans la base
+    # Store modifications in database
     #
 
     set spec {
@@ -389,11 +375,11 @@ proc main {} {
     }
 
     set msg [store-tabular $dbfd $spec iddhcprange dns.dhcprange ftab]
-    if {! [string equal $msg ""]} then {
+    if {$msg ne ""} then {
 	d error $msg
     }
 
-    d writelog "modifdhcp" "intervalles dhcp modifies : [join $lcidr {, }]"
+    d writelog "moddhcp" "modified dhcp ranges: [join $lcidr {, }]"
 
     #
     # End of script: output page and close database

@@ -2,21 +2,16 @@
 
 
 #
-# Script pour demander le réseau pour lequel il faut présenter la page
-# d'édition des paramètres DHCP.
+# Script to ask for network where DHCP parameters should be edited.
 #
-# Called by: index.htgt
+# Called by: accueil
 #
 # Parameters (form or url): none
 #
 # History
 #   2004/10/05 : pda/jean : design
+#   2010/12/10 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -38,15 +33,12 @@ set conf(next)		"%HOMEURL%/bin/dhcpedit"
 set conf(script-edit)	%DESTDIR%/bin/dhcpedit
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Main procedure
@@ -63,18 +55,18 @@ proc main {} {
     d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
 
     #
-    # Récupération des réseaux auxquels a droit le correspondant
+    # Get networks
     #
 
     set lnet [read-networks $dbfd $tabuid(idgrp) "dhcp"]
     set nnet [llength $lnet]
     switch $nnet {
 	0 {
-	    d error "Vous n'avez accès à aucun réseau avec le droit DHCP"
+	    d error [mc "You don't have access to any DHCP enabled network"]
 	}
 	1 {
-	    set idreseau [lindex [lindex $lnet 0] 0]
-	    set ftab(idreseau) [list $idreseau]
+	    set idnet [lindex [lindex $lnet 0] 0]
+	    set ftab(idreseau) [list $idnet]
 	    puts stdout [::webapp::call-cgi $conf(script-edit) ftab]
 	    d end
 	}

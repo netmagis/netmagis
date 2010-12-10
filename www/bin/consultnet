@@ -1,10 +1,9 @@
 #!%TCLSH%
 
-
 #
-# Script pour demander les paramètres de consultation des réseaux.
+# Script to ask for network consultation parameters
 #
-# Called by: admin.htgt
+# Called by: admin
 #
 # Parameters (form or url): none
 #
@@ -12,12 +11,8 @@
 #   2002/10/24 : pda      : design
 #   2003/05/13 : pda/jean : use auth base
 #   2004/01/20 : pda/jean : conversion ipv6
+#   2010/12/10 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -33,15 +28,12 @@ set conf(page)		consultnet.html
 set conf(next)		"%HOMEURL%/bin/listenet"
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Main procedure
@@ -58,8 +50,7 @@ proc main {} {
     d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
 
     #
-    # Extraire la liste des établissements et des communautés
-    # et en faire des listes à choix multiples.
+    # Extract organization and community lists, and make listboxes
     #
 
     set le [::pgsql::getcols $dbfd dns.etablissement "" "nom ASC" {idetabl nom}]
@@ -71,20 +62,20 @@ proc main {} {
     set listecommu [::webapp::form-menu commu $h 1 $lc {}]
 
     #
-    # Liste des critères de tri
+    # Sort criteria
     #
 
-    set tri {
-		{adr4		{Adresse IPv4}}
-		{adr6		{Adresse IPv6}}
-		{nom		Intitulé}
-		{etablissement	Établissement}
-		{communaute	Communauté}
-		{localisation	Localisation}
-		{commentaire	Commentaire}
-	    }
-    set menutri1 [::webapp::form-menu tri1 1 0 $tri 0]
-    set menutri2 [::webapp::form-menu tri2 1 0 $tri 1]
+    set sortcrit [list \
+			[list adr4		[mc "IPv4 address"]] \
+			[list adr6		[mc "IPv6 address"]] \
+			[list nom		[mc "Name"]] \
+			[list etablissement	[mc "Organization"]] \
+			[list communaute	[mc "Community"]] \
+			[list localisation	[mc "Location"]] \
+			[list commentaire	[mc "Comment"]] \
+		    ]
+    set menu1 [::webapp::form-menu tri1 1 0 $sortcrit 0]
+    set menu2 [::webapp::form-menu tri2 1 0 $sortcrit 1]
 
     #
     # End of script: output page and close database
@@ -94,8 +85,8 @@ proc main {} {
     d result $conf(page) [list \
 				[list %LISTEETABL% $listeetabl] \
 				[list %LISTECOMMU% $listecommu] \
-				[list %MENUTRI1% $menutri1] \
-				[list %MENUTRI2% $menutri2] \
+				[list %MENUTRI1% $menu1] \
+				[list %MENUTRI2% $menu2] \
 			    ]
 }
 

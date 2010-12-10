@@ -1,22 +1,18 @@
 #!%TCLSH%
 
-
 #
+# Script to present DHCP parameters for a network
 # Script de présentation des paramètres DHCP d'un réseau
 #
-# Called by: script dhcp ou dchpsel
+# Called by: dhcp or dchpsel
 #
 # Parameters (form or url):
-#   - reseau : id du réseau sélectionné
+#   - idreseau : selected network id
 #
 # History
 #   2004/10/05 : pda/jean : design
+#   2010/12/10 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Next actions
@@ -40,15 +36,12 @@ set conf(err)		erreur.html
 set conf(page)		dhcpedit.html
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Main procedure
@@ -67,29 +60,31 @@ proc main {} {
     set idgrp $tabuid(idgrp)
 
     #
-    # Valider le réseau
+    # Check network
     #
 
-    set idreseau [lindex $ftab(idreseau) 0]
-    set lcidr [check-netid $dbfd $idreseau $idgrp "dhcp" 4 msg]
+    set idnet [string trim [lindex $ftab(idreseau) 0]]
+    set lcidr [check-netid $dbfd $idnet $idgrp "dhcp" 4 msg]
     if {[llength $lcidr] == 0} then {
 	d error $msg
     }
     if {[llength $lcidr] != 1} then {
-	d error "Erreur interne: trop de CIDR trouvés !"
+	d error [mc "Internal error: too many CIDR found"]
     }
 
     #
-    # Préparer les éléments du tableau n+5
+    # Prepare tabular data
     #
 
-    set largeurs {25 25 20 10 10 10}
-    set titre {{text Min} {text Max}
-		{text Domaine}
-		{text {Durée par défaut du bail}}
-		{text {Durée maximum du bail}}
-		{text Profil DHCP}
-	    }
+    set cwidth {25 25 20 10 10 10}
+    set ctitle [list \
+			[list "text" [mc "Min"]] \
+			[list "text" [mc "Max"]] \
+			[list "text" [mc "Domain"]] \
+			[list "text" [mc "Default lease duration"]] \}
+			[list "text" [mc "Maximum lease duration"]] \}
+			[list "text" [mc "DHCP profile"]] \
+		    ]
 
     set menudom {}
     set sql "SELECT d.iddom, d.nom FROM dns.domaine d, dns.dr_dom dr
@@ -131,12 +126,9 @@ proc main {} {
 			ORDER BY min"
     set id iddhcprange
 
-    #
-    #
-
-    set errmsg [display-tabular $largeurs $titre $spec $dbfd $sql $id tableau]
-    if {[string length $errmsg] > 0} then {
-	d error $errmsg
+    set msg [display-tabular $cwidth $ctitle $spec $dbfd $sql $id tableau]
+    if {$msg ne ""} then {
+	d error $msg
     }
 
     #
@@ -145,7 +137,7 @@ proc main {} {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
-				[list %IDRESEAU% $idreseau] \
+				[list %IDRESEAU% $idnet] \
 				[list %RESEAU% $lcidr] \
 				[list %TABLEAU% $tableau] \
 			    ]

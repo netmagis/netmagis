@@ -157,6 +157,8 @@
  {Type}		{Type}
  {Yes}		{Oui}
  {No}		{Non}
+ {Min}		{Min}
+ {Max}		{Max}
  {SMTP emit right}	{Droit d'émission SMTP}
  {TTL}		{TTL}
  {Comment}		{Infos complémentaires}
@@ -187,7 +189,7 @@
  {Invalid domain '%s'}	{Domaine '%s' invalide}
  {Invalid name '%s'}	{Nom '%s' invalide}
  {'%1$s' is not a valid IPv%2$s address} {'%1$s' n'est pas une adresse IPv%2$s valide}
- {The '/' character is not valid in the address} {Le caractère '/' est interdit dans l'adresse}
+ {The '/' character is not valid in the address '%s'} {Le caractère '/' est interdit dans l'adresse '%s'}
  {Invalid syntax for '%s'} {Syntaxe invalide pour '%s'}
  {Invalid syntax for DHCP profile} {Syntaxe invalide pour le profil DHCP}
  {No profile} {Aucun profil}
@@ -368,4 +370,24 @@
  {Old relay deletion failed: %s} {Suppression des anciens relais impossible : %s}
  {Mail relays deleted} {Relais de messagerie supprimés}
  {No authorized network} {Aucun réseau autorisé}
+ {Host '%s' not found} {Machine '%s' non trouvée}
+ {No default domain} {Pas de domaine par défaut}
+ {Invalid search criterium '%s'} {Critère de recherche '%s' invalide}
+ {Internal error: object pointed by alias is not found} {Erreur interne : l'objet pointé par l'alias n'est pas trouvé}
+ {Internal error: mail host of role mail not found} {Erreur interne : hébergeur du rolemail non trouvé}
+ {Internal error: no IP address} {Erreur interne : pas d'adresse IP}
+ {Searched address: %s} {Adresse recherchée : %s}
+ {You don't have access to any DHCP enabled network} {Vous n'avez accès à aucun réseau avec le droit DHCP}
+ {Internal error: too many CIDR found} {Erreur interne : trop de CIDR trouvés}
+ {Default lease duration} {Durée par défaut du bail}
+ {Maximum lease duration} {Durée maximum du bail}
+ {You don't have access to DHCP range id '%s'} {Vous n'avez pas accès à l'intervalle DHCP d'id '%s'}
+ {Invalid default_lease_time value '%s'} {Valeur default_lease_time '%s' invalide}
+ {Default_lease_time value less than '%s'} {Valeur default_lease_time inférieure à '%s'}
+ {Invalid max_lease_time value '%s'} {Valeur max_lease_time '%s' invalide}
+ {Max_lease_time value less than '%s'} {Valeur max_lease_time inférieure à '%s'}
+ {Range [%s] not authorized} {Intervalle [%s] non autorisé}
+ {Conflict between dynamic range [%1$s] and %2$s IP address(es) declared with a MAC address} {Conflit entre l'intervalle dynamique [%1$s] et %2$s adresse(s) IP déclée(s) avec une adresse MAC}
+ {Range [%1$s] intersects with range [%2$s]} {L'intervalle [%1$s] a une intersection non nulle avec l'intervalle [%2$s]}
+ {Permissions not associated with any network} {Droits non rattachés à des réseaux}
 }

@@ -2,26 +2,19 @@
 
 
 #
-# Script pour consulter les droits associés à un correspondant
+# Script to consult user's permissions
 #
-# Called by: index.htgt
+# Called by: accueil
 #
 # Parameters (form or url): none
-#	- si l'utilisateur est un administrateur
-#		- login : nom de login d'un correspondant quelconque
-#	- si non : none paramètre
 #
 # History
 #   2002/05/21 : pda/jean : design
 #   2002/07/09 : pda      : add nologin
 #   2003/05/13 : pda/jean : use auth base
-#   2005/04/06 : pda      : ajout des profils dhcp
+#   2005/04/06 : pda      : add dhcp profiles
+#   2010/12/10 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -29,12 +22,6 @@
 
 set conf(err)		erreur.html
 set conf(page)		droits.html
-
-#
-# Next actions
-# 
-
-# (aucun : page cul de sac)
 
 #
 # Script parameters
@@ -45,15 +32,12 @@ set conf(form)	{
 }
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Main procedure
@@ -70,38 +54,13 @@ proc main {} {
     d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
-    # Si l'utilisateur est un administrateur, l'autoriser à consulter
-    # les droits d'un autre utilisateur.
+    # Display user informations.
     #
 
-    if {[user-attribute $dbfd $tabuid(idcor) admin]} then {
-	#
-	# A partir de maintenant, on prend le nouveau login qui est
-	# fourni dans le formulaire (s'il est fourni)
-	#
-
-	if {[llength $ftab(login)] > 0} then {
-	    set login [lindex $ftab(login) 0]
-
-	    unset tabuid
-	    set n [read-user $dbfd $login tabuid msg]
-	    if {$n != 1} then {
-		d error $msg
-	    }
-	}
-    }
+    set user	[display-user tabuid]
 
     #
-    # Mettre en forme les informations associées au correspondant pour
-    # qu'il se les rappelle bien (et pense à nous envoyer les
-    # modifications ;-)
-    #
-
-    set corresp	[display-user tabuid]
-
-    #
-    # Récupération du code HTML d'affichage des caractéristiques
-    # du groupe auquel appartient le correspondant
+    # Display group informations.
     #
 
     set grospaquet [display-group $dbfd $tabuid(idgrp)]
@@ -110,10 +69,10 @@ proc main {} {
     set tabdomaines       [lindex $grospaquet 4]
     set tabdhcpprofil     [lindex $grospaquet 5]
 
-    if {[string length $tabcidrhorsreseau] == 0} then {
+    if {$tabcidrhorsreseau eq ""} then {
 	set titrecidrhorsreseau ""
     } else {
-	set titrecidrhorsreseau "Droits non rattachés à des réseaux"
+	set titrecidrhorsreseau [mc "Permissions not associated with any network"]
     }
 
     #
@@ -121,7 +80,7 @@ proc main {} {
     #
 
     d result $conf(page) [list \
-			    [list %CORRESP% $corresp] \
+			    [list %CORRESP% $user] \
 			    [list %TABRESEAUX% $tabreseaux] \
 			    [list %TITRECIDRHORSRESEAU% $titrecidrhorsreseau] \
 			    [list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \

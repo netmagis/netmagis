@@ -1,10 +1,9 @@
 #!%TCLSH%
 
-
 #
-# Script pour demander les paramètres de consultation des MX.
+# Script to ask for MX consultation parameters
 #
-# Called by: admin.htgt
+# Called by: admin
 #
 # Parameters (form or url): none
 #
@@ -12,12 +11,8 @@
 #   2002/05/25 : pda      : design
 #   2002/07/09 : pda      : add nologin
 #   2003/05/13 : pda/jean : use auth base
+#   2010/12/10 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -33,15 +28,12 @@ set conf(page)		consultmx.html
 set conf(next)		"%HOMEURL%/bin/listemx"
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Main procedure
@@ -58,7 +50,7 @@ proc main {} {
     d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
 
     #
-    # Extraire la liste des domaines (tous, sans exception)
+    # Extract domain list (all)
     #
 
     set ld [::pgsql::getcols $dbfd dns.domaine "" "nom ASC" {nom nom}]
