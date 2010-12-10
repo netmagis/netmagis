@@ -649,9 +649,9 @@ proc ::webapp::form-menu {var taille multiple liste lsel} {
 #
 
 proc ::webapp::form-submit {var val} {
-    set v ""
-    if {var ne ""} then {
-	set v "name=\"$var\""
+    set name ""
+    if {$var ne ""} then {
+	set name "name=\"$var\""
     }
     set val [::webapp::html-string $val]
     set html "<input type=submit $name value=\"$val\">"
@@ -659,9 +659,9 @@ proc ::webapp::form-submit {var val} {
 }
 
 proc ::webapp::form-reset {var val} {
-    set v ""
-    if {var ne ""} then {
-	set v "name=\"$var\""
+    set name ""
+    if {$var ne ""} then {
+	set name "name=\"$var\""
     }
     set val [::webapp::html-string $val]
     set html "<input type=reset $name value=\"$val\">"

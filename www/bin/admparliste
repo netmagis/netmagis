@@ -143,10 +143,9 @@ proc main {} {
 	}
     }
 
-    lappend lines [list "Buttons" \
-			    [::webapp::form-submit "" [mc "Submit"]] \
-			    [::webapp::form-reset  "" [mc "Reset"]] \
-			]
+    set b [::webapp::form-submit "" [mc "Submit"]]
+    append b [::webapp::form-reset  "" [mc "Reset"]]
+    lappend lines [list "Buttons" $b]
 
     set tab [::arrgen::output "html" $conf(tableau) $lines]
 

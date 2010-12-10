@@ -148,11 +148,11 @@ set conf(etabl:spec)		{nom}
 set conf(etabl:idnum)		idetabl
 set conf(etabl:table)		dns.etablissement
 
-set conf(etabl:return) "Return to community modification"
-set conf(etabl:form)		form-commu
-set conf(etabl:spec)		{nom}
-set conf(etabl:idnum)		idcommu
-set conf(etabl:table)		dns.communaute
+set conf(commu:return) "Return to community modification"
+set conf(commu:form)		form-commu
+set conf(commu:spec)		{nom}
+set conf(commu:idnum)		idcommu
+set conf(commu:table)		dns.communaute
 
 set conf(hinfo:return) "Return to host information modification"
 set conf(hinfo:form)		form-hinfo
@@ -197,7 +197,7 @@ set conf(dhcpprofil:spec)	{nom texte}
 set conf(dhcpprofil:idnum)	iddhcpprofil
 set conf(dhcpprofil:table)	dns.dhcpprofil
 
-set conf(dhcpprofil:return) "Return to Vlan modification"
+set conf(vlan:return) "Return to Vlan modification"
 set conf(vlan:form)		form-vlan
 set conf(vlan:spec)		{vlanid descr voip}
 set conf(vlan:idnum)		vlanid
@@ -266,7 +266,7 @@ proc main {} {
     d urlset "%URL3%" $conf(nextmodif) [list [list "type" $type]]
 
     d result $conf(page) [list \
-				[list %TYPEENCLAIR% $ret] \
+				[list %RETURN% $ret] \
 
 			    ]
 }

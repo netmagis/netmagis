@@ -64,7 +64,7 @@ proc main {} {
     # Check MX 
     #
 
-    set msg [check-authorized-mx $dbfd $tabuid(idcor) $name $domain exists trr]
+    set msg [check-authorized-mx $dbfd $tabuid(idcor) $name iddom $domain exists trr]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -101,7 +101,7 @@ proc main {} {
     set idnum "mx"
 
     set msg [display-tabular $cwidth $ctitle $cspec $dbfd $sql $idnum tableau]
-    if {msg ne ""} then {
+    if {$msg ne ""} then {
 	d error $msg
     }
 

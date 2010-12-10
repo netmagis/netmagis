@@ -50,12 +50,12 @@ set conf(form)	{
 }
 
 set conf(etabl:ptitle) 	"Organization management"
-set conf(etabl:cols)		{ {100 nom {Description} {string 30} {}} }
+set conf(etabl:cols)		{ {100 nom {Name} {string 30} {}} }
 set conf(etabl:sql)		"SELECT * FROM dns.etablissement ORDER BY nom ASC"
 set conf(etabl:id)		idetabl
 
 set conf(commu:ptitle) 	"Community management"
-set conf(commu:cols)		{ {100 nom {Description} {string 30} {}} }
+set conf(commu:cols)		{ {100 nom {Name} {string 30} {}} }
 set conf(commu:sql)		"SELECT * FROM dns.communaute ORDER BY nom ASC"
 set conf(commu:id)		idcommu
 
@@ -68,22 +68,22 @@ set conf(hinfo:sql)		"SELECT * FROM dns.hinfo ORDER BY tri ASC, texte ASC"
 set conf(hinfo:id)		idhinfo
 
 set conf(reseau:ptitle)	"Network management"
-set conf(reseau:cols)		{ {1 nom	{Title} {string 20} {}}
+set conf(reseau:cols)		{ {1 nom	{Name} {string 20} {}}
 				  {1 localisation {Location} {string 10} {}}
 				  {1 adr4	{IPv4 address} {string 15} {}}
 				  {1 gw4	{IPv4 gateway} {string 12} {}}
 				  {1 dhcp	{DHCP enabled} {bool} 0}
-				  {1 adr6	{Adr IPv6} {string 49}
+				  {1 adr6	{Adr IPv6} {string 49} {}}
 				  {1 gw6	{IPv6 gateway} {string 45} {}}
-				  {1 idetabl	{Organization} {menu {%MENUETABL%} {}}
-				  {1 idcommu	{Community} {menu {%MENUCOMMU%} {}}
+				  {1 idetabl	{Organization} {menu {%MENUETABL%}} {}}
+				  {1 idcommu	{Community} {menu {%MENUCOMMU%}} {}}
 				  {1 commentaire {Comment} {string 15} {}}
 				}
 set conf(reseau:sql)		"SELECT * FROM dns.reseau ORDER BY adr4"
 set conf(reseau:id)		idreseau
 
 set conf(domaine:ptitle) "Domain management"
-set conf(domaine:cols)		{ {100 nom {Domain } {string 30} {}} }
+set conf(domaine:cols)		{ {100 nom {Domain} {string 30} {}} }
 set conf(domaine:sql)		"SELECT * FROM dns.domaine ORDER BY nom ASC"
 set conf(domaine:id)		iddom
 

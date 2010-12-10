@@ -126,7 +126,7 @@ proc main {} {
     # Check MX
     #
 
-    set msg [check-authorized-mx $dbfd $tabuid(idcor) $name $domain exists trr]
+    set msg [check-authorized-mx $dbfd $tabuid(idcor) $name iddom $domain exists trr]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -180,12 +180,12 @@ proc main {} {
     # Insert and delete operations
     #
 
-    if {$exist} then {
+    if {$exists} then {
 	#
 	# Delete all previous MX
 	#
 
-	set sql "DELETE FROM dns.rr_mx WHERE idrr = $tabrr(idrr)"
+	set sql "DELETE FROM dns.rr_mx WHERE idrr = $trr(idrr)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    ::pgsql::unlock $dbfd "abort" m
 	    d error [format [mc "Old MX deletion failed: %s"] $msg]
@@ -200,7 +200,7 @@ proc main {} {
 	    # Delete RR
 	    #
 
-	    set sql "DELETE FROM dns.rr WHERE idrr = $tabrr(idrr)"
+	    set sql "DELETE FROM dns.rr WHERE idrr = $trr(idrr)"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
 		d error [format [mc {Deletion of RR '%1$s' failed: %2$s}] $fqdn $msg]
@@ -209,7 +209,7 @@ proc main {} {
 	    #
 	    # Insert MX RRs
 	    #
-	    set msg [insert-mx $dbfd $tabrr(idrr) $lmx]
+	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
 	    if {$msg ne ""} then {
 		::pgsql::unlock $dbfd "abort" m
 		d error $msg
@@ -234,7 +234,7 @@ proc main {} {
 
 	    # XXX : No comment, nor any responsible. May be later...
 	    set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" \
-				$tabuid(idcor) tabrr]
+				$tabuid(idcor) trr]
 	    if {$msg ne ""} then {
 		d error [format [mc {Addition or RR '%1$s' failed: %2$s}] $fqdn $msg]
 	    }
@@ -242,7 +242,7 @@ proc main {} {
 	    #
 	    # Insert MX RRs
 	    #
-	    set msg [insert-mx $dbfd $tabrr(idrr) $lmx]
+	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
 	    if {$msg ne ""} then {
 		::pgsql::unlock $dbfd "abort" m
 		d error $msg

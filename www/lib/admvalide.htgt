@@ -36,7 +36,7 @@
     \liste {
 	\item {\lien {Revenir au menu principal} {%URL1%}}
 	\item {\lien {Revenir au menu d'administration} {%URL2%}}
-	\item {\lien {Revenir à la modification des %TYPE%} {%URL3%}}
+	\item {\lien {%RETURN%} {%URL3%}}
     }
 }
 

@@ -241,12 +241,12 @@ proc main {} {
     d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
 
     #
-    # Valider le nom du groupe, et récupérer son identifiant numérique
+    # Check group name, and get group id
     #
 
     set orggrp [lindex $ftab(orggrp) 0]
-    if {[string equal $orggrp "::nouveau"]} then {
-	set titre [mc "New group creation"]
+    if {$orggrp eq "::nouveau"} then {
+	set title [mc "New group creation"]
 	set newgrp ""
 	set msggrp [mc "Type the name of group to create"]
 	set idgrp -1
@@ -255,15 +255,15 @@ proc main {} {
 	set droitttl 0
 	set droitmac 0
     } else {
-	set qgroupe [::webapp::html-string $orggrp]
-	set titre [format [mc "Edition of group '%s'"] $qgroupe
-	set newgrp $qgroupe
+	set qgroup [::webapp::html-string $orggrp]
+	set title [format [mc "Edition of group '%s'"] $qgroup]
+	set newgrp $qgroup
 	set msggrp [mc "Modify group name or erase it to remove the group"]
-	set pqgroupe [::pgsql::quote $orggrp]
+	set pqgroup [::pgsql::quote $orggrp]
 	set idgrp -1
 	set sql "SELECT idgrp, admin, droitsmtp, droitttl, droitmac
 			FROM global.groupe
-			WHERE nom = '$pqgroupe'"
+			WHERE nom = '$pqgroup'"
 	pg_select $dbfd $sql tab {
 	    set idgrp $tab(idgrp)
 	    set admin $tab(admin)
@@ -317,12 +317,12 @@ proc main {} {
     #
 
     set lines {}
-    lappend lines {Title
-			{Classe de tri}
-			{Domaine}
-			{Édition des rôles de messagerie}
-			{Édition des rôles Web}
-		    }
+    lappend lines [list "Title" \
+			    [mc "Sort class"] \
+			    [mc "Domain"] \
+			    [mc "Mail role edition"] \
+			    [mc "Web role edition"] \
+			]
     set ldom [::pgsql::getcols $dbfd dns.domaine "" "nom ASC" {nom nom}]
     set sql "SELECT domaine.nom AS nom, dr_dom.tri AS tri,
 				dr_dom.rolemail, dr_dom.roleweb
@@ -339,7 +339,7 @@ proc main {} {
 
 	set idx [lsearch -exact $ldom [list $d $d]]
 	if {$idx == -1} then {
-	    d error "Le groupe à accès au domaine '$d' qui n'existe pas dans la base"
+	    d error [format [mc "Group has access to domain '%s' which do not exists in database"] $d]
 	}
 	set htri  [::webapp::form-text tridom$ndom 1 5 5 $tri]
 	set hdom  [::webapp::form-menu domaine$ndom 1 0 $ldom [list $idx]]
@@ -361,17 +361,16 @@ proc main {} {
     set listedomaines [::arrgen::output "html" $conf(tabdomaines) $lines]
 
     #
-    # Extraire la liste des réseaux, sélectionner ceux qui sont
-    # autorisés pour le groupe, et présenter tout ça dans un tableau
+    # Extract network list and select those which are authorized for the group
     #
 
     set lines {}
-    lappend lines {Title
-			{Classe de tri}
-			{Réseau}
-			{Accès à la gestion DHCP}
-			{Accès aux ACL}
-		    }
+    lappend lines [list "Title" \
+			[mc "Sort class"] \
+			[mc "Network"] \
+			[mc "DHCP management"] \
+			[mc "ACL management"] \
+		    ]
     set lres {}
     set idx 0
     set sql "SELECT idreseau, nom, adr4, adr6 FROM dns.reseau ORDER BY adr4, adr6"
@@ -401,7 +400,7 @@ proc main {} {
 	set acl      $tab(acl)
 
 	if {! [info exists idxreseau($idreseau)]} then {
-	    d error "Le groupe à accès au réseau '$idreseau' qui n'existe pas dans la base"
+	    d error [format [mc "Group has access to network '%s' which do not exists in database"] $idreseau]
 	}
 	set idx $idxreseau($idreseau)
 
@@ -426,7 +425,7 @@ proc main {} {
     set listereseaux [::arrgen::output "html" $conf(tabreseaux) $lines]
 
     #
-    # Les droits
+    # Permissions
     #
 
     set lines {}
@@ -459,7 +458,7 @@ proc main {} {
     set listedroits [::arrgen::output "html" $conf(tabdrip) $lines]
 
     #
-    # Les droits sur les équipements (topo)
+    # Permissions on equipments (topo)
     #
 
     set lines {}
@@ -501,7 +500,7 @@ proc main {} {
     set listedreq [::arrgen::output "html" $conf(tabdreq) $lines]
 
     #
-    # Les profils DHCP visibles
+    # DHCP profiles
     #
 
     set lines {}
@@ -542,7 +541,7 @@ proc main {} {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
-				[list %TITRE% $titre] \
+				[list %TITRE% $title] \
 				[list %ORGGRP% $orggrp] \
 				[list %NEWGRP% $newgrp] \
 				[list %ADMIN% $admin] \

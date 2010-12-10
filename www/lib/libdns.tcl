@@ -19,6 +19,8 @@ package require snit			;# tcllib
 package require msgcat			;# tcl
 
 package require webapp
+package require pgsql
+package require arrgen
 
 namespace import ::msgcat::*
 
@@ -943,12 +945,15 @@ snit::type ::dnscontext {
 	switch -glob $page {
 	    *.html {
 		set fmt html
+		set dir %DESTDIR%/lib
 	    }
 	    *.tex {
 		set fmt pdf
+		set dir %DESTDIR%/lib
 	    }
 	    default {
 		set fmt "unknown"
+		set dir %DESTDIR%/lib
 	    }
 	}
 
@@ -969,7 +974,7 @@ snit::type ::dnscontext {
 	# Send resulting page
 	#
 
-	::webapp::send $fmt [::webapp::file-subst $page $lsubst]
+	::webapp::send $fmt [::webapp::file-subst "$dir/$page" $lsubst]
 	$self end
     }
 
@@ -3361,6 +3366,7 @@ proc check-mx-target {dbfd prio name domain idcor _msg} {
 #   - parameters:
 #	- dbfd : database handle
 #	- name : MX name
+#	- _iddom : in return, domain id
 #	- domain : MX domain name
 #	- idcor : user id
 #	- _exists : 1 if RR exists, 0 if not
@@ -3373,7 +3379,9 @@ proc check-mx-target {dbfd prio name domain idcor _msg} {
 #   2010/12/09 : pda      : isolate common code
 #
 
-proc check-authorized-mx {dbfd idcor name domain _trr} {
+proc check-authorized-mx {dbfd idcor name _iddom domain _exists _trr} {
+    upvar $_exists exists
+    upvar $_iddom iddom
     upvar $_trr trr
 
     #
@@ -3386,7 +3394,7 @@ proc check-authorized-mx {dbfd idcor name domain _trr} {
     }
 
     set iddom -1
-    set msg [check-domain $dbfd $tabuid(idcor) iddom domain ""]
+    set msg [check-domain $dbfd $idcor iddom domain ""]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -3395,7 +3403,8 @@ proc check-authorized-mx {dbfd idcor name domain _trr} {
     # Get information about this name if it already exists
     #
 
-    if {[read-rr-by-name $dbfd $name $iddom trr]} then {
+    set exists [read-rr-by-name $dbfd $name $iddom trr]
+    if {$exists} then {
 	#
 	# If it already exists, check that it is not a A or CNAME or
 	# anything else which is not a MX
@@ -3419,7 +3428,7 @@ proc check-authorized-mx {dbfd idcor name domain _trr} {
 		return [format [mc "Internal error: rr_mx table references RR '%s', not found in the rr table"] $idmx]
 	    }
 	    set iddom $tabmx(iddom)
-	    set msg [check-domain $dbfd $tabuid(idcor) iddom tabmx(domaine) ""]
+	    set msg [check-domain $dbfd $idcor iddom tabmx(domaine) ""]
 	    if {$msg ne ""} then {
 		return [format [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s}] "$tabmx(nom).$tabmx(domaine)" $msg]
 	    }

@@ -93,14 +93,14 @@ proc main {} {
     # End of script: output page and close database
     #
 
-    set type [mc "return to application parameter modification"]
+    set ret [mc "return to application parameter modification"]
 
     d urlset "%URL1%" $conf(nextaccueil) {}
     d urlset "%URL2%" $conf(nextadmin) {}
     d urlset "%URL3%" $conf(nextmodif) {}
 
     d result $conf(page) [list \
-				[list %TYPEENCLAIR% $type] \
+				[list %RETURN% $ret] \
 			    ]
 }
 

@@ -122,6 +122,7 @@ proc main {} {
     # Check domain
     #
 
+    set iddom -1
     set msg [check-domain-relay $dbfd $tabuid(idcor) iddom $domain]
     if {$msg ne ""} then {
 	d error $msg

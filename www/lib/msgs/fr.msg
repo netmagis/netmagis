@@ -296,14 +296,20 @@
  {Edition of group '%s'} {Édition du groupe '%s'}
  {Modify group name or erase it to remove the group} {Modifiez le nom du groupe ou effacez-le pour supprimer le groupe}
  {Group '%s' not found} {Groupe '%s' non trouvé}
+ {Group has access to domain '%s' which do not exists in database} {Le groupe a acc�s au domaine '%s' qui n'existe pas dans la base}
+ {Group has access to network '%s' which do not exists in database} {Le groupe a acc�s au r�seau '%s' qui n'existe pas dans la base}
  {yes} {oui}
  {no} {non}
  {Sort class} {Classe de tri}
+ {DHCP management} {Gestion DHCP}
+ {ACL management} {Gestion des ACL}
  {Group have access to DHCP profile '%s' which do not exist in the database} {Le groupe a accès au profil '%s' qui n'existe pas dans la base}
  {Group '%s' already exist} {Le groupe '%s' existe déjà}
  {You must type a name for the group} {Il faut saisir un nom pour ce groupe}
  {Creation of group %s} {Création du groupe %s}
  {Modification of group %s} {Modification du groupe %s}
+ {Mail role edition} {�Édition des rôles de messagerie}
+ {Web role edition} {�Édition des rôles de Web}
  {Unable to remove group: %s} {Suppression du groupe impossible : %s}
  {Invalid value '%1$s' for form variable '%2$s'} {Valeur '%1$s' invalide pour le champ de formulaire '%2$s'}
  {Login '%1$s' already assigned to group '%2$s'} {Login '%1$s' déjà affecté au groupe '%2$s'}
