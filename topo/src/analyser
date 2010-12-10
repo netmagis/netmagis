@@ -238,7 +238,7 @@ proc parse-list {spec expanser preflist} {
 		lappend l $rg
 	    }
 	    default {
-		warning "Incorrect list specification ($spec)"
+		warning "Incorrect list specification: pattern A-B-C... ($spec)"
 		return {}
 	    }
 	}
@@ -247,26 +247,43 @@ proc parse-list {spec expanser preflist} {
     if {$expanser} then {
 	set l2 {}
 	foreach c $l {
-	    set min [lindex $c 0]
-	    set max [lindex $c 1]
+	    lassign $c min max
 
-	    if {! [regexp {^([^0-9]*)([0-9]+)} $min bidon prefmin min]} then {
-		warning "Incorrect list specification ($spec)"
+	    if {! [regexp {^([^0-9]*)([0-9]*)} $min bidon prefmin min]} then {
+		warning "Incorrect list specification: invalid lower bound $min ($spec)"
 		return {}
 	    }
-	    if {! [regexp {^([^0-9]*)([0-9]+)} $max bidon prefmax max]} then {
-		warning "Incorrect list specification ($spec)"
+	    if {! [regexp {^([^0-9]*)([0-9]*)} $max bidon prefmax max]} then {
+		warning "Incorrect list specification: invalid upper bound $max ($spec)"
 		return {}
 	    }
-	    if {[string equal $prefmin $prefmax]} then {
+	    if {$prefmin eq $prefmax} then {
 		# A5-A9
-		for {set i $min} {$i <= $max} {incr i} {
-		    lappend l2 "$prefmin$i"
+		if {$min ne "" && $max ne ""} then {
+		    # A5-A9
+		    for {set i $min} {$i <= $max} {incr i} {
+			lappend l2 "$prefmin$i"
+		    }
+		} elseif {$min eq "" && $max eq ""} then {
+		    # H-H (initial: H)
+		    set ipref [lsearch -index 0 $preflist $prefmin]
+		    if {$ipref == -1} then {
+			warning "Incorrect prefix '$prefmin' in '$spec'"
+			return {}
+		    }
+		    set k [lindex [lindex $preflist $ipref] 1]
+		    for {set i 1} {$i <= $k} {incr i} {
+			lappend l2 "$prefmin$i"
+		    }
+		} else {
+		    warning "Incorrect list specification: invalid range $c ($spec)"
+		    return {}
 		}
+
 	    } else {
 		# A5-C2
 		if {[llength $preflist] == 0} then {
-		    warning "Incorrect list specification ($spec) : prefix '$prefmin' != '$prefmax'"
+		    warning "Incorrect list specification: prefix '$prefmin' != '$prefmax' ($spec)"
 		    return {}
 		} else {
 		    #
@@ -286,15 +303,22 @@ proc parse-list {spec expanser preflist} {
 		    # Expanser la liste
 		    #
 
-		    set i $min
+		    if {$min eq ""} then {
+			set i 1
+		    } else {
+			set i $min
+		    }
 		    for {set j $imin} {$j <= $imax} {incr j} {
-			set pref   [lindex [lindex $preflist $j] 0]
-			set nports [lindex [lindex $preflist $j] 1]
+			lassign [lindex $preflist $j] pref nports
 
 			# pour les préfixes intermédiaires : aller
 			# jusqu'au port max. Quand on arrive au
 			# dernier préfixe : prendre la valeur spécifiée.
-			set k [expr "$j < $imax ? $nports : $max"]
+			if {$max eq "" || $j < $imax} then {
+			    set k $nports
+			} else {
+			    set k $max
+			}
 
 			# expanser
 			for {} {$i <= $k} {incr i} {
