@@ -175,7 +175,7 @@ proc main {} {
 	set libifordesc [mc "Description"]
 	set menuifordesc [::webapp::form-text desc 1 40 40 $desc]
 	append menuifordesc " ("
-	append menuiffordesc [mc "authorized special characters : -+/()&.:#_"]
+	append menuifordesc [mc "authorized special characters: -+/()&.:#_"]
 	append menuifordesc ")"
 
 	append libifordesc [::webapp::form-hidden "iface" $iface]

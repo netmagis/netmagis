@@ -30,14 +30,14 @@ set conf(nextsuppr)	"%HOMEURL%/bin/traitesuppr"
 set conf(dbmac)         %BASEMAC%
 
 set conf(occur)		{
-			    {6  {More than 6 months}}
-			    {9  {More than 9 months}}
+			    {6 {More than 6 months}}
+			    {9 {More than 9 months}}
 			    {12 {More than one year}}
 			}
 
 set conf(form)          {
     {reseau	    0 1}
-    {occurence	    0 1}
+    {occurrence	    0 1}
 }
 
 set conf(sqldateformat) {'DD/MM/YYYY HH24:MI:SS'}
@@ -126,7 +126,7 @@ proc main {} {
 
     set loccur {}
     foreach o $conf(occur) {
-	lassign o duration text
+	lassign $o duration text
 	lappend loccur [list $duration [mc $text]]
     }
 
@@ -153,8 +153,8 @@ proc main {} {
 	# Check occurrence
 	#
 
-	set occurence [string trim [lindex $ftab(occurence) 0]]
-	set seloccur [lsearch -exact -index 0 $loccur $occurence]
+	set occurrence [string trim [lindex $ftab(occurrence) 0]]
+	set seloccur [lsearch -exact -index 0 $loccur $occurrence]
 	if {$seloccur == -1} {
               d error [format [mc "Invalid occurrence '%s'"] $occurrence]
 	}
@@ -174,7 +174,7 @@ proc main {} {
 	set sql "SELECT ip, to_char (most_recent_date,$datefmt) AS derndate
 		     FROM ipmac2
 		     WHERE ip <<= '$cidr' AND
-			   most_recent_date < now() - interval '$occurence month'
+			   most_recent_date < now() - interval '$occurrence month'
 		     ORDER BY ip"
 	set nbadr 0
         pg_select $dbfdmac $sql tab {
@@ -224,7 +224,7 @@ proc main {} {
     } else {
         set menureseau [::webapp::form-menu "reseau" 1 0 $lnet $selnet]
     }
-    set menuoccur [::webapp::form-menu "occurence" 1 0 $loccur $seloccur]
+    set menuoccur [::webapp::form-menu "occurrence" 1 0 $loccur $seloccur]
 
     #
     # Url du formulaire

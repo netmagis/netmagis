@@ -308,6 +308,8 @@
  {Group '%s' already exist} {Le groupe '%s' existe déjà}
  {You must type a name for the group} {Il faut saisir un nom pour ce groupe}
  {Creation of group %s} {Création du groupe %s}
+ {Login '%s' does not exist} {Le login '%s' n'existe pas}
+ {Login '%s' found more than once} {Le login '%s' est ambigu}
  {Modification of group %s} {Modification du groupe %s}
  {Mail role edition} {�Édition des rôles de messagerie}
  {Web role edition} {�Édition des rôles de Web}

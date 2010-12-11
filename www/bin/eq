@@ -546,7 +546,7 @@ proc format-one-eq {eqname iface _tabuid} {
 	    append txt ")"
 	}
 
-	if {$state eq "-"} then {
+	if {$stat ne "-"} then {
 	    d urlset "" $conf(nextmetro) [list [list "id" $stat]]
 	    set url [d urlget ""]
 	    append txt " "

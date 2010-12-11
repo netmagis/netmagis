@@ -592,20 +592,23 @@ proc main {} {
 
 	# non existant logins
 
+	set u [::webapp::authuser create %AUTO%]
 	set n 1
 	while {[info exists ftab(login$n)]} {
 	    set login [string trim [lindex $ftab(login$n) 0]]
 	    if {$login ne ""} then {
-		set nu [read-user $dbfd $login tab msg]
-		switch $nu {
+		if {[catch {set nb [$ah getuser $login $u]} msg]} then {
+		    d error [format [mc "Authentication base problem: %s"] $msg]
+		}
+		switch $nb {
 		    0 {
-			lappend inconsist $msg
+			lappend inconsist [format [mc "Login '%s' does not exist"] $login]
 		    }
 		    1 {
 			# nothing: it's ok
 		    }
 		    default {
-			d error $msg
+			d error [format [mc "Login '%s' found more than once"] $login]
 		    }
 		}
 	    }
@@ -627,7 +630,7 @@ proc main {} {
 	    set idreseau [lindex $r 1]
 	    set dhcp [lindex $r 2]
 	    if {$dhcp && ! $tabdhcp($idreseau)} then {
-		lappend inconsist [format [mc "Network '%s' is not DHCP enabled"] $tabres($idreseau]
+		lappend inconsist [format [mc "Network '%s' is not DHCP enabled"] $tabres($idreseau)]
 	    }
 	}
 
