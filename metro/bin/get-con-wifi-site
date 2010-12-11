@@ -1,0 +1,142 @@
+#!/usr/bin/perl
+
+# $Id: get-con-wifi-site,v 1.2 2008-06-13 10:16:50 pda Exp $
+# ###################################################################
+# boggia : Creation : 25/03/08
+#
+# établit des stats de connexion dans une base RRD pour tous les sites WiFi
+# Lancé par Cron
+
+use DBI;
+
+# fichier de configuration principal et chargement des focntions de base
+$fich_conf = "%CONF%";
+require "%LIBMETRO%";
+#
+
+# repertoire des binaires
+$rep_bin = read_conf_file($fich_conf,"DIR_BIN");
+#repertoire dans lequel se trouve la liste des graphiques existants avec le modele a utiliser
+$rep_etc = read_conf_file($fich_conf,"DIR_ETC");
+$rep_logap = read_conf_file($fich_conf,"DIR_AP_REPORT");
+$rep_snmp = "$rep_logap/snmp";
+$liste_sites_wifi = read_conf_file($fich_conf,"FILE_LISTE_SITES_WIFI");
+#repertoire des bases de donnï¿½es
+$rep_db = read_conf_file($fich_conf,"DIR_RRD_DB");
+# arguments de connexion a la base PSQL
+$dbhost = read_conf_file($fich_conf,"MAC_PSQL_SERVER");
+$dbname= read_conf_file($fich_conf,"PG_DATABASE_MAC");
+$dbuser= read_conf_file($fich_conf,"PG_USER_MAC");
+$dbpass= read_conf_file($fich_conf,"PG_PASSWORD_MAC");
+
+$db =  DBI->connect("dbi:Pg:dbname=$dbname;host=$dbhost", $dbuser, $dbpass )
+        or print STDERR "$DBI::errstr";
+$sql = "SELECT authaccess.mac FROM sessionauthaccess,authaccess WHERE close=0 AND sessionauthaccess.idauthaccess = authaccess.idauthaccess AND ideq=(SELECT ideq FROM eq WHERE nom='ash.u-strasbg.fr');";
+$cursor = $db->prepare($sql);
+$cursor->execute;
+
+while(($mac) = $cursor->fetchrow)
+{
+    $mac_liste{$mac} = 1;
+}
+
+$time = time;
+$modulo_time = $time % 300;
+$time = $time - $modulo_time;
+
+#lecture du fichier contenant la liste des bâtiments
+$i = 0;
+open(LISTE,"$liste_sites_wifi");
+while(<LISTE>)
+{
+	if(!/^#/ && !/^\s+/)
+	{
+		chomp $_;
+        	($tab[$i][0],$tab[$i][1]) = (split(/:/,$_))[0,1];
+		$i++;
+	}
+}
+close(LISTE);
+
+$t_tab = @tab;
+for($i=0;$i<$t_tab;$i++)
+{
+	%ssid = ();
+	$ssid{'osiris'} = 0;
+	$ssid{'osiris-sec'} = 0;
+	$ssid{'osiris-lab'} = 0;
+	$ssid{'eduroam'} = 0;
+
+	# recupération du préfixe des AP
+	%prefix = ();
+	%assoc = ();
+	@liste_des_ap = split(/;/,$tab[$i][1]);
+
+	open(RAP_SNMP,">$rep_snmp/$tab[$i][0]");
+
+	foreach $elem (@liste_des_ap)
+	{
+		%ssidap = ();
+		$ssidap{'osiris'} = 0;
+		$ssidap{'osiris-sec'} = 0;
+		$ssidap{'osiris-lab'} = 0;
+		$ssidap{'eduroam'} = 0;
+
+		$derniere_ligne = "";
+		open(FH, "$rep_logap/$elem/assoc.log");
+		while (<FH>) { $derniere_ligne=$_ if eof(FH); } 
+		close(FH);
+
+		#2006-09-27 14:25:16 | 00:0b:cd:5b:ed:70 osiris-lab      1 | 00:17:f2:40:74:c9 osiris          0
+		@liste_assoc = ();
+		@liste_assoc = split(/\|/,$derniere_ligne);
+		$t_liste_assoc = @liste_assoc;
+
+		for($j=1;$j<$t_liste_assoc;$j++)
+		{
+		    if($liste_assoc[$j] =~/osiris-sec/)
+		    {
+			$ssid{'osiris-sec'}++;
+			$ssidap{'osiris-sec'}++;
+		    }
+		    elsif($liste_assoc[$j] =~/osiris-lab/)
+		    {
+			$ssid{'osiris-lab'}++;
+			$ssidap{'osiris-lab'}++;
+		    }
+		    elsif($liste_assoc[$j] =~/eduroam/)
+                    {
+                        $ssid{'eduroam'}++;
+			$ssidap{'eduroam'}++;
+                    }
+		    elsif($liste_assoc[$j] =~/([0-9a-f]{2}):([0-9a-f]{2}):([0-9a-f]{2}):([0-9a-f]{2}):([0-9a-f]{2}):([0-9a-f]{2}) osiris/)
+		    {
+			$mac_addr = "$1:$2:$3:$4:$5:$6";
+			if(defined($mac_liste{$mac_addr}))
+			{
+			    $ssid{'osiris'}++;
+			    $ssidap{'osiris'}++;
+			}
+		    }
+		}
+    
+		print RAP_SNMP "$elem=osiris,$ssidap{'osiris'};osiris-sec,$ssidap{'osiris-sec'};osiris-lab,$ssidap{'osiris-lab'};eduroam,$ssidap{'eduroam'}\n";
+	}
+    
+	close(RAP_SNMP);
+
+	# si la base rrd existe
+	$nom_fichier_rrd = "$rep_db/$tab[$i][0]/authentifies_wifi.rrd";
+	if(-e $nom_fichier_rrd)
+	{
+#		print "Mise à jour de la base rrd\n";
+#		print "/usr/local/bin/rrdtool update $nom_fichier_rrd $time:$ssid{'osiris'}:$ssid{'osiris-sec'}\n";
+		$users_sec = $ssid{'osiris-sec'} + $ssid{'osiris-lab'} + $ssid{'eduroam'};
+		system("/usr/local/bin/rrdtool update $nom_fichier_rrd $time:$ssid{'osiris'}:$users_sec");
+	}
+	else
+	{	
+#		print "La base n'existe pas. Création ...\n";
+		system("/usr/local/bin/rrdtool create $nom_fichier_rrd DS:osiris:GAUGE:600:U:U DS:osiris-sec:GAUGE:600:U:U RRA:AVERAGE:0.5:1:420480 RRA:MAX:0.5:1:420480");
+	}
+}

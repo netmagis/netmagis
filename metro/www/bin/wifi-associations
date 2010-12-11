@@ -1,0 +1,517 @@
+#!/usr/bin/perl
+
+# $Id: wifi-associations,v 1.2 2008/06/13 10:01:06 pda Exp $
+#
+#
+# ###################################################################
+# boggia : Creation : 31/03/08
+#
+# Permet de faire des statistiques sur l'utilisation des AP sous 
+# forme d'un tableau
+#
+#
+use CGI qw/:standard/;
+use CGI::Pretty qw( :html3 );
+
+# fichier de configuration principal et chargement des focntions de base
+our $conf_file = "%CONF%";
+require "%LIBMETRO%";
+#
+$server_hostname = read_conf_file($conf_file,"WWW_IDRIS_HOSTNAME");
+$www_root = read_conf_file($conf_file,"WWW_IDRIS_DIR_ROOT");
+$www_bin = read_conf_file($conf_file,"WWW_IDRIS_DIR_BIN");
+$www_img = read_conf_file($conf_file,"WWW_IDRIS_DIR_IMG");
+$www_graph = read_conf_file($conf_file,"WWW_IDRIS_DIR_GRAPHS");
+# repertoire des binaires
+$rep_bin = read_conf_file($conf_file,"DIR_BIN");
+#repertoire dans lequel se trouve la liste des graphiques existants avec le modele a utiliser
+$rep_etc = read_conf_file($conf_file,"DIR_ETC");
+$dir_ap_logs = read_conf_file($conf_file,"DIR_AP_REPORT");
+$liste_sites = read_conf_file($conf_file,"FILE_LISTE_SITES_WIFI");
+
+# arguments de connexion a la base PSQL
+$dbhost = read_conf_file($conf_file,"MAC_PSQL_SERVER");
+$dbname = read_conf_file($conf_file,"PG_DATABASE_MAC");
+$dbuser = read_conf_file($conf_file,"PG_USER_MAC");
+$dbpass = read_conf_file($conf_file,"PG_PASSWORD_MAC");
+
+print header();
+
+$histo = 365;
+$temps1 = 7;
+$temps2 = 30;
+
+%liste_ap = ();
+@batiments = ();
+$i=0;
+#lecture du fichier contenant la liste des bâtiments
+open(LISTE,"$liste_sites");
+while(<LISTE>)
+{
+        chomp;
+        if(!/^#/ && !/^\s+/)
+        {
+                ($bat,$liste_ap,$universite) = (split(/:/,$_))[0,1,2];
+		@liste_des_ap = split(/;/,$liste_ap);
+                $t_liste_des_ap = @liste_des_ap;
+                
+		for($j=0;$j<$t_liste_des_ap;$j++)
+		{
+		    $liste_ap{$liste_des_ap[$j]} = $universite;	    
+		}	
+                $i++;
+        }
+}
+close(LISTE);
+
+$t_batiments = @batiments;
+
+
+print "<HTML><HEAD><TITLE>recapitulatif associations</TITLE>
+       <META HTTP-EQUIV=\"Refresh\" CONTENT=\"300\">
+       <META HTTP-EQUIV=\"Cache-Control\" content=\"no-cache\">
+       <META HTTP-EQUIV=\"Pragma\" CONTENT=\"no-cache\">
+       </HEAD><BODY>
+       <h2>Listing des APs en fonction de leur utilisation.</h2>";
+
+$temps_ss = 1;
+$assoc_ss = 0;
+if (param(-name=>'Associations'))
+{
+	$addition = "assoc";
+        $assoc_ss = 1;
+	$temps_ss = 0;
+	
+}
+elsif (param(-name=>'Temps'))
+{
+	$addition = "temps";
+	$temps_ss = 1;
+}
+	
+$histo = (param('historique'));
+if($histo !~/[0-9]+/)
+{
+	$histo = 30;
+}
+
+#liste des point d'accès
+opendir(DIR_RAPPORTS,$dir_ap_logs);
+@liste_ap=grep(!/^\.\.?$/, readdir DIR_RAPPORTS);
+closedir(DIR_RAPPORTS);
+
+@tab = ();
+$t_tab=0;
+
+%ssid = ();
+%total_temps = ();
+%$total_assoc = ();
+foreach $elem (@liste_ap)
+{
+	%assoc = ();
+	%temps = ();
+	%assoc_histo = ();
+	%temps_histo = ();
+	if($elem=~m/-ap[0-9]+$/)
+        {
+                open(LOG,"$dir_ap_logs/$elem/utilisation_ap");
+		#print "$elem<br>";
+		for($i=0;$i<$histo;$i++)
+		{
+                	$ligne = <LOG>;
+			chomp $ligne;
+			if($ligne ne "")
+			{
+				($cumul_assoc,$cumul_temps)=(split(/\|/,$ligne))[1,2];
+				#print "$cumul_temps<br>";
+				@ssids_tmp = split(/;/,$cumul_temps);
+				$t_ssids_tmp = @ssids_tmp;
+				@ssids_assoc = split(/;/,$cumul_assoc);
+				$t_ssids_assoc = @ssids_assoc;
+				for($j=1;$j<$t_ssids_tmp;$j++)
+				{
+					($nom_ssid,$tmp)=(split(/=/,$ssids_tmp[$j]))[0,1];
+					$ssid{$nom_ssid}=1;	
+					#print "$nom_ssid<br>";
+					$temps{$nom_ssid} = $temps{$nom_ssid} + $tmp;
+					($nom_ssid,$ass)=(split(/=/,$ssids_assoc[$j]))[0,1];
+					$assoc{$nom_ssid} = $assoc{$nom_ssid} + $ass;
+				}
+			}
+			if($i == ($histo -2))
+                        {
+                                foreach $c (keys %assoc)
+                                {
+                                        $assoc_histo{$c} = $assoc{$c};
+                                        $temps_histo{$c} = $temps{$c};
+                                }
+                        }
+		}
+		close(LOG);
+	
+		%assoc = ();
+		%temps = ();	
+		open(LOG,"$dir_ap_logs/$elem/derniere_mesure");
+		$ligne = <LOG>;
+		$cumul_assoc = <LOG>;
+		chomp $cumul_assoc;
+		$cumul_temps = <LOG>;
+                chomp $cumul_temps;
+		@ssids_assoc = split(/;/,$cumul_assoc);
+		@ssids_tmp = split(/;/,$cumul_temps);
+                $t_ssids_assoc = @ssids_assoc;
+		for($j=1;$j<$t_ssids_assoc;$j++)
+		{
+			($nom_ssid,$ass)=(split(/=/,$ssids_assoc[$j]))[0,1];
+			$assoc_histo{$nom_ssid} = $assoc_histo{$nom_ssid} + $ass;
+			$assoc{$nom_ssid} = $ass;
+			$ssid{$nom_ssid}=1;
+			($nom_ssid,$tmp)=(split(/=/,$ssids_tmp[$j]))[0,1];
+			$temps_histo{$nom_ssid} = $temps_histo{$nom_ssid} + $tmp;
+			$temps{$nom_ssid} = $tmp;
+		}
+		close(LOG);
+
+		$resultats = "";
+		$top = 0;
+		$top_assoc = 0;
+		$add_ssid = "tous";
+
+		foreach $a (keys %ssid)
+		{
+			$name_assoc = "assoc_$a";
+                        $temps_assoc = "temps_$a";
+                        if (param(-name=>"$name_assoc"))
+                        {
+                                $add_ssid = $a;
+                                $param_save = "$name_assoc=Associations";
+				$assoc_ss = 1;
+				$temps_ss = 0;
+				
+                        }
+                        elsif(param(-name=>"$temps_assoc"))
+                        {
+                                $add_ssid = $a;
+                                $param_save = "$temps_assoc=Cumul+temps+%28h%29";
+				$temps_ss = 1;
+                        }
+
+		}
+		foreach $a (keys %ssid)
+		{
+			if($a ne "")
+			{
+				if($assoc{$a} eq "")
+				{
+					$assoc{$a} = 0;
+				}
+				if($temps{$a} eq "")
+				{
+					$temps{$a} = 0;
+				}
+				if($assoc_histo{$a} eq "")
+                                {
+                                        $assoc_histo{$a} = 0;
+                                }
+				if($temps_histo{$a} eq "")
+				{
+					$temps_histo{$a} = 0;
+				}
+				$resultats = "$resultats" . "[$a]$assoc{$a};$temps{$a};";
+				$resultats = "$resultats" . "$assoc_histo{$a};$temps_histo{$a}";
+				$resultats = "$resultats" . "[$a]";
+				$total_temps{$a} = $total_temps{$a} + $temps{$a};
+				$total_assoc{$a} = $total_assoc{$a} + $assoc{$a};
+				$total_temps_histo{$a} = $total_temps_histo{$a} + $temps_histo{$a};
+				$total_assoc_histo{$a} = $total_assoc_histo{$a} + $assoc_histo{$a};
+				#print "$elem = $resultats<br>";
+
+				if($add_ssid eq "tous" || $add_ssid eq $a)
+				{
+					if($temps_histo{$a} !~m/[0-9]+/)
+					{
+						$temps_histo{$a} = 0;
+					}
+					if($assoc_histo{$a} !~m/[0-9]+/)
+					{
+						$assoc_histo{$a} = 0;
+					}
+					if($assoc_ss == 1)
+					{
+						$top = $top + $assoc_histo{$a};
+					}
+					elsif($temps_ss == 1)
+					{
+						$top = $top + $temps_histo{$a};
+					}
+					elsif($addition eq "assoc")
+					{
+						$top = $top + $assoc_histo{$a};
+						$param_save = "Associations=Associations";
+					}
+					else
+					{
+						$top = $top + $temps_histo{$a};
+						$param_save = "Temps=Cumul+temps+%28h%29";
+					}
+				}
+			}
+		}
+		
+		$t_tab = @tab;
+		if($t_tab == 0)
+		{
+			$tab[0][0] = $elem;
+			$tab[0][1] = $resultats;
+			$tab[0][2] = $top;
+			#print "<br>$resultats";
+			$t_tab ++;
+		}
+		else
+		{
+			@c_tab = ();
+			for($i=0;$i<$t_tab;$i++)
+			{
+				if($top > $tab[$i][2])
+				{
+					$c_tab[$i][0] = $elem;
+					$c_tab[$i][1] = $resultats;
+					$c_tab[$i][2] = $top;
+					$top = "ok";
+					for($j=$i;$j<$t_tab;$j++)
+					{
+						$c_tab[$j+1][0] = $tab[$j][0];
+						$c_tab[$j+1][1] = $tab[$j][1];
+						$c_tab[$j+1][2] = $tab[$j][2];
+						$i = $t_tab;	
+					}
+				}
+				elsif($top <= $tab[$i][2])
+				{
+					$c_tab[$i][0] = $tab[$i][0];
+					$c_tab[$i][1] = $tab[$i][1];
+					$c_tab[$i][2] = $tab[$i][2];	
+				}
+			}
+			if($top ne "ok")
+			{
+				$c_tab[$t_tab][0] = $elem;
+				$c_tab[$t_tab][1] = $resultats;
+                                $c_tab[$t_tab][2] = $top;
+                                $top = "ok";
+			}
+			@tab = @c_tab;
+		}
+
+        }
+}
+
+print "Afficher utilisation sur <a href=https://$server_hostname$www_bin/wifi-associations?historique=7&$param_save>7 jours</a>
+        , <a href=https://$server_hostname$www_bin/wifi-associations?historique=30&$param_save>30 jours</a>
+        , <a href=https://$server_hostname$www_bin/wifi-associations?historique=365&$param_save>1 an</a>.";
+
+print "<form action=\"wifi-associations\">";
+
+print "<br><table CELLSPACING=0 CELLPADDING=0 BORDER=1 >";
+print "<tr><th rowspan=3 colspan=3 bgcolor=\"#666666\">Point d'accès</th>";
+foreach $a (keys %ssid)
+{
+	if($a ne "" && ($a eq "osiris" || $a eq "osiris-sec" || $a eq "osiris-lab"))
+        {
+		print "<th colspan=4 BGCOLOR=#CCCCCC>$a</th>";
+	}	
+}
+print "<th colspan=4 BGCOLOR=#CCCCCC>cumul des ssids</th>";
+print "</tr><tr>";
+foreach $a (keys %ssid)
+{
+        if($a ne "" && ($a eq "osiris" || $a eq "osiris-sec" || $a eq "osiris-lab"))
+        {
+                print "<td colspan=2 align=center bgcolor=\"#b0b0d9\">
+		<input type=submit name=\"assoc_$a\" value=\"Associations\"></td>
+		<td colspan=2 align=center bgcolor=\"#b0b0d9\">
+		<input type=submit name=\"temps_$a\" value=\"Cumul temps (h)\"></td>";
+	}
+}
+print "<td colspan=2 align=center bgcolor=\"#b0b0d9\"><input type=submit name=\"Associations\" value=\"Associations\"></td>
+	<td colspan=2 align=center bgcolor=\"#aeaeae\"><input type=submit name=\"Temps\" value=\"Cumul temps (h)\"</td>";
+print "</tr><tr>";
+foreach $a (keys %ssid)
+{
+        if($a ne "" && ($a eq "osiris" || $a eq "osiris-sec"|| $a eq "osiris-lab"))
+        {
+		$bgcolor = "\"#b0b0d9\"";
+		if($add_ssid eq $a)
+		{
+			if($assoc_ss == 1)
+			{
+				$bgcolor = "\"#edbb2b\"";
+			}
+		}
+                print "<td align=center bgcolor=\"#b0b0d9\">ce jour</td><td align=center bgcolor=$bgcolor>$histo jours</td>";
+		$bgcolor = "\"#CCCCCC\"";
+                if($add_ssid eq $a)
+                {
+                        if($temps_ss == 1)
+                        {
+                                $bgcolor = "\"#edbb2b\"";
+                        }
+                }
+		print "<td align=center BGCOLOR=#CCCCCC>ce jour</td><td align=center BGCOLOR=$bgcolor>$histo jours</td>";
+        }
+}
+$bgcolor = "\"#b0b0d9\"";
+if($add_ssid eq "tous")
+{
+	if($assoc_ss == 1)
+        {
+        	$bgcolor = "\"#edbb2b\"";
+        }
+}
+print "<td align=center bgcolor=\"#b0b0d9\">ce jour</td><td align=center bgcolor=$bgcolor>$histo jours</td>";
+$bgcolor = "\"#CCCCCC\"";
+if($add_ssid eq "tous")
+{
+        if($temps_ss == 1)
+        {
+                $bgcolor = "\"#edbb2b\"";
+        }
+}
+print "<td align=center BGCOLOR=#CCCCCC>ce jour</td><td align=center BGCOLOR=$bgcolor>$histo jours</td>";
+print "</tr>";
+$t_tab = @tab;
+for($i=0;$i<$t_tab;$i++)
+{
+	$rang = $i + 1;
+	print "<tr BGCOLOR=#CCCCCC><td>$rang</td>
+		<td>
+		    <a href=https://$server_hostname$www_bin/ap-stats?nom_ap=$tab[$i][0]>$tab[$i][0]</a>
+		</td>
+		<td bgcolor=#FFFFFF align=center>
+		    <img src=https://$server_hostname$www_img/$liste_ap{$tab[$i][0]}.jpg></td>
+		</td>";
+	$cumul_t1 = 0;
+	$cumul_a1 = 0;
+	$cumul_t2 = 0;
+	$cumul_a2 = 0;
+	foreach $a (keys %ssid)
+	{
+		if($a ne "" && ($a eq "osiris" || $a eq "osiris-sec" || $a eq "osiris-lab"))
+        	{
+		$splitter = "\\[" . "$a" . "\\]";
+		($ligne)=(split(/$splitter/,$tab[$i][1]))[1];
+		($a1,$t1,$a2,$t2) = (split(/;/,$ligne))[0,1,2,3];
+		$t1 = $t1 / 60;
+		$t1 = int($t1 * 10);
+		$t1 = $t1 / 10;
+		$t2 = $t2 / 60;
+                $t2 = int($t2 * 10);
+                $t2 = $t2 / 10;
+		$cumul_t1 = $cumul_t1 + $t1;
+		$cumul_a1 = $cumul_a1 + $a1;
+		$cumul_t2 = $cumul_t2 + $t2;
+		$cumul_a2 = $cumul_a2 + $a2;
+		if($a1 > 0)
+		{
+			$a1 = "<b>$a1</b>";
+		}
+		if($a2 > 0)
+		{
+			$a2 = "<b>$a2</b>";
+		}
+		if($t1 > 0)
+		{
+			$t1 = "<b>$t1</b>";
+		}
+		if($t2 > 0)
+                {
+			$t2 = "<b>$t2</b>";
+                }
+		$bgcolor = "\"#b0b0d9\"";
+                if($add_ssid eq $a)
+                {
+                        if($assoc_ss == 1)
+                        {
+                                $bgcolor = "\"#edbb2b\"";
+                        }
+                }
+                print "<td align=right bgcolor=\"#b0b0d9\">$a1</b></td><td align=right bgcolor=$bgcolor>$a2</td>";
+                $bgcolor = "\"#CCCCCC\"";
+                if($add_ssid eq $a)
+                {
+                        if($temps_ss == 1)
+                        {
+                                $bgcolor = "\"#edbb2b\"";
+                        }
+                }
+		print "<td align=right>$t1</td><td align=right bgcolor=$bgcolor>$t2</td>";	
+		}
+	}
+	if($cumul_t1 > 0)
+        {
+                $cumul_t1 = "<b>$cumul_t1</b>";
+        }
+        if($cumul_t2 > 0)
+        {
+                $cumul_t2 = "<b>$cumul_t2</b>";
+        }
+        if($cumul_a1 > 0)
+        {
+                $cumul_a1 = "<b>$cumul_a1</b>";
+        }
+        if($cumul_a2 > 0)
+        {
+               	$cumul_a2 = "<b>$cumul_a2</b>";
+        }
+
+	$bgcolor = "\"#b0b0d9\"";
+	if($add_ssid eq "tous")
+	{
+        	if($assoc_ss == 1)
+        	{
+                	$bgcolor = "\"#edbb2b\"";
+        	}
+	}
+	print "<td align=right bgcolor=\"#b0b0d9\">$cumul_a1</td><td align=right bgcolor=$bgcolor>$cumul_a2</td>";
+	$bgcolor = "\"#CCCCCC\"";
+	if($add_ssid eq "tous")
+	{
+        	if($temps_ss == 1)
+        	{
+                	$bgcolor = "\"#edbb2b\"";
+        	}
+	}
+	print "<td align=right>$cumul_t1</td><td align=right bgcolor=$bgcolor>$cumul_t2</td>";
+	
+	#print "$tab[$i][0] => $tab[$i][1] == $tab[$i][2]<br>";
+	print "</tr>";
+}
+print "<tr BGCOLOR=#CCCCCC><td colspan=2>TOTAL</td>";
+$cumul_tot_assoc = 0;
+$cumul_tot_temps = 0;
+foreach $a (keys %ssid)
+{
+        if($a ne "" && ($a eq "osiris" || $a eq "osiris-sec" || $a eq "osiris-lab"))
+        {
+		print "<td align=right bgcolor=\"#b0b0d9\">$total_assoc{$a}</td><td align=right bgcolor=\"#b0b0d9\">
+			$total_assoc_histo{$a}</td>";
+		$total_temps{$a} = (int(10 * ($total_temps{$a} / 60)))/10;
+		$total_temps_histo{$a} = (int(10 * ($total_temps_histo{$a} / 60)))/10;
+		print "<td align=right>$total_temps{$a}</td><td align=right>$total_temps_histo{$a}</td>";
+		$cumul_tot_assoc_histo = $cumul_tot_assoc_histo + $total_assoc_histo{$a};
+		$cumul_tot_temps_histo = $cumul_tot_temps_histo + $total_temps_histo{$a};
+		$cumul_tot_assoc = $cumul_tot_assoc + $total_assoc{$a};
+		$cumul_tot_temps = $cumul_tot_temps + $total_temps{$a};
+	}
+}
+print "<td align=right bgcolor=\"#b0b0d9\">$cumul_tot_assoc</td><td align=right bgcolor=\"#b0b0d9\">$cumul_tot_assoc_histo</td>";
+print "<td align=right>$cumul_tot_temps</td><td align=right><b><i>$cumul_tot_temps_histo</i></b></td>";
+
+        #print "$tab[$i][0] => $tab[$i][1] == $tab[$i][2]<br>";
+print "</tr>";
+
+
+
+print "</table>";
+
+print "</form></boby></html>";	

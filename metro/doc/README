@@ -1,0 +1,100 @@
+Arborescence du projet obj999
+
+/local/services/www-idris
+	
+    Serveur HTTP pour idris
+    Binaires installes par Makefile (enfin, bientôt)
+
+
+/local/services/www-metro
+	
+    Serveur HTTP pour metro
+    Binaires installes par Makefile
+
+/local/obj999
+
+    bin/
+	binaires installes par Makefile
+	(poller, stats d'association wifi pour alimentation des bases,
+	météo, création des bases, divers utilitaires, modèles)
+
+    lib/
+	bibliothèques de fonctions utilisées par les différents
+	binaires (de obj999, de www-idris, de www-metro, etc.)
+	ex:
+	    fonctions-bases-rrd.pl
+	    sonde-assoc-ap.pl
+	    sonde-bind-stat.pl
+	    ...
+
+    etc/
+	obj999.conf  ==> fichier de configuration generale de toutes les
+			 applis du projet obj999
+	
+	index.graph
+	<autres fichiers generes a la main eventuellement>
+	rien n'est modifie par make
+
+    var/
+	spool/
+	    metro.maj_sonde
+		fichier généré par www-metro/setgraph
+	poller/
+	    majDB.*
+		liste des sondes à sonder
+	    metro.graph
+		liste d'association des sondes et des bases RRD (généré
+		par setgraph à chaque passage de la topo)
+	    rrd_quarantaine
+		liste des sondes supprimées
+
+
+
+Arborescence CVS
+
+    /home/boggia/obj999
+	Makefile
+	    DESTIDRIS = /local/services/www-idris
+	    DESTMETRO = /local/services/www-metro
+	    DESTBIN   = /local/obj999/bin
+	    CONF      = /local/obj999/etc/obj999.conf
+
+	    install: install-idris install-metro install-bin
+
+	    install-idris:
+		    <scripts pour remplacer %CONF% par $(CONF)
+			dans les binaires
+			et copier tout ca dans DESTIDRIS>
+	    <etc>
+
+	etc/
+	    squelette de obj999.conf
+	    crontab.obj999
+
+	bin/
+	    binaires avec %CONF%
+
+	lib/
+	    fonctions appelées
+
+	www/
+	    binaires avec %CONF%
+
+	metro/
+	    binaires avec %CONF%
+
+	doc/
+	    documentation, figures, etc.
+
+
+Interactions avec la base DNS :
+
+select count(*) from topo.sensor where now() - lastmod < interval '150h';
+
+select * from topo.sensor where now() - lastmod < interval '150h';
+
+select count(*) from topo.sensor;
+
+select * from topo.sensor;
+
+

@@ -1,0 +1,1736 @@
+#!/usr/bin/perl
+
+# $Id: cree-base-rrd,v 1.5 2009-08-24 08:02:58 boggia Exp $
+#
+#
+# ###################################################################
+#  boggia : Creation : 25/03/08
+#
+# Permet de creer des bases rrdtoold ou des les corriger
+# Une interface mode texte permet a l'utilisateur de se servir du
+# programme.
+#
+
+# fichier de configuration principal et chargement des focntions de base
+our $conf_file = "%CONF%";
+require "%LIBMETRO%";
+#
+
+use SNMP_util;
+use Socket;
+use Net::hostent;
+
+#liste des Catalysts
+@liste_oids_commuts_cisco = qw(1.3.6.1.4.1.9.1.516 1.3.6.1.4.1.9.1.502 1.3.6.1.4.1.9.1.501 1.3.6.1.4.1.9.1.503 1.3.6.1.4.1.9.1.325 1.3.6.1.4.1.9.1.359 1.3.6.1.4.1.9.1.527 1.3.6.1.4.1.9.1.563 1.3.6.1.4.1.9.1.614 1.3.6.1.4.1.9.1.716 1.3.6.1.4.1.9.1.561);
+@liste_nom_commuts_cisco = qw(catalyst_3750 catalyst_4506 catalyst_4507 catalyst_4503 catalyst_2950 catalyst_2950T catalyst_2970 catalyst_3560 catalyst_3560Giga catalyst_2960 catalyst_2970);
+
+#liste des Routeurs Juniper
+@liste_oids_routeurs_juniper = qw(1.3.6.1.4.1.2636.1.1.1.2.2);
+@liste_nom_routeurs_juniper = qw(M20_kernel6.2R2.5);
+
+#liste des serveurs
+@liste_oids_serveurs = qw(1.3.6.1.4.1.2021.250.255 1.3.6.1.4.1.8072.3.2.255 1.3.6.1.4.1.8072.3.2.8 1.3.6.0.0.0.0.0.0.0);
+@liste_noms_serveurs = qw(OpenBSD_3.5 FreeBSD_4.10 FreeBSD_5.4 FreeBSD_6);
+
+#liste des points d'accès Wifi
+@liste_oids_ap = qw(1.3.6.1.4.1.9.1.525 1.3.6.1.4.1.9.1.507);
+@liste_noms_ap = qw(aironet_1200 aironet_1100);
+
+$dir_bases = read_conf_file("$conf_file","DIR_RRD_DB");
+$dir_bases_osiris = read_conf_file("$conf_file","DIR_RRD_DB") . "/osiris";
+$dir_bin = read_conf_file("$conf_file","DIR_BIN");
+$dir_sondes = read_conf_file("$conf_file","DIR_BIN_PROBES");
+$dir_majdb = read_conf_file("$conf_file","DIR_PROBES");
+$dir_etc = read_conf_file("$conf_file","DIR_ETC");
+
+$communaute = read_conf_file("$conf_file","O2_SNMP_COMMUNITY");
+$exec =1;
+$nb_MAX_lignes = 40;
+
+while($exec == 1)
+{
+        system("clear");
+        affiche_menu();
+        $reponse = <STDIN>;
+
+	if($reponse == 1)
+        {
+                cree_rrd_trafic();
+                print "\nOk! Appuyer sur Enter\n";
+                $suite = <STDIN>;
+                #system("clear");
+        }
+        elsif($reponse == 2)
+	{
+		ecrete_valeur();
+	}
+	elsif($reponse == 3)
+        {
+              	print "\nTcho.\n";
+                $exec = 0;
+        }
+        else
+        {
+               print "\nPas compris\n";
+        }
+}
+
+sub affiche_menu()
+{
+        print "\n--------------------------------------------------------";
+        print "\nMENU\n\n";
+        print "1. Creer une nouvelle base\n";
+	print "2. corriger une base\n";
+        print "3. Au revoir\n\n";
+}
+
+sub cree_rrd_trafic()
+{
+        print "\nEntrer le nom de l'equipement : ";
+        $ip = <STDIN>;
+        ($ip) = (split(/\s+/,$ip))[0];
+
+        #conversion du nom en adresse ip
+        $h = gethostbyname($ip);
+        $ip_addr = inet_ntoa($h->addr);
+
+        print "\nEntrer la communauté SNMP du commutateur (default : $communaute) : ";
+        $com = <STDIN>;
+        ($com) = (split(/\s+/,$com))[0];
+        if($com ne "")
+        {
+                $communaute = $com;
+        }
+
+        #verifie si l'equipement repond
+        $param = $communaute."@".$ip;
+
+        @sysName = ();
+        &snmpmapOID("nom","1.3.6.1.2.1.1.5.0");
+        @sysName = &snmpget($param,"nom");
+
+        $nom_equip = $sysName[0];
+
+	if($nom_equip ne "")
+        {
+                print "$nom_equip repond ...\n";
+		@sys_oid = ();
+	        &snmpmapOID("oid","1.3.6.1.2.1.1.2.0");
+        	@sys_oid = &snmpget($param,"oid");
+		$oid = $sys_oid[0];
+		
+		print "oid = $oid\n";
+
+		$trouve_equip = 0;
+		#selection de la fonction d'integration en fonction de l'equipement.
+		$taille_liste_catalyst = @liste_oids_commuts_cisco;
+		for($i=0;$i<$taille_liste_catalyst;$i++)
+		{
+			if($oid eq $liste_oids_commuts_cisco[$i])
+			{
+				print "L'equipement est un $liste_nom_commuts_cisco[$i].\n";
+				$trouve_equip = 1;
+				$couter32 = 0;
+				if($liste_nom_commuts_cisco[$i] eq "catalyst_3560" ||
+				$liste_nom_commuts_cisco[$i] eq "catalyst_2950" ||
+				$liste_nom_commuts_cisco[$i] eq "catalyst_2950T")
+				{
+					$couter32 = 1;
+				}
+			}
+		}
+		#si on est en preence d'un cisco catalyst
+		if($trouve_equip == 1)
+		{
+			cree_rrd_trafic_ce($nom_equip,$ip_addr,$communaute,$couter32);
+			$trouve_equip = 2;	
+		}
+
+		$taille_liste_juniper = @liste_oids_routeurs_juniper;
+                for($i=0;$i<$taille_liste_juniper;$i++)
+                {
+                        if($oid eq $liste_oids_routeurs_juniper[$i])
+                        {
+                                print "L'equipement est un $liste_nom_routeurs_juniper[$i].\n";
+                                $trouve_equip = 1;
+                        }
+                }
+		
+		if($trouve_equip == 1)
+                {
+                        cree_rrd_trafic_bb($nom_equip,$ip_addr,$communaute);
+			$trouve_equip = 2;
+                }
+
+		$taille_liste_serveurs = @liste_oids_serveurs;
+		for($i=0;$i<$taille_liste_serveurs;$i++)
+                {
+                        if($oid eq $liste_oids_serveurs[$i])
+                        {
+                                print "$nom_equip est un $liste_noms_serveurs[$i].\n";
+                                $trouve_equip = 1;
+                        }
+                }
+
+                if($trouve_equip == 1)
+                {
+                        cree_rrd_serveur($nom_equip,$ip_addr,$communaute);
+			$trouve_equip = 2;
+                }
+
+		$taille_liste_ap = @liste_oids_ap;
+		for($i=0;$i<$taille_liste_ap;$i++)
+		{
+			if($oid eq $liste_oids_ap[$i])
+			{
+				print "$nom_equip est un $liste_noms_ap[$i].\n";
+				$trouve_equip = 1;
+			}
+		}
+			
+		if($trouve_equip == 1)
+                {
+			cree_rrd_ap($nom_equip,$ip_addr,$communaute);
+			$trouve_equip = 2;
+		}
+		
+		#si on est en presence d'un equipement inconnu
+		if($trouve_equip == 0)
+		{
+			print "\nEquipement inconnu. Mettre à jour le programme.\n"; 
+		}
+	}
+	else
+	{
+		print "L'equipement ne répond pas. Vérifier son IP et ses configurations SNMP\n";
+	}
+}
+
+#fonction de creation d'une base pour une interface d'un juniper
+sub cree_rrd_trafic_bb
+{
+($nom_equip,$ip_addr,$communaute)=@_;
+	#creation du nom du repertoire dans lequel sera stocke la base
+        $rep_base = (split(/\./,$nom_equip))[0];
+        @nom_rep = split(/-/,$rep_base);
+        $taille_nom_rep = @nom_rep;
+        #print "\n$taille_nom_rep\n";
+        if($taille_nom_rep > 2)
+        {
+                $repertoire = "$nom_rep[0]";
+                for($i=1;$i<$taille_nom_rep-1;$i++)
+                {
+                        $repertoire = "$repertoire" . "-";
+                        $repertoire = "$repertoire" . "$nom_rep[$i]";
+                }
+                $num_equip = $nom_rep[$taille_nom_rep-1];
+        }
+	elsif($taille_nom_rep == 2)
+        {
+                $repertoire = $nom_rep[0];
+                $num_equip = $nom_rep[1];
+        }
+	elsif($taille_nom_rep == 1)
+        {
+                $repertoire = "$rep_base";
+        }
+
+        print "\nEntrer le nom du repertoire dans lequel creer la base (defaut = $repertoire) : ";
+        $n_rep = <STDIN>;
+        ($n_rep) = (split(/\s+/,$n_rep))[0];
+        if($n_rep ne "")
+        {
+                $repertoire = $n_rep;
+        }
+	
+        #teste si le reppertoire existe deja
+        opendir(DIR_BASE,$dir_bases);
+        @REP=grep(!/^\.\.?$/, readdir DIR_BASE);
+        closedir(DIR_BASE);
+        $existe_rep = 0;
+        foreach $elem (@REP)
+        {
+                #print "$elem\n";
+                if($elem eq $repertoire)
+                {
+                        print "Le repertoire existe déjà. La nouvelle base sera cree dans ce repertoire\n";
+                        $existe_rep = 1;
+                }
+        }
+	
+	$param = $communaute."@".$ip_addr;
+        #interrogation de l'equipement et recuperation des donnees
+        #recuperation de la liste des vlans
+        @ipAddress = ();
+        &snmpmapOID("ipaddress","1.3.6.1.2.1.4.20.1.2");
+        @ipAddress = &snmpwalk($param,"ipaddress");
+	#recuperation du masque
+	@ipMask = ();
+        &snmpmapOID("ipmask","1.3.6.1.2.1.4.20.1.3");
+        @ipMask = &snmpwalk($param,"ipmask");
+        #recuperation de la liste des ports
+        @ifName = ();
+        &snmpmapOID("ifname","1.3.6.1.2.1.31.1.1.1.1");
+        @ifName = &snmpwalk($param,"ifname");
+        #recuperation de la liste des descriptifs
+        @ifAlias = ();
+        &snmpmapOID("ifalias","1.3.6.1.2.1.31.1.1.1.18");
+        @ifAlias = &snmpwalk($param,"ifalias");
+        #recuperation de la liste des types d'interface
+        @ifType = ();
+        &snmpmapOID("iftype","1.3.6.1.2.1.2.2.1.3");
+        @ifType = &snmpwalk($param,"iftype");
+	
+	#creation d'un tableau de correspondance Vlans, interfaces
+        #on stocke dans le tableau toutes les interfaces de type Ethernet et vlan
+        $t=@ifType;
+ 	$taille_tab = 0;
+        @tab = ();
+        for($i=0;$i<$t;$i++)
+        {
+                ($index,$type)=(split(/:/,$ifType[$i]))[0,1];
+                if($type == 6 || $type == 135 || $type == 53)
+                {
+                        $tab[$taille_tab][0] = $index;
+                        $tt=@ifName;
+                        for($j=0;$j<$tt;$j++)
+                        {
+                                ($index_nom,$nom)=(split(/:/,$ifName[$j]))[0,1];
+                                if($index_nom eq $index)
+                                {
+                                        $tab[$taille_tab][1] = $nom;
+                                        $j = $tt;
+                                }
+                        }
+			$tt=@ifAlias;
+                        for($j=0;$j<$tt;$j++)
+                        {
+                                ($index_alias,$nom)=(split(/:/,$ifAlias[$j]))[0,1];
+                                if($index_alias eq $index)
+                                {
+                                        $tab[$taille_tab][3] = $nom;
+                                        $j = $tt;
+                                }
+                        }
+                        $tt=@ipAddress;
+			$tab[$taille_tab][2] = "";
+                        for($j=0;$j<$tt;$j++)
+                        {
+                                ($ip_adresse,$index_if)=(split(/:/,$ipAddress[$j]))[0,1];
+				#print "$ipAddress[$j]\n";
+                                if($index_if eq $index)
+                                {
+					$kk=@ipMask;
+					for($k=0;$k<$kk;$k++)
+					{
+						($ip_m,$mask)=(split(/:/,$ipMask[$j]))[0,1];
+						if($ip_m eq $ip_adresse)
+						{
+							$k = $kk;
+							$ip_adresse = "$ip_adresse $mask"; 
+						}
+					}
+                                        $tab[$taille_tab][2] = "$tab[$taille_tab][2]\n$ip_adresse";
+                                }
+                        }
+                        $taille_tab ++;
+                }
+	}
+
+	#On affiche les possibilites des interfaces a grapher
+        $choix_ok = 0;
+        while($choix_ok == 0)
+        {
+                print "Choisir dans la liste l'interface sur laquelle sera collecte le trafic :\n\n";
+                for($i=1;$i<=$taille_tab;$i++)
+        	{
+                	print "_____________________________________________________________________________\n$i)\n$tab[$i-1][2]\t\t$tab[$i-1][1]\t\t$tab[$i-1][3]\n";
+        	}
+		print "\nEntrer votre choix : ";
+                $choix_inter = <STDIN>;
+                ($choix_inter) = (split(/\s+/,$choix_inter))[0];
+                if(int($choix_inter) > 0 && int($choix_inter) <= $taille_tab)
+                {
+                        $choix_ok = 1;
+                }
+                else
+                {
+                        print "\nChoix non valide. Doigts carrés\n";
+                }
+		
+        }
+	
+	print "\nSe baser sur l'adresse IP? Sinon sur le nom de l'interface. (0)/N ?";
+	$choix_ON = <STDIN>;
+	($choix_ON) = (split(/\s+/,$choix_ON))[0];
+	
+	if($choix_ON ne "N")
+	{
+		$tab[$choix_inter-1][2]=~s/^\n//;
+		@liste_ip = split(/\n/,$tab[$choix_inter-1][2]);
+		$t_liste_ip = @liste_ip;
+
+		if($t_liste_ip > 1)
+		{
+			print "\nQuelle est l'IP la plus significative pour le service?\n";
+			for($i=1;$i<=$t_liste_ip;$i++)
+			{
+				print "$i) $liste_ip[$i-1]\n";	
+			}
+			$choix_ok = 0;
+			while($choix_ok == 0)
+                	{
+				$ip_choix = <STDIN>;
+				if(int($ip_choix) > 0 && int($ip_choix) <= $t_liste_ip)
+                     		{
+                             		$choix_ok = 1;
+					$ip_choix = $liste_ip[$ip_choix-1];
+					($ip_choix) = (split(/\s+/,$ip_choix))[0];
+                     		}
+			}
+		}
+		elsif($t_liste_ip == 1)
+		{
+			($ip_choix) = (split(/\s+/,$liste_ip[0]))[0];	
+		}
+		else
+		{
+			print "\nErreur sur le nom de l'interface\n";
+			exit(0);
+		}
+		
+		#reconnaissance d'une adresse IP	
+		if($ip_choix=~m/[0-9]+.[0-9]+.[0-9]+.[0-9]+/)
+		{
+			print "\nIP choix = $ip_choix\n";
+		}
+		else
+		{
+			print "\nErreur : Adresse IP non reconnue.\n";
+                        exit(0);
+		}
+	}
+
+	print "\nChoisir le sens dans lequel on veut visualiser le trafic.\nPar défaut, on a une vue depuis l'equipement.\nInverser le flux? O/(N) : ";
+
+        $reponse = <STDIN>;
+        $inverse_flux = 0;
+        ($reponse) = (split(/\s+/,$reponse))[0];
+        if($reponse eq "O")
+        {
+                $inverse_flux = 1;
+        }
+
+	#creation du repertoire
+        if($existe_rep == 0)
+        {
+                system("mkdir $dir_bases/$repertoire");
+                system("chown obj999:obj999 $dir_bases/$repertoire");
+        }
+
+#####creation de la base
+        #nom du fichier
+        $nom_fichier_base = $num_equip;
+	if($nom_fichier_base eq "")
+	{
+		$nom_fichier_base = "if";
+	}
+        $nom_interf = $tab[$choix_inter-1][1];
+        $nom_interf=~s/\//_/g;
+	$nom_interf=~s/-/_/g;
+	if($choix_ON ne "N")
+	{
+		($c1,$c2,$c3,$c4)=(split(/\./,$ip_choix))[0,1,2,3];
+		if($c1 == 130 && $c2 == 79)
+		{
+			$nom_fichier_base = "$nom_fichier_base" . "-" . "O2_" . "$c3.$c4.rrd";
+		}
+		elsif($c1 == 193 && $c2 == 54)
+		{
+			$nom_fichier_base = "$nom_fichier_base" . "-" . "RR_" . "$c3.$c4.rrd";
+		}
+		elsif($c1 == 193 && $c2 == 51)
+		{
+			$nom_fichier_base = "$nom_fichier_base" . "-" . "RN_" . "$c3.$c4.rrd";
+		}
+		else
+		{
+			$nom_fichier_base = "$nom_fichier_base" . "-" . "UN_" . "$c3.$c4.rrd";
+		}
+	}
+	else
+	{
+        	$nom_fichier_base = "$nom_fichier_base" . "-" . "$nom_interf.rrd";
+	}
+	
+	print "\nNom de la base : $nom_fichier_base\n";
+        #teste si la base existe deja
+        #
+        $param1 = "$dir_bases/$repertoire";
+        $existe_base = test_base_existe($param1,$nom_fichier_base);
+        ###
+
+        if($existe_base == 1)
+        {
+        #demande a l'utilisateur si le fichier existant doit etre ecrase
+                $existe_base = question_ecraser_fichier();
+        }
+        #ecriture de la base dans son repertoire
+        if($existe_base == 0)
+        {
+                $param = "$dir_bases/$repertoire/$nom_fichier_base";
+
+                creeBaseOsirisCE($param);
+
+                system("chown obj999:obj999 $dir_bases/$repertoire/$nom_fichier_base");
+        }
+
+	#creation de la ligne de commande a mettre dans le fichier majDB
+        if($choix_ON ne "N")
+	{
+		if($inverse_flux == 1)
+        	{	
+			$ip_choix = "-$ip_choix";
+        	}
+        	$commande = "ifIP-snmp64 $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute $ip_choix";
+   	}
+	else
+	{
+		if($inverse_flux == 1)
+                {
+			$tab[$choix_inter-1][1] = "-$tab[$choix_inter-1][1]";
+                }
+		$commande = "ifNom-snmp64 $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute $tab[$choix_inter-1][1]";
+
+	}
+######mise a jour des fichiers lancant les actions d'update des bases
+        maj_fichier_update($dir_majdb,$commande,$nb_MAX_lignes);
+}
+
+
+#fonction de creation d'une base pour un serveur
+sub cree_rrd_serveur
+{
+($nom_equip,$ip_addr,$communaute)=@_;
+
+	#creation du nom du repertoire dans lequel sera stocke la base
+        $rep_base = (split(/\./,$nom_equip))[0];
+        @nom_rep = split(/-/,$rep_base);
+        $taille_nom_rep = @nom_rep;
+        #print "\n$taille_nom_rep\n";
+        if($taille_nom_rep > 2)
+        {
+                $repertoire = "$nom_rep[0]";
+                for($i=1;$i<$taille_nom_rep-1;$i++)
+                {
+                        $repertoire = "$repertoire" . "-";
+                        $repertoire = "$repertoire" . "$nom_rep[$i]";
+                }
+                $num_equip = $nom_rep[$taille_nom_rep-1];
+        }
+        elsif($taille_nom_rep == 2)
+        {
+                $repertoire = $nom_rep[0];
+                $num_equip = $nom_rep[1];
+        }
+	elsif($taille_nom_rep == 1)
+	{
+		$repertoire = "serveur_$rep_base";
+	}
+
+        print "\nEntrer le nom du repertoire dans lequel creer la base (defaut = $repertoire) : ";
+        $n_rep = <STDIN>;
+        ($n_rep) = (split(/\s+/,$n_rep))[0];
+        if($n_rep ne "")
+        {
+                $repertoire = $n_rep;
+        }
+	
+	#teste si le reppertoire existe deja
+        opendir(DIR_BASE,$dir_bases);
+        @REP=grep(!/^\.\.?$/, readdir DIR_BASE);
+        closedir(DIR_BASE);
+        $existe_rep = 0;
+        foreach $elem (@REP)
+        {
+                #print "$elem\n";
+                if($elem eq $repertoire)
+                {
+                        print "Le repertoire existe déjà. La nouvelle base sera cree dans ce repertoire\n";
+                        $existe_rep = 1;
+                }
+        }
+	
+	$choix_ok = 0;
+        while($choix_ok == 0)
+        {
+		print "\nQue monitorer ?\n1) trafic\n2) CPU\n3) memoire\n4) interruptions systeme\n5) load average\n6) requetes DNS\n7) transactions/s sur un disque\n8) taille de la mailq\n: ";
+
+                $choix_sonde = <STDIN>;
+                ($choix_sonde) = (split(/\s+/,$choix_sonde))[0];
+                if(int($choix_sonde) > 0 && int($choix_sonde) <= 8)
+                {
+                        $choix_ok = 1;
+                }
+                else
+                {
+                        print "\nChoix non valide. Doigts carrés\n";
+                }
+
+        }
+	
+	if($choix_sonde == 1)
+	{
+		$param = $communaute."@".$ip_addr;
+		#recuperation de la liste des ports
+        	@ifName = ();
+        	&snmpmapOID("ifname","1.3.6.1.2.1.2.2.1.2");
+        	@ifName = &snmpwalk($param,"ifname");
+		#recuperation de la liste des types d'interface
+        	@ifType = ();
+        	&snmpmapOID("iftype","1.3.6.1.2.1.2.2.1.3");
+        	@ifType = &snmpwalk($param,"iftype");
+		
+		#on stocke dans le tableau toutes les interfaces de type Ethernet
+        	$t=@ifType;
+        	$taille_tab = 0;
+        	@tab = ();
+		for($i=0;$i<$t;$i++)
+        	{
+                	($index,$type)=(split(/:/,$ifType[$i]))[0,1];
+                	if($type == 6)
+                	{
+                        	$tab[$taille_tab][0] = $index;
+                        	$tt=@ifName;
+                        	for($j=0;$j<$tt;$j++)
+                        	{
+                                	($index_nom,$nom)=(split(/:/,$ifName[$j]))[0,1];
+                                	if($index_nom eq $index)
+                                	{
+                                        	$tab[$taille_tab][1] = $nom;
+                                        	$j = $tt;
+                                	}
+                        	}
+				$taille_tab ++;
+			}
+		}
+
+		#On affiche les possibilites des interfaces a grapher
+        	$choix_ok = 0;
+        	while($choix_ok == 0)
+        	{
+                	print "Choisir dans la liste l'interface sur laquelle sera collecte le trafic :\n\n";
+                	for($i=1;$i<=$taille_tab;$i++)
+                	{
+                        	print "$i. $tab[$i-1][1]\n";
+                	}
+                	print "\nEntrer votre choix : ";
+                	$choix_inter = <STDIN>;
+                	($choix_inter) = (split(/\s+/,$choix_inter))[0];
+                	if(int($choix_inter) > 0 && int($choix_inter) <= $taille_tab)
+                	{
+                        	$choix_ok = 1;
+                	}
+                	else
+                	{
+                        	print "\nChoix non valide. Doigts carrés\n";
+                	}
+        	}
+		print "\nChoisir le sens dans lequel on veut visualiser le trafic.\nPar défaut, on a une vue depuis l'equipement.\nInverser le flux? O/(N) : ";
+                $reponse = <STDIN>;
+                $inverse_flux = 0;
+                ($reponse) = (split(/\s+/,$reponse))[0];
+                if($reponse eq "O")
+                {
+                        $inverse_flux = 1;
+                }
+		
+		#creation du repertoire
+        	if($existe_rep == 0)
+        	{
+                	system("mkdir $dir_bases/$repertoire");
+                	system("chown obj999:obj999 $dir_bases/$repertoire");
+        	}
+		
+		$nom_fichier_base = $num_equip;
+        	$nom_interf = $tab[$choix_inter-1][1];
+        	$nom_interf=~s/\//_/g;
+		if($nom_fichier_base ne "")
+		{
+        		$nom_fichier_base = "$nom_fichier_base" . "-" . "$nom_interf";
+		}
+		else
+		{
+			$nom_fichier_base = $nom_interf;
+		}
+		$nom_fichier_base = "$nom_fichier_base" . ".rrd";
+		
+		print "\nNom de la base : $nom_fichier_base\n";
+
+		#creation de la ligne de commande a mettre dans le fichier majDB
+        	if($inverse_flux == 1)
+        	{
+                	$desc_inter = "-$tab[$choix_inter-1][1]";
+        	}
+		else
+		{
+			$desc_inter = $tab[$choix_inter-1][1];
+		}
+
+		$commande = "ifNom-snmp32 $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute $desc_inter";
+		$param_graph = "$rep_base-trafic-$desc_inter;trafic;1;$dir_bases/$repertoire/$nom_fichier_base;trafic sur $desc_inter de $rep_base";
+	}
+	elsif($choix_sonde == 2)
+	{
+		$param = $communaute."@".$ip_addr;
+                #recuperation de la liste des CPUs systeme
+                @CPU_system = ();
+                &snmpmapOID("cpusyst","1.3.6.1.4.1.2021.11.10");
+                @CPU_system = &snmpwalk($param,"cpusyst");
+		#recuperation de la liste des CPUs user
+                @CPU_user = ();
+                &snmpmapOID("cpuuser","1.3.6.1.4.1.2021.11.9");
+                @CPU_user = &snmpwalk($param,"cpuuser");
+			
+		foreach $elem (@CPU_system)
+		{
+			print "\n$elem";
+		}
+
+		$nb_cpu = @CPU_system;
+
+		#creation du repertoire
+                if($existe_rep == 0)
+                {
+                        system("mkdir $dir_bases/$repertoire");
+                        system("chown obj999:obj999 $dir_bases/$repertoire");
+                }
+
+		for($n=0;$n<$nb_cpu;$n++)
+		{
+                	$nom_base = $num_equip;
+                	if($nom_base ne "")
+	                {
+       		                $nom_base = "$nom_base" . "-" . "CPU$n";
+       		        }
+                	else
+                	{
+                        	$nom_base = "CPU$n";
+                	}
+			$nom_base = "$nom_base" . ".rrd";
+
+			print "\nNom de la base : $nom_base\n";
+			$commande = "$dir_sondes/CPU-serveur.pl $dir_bases/$repertoire/$nom_base $ip_addr $communaute $n";
+			$param_graph = "$rep_base-cpu;GaugeCPU;1;$dir_bases/$repertoire/$nom_base;Utilisation CPU de $rep_base";
+
+			$param1 = "$dir_bases/$repertoire";
+			$existe_base = test_base_existe($param1,$nom_base);
+			
+			if($existe_base == 1)
+                	{
+                	#demande a l'utilisateur si le fichier existant doit etre ecrase
+                        	$existe_base = question_ecraser_fichier();
+                	}
+			
+			#ecriture de la base dans son repertoire
+                	if($existe_base == 0)
+                	{
+                        	$param = "$dir_bases/$repertoire/$nom_base";
+
+				creeBaseCPU($param); 
+
+                        	system("chown obj999:obj999 $dir_bases/$repertoire/$nom_base");
+                	}
+
+                	######mise a jour des fichiers lancant les actions d'update des bases
+                	maj_fichier_update($dir_majdb,$commande,$nb_MAX_lignes,$param_graph);
+		}
+
+	}
+	elsif($choix_sonde == 3)
+	{	
+		#creation du repertoire
+                if($existe_rep == 0)
+                {
+                        system("mkdir $dir_bases/$repertoire");
+                        system("chown obj999:obj999 $dir_bases/$repertoire");
+                }
+
+		$nom_fichier_base = $num_equip;
+                if($nom_fichier_base ne "")
+                {
+                        $nom_fichier_base = "$nom_fichier_base" . "-" . "Mem";
+                }
+                else
+                {
+                        $nom_fichier_base = "Mem";
+                }
+                $nom_fichier_base = "$nom_fichier_base" . ".rrd";
+		
+		print "\nNom de la base : $nom_fichier_base\n";
+                $commande = "$dir_sondes/Memoire-serveur.pl $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute";
+	}
+	elsif($choix_sonde == 4)
+        {
+		#creation du repertoire
+                if($existe_rep == 0)
+                {
+                        system("mkdir $dir_bases/$repertoire");
+                        system("chown obj999:obj999 $dir_bases/$repertoire");
+                }
+		
+		$nom_fichier_base = $num_equip;
+		if($nom_fichier_base ne "")
+                {
+                        $nom_fichier_base = "$nom_fichier_base" . "-" . "Interrupt";
+                }
+                else
+                {
+                        $nom_fichier_base = "Interrupt";
+                }
+                $nom_fichier_base = "$nom_fichier_base" . ".rrd";
+		
+		print "\nNom de la base : $nom_fichier_base\n";
+		$commande = "$dir_sondes/Interrupt-serveur.pl $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute";
+	}
+	elsif($choix_sonde == 5)
+	{
+		#creation du repertoire
+                if($existe_rep == 0)
+                {
+                        system("mkdir $dir_bases/$repertoire");
+                        system("chown obj999:obj999 $dir_bases/$repertoire");
+                }
+		
+		$nom_fichier_base = $num_equip;
+                if($nom_fichier_base ne "")
+                {
+                        $nom_fichier_base = "$nom_fichier_base" . "-" . "Load";
+		}
+		else
+                {
+                        $nom_fichier_base = "Load";
+		}
+		$nom_fichier_base = "$nom_fichier_base" . ".rrd";
+		
+		print "\nNom de la base : $nom_fichier_base\n";
+                $commande = "$dir_sondes/LOAD-serveur.pl $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute";
+		$param_graph = "$rep_base-load;GaugeLoadAverage;1;$dir_bases/$repertoire/$nom_fichier_base;Load Average de $rep_base";
+	}
+	elsif($choix_sonde == 6)
+	{
+	    #creation du repertoire
+                if($existe_rep == 0)
+                {
+                        system("mkdir $dir_bases/$repertoire");
+                        system("chown obj999:obj999 $dir_bases/$repertoire");
+                }
+
+                $nom_fichier_base = $num_equip;
+                if($nom_fichier_base ne "")
+                {
+                        $nom_fichier_base = "$nom_fichier_base" . "-" . "bind";
+                }
+                else
+                {
+                        $nom_fichier_base = "bind";
+                }
+                $nom_fichier_base = "$nom_fichier_base" . ".rrd";
+
+                print "\nNom de la base : $nom_fichier_base\n";
+                $commande = "get-bind-stat $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute";
+		$param_graph = "$rep_base-bind;bind;1;$dir_bases/$repertoire/$nom_fichier_base;Statistiques de Bind sur $rep_base";
+	}
+	# transaction par secondes sur un disque
+	elsif($choix_sonde == 7)
+        {
+		$param = $communaute."@".$ip_addr;
+                #recuperation de la liste des disques
+                @diskName = ();
+                &snmpmapOID("ifname","1.3.6.1.4.1.2021.13.15.1.1.2");
+                @diskName = &snmpwalk($param,"ifname");
+
+                $taille_tab = 0;
+                @tab = ();
+                $tt=@diskName;
+                for($j=0;$j<$tt;$j++)
+                {
+		    ($index,$nom)=(split(/:/,$diskName[$j]))[0,1];
+		    $tab[$taille_tab][0] = $index;
+		    $tab[$taille_tab][1] = $nom;
+                    $taille_tab ++;
+                }
+		#On affiche la liste des disques
+                $choix_ok = 0;
+                while($choix_ok == 0)
+                {
+                        print "Choisir un disque dans la liste :\n\n";
+                        for($i=1;$i<=$taille_tab;$i++)
+                        {
+                                print "$i. $tab[$i-1][1]\n";
+                        }
+                        print "\nEntrer votre choix : ";
+                        $choix_inter = <STDIN>;
+                        ($choix_inter) = (split(/\s+/,$choix_inter))[0];
+                        if(int($choix_inter) > 0 && int($choix_inter) <= $taille_tab)
+                        {
+                                $choix_ok = 1;
+                        }
+                        else
+                        {
+                                print "\nChoix non valide. Doigts carrés\n";
+                        }
+                }
+		
+		#creation du repertoire
+                if($existe_rep == 0)
+                {
+                        system("mkdir $dir_bases/$repertoire");
+                        system("chown obj999:obj999 $dir_bases/$repertoire");
+                }
+
+                $nom_fichier_base = $num_equip;
+                $nom_disque = $tab[$choix_inter-1][1];
+                if($nom_fichier_base ne "")
+                {
+                        $nom_fichier_base = "$nom_fichier_base" . "-" . "$nom_disque";
+                }
+                else
+                {
+                        $nom_fichier_base = $nom_disque;
+                }
+                $nom_fichier_base = "tps-$nom_fichier_base" . ".rrd";
+
+                print "\nNom de la base : $nom_fichier_base\n";
+
+                #creation de la ligne de commande a mettre dans le fichier majDB
+                $desc_disque = $tab[$choix_inter-1][1];
+
+                $commande = "get_tps_disk $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute $desc_disque";
+		$param_graph = "$rep_base-tps-$nom_disque;tpsDisk;1;$dir_bases/$rpertoire/$nom_fichier_base;Transitions par secondes sur $nom_disque de $rep_base";
+	}
+	elsif($choix_sonde == 8)
+        {
+                #creation du repertoire
+                if($existe_rep == 0)
+                {
+                        system("mkdir $dir_bases/$repertoire");
+                        system("chown obj999:obj999 $dir_bases/$repertoire");
+                }
+
+                $nom_fichier_base = $num_equip;
+                if($nom_fichier_base ne "")
+                {
+                        $nom_fichier_base = "mailq-$nom_fichier_base";
+                }
+                else
+                {
+                        $nom_fichier_base = "mailq";
+                }
+                $nom_fichier_base = "$nom_fichier_base" . ".rrd";
+
+                print "\nNom de la base : $nom_fichier_base\n";
+                $commande = "get_mailq $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute";
+		$param_graph = "$rep_base-mailq;GaugeMailq;1;$dir_bases/$repertoire/$nom_fichier_base;mailq sur $rep_base";
+        }
+
+	
+	if($choix_sonde	!= 2)
+	{
+		#teste si la base existe deja
+        	#
+        	$param1 = "$dir_bases/$repertoire";
+        	$existe_base = test_base_existe($param1,$nom_fichier_base);
+        	###
+
+        	if($existe_base == 1)
+        	{
+        	#demande a l'utilisateur si le fichier existant doit etre ecrase
+                	$existe_base = question_ecraser_fichier();
+        	}
+
+		#ecriture de la base dans son repertoire
+        	if($existe_base == 0)
+        	{
+                	$param = "$dir_bases/$repertoire/$nom_fichier_base";
+			
+			if($choix_sonde == 1)
+			{
+                		creeBaseOsirisCE($param);
+			}
+			elsif($choix_sonde == 4)
+			{
+				creeBaseInterupt($param);	
+			}
+			elsif($choix_sonde == 5)
+			{
+                                creeBaseLoad($param);
+			}
+			elsif($choix_sonde == 6)
+			{
+                                creeBaseBind_stat($param);
+                        }
+			elsif($choix_sonde == 7)
+                        {
+                                creeBaseTPSDisk($param);
+                        }
+			elsif($choix_sonde == 8)
+                        {
+                                creeBaseMailq($param);
+                        }
+                	system("chown obj999:obj999 $dir_bases/$repertoire/$nom_fichier_base");
+        	}
+
+ 		######mise a jour des fichiers lancant les actions d'update des bases
+        	maj_fichier_update($dir_majdb,$commande,$nb_MAX_lignes,$param_graph);
+	}
+}
+
+
+#fonction de creation d'une base pour une interface d'un catalyst
+sub cree_rrd_trafic_ce
+{
+($nom_equip,$ip_addr,$communaute,$counter32)=@_;
+	#creation du nom du repertoire dans lequel sera stocke la base
+	$rep_base = (split(/\./,$nom_equip))[0];
+	@nom_rep = split(/-/,$rep_base);
+	$taille_nom_rep = @nom_rep;
+	#print "\n$taille_nom_rep\n";
+	if($taille_nom_rep > 2)
+	{
+		$repertoire = "$nom_rep[0]";
+		for($i=1;$i<$taille_nom_rep-1;$i++)
+		{
+			$repertoire = "$repertoire" . "-";
+			$repertoire = "$repertoire" . "$nom_rep[$i]";
+		}
+		$num_equip = $nom_rep[$taille_nom_rep-1];
+	}
+	elsif($taille_nom_rep == 2)
+	{
+		$repertoire = $nom_rep[0];
+		$num_equip = $nom_rep[1];
+	}
+	
+	print "\nEntrer le nom du repertoire dans lequel creer la base (defaut = $repertoire) : ";
+	$n_rep = <STDIN>;
+	($n_rep) = (split(/\s+/,$n_rep))[0];
+	if($n_rep ne "")
+	{
+		$repertoire = $n_rep;
+	}			
+	
+ 	#teste si le reppertoire existe deja
+	opendir(DIR_BASE,$dir_bases);
+	@REP=grep(!/^\.\.?$/, readdir DIR_BASE);
+	closedir(DIR_BASE);
+	$existe_rep = 0;
+	foreach $elem (@REP)
+	{
+       		#print "$elem\n";
+       		if($elem eq $repertoire)
+       		{
+               		print "Le repertoire existe déjà. La nouvelle base sera cree dans ce repertoire\n";
+			$existe_rep = 1; 
+       		}
+	}
+
+	$param = $communaute."@".$ip_addr;	
+	#interrogation de l'equipement et recuperation des donnees
+	#recuperation de la liste des vlans
+	@vlanAccess = ();
+       	&snmpmapOID("vlanAccess","1.3.6.1.4.1.9.9.68.1.2.2.1.2");
+       	@vlanAccess = &snmpwalk($param,"vlanAccess");
+	#recuperation de la liste des ports
+	@ifName = ();
+        &snmpmapOID("ifname","1.3.6.1.2.1.31.1.1.1.1");
+        @ifName = &snmpwalk($param,"ifname");
+	#recuperation de la liste des descriptifs
+	@ifAlias = ();
+        &snmpmapOID("ifalias","1.3.6.1.2.1.31.1.1.1.18");
+        @ifAlias = &snmpwalk($param,"ifalias");
+	#recuperation de la liste des types d'interface
+	@ifType = ();
+        &snmpmapOID("iftype","1.3.6.1.2.1.2.2.1.3");
+        @ifType = &snmpwalk($param,"iftype");
+		
+	#creation d'un tableau de correspondance Vlans, interfaces
+	#on stocke dans le tableau toutes les interfaces de type Ethernet
+	$t=@ifType;
+	$taille_tab = 0;
+	@tab = ();
+        for($i=0;$i<$t;$i++)
+        {
+                ($index,$type)=(split(/:/,$ifType[$i]))[0,1];
+		if($type == 6 || $type == 53)
+		{	
+			$continue = 1;
+			
+			$tt=@ifName;
+                        for($j=0;$j<$tt;$j++)
+                        {
+                                ($index_nom,$nom)=(split(/:/,$ifName[$j]))[0,1];
+                                if($index_nom eq $index)
+                                {
+					if($type == 53)
+					{
+						if($nom=~m/^Po/)
+		                                {
+							$tab[$taille_tab][1] = $nom;
+                                                	$j = $tt;
+                               		 	}
+                                		else
+                                		{
+                                        		$continue = 0;
+                                		}
+					}
+					else
+					{
+                                        	$tab[$taille_tab][1] = $nom;
+                                        	$j = $tt;
+					}
+                                }
+                        }
+
+			if($continue == 1)
+			{
+				$tab[$taille_tab][0] = $index;
+				
+				$tt=@vlanAccess;
+				for($j=0;$j<$tt;$j++)
+                        	{
+                                	($index_vlan,$nom)=(split(/:/,$vlanAccess[$j]))[0,1];
+                                	if($index_vlan eq $index)
+                                	{
+                                        	$tab[$taille_tab][2] = $nom;
+                                        	$j = $tt;
+                                	}
+                        	}
+				$tt=@ifAlias;
+				for($j=0;$j<$tt;$j++)
+                        	{
+                                	($index_alias,$nom)=(split(/:/,$ifAlias[$j]))[0,1];
+                                	if($index_alias eq $index)
+                               	 	{
+                                        	$tab[$taille_tab][3] = $nom;
+                                        	$j = $tt;
+                                	}
+                        	}
+				$taille_tab ++;	
+			}
+		}
+        }
+	
+	#On affiche les possibilites des interfaces a grapher
+	$choix_ok = 0;
+	while($choix_ok == 0)
+	{
+		print "Choisir dans la liste l'interface sur laquelle sera collecte le trafic :\n\n";
+		for($i=1;$i<=$taille_tab;$i++)
+		{
+			print "$i. $tab[$i-1][1]\t\t$tab[$i-1][2]\t\t$tab[$i-1][3]\n";
+		}		
+		print "\nEntrer votre choix : ";
+		$choix_inter = <STDIN>;
+		($choix_inter) = (split(/\s+/,$choix_inter))[0];
+		if(int($choix_inter) > 0 && int($choix_inter) <= $taille_tab)
+		{
+			$choix_ok = 1;	
+		}
+		else
+		{
+			print "\nChoix non valide. Doigts carrés\n";
+		}
+		print "\nChoisir le sens dans lequel on veut visualiser le trafic.\nPar défaut, on a une vue depuis l'equipement.\nInverser le flux? O/(N) : ";
+		$reponse = <STDIN>;
+		$inverse_flux = 0;
+                ($reponse) = (split(/\s+/,$reponse))[0];
+                if($reponse eq "O")
+                {
+                        $inverse_flux = 1;
+                }
+	}
+	
+	#creation du repertoire
+	if($existe_rep == 0)
+	{
+		system("mkdir $dir_bases/$repertoire");
+		system("chown obj999:obj999 $dir_bases/$repertoire");
+	}
+	
+#####creation de la base
+	#nom du fichier
+	$nom_fichier_base = $num_equip;
+	if($nom_fichier_base eq "")
+        {
+                $nom_fichier_base = "if";
+        }
+	$nom_interf = $tab[$choix_inter-1][1];
+	$nom_interf=~s/\//_/g;
+	$nom_fichier_base = "$nom_fichier_base" . "-" . "$nom_interf"; 
+	if($tab[$choix_inter-1][2] eq "")
+	{	
+		$nom_fichier_base = "$nom_fichier_base" . "-trunk" . ".rrd";
+	}
+	else
+	{	
+		$nom_fichier_base = "$nom_fichier_base" . "-" . "$tab[$choix_inter-1][2]" . ".rrd";
+	}
+	print "\nNom de la base : $nom_fichier_base\n";
+
+	#On recupere le descriptif de l'interface :
+        &snmpmapOID("descindex","1.3.6.1.2.1.2.2.1.2.$tab[$choix_inter-1][0]");
+        @desc_inter = &snmpget($param, "descindex");
+		
+	#teste si la base existe deja
+	#
+	$param1 = "$dir_bases/$repertoire";
+	$existe_base = test_base_existe($param1,$nom_fichier_base);
+	###
+
+	if($existe_base == 1)
+	{
+	#demande a l'utilisateur si le fichier existant doit etre ecrase
+		$existe_base = question_ecraser_fichier();
+	}	
+	#ecriture de la base dans son repertoire
+	if($existe_base == 0)
+	{
+		$param = "$dir_bases/$repertoire/$nom_fichier_base";
+		
+		creeBaseOsirisCE($param);
+		
+		system("chown obj999:obj999 $dir_bases/$repertoire/$nom_fichier_base");
+	}
+	
+	#creation de la ligne de commande a mettre dans le fichier majDB
+	if($inverse_flux == 1)
+	{
+		$desc_inter[0] = "-$desc_inter[0]";
+	}
+	if($counter32 == 1)
+	{
+	$commande = "ifNom-snmp32.pl $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute $desc_inter[0]";
+	}
+	else
+	{
+		$commande = "ifNom-snmp64.pl $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute $desc_inter[0]";
+	}
+######mise a jour des fichiers lancant les actions d'update des bases
+	maj_fichier_update($dir_majdb,$commande,$nb_MAX_lignes);
+}
+
+
+#creation des bases pour les points d'accès 
+sub cree_rrd_ap
+{
+($nom_equip,$ip_addr,$communaute)=@_;
+ 
+        #creation du nom du repertoire dans lequel sera stocke la base
+        $rep_base = (split(/\./,$nom_equip))[0];
+	$nom_eq = $rep_base;
+        @nom_rep = split(/-/,$rep_base);
+        $taille_nom_rep = @nom_rep;
+        #print "\n$taille_nom_rep\n";
+        if($taille_nom_rep > 2)
+        {
+                $repertoire = "$nom_rep[0]";
+                for($i=1;$i<$taille_nom_rep-1;$i++)
+                {
+                        $repertoire = "$repertoire" . "-";
+                        $repertoire = "$repertoire" . "$nom_rep[$i]";
+                }
+                $num_equip = $nom_rep[$taille_nom_rep-1];
+        }
+        elsif($taille_nom_rep == 2)
+        {
+                $repertoire = $nom_rep[0];
+                $num_equip = $nom_rep[1];
+        }
+
+        print "\nEntrer le nom du repertoire dans lequel creer la base (defaut = $repertoire) : ";
+        $n_rep = <STDIN>;
+        ($n_rep) = (split(/\s+/,$n_rep))[0];
+        if($n_rep ne "")
+        {
+                $repertoire = $n_rep;
+        }
+
+        #teste si le reppertoire existe deja
+        opendir(DIR_BASE,$dir_bases);
+        @REP=grep(!/^\.\.?$/, readdir DIR_BASE);
+        closedir(DIR_BASE);
+        $existe_rep = 0;
+        foreach $elem (@REP)
+        {
+                #print "$elem\n";
+                if($elem eq $repertoire)
+                {
+                        print "Le repertoire existe déjà. La nouvelle base sera cree dans ce repertoire\n";
+                        $existe_rep = 1;
+                }
+        }
+	
+	$param = $communaute."@".$ip_addr;
+        #interrogation de l'equipement et recuperation des donnees
+	#recuperation de la liste des ports
+        @ifName = ();
+        &snmpmapOID("ifname","1.3.6.1.2.1.31.1.1.1.1");
+        @ifName = &snmpwalk($param,"ifname");
+
+	$t_ifName = @ifName;
+	@tab_if_ap = ();
+	$index_if_ap = 0;
+	for($x=0;$x<$t_ifName;$x++)
+	{
+		if($ifName[$x]=~m/Do0\./)
+		{
+			($if)=(split(/:/,$ifName[$x]))[1];
+			if($if !~/811/ && $if !~/100/)
+			{
+				$tab_if_ap[$index_if_ap] = $if;
+				$index_if_ap ++;
+				#print "\nNouvelle interface à grapher : $if";
+			}
+		}	
+	}
+
+	#creation du repertoire
+        if($existe_rep == 0)
+        {
+                system("mkdir $dir_bases/$repertoire");
+                system("chown obj999:obj999 $dir_bases/$repertoire");
+        }
+	print "\n";
+
+	$liste_graph = ""; 
+	for($x=0;$x<$index_if_ap;$x++)
+	{
+		#####creation de la base
+        	#nom du fichier
+        	$nom_fichier_base = $num_equip;
+        	if($nom_fichier_base eq "")
+        	{
+                	$nom_fichier_base = "if";
+        	}
+		($if_ap,$vlan_ap)=(split(/\./,$tab_if_ap[$x]))[0,1]; 
+		$nom_fichier_base = "$nom_fichier_base" . "-" . "$if_ap" . "_" . "$vlan_ap.rrd";
+		print "\n\nNom de la nouvelle base : $nom_fichier_base\n";
+
+		#teste si la base existe deja
+        	#
+        	$param1 = "$dir_bases/$repertoire";
+        	$existe_base = test_base_existe($param1,$nom_fichier_base);
+        	###
+
+		if($existe_base == 1)
+        	{
+        		#demande a l'utilisateur si le fichier existant doit etre ecrase
+                	$existe_base = question_ecraser_fichier();
+        	}
+        	#ecriture de la base dans son repertoire
+        	if($existe_base == 0)
+        	{
+                	$param = "$dir_bases/$repertoire/$nom_fichier_base";
+
+                	creeBaseOsirisAP($param,100000000);
+
+                	system("chown obj999:obj999 $dir_bases/$repertoire/$nom_fichier_base");
+        	}
+
+		$commande = "ifNom-ap.pl $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute -$tab_if_ap[$x]";
+
+		if($x < $index_if_ap-1)
+		{
+		    $liste_graph = $liste_graph . "$param1/$nom_fichier_base,";
+		}
+		else
+		{
+		    $liste_graph = $liste_graph . "$param1/$nom_fichier_base";
+		}
+
+		######mise a jour des fichiers lancant les actions d'update des bases
+        	maj_fichier_update($dir_majdb,$commande,$nb_MAX_lignes);
+	}
+
+	# paramètre du graphique dans index.graph
+	$nom_graphique = $nom_eq . "_trafic";
+	system("echo \"$nom_graphique;aggregation-trafic2-moyen;$index_if_ap;$liste_graph;Trafic sur $nom_equip\" >> $dir_etc/index.graph");
+
+	#creation de la base comptant le nombre d'associations
+	#####creation de la base
+                #nom du fichier
+        $nom_fichier_base = $num_equip;
+	$nom_fichier_base = "$nom_fichier_base" . "-" . "assoc.rrd";
+
+	print "\n\nNom de la nouvelle base d'association : $nom_fichier_base\n";
+
+	#teste si la base existe deja
+        #
+        $param1 = "$dir_bases/$repertoire";
+        $existe_base = test_base_existe($param1,$nom_fichier_base);
+        ###
+	
+	if($existe_base == 1)
+        {
+                #demande a l'utilisateur si le fichier existant doit etre ecrase
+                $existe_base = question_ecraser_fichier();
+        }
+	
+	#ecriture de la base dans son repertoire
+        if($existe_base == 0)
+        {
+                $param = "$dir_bases/$repertoire/$nom_fichier_base";
+
+		creeBaseApAssoc($param);
+
+		system("chown obj999:obj999 $dir_bases/$repertoire/$nom_fichier_base");
+        }
+	
+	$commande = "$dir_sondes/assoc_ap.pl $dir_bases/$repertoire/$nom_fichier_base $ip_addr $communaute";
+
+	maj_fichier_update($dir_majdb,$commande,$nb_MAX_lignes);
+	
+	# paramètre du graphique dans index.graph
+        $nom_graphique = $nom_eq . "_associations";
+	system("echo \"$nom_graphique;GaugeNbConAp;1;$param1/$nom_fichier_base;Associations sur $nom_eq\" >> $dir_etc/index.graph");
+}
+
+#fonction qui teste l'existance d'une DB dans un repertoire
+sub test_base_existe
+{
+($rep,$nom_fichier_db)=@_;
+	@tests_existe = ();
+	#teste si le fichier de la base existe deja
+	opendir(BASE,"$rep");
+	@REPBASE=grep(!/^\.\.?$/, readdir BASE);
+	closedir(BASE);
+	$existe_base = 0;
+	foreach $elem (@REPBASE)
+	{
+		if($elem eq $nom_fichier_db)
+		{
+			$existe_base = 1;
+		}
+	}
+	return($existe_base);
+}
+
+#fonction demandant a l'utilisateur si le fichier de base existant doit etre ecrase ou pas.
+sub question_ecraser_fichier
+{
+	print "Un fichier portant ce nom existe déjà. Ecraser? O/(N)? ";
+        $reponse = <STDIN>;
+        ($reponse) = (split(/\s+/,$reponse))[0];
+        if($reponse eq "O")
+        {
+        	$existe_base = 0;
+        }
+        else
+        {
+        	print "\nLa base n'a pas ete cree.\n";
+		$existe_base = 1;
+        }
+	return($existe_base);
+}
+
+sub maj_fichier_update
+{
+($dir_majdb,$commande,$nb_MAX_lignes,$param_graph)=@_;
+        opendir(DIR_MAJDB,$dir_majdb);
+        @majdb=grep(/^majDB/, readdir DIR_MAJDB);
+        closedir(DIR_MAJDB);
+        #######mise a jour des fichiers majdb
+        #### controle des fichiers existants
+
+        #nombre de fichiers majdb*
+        $nb_majdb = @majdb;
+        #index_maximum des fichiers majdb
+        $indexmax_majdb = 0;
+        $ajour = 0;
+        #flag permettant de voir si la ligne de commande est deja présente
+        $trouve_commande = 0;
+        for($i=0;$i<$nb_majdb;$i++)
+        {
+                #nombre de lignes dans un fichier. Ne doit pas exceder un seuil MAX
+                $nb_lignes = 0;
+                ($ind) = (split(/\./,$majdb[$i]))[1];
+                #verifie la syntaxe du nom du fichier et controle l'index
+                if($ind=~m/[0-9]+/)
+                {
+                        if($ind > $indexmax_majdb)
+                        {
+                                $indexmax_majdb = $ind;
+                        }
+                        #ouverture du fichier
+                        open(MAJDB,"$dir_majdb/$majdb[$i]");
+                        while(<MAJDB>)
+                        {
+                                 if(!/^#/ && !/^\s*$/)
+                                 {
+                                        $nb_lignes ++;
+                                        ($_)=(split(/\n/,$_))[0];
+                                        #print "$commande:$_ fin\n";
+                                        if($commande eq $_)
+                                        {
+                                                $trouve_commande = 1;
+                                                print "\nLa ligne de commande pour la mise a jour de la db existe déjà dans le fichier $majdb[$i].\n";
+                                        }
+                                }
+                        }
+                        close(MAJDB);
+                        $tab_corresp[$i][0]=$majdb[$i];
+                        $tab_corresp[$i][1]=$nb_lignes;
+                }
+        }
+
+        ####mise a jour des fichiers
+        if($trouve_commande == 0)
+        {
+                $index_tab = "nan";
+                $nb_lignes_tab = @tab_corresp;
+                if($nb_lignes_tab > 0)
+                {
+                        $min = $tab_corresp[0][1];
+                        $index_tab = 0;
+
+                        for($i=1;$i<$nb_lignes_tab;$i++)
+                        {
+                                if($min > $tab_corresp[$i][1])
+                                {
+                                        $min = $tab_corresp[$i][1];
+                                        $index_tab = $i;
+                                }
+                        }
+                }
+                if($min <= $nb_MAX_lignes && $index_tab ne "nan")
+                {
+                        open(MAJDB,">>$dir_majdb/$tab_corresp[$index_tab][0]");
+                        print MAJDB "$commande\n";
+                        close(MAJDB);
+			system("chmod 744 $dir_majdb/$tab_corresp[$index_tab][0]");
+			system("chown obj999:obj999 $dir_majdb/$tab_corresp[$index_tab][0]");
+                        print "Le fichier $dir_majdb/$tab_corresp[$index_tab][0] a ete mis a jour.\n";
+                }
+		else
+                {
+                        $indexmax_majdb ++;
+                        $fich = "$dir_majdb/majDB";
+                        $fich = "$fich" . "." . "$indexmax_majdb";
+                        open(MAJDB,">>$fich");
+                        print MAJDB "$commande\n";
+                        close(MAJDB);
+			system("chmod 744 $fich");
+                        system("chown obj999:obj999 $fich");
+                        print "Le fichier $fich a ete mis a jour.\n";
+                }
+        }
+
+	system("echo \"$param_graph\" >> $dir_etc/index.graph");
+
+}
+
+
+######################################################################################
+#fonction permettant d'afficher le contenu d'un repertoire
+sub affiche_contenu_rep
+{
+($repertoire)=@_;
+
+        print "\nVous etes dans : $repertoire\n";
+        print "Vous avez choisi les bases suivantes : \n";
+        foreach $elem (@liste_bases)
+        {
+                print "\t$elem\n";
+        }
+
+
+        opendir(DIR,$repertoire);
+        @REP=grep(!/^\.$/, readdir DIR);
+        closedir(DIR);
+
+        print "\nChoisir un repertoire, un fichier de base rrdtool ou bien une action : \n\n";
+        $taille = @REP;
+        for($i=0;$i<$taille;$i++)
+        {
+                $numero = $i+1;
+                if(-d "$repertoire/$REP[$i]")
+                {
+                        print "$numero) <REP>\t$REP[$i]\n";
+                }
+                else
+                {
+                        print "$numero) \t\t$REP[$i]\n";
+                }
+        }
+
+        print "\nq) Terminer\n\n: ";
+
+        return(@REP);
+}
+
+
+sub ecrete_valeur
+{
+	@liste_bases = ();
+	$repertoire = $dir_bases;
+	$termine = 0;
+	while($termine == 0)
+	{
+        	@liste_rep = affiche_contenu_rep($repertoire);
+
+        	$choix = <STDIN>;
+        	#print "\nrep = $liste_rep[$choix-1] et $choix i\n";
+
+        	chomp($choix);
+        	if($choix eq "q" || $choix eq "Q")
+        	{
+                	if(@liste_bases >=1)
+                	{
+                        	$termine = 1;
+                	}
+                	else
+                	{
+                       	 	print "\nIl faut choisir une base rrdtool\n";
+                	}
+        	}
+        	elsif($liste_rep[$choix-1] eq "..")
+        	{
+                	if($repertoire ne "/")
+                	{
+                        	@contenu_repertoire = split(/\//,$repertoire);
+                        	$t_contenu = @contenu_repertoire;
+                        	$repertoire = "";
+                        	for($j=1;$j<$t_contenu-1;$j++)
+                        	{
+                                	$repertoire = "$repertoire/$contenu_repertoire[$j]";
+                        	}
+                	}
+        	}
+		elsif(-d "$repertoire/$liste_rep[$choix-1]" && $liste_rep[$choix-1] ne "")
+        	{
+                	$repertoire = "$repertoire/$liste_rep[$choix-1]";
+        	}
+        	elsif($liste_rep[$choix-1]=~m/\.rrd$/)
+        	{
+                	$deja_select = 0;
+                	$taille_liste_bases = @liste_bases;
+                	if($MOD[$choix_graphique -1] eq "trafic" && $taille_liste_bases > 0)
+                	{
+                        	$deja_select = 1;
+                        	print "\nLe modele trafic ne supporte qu'une base. Taper \"q\" pour terminer.\n";
+                	}
+                	foreach $elem (@liste_bases)
+                	{
+                        	if($elem eq "$repertoire/$liste_rep[$choix-1]")
+                        	{
+                                	$deja_select = 1;
+                                	print "\nCette base a deje ete selectionnee\n";
+                        	}
+                	}
+                	if($deja_select == 0)
+                	{
+                        	push @liste_bases,"$repertoire/$liste_rep[$choix-1]";
+                	}
+        	}
+        	else
+        	{
+                	print "\nChoix invalide. Essaye encore!\n";
+                	<STDIN>;
+        	}
+	}	
+	
+	#######################################################################
+	## Netoyage des bases
+	$t_liste_bases = @liste_bases;
+
+	for($i=0;$i<$t_liste_bases;$i++)
+	{
+		print "\nSauvegarde de $liste_bases[$i] en $liste_bases[$i].old ...";
+		system("cp $liste_bases[$i] $liste_bases[$i].old");
+		print "\nCorrection de : $liste_bases[$i]\n";
+		print "\nCopie dump de la base en xml ...";
+		system("/usr/local/bin/rrdtool dump $liste_bases[$i] > $liste_bases[$i].xml");
+		print ("\nCorrection de la base :");
+		
+		open(FILE,"$liste_bases[$i].xml");
+		open(NEWFILE,">$liste_bases[$i].xml.new");
+		while(<FILE>)
+		{
+			if(/(e\+19)/ || /(e\+11)/ || /(e\+12)/ || /(e\+13)/ || /(e\+14)/ || /(e\+15)/ || /(e\+16)/ || /(e\+17)/ || /(e\+18)/)
+			{
+				$qqch = $1;
+				$qqch =~ s/\+/\\+/;
+				print "ORIGINAL : $_";
+				s/$qqch/e\+00/;
+				print "MODIFIE  : $_";
+
+				if(/(e\+19)/ || /(e\+11)/ || /(e\+12)/ || /(e\+13)/ || /(e\+14)/ || /(e\+15)/ || /(e\+16)/ || /(e\+17)/ || /(e\+18)/)
+				{	
+					$qqch = $1;
+                                	$qqch =~ s/\+/\\+/;
+                                	print "ORIGINAL : $_";
+                                	s/$qqch/e\+00/;
+                                	print "MODIFIE  : $_";
+				}		
+			}
+			# correction bug bases DHCP : valeurs dépassant le seuil max
+			elsif($liste_bases[$i]=~/dhcp_/)
+			{
+				m/<row><v> (.+) <\/v><v> (.+) <\/v><\/row>/;
+				($num,$exp) = (split(/e\+/,$1))[0,1];
+				$baux_dhcp = $num * 10 ** $exp;
+				($num,$exp) = (split(/e\+/,$2))[0,1];
+                                $max_baux_dhcp = $num * 10 ** $exp;
+			
+				if($baux_dhcp > $max_baux_dhcp)
+				{
+				    print "ORIGINAL : $_";
+				    s/<row><v> (.+) <\/v><v> (.+) <\/v><\/row>/<row><v> NaN <\/v><v> $2 <\/v><\/row>/;
+				    print "MODIFIE : $_";
+				}
+			}
+			# correction bug bases DNS : du 24 au 27 septembre 2007
+			# correction bug bases DNS : valeurs folles
+                        elsif($liste_bases[$i]=~/bind\.rrd/)
+                        {
+				if(/2007-09-24/ || /2007-09-25/ || /2007-09-26/ || /2007-09-27/)
+				{
+					print "ORIGINAL : $_";
+					s/<row><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><\/row>/<row><v> 0.0000000000e+00 <\/v><v> 0.0000000000e+00 <\/v><v> 0.0000000000e+00 <\/v><v> 0.0000000000e+00 <\/v><v> 0.0000000000e+00 <\/v><v> 0.0000000000e+00 <\/v><\/row>/;
+					print "MODIFIE : $_";
+				}
+				else
+				{
+				    m/<row><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><\/row>/;
+				    ($num,$exp) = (split(/e\+/,$1))[0,1];
+				    $valeur = $num * 10 ** $exp;
+				    if($valeur > 90000)
+				    {
+					print "ORIGINAL : $_";
+					s/<row><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><v> (.+) <\/v><\/row>/<row><v> 0.0000000000e+00 <\/v><v> 0.0000000000e+00 <\/v><v> 0.0000000000e+00 <\/v><v> 0.0000000000e+00 <\/v><v> 0.0000000000e+00 <\/v><v> 0.000000
+0000e+00 <\/v><\/row>/;
+					print "MODIFIE : $_";
+				    }
+				}
+                        }
+
+			print NEWFILE "$_";
+		}
+		close(NEWFILE);
+		close(FILE);
+
+		print "\nRestauration de la base corrigée ...";
+		if(-f "$liste_bases[$i].tmp")
+		{
+			unlink "$liste_bases[$i].tmp";
+		}
+		system("/usr/local/bin/rrdtool restore $liste_bases[$i].xml.new $liste_bases[$i].tmp");	
+		system("cp $liste_bases[$i].tmp $liste_bases[$i]");
+		unlink "$liste_bases[$i].tmp";
+		unlink "$liste_bases[$i].xml";
+		unlink "$liste_bases[$i].xml.new";
+		print "\n\nTerminé.\n";
+		sleep(3);
+	}
+}
