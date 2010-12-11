@@ -277,7 +277,6 @@
  {Error during extraction of readable interfaces from '%1$s' (%2$s)} {Erreur lors de l'extraction des interfaces consultables de '%1$s' : %2s$}
  {Error during extraction of writable interfaces from '%1$s' (%2$s)} {Erreur lors de l'extraction des interfaces modifiables de '%1$s' : %2s$}
  {Equipment '%s' not found} {Équipement '%s' non trouvé}
- {Equipment '%s' not found} {Équipement '%s' non trouvé}
  {description='%s'} {description='%s'}
  {vlan='%s'} {vlan='%s'}
  {voip='%s'} {voip='%s'}
@@ -390,4 +389,54 @@
  {Conflict between dynamic range [%1$s] and %2$s IP address(es) declared with a MAC address} {Conflit entre l'intervalle dynamique [%1$s] et %2$s adresse(s) IP déclée(s) avec une adresse MAC}
  {Range [%1$s] intersects with range [%2$s]} {L'intervalle [%1$s] a une intersection non nulle avec l'intervalle [%2$s]}
  {Permissions not associated with any network} {Droits non rattachés à des réseaux}
+ {Address '%s' do not exists in database} {L'adresse '%s' n'existe pas dans la base}
+ {sums} {cumuls}
+ {detail/SSID} {détail/SSID}
+ {detail/AP} {détail/AP}
+ {Inconsistent permissions on interfaces: %s} {Droits d'accès incohérents pour les interfaces : %s}
+ {Equipment} {Équipement}
+ {Vlan} {Vlan}
+ {location}	{localisation}
+ {channel %1$s power %2$s mW}	{canal %1$s puissance %2$s mW}
+ {to} {vers}
+ {Edit} {Modifier}
+ {no description} {pas de description}
+ {native vlan} {vlan natif}
+ {Traffic} {Trafic}
+ {SSID %s } {SSID %s }
+ {Sum assoc} {Cumul assoc}
+ {Sum auth} {Cumul auth}
+ {Detail assoc} {Détail assoc}
+ {Detail auth} {Détail auth}
+ {assoc} {assoc}
+ {auth} {auth}
+ {Edit interfaces} {Modifier les interfaces}
+ {Error while reading equipments: %s} {Erreur lors de la lecture des équipements : %s}
+ {Error while reading wifi sensors: %s} {Erreur lors de la lecture des sondes Wifi : %s}
+ {No equipment found} {Aucun équipement trouvé}
+ {equipments} {équipements}
+ {develop} {tout dérouler}
+ {envelop} {tout enrouler}
+ {Invalid period '%s'} {Période '%s' invalide}
+ {Invalid date '%s'} {Date '%s' invalide}
+ {Invalid graph size '%s'} {Taille du graphe invalide '%s'}
+ {Shutdown interface} {Désactiver le port}
+ {Shutdown VoIP on this interface} {Désactiver la VoIP sur ce port}
+ {Interface '%1$s' not found on %2$s} {L'interface '%1$s' n'est pas trouvée sur %2$s}
+ {You can't modify interface %1$s on %2$s} {Vous ne pouvez pas modifier l'interface %1$s sur %2$s}
+ {Edit interface %1$s on %2$s} {Modification de l'interface %1$s sur %2$s}
+ {You can also <a href="%s">edit more than one interfaces</a> simultaneously} {Vous pouvez également <a href="%s">modifier plusieurs interfaces</a> simultanément}
+ {authorized special characters: -+/()&.:#_} {caractères spéciaux autorisés : -+/()&.:#_}
+ {VoIP} {VoIP}
+ {Sensors} {Sondes}
+ {Edit interfaces on %s} {Modification des interfaces de %s}
+ {Interfaces} {Interfaces}
+ {More than 6 months} {Plus de 6 mois}
+ {More than 9 months} {Plus de 9 mois}
+ {More than one year} {Plus d'un an}
+ {Invalid occurrence '%s'} {Occurrence '%s' invalide}
+ {Last occurrence} {Dernière occurrence}
+ {Inactive hosts in network %1$s since more than %2$s months: } {Machines inactives dans le réseau %1$s depuis plus de %2s mois : }
+ {%s inactive hosts} {%s machines inactives}
+ {no inactive host found} {aucune machine inactive trouvée}
 }

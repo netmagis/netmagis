@@ -2,22 +2,17 @@
 
 
 #
-# Script pour permettre au correspondant de choisir la modification
-# qu'il veut effectuer sur l'adresse sélectionnée.
+# Script to choose which type of modification to apply to an IP address.
 #
-# Called by: script liste (carte des adresses disponibles)
+# Called by: liste (address map)
 #
 # Parameters (form or url):
-#   - adr: IP address (v4 en l'occurrence sélectionnée)
+#   - adr: IP address (v4 at this time)
 #
 # History
-#   2010/10/10 : pda      : spécification
+#   2010/10/10 : pda      : specification
+#   2010/12/11 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -38,29 +33,17 @@ set conf(nextlist)	"%HOMEURL%/bin/liste"
 # Script parameters
 #
 
-# scripts cgi
-set conf(script-map)	bin/liste
-set conf(script-liste)	bin/liste
-set conf(script-accueil) bin/accueil
-
-#
-# Les paramètres du formulaire
-#
-
 set conf(form)		{
 	{adr		1 1}
 }
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Main procedure
@@ -76,96 +59,91 @@ proc main {} {
     ::dnscontext create d
     d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
-    set idcor $tabuid(idcor)
-
     #
-    # Lire les champs du formulaire
+    # Check parameters
     #
 
-    set adr      [string trim [lindex $ftab(adr) 0]]
+    set addr [string trim [lindex $ftab(adr) 0]]
 
-    #
-    # Vérifier la syntaxe de l'adresse IP
-    #
-
-    set m [check-ip-syntax $dbfd $adr "inet"]
-    if {[string length $m] > 0} then {
-	d error "Erreur sur l'adresse '$adr': $m"
-    }
-
-    #
-    # Vérifier que l'adresse IP appartient bien à une des plages
-    # autorisées pour le correspondant
-    #
-
-    if {! [check-authorized-ip $dbfd $idcor $adr]} then {
-	d error "Vous n'avez pas accès à l'adresse '$adr'"
-    }
-
-    #
-    # Vérifier que l'adresse existe, en récupérant toutes les
-    # informations de l'objet.
-    #
-
-    if {! [read-rr-by-ip $dbfd $adr trr]} then {
-	d error "L'adresse '$adr' n'existe pas dans la base."
-    }
-
-    #
-    # Valider l'accès à ce nom
-    #
-
-    set nom     $trr(nom)
-    set domaine $trr(domaine)
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine bidon "del-name"]
-    if {! [string equal $msg ""]} then {
+    set msg [check-ip-syntax $dbfd $addr "inet"]
+    if {$msg ne ""} then {
 	d error $msg
     }
 
     #
-    # Est-ce qu'il y a une seule adresse IP ?
-    # Si = 1 : supprimer l'adresse revient à supprimer l'ensemble
-    # Si > 1 : supprimer l'adresse ne fait que supprimer *une* des adresses
-    # On fait ce test essentiellement pour différencier le message.
+    # Check that IP address belongs to one of our networks
+    #
+
+    set idcor $tabuid(idcor)
+
+    if {! [check-authorized-ip $dbfd $idcor $addr]} then {
+	d error [format [mc "You don't have rights on '%s'"] $addr]
+    }
+
+    #
+    # Check that given address exists, and get all related information.
+    #
+
+    if {! [read-rr-by-ip $dbfd $addr trr]} then {
+	d error [format [mc "Address '%s' do not exists in database"] $addr]
+    }
+
+    #
+    # Check access to this name
+    #
+
+    set name   $trr(nom)
+    set domain $trr(domaine)
+    set msg [check-authorized-host $dbfd $idcor $name $domain bidon "del-name"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Is there only one IP address for this host?
+    # If only 1 : delete address is equivalent to delete the host name
+    # If more than 1 : delete address only delete *one* address
+    # This test is made only to differentiate message "delete one
+    # IP address but do not delete name"
     #
 
     if {[llength $trr(ip)] == 1} then {
-	# ne pas afficher l'action "supprimer une ip mais pas le nom"
+	# do not display action
 	set dispuneip "none"
     } else {
-	# afficher l'action "supprimer une ip mais pas le nom"
+	# display action
 	set dispuneip "block"
     }
 
     #
-    # Préparer l'affichage des informations à afficher le cas échéant
+    # Prepare information display
     #
 
     set machine [display-rr $dbfd -1 trr]
 
     #
-    # Préparer la suite du parcours
+    # Prepare next actions
     #
 
     d urlset "%URLSUPPR%" $conf(nextsuppr) [list \
 						[list "action" "suppr-nom"] \
 						[list "confirm" "oui"] \
-						[list "nom" $nom] \
-						[list "domaine" $domaine] \
+						[list "nom" $name] \
+						[list "domaine" $domain] \
 					    ]
     d urladdnext "%URLSUPPR%"
 
     d urlset "%URLSUPPRIP%" $conf(nextsuppr) [list \
 						[list "action" "suppr-ip"] \
 						[list "confirm" "oui"] \
-						[list "adr" $adr] \
+						[list "adr" $addr] \
 					    ]
     d urladdnext "%URLSUPPRIP%"
 
     d urlset "%URLEDIT%" $conf(nextedit) [list \
 						[list "action" "modif-infos"] \
-						[list "nom" $nom] \
-						[list "domaine" $domaine] \
+						[list "nom" $name] \
+						[list "domaine" $domain] \
 					    ]
     d urladdnext "%URLEDIT%"
 
@@ -184,9 +162,9 @@ proc main {} {
     #
 
     d result $conf(page) [list \
-				[list %ADR%         $adr] \
-				[list %NOM%         $nom] \
-				[list %DOMAINE%     $domaine] \
+				[list %ADR%         $addr] \
+				[list %NOM%         $name] \
+				[list %DOMAINE%     $domain] \
 				[list %MACHINE%     $machine] \
 				[list %DISPUNEIP%   $dispuneip] \
 			    ]

@@ -1,24 +1,19 @@
 #!%TCLSH%
 
 #
-# Script pour présenter la page de modification d'une ou plusieurs
-# interfaces de l'équipement.
+# Display page to edit one or more equipment interfaces
 #
-# Called by: script eq
+# Called by: eq
 #
 # Parameters (form or url):
-#	- eq: equipment name
-#	- iface : nom de l'interface, ou vide pour toutes les interfaces de l'eq
+# - eq: equipment name
+# - iface : interface name, or empty for all interfaces of an equipement
 #
 # History
-#   2010/11/03 : pda        : design
-#   2010/11/30 : pda/jean   : add sensor
+#   2010/11/03 : pda      : design
+#   2010/11/30 : pda/jean : add sensor
+#   2010/12/11 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -38,23 +33,18 @@ set conf(nextifchg)	"%HOMEURL%/bin/ifchg"
 # Script parameters
 #
 
-
 set conf(form)	{
     {eq			1 1}
     {iface		0 1}
 }
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
-
 
 ##############################################################################
 # Main procedure
@@ -77,9 +67,7 @@ proc main {} {
     }
 
     #
-    # Lire les informations de l'équipement dans le graphe
-    # Ces informations sont filtrées par tabuid qui n'affiche
-    # que les vlans autorisés.
+    # Read equipment information from graph.
     #
 
     set l [eq-iflist $eq tabuid]
@@ -89,25 +77,22 @@ proc main {} {
     array set tabvlan  $arrayvlan
 
     #
-    # En cas d'erreur, on sort prématurément
-    # Ce cas correspond à une (ou plusieurs) interface qui serait
-    # modifiable mais non consultable.
+    # If an error is found, exit immediately. This case means that
+    # one (or more) interface(s) which is writable, but not readable.
     #
 
     if {[llength $liferr] > 0} then {
-	set texte "Incohérence sur les droits d'accès pour les interfaces : "
-	append texte [join $liferr " "]
-	return [list $titre $texte]
+	set l [join $liferr " "]
+	d error [format [mc "Inconsistent permissions on interfaces: %s"] $l]
     }
 
     #
-    # Préparer les listes de vlans pour les menus
-    #
-    # Note : un vlan est soit un vlan VoIP, soit un vlan "standard".
+    # Prepare Vlan list for menus
+    # Note : a Vlan is either a standard Vlan or a VoIP vlan
     #
 
-    set lvlan [list [list -1 "Désactiver le port"]]
-    set lvoip [list [list -1 "Désactiver la VoIP sur ce port"]]
+    set lvlan [list [list -1 [mc "Shutdown interface"]]]
+    set lvoip [list [list -1 [mc "Shutdown VoIP on this interface"]]]
     foreach id [lsort -integer [array names tabvlan]] {
 	lassign $tabvlan($id) desc voip
 	if {$desc eq "-"} then {
@@ -125,16 +110,16 @@ proc main {} {
     set nvoip [llength $lvoip]
 
     #
-    # Est-ce qu'il faut présenter toutes les interfaces ou juste une ?
+    # Do we have to display all interfaces, or just one?
     #
 
     if {$iface ne ""} then {
 	#
-	# Il y a un nom d'interface. Présenter juste cette interface
+	# There is a name. Just display this one.
 	#
 
 	if {! [info exists tabiface($iface)]} then {
-	    d error "L'interface $iface n'est pas trouvée sur $eq"
+	    d error [format [mc {Interface '%1$s' not found on %2$s}] $iface $eq]
 	}
 
 	#
@@ -145,26 +130,26 @@ proc main {} {
 	set eqsta [eq-graph-status $dbfd $eq $iface]
 
 	#
-	# Récupérer les caractéristiques de l'interface
+	# Get interface characteristics
 	#
 
 	lassign $tabiface($iface) nom edit radio ifstat ifmode desc lien natif
 	set trunk [lreplace $tabiface($iface) 0 7]
 
 	if {$edit ne "edit"} then {
-	    d error "Vous ne pouvez modifier l'interface $iface sur $eq"
+	    d error [format [mc {You can't modify interface %1$s on %2$s}] $iface $eq]
 	}
 
 	#
-	# Préparer les informations
+	# Prepare informations
 	#
 
 	set mode "mono"
-	set titre "Modification de l'interface $iface sur $eq"
+	set title [format [mc {Edit interface %1$s on %2$s}] $iface $eq]
 	set menuif [::webapp::form-hidden iface $iface]
 
-	# proposer l'option "plusieurs interfaces" s'il y a effectivement
-	# plus d'une interface modifiable
+	# display option "multiple interfaces" if there is more than one
+	# writable interface
 	set nifmod 0
 	foreach i $iflist {
 	    if {[lindex $tabiface($i) 1] eq "edit"} then {
@@ -175,32 +160,27 @@ proc main {} {
 	    d urlset "" $conf(nextifchg) [list [list "eq" $eq]]
 	    set url [d urlget ""]
 	    set multi [::webapp::helem "p" \
-				[format {%1$s %2$s %3$s} \
-				    "Vous pouvez également" \
-				    [::webapp::helem "a" \
-						{modifier plusieurs interfaces} \
-						"href" $url \
-					] \
-				    "simultanément"
-				] \
-			    ]
+			    [format {You can also <a href="%s">edit more than one interfaces</a> simultaneously} $url] \
+			]
 	} else {
 	    set multi ""
 	}
 
-	# proposer le menu de description d'interface
+	# interface description menu
 	if {$desc eq "-"} then {
 	    set desc ""
 	} else {
 	    set desc [::webapp::html-string [binary format H* $desc]]
 	}
-	set libifordesc "Description"
+	set libifordesc [mc "Description"]
 	set menuifordesc [::webapp::form-text desc 1 40 40 $desc]
-	append menuifordesc " (caractères spéciaux autorisés : -+/()&.:#_)"
+	append menuifordesc " ("
+	append menuiffordesc [mc "authorized special characters : -+/()&.:#_"]
+	append menuifordesc ")"
 
 	append libifordesc [::webapp::form-hidden "iface" $iface]
 
-	# proposer le menu de vlan
+	# vlan menu
 	if {$ifmode eq "Disabled"} then {
 	    set pos -1
 	} else {
@@ -213,15 +193,14 @@ proc main {} {
 	}
 	set menuvlan [::webapp::form-menu "vlan" 1 0 $lvlan $lsel]
 
-	# proposer le menu de vlan voip si nécessaire
+	# voip vlan menu if needed
 	if {$nvoip > 1} then {
 	    set pos -1
 	    if {$ifmode eq "Trunk"} then {
-		# rechercher, parmi les vlans taggés, celui qui
-		# est voip (le cas échéant)
+		# search voip vlan amon tagged vlans
 		foreach v $trunk {
 		    lassign $v id desc stat
-		    # rechercher le vlan dans la liste du menu
+		    # search for the vlan in the menu list
 		    set pos [lsearch -index 0 $lvoip $id]
 		    if {$pos != -1} then {
 			break
@@ -233,19 +212,19 @@ proc main {} {
 	    } else {
 		set lsel [list $pos]
 	    }
-	    set libvoip "VoIP"
+	    set libvoip [mc "VoIP"]
 	    set menuvoip [::webapp::form-menu "voip" 1 0 $lvoip $lsel]
 	} else {
 	    set libvoip ""
 	    set menuvoip [::webapp::form-hidden "voip" -1]
 	}
 
-	# proposer le menu de modification de sonde
+	# sensor menu
 	if {$tabuid(admin)} then {
 	    if {$ifstat eq "-"} then {
 		set ifstat ""
 	    }
-	    set libstat "Sondes"
+	    set libstat [mc "Sensors"]
 	    set menustat [::webapp::form-text "stat" 1 40 40 $ifstat]
 	} else {
 	    set libstat ""
@@ -254,10 +233,10 @@ proc main {} {
 
     } else {
 	#
-	# Présenter toutes les interfaces
+	# Display all interfaces
 	#
 
-	set titre "Modification des interfaces de $eq"
+	set title [format [mc "Edit interfaces on %s"] $eq]
 	set mode "multi"
 
 	#
@@ -266,7 +245,7 @@ proc main {} {
 	#
 	set eqsta [eq-graph-status $dbfd $eq]
 
-	# liste des interfaces
+	# interface list
 	set lif {}
 	foreach i $iflist {
 	    set edit [lindex $tabiface($i) 1]
@@ -275,29 +254,29 @@ proc main {} {
 	    }
 	}
 	set nif [llength $lif]
-	set libifordesc "Interfaces"
+	set libifordesc [mc "Interfaces"]
 	set menuifordesc [::webapp::form-menu "iface" $nif 1 $lif {}]
 	set multi ""
 
-	# proposer le menu de vlan
+	# vlan menu
 	set menuvlan [::webapp::form-menu "vlan" 1 0 $lvlan {}]
 
-	# proposer le menu de vlan voip si nécessaire
+	# voip vlan menu if needed
 	if {$nvoip > 1} then {
-	    set libvoip "VoIP"
+	    set libvoip [mc "VoIP"]
 	    set menuvoip [::webapp::form-menu "voip" 1 0 $lvoip {}]
 	} else {
 	    set libvoip ""
 	    set menuvoip [::webapp::form-hidden "voip" -1]
 	}
 
-	# le menu de modification de sonde est vide
+	# sensor menu is empty
 	set libstat ""
 	set menustat ""
     }
 
     #
-    # Script suivant
+    # Next script
     #
 
     d urlset "%URLFORM%" $conf(next) {}
@@ -309,7 +288,7 @@ proc main {} {
     d result $conf(page) [list \
 			    [list %EQSTA%        $eqsta] \
 			    [list %EQ%           $eq] \
-			    [list %TITRE%        $titre] \
+			    [list %TITRE%        $title] \
 			    [list %MODE%         $mode] \
 			    [list %MULTI%        $multi] \
 			    [list %LIBIFORDESC%  $libifordesc] \

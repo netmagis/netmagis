@@ -1,31 +1,26 @@
 #!%TCLSH%
 
 #
-# Script pour afficher la liste des équipements,
-# ou les détails d'un équipement
+# Display equipment list, or equipment details
 #
-# Called by: /applis/topo/<tous les scripts>
+# Called by: every topo script
 #
 # Parameters (form or url):
-#	- eq : si fourni, nom (ou pattern glob) de l'équipement
-#	- iface : si fourni, nom d'une interface à souligner
+#	- eq: equipment name (glob)
+#	- iface: interface name
 #
 # History
 #   2006/06/05 : pda        : design
-#   2006/08/14 : pda        : fusion script listeq
-#   2007/01/04 : pda        : ajout du paramètre uti
-#   2007/01/11 : pda        : mutualisation initialisation
-#   2007/01/11 : pda        : substitution possible d'un uid
-#   2008/05/06 : pda        : ajout localisation
-#   2008/07/31 : pda/boggia : vue arborescente
-#   2008/08/01 : pda        : stats wifi sur la page d'un équipement
-#   2010/08/31 : pda/jean   : ajout de l'information "vlan natif"
+#   2006/08/14 : pda        : merge listeq
+#   2007/01/04 : pda        : add parameter uid
+#   2007/01/11 : pda        : common initialisation
+#   2007/01/11 : pda        : possible to substitute uid
+#   2008/05/06 : pda        : add localition
+#   2008/07/31 : pda/boggia : tree view
+#   2008/08/01 : pda        : wifi statistics
+#   2010/08/31 : pda/jean   : add "native vlan" information
+#   2010/12/11 : pda        : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -49,7 +44,6 @@ set conf(nextifchg)	"%HOMEURL%/bin/ifchg"
 # Script parameters
 #
 
-
 set conf(form)	{
     {eq			0 1}
     {iface		0 1}
@@ -59,43 +53,39 @@ set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
 set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
 
-
 ##############################################################################
-# Cumuls de stats wifi
+# Wifi statistics
 ##############################################################################
 
 #
-# Note générale :
-# Le format des statistiques wifi est un tableau contenant les clefs
-# suivantes ::
-#	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
+# General note:
+# Wifi statistics is an array containing following indexes:
+#	tab(:ssid)		{<ssid> ... <ssid>}	(sorted list)
 #	tab(:assoc:cumul)	<id>+<id>+...
-#	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
+#	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(sorted list)
 #	tab(:assoc:ssid:<ssid>)	{<id>}	ou {}
-#	(idem avec :auth en plus de :assoc)
-# La fonction "cumul-wifi" accumule ces stats
+#	(idem with :auth)
+# Function "cumul-wifi" accumulates these statistics
 #
 
 #
-# Initialiser des stats wifi
+# Initialize wifi statistics
 #
 # Input:
-#   - _tab : nom d'un tableau contenant en retour les stats accumulées
+#   - _tab : name of an array containing, in return, accumulated stats
 # Output:
-#   - valeur de retour : nonee
-#   - paramètre _tab : contient
+#   - return value: none
+#   - parameter _tab : see above
 #
 # History
-#   2008/08/03 : pda        : conception
+#   2008/08/03 : pda        : design
 #
 
 proc init-cumul-wifi {_tab} {
@@ -103,11 +93,11 @@ proc init-cumul-wifi {_tab} {
 
     catch {unset tab}
 
-    set lclefs {assoc auth}
+    set lkeys {assoc auth}
 
     set tab(:ssid)	   {}
 
-    foreach k $lclefs {
+    foreach k $lkeys {
 	set tab(:$k:cumul)  {}
 	set tab(:$k:ssid)   {}
 	set tab(:$k:ap)     {}
@@ -115,42 +105,34 @@ proc init-cumul-wifi {_tab} {
 }
 
 #
-# Cumuler les stats wifi pour un point d'accès
+# Cumulate wifi statistics for an access point
 #
 # Input:
-#   - sondes : liste des sondes wifi pour ce point d'accès
-#	au format {{<nbauthwifi|nbassocwifi> <id> <ssid>}
-#   - _tab : nom d'un tableau contenant en retour les stats accumulées
+#   - sensors : wifi sensor list for this access point
+#		{{<nbauthwifi|nbassocwifi> <id> <ssid>}
+#   - _tab : name of an array containing, in return, accumulated stats
 # Output:
-#   - valeur de retour : nonee
-#   - paramètre _tab : contient
-#	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:cumul)	<id>+<id>+...
-#	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:ssid:<ssid>)	{<id>}	ou {}
-#	(idem avec :auth en plus de :assoc)
+#   - return value: none
+#   - parameter _tab : see above
 #
 # History
-#   2008/08/02 : pda        : conception
+#   2008/08/02 : pda        : design
 #
 
-proc cumul-wifi {sondes _tab} {
+proc cumul-wifi {sensors _tab} {
     upvar $_tab tab
 
     init-cumul-wifi tab
 
-    set lclefs {assoc auth}
+    set lkeys {assoc auth}
 
-    foreach l $sondes {
-	# kw id ssid
-	set kw [lindex $l 0]
-	set id [lindex $l 1]
-	set ssid [lindex $l 2]
+    foreach l $sensors {
+	lassign $l kw id ssid
 
 	if {! [info exists seen($ssid)]} then {
 	    lappend tab(:ssid) $ssid
 	    set seen($ssid) 1
-	    foreach k $lclefs {
+	    foreach k $lkeys {
 		set tab(:$k:ssid:$ssid) {}
 	    }
 	}
@@ -166,45 +148,39 @@ proc cumul-wifi {sondes _tab} {
 	lappend tab(:$k:ssid) $ssid
     }
 
-    foreach k $lclefs {
+    foreach k $lkeys {
 	set tab(:$k:cumul) [join $tab(:$k:cumul) "+"]
     }
 
     set tab(:ssid) [lsort $tab(:ssid)]
-    foreach k $lclefs {
+    foreach k $lkeys {
 	set tab(:$k:ssid) [lsort $tab(:$k:ssid)]
     }
 }
 
 #
-# Accumuler les stats wifi d'un nouveau point d'accès
+# Cumulate wifi statistics for a new access point
 #
 # Input:
-#   - _tr : tableau résumé
-#   - _t1 : tableau d'un point d'accès
+#   - _tr : array containing all stats
+#   - _t1 : array containing stats for one access point
 # Output:
-#   - valeur de retour : nonee
-#   - paramètre _tab : contient
-#	tab(:ssid)		{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:cumul)	<id>+<id>+...
-#	tab(:assoc:ssid)	{<ssid> ... <ssid>}	(liste triée)
-#	tab(:assoc:ssid:<ssid>)	{<id>}	ou {}
-#	tab(:assoc:ap)		{{<id>+...} {<id>+...} ...}
-#	(idem avec :auth en plus de :assoc)
+#   - return value: none
+#   - parameters _tr, _t1 : see above
 #
 # History
-#   2008/08/04 : pda        : spécification
-#   2008/08/14 : pda        : fin du codage
+#   2008/08/04 : pda        : specification
+#   2008/08/14 : pda        : end of coding
 #
 
-proc accumuler {_tr _t1} {
+proc accumulate {_tr _t1} {
     upvar $_tr tr
     upvar $_t1 t1
 
-    set lclefs {assoc auth}
+    set lkeys {assoc auth}
 
     #
-    # Ajouter le ssid à la liste totale des ssid si besoin est
+    # Add ssid to list of ssids
     #
 
     foreach ssid $t1(:ssid) {
@@ -214,10 +190,10 @@ proc accumuler {_tr _t1} {
     }
 
     #
-    # Ajouter les stats par ssid
+    # Add per ssid stats
     #
 
-    foreach k $lclefs {
+    foreach k $lkeys {
 	foreach ssid $t1(:$k:ssid) {
 	    set c ":$k:ssid:$ssid"
 	    if {[info exists tr($c)]} then {
@@ -230,10 +206,10 @@ proc accumuler {_tr _t1} {
     }
 
     #
-    # Ajouter les stats par ap
+    # Add per ap stats
     #
 
-    foreach k $lclefs {
+    foreach k $lkeys {
 	set l {}
 	foreach ssid $t1(:$k:ssid) {
 	    lappend l $t1(:$k:ssid:$ssid)
@@ -242,11 +218,11 @@ proc accumuler {_tr _t1} {
     }
 
     #
-    # Cumuler le cumul
+    # Cumulate the cumul
     #
 
-    foreach k $lclefs {
-	if {[string equal $tr(:$k:cumul) ""]} then {
+    foreach k $lkeys {
+	if {$tr(:$k:cumul) eq ""} then {
 	    set tr(:$k:cumul) $t1(:$k:cumul)
 	} else {
 	    append tr(:$k:cumul) "+$t1(:$k:cumul)"
@@ -254,127 +230,124 @@ proc accumuler {_tr _t1} {
     }
 
     #
-    # Trier les listes finales
+    # Sort final lists
     #
 
     set tr(:ssid) [lsort $tr(:ssid)]
-    foreach k $lclefs {
+    foreach k $lkeys {
 	set tr(:$k:ssid) [lsort $tr(:$k:ssid)]
     }
 }
 
 ##############################################################################
-# Arborisation d'une liste d'équipements
+# Make a tree from an equipment list
 ##############################################################################
 
 #
-# Hierarchiser un élément dans un tableau en vue de consituer une
-# arborescence
+# Place an element into a tree
 #
 # Input:
-#   - _thier : tableau passé par nom, contenant l'arborescence
-#   - liste : liste d'éléments par niveau
-#   - cumul : 1 si les éléments doivent être cumulés, 0 sinon (cf ci-dessous)
+#   - _thier : array containing the tree
+#   - list : element list by level
+#   - cumul : 1 if elements must be accumulated, else 0 (see below)
 # Output:
-#   - valeur de retour : nonee
-#   - tableau _thier : réactualisé
+#   - return value: none
+#   - array _thier : updated
 #
-# Exemple 1 :
-#   si liste = {anapat -ap 3} et cumul = 1
-#   et tableau vaut :
+# Example 1 :
+#   if list = {anapat -ap 3} and cumul = 1 and thier =
 #	t()		= {anapat}
 #	t(anapat)	= {anapat-ap}
 #	t(anapat-ap)	= {anapat-ap1}
 #	t(anapat-ap1)	= {}
-#   alors le tableau est actualisé avec :
+#   then thier is updated with:
 #	t()		= {anapat}
 #	t(anapat)	= {anapat-ap}
-#	t(anapat-ap)	= {anapat-ap1 anapat-ap3} (peu importe l'ordre 3/1 ou 1/3)
+#	t(anapat-ap)	= {anapat-ap1 anapat-ap3} (order don't matter 3/1 or 1/3)
 #	t(anapat-ap1)	= {}
 #	t(anapat-ap3)	= {}
 #
-# Exemple 2 :
-#   pour l'exemple ci-dessus, si cumul = 0, il faudrait avoir la
-#   liste {anapat anapat-ap anapat-ap3}
+# Example 2 :
+#   in above example, if cumul = 0, we should have the list:
+#		{anapat anapat-ap anapat-ap3}
 #
-# Exemple 3 :
-#   si liste = {horus}
-#   et tableau vaut :
-#	(rien)
-#   alors le tableau est actualisé avec :
+# Example 3 :
+#   if list = {horus} and thier =
+#	(nothing)
+#   then thier is updated with:
 #	t()		= {horus}
 #	t(horus)	= {}
 #
 # History
-#   2008/07/31 : pda/boggia : conception
+#   2008/07/31 : pda/boggia : design
 #
 
-proc hierarchiser-un-element {_thier liste cumul} {
+proc place-into-tree {_thier list cumul} {
     upvar $_thier thier
 
-    set racine ""
+    set root ""
     set idx ""
-    foreach mot $liste {
+    foreach word $list {
 	if {$cumul} then {
-	    append idx $mot
+	    append idx $word
 	} else {
-	    set idx $mot
+	    set idx $word
 	}
 	if {! [info exists thier($idx)]} then {
-	    lappend thier($racine) $idx
+	    lappend thier($root) $idx
 	}
-	set racine $idx
+	set root $idx
     }
-    lappend thier($racine) {}
+    lappend thier($root) {}
 }
 
 #
-# Hiérarchiser une liste d'équipements 
+# Make a tree from an equipment list
 #
 # Input:
-#   - _t : tableau passé par nom, contenant l'arborescence
-#   - leq : liste d'équipements
+#   - _t : tree
+#   - leq : equipment list
 # Output:
-#   - valeur de retour : nonee
-#   - tableau _t : réactualisé
+#   - return value: none
+#   - _t : updated
 #
-# Note : le regroupement en arbre est réalisé sur le nom d'équipement
-#   qui est découpé suivant une politique spécifique Osiris, à savoir
+# Note: grouping in a tree is realized on equipment name, which is
+#   splitted following a local specific policy, which is:
 #	[xxx] [-tt] [nn]
-#   où xxx est le préfixe, -tt le type d'équipement et nn le numéro
-#   dans le type. Par exemple, "anapat-ap3" est découpé en :
-#	anapat -ap 3
+#   where xxx is a prefix, -tt is the equipment type and nn the number
+#   within the type. For example, "anapat-ap3" is splitted in: anapat -ap 3
 #
 # History
-#   2008/07/31 : pda/boggia : conception
+#   2008/07/31 : pda/boggia : design
 #
 
-proc hiearchiser-liste-equipements {_t leq} {
+proc listeq-to-tree {_t leq} {
     upvar $_t t
 
     catch {unset t}
 
     #
-    # Première phase : hiérarchiser tous les éléments
+    # First phase: make a tree from all elements
     #
 
     foreach eq $leq {
 	if {[regexp  {(.*)(-[a-z]+)([0-9]+)$} $eq bidon n1 n2 n3]} then {
-	    hierarchiser-un-element t [list $n1 $n2 $n3] 1
+	    place-into-tree t [list $n1 $n2 $n3] 1
 	} else {
-	    hierarchiser-un-element t [list $eq] 1
+	    place-into-tree t [list $eq] 1
 	}
     }
 
     #
-    # Deuxième phase : remonter d'un niveau (récursivement) tous
-    # les éléments qui sont seuls sur leur niveau (sauf les -ap)
+    # Second phase: move up one level (recursively) all equipments
+    # when they are alone on their level (except "-ap" equipments,
+    # which are wifi access-points in our local policy)
     #
 
-    # XXX : il manque quelque chose là, vous ne trouvez pas ?
+    # XXX : not yet
 
     #
-    # Troisième phase : trier chaque niveau
+    # Third phase: sort each level
     #
 
     foreach i [array names t] {
@@ -383,103 +356,104 @@ proc hiearchiser-liste-equipements {_t leq} {
 }
 
 #
-# Générer un arbre à l'aide d'un tableau hiérarchisé
+# Display equipment tree
 #
 # Input:
-#   - racine : racine de l'arbre
-#   - _thier : tableau passé par nom, contenant l'arborescence
-#   - _tabeq : tableau passé par nom, contenant les équipements
-#   - _tabwifi : tableau passé par nom, contenant les sondes wifi
+#   - root: root of tree
+#   - _thier : tree
+#   - _tabeq : array containaing all equipments
+#   - _tabwifi : array containing all wifi sensors
 # Output:
-#   - valeur de retour : liste des arbres dont la racine est à ce niveau
+#   - return value: list of trees where root is at this level
 #
 # History
-#   2008/07/31 : pda/boggia : conception
-#   2008/08/01 : pda/boggia : ajout tabwifi
+#   2008/07/31 : pda/boggia : design
+#   2008/08/01 : pda/boggia : add tabwifi
 #
 
-proc generer-arbre-eq {racine _thier _tabeq _tabwifi} {
+proc display-eq-tree {root _thier _tabeq _tabwifi} {
     global conf
     upvar $_thier thier
     upvar $_tabeq tabeq
     upvar $_tabwifi tabwifi
 
-    set arbre {}
+    set tree {}
     set nwifi 0
     init-cumul-wifi twa
 
-    foreach fils $thier($racine) {
+    foreach son $thier($root) {
 	#
-	# Cette boucle a pour but d'éviter de faire des niveaux
-	# multiples s'il n'y a qu'un seul fils à chaque niveau.
+	# The goal of this loop is to avoid to make multiple levels
+	# when there is only one son at each level
 	#
-	set prec $racine
-	while {! [string equal $fils ""] && [llength $thier($fils)] <= 1} {
-	    set prec $fils
-	    set fils [lindex $thier($fils) 0]
+	set prec $root
+	while {$son ne "" && [llength $thier($son)] <= 1} {
+	    set prec $son
+	    set son [lindex $thier($son) 0]
 	}
 
 	#
-	# Noeud ou feuille ?
+	# Node or leaf ?
 	#
 
-	if {[string equal $fils ""]} then {
+	if {$son eq ""} then {
 	    #
-	    # Feuille : c'est donc un équipement
+	    # Leaf: it's an equipment
 	    #
-	    set type   [lindex $tabeq($prec) 0]
-	    set modele [lindex $tabeq($prec) 1]
+	    set type  [lindex $tabeq($prec) 0]
+	    set model [lindex $tabeq($prec) 1]
 
 	    d urlset "" $conf(nexteq) [list [list "eq" $prec]]
 	    set url [d urlget ""]
-	    set lien [::webapp::helem "a" $prec "href" $url]
-	    lappend arbre [list "$lien $type $modele"]
+	    set link [::webapp::helem "a" $prec "href" $url]
+	    lappend tree [list "$link $type $model"]
 
 	    #
-	    # Stats wifi
+	    # Wifi stats
 	    #
 	    if {[info exists tabwifi($prec)]} then {
 		incr nwifi
 		cumul-wifi $tabwifi($prec) tw
-		accumuler twa tw
+		accumulate twa tw
 	    }
 	} else {
 	    #
-	    # Noeud : on recommence récursivement
+	    # Note: repeat recursively
 	    #
-	    lappend arbre [generer-arbre-eq $fils thier tabeq tabwifi]
+	    lappend tree [display-eq-tree $son thier tabeq tabwifi]
 	}
     }
 
     #
-    # Affichage de la racine
+    # Root display
     #
 
-    set rhtml $racine
-    if {$nwifi > 1 && $nwifi == [llength $thier($racine)]} then {
+    set rhtml $root
+    if {$nwifi > 1 && $nwifi == [llength $thier($root)]} then {
 	#
-	# Affichage des stats wifi si toutes les feuilles sont
-	# des points d'accès
-	#
-
-	#
-	# Cumuls
+	# Display wifi stats if all leafs are access points
 	#
 
-	append rhtml " (cumuls "
+	#
+	# Cumul
+	#
+
+	append rhtml [format " (%s " [mc "sums"]]
 	foreach k {assoc auth} {
+	    set tk [mc "$k"]
 	    set hid $twa(:$k:cumul)
 	    d urlset "" $conf(nextmetro) [list [list "id" $hid]]
 	    set url [d urlget ""]
-	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
+	    append rhtml [::webapp::helem "a" "\[$tk\]" "href" $url]
 	}
 
 	#
-	# Détails par SSID
+	# Details per SSID
 	#
 
-	append rhtml ", détail/SSID "
+	append rhtml [format ", %s " [mc "detail/SSID"]]
 	foreach k {assoc auth} {
+	    set tk [mc "$k"]
 	    set lid {}
 	    foreach ssid $twa(:$k:ssid) {
 		set lid [concat $lid $twa(:$k:ssid:$ssid)]
@@ -487,91 +461,92 @@ proc generer-arbre-eq {racine _thier _tabeq _tabwifi} {
 	    set hid [join $lid "|"]
 	    d urlset "" $conf(nextmetro) [list [list "id" $hid]]
 	    set url [d urlget ""]
-	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
+	    append rhtml [::webapp::helem "a" "\[$tk\]" "href" $url]
 	}
 
 	#
-	# Détails par point d'accès
+	# Details per access point
 	#
 
-	append rhtml ", détail/AP "
+	append rhtml [format ", %s " [mc "detail/AP"]]
 	foreach k {assoc auth} {
+	    set tk [mc "$k"]
 	    set hid [join $twa(:$k:ap) "|"]
 	    d urlset "" $conf(nextmetro) [list [list "id" $hid]]
 	    set url [d urlget ""]
-	    append rhtml [::webapp::helem "a" "\[$k\]" "href" $url]
+	    append rhtml [::webapp::helem "a" "\[$tk\]" "href" $url]
 	}
 	append rhtml ")"
     }
 
-    return [linsert $arbre 0 $rhtml]
+    return [linsert $tree 0 $rhtml]
 }
 
 ##############################################################################
-# Affichage d'un équipement
+# Equipement display
 ##############################################################################
 
-proc format-one-eq {nomeq iface _tabuid} {
+proc format-one-eq {eqname iface _tabuid} {
     global conf
     upvar $_tabuid tabuid
 
     #
-    # Lire les informations de l'équipement dans le graphe
-    # Ces informations sont filtrées par tabuid qui n'affiche
-    # que les vlans autorisés.
+    # Read equipment information from graph.
     #
 
-    set l [eq-iflist $nomeq tabuid]
+    set l [eq-iflist $eqname tabuid]
 
-    lassign $l nomeq type model location liferr iflist arrayif arrayvlan
+    lassign $l eqname type model location liferr iflist arrayif arrayvlan
     array set tabiface $arrayif
 
-    set titre "Équipement $nomeq $type $model"
+    #
+    # Title
+    #
+
+    set title [mc "Equipment"]
+    append title " $eqname $type $model"
     if {$location ne ""} then {
-	append titre " (localisation $location)"
+	append title [format " (%s)" [mc "location"]]
     }
 
     #
-    # En cas d'erreur, on sort prématurément
-    # Ce cas correspond à une (ou plusieurs) interface qui serait
-    # modifiable mais non consultable.
+    # If an error is found, exit immediately. This case means that
+    # one (or more) interface(s) which is writable, but not readable.
     #
 
     if {[llength $liferr] > 0} then {
-	set texte "Incohérence sur les droits d'accès pour les interfaces : "
-	append texte [join $liferr " "]
-	return [list $titre $texte]
+	set l [join $liferr " "]
+	set text [format [mc "Inconsistent permissions on interfaces: %s"] $l]
+	return [list $title $text]
     }
 
-    #
-    # Mettre en forme toutes ces informations
-    #
-
     set eqmod 0
-    set texte ""
+    set text ""
     foreach i $iflist {
 	set txt ""
 
 	#
-	# Nom de l'interface et paramètres associés (Ethernet, radio)
+	# Interface name and parameters (Ethernet, radio)
 	#
 
-	lassign $tabiface($i) nom edit radio stat mode desc lien natif
-	set ligne [lreplace $tabiface($i) 0 7]
+	lassign $tabiface($i) name edit radio stat mode desc link native
+	set line [lreplace $tabiface($i) 0 7]
 
-	if {[string equal $iface $nom]} then {
-	    append txt [::webapp::helem "b" $nom]
+	if {$iface eq $name} then {
+	    append txt [::webapp::helem "b" $name]
 	} else {
-	    append txt "$nom"
+	    append txt "$name"
 	}
 
 	if {[llength $radio] > 0} then {
 	    set channel [conv-channel [lindex $radio 0]]
 	    set power   [lindex $radio 1]
-	    append txt " (channel $channel power $power mW)"
+	    append txt " ("
+	    append txt [format [mc {channel %1$s power %2$s mW}] $channel $power]
+	    append txt ")"
 	}
 
-	if {! [string equal $stat "-"]} then {
+	if {$state eq "-"} then {
 	    d urlset "" $conf(nextmetro) [list [list "id" $stat]]
 	    set url [d urlget ""]
 	    append txt " "
@@ -586,115 +561,114 @@ proc format-one-eq {nomeq iface _tabuid} {
 	    append txt ")"
 	}
 
-	if {[llength $lien] > 1} then {
-	    lassign $lien via eq2 if2
+	if {[llength $link] > 1} then {
+	    lassign $link via eq2 if2
 	    d urlset "" $conf(nexteq) [list \
 					    [list "eq" $eq2] \
 					    [list "iface" $if2] \
 					]
 	    set urleqiface [d urlget ""]
-	    append txt " $via vers "
+	    append txt " $via "
+	    append txt [mc "to"]
+	    append txt " "
 	    append txt [::webapp::helem "a" "$eq2 $if2" "href" $urleqiface]
 	}
 
 	#
-	# Récapitulatif des stats wifi
+	# Wifi statistics
 	#
 
-	if {[info exists tabwifi($nomeq:$i)]} then {
-	    #
-	    # Cumuler les graphes d'associations et d'authentification
-	    # Cumuler les graphes par ssid
-	    #
-	    cumul-wifi $tabwifi($nomeq:$i) tw
+	if {[info exists tabwifi($eqname:$i)]} then {
+
+	    cumul-wifi $tabwifi($eqname:$i) tw
 
 	    append txt " "
 
 	    foreach k {assoc auth} {
 		if {[llength $tw(:$k:ssid)] > 1} then {
 		    #
-		    # Cumuls (seulement si plus d'un ssid)
+		    # Display sums (only if more than one ssid)
 		    #
 
+		    set tk [mc "Sum $k"]
 		    set hid $tw(:$k:cumul)
 		    d urlset "" $conf(nextmetro) [list [list "id" $hid]]
 		    set url [d urlget ""]
 		    append txt " "
-		    append txt [::webapp::helem "a" "\[Cumul $k\]" "href" $url]
+		    append txt [::webapp::helem "a" "\[$tk\]" "href" $url]
 
 		    #
-		    # Détails par SSID (seulement si plus d'un ssid)
+		    # Detail per ssid (only if more than one ssid)
 		    #
 
 		    set lid {}
 		    foreach ssid $tw(:$k:ssid) {
 			set lid [concat $lid $tw(:$k:ssid:$ssid)]
 		    }
+		    set tk [mc "Detail $k"]
 		    set hid [join $lid "|"]
 		    d urlset "" $conf(nextmetro) [list [list "id" $hid]]
 		    set url [d urlget ""]
 		    append txt " "
-		    append txt [::webapp::helem "a" "\[Détail $k\]" "href" $url]
+		    append txt [::webapp::helem "a" "\[$tk\]" "href" $url]
 		}
 	    }
 	}
 
 	#
-	# Édition des interfaces.
-	# Si c'est une interface modifiable, activer le
-	# bouton pour la modifier
-	# Critères :
-	#  1- le lien de l'interface doit être "X"
-	#  2- le correspondant doit avoir accès à tous les vlans
+	# If this interface is writable, activate the button.
 	#
 
 	if {$edit eq "edit"} then {
 	    d urlset "" $conf(nextifchg) [list \
-						[list "eq" $nomeq] \
+						[list "eq" $eqname] \
 						[list "iface" $i] \
 					    ]
+	    set e [mc "Edit"]
 	    set url [d urlget ""]
 	    append txt " "
-	    append txt [::webapp::helem "a" {[Modifier]} "href" $url]
+	    append txt [::webapp::helem "a" "\[$e\]" "href" $url]
 	    incr eqmod
 	}
 
 	#
-	# Parcours des vlans présents sur cette interface
+	# Traverse vlans available on this interface
 	#
 
-	set nvlan [llength $ligne]
-	foreach vlan [lsort -index 0 -integer $ligne] {
+	set nvlan [llength $line]
+	foreach vlan [lsort -index 0 -integer $line] {
 	    lassign $vlan vlanid desc stat
 
-	    if {[string equal $desc "-"]} then {
-		set desc "pas de description"
+	    if {$desc eq "-"} then {
+		set desc [mc "no description"]
 	    } else {
 		set desc [binary format H* $desc]
 	    }
-	    set native ""
-	    if {$vlanid == $natif} then {
-		set native " (vlan natif)"
+	    set natv ""
+	    if {$vlanid == $native} then {
+		set natv [format " (%s)" [mc "native vlan"]]
 	    }
 
 	    append txt "\n<BR>\n"
 
 	    if {$nvlan > 1 || $vlanid != 0} then {
 		d urlset "" $conf(nextl2) [list \
-						[list "eq" $nomeq] \
+						[list "eq" $eqname] \
 						[list "iface" $i] \
 						[list "vlan" $vlanid] \
 					    ]
 		set urll2 [d urlget ""]
-		append txt "Vlan "
+		append txt [mc "Vlan"]
+		append txt " "
 		append txt [::webapp::helem "a" "$vlanid ($desc)" "href" $urll2]
-		append txt $native
+		append txt $natv
 
-		if {! [string equal $stat "-"]} then {
+		if {$stat ne "-"} then {
+		    set t [mc "Traffic"]
 		    d urlset "" $conf(nextmetro) [list [list "id" $stat]]
 		    set url [d urlget ""]
 		    append txt " "
-		    append txt [::webapp::helem "a" {[Trafic]} "href" $url]
+		    append txt [::webapp::helem "a" "\[$t\]" "href" $url]
 		}
 	    }
 
@@ -707,41 +681,42 @@ proc format-one-eq {nomeq iface _tabuid} {
 	}
 
 	#
-	# Pour les interfaces radio, parcourir les points
-	# de métrologie pour les ssid trouvés
+	# For radio interfaces, fetch sensors
 	#
 
-	if {[info exists tabwifi($nomeq:$i)]} then {
+	if {[info exists tabwifi($eqname:$i)]} then {
 	    foreach ssid $tw(:ssid) {
-		append txt "\n<BR>\nSsid $ssid "
+		append txt "\n<BR>\n"
+		append txt [format [mc "SSID %s "] $ssid]
 		foreach k {assoc auth} {
+		    set tk [mc $k]
 		    set id [lindex $tw(:$k:ssid:$ssid) 0]
-		    if {! [string equal $id ""]} then {
+		    if {$id ne ""} then {
 			d urlset "" $conf(nextmetro) [list [list "id" $id]]
 			set url [d urlget ""]
-			append txt [::webapp::helem "a" "\[$k\]" "href" $url]
+			append txt [::webapp::helem "a" "\[$tk\]" "href" $url]
 		    }
 		}
 	    }
 	}
 
 	#
-	# Résultat final
+	# Final result
 	#
-	append texte [::webapp::helem "li" [::webapp::helem "p" $txt]]
+	append text [::webapp::helem "li" [::webapp::helem "p" $txt]]
     }
 
-    set texte [::webapp::helem "ul" $texte]
+    set text [::webapp::helem "ul" $text]
 
     if {$eqmod > 1} then {
-	d urlset "" $conf(nextifchg) [list [list "eq" $nomeq]]
+	set t [mc "Edit interfaces"]
+	d urlset "" $conf(nextifchg) [list [list "eq" $eqname]]
 	set url [d urlget ""]
-	append titre " "
-	append titre [::webapp::helem "a" {[Modifier les interfaces]} \
-					"href" $url]
+	append title " "
+	append title [::webapp::helem "a" "\[$t\]" "href" $url]
     }
 
-    return [list $titre $texte]
+    return [list $title $text]
 }
 
 ##############################################################################
@@ -766,52 +741,43 @@ proc main {} {
 	set $var [string trim [lindex [set $var] 0]]
     }
 
-    #
-    #  URL des formulaires
-    #
-
     d urlset "%URLFORMEQ%" $conf(nexteq) {}
     d urlset "%URLFORML2%" $conf(nextl2) {}
     d urlset "%URLFORML3%" $conf(nextl3) {}
 
     #
-    # Récupérer les informations sur les équipements lues dans le graphe
+    # Get equipment informations from graph
     #
 
     set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
-    while {[gets $fd ligne] > -1} {
-	switch [lindex $ligne 0] {
+    while {[gets $fd line] > -1} {
+	switch [lindex $line 0] {
 	    eq {
-		set nomeq  [lindex $ligne 1]
-		if {[string equal $eq ""] || [string match -nocase $eq $nomeq]} then {
-		    set type   [lindex $ligne 3]
-		    set modele [lindex $ligne 5]
-		    set tabeq($nomeq) [list $type $modele]
+		set eqname [lindex $line 1]
+		if {$eq eq "" || [string match -nocase $eq $eqname]} then {
+		    set type  [lindex $line 3]
+		    set model [lindex $line 5]
+		    set tabeq($eqname) [list $type $model]
 		}
 	    }
 	}
     }
     if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture des équipements ($msg)"
+	d error [format [mc "Error while reading equipments: %s"] $msg]
     }
 
     #
-    # Récupérer les stats wifi sur ces équipements
+    # Extract wifi statistics for these equipments
     #
 
     set cmd [format $conf(extractcoll) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
-    while {[gets $fd ligne] > -1} {
-	set kw [lindex $ligne 0]
-	switch $kw {
+    while {[gets $fd line] > -1} {
+	switch [lindex $line 0] {
 	    nbassocwifi -
 	    nbauthwifi {
-		set id    [lindex $ligne 1]
-		set weq   [lindex $ligne 2]
-		set iface [lindex $ligne 4]
-		set ssid  [lindex $ligne 5]
-
+		lassign $line kw id weq iface ssid
 		if {[info exists tabeq($weq)]} then {
 		    lappend tabwifi($weq) [list $kw $id $ssid]
 		    lappend tabwifi($weq:$iface) [list $kw $id $ssid]
@@ -820,29 +786,27 @@ proc main {} {
 	}
     }
     if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture des sondes wifi ($msg)"
+	d error [format [mc "Error while reading wifi sensors: %s"] $msg]
     }
 
     #
-    # S'il y a plusieurs équipements trouvés, les présenter
-    # dans le bon ordre
+    # If more than one equipment is found, display them in order
     #
 
-    # 1 si aucun eq cherché, 0 si recherche d'un éq
+    # 1 if no equipment is searched for, 0 if search for equipment name
     set ceq [string equal $eq ""]
 
-    # nb d'équipements trouvés
+    # number of equipment found
     set neq [llength [array names tabeq]]
 
     switch -glob "$ceq-$neq" {
 	*-0 {
 	    #
-	    # Aucun équipement trouvé. Faire comme pour une liste, mais
-	    # une liste vide ;-)
-	    # Peu importe qu'on ait cherché ou non un équipement.
+	    # No equipment is found. Proceed as a list, but with an empty list.
+	    # No matter whether or not we searched for an equipment.
 	    #
 
-	    set liste "Aucun équipement trouvé"
+	    set liste [mc "No equipment found"]
 
 	    #
 	    # End of script: output page and close database
@@ -850,7 +814,7 @@ proc main {} {
 
 	    d result $conf(pagen) [list \
 				    [list %MSGSTA% $msgsta] \
-				    [list %OBJETS% "équipements"] \
+				    [list %OBJETS% [mc "equipments"]] \
 				    [list %LISTE%  $liste] \
 				    [list %EQ%     $eq] \
 				    [list %VLAN%   ""] \
@@ -861,16 +825,14 @@ proc main {} {
 	}
 	*-1 {
 	    #
-	    # On n'a trouvé qu'un seul équipement. Peu importe
-	    # qu'on l'ait cherché ou non (le réseau peut être
-	    # tout petit ;-)
-	    # Récupérer les informations lues dans le graphe
+	    # We found only one equipment. No matter whether or not
+	    # we searched for it. Extract informations from the graph.
 	    #
 
-	    set nomeq [lindex [array names tabeq] 0]
+	    set eqname [lindex [array names tabeq] 0]
 
-	    set l [format-one-eq $nomeq $iface tabuid]
-	    lassign $l titre texte
+	    set l [format-one-eq $eqname $iface tabuid]
+	    lassign $l title text
 
 	    set eqsta [eq-graph-status $dbfd $eq]
 
@@ -881,8 +843,8 @@ proc main {} {
 	    d result $conf(page1) [list \
 				    [list %MSGSTA% $msgsta] \
 				    [list %EQSTA% $eqsta] \
-				    [list %TITRE% $titre] \
-				    [list %TEXTE% $texte] \
+				    [list %TITRE% $title] \
+				    [list %TEXTE% $text] \
 				    [list %EQ%    $eq] \
 				    [list %VLAN%  ""] \
 				    [list %ADDR%  ""] \
@@ -890,19 +852,17 @@ proc main {} {
 	}
 	0-* {
 	    #
-	    # On a cherché un équipement (via une expression régulière
-	    # par exemple), et on en a trouvé plusieurs.
-	    # Trier les équipements pour les présenter dans le bon ordre
-	    # dans une liste bien linéaire.
+	    # We search for an equipment (with a regexp for example)
+	    # and we found more than one. Sort equipments.
 	    #
 
 	    set liste ""
 	    foreach e [lsort [array names tabeq]] {
-		lassign $tabeq($e) type modele
+		lassign $tabeq($e) type model
 		d urlset "" $conf(nexteq) [list [list "eq" $e]]
 		set url [d urlget ""]
-		set lien [::webapp::helem "a" $e "href" $url]
-		append liste [::webapp::helem "li" "$lien $type $modele"]
+		set link [::webapp::helem "a" $e "href" $url]
+		append liste [::webapp::helem "li" "$link $type $model"]
 	    }
 	    set liste [::webapp::helem "ul" $liste]
 
@@ -923,16 +883,14 @@ proc main {} {
 	}
 	1-* {
 	    #
-	    # On n'a cherché aucun équipement, on veut juste voir
-	    # la liste (arborescente).
-	    # Regrouper les équipements par leur nom, en attendant
-	    # de faire mieux.
+	    # We didn't search for an equipment, we just wanted to
+	    # see the list (as a tree).
 	    #
 
-	    hiearchiser-liste-equipements thier [array names tabeq]
-	    set arbre [generer-arbre-eq "" thier tabeq tabwifi]
-	    set expcoll {{tout dérouler} {tout enrouler}}
-	    set t [::webapp::interactive-tree "leq" $arbre $expcoll]
+	    listeq-to-tree thier [array names tabeq]
+	    set tree [display-eq-tree "" thier tabeq tabwifi]
+	    set expcoll [list [mc "develop"] [mc "envelop"]]
+	    set t [::webapp::interactive-tree "leq" $tree $expcoll]
 	    lassign $t head1 head2 onload html
 	    set header "$head1\n$head2\n"
 
