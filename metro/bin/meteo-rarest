@@ -1,0 +1,43 @@
+#!/usr/local/bin/bash
+
+PATH_WEATHERMAP="/local/weathermap/"
+CONF="/local/obj999/etc/meteo/rarest/weathermap.rarest.conf"
+#OUTPUT="/local/obj999/metro/www/meteo/rarest"
+OUTPUT="/local/services/www-metro/meteo/rarest"
+
+# 
+# 1. On créé la weathermap
+#
+
+$PATH_WEATHERMAP/weathermap -c $CONF -o $OUTPUT/weathermap.rarest.png
+
+# 
+# 2. On récupère les graphes RRD associés aux liens de la weathermap 
+#
+
+FIN=`date +%s`
+DEBUT=`expr $FIN - 86400`
+
+function get_rrd_graph
+{
+   /usr/local/bin/wget "http://metro.u-strasbg.fr/bin/gengraph?id=$1&debut=$DEBUT&fin=$FIN&taille=petit" -O $OUTPUT/$2
+}
+
+
+# STRASBOURG - RENATER
+get_rrd_graph M819.strasbourg-ce1 renater.png
+
+# STRASBOURG - COLMAR
+get_rrd_graph M863.strasbourg-ce1 colmar.png
+
+# STRASBOURG - GUEBWILLER
+get_rrd_graph M924.strasbourg-ce1 guebwiller.png
+
+# STRASBOURG - HAGUENAU
+get_rrd_graph M861.strasbourg-ce1 haguenau.png
+
+# STRASBOURG - MULHOUSE
+get_rrd_graph M864.strasbourg-ce1 mulhouse.png
+
+# STRASBOURG - SELESTAT
+get_rrd_graph M862.strasbourg-ce1 selestat.png

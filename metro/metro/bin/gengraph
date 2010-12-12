@@ -1,0 +1,221 @@
+#!/usr/bin/perl
+
+# $Id: gengraph,v 1.4 2008-07-30 15:21:47 boggia Exp $
+# ###################################################################
+#  boggia : Creation : 25/03/08
+#
+# génération du graphique RRD tool
+#
+#    Résumé : specification de http://idris/bin/gengraph
+#	paramètres :
+#	    [ titre = <titre> ]
+#	    idX = <ptmetro> [+ <ptmetro> [+ <ptmetro> ...]]
+#	    [ legendeX = <legende> ]
+#		=> si pas indiquée : légende par défaut déterminée par idris
+#	    [ taille = <petit|moyen|grand|LxH> ]
+#		=> si pas indiquée : moyen
+#	    debut = <date en format time_t>
+#	    fin = <date en format time_t>
+#   Exemple :
+#	http://idris/bin/gengraph?
+#		titre=trafic sur les points d'accès de l'INSA
+#		&id1=Minsa-ap1.osiris+Minsa-ap2.osiris+....
+#		&id2=Minsa-ap2.osiris-sec+Minsa-ap2.osiris-sec+...
+#		&taille=200x100
+#		&debut=...&fin=
+#
+
+use CGI qw/:standard/;
+use CGI::Pretty qw( :html3 );
+use strict;
+
+# fichier de configuration principal et chargement des fonctions de base
+our $conf_file = "/local/obj999/etc/obj999.conf";
+require "/local/obj999/lib/libmetro.pl";
+#
+# lecture du fichier de configuration general
+our %global_var = read_global_conf_file($conf_file);
+
+our %liste_taille = (   'petit' => 1,
+                        'moyen' => 1,
+                        'grand' => 1
+                    );
+
+our $rep_modeles = $global_var{"DIR_BIN_MODELS"};
+our $rep_index = $global_var{"DIR_ETC"};
+our $rep_bin = $global_var{"DIR_BIN"};
+
+# initialisation des parametres utiles à la génération de graphes
+our %param = (
+		'type'		    => "-",
+                'start'		    => "0",
+                'end'		    => "0",
+                'size'		    => "moyen",
+                'title'		    => "",
+);
+
+my @liste = (param());
+
+capture_liste(@liste);
+
+my $message_erreur = check_param();
+
+if($message_erreur)
+{
+	print header();
+	print $message_erreur;
+}
+else
+{
+	create_and_send_graph();
+}
+
+
+# contrôle la validité du nom du graphe et du temps
+sub check_param()
+{
+    my ($id,$debut,$fin,$taille) = @_;
+
+    my $message_erreur = 0; 
+    if($param{'end'}!~m/[0-9]+/ || $param{'start'}!~m/[0-9]+/)
+    {
+	$message_erreur = "erreur date";
+    }
+    elsif($param{'end'} < $param{'start'})
+    {
+	$message_erreur = "erreur date : fin < debut <=> $param{'end'} < $param{'start'}";
+    }
+    elsif($param{'size'} ne "" && !defined($liste_taille{$param{'size'}}) && $param{'size'}!~m/[0-9]+x[0-9]+/)
+    {
+	$message_erreur = "erreur : taille de graphique non définie. Utiliser \"petit\", \"moyen\", \"grand\"";
+	$message_erreur = "$message_erreur ou bien \"<largeur>x<hauteur>\"";
+    }
+    return $message_erreur;
+}
+
+
+# fonction qui crée l'image, la récupère sur la sortie standard
+# et l'affiche sur la sortie standard
+sub create_and_send_graph
+{
+    my $gengraphcmd = "$rep_bin/genere-rrdgraph ";
+
+    if(exists $param{'id'})
+    {
+	# creation des parametres "id" et "legend"
+	my $param_id = "";
+	my $param_legend = "";
+	my $compteurid = 0;
+	foreach my $key (sort keys %{$param{'id'}})
+	{
+	    if($compteurid == 0)
+	    {	
+		$param_id = $param{'id'}{$key} . $param_id;
+		if(exists $param{'legend'}{$key})
+        	{   
+		    $param_legend = $param{'legend'}{$key} . $param_legend;   
+		}
+	    }
+	    elsif($compteurid > 0)
+	    {
+		$param_id = "$param_id,$param{'id'}{$key}";
+		if(exists $param{'legend'}{$key})
+                {
+		    $param_legend = "$param_legend,$param{'legend'}{$key}";
+		}
+	    }
+	    $compteurid ++;
+	}
+
+	# generation de la commande pour creer le graphique	
+	my $gengraphcmd = "$rep_bin/genere-rrdgraph $param_id $param{'type'} $param{'start'} $param{'end'} $param{'size'}";
+
+	if($param{'title'} ne "")
+	{
+	    $gengraphcmd = "$gengraphcmd '$param{'title'}'";
+	}
+	if($param_legend ne "")
+	{
+	    $gengraphcmd = "$gengraphcmd '$param_legend'";
+	}
+
+	print header(-type=>'image/png');
+	open(IMG,"$gengraphcmd |");
+	binmode(IMG) ;
+	while( <IMG> )
+	{
+	    print ;
+	}
+	close(IMG);
+    }
+    else
+    {
+	print header();
+	print "Erreur : pas d'identifiant de graphe en parametre";
+    }
+}
+
+# fonction qui classifie les parametres CGI
+# et les classe dans des tableaux nominatifs
+sub capture_liste
+{
+    my (@liste) = @_;
+
+    my ($elem,$arg);
+    my $index_id = -1;
+    my $index_legende = -1;
+ 
+    foreach $elem (@liste)
+    {
+        $arg = param($elem);
+	
+        if($elem =~m/^id/)
+        {
+	    if($elem =~m/^id([0-9]+)/)
+	    {
+		$index_id = $1;
+	    }
+	    else
+	    {	
+		$index_id ++;
+	    }
+	    
+	    $arg =~s/ /\+/g;
+	    
+	    $param{'id'}{$index_id} = $arg;
+        }
+	elsif($elem =~m/^legende/)
+	{
+	    if($elem =~m/^legende([0-9]+)/)
+	    {
+		$index_legende = $1;
+	    }	
+	    else
+	    {
+		$index_legende ++;
+	    }
+	    $param{'legend'}{$index_legende} = $arg;
+	}
+	elsif($elem eq "type")
+	{
+	   $param{'type'} = $arg; 
+	}
+	elsif($elem eq "taille")
+	{
+	    $param{'size'} = $arg;
+	}
+	elsif($elem eq "debut" && $arg=~m/[0-9]+/)
+	{
+	    $param{'start'} = $arg;
+	}
+	elsif($elem eq "fin" && $arg=~m/[0-9]+/)
+        {
+	    $param{'end'} = $arg;
+        }
+	elsif($elem eq "titre")
+	{
+	    $param{'title'} = $arg;
+	}
+    }
+}
+

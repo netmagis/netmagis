@@ -1,0 +1,58 @@
+#!/usr/bin/perl
+
+# $Id: rotate-ap-logs,v 1.2 2008/06/13 10:16:50 pda Exp $
+#
+#
+# ###################################################################
+#  boggia : Creation : 25/03/08
+#
+#  Programme de rotation des rapports d'assocation pour chaque AP
+#  Lancé par Cron tous les jours
+
+use SNMP_util;
+
+# fichier de configuration principal et chargement des focntions de base
+our $conf_file = "%CONF%";
+require "%LIBMETRO%";
+#
+
+#repertoire des rapports
+$rep_rapport = read_conf_file("$conf_file","DIR_AP_REPORT");
+$nb_max_logfile = 104;
+
+#$date  = `date +%Y%m%d`;
+#chomp $date;
+
+#teste si le reppertoire existe deja
+opendir(DIR_RAPPORT,"$rep_rapport");
+@REP=grep(!/^\.\.?$/, readdir DIR_RAPPORT);
+closedir(DIR_RAPPORT);
+$existe_rep = 0;
+foreach $elem (@REP)
+{
+      #print "$elem\n";
+       if($elem=~m/-ap[0-9]+/)
+       {
+		#print "rep = $elem\n";
+        
+		unlink "$rep_rapport/$elem/assoc.log.$nb_max_logfile.gz";
+		#print "unlink $rep_rapport/$elem/assoc.$nb_max_logfile.log.gz\n";	
+		
+		for($i=$nb_max_logfile - 1;$i>=0;$i--)
+		{
+			$indexplus1 = $i + 1;
+			rename "$rep_rapport/$elem/assoc.log.$i.gz", "$rep_rapport/$elem/assoc.log.$indexplus1.gz";
+			#system("cp $rep_rapport/$elem/assoc.$i.log.gz $rep_rapport/$elem/assoc.$indexplus1.log.gz");
+			#print "cp $rep_rapport/$elem/assoc.$i.log.gz $rep_rapport/$elem/assoc.$indexplus1.log.gz\n";
+		} 
+		#system("mv $rep_rapport/$elem/assoc.log $rep_rapport/$elem/assoc.0.log");
+		rename "$rep_rapport/$elem/assoc.log", "$rep_rapport/$elem/assoc.log.0";
+		#print "mv $rep_rapport/$elem/assoc.log $rep_rapport/$elem/assoc.0.log\n";
+
+		system("gzip $rep_rapport/$elem/assoc.log.0");
+		#print "gzip $rep_rapport/$elem/assoc.0.log\n";
+		system("chmod 644 $rep_rapport/$elem/assoc.log.0.gz");
+                system("chown obj999:obj999 $rep_rapport/$elem/assoc.log.0.gz");
+       }
+}
+

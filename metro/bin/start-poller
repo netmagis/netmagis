@@ -1,0 +1,76 @@
+#!/usr/bin/perl -w 
+
+use strict;
+use Sys::Syslog;                          # Misses setlogsock.
+use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
+
+our %config = ( 'NB_PROCESS'            => 3,
+		'conf_file'             => "%CONF%",
+                'syslog_facility'       => "local0",
+                'logopt'                => ""
+);
+
+# Message des logs demarrage du démon ####################
+writelog("start_poller",$config{'logopt'},"info",
+        "\t #######################################");
+
+# recuperation des groupes de pollers dans le fichier de conf
+my @groupes = split(/,/,read_conf_file($config{'conf_file'},"POLLER_GROUPS"));
+my $dir_bin = read_conf_file($config{'conf_file'},"DIR_BIN");
+
+my $i;
+for($i=0;$i<@groupes;$i++)
+{
+    my $nb_process = read_conf_file($config{'conf_file'},"NB_PROCESS_GROUP_$groupes[$i]");
+    #my $options = read_conf_file($config{'conf_file'},"OPTIONS_GROUP_$groupes[$i]");
+
+    my $j;
+    for($j=1;$j<=$nb_process;$j++)
+    {
+	system("$dir_bin/poller $groupes[$i] $j $nb_process &");
+	sleep(1);
+    }
+}
+
+
+###########################################################
+# fonction d'ecriture des messages syslog
+sub writelog
+{
+	my ($program,$logopt,$level,$message) = @_;
+
+	openlog($program,$logopt,$config{'syslog_facility'});
+	syslog($level,$message);
+	closelog();
+}
+
+###########################################################
+# fonction de lecture de fichier de conf
+# prend un fichier de conf et une variable recherchee en param
+# renvoie la valeur de la variable
+# appelee par :
+# read_conf_file("nom_fichier_conf","variable_recherchee");
+#
+sub read_conf_file
+{
+    my ($file,$var) = @_;
+
+    open(FILE, $file);
+    while(<FILE>)
+    {
+        if(! /^#/ && ! /^\s+/)
+        {
+            chomp;
+            my ($variable,$value) = (split(/\s+/,$_))[0,1];
+            if($variable eq $var)
+            {
+                close(FILE);
+                return $value;
+            }
+        }
+    }
+    close(FILE);
+
+    return "UNDEF";
+}
+
