@@ -1,32 +1,28 @@
 #!%TCLSH%
 
 #
-# Script pour lister les vlans, ou les détails d'un vlan
+# List vlans, or vlan details
 #
-# Called by: /applis/topo/<tous>
+# Called by: all topo scripts
 #
 # Parameters (form or url):
 #	- eq: equipment name
-#	- iface : nom d'une interface à souligner
-#	- vlan : numéro d'un vlan sur l'interface, ou partie de description
-#	- format : rien, ou "pdf" ou "png"
+#	- iface : name of an interface
+#	- vlan : vlan-id on this interface, or part of a vlan description
+#	- format : nothing, or "pdf" or "png"
 #
 # History
 #   2006/06/05 : pda      : design
-#   2006/06/20 : pda      : prologue dépendant du format
-#   2006/06/22 : pda      : correction d'un bug sur les numéros de liens
-#   2006/06/22 : pda      : sortie dépendante du format
-#   2006/08/09 : pda      : ps2pdf avec chemin complet
-#   2006/08/14 : pda      : fusion avec listl2
-#   2007/01/04 : pda      : ajout du paramètre uti
-#   2007/01/11 : pda      : mutualisation initialisation
-#   2007/01/11 : pda      : substitution possible d'un uid
+#   2006/06/20 : pda      : prologue depends upon format
+#   2006/06/22 : pda      : fix a bug on link numbers
+#   2006/06/22 : pda      : output depends upon format
+#   2006/08/09 : pda      : full path of ps2pdf
+#   2006/08/14 : pda      : merge with listl2
+#   2007/01/04 : pda      : add parameter uid
+#   2007/01/11 : pda      : common initialization
+#   2007/01/11 : pda      : uid substitution
+#   2010/12/12 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -48,7 +44,6 @@ set conf(nextl3)	"%HOMEURL%/bin/l3"
 # Script parameters
 #
 
-
 set conf(form)	{
     {eq			0 1}
     {iface		0 1}
@@ -65,17 +60,13 @@ set conf(ps2pdf)	"%PS2PDF%"
 
 set conf(maxdot)	12
 
-
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Utilities
@@ -157,8 +148,7 @@ proc conv-ifname {ifname} {
 		{ Port-channel Po}
 		{ (ge-.*)/0$ \\1}
 		} {
-	set pattern [lindex $p 0]
-	set subst   [lindex $p 1]
+	lassign $p pattern subst
 	regsub -all $pattern $ifname $subst ifname
     }
     return $ifname
@@ -232,7 +222,7 @@ proc title {vlanlist _tabvlan} {
 	if {[info exists tabvlan($v)]} then {
 	    set vlandesc [lindex $tabvlan($v) 0]
 	} else {
-	    set vlandesc "(pas de description)"
+	    set vlandesc [format "(%s)" [mc "no description"]]
 	}
 	switch -- $vlanid {
 	    0 {
@@ -242,14 +232,14 @@ proc title {vlanlist _tabvlan} {
 		# rien
 	    }
 	    default {
-		if {! [string equal $vl ""]} then {
+		if {$vl ne ""} then {
 		    append vl "\\n"
 		}
-		append vl "Vlan $vlanid : $vlandesc"
+		append vl [format [mc {Vlan %1$s: %2$s}] $vlanid $vlandesc]
 	    }
 	}
     }
-    if {[string equal $vl ""] && $vlan0} then {
+    if {$vl eq "" && vlan0} then {
 	set vl "Vlan 0"
     }
     return "label = \"$vl\" ;\n"
@@ -260,7 +250,7 @@ proc epilogue {format} {
 }
 
 
-proc generer-dot {format eq iface vlan prog _tabvlan _nnodes} {
+proc gen-dot {format eq iface vlan prog _tabvlan _nnodes} {
     global conf
 
     upvar $_nnodes nnodes
@@ -268,23 +258,18 @@ proc generer-dot {format eq iface vlan prog _tabvlan _nnodes} {
 
     set nnodes 0
     set fd [open "|$prog" "r"]
-    while {[gets $fd ligne] > -1} {
-	switch [lindex $ligne 0] {
+    while {[gets $fd line] > -1} {
+	switch [lindex $line 0] {
 	    vlans {
-		set vlans [lreplace $ligne 0 0]
+		set vlans [lreplace $line 0 0]
 	    }
 	    eq {
-		set nomeq      [lindex $ligne 1]
-		set typemodele [lindex $ligne 2]
-		set tabeq($nomeq) $typemodele
+		lassign $line kw eqname typemodel
+		set tabeq($eqname) $typemodel
 		incr nnodes
 	    }
 	    link {
-		set linkname [lindex $ligne 1]
-		set eq1      [lindex $ligne 2]
-		set iface1   [lindex $ligne 3]
-		set eq2      [lindex $ligne 4]
-		set iface2   [lindex $ligne 5]
+		lassign $line kw linkname eq1 iface1 eq2 iface2
 		set tablink($linkname) [list $eq1 $iface1 $eq2 $iface2]
 	    }
 	}
@@ -294,21 +279,21 @@ proc generer-dot {format eq iface vlan prog _tabvlan _nnodes} {
     }
 
     #
-    # Mettre en forme toutes ces informations
+    # Display all these informations
     #
 
     set dot [prologue $format]
     append dot [title $vlans tabvlan]
 
-    foreach nomeq [array names tabeq] {
-	set attrlist [match-eq $tabeq($nomeq)]
+    foreach eqname [array names tabeq] {
+	set attrlist [match-eq $tabeq($eqname)]
 
-	d urlset "" $conf(nexteq) [list [list "eq" $nomeq]]
+	d urlset "" $conf(nexteq) [list [list "eq" $eqname]]
 	set url [d urlget ""]
 	lappend attrlist "href=\"$url\""
 
 	set attr [join $attrlist ", "]
-	append dot "\"$nomeq\" \[$attr\] ;\n"
+	append dot "\"$eqname\" \[$attr\] ;\n"
     }
 
     foreach link [array names tablink] {
@@ -330,20 +315,19 @@ proc generer-dot {format eq iface vlan prog _tabvlan _nnodes} {
     return $dot
 }
 
-proc chercher-vlans {vlan _tabvlan} {
+proc search-vlan {vlan _tabvlan} {
     upvar $_tabvlan tabvlan
 
     set r {}
-    if {[string equal $vlan ""]} then {
+    if {$vlan eq ""} then {
 	#
-	# Par défaut : liste de tous les vlans
+	# Default case: list of all vlans
 	#
 	set r [lsort -integer [array names tabvlan]]
 
     } elseif {[catch {expr $vlan+0}]} then {
 	#
-	# Pas un entier : il faut donc chercher le texte dans les
-	# descriptions
+	# Not an integer: look for given text in vlan descriptions
 	#
 	set pattern "*${vlan}*"
 	foreach v [lsort -integer [array names tabvlan]] {
@@ -383,26 +367,22 @@ proc main {} {
 
     set tmp /tmp/l2-[pid]
 
-    #
-    #  URL des formulaires
-    #
-
     d urlset "%URLFORMEQ%" $conf(nexteq) {}
     d urlset "%URLFORML2%" $conf(nextl2) {}
     d urlset "%URLFORML3%" $conf(nextl3) {}
 
     #
-    # Récupération des descriptions de vlans
+    # Extract vlan descriptions
     #
 
     set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
 
-    while {[gets $fd ligne] > -1} {
-	switch [lindex $ligne 0] {
+    while {[gets $fd line] > -1} {
+	switch [lindex $line 0] {
 	    vlan {
-		set id [lindex $ligne 1]
-		set reste [lreplace $ligne 0 1]
+		set id [lindex $line 1]
+		set reste [lreplace $line 0 1]
 		set desc ""
 		set lnet {}
 		while {[llength $reste] > 0} {
@@ -410,7 +390,7 @@ proc main {} {
 		    set val [lindex $reste 1]
 		    switch $key {
 			desc {
-			    if {[string equal $val "-"]} then {
+			    if {$val eq "-"} then {
 				set desc ""
 			    } else {
 				set desc [binary format H* $val]
@@ -427,29 +407,28 @@ proc main {} {
 	}
     }
     if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture des vlans ($msg)"
+	d error [format [mc "Error while reading Vlans: %s"] $msg]
     }
 
     #
-    # Chercher la liste des vlans demandés
+    # Search for vlans
     #
 
-    set lvlans [chercher-vlans $vlan tabvlan]
-
+    set lvlans [search-vlan $vlan tabvlan]
     set qvlan [::webapp::html-string $vlan]
 
     #
-    # Est-ce un affichage de tous les vlans, ou d'un vlan en particulier ?
+    # Do we have to display all vlans, or one in particular?
     #
 
     set nvlans [llength $lvlans]
     switch $nvlans {
 	0 {
 	    #
-	    # Aucun vlan trouvé
+	    # No vlan found
 	    #
 
-	    set liste "Vlan '$qvlan' non trouvé sur les équipements"
+	    set liste [format [mc "Vlan '%s' not found on equipments"] $qvlan]
 	    d result $conf(pagen) [list \
 					[list %MSGSTA% $msgsta] \
 					[list %OBJETS% "Vlans"] \
@@ -463,28 +442,28 @@ proc main {} {
 	}
 	1 {
 	    #
-	    # Récupérer le nom du vlan
+	    # Search for vlan name
 	    #
 
 	    set v [lindex $lvlans 0]
-	    set desc "(pas de description)"
+	    set desc [format "(%s)" [mc "no description"]]
 	    if {[info exists tabvlan($v)]} then {
 		set desc [lindex $tabvlan($v) 0]
 		set nets [join [lindex $tabvlan($v) 1] " "]
-		if {! [string equal $nets ""]} then {
+		if {$nets ne ""} then {
 		    append desc " ($nets)"
 		}
 	    }
 	    set qvlan [::webapp::html-string $vlan]
 
 	    #
-	    # Récupérer les informations lues dans le graphe
+	    # Get informations from graph
 	    #
 
 	    set xl2 [format $conf(extractl2) $tabuid(flagsr) $eq $iface $v]
-	    set dot [generer-dot $format $eq $iface $v $xl2 tabvlan nnodes]
-	    if {[string equal $dot ""]} then {
-		set liste "Vlan '$qvlan' non trouvé sur les équipements"
+	    set dot [gen-dot $format $eq $iface $v $xl2 tabvlan nnodes]
+	    if {$dot eq ""} then {
+		set liste [format [mc "Vlan '%s' not found on equipments"] $qvlan]
 		d result $conf(pagen) [list \
 					[list %MSGSTA% $msgsta] \
 					[list %OBJETS% "Vlans"] \
@@ -501,7 +480,7 @@ proc main {} {
 		close $fd
 
 		#
-		# Sélectionner le générateur de graphe
+		# Select graph processor
 		#
 
 		if {$nnodes > $conf(maxdot)} then {
@@ -526,7 +505,7 @@ proc main {} {
 		set urlpdf [d urlget ""]
 
 		#
-		# Sélectionner le format et sortir la page
+		# Select format and output page
 		#
 
 		switch -- $format {
@@ -536,6 +515,7 @@ proc main {} {
 			set pdf [read $fd]
 			close $fd
 			::webapp::send rawpdf $pdf
+			d end
 		    }
 		    png {
 			set fd [open "| $prog -Tpng $tmp.dot 2>/dev/null" "r"]
@@ -543,7 +523,7 @@ proc main {} {
 			set img [read $fd]
 			close $fd
 			::webapp::send png $img
-			exit 0
+			d end
 		    }
 		    default {
 			set map [exec sh -c "$prog -Tcmapx < $tmp.dot 2> /dev/null"]
@@ -565,14 +545,12 @@ proc main {} {
 	}
 	default {
 	    #
-	    # Afficher la liste (celle qui nous est retournée par
-	    # chercher-vlans est déjà triée)
+	    # Display vlan list (which is already sorted by search-vlan)
 	    #
 
 	    set liste {}
 	    foreach id $lvlans {
-		set desc [lindex $tabvlan($id) 0]
-		set nets [lindex $tabvlan($id) 1]
+		lassign $tabvlan($id) desc nets
 		if {[llength $nets] > 0} then {
 		    append desc " : $nets"
 		}

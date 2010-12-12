@@ -141,6 +141,9 @@
  {Date}		{Date}
  {Interface}	{Interface}
  {Change}	{Modification}
+ {Present}	{Présent}
+ {Group}	{Groupe}
+ {ERROR}	{ERREUR}
 
  {This host holds mail addresses} {Cette machine héberge des adresses de messagerie}
  {Internal error: '%s' inserted, but not found in database} {Erreur interne : '%s' inséré, mais non retrouvé dans la base}
@@ -159,6 +162,8 @@
  {No}		{Non}
  {Min}		{Min}
  {Max}		{Max}
+ {IPv4}		{IPv4}
+ {IPv6}		{IPv6}
  {SMTP emit right}	{Droit d'émission SMTP}
  {TTL}		{TTL}
  {Comment}		{Infos complémentaires}
@@ -166,6 +171,7 @@
  {Responsible (mail)}	{Responsable (mél)}
  {Aliases}		{Aliases}
  {Priority}	{Priorité}
+ {MX}		{MX}
  {Submit} {Enregistrer}
  {Reset} {Réinitialiser}
  {Title}	{Intitulé}
@@ -184,6 +190,13 @@
  {Description}	{Description}
  {Vlan-Id}	{Vlan-id}
  {VoIP Vlan}	{Vlan VoIP}
+ {Name and aliases} {Noms et aliases}
+ {Host type}	{Type de machine}
+ {Responsible}	{Responsable}
+ {location} {localisation}
+ {description} {description}
+ {Declared addresses (IPv4+IPv6): %s} {Adresses déclarées (IPv4+IPv6) : %s}
+ {List of declared addresses} {Liste des adresses déclarées}
 
  {Invalid FQDN '%s'}	{FQDN '%s' invalide}
  {Invalid domain '%s'}	{Domaine '%s' invalide}
@@ -219,7 +232,7 @@
  {DHCP profile} {Profil DHCP}
  {Use SMTP} {Émettre en SMTP}
  {TTL} {TTL}
- { (in seconds)} {(en secondes)}
+ { (in seconds)} { (en secondes)}
  {Sorry, but you do not have any active domain} {Désolé, mais vous n'avez aucun domaine actif}
  {No profile} {Aucun profil}
  {yes}		{oui}
@@ -351,7 +364,7 @@
  {Store parameter '%1$s' failed: %2$s} {Enregistrement du paramètre '%1$s' impossible : %2$s}
  {return to application parameter modification} {revenir à la modification des paramètres de l'application}
  {Type '%s' not supported} {Type '%s' non supporté}
- {Organism management} {Gestion des organismes}
+ {Organization management} {Gestion des organismes}
  {Community management} {Gestion des communautés}
  {Host type management} {Gestion des types de machines}
  {Network management} {Gestion des réseaux}
@@ -415,6 +428,8 @@
  {Edit interfaces} {Modifier les interfaces}
  {Error while reading equipments: %s} {Erreur lors de la lecture des équipements : %s}
  {Error while reading wifi sensors: %s} {Erreur lors de la lecture des sondes Wifi : %s}
+ {Error while reading Vlans: %s} {Erreur lors de la lecture des Vlans : %s}
+ {Error while reading networks: %s} {Erreur lors de la lecture des réseaux : %s}
  {No equipment found} {Aucun équipement trouvé}
  {equipments} {équipements}
  {develop} {tout dérouler}
@@ -441,4 +456,36 @@
  {Inactive hosts in network %1$s since more than %2$s months: } {Machines inactives dans le réseau %1$s depuis plus de %2$s mois : }
  {%s inactive hosts} {%s machines inactives}
  {no inactive host found} {aucune machine inactive trouvée}
+ {Vlan %1$s: %2$s} {Vlan %1$s : %2$s}
+ {Vlan '%s' not found on equipments} {Vlan '%s' non trouvé sur les équipements}
+ {Invalid router instance '%s'} {Instance de routage '%s' invalide}
+ {Invalid node type '%1$s' for %2$s} {Type de noeud '%1$s' invalide pour %2$s}
+ {IP networks} {réseaux IP}
+ {No valid CIDR: %s} {Aucun CIDR valide : %s}
+ {Error in CIDR '%1$s': %2$s} {Erreur dans le CIDR '%1$s' : %2$s}
+ {Internal error for '%1$s': avail=%2$s} {Erreur interne pour '%1$s' : avail=%2$s}
+ {Network '%s'} {Réseau '%s'}
+ {%1$s available addresses / %2$s total} {%1$s adresses disponibles / %2$s total}
+ {Detail} {Détail}
+ {address not allowed} {adresse non accessible}
+ {available address} {adresse disponible}
+ {declared address} {adresse déclarée}
+ {non-declared address within a DHCP range} {adresse non déclarée, figurant dans un intervalle DHCP}
+ {declared address, within a DHCP range} {adresse déclarée, figurant dans un intervalle DHCP}
+ {IPv4 address map} {Carte des adresses IPv4}
+ {You must choose a CIDR or at least one network} {Vous devez choisir un CIDR ou au moins une plage}
+ {You can not choose both a CIDR and a network} {Vous ne pouvez pas choisir un CIDR et une plage}
+ {List of users} {Liste des utilisateurs}
+ {(no MX for this domain)} {(pas de MX pour ce domaine)}
+ {CIDR matches '%s'} {CIDR correspond à '%s'}
+ {Organization id '%s' not found} {L'organisme d'id '%s' n'est pas trouvé}
+ {Community id '%s' not found} {La communauté d'id '%s' n'est pas trouvée}
+ {organization = %s} {organisme = %s}
+ { or } { ou }
+ {community = %s} {communauté = %s}
+ {List of networks filtered by: } {Liste des réseaux filtrés par : }
+ { (no filter) } { (aucun filtre) }
+ {and sorted by '%1$s' and by '%2$s'} {et triés par '%1$s' et par '%2$s'}
+ {%s selected network(s).} {%s réseau(x) sélectionné(s).}
+ {networks} {réseaux}
 }

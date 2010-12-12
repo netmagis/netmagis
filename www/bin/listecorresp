@@ -1,22 +1,16 @@
 #!%TCLSH%
 
-
 #
-# Script pour lister les correspondants 
+# List users
 #
-# Called by: index.htgt
-#
+# Called by: accueil
 #
 # History
 #   2002/12/05 : jean     : design
 #   2003/05/13 : pda/jean : use auth base
-#   2005/09/30 : jean     : autorisation aux non-admin
+#   2005/09/30 : jean     : let non-admin access this page
+#   2010/12/12 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -24,12 +18,6 @@
 
 set conf(page)          listecorresp.html
 set conf(err)		erreur.html
-
-#
-# Next actions
-# 
-
-# none (no-return page)
 
 #
 # Script parameters
@@ -45,7 +33,7 @@ set conf(tableau) {
 	    linewidth {267}
 	}
     }
-    motif {Gras} {
+    pattern Title {
 	title {yes}
 	topbar {yes}
 	chars {bold}
@@ -65,7 +53,7 @@ set conf(tableau) {
 	colonne { }
 	vbar {yes}
     }
-    motif {Normal} {
+    pattern Normal {
 	vbar {yes}
 	colonne { }
 	vbar {yes}
@@ -85,17 +73,14 @@ set conf(tableau) {
 	vbar {yes}
     }
 }
+
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
-
 
 ##############################################################################
 # Main procedure
@@ -112,21 +97,18 @@ proc main {} {
     ::dnscontext create d
     d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
 
-    set titrepage "Liste des correspondants"
+    set titrepage [mc "List of users"]
 
-    set largeurs {10 20 20 10 20 5 15}
-
-    set donnees {}
-
-    lappend donnees {Gras 
-			  {Login}
-			  {Nom+Prénom}
-			  {Mél}
-			  {Tél}
-			  {Localisation}
-			  {Présent}
-			  {Groupe}
-    }
+    set lines {}
+    lappend lines [list "Title" \
+			  [mc "Login"] \
+			  [mc "Name"] \
+			  [mc "Mail"] \
+			  [mc "Phone"] \
+			  [mc "Address"] \
+			  [mc "Present"] \
+			  [mc "Group"] \
+    		    ]
 
     set u [::webapp::authuser create %AUTO%]
 
@@ -140,8 +122,8 @@ proc main {} {
             set present		$tab(present)
             set nomgroupe	$tab(nom)
 
-	    if {[catch {set n [$ah getuser $login $u]} m]} then {
-		return "Problème dans la base d'authentification ($m)"
+	    if {[catch {set n [$ah getuser $login $u]} msg]} then {
+		d error [format [mc "Authentication base problem: %s"] $msg]
 	    }
 	    
 	    if {$n == 1} then {
@@ -150,22 +132,20 @@ proc main {} {
 		set tel		 [$u get tel]
 		set localisation [$u get adr]
 	    } else {
-		set nomprenom	ERREUR
-		set mel		ERREUR
-		set tel		ERREUR
-		set localisation ERREUR
+		set nomprenom	[mc "ERROR"]
+		set mel		[mc "ERROR"]
+		set tel		[mc "ERROR"]
+		set localisation [mc "ERROR"]
 	    }
 
-            lappend donnees [list Normal \
-              $login $nomprenom $mel $tel $localisation \
-              $present $nomgroupe ]
+            lappend lines [list Normal \
+				  $login $nomprenom $mel $tel $localisation \
+				  $present $nomgroupe ]
     }
 
     $u destroy
 
-
-    # on fabrique la liste
-    set tab [::arrgen::output "html" $conf(tableau) $donnees]
+    set tab [::arrgen::output "html" $conf(tableau) $lines]
 
     #
     # End of script: output page and close database

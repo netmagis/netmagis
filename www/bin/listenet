@@ -1,33 +1,28 @@
 #!%TCLSH%
 
-
 #
-# Script pour lister les réseaux
+# List networks
 #
-# Called by: script admin (page lib/admin.htgt)
+# Called by: admin
 #
 # Parameters (form or url):
-#   - critères de sélection : 
-#	- adr4 = cidr d'une plage sélectionnée
-#	- etabl = {id d'un établissement ...}
-#	- commu = {id d'une communauté ...}
-#   - critères de tri :
+#   - selection criteria:
+#	- adr = cidr of network
+#	- etabl = list of organization ids
+#	- commu = list of community ids
+#   - sort criteria
 #	- tri1 = adr4|adr6|nom|etablissement|communaute|localisation|commentaire
 #	- tri2 = adr4|adr6|nom|etablissement|communaute|localisation|commentaire
-#   - format de sortie
-#	- format : "Consulter" ou "Imprimer" ou "Tableur"
+#   - output format:
+#	- format : "Consulter" or "Imprimer" or "Tableur"
 #
 # History
 #   2002/10/24 : pda      : design
 #   2003/05/13 : pda/jean : use auth base
 #   2004/01/14 : pda/jean : add IPv6
-#   2005/09/28 : pda/jean/lauce : autorisation aux non-admin
+#   2005/09/28 : pda/jean/lauce : allow access for non administrators
+#   2010/12/12 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -36,13 +31,6 @@
 set conf(liste)		listedes.html
 set conf(listetex)	listedes.tex
 set conf(err)		erreur.html
-
-#
-# Next actions
-# 
-
-# none (no-return page)
-
 
 #
 # Script parameters
@@ -60,13 +48,13 @@ set conf(form)		{
 #
 # tabular specification for result
 # Colonnes :
-#	- Intitulé
-#	- Localisation
-#	- CIDR IPv4
-#	- CIDR IPv6
-#	- Établissement
-#	- Communauté
-#	- Commentaire
+#	- Description
+#	- Location
+#	- IPv4 address
+#	- IPv6 address
+#	- Organization
+#	- Community
+#	- Comment
 #
 
 set conf(tableau) {
@@ -79,7 +67,7 @@ set conf(tableau) {
 	    linewidth { 258 }
 	}
     }
-    pattern {Titre} {
+    pattern Title {
 	title {yes}
 	topbar {yes}
 	chars {12 bold}
@@ -100,7 +88,7 @@ set conf(tableau) {
 	colonne { }
 	vbar {yes}
     }
-    pattern {Normal} {
+    pattern Normal {
 	vbar {yes}
 	colonne { }
 	vbar {yes}
@@ -119,28 +107,28 @@ set conf(tableau) {
     }
 }
 
-
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
 
+##############################################################################
+# Utility functions
+##############################################################################
 
-proc critere-tri {tri} {
+proc sort-crit {tri} {
     switch -- $tri {
-	adr4		{ set sql "r.adr4 ASC" ; set txt "adresse IPv4" }
-	adr6		{ set sql "r.adr6 ASC" ; set txt "adresse IPv6" }
-	nom		{ set sql "r.nom ASC" ; set txt "intitulé" }
-	etablissement	{ set sql "etabl ASC" ; set txt "établissement" }
-	communaute	{ set sql "commu ASC" ; set txt "communauté" }
-	localisation	{ set sql "r.localisation ASC" ; set txt "localisation" }
-	commentaire	{ set sql "r.commentaire ASC" ; set txt "commentaire" }
-	default		{ set sql "r.adr4 ASC" ; set txt "adresse IPv4" }
+	nom		{ set sql "r.nom ASC" ; set txt [mc "Name"] }
+	etablissement	{ set sql "etabl ASC" ; set txt [mc "Organization"] }
+	communaute	{ set sql "commu ASC" ; set txt [mc "Community"] }
+	localisation	{ set sql "r.localisation ASC" ; set txt [mc "Location"] }
+	commentaire	{ set sql "r.commentaire ASC" ; set txt [mc "Description" }
+	adr6		{ set sql "r.adr6 ASC" ; set txt [mc "IPv6 address"] }
+	adr4		-
+	default		{ set sql "r.adr4 ASC" ; set txt [mc "IPv4 address"] }
     }
     return [list $sql $txt]
 }
@@ -160,10 +148,10 @@ proc main {} {
     d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
-    # Analyse et validation des arguments
+    # Argument analysis
     #
 
-    # format de sortie
+    # output format
     switch -- [lindex $ftab(format) 0] {
 	Consulter	{ set format html }
 	Imprimer	{ set format latex }
@@ -171,17 +159,12 @@ proc main {} {
 	default		{ set format html }
     }
 
-    # critères de tri (primaire et secondaire)
-    set tri1 [critere-tri [lindex $ftab(tri1) 0]]
-    set sqltri1 [lindex $tri1 0]
-    set txttri1 [lindex $tri1 1]
-
-    set tri2 [critere-tri [lindex $ftab(tri2) 0]]
-    set sqltri2 [lindex $tri2 0]
-    set txttri2 [lindex $tri2 1]
+    # sort criteria
+    lassign [sort-crit [lindex $ftab(tri1) 0]] sqltri1 txttri1
+    lassign [sort-crit [lindex $ftab(tri2) 0]] sqltri2 txttri2
 
     #
-    # Critères de sélection
+    # Selection criteria
     #
 
     set selection ""
@@ -189,71 +172,68 @@ proc main {} {
 
     # cidr
     set cidr [string trim [lindex $ftab(adr) 0]]
-    if {! [string equal $cidr ""]} then {
+    if {$cidr ne ""} then {
 	set msg [check-ip-syntax $dbfd $cidr "cidr"]
-	if {! [string equal $msg ""]} then {
+	if {$msg ne ""} then {
 	    d error $msg
 	}
 	append selection "AND (r.adr4 <<= '$cidr' OR r.adr6 <<= '$cidr')"
-	lappend txtsel "dont le CIDR correspond à '$cidr'"
+	lappend txtsel [format [mc "CIDR matches '%s'"] $cidr]
     }
 
-    # liste des établissements
-    if {[info exists ftab(etabl)]} then {
-	set lsqletabl {}
-	set ltxtetabl {}
-	pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
-	    set te($tab(idetabl)) $tab(nom)
+    # organization list
+    set lsqletabl {}
+    set ltxtetabl {}
+    pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
+	set te($tab(idetabl)) $tab(nom)
+    }
+    foreach idetabl $ftab(etabl) {
+	if {! [info exists te($idetabl)]} then {
+	    d error [format [mc "Organization id '%s' not found"] $idetabl]
 	}
-	foreach idetabl $ftab(etabl) {
-	    if {! [info exists te($idetabl)]} then {
-		d error "'$idetabl' n'est pas un numéro d'établissement"
-	    }
-	    lappend lsqletabl "r.idetabl = $idetabl"
-	    lappend ltxtetabl "$te($idetabl)"
-	}
-	if {[llength $lsqletabl] > 0} then {
-	    set l [join $lsqletabl " OR "]
-	    append selection " AND ($l)"
-	    set t [join $ltxtetabl " ou "]
-	    lappend txtsel "dont l'établissement est $t"
-	}
+	lappend lsqletabl "r.idetabl = $idetabl"
+	lappend ltxtetabl "$te($idetabl)"
+    }
+    if {[llength $lsqletabl] > 0} then {
+	set l [join $lsqletabl " OR "]
+	append selection " AND ($l)"
+	set t [join $ltxtetabl [mc " or "]]
+	lappend txtsel [format [mc "Organization = %s"] $t]
     }
 
-    # liste des communautés
-    if {[info exists ftab(commu)]} then {
-	set lsqlcommu {}
-	pg_select $dbfd "SELECT * FROM dns.communaute" tab {
-	    set tc($tab(idcommu)) $tab(nom)
+    # Community list
+    set lsqlcommu {}
+    pg_select $dbfd "SELECT * FROM dns.communaute" tab {
+	set tc($tab(idcommu)) $tab(nom)
+    }
+    foreach idcommu $ftab(commu) {
+	if {! [info exists tc($idcommu)]} then {
+	    d error [format [mc "Community id '%s' not found"] $idcommu]
 	}
-	foreach idcommu $ftab(commu) {
-	    if {! [info exists tc($idcommu)]} then {
-		d error "'$idcommu' n'est pas un numéro de communauté"
-	    }
-	    lappend lsqlcommu "r.idcommu = $idcommu"
-	    lappend ltxtcommu "$tc($idcommu)"
-	}
-	if {[llength $lsqlcommu] > 0} then {
-	    set l [join $lsqlcommu " OR "]
-	    append selection " AND ($l)"
-	    set t [join $ltxtcommu " ou "]
-	    lappend txtsel "dont la communauté est $t"
-	}
+	lappend lsqlcommu "r.idcommu = $idcommu"
+	lappend ltxtcommu "$tc($idcommu)"
+    }
+    if {[llength $lsqlcommu] > 0} then {
+	set l [join $lsqlcommu " OR "]
+	append selection " AND ($l)"
+	set t [join $ltxtcommu [mc " or "]]
+	lappend txtsel [format [mc "community = %s"] $t]
     }
 
     #
-    # Constitution de l'en-tête du tableau
+    # Display information
     #
 
-    set donnees {}
-    lappend donnees {Titre
-			Intitulé Localisation IPv4 IPv6
-			Établ. Communauté Commentaire
-		    }
-
-    #
-    # Récupération des données
-    #
+    set lines {}
+    lappend lines [list "Title" \
+			[mc "Name"] \
+			[mc "Location"] \
+			[mc "IPv4"] \
+			[mc "IPv6"] \
+			[mc "Organization"] \
+			[mc "Community"] \
+			[mc "Description"] \
+		    ]
 
     set sql "SELECT r.idreseau,
 		    r.nom, r.localisation, r.adr4, r.adr6, 
@@ -262,9 +242,9 @@ proc main {} {
 		WHERE r.idetabl = e.idetabl AND r.idcommu = c.idcommu
 			$selection
 		ORDER BY $sqltri1, $sqltri2"
-    set nres 0
+    set nnet 0
     pg_select $dbfd $sql tab {
-	lappend donnees [list Normal \
+	lappend lines [list Normal \
 				$tab(nom) \
 				$tab(localisation) \
 				$tab(adr4) \
@@ -273,26 +253,28 @@ proc main {} {
 				$tab(commu) \
 				$tab(commentaire) \
 			    ]
-	incr nres
+	incr nnet
     }
 
-    #
-    # Générer le zoli tableau
-    #
-
-    set tableau [::arrgen::output $format $conf(tableau) $donnees]
+    set tableau [::arrgen::output $format $conf(tableau) $lines]
 
     #
-    # Générer un titre adapté
+    # Generate an appropriate title
     #
 
-    set txt "Liste des réseaux"
-    if {[llength $txtsel] > 0} then {
-	append txt " "
-	append txt [join $txtsel " et "]
+    set txt1 [mc "List of networks filtered by: "]
+    if {[llength $txtsel] == 0} then {
+	append txt1 [mc " (no filter) "]
+    } else {
+	set tmp ""
+	foreach t $txtsel {
+	    append tmp [::webapp::helem "li" $t]
+	}
+	append txt1 [::webapp::helem "ul" $tmp]
     }
-    append txt ", triés par $txttri1 et par $txttri2"
-    append txt " : $nres réseau(x) sélectionné(s)."
+    set txt2 [format [mc "and sorted by '%1$s' and by '%2$s'] $txttri1 $txttri2]
+    set txt3 [format [mc "%s selected network(s)."] $nnet]
+    set txt "$txt1 $txt2: $txt3"
 
     #
     # End of script: output page and close database
@@ -300,10 +282,11 @@ proc main {} {
 
     set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
+    set title [mc "networks"]
     switch -- $format  {
 	html	{
 	    d result $conf(liste) [list \
-					[list %TITRE%	"réseaux"] \
+					[list %TITRE%	$title] \
 					[list %TXT%	$txt] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
@@ -316,8 +299,8 @@ proc main {} {
 	latex	{
 	    d result $conf(listetex) [list \
 					[list %ORIENTATION%	"landscape"] \
-					[list %TITRE%	"réseaux"] \
-					[list %TXT%		$txt] \
+					[list %TITRE%	$title] \
+					[list %TXT%	$txt] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
 				    ]

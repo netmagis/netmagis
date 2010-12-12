@@ -1,29 +1,25 @@
 #!%TCLSH%
 
 #
-# Script pour lister les détails d'un réseau de niveau 3
+# List networks, or network details
 #
-# Called by: /applis/topo/<tous>
+# Called by: all topo scripts
 #
 # Parameters (form or url):
-#	- addr : nom de l'équipement
-#	- format : rien, ou "pdf" ou "png"
+#	- addr : ip address
+#	- format : nothing, or "pdf" or "png"
 #
 # History
 #   2006/06/05 : pda      : design
-#   2006/06/20 : pda      : prologue dépendant du format
-#   2006/06/22 : pda      : sortie dépendante du format
-#   2006/08/09 : pda      : ps2pdf avec chemin complet
-#   2006/08/14 : pda      : fusion script l3
-#   2007/01/04 : pda      : ajout du paramètre uti
-#   2007/01/11 : pda      : mutualisation initialisation
-#   2007/01/11 : pda      : substitution possible d'un uid
-#
-
-
-#
-#
-
+#   2006/06/20 : pda      : prologue depends upon format
+#   2006/06/22 : pda      : fix a bug on link numbers
+#   2006/06/22 : pda      : output depends upon format
+#   2006/08/09 : pda      : full path of ps2pdf
+#   2006/08/14 : pda      : merge with listl2
+#   2007/01/04 : pda      : add parameter uid
+#   2007/01/11 : pda      : common initialization
+#   2007/01/11 : pda      : uid substitution
+#   2010/12/12 : pda      : i18n
 
 #
 # Template pages used by this script
@@ -46,7 +42,6 @@ set conf(nextl3)	"%HOMEURL%/bin/l3"
 # Script parameters
 #
 
-
 set conf(form)	{
     {addr		0 1}
     {format		0 1}
@@ -60,18 +55,12 @@ set conf(neato)		"%NEATO%"
 set conf(ps2pdf)	"%PS2PDF%"
 
 #
+# WebDNS general library
 #
-
-# tcllib
-package require ip
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Utilities
@@ -146,7 +135,7 @@ proc epilogue {format} {
     return "\}\n"
 }
 
-proc generer-dot {format prog} {
+proc gen-dot {format prog} {
     global conf
 
     set dot [prologue $format]
@@ -158,13 +147,11 @@ proc generer-dot {format prog} {
 		append dot [title [lreplace $line 0 0]]
 	    }
 	    eq {
-		set nodename [lindex $line 1]
-		set nodetype [lindex $line 2]
+		lassign $line kw nodename nodetype
 		switch $nodetype {
 		    router {
 			if {! [regexp -- {([^:]+):(.*)} $nodename bidon eqname rinst]} then {
-			    puts stderr "Invalid router instance ($nodename)"
-			    return ""
+			    d error [format [mc "Invalid router instance '%s'"] $nodename]
 			}
 			switch -- $rinst {
 			    _v4 { set label "$eqname\\ndefault" }
@@ -183,8 +170,7 @@ proc generer-dot {format prog} {
 					    height=.25}
 		    }
 		    default {
-			puts stderr "Invalid node type ($nodetype) for $nodename"
-			return ""
+			d error [format [mc {Invalid node type '%1$s' for %2$s}] $nodetype $nodename]
 		    }
 		}
 
@@ -197,14 +183,7 @@ proc generer-dot {format prog} {
 		append dot "\"$nodename\" \[$attr\] ;\n"
 	    }
 	    direct {
-		set eq1 [lindex $line 1]
-		set if1 [lindex $line 2]
-		set ip1 [lindex $line 3]
-		set linkname [lindex $line 4]
-		set eq2 [lindex $line 5]
-		set if2 [lindex $line 6]
-		set ip2 [lindex $line 7]
-
+		lassign $line kw eq1 if1 ip1 linkname eq2 if2 ip2
 		set attrlist [list label=\"$linkname\" \
 					headlabel=\"$if2\\n$ip2\" \
 					taillabel=\"$if1\\n$ip1\" \
@@ -213,15 +192,10 @@ proc generer-dot {format prog} {
 		append dot "\"$eq1\" -- \"$eq2\" \[$attr\] ;\n"
 	    }
 	    cloud {
-		set nodename [lindex $line 1]
-		set bcastref [lindex $line 2]
-		set vlans    [lindex $line 3]
-		set networks [lindex $line 4]
-
+		lassign $line kw nodename bcastref vlans networks
 		set attrlist {shape=ellipse
 				style=filled fillcolor=palegreen
 				width=1.5}
-
 		set l {}
 		set vlanid -1
 		foreach vl $vlans {
@@ -232,12 +206,8 @@ proc generer-dot {format prog} {
 		    }
 		}
 		set l [join $l ", "]
-		if {[llength $vlans] > 1} then {
-		    set s "s"
-		} else {
-		    set s ""
-		}
-		set label "Vlan$s $l\\n"
+		set label [mc "Vlan"]
+		append label " $l\\n"
 		append label [join $networks "\\n"]
 		lappend attrlist "label=\"$label\""
 
@@ -252,12 +222,7 @@ proc generer-dot {format prog} {
 		append dot "\"$nodename\" \[$attr\] ;\n"
 	    }
 	    link {
-		set eqname   [lindex $line 1]
-		set ifname   [lindex $line 2]
-		set ipaddr   [lindex $line 3]
-		set linkname [lindex $line 4]
-		set cloud    [lindex $line 5]
-
+		lassign $line kw eqname ifname ipaddr linkname cloud
 		set attrlist [list headlabel=\"$linkname\" \
 					taillabel=\"$ifname\\n$ipaddr\" \
 				    ]
@@ -267,12 +232,9 @@ proc generer-dot {format prog} {
 	}
     }
     close $fd
-
     append dot [epilogue $format]
-
     return $dot
 }
-
 
 ##############################################################################
 # Main procedure
@@ -298,33 +260,29 @@ proc main {} {
 
     set tmp /tmp/l3-[pid]
 
-    #
-    #  URL des formulaires
-    #
-
     d urlset "%URLFORMEQ%" $conf(nexteq) {}
     d urlset "%URLFORML2%" $conf(nextl2) {}
     d urlset "%URLFORML3%" $conf(nextl3) {}
 
     #
-    # Récupérer les réseaux IP déclarés dans le graphe
+    # Get IP networks from the graph
     #
 
     set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
     set fd [open "|$cmd" "r"]
 
-    while {[gets $fd ligne] > -1} {
-	if {[regexp {^rnet ([^ ]+)} $ligne bidon a]} then {
+    while {[gets $fd line] > -1} {
+	if {[regexp {^rnet ([^ ]+)} $line bidon a]} then {
 	    set tabip($a) ""
 	}
     }
     if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture des réseaux ($msg)"
+	d error [format [mc "Error while reading networks: %s"] $msg]
     }
 
-    if {[string equal $addr ""]} then {
+    if {$addr eq ""} then {
 	#
-	# Trier les adresses IP pour les présenter dans le bon ordre
+	# Sort IP addresses
 	#
 
 	set liste {}
@@ -342,7 +300,7 @@ proc main {} {
 
 	d result $conf(pagen) [list \
 				    [list %MSGSTA% $msgsta] \
-				    [list %OBJETS% "réseaux IP"] \
+				    [list %OBJETS% [mc "IP networks"]] \
 				    [list %LISTE%  $liste] \
 				    [list %EQ%     ""] \
 				    [list %VLAN%   ""] \
@@ -352,16 +310,16 @@ proc main {} {
 				]
     } else {
 	#
-	# Valider l'adresse IP
+	# Validate IP address
 	#
 
 	set msg [check-ip-syntax $dbfd $addr "loosecidr"]
-	if {! [string equal $msg ""]} then {
+	if {$msg ne ""} then {
 	    d error $msg
 	}
 
 	#
-	# Rechercher l'adresse IP fournie et obtenir le réseau
+	# Search given IP and get associated network
 	#
 
 	set lnet {}
@@ -375,17 +333,17 @@ proc main {} {
 	}
 
 	#
-	# Récupérer les informations lues dans le graphe
+	# Get informations from graph
 	#
 
 	set xl3 [format $conf(extractl3) $tabuid(flagsr) [join $lnet " "]]
-	set dot [generer-dot $format $xl3]
+	set dot [gen-dot $format $xl3]
 	set fd [open "$tmp.dot" "w"]
 	puts $fd $dot
 	close $fd
 
 	#
-	# Sélectionner le format et sortir la page
+	# Select format and ouput page
 	#
 
 	set prog "$conf(neato) -Gmaxiter=10000"
@@ -409,6 +367,7 @@ proc main {} {
 		set pdf [read $fd]
 		close $fd
 		::webapp::send rawpdf $pdf
+		d end
 	    }
 	    png {
 		set fd [open "| $prog -Tpng $tmp.dot 2>/dev/null" "r"]
@@ -416,6 +375,7 @@ proc main {} {
 		set img [read $fd]
 		close $fd
 		::webapp::send png $img
+		d end
 	    }
 	    default {
 		set map [exec sh -c "$prog -Tcmapx < $tmp.dot 2> /dev/null"]

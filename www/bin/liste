@@ -1,39 +1,33 @@
 #!%TCLSH%
 
-
 #
-# Script pour lister les machines d'un ou plusieurs domaines
+# List all machines with one or more domains
 #
-# Called by: script consulter (page lib/consulter.htgt)
+# Called by: consulter
 #
 # Parameters (form or url):
-#   - critères de sélection : 
-#	- plages4 : liste de plages IPv4 (idreseau dans tables reseau/plage)
-#	- plages6 : liste de plages IPv6 (idreseau dans tables reseau/plage)
-#	- cidr : cidr saisi par l'utilisateur
-#   - format de sortie
-#	- format : "Consulter" ou "Imprimer" ou "Adresses libres"
+#   - selection criteria
+#	- plages : list of IP network ids
+#	- cidr : cidr given by user
+#   - output format
+#	- format : "Consulter" or "Imprimer" or "Adresses libres"
 #
 # History
 #   2002/03/27 : pda/jean : design
-#   2002/05/02 : pda/jean : traitement des hinfo
-#   2002/05/06 : pda/jean : ajout du cidr
-#   2002/05/06 : pda/jean : ajout des groupes
-#   2002/05/16 : pda      : conversion à arrgen
+#   2002/05/02 : pda/jean : hinfo processing
+#   2002/05/06 : pda/jean : add cidr
+#   2002/05/06 : pda/jean : add groups
+#   2002/05/16 : pda      : conversion to arrgen
 #   2002/07/09 : pda      : add nologin
 #   2003/05/13 : pda/jean : use auth base
 #   2004/01/14 : pda/jean : add IPv6
 #   2004/08/05 : pda/jean : add mac
-#   2004/08/06 : pda/jean : extension des droits sur les réseaux
-#   2008/09/24 : pda/jean : ajout droitsmtp
-#   2010/10/07 : pda      : début ajout adresses libres
+#   2004/08/06 : pda/jean : extend network permissions
+#   2008/09/24 : pda/jean : add droitsmtp
+#   2010/10/07 : pda      : add free addresses
 #   2010/10/13 : pda      : added dhcp ranges in map
+#   2010/12/12 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -61,23 +55,22 @@ set conf(form)		{
 	{format		0 1}
 }
 
-# taille max des blocs d'adresses IPv4 dans lesquelles on cherche 
-# des adresses non déclarées
+# max size of IPv4 blocks where we are looking for non-declared addresses
 set conf(limit-unused)	16384
-# nb d'adresses par ligne dans une "carte" d'adresses libres
+# number of addresses per line in a free address map
 set conf(max-per-row)	16
 
 #
 # tabular specification for result
-# Colonnes :
-#	- adr IP
-#	- nom machine et aliases
-#	- adr MAC
-#	- profil dhcp
-#	- type de machine (hinfo)
-#	- informations complémentaires (texte libre)
-#	- correspondant (login)
-#	- date de dernière modif (%m/%d/%y)
+# Columns:
+#	- IP address
+#	- host name and aliases
+#	- MAC address
+#	- DHCP profile
+#	- host type (hinfo)
+#	- comments
+#	- user login
+#	- date of last modification (%m/%d/%y)
 #
 
 set conf(tableau) {
@@ -90,7 +83,7 @@ set conf(tableau) {
 	    linewidth {267}
 	}
     }
-    motif {Gras} {
+    pattern Title {
 	title {yes}
 	topbar {yes}
 	chars {bold}
@@ -116,7 +109,7 @@ set conf(tableau) {
 	colonne { }
 	vbar {yes}
     }
-    motif {Normal} {
+    pattern Normal {
 	vbar {yes}
 	colonne {
 	    format {raw}
@@ -149,47 +142,39 @@ set conf(tableau) {
     }
 }
 
-
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
 
-
 ##############################################################################
-# Fonctions
+# Utility functions
 ##############################################################################
 
 proc output-list {dbfd lcidr _tabuid format} {
     upvar $_tabuid tabuid
     global conf
 
-    #
-    # Boucle externe : pour chaque plage demandée dans le formulaire
-    #
-
-    set donnees {}
-    lappend donnees {Gras {Adresse IP}
-			  {Noms et aliases}
-			  {Adresse MAC}
-			  {Profil DHCP}
-			  {Système}
-			  {Commentaire}
-			  {Responsable}
-			  {Émission SMTP}
-			  {Login}
-			  {Date}
-			}
-    set nbmachines 0
+    set lines {}
+    lappend lines [list "Title" \
+			    [mc "IP address"] \
+			    [mc "Name and aliases"] \
+			    [mc "MAC address"] \
+			    [mc "DHCP profile"] \
+			    [mc "Host type"] \
+			    [mc "Comment"] \
+			    [mc "Responsible"] \
+			    [mc "SMTP emit right"] \
+			    [mc "Login"] \
+			    [mc "Date"] \
+			]
+    set nbhost 0
 
     #
-    # Construire la suite, c'est à dire l'url que devra suivre
-    # le script edit & co une fois la machine ajoutée.
+    # Build next action
     #
 
     set nextprog "list"
@@ -200,14 +185,15 @@ proc output-list {dbfd lcidr _tabuid format} {
     set nextargs [join $nextargs "&"]
 
     #
-    # Parcourir les plages demandées
+    # External loop : for each IP range given
     #
+
 
     foreach cidrplage $lcidr {
 	#
-	# Les deux sous-select servent à récupérer les plages
-	# autorisées/interdites par le correspondant, à l'intérieur
-	# du numéro de réseau spécifié par le CIDR obtenu ci-dessus.
+	# These two subselect queries are used to get IP ranges
+	# allowed/denied for the user, within network id specified
+	# by the CIDR
 	# 
 
 	set sqlallow "SELECT adr FROM dns.dr_ip WHERE
@@ -220,18 +206,17 @@ proc output-list {dbfd lcidr _tabuid format} {
 			    AND idgrp = $tabuid(idgrp)"
 
 	#
-	# Récupérer tous les aliases dont l'adresse IP est
-	# dans les plages autorisées, et les mettre dans un
-	# tableau indexé par les adresses IP.
-	# Exemple :
-	#	cname(130.79.201.129) {aton.u-strasbg.fr diablo.u-strasbg.fr...}
+	# Extract all aliases related to IP addresses in allowed ranges
+	# and put them in an array indexed by IP addresses
+	# Example :
+	#  cname(130.79.201.129) {aton.u-strasbg.fr diablo.u-strasbg.fr...}
 	#
 
 	set sql "SELECT alias.nom || '.' || domaine.nom AS nom, rr_ip.adr
-		    FROM dns.rr alias, dns.rr canonique, dns.rr_ip, dns.rr_cname, dns.domaine
-		    WHERE canonique.idrr = rr_cname.cname
+		    FROM dns.rr alias, dns.rr canon, dns.rr_ip, dns.rr_cname, dns.domaine
+		    WHERE canon.idrr = rr_cname.cname
 			AND rr_cname.idrr = alias.idrr
-			AND rr_ip.idrr = canonique.idrr
+			AND rr_ip.idrr = canon.idrr
 			AND rr_ip.adr <<= ANY ($sqlallow)
 			AND NOT rr_ip.adr <<= ANY ($sqldeny)
 			AND rr_ip.adr <<= '$cidrplage'
@@ -242,10 +227,9 @@ proc output-list {dbfd lcidr _tabuid format} {
 	}
 
 	#
-	# Récupérer tous les noms de profils DHCP.
-	# On pourrait les obtenir dans la grande requête
-	# suivante sur les rr, mais ça la rendrait très
-	# compliquée, et franchement illisible.
+	# Get all DHCP profile names. They could be fetched in the
+	# next large request (on RR), but this request would become
+	# very complex and not very readable.
 	#
 
 	set sql "SELECT iddhcpprofil, nom FROM dns.dhcpprofil"
@@ -254,8 +238,7 @@ proc output-list {dbfd lcidr _tabuid format} {
 	}
 
 	#
-	# Récupérer toutes les adresses IP autorisées et les
-	# ajouter au tableau.
+	# Get all allowed IP address and add them to the array.
 	#
 
 	set jourfmt [dnsconfig get "jourfmt"]
@@ -315,7 +298,7 @@ proc output-list {dbfd lcidr _tabuid format} {
 	    set date [clock format [clock scan $date] -format $jourfmt]
 
 	    if {$droitsmtp} then {
-		set droitsmtp "Oui"
+		set droitsmtp [mc "Yes"]
 	    } else {
 		set droitsmtp "-"
 	    }
@@ -333,20 +316,20 @@ proc output-list {dbfd lcidr _tabuid format} {
 		    set nom "$nomprimaire \\textit \{$nomssecondaires\}"
 		}
 	    }
-	    lappend donnees [list Normal \
+	    lappend lines [list Normal \
 				$adr $nom $mac $dhcp \
 				$hinfo $commentaire $responsable \
 				$droitsmtp \
 				$login $date]
-	    incr nbmachines
+	    incr nbhost
 	}
     }
 
     #
-    # Générer le zoli tableau
+    # Generate HTML code
     #
 
-    set tableau [::arrgen::output $format $conf(tableau) $donnees]
+    set tableau [::arrgen::output $format $conf(tableau) $lines]
 
     #
     # End of script: output page and close database
@@ -355,25 +338,26 @@ proc output-list {dbfd lcidr _tabuid format} {
     set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
 
+    set pline [format [mc "Declared addresses (IPv4+IPv6): %s"] $nbhost]
+    set dhost [mc "List of declared addresses"]
+
     switch -- $format  {
 	html	{
-	    set tableau "<p>Adresses déclarées (IPv4 + IPv6) : $nbmachines</p>$tableau"
+	    set pline [::webapp::helem "p" $pline]
+	    set tableau "$pline\n$tableau"
 
 	    d result $conf(liste) [list \
-					[list %TITRE%	"Liste des adresses déclarées"] \
+					[list %TITRE%	$dhost] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
-					[list %NBADR%	$nbmachines] \
 				    ]
 	}
 	latex	{
+	    set tableau "$pline\n$tableau"
 	    d result $conf(listetex) [list \
 					[list %ORIENTATION% "landscape"] \
-					[list %TITRE%	"machines"] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
-					[list %QUOI%	"déclarées"] \
-					[list %NBADR%	$nbmachines] \
 				    ]
 	}
     }
@@ -384,15 +368,15 @@ proc output-map {dbfd lcidr _tabuid format} {
     global conf
 
     #
-    # Ne conserver dans lcidr que les plages IPv4 (et pas IPv6)
-    # car la fonction SQL availip() ne fonctionne qu'en IPv4.
+    # Keep in lcidr only IPv4 ranges (and not IPv6) because
+    # SQL function availip() works only for IPv4.
     #
 
     set lcidrv4 {}
     set m ""
     foreach cidrplage $lcidr {
 	set r [check-ip-syntax $dbfd $cidrplage "cidr4"]
-	if {[string eq $r ""]} then {
+	if {$r eq ""} then {
 	    lappend lcidrv4 $cidrplage
 	} else {
 	    append m "$r<br>"
@@ -400,12 +384,11 @@ proc output-map {dbfd lcidr _tabuid format} {
     }
 
     if {[llength $lcidrv4] == 0} then {
-	d error "Aucun CIDR valide ($m)"
+	d error [format [mc "No valid CIDR: %s"] $m]
     }
 
     #
-    # Construire la suite, c'est à dire l'url que devra suivre
-    # le script traiteajout une fois la machine ajoutée.
+    # Build next action.
     #
 
     set nextprog "map"
@@ -424,9 +407,8 @@ proc output-map {dbfd lcidr _tabuid format} {
     }
 
     #
-    # Parcourir toutes les adresses
-    # - revenir à la ligne toutes les 16 adresses
-    # - afficher la bonne couleur
+    # Traverse all IP addresses. New line every 16 addresses, and
+    # display appropriate color.
     #
 
     set tableau ""
@@ -439,7 +421,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 	set navail 0
 	set sql "SELECT * FROM markcidr ('$cidr', $limite, $tabuid(idgrp))"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    d error "Erreur dans le cidr '$cidr' ($msg)"
+	    d error [format [mc {Error in CIDR '%1$s': %2$s}] $cidr $msg]
 	}
 
 	set sql "SELECT * FROM allip ORDER BY adr"
@@ -504,7 +486,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 		    append line [::webapp::helem "td" $h "class" "name-dhcp"]
 		}
 		default {
-		    d error "Erreur interne pour '$adr' : avail = $avail"
+		    d error [format [mc {Internal error for '%1$s': avail=%2$s}] $adr $avail]
 		}
 	    }
 
@@ -528,17 +510,18 @@ proc output-map {dbfd lcidr _tabuid format} {
 
 	append tableau "\n"
 	if {[llength $lcidrv4] > 1} then {
-	    append tableau [::webapp::helem "h3" "Réseau '$cidr'"]
+	    append tableau [::webapp::helem "h3" [format [mc "Network '%s'"] $cidr]]
 	}
 
-	set p "$navail adresses disponibles / $n total "
+	set p [format [mc {%1$s available addresses / %2$s total}] $navail $n]
 
+	set t [mc "Detail"]
 	d urlset "" $conf(nextlist) [list \
 					    [list "format" "consulter"] \
 					    [list "cidr" $cidr] \
 					]
 	set url [d urlget ""]
-	append p [::webapp::helem "a" {[Détail]} "href" $url]
+	append p [::webapp::helem "a" "\[$t\]" "href" $url]
 
 	append tableau [::webapp::helem "p" $p]
 	append tableau "\n"
@@ -552,15 +535,15 @@ proc output-map {dbfd lcidr _tabuid format} {
 
     set hlegend ""
     foreach {i class txt} {
-		0 notav {adresse non accessible}
-		1 noname-nodhcp {adresse disponible}
-		2 name-nodhcp {adresse déclarée}
-		3 noname-dhcp {adresse non déclarée, figurant dans un intervalle DHCP}
-		4 name-dhcp {adresse déclarée, figurant dans un intervalle DHCP}
+		0 notav {address not allowed}
+		1 noname-nodhcp {available address}
+		2 name-nodhcp {declared address}
+		3 noname-dhcp {non-declared address within a DHCP range}
+		4 name-dhcp {declared address, within a DHCP range}
 	    } {
 	if {$legend($i) > 0} then {
 	    set l [::webapp::helem "td" "&nbsp;" "class" $class]
-	    append l [::webapp::helem "td" $txt]
+	    append l [::webapp::helem "td" [mc $txt]]
 	    append l "\n"
 	    append hlegend [::webapp::helem "tr" $l]
 	}
@@ -571,14 +554,14 @@ proc output-map {dbfd lcidr _tabuid format} {
     set tableau "$hlegend\n$tableau"
 
     #
-    # Fioritures
+    # Output page and close database
     #
 
     set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
 
     d result $conf(liste) [list \
-				[list %TITRE%	"Carte des adresses IPv4"] \
+				[list %TITRE%	[mc "IPv4 address map"]] \
 				[list %TABLEAU%	$tableau] \
 				[list %DATE%	$date] \
 			    ]
@@ -599,41 +582,39 @@ proc main {} {
     d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
-    # Analyse et validation des arguments
+    # Fetch arguments
     #
 
-    # le ou les CIDR(s) demandé(s) par le correspondant
     set lcidr {}
     set l $ftab(cidr)
     foreach cidr $l {
-	if {! [string eq [string trim $cidr] ""]} then {
-	    set m [check-ip-syntax $dbfd $cidr "cidr"]
-	    if {[string length $m] > 0} then {
-		d error $m
+	set cidr [string trim $cidr]
+	if {$cidr ne ""} then {
+	    set msg [check-ip-syntax $dbfd $cidr "cidr"]
+	    if {$msg ne ""} then {
+		d error $msg
 	    }
 	    lappend lcidr $cidr
 	}
     }
 
-    # les plages demandées par le correspondant
-    set nplages [llength $ftab(plages)]
+    set nranges [llength $ftab(plages)]
 
-    # compatibilité entre les deux arguments
-    if {[string length $lcidr] == 0 && $nplages == 0} then {
-	d error "Vous devez choisir un CIDR ou au moins une plage"
+    # compatibility between two arguments
+    if {[llength $lcidr] == 0 && $nranges == 0} then {
+	d error [mc "You must choose a CIDR or at least one network"]
     }
-    if {[string length $lcidr] > 0 && $nplages > 0} then {
-	d error "Vous ne pouvez pas choisir un CIDR et une plage"
+    if {[llength $lcidr] > 0 && $nranges > 0} then {
+	d error [mc "You can not choose both a CIDR and a network"]
     }
 
     #
-    # Valider les idreseaux fournis, et récupérer les CIDR correspondants
+    # Check given network ids and CIDR
     #
 
-    if {$nplages > 0} then {
-	foreach idreseau $ftab(plages) {
-	    set l [check-netid $dbfd $idreseau \
-					$tabuid(idgrp) "consult" {4 6} msg]
+    if {$nranges > 0} then {
+	foreach netid $ftab(plages) {
+	    set l [check-netid $dbfd $netid $tabuid(idgrp) "consult" {4 6} msg]
 	    if {[llength $l] == 0} then {
 		d error $msg
 	    }
@@ -641,7 +622,7 @@ proc main {} {
 	}
     }
 
-    # format de sortie
+    # output format
     switch -glob -nocase -- [lindex $ftab(format) 0] {
 	Carte*		{ set format carte }
 	Imprimer	{ set format latex }
@@ -649,7 +630,7 @@ proc main {} {
 	*		{ set format html }
     }
 
-    if {[string eq $format "carte"]} then {
+    if {$format eq "carte"} then {
 	output-map $dbfd $lcidr tabuid $format
     } else {
 	output-list $dbfd $lcidr tabuid $format

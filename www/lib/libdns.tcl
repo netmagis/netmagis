@@ -4889,6 +4889,8 @@ proc compare-interfaces {i1 i2} {
 #
 
 proc compare-ip {ip1 ip2} {
+    package require ip				;# tcllib
+
     set ip1 [::ip::normalize $ip1]
     set v1  [::ip::version $ip1]
     set ip2 [::ip::normalize $ip2]
