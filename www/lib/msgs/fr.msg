@@ -25,11 +25,9 @@
  {Networks} {Réseaux}
  {DNS/DHCP} {DNS/DHCP}
 
- {Consult MX} {MX}
- {Statistics by user} {Stats par correspondant}
- {Statistics by organization} {Stats par établissement}
- {Consult networks} {Réseaux}
- {List users} {Correspondants}
+ {List MX} {Lister MX}
+ {List networks} {Lister réseaux}
+ {List users} {Lister correspondants}
  {Search} {Chercher}
  {Modify organizations} {Modif établissements}
  {Modify communities} {Modif communautés}
@@ -45,6 +43,8 @@
  {Modify users and groups} {Modif groupes}
  {Force zone generation} {Forcer zones}
  {Application parameters} {Modif paramètres}
+ {Statistics by user} {Stats par correspondant}
+ {Statistics by organization} {Stats par établissement}
  {Topod status} {Topod status}
 
  {MAC index} {Accueil MAC}

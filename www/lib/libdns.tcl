@@ -15,8 +15,10 @@
 
 lappend auto_path %PKGTCL%
 
-package require snit			;# tcllib
 package require msgcat			;# tcl
+
+package require snit			;# tcllib
+package require ip			;# tcllib
 
 package require webapp
 package require pgsql
@@ -395,8 +397,6 @@ snit::type ::dnscontext {
 	:admin		{
 			    {admtitle always}
 			    {consultmx always}
-			    {statcor always}
-			    {statetab always}
 			    {consultnet always}
 			    {listecorresp always}
 			    {corresp always}
@@ -414,15 +414,15 @@ snit::type ::dnscontext {
 			    {admgrpsel always}
 			    {admgenliste always}
 			    {admparliste always}
+			    {statcor always}
+			    {statetab always}
 			    {topotop topo}
 			    {dnstitle dns}
 			    {topotitle topo}
 			    {mactitle mac}
 			}
-	consultmx	{%HOMEURL%/bin/consultmx {Consult MX}}
-	statcor		{%HOMEURL%/bin/statcor {Statistics by user}}
-	statetab	{%HOMEURL%/bin/statetab {Statistics by organization}}
-	consultnet	{%HOMEURL%/bin/consultnet {Consult networks}}
+	consultmx	{%HOMEURL%/bin/consultmx {List MX}}
+	consultnet	{%HOMEURL%/bin/consultnet {List networks}}
 	listecorresp	{%HOMEURL%/bin/listecorresp {List users}}
 	corresp		{%HOMEURL%/bin/corresp {Search}}
 	modetabl	{%HOMEURL%/bin/admrefliste?type=etabl {Modify organizations}}
@@ -439,6 +439,8 @@ snit::type ::dnscontext {
 	admgrpsel	{%HOMEURL%/bin/admgrpsel {Modify users and groups}}
 	admgenliste	{%HOMEURL%/bin/admgenliste {Force zone generation}}
 	admparliste	{%HOMEURL%/bin/admparliste {Application parameters}}
+	statcor		{%HOMEURL%/bin/statcor {Statistics by user}}
+	statetab	{%HOMEURL%/bin/statetab {Statistics by organization}}
 	topotop		{%HOMEURL%/bin/topotop {Topod status}}
 	:mac		{
 			    {macindex always}
@@ -4889,8 +4891,6 @@ proc compare-interfaces {i1 i2} {
 #
 
 proc compare-ip {ip1 ip2} {
-    package require ip				;# tcllib
-
     set ip1 [::ip::normalize $ip1]
     set v1  [::ip::version $ip1]
     set ip2 [::ip::normalize $ip2]

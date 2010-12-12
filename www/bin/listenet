@@ -182,42 +182,46 @@ proc main {} {
     }
 
     # organization list
-    set lsqletabl {}
-    set ltxtetabl {}
-    pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
-	set te($tab(idetabl)) $tab(nom)
-    }
-    foreach idetabl $ftab(etabl) {
-	if {! [info exists te($idetabl)]} then {
-	    d error [format [mc "Organization id '%s' not found"] $idetabl]
+    if {[info exists ftab(etabl)]} then {
+	set lsqletabl {}
+	set ltxtetabl {}
+	pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
+	    set te($tab(idetabl)) $tab(nom)
 	}
-	lappend lsqletabl "r.idetabl = $idetabl"
-	lappend ltxtetabl "$te($idetabl)"
-    }
-    if {[llength $lsqletabl] > 0} then {
-	set l [join $lsqletabl " OR "]
-	append selection " AND ($l)"
-	set t [join $ltxtetabl [mc " or "]]
-	lappend txtsel [format [mc "Organization = %s"] $t]
+	foreach idetabl $ftab(etabl) {
+	    if {! [info exists te($idetabl)]} then {
+		d error [format [mc "Organization id '%s' not found"] $idetabl]
+	    }
+	    lappend lsqletabl "r.idetabl = $idetabl"
+	    lappend ltxtetabl "$te($idetabl)"
+	}
+	if {[llength $lsqletabl] > 0} then {
+	    set l [join $lsqletabl " OR "]
+	    append selection " AND ($l)"
+	    set t [join $ltxtetabl [mc " or "]]
+	    lappend txtsel [format [mc "organization = %s"] $t]
+	}
     }
 
     # Community list
-    set lsqlcommu {}
-    pg_select $dbfd "SELECT * FROM dns.communaute" tab {
-	set tc($tab(idcommu)) $tab(nom)
-    }
-    foreach idcommu $ftab(commu) {
-	if {! [info exists tc($idcommu)]} then {
-	    d error [format [mc "Community id '%s' not found"] $idcommu]
+    if {[info exists ftab(commu)]} then {
+	set lsqlcommu {}
+	pg_select $dbfd "SELECT * FROM dns.communaute" tab {
+	    set tc($tab(idcommu)) $tab(nom)
 	}
-	lappend lsqlcommu "r.idcommu = $idcommu"
-	lappend ltxtcommu "$tc($idcommu)"
-    }
-    if {[llength $lsqlcommu] > 0} then {
-	set l [join $lsqlcommu " OR "]
-	append selection " AND ($l)"
-	set t [join $ltxtcommu [mc " or "]]
-	lappend txtsel [format [mc "community = %s"] $t]
+	foreach idcommu $ftab(commu) {
+	    if {! [info exists tc($idcommu)]} then {
+		d error [format [mc "Community id '%s' not found"] $idcommu]
+	    }
+	    lappend lsqlcommu "r.idcommu = $idcommu"
+	    lappend ltxtcommu "$tc($idcommu)"
+	}
+	if {[llength $lsqlcommu] > 0} then {
+	    set l [join $lsqlcommu " OR "]
+	    append selection " AND ($l)"
+	    set t [join $ltxtcommu [mc " or "]]
+	    lappend txtsel [format [mc "community = %s"] $t]
+	}
     }
 
     #
@@ -259,24 +263,6 @@ proc main {} {
     set tableau [::arrgen::output $format $conf(tableau) $lines]
 
     #
-    # Generate an appropriate title
-    #
-
-    set txt1 [mc "List of networks filtered by: "]
-    if {[llength $txtsel] == 0} then {
-	append txt1 [mc " (no filter) "]
-    } else {
-	set tmp ""
-	foreach t $txtsel {
-	    append tmp [::webapp::helem "li" $t]
-	}
-	append txt1 [::webapp::helem "ul" $tmp]
-    }
-    set txt2 [format [mc "and sorted by '%1$s' and by '%2$s'] $txttri1 $txttri2]
-    set txt3 [format [mc "%s selected network(s)."] $nnet]
-    set txt "$txt1 $txt2: $txt3"
-
-    #
     # End of script: output page and close database
     #
 
@@ -285,6 +271,20 @@ proc main {} {
     set title [mc "networks"]
     switch -- $format  {
 	html	{
+	    set txt1 [mc "List of networks filtered by: "]
+	    if {[llength $txtsel] == 0} then {
+		append txt1 [mc " (no filter) "]
+	    } else {
+		set tmp ""
+		foreach t $txtsel {
+		    append tmp [::webapp::helem "li" $t]
+		}
+		append txt1 [::webapp::helem "ul" $tmp]
+	    }
+	    set txt2 [format [mc {and sorted by '%1$s' and by '%2$s'}] $txttri1 $txttri2]
+	    set txt3 [format [mc "%s selected network(s)."] $nnet]
+	    set txt "$txt1 $txt2: $txt3"
+
 	    d result $conf(liste) [list \
 					[list %TITRE%	$title] \
 					[list %TXT%	$txt] \
@@ -297,6 +297,21 @@ proc main {} {
 	    d end
 	}
 	latex	{
+	    set txt1 [mc "List of networks filtered by: "]
+	    if {[llength $txtsel] == 0} then {
+		append txt1 [mc " (no filter) "]
+	    } else {
+		set tmp "\\begin\{itemize\}"
+		foreach t $txtsel {
+		    append tmp "\\item $t\n"
+		}
+		append tmp "\\end\{itemize\}"
+		append txt1 $tmp
+	    }
+	    set txt2 [format [mc {and sorted by '%1$s' and by '%2$s'}] $txttri1 $txttri2]
+	    set txt3 [format [mc "%s selected network(s)."] $nnet]
+	    set txt "$txt1 $txt2: $txt3"
+
 	    d result $conf(listetex) [list \
 					[list %ORIENTATION%	"landscape"] \
 					[list %TITRE%	$title] \

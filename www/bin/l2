@@ -239,7 +239,7 @@ proc title {vlanlist _tabvlan} {
 	    }
 	}
     }
-    if {$vl eq "" && vlan0} then {
+    if {$vl eq "" && $vlan0} then {
 	set vl "Vlan 0"
     }
     return "label = \"$vl\" ;\n"

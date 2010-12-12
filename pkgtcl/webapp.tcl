@@ -1883,7 +1883,7 @@ proc ::webapp::sortie-html {page} {
 #
 
 proc ::webapp::sortie-csv {page fichier} {
-    fconfigure stdout --encoding utf-8
+    fconfigure stdout -encoding utf-8
     puts stdout "Content-type: text/csv; charset=utf-8"
     puts stdout "Content-Disposition: attachment; filename=$fichier"
     puts stdout ""
