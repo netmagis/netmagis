@@ -1,24 +1,15 @@
 #!%TCLSH%
 
 #
-# Script qui recherche un nom ou une adresse (IP ou MAC)
-# dans la base Mac et qui affiche l'ensemble
-# sessions correspondantes (historique des occurences
-# de cette adresse sur le réseau)
+# Search for a name or an IP/MAC address and display all sessions
 #
 # History
-#   2004/11/14 : jean : conception
-#   2005/06/04 : jean : optimisation de la recherche (gen-ipmac et gen-portmac)
-#                       disparition des jointures sql, 2 requetes et trait. tcl
+#   2004/11/14 : jean     : design
+#   2005/06/04 : jean     : search optimization (gen-ipmac and gen-portmac)
+#			    remove SQL joints, 2 requests and tcl processing
 #   2010/11/30 : pda/jean : integration a WebDNS
+#   2010/12/12 : pda      : i18n
 #
-
-
-#
-#
-
-
-set conf(cmdhost)	"/usr/bin/host"
 
 #
 # Template pages used by this script
@@ -35,8 +26,10 @@ set conf(err)           erreur.html
 set conf(next)		"%HOMEURL%/bin/mac"
 
 #
-# Formats du tableau
+# Script parameters
 #
+
+set conf(cmdhost)	"/usr/bin/host"
 
 set conf(tabsession) {
     global {
@@ -45,7 +38,7 @@ set conf(tabsession) {
         botbar {yes}
         columns {15 35 15 35}
     }   
-    pattern Titre {
+    pattern Title {
         vbar {yes}
         column { 
             multicolumn {4}
@@ -125,7 +118,7 @@ set conf(tabmenuipmac) {
         column { }
         vbar {yes}
     }
-    pattern Titre {
+    pattern Title {
         vbar {yes}
         column { 
             chars {bold}
@@ -178,7 +171,7 @@ set conf(tabmenuportmac) {
 	}
         vbar {yes}
     }
-    pattern Titre {
+    pattern Title {
         vbar {yes}
         column { 
             chars {bold}
@@ -220,72 +213,76 @@ set conf(form)          {
 set conf(sqldateformat) {'DD/MM/YYYY HH24:MI:SS'}
 set conf(clockformat)   {%d/%m/%Y %H:%M:%S}
 
-source %LIBDNS%
+#
+# WebDNS general library
+#
 
-#
-#
+source %LIBDNS%
 
 # ::webapp::cgidebug ; exit
 
+##############################################################################
+# Utility functions
+##############################################################################
 
 #
-# Détermine le type de paramètre
+# Guess parameter type
 #
 # Input: 
-#   dbfd : acces a la base de donnee (utilise pour check-ip-syntax)
-#   recherche : objet de la recherche à identifier
+#   - dbfd : database handle
+#   - param : parameter given by the user
+#   - _msg : in return, error message
 # Output:
-#   Retourne une liste constituée de deux éléments : {type param}
+#   - return value: empty list (error) or list {type param} where
 #	- type = "ip", "nom", "mac", "idipmac", ... 
-#	- type = param : objet de la recherche après décomposition éventuelle
-#       Si le type est indeterminé, retourne une liste vide.
-#   varmsg : message d'erreur eventuel
+#	- param = canonical representation of parameter
+#   - msg : empty string or error message
 #
-proc determine-type {dbfd recherche varmsg} {
-    upvar $varmsg msg
+
+proc guess-type {dbfd param _msg} {
+    upvar $_msg msg
 
     set type ""
-    set param $recherche
-
     set msg  ""
 
-    if { [regexp {^[0-9a-f]{1,2}(:[0-9a-f]{1,2}){5}$} $recherche] } {
-	# Adresse MAC
+    if {[regexp {^[0-9a-f]{1,2}(:[0-9a-f]{1,2}){5}$} $param]} then {
+	# MAC address
 	set type "mac"
-    }
-    if { [regexp {^[0-9a-f]{4}(.[0-9a-f]{4}){2}$} $recherche] } {
-	# Adresse MAC (au format cisco : 00AB.1234.5678), conversion
+    } elseif {[regexp {^[0-9a-f]{4}(.[0-9a-f]{4}){2}$} $param]} then {
+	# MAC address with Cisco format (00AB.1234.5678)
 	set n {([0-9a-f]{2})}
-	regsub  "^$n$n.$n$n.$n$n" $recherche {\1:\2:\3:\4:\5:\6} recherche
+	regsub  "^$n$n.$n$n.$n$n" $param {\1:\2:\3:\4:\5:\6} param
 	set type "mac"
-    } elseif { [regexp {^idportmac:([0-9]+)$} $recherche bidon idportmac] } {
+    } elseif {[regexp {^idportmac:([0-9]+)$} $param bidon idportmac]} then {
         # ID portmac
 	set type "idportmac"
 	set param $idportmac
-    } elseif { [regexp {^idipmac:([0-9]+)$} $recherche bidon idipmac] } {
+    } elseif {[regexp {^idipmac:([0-9]+)$} $param bidon idipmac]} then {
         # ID ipmac
 	set type "idipmac"
 	set param $idipmac
-    } elseif { [regexp {^eq:([a-z0-9\-.]+)$} $recherche bidon eq] } {
-        # Par équipement
+    } elseif {[regexp {^eq:([a-z0-9\-.]+)$} $param bidon eq]} then {
+        # By equipment
 	set type "equipement"
 	set param $eq
-    } elseif { [regexp {^vlan:([a-z0-9\-.]+)$} $recherche bidon vlan] } {
-        # Par VLAN
+    } elseif {[regexp {^vlan:([a-z0-9\-.]+)$} $param bidon vlan]} then {
+        # By VLAN
 	set type "vlan"
 	set param $vlan
-    } elseif { [regexp {^([0-9.]+|[0-9a-f:.]+)$} $recherche] } {
-	# Adresse IP
-        set msg [check-ip-syntax $dbfd $recherche "inet"]
-        if { [string equal $msg ""]} {
+    } elseif {[regexp {^([0-9.]+|[0-9a-f:.]+)$} $param]} then {
+	# IP Address
+        set msg [check-ip-syntax $dbfd $param "inet"]
+        if {$msg eq ""} then {
   	    set type "ip"
-        }
-    } elseif { [regexp {^[a-z0-9\-.]+$} $recherche] } {
+	} else {
+	    return {}
+	}
+    } elseif {[regexp {^[a-z0-9\-.]+$} $param]} then {
         # Nom
 	set type "nom"
     } else {
-	# Autres
-	set msg "Chaine de recherche '$recherche' incorrecte"
+	# Other
+	set msg [format [mc "Invalid search string '%s'"] $param]
 	return {}
     }
 
@@ -293,27 +290,21 @@ proc determine-type {dbfd recherche varmsg} {
 }
 
 #
-# Génère un tableau html contenant le résultat de la recherche
+# Display an HTML result with search result
 #
 # Input:
-#   dbfd   : accès à la base de donnée
-#   type   : type de recherche (ip, mac, etc.)
-#   param : critère de recherche
+#   - dbfd : database handle
+#   - type : search type (ip, mac, etc.)
+#   - param : search criterion
 # Output:
-#   retourne le code html de résultat
+#   - return value : HTML code
 #
-proc gen-res {dbfd type param} {
-    global conf
 
+proc html-result {dbfd type param} {
     set tab ""
-
-    #
-    # Effectue la recherche en fonction du type
-    #
-
     switch $type {
 	nom {
-	    set lip [resolution "nom" $param]
+	    set lip [resolve "nom" $param]
 	    foreach ip $lip {
 		append tab [gen-ipmac $dbfd $ip ""]
 	    }
@@ -334,337 +325,322 @@ proc gen-res {dbfd type param} {
 	    append tab [gen-vlan $dbfd $param]
 	}
 	mac {
-	    append tab [gen-ipmac      $dbfd "" $param]
- 	    append tab [gen-mac    $dbfd $param]
+	    append tab [gen-ipmac $dbfd "" $param]
+ 	    append tab [gen-mac $dbfd $param]
 	}
 	default {
-	    ::webapp::error-exit $conf(err) "type de parametre"
+	    d error [format [mc "Internal error: invalid parameter type '%s'"] $type]
 	}
     }
-
     return $tab
 }
 
 #
-# Génère un tableau pour une session ipmac
-# Entre :
-#      idipmac : identifiant d'un couple ip-mac
+# Display an ipmac session
+# Input:
+#      idipmac : couple ip-mac identifier
 #
 
 proc gen-idipmac-session {dbfd idipmac} {
     global conf
 
     #
-    # Détermine l'adresse ip et l'adresse mac
+    # Find IP and MAC addresses
     #
 
     set ip ""
     set mac ""
-    pg_select $dbfd "SELECT ip, mac FROM ipmac WHERE idipmac=$idipmac" tab {
+    pg_select $dbfd "SELECT ip, mac FROM ipmac WHERE idipmac = $idipmac" tab {
 	set ip $tab(ip)
 	set mac $tab(mac)
     }
-    if {[string equal $ip ""]} {
-	return "Erreur : Identifiant IP-MAC '$idipmac' non trouvé dans la base"
+    if {$ip eq ""} then {
+	return [format [mc "IP-MAC identifier '%s' not found"] $idipmac]
     }
 
-    set donnees {}
+    set lines {}
 
-    set nomdns [resolution "ip" $ip]
-    
-    set lienip [gen-lien [presenter-ip $ip $nomdns] $ip]
-    lappend donnees [list Info "Adresse IP" $lienip]
+    set dnsname [resolve "ip" $ip]
 
-    lappend donnees [list Info "Adresse MAC" \
-			[gen-lien \
-			    [presenter-mac $dbfd $mac] \
-			    $mac \
-			] \
+    set lienip [gen-link [display-ip $ip $dnsname] $ip]
+    lappend lines [list Info [mc "IP address"] $lienip]
+
+    lappend lines [list Info [mc "MAC address"] \
+			[gen-link [display-mac $dbfd $mac] $mac] \
 		    ]
 
     #
-    # Produit les sessions IPMAC
+    # Display sessions
     #
-    
+
     set found 0
-    set tableau ""
-    pg_select $dbfd "
-		SELECT  to_char(debut,$conf(sqldateformat)) AS ddebut,
+    set sql "SELECT  to_char(debut,$conf(sqldateformat)) AS ddebut,
 			to_char(fin,$conf(sqldateformat)) AS dfin,
 			close
 		FROM sessionipmac
-		WHERE idipmac='$idipmac' ORDER BY debut DESC" tab2 {
-
-	if {$tab2(close)} { set pat "Close" } else { set pat "Active" }
-
-	if {$found == 0} {
-	    lappend donnees [list Active "Debut" "Fin" ]
+		WHERE idipmac = '$idipmac'
+		ORDER BY debut DESC"
+    pg_select $dbfd $sql tab2 {
+	if {$tab2(close)} then { set pat "Close" } else { set pat "Active" }
+	if {$found == 0} then {
+	    lappend lines [list Active [mc "Start"] [mc "End"]]
 	    set found 1
 	}
-	lappend donnees [list $pat $tab2(ddebut) $tab2(dfin)]
+	lappend lines [list $pat $tab2(ddebut) $tab2(dfin)]
     }
 
-    if {$found == 0} {
-	lappend donnees [list Rem "Pas de session IP - MAC dans la base" ]
+    if {$found == 0} then {
+	lappend lines [list Rem [mc "No IP-MAC session found"]]
     }
 
     # 
-    # Génère le code html pour ce couple IP-MAC
+    # Final result for this couple IP-MAC
     # 
-    append tableau [::arrgen::output "html" $conf(tabsession) $donnees]
 
-    return $tableau
+    return [::arrgen::output "html" $conf(tabsession) $lines]
 }
 
 #
-# Génère un tableau html contenant la liste des sessions portmac
-# trouvées dans la base pour un idportmac donné
+# Display a portmac session list, for a given idportmac
 #
+
 proc gen-idportmac-session {dbfd idportmac} {
     global conf
 
-    set donnees {}
-
-    pg_select $dbfd "
-	SELECT portmac.mac AS mac,
-	    portmac.port AS port,
-	    portmac.ideq AS ideq,
-	    portmac.idvlan AS idvlan
-	FROM portmac
-	WHERE portmac.idportmac=$idportmac
-    " tab {
-	lappend donnees [list Info  "Adresse MAC" \
-			    [gen-lien \
-				[presenter-mac $dbfd $tab(mac)] \
-				$tab(mac) \
-			    ] \
+    set lines {}
+    set sql "SELECT portmac.mac AS mac,
+		    portmac.port AS port,
+		    portmac.ideq AS ideq,
+		    portmac.idvlan AS idvlan
+		FROM portmac
+		WHERE portmac.idportmac=$idportmac"
+    pg_select $dbfd $sql tab {
+	lappend lines [list "Info" \
+			    [mc "MAC address"] \
+			    [gen-link [display-mac $dbfd $tab(mac)] $tab(mac)] \
 			]
-
 	set eq [get-eq-name $dbfd $tab(ideq)]
-	lappend donnees [list Info  "Equipement"  [gen-lien $eq "eq:$tab(ideq)"]]
-	lappend donnees [list Info  "Port"        $tab(port)]
-	set vlan [presenter-vlan $dbfd $tab(idvlan)]
-	lappend donnees [list Info  "VLAN"        [gen-lien $vlan "vlan:$tab(idvlan)"]]
+	lappend lines [list "Info" \
+			    [mc "Équipement"] \
+			    [gen-link $eq "eq:$tab(ideq)"] \
+			]
+	lappend lines [list "Info" \
+			    [mc "Interface"] \
+			    $tab(port) \
+			]
+	set vlan [display-vlan $dbfd $tab(idvlan)]
+	lappend lines [list "Info" \
+			    [mc "Vlan"] \
+			    [gen-link $vlan "vlan:$tab(idvlan)"] \
+			]
     }
 
     set found 0
-    pg_select $dbfd "
-	SELECT 
-	    to_char(sessionportmac.debut,$conf(sqldateformat)) AS ddebut,
-	    to_char(sessionportmac.fin,$conf(sqldateformat)) AS dfin,
-	    sessionportmac.close AS close
-	FROM sessionportmac
-	WHERE sessionportmac.idportmac=$idportmac
-	ORDER BY sessionportmac.fin DESC
-    " tab2 {
-
-	if {$found==0} {
+    set sql "SELECT 
+		    to_char(sessionportmac.debut,$conf(sqldateformat)) AS ddebut,
+		    to_char(sessionportmac.fin,$conf(sqldateformat)) AS dfin,
+		    sessionportmac.close AS close
+		FROM sessionportmac
+		WHERE sessionportmac.idportmac=$idportmac
+		ORDER BY sessionportmac.fin DESC"
+    pg_select $dbfd $sql tab2 {
+	if {$found==0} then {
+	    lappend lines [list Active [mc "Start"] [mc "End"]]
 	    set found 1
-	    lappend donnees [list Active "Debut" "Fin" ]
 	}
 
-	if {$tab2(close)} {
-	    set pat "Close"
-	} else {
-	    set pat "Active"
-	}
-	lappend donnees [list $pat $tab2(ddebut) $tab2(dfin)]
+	if {$tab2(close)} then { set pat "Close" } else { set pat "Active" }
+	lappend lines [list $pat $tab2(ddebut) $tab2(dfin)]
     }
 
-    set tableau [::arrgen::output "html" $conf(tabsession) $donnees]
-
-    return $tableau
+    return [::arrgen::output "html" $conf(tabsession) $lines]
 }
 
 #
-# Genere un menu cliquable des association adresses IP - adresse
-# MAC à partir d'une adresse IP ou d'une adresse MAC
+# Display a menu of IPMAC associations from an IP or MAC address
 #
 # Input:
-#   ip : adresse ip (éventuellement vide)
-#   mac : adresse mac (éventuellement vide)
+#  - ip : ip address (may be null)
+#  - mac : mac address (may be null)
 #
 # Output:
-#   retourne une chaine de caractère contenant un tableau html
+#  - return value : HTML code
 #
 
 proc gen-ipmac {dbfd ip mac} {
-global conf
+    global conf
 
-    if {[string equal $mac ""] && [string equal $ip ""]} {
+    if {$mac eq "" && $ip eq ""} then {
 	return ""
     }
 
     set tableau ""
-    set donnees {}
-    lappend donnees [list Titre  "Sessions" "IP" "MAC" "Dernière occurence"]
-
-    set critere {}
-
-    if {![string equal $ip ""]} {
-	lappend critere " ipmac.ip='$ip' "
+    set lines {}
+    lappend lines [list Title \
+			[mc "Sessions"] \
+			[mc "IP address"] \
+			[mc "MAC address"] \
+			[mc "Last occurrence"] \
+		    ]
+    set crit {}
+    if {$ip ne ""} then {
+	lappend crit " ipmac.ip='$ip' "
     }
 
-    if {![string equal $mac ""]} {
-	lappend critere " ipmac.mac='$mac' "
+    if {$mac ne ""} then {
+	lappend crit " ipmac.mac='$mac' "
     }
 
     #
-    # Cherche toutes les associations ip-mac
-    # et leur date de dernière occurence
+    # Search all ip-mac associations and last occurrence date
     #
     
     set n 0
     set sql "SELECT idipmac AS idipmac, ipmac.mac AS mac, ipmac.ip AS ip
-		FROM ipmac WHERE [join $critere AND] "
-
+		FROM ipmac WHERE [join $crit AND]"
     set d {}
     pg_select $dbfd $sql tab {
-	    incr n
-	    set idipmac $tab(idipmac)
-	    set lienidipmac [gen-lien "Détails" "idipmac:$idipmac"]
-	    set nomdns [resolution "ip" $tab(ip)]
-	    set lienip [gen-lien [presenter-ip $tab(ip) $nomdns] $tab(ip)]
+	incr n
+	set idipmac $tab(idipmac)
+	set lienidipmac [gen-link [mc "Details"] "idipmac:$idipmac"]
+	set dnsname [resolve "ip" $tab(ip)]
+	set lienip [gen-link [display-ip $tab(ip) $dnsname] $tab(ip)]
 
-	    pg_select $dbfd "SELECT extract(epoch from max(fin)) AS fin
-		    FROM sessionipmac
-		    WHERE idipmac=$idipmac" tab2 {
-		set fin $tab2(fin)
-	    }
+	pg_select $dbfd "SELECT extract(epoch from max(fin)) AS fin
+		FROM sessionipmac
+		WHERE idipmac=$idipmac" tab2 {
+	    set fin $tab2(fin)
+	}
 
-	    if {![string equal $fin ""]} {
-		set fin [expr int($fin)]
-	    } else {
-		set fin 0
-	    }
-	    set lienmac [gen-lien [presenter-mac $dbfd $tab(mac)] $tab(mac)]
-	    lappend d [list Data $lienidipmac $lienip $lienmac $fin]
+	if {$fin ne ""} then {
+	    set fin [expr int($fin)]
+	} else {
+	    set fin 0
+	}
+	set lienmac [gen-link [display-mac $dbfd $tab(mac)] $tab(mac)]
+	lappend d [list Data $lienidipmac $lienip $lienmac $fin]
     }
 
     #
-    # Trie la liste et converti la date au bon format
+    # Sort list and convert date
     #
+
     foreach l [lsort -index end -integer $d] {
 	set t [lindex $l end]
 	set date [clock format $t -format "$conf(clockformat)"]
 	if {[regexp {^01/01/1970} $date]} then {
-	    set date "(date effacee)"
+	    set date [mc "(no date)"]
 	}
-	lappend donnees \
-	    [lreplace $l end end $date]
+	lappend lines [lreplace $l end end $date]
     }
     
-    if {$n > 0} {
-	if {$n == 1} { set p "" } else { set p "s" }
-	set tableau "$n associations adresse$p MAC - adresse IP trouvée$p pour $mac$ip:<BR>"
-	append tableau [::arrgen::output "html" $conf(tabmenuipmac) $donnees]
+    if {$n > 0} then {
+	set tableau [format [mc {%1$s MAC-IP address associations found for %2$s:}] $n "$mac$ip"]
+	append tableau "<br>"
+	append tableau [::arrgen::output "html" $conf(tabmenuipmac) $lines]
     } else {
-	set tableau "Aucune association IP - MAC trouvée pour $mac$ip<BR>"
+	set tableau [format [mc "No MAC-IP address association found for %s"] "$mac$ip"]
+	append tableau "<br>"
     }
 
-    append tableau "<BR>"
-
+    append tableau "<br>"
     return $tableau
 }
 
 #
-# Genere un menu cliquable des association adresses MAC - 
-# équipement - port
+# Display a menu of MAC-Port associations
 #
 # Input:
-#   mac : adresse mac
+#  - mac : MAC address
 #
 # Output:
-#   retourne une chaine de caractère contenant un tableau html
+#  - return value : HTML code
 #
 
 proc gen-mac {dbfd mac} {
-
-    if {[string equal $mac ""]} {
+    if {$mac eq ""} then {
 	return ""
     }
-
     return [gen-portmac $dbfd "portmac.mac='$mac'"]
 }
 
 #
-# Genere un menu cliquable des association adresse mac-equipement-port-vlan
-# pour un équipement donné
+# Display a menu of MAC-Port-Vlan for an equipment
 #
 # Input:
-#   eq : nom d'équipement
+#  - eq : nom d'équipement
 #
 # Output:
-#   retourne une chaine de caractère contenant un tableau html
+#  - return value : HTML code
 #
 
 proc gen-eq {dbfd eq} {
-
     set ideq [get-eq-id $dbfd $eq]
-    if {$ideq==0} {
-	return "$eq : équipement non trouvé"
+    if {$ideq==0} then {
+	return [format [mc "Equipment '%s' not found"] $eq]
     }
-
     return [gen-portmac $dbfd "portmac.ideq=$ideq"]
 }
 
 #
-# Genere un menu cliquable des association adresse mac-equipement-port-vlan
-# pour un vlan donné
+# Display a menu of MAC-Port-Vlan for a Vlan
 #
 # Input:
-#   idvlan : numéro de vlan
+#   - vlanid : vlan-id
 #
 # Output:
-#   retourne une chaine de caractère contenant un tableau html
+#  - return value : HTML code
 #
 
-proc gen-vlan {dbfd idvlan} {
-
-    if {[string equal [presenter-vlan $dbfd $idvlan] ""]} {
-	return "$idvlan : vlan non trouvé"
+proc gen-vlan {dbfd vlanid} {
+    if {[display-vlan $dbfd $vlanid] eq ""} then {
+	return [format [mc "Vlan '%s' not found"] $vlanid]
     }
-
-    return [gen-portmac $dbfd "portmac.idvlan=$idvlan"]
+    return [gen-portmac $dbfd "portmac.idvlan=$vlanid"]
 }
 
 #
-# Cherche toutes les associations port-equipement-mac-vlan
-# et leur date de dernière occurence en fonction du critère 
-# (expression au format SQL) passé en paramètre
+# Search all port-mac-vlan associations and last occurrence date
+# according to a criterion (SQL expression).
 #
     
-proc gen-portmac {dbfd critere} {
+proc gen-portmac {dbfd crit} {
     global conf
 
     set n 0
     set tableau ""
-    set donnees {}
-    lappend donnees [list Titre  "Sessions" "MAC" "Equipement" "Port" "VLAN" "Dernière occurence"]
-    set sql "
-	SELECT   mac, idvlan, idportmac, ideq, port
-	FROM	portmac
-	WHERE	$critere
-	GROUP BY    idportmac, mac, idvlan, port, ideq"
-
+    set lines {}
+    lappend lines [list Title \
+			    [mc "Sessions"] \
+			    [mc "MAC address"] \
+			    [mc "Equipment"] \
+			    [mc "Interface"] \
+			    [mc "Vlan"] \
+			    [mc "Last occurrence"] \
+			]
+    set sql "SELECT   mac, idvlan, idportmac, ideq, port
+		    FROM	portmac
+		    WHERE	$crit
+		    GROUP BY    idportmac, mac, idvlan, port, ideq"
     set d {}
     pg_select $dbfd $sql tab {
 	    incr n
 	    set idportmac $tab(idportmac)
-	    set lienidportmac [gen-lien "Détails" "idportmac:$idportmac"]
-	    set lienmac [gen-lien [presenter-mac $dbfd $tab(mac)] $tab(mac)]
+	    set lienidportmac [gen-link [mc "Details"] "idportmac:$idportmac"]
+	    set lienmac [gen-link [display-mac $dbfd $tab(mac)] $tab(mac)]
 	    set idvlan $tab(idvlan)
-	    set lienvlan [gen-lien [presenter-vlan $dbfd $idvlan] "vlan:$idvlan"]
+	    set lienvlan [gen-link [display-vlan $dbfd $idvlan] "vlan:$idvlan"]
 	    set nomeq [get-eq-name $dbfd $tab(ideq)] 
-	    set lieneq [gen-lien $nomeq "eq:$nomeq"]
+	    set lieneq [gen-link $nomeq "eq:$nomeq"]
 
-	    pg_select $dbfd "SELECT extract(epoch from max(fin)) AS fin
-		    FROM sessionportmac
-		    WHERE idportmac=$idportmac" tab2 {
+	    set sql "SELECT extract(epoch from max(fin)) AS fin
+			FROM sessionportmac
+			WHERE idportmac=$idportmac"
+	    pg_select $dbfd $sql tab2 {
 		set fin $tab2(fin)
 	    }
 
-	    if {![string equal $fin ""]} {
+	    if {$fin ne ""} then {
 		set fin [expr int($fin)]
 	    } else {
 		set fin 0
@@ -673,169 +649,156 @@ proc gen-portmac {dbfd critere} {
 		$lienidportmac $lienmac $lieneq $tab(port) $lienvlan $fin ]
 
     }
+
     #
-    # Trie la liste et converti la date au bon format
+    # Sort list and convert date
     #
+
     foreach l [lsort -index end -integer $d] {
 	set t [lindex $l end]
-	lappend donnees \
-	    [lreplace $l end end [clock format $t -format "$conf(clockformat)"]]
+	lappend lines [lreplace $l end end \
+				[clock format $t -format "$conf(clockformat)"]]
     }
 
-    if {$n > 0} {
-	if {$n == 1} { set p "" } else { set p "s" }
-	set tableau "$n associations adresse$p MAC - équipement - port - vlan trouvée$p"
-	append tableau [::arrgen::output "html" $conf(tabmenuportmac) $donnees]
+    if {$n > 0} then {
+	set tableau [format [mc "%s MAC-Equipment-port-vlan associations found"] $n]
+	append tableau [::arrgen::output "html" $conf(tabmenuportmac) $lines]
     } else {
-	set tableau "Aucune association adresse MAC - équipement - port - vlan trouvée"
+	set tableau [mc "No MAC-Equipment-port-vlan association found"]
     }
-	
+
     return $tableau
 }
 
 #
-# Génère un lien cliquable
+# Display an HTML link
 #
 
-proc gen-lien {texte cible} {
+proc gen-link {text target} {
     global conf
 
-    d urlset "" $conf(next) [list [list "recherche" $cible]]
+    d urlset "" $conf(next) [list [list "recherche" $target]]
     set url [d urlget ""]
-    return [::webapp::helem "a" $texte "href" $url]
+    return [::webapp::helem "a" $text "href" $url]
 }
 
 #
-# Produit une chaine décrivant le VLAN de la forme
-#   "5" si le vlan d'id 5 est inconnu
-# ou
-#   "5 (vlan CRC)" si le vlan existe dans la base
+# Display a Vlan name: "vlanid (description)" or "vlanid"
 #
-proc presenter-vlan {dbfd idvlan} {
+
+proc display-vlan {dbfd vlanid} {
     global cachevlan
 
-    set vlan ""
-    if {[info exists cachevlan($idvlan)]} {
-	set vlan $cachevlan($idvlan)
+    if {[info exists cachevlan($vlanid)]} then {
+	set vlandesc $cachevlan($vlanid)
     } else {
-	pg_select $dbfd "SELECT nom FROM vlan WHERE idvlan=$idvlan" tab {
-	    set vlan $tab(nom)
+	set vlandesc ""
+	pg_select $dbfd "SELECT nom FROM vlan WHERE idvlan=$vlanid" tab {
+	    set vlandesc $tab(nom)
 	}
-	set cachevlan($idvlan) $vlan
+	set cachevlan($vlanid) $vlandesc
     }
 
-if {![string equal $vlan ""]} {
-    set affichevlan "$idvlan ($vlan)"
-} else {
-    set affichevlan $idvlan
-}
-
-return $affichevlan
+    if {$vlandesc ne ""} then {
+	set dispvlan "$vlanid ($vlandesc)"
+    } else {
+	set dispvlan $vlanid
+    }
+    return $dispvlan
 }
 
 #
-# Cherche le nom de l'équipement
+# Search equipment name from equipment id
 #
+
 proc get-eq-name {dbfd ideq} {
     global cacheideq
     global cacheeq
 
-    set eq "équipement inconnu (id $ideq)"
-    if {[info exists cacheeq($ideq)]} {
+    if {[info exists cacheeq($ideq)]} then {
 	set eq $cacheeq($ideq)
     } else {
+	set eq [format [mc "Unknown equipment (id %s)"] $ideq]
 	pg_select $dbfd "SELECT nom FROM eq WHERE ideq=$ideq" tab {
 	    set eq $tab(nom)
 	}
 	set cacheideq($eq) $ideq
 	set cacheeq($ideq) $eq
     }
-
     return $eq
 }
 
 #
-# Cherche l'id de l'équipement dans le cache ou
-# dans la base en cas d'absence dans la cache.
-#
-# Retourne 0 si non trouvé.
-# Place le résultat de la requête dans le cache
+# Search equipment id from equipment name
+# Returns 0 if not found
 #
 
 proc get-eq-id {dbfd eq} {
     global cacheideq
     global cacheeq
 
-    set ideq 0
-    if {[info exists cacheideq($eq)]} {
+    if {[info exists cacheideq($eq)]} then {
 	set ideq $cacheideq($eq)
     } else {
+	set ideq 0
 	pg_select $dbfd "SELECT ideq FROM eq WHERE nom='$eq'" tab {
 	    set ideq $tab(ideq)
 	}
 	set cacheeq($ideq) $eq
 	set cacheideq($eq) $ideq
     }
-
     return $ideq
 }
 
 
 #
-# Présenter le critère de recherche sur la page de résultat
-# de façon lisible par un être humain...
+# Display search criterion on result page as a readable text
 #
 
-proc presenter-crit {dbfd type param} {
-
+proc display-crit {dbfd type param} {
     switch $type {
-	mac       { set m "l'adresse MAC $param" }
-	ip        { set m "l'adresse IP $param" }
-	idipmac   { set m "cette association adresse IP - adresse MAC" }
-	idportmac { set m "cette association adresse MAC - Équipement - Port - VLAN" }
-	vlan      { set m "le vlan [presenter-vlan $dbfd $param]" }
-	nom       { set m "la machine $param" }
+	mac       { set m "MAC address %s" }
+	ip        { set m "IP address %s" }
+	idipmac   { set m "this association IP-MAC" }
+	idportmac { set m "this MAC-Equipment-Port-Vlan association" }
+	vlan      { set m "Vlan %s" ; set param [display-vlan $dbfd $param] }
+	nom       { set m "host %s" }
 	default   { set m "???" }
     }
-    
-    return $m
+    return [format [mc $m] $param]
 }
 
 #
-# Reformate une adresse IP :
-# soit l'adresse IP suivi du nom s'il existe,
-# soit l'adresse IP seule
+# Format an IP address: either IP followed by DNS name if it exists, or IP
+# address only.
 #
 
-proc presenter-ip {ip nomdns} {
-
-    if {![string equal $nomdns ""]} {
-	set affichenomip "$ip ($nomdns)"
+proc display-ip {ip dnsname} {
+    if {$dnsname ne ""} then {
+	set disp "$ip ($dnsname)"
     } else {
-	set affichenomip "$ip"
+	set disp "$ip"
     }
-    
-    return $affichenomip
+    return $disp
 }
 
 #
-# Recherche l'OUI pour une adresse MAC donnée
-# et retourne une chaine de caractère composé de l'adresse
-# MAC et du nom du constructeur
+# Search OUI for a given MAC address and returns a string built from
+# MAC address and manufacturer name
 # 
-# Exemple :
-# - l'adresse mac "08:00:20:67:89:ab" devient :
-#   "08:00:20:67:89:ab (SUN MICROSYSTEMS INC.)"
+# Example:
+# - MAC address "08:00:20:67:89:ab" becomes
+#	"08:00:20:67:89:ab (SUN MICROSYSTEMS INC.)"
 #
-# - l'adresse mac "01:23:45:67:89:ab" devient :
-# "01:23:45:67:89:ab"
-# (pas de changement car OUI non trouvé)
+# - MAC address mac "01:23:45:67:89:ab" becomes
+#	"01:23:45:67:89:ab"
+#	(no change since OUI is not found)
 #
 
-proc presenter-mac {dbfd mac} {
+proc display-mac {dbfd mac} {
     global ouicache
 
-    if {[info exists ouicache($mac)]} {
+    if {[info exists ouicache($mac)]} then {
 	return $ouicache($mac)
     }
 
@@ -843,33 +806,27 @@ proc presenter-mac {dbfd mac} {
     pg_select $dbfd "SELECT manuf('$mac') AS m" tab {
 	set manuf $tab(m)
     }
-    
-    if {![string equal $manuf ""]} {
-	set affichemac "$mac ($manuf)"
-    } else {
-	set affichemac "$mac"
-    }
-    
-    set ouicache($mac) $affichemac
 
-    return $affichemac
+    if {$manuf ne ""} then {
+	set dispmac "$mac ($manuf)"
+    } else {
+	set dispmac "$mac"
+    }
+    set ouicache($mac) $dispmac
+    return $dispmac
 }
 
 #
-# Resolution DNS : 
-# Appelle la commande "host" et en fonction du type
-# de resolution DNS demandée, produit une liste d'ip ou un nom de
-# domaine
+# DNS resolver : calls "host" command and produces an IP address list or a FQDN
 #
-# Paramètres :
-#   Input: 
-#     type : "nom" pour une resolution de nom, "ip" pour un resolution inverse
-#     arg  : objet de la resolution (nom de domaine ou adresse ip)
-#   Output: 
-#     Valeur de retour : liste d'adresse ip ou nom de domaine
+# Input: 
+#  - type : "nom" for a standard resolution, "ip" for a reverse resolution
+#  - arg  : resolve parameter
+# Output: 
+#  - return value: addresse list or domain name
 #
 
-proc resolution {type arg} {
+proc resolve {type arg} {
     global conf
     global dnscache
 
@@ -879,10 +836,10 @@ proc resolution {type arg} {
     }
 
     #
-    # Définition du filtre
+    # Filter definition
     #
 
-    if {[info exists dnscache($arg)]} {
+    if {[info exists dnscache($arg)]} then {
 	return $dnscache($arg)
     }
 
@@ -892,34 +849,30 @@ proc resolution {type arg} {
     }
 
     #
-    # On récupère le résultat de la commande "host"
+    # Extract "host" command result
     #
 
-    if { [catch {set buf [exec $conf(cmdhost) $arg]} msg]} {
+    if { [catch {set buf [exec $conf(cmdhost) $arg]} msg]} then {
 	set buf ""
     }
 
     #
-    # On ne garde que le dernier mot de chaque ligne
+    # Keep only the last word of each line
     #
 
     set l {}
     foreach line [split $buf "\n"] {
-	if { [regexp $pat $line] } {
+	if {[regexp $pat $line]} then {
 	    lappend l [lindex $line end]
 	}
     }
-
     set dnscache($arg) $l
-
     return $l 
 }
 
-
-
-#
+##############################################################################
 # Main procedure
-#
+##############################################################################
 
 proc main {} {
     global conf
@@ -936,7 +889,7 @@ proc main {} {
     }
 
     #
-    # Analyse des arguments
+    # Argument analysis
     #
 
     set recherche [string tolower [string trim [lindex $ftab(recherche) 0]]]
@@ -947,28 +900,26 @@ proc main {} {
 	#
 
 	d urlset "%URLFORM%" $conf(next) {}
-
 	d result $conf(pagesearch) {}
     } else {
 	#
-	# Détermine le type
+	# Guess search type
 	#
 
-	set l [determine-type $dbfdmac $recherche msg]
-	if {[llength $l]==0} {
-	    ::webapp::error-exit $conf(err) "type de parametre : $msg"
+	set l [guess-type $dbfdmac $recherche msg]
+	if {[llength $l] == 0} then {
+	    d error $msg
 	} 
-	set type [lindex $l 0]
-	set param [lindex $l 1]
+	lassign $l type param
 
 	#
-	# Génère le tableau html de résultat
+	# Display output
 	#
 
-	set tableau [gen-res $dbfdmac $type $param]
+	set tableau [html-result $dbfdmac $type $param]
 
-	if { [string equal $tableau ""] } {
-	    set tableau "Aucune information trouvée"
+	if {$tableau eq ""} then {
+	    set tableau [mc "No information found"]
 	}
 
 	#
@@ -976,7 +927,7 @@ proc main {} {
 	#
 
 	d result $conf(page) [list \
-				    [list %RECHERCHE% [presenter-crit $dbfdmac $type $param]] \
+				    [list %RECHERCHE% [display-crit $dbfdmac $type $param]] \
 				    [list %TABLEAU%   $tableau] \
 				]
     }

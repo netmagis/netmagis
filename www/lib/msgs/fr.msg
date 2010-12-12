@@ -457,7 +457,7 @@
  {%s inactive hosts} {%s machines inactives}
  {no inactive host found} {aucune machine inactive trouvée}
  {Vlan %1$s: %2$s} {Vlan %1$s : %2$s}
- {Vlan '%s' not found on equipments} {Vlan '%s' non trouvé sur les équipements}
+ {Vlan '%s' not found} {Vlan '%s' non trouvé}
  {Invalid router instance '%s'} {Instance de routage '%s' invalide}
  {Invalid node type '%1$s' for %2$s} {Type de noeud '%1$s' invalide pour %2$s}
  {IP networks} {réseaux IP}
@@ -467,6 +467,10 @@
  {Network '%s'} {Réseau '%s'}
  {%1$s available addresses / %2$s total} {%1$s adresses disponibles / %2$s total}
  {Detail} {Détail}
+ {Details} {Détails}
+ {(no date)} {(date effacée)}
+ {%1$s MAC-IP address associations found for %2$s:} {%1$s associations IP-MAC trouvées pour %2$s :}
+ {No MAC-IP address association found for %s} {Aucune association IP-MAC trouvée pour %s}
  {address not allowed} {adresse non accessible}
  {available address} {adresse disponible}
  {declared address} {adresse déclarée}
@@ -488,4 +492,23 @@
  {and sorted by '%1$s' and by '%2$s'} {et triés par '%1$s' et par '%2$s'}
  {%s selected network(s).} {%s réseau(x) sélectionné(s).}
  {networks} {réseaux}
+ {Invalid search string '%s'} {Châine de recherche '%s' incorrecte}
+ {No information found} {Aucune information trouvée}
+ {Internal error: invalid parameter type '%s'} {Erreur interne : type de paramètre invalide '%s'}
+ {IP-MAC identifier '%s' not found} {Identifiant IP-MAC '%s' non trouvé}
+ {Start} {Début}
+ {End} {Fin}
+ {No IP-MAC session found} {Aucune session IP-MAC trouvée}
+ {Sessions} {Sessions}
+ {Last occurrence} {Dernière occurrence}
+ {%s MAC-Equipment-port-vlan associations found} {%s associations adresse MAC-équipement-port-vlan trouvées}
+ {No MAC-Equipment-port-vlan association found} {Aucune association adresse MAC-équipement-port-vlan trouvée}
+ {Unknown equipemnt (id %s)} {Équipement inconnu (id %s)}
+ {MAC address %s} {l'adresse MAC %s}
+ {IP address %s} {l'adresse IP %s}
+ {this IP-MAC association} {cette association IP-MAC}
+ {this MAC-Equipment-Port-Vlan association} {cette association AC-Équipement-Port-Vlan}
+ {Vlan %s} {le vlan %s}
+ {host %s} {la machine %s}
+ {this IP-MAC association} {cette association IP-MAC}
 }

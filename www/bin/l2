@@ -428,7 +428,7 @@ proc main {} {
 	    # No vlan found
 	    #
 
-	    set liste [format [mc "Vlan '%s' not found on equipments"] $qvlan]
+	    set liste [format [mc "Vlan '%s' not found"] $qvlan]
 	    d result $conf(pagen) [list \
 					[list %MSGSTA% $msgsta] \
 					[list %OBJETS% "Vlans"] \
@@ -463,7 +463,7 @@ proc main {} {
 	    set xl2 [format $conf(extractl2) $tabuid(flagsr) $eq $iface $v]
 	    set dot [gen-dot $format $eq $iface $v $xl2 tabvlan nnodes]
 	    if {$dot eq ""} then {
-		set liste [format [mc "Vlan '%s' not found on equipments"] $qvlan]
+		set liste [format [mc "Vlan '%s' not found"] $qvlan]
 		d result $conf(pagen) [list \
 					[list %MSGSTA% $msgsta] \
 					[list %OBJETS% "Vlans"] \
