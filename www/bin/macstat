@@ -1,18 +1,13 @@
 #!%TCLSH%
 
 #
-# Script qui affiche des statistiques
-# sur les informations contenues dans la base MAC
+# Display statistics about MAC informations
 #
 # History
-#   2005/05/27 : jean : conception
+#   2005/05/27 : jean     : design
 #   2010/11/30 : pda/jean : integration a WebDNS
+#   2010/12/12 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -26,13 +21,6 @@ set conf(page)          macstat.html
 #
 
 set conf(dbmac)          %BASEMAC%
-
-
-source %LIBDNS%
-
-#
-# Formats du tableau
-#
 
 set conf(tabresultat) {
     global {
@@ -51,42 +39,45 @@ set conf(tabresultat) {
 }
 
 #
-#
+# WebDNS general library
+
+source %LIBDNS%
 
 # ::webapp::cgidebug ; exit
 
+##############################################################################
+# Utility functions
+##############################################################################
 
 #
-# Calcule les statistiques sur les adresses
+# Compute statistics on addresses
 #
 
-proc stat-adr {dbfd} {
+proc stat-addr {dbfd} {
     global conf
 
-    # liste de couples description - requetes
-    set req {
-    "Nombre d'adresses mac uniques"
-    "SELECT count(DISTINCT mac) AS r FROM portmac" 
-    "Nombre d'adresses IPv4 uniques"
-    "SELECT count(DISTINCT ip) AS r FROM ipmac WHERE family(ip)=4"
-    "Nombre d'adresses IPv6 uniques"
-    "SELECT count(DISTINCT ip) AS r FROM ipmac WHERE family(ip)=6"
-    "Nombre d'adresses MAC distinctes associées à une adresse IPv6"
-    "SELECT count(DISTINCT(mac)) AS r FROM ipmac WHERE family(ip)=6"
+    # list of couples <desc, request>
+    set lcouples {
+	"Number of unique MAC addresses"
+	"SELECT count(DISTINCT mac) AS r FROM portmac" 
+	"Number of unique IPv4 addresses"
+	"SELECT count(DISTINCT ip) AS r FROM ipmac WHERE family(ip)=4"
+	"Number of unique IPv6 addresses"
+	"SELECT count(DISTINCT ip) AS r FROM ipmac WHERE family(ip)=6"
+	"Number of distinct MAC addresses associated with an IPv6 address"
+	"SELECT count(DISTINCT(mac)) AS r FROM ipmac WHERE family(ip)=6"
     }
 
-    set data {}
-
-    foreach {description requete} $req {
-	set resultat ""
-	pg_select $dbfd $requete tab {
-	    set resultat $tab(r)
+    set lines {}
+    foreach {desc req} $lcouples {
+	set result ""
+	pg_select $dbfd $req tab {
+	    set result $tab(r)
 	}
-	lappend data [list Normal $description $resultat]
+	set desc [mc $desc]
+	lappend lines [list Normal $desc $result]
     }
-    append tableau [::arrgen::output "html" $conf(tabresultat) $data]
-
-    return $tableau
+    return [::arrgen::output "html" $conf(tabresultat) $lines]
 }
 
 #
@@ -103,26 +94,22 @@ proc main {} {
     ::dnscontext create d
     d init-cgi "mac" $conf(err) "" {} ftab dbfd login tabuid
 
-    #
-    # Accès à la base MAC
-    #
-
     if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {
         ::webapp::error-exit $conf(err) $msg
     }
 
     #
-    # Génère le tableau html de résultat
+    # Get result
     #
 
-    set tableau [stat-adr $dbfdmac]
+    set tableau [stat-addr $dbfdmac]
 
     #
     # End of script: output page and close database
     #
 
     d result $conf(page) [list \
-                                [list %TITRE%   "Statistiques sur les adresses MAC/IP"] \
+                                [list %TITRE% [mc "Statistics about MAC/IP addresses"]] \
                                 [list %TABLEAU% $tableau] \
                             ]
 }

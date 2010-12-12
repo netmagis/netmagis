@@ -511,4 +511,9 @@
  {Vlan %s} {le vlan %s}
  {host %s} {la machine %s}
  {this IP-MAC association} {cette association IP-MAC}
+ {Number of unique MAC addresses} {Nombre d'adresses MAC uniques}
+ {Number of unique IPv4 addresses} {Nombre d'adresses IPv4 uniques}
+ {Number of unique IPv6 addresses} {Nombre d'adresses IPv6 uniques}
+ {Number of distinct MAC addresses associated with an IPv6 address} {Nombre d'adresses MAC distinctes associées à une adresse IPv6}
+ {Statistics about MAC/IP addresses} {Statistiques sur les adresses MAC/IP}
 }

@@ -1,21 +1,16 @@
 #!%TCLSH%
 
-
 #
-# Script pour définir l'accueil du module Mac
+# Index page of MAC module
 #
-# Called by: index.htgt
+# Called by: accueil
 #
 # Parameters (form or url): none
 #
 # History
 #   2010/11/30 : pda/jean : design
+#   2010/12/12 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -25,15 +20,12 @@ set conf(err)		erreur.html
 set conf(page)		macindex.html
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Main procedure
@@ -50,7 +42,7 @@ proc main {} {
     d init-cgi "mac" $conf(err) "droitmac" {} ftab dbfd login tabuid
 
     #
-    # Construction des URL et de la liste de subsitution
+    # Build URLs
     #
 
     foreach script {mac ipinact macstat} {
