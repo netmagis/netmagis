@@ -209,7 +209,7 @@
  {Domain '%s' not found} {Domaine '%s' non trouvé}
  {Domain-id '%s' not found} {Identificateur de domaine '%s' non trouvé}
  {MX '%1$s' points to a domain on which you don't have rights\n%2$s} {Le MX '%1$s' référence un domaine auquel vous n'avez pas accès\n%2$s}
- {Invalid MX priority '%1ss' for '%2$s'} {Priorité de MX non valide '%1$s' pour '%2$s'}
+ {Invalid MX priority '%1$s' for '%2$s'} {Priorité de MX non valide '%1$s' pour '%2$s'}
  {You don't have rights to some relays of domain '%1$s': %2$s} {Vous n'avez pas les droits sur certains relais du domaine '%1$s' : %2$s}
  {Internal error on '%1$s': id '%2$s' of mail host not found} {Erreur interne sur '%1$s' : id de l'hébergeur '%2$s' non trouvé}
  {Impossible to use MAC address '%1$s' because IP address '%2$s' is in DHCP dynamic range [%3$s..%4$s]} {Impossible d'affecter l'adresse MAC '%1$s' car l'adresse IP '%2$s' figure dans l'intervalle DHCP dynamique [%3$s..%4$s]}
@@ -265,7 +265,7 @@
  {Divergent sensor types} {Types de points de collecte divergents}
  {Sensor '%s' not found} {Point de collecte '%s' non trouvé}
  {No sensor selected} {Aucun point de collecte sélectionné}
- {Traffic on vlan %1$s of interface %2$s of %3s} {Trafic sur le vlan %1$s de l'interface %2$s de %3$s}
+ {Traffic on vlan %1$s of interface %2$s of %3$s} {Trafic sur le vlan %1$s de l'interface %2$s de %3$s}
  {Traffic on interface %2$s of %3$s} {Trafic sur l'interface %2$s de %3$s}
  {Number of auhentified users on ssid %1$s of interface %2$s of %3$s} {Nombre d'utilisateurs authentifiés sur le ssid %1$s de l'interface %2$s de %3$s}
  {Number of associated hosts on ssid %1$s of interface %2$s of %3$s} {Nombre de machines associées sur le ssid %1$s de l'interface %2$s de %3$s}
@@ -274,8 +274,8 @@
  {Number of associated hosts on %s} {Nombre de machines associées sur %s}
  {Internal error: invalid extractcoll output format} {Erreur interne : format de sortie de extractcoll non valide}
  {No access: %s} {Accès impossible: %s}
- {Error during extraction of readable interfaces from '%1$s' (%2$s)} {Erreur lors de l'extraction des interfaces consultables de '%1$s' : %2s$}
- {Error during extraction of writable interfaces from '%1$s' (%2$s)} {Erreur lors de l'extraction des interfaces modifiables de '%1$s' : %2s$}
+ {Error during extraction of readable interfaces from '%1$s' (%2$s)} {Erreur lors de l'extraction des interfaces consultables de '%1$s' : %2$s}
+ {Error during extraction of writable interfaces from '%1$s' (%2$s)} {Erreur lors de l'extraction des interfaces modifiables de '%1$s' : %2$s}
  {Equipment '%s' not found} {Équipement '%s' non trouvé}
  {description='%s'} {description='%s'}
  {vlan='%s'} {vlan='%s'}
@@ -297,8 +297,8 @@
  {Edition of group '%s'} {Édition du groupe '%s'}
  {Modify group name or erase it to remove the group} {Modifiez le nom du groupe ou effacez-le pour supprimer le groupe}
  {Group '%s' not found} {Groupe '%s' non trouvé}
- {Group has access to domain '%s' which do not exists in database} {Le groupe a acc�s au domaine '%s' qui n'existe pas dans la base}
- {Group has access to network '%s' which do not exists in database} {Le groupe a acc�s au r�seau '%s' qui n'existe pas dans la base}
+ {Group has access to domain '%s' which do not exists in database} {Le groupe a accès au domaine '%s' qui n'existe pas dans la base}
+ {Group has access to network '%s' which do not exists in database} {Le groupe a accès au réseau '%s' qui n'existe pas dans la base}
  {yes} {oui}
  {no} {non}
  {Sort class} {Classe de tri}
@@ -311,8 +311,8 @@
  {Login '%s' does not exist} {Le login '%s' n'existe pas}
  {Login '%s' found more than once} {Le login '%s' est ambigu}
  {Modification of group %s} {Modification du groupe %s}
- {Mail role edition} {�Édition des rôles de messagerie}
- {Web role edition} {�Édition des rôles de Web}
+ {Mail role edition} {Édition des rôles de messagerie}
+ {Web role edition} {Édition des rôles de Web}
  {Unable to remove group: %s} {Suppression du groupe impossible : %s}
  {Invalid value '%1$s' for form variable '%2$s'} {Valeur '%1$s' invalide pour le champ de formulaire '%2$s'}
  {Login '%1$s' already assigned to group '%2$s'} {Login '%1$s' déjà affecté au groupe '%2$s'}
@@ -438,7 +438,7 @@
  {More than one year} {Plus d'un an}
  {Invalid occurrence '%s'} {Occurrence '%s' invalide}
  {Last occurrence} {Dernière occurrence}
- {Inactive hosts in network %1$s since more than %2$s months: } {Machines inactives dans le réseau %1$s depuis plus de %2s mois : }
+ {Inactive hosts in network %1$s since more than %2$s months: } {Machines inactives dans le réseau %1$s depuis plus de %2$s mois : }
  {%s inactive hosts} {%s machines inactives}
  {no inactive host found} {aucune machine inactive trouvée}
 }

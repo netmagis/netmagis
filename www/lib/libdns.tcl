@@ -5050,9 +5050,9 @@ proc check-metro-id {dbfd id _tabuid _title} {
 		    set vlan  [lindex $l 5]
 
 		    if {$vlan ne "-"} then {
-			set t [mc {Traffic on vlan %1$s of interface %2$s of %3s}]
+			set t [mc {Traffic on vlan %1$s of interface %2$s of %3$s}]
 		    } else {
-			set t [mc {Traffic on interface %1$s of %2s}]
+			set t [mc {Traffic on interface %2$s of %3$s}]
 		    }
 		    set title [format $t $vlan $iface $eq]
 		}
