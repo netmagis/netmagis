@@ -1,26 +1,18 @@
 #!%TCLSH%
 
-
 #
-# Script pour présenter la page de saisie de l'hébergeur d'une adresse
-# de messagerie (ou la liste des adresses de messagerie existantes)
+# Display mail host of a mail address (or list of existing mail addresses)
 #
-# Called by: script mail (page lib/mail.htgt)
+# Called by: mail
 #
 # Parameters (form or url):
-#   - nom : nom (premier constituant) de l'adresse de
-#		messagerie (ou vide si on veut une liste)
-#   - domaine : domaine de l'adresse de messagerie (tous les
-#		constituants sauf le premier)
+#   - nom : name (first component of fqdn) of mail address (or empty)
+#   - domaine : domain (last components of fqdn) of mail address
 #
 # History
 #   2004/02/06 : pda/jean : design
+#   2010/12/13 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -41,18 +33,16 @@ set conf(nextmodif)	"%HOMEURL%/bin/mailmodif"
 # Script parameters
 #
 
-# les champs du formulaire
 set conf(form)		{
 	{nom		1 1}
 	{domaine	1 1}
 }
 
 #
-# Le tableau servant à présenter la liste des adresses
-# de messagerie enregistrées dans la base pour édition
-# Colonnes :
-#	- adresse de messagerie
-#	- hébergeur des boîtes pour cette adresse
+# Tabular format
+# Columns :
+#	- mail address
+#	- mail host
 #
 
 set conf(tableau) {
@@ -62,7 +52,7 @@ set conf(tableau) {
 	botbar {yes}
 	align {left}
     }
-    pattern {Titre} {
+    pattern Title {
 	title {yes}
 	topbar {yes}
 	chars {bold}
@@ -73,7 +63,7 @@ set conf(tableau) {
 	colonne { }
 	vbar {yes}
     }
-    pattern {Normal} {
+    pattern Normal {
 	title {yes}
 	topbar {yes}
 	vbar {yes}
@@ -87,58 +77,53 @@ set conf(tableau) {
 }
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
 
-
 ##############################################################################
-# Fonctions auxiliaires
+# Utility functions
 ##############################################################################
 
 #
-# Lit l'ensemble des rôles de messagerie associés à un groupe et un
-# domaine. Si le nom est fourni, seul le rôle associé à l'adresse
-# spécifiée est retourné.
+# Read all "role mail" associated with a group and a domain. If name
+# if supplied, only role associated with the specified address is returned.
 #
 # Input:
-#   - dbfd : accès à la base
-#   - idcor : correspondant
-#   - nom : nom (premier constituant) de l'adresse de messagerie
-#   - domaine : nom de domaine (tous les constituants sauf le premier) de
-#	l'adresse de messagerie
+#   - dbfd : database handle
+#   - idcor : user id
+#   - name : name (first component) of mail address
+#   - domain : domain name (last components) of mail address
 # Output:
-#   - valeur de retour : liste de quadruplets {noma domainea nomh domaineh}
-#	où :
-#	    - noma : nom de l'adresse de messagerie
-#	    - domainea : nom de domaine de l'adresse de messagerie
-#	    - nomh : nom de l'hébergeur des boîtes
-#	    - domaineh : nom de domaine de l'hébergeur des boîtes
+#   - return value: list {{namea domaina nameh domainh} ...} where:
+#	    - namea : name of mail address
+#	    - domaina : domain of mail address
+#	    - nameh : name of mail host
+#	    - domainh : domain of mail host
 #
 # History
-#   2004/02/06 : pda/jean : conception
-#   2004/02/27 : pda/jean : utilisation de l'id du correspondant
-#   2004/03/01 :     jean : requête de la mort qui tue !
+#   2004/02/06 : pda/jean : design
+#   2004/02/27 : pda/jean : use user id
+#   2004/03/01 : jres     : what a beautiful sql request!
 #
 
-proc lire-role-mail {dbfd idcor nom domaine} {
-    if {! [string equal $nom ""]} then {
-	set nom " AND r1.nom = '$nom' "
+proc read-mailrole {dbfd idcor name domain} {
+    if {$name ne ""} then {
+	set name " AND r1.nom = '$name' "
     }
     set sql "
-	SELECT r1.nom AS noma, d1.nom AS domainea,
-		r2.nom AS nomh, d2.nom AS domaineh
-	    FROM dns.role_mail, dns.rr r1, dns.domaine d1, dns.rr r2, dns.domaine d2, global.corresp
+	SELECT r1.nom AS namea, d1.nom AS domaina,
+		r2.nom AS nameh, d2.nom AS domainh
+	    FROM dns.role_mail, global.corresp,
+		dns.rr r1, dns.domaine d1, dns.rr r2, dns.domaine d2
 	    WHERE corresp.idcor = $idcor
-		$nom
+		$name
 		AND role_mail.idrr = r1.idrr
 		AND r1.iddom = d1.iddom
-		AND d1.nom = '$domaine'
+		AND d1.nom = '$domain'
 		AND r1.iddom =
 			(SELECT dd1.iddom FROM dns.dr_dom dd1
 					WHERE dd1.idgrp = corresp.idgrp
@@ -162,11 +147,11 @@ proc lire-role-mail {dbfd idcor nom domaine} {
 					WHERE NOT valide_ip_cor(adr, $idcor)
 					    AND r4.idrr = r2.idrr
 			    )
-	    ORDER BY domainea ASC, noma ASC
+	    ORDER BY domaina ASC, namea ASC
 		"
     set r {}
     pg_select $dbfd $sql tab {
-	lappend r [list $tab(noma) $tab(domainea) $tab(nomh) $tab(domaineh)]
+	lappend r [list $tab(namea) $tab(domaina) $tab(nameh) $tab(domainh)]
     }
     return $r
 }
@@ -187,100 +172,95 @@ proc main {} {
 
     set idcor $tabuid(idcor)
 
-    set nom     [string trim [lindex $ftab(nom) 0]]
-    set domaine [string trim [lindex $ftab(domaine) 0]]
-    set toutnom "$nom.$domaine"
+    set name   [string trim [lindex $ftab(nom) 0]]
+    set domain [string trim [lindex $ftab(domaine) 0]]
 
     #
-    # A-t'on le droit de déclarer des rôles mails dans ce domaine ?
+    # Do we have permission for declaring mail roles in this domain?
     #
 
-    set msg [check-domain $dbfd $idcor idom domaine "rolemail"]
+    set msg [check-domain $dbfd $idcor idom domain "rolemail"]
     if {$msg ne ""} then {
 	d error $msg
     }
 
     #
-    # Doit-on générer une liste de domaines de messagerie, ou bien
-    # l'utilisateur en a-t'il saisi un ?
+    # Should we display a list of mail addresses?
     #
 
     set lsubst {}
-    if {[string equal $nom ""]} then {
+    if {$name eq ""} then {
 	#
-	# Pas de nom saisi : il faut générer une liste des
-	# rôles mails enregistrés dans la base pour les
-	# adresses dont le correspondant est propriétaire.
-	# C'est le cas par défaut si on utilise le bouton
-	# de consultation.
+	# No name given: we must display of list of existing mail addresses
+	# in database for addresses owned by the user.
 	#
 
 	set page $conf(pageliste)
-	set lroles [lire-role-mail $dbfd $idcor "" $domaine]
+	set lroles [read-mailrole $dbfd $idcor "" $domain]
 
 	if {[llength $lroles] == 0} then {
-	    set tableau "Aucun rôle de messagerie n'a été trouvée pour '$domaine'"
+	    set tableau [format [mc "No mail role found for '%s'"] $domain]
 	} else {
-	    set donnees {}
-	    lappend donnees [list Titre \
-				"Adresse de messagerie" "Hébergeur des boîtes"]
-	    foreach q [lire-role-mail $dbfd $idcor "" $domaine] {
-		# lien de la forme "..../mailheberg?nom=...&domaine=.."
-		set noma [lindex $q 0] ; set domainea [lindex $q 1]
-		set nomh [lindex $q 2] ; set domaineh [lindex $q 3]
+	    set lines {}
+	    lappend lines [list "Title" \
+				    [mc "Mail address"]  \
+				    [mc "Mailbox host"]  \
+				]
+	    foreach q [read-mailrole $dbfd $idcor "" $domain] {
+		# link "..../mailheberg?nom=...&domaine=.."
+		lassign $q namea domaina nameh domainh
 
-		# normalement, il n'y a que des caractères "compatibles RFC"...
+		# there is only "RFC compatible" characters, no need to quote
 		d urlset "" $conf(nextheberg) [list \
-						    [list "nom" $noma] \
-						    [list "domaine" $domainea] \
+						    [list "nom" $namea] \
+						    [list "domaine" $domaina] \
 					    ]
 		set url [d urlget ""]
-		set html [::webapp::helem "a" "$noma.$domainea" "href" $url]
+		set html [::webapp::helem "a" "$namea.$domaina" "href" $url]
 
-		lappend donnees [list Normal $html "$nomh.$domaineh"]
+		lappend lines [list Normal $html "$nameh.$domainh"]
 	    }
-	    set tableau [::arrgen::output "html" $conf(tableau) $donnees]
+	    set tableau [::arrgen::output "html" $conf(tableau) $lines]
 	}
 
 	lappend lsubst [list %TABLEAU% $tableau]
-	lappend lsubst [list %DOMAINE% $domaine]
+	lappend lsubst [list %DOMAINE% $domain]
 
     } else {
+	#
+	# A name has been given. We must display the edit page for this role.
+	#
 
-	#
-	# Un nom a été fourni. Il faut présenter la page d'édition
-	# de rôle de messagerie pour ce nom.
-	#
 	set page $conf(pageedit)
-	set nomh ""
+	set nameh ""
 	set domh ""
 
 	#
-	# Valider la syntaxe de l'adresse de messagerie
+	# Check mail address syntax
 	#
 
-	set msg [check-name-syntax $nom]
-	if {! [string equal $msg ""]} then {
+	set msg [check-name-syntax $name]
+	if {$msg ne ""} then {
 	    d error $msg
 	}
 
 	#
-	# Valider le droit d'éditer cette adresse de messagerie
+	# Check permission to edit this mail address
 	#
 
-	set msg [check-role-mail $dbfd $idcor $nom $domaine trr trrh]
-	if {! [string equal $msg ""]} then {
-	    d error "$msg. Édition refusée."
+	set msg [check-role-mail $dbfd $idcor $name $domain trr trrh]
+	if {$msg ne ""} then {
+	    d error $msg
 	}
 
-	set nomh $trrh(nom)
+	set nameh $trrh(nom)
 	set domh $trrh(domaine)
-	set domaineh [menu-domain $dbfd $idcor domaineh "" $domh]
+	set domainh [menu-domain $dbfd $idcor domainh "" $domh]
 
-	lappend lsubst [list %NOM%      $nom]
-	lappend lsubst [list %DOMAINE%  $domaine]
-	lappend lsubst [list %NOMH%	$nomh]
-	lappend lsubst [list %DOMAINEH% $domaineh]
+	lappend lsubst [list %NOM%      $name]
+	lappend lsubst [list %DOMAINE%  $domain]
+	lappend lsubst [list %NOMH%	$nameh]
+	lappend lsubst [list %DOMAINEH% $domainh]
     }
 
     #

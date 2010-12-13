@@ -516,4 +516,9 @@
  {Number of unique IPv6 addresses} {Nombre d'adresses IPv6 uniques}
  {Number of distinct MAC addresses associated with an IPv6 address} {Nombre d'adresses MAC distinctes associées à une adresse IPv6}
  {Statistics about MAC/IP addresses} {Statistiques sur les adresses MAC/IP}
+ {No mail role found for '%s'} {Aucun rôle de messagerie trouvé pour '%s'}
+ {Mail address} {Adresse de messagerie}
+ {Mailbox host} {Hébergeur des boîtes}
+ {Mailbox host name '%s' not found} {Nom d'hébergeur '%s' non trouvé}
+ {Mail role '%s' does not exist: you can't delete it} {Le rôle '%s' n'existe pas. Vous ne pouvez pas le supprimer}
 }

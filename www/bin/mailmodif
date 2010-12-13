@@ -1,28 +1,21 @@
 #!%TCLSH%
 
-
 #
-# Script pour présenter la page de saisie de l'hébergeur d'une adresse
-# de messagerie (ou la liste des adresses de messagerie existantes)
+# Record mailbox host for an address.
 #
-# Called by: script mailheberg (page lib/mailheberg-edit.htgt)
+# Called by: mailheberg
 #
 # Parameters (form or url):
-#   - nom : nom (premier constituant) de l'adresse de messagerie
-#   - domaine : domaine de l'adresse de messagerie (tous les
-#		constituants sauf le premier)
-#   - nomh : nom (premier constituant) de l'hébergeur
-#   - domaineh : domaine de l'hébergeur (tous les constituants sauf le premier)
+#   - nom : name (first component of fqdn) of mail address
+#   - domaine : domain (last components of fqdn) of mail address
+#   - nomh : name (first component of fqdn) of mailbox host
+#   - domaineh : domain (last components of fqdn) of mailbox host
 #
 # History
 #   2004/02/12 : pda/jean : design
 #   2007/10/25 : jean     : log modify actions
+#   2010/12/13 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -30,12 +23,6 @@
 
 set conf(err)		erreur.html
 set conf(page)		mailmodif.html
-
-#
-# Next actions
-# 
-
-# none (no-return page)
 
 #
 # Script parameters
@@ -49,15 +36,12 @@ set conf(form)		{
 }
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Main procedure
@@ -75,119 +59,116 @@ proc main {} {
 
     set idcor $tabuid(idcor)
 
-    set nom      [string trim [lindex $ftab(nom) 0]]
-    set domaine  [string trim [lindex $ftab(domaine) 0]]
-    set nomh     [string trim [lindex $ftab(nomh) 0]]
-    set domaineh [string trim [lindex $ftab(domaineh) 0]]
+    set name    [string trim [lindex $ftab(nom) 0]]
+    set domain  [string trim [lindex $ftab(domaine) 0]]
+    set nameh   [string trim [lindex $ftab(nomh) 0]]
+    set domainh [string trim [lindex $ftab(domaineh) 0]]
 
-    set toutnom "$nom.$domaine"
-    set toutheb "$nomh.$domaineh"
+    set fqdn "$name.$domain"
+    set fqdnh "$nameh.$domainh"
 
     #
-    # Vérifier le droit de déclarer un rôle mail
-    # et récupérer les informations sur l'hébergeur éventuel
+    # Check permission to declare a mail role and get informations on
+    # mailbox host.
     #
 
-    set msg [check-role-mail $dbfd $idcor $nom $domaine trr oldtrrh]
-    if {! [string equal $msg ""]} then {
+    set msg [check-role-mail $dbfd $idcor $name $domain trr oldtrrh]
+    if {$msg ne ""} then {
 	d error $msg
     }
 
-    set rrexiste [expr ! [string equal $trr(idrr) ""]]
-    set oldnomh $oldtrrh(nom)
+    set rrexist [expr ! [string equal $trr(idrr) ""]]
+    set oldnameh $oldtrrh(nom)
 
     #
-    # Valider la syntaxe, l'existence et le droit d'accès au nouvel
-    # hébergeur (du moins, si nomh existe, c'est à dire si ce n'est
-    # pas une suppression).
+    # If nameh exists, check syntax, existence and permission of
+    # new mailbox host. In the opposite case, this is a deletion.
     #
 
-    set msg [check-authorized-host $dbfd $idcor $nomh $domaineh newtrrh "host"]
-    if {! [string equal $msg ""]} then {
-	d error "$msg\nAction refusée."
+    set msg [check-authorized-host $dbfd $idcor $nameh $domainh newtrrh "host"]
+    if {$msg ne ""} then {
+	d error $msg
     }
 
     #
-    # Si nomh existe, l'hébergeur fourni par l'utilisateur doit exister.
+    # If nameh exists, mailbox host should exist
     #
 
-    if {! [string equal $nomh ""]} then {
-	if {[string equal $newtrrh(idrr) ""]} then {
-	    d error "Nom d'hébergeur '$toutheb' non valide (n'existe pas)."
+    if {$nameh ne ""} then {
+	if {$newtrrh(idrr) eq ""} then {
+	    d error [format [mc "Mailbox host name '%s' not found"] $fqdnh]
 	}
     }
 
     #
-    # Insertion des données dans la base
+    # Insert data in database
     #
-    # SELON oldnomh ET nomh
-    #   vide     ET vide     => erreur
-    #	vide     ET non-vide => design
-    #	non-vide ET vide     => suppression
-    #   non-vide ET non-vide => modification
+    # SWITCH oldnameh AND nameh
+    #   empty     AND empty     => error
+    #	empty     AND non-empty => design
+    #	non-empty AND empty     => removal
+    #   non-empty AND non-empty => modification
     #
 
-    set videoldnomh [string equal $oldnomh ""]
-    set videnewnomh [string equal $nomh ""]
+    set emptyoldnameh [string equal $oldnameh ""]
+    set emptynewnameh [string equal $nameh ""]
 
     if {! [::pgsql::lock $dbfd {dns.rr dns.role_mail} msg]} then {
-	d error "Transaction impossible\n$msg"
+	d error [format [mc "Unable to lock table (%s)"] $msg]
     }
 
     set lm ""
-    switch "$videoldnomh-$videnewnomh" {
+    switch "$emptyoldnameh-$emptynewnameh" {
 	1-1 {
-	    d error "Le rôle '$toutnom' n'existe pas. Vous ne pouvez pas le supprimer."
+	    d error [format [mc "Mail role '%s' does not exist: you can't delete it"] $fqdn]
 	}
 	1-0 {
 	    #
-	    # Création d'un rôle
+	    # Role creation
 	    #
 	    set action "créée"
 
-	    if {! $rrexiste} then {
+	    if {! $rrexist} then {
 		#
-		# Le nom de "l'adresse de messagerie" n'existe pas encore.
-		# Ajouter le RR correspondant
+		# Name of mail address does not exist. Add appropriate RR.
 		#
-		set msg [add-rr $dbfd $nom $trr(iddom) "" 0 "" 0 -1 \
+		set msg [add-rr $dbfd $name $trr(iddom) "" 0 "" 0 -1 \
 						"" "" "" $idcor trr]
-		if {! [string equal $msg ""]} then {
-		    d error "Insertion de '$toutnom' impossible ($msg)"
+		if {$msg ne ""} then {
+		    d error $msg
 		} 
 	    }
 
 	    #
-	    # Ajouter le rôle dans la base
+	    # Add mail role in database
 	    #
 
 	    set sql "INSERT INTO dns.role_mail (idrr, heberg)
 			    VALUES ($trr(idrr), $newtrrh(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		d error "Impossible d'insérer\n$msg"
+		d error $msg
 	    }
 
 	    #
-	    # Affecter un droit pour l'hébergement des boîtes
-	    # Ce droit est mis par défaut pour le groupe du correspondant
-	    # faisant cette design.
+	    # Assign a permission for mailbox host. This permission
+	    # is placed for the group.
+	    # XXX : this table is not used at this time
 	    #
 
 	    set sql "INSERT INTO dns.dr_mbox (idgrp, idmail)
 				VALUES ($tabuid(idgrp), $trr(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		d error "Impossible d'insérer\n$msg"
+		d error $msg
 	    }
 
-	    set lm "ajout role mail $toutnom -> $toutheb"
+	    set lm "add mail role $fqdn -> $fqdnh"
 	}
 	0-1 {
 	    #
-	    # Suppression d'un rôle et des droits associés
-	    # On sait que le rôle mail préexistait (donc
-	    # que trr(idrr) est non vide).
+	    # Mail role removal. We know that mail role was existing
+	    # (thus, trr(idrr) is not empty).
 	    #
 
 	    set action "supprimée"
@@ -198,25 +179,25 @@ proc main {} {
 		    DELETE FROM dns.role_mail WHERE idrr = $idrr"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		::pgsql::unlock $dbfd "abort" m
-		d error "Impossible de supprimer\n$msg"
+		d error $msg
 	    }
 
 	    #
-	    # Suppression du RR lui-même si possible
+	    # RR removal (if possible)
 	    #
 	    set msg [del-orphaned-rr $dbfd $idrr]
-	    if {! [string equal $msg ""]} then {
+	    if {$msg ne ""} then {
 		::pgsql::unlock $dbfd "abort" m
-		d error "Impossible de supprimer\n$msg"
+		d error $msg
 	    }
 
-	    set lm "suppression du role mail $toutnom"
+	    set lm "delete mail role $fqdn"
 	}
 	0-0 {
 	    #
-	    # Modification d'un rôle. On est sûr que le rôle mail
-	    # préexistait (donc que trr(idrr) est non vide).
-	    # On se borne à changer l'hébergeur.
+	    # Mail role modification. We know that mail role was
+	    # existing (thus, trr(idrr) is not empty). We just
+	    # change mailbox host.
 	    #
 
 	    set action "modifiée"
@@ -226,32 +207,32 @@ proc main {} {
 	    set sql "UPDATE role_mail
 				SET heberg = $newtrrh(idrr)
 				WHERE idrr = $idrr"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    if {$msg ne ""} then {
 		::pgsql::unlock $dbfd "abort" m
-		d error "Impossible de modifier\n$msg"
+		d error $msg
 	    }
-	    set lm "modification du role mail $toutnom -> $toutheb"
+	    set lm "modify mail role $fqdn -> $fqdnh"
 	}
     }
 
     #
-    # Les modifications de la base sont terminées sans erreur.
-    # Procéder à la fin de la transaction.
+    # We did not had any error while modifying database.
+    # Finish transaction.
     #
 
     if {! [::pgsql::unlock $dbfd "commit" msg]} then {
 	::pgsql::unlock $dbfd "abort" m
-	d error "L'insertion a échoué. Abandon.\n$msg"
+	d error $msg
     }
 
-    d writelog "modifrolemail" $lm
+    d writelog "modmailrole" $lm
 
     #
     # End of script: output page and close database
     #
 
     d result $conf(page) [list \
-				[list %NOM% $toutnom] \
+				[list %NOM% $fqdn] \
 				[list %ACTION% $action] \
 			    ]
 }
