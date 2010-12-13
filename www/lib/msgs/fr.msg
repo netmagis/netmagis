@@ -145,6 +145,7 @@
  {Change}	{Modification}
  {Present}	{Présent}
  {Group}	{Groupe}
+ {Log}		{Log}
  {ERROR}	{ERREUR}
 
  {This host holds mail addresses} {Cette machine héberge des adresses de messagerie}
@@ -156,7 +157,7 @@
  {Domain}	{Domaine}
  {IP address}	{Adresse IP}
  {IP addresses}	{Adresses IP}
- {(none)}		{(aucune)}
+ {(none)}	{(aucune)}
  {MAC address}	{Adresse MAC}
  {DHCP profile}	{Profil DHCP}
  {Type}		{Type}
@@ -531,4 +532,32 @@
  {Mailbox host} {Hébergeur des boîtes}
  {Mailbox host name '%s' not found} {Nom d'hébergeur '%s' non trouvé}
  {Mail role '%s' does not exist: you can't delete it} {Le rôle '%s' n'existe pas. Vous ne pouvez pas le supprimer}
+ {created} {créée}
+ {deleted} {supprimée}
+ {modified} {modifiée}
+ {Invalid date or time '%1$s/%2$s'} {Date ou heure invalide '%1$s/%2$s'}
+ {RR count} {Nombre de RR}
+ {Percentage} {Pourcentage}
+ {Total} {Total}
+ {Declared hosts} {Machines déclarées}
+ {Allocated addresses} {Adresses allouées}
+
+ {General} {Général}
+ {Topo module} {Module Topo}
+ {active} {activé}
+ {inactive} {désactivé}
+ {Last full-rancid} {Dernier full-rancid}
+ {(never)} {(jamais)}
+ {Modified equipments} {Équipements modifiés}
+ {Waiting changes} {Changements en attente}
+ {Status} {Statut}
+ {Last processed equipments} {Derniers équipements traités}
+ {Processed} {Traité}
+ {Date sent}	{Date d'envoi}
+ {vlan=%1$s, voip=%2$s, desc=%3$s} {vlan=%1$s, voip=%2$s, desc=%3$s}
+ {Invalid argument '%s'} {Argument '%s' invalide}
+ {Change of '%s' not yet processed} {Modification de '%s' non encore effectuée}
+ {Change log of '%1$s' at %2$s} {Log des modifications de '%1$s' au %2$s}
+ {No message for '%s'} {Aucun message pour '%s'}
+ {Last message for '%1$s' at %2$s} {ernier message pour '%1$s' au %2$s}
 }

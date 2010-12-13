@@ -1,22 +1,17 @@
 #!%TCLSH%
 
-
 #
-# Script pour consulter des stats sur les correspondants
+# Display per user statistics
 #
-# Called by: admin.htgt
+# Called by: admin
 #
 # Parameters (form or url): none
 #
 # History
 #   2002/07/25 : pda      : design
 #   2003/05/13 : pda/jean : use auth base
+#   2010/12/13 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -26,18 +21,11 @@ set conf(err)		erreur.html
 set conf(page)		statcor.html
 
 #
-# Next actions
-# 
-
-# none (no-return page)
-
-#
-# Le tableau servant à présenter le nb de machines par correspondant
-# Colonnes
-#	nom du correspondant
-#	nombre de RR déclarés
-#	pourcentage par rapport au nb de machines
-#	[nb d'adresses allouées au correspondant]
+# Tabular specification
+# Columns
+#	user name
+#	number of declared RR by this user
+#	percent of total number of hosts
 #
 
 set conf(tabrrcor) {
@@ -47,62 +35,59 @@ set conf(tabrrcor) {
 	botbar {yes}
 	align {right}
     }
-    motif {Titre} {
+    pattern Title {
 	align {center}
 	title {yes}
 	topbar {yes}
 	chars {bold}
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
-    motif {Normal} {
+    pattern Normal {
 	title {yes}
 	vbar {yes}
-	colonne {
+	column {
 	    align {left}
 	}
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
-    motif {Total} {
+    pattern Total {
 	title {yes}
 	chars {bold}
 	vbar {yes}
-	colonne {
+	column {
 	    align {left}
 	}
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
 }
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
 
-
 ##############################################################################
-# Comparaison de deux éléments de liste (pour les tris)
+# Utility functions
 ##############################################################################
 
-proc comparer {e1 e2} {
+proc compare {e1 e2} {
     set nb1 [lindex $e1 0]
     set nb2 [lindex $e2 0]
     if {$nb1 < $nb2} then {
@@ -129,8 +114,10 @@ proc main {} {
     d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
 
     #
-    # Calcule les stats, et former une liste {nb nomprenom}
+    # Compute statistics, and create a list {nb username}
     #
+
+    set u [::webapp::authuser create %AUTO%]
 
     set sql "SELECT c.login, count(*) AS nb
 		    FROM dns.rr r, global.corresp c
@@ -138,52 +125,53 @@ proc main {} {
 		    GROUP BY c.login
 		"
     set total 0
-    set liste {}
-
-    set u [::webapp::authuser create %AUTO%]
+    set list {}
 
     pg_select $dbfd $sql tab {
 	catch {unset tabuid}
 
-	if {[catch {set n [$ah getuser $tab(login) $u]} m]} then {
-	    return "Problème dans la base d'authentification ($m)"
+	if {[catch {set n [$ah getuser $tab(login) $u]} msg]} then {
+	    return [format [mc "Authentication base problem: %s"] $msg]
 	}
 	
 	if {$n == 1} then {
-	    set nomprenom "[$u get nom] [$u get prenom]"
+	    set name "[$u get nom] [$u get prenom]"
 	} else {
-	    set nomprenom $tab(login)
+	    set name $tab(login)
 	}
 
-	lappend liste [list $tab(nb) $nomprenom]
+	lappend list [list $tab(nb) $name]
 	incr total $tab(nb)
     }
 
     $u destroy
 
     #
-    # Trier la liste par nb, puis par nomprénom
+    # Sort by number of host (primary), then by name (secondary)
     #
 
-    set liste [lsort -command comparer $liste]
+    set list [lsort -command compare $list]
 
     #
-    # Présenter les données dans un zoli tableau
+    # Display data in a tabular form
     #
 
-    set donnees {}
-    lappend donnees {Total Correspondant {Nombre de RR} {Pourcentage}}
+    set lines {}
+    lappend lines [list "Total" \
+			[mc "USer"] \
+			[mc "RR count"] \
+			[mc "Percentage"] \
+		    ]
     set ptotal 0.0
-    foreach e $liste {
-	set nb    [lindex $e 0]
-	set nom   [lindex $e 1]
-	set pcent [expr $nb * 100.0 / $total]
-	lappend donnees [list Normal $nom $nb [format "%5.2f" $pcent]]
+    foreach e $list {
+	lassign $e name nb
+	set pcent [expr "$nb*100.0/$total"]
+	lappend lines [list "Normal" $name $nb [format "%5.2f" $pcent]]
 	set ptotal [expr $ptotal + $pcent]
     }
-    lappend donnees [list Total Total $total [format "%5.2f" $ptotal]]
+    lappend lines [list "Total" [mc "Total"] $total [format "%5.2f" $ptotal]]
 
-    set nbrrcor [::arrgen::output "html" $conf(tabrrcor) $donnees]
+    set nbrrcor [::arrgen::output "html" $conf(tabrrcor) $lines]
 
     #
     # End of script: output page and close database

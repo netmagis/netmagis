@@ -57,18 +57,18 @@ set conf(tableau) {
 	chars {12 bold}
 	align {center}
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
     pattern Domain {
 	chars {12 bold}
 	align {center}
 	vbar {yes}
-	colonne {
+	column {
 	    multicolumn {3}
 	}
 	vbar {yes}
@@ -76,33 +76,33 @@ set conf(tableau) {
     pattern NoMX {
 	align {left}
 	vbar {yes}
-	colonne {
+	column {
 	    multicolumn {3}
 	}
 	vbar {yes}
     }
     pattern MX {
 	vbar {yes}
-	colonne {
+	column {
 	    botbar {no}
 	}
 	vbar {yes}
-	colonne {
+	column {
 	    align {right}
 	}
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
     pattern LastMX {
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne {
+	column {
 	    align {right}
 	}
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
 }

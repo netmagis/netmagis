@@ -2,7 +2,6 @@
 
 #
 # Script to present DHCP parameters for a network
-# Script de présentation des paramètres DHCP d'un réseau
 #
 # Called by: dhcp or dchpsel
 #

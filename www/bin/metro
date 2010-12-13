@@ -1,30 +1,25 @@
 #!%TCLSH%
 
 #
-# Script pour afficher la page contenant le graphe et le formulaire
-# d'actualisation des dates
+# Display graph and form to update dates
 #
-# Called by: /applis/dns/bin/eq
+# Called by: eq
 #
 # Parameters (form or url):
-#   - id : id du point de collecte sélectionné
-#   - hdebut : heure de début
-#   - jdebut : date de début
-#   - hfin : heure de fin
-#   - jfin : date de fin
+#   - id : selected sensor id, or multiple ids joined either by "+" or by "|"
+#   - hdebut : start time
+#   - jdebut : start date
+#   - hfin : end time
+#   - jfin : end date
 #
 # History
 #   2006/05/24 : pda/jean/boggia : design
-#   2006/08/10 : pda/boggia      : ajout du paramètre uti
-#   2007/01/12 : pda             : mutualisation initialisation
-#   2008/07/30 : pda             : généralisation aux graphes wifi
-#   2008/07/30 : pda             : plus de souplesse dans les dates/heures
+#   2006/08/10 : pda/boggia      : add ttl parameter
+#   2007/01/12 : pda             : common initialization
+#   2008/07/30 : pda             : generalize to wifi graphs
+#   2008/07/30 : pda             : more flexible date/hour analysis
+#   2010/12/13 : pda             : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -38,7 +33,6 @@ set conf(page)		metro.html
 # 
 
 set conf(nextmetro)	"%HOMEURL%/bin/metro"
-
 
 #
 # Script parameters
@@ -56,15 +50,12 @@ set conf(form)	{
 set conf(urlgraph)	"%HOMEURL%/bin/graphe"
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
-
 
 ##############################################################################
 # Main procedure
@@ -89,87 +80,87 @@ proc main {} {
     }
 
     #
-    # valider l'id du graphe en fonction des droits
+    # Check graph id according to user's rights
     #
 
     set msg [check-metro-id $dbfd $id tabuid titre]
-    if {! [string equal $msg ""]} then {
+    if {$msg ne ""} then {
 	d error $msg
     }
 
     #
-    # Valider l'intervalle de temps : début
+    # Check start time and date
     #
 
-    set aujourdhui [clock format [clock seconds] -format "%d/%m/%Y"]
+    set today [clock format [clock seconds] -format "%d/%m/%Y"]
 
-    set debut ""
+    set start ""
     switch -regexp -- "$jdebut-$hdebut" {
 	{^[0-9/]+-[0-9:]+$} {
-	    # spéc exacte
-	    set debut [decode-date $jdebut $hdebut]
+	    # exact specification
+	    set start [decode-date $jdebut $hdebut]
 	}
 	{^-[0-9:]+$} {
-	    # aujourd'hui à x heures
-	    set debut [decode-date $aujourdhui $hdebut]
+	    # today at x o'clock
+	    set start [decode-date $today $hdebut]
 	}
 	{^[0-9/]+-$} {
-	    # tel jour à 0 heure
-	    set debut [decode-date $jdebut "00:00:00"]
+	    # day x at 00:00
+	    set start [decode-date $jdebut "00:00:00"]
 	}
 	{^-$} {
-	    # il y a 36 heures
-	    set debut "-1 day -12 hours"
+	    # 36 hours ago
+	    set start "-1 day -12 hours"
 	}
     }
-    if {[string equal $debut ""]} then {
-	d error "Date ou heure de début incorrecte"
+    if {$start eq ""} then {
+	d error [format [mc {Invalid date or time '%1$s/%2$s'}] $jdebut $hdebut]
     }
-    set debut [clock scan $debut]
+    set start [clock scan $start]
 
     #
-    # Valider l'intervalle de temps : fin
+    # Check end time and date
     #
 
-    set fin ""
+    set end ""
     switch -regexp -- "$jfin-$hfin" {
 	{^[0-9/]+-[0-9:]+$} {
-	    # spéc exacte
-	    set fin [decode-date $jfin $hfin]
+	    # exact specification
+	    set end [decode-date $jfin $hfin]
 	}
 	{^-[0-9:]+$} {
-	    # aujourd'hui à x heures
-	    set fin [decode-date $aujourdhui $hfin]
+	    # today at x o'clock
+	    set end [decode-date $today $hfin]
 	}
 	{^[0-9/]+-$} {
-	    # tel jour à minuit
-	    set fin [decode-date $jfin "23:59:59"]
+	    # day x at midnight
+	    set end [decode-date $jfin "23:59:59"]
 	}
 	{^-$} {
-	    # maintenant
-	    set fin "now"
+	    # just now
+	    set end "now"
 	}
     }
-    if {[string equal $fin ""]} then {
-	d error "Date ou heure de fin incorrecte"
+    if {$end eq ""} then {
+	d error [format [mc {Invalid date or time '%1$s/%2$s'}] $jfin $hfin]
     }
-    set fin [clock scan $fin]
+    set end [clock scan $end]
 
     #
-    # Remettre l'id en forme
+    # Display id
     #
 
     set hid [::webapp::html-string $id]
 
     #
-    # Préparer les URL
+    # Prepare URL
     #
 
     d urlset "%URLMETRO%" $conf(nextmetro) {}
     d urlset "%URLGRAPH%" $conf(urlgraph) [list \
 						[list "id" $id] \
-						[list "debut" $debut] \
-						[list "fin" $fin] \
+						[list "debut" $start] \
+						[list "fin" $end] \
 					    ]
 
     #

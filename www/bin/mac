@@ -568,7 +568,7 @@ proc gen-mac {dbfd mac} {
 # Display a menu of MAC-Port-Vlan for an equipment
 #
 # Input:
-#  - eq : nom d'équipement
+#  - eq : equipment name
 #
 # Output:
 #  - return value : HTML code

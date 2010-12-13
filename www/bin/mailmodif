@@ -126,7 +126,7 @@ proc main {} {
 	    #
 	    # Role creation
 	    #
-	    set action "créée"
+	    set action [mc "created"]
 
 	    if {! $rrexist} then {
 		#
@@ -171,7 +171,7 @@ proc main {} {
 	    # (thus, trr(idrr) is not empty).
 	    #
 
-	    set action "supprimée"
+	    set action [mc "deleted"]
 
 	    set idrr $trr(idrr)
 
@@ -200,7 +200,7 @@ proc main {} {
 	    # change mailbox host.
 	    #
 
-	    set action "modifiée"
+	    set action [mc "modified"]
 
 	    set idrr $trr(idrr)
 

@@ -872,7 +872,7 @@ proc main {} {
 
 	    d result $conf(pagen) [list \
 				    [list %MSGSTA% $msgsta] \
-				    [list %OBJETS% "équipements"] \
+				    [list %OBJETS% [mc "equipments"]] \
 				    [list %LISTE%  $liste] \
 				    [list %EQ%     $eq] \
 				    [list %VLAN%   ""] \
@@ -900,7 +900,7 @@ proc main {} {
 
 	    d result $conf(pagen) [list \
 				    [list %MSGSTA% $msgsta] \
-				    [list %OBJETS% "équipements"] \
+				    [list %OBJETS% [mc "equipments"]] \
 				    [list %LISTE%  $html] \
 				    [list %EQ%     $eq] \
 				    [list %VLAN%   ""] \

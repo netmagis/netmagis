@@ -58,20 +58,20 @@ set conf(tableau) {
 	chars {bold}
 	align {center}
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
     pattern Normal {
 	title {yes}
 	topbar {yes}
 	vbar {yes}
-	colonne {
+	column {
 	    format {raw}
 	}
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
 }

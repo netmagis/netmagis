@@ -46,21 +46,21 @@ set conf(tableau) {
 	botbar {yes}
 	align {left}
     }
-    motif {Title} {
+    pattern Title {
 	title {yes}
 	topbar {yes}
 	chars {bold}
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
-    motif {Normal} {
+    pattern Normal {
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
 }

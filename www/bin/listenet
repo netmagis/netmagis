@@ -73,36 +73,36 @@ set conf(tableau) {
 	chars {12 bold}
 	align {center}
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
     pattern Normal {
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
-	colonne { }
+	column { }
 	vbar {yes}
     }
 }

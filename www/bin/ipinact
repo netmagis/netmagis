@@ -54,24 +54,24 @@ set conf(tableau) {
         topbar {yes}
         chars {bold}
         vbar {yes}
-        colonne { }
+        column { }
         vbar {yes}
-        colonne { }
+        column { }
         vbar {yes}
-        colonne { }
+        column { }
         vbar {yes}
     }
     pattern Normal {
         vbar {yes}
-        colonne {
+        column {
             format {raw}
 	}
         vbar {yes}
-        colonne {
+        column {
             format {raw}
 	}
         vbar {yes}
-        colonne { }
+        column { }
     }
 }
 
