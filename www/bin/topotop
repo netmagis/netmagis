@@ -395,7 +395,7 @@ proc topotop-all {dbfd datefmt arg} {
     }
     d urlset "" $conf(next) [list {key status}]
     set url [d urlget ""]
-    set statut [::webapp::helem "a" "Statut" "href" $url]
+    set statut [::webapp::helem "a" [mc "Status"] "href" $url]
     set ls {}
     set i 0
     foreach s $status {

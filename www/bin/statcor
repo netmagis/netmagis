@@ -158,13 +158,13 @@ proc main {} {
 
     set lines {}
     lappend lines [list "Total" \
-			[mc "USer"] \
+			[mc "User"] \
 			[mc "RR count"] \
 			[mc "Percentage"] \
 		    ]
     set ptotal 0.0
     foreach e $list {
-	lassign $e name nb
+	lassign $e nb name
 	set pcent [expr "$nb*100.0/$total"]
 	lappend lines [list "Normal" $name $nb [format "%5.2f" $pcent]]
 	set ptotal [expr $ptotal + $pcent]
