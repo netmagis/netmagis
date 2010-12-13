@@ -649,6 +649,60 @@ proc keep-state-mail {ev msg} {
 ##############################################################################
 
 #
+# Generate a new router.db rancid file
+#
+# Entrée :
+#   - none
+# Sortie : 
+#   - valeur de retour : empty string or error message
+#
+# Historique : 
+#   2010/12/13 : pda/jean : design
+#
+
+proc update-routerdb {} {
+    global conf
+
+    set sql "SELECT * FROM topo.modeq
+		    WHERE eq = '_routerdb' AND processed = 0"
+    set found 0
+    if {! [myselect $sql tab { set found 1 }]} then {
+	return "Cannot read equipment modification from database"
+    }
+
+    if {$found} then {
+	set sql "SELECT e.eq, t.type, e.up
+			FROM topo.eq e, topo.eqtype t
+			WHERE e.idtype = t.idtype"
+	set leq {}
+	if {! [myselect $sql t { lappend leq [list $t(eq) $t(type) $t(up)] }]} then {
+	    return "Cannot read equipment list from database"
+	}
+
+	set new "$conf(routerdb).new"
+	if {[catch {set fd [open $new "w"]} msg]} then {
+	    return "Cannot create $new ($msg)"
+	}
+	foreach e $leq {
+	    lassign $e eq type up
+	    if {$up} then { set up "up" } else { set up "down" }
+	    puts $fd "$eq:$type:$up"
+	}
+	if {[catch {close $fd} msg]} then {
+	    return "Cannot close $new ($msg)"
+	}
+	if {[catch {file rename -force $new $conf(routerdb)} msg]} then {
+	    return "Cannot move $new to $conf(routerdb) ($msg)"
+	}
+	set sql "UPDATE topo.modeq SET processed = 1 WHERE eq = '_routerdb'"
+	if {! [myexec $sql]} then {
+	    return "Cannot update equipment modification for _routerdb"
+	}
+    }
+    return ""
+}
+
+#
 # Détermine si un passage complet de rancid est nécessaire
 #
 # Entrée :
@@ -667,6 +721,12 @@ proc keep-state-mail {ev msg} {
 proc full-rancid-needed {_routerdbmod} {
     global conf
     upvar $_routerdbmod routerdbmod
+
+    set msg [update-routerdb]
+    if {$msg ne ""} then {
+	keep-state-mail "router.db" $msg
+	return -1
+    }
 
     set sql "SELECT topo.lastrun.date IS NULL
 		    OR (

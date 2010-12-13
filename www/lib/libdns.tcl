@@ -411,6 +411,8 @@ snit::type ::dnscontext {
 			    {modzone6 always}
 			    {moddhcpprofil always}
 			    {modvlan always}
+			    {modeqtype always}
+			    {modeq always}
 			    {admgrpsel always}
 			    {admgenliste always}
 			    {admparliste always}
@@ -436,6 +438,8 @@ snit::type ::dnscontext {
 	modzone6	{%HOMEURL%/bin/admrefliste?type=zone6 {Modify reverse IPv6 zones}}
 	moddhcpprofil	{%HOMEURL%/bin/admrefliste?type=dhcpprofil {Modify DHCP profiles}}
 	modvlan		{%HOMEURL%/bin/admrefliste?type=vlan {Modify Vlans}}
+	modeqtype	{%HOMEURL%/bin/admrefliste?type=eqtype {Modify equipment types}}
+	modeq		{%HOMEURL%/bin/admrefliste?type=eq {Modify equipments}}
 	admgrpsel	{%HOMEURL%/bin/admgrpsel {Modify users and groups}}
 	admgenliste	{%HOMEURL%/bin/admgenliste {Force zone generation}}
 	admparliste	{%HOMEURL%/bin/admparliste {Application parameters}}
@@ -1826,7 +1830,7 @@ proc read-user {dbfd login _tabuid _msg} {
     #
 
     # Read authorized CIDR
-    set tabuid(reseaux) [allowed-networks $dbfd $tabuid(idgrp) "dhcp"]
+    set tabuid(reseaux) [allowed-networks $dbfd $tabuid(idgrp) "consult"]
 
     # Read regexp to allow or deny access to equipments
     set tabuid(eqr) [read-authorized-eq $dbfd 0 $tabuid(idgrp)]

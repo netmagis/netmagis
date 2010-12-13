@@ -208,9 +208,9 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
 	    dhcpprofil {
 		# valeur numérique ou vide
 		if {[string equal $v ""] || $v == 0} then {
-		    lappend modif "$c = NULL"
+		    lappend modif "iddhcpprofil = NULL"
 		} else {
-		    lappend modif "$c = $v"
+		    lappend modif "iddhcpprofil = $v"
 		}
 	    }
 	    ttl {

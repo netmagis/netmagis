@@ -71,6 +71,16 @@ ALTER SEQUENCE seq_zone          SET SCHEMA dns ;
 GRANT SELECT ON dns.rr, dns.rr_ip, dns.domaine TO detecteq ;
 
 ------------------------------------------------------------------------------
+-- Group permission to access the MAC module
+------------------------------------------------------------------------------
+
+ALTER TABLE global.groupe
+    ADD COLUMN droitmac INT DEFAULT 0
+    ;
+
+UPDATE global.groupe SET droitmac = 0 ;
+
+------------------------------------------------------------------------------
 -- Modified equipement spool
 ------------------------------------------------------------------------------
 
@@ -194,6 +204,97 @@ CREATE TABLE topo.sensor (
     PRIMARY KEY (id)
 ) ;
 
+
+------------------------------------------------------------------------------
+-- Topod file monitor
+------------------------------------------------------------------------------
+
+CREATE TABLE topo.filemonitor (
+	path	TEXT,		-- path to file or directory
+	date	TIMESTAMP (0)	-- last modification date
+			    WITHOUT TIME ZONE
+			    DEFAULT CURRENT_TIMESTAMP,
+
+	PRIMARY KEY (path)
+) ;
+
+------------------------------------------------------------------------------
+-- Vlan table
+------------------------------------------------------------------------------
+
+CREATE TABLE topo.vlan (
+	vlanid	INT,		-- 1..4095
+	descr	TEXT,		-- description
+	voip	INT DEFAULT 0,	-- 1 if VoIP vlan, 0 if standard vlan
+
+	PRIMARY KEY (vlanid)
+) ;
+
+COPY topo.vlan (vlanid, descr) FROM stdin;
+1	default
+\.
+
+CREATE OR REPLACE FUNCTION modif_vlan () RETURNS trigger AS $$
+    BEGIN
+	INSERT INTO topo.modeq (eq) VALUES ('_vlan') ;
+	RETURN NEW ;
+    END ;
+    $$ LANGUAGE 'plpgsql' ;
+
+CREATE TRIGGER tr_mod_vlan
+    AFTER INSERT OR UPDATE OR DELETE
+    ON topo.vlan
+    FOR EACH ROW
+    EXECUTE PROCEDURE modif_vlan () ;
+
+------------------------------------------------------------------------------
+-- Equipment types and equipment list to create rancid router.db file
+------------------------------------------------------------------------------
+
+CREATE SEQUENCE topo.seq_eqtype START 1 ;
+
+CREATE TABLE topo.eqtype (
+    idtype	INTEGER		-- type id
+	DEFAULT NEXTVAL ('topo.seq_eqtype'),
+    type	TEXT,		-- cisco, hp, juniper, etc.
+
+    UNIQUE (type),
+    PRIMARY KEY (idtype)
+) ;
+
+CREATE SEQUENCE topo.seq_eq START 1 ;
+
+CREATE TABLE topo.eq (
+    ideq	INTEGER		-- equipment id
+	DEFAULT NEXTVAL ('topo.seq_eq'),
+    eq		TEXT,		-- fqdn
+    idtype	INTEGER,
+    up		INTEGER,	-- 1 : up, 0 : 0
+
+    FOREIGN KEY (idtype) REFERENCES topo.eqtype (idtype),
+    UNIQUE (eq),
+    PRIMARY KEY (ideq)
+) ;
+
+COPY topo.eqtype (type) FROM stdin;
+cisco
+juniper
+hp
+\.
+
+CREATE OR REPLACE FUNCTION modif_routerdb () RETURNS trigger AS $$
+    BEGIN
+	INSERT INTO topo.modeq (eq) VALUES ('_routerdb') ;
+	RETURN NEW ;
+    END ;
+    $$ LANGUAGE 'plpgsql' ;
+
+CREATE TRIGGER tr_mod_eq
+    AFTER INSERT OR UPDATE OR DELETE
+    ON topo.eq
+    FOR EACH ROW
+    EXECUTE PROCEDURE modif_routerdb () ;
+
 ------------------------------------------------------------------------------
 -- Authorizations
 ------------------------------------------------------------------------------
@@ -203,7 +304,8 @@ GRANT INSERT ON topo.modeq TO detecteq ;
 
 GRANT ALL
     ON topo.modeq, topo.ifchanges, topo.lastrun, topo.keepstate, topo.dr_eq,
-	topo.sensor
+	topo.sensor, topo.filemonitor, topo.vlan,
+	topo.seq_eqtype, topo.seq_eq, topo.eqtype, topo.eq
     TO dns, pda, jean ;
 
 ------------------------------------------------------------------------------
@@ -483,5 +585,3 @@ CREATE OR REPLACE FUNCTION valide_ip_grp (INET, INTEGER)
 	    ) ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
-
-

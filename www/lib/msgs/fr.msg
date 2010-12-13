@@ -40,6 +40,8 @@
  {Modify reverse IPv6 zones} {Modif zones IPv6}
  {Modify DHCP profiles} {Modif profils DHCP}
  {Modify Vlans} {Modif Vlans}
+ {Modify equipment types} {Modif types d'équipement}
+ {Modify equipments} {Modif équipements}
  {Modify users and groups} {Modif groupes}
  {Force zone generation} {Forcer zones}
  {Application parameters} {Modif paramètres}
@@ -197,6 +199,7 @@
  {description} {description}
  {Declared addresses (IPv4+IPv6): %s} {Adresses déclarées (IPv4+IPv6) : %s}
  {List of declared addresses} {Liste des adresses déclarées}
+ {Type}		{Type}
 
  {Invalid FQDN '%s'}	{FQDN '%s' invalide}
  {Invalid domain '%s'}	{Domaine '%s' invalide}
@@ -372,6 +375,8 @@
  {Zone management} {Gestion des zones}
  {DHCP profile management} {Gestion des profils DHCP}
  {Vlan management} {Gestion des Vlans}
+ {Equipment type management}
+ {Equipment management}
  {return to organization modification} {revenir à la modification des organismes}
  {return to community modification} {revenir à la modification des communautés}
  {return to host information modification} {revenir à la modification des types de machines}
@@ -380,6 +385,11 @@
  {return to zone modification} {revenir à la modification des zones}
  {return to DHCP profile modification} {revenir à la modification des profils DHCP}
  {return to Vlan modification} {revenir à la modification des Vlans}
+ {return to equipment type modification} {revenir à la modification des types d'équipement}
+ {return to equipment modification} {revenir à la modification des équipements}
+ {Up/Down} {Actif/Inactif}
+ {Up} {Actif}
+ {Down} {Inactif}
  {Relay insertion failed: %s} {Insertion du relais impossible : %s}
  {Old relay deletion failed: %s} {Suppression des anciens relais impossible : %s}
  {Mail relays deleted} {Relais de messagerie supprimés}

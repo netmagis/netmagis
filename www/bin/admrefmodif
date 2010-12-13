@@ -7,7 +7,7 @@
 #
 # Parameters (form or url):
 #   - type : etabl, commu, hinfo, reseau, domaine, zone, zone4, zone6,
-#		groupe
+#		vlan, eq, eqtype
 #   - parameters specific to types
 #
 # History
@@ -27,6 +27,7 @@
 #   2010/12/09 : pda      : i18n
 #   2010/12/09 : pda      : remove groups
 #   2010/12/09 : pda      : rewrite with conf() array
+#   2010/12/13 : pda/jean : add eq and eqtype tables
 #
 
 #
@@ -142,6 +143,22 @@ set conf(form-vlan) {
 	{voipn[0-9]+		0 9999}
 }
 
+set conf(form-eqtype) {
+	{type[0-9]+		0 9999}
+
+	{typen[0-9]+		1 9999}
+}
+
+set conf(form-eq) {
+	{eq[0-9]+		0 9999}
+	{idtype[0-9]+		0 9999}
+	{up[0-9]+		0 9999}
+
+	{eqn[0-9]+		1 9999}
+	{idtypen[0-9]+		0 9999}
+	{upn[0-9]+		0 9999}
+}
+
 set conf(etabl:return) "Return to organization modification"
 set conf(etabl:form)		form-etabl
 set conf(etabl:spec)		{nom}
@@ -202,6 +219,18 @@ set conf(vlan:form)		form-vlan
 set conf(vlan:spec)		{vlanid descr voip}
 set conf(vlan:idnum)		vlanid
 set conf(vlan:table)		topo.vlan
+
+set conf(eqtype:return) "Return to equipment type modification"
+set conf(eqtype:form)		form-eqtype
+set conf(eqtype:spec)		{type}
+set conf(eqtype:idnum)		idtype
+set conf(eqtype:table)		topo.eqtype
+
+set conf(eq:return) "Return to equipment modification"
+set conf(eq:form)		form-eq
+set conf(eq:spec)		{eq idtype up}
+set conf(eq:idnum)		ideq
+set conf(eq:table)		topo.eq
 
 #
 # WebDNS general library
