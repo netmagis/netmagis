@@ -352,6 +352,8 @@ snit::type ::dnscontext {
 			    {modzone6 always}
 			    {moddhcpprofil always}
 			    {modvlan always}
+			    {modeqtype always}
+			    {modeq always}
 			    {admgrpsel always}
 			    {admgenliste always}
 			    {admparliste always}
@@ -377,6 +379,8 @@ snit::type ::dnscontext {
 	modzone6	{%HOMEURL%/bin/admrefliste?type=zone6 fr {Modif zones IPv6} en {Modify reverse IPv6 zones}}
 	moddhcpprofil	{%HOMEURL%/bin/admrefliste?type=dhcpprofil fr {Modif profils DHCP} en {Modify DHCP profiles}}
 	modvlan		{%HOMEURL%/bin/admrefliste?type=vlan fr {Modif Vlans} en {Modify Vlans}}
+	modeqtype	{%HOMEURL%/bin/admrefliste?type=eqtype fr {Modif types d'éq} en {Modify equipment types}}
+	modeq		{%HOMEURL%/bin/admrefliste?type=eq fr {Modif équipements} en {Modify equipments}}
 	admgrpsel	{%HOMEURL%/bin/admgrpsel fr {Modif groupes} en {Modify users and groups}}
 	admgenliste	{%HOMEURL%/bin/admgenliste fr {Forcer zones} en {Force zone generation}}
 	admparliste	{%HOMEURL%/bin/admparliste fr {Modif paramètres} en {Application parameters}}
@@ -1219,7 +1223,7 @@ proc lire-correspondant {dbfd login _tabuid} {
     # Lire les CIDR des réseaux autorisés (fonction de la libdns)
     #
 
-    set tabuid(reseaux) [liste-reseaux-autorises $dbfd $tabuid(idgrp) "dhcp"]
+    set tabuid(reseaux) [liste-reseaux-autorises $dbfd $tabuid(idgrp) "consult"]
 
     #
     # Lire les équipements

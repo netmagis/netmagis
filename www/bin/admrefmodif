@@ -150,6 +150,22 @@ set conf(form-vlan) {
 	{voipn[0-9]+		0 9999}
 }
 
+set conf(form-eqtype) {
+	{type[0-9]+		0 9999}
+
+	{typen[0-9]+		1 9999}
+}
+
+set conf(form-eq) {
+	{eq[0-9]+		0 9999}
+	{idtype[0-9]+		0 9999}
+	{up[0-9]+		0 9999}
+
+	{eqn[0-9]+		1 9999}
+	{idtypen[0-9]+		0 9999}
+	{upn[0-9]+		0 9999}
+}
+
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
 #
@@ -292,6 +308,26 @@ proc main {} {
 	    }
 	    set idnum vlanid
 	    set table topo.vlan
+	}
+	eqtype {
+	    set typeenclair "types d'équipement"
+	    set formaux form-eqtype
+	    set spec {
+		{type}
+	    }
+	    set idnum idtype
+	    set table topo.eqtype
+	}
+	eq {
+	    set typeenclair "équipements"
+	    set formaux form-eq
+	    set spec {
+		{eq}
+		{idtype}
+		{up}
+	    }
+	    set idnum ideq
+	    set table topo.eq
 	}
 	default	{
 	    d error "Type de modification invalide ($type)"

@@ -1,0 +1,44 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    WebDNS - Modification des types d'équipements
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %BANDEAU%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Gestion des types d'équipements}
+
+    \titre {2} {\ancre {type} {Type}}
+
+	Type d'équipement tel que reconnu par rancid
+	(cf \lien {router.db(5)} {http://www.shrubbery.net/rancid/man/router.db.5.html}).
+
+	Exemple~:
+	    \retrait {\verbatim {juniper}}
+
+	Note~: ajouter des types d'équipements non reconnus
+	par Rancid peut donner des effets indésirables...
+}
+
+}

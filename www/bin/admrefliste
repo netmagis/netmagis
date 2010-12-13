@@ -8,7 +8,7 @@
 #
 # Paramètres (formulaire ou URL) :
 #   - type : etabl, commu, hinfo, reseau, domaine, zone, zone4, zone6,
-#	groupe
+#	groupe, eq, eqtype
 #
 # Historique
 #   2001/11/01 : pda      : création
@@ -24,6 +24,7 @@
 #   2004/08/06 : pda/jean : ajout flag dhcp par réseau
 #   2005/04/08 : pda/jean : ajout table dhcpprofil
 #   2010/11/16 : pda/jean : ajout table vlan
+#   2010/12/13 : pda/jean : add eq and eqtype tables
 #
 
 set conf(homeurl)	%HOMEURL%
@@ -288,6 +289,39 @@ proc main {} {
 		}
 	    set sql "SELECT * FROM topo.vlan ORDER BY vlanid ASC"
 	    set id vlanid
+	}
+	eqtype {
+	    set titrepage "Types d'équipements"
+	    set largeurs {100}
+	    set titre [prepare-titres {
+					{type		{Type}}
+				    } $urlaide]
+	    set spec {
+		    {type		{string 20}		{}}
+		}
+	    set sql "SELECT * FROM topo.eqtype ORDER BY type ASC"
+	    set id idtype
+	}
+	eq {
+	    set titrepage "Équipements"
+	    set largeurs {60 20 20}
+	    set titre [prepare-titres {
+					{eq		{Équipement}}
+					{idtype		{Type}}
+					{up		{Up/Down}}
+				    } $urlaide]
+	    set menutype [::pgsql::getcols $dbfd topo.eqtype "" "type ASC" \
+						{idtype type}]
+	    set menuup [list [list 1 "Up"] [list 0 "Down"]]
+	    set spec {
+		    {eq			{string 40}		{}}
+		    {idtype		{menu {%MENUTYPE%}}	{}}
+		    {up			{menu {%MENUUP%}}	{}}
+		}
+	    regsub -- "%MENUTYPE%" $spec "$menutype" spec
+	    regsub -- "%MENUUP%" $spec "$menuup" spec
+	    set sql "SELECT * FROM topo.eq ORDER BY eq ASC"
+	    set id ideq
 	}
 	default	{
 	    d error "Type d'édition invalide ($type)"
