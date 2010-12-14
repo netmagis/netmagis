@@ -19,13 +19,13 @@ case "$1" in
 		/bin/kill `ps ax | grep $topod_program | grep -v "grep" | cut -c1-5`
 		;;
 	restart)
-		echo "Restart rancid-topo"
+		echo "Restart topod"
 		/bin/kill `ps ax | grep $topod_program | grep -v "grep" | cut -c1-5`
 		su rancid -c "$topod_program &"
 		;;
 	debug)
 		shift
-		echo "Reload rancid-topo with level $1"
+		echo "Reload topod with level $1"
 		/bin/kill `ps ax | grep $topod_program | grep -v "grep" | cut -c1-5`
 		su rancid -c "$topod_program -v $1 &"
 		;;
