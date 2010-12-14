@@ -789,8 +789,8 @@ snit::type ::dnscontext {
 	    set locale $l
 	}
 
-	mclocale $locale
-	mcload %TRANSMSGS%
+	uplevel #0 mclocale $locale
+	uplevel #0 mcload %TRANSMSGS%
 
 	#
 	# Get next action
