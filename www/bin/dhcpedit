@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to present DHCP parameters for a network
+# Display DHCP parameters for a network
 #
 # Called by: dhcp or dchpsel
 #

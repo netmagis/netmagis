@@ -182,7 +182,7 @@ proc main {} {
 	    d error $msg
 	}
 	append selection "AND (r.adr4 <<= '$cidr' OR r.adr6 <<= '$cidr')"
-	lappend txtsel [format [mc "CIDR matches '%s'"] $cidr]
+	lappend txtsel [mc "CIDR matches '%s'" $cidr]
     }
 
     # organization list
@@ -194,7 +194,7 @@ proc main {} {
 	}
 	foreach idetabl $ftab(etabl) {
 	    if {! [info exists te($idetabl)]} then {
-		d error [format [mc "Organization id '%s' not found"] $idetabl]
+		d error [mc "Organization id '%s' not found" $idetabl]
 	    }
 	    lappend lsqletabl "r.idetabl = $idetabl"
 	    lappend ltxtetabl "$te($idetabl)"
@@ -203,7 +203,7 @@ proc main {} {
 	    set l [join $lsqletabl " OR "]
 	    append selection " AND ($l)"
 	    set t [join $ltxtetabl [mc " or "]]
-	    lappend txtsel [format [mc "organization = %s"] $t]
+	    lappend txtsel [mc "organization = %s" $t]
 	}
     }
 
@@ -215,7 +215,7 @@ proc main {} {
 	}
 	foreach idcommu $ftab(commu) {
 	    if {! [info exists tc($idcommu)]} then {
-		d error [format [mc "Community id '%s' not found"] $idcommu]
+		d error [mc "Community id '%s' not found" $idcommu]
 	    }
 	    lappend lsqlcommu "r.idcommu = $idcommu"
 	    lappend ltxtcommu "$tc($idcommu)"
@@ -224,7 +224,7 @@ proc main {} {
 	    set l [join $lsqlcommu " OR "]
 	    append selection " AND ($l)"
 	    set t [join $ltxtcommu [mc " or "]]
-	    lappend txtsel [format [mc "community = %s"] $t]
+	    lappend txtsel [mc "community = %s" $t]
 	}
     }
 
@@ -285,8 +285,8 @@ proc main {} {
 		}
 		append txt1 [::webapp::helem "ul" $tmp]
 	    }
-	    set txt2 [format [mc {and sorted by '%1$s' and by '%2$s'}] $txttri1 $txttri2]
-	    set txt3 [format [mc "%s selected network(s)."] $nnet]
+	    set txt2 [mc {and sorted by '%1$s' and by '%2$s'} $txttri1 $txttri2]
+	    set txt3 [mc "%s selected network(s)." $nnet]
 	    set txt "$txt1 $txt2: $txt3"
 
 	    d result $conf(liste) [list \
@@ -312,8 +312,8 @@ proc main {} {
 		append tmp "\\end\{itemize\}"
 		append txt1 $tmp
 	    }
-	    set txt2 [format [mc {and sorted by '%1$s' and by '%2$s'}] $txttri1 $txttri2]
-	    set txt3 [format [mc "%s selected network(s)."] $nnet]
+	    set txt2 [mc {and sorted by '%1$s' and by '%2$s'} $txttri1 $txttri2]
+	    set txt3 [mc "%s selected network(s)." $nnet]
 	    set txt "$txt1 $txt2: $txt3"
 
 	    d result $conf(listetex) [list \

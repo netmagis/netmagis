@@ -120,14 +120,14 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
     #
 
     if {! [regexp {^\d+$} $idrr]} then {
-	d error [format [mc "Invalid input '%s'"] $idrr]
+	d error [mc "Invalid input '%s'" $idrr]
     }
     if {! [read-rr-by-id $dbfd $idrr trr]} then {
-	d error [format [mc "Cannot read host-id %s"] $idrr]
+	d error [mc "Cannot read host-id %s" $idrr]
     }
     # test if host exists
     if {$trr(idrr) eq ""} then {
-	d error [format [mc "Host id %s not found"] $idrr]
+	d error [mc "Host id %s not found" $idrr]
     }
 
     set msg [check-authorized-host $dbfd $idcor $trr(nom) $trr(domaine) trr "existing-host"]
@@ -154,7 +154,7 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
 	# New host or domain. We must check it does not already exist.
 	#
     	if {[info exists ntrr(ip)] && [llength $ntrr(ip)] > 0} then {
-	    d error [format [mc "Host '%s' already exists"] "$nom.$domaine"]
+	    d error [mc "Host '%s' already exists" "$nom.$domaine"]
 	}
     }
     set iddom $ntrr(iddom)
@@ -183,7 +183,7 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
 
     set idhinfo [read-hinfo $dbfd $hinfo]
     if {$idhinfo == -1} then {
-	d error [format [mc "Host type '%s' not found"] $hinfo]
+	d error [mc "Host type '%s' not found" $hinfo]
     }
 
     if {$tabuid(droitsmtp)} then {
@@ -285,15 +285,15 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
 			    respmel = '$qrespmel'
 			WHERE idrr = $trr(idrr)"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-       d dbabort [format [mc "modify %s"] "$nom.$domaine"]
+       d dbabort [mc "modify %s" "$nom.$domaine"]
     }
 
     set msg [touch-rr $dbfd $trr(idrr)]
     if {$msg ne ""} then {
-	d dbabort [format [mc "modify %s"] [mc "RR"]] $msg
+	d dbabort [mc "modify %s" [mc "RR"]] $msg
     }
 
-    d dbcommit [format [mc "modify %s"] "$nom.$domaine"]
+    d dbcommit [mc "modify %s" "$nom.$domaine"]
 
     #
     # Update log
@@ -375,7 +375,7 @@ proc main {} {
     set action [string trim [lindex $ftab(action) 0]]
 
     if {! [info exists conf(form-$action)]} then {
-	d error [format [mc "Invalid input '%s'"] $action]
+	d error [mc "Invalid input '%s'" $action]
     }
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
 	d error [mc "Invalid input"]

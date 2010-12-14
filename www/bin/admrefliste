@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to present table for edition
+# Display reference table for edition
 #
 # Called by: admin
 #
@@ -210,7 +210,7 @@ proc main {} {
     #
 
     if {! [info exists conf($type:ptitle)]} then {
-	d error [format [mc "Type '%s' not supported"] $type]
+	d error [mc "Type '%s' not supported" $type]
     }
 
     set ptitle [mc $conf($type:ptitle)]

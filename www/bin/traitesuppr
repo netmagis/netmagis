@@ -115,7 +115,7 @@ proc traitesuppr-nom {dbfd idcor login _ftab} {
     #
 
     if {$trr(idrr) eq ""} then {
-	d error [format [mc "Name '%s' does not exist"] $fqdn]
+	d error [mc "Name '%s' does not exist" $fqdn]
     }
 
     #
@@ -129,7 +129,7 @@ proc traitesuppr-nom {dbfd idcor login _ftab} {
 	# It is not an alias, there must be at least an IP address
 	#
 	if {$trr(ip) eq ""} then {
-	    d error [format [mc "Name '%s' is not a host"] $fqdn]
+	    d error [mc "Name '%s' is not a host" $fqdn]
 	}
 
     } else {
@@ -184,7 +184,7 @@ proc traitesuppr-nom {dbfd idcor login _ftab} {
 
 	if {$alias} then {
 	    if {! [del-alias-by-id $dbfd $trr(idrr) msg]} then {
-		d dbabort [format [mc "delete %s"] $fqdn] $msg
+		d dbabort [mc "delete %s" $fqdn] $msg
 	    }
 
 	    set p "$trrref(nom).$trrref(domaine)"
@@ -198,13 +198,13 @@ proc traitesuppr-nom {dbfd idcor login _ftab} {
 	    # - IP addresses
 	    #
 	    if {! [del-rr-and-dependancies $dbfd trr msg]} then {
-		d dbabort [format [mc "delete %s"] $fqdn] $msg
+		d dbabort [mc "delete %s" $fqdn] $msg
 	    }
 	    set logevt "delname"
 	    set logmsg "delete all of $nom.$domaine"
 	}
 
-	d dbcommit [format [mc "delete %s"] $fqdn]
+	d dbcommit [mc "delete %s" $fqdn]
 	d writelog $logevt $logmsg
 
 	#
@@ -263,7 +263,7 @@ proc traitesuppr-ip {dbfd idcor login _ftab} {
 	d error $msg
     }
     if {! [check-authorized-ip $dbfd $idcor $adr]} then {
-	d error [format [mc "You don't have rights on '%s'"] $adr]
+	d error [mc "You don't have rights on '%s'" $adr]
     }
 
     #
@@ -271,7 +271,7 @@ proc traitesuppr-ip {dbfd idcor login _ftab} {
     #
 
     if {! [read-rr-by-ip $dbfd $adr trr]} then {
-	d error [format [mc "Address '%s' not found"] $adr]
+	d error [mc "Address '%s' not found" $adr]
     }
 
     #
@@ -321,11 +321,11 @@ proc traitesuppr-ip {dbfd idcor login _ftab} {
 
 	    set sql "DELETE FROM dns.rr_ip WHERE adr = '$adr'"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [format [mc "delete %s"] $adr] $msg
+		d dbabort [mc "delete %s" $adr] $msg
 	    }
 	    set msg [touch-rr $dbfd $trr(idrr)]
 	    if {$msg ne ""} then {
-		d dbabort [format [mc "modify %s"] [mc "RR"]] $msg
+		d dbabort [mc "modify %s" [mc "RR"]] $msg
 	    }
 
 	    set logevt "deladdr"
@@ -337,14 +337,14 @@ proc traitesuppr-ip {dbfd idcor login _ftab} {
 	    #
 
 	    if {! [del-rr-and-dependancies $dbfd trr msg]} then {
-		d dbabort [format [mc "delete %s"] $fqdn] $msg
+		d dbabort [mc "delete %s" $fqdn] $msg
 	    }
 
 	    set logevt "deladr"
 	    set logmsg "delete address $adr -> delete all $fqdn"
 	}
 
-	d dbcommit [format [mc "delete %s"] $adr]
+	d dbcommit [mc "delete %s" $adr]
 	d writelog $logevt $logmsg
     }
 
@@ -397,7 +397,7 @@ proc traitesuppr-ip {dbfd idcor login _ftab} {
 	    set objet "$nom.$domaine"
 	}
 	default {
-	    d error [format [mc "Internal error: impossible case '%s'"] "confirm=$confirm, lastadr=$lastadr"]
+	    d error [mc "Internal error: impossible case '%s'" "confirm=$confirm, lastadr=$lastadr"]
 	}
     }
 
@@ -433,7 +433,7 @@ proc main {} {
     set action [string trim [lindex $ftab(action) 0]]
 
     if {! [info exists conf(form-$action)]} then {
-	d error [format [mc "Invalid input '%s'"] $action]
+	d error [mc "Invalid input '%s'" $action]
     }
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
 	d error [mc "Invalid input"]

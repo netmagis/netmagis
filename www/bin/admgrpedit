@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to present groupe characteristic for edition
+# Display groupe characteristics for edition
 #
 # Called by: admgrpsel
 #
@@ -256,7 +256,7 @@ proc main {} {
 	set droitmac 0
     } else {
 	set qgroup [::webapp::html-string $orggrp]
-	set title [format [mc "Edition of group '%s'"] $qgroup]
+	set title [mc "Edition of group '%s'" $qgroup]
 	set newgrp $qgroup
 	set msggrp [mc "Modify group name or erase it to remove the group"]
 	set pqgroup [::pgsql::quote $orggrp]
@@ -273,7 +273,7 @@ proc main {} {
 	}
 
 	if {$idgrp == -1} then {
-	    d error [format [mc "Group '%s' not found"] $orggrp]
+	    d error [mc "Group '%s' not found" $orggrp]
 	}
     }
 
@@ -339,7 +339,7 @@ proc main {} {
 
 	set idx [lsearch -exact $ldom [list $d $d]]
 	if {$idx == -1} then {
-	    d error [format [mc "Group has access to domain '%s' which do not exists in database"] $d]
+	    d error [mc "Group has access to domain '%s' which do not exists in database" $d]
 	}
 	set htri  [::webapp::form-text tridom$ndom 1 5 5 $tri]
 	set hdom  [::webapp::form-menu domaine$ndom 1 0 $ldom [list $idx]]
@@ -400,7 +400,7 @@ proc main {} {
 	set acl      $tab(acl)
 
 	if {! [info exists idxreseau($idreseau)]} then {
-	    d error [format [mc "Group has access to network '%s' which do not exists in database"] $idreseau]
+	    d error [mc "Group has access to network '%s' which do not exists in database" $idreseau]
 	}
 	set idx $idxreseau($idreseau)
 
@@ -518,7 +518,7 @@ proc main {} {
 
 	set idx [lsearch -exact $lprof [list $p $p]]
 	if {$idx == -1} then {
-	    d error [format [mc "Group have access to DHCP profile '%s' which do not exist in the database"] $d]
+	    d error [mc "Group have access to DHCP profile '%s' which do not exist in the database" $d]
 	}
 	set htri  [::webapp::form-text tridhcpprof$nprof 1 5 5 $tri]
 	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof [list $idx]]

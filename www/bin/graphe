@@ -101,7 +101,7 @@ proc main {} {
 		set debut [clock scan "last year"]
 	    }
 	    default {
-		d error [format [mc "Invalid period '%s'"] $periode]
+		d error [mc "Invalid period '%s'" $periode]
 	    }
 	}
     } elseif {$debut eq "" && $fin eq ""} then {
@@ -109,10 +109,10 @@ proc main {} {
 	set debut [clock scan "yesterday"]
     } else {
 	if {[catch {clock format $debut}]} then {
-	    d error [format [mc "Invalid date '%s'"] $debut]
+	    d error [mc "Invalid date '%s'" $debut]
 	}
 	if {[catch {clock format $fin}]} then {
-	    d error [format [mc "Invalid date '%s'"] $fin]
+	    d error [mc "Invalid date '%s'" $fin]
 	}
 	if {$debut >= $fin} then {
 	    set x $debut
@@ -135,7 +135,7 @@ proc main {} {
 	    set urltaille ""
 	}
 	default {
-	    d error [format [mc "Invalid graph size '%s'"] $taille]
+	    d error [mc "Invalid graph size '%s'" $taille]
 	}
     }
 

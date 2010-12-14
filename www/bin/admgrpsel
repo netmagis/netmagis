@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to select a group to modify
+# Select a group to modify
 #
 # Called by: admin
 #

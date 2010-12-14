@@ -502,7 +502,7 @@ snit::type ::dnscontext {
 
 	set dbfd [ouvrir-base %BASE% msg]
 	if {$dbfd eq ""} then {
-	    return [format [mc "Error accessing database: %s"] $msg]
+	    return [mc "Error accessing database: %s" $msg]
 	}
 	set db $dbfd
 
@@ -535,7 +535,7 @@ snit::type ::dnscontext {
 	    return $msg
 	}
 	if {! $tabuid(present)} then {
-	    return [format [mc "User '%s' not authorized"] $login]
+	    return [mc "User '%s' not authorized" $login]
 	}
 	set eidcor $tabuid(idcor)
 
@@ -665,7 +665,7 @@ snit::type ::dnscontext {
 
 	} else {
 	    append h [::webapp::helem "li" \
-				[format [mc "Unknown module '%s'"] $eorm] ]
+				[mc "Unknown module '%s'" $eorm] ]
 	    append h "\n"
 	}
 	return $h
@@ -816,7 +816,7 @@ snit::type ::dnscontext {
 		$self error $msg
 	    }
 	    if {! $tabuid(present)} then {
-		$self error [format [mc "User '%s' not authorized"] $login]
+		$self error [mc "User '%s' not authorized" $login]
 	    }
 	}
 
@@ -853,7 +853,7 @@ snit::type ::dnscontext {
 	if {[llength $attr] > 0} then {
 	    # XXX : for now, test only one attribute
 	    if {! [user-attribute $dbfd $tabuid(idcor) $attr]} then {
-		$self error [format [mc "User '%s' not authorized"] $login]
+		$self error [mc "User '%s' not authorized" $login]
 	    }
 	}
     }
@@ -893,7 +893,7 @@ snit::type ::dnscontext {
 	    set fd [open %NOLOGIN% "r"]
 	    set message [read $fd]
 	    close $fd
-	    return [format [mc "Connection refused (%s)"] $message]
+	    return [mc "Connection refused (%s)" $message]
 	}
 
 	#
@@ -1114,9 +1114,9 @@ snit::type ::dnscontext {
 	if {! [::pgsql::lock $db $tablelist msg]} then {
 	    if {[llength $tablelist] == 0} then {
 		set tl [join $tablelist ", "]
-		$self error [format [mc {Cannot lock table(s) %1$s: %2$s}] $tl $msg]
+		$self error [mc {Cannot lock table(s) %1$s: %2$s} $tl $msg]
 	    } else {
-		$self error [format [mc "Cannot lock database: %s"] $msg]
+		$self error [mc "Cannot lock database: %s" $msg]
 	    }
 	}
     }
@@ -1129,7 +1129,7 @@ snit::type ::dnscontext {
 
     method dbabort {op msg} {
 	::pgsql::unlock $db "abort" m
-	$self error [format [mc {Cannot perform operation "%1$s": %2$s}] $op $msg]
+	$self error [mc {Cannot perform operation "%1$s": %2$s} $op $msg]
     }
 }
 
@@ -1307,7 +1307,7 @@ snit::type ::config {
 		}
 	    }
 	} else {
-	    error [format [mc "Unknown configuration key '%s'"] $key]
+	    error [mc "Unknown configuration key '%s'" $key]
 	}
 	return $val
     }
@@ -1322,10 +1322,10 @@ snit::type ::config {
 	    set v [::pgsql::quote $val]
 	    set sql "INSERT INTO global.config VALUES ('$k', '$v')"
 	    if {! [::pgsql::execsql $db $sql msg]} then {
-		set r [format [mc {Cannot set key '%1$s' to '%2$s': %3$s}] $key $val $msg]
+		set r [mc {Cannot set key '%1$s' to '%2$s': %3$s} $key $val $msg]
 	    }
 	} else {
-	    set r [format [mc {Cannot fetch key '%1$s': %2$s}] $key $msg]
+	    set r [mc {Cannot fetch key '%1$s': %2$s} $key $msg]
 	}
 
 	return $r
@@ -1806,20 +1806,20 @@ proc read-user {dbfd login _tabuid _msg} {
 
     set u [::webapp::authuser create %AUTO%]
     if {[catch {set n [$ah getuser $login $u]} m]} then {
-	set msg [format [mc "Authentication base problem: %s"] $m]
+	set msg [mc "Authentication base problem: %s" $m]
 	return -1
     }
     
     switch $n {
 	0 {
-	    set msg [format [mc "User '%s' is not in the authentication base"] $login]
+	    set msg [mc "User '%s' is not in the authentication base" $login]
 	    return 0
 	}
 	1 { 
 	    set msg ""
 	}
 	default {
-	    set msg [format [mc "Found more than one entry for login '%s' in the authentication base"] $login]
+	    set msg [mc "Found more than one entry for login '%s' in the authentication base" $login]
 	    return $n
 	}
     }
@@ -1851,7 +1851,7 @@ proc read-user {dbfd login _tabuid _msg} {
     }
 
     if {$tabuid(idcor) == -1} then {
-	set msg [format [mc "User '%s' is not in the WebDNS base"] $login]
+	set msg [mc "User '%s' is not in the WebDNS base" $login]
 	return -1
     }
 
@@ -2493,11 +2493,11 @@ proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
 	if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
-	    set msg [format [mc "Internal error: '%s' inserted, but not found in database"] $name]
+	    set msg [mc "Internal error: '%s' inserted, but not found in database" $name]
 
 	}
     } else {
-	set msg [format [mc "RR addition impossible: %s"] $msg]
+	set msg [mc "RR addition impossible: %s" $msg]
     }
     return $msg
 }
@@ -2525,7 +2525,7 @@ proc touch-rr {dbfd idrr} {
     set sql "UPDATE dns.rr SET idcor = $idcor, date = '$date' WHERE idrr = $idrr"
     set msg ""
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	set msg [format [mc "RR update impossible: %s"] $msg]
+	set msg [mc "RR update impossible: %s" $msg]
     }
     return $msg
 }
@@ -2684,7 +2684,7 @@ proc check-fqdn-syntax {dbfd fqdn _name _domain _iddom} {
     upvar $_iddom iddom
 
     if {! [regexp {^([^\.]+)\.(.*)$} $fqdn bidon name domain]} then {
-	return [format [mc "Invalid FQDN '%s'"] $fqdn]
+	return [mc "Invalid FQDN '%s'" $fqdn]
     }
 
     set msg [check-name-syntax $name]
@@ -2694,7 +2694,7 @@ proc check-fqdn-syntax {dbfd fqdn _name _domain _iddom} {
 
     set iddom [read-domain $dbfd $domain]
     if {$iddom < 0} then {
-	return [format [mc "Invalid domain '%s'"] $domain]
+	return [mc "Invalid domain '%s'" $domain]
     }
 
     return ""
@@ -2725,7 +2725,7 @@ proc check-name-syntax {name} {
     if {[regexp "^$re1$" $name] || [regexp "^$re2$" $name]} then {
 	set msg ""
     } else {
-	set msg [format [mc "Invalid name '%s'"] $name]
+	set msg [mc "Invalid name '%s'" $name]
     }
 
     return $msg
@@ -2786,17 +2786,17 @@ proc check-ip-syntax {dbfd addr type} {
 	if {$fam ne ""} then {
 	    pg_select $dbfd "SELECT family ('$addr') AS fam" tab {
 		if {$tab(fam) != $fam} then {
-		    set r [format [mc {'%1$s' is not a valid IPv%2$s address}] $addr $fam]
+		    set r [mc {'%1$s' is not a valid IPv%2$s address} $addr $fam]
 		}
 	    }
 	}
 	if {! ($type eq "cidr" || $type eq "loosecidr")} then {
 	    if {[regexp {/}  $addr ]} then {
-		set r [format [mc "The '/' character is not valid in the address '%s'"] $addr]
+		set r [mc "The '/' character is not valid in the address '%s'" $addr]
 	    }
 	}
     } else {
-	set r [format [mc "Invalid syntax for '%s'"] $addr]
+	set r [mc "Invalid syntax for '%s'" $addr]
     }
     return $r
 }
@@ -2847,12 +2847,12 @@ proc check-iddhcpprofil {dbfd iddhcpprofil _dhcpprofil _msg} {
     set msg ""
 
     if {! [regexp -- {^[0-9]+$} $iddhcpprofil]} then {
-	set msg [format [mc "Invalid syntax '%s' for DHCP profile"] $iddhcpprofil]
+	set msg [mc "Invalid syntax '%s' for DHCP profile" $iddhcpprofil]
     } else {
 	if {$iddhcpprofil != 0} then {
 	    set sql "SELECT nom FROM dns.dhcpprofil
 				WHERE iddhcpprofil = $iddhcpprofil"
-	    set msg [format [mc "Invalid DHCP profile '%s'"] $iddhcpprofil]
+	    set msg [mc "Invalid DHCP profile '%s'" $iddhcpprofil]
 	    pg_select $dbfd $sql tab {
 		set dhcpprofil $tab(nom)
 		set msg ""
@@ -2926,7 +2926,7 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
     if {$iddom == -1} then {
 	set iddom [read-domain $dbfd $domain]
 	if {$iddom == -1} then {
-	    set msg [format [mc "Domain '%s' not found"] $domain]
+	    set msg [mc "Domain '%s' not found" $domain]
 	}
     } elseif {$domain eq ""} then {
 	set sql "SELECT domaine FROM dns.domaine WHERE iddom = $iddom"
@@ -2934,7 +2934,7 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
 	    set domain $tab(domaine)
 	}
 	if {$domain eq ""} then {
-	    set msg [format [mc "Domain-id '%s' not found"] $iddom]
+	    set msg [mc "Domain-id '%s' not found" $iddom]
 	}
     }
 
@@ -2958,7 +2958,7 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
 	    set found 1
 	}
 	if {! $found} then {
-	    set msg [format [mc "You don't have rights on domain '%s'"] $domain]
+	    set msg [mc "You don't have rights on domain '%s'" $domain]
 	}
     }
 
@@ -3176,7 +3176,7 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
     #
 
     if {! [info exists testrights($context)]} then {
-	return [format [mc "Internal error: invalid context '%s'"] $context]
+	return [mc "Internal error: invalid context '%s'" $context]
     }
 
     #
@@ -3209,16 +3209,16 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 			    REJECT {
 				read-rr-by-id $dbfd $idrr talias
 				set alias "$talias(nom).$talias(domaine)"
-				return [format [mc {'%1$s' is an alias of '%2$s'}] $fqdn $alias]
+				return [mc {'%1$s' is an alias of '%2$s'} $fqdn $alias]
 			    }
 			    CHECK {
 				set ok [check-name-by-addresses $dbfd $idcor $idrr t]
 				if {! $ok} then {
-				    return [format [mc "You don't have rights on '%s'"] $fqdn]
+				    return [mc "You don't have rights on '%s'" $fqdn]
 				}
 			    }
 			    default {
-				return [format [mc {Internal error: invalid parameter '%1$s' for '%2$s'}] $parm "$context/$a"]
+				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			    }
 			}
 		    }
@@ -3230,17 +3230,17 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 		    foreach mx $lmx {
 			switch $parm {
 			    REJECT {
-				return [format [mc "'%s' is a MX"] $fqfn]
+				return [mc "'%s' is a MX" $fqfn]
 			    }
 			    CHECK {
 				set idrr [lindex $mx 1]
 				set ok [check-name-by-addresses $dbfd $idcor $idrr t]
 				if {! $ok} then {
-				    return [format [mc "You don't have rights on '%s'"] $fqdn]
+				    return [mc "You don't have rights on '%s'" $fqdn]
 				}
 			    }
 			    default {
-				return [format [mc {Internal error: invalid parameter '%1$s' for '%2$s'}] $parm "$context/$a"]
+				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			    }
 			}
 		    }
@@ -3253,30 +3253,30 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 			switch $parm {
 			    REJECT {
 				# IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-				return [format [mc "'%s' is a mail role"] $fqdn]
+				return [mc "'%s' is a mail role" $fqdn]
 			    }
 			    CHECK {
 				if {! [read-rr-by-id $dbfd $idrr trrh]} then {
-				    return [format [mc "Internal error: id '%s' doesn't exists for a mail host"] $idrr]
+				    return [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
 				}
 
 				# IP address check
 				set ok [check-name-by-addresses $dbfd $idcor -1 trrh]
 				if {! $ok} then {
-				    return [format [mc "You don't have rights on host holding mail for '%s'"] $fqdn]
+				    return [mc "You don't have rights on host holding mail for '%s'" $fqdn]
 				}
 
 				# Mail host checking
 				set bidon -1
 				set msg [check-domain $dbfd $idcor bidon trrh(domaine) ""]
 				if {$msg ne ""} then {
-				    set r [format [mc "You don't have rights on host holding mail for '%s'"] $fqdn]
+				    set r [mc "You don't have rights on host holding mail for '%s'" $fqdn]
 				    append r "\n$msg"
 				    return $r
 				}
 			    }
 			    default {
-				return [format [mc {Internal error: invalid parameter '%1$s' for '%2$s'}] $parm "$context/$a"]
+				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			    }
 			}
 		    }
@@ -3288,7 +3288,7 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 		    switch $parm {
 			REJECT {
 			    if {[llength $ladr] > 0} then {
-				return [format [mc "'%s' is a mail host for mail domains"] $fqdn]
+				return [mc "'%s' is a mail host for mail domains" $fqdn]
 			    }
 			}
 			CHECK {
@@ -3299,11 +3299,11 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 				set ladr [lreplace $ladr $pos $pos]
 			    }
 			    if {[llength $ladr] > 0} then {
-				return [format [mc "'%s' is a mail host for mail domains"] $fqdn]
+				return [mc "'%s' is a mail host for mail domains" $fqdn]
 			    }
 			}
 			default {
-			    return [format [mc {Internal error: invalid parameter '%1$s' for '%2$s'}] $parm "$context/$a"]
+			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			}
 		    }
 		}
@@ -3312,26 +3312,26 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 		if {$exists} then {
 		    switch $parm {
 			REJECT {
-			    return [format [mc "'%s' has IP addresses] $fqfn]
+			    return [mc "'%s' has IP addresses $fqfn]
 			}
 			EXISTS {
 			    if {$trr(ip) eq ""} then {
-				return [format [mc "Name '%s' is not a host"] $fqdn]
+				return [mc "Name '%s' is not a host" $fqdn]
 			    }
 			}
 			CHECK {
 			    set ok [check-name-by-addresses $dbfd $idcor -1 trr]
 			    if {! $ok} then {
-				return [format [mc "You don't have rights on '%s'"] $fqdn]
+				return [mc "You don't have rights on '%s'" $fqdn]
 			    }
 			}
 			default {
-			    return [format [mc {Internal error: invalid parameter '%1$s' for '%2$s'}] $parm "$context/$a"]
+			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			}
 		    }
 		} else {
 		    if {$parm eq "EXISTS"} {
-			return [format [mc "Name '%s' does not exist"] $fqdn]
+			return [mc "Name '%s' does not exist" $fqdn]
 		    }
 		}
 	    }
@@ -3373,7 +3373,7 @@ proc check-mx-target {dbfd prio name domain idcor _msg} {
     #
 
     if {! [regexp {^[0-9]+$} $prio]} then {
-	set msg [format [mc {Invalid MX priority '%1$s' for '%2$s'}] $prio "$name.$domain"]
+	set msg [mc {Invalid MX priority '%1$s' for '%2$s'} $prio "$name.$domain"]
 	return {}
     }
 
@@ -3445,10 +3445,10 @@ proc check-authorized-mx {dbfd idcor name _iddom domain _exists _trr} {
 	#
 
 	if {[llength $trr(ip)] > 0} then {
-	    return [format [mc "'%s' already has IP addresses"] $name]
+	    return [mc "'%s' already has IP addresses" $name]
 	}
 	if {[llength $trr(cname)] > 0} then {
-	    return [format [mc "'%s' is an alias"] $name]
+	    return [mc "'%s' is an alias" $name]
 	}
 
 	#
@@ -3459,12 +3459,12 @@ proc check-authorized-mx {dbfd idcor name _iddom domain _exists _trr} {
 	foreach mx $trr(mx) {
 	    set idmx [lindex $mx 1]
 	    if {! [read-rr-by-id $dbfd $idmx tabmx]} then {
-		return [format [mc "Internal error: rr_mx table references RR '%s', not found in the rr table"] $idmx]
+		return [mc "Internal error: rr_mx table references RR '%s', not found in the rr table" $idmx]
 	    }
 	    set iddom $tabmx(iddom)
 	    set msg [check-domain $dbfd $idcor iddom tabmx(domaine) ""]
 	    if {$msg ne ""} then {
-		return [format [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s}] "$tabmx(nom).$tabmx(domaine)" $msg]
+		return [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s} "$tabmx(nom).$tabmx(domaine)" $msg]
 	    }
 	}
     }
@@ -3515,7 +3515,7 @@ proc check-domain-relay {dbfd idcor _iddom domain} {
     pg_select $dbfd $sql tab {
 	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domaine) trr "existing-host"]
 	if {$msg ne ""} then {
-	    return [format [mc {You don't have rights to some relays of domain '%1$s': %2$s}] $domain $msg]
+	    return [mc {You don't have rights to some relays of domain '%1$s': %2$s} $domain $msg]
 	}
     }
 
@@ -3578,7 +3578,7 @@ proc check-role-mail {dbfd idcor name domain _trr _trrh} {
 	    # Name is an existing mail address. Do we have rights on it?
 	    #
 	    if {! [read-rr-by-id $dbfd $h trrh]} then {
-		return [format [mc {Internal error on '%1$s': id '%2$s' of mail host not found}] \
+		return [mc {Internal error on '%1$s': id '%2$s' of mail host not found} \
 				$fqdn $h]
 	    }
 	}
@@ -3612,8 +3612,7 @@ proc check-static-dhcp {dbfd mac lip} {
 			    FROM dns.dhcprange
 			    WHERE '$ip' >= min AND '$ip' <= max"
 	    pg_select $dbfd $sql tab {
-		set r [format [mc {Impossible to use MAC address '%1$s' because IP address '%2$s' is in DHCP dynamic range [%3$s..%4$s]}] \
-				$mac $ip $tab(min) $tab(max)]
+		set r [mc {Impossible to use MAC address '%1$s' because IP address '%2$s' is in DHCP dynamic range [%3$s..%4$s]} $mac $ip $tab(min) $tab(max)]
 	    }
 	    if {$r ne ""} then {
 		break
@@ -3645,7 +3644,7 @@ proc check-ttl {ttl} {
 	set r [mc "Invalid TTL: must be a positive integer"]
     } else {
 	if {$ttl > $maxttl} then {
-	    set r [format [mc "Invalid TTL: must be less than %s"] $maxttl]
+	    set r [mc "Invalid TTL: must be less than %s" $maxttl]
 	}
     }
     return $r
@@ -3673,7 +3672,7 @@ proc check-group-syntax {group} {
     if {[regexp {^[-A-Za-z0-9]*$} $group]} then {
 	set r ""
     } else {
-	set r [format [mc "Invalid group name '%s' (allowed chars: letters, digits and minus symbol)"] $group]
+	set r [mc "Invalid group name '%s' (allowed chars: letters, digits and minus symbol)" $group]
     }
     return $r
 }
@@ -4154,7 +4153,7 @@ proc check-netid {dbfd netid idgrp priv version _msg} {
     #
     set netid [string trim $netid]
     if {! [regexp {^[0-9]+$} $netid]} then {
-	set msg [format [mc "Invalid network id '%s'"] $netid]
+	set msg [mc "Invalid network id '%s'" $netid]
 	return {}
     }
 
@@ -4538,7 +4537,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
 				    WHERE $idnum = $id" t {
 			set oldkey $t($key)
 		    }
-		    d dbabort [format [mc "delete %s"] $oldkey] $msg
+		    d dbabort [mc "delete %s" $oldkey] $msg
 		}
 	    } else {
 		#
@@ -4547,7 +4546,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
 
 		set ok [_store-tabular-mod $dbfd msg $id $idnum $table tabval]
 		if {! $ok} then {
-		    d dbabort [format [mc "modify %s"] $tabval($key)] $msg
+		    d dbabort [mc "modify %s" $tabval($key)] $msg
 		}
 	    }
 	}
@@ -4568,7 +4567,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
 
 	    set ok [_store-tabular-add $dbfd msg $table tabval]
 	    if {! $ok} then {
-		d dbabort [format [mc "add %s"] $tabval($key)] $msg
+		d dbabort [mc "add %s" $tabval($key)] $msg
 	    }
 	}
 
@@ -4832,7 +4831,7 @@ proc topo-status {dbfd admin} {
 	    append text [::webapp::helem "p" \
 			    [::webapp::helem "font" $msg "color" "#ff0000"] \
 			    ]
-	    append text [::webapp::helem "p" [format [mc "... since %s"] $date]]
+	    append text [::webapp::helem "p" [mc "... since %s" $date]]
 
 	    set msgsta [::webapp::helem "div" $text "class" "alerte"]
 	}
@@ -5057,7 +5056,7 @@ proc check-metro-id {dbfd id _tabuid _title} {
 
     set cmd [format $libconf(extractcoll) $tabuid(flagsr)]
     if {! [call-topo $cmd msg]} then {
-	return [format [mc "Cannot read sensor list: %s"] $msg]
+	return [mc "Cannot read sensor list: %s" $msg]
     }
     foreach line [split $msg "\n"] {
 	lassign [split $line] kw i
@@ -5080,7 +5079,7 @@ proc check-metro-id {dbfd id _tabuid _title} {
     #
 
     if {[llength $lid] > 0} then {
-	return [format [mc "Sensor '%s' not found"] $id]
+	return [mc "Sensor '%s' not found" $id]
     }
 
     #
@@ -5143,7 +5142,7 @@ proc check-metro-id {dbfd id _tabuid _title} {
 			lappend le $e
 		    }
 		    set le [join $le ", "]
-		    set title [format [mc "Traffic on interfaces %s"] $le]
+		    set title [mc "Traffic on interfaces %s" $le]
 		}
 		nbauthwifi -
 		nbassocwifi {
@@ -5232,7 +5231,7 @@ proc gengraph {url} {
 
     if {$status ne "ok"} then {
 	set code [::http::code $token]
-	d error [format [mc "No access: %s"] $code]
+	d error [mc "No access: %s" $code]
     }
 
     upvar #0 $token state
@@ -5394,7 +5393,7 @@ proc eq-iflist {eq _tabuid} {
 
     set cmd [format $libconf(extracteq) $tabuid(flagsr) $eq]
     if {! [call-topo $cmd msg]} then {
-	d error [format [mc {Error during extraction of readable interfaces from '%1$s': %2$s}] $eq $msg]
+	d error [mc {Error during extraction of readable interfaces from '%1$s': %2$s} $eq $msg]
     }
     foreach line [split $msg "\n"] {
 	switch [lindex $line 0] {
@@ -5426,7 +5425,7 @@ proc eq-iflist {eq _tabuid} {
     }
 
     if {! $found} then {
-	d error [format [mc "Equipment '%s' not found"] $eq]
+	d error [mc "Equipment '%s' not found" $eq]
     }
 
     #
@@ -5438,7 +5437,7 @@ proc eq-iflist {eq _tabuid} {
     if {$manual eq "auto"} then {
 	set cmd [format $libconf(extracteq) $tabuid(flagsw) $eq]
 	if {! [call-topo $cmd msg]} then {
-	    d error [format [mc {Error during extraction of writable interfaces from '%1$s': %2$s}] $eq $msg]
+	    d error [mc {Error during extraction of writable interfaces from '%1$s': %2$s} $eq $msg]
 	}
 	foreach line [split $msg "\n"] {
 	    switch [lindex $line 0] {
@@ -5510,10 +5509,10 @@ proc eq-graph-status {dbfd eq {iface {}}} {
 
     set iddom [read-domain $dbfd $domain]
     if {$iddom == -1} then {
-	d error [format [mc "Domain '%s' not found"] $domain]
+	d error [mc "Domain '%s' not found" $domain]
     }
     if {! [read-rr-by-name $dbfd $host $iddom tabrr]} then {
-	d error [format [mc "Equipment '%s' not found"] $eq]
+	d error [mc "Equipment '%s' not found" $eq]
     }
     set idrr $tabrr(idrr)
 
@@ -5536,16 +5535,16 @@ proc eq-graph-status {dbfd eq {iface {}}} {
 	set ifdesc $tab(ifdesc)
 	set ethervlan $tab(ethervlan)
 	set voicevlan $tab(voicevlan)
-	set chg [format [mc "description='%s'"] $ifdesc]
+	set chg [mc "description='%s'" $ifdesc]
 	if {$ethervlan == -1} then {
 	    append chg ", "
 	    append chg [mc "deactivated interface"]
 	} else {
 	    append chg ", "
-	    append chg [format [mc "vlan=%s"] $ethervlan]
+	    append chg [mc "vlan=%s" $ethervlan]
 	    if {$voicevlan != -1} then {
 		append chg ", "
-		append chg [format [mc "voip=%s"] $voicevlan]
+		append chg [mc "voip=%s" $voicevlan]
 	    }
 	}
 	lappend lines [list Normal4 $tab(reqdate) $tab(login) $tab(iface) $chg]

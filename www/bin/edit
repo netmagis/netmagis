@@ -1,8 +1,7 @@
 #!%TCLSH%
 
-
 #
-# Script to choose which type of modification to apply to an IP address.
+# Choose which type of modification to apply to an IP address.
 #
 # Called by: liste (address map)
 #
@@ -77,7 +76,7 @@ proc main {} {
     set idcor $tabuid(idcor)
 
     if {! [check-authorized-ip $dbfd $idcor $addr]} then {
-	d error [format [mc "You don't have rights on '%s'"] $addr]
+	d error [mc "You don't have rights on '%s'" $addr]
     }
 
     #
@@ -85,7 +84,7 @@ proc main {} {
     #
 
     if {! [read-rr-by-ip $dbfd $addr trr]} then {
-	d error [format [mc "Address '%s' not found"] $addr]
+	d error [mc "Address '%s' not found" $addr]
     }
 
     #

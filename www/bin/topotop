@@ -549,7 +549,7 @@ proc topotop-ifchg {dbfd datefmt arg} {
 	set url [d urlget ""]
 	set eq [::webapp::helem "a" $tab(eq) "href" $url]
 
-	set mod [format [mc {vlan=%1$s, voip=%2$s, desc=%3$s}] $tab(ethervlan) $tab(voicevlan) $tab(ifdesc)]
+	set mod [mc {vlan=%1$s, voip=%2$s, desc=%3$s} $tab(ethervlan) $tab(voicevlan) $tab(ifdesc)]
 	set moddate $tab(moddate)
 	if {$moddate ne ""} then {
 	    set moddate [clock format [clock scan $moddate] -format $datefmt]
@@ -582,7 +582,7 @@ proc topotop-modlog {dbfd datefmt arg} {
     global conf
 
     if {! [regexp {^([^|]+)\|([^|]+)\|([^|]+)$} $arg bidon eq iface date]} then {
-	d error [format [mc "Invalid argument '%s'"] $arg]
+	d error [mc "Invalid argument '%s'" $arg]
     }
 
     set qeq [::pgsql::quote $eq]
@@ -607,10 +607,10 @@ proc topotop-modlog {dbfd datefmt arg} {
 
     set harg [::webapp::html-string $arg]
     if {$moddate eq ""} then {
-	set msg [format [mc "Change of '%s' not yet processed"] "$eq/$iface"]
+	set msg [mc "Change of '%s' not yet processed" "$eq/$iface"]
 	lappend lines [list "Title" $msg]
     } else {
-	set msg [format [mc {Change log of '%1$s' at %2$s}] "$eq/$iface" $moddate]
+	set msg [mc {Change log of '%1$s' at %2$s} "$eq/$iface" $moddate]
 	lappend lines [list "Title" $msg]
 	lappend lines [list "Normal1" $modlog]
     }
@@ -667,10 +667,10 @@ proc topotop-keepstate {dbfd datefmt arg} {
 
     set harg [::webapp::html-string $arg]
     if {$date eq ""} then {
-	set msg [format [mc "No message for '%s'" $harg]
+	set msg [mc "No message for '%s'" $harg
 	lappend lines [list "Title" $msg]
     } else {
-	set msg [format [mc {Last message for '%1$s' at %2$s}] $harg $date]
+	set msg [mc {Last message for '%1$s' at %2$s} $harg $date]
 	lappend lines [list "Title" $msg]
 	lappend lines [list "Normal1" $message]
     }

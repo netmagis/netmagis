@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to store a modification of mail relay
+# Store a modification of mail relay
 #
 # Called by: admrefliste
 #
@@ -96,7 +96,7 @@ proc insert-relay {dbfd iddom lrel} {
 	set sql "INSERT INTO dns.relais_dom (iddom, priorite, mx)
 				    VALUES ($iddom, $prio, $idmx)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    return [format [mc "Relay insertion failed: %s"] $msg]
+	    return [mc "Relay insertion failed: %s" $msg]
 	}
     }
     return ""
@@ -155,12 +155,12 @@ proc main {} {
 			d error $msg
 		    }
 		    if {[info exists tmx([lindex $mx 1])]} then {
-			d error [format [mc "'%s' specified more than once"] "$fname.$fdom"]
+			d error [mc "'%s' specified more than once" "$fname.$fdom"]
 		    }
 		    lappend lrel $mx
 		}
 	    } else {
-		d error [format [mc "Invalid form values (%s)"] "$idxprio, $idxnom, $idxdom"]
+		d error [mc "Invalid form values (%s)" "$idxprio, $idxnom, $idxdom"]
 	    }
 	}
     }
@@ -177,7 +177,7 @@ proc main {} {
 
     set sql "DELETE FROM dns.relais_dom WHERE iddom = $iddom"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	d dbabort [format [mc "delete %s"] [mc "old mail relays"]] $msg
+	d dbabort [mc "delete %s" [mc "old mail relays"]] $msg
     }
 
     #
@@ -186,14 +186,14 @@ proc main {} {
 
     set msg [insert-relay $dbfd $iddom $lrel]
     if {$msg ne ""} then {
-	d dbabort [format [mc "add %s"] [mc "new mail relays"]] $msg
+	d dbabort [mc "add %s" [mc "new mail relays"]] $msg
     }
 
     #
     # Unlock and commit modifications
     #
 
-    d dbcommit [format [mc "modify %s"] [mc "mail relays"]]
+    d dbcommit [mc "modify %s" [mc "mail relays"]]
 
     #
     # Present informations stored in database

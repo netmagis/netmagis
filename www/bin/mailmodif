@@ -96,7 +96,7 @@ proc main {} {
 
     if {$nameh ne ""} then {
 	if {$newtrrh(idrr) eq ""} then {
-	    d error [format [mc "Mailbox host name '%s' not found"] $fqdnh]
+	    d error [mc "Mailbox host name '%s' not found" $fqdnh]
 	}
     }
 
@@ -118,7 +118,7 @@ proc main {} {
     set lm ""
     switch "$emptyoldnameh-$emptynewnameh" {
 	1-1 {
-	    d error [format [mc "Mail role '%s' does not exist: you can't delete it"] $fqdn]
+	    d error [mc "Mail role '%s' does not exist: you can't delete it" $fqdn]
 	}
 	1-0 {
 	    #
@@ -133,7 +133,7 @@ proc main {} {
 		set msg [add-rr $dbfd $name $trr(iddom) "" 0 "" 0 -1 \
 						"" "" "" $idcor trr]
 		if {$msg ne ""} then {
-		    d dbabort [format [mc "add %s"] $name] $msg
+		    d dbabort [mc "add %s" $name] $msg
 		} 
 	    }
 
@@ -144,7 +144,7 @@ proc main {} {
 	    set sql "INSERT INTO dns.role_mail (idrr, heberg)
 			    VALUES ($trr(idrr), $newtrrh(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [format [mc "add %s"] [mc "mail role"]] $msg
+		d dbabort [mc "add %s" [mc "mail role"]] $msg
 	    }
 
 	    #
@@ -156,7 +156,7 @@ proc main {} {
 	    set sql "INSERT INTO dns.dr_mbox (idgrp, idmail)
 				VALUES ($tabuid(idgrp), $trr(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [format [mc "add %s"] [mc "mailbox permissions"]] $msg
+		d dbabort [mc "add %s" [mc "mailbox permissions"]] $msg
 	    }
 
 	    set lm "add mail role $fqdn -> $fqdnh"
@@ -174,7 +174,7 @@ proc main {} {
 	    set sql "DELETE FROM dns.dr_mbox WHERE idmail = $idrr ;
 		    DELETE FROM dns.role_mail WHERE idrr = $idrr"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [format [mc "delete %s"] [mc "mail role"]] $msg
+		d dbabort [mc "delete %s" [mc "mail role"]] $msg
 	    }
 
 	    #
@@ -182,7 +182,7 @@ proc main {} {
 	    #
 	    set msg [del-orphaned-rr $dbfd $idrr]
 	    if {$msg ne ""} then {
-		d dbabort [format [mc "delete %s"] [mc "RR"]] $msg
+		d dbabort [mc "delete %s" [mc "RR"]] $msg
 	    }
 
 	    set lm "delete mail role $fqdn"
@@ -202,7 +202,7 @@ proc main {} {
 				SET heberg = $newtrrh(idrr)
 				WHERE idrr = $idrr"
 	    if {$msg ne ""} then {
-		d dbabort [format [mc "modify %s"] [mc "mail role"]] $msg
+		d dbabort [mc "modify %s" [mc "mail role"]] $msg
 	    }
 	    set lm "modify mail role $fqdn -> $fqdnh"
 	}
@@ -213,7 +213,7 @@ proc main {} {
     # Finish transaction.
     #
 
-    d dbcommit [format [mc "modify %s"] [mc "mail role"]
+    d dbcommit [mc "modify %s" [mc "mail role"]]
     d writelog "modmailrole" $lm
 
     #

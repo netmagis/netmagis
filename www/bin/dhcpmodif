@@ -1,8 +1,7 @@
 #!%TCLSH%
 
-
 #
-# Script to modify DHCP network parameters
+# Modify DHCP network parameters
 #
 # Called by: dhcpedit
 #
@@ -201,7 +200,7 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
 
 	if {! $new} then {
 	    if {! [info exists tabrange($i)]} then {
-		return [format [mc "You don't have access to DHCP range id '%s'"] $i]
+		return [mc "You don't have access to DHCP range id '%s'" $i]
 	    }
 	}
 	set tabrange($i) [list $min $max]
@@ -241,17 +240,17 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
 	    }
 
 	    if {[catch {expr $default_lease_time+0}]} then {
-		return [format [mc "Invalid default_lease_time value '%s'"] $default_lease_time]
+		return [mc "Invalid default_lease_time value '%s'" $default_lease_time]
 	    } elseif {$default_lease_time != 0 &&
 				$default_lease_time < $min_lease_time} then {
-		return [format [mc "Default_lease_time value less than '%s'"] $min_lease_time]
+		return [mc "Default_lease_time value less than '%s'" $min_lease_time]
 	    }
 
 	    if {[catch {expr $max_lease_time+0}]} then {
-		return [format [mc "Invalid max_lease_time value '%s'"] $default_lease_time]
+		return [mc "Invalid max_lease_time value '%s'" $default_lease_time]
 	    } elseif {$max_lease_time != 0 &&
 				$max_lease_time < $min_lease_time} then {
-		return [format [mc "Max_lease_time value less than '%s'"] $min_lease_time]
+		return [mc "Max_lease_time value less than '%s'" $min_lease_time]
 	    }
 
 	    #
@@ -275,7 +274,7 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
 	    set sql "SELECT valide_dhcprange_grp ($idgrp,'$min','$max') AS val"
 	    pg_select $dbfd $sql tab {
 		if {$tab(val) eq "f"} then {
-		    return [format [mc {Range [%s] not authorized}] "$min...$max"]
+		    return [mc {Range [%s] not authorized} "$min...$max"]
 		}
 	    }
 
@@ -294,7 +293,7 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
 		set nb $tab(nb)
 	    }
 	    if {$nb > 0} then {
-		return [format [mc {Conflict between dynamic range [%1$s] and %2$s IP address(es) declared with a MAC address}] "$min...$max" $nb]
+		return [mc {Conflict between dynamic range [%1$s] and %2$s IP address(es) declared with a MAC address} "$min...$max" $nb]
 	    }
 	}
     }
@@ -312,7 +311,7 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
 	    if {[overlap $dbfd $min $max $jmin $jmax]} then {
 		set i1 "$min...$max"
 		set i2 "$jmin...$jmax"
-		return [format [mc {Range [%1$s] intersects with range [%2$s]}] $i1 $i2]
+		return [mc {Range [%1$s] intersects with range [%2$s]} $i1 $i2]
 	    }
 	}
     }

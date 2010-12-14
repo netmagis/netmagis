@@ -152,7 +152,7 @@ proc gen-dot {format cmd} {
 		switch $nodetype {
 		    router {
 			if {! [regexp -- {([^:]+):(.*)} $nodename bidon eqname rinst]} then {
-			    d error [format [mc "Invalid router instance '%s'"] $nodename]
+			    d error [mc "Invalid router instance '%s'" $nodename]
 			}
 			switch -- $rinst {
 			    _v4 { set label "$eqname\\ndefault" }
@@ -171,7 +171,7 @@ proc gen-dot {format cmd} {
 					    height=.25}
 		    }
 		    default {
-			d error [format [mc {Invalid node type '%1$s' for %2$s}] $nodetype $nodename]
+			d error [mc {Invalid node type '%1$s' for %2$s} $nodetype $nodename]
 		    }
 		}
 
@@ -270,7 +270,7 @@ proc main {} {
 
     set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
     if {! [call-topo $cmd msg]} then {
-	d error [format [mc "Error while reading networks: %s"] $msg]
+	d error [mc "Error while reading networks: %s" $msg]
     }
     foreach ligne [split $msg "\n"] {
 	if {[regexp {^rnet ([^ ]+)} $line bidon a]} then {

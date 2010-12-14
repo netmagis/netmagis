@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to store table modifications
+# Store reference table modifications
 #
 # Called by: admrefliste
 #
@@ -262,7 +262,7 @@ proc main {} {
     set type [string trim [lindex $ftab(type) 0]]
 
     if {! [info exists conf($type:return)]} then {
-	d error [format [mc "Type '%s' not supported"] $type]
+	d error [mc "Type '%s' not supported" $type]
     }
     set ret [mc $conf($type:return)]
 

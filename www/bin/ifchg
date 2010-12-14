@@ -83,7 +83,7 @@ proc main {} {
 
     if {[llength $liferr] > 0} then {
 	set l [join $liferr " "]
-	d error [format [mc "Inconsistent permissions on interfaces: %s"] $l]
+	d error [mc "Inconsistent permissions on interfaces: %s" $l]
     }
 
     #
@@ -119,7 +119,7 @@ proc main {} {
 	#
 
 	if {! [info exists tabiface($iface)]} then {
-	    d error [format [mc {Interface '%1$s' not found on %2$s}] $iface $eq]
+	    d error [mc {Interface '%1$s' not found on %2$s} $iface $eq]
 	}
 
 	#
@@ -137,7 +137,7 @@ proc main {} {
 	set trunk [lreplace $tabiface($iface) 0 7]
 
 	if {$edit ne "edit"} then {
-	    d error [format [mc {You can't modify interface %1$s on %2$s}] $iface $eq]
+	    d error [mc {You can't modify interface %1$s on %2$s} $iface $eq]
 	}
 
 	#
@@ -145,7 +145,7 @@ proc main {} {
 	#
 
 	set mode "mono"
-	set title [format [mc {Edit interface %1$s on %2$s}] $iface $eq]
+	set title [mc {Edit interface %1$s on %2$s} $iface $eq]
 	set menuif [::webapp::form-hidden iface $iface]
 
 	# display option "multiple interfaces" if there is more than one
@@ -236,7 +236,7 @@ proc main {} {
 	# Display all interfaces
 	#
 
-	set title [format [mc "Edit interfaces on %s"] $eq]
+	set title [mc "Edit interfaces on %s" $eq]
 	set mode "multi"
 
 	#

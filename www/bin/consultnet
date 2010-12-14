@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to ask for network consultation parameters
+# Ask for network consultation parameters
 #
 # Called by: admin
 #

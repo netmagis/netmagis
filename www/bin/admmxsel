@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to select a MX to be modified
+# Select a MX to be modified
 #
 # Called by: admin
 #

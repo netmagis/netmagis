@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to present data for MX modification
+# Display data for MX modification
 #
 # Called by: admmxsel
 #

@@ -145,7 +145,7 @@ proc main {} {
     foreach d $ftab(domaine) {
 	set iddom [read-domain $dbfd $d]
 	if {$iddom == -1} then {
-	    d error [format [mc "Domain '%s' not found"] $d]
+	    d error [mc "Domain '%s' not found" $d]
 	}
 	set tabdom($d) $iddom
     }

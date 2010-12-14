@@ -340,7 +340,7 @@ proc output-list {dbfd lcidr _tabuid format} {
     set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
 
-    set pline [format [mc "Declared addresses (IPv4+IPv6): %s"] $nbhost]
+    set pline [mc "Declared addresses (IPv4+IPv6): %s" $nbhost]
     set dhost [mc "List of declared addresses"]
 
     switch -- $format  {
@@ -386,7 +386,7 @@ proc output-map {dbfd lcidr _tabuid format} {
     }
 
     if {[llength $lcidrv4] == 0} then {
-	d error [format [mc "No valid CIDR: %s"] $m]
+	d error [mc "No valid CIDR: %s" $m]
     }
 
     #
@@ -423,7 +423,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 	set navail 0
 	set sql "SELECT * FROM markcidr ('$cidr', $limite, $tabuid(idgrp))"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    d error [format [mc {Error in CIDR '%1$s': %2$s}] $cidr $msg]
+	    d error [mc {Error in CIDR '%1$s': %2$s} $cidr $msg]
 	}
 
 	set sql "SELECT * FROM allip ORDER BY adr"
@@ -488,7 +488,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 		    append line [::webapp::helem "td" $h "class" "name-dhcp"]
 		}
 		default {
-		    d error [format [mc {Internal error for '%1$s': avail=%2$s}] $adr $avail]
+		    d error [mc {Internal error for '%1$s': avail=%2$s} $adr $avail]
 		}
 	    }
 
@@ -512,10 +512,10 @@ proc output-map {dbfd lcidr _tabuid format} {
 
 	append tableau "\n"
 	if {[llength $lcidrv4] > 1} then {
-	    append tableau [::webapp::helem "h3" [format [mc "Network '%s'"] $cidr]]
+	    append tableau [::webapp::helem "h3" [mc "Network '%s'" $cidr]]
 	}
 
-	set p [format [mc {%1$s available addresses / %2$s total}] $navail $n]
+	set p [mc {%1$s available addresses / %2$s total} $navail $n]
 
 	set t [mc "Detail"]
 	d urlset "" $conf(nextlist) [list \

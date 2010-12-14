@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to ask for a network or an IP range
+# Ask for a network or an IP range to display
 #
 # Called by: accueil
 #

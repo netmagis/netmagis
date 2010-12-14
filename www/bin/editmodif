@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to edit host information
+# Display a page to edit host information
 #
 # Called by: edit, modif
 #
@@ -96,7 +96,7 @@ proc editmodif-infos {dbfd _tabuid _ftab} {
     #
 
     if {$trr(idrr) eq ""} then {
-	d error [format [mc "Name '%s' does not exist"] $name]
+	d error [mc "Name '%s' does not exist" $name]
     }
 
     #

@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to present help for administration parameters
+# Display help for administration parameters
 #
 # Called by: admparlist
 #

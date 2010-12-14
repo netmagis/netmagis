@@ -114,7 +114,7 @@ proc main {} {
 	}
     }
     if {$start eq ""} then {
-	d error [format [mc {Invalid date or time '%1$s/%2$s'}] $jdebut $hdebut]
+	d error [mc {Invalid date or time '%1$s/%2$s'} $jdebut $hdebut]
     }
     set start [clock scan $start]
 
@@ -142,7 +142,7 @@ proc main {} {
 	}
     }
     if {$end eq ""} then {
-	d error [format [mc {Invalid date or time '%1$s/%2$s'}] $jfin $hfin]
+	d error [mc {Invalid date or time '%1$s/%2$s'} $jfin $hfin]
     }
     set end [clock scan $end]
 

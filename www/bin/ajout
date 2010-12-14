@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to present page for adding machine or alias
+# Display page for adding machine or alias
 #
 # Called by: accueil, liste, traiteajout
 #

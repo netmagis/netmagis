@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to define general WebDNS index page
+# Display general WebDNS index page
 #
 # Called by: /applis/dns/
 #

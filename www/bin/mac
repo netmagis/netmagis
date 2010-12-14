@@ -282,7 +282,7 @@ proc guess-type {dbfd param _msg} {
 	set type "nom"
     } else {
 	# Other
-	set msg [format [mc "Invalid search string '%s'"] $param]
+	set msg [mc "Invalid search string '%s'" $param]
 	return {}
     }
 
@@ -329,7 +329,7 @@ proc html-result {dbfd type param} {
  	    append tab [gen-mac $dbfd $param]
 	}
 	default {
-	    d error [format [mc "Internal error: invalid parameter type '%s'"] $type]
+	    d error [mc "Internal error: invalid parameter type '%s'" $type]
 	}
     }
     return $tab
@@ -355,7 +355,7 @@ proc gen-idipmac-session {dbfd idipmac} {
 	set mac $tab(mac)
     }
     if {$ip eq ""} then {
-	return [format [mc "IP-MAC identifier '%s' not found"] $idipmac]
+	return [mc "IP-MAC identifier '%s' not found" $idipmac]
     }
 
     set lines {}
@@ -535,11 +535,11 @@ proc gen-ipmac {dbfd ip mac} {
     }
     
     if {$n > 0} then {
-	set tableau [format [mc {%1$s MAC-IP address associations found for %2$s:}] $n "$mac$ip"]
+	set tableau [mc {%1$s MAC-IP address associations found for %2$s:} $n "$mac$ip"]
 	append tableau "<br>"
 	append tableau [::arrgen::output "html" $conf(tabmenuipmac) $lines]
     } else {
-	set tableau [format [mc "No MAC-IP address association found for %s"] "$mac$ip"]
+	set tableau [mc "No MAC-IP address association found for %s" "$mac$ip"]
 	append tableau "<br>"
     }
 
@@ -577,7 +577,7 @@ proc gen-mac {dbfd mac} {
 proc gen-eq {dbfd eq} {
     set ideq [get-eq-id $dbfd $eq]
     if {$ideq==0} then {
-	return [format [mc "Equipment '%s' not found"] $eq]
+	return [mc "Equipment '%s' not found" $eq]
     }
     return [gen-portmac $dbfd "portmac.ideq=$ideq"]
 }
@@ -594,7 +594,7 @@ proc gen-eq {dbfd eq} {
 
 proc gen-vlan {dbfd vlanid} {
     if {[display-vlan $dbfd $vlanid] eq ""} then {
-	return [format [mc "Vlan '%s' not found"] $vlanid]
+	return [mc "Vlan '%s' not found" $vlanid]
     }
     return [gen-portmac $dbfd "portmac.idvlan=$vlanid"]
 }
@@ -661,7 +661,7 @@ proc gen-portmac {dbfd crit} {
     }
 
     if {$n > 0} then {
-	set tableau [format [mc "%s MAC-Equipment-port-vlan associations found"] $n]
+	set tableau [mc "%s MAC-Equipment-port-vlan associations found" $n]
 	append tableau [::arrgen::output "html" $conf(tabmenuportmac) $lines]
     } else {
 	set tableau [mc "No MAC-Equipment-port-vlan association found"]
@@ -718,7 +718,7 @@ proc get-eq-name {dbfd ideq} {
     if {[info exists cacheeq($ideq)]} then {
 	set eq $cacheeq($ideq)
     } else {
-	set eq [format [mc "Unknown equipment (id %s)"] $ideq]
+	set eq [mc "Unknown equipment (id %s)" $ideq]
 	pg_select $dbfd "SELECT nom FROM eq WHERE ideq=$ideq" tab {
 	    set eq $tab(nom)
 	}
@@ -765,7 +765,7 @@ proc display-crit {dbfd type param} {
 	nom       { set m "host %s" }
 	default   { set m "???" }
     }
-    return [format [mc $m] $param]
+    return [mc $m $param]
 }
 
 #

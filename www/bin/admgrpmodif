@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to store group data
+# Store group permissions
 #
 # Called by: admgrpedit
 #
@@ -122,7 +122,7 @@ proc val-group {dbfd group exist} {
 	# We want an existing group
 	#
 	if {$idgrp == -1} then {
-	    d error [format [mc "Group '%s' not found"] $group]
+	    d error [mc "Group '%s' not found" $group]
 	}
     } else {
 	#
@@ -134,7 +134,7 @@ proc val-group {dbfd group exist} {
 	}
 	# ... and now, check that the group is unknown
 	if {$idgrp != -1} then {
-	    d error [format [mc "Group '%s' already exist"] $group]
+	    d error [mc "Group '%s' already exist" $group]
 	}
     }
 
@@ -158,7 +158,7 @@ proc del-group {dbfd idgrp idorphan} {
     foreach table {dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom dns.dr_dhcpprofil} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    d dbabort [format [mc "delete %s"] $table] $msg
+	    d dbabort [mc "delete %s" $table] $msg
 	}
     }
 
@@ -185,7 +185,7 @@ proc del-group {dbfd idgrp idorphan} {
 	set sql "UPDATE global.corresp SET idgrp = $idorphan, present = 0
 		    WHERE idcor IN ($lcor)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    d dbabort [format [mc "modify %s"] "global.corresp"] $msg
+	    d dbabort [mc "modify %s" "global.corresp"] $msg
 	} 
     }
 
@@ -196,11 +196,11 @@ proc del-group {dbfd idgrp idorphan} {
     foreach table {global.corresp global.groupe} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    d dbabort [format [mc "delete %s"] $table] $msg
+	    d dbabort [mc "delete %s" $table] $msg
 	}
     }
 
-    d dbcommit [format [mc "delete %s"] $idgrp]
+    d dbcommit [mc "delete %s" $idgrp]
 }
 
 ##############################################################################
@@ -258,12 +258,12 @@ proc main {} {
 	10 {
 	    set action "add"
 	    val-group $dbfd $newgrp 0
-	    set msgact [format [mc "Creation of group %s"] $newgrp]
+	    set msgact [mc "Creation of group %s" $newgrp]
 	    set idgrp -1
 	}
 	00 {
 	    set action "mod"
-	    set msgact [format [mc "Modification of group %s"] $newgrp]
+	    set msgact [mc "Modification of group %s" $newgrp]
 	    set idgrp [val-group $dbfd $orggrp 1]
 
 	    # Renaming
@@ -311,7 +311,7 @@ proc main {} {
     foreach f {admin droitsmtp droitttl droitmac} {
 	set $f [set v [string trim [lindex $ftab($f) 0]]]
 	if {$v ne "0" && $v ne "1"} then {
-	    d error [format [mc {Invalid value '%1$s' for form variable '%2$s'}] $v $f]
+	    d error [mc {Invalid value '%1$s' for form variable '%2$s'} $v $f]
 	}
     }
 
@@ -349,7 +349,7 @@ proc main {} {
 	    } elseif {[info exists tcor($login)]} then {
 		if {$idgrp != [lindex $tcor($login) 0]} then {
 		    set g [lindex $tcor($login) 1]
-		    d error [format [mc {Login '%1$s' already assigned to group '%2$s'}] $login $g]
+		    d error [mc {Login '%1$s' already assigned to group '%2$s'} $login $g]
 		}
 		unset tcor($login)
 	    } else {
@@ -381,12 +381,12 @@ proc main {} {
 	set tri [string trim [lindex $ftab(tridom$n) 0]]
 	if {[string length $tri] > 0} then {
 	    if {! [regexp -- {^[0-9]+$} $tri]} then {
-		d error [format [mc "Invalid domain sort class '%s'"] $tri]
+		d error [mc "Invalid domain sort class '%s'" $tri]
 	    }
 
 	    set domaine [string trim [lindex $ftab(domaine$n) 0]]
 	    if {! [info exists tabdom($domaine)]} then {
-		d error [format [mc "Invalid domain '%s'"] $domaine]
+		d error [mc "Invalid domain '%s'" $domaine]
 	    }
 
 	    if {! [info exists ftab(rolemail$n)]} then {
@@ -394,7 +394,7 @@ proc main {} {
 	    }
 	    set rolemail [string trim [lindex $ftab(rolemail$n) 0]]
 	    if {! [regexp -- {^[01]$} $rolemail]} then {
-		d error [format [mc "Invalid mail role '%s'"] $rolemail]
+		d error [mc "Invalid mail role '%s'" $rolemail]
 	    }
 
 	    if {! [info exists ftab(roleweb$n)]} then {
@@ -402,7 +402,7 @@ proc main {} {
 	    }
 	    set roleweb [string trim [lindex $ftab(roleweb$n) 0]]
 	    if {! [regexp -- {^[01]$} $roleweb]} then {
-		d error [format [mc "Invalid web role '%s'"] $roleweb]
+		d error [mc "Invalid web role '%s'" $roleweb]
 	    }
 
 	    lappend liddom [list $tri $tabdom($domaine) $rolemail $roleweb]
@@ -434,12 +434,12 @@ proc main {} {
 	set tri [string trim [lindex $ftab(trires$n) 0]]
 	if {[string length $tri] > 0} then {
 	    if {! [regexp -- {^[0-9]+$} $tri]} then {
-		d error [format [mc "Invalid network sort class '%s'"] $tri]
+		d error [mc "Invalid network sort class '%s'" $tri]
 	    }
 
 	    set idreseau [string trim [lindex $ftab(reseau$n) 0]]
 	    if {! [info exists tabres($idreseau)]} then {
-		d error [format [mc "Invalid network id '%s'"] $idreseau]
+		d error [mc "Invalid network id '%s'" $idreseau]
 	    }
 
 	    if {! [info exists ftab(dhcp$n)]} then {
@@ -447,7 +447,7 @@ proc main {} {
 	    }
 	    set dhcp [string trim [lindex $ftab(dhcp$n) 0]]
 	    if {! [regexp -- {^[01]$} $dhcp]} then {
-		d error [format [mc "Invalid DHCP permission '%s'"] $dhcp]
+		d error [mc "Invalid DHCP permission '%s'" $dhcp]
 	    }
 
 	    if {! [info exists ftab(acl$n)]} then {
@@ -455,7 +455,7 @@ proc main {} {
 	    }
 	    set acl [string trim [lindex $ftab(acl$n) 0]]
 	    if {! [regexp -- {^[01]$} $acl]} then {
-		d error [format [mc "Invalid ACL permission '%s'"] $dhcp]
+		d error [mc "Invalid ACL permission '%s'" $dhcp]
 	    }
 
 	    lappend lidres [list $tri $idreseau $dhcp $acl]
@@ -475,14 +475,14 @@ proc main {} {
 	set allow_deny [lindex $ftab(allow$n) 0]
 	if {!([string equal $allow_deny "0"] || \
 		[string equal $allow_deny "1"])} then {
-	    d error [format [mc "Invalid value '%s' for allow/deny"] $allow_deny]
+	    d error [mc "Invalid value '%s' for allow/deny" $allow_deny]
 	}
 
 	set adr [string trim [lindex $ftab(adr$n) 0]]
 	if {[string length $adr] != 0} then {
 	    set m [check-ip-syntax $dbfd $adr "cidr"]
 	    if {[string length $m] > 0} then {
-		d error [format [mc "Invalid CIDR '%s'"] $adr]
+		d error [mc "Invalid CIDR '%s'" $adr]
 	    }
 	    lappend ldrip [list $allow_deny $adr]
 	    if {$allow_deny} then {
@@ -505,18 +505,18 @@ proc main {} {
 
 	set rw [lindex $ftab(eqrw$n) 0]
 	if {!($rw eq "0" || $rw eq "1")} then {
-	    d error [format [mc "Invalid value '%s' for read/write"] $rw]
+	    d error [mc "Invalid value '%s' for read/write" $rw]
 	}
 
 	set allow_deny [lindex $ftab(eqallow$n) 0]
 	if {!($allow_deny eq "0" || $allow_deny eq "1")} then {
-	    d error [format [mc "Invalid value '%s' for allow/deny"] $allow_deny]
+	    d error [mc "Invalid value '%s' for allow/deny" $allow_deny]
 	}
 
 	set pattern [string trim [lindex $ftab(eqpat$n) 0]]
 	if {$pattern ne ""} then {
 	    if {[catch {regexp $pattern ""} msg]} then {
-		d error [format [mc "Invalid regular expression pattern '%s'"] $pattern]
+		d error [mc "Invalid regular expression pattern '%s'" $pattern]
 	    }
 
 	    lappend ldreq [list $rw $allow_deny $pattern]
@@ -541,12 +541,12 @@ proc main {} {
 	set tri [string trim [lindex $ftab(tridhcpprof$n) 0]]
 	if {[string length $tri] > 0} then {
 	    if {! [regexp -- {^[0-9]+$} $tri]} then {
-		d error [format [mc "Invalid DHCP profile sort class '%s'"] $tri]
+		d error [mc "Invalid DHCP profile sort class '%s'" $tri]
 	    }
 
 	    set dhcpprofil [string trim [lindex $ftab(nomdhcpprof$n) 0]]
 	    if {! [info exists tabdhcpprofil($dhcpprofil)]} then {
-		d error [format [mc "Invalid DHCP profile '%s'"] $dhcpprofil]
+		d error [mc "Invalid DHCP profile '%s'" $dhcpprofil]
 	    }
 
 	    lappend lidprof [list $tri $tabdhcpprofil($dhcpprofil)]
@@ -585,17 +585,17 @@ proc main {} {
 	    set login [string trim [lindex $ftab(login$n) 0]]
 	    if {$login ne ""} then {
 		if {[catch {set nb [$ah getuser $login $u]} msg]} then {
-		    d error [format [mc "Authentication base problem: %s"] $msg]
+		    d error [mc "Authentication base problem: %s" $msg]
 		}
 		switch $nb {
 		    0 {
-			lappend inconsist [format [mc "Login '%s' does not exist"] $login]
+			lappend inconsist [mc "Login '%s' does not exist" $login]
 		    }
 		    1 {
 			# nothing: it's ok
 		    }
 		    default {
-			d error [format [mc "Login '%s' found more than once"] $login]
+			d error [mc "Login '%s' found more than once" $login]
 		    }
 		}
 	    }
@@ -617,7 +617,7 @@ proc main {} {
 	    set idreseau [lindex $r 1]
 	    set dhcp [lindex $r 2]
 	    if {$dhcp && ! $tabdhcp($idreseau)} then {
-		lappend inconsist [format [mc "Network '%s' is not DHCP enabled"] $tabres($idreseau)]
+		lappend inconsist [mc "Network '%s' is not DHCP enabled" $tabres($idreseau)]
 	    }
 	}
 
@@ -636,7 +636,7 @@ proc main {} {
 		    }
 		}
 		if {! $perm} then {
-		    lappend inconsist [format [mc "No 'allow' permission found for network '%s'"] $adr]
+		    lappend inconsist [mc "No 'allow' permission found for network '%s'" $adr]
 		}
 	    }
 	}
@@ -659,7 +659,7 @@ proc main {} {
 	    }
 
 	    if {$larger} then {
-		lappend inconsist [format [mc "'Allow' permission '%s' is too large"] $dr]
+		lappend inconsist [mc "'Allow' permission '%s' is too large" $dr]
 	    }
 	}
 
@@ -704,7 +704,7 @@ proc main {} {
 				(nom, admin, droitsmtp, droitttl, droitmac)
 			VALUES ('$qnewgrp', $admin, $droitsmtp, $droitttl, $droitmac)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    d dbabort [format [mc "add %s"] $newgrp] $msg
+	    d dbabort [mc "add %s" $newgrp] $msg
 	} 
     } else {
 
@@ -717,7 +717,7 @@ proc main {} {
 	    set qnewgrp [::pgsql::quote $newgrp]
 	    set sql "UPDATE global.groupe SET nom = '$qnewgrp' WHERE nom = '$qorggrp'"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [format [mc "rename %s"] $orggrp]
+		d dbabort [mc "rename %s" $orggrp]
 	    }
 	}
     }
@@ -729,7 +729,7 @@ proc main {} {
 	set idgrp $tab(idgrp)
     }
     if {$idgrp == -1} then {
-	d error [format [mc "Internal error: group '%s' not found"] $newgrp]
+	d error [mc "Internal error: group '%s' not found" $newgrp]
     }
 
     # Update group attributes
@@ -824,11 +824,11 @@ proc main {} {
 
     foreach sql $cmd {
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	   d dbabort [format [mc "modify %s"] $orggrp] $msg
+	   d dbabort [mc "modify %s" $orggrp] $msg
 	}
     }
 
-    d dbcommit [format [mc "modify %s"] $orggrp]
+    d dbcommit [mc "modify %s" $orggrp]
 
     #
     # Get group characteristics

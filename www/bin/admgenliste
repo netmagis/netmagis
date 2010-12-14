@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to select one or more DNS zones in order to force generation
+# Select one or more DNS zones in order to force generation
 #
 # Called by: admin
 #

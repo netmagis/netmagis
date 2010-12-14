@@ -131,7 +131,7 @@ proc main {} {
 	catch {unset tabuid}
 
 	if {[catch {set n [$ah getuser $tab(login) $u]} msg]} then {
-	    return [format [mc "Authentication base problem: %s"] $msg]
+	    return [mc "Authentication base problem: %s" $msg]
 	}
 	
 	if {$n == 1} then {

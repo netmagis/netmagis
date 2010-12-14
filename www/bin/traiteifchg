@@ -89,7 +89,7 @@ proc main {} {
     #
 
     if {[llength $liferr] > 0} then {
-	d error [format [mc "Inconsistency in access rights for following interfaces: %s"] [join $liferr ", "]]
+	d error [mc "Inconsistency in access rights for following interfaces: %s" [join $liferr ", "]]
     }
 
     #
@@ -107,7 +107,7 @@ proc main {} {
     foreach i $iface {
 	if {! ([info exists tabiface($i)] &&
 				[lindex $tabiface($i) 1] eq "edit")} then {
-	    d error [format [mc {You don't have write access to interface '%1$s' on '%2$s'}] $i $eq]
+	    d error [mc {You don't have write access to interface '%1$s' on '%2$s'} $i $eq]
 	}
     }
 
@@ -121,10 +121,10 @@ proc main {} {
     } elseif {[regexp {^[0-9]+$} $vlan] && [info exists tabvlan($vlan)]} then {
 	lassign $tabvlan($vlan) vlandesc isvoip
 	if {$isvoip} then {
-	    d error [format [mc "Vlan '%s' is a voice Vlan"] $vlan]
+	    d error [mc "Vlan '%s' is a voice Vlan" $vlan]
 	}
     } else {
-	d error [format [mc "Vlan '%s' not found"] $vlan]
+	d error [mc "Vlan '%s' not found" $vlan]
     }
 
     # voip
@@ -133,10 +133,10 @@ proc main {} {
     } elseif {[regexp {^[0-9]+$} $voip] && [info exists tabvlan($voip)]} then {
 	lassign $tabvlan($voip) vlandesc isvoip
 	if {! $isvoip} then {
-	    d error [format [mc "Vlan '%s' is not a voice Vlan"] $voip]
+	    d error [mc "Vlan '%s' is not a voice Vlan" $voip]
 	}
     } else {
-	d error [format [mc "Vlan '%s' not found"] $voip]
+	d error [mc "Vlan '%s' not found" $voip]
     }
 
     # description
@@ -147,7 +147,7 @@ proc main {} {
 	mono {
 	    # check special characters and add "X"
 	    if {[regexp {[^- a-zA-Z0-9+/()&.:#_]} $desc match]} then {
-		d error [format [mc "Special character '%s' is not allowed"] $match]
+		d error [mc "Special character '%s' is not allowed" $match]
 	    }
 	    # if user is admin, use the given sensor, else use the old sensor
 	    if {! $tabuid(admin)} then {
@@ -174,10 +174,10 @@ proc main {} {
 
     set iddom [read-domain $dbfd $domain]
     if {$iddom == -1} then {
-	d error [format [mc "Domain '%s' not found"] $domain]
+	d error [mc "Domain '%s' not found" $domain]
     }
     if {! [read-rr-by-name $dbfd $host $iddom tabrr]} then {
-	d error [format [mc "Equipment '%s' not found"] $eq]
+	d error [mc "Equipment '%s' not found" $eq]
     }
     set idrr $tabrr(idrr)
 
@@ -212,7 +212,7 @@ proc main {} {
     }
     set sql [join $sql ";"]
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	d error [format [mc "Error during spool insertion: %s"] $msg]
+	d error [mc "Error during spool insertion: %s" $msg]
     }
 
     #

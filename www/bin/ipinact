@@ -156,7 +156,7 @@ proc main {} {
 	set occurrence [string trim [lindex $ftab(occurrence) 0]]
 	set seloccur [lsearch -exact -index 0 $loccur $occurrence]
 	if {$seloccur == -1} {
-              d error [format [mc "Invalid occurrence '%s'"] $occurrence]
+              d error [mc "Invalid occurrence '%s'" $occurrence]
 	}
 
 	#
@@ -204,9 +204,9 @@ proc main {} {
 	}
 
 	set tableau "<BR>" 
-	append tableau [format [mc {Inactive hosts in network %1$s since more than %2$s months: }] $cidr $occurrence]
+	append tableau [mc {Inactive hosts in network %1$s since more than %2$s months: } $cidr $occurrence]
 	if {$nbadr >0 } then {
-	    append tableau [format [mc "%s inactive hosts"] $nbadr]
+	    append tableau [mc "%s inactive hosts" $nbadr]
 	    append tableau "\n"
 	    append tableau [::arrgen::output "html" $conf(tableau) $lines]
  	} else {

@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to store an MX modification
+# Store MX modifications
 #
 # Called by: admmxedit
 #
@@ -160,12 +160,12 @@ proc main {} {
 			d error $msg
 		    }
 		    if {[info exists tmx([lindex $mx 1])]} then {
-			d error [format [mc "'%s' specified more than once"] "$fnom.$fdom"]
+			d error [mc "'%s' specified more than once" "$fnom.$fdom"]
 		    }
 		    lappend lmx $mx
 		}
 	    } else {
-		d error [format [mc "Invalid form values (%s)"] "$idxprio, $idxnom, $idxdom"]
+		d error [mc "Invalid form values (%s)" "$idxprio, $idxnom, $idxdom"]
 	    }
 	}
     }
@@ -183,7 +183,7 @@ proc main {} {
 
 	set sql "DELETE FROM dns.rr_mx WHERE idrr = $trr(idrr)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    d dbabort [format [mc "delete %s"] [mc "old MX"]] $msg
+	    d dbabort [mc "delete %s" [mc "old MX"]] $msg
 	}
 
 	#
@@ -197,7 +197,7 @@ proc main {} {
 
 	    set sql "DELETE FROM dns.rr WHERE idrr = $trr(idrr)"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [format [mc "delete %s"] $fqdn] $msg
+		d dbabort [mc "delete %s" $fqdn] $msg
 	    }
 	} else {
 	    #
@@ -205,7 +205,7 @@ proc main {} {
 	    #
 	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
 	    if {$msg ne ""} then {
-		d dbabort [format [mc "add %s"] "MX"] $msg
+		d dbabort [mc "add %s" "MX"] $msg
 	    }
 	}
     } else {
@@ -218,7 +218,7 @@ proc main {} {
 	    # This case should not happen: user has asked for MX
 	    # creation, but did not imput any MX.
 	    #
-	    d dbabort [format [mc "add %s"] "MX"] [format [mc "No MX given for %s"] $fqdn]
+	    d dbabort [mc "add %s" "MX"] [mc "No MX given for %s" $fqdn]
 	} else {
 	    #
 	    # Create RR
@@ -228,7 +228,7 @@ proc main {} {
 	    set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" \
 				$tabuid(idcor) trr]
 	    if {$msg ne ""} then {
-		d dbabort [format [mc "add %s"] $fqdn] $msg
+		d dbabort [mc "add %s" $fqdn] $msg
 	    }
 
 	    #
@@ -236,7 +236,7 @@ proc main {} {
 	    #
 	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
 	    if {$msg ne ""} then {
-		d dbabort [format [mc "add %s"] "MX"] $msg
+		d dbabort [mc "add %s" "MX"] $msg
 	    }
 	}
     }
@@ -245,7 +245,7 @@ proc main {} {
     # Unlock and commit modifications
     #
 
-    d dbcommit [format [mc "modify %s"] "MX"]
+    d dbcommit [mc "modify %s" "MX"]
 
     #
     # Present informations stored in database

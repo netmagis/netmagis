@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to consult user's permissions
+# List user's permissions
 #
 # Called by: accueil
 #

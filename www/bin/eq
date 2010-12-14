@@ -516,7 +516,7 @@ proc format-one-eq {eqname iface _tabuid} {
 
     if {[llength $liferr] > 0} then {
 	set l [join $liferr " "]
-	set text [format [mc "Inconsistent permissions on interfaces: %s"] $l]
+	set text [mc "Inconsistent permissions on interfaces: %s" $l]
 	return [list $title $text]
     }
 
@@ -542,7 +542,7 @@ proc format-one-eq {eqname iface _tabuid} {
 	    set channel [conv-channel [lindex $radio 0]]
 	    set power   [lindex $radio 1]
 	    append txt " ("
-	    append txt [format [mc {channel %1$s power %2$s mW}] $channel $power]
+	    append txt [mc {channel %1$s power %2$s mW} $channel $power]
 	    append txt ")"
 	}
 
@@ -687,7 +687,7 @@ proc format-one-eq {eqname iface _tabuid} {
 	if {[info exists tabwifi($eqname:$i)]} then {
 	    foreach ssid $tw(:ssid) {
 		append txt "\n<BR>\n"
-		append txt [format [mc "SSID %s "] $ssid]
+		append txt [mc "SSID %s " $ssid]
 		foreach k {assoc auth} {
 		    set tk [mc $k]
 		    set id [lindex $tw(:$k:ssid:$ssid) 0]
@@ -751,7 +751,7 @@ proc main {} {
 
     set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
     if {! [call-topo $cmd msg]} then {
-	d error [format [mc "Error while reading equipments: %s"] $msg]
+	d error [mc "Error while reading equipments: %s" $msg]
     }
     foreach line [split $msg "\n"] {
 	switch [lindex $line 0] {
@@ -772,7 +772,7 @@ proc main {} {
 
     set cmd [format $conf(extractcoll) $tabuid(flagsr)]
     if {! [call-topo $cmd msg]} then {
-	d error [format [mc "Error while reading wifi sensors: %s"] $msg]
+	d error [mc "Error while reading wifi sensors: %s" $msg]
     }
     foreach line [split $msg "\n"] {
 	switch [lindex $line 0] {

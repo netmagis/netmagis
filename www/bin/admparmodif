@@ -76,11 +76,11 @@ proc main {} {
 	if {$msg eq ""} then {
 	    lappend lm "$key ($val)"
 	} else {
-	    dbabort [format [mc "modify %s"] $key] $msg
+	    dbabort [mc "modify %s" $key] $msg
 	}
     }
 
-    d dbcommit [format [mc "modify %s"] [mc "parameters"]]
+    d dbcommit [mc "modify %s" [mc "parameters"]]
     d writelog "admparmod" "modify parameters: [join $lm ,]"
 
     #

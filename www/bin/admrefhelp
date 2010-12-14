@@ -71,7 +71,7 @@ proc main {} {
 
     set type [lindex $ftab(type) 0]
     if {! [info exists conf(page-$type)]} then {
-	d error [format [mc "Type '%s' not supported"] $type]
+	d error [mc "Type '%s' not supported" $type]
     }
 
     #

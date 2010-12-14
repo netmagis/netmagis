@@ -245,11 +245,11 @@ proc traiteajout-machine {dbfd _tabuid _ftab} {
     }
 
     if {! [check-authorized-ip $dbfd $idcor $adr]} then {
-	d error [format [mc "You don't have rights on '%s'"] $adr]
+	d error [mc "You don't have rights on '%s'" $adr]
     }
 
     if {[read-rr-by-ip $dbfd $adr tabrrbidon]} then {
-	d error [format [mc "IP address '%s' already exists"] $adr]
+	d error [mc "IP address '%s' already exists" $adr]
     }
 
     #
@@ -289,7 +289,7 @@ proc traiteajout-machine {dbfd _tabuid _ftab} {
 
     set idhinfo [read-hinfo $dbfd $hinfo]
     if {$idhinfo == -1} then {
-	d error [format [mc "Host type '%s' not found"] $hinfo]
+	d error [mc "Host type '%s' not found" $hinfo]
     }
 
     #
@@ -396,7 +396,7 @@ proc traiteajout-machine {dbfd _tabuid _ftab} {
 	set msg [add-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
 		    $droitsmtp $ttl $commentaire $respnom $respmel $idcor trr]
 	if {$msg ne ""} then {
-	    d dbabort [format [mc "add %s"] $nom]
+	    d dbabort [mc "add %s" $nom]
 	}
 
     } else {
@@ -440,7 +440,7 @@ proc traiteajout-machine {dbfd _tabuid _ftab} {
 					respmel = '$qrespmel'
 				    WHERE idrr = $trr(idrr)"
 		if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		    d dbabort [format [mc "modify %s"] [mc "host information"]] $msg
+		    d dbabort [mc "modify %s" [mc "host information"]] $msg
 		}
 	    }
 	}
@@ -448,7 +448,7 @@ proc traiteajout-machine {dbfd _tabuid _ftab} {
 
     set sql "INSERT INTO dns.rr_ip VALUES ($trr(idrr), '$adr')"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-       d dbabort [format [mc "add %s"] $adr]
+       d dbabort [mc "add %s" $adr]
     }
 
     #
@@ -457,10 +457,10 @@ proc traiteajout-machine {dbfd _tabuid _ftab} {
 
     set msg [touch-rr $dbfd $trr(idrr)]
     if {$msg ne ""} then {
-	d dbabort [format [mc "modify %s"] [mc "RR"]] $msg
+	d dbabort [mc "modify %s" [mc "RR"]] $msg
     }
 
-    d dbcommit [format [mc "add %s"] "$nom.$domaine"]
+    d dbcommit [mc "add %s" "$nom.$domaine"]
     d writelog "addhost" "add $nom.$domaine ($adr)"
 
     #
@@ -561,7 +561,7 @@ proc traiteajout-multi {dbfd _tabuid _ftab} {
     #
 
     if {! [regexp {^[0-9]+$} $nbadr] || $nbadr < 1} then {
-       d error [format [mc "Invalid address count '%s'"] $nbadr]
+       d error [mc "Invalid address count '%s'" $nbadr]
     }
 
     switch -- $tri {
@@ -584,7 +584,7 @@ proc traiteajout-multi {dbfd _tabuid _ftab} {
     }
 
     if {[llength $lranges] == 0} then {
-       d error [format [mc "No block of %s free IPv4 address(es) found"] $nbadr]
+       d error [mc "No block of %s free IPv4 address(es) found" $nbadr]
     }
 
     #
@@ -715,7 +715,7 @@ proc traiteajout-alias {dbfd _tabuid _ftab} {
 
     set msg [add-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor newrr]
     if {$msg ne ""} then {
-	d dbabort [format [mc "add %s"] $nom] $msg
+	d dbabort [mc "add %s" $nom] $msg
     }
 
     #
@@ -724,11 +724,11 @@ proc traiteajout-alias {dbfd _tabuid _ftab} {
 
     set sql "INSERT INTO dns.rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	d dbabort [format [mc "add %s"] [mc "alias"]] $msg
+	d dbabort [mc "add %s" [mc "alias"]] $msg
     }
 
     
-    d dbcommit [format [mc "add %s"] "$nom.$domaine"]
+    d dbcommit [mc "add %s" "$nom.$domaine"]
     d writelog "addalias" "add alias $nom.$domaine -> $nomref.$domaineref"
 
     #
@@ -765,7 +765,7 @@ proc main {} {
     set action [string trim [lindex $ftab(action) 0]]
 
     if {! [info exists conf(form-$action)]} then {
-	d error [format [mc "Invalid input '%s'"] $action]
+	d error [mc "Invalid input '%s'" $action]
     }
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
 	d error [mc "Invalid input"]

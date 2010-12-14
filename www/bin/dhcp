@@ -1,8 +1,7 @@
 #!%TCLSH%
 
-
 #
-# Script to ask for network where DHCP parameters should be edited.
+# Ask for network where DHCP parameters should be edited.
 #
 # Called by: accueil
 #

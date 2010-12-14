@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script pour select a domain for which mail relay are to be modified
+# Select a domain for which mail relay are to be modified
 #
 # Called by: admin
 #

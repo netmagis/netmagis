@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to present application parameters to be modified
+# Display application parameters to be modified
 #
 # Called by: admin
 #
@@ -133,7 +133,7 @@ proc main {} {
 		    set html [::webapp::form-menu $key 1 0 $lmenu {}]
 		}
 		default {
-		    set msg [format [mc "Internal error: invalid key type '%s'"] $key] \
+		    set msg [mc "Internal error: invalid key type '%s'" $key] \
 		    set html [::webapp::helem "font" $msg "color" "#ff0000"]
 		}
 	    }

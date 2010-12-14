@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to force generation of one or more DNS zones
+# Force generation of one or more DNS zones
 #
 # Called by: admgenliste
 #
@@ -60,7 +60,7 @@ proc main {} {
 
     d dblock {dns.zone}
 
-    set op [format [mc "force generation for zone %s"] $z]
+    set op [mc "force generation for zone %s" $z]
 
     foreach z $ftab(zones) {
 	set qz [::pgsql::quote $z]

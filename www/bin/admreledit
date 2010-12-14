@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Script to present mail relay information to be modified
+# Display mail relay information to be modified
 #
 # Called by: admrelsel
 #

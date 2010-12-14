@@ -123,7 +123,7 @@ proc main {} {
             set nomgroupe	$tab(nom)
 
 	    if {[catch {set n [$ah getuser $login $u]} msg]} then {
-		d error [format [mc "Authentication base problem: %s"] $msg]
+		d error [mc "Authentication base problem: %s" $msg]
 	    }
 	    
 	    if {$n == 1} then {
