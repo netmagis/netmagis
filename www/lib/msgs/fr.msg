@@ -587,4 +587,11 @@
  {Host '%s' already exists} {La machine '%s' existe déjà}
  {(default zone value)} {(valeur par défaut de la zone)}
  {Internal error: impossible case '%s'} {Erreur interne : cas '%s' impossible}
+ {Inconsistency in access rights for following interfaces: %s} {Incohérence sur les droits d'accès pour les interfaces suivantes : %s}
+ {You did not selected any interface} {Vous n'avez pas sélectionné d'interface}
+ {You don't have write access to interface '%1$s' on '%2$s'} {Vous n'avez mpas de le droit de modifier l'interface '%1$s' sur '%2$s'}
+ {Vlan '%s' is a voice Vlan} {Le vlan '%s' est un Vlan VoIP}
+ {Vlan '%s' is not a voice Vlan} {Le vlan '%s' n'est pas un Vlan VoIP}
+ {Special character '%s' is not allowed} {Le caractère spécial '%s' n'est pas autorisé}
+ {Error during spool insertion: %s} {Ajout dans la file d'attente impossible : %s}
 }
