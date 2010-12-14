@@ -22,7 +22,7 @@
 #	- respmel : mail address of the person responsible for this host
 #   - free address block search
 #	- action : "ajout-multi"
-#	- redirect-search or redirect-map : non-empty value (see ajout.html)
+#	- dosearch or domap : non-empty value (see ajout.html)
 #	- tri : sort criterion ("nbadr" or "adr")
 #	- plage : selected network id
 #	- nbadr : block number
@@ -117,8 +117,8 @@ set conf(form-ajout-alias)	{
 }
 
 set conf(form-ajout-multi)	{
-	{redirect-search 0 1}
-	{redirect-map	0 1}
+	{dosearch	0 1}
+	{domap		0 1}
 	{tri		0 1}
 	{plage		1 1}
 	{nbadr		1 1}
@@ -469,7 +469,7 @@ proc traiteajout-machine {dbfd _tabuid _ftab} {
      
     switch -- [d nextprog] {
 	map {
-	    d urlset "%URLSUITE%" $conf(nextmap) [list {format carte} [d nextargs]]
+	    d urlset "%URLSUITE%" $conf(nextmap) [list {domap yes} [d nextargs]]
 	}
 	sequence {
 	    foreach kv [split [d nextargs] "&"] {
@@ -489,7 +489,7 @@ proc traiteajout-machine {dbfd _tabuid _ftab} {
 		    set nadr $tab(adr)
 		}
 
-		d urlset "%URLSUITE%" $conf(nextseq) [list [list "adr" $nadr]]
+		d urlset "%URLSUITE%" $conf(nextajout) [list [list "adr" $nadr]]
 		d urlsetnext "%URLSUITE%" "sequence" "nbadr=$nbadr"
 	    } else {
 		d urlset "%URLSUITE%" $conf(nextajout) {}
@@ -549,9 +549,9 @@ proc traiteajout-multi {dbfd _tabuid _ftab} {
     # Special case for address map: we redirect to another CGI script
     #
 
-    if {$redirect-map ne ""} then {
+    if {$domap ne ""} then {
 	set nftab(cidr) $lcidr
-	set nftab(format) [list "Carte des adresses"]
+	set nftab(domap) {yes}
 	puts stdout [::webapp::call-cgi $conf(scriptmap) nftab]
 	return 0
     }

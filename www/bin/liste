@@ -10,7 +10,7 @@
 #	- plages : list of IP network ids
 #	- cidr : cidr given by user
 #   - output format
-#	- format : "Consulter" or "Imprimer" or "Adresses libres"
+#	- dolist, doprint or domap
 #
 # History
 #   2002/03/27 : pda/jean : design
@@ -52,7 +52,9 @@ set conf(nextlist)	"%HOMEURL%/bin/liste"
 set conf(form)		{
 	{plages		0 99999}
 	{cidr		1 99999}
-	{format		0 1}
+	{dolist		0 1}
+	{doprint	0 1}
+	{domap		0 1}
 }
 
 # max size of IPv4 blocks where we are looking for non-declared addresses
@@ -517,7 +519,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 
 	set t [mc "Detail"]
 	d urlset "" $conf(nextlist) [list \
-					    [list "format" "consulter"] \
+					    [list "dolist" "yes"] \
 					    [list "cidr" $cidr] \
 					]
 	set url [d urlget ""]
@@ -623,14 +625,16 @@ proc main {} {
     }
 
     # output format
-    switch -glob -nocase -- [lindex $ftab(format) 0] {
-	Carte*		{ set format carte }
-	Imprimer	{ set format latex }
-	Consulter	-
-	*		{ set format html }
+    if {$doprint ne ""} then {
+	set format latex
+    } elseif {$domap ne ""} then {
+	set format map
+    } else {
+	# default case: dolist or anything else
+	set format html
     }
 
-    if {$format eq "carte"} then {
+    if {$format eq "map"} then {
 	output-map $dbfd $lcidr tabuid $format
     } else {
 	output-list $dbfd $lcidr tabuid $format

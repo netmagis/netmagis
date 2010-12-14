@@ -8,8 +8,8 @@
 # Parameters (form or url):
 #   - selection criteria
 #	- domaine : domain list
-#   - format de sortie
-#	- format : "Consulter" ou "Imprimer"
+#   - output format
+#	- dolist or doprint
 #
 # History
 #   2002/05/25 : pda      : design
@@ -33,7 +33,8 @@ set conf(err)		erreur.html
 
 set conf(form)		{
 	{domaine	0 99999}
-	{format		1 1}
+	{dolist		0 1}
+	{doprint	0 1}
 }
 
 #
@@ -134,10 +135,11 @@ proc main {} {
     #
 
     # output format
-    switch -- [lindex $ftab(format) 0] {
-	Imprimer	{ set format latex }
-	Consulter	-
-	default		{ set format html }
+    if {[lindex $ftab(doprint) 0] ne ""} then {
+	set format latex
+    } else {
+	# default case: dolist or anything else
+	set format html
     }
 
     foreach d $ftab(domaine) {

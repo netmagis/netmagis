@@ -1107,7 +1107,7 @@ snit::type ::dnscontext {
     #
 
     method dblock {tablelist} {
-	if {! [::pgsql::lock $dbfd $tablelist] msg]} then {
+	if {! [::pgsql::lock $db $tablelist msg]} then {
 	    if {[llength $tablelist] == 0} then {
 		set tl [join $tablelist ", "]
 		$self error [format [mc {Cannot lock table(s) %1$s: %2$s}] $tl $msg]
@@ -1118,13 +1118,13 @@ snit::type ::dnscontext {
     }
 
     method dbcommit {op} {
-	if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+	if {! [::pgsql::unlock $db "commit" msg]} then {
 	    $self dbabort $op $msg
 	}
     }
 
     method dbabort {op msg} {
-	::pgsql::unlock $dbfd "abort" m
+	::pgsql::unlock $db "abort" m
 	$self error [format [mc {Cannot perform operation "%1$s": %2$s}] $op $msg]
     }
 }

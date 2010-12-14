@@ -148,12 +148,12 @@ proc main {} {
     d urladdnext "%URLEDIT%"
 
     switch -- [d nextprog] {
-	map { set format "carte" }
+	map { set format "domap" }
 	list -
-	default { set format "consulter" }
+	default { set format "dolist" }
     }
     d urlset "%URLBACK%" $conf(nextlist) [list \
-						[list "format" $format] \
+						[list $format "yes"] \
 						[d nextargs] \
 					    ]
 

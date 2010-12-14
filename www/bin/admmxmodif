@@ -236,7 +236,7 @@ proc main {} {
 	    #
 	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
 	    if {$msg ne ""} then {
-		d dbabort [format "mc "add %s"] "MX"] $msg
+		d dbabort [format [mc "add %s"] "MX"] $msg
 	    }
 	}
     }

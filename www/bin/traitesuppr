@@ -99,7 +99,7 @@ proc traitesuppr-nom {dbfd idcor login _ftab} {
     foreach v {confirm nom domaine} {
 	set $v [string trim [lindex $ftab($v) 0]]
     }
-    set fqfn "$nom.$domaine"
+    set fqdn "$nom.$domaine"
 
     #
     # Check name
@@ -213,10 +213,10 @@ proc traitesuppr-nom {dbfd idcor login _ftab} {
 
 	switch -- [d nextprog] {
 	    map {
-		d urlset "%URLSUITE%" $conf(nextmap) [list {format carte} [d nextargs]]
+		d urlset "%URLSUITE%" $conf(nextmap) [list {domap {yes}} [d nextargs]]
 	    }
 	    list {
-		d urlset "%URLSUITE%" $conf(nextlist) [list {format consulter} [d nextargs]]
+		d urlset "%URLSUITE%" $conf(nextlist) [list {dolist {yes}} [d nextargs]]
 	    }
 	    default {
 		d urlset "%URLSUITE%" $conf(nextsuppr) {}
@@ -354,10 +354,10 @@ proc traitesuppr-ip {dbfd idcor login _ftab} {
 
     switch -- [d nextprog] {
 	map {
-	    d urlset "%URLSUITE%" $conf(nextmap) [list {format carte} [d nextargs]]
+	    d urlset "%URLSUITE%" $conf(nextmap) [list {domap {yes}} [d nextargs]]
 	}
 	list {
-	    d urlset "%URLSUITE%" $conf(nextlist) [list {format consulter} [d nextargs]]
+	    d urlset "%URLSUITE%" $conf(nextlist) [list {dolist {yes}} [d nextargs]]
 	}
 	default {
 	    d urlset "%URLSUITE%" $conf(nextsuppr) {}

@@ -14,7 +14,7 @@
 #	- tri1 = adr4|adr6|nom|etablissement|communaute|localisation|commentaire
 #	- tri2 = adr4|adr6|nom|etablissement|communaute|localisation|commentaire
 #   - output format:
-#	- format : "Consulter" or "Imprimer" or "Tableur"
+#	- dolist, doprint or docsv
 #
 # History
 #   2002/10/24 : pda      : design
@@ -42,7 +42,9 @@ set conf(form)		{
 	{communaute	0 9999}
 	{tri1		1 1}
 	{tri2		1 1}
-	{format		0 1}
+	{dolist		0 1}
+	{doprint	0 1}
+	{docsv		0 1}
 }
 
 #
@@ -152,11 +154,13 @@ proc main {} {
     #
 
     # output format
-    switch -- [lindex $ftab(format) 0] {
-	Consulter	{ set format html }
-	Imprimer	{ set format latex }
-	Tableur		{ set format csv }
-	default		{ set format html }
+    if {[lindex $ftab(doprint) 0] ne ""} then {
+	set format latex
+    } elseif {[lindex $ftab(docsv) 0] ne ""} then {
+	set format csv
+    } else {
+	# default case: dolist or anything else
+	set format html
     }
 
     # sort criteria

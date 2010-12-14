@@ -78,9 +78,9 @@
 		     \couleurfond {%COULEUR%}
 		     \centragehorizontal {CENTER}
 		} {
-		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Consulter">
-		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Imprimer">
-		    <INPUT TYPE="SUBMIT" NAME="format" VALUE="Tableur">
+		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consulter">
+		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Imprimer">
+		    <INPUT TYPE="SUBMIT" NAME="docsv" VALUE="Tableur">
 		}
 	    }
 	}

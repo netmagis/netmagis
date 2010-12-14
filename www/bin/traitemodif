@@ -325,10 +325,10 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
 
     switch -- [d nextprog] {
 	map {
-	    d urlset "%URLSUITE%" $conf(nextmap) [list {format carte} [d nextargs]]
+	    d urlset "%URLSUITE%" $conf(nextmap) [list {domap {yes}} [d nextargs]]
 	}
 	list {
-	    d urlset "%URLSUITE%" $conf(nextlist) [list {format consulter} [d nextargs]]
+	    d urlset "%URLSUITE%" $conf(nextlist) [list {dolist {yes}} [d nextargs]]
 	}
 	default {
 	    d urlset "%URLSUITE%" $conf(nextmodif) {}

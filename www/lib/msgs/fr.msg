@@ -581,7 +581,7 @@
  {Choose this address} {Choisir cette adresse}
  {Choose these %s addresses} {Choisir ces %s adresses}
  {Choose the first address} {Choisir la première adresse}
- {Choose the first %s first addresses} {Choisir les %s premières adresses}
+ {Choose the %s first addresses} {Choisir les %s premières adresses}
  {Cannot read host-id %s} {Impossible de lire la machine d'identificateur %s}
  {Host id %s not found} {Machine d'id %s non trouvée}
  {Host '%s' already exists} {La machine '%s' existe déjà}
