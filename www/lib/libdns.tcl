@@ -18,6 +18,10 @@ package require snit			;# tcllib
 # Paramètres de la librairie
 ##############################################################################
 
+set libconf(topohost)	{%TOPOHOST%}
+set libconf(topobin)	%TOPODIR%/bin
+set libconf(topograph)	%TOPOGRAPH%
+
 #
 # Divers formats de tabeaux
 #
@@ -4937,12 +4941,8 @@ snit::type ::config {
 #   2008/10/01 : pda             : ajout de message de statut de la topo
 #
 
-set libconf(topodir)	%TOPODIR%
-set libconf(graph)	%GRAPH%
-set libconf(status)	%STATUS%
-
-set libconf(extractcoll)	"%TOPODIR%/bin/extractcoll %s < %GRAPH%"
-set libconf(extracteq)		"%TOPODIR%/bin/extracteq %s %s < %GRAPH%"
+set libconf(extractcoll)	"extractcoll %s"
+set libconf(extracteq)		"extracteq %s %s"
 
 array set libconf {
     freq:2412	1
@@ -5008,6 +5008,36 @@ proc topo-status {dbfd admin} {
 	}
     }
     return $msgsta
+}
+
+#
+# Wrapper function to call topo programs on topo host
+#
+# Input:
+#   - cmd: topo program with arguments
+#   - _msg : in return, text read from program or error message
+#   - global variable libconf(topohost): topo hostname or empty for local exec
+#   - global variable libconf(topobin): path to topo programs
+#   - global variable libconf(topograph): compiled graph path
+# Output:
+#   - return value: 1 if ok, 0 if failure
+#   - parameter _msg: text read or error message
+#
+# History
+#   2010/12/14 : pda/jean : design
+#
+
+proc call-topo {cmd _msg} {
+    global libconf
+    upvar $_msg msg
+
+    set cmd "$libconf(topobin)/$cmd < $libconf(topograph)"
+    if {$libconf(topohost) eq ""} then {
+	set r [catch {exec sh -c $cmd} msg]
+    } else {
+	set r [catch {exec ssh $libconf(topohost) $cmd} msg]
+    }
+    return [expr !$r]
 }
 
 #
@@ -5191,12 +5221,10 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
     #
 
     set cmd [format $libconf(extractcoll) $tabuid(flagsr)]
-
-    if {[catch {set fd [open "| $cmd" "r"]} msg]} then {
-	return "Impossible de lire les points de collecte: $msg"
+    if {! [call-topo $cmd msg]} then {
+	d error "Erreur lors de la lecture des points de collecte ($msg)"
     }
-
-    while {[gets $fd ligne] > -1} {
+    foreach ligne [split $msg "\n"] {
 	set l [split $ligne]
 	set kw [lindex $l 0]
 	set i  [lindex $l 1]
@@ -5213,7 +5241,6 @@ proc verifier-metro-id {dbfd id _tabuid _titre} {
 	    set lid [lreplace $lid $n $n]
 	}
     }
-    catch {close $fd}
 
     #
     # Erreur si id pas trouvé
@@ -5543,8 +5570,10 @@ proc eq-iflist {eq _tabuid} {
     set found 0
 
     set cmd [format $libconf(extracteq) $tabuid(flagsr) $eq]
-    set fd [open "|$cmd" "r"]
-    while {[gets $fd ligne] > -1} {
+    if {! [call-topo $cmd msg]} then {
+	d error "Erreur lors de la lecture des équipements ($msg)"
+    }
+    foreach ligne [split $msg "\n"] {
 	switch [lindex $ligne 0] {
 	    eq {
 		set r [lreplace $ligne 0 0]
@@ -5571,9 +5600,6 @@ proc eq-iflist {eq _tabuid} {
 		set tabiface($if) [lreplace $ligne 0 0]
 	    }
 	}
-    }
-    if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture de l'équipement '$eq' (read)\n$msg"
     }
 
     if {! $found} then {

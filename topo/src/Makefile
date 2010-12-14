@@ -2,7 +2,7 @@
 #
 
 TOPODIR=/local/applis/topo
-GRAPH=$(TOPODIR)/osiris/osiris.graph
+TOPOGRAPH=$(TOPODIR)/osiris/osiris.graph
 
 # pour topod
 BASE="{host=dbcrc.u-strasbg.fr dbname=dns user=dns password=pas-fou-non}"
@@ -55,7 +55,7 @@ SUBST = \
         -e 's|%FPING%|$(FPING)|' \
         -e 's|%RANCID%|$(RANCID)|' \
         -e 's|%LOGGER%|$(LOGGER)|' \
-        -e 's|%GRAPH%|$(GRAPH)|' \
+        -e 's|%TOPOGRAPH%|$(TOPOGRAPH)|' \
         -e 's|%TOPODIR%|$(TOPODIR)|' \
         -e 's|%BASE%|$(BASE)|' \
         -e 's|%LIBDNS%|$(LIBDNS)|' \

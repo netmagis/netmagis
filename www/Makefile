@@ -46,8 +46,7 @@ COULEUR = "\#10C090"
 DEFDOM  = u-strasbg.fr
 
 TOPODIR	= /local/applis/topo
-GRAPH	= $(TOPODIR)/osiris/osiris.graph
-STATUS	= $(TOPODIR)/osiris/osiris.status
+TOPOGRAPH = $(TOPODIR)/osiris/osiris.graph
 IDRHOST	= metro.u-strasbg.fr
 
 NEATO	= /usr/local/bin/neato
@@ -84,8 +83,7 @@ SUBST	= \
 	-e 's|%BASE%|$(BASE)|' \
 	-e 's|%BASEMAC%|$(BASEMAC)|' \
 	-e 's|%TOPODIR%|$(TOPODIR)|' \
-	-e 's|%GRAPH%|$(GRAPH)|' \
-	-e 's|%STATUS%|$(STATUS)|' \
+	-e 's|%TOPOGRAPH%|$(TOPOGRAPH)|' \
 	-e 's|%DEFUSER%|$(DEFUSER)|' \
 	-e 's|%NEATO%|$(NEATO)|' \
 	-e 's|%DOT%|$(DOT)|' \

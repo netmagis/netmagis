@@ -59,8 +59,8 @@ set conf(form)	{
     {iface		0 1}
 }
 
-set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
-set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
+set conf(dumpgraph)	"dumpgraph %s"
+set conf(extractcoll)	"extractcoll -w %s"
 
 #
 # Les outils du parfait concepteur de pages Web dynamiques...
@@ -789,8 +789,10 @@ proc main {} {
     #
 
     set cmd [format $conf(dumpgraph) $tabcor(flagsr)]
-    set fd [open "|$cmd" "r"]
-    while {[gets $fd ligne] > -1} {
+    if {! [call-topo $cmd msg]} then {
+	d error "Erreur lors de la lecture des équipements ($msg)"
+    }
+    foreach ligne [split $msg "\n"] {
 	switch [lindex $ligne 0] {
 	    eq {
 		set nomeq  [lindex $ligne 1]
@@ -802,17 +804,16 @@ proc main {} {
 	    }
 	}
     }
-    if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture des équipements ($msg)"
-    }
 
     #
     # Récupérer les stats wifi sur ces équipements
     #
 
     set cmd [format $conf(extractcoll) $tabcor(flagsr)]
-    set fd [open "|$cmd" "r"]
-    while {[gets $fd ligne] > -1} {
+    if {! [call-topo $cmd msg]} then {
+	d error "Erreur lors de la lecture des sondes wifi ($msg)"
+    }
+    foreach ligne [split $msg "\n"] {
 	set kw [lindex $ligne 0]
 	switch $kw {
 	    nbassocwifi -
@@ -828,9 +829,6 @@ proc main {} {
 		}
 	    }
 	}
-    }
-    if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture des sondes wifi ($msg)"
     }
 
     #

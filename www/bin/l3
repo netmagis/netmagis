@@ -56,8 +56,8 @@ set conf(form)	{
     {format		0 1}
 }
 
-set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
-set conf(extractl3)	"%TOPODIR%/bin/extractl3 %s %s < %GRAPH%"
+set conf(dumpgraph)	"dumpgraph %s"
+set conf(extractl3)	"extractl3 %s %s"
 
 set conf(dot)		"%DOT%"
 set conf(neato)		"%NEATO%"
@@ -155,13 +155,15 @@ proc epilogue {format} {
     return "\}\n"
 }
 
-proc generer-dot {format prog} {
+proc generer-dot {format cmd} {
     global conf
 
     set dot [prologue $format]
 
-    set fd [open "|$prog" "r"]
-    while {[gets $fd line] > 0} {
+    if {! [call-topo $cmd msg]} then {
+	return ""
+    }
+    foreach line [split $msg "\n"] {
 	switch -- [lindex $line 0] {
 	    selection {
 		append dot [title [lreplace $line 0 0]]
@@ -275,7 +277,6 @@ proc generer-dot {format prog} {
 	    }
 	}
     }
-    close $fd
 
     append dot [epilogue $format]
 
@@ -320,15 +321,13 @@ proc main {} {
     #
 
     set cmd [format $conf(dumpgraph) $tabcor(flagsr)]
-    set fd [open "|$cmd" "r"]
-
-    while {[gets $fd ligne] > -1} {
+    if {! [call-topo $cmd msg]} then {
+	d error "Erreur lors de la lecture des réseaux ($msg)"
+    }
+    foreach ligne [split $msg "\n"] {
 	if {[regexp {^rnet ([^ ]+)} $ligne bidon a]} then {
 	    set tabip($a) ""
 	}
-    }
-    if {[catch {close $fd} msg]} then {
-	d error "Erreur lors de la lecture des réseaux ($msg)"
     }
 
     if {[string equal $addr ""]} then {
