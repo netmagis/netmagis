@@ -132,6 +132,15 @@
  {Found more than one entry for login '%s' in the authentication base} {Plus d'une entrée trouvée pour le login '%s' dans la base d'authentification}
  {User '%s' is not in the WebDNS base} {L'utilisateur '%s' n'est pas dans la base de WebDNS}
  {Invalid input} {Données invalides}
+ {Invalid input '%s'} {Données invalides '%s'}
+ {Cannot lock table(s) %1$s: %2$s} {Verrouillage impossible pour la/les table(s) %1$s : %2$s}
+ {Cannot lock database: %s} {Verrouillage impossible : %s}
+ {Cannot perform operation "%1$s": %2$s} {Opération "%1$s" impossible : %2$s}
+ {delete %s} {suppression de %s}
+ {modify %s} {modification de %s}
+ {add %s} {ajout de %s}
+ {rename %s} {renommage de %s}
+ {store} {enregistrement}
 
  {User}	{Utilisateur}
  {Login}	{Login}
@@ -175,6 +184,7 @@
  {Aliases}		{Aliases}
  {Priority}	{Priorité}
  {MX}		{MX}
+ {RR}		{RR}
  {Submit} {Enregistrer}
  {Reset} {Réinitialiser}
  {Title}	{Intitulé}
@@ -208,7 +218,8 @@
  {'%1$s' is not a valid IPv%2$s address} {'%1$s' n'est pas une adresse IPv%2$s valide}
  {The '/' character is not valid in the address '%s'} {Le caractère '/' est interdit dans l'adresse '%s'}
  {Invalid syntax for '%s'} {Syntaxe invalide pour '%s'}
- {Invalid syntax for DHCP profile} {Syntaxe invalide pour le profil DHCP}
+ {Invalid syntax '%s' for DHCP profile} {Syntaxe invalide pour le profil DHCP '%s'}
+ {Invalid DHCP profile '%s'} {Profil DHCP '%s' invalide}
  {No profile} {Aucun profil}
 
  {Internal error: invalid context '%s'} {Erreur interne : contexte '%s' invalide}
@@ -263,12 +274,9 @@
  {You do not have DHCP access to this network} {Vous n'avez pas accès à ce réseau pour DHCP}
  {You do not have ACL access to this network} {Vous n'avez pas accès à ce réseau pour définir des ACL}
  {Internal error: invalid tabular specification} {Erreur interne : spécification de tableau invalide}
- {Unable to lock table (%s)} {Verrouillage impossible (%s)}
- {Unable to lock database: %s)} {Verrouillage impossible : %s}
  {Error deleting '%1$s' (%2$s)} {Erreur dans la suppression de '%1$s' (%2$s)}
  {Error modifying '%1$s' (%2$s)} {Erreur dans la modification de '%1$s' (%2$s)}
  {Error adding '%1$s' (%2$s)} {Erreur dans l'ajout de '%1$s': %2$s}
- {Unable to commit, modification cancelled (%s)} {Déverrouillage impossible, modification annulée (%s)}
 
  {Unknown configuration key '%s'} {Clef de configuration '%s' inconnue}
  {Cannot set key '%1$s' to '%2$s: %3$s} {Impossible de modifier la clef '%1$s' à '%2$s' : %3$s}
@@ -305,10 +313,8 @@
 ###############################################################################
 # CGI Scripts
 ::msgcat::mcmset fr {
- {Error for zone '%1$s': %2$s} {Échec pour la zone '%1$s' : %2$s}
- {Operation failed (%s). Abort.} {L'opération a échoué (%s). Abandon.}
- {Insertion failed (%s). Abort.} {L'insertion a échoué (%s). Abandon.}
-
+ {force generation for zone %s} {forçage de la génération de la zone %s}
+ {Cannot create group of orphaned users} {Impossible de créer le groupe des utilisateurs orphelins}
  {New group creation} {Création d'un nouveau groupe}
  {Type the name of group to create} {Entrez le nom du groupe à créer}
  {Edition of group '%s'} {Édition du groupe '%s'}
@@ -330,7 +336,6 @@
  {Modification of group %s} {Modification du groupe %s}
  {Mail role edition} {Édition des rôles de messagerie}
  {Web role edition} {Édition des rôles de Web}
- {Unable to remove group: %s} {Suppression du groupe impossible : %s}
  {Invalid value '%1$s' for form variable '%2$s'} {Valeur '%1$s' invalide pour le champ de formulaire '%2$s'}
  {Login '%1$s' already assigned to group '%2$s'} {Login '%1$s' déjà affecté au groupe '%2$s'}
  {Invalid domain sort class '%s'} {Classe de tri de domaine '%s' invalide}
@@ -358,15 +363,21 @@
  {MX insertion failed: %s} {Insertion du MX impossible : %s}
  {'%s' specified more than once} {'%s' spécifié plus d'une fois}
  {Invalid form values (%s)} {Valeurs de formulaire invalides (%s)}
- {Old MX deletion failed: %s} {Suppression des anciens MX impossible : %s}
+ {old MX} {anciens MX}
  {Deletion of RR '%1$s' failed: %2$s} {Suppression du RR '%1$s' impossible : %2$s}
- {No MX creation for '%s'} {Pas de création de MX pour '%s'}
+ {No MX given for %s} {Pas de MX fourni pour %s}
  {Addition or RR '%1$s' failed: %2$s} {Ajout du RR '%1$s' impossible : %2$s}
- {Unlock failed, modification failed: %s} {Déverrouillage impossible, modification annulée : %s}
  {RR deleted} {RR supprimé}
  {Internal error: invalid key type '%s'} {Erreur interne : type de clef invalide '%s'}
- {Store parameter '%1$s' failed: %2$s} {Enregistrement du paramètre '%1$s' impossible : %2$s}
+ {parameters} {paramètres}
+ {host information} {informations de la machine}
+ {alias} {alias}
  {return to application parameter modification} {revenir à la modification des paramètres de l'application}
+ {old mail relays} {anciens relais de messagerie}
+ {new mail relays} {nouveaux relais de messagerie}
+ {mail relays} {relais de messagerie}
+ {mail role} {rôle de messagerie}
+ {mailbox permissions} {droits d'accès aux boîtes aux lettres}
  {Type '%s' not supported} {Type '%s' non supporté}
  {Organization management} {Gestion des organismes}
  {Community management} {Gestion des communautés}
@@ -415,7 +426,7 @@
  {Conflict between dynamic range [%1$s] and %2$s IP address(es) declared with a MAC address} {Conflit entre l'intervalle dynamique [%1$s] et %2$s adresse(s) IP déclée(s) avec une adresse MAC}
  {Range [%1$s] intersects with range [%2$s]} {L'intervalle [%1$s] a une intersection non nulle avec l'intervalle [%2$s]}
  {Permissions not associated with any network} {Droits non rattachés à des réseaux}
- {Address '%s' do not exists in database} {L'adresse '%s' n'existe pas dans la base}
+ {Address '%s' not found} {Adresse '%s' non trouvée}
  {sums} {cumuls}
  {detail/SSID} {détail/SSID}
  {detail/AP} {détail/AP}
@@ -560,4 +571,20 @@
  {Change log of '%1$s' at %2$s} {Log des modifications de '%1$s' au %2$s}
  {No message for '%s'} {Aucun message pour '%s'}
  {Last message for '%1$s' at %2$s} {ernier message pour '%1$s' au %2$s}
+ {IP address '%s' already exists} {L'adresse '%s' existe déjà}
+ {You cannot set a DHCP profile without assigning a MAC address} {Impossible de configurer un profil DHCP sans adresse MAC}
+ {Host type '%s' not found} {Type de machine '%s' non trouvé}
+ {Invalid address count '%s'} {Nombre '%s' d'adresses invalide}
+ {No block of %s free IPv4 address(es) found} {Aucun bloc de %s adresse(s) trouvé}
+ {First available IP address} {Première adresse IP disponible}
+ {Size of block} {Taille du bloc}
+ {Choose this address} {Choisir cette adresse}
+ {Choose these %s addresses} {Choisir ces %s adresses}
+ {Choose the first address} {Choisir la première adresse}
+ {Choose the first %s first addresses} {Choisir les %s premières adresses}
+ {Cannot read host-id %s} {Impossible de lire la machine d'identificateur %s}
+ {Host id %s not found} {Machine d'id %s non trouvée}
+ {Host '%s' already exists} {La machine '%s' existe déjà}
+ {(default zone value)} {(valeur par défaut de la zone)}
+ {Internal error: impossible case '%s'} {Erreur interne : cas '%s' impossible}
 }

@@ -374,11 +374,7 @@ proc main {} {
 	{iddhcpprofil}
     }
 
-    set msg [store-tabular $dbfd $spec iddhcprange dns.dhcprange ftab]
-    if {$msg ne ""} then {
-	d error $msg
-    }
-
+    store-tabular $dbfd $spec iddhcprange dns.dhcprange ftab
     d writelog "moddhcp" "modified dhcp ranges: [join $lcidr {, }]"
 
     #

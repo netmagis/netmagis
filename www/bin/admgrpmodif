@@ -146,12 +146,10 @@ proc val-group {dbfd group exist} {
 #
 
 proc del-group {dbfd idgrp idorphan} {
-
     set ltab {global.groupe global.corresp
-		dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom dns.dr_dhcpprofil}
-    if {! [::pgsql::lock $dbfd $ltab msg]} then {
-	return $msg
-    } 
+		dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom
+		dns.dr_dhcpprofil}
+    dblock $ltab
 
     #
     # Remove permissions
@@ -160,8 +158,7 @@ proc del-group {dbfd idgrp idorphan} {
     foreach table {dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom dns.dr_dhcpprofil} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    ::pgsql::unlock $dbfd "abort" m
-	    return $msg
+	    d dbabort [format [mc "delete %s"] $table] $msg
 	}
     }
 
@@ -188,8 +185,7 @@ proc del-group {dbfd idgrp idorphan} {
 	set sql "UPDATE global.corresp SET idgrp = $idorphan, present = 0
 		    WHERE idcor IN ($lcor)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    ::pgsql::unlock $dbfd "abort" m
-	    return $msg
+	    d dbabort [format [mc "modify %s"] "global.corresp"] $msg
 	} 
     }
 
@@ -200,16 +196,11 @@ proc del-group {dbfd idgrp idorphan} {
     foreach table {global.corresp global.groupe} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    ::pgsql::unlock $dbfd "abort" m
-	    return $msg
+	    d dbabort [format [mc "delete %s"] $table] $msg
 	}
     }
 
-    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-	return $msg
-    }
-
-    return ""
+    d dbcommit [format [mc "delete %s"] $idgrp]
 }
 
 ##############################################################################
@@ -239,14 +230,13 @@ proc main {} {
     pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = ''" tab {
 	set idorphan $tab(idgrp)
     }
-    
+
     if {$idorphan == -1} then {
 	set sql "INSERT INTO global.groupe
 				(nom, admin, droitsmtp, droitttl, droitmac)
 			    VALUES ('', 0, 0, 0, 0)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    ::pgsql::unlock $dbfd "abort" m
-	    return $msg
+	    d error [mc "Cannot create group of orphaned users"]
 	} 
 	pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = ''" tab {
 	    set idorphan $tab(idgrp)
@@ -301,10 +291,7 @@ proc main {} {
 				    ]
 	} else {
 	    # Proceed to removal
-	    set msg [del-group $dbfd $idgrp $idorphan]
-	    if {$msg ne ""} then {
-		d error [format [mc "Unable to remove group: %s"] $msg]
-	    }
+	    del-group $dbfd $idgrp $idorphan
 	    d result $conf(supprok) [list \
 					[list %ORGGRP%	$orggrp] \
 				    ]
@@ -705,10 +692,9 @@ proc main {} {
     #
 
     set ltab {global.groupe global.corresp
-		dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom dns.dr_dhcpprofil} 
-    if {! [::pgsql::lock $dbfd $ltab msg]} then {
-	return $msg
-    } 
+		dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom
+		dns.dr_dhcpprofil} 
+    d dblock $ltab
 
     # Create group if needed
 
@@ -718,8 +704,7 @@ proc main {} {
 				(nom, admin, droitsmtp, droitttl, droitmac)
 			VALUES ('$qnewgrp', $admin, $droitsmtp, $droitttl, $droitmac)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    ::pgsql::unlock $dbfd "abort" m
-	    return $msg
+	    d dbabort [format [mc "add %s"] $newgrp] $msg
 	} 
     } else {
 
@@ -732,8 +717,7 @@ proc main {} {
 	    set qnewgrp [::pgsql::quote $newgrp]
 	    set sql "UPDATE global.groupe SET nom = '$qnewgrp' WHERE nom = '$qorggrp'"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		::pgsql::unlock $dbfd "abort" m
-		return $msg
+		d dbabort [format [mc "rename %s"] $orggrp]
 	    }
 	}
     }
@@ -840,15 +824,11 @@ proc main {} {
 
     foreach sql $cmd {
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	   ::pgsql::unlock $dbfd "abort" m
-	   d error [format [mc "Operation failed (%s). Abort."] $msg]
+	   d dbabort [format [mc "modify %s"] $orggrp] $msg
 	}
     }
 
-    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-       ::pgsql::unlock $dbfd "abort" m
-       d error [format [mc "Insertion failed (%s). Abort."] $msg]
-    }
+    d dbcommit [format [mc "modify %s"] $orggrp]
 
     #
     # Get group characteristics

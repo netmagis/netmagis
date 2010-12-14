@@ -67,26 +67,20 @@ proc main {} {
     # Store new values
     #
 
-    if {! [::pgsql::lock $dbfd {global.config} msg]} then {
-	d error [format [mc "Unable to lock table (%s)"] $msg]
-    }
+    d dblock {global.config}
 
     set lm {}
     foreach key [dnsconfig keys] {
 	set val [lindex $ftab($key) 0]
 	set msg [dnsconfig set $key $val]
-	if {[string equal $msg ""]} then {
+	if {$msg eq ""} then {
 	    lappend lm "$key ($val)"
 	} else {
-	    ::pgsql::unlock $dbfd "abort" m
-	    d error [format [mc {Store parameter '%1$s' failed: %2$s}] $key $msg]
+	    dbabort [format [mc "modify %s"] $key] $msg
 	}
     }
 
-    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-	d error [format [mc "Unlock failed, modification failed: %s"] $msg]
-    }
-
+    d dbcommit [format [mc "modify %s"] [mc "parameters"]]
     d writelog "admparmod" "modify parameters: [join $lm ,]"
 
     #

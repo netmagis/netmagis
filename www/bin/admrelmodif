@@ -169,9 +169,7 @@ proc main {} {
     # Start transaction
     #
 
-    if {! [::pgsql::lock $dbfd {} msg]} then {
-	d error [format [mc "Unable to lock database: %s"] $msg]
-    }
+    d dblock {}
 
     #
     # First, delete all previous relays
@@ -179,8 +177,7 @@ proc main {} {
 
     set sql "DELETE FROM dns.relais_dom WHERE iddom = $iddom"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	::pgsql::unlock $dbfd "abort" m
-	d error [format [mc "Old relay deletion failed: %s"] $msg]
+	d dbabort [format [mc "delete %s"] [mc "old mail relays"]] $msg
     }
 
     #
@@ -189,18 +186,14 @@ proc main {} {
 
     set msg [insert-relay $dbfd $iddom $lrel]
     if {$msg ne ""} then {
-	::pgsql::unlock $dbfd "abort" m
-	d error $msg
+	d dbabort [format [mc "add %s"] [mc "new mail relays"]] $msg
     }
 
     #
     # Unlock and commit modifications
     #
 
-    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-        ::pgsql::unlock $dbfd "abort" m
-        return [format [mc "Unlock failed, modification failed: %s"] $msg]
-    }
+    d dbcommit [format [mc "modify %s"] [mc "mail relays"]]
 
     #
     # Present informations stored in database

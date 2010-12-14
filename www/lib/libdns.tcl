@@ -1101,6 +1101,32 @@ snit::type ::dnscontext {
 
 	$log log "" $event $euid $ip $msg
     }
+
+    #
+    # Transaction processing
+    #
+
+    method dblock {tablelist} {
+	if {! [::pgsql::lock $dbfd $tablelist] msg]} then {
+	    if {[llength $tablelist] == 0} then {
+		set tl [join $tablelist ", "]
+		$self error [format [mc {Cannot lock table(s) %1$s: %2$s}] $tl $msg]
+	    } else {
+		$self error [format [mc "Cannot lock database: %s"] $msg]
+	    }
+	}
+    }
+
+    method dbcommit {op} {
+	if {! [::pgsql::unlock $dbfd "commit" msg]} then {
+	    $self dbabort $op $msg
+	}
+    }
+
+    method dbabort {op msg} {
+	::pgsql::unlock $dbfd "abort" m
+	$self error [format [mc {Cannot perform operation "%1$s": %2$s}] $op $msg]
+    }
 }
 
 ##############################################################################
@@ -2463,8 +2489,7 @@ proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
 	if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
-	    set msg [format [mc "Internal error: '%s' inserted, but not found in database"] \
-			    $name]
+	    set msg [format [mc "Internal error: '%s' inserted, but not found in database"] $name]
 
 	}
     } else {
@@ -2494,9 +2519,8 @@ proc touch-rr {dbfd idrr} {
     set date [clock format [clock seconds]]
     set idcor [lindex [d euid] 1]
     set sql "UPDATE dns.rr SET idcor = $idcor, date = '$date' WHERE idrr = $idrr"
-    if {[::pgsql::execsql $dbfd $sql msg]} then {
-       set msg ""
-    } else {
+    set msg ""
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	set msg [format [mc "RR update impossible: %s"] $msg]
     }
     return $msg
@@ -2819,12 +2843,12 @@ proc check-iddhcpprofil {dbfd iddhcpprofil _dhcpprofil _msg} {
     set msg ""
 
     if {! [regexp -- {^[0-9]+$} $iddhcpprofil]} then {
-	set msg [mc "Invalid syntax for DHCP profile"]
+	set msg [format [mc "Invalid syntax '%s' for DHCP profile"] $iddhcpprofil]
     } else {
 	if {$iddhcpprofil != 0} then {
 	    set sql "SELECT nom FROM dns.dhcpprofil
 				WHERE iddhcpprofil = $iddhcpprofil"
-	    set msg "Profil DHCP invalide ($iddhcpprofil)"
+	    set msg [format [mc "Invalid DHCP profile '%s'"] $iddhcpprofil]
 	    pg_select $dbfd $sql tab {
 		set dhcpprofil $tab(nom)
 		set msg ""
@@ -4441,7 +4465,7 @@ proc _display-tabular-line {cspec _tab idnum} {
 #	- table : name of the SQL table to modify
 #	- _ftab : array containing form field values
 # Output:
-#   - return value: empty string or error message
+#   - return value: none, this function exits if an error is encountered
 #
 # Notes :
 #   - format of "cspec" is {{column defval} ...}, where:
@@ -4456,6 +4480,7 @@ proc _display-tabular-line {cspec _tab idnum} {
 #   2001/11/02 : pda      : coding
 #   2002/05/03 : pda/jean : remove an old constraint
 #   2010/12/04 : pda      : i18n
+#   2010/12/14 : pda      : use db lock methods
 #
 
 proc store-tabular {dbfd cspec idnum table _ftab} {
@@ -4465,9 +4490,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
     # Lock the table
     #
 
-    if {! [::pgsql::execsql $dbfd "BEGIN WORK ; LOCK $table" msg]} then {
-	return [format [mc "Unable to lock table (%s)"] $msg]
-    }
+    d dblock [list $table]
 
     #
     # Last used id
@@ -4511,8 +4534,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
 				    WHERE $idnum = $id" t {
 			set oldkey $t($key)
 		    }
-		    ::pgsql::execsql $dbfd "ABORT WORK" m
-		    return [format [mc {Error deleting '%1$s' (%2$s)}] $oldkey $msg]
+		    d dbabort [format [mc "delete %s"] $oldkey] $msg
 		}
 	    } else {
 		#
@@ -4521,9 +4543,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
 
 		set ok [_store-tabular-mod $dbfd msg $id $idnum $table tabval]
 		if {! $ok} then {
-		    ::pgsql::execsql $dbfd "ABORT WORK" m
-		    return [format [mc {Error modifying '%1$s' (%2$s)}] $tabval($key) $msg]
-
+		    d dbabort [format [mc "modify %s"] $tabval($key)] $msg
 		}
 	    }
 	}
@@ -4544,8 +4564,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
 
 	    set ok [_store-tabular-add $dbfd msg $table tabval]
 	    if {! $ok} then {
-		::pgsql::execsql $dbfd "ABORT WORK" m
-		return [format [mc {Error adding '%1$s' (%2$s)}] $tabval($key) $msg]
+		d dbabort [format [mc "add %s"] $tabval($key)] $msg
 	    }
 	}
 
@@ -4556,12 +4575,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
     # Unlock and commit modifications
     #
 
-    if {! [::pgsql::execsql $dbfd "COMMIT WORK" msg]} then {
-	::pgsql::execsql $dbfd "ABORT WORK" m
-	return [format [mc "Unable to commit, modification cancelled (%s)"] $msg]
-    }
-
-    return ""
+    d dbcommit [mc "store"]
 }
 
 #
@@ -4661,7 +4675,7 @@ proc _store-tabular-mod {dbfd _msg id idnum table _tabval} {
     set diff 0
     pg_select $dbfd "SELECT * FROM $table WHERE $idnum = $id" tab {
 	foreach attribut [array names tabval] {
-	    if {[string compare $tabval($attribut) $tab($attribut)] != 0} then {
+	    if {$tabval($attribut) ne $tab($attribut)} then {
 		set diff 1
 		break
 	    }

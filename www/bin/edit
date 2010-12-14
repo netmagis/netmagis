@@ -85,7 +85,7 @@ proc main {} {
     #
 
     if {! [read-rr-by-ip $dbfd $addr trr]} then {
-	d error [format [mc "Address '%s' do not exists in database"] $addr]
+	d error [format [mc "Address '%s' not found"] $addr]
     }
 
     #

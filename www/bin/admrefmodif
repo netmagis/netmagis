@@ -279,12 +279,8 @@ proc main {} {
     set idnum $conf($type:idnum)
     set table $conf($type:table)
 
-    set msg [store-tabular $dbfd $spec $idnum $table ftab]
-    if {$msg ne ""} then {
-	d error $msg
-    }
-
-    d writelog "modref" "modification of table $table"
+    store-tabular $dbfd $spec $idnum $table ftab
+    d writelog "modref" "modification of reference table $table"
 
     #
     # End of script: output page and close database

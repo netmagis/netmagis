@@ -163,11 +163,11 @@
 			\lignetableau {
 			    \casetableau {} {~}
 			    \casetableau {} {
-				<INPUT TYPE="SUBMIT" NAME="redirect" VALUE="Rechercher">
+				<INPUT TYPE="SUBMIT" NAME="redirect-search" VALUE="Rechercher">
 				~ ~ ~ ~
 				ou 
 				~ ~ ~ ~
-				<INPUT TYPE="SUBMIT" NAME="redirect" VALUE="Consulter la carte">
+				<INPUT TYPE="SUBMIT" NAME="redirect-map" VALUE="Consulter la carte">
 			    }
 			}
 		    }

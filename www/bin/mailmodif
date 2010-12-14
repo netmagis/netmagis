@@ -110,12 +110,10 @@ proc main {} {
     #   non-empty AND non-empty => modification
     #
 
+    d dblock {dns.rr dns.role_mail}
+
     set emptyoldnameh [string equal $oldnameh ""]
     set emptynewnameh [string equal $nameh ""]
-
-    if {! [::pgsql::lock $dbfd {dns.rr dns.role_mail} msg]} then {
-	d error [format [mc "Unable to lock table (%s)"] $msg]
-    }
 
     set lm ""
     switch "$emptyoldnameh-$emptynewnameh" {
@@ -135,7 +133,7 @@ proc main {} {
 		set msg [add-rr $dbfd $name $trr(iddom) "" 0 "" 0 -1 \
 						"" "" "" $idcor trr]
 		if {$msg ne ""} then {
-		    d error $msg
+		    d dbabort [format [mc "add %s"] $name] $msg
 		} 
 	    }
 
@@ -146,8 +144,7 @@ proc main {} {
 	    set sql "INSERT INTO dns.role_mail (idrr, heberg)
 			    VALUES ($trr(idrr), $newtrrh(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		::pgsql::unlock $dbfd "abort" m
-		d error $msg
+		d dbabort [format [mc "add %s"] [mc "mail role"]] $msg
 	    }
 
 	    #
@@ -159,8 +156,7 @@ proc main {} {
 	    set sql "INSERT INTO dns.dr_mbox (idgrp, idmail)
 				VALUES ($tabuid(idgrp), $trr(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		::pgsql::unlock $dbfd "abort" m
-		d error $msg
+		d dbabort [format [mc "add %s"] [mc "mailbox permissions"]] $msg
 	    }
 
 	    set lm "add mail role $fqdn -> $fqdnh"
@@ -178,8 +174,7 @@ proc main {} {
 	    set sql "DELETE FROM dns.dr_mbox WHERE idmail = $idrr ;
 		    DELETE FROM dns.role_mail WHERE idrr = $idrr"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		::pgsql::unlock $dbfd "abort" m
-		d error $msg
+		d dbabort [format [mc "delete %s"] [mc "mail role"]] $msg
 	    }
 
 	    #
@@ -187,8 +182,7 @@ proc main {} {
 	    #
 	    set msg [del-orphaned-rr $dbfd $idrr]
 	    if {$msg ne ""} then {
-		::pgsql::unlock $dbfd "abort" m
-		d error $msg
+		d dbabort [format [mc "delete %s"] [mc "RR"]] $msg
 	    }
 
 	    set lm "delete mail role $fqdn"
@@ -208,8 +202,7 @@ proc main {} {
 				SET heberg = $newtrrh(idrr)
 				WHERE idrr = $idrr"
 	    if {$msg ne ""} then {
-		::pgsql::unlock $dbfd "abort" m
-		d error $msg
+		d dbabort [format [mc "modify %s"] [mc "mail role"]] $msg
 	    }
 	    set lm "modify mail role $fqdn -> $fqdnh"
 	}
@@ -220,11 +213,7 @@ proc main {} {
     # Finish transaction.
     #
 
-    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-	::pgsql::unlock $dbfd "abort" m
-	d error $msg
-    }
-
+    d dbcommit [format [mc "modify %s"] [mc "mail role"]
     d writelog "modmailrole" $lm
 
     #

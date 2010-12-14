@@ -58,23 +58,19 @@ proc main {} {
     # Force generation
     #
 
-    if {! [::pgsql::lock $dbfd {dns.zone} msg]} then {
-	d error "Transaction impossible : $msg"
-    }
+    d dblock {dns.zone}
+
+    set op [format [mc "force generation for zone %s"] $z]
 
     foreach z $ftab(zones) {
 	set qz [::pgsql::quote $z]
 	set sql "UPDATE zone SET generer = 1 WHERE domaine = '$qz'"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    ::pgsql::unlock $dbfd "abort" m
-	    d error [format [mc {Error for zone '%1$s': %2$s}] $z $msg]
+	    d dbabort $op $msg
 	}
     }
 
-    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-	::pgsql::unlock $dbfd "abort" m
-	d error [format [mc "Operation failed (%s). Abort."] $msg]
-    }
+    d dbcommit $op
 
     d writelog "forcegeneration" "zones $ftab(zones)"
 

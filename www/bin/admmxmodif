@@ -81,7 +81,7 @@ source %LIBDNS%
 # Insert a MX list in the database
 #
 # Input:
-#   - paramètres :
+#   - parameters:
 #	- dbfd : database handle
 #	- idrr : RR id
 #	- lmx : list of MX
@@ -90,18 +90,20 @@ source %LIBDNS%
 #
 # History
 #   2003/04/25 : pda/jean : design
+#   2010/12/14 : pda      : minor simplification
 #
 
 proc insert-mx {dbfd idrr lmx} {
+    set msg ""
     foreach mx $lmx {
 	lassign $mx prio idmx
 	set sql "INSERT INTO dns.rr_mx (idrr, priorite, mx)
 				VALUES ($idrr, $prio, $idmx)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    return [format [mc "MX insertion failed: %s"] $msg]
+	    break
 	}
     }
-    return ""
+    return $msg
 }
 
 ##############################################################################
@@ -169,16 +171,10 @@ proc main {} {
     }
 
     #
-    # Start transaction
-    #
-
-    if {! [::pgsql::lock $dbfd {} msg]} then {
-	d error [format [mc "Unable to lock database: %s"] $msg]
-    }
-
-    #
     # Insert and delete operations
     #
+
+    d dblock {}
 
     if {$exists} then {
 	#
@@ -187,8 +183,7 @@ proc main {} {
 
 	set sql "DELETE FROM dns.rr_mx WHERE idrr = $trr(idrr)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    ::pgsql::unlock $dbfd "abort" m
-	    d error [format [mc "Old MX deletion failed: %s"] $msg]
+	    d dbabort [format [mc "delete %s"] [mc "old MX"]] $msg
 	}
 
 	#
@@ -202,8 +197,7 @@ proc main {} {
 
 	    set sql "DELETE FROM dns.rr WHERE idrr = $trr(idrr)"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		::pgsql::unlock $dbfd "abort" m
-		d error [format [mc {Deletion of RR '%1$s' failed: %2$s}] $fqdn $msg]
+		d dbabort [format [mc "delete %s"] $fqdn] $msg
 	    }
 	} else {
 	    #
@@ -211,8 +205,7 @@ proc main {} {
 	    #
 	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
 	    if {$msg ne ""} then {
-		::pgsql::unlock $dbfd "abort" m
-		d error $msg
+		d dbabort [format [mc "add %s"] "MX"] $msg
 	    }
 	}
     } else {
@@ -225,8 +218,7 @@ proc main {} {
 	    # This case should not happen: user has asked for MX
 	    # creation, but did not imput any MX.
 	    #
-	    ::pgsql::unlock $dbfd "abort" m
-	    d error [format [mc "No MX creation for '%s'"] $fqdn]
+	    d dbabort [format [mc "add %s"] "MX"] [format [mc "No MX given for %s"] $fqdn]
 	} else {
 	    #
 	    # Create RR
@@ -236,7 +228,7 @@ proc main {} {
 	    set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" \
 				$tabuid(idcor) trr]
 	    if {$msg ne ""} then {
-		d error [format [mc {Addition or RR '%1$s' failed: %2$s}] $fqdn $msg]
+		d dbabort [format [mc "add %s"] $fqdn] $msg
 	    }
 
 	    #
@@ -244,8 +236,7 @@ proc main {} {
 	    #
 	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
 	    if {$msg ne ""} then {
-		::pgsql::unlock $dbfd "abort" m
-		d error $msg
+		d dbabort [format "mc "add %s"] "MX"] $msg
 	    }
 	}
     }
@@ -254,10 +245,7 @@ proc main {} {
     # Unlock and commit modifications
     #
 
-    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-        ::pgsql::unlock $dbfd "abort" m
-        return [format [mc "Unlock failed, modification failed: %s"] $msg]
-    }
+    d dbcommit [format [mc "modify %s"] "MX"]
 
     #
     # Present informations stored in database

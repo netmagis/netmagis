@@ -1,48 +1,43 @@
 #!%TCLSH%
 
-
 #
-# Script pour enregistrer les modifications demandées par un correspondant.
+# Store host modifications
 #
-# Called by: script editmodif (page lib/editmodif-infos.htgt)
+# Called by: editmodif
 #
 # Parameters (form or url):
-#   - modifications des informations d'une machine
+#   - modification of host informations
 #	- action : "modif-infos"
-#	- confirm : "non" ou "oui" (si confirmation ok)
-#	- idrr : idrr original de la machine à modifier
-#	- nom : nom modifié de la machine
-#	- domaine : domaine modifié de la machine 
-#	- mac : adresse mac
-#	- iddhcpprofil : l'id du profil DHCP, ou 0
-#	- hinfo : type de machine (id)
-#	- droitsmtp : inexistant ou non vide
-#	- ttl : valeur (ou vide si pas autorisé)
-#	- commentaire : informations complémentaires
-#	- respnom : nom+prénom du responsable
-#	- respmel : mél du responsable
+#	- confirm : "non" or "oui" (if confirm ok)
+#	- idrr : original idrr of host
+#	- nom : modified name of the host
+#	- domaine : modified domain of the host
+#	- mac : modified mac address
+#	- iddhcpprofil : modified DHCP profile (or 0)
+#	- hinfo : host type (id)
+#	- droitsmtp : non existant, or non empty
+#	- ttl : value (or empty if now allowed)
+#	- commentaire : comments
+#	- respnom : name of person responsible for this host
+#	- respmel : mail of person responsible for this host
 #
 # History
 #   2002/05/03 : pda/jean : design
-#   2002/05/23 : pda/jean : ajout du responsable
+#   2002/05/23 : pda/jean : add responsible
 #   2002/07/09 : pda      : add nologin
-#   2002/07/09 : pda      : conversion des noms en minuscules
+#   2002/07/09 : pda      : convert names to lowercase
 #   2003/05/13 : pda/jean : use auth base
-#   2004/08/05 : pda/jean : ajout mac
-#   2005/04/08 : pda/jean : ajout dhcppprofil
+#   2004/08/05 : pda/jean : add mac
+#   2005/04/08 : pda/jean : add dhcppprofil
 #   2007/10/25 : jean     : log modify actions
-#   2008/02/13 : pda/jean : le responsable est le correspondant si pas précisé
-#   2008/07/25 : pda/jean : ajout du droit d'émission SMTP et confirmation
-#   2010/10/14 : pda      : codage parcours (via next*)
-#   2010/10/26 : pda      : vérification dhcpprofil sans adresse mac
-#   2010/10/26 : pda      : rendre le nom+domaine éditable
-#   2010/10/31 : pda      : ajout ttl
+#   2008/02/13 : pda/jean : responsible person is the current user by default
+#   2008/07/25 : pda/jean : add smtp emit right
+#   2010/10/14 : pda      : add journey (via next)
+#   2010/10/26 : pda      : check dhcpprofil case when no maC address
+#   2010/10/26 : pda      : make name and domain editable
+#   2010/10/31 : pda      : add ttl
+#   2010/12/14 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -87,23 +82,21 @@ set conf(form-modif-infos)	{
 }
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
 
-
 ##############################################################################
-# Modification des informations
+# Information modification
 ##############################################################################
 
 # History
-#   2002/05/03 : pda/jean : conception
+#   2002/05/03 : pda/jean : design
 #
+
 proc traitemodif-infos {dbfd _tabuid _ftab} {
     global conf
     upvar $_ftab ftab
@@ -116,106 +109,85 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
     # Validate form input
     #
 
-    set idrr          [string trim [lindex $ftab(idrr) 0]]
-    set nom           [string trim [lindex $ftab(nom) 0]]
-    set domaine       [string trim [lindex $ftab(domaine) 0]]
-    set mac           [string trim [lindex $ftab(mac) 0]]
-    set iddhcpprofil  [string trim [lindex $ftab(iddhcpprofil) 0]]
-    set hinfo         [string trim [lindex $ftab(hinfo) 0]]
-    set droitsmtp     [string trim [lindex $ftab(droitsmtp) 0]]
-    set ttl           [string trim [lindex $ftab(ttl) 0]]
-    set commentaire   [string trim [lindex $ftab(commentaire) 0]]
-    set respnom       [string trim [lindex $ftab(respnom) 0]]
-    set respmel       [string trim [lindex $ftab(respmel) 0]]
-    set confirm       [string trim [lindex $ftab(confirm) 0]]
+    foreach v {idrr nom domaine mac iddhcpprofil droitsmtp ttl hinfo
+		    commentaire respnom respmel confirm} {
+	set $v [string trim [lindex $ftab($v) 0]]
+    }
 
     #
-    # Vérifier l'idrr
-    # Tester si l'idrr n'est pas un alias, et que le correspondant
-    # est bien propriétaire de toutes les adresses associées au nom.
+    # Check host idrr
+    # It must not be an alias, and user must own all addresses
     #
 
-    # tester la syntaxe du champ de formulaire qui nous est donné
     if {! [regexp {^\d+$} $idrr]} then {
-	d error "Erreur interne sur idrr"
+	d error [format [mc "Invalid input '%s'"] $idrr]
     }
     if {! [read-rr-by-id $dbfd $idrr trr]} then {
-	d error "Erreur de lecture de idrr"
+	d error [format [mc "Cannot read host-id %s"] $idrr]
     }
-    # tester si la machine existe
-    if {[string equal $trr(idrr) ""]} then {
-	d error "La machine d'id $idrr n'existe pas"
+    # test if host exists
+    if {$trr(idrr) eq ""} then {
+	d error [format [mc "Host id %s not found"] $idrr]
     }
 
-    # tester les droits
-    set m [check-authorized-host $dbfd $idcor $trr(nom) $trr(domaine) trr "existing-host"]
-    if {! [string equal $m ""]} then {
-	d error "Erreur de droit sur idrr"
+    set msg [check-authorized-host $dbfd $idcor $trr(nom) $trr(domaine) trr "existing-host"]
+    if {$msg ne ""} then {
+	d error $msg
     }
 
     #
-    # Vérifier le nouveau nom et le nouveau domaine
+    # Check new name and domain
     #
 
-    set m [check-name-syntax $nom]
-    if {[string length $m] > 0} then {
-	d error "Erreur sur le nom '$nom': $m"
+    set msg [check-name-syntax $nom]
+    if {$msg ne ""} then {
+	d error $msg
     }
     set nom [string tolower $nom]
 
-    set m [check-authorized-host $dbfd $idcor $nom $domaine ntrr "host"]
-    if {! [string equal $m ""]} then {
-	d error "Vous n'avez pas les droits sur $nom.$domaine"
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine ntrr "host"]
+    if {$msg ne ""} then {
+	d error $msg
     }
     if {$ntrr(idrr) != $idrr} then {
 	#
-	# Cas d'un nouveau nom de machine ou de domaine : il faut
-	# vérifier que ce n'est pas une machine existante
+	# New host or domain. We must check it does not already exist.
 	#
     	if {[info exists ntrr(ip)] && [llength $ntrr(ip)] > 0} then {
-	    d error "La machine $nom.$domaine existe déjà"
+	    d error [format [mc "Host '%s' already exists"] "$nom.$domaine"]
 	}
     }
     set iddom $ntrr(iddom)
 
     #
-    # Vérifier la syntaxe de l'adresse MAC
+    # Check various informations
     #
 
-    if {! [string equal $mac ""]} then {
-	set m [check-mac-syntax $dbfd $mac]
-	if {[string length $m] > 0} then {
-	    d error "Erreur sur l'adresse MAC : $m"
+    if {$mac ne ""} then {
+	set msg [check-mac-syntax $dbfd $mac]
+	if {$msg ne ""} then {
+	    d error $msg
 	}
     }
-
-    #
-    # Vérifier le profil DHCP
-    #
+    set msg [check-static-dhcp $dbfd $mac $trr(ip)]
+    if {$msg ne ""} then {
+	d error $msg
+    }
 
     if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
-	d error "Profil DHCP invalide ($msg)"
+	d error $msg
     }
-
-    if {[string equal $mac ""] && $iddhcpprofil != 0} then {
-	d error "Impossible de configurer un profil DHCP sans adresse MAC"
+    if {$mac eq "" && $iddhcpprofil != 0} then {
+	d error [mc "You cannot set a DHCP profile without assigning a MAC address"]
     }
-
-    #
-    # Récupérer le type de machine en clair
-    #
 
     set idhinfo [read-hinfo $dbfd $hinfo]
     if {$idhinfo == -1} then {
-	d error "Le type de machine '$hinfo' n'existe pas."
+	d error [format [mc "Host type '%s' not found"] $hinfo]
     }
 
-    #
-    # Vérifier le droit d'émission SMTP
-    #
-
     if {$tabuid(droitsmtp)} then {
-	if {[string equal $droitsmtp ""]} then {
+	if {$droitsmtp eq ""} then {
 	    set droitsmtp 0
 	} else {
 	    set droitsmtp 1
@@ -224,12 +196,8 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
 	set droitsmtp 0
     }
 
-    #
-    # Vérifier le droit TTL
-    #
-
     if {$tabuid(droitttl)} then {
-	if {[string equal $ttl ""]} then {
+	if {$ttl eq ""} then {
 	    set ttl -1
 	} else {
 	    set msg [check-ttl $ttl]
@@ -242,32 +210,22 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
     }
 
     #
-    # Tester si la machine doit être ajoutée statiquement comme adresse DHCP
+    # If responsible person is not specified, this is the user by default
     #
 
-    set m [check-static-dhcp $dbfd $mac $trr(ip)]
-    if {! [string equal $m  ""]} then {
-	d error "$m.\nModification refusée"
-    }
-
-    #
-    # Si le responsable n'est pas spécifié, mettre par défaut le
-    # correspondant Tant pis pour lui.
-    #
-
-    if {[string equal $respnom ""] && [string equal $respmel ""]} then {
+    if {$respnom eq "" && $respmel eq ""} then {
 	set respnom "$tabuid(nom) $tabuid(prenom)"
 	set respmel $tabuid(mel)
     }
 
     #
-    # Demander confirmation s'il y a demande d'émission SMTP
-    # (alors qu'il n'y en avait pas avant)
+    # Ask for confirmation if user asked for SMTP emit right
+    # (and this right was now allowed before)
     #
 
     if {! $trr(droitsmtp) && $droitsmtp && ! [string equal $confirm "oui"]} then {
 	#
-	# Sortir une page de confirmation
+	# Confirmation page
 	#
 
 	set l {idrr nom domaine mac iddhcpprofil hinfo droitsmtp ttl
@@ -282,12 +240,10 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
     }
 
     #
-    # Enregistrer les modifications
+    # Store modificationas
     #
 
-    if {! [::pgsql::lock $dbfd {dns.rr} msg]} then {
-	d error "Transaction impossible : $msg"
-    }
+    d dblock {dns.rr}
 
     if {! $tabuid(droitsmtp)} then {
 	set droitsmtp $trr(droitsmtp)
@@ -307,7 +263,7 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
 	set qiddhcpprofil $iddhcpprofil
     }
     if {$ttl == -1} then {
-	set httl "(valeur par défaut de la zone)"
+	set httl [mc "(default zone value)"]
     } else {
 	set httl $ttl
     }
@@ -329,23 +285,28 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
 			    respmel = '$qrespmel'
 			WHERE idrr = $trr(idrr)"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-       ::pgsql::unlock $dbfd "abort" m
-	d error "Impossible de mettre à jour : $msg"
+       d dbabort [format [mc "modify %s"] "$nom.$domaine"]
     }
 
     set msg [touch-rr $dbfd $trr(idrr)]
-    if {[string length $msg] > 0} then {
-       ::pgsql::unlock $dbfd "abort" m
-	d error $msg
+    if {$msg ne ""} then {
+	d dbabort [format [mc "modify %s"] [mc "RR"]] $msg
     }
 
-    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-       ::pgsql::unlock $dbfd "abort" m
-       d error "L'insertion a échoué. Abandon.\n$msg"
-    }
+    d dbcommit [format [mc "modify %s"] "$nom.$domaine"]
 
     #
-    # Préparer la sortie du résultat
+    # Update log
+    #
+
+    set m "modify $trr(nom).$trr(domaine):"
+    foreach c {nom domaine mac dhcpprofil hinfo droitsmtp ttl commentaire respnom respmel} {
+	append m " $c=[set $c]"
+    }
+    d writelog "modrr" $m
+
+    #
+    # Display result
     #
 
     set commentaire [html-tab-string $commentaire]
@@ -353,23 +314,13 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
     set respmel     [html-tab-string $respmel]
 
     if {$droitsmtp} then {
-	set droitsmtp "Oui"
+	set droitsmtp [mc "Yes"]
     } else {
-	set droitsmtp "Non"
+	set droitsmtp [mc "No"]
     }
 
     #
-    # Se rappeler du correspondant qui a affectué la modification
-    #
-
-    set m "modification de $trr(nom).$trr(domaine) :"
-    foreach c {nom domaine mac dhcpprofil hinfo droitsmtp ttl commentaire respnom respmel} {
-	append m " $c=[set $c]"
-    }
-    d writelog "modifrr" $m
-
-    #
-    # Préparer la suite du parcours
+    # Prepare next step in journey
     #
 
     switch -- [d nextprog] {
@@ -418,16 +369,14 @@ proc main {} {
     d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
-    # Valider l'action, lire les autres champs du formulaire,
-    # et faire le branchement
+    # Validate action, read form values and call the appropriate function.
     #
 
-    set action [lindex $ftab(action) 0]
+    set action [string trim [lindex $ftab(action) 0]]
 
     if {! [info exists conf(form-$action)]} then {
-	d error "Champ 'action' non conforme : $action"
+	d error [format [mc "Invalid input '%s'"] $action]
     }
-
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
 	d error [mc "Invalid input"]
     }

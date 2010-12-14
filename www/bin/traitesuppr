@@ -1,41 +1,35 @@
 #!%TCLSH%
 
-
 #
-# Script pour enregistrer les suppressions demandées par un correspondant.
+# Delete host, IP address or alias
 #
-# Called by: script suppr (page lib/suppr.htgt)
+# Called by: suppr
 #
 # Parameters (form or url):
-#   - suppression d'un nom
+#   - name removal
 #	- action : "suppr-nom"
-#	- confirm : "non" ou "oui" (si confirmation ok)
-#	- nom : nom de l'objet à supprimer
-#	- domaine : domaine dans lequel l'objet existait
-#   - suppression d'une adresse IP
+#	- confirm : "non" or "oui" (if confirm ok)
+#	- nom : name of object to delete
+#	- domaine : domain of object to delete
+#   - IP address removal
 #	- action : "suppr-ip"
-#	- confirm : "non" ou "oui" (si confirmation ok)
+#	- confirm : "non" or "oui" (if confirm ok)
 #	- adr: IP address
 #
 # History
 #   2002/04/11 : pda/jean : design
-#   2002/04/19 : pda/jean : ajout de la multi-adresses
-#   2002/05/03 : pda/jean : séparation des trois types de modifications
+#   2002/05/03 : pda/jean : split 3 modification types
 #   2002/07/09 : pda      : add nologin
 #   2003/05/13 : pda/jean : use auth base
 #   2004/01/14 : pda/jean : add IPv6
 #   2004/08/05 : pda/jean : add mac
-#   2005/04/08 : pda/jean : ajout dhcpprofil
+#   2005/04/08 : pda/jean : add dhcpprofil
 #   2007/10/25 : jean     : log modify actions
-#   2008/07/24 : pda/jean : ajout droitsmtp
-#   2008/07/29 : pda      : utilisation display-rr
-#   2010/10/15 : pda      : ajout parcours
+#   2008/07/24 : pda/jean : add droitsmtp
+#   2008/07/29 : pda      : use display-rr
+#   2010/10/15 : pda      : add journey
+#   2010/12/14 : pda      : i18n
 #
-
-
-#
-#
-
 
 #
 # Template pages used by this script
@@ -79,86 +73,83 @@ set conf(form-suppr-ip)	{
 }
 
 #
+# WebDNS general library
 #
 
 source %LIBDNS%
 
-#
-#
-
 # ::webapp::cgidebug ; exit
 
-
 ##############################################################################
-# Suppression d'un nom
+# Name removal
 ##############################################################################
 
 # History
-#   2002/04/19 : pda/jean : conception
+#   2002/04/19 : pda/jean : design
 #
-proc traitesuppr-nom {dbfd idcor login ft} {
+
+proc traitesuppr-nom {dbfd idcor login _ftab} {
     global conf
-    upvar $ft ftab
+    upvar $_ftab ftab
 
     #
     # Validate form input
     #
 
-    set confirm       [string trim [lindex $ftab(confirm) 0]]
-    set nom           [string trim [lindex $ftab(nom) 0]]
-    set domaine       [string trim [lindex $ftab(domaine) 0]]
+    foreach v {confirm nom domaine} {
+	set $v [string trim [lindex $ftab($v) 0]]
+    }
+    set fqfn "$nom.$domaine"
 
     #
-    # Valider le nom fourni
+    # Check name
     #
 
     set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "del-name"]
-    if {[string length $msg] > 0} then {
+    if {$msg ne ""} then {
 	d error $msg
     }
 
     #
-    # Vérifier que le nom demandé existe
+    # Check that name exists
     #
 
-    if {[string equal $trr(idrr) ""]} then {
-	d error "Le nom '$nom.$domaine' n'existe pas."
+    if {$trr(idrr) eq ""} then {
+	d error [format [mc "Name '%s' does not exist"] $fqdn]
     }
 
     #
-    # Noter si c'est un alias
+    # Is it an alias?
     #
 
-    if {[string equal $trr(cname) ""]} then {
+    if {$trr(cname) eq ""} then {
 	set alias 0
 
 	#
-	# Si ce n'est pas un alias, il doit y avoir au moins une adresse IP
+	# It is not an alias, there must be at least an IP address
 	#
-	if {[string equal $trr(ip) ""]} then {
-	    d error "Le nom '$nom.$domaine' n'est pas une machine."
+	if {$trr(ip) eq ""} then {
+	    d error [format [mc "Name '%s' is not a host"] $fqdn]
 	}
 
     } else {
 	set alias 1
 
 	#
-	# C'est un alias. Lisons les informations pour afficher
-	# une page éventuelle de confirmation
+	# It is an alias. Read informations to display a confirmation page.
 	#
 	if {! [read-rr-by-id $dbfd $trr(cname) trrref]} then {
-	    d error "Erreur interne. Alias non trouvé"
+	    d error [mc "Internal error: object pointed by alias is not found"]
 	}
     }
 
     #
-    # Demander confirmation à l'utilisateur si ce n'est pas encore
-    # fait
+    # Ask for confirmation if needed
     #
 
-    if {! [string equal $confirm "oui"]} then {
+    if {$confirm ne "oui"} then {
 	#
-	# Envoyer la page de confirmation
+	# Confirmation needed
 	#
 
 	d urlset "%URLFORM%" $conf(next) {}
@@ -166,7 +157,7 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 
 	if {$alias} then {
 	    #
-	    # Sortir la page de confirmation pour un alias
+	    # Confirmation page for an alias
 	    #
 	    d result $conf(page-suppr-alias) [list \
 					[list %NOM% $nom] \
@@ -176,61 +167,48 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 				    ]
 	} else {
 	    #
-	    # Sortir la page de confirmation pour une machine
+	    # Confirmation page for a host
 	    #
-	    set machine [display-rr $dbfd -1 trr]
+	    set host [display-rr $dbfd -1 trr]
 	    d result $conf(page-suppr-nom) [list \
 					[list %NOM% $nom] \
 					[list %DOMAINE% $domaine] \
-					[list %MACHINE% $machine] \
+					[list %MACHINE% $host] \
 				    ]
 	}
     } else {
 	#
-	# La confirmation est acquise. Effectuer la suppression dans
-	# la base.
+	# Confirmation is accepted. Do the removal.
 	#
-	if {! [::pgsql::lock $dbfd {} msg]} then {
-	    d error "Transaction impossible : $msg"
-	}
+	d dblock {}
 
 	if {$alias} then {
 	    if {! [del-alias-by-id $dbfd $trr(idrr) msg]} then {
-		::pgsql::unlock $dbfd "abort" m
-		 d error "La suppression a échoué.\n$msg"
+		d dbabort [format [mc "delete %s"] $fqdn] $msg
 	    }
 
 	    set p "$trrref(nom).$trrref(domaine)"
-	    set logevt "suppralias"
-	    set logmsg "suppression de l'alias $nom.$domaine -> $p"
+	    set logevt "delalias"
+	    set logmsg "delete alias $fqdn -> $p"
 	} else {
 	    #
-	    # Ce n'est pas un alias. Supprimer toutes les dépendances
-	    # du RR
-	    # - les aliases pointant vers cet objet
-	    # - les MX
-	    # - les adresses IP
+	    # This is not an alias: delete all RR dependancies:
+	    # - aliases pointing this object
+	    # - MX
+	    # - IP addresses
 	    #
 	    if {! [del-rr-and-dependancies $dbfd trr msg]} then {
-		::pgsql::unlock $dbfd "abort" m
-		d error "La suppression a échoué.\n$msg"
+		d dbabort [format [mc "delete %s"] $fqdn] $msg
 	    }
-	    set logevt "supprnom"
-	    set logmsg "suppression totale de $nom.$domaine"
+	    set logevt "delname"
+	    set logmsg "delete all of $nom.$domaine"
 	}
 
-	#
-	# Enregistrer les modifications dans la base
-	#
-	if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-	   ::pgsql::unlock $dbfd "abort" m
-	   d error "La suppression a échoué. Abandon.\n$msg"
-	}
-
+	d dbcommit [format [mc "delete %s"] $fqdn]
 	d writelog $logevt $logmsg
 
 	#
-	# Préparer la suite du parcours
+	# Prepare next step in journey
 	#
 
 	switch -- [d nextprog] {
@@ -246,12 +224,11 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 	}
 
 	#
-	# End of script: output page and close database pour dire que la suppression a été effectuée
-	# correctement.
+	# End of script: output page and close database
 	#
-	set objet "$nom.$domaine"
+
 	d result $conf(page-suppr-ok) [list \
-						[list %OBJET% $objet] \
+						[list %OBJET% $fqdn] \
 			    ]
     }
 }
@@ -261,13 +238,14 @@ proc traitesuppr-nom {dbfd idcor login ft} {
 ##############################################################################
 
 # History
-#   2002/04/23 : pda/jean : conception
-#   2002/04/26 : pda/jean : fin de la conception
-#   2002/05/03 : pda/jean : mémoriser la mise à jour par le correspondant
+#   2002/04/23 : pda/jean : design
+#   2002/04/26 : pda/jean : design end
+#   2002/05/03 : pda/jean : keep a log of modification
 #
-proc traitesuppr-ip {dbfd idcor login ft} {
+
+proc traitesuppr-ip {dbfd idcor login _ftab} {
     global conf
-    upvar $ft ftab
+    upvar $_ftab ftab
 
     #
     # Validate form input
@@ -277,128 +255,101 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     set adr           [string trim [lindex $ftab(adr) 0]]
 
     #
-    # Vérifier la syntaxe de l'adresse IP
+    # Check IP address
     #
 
-    set m [check-ip-syntax $dbfd $adr "inet"]
-    if {[string length $m] > 0} then {
-	d error "Erreur sur l'adresse '$adr': $m"
+    set msg [check-ip-syntax $dbfd $adr "inet"]
+    if {$msg ne ""} then {
+	d error $msg
     }
-
-    #
-    # Vérifier que l'adresse IP appartient bien à une des plages
-    # autorisées pour le correspondant
-    #
-
     if {! [check-authorized-ip $dbfd $idcor $adr]} then {
-	d error "Vous n'avez pas accès à l'adresse '$adr'"
+	d error [format [mc "You don't have rights on '%s'"] $adr]
     }
 
     #
-    # Vérifier que l'adresse existe, en récupérant toutes les
-    # informations de l'objet.
+    # Check that this address exists and get all stored informations
     #
 
     if {! [read-rr-by-ip $dbfd $adr trr]} then {
-	d error "L'adresse '$adr' n'existe pas dans la base."
+	d error [format [mc "Address '%s' not found"] $adr]
     }
 
     #
-    # Valider l'accès à ce nom
+    # Check access to this name
     #
 
     set nom     $trr(nom)
     set domaine $trr(domaine)
     set msg [check-authorized-host $dbfd $idcor $nom $domaine bidon "del-name"]
-    if {! [string equal $msg ""]} then {
+    if {$msg ne "} then {
 	d error $msg
     }
+    set fqdn "$nom.$domaine"
 
     #
-    # Est-ce la dernière adresse IP ou non ?
+    # Is it the last IP address?
     #
 
     if {[llength $trr(ip)] == 1} then {
-	set lastadr "oui"
+	set lastadr "yes"
     } else {
-	set lastadr "non"
+	set lastadr "no"
     }
 
     #
-    # Préparer l'affichage des informations à afficher le cas échéant
+    # Prepare display of informations, if needed
     #
 
     set objet ""
-    set machine [display-rr $dbfd -1 trr]
+    set host [display-rr $dbfd -1 trr]
 
     #
-    # Effectuer l'action de suppression seulement si confirmation
+    # Remove only if confirmation is ok
     #
 
-    if {[string equal $confirm "oui"]} then {
+    if {$confirm eq "oui"} then {
 	#
-	# Verrouiller la base
-	#
-
-	if {! [::pgsql::lock $dbfd {} msg]} then {
-	    d error "Transaction impossible : $msg"
-	}
-
-	#
-	# Procéder à la destruction effective
+	# Proceed to removal
 	#
 
-	if {[string equal $lastadr "non"]} then {
+	d dblock {}
+
+	if {! $lastadr} then {
 	    #
-	    # Suppression d'une adresse seulement
+	    # Only delete an IP address
 	    #
 
 	    set sql "DELETE FROM dns.rr_ip WHERE adr = '$adr'"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	       ::pgsql::unlock $dbfd "abort" m
-		d error "La suppression a échoué.\n$msg"
+		d dbabort [format [mc "delete %s"] $adr] $msg
 	    }
-
-	    #
-	    # Se rappeler que le correspondant a fait la modification
-	    #
-
 	    set msg [touch-rr $dbfd $trr(idrr)]
-	    if {! [string equal $msg ""]} then {
-	       ::pgsql::unlock $dbfd "abort" m
-		d error "Mise à jour impossible.\n$msg"
+	    if {$msg ne ""} then {
+		d dbabort [format [mc "modify %s"] [mc "RR"]] $msg
 	    }
 
-	    set logevt "suppradr"
-	    set logmsg "suppression de l'adresse $adr de $nom.$domaine"
+	    set logevt "deladdr"
+	    set logmsg "delete address $adr from $fqdn"
 
 	} else {
 	    #
-	    # Suppression de l'objet entier
+	    # Delete the whole object
 	    #
 
 	    if {! [del-rr-and-dependancies $dbfd trr msg]} then {
-		::pgsql::unlock $dbfd "abort" m
-		d error "La suppression a échoué.\n$msg"
+		d dbabort [format [mc "delete %s"] $fqdn] $msg
 	    }
 
-	    set logevt "suppradr"
-	    set logmsg "suppression de l'adresse $adr -> suppression totale de $nom.$domaine"
+	    set logevt "deladr"
+	    set logmsg "delete address $adr -> delete all $fqdn"
 	}
 
-	#
-	# Enregistrer les modifications dans la base et la déverrouiller.
-	#
-	if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-	   ::pgsql::unlock $dbfd "abort" m
-	   d error "La suppression a échoué. Abandon.\n$msg"
-	}
-    
+	d dbcommit [format [mc "delete %s"] $adr]
 	d writelog $logevt $logmsg
     }
 
     #
-    # Préparer la suite du parcours
+    # Prepare next step in journey
     #
 
     switch -- [d nextprog] {
@@ -414,41 +365,39 @@ proc traitesuppr-ip {dbfd idcor login ft} {
     }
 
     #
-    # Préparer l'affichage de la page
+    # Prepare page display
     #
 
     switch -- "confirm=$confirm-lastadr=$lastadr" {
 	confirm=non-lastadr=non {
 	    #
-	    # Demander confirmation pour la suppression d'une des adresses
+	    # Ask for confirmation to remove one of the IP addresses
 	    # 
 	    set page $conf(page-suppr-ip-uneip)
 	}
 	confirm=non-lastadr=oui {
 	    #
-	    # Demander confirmation pour la suppression de la dernière
-	    # adresse et donc de l'objet entier.
+	    # Ask for confirmation to remove the last IP address, and thus
+	    # of the whole object.
 	    # 
 	    set page $conf(page-suppr-ip-objet)
 	}
 	confirm=oui-lastadr=non {
 	    #
-	    # L'adresse a été supprimée
+	    # Address has been removed
 	    #
-
 	    set page $conf(page-suppr-ok)
 	    set objet $adr
 	}
 	confirm=oui-lastadr=oui {
 	    #
-	    # L'objet entier a été supprimé
+	    # The whole object has been removed
 	    #
-
 	    set page $conf(page-suppr-ok)
 	    set objet "$nom.$domaine"
 	}
 	default {
-	    d error "Cas impossible : confirm=$confirm, lastadr=$lastadr"
+	    d error [format [mc "Internal error: impossible case '%s'"] "confirm=$confirm, lastadr=$lastadr"]
 	}
     }
 
@@ -458,7 +407,7 @@ proc traitesuppr-ip {dbfd idcor login ft} {
 			[list %NOM%         $nom] \
 			[list %DOMAINE%     $domaine] \
 			[list %ADR%         $adr] \
-			[list %MACHINE%     $machine] \
+			[list %MACHINE%     $host] \
 			[list %OBJET%       $objet] \
 		    ]
 }
@@ -478,16 +427,14 @@ proc main {} {
     d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
-    # Valider l'action, lire les autres champs du formulaire,
-    # et faire le branchement
+    # Validate action, read form values and call the appropriate function.
     #
 
-    set action [lindex $ftab(action) 0]
+    set action [string trim [lindex $ftab(action) 0]]
 
     if {! [info exists conf(form-$action)]} then {
-	d error "Champ 'action' non conforme : $action"
+	d error [format [mc "Invalid input '%s'"] $action]
     }
-
     if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
 	d error [mc "Invalid input"]
     }

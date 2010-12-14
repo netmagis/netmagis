@@ -367,7 +367,7 @@ proc main {} {
     set lines {}
     lappend lines [list "Title" \
 			[mc "Sort class"] \
-			[mc "Network"] \
+			[mc "Networks"] \
 			[mc "DHCP management"] \
 			[mc "ACL management"] \
 		    ]
