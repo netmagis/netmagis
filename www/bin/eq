@@ -59,7 +59,7 @@ set conf(form)	{
     {iface		0 1}
 }
 
-set conf(dumpgraph)	"dumpgraph %s"
+set conf(dumpgraph)	"dumpgraph -o eq %s"
 set conf(extractcoll)	"extractcoll -w %s"
 
 #

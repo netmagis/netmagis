@@ -557,7 +557,7 @@ Input-output functions
 ******************************************************************************/
 
 void text_read (FILE *fpin) ;
-void text_write (FILE *fpin) ;
+void text_write (FILE *fpin, char *object) ;
 
 void bin_read (FILE *fpin, MOBJ *graph []) ;
 void bin_write (FILE *fpout, MOBJ *graph []) ;

@@ -56,7 +56,7 @@ set conf(form)	{
     {format		0 1}
 }
 
-set conf(dumpgraph)	"dumpgraph %s"
+set conf(dumpgraph)	"dumpgraph -o rnet %s"
 set conf(extractl3)	"extractl3 %s %s"
 
 set conf(dot)		"%DOT%"

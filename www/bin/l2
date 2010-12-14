@@ -60,7 +60,7 @@ set conf(form)	{
     {format		0 1}
 }
 
-set conf(dumpgraph)	"dumpgraph %s"
+set conf(dumpgraph)	"dumpgraph -o vlan %s"
 set conf(extractl2)	"extractl2 %s %s %s %d"
 
 set conf(dot)		"%DOT%"
