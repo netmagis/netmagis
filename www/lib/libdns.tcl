@@ -5614,8 +5614,10 @@ proc eq-iflist {eq _tabuid} {
 
     if {$manual eq "auto"} then {
 	set cmd [format $libconf(extracteq) $tabuid(flagsw) $eq]
-	set fd [open "|$cmd" "r"]
-	while {[gets $fd ligne] > -1} {
+	if {! [call-topo $cmd msg]} then {
+	    d error "Erreur lors de la lecture de l'équipement '$eq' (write)\n$msg"
+	}
+	foreach ligne [split $msg "\n"] {
 	    switch [lindex $ligne 0] {
 		iface {
 		    set if [lindex $ligne 1]
@@ -5633,9 +5635,6 @@ proc eq-iflist {eq _tabuid} {
 		    set tabvlan($id) [list $desc $voip]
 		}
 	    }
-	}
-	if {[catch {close $fd} msg]} then {
-	    d error "Erreur lors de la lecture de l'équipement '$eq' (write)\n$msg"
 	}
 
 	set liferr [lsort -command compare-interfaces $liferr]

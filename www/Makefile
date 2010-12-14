@@ -46,6 +46,7 @@ COULEUR = "\#10C090"
 DEFDOM  = u-strasbg.fr
 
 TOPODIR	= /local/applis/topo
+TOPOHOST = 
 TOPOGRAPH = $(TOPODIR)/osiris/osiris.graph
 IDRHOST	= metro.u-strasbg.fr
 
@@ -83,6 +84,7 @@ SUBST	= \
 	-e 's|%BASE%|$(BASE)|' \
 	-e 's|%BASEMAC%|$(BASEMAC)|' \
 	-e 's|%TOPODIR%|$(TOPODIR)|' \
+	-e 's|%TOPOHOST%|$(TOPOHOST)|' \
 	-e 's|%TOPOGRAPH%|$(TOPOGRAPH)|' \
 	-e 's|%DEFUSER%|$(DEFUSER)|' \
 	-e 's|%NEATO%|$(NEATO)|' \
