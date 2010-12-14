@@ -172,8 +172,7 @@ proc main {} {
     # description
     switch -- $mode {
 	multi {
-	    # topod ignore une description vide
-	    set desc ""
+	    # nothing: we'll do the test in the next loop
 	}
 	mono {
 	    # vérifier les caractères spéciaux et ajouter le X
@@ -191,6 +190,7 @@ proc main {} {
 	    } else {
 		set desc "$desc <X $stat>"
 	    }
+	    set qifdesc [::pgsql::quote $desc]
 	}
     }
 
@@ -219,11 +219,24 @@ proc main {} {
     # le correspondant réel (i.e. pas celui auquel on s'est éventuellement
     # substitué)
     set qlogin [::pgsql::quote [lindex [d euid] 0]]
-    set qifdesc [::pgsql::quote $desc]
 
     set sql {}
     foreach i $iface {
 	set qiface [::pgsql::quote $i]
+	switch $mode {
+	    multi {
+		if {! ([info exists tabiface($i)] &&
+					[lindex $tabiface($i) 5] eq "")} then {
+		    # description is empty: (re)create one
+		    set qifdesc "X"
+		} else {
+		    set qifdesc ""
+		}
+	    }
+	    mono {
+		# nothing: qifdesc has been filled above
+	    }
+	}
 	lappend sql "INSERT INTO topo.ifchanges
 			    (login, idrr, iface, ifdesc, ethervlan, voicevlan)
 			VALUES ('$qlogin', $idrr, '$qiface',
