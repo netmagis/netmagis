@@ -297,13 +297,20 @@ static void text_write_ssidprobes (FILE *fp)
     }
 }
 
-void text_write (FILE *fp)
+void text_write (FILE *fp, char *object)
 {
-    text_write_eq (fp) ;
-    text_write_nodes (fp) ;
-    text_write_links (fp) ;
-    text_write_rnet (fp) ;
-    text_write_vlans (fp) ;
-    text_write_lvlans (fp) ;
-    text_write_ssidprobes (fp) ;
+    if (object == NULL || strcmp (object, "eq") == 0)
+	text_write_eq (fp) ;
+    if (object == NULL || strcmp (object, "node") == 0)
+	text_write_nodes (fp) ;
+    if (object == NULL || strcmp (object, "link") == 0)
+	text_write_links (fp) ;
+    if (object == NULL || strcmp (object, "rnet") == 0)
+	text_write_rnet (fp) ;
+    if (object == NULL || strcmp (object, "vlan") == 0)
+	text_write_vlans (fp) ;
+    if (object == NULL || strcmp (object, "lvlan") == 0)
+	text_write_lvlans (fp) ;
+    if (object == NULL || strcmp (object, "ssidprobe") == 0)
+	text_write_ssidprobes (fp) ;
 }

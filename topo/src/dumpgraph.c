@@ -7,7 +7,7 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]*\n", progname) ;
+    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]* [-o obj]\n", progname) ;
     exit (1) ;
 }
 
@@ -15,6 +15,7 @@ int main (int argc, char *argv [])
 {
     char *prog, *errstr ;
     int c, err ;
+    char *object ;
 
     /*
      * First loop to build selection specifiers from arguments
@@ -22,10 +23,11 @@ int main (int argc, char *argv [])
 
     prog = argv [0] ;
     err = 0 ;
+    object = NULL ;
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "an:e:E:tm")) != -1)
+    while ((c = getopt (argc, argv, "an:e:E:tmo:")) != -1)
     {
 	switch (c)
 	{
@@ -40,6 +42,9 @@ int main (int argc, char *argv [])
 		    fprintf (stderr, "%s: %s\n", prog, errstr) ;
 		    err = 1 ;
 		}
+		break ;
+	    case 'o':
+		object = optarg ;
 		break ;
 	    case '?' :
 	    default :
@@ -62,7 +67,7 @@ int main (int argc, char *argv [])
 
     bin_read (stdin, mobjlist) ;
     sel_mark () ;
-    text_write (stdout) ;
+    text_write (stdout, object) ;
 
     sel_end () ;
     exit (0) ;

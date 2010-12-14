@@ -51,8 +51,8 @@ set conf(form)	{
     {format		0 1}
 }
 
-set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
-set conf(extractl2)	"%TOPODIR%/bin/extractl2 %s %s %s %d < %GRAPH%"
+set conf(dumpgraph)	"dumpgraph -o vlan %s"
+set conf(extractl2)	"extractl2 %s %s %s %d"
 
 set conf(dot)		"%DOT%"
 set conf(neato)		"%NEATO%"
@@ -250,15 +250,16 @@ proc epilogue {format} {
 }
 
 
-proc gen-dot {format eq iface vlan prog _tabvlan _nnodes} {
+proc gen-dot {format eq iface vlan cmd _tabvlan _nnodes} {
     global conf
-
     upvar $_nnodes nnodes
     upvar $_tabvlan tabvlan
 
     set nnodes 0
-    set fd [open "|$prog" "r"]
-    while {[gets $fd line] > -1} {
+    if {! [call-topo $cmd msg]} then {
+	return ""
+    }
+    foreach line [split $msg "\n"] {
 	switch [lindex $line 0] {
 	    vlans {
 		set vlans [lreplace $line 0 0]
@@ -273,9 +274,6 @@ proc gen-dot {format eq iface vlan prog _tabvlan _nnodes} {
 		set tablink($linkname) [list $eq1 $iface1 $eq2 $iface2]
 	    }
 	}
-    }
-    if {[catch {close $fd}]} then {
-	return ""
     }
 
     #
@@ -376,9 +374,10 @@ proc main {} {
     #
 
     set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
-    set fd [open "|$cmd" "r"]
-
-    while {[gets $fd line] > -1} {
+    if {! [call-topo $cmd msg]} then {
+	d error [format [mc "Error while reading Vlans: %s"] $msg]
+    }
+    foreach line [split $msg "\n"] {
 	switch [lindex $line 0] {
 	    vlan {
 		set id [lindex $line 1]
@@ -405,9 +404,6 @@ proc main {} {
 		set tabvlan($id) [list $desc $lnet]
 	    }
 	}
-    }
-    if {[catch {close $fd} msg]} then {
-	d error [format [mc "Error while reading Vlans: %s"] $msg]
     }
 
     #

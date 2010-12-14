@@ -49,8 +49,8 @@ set conf(form)	{
     {iface		0 1}
 }
 
-set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph %s < %GRAPH%"
-set conf(extractcoll)	"%TOPODIR%/bin/extractcoll -w %s < %GRAPH%"
+set conf(dumpgraph)	"dumpgraph -o eq %s"
+set conf(extractcoll)	"extractcoll -w %s"
 
 #
 # WebDNS general library
@@ -750,8 +750,10 @@ proc main {} {
     #
 
     set cmd [format $conf(dumpgraph) $tabuid(flagsr)]
-    set fd [open "|$cmd" "r"]
-    while {[gets $fd line] > -1} {
+    if {! [call-topo $cmd msg]} then {
+	d error [format [mc "Error while reading equipments: %s"] $msg]
+    }
+    foreach line [split $msg "\n"] {
 	switch [lindex $line 0] {
 	    eq {
 		set eqname [lindex $line 1]
@@ -763,17 +765,16 @@ proc main {} {
 	    }
 	}
     }
-    if {[catch {close $fd} msg]} then {
-	d error [format [mc "Error while reading equipments: %s"] $msg]
-    }
 
     #
     # Extract wifi statistics for these equipments
     #
 
     set cmd [format $conf(extractcoll) $tabuid(flagsr)]
-    set fd [open "|$cmd" "r"]
-    while {[gets $fd line] > -1} {
+    if {! [call-topo $cmd msg]} then {
+	d error [format [mc "Error while reading wifi sensors: %s"] $msg]
+    }
+    foreach line [split $msg "\n"] {
 	switch [lindex $line 0] {
 	    nbassocwifi -
 	    nbauthwifi {
@@ -784,9 +785,6 @@ proc main {} {
 		}
 	    }
 	}
-    }
-    if {[catch {close $fd} msg]} then {
-	d error [format [mc "Error while reading wifi sensors: %s"] $msg]
     }
 
     #

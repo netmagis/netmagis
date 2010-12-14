@@ -30,6 +30,10 @@ namespace import ::msgcat::*
 # Library parameters
 ##############################################################################
 
+set libconf(topohost)	{%TOPOHOST%}
+set libconf(topobin)	%TOPODIR%/bin
+set libconf(topograph)	%TOPOGRAPH%
+
 #
 # Various table specifications
 #
@@ -4837,7 +4841,37 @@ proc topo-status {dbfd admin} {
 }
 
 #
-# Compare two interface names, used in sort operations.
+# Wrapper function to call topo programs on topo host
+#
+# Input:
+#   - cmd: topo program with arguments
+#   - _msg : in return, text read from program or error message
+#   - global variable libconf(topohost): topo hostname or empty for local exec
+#   - global variable libconf(topobin): path to topo programs
+#   - global variable libconf(topograph): compiled graph path
+# Output:
+#   - return value: 1 if ok, 0 if failure
+#   - parameter _msg: text read or error message
+#
+# History
+#   2010/12/14 : pda/jean : design
+#
+
+proc call-topo {cmd _msg} {
+    global libconf
+    upvar $_msg msg
+
+    set cmd "$libconf(topobin)/$cmd < $libconf(topograph)"
+    if {$libconf(topohost) eq ""} then {
+	set r [catch {exec sh -c $cmd} msg]
+    } else {
+	set r [catch {exec ssh $libconf(topohost) $cmd} msg]
+    }
+    return [expr !$r]
+}
+
+#
+# Utilitaire pour le tri des interfaces : compare deux noms d'interface
 #
 # Input:
 #   - parameters:
@@ -5022,11 +5056,10 @@ proc check-metro-id {dbfd id _tabuid _title} {
     #
 
     set cmd [format $libconf(extractcoll) $tabuid(flagsr)]
-
-    if {[catch {set fd [open "| $cmd" "r"]} msg]} then {
+    if {! [call-topo $cmd msg]} then {
 	return [format [mc "Cannot read sensor list: %s"] $msg]
     }
-    while {[gets $fd line] > -1} {
+    foreach line [split $msg "\n"] {
 	lassign [split $line] kw i
 	set n [lsearch -exact $lid $i]
 	if {$n >= 0} then {
@@ -5041,7 +5074,6 @@ proc check-metro-id {dbfd id _tabuid _title} {
 	    set lid [lreplace $lid $n $n]
 	}
     }
-    catch {close $fd}
 
     #
     # Error if id is not found
@@ -5361,8 +5393,10 @@ proc eq-iflist {eq _tabuid} {
     set found 0
 
     set cmd [format $libconf(extracteq) $tabuid(flagsr) $eq]
-    set fd [open "|$cmd" "r"]
-    while {[gets $fd line] > -1} {
+    if {! [call-topo $cmd msg]} then {
+	d error [format [mc {Error during extraction of readable interfaces from '%1$s': %2$s}] $eq $msg]
+    }
+    foreach line [split $msg "\n"] {
 	switch [lindex $line 0] {
 	    eq {
 		set r [lreplace $line 0 0]
@@ -5390,9 +5424,6 @@ proc eq-iflist {eq _tabuid} {
 	    }
 	}
     }
-    if {[catch {close $fd} msg]} then {
-	d error [format [mc {Error during extraction of readable interfaces from '%1$s': %2$s}] $eq $msg]
-    }
 
     if {! $found} then {
 	d error [format [mc "Equipment '%s' not found"] $eq]
@@ -5406,8 +5437,10 @@ proc eq-iflist {eq _tabuid} {
 
     if {$manual eq "auto"} then {
 	set cmd [format $libconf(extracteq) $tabuid(flagsw) $eq]
-	set fd [open "|$cmd" "r"]
-	while {[gets $fd line] > -1} {
+	if {! [call-topo $cmd msg]} then {
+	    d error [format [mc {Error during extraction of writable interfaces from '%1$s': %2$s}] $eq $msg]
+	}
+	foreach line [split $msg "\n"] {
 	    switch [lindex $line 0] {
 		iface {
 		    set if [lindex $line 1]
@@ -5425,10 +5458,6 @@ proc eq-iflist {eq _tabuid} {
 		}
 	    }
 	}
-	if {[catch {close $fd} msg]} then {
-	    d error [format [mc {Error during extraction of writable interfaces from '%1$s': %2$s}] $eq $msg]
-	}
-
 	set liferr [lsort -command compare-interfaces $liferr]
     }
 

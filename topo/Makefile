@@ -18,6 +18,7 @@ install: all
 		FPING=$(FPING) RANCID=$(RANCID) \
 		RANCIDDIR=$(RANCIDDIR) EQVIRT=$(EQVIRT) \
 		LOGERR="$(LOGERR)" DEFUSER="$(DEFUSER)" \
+		TOPOGRAPH="$(TOPOGRAPH)" \
 		install
 	cd etc ; make \
 		TOPODIR=$(TOPODIR) DESTDIR=$(RCDIR) \
