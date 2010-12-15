@@ -5632,7 +5632,6 @@ proc report-leave {cmd code result leave} {
     puts "< $cmd -> $code/$result"
 }
 
-
 ##############################################################################
 # Utility functions
 ##############################################################################
@@ -5657,7 +5656,7 @@ proc set-log {logger} {
 }
 
 #
-# Add a message into the log
+# Add a message to the log
 #
 # Input: 
 #   - msg : error/warning message
@@ -5751,11 +5750,11 @@ proc set-status {status} {
 	return
     }
 
-    # retirer l'entrée la plus vieille, s'il y a plus de maxstatus entrées
+    # remove oldest entry, if there is more than maxstatus entries
     set last [expr $conf(maxstatus)-1]
     catch {set cur [lreplace $last $last]}
 
-    # introduire la nouvelle entrée en tête
+    # insert new entry before all others
     set date [clock format [clock seconds]]
     set cur [linsert $cur 0 [list $date $status]]
 
@@ -5768,17 +5767,17 @@ proc set-status {status} {
 }
 
 ##############################################################################
-# Accès à la base
+# Topo*d database handling
 ##############################################################################
 
 #
-# Réalise la connexion à la base de données si nécessaire.
+# Connect to database if needed
 #
 # Input:
-#   - chan : canal (1 par défaut)
-#   - ctxt(dbfd1), ctxt(dbfd2) : accès à la base
+#   - chan : database channel
+#   - ctxt(dbfd1), ctxt(dbfd2) : database handles for each channel
 # Output:
-#   - ctxt(dbfd<n>) : accès réactualisé
+#   - ctxt(dbfd<n>) : database handle updated
 #
 # History
 #   2010/10/20 : pda/jean : documentation
@@ -5802,14 +5801,16 @@ proc lazy-connect {{chan 1}} {
 }
 
 #
-# Exécute une requête SELECT et gère la reconnexion à la base
+# Execute a SQL request to get data (as with pg_select), and manage
+# database reconnect
 #
 # Input: 
-#   - sql : requete SQL à exécuter
-#   - arrayname : tableau utilisé dans le script
-#   - script : procédure ou script
+#   - sql : SQL request
+#   - arrayname : array used in the script
+#   - script : procedure ou script
+#   - chan : optionnal channel (1 or 2)
 # Output: 
-#   - return value: 1 si réussi, 0 si erreur
+#   - return value: 1 if ok, 0 if error
 #
 # History
 #   2010/10/20 : pda/jean : design (woaw !)
@@ -5835,13 +5836,14 @@ proc toposqlselect {sql arrayname script {chan 1}} {
 }
 
 #
-# Exécute une requête de modification (INSERT, UPDATE ou DELETE)
-# et gère la reconnexion à la base
+# Execute a SQL request to modify data (INSERT, UPDATE or DELETE, as
+# with pg_exec) and manage database reconnect
 #
 # Input: 
-#   - sql : requete SQL à exécuter
+#   - sql : SQL request
+#   - chan : optionnal channel (1 or 2)
 # Output: 
-#   - return value: 1 si réussi, 0 si erreur
+#   - return value: 1 if ok, 0 if error
 #
 # History
 #   2010/10/20 : pda/jean : design
@@ -5881,13 +5883,12 @@ proc toposqlexec {sql {chan 1}} {
 }
 
 #
-# Exécute une requête de début de transaction
-# et gère la reconnexion à la base
+# Start a SQL transaction and manage database reconnect
 #
 # Input: 
-#   - none
+#   - chan : optionnal channel (1 or 2)
 # Output: 
-#   - return value: 1 si réussi, 0 si erreur
+#   - return value: 1 if ok, 0 if error
 #
 # History
 #   2010/10/21 : pda/jean : design
@@ -5898,13 +5899,12 @@ proc toposqllock {{chan 1}} {
 }
 
 #
-# Exécute une requête de début de transaction
-# et gère la reconnexion à la base
+# End a SQL transaction and manage database reconnect
 #
 # Input: 
-#   - commit : "commit" ou "abort"
+#   - commit : "commit" or "abort"
 # Output: 
-#   - return value: 1 si réussi, 0 si erreur
+#   - return value: 1 if ok, 0 if error
 #
 # History
 #   2010/10/21 : pda/jean : design
@@ -5920,16 +5920,15 @@ proc toposqlunlock {commit {chan 1}} {
 
 
 ##############################################################################
-# Gestion des mails
+# Topo*d mail management
 ##############################################################################
 
 #
-# Envoie un mail si le message produit par un événement a changé par
-# rapport au précédent événement
+# Send a mail if event message changes
 #
 # Input:
-#   - ev : événement considéré ("rancid", "anaconf")
-#   - msg : message de l'événement
+#   - ev : event ("rancid", "anaconf", etc.)
+#   - msg : event message
 # Output:
 #   - none
 #
@@ -5939,30 +5938,29 @@ proc toposqlunlock {commit {chan 1}} {
 
 proc keep-state-mail {ev msg} {
     #
-    # Récupérer l'ancien message
+    # Get previous message
     #
 
     set oldmsg ""
     set qev [::pgsql::quote $ev]
     set sql "SELECT message FROM topo.keepstate WHERE type = '$qev'"
     if {! [toposqlselect $sql tab { set oldmsg $tab(message) } 2]} then {
-	# on ne sait pas quoi faire...
+	# we don't know what to do...
 	return
     }
 
-    if {! [string equal $msg $oldmsg]} then {
+    if {$msg ne $oldmsg} then {
 	#
-	# Le nouveau message est différent de l'ancien. Il faut l'envoyer
-	# par mail et l'enregistrer dans le keepstate.
+	# New message is different from previous one. We must
+	# send it by mail and store it in keepstate table.
 	#
-	# Parti pris : si l'accès à la base est HS et qu'on ne peut
-	# donc pas avoir accès au keepstate de l'événement, on
-	# n'envoie plus de mail. Le risque est de ne pas avoir
-	# connaissance par mail des événements lorsque la base est
-	# HS, mais le gain est ne pas avoir un nouveau mail identique
-	# toutes les X secondes... D'un autre côté, on ne risque rien
-	# puisqu'il n'y aura pas de changement détecté ou traité tant
-	# que la base est HS.
+	# Design choice: if database access is out of order, we
+	# can't access keepstate. The choice is to not send mail.
+	# The risk is we won't known new messages, but the advantage
+	# is that our mailboxes will not be polluted by a new
+	# identical mail every X seconds. On the other hand, risk
+	# is minimized by the fact that no new change will be detected
+	# and/or processed while database is out of order.
 	#
 
 	set qmsg [::pgsql::quote $msg]
@@ -5971,8 +5969,7 @@ proc keep-state-mail {ev msg} {
 			    VALUES ('$qev', '$qmsg')"
 	if {[toposqlexec $sql 2]} then {
 	    #
-	    # Si on arrive ici, c'est que la base est vivante.
-	    # Envoyer le mail.
+	    # Database access is ok. Send the mail.
 	    #
 
 	    set from    [::dnsconfig get "topofrom"]
@@ -5991,18 +5988,18 @@ proc keep-state-mail {ev msg} {
 ##############################################################################
 
 #
-# Recherche le type et le modèle des équipements connus dans le graphe
+# Read type and model for all equipments in the graph.
 #
-# Entrée :
-#   - _tabeq : nom du tableau contenant en retour les types
-# Sortie :
-#   - valeur de retour : message d'erreur ou chaîne vide si ok
-#   - tabeq : tableau, indexé par nom complet de l'équipement, contenant
+# Input:
+#   - _tabeq : name of array containing, in return, types and models
+# Output:
+#   - return value: empty string or error message
+#   - tabeq : array, indexed by FQDN of equipement, containing:
 #	tabeq(<eq>) {<type> <model>}
 # 
-# Historique : 
-#   2010/02/25 : pda/jean : création
-#   2010/10/21 : pda/jean : modification pour ne gérer que des noms complets
+# History
+#   2010/02/25 : pda/jean : design
+#   2010/10/21 : pda/jean : manage only fully qualified host names
 #
 
 set libconf(dumpgraph-read-eq-type) "dumpgraph -a -o eq"
@@ -6024,8 +6021,7 @@ proc read-eq-type {_tabeq} {
 		    set type $t(type)
 		    set model $t(model)
 
-		    #### BEQUILLE
-		    append eq ".u-strasbg.fr"
+		    append eq ".%DEFDOM%"
 
 		    set tabeq($eq) [list $type $model]
 
