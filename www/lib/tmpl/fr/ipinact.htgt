@@ -5,12 +5,12 @@
 \set {date}   {16/09/2010}
 
 \*******************************************************************************
-\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+\partie {banniere} {
     WebDNS - Lister les adresses inactives
 }
 
 \*******************************************************************************
-\partie {titrepage} { \* Titre de la page
+\partie {titrepage} {
     Application WebDNS
 }
 
@@ -20,12 +20,12 @@
 	WebDNS v%VERSION%
     } {
 	\elementbandeau {Actions} {
-	    %BANDEAU%
+	    %LINKS%
 	}
 }
 
 \*******************************************************************************
-\partie {texte} { \* Le texte proprement dit
+\partie {texte} {
     \titre {1} {Lister les adresses inactives}
 
 	<FORM METHOD="POST" ACTION="%URLFORM%">

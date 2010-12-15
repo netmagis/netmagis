@@ -5,12 +5,12 @@
 \set {date}   {21/05/2002}
 
 \*******************************************************************************
-\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+\partie {banniere} {
     WebDNS - Édition d'un groupe
 }
 
 \*******************************************************************************
-\partie {titrepage} { \* Titre de la page
+\partie {titrepage} {
     Application WebDNS
 }
 
@@ -20,12 +20,12 @@
 	WebDNS v%VERSION%
     } {
 	\elementbandeau {Actions} {
-	    %BANDEAU%
+	    %LINKS%
 	}
 }
 
 \*******************************************************************************
-\partie {texte} { \* Le texte proprement dit
+\partie {texte} {
 
     \titre {1} {%TITRE%}
 

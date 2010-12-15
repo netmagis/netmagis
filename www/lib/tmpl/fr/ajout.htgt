@@ -5,12 +5,12 @@
 \set {date}   {11/04/2002}
 
 \*******************************************************************************
-\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+\partie {banniere} {
     WebDNS - Ajout d'une machine ou d'un alias
 }
 
 \*******************************************************************************
-\partie {titrepage} { \* Titre de la page
+\partie {titrepage} {
     Application WebDNS
 }
 
@@ -20,7 +20,7 @@
 	WebDNS v%VERSION%
     } {
 	\elementbandeau {Actions} {
-	    %BANDEAU%
+	    %LINKS%
 	}
 }
 
@@ -33,7 +33,7 @@
 }
 
 \*******************************************************************************
-\partie {texte} { \* Le texte proprement dit
+\partie {texte} {
 
     \titre {1} {Ajout de machine dans le DNS}
 

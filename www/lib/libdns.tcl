@@ -995,7 +995,7 @@ snit::type ::dnscontext {
 	if {$fmt eq "html"} then {
 
 	    set linkmenu [$self Get-links ":$curmodule"]
-	    lappend lsubst [list %BANDEAU% $linkmenu]
+	    lappend lsubst [list %LINKS% $linkmenu]
 
 	    foreach s [$self urlsubst] {
 		lappend lsubst $s

@@ -5,12 +5,12 @@
 \set {date}   {23/05/2002}
 
 \*******************************************************************************
-\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+\partie {banniere} {
     WebDNS - Confirmation de modification d'un groupe
 }
 
 \*******************************************************************************
-\partie {titrepage} { \* Titre de la page
+\partie {titrepage} {
     Application WebDNS
 }
 
@@ -21,12 +21,12 @@
     } {
 
 	\elementbandeau {Actions} {
-	    %BANDEAU%
+	    %LINKS%
 	}
 }
 
 \*******************************************************************************
-\partie {texte} { \* Le texte proprement dit
+\partie {texte} {
 
     \titre {1} {Incohérences dans la %MSGACT%}
 
