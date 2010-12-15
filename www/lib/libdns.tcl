@@ -973,8 +973,25 @@ snit::type ::dnscontext {
 	}
 
 	#
+	# Handle internationalized template files
+	#
+
+	set found 0
+	foreach l [concat [mcpreferences] "C"] {
+	    set file "%TRANSTMPL%/$l/$page"
+	    if {[file exists $file]} then {
+		set found 1
+		break
+	    }
+	}
+	if {! $found} then {
+	    error "Template file '%page' not found in locale [mcpreferences]"
+	}
+
+	#
 	# Constitute the links menu
 	#
+
 	if {$fmt eq "html"} then {
 
 	    set linkmenu [$self Get-links ":$curmodule"]

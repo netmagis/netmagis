@@ -28,7 +28,7 @@ DEFUSER	= crc
 
 DESTDIR	= /local/services/www$(HOMEURL)
 TRANSMSGS = $(DESTDIR)/lib/msgs
-TRANSHTML = $(DESTDIR)/lib/html
+TRANSTMPL = $(DESTDIR)/lib/tmpl
 PKGTCL	= /local/services/www/pkgtcl
 LIBDNS	= $(DESTDIR)/lib/libdns.tcl
 
@@ -73,7 +73,7 @@ SUBST	= \
 	-e 's|%DEBUG%|$(DEBUG)|' \
 	-e 's|%DESTDIR%|$(DESTDIR)|' \
 	-e 's|%TRANSMSGS%|$(TRANSMSGS)|' \
-	-e 's|%TRANSHTML%|$(TRANSHTML)|' \
+	-e 's|%TRANSTMPL%|$(TRANSTMPL)|' \
 	-e 's|%LIBDNS%|$(LIBDNS)|' \
 	-e 's|%PKGTCL%|$(PKGTCL)|' \
 	-e 's|%HOMEURL%|$(HOMEURL)|' \
