@@ -5031,12 +5031,19 @@ proc call-topo {cmd _msg} {
     global libconf
     upvar $_msg msg
 
+    #
+    # Quote shell metacharacters to prevent interpretation
+    #
+    regsub -all {[<>|;'"${}()&\[\]*?]} $cmd {\\&} cmd
+
     set cmd "$libconf(topobin)/$cmd < $libconf(topograph)"
+
     if {$libconf(topohost) eq ""} then {
-	set r [catch {exec sh -c $cmd} msg]
+	set r [catch {exec sh -c $cmd} msg option]
     } else {
 	set r [catch {exec ssh $libconf(topohost) $cmd} msg]
     }
+
     return [expr !$r]
 }
 

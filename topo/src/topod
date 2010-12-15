@@ -97,9 +97,9 @@
 
 set conf(fping) "%FPING% %s"
 
-set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph -a < %GRAPH%"
-set conf(extracteq)	{%TOPODIR%/bin/extracteq -a %1$s %2$s < %GRAPH%}
-set conf(extractcoll)	{%TOPODIR%/bin/extractcoll -s -w < %GRAPH%}
+set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph -a < %TOPOGRAPH%"
+set conf(extracteq)	{%TOPODIR%/bin/extracteq -a %1$s %2$s < %TOPOGRAPH%}
+set conf(extractcoll)	{%TOPODIR%/bin/extractcoll -s -w < %TOPOGRAPH%}
 set conf(rancid)	{%TOPODIR%/bin/start-rancid %1$s}
 set conf(anaconf)	{%TOPODIR%/bin/anaconf}
 set conf(logger)	%LOGGER%
