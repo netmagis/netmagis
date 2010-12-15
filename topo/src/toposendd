@@ -1,0 +1,783 @@
+#! %TCLSH%
+
+#
+# Daemon to send interface modifications on equipments
+#
+# Historique :
+#  2010/02/16 : pda/jean : design
+#  2010/10/15 : pda/jean : splitted in a different daemon
+#
+
+set conf(fping)		"%FPING% %s"
+
+set conf(logger)	%LOGGER%
+
+set conf(delay)		%DELAY%
+
+set conf(libdns)	%LIBDNS%
+
+set conf(maxstatus)	100
+
+set conf(extracteq)	{extracteq -a %1$s %2$s}
+
+lappend auto_path %PKGTCL%
+package require webapp
+package require pgsql
+
+source $conf(libdns)
+
+#
+# Commandes de modification à envoyer pour chaque équipement
+#
+# Ces quatre actions doivent être paramétrées en fonction du
+# type d'équipement. Pour cela, le tableau confcmd contient
+# les commandes à passer sur chaque type d'équipement.
+#
+# La clef est de la forme :
+#   type:modele:action
+# Le modèle peut être "*"
+# Exemple :
+#   confcmd(cisco:3750:ifaccess) ...
+#   confcmd(cisco:*:ifaccess) ...
+#
+# La valeur est une liste de lignes à passer sur l'équipement.
+# Ces lignes sont paramétrés.
+#
+# Les différentes actions sont :
+#   
+#   exec
+#	commande shell a appeler pour envoyer des commandes à exécuter sur
+#	l'équipement. Les autres actions sont exécutées sur l'équipement
+#	lui-même.
+#   prologue
+#	entrer en mode configuration sur l'équipement
+#   ifreset
+#	remettre l'interface dans un mode connu (la plupart du temps par
+#	suppression de tous les vlans sur l'interface).
+#	Paramètres :
+#	    %1$ : nom de l'interface
+#   resetvlans
+#	dans le cas où on ne peut pas remettre l'interface dans un mode
+#	connu (par exemple sur HP), commande à passer pour tous les vlans
+#	pour retirer l'interface de ces vlans.
+#	Paramètres :
+#	    %1$ : nom de l'interface
+#	    %2$ : numéro de vlan
+#   ifaccess
+#	positionner un vlan d'accès donné sur une interface.
+#	Paramètres :
+#	    %1$ : nom de l'interface
+#	    %2$ : numéro de vlan
+#   ifvoice
+#	positionner un voice vlan donné sur une interface.
+#	Paramètres :
+#	    %1$ : nom de l'interface
+#	    %2$ : numéro de vlan
+#   ifdesc
+#	positionner la description sur une interface.
+#	Paramètres :
+#	    %1$ : nom de l'interface
+#	    %2$ : description
+#   epilogue
+#	quitter le mode de configuration et enregistrer la configuration saisie
+#
+#
+
+array set confcmd {
+    cisco:*:exec {/usr/local/libexec/rancid/clogin -autoenable -u %RANCIDMODUSER% -p %RANCIDMODPASS%}
+
+    cisco:*:prologue {
+	  {configure terminal}
+    }
+    cisco:*:ifreset {
+	  {interface %1$s}
+	  {no switchport}
+	  {switchport}
+    }
+    cisco:*:ifdisable {
+	{interface %1$s}
+	{shutdown}
+    }
+    cisco:*:ifenable {
+	{interface %1$s}
+	{no shutdown}
+    }
+    cisco:*:ifaccess {
+	      {interface %1$s}
+	      {switchport access vlan %2$s}
+	      {spanning-tree portfast}
+	  }
+    cisco:*:ifvoice {
+	      {interface %1$s}
+	      {switchport voice vlan %2$s}
+	  }
+    cisco:*:ifdesc {
+	      {interface %1$s}
+	      {description %2$s}
+	  }
+    cisco:*:epilogue {
+	      {line con 0}
+	      {exit}
+	      {exit}
+	      {write memory}
+	  }
+
+    juniper:*:exec {/usr/local/libexec/rancid/jlogin -u %RANCIDMODUSER% -p %RANCIDMODPASS%}
+
+    juniper:*:prologue {
+	{configure}
+    }
+    juniper:*:ifreset {
+	{delete interfaces %1$s unit 0 family ethernet-switching}
+	{delete ethernet-switching-options voip interface %1$s}
+    }
+    juniper:*:ifdisable {
+	{set interfaces %1$s disable}
+    }
+    juniper:*:ifenable {
+	{delete interfaces %1$s disable}
+    }
+    juniper:*:ifaccess {
+	{set interfaces %1$s unit 0 family ethernet-switching port-mode access}
+	{set interfaces %1$s unit 0 family ethernet-switching vlan members %2$s}
+    }
+    juniper:*:ifdesc {
+	{set interfaces %1$s description "%2$s"}
+    }
+    juniper:*:ifvoice {
+	{set ethernet-switching-options voip interface %1$s vlan %2$s}
+    }
+    juniper:*:epilogue {
+	{commit}
+	{exit configuration}
+    }
+
+    hp:*:exec {/usr/local/libexec/rancid/hlogin -autoenable -u %RANCIDMODUSER% -p %RANCIDMODPASS%}
+    hp:*:prologue {
+	{configure terminal}
+    }
+    hp:*:resetvlans {
+	{vlan %2$s}
+	{no tagged %1$s}
+	{no untagged %1$s}
+    }
+
+    hp:*:ifenable {
+	{interface %1$s}
+	{enable}
+    }
+    hp:*:ifdisable {
+	{interface %1$s}
+	{disable}
+    }
+    hp:*:ifaccess {
+	{vlan %2$s}
+	{untagged %1$s}
+    }
+    hp:*:ifvoice {
+	{vlan %2$s}
+	{tagged %1$s}
+    }
+    hp:*:ifdesc {
+	{interface %1$s}
+	{name "%2$s"}
+    }
+    hp:*:epilogue {
+	{vlan 1}
+	{exit}
+	{exit}
+	{write memory}
+    }
+}
+
+
+##############################################################################
+# Propagation des modifications sur les équipements
+##############################################################################
+
+#
+# Propage les modifications demandées (dans le spool) vers les
+# équipements
+#
+# Entrée :
+#   - _tabeq : nom du tableau contenant les types d'équipements
+# Sortie :
+#   - valeur de retour : 1 si ok, 0 si erreur
+# 
+# Historique : 
+#   2010/10/14 : pda/jean : création
+#
+
+proc send-changes {_tabeq} {
+    upvar $_tabeq tabeq
+
+    #
+    # Trouver les équipements modifiés
+    # et constituer une liste de couples {{idrr fqdn} ...}
+    #
+
+    set lc {}
+    set sql "SELECT DISTINCT (c.idrr) AS idrr,
+			rr.nom || '.' || d.nom AS fqdn
+		    FROM topo.ifchanges c, dns.rr, dns.domaine d
+		    WHERE c.processed = 0
+			AND c.idrr = rr.idrr
+			AND rr.iddom = d.iddom"
+    if {! [toposqlselect $sql tab { lappend lc [list $tab(idrr) $tab(fqdn)] }]} then {
+	return 0
+    }
+
+    foreach c $lc {
+	lassign $c idrr eq
+
+	#
+	# Rechercher le type et le modèle de l'équipement à partir
+	# du fqdn
+	#
+
+	if {! [info exists tabeq($eq)]} then {
+	    update-modlog $idrr "Unknown equipement type for '$eq'"
+	    continue
+	}
+	lassign $tabeq($eq) type model
+
+	#
+	# Test d'accessibilité
+	#
+
+	set msg [test-ping $eq]
+	if {! [string equal $msg ""]} then {
+	    update-modlog $idrr $msg
+	    continue
+	}
+
+	#
+	# L'équipement est accessible.
+	# Récupérer toutes les modifications non traitées pour
+	# cet équipement, les traduire en lignes de configuration,
+	# les envoyer sur l'équipement, et marquer les modifications
+	# comme étant traitées
+	#
+
+	set lcmd [mod-to-conf $idrr $eq $type $model lreqdate]
+	if {[llength $lcmd] == 0} then {
+	    continue
+	}
+
+	if {[execute-cmd $eq $type $model $lcmd msg]} then {
+	    mark-processed $idrr $lreqdate $msg
+	} else {
+	    update-modlog $idrr $msg
+	}
+    }
+
+    return 1
+}
+
+#
+# Traduit les changements demandés dans le spool en une suite
+# de lignes pour l'équipement donné
+#
+# Entrée :
+#   - idrr : id de l'équipement
+#   - eq : nom complet (fqdn) de l'équipement
+#   - type : type d'équipement (ex: cisco, juniper etc.)
+#   - model : modèle d'équipement (ex: 3750, M20 etc.)
+#   - lreqdate : en retour, liste des demandes trouvées (i.e. les dates)
+# Sortie :
+#   - valeur de retour : liste des lignes de commandes à passer sur l'équipement
+#		ou liste vide en cas d'erreur
+#   - paramètre lreqdate : cf ci-dessus
+# 
+# Historique : 
+#   2010/10/14 : pda/jean : création
+#
+
+proc mod-to-conf {idrr eq type model _lreqdate} {
+    upvar $_lreqdate lreqdate
+
+    set lreqdate {}
+    set lcmd {}
+
+    #
+    # prologue
+    #
+
+    set prologue [fetch-conf $type $model "prologue"]
+    set lcmd [concat $lcmd $prologue]
+
+    #
+    # Chercher toutes les modifications
+    #
+
+    set sql "SELECT c.*
+		FROM topo.ifchanges c
+		WHERE c.idrr = $idrr AND c.processed = 0
+		ORDER BY c.reqdate ASC"
+
+    set l {}
+    if {! [toposqlselect $sql tab { lappend l [list $tab(reqdate) $tab(iface) \
+			$tab(ifdesc) $tab(ethervlan) $tab(voicevlan)] }]} then {
+	return {}
+    }
+
+    foreach e $l {
+	lassign $e reqdate iface ifdesc ethervlan voicevlan
+
+	lappend lreqdate $reqdate
+
+	#
+	# Description de l'interface
+	#
+
+	if {! [string equal $ifdesc ""]} then {
+	    foreach fmt [fetch-conf $type $model "ifdesc"] {
+		lappend lcmd [format $fmt $iface $ifdesc]
+	    }
+	}
+
+	#
+	# On remet l'interface dans un état connu dans tous les cas
+	#
+
+	set lcmd [concat $lcmd [resetif $eq $type $model $iface]]
+
+	# 
+	# En fonction de ce qui se trouve dans le fichier spool, on 
+	# execute des commandes sur l'équipement. 
+	# 
+	#   Ether	    Voice	Opération
+	#   -----------------------------------------------------
+	#   -1		    -1		Désactiver l'interface
+	#   -1		    > 0		Voice vlan uniquement
+	#   > 0		    -1		Vlan d'accès uniquement
+	#   > 0		    > 0		Vlan d'accès + Voice Vlan
+	#
+
+	set ether [expr $ethervlan==-1]
+	set voice [expr $voicevlan==-1]
+	
+	switch -- "$ether$voice" {
+	    11	{
+		foreach fmt [fetch-conf $type $model "ifdisable"] {
+		    lappend lcmd [format $fmt $iface]
+		}
+	    }
+	    10	{
+		foreach fmt [fetch-conf $type $model "ifvoice"] {
+		    lappend lcmd [format $fmt $iface $voicevlan]
+		}
+	    }
+	    01	{
+		foreach fmt [fetch-conf $type $model "ifaccess"] {
+		    lappend lcmd [format $fmt $iface $ethervlan]
+		}
+	    }
+	    00  {
+		foreach fmt [fetch-conf $type $model "ifvoice"] {
+		    lappend lcmd [format $fmt $iface $voicevlan]
+		}
+		foreach fmt [fetch-conf $type $model "ifaccess"] {
+		    lappend lcmd [format $fmt $iface $ethervlan]
+		}
+	    }
+	}
+    }
+
+    #
+    # Épilogue
+    #
+
+    set epilogue [fetch-conf $type $model "epilogue"]
+    set lcmd [concat $lcmd $epilogue]
+
+    return $lcmd
+}
+
+#
+# Exécute une séquence de commandes sur un équipement
+#
+# Entrée :
+#   - fqdn : nom complet de l'équipement
+#   - type : type d'équipement (ex: cisco, juniper etc.)
+#   - model : modèle d'équipement (ex: 3750, M20 etc.)
+#   - lcmd : liste des commandes à exécuter
+#   - _msg : en retour, message d'erreur ou sortie de la commande
+# Sortie
+#   - valeur de retour : 1 si ok, 0 si erreur
+#
+# Historique : 
+#   2010/02/18 : pda/jean : création
+#
+
+proc execute-cmd {fqdn type model lcmd _msg} {
+    global conf
+    upvar $_msg msg
+
+    set-status "Sending command to $fqdn"
+
+    set tmp "/tmp/topod.[pid]"
+    set fd [open $tmp "w"]
+    puts $fd [join $lcmd "\n"]
+    close $fd
+    
+    set exec [fetch-conf $type $model "exec"]
+
+    if {[catch {exec sh -c "$exec -x $tmp $fqdn"} msg]} then {
+	set r 0
+    } else {
+	set r 1
+    }
+
+    file delete -force $tmp
+
+    #
+    # Interpréter le fichier résultant de l'exécution
+    #
+    # Pistes :
+    # 1- analyser le fichier en supprimant toutes les lignes connues
+    #	(ex: "cisco(Fa1/0)# switchport blablabla" -> supprimer)
+    #	ce qui reste est une erreur
+    #	-> pb : stratégie peu maintenable dans le temps
+    # 2- chercher des patterns d'erreur
+    #	-> pb : le nombre d'erreurs non connues est non dénombrable
+    # 3- ignorer le résultat de l'exécution, et détecter les modifications
+    #	non prises en compte dans le graphe reconstruit après
+    #	-> pb : délai entre la modif et la vérification
+    #	-> pb : complexité du code de vérification
+    # 4- ignorer le résultat de l'exécution, et laisser l'être humain
+    #	détecter les problèmes (par ex: affichage de l'erreur dans une
+    #	page web de diagnostic, ou la page web de l'équipement)
+    #	-> pb : codage dans l'appli web
+    #
+    # On privilégie la piste 4 pour le moment. L'expérience nous dira
+    # si c'est une bonne idée ou non.
+    #
+
+    return $r
+}
+
+#
+# Renvoie la commande associée à un type d'équipement
+# et un type de configuration
+#
+# Entrée :
+#   - type : type d'équipement (ex: cisco, juniper etc.)
+#   - model : modèle d'équipement (ex: 3750, M20 etc.)
+#   - context : voir description du tableau confcmd
+# Sortie
+#   - valeur de retour : commande à exécuter ou liste vide si non trouvé
+#
+# Historique : 
+#   2010/02/16 : pda/jean : création
+#
+
+proc fetch-conf {type model context} {
+    global confcmd
+    
+    set r {}
+    if {[info exists confcmd($type:*:$context)]} then {
+	set r $confcmd($type:*:$context)
+    } elseif {[info exists confcmd($type:$model:$context)]} then {
+	set r $confcmd($type:$model:$context)
+    }
+
+    return $r
+}
+
+
+#
+# Génère une liste de commande pour remettre une interface
+# dans un état connu et l'activer
+#
+# Entrée :
+#   - eq : nom de l'équipement
+#   - type : type d'équipement (ex: cisco, juniper etc.)
+#   - model : modèle d'équipement (ex: 3750, M20 etc.)
+#   - iface : nom de l'interface
+# Sortie :
+#   - valeur de retour : liste des commandes à passer sur l'équipement
+#
+# Historique : 
+#   2010/09/23 : pda/jean : création
+#
+
+proc resetif {eq type model iface} {
+
+    #
+    # Cherche la sequence de commande pour remettre l'interface
+    # dans un mode connu
+    #
+
+    set lcmd {}
+    foreach fmt [fetch-conf $type $model "ifreset"] {
+	lappend lcmd [format $fmt $iface]
+    }
+
+    set l2 [fetch-conf $type $model "resetvlans"]
+    if {[llength $l2]>0} then {
+	foreach vlan [get-vlans $eq $iface] {
+	    foreach fmt $l2 {
+		lappend lcmd [format $fmt $iface $vlan]
+	    }
+	}
+    }
+
+    #
+    # Active l'interface
+    #
+
+    foreach fmt [fetch-conf $type $model "ifenable"] {
+	lappend lcmd [format $fmt $iface]
+    }
+    
+    return $lcmd
+}
+
+#
+# Liste les vlans pour un équipement et une interface donnée
+#
+# Entrée :
+#   - eq : nom complet de l'équipement
+#   - iface : nom de l'interface
+# Sortie
+#   - valeur de retour : liste des vlans trouvés
+#
+# Historique : 
+#   2010/09/23 : pda/jean : création
+#
+
+proc get-vlans {eq iface} {
+    global conf
+
+    set lvlans {}
+
+    # BEQUILLE supprimer le nom de domaine pour ne garder que le nom court
+    regsub {\..*} $eq "" eqcourt
+
+    set cmd [format $conf(extracteq) $eqcourt $iface]
+
+    if {[call-topo $cmd msg]} then {
+	foreach line [split $msg "\n"] {
+	    if {[lindex $line 0] eq "iface"} then {
+		foreach vlan [lreplace $line 0 6] {
+		    lappend lvlans [lindex $vlan 0]
+		}
+	    }
+	}
+    } else {
+	puts stderr "extracteq : $msg"
+    }
+
+    return $lvlans
+}
+
+#
+# Teste l'accessibilité d'un équipement
+#
+# Entrée :
+#   - eq : nom complet de l'équipement
+# Sortie :
+#   - valeur de retour : vide si ok, ou message d'erreur si pas accessible
+#
+# Historique
+#   2010/10/14 : pda/jean : fonction séparée
+#
+
+proc test-ping {eq} {
+    global conf
+
+    # 
+    # Teste si l'équipement est joignable
+    # 
+
+    set cmd [format $conf(fping) $eq]
+
+    if {[catch {exec sh -c $cmd} msg]} then {
+	set r $msg
+    } else {
+	set r ""
+    }
+
+    return $r
+}
+
+#
+# Conserve une trace de l'échec d'une tentative de configuration
+# d'un équipement
+#
+# Entrée :
+#   - idrr : id de l'équipement
+#   - msg : message d'erreur suite à la tentative
+# Sortie :
+#   - aucune
+# 
+# Historique : 
+#   2010/10/14 : pda/jean : création
+#
+
+proc update-modlog {idrr msg} {
+    global ctxt
+
+    set qmsg [::pgsql::quote $msg]
+    set sql "UPDATE topo.ifchanges
+		    SET modlog = '$qmsg', moddate = now ()
+		    WHERE idrr = $idrr AND processed = 0"
+    if {! [toposqlexec $sql]} then {
+	log-error "Cannot update modlog for idrr=$idrr"
+    }
+
+    return
+}
+
+#
+# Marquer les changements comme étant traités, en y inscrivant 
+# le log des lignes envoyées à l'équipement
+#
+# Entrée :
+#   - idrr : id de l'équipement
+#   - lreqdate : liste des dates des changements
+#   - msg : message de log
+# Sortie :
+#   - aucune
+# 
+# Historique : 
+#   2010/10/14 : pda/jean : création
+#
+
+proc mark-processed {idrr lreqdate msg} {
+    global ctxt
+
+    set reqdate [join $lreqdate "', '"]
+
+    set qmsg [::pgsql::quote $msg]
+    set sql "UPDATE topo.ifchanges
+		    SET processed = 1, modlog = '$qmsg', moddate = now ()
+		    WHERE idrr = $idrr AND reqdate IN ('$reqdate')"
+    if {! [toposqlexec $sql]} then {
+	log-error "Cannot update 'processed' flag for idrr=$idrr"
+    }
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+set usage {usage: %1$s [-h][-v <n>]
+    -h         : affiche ce texte
+    -v <n>     : niveau de verbosité (0 = aucun, 1 = minimum, 99 = max)
+}
+
+proc usage {argv0} {
+    global usage
+
+    puts stderr [format $usage $argv0]
+}
+
+#
+# Programme principal
+#
+
+proc main {argv0 argv} {
+    global conf
+    global ctxt
+
+    set ctxt(dbfd1) ""
+    set ctxt(dbfd2) ""
+    set verbose 0
+
+    config ::dnsconfig
+
+    set-log $conf(logger)
+    set delay [expr $conf(delay)*1000]
+
+    #
+    # Analyse des arguments
+    #
+
+    while {[llength $argv] > 0} {
+	switch -glob -- [lindex $argv 0] {
+	    -h {
+		usage $argv0
+		return 0
+	    }
+	    -v {
+		set verbose [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+
+	    }
+	    -* {
+		usage $argv0
+		return 1
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    if {[llength $argv] != 0} then {
+	usage $argv0
+	return 1
+    }
+
+    reset-status
+    set-status "Starting toposendd"
+
+    #
+    # Valeurs par défaut
+    #
+
+    topo-set-verbose $verbose
+
+    if {$verbose > 0} then {
+	set-trace {toposqlselect toposqlexec toposqllock toposqlunlock
+		    keep-state-mail
+		    read-eq-type send-changes mod-to-conf
+		    execute-cmd fetch-conf resetif get-vlans test-ping
+		    update-modlog mark-processed}
+    }
+
+    #
+    # Initialiser la liste des équipements (qui sera réactualisée à chaque
+    # mise à jour du graphe)
+    #
+
+    set msg [read-eq-type tabeq]
+    if {! [string equal $msg ""]} then {
+	#
+	# C'est une erreur fatale qui empêche le démon de démarrer.
+	#
+
+	puts stderr "Cannot read equipment types. Abort. ($msg)"
+	exit 1
+    }
+
+    #
+    # Boucle principale du démon
+    #
+
+    set first 1
+
+    while {true} {
+	#
+	# Gestion de l'attente : avant chaque tour de boucle, sauf
+	# la première fois, attendre le délai demandé.
+	#
+
+	topo-verbositer "delay : first=$first delay=$delay" 10
+	if {! $first} then {
+	    after $delay
+	}
+	set first 0
+
+	#
+	# Chercher les modifications demandées par l'interface Web
+	# et les propager
+	#
+
+	send-changes tabeq
+    }
+}
+
+exit [main $argv0 $argv]

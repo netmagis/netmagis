@@ -1,0 +1,1132 @@
+#! %TCLSH%
+
+#  
+# Recette pour accélérer le déroulement de rancid+topo pour permettre
+# la modification de conf par interface Web topo
+#  
+# Il faut deux spools différents :
+#	- spool des détections de modification d'équipement
+#	- spool des modifications (à propager, puis ensuite effectuées)
+#  
+# Lorsqu'une modification est effectuée sur l'interface Web :
+#
+#	Une entrée est générée par modification effectuée (ex: chgt
+#	d'affectation d'un port dans un vlan) avec les attributs
+#	suivants :
+#	- login de l'utilisateur
+#	- date de la requête de modification
+#	- équipement (RR)
+#	- interface
+#	- description d'interface
+#	- vlan d'accès
+#	- vlan voix
+#	L'entrée est une ligne dans la table topo.ifchanges de la base
+#	WebDNS.
+#
+#	Lorsque la modification est propagée sur l'équipement, les
+#	attributs suivants sont actualisés :
+#	- date de modification
+#	- log de la modification (sortie de la commande de modification)
+#  
+#  Lorsqu'une modification sur un équipement est détectée :
+#  
+#	La modification peut être soit une modification automatique
+#	poussée à partir de l'interface Web, soit une modification
+#	manuelle par un très doué ingénieur réseau.
+#  
+#	La détection peut-être réalisée via une trappe SNMP, via
+#	l'analyse des fichiers de log ou via l'accounting Radius.
+#	Dans tous les cas, une entrée est générée par modification
+#	détectée, avec les attributs suivants :
+#	- équipement (fqdn ou nom incomplet)
+#	- login
+#	- date de détection de l'événement
+#	L'entrée est une ligne dans la table topo.modeq de la base
+#	WebDNS.
+#
+#	Lorsque l'entrée est traitée, l'attribut suivant est actualisé :
+#	- booléen "traité"
+#  
+#  Rancid est remplacé par le programme, constitué d'une boucle infinie
+#  (démon), dont le corps est :
+#  
+#   1- une fois par nuit, faire une récupération des confs
+#	(rancid original) et une analyse des confs (topo) complètes
+#  
+#   2- analyser le spool de modifications à effectuer, en regroupant
+#	les modifications par équipement (mais en conservant la
+#  	séquence des modifications)
+#  
+#	a- tester si l'équipement est accessible (fping)
+#  	    => l'idée est de ne pas attendre le timeout TCP si
+#  		l'équipement est éteint/crashé/etc
+#  
+#	b- propager ces modifications sur l'équipement s'il est
+#  	    accessible (normalement, ces modifications entrainent
+#  	    l'apparition d'une entrée dans le spool des modifications
+#  	    détectées)
+#  
+#	c- si la propagation s'est passée sans problème, déplacer les
+#  	    fichiers dans le spool des modifications effectuées.
+#  
+#	d- conserver la liste des équipements pour lesquels la
+#  	    propagation des modifications s'est effectuée sans
+#  	    problème.
+#  
+#   3- analyser le spool des détections de modifications
+#  
+#  	a- si l'équipement n'est pas dans routers.db, alors râler
+#  
+#  	b- si l'équipement est accessible, alors lancer rancid pour
+#  	    récupérer sa configuration
+#  
+#	c- si la configuration d'un équipement a été modifiée/propagée
+#  	    avec succès, mais que cet équipement n'apparaît pas dans
+#  	    le spool des détections de modifications, alors râler
+#  
+#	d- lancer topo en restreignant l'analyse aux seuls équipements
+#  	    modifiés
+#  
+#	e- supprimer les fichiers du spool des modifications effectuées
+#  
+#
+# Historique :
+#  2010/02/16 : pda/jean : création
+#
+
+set conf(fping) "%FPING% %s"
+
+set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph -a < %TOPOGRAPH%"
+set conf(extracteq)	{%TOPODIR%/bin/extracteq -a %1$s %2$s < %TOPOGRAPH%}
+set conf(extractcoll)	{%TOPODIR%/bin/extractcoll -s -w < %TOPOGRAPH%}
+set conf(rancid)	{%TOPODIR%/bin/start-rancid %1$s}
+set conf(anaconf)	{%TOPODIR%/bin/anaconf}
+set conf(logger)	%LOGGER%
+
+# horaires pendant lesquels un full-rancid doit être provoqué
+# pour avoir une synchronisation complète une fois par jour
+set conf(fullrancidmin)	2
+set conf(fullrancidmax)	4
+
+set conf(routerdb)	%RANCIDDIR%/router.db
+set conf(eqvirt)	%EQVIRT%
+
+set conf(delay)		%DELAY%
+
+set conf(libdns)	%LIBDNS%
+
+set conf(maxstatus)	100
+
+set conf(sensorexpire)	"30 days"
+
+lappend auto_path %PKGTCL%
+package require webapp
+package require pgsql
+
+source $conf(libdns)
+
+##############################################################################
+# Mise à jour du graphe
+##############################################################################
+
+#
+# Generate a new router.db rancid file
+#
+# Entrée :
+#   - none
+# Sortie : 
+#   - valeur de retour : empty string or error message
+#
+# Historique : 
+#   2010/12/13 : pda/jean : design
+#
+
+proc update-routerdb {} {
+    global conf
+
+    set sql "SELECT * FROM topo.modeq
+		    WHERE eq = '_routerdb' AND processed = 0"
+    set found 0
+    if {! [toposqlselect $sql tab { set found 1 }]} then {
+	return "Cannot read equipment modification from database"
+    }
+
+    if {$found} then {
+	set sql "SELECT e.eq, t.type, e.up
+			FROM topo.eq e, topo.eqtype t
+			WHERE e.idtype = t.idtype"
+	set leq {}
+	if {! [toposqlselect $sql t { lappend leq [list $t(eq) $t(type) $t(up)] }]} then {
+	    return "Cannot read equipment list from database"
+	}
+
+	set new "$conf(routerdb).new"
+	if {[catch {set fd [open $new "w"]} msg]} then {
+	    return "Cannot create $new ($msg)"
+	}
+	foreach e $leq {
+	    lassign $e eq type up
+	    if {$up} then { set up "up" } else { set up "down" }
+	    puts $fd "$eq:$type:$up"
+	}
+	if {[catch {close $fd} msg]} then {
+	    return "Cannot close $new ($msg)"
+	}
+	if {[catch {file rename -force $new $conf(routerdb)} msg]} then {
+	    return "Cannot move $new to $conf(routerdb) ($msg)"
+	}
+	set sql "UPDATE topo.modeq SET processed = 1 WHERE eq = '_routerdb'"
+	if {! [toposqlexec $sql]} then {
+	    return "Cannot update equipment modification for _routerdb"
+	}
+    }
+    return ""
+}
+
+#
+# Détermine si un passage complet de rancid est nécessaire
+#
+# Entrée :
+#   - routerdbmod : en retour, structure résultant de detect-filemod
+# Sortie : 
+#   - valeur de retour :
+#	-1 : erreur
+#	0 : pas de passage nécessaire
+#	1 : passage nécessaire
+#   - paramètre routerdbmod : structure résultant de detect-filemod
+#
+# Historique : 
+#   2010/10/15 : pda/jean : création
+#
+
+proc full-rancid-needed {_routerdbmod} {
+    global conf
+    upvar $_routerdbmod routerdbmod
+
+    set msg [update-routerdb]
+    if {$msg ne ""} then {
+	keep-state-mail "router.db" $msg
+	return -1
+    }
+
+    set sql "SELECT topo.lastrun.date IS NULL
+		    OR (
+			(date_trunc('day',topo.lastrun.date)
+			    <> date_trunc('day',now())
+			AND extract(hour from now())>=$conf(fullrancidmin)
+			AND extract(hour from now())<=$conf(fullrancidmax))
+		    )
+	       AS result
+	       FROM topo.lastrun"
+
+    # if selects succeeds, returns the result of SQL query,
+    # while translating it to 1 (true) or 0 (false)
+    set r2 1
+    set r [toposqlselect $sql tab { set r2 [expr $tab(result) ? 1 : 0]}]
+    if {$r} then {
+	set r $r2
+
+	# detect if router.db has been modified
+	set routerdbmod {}
+	set fmod [detect-filemod $conf(routerdb)]
+	if {[llength $fmod] > 0} then {
+	    lassign $fmod code path date
+	    switch $code {
+		err {
+		    set msg $date
+		    set r -1
+		}
+		add {
+		    set msg "File router.db added"
+		    set r 1
+		}
+		mod {
+		    set msg "Resuming normal operation"
+		    set r 1
+		}
+		del {
+		    set msg "File router.db deleted"
+		    set r -1
+		}
+	    }
+	    keep-state-mail "router.db" $msg
+	    if {$r == 1} then {
+		set routerdbmod $fmod
+	    }
+	} else {
+	    keep-state-mail "router.db" "Resuming normal operation"
+	}
+    }
+
+    return $r
+}
+
+#
+# Mise à jour du graphe topo à partir des configuration des équipements
+#
+# Entrée :
+#   - full : 1 s'il faut lancer rancid+anaconf sur tous les équipements, 0 sinon
+#   - _tabeq : tableau contenant en retour les types/modèles des équipements
+#   - routerdbmod : liste résultant de detect-filemod, ou vide si pas d'update
+#   - leq : liste des équipements dont la modification a été détectée
+#	avec éventuellement l'"équipement" fictif "_vlan"
+#   - leqvirt : équipements virtuels modifiés, dont la date doit être mise à
+#	jour dans la base. Cette liste est au format de detect-dirmod
+# Sortie :
+#   - valeur de retour : 1 si ok, 0 en cas d'erreur
+#
+# Historique : 
+#   2010/10/15 : pda/jean : conception
+#   2010/10/20 : pda/jean : codage
+#   2010/11/12 : pda/jean : ajout leqvirt
+#
+
+proc update-graph {full _tabeq routerdbmod leq leqvirt} {
+    upvar $_tabeq tabeq
+    global conf
+
+    #
+    # Remettre à zéro les équipements marqués comme modifiés
+    # dans le spool
+    #
+
+    if {! [toposqllock]} then {
+	return 0
+    }
+
+    if {[llength $leq] == 0} then {
+	set sql "UPDATE topo.modeq SET processed = 1"
+    } else {
+	set inlist [join $leq "', '"]
+	set sql "UPDATE topo.modeq SET processed = 1 WHERE eq IN ('$inlist')"
+    }
+    if {! [toposqlexec $sql]} then {
+	return 0
+    }
+
+    #
+    # Lancer rancid et envoyer un mail si nécessaire
+    #
+
+    if {$full} then {
+	set callrancid 1
+	set leqrancid {}
+    } else {
+	# Ce n'est pas un full-rancid.
+	# Retirer _vlan des équipements. Si après cela, il ne reste
+	# plus d'équipement, ne pas confondre avec un full-rancid.
+	set pos [lsearch -exact $leq "_vlan"]
+	if {$pos != -1} then {
+	    set leqrancid [lreplace $leq $pos $pos]
+	} else {
+	    set leqrancid $leq
+	}
+	if {[llength $leqrancid] == 0} then {
+	    set callrancid 0
+	} else {
+	    set callrancid 1
+	}
+    }
+
+    if {$callrancid} then {
+	if {! [rancid $leqrancid]} then {
+	    toposqlunlock "abort"
+	    return 0
+	}
+    }
+
+    #
+    # Actualiser la date de modification de router.db si nécessaire
+    #
+
+    if {[llength $routerdbmod] > 0} then {
+	if {! [sync-filemonitor [list $routerdbmod]]} then {
+	    toposqlunlock "abort"
+	    return 0
+	}
+    }
+
+    # si ce n'est pas un "full-anaconf", ajouter les équipements
+    # virtuels
+
+    if {$full} then {
+	set leqanaconf {}
+    } else {
+	set leqanaconf $leq
+	foreach meq $leqvirt {
+	    topo-verbositer "processing $meq" 9
+	    lassign $meq code path date
+	    if {$code eq "add" || $code eq "mod"} then {
+		if {[regexp {([^/]+)\.eq$} $path bidon eq]} then {
+		    topo-verbositer "adding virtual $eq to leqanaconf" 9
+		    lappend leqanaconf $eq
+		}
+	    }
+	}
+    }
+
+    #
+    # Mettre à jour le graphe et envoyer un mail si nécessaire
+    #
+
+    if {! [anaconf $leqanaconf]} then {
+	toposqlunlock "abort"
+	return 0
+    }
+
+    #
+    # Actualiser la date de modification des équipements virtuels
+    #
+
+    if {! [sync-filemonitor $leqvirt]} then {
+	toposqlunlock "abort"
+	return 0
+    }
+
+    #
+    # Mettre à jour la liste des points de collecte
+    #
+
+    if {! [sensors]} then {
+	toposqlunlock "abort"
+	return 0
+    }
+
+    #
+    # Mettre à jour la date du dernier passage complet
+    # (si c'est un passage complet bien sûr)
+    #
+
+    if {[llength $leq] == 0} then {
+	set sql "DELETE FROM topo.lastrun ;
+		    INSERT INTO topo.lastrun (date) VALUES (NOW ())"
+	if {! [toposqlexec $sql]} then {
+	    return 0
+	}
+    }
+    toposqlunlock "commit"
+
+    #
+    # Relire les équipements et leur type/modèle
+    #
+
+    set msg [read-eq-type tabeq]
+    if {! [string equal $msg ""]} then {
+	keep-state-mail "read-eq-type" "Cannot read equipment types ($msg)"
+	return 0
+    }
+
+    return 1
+}
+
+#
+# Appelle rancid
+#
+# Entrée :
+#   - leq : liste d'équipements modifiés, à interroger (optionnel)
+# Sortie : 
+#   - valeur de retour : 1 si ok, 0 si erreur
+#
+# Historique : 
+#   2010/10/20 : pda/jean : création
+#
+
+proc rancid {{leq {}}} {
+    global conf
+
+    if {[llength $leq] == 0} then {
+	set-status "Ranciding all equipements"
+    } else {
+	set-status "Ranciding $leq"
+    }
+
+    #
+    # Appeler rancid
+    #
+
+    set cmd [format $conf(rancid) $leq]
+    topo-verbositer "rancid : cmd=<$cmd>" 2
+
+    if {[catch {exec sh -c $cmd} msg]} then {
+	# erreur
+	set msg "Error while running '$cmd'\n$msg"
+	set r 0
+    } else {
+	# pas d'erreur : msg contient la sortie de rancid
+	if {$msg eq ""} then {
+	    set msg "Resuming normal operation"
+	}
+	set r 1
+    }
+
+    #
+    # Envoyer le mail si nécessaire
+    #
+
+    if {[llength $leq] == 0} then {
+	set ev "fullrancid"
+    } else {
+	set ev "rancid"
+    }
+
+    keep-state-mail $ev $msg
+
+    return $r
+}
+
+#
+# Appelle anaconf pour reconstruire le graphe
+#
+# Entrée :
+#   - leq : liste d'équipements modifiés (optionnel)
+# Sortie : 
+#   - valeur de retour : 1 si ok, 0 si erreur
+#
+# Historique : 
+#   2010/10/20 : pda/jean : création
+#
+
+proc anaconf {{leq {}}} {
+    global conf
+
+    if {[llength $leq] == 0} then {
+	set-status "Building graph for all equipements"
+    } else {
+	set-status "Building graph for $leq"
+    }
+
+    set text ""
+
+    set cmd $conf(anaconf)
+
+    set r 1
+    foreach eq $leq {
+	append cmd " $eq"
+    }
+
+    topo-verbositer "anaconf : cmd=<$cmd>" 2
+    if {[catch {exec sh -c $cmd} msg]} then {
+	# erreur
+	set msg "Erreur dans l'exécution de $cmd\n$msg"
+	set r 0
+    } else {
+	# pas d'erreur
+    }
+    set text $msg
+
+    #
+    # Envoyer le mail si nécessaire
+    #
+
+    keep-state-mail "anaconf" $msg
+
+    return $r
+}
+
+#
+# Lit les points de collecte et les met à jour dans la base
+#
+# Entrée : aucune
+# Sortie : 
+#   - valeur de retour : 1 si ok, 0 si erreur
+#
+# Historique : 
+#   2010/11/09 : pda/jean : création
+#
+
+proc sensors {} {
+    global conf
+
+    set-status "Updating sensor list"
+
+    #
+    # Lecture des points de collecte existants dans la base
+    #
+
+    set sql "SELECT * FROM topo.sensor"
+    set r [toposqlselect $sql tab {
+				set id $tab(id)
+				set told($id) [list $tab(type) $tab(eq) \
+					$tab(comm) $tab(iface) $tab(param)]
+			    } ]
+    if {! $r} then {
+	keep-state-mail "sensors" "Cannot read sensor list from database"
+	return 0
+    }
+
+    #
+    # Lecture des nouveaux points de collecte à partir du graphe
+    #
+
+    set msg [read-coll tnew]
+    if {$msg ne ""} then {
+	keep-state-mail "sensors" "Cannot read sensor list from graph\n$msg"
+	return 0
+    }
+
+    #
+    # Analyse des différences
+    #
+
+    set lunmod {}
+    set sql {}
+
+    foreach id [array names tnew] {
+	lassign $tnew($id) type eq comm iface param
+	set qtype [::pgsql::quote $type]
+	set qid [::pgsql::quote $id]
+	set qeq [::pgsql::quote $eq]
+	set qcomm [::pgsql::quote $comm]
+	set qiface [::pgsql::quote $iface]
+	set qparam [::pgsql::quote $param]
+
+	if {[info exists told($id)]} then {
+	    #
+	    # Mise à jour des sondes communes
+	    #
+
+	    if {$tnew($id) eq $told($id)} then {
+		#
+		# identique : on ne fait qu'actualiser la date de dernière
+		# lecture
+		#
+		lappend lunmod "'$qid'"
+	    } else {
+		#
+		# différente : on met à jour (y compris les dates)
+		#
+		lappend sql "UPDATE topo.sensor
+				    SET type = '$qtype',
+					eq = '$qeq',
+					comm = '$qcomm',
+					iface = '$qiface',
+					param = '$qparam',
+					lastmod = DEFAULT,
+					lastseen = DEFAULT
+				    WHERE id = '$qid'"
+	    }
+
+	    unset told($id)
+	} else {
+	    #
+	    # Nouvelle sonde
+	    #
+	    lappend sql \
+		"INSERT INTO topo.sensor (id, type, eq, comm, iface, param)
+		    VALUES ('$qid','$qtype','$qeq','$qcomm','$qiface','$qparam')"
+	}
+    }
+
+    #
+    # Mise à jour de la date des sondes vues, mais non modifiées
+    #
+
+    if {[llength $lunmod] > 0} then {
+	set l [join $lunmod ","]
+	lappend sql "UPDATE topo.sensor SET lastseen = DEFAULT WHERE id IN ($l)"
+    }
+
+    #
+    # Suppression des anciennes sondes au bout d'un certain délai
+    #
+
+    lappend sql "DELETE FROM topo.sensor
+			WHERE lastseen + interval '$conf(sensorexpire)' < now()"
+
+    #
+    # Passer la groooooooosse commande SQL
+    # 
+
+    if {[llength $sql] > 0} then {
+	set sql [join $sql ";"]
+	if {! [toposqlexec $sql]} then {
+	    keep-state-mail "sensors" "Cannot write sensors in database"
+	    return 0
+	}
+    }
+
+    #
+    # Envoyer le mail si nécessaire
+    #
+
+    keep-state-mail "sensors" ""
+
+    return 1
+}
+
+#
+# Lit les lignes issues de "extractcoll -s -w" et en extrait la liste
+# des sondes à métrologiser.
+#
+# Entrée :
+#   - _tab : tableau contenant en sortie les informations
+# Sortie :
+#   - valeur de retour : message d'erreur ou chaîne vide
+#   - paramètre tab : tableau, indexé par les noms de points de métrologie,
+#	contenant pour chaque case une liste de la forme :
+#	{<type> <eq> <communaute> [<iface> [<param>]]}
+#
+# Note :
+#   Le format attendu en entrée est composé de trois types de ligne :
+#	trafic      <id coll> <eq> <community> <phys iface> <vlan|->
+#	nbassocwifi <id coll> <eq> <community> <phys iface> <ssid>
+#	nbauthwifi  <id coll> <eq> <community> <phys iface> <ssid>
+#
+# Historique :
+#   2008/07/28 : pda/boggia : conception
+#   2008/07/30 : pda        : adaptation au nouveau format d'entrée
+#   2010/11/09 : pda/jean   : intégration dans topod
+#
+
+proc read-coll {_tab} {
+    global conf
+    upvar $_tab tab
+
+    set cmd $conf(extractcoll)
+    if {! [catch {set fd [open "|$cmd" "r"]} msg]} then {
+	set msg ""
+
+	set r ""
+	while {[gets $fd ligne] >= 0} {
+	    set l [split $ligne]
+
+	    set type [lindex $l 0]
+	    switch $type {
+		trafic {
+		    set id    [lindex $l 1]
+		    set eq    [lindex $l 2]
+		    set comm  [lindex $l 3]
+		    set iface [lindex $l 4]
+		    set vlan  [lindex $l 5]
+
+		    if {! [string equal $vlan "-"]} then {
+			set iface "$iface.$vlan"
+		    }
+
+		    set sonde [list $type $eq $comm $iface {}]
+		}
+		nbassocwifi -
+		nbauthwifi {
+		    set id    [lindex $l 1]
+		    set eq    [lindex $l 2]
+		    set comm  [lindex $l 3]
+		    set iface [lindex $l 4]
+		    set ssid  [lindex $l 5]
+
+		    set sonde [list $type $eq $comm $iface $ssid]
+		}
+		default {
+		    return "Type de sonde inconnu ($l)"
+		}
+	    }
+
+	    if {[info exists tab($id)]} then {
+		return "Sonde '$id' présente plusieurs fois"
+	    }
+	    set tab($id) $sonde
+	}
+	close $fd
+    }
+
+    return $msg
+}
+
+##############################################################################
+# Détection des modifications effectuées dans les fichiers
+##############################################################################
+
+#
+# Détecter les modifications dans un répertoire
+#
+# Entrée :
+#   - dir : chemin d'accès au répertoire
+#   - _err : en retour, message d'erreur ou chaîne vide
+# Sortie :
+#   - valeur de retour : liste de la forme
+#		{{<code> <file> <date>} {<code> <file> <date>}...}
+#	où <code> = "add", "del", "mod" ou "err"
+#	et <date> = la date en format clock_t
+#	dans le cas où <code> = "err", le message d'erreur est dans "<date>"
+#   - paramètre err : en retour, tous les messages d'erreur
+# 
+# Historique : 
+#   2010/11/12 : pda/jean : création
+#
+
+proc detect-dirmod {dir _err} {
+    upvar $_err err
+
+    set err ""
+
+    #
+    # Premier passage : récupérer tous les fichiers du répertoire
+    # et les stocker dans un tableau au format :
+    #	ntab(<file>) <date>
+    #
+    foreach file [glob "$dir/*.eq"] {
+	if {[catch {file mtime $file} date]} then {
+	    append err "$date\n"
+	} else {
+	    set ntab($file) $date
+	}
+    }
+
+    #
+    # Deuxième passage : récupérer tous les fichiers décrits dans la
+    # base pour ce répertoire et les stocker dans un tableau au format :
+    #	otab(<file>) <date>
+    #
+    set sql "SELECT path, date FROM topo.filemonitor
+				WHERE path ~ '^$dir/\[^/\]+$'"
+    if {! [toposqlselect $sql tab { set otab($tab(path)) [clock scan $tab(date)] }]} then {
+	append err "Cannot execute SQL SELECT query for $dir\n"
+	return {}
+    }
+
+    #
+    # Comparaison
+    #
+    set r {}
+    if {$err eq ""} then {
+	foreach f [array names otab] {
+	    if {[info exists ntab($f)]} then {
+		if {$otab($f) != $ntab($f)} then {
+		    lappend r [list "mod" $f $ntab($f)]
+		}
+		unset ntab($f)
+	    } else {
+		lappend r [list "del" $f ""]
+	    }
+	    unset otab($f)
+	}
+
+	foreach f [array names ntab] {
+	    lappend r [list "add" $f $ntab($f)]
+	}
+    }
+
+    return $r
+}
+
+#
+# Détecter si un fichier a été modifié
+#
+# Entrée :
+#   - path : chemin d'accès au répertoire
+# Sortie :
+#   - valeur de retour : au format de detect-dirmod
+#
+# Historique : 
+#   2010/11/12 : pda/jean : création
+#
+
+proc detect-filemod {path} {
+    set oldfmod -1
+    set qpath [::pgsql::quote $path]
+    set sql "SELECT date FROM topo.filemonitor WHERE path = '$qpath'"
+    if {[toposqlselect $sql tab {set oldfmod [clock scan $tab(date)]}]} then {
+	if {[catch {file mtime $path} newfmod]} then {
+	    #
+	    # Erreur : on suppose que c'est parce que le fichier
+	    # n'existe pas
+	    #
+	    if {$oldfmod == -1} then {
+		# fichier n'existait ni avant, ni maintenant
+		set r [list "err" $path "Error on '$path': $newfmod"]
+	    } else {
+		# le fichier existait avant, mais plus maintenant
+		set r [list "del" $path ""]
+	    }
+	    set newfmod ""
+	} else {
+	    #
+	    # Le fichier existe
+	    #
+	    if {$oldfmod == -1} then {
+		# le fichier est créé
+		set r [list "add" $path $newfmod]
+	    } elseif {$oldfmod == $newfmod} then {
+		# les dates concordent : le fichier n'a pas été modifié
+		set r {}
+	    } else {
+		# le fichier est modifié
+		set r [list "mod" $path $newfmod]
+	    }
+	}
+    } else {
+	set r [list $path "err" "Error on '$path' : SQL query failed"]
+    }
+    topo-verbositer "detect-filemod: $path => $r" 9
+
+    return $r
+}
+
+#
+# Actualiser dans la base la date de modification d'un ou plusieurs fichiers
+#
+# Entrée :
+#   - lf : liste de la forme renvoyée par detect-dirmod
+# Sortie :
+#   - valeur de retour : 1 si réussi, 0 si erreur
+# 
+# Historique : 
+#   2010/11/12 : pda/jean : création
+#
+
+proc sync-filemonitor {lf} {
+    set sql {}
+    foreach f $lf {
+	lassign $f code path date
+	set qpath [::pgsql::quote $path]
+	switch $code {
+	    add {
+		set qdate [clock format $date]
+		lappend sql "INSERT INTO topo.filemonitor (path, date)
+					VALUES ('$qpath', '$qdate')"
+	    }
+	    mod {
+		set qdate [clock format $date]
+		lappend sql "UPDATE topo.filemonitor
+					SET date = '$qdate'
+					WHERE path = '$qpath'"
+	    }
+	    del {
+		lappend sql "DELETE FROM topo.filemonitor
+					WHERE path = '$qpath'"
+	    }
+	}
+    }
+    set r 1
+    if {[llength $sql] > 0} then {
+	set sql [join $sql ";"]
+	set r [toposqlexec $sql]
+    }
+
+    return $r
+}
+
+##############################################################################
+# Détection des modifications effectuées sur les équipements
+##############################################################################
+
+#
+# Détecter les modifications effectuées sur les équipements afin de
+# provoquer la reconstruction partielle du graphe.
+#
+# Entrée :
+#   - tabeq : tableau des types d'équipements, indexé par fqdn d'équipement
+# Sortie :
+#   - valeur de retour : liste d'équipements modifiés, ou liste vide
+# 
+# Historique : 
+#   2010/10/21 : pda/jean : création
+#
+
+proc detect-mod {_tabeq} {
+    upvar $_tabeq tabeq
+
+    set l {}
+    set sql "SELECT DISTINCT(eq) AS eq FROM topo.modeq WHERE processed = 0"
+    if {! [toposqlselect $sql tab { lappend l $tab(eq) }]} then {
+	return {}
+    }
+
+    #
+    # Vérifier que l'équipement est bien un équipement géré par notre
+    # rancid.
+    # Note : selon les types d'équipements, les versions de syslogd,
+    # et les configurations de ces équipements, les noms récupérés
+    # peuvent être des noms courts. Dans ces cas, on considère que
+    # l'équipement n'est pas géré (c'est sans doute une erreur dans
+    # le script de détection des équipements modifiés).
+    #
+
+    set leq {}
+    set lunk {}
+    foreach eq $l {
+	if {[info exists tabeq($eq)]} then {
+	    lappend leq $eq
+	} elseif {$eq eq "_vlan"} then {
+	    lappend leq $eq
+	} else {
+	    lappend lunk $eq
+	}
+    }
+
+    if {[llength $lunk] == 0} then {
+	keep-state-mail "detectunknw" "Resuming normal operation"
+    } else {
+	keep-state-mail "detectunknw" \
+			"Change detected on unknown equipments ($lunk)"
+    }
+
+    return $leq
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+set usage {usage: %1$s [-h][-v <n>]
+    -h         : affiche ce texte
+    -v <n>     : niveau de verbosité (0 = aucun, 1 = minimum, 99 = max)
+}
+
+proc usage {argv0} {
+    global usage
+
+    puts stderr [format $usage $argv0]
+}
+
+#
+# Programme principal
+#
+
+proc main {argv0 argv} {
+    global conf
+    global ctxt
+
+    set ctxt(dbfd1) ""
+    set ctxt(dbfd2) ""
+    set verbose 0
+
+    config ::dnsconfig
+
+    set-log $conf(logger)
+    set delay [expr $conf(delay)*1000]
+
+    #
+    # Analyse des arguments
+    #
+
+    while {[llength $argv] > 0} {
+	switch -glob -- [lindex $argv 0] {
+	    -h {
+		usage $argv0
+		return 0
+	    }
+	    -v {
+		set verbose [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+
+	    }
+	    -* {
+		usage $argv0
+		return 1
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    if {[llength $argv] != 0} then {
+	usage $argv0
+	return 1
+    }
+
+    reset-status
+    set-status "Starting topographd"
+
+    #
+    # Valeurs par défaut
+    #
+
+    topo-set-verbose $verbose
+
+    if {$verbose > 0} then {
+	set-trace {toposqlselect toposqlexec toposqllock toposqlunlock
+		    keep-state-mail
+		    full-rancid-needed update-graph
+		    rancid anaconf read-eq-type
+		    detect-mod
+		    detect-filemod detect-dirmod sync-filemonitor}
+    }
+
+    #
+    # Initialiser la liste des équipements (qui sera réactualisée à chaque
+    # mise à jour du graphe)
+    #
+
+    set msg [read-eq-type tabeq]
+    if {! [string equal $msg ""]} then {
+	#
+	# C'est une erreur fatale qui empêche le démon de démarrer.
+	#
+
+	puts stderr "Cannot read equipment types. Abort. ($msg)"
+	exit 1
+    }
+
+    #
+    # Boucle principale du démon
+    #
+
+    set first 1
+
+    while {true} {
+	#
+	# Gestion de l'attente : avant chaque tour de boucle, sauf
+	# la première fois, attendre le délai demandé.
+	#
+
+	topo-verbositer "delay : first=$first delay=$delay" 10
+	if {! $first} then {
+	    after $delay
+	}
+	set first 0
+
+	#
+	# Détecter s'il faut faire un passage complet sur toutes
+	# les conf (i.e. si on n'a pas encore fait de lecture complète
+	# depuis cette nuit à 2h du matin par ex).
+	#
+    
+	switch [full-rancid-needed routerdbmod] {
+	    -1 {
+		# error
+		continue
+	    }
+	    0 {
+		# not needed
+		# rien à faire
+	    }
+	    1 {
+		# il faut mettre à jour le graphe complet
+		# et (re-)lire la liste des types d'équipements
+
+		# faire un point sur les dates de modification
+		# des équipements virtuels, pour les mettre à
+		# jour après la lecture des configurations
+		set leqvirt [detect-dirmod $conf(eqvirt) err]
+		if {$err ne ""} then {
+		    keep-state-mail "eqvirt" $err
+		    continue
+		}
+
+		if {! [update-graph 1 tabeq $routerdbmod {} $leqvirt]} then {
+		    continue
+		}
+	    }
+	}
+
+	#
+	# Chercher les modifications des équipements et reconstituer
+	# le graphe
+	#
+
+	# équipements virtuels
+	set leqvirt [detect-dirmod $conf(eqvirt) err]
+	if {$err ne ""} then {
+	    keep-state-mail "eqvirt" $err
+	    continue
+	}
+
+	set leq [detect-mod tabeq]
+	if {[llength $leq] > 0 || [llength $leqvirt] > 0} then {
+	    update-graph 0 tabeq {} $leq $leqvirt
+	}
+    }
+}
+
+exit [main $argv0 $argv]

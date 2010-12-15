@@ -45,9 +45,10 @@ SCRIPTS = \
 	parse-hp.tcl	\
 	parse-cisco.tcl	\
 	parse-juniper.tcl	\
-	ssidprobes \
-	topod \
-	start-rancid \
+	ssidprobes	\
+	topographd	\
+	toposendd	\
+	start-rancid	\
 	sendmail
 
 SUBST = \

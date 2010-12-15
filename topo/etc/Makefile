@@ -7,7 +7,9 @@ DESTDIR=/local/etc/rc.d
 SUBST = \
         -e 's|%TOPODIR%|$(TOPODIR)|'
 
-SCRIPTS=topod.sh
+SCRIPTS= \
+	topographd.sh \
+	toposendd.sh
 
 all:
 
