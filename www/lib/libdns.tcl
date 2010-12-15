@@ -958,18 +958,9 @@ snit::type ::dnscontext {
 	#
 
 	switch -glob $page {
-	    *.html {
-		set fmt html
-		set dir %DESTDIR%/lib
-	    }
-	    *.tex {
-		set fmt pdf
-		set dir %DESTDIR%/lib
-	    }
-	    default {
-		set fmt "unknown"
-		set dir %DESTDIR%/lib
-	    }
+	    *.html { set fmt html }
+	    *.tex { set fmt pdf }
+	    default { set fmt "unknown" }
 	}
 
 	#
@@ -1006,7 +997,7 @@ snit::type ::dnscontext {
 	# Send resulting page
 	#
 
-	::webapp::send $fmt [::webapp::file-subst "$dir/$page" $lsubst]
+	::webapp::send $fmt [::webapp::file-subst $file $lsubst]
 	$self end
     }
 
