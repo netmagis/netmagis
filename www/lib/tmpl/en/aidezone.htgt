@@ -1,0 +1,111 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Zones
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {DNS zone management}
+
+    \titre {2} {\ancre {domaine} {Domain}}
+
+	Domain name of the zone (without final dot).
+
+	Exemple~:
+	    \retrait {\verbatim {mycompany.com} \br
+		\verbatim {168.192.in-addr.arpa}}
+
+    \titre {2} {\ancre {prologue} {Prologue}}
+
+	Text to add in the zone file before generated RR from database.
+	This text must contain string \gras {%VERSION%}, which will
+	be replaced by the version number at generation time.
+
+	Notice: if there are special cases (example: 2 RR with same A
+	and different names), they must be here.
+
+	Example~:
+	\retrait {
+	    \verbatim {;
+; Zone mycompany.com
+;
+; History
+;   2002/04/26 : jean/pda  : webdns se
+;
+
+@	IN	SOA	ns.mycompany.com. hostmaster.mycompany.com. (
+		    %VERSION%	; yy mm dd version
+		    86400		; refresh = 1 d
+		    3600		; retry = 1 h
+		    3600000		; expire = 1000 hr (~ 41 d)
+		    86400		; default ttl = 1 d
+		)
+
+;
+; default TTL of RR
+;
+$TTL	86400
+
+;
+; Authoritative nameservers
+;
+
+		IN	NS	ns.mycompany.com.
+		IN	NS	ns.myisp.com.
+
+;
+; Default MX
+;
+
+;		IN	MX	10	maihost1.mycompany.com.
+;		IN	MX	20	maihost2.mycompany.com.
+}
+	}
+
+    \titre {2} {\ancre {rrsup} {Addtl RR}}
+
+	Text to add after each A or MX resource record. This
+	text must contains string \gras {%NOM%}, which will
+	be replaced by the RR name.
+
+	Example~:
+	\retrait {
+	    \verbatim {%NOM%	IN	MX	10 mailhost.mycompany.com.
+%NOM%	IN	MX	20 mailhost2.mycompany.com.}
+	}
+
+    \titre {2} {\ancre {selection} {RR selection criterion}}
+
+	Criterion to select resource records for this zone. For a
+	standard zone, it is a domain name. For a reverse (IPv4 or
+	IPv6) zone, it is a network prefix.
+
+	Exemple~:
+	    \retrait {\verbatim {mycompany.com}\br
+		\verbatim {192.168.17.0/24}
+	    }
+}
+
+}

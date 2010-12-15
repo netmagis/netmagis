@@ -1,0 +1,40 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Domains
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS  v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Domain management}
+
+    \titre {2} {\ancre {texte} {Domain}}
+
+	Domain name.
+
+	Exemple~:
+	    \retrait {\verbatim {mycompany.com}}
+}
+
+}

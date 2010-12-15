@@ -1,0 +1,46 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Equipments
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Equipment management}
+
+    \titre {2} {\ancre {eq} {Equipment}}
+
+	Fully qualified domain name of equipment to manage
+	with \lien {rancid} {http://www.shrubbery.net/rancid/}.
+
+    \titre {2} {\ancre {idtype} {Type}}
+
+	Type of equipment managed by rancid.
+
+    \titre {2} {\ancre {up} {Up/Down}}
+
+	Tell if rancid should process this equipment or not.
+}
+
+}

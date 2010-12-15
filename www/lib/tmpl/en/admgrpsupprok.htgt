@@ -1,0 +1,35 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {13/02/2008}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Group removed
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Group removed}
+
+    The group '\gras {%ORGGRP%}' has been removed.
+}
+
+}

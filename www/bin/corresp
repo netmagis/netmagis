@@ -6,7 +6,7 @@
 # Called by: accueil
 #
 # Parameters (form or url):
-#	- critere : search criterium (ip, cidr, or fqdn, or _ for "here")
+#	- critere : search criterion (ip, cidr, or fqdn, or _ for "here")
 #
 # History
 #   2002/07/25 : pda      : design
@@ -80,7 +80,7 @@ proc main {} {
     d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
 
     #
-    # Is criterium an IP address, a host name, anything else?
+    # Is criterion an IP address, a host name, anything else?
     #
 
     set crit [string trim [lindex $ftab(critere) 0]]
@@ -171,11 +171,11 @@ proc main {} {
 	#
 	# We should not come here.
 	#
-	user-error $crit [mc "Invalid search criterium '%s'" $crit]
+	user-error $crit [mc "Invalid search criterion '%s'" $crit]
     }
 
     #
-    # If we come here, it means that the search criterium is ok.
+    # If we come here, it means that the search criterion is ok.
     # If trr(idrr) exists, it means that name or address match a real host.
     #
 
@@ -208,7 +208,7 @@ proc main {} {
     }
 
     #
-    # If criterium was a name and not an IP address, extract one of its
+    # If criterion was a name and not an IP address, extract one of its
     # IP addresses (random among all IP addresses)
     #
 

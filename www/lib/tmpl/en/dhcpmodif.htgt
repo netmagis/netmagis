@@ -1,0 +1,35 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {08/10/2004}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Modification des plages DHCP effectuée
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modification effectuée}
+
+    Les intervalles DHCP du réseau '%RESEAU%' ont été mis à jour.
+}
+
+}

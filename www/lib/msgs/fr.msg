@@ -198,7 +198,7 @@
  {Community}	{Commaunauté}
  {Prolog}	{Prologue}
  {Addtl RR}	{RR suppl.}
- {Criterium}	{Critère}
+ {Criterion}	{Critère}
  {dhcpd.conf configuration}	{Directives dhcpd.conf}
  {Description}	{Description}
  {Vlan-Id}	{Vlan-id}
@@ -330,10 +330,10 @@
  {Group have access to DHCP profile '%s' which do not exist in the database} {Le groupe a accès au profil '%s' qui n'existe pas dans la base}
  {Group '%s' already exist} {Le groupe '%s' existe déjà}
  {You must type a name for the group} {Il faut saisir un nom pour ce groupe}
- {Creation of group %s} {Création du groupe %s}
+ {creation of group %s} {création du groupe %s}
  {Login '%s' does not exist} {Le login '%s' n'existe pas}
  {Login '%s' found more than once} {Le login '%s' est ambigu}
- {Modification of group %s} {Modification du groupe %s}
+ {modification of group %s} {modification du groupe %s}
  {Mail role edition} {Édition des rôles de messagerie}
  {Web role edition} {Édition des rôles de Web}
  {Invalid value '%1$s' for form variable '%2$s'} {Valeur '%1$s' invalide pour le champ de formulaire '%2$s'}
@@ -408,7 +408,7 @@
  {No authorized network} {Aucun réseau autorisé}
  {Host '%s' not found} {Machine '%s' non trouvée}
  {No default domain} {Pas de domaine par défaut}
- {Invalid search criterium '%s'} {Critère de recherche '%s' invalide}
+ {Invalid search criterion '%s'} {Critère de recherche '%s' invalide}
  {Internal error: object pointed by alias is not found} {Erreur interne : l'objet pointé par l'alias n'est pas trouvé}
  {Internal error: mail host of role mail not found} {Erreur interne : hébergeur du rolemail non trouvé}
  {Internal error: no IP address} {Erreur interne : pas d'adresse IP}

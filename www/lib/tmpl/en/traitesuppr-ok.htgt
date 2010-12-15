@@ -1,0 +1,41 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {23/04/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Suppression effectuée
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Suppression effectuée}
+
+    La suppression de '%OBJET%' est effectuée.
+
+    Elle sera effective sur les
+    \lien {serveurs de nom Osiris} {%DOCDNS%}
+    d'ici %INTERVALLE% minutes.
+
+    Cliquer \lien {ici pour continuer} {%URLSUITE%}.
+}
+
+}

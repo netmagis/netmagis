@@ -1,0 +1,43 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {02/11/2001}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Reference table modified
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modification saved}
+
+    Your modification is stored in database.
+
+    You may now:
+
+    \liste {
+	\item {\lien {Return to the main menu} {%URL1%}}
+	\item {\lien {Return to the administration menu} {%URL2%}}
+	\item {\lien {%RETURN%} {%URL3%}}
+    }
+}
+
+}

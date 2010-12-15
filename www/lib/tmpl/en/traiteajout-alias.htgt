@@ -1,0 +1,56 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {19/04/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Alias ajouté
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Alias ajouté dans le DNS}
+
+    L'alias a été ajouté.
+
+    La modification sera effective sur les
+    \lien {serveurs de nom Osiris} {%DOCDNS%}
+    d'ici %INTERVALLE% minutes.
+
+    \tableau {
+	\bordure {1} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {} {Nom de l'alias}
+	    \casetableau {} {%NOM%.%DOMAINE%}
+	}
+	\lignetableau {
+	    \casetableau {} {Pointe vers}
+	    \casetableau {} {%NOMREF%.%DOMAINEREF%}
+	}
+    }
+}
+
+}

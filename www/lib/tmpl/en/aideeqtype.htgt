@@ -1,0 +1,45 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Equipment types
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Equipment type management}
+
+    \titre {2} {\ancre {type} {Type}}
+
+	Equipment type, which must be recognized by rancid
+	(see \lien {router.db(5)}
+	{http://www.shrubbery.net/rancid/man/router.db.5.html}).
+
+	Example~:
+	    \retrait {\verbatim {juniper}}
+
+	Notice~: adding types not recognized by Rancid may give
+	side effects...
+}
+
+}

@@ -1,0 +1,57 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {25/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Consultation des MX
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Consultation des MX d'une ou plusieurs zones}
+
+    Sélectionner les domaines dont vous voulez consulter les MX~:
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {CENTER}}
+	} {
+	    \lignetableau {
+		\casetableau {} {%LISTEDOMAINES%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {%COULEUR%}
+		    \centragehorizontal {CENTER}
+		} {
+		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consulter">
+		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Imprimer">
+		}
+	    }
+	}
+    </FORM>
+}
+
+}

@@ -1,0 +1,35 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {25/10/2010}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Application parameters
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Application parameters}
+
+    %TEXTE%
+}
+
+}

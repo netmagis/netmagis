@@ -1,0 +1,86 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {03/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Modification effectuée
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modification effectuée}
+
+    La modification a été effectuée.
+
+    Elle sera effective sur les
+    \lien {serveurs de nom Osiris} {%DOCDNS%}
+    d'ici %INTERVALLE% minutes.
+
+    \tableau {
+	\bordure {1} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {} {Nom}
+	    \casetableau {} {%NOM%.%DOMAINE%}
+	}
+	\lignetableau {
+	    \casetableau {} {Adresse MAC}
+	    \casetableau {} {%MAC%}
+	}
+	\lignetableau {
+	    \casetableau {} {Profil DHCP}
+	    \casetableau {} {%DHCPPROFIL%}
+	}
+	\lignetableau {
+	    \casetableau {} {Machine}
+	    \casetableau {} {%HINFO%}
+	}
+	\lignetableau {
+	    \casetableau {} {Droit d'émission SMTP}
+	    \casetableau {} {%DROITSMTP%}
+	}
+	\lignetableau {
+	    \casetableau {} {TTL}
+	    \casetableau {} {%TTL%}
+	}
+	\lignetableau {
+	    \casetableau {} {Infos complémentaires}
+	    \casetableau {} {%COMMENTAIRE%}
+	}
+	\lignetableau {
+	    \casetableau {} {Responsable (nom + prénom)}
+	    \casetableau {} {%RESPNOM%}
+	}
+	\lignetableau {
+	    \casetableau {} {Responsable (mél)}
+	    \casetableau {} {%RESPMEL%}
+	}
+    }
+
+    Cliquer \lien {ici pour continuer} {%URLSUITE%}.
+}
+
+}

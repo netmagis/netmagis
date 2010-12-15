@@ -258,12 +258,12 @@ proc main {} {
 	10 {
 	    set action "add"
 	    val-group $dbfd $newgrp 0
-	    set msgact [mc "Creation of group %s" $newgrp]
+	    set msgact [mc "creation of group %s" $newgrp]
 	    set idgrp -1
 	}
 	00 {
 	    set action "mod"
-	    set msgact [mc "Modification of group %s" $newgrp]
+	    set msgact [mc "modification of group %s" $newgrp]
 	    set idgrp [val-group $dbfd $orggrp 1]
 
 	    # Renaming

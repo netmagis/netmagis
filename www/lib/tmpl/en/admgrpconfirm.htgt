@@ -1,0 +1,52 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {23/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Group modification confirmation
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Inconsistencies in %MSGACT%}
+
+    Following inconsistencies have been detected:
+
+    \retrait {<FONT COLOR="#FF0000">%MESSAGE%</FONT>}
+
+    You can:
+
+    \liste {
+	\item {go ahead and modify anyway:
+	    <FORM METHOD="POST" ACTION="%URLFORM%">
+		%HIDDEN%
+		<INPUT TYPE="SUBMIT" VALUE="I confirm">
+	    </FORM>
+	}
+	\item {use your browser to come back to the previous
+	    page to modify group data
+	}
+    }
+}
+
+}

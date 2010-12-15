@@ -1,0 +1,78 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {27/03/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Affichage de réseau
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\* cas particulier pour l'affichage de la "carte" des adresses disponibles
+
+\set {header} {
+    <style type="text/css">
+	td.notav \{
+	    text-align: center;
+	    background-color: silver;
+	    width: 6%;
+	\}
+	td.noname-nodhcp  \{
+	    text-align: center;
+	    background-color: palegreen;
+	    text-decoration:none;
+	    width: 6%;
+	\}
+	td.name-nodhcp  \{
+	    text-align: center;
+	    background-color: red;
+	    width: 6%;
+	\}
+	td.noname-dhcp  \{
+	    text-align: center;
+	    background-color: darkorange;
+	    text-decoration:none;
+	    width: 6%;
+	\}
+	td.name-dhcp  \{
+	    text-align: center;
+	    background-color: darkred;
+	    width: 6%;
+	\}
+	#legend table \{
+	    border: 1px solid black;
+	\}
+	#map a:link, #map a:visited, #map a:hover, #map a:active \{
+	    text-decoration: none;
+	    color: black;
+	\}
+    </style>
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {%TITRE%}
+
+    Liste au %DATE%.
+
+    %TABLEAU%
+}
+
+}

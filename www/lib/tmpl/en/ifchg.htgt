@@ -1,0 +1,72 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {03/11/2010}
+
+\*******************************************************************************
+\partie {banniere} {
+    CRC - Topologie
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {%TITRE%}
+
+    %EQSTA%
+
+    <form method="post" action="%URLFORM%">
+	<input type="hidden" name="mode" value="%MODE%">
+	<input type="hidden" name="eq" value="%EQ%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {RIGHT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {} {%LIBIFORDESC%}
+		\casetableau {} {%MENUIFORDESC%} \* listbox(interfaces) or text(desc)
+	    }
+	    \lignetableau {
+		\casetableau {} {VLAN}
+		\casetableau {} {%MENUVLAN%}
+	    }
+	    \lignetableau {
+		\casetableau {} {%LIBVOIP%}
+		\casetableau {} {%MENUVOIP%}
+	    }
+	    \lignetableau {
+		\casetableau {} {%LIBSTAT%}
+		\casetableau {} {%MENUSTAT%}
+	    }
+	    \lignetableau {
+		\casetableau {} {~}
+		\casetableau {} {
+		    <input type="submit" value="Valider">
+		}
+	    }
+	}
+    </form>
+
+    %MULTI%
+}
+
+}

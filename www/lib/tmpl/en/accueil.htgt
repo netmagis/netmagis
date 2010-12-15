@@ -1,0 +1,85 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {16/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Welcome
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {DNS Management}
+
+    Welcome in WebDNS application to manage DNS information.
+
+    \titre {2} {Introduction}
+
+    This application interactively manages hosts (names and
+    IP addresses) on your network. These informations are
+    in a database, and are synchronised on DNS servers.
+
+    You may access classical operations:
+
+    \liste {
+	\item {add hosts or aliases}
+	\item {change informations associated with a host}
+	\item {delete hosts or aliases}
+    }
+
+    Additionnal informations are associated to each host:
+
+    \liste {
+	\item {host type: use it!}
+	\item {comment: this is a zone for you, don't hesitate
+	    to use it}
+	\item {responsible: the responsible person (user or
+	    sysadmin) for this host}
+    }
+
+    Feel free to use this database to manage your hosts.  In case
+    of suggestions for improvement, contact \lien {application
+    authors} {http://webdns.u-strasbg.fr}.
+
+    \titre {2} {Available operations}
+
+    You may:
+    \liste {
+	\item {\lien {consult informations}		{%URLCONSULTER%}}
+	\item {\lien {add a host or an alias}		{%URLAJOUT%}}
+	\item {\lien {modify informations}		{%URLMODIF%}}
+	\item {\lien {delete a host}			{%URLSUPPR%}}
+	\item {\lien {check my access rights}		{%URLDROITS%}}
+	\item {\lien {modify my password}		{%PASSWDURL%}}
+	\item {\lien {manage mail roles}		{%URLMAIL%}}
+	\* \item {\lien {manage web roles}		{%URLWEB%}}
+	\item {\lien {manage DHCP dynamic ranges}	{%URLDHCP%}}
+	\item {\lien {search for a user}		{%URLCORRESP%}}
+ 	\item {\lien {locate my current IP address}	{%URLOUSUISJE%}}
+    }
+
+    \titre {2} {Other operations}
+
+    If you have any questions, or other more specific needs,
+    please \lien {contact us} {http://webdns.u-strasbg.fr}.
+}
+
+}

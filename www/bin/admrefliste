@@ -93,7 +93,7 @@ set conf(zone:ptitle)	"Zone management"
 set conf(zone:cols)		{ {15 domaine	{Domain} {string 15} {}}
 				  {45 prologue	{Prolog} {textarea {45 10}} {}}
 				  {25 rrsup	{Addtl RR} {textarea {30 10}} {}}
-				  {15 selection	{Criterium} {string 15} {}}
+				  {15 selection	{Criterion} {string 15} {}}
 				}
 set conf(zone:sql)		"SELECT * FROM dns.zone_normale ORDER BY domaine ASC"
 set conf(zone:id)		idzone

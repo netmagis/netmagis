@@ -1,0 +1,77 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {03/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Administration
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Administration module}
+
+    \titre {2} {Consultation des données}
+
+    \liste {
+	\item {List \lien {MX} {%URLCONSULTMX%}}
+	\item {List \lien {networks} {%URLCONSULTNET%}}
+	\item {List \lien {users} {%URLLISTECORRESP%}}
+	\item {Search for a \lien {user} {%URLCORRESP%} from a name or address}
+	\item {Consult \lien {statistics by user} {%URLSTATCOR%}}
+	\item {Consult \lien {statistics by organization} {%URLSTATETAB%} [Slow !]}
+	\item {Consulter le \lien {topod dashboard} {%URLTOPOTOP%}}
+    }
+
+    \titre {2} {Data administration}
+
+    \liste {
+	\item {Modify \lien {organizations} {%URLREFETABL%}}
+	\item {Modify \lien {communities} {%URLREFCOMMU%}}
+	\item {Modify \lien {host types} {%URLREFHINFO%}}
+	\item {Modify \lien {networks} {%URLREFRESEAU%}}
+	\item {Modify \lien {domains} {%URLREFDOMAINE%}}
+	\item {Modify \lien {mail relays}{%URLADMRELSEL%} d'un domaine}
+	\item {Modify \lien {zones} {%URLREFZONE%}}
+	\item {Modify \lien {reverse IPv4 zones} {%URLREFZONE4%}}
+	\item {Modify \lien {reverse IPv6 zones} {%URLREFZONE6%}}
+	\item {Modify \lien {MX} {%URLADMMXSEL%}}
+	\item {Modify \lien {DHCP profiles} {%URLREFDHCPPROFIL%}}
+	\item {Modify \lien {Vlans} {%URLREFVLAN%}}
+	\item {Modify \lien {equipment types} {%URLREFEQTYPE%}}
+	\item {Modify \lien {equipments} {%URLREFEQ%}}
+	\item {Modify \lien {groups and users} {%URLADMGRPSEL%}}
+    }
+
+    \titre {2} {Actions}
+
+    \liste {
+	\item {Force \lien {zone generation} {%URLADMGENLISTE%}}
+    }
+
+    \titre {2} {Application administration}
+
+    \liste {
+	\item {Modify \lien {application parameters} {%URLADMPARLISTE%}}
+    }
+}
+
+}

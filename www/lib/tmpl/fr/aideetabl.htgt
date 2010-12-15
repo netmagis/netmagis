@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification des établissements
+    WebDNS - Modification des organismes
 }
 
 \*******************************************************************************
@@ -27,18 +27,18 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Gestion des établissements}
+    \titre {1} {Gestion des organismes}
 
     \titre {2} {\ancre {nom} {Intitulé}}
 
-	Intitulé de l'établissement.
+	Intitulé de l'organisme.
 
 	Exemple~:
-	    \retrait {\verbatim {ULP}}
+	    \retrait {\verbatim {Nations Unies}}
 
-	Attention~: l'intitulé peut changer, mais l'établissement
+	Attention~: l'intitulé peut changer, mais l'organisme
 	reste le même. Autrement, tous les réseaux associés à cet
-	établissement restent associés avec le nouveau nom.
+	organisme restent associés avec le nouveau nom.
 }
 
 }

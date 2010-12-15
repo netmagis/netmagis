@@ -1,0 +1,63 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {21/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Group modified
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Group modified}
+
+    Informations of group '\gras {%NEWGRP%}' have been updated:
+
+    \titre {2} {Members}
+
+    %TABLOGINS%
+
+    \titre {2} {General attributes}
+
+    %TABDROITS%
+
+    \titre {2} {Networks}
+
+    %TABRESEAUX%
+
+    \titre {2} {IP permissions not in networks}
+
+    %TABCIDRHORSRESEAU%
+
+    \titre {2} {Domains}
+
+    %TABDOMAINES%
+
+    \titre {2} {DHCP profiles}
+
+    %TABDHCPPROFILS%
+
+    \titre {2} {Equipments}
+
+    %TABDREQ%
+}
+
+}

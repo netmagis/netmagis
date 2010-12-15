@@ -1,0 +1,39 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {26/11/2010}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Modification effectuée
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modification enregistrée}
+
+    Les modifications demandées ont été enregistrées dans la
+    file d'attente. Elles seront effectives d'ici quelques
+    minutes.
+
+    %EQSTA%
+}
+
+}

@@ -1,0 +1,37 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {04/03/2004}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Mail relays modified
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Mail relays modified}
+
+    Mail relays for \gras {%DOMAINE%} have been updated:
+
+    %TABLEAU%
+}
+
+}

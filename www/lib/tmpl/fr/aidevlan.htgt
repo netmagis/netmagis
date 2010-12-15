@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification des établissements
+    WebDNS - Modification des Vlans
 }
 
 \*******************************************************************************
@@ -27,10 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Gestion des établissements}
+    \titre {1} {Gestion des Vlans}
 
     \titre {2} {\ancre {vlanid} {Vlan-ID}}
-	établissement restent associés avec le nouveau nom.
 
 	Identificateur de vlan IEEE 802.1Q.
 

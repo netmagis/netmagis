@@ -1,0 +1,41 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {13/02/2008}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Group removal confirmation
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Removal of group %ORGGRP%}
+
+    Do you really want to remove the group '%ORGGRP%'?
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	%HIDDEN%
+	<INPUT TYPE="SUBMIT" VALUE="I confirm">
+    </FORM>
+}
+
+}

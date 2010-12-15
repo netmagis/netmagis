@@ -1,0 +1,65 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {08/04/2005}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - DHCP profiles
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS  v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {DHCP profile management}
+
+    DHCP profiles associate \teletype {dhcpd.conf} parameters to
+    one or more hosts.
+
+
+    \titre {2} {\ancre {texte} {Name}}
+
+	The name of the profile is used only in WebDNS application
+	itself (it does not appear in the \teletype {dhcpd.conf}
+	file. It is used in "add host" and "modify host" interfaces.
+
+	Example~:
+	    \retrait {\verbatim {x-terminal}}
+
+    \titre {2} {\ancre {texte} {Dhcpd.conf}}
+
+	This field contains parameters supplied by DHCP server to
+	clients. Consult you DHCP server manual for syntax.
+
+	Example~:
+	    \retrait {\verbatim {
+    #
+    # PC diskless boot using PXE
+    #
+    server-name "myserver.mycompany.com" ;
+    server-identifier 10.1.2.3 ;
+    next-server 10.1.2.3 ;                      # boot server
+    filename "/pxeboot" ;
+    option root-path "/diskless" ;              # NFS mount
+}
+}
+
+}
+
+}

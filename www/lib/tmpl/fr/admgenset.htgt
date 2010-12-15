@@ -31,8 +31,7 @@
 
     \* INTERVALLE et DOCDNS = générés par le Makefile
     La ou les zones sélectionnées seront disponibles sur les
-    \lien {serveurs de nom Osiris} {%DOCDNS%}
-    d'ici %INTERVALLE% minutes.
+    serveurs de nom d'ici %INTERVALLE% minutes.
 }
 
 }

@@ -1,0 +1,44 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Communities
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Community management}
+
+    \titre {2} {\ancre {nom} {Name}}
+
+	Name of community.
+
+	Example~:
+	    \retrait {\verbatim {Administration}}
+
+	Notice: name may change, but community is still the same.
+	All networks associated to this community keep associated
+	with the new name.
+}
+
+}

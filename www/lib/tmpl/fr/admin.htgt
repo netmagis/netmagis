@@ -32,12 +32,12 @@
     \titre {2} {Consultation des données}
 
     \liste {
-	\item {Consulter les \lien {MX} {%URLCONSULTMX%}}
-	\item {Consulter les \lien {statistiques par correspondant} {%URLSTATCOR%}}
-	\item {Consulter les \lien {statistiques par établissement} {%URLSTATETAB%} [Lent ! Compter 1 à 2 minutes]}
-	\item {Consulter les \lien {réseaux} {%URLCONSULTNET%}}
+	\item {Lister les \lien {MX} {%URLCONSULTMX%}}
+	\item {Lister les \lien {réseaux} {%URLCONSULTNET%}}
 	\item {Lister les \lien {correspondants} {%URLLISTECORRESP%}}
 	\item {Chercher un \lien {correspondant} {%URLCORRESP%} à partir d'une adresse}
+	\item {Consulter les \lien {statistiques par correspondant} {%URLSTATCOR%}}
+	\item {Consulter les \lien {statistiques par établissement} {%URLSTATETAB%} [Lent !]}
 	\item {Consulter le \lien {tableau de bord de topod} {%URLTOPOTOP%}}
     }
 
@@ -67,7 +67,7 @@
 	\item {Forcer la \lien {génération de zones} {%URLADMGENLISTE%}}
     }
 
-    \titre {2} {Administration de la base}
+    \titre {2} {Administration de l'application}
 
     \liste {
 	\item {Modifier les \lien {paramètres de l'application} {%URLADMPARLISTE%}}

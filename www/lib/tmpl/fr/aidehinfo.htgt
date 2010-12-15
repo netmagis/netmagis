@@ -82,9 +82,6 @@
 		mais il ne peut pas être détruit de la base car des
 		machines l'utilisent encore.}
 	}
-
-	Exemple~:
-	    \retrait {(sans objet)}
 }
 
 }

@@ -45,8 +45,7 @@
 	\lignetableau {
 	    \casetableau {} {Supprimer une entrée}
 	    \casetableau {} {:}
-	    \casetableau {} {Vider la case <<~intitulé~>>, <<~domaine~>>
-		    ou <<~login~>>}
+	    \casetableau {} {Vider la première case de la ligne}
 	}
 	\lignetableau {
 	    \casetableau {} {Ajouter une entrée}

@@ -1,0 +1,90 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {25/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Sélection de réseaux
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Consultation des réseaux}
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {RIGHT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {RIGHT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\multicasetableau {4} {
+		    \centragehorizontal {CENTER}
+		    \couleurfond {#C0C0C0}
+		} {
+		    \gras {Sélectionner seulement les réseaux...}
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {... correspondant au CIDR}
+		\multicasetableau {4} {} {
+		    <INPUT TYPE="text" NAME="adr" SIZE=49>
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {... dont l'établissement est}
+		\casetableau {} {%LISTEETABL%}
+		\casetableau {} {... dont la communauté est}
+		\casetableau {} {%LISTECOMMU%}
+	    }
+	    \lignetableau {
+		\multicasetableau {4} {
+		    \centragehorizontal {CENTER}
+		    \couleurfond {#C0C0C0}
+		} {
+		    \gras {Tri...}
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {... primaire par}
+		\casetableau {} {%MENUTRI1%}
+		\casetableau {} {... secondaire par}
+		\casetableau {} {%MENUTRI2%}
+	    }
+	    \lignetableau {
+		\multicasetableau {4} {
+		     \couleurfond {%COULEUR%}
+		     \centragehorizontal {CENTER}
+		} {
+		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consulter">
+		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Imprimer">
+		    <INPUT TYPE="SUBMIT" NAME="docsv" VALUE="Tableur">
+		}
+	    }
+	}
+    </FORM>
+}
+
+}
