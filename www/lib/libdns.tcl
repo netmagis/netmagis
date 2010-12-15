@@ -288,6 +288,8 @@ array set libconf {
 #	returns a page and close access to application
 #   writelog
 #	write a log message in the log system
+#   dblock, dbabort, dbcommit
+#	database locking/unlocking operations
 #
 # History
 #   2001/06/18 : pda      : design
