@@ -26,6 +26,9 @@ package require arrgen
 
 namespace import ::msgcat::*
 
+package require pgsql
+package require webapp
+
 ##############################################################################
 # Library parameters
 ##############################################################################
@@ -4860,12 +4863,19 @@ proc call-topo {cmd _msg} {
     global libconf
     upvar $_msg msg
 
+    #
+    # Quote shell metacharacters to prevent interpretation
+    #
+    regsub -all {[<>|;'"${}()&\[\]*?]} $cmd {\\&} cmd
+
     set cmd "$libconf(topobin)/$cmd < $libconf(topograph)"
+
     if {$libconf(topohost) eq ""} then {
-	set r [catch {exec sh -c $cmd} msg]
+	set r [catch {exec sh -c $cmd} msg option]
     } else {
 	set r [catch {exec ssh $libconf(topohost) $cmd} msg]
     }
+
     return [expr !$r]
 }
 
@@ -5589,4 +5599,442 @@ proc eq-graph-status {dbfd eq {iface {}}} {
     }
 
     return $html
+}
+
+##############################################################################
+# Topo*d subsystem
+##############################################################################
+
+#
+# Set function tracing
+#
+# Input: 
+#   - lfunct : list of function names
+# Output: none
+#
+# History
+#   2010/10/20 : pda/jean : minimal design
+#   2010/12/15 : pda/jean : splitted in library
+#
+
+proc set-trace {lfunct} {
+    foereach c $lfunct {
+	trace add execution $c enter report-enter
+	trace add execution $c leave report-leave
+    }
+}
+
+proc report-enter {cmd enter} {
+    puts "> $cmd"
+}
+
+proc report-leave {cmd code result leave} {
+    puts "< $cmd -> $code/$result"
+}
+
+
+##############################################################################
+# Utility functions
+##############################################################################
+
+#
+# Initialize system logger
+#
+# Input: 
+#   - logger : shell command line to log messages
+# Output: none
+#
+# History
+#   2010/12/15 : pda/jean : minimal design
+#
+
+set ctxt(logger) ""
+
+proc set-log {logger} {
+    global ctxt
+
+    set ctxt(logger) $logger
+}
+
+#
+# Add a message into the log
+#
+# Input: 
+#   - msg : error/warning message
+# Output: none
+#
+# History
+#   2010/10/20 : pda/jean : minimal design
+#
+
+proc log-error {msg} {
+    global ctxt
+
+    if {[catch {open "|$ctxt(logger)" "w"} fd]} then {
+	puts stderr "$msg (log to syslog: $fd)"
+    } else {
+	puts $fd $msg
+	close $fd
+    }
+}
+
+#
+# Set verbosity level
+#
+# Input: 
+#   - level : threshold (verbosity level) of messages to display
+# Output:
+#   - return value: none
+#   - ctxt(verbose) : verbose threshold
+#
+# History
+#   2010/10/21 : pda/jean : design
+#
+
+proc topo-set-verbose {level} {
+    global ctxt
+
+    set ctxt(verbose) $level
+}
+
+#
+# Display debug message according to verbosity level
+#
+# Input: 
+#   - msg : message
+#   - level : verbosity level
+# Output: none
+#
+# History
+#   2010/10/21 : pda/jean : design
+#
+
+proc topo-verbositer {msg level} {
+    global ctxt
+
+    if {$level <= $ctxt(verbose)} then {
+	puts stderr $msg
+    }
+}
+
+##############################################################################
+# Status management
+##############################################################################
+
+#
+# Update status
+# Status keeps last topo*d operations.
+#
+# Input: 
+#   - status : current operation
+# Output: none
+#
+# Note: status is in topo.keepstate table, topo.message is a list
+# {{date1 msg1} {date2 msg2} ...} where 1 is the most recent entry.
+# We keep only last N entries.
+#
+# History
+#   2010/11/05 : pda/jean : design
+#
+
+proc reset-status {} {
+    set sql "DELETE FROM topo.keepstate WHERE type = 'status'"
+    toposqlexec $sql 2
+}
+
+proc set-status {status} {
+    global conf
+
+    set cur {}
+    set sql "SELECT message FROM topo.keepstate WHERE type = 'status'"
+    if {! [toposqlselect $sql tab { set cur $tab(message) } 2]} then {
+	return
+    }
+
+    # retirer l'entrée la plus vieille, s'il y a plus de maxstatus entrées
+    set last [expr $conf(maxstatus)-1]
+    catch {set cur [lreplace $last $last]}
+
+    # introduire la nouvelle entrée en tête
+    set date [clock format [clock seconds]]
+    set cur [linsert $cur 0 [list $date $status]]
+
+    set qcur [::pgsql::quote $cur]
+
+    set sql "DELETE FROM topo.keepstate WHERE type = 'status' ;
+		INSERT INTO topo.keepstate (type, message)
+			VALUES ('status', '$qcur')"
+    toposqlexec $sql 2
+}
+
+##############################################################################
+# Accès à la base
+##############################################################################
+
+#
+# Réalise la connexion à la base de données si nécessaire.
+#
+# Input:
+#   - chan : canal (1 par défaut)
+#   - ctxt(dbfd1), ctxt(dbfd2) : accès à la base
+# Output:
+#   - ctxt(dbfd<n>) : accès réactualisé
+#
+# History
+#   2010/10/20 : pda/jean : documentation
+#
+
+proc lazy-connect {{chan 1}} {
+    global ctxt
+    global conf
+
+    set r 1
+    if {[string equal $ctxt(dbfd$chan) ""]} then {
+	set d [catch {set ctxt(dbfd$chan) [pg_connect -conninfo %BASE%]} msg]
+	if {$d} then {
+	    set r 0
+	} else {
+	    ::dnsconfig setdb $ctxt(dbfd$chan)
+	    log-error "Connexion to database succeeded"
+	}
+    }
+    return $r
+}
+
+#
+# Exécute une requête SELECT et gère la reconnexion à la base
+#
+# Input: 
+#   - sql : requete SQL à exécuter
+#   - arrayname : tableau utilisé dans le script
+#   - script : procédure ou script
+# Output: 
+#   - return value: 1 si réussi, 0 si erreur
+#
+# History
+#   2010/10/20 : pda/jean : design (woaw !)
+#
+
+proc toposqlselect {sql arrayname script {chan 1}} {
+    global ctxt
+
+    if {[lazy-connect $chan]} {
+	set cmd [list pg_select $ctxt(dbfd$chan) $sql $arrayname $script]
+	if {[catch {uplevel 1 $cmd} err]} then {
+	    log-error "Connexion to database lost in toposqlselect ($err)"
+	    catch {pg_disconnect $ctxt(dbfd$chan)}
+	    set ctxt(dbfd$chan) ""
+	    set r 0
+	} else {
+	    set r 1
+	}
+    } else {
+	set r 0
+    }
+    return $r
+}
+
+#
+# Exécute une requête de modification (INSERT, UPDATE ou DELETE)
+# et gère la reconnexion à la base
+#
+# Input: 
+#   - sql : requete SQL à exécuter
+# Output: 
+#   - return value: 1 si réussi, 0 si erreur
+#
+# History
+#   2010/10/20 : pda/jean : design
+#
+
+proc toposqlexec {sql {chan 1}} {
+    global ctxt
+
+    if {[lazy-connect]} {
+	if {[catch {pg_exec $ctxt(dbfd$chan) $sql} res]} then {
+	    log-error "Connection to database lost in toposqlexec ($res)"
+	    catch {pg_disconnect $ctxt(dbfd$chan)}
+	    set ctxt(dbfd$chan) ""
+	    set r 0
+	} else {
+	    switch -- [pg_result $res -status] {
+		PGRES_COMMAND_OK -
+		PGRES_TUPLES_OK -
+		PGRES_EMPTY_QUERY {
+		    set r 1
+		    pg_result $res -clear
+		}
+		default {
+		    set err [pg_result $res -error]
+		    pg_result $res -clear
+		    log-error "Internal error in toposqlexec. Connexion to database lost ($err)"
+		    catch {pg_disconnect $ctxt(dbfd$chan)}
+		    set ctxt(dbfd$chan) ""
+		    set r 0
+		}
+	    }
+	}
+    } else {
+	set r 0
+    }
+    return $r
+}
+
+#
+# Exécute une requête de début de transaction
+# et gère la reconnexion à la base
+#
+# Input: 
+#   - none
+# Output: 
+#   - return value: 1 si réussi, 0 si erreur
+#
+# History
+#   2010/10/21 : pda/jean : design
+#
+
+proc toposqllock {{chan 1}} {
+    return [toposqlexec "START TRANSACTION" $chan]
+}
+
+#
+# Exécute une requête de début de transaction
+# et gère la reconnexion à la base
+#
+# Input: 
+#   - commit : "commit" ou "abort"
+# Output: 
+#   - return value: 1 si réussi, 0 si erreur
+#
+# History
+#   2010/10/21 : pda/jean : design
+#
+
+proc toposqlunlock {commit {chan 1}} {
+    switch $commit {
+	commit { set sql "COMMIT WORK" }
+	abort  { set sql "ABORT WORK" }
+    }
+    return [toposqlexec $sql $chan]
+}
+
+
+##############################################################################
+# Gestion des mails
+##############################################################################
+
+#
+# Envoie un mail si le message produit par un événement a changé par
+# rapport au précédent événement
+#
+# Input:
+#   - ev : événement considéré ("rancid", "anaconf")
+#   - msg : message de l'événement
+# Output:
+#   - none
+#
+# History
+#   2010/10/21 : pda/jean : design
+#
+
+proc keep-state-mail {ev msg} {
+    #
+    # Récupérer l'ancien message
+    #
+
+    set oldmsg ""
+    set qev [::pgsql::quote $ev]
+    set sql "SELECT message FROM topo.keepstate WHERE type = '$qev'"
+    if {! [toposqlselect $sql tab { set oldmsg $tab(message) } 2]} then {
+	# on ne sait pas quoi faire...
+	return
+    }
+
+    if {! [string equal $msg $oldmsg]} then {
+	#
+	# Le nouveau message est différent de l'ancien. Il faut l'envoyer
+	# par mail et l'enregistrer dans le keepstate.
+	#
+	# Parti pris : si l'accès à la base est HS et qu'on ne peut
+	# donc pas avoir accès au keepstate de l'événement, on
+	# n'envoie plus de mail. Le risque est de ne pas avoir
+	# connaissance par mail des événements lorsque la base est
+	# HS, mais le gain est ne pas avoir un nouveau mail identique
+	# toutes les X secondes... D'un autre côté, on ne risque rien
+	# puisqu'il n'y aura pas de changement détecté ou traité tant
+	# que la base est HS.
+	#
+
+	set qmsg [::pgsql::quote $msg]
+	set sql "DELETE FROM topo.keepstate WHERE type = '$qev' ;
+		    INSERT INTO topo.keepstate (type, message)
+			    VALUES ('$qev', '$qmsg')"
+	if {[toposqlexec $sql 2]} then {
+	    #
+	    # Si on arrive ici, c'est que la base est vivante.
+	    # Envoyer le mail.
+	    #
+
+	    set from    [::dnsconfig get "topofrom"]
+	    set to	[::dnsconfig get "topoto"]
+	    set replyto	""
+	    set cc	""
+	    set bcc	""
+	    set subject	"\[auto\] topod status changed for $ev"
+	    ::webapp::mail $from $replyto $to $cc $bcc $subject $msg
+	}
+    }
+}
+
+##############################################################################
+# Equipment types
+##############################################################################
+
+#
+# Recherche le type et le modèle des équipements connus dans le graphe
+#
+# Entrée :
+#   - _tabeq : nom du tableau contenant en retour les types
+# Sortie :
+#   - valeur de retour : message d'erreur ou chaîne vide si ok
+#   - tabeq : tableau, indexé par nom complet de l'équipement, contenant
+#	tabeq(<eq>) {<type> <model>}
+# 
+# Historique : 
+#   2010/02/25 : pda/jean : création
+#   2010/10/21 : pda/jean : modification pour ne gérer que des noms complets
+#
+
+set libconf(dumpgraph-read-eq-type) "dumpgraph -a -o eq"
+
+proc read-eq-type {_tabeq} {
+    global libconf
+    upvar $_tabeq tabeq
+
+    set-status "Reading equipement types"
+
+    set cmd $libconf(dumpgraph-read-eq-type)
+
+    if {[call-topo $cmd msg]} then {
+	foreach line [split $msg "\n"] {
+	    switch [lindex $line 0] {
+		eq {
+		    array set t $line
+		    set eq $t(eq)
+		    set type $t(type)
+		    set model $t(model)
+
+		    #### BEQUILLE
+		    append eq ".u-strasbg.fr"
+
+		    set tabeq($eq) [list $type $model]
+
+		    array unset t
+		}
+	    }
+	}
+	set msg ""
+    }
+
+    return $msg
 }
