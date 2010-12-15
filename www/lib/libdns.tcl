@@ -5032,6 +5032,12 @@ proc call-topo {cmd _msg} {
     upvar $_msg msg
 
     set cmd "$libconf(topobin)/$cmd < $libconf(topograph)"
+
+    #
+    # Quote glob metacharacters to prevent shell interpretation
+    #
+    regsub -all {[*?]} $cmd {\\&} cmd
+
     if {$libconf(topohost) eq ""} then {
 	set r [catch {exec sh -c $cmd} msg]
     } else {
