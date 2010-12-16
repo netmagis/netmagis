@@ -691,16 +691,7 @@ proc main {} {
 
     ::dnscontext create d
     d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
-
-    ::webapp::import-vars ftab
-    if {[llength $ftab(key)] > 1} then {
-	d error [mc "Invalid input"]
-    }
-
-    foreach f $conf(form) {
-	set var [lindex $f 0]
-	set $var [string trim [lindex [set $var] 0]]
-    }
+    ::webapp::import-vars ftab $conf(form)
 
     # nrefresh (text field given by the user) has priority over refresh
     # value supplied in URL. Thus, the new URL will use nrefresh.

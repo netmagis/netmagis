@@ -35,11 +35,11 @@
     des deux conditions suivantes~:
 
     \liste {
-	\item {vous certifiez que la machine n'accepte que
+	\item {vous certifiez que la machine ajoutée n'accepte que
 	    des mails authentifiés, et vous êtes capables de tracer
 	    l'utilisateur responsable en cas d'incident de sécurité
 	}
-	\item {vous certifiez que la machine n'accepte aucun
+	\item {vous certifiez que la machine ajoutée n'accepte aucun
 	    mail, et ne peut elle-même authentifier les mails qu'elle
 	    envoie (cas d'un copieur par exemple)
 	}

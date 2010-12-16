@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Tableau de bord de topod
+    WebDNS - Topo daemons dashboard
 }
 
 \*******************************************************************************
@@ -24,7 +24,7 @@
 	}
 }
 
-\* pour faire un refresh, comme pour top(1)
+\* to refresh page, as with top(1)
 \set {header} {
     %META%
 }
@@ -32,12 +32,12 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Tableau de bord de topod au %DATE%}
+    \titre {1} {Topo daemons dashboard, at %DATE%}
 
     <form method="post" action="%URLFORM%">
-	Rafraîchir cette page toutes
-	les~<input type="text" name="nrefresh" value="%REFRESH%">~secondes
-	<input type="submit" value="Régler">
+	Refresh this page every
+	<input type="text" name="nrefresh" value="%REFRESH%">~seconds
+	<input type="submit" value="Set">
     </form>
 
     %TOP%

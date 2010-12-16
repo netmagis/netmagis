@@ -54,7 +54,7 @@
 		}
 	    }
 	    \lignetableau {
-		\casetableau {} {... dont l'établissement est}
+		\casetableau {} {... dont l'organisme est}
 		\casetableau {} {%LISTEETABL%}
 		\casetableau {} {... dont la communauté est}
 		\casetableau {} {%LISTECOMMU%}

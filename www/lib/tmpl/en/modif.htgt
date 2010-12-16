@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Sélection d'une machine à modifier
+    WebDNS - Select a host to mody
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification de machine dans le DNS}
+    \titre {1} {Modify host}
 
     \tableau {
 	\bordure {0} {}
@@ -39,7 +39,7 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
-	    } {\gras {Modification des informations d'une machine}}
+	    } {\gras {Modify host informations}}
 	}
 	\lignetableau {
 	    \casetableau {} {
@@ -53,7 +53,7 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {Nom}
+			    \casetableau {} {Name}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
@@ -63,7 +63,7 @@
 			\lignetableau {
 			    \casetableau {} {~}
 			    \casetableau {} {
-				<INPUT TYPE="SUBMIT" VALUE="Valider">
+				<INPUT TYPE="SUBMIT" VALUE="Select">
 			    }
 			}
 		    }

@@ -29,7 +29,7 @@
 
     \titre {1} {Génération de zones}
 
-    \* INTERVALLE et DOCDNS = générés par le Makefile
+    \* INTERVALLE = généré par le Makefile
     La ou les zones sélectionnées seront disponibles sur les
     serveurs de nom d'ici %INTERVALLE% minutes.
 }

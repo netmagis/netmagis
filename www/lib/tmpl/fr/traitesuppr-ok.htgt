@@ -31,9 +31,8 @@
 
     La suppression de '%OBJET%' est effectuée.
 
-    Elle sera effective sur les
-    \lien {serveurs de nom Osiris} {%DOCDNS%}
-    d'ici %INTERVALLE% minutes.
+    La modification sera effective sur les serveurs de nom d'ici
+    %INTERVALLE% minutes.
 
     Cliquer \lien {ici pour continuer} {%URLSUITE%}.
 }

@@ -47,6 +47,7 @@
 		<TD>
 		    <INPUT TYPE="TEXT" NAME="vlan" VALUE="%VLAN%">
 		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
+		    (id numérique ou partie du nom)
 		</TD>
 	    </FORM>
 	</TR>

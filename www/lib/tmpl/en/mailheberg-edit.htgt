@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Édition d'un rôle de messagerie
+    WebDNS - Mail role edition
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Édition de l'hébergeur de messagerie %NOM%.%DOMAINE%}
+    \titre {1} {Edit mailbox host for %NOM%.%DOMAINE%}
 
     \tableau {
 	\bordure {0} {}
@@ -39,7 +39,7 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
-	    } {\gras {Edition d'un rôle de messagerie}}
+	    } {\gras {Mail role edition}}
 	}
 	\lignetableau {
 	    \casetableau {} {
@@ -55,13 +55,13 @@
 		    } {
 			\lignetableau {
 			    \multicasetableau {2} {} {
-				Modifiez l'adresse de l'hébergeur pour
-				les boîtes aux lettres de "%NOM%.%DOMAINE%",
-				ou effacez la pour supprimer le rôle.
+				Modify mailbox host for mail address
+				"%NOM%.%DOMAINE%", or delete it to
+				remove the role.
 			    }
 			}
 			\lignetableau {
-			    \casetableau {} {Adresse d'hébergement}
+			    \casetableau {} {Mailbox host}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nomh" SIZE="30" VALUE="%NOMH%">
 				.
@@ -71,7 +71,7 @@
 			\lignetableau {
 			    \casetableau {} {~}
 			    \casetableau {} {
-				<INPUT TYPE="SUBMIT" VALUE="Valider">
+				<INPUT TYPE="SUBMIT" VALUE="Store">
 			    }
 			}
 		    }

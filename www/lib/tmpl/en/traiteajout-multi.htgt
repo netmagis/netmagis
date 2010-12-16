@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Recherche d'adresses consécutives
+    WebDNS - Search for a block
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Recherche d'adresses consécutives}
+    \titre {1} {Search for a block of free IPv4 addresses}
 
     %LISTE%
 }

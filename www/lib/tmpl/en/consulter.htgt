@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Sélection du réseau à lister
+    WebDNS - Network selection
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Consultation des informations DNS}
+    \titre {1} {Consult networks}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	\tableau {
@@ -43,7 +43,7 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		     \centragehorizontal {CENTER}
-		} {\gras {Choisissez votre réseau dans la liste ci-dessous...}}
+		} {\gras {Select your networks in the following list...}}
 	    }
 	    \lignetableau {
 		\casetableau {} {%PLAGES%}
@@ -52,7 +52,7 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		     \centragehorizontal {CENTER}
-		} {\gras {... ou saisissez la plage par son préfixe (par ex. 130.79.200.0/24 ou 2001:660:2402:10::/64)}}
+		} {\gras {... or enter a network prefix (e.g. 192.168.17.0/24 or 2001:660:2402:10::/64)}}
 	    }
 	    \lignetableau {
 		\casetableau {} {<INPUT TYPE="text" NAME="cidr" SIZE="49">}
@@ -62,9 +62,9 @@
 		    \couleurfond {%COULEUR%}
 		     \centragehorizontal {CENTER}
 		} {
-		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consulter">
-		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Imprimer">
-		    <INPUT TYPE="SUBMIT" NAME="domap" VALUE="Carte des adresses">
+		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consult list">
+		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Print list">
+		    <INPUT TYPE="SUBMIT" NAME="domap" VALUE="Display map">
 		}
 	    }
 	}

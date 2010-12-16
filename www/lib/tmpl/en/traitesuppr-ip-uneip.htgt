@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Confirmation de suppression d'adresse IP
+    WebDNS - IP address removal confirmation
 }
 
 \*******************************************************************************
@@ -27,14 +27,15 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Confirmation de suppression}
+    \titre {1} {Removal confirmation}
 
-    Vous avez demandé à supprimer l'adresse IP '%ADR%' de l'objet~:
+    You asked for IP address '%ADR%' removal. This address is part
+    of object:
 
     %MACHINE%
 
-    \gras {Voulez-vous vraiment supprimer cette adresse IP (sans supprimer
-    les autres informations)~?}
+    \gras {Do you really want to remove this IP address (without
+	removing other informations)?}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="suppr-ip">
@@ -42,7 +43,7 @@
 	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
 	<INPUT TYPE="HIDDEN" NAME="nextprog" VALUE="%NEXTPROG%">
 	<INPUT TYPE="HIDDEN" NAME="nextargs" VALUE="%NEXTARGS%">
-	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
+	<INPUT TYPE="SUBMIT" VALUE="I confirm">
     </FORM>
 }
 

@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Sélection de réseaux
+    WebDNS - Network selection
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Consultation des réseaux}
+    \titre {1} {Consult networks}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	\tableau {
@@ -44,19 +44,19 @@
 		    \centragehorizontal {CENTER}
 		    \couleurfond {#C0C0C0}
 		} {
-		    \gras {Sélectionner seulement les réseaux...}
+		    \gras {Select networks...}
 		}
 	    }
 	    \lignetableau {
-		\casetableau {} {... correspondant au CIDR}
+		\casetableau {} {... matching network prefix}
 		\multicasetableau {4} {} {
 		    <INPUT TYPE="text" NAME="adr" SIZE=49>
 		}
 	    }
 	    \lignetableau {
-		\casetableau {} {... dont l'établissement est}
+		\casetableau {} {... whose organization is}
 		\casetableau {} {%LISTEETABL%}
-		\casetableau {} {... dont la communauté est}
+		\casetableau {} {... whose community is}
 		\casetableau {} {%LISTECOMMU%}
 	    }
 	    \lignetableau {
@@ -64,13 +64,13 @@
 		    \centragehorizontal {CENTER}
 		    \couleurfond {#C0C0C0}
 		} {
-		    \gras {Tri...}
+		    \gras {Sort...}
 		}
 	    }
 	    \lignetableau {
-		\casetableau {} {... primaire par}
+		\casetableau {} {... primary by}
 		\casetableau {} {%MENUTRI1%}
-		\casetableau {} {... secondaire par}
+		\casetableau {} {... secondary by}
 		\casetableau {} {%MENUTRI2%}
 	    }
 	    \lignetableau {
@@ -78,9 +78,9 @@
 		     \couleurfond {%COULEUR%}
 		     \centragehorizontal {CENTER}
 		} {
-		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consulter">
-		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Imprimer">
-		    <INPUT TYPE="SUBMIT" NAME="docsv" VALUE="Tableur">
+		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consult">
+		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Print">
+		    <INPUT TYPE="SUBMIT" NAME="docsv" VALUE="Spreadsheet">
 		}
 	    }
 	}

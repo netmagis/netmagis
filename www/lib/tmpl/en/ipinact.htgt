@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Lister les adresses inactives
+    WebDNS - List inactive addresses
 }
 
 \*******************************************************************************
@@ -26,22 +26,33 @@
 
 \*******************************************************************************
 \partie {texte} {
-    \titre {1} {Lister les adresses inactives}
+    \titre {1} {List inactive addresses}
 
-	<FORM METHOD="POST" ACTION="%URLFORM%">
-	    <TABLE BORDER="0">
-		<TR>
-		    <TD>R&eacute;seau :</TD>
-		    <TD>%LRES%</TD>
-		</TR>
-		<TR>
-		    <TD>Derni&egrave;re occurence:</TD>
-		    <TD>%LOCCUR%</TD>
-		</TR>
-	    </TABLE>
-	    <INPUT NAME="action" TYPE="SUBMIT" VALUE="Lister">
-	</FORM>
-	%TABLEAU%
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	\tableau {
+	    \bordure {0} {}
+	    taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {} {Network}
+		\casetableau {} {%LRES%}
+	    }
+	    \lignetableau {
+		\casetableau {} {Last occurrence}
+		\casetableau {} {%LOCCUR%}
+	    }
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}} {
+		    <INPUT NAME="action" TYPE="SUBMIT" VALUE="Lister">
+		}
+	    }
+	}
+    </FORM>
+
+    %TABLEAU%
 
 }
 

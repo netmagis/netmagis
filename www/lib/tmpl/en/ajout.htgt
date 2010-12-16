@@ -165,7 +165,7 @@
 			    \casetableau {} {
 				<INPUT TYPE="SUBMIT" NAME="dosearch" VALUE="Search">
 				~ ~ ~ ~
-				ou 
+				or 
 				~ ~ ~ ~
 				<INPUT TYPE="SUBMIT" NAME="domap" VALUE="Consult map">
 			    }

@@ -29,9 +29,8 @@
 
     \titre {1} {Modification enregistrée}
 
-    Les modifications demandées ont été enregistrées dans la
-    file d'attente. Elles seront effectives d'ici quelques
-    minutes.
+    Les modifications demandées ont été enregistrées dans la file
+    d'attente. Elles seront rapidement propagées sur l'équipement.
 
     %EQSTA%
 }

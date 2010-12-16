@@ -26,16 +26,15 @@
 
 \*******************************************************************************
 \partie {texte} {
-    \titre {1} {Gestion des adresses MAC}
+    \titre {1} {MAC address management}
 
-    Cette applications propose une interface à la base de données
-    des adresses IP et et des adresses MAC collectées sur les
-    équipements réseau. Les possibilités suivantes vous sont offertes~:
+    This module is an interface to database of IP and MAC addresses
+    collected from network equipments. You can:
 
     \liste {
-	\item {Effectuer une \lien {recherche} {%URLMAC%}}
-	\item {Lister les \lien {adresses inactives} {%URLIPINACT%}}
-	\item {Consulter les \lien {statistiques} {%URLMACSTAT%}}
+	\item {\lien {search an IP or MAC address} {%URLMAC%}}
+	\item {List \lien {inactive addresses} {%URLIPINACT%}}
+	\item {Consult \lien {statistics} {%URLMACSTAT%}}
     }
 }
 

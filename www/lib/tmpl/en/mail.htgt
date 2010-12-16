@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Gestion des rôles de messagerie
+    WebDNS - Mail role management
 }
 
 \*******************************************************************************
@@ -27,15 +27,13 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Gestion des rôles}
+    \titre {1} {Mail role management}
 
-    Cette page vous permet de paramétrer la gestion du routage de
-    messagerie. Vous pouvez~:
+    This page allows you to specify mail routing. You can:
     \liste {
-	\item {déclarer une adresse (partie droite après le <<~@~>>), et}
-	\item {spécifier la machine devant recevoir les messages
-	    (c'est à dire devant héberger les boîtes aux lettres)
-	    pour cette adresse.
+	\item {declare a mail address (right part, after the "@" symbol), and}
+	\item {specify mailbox host (the server which will receive
+	    mails and host mail boxes for this mail address)
 	}
     }
 
@@ -49,7 +47,7 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
-	    } {\gras {Modification d'un rôle de messagerie}}
+	    } {\gras {Mail role modification}}
 	}
 	\lignetableau {
 	    \casetableau {} {
@@ -63,12 +61,12 @@
 		    } {
 			\lignetableau {
 			    \multicasetableau {2} {} {
-				Saisissez l'adresse de messagerie à
-				créer, modifier ou supprimer~:
+				Enter mail address to create, modify
+				or remove:
 			    }
 			}
 			\lignetableau {
-			    \casetableau {} {Adresse de messagerie}
+			    \casetableau {} {Mail address}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
@@ -78,7 +76,7 @@
 			\lignetableau {
 			    \casetableau {} {~}
 			    \casetableau {} {
-				<INPUT TYPE="SUBMIT" VALUE="Valider">
+				<INPUT TYPE="SUBMIT" VALUE="Select">
 			    }
 			}
 		    }
@@ -90,7 +88,7 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
-	    } {\gras {Consultation des rôles de messagerie}}
+	    } {\gras {Consult mail roles}}
 	}
 	\lignetableau {
 	    \casetableau {} {
@@ -104,13 +102,13 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {Domaine de messagerie~:}
+			    \casetableau {} {Mail address:}
 			    \casetableau {} {%DOMAINE%}
 			}
 			\lignetableau {
 			    \casetableau {} {~}
 			    \casetableau {} {
-				<INPUT TYPE="SUBMIT" VALUE="Consulter">
+				<INPUT TYPE="SUBMIT" VALUE="Consult">
 			    }
 			}
 		    }

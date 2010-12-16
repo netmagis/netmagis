@@ -47,7 +47,7 @@
 	    <a href="%URLSUPPR%">Supprimer</a> la machine '%NOM%.%DOMAINE%'.
 	    </li>
 	<li id="suppruneip">
-	    <a href="%URLSUPPRIP%">Supprimer l'adresse</a> '%ADR%' de '%NOM%.%DOMAINE%'
+	    <a href="%URLSUPPRIP%">Supprimer l'adresse '%ADR%'</a> de '%NOM%.%DOMAINE%'
 		(mais il restera les autres adresses).
 	    </li>
 	<li>

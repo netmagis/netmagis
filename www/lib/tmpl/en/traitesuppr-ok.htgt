@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Suppression effectuée
+    WebDNS - Removed
 }
 
 \*******************************************************************************
@@ -27,15 +27,14 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Suppression effectuée}
+    \titre {1} {Removed}
 
-    La suppression de '%OBJET%' est effectuée.
+    '%OBJET%' has been removed.
 
-    Elle sera effective sur les
-    \lien {serveurs de nom Osiris} {%DOCDNS%}
-    d'ici %INTERVALLE% minutes.
+    The modification will be available on DNS servers
+    within %INTERVALLE% minutes.
 
-    Cliquer \lien {ici pour continuer} {%URLSUITE%}.
+    Click \lien {here to continue} {%URLSUITE%}.
 }
 
 }

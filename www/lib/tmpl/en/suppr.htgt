@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Sélection d'une machine à supprimer
+    WebDNS - Select a host to remove
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Suppression de machine dans le DNS}
+    \titre {1} {Remove a host or alias}
 
     \tableau {
 	\bordure {0} {}
@@ -39,7 +39,7 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
-	    } {\gras {Suppression d'une machine}}
+	    } {\gras {Remove a host or alias}}
 	}
 	\lignetableau {
 	    \casetableau {} {
@@ -54,7 +54,7 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {Nom à supprimer}
+			    \casetableau {} {Name to remove}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
@@ -64,7 +64,7 @@
 			\lignetableau {
 			    \casetableau {} {~}
 			    \casetableau {} {
-				<INPUT TYPE="SUBMIT" VALUE="Valider">
+				<INPUT TYPE="SUBMIT" VALUE="Remove">
 			    }
 			}
 		    }
@@ -76,7 +76,7 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
-	    } {\gras {Suppression d'une adresse IP}}
+	    } {\gras {Remove an IP address}}
 	}
 	\lignetableau {
 	    \casetableau {} {
@@ -91,7 +91,7 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {Adresse à supprimer}
+			    \casetableau {} {Address to remove}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="adr" SIZE="45">
 			    }
@@ -99,7 +99,7 @@
 			\lignetableau {
 			    \casetableau {} {~}
 			    \casetableau {} {
-				<INPUT TYPE="SUBMIT" VALUE="Valider">
+				<INPUT TYPE="SUBMIT" VALUE="Remove">
 			    }
 			}
 		    }

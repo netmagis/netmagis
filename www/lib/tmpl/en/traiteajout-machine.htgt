@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Machine ajoutée
+    WebDNS - Host added
 }
 
 \*******************************************************************************
@@ -27,17 +27,16 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Machine ajoutée dans le DNS}
+    \titre {1} {Host added}
 
     La machine a été ajoutée.
 
-    La modification sera effective sur les
-    \lien {serveurs de nom Osiris} {%DOCDNS%}
-    d'ici %INTERVALLE% minutes.
+    The modification will be available on DNS servers
+    within %INTERVALLE% minutes.
 
     %MACHINE%
 
-    Cliquer \lien {ici pour continuer} {%URLSUITE%}.
+    Click \lien {here to continue} {%URLSUITE%}.
 }
 
 }

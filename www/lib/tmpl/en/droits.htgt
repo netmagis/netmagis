@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Mes droits d'accès
+    WebDNS - My permissions
 }
 
 \*******************************************************************************
@@ -27,13 +27,13 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Consultation des droits DNS}
+    \titre {1} {Consult my permissions}
 
-    \titre {2} {Informations générales}
+    \titre {2} {General information}
 
     %CORRESP%
 
-    \titre {2} {Réseaux}
+    \titre {2} {Networks}
 
     %TABRESEAUX%
 
@@ -41,11 +41,11 @@
 
     %TABCIDRHORSRESEAU%
 
-    \titre {2} {Domaines}
+    \titre {2} {Domaine}
 
     %TABDOMAINES%
 
-    \titre {2} {Profils DHCP}
+    \titre {2} {DHCP profiles}
 
     %TABDHCPPROFIL%
 }

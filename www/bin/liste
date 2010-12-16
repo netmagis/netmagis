@@ -582,9 +582,10 @@ proc main {} {
 
     ::dnscontext create d
     d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
+    ::webapp::import-vars ftab $conf(form)
 
     #
-    # Fetch arguments
+    # Argument analysis
     #
 
     set lcidr {}

@@ -281,7 +281,7 @@ proc traitesuppr-ip {dbfd idcor login _ftab} {
     set nom     $trr(nom)
     set domaine $trr(domaine)
     set msg [check-authorized-host $dbfd $idcor $nom $domaine bidon "del-name"]
-    if {$msg ne "} then {
+    if {$msg ne ""} then {
 	d error $msg
     }
     set fqdn "$nom.$domaine"
@@ -369,27 +369,27 @@ proc traitesuppr-ip {dbfd idcor login _ftab} {
     #
 
     switch -- "confirm=$confirm-lastadr=$lastadr" {
-	confirm=non-lastadr=non {
+	confirm=non-lastadr=no {
 	    #
 	    # Ask for confirmation to remove one of the IP addresses
 	    # 
 	    set page $conf(page-suppr-ip-uneip)
 	}
-	confirm=non-lastadr=oui {
+	confirm=non-lastadr=yes {
 	    #
 	    # Ask for confirmation to remove the last IP address, and thus
 	    # of the whole object.
 	    # 
 	    set page $conf(page-suppr-ip-objet)
 	}
-	confirm=oui-lastadr=non {
+	confirm=oui-lastadr=no {
 	    #
 	    # Address has been removed
 	    #
 	    set page $conf(page-suppr-ok)
 	    set objet $adr
 	}
-	confirm=oui-lastadr=oui {
+	confirm=oui-lastadr=yes {
 	    #
 	    # The whole object has been removed
 	    #

@@ -60,7 +60,7 @@
 	    \lignetableau {
 		\casetableau {} {~}
 		\casetableau {} {
-		    <input type="submit" value="Valider">
+		    <input type="submit" value="Modify">
 		}
 	    }
 	}

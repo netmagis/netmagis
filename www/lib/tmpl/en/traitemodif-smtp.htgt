@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Autorisation d'émission SMTP
+    WebDNS - SMTP emit authorization
 }
 
 \*******************************************************************************
@@ -27,38 +27,35 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Autorisation d'émission SMTP}
+    \titre {1} {SMTP emit authorization}
 
-    Vous avez coché la case «~Émettre en SMTP~».
+    You have check the box "Use SMTP".
 
-    Vous ne pouvez cocher cette case que si vous remplissez une
-    des deux conditions suivantes~:
+    You may check this box only if you fill one of the following
+    two conditions:
 
     \liste {
-	\item {vous certifiez que la machine n'accepte que
-	    des mails authentifiés, et vous êtes capables de tracer
-	    l'utilisateur responsable en cas d'incident de sécurité
+	\item {you warrant that the host accepts only authenticated
+	    mails, and you are able to draw the user responsible
+	    for any security incident
 	}
-	\item {vous certifiez que la machine n'accepte aucun
-	    mail, et ne peut elle-même authentifier les mails qu'elle
-	    envoie (cas d'un copieur par exemple)
+	\item {you warrant that the host does not accept any mail,
+	    and can not itself authenticate the mails that it sends
+	    (e.g. copier with a scan-to-mail function)
 	}
     }
 
-    \gras {Confirmez-vous que vous remplissez l'une des conditions
-	ci-dessus~?
-    }
+    \gras {Do you confirm that you fill one of the above conditions?}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="modif-infos">
 	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="oui">
 	%HIDDEN%
-	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
+	<INPUT TYPE="SUBMIT" VALUE="I confirm">
     </FORM>
 
-    \gras {Si vous ne confirmez pas, utilisez simplement votre
-	navigateur pour revenir à la page précédente, et décochez
-	la case «~Émettre en SMTP~».
+    \gras {If you don't want to confirm, just use your web browser to
+	come back to the previous page and uncheck the box "Use SMTP".
     }
 }
 

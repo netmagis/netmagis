@@ -30,8 +30,9 @@
     \titre {1} {Localiser une adresse IP / une adresse MAC}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-    Entrer le nom ou l'adresse cherchée :
-	<INPUT TYPE="TEXT" NAME="recherche" SIZE="30"> <INPUT TYPE="SUBMIT" VALUE="Rechercher">
+	Entrer le nom ou l'adresse
+	<INPUT TYPE="TEXT" NAME="recherche" SIZE="30">
+	<INPUT TYPE="SUBMIT" VALUE="Rechercher">
     </FORM>
 
 }

@@ -181,9 +181,10 @@ source %LIBDNS%
 #   2004/08/04 : pda/jean : add mac
 #   2005/04/08 : pda/jean : add iddhcpprofil
 #   2010/10/31 : pda      : add ttl
+#   2010/12/16 : pda      : add fspec parameter
 #
 
-proc traiteajout-machine {dbfd _tabuid _ftab} {
+proc traiteajout-machine {dbfd _tabuid _ftab fspec} {
     global conf
     upvar $_ftab ftab
     upvar $_tabuid tabuid
@@ -195,10 +196,7 @@ proc traiteajout-machine {dbfd _tabuid _ftab} {
     # Validate form input
     #
 
-    foreach v {nom domaine adr mac iddhcpprofil droitsmtp ttl hinfo
-		    commentaire respnom respmel confirm} {
-	set $v [string trim [lindex $ftab($v) 0]]
-    }
+    ::webapp::import-vars ftab $fpsec
 
     #
     # Check name and domain
@@ -518,9 +516,10 @@ proc traiteajout-machine {dbfd _tabuid _ftab} {
 # History
 #   2010/01/01 : pda      : design
 #   2010/10/09 : pda      : end of design
+#   2010/12/16 : pda      : add fspec parameter
 #
 
-proc traiteajout-multi {dbfd _tabuid _ftab} {
+proc traiteajout-multi {dbfd _tabuid _ftab fpsec} {
     global conf
     upvar $_ftab ftab
     upvar $_tabuid tabuid
@@ -533,11 +532,7 @@ proc traiteajout-multi {dbfd _tabuid _ftab} {
     # Validate form input
     #
 
-    ::webapp::import-vars ftab
-    foreach f $conf(form) {
-	set var [lindex $f 0]
-	set $var [string trim [lindex [set $var] 0]]
-    }
+    ::webapp::import-vars ftab $fpsec
 
     set lcidr [check-netid $dbfd $plage $idgrp "consult" {4} msg]
     if {[llength $lcidr] != 1} then {
@@ -653,9 +648,10 @@ proc traiteajout-multi {dbfd _tabuid _ftab} {
 
 # History
 #   2002/04/19 : pda/jean : design
+#   2010/12/16 : pda      : add fspec parameter
 #
 
-proc traiteajout-alias {dbfd _tabuid _ftab} {
+proc traiteajout-alias {dbfd _tabuid _ftab fpsec} {
     global conf
     upvar $_ftab ftab
     upvar $_tabuid tabuid
@@ -771,7 +767,7 @@ proc main {} {
 	d error [mc "Invalid input"]
     }
 
-    traite$action $dbfd tabuid ftab
+    traite$action $dbfd tabuid ftab $conf(form-$action)
 }
 
 ::webapp::cgi-exec main %DEBUG%

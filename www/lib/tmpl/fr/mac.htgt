@@ -26,13 +26,9 @@
 
 \*******************************************************************************
 \partie {texte} {
-
-
-      \titre {1} {Résultat de la recherche pour %RECHERCHE%}
+    \titre {1} {Résultat de la recherche pour %RECHERCHE%}
 
     %TABLEAU%
 }
-
-
 
 }

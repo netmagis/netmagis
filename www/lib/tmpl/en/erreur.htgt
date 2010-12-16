@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Erreur !
+    WebDNS - Error!
 }
 
 \*******************************************************************************
@@ -27,12 +27,12 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Erreur !}
+    \titre {1} {Error!}
 
-    Une erreur est survenue dans l'exécution du script.
+    An error occurred in WebDNS application.
     \retrait {<FONT COLOR="#FF0000">%MESSAGE%</FONT>}
 
-    Utilisez votre navigateur pour revenir à la page précédente.
+    Use your Web browser to come back to previous page.
 }
 
 }

@@ -265,7 +265,7 @@ Database Class:	\\fB\\$3\\fR
 .sp
 \fB::webapp::get-data\fR \fIarray\fR \fIspec\fR
 .sp
-\fB::webapp::import-vars\fR \fIarray\fR
+\fB::webapp::import-vars\fR \fIarray\fR \fI?fspec?\fR
 .sp
 \fB::webapp::call-cgi\fR \fIscript\fR \fIarray
 .sp
@@ -380,11 +380,16 @@ is found, an empty list is returned and the \fBarray(_error)\fR
 cell is set to the error message.
 .RE
 .TP
-\fB::webapp::import-vars\fR \fIarray\fR
+\fB::webapp::import-vars\fR \fIarray\fR \fI?fspec?\fR
 Update variables, in current procedure context, from the \fIarray\fR
-parameter (most often the result of a \fBget-data\fR call). For
-each cell in \fIarray\fR argument, a variable with that name is
-created in current context.
+parameter (most often the result of a \fBget-data\fR call). If
+\fIfspec\fR is not given, each cell in \fIarray\fR argument leads
+to creation in current context of a variable with that name. If
+\fIfspec\fR is given, each form field specifier (see \fBget-data\fR)
+is translated into a variable with matching name. Variables with more
+than one occurrence are translated to a list value, and variable with
+less than one maximum occurrence are translated to a single trimmed
+value.
 .RS
 .PP
 Example:

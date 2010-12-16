@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Localiser une adresse IP / MAC
+    WebDNS - Locate a IP / MAC address
 }
 
 \*******************************************************************************
@@ -27,11 +27,12 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Localiser une adresse IP / une adresse MAC}
+    \titre {1} {Locate an IP or MAC address}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-    Entrer le nom ou l'adresse cherchée :
-	<INPUT TYPE="TEXT" NAME="recherche" SIZE="30"> <INPUT TYPE="SUBMIT" VALUE="Rechercher">
+	Enter name or address
+	<INPUT TYPE="TEXT" NAME="recherche" SIZE="30">
+	<INPUT TYPE="SUBMIT" VALUE="Search">
     </FORM>
 
 }

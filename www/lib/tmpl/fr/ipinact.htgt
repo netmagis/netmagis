@@ -28,20 +28,31 @@
 \partie {texte} {
     \titre {1} {Lister les adresses inactives}
 
-	<FORM METHOD="POST" ACTION="%URLFORM%">
-	    <TABLE BORDER="0">
-		<TR>
-		    <TD>R&eacute;seau :</TD>
-		    <TD>%LRES%</TD>
-		</TR>
-		<TR>
-		    <TD>Derni&egrave;re occurence:</TD>
-		    <TD>%LOCCUR%</TD>
-		</TR>
-	    </TABLE>
-	    <INPUT NAME="action" TYPE="SUBMIT" VALUE="Lister">
-	</FORM>
-	%TABLEAU%
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	\tableau {
+	    \bordure {0} {}
+	    taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {} {Réseau}
+		\casetableau {} {%LRES%}
+	    }
+	    \lignetableau {
+		\casetableau {} {Dernière occurrence}
+		\casetableau {} {%LOCCUR%}
+	    }
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}} {
+		    <INPUT NAME="action" TYPE="SUBMIT" VALUE="Lister">
+		}
+	    }
+	}
+    </FORM>
+
+    %TABLEAU%
 
 }
 

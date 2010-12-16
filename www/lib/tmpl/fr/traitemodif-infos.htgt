@@ -31,9 +31,8 @@
 
     La modification a été effectuée.
 
-    Elle sera effective sur les
-    \lien {serveurs de nom Osiris} {%DOCDNS%}
-    d'ici %INTERVALLE% minutes.
+    Elle sera effective sur les serveurs de nom d'ici %INTERVALLE%
+    minutes.
 
     \tableau {
 	\bordure {1} {}

@@ -1,14 +1,11 @@
 
 \documentclass [a4paper,%ORIENTATION%] {article}
 
-    % Package "francais" inadapté car il met des espaces avant les ":"
-    % ce qui est génant dans l'impression des adresses MAC et IPv6
-    % \usepackage [francais] {babel}
     \usepackage [T1] {fontenc}
 
     \usepackage {palatino}
     \renewcommand {\familydefault} {phv}
-    \usepackage {marvosym}			% pour l'euro (\EUR)
+    \usepackage {marvosym}			% for \EUR symbol
 
     \usepackage [pdftex,a4paper,margin=15mm,nohead,nofoot] {geometry}
 
@@ -24,23 +21,19 @@
 
     \pdfinfo {
 	/Title (liste.pdf)
-	/Creator (DNS)
+	/Creator (WebDNS v%VERSION%)
 	/Producer (dns+arrgen+pdflatex)
 	/Author (pda/jean)
-	/Subject (Liste des machines)
-	/Keywords (DNS, adresse IP)
+	/Subject (Host list)
+	/Keywords (DNS, IP address)
     }
 
 \begin {center}
     \Large\bf
-    %% Université Louis Pasteur \\
-    Application WebDNS
+    WebDNS application 
 
-    Liste des machines au %DATE%
+    Host list at %DATE%
 \end {center}
-
-% Pour avoir une ligne horizontale sur toute la largeur de la ligne
-% \hrulefill
 
 %TABLEAU% 
 

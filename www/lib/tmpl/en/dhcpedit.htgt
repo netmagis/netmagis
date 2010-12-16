@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Édtion des plages DHCP dynamiques
+    WebDNS - Editing DHCP dynamic ranges
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Édition des paramètres DHCP du réseau %RESEAU%}
+    \titre {1} {Edit DHCP parameters for network %RESEAU%}
 
     \tableau {
 	\bordure {0} {}
@@ -38,26 +38,25 @@
 	\casedefauttableau {\centragehorizontal {LEFT}}
     } {
 	\lignetableau {
-	    \casetableau {} {Modifier une entrée}
+	    \casetableau {} {Modify an entry}
 	    \casetableau {} {:}
-	    \casetableau {} {Modifier directement la ligne}
+	    \casetableau {} {Directly edit line}
 	}
 	\lignetableau {
-	    \casetableau {} {Supprimer une entrée}
+	    \casetableau {} {Remove an entry}
 	    \casetableau {} {:}
-	    \casetableau {} {Vider la case <<~min~>>}
+	    \casetableau {} {Just delete "min"}
 	}
 	\lignetableau {
-	    \casetableau {} {Ajouter une entrée}
+	    \casetableau {} {Add an entry}
 	    \casetableau {} {:}
-	    \casetableau {} {Ajouter les informations 
-		dans l'une des lignes vides en bas du tableau}
+	    \casetableau {} {Add informations in one of the
+		empty lines at the bottom}
 	}
     }
 
-    Note~: Les valeurs associées au bail sont exprimées en secondes.
-    La valeur <<~0~>> correspond à la valeur par défaut sur le
-    serveur DHCP
+    Note: values for lease parameters are in seconds. The "0" value
+    means default value on DHCP server.
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="idreseau" VALUE="%IDRESEAU%">
@@ -74,8 +73,8 @@
 		    \couleurfond {%COULEUR%}
 		    \centragehorizontal {CENTER}
 		} {
-		    <INPUT TYPE="SUBMIT" VALUE="Enregistrer">
-		    <INPUT TYPE="RESET" VALUE="Réinitialiser">
+		    <INPUT TYPE="SUBMIT" VALUE="Store">
+		    <INPUT TYPE="RESET" VALUE="Reset">
 		}
 	    }
 	}

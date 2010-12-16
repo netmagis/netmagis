@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Statistiques par correspondant
+    WebDNS - Statistics by user
 }
 
 \*******************************************************************************
@@ -27,11 +27,10 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Statistiques par correspondant}
+    \titre {1} {Statistics by user}
 
     \liste {
-	\item {Nombre de RR~: nombre de noms déclarés par
-	    correspondant.}
+	\item {RR count~: count of names declared by user.}
     }
 
     %NBRRCOR%

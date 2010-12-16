@@ -223,8 +223,8 @@ set libconf(tabeqstatus) {
 }
 
 
-set libconf(extractcoll)	"%TOPODIR%/bin/extractcoll %s < %GRAPH%"
-set libconf(extracteq)		"%TOPODIR%/bin/extracteq %s %s < %GRAPH%"
+set libconf(extractcoll)	"extractcoll %s"
+set libconf(extracteq)		"extracteq %s %s"
 
 # Cisco aironet frequency conversion table
 array set libconf {

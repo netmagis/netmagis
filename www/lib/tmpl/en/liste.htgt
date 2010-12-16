@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Affichage de réseau
+    WebDNS - Network display
 }
 
 \*******************************************************************************
@@ -24,7 +24,7 @@
 	}
 }
 
-\* cas particulier pour l'affichage de la "carte" des adresses disponibles
+\* special case for map display
 
 \set {header} {
     <style type="text/css">
@@ -70,7 +70,7 @@
 
     \titre {1} {%TITRE%}
 
-    Liste au %DATE%.
+    List at %DATE%.
 
     %TABLEAU%
 }

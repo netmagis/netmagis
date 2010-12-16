@@ -28,6 +28,7 @@
 #   2010/11/27 : pda      : ajout locale
 #   2010/11/27 : pda      : envoi utf-8 systématique
 #   2010/12/09 : pda      : ajout form-submit et form-reset
+#   2010/12/16 : pda      : add import-vars optional fspec parameter
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -38,7 +39,7 @@ package require pgsql ;			# package local
 
 # package require Pgtcl
 
-package provide webapp 1.13
+package provide webapp 1.14
 
 namespace eval webapp {
     namespace export log pathinfo user locale \
@@ -1614,26 +1615,60 @@ proc ::webapp::html-string {str} {
 }
 
 #
-# Importe les champs de formulaire dans des variables individuelles
+# Import form variables in individual Tcl variables
 #
 # Entrée :
 #   - paramètres :
-#	- formtab : tableau, passé par référence, contenant les valeurs
-#	    des paramètres fournis au formulaire
+#	- _ftab : tableau, passé par référence, contenant les valeurs
+#	    des paramètres fournis au formulaire (see get-data)
+#	- fspec : optional form specification (see get-data)
 # Sortie :
 #   - variables nommées par formtab : initialisées
-#   - valeur de retour : aucune
+#   - valeur de retour : none
 #
 # Historique :
 #   2006/08/29 : pda : conception et codage
+#   2010/12/16 : pda : add fspec
 #
 
-proc ::webapp::import-vars {formtab} {
-    upvar $formtab tab
+proc ::webapp::import-vars {_ftab {fspec {}}} {
+    upvar $_ftab ftab
 
-    foreach varname [array names tab] {
-	upvar $varname var
-	set var $tab($varname)
+    if {[llength $fspec] == 0} then {
+	foreach varname [array names ftab] {
+	    upvar $varname var
+	    set var $ftab($varname)
+	}
+    } else {
+	# keep max number of occurrence to make a single value or a list
+	# while at here, keep a log of found specifiers
+	foreach s $fspec {
+	    lassign $s re min max def
+	    set m($re) $max
+	    set found($re) 0
+	}
+	foreach varname [array names ftab] {
+	    foreach s $fspec {
+		lassign $s re min max def
+		if {[regexp "^$re\$" $varname]} then {
+		    set found($re) 1
+		    upvar $varname var
+		    set val $ftab($varname)
+		    if {$m($re) <= 1} then {
+			set val [string trim [lindex $val 0]]
+		    }
+		    set var $val
+		    break
+		}
+	    }
+	}
+	foreach s $fspec {
+	    lassign $s re min max def
+	    if {! $found($re)} then {
+		upvar $re var
+		set var {}
+	    }
+	}
     }
 }
 

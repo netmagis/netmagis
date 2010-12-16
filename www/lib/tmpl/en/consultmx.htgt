@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Consultation des MX
+    WebDNS - MX selection
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Consultation des MX d'une ou plusieurs zones}
+    \titre {1} {Consult MX for domains}
 
-    Sélectionner les domaines dont vous voulez consulter les MX~:
+    Select domains for which you want to consult MX records:
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	\tableau {
@@ -46,8 +46,8 @@
 		    \couleurfond {%COULEUR%}
 		    \centragehorizontal {CENTER}
 		} {
-		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consulter">
-		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Imprimer">
+		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consult">
+		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Print">
 		}
 	    }
 	}

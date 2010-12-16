@@ -37,14 +37,14 @@
 	\item {Lister les \lien {correspondants} {%URLLISTECORRESP%}}
 	\item {Chercher un \lien {correspondant} {%URLCORRESP%} à partir d'une adresse}
 	\item {Consulter les \lien {statistiques par correspondant} {%URLSTATCOR%}}
-	\item {Consulter les \lien {statistiques par établissement} {%URLSTATETAB%} [Lent !]}
+	\item {Consulter les \lien {statistiques par organisme} {%URLSTATETAB%} [Lent !]}
 	\item {Consulter le \lien {tableau de bord de topod} {%URLTOPOTOP%}}
     }
 
     \titre {2} {Administration des données}
 
     \liste {
-	\item {Modifier les \lien {établissements} {%URLREFETABL%}}
+	\item {Modifier les \lien {organismes} {%URLREFETABL%}}
 	\item {Modifier les \lien {communautés} {%URLREFCOMMU%}}
 	\item {Modifier les \lien {types de machines} {%URLREFHINFO%}}
 	\item {Modifier les \lien {réseaux} {%URLREFRESEAU%}}

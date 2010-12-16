@@ -27,17 +27,18 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {DNS Management}
+    \titre {1} {DNS management}
 
-    Welcome in WebDNS application to manage DNS information.
+    Welcome in WebDNS application. This application allow you to
+    manage DNS information.
 
     \titre {2} {Introduction}
 
-    This application interactively manages hosts (names and
-    IP addresses) on your network. These informations are
-    in a database, and are synchronised on DNS servers.
+    This application interactively manages hosts (names and IP
+    addresses) on your network. These informations are stored in a
+    database, and are propagated to DNS servers.
 
-    You may access classical operations:
+    You may use classical operations:
 
     \liste {
 	\item {add hosts or aliases}
@@ -59,13 +60,13 @@
     of suggestions for improvement, contact \lien {application
     authors} {http://webdns.u-strasbg.fr}.
 
-    \titre {2} {Available operations}
+    \titre {2} {Available actions}
 
     You may:
     \liste {
 	\item {\lien {consult informations}		{%URLCONSULTER%}}
 	\item {\lien {add a host or an alias}		{%URLAJOUT%}}
-	\item {\lien {modify informations}		{%URLMODIF%}}
+	\item {\lien {modify informations about a host}	{%URLMODIF%}}
 	\item {\lien {delete a host}			{%URLSUPPR%}}
 	\item {\lien {check my access rights}		{%URLDROITS%}}
 	\item {\lien {modify my password}		{%PASSWDURL%}}
@@ -75,6 +76,9 @@
 	\item {\lien {search for a user}		{%URLCORRESP%}}
  	\item {\lien {locate my current IP address}	{%URLOUSUISJE%}}
     }
+
+    Check the links menu at the left for a complete list of available
+    actions.
 
     \titre {2} {Other operations}
 

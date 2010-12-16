@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Liste des rôles de messagerie
+    WebDNS - Mail role list
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Edition d'un hébergeur de messagerie dans %DOMAINE%}
+    \titre {1} {Edit mailbox host for %DOMAINE%}
 
     \tableau {
 	\bordure {0} {}
@@ -39,11 +39,11 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
-	    } {\gras {Edition d'un rôle de messagerie}}
+	    } {\gras {Edit Mail role}}
 	}
 	\lignetableau {
-	    \casetableau {} {Sélectionnez l'adresse de messagerie
-		du domaine %DOMAINE% que vous voulez modifier ou supprimer
+	    \casetableau {} {Select mail address in domain %DOMAIN%
+		that you want to modify or remove
 	    }
 	}
 	\lignetableau {

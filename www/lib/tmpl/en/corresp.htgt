@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Recherche de correspondant
+    WebDNS - Search users
 }
 
 \*******************************************************************************
@@ -27,12 +27,12 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Recherche des correspondants associés à une machine}
+    \titre {1} {Search users associated with a host}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	Adresse ou machine (avec domaine)~:
+	Name (with domain) or IP address:
 	    <INPUT TYPE="TEXT" NAME="critere" SIZE="49" VALUE="%CRITERE%">
-	    <INPUT TYPE="SUBMIT" VALUE="Chercher">
+	    <INPUT TYPE="SUBMIT" VALUE="Search">
     </FORM>
 
     <HR>

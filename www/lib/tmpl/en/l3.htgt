@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    CRC - Topologie
+    CRC - Topology - Network list
 }
 
 \*******************************************************************************
@@ -27,35 +27,36 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Réseau %RESEAU%}
+    \titre {1} {Network %RESEAU%}
 
     %MSGSTA%
 
     <TABLE>
 	<TR>
 	    <FORM METHOD="POST" ACTION="%URLFORMEQ%">
-		<TD>Choisir un équipement</TD>
+		<TD>Enter an equipment</TD>
 		<TD>
 		    <INPUT TYPE="TEXT" NAME="eq" VALUE="%EQ%">
-		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
+		    <INPUT TYPE="SUBMIT" VALUE="Display">
 		</TD>
 	    </FORM>
 	</TR>
 	<TR>
 	    <FORM METHOD="POST" ACTION="%URLFORML2%">
-		<TD>Choisir un vlan</TD>
+		<TD>Enter a VLAN</TD>
 		<TD>
 		    <INPUT TYPE="TEXT" NAME="vlan" VALUE="%VLAN%">
-		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
+		    <INPUT TYPE="SUBMIT" VALUE="Display">
+		    (numeric id or part of name)
 		</TD>
 	    </FORM>
 	</TR>
 	<TR>
 	    <FORM METHOD="POST" ACTION="%URLFORML3%">
-		<TD>Choisir une adresse IP</TD>
+		<TD>Enter an IP address</TD>
 		<TD>
 		    <INPUT TYPE="TEXT" NAME="addr" VALUE="%ADDR%">
-		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
+		    <INPUT TYPE="SUBMIT" VALUE="Display">
 		</TD>
 	    </FORM>
 	</TR>
@@ -64,7 +65,7 @@
     <IMG SRC="%URLIMG%" USEMAP="#l3graph" />
     %MAP%
 
-    \lien {version imprimable} {%URLPDF%}
+    \lien {printable version} {%URLPDF%}
 }
 
 }

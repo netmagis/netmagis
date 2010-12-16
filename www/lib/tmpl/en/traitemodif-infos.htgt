@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification effectuée
+    WebDNS - Modification stored
 }
 
 \*******************************************************************************
@@ -27,13 +27,10 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification effectuée}
+    \titre {1} {Modification stored}
 
-    La modification a été effectuée.
-
-    Elle sera effective sur les
-    \lien {serveurs de nom Osiris} {%DOCDNS%}
-    d'ici %INTERVALLE% minutes.
+    The modification has been stored in database.  It will be
+    available on DNS servers within %INTERVALLE% minutes.
 
     \tableau {
 	\bordure {1} {}
@@ -43,23 +40,23 @@
 	\casedefauttableau {\centragehorizontal {LEFT}}
     } {
 	\lignetableau {
-	    \casetableau {} {Nom}
+	    \casetableau {} {Name}
 	    \casetableau {} {%NOM%.%DOMAINE%}
 	}
 	\lignetableau {
-	    \casetableau {} {Adresse MAC}
+	    \casetableau {} {MAC address}
 	    \casetableau {} {%MAC%}
 	}
 	\lignetableau {
-	    \casetableau {} {Profil DHCP}
+	    \casetableau {} {DHCP profile}
 	    \casetableau {} {%DHCPPROFIL%}
 	}
 	\lignetableau {
-	    \casetableau {} {Machine}
+	    \casetableau {} {Type}
 	    \casetableau {} {%HINFO%}
 	}
 	\lignetableau {
-	    \casetableau {} {Droit d'émission SMTP}
+	    \casetableau {} {Use SMTP}
 	    \casetableau {} {%DROITSMTP%}
 	}
 	\lignetableau {
@@ -67,20 +64,20 @@
 	    \casetableau {} {%TTL%}
 	}
 	\lignetableau {
-	    \casetableau {} {Infos complémentaires}
+	    \casetableau {} {Comment}
 	    \casetableau {} {%COMMENTAIRE%}
 	}
 	\lignetableau {
-	    \casetableau {} {Responsable (nom + prénom)}
+	    \casetableau {} {Responsible (name)}
 	    \casetableau {} {%RESPNOM%}
 	}
 	\lignetableau {
-	    \casetableau {} {Responsable (mél)}
+	    \casetableau {} {Responsible (maill)}
 	    \casetableau {} {%RESPMEL%}
 	}
     }
 
-    Cliquer \lien {ici pour continuer} {%URLSUITE%}.
+    Click \lien {here to continue} {%URLSUITE%}.
 }
 
 }

@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Localiser une adresse IP / MAC
+    WebDNS - Locate a IP or MAC address
 }
 
 \*******************************************************************************
@@ -26,13 +26,9 @@
 
 \*******************************************************************************
 \partie {texte} {
-
-
-      \titre {1} {Résultat de la recherche pour %RECHERCHE%}
+    \titre {1} {Search result for %RECHERCHE%}
 
     %TABLEAU%
 }
-
-
 
 }

@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Statistiques par établissement
+    WebDNS - Statistics by organization
 }
 
 \*******************************************************************************
@@ -27,13 +27,15 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Statistiques par établissement}
+    \titre {1} {Statistics by organization}
 
     \liste {
-	\item {Nombre de machines~: nombre de noms déclarés par
-	    établissement (correspondant à une adresse v4 ou v6.}
-	\item {Nombre d'adresses~: nombre d'adresses réseau (v4) allouées
-	    par établissement.}
+	\item {Host count: count of names declared by organism
+	    (matching an IPv4 or IPv6 address.)
+	}
+	\item {Address count: count of IPv4 addresses allocated
+	    by organization.
+	}
     }
 
     %NBMACHETABL%

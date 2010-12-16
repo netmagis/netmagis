@@ -1,15 +1,14 @@
-% Liste des ...
+% List of...
 %
 %
 
 \documentclass [a4paper,%ORIENTATION%] {article}
 
-    \usepackage [francais] {babel}
     \usepackage [T1] {fontenc}
 
     \usepackage {palatino}
     \renewcommand {\familydefault} {phv}
-    \usepackage {marvosym}			% pour l'euro (\EUR)
+    \usepackage {marvosym}			% pour \EUR symbol
 
     \usepackage [pdftex,a4paper,margin=15mm,nohead,nofoot] {geometry}
 
@@ -24,26 +23,22 @@
 \begin {document}
 
     \pdfinfo {
-	/Title (liste.pdf)
-	/Creator (DNS)
+	/Title (listedes.pdf)
+	/Creator (WebDNS v%VERSION%)
 	/Producer (dns+arrgen+pdflatex)
 	/Author (pda/jean)
-	/Subject (Liste des machines)
-	/Keywords (DNS, adresse IP)
+	/Subject (List of %TITRE%)
+	/Keywords (DNS, IP address)
     }
 
 \begin {center}
     \Large\bf
-    % Université Louis Pasteur \\
-    Application WebDNS
+    WebDNS application
 
-    Liste des %TITRE% au %DATE%
+    List of %TITRE% at %DATE%
 \end {center}
 
 %TXT%
-
-% Pour avoir une ligne horizontale sur toute la largeur de la ligne
-%\hrulefill
 
 %TABLEAU% 
 

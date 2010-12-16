@@ -40,8 +40,6 @@ ROOT	= {pda jean}
 
 # Intervalle entre deux générations de zones
 INTERVALLE = 10
-# Page présentant les DNS Osiris
-DOCDNS	= /osiris/services/dns.html
 
 # Couleur de fond des boutons "valider"
 COULEUR = "\#10C090"
@@ -78,7 +76,6 @@ SUBST	= \
 	-e 's|%PKGTCL%|$(PKGTCL)|' \
 	-e 's|%HOMEURL%|$(HOMEURL)|' \
 	-e 's|%INTERVALLE%|$(INTERVALLE)|' \
-	-e 's|%DOCDNS%|$(DOCDNS)|' \
 	-e 's|%VERSION%|$(VERSION)|' \
 	-e 's|%ROOT%|$(ROOT)|' \
 	-e 's|%NOLOGIN%|$(NOLOGIN)|' \

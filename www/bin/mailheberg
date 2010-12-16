@@ -179,7 +179,8 @@ proc main {} {
     # Do we have permission for declaring mail roles in this domain?
     #
 
-    set msg [check-domain $dbfd $idcor idom domain "rolemail"]
+    set iddom -1
+    set msg [check-domain $dbfd $idcor iddom domain "rolemail"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -255,7 +256,7 @@ proc main {} {
 
 	set nameh $trrh(nom)
 	set domh $trrh(domaine)
-	set domainh [menu-domain $dbfd $idcor domainh "" $domh]
+	set domainh [menu-domain $dbfd $idcor "domaineh" "" $domh]
 
 	lappend lsubst [list %NOM%      $name]
 	lappend lsubst [list %DOMAINE%  $domain]

@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Choix des actions à effectuer sur une adresse IP
+    WebDNS - Select what to do on an IP address
 }
 
 \*******************************************************************************
@@ -24,8 +24,7 @@
 	}
 }
 
-\* affichage ou non des différentes puces
-
+\* display (or not display) various items
 \set {header} {
     <style type="text/css">
 	#suppruneip \{
@@ -38,23 +37,23 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Édition de l'adresse %ADR%}
+    \titre {1} {Edit address %ADR%}
 
-    Que souhaitez-vous faire~?
+    What do you want to do?
 
     <ul>
 	<li>
-	    <a href="%URLSUPPR%">Supprimer</a> la machine '%NOM%.%DOMAINE%'.
+	    <a href="%URLSUPPR%">Remove</a> the host '%NOM%.%DOMAINE%'.
 	    </li>
 	<li id="suppruneip">
-	    <a href="%URLSUPPRIP%">Supprimer l'adresse</a> '%ADR%' de '%NOM%.%DOMAINE%'
-		(mais il restera les autres adresses).
+	    <a href="%URLSUPPRIP%">Remove address '%ADR%'</a> from '%NOM%.%DOMAINE%'
+		(all other addresses of this host will stay).
 	    </li>
 	<li>
-	    <a href="%URLEDIT%">Éditer les informations</a> de '%NOM%.%DOMAINE%'.
+	    <a href="%URLEDIT%">Edit informations</a> of '%NOM%.%DOMAINE%'.
 	    </li>
 	<li>
-	    <a href="%URLBACK%">Revenir à l'affichage précédent</a>
+	    <a href="%URLBACK%">Come back to previous display</a>
 	    </li>
     </ul>
 
