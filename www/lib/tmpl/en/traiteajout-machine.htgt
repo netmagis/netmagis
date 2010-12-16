@@ -29,7 +29,7 @@
 
     \titre {1} {Host added}
 
-    La machine a été ajoutée.
+    Host has been added.
 
     The modification will be available on DNS servers
     within %INTERVALLE% minutes.
