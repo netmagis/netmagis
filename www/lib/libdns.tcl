@@ -16,6 +16,7 @@
 lappend auto_path %PKGTCL%
 
 package require msgcat			;# tcl
+namespace import ::msgcat::*
 
 package require snit			;# tcllib
 package require ip			;# tcllib
@@ -23,11 +24,6 @@ package require ip			;# tcllib
 package require webapp
 package require pgsql
 package require arrgen
-
-namespace import ::msgcat::*
-
-package require pgsql
-package require webapp
 
 ##############################################################################
 # Library parameters
@@ -257,6 +253,8 @@ array set libconf {
 #	initialize context for a CGI script
 #   init-script
 #	initialize context for an autonomous program (not CGI)
+#   locale
+#	set current locale
 #   end
 #	properly close access to application and to database
 #   nextprog, nextargs
@@ -324,6 +322,9 @@ snit::type ::dnscontext {
 
     # HTML error page
     variable errorpage ""
+
+    # HTML home page
+    variable homepage "%HOMEURL%/bin/accueil"
 
     # in order to come back from a travel in the WebDNS application
     variable dnextprog ""
@@ -551,8 +552,11 @@ snit::type ::dnscontext {
     # Builds up an URL
     #
     # Input:
-    #   - path : URL path
-    #   - largs : list of {{key val} {key val} ...} to add to URL
+    #   - _urltab : name of an array containing :
+    #		urltab($name): the list {path {key val} {key val} ...}
+    #		urltab($name:nextprog) program
+    #		urltab($name:nextargs) arguments
+    #   - name : index in urltab
     #	- u, eu : uid and effective uid
     #	- l, bl : locale and browser locale
     # Output:
@@ -669,8 +673,7 @@ snit::type ::dnscontext {
 	    }
 
 	} else {
-	    append h [::webapp::helem "li" \
-				[mc "Unknown module '%s'" $eorm] ]
+	    append h [::webapp::helem "li" [mc "Unknown module '%s'" $eorm] ]
 	    append h "\n"
 	}
 	return $h
@@ -790,12 +793,9 @@ snit::type ::dnscontext {
 	#
 
 	set l [string trim [lindex $ftab(l) 0]]
-	if {$l in $avlocale} then {
-	    set locale $l
+	if {$l ne ""} then {
+	    $self locale $l
 	}
-
-	uplevel #0 mclocale $locale
-	uplevel #0 mcload %TRANSMSGS%
 
 	#
 	# Get next action
@@ -926,6 +926,19 @@ snit::type ::dnscontext {
 	fermer-base $db
     }
 
+
+    method locale {{l {}}} {
+	set locale "C"
+	if {$l in $avlocale} then {
+	    set locale $l
+	}
+
+	uplevel #0 mclocale $locale
+	uplevel #0 mcload %TRANSMSGS%
+
+	return $locale
+    }
+
     ###########################################################################
     # Returns an error and properly close access to application (and database)
     #
@@ -984,9 +997,20 @@ snit::type ::dnscontext {
 	#
 
 	if {$fmt eq "html"} then {
+	    set linksmenu [$self Get-links ":$curmodule"]
 
-	    set linkmenu [$self Get-links ":$curmodule"]
-	    lappend lsubst [list %LINKS% $linkmenu]
+	    foreach l $avlocale {
+		if {$l ne $locale} then {
+		    set utab(L) [list $homepage]
+		    set utab(L:nextprog) ""
+		    set url [make-url utab "L" $uid $euid $l $blocale]
+		    append linksmenu [::webapp::helem "li" \
+				[::webapp::helem "a" "\[$l\]" "href" $url] \
+			    ]
+		}
+	    }
+
+	    lappend lsubst [list %LINKS% $linksmenu]
 
 	    foreach s [$self urlsubst] {
 		lappend lsubst $s
