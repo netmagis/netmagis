@@ -55,9 +55,6 @@ namespace eval webapp {
 	nologin send error-exit \
 	debug \
 	cgidebug \
-	\
-	cacher-parametres substituer \
-	\
 	cgi-exec
 
     variable tmpdir	/tmp
@@ -1765,6 +1762,7 @@ proc ::webapp::mail {from replyto to cc bcc subject texte {type {}}} {
 #	- fichier : le nom du fichier servant de base pour la substitution
 #	- subst : liste de susbtitutions, de la forme 
 #		{{motif valeur} {motif valeur} ...}
+#	- encoding: name of encoding
 # Sortie :
 #   - valeur de retour : le fichier susbtitué
 #
@@ -1772,14 +1770,18 @@ proc ::webapp::mail {from replyto to cc bcc subject texte {type {}}} {
 #   1999/03/25 : pda : conception et codage
 #   1999/11/02 : pda : suppression de & comme caractère spécial
 #   2002/05/12 : pda : suppression de \ comme caractère spécial
+#   2010/10/16 : pda : add encoding parameter
 #
 
 proc ::webapp::substituer {fichier subst} {
     return [::webapp::file-subst $fichier $subst]
 }
 
-proc ::webapp::file-subst {fichier subst} {
+proc ::webapp::file-subst {fichier subst {encoding {}}} {
     set fd [open $fichier r]
+    if {$encoding ne ""} then {
+	fconfigure $fd -encoding $encoding
+    }
     set string [read $fd]
     close $fd
 

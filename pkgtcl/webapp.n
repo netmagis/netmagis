@@ -291,7 +291,7 @@ Database Class:	\\fB\\$3\\fR
 .sp
 \fB::webapp::random\fR
 .sp
-\fB::webapp::file-subst\fR \fIfile\fR \fIpatterns\fR
+\fB::webapp::file-subst\fR \fIfile\fR \fIpatterns\fR \fI?encoding?\fR
 .sp
 \fB::webapp::send\fR \fItype\fR \fIcontent\fR
 .sp
@@ -532,11 +532,13 @@ Returns a pseudo-random 20 characters string. The random is based
 on the number of clock clicks (see \fBclock(n)\fR), the process-id,
 and the date.
 .TP
-\fB::webapp::file-subst\fR \fIfile\fR \fIpatterns\fR
+\fB::webapp::file-subst\fR \fIfile\fR \fIpatterns\fR \fI?encoding?\fR
 Returns the contents of a file after some substitutions. The \fIfile\fR
 parameter is the name of an existing file. The \fIpatterns\fR is a list
 of substitutions, each substitution is a 2-elements list: a pattern and
 a substitution value. These two items are used with \fBregsub(n)\fR.
+If \fIencoding\fR optional parameter is given, file is read with
+\fBfencoding(n)\fR file encoding. Otherwise, system encoding is used.
 .RS
 .PP
 Example:
