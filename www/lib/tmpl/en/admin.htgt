@@ -29,7 +29,7 @@
 
     \titre {1} {Administration module}
 
-    \titre {2} {Consultation des données}
+    \titre {2} {Data viewing}
 
     \liste {
 	\item {List \lien {MX} {%URLCONSULTMX%}}
@@ -38,7 +38,7 @@
 	\item {Search for a \lien {user} {%URLCORRESP%} from a name or address}
 	\item {Consult \lien {statistics by user} {%URLSTATCOR%}}
 	\item {Consult \lien {statistics by organization} {%URLSTATETAB%} [Slow !]}
-	\item {Consulter le \lien {topod dashboard} {%URLTOPOTOP%}}
+	\item {Consult \lien {topo daemons dashboard} {%URLTOPOTOP%}}
     }
 
     \titre {2} {Data administration}

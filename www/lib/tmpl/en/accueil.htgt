@@ -29,14 +29,14 @@
 
     \titre {1} {DNS management}
 
-    Welcome in WebDNS application. This application allow you to
+    Welcome in WebDNS application. This application allows you to
     manage DNS information.
 
     \titre {2} {Introduction}
 
     This application interactively manages hosts (names and IP
     addresses) on your network. These informations are stored in a
-    database, and are propagated to DNS servers.
+    database, and are periodically propagated to DNS servers.
 
     You may use classical operations:
 
