@@ -196,7 +196,7 @@ proc traiteajout-machine {dbfd _tabuid _ftab fspec} {
     # Validate form input
     #
 
-    ::webapp::import-vars ftab $fpsec
+    ::webapp::import-vars ftab $fspec
 
     #
     # Check name and domain
@@ -519,7 +519,7 @@ proc traiteajout-machine {dbfd _tabuid _ftab fspec} {
 #   2010/12/16 : pda      : add fspec parameter
 #
 
-proc traiteajout-multi {dbfd _tabuid _ftab fpsec} {
+proc traiteajout-multi {dbfd _tabuid _ftab fspec} {
     global conf
     upvar $_ftab ftab
     upvar $_tabuid tabuid
@@ -532,7 +532,7 @@ proc traiteajout-multi {dbfd _tabuid _ftab fpsec} {
     # Validate form input
     #
 
-    ::webapp::import-vars ftab $fpsec
+    ::webapp::import-vars ftab $fspec
 
     set lcidr [check-netid $dbfd $plage $idgrp "consult" {4} msg]
     if {[llength $lcidr] != 1} then {
@@ -651,7 +651,7 @@ proc traiteajout-multi {dbfd _tabuid _ftab fpsec} {
 #   2010/12/16 : pda      : add fspec parameter
 #
 
-proc traiteajout-alias {dbfd _tabuid _ftab fpsec} {
+proc traiteajout-alias {dbfd _tabuid _ftab fspec} {
     global conf
     upvar $_ftab ftab
     upvar $_tabuid tabuid
