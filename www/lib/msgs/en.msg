@@ -29,6 +29,22 @@
  cfg:topofrom:help {"From" header of mails sent by the topod daemon when it detects modifications or abnormalities.}
  cfg:topoto:desc {Topo mail receiver}
  cfg:topoto:help {"To" header of mails sent by the topod daemon when it detects modifications or abnormalities.}
+ cfg:topographddelay:desc {Topographd loop delay}
+ cfg:topographddelay:help {Time (in seconds) between each main loop iteration in topographd daemon. Example: 5}
+ cfg:toposendddelay:desc {Toposendd loop delay}
+ cfg:toposendddelay:help {Time (in seconds) between each main loop iteration in toposendd daemon. Example: 5}
+ cfg:topomaxstatus:desc {Max status lines}
+ cfg:topomaxstatus:help {Maximum number of status lines kept in database. Example: 100}
+ cfg:sensorexpire:desc {Sensor expiration time}
+ cfg:sensorexpire:help {Delay (in days) before sensor expiration. Example: 30}
+ cfg:modeqexpire:desc {Equipment modifications expiration time}
+ cfg:modeqexpire:help {Delay (in days) before expiring "detected equipment modifications" in database. Example: 30}
+ cfg:ifchangeexpire:desc {Interface changes expiration time}
+ cfg:ifchangeexpire:help {Delay (in days) before expiring "interface changes" in database. Example: 30}
+ cfg:fullrancidmin:desc {Min fullrancid start hour}
+ cfg:fullrancidmin:help {Minimum start hour (0..24) for the daily full-rancid operations. Example: 2}
+ cfg:fullrancidmax:desc {Max fullrancid start hour}
+ cfg:fullrancidmax:help {Maximum start hour (0..24) for the daily full-rancid operations. Example: 4}
 
  cfg:mac {"MAC" module parameters}
 

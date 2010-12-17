@@ -1228,6 +1228,14 @@ snit::type ::config {
 	    {topoactive {bool}}
 	    {topofrom {string}}
 	    {topoto {string}}
+	    {topographddelay {string}}
+	    {toposendddelay {string}}
+	    {topomaxstatus {string}}
+	    {sensorexpire {string}}
+	    {modeqexpire {string}}
+	    {ifchangeexpire {string}}
+	    {fullrancidmin {string}}
+	    {fullrancidmax {string}}
 	}
 	{mac
 	    {macactive {bool}}
@@ -5776,7 +5784,7 @@ proc reset-status {} {
 }
 
 proc set-status {status} {
-    global conf
+    global ctxt
 
     set cur {}
     set sql "SELECT message FROM topo.keepstate WHERE type = 'status'"
@@ -5789,8 +5797,8 @@ proc set-status {status} {
     set cur [linsert $cur 0 [list $date $status]]
 
     # remove oldest entries at the end
-    if {[llength $cur] > $conf(maxstatus)} then {
-	set cur [lreplace $cur $conf(maxstatus) end]
+    if {[llength $cur] > $ctxt(maxstatus)} then {
+	set cur [lreplace $cur $ctxt(maxstatus) end]
     }
 
     set qcur [::pgsql::quote $cur]
@@ -5820,7 +5828,6 @@ proc set-status {status} {
 
 proc lazy-connect {{chan 1}} {
     global ctxt
-    global conf
 
     set r 1
     if {[string equal $ctxt(dbfd$chan) ""]} then {

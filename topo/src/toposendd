@@ -12,11 +12,7 @@ set conf(fping)		"%FPING% %s"
 
 set conf(logger)	%LOGGER%
 
-set conf(delay)		%DELAY%
-
 set conf(libdns)	%LIBDNS%
-
-set conf(maxstatus)	100
 
 set conf(extracteq)	{extracteq -a %1$s %2$s}
 
@@ -687,9 +683,20 @@ proc main {argv0 argv} {
     set verbose 0
 
     config ::dnsconfig
+    lazy-connect
 
     set-log $conf(logger)
-    set delay [expr $conf(delay)*1000]
+
+    #
+    # Get configuration values from database
+    #
+
+    set delay [dnsconfig get "toposendddelay"]
+    set delay [expr $delay*1000]
+
+    set ctxt(maxstatus) [dnsconfig get "topomaxstatus"]
+
+    set ctxt(ifchangeexpire) [dnsconfig get "ifchangeexpire"]
 
     #
     # Analyse des arguments
