@@ -11,9 +11,111 @@
 #   2006/01/26 : jean     : bug fix in check-authorized-host (case ip EXIST)
 #   2006/01/30 : jean     : alias message in check-authorized-host
 #   2010/11/29 : pda      : i18n
+#   2010/12/17 : pda      : reworked installation and parameters
 #
 
-lappend auto_path %PKGTCL%
+##############################################################################
+# Configuration file processing
+##############################################################################
+
+#
+# Read configuration file
+#
+# Input:
+#   - parameters:
+#	- file : configuration file
+# Output:
+#   - none (program ends if an error is encountered)
+#
+# History
+#   2010/12/17 : pda      : design
+#
+
+proc read-conf-file {file} {
+    global webdnsconf
+
+    if {[catch {set fd [open "$file" "r"]} msg]} then {
+	puts stderr "Cannot open configuration file '$file'"
+	exit 1
+    }
+    set lineno 1
+    set errors false
+    while {[gets $fd line] >= 0} {
+	regsub {#.*} $line {} line
+	regsub {\s*$} $line {} line
+	if {$line ne ""} then {
+	    if {[regexp {(\S+)\s+"(.*)"} $line m key val]} then {
+		set webdnsconf($key) $val
+	    } elseif {[regexp {(\S+)\s+(.*)} $line m key val]} then {
+		set webdnsconf($key) $val
+	    } else {
+		puts stderr "$file($lineno): unrecognized line $line"
+		set errors true
+	    }
+	}
+	incr lineno
+    }
+    close $fd
+    if {$errors} then {
+	exit 1
+    }
+}
+
+#
+# Get configuration key
+#
+# Input:
+#   - parameters:
+#	- key : configuration key
+# Output:
+#   - return value: configuration value, or error
+#
+# History
+#   2010/12/17 : pda      : design
+#
+
+proc get-conf {key} {
+    global webdnsconf
+
+    if {! [info exists webdnsconf($key)]} then {
+	puts stderr "Unrecognized configuration key '$key'"
+	exit 1
+    }
+
+    return $webdnsconf($key)
+}
+
+#
+# Get database handle
+#
+# Input:
+#   - parameters:
+#	- prefix : prefix for configuration keys (e.g. db for dbhost/dbname/...)
+# Output:
+#   - return value: conninfo script for pg_connect
+#
+# History
+#   2010/12/17 : pda      : design
+#
+
+proc get-conninfo {prefix} {
+    set conninfo {}
+    foreach f {{host host} {dbname name} {user user} {password password}} {
+	lassign $f connkey suffix connkey
+	set v [get-conf "$prefix$suffix"]
+	regsub {['\\]} $v {\'} v
+	lappend conninfo [list "$connkey='$v'"]
+    }
+    return [join $conninfo " "]
+}
+
+##############################################################################
+# Library initialization
+##############################################################################
+
+read-conf-file %CONFFILE%
+
+lappend auto_path [get-conf "pkgtcl"]
 
 package require msgcat			;# tcl
 namespace import ::msgcat::*
@@ -28,10 +130,6 @@ package require arrgen
 ##############################################################################
 # Library parameters
 ##############################################################################
-
-set libconf(topohost)	{%TOPOHOST%}
-set libconf(topobin)	%TOPODIR%/bin
-set libconf(topograph)	%TOPOGRAPH%
 
 #
 # Various table specifications
@@ -506,7 +604,7 @@ snit::type ::dnscontext {
 	# Access to WebDNS database
 	#
 
-	set dbfd [ouvrir-base %BASE% msg]
+	set dbfd [ouvrir-base [get-conninfo "dnsdb"] msg]
 	if {$dbfd eq ""} then {
 	    return [mc "Error accessing database: %s" $msg]
 	}
@@ -727,7 +825,7 @@ snit::type ::dnscontext {
 	set locale $blocale
 
 	uplevel #0 mclocale $locale
-	uplevel #0 mcload %TRANSMSGS%
+	uplevel #0 mcload [get-conf "msgsdir"]
 
 	#
 	# Maintenance mode : access is forbidden to all, except
@@ -888,7 +986,7 @@ snit::type ::dnscontext {
 	#
 
 	uplevel #0 mclocale
-	uplevel #0 mcload %TRANSMSGS%
+	uplevel #0 mcload [get-conf "msgsdir"]
 
 	#
 	# Maintenance mode
@@ -934,7 +1032,7 @@ snit::type ::dnscontext {
 	}
 
 	uplevel #0 mclocale $locale
-	uplevel #0 mcload %TRANSMSGS%
+	uplevel #0 mcload [get-conf "msgsdir"]
 
 	return $locale
     }
@@ -982,7 +1080,8 @@ snit::type ::dnscontext {
 
 	set found 0
 	foreach l [concat [mcpreferences] "C"] {
-	    set file "%TRANSTMPL%/$l/$page"
+	    set tdir [get-conf "templatedir"]
+	    set file "$tdir/$l/$page"
 	    if {[file exists $file]} then {
 		set found 1
 		break
@@ -4882,9 +4981,6 @@ proc topo-status {dbfd admin} {
 # Input:
 #   - cmd: topo program with arguments
 #   - _msg : in return, text read from program or error message
-#   - global variable libconf(topohost): topo hostname or empty for local exec
-#   - global variable libconf(topobin): path to topo programs
-#   - global variable libconf(topograph): compiled graph path
 # Output:
 #   - return value: 1 if ok, 0 if failure
 #   - parameter _msg: text read or error message
@@ -4894,7 +4990,6 @@ proc topo-status {dbfd admin} {
 #
 
 proc call-topo {cmd _msg} {
-    global libconf
     upvar $_msg msg
 
     #
@@ -4902,12 +4997,16 @@ proc call-topo {cmd _msg} {
     #
     regsub -all {[<>|;'"${}()&\[\]*?]} $cmd {\\&} cmd
 
-    set cmd "$libconf(topobin)/$cmd < $libconf(topograph)"
+    set topobindir [get-conf "topobindir"]
+    set topograph  [get-conf "topograph"]
+    set topohost   [get-conf "topohost"]
 
-    if {$libconf(topohost) eq ""} then {
+    set cmd "$topobindir/$cmd < $topograph"
+
+    if {$topohost eq ""} then {
 	set r [catch {exec sh -c $cmd} msg option]
     } else {
-	set r [catch {exec ssh $libconf(topohost) $cmd} msg]
+	set r [catch {exec ssh $topohost $cmd} msg]
     }
 
     return [expr !$r]

@@ -1,0 +1,13 @@
+#!%TCLSH%
+
+source %LIBDNS%
+
+set l {}
+foreach a $argv {
+    set v [get-conf $a]
+    regsub -all {"\\*?\[\]`} $v {\\&} v
+    lappend l "$a=\"$v\""
+}
+
+puts stdout [join $l " "]
+exit 0
