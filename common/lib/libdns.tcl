@@ -31,7 +31,7 @@
 #   2010/12/17 : pda      : design
 #
 
-proc read-conf-file {file} {
+proc read-local-conf-file {file} {
     global webdnsconf
 
     if {[catch {set fd [open "$file" "r"]} msg]} then {
@@ -74,7 +74,7 @@ proc read-conf-file {file} {
 #   2010/12/17 : pda      : design
 #
 
-proc get-conf {key} {
+proc get-local-conf {key} {
     global webdnsconf
 
     if {! [info exists webdnsconf($key)]} then {
@@ -102,7 +102,7 @@ proc get-conninfo {prefix} {
     set conninfo {}
     foreach f {{host host} {dbname name} {user user} {password password}} {
 	lassign $f connkey suffix connkey
-	set v [get-conf "$prefix$suffix"]
+	set v [get-local-conf "$prefix$suffix"]
 	regsub {['\\]} $v {\'} v
 	lappend conninfo [list "$connkey='$v'"]
     }
@@ -113,9 +113,9 @@ proc get-conninfo {prefix} {
 # Library initialization
 ##############################################################################
 
-read-conf-file %CONFFILE%
+read-local-conf-file %CONFFILE%
 
-lappend auto_path [get-conf "pkgtcl"]
+lappend auto_path [get-local-conf "pkgtcl"]
 
 package require msgcat			;# tcl
 namespace import ::msgcat::*
@@ -825,7 +825,7 @@ snit::type ::dnscontext {
 	set locale $blocale
 
 	uplevel #0 mclocale $locale
-	uplevel #0 mcload [get-conf "msgsdir"]
+	uplevel #0 mcload [get-local-conf "msgsdir"]
 
 	#
 	# Maintenance mode : access is forbidden to all, except
@@ -986,7 +986,7 @@ snit::type ::dnscontext {
 	#
 
 	uplevel #0 mclocale
-	uplevel #0 mcload [get-conf "msgsdir"]
+	uplevel #0 mcload [get-local-conf "msgsdir"]
 
 	#
 	# Maintenance mode
@@ -1032,7 +1032,7 @@ snit::type ::dnscontext {
 	}
 
 	uplevel #0 mclocale $locale
-	uplevel #0 mcload [get-conf "msgsdir"]
+	uplevel #0 mcload [get-local-conf "msgsdir"]
 
 	return $locale
     }
@@ -1080,7 +1080,7 @@ snit::type ::dnscontext {
 
 	set found 0
 	foreach l [concat [mcpreferences] "C"] {
-	    set tdir [get-conf "templatedir"]
+	    set tdir [get-local-conf "templatedir"]
 	    set file "$tdir/$l/$page"
 	    if {[file exists $file]} then {
 		set found 1
@@ -4997,9 +4997,9 @@ proc call-topo {cmd _msg} {
     #
     regsub -all {[<>|;'"${}()&\[\]*?]} $cmd {\\&} cmd
 
-    set topobindir [get-conf "topobindir"]
-    set topograph  [get-conf "topograph"]
-    set topohost   [get-conf "topohost"]
+    set topobindir [get-local-conf "topobindir"]
+    set topograph  [get-local-conf "topograph"]
+    set topohost   [get-local-conf "topohost"]
 
     set cmd "$topobindir/$cmd < $topograph"
 
