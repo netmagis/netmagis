@@ -5784,13 +5784,14 @@ proc set-status {status} {
 	return
     }
 
-    # remove oldest entry, if there is more than maxstatus entries
-    set last [expr $conf(maxstatus)-1]
-    catch {set cur [lreplace $last $last]}
-
     # insert new entry before all others
     set date [clock format [clock seconds]]
     set cur [linsert $cur 0 [list $date $status]]
+
+    # remove oldest entries at the end
+    if {[llength $cur] > $conf(maxstatus)} then {
+	set cur [lreplace $cur $conf(maxstatus) end]
+    }
 
     set qcur [::pgsql::quote $cur]
 
