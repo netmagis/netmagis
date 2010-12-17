@@ -17,17 +17,17 @@ case "$1" in
 		su rancid -c "$topographd_program &"
 		;;
 	stop)
-		/bin/kill `ps ax | grep "$topographd_program" | grep -v "grep" | cut -c1-5`
+		/bin/kill `ps axwww | grep "$topographd_program" | grep -v "grep" | cut -c1-5`
 		;;
 	restart)
 		echo "Restart topographd"
-		/bin/kill `ps ax | egrep "$topographd_program" | grep -v "grep" | cut -c1-5`
+		/bin/kill `ps axwww | egrep "$topographd_program" | grep -v "grep" | cut -c1-5`
 		su rancid -c "$topographd_program &"
 		;;
 	debug)
 		shift
 		echo "Reload topographd with level $1"
-		/bin/kill `ps ax | grep $topographd_program | grep -v "grep" | cut -c1-5`
+		/bin/kill `ps axwww | grep $topographd_program | grep -v "grep" | cut -c1-5`
 		su rancid -c "$topographd_program -v $1 &"
 		;;
 	*)
