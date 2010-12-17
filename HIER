@@ -1,9 +1,7 @@
-WebDNS file hierarchy:
+WebDNS standard file hierarchy
 
-DESTDIR=/usr/local
-
-All servers
------------
+Common part for all components
+------------------------------
 
     This is the standard hierarchy for common files on nearly all
     WebDNS servers.
