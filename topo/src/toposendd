@@ -682,10 +682,10 @@ proc main {argv0 argv} {
     set ctxt(dbfd2) ""
     set verbose 0
 
+    set-log $conf(logger)
+
     config ::dnsconfig
     lazy-connect
-
-    set-log $conf(logger)
 
     #
     # Get configuration values from database
