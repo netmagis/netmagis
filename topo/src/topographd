@@ -891,7 +891,7 @@ proc sync-filemonitor {lf} {
     set r 1
     if {[llength $sql] > 0} then {
 	set sql [join $sql ";"]
-	set r [toposqlexec $sql]
+	set r [toposqlexec $sql 2]
     }
 
     return $r
