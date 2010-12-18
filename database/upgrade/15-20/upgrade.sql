@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------
--- Mise à jour de la base vers la version 2.0
+-- Database upgrade to 2.0 version
 --
--- Méthode :
+-- Use:
 --	- psql -f upgrade.sql dns
 --
 ------------------------------------------------------------------------------
@@ -573,8 +573,8 @@ CREATE OR REPLACE FUNCTION valide_ip_cor (INET, INTEGER)
     END ;
     $$ LANGUAGE 'plpgsql' ;
 
--- premier argument : adresse à tester
--- deuxième argument : id du groupe
+-- arg 1: address to test
+-- arg 2: group id
 CREATE OR REPLACE FUNCTION valide_ip_grp (INET, INTEGER)
     RETURNS BOOLEAN AS $$
     BEGIN

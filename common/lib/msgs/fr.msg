@@ -66,6 +66,8 @@
  cfg:datefmt:help {Format d'affichage des dates et des heures, utilisé dans l'édition et l'affichage des données. Voir la page de manuel clock(n) de Tcl.}
  cfg:jourfmt:desc {Format d'affichage des jours}
  cfg:jourfmt:help {Format d'affichage des dates (sans l'heure). Voir la page de manuel clock(n) de Tcl.}
+ cfg:defuser:desc {Utilisateur par défaut}
+ cfg:defuser:help {L'utilisateur par défaut est utilisé dans les programmes WebDNS en ligne de commande lorsque le login de l'utilisateur n'existe pas dans la base WebDNS.}
 
  cfg:dhcp {Paramètres DHCP}
 

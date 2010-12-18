@@ -11,45 +11,12 @@
 #   2004/05/25 : pda      : conception en sh
 #   2005/04/11 : pda      : réécriture en Tcl pour bénéficier du Makefile
 #   2007/10/25 : jean     : log des actions de modification
+#   2010/12/18 : pda      : use new install system
 #
 
-set conf(homeurl)	%HOMEURL%
-
-#
-# Chemins utilisés par les scripts
-#
-
-set conf(pkg)		%PKGTCL%
-set conf(lib)		%DESTDIR%/lib
-set conf(libdns)	$conf(lib)/libdns.tcl
-
-#
-# Quelques paramètres du script
-#
-
-set conf(base)		%BASE%
-set conf(auth)		%AUTH%
-set conf(nologin)	%NOLOGIN%
-set conf(log)		%LOG%
-set conf(defuser)	%DEFUSER%
+source %LIBDNS%
 
 set conf(interactive)	yes
-
-#
-# Les outils du parfait concepteur de pages Web dynamiques...
-#
-
-lappend auto_path $conf(pkg)
-package require webapp
-package require pgsql
-
-#
-# On y va !
-#
-
-# ::webapp::cgidebug ; exit
-
-source $conf(libdns)
 
 ##############################################################################
 # Petites fonctions utilitaires
@@ -73,7 +40,7 @@ proc main {argv0 argv} {
     #
 
     ::dnscontext create d
-    set msg [d init-script dbfd $conf(defuser) tabcor]
+    set msg [d init-script dbfd tabcor]
     if {$msg ne ""} then {
 	puts stderr "$msg"
 	puts stderr "Aborted."

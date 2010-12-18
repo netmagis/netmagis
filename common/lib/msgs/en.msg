@@ -10,7 +10,10 @@
  cfg:datefmt:desc {Date/hour display format}
  cfg:datefmt:help {Date and time display format, used in data display and data editing. See Tcl clock(n) manual page for format specification.}
  cfg:jourfmt:desc {Date display format}
- cfg:Jourfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
+ cfg:jourfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
+ cfg:defuser:desc {Default user}}
+ cfg:defuser:help {Default user is used in WebDNS command line programs, when the user's login is not found in the WebDNS database}
+
 
  cfg:dhcp {DHCP parameters}
 

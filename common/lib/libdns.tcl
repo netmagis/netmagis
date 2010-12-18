@@ -580,6 +580,7 @@ snit::type ::dnscontext {
     #	- selfs : current object
     #	- _dbfd : database handle, in return
     #   - login : user's login
+    #	- usedefuser : use default user name if login is not found
     #   - _tabuid : array containing, in return, user's characteristics
     #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
     #			idcor, idgrp, present)
@@ -588,7 +589,7 @@ snit::type ::dnscontext {
     #	- return value: empty string or error message
     #
 
-    proc init-common {selfns _dbfd login _tabuid} {
+    proc init-common {selfns _dbfd login usedefuser _tabuid} {
 	global ah
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
@@ -635,8 +636,26 @@ snit::type ::dnscontext {
 	#
 
 	set n [read-user $dbfd $login tabuid msg]
-	if {$n != 1} then {
-	    return $msg
+	switch $n {
+	    0 {
+		if {$usedefuser} then {
+		    set login [dnsconfig get "defuser"]
+
+		    set uid $login
+		    set euid $login
+		    set n [read-user $dbfd $login tabuid msg]
+		}
+		# IF user is not found
+		#    OR (able to use default user AND default user is not found)
+		if {$n != 1} then {
+		    return $msg
+		}
+	    }
+	    1 {
+	    }
+	    default {
+		return $msg
+	    }
 	}
 	if {! $tabuid(present)} then {
 	    return [mc "User '%s' not authorized" $login]
@@ -860,7 +879,7 @@ snit::type ::dnscontext {
 	# Common initialization work
 	#
 
-	set msg [init-common $selfns dbfd $login tabuid]
+	set msg [init-common $selfns dbfd $login false tabuid]
 	if {$msg ne ""} then {
 	    $self error $msg
 	}
@@ -977,7 +996,7 @@ snit::type ::dnscontext {
     #   - object $ah : access to authentication base
     #
 
-    method init-script {_dbfd login _tabuid} {
+    method init-script {_dbfd _tabuid} {
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
 
@@ -989,21 +1008,20 @@ snit::type ::dnscontext {
 	uplevel #0 mcload [get-local-conf "msgsdir"]
 
 	#
-	# Maintenance mode
+	# Look for user's login
 	#
 
-	if {[file exists %NOLOGIN%]} then {
-	    set fd [open %NOLOGIN% "r"]
-	    set message [read $fd]
-	    close $fd
-	    return [mc "Connection refused (%s)" $message]
+	set cmd [get-local-conf "whoami"]
+	if {! [catch {exec $cmd} msg]} then {
+	    return "Cannot get login name ($msg)"
 	}
+	set login $msg
 
 	#
 	# Common initialization work
 	#
 
-	set msg [init-common $selfns dbfd $login tabuid]
+	set msg [init-common $selfns dbfd $login true tabuid]
 	if {$msg ne ""} then {
 	    return $msg
 	}
@@ -1317,6 +1335,7 @@ snit::type ::config {
 	{dns
 	    {datefmt {string}}
 	    {jourfmt {string}}
+	    {defuser {string}}
 	}
 	{dhcp
 	    {default_lease_time {string}}

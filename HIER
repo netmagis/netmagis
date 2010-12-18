@@ -33,6 +33,7 @@ Database server
 	    .../webdns/
 		.../defaults
 		    .../crontab.dns	[example crontab]
+		.../upgrade/
 	.../sbin/
 	    .../webdns-daily
 	    .../webdns-backup
