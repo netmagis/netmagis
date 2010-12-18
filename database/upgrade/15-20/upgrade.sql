@@ -312,9 +312,19 @@ GRANT ALL
 -- New configuration values
 ------------------------------------------------------------------------------
 
-INSERT INTO global.config (clef, valeur) VALUES ('topofrom', 'pda@unistra.fr') ;
-INSERT INTO global.config (clef, valeur) VALUES
-	('topoto', 'di-infra-expl-res@unistra.fr pda@unistra.fr') ;
+COPY global.config (clef, valeur) FROM stdin;
+topoactive	0
+topofrom	nobody.topo@unistra.fr
+topoto	di-infra-expl-res@unistra.fr pda@unistra.fr
+topographddelay	5
+toposendddelay	5
+topomaxstatus	100
+sensorexpire	30
+modeqexpire	30
+ifchangeexpire	30
+fullrancidmin	2
+fullrancidmax	4
+\.
 
 ------------------------------------------------------------------------------
 -- Adapt functions to new schemas

@@ -86,6 +86,22 @@
  cfg:topofrom:help {Champ "From" des mails envoyés par le démon topod lors des détections de modification ou d'anomalie.}
  cfg:topoto:desc {Destinataire des mails de topo}
  cfg:topoto:help {Champ "To" des mails envoyés par le démon topod lors des détection de modification ou d'anomalie.}
+ cfg:topographddelay:desc {Délai de topographd}
+ cfg:topographddelay:help {Délai d'attente (en secondes) entre deux itérations de la boucle principale du démon topographd. Exemple: 5}
+ cfg:toposendddelay:desc {Délai de toposendd}
+ cfg:toposendddelay:help {Délai d'attente (en secondes) entre deux itérations de la boucle principale du démon toposendd. Exemple: 5}
+ cfg:topomaxstatus:desc {Max statut}
+ cfg:topomaxstatus:help {Nombre maximum de lignes de statut conservées dans la base de données. Exemple: 100}
+ cfg:sensorexpire:desc {Délai d'expiration des sondes}
+ cfg:sensorexpire:help {Délai (en jours) avant qu'une sonde expire et soit supprimée de la base. Exemple: 30}
+ cfg:modeqexpire:desc {Délai d'expiration des modifications d'équiments}
+ cfg:modeqexpire:help {Délai (en jours) avant qu'une entrée "équipement modifié" soit expirée de la base de donnés. Exemple: 30}
+ cfg:ifchangeexpire:desc {Délai d'expiration des changements d'interfaces}
+ cfg:ifchangeexpire:help {Délai (en jours) avant qu'une entrée "changement d'interface en attente" soit expirée de la base de donnés. Exemple: 30}
+ cfg:fullrancidmin:desc {Heure minimum de fullrancid}
+ cfg:fullrancidmin:help {Heure minimum (0..24) de démarrage de l'opération quotidienne de "full-rancid". Exemple: 2}
+ cfg:fullrancidmax:desc {Heure maximum de fullrancid}
+ cfg:fullrancidmax:help {Heure maximum (0..24) de démarrage de l'opération quotidienne de "full-rancid". Exemple: 4}
 
  cfg:mac {Paramètres du module "MAC"}
 

@@ -1,4 +1,4 @@
-#! %TCLSH%
+#!%TCLSH%
 
 #  
 # Recette pour accélérer le déroulement de rancid+topo pour permettre
@@ -98,24 +98,15 @@ set conf(fping) "%FPING% %s"
 
 set conf(dumpgraph)	"%TOPODIR%/bin/dumpgraph -a < %TOPOGRAPH%"
 set conf(extracteq)	{%TOPODIR%/bin/extracteq -a %1$s %2$s < %TOPOGRAPH%}
-set conf(extractcoll)	{%TOPODIR%/bin/extractcoll -s -w < %TOPOGRAPH%}
+set conf(extractcoll)	{%TOPODIR%/bin/extractcoll -a -s -w < %TOPOGRAPH%}
 set conf(rancid)	{%TOPODIR%/bin/start-rancid %1$s}
 set conf(anaconf)	{%TOPODIR%/bin/anaconf}
 set conf(logger)	%LOGGER%
 
-# horaires pendant lesquels un full-rancid doit être provoqué
-# pour avoir une synchronisation complète une fois par jour
-set conf(fullrancidmin)	2
-set conf(fullrancidmax)	4
-
 set conf(routerdb)	%RANCIDDIR%/router.db
 set conf(eqvirt)	%EQVIRT%
 
-set conf(delay)		%DELAY%
-
 set conf(libdns)	%LIBDNS%
-
-set conf(maxstatus)	100
 
 set conf(sensorexpire)	"30 days"
 
@@ -201,6 +192,7 @@ proc update-routerdb {} {
 
 proc full-rancid-needed {_routerdbmod} {
     global conf
+    global ctxt
     upvar $_routerdbmod routerdbmod
 
     set msg [update-routerdb]
@@ -213,8 +205,8 @@ proc full-rancid-needed {_routerdbmod} {
 		    OR (
 			(date_trunc('day',topo.lastrun.date)
 			    <> date_trunc('day',now())
-			AND extract(hour from now())>=$conf(fullrancidmin)
-			AND extract(hour from now())<=$conf(fullrancidmax))
+			AND extract(hour from now())>=$ctxt(fullrancidmin)
+			AND extract(hour from now())<=$ctxt(fullrancidmax))
 		    )
 	       AS result
 	       FROM topo.lastrun"
@@ -990,10 +982,25 @@ proc main {argv0 argv} {
     set ctxt(dbfd2) ""
     set verbose 0
 
-    config ::dnsconfig
-
     set-log $conf(logger)
-    set delay [expr $conf(delay)*1000]
+
+    config ::dnsconfig
+    lazy-connect
+
+    #
+    # Get configuration values from database
+    #
+
+    set delay [dnsconfig get "topographddelay"]
+    set delay [expr $delay*1000]
+
+    set ctxt(maxstatus) [dnsconfig get "topomaxstatus"]
+
+    set ctxt(sensorexpire) [dnsconfig get "sensorexpire"]
+    set ctxt(modeqexpire) [dnsconfig get "modeqexpire"]
+
+    set ctxt(fullrancidmin) [dnsconfig get "fullrancidmin"]
+    set ctxt(fullrancidmax) [dnsconfig get "fullrancidmax"]
 
     #
     # Analyse des arguments

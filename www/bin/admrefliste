@@ -131,7 +131,7 @@ set conf(eqtype:id)		idtype
 set conf(eq:ptitle)	"Equipment management"
 set conf(eq:cols)		{ {60 eq {Equipment} {string 40} {}}
 				  {20 idtype {Type} {menu {%MENUTYPE%}} {}}
-				  {20 up {Up/Down} {menu {%MENUTYPE%}} {}}
+				  {20 up {Up/Down} {menu {%MENUUP%}} {}}
 				}
 set conf(eq:sql)		"SELECT * FROM topo.eq ORDER BY eq ASC"
 set conf(eq:id)			ideq

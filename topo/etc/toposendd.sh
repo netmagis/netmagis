@@ -17,17 +17,17 @@ case "$1" in
 		su rancid -c "$toposendd_program &"
 		;;
 	stop)
-		/bin/kill `ps ax | grep "$toposendd_program" | grep -v "grep" | cut -c1-5`
+		/bin/kill `ps axwww | grep "$toposendd_program" | grep -v "grep" | cut -c1-5`
 		;;
 	restart)
 		echo "Restart toposendd"
-		/bin/kill `ps ax | egrep "$toposendd_program" | grep -v "grep" | cut -c1-5`
+		/bin/kill `ps axwww | egrep "$toposendd_program" | grep -v "grep" | cut -c1-5`
 		su rancid -c "$toposendd_program &"
 		;;
 	debug)
 		shift
 		echo "Reload toposendd with level $1"
-		/bin/kill `ps ax | grep $toposendd_program | grep -v "grep" | cut -c1-5`
+		/bin/kill `ps axwww | grep $toposendd_program | grep -v "grep" | cut -c1-5`
 		su rancid -c "$toposendd_program -v $1 &"
 		;;
 	*)
