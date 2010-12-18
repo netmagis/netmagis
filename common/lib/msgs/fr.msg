@@ -68,6 +68,8 @@
  cfg:jourfmt:help {Format d'affichage des dates (sans l'heure). Voir la page de manuel clock(n) de Tcl.}
  cfg:defuser:desc {Utilisateur par défaut}
  cfg:defuser:help {L'utilisateur par défaut est utilisé dans les programmes WebDNS en ligne de commande lorsque le login de l'utilisateur n'existe pas dans la base WebDNS.}
+ cfg:authmethod:desc {Méthode d'authentification}
+ cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.)}
 
  cfg:dhcp {Paramètres DHCP}
 
@@ -108,7 +110,38 @@
  cfg:macactive:desc {Activation de Mac}
  cfg:macactive:help {Cocher cette case pour activer l'accès à la fonctionnalité "Mac"}
 
- cfg:auth {Paramètres d'authentification}
+ cfg:authpldap {Paramètres pour l'authentification LDAP}
+
+ cfg:ldapurl:desc {Serveur LDAP}
+ cfg:ldapurl:help {URL d'accès au serveur LDAP. Exemple : ldaps://ldap.domaine.fr:636/}
+ cfg:ldapbinddn:desc {Bind DN}
+ cfg:ldapbinddn:help {DN permettant l'authentification sur le serveur LDAP. Exemple : cn=admin,dc=domaine,dc=fr}
+ cfg:ldapbindpw:desc {Mot de passe de Bind}
+ cfg:ldapbindpw:help {Mot de passe pour le DN permettant l'authentification sur le serveur LDAP}
+ cfg:ldapbasedn:desc {DN de base}
+ cfg:ldapbasedn:help {DN de base à partir duquel il faut faire les requêtes sur les personnes. Exemple : ou=people,dc=domaine,dc=fr}
+ cfg:ldapsearchlogin:desc {Requête de recherche d'utilisateur}
+ cfg:ldapsearchlogin:help {Requête LDAP pour chercher un utilisateur à partir de son login. Exemple : "(&(objectClass=inetOrgPerson)(uid=%s))"}
+ cfg:ldapattrlogin {string}:desc {Attribut "login"}
+ cfg:ldapattrlogin {string}:help {Attribut LDAP correspondant au login. Exemple : "uid"}
+ cfg:ldapattrpassword:desc {Attribut "mot de passe"}
+ cfg:ldapattrpassword:help {Attribut LDAP correspondant au mot de passe. Exemple : "userPassword"}
+ cfg:ldapattrname:desc {Attribut "nom"}
+ cfg:ldapattrname:help {Attribut LDAP correspondant au nom. Exemple : "sn"}
+ cfg:ldapattrgivenname:desc {Attribut "prénom"}
+ cfg:ldapattrgivenname:help {Attribut LDAP correspondant au prénom. Exemple : "givenName". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattrmail:desc {Attribut "mél"}
+ cfg:ldapattrmail:help {Attribut LDAP correspondant à l'adresse mail de la personne. Exemple : "mail". Les attributs peuvent également être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattrphone:desc {Attribut "téléphone"}
+ cfg:ldapattrphone:help {Attribut LDAP correspondant au numéro de téléphone. Exemple : "telephoneNumber". Les attributs peuvent être vides, ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattrmobile:desc {Attribut "portable"}
+ cfg:ldapattrmobile:help {Attribut LDAP correspondant au numéro de téléphone mobile. Exemple : "". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattrfax:desc {Attribut "fax"}
+ cfg:ldapattrfax:help {Attribut LDAP correspondant au numéro de fax. Exemple : "facsimileTelephoneNumber". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattraddr:desc {Attribut "adresse"}
+ cfg:ldapattraddr:help {Attribut LDAP correspondant à l'adresse. Exemple : "postalAddress postalCode l". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+
+ cfg:authpgsql {Paramètres pour l'authentification interne}
 
  cfg:authmailfrom:desc {Utiliser le "From" spécifié dans "auth"}
  cfg:authmailfrom:help {Utiliser l'information provenant de l'application "auth" plutôt que le champ suivant.}
@@ -143,6 +176,7 @@
 ::msgcat::mcmset fr {
  {Error accessing database (%s)} {Erreur d'accès à la base de données (%s)}
  {Connection refused (%s)} {Connexion refusée (%s)}
+ {Unrecognized authentication method '%s'} {Méthode d'authentication '%s' non reconnue}
  {No login: authentication failed} {Pas de login : l'authentification a échoué}
  {User '%s' not authorized} {Utilisateur '%s' non autorisé}
  {Authentication base problem: %s} {Problème dans la base d'authentification : %s}

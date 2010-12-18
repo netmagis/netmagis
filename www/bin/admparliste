@@ -12,6 +12,7 @@
 #   2004/10/13 : pda      : add DHCP parameters
 #   2010/10/25 : pda      : put parameters into library
 #   2010/12/09 : pda      : i18n
+#   2010/12/18 : pda      : type menu
 #
 
 #
@@ -129,8 +130,19 @@ proc main {} {
 		    set html [::webapp::form-text $key 20 70 0 $curval]
 		}
 		menu {
-		    set lmenu [lindex $type 1]
-		    set html [::webapp::form-menu $key 1 0 $lmenu {}]
+		    set idx 0
+		    set lsel {}
+		    set lmenu {}
+		    foreach mi [lindex $type 1] {
+			lassign mi val txt
+			set txt [mc $txt]
+			lappend lmenu [list $val $txt]
+			if {$val eq $curval} then {
+			    set lsel [list $idx]
+			}
+			incr idx
+		    }
+		    set html [::webapp::form-menu $key 1 0 $lmenu $lsel]
 		}
 		default {
 		    set msg [mc "Internal error: invalid key type '%s'" $key] \

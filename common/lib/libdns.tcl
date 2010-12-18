@@ -101,7 +101,7 @@ proc get-local-conf {key} {
 proc get-conninfo {prefix} {
     set conninfo {}
     foreach f {{host host} {dbname name} {user user} {password password}} {
-	lassign $f connkey suffix connkey
+	lassign $f connkey suffix
 	set v [get-local-conf "$prefix$suffix"]
 	regsub {['\\]} $v {\'} v
 	lappend conninfo [list "$connkey='$v'"]
@@ -595,17 +595,11 @@ snit::type ::dnscontext {
 	upvar $_tabuid tabuid
 
 	#
-	# Access to authentification mechanism (database or LDAP)
-	#
-
-	set ah [::webapp::authbase create %AUTO%]
-	$ah configurelist %AUTH%
-
-	#
 	# Access to WebDNS database
 	#
 
-	set dbfd [ouvrir-base [get-conninfo "dnsdb"] msg]
+	set conninfo [get-conninfo "dnsdb"]
+	set dbfd [ouvrir-base $conninfo msg]
 	if {$dbfd eq ""} then {
 	    return [mc "Error accessing database: %s" $msg]
 	}
@@ -629,6 +623,52 @@ snit::type ::dnscontext {
 
 	config ::dnsconfig
 	dnsconfig setdb $dbfd
+
+	#
+	# Access to authentification mechanism (database or LDAP)
+	#
+
+	set am [dnsconfig get "authmethod"]
+	switch $am {
+	    pgsql {
+		set m {-method postgresql}
+		lappend m [list "-db" $conninfo]
+	    }
+	    ldap {
+		foreach v {ldapurl ldapbinddn ldapbindpw ldapbasedn
+				ldapsearchlogin ldapattrlogin ldapattrpassword
+				ldapattrname ldapattrgivenname ldapattrmail
+				ldapattrphone ldapattrmobile ldapattrfax
+				ldapattraddr} {
+		    set $v [dnsconfig get $v]
+		}
+		set m {-method ldap}
+		lappend m "-db" [list \
+				    "url" $ldapurl \
+				    "binddn" $ldapbinddn \
+				    "bindpw" $ldapbindpw \
+				    "base" $ldapbasedn \
+				    "searchuid" $ldapsearchlogin \
+				    ]
+		lappend m "-attrmap" [list \
+					"login" $ldapattrlogin \
+					"password" $ldapattrpassword \
+					"nom" $ldapattrname \
+					"prenom" $ldapattrgivenname \
+					"mel" $ldapattrmail \
+					"tel" $ldapattrphone \
+					"mobile" $ldapattrmobile \
+					"fax" $ldapattrfax \
+					"adr" $ldapattraddr \
+					]
+	    }
+	    default {
+		return [mc "Unrecognized authentication method '%s'" $am]
+	    }
+	}
+
+	set ah [::webapp::authbase create %AUTO%]
+	$ah configurelist $m
 
 	#
 	# Reads all user's characteristics. If this user is not
@@ -1336,6 +1376,7 @@ snit::type ::config {
 	    {datefmt {string}}
 	    {jourfmt {string}}
 	    {defuser {string}}
+	    {authmethod {menu {{pgsql Internal} {ldap {LDAP}}}}}
 	}
 	{dhcp
 	    {default_lease_time {string}}
@@ -1358,7 +1399,23 @@ snit::type ::config {
 	{mac
 	    {macactive {bool}}
 	}
-	{auth
+	{authldap
+	    {ldapurl {string}}
+	    {ldapbinddn {string}}
+	    {ldapbindpw {string}}
+	    {ldapbasedn {string}}
+	    {ldapsearchlogin {string}}
+	    {ldapattrlogin {string}}
+	    {ldapattrpassword {string}}
+	    {ldapattrname {string}}
+	    {ldapattrgivenname {string}}
+	    {ldapattrmail {string}}
+	    {ldapattrphone {string}}
+	    {ldapattrmobile {string}}
+	    {ldapattrfax {string}}
+	    {ldapattraddr {string}}
+	}
+	{authpgsql
 	    {authmailfrom {bool}}
 	    {mailfrom {string}}
 	    {authmailreplyto {bool}}

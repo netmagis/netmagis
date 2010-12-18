@@ -13,7 +13,8 @@
  cfg:jourfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
  cfg:defuser:desc {Default user}}
  cfg:defuser:help {Default user is used in WebDNS command line programs, when the user's login is not found in the WebDNS database}
-
+ cfg:authmethod:desc {Authentication method}
+ cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.)}
 
  cfg:dhcp {DHCP parameters}
 
@@ -54,7 +55,38 @@
  cfg:macactive:desc {MAC module activation}
  cfg:macactive:help {Check this box to activate the "MAC" module.}
 
- cfg:auth {Authentication parameters}
+ cfg:authpldap {LDAP authentication parameters}
+
+ cfg:ldapurl:desc {LDAP server}
+ cfg:ldapurl:help {URL to access LDAP server. Example: ldaps://ldap.domaine.fr:636/}
+ cfg:ldapbinddn:desc {Bind DN}
+ cfg:ldapbinddn:help {Bind DN to authenticate against LDAP server. Example : cn=admin,dc=mycompany,dc=com}
+ cfg:ldapbindpw:desc {Bind password}
+ cfg:ldapbindpw:help {Password to authenticate against LDAP server}
+ cfg:ldapbasedn:desc {Base DN}
+ cfg:ldapbasedn:help {Base DN for people searches. Example: ou=people,dc=domaine,dc=fr}
+ cfg:ldapsearchlogin:desc {User search request}
+ cfg:ldapsearchlogin:help {LDAP request to search for an user using the login name. Example: "(&(objectClass=inetOrgPerson)(uid=%s))"}
+ cfg:ldapattrlogin {string}:desc {Attribute "login"}
+ cfg:ldapattrlogin {string}:help {LDAP attribute to get login name. Example: "uid"}
+ cfg:ldapattrpassword:desc {Attribute "password"}
+ cfg:ldapattrpassword:help {LDAP attribute to get encrypted password. Example: "userPassword"}
+ cfg:ldapattrname:desc {Attribute "nom"}
+ cfg:ldapattrname:help {LDAP attribute to get user's name. Example: "sn"}
+ cfg:ldapattrgivenname:desc {Attribute "first name"}
+ cfg:ldapattrgivenname:help {LDAP attribute to get user's first name. Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattrmail:desc {Attribute "mail addresse"}
+ cfg:ldapattrmail:help {LDAP attribute to get user's mail address. Example: "mail". Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattrphone:desc {Attribute "telephone number"}
+ cfg:ldapattrphone:help {LDAP attribute to get user's telephone number. Example: "telephoneNumber". Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattrmobile:desc {Attribute "mobile phone"}
+ cfg:ldapattrmobile:help {LDAP attribute to get user's mobile phone number. Example: "". Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattrfax:desc {Attribute "facsimile"}
+ cfg:ldapattrfax:help {LDAP attribute to get user's facsimile number. Example: "facsimileTelephoneNumber". Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattraddr:desc {Attribute "address"}
+ cfg:ldapattraddr:help {LDAP attribute to get user's postal address. Example: "postalAddress postalCode l". Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+
+ cfg:authpgsql {Internal authentication parameters}
 
  cfg:authmailfrom:desc {Use the "From" specified in "auth"}
  cfg:authmailfrom:help {Use the information from the "auth" application, rather than the next parameter in this list.}
