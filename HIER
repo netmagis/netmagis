@@ -137,7 +137,7 @@ Topo server
 	[same standard hierarchy as for all machines]
 	.../lib/
 	    .../webdns/
-		.../topobin/
+		.../topo/
 		    .../analyze
 		    .../parse-cisco.tcl
 		    .../buildgraph
