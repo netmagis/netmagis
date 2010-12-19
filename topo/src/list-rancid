@@ -1,25 +1,23 @@
 #!/bin/sh
 
 #
+# Analyze a rancid configuration file, and extracts equipment names
+# and types. Then, from each equipment configuration file, extract
+# then exact model.
 #
-# Analyse un fichier de configuration de rancid, et en extrait
-# le nom et le type de chaque équipement, et extrait de chaque
-# fichier d'équipement le modèle exact.
-# Présente le tout sur la sortie standard.
+# Syntax :
+#	list-rancid <dbfile> <confdir>	> <output-file>
 #
-# Syntaxe :
-#	liste-rancid <fichierdb> <confdir>	> <fichier de sortie>
-#
-# Historique :
-#   2004/06/08 : pda/jean : conception
-#   2008/07/07 : pda      : ajout hp
-#   2008/12/15 : jean     : ajout d'un motif des types d'équipement à ignorer
-#   2010/09/27 : pda      : traitement du cas où un fichier n'existe pas encore
+# History :
+#   2004/06/08 : pda/jean : design
+#   2008/07/07 : pda      : add hp
+#   2008/12/15 : jean     : add pattern of types to ignore
+#   2010/09/27 : pda      : case where a file does not exist yet
 #
 
 if [ $# != 2 ]
 then
-    echo "usage: $0 <fichierdb> <confdir>" >&2
+    echo "usage: $0 <dbfile> <confdir>" >&2
     exit 1
 fi
 

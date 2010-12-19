@@ -137,7 +137,12 @@ Topo server
 	[same standard hierarchy as for all machines]
 	.../lib/
 	    .../webdns/
-		.../defaults
+		.../topobin/
+		    .../analyze
+		    .../parse-cisco.tcl
+		    .../buildgraph
+		    ...
+		.../defaults/
 		    .../crontab.relay	[example crontab]
 	.../etc/
 	    .../rc.d/

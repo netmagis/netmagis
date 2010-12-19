@@ -68,21 +68,22 @@ proc read-local-conf-file {file} {
 #   - parameters:
 #	- key : configuration key
 # Output:
-#   - return value: configuration value, or error
+#   - return value: configuration value or empty string
 #
 # History
 #   2010/12/17 : pda      : design
+#   2010/12/19 : pda      : empty string if key is not found
 #
 
 proc get-local-conf {key} {
     global webdnsconf
 
-    if {! [info exists webdnsconf($key)]} then {
-	puts stderr "Unrecognized configuration key '$key'"
-	exit 1
+    if {[info exists webdnsconf($key)]} then {
+	set v $webdnsconf($key)
+    } else {
+	set v ""
     }
-
-    return $webdnsconf($key)
+    return $v
 }
 
 #
@@ -5071,6 +5072,7 @@ proc topo-status {dbfd admin} {
 #
 # History
 #   2010/12/14 : pda/jean : design
+#   2010/12/19 : pda      : added topouser
 #
 
 proc call-topo {cmd _msg} {
@@ -5085,12 +5087,25 @@ proc call-topo {cmd _msg} {
     set topograph  [get-local-conf "topograph"]
     set topohost   [get-local-conf "topohost"]
 
+    if {$topohost ne ""} then {
+	set hostname [exec "hostname"]
+	if {[string tolower $topohost] eq [string tolower $hostname]} then {
+	    set topohost ""
+	} else {
+	    set topouser [get-local-conf "topouser"]
+	}
+    }
+
     set cmd "$topobindir/$cmd < $topograph"
 
     if {$topohost eq ""} then {
 	set r [catch {exec sh -c $cmd} msg option]
     } else {
-	set r [catch {exec ssh $topohost $cmd} msg]
+	if {$topouser ne ""} then {
+	    set r [catch {exec ssh -l $topouser $topohost $cmd} msg]
+	} else {
+	    set r [catch {exec ssh $topohost $cmd} msg]
+	}
     }
 
     return [expr !$r]

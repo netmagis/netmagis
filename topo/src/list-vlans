@@ -1,34 +1,23 @@
 #!%TCLSH%
 
 #
-#
-# Formatte la liste des vlans pour topo
+# Format a vlan list for topo programs
 #
 # Syntaxe :
-#	liste-vlans [ <id> ]
+#	list-vlans [ <id> ]
 #
-# Historique :
-#   2004/07/09 : pda/jean      : conception
-#   2007/01/08 : pda           : changement du format de sortie
-#   2010/09/14 : jean/saillard : changement du format d'entree, plus de vtp
-#   2010/09/21 : pda/jean      : ajout troisième colonne voice optionnelle
-#   2010/11/17 : pda           : utilisation de la base dns
+# History :
+#   2004/07/09 : pda/jean      : design
+#   2007/01/08 : pda           : change output format
+#   2010/09/14 : jean/saillard : change input format, no more VTP
+#   2010/09/21 : pda/jean      : add third optional column "voip"
+#   2010/11/17 : pda           : use webdns database
+#   2010/12/18 : pda           : rework installation
 #
-
-set conf(libdns)	%LIBDNS%
 
 set conf(chars)		{/+. a-zA-Z0-9()<>_-}
-set conf(defuser)	%DEFUSER%
 
-#
-# Les outils DNS
-#
-
-lappend auto_path %PKGTCL%
-package require webapp
-package require pgsql
-
-source $conf(libdns)
+source %LIBDNS%
 
 ##############################################################################
 # Programme principal
@@ -45,10 +34,11 @@ proc main {argv0 argv} {
     regsub {.*/} $argv0 {} argv0
 
     #
-    # Initialisation des accès
+    # Initialize
     #
+
     ::dnscontext create d
-    set msg [d init-script dbfd $conf(defuser) tabcor]
+    set msg [d init-script dbfd "" true tabcor]
     if {$msg ne ""} then {
 	puts stderr "$msg"
 	puts stderr "Aborted."
@@ -56,7 +46,7 @@ proc main {argv0 argv} {
     }
 
     #
-    # Validation des arguments
+    # Argument checking
     #
 
     switch [llength $argv] {
@@ -78,7 +68,7 @@ proc main {argv0 argv} {
     }
 
     #
-    # Recherche du ou des vlans
+    # Search vlan(s)
     #
 
     set sql "SELECT * FROM topo.vlan $where ORDER BY vlanid ASC"
@@ -106,7 +96,7 @@ proc main {argv0 argv} {
     }
 
     #
-    # Déconnexion de la base
+    # Close database and exit
     #
 
     d end

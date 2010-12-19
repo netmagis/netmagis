@@ -1,40 +1,42 @@
 #!/bin/sh
 
 #
-# Lance rancid en affichant le résultat sur la sortie standard
-# au lieu de l'envoyer par mail.
+# Start rancid and display result on stdout instead of sending it by mail
 #
-# Syntaxe :
+# Syntax:
 #	start-rancid [eq ... eq]
 #
-# Historique
-#   2007/07/03 : pda/jean : conception
-#   2010/10/20 : pda/jean : intégration dans topo
+# History
+#   2007/07/03 : pda/jean : design
+#   2010/10/20 : pda/jean : topo integration
+#   2010/12/18 : pda      : rework installation
 #
 
-# Dans le répertoire SENDMAILDIR, il y a un vrai-faux-programme sendmail
-# qui envoie le resultat sur le descripteur numéro 3 (au lieu de l'envoyer
-# par mail)
-# Il faudra collecter ces mails prétendument envoyés par rancid
-# (récupérés sur ce descripteur 3) et les rediriger vers la sortie
-# standard
+eval `webdns-config \
+		rancidcmd \
+		topobindir \
+		`
 
-SENDMAILDIR=%TOPODIR%/bin
+# In the topodir directory, the fake sendmail program sends result
+# on file descripor number 3 (instead of sending mail).
+# We have to collect these mails (got on descriptor 3) and redirect
+# them to stdout.
 
+SENDMAILDIR="$topobindir"
 PATH=$SENDMAILDIR:$PATH
 export PATH
 
 if [ $# = 0 ]
 then
-    exec %RANCID% 3>&1
+    exec $rancidcmd 3>&1
 else
-    erreur=0
+    error=0
     for eq in $*
     do
-	%RANCID% -r $eq 3>&1
+	$rancidcmd -r $eq 3>&1
 	if [ $? != 0 ]
-	then erreur=1
+	then error=1
 	fi
     done
-    exit $erreur
+    exit $error
 fi

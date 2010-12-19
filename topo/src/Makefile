@@ -40,8 +40,8 @@ SCRIPTS = \
 	checkdns	\
 	decodename	\
 	doteq		\
-	liste-rancid	\
-	liste-vlans	\
+	list-rancid	\
+	list-vlans	\
 	parse-hp.tcl	\
 	parse-cisco.tcl	\
 	parse-juniper.tcl	\

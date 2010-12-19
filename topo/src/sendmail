@@ -1,15 +1,13 @@
 #!/bin/sh
 
 #
+# This script is a fake, used to collect mails sent by the true "rancid"
+# program and redirect them to file descriptor 3. This avoids to mix
+# with other log informations which do not interest us.
 #
-# Ce script est un faux "sendmail" utilisé pour collecter les mails
-# envoyés par le vrai "rancid" et les rediriger vers la sortie 3
-# afin d'éviter le mélange avec d'autres informations de log qui
-# ne nous intéressent pas.
-#
-# Historique
-#   2007/07/03 : pda/jean : conception
-#   2010/10/20 : pda/jean : intégration dans topo
+# History
+#   2007/07/03 : pda/jean : design
+#   2010/10/20 : pda/jean : topo integration
 #
 
 (
