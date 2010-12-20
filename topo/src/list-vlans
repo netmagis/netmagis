@@ -38,7 +38,7 @@ proc main {argv0 argv} {
     #
 
     ::dnscontext create d
-    set msg [d init-script dbfd "" true tabcor]
+    set msg [d init-script dbfd tabcor]
     if {$msg ne ""} then {
 	puts stderr "$msg"
 	puts stderr "Aborted."

@@ -20,7 +20,7 @@ PROGS = \
 
 SCRIPTS = \
 	anaconf		\
-	analyser	\
+	analyze	\
 	checkdns	\
 	decodename	\
 	doteq		\
@@ -29,7 +29,7 @@ SCRIPTS = \
 	parse-hp.tcl	\
 	parse-cisco.tcl	\
 	parse-juniper.tcl	\
-	ssidprobes	\
+	ssidsensors	\
 	topographd	\
 	toposendd	\
 	start-rancid	\

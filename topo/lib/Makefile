@@ -26,10 +26,14 @@ OBJS = \
 	sel.o
 
 
+all:	libgraph.a
+
 libgraph.a:	$(OBJS)
 	ar r libgraph.a $(OBJS)
 
 $(OBJS):	graph.h
+
+install:
 
 clean:
 	rm -f *.o *.a
