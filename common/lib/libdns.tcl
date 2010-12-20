@@ -1386,6 +1386,7 @@ snit::type ::config {
 	}
 	{topo
 	    {topoactive {bool}}
+	    {defdomain {string}}
 	    {topofrom {string}}
 	    {topoto {string}}
 	    {topographddelay {string}}
@@ -5746,7 +5747,7 @@ proc eq-graph-status {dbfd eq {iface {}}} {
     
     if {! [regexp {^([^.]+)\.(.+)$} $eq bidon host domain]} then {
         set host $eq
-        set domain %DEFDOM%
+        set domain [dnsconfig "defdomain"]
     }
 
     set iddom [read-domain $dbfd $domain]
@@ -6242,6 +6243,8 @@ proc read-eq-type {_tabeq} {
 
     set-status "Reading equipement types"
 
+    set defdom [dnsconfig "defdomain"]
+
     set cmd $libconf(dumpgraph-read-eq-type)
 
     if {[call-topo $cmd msg]} then {
@@ -6253,7 +6256,7 @@ proc read-eq-type {_tabeq} {
 		    set type $t(type)
 		    set model $t(model)
 
-		    append eq ".%DEFDOM%"
+		    append eq ".$defdom"
 
 		    set tabeq($eq) [list $type $model]
 

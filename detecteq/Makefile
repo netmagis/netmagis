@@ -1,12 +1,11 @@
 DESTDIR	= /usr/local
 TCLSH	= /usr/local/bin/tclsh
-SINSTALL = ../../inst/install-script
 SUBST	= $(TCLSH) $(DESTDIR)/lib/webdns/libdns.tcl $(DESTDIR)/etc/webdns.conf
 
 all:
 
-install:
-	mkdir -p $(DESTDIR)/sbin
-	$(SINSTALL) -m 0755 $(SUBST) detectconfmod $(DESTDIR)/sbin
+install: all
+	cd syslog ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 clean:
+	cd syslog ; make clean

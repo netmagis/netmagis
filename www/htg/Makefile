@@ -1,8 +1,3 @@
-#
-# Makefile d'installation de htg
-#
-
-
 DESTDIR		= /local/services/www/htg
 
 SUBST	= \
@@ -18,3 +13,5 @@ install:
 	cp src/htgtcl $(DESTDIR)/bin/$$i
 	tar cf - modeles | tar xf - -C $(DESTDIR)
 
+clean:
+	cd src ; make clean

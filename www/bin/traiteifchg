@@ -162,7 +162,7 @@ proc main {} {
 
     if {! [regexp {^([^.]+)\.(.+)$} $eq bidon host domain]} then {
 	set host $eq
-	set domain %DEFDOM%
+	set domain [dnsconfig "defdomain"]
     }
 
     set iddom [read-domain $dbfd $domain]
