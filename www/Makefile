@@ -159,3 +159,4 @@ exec:
 	chmod +x $(DESTDIR)/lib/util/*
 
 divers:
+	cd $(DESTDIR)/lib/tmpl ; ln -s en C
