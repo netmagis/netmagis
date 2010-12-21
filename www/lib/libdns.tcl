@@ -30,7 +30,7 @@ package require arrgen
 ##############################################################################
 
 set libconf(topohost)	{%TOPOHOST%}
-set libconf(topobin)	%TOPODIR%/bin
+set libconf(topobin)	%TOPOBINDIR%
 set libconf(topograph)	%TOPOGRAPH%
 
 #
