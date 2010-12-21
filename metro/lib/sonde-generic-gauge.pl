@@ -17,16 +17,16 @@
 # get_memory_by_proc /local/obj999/db/size/memoire_dhcp 130.79.208.190 <community> 
 # memoire_dhcp
 
-sub get_url
+sub get_generic
 {
-    my ($base,$host,$community,$url,$type_sonde) = @_;
+    my ($base,$host,$community,$generic,$type_sonde) = @_;
     
     my $sonde_trouve = "";	
 
     if(! $community)
     {
 	writelog("sonde-generic-gauge",$config{'logopt'},"info",
-                        "\t -> ERROR: ($host,$url), Pas de communaute SNMP");
+                        "\t -> ERROR: ($host,$generic), Pas de communaute SNMP");
     }
     else
     {	    
@@ -43,7 +43,7 @@ sub get_url
 	if (!defined($snmp)) 
 	{
 		writelog("get_time_www",$config{'logopt'},"info",
-			"\t -> ERROR: SNMP connect error: ($host,$community,$url), $error");
+			"\t -> ERROR: SNMP connect error: ($host,$community,$generic), $error");
         }
 	else
 	{
@@ -53,22 +53,22 @@ sub get_url
 	    my $index_sonde = "";
 
 	    # on recherche l'URL dans le fichier nom<=>index	
-	    my $t_liste_url = @liste_url;
+	    my $t_liste_generic = @liste_generic;
 	
-	    for($i=0;$i<$t_liste_url;$i++)
+	    for($i=0;$i<$t_liste_generic;$i++)
 	    {
-		if($liste_url[$i] !~/^#/ && $liste_url[$i] !~/^\s*$/)
+		if($liste_generic[$i] !~/^#/ && $liste_generic[$i] !~/^\s*$/)
 		{
-		    chomp $liste_url[$i];
-	            (my $ip, $sonde_trouve, my $ind) = split(/;/,$liste_url[$i]);
+		    chomp $liste_generic[$i];
+	            (my $ip, $sonde_trouve, my $ind) = split(/;/,$liste_generic[$i]);
   
 	            #si l'interface recherchee est trouvee
 	            #on remplit la variable index
-	            if($url eq $sonde_trouve && $ip eq $host && $ind ne "")
+	            if($generic eq $sonde_trouve && $ip eq $host && $ind ne "")
 	            {
                     	$trouve_sonde = 1;
                        	$index_sonde = $ind;
-			$i = $t_liste_url;
+			$i = $t_liste_generic;
  	            }
 	        }
 	    }
@@ -82,31 +82,31 @@ sub get_url
 		my $oid = "1.3.6.1.4.1.2021.8.1.2.$index_sonde";
 		$r = $snmp->get_request(
 		    -varbindlist   => [$oid],
-		    -callback   => [ \&get_url_name,$sonde,$base,$host,$community,$url,$oid,$index_sonde,$type_sonde] );
+		    -callback   => [ \&get_generic_name,$sonde,$base,$host,$community,$generic,$oid,$index_sonde,$type_sonde] );
 	    }
 	    # sinon, il faut rechercher l'index de l'URL et remplir le fichier nom<=>idex
 	    else
 	    {
-		my @desc_url=();
+		my @desc_generic=();
 		# cherche liste des URL
 		$param = $community."@".$host;
 		&snmpmapOID("desc","1.3.6.1.4.1.2021.8.1.2");
-	       	@desc_url = &snmpwalk($param, "desc");
+	       	@desc_generic = &snmpwalk($param, "desc");
 
-        	$nb_desc = @desc_url;
+        	$nb_desc = @desc_generic;
 
-		if($desc_url[0] ne "")
+		if($desc_generic[0] ne "")
 		{
 		    $index_sonde = "";
 
 		    my $i;	
 		    for($i=0;$i<$nb_desc;$i++)
 		    {
-   	             	if($desc_url[$i]=~m/$url/)
+   	             	if($desc_generic[$i]=~m/$generic/)
 	        	{
-			    #print "$desc_url[$i]\n";
-			    chomp $desc_url[$i];
-			    $index_sonde = (split(/:/,$desc_url[$i]))[0];
+			    #print "$desc_generic[$i]\n";
+			    chomp $desc_generic[$i];
+			    $index_sonde = (split(/:/,$desc_generic[$i]))[0];
         		    #       print "index = $index_sonde\n";
 	                    $i = $nb_desc;
 			    $ok_interro = 1;
@@ -116,26 +116,26 @@ sub get_url
 		    # on remplit le fichier nom<=>index et on iterroge l'equipement
 		    if($ok_interro == 1)
 		    {
-        	   	if($lock_liste_url == 0)
+        	   	if($lock_liste_generic == 0)
                 	{
-			   $lock_liste_url = 1;
+			   $lock_liste_generic = 1;
 	
-			    $ligne = "$host;$url;$index_sonde";
-			    push @liste_url,$ligne;
+			    $ligne = "$host;$generic;$index_sonde";
+			    push @liste_generic,$ligne;
 	
-			    $maj_url_file = 1;				
-			    $lock_liste_url = 0;	
+			    $maj_generic_file = 1;				
+			    $lock_liste_generic = 0;	
 			}
 
-			my $oid_time_url = "1.3.6.1.4.1.2021.8.1.101.$index_sonde";
+			my $oid_time_generic = "1.3.6.1.4.1.2021.8.1.101.$index_sonde";
                 	$r = $snmp->get_request(
-			    varbindlist   => [$oid_time_url],
-			    -callback   => [ \&get_time_url,$base,$host,$url,$oid_time_url,$type_sonde] );
+			    varbindlist   => [$oid_time_generic],
+			    -callback   => [ \&get_time_generic,$base,$host,$generic,$oid_time_generic,$type_sonde] );
 		    }	
 		    else
 		    {
 			writelog("get_time_www",$config{'logopt'},"info",
-			    "\t -> ERROR: URL $url inexistante sur $host");
+			    "\t -> ERROR: URL $generic inexistante sur $host");
 		    }
 		}
 		else
@@ -148,9 +148,9 @@ sub get_url
     }
 }
 
-sub get_url_name 
+sub get_generic_name 
 {
-	my ($session,$sonde,$base,$host,$community,$sonde_trouve,$oid,$id_url,$type_sonde) = @_;	
+	my ($session,$sonde,$base,$host,$community,$sonde_trouve,$oid,$id_generic,$type_sonde) = @_;	
 
 	my $result;
 	my $ok_interro;
@@ -172,7 +172,7 @@ sub get_url_name
        		my $error  = $session->error;
 
 		writelog("get_time_www",$config{'logopt'},"info",
-			"\t -> ERROR: get_url_name($host) Error: $error");
+			"\t -> ERROR: get_generic_name($host) Error: $error");
 		
 		$err=1;
     	} 
@@ -198,20 +198,20 @@ sub get_url_name
 		# cherche liste des interfaces
                 my $param = $community."@".$host;
                 &snmpmapOID("desc","1.3.6.1.4.1.2021.8.1.2");
-                my @desc_url = &snmpwalk($param, "desc");
+                my @desc_generic = &snmpwalk($param, "desc");
 
-                my $nb_desc = @desc_url;
+                my $nb_desc = @desc_generic;
 
                 my $index_sonde = "";
 	
 		my $i;
                 for($i=0;$i<$nb_desc;$i++)
                 {
-                        if($desc_url[$i]=~m/$sonde_trouve/)
+                        if($desc_generic[$i]=~m/$sonde_trouve/)
                         {
-                                #print "$desc_url[$i]\n";
-                                chomp $desc_url[$i];
-                                $index_sonde = (split(/:/,$desc_url[$i]))[0];
+                                #print "$desc_generic[$i]\n";
+                                chomp $desc_generic[$i];
+                                $index_sonde = (split(/:/,$desc_generic[$i]))[0];
                                 #       print "index = $index_sonde\n";
                                 $i = $nb_desc;
                                 $ok_interro = 1;
@@ -221,29 +221,29 @@ sub get_url_name
 		if($ok_interro == 1)
 		{
 			#print "tentative de correction\n";
-			if($lock_liste_url == 0)
+			if($lock_liste_generic == 0)
                         {
-	                        $lock_liste_url = 1;
-				my $t_liste_url = @liste_url;
+	                        $lock_liste_generic = 1;
+				my $t_liste_generic = @liste_generic;
 				
 				my $i;
-				for($i=0;$i<$t_liste_url;$i++)
+				for($i=0;$i<$t_liste_generic;$i++)
 				{
-					(my $ip, my $url, my $ind) = split(/;/,$liste_url[$i]);
-					if($ip eq $host && $sonde_trouve eq $url)
+					(my $ip, my $generic, my $ind) = split(/;/,$liste_generic[$i]);
+					if($ip eq $host && $sonde_trouve eq $generic)
 					{
-						$liste_url[$i] = "$ip;$sonde_trouve;$index_sonde";
+						$liste_generic[$i] = "$ip;$sonde_trouve;$index_sonde";
 					}	
 				}
-				$lock_liste_url = 0;
-				$maj_url_file = 1;
+				$lock_liste_generic = 0;
+				$maj_generic_file = 1;
 			}
 			else
 			{
 				writelog("get_time_www",$config{'logopt'},"info",
-					"\t -> ERROR: Fichier url.txt locké. Pas de mise à jour");
+					"\t -> ERROR: Fichier generic.txt locké. Pas de mise à jour");
 			}
-			$id_url = $index_sonde;
+			$id_generic = $index_sonde;
 		}
 		else
 		{
@@ -252,24 +252,24 @@ sub get_url_name
 		}
         }
 
-	if($id_url ne "" && $ok_interro ==1)
+	if($id_generic ne "" && $ok_interro ==1)
 	{
-		my $oid_time_url = "1.3.6.1.4.1.2021.8.1.101.$id_url";
+		my $oid_time_generic = "1.3.6.1.4.1.2021.8.1.101.$id_generic";
 
                 $r = $snmp->get_request(
-                	-varbindlist   => [$oid_time_url],
-                	-callback   => [ \&get_time_url,$base,$host,$sonde_trouve,$oid_time_url,$type_sonde] );
+                	-varbindlist   => [$oid_time_generic],
+                	-callback   => [ \&get_time_generic,$base,$host,$sonde_trouve,$oid_time_generic,$type_sonde] );
 	}
 }
 
 
 
 # recupere le resultat des requetes SNMP sur les interfaces
-sub get_time_url
+sub get_time_generic
 {
-    my ($session,$base,$host,$sonde_trouve,$oid_time_url,$type_sonde) = @_;
+    my ($session,$base,$host,$sonde_trouve,$oid_time_generic,$type_sonde) = @_;
 
-    my ($r_time_url);
+    my ($r_time_generic);
     if (!defined($session->var_bind_list))
     {
 	my $error  = $session->error;
@@ -279,9 +279,9 @@ sub get_time_url
     }
     else
     {
-	$r_time_url = $session->var_bind_list->{$oid_time_url};
+	$r_time_generic = $session->var_bind_list->{$oid_time_generic};
 
-        RRDs::update ("$base","N:$r_time_url");
+        RRDs::update ("$base","N:$r_time_generic");
         my $ERR=RRDs::error;
         if ($ERR)
         {

@@ -17,7 +17,7 @@ sub tps_disk
     if(! $community)
     {
 	writelog("get_tps_disk",$config{'logopt'},"info",
-                        "\t -> ERROR: ($host,$url), Pas de communaute SNMP");
+                        "\t -> ERROR: ($host,$disk), Pas de communaute SNMP");
     }
     else
     {    
