@@ -380,6 +380,11 @@ li ul li ul li {
 	border-style: none none solid none;
 }
 
+/* Couleur de fond pour les boutons de formulaires */
+#buttons {
+	background-color: #cc5229;	/* orange */
+}
+
 /* pour le package arrgen */
 .tab-text8 { font-size: 10px; }
 .tab-text10 { font-size: 12px; }

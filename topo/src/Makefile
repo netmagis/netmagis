@@ -1,10 +1,10 @@
-DESTDIR	= /usr/local
-TCLSH	= /usr/local/bin/tclsh
-SINSTALL = ../../inst/install-script
-SUBST	= $(TCLSH) \
-	$(DESTDIR)/lib/webdns/libdns.tcl \
-	$(DESTDIR)/etc/webdns.conf \
-	$(DESTDIR)/bin/webdns-config
+DESTDIR		= /usr/local
+TCLSH		= /usr/local/bin/tclsh
+SINSTALL	= ../../inst/install-script
+SUBST		= $(TCLSH) \
+			$(DESTDIR)/lib/webdns/libdns.tcl \
+			$(DESTDIR)/etc/webdns.conf \
+			$(DESTDIR)/bin/webdns-config
 
 LIBDIR = ../lib
 CFLAGS = -g -Wall -I$(LIBDIR)
@@ -39,6 +39,7 @@ SCRIPTS = \
 	sendmail
 
 all:	$(PROGS)
+	@echo ">>> Making all in `pwd`"
 
 dumpgraph:	dumpgraph.c	$(LIBDIR)/libgraph.a
 buildgraph:	buildgraph.c	$(LIBDIR)/libgraph.a
@@ -50,6 +51,7 @@ extractcoll:	extractcoll.c	$(LIBDIR)/libgraph.a
 getnetif:	getnetif.c	$(LIBDIR)/libgraph.a
 
 install: $(PROGS) $(SCRIPTS)
+	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)/lib/webdns/topo
 	install -m 0755 $(PROGS) $(DESTDIR)/lib/webdns/topo
 	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/lib/webdns/topo

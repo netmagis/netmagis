@@ -5,16 +5,21 @@
 ###############################################################################
 # Configuration parameters
 ::msgcat::mcmset en {
- cfg:dns {General parameters}
+ cfg:general {General parameters}
 
  cfg:datefmt:desc {Date/hour display format}
  cfg:datefmt:help {Date and time display format, used in data display and data editing. See Tcl clock(n) manual page for format specification.}
  cfg:jourfmt:desc {Date display format}
  cfg:jourfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
- cfg:defuser:desc {Default user}}
- cfg:defuser:help {Default user is used in WebDNS command line programs, when the user's login is not found in the WebDNS database}
  cfg:authmethod:desc {Authentication method}
  cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.)}
+
+ cfg:dns {DNS parameters}
+
+ cfg:dnsupdateperiod:desc {DNS update period}
+ cfg:dnsupdateperiod:help {Duration between DNS zone generations on the DNS server (should be kept in sync with the associated CRON period)}
+ cfg:defuser:desc {Default user}}
+ cfg:defuser:help {Default user is used in WebDNS command line programs, when the user's login is not found in the WebDNS database}
 
  cfg:dhcp {DHCP parameters}
 

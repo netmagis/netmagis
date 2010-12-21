@@ -1,0 +1,283 @@
+#!%TCLSH%
+
+#
+# Store MX modifications
+#
+# Called by: admmxedit
+#
+# Parameters (form or url): none
+#
+# History
+#   2003/04/24 : pda/jean : design
+#   2003/05/13 : pda/jean : use auth base
+#   2004/03/04 : pda/jean : check-mx is now common
+#   2007/10/25 : jean     : log modify actions
+#   2010/12/06 : pda      : i18n
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		admmxmodif.html
+
+#
+# Script parameters
+#
+
+set conf(form) {
+	{nom			1 1}
+	{domaine		1 1}
+
+	{priorite[0-9]+		0 9999}
+	{nom[0-9]+		0 9999}
+	{domaine[0-9]+		0 9999}
+
+	{prioriten[0-9]+	0 9999}
+	{nomn[0-9]+		0 9999}
+	{domainen[0-9]+		0 9999}
+}
+
+set conf(tableau) {
+    global {
+	chars {12 normal}
+	columns {20 80}
+	botbar {yes}
+	align {left}
+    }
+    pattern Title {
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+    pattern Normal {
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+}
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Utilities
+##############################################################################
+
+#
+# Insert a MX list in the database
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- idrr : RR id
+#	- lmx : list of MX
+# Output:
+#   - valeur de retour : empty string or error message
+#
+# History
+#   2003/04/25 : pda/jean : design
+#   2010/12/14 : pda      : minor simplification
+#
+
+proc insert-mx {dbfd idrr lmx} {
+    set msg ""
+    foreach mx $lmx {
+	lassign $mx prio idmx
+	set sql "INSERT INTO dns.rr_mx (idrr, priorite, mx)
+				VALUES ($idrr, $prio, $idmx)"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    break
+	}
+    }
+    return $msg
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
+
+    set name   [lindex $ftab(nom) 0]
+    set domain [lindex $ftab(domaine) 0]
+    set fqdn   "$name.$domain"
+
+    #
+    # Check MX
+    #
+
+    set msg [check-authorized-mx $dbfd $tabuid(idcor) $name iddom $domain exists trr]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Traverse list of form variables and build a list:
+    #		{{prio idmx} ... }
+    # where :
+    #  - prio = numeric priority
+    #  - idmx = id of an existing RR
+    #
+
+    set lmx {}
+    foreach c [array names ftab] {
+	if {[regexp {^priorite(n?)([0-9]+)$} $c bidon n idmx]} then {
+	    set idxprio priorite$n$idmx
+	    set idxnom  nom$n$idmx
+	    set idxdom  domaine$n$idmx
+	    if {[info exists ftab($idxprio)] && \
+			    [info exists ftab($idxnom)] && \
+			    [info exists ftab($idxdom)] \
+		    } then {
+		set fprio [string trim [lindex $ftab($idxprio) 0]]
+		set fnom  [string trim [lindex $ftab($idxnom)  0]]
+		set fdom  [string trim [lindex $ftab($idxdom)  0]]
+		if {$fprio ne ""} then {
+		    set mx [check-mx-target $dbfd $fprio $fnom $fdom $tabuid(idcor) msg]
+		    if {$msg ne ""} then {
+			d error $msg
+		    }
+		    if {[info exists tmx([lindex $mx 1])]} then {
+			d error [mc "'%s' specified more than once" "$fnom.$fdom"]
+		    }
+		    lappend lmx $mx
+		}
+	    } else {
+		d error [mc "Invalid form values (%s)" "$idxprio, $idxnom, $idxdom"]
+	    }
+	}
+    }
+
+    #
+    # Insert and delete operations
+    #
+
+    d dblock {}
+
+    if {$exists} then {
+	#
+	# Delete all previous MX
+	#
+
+	set sql "DELETE FROM dns.rr_mx WHERE idrr = $trr(idrr)"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    d dbabort [mc "delete %s" [mc "old MX"]] $msg
+	}
+
+	#
+	# If lmx list is empty, delete RR
+	#
+
+	if {[llength $lmx] == 0} then {
+	    #
+	    # Delete RR
+	    #
+
+	    set sql "DELETE FROM dns.rr WHERE idrr = $trr(idrr)"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		d dbabort [mc "delete %s" $fqdn] $msg
+	    }
+	} else {
+	    #
+	    # Insert MX RRs
+	    #
+	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
+	    if {$msg ne ""} then {
+		d dbabort [mc "add %s" "MX"] $msg
+	    }
+	}
+    } else {
+	#
+	# RR does not exist yet
+	#
+
+	if {[llength $lmx] == 0} then {
+	    #
+	    # This case should not happen: user has asked for MX
+	    # creation, but did not imput any MX.
+	    #
+	    d dbabort [mc "add %s" "MX"] [mc "No MX given for %s" $fqdn]
+	} else {
+	    #
+	    # Create RR
+	    #
+
+	    # XXX : No comment, nor any responsible. May be later...
+	    set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" \
+				$tabuid(idcor) trr]
+	    if {$msg ne ""} then {
+		d dbabort [mc "add %s" $fqdn] $msg
+	    }
+
+	    #
+	    # Insert MX RRs
+	    #
+	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
+	    if {$msg ne ""} then {
+		d dbabort [mc "add %s" "MX"] $msg
+	    }
+	}
+    }
+
+    #
+    # Unlock and commit modifications
+    #
+
+    d dbcommit [mc "modify %s" "MX"]
+
+    #
+    # Present informations stored in database
+    #
+
+    if {[llength $lmx] > 0} then {
+	set lines {}
+	lappend lines [list "Title" [mc "Priority"] [mc "Name"]]
+	set lm {}
+	foreach mx $lmx {
+	    lassign $mx prio idmx
+	    read-rr-by-id $dbfd $idmx tabmx
+	    set n "$tabmx(nom).$tabmx(domaine)"
+	    lappend lines [list "Normal" $prio $n]
+	    lappend lm $n
+	}
+	set tableau [::arrgen::output "html" $conf(tableau) $lines]
+	d writelog "addmx" "add mx [join $lm {, }] for $fqdn"
+    } else {
+	set tableau [mc "RR deleted"]
+	d writelog "supprmx" "delete RR $fqdn"
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page) [list \
+				[list %TABLEAU% $tableau] \
+				[list %NOM%     $name] \
+				[list %DOMAINE% $domain] \
+			    ]
+}
+
+::webapp::cgi-exec main $debug

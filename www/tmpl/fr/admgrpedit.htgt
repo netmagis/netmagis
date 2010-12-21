@@ -179,11 +179,12 @@
 	    }
 	    \lignetableau {
 		\casetableau {
-		    \couleurfond {%COULEUR%}
 		    \centragehorizontal {CENTER}
 		} {
+		    <div id="buttons">
 		    <INPUT TYPE="SUBMIT" VALUE="Enregistrer">
 		    <INPUT TYPE="RESET" VALUE="Réinitialiser">
+		    </div>
 		}
 	    }
 	}

@@ -1,0 +1,202 @@
+#!%TCLSH%
+
+#
+# Display a page to edit host information
+#
+# Called by: edit, modif
+#
+# Parameters (form or url):
+# - nom : name of host to edit
+# - domaine : domain of host to edit
+#
+# History
+#   2002/05/03 : pda/jean : design
+#   2002/07/09 : pda      : add nologin
+#   2002/07/09 : pda      : lowercase conversion of names
+#   2003/05/13 : pda/jean : use auth base
+#   2004/08/05 : pda/jean : add mac
+#   2005/04/08 : pda/jean : add dhcpprofil
+#   2008/07/25 : pda/jean : add SMTP permission
+#   2010/10/26 : pda      : name and domain are now editable
+#   2010/10/31 : pda      : add ttl
+#   2010/12/11 : pda      : i18n
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(page-edit-infos)	editmodif-infos.html
+set conf(err)			erreur.html
+
+#
+# Next actions
+# 
+
+set conf(next)		"traitemodif"
+set conf(nextajout)	"ajout"
+set conf(nextsuppr)	"suppr"
+
+#
+# Script parameters
+#
+
+# field used to determine next step
+set conf(form)		{
+	{action		1 1}
+}
+
+# action specific fields
+set conf(form-modif-infos)	{
+	{nom		1 1}
+	{domaine	1 1}
+}
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Utility functions
+##############################################################################
+
+# History
+#   2002/05/03 : pda/jean : conception
+#
+
+proc editmodif-infos {dbfd _tabuid _ftab} {
+    global conf
+    upvar $_tabuid tabuid
+    upvar $_ftab ftab
+
+    #
+    # Validate form input
+    #
+
+    set name   [string trim [lindex $ftab(nom) 0]]
+    set domain [string trim [lindex $ftab(domaine) 0]]
+
+    set msg [check-name-syntax $name]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+    set name [string tolower $name]
+
+    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain trr "existing-host"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Check host existence
+    #
+
+    if {$trr(idrr) eq ""} then {
+	d error [mc "Name '%s' does not exist" $name]
+    }
+
+    #
+    # In order to display original name of host
+    #
+
+    set vname $name
+    set vdomain $domain
+
+    #
+    # Default values for all fields
+    #
+
+    set name [::webapp::form-text nom 1 20 64 $name]
+    set domain [menu-domain $dbfd $tabuid(idcor) domaine "" $domain]
+
+    set val [::webapp::html-string $trr(mac)]
+    set mac [::webapp::form-text mac 1 20 17 $val]
+    lassign [menu-dhcp-profile $dbfd iddhcpprofil $tabuid(idcor) $trr(iddhcpprofil)] \
+	dhcpprofillibelle dhcpprofilmenu
+
+    set menuhinfo [menu-hinfo $dbfd hinfo $trr(hinfo)]
+
+    lassign [menu-droitsmtp $dbfd "droitsmtp" tabuid $trr(droitsmtp)] \
+	droitsmtplibelle droitsmtpmenu
+
+    lassign [menu-ttl $dbfd "ttl" tabuid $trr(ttl)] ttllibelle ttlval
+
+    set val [::webapp::html-string $trr(commentaire)]
+    set commentaire [::webapp::form-text commentaire 1 50 50 $val]
+
+    set val [::webapp::html-string $trr(respnom)]
+    set respnom [::webapp::form-text respnom 1 50 50 $val]
+
+    set val [::webapp::html-string $trr(respmel)]
+    set respmel [::webapp::form-text respmel 1 50 50 $val]
+
+    #
+    # Next script
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+    d urladdnext "%URLFORM%"
+
+    d urlset "%URLAJOUT%" $conf(nextajout) {}
+    d urlset "%URLSUPPR%" $conf(nextsuppr) {}
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-edit-infos) [list \
+					[list %IDRR% $trr(idrr)] \
+					[list %VNOM% $vname] \
+					[list %VDOMAINE% $vdomain] \
+					[list %NOM% $name] \
+					[list %DOMAINE% $domain] \
+					[list %MAC% $mac] \
+					[list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
+					[list %DHCPPROFILMENU% $dhcpprofilmenu] \
+					[list %MENUHINFO% $menuhinfo] \
+					[list %DROITSMTPLIBELLE% $droitsmtplibelle] \
+					[list %DROITSMTPMENU% $droitsmtpmenu] \
+					[list %TTLLIBELLE% $ttllibelle] \
+					[list %TTLVAL% $ttlval] \
+					[list %COMMENTAIRE% $commentaire] \
+					[list %RESPNOM% $respnom] \
+					[list %RESPMEL% $respmel] \
+			    ]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
+
+    #
+    # Validate action, read other variables and to the action
+    #
+
+    set action [string trim [lindex $ftab(action) 0]]
+
+    if {! [info exists conf(form-$action)]} then {
+	d error [mc "Invalid input"]
+    }
+
+    if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
+	d error [mc "Invalid input"]
+    }
+
+    edit$action $dbfd tabuid ftab
+}
+
+::webapp::cgi-exec main $debug

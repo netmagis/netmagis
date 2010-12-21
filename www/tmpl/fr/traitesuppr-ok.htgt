@@ -32,7 +32,7 @@
     La suppression de '%OBJET%' est effectuée.
 
     La modification sera effective sur les serveurs de nom d'ici
-    %INTERVALLE% minutes.
+    %INTERVAL% minutes.
 
     Cliquer \lien {ici pour continuer} {%URLSUITE%}.
 }

@@ -1,18 +1,20 @@
-DESTDIR	= /usr/local
-TCLSH	= /usr/local/bin/tclsh
-SINSTALL = ../../inst/install-script
-SUBST	= $(TCLSH) \
-	$(DESTDIR)/lib/webdns/libdns.tcl \
-	$(DESTDIR)/etc/webdns.conf \
-	$(DESTDIR)/bin/webdns-config
+DESTDIR		= /usr/local
+TCLSH		= /usr/local/bin/tclsh
+SINSTALL	= ../../inst/install-script
+SUBST		= $(TCLSH) \
+			$(DESTDIR)/lib/webdns/libdns.tcl \
+			$(DESTDIR)/etc/webdns.conf \
+			$(DESTDIR)/bin/webdns-config
 
 SCRIPTS= \
 	topographd.sh \
 	toposendd.sh
 
 all:
+	@echo ">>> Making all in `pwd`"
 
 install:
+	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)/etc/rc.d
 	for i in $(SCRIPTS) ; \
 	do \

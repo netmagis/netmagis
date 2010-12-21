@@ -117,6 +117,7 @@ proc get-conninfo {prefix} {
 read-local-conf-file %CONFFILE%
 
 lappend auto_path [get-local-conf "pkgtcl"]
+set debug [get-local-conf "debug"]
 
 package require msgcat			;# tcl
 namespace import ::msgcat::*
@@ -398,9 +399,13 @@ array set libconf {
 #   2010/11/05 : pda      : use a snit object
 #   2010/11/09 : pda      : add init-script
 #   2010/11/29 : pda      : i18n
+#   2010/12/21 : pda/jean : add version in class
 #
 
 snit::type ::dnscontext {
+    # WebDNS version
+    variable version "1.5"
+
     # database handle
     variable db ""
 
@@ -423,7 +428,7 @@ snit::type ::dnscontext {
     variable errorpage ""
 
     # HTML home page
-    variable homepage "%HOMEURL%/bin/accueil"
+    variable homepage "accueil"
 
     # in order to come back from a travel in the WebDNS application
     variable dnextprog ""
@@ -477,19 +482,19 @@ snit::type ::dnscontext {
 			    {mactitle mac}
 			    {admtitle admin}
 			}
-	accueil		{%HOMEURL%/bin/accueil Welcome}
-	consulter	{%HOMEURL%/bin/consulter Consult}
-	ajouter		{%HOMEURL%/bin/ajout Add}
-	supprimer	{%HOMEURL%/bin/suppr Delete}
-	modifier	{%HOMEURL%/bin/modif Modify}
-	rolesmail	{%HOMEURL%/bin/mail {Mail roles}}
-	dhcprange	{%HOMEURL%/bin/dhcp {DHCP ranges}}
+	accueil		{accueil Welcome}
+	consulter	{consulter Consult}
+	ajouter		{ajout Add}
+	supprimer	{suppr Delete}
+	modifier	{modif Modify}
+	rolesmail	{mail {Mail roles}}
+	dhcprange	{dhcp {DHCP ranges}}
 	passwd		{%PASSWDURL% Password}
-	corresp		{%HOMEURL%/bin/corr Search}
-	whereami	{%HOMEURL%/bin/corresp?critere=_ {Where am I?}}
-	topotitle	{%HOMEURL%/bin/eq Topology}
-	mactitle	{%HOMEURL%/bin/macindex Mac}
-	admtitle	{%HOMEURL%/bin/admin Admin}
+	corresp		{corr Search}
+	whereami	{corresp?critere=_ {Where am I?}}
+	topotitle	{eq Topology}
+	mactitle	{macindex Mac}
+	admtitle	{admin Admin}
 	:topo		{
 			    {eq always}
 			    {l2 always}
@@ -499,10 +504,10 @@ snit::type ::dnscontext {
 			    {mactitle mac}
 			    {admtitle admin}
 			}
-	eq		{%HOMEURL%/bin/eq Equipments}
-	l2		{%HOMEURL%/bin/l2 Vlans}
-	l3		{%HOMEURL%/bin/l3 Networks}
-	dnstitle	{%HOMEURL%/bin/accueil DNS/DHCP}
+	eq		{eq Equipments}
+	l2		{l2 Vlans}
+	l3		{l3 Networks}
+	dnstitle	{accueil DNS/DHCP}
 	:admin		{
 			    {admtitle always}
 			    {consultmx always}
@@ -532,29 +537,29 @@ snit::type ::dnscontext {
 			    {topotitle topo}
 			    {mactitle mac}
 			}
-	consultmx	{%HOMEURL%/bin/consultmx {List MX}}
-	consultnet	{%HOMEURL%/bin/consultnet {List networks}}
-	listecorresp	{%HOMEURL%/bin/listecorresp {List users}}
-	corresp		{%HOMEURL%/bin/corresp {Search}}
-	modetabl	{%HOMEURL%/bin/admrefliste?type=etabl {Modify organizations}}
-	modcommu	{%HOMEURL%/bin/admrefliste?type=commu {Modify communities}}
-	modhinfo	{%HOMEURL%/bin/admrefliste?type=hinfo {Modify machine types}}
-	modreseau	{%HOMEURL%/bin/admrefliste?type=reseau {Modify networks}}
-	moddomaine	{%HOMEURL%/bin/admrefliste?type=domaine {Modify domains}}
-	admrelsel	{%HOMEURL%/bin/admrelsel {Modify mailhost}}
-	modzone		{%HOMEURL%/bin/admrefliste?type=zone {Modify zones}}
-	modzone4	{%HOMEURL%/bin/admrefliste?type=zone4 {Modify reverse IPv4 zones}}
-	modzone6	{%HOMEURL%/bin/admrefliste?type=zone6 {Modify reverse IPv6 zones}}
-	moddhcpprofil	{%HOMEURL%/bin/admrefliste?type=dhcpprofil {Modify DHCP profiles}}
-	modvlan		{%HOMEURL%/bin/admrefliste?type=vlan {Modify Vlans}}
-	modeqtype	{%HOMEURL%/bin/admrefliste?type=eqtype {Modify equipment types}}
-	modeq		{%HOMEURL%/bin/admrefliste?type=eq {Modify equipments}}
-	admgrpsel	{%HOMEURL%/bin/admgrpsel {Modify users and groups}}
-	admgenliste	{%HOMEURL%/bin/admgenliste {Force zone generation}}
-	admparliste	{%HOMEURL%/bin/admparliste {Application parameters}}
-	statcor		{%HOMEURL%/bin/statcor {Statistics by user}}
-	statetab	{%HOMEURL%/bin/statetab {Statistics by organization}}
-	topotop		{%HOMEURL%/bin/topotop {Topod status}}
+	consultmx	{consultmx {List MX}}
+	consultnet	{consultnet {List networks}}
+	listecorresp	{listecorresp {List users}}
+	corresp		{corresp {Search}}
+	modetabl	{admrefliste?type=etabl {Modify organizations}}
+	modcommu	{admrefliste?type=commu {Modify communities}}
+	modhinfo	{admrefliste?type=hinfo {Modify machine types}}
+	modreseau	{admrefliste?type=reseau {Modify networks}}
+	moddomaine	{admrefliste?type=domaine {Modify domains}}
+	admrelsel	{admrelsel {Modify mailhost}}
+	modzone		{admrefliste?type=zone {Modify zones}}
+	modzone4	{admrefliste?type=zone4 {Modify reverse IPv4 zones}}
+	modzone6	{admrefliste?type=zone6 {Modify reverse IPv6 zones}}
+	moddhcpprofil	{admrefliste?type=dhcpprofil {Modify DHCP profiles}}
+	modvlan		{admrefliste?type=vlan {Modify Vlans}}
+	modeqtype	{admrefliste?type=eqtype {Modify equipment types}}
+	modeq		{admrefliste?type=eq {Modify equipments}}
+	admgrpsel	{admgrpsel {Modify users and groups}}
+	admgenliste	{admgenliste {Force zone generation}}
+	admparliste	{admparliste {Application parameters}}
+	statcor		{statcor {Statistics by user}}
+	statetab	{statetab {Statistics by organization}}
+	topotop		{topotop {Topod status}}
 	:mac		{
 			    {macindex always}
 			    {mac always}
@@ -564,10 +569,10 @@ snit::type ::dnscontext {
 			    {topotitle topo}
 			    {admtitle admin}
 			}
-	macindex	{%HOMEURL%/bin/macindex {MAC index}}
-	mac		{%HOMEURL%/bin/mac {MAC search}}
-	ipinact		{%HOMEURL%/bin/ipinact {Inactive addresses}}
-	macstat		{%HOMEURL%/bin/macstat {MAC stats}}
+	macindex	{macindex {MAC index}}
+	mac		{mac {MAC search}}
+	ipinact		{ipinact {Inactive addresses}}
+	macstat		{macstat {MAC stats}}
     }
 
     ###########################################################################
@@ -892,9 +897,14 @@ snit::type ::dnscontext {
 	# for users specified in ROOT pattern.
 	#
 
-	set ftest %NOLOGIN%
+	set ftest [get-local-conf "nologin"]
+	set root [get-local-conf "rootusers"]
+	if {[catch [lindex $root 0]]} then {
+	    $self error "Invalid 'rootusers' configuration parameter"
+	}
+
 	if {[file exists $ftest]} then {
-	    if {$uid eq "" || ! ($uid in %ROOT%)} then {
+	    if {$uid eq "" || ! ($uid in $root)} then {
 		set fd [open $ftest "r"]
 		set msg [read $fd]
 		close $fd
@@ -1173,6 +1183,8 @@ snit::type ::dnscontext {
 	    foreach s [$self urlsubst] {
 		lappend lsubst $s
 	    }
+
+	    lappend lsubst [list %VERSION% $version]
 	}
 
 	#
@@ -1373,11 +1385,14 @@ snit::type ::config {
     # class = class name
     # class-spec = {{key type} {key type} ...}
     variable configspec {
-	{dns
+	{general
 	    {datefmt {string}}
 	    {jourfmt {string}}
-	    {defuser {string}}
 	    {authmethod {menu {{pgsql Internal} {ldap {LDAP}}}}}
+	}
+	{dns
+	    {dnsupdateperiod {string}}
+	    {defuser {string}}
 	}
 	{dhcp
 	    {default_lease_time {string}}

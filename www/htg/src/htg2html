@@ -7,11 +7,12 @@
 # But : convertit toute une arborescence HTG en une arborescence HTML
 #
 # Syntaxe :
-#    htg2html [-h][-v 0|1][-g rep-htg][-d rep-modèles][-l] rep-wsrc rep-wtmp rep-wobj
+#    htg2html [-h][-v 0|1][-g rep-htg][-d rep-modèles][-c htgtcl][-l] rep-wsrc rep-wtmp rep-wobj
 #
 # Entree :
 #   - option -h : heeeeeelp !
 #   - option -v : verbose
+#   - option -c : htgtcl path (modified Tcl interperter)
 #   - option -g : répertoire HTG (là où sont placés les scripts et les modèles)
 #   - option -d : répertoire contenant les modèles
 #   - option -l : fait un lien symbolique vers les fichiers non HTG
@@ -33,6 +34,7 @@
 #   2001/11/26 : pda          : ajout de l'option "-l" pour lier les fichiers non htg
 #   2008/03/04 : pda/moindrot : options -h/-g/-d
 #   2010/10/29 : pda/moindrot/jean : option -m et parametrisation du script
+#   2010/12/21 : pda/jean     : add -c option
 #
 
 #
@@ -123,8 +125,14 @@ htmliser ()
 	while read f ; do 
 	    h=`echo $f | sed 's/.htgt$//'`
 	    $cmdverbose "$wsrc/$f"
-	    "$htgdir/bin/htg" -v $verbose -d "$modeldir" $optm \
+	    if [ "$htgtcl" != "" ]
+	    then
+		$htgtcl "$htgdir/htg" -v $verbose -d "$modeldir" $optm \
 			"$wsrc/$f" > "$wobj/$h.html"
+	    else
+		"$htgdir/bin/htg" -v $verbose -d "$modeldir" $optm \
+			"$wsrc/$f" > "$wobj/$h.html"
+	    fi
 	    if [ $? != 0 ]
 	    then
 		echo Problème sur "$wsrc/$f"
@@ -163,15 +171,16 @@ usage ()
 #
 
 htgdir=$HTGDIRDEF
-modeldir=$htgdir/modeles
+modeldir=$htgdir/models
 verbose=$VERBOSE
+htgtcl=""
 optm=""
 
 #
 # Analyse des options
 #
 
-set -- `getopt hg:d:m:v:l $*`
+set -- `getopt hc:g:d:m:v:l $*`
 
 if [ $? != 0 ]
 then usage
@@ -183,6 +192,7 @@ for i
 do
     case $i in
 	-h)	usage ;;
+	-c)	htgtcl=$2 ; shift 2 ;;
 	-g)	htgdir=$2 ; shift 2 ;;
 	-d)	modeldir=$2 ; shift 2 ;;
 	-m)	optm="-m $2" ; shift 2 ;;

@@ -60,16 +60,21 @@
 ###############################################################################
 # Configuration parameters
 ::msgcat::mcmset fr {
- cfg:dns {Paramètres généraux}
+ cfg:general {Paramètres généraux}
 
  cfg:datefmt:desc {Format d'affichage des dates/heures}
  cfg:datefmt:help {Format d'affichage des dates et des heures, utilisé dans l'édition et l'affichage des données. Voir la page de manuel clock(n) de Tcl.}
  cfg:jourfmt:desc {Format d'affichage des jours}
  cfg:jourfmt:help {Format d'affichage des dates (sans l'heure). Voir la page de manuel clock(n) de Tcl.}
- cfg:defuser:desc {Utilisateur par défaut}
- cfg:defuser:help {L'utilisateur par défaut est utilisé dans les programmes WebDNS en ligne de commande lorsque le login de l'utilisateur n'existe pas dans la base WebDNS.}
  cfg:authmethod:desc {Méthode d'authentification}
  cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.)}
+
+ cfg:dns {Paramètres DNS}
+
+ cfg:dnsupdateperiod:desc {Délai de mise à jour DNS}
+ cfg:dnsupdateperiod:help {Durée entre deux générations de zones DNS sur le serveur DNS (doit être identique à la valeur CRON correspondante)}
+ cfg:defuser:desc {Utilisateur par défaut}
+ cfg:defuser:help {L'utilisateur par défaut est utilisé dans les programmes WebDNS en ligne de commande lorsque le login de l'utilisateur n'existe pas dans la base WebDNS.}
 
  cfg:dhcp {Paramètres DHCP}
 
@@ -179,6 +184,7 @@
  {Error accessing database (%s)} {Erreur d'accès à la base de données (%s)}
  {Connection refused (%s)} {Connexion refusée (%s)}
  {Unrecognized authentication method '%s'} {Méthode d'authentication '%s' non reconnue}
+ {Invalid 'rootusers' configuration parameter} {Paramètre de configuration 'rootusers' invalide}
  {No login: authentication failed} {Pas de login : l'authentification a échoué}
  {User '%s' not authorized} {Utilisateur '%s' non autorisé}
  {Authentication base problem: %s} {Problème dans la base d'authentification : %s}

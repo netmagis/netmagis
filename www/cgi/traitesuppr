@@ -1,0 +1,459 @@
+#!%TCLSH%
+
+#
+# Delete host, IP address or alias
+#
+# Called by: suppr
+#
+# Parameters (form or url):
+#   - name removal
+#	- action : "suppr-nom"
+#	- confirm : "non" or "oui" (if confirm ok)
+#	- nom : name of object to delete
+#	- domaine : domain of object to delete
+#   - IP address removal
+#	- action : "suppr-ip"
+#	- confirm : "non" or "oui" (if confirm ok)
+#	- adr: IP address
+#
+# History
+#   2002/04/11 : pda/jean : design
+#   2002/05/03 : pda/jean : split 3 modification types
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2004/01/14 : pda/jean : add IPv6
+#   2004/08/05 : pda/jean : add mac
+#   2005/04/08 : pda/jean : add dhcpprofil
+#   2007/10/25 : jean     : log modify actions
+#   2008/07/24 : pda/jean : add droitsmtp
+#   2008/07/29 : pda      : use display-rr
+#   2010/10/15 : pda      : add journey
+#   2010/12/14 : pda      : i18n
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(page-suppr-nom)	traitesuppr-nom.html
+set conf(page-suppr-alias)	traitesuppr-alias.html
+set conf(page-suppr-ip-uneip)	traitesuppr-ip-uneip.html
+set conf(page-suppr-ip-objet)	traitesuppr-ip-objet.html
+set conf(page-suppr-ok)		traitesuppr-ok.html
+set conf(err)			erreur.html
+
+#
+# Next actions
+# 
+
+set conf(next)		"traitesuppr"
+set conf(nextmap)	"liste"
+set conf(nextlist)	"liste"
+set conf(nextsuppr)	"suppr"
+
+#
+# Script parameters
+#
+
+# field used to determine next step
+set conf(form)		{
+	{action		1 1}
+}
+
+# action specific fields
+set conf(form-suppr-nom)	{
+	{confirm	1 1}
+	{nom		1 1}
+	{domaine	1 1}
+}
+
+set conf(form-suppr-ip)	{
+	{confirm	1 1}
+	{adr		1 1}
+}
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Name removal
+##############################################################################
+
+# History
+#   2002/04/19 : pda/jean : design
+#
+
+proc traitesuppr-nom {dbfd idcor login _ftab} {
+    global conf
+    upvar $_ftab ftab
+
+    #
+    # Validate form input
+    #
+
+    foreach v {confirm nom domaine} {
+	set $v [string trim [lindex $ftab($v) 0]]
+    }
+    set fqdn "$nom.$domaine"
+
+    #
+    # Get dns update interval
+    #
+
+    set interval [dnsconfig "dnsupdateperiod"]
+
+    #
+    # Check name
+    #
+
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "del-name"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Check that name exists
+    #
+
+    if {$trr(idrr) eq ""} then {
+	d error [mc "Name '%s' does not exist" $fqdn]
+    }
+
+    #
+    # Is it an alias?
+    #
+
+    if {$trr(cname) eq ""} then {
+	set alias 0
+
+	#
+	# It is not an alias, there must be at least an IP address
+	#
+	if {$trr(ip) eq ""} then {
+	    d error [mc "Name '%s' is not a host" $fqdn]
+	}
+
+    } else {
+	set alias 1
+
+	#
+	# It is an alias. Read informations to display a confirmation page.
+	#
+	if {! [read-rr-by-id $dbfd $trr(cname) trrref]} then {
+	    d error [mc "Internal error: object pointed by alias is not found"]
+	}
+    }
+
+    #
+    # Ask for confirmation if needed
+    #
+
+    if {$confirm ne "oui"} then {
+	#
+	# Confirmation needed
+	#
+
+	d urlset "%URLFORM%" $conf(next) {}
+	d urladdnext "%URLFORM%"
+
+	if {$alias} then {
+	    #
+	    # Confirmation page for an alias
+	    #
+	    d result $conf(page-suppr-alias) [list \
+					[list %NOM% $nom] \
+					[list %DOMAINE% $domaine] \
+					[list %NOMREF% $trrref(nom)] \
+					[list %DOMAINEREF% $trrref(domaine)] \
+				    ]
+	} else {
+	    #
+	    # Confirmation page for a host
+	    #
+	    set host [display-rr $dbfd -1 trr]
+	    d result $conf(page-suppr-nom) [list \
+					[list %NOM% $nom] \
+					[list %DOMAINE% $domaine] \
+					[list %MACHINE% $host] \
+				    ]
+	}
+    } else {
+	#
+	# Confirmation is accepted. Do the removal.
+	#
+	d dblock {}
+
+	if {$alias} then {
+	    if {! [del-alias-by-id $dbfd $trr(idrr) msg]} then {
+		d dbabort [mc "delete %s" $fqdn] $msg
+	    }
+
+	    set p "$trrref(nom).$trrref(domaine)"
+	    set logevt "delalias"
+	    set logmsg "delete alias $fqdn -> $p"
+	} else {
+	    #
+	    # This is not an alias: delete all RR dependancies:
+	    # - aliases pointing this object
+	    # - MX
+	    # - IP addresses
+	    #
+	    if {! [del-rr-and-dependancies $dbfd trr msg]} then {
+		d dbabort [mc "delete %s" $fqdn] $msg
+	    }
+	    set logevt "delname"
+	    set logmsg "delete all of $nom.$domaine"
+	}
+
+	d dbcommit [mc "delete %s" $fqdn]
+	d writelog $logevt $logmsg
+
+	#
+	# Prepare next step in journey
+	#
+
+	switch -- [d nextprog] {
+	    map {
+		d urlset "%URLSUITE%" $conf(nextmap) [list {domap {yes}} [d nextargs]]
+	    }
+	    list {
+		d urlset "%URLSUITE%" $conf(nextlist) [list {dolist {yes}} [d nextargs]]
+	    }
+	    default {
+		d urlset "%URLSUITE%" $conf(nextsuppr) {}
+	    }
+	}
+
+	#
+	# End of script: output page and close database
+	#
+
+	d result $conf(page-suppr-ok) [list \
+						[list %OBJET% $fqdn] \
+						[list %INTERVAL% $interval] \
+			    ]
+    }
+}
+
+##############################################################################
+# Suppression d'une adresse IP
+##############################################################################
+
+# History
+#   2002/04/23 : pda/jean : design
+#   2002/04/26 : pda/jean : design end
+#   2002/05/03 : pda/jean : keep a log of modification
+#
+
+proc traitesuppr-ip {dbfd idcor login _ftab} {
+    global conf
+    upvar $_ftab ftab
+
+    #
+    # Validate form input
+    #
+
+    set confirm       [string trim [lindex $ftab(confirm) 0]]
+    set adr           [string trim [lindex $ftab(adr) 0]]
+
+    #
+    # Get dns update interval
+    #
+
+    set interval [dnsconfig "dnsupdateperiod"]
+
+    #
+    # Check IP address
+    #
+
+    set msg [check-ip-syntax $dbfd $adr "inet"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+    if {! [check-authorized-ip $dbfd $idcor $adr]} then {
+	d error [mc "You don't have rights on '%s'" $adr]
+    }
+
+    #
+    # Check that this address exists and get all stored informations
+    #
+
+    if {! [read-rr-by-ip $dbfd $adr trr]} then {
+	d error [mc "Address '%s' not found" $adr]
+    }
+
+    #
+    # Check access to this name
+    #
+
+    set nom     $trr(nom)
+    set domaine $trr(domaine)
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine bidon "del-name"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+    set fqdn "$nom.$domaine"
+
+    #
+    # Is it the last IP address?
+    #
+
+    if {[llength $trr(ip)] == 1} then {
+	set lastadr "yes"
+    } else {
+	set lastadr "no"
+    }
+
+    #
+    # Prepare display of informations, if needed
+    #
+
+    set objet ""
+    set host [display-rr $dbfd -1 trr]
+
+    #
+    # Remove only if confirmation is ok
+    #
+
+    if {$confirm eq "oui"} then {
+	#
+	# Proceed to removal
+	#
+
+	d dblock {}
+
+	if {! $lastadr} then {
+	    #
+	    # Only delete an IP address
+	    #
+
+	    set sql "DELETE FROM dns.rr_ip WHERE adr = '$adr'"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		d dbabort [mc "delete %s" $adr] $msg
+	    }
+	    set msg [touch-rr $dbfd $trr(idrr)]
+	    if {$msg ne ""} then {
+		d dbabort [mc "modify %s" [mc "RR"]] $msg
+	    }
+
+	    set logevt "deladdr"
+	    set logmsg "delete address $adr from $fqdn"
+
+	} else {
+	    #
+	    # Delete the whole object
+	    #
+
+	    if {! [del-rr-and-dependancies $dbfd trr msg]} then {
+		d dbabort [mc "delete %s" $fqdn] $msg
+	    }
+
+	    set logevt "deladr"
+	    set logmsg "delete address $adr -> delete all $fqdn"
+	}
+
+	d dbcommit [mc "delete %s" $adr]
+	d writelog $logevt $logmsg
+    }
+
+    #
+    # Prepare next step in journey
+    #
+
+    switch -- [d nextprog] {
+	map {
+	    d urlset "%URLSUITE%" $conf(nextmap) [list {domap {yes}} [d nextargs]]
+	}
+	list {
+	    d urlset "%URLSUITE%" $conf(nextlist) [list {dolist {yes}} [d nextargs]]
+	}
+	default {
+	    d urlset "%URLSUITE%" $conf(nextsuppr) {}
+	}
+    }
+
+    #
+    # Prepare page display
+    #
+
+    switch -- "confirm=$confirm-lastadr=$lastadr" {
+	confirm=non-lastadr=no {
+	    #
+	    # Ask for confirmation to remove one of the IP addresses
+	    # 
+	    set page $conf(page-suppr-ip-uneip)
+	}
+	confirm=non-lastadr=yes {
+	    #
+	    # Ask for confirmation to remove the last IP address, and thus
+	    # of the whole object.
+	    # 
+	    set page $conf(page-suppr-ip-objet)
+	}
+	confirm=oui-lastadr=no {
+	    #
+	    # Address has been removed
+	    #
+	    set page $conf(page-suppr-ok)
+	    set objet $adr
+	}
+	confirm=oui-lastadr=yes {
+	    #
+	    # The whole object has been removed
+	    #
+	    set page $conf(page-suppr-ok)
+	    set objet "$nom.$domaine"
+	}
+	default {
+	    d error [mc "Internal error: impossible case '%s'" "confirm=$confirm, lastadr=$lastadr"]
+	}
+    }
+
+    d urlset "%URLFORM%" $conf(next) {}
+
+    d result $page [list \
+			[list %NOM%         $nom] \
+			[list %DOMAINE%     $domaine] \
+			[list %ADR%         $adr] \
+			[list %MACHINE%     $host] \
+			[list %OBJET%       $objet] \
+			[list %INTERVAL%    $interval] \
+		    ]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
+
+    #
+    # Validate action, read form values and call the appropriate function.
+    #
+
+    set action [string trim [lindex $ftab(action) 0]]
+
+    if {! [info exists conf(form-$action)]} then {
+	d error [mc "Invalid input '%s'" $action]
+    }
+    if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
+	d error [mc "Invalid input"]
+    }
+
+    traite$action $dbfd $tabuid(idcor) $tabuid(login) ftab
+}
+
+::webapp::cgi-exec main $debug

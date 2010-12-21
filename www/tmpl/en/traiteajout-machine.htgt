@@ -32,7 +32,7 @@
     Host has been added.
 
     The modification will be available on DNS servers
-    within %INTERVALLE% minutes.
+    within %INTERVAL% minutes.
 
     %MACHINE%
 

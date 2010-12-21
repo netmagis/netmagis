@@ -43,11 +43,12 @@
 	    }
 	    \lignetableau {
 		\casetableau {
-		    \couleurfond {%COULEUR%}
 		    \centragehorizontal {CENTER}
 		} {
+		    <div id="buttons">
 		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consulter">
 		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Imprimer">
+		    </div>
 		}
 	    }
 	}

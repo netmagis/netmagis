@@ -75,12 +75,13 @@
 	    }
 	    \lignetableau {
 		\multicasetableau {4} {
-		     \couleurfond {%COULEUR%}
 		     \centragehorizontal {CENTER}
 		} {
+		    <div id="buttons">
 		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consult">
 		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Print">
 		    <INPUT TYPE="SUBMIT" NAME="docsv" VALUE="Spreadsheet">
+		    </div>
 		}
 	    }
 	}

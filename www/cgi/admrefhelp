@@ -1,0 +1,84 @@
+#!%TCLSH%
+
+#
+# Store modifications of tables which constitute the application reference
+#
+# Called by: admrefliste
+#
+# Parameters (form or url):
+#   - type : etabl, commu, hinfo, reseau, domaine, zone, zone4, zone6,
+#		groupe, vlan, eq, eqtype
+#   - more specific parameters
+#
+# History
+#   2010/11/17 : pda      : specifications
+#   2010/12/09 : pda      : i18n
+#   2010/12/13 : pda/jean : add eq and eqtype tables
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page-commu)	aidecommu.html
+set conf(page-dhcpprofil)	aidedhcpprofil.html
+set conf(page-domaine)	aidedomaine.html
+set conf(page-etabl)	aideetabl.html
+set conf(page-groupe)	aidegroupe.html
+set conf(page-hinfo)	aidehinfo.html
+set conf(page-reseau)	aidereseau.html
+set conf(page-vlan)	aidevlan.html
+set conf(page-zone)	aidezone.html
+set conf(page-zone4)	$conf(page-zone)
+set conf(page-zone6)	$conf(page-zone)
+set conf(page-eqtype)	$conf(lib)/aideeqtype.html
+set conf(page-eq)	$conf(lib)/aideeq.html
+
+#
+# Script parameters
+#
+
+set conf(form)	{
+	{type			1 1}
+}
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
+
+    #
+    # Get table type
+    #
+
+    set type [lindex $ftab(type) 0]
+    if {! [info exists conf(page-$type)]} then {
+	d error [mc "Type '%s' not supported" $type]
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-$type) {}
+}
+
+::webapp::cgi-exec main $debug

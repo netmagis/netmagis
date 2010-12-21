@@ -1,0 +1,63 @@
+#!%TCLSH%
+
+#
+# Display general WebDNS index page
+#
+# Called by: /applis/dns/
+#
+# Parameters (form or url): none
+#
+# History
+#   2002/06/03 : pda      : design
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2010/12/06 : pda      : i18n
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		accueil.html
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
+
+    #
+    # URL and substitution list building
+    #
+
+    foreach script {consulter ajout modif suppr droits mail web dhcp corresp} {
+	set up [string toupper $script]
+	d urlset "%URL$up%" "$script" {}
+    }
+    d urlset "%URLOUSUISJE%" "corresp" [list [list "critere" "_"]]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page) {}
+}
+
+::webapp::cgi-exec main $debug

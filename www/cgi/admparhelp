@@ -1,0 +1,78 @@
+#!%TCLSH%
+
+#
+# Display help for administration parameters
+#
+# Called by: admparlist
+#
+# Parameters (form or url): none
+#
+# History
+#   2010/10/25 : pda      : design
+#   2010/12/09 : pda      : i18n
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		admparhelp.html
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
+
+    #
+    # Get data in the form
+    #
+
+    set html {}
+
+    foreach class [dnsconfig class] {
+	append html [::webapp::helem "h3" [dnsconfig desc $class]]
+	append html "\n"
+
+	foreach key [dnsconfig keys $class] {
+
+	    set desc [dnsconfig desc $key]
+	    set help [dnsconfig keyhelp $key]
+
+	    append html [::webapp::helem "h4" \
+				[::webapp::helem "a" $desc "name" $key]]
+
+	    append html "\n"
+	    append html [::webapp::helem "p" $help]
+	    append html "\n"
+			
+	}
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page) [list \
+				[list %TEXTE% $html] \
+			    ]
+}
+
+::webapp::cgi-exec main $debug
