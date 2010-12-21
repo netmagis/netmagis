@@ -1,12 +1,6 @@
 #!/usr/bin/perl -w 
 
-# $Id: poller,v 1.5 2009-08-24 07:51:31 boggia Exp $
-###################################################################
-#  boggia : Creation : 20/03/08
-#  boggia : Modification : 16/05/08
-#	    Ajout d'une fonction de lecture globale du fichier de
-#	    configuration obj999.conf
-#
+#######################################################################
 # Processus d'interrogation de l'ensemble des equipements Osiris
 # - Interrogation SNMP + generation de graphes rrdtools
 # - Mise a jour de la base d'association Postgres pour les AP WiFi
@@ -41,12 +35,9 @@ our $nb_process = $ARGV[2];
 
 
 # configuration par defaut
-our %config = ( 'debug'        		=> 1,
-		'defaultdomain' 	=> 'u-strasbg.fr', 
-          	'snmp_timeout'  	=> 4,
-		'conf_file'		=> "%CONF%",
-          	'syslog_facility'	=> "local0",
-		'logopt'		=> "" 
+our %config = (
+                'snmp_timeout'          => 4,
+                'conf_file'             => "%CONF%",
 );
 
 # liste des sondes
@@ -66,11 +57,10 @@ our %function_probes = (
                 'get_mailq'		=> \&get_mailq,
                 'get_CPU_cisco'		=> \&get_CPU_cisco,
                 'get_CPU_juniper'	=> \&get_CPU_juniper,
-		'get_tempsRep'		=> \&get_url,
-		'get_memory_by_proc'	=> \&get_url,
-		'get_nb_mbuf_juniper'	=> \&get_url,
-		'get_value_generic'	=> \&get_url,
-		'stp_catalyst'          => \&get_stp_catalyst,
+		'get_tempsRep'		=> \&get_generic,
+		'get_memory_by_proc'	=> \&get_generic,
+		'get_nb_mbuf_juniper'	=> \&get_generic,
+		'get_value_generic'	=> \&get_generic,
 		'nbauthwifi'		=> \&get_nbauthwifi,
 		'nbassocwifi'		=> \&get_nbassocwifi,
 		'juniper_filter_counter'	=> \&get_juniper_filter_counter,
@@ -82,7 +72,9 @@ require "%LIBMETRO%";
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($config{'conf_file'});
 
-$config{'path_root'} = $global_var{"PATH_ROOT"};
+$config{'defaultdomain'} = $global_var{"DEFAULTDOMAINNAME"};
+$config{'debug'} = $global_var{"POLLER-debug-on"};
+$config{'syslog_facility'} = $global_var{"syslog-facility-poller"};
 $config{'path_etc'} = $global_var{"DIR_ETC"};
 $config{'path_bin'} = $global_var{"DIR_BIN"};
 $config{'path_var'} = $global_var{"DIR_VAR"};
@@ -93,7 +85,6 @@ $config{'path_syslog'} = $global_var{"DIR_SYSLOG_POLLER"};
 $config{'path_rapport_ap'} = $global_var{"DIR_AP_REPORT"};
 $config{'path_cache_probes'} = $global_var{"DIR_CACHE_PROBES"};
 $config{'dir_lock'} = $global_var{"DIR_LOCK"};
-$config{'dir_res_stp'} = $global_var{"DIR_RES_STP"};
 # recuperation du groupe de pollers
 $config{'options'} = $global_var{"OPTIONS_GROUP_$group"};
 # arguments de connexion a la base PSQL
@@ -106,12 +97,12 @@ $config{'index_ap_file'} = $config{'path_cache_probes'} . "/interf_ap.txt";
 $config{'index_if64'} = $config{'path_cache_probes'} . "/if64.txt";
 $config{'index_if32'} = $config{'path_cache_probes'} . "/if32.txt";
 $config{'index_disk'} = $config{'path_cache_probes'} . "/disk.txt";
-$config{'index_url'} = $config{'path_cache_probes'} . "/url.txt";
-$config{'index_url'} = $config{'path_cache_probes'} . "/url.txt";
+$config{'index_generic'} = $config{'path_cache_probes'} . "/generic.txt";
+$config{'index_generic'} = $config{'path_cache_probes'} . "/generic.txt";
 $config{'fichier_etat'} = $config{'path_var'} . "/wifi/ap_state.txt";
 $config{'index_juniper_filter'} = $config{'path_cache_probes'} . "/juniper_filter.txt";
 # liste des ssid du reseau sans fil
-$config{'list_ssid_wifi'} = read_conf_file("$config{'conf_file'}","LIST_SSID_WIFI");
+$config{'list_ssid_wifi'} = $global_var{"LIST_SSID_WIFI"};
 
 require "$config{'path_sondes'}/sonde-if-snmp-ap.pl";
 require "$config{'path_sondes'}/sonde-if-snmp64.pl";
@@ -128,12 +119,10 @@ require "$config{'path_sondes'}/sonde-mailq.pl";
 require "$config{'path_sondes'}/sonde-cpu-cisco.pl";
 require "$config{'path_sondes'}/sonde-cpu-juniper.pl";
 require "$config{'path_sondes'}/sonde-generic-gauge.pl";
-require "$config{'path_sondes'}/sonde-stp-catalyst.pl";
 require "$config{'path_sondes'}/sonde-juniper-filter-counter.pl";
 require "$config{'path_sondes'}/sonde-indicateur.pl";
 require "$config{'path_sondes'}/sonde-if-broadcast64.pl";
 
-our $logopt;
 our $lock_liste_ap = 0;
 our $lock_liste_if64 = 0;
 our $lock_liste_if32 = 0;
@@ -143,7 +132,7 @@ our $maj_if_ap_file = 0;
 our $maj_if64_file = 0;
 our $maj_if32_file = 0;
 our $maj_disk_file = 0;
-our $maj_url_file = 0;
+our $maj_generic_file = 0;
 our $maj_juniper_filter_file = 0;
 
 our %collsess;
@@ -155,18 +144,12 @@ our @total_activesess = ();
 our @total_authsess = ();
 our %mac_auth;
 
-our %stpInfos;
-our %stpPorts;
-our %BridgeID;
-
 our %ok_sondes = ();
 our %nok_sondes = ();
 
 our %ssid_osiris = init_list_ssid($config{'list_ssid_wifi'});
 
 init_test_sondes();
-
-#open(LOG,">>/tmp/poller");
 
 # recuperation de la date et heure de lancement du script
 our %time = get_time();
@@ -195,7 +178,7 @@ our $modulo_match = $num_process % $nb_process;
 setlogsock("unix");
 
 # Message des logs demarrage du démon ####################
-writelog("poller_$group$num_process",$config{'logopt'},"info",
+writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
 	"\t -> START. Demarrage du polling ########");
 
 
@@ -204,7 +187,7 @@ writelog("poller_$group$num_process",$config{'logopt'},"info",
 # recuperation de la liste des authentifies sur le WiFi
 if($ok_sondes{'assoc_ap'} == 1 && check_periodicity("*/5 * * * *"))
 {
-    writelog("poller_$group$num_process",$config{'logopt'},"info",
+    writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
         "\t -> INFO : Recuperation des authentifies du reseau sans fil ...");
     
     get_authaccess();
@@ -234,8 +217,8 @@ open(DISK,$config{'index_disk'});
 our @liste_disk=<DISK>;
 close(DISK);
 
-open(URL,$config{'index_url'});
-our @liste_url=<URL>;
+open(URL,$config{'index_generic'});
+our @liste_generic=<URL>;
 close(URL);
 
 open(JUNFILTER,$config{'index_juniper_filter'});
@@ -253,7 +236,7 @@ foreach $elem (@FICHIERS)
         }
 }
 
-writelog("poller_$group$num_process",$config{'logopt'},"info",
+writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
         "\t -> $compteur sondes");
 
 Net::SNMP->snmp_dispatcher();
@@ -269,14 +252,14 @@ if($ok_sondes{'assoc_ap'} == 1 && check_periodicity("*/5 * * * *"))
 {
     ###################################
     # création du tableau d'état des AP
-    writelog("poller_$group$num_process",$config{'logopt'},"info",
+    writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
         "\t -> Ecriture du fichier de supervision des AP");
 
     maj_liste_ap_state();
 
     ################################################################
     ## mise à jour de la base des associations WiFi
-    writelog("poller_$group$num_process",$config{'logopt'},"info",
+    writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
         "\t -> MAJ de la base des associations WIFI");
     
     set_assoc_ap_base();
@@ -284,18 +267,7 @@ if($ok_sondes{'assoc_ap'} == 1 && check_periodicity("*/5 * * * *"))
 ########
 
 
-##################################################################
- # gestion specifique pour la metrologie du spanning Tree
-if($ok_sondes{'stp_catalyst'} == 1)
-{
-     writelog("poller_$group$num_process",$config{'logopt'},"info",
-         "\t -> Detection des mouvements dans le Spanning Tree");
-
-     compare_stp_state();
-}
-
-
-writelog("poller_$group$num_process",$config{'logopt'},"info",
+writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
                 "\t -> STOP. Fin du polling ###############");
 ########
 
@@ -313,7 +285,7 @@ sub maj_if_files
 	my $i;
 	my @fichier;
 
-	writelog("poller_$group$num_process",$config{'logopt'},"info",
+	writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
 	    "\t -> INFO : Mise à jour des fichiers de cache");
 
 	if($maj_if_ap_file == 1)
@@ -322,7 +294,7 @@ sub maj_if_files
         	@fichier = grep(/ap32/,readdir REPLOCK);
         	closedir(REPLOCK);
 
-		writelog("poller_$group$num_process",$config{'logopt'},"info",
+		writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
                 	"\t -> REECRITURE DU FICHIER INDEX AP");
 
         	if($fichier[0] eq "")
@@ -353,7 +325,7 @@ sub maj_if_files
                 @fichier = grep(/if64\.lock/,readdir REPLOCK);
                 closedir(REPLOCK);
 
-		writelog("poller_$group$num_process",$config{'logopt'},"info",
+		writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
                         "\t -> REECRITURE DU FICHIER INDEX 64");
                 
 		if($fichier[0] eq "")
@@ -384,7 +356,7 @@ sub maj_if_files
                 @fichier = grep(/if32\.lock/,readdir REPLOCK);
                 closedir(REPLOCK);
 
-		writelog("poller_$group$num_process",$config{'logopt'},"info",
+		writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
                         "\t -> REECRITURE DU FICHIER INDEX 32");
                 
 		if($fichier[0] eq "")
@@ -416,7 +388,7 @@ sub maj_if_files
                 @fichier = grep(/disk\.lock/,readdir REPLOCK);
                 closedir(REPLOCK);
 
-                writelog("poller_$group$num_process",$config{'logopt'},"info",
+                writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
                         "\t -> REECRITURE DU FICHIER D'INDEX DES DISQUES");
 
                 if($fichier[0] eq "")
@@ -442,35 +414,35 @@ sub maj_if_files
                         unlink "$config{'dir_lock'}/disk.lock";
                 }
         }
-	if($maj_url_file == 1)
+	if($maj_generic_file == 1)
         {
                 opendir(REPLOCK,$config{'dir_lock'});
-                @fichier = grep(/url\.lock/,readdir REPLOCK);
+                @fichier = grep(/generic\.lock/,readdir REPLOCK);
                 closedir(REPLOCK);
 
-                writelog("poller_$group$num_process",$config{'logopt'},"info",
-                        "\t -> REECRITURE DU FICHIER D'INDEX DES URL");
+                writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+                        "\t -> REECRITURE DU FICHIER D'INDEX GENERIQUE");
 
                 if($fichier[0] eq "")
                 {
-                        open(LOCK,">$config{'dir_lock'}/url.lock");
+                        open(LOCK,">$config{'dir_lock'}/generic.lock");
                         close(LOCK);
 
-                        my $t_liste_url = @liste_url;
+                        my $t_liste_generic = @liste_generic;
 
-                        open(BD,">$config{'index_url'}");
+                        open(BD,">$config{'index_generic'}");
 
-                        for($i=0;$i<$t_liste_url;$i++)
+                        for($i=0;$i<$t_liste_generic;$i++)
                         {
-				if($liste_url[$i] =~/.*;.*;.*/)
+				if($liste_generic[$i] =~/.*;.*;.*/)
                                 {
-				    print BD "$liste_url[$i]\n";
+				    print BD "$liste_generic[$i]\n";
 				}
                         }
 
                         close(BD);
 
-                        unlink "$config{'dir_lock'}/url.lock";
+                        unlink "$config{'dir_lock'}/generic.lock";
                 }
         }
 	if($maj_juniper_filter_file == 1)
@@ -479,7 +451,7 @@ sub maj_if_files
                 @fichier = grep(/juniper_filter\.lock/,readdir REPLOCK);
                 closedir(REPLOCK);
 
-                writelog("poller_$group$num_process",$config{'logopt'},"info",
+                writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
                         "\t -> REECRITURE DU FICHIER D'INDEX DES FILTRES JUNIPER");
 
                 if($fichier[0] eq "")
@@ -570,7 +542,7 @@ sub ouvre_fichier_conf
 				{
 			    		if(($ok_sondes{'all'} == 1 || $ok_sondes{$sonde} == 1) && $nok_sondes{$sonde} != 1)
                             		{
-					writelog("poller_$group$num_process",$config{'logopt'},"info",
+					writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
 				    		"\t -> WARNING: Sonde $sonde inexistante");
 					# aucune sonde trouvee, n'a rien fait
 					$ok --;
@@ -598,19 +570,6 @@ sub clean_probe
     ($sonde) = (split(/\.pl/,$decomp_rep[$t_decomp_rep - 1]))[0];
 
     return $sonde;
-}
-
-
-
-###########################################################
-# fonction d'ecriture des messages syslog
-sub writelog
-{
-	my ($program,$logopt,$level,$message) = @_;
-
-	openlog($program,$logopt,$config{'syslog_facility'});
-	syslog($level,$message);
-	closelog();
 }
 
 
