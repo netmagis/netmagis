@@ -86,7 +86,7 @@ SUBST	= \
 	-e 's|%PASSWDURL%|$(PASSWDURL)|' \
 	-e 's|%BASE%|$(BASE)|' \
 	-e 's|%BASEMAC%|$(BASEMAC)|' \
-	-e 's|%TOPODIR%|$(TOPODIR)|' \
+	-e 's|%TOPOBINDIR%|$(TOPOBINDIR)|' \
 	-e 's|%TOPOHOST%|$(TOPOHOST)|' \
 	-e 's|%TOPOGRAPH%|$(TOPOGRAPH)|' \
 	-e 's|%DEFUSER%|$(DEFUSER)|' \
