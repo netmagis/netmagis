@@ -117,7 +117,7 @@
  cfg:macactive:desc {Activation de Mac}
  cfg:macactive:help {Cocher cette case pour activer l'accès à la fonctionnalité "Mac"}
 
- cfg:authpldap {Paramètres pour l'authentification LDAP}
+ cfg:authldap {Paramètres pour l'authentification LDAP}
 
  cfg:ldapurl:desc {Serveur LDAP}
  cfg:ldapurl:help {URL d'accès au serveur LDAP. Exemple : ldaps://ldap.domaine.fr:636/}
@@ -129,8 +129,8 @@
  cfg:ldapbasedn:help {DN de base à partir duquel il faut faire les requêtes sur les personnes. Exemple : ou=people,dc=domaine,dc=fr}
  cfg:ldapsearchlogin:desc {Requête de recherche d'utilisateur}
  cfg:ldapsearchlogin:help {Requête LDAP pour chercher un utilisateur à partir de son login. Exemple : "(&(objectClass=inetOrgPerson)(uid=%s))"}
- cfg:ldapattrlogin {string}:desc {Attribut "login"}
- cfg:ldapattrlogin {string}:help {Attribut LDAP correspondant au login. Exemple : "uid"}
+ cfg:ldapattrlogin:desc {Attribut "login"}
+ cfg:ldapattrlogin:help {Attribut LDAP correspondant au login. Exemple : "uid"}
  cfg:ldapattrpassword:desc {Attribut "mot de passe"}
  cfg:ldapattrpassword:help {Attribut LDAP correspondant au mot de passe. Exemple : "userPassword"}
  cfg:ldapattrname:desc {Attribut "nom"}

@@ -18,7 +18,7 @@
 
  cfg:dnsupdateperiod:desc {DNS update period}
  cfg:dnsupdateperiod:help {Duration between DNS zone generations on the DNS server (should be kept in sync with the associated CRON period)}
- cfg:defuser:desc {Default user}}
+ cfg:defuser:desc {Default user}
  cfg:defuser:help {Default user is used in WebDNS command line programs, when the user's login is not found in the WebDNS database}
 
  cfg:dhcp {DHCP parameters}
@@ -62,7 +62,7 @@
  cfg:macactive:desc {MAC module activation}
  cfg:macactive:help {Check this box to activate the "MAC" module.}
 
- cfg:authpldap {LDAP authentication parameters}
+ cfg:authldap {LDAP authentication parameters}
 
  cfg:ldapurl:desc {LDAP server}
  cfg:ldapurl:help {URL to access LDAP server. Example: ldaps://ldap.domaine.fr:636/}
@@ -74,8 +74,8 @@
  cfg:ldapbasedn:help {Base DN for people searches. Example: ou=people,dc=domaine,dc=fr}
  cfg:ldapsearchlogin:desc {User search request}
  cfg:ldapsearchlogin:help {LDAP request to search for an user using the login name. Example: "(&(objectClass=inetOrgPerson)(uid=%s))"}
- cfg:ldapattrlogin {string}:desc {Attribute "login"}
- cfg:ldapattrlogin {string}:help {LDAP attribute to get login name. Example: "uid"}
+ cfg:ldapattrlogin:desc {Attribute "login"}
+ cfg:ldapattrlogin:help {LDAP attribute to get login name. Example: "uid"}
  cfg:ldapattrpassword:desc {Attribute "password"}
  cfg:ldapattrpassword:help {LDAP attribute to get encrypted password. Example: "userPassword"}
  cfg:ldapattrname:desc {Attribute "nom"}

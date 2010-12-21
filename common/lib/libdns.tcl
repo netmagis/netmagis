@@ -737,13 +737,13 @@ snit::type ::dnscontext {
 
 	#
 	# Two possible cases:
-	# - URL is a local one (begins with a "/")
+	# - URL is a local one (does not begin with "http://")
 	# - URL is external (begins with "http://")
 	# In the last case, don't add default arguments which are
 	# specific to WebDNS application.
 	#
 
-	if {[regexp {^/} $path]} then {
+	if {! [regexp {^https?://} $path]} then {
 	    #
 	    # Add default arguments
 	    #
@@ -753,7 +753,7 @@ snit::type ::dnscontext {
 		lappend largs [list "uid" $u]
 	    }
 
-	    # defautl locale
+	    # default locale
 	    if {$l ne $bl} then {
 		lappend largs [list "l" $l]
 	    }
@@ -887,10 +887,7 @@ snit::type ::dnscontext {
 	#
 
 	set blocale [::webapp::locale $avlocale]
-	set locale $blocale
-
-	uplevel #0 mclocale $locale
-	uplevel #0 mcload [get-local-conf "msgsdir"]
+	$self locale $blocale
 
 	#
 	# Maintenance mode : access is forbidden to all, except
@@ -898,13 +895,13 @@ snit::type ::dnscontext {
 	#
 
 	set ftest [get-local-conf "nologin"]
-	set root [get-local-conf "rootusers"]
-	if {[catch [lindex $root 0]]} then {
+	set rootusers [get-local-conf "rootusers"]
+	if {! [catch [lindex $rootusers 0]]} then {
 	    $self error "Invalid 'rootusers' configuration parameter"
 	}
 
 	if {[file exists $ftest]} then {
-	    if {$uid eq "" || ! ($uid in $root)} then {
+	    if {$uid eq "" || ! ($uid in $rootusers)} then {
 		set fd [open $ftest "r"]
 		set msg [read $fd]
 		close $fd

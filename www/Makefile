@@ -26,18 +26,23 @@ install: all
 	mkdir -p $(DESTDIR)/lib/webdns
 	install -m 0755 ps2pdf $(DESTDIR)/lib/webdns/
 	#
+	# install htg and models
+	#
+	cd htg ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	#
 	# install tmpl pages
 	#
 	mkdir -p $(DESTDIR)/lib/webdns/tmpl
 	./htg/src/htg2html -g htg/src -d htg/models -m default \
 			-c ./htg/src/htgtcl \
-			tmpl /tmp/htg.$$ $(DESTDIR)/lib/webdns/tmpl
+			tmpl /tmp/htgtmp $(DESTDIR)/lib/webdns/tmpl
+	rm -rf /tmp/htgtmp
 	cd $(DESTDIR)/lib/webdns/tmpl ; ln -s en C
 	#
 	# install css and images
 	#
 	rm -f $(DESTDIR)/www/webdns/css
-	ln -s $(DESTDIR)/www/webdns/models/default/css $(DESTDIR)/www/webdns
+	ln -s $(DESTDIR)/lib/webdns/htg/models/default/css $(DESTDIR)/www/webdns
 	#
 	# install default files
 	#
