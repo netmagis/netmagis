@@ -586,7 +586,7 @@
  {Change of '%s' not yet processed} {Modification de '%s' non encore effectuée}
  {Change log of '%1$s' at %2$s} {Log des modifications de '%1$s' au %2$s}
  {No message for '%s'} {Aucun message pour '%s'}
- {Last message for '%1$s' at %2$s} {ernier message pour '%1$s' au %2$s}
+ {Last message for '%1$s' at %2$s} {Dernier message pour '%1$s' au %2$s}
  {IP address '%s' already exists} {L'adresse '%s' existe déjà}
  {You cannot set a DHCP profile without assigning a MAC address} {Impossible de configurer un profil DHCP sans adresse MAC}
  {Host type '%s' not found} {Type de machine '%s' non trouvé}
