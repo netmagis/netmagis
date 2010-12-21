@@ -24,7 +24,7 @@
 TMP=/tmp/topo.$$
 TMPERR=/tmp/topoerr.$$
 
-eval `webdns-config \
+eval `%CONFPROG% \
 		ranciddb \
 		rancidconfdir \
 		eqvirtdir \

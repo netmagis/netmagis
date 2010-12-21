@@ -8,7 +8,7 @@ createdir=false
 usage ()
 {
     (
-	echo "usage: `basename $0` opt tclsh libdns conffile file ... file dir"
+	echo "usage: `basename $0` opt tclsh libdns conffile confprog file ... file dir"
 	echo "	opt: [-m mode][-o owner][-g group][-d]"
     )
 }
@@ -33,7 +33,7 @@ do
     esac
 done
 
-if [ $# -lt 5 ]
+if [ $# -lt 6 ]
 then
     usage
     exit 1
@@ -42,8 +42,9 @@ fi
 tclsh=$1
 libdns=$2
 conffile=$3
+confprog=$4
 
-shift 3
+shift 4
 
 #
 # Search for dest directory (last argument) and create it if needed
@@ -75,6 +76,7 @@ do
 	    -e "s|%TCLSH%|$tclsh|g" \
 	    -e "s|%LIBDNS%|$libdns|g" \
 	    -e "s|%CONFFILE%|$conffile|g" \
+	    -e "s|%CONFPROG%|$confprog|g" \
 	    $f > "$destfile" \
 	&& chmod $mode "$destfile" \
 	&& if [ ! -z "$owner" ] ; then chown $owner "$destfile" ; fi \

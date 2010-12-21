@@ -12,7 +12,7 @@
 #   2010/12/18 : pda      : rework installation
 #
 
-eval `webdns-config \
+eval `%CONFPROG% \
 		rancidcmd \
 		topobindir \
 		`

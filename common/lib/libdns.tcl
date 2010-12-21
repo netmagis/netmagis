@@ -6021,7 +6021,8 @@ proc lazy-connect {{chan 1}} {
 
     set r 1
     if {[string equal $ctxt(dbfd$chan) ""]} then {
-	set d [catch {set ctxt(dbfd$chan) [pg_connect -conninfo %BASE%]} msg]
+	set conninfo [get-conninfo "dnsdb"]
+	set d [catch {set ctxt(dbfd$chan) [pg_connect -conninfo $conninfo]} msg]
 	if {$d} then {
 	    set r 0
 	} else {

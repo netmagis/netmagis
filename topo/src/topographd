@@ -473,10 +473,13 @@ proc sensors {} {
     # Red new sensor list from the graph
     #
 
-    set msg [read-coll tnew]
-    if {$msg ne ""} then {
+    if {! [read-coll tnew msg]} then {
 	keep-state-mail "sensors" "Cannot read sensor list from graph\n$msg"
 	return 0
+    }
+    if {$msg ne ""} then {
+	keep-state-mail "sensors" "Inconsistent sensors:\n$msg\nSensor list not updated."
+	return 1
     }
 
     #
@@ -563,7 +566,7 @@ proc sensors {} {
     # Send a mail if needed
     #
 
-    keep-state-mail "sensors" ""
+    keep-state-mail "sensors" "Resuming normal operation"
 
     return 1
 }
@@ -573,8 +576,9 @@ proc sensors {} {
 #
 # Input:
 #   - _tab : in return, information extracted
+#   - _msg : in return, empty string or error/warning message
 # Output:
-#   - return value : empty string or error message
+#   - return value : 1 if ok, 0 if error
 #   - parameter _tab: array, indexed by sensor names, containing a list
 #	{<type> <eq> <community> [<iface> [<param>]]}
 #
@@ -589,17 +593,20 @@ proc sensors {} {
 #   2008/07/30 : pda        : adapt to new input format
 #   2010/11/09 : pda/jean   : topographd integration
 #   2010/12/19 : pda        : use call-topo
+#   2010/12/21 : pda        : any message is not automatically an error
 #
 
-proc read-coll {_tab} {
+proc read-coll {_tab _msg} {
     global conf
     upvar $_tab tab
+    upvar $_msg msg
 
     set cmd $conf(extractcoll)
     if {! [call-topo $cmd msg]} then {
-	return "Cannot read sensor list ($msg)"
+	return 0
     }
 
+    set lwarn {}
     foreach line [split $msg "\n"] {
 	set l [split $line]
 	switch [lindex $l 0] {
@@ -608,24 +615,31 @@ proc read-coll {_tab} {
 		if {$vlan ne "-"} then {
 		    set iface "$iface.$vlan"
 		}
-		set sensor [list $type $eq $comm $iface {}]
+		set sensor [list $kw $eq $comm $iface {}]
 	    }
 	    nbassocwifi -
 	    nbauthwifi {
 		lassign $l kw id eq comm iface ssid
-		set sensor [list $type $eq $comm $iface $ssid]
+		set sensor [list $kw $eq $comm $iface $ssid]
 	    }
 	    default {
-		return "Unknown sensor type ($l)"
+		lappend lwarn "Unknown sensor type ($l)"
+		set sensor ""
 	    }
 	}
 
-	if {[info exists tab($id)]} then {
-	    return "Sensor '$id' seen more than once"
+	if {$sensor ne ""} then {
+	    if {[info exists tab($id)]} then {
+		# same format for all sensor types, until now
+		lassign $tab($id) okw oeq ocomm oiface
+		lappend lwarn "Sensor '$id' seen more than once ($eq/$iface and $oeq/$oiface)"
+	    }
+	    set tab($id) $sensor
 	}
-	set tab($id) $sensor
     }
-    return ""
+
+    set msg [join $lwarn "\n"]
+    return 1
 }
 
 ##############################################################################

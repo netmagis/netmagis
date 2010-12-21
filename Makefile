@@ -1,6 +1,9 @@
 DESTDIR = /usr/local
 TCLSH	= /usr/local/bin/tclsh
-SUBST	= $(TCLSH) $(DESTDIR)/lib/webdns/libdns.tcl $(DESTDIR)/etc/webdns.conf
+SUBST	= $(TCLSH) \
+	$(DESTDIR)/lib/webdns/libdns.tcl \
+	$(DESTDIR)/etc/webdns.conf \
+	$(DESTDIR)/bin/webdns-config
 
 usage:
 	@echo "available targets:"
