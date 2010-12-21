@@ -91,8 +91,9 @@ CREATE TABLE topo.modeq (
 			    DEFAULT CURRENT_TIMESTAMP,
 	login		TEXT,		-- detected user
 	processed	INT DEFAULT 0,
-	PRIMARY KEY (eq, date)
 ) ;
+
+CREATE INDEX modeq_index ON topo.modeq (eq) ;
 
 ------------------------------------------------------------------------------
 -- Interface change request spool
