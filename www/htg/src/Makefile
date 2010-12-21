@@ -1,4 +1,5 @@
 
+TCLCONF	= /usr/local/lib/tcl8.6/tclConfig.sh
 CC		= gcc -Wall
 DEBUG		= -g
 TCLCFLAGS	= -I/usr/local/include/tcl8.5
@@ -11,7 +12,8 @@ OBJS		= htgtcl.o base.o
 all:		htgtcl
 
 htgtcl:		$(OBJS)
-	$(CC) -o htgtcl $(OBJS) $(TCLLFLAGS)
+	./$(TCLCONF) $(CC) -o htgtcl $(OBJS) $$TCL_LIB_SPEC $(TCLLFLAGS)
+####	$(CC) -o htgtcl $(OBJS) $(TCLLFLAGS)
 
 install:	htgtcl
 

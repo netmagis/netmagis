@@ -20,6 +20,8 @@
 #   2007/01/11 : pda      : common initialization
 #   2007/01/11 : pda      : uid substitution
 #   2010/12/12 : pda      : i18n
+#   2010/12/20 : pda      : reworked installation
+#
 
 #
 # Template pages used by this script
@@ -50,9 +52,7 @@ set conf(form)	{
 set conf(dumpgraph)	"dumpgraph -o rnet %s"
 set conf(extractl3)	"extractl3 %s %s"
 
-set conf(dot)		"%DOT%"
-set conf(neato)		"%NEATO%"
-set conf(ps2pdf)	"%PS2PDF%"
+set conf(neatocmd)	"%s -Gmaxiter=10000"
 
 #
 # WebDNS general library
@@ -339,7 +339,7 @@ proc main {} {
 	# Select format and ouput page
 	#
 
-	set prog "$conf(neato) -Gmaxiter=10000"
+	set prog [format $conf(neatocmd) [get-local-conf "neato"]]
 
 	d urlset "" $conf(nextl3) [list \
 					[list "format" "png"] \
@@ -355,7 +355,8 @@ proc main {} {
 
 	switch -- $format {
 	    pdf {
-		set fd [open "|$prog -Tps $tmp.dot 2> /dev/null | $conf(ps2pdf) - -" "r"]
+		set ps2pdf [get-local-conf "ps2pdf"]
+		set fd [open "|$prog -Tps $tmp.dot 2> /dev/null | $ps2pdf - -" "r"]
 		fconfigure $fd -translation binary
 		set pdf [read $fd]
 		close $fd

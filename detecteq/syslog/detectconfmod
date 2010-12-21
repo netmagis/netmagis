@@ -1,7 +1,6 @@
 #!%TCLSH%
 
 # 
-# 
 # This script is called from syslogd daemon, with a line such as:
 # 
 #     local2.*       |exec /local/applis/topo/bin/detectconfmod
@@ -16,81 +15,87 @@
 #
 # History:
 #   2010/10/14 : pda/jean : design
+#   2010/12/20 : pda      : reworked installation
 #
 
+source %LIBDNS%
 
-set conf(pkg)		%PKGTCL%
-set conf(libdns)	%LIBDNS%
-set conf(base)		%BASE%
+proc main {argv0 argv} {
 
-set conf(defdom)	%DEFDOM%
-
-lappend auto_path $conf(pkg)
-
-package require pgsql
-
-source $conf(libdns)
-
-
-set dbfd [ouvrir-base $conf(base) msg]
-if {[string equal $dbfd ""]} then {
-    puts stderr "$argv0: cannot connect to database ($msg)"
-    exit 1
-}
-
-while {[gets stdin line] >= 0} {
     #
-    # Extract host name
+    # Initialization
+    #
+    ::dnscontext create d
+
+    set msg [d init-script dbfd tabcor]
+    if {$msg ne ""} then {
+	puts stderr "$msg"
+	puts stderr "Aborted."
+	return 1
+    }
+
+    set defdomain [dnsconfig "defdomain"]
+
+    #
+    # Main loop
     #
 
-    if {[regexp {^\S+\s+\d+\s+\d+:\d+:\d+\s+(\S+)} $line dummy host]} then {
+    while {[gets stdin line] >= 0} {
+	#
+	# Extract host name
+	#
 
-	set found 0
+	if {[regexp {^\S+\s+\d+\s+\d+:\d+:\d+\s+(\S+)} $line dummy host]} then {
 
-	if {[regexp {.*Configured from \S+ by (\S+)} $line dummy login]} then {
-	    #
-	    # Cisco
-	    #
+	    set found 0
 
-	    set found 1
-	} elseif {[regexp {.*User '(\S+)' requested 'commit'} $line dummy login]} then {
-	    #
-	    # Juniper
-	    #
-
-	    set found 1
-	}
-
-	if {$found} then {
-	    #
-	    # If host name is not fully qualified, qualify it.
-	    # The case of a not fully qualified host name occurs if
-	    # - either the originating syslog do not send a FQDN 
-	    #	(not a best practice according to RFC 5424)
-	    # - or the originating syslog do not send a hostname
-	    #	and the local syslog daemon performs a reverse-lookup
-	    #	and strips the domain part.
-	    #
-
-	    if {! [regexp {\.} $host]} then {
+	    if {[regexp {.*Configured from \S+ by (\S+)} $line dummy login]} then {
 		#
-		# Append the default domain
+		# Cisco
 		#
-		append host ".$conf(defdom)"
+
+		set found 1
+	    } elseif {[regexp {.*User '(\S+)' requested 'commit'} $line dummy login]} then {
+		#
+		# Juniper
+		#
+
+		set found 1
 	    }
 
+	    if {$found} then {
+		#
+		# If host name is not fully qualified, qualify it.
+		# The case of a not fully qualified host name occurs if
+		# - either the originating syslog do not send a FQDN 
+		#	(not a best practice according to RFC 5424)
+		# - or the originating syslog do not send a hostname
+		#	and the local syslog daemon performs a reverse-lookup
+		#	and strips the domain part.
+		#
 
-	    #
-	    # Insert this entry in the database
-	    #
+		if {! [regexp {\.} $host]} then {
+		    #
+		    # Append the default domain
+		    #
+		    append host ".$defdomain"
+		}
 
-	    set qhost [::pgsql::quote $host]
-	    set qlogin [::pgsql::quote $login]
-	    set sql "INSERT INTO topo.modeq (eq, login) VALUES ('$qhost', '$qlogin')"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		puts stderr "$argv0: cannot write '$eq/$login' to database ($msg)"
-		exit 1
+
+		#
+		# Insert this entry in the database
+		#
+
+		set qhost [::pgsql::quote $host]
+		set qlogin [::pgsql::quote $login]
+		set sql "INSERT INTO topo.modeq (eq, login) VALUES ('$qhost', '$qlogin')"
+		if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		    puts stderr "$argv0: cannot write '$eq/$login' to database ($msg)"
+		    return 1
+		}
 	    }
 	}
     }
 }
+
+exit [main $argv0 $argv]

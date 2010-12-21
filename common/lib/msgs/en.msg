@@ -29,6 +29,8 @@
 
  cfg:topoactive:desc {Topo module activation}
  cfg:topoactive:help {Check this box to activate the "Topo" module.}
+ cfg:defdomain:desc {Default domain}
+ cfg:defdomain:help {Default domain name, since some equipments do not report FQDNs}
  cfg:topofrom:desc {Topo mail sender}
  cfg:topofrom:help {"From" header of mails sent by the topod daemon when it detects modifications or abnormalities.}
  cfg:topoto:desc {Topo mail receiver}

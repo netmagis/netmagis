@@ -84,6 +84,8 @@
 
  cfg:topoactive:desc {Activation de Topo}
  cfg:topoactive:help {Cocher cette case pour activer l'accès à la fonctionnalité "Topo".}
+ cfg:defdomain:desc {Domaine par défaut}
+ cfg:defdomain:help {Domaine par défaut, car certains équipements ne se signalement pas avec un nom pleinement qualifié}
  cfg:topofrom:desc {"From" des mails de topo}
  cfg:topofrom:help {Champ "From" des mails envoyés par le démon topod lors des détections de modification ou d'anomalie.}
  cfg:topoto:desc {Destinataire des mails de topo}

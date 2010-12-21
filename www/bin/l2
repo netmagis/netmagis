@@ -22,6 +22,7 @@
 #   2007/01/11 : pda      : common initialization
 #   2007/01/11 : pda      : uid substitution
 #   2010/12/12 : pda      : i18n
+#   2010/12/20 : pda      : reworked installation
 #
 
 #
@@ -54,9 +55,8 @@ set conf(form)	{
 set conf(dumpgraph)	"dumpgraph -o vlan %s"
 set conf(extractl2)	"extractl2 %s %s %s %d"
 
-set conf(dot)		"%DOT%"
-set conf(neato)		"%NEATO%"
-set conf(ps2pdf)	"%PS2PDF%"
+set conf(dotcmd)	"%s"
+set conf(neatocmd)	"%s -Gmaxiter=10000"
 
 set conf(maxdot)	12
 
@@ -475,9 +475,11 @@ proc main {} {
 		#
 
 		if {$nnodes > $conf(maxdot)} then {
-		    set prog "$conf(neato) -Gmaxiter=10000"
+		    set prog [get-local-conf "neato"]
+		    set prog [format $conf(neatocmd) $prog]
 		} else {
-		    set prog "$conf(dot)"
+		    set prog [get-local-conf "dot"]
+		    set prog [format $conf(dotcmd) $prog]
 		}
 
 		d urlset "" $conf(nextl2) [list \
@@ -501,7 +503,8 @@ proc main {} {
 
 		switch -- $format {
 		    pdf {
-			set fd [open "|$prog -Tps $tmp.dot 2> /dev/null | $conf(ps2pdf) - -" "r"]
+			set ps2pdf [get-local-conf "ps2pdf"]
+			set fd [open "|$prog -Tps $tmp.dot 2> /dev/null | $ps2pdf - -" "r"]
 			fconfigure $fd -translation binary
 			set pdf [read $fd]
 			close $fd
