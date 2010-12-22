@@ -33,6 +33,7 @@ Database server
 	    .../webdns/
 		.../defaults
 		    .../crontab.dns	[example crontab]
+		.../upgrade/
 	.../sbin/
 	    .../webdns-daily
 	    .../webdns-backup
@@ -49,6 +50,7 @@ Web server
 	[same standard hierarchy as for all machines]
 	.../lib/
 	    .../webdns/
+		.../ps2pdf
 		.../tmpl/
 		    .../fr/
 			.../*.html	[all HTML templates files]
@@ -56,18 +58,25 @@ Web server
 		    .../en/
 			.../*.html	[all HTML templates files]
 			.../*.tex	[all LaTeX templates files]
-		    .../C		[symbolic link to en/ directory]
+		    .../C		[symlink to en/ directory]
 		.../defaults
 		    .../httpd.conf	[example Apache22 configuration file]
 		    .../authldap.conf	[example Apache22 configuration file]
 		    .../authpgsql.conf	[example Apache22 configuration file]
+		.../htg/
+		    .../models/
+		    .../doc/		[obsolete, in french]
+	.../bin/
+	    .../htg
+	    .../htg2html
+	    .../htgtcl
 	.../www
 	    .../webdns
 		.../*			[all CGI scripts]
-		.../css/
+		.../css/		[symlink to lib/webdns/htg/models/defaults/css]
 		    .../*		[CSS files]
-		images/
-		    .../*		[logo, pictures]
+		    .../images/
+			.../*		[logo, pictures]
 
 Utils server
 ------------
@@ -129,7 +138,13 @@ Topo server
 	[same standard hierarchy as for all machines]
 	.../lib/
 	    .../webdns/
-		.../defaults
+		.../topo/
+		    .../anaconf
+		    .../analyze
+		    .../parse-cisco.tcl
+		    .../buildgraph
+		    ...
+		.../defaults/
 		    .../crontab.relay	[example crontab]
 	.../etc/
 	    .../rc.d/

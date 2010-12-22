@@ -1,0 +1,44 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Modification des organismes
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Gestion des organismes}
+
+    \titre {2} {\ancre {nom} {Intitulé}}
+
+	Intitulé de l'organisme.
+
+	Exemple~:
+	    \retrait {\verbatim {Nations Unies}}
+
+	Attention~: l'intitulé peut changer, mais l'organisme
+	reste le même. Autrement, tous les réseaux associés à cet
+	organisme restent associés avec le nouveau nom.
+}
+
+}

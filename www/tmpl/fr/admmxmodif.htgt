@@ -1,0 +1,37 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {25/04/2003}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - MX modifiés
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modification effectuée}
+
+    Les MX associés à \gras {%NOM%.%DOMAINE%} ont été mis à jour~:
+
+    %TABLEAU%
+}
+
+}

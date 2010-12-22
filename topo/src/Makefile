@@ -1,25 +1,12 @@
-#
-#
-
-TOPODIR=/local/applis/topo
-TOPOGRAPH=$(TOPODIR)/osiris/osiris.graph
-
-# pour topod
-BASE="{host=dbcrc.u-strasbg.fr dbname=dns user=dns password=pas-fou-non}"
-DELAY=5					# delai entre itérations de topod (sec)
-PKGTCL=
-LIBDNS=
-FPING=
-RANCID=
-LOGGER=
-RANCIDDIR=
-EQVIRT=
-DEFUSER=
-
-
+DESTDIR		= /usr/local
+TCLSH		= /usr/local/bin/tclsh
+SINSTALL	= ../../inst/install-script
+SUBST		= $(TCLSH) \
+			$(DESTDIR)/lib/webdns/libdns.tcl \
+			$(DESTDIR)/etc/webdns.conf \
+			$(DESTDIR)/bin/webdns-config
 
 LIBDIR = ../lib
-
 CFLAGS = -g -Wall -I$(LIBDIR)
 LDFLAGS = -L$(LIBDIR)
 LDLIBS = -lgraph
@@ -36,40 +23,23 @@ PROGS = \
 
 SCRIPTS = \
 	anaconf		\
-	analyser	\
+	analyze	\
 	checkdns	\
 	decodename	\
 	doteq		\
-	liste-rancid	\
-	liste-vlans	\
+	list-rancid	\
+	list-vlans	\
 	parse-hp.tcl	\
 	parse-cisco.tcl	\
 	parse-juniper.tcl	\
-	ssidprobes	\
+	ssidsensors	\
 	topographd	\
 	toposendd	\
 	start-rancid	\
 	sendmail
 
-SUBST = \
-        -e 's|%TCLSH%|$(TCLSH)|' \
-        -e 's|%FPING%|$(FPING)|' \
-        -e 's|%RANCID%|$(RANCID)|' \
-        -e 's|%LOGGER%|$(LOGGER)|' \
-        -e 's|%TOPOGRAPH%|$(TOPOGRAPH)|' \
-        -e 's|%TOPODIR%|$(TOPODIR)|' \
-        -e 's|%BASE%|$(BASE)|' \
-        -e 's|%LIBDNS%|$(LIBDNS)|' \
-        -e 's|%PKGTCL%|$(PKGTCL)|' \
-        -e 's|%DELAY%|$(DELAY)|' \
-	-e 's|%DEFUSER%|$(DEFUSER)|' \
-	-e 's|%RANCIDMODUSER%|$(RANCIDMODUSER)|' \
-	-e 's|%RANCIDMODPASS%|$(RANCIDMODPASS)|' \
-	-e 's|%RANCIDDIR%|$(RANCIDDIR)|' \
-	-e 's|%EQVIRT%|$(EQVIRT)|'
-
-
 all:	$(PROGS)
+	@echo ">>> Making all in `pwd`"
 
 dumpgraph:	dumpgraph.c	$(LIBDIR)/libgraph.a
 buildgraph:	buildgraph.c	$(LIBDIR)/libgraph.a
@@ -81,17 +51,10 @@ extractcoll:	extractcoll.c	$(LIBDIR)/libgraph.a
 getnetif:	getnetif.c	$(LIBDIR)/libgraph.a
 
 install: $(PROGS) $(SCRIPTS)
-	test -d $(TOPODIR)/bin || mkdir $(TOPODIR)/bin
-	chmod 775 $(TOPODIR)/bin
-	for i in $(SCRIPTS) ; \
-	do \
-		sed $(SUBST) $$i > $(TOPODIR)/bin/$$i ; \
-		chmod 0775 $(TOPODIR)/bin/$$i ; \
-	done
-	for i in $(PROGS) ; \
-	do \
-		install -m 0775 $$i $(TOPODIR)/bin ; \
-	done
+	@echo ">>> Making install in `pwd`"
+	mkdir -p $(DESTDIR)/lib/webdns/topo
+	install -m 0755 $(PROGS) $(DESTDIR)/lib/webdns/topo
+	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/lib/webdns/topo
 
 clean:
 	rm -f *.o $(PROGS) *.core

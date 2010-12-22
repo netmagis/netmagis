@@ -1,0 +1,59 @@
+{
+\modele {texte}
+
+\set {auteur} {jean}
+\set {date}   {16/09/2010}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Lister les adresses inactives
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+    \titre {1} {Lister les adresses inactives}
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	\tableau {
+	    \bordure {0} {}
+	    taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {} {Réseau}
+		\casetableau {} {%LRES%}
+	    }
+	    \lignetableau {
+		\casetableau {} {Dernière occurrence}
+		\casetableau {} {%LOCCUR%}
+	    }
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}} {
+		    <INPUT NAME="action" TYPE="SUBMIT" VALUE="Lister">
+		}
+	    }
+	}
+    </FORM>
+
+    %TABLEAU%
+
+}
+
+}

@@ -1,0 +1,124 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {06/02/2004}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Gestion des rôles de messagerie
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Gestion des rôles}
+
+    Cette page vous permet de paramétrer la gestion du routage de
+    messagerie. Vous pouvez~:
+    \liste {
+	\item {déclarer une adresse (partie droite après le <<~@~>>), et}
+	\item {spécifier la machine devant recevoir les messages
+	    (c'est à dire devant héberger les boîtes aux lettres)
+	    pour cette adresse.
+	}
+    }
+
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Modification d'un rôle de messagerie}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%URLFORM%">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \multicasetableau {2} {} {
+				Saisissez l'adresse de messagerie à
+				créer, modifier ou supprimer~:
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Adresse de messagerie}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				.
+				%DOMAINE%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Valider">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Consultation des rôles de messagerie}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%URLFORM%">
+		    <INPUT TYPE="HIDDEN" NAME="nom" VALUE="">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Domaine de messagerie~:}
+			    \casetableau {} {%DOMAINE%}
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Consulter">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+    }
+}
+
+}

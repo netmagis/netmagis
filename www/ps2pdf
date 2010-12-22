@@ -1,0 +1,16 @@
+#!/bin/sh
+
+#
+# ps2pdf wrapper
+#
+# This *#*@\%#!$ script use many programs located in /usr/local/bin
+# or elsewhere.
+#
+# To avoid encumbering Makefile or CGI scripts with paths, this wrapper
+# sets a valid PATH for all scripts called by ps2pdf.
+#
+
+PATH=/usr/local/bin:$PATH
+export PATH
+
+exec ps2pdf $*

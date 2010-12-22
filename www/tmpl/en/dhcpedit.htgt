@@ -1,0 +1,85 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {05/10/2004}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Editing DHCP dynamic ranges
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Edit DHCP parameters for network %RESEAU%}
+
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {RIGHT}}
+	\casedefauttableau {\centragehorizontal {CENTER}}
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {} {Modify an entry}
+	    \casetableau {} {:}
+	    \casetableau {} {Directly edit line}
+	}
+	\lignetableau {
+	    \casetableau {} {Remove an entry}
+	    \casetableau {} {:}
+	    \casetableau {} {Just delete "min"}
+	}
+	\lignetableau {
+	    \casetableau {} {Add an entry}
+	    \casetableau {} {:}
+	    \casetableau {} {Add informations in one of the
+		empty lines at the bottom}
+	}
+    }
+
+    Note: values for lease parameters are in seconds. The "0" value
+    means default value on DHCP server.
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	<INPUT TYPE="HIDDEN" NAME="idreseau" VALUE="%IDRESEAU%">
+	%TABLEAU%
+	<P>
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {}
+	} {
+	    \lignetableau {
+		\casetableau {
+		    \centragehorizontal {CENTER}
+		} {
+		    <div id="buttons">
+		    <INPUT TYPE="SUBMIT" VALUE="Store">
+		    <INPUT TYPE="RESET" VALUE="Reset">
+		    </div>
+		}
+	    }
+	}
+    </FORM>
+}
+
+}

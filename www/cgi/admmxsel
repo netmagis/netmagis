@@ -1,0 +1,67 @@
+#!%TCLSH%
+
+#
+# Select a MX to be modified
+#
+# Called by: admin
+#
+# Parameters (form or url): none
+#
+# History
+#   2003/04/24 : pda/jean : design
+#   2003/05/13 : pda/jean : use auth base
+#   2010/12/09 : pda      : i18n
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		admmxsel.html
+
+#
+# Next actions
+# 
+
+set conf(next)		"admmxedit"
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
+
+    #
+    # Get domains authorized for the user
+    #
+
+    set domain [menu-domain $dbfd $tabuid(idcor) "domaine" "" ""]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+    d result $conf(page) [list \
+				[list %DOMAINE% $domain] \
+			    ]
+}
+
+::webapp::cgi-exec main $debug

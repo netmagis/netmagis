@@ -1,0 +1,43 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {06/02/2004}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Recherche de correspondant
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Recherche des correspondants associés à une machine}
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	Adresse ou machine (avec domaine)~:
+	    <INPUT TYPE="TEXT" NAME="critere" SIZE="49" VALUE="%CRITERE%">
+	    <INPUT TYPE="SUBMIT" VALUE="Chercher">
+    </FORM>
+
+    <HR>
+
+    %RESULTAT%
+}
+
+}

@@ -1,0 +1,175 @@
+#!%TCLSH%
+
+#
+# Display application parameters to be modified
+#
+# Called by: admin
+#
+# Parameters (form or url): none
+#
+# History
+#   2003/12/08 : pda      : design from sos code
+#   2004/10/13 : pda      : add DHCP parameters
+#   2010/10/25 : pda      : put parameters into library
+#   2010/12/09 : pda      : i18n
+#   2010/12/18 : pda      : type menu
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		admparliste.html
+
+#
+# Next actions
+# 
+
+set conf(next)		"admparmodif"
+set conf(nexthelp)	"admparhelp"
+
+#
+# Tabular specification
+#
+
+set conf(tableau) {
+    global {
+	chars {10 normal}
+	columns {50 50}
+    }
+    pattern {Normal1} {
+	vbar {no}
+	column {
+	    multicolumn {2}
+	    color {909090}
+	    align {center}
+	    botbar {no}
+	}
+	vbar {no}
+    }
+    pattern {Normal2} {
+	vbar {no}
+	column {
+	    align {right}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+	column {
+	    align {left}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+    }
+    pattern {Buttons} {
+	vbar {no}
+	column {
+	    multicolumn {2}
+	    color {10C090}
+	    align {center}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+    }
+}
+
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
+
+    #
+    # Present data in a tabular form
+    #
+
+    d urlset "" $conf(nexthelp) {}
+    set url [d urlget ""]
+    append url {#%1$s}
+    set urlhelp [::webapp::helem "a" {%2$s} "href" $url]
+
+    set lines {}
+
+    foreach class [dnsconfig class] {
+	lappend lines [list Normal1 [dnsconfig desc $class]]
+
+	foreach key [dnsconfig keys $class] {
+
+	    set type   [dnsconfig keytype $key]
+	    set desc   [dnsconfig desc $key]
+	    set curval [dnsconfig get $key]
+
+	    switch -- [lindex $type 0] {
+		bool {
+		    set html [::webapp::form-yesno $key $curval {%1$sOui %2$sNon}]
+		}
+		string {
+		    set html [::webapp::form-text $key 1 60 0 $curval]
+		}
+		text {
+		    set html [::webapp::form-text $key 20 70 0 $curval]
+		}
+		menu {
+		    set idx 0
+		    set lsel {}
+		    set lmenu {}
+		    foreach mi [lindex $type 1] {
+			lassign mi val txt
+			set txt [mc $txt]
+			lappend lmenu [list $val $txt]
+			if {$val eq $curval} then {
+			    set lsel [list $idx]
+			}
+			incr idx
+		    }
+		    set html [::webapp::form-menu $key 1 0 $lmenu $lsel]
+		}
+		default {
+		    set msg [mc "Internal error: invalid key type '%s'" $key] \
+		    set html [::webapp::helem "font" $msg "color" "#ff0000"]
+		}
+	    }
+
+	    set help [format $urlhelp $key $desc]
+	    lappend lines [list Normal2 $help $html]
+	}
+    }
+
+    set b [::webapp::form-submit "" [mc "Submit"]]
+    append b [::webapp::form-reset  "" [mc "Reset"]]
+    lappend lines [list "Buttons" $b]
+
+    set tab [::arrgen::output "html" $conf(tableau) $lines]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+
+    d result $conf(page) [list \
+				[list %TAB% $tab] \
+			    ]
+}
+
+::webapp::cgi-exec main $debug

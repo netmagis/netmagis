@@ -1,0 +1,77 @@
+#!%TCLSH%
+
+
+#
+# Script pour lire le prologue d'une zone
+#
+# Syntaxe :
+#   dnsreadprol <zone>
+#
+# Historique
+#   2004/05/25 : pda      : conception en sh
+#   2005/04/11 : pda      : réécriture en Tcl pour bénéficier du Makefile
+#   2010/12/18 : pda      : use new install system
+#
+
+source %LIBDNS%
+
+##############################################################################
+# Petites fonctions utilitaires
+##############################################################################
+
+proc syntax-error {argv0} {
+    regsub {.*/} $argv0 {} argv0
+    puts stderr "usage: $argv0 zone"
+    exit 1
+}
+
+##############################################################################
+# Programme principal
+##############################################################################
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Initialisation des accès
+    #
+
+    ::dnscontext create d
+    set msg [d init-script dbfd tabcor]
+    if {$msg ne ""} then {
+	puts stderr "$msg"
+	puts stderr "Aborted."
+	return 1
+    }
+
+    #
+    # Validation des arguments
+    #
+
+    if {[llength $argv] != 1} then {
+	syntax-error $argv0
+	return 1
+    }
+
+    set zone [lindex $argv 0]
+    set qzone [::pgsql::quote $zone]
+    set sql "SELECT prologue FROM dns.zone WHERE domaine = '$qzone'"
+
+    set trouve 0
+    pg_select $dbfd $sql tab {
+	set trouve 1
+	puts -nonewline stdout $tab(prologue)
+    }
+    if {! $trouve} then {
+	puts stderr "Zone '$zone' not found"
+    }
+
+    #
+    # Déconnexion de la base
+    #
+
+    d end
+    return [expr !$trouve]
+}
+
+exit [main $argv0 $argv]

@@ -1,0 +1,58 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {25/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - MX selection
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Consult MX for domains}
+
+    Select domains for which you want to consult MX records:
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {CENTER}}
+	} {
+	    \lignetableau {
+		\casetableau {} {%LISTEDOMAINES%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		    \centragehorizontal {CENTER}
+		} {
+		    <div id="buttons">
+		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consult">
+		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Print">
+		    </div>
+		}
+	    }
+	}
+    </FORM>
+}
+
+}

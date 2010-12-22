@@ -1,0 +1,43 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {02/11/2001}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Modification du référentiel effectuée
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modification enregistrée}
+
+    Modification enregistrée.
+
+    Vous pouvez à présent~:
+
+    \liste {
+	\item {\lien {Revenir au menu principal} {%URL1%}}
+	\item {\lien {Revenir au menu d'administration} {%URL2%}}
+	\item {\lien {%RETURN%} {%URL3%}}
+    }
+}
+
+}

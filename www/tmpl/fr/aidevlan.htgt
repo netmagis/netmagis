@@ -1,0 +1,47 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Modification des Vlans
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Gestion des Vlans}
+
+    \titre {2} {\ancre {vlanid} {Vlan-ID}}
+
+	Identificateur de vlan IEEE 802.1Q.
+
+    \titre {2} {\ancre {descr} {Description du Vlan}}
+
+	Description du Vlan.
+
+    \titre {2} {\ancre {voip} {VoIP}}
+
+	Définir ce VLAN comme VoIP ou non. Cela permet d'autoriser
+	la configuration de VLAN VoIP sur les interfaces des
+	équipements.
+}
+
+}

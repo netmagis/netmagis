@@ -1,0 +1,190 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {21/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Editing a group
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {%TITRE%}
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
+	<INPUT TYPE="HIDDEN" NAME="orggrp" VALUE="%ORGGRP%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {CENTER}}
+	} {
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {General group attributes}}
+	    }
+	    \lignetableau {
+		\casetableau {} {
+		    \tableau {
+			\bordure {0} {}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {%MESSAGEGROUPE%}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="newgrp" VALUE="%NEWGRP%">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Application administration}
+			    \casetableau {} {%ADMIN%}
+			}
+			\lignetableau {
+			    \casetableau {} {Permission to manage SMTP
+				emit right
+			    }
+			    \casetableau {} {%DROITSMTP%}
+			}
+			\lignetableau {
+			    \casetableau {} {Permission to manage hosts TTL}
+			    \casetableau {} {%DROITTTL%}
+			}
+			\lignetableau {
+			    \casetableau {} {Permission to use MAC module}
+			    \casetableau {} {%DROITMAC%}
+			}
+		    }
+		}
+	    }
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {Membres of the group}}
+	    }
+	    \lignetableau {
+		\casetableau {} {To remove a user, just delete
+		    her/his login.
+
+		    %LISTECOR%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {Allowed domains}}
+	    }
+	    \lignetableau {
+		\casetableau {} {To remove a domain, just delete
+		    its "sort class".
+
+		    %LISTEDOMAINES%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {Allowed networks}}
+	    }
+	    \lignetableau {
+		\casetableau {} {To remove a network, just delete
+		    its "sort class".
+
+		    %LISTERESEAUX%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {IP access rights}}
+	    }
+	    \lignetableau {
+		\casetableau {} {%LISTEDROITS%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {Permissions on network equipments (Topo module)}}
+	    }
+	    \lignetableau {
+		\casetableau {} {Describe permissions on equipments
+		    with a regular expression (case independant ERE).
+
+		    To remove a permission, just delete the regular
+		    expression field.
+
+		    Users of a group have:
+
+		    \liste {
+			\item {read access (i.e. to consult topo
+			    graphs and informations) to equipments
+			    which match "read/allow" expressions
+			    (except equipments which match "read/deny"
+			    expressions), and to equipment interfaces
+			    which transport allowed networks (see
+			    "allowed networks" section above).
+			}
+			\item {write access (i.e. to modify equipment
+			    interfaces) to equipements which match
+			    "write/allow" expressions (except
+			    equipments which match "write/deny"
+			    expressions), restricted to terminal
+			    interfaces which transport only allowed
+			    networks (see "allowed networks" section
+			    above).
+			}
+		    }
+
+		    %LISTEDREQ%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {\gras {DHCP profiles}}
+	    }
+	    \lignetableau {
+		\casetableau {} {To remove access to a DHCP profile,
+		    just delete its "sort class".
+
+		    %LISTEDHCPPROFILS%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		    \centragehorizontal {CENTER}
+		} {
+		    <div id="buttons">
+		    <INPUT TYPE="SUBMIT" VALUE="Store">
+		    <INPUT TYPE="RESET" VALUE="Reset">
+		    </div>
+		}
+	    }
+	}
+    </FORM>
+}
+
+}

@@ -1,0 +1,53 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {21/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Mes droits d'accès
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Consultation des droits DNS}
+
+    \titre {2} {Informations générales}
+
+    %CORRESP%
+
+    \titre {2} {Réseaux}
+
+    %TABRESEAUX%
+
+    \titre {2} {%TITRECIDRHORSRESEAU%}
+
+    %TABCIDRHORSRESEAU%
+
+    \titre {2} {Domaines}
+
+    %TABDOMAINES%
+
+    \titre {2} {Profils DHCP}
+
+    %TABDHCPPROFIL%
+}
+
+}

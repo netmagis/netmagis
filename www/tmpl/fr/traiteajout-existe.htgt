@@ -1,0 +1,49 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {11/04/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Machine existe déjà
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Le nom existe déjà}
+
+    Il existe déjà une machine de nom '%NOM%.%DOMAINE%'.
+
+    Ses caractéristiques sont~:
+
+    %MACHINE%
+
+    \gras {Voulez-vous vraiment ajouter la nouvelle adresse '%ADR%'
+    à la machine '%NOM%.%DOMAINE%'~?}
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	<INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
+	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="oui">
+	%HIDDEN%
+	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
+    </FORM>
+}
+
+}

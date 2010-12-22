@@ -1,0 +1,83 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {03/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Modification stored
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modification stored}
+
+    The modification has been stored in database.  It will be
+    available on DNS servers within %INTERVAL% minutes.
+
+    \tableau {
+	\bordure {1} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {} {Name}
+	    \casetableau {} {%NOM%.%DOMAINE%}
+	}
+	\lignetableau {
+	    \casetableau {} {MAC address}
+	    \casetableau {} {%MAC%}
+	}
+	\lignetableau {
+	    \casetableau {} {DHCP profile}
+	    \casetableau {} {%DHCPPROFIL%}
+	}
+	\lignetableau {
+	    \casetableau {} {Type}
+	    \casetableau {} {%HINFO%}
+	}
+	\lignetableau {
+	    \casetableau {} {Use SMTP}
+	    \casetableau {} {%DROITSMTP%}
+	}
+	\lignetableau {
+	    \casetableau {} {TTL}
+	    \casetableau {} {%TTL%}
+	}
+	\lignetableau {
+	    \casetableau {} {Comment}
+	    \casetableau {} {%COMMENTAIRE%}
+	}
+	\lignetableau {
+	    \casetableau {} {Responsible (name)}
+	    \casetableau {} {%RESPNOM%}
+	}
+	\lignetableau {
+	    \casetableau {} {Responsible (maill)}
+	    \casetableau {} {%RESPMEL%}
+	}
+    }
+
+    Click \lien {here to continue} {%URLSUITE%}.
+}
+
+}

@@ -9,7 +9,7 @@
 #   2010/12/15 : pda/jean : split for toposendd
 #
 
-toposendd_program=%TOPODIR%/bin/toposendd
+toposendd_program=%TOPOBINDIR%/toposendd
 
 case "$1" in
         start)

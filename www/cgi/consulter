@@ -1,0 +1,93 @@
+#!%TCLSH%
+
+#
+# Ask for a network or an IP range to display
+#
+# Called by: accueil
+#
+# Parameters (form or url): none
+#
+# History
+#   2002/03/27 : pda/jean : design
+#   2002/05/06 : pda/jean : add groups
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2010/12/09 : pda      : i18n
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		consulter.html
+
+#
+# Next actions
+# 
+
+set conf(next)		"liste"
+
+#
+# Script parameters
+#
+
+# maximum number of IP networks without displaying a scroll bar
+set conf(maxranges)	10
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
+
+    #
+    # Process informations about the user, in case they are changed
+    # (user is supposed to signal updates)
+    #
+
+    set user	[display-user tabuid]
+
+    #
+    # Get IP address ranges
+    #
+
+    set lnet [read-networks $dbfd $tabuid(idgrp) "consult"]
+    set nnet [llength $lnet]
+    if {$nnet == 0} then {
+	set ranges [mc "No authorized network"]
+    } else {
+	if {$nnet > $conf(maxranges)} then {
+	    set nnet $conf(maxranges)
+	}
+	set ranges [::webapp::form-menu "plages" $nnet 1 $lnet {}]
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+    d result $conf(page) [list \
+				[list %CORRESP% $user] \
+				[list %PLAGES%  $ranges] \
+			    ]
+}
+
+::webapp::cgi-exec main $debug

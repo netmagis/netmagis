@@ -1,0 +1,82 @@
+#!%TCLSH%
+
+#
+# Ask for network where DHCP parameters should be edited.
+#
+# Called by: accueil
+#
+# Parameters (form or url): none
+#
+# History
+#   2004/10/05 : pda/jean : design
+#   2010/12/10 : pda      : i18n
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		dhcpsel.html
+
+#
+# Next actions
+# 
+
+set conf(next)		"dhcpedit"
+
+#
+# Script parameters
+#
+
+set conf(script-edit)	"./dhcpedit"
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
+
+    #
+    # Get networks
+    #
+
+    set lnet [read-networks $dbfd $tabuid(idgrp) "dhcp"]
+    set nnet [llength $lnet]
+    switch $nnet {
+	0 {
+	    d error [mc "You don't have access to any DHCP enabled network"]
+	}
+	1 {
+	    set idnet [lindex [lindex $lnet 0] 0]
+	    set ftab(idreseau) [list $idnet]
+	    puts stdout [::webapp::call-cgi $conf(script-edit) ftab]
+	    d end
+	}
+	default {
+	    set menureseau [::webapp::form-menu "idreseau" 1 0 $lnet {}]
+	    d urlset "%URLFORM%" $conf(next) {}
+	    d result $conf(page) [list \
+					[list %MENURESEAU% $menureseau] \
+				    ]
+	}
+    }
+}
+
+::webapp::cgi-exec main $debug

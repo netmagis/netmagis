@@ -1,0 +1,40 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {23/04/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Removed
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    WebDNS application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Removed}
+
+    '%OBJET%' has been removed.
+
+    The modification will be available on DNS servers
+    within %INTERVAL% minutes.
+
+    Click \lien {here to continue} {%URLSUITE%}.
+}
+
+}

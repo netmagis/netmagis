@@ -1,0 +1,206 @@
+#!/bin/sh
+
+#
+# htg2html
+#
+# Convert an tree of HTG files into a tree of HTML files
+#
+# Syntax:
+#    htg2html [-h][-v 0|1][-l][-m model] -b htgbindir -d modeldir \
+#			wsrcdir wtmpdir wobjdir
+#
+# Input:
+#   - option -h : heeeeeelp !
+#   - option -v : verbose
+#   - option -b : HTG bin directory (where htg and htgtcl are located)
+#   - option -d : models directory
+#   - option -l : fait un lien symbolique vers les fichiers non HTG
+#   - wsrcdir : HTG source directory (may include other files as well)
+#   - wtmpdir : temporary directory used for compilation
+#   - wobjdir : destination directory, where HTML files should be located
+#
+# Output :
+#   - stdout : error messages and files
+#   - wobjdir : directory populated with converted files
+#
+# History
+#   1998/12/10 : pda          : adapt an old Makefile+script
+#   1999/07/13 : pda          : parametrize HTG location
+#   1999/07/13 : pda          : copy file dates
+#   1999/07/27 : pda          : display file name only if error
+#   2000/06/07 : pda          : protect against file names containing spaces
+#   2001/11/26 : pda          : add option -l
+#   2008/03/04 : pda/moindrot : options -h/-g/-d
+#   2010/10/29 : pda/moindrot/jean : option -m
+#   2010/12/21 : pda/jean     : add -c option
+#   2010/12/22 : pda/jean     : rework options
+#
+
+#
+# Verbose mode (display all processed files)
+#
+
+VERBOSE=0
+
+#
+# Create source tree directories to tmp tree
+#
+
+create_directories ()
+{
+    wsrc=$1
+    wobj=$2
+    (
+	cd $wsrc
+	find . -type d -print
+    ) |
+	while read d
+	do
+	    if [ ! -d $wobj/$d ]
+	    then
+		mkdir -p $wobj/$d
+	    fi
+	done
+}
+
+#
+# Initialize file date from a reference file
+#
+
+set_date ()
+{
+    touch -r "$1" "$2"
+}
+
+#
+# Copy non HTG files to temporary directory
+#
+
+other_files ()
+{
+    link=$1
+    wsrc=$2
+    wobj=$3
+    (
+	cd $wsrc
+	find . -type f -print
+    ) |
+	grep -v '.htgt$' | 
+	while read f
+	do 
+	    $cmdverbose "$wsrc/$f"
+	    if [ $link = 1 ]
+	    then
+		ln -s "$wsrc/$f" "$wobj/$f"
+	    else
+		cp "$wsrc/$f" "$wobj/$f"
+		set_date "$wsrc/$f" "$wobj/$f"
+	    fi
+	done
+}
+
+#
+# Translate HTG files from source directory to temporary directory
+#
+
+translate ()
+{
+    wsrc=$1
+    wobj=$2
+    (
+	cd $wsrc
+	find . -name "*.htgt" -print
+    ) | 
+	while read f ; do 
+	    h=`echo $f | sed 's/.htgt$//'`
+	    $cmdverbose "$wsrc/$f"
+	    $htgbindir/htgtcl $htgbindir/htg -v $verbose -d "$modeldir" $optm \
+			"$wsrc/$f" > "$wobj/$h.html"
+	    if [ $? != 0 ]
+	    then
+		echo "Error on $wsrc/$f"
+		echo
+	    fi
+	    set_date "$wsrc/$f" "$wobj/$h.html"
+	done
+}
+
+#
+# Move directory contents to a destination directory. If the directory
+# to move is empty, do not do anything.
+#
+
+mv_if_not_empty ()
+{
+    src=$1
+    dst=$2
+    if [ x"`ls $src`" != x ]
+    then mv $src/* $dst
+    fi
+}
+
+#
+# Syntax
+#
+
+usage ()
+{
+    echo "usage: $0 [-h][-v 0|1][-m model][-l] -b htgbindir -d modeldir srcdir tmpdir objdir" >&2
+    exit 1
+}
+
+#
+# Default values for options
+#
+
+htgbindir=""
+modeldir=""
+verbose=$VERBOSE
+optm=""
+
+#
+# Option analysis
+#
+
+set -- `getopt hv:m:lb:d: $*`
+
+if [ $? != 0 ]
+then usage
+fi
+
+link=0
+
+for i
+do
+    case $i in
+	-h)	usage ;;
+	-v)	verbose=$2 ; shift 2 ;;
+	-m)	optm="-m $2" ; shift 2 ;;
+	-l)	link=1 ; shift ;;
+	-b)	htgbindir=$2 ; shift 2 ;;
+	-d)	modeldir=$2 ; shift 2 ;;
+	--)	shift ; break ;;
+    esac
+done
+
+case $verbose in
+    0)	cmdverbose=":" ;;
+    1)	cmdverbose="echo" ;;
+esac
+
+if [ $# != 3 -o "$htgbindir" = "" -o "$modeldir" = "" ]
+then usage
+fi
+
+WSRC=$1
+WTMP=$2
+WOBJ=$3
+
+rm -rf $WTMP/new $WTMP/old
+mkdir  $WTMP $WTMP/new $WTMP/old 2> /dev/null
+
+create_directories $WSRC $WTMP/new &&
+    other_files $link $WSRC $WTMP/new &&
+    translate $WSRC $WTMP/new &&
+    mv_if_not_empty $WOBJ $WTMP/old &&
+    mv $WTMP/new/* $WOBJ

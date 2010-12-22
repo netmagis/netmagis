@@ -1,28 +1,18 @@
-#
-# Makefile principale pour l'analyseur de configurations
-#
-#
-
-TOPODIR	= /local/applis/topo
-RCDIR	= /local/etc/rc.d
+DESTDIR		= /usr/local
+TCLSH		= /usr/local/bin/tclsh
 
 all:
+	@echo ">>> Making all in `pwd`"
 	cd lib ; make
 	cd src ; make
 
 install: all
-	cd src ; make \
-		TOPODIR=$(TOPODIR) TCLSH=$(TCLSH) BASE="$(BASE)" \
-		LIBDNS=$(LIBDNS) PKGTCL=$(PKGTCL) DELAY=$(DELAY) \
-		RANCIDMODUSER=$(RANCIDMODUSER) RANCIDMODPASS="$(RANCIDMODPASS)" \
-		FPING=$(FPING) RANCID=$(RANCID) \
-		RANCIDDIR=$(RANCIDDIR) EQVIRT=$(EQVIRT) \
-		LOGERR="$(LOGERR)" DEFUSER="$(DEFUSER)" \
-		TOPOGRAPH="$(TOPOGRAPH)" \
-		install
-	cd etc ; make \
-		TOPODIR=$(TOPODIR) DESTDIR=$(RCDIR) \
-		install
+	@echo ">>> Making install in `pwd`"
+	cd src ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd etc ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	mkdir -p $(DESTDIR)/var/webdns
+	mkdir -p $(DESTDIR)/var/webdns/eqvirt
+	mkdir -p $(DESTDIR)/var/webdns/eqgen
 
 clean:
 	cd lib ; make clean

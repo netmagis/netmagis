@@ -1,0 +1,72 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {05/06/2006}
+
+\*******************************************************************************
+\partie {banniere} {
+    CRC - Topologie
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Interfaces de %EQ%}
+
+    %MSGSTA%
+
+    <TABLE>
+	<TR>
+	    <FORM METHOD="POST" ACTION="%URLFORMEQ%">
+		<TD>Choisir un équipement</TD>
+		<TD>
+		    <INPUT TYPE="TEXT" NAME="eq" VALUE="%EQ%">
+		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
+		</TD>
+	    </FORM>
+	</TR>
+	<TR>
+	    <FORM METHOD="POST" ACTION="%URLFORML2%">
+		<TD>Choisir un vlan</TD>
+		<TD>
+		    <INPUT TYPE="TEXT" NAME="vlan" VALUE="%VLAN%">
+		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
+		    (id numérique ou partie du nom)
+		</TD>
+	    </FORM>
+	</TR>
+	<TR>
+	    <FORM METHOD="POST" ACTION="%URLFORML3%">
+		<TD>Choisir une adresse IP</TD>
+		<TD>
+		    <INPUT TYPE="TEXT" NAME="addr" VALUE="%ADDR%">
+		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
+		</TD>
+	    </FORM>
+	</TR>
+    </TABLE>
+
+    %EQSTA%
+
+    %TITRE%
+
+    %TEXTE%
+}
+
+}

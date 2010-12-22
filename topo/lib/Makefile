@@ -1,6 +1,3 @@
-#
-#
-
 CFLAGS = -g -Wall
 
 OBJS = \
@@ -26,10 +23,16 @@ OBJS = \
 	sel.o
 
 
+all:	libgraph.a
+	@echo ">>> Making all in `pwd`"
+
 libgraph.a:	$(OBJS)
 	ar r libgraph.a $(OBJS)
 
 $(OBJS):	graph.h
+
+install:
+	@echo ">>> Making install in `pwd`"
 
 clean:
 	rm -f *.o *.a

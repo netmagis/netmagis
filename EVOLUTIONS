@@ -1,64 +1,64 @@
-Proposition d'évolutions de l'application WebDNS
+Proposition d'Ã©volutions de l'application WebDNS
 
-Ce document a pour but de présenter les évolutions prévues de
-l'application WebDNS (qui regroupe également les actuelles applications
+Ce document a pour but de prÃ©senter les Ã©volutions prÃ©vues de
+l'application WebDNS (qui regroupe Ã©galement les actuelles applications
 topo et mac) dans les prochaines semaines et de prioriser ces
-évolutions.
+Ã©volutions.
 
-1- Recherche d'adresses IP disponibles dans un sous-réseau
+1- Recherche d'adresses IP disponibles dans un sous-rÃ©seau
 
-    Cette option est accessible à partir de plusieurs pages :
+    Cette option est accessible Ã  partir de plusieurs pages :
 	- page d'ajout de machine
 		https://www-crc.u-strasbg.fr/applis/devdns/bin/ajout
 	    section "Recherche de plusieurs adresses IPv4 disponibles"
-		Option [Rechercher] : permet de sélectionner une
-		    plage de N adresses consécutives et d'effectuer
+		Option [Rechercher] : permet de sÃ©lectionner une
+		    plage de N adresses consÃ©cutives et d'effectuer
 		    l'ajout des N machines
 		Option [Consulter la carte] : affiche une carte du
-		    sous-réseau colorisée suivant le statut des
+		    sous-rÃ©seau colorisÃ©e suivant le statut des
 		    adresses IP
-	- page de consultation des réseaux
+	- page de consultation des rÃ©seaux
 		https://www-crc.u-strasbg.fr/applis/devdns/bin/consulter
 	    Option [Carte des adresses] : affiche la carte du
-		sous-réseau
+		sous-rÃ©seau
 
-    À partir de la carte du sous-réseau :
-	- cliquer sur une adresse non déclarée permet de déclarer une
+    Ã€ partir de la carte du sous-rÃ©seau :
+	- cliquer sur une adresse non dÃ©clarÃ©e permet de dÃ©clarer une
 	    machine
-	- cliquer sur une adresse déclarée permet d'éditer les
+	- cliquer sur une adresse dÃ©clarÃ©e permet d'Ã©diter les
 	    informations (type de machine, adresse MAC, etc.) ou
 	    de supprimer la machine
 
     Statut :
-	- codage effectué, installé dans l'appli de test (cf url de type devdns)
+	- codage effectuÃ©, installÃ© dans l'appli de test (cf url de type devdns)
 	- en attente de validation/information par l'infra et la GP
 
 2- Affichage de l'adresse IP courante
 
     Cette option est accessible depuis le bandeau de gauche
-    de WebDNS (lien "Où suis-je ?")
+    de WebDNS (lien "OÃ¹ suis-je ?")
 	https://www-crc.u-strasbg.fr/applis/devdns/bin/accueil
 
     Affichage de l'adresse du client Web
 	- si hors Osiris : affichage de l'adresse IP
-	- si dans Osiris, et non déclaré : affichage des correspondants
-	    responsables du sous-réseau
-	- si dans Osiris, et déclaré : affichage du nom et des
-	    correspondants responsables du sous-réseau
+	- si dans Osiris, et non dÃ©clarÃ© : affichage des correspondants
+	    responsables du sous-rÃ©seau
+	- si dans Osiris, et dÃ©clarÃ© : affichage du nom et des
+	    correspondants responsables du sous-rÃ©seau
 
     Statut :
-	- codage effectué, installé dans l'appli de test (cf url de type devdns)
+	- codage effectuÃ©, installÃ© dans l'appli de test (cf url de type devdns)
 	- en attente de validation/information par l'infra et la GP
 
-3- Ajout du profil DHCP dans la liste des machines d'un sous-réseau
+3- Ajout du profil DHCP dans la liste des machines d'un sous-rÃ©seau
 
     Page accessible via :
 	https://www-crc.u-strasbg.fr/applis/dns/bin/consulter
 
     Statut :
-	- codage effectué, installé dans l'appli de test (cf url de type devdns)
+	- codage effectuÃ©, installÃ© dans l'appli de test (cf url de type devdns)
 	- en attente de mise en production
-	- difficulté = facile
+	- difficultÃ© = facile
 
 4- Renommage facile d'une machine
 
@@ -66,55 +66,55 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 	https://www-crc.u-strasbg.fr/applis/dns/bin/modif
 
     Statut :
-	- codage effectué, installé dans l'appli de test (cf url de type devdns)
+	- codage effectuÃ©, installÃ© dans l'appli de test (cf url de type devdns)
 	- en attente de mise en production
-	- difficulté = facile
+	- difficultÃ© = facile
 
-5- Modification des ports d'un équipement
+5- Modification des ports d'un Ã©quipement
 
-    Il est proposé une interface Web partant de l'actuel topo
+    Il est proposÃ© une interface Web partant de l'actuel topo
 	https://www-crc.u-strasbg.fr/applis/topo/bin/eq
-    permettant à partir de la page d'un équipement, de sélectionner
+    permettant Ã  partir de la page d'un Ã©quipement, de sÃ©lectionner
     une ou plusieurs interfaces pour modifier :
 	- sa description
-	- le vlan d'accès
+	- le vlan d'accÃ¨s
 	- le vlan VoIP
 
     Cette application permettra de configurer une interface sous les
     conditions suivantes :
-	- l'interface sert à connecter un équipement terminal (PC
-	    et/ou téléphone) et non un équipement réseau. Il n'est
+	- l'interface sert Ã  connecter un Ã©quipement terminal (PC
+	    et/ou tÃ©lÃ©phone) et non un Ã©quipement rÃ©seau. Il n'est
 	    donc pas question de modifier les liens d'interconnexion
-	    du réseau.
-	- le vlan demandé doit être présent sur l'équipement
-	    [pour mémoire, il vaut mieux que tous les vlans aient été
-	    provisionnés sur les équipements, suivant les décisions
-	    prises lors de la réunion du 14/09/2010
+	    du rÃ©seau.
+	- le vlan demandÃ© doit Ãªtre prÃ©sent sur l'Ã©quipement
+	    [pour mÃ©moire, il vaut mieux que tous les vlans aient Ã©tÃ©
+	    provisionnÃ©s sur les Ã©quipements, suivant les dÃ©cisions
+	    prises lors de la rÃ©union du 14/09/2010
 	       https://di.u-strasbg.fr/infra/outils-exploit-reseau/topo/cr14092010
 	    ]
-	- l'application sera ouverte aux correspondants réseau
-	- les droits d'accès sur les vlans sont déduits des droits
-	    d'accès sur les sous-réseaux IP associés (modèle de
-	    droits de topo dérivé de WebDNS)
+	- l'application sera ouverte aux correspondants rÃ©seau
+	- les droits d'accÃ¨s sur les vlans sont dÃ©duits des droits
+	    d'accÃ¨s sur les sous-rÃ©seaux IP associÃ©s (modÃ¨le de
+	    droits de topo dÃ©rivÃ© de WebDNS)
 
-    Mécanisme :
-	- les modifications sont décrites dans la base de données
-	- un démon vérifie périodiquement (< 5 min) les demandes
-	    de modification, les envoie vers les équipements, et
+    MÃ©canisme :
+	- les modifications sont dÃ©crites dans la base de donnÃ©es
+	- un dÃ©mon vÃ©rifie pÃ©riodiquement (< 5 min) les demandes
+	    de modification, les envoie vers les Ã©quipements, et
 	    reconstruit le graphe de la topologie
-	- la reconstruction du graphe est une opération lente
-	    (environ 2 minutes à ce jour sur la machine crc qui est
-	    très chargée)
-	- l'affichage des interfaces d'un équipement sera complété
-	    avec les modifications demandées mais non encore propagées
-	    sur l'équipement
-	- conclusion : les demandes ne sont pas immédiatement
-	    répercutées vers les équipements, une petite latence
-	    est à prévoir.
+	- la reconstruction du graphe est une opÃ©ration lente
+	    (environ 2 minutes Ã  ce jour sur la machine crc qui est
+	    trÃ¨s chargÃ©e)
+	- l'affichage des interfaces d'un Ã©quipement sera complÃ©tÃ©
+	    avec les modifications demandÃ©es mais non encore propagÃ©es
+	    sur l'Ã©quipement
+	- conclusion : les demandes ne sont pas immÃ©diatement
+	    rÃ©percutÃ©es vers les Ã©quipements, une petite latence
+	    est Ã  prÃ©voir.
 
-    Maquette d'écrans :
+    Maquette d'Ã©crans :
 
-	1- https://www-crc.u-strasbg.fr/applis/topo/bin/eq modifié
+	1- https://www-crc.u-strasbg.fr/applis/topo/bin/eq modifiÃ©
 
 	    +----------------------------------------------
 	    | Interfaces de xxx-cg1
@@ -127,7 +127,7 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 	    |	(+ affichage des modifications non encore prises en compte)
 	    |
 
-	2- nouvelle page de modif d'une interface d'un équipement
+	2- nouvelle page de modif d'une interface d'un Ã©quipement
 
 	    +----------------------------------------------
 	    | Modification de l'interface FastEthernet 0/1 de xxx-cg1
@@ -136,9 +136,9 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 	    |
 	    | Description [               ]
 	    | Vlan        [               ]
-		(choix simple dans liste des vlans sur l'équipement)
+		(choix simple dans liste des vlans sur l'Ã©quipement)
 	    | Vlan VoIP   [               ]
-		(choix simple dans liste des vlans VoIP sur l'équipement)
+		(choix simple dans liste des vlans VoIP sur l'Ã©quipement)
 	    |
 	    | [VALIDER] (propage les modifs)
 
@@ -149,159 +149,159 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 	    | ...
 	    |
 	    | Interfaces  [               ]
-		(choix multiple dans la liste des interfaces autorisées)
+		(choix multiple dans la liste des interfaces autorisÃ©es)
 	    | Vlan        [               ]
-		(choix simple dans liste des vlans sur l'équipement)
+		(choix simple dans liste des vlans sur l'Ã©quipement)
 	    | Vlan VoIP   [               ]
-		(choix simple dans liste des vlans VoIP sur l'équipement)
+		(choix simple dans liste des vlans VoIP sur l'Ã©quipement)
 	    |
 	    | [VALIDER] (propage les modifs)
 
-    Note : ce point de modification des interfaces des équipements
-    nécessite une refonte particulièrement importante de l'infrastructure
+    Note : ce point de modification des interfaces des Ã©quipements
+    nÃ©cessite une refonte particuliÃ¨rement importante de l'infrastructure
     de la topologie.
 
     Statut :
-	- difficulté : très difficile
-	- codage effectué à 50 %
+	- difficultÃ© : trÃ¨s difficile
+	- codage effectuÃ© Ã  50 %
 	- mise en production du back-office avant fin octobre
 	- codage interface Web : mi-novembre
 
-6- Fluidifier la navigation entre les différents composants
+6- Fluidifier la navigation entre les diffÃ©rents composants
 
-    Actuellement, les applications WebDNS, topo et métro, mac, dhcp
-    sont des modules séparés et non communicants.
+    Actuellement, les applications WebDNS, topo et mÃ©tro, mac, dhcp
+    sont des modules sÃ©parÃ©s et non communicants.
 
-    La proposition consiste à simplifier l'interface utilisateur
-    et faciliter la navigation entre ces différents modules.
-    Ceci nécessite un changement d'infrastructure important.
+    La proposition consiste Ã  simplifier l'interface utilisateur
+    et faciliter la navigation entre ces diffÃ©rents modules.
+    Ceci nÃ©cessite un changement d'infrastructure important.
 
     Statut :
-	- difficulté : très difficile
-	- priorité haute
+	- difficultÃ© : trÃ¨s difficile
+	- prioritÃ© haute
 
 7- Internationaliser l'application
 
-    Actuellement, tout est rédigé en français. Il faudrait rendre
+    Actuellement, tout est rÃ©digÃ© en franÃ§ais. Il faudrait rendre
     l'application utilisable au moins par des anglophones, ce qui
     implique :
-	- d'implémenter des mécanismes d'internationalisation (i.e.
-	    détection de la langue du client Web)
-	- de traduire tous les messages codés en dur dans les scripts
+	- d'implÃ©menter des mÃ©canismes d'internationalisation (i.e.
+	    dÃ©tection de la langue du client Web)
+	- de traduire tous les messages codÃ©s en dur dans les scripts
 	- de traduire toutes les pages Web
     Dans le futur, il serait bien que tous les commentaires des
-    scripts soient rédigés en anglais, afin de faciliter le partage
+    scripts soient rÃ©digÃ©s en anglais, afin de faciliter le partage
     du code.
 
-X- Localisation géographique des équipements réseau
+X- Localisation gÃ©ographique des Ã©quipements rÃ©seau
 
-    Il s'agit de mettre en correspondance la localisation géographique
-    des équipements avec la base Abyla suivant les règles déterminées lors
-    de la réunion du 09/09/2010
+    Il s'agit de mettre en correspondance la localisation gÃ©ographique
+    des Ã©quipements avec la base Abyla suivant les rÃ¨gles dÃ©terminÃ©es lors
+    de la rÃ©union du 09/09/2010
 	https://di.u-strasbg.fr/infra/outils-exploit-reseau/abyla/cr09092010
-    et de la réunion du 16/09/2010
+    et de la rÃ©union du 16/09/2010
 	https://di.u-strasbg.fr/archi/abyla-cr20100916
 
     Ceci permettra des choses importantes :
-	- limitation de l'affichage d'un vlan aux équipements d'un
-	    bâtiment donné
-	- tri/regroupement des équipements par bâtiment
-	- représentation cartographique des équipements sur plans
+	- limitation de l'affichage d'un vlan aux Ã©quipements d'un
+	    bÃ¢timent donnÃ©
+	- tri/regroupement des Ã©quipements par bÃ¢timent
+	- reprÃ©sentation cartographique des Ã©quipements sur plans
 	- etc.
 
-    Actions à faire :
-	- saisie dans Abyla de quelques bâtiments de test et dans les
-	    configurations des équipements
-	- intégration du champ localisation dans le graphe de topo
-	- codage de l'incorporation des données Abyla lors de la
+    Actions Ã  faire :
+	- saisie dans Abyla de quelques bÃ¢timents de test et dans les
+	    configurations des Ã©quipements
+	- intÃ©gration du champ localisation dans le graphe de topo
+	- codage de l'incorporation des donnÃ©es Abyla lors de la
 	    construction du graphe
-	- codage de la récupération des plans Abyla
+	- codage de la rÃ©cupÃ©ration des plans Abyla
 	- codage de l'interface Web Topo
-	- campagne de saisie de tous les bâtiments et de tous les
-	    équipements
+	- campagne de saisie de tous les bÃ¢timents et de tous les
+	    Ã©quipements
 
     Statut :
-	- pas encore codé
-	- difficulté : moyenne, mais développement important et long
-	    (hors saisie des informations dans Abyla et les équipements)
+	- pas encore codÃ©
+	- difficultÃ© : moyenne, mais dÃ©veloppement important et long
+	    (hors saisie des informations dans Abyla et les Ã©quipements)
 
-X- Ajout de l'équipement et du numéro de port dans la liste des
-    machines d'un sous-réseau
+X- Ajout de l'Ã©quipement et du numÃ©ro de port dans la liste des
+    machines d'un sous-rÃ©seau
 
     Page accessible via :
 	https://www-crc.u-strasbg.fr/applis/dns/bin/consulter
 
     Statut :
-	- pas encore codé
-	- difficulté = facile, mais nécessite convergence WebDNS/Topo/Mac
+	- pas encore codÃ©
+	- difficultÃ© = facile, mais nÃ©cessite convergence WebDNS/Topo/Mac
 	    (qui est difficile)
 
-X- Import de machines à partir d'un fichier CSV
+X- Import de machines Ã  partir d'un fichier CSV
 
-    Ce point nécessite de fixer des règles permettant d'assurer la
-    cohérence sans contraindre trop l'utilisation. Par exemple :
-    ne pas permettre d'ajouter une deuxième adresse à un machine,
+    Ce point nÃ©cessite de fixer des rÃ¨gles permettant d'assurer la
+    cohÃ©rence sans contraindre trop l'utilisation. Par exemple :
+    ne pas permettre d'ajouter une deuxiÃ¨me adresse Ã  un machine,
     gestion des aliases, etc.
 
     Statut :
-	- nécessite une étude de faisabilité.
+	- nÃ©cessite une Ã©tude de faisabilitÃ©.
 
-X- Pouvoir forcer la mise à jour du DNS
+X- Pouvoir forcer la mise Ã  jour du DNS
 
-    Implémentation d'un délai raccourci (ex: une minute).
+    ImplÃ©mentation d'un dÃ©lai raccourci (ex: une minute).
 
     Statut :
-	- pas encore codé
-	- difficulté : moyenne à facile
+	- pas encore codÃ©
+	- difficultÃ© : moyenne Ã  facile
 
-X- Affichage des caractéristiques dynamiques des interfaces d'un équipement
+X- Affichage des caractÃ©ristiques dynamiques des interfaces d'un Ã©quipement
 
-    Ces caractéristiques doivent être interrogées sur l'équipement
+    Ces caractÃ©ristiques doivent Ãªtre interrogÃ©es sur l'Ã©quipement
     en direct via SNMP :
-	- speed		vitesse réelle
+	- speed		vitesse rÃ©elle
 	- adminStatus	shutdown ou non
-	- operStatus	connecté ou non
-	- (cf MIB bridge) adresses MAC derrière ce port
+	- operStatus	connectÃ© ou non
+	- (cf MIB bridge) adresses MAC derriÃ¨re ce port
 
     Statut :
-	- nécessite une étude de faisabilité.
+	- nÃ©cessite une Ã©tude de faisabilitÃ©.
 
 X- Affichage du contenu d'un profil DHCP
 
     Statut :
-	- pas encore codé
-	- difficulté : facile
+	- pas encore codÃ©
+	- difficultÃ© : facile
 
-X- Création d'un profil DHCP
+X- CrÃ©ation d'un profil DHCP
 
-    Ceci nécessite une validation de la syntaxe du fichier DHCP
-    généré sur le serveur Web, soit l'installation d'un serveur
+    Ceci nÃ©cessite une validation de la syntaxe du fichier DHCP
+    gÃ©nÃ©rÃ© sur le serveur Web, soit l'installation d'un serveur
     DHCP (inactif, sauf pour tester les configurations) sur le
-    serveur Web. Ceci nécessite également que l'en-tête du fichier
-    DHCP soit stocké dans la base de données.
+    serveur Web. Ceci nÃ©cessite Ã©galement que l'en-tÃªte du fichier
+    DHCP soit stockÃ© dans la base de donnÃ©es.
 
     Statut :
-	- pas encore codé
-	- difficulté : moyenne
+	- pas encore codÃ©
+	- difficultÃ© : moyenne
 
 X- Exploitation des logs
 
-    L'application génère des logs des modifications de WebDNS dans
+    L'application gÃ©nÃ¨re des logs des modifications de WebDNS dans
     une table. Pour l'instant, pour lire ces logs, il faut utiliser
     psql et faire des interrogations en SQL.
-    La proposition consiste à rendre ces logs visibles par les
+    La proposition consiste Ã  rendre ces logs visibles par les
     administrateurs de l'applcation dans l'interface Web.
 
     Statut :
-	- pas encore codé
-	- difficulté : facile
+	- pas encore codÃ©
+	- difficultÃ© : facile
 
 X- Convergence des logs
 
     La mise en exploitation de topod, anaconf et la modification
-    des ports des équipements génèrent des informations de statut
+    des ports des Ã©quipements gÃ©nÃ¨rent des informations de statut
     qu'il faudrait faire converger avec le log de WebDNS.
 
     Statut :
-	- pas encore codé
-	- difficulté : moyenne
+	- pas encore codÃ©
+	- difficultÃ© : moyenne

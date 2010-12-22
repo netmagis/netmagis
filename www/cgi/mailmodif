@@ -1,0 +1,229 @@
+#!%TCLSH%
+
+#
+# Record mailbox host for an address.
+#
+# Called by: mailheberg
+#
+# Parameters (form or url):
+#   - nom : name (first component of fqdn) of mail address
+#   - domaine : domain (last components of fqdn) of mail address
+#   - nomh : name (first component of fqdn) of mailbox host
+#   - domaineh : domain (last components of fqdn) of mailbox host
+#
+# History
+#   2004/02/12 : pda/jean : design
+#   2007/10/25 : jean     : log modify actions
+#   2010/12/13 : pda      : i18n
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(err)		erreur.html
+set conf(page)		mailmodif.html
+
+#
+# Script parameters
+#
+
+set conf(form)		{
+	{nom		1 1}
+	{domaine	1 1}
+	{nomh		1 1}
+	{domaineh	1 1}
+}
+
+#
+# WebDNS general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    ::dnscontext create d
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
+
+    set idcor $tabuid(idcor)
+
+    set name    [string trim [lindex $ftab(nom) 0]]
+    set domain  [string trim [lindex $ftab(domaine) 0]]
+    set nameh   [string trim [lindex $ftab(nomh) 0]]
+    set domainh [string trim [lindex $ftab(domaineh) 0]]
+
+    set fqdn "$name.$domain"
+    set fqdnh "$nameh.$domainh"
+
+    #
+    # Check permission to declare a mail role and get informations on
+    # mailbox host.
+    #
+
+    set msg [check-role-mail $dbfd $idcor $name $domain trr oldtrrh]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    set rrexist [expr ! [string equal $trr(idrr) ""]]
+    set oldnameh $oldtrrh(nom)
+
+    #
+    # If nameh exists, check syntax, existence and permission of
+    # new mailbox host. In the opposite case, this is a deletion.
+    #
+
+    set msg [check-authorized-host $dbfd $idcor $nameh $domainh newtrrh "host"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # If nameh exists, mailbox host should exist
+    #
+
+    if {$nameh ne ""} then {
+	if {$newtrrh(idrr) eq ""} then {
+	    d error [mc "Mailbox host name '%s' not found" $fqdnh]
+	}
+    }
+
+    #
+    # Insert data in database
+    #
+    # SWITCH oldnameh AND nameh
+    #   empty     AND empty     => error
+    #	empty     AND non-empty => design
+    #	non-empty AND empty     => removal
+    #   non-empty AND non-empty => modification
+    #
+
+    d dblock {dns.rr dns.role_mail}
+
+    set emptyoldnameh [string equal $oldnameh ""]
+    set emptynewnameh [string equal $nameh ""]
+
+    set lm ""
+    switch "$emptyoldnameh-$emptynewnameh" {
+	1-1 {
+	    d error [mc "Mail role '%s' does not exist: you can't delete it" $fqdn]
+	}
+	1-0 {
+	    #
+	    # Role creation
+	    #
+	    set action [mc "created"]
+
+	    if {! $rrexist} then {
+		#
+		# Name of mail address does not exist. Add appropriate RR.
+		#
+		set msg [add-rr $dbfd $name $trr(iddom) "" 0 "" 0 -1 \
+						"" "" "" $idcor trr]
+		if {$msg ne ""} then {
+		    d dbabort [mc "add %s" $name] $msg
+		} 
+	    }
+
+	    #
+	    # Add mail role in database
+	    #
+
+	    set sql "INSERT INTO dns.role_mail (idrr, heberg)
+			    VALUES ($trr(idrr), $newtrrh(idrr))"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		d dbabort [mc "add %s" [mc "mail role"]] $msg
+	    }
+
+	    #
+	    # Assign a permission for mailbox host. This permission
+	    # is placed for the group.
+	    # XXX : this table is not used at this time
+	    #
+
+	    set sql "INSERT INTO dns.dr_mbox (idgrp, idmail)
+				VALUES ($tabuid(idgrp), $trr(idrr))"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		d dbabort [mc "add %s" [mc "mailbox permissions"]] $msg
+	    }
+
+	    set lm "add mail role $fqdn -> $fqdnh"
+	}
+	0-1 {
+	    #
+	    # Mail role removal. We know that mail role was existing
+	    # (thus, trr(idrr) is not empty).
+	    #
+
+	    set action [mc "deleted"]
+
+	    set idrr $trr(idrr)
+
+	    set sql "DELETE FROM dns.dr_mbox WHERE idmail = $idrr ;
+		    DELETE FROM dns.role_mail WHERE idrr = $idrr"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		d dbabort [mc "delete %s" [mc "mail role"]] $msg
+	    }
+
+	    #
+	    # RR removal (if possible)
+	    #
+	    set msg [del-orphaned-rr $dbfd $idrr]
+	    if {$msg ne ""} then {
+		d dbabort [mc "delete %s" [mc "RR"]] $msg
+	    }
+
+	    set lm "delete mail role $fqdn"
+	}
+	0-0 {
+	    #
+	    # Mail role modification. We know that mail role was
+	    # existing (thus, trr(idrr) is not empty). We just
+	    # change mailbox host.
+	    #
+
+	    set action [mc "modified"]
+
+	    set idrr $trr(idrr)
+
+	    set sql "UPDATE role_mail
+				SET heberg = $newtrrh(idrr)
+				WHERE idrr = $idrr"
+	    if {$msg ne ""} then {
+		d dbabort [mc "modify %s" [mc "mail role"]] $msg
+	    }
+	    set lm "modify mail role $fqdn -> $fqdnh"
+	}
+    }
+
+    #
+    # We did not had any error while modifying database.
+    # Finish transaction.
+    #
+
+    d dbcommit [mc "modify %s" [mc "mail role"]]
+    d writelog "modmailrole" $lm
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page) [list \
+				[list %NOM% $fqdn] \
+				[list %ACTION% $action] \
+			    ]
+}
+
+::webapp::cgi-exec main $debug

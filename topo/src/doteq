@@ -1,15 +1,14 @@
 #!%TCLSH%
 
 #
+# Example script to display graphical representation of equipment
+# configuration.
 #
-# Script pour analyser la sortie de l'analyse de configuration
-# et la présenter sous forme graphique à l'aide de "neato".
+# Usage:
+#	analyze ... | doteq > /tmp/eq.ps
 #
-# Usage :
-#	analyser ... | doteq > /tmp/eq.ps
-#
-# Historique
-#   2007/07/16 : pda : reconception
+# History
+#   2007/07/16 : pda : design
 #
 
 proc dot-init {} {
@@ -78,7 +77,7 @@ proc epilogue {} {
     return
 }
 
-proc titre {eq type model} {
+proc title {eq type model} {
     dot-kw [list "label" "\"$eq ($type / $model)\""]
 }
 
@@ -98,7 +97,7 @@ proc main {argv0 argv} {
 	switch [lindex $l 0] {
 	    eq {
 		array set t $l
-		append r [titre $t(eq) $t(type) $t(model)]
+		append r [title $t(eq) $t(type) $t(model)]
 		array unset t
 	    }
 	    node {

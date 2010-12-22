@@ -1,25 +1,26 @@
-#
-#
-
-TOPODIR=/local/applis/topo
-DESTDIR=/local/etc/rc.d
-
-SUBST = \
-        -e 's|%TOPODIR%|$(TOPODIR)|'
+DESTDIR		= /usr/local
+TCLSH		= /usr/local/bin/tclsh
+SINSTALL	= ../../inst/install-script
+SUBST		= $(TCLSH) \
+			$(DESTDIR)/lib/webdns/libdns.tcl \
+			$(DESTDIR)/etc/webdns.conf \
+			$(DESTDIR)/bin/webdns-config
 
 SCRIPTS= \
 	topographd.sh \
 	toposendd.sh
 
 all:
+	@echo ">>> Making all in `pwd`"
 
 install:
-	test -d $(DESTDIR) || mkdir $(DESTDIR)
-	chmod 775 $(TOPODIR)/bin
+	@echo ">>> Making install in `pwd`"
+	mkdir -p $(DESTDIR)/etc/rc.d
 	for i in $(SCRIPTS) ; \
 	do \
-		sed $(SUBST) $$i > $(DESTDIR)/$$i ; \
-		chmod 0775 $(DESTDIR)/$$i ; \
+		sed -e "s|%TOPOBINDIR%|$(DESTDIR)/lib/webdns/topo|" $$i \
+			    > $(DESTDIR)/etc/rc.d/$$i && \
+		chmod 0775 $(DESTDIR)/etc/rc.d$/$i ; \
 	done
 
 clean:

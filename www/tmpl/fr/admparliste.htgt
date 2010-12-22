@@ -1,0 +1,37 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {21/03/2001}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Édition des paramètres de l'application
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Édition des paramètres de l'application}
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+    %TAB%
+    </FORM>
+}
+
+}

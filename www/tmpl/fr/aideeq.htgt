@@ -1,0 +1,46 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Modification des équipements
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Gestion des équipements}
+
+    \titre {2} {\ancre {eq} {Équipement}}
+
+	Nom complet de l'équipement à traiter avec \lien {rancid}
+	{http://www.shrubbery.net/rancid/}.
+
+    \titre {2} {\ancre {idtype} {Type}}
+
+	Type d'équipement que rancid doit traiter.
+
+    \titre {2} {\ancre {up} {Up/Down}}
+
+	Indique si rancid doit ou non traiter l'équipement.
+}
+
+}

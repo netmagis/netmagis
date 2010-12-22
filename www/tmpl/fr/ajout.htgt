@@ -1,0 +1,226 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {11/04/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    WebDNS - Ajout d'une machine ou d'un alias
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application WebDNS
+}
+
+
+\*******************************************************************************
+\bandeau {
+	WebDNS v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\set {header} {
+    <style type="text/css">
+	#nextpart \{
+	    display: %DISPLAY%;
+	\}
+    </style>
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Ajout de machine dans le DNS}
+
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Ajout d'une machine}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%URLFORM1%">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
+		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {RIGHT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Nom}
+			    \multicasetableau {3} {} {
+				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				.
+				%DOMAINE%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Adresse IP}
+			    \multicasetableau {3} {} {
+				<INPUT TYPE="TEXT" NAME="adr" SIZE="45" VALUE="%ADR%">
+				~ ~ ~
+				%TTLLIBELLE% %TTLVAL%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Adresse MAC}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="mac" SIZE="20" MAXLENGTH="17">
+			    }
+			    \casetableau {} {%DHCPPROFILLIBELLE%}
+			    \casetableau {} {%DHCPPROFILMENU%}
+			}
+			\lignetableau {
+			    \casetableau {} {Type de machine}
+			    \casetableau {} {%MENUHINFO%}
+			    \casetableau {} {%DROITSMTPLIBELLE%}
+			    \casetableau {} {%DROITSMTPMENU%}
+			}
+			\lignetableau {
+			    \casetableau {} {Infos complémentaires}
+			    \multicasetableau {3} {} {
+				<INPUT TYPE="TEXT" NAME="commentaire" SIZE="50">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Responsable (nom et prénom)}
+			    \multicasetableau {3} {} {
+				<INPUT TYPE="TEXT" NAME="respnom" SIZE="50">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Responsable (mél)}
+			    \multicasetableau {3} {} {
+				<INPUT TYPE="TEXT" NAME="respmel" SIZE="50">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \multicasetableau {3} {} {
+				<INPUT TYPE="SUBMIT" VALUE="Valider">
+			    }
+			}
+		    }
+		</FORM>
+	    }
+	}
+    }
+
+    <div id="nextpart">
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Recherche de plusieurs adresses IPv4 disponibles}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%URLFORM2%">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-multi">
+		    <INPUT TYPE="HIDDEN" NAME="tri" VALUE="adr">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Réseau IPv4 à chercher}
+			    \casetableau {} {
+				%MENUPLAGE%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Nombre d'adresses consécutives}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nbadr" SIZE="30" VALUE="1">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" NAME="dosearch" VALUE="Rechercher">
+				~ ~ ~ ~
+				ou 
+				~ ~ ~ ~
+				<INPUT TYPE="SUBMIT" NAME="domap" VALUE="Consulter la carte">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Ajout d'un alias}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%URLFORM2%">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-alias">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Nom de l'alias}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				.
+				%DOMAINE%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Pointe vers}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nomref" SIZE="30">
+				.
+				%DOMAINEREF%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Valider">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+    }
+    </div>
+}
+
+}
