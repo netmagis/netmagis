@@ -1,4 +1,4 @@
-#!%DESTDIR%/bin/htgtcl
+#!%HTGBINDIR%/htgtcl
 
 #
 #
@@ -7,8 +7,8 @@
 # Usage :
 #   htg		[-v 0|1]
 #		[-l <langage>]
-#		[-d <répertoire de modèles>]
 #		[-i <répertoire des images>]
+#		-d <répertoire de modèles>
 #		[fichier]
 #
 #	-v : 1 si verbose
@@ -61,7 +61,7 @@
 #
 
 set conf(lang)		html
-set conf(repmodel)	%DESTDIR%/modeles
+set conf(repmodel)	""
 set conf(defmodel)	default
 set conf(verbose)	0
 set conf(images)	{}
@@ -72,7 +72,7 @@ set conf(version)	1.1
 #
 
 set conf(langages)	{html latex}
-set conf(usage)		{htg [-v 0|1] [-l lang] [-d repmodeles] [-m model] [-i rép] [fichier]}
+set conf(usage)		{htg [-v 0|1] [-l lang] -d repmodeles [-m model] [-i rép] [fichier]}
 
 ##############################################################################
 # Première procédure appelée par un fichier modèle
@@ -291,6 +291,9 @@ proc main {} {
     # Vérification de validité des arguments
     #
 
+    if {$conf(repmodel) eq ""} then {
+	erreur "Option -d is mandatory"
+    }
     if {! [file isdirectory $conf(repmodel)]} then {
 	erreur "Répertoire de modèles '$conf(repmodel)' inexistant"
     }

@@ -28,7 +28,7 @@ proc htg_titre {} {
 		set logo [helem TD \
 			    [helem IMG \
 				"" \
-				SRC /css/images/logo.png ALT "logo" \
+				SRC css/images/logo.png ALT "logo" \
 				] \
 			    ALIGN center VALIGN top \
 			    ID image-a-imprimer-seulement \

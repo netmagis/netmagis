@@ -25,7 +25,10 @@ install:	htgtcl
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)/bin
 	install -m 0755 htgtcl $(DESTDIR)/bin
-	$(SINSTALL) -m 0755 $(SUBST) htg htg2html $(DESTDIR)/bin
+	$(SINSTALL) -m 0755 \
+		-e "s|%HTGBINDIR%|$(DESTDIR)/bin|" \
+		-e "s|%HTGMODLDIR%|$(DESTDIR)/lib/webdns/htg/models|" \
+		$(SUBST) htg htg2html $(DESTDIR)/bin
 
 clean:
 	rm -f htgtcl *.o a.out *.core
