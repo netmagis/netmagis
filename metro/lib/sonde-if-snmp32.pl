@@ -15,7 +15,7 @@ sub ifNom_counter32
     if(! $community)
     {
 	writelog("ifNom_counter32",$config{'logopt'},"info",
-                        "\t -> ERROR: ($host,$url), Pas de communaute SNMP");
+                        "\t -> ERROR: ($host,$if), Pas de communaute SNMP");
     }
     else
     {

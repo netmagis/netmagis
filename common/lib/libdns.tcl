@@ -1154,7 +1154,7 @@ snit::type ::dnscontext {
 	    }
 	}
 	if {! $found} then {
-	    error "Template file '%page' not found in locale [mcpreferences]"
+	    error "Template file '$page' not found in locale: [mcpreferences]"
 	}
 
 	#
