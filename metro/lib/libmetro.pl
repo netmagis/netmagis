@@ -575,8 +575,6 @@ sub ctrl_ip
         }
         else
         {
-                # writelog("ctrl_ip","","info",
-                #        "\t -> ERROR : READ SUP : mauvais format d'adresse IP: '$ip'");
                 $return -1;
         }
         return($ip_val);
@@ -608,9 +606,25 @@ sub check_host
     	}
 }
 
+###########################################################
+# fonction d'ecriture des messages syslog
+sub writelog
+{
+        my ($program,$facility,$level,$message) = @_;
+
+        if(openlog($program,$facility,""))
+        {
+            syslog("$facility.$level",$message);
+            closelog();
+        }
+        else
+        {
+            print "Impossible de loger\n";
+        }
+}
 
 #############################################################
-# lecture d'un tableau associatif a 2 dimensions
+# lecture et affichage d'un tableau associatif a 2 dimensions
 #
 sub read_tab_asso
 {

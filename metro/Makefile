@@ -7,9 +7,9 @@
 # Historique
 #   2008/05/06 : boggia/pda : conception
 #   2008/06/13 : boggia/pda : debut de la rédaction effective
+#   2010/12/21 : suppression de l'installation Idris
 #
 
-DESTIDRIS = /local/services/www-idris
 DESTMETRO = /local/services/www-metro
 DESTEXPL  = /local/obj999
 CONF      = /local/obj999/etc/obj999.conf
@@ -24,19 +24,7 @@ SUBST	= \
 	-e "s|%CONF%|$(CONF)|" \
 	-e "s|%LIBMETRO%|$(LIBMETRO)|"
 
-install: install-idris install-metro install-binlib
-
-install-idris:
-	for d in $(DESTIDRIS) $(DESTIDRIS)/bin $(DESTIDRIS)/images ; do \
-	    [ -d $$d ] || mkdir $$d ; \
-	done
-	(cd www ; for i in bin/[a-z]* ; do \
-	    sed $(SUBST) $$i > $(DESTIDRIS)/$$i ; \
-	done )
-	chmod +x $(DESTIDRIS)/bin/*
-	cp www/images/*.* $(DESTIDRIS)/images
-	chown -R $(WWWUSER) $(DESTIDRIS)
-
+install: install-metro install-binlib
 
 install-metro:
 	for d in $(DESTMETRO) $(DESTMETRO)/bin ; do \
