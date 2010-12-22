@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Groupe modifié
+    WebDNS - Groupe modifiÃ©
 }
 
 \*******************************************************************************
@@ -27,23 +27,23 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification effectuée}
+    \titre {1} {Modification effectuÃ©e}
 
-    Les informations du groupe '\gras {%NEWGRP%}' ont été mises à jour~:
+    Les informations du groupe '\gras {%NEWGRP%}' ont Ã©tÃ© mises Ã  jour~:
 
     \titre {2} {Correspondants}
 
     %TABLOGINS%
 
-    \titre {2} {Attributs généraux}
+    \titre {2} {Attributs gÃ©nÃ©raux}
 
     %TABDROITS%
 
-    \titre {2} {Réseaux}
+    \titre {2} {RÃ©seaux}
 
     %TABRESEAUX%
 
-    \titre {2} {Droits non rattachés à des réseaux}
+    \titre {2} {Droits non rattachÃ©s Ã  des rÃ©seaux}
 
     %TABCIDRHORSRESEAU%
 
@@ -55,7 +55,7 @@
 
     %TABDHCPPROFILS%
 
-    \titre {2} {Équipements}
+    \titre {2} {Ã‰quipements}
 
     %TABDREQ%
 }

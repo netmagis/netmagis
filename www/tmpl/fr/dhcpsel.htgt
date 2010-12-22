@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Sélection du réseau pour l'édition de plage DHCP
+    WebDNS - SÃ©lection du rÃ©seau pour l'Ã©dition de plage DHCP
 }
 
 \*******************************************************************************
@@ -27,14 +27,14 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification des paramètres DHCP d'un réseau}
+    \titre {1} {Modification des paramÃ¨tres DHCP d'un rÃ©seau}
 
-    Sélectionnez le réseau dont vous souhaitez modifier les
-    caractéristiques DHCP~:
+    SÃ©lectionnez le rÃ©seau dont vous souhaitez modifier les
+    caractÃ©ristiques DHCP~:
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	%MENURESEAU%
-	<INPUT TYPE="SUBMIT" VALUE="Sélectionner">
+	<INPUT TYPE="SUBMIT" VALUE="SÃ©lectionner">
     </FORM>
 }
 

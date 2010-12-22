@@ -1,8 +1,0 @@
-{
-% un fond neutre pour latex
-% (note : inclus par la plupart des styles latex)
-%
-\include {include/latex/preambule.latex}
-\recuperer {texte}
-\\end \{document\}
-}

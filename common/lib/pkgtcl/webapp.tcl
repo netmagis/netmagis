@@ -1771,13 +1771,10 @@ proc ::webapp::mail {from replyto to cc bcc subject texte {type {}}} {
 #   1999/11/02 : pda : suppression de & comme caractère spécial
 #   2002/05/12 : pda : suppression de \ comme caractère spécial
 #   2010/10/16 : pda : add encoding parameter
+#   2010/12/22 : pda/jean : encoding defaults to utf-8
 #
 
-proc ::webapp::substituer {fichier subst} {
-    return [::webapp::file-subst $fichier $subst]
-}
-
-proc ::webapp::file-subst {fichier subst {encoding {}}} {
+proc ::webapp::file-subst {fichier subst {encoding utf-8}} {
     set fd [open $fichier r]
     if {$encoding ne ""} then {
 	fconfigure $fd -encoding $encoding

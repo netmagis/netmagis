@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Édition d'une machine
+    WebDNS - Ã‰dition d'une machine
 }
 
 \*******************************************************************************
@@ -59,15 +59,15 @@
 		\casetableau {} {%DROITSMTPMENU%}
 	    }
 	    \lignetableau {
-		\casetableau {} {Infos complémentaires}
+		\casetableau {} {Infos complÃ©mentaires}
 		\multicasetableau {3} {} {%COMMENTAIRE%}
 	    }
 	    \lignetableau {
-		\casetableau {} {Responsable (nom + prénom)}
+		\casetableau {} {Responsable (nom + prÃ©nom)}
 		\multicasetableau {3} {} {%RESPNOM%}
 	    }
 	    \lignetableau {
-		\casetableau {} {Responsable (mél)}
+		\casetableau {} {Responsable (mÃ©l)}
 		\multicasetableau {3} {} {%RESPMEL%}
 	    }
 	    \lignetableau {

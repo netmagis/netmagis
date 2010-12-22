@@ -29,25 +29,25 @@
 
     \titre {1} {Module d'administration}
 
-    \titre {2} {Consultation des données}
+    \titre {2} {Consultation des donnÃ©es}
 
     \liste {
 	\item {Lister les \lien {MX} {%URLCONSULTMX%}}
-	\item {Lister les \lien {réseaux} {%URLCONSULTNET%}}
+	\item {Lister les \lien {rÃ©seaux} {%URLCONSULTNET%}}
 	\item {Lister les \lien {correspondants} {%URLLISTECORRESP%}}
-	\item {Chercher un \lien {correspondant} {%URLCORRESP%} à partir d'une adresse}
+	\item {Chercher un \lien {correspondant} {%URLCORRESP%} Ã  partir d'une adresse}
 	\item {Consulter les \lien {statistiques par correspondant} {%URLSTATCOR%}}
 	\item {Consulter les \lien {statistiques par organisme} {%URLSTATETAB%} [Lent !]}
 	\item {Consulter le \lien {tableau de bord de topod} {%URLTOPOTOP%}}
     }
 
-    \titre {2} {Administration des données}
+    \titre {2} {Administration des donnÃ©es}
 
     \liste {
 	\item {Modifier les \lien {organismes} {%URLREFETABL%}}
-	\item {Modifier les \lien {communautés} {%URLREFCOMMU%}}
+	\item {Modifier les \lien {communautÃ©s} {%URLREFCOMMU%}}
 	\item {Modifier les \lien {types de machines} {%URLREFHINFO%}}
-	\item {Modifier les \lien {réseaux} {%URLREFRESEAU%}}
+	\item {Modifier les \lien {rÃ©seaux} {%URLREFRESEAU%}}
 	\item {Modifier les \lien {domaines} {%URLREFDOMAINE%}}
 	\item {Modifier les \lien {relais de messagerie} {%URLADMRELSEL%} d'un domaine}
 	\item {Modifier les \lien {zones normales} {%URLREFZONE%}}
@@ -56,21 +56,21 @@
 	\item {Modifier les \lien {MX} {%URLADMMXSEL%}}
 	\item {Modifier les \lien {profils DHCP} {%URLREFDHCPPROFIL%}}
 	\item {Modifier les \lien {Vlans} {%URLREFVLAN%}}
-	\item {Modifier les \lien {types d'équipements} {%URLREFEQTYPE%}}
-	\item {Modifier les \lien {équipements} {%URLREFEQ%}}
+	\item {Modifier les \lien {types d'Ã©quipements} {%URLREFEQTYPE%}}
+	\item {Modifier les \lien {Ã©quipements} {%URLREFEQ%}}
 	\item {Modifier les \lien {groupes et les correspondants} {%URLADMGRPSEL%}}
     }
 
     \titre {2} {Actions}
 
     \liste {
-	\item {Forcer la \lien {génération de zones} {%URLADMGENLISTE%}}
+	\item {Forcer la \lien {gÃ©nÃ©ration de zones} {%URLADMGENLISTE%}}
     }
 
     \titre {2} {Administration de l'application}
 
     \liste {
-	\item {Modifier les \lien {paramètres de l'application} {%URLADMPARLISTE%}}
+	\item {Modifier les \lien {paramÃ¨tres de l'application} {%URLADMPARLISTE%}}
     }
 }
 

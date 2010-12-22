@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification du référentiel effectuée
+    WebDNS - Modification du rÃ©fÃ©rentiel effectuÃ©e
 }
 
 \*******************************************************************************
@@ -27,11 +27,11 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification enregistrée}
+    \titre {1} {Modification enregistrÃ©e}
 
-    Modification enregistrée.
+    Modification enregistrÃ©e.
 
-    Vous pouvez à présent~:
+    Vous pouvez Ã  prÃ©sent~:
 
     \liste {
 	\item {\lien {Revenir au menu principal} {%URL1%}}

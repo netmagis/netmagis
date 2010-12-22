@@ -29,10 +29,10 @@
 
     \titre {1} {Erreur !}
 
-    Une erreur est survenue dans l'exécution du script.
+    Une erreur est survenue dans l'exÃ©cution du script.
     \retrait {<FONT COLOR="#FF0000">%MESSAGE%</FONT>}
 
-    Utilisez votre navigateur pour revenir à la page précédente.
+    Utilisez votre navigateur pour revenir Ã  la page prÃ©cÃ©dente.
 }
 
 }

@@ -39,9 +39,9 @@
 
     \titre {2} {\ancre {voip} {VoIP}}
 
-	Définir ce VLAN comme VoIP ou non. Cela permet d'autoriser
+	DÃ©finir ce VLAN comme VoIP ou non. Cela permet d'autoriser
 	la configuration de VLAN VoIP sur les interfaces des
-	équipements.
+	Ã©quipements.
 }
 
 }

@@ -355,7 +355,7 @@ proc output-list {dbfd lcidr _tabuid format} {
 				    ]
 	}
 	latex	{
-	    set tableau "$pline\n$tableau"
+	    set tableau "$pline\n\n$tableau"
 	    d result $conf(listetex) [list \
 					[list %ORIENTATION% "landscape"] \
 					[list %TABLEAU%	$tableau] \

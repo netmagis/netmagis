@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Choix des actions à effectuer sur une adresse IP
+    WebDNS - Choix des actions Ã  effectuer sur une adresse IP
 }
 
 \*******************************************************************************
@@ -24,7 +24,7 @@
 	}
 }
 
-\* affichage ou non des différentes puces
+\* affichage ou non des diffÃ©rentes puces
 
 \set {header} {
     <style type="text/css">
@@ -38,7 +38,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Édition de l'adresse %ADR%}
+    \titre {1} {Ã‰dition de l'adresse %ADR%}
 
     Que souhaitez-vous faire~?
 
@@ -51,10 +51,10 @@
 		(mais il restera les autres adresses).
 	    </li>
 	<li>
-	    <a href="%URLEDIT%">Éditer les informations</a> de '%NOM%.%DOMAINE%'.
+	    <a href="%URLEDIT%">Ã‰diter les informations</a> de '%NOM%.%DOMAINE%'.
 	    </li>
 	<li>
-	    <a href="%URLBACK%">Revenir à l'affichage précédent</a>
+	    <a href="%URLBACK%">Revenir Ã  l'affichage prÃ©cÃ©dent</a>
 	    </li>
     </ul>
 

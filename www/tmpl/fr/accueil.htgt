@@ -33,34 +33,34 @@
 
     \titre {2} {Introduction}
 
-    Cette application vous permet de gérer interactivement les
-    machines (noms et adresses IP) situées sur votre réseau. Ces
-    informations sont stockées dans une base de données, et sont
-    synchronisées sur les serveurs DNS.
+    Cette application vous permet de gÃ©rer interactivement les
+    machines (noms et adresses IP) situÃ©es sur votre rÃ©seau. Ces
+    informations sont stockÃ©es dans une base de donnÃ©es, et sont
+    synchronisÃ©es sur les serveurs DNS.
 
-    Vous pouvez effectuer les opérations classiques~:
+    Vous pouvez effectuer les opÃ©rations classiques~:
 
     \liste {
 	\item {ajout de machine ou d'alias}
-	\item {modification des informations associées à une machine}
+	\item {modification des informations associÃ©es Ã  une machine}
 	\item {suppression de machine ou d'alias}
     }
 
-    Des informations supplémentaires sont associées à chaque machine~:
+    Des informations supplÃ©mentaires sont associÃ©es Ã  chaque machine~:
 
     \liste {
 	\item {type de machine~: renseignez cette information}
 	\item {commentaire~: ceci est une zone pour votre usage,
-	    n'hésitez pas à vous en servir}
+	    n'hÃ©sitez pas Ã  vous en servir}
 	\item {responsable~: la personne responsable (utilisateur,
-	    ou administrateur système) de la machine}
+	    ou administrateur systÃ¨me) de la machine}
     }
 
-    N'hésitez pas à profiter de cette base de données pour gérer
-    vos machines. En cas de suggestion d'amélioration,
+    N'hÃ©sitez pas Ã  profiter de cette base de donnÃ©es pour gÃ©rer
+    vos machines. En cas de suggestion d'amÃ©lioration,
     \lien {contactez-nous} {http://webdns.u-strasbg.fr}.
 
-    \titre {2} {Accès à la base}
+    \titre {2} {AccÃ¨s Ã  la base}
 
     Cette application vous permet~:
     \liste {
@@ -68,19 +68,19 @@
 	\item {\lien {d'ajouter une machine}		{%URLAJOUT%}}
 	\item {\lien {de modifier les informations}	{%URLMODIF%}}
 	\item {\lien {de supprimer une machine}		{%URLSUPPR%}}
-	\item {\lien {de consulter mes droits d'accès}	{%URLDROITS%}}
+	\item {\lien {de consulter mes droits d'accÃ¨s}	{%URLDROITS%}}
 	\item {\lien {de modifier mon mot de passe}	{%PASSWDURL%}}
-	\item {\lien {de gérer les "rôles mail"}	{%URLMAIL%}}
-	\* \item {\lien {de gérer les "rôles web"}	{%URLWEB%}}
-	\item {\lien {de gérer les plages DHCP}		{%URLDHCP%}}
+	\item {\lien {de gÃ©rer les "rÃ´les mail"}	{%URLMAIL%}}
+	\* \item {\lien {de gÃ©rer les "rÃ´les web"}	{%URLWEB%}}
+	\item {\lien {de gÃ©rer les plages DHCP}		{%URLDHCP%}}
 	\item {\lien {de rechercher un correspondant}	{%URLCORRESP%}}
  	\item {\lien {de localiser mon adresse}		{%URLOUSUISJE%}}
     }
 
-    \titre {2} {Autres opérations}
+    \titre {2} {Autres opÃ©rations}
 
-    Si vous avez des questions, ou d'autres besoins plus spécifiques,
-    n'hésitez pas à \lien {nous contacter} {http://webdns.u-strasbg.fr}.
+    Si vous avez des questions, ou d'autres besoins plus spÃ©cifiques,
+    n'hÃ©sitez pas Ã  \lien {nous contacter} {http://webdns.u-strasbg.fr}.
 }
 
 }

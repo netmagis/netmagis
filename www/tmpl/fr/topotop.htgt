@@ -35,9 +35,9 @@
     \titre {1} {Tableau de bord de topod au %DATE%}
 
     <form method="post" action="%URLFORM%">
-	Rafraîchir cette page toutes
+	RafraÃ®chir cette page toutes
 	les~<input type="text" name="nrefresh" value="%REFRESH%">~secondes
-	<input type="submit" value="Régler">
+	<input type="submit" value="RÃ©gler">
     </form>
 
     %TOP%

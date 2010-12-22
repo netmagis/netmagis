@@ -30,9 +30,9 @@
     \titre {1} {Statistiques par organisme}
 
     \liste {
-	\item {Nombre de machines~: nombre de noms déclarés par
-	    organisme (correspondant à une adresse v4 ou v6.}
-	\item {Nombre d'adresses~: nombre d'adresses réseau (v4) allouées
+	\item {Nombre de machines~: nombre de noms dÃ©clarÃ©s par
+	    organisme (correspondant Ã  une adresse v4 ou v6.}
+	\item {Nombre d'adresses~: nombre d'adresses rÃ©seau (v4) allouÃ©es
 	    par organisme.}
     }
 

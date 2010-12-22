@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification effectuée
+    WebDNS - Modification queued
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification enregistrée}
+    \titre {1} {Modification queued}
 
     The modification has been queued. They will be propagated shortly
     on the equipement.

@@ -158,6 +158,7 @@ proc ouvrir-fichier {chemin mode} {
 
     if {$conf(verbose)} then { puts stderr "inclusion '$chemin'" }
     set fd [open $chemin $mode]
+    fconfigure $fd -encoding utf-8
     return $fd
 }
 
@@ -312,13 +313,22 @@ proc main {} {
     #
 
     switch [llength $argv] {
-	0 { set fname "(stdin)" ; set fd stdin }
-	1 { set fname [lindex $argv 0] ; set fd [ouvrir-fichier $fname r] }
+	0 {
+	    set fname "(stdin)"
+	    set fd stdin
+	    fconfigure stdin -encoding utf-8
+	}
+	1 {
+	    set fname [lindex $argv 0]
+	    set fd [ouvrir-fichier $fname r]
+	}
 	* { erreur "" }
     }
 
     set date [htg getdate $fd]
     init-variables $date
+
+    fconfigure stdout -encoding utf-8
 
     analyser $fd $fname
     close $fd

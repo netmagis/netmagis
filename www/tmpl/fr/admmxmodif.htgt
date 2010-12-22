@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - MX modifiés
+    WebDNS - MX modifiÃ©s
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification effectuée}
+    \titre {1} {Modification effectuÃ©e}
 
-    Les MX associés à \gras {%NOM%.%DOMAINE%} ont été mis à jour~:
+    Les MX associÃ©s Ã  \gras {%NOM%.%DOMAINE%} ont Ã©tÃ© mis Ã  jour~:
 
     %TABLEAU%
 }

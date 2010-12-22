@@ -39,14 +39,14 @@
 
     \titre {2} {\ancre {prologue} {Prologue}}
 
-	Texte à ajouter dans le fichier de zone avant les RR générés
-	automatiquement à partir de la base. Ce texte doit contenir la
-	chaîne \gras {%VERSION%}, qui sera remplacée par le numéro
-	de version lors de la génération de la zone.
+	Texte Ã  ajouter dans le fichier de zone avant les RR gÃ©nÃ©rÃ©s
+	automatiquement Ã  partir de la base. Ce texte doit contenir la
+	chaÃ®ne \gras {%VERSION%}, qui sera remplacÃ©e par le numÃ©ro
+	de version lors de la gÃ©nÃ©ration de la zone.
 
-	Note~: s'il y a des cas particuliers dans la génération de la
-	zone (exemple~: deux RR de nom différent avec le même A), ils
-	doivent être listés ici.
+	Note~: s'il y a des cas particuliers dans la gÃ©nÃ©ration de la
+	zone (exemple~: deux RR de nom diffÃ©rent avec le mÃªme A), ils
+	doivent Ãªtre listÃ©s ici.
 
 	Exemple~:
 	\retrait {
@@ -56,7 +56,7 @@
 ; Localisation : tout Osiris ;-)
 ;
 ; Historique
-;   2002/04/26 : jean/pda  : remise à plat des commentaires
+;   2002/04/26 : jean/pda  : remise Ã  plat des commentaires
 ;
 
 @	IN	SOA	isis.u-strasbg.fr. hostmaster.u-strasbg.fr. (
@@ -68,7 +68,7 @@
 		)
 
 ;
-; Le TTL par défaut des enregistrements de la zone
+; Le TTL par dÃ©faut des enregistrements de la zone
 ;
 $TTL	86400
 
@@ -85,7 +85,7 @@ $TTL	86400
 		IN	NS	shiva.jussieu.fr.
 
 ;
-; Le MX par défaut de la zone
+; Le MX par dÃ©faut de la zone
 ;
 
 		IN	MX	10	bes.u-strasbg.fr.
@@ -101,10 +101,10 @@ localhost	IN	A	127.0.0.1
 }
 	}
 
-    \titre {2} {\ancre {rrsup} {RR supplémentaires}}
+    \titre {2} {\ancre {rrsup} {RR supplÃ©mentaires}}
 
-	Texte à ajouter après chaque RR de type A ou MX.  Ce texte
-	doit contenir la chaîne \gras {%NOM%}, qui sera remplacée
+	Texte Ã  ajouter aprÃ¨s chaque RR de type A ou MX.  Ce texte
+	doit contenir la chaÃ®ne \gras {%NOM%}, qui sera remplacÃ©e
 	par le nom du RR en cours de traitement.
 
 	Exemple~:
@@ -113,11 +113,11 @@ localhost	IN	A	127.0.0.1
 %NOM%	IN	MX	20 amon.u-strasbg.fr}
 	}
 
-    \titre {2} {\ancre {selection} {Critère de sélection des RR}}
+    \titre {2} {\ancre {selection} {CritÃ¨re de sÃ©lection des RR}}
 
-	Critère de sélection des RR à générer pour cette zone. Pour
+	CritÃ¨re de sÃ©lection des RR Ã  gÃ©nÃ©rer pour cette zone. Pour
 	une zone normale, c'est un nom de domaine. Pour une zone
-	<<~reverse~>> IPv4, c'est un CIDR pour sélectionner les
+	<<~reverse~>> IPv4, c'est un CIDR pour sÃ©lectionner les
 	adresses.
 
 	Exemple~:

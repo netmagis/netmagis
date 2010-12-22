@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Rôle modifié
+    WebDNS - RÃ´le modifiÃ©
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Action effectuée}
+    \titre {1} {Action effectuÃ©e}
 
-    L'adresse de messagerie '%NOM%' a été %ACTION%.
+    L'adresse de messagerie '%NOM%' a Ã©tÃ© %ACTION%.
 }
 
 }

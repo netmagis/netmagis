@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Sélection d'un domaine
+    WebDNS - SÃ©lection d'un domaine
 }
 
 \*******************************************************************************
@@ -29,17 +29,17 @@
 
     \titre {1} {Modification des relais de messagerie}
 
-    Si vous utilisez les <<~rôles de messagerie~>>, vous devez
+    Si vous utilisez les <<~rÃ´les de messagerie~>>, vous devez
     indiquer le ou les relais qui effectueront le routage de messagerie
     pour un domaine. Ces relais~:
 
     \liste {
-	\item {sont les MX désignés pour les rôles de messagerie
-	    de ce domaine (reçoivent donc le courrier pour les rôles
-	    définis)
+	\item {sont les MX dÃ©signÃ©s pour les rÃ´les de messagerie
+	    de ce domaine (reÃ§oivent donc le courrier pour les rÃ´les
+	    dÃ©finis)
 	}
-	\item {doivent router les messages vers les machines désignées
-	    (<<~hébergeurs~>> pour les rôles)
+	\item {doivent router les messages vers les machines dÃ©signÃ©es
+	    (<<~hÃ©bergeurs~>> pour les rÃ´les)
 	}
     }
 
@@ -47,7 +47,7 @@
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	Domaine~: %DOMAINE%
-	<INPUT TYPE="SUBMIT" VALUE="Sélectionner">
+	<INPUT TYPE="SUBMIT" VALUE="SÃ©lectionner">
     </FORM>
 }
 

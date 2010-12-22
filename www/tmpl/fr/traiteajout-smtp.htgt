@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Autorisation d'émission SMTP
+    WebDNS - Autorisation d'Ã©mission SMTP
 }
 
 \*******************************************************************************
@@ -27,20 +27,20 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Autorisation d'émission SMTP}
+    \titre {1} {Autorisation d'Ã©mission SMTP}
 
-    Vous avez coché la case «~Émettre en SMTP~».
+    Vous avez cochÃ© la case Â«~Ã‰mettre en SMTP~Â».
 
     Vous ne pouvez cocher cette case que si vous remplissez une
     des deux conditions suivantes~:
 
     \liste {
-	\item {vous certifiez que la machine ajoutée n'accepte que
-	    des mails authentifiés, et vous êtes capables de tracer
-	    l'utilisateur responsable en cas d'incident de sécurité
+	\item {vous certifiez que la machine ajoutÃ©e n'accepte que
+	    des mails authentifiÃ©s, et vous Ãªtes capables de tracer
+	    l'utilisateur responsable en cas d'incident de sÃ©curitÃ©
 	}
-	\item {vous certifiez que la machine ajoutée n'accepte aucun
-	    mail, et ne peut elle-même authentifier les mails qu'elle
+	\item {vous certifiez que la machine ajoutÃ©e n'accepte aucun
+	    mail, et ne peut elle-mÃªme authentifier les mails qu'elle
 	    envoie (cas d'un copieur par exemple)
 	}
     }
@@ -57,8 +57,8 @@
     </FORM>
 
     \gras {Si vous ne confirmez pas, utilisez simplement votre
-	navigateur pour revenir à la page précédente, et décochez
-	la case «~Émettre en SMTP~».
+	navigateur pour revenir Ã  la page prÃ©cÃ©dente, et dÃ©cochez
+	la case Â«~Ã‰mettre en SMTP~Â».
     }
 }
 

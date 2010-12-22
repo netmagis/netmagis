@@ -28,23 +28,23 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Incohérences dans la %MSGACT%}
+    \titre {1} {IncohÃ©rences dans la %MSGACT%}
 
-    Les incohérences suivantes ont été détectées~:
+    Les incohÃ©rences suivantes ont Ã©tÃ© dÃ©tectÃ©es~:
 
     \retrait {<FONT COLOR="#FF0000">%MESSAGE%</FONT>}
 
     Vous pouvez~:
 
     \liste {
-	\item {passer outre et demander quand même la modification~:
+	\item {passer outre et demander quand mÃªme la modification~:
 	    <FORM METHOD="POST" ACTION="%URLFORM%">
 		%HIDDEN%
 		<INPUT TYPE="SUBMIT" VALUE="Je confirme">
 	    </FORM>
 	}
-	\item {utiliser votre navigateur pour revenir à la page
-	    précédente et modifier votre demande
+	\item {utiliser votre navigateur pour revenir Ã  la page
+	    prÃ©cÃ©dente et modifier votre demande
 	}
     }
 }

@@ -37,11 +37,11 @@
 	    \casedefauttableau {\centragehorizontal {LEFT}}
 	} {
 	    \lignetableau {
-		\casetableau {} {Réseau}
+		\casetableau {} {RÃ©seau}
 		\casetableau {} {%LRES%}
 	    }
 	    \lignetableau {
-		\casetableau {} {Dernière occurrence}
+		\casetableau {} {DerniÃ¨re occurrence}
 		\casetableau {} {%LOCCUR%}
 	    }
 	    \lignetableau {

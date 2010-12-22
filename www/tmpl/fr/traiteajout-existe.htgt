@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Machine existe dÈj‡
+    WebDNS - Machine existe d√©j√†
 }
 
 \*******************************************************************************
@@ -27,16 +27,16 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Le nom existe dÈj‡}
+    \titre {1} {Le nom existe d√©j√†}
 
-    Il existe dÈj‡ une machine de nom '%NOM%.%DOMAINE%'.
+    Il existe d√©j√† une machine de nom '%NOM%.%DOMAINE%'.
 
-    Ses caractÈristiques sont~:
+    Ses caract√©ristiques sont~:
 
     %MACHINE%
 
     \gras {Voulez-vous vraiment ajouter la nouvelle adresse '%ADR%'
-    ‡ la machine '%NOM%.%DOMAINE%'~?}
+    √† la machine '%NOM%.%DOMAINE%'~?}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">

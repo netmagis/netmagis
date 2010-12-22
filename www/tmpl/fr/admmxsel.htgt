@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Sélection du domaine
+    WebDNS - SÃ©lection du domaine
 }
 
 \*******************************************************************************
@@ -29,11 +29,11 @@
 
     \titre {1} {Modification des MX}
 
-    Entrez le MX à modifier~:
+    Entrez le MX Ã  modifier~:
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="TEXT" NAME="nom" SIZE=30 MAXLENGTH=60> .  %DOMAINE%
-	<INPUT TYPE="SUBMIT" VALUE="Sélectionner">
+	<INPUT TYPE="SUBMIT" VALUE="SÃ©lectionner">
     </FORM>
 }
 

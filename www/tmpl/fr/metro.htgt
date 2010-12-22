@@ -36,12 +36,12 @@
 	Afficher les statistiques entre
 	    le <INPUT TYPE="TEXT" NAME="jdebut" VALUE="%JDEBUT%"
 			SIZE="10" MAXLEN="10">
-	    à  <INPUT TYPE="TEXT" NAME="hdebut" VALUE="%HDEBUT%"
+	    Ã   <INPUT TYPE="TEXT" NAME="hdebut" VALUE="%HDEBUT%"
 			SIZE="2" MAXLEN="2">h
 	et
 	    le <INPUT TYPE="TEXT" NAME="jfin" VALUE="%JFIN%"
 			SIZE="10" MAXLEN="10">
-	    à  <INPUT TYPE="TEXT" NAME="hfin" VALUE="%HFIN%"
+	    Ã   <INPUT TYPE="TEXT" NAME="hfin" VALUE="%HFIN%"
 			SIZE="2" MAXLEN="2">h
 	<INPUT TYPE="SUBMIT" VALUE="Afficher">
     </FORM>

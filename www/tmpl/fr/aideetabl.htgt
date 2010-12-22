@@ -29,16 +29,16 @@
 
     \titre {1} {Gestion des organismes}
 
-    \titre {2} {\ancre {nom} {Intitulé}}
+    \titre {2} {\ancre {nom} {IntitulÃ©}}
 
-	Intitulé de l'organisme.
+	IntitulÃ© de l'organisme.
 
 	Exemple~:
 	    \retrait {\verbatim {Nations Unies}}
 
-	Attention~: l'intitulé peut changer, mais l'organisme
-	reste le même. Autrement, tous les réseaux associés à cet
-	organisme restent associés avec le nouveau nom.
+	Attention~: l'intitulÃ© peut changer, mais l'organisme
+	reste le mÃªme. Autrement, tous les rÃ©seaux associÃ©s Ã  cet
+	organisme restent associÃ©s avec le nouveau nom.
 }
 
 }

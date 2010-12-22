@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Édition des paramètres de l'application
+    WebDNS - Ã‰dition des paramÃ¨tres de l'application
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Édition des paramètres de l'application}
+    \titre {1} {Ã‰dition des paramÃ¨tres de l'application}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
     %TAB%

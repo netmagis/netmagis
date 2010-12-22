@@ -28,9 +28,9 @@
 \partie {texte} {
     \titre {1} {Gestion des adresses MAC}
 
-    Ce module propose une interface à la base de données des adresses
-    IP et et des adresses MAC collectées sur les équipements réseau.
-    Les possibilités suivantes vous sont offertes~:
+    Ce module propose une interface Ã  la base de donnÃ©es des adresses
+    IP et et des adresses MAC collectÃ©es sur les Ã©quipements rÃ©seau.
+    Les possibilitÃ©s suivantes vous sont offertes~:
 
     \liste {
 	\item {Effectuer une \lien {recherche} {%URLMAC%}}
