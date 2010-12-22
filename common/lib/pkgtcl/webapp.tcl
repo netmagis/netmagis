@@ -361,7 +361,27 @@ proc ::webapp::locale {avail} {
 		regexp {^q=([.0-9]+)$} $param bidon q
 	    }
 	    lappend tabl($q) $lang
+	    set tabq($lang) $q
 	}
+	#
+	# En cas de langage avec un sous-tag, ajouter le langage
+	# primaire s'il n'existe pas.
+	# Il peut y avoir un nombre quelconque de sous-tags
+	# fr-fr-paris-xive-alesia
+	#
+	foreach l [array names tabq] {
+	    set q $tabq($l)
+	    set ll [split $l "-"]
+	    while {[llength $ll] > 1} {
+		set ll [lreplace $ll end end]
+		set llp [join $ll "-"]
+		if {! [info exists tabq($llp)]} then {
+		    lappend tabl($q) $llp
+		    set tabq($llp) $q
+		}
+	    }
+	}
+
 	#
 	# Croise avec les langages disponibles, en tenant
 	# compte du facteur de qualité
