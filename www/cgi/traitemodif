@@ -109,7 +109,7 @@ proc traitemodif-infos {dbfd _tabuid _ftab} {
     # Get dns update interval
     #
 
-    set interval [dnsconfig "dnsupdateperiod"]
+    set interval [dnsconfig get "dnsupdateperiod"]
 
     #
     # Validate form input

@@ -105,7 +105,7 @@ proc traitesuppr-nom {dbfd idcor login _ftab} {
     # Get dns update interval
     #
 
-    set interval [dnsconfig "dnsupdateperiod"]
+    set interval [dnsconfig get "dnsupdateperiod"]
 
     #
     # Check name
@@ -265,7 +265,7 @@ proc traitesuppr-ip {dbfd idcor login _ftab} {
     # Get dns update interval
     #
 
-    set interval [dnsconfig "dnsupdateperiod"]
+    set interval [dnsconfig get "dnsupdateperiod"]
 
     #
     # Check IP address

@@ -77,7 +77,7 @@ proc main {} {
     # Get dns update interval
     #
 
-    set interval [dnsconfig "dnsupdateperiod"]
+    set interval [dnsconfig get "dnsupdateperiod"]
 
     #
     # End of script: output page and close database

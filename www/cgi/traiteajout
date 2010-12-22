@@ -202,7 +202,7 @@ proc traiteajout-machine {dbfd _tabuid _ftab fspec} {
     # Get dns update interval
     #
 
-    set interval [dnsconfig "dnsupdateperiod"]
+    set interval [dnsconfig get "dnsupdateperiod"]
 
     #
     # Check name and domain
@@ -679,7 +679,7 @@ proc traiteajout-alias {dbfd _tabuid _ftab fspec} {
     # Get dns update interval
     #
 
-    set interval [dnsconfig "dnsupdateperiod"]
+    set interval [dnsconfig get "dnsupdateperiod"]
 
     #
     # Check names of alias and host
