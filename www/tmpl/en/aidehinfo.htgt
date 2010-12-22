@@ -33,12 +33,8 @@
 
 	Host type.
 
-	Exemple~:
+	Example~:
 	    \retrait {\verbatim {PC/Windows}}
-
-	Attention~: l'intitulé peut changer, mais le type doit
-	rester le même. Autrement, toutes les machines de ce type
-	se retrouveront avec le nouvel intitulé.
 
 	Notice: type may change, but all hosts of this type will
 	have the new type.

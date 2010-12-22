@@ -34,7 +34,7 @@
     <TABLE>
 	<TR>
 	    <FORM METHOD="POST" ACTION="%URLFORMEQ%">
-		<TD>Choisir un équipement</TD>
+		<TD>Choisir un Ã©quipement</TD>
 		<TD>
 		    <INPUT TYPE="TEXT" NAME="eq" VALUE="%EQ%">
 		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
@@ -47,7 +47,7 @@
 		<TD>
 		    <INPUT TYPE="TEXT" NAME="vlan" VALUE="%VLAN%">
 		    <INPUT TYPE="SUBMIT" VALUE="Afficher">
-		    (id numérique ou partie du nom)
+		    (id numÃ©rique ou partie du nom)
 		</TD>
 	    </FORM>
 	</TR>

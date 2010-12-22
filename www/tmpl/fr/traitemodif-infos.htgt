@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification effectuée
+    WebDNS - Modification effectuÃ©e
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification effectuée}
+    \titre {1} {Modification effectuÃ©e}
 
-    La modification a été effectuée.
+    La modification a Ã©tÃ© effectuÃ©e.
 
     Elle sera effective sur les serveurs de nom d'ici %INTERVAL%
     minutes.
@@ -58,7 +58,7 @@
 	    \casetableau {} {%HINFO%}
 	}
 	\lignetableau {
-	    \casetableau {} {Droit d'émission SMTP}
+	    \casetableau {} {Droit d'Ã©mission SMTP}
 	    \casetableau {} {%DROITSMTP%}
 	}
 	\lignetableau {
@@ -66,15 +66,15 @@
 	    \casetableau {} {%TTL%}
 	}
 	\lignetableau {
-	    \casetableau {} {Infos complémentaires}
+	    \casetableau {} {Infos complÃ©mentaires}
 	    \casetableau {} {%COMMENTAIRE%}
 	}
 	\lignetableau {
-	    \casetableau {} {Responsable (nom + prénom)}
+	    \casetableau {} {Responsable (nom + prÃ©nom)}
 	    \casetableau {} {%RESPNOM%}
 	}
 	\lignetableau {
-	    \casetableau {} {Responsable (mél)}
+	    \casetableau {} {Responsable (mÃ©l)}
 	    \casetableau {} {%RESPMEL%}
 	}
     }

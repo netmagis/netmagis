@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Édition d'un rôle de messagerie
+    WebDNS - Ã‰dition d'un rÃ´le de messagerie
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Édition de l'hébergeur de messagerie %NOM%.%DOMAINE%}
+    \titre {1} {Ã‰dition de l'hÃ©bergeur de messagerie %NOM%.%DOMAINE%}
 
     \tableau {
 	\bordure {0} {}
@@ -39,7 +39,7 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
-	    } {\gras {Edition d'un rôle de messagerie}}
+	    } {\gras {Edition d'un rÃ´le de messagerie}}
 	}
 	\lignetableau {
 	    \casetableau {} {
@@ -55,13 +55,13 @@
 		    } {
 			\lignetableau {
 			    \multicasetableau {2} {} {
-				Modifiez l'adresse de l'hébergeur pour
-				les boîtes aux lettres de "%NOM%.%DOMAINE%",
-				ou effacez la pour supprimer le rôle.
+				Modifiez l'adresse de l'hÃ©bergeur pour
+				les boÃ®tes aux lettres de "%NOM%.%DOMAINE%",
+				ou effacez la pour supprimer le rÃ´le.
 			    }
 			}
 			\lignetableau {
-			    \casetableau {} {Adresse d'hébergement}
+			    \casetableau {} {Adresse d'hÃ©bergement}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nomh" SIZE="30" VALUE="%NOMH%">
 				.

@@ -94,19 +94,19 @@
 			    \casetableau {} {%DROITSMTPMENU%}
 			}
 			\lignetableau {
-			    \casetableau {} {Infos complémentaires}
+			    \casetableau {} {Infos complÃ©mentaires}
 			    \multicasetableau {3} {} {
 				<INPUT TYPE="TEXT" NAME="commentaire" SIZE="50">
 			    }
 			}
 			\lignetableau {
-			    \casetableau {} {Responsable (nom et prénom)}
+			    \casetableau {} {Responsable (nom et prÃ©nom)}
 			    \multicasetableau {3} {} {
 				<INPUT TYPE="TEXT" NAME="respnom" SIZE="50">
 			    }
 			}
 			\lignetableau {
-			    \casetableau {} {Responsable (mél)}
+			    \casetableau {} {Responsable (mÃ©l)}
 			    \multicasetableau {3} {} {
 				<INPUT TYPE="TEXT" NAME="respmel" SIZE="50">
 			    }
@@ -149,13 +149,13 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {Réseau IPv4 à chercher}
+			    \casetableau {} {RÃ©seau IPv4 Ã  chercher}
 			    \casetableau {} {
 				%MENUPLAGE%
 			    }
 			}
 			\lignetableau {
-			    \casetableau {} {Nombre d'adresses consécutives}
+			    \casetableau {} {Nombre d'adresses consÃ©cutives}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nbadr" SIZE="30" VALUE="1">
 			    }

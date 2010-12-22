@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Sélection de réseaux
+    WebDNS - SÃ©lection de rÃ©seaux
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Consultation des réseaux}
+    \titre {1} {Consultation des rÃ©seaux}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	\tableau {
@@ -44,7 +44,7 @@
 		    \centragehorizontal {CENTER}
 		    \couleurfond {#C0C0C0}
 		} {
-		    \gras {Sélectionner seulement les réseaux...}
+		    \gras {SÃ©lectionner seulement les rÃ©seaux...}
 		}
 	    }
 	    \lignetableau {
@@ -56,7 +56,7 @@
 	    \lignetableau {
 		\casetableau {} {... dont l'organisme est}
 		\casetableau {} {%LISTEETABL%}
-		\casetableau {} {... dont la communauté est}
+		\casetableau {} {... dont la communautÃ© est}
 		\casetableau {} {%LISTECOMMU%}
 	    }
 	    \lignetableau {

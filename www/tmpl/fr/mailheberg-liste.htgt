@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Liste des rôles de messagerie
+    WebDNS - Liste des rÃ´les de messagerie
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Edition d'un hébergeur de messagerie dans %DOMAINE%}
+    \titre {1} {Edition d'un hÃ©bergeur de messagerie dans %DOMAINE%}
 
     \tableau {
 	\bordure {0} {}
@@ -39,10 +39,10 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
-	    } {\gras {Edition d'un rôle de messagerie}}
+	    } {\gras {Edition d'un rÃ´le de messagerie}}
 	}
 	\lignetableau {
-	    \casetableau {} {Sélectionnez l'adresse de messagerie
+	    \casetableau {} {SÃ©lectionnez l'adresse de messagerie
 		du domaine %DOMAINE% que vous voulez modifier ou supprimer
 	    }
 	}

@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification des types d'équipements
+    WebDNS - Modification des types d'Ã©quipements
 }
 
 \*******************************************************************************
@@ -27,18 +27,18 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Gestion des types d'équipements}
+    \titre {1} {Gestion des types d'Ã©quipements}
 
     \titre {2} {\ancre {type} {Type}}
 
-	Type d'équipement tel que reconnu par rancid
+	Type d'Ã©quipement tel que reconnu par rancid
 	(cf \lien {router.db(5)} {http://www.shrubbery.net/rancid/man/router.db.5.html}).
 
 	Exemple~:
 	    \retrait {\verbatim {juniper}}
 
-	Note~: ajouter des types d'équipements non reconnus
-	par Rancid peut donner des effets indésirables...
+	Note~: ajouter des types d'Ã©quipements non reconnus
+	par Rancid peut donner des effets indÃ©sirables...
 }
 
 }

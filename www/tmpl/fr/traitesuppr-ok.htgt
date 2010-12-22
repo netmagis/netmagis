@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Suppression effectuée
+    WebDNS - Suppression effectuÃ©e
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Suppression effectuée}
+    \titre {1} {Suppression effectuÃ©e}
 
-    La suppression de '%OBJET%' est effectuée.
+    La suppression de '%OBJET%' est effectuÃ©e.
 
     La modification sera effective sur les serveurs de nom d'ici
     %INTERVAL% minutes.

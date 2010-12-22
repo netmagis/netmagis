@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Génération des zones
+    WebDNS - GÃ©nÃ©ration des zones
 }
 
 \*******************************************************************************
@@ -27,15 +27,15 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Génération de zones}
+    \titre {1} {GÃ©nÃ©ration de zones}
 
-    Sélectionner la ou les zones dont il faut forcer la génération~:
+    SÃ©lectionner la ou les zones dont il faut forcer la gÃ©nÃ©ration~:
 
     \retrait {
 	<FORM METHOD="POST" ACTION="%URLFORM%">
 	    %ZONES%
 
-	    <INPUT TYPE="SUBMIT" VALUE="Générer">
+	    <INPUT TYPE="SUBMIT" VALUE="GÃ©nÃ©rer">
 	</FORM>
     }
 }

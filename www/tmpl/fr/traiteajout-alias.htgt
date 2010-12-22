@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Alias ajouté
+    WebDNS - Alias ajoutÃ©
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Alias ajouté dans le DNS}
+    \titre {1} {Alias ajoutÃ© dans le DNS}
 
-    L'alias a été ajouté.
+    L'alias a Ã©tÃ© ajoutÃ©.
 
     La modification sera effective sur les serveurs de nom d'ici
     %INTERVAL% minutes.

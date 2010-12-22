@@ -29,21 +29,21 @@
 
     \titre {1} {Gestion des types de machines}
 
-    \titre {2} {\ancre {texte} {Intitulé}}
+    \titre {2} {\ancre {texte} {IntitulÃ©}}
 
-	Intitulé du type de machine.
+	IntitulÃ© du type de machine.
 
 	Exemple~:
 	    \retrait {\verbatim {PC/Windows}}
 
-	Attention~: l'intitulé peut changer, mais le type doit
-	rester le même. Autrement, toutes les machines de ce type
-	se retrouveront avec le nouvel intitulé.
+	Attention~: l'intitulÃ© peut changer, mais le type doit
+	rester le mÃªme. Autrement, toutes les machines de ce type
+	se retrouveront avec le nouvel intitulÃ©.
 
     \titre {2} {\ancre {tri} {Classe de tri}}
 
-	Dans les menus déroulants, les types de machines sont triés
-	selon deux clefs~: le classe de tri d'abord, et l'intitulé
+	Dans les menus dÃ©roulants, les types de machines sont triÃ©s
+	selon deux clefs~: le classe de tri d'abord, et l'intitulÃ©
 	ensuite.  Ceci permet par exemple de mettre les PCs sous
 	Windows en premier.
 
@@ -67,19 +67,19 @@
 	    }
 	}
 
-    \titre {2} {\ancre {present} {Présent dans les menus}}
+    \titre {2} {\ancre {present} {PrÃ©sent dans les menus}}
 
-	Pour qu'un type existe dans la base, mais ne puisse pas être
+	Pour qu'un type existe dans la base, mais ne puisse pas Ãªtre
 	saisi par les correspondants, il suffit d'invalider cet
-	indicateur. L'utilisation typique correspond à deux cas~:
+	indicateur. L'utilisation typique correspond Ã  deux cas~:
 
 	\liste {
-	    \item {type <<~non renseigné~>>~: on ne souhaite pas qu'un
+	    \item {type <<~non renseignÃ©~>>~: on ne souhaite pas qu'un
 		correspondant puisse le saisir, mais certaines machines
-		peuvent encore avoir cet attribut hérité du remplissage
+		peuvent encore avoir cet attribut hÃ©ritÃ© du remplissage
 		initial~;}
-	    \item {type désormais invalide~: un type a été invalidé,
-		mais il ne peut pas être détruit de la base car des
+	    \item {type dÃ©sormais invalide~: un type a Ã©tÃ© invalidÃ©,
+		mais il ne peut pas Ãªtre dÃ©truit de la base car des
 		machines l'utilisent encore.}
 	}
 }

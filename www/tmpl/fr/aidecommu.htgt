@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification des communautés
+    WebDNS - Modification des communautÃ©s
 }
 
 \*******************************************************************************
@@ -27,18 +27,18 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Gestion des communautés}
+    \titre {1} {Gestion des communautÃ©s}
 
-    \titre {2} {\ancre {nom} {Intitulé}}
+    \titre {2} {\ancre {nom} {IntitulÃ©}}
 
-	Intitulé de la communauté.
+	IntitulÃ© de la communautÃ©.
 
 	Exemple~:
 	    \retrait {\verbatim {Administration}}
 
-	Attention~: l'intitulé peut changer, mais la communauté
-	reste la même. Tous les réseaux associés à cette communauté
-	restent associés avec le nouveau nom.
+	Attention~: l'intitulÃ© peut changer, mais la communautÃ©
+	reste la mÃªme. Tous les rÃ©seaux associÃ©s Ã  cette communautÃ©
+	restent associÃ©s avec le nouveau nom.
 }
 
 }

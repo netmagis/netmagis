@@ -33,8 +33,7 @@ install: all
 	# install tmpl pages
 	#
 	mkdir -p $(DESTDIR)/lib/webdns/tmpl
-	./htg/src/htg2html -g htg/src -d htg/models -m default \
-			-c ./htg/src/htgtcl \
+	./htg/src/htg2html -b htg/src -d htg/models -m default \
 			tmpl /tmp/htgtmp $(DESTDIR)/lib/webdns/tmpl
 	rm -rf /tmp/htgtmp
 	cd $(DESTDIR)/lib/webdns/tmpl ; ln -s en C

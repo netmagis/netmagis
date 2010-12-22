@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Sélection d'une machine à supprimer
+    WebDNS - SÃ©lection d'une machine Ã  supprimer
 }
 
 \*******************************************************************************
@@ -54,7 +54,7 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {Nom à supprimer}
+			    \casetableau {} {Nom Ã  supprimer}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
@@ -91,7 +91,7 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {Adresse à supprimer}
+			    \casetableau {} {Adresse Ã  supprimer}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="adr" SIZE="45">
 			    }

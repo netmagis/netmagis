@@ -1,62 +1,52 @@
 #!/bin/sh
 
 #
-#
 # htg2html
 #
-# But : convertit toute une arborescence HTG en une arborescence HTML
+# Convert an tree of HTG files into a tree of HTML files
 #
-# Syntaxe :
-#    htg2html [-h][-v 0|1][-g rep-htg][-d rep-modèles][-c htgtcl][-l] rep-wsrc rep-wtmp rep-wobj
+# Syntax:
+#    htg2html [-h][-v 0|1][-l][-m model] -b htgbindir -d modeldir \
+#			wsrcdir wtmpdir wobjdir
 #
-# Entree :
+# Input:
 #   - option -h : heeeeeelp !
 #   - option -v : verbose
-#   - option -c : htgtcl path (modified Tcl interperter)
-#   - option -g : répertoire HTG (là où sont placés les scripts et les modèles)
-#   - option -d : répertoire contenant les modèles
+#   - option -b : HTG bin directory (where htg and htgtcl are located)
+#   - option -d : models directory
 #   - option -l : fait un lien symbolique vers les fichiers non HTG
-#   - rep-wsrc : repertoire des textes HTG (et autres fichiers
-#	recopies purement et simplement)
-#   - rep-wtmp : repertoire temporaire utilisé pour la compilation
-#   - rep-wobj : repertoire de destination, là où sont placés les fichiers HTML
+#   - wsrcdir : HTG source directory (may include other files as well)
+#   - wtmpdir : temporary directory used for compilation
+#   - wobjdir : destination directory, where HTML files should be located
 #
-# Sortie :
-#   - sortie standard : messages d'erreur et fichiers en erreur
-#   - repertoire de destination : peuplé avec les fichiers convertis
+# Output :
+#   - stdout : error messages and files
+#   - wobjdir : directory populated with converted files
 #
-# Historique
-#   1998/12/10 : pda          : adaptation d'un Makefile+script particuliers
-#   1999/07/13 : pda          : paramétrage de la localisation de HTG
-#   1999/07/13 : pda          : conservation des dates des fichiers
-#   1999/07/27 : pda          : affiche le nom du fichier seulement en cas d'erreur
-#   2000/06/07 : pda          : protection contre les noms de fichiers avec des espaces
-#   2001/11/26 : pda          : ajout de l'option "-l" pour lier les fichiers non htg
+# History
+#   1998/12/10 : pda          : adapt an old Makefile+script
+#   1999/07/13 : pda          : parametrize HTG location
+#   1999/07/13 : pda          : copy file dates
+#   1999/07/27 : pda          : display file name only if error
+#   2000/06/07 : pda          : protect against file names containing spaces
+#   2001/11/26 : pda          : add option -l
 #   2008/03/04 : pda/moindrot : options -h/-g/-d
-#   2010/10/29 : pda/moindrot/jean : option -m et parametrisation du script
+#   2010/10/29 : pda/moindrot/jean : option -m
 #   2010/12/21 : pda/jean     : add -c option
+#   2010/12/22 : pda/jean     : rework options
 #
 
 #
-# Localisation par défaut des éléments de HTG
-#
-
-HTGDIRDEF=%DESTDIR%
-
-#
-# Mode verbeux ou non (affichage de tous les fichiers traités)
+# Verbose mode (display all processed files)
 #
 
 VERBOSE=0
 
-# set -x
-
 #
-# Création des répertoires de l'arborescence source vers l'arborscence
-# temporaire.
+# Create source tree directories to tmp tree
 #
 
-repertoires ()
+create_directories ()
 {
     wsrc=$1
     wobj=$2
@@ -74,19 +64,19 @@ repertoires ()
 }
 
 #
-# Initialise la date d'un fichier à une date de référence
+# Initialize file date from a reference file
 #
 
-copie_date ()
+set_date ()
 {
     touch -r "$1" "$2"
 }
 
 #
-# Copie des fichiers "non-htgt" vers l'arborescence temporaire.
+# Copy non HTG files to temporary directory
 #
 
-autres ()
+other_files ()
 {
     link=$1
     wsrc=$2
@@ -104,17 +94,16 @@ autres ()
 		ln -s "$wsrc/$f" "$wobj/$f"
 	    else
 		cp "$wsrc/$f" "$wobj/$f"
-		copie_date "$wsrc/$f" "$wobj/$f"
+		set_date "$wsrc/$f" "$wobj/$f"
 	    fi
 	done
 }
 
 #
-# HTML-isation des fichiers htgt de l'arborescence source vers
-# l'arborescence temporaire.
+# Translate HTG files from source directory to temporary directory
 #
 
-htmliser ()
+translate ()
 {
     wsrc=$1
     wobj=$2
@@ -125,29 +114,23 @@ htmliser ()
 	while read f ; do 
 	    h=`echo $f | sed 's/.htgt$//'`
 	    $cmdverbose "$wsrc/$f"
-	    if [ "$htgtcl" != "" ]
-	    then
-		$htgtcl "$htgdir/htg" -v $verbose -d "$modeldir" $optm \
+	    $htgbindir/htgtcl $htgbindir/htg -v $verbose -d "$modeldir" $optm \
 			"$wsrc/$f" > "$wobj/$h.html"
-	    else
-		"$htgdir/bin/htg" -v $verbose -d "$modeldir" $optm \
-			"$wsrc/$f" > "$wobj/$h.html"
-	    fi
 	    if [ $? != 0 ]
 	    then
-		echo Problème sur "$wsrc/$f"
+		echo "Error on $wsrc/$f"
 		echo
 	    fi
-	    copie_date "$wsrc/$f" "$wobj/$h.html"
+	    set_date "$wsrc/$f" "$wobj/$h.html"
 	done
 }
 
 #
-# Déplace le contenu d'un répertoire vers une destination.
-# Si le répertoire est vide, ne fait rien.
+# Move directory contents to a destination directory. If the directory
+# to move is empty, do not do anything.
 #
 
-deplacersinonvide ()
+mv_if_not_empty ()
 {
     src=$1
     dst=$2
@@ -157,30 +140,29 @@ deplacersinonvide ()
 }
 
 #
-# Beau message d'erreur
+# Syntax
 #
 
 usage ()
 {
-    echo "usage: $0 [-h][-g <htgdir>][-d <modeldir>][-m <model>][-l] <srcdir> <tmpdir> <objdir>" >&2
+    echo "usage: $0 [-h][-v 0|1][-m model][-l] -b htgbindir -d modeldir srcdir tmpdir objdir" >&2
     exit 1
 }
 
 #
-# Valeurs par défaut des options
+# Default values for options
 #
 
-htgdir=$HTGDIRDEF
-modeldir=$htgdir/models
+htgbindir=""
+modeldir=""
 verbose=$VERBOSE
-htgtcl=""
 optm=""
 
 #
-# Analyse des options
+# Option analysis
 #
 
-set -- `getopt hc:g:d:m:v:l $*`
+set -- `getopt hv:m:lb:d: $*`
 
 if [ $? != 0 ]
 then usage
@@ -192,12 +174,11 @@ for i
 do
     case $i in
 	-h)	usage ;;
-	-c)	htgtcl=$2 ; shift 2 ;;
-	-g)	htgdir=$2 ; shift 2 ;;
-	-d)	modeldir=$2 ; shift 2 ;;
+	-v)	verbose=$2 ; shift 2 ;;
 	-m)	optm="-m $2" ; shift 2 ;;
 	-l)	link=1 ; shift ;;
-	-v)	verbose=$2 ; shift 2 ;;
+	-b)	htgbindir=$2 ; shift 2 ;;
+	-d)	modeldir=$2 ; shift 2 ;;
 	--)	shift ; break ;;
     esac
 done
@@ -207,7 +188,7 @@ case $verbose in
     1)	cmdverbose="echo" ;;
 esac
 
-if [ $# != 3 ]
+if [ $# != 3 -o "$htgbindir" = "" -o "$modeldir" = "" ]
 then usage
 fi
 
@@ -218,8 +199,8 @@ WOBJ=$3
 rm -rf $WTMP/new $WTMP/old
 mkdir  $WTMP $WTMP/new $WTMP/old 2> /dev/null
 
-repertoires $WSRC $WTMP/new &&
-    autres $link $WSRC $WTMP/new &&
-    htmliser $WSRC $WTMP/new &&
-    deplacersinonvide $WOBJ $WTMP/old &&
+create_directories $WSRC $WTMP/new &&
+    other_files $link $WSRC $WTMP/new &&
+    translate $WSRC $WTMP/new &&
+    mv_if_not_empty $WOBJ $WTMP/old &&
     mv $WTMP/new/* $WOBJ

@@ -29,7 +29,7 @@
 
     \titre {1} {Consultation des MX d'un ou plusieurs domaines}
 
-    Sélectionner les domaines dont vous voulez consulter les MX~:
+    SÃ©lectionner les domaines dont vous voulez consulter les MX~:
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	\tableau {

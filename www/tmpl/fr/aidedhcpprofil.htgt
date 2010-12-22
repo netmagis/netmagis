@@ -29,15 +29,15 @@
 
     \titre {1} {Gestion des profils DHCP}
 
-    Les profils DHCP servent à associer à une ou plusieurs machines
-    des paramètres dans le fichier \teletype {dhcpd.conf}.
+    Les profils DHCP servent Ã  associer Ã  une ou plusieurs machines
+    des paramÃ¨tres dans le fichier \teletype {dhcpd.conf}.
 
 
     \titre {2} {\ancre {texte} {Nom}}
 
-	Le nom du profil est utilisé uniquement dans l'application
-	elle-même (il n'apparaît pas dans le fichier \teletype
-	{dhcpd.conf}). Il est utilisé dans l'interface d'ajout (ou
+	Le nom du profil est utilisÃ© uniquement dans l'application
+	elle-mÃªme (il n'apparaÃ®t pas dans le fichier \teletype
+	{dhcpd.conf}). Il est utilisÃ© dans l'interface d'ajout (ou
 	de modification) de machine.
 
 	Exemple~:
@@ -45,10 +45,10 @@
 
     \titre {2} {\ancre {texte} {Directives dhcpd.conf}}
 
-	Ce champ contient les paramètres transmis par le serveur
-	DHCP, sous forme de directives stockées dans le fichier
+	Ce champ contient les paramÃ¨tres transmis par le serveur
+	DHCP, sous forme de directives stockÃ©es dans le fichier
 	\teletype {dhcpd.conf}. Consultez le manuel de votre serveur
-	DHCP pour la syntaxe de ce texte, qui est généré tel quel.
+	DHCP pour la syntaxe de ce texte, qui est gÃ©nÃ©rÃ© tel quel.
 
 	Exemple~:
 	    \retrait {\verbatim {

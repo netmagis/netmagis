@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification des plages DHCP effectuée
+    WebDNS - Modification des plages DHCP effectuÃ©e
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification effectuée}
+    \titre {1} {Modification effectuÃ©e}
 
-    Les intervalles DHCP du réseau '%RESEAU%' ont été mis à jour.
+    Les intervalles DHCP du rÃ©seau '%RESEAU%' ont Ã©tÃ© mis Ã  jour.
 }
 
 }

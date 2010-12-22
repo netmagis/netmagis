@@ -4,16 +4,18 @@ mode=0755
 owner=
 group=
 createdir=false
+subst=
 
 usage ()
 {
     (
 	echo "usage: `basename $0` opt tclsh libdns conffile confprog file ... file dir"
-	echo "	opt: [-m mode][-o owner][-g group][-d]"
+	echo "	opt: [-m mode][-o owner][-g group][-d][-e sed-pattern]"
+	echo "	Warning: no shell special characters in sed-pattern (including space)"
     )
 }
 
-args=`getopt "dm:o:g:" $*`
+args=`getopt "dm:o:g:e:" $*`
 if [ $? != 0 ]
 then
     usage
@@ -26,6 +28,7 @@ while :
 do
     case "$1" in
 	-d)	createdir=true ; shift ;;
+	-e)	subst="$subst -e $2" ; shift 2 ;;
 	-o)	owner=$2 ; shift 2 ;;
 	-g)	group=$2 ; shift 2 ;;
 	-m)	mode=$2 ; shift 2 ;;
@@ -77,6 +80,7 @@ do
 	    -e "s|%LIBDNS%|$libdns|g" \
 	    -e "s|%CONFFILE%|$conffile|g" \
 	    -e "s|%CONFPROG%|$confprog|g" \
+	    $subst \
 	    $f > "$destfile" \
 	&& chmod $mode "$destfile" \
 	&& if [ ! -z "$owner" ] ; then chown $owner "$destfile" ; fi \

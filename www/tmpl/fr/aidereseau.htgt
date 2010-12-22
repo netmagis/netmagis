@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification des réseaux
+    WebDNS - Modification des rÃ©seaux
 }
 
 \*******************************************************************************
@@ -27,69 +27,69 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Gestion des réseaux}
+    \titre {1} {Gestion des rÃ©seaux}
 
-    \titre {2} {\ancre {texte} {Intitulé}}
+    \titre {2} {\ancre {texte} {IntitulÃ©}}
 
-	Intitulé du réseau.
+	IntitulÃ© du rÃ©seau.
 
 	Exemple~:
 	    \retrait {\verbatim {CRC-POSTES}}
 
     \titre {2} {\ancre {localisation} {Localisation}}
 
-	Localisation du réseau, si le réseau est géographiquement
-	situé à un endroit précis.
+	Localisation du rÃ©seau, si le rÃ©seau est gÃ©ographiquement
+	situÃ© Ã  un endroit prÃ©cis.
 
 	Exemple~:
-	    \retrait {\verbatim {Bât. Maths}}
+	    \retrait {\verbatim {BÃ¢t. Maths}}
 
     \titre {2} {\ancre {adr4} {Adresse IPv4}}
 
-	Spécification CIDR IPv4 du réseau.
+	SpÃ©cification CIDR IPv4 du rÃ©seau.
 
 	Exemple~:
 	    \retrait {\verbatim {130.79.201.128/25}}
 
     \titre {2} {\ancre {gw4} {Passerelle IPv4}}
 
-	Adresse du routeur IPv4 du réseau.
+	Adresse du routeur IPv4 du rÃ©seau.
 
-    \titre {2} {\ancre {dhcp} {DHCP activé}}
+    \titre {2} {\ancre {dhcp} {DHCP activÃ©}}
 
 	Validez cette case pour activer le service central DHCP
-	pour ce réseau (génération de la configuration \teletype
-	{dhcpd.conf} pour ce réseau, et définition possible, pour
-	les groupes autorisés, d'intervalles DHCP dynamiques).
+	pour ce rÃ©seau (gÃ©nÃ©ration de la configuration \teletype
+	{dhcpd.conf} pour ce rÃ©seau, et dÃ©finition possible, pour
+	les groupes autorisÃ©s, d'intervalles DHCP dynamiques).
 
     \titre {2} {\ancre {adr6} {Adresse IPv6}}
 
-	Spécification IPv6 du réseau.
+	SpÃ©cification IPv6 du rÃ©seau.
 
 	Exemple~:
 	    \retrait {\verbatim {2001:660:4701:2001::/64}}
 
     \titre {2} {\ancre {gw6} {Passerelle IPv6}}
 
-	Adresse du routeur IPv6 du réseau.
+	Adresse du routeur IPv6 du rÃ©seau.
 
     \titre {2} {\ancre {idetabl} {Organisme}}
 
-	Organisme auquel se rattache le réseau.
+	Organisme auquel se rattache le rÃ©seau.
 
 	Exemple~:
 	    \retrait {\verbatim {Nations Unies}}
 
-    \titre {2} {\ancre {communaute} {Communauté}}
+    \titre {2} {\ancre {communaute} {CommunautÃ©}}
 
-	Communauté hébergée sur le réseau.
+	CommunautÃ© hÃ©bergÃ©e sur le rÃ©seau.
 
 	Exemple~:
 	    \retrait {\verbatim {Recherche}}
 
-    \titre {2} {\ancre {commentaire} {Infos complémentaires}}
+    \titre {2} {\ancre {commentaire} {Infos complÃ©mentaires}}
 
-	Information complémentaire à propos de ce réseau.
+	Information complÃ©mentaire Ã  propos de ce rÃ©seau.
 }
 
 }

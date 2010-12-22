@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Édition d'un groupe
+    WebDNS - Ã‰dition d'un groupe
 }
 
 \*******************************************************************************
@@ -42,7 +42,7 @@
 		\casetableau {
 		    \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
-		} {\gras {Attributs généraux du groupe}}
+		} {\gras {Attributs gÃ©nÃ©raux du groupe}}
 	    }
 	    \lignetableau {
 		\casetableau {} {
@@ -63,17 +63,17 @@
 			    \casetableau {} {%ADMIN%}
 			}
 			\lignetableau {
-			    \casetableau {} {Accès à la gestion des
-				droits d'émission SMTP
+			    \casetableau {} {AccÃ¨s Ã  la gestion des
+				droits d'Ã©mission SMTP
 			    }
 			    \casetableau {} {%DROITSMTP%}
 			}
 			\lignetableau {
-			    \casetableau {} {Accès à la gestion des TTL}
+			    \casetableau {} {AccÃ¨s Ã  la gestion des TTL}
 			    \casetableau {} {%DROITTTL%}
 			}
 			\lignetableau {
-			    \casetableau {} {Accès au module MAC}
+			    \casetableau {} {AccÃ¨s au module MAC}
 			    \casetableau {} {%DROITMAC%}
 			}
 		    }
@@ -95,7 +95,7 @@
 		\casetableau {
 		    \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
-		} {\gras {Domaines autorisés}}
+		} {\gras {Domaines autorisÃ©s}}
 	    }
 	    \lignetableau {
 		\casetableau {} {Pour supprimer un domaine,
@@ -107,10 +107,10 @@
 		\casetableau {
 		    \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
-		} {\gras {Réseaux autorisés}}
+		} {\gras {RÃ©seaux autorisÃ©s}}
 	    }
 	    \lignetableau {
-		\casetableau {} {Pour supprimer un réseau,
+		\casetableau {} {Pour supprimer un rÃ©seau,
 		    vider la case <<~Classe de tri~>>.
 
 		    %LISTERESEAUX%}
@@ -119,7 +119,7 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
-		} {\gras {Droits d'accès IP}}
+		} {\gras {Droits d'accÃ¨s IP}}
 	    }
 	    \lignetableau {
 		\casetableau {} {%LISTEDROITS%}
@@ -128,37 +128,37 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
-		} {\gras {Droits d'accès sur les équipements réseau (Topo)}}
+		} {\gras {Droits d'accÃ¨s sur les Ã©quipements rÃ©seau (Topo)}}
 	    }
 	    \lignetableau {
-		\casetableau {} {Décrire les droits d'accès sur les
-		    équipements sous forme d'expression régulière
-		    (ERE indépendante de la casse).
+		\casetableau {} {DÃ©crire les droits d'accÃ¨s sur les
+		    Ã©quipements sous forme d'expression rÃ©guliÃ¨re
+		    (ERE indÃ©pendante de la casse).
 
 		    Pour supprimer un droit, vider la case correspondant
-		    à l'expression régulière.
+		    Ã  l'expression rÃ©guliÃ¨re.
 
-		    Les correspondants d'un groupe ont accès~:
+		    Les correspondants d'un groupe ont accÃ¨s~:
 
 		    \liste {
 			\item {en lecture (i.e. en consultation des
-			    graphes et informations de topo) à tous
-			    les équipements qui correspondent aux
-			    expressions «~read~+~allow~» (exceptés
-			    les équipements qui correspondent aux
-			    expressions «~read~+~deny~») ainsi
-			    qu'aux interfaces des équipements
-			    transportant des réseaux autorisés (cf
+			    graphes et informations de topo) Ã  tous
+			    les Ã©quipements qui correspondent aux
+			    expressions Â«~read~+~allow~Â» (exceptÃ©s
+			    les Ã©quipements qui correspondent aux
+			    expressions Â«~read~+~deny~Â») ainsi
+			    qu'aux interfaces des Ã©quipements
+			    transportant des rÃ©seaux autorisÃ©s (cf
 			    ci-dessus).
 			}
-			\item {en écriture (i.e. en modification
-			    des interfaces des équipements de topo)
-			    à tous les équipements qui correspondent
-			    aux expressions «~write~+~allow~»
-			    (exceptés les équipements qui correspondent
-			    aux expressions «~write~+~deny~») restreints
+			\item {en Ã©criture (i.e. en modification
+			    des interfaces des Ã©quipements de topo)
+			    Ã  tous les Ã©quipements qui correspondent
+			    aux expressions Â«~write~+~allow~Â»
+			    (exceptÃ©s les Ã©quipements qui correspondent
+			    aux expressions Â«~write~+~deny~Â») restreints
 			    aux interfaces terminales et ne
-			    transportant que des réseaux autorisés
+			    transportant que des rÃ©seaux autorisÃ©s
 			    (cf ci-dessus).
 			}
 		    }
@@ -172,7 +172,7 @@
 		} {\gras {Profils DHCP visibles}}
 	    }
 	    \lignetableau {
-		\casetableau {} {Pour supprimer un accès à un profil,
+		\casetableau {} {Pour supprimer un accÃ¨s Ã  un profil,
 		    vider la case <<~Classe de tri~>>.
 
 		    %LISTEDHCPPROFILS%}
@@ -183,7 +183,7 @@
 		} {
 		    <div id="buttons">
 		    <INPUT TYPE="SUBMIT" VALUE="Enregistrer">
-		    <INPUT TYPE="RESET" VALUE="Réinitialiser">
+		    <INPUT TYPE="RESET" VALUE="RÃ©initialiser">
 		    </div>
 		}
 	    }

@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Sélection d'un groupe
+    WebDNS - SÃ©lection d'un groupe
 }
 
 \*******************************************************************************
@@ -30,7 +30,7 @@
     \titre {1} {Modification des groupes et des correspondants}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	Sélectionnez le groupe à modifier~: %MENUORGGRP%
+	SÃ©lectionnez le groupe Ã  modifier~: %MENUORGGRP%
 	<INPUT TYPE="SUBMIT" VALUE="Ok">
     </FORM>
 }

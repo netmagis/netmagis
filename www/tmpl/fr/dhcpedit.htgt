@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Édtion des plages DHCP dynamiques
+    WebDNS - Ã‰dtion des plages DHCP dynamiques
 }
 
 \*******************************************************************************
@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Édition des paramètres DHCP du réseau %RESEAU%}
+    \titre {1} {Ã‰dition des paramÃ¨tres DHCP du rÃ©seau %RESEAU%}
 
     \tableau {
 	\bordure {0} {}
@@ -38,25 +38,25 @@
 	\casedefauttableau {\centragehorizontal {LEFT}}
     } {
 	\lignetableau {
-	    \casetableau {} {Modifier une entrée}
+	    \casetableau {} {Modifier une entrÃ©e}
 	    \casetableau {} {:}
 	    \casetableau {} {Modifier directement la ligne}
 	}
 	\lignetableau {
-	    \casetableau {} {Supprimer une entrée}
+	    \casetableau {} {Supprimer une entrÃ©e}
 	    \casetableau {} {:}
 	    \casetableau {} {Vider la case <<~min~>>}
 	}
 	\lignetableau {
-	    \casetableau {} {Ajouter une entrée}
+	    \casetableau {} {Ajouter une entrÃ©e}
 	    \casetableau {} {:}
 	    \casetableau {} {Ajouter les informations 
 		dans l'une des lignes vides en bas du tableau}
 	}
     }
 
-    Note~: Les valeurs associées au bail sont exprimées en secondes.
-    La valeur <<~0~>> correspond à la valeur par défaut sur le
+    Note~: Les valeurs associÃ©es au bail sont exprimÃ©es en secondes.
+    La valeur <<~0~>> correspond Ã  la valeur par dÃ©faut sur le
     serveur DHCP
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
@@ -75,7 +75,7 @@
 		} {
 		    <div id="buttons">
 		    <INPUT TYPE="SUBMIT" VALUE="Enregistrer">
-		    <INPUT TYPE="RESET" VALUE="Réinitialiser">
+		    <INPUT TYPE="RESET" VALUE="RÃ©initialiser">
 		    </div>
 		}
 	    }

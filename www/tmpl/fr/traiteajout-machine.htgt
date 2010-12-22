@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Machine ajoutée
+    WebDNS - Machine ajoutÃ©e
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Machine ajoutée dans le DNS}
+    \titre {1} {Machine ajoutÃ©e dans le DNS}
 
-    La machine a été ajoutée.
+    La machine a Ã©tÃ© ajoutÃ©e.
 
     La modification sera effective sur les serveurs de nom d'ici
     %INTERVAL% minutes.

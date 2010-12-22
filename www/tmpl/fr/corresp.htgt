@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Recherche des correspondants associés à une machine}
+    \titre {1} {Recherche des correspondants associÃ©s Ã  une machine}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	Adresse ou machine (avec domaine)~:

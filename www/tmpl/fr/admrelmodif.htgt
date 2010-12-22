@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Relais de messagerie modifiés
+    WebDNS - Relais de messagerie modifiÃ©s
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification effectuée}
+    \titre {1} {Modification effectuÃ©e}
 
-    Les relais de messagerie  associés à \gras {%DOMAINE%} ont été mis à jour~:
+    Les relais de messagerie  associÃ©s Ã  \gras {%DOMAINE%} ont Ã©tÃ© mis Ã  jour~:
 
     %TABLEAU%
 }

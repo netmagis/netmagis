@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Zones à regénérer
+    WebDNS - Zones Ã  regÃ©nÃ©rer
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Génération de zones}
+    \titre {1} {GÃ©nÃ©ration de zones}
 
-    La ou les zones sélectionnées seront disponibles sur les
+    La ou les zones sÃ©lectionnÃ©es seront disponibles sur les
     serveurs de nom d'ici %INTERVAL% minutes.
 }
 

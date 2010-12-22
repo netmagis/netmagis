@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Groupe supprimé
+    WebDNS - Groupe supprimÃ©
 }
 
 \*******************************************************************************
@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Suppression effectuée}
+    \titre {1} {Suppression effectuÃ©e}
 
-    Le groupe '\gras {%ORGGRP%}' a été supprimé.
+    Le groupe '\gras {%ORGGRP%}' a Ã©tÃ© supprimÃ©.
 }
 
 }

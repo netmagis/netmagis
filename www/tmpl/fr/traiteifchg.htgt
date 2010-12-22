@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Modification effectuée
+    WebDNS - Modification effectuÃ©e
 }
 
 \*******************************************************************************
@@ -27,10 +27,10 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification enregistrée}
+    \titre {1} {Modification enregistrÃ©e}
 
-    Les modifications demandées ont été enregistrées dans la file
-    d'attente. Elles seront rapidement propagées sur l'équipement.
+    Les modifications demandÃ©es ont Ã©tÃ© enregistrÃ©es dans la file
+    d'attente. Elles seront rapidement propagÃ©es sur l'Ã©quipement.
 
     %EQSTA%
 }

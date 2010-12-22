@@ -1,87 +1,87 @@
 Version 2.0 - ??/??/????
-    - intégration du module topo
-    - utilisation de schémas pour mieux séparer les données des modules
-    - droits sur les équipements maintenant placés dans la base de données
-	dans une table specifique (topo.dr_eq) et modifiée dans la page
-	d'édition des groupes
-    - la génération DHCP autorise une même machine à obtenir une
-	adresse IP différente en fonction du réseau auquel elle est
-	connectée
-    - la génération DHCP supporte la redondance du serveur DHCP
+    - intÃ©gration du module topo
+    - utilisation de schÃ©mas pour mieux sÃ©parer les donnÃ©es des modules
+    - droits sur les Ã©quipements maintenant placÃ©s dans la base de donnÃ©es
+	dans une table specifique (topo.dr_eq) et modifiÃ©e dans la page
+	d'Ã©dition des groupes
+    - la gÃ©nÃ©ration DHCP autorise une mÃªme machine Ã  obtenir une
+	adresse IP diffÃ©rente en fonction du rÃ©seau auquel elle est
+	connectÃ©e
+    - la gÃ©nÃ©ration DHCP supporte la redondance du serveur DHCP
     - correction d'un bug de dnsmodattr dans la specification de hinfo
 
 version 1.5 - ??/??/????
     - ajout du profil DHCP dans la gestion des plages dynamiques
-    - affichage du profil DHCP dans la liste des machines par réseau
-    - ajout d'une option dans la procédure syntaxe-ip utilisée par d'autres
+    - affichage du profil DHCP dans la liste des machines par rÃ©seau
+    - ajout d'une option dans la procÃ©dure syntaxe-ip utilisÃ©e par d'autres
 	applications (notamment l'application topo, cf jres 2005)
-    - ajout du droit "droitsmtp" par groupe, permettant à ses membres
-	d'éditer les autorisations d'émettre en SMTP machine par machine,
+    - ajout du droit "droitsmtp" par groupe, permettant Ã  ses membres
+	d'Ã©diter les autorisations d'Ã©mettre en SMTP machine par machine,
 	lors de l'ajout de la modification d'une machine
-    - possibilité de renommer une machine dans la page de modification
+    - possibilitÃ© de renommer une machine dans la page de modification
     - affichage de la "carte" des adresses disponibles (seulement pour IPv4)
-	à partir des deux pages : consultation des réseau, et ajout d'une
+	Ã  partir des deux pages : consultation des rÃ©seau, et ajout d'une
 	machine
-    - recherche de plage consécutive d'adresses disponibles accessible
-	à partir de la page d'ajout d'une machine
+    - recherche de plage consÃ©cutive d'adresses disponibles accessible
+	Ã  partir de la page d'ajout d'une machine
     - titres de page plus explicites, notamment pour naviguer dans
 	les menus d'historique de la plupart des navigateurs
-    - fonctionnalité « où suis-je ? » pour afficher l'adresse IP du client
-    - édition des TTL pour les machines (ajout, modification) selon
+    - fonctionnalitÃ© Â« oÃ¹ suis-je ? Â» pour afficher l'adresse IP du client
+    - Ã©dition des TTL pour les machines (ajout, modification) selon
 	l'attribut "droit ttl" du correspondant
-    - suppression des références à Osiris et au CRC
-    - restructuration des modèles HTG et modèle paramétrable
-    - htg est prêt pour les versions de Tcl >= 8.6
-    - bug : les profils DHCP ne sont plus acceptés sur les RR qui n'ont
-	pas d'adresse MAC configurée
+    - suppression des rÃ©fÃ©rences Ã  Osiris et au CRC
+    - restructuration des modÃ¨les HTG et modÃ¨le paramÃ©trable
+    - htg est prÃªt pour les versions de Tcl >= 8.6
+    - bug : les profils DHCP ne sont plus acceptÃ©s sur les RR qui n'ont
+	pas d'adresse MAC configurÃ©e
     - formalisation de la licence CeCILL-B
 
 
 version 1.4 - 13/04/2008
-    - intégration dans CVS et ajout des Id
-    - bug : les valeurs par défaut de dhcpmodif n'étaient pas prises en compte
-    - bug : erreur de syntaxe dans traiteajout (code peu utilisé)
-    - bug : cas non traité dans la vérification des droits pour l'ajout
+    - intÃ©gration dans CVS et ajout des Id
+    - bug : les valeurs par dÃ©faut de dhcpmodif n'Ã©taient pas prises en compte
+    - bug : erreur de syntaxe dans traiteajout (code peu utilisÃ©)
+    - bug : cas non traitÃ© dans la vÃ©rification des droits pour l'ajout
 	d'un alias sur une machine inexistante
     - inversion des bandeaux "voir aussi" et "actions"
-    - script de liste des correspondants accessible à tous
-    - script de liste des réseaux accessible (mais url non publiée)
-    - affichage des correspondants admin en dernier pour éviter aux admins
-	d'être toujours listés en premier
-    - récupération du nom du groupe pour plus d'efficacité
+    - script de liste des correspondants accessible Ã  tous
+    - script de liste des rÃ©seaux accessible (mais url non publiÃ©e)
+    - affichage des correspondants admin en dernier pour Ã©viter aux admins
+	d'Ãªtre toujours listÃ©s en premier
+    - rÃ©cupÃ©ration du nom du groupe pour plus d'efficacitÃ©
     - explicitation du message en cas de tentative d'ajout sur un alias
-    - paramétrisation de la couleur du fond des boutons "valider"
+    - paramÃ©trisation de la couleur du fond des boutons "valider"
     - suppression du package auth.tcl et authentification sur LDAP
     - suppression du script passwd et redirection vers un script externe
     - centralisation de la gestion des groupes et des correspondants
     - log des modifications de la base
-    - intégration de webauth sous le nom pgauth, pour ceux qui souhaitent
+    - intÃ©gration de webauth sous le nom pgauth, pour ceux qui souhaitent
 	conserver l'auth PostgreSQL
-    - si le responsable d'une machine n'est pas précisé, mettre le correspondant
-	par défaut.
+    - si le responsable d'une machine n'est pas prÃ©cisÃ©, mettre le correspondant
+	par dÃ©faut.
 
 version 1.3 - 13/04/2005
-    - bug : adresses IPv6 avec une longueur de préfixe acceptées à tort
-    - bug : recherche de correspondant pour un rôle de messagerie
-    - bug : génération HTML erronée dans ::webapp::form-text
-    - bug : formulaires en méthode GET (au lieu d'être en POST normalement)
+    - bug : adresses IPv6 avec une longueur de prÃ©fixe acceptÃ©es Ã  tort
+    - bug : recherche de correspondant pour un rÃ´le de messagerie
+    - bug : gÃ©nÃ©ration HTML erronÃ©e dans ::webapp::form-text
+    - bug : formulaires en mÃ©thode GET (au lieu d'Ãªtre en POST normalement)
     - changement de format interne des dates dans les RR
-    - affichage du numéro de version dans les pages de l'application
+    - affichage du numÃ©ro de version dans les pages de l'application
     - script de sauvegarde horaire
-    - création d'utilitaires (dnsaddhost, dnsaddalias, dnsdelhost, dnsdelip,
+    - crÃ©ation d'utilitaires (dnsaddhost, dnsaddalias, dnsdelhost, dnsdelip,
 	dnsmodattr, dnsreadprol, dnswriteprol)
     - ajout de DHCP (associations statiques, intervalles dynamiques, profils)
     - ajout du droit ACL par groupe (utilisation future)
 
 Version 1.2 - 16/04/2004
-    - rédaction de la documentation d'installation et de paramétrage
-    - mise en paquetage pour distribution à l'extérieur d'Osiris
-    - ajout des rôles de messagerie et génération approprié des zones/routages
+    - rÃ©daction de la documentation d'installation et de paramÃ©trage
+    - mise en paquetage pour distribution Ã  l'extÃ©rieur d'Osiris
+    - ajout des rÃ´les de messagerie et gÃ©nÃ©ration appropriÃ© des zones/routages
 
 Verison 1.1 - 20/01/2004
     - support de IPv6
     - changement des triggers sur les zones
-    - changement des contraintes d'intégrité sur les MX (accepter même priorité)
+    - changement des contraintes d'intÃ©gritÃ© sur les MX (accepter mÃªme prioritÃ©)
 
 Version 1.0 - xx/05/2002
     - version initiale

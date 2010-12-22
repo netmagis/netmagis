@@ -63,13 +63,13 @@ Web server
 		    .../httpd.conf	[example Apache22 configuration file]
 		    .../authldap.conf	[example Apache22 configuration file]
 		    .../authpgsql.conf	[example Apache22 configuration file]
-#		.../htg/
-#		    .../models/
-#		    .../doc/		[obsolete, in french]
-#	.../bin/
-#	    .../htg
-#	    .../htg2html
-#	    .../htgtcl
+		.../htg/
+		    .../models/
+		    .../doc/		[obsolete, in french]
+	.../bin/
+	    .../htg
+	    .../htg2html
+	    .../htgtcl
 	.../www
 	    .../webdns
 		.../*			[all CGI scripts]
