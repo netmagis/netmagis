@@ -662,7 +662,7 @@ proc mark-processed {idrr lreqdate msg} {
 #   2010/12/23 : pda      : design
 #
 
-proc reread-eq-type {_tabeq graph} {
+proc reread-eq-type {graph _tabeq} {
     set fmod [detect-filemod $graph]
     switch [lindex $fmod 0] {
 	{} {
