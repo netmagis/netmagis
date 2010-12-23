@@ -651,6 +651,7 @@ proc mark-processed {idrr lreqdate msg} {
 # Read or re-read network graph to get equipment types
 #
 # Input:
+#   - force : force reread
 #   - graph : name of file containing network graph
 #   - _tabeq : name of array containing, in return, types and models
 # Output:
@@ -662,7 +663,9 @@ proc mark-processed {idrr lreqdate msg} {
 #   2010/12/23 : pda      : design
 #
 
-proc reread-eq-type {graph _tabeq} {
+proc reread-eq-type {force graph _tabeq} {
+    upvar $_tabeq tabeq
+
     set fmod [detect-filemod $graph]
     switch [lindex $fmod 0] {
 	{} {
@@ -670,15 +673,21 @@ proc reread-eq-type {graph _tabeq} {
 	}
 	err {
 	    set msg [lindex $fmod 2]
+	    set force 0
 	}
 	del {
 	    set msg "$graph disappeared"
+	    set force 0
 	}
 	default {
-	    set msg [read-eq-type tabeq]
-	    if {$msg eq ""} then {
-		sync-filemonitor [list $fmod]
-	    }
+	    set force 1
+	}
+    }
+
+    if {$force} then {
+	set msg [read-eq-type tabeq]
+	if {$msg eq ""} then {
+	    sync-filemonitor [list $fmod]
 	}
     }
 
@@ -802,6 +811,7 @@ proc main {argv0 argv} {
     #
 
     set first 1
+    set forcereread 1
 
     while {true} {
 	#
@@ -818,9 +828,10 @@ proc main {argv0 argv} {
 	# Check if equipment types must be (re)read
 	#
 
-	if {! [reread-eq-type $graph tabeq]} then {
+	if {! [reread-eq-type $forcereread $graph tabeq]} then {
 	    continue
 	}
+	set forcereread 0
 
 	#
 	# Get modification requests from Web interface and send them
