@@ -5759,7 +5759,7 @@ proc eq-graph-status {dbfd eq {iface {}}} {
     
     if {! [regexp {^([^.]+)\.(.+)$} $eq bidon host domain]} then {
         set host $eq
-        set domain [dnsconfig "defdomain"]
+        set domain [dnsconfig get "defdomain"]
     }
 
     set iddom [read-domain $dbfd $domain]
@@ -5863,7 +5863,7 @@ proc eq-graph-status {dbfd eq {iface {}}} {
 #
 
 proc set-trace {lfunct} {
-    foereach c $lfunct {
+    foreach c $lfunct {
 	trace add execution $c enter report-enter
 	trace add execution $c leave report-leave
     }
@@ -6256,7 +6256,7 @@ proc read-eq-type {_tabeq} {
 
     set-status "Reading equipement types"
 
-    set defdom [dnsconfig "defdomain"]
+    set defdom [dnsconfig get "defdomain"]
 
     set cmd $libconf(dumpgraph-read-eq-type)
 
