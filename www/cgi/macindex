@@ -39,7 +39,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "droitmac" {} ftab dbfd login tabuid
+    d init-cgi "mac" $conf(err) "droitmac" {} ftab dbfd tabuid
 
     #
     # Build URLs

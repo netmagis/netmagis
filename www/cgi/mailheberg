@@ -168,7 +168,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd login tabuid
+    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd tabuid
 
     set idcor $tabuid(idcor)
 

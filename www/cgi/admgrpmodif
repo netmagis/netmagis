@@ -216,7 +216,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd tabuid
 
     set orggrp  [lindex $ftab(orggrp) 0]
     set newgrp  [lindex $ftab(newgrp) 0]

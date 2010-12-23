@@ -111,7 +111,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd tabuid
 
     #
     # Compute statistics, and create a list {nb username}

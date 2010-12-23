@@ -690,7 +690,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd tabuid
     ::webapp::import-vars ftab $conf(form)
 
     # nrefresh (text field given by the user) has priority over refresh

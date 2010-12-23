@@ -95,7 +95,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" {} ftab dbfd login tabuid
+    d init-cgi "dns" $conf(err) "" {} ftab dbfd tabuid
 
     set titrepage [mc "List of users"]
 

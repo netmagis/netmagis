@@ -62,7 +62,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd login tabuid
+    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd tabuid
     ::webapp::import-vars ftab $conf(form)
 
     #
