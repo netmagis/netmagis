@@ -2,9 +2,9 @@ DESTDIR	= /usr/local
 TCLSH	= /usr/local/bin/tclsh
 SINSTALL = ../inst/install-script
 SUBST	= $(TCLSH) \
-	$(DESTDIR)/lib/webdns/libdns.tcl \
-	$(DESTDIR)/etc/webdns.conf \
-	$(DESTDIR)/bin/webdns-config
+	$(DESTDIR)/lib/netmagis/libdns.tcl \
+	$(DESTDIR)/etc/netmagis.conf \
+	$(DESTDIR)/bin/netmagis-config
 
 TCLCFLAGS	= -I/usr/local/include/tcl8.5
 TCLLFLAGS	= -L/usr/local/lib -ltcl85 -lm
@@ -18,13 +18,13 @@ install: all
 	#
 	# install CGI
 	#
-	mkdir -p $(DESTDIR)/www/webdns
+	mkdir -p $(DESTDIR)/www/netmagis
 	cd cgi ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 	#
 	# install ps2pdf
 	#
-	mkdir -p $(DESTDIR)/lib/webdns
-	install -m 0755 ps2pdf $(DESTDIR)/lib/webdns/
+	mkdir -p $(DESTDIR)/lib/netmagis
+	install -m 0755 ps2pdf $(DESTDIR)/lib/netmagis/
 	#
 	# install htg and models
 	#
@@ -32,20 +32,20 @@ install: all
 	#
 	# install tmpl pages
 	#
-	mkdir -p $(DESTDIR)/lib/webdns/tmpl
+	mkdir -p $(DESTDIR)/lib/netmagis/tmpl
 	./htg/src/htg2html -b htg/src -d htg/models -m default \
-			tmpl /tmp/htgtmp $(DESTDIR)/lib/webdns/tmpl
+			tmpl /tmp/htgtmp $(DESTDIR)/lib/netmagis/tmpl
 	rm -rf /tmp/htgtmp
-	cd $(DESTDIR)/lib/webdns/tmpl ; ln -s en C
+	cd $(DESTDIR)/lib/netmagis/tmpl ; ln -s en C
 	#
 	# install css and images
 	#
-	rm -f $(DESTDIR)/www/webdns/css
-	ln -s $(DESTDIR)/lib/webdns/htg/models/default/css $(DESTDIR)/www/webdns
+	rm -f $(DESTDIR)/www/netmagis/css
+	ln -s $(DESTDIR)/lib/netmagis/htg/models/default/css $(DESTDIR)/www/netmagis
 	#
 	# install default files
 	#
-	tar cf - defaults | tar xf - -C $(DESTDIR)/lib/webdns
+	tar cf - defaults | tar xf - -C $(DESTDIR)/lib/netmagis
 
 clean:
 	cd htg ; make clean

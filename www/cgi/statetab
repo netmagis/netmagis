@@ -91,7 +91,7 @@ set conf(tabmachetabl) {
 }
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

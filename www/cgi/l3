@@ -55,7 +55,7 @@ set conf(extractl3)	"extractl3 %s %s"
 set conf(neatocmd)	"%s -Gmaxiter=10000"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

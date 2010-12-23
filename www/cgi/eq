@@ -53,7 +53,7 @@ set conf(dumpgraph)	"dumpgraph -o eq %s"
 set conf(extractcoll)	"extractcoll -w %s"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

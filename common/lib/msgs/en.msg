@@ -1,5 +1,5 @@
 #
-# WebDNS translation messages
+# Netmagis translation messages
 #
 
 ###############################################################################
@@ -19,7 +19,7 @@
  cfg:dnsupdateperiod:desc {DNS update period}
  cfg:dnsupdateperiod:help {Duration between DNS zone generations on the DNS server (should be kept in sync with the associated CRON period)}
  cfg:defuser:desc {Default user}
- cfg:defuser:help {Default user is used in WebDNS command line programs, when the user's login is not found in the WebDNS database}
+ cfg:defuser:help {Default user is used in Netmagis command line programs, when the user's login is not found in the Netmagis database}
 
  cfg:dhcp {DHCP parameters}
 

@@ -6,12 +6,12 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - DHCP profiles
+    Netmagis - DHCP profiles
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    WebDNS application
+    Netmagis application
 }
 
 
@@ -35,7 +35,7 @@
 
     \titre {2} {\ancre {texte} {Name}}
 
-	The name of the profile is used only in WebDNS application
+	The name of the profile is used only in Netmagis application
 	itself (it does not appear in the \teletype {dhcpd.conf}
 	file. It is used in "add host" and "modify host" interfaces.
 

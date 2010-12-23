@@ -6,18 +6,18 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Lister les adresses inactives
+    Netmagis - Lister les adresses inactives
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    Application WebDNS
+    Application Netmagis
 }
 
 
 \*******************************************************************************
 \bandeau {
-	WebDNS v%VERSION%
+	Netmagis v%VERSION%
     } {
 	\elementbandeau {Actions} {
 	    %LINKS%

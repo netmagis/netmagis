@@ -20,7 +20,7 @@ set conf(err)		erreur.html
 set conf(page)		admparhelp.html
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

@@ -1,47 +1,52 @@
-Application WebDNS
-------------------
+Netmagis Application
+--------------------
 
-Objectif
---------
+About
+-----
 
-L'objectif premier est de déléguer la gestion du DNS et de DHCP
-d'un ensemble de domaines et de réseaux IPv4/IPv6 à des correspondants
-réseau
+Primary goal of the Netmagis application is to delegate DNS and
+DHCP administration of some IPv4/v6 networks and domains to
+users.
 
-Avec l'utilisation de WebDNS, il est également possible de :
-    - constituer le début d'un système d'information réseau.
-    - gérer les routages de messagerie d'un domaine
-    - gérer les exceptions dans le cadre de la mise en place de SMTP
-	authentifié sur un domaine
+Netmagis is also the heart of a Network Information System. It
+allows to:
+- consult informations about a set of network equipments (map of
+    equipments, of VLANS, of IP networks)
+- modify configuration of equipments: delegate VLAN assignment
+    to some users
+- manage mail routing of a set of domains
+- manage exceptions in mail routing
+- manage exceptions in a SMTP authentified policy
 
-Voir
-    - l'article présenté aux JRES 2003
+For more information, see:
+    - JRES 2003 paper (in french)
 	http://2003.jres.org/actes/paper.144.pdf
-    - l'article présenté aux JRES 2005
+    - JRES 2005 paper (in french)
 	http://2005.jres.org/paper/82.pdf
-    - l'article présenté aux JRES 2009
+    - JRES 2009 paper (in french)
 	http://2009.jres.org/planning_files/article/pdf/124.pdf
 
-Auteurs
+Authors
 -------
 
 Pierre DAVID (pda@unistra.fr)
 Jean BENOIT (jean@unistra.fr)
+Sebastien BOGGIA (boggia@unistra.fr)
 
 
 Version
 -------
 
-1.5
+2.0
 
 
-Site Web
+Web Site
 --------
 
-http://webdns.u-strasbg.fr 
+http://www.netmagis.org /
 
 
 Forge
 -----
 
-http://github.com/pdav/webdns
+http://github.com/pdav/netmagis

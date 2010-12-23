@@ -11,13 +11,13 @@
 
 \*******************************************************************************
 \partie {titrepage} {
-    Application WebDNS
+    Application Netmagis
 }
 
 
 \*******************************************************************************
 \bandeau {
-	WebDNS v%VERSION%
+	Netmagis v%VERSION%
     } {
 	\elementbandeau {Actions} {
 	    %LINKS%

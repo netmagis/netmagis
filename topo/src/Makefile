@@ -2,9 +2,9 @@ DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
 SINSTALL	= ../../inst/install-script
 SUBST		= $(TCLSH) \
-			$(DESTDIR)/lib/webdns/libdns.tcl \
-			$(DESTDIR)/etc/webdns.conf \
-			$(DESTDIR)/bin/webdns-config
+			$(DESTDIR)/lib/netmagis/libdns.tcl \
+			$(DESTDIR)/etc/netmagis.conf \
+			$(DESTDIR)/bin/netmagis-config
 
 LIBDIR = ../lib
 CFLAGS = -g -Wall -I$(LIBDIR)
@@ -52,9 +52,9 @@ getnetif:	getnetif.c	$(LIBDIR)/libgraph.a
 
 install: $(PROGS) $(SCRIPTS)
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/lib/webdns/topo
-	install -m 0755 $(PROGS) $(DESTDIR)/lib/webdns/topo
-	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/lib/webdns/topo
+	mkdir -p $(DESTDIR)/lib/netmagis/topo
+	install -m 0755 $(PROGS) $(DESTDIR)/lib/netmagis/topo
+	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/lib/netmagis/topo
 
 clean:
 	rm -f *.o $(PROGS) *.core

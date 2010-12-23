@@ -5,7 +5,7 @@
 #
 # History
 #   2005/05/27 : jean     : design
-#   2010/11/30 : pda/jean : integration a WebDNS
+#   2010/11/30 : pda/jean : integration a Netmagis
 #   2010/12/12 : pda      : i18n
 #
 
@@ -39,7 +39,7 @@ set conf(tabresultat) {
 }
 
 #
-# WebDNS general library
+# Netmagis general library
 
 source %LIBDNS%
 

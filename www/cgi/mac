@@ -7,7 +7,7 @@
 #   2004/11/14 : jean     : design
 #   2005/06/04 : jean     : search optimization (gen-ipmac and gen-portmac)
 #			    remove SQL joints, 2 requests and tcl processing
-#   2010/11/30 : pda/jean : integration a WebDNS
+#   2010/11/30 : pda/jean : integration a Netmagis
 #   2010/12/12 : pda      : i18n
 #
 
@@ -214,7 +214,7 @@ set conf(sqldateformat) {'DD/MM/YYYY HH24:MI:SS'}
 set conf(clockformat)   {%d/%m/%Y %H:%M:%S}
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

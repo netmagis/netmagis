@@ -61,7 +61,7 @@ set conf(neatocmd)	"%s -Gmaxiter=10000"
 set conf(maxdot)	12
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

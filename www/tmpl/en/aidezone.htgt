@@ -6,18 +6,18 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Zones
+    Netmagis - Zones
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    WebDNS application
+    Netmagis application
 }
 
 
 \*******************************************************************************
 \bandeau {
-	WebDNS v%VERSION%
+	Netmagis v%VERSION%
     } {
 	\elementbandeau {Actions} {
 	    %LINKS%
@@ -52,7 +52,7 @@
 ; Zone mycompany.com
 ;
 ; History
-;   2002/04/26 : jean/pda  : webdns se
+;   2002/04/26 : jean/pda  : netmagis se
 ;
 
 @	IN	SOA	ns.mycompany.com. hostmaster.mycompany.com. (

@@ -1,7 +1,7 @@
-Proposition d'évolutions de l'application WebDNS
+Proposition d'évolutions de l'application Netmagis
 
 Ce document a pour but de présenter les évolutions prévues de
-l'application WebDNS (qui regroupe également les actuelles applications
+l'application Netmagis (qui regroupe également les actuelles applications
 topo et mac) dans les prochaines semaines et de prioriser ces
 évolutions.
 
@@ -36,7 +36,7 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 2- Affichage de l'adresse IP courante
 
     Cette option est accessible depuis le bandeau de gauche
-    de WebDNS (lien "Où suis-je ?")
+    de Netmagis (lien "Où suis-je ?")
 	https://www-crc.u-strasbg.fr/applis/devdns/bin/accueil
 
     Affichage de l'adresse du client Web
@@ -95,7 +95,7 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 	- l'application sera ouverte aux correspondants réseau
 	- les droits d'accès sur les vlans sont déduits des droits
 	    d'accès sur les sous-réseaux IP associés (modèle de
-	    droits de topo dérivé de WebDNS)
+	    droits de topo dérivé de Netmagis)
 
     Mécanisme :
 	- les modifications sont décrites dans la base de données
@@ -169,7 +169,7 @@ topo et mac) dans les prochaines semaines et de prioriser ces
 
 6- Fluidifier la navigation entre les différents composants
 
-    Actuellement, les applications WebDNS, topo et métro, mac, dhcp
+    Actuellement, les applications Netmagis, topo et métro, mac, dhcp
     sont des modules séparés et non communicants.
 
     La proposition consiste à simplifier l'interface utilisateur
@@ -233,7 +233,7 @@ X- Ajout de l'équipement et du numéro de port dans la liste des
 
     Statut :
 	- pas encore codé
-	- difficulté = facile, mais nécessite convergence WebDNS/Topo/Mac
+	- difficulté = facile, mais nécessite convergence Netmagis/Topo/Mac
 	    (qui est difficile)
 
 X- Import de machines à partir d'un fichier CSV
@@ -286,7 +286,7 @@ X- Création d'un profil DHCP
 
 X- Exploitation des logs
 
-    L'application génère des logs des modifications de WebDNS dans
+    L'application génère des logs des modifications de Netmagis dans
     une table. Pour l'instant, pour lire ces logs, il faut utiliser
     psql et faire des interrogations en SQL.
     La proposition consiste à rendre ces logs visibles par les
@@ -300,7 +300,7 @@ X- Convergence des logs
 
     La mise en exploitation de topod, anaconf et la modification
     des ports des équipements génèrent des informations de statut
-    qu'il faudrait faire converger avec le log de WebDNS.
+    qu'il faudrait faire converger avec le log de Netmagis.
 
     Statut :
 	- pas encore codé

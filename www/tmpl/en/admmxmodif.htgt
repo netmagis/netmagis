@@ -6,18 +6,18 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - MX modified
+    Netmagis - MX modified
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    WebDNS application
+    Netmagis application
 }
 
 
 \*******************************************************************************
 \bandeau {
-	WebDNS v%VERSION%
+	Netmagis v%VERSION%
     } {
 	\elementbandeau {Actions} {
 	    %LINKS%

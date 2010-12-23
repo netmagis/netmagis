@@ -6,18 +6,18 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Error!
+    Netmagis - Error!
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    WebDNS application
+    Netmagis application
 }
 
 
 \*******************************************************************************
 \bandeau {
-	WebDNS v%VERSION%
+	Netmagis v%VERSION%
     } {
 	\elementbandeau {Actions} {
 	    %LINKS%
@@ -29,7 +29,7 @@
 
     \titre {1} {Error!}
 
-    An error occurred in WebDNS application.
+    An error occurred in Netmagis application.
     \retrait {<FONT COLOR="#FF0000">%MESSAGE%</FONT>}
 
     Use your Web browser to come back to previous page.

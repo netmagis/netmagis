@@ -28,7 +28,7 @@ set conf(page)		consultnet.html
 set conf(next)		"listenet"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

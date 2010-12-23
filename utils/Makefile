@@ -2,9 +2,9 @@ DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
 SINSTALL	= ../inst/install-script
 SUBST		= $(TCLSH) \
-			$(DESTDIR)/lib/webdns/libdns.tcl \
-			$(DESTDIR)/etc/webdns.conf \
-			$(DESTDIR)/bin/webdns-config
+			$(DESTDIR)/lib/netmagis/libdns.tcl \
+			$(DESTDIR)/etc/netmagis.conf \
+			$(DESTDIR)/bin/netmagis-config
 
 SCRIPTS = \
 	dnsaddalias \

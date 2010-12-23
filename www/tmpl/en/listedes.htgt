@@ -7,18 +7,18 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - List
+    Netmagis - List
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    WebDNS application
+    Netmagis application
 }
 
 
 \*******************************************************************************
 \bandeau {
-	WebDNS v%VERSION%
+	Netmagis v%VERSION%
     } {
 	\elementbandeau {Actions} {
 	    %LINKS%

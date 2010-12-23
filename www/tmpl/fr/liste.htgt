@@ -6,18 +6,18 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Affichage de réseau
+    Netmagis - Affichage de réseau
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    Application WebDNS
+    Application Netmagis
 }
 
 
 \*******************************************************************************
 \bandeau {
-	WebDNS v%VERSION%
+	Netmagis v%VERSION%
     } {
 	\elementbandeau {Actions} {
 	    %LINKS%

@@ -291,7 +291,7 @@ set conf(tabks) {
 set conf(tabmodlog) $conf(tabks)
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

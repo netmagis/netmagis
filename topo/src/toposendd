@@ -3,7 +3,7 @@
 #
 # Daemon to send interface modifications on equipments
 #
-# When a user ask, via the WebDNS interface, to change an interface
+# When a user ask, via the Netmagis interface, to change an interface
 # on an equipment (VLAN, VoIP VLAN or description), the CGI script
 # writes an entry in topo.ifchange table.
 # This entry contains:
@@ -443,7 +443,7 @@ proc execute-cmd {fqdn type model lcmd _msg} {
     #	-> pb : program to check would be very complex
     # 4- ignore output file and let people detect problems
     #	(eg: display output file in a diagnostic page or in
-    #	the WebDNS equipment page)
+    #	the Netmagis equipment page)
     #
     # We choose the 4th idea at this time. Experience will say if
     # it is a good idea or no.

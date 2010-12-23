@@ -29,7 +29,7 @@ set conf(page)		modif.html
 set conf(next)		"editmodif"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

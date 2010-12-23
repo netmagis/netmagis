@@ -1,5 +1,5 @@
 #
-# TCL library for WebDNS
+# TCL library for Netmagis
 #
 #
 # History
@@ -32,7 +32,7 @@
 #
 
 proc read-local-conf-file {file} {
-    global webdnsconf
+    global netmagisconf
 
     if {[catch {set fd [open "$file" "r"]} msg]} then {
 	puts stderr "Cannot open configuration file '$file'"
@@ -45,9 +45,9 @@ proc read-local-conf-file {file} {
 	regsub {\s*$} $line {} line
 	if {$line ne ""} then {
 	    if {[regexp {(\S+)\s+"(.*)"} $line m key val]} then {
-		set webdnsconf($key) $val
+		set netmagisconf($key) $val
 	    } elseif {[regexp {(\S+)\s+(.*)} $line m key val]} then {
-		set webdnsconf($key) $val
+		set netmagisconf($key) $val
 	    } else {
 		puts stderr "$file($lineno): unrecognized line $line"
 		set errors true
@@ -76,10 +76,10 @@ proc read-local-conf-file {file} {
 #
 
 proc get-local-conf {key} {
-    global webdnsconf
+    global netmagisconf
 
-    if {[info exists webdnsconf($key)]} then {
-	set v $webdnsconf($key)
+    if {[info exists netmagisconf($key)]} then {
+	set v $netmagisconf($key)
     } else {
 	set v ""
     }
@@ -339,14 +339,14 @@ array set libconf {
 
 
 ##############################################################################
-# WebDNS application framework
+# Netmagis application framework
 ##############################################################################
 
 #
-# WebDNS access class
+# Netmagis access class
 #
 # This class is a simple way to initialize the whole context of all
-# WebDNS programs (CGI scripts, daemons, command line utilities).
+# Netmagis programs (CGI scripts, daemons, command line utilities).
 #
 # Methods:
 #   init-cgi
@@ -392,7 +392,7 @@ array set libconf {
 # History
 #   2001/06/18 : pda      : design
 #   2002/12/26 : pda      : update and usage
-#   2003/05/13 : pda/jean : integration in webdns and auth class usage
+#   2003/05/13 : pda/jean : integration in netmagis and auth class usage
 #   2007/10/05 : pda/jean : adaptation to "authuser" and "authbase" objects
 #   2007/10/26 : jean     : add log
 #   2010/10/25 : pda      : add dnsconfig
@@ -403,7 +403,7 @@ array set libconf {
 #
 
 snit::type ::dnscontext {
-    # WebDNS version
+    # Netmagis version
     variable version "1.5"
 
     # database handle
@@ -430,7 +430,7 @@ snit::type ::dnscontext {
     # HTML home page
     variable homepage "accueil"
 
-    # in order to come back from a travel in the WebDNS application
+    # in order to come back from a travel in the Netmagis application
     variable dnextprog ""
     variable dnextargs ""
 
@@ -601,7 +601,7 @@ snit::type ::dnscontext {
 	upvar $_tabuid tabuid
 
 	#
-	# Access to WebDNS database
+	# Access to Netmagis database
 	#
 
 	set conninfo [get-conninfo "dnsdb"]
@@ -616,7 +616,7 @@ snit::type ::dnscontext {
 	#
 
 	set log [::webapp::log create %AUTO% \
-				    -subsys webdns \
+				    -subsys netmagis \
 				    -method opened-postgresql \
 				    -medium [list "db" $dbfd table global.log] \
 			]
@@ -740,7 +740,7 @@ snit::type ::dnscontext {
 	# - URL is a local one (does not begin with "http://")
 	# - URL is external (begins with "http://")
 	# In the last case, don't add default arguments which are
-	# specific to WebDNS application.
+	# specific to Netmagis application.
 	#
 
 	if {! [regexp {^https?://} $path]} then {
@@ -844,7 +844,7 @@ snit::type ::dnscontext {
 
 
     ###########################################################################
-    # Initialize access to WebDNS, for a CGI script
+    # Initialize access to Netmagis, for a CGI script
     #
     # Input:
     #   - module : current module we are in ("dns", "admin" or "topo")
@@ -859,7 +859,7 @@ snit::type ::dnscontext {
     #			idcor, idgrp, present)
     # Output:
     #   - return value: none
-    #   - object d : WebDNS context
+    #   - object d : Netmagis context
     #   - object $ah : access to authentication base
     #
 
@@ -1029,7 +1029,7 @@ snit::type ::dnscontext {
     }
 
     ###########################################################################
-    # Initialize access to WebDNS, for an autonomous program (command
+    # Initialize access to Netmagis, for an autonomous program (command
     # line utility, daemon, etc.)
     #
     # Input:
@@ -1040,7 +1040,7 @@ snit::type ::dnscontext {
     #			idcor, idgrp, present)
     # Output:
     #   - return value: error message or empty string
-    #   - object d : WebDNS context
+    #   - object d : Netmagis context
     #   - object $ah : access to authentication base
     #
 
@@ -1078,7 +1078,7 @@ snit::type ::dnscontext {
     }
 
     ###########################################################################
-    # Ends access to WebDNS (CGI script or autonomous program)
+    # Ends access to Netmagis (CGI script or autonomous program)
     #
     # Input:
     #   - none
@@ -1345,7 +1345,7 @@ snit::type ::dnscontext {
 # Configuration parameters class
 #
 # This class is a simple way to access to configuration parameters
-# of the WebDNS application.
+# of the Netmagis application.
 #
 # Methods:
 # - setdb $dbfd
@@ -1682,7 +1682,7 @@ proc display-group {dbfd idgrp} {
 	} else {
 	    set droitmac [mc "no"]
 	}
-	lappend lines [list DROIT [mc "WebDNS administration"] $admin]
+	lappend lines [list DROIT [mc "Netmagis administration"] $admin]
 	lappend lines [list DROIT [mc "SMTP authorization management"] $droitsmtp]
 	lappend lines [list DROIT [mc "TTL management"] $droitttl]
 	lappend lines [list DROIT [mc "MAC module access"] $droitmac]
@@ -1970,7 +1970,7 @@ proc fermer-base {dbfd} {
 #
 # History
 #   2000/07/26 : pda      : design
-#   2002/05/03 : pda/jean : use in webdns
+#   2002/05/03 : pda/jean : use in netmagis
 #   2002/05/06 : pda/jean : groups
 #   2010/11/29 : pda      : i18n
 #
@@ -2065,7 +2065,7 @@ proc read-user {dbfd login _tabuid _msg} {
     $u destroy
 
     #
-    # WebDNS specific characteristics
+    # Netmagis specific characteristics
     #
 
     set qlogin [::pgsql::quote $login]
@@ -2085,7 +2085,7 @@ proc read-user {dbfd login _tabuid _msg} {
     }
 
     if {$tabuid(idcor) == -1} then {
-	set msg [mc "User '%s' is not in the WebDNS base" $login]
+	set msg [mc "User '%s' is not in the Netmagis base" $login]
 	return -1
     }
 
@@ -3972,7 +3972,7 @@ proc read-dhcp-profile {dbfd text} {
 }
 
 ##############################################################################
-# WebDNS standard HTML menus
+# Netmagis standard HTML menus
 ##############################################################################
 
 #

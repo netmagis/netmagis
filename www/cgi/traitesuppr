@@ -73,7 +73,7 @@ set conf(form-suppr-ip)	{
 }
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

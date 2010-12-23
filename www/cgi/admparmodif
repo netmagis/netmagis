@@ -30,7 +30,7 @@ set conf(nextadmin)	"admin"
 set conf(nextmodif)	"admparliste"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

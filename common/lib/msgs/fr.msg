@@ -1,6 +1,6 @@
 
 #
-# WebDNS translation messages
+# Netmagis translation messages
 #
 
 ###############################################################################
@@ -74,7 +74,7 @@
  cfg:dnsupdateperiod:desc {Délai de mise à jour DNS}
  cfg:dnsupdateperiod:help {Durée entre deux générations de zones DNS sur le serveur DNS (doit être identique à la valeur CRON correspondante)}
  cfg:defuser:desc {Utilisateur par défaut}
- cfg:defuser:help {L'utilisateur par défaut est utilisé dans les programmes WebDNS en ligne de commande lorsque le login de l'utilisateur n'existe pas dans la base WebDNS.}
+ cfg:defuser:help {L'utilisateur par défaut est utilisé dans les programmes Netmagis en ligne de commande lorsque le login de l'utilisateur n'existe pas dans la base Netmagis.}
 
  cfg:dhcp {Paramètres DHCP}
 
@@ -190,7 +190,7 @@
  {Authentication base problem: %s} {Problème dans la base d'authentification : %s}
  {User '%s' is not in the authentication base} {L'utilisateur '%s' n'est pas dans la base d'authentification}
  {Found more than one entry for login '%s' in the authentication base} {Plus d'une entrée trouvée pour le login '%s' dans la base d'authentification}
- {User '%s' is not in the WebDNS base} {L'utilisateur '%s' n'est pas dans la base de WebDNS}
+ {User '%s' is not in the Netmagis base} {L'utilisateur '%s' n'est pas dans la base de Netmagis}
  {Invalid input} {Données invalides}
  {Invalid input '%s'} {Données invalides '%s'}
  {Cannot lock table(s) %1$s: %2$s} {Verrouillage impossible pour la/les table(s) %1$s : %2$s}
@@ -312,7 +312,7 @@
  {No profile} {Aucun profil}
  {yes}		{oui}
  {no}		{non}
- {WebDNS administration} {Administration de WebDNS}
+ {Netmagis administration} {Administration de Netmagis}
  {SMTP authorizations management} {Gestion des émetteurs SMTP}
  {TTL management} {Gestion du TTL}
  {MAC module access} {Accès au module MAC}

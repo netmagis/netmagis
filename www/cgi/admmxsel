@@ -27,7 +27,7 @@ set conf(page)		admmxsel.html
 set conf(next)		"admmxedit"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

@@ -82,7 +82,7 @@ set conf(form-modif-infos)	{
 }
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

@@ -76,7 +76,7 @@ set conf(tabrrcor) {
 }
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

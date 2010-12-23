@@ -11,7 +11,7 @@
 #
 # History
 #   2001/11/01 : pda      : design
-#   2002/05/03 : pda/jean : re-use in webdns
+#   2002/05/03 : pda/jean : re-use in netmagis
 #   2002/05/06 : pda/jean : add users
 #   2002/05/16 : pda      : conversion to arrgen
 #   2002/05/21 : pda/jean : add groups
@@ -137,7 +137,7 @@ set conf(eq:sql)		"SELECT * FROM topo.eq ORDER BY eq ASC"
 set conf(eq:id)			ideq
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

@@ -6,18 +6,18 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    WebDNS - Accueil
+    Netmagis - Accueil
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    Application WebDNS
+    Application Netmagis
 }
 
 
 \*******************************************************************************
 \bandeau {
-	WebDNS v%VERSION%
+	Netmagis v%VERSION%
     } {
 	\elementbandeau {Actions} {
 	    %LINKS%
@@ -29,7 +29,7 @@
 
     \titre {1} {Gestion du DNS}
 
-    Bienvenue dans l'application WebDNS de gestion du DNS.
+    Bienvenue dans l'application Netmagis de gestion du DNS.
 
     \titre {2} {Introduction}
 
@@ -58,7 +58,7 @@
 
     N'hésitez pas à profiter de cette base de données pour gérer
     vos machines. En cas de suggestion d'amélioration,
-    \lien {contactez-nous} {http://webdns.u-strasbg.fr}.
+    \lien {contactez-nous} {http://netmagis.u-strasbg.fr}.
 
     \titre {2} {Accès à la base}
 
@@ -80,7 +80,7 @@
     \titre {2} {Autres opérations}
 
     Si vous avez des questions, ou d'autres besoins plus spécifiques,
-    n'hésitez pas à \lien {nous contacter} {http://webdns.u-strasbg.fr}.
+    n'hésitez pas à \lien {nous contacter} {http://netmagis.u-strasbg.fr}.
 }
 
 }

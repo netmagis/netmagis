@@ -11,7 +11,7 @@
 #   2007/01/08 : pda           : change output format
 #   2010/09/14 : jean/saillard : change input format, no more VTP
 #   2010/09/21 : pda/jean      : add third optional column "voip"
-#   2010/11/17 : pda           : use webdns database
+#   2010/11/17 : pda           : use netmagis database
 #   2010/12/18 : pda           : rework installation
 #
 

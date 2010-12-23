@@ -29,7 +29,7 @@ set conf(page)		suppr.html
 set conf(next)		"traitesuppr"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

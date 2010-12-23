@@ -36,7 +36,7 @@ set conf(next)		"liste"
 set conf(maxranges)	10
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

@@ -32,7 +32,7 @@ set conf(next)		"dhcpedit"
 set conf(script-edit)	"./dhcpedit"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

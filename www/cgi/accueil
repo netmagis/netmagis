@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Display general WebDNS index page
+# Display general Netmagis index page
 #
 # Called by: /applis/dns/
 #
@@ -22,7 +22,7 @@ set conf(err)		erreur.html
 set conf(page)		accueil.html
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

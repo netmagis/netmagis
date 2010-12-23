@@ -50,7 +50,7 @@ set conf(form)	{
 set conf(urlgraph)	"graphe"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

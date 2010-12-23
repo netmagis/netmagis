@@ -27,7 +27,7 @@ set conf(domain) "u-strasbg.fr"
 # Script où sont placées les modifications du DNS
 set conf(script) "%TOPODIR%/bin/update-dns.sh"
 
-# Répertoire où trouver les commandes d'ajout et de suppression dans WebDNS
+# Répertoire où trouver les commandes d'ajout et de suppression dans Netmagis
 set conf(path)	"/local/services/www/applis/devdns/lib/util"
 
 #

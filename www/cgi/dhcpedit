@@ -35,7 +35,7 @@ set conf(err)		erreur.html
 set conf(page)		dhcpedit.html
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

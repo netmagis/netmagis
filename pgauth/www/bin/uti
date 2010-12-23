@@ -10,7 +10,7 @@
 #
 # Historique
 #   2003/08/10 : pda      : création
-#   2007/12/04 : pda/jean : intégration dans webdns
+#   2007/12/04 : pda/jean : intégration dans netmagis
 #
 
 set conf(homeurl)	%HOMEURL%

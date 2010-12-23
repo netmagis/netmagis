@@ -28,7 +28,7 @@ set conf(page)		admgrpsel.html
 set conf(next)		"admgrpedit"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

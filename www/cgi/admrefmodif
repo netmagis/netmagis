@@ -13,7 +13,7 @@
 # History
 #   2001/11/01 : pda      : specifications
 #   2001/11/02 : pda      : coding
-#   2002/05/03 : pda/jean : re-use in webdns
+#   2002/05/03 : pda/jean : re-use in netmagis
 #   2002/05/06 : pda/jean : add users
 #   2002/05/21 : pda/jean : add groups
 #   2002/05/21 : pda/jean : add communauties
@@ -233,7 +233,7 @@ set conf(eq:idnum)		ideq
 set conf(eq:table)		topo.eq
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

@@ -10,9 +10,9 @@ install: all
 	@echo ">>> Making install in `pwd`"
 	cd src ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 	cd etc ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
-	mkdir -p $(DESTDIR)/var/webdns
-	mkdir -p $(DESTDIR)/var/webdns/eqvirt
-	mkdir -p $(DESTDIR)/var/webdns/eqgen
+	mkdir -p $(DESTDIR)/var/netmagis
+	mkdir -p $(DESTDIR)/var/netmagis/eqvirt
+	mkdir -p $(DESTDIR)/var/netmagis/eqgen
 
 clean:
 	cd lib ; make clean

@@ -109,7 +109,7 @@ set conf(tableau) {
 }
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

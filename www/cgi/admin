@@ -10,7 +10,7 @@
 # History
 #   2001/03/22 : pda      : design
 #   2001/10/20 : pda      : use output procedure
-#   2002/05/03 : pda/jean : re-use in webdns
+#   2002/05/03 : pda/jean : re-use in netmagis
 #   2002/07/09 : pda      : add nologin
 #   2003/05/13 : pda/jean : use auth base
 #   2010/12/06 : pda      : i18n
@@ -24,7 +24,7 @@ set conf(err)		erreur.html
 set conf(page)		admin.html
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

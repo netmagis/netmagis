@@ -37,7 +37,7 @@ set conf(etabl)		{UM ESIATF INCONNU}
 set conf(commu)		{Enseignement Administration Recherche INCONNUE}
 
 ##############################################################################
-# Liste du ou des groupes WebDNS ayant le droit d'administrer la base
+# Liste du ou des groupes Netmagis ayant le droit d'administrer la base
 
 set conf(admin)		{sysadm}
 

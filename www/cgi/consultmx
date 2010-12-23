@@ -28,7 +28,7 @@ set conf(page)		consultmx.html
 set conf(next)		"listemx"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%

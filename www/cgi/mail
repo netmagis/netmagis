@@ -26,7 +26,7 @@ set conf(err)		erreur.html
 set conf(next)		"mailheberg"
 
 #
-# WebDNS general library
+# Netmagis general library
 #
 
 source %LIBDNS%
