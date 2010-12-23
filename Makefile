@@ -18,6 +18,7 @@ usage:
 	@echo "	install-database
 	@echo "	install-www
 	@echo "	install-utils
+	@echo "	install-detecteq
 	@echo "	install-topo"
 	@echo "	clean"
 
@@ -41,6 +42,9 @@ install-utils:
 
 install-topo:
 	cd topo ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+
+install-detecteq:
+	cd detecteq ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 clean:
 	cd www ; make clean
