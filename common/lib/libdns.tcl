@@ -4222,9 +4222,9 @@ proc menu-domain {dbfd idcor field where sel} {
 	    d error [mc "Sorry, but you do not have any active domain"]
 	}
 	1	{
-	    set d [lindex [lindex $lcouples 0] 0]
-	    set h [::webapp::hidden $field $d]
-	    set html "$d $h"
+	    set v [lindex [lindex $lcouples 0] 0]
+	    set h [::webapp::form-hidden $field $v]
+	    set html "$v $h"
 	}
 	default	{
 	    set html [::webapp::form-menu $field 1 0 $lcouples $lsel]
