@@ -644,6 +644,57 @@ proc mark-processed {idrr lreqdate msg} {
 }
 
 ##############################################################################
+# Reread network graph
+##############################################################################
+
+#
+# Read or re-read network graph to get equipment types
+#
+# Input:
+#   - graph : name of file containing network graph
+#   - _tabeq : name of array containing, in return, types and models
+# Output:
+#   - return value: 1 (ok) or 0 (0) error
+#   - tabeq : array, indexed by FQDN of equipement, containing:
+#	tabeq(<eq>) {<type> <model>}
+# 
+# History
+#   2010/12/23 : pda      : design
+#
+
+proc reread-eq-type {_tabeq graph} {
+    set fmod [detect-filemod $graph]
+    switch [lindex $fmod 0] {
+	{} {
+	    set msg ""
+	}
+	err {
+	    set msg [lindex $fmod 2]
+	}
+	del {
+	    set msg "$graph disappeared"
+	}
+	default {
+	    set msg [read-eq-type tabeq]
+	    if {$msg ne ""} then {
+		sync-filemonitor [list $fmod]
+	    }
+	}
+    }
+
+    if {$msg eq ""} then {
+	set r 1
+	set msg "Resuming normal operation"
+    } else {
+	set r 0
+    }
+
+    keep-state-mail "graphread" $msg
+
+    return $r
+}
+
+##############################################################################
 # Main program
 ##############################################################################
 
@@ -682,6 +733,8 @@ proc main {argv0 argv} {
 	set idx "$type:*:exec"
 	set confcmd($idx) [get-local-conf "send$type"]
     }
+
+    set graph [get-local-conf "topograph"]
 
     #
     # Get configuration values from database
@@ -745,20 +798,6 @@ proc main {argv0 argv} {
     }
 
     #
-    # Initialize equipment list (which will be updated at each graph update)
-    #
-
-    set msg [read-eq-type tabeq]
-    if {$msg ne ""} then {
-	#
-	# Fatal error: daemon cannot start
-	#
-
-	puts stderr "Cannot read equipment types. Abort. ($msg)"
-	exit 1
-    }
-
-    #
     # Daemon loop
     #
 
@@ -774,6 +813,14 @@ proc main {argv0 argv} {
 	    after $delay
 	}
 	set first 0
+
+	#
+	# Check if equipment types must be (re)read
+	#
+
+	if {! [reread-eq-type $graph tabeq]} then {
+	    continue
+	}
 
 	#
 	# Get modification requests from Web interface and send them
