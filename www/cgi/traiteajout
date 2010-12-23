@@ -67,7 +67,6 @@ set conf(page-ajout-existe)	traiteajout-existe.html
 set conf(page-ajout-smtp)	traiteajout-smtp.html
 set conf(page-ajout-multi)	traiteajout-multi.html
 set conf(page-ajout-alias)	traiteajout-alias.html
-set conf(err)			erreur.html
 
 #
 # Next actions
@@ -766,7 +765,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
 
     #
     # Validate action, read form values and call the appropriate function.

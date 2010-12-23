@@ -16,7 +16,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		admparhelp.html
 
 #
@@ -39,7 +38,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd tabuid
+    d init-cgi "admin" "admin" {} ftab dbfd tabuid
 
     #
     # Get data in the form

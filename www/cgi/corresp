@@ -22,7 +22,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		corresp.html
 
 #
@@ -77,7 +76,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
 
     #
     # Is criterion an IP address, a host name, anything else?

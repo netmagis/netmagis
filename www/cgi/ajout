@@ -32,7 +32,6 @@
 
 set conf(page)		ajout.html
 set conf(pageadr)	ajout-adr.html
-set conf(err)		erreur.html
 
 #
 # Next actions
@@ -68,7 +67,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
 
     #
     # Get host types

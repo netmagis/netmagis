@@ -18,7 +18,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		consultnet.html
 
 #
@@ -47,7 +46,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" {} ftab dbfd tabuid
+    d init-cgi "dns" "" {} ftab dbfd tabuid
 
     #
     # Extract organization and community lists, and make listboxes

@@ -20,7 +20,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		topotop.html
 
 #
@@ -690,7 +689,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd tabuid
+    d init-cgi "admin" "admin" $conf(form) ftab dbfd tabuid
     ::webapp::import-vars ftab $conf(form)
 
     # nrefresh (text field given by the user) has priority over refresh

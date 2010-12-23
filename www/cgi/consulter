@@ -19,7 +19,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		consulter.html
 
 #
@@ -55,7 +54,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" {} ftab dbfd tabuid
+    d init-cgi "dns" "" {} ftab dbfd tabuid
 
     #
     # Process informations about the user, in case they are changed

@@ -425,7 +425,7 @@ snit::type ::dnscontext {
     variable eidcor -1
 
     # HTML error page
-    variable errorpage ""
+    variable errorpage "error.html"
 
     # HTML home page
     variable homepage "accueil"
@@ -848,7 +848,6 @@ snit::type ::dnscontext {
     #
     # Input:
     #   - module : current module we are in ("dns", "admin" or "topo")
-    #   - err : file containing the HTML error page
     #   - attr : needed attribute to execute the script
     #   - form : form fields specification
     #   - _ftab : array containing, in return, form values
@@ -862,7 +861,7 @@ snit::type ::dnscontext {
     #   - object $ah : access to authentication base
     #
 
-    method init-cgi {module err attr form _ftab _dbfd _tabuid} {
+    method init-cgi {module attr form _ftab _dbfd _tabuid} {
 	upvar $_ftab ftab
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
@@ -876,7 +875,6 @@ snit::type ::dnscontext {
 	set euid $login
 	set curmodule "dns"
 	set curcap {dns}
-	set errorpage $err
 	set locale "C"
 	set blocale "C"
 

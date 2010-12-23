@@ -49,7 +49,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		admgrpmodif.html
 set conf(confirm)	admgrpconfirm.html
 set conf(confsuppr)	admgrpconfsuppr.html
@@ -216,7 +215,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd tabuid
+    d init-cgi "admin" "admin" $conf(form) ftab dbfd tabuid
 
     set orggrp  [lindex $ftab(orggrp) 0]
     set newgrp  [lindex $ftab(newgrp) 0]

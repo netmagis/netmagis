@@ -13,7 +13,6 @@
 # Template pages used by this script
 #
 
-set conf(err)           erreur.html
 set conf(page)          macstat.html
 
 #
@@ -92,7 +91,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "" {} ftab dbfd tabuid
+    d init-cgi "mac" "" {} ftab dbfd tabuid
 
     if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {
         ::webapp::error-exit $conf(err) $msg

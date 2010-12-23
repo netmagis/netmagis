@@ -35,7 +35,6 @@
 
 set conf(liste)		liste.html
 set conf(listetex)	liste.tex
-set conf(err)		erreur.html
 
 #
 # Next actions
@@ -581,7 +580,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
     ::webapp::import-vars ftab $conf(form)
 
     #

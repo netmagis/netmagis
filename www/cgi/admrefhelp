@@ -20,7 +20,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page-commu)	aidecommu.html
 set conf(page-dhcpprofil)	aidedhcpprofil.html
 set conf(page-domaine)	aidedomaine.html
@@ -63,7 +62,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd tabuid
+    d init-cgi "admin" "admin" $conf(form) ftab dbfd tabuid
 
     #
     # Get table type

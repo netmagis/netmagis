@@ -34,7 +34,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		admvalide.html
 
 #
@@ -252,7 +251,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd tabuid
+    d init-cgi "admin" "admin" $conf(form) ftab dbfd tabuid
 
     #
     # Form field specification is minimalist: it includes only "type" field

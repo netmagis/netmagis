@@ -17,7 +17,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		admmxedit.html
 
 #
@@ -55,7 +54,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd tabuid
+    d init-cgi "admin" "admin" $conf(form) ftab dbfd tabuid
 
     set name   [lindex $ftab(nom) 0]
     set domain [lindex $ftab(domaine) 0]

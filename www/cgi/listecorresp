@@ -17,7 +17,6 @@
 #
 
 set conf(page)          listecorresp.html
-set conf(err)		erreur.html
 
 #
 # Script parameters
@@ -95,7 +94,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" {} ftab dbfd tabuid
+    d init-cgi "dns" "" {} ftab dbfd tabuid
 
     set titrepage [mc "List of users"]
 

@@ -30,7 +30,6 @@
 
 set conf(liste)		listedes.html
 set conf(listetex)	listedes.tex
-set conf(err)		erreur.html
 
 #
 # Script parameters
@@ -147,7 +146,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
 
     #
     # Argument analysis

@@ -16,7 +16,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		macindex.html
 
 #
@@ -39,7 +38,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "droitmac" {} ftab dbfd tabuid
+    d init-cgi "mac" "droitmac" {} ftab dbfd tabuid
 
     #
     # Build URLs

@@ -45,7 +45,6 @@
 
 set conf(page-modif-infos)	traitemodif-infos.html
 set conf(page-modif-smtp)	traitemodif-smtp.html
-set conf(err)			erreur.html
 
 #
 # Next actions
@@ -373,7 +372,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
 
     #
     # Validate action, read form values and call the appropriate function.

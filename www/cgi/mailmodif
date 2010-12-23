@@ -21,7 +21,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		mailmodif.html
 
 #
@@ -55,7 +54,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
 
     set idcor $tabuid(idcor)
 

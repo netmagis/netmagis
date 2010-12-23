@@ -27,7 +27,6 @@
 #
 
 set conf(page-edit-infos)	editmodif-infos.html
-set conf(err)			erreur.html
 
 #
 # Next actions
@@ -180,7 +179,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
 
     #
     # Validate action, read other variables and to the action

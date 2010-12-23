@@ -17,7 +17,6 @@
 
 set conf(page)          mac.html
 set conf(pagesearch)	macsearch.html
-set conf(err)           erreur.html
 
 #
 # Next actions
@@ -882,7 +881,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "mac" "" $conf(form) ftab dbfd tabuid
 
     if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {
         d error $msg

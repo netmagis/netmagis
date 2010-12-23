@@ -16,7 +16,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		admreledit.html
 
 #
@@ -53,7 +52,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd tabuid
+    d init-cgi "admin" "admin" $conf(form) ftab dbfd tabuid
 
     set idcor $tabuid(idcor)
     set domain [lindex $ftab(domaine) 0]

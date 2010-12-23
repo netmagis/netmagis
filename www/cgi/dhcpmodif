@@ -19,7 +19,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 set conf(page)		dhcpmodif.html
 
 #
@@ -335,7 +334,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "dns" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
 
     #
     # Check network

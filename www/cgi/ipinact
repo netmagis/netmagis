@@ -12,7 +12,6 @@
 # Template pages used by this script
 #
 
-set conf(err)           erreur.html
 set conf(page)          ipinact.html
 
 #
@@ -113,7 +112,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "mac" "" $conf(form) ftab dbfd tabuid
 
     if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {
         d error $msg

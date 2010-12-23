@@ -26,7 +26,6 @@
 # Template pages used by this script
 #
 
-set conf(err)		erreur.html
 
 #
 # Script parameters
@@ -63,7 +62,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "topo" $conf(err) "" $conf(form) ftab dbfd tabuid
+    d init-cgi "topo" "" $conf(form) ftab dbfd tabuid
     ::webapp::import-vars ftab $conf(form)
 
     #
