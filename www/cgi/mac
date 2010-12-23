@@ -882,7 +882,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "" $conf(form) ftab dbfd login tabuid
+    d init-cgi "mac" $conf(err) "" $conf(form) ftab dbfd tabuid
 
     if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {
         d error $msg

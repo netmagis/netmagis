@@ -49,7 +49,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd tabuid
 
     #
     # Creation of a form variable specification from configuration keys

@@ -110,7 +110,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd login tabuid
+    d init-cgi "admin" $conf(err) "admin" {} ftab dbfd tabuid
 
     #
     # Address count (v4 or v6) declared by organization

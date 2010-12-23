@@ -118,7 +118,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd login tabuid
+    d init-cgi "admin" $conf(err) "admin" $conf(form) ftab dbfd tabuid
 
     set name   [lindex $ftab(nom) 0]
     set domain [lindex $ftab(domaine) 0]

@@ -92,7 +92,7 @@ proc main {} {
     #
 
     ::dnscontext create d
-    d init-cgi "mac" $conf(err) "" {} ftab dbfd login tabuid
+    d init-cgi "mac" $conf(err) "" {} ftab dbfd tabuid
 
     if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {
         ::webapp::error-exit $conf(err) $msg

@@ -853,7 +853,6 @@ snit::type ::dnscontext {
     #   - form : form fields specification
     #   - _ftab : array containing, in return, form values
     #   - _dbfd : database handle, in return
-    #   - _login : user's login, in return
     #   - _tabuid : array containing, in return, user's characteristics
     #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
     #			idcor, idgrp, present)
@@ -863,10 +862,9 @@ snit::type ::dnscontext {
     #   - object $ah : access to authentication base
     #
 
-    method init-cgi {module err attr form _ftab _dbfd _login _tabuid} {
+    method init-cgi {module err attr form _ftab _dbfd _tabuid} {
 	upvar $_ftab ftab
 	upvar $_dbfd dbfd
-	upvar $_login login
 	upvar $_tabuid tabuid
 
 	#
