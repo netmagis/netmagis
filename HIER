@@ -177,5 +177,37 @@ Radius server
 Metrology server
 ----------------
 
+    /usr/local/
+	[same standard hierarchy as for all machines]
+	.../bin
+	    .../metropoller-run
+	    .../metropoller
+	    .../metrocreatedb
+	.../lib
+	    .../netmagis/
+		.../metroplugins/
+		    .../sensor-assoc-ap.pl
+		    .../sensor-*.pl
+		.../libgraph.pl
+		.../libmetro.pl
+		.../gen-rrdgraph.pl
+		.../defaults
+		    .../metro-httpd.conf	[example Apache22 configuration file]
+		    .../crontab.metro
+	.../var
+	    .../netmagis/
+		.../metro/
+		    .../*.sensor
+		    .../*.graph
+	.../www
+	    .../metro
+		.../gengraph
+    /var/db/
+	.../netmagis/
+	    .../rrd/
+		*.rrd
+	    .../metroidx.cache
+
+
 MAC server
 ----------
