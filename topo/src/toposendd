@@ -676,7 +676,7 @@ proc reread-eq-type {graph _tabeq} {
 	}
 	default {
 	    set msg [read-eq-type tabeq]
-	    if {$msg ne ""} then {
+	    if {$msg eq ""} then {
 		sync-filemonitor [list $fmod]
 	    }
 	}
