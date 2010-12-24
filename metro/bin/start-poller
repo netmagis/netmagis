@@ -5,6 +5,7 @@ use Sys::Syslog;                          # Misses setlogsock.
 use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
 
 our %config = ( 'NB_PROCESS'            => 3,
+		'path_root'             => "/usr/local",
 		'conf_file'             => "%CONF%",
                 'syslog_facility'       => "local0",
                 'logopt'                => ""
@@ -16,7 +17,7 @@ writelog("start_poller",$config{'logopt'},"info",
 
 # recuperation des groupes de pollers dans le fichier de conf
 my @groupes = split(/,/,read_conf_file($config{'conf_file'},"POLLER_GROUPS"));
-my $dir_bin = read_conf_file($config{'conf_file'},"DIR_BIN");
+my $dir_bin = "$config{'path_root'}/bin";
 
 my $i;
 for($i=0;$i<@groupes;$i++)

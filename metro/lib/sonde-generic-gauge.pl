@@ -297,7 +297,7 @@ sub get_time_generic
 			creeBaseTpsRepWWW($base);
 			writelog("get_time_www",$config{'logopt'},"info",
                              "\t -> create $base");
-			system("echo \"$sonde_trouve-trep;GaugeTempsReponse;1;$base;Temps de reponse de $sonde_trouve\" >> $config{'path_etc'}/index.graph");
+			#system("echo \"$sonde_trouve-trep;GaugeTempsReponse;1;$base;Temps de reponse de $sonde_trouve\" >> $config{''}/index.graph");
 			#$sonde_trouve-trep;GaugeTempsReponse;1;$base;Temps de reponse de $sonde_trouve
 		    }
 		    elsif($type_sonde eq "get_memory_by_proc")
@@ -305,35 +305,35 @@ sub get_time_generic
 			creeBaseVolumeOctets($base);
 			writelog("get_memory_by_proc",$config{'logopt'},"info",
                              "\t -> create $base");
-                        system("echo \"$sonde_trouve-membyproc;GaugeMemByProc;1;$base;Utilisation memoire de $sonde_trouve\" >> $config{'path_etc'}/index.graph");
+                        #system("echo \"$sonde_trouve-membyproc;GaugeMemByProc;1;$base;Utilisation memoire de $sonde_trouve\" >> $config{''}/index.graph");
 		    }
 		    elsif($type_sonde eq "get_nb_mbuf_juniper")
                     {
                         creeBaseNbMbuf($base);
                         writelog("get_mbuf_juniper",$config{'logopt'},"info",
                              "\t -> create $base");
-                        system("echo \"$sonde_trouve-mbufjuniper;GaugeNbMbufJuniper;1;$base;Nombre de mbufs sur les Juniper $sonde_trouve\" >> $config{'path_etc'}/index.graph");
+                        #system("echo \"$sonde_trouve-mbufjuniper;GaugeNbMbufJuniper;1;$base;Nombre de mbufs sur les Juniper $sonde_trouve\" >> $config{''}/index.graph");
                     }
 		    elsif($type_sonde eq "get_fast_rep_time")
                     {
 			creeBaseTpsRepWWWFast($base);
 			writelog("get_fast_rep_time",$config{'logopt'},"info",
                              "\t -> create $base");
-			system("echo \"$sonde_trouve-trepFast;GaugeTempsReponse;1;$base;Temps de reponse de $sonde_trouve\" >> $config{'path_etc'}/index.graph");
+			#system("echo \"$sonde_trouve-trepFast;GaugeTempsReponse;1;$base;Temps de reponse de $sonde_trouve\" >> $config{''}/index.graph");
 		    }
 		    elsif($type_sonde eq "get_fast_memory_by_proc")
                     {
 			creeBaseVolumeOctetsFast($base);
 			writelog("get_fast_memory_by_proc",$config{'logopt'},"info",
                              "\t -> create $base");
-			system("echo \"$sonde_trouve-membyprocFast;GaugeMemByProc;1;$base;Utilisation memoire de $sonde_trouve\" >> $config{'path_etc'}/index.graph");
+			#system("echo \"$sonde_trouve-membyprocFast;GaugeMemByProc;1;$base;Utilisation memoire de $sonde_trouve\" >> $config{''}/index.graph");
                     }
 		    elsif($type_sonde eq "get_value_generic")
                     {
                         creeBaseNbGeneric($base);
                         writelog("get_value_generic",$config{'logopt'},"info",
                              "\t -> create $base");
-                        system("echo \"$sonde_trouve-value_generic;GaugeGeneric;1;$base;Valeur pour $sonde_trouve\" >> $config{'path_etc'}/index.graph");
+                        #system("echo \"$sonde_trouve-value_generic;GaugeGeneric;1;$base;Valeur pour $sonde_trouve\" >> $config{''}/index.graph");
                     }
                 }
            }

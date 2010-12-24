@@ -287,7 +287,7 @@ sub get_juniper_filter
                             writelog("get_juniper_filter_$group$num_process",$config{'logopt'},"info",
 				"\t -> create $base,$host,$if,$oid,$speed");
     
-			    system("echo \"$hostname-$if;counter_generic;1;$base;\" >> $config{'path_etc'}/index.graph");
+			    #system("echo \"$hostname-$if;counter_generic;1;$base;\" >> $config{''}/index.graph");
                         }
                     }
                 }

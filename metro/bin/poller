@@ -36,6 +36,7 @@ our $nb_process = $ARGV[2];
 
 # configuration par defaut
 our %config = (
+		'path_root' 		=> "/usr/local",
                 'snmp_timeout'          => 4,
                 'conf_file'             => "%CONF%",
 );
@@ -72,13 +73,11 @@ require "%LIBMETRO%";
 # lecture du fichier de configuration general
 our %global_var = read_global_conf_file($config{'conf_file'});
 
-$config{'defaultdomain'} = $global_var{"DEFAULTDOMAINNAME"};
+$config{'defaultdomain'} = $global_var{"defaultdomain"};
 $config{'debug'} = $global_var{"POLLER-debug-on"};
 $config{'syslog_facility'} = $global_var{"syslog-facility-poller"};
-$config{'path_etc'} = $global_var{"DIR_ETC"};
-$config{'path_bin'} = $global_var{"DIR_BIN"};
-$config{'path_var'} = $global_var{"DIR_VAR"};
-$config{'path_sondes'} = $global_var{"DIR_BIN_PROBES"};
+$config{'path_bin'} = "$config{'path_root'}/bin";
+$config{'path_sondes'} = "$config{'path_root'}/lib";
 $config{'path_poll'} = $global_var{"DIR_PROBES"};
 $config{'path_rrd_db'} = $global_var{"DIR_RRD_DB"};
 $config{'path_syslog'} = $global_var{"DIR_SYSLOG_POLLER"};

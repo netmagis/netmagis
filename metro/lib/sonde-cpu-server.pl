@@ -76,7 +76,7 @@ sub get_snmp_cpu_server
 				my ($nom_graph_ind) = (split(/\.rrd/,$decomp_rep[$t_decomp_rep - 1]))[0];
 				if($nom_graph_ind ne "")
 				{
-				    system("echo \"$nom_graph_ind;GaugeCPU;1;/local/obj999/db/CPU/$nom_graph_ind.rrd;Utilisation CPU de $nom_graph_ind\" >> $config{'path_etc'}/index.graph");
+				    #system("echo \"$nom_graph_ind;GaugeCPU;1;/local/obj999/db/CPU/$nom_graph_ind.rrd;Utilisation CPU de $nom_graph_ind\" >> $config{''}/index.graph");
                   
 				}
                             }
