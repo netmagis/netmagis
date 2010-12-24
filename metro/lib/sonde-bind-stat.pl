@@ -87,7 +87,7 @@ sub get_snmp_bind_stat
                 			my $hostname  = gethostbyaddr($iaddr, AF_INET);
                 			($hostname)=(split(/\./,$hostname))[0];
 					# insertion de la ligne dans index.graph
-                        		system("echo \"$hostname-bind;bind;1;$base;Statistiques de Bind sur $hostname\" >> $config{'path_etc'}/index.graph");
+                        		#system("echo \"$hostname-bind;bind;1;$base;Statistiques de Bind sur $hostname\" >> $config{''}/index.graph");
 				}
 			}
         	}

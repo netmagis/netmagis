@@ -131,7 +131,7 @@ sub get_snmp_cpu_re1
 			
 			my $hostname = gethostnamebyaddr($host);
 
-			system("echo \"$hostname-cpu-$carte;GaugeCPUJuniper;1;$base;Utilisation CPU de la $carte sur les slot 0 et 1\" >> $config{'path_etc'}/index.graph");
+			#system("echo \"$hostname-cpu-$carte;GaugeCPUJuniper;1;$base;Utilisation CPU de la $carte sur les slot 0 et 1\" >> $config{''}/index.graph");
 
 		  }
 		}
