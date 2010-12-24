@@ -1,0 +1,1236 @@
+#!/usr/bin/perl
+
+#
+# 
+# ###################################################################
+#  boggia : Creation : 25/03/08
+#  boggia : Modification : 28/04/08
+#	    ajout des routines de creation des sondes nbassocwifi et 
+#	    nbauthwifi pour la supervision des associations sur le
+#	    reseau sans fil
+#  boggia : Modification : 15/05/08
+#	    simplification des messages d'erreur envoyés par mails
+#
+# Script lancé de maniere périodique par Cron. 
+# Permet de mettre à jour les bases et les sondes RRDTool de 
+# l'application Metro
+#
+#
+
+use SNMP_util;
+use Socket;
+use Sys::Syslog;                          # Misses setlogsock.
+use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
+use DBI;
+use strict;
+
+# fichier de configuration principal et chargement des fonctions de base
+our $conf_file = "%CONF%";
+require "%LIBMETRO%";
+#
+#
+
+# tunning du module SNMP pour ne pas afficher les erreurs sur la sortie
+# standard en cas d'echec d'interrogation
+$SNMP_Session::suppress_warnings = 2;
+$SNMP_util::Debug = 0;
+
+#
+# lecture du fichier de configuration general
+our %var = read_global_conf_file($conf_file);
+
+# liste eq en supervision
+our %sonde_sup_prod;
+# liste eq integres dans appli TOPO
+our %sonde_sup_new;
+# liste des sondes de metrologie integree dans la supervision
+our %sonde_majMETRO;
+# liste des sondes de metrologie a integrer dans la supervision
+our %sonde_maj_sonde;
+# liste des sondes dont l'integration dans la supervision a echouee
+our %sursis_maj_sondes;
+# liste de quanrantaine pour les sondes suprimees
+our %quarantaine;
+# messages d'erreurs pour sortie mail
+our %error_msg;
+
+# heure de lancement du programme
+our $timet = time;
+
+# message envoye par mail
+our $message_mail = 0;
+our $entete_mail = "Mise à jour des POINTS de METROLOGIE\n
+                    ------------------------------------\n\n";
+
+
+
+#creation d'une socket syslog unix
+setlogsock("unix");
+
+writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+    "\t #######################################");
+writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+    "\t Demarrage du programme de creation des bases RRD");
+
+opendir(REPLOCK,$var{DIR_LOCK_UPDATE_METRO});
+my @file_processing = grep(/update_metro/,readdir REPLOCK);
+closedir(REPLOCK);
+
+# si la base n'est pas lockée
+if($file_processing[0] eq "")
+{
+    # on locke tant que l'appli tourne
+    open(LOCK,">$var{DIR_LOCK_UPDATE_METRO}/update_metro.lock");
+    close(LOCK);
+
+    # chargement de la liste des sondes de metrologie en place
+    charger_liste_majMETRO();
+    # chergment de la liste des equipements supervises dans la plateforme de supervision
+    charger_liste_sup_prod();
+
+    # chargement de la liste des nouvelles sondes via la base DNS
+    my $lecture_maj_sondes = load_dns_sql_sensors();
+
+    # si le chargement de la liste des nouvelles sondes echoue.
+    if($lecture_maj_sondes == -1)
+    {
+        message_erreur("ERREUR : Liste des sondes envoyée par TOPO vide => Aucune mise à jour.");
+
+        writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                        "\t ERREUR : fichier de mise à jour des sondes vide.");
+        writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                        "\t Fin du programme ######################");
+        exit(0);
+    }
+
+    ## SUPERVISION
+    # installations des hotes supervises a partir de TOPO
+    cmp_listes_hotes_supervises();
+    # ecriture du fichier des hostes supervises
+    ecrit_liste_sup_eq();
+    
+    ## METROLOGIE
+    # suppression des sondes de metrologie perimees
+    test_bases_expirees();
+    # creation ou suppression de sondes de metrologie
+    creeSupprSonde();
+
+    writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+    "\t Fin du programme ######################");
+
+    # suppression du verrou
+    unlink "$var{DIR_LOCK_UPDATE_METRO}/update_metro.lock";
+}
+else     
+{             
+    writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+        "\t Fichier lock dans $var{DIR_LOCK_UPDATE_METRO}");
+}
+
+if($message_mail == 1)
+{
+    print "$entete_mail\n";
+    foreach my $key (keys %error_msg)
+    {
+        print "$key\n";
+    }
+}
+
+
+##################################################################################
+# FONCTIONS ASSOCIEES
+##################################################################################
+
+##################################################################################
+# creation suppression des sondes de metrologie
+sub creeSupprSonde
+{
+    my $key;
+    my $compteur_keys;
+    # liste toute les sondes envoyees par TOPO
+    foreach $key (keys %sonde_maj_sonde)
+    {
+	$compteur_keys ++;
+	# teste si la sonde existe déjà dans la table majMETRO (mise a jour des sondes)
+	if(defined($sonde_majMETRO{$key}))
+	{
+	    # remplacement des , dans les arguments par des espaces
+            if($sonde_majMETRO{$key}{params} =~/,/)
+            {
+		$sonde_majMETRO{$key}{params} =~tr/,/ /;
+            }
+
+	    # la sonde existe deja. On regarde si les parametres ont change.
+	    if($sonde_majMETRO{$key}{params} ne $sonde_maj_sonde{$key}{params}
+		|| $sonde_majMETRO{$key}{ip} ne $sonde_maj_sonde{$key}{ip}
+		|| $sonde_majMETRO{$key}{community} ne $sonde_maj_sonde{$key}{community}) 
+	    {
+		# les parametres de la sonde ont change, on met a jour.
+		my $p1 = "$sonde_majMETRO{$key}{ip} $sonde_majMETRO{$key}{community} $sonde_majMETRO{$key}{params}";
+		my $p2 = "$sonde_maj_sonde{$key}{ip} $sonde_maj_sonde{$key}{community} $sonde_maj_sonde{$key}{params}";
+
+		if($p2!~/undef/)
+		{
+		    my $nom_pt_metro = get_nom_pt_metro($key);
+		    message_erreur("MODIFICATION : point de metrologie \"$nom_pt_metro\". Nouveaux parametres ($p1) => ($p2)");
+		}
+		writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+		    "\t WARNING : sonde $compteur_keys, changement des parametres ($p1 != $p2)");
+		
+		ajouter_sonde($key,$sonde_maj_sonde{$key}{type},
+                              $sonde_maj_sonde{$key}{ip},
+                              $sonde_maj_sonde{$key}{community},
+                              $sonde_maj_sonde{$key}{params});
+	    }
+	    else
+	    {
+		# les parametres n'ont pas change 
+		# on teste l'existance de la sonde
+		if(-e $key)
+		{
+		    # operations specifiques aux sondes de trafic
+		    if($sonde_maj_sonde{$key}{type} eq "trafic")
+		    {
+		    	# controle de la vitesse de l'interface par rapport a la sonde
+		    	if(check_if_speed($sonde_majMETRO{$key}{type},
+                                          $sonde_maj_sonde{$key}{ip},
+                                          $sonde_maj_sonde{$key}{community},
+                                          $sonde_maj_sonde{$key}{params}) == 1)
+			{
+				# la vitesse est ok, pas de mise a jour a effectuer.
+                        	delete $sonde_maj_sonde{$key};	
+			}
+			else
+			{
+				# la vitesse n'est pas bonne, il faut mettre la sonde a jour				
+				writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+		                        "\t WARNING : sonde $compteur_keys, changement du type de sonde pour $key");
+
+                    		ajouter_sonde($key,$sonde_maj_sonde{$key}{type},
+                                              $sonde_maj_sonde{$key}{ip},
+                                              $sonde_maj_sonde{$key}{community},
+                                              $sonde_maj_sonde{$key}{params});
+			}
+		    }
+		    else
+		    {
+		    	# la sonde existe deja avec les bons parametres. Pas de mise a jour a effectuer.
+                    	delete $sonde_maj_sonde{$key};
+		    }
+		}
+		else
+		{
+		    # la sonde n'existe pas, il faut la creer.
+		    my $nom_pt_metro = get_nom_pt_metro($key);
+		    
+		    message_erreur("NOUVEAU point de metrologie : \"$nom_pt_metro\". Parametres ($sonde_maj_sonde{$key}{ip},
+				$sonde_maj_sonde{$key}{community},$sonde_maj_sonde{$key}{params})");
+		    writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                        "\t WARNING : sonde $compteur_keys, la base $key n'existe pas, procedure d'ajout de sonde");
+
+                    ajouter_sonde($key,$sonde_maj_sonde{$key}{type},
+                                  $sonde_maj_sonde{$key}{ip},
+                                  $sonde_maj_sonde{$key}{community},
+                                  $sonde_maj_sonde{$key}{params});
+		}
+	    }
+	}
+	# nouvelle sonde
+	else
+	{
+	    my $nom_pt_metro = get_nom_pt_metro($key);
+	    
+	    message_erreur("NOUVEAU point de metrologie : \"$nom_pt_metro\". Parametres ($sonde_maj_sonde{$key}{ip},$sonde_maj_sonde{$key}{community},$sonde_maj_sonde{$key}{params}), sonde $compteur_keys");
+	    
+	    ajouter_sonde($key,$sonde_maj_sonde{$key}{type},
+                          $sonde_maj_sonde{$key}{ip},
+                          $sonde_maj_sonde{$key}{community},
+                          $sonde_maj_sonde{$key}{params});
+	}
+    }
+   
+    # tentatives d'écriture des fichiers mis à jour
+    my $essais = 5;
+    my $ok = 0;
+    while($essais > 0)
+    {
+	#fonction teste si le fichier de lock est toujours ouvert
+	opendir(REPLOCK,$var{DIR_LOCK_UPDATE_METRO});
+	my @fichier = grep(/update_sensors/,readdir REPLOCK);
+	closedir(REPLOCK);
+
+	if($fichier[0] eq "")
+	{
+	    # on locke le fichier pour le mettre à jour
+	    open(LOCK,">$var{DIR_LOCK_UPDATE_METRO}/update_sensors.lock");
+	    close(LOCK); 
+	
+	    # ecriture du fichier majMETRO mis à jour
+	    ecrit_liste_majMETRO();
+
+	    # suppression du verrou
+	    unlink "$var{DIR_LOCK_UPDATE_METRO}/update_sensors.lock";
+
+	    $essais = 0;
+	    $ok = 1;
+	}
+	else
+	{   
+	    sleep(5);
+	    $essais --;
+	}	
+    }
+
+    if($ok == 0)
+    {
+        message_erreur("ERREUR : Problèmes d'ecriture (lock) du fichier majMETRO. Mises à jour perdues.");
+
+        writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+            "\t ERREUR : Problèmes d'ecriture (lock) du fichier majMETRO. Mises à jour perdues");
+    }
+}
+
+
+###########################################################
+# chargement des lignes du fichier des equipements 
+# supervises
+sub charger_liste_sup_prod
+{
+    if(open(LISTE,$var{FILE_SUP_EQ}))
+    {
+	 my $compteur = 0;
+         while(<LISTE>)
+         {
+              chomp;
+              my @l = split(/,/,$_);
+
+              if(ctrl_ip($l[1]) == 1 && $l[2] ne "")
+              {
+                  # supprime les doublons
+                  if(!defined($sonde_sup_prod{$l[0]}))
+                  {
+                        $sonde_sup_prod{$l[0]}{'ip'} = $l[1];
+                        $sonde_sup_prod{$l[0]}{'snmp_com'} = $l[2];
+                        $sonde_sup_prod{$l[0]}{'host_tmpl'} = $l[3];
+                        $sonde_sup_prod{$l[0]}{'topo_enabled'} = $l[4];
+                        $sonde_sup_prod{$l[0]}{'quarantine'} = $l[5];
+
+			$compteur ++;
+                  }
+             }
+         }
+	 close(LISTE);
+		
+	 writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+            "\t INFO : chargement de la liste des equipemements supervises : $compteur equipements");
+     }
+     else
+     {
+	 writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+            "\t ERREUR : echec ouverture du fichier $var{FILE_SUP_EQ}");
+     }	
+}
+
+
+###########################################################
+# chargement des lignes du fichier majMETRO
+sub charger_liste_majMETRO
+{
+    if(open(LISTE,$var{FILE_METRO_PROBES}))
+    {
+	my $compteur = 0;
+	while(<LISTE>)
+	{
+	    chomp;
+	    my @liste = split(/\s+/,$_);
+       
+	    # Traitement METRO
+	    if($liste[1]=~/(.+).rrd$/)
+	    {
+		$sonde_majMETRO{$liste[1]}{type} = $liste[0];
+		$sonde_majMETRO{$liste[1]}{ip} = $liste[2];
+		$sonde_majMETRO{$liste[1]}{community} = $liste[3];
+		$sonde_majMETRO{$liste[1]}{params} = $liste[4];
+
+		my $t_liste = @liste;
+		for(my $i=5;$i<$t_liste;$i++)
+		{
+			$sonde_majMETRO{$liste[1]}{params} = "$sonde_majMETRO{$liste[1]}{params} $liste[$i]";
+		}
+		if($sonde_majMETRO{$liste[1]}{params} =~/,/)
+		{
+			$sonde_majMETRO{$liste[1]}{params} =~tr/,/ /;
+		}
+		$compteur ++;
+	    }
+	}
+	close(LISTE);
+	
+	writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+            "\t INFO : chargement des sondes de metrologie existantes : $compteur sondes");
+    }
+    else
+    {
+	writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+	    "\t ERREUR : ouverture du fichier $var{FILE_METRO_PROBES} echouee");
+    }
+
+    # DEBUG
+    #read_tab_asso(%sonde_majMETRO);
+}
+
+
+
+###########################################################
+# chargement des nouvelles sondes en activite dans la base 
+# SQL de l'appli TOPO
+sub load_dns_sql_sensors
+{
+    my ($sql,$cursor,$sensor,$type,$eq,$ip,$comm,$param1,$param2,$lastmod,$lastseen);
+
+    my $compteur = -1;
+
+    #ouverture de la base PSQL
+    my $db =  DBI->connect("dbi:Pg:dbname=$var{PG_DATABASE_DNS};host=$var{'DNS_PSQL_SERVER'}",
+		$var{'PG_USER_DNS'}, $var{'PG_PASSWORD_DNS'});
+
+    if($db)
+    {
+        writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                "\t -> INFO : Connexion a la base $var{PG_DATABASE_DNS}");
+
+	$sql = "SELECT * from topo.sensor 
+		WHERE now() - lastseen < interval '7d'";
+
+        $cursor = $db->prepare($sql);
+        $cursor->execute;
+
+        while( ($sensor,$type,$eq,$comm,$param1,$param2,$lastmod,$lastseen) = $cursor->fetchrow )
+        {
+	# |id    		| type   |      eq |  comm | iface     |   param    |   lastmod           |   lastseen          |
+	# |---------------------+--------+---------+-------+-----------+------------+---------------------+---------------------|
+ 	# |Mefs-ce1.crih-efs    | trafic | efs-ce1 | o2get | ge-0/0/2  |            | 2010-11-09 22:35:06 | 2010-11-16 16:47:53 |
+	   	my $ctrl_sensor = 1;
+
+		### DEBUG 
+		if($eq =~ /\.fr$/ || $eq =~ /\.eu$/ || $eq =~ /\.net$/ || $eq =~ /\.com$/)
+		{
+			$ip = getaddrbyhostname($eq);
+		}
+		elsif(ctrl_ip($eq) != 1)
+		{
+			$eq = "$eq\.$var{'defaultdomain'}";
+			$ip = getaddrbyhostname($eq);
+
+			if(ctrl_ip($ip) != 1)
+			{
+				$ctrl_sensor = 0;
+
+				writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                			"\t -> ERROR : Liste eq dans la base DNS 
+					($sensor,$type,$eq,$comm,$param1,$param2,$lastmod,$lastseen) Arguments invalides.");
+			}
+		}
+		else
+		{
+			$ip = $eq;
+		}
+
+		if($ctrl_sensor == 1)
+		{
+			$sensor = "$var{'DIR_RRD_DB_METRO'}/$sensor.rrd";
+               	 	$sonde_maj_sonde{$sensor}{type} = $type;
+			$sonde_maj_sonde{$sensor}{ip} = $ip;
+			$sonde_maj_sonde{$sensor}{community} = $comm;
+			if($param2 ne "")
+			{
+				$sonde_maj_sonde{$sensor}{params} = "$param1 $param2";
+			}
+			else
+			{
+				$sonde_maj_sonde{$sensor}{params} = $param1;
+			}
+
+			# equipements a superviser                
+                        $sonde_sup_new{$ip}=$comm;
+
+			$compteur ++;
+		}
+	}
+	writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                       "\t -> INFO : $compteur equipements dans la base $var{PG_DATABASE_DNS}");
+    }
+    else
+    {
+	writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                       "\t -> ERROR : Probleme de connexion a la base $var{PG_DATABASE_DNS}");
+	return $compteur;
+    }
+	
+    return $compteur;
+}
+
+
+#############################################################
+# synchronisation de la liste des host integres dans TOPO 
+# et ceux integres dans la plateforme de supervision
+sub cmp_listes_hotes_supervises
+{
+	# controle des hosts a partir de la liste des hosts en supervision
+	foreach my $key (keys %sonde_sup_prod)
+	{
+		# teste si l'equipement est integre a TOPO
+		if(defined($sonde_sup_new{$sonde_sup_prod{$key}{'ip'}}))
+		{
+			# si dans la liste de TOPO on controle les infos et on les met a jour
+			update_sup_host($key,$sonde_sup_new{$sonde_sup_prod{$key}{'ip'}});
+		}
+		# si l'equipement n'est plus integre dans TOPO
+		else
+		{
+			del_sup_host($key);
+		}
+	}
+
+	# controle des hosts a partir du reste de la liste envoyée par TOPO
+	# il ne s'agit plus que de nouvelles machines non supervisees
+	foreach my $key (keys %sonde_sup_new)
+	{
+		my $oid = check_host($key,$sonde_sup_new{$key});
+		# le host repond
+		if($oid != -1)
+		{
+			my $hostname = gethostnamebyaddr($key);
+			
+			# si la resolution dns fonctionne
+			if($hostname ne "")
+			{
+		        	# ecriture dans la liste des machines a superviser
+				$sonde_sup_prod{$hostname}{'ip'} = $key;
+				$sonde_sup_prod{$hostname}{'topo_enabled'} = 1;
+                        	$sonde_sup_prod{$hostname}{'quarantine'} = 0;
+                        	$sonde_sup_prod{$hostname}{'snmp_com'} = $sonde_sup_new{$key};
+				$sonde_sup_prod{$hostname}{'oid'} = $oid;
+		
+				 writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                                        "\t INFO SUP : Intergration en supervision de ($key,$sonde_sup_new{$key})");
+			}
+			# sinon message d'erreur
+			else
+			{
+				writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                                	"\t ERREUR SUP : Integration en supervision de ($key,$sonde_sup_new{$key}), echec resolution DNS");
+			}
+		}
+		# le host ne repond pas en snmp
+		else
+		{
+			writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                		"\t ERREUR SUP : Impossible d'integrer en supervision l'equipement ($key,$sonde_sup_new{$key})");	
+		}
+	}
+}
+
+
+###########################################################
+# traitement des bases qui n'existent plus dans topo
+sub test_bases_expirees
+{
+    #fonction qui teste si le fichier de lock est toujours ouvert
+    opendir(REPLOCK,$var{DIR_LOCK_UPDATE_METRO});
+    my @fichier = grep(/quarantaine/,readdir REPLOCK);
+    closedir(REPLOCK);
+
+    if($fichier[0] eq "")
+    {
+	# on locke le fichier pour le lire
+        open(LOCK,">$var{DIR_LOCK_UPDATE_METRO}/quarantaine.lock");
+        close(LOCK);
+
+	# lecture des bases recement supprimées de topo
+	open(QUA,"$var{FILE_METRO_QUARANTINE}");
+	while(<QUA>)
+	{
+	    chomp;
+	    my ($base,$temps) = (split(/;/,$_))[0,1]; 
+	    $quarantaine{$base} = $temps;		     
+	}
+	close(QUA);
+
+	my $key;
+	foreach $key (keys %sonde_majMETRO)
+	{
+	    # teste si la sonde existe toujours dans topo
+	    if(defined($sonde_maj_sonde{$key}))
+	    {
+		if(defined($quarantaine{$key}))
+		{
+		    # la sonde existe dans topo et est en quarantaine. On la supprime de la quarantaine.
+		    my $nom_pt_metro = get_nom_pt_metro($key);
+		    message_erreur("REMISE en SERVICE : point de métrologie \"$nom_pt_metro\".");
+		    writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+			"\t INFO : retrait de $key du fichier de quarantaine");
+		    
+		    delete $quarantaine{$key};
+		}
+            }
+            # la sonde n'existe plus dans topo
+	    else
+            {
+		$quarantaine{$key} = $timet;
+		my $seuil = $var{METRO_DAY_QUARANTINE} * 24 * 3600;
+    
+		if($quarantaine{$key} == $timet)
+		{
+		    my $nom_pt_metro = get_nom_pt_metro($key);
+		    message_erreur("SUPPRESSION dans TOPO : point de métrologie \"$nom_pt_metro\".");
+		    writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                        "\t WARNING : La sonde sur la base $key n'existe plus dans Topo. Mise en quarantaine");
+		}
+		elsif($quarantaine{$key} + $seuil <= $timet)
+		{
+		    my $nom_pt_metro = get_nom_pt_metro($key);
+		    message_erreur("SUPPRESSION DEFINITIVE : point de métrologie \"$nom_pt_metro\".");
+		    writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                        "\t WARNING : suppression définitive de $key");
+		    
+		    delete $sonde_majMETRO{$key};
+		    delete $quarantaine{$key};
+		}
+            }
+        }
+
+	# reecriture du fichier de quarantaine	
+	open(QUA,">$var{FILE_METRO_QUARANTINE}");
+	foreach $key (keys %quarantaine)
+	{
+	    print QUA "$key;$quarantaine{$key}\n";
+	}
+	close(QUA);
+
+	# suppression du verrou
+        unlink "$var{DIR_LOCK_UPDATE_METRO}/quarantaine.lock";
+    }
+    else
+    {
+	writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                        "\t WARNING : fichier $var{FILE_METRO_QUARANTINE} locké.");
+    }
+}
+
+
+###########################################################
+# suppression du parametre communaute snmp pour les mails
+sub supprimer_com_snmp
+{
+    my ($params) = @_;
+    my $i;
+
+    my @tab_params = split(/\s+/,$params);
+    my $t_tab = @tab_params;   
+    my $p = "";
+ 
+    for($i=0;$i<$t_tab;$i++)
+    {
+	if($i != 1)
+	{
+	    $p = "$p $tab_params[$i]";
+	}
+    }
+
+    return $p;    
+}
+
+
+###########################################################
+# extrait le nom du point de metrologie
+sub get_nom_pt_metro
+{
+    my ($rrd_db) = @_;
+
+    my @liste_dir = split(/\//,$rrd_db);
+    my $t_liste_dir = @liste_dir;
+
+    $rrd_db = $liste_dir[$t_liste_dir -1];
+
+    ($rrd_db) = (split(/\.rrd/,$rrd_db))[0];
+
+    return $rrd_db;
+}
+
+
+###########################################################
+# ecriture du fichier FILE_SUP_EQ
+sub ecrit_liste_sup_eq
+{
+    my $key;
+
+    # ecriture des sondes qui n'ont pas pu etre installees
+    if(open(LISTE,">$var{FILE_SUP_EQ}"))
+    {
+	#print LISTE "HOSTNAME,HOST_IP_ADDRESS,SNMP_COMMUNITY,HOST_TEMPLATE,TOPO_ENABLED,QUARANTINE\n";
+
+        foreach $key (keys %sonde_sup_prod)
+        {
+		if($sonde_sup_prod{$key}{'ip'} ne "" && $sonde_sup_prod{$key}{'snmp_com'} ne "")
+		{
+            		print LISTE "$key,$sonde_sup_prod{$key}{'ip'},$sonde_sup_prod{$key}{'snmp_com'},$sonde_sup_prod{$key}{'host_tmpl'},$sonde_sup_prod{$key}{'topo_enabled'},$sonde_sup_prod{$key}{'quarantine'}\n";
+		}
+        }
+
+        close(LISTE);
+        
+	writelog("metrocreatedb","$var{syslog-facility-syncmetro}","info",
+            "\t INFO SUP : Ecriture du fichier $var{FILE_SUP_EQ}");
+    }
+    else
+    {
+        writelog("metrocreatedb","$var{syslog-facility-syncmetro}","info",
+            "\t ERREUR SUP : ouverture du fichier $var{FILE_SUP_EQ} en ecriture impossible");
+    }
+}
+
+
+##############################################################
+# suppression d'un host de la plateforme de supervision
+sub del_sup_host
+{
+        my ($key) = @_;
+
+        # si le host n'a pas depasse la periode de max de quarantaine ...
+        if(($timet - ($var{METRO_DAY_QUARANTINE} * 84600)) < $sonde_sup_prod{$key}{'quarantine'})
+        {
+                $sonde_sup_prod{$key}{'topo_enabled'} = 0;
+
+                if($sonde_sup_prod{$key}{'quarantine'} != 0)
+                {
+			my %t = get_time($sonde_sup_prod{$key}{'quarantine'});
+
+                        writelog("metrocreatedb","$var{syslog-facility-syncmetro}","info",
+                                "\t INFO SUP : Host en quarantaine : $key, depuis le $t{MDAY}-$t{MON}-$t{YEAR}");
+                }
+        }
+        # sinon, on supprime le host de la supervision
+        else
+        {
+                writelog("metrocreatedb","$var{syslog-facility-syncmetro}","info",
+                                "\t INFO SUP : suppression definitive de $key,$sonde_sup_prod{$key}");
+                delete $sonde_sup_prod{$key};
+        }
+}
+
+
+#############################################################
+# ecriture des messages d'erreurs dans un tableau associatif
+sub message_erreur
+{   my ($msg_err) = @_;
+
+    $message_mail = 1;
+    $error_msg{$msg_err} = 1;
+}
+
+
+#############################################################
+# Mise a jour des parametres d'un host dans la plateforme de 
+# supervision
+sub update_sup_host
+{
+        my ($host,$snmp_com) = @_;
+
+	my $quarantine = 0;
+
+        my $hostname = gethostnamebyaddr($sonde_sup_prod{$host}{'ip'});
+
+        my $oid = check_host($sonde_sup_prod{$host}{'ip'},$snmp_com);
+
+        # si la machine est declaree dans le DNS
+        if($hostname ne "")
+        {
+                if($host eq $hostname)
+                {
+                        $sonde_sup_prod{$hostname}{'topo_enabled'} = 1;
+                        $sonde_sup_prod{$hostname}{'snmp_com'} = $snmp_com;
+                }
+                else
+                # si le nom du host a change
+                {
+                        $sonde_sup_prod{$hostname}{'ip'} = $sonde_sup_prod{$host}{'ip'};
+                        $sonde_sup_prod{$hostname}{'snmp_com'} = $snmp_com;
+                        $sonde_sup_prod{$hostname}{'topo_enabled'} = 1;
+                        delete $sonde_sup_prod{$host};
+
+                        writelog("metrocreatedb","$var{syslog-facility-syncmetro}","info",
+                                        "\t WARNING SUP : le nom du host a change $host -> $hostname : suppression de $host");
+                }
+        }
+        # si la machine n'est pas declaree ou que le DNS ne repond pas
+        else
+        {
+                $sonde_sup_prod{$hostname}{'snmp_com'} = $snmp_com;
+                $sonde_sup_prod{$hostname}{'topo_enabled'} = 1;
+		$quarantine = 1;
+        }
+
+        if($oid != -1)
+        {
+                $sonde_sup_prod{$hostname}{'oid'} = $oid;
+        }
+        else
+        {
+                 writelog("metrocreatedb","$var{syslog-facility-syncmetro}","info",
+                        "\t ERREUR SUP : echec SNMP get sysOID ($sonde_sup_prod{$hostname}{'ip'},$snmp_com), on laisse en supervision");
+		$quarantine = 1;
+        }
+
+	# mise en quarantaine
+	if($quarantine == 1 && $sonde_sup_prod{$host}{'quarantine'} == 0)
+	{
+		$sonde_sup_prod{$host}{'quarantine'} = $timet;
+	}
+
+	# si l'hote est en quarantaine on lance la fonction de suppression
+	if($quarantine == 1)
+	{
+	   	del_sup_host($host);
+	}
+	# sinon on le sort de la quarantaine
+	else
+	{
+		$sonde_sup_prod{$host}{'quarantine'} = 0;
+	}
+
+        # nettoyage de sonde_sup_new
+        delete $sonde_sup_new{$sonde_sup_prod{$host}{'ip'}};
+}
+
+ 
+###########################################################
+# ajouter une sonde 
+# - trafic
+# - nbauthwifi
+# - nbassocwifi
+# - broadcast
+# - multicast
+# - trafficError
+sub ajouter_sonde
+{
+    my ($base,$type,$ip,$com,$params) = @_;
+
+    if($type eq "trafic" || $type eq "aggreg_trafic")
+    {
+	if($ip=~/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/)
+	{
+	    #les paramètres sont justes
+	    my $result = trafic($ip,$com,$params,$base);
+	    
+	    # si l'interface n'existe pas, on supprime l'entree
+	    if($result == 2)
+	    {
+		delete $sonde_maj_sonde{$base};
+	    }
+	}
+	else
+	{
+	    if("$ip $com $params" !~/undef/)
+            {
+		    my $nom_pt_metro = get_nom_pt_metro($base);
+		    message_erreur("ERREUR : Parametres ERRONES pour le point de METRO \"$nom_pt_metro\":
+					 ($ip,$com,$params)");
+	    }
+	    writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+		"\t ERREUR Parametres de sonde ($base, $type) errones : ($ip $com $params)");
+	    
+	    delete  $sonde_maj_sonde{$base};
+	}
+    }
+    elsif($type eq "broadcast" || $type eq "multicast" || $type eq "trafficError")
+    {
+	if($ip=~/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/)
+        {
+            #les paramètres sont justes
+            my $result = traficPaquets($type,$ip,$com,$params,$base);
+
+            # si l'interface n'existe pas, on supprime l'entree
+            if($result == 2)
+            {
+                delete $sonde_maj_sonde{$base};
+            }
+	}
+	else
+	{
+            if("$ip $com $params" !~/undef/)
+            {
+                    my $nom_pt_metro = get_nom_pt_metro($base);
+                    message_erreur("ERREUR : Parametres ERRONES pour le point de METRO \"$nom_pt_metro\":
+                                         ($ip,$com,$params)");
+            }
+            writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                "\t ERREUR Parametres de sonde ($base, $type) errones : ($ip $com $params)");
+
+            delete  $sonde_maj_sonde{$base}; 
+	}
+    }
+    elsif($type eq "nbassocwifi" || $type eq "nbauthwifi")
+    {
+	if("$ip $com $params" =~/^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+) (.+) (.+) (.+)$/)
+        {
+            #les paramètres sont justes
+	    my $result = authassocwifi($type,$1,$2,$3,$4,$base);
+	}
+        else
+        {
+            if("$ip $com $params"!~/undef/)
+            {
+		    my $nom_pt_metro = get_nom_pt_metro($base);
+		    message_erreur("ERREUR : Paramètres ERRONES pour le point de METRO \"$nom_pt_metro\".  Parametres : ($ip $com $params)");
+            }
+            writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                "\t ERREUR Paramètres de sonde ($base,$type) errones : ($ip $com $params)");
+
+            delete  $sonde_maj_sonde{$base};
+        }
+    }
+}
+
+
+
+###########################################################
+# cree une sonde pour compter les authentifications et les
+# associations sur le resau WiFi
+# codes erreur
+# 0 ok
+# 1 equipement down
+sub authassocwifi
+{
+    my ($sonde,$ip,$com,$if,$ssid,$base) = @_;
+    
+    my $param = $com."@".$ip;
+    
+    # recupération de l'oid de l'equipement
+    my $oid = get_snmp_oid($param);
+
+    # si l'équipement répond
+    if($oid != -1)
+    {
+	# ecriture de la nouvelle ligne
+        $sonde_majMETRO{$base}{type} = $sonde;
+	$sonde_majMETRO{$base}{ip} = $ip;
+	$sonde_majMETRO{$base}{community} = $com;
+	$sonde_majMETRO{$base}{params} = "$if,$ssid";
+
+        # suppression de l'enrée du tableau $sonde_maj_sonde
+        delete $sonde_maj_sonde{$base};
+
+        # vérifier existance d'une base
+        # elle n'existe pas : on la crée
+        if(-e $base)
+        {
+            writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                    "\t INFO : La base $base existe deja, on continue a s'en servir");
+        }
+        else
+        {
+	    creeBaseAuthassocwifi($base,$ssid);   
+             writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                    "\t INFO : Creation de $base");
+        }
+	
+    }
+    else
+    {
+	my $nom_pt_metro = get_nom_pt_metro($base);
+	message_erreur("ERREUR : Point de métrologie \"$nom_pt_metro\". L'équipement $ip ne repond pas.");
+        writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                    "\t ERREUR : L'équipement $ip ne repond pas");
+        return 1;
+    }
+    
+    return 0;
+}
+
+
+###########################################################
+# controle le type de sonde de trafic
+# compteur 32 bits ou compteur 64 bits
+# 1 la sonde est ok
+# 0 la vitesse de l'interface a change il faut modifier le
+# compteur, il y a une erreur
+sub check_if_speed
+{
+	my ($sonde,$ip,$com,$if) = @_;
+
+    	if($sonde eq "ifNom-snmp32" || $sonde eq "ifNom-snmp64")
+    	{
+		my $snmp_param = $com."@".$ip;
+
+		# recuperation de la vitesse de l'interface
+            	my $speed = get_snmp_ifspeed($snmp_param,"",$if);
+
+		if($sonde eq "ifNom-snmp32")
+		{
+			if($speed > 100000000)
+			{
+				return 0;
+				# la vitesse n'est pas bonne, il faut mettre la sonde a jour
+                               	writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                                       	"\t WARNING : $sonde inadapte a $speed");
+			}
+			else
+			{
+				return 1;
+			}
+		}
+		elsif($sonde eq "ifNom-snmp64")
+		{
+			if($speed > 100000000)
+                        {
+                                return 1;
+                        }
+                        else
+                        {
+                                return 0;
+				# la vitesse n'est pas bonne, il faut mettre la sonde a jour
+                               	writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                                       	"\t WARNING : $sonde inadapte a $speed");
+                        }
+		}
+		return 0;
+	}
+	return 0;
+}
+
+
+###########################################################
+# cree une sonde de trafic
+# codes erreur 
+# 0 ok
+# 1 equipement down
+# 2 interface inexistanet
+sub trafic
+{
+    my ($ip,$com,$if,$base) = @_;
+    
+    my $inverse = 0;
+    my ($i,$speed,$sonde_polling);
+    my $param = $com."@".$ip;
+    
+    chomp $if;
+    my $interf = $if;
+
+    #print "$ip,$com,$if\n";
+    # interroger l'equipement
+    if($if=~/^-/)
+    {
+        $inverse = 1;
+        $if =~s/^-//;
+    }
+
+    # recupération de l'oid de l'equipement
+    my $oid = get_snmp_oid($param);
+
+    # si l'équipement répond
+    if($oid != -1)
+    {
+	# recuperation de l'oid de l'interface
+	my $index = get_snmp_ifindex($param,$if);
+	
+	if($index != -1)
+	{
+	    # recuperation de la vitesse de l'interface   
+	    $speed = get_snmp_ifspeed($param,$index,$interf);	    
+
+	    if($speed <= 100000000)
+	    {
+		$speed = 100000000;
+		$sonde_polling = "ifNom-snmp32";
+	    }
+	    else
+	    {
+		$sonde_polling = "ifNom-snmp64";
+	    }
+    
+	    # ecriture de la nouvelle ligne
+	    $sonde_majMETRO{$base}{ip} = $ip;
+	    $sonde_majMETRO{$base}{community} = $com; 
+	    $sonde_majMETRO{$base}{params} = $interf;
+	    $sonde_majMETRO{$base}{type} = $sonde_polling;
+	    
+	    # suppression de l'en du tableau $sonde_maj_sonde
+	    delete $sonde_maj_sonde{$base};
+	    
+	    # vérifier existance d'une base
+	    # elle n'existe pas : on la crée
+	    if(-e $base)
+	    {
+		my $nom_pt_metro = get_nom_pt_metro($base);
+		message_erreur("MODIFICATION : point de metrologie \"$nom_pt_metro\". Vitesse de l'interface ($ip,$interf) passse a $speed");
+		writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+		    "\t INFO : La base $base existe deja");
+			
+		setBaseMaxSpeed($base,$speed);
+	    }
+	    else
+	    {
+		creeBaseTrafic($base,$speed);
+		
+		writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                    "\t INFO : Creation de $base");
+	    }
+	}
+	else	
+	{
+	    my $nom_pt_metro = get_nom_pt_metro($base);
+	    message_erreur("ERREUR : point de métrologie \"$nom_pt_metro\". L'interface $if de $ip n'existe pas, suppression de l'entree.");
+	    writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                    "\t ERREUR : L'interface $if de $ip n'existe pas, suppression de l'entree");
+	    return 2;
+	}
+    }
+    else
+    {
+	my $nom_pt_metro = get_nom_pt_metro($base);
+	message_erreur("ERREUR : point de métrologie \"$nom_pt_metro\". L'equipement $ip ne repond pas");
+	writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                    "\t ERREUR : L'equipement $ip ne repond pas");
+	return 1;
+    }
+    
+    return 0;
+}
+
+
+###########################################################
+# cree une sonde qui compte les paquets
+# - Broadcast
+# - Multicast
+# - Erreurs sur l'interface
+# codes erreur 
+# 0 ok
+# 1 equipement down
+# 2 interface inexistanet
+sub traficPaquets
+{
+
+    my ($typeSonde,$ip,$com,$if,$base) = @_;
+    
+    my $inverse = 0;
+    my ($i,$speed,$sonde_polling);
+    my $param = $com."@".$ip;
+    
+    chomp $if;
+    my $interf = $if;
+
+    if($if=~/^-/)
+    {
+        $inverse = 1;
+        $if =~s/^-//;
+    }
+
+    # recupération de l'oid de l'equipement
+    my $oid = get_snmp_oid($param);
+
+    # si l'équipement répond
+    if($oid != -1)
+    {
+	# recuperation de l'oid de l'interface
+	my $index = get_snmp_ifindex($param,$if);
+	
+	if($index != -1)
+	{
+	    # ecriture de la nouvelle ligne
+	    $sonde_majMETRO{$base}{ip} = $ip;
+	    $sonde_majMETRO{$base}{community} = $com; 
+	    $sonde_majMETRO{$base}{params} = $interf;
+	    $sonde_majMETRO{$base}{type} = $typeSonde;
+	    
+	    # suppression de l'en du tableau $sonde_maj_sonde
+	    delete $sonde_maj_sonde{$base};
+	    
+	    # vérifier existance d'une base
+	    # elle n'existe pas : on la crée
+	    if(-e $base)
+	    {
+		my $nom_pt_metro = get_nom_pt_metro($base);
+		message_erreur("MODIFICATION : point de metrologie \"$nom_pt_metro\". Vitesse de l'interface ($ip,$interf) passse a $speed");
+		writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+		    "\t INFO : La base $base existe deja");
+	    }
+	    else
+	    {
+		# creation de la base avec une limitation a 200.000.000 de paquets par seconde
+		creeBaseBroadcast($base,"200000000");
+		
+		writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                    "\t INFO : Creation de $base");
+	    }
+	}
+	else	
+	{
+	    my $nom_pt_metro = get_nom_pt_metro($base);
+	    message_erreur("ERREUR : point de métrologie \"$nom_pt_metro\". L'interface $if de $ip n'existe pas, suppression de l'entree.");
+	    writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                    "\t ERREUR : L'interface $if de $ip n'existe pas, suppression de l'entree");
+	    return 2;
+	}
+    }
+    else
+    {
+	my $nom_pt_metro = get_nom_pt_metro($base);
+	message_erreur("ERREUR : point de métrologie \"$nom_pt_metro\". L'equipement $ip ne repond pas");
+	writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+                    "\t ERREUR : L'equipement $ip ne repond pas");
+	return 1;
+    }
+    
+    return 0;
+}
+
+###########################################################
+# retourne le sysoid d'un équipement
+sub get_snmp_oid
+{
+    my ($param) = @_;
+
+    my @sys_oid = ();
+    &snmpmapOID("oid","1.3.6.1.2.1.1.2.0");
+    @sys_oid = &snmpget($param,"oid");
+    if($sys_oid[0] ne "")
+    {
+	return $sys_oid[0];
+    }
+    else
+    {
+	return -1;
+    }
+}
+
+
+
+###########################################################
+# ecriture du fichier majMETRO mis à jour
+sub ecrit_liste_majMETRO
+{
+    my $key;
+    
+    if(open(LISTE,">$var{FILE_METRO_PROBES}"))
+    {
+	foreach $key (keys %sonde_majMETRO)
+	{
+	    if($sonde_majMETRO{$key}{params} =~/\s+/)
+	    {
+		$sonde_majMETRO{$key}{params} =~ tr/ /,/;
+	    }
+	    print LISTE "$sonde_majMETRO{$key}{type} $key $sonde_majMETRO{$key}{ip} $sonde_majMETRO{$key}{community} $sonde_majMETRO{$key}{params}\n";
+	}
+	close(LISTE);
+        writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+            "\t INFO : Ecriture du fichier $var{FILE_METRO_PROBES}");
+    }
+    else
+    {
+        writelog("metrocreatedb",$var{syslog-facility-syncmetro},"info",
+            "\t ERREUR : ouverture du fichier $var{FILE_METRO_PROBES} en ecriture impossible");
+    }
+}
+
+
