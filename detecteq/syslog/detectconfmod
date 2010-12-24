@@ -34,7 +34,7 @@ proc main {argv0 argv} {
 	return 1
     }
 
-    set defdomain [dnsconfig "defdomain"]
+    set defdomain [dnsconfig get "defdomain"]
 
     #
     # Main loop

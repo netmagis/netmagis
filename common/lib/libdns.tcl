@@ -1056,7 +1056,7 @@ snit::type ::dnscontext {
 	#
 
 	set cmd [get-local-conf "whoami"]
-	if {! [catch {exec $cmd} msg]} then {
+	if {[catch {exec $cmd} msg]} then {
 	    return "Cannot get login name ($msg)"
 	}
 	set login $msg
