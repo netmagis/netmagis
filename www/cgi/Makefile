@@ -10,7 +10,7 @@ SCRIPTS 	= \
 		    index \
 		    admgenliste admgenset \
 		    admgrpedit admgrpmodif admgrpsel \
-		    admin \
+		    admindex \
 		    admmxedit admmxmodif admmxsel \
 		    admparhelp admparliste admparmodif \
 		    admrefhelp admrefliste admrefmodif \
@@ -20,10 +20,9 @@ SCRIPTS 	= \
 		    consultnet \
 		    del \
 		    dhcp \
-		    droits \
 		    edit \
 		    eq \
-		    graphe \
+		    graph \
 		    ifchg \
 		    ipinact \
 		    l2 \
@@ -38,11 +37,11 @@ SCRIPTS 	= \
 		    metro \
 		    mod \
 		    net \
+		    perm \
 		    search \
 		    statcor \
 		    statetab \
-		    topotop \
-		    traiteifchg
+		    topotop
 
 all:
 	@echo ">>> Making all in `pwd`"

@@ -21,6 +21,7 @@
 #   2007/01/11 : pda      : uid substitution
 #   2010/12/12 : pda      : i18n
 #   2010/12/20 : pda      : reworked installation
+#   2010/12/25 : pda      : use cgi-dispatch
 #
 
 #
@@ -28,7 +29,7 @@
 #
 
 set conf(page1)		l3.html
-set conf(pagen)		topoliste.html
+set conf(pagen)		topolist.html
 
 #
 # Next actions
@@ -42,11 +43,6 @@ set conf(nextl3)	"l3"
 #
 # Script parameters
 #
-
-set conf(form)	{
-    {addr		0 1}
-    {format		0 1}
-}
 
 set conf(dumpgraph)	"dumpgraph -o rnet %s"
 set conf(extractl3)	"extractl3 %s %s"
@@ -236,18 +232,18 @@ proc gen-dot {format cmd} {
 }
 
 ##############################################################################
-# Main procedure
+# Display L3 parameters
 ##############################################################################
 
-proc main {} {
+d cgi-register {} {
+    {addr	0 1}
+    {format	0 1}
+} {
     global conf
 
     #
     # Initialization
     #
-
-    d init-cgi "topo" "" $conf(form) ftab dbfd tabuid
-    ::webapp::import-vars ftab $conf(form)
 
     set msgsta [topo-status $dbfd $tabuid(admin)]
 
@@ -388,4 +384,8 @@ proc main {} {
     }
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "topo" ""

@@ -64,17 +64,17 @@
 
     Cette application vous permet~:
     \liste {
-	\item {\lien {de consulter les informations}	{%URLCONSULTER%}}
+	\item {\lien {de consulter les informations}	{%URLNET%}}
 	\item {\lien {d'ajouter une machine}		{%URLADD%}}
 	\item {\lien {de modifier les informations}	{%URLMOD%}}
 	\item {\lien {de supprimer une machine}		{%URLDEL%}}
-	\item {\lien {de consulter mes droits d'accès}	{%URLDROITS%}}
+	\item {\lien {de consulter mes droits d'accès}	{%URLPERM%}}
 	\item {\lien {de modifier mon mot de passe}	{%PASSWDURL%}}
 	\item {\lien {de gérer les "rôles mail"}	{%URLMAIL%}}
 	\* \item {\lien {de gérer les "rôles web"}	{%URLWEB%}}
-	\item {\lien {de gérer les plages DHCP}		{%URLDHCP%}}
-	\item {\lien {de rechercher un correspondant}	{%URLCORRESP%}}
- 	\item {\lien {de localiser mon adresse}		{%URLOUSUISJE%}}
+	\item {\lien {de gérer les plages DHCP}	{%URLDHCP%}}
+	\item {\lien {de rechercher un correspondant}	{%URLSEARCH%}}
+ 	\item {\lien {de localiser mon adresse}		{%URLWHERE%}}
     }
 
     \titre {2} {Autres opérations}

@@ -34,8 +34,8 @@
 #
 
 set conf(page)		net.html
-set conf(liste)		net-list.html
-set conf(listetex)	net-list.tex
+set conf(listhtml)	net-list.html
+set conf(listtex)	net-list.tex
 
 #
 # Next actions
@@ -393,7 +393,7 @@ proc output-list {dbfd lcidr _tabuid format} {
 	    set pline [::webapp::helem "p" $pline]
 	    set tableau "$pline\n$tableau"
 
-	    d result $conf(liste) [list \
+	    d result $conf(listhtml) [list \
 					[list %TITRE%	$dhost] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
@@ -401,7 +401,7 @@ proc output-list {dbfd lcidr _tabuid format} {
 	}
 	latex	{
 	    set tableau "$pline\n\n$tableau"
-	    d result $conf(listetex) [list \
+	    d result $conf(listtex) [list \
 					[list %ORIENTATION% "landscape"] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
@@ -607,7 +607,7 @@ proc output-map {dbfd lcidr _tabuid format} {
     set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
 
-    d result $conf(liste) [list \
+    d result $conf(listhtml) [list \
 				[list %TITRE%	[mc "IPv4 address map"]] \
 				[list %TABLEAU%	$tableau] \
 				[list %DATE%	$date] \

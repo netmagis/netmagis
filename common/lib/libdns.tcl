@@ -436,7 +436,7 @@ snit::type ::netmagis {
     variable errorpage "error.html"
 
     # HTML home page
-    variable homepage "accueil"
+    variable homepage "index"
 
     # in order to come back from a travel in the Netmagis application
     variable dnextprog ""
@@ -476,7 +476,7 @@ snit::type ::netmagis {
     # The second type gives the display of a particular element.
     variable links -array {
 	:dns		{
-			    {accueil always}
+			    {index always}
 			    {net always}
 			    {add always}
 			    {del always}
@@ -488,9 +488,9 @@ snit::type ::netmagis {
 			    {whereami always}
 			    {topotitle topo}
 			    {mactitle mac}
-			    {admtitle admin}
+			    {admtitle admindex}
 			}
-	accueil		{index Welcome}
+	index		{index Welcome}
 	net		{net Consult}
 	add		{add Add}
 	del		{del Delete}
@@ -502,7 +502,7 @@ snit::type ::netmagis {
 	whereami	{search?crit=_ {Where am I?}}
 	topotitle	{eq Topology}
 	mactitle	{macindex Mac}
-	admtitle	{admin Admin}
+	admtitle	{admindex Admin}
 	:topo		{
 			    {eq always}
 			    {l2 always}
@@ -515,7 +515,7 @@ snit::type ::netmagis {
 	eq		{eq Equipments}
 	l2		{l2 Vlans}
 	l3		{l3 Networks}
-	dnstitle	{accueil DNS/DHCP}
+	dnstitle	{index DNS/DHCP}
 	:admin		{
 			    {admtitle always}
 			    {consultmx always}

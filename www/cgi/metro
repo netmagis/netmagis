@@ -19,6 +19,7 @@
 #   2008/07/30 : pda             : generalize to wifi graphs
 #   2008/07/30 : pda             : more flexible date/hour analysis
 #   2010/12/13 : pda             : i18n
+#   2010/12/25 : pda             : use cgi-dispatch
 #
 
 #
@@ -37,16 +38,7 @@ set conf(nextmetro)	"metro"
 # Script parameters
 #
 
-
-set conf(form)	{
-    {id			1 1}
-    {jdebut		0 1}
-    {hdebut		0 1}
-    {jfin		0 1}
-    {hfin		0 1}
-}
-
-set conf(urlgraph)	"graphe"
+set conf(urlgraph)	"graph"
 
 #
 # Netmagis general library
@@ -60,22 +52,20 @@ source %LIBDNS%
 # Main procedure
 ##############################################################################
 
-proc main {} {
+d cgi-register {} {
+    {id		1 1}
+    {jdebut	0 1}
+    {hdebut	0 1}
+    {jfin	0 1}
+    {hfin	0 1}
+} {
     global conf
 
     #
     # Initialization
     #
 
-    d init-cgi "topo" "" $conf(form) ftab dbfd tabuid
-
     set msgsta [topo-status $dbfd $tabuid(admin)]
-
-    ::webapp::import-vars ftab
-    foreach f $conf(form) {
-	set var [lindex $f 0]
-	set $var [string trim [lindex [set $var] 0]]
-    }
 
     #
     # Check graph id according to user's rights
@@ -177,4 +167,8 @@ proc main {} {
 			]
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "topo" ""

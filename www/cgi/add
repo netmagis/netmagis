@@ -79,7 +79,7 @@ set conf(page-multi)	add-multi.html
 set conf(nextadd)	"add"
 set conf(nextmap)	"net"
 
-set conf(scriptmap)	"./liste"
+set conf(script-map)	"./net"
 
 #
 # Script parameters
@@ -619,7 +619,7 @@ d cgi-register {action add-multi} {
     if {$domap ne ""} then {
 	set nftab(cidr) $lcidr
 	set nftab(domap) {yes}
-	puts stdout [::webapp::call-cgi $conf(scriptmap) nftab]
+	puts stdout [::webapp::call-cgi $conf(script-map) nftab]
 	return 0
     }
 

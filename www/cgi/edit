@@ -11,6 +11,7 @@
 # History
 #   2010/10/10 : pda      : specification
 #   2010/12/11 : pda      : i18n
+#   2010/12/25 : pda      : use cgi-dispatch
 #
 
 #
@@ -28,14 +29,6 @@ set conf(nextmod)	"mod"
 set conf(nextlist)	"net"
 
 #
-# Script parameters
-#
-
-set conf(form)		{
-	{adr		1 1}
-}
-
-#
 # Netmagis general library
 #
 
@@ -47,20 +40,16 @@ source %LIBDNS%
 # Main procedure
 ##############################################################################
 
-proc main {} {
+d cgi-register {} {
+    {adr	1 1}
+} {
     global conf
-
-    #
-    # Initialization
-    #
-
-    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
 
     #
     # Check parameters
     #
 
-    set addr [string trim [lindex $ftab(adr) 0]]
+    set addr $adr
 
     set msg [check-ip-syntax $dbfd $addr "inet"]
     if {$msg ne ""} then {
@@ -167,4 +156,9 @@ proc main {} {
 			    ]
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "dns" ""
+

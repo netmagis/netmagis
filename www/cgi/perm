@@ -13,21 +13,14 @@
 #   2003/05/13 : pda/jean : use auth base
 #   2005/04/06 : pda      : add dhcp profiles
 #   2010/12/10 : pda      : i18n
+#   2010/12/25 : pda      : use cgi-disptach
 #
 
 #
 # Template pages used by this script
 #
 
-set conf(page)		droits.html
-
-#
-# Script parameters
-#
-
-set conf(form)	{
-	{login	0 1}
-}
+set conf(page)		perm.html
 
 #
 # Netmagis general library
@@ -41,14 +34,10 @@ source %LIBDNS%
 # Main procedure
 ##############################################################################
 
-proc main {} {
+d cgi-register {} {
+    {login	0 1}
+} {
     global conf
-
-    #
-    # Initialization
-    #
-
-    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
 
     #
     # Display user informations.
@@ -86,4 +75,9 @@ proc main {} {
 			    ]
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "dns" ""
+

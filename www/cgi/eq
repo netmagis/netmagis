@@ -10,16 +10,17 @@
 #	- iface: interface name
 #
 # History
-#   2006/06/05 : pda        : design
-#   2006/08/14 : pda        : merge listeq
-#   2007/01/04 : pda        : add parameter uid
-#   2007/01/11 : pda        : common initialisation
-#   2007/01/11 : pda        : possible to substitute uid
-#   2008/05/06 : pda        : add localition
+#   2006/06/05 : pda      : design
+#   2006/08/14 : pda      : merge listeq
+#   2007/01/04 : pda      : add parameter uid
+#   2007/01/11 : pda      : common initialisation
+#   2007/01/11 : pda      : possible to substitute uid
+#   2008/05/06 : pda      : add localition
 #   2008/07/31 : pda/boggia : tree view
-#   2008/08/01 : pda        : wifi statistics
-#   2010/08/31 : pda/jean   : add "native vlan" information
-#   2010/12/11 : pda        : i18n
+#   2008/08/01 : pda      : wifi statistics
+#   2010/08/31 : pda/jean : add "native vlan" information
+#   2010/12/11 : pda      : i18n
+#   2010/12/25 : pda      : use cgi-dispatch
 #
 
 #
@@ -27,7 +28,7 @@
 #
 
 set conf(page1)		eq.html
-set conf(pagen)		topoliste.html
+set conf(pagen)		topolist.html
 
 #
 # Next actions
@@ -42,11 +43,6 @@ set conf(nextifchg)	"ifchg"
 #
 # Script parameters
 #
-
-set conf(form)	{
-    {eq			0 1}
-    {iface		0 1}
-}
 
 set conf(dumpgraph)	"dumpgraph -o eq %s"
 set conf(extractcoll)	"extractcoll -w %s"
@@ -719,18 +715,18 @@ proc format-one-eq {eqname iface _tabuid} {
 }
 
 ##############################################################################
-# Main procedure
+# Display equipment
 ##############################################################################
 
-proc main {} {
+d cgi-register {} {
+    {eq		0 1}
+    {iface	0 1}
+} {
     global conf
 
     #
     # Initialization
     #
-
-    d init-cgi "topo" "" $conf(form) ftab dbfd tabuid
-    ::webapp::import-vars ftab $conf(form)
 
     set msgsta [topo-status $dbfd $tabuid(admin)]
 
@@ -903,4 +899,8 @@ proc main {} {
     }
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "topo" ""

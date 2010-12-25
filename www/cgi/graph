@@ -20,25 +20,12 @@
 #   2008/07/30 : pda         : generalize to wifi graphs
 #   2008/07/31 : pda         : more than one graph on the same graph with "|"
 #   2010/12/11 : pda         : i18n
+#   2010/12/25 : pda         : use cgi-dispatch
 #
-
-#
-# Template pages used by this script
-#
-
 
 #
 # Script parameters
 #
-
-
-set conf(form)	{
-    {id			1 1}
-    {debut		0 1}
-    {fin		0 1}
-    {periode		0 1}
-    {taille		0 1}
-}
 
 set conf(idrfmt)	{http://%1$s/bin/gengraph?%2$s&debut=%3$d&fin=%4$d"
 
@@ -54,15 +41,14 @@ source %LIBDNS%
 # Main procedure
 ##############################################################################
 
-proc main {} {
+d cgi-register {} {
+    {id		1 1}
+    {debut	0 1}
+    {fin	0 1}
+    {periode	0 1}
+    {taille	0 1}
+} {
     global conf
-
-    #
-    # Initialization
-    #
-
-    d init-cgi "topo" "" $conf(form) ftab dbfd tabuid
-    ::webapp::import-vars ftab $conf(form)
 
     #
     # Check graph id according to user's rights
@@ -167,4 +153,8 @@ proc main {} {
     d end
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "topo" ""
