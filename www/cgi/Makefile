@@ -15,7 +15,7 @@ SCRIPTS 	= \
 		    admparhelp admparliste admparmodif \
 		    admrefhelp admrefliste admrefmodif \
 		    admreledit admrelmodif admrelsel \
-		    ajout \
+		    add \
 		    consulter \
 		    consultmx \
 		    consultnet \
@@ -44,7 +44,6 @@ SCRIPTS 	= \
 		    statetab \
 		    suppr \
 		    topotop \
-		    traiteajout \
 		    traiteifchg \
 		    traitemodif \
 		    traitesuppr

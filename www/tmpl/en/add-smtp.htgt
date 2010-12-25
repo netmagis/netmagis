@@ -48,8 +48,8 @@
     \gras {Do you confirm that you fill one of the above conditions?}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="oui">
+	<INPUT TYPE="HIDDEN" NAME="action" VALUE="add-host">
+	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
 	%HIDDEN%
 	<INPUT TYPE="SUBMIT" VALUE="I confirm">
     </FORM>

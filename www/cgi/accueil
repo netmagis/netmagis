@@ -45,7 +45,7 @@ proc main {} {
     # URL and substitution list building
     #
 
-    foreach script {consulter ajout modif suppr droits mail web dhcp corresp} {
+    foreach script {consulter add modif suppr droits mail web dhcp corresp} {
 	set up [string toupper $script]
 	d urlset "%URL$up%" "$script" {}
     }

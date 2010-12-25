@@ -41,7 +41,7 @@ set conf(listetex)	liste.tex
 # 
 
 set conf(nextedit)	"edit"
-set conf(nextajout)	"ajout"
+set conf(nextadd)	"add"
 set conf(nextlist)	"liste"
 
 #
@@ -455,7 +455,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 		}
 		1	{
 		    # not declared and not in a dhcp range
-		    d urlset "" $conf(nextajout) [list [list "adr" $adr]]
+		    d urlset "" $conf(nextadd) [list [list "adr" $adr]]
 		    d urlsetnext "" $nextprog $nextargs
 		    set url [d urlget ""]
 		    set h [::webapp::helem "a" $last "href" $url]
@@ -472,7 +472,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 		}
 		3	{
 		    # not declared and in a dhcp range
-		    d urlset "" $conf(nextajout) [list [list "adr" $adr]]
+		    d urlset "" $conf(nextadd) [list [list "adr" $adr]]
 		    d urlsetnext "" $nextprog $nextargs
 		    set url [d urlget ""]
 		    set h [::webapp::helem "a" $last "href" $url]

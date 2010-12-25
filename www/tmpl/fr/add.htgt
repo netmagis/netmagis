@@ -52,8 +52,8 @@
 	\lignetableau {
 	    \casetableau {} {
 		<FORM METHOD="POST" ACTION="%URLFORM1%">
-		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
-		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="non">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="add-host">
+		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="no">
 		    \tableau {
 			\bordure {0} {}
 			\* \taille {100}
@@ -139,7 +139,7 @@
 	\lignetableau {
 	    \casetableau {} {
 		<FORM METHOD="POST" ACTION="%URLFORM2%">
-		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-multi">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="add-multi">
 		    <INPUT TYPE="HIDDEN" NAME="tri" VALUE="adr">
 		    \tableau {
 			\bordure {0} {}
@@ -184,7 +184,7 @@
 	\lignetableau {
 	    \casetableau {} {
 		<FORM METHOD="POST" ACTION="%URLFORM2%">
-		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-alias">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="add-alias">
 		    \tableau {
 			\bordure {0} {}
 			\* \taille {100}

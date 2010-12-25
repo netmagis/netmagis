@@ -33,7 +33,7 @@ set conf(page-edit-infos)	editmodif-infos.html
 # 
 
 set conf(next)		"traitemodif"
-set conf(nextajout)	"ajout"
+set conf(nextadd)	"add"
 set conf(nextsuppr)	"suppr"
 
 #
@@ -140,7 +140,7 @@ proc editmodif-infos {dbfd _tabuid _ftab} {
     d urlset "%URLFORM%" $conf(next) {}
     d urladdnext "%URLFORM%"
 
-    d urlset "%URLAJOUT%" $conf(nextajout) {}
+    d urlset "%URLAJOUT%" $conf(nextadd) {}
     d urlset "%URLSUPPR%" $conf(nextsuppr) {}
 
     #

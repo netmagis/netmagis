@@ -23,7 +23,7 @@
 #   2004/08/06 : pda/jean : add flag dhcp by network
 #   2005/04/08 : pda/jean : add table dhcpprofil
 #   2007/10/25 : jean     : log modify actions
-#   2010/11/16 : pda/jean : ajout table vlan
+#   2010/11/16 : pda/jean : add table vlan
 #   2010/12/09 : pda      : i18n
 #   2010/12/09 : pda      : remove groups
 #   2010/12/09 : pda      : rewrite with conf() array

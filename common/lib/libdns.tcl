@@ -492,7 +492,7 @@ snit::type ::netmagis {
 			}
 	accueil		{accueil Welcome}
 	consulter	{consulter Consult}
-	ajouter		{ajout Add}
+	ajouter		{add Add}
 	supprimer	{suppr Delete}
 	modifier	{modif Modify}
 	rolesmail	{mail {Mail roles}}
@@ -1248,47 +1248,54 @@ snit::type ::netmagis {
 	}
 
 	#
-	# Dispatch and execute script according to criterion
+	# Find script according to criterion
 	#
 
+	set ok 0
 	foreach cfs $critscript {
 	    lassign $cfs crit form script
 	    set ok 1
 	    foreach {f re} $crit {
-		set v [string trim [lindex $ftab($f) 0]
+		set v [string trim [lindex $ftab($f) 0]]
 		if {! [regexp "^$re$" $v]} then {
 		    set ok 0
 		    break
 		}
 	    }
 	    if {$ok} {
-		#
-		# Criterion ok
-		# Get form variables
-		#
-
-		if {[llength [::webapp::get-data ftab $form]] == 0} then {
-		    set msg [mc "Invalid input"]
-		    if {%DEBUG%} then {
-			append msg "\n$ftab(_error)"
-		    }
-		    $self error $msg
-		}
-
-		#
-		# Import script variables into current context
-		#
-
-		::webapp::import-vars ftab $form
-
-		#
-		# Execute script
-		#
-
-		if {[catch $script msg]} then {
-		    ::webapp::cgi-err $errorInfo $debug
-		}
+		break
 	    }
+	}
+
+	if {! $ok} then {
+	    $self error [mc "Cannot find CGI action"]
+	}
+
+	#
+	# Criterion ok
+	# Get form variables and import them into current context
+	#
+
+	if {[llength [::webapp::get-data ftab $form]] == 0} then {
+	    set msg [mc "Invalid input"]
+	    if {%DEBUG%} then {
+		append msg "\n$ftab(_error)"
+	    }
+	    $self error $msg
+	}
+
+	::webapp::import-vars ftab $form
+
+	#
+	# Execute script
+	#
+
+	set r [catch $script msg]
+	# r=0 (OK), 1 (ERROR), 2 (RETURN), 3 (BREAK) or 4 (CONTINUE)
+	if {$r == 1} then {
+	    global errorInfo
+
+	    ::webapp::cgi-err $errorInfo $debug
 	}
 
 	return 0
@@ -3048,7 +3055,7 @@ proc touch-rr {dbfd idrr} {
 #
 # History
 #   2008/07/25 : pda/jean : design
-#   2010/10/31 : pda      : ajout ttl
+#   2010/10/31 : pda      : add ttl
 #   2010/11/29 : pda      : i18n
 #
 
@@ -3732,7 +3739,7 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 		    foreach mx $lmx {
 			switch $parm {
 			    REJECT {
-				return [mc "'%s' is a MX" $fqfn]
+				return [mc "'%s' is a MX" $fqdn]
 			    }
 			    CHECK {
 				set idrr [lindex $mx 1]
@@ -3814,7 +3821,7 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 		if {$exists} then {
 		    switch $parm {
 			REJECT {
-			    return [mc "'%s' has IP addresses $fqfn]
+			    return [mc "'%s' has IP addresses" $fqdn]
 			}
 			EXISTS {
 			    if {$trr(ip) eq ""} then {

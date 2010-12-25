@@ -65,7 +65,7 @@
     You may:
     \liste {
 	\item {\lien {consult informations}		{%URLCONSULTER%}}
-	\item {\lien {add a host or an alias}		{%URLAJOUT%}}
+	\item {\lien {add a host or an alias}		{%URLADD%}}
 	\item {\lien {modify informations about a host}	{%URLMODIF%}}
 	\item {\lien {delete a host}			{%URLSUPPR%}}
 	\item {\lien {check my access rights}		{%URLDROITS%}}

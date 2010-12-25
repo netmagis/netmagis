@@ -65,7 +65,7 @@
     Cette application vous permet~:
     \liste {
 	\item {\lien {de consulter les informations}	{%URLCONSULTER%}}
-	\item {\lien {d'ajouter une machine}		{%URLAJOUT%}}
+	\item {\lien {d'ajouter une machine}		{%URLADD%}}
 	\item {\lien {de modifier les informations}	{%URLMODIF%}}
 	\item {\lien {de supprimer une machine}		{%URLSUPPR%}}
 	\item {\lien {de consulter mes droits d'accès}	{%URLDROITS%}}

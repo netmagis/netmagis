@@ -3,14 +3,14 @@
 #
 # Store host modifications
 #
-# Called by: ajout
+# Called by: accueil
 #
 # Parameters (form or url):
 #   - display edit page
-#	- action : ""
+#	- action : (none)
 #   - add host
-#	- action : "ajout-machine"
-#	- confirm : "non" or "oui" (if confirmation)
+#	- action : "add-host"
+#	- confirm : "no" or "yes" (if confirmation)
 #	- nom : name of host to add
 #	- domaine : domain of host to add
 #	- adr: IP address
@@ -23,13 +23,13 @@
 #	- respnom : name of the person responsible for this host
 #	- respmel : mail address of the person responsible for this host
 #   - free address block search
-#	- action : "ajout-multi"
-#	- dosearch or domap : non-empty value (see ajout.html)
+#	- action : "add-multi"
+#	- dosearch or domap : non-empty value (see add.html)
 #	- tri : sort criterion ("nbadr" or "adr")
 #	- plage : selected network id
 #	- nbadr : block number
 #   - add alias
-#	- action : "ajout-alias"
+#	- action : "add-alias"
 #	- nom : name of alias to add
 #	- domaine : domain of alias to add
 #	- alias : name of canonical existing host
@@ -53,9 +53,9 @@
 #   2008/02/13 : pda/jean : responsible person is the current user by default
 #   2008/07/23 : pda/jean : add smtp emit right
 #   2008/07/29 : pda      : use display-rr
-#   2010/01/01 : pda      : add ajout-multi
+#   2010/01/01 : pda      : add add-multi
 #   2010/10/08 : pda      : add journey (via next)
-#   2010/10/09 : pda      : end ajout-multi coding
+#   2010/10/09 : pda      : end add-multi coding
 #   2010/10/26 : pda      : check dhcpprofil case when no maC address
 #   2010/12/14 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
@@ -65,24 +65,19 @@
 # Template pages used by this script
 #
 
-set conf(page)		ajout.html
-set conf(pageadr)	ajout-adr.html
-
-set conf(page-ajout-machine)	traiteajout-machine.html
-set conf(page-ajout-existe)	traiteajout-existe.html
-set conf(page-ajout-smtp)	traiteajout-smtp.html
-set conf(page-ajout-multi)	traiteajout-multi.html
-set conf(page-ajout-alias)	traiteajout-alias.html
+set conf(page-add)	add.html
+set conf(page-alias)	add-alias.html
+set conf(page-exist)	add-exist.html
+set conf(page-host)	add-host.html
+set conf(page-smtp)	add-smtp.html
+set conf(page-multi)	add-multi.html
 
 #
 # Next actions
 # 
 
-set conf(nextconfirm)	"add"
-
+set conf(nextadd)	"add"
 set conf(nextmap)	"liste"
-set conf(nextseq)	"add"
-set conf(nextajout)	"ajout"
 
 set conf(scriptmap)	"./liste"
 
@@ -95,7 +90,7 @@ set conf(maxip)		1024
 
 set conf(tableau-multi) {
     global {
-	chars {12 normal}
+	chars {10 normal}
 	align {left}
 	botbar {yes}
 	columns {40 20 40}
@@ -196,8 +191,7 @@ d cgi-register {action {}} {
     # Is an address already provided?
     #
 
-    set addr [string trim [lindex $ftab(adr) 0]]
-    if {$addr eq ""} then {
+    if {$adr eq ""} then {
 	# no: show rest of page
 	set display "block"
     } else {
@@ -209,15 +203,15 @@ d cgi-register {action {}} {
     # Next scripts
     #
 
-    d urlset "%URLFORM1%" $conf(next) {}
+    d urlset "%URLFORM1%" $conf(nextadd) {}
     d urladdnext "%URLFORM1%"
-    d urlset "%URLFORM2%" $conf(next) {}
+    d urlset "%URLFORM2%" $conf(nextadd) {}
 
     #
     # End of script: output page and close database
     #
 
-    d result $conf(page) [list \
+    d result $conf(page-add) [list \
 				[list %DOMAINE% $domaine] \
 				[list %DOMAINEREF% $domaineref] \
 				[list %MENUHINFO% $menuhinfo] \
@@ -229,7 +223,7 @@ d cgi-register {action {}} {
 				[list %DHCPPROFILMENU% $dhcpprofilmenu] \
 				[list %MENUPLAGE% $menuplage] \
 				[list %DISPLAY% $display] \
-				[list %ADR% $addr] \
+				[list %ADR% $adr] \
 			    ]
 }
 
@@ -249,7 +243,7 @@ d cgi-register {action {}} {
 #   2010/12/16 : pda      : add fspec parameter
 #
 
-d cgi-register {action ajout-machine} {
+d cgi-register {action add-host} {
     {confirm	1 1}
     {nom	1 1}
     {domaine	1 1}
@@ -419,14 +413,14 @@ d cgi-register {action ajout-machine} {
     # Ask for confirmation if user asked for SMTP emit right
     #
 
-    if {! $exip && $droitsmtp && $confirm ne "oui"} then {
+    if {! $exip && $droitsmtp && $confirm ne "yes"} then {
 	#
 	# Confirmation page
 	#
 
-	d urlset "%URLFORM%" $conf(nextconfirm) {}
+	d urlset "%URLFORM%" $conf(nextadd) {}
 	d urladdnext "%URLFORM%"
-	d result $conf(page-ajout-smtp) [list \
+	d result $conf(page-smtp) [list \
 					    [list %HIDDEN% $hidden] \
 				]
 	return 0
@@ -436,15 +430,15 @@ d cgi-register {action ajout-machine} {
     # If name already exists, ask for confirmation, else insert object
     #
 
-    if {$exip && $confirm ne "oui"} then {
+    if {$exip && $confirm ne "yes"} then {
 	#
 	# Output a page with attribute list of the identified object
 	#
 
 	set host [display-rr $dbfd -1 trr]
-	d urlset "%URLFORM%" $conf(nextconfirm) {}
+	d urlset "%URLFORM%" $conf(nextadd) {}
 	d urladdnext "%URLFORM%"
-	d result $conf(page-ajout-existe) [list \
+	d result $conf(page-exist) [list \
 						[list %NOM%     $nom] \
 						[list %DOMAINE% $domaine] \
 						[list %ADR%     $adr] \
@@ -563,14 +557,14 @@ d cgi-register {action ajout-machine} {
 		    set nadr $tab(adr)
 		}
 
-		d urlset "%URLSUITE%" $conf(nextajout) [list [list "adr" $nadr]]
+		d urlset "%URLSUITE%" $conf(nextadd) [list [list "adr" $nadr]]
 		d urlsetnext "%URLSUITE%" "sequence" "nbadr=$nbadr"
 	    } else {
-		d urlset "%URLSUITE%" $conf(nextajout) {}
+		d urlset "%URLSUITE%" $conf(nextadd) {}
 	    }
 	}
 	default {
-	    d urlset "%URLSUITE%" $conf(nextajout) {}
+	    d urlset "%URLSUITE%" $conf(nextadd) {}
 	}
     }
 
@@ -579,7 +573,7 @@ d cgi-register {action ajout-machine} {
     #
 
     set machine [display-rr $dbfd $trr(idrr) trr]
-    d result $conf(page-ajout-machine) [list \
+    d result $conf(page-host) [list \
 					    [list %MACHINE% $machine] \
 					    [list %INTERVAL% $interval] \
 			    ]
@@ -595,7 +589,7 @@ d cgi-register {action ajout-machine} {
 #   2010/12/16 : pda      : add fspec parameter
 #
 
-d cgi-register {action ajout-multi} {
+d cgi-register {action add-multi} {
     {dosearch	0 1}
     {domap	0 1}
     {tri	0 1}
@@ -667,17 +661,17 @@ d cgi-register {action ajout-multi} {
     set lines {}
 
     # base URL to perform sort
-    set largs [list {action ajout-multi} \
+    set largs [list {action add-multi} \
 		    [list "plage" $plage] \
 		    [list "nbadr" $nbadr] \
 		]
 
     # first line (with sort URLs)
-    d urlset "" $conf(nextseq) [concat $largs {{tri adr}}]
+    d urlset "" $conf(nextadd) [concat $largs {{tri adr}}]
     set url [d urlget ""]
     set c1 [::webapp::helem "a" [mc "First available IP address"] "href" $url]
 
-    d urlset "" $conf(nextseq) [concat $largs {{tri nbadr}}]
+    d urlset "" $conf(nextadd) [concat $largs {{tri nbadr}}]
     set url [d urlget ""]
     set c2 [::webapp::helem "a" [mc "Size of block"] "href" $url]
 
@@ -699,7 +693,7 @@ d cgi-register {action ajout-multi} {
 	set msg [format $fmt $nbadr]
 	set button [::webapp::form-submit "" $msg]
 
-	d urlset "" $conf(nextajout) {}
+	d urlset "" $conf(nextadd) {}
 	d urlsetnext "" "sequence" "nbadr=$nbadr"
 	set c [::webapp::helem "form" "$hidden$button" \
 					    "method" "post" \
@@ -714,7 +708,7 @@ d cgi-register {action ajout-multi} {
     # End of script: output page and close database
     #
 
-    d result $conf(page-ajout-multi) [list \
+    d result $conf(page-multi) [list \
 					    [list %LISTE% $liste] \
 			    ]
     return 0
@@ -729,7 +723,7 @@ d cgi-register {action ajout-multi} {
 #   2010/12/16 : pda      : add fspec parameter
 #
 
-d cgi-register {action ajout-alias} {
+d cgi-register {action add-alias} {
     {nom	1 1}
     {domaine	1 1}
     {nomref	1 1}
@@ -809,7 +803,7 @@ d cgi-register {action ajout-alias} {
     # End of script: output page and close database
     #
 
-    d result $conf(page-ajout-alias) [list \
+    d result $conf(page-alias) [list \
 					    [list %NOM%        $nom] \
 					    [list %DOMAINE%    $domaine] \
 					    [list %NOMREF%     $nomref] \

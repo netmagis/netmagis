@@ -6,12 +6,12 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Name already exists
+    Netmagis - Machine existe déjà
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    Netmagis application
+    Application Netmagis
 }
 
 
@@ -27,22 +27,22 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Name already exists}
+    \titre {1} {Le nom existe déjà}
 
-    There is already a host named '%NOM%.%DOMAINE%'.
+    Il existe déjà une machine de nom '%NOM%.%DOMAINE%'.
 
-    Its characteristics are:
+    Ses caractéristiques sont~:
 
     %MACHINE%
 
-    \gras {Do you really want to add the new IP address '%ADR%' to
-    the '%NOM%.%DOMAINE%' host?}
+    \gras {Voulez-vous vraiment ajouter la nouvelle adresse '%ADR%'
+    à la machine '%NOM%.%DOMAINE%'~?}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="ajout-machine">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="oui">
+	<INPUT TYPE="HIDDEN" NAME="action" VALUE="add-host">
+	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
 	%HIDDEN%
-	<INPUT TYPE="SUBMIT" VALUE="I confirm">
+	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
     </FORM>
 }
 
