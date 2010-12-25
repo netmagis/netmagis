@@ -108,7 +108,6 @@ proc main {} {
     # Initialization
     #
 
-    ::dnscontext create d
     d init-cgi "admin" "admin" {} ftab dbfd tabuid
 
     #

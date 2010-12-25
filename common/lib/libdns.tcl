@@ -349,8 +349,10 @@ array set libconf {
 # Netmagis programs (CGI scripts, daemons, command line utilities).
 #
 # Methods:
-#   init-cgi
-#	initialize context for a CGI script
+#   cgi-register
+#	register a CGI script and conditions to execute it
+#   cgi-dispatch
+#	dispatch execution to a registered CGI script
 #   init-script
 #	initialize context for an autonomous program (not CGI)
 #   locale
@@ -402,9 +404,15 @@ array set libconf {
 #   2010/12/21 : pda/jean : add version in class
 #
 
-snit::type ::dnscontext {
+snit::type ::netmagis {
     # Netmagis version
     variable version "1.5"
+
+    # cgi script dispatching (see cgi-register)
+    # critform : list of field names
+    # critscript : list {{crit form script} {crit form script} ...}
+    variable critform {}
+    variable critscript {}
 
     # database handle
     variable db ""
@@ -1025,6 +1033,268 @@ snit::type ::dnscontext {
     }
 
     ###########################################################################
+    # Register a CGI script
+    #
+    # Input:
+    #	- crit : criterion list {field regexp field regexp ...}
+    #	- form : form field specification (see webapp::get-data)
+    #   - script : script to execute if criterion matches.
+    #		Variables defined in script:
+    #		- dbfd : database descriptor
+    #		- ftab : field array (see webapp::get-data)
+    #		- tabuid : user's characteristics
+    #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
+    #			idcor, idgrp, present)
+    # Output: (none)
+    #
+
+    method cgi-register {crit form script} {
+	#
+	# Memorize field name from criterion
+	#
+	foreach {f re} $crit {
+	    lappend critform $f
+	}
+
+	#
+	# Memorize criterion, form and script
+	#
+	lappend critscript [list $crit $form $script]
+    }
+
+    ###########################################################################
+    # Dispatch to CGI actions
+    #
+    # Input:
+    #   - module : current module we are in ("dns", "admin" or "topo")
+    #   - attr : needed attribute to execute the script
+    # Output:
+    #   - return value: none
+    #   - object d : Netmagis context
+    #   - object $ah : access to authentication base
+    #
+
+    method cgi-dispatch {module attr} {
+	#
+	# Builds-up a fictive context to easily return error messages
+	#
+
+	set login [::webapp::user]
+	set uid $login
+	set euid $login
+	set curmodule "dns"
+	set curcap {dns}
+	set locale "C"
+	set blocale "C"
+
+	set debug [get-local-conf "debug"]
+
+	#
+	# Language negociation
+	#
+
+	set blocale [::webapp::locale $avlocale]
+	$self locale $blocale
+
+	#
+	# Maintenance mode : access is forbidden to all, except
+	# for users specified in ROOT pattern.
+	#
+
+	set ftest [get-local-conf "nologin"]
+	set rootusers [get-local-conf "rootusers"]
+	if {! [catch [lindex $rootusers 0]]} then {
+	    $self error "Invalid 'rootusers' configuration parameter"
+	}
+
+	if {[file exists $ftest]} then {
+	    if {$uid eq "" || ! ($uid in $rootusers)} then {
+		set fd [open $ftest "r"]
+		set msg [read $fd]
+		close $fd
+		$self error $msg
+	    }
+	}
+
+	#
+	# Current module
+	#
+
+	set curmodule $module
+
+	#
+	# User's login
+	#
+
+	if {$login eq ""} then {
+	    $self error [mc "No login: authentication failed"]
+	}
+
+	#
+	# Common initialization work
+	#
+
+	set msg [init-common $selfns dbfd $login false tabuid]
+	if {$msg ne ""} then {
+	    $self error $msg
+	}
+
+	#
+	# Add default parameters in form analysis
+	# Default parameters are:
+	#   l : language
+	#   uid : login to be substituted
+	#   nextprog : next action, after current travel
+	#   nextargs : arguments of next action, after current travel
+	#
+
+	lappend form {l 0 1}
+	lappend form {uid 0 1}
+	lappend form {nextprog 0 1}
+	lappend form {nextargs 0 1}
+
+	#
+	# Add dispatch criterions
+	#
+
+	foreach f [lsort -unique $critform] {
+	    lappend form [list $f 0 1]
+	}
+
+	#
+	# Get variables
+	#
+
+	if {[llength [::webapp::get-data ftab $form]] == 0} then {
+	    set msg [mc "Invalid input"]
+	    if {$debug} then {
+		append msg "\n$ftab(_error)"
+	    }
+	    $self error $msg
+	}
+
+	#
+	# Is a specific language required ?
+	#
+
+	set l [string trim [lindex $ftab(l) 0]]
+	if {$l ne ""} then {
+	    $self locale $l
+	}
+
+	#
+	# Get next action
+	#
+
+	set dnextprog [string trim [lindex $ftab(nextprog) 0]]
+	set dnextargs [string trim [lindex $ftab(nextargs) 0]]
+
+	#
+	# Perform user substitution (through the uid parameter)
+	#
+
+	set nuid [string trim [lindex $ftab(uid) 0]]
+	if {$nuid ne "" && $tabuid(admin)} then {
+	    array set tabouid [array get tabuid]
+	    array unset tabuid
+
+	    set uid $nuid
+	    set login $nuid
+
+	    set n [read-user $dbfd $login tabuid msg]
+	    if {$n != 1} then {
+		$self error $msg
+	    }
+	    if {! $tabuid(present)} then {
+		$self error [mc "User '%s' not authorized" $login]
+	    }
+	}
+
+	#
+	# Remove additionnal default parameters
+	# If they were staying in ftab, they could be caught by a
+	# "hide all ftab paramaters" in a CGI script.
+	#
+
+	foreach p {l uid nextprog nextargs} {
+	    unset ftab($p)
+	}
+
+	#
+	# Computes capacity, given local installation and/or user rights
+	#
+
+	set curcap	{}
+	lappend curcap "dns"
+	if {[dnsconfig get "topoactive"]} then {
+	    lappend curcap "topo"
+	}
+	if {[dnsconfig get "macactive"] && $tabuid(droitmac)} then {
+	    lappend curcap "mac"
+	}
+	if {$tabuid(admin)} then {
+	    lappend curcap "admin"
+	}
+
+	#
+	# Is this page an "admin" only page ?
+	#
+
+	if {[llength $attr] > 0} then {
+	    # XXX : for now, test only one attribute
+	    if {! [user-attribute $dbfd $tabuid(idcor) $attr]} then {
+		$self error [mc "User '%s' not authorized" $login]
+	    }
+	}
+
+	#
+	# Dispatch and execute script according to criterion
+	#
+
+	foreach cfs $critscript {
+	    lassign $cfs crit form script
+	    set ok 1
+	    foreach {f re} $crit {
+		set v [string trim [lindex $ftab($f) 0]
+		if {! [regexp "^$re$" $v]} then {
+		    set ok 0
+		    break
+		}
+	    }
+	    if {$ok} {
+		#
+		# Criterion ok
+		# Get form variables
+		#
+
+		if {[llength [::webapp::get-data ftab $form]] == 0} then {
+		    set msg [mc "Invalid input"]
+		    if {%DEBUG%} then {
+			append msg "\n$ftab(_error)"
+		    }
+		    $self error $msg
+		}
+
+		#
+		# Import script variables into current context
+		#
+
+		::webapp::import-vars ftab $form
+
+		#
+		# Execute script
+		#
+
+		if {[catch $script msg]} then {
+		    ::webapp::cgi-err $errorInfo $debug
+		}
+	    }
+	}
+
+	return 0
+    }
+
+    ###########################################################################
     # Initialize access to Netmagis, for an autonomous program (command
     # line utility, daemon, etc.)
     #
@@ -1332,6 +1602,8 @@ snit::type ::dnscontext {
 	$self error [mc {Cannot perform operation "%1$s": %2$s} $op $msg]
     }
 }
+
+::netmagis create d
 
 ##############################################################################
 # Configuration parameters
@@ -6449,4 +6721,3 @@ proc sync-filemonitor {lf} {
 
     return $r
 }
-

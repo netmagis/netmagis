@@ -6,6 +6,8 @@
 # Called by: ajout
 #
 # Parameters (form or url):
+#   - display edit page
+#	- action : ""
 #   - add host
 #	- action : "ajout-machine"
 #	- confirm : "non" or "oui" (if confirmation)
@@ -56,11 +58,15 @@
 #   2010/10/09 : pda      : end ajout-multi coding
 #   2010/10/26 : pda      : check dhcpprofil case when no maC address
 #   2010/12/14 : pda      : i18n
+#   2010/12/25 : pda      : use cgi-dispatch
 #
 
 #
 # Template pages used by this script
 #
+
+set conf(page)		ajout.html
+set conf(pageadr)	ajout-adr.html
 
 set conf(page-ajout-machine)	traiteajout-machine.html
 set conf(page-ajout-existe)	traiteajout-existe.html
@@ -72,10 +78,10 @@ set conf(page-ajout-alias)	traiteajout-alias.html
 # Next actions
 # 
 
-set conf(nextconfirm)	"traiteajout"
+set conf(nextconfirm)	"add"
 
 set conf(nextmap)	"liste"
-set conf(nextseq)	"traiteajout"
+set conf(nextseq)	"add"
 set conf(nextajout)	"ajout"
 
 set conf(scriptmap)	"./liste"
@@ -86,42 +92,6 @@ set conf(scriptmap)	"./liste"
 
 # maximum size (in IP address count) of block to search
 set conf(maxip)		1024
-
-# field used to determine next step
-set conf(form)		{
-	{action		1 1}
-}
-
-# action specific fields
-set conf(form-ajout-machine)	{
-	{confirm	1 1}
-	{nom		1 1}
-	{domaine	1 1}
-	{adr		1 1}
-	{mac		1 1}
-	{iddhcpprofil	1 1}
-	{droitsmtp	0 1}
-	{ttl		1 1}
-	{hinfo		1 1}
-	{commentaire	1 1}
-	{respnom	1 1}
-	{respmel	1 1}
-}
-
-set conf(form-ajout-alias)	{
-	{nom		1 1}
-	{domaine	1 1}
-	{nomref		1 1}
-	{domaineref	1 1}
-}
-
-set conf(form-ajout-multi)	{
-	{dosearch	0 1}
-	{domap		0 1}
-	{tri		0 1}
-	{plage		1 1}
-	{nbadr		1 1}
-}
 
 set conf(tableau-multi) {
     global {
@@ -168,6 +138,102 @@ source %LIBDNS%
 # ::webapp::cgidebug ; exit
 
 ##############################################################################
+# Display page
+##############################################################################
+
+d cgi-register {action {}} {
+    {adr 0 1}
+} {
+    global conf
+
+    #
+    # Get host types
+    #
+
+    set menuhinfo [menu-hinfo $dbfd hinfo ""]
+
+    #
+    # Get SMTP authorization, in order to display (or not display)
+    # authorization button
+    #
+
+    lassign [menu-droitsmtp $dbfd "droitsmtp" tabuid 0] \
+				droitsmtplibelle droitsmtpmenu
+
+    #
+    # Get TTL permission in order to display (or not display) TTL field
+    #
+
+    lassign [menu-ttl $dbfd "ttl" tabuid ""] ttllibelle ttlval
+
+    #
+    # Get authorized domains
+    #
+
+    set domaine    [menu-domain $dbfd $tabuid(idcor) domaine    "" ""]
+    set domaineref [menu-domain $dbfd $tabuid(idcor) domaineref "" ""]
+
+    #
+    # Get DHCP profile informations
+    #
+
+    lassign [menu-dhcp-profile $dbfd "iddhcpprofil" $tabuid(idcor) 0] \
+				dhcpprofillibelle dhcpprofilmenu 
+
+    #
+    # Get network addresses
+    #
+
+    set lnet [read-networks $dbfd $tabuid(idgrp) "consult"]
+    set taille [llength $lnet]
+    if {$taille == 0} then {
+	set menuplage [mc "No authorized network"]
+    } else {
+	set menuplage [::webapp::form-menu "plage" 1 0 $lnet {}]
+    }
+
+    #
+    # Is an address already provided?
+    #
+
+    set addr [string trim [lindex $ftab(adr) 0]]
+    if {$addr eq ""} then {
+	# no: show rest of page
+	set display "block"
+    } else {
+	# yes: hide rest of page
+	set display "none"
+    }
+
+    #
+    # Next scripts
+    #
+
+    d urlset "%URLFORM1%" $conf(next) {}
+    d urladdnext "%URLFORM1%"
+    d urlset "%URLFORM2%" $conf(next) {}
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page) [list \
+				[list %DOMAINE% $domaine] \
+				[list %DOMAINEREF% $domaineref] \
+				[list %MENUHINFO% $menuhinfo] \
+				[list %TTLLIBELLE% $ttllibelle] \
+				[list %TTLVAL% $ttlval] \
+				[list %DROITSMTPLIBELLE% $droitsmtplibelle] \
+				[list %DROITSMTPMENU% $droitsmtpmenu] \
+				[list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
+				[list %DHCPPROFILMENU% $dhcpprofilmenu] \
+				[list %MENUPLAGE% $menuplage] \
+				[list %DISPLAY% $display] \
+				[list %ADR% $addr] \
+			    ]
+}
+
+##############################################################################
 # Add a name
 ##############################################################################
 
@@ -183,19 +249,24 @@ source %LIBDNS%
 #   2010/12/16 : pda      : add fspec parameter
 #
 
-proc traiteajout-machine {dbfd _tabuid _ftab fspec} {
+d cgi-register {action ajout-machine} {
+    {confirm	1 1}
+    {nom	1 1}
+    {domaine	1 1}
+    {adr	1 1}
+    {mac	1 1}
+    {iddhcpprofil 1 1}
+    {droitsmtp	0 1}
+    {ttl	1 1}
+    {hinfo	1 1}
+    {commentaire 1 1}
+    {respnom	1 1}
+    {respmel	1 1}
+} {
     global conf
-    upvar $_ftab ftab
-    upvar $_tabuid tabuid
 
     set login $tabuid(login)
     set idcor $tabuid(idcor)
-
-    #
-    # Validate form input
-    #
-
-    ::webapp::import-vars ftab $fspec
 
     #
     # Get dns update interval
@@ -514,7 +585,6 @@ proc traiteajout-machine {dbfd _tabuid _ftab fspec} {
 			    ]
 }
 
-
 ##############################################################################
 # Search for a block
 ##############################################################################
@@ -525,10 +595,14 @@ proc traiteajout-machine {dbfd _tabuid _ftab fspec} {
 #   2010/12/16 : pda      : add fspec parameter
 #
 
-proc traiteajout-multi {dbfd _tabuid _ftab fspec} {
+d cgi-register {action ajout-multi} {
+    {dosearch	0 1}
+    {domap	0 1}
+    {tri	0 1}
+    {plage	1 1}
+    {nbadr	1 1}
+} {
     global conf
-    upvar $_ftab ftab
-    upvar $_tabuid tabuid
 
     set login $tabuid(login)
     set idcor $tabuid(idcor)
@@ -537,8 +611,6 @@ proc traiteajout-multi {dbfd _tabuid _ftab fspec} {
     #
     # Validate form input
     #
-
-    ::webapp::import-vars ftab $fspec
 
     set lcidr [check-netid $dbfd $plage $idgrp "consult" {4} msg]
     if {[llength $lcidr] != 1} then {
@@ -657,22 +729,16 @@ proc traiteajout-multi {dbfd _tabuid _ftab fspec} {
 #   2010/12/16 : pda      : add fspec parameter
 #
 
-proc traiteajout-alias {dbfd _tabuid _ftab fspec} {
+d cgi-register {action ajout-alias} {
+    {nom	1 1}
+    {domaine	1 1}
+    {nomref	1 1}
+    {domaineref	1 1}
+} {
     global conf
-    upvar $_ftab ftab
-    upvar $_tabuid tabuid
 
     set login $tabuid(login)
     set idcor $tabuid(idcor)
-
-    #
-    # Validate form input
-    #
-
-    set nom           [string trim [lindex $ftab(nom) 0]]
-    set domaine       [string trim [lindex $ftab(domaine) 0]]
-    set nomref        [string trim [lindex $ftab(nomref) 0]]
-    set domaineref    [string trim [lindex $ftab(domaineref) 0]]
 
     #
     # Get dns update interval
@@ -754,33 +820,7 @@ proc traiteajout-alias {dbfd _tabuid _ftab fspec} {
 }
 
 ##############################################################################
-# Main procedure
+# Central dispatching
 ##############################################################################
 
-proc main {} {
-    global conf
-
-    #
-    # Initialization
-    #
-
-    ::dnscontext create d
-    d init-cgi "dns" "" $conf(form) ftab dbfd tabuid
-
-    #
-    # Validate action, read form values and call the appropriate function.
-    #
-
-    set action [string trim [lindex $ftab(action) 0]]
-
-    if {! [info exists conf(form-$action)]} then {
-	d error [mc "Invalid input '%s'" $action]
-    }
-    if {[llength [::webapp::get-data ftab $conf(form-$action)]] == 0} then {
-	d error [mc "Invalid input"]
-    }
-
-    traite$action $dbfd tabuid ftab $conf(form-$action)
-}
-
-::webapp::cgi-exec main $debug
+d cgi-dispatch "dns" ""

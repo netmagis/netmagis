@@ -90,7 +90,6 @@ proc main {} {
     # Initialization
     #
 
-    ::dnscontext create d
     d init-cgi "mac" "" {} ftab dbfd tabuid
 
     if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {

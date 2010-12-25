@@ -160,7 +160,6 @@ proc main {argv0 argv} {
     # Initialisation des accès
     #
 
-    ::dnscontext create d
     set msg [d init-script dbfd tabcor]
     if {$msg ne ""} then {
 	puts stderr "$msg"
