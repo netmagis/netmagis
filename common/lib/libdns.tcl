@@ -477,29 +477,29 @@ snit::type ::netmagis {
     variable links -array {
 	:dns		{
 			    {accueil always}
-			    {consulter always}
-			    {ajouter always}
-			    {supprimer always}
-			    {modifier always}
-			    {rolesmail always}
+			    {net always}
+			    {add always}
+			    {del always}
+			    {mod always}
+			    {mail always}
 			    {dhcprange always}
 			    {passwd always}
-			    {corresp always}
+			    {search always}
 			    {whereami always}
 			    {topotitle topo}
 			    {mactitle mac}
 			    {admtitle admin}
 			}
-	accueil		{accueil Welcome}
-	consulter	{consulter Consult}
-	ajouter		{add Add}
-	supprimer	{suppr Delete}
-	modifier	{modif Modify}
-	rolesmail	{mail {Mail roles}}
+	accueil		{index Welcome}
+	net		{net Consult}
+	add		{add Add}
+	del		{del Delete}
+	mod		{mod Modify}
+	mail		{mail {Mail roles}}
 	dhcprange	{dhcp {DHCP ranges}}
 	passwd		{%PASSWDURL% Password}
-	corresp		{corr Search}
-	whereami	{corresp?critere=_ {Where am I?}}
+	search		{search Search}
+	whereami	{search?crit=_ {Where am I?}}
 	topotitle	{eq Topology}
 	mactitle	{macindex Mac}
 	admtitle	{admin Admin}
@@ -521,7 +521,7 @@ snit::type ::netmagis {
 			    {consultmx always}
 			    {consultnet always}
 			    {listecorresp always}
-			    {corresp always}
+			    {search always}
 			    {modetabl always}
 			    {modcommu always}
 			    {modhinfo always}
@@ -548,7 +548,6 @@ snit::type ::netmagis {
 	consultmx	{consultmx {List MX}}
 	consultnet	{consultnet {List networks}}
 	listecorresp	{listecorresp {List users}}
-	corresp		{corresp {Search}}
 	modetabl	{admrefliste?type=etabl {Modify organizations}}
 	modcommu	{admrefliste?type=commu {Modify communities}}
 	modhinfo	{admrefliste?type=hinfo {Modify machine types}}
@@ -1268,23 +1267,32 @@ snit::type ::netmagis {
 	}
 
 	if {! $ok} then {
-	    $self error [mc "Cannot find CGI action"]
+	    $self error [mc "Cannot find registered CGI action"]
 	}
 
 	#
 	# Criterion ok
-	# Get form variables and import them into current context
+	# Get additional form variables and import them into current context
 	#
 
-	if {[llength [::webapp::get-data ftab $form]] == 0} then {
-	    set msg [mc "Invalid input"]
-	    if {%DEBUG%} then {
-		append msg "\n$ftab(_error)"
+	if {[llength $form] > 0} then {
+	    if {[llength [::webapp::get-data ftab $form]] == 0} then {
+		set msg [mc "Invalid input"]
+		if {$debug} then {
+		    append msg "\n$ftab(_error)"
+		}
+		$self error $msg
 	    }
-	    $self error $msg
 	}
 
-	::webapp::import-vars ftab $form
+	#
+	# Prepare variable import
+	#
+
+	foreach f [lsort -unique $critform] {
+	    lappend form [list $f 0 1]
+	}
+	set script "::webapp::import-vars ftab \$form ; $script"
 
 	#
 	# Execute script

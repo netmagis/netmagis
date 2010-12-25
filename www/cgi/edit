@@ -23,9 +23,9 @@ set conf(page)		edit.html
 # Next actions
 # 
 
-set conf(nextsuppr)	"traitesuppr"
-set conf(nextedit)	"editmodif"
-set conf(nextlist)	"liste"
+set conf(nextdel)	"del"
+set conf(nextmod)	"mod"
+set conf(nextlist)	"net"
 
 #
 # Script parameters
@@ -122,23 +122,23 @@ proc main {} {
     # Prepare next actions
     #
 
-    d urlset "%URLSUPPR%" $conf(nextsuppr) [list \
-						[list "action" "suppr-nom"] \
-						[list "confirm" "oui"] \
+    d urlset "%URLSUPPR%" $conf(nextdel) [list \
+						[list "action" "del-name"] \
+						[list "confirm" "yes"] \
 						[list "nom" $name] \
 						[list "domaine" $domain] \
 					    ]
     d urladdnext "%URLSUPPR%"
 
-    d urlset "%URLSUPPRIP%" $conf(nextsuppr) [list \
-						[list "action" "suppr-ip"] \
-						[list "confirm" "oui"] \
+    d urlset "%URLSUPPRIP%" $conf(nextdel) [list \
+						[list "action" "del-ip"] \
+						[list "confirm" "yes"] \
 						[list "adr" $addr] \
 					    ]
     d urladdnext "%URLSUPPRIP%"
 
-    d urlset "%URLEDIT%" $conf(nextedit) [list \
-						[list "action" "modif-infos"] \
+    d urlset "%URLEDIT%" $conf(nextmod) [list \
+						[list "action" "edit"] \
 						[list "nom" $name] \
 						[list "domaine" $domain] \
 					    ]

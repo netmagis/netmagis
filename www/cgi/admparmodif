@@ -24,7 +24,7 @@ set conf(page)		admvalide.html
 # Next actions
 # 
 
-set conf(nextaccueil)	"accueil"
+set conf(nextindex)	"index"
 set conf(nextadmin)	"admin"
 set conf(nextmodif)	"admparliste"
 
@@ -87,7 +87,7 @@ proc main {} {
 
     set ret [mc "return to application parameter modification"]
 
-    d urlset "%URL1%" $conf(nextaccueil) {}
+    d urlset "%URL1%" $conf(nextindex) {}
     d urlset "%URL2%" $conf(nextadmin) {}
     d urlset "%URL3%" $conf(nextmodif) {}
 

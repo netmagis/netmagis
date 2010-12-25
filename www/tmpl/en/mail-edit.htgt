@@ -1,0 +1,86 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {06/02/2004}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Mail role edition
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Edit mailbox host for %NOM%.%DOMAINE%}
+
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Mail role edition}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%URLFORM%">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="mod">
+		    <INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
+		    <INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \multicasetableau {2} {} {
+				Modify mailbox host for mail address
+				"%NOM%.%DOMAINE%", or delete it to
+				remove the role.
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Mailbox host}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nomh" SIZE="30" VALUE="%NOMH%">
+				.
+				%DOMAINEH%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Store">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+    }
+}
+
+}

@@ -1,0 +1,86 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {03/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Host edit
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modify %VNOM%.%VDOMAINE%}
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	<INPUT TYPE="HIDDEN" NAME="action" VALUE="store">
+	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="no">
+	<INPUT TYPE="HIDDEN" NAME="idrr" VALUE="%IDRR%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {RIGHT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {} {Name}
+		\multicasetableau {3} {} {%NOM%.%DOMAINE%}
+	    }
+	    \lignetableau {
+		\casetableau {} {MAC address}
+		\casetableau {} {%MAC%}
+		\casetableau {} {%DHCPPROFILLIBELLE%}
+		\casetableau {} {%DHCPPROFILMENU%}
+	    }
+	    \lignetableau {
+		\casetableau {} {Type}
+		\casetableau {} {%MENUHINFO%}
+		\casetableau {} {%DROITSMTPLIBELLE%}
+		\casetableau {} {%DROITSMTPMENU%}
+	    }
+	    \lignetableau {
+		\casetableau {} {Comment}
+		\multicasetableau {3} {} {%COMMENTAIRE%}
+	    }
+	    \lignetableau {
+		\casetableau {} {Responsible (name)}
+		\multicasetableau {3} {} {%RESPNOM%}
+	    }
+	    \lignetableau {
+		\casetableau {} {Responsible (mail)}
+		\multicasetableau {3} {} {%RESPMEL%}
+	    }
+	    \lignetableau {
+		\casetableau {} {%TTLLIBELLE%}
+		\multicasetableau {3} {} {%TTLVAL%}
+	    }
+	}
+	<INPUT TYPE="SUBMIT" VALUE="Modify">
+    </FORM>
+
+    Hint: to modify IP address for a host, you just need to
+    \lien {add a new address} {%URLADD%},
+    then to \lien {remove the old address} {%URLDEL%}.
+}
+
+}

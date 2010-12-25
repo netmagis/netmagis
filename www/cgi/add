@@ -3,7 +3,7 @@
 #
 # Store host modifications
 #
-# Called by: accueil
+# Called by: index
 #
 # Parameters (form or url):
 #   - display edit page
@@ -77,7 +77,7 @@ set conf(page-multi)	add-multi.html
 # 
 
 set conf(nextadd)	"add"
-set conf(nextmap)	"liste"
+set conf(nextmap)	"net"
 
 set conf(scriptmap)	"./liste"
 

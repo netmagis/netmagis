@@ -40,7 +40,7 @@ set conf(page)		admvalide.html
 # Next actions
 # 
 
-set conf(nextaccueil)	"accueil"
+set conf(nextindex)	"index"
 set conf(nextadmin)	"admin"
 set conf(nextmodif)	"admrefliste"
 
@@ -284,7 +284,7 @@ proc main {} {
     # End of script: output page and close database
     #
 
-    d urlset "%URL1%" $conf(nextaccueil) {}
+    d urlset "%URL1%" $conf(nextindex) {}
     d urlset "%URL2%" $conf(nextadmin) {}
     d urlset "%URL3%" $conf(nextmodif) [list [list "type" $type]]
 

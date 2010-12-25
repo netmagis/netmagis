@@ -7,7 +7,7 @@ SUBST		= $(TCLSH) \
 			$(DESTDIR)/bin/netmagis-config
 
 SCRIPTS 	= \
-		    accueil \
+		    index \
 		    admgenliste admgenset \
 		    admgrpedit admgrpmodif admgrpsel \
 		    admin \
@@ -16,37 +16,33 @@ SCRIPTS 	= \
 		    admrefhelp admrefliste admrefmodif \
 		    admreledit admrelmodif admrelsel \
 		    add \
-		    consulter \
 		    consultmx \
 		    consultnet \
-		    corresp \
-		    dhcp dhcpedit dhcpmodif \
+		    del \
+		    dhcp \
 		    droits \
 		    edit \
-		    editmodif \
 		    eq \
 		    graphe \
 		    ifchg \
 		    ipinact \
 		    l2 \
 		    l3 \
-		    liste \
 		    listecorresp \
 		    listemx \
 		    listenet \
 		    mac \
 		    macindex \
 		    macstat \
-		    mail mailheberg mailmodif \
+		    mail \
 		    metro \
-		    modif \
+		    mod \
+		    net \
+		    search \
 		    statcor \
 		    statetab \
-		    suppr \
 		    topotop \
-		    traiteifchg \
-		    traitemodif \
-		    traitesuppr
+		    traiteifchg
 
 all:
 	@echo ">>> Making all in `pwd`"

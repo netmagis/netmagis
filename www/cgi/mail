@@ -1,28 +1,86 @@
 #!%TCLSH%
 
 #
-# Display role management page
+# Mail roles
 #
-# Called by: accueil
+# Called by: index
 #
 # Parameters (form or url): none
+#   - display selection page
+#	- action : (empty)
+#   - list existing mail addresses
+#	- action : "list"
+#	- domaine : domain (last components of fqdn) of mail address
+#   - display mail host for a mail address
+#	- action : "edit"
+#	- nom : name (first component of fqdn) of mail address (or empty)
+#	- domaine : domain (last components of fqdn) of mail address
+#   - modify mail host for a mail address
+#	- action : "mod"
+#	- nom : name (first component of fqdn) of mail address
+#	- domaine : domain (last components of fqdn) of mail address
+#	- nomh : name (first component of fqdn) of mailbox host
+#	- domaineh : domain (last components of fqdn) of mailbox host
 #
 # History
 #   2004/02/06 : pda/jean : design
+#   2007/10/25 : jean     : log modify actions
 #   2010/12/13 : pda      : i18n
+#   2010/12/25 : pda      : use cgi-dispatch
 #
 
 #
 # Template pages used by this script
 #
 
-set conf(page)		mail.html
+set conf(page-sel)	mail-sel.html
+set conf(page-list)	mail-list.html
+set conf(page-edit)	mail-edit.html
+set conf(page-mod)	mail-mod.html
 
 #
 # Next actions
 # 
 
-set conf(next)		"mailheberg"
+set conf(next)		"mail"
+
+#
+# Tabular format
+# Columns :
+#	- mail address
+#	- mail host
+#
+
+set conf(tableau) {
+    global {
+	chars {12 normal}
+	columns {50 50}
+	botbar {yes}
+	align {left}
+    }
+    pattern Title {
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	align {center}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+    pattern Normal {
+	title {yes}
+	topbar {yes}
+	vbar {yes}
+	column {
+	    format {raw}
+	}
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+}
 
 #
 # Netmagis general library
@@ -33,17 +91,12 @@ source %LIBDNS%
 # ::webapp::cgidebug ; exit
 
 ##############################################################################
-# Main procedure
+# Display page to select a mail address or to list all mail roles
 ##############################################################################
 
-proc main {} {
+d cgi-register {action {}} {
+} {
     global conf
-
-    #
-    # Initialization
-    #
-
-    d init-cgi "dns" "" {} ftab dbfd tabuid
 
     #
     # Extract domains where user can declare "mail roles"
@@ -57,9 +110,356 @@ proc main {} {
     #
 
     d urlset "%URLFORM%" $conf(next) {}
-    d result $conf(page) [list \
+    d result $conf(page-sel) [list \
 				[list %DOMAINE% $domain] \
 			    ]
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# List mail roles
+##############################################################################
+
+d cgi-register {action list} {
+    {domaine	1 1}
+} {
+    global conf
+
+    set idcor $tabuid(idcor)
+
+    #
+    # Do we have permission for declaring mail roles in this domain?
+    #
+
+    set iddom -1
+    set msg [check-domain $dbfd $idcor iddom domaine "rolemail"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Get mail roles
+    #
+
+    set sql "
+	SELECT r1.nom AS namea, d1.nom AS domaina,
+		r2.nom AS nameh, d2.nom AS domainh
+	    FROM dns.role_mail, global.corresp,
+		dns.rr r1, dns.domaine d1, dns.rr r2, dns.domaine d2
+	    WHERE corresp.idcor = $idcor
+		AND role_mail.idrr = r1.idrr
+		AND r1.iddom = d1.iddom
+		AND d1.nom = '$domaine'
+		AND r1.iddom =
+			(SELECT dd1.iddom FROM dns.dr_dom dd1
+					WHERE dd1.idgrp = corresp.idgrp
+					    AND dd1.iddom = r1.iddom
+					    AND dd1.rolemail > 0
+			    )
+		AND role_mail.heberg = r2.idrr
+		AND r2.iddom = d2.iddom
+		AND r2.iddom =
+			(SELECT dd2.iddom FROM dns.dr_dom dd2
+					WHERE dd2.idgrp = corresp.idgrp
+					    AND dd2.iddom = r2.iddom
+			    )
+		AND r2.idrr IN
+			(SELECT r3.idrr FROM dns.rr_ip r3
+					WHERE valide_ip_cor(adr, $idcor)
+					    AND r3.idrr = r2.idrr
+			    )
+		AND r2.idrr NOT IN
+			(SELECT r4.idrr FROM dns.rr_ip r4
+					WHERE NOT valide_ip_cor(adr, $idcor)
+					    AND r4.idrr = r2.idrr
+			    )
+	    ORDER BY domaina ASC, namea ASC
+		"
+    set lroles {}
+    pg_select $dbfd $sql tab {
+	lappend lroles [list $tab(namea) $tab(domaina) $tab(nameh) $tab(domainh)]
+    }
+
+    if {[llength $lroles] == 0} then {
+	set tableau [mc "No mail role found for '%s'" $domaine]
+    } else {
+	set lines {}
+	lappend lines [list "Title" \
+				[mc "Mail address"]  \
+				[mc "Mailbox host"]  \
+			    ]
+	foreach q $lroles {
+	    # link "..../mail?action=edit&nom=...&domaine=.."
+	    lassign $q namea domaina nameh domainh
+
+	    # only "RFC compatible" characters, no need to quote
+	    d urlset "" $conf(next) [list \
+						[list "action" "edit"] \
+						[list "nom" $namea] \
+						[list "domaine" $domaina] \
+					]
+	    set url [d urlget ""]
+	    set html [::webapp::helem "a" "$namea.$domaina" "href" $url]
+
+	    lappend lines [list Normal $html "$nameh.$domainh"]
+	}
+	set tableau [::arrgen::output "html" $conf(tableau) $lines]
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-list) [list \
+				    [list %TABLEAU% $tableau] \
+				    [list %DOMAINE% $domaine] \
+				]
+}
+
+##############################################################################
+# Select mail host
+##############################################################################
+
+d cgi-register {action edit} {
+    {nom	1 1}
+    {domaine	1 1}
+} {
+    global conf
+
+    set idcor $tabuid(idcor)
+
+    #
+    # Do we have permission for declaring mail roles in this domain?
+    #
+
+    set iddom -1
+    set msg [check-domain $dbfd $idcor iddom domaine "rolemail"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    set nameh ""
+    set domh ""
+
+    #
+    # Check mail address syntax
+    #
+
+    set msg [check-name-syntax $nom]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Check permission to edit this mail address
+    #
+
+    set msg [check-role-mail $dbfd $idcor $nom $domaine trr trrh]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    set nameh $trrh(nom)
+    set domh $trrh(domaine)
+    set domainh [menu-domain $dbfd $idcor "domaineh" "" $domh]
+
+
+    d urlset "%URLFORM%" $conf(next) {}
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-edit) [list \
+				    [list %NOM%      $nom] \
+				    [list %DOMAINE%  $domaine] \
+				    [list %NOMH%     $nameh] \
+				    [list %DOMAINEH% $domainh] \
+				]
+}
+
+##############################################################################
+# Modify mail host
+##############################################################################
+
+d cgi-register {action mod} {
+    {nom	1 1}
+    {domaine	1 1}
+    {nomh	1 1}
+    {domaineh	1 1}
+} {
+    global conf
+
+    set idcor $tabuid(idcor)
+
+    set name    [string trim [lindex $ftab(nom) 0]]
+    set domain  [string trim [lindex $ftab(domaine) 0]]
+    set nameh   [string trim [lindex $ftab(nomh) 0]]
+    set domainh [string trim [lindex $ftab(domaineh) 0]]
+
+    set fqdn "$name.$domain"
+    set fqdnh "$nameh.$domainh"
+
+    #
+    # Check permission to declare a mail role and get informations on
+    # mailbox host.
+    #
+
+    set msg [check-role-mail $dbfd $idcor $name $domain trr oldtrrh]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    set rrexist [expr ! [string equal $trr(idrr) ""]]
+    set oldnameh $oldtrrh(nom)
+
+    #
+    # If nameh exists, check syntax, existence and permission of
+    # new mailbox host. In the opposite case, this is a deletion.
+    #
+
+    set msg [check-authorized-host $dbfd $idcor $nameh $domainh newtrrh "host"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # If nameh exists, mailbox host should exist
+    #
+
+    if {$nameh ne ""} then {
+	if {$newtrrh(idrr) eq ""} then {
+	    d error [mc "Mailbox host name '%s' not found" $fqdnh]
+	}
+    }
+
+    #
+    # Insert data in database
+    #
+    # SWITCH oldnameh AND nameh
+    #   empty     AND empty     => error
+    #	empty     AND non-empty => design
+    #	non-empty AND empty     => removal
+    #   non-empty AND non-empty => modification
+    #
+
+    d dblock {dns.rr dns.role_mail}
+
+    set emptyoldnameh [string equal $oldnameh ""]
+    set emptynewnameh [string equal $nameh ""]
+
+    set lm ""
+    switch "$emptyoldnameh-$emptynewnameh" {
+	1-1 {
+	    d error [mc "Mail role '%s' does not exist: you can't delete it" $fqdn]
+	}
+	1-0 {
+	    #
+	    # Role creation
+	    #
+	    set action [mc "created"]
+
+	    if {! $rrexist} then {
+		#
+		# Name of mail address does not exist. Add appropriate RR.
+		#
+		set msg [add-rr $dbfd $name $trr(iddom) "" 0 "" 0 -1 \
+						"" "" "" $idcor trr]
+		if {$msg ne ""} then {
+		    d dbabort [mc "add %s" $name] $msg
+		} 
+	    }
+
+	    #
+	    # Add mail role in database
+	    #
+
+	    set sql "INSERT INTO dns.role_mail (idrr, heberg)
+			    VALUES ($trr(idrr), $newtrrh(idrr))"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		d dbabort [mc "add %s" [mc "mail role"]] $msg
+	    }
+
+	    #
+	    # Assign a permission for mailbox host. This permission
+	    # is placed for the group.
+	    # XXX : this table is not used at this time
+	    #
+
+	    set sql "INSERT INTO dns.dr_mbox (idgrp, idmail)
+				VALUES ($tabuid(idgrp), $trr(idrr))"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		d dbabort [mc "add %s" [mc "mailbox permissions"]] $msg
+	    }
+
+	    set lm "add mail role $fqdn -> $fqdnh"
+	}
+	0-1 {
+	    #
+	    # Mail role removal. We know that mail role was existing
+	    # (thus, trr(idrr) is not empty).
+	    #
+
+	    set action [mc "deleted"]
+
+	    set idrr $trr(idrr)
+
+	    set sql "DELETE FROM dns.dr_mbox WHERE idmail = $idrr ;
+		    DELETE FROM dns.role_mail WHERE idrr = $idrr"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		d dbabort [mc "delete %s" [mc "mail role"]] $msg
+	    }
+
+	    #
+	    # RR removal (if possible)
+	    #
+	    set msg [del-orphaned-rr $dbfd $idrr]
+	    if {$msg ne ""} then {
+		d dbabort [mc "delete %s" [mc "RR"]] $msg
+	    }
+
+	    set lm "delete mail role $fqdn"
+	}
+	0-0 {
+	    #
+	    # Mail role modification. We know that mail role was
+	    # existing (thus, trr(idrr) is not empty). We just
+	    # change mailbox host.
+	    #
+
+	    set action [mc "modified"]
+
+	    set idrr $trr(idrr)
+
+	    set sql "UPDATE role_mail
+				SET heberg = $newtrrh(idrr)
+				WHERE idrr = $idrr"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		d dbabort [mc "modify %s" [mc "mail role"]] $msg
+	    }
+	    set lm "modify mail role $fqdn -> $fqdnh"
+	}
+    }
+
+    #
+    # We did not had any error while modifying database.
+    # Finish transaction.
+    #
+
+    d dbcommit [mc "modify %s" [mc "mail role"]]
+    d writelog "modmailrole" $lm
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-mod) [list \
+				[list %NOM% $fqdn] \
+				[list %ACTION% $action] \
+			    ]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "dns" ""

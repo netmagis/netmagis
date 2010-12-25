@@ -1,0 +1,43 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {06/02/2004}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Search users
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Search users associated with a host}
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	Name (with domain) or IP address:
+	    <INPUT TYPE="TEXT" NAME="crit" SIZE="49" VALUE="%CRITERE%">
+	    <INPUT TYPE="SUBMIT" VALUE="Search">
+    </FORM>
+
+    <HR>
+
+    %RESULTAT%
+}
+
+}

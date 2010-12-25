@@ -1,0 +1,89 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {16/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Welcome
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {DNS management}
+
+    Welcome in Netmagis application. This application allows you to
+    manage DNS information.
+
+    \titre {2} {Introduction}
+
+    This application interactively manages hosts (names and IP
+    addresses) on your network. These informations are stored in a
+    database, and are periodically propagated to DNS servers.
+
+    You may use classical operations:
+
+    \liste {
+	\item {add hosts or aliases}
+	\item {change informations associated with a host}
+	\item {delete hosts or aliases}
+    }
+
+    Additionnal informations are associated to each host:
+
+    \liste {
+	\item {host type: use it!}
+	\item {comment: this is a zone for you, don't hesitate
+	    to use it}
+	\item {responsible: the responsible person (user or
+	    sysadmin) for this host}
+    }
+
+    Feel free to use this database to manage your hosts.  In case
+    of suggestions for improvement, contact \lien {application
+    authors} {http://netmagis.u-strasbg.fr}.
+
+    \titre {2} {Available actions}
+
+    You may:
+    \liste {
+	\item {\lien {consult informations}		{%URLCONSULTER%}}
+	\item {\lien {add a host or an alias}		{%URLADD%}}
+	\item {\lien {modify informations about a host}	{%URLMOD%}}
+	\item {\lien {delete a host}			{%URLDEL%}}
+	\item {\lien {check my access rights}		{%URLDROITS%}}
+	\item {\lien {modify my password}		{%PASSWDURL%}}
+	\item {\lien {manage mail roles}		{%URLMAIL%}}
+	\* \item {\lien {manage web roles}		{%URLWEB%}}
+	\item {\lien {manage DHCP dynamic ranges}	{%URLDHCP%}}
+	\item {\lien {search for a user}		{%URLCORRESP%}}
+ 	\item {\lien {locate my current IP address}	{%URLOUSUISJE%}}
+    }
+
+    Check the links menu at the left for a complete list of available
+    actions.
+
+    \titre {2} {Other operations}
+
+    If you have any questions, or other more specific needs,
+    please \lien {contact us} {http://netmagis.u-strasbg.fr}.
+}
+
+}

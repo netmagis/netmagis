@@ -191,6 +191,7 @@
  {User '%s' is not in the authentication base} {L'utilisateur '%s' n'est pas dans la base d'authentification}
  {Found more than one entry for login '%s' in the authentication base} {Plus d'une entrée trouvée pour le login '%s' dans la base d'authentification}
  {User '%s' is not in the Netmagis base} {L'utilisateur '%s' n'est pas dans la base de Netmagis}
+ {Cannot find registered CGI action} {Aucune action CGI trouvée}
  {Invalid input} {Données invalides}
  {Invalid input '%s'} {Données invalides '%s'}
  {Cannot lock table(s) %1$s: %2$s} {Verrouillage impossible pour la/les table(s) %1$s : %2$s}

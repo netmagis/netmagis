@@ -1,0 +1,113 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {11/04/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Sélection d'une machine à supprimer
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application Netmagis
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Suppression de machine dans le DNS}
+
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Suppression d'une machine}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%URLFORM%">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="del-name">
+		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="no">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Nom à supprimer}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				.
+				%DOMAINE%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Valider">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Suppression d'une adresse IP}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%URLFORM%">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
+		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="no">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Adresse à supprimer}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="adr" SIZE="45">
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Valider">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+    }
+}
+
+}

@@ -1,34 +1,47 @@
 #!%TCLSH%
 
 #
-# Ask for network where DHCP parameters should be edited.
+# DHCP parameters
 #
-# Called by: accueil
+# Called by: index
 #
 # Parameters (form or url): none
+#   - initial page
+#	- action : (empty)
+#   - display network DHCP parameters
+#	- action : "select"
+#	- idreseau : selected network id
+#   - modify network DHCP parameters
+#	- action : "edit"
+#	- idreseau : selected network id
+#	- iddhcprange* : parameters
+#	- min* : parameters
+#	- max* : parameters
+#	- iddom* : parameters
+#	- defaut_lease_time* : parameters
+#	- max_lease_time* : parameters
 #
 # History
 #   2004/10/05 : pda/jean : design
+#   2006/05/04 : jean     : remove default values from spec
+#   2007/10/25 : jean     : log modify actions
 #   2010/12/10 : pda      : i18n
+#   2010/12/25 : pda      : use cgi-dispatch
 #
 
 #
 # Template pages used by this script
 #
 
-set conf(page)		dhcpsel.html
+set conf(page-sel)	dhcp-sel.html
+set conf(page-edit)	dhcp-edit.html
+set conf(page-mod)	dhcp-mod.html
 
 #
 # Next actions
 # 
 
-set conf(next)		"dhcpedit"
-
-#
-# Script parameters
-#
-
-set conf(script-edit)	"./dhcpedit"
+set conf(next)		"dhcp"
 
 #
 # Netmagis general library
@@ -39,17 +52,370 @@ source %LIBDNS%
 # ::webapp::cgidebug ; exit
 
 ##############################################################################
-# Main procedure
+# Utility function
 ##############################################################################
 
-proc main {} {
+proc output-edit {dbfd netid _tabuid} {
+    upvar $_tabuid tabuid
     global conf
 
+    set idgrp $tabuid(idgrp)
+
     #
-    # Initialization
+    # Check network
     #
 
-    d init-cgi "dns" "" {} ftab dbfd tabuid
+    set lcidr [check-netid $dbfd $netid $idgrp "dhcp" 4 msg]
+    if {[llength $lcidr] == 0} then {
+	d error $msg
+    }
+    if {[llength $lcidr] != 1} then {
+	d error [mc "Internal error: too many CIDR found"]
+    }
+
+    #
+    # Prepare tabular data
+    #
+
+    set cwidth {25 25 20 10 10 10}
+    set ctitle [list \
+			[list "text" [mc "Min"]] \
+			[list "text" [mc "Max"]] \
+			[list "text" [mc "Domain"]] \
+			[list "text" [mc "Default lease duration"]] \
+			[list "text" [mc "Maximum lease duration"]] \
+			[list "text" [mc "DHCP profile"]] \
+		    ]
+
+    set menudom {}
+    set sql "SELECT d.iddom, d.nom FROM dns.domaine d, dns.dr_dom dr
+			WHERE d.iddom = dr.iddom
+				AND dr.idgrp = $idgrp
+			ORDER BY dr.tri ASC, d.nom ASC"
+    pg_select $dbfd $sql tab {
+	lappend menudom [list $tab(iddom) $tab(nom)]
+    }
+
+    set menudhcp {}
+    set sql "	(SELECT 0 AS iddhcpprofil, 'Aucun profil' AS nom)
+		UNION
+		(SELECT p.iddhcpprofil AS iddhcpprofil, p.nom AS nom
+		    FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p, global.corresp c
+		    WHERE c.idcor = $tabuid(idcor)
+			AND dr.idgrp = c.idgrp
+			AND dr.iddhcpprofil = p.iddhcpprofil
+		    ORDER BY dr.tri ASC)
+		ORDER BY nom"
+    pg_select $dbfd $sql tab {
+	lappend menudhcp [list $tab(iddhcpprofil) $tab(nom)]
+    }
+
+    set spec {
+	    {min		{string 15}	{}}
+	    {max		{string 15}	{}}
+	    {iddom		{menu {%MENUDOM%}}	{}}
+	    {default_lease_time	{string 10}	0}
+	    {max_lease_time	{string 10}	0}
+	    {iddhcpprofil	{menu {%MENUDHCP%}}	0}
+	}
+    regsub -- "%MENUDOM%" $spec "$menudom" spec
+    regsub -- "%MENUDHCP%" $spec "$menudhcp" spec
+    set sql "SELECT * FROM dns.dhcprange
+			WHERE min <<= '$lcidr'
+			    AND max <<= '$lcidr'
+			    AND valide_dhcprange_grp ($idgrp, min, max)
+			ORDER BY min"
+    set id iddhcprange
+
+    set msg [display-tabular $cwidth $ctitle $spec $dbfd $sql $id tableau]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+    d result $conf(page-edit) [list \
+				[list %IDRESEAU% $netid] \
+				[list %RESEAU% $lcidr] \
+				[list %TABLEAU% $tableau] \
+			    ]
+}
+
+##############################################################################
+# Utility functions
+##############################################################################
+
+#
+# Check overlap between two IP ranges
+#
+# Input:
+#   - dbfd : database handle
+#   - min1, max1, min2, max2 : bounds of the two ranges
+# Output:
+#   - return value: 1 if overlap, 0 if no overlap
+# History
+#   2004/10/08 : pda/jean : design
+#
+
+proc overlap {dbfd min1 max1 min2 max2} {
+    # On suppose que min1 <= max1 et min2 <= max2
+    set sql "SELECT
+		(
+		    (inet '$max2') >= (inet '$min1')
+		    AND
+		    (inet '$max2') <= (inet '$max1')
+		)
+		OR
+		(
+		    (inet '$min2') >= (inet '$min1')
+		    AND
+		    (inet '$min2') <= (inet '$max1')
+		)
+		AS result"
+    set r 0
+    pg_select $dbfd $sql tab {
+	if {$tab(result) eq "t"} then {
+	    set r 1
+	}
+    }
+    return $r
+}
+
+#
+# Check various DHCP ranges
+#
+# Input:
+#   - dbfd : database handle
+#   - _ftab : input values
+#   - idcor : user id
+#   - idgrp : group id
+#   - cidr : cidr of current network
+# Output:
+#   - return value: empty string or error message
+# History
+#   2004/10/08 : pda/jean : design
+#   2004/10/13 : pda/jean : add minimum lease duration
+#
+
+proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
+    upvar $_ftab ftab
+
+    #
+    # Get minimum lease duration
+    #
+
+    set min_lease_time [dnsconfig get "min_lease_time"]
+
+    #
+    # Extract list of existing ranges as they were given in the form.
+    #
+
+    set lid [array names ftab -regexp "^min\[0-9\]+$"]
+    regsub -all "min" $lid "" lid
+    set lid [lsort -integer -increasing $lid]
+
+    #
+    # Get new ranges as they were given in the form.
+    #
+
+    set lnid {}
+    foreach i [array names ftab -regexp "^minn\[0-9\]+$"] {
+	if {[string trim [lindex $ftab($i) 0]] ne ""} then {
+	    lappend lnid $i
+	}
+    }
+    regsub -all "minn" $lnid "" lnid
+    set lnid [lsort -integer -increasing $lnid]
+    regsub -all {[[:<:]]} $lnid "n" lnid
+   
+    # 
+    # Build-up the list of all ids
+    # 
+
+    set lid [concat $lid $lnid]
+
+    #
+    # Extract the list of all existing DHCP ranges for this network
+    #
+
+    set sql "SELECT iddhcprange, min, max
+			FROM dns.dhcprange
+			WHERE min <<= '$cidr' AND max <<= '$cidr'"
+    pg_select $dbfd $sql tab {
+	set tabrange($tab(iddhcprange)) [list $tab(min) $tab(max)]
+    }
+
+    #
+    # Check each range
+    #
+
+    foreach i $lid {
+	switch -glob $i {
+	    n*		{ set new 1 }
+	    default	{ set new 0 }
+	}
+
+	foreach c {min max iddom default_lease_time max_lease_time iddhcpprofil} {
+	    if {! [info exists ftab($c$i)]} then {
+		return [mc "Invalid input"]
+	    }
+	}
+
+	set iddom		[string trim [lindex $ftab(iddom$i) 0]]
+	set min			[string trim [lindex $ftab(min$i) 0]]
+	set max			[string trim [lindex $ftab(max$i) 0]]
+	set default_lease_time	[string trim [lindex $ftab(default_lease_time$i) 0]]
+	set max_lease_time	[string trim [lindex $ftab(max_lease_time$i) 0]]
+	set iddhcpprofil	[string trim [lindex $ftab(iddhcpprofil$i) 0]]
+
+	#
+	# Special case: when DHCP profile equals 0 (No profile)
+	# we must replace its value by an empty string.
+	#
+
+	if {$iddhcpprofil == 0} {
+	    set ftab(iddhcpprofil$i) [lreplace $ftab(iddhcpprofil$i) 0 0 ""]
+	}
+
+	#
+	# Check that user has the right to modify this range
+	#
+
+	if {! $new} then {
+	    if {! [info exists tabrange($i)]} then {
+		return [mc "You don't have access to DHCP range id '%s'" $i]
+	    }
+	}
+	set tabrange($i) [list $min $max]
+
+	if {$min eq ""} then {
+	    unset tabrange($i)
+	} else {
+	    #
+	    # Check domain permission
+	    #
+
+	    set domain ""
+	    set msg [check-domain $dbfd $idcor iddom domain ""]
+	    if {$msg ne ""} then {
+		d error $msg
+	    }
+
+	    #
+	    # Check DHCP profile
+	    #
+
+	    if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
+		return $msg
+	    }
+
+	    #
+	    # Check parameter syntax
+	    #
+
+	    set msg [check-ip-syntax $dbfd $min "inet4"]
+	    if {$msg ne ""} then {
+		return $msg
+	    }
+	    set msg [check-ip-syntax $dbfd $max "inet4"]
+	    if {$msg ne ""} then {
+		return $msg
+	    }
+
+	    if {[catch {expr $default_lease_time+0}]} then {
+		return [mc "Invalid default_lease_time value '%s'" $default_lease_time]
+	    } elseif {$default_lease_time != 0 &&
+				$default_lease_time < $min_lease_time} then {
+		return [mc "Default_lease_time value less than '%s'" $min_lease_time]
+	    }
+
+	    if {[catch {expr $max_lease_time+0}]} then {
+		return [mc "Invalid max_lease_time value '%s'" $default_lease_time]
+	    } elseif {$max_lease_time != 0 &&
+				$max_lease_time < $min_lease_time} then {
+		return [mc "Max_lease_time value less than '%s'" $min_lease_time]
+	    }
+
+	    #
+	    # Check that min < max
+	    #
+
+	    set sql "SELECT (inet '$min') <= (inet '$max') AS resultat"
+	    pg_select $dbfd $sql tab {
+		if {$tab(resultat) eq "f"} then {
+		    set x $min
+		    set min $max
+		    set max $x
+		}
+	    }
+
+	    #
+	    # Check if range do not overlap over a non authorized IP
+	    # address.
+	    #
+
+	    set sql "SELECT valide_dhcprange_grp ($idgrp,'$min','$max') AS val"
+	    pg_select $dbfd $sql tab {
+		if {$tab(val) eq "f"} then {
+		    return [mc {Range [%s] not authorized} "$min...$max"]
+		}
+	    }
+
+	    #
+	    # Check that there is no static DHCP host (i.e. with a
+	    # MAC address stored in the RR) in the range.
+	    #
+
+	    set sql "SELECT count(*) AS nb
+			    FROM dns.rr, dns.rr_ip
+			    WHERE rr.mac IS NOT NULL
+				AND rr.idrr = rr_ip.idrr
+				AND rr_ip.adr >= '$min'
+				AND rr_ip.adr <= '$max'"
+	    pg_select $dbfd $sql tab {
+		set nb $tab(nb)
+	    }
+	    if {$nb > 0} then {
+		return [mc {Conflict between dynamic range [%1$s] and %2$s IP address(es) declared with a MAC address} "$min...$max" $nb]
+	    }
+	}
+    }
+
+    #
+    # Check that no DHCP range overlap.
+    #
+
+    foreach i [array names tabrange] {
+	lassign $tabrange($i) min max
+	unset tabrange($i)
+
+	foreach j [array names tabrange] {
+	    lassign $tabrange($j) jmin jmax
+	    if {[overlap $dbfd $min $max $jmin $jmax]} then {
+		set i1 "$min...$max"
+		set i2 "$jmin...$jmax"
+		return [mc {Range [%1$s] intersects with range [%2$s]} $i1 $i2]
+	    }
+	}
+    }
+
+    #
+    # We arrive here without any error. Great!
+    #
+
+    return ""
+}
+
+##############################################################################
+# Display network selection page
+##############################################################################
+
+d cgi-register {action {}} {
+} {
+    global conf
 
     #
     # Get networks
@@ -62,19 +428,105 @@ proc main {} {
 	    d error [mc "You don't have access to any DHCP enabled network"]
 	}
 	1 {
-	    set idnet [lindex [lindex $lnet 0] 0]
-	    set ftab(idreseau) [list $idnet]
-	    puts stdout [::webapp::call-cgi $conf(script-edit) ftab]
-	    d end
+	    # no need to select a network if there is only one available
+	    set netid [lindex [lindex $lnet 0] 0]
+	    output-edit $dbfd $netid tabuid
 	}
 	default {
 	    set menureseau [::webapp::form-menu "idreseau" 1 0 $lnet {}]
 	    d urlset "%URLFORM%" $conf(next) {}
-	    d result $conf(page) [list \
+	    d result $conf(page-sel) [list \
 					[list %MENURESEAU% $menureseau] \
 				    ]
 	}
     }
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Display network edition page
+##############################################################################
+
+d cgi-register {action select} {
+    {idreseau	1 1}
+} {
+    global conf
+
+    output-edit $dbfd $idreseau tabuid
+}
+
+##############################################################################
+# Modify network DHCP parameters
+##############################################################################
+
+d cgi-register {action edit} {
+    {idreseau	1 1}
+
+    {min[0-9]+			0 9999}
+    {max[0-9]+			0 9999}
+    {iddom[0-9]+		0 9999}
+    {default_lease_time[0-9]+	0 9999}
+    {max_lease_time[0-9]+	0 9999}
+    {iddhcpprofil[0-9]+		0 9999}
+
+    {minn[0-9]+			1 9999}
+    {maxn[0-9]+			1 9999}
+    {iddomn[0-9]+		1 9999}
+    {default_lease_timen[0-9]+	1 9999}
+    {max_lease_timen[0-9]+	1 9999}
+    {iddhcpprofiln[0-9]+	1 9999}
+} {
+    global conf
+
+    #
+    # Check network
+    #
+
+    set netid [string trim [lindex $ftab(idreseau) 0]]
+    set lcidr [check-netid $dbfd $netid $tabuid(idgrp) "dhcp" 4 msg]
+    if {[llength $lcidr] == 0} then {
+	d error $msg
+    }
+    if {[llength $lcidr] != 1} then {
+	d error [mc "Internal error: too many CIDR found"]
+    }
+
+    #
+    # Check data such as there is no range overlap, and each
+    # range be in the network and authorized IP addresses.
+    #
+
+    set msg [check-dhcprange $dbfd ftab $tabuid(idcor) $tabuid(idgrp) $lcidr]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Store modifications in database
+    #
+
+    set spec {
+	{min}
+	{max}
+	{iddom}
+	{default_lease_time}
+	{max_lease_time}
+	{iddhcpprofil}
+    }
+
+    store-tabular $dbfd $spec iddhcprange dns.dhcprange ftab
+    d writelog "moddhcp" "modified dhcp ranges: [join $lcidr {, }]"
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-mod) [list \
+				[list %RESEAU% $lcidr] \
+			    ]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "dns" ""

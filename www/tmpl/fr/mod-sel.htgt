@@ -1,0 +1,77 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {11/04/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Sélection d'une machine à modifier
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application Netmagis
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modification de machine dans le DNS}
+
+    \tableau {
+	\bordure {0} {}
+	\taille {100}
+    } {
+	\casedefauttableau {\centragehorizontal {LEFT}}
+    } {
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
+	    } {\gras {Modification des informations d'une machine}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%URLFORM%">
+		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="edit">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Nom}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				.
+				%DOMAINE%
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Valider">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+    }
+}
+
+}
