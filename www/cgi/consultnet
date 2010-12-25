@@ -45,7 +45,6 @@ proc main {} {
     # Initialization
     #
 
-    ::dnscontext create d
     d init-cgi "dns" "" {} ftab dbfd tabuid
 
     #

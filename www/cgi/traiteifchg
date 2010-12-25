@@ -60,7 +60,6 @@ proc main {} {
     # Initialization
     #
 
-    ::dnscontext create d
     d init-cgi "topo" "" $conf(form) ftab dbfd tabuid
     ::webapp::import-vars ftab $conf(form)
 

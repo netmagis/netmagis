@@ -112,7 +112,6 @@ proc main {} {
     # Initialization
     #
 
-    ::dnscontext create d
     d init-cgi "admin" "admin" $conf(form) ftab dbfd tabuid
 
     set domain [string trim [lindex $ftab(domaine) 0]]

@@ -67,7 +67,6 @@ proc main {} {
     # Initialization
     #
 
-    ::dnscontext create d
     d init-cgi "topo" "" $conf(form) ftab dbfd tabuid
 
     set msgsta [topo-status $dbfd $tabuid(admin)]
