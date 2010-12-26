@@ -14,13 +14,14 @@
 #   2002/07/09 : pda      : add nologin
 #   2003/05/13 : pda/jean : use auth base
 #   2010/12/06 : pda      : i18n
+#   2010/12/26 : pda      : use cgi-dispatch
 #
 
 #
 # Template pages used by this script
 #
 
-set conf(page)		admin.html
+set conf(page)		admindex.html
 
 #
 # Netmagis general library
@@ -34,29 +35,23 @@ source %LIBDNS%
 # Main procedure
 ##############################################################################
 
-proc main {} {
+d cgi-register {} {} {
     global conf
-
-    #
-    # Initialization
-    #
-
-    d init-cgi "admin" "admin" {} ftab dbfd tabuid
 
     #
     # URL and substitution list building
     #
 
-    foreach script {consultmx statcor statetab consultnet listecorresp
-			corresp admrelsel admmxsel admgrpsel
-			admgenliste admparliste topotop} {
+    foreach script {admlmx statuser statorg lnet lusers search
+			admmrel admmx admgrp admzgen admpar topotop} {
 	set up [string toupper $script]
 	d urlset "%URL$up%" "$script" {}
     }
-    foreach ref {etabl commu hinfo reseau domaine zone zone4 zone6 dhcpprofil vlan eq eqtype} {
+    foreach ref {etabl commu hinfo reseau domaine zone zone4 zone6 dhcpprofil
+			vlan eq eqtype} {
 	set up [string toupper $ref]
 	set args [list [list "type" $ref]]
-	d urlset "%URLREF$up%" "admrefliste" $args
+	d urlset "%URLREF$up%" "admref" $args
     }
 
     #
@@ -66,4 +61,8 @@ proc main {} {
     d result $conf(page) {}
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "admin" "admin"

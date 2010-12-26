@@ -1,0 +1,277 @@
+#!%TCLSH%
+
+#
+# Application parameters
+#
+# Called by: admindex
+#
+# Parameters (form or url):
+#   - display edit page
+#   - display help page
+#
+# History
+#   2003/12/08 : pda      : design from sos code
+#   2004/10/13 : pda      : add DHCP parameters
+#   2007/10/25 : jean     : log modify actions
+#   2010/10/25 : pda      : put parameters into library
+#   2010/12/09 : pda      : i18n
+#   2010/12/18 : pda      : type menu
+#   2010/12/26 : pda      : use cgi-dispatch
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(page-edit)	admpar-edit.html
+set conf(page-help)	admpar-help.html
+set conf(page-mod)	adm-mod.html
+
+#
+# Next actions
+# 
+
+set conf(next)		"admpar"
+set conf(nextindex)	"index"
+set conf(nextadmindex)	"admindex"
+
+
+#
+# Tabular specification
+#
+
+set conf(tableau) {
+    global {
+	chars {10 normal}
+	columns {50 50}
+    }
+    pattern {Normal1} {
+	vbar {no}
+	column {
+	    multicolumn {2}
+	    color {909090}
+	    align {center}
+	    botbar {no}
+	}
+	vbar {no}
+    }
+    pattern {Normal2} {
+	vbar {no}
+	column {
+	    align {right}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+	column {
+	    align {left}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+    }
+    pattern {Buttons} {
+	vbar {no}
+	column {
+	    multicolumn {2}
+	    color {10C090}
+	    align {center}
+	    botbar {no}
+	    format {raw}
+	}
+	vbar {no}
+    }
+}
+
+
+#
+# Netmagis general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Display edit page
+##############################################################################
+
+d cgi-register {action {}} {
+} {
+    global conf
+
+    #
+    # Present data in a tabular form
+    #
+
+    d urlset "" $conf(next) {{action help}}
+    set url [d urlget ""]
+    append url {#%1$s}
+    set urlhelp [::webapp::helem "a" {%2$s} "href" $url]
+
+    set lines {}
+
+    foreach class [dnsconfig class] {
+	lappend lines [list Normal1 [dnsconfig desc $class]]
+
+	foreach key [dnsconfig keys $class] {
+
+	    set type   [dnsconfig keytype $key]
+	    set desc   [dnsconfig desc $key]
+	    set curval [dnsconfig get $key]
+
+	    switch -- [lindex $type 0] {
+		bool {
+		    set html [::webapp::form-yesno $key $curval {%1$sOui %2$sNon}]
+		}
+		string {
+		    set html [::webapp::form-text $key 1 60 0 $curval]
+		}
+		text {
+		    set html [::webapp::form-text $key 20 70 0 $curval]
+		}
+		menu {
+		    set idx 0
+		    set lsel {}
+		    set lmenu {}
+		    foreach mi [lindex $type 1] {
+			lassign mi val txt
+			set txt [mc $txt]
+			lappend lmenu [list $val $txt]
+			if {$val eq $curval} then {
+			    set lsel [list $idx]
+			}
+			incr idx
+		    }
+		    set html [::webapp::form-menu $key 1 0 $lmenu $lsel]
+		}
+		default {
+		    set msg [mc "Internal error: invalid key type '%s'" $key] \
+		    set html [::webapp::helem "font" $msg "color" "#ff0000"]
+		}
+	    }
+
+	    set help [format $urlhelp $key $desc]
+	    lappend lines [list Normal2 $help $html]
+	}
+    }
+
+    set b [::webapp::form-submit "" [mc "Submit"]]
+    append b [::webapp::form-reset  "" [mc "Reset"]]
+    lappend lines [list "Buttons" $b]
+
+    set tab [::arrgen::output "html" $conf(tableau) $lines]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+
+    d result $conf(page-edit) [list \
+				[list %TAB% $tab] \
+			    ]
+}
+
+##############################################################################
+# Display help page
+##############################################################################
+
+d cgi-register {action help} {
+} {
+    global conf
+
+    #
+    # Get data in the form
+    #
+
+    set html {}
+
+    foreach class [dnsconfig class] {
+	append html [::webapp::helem "h3" [dnsconfig desc $class]]
+	append html "\n"
+
+	foreach key [dnsconfig keys $class] {
+
+	    set desc [dnsconfig desc $key]
+	    set help [dnsconfig keyhelp $key]
+
+	    append html [::webapp::helem "h4" \
+				[::webapp::helem "a" $desc "name" $key]]
+
+	    append html "\n"
+	    append html [::webapp::helem "p" $help]
+	    append html "\n"
+			
+	}
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-help) [list \
+				[list %TEXTE% $html] \
+			    ]
+}
+
+##############################################################################
+# Store modifications
+##############################################################################
+
+d cgi-register {action mod} {
+} {
+    global conf
+
+    #
+    # Creation of a form variable specification from configuration keys
+    #
+
+    set form {}
+    foreach key [dnsconfig keys] {
+	lappend form [list $key 1 1]
+    }
+    if {[llength [::webapp::get-data ftab $form]] == 0} then {
+	d error [mc "Invalid input"]
+    }
+
+    #
+    # Store new values
+    #
+
+    d dblock {global.config}
+
+    set lm {}
+    foreach key [dnsconfig keys] {
+	set val [lindex $ftab($key) 0]
+	set msg [dnsconfig set $key $val]
+	if {$msg eq ""} then {
+	    lappend lm "$key ($val)"
+	} else {
+	    dbabort [mc "modify %s" $key] $msg
+	}
+    }
+
+    d dbcommit [mc "modify %s" [mc "parameters"]]
+    d writelog "admparmod" "modify parameters: [join $lm ,]"
+
+    #
+    # End of script: output page and close database
+    #
+
+    set ret [mc "return to application parameter modification"]
+
+    d urlset "%URL1%" $conf(nextindex) {}
+    d urlset "%URL2%" $conf(nextadmindex) {}
+    d urlset "%URL3%" $conf(next) {}
+
+    d result $conf(page-mod) [list \
+				[list %RETURN% $ret] \
+			    ]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "admin" "admin"

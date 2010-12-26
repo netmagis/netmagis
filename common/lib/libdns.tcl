@@ -488,7 +488,7 @@ snit::type ::netmagis {
 			    {whereami always}
 			    {topotitle topo}
 			    {mactitle mac}
-			    {admtitle admindex}
+			    {admtitle admin}
 			}
 	index		{index Welcome}
 	net		{net Consult}
@@ -518,16 +518,17 @@ snit::type ::netmagis {
 	dnstitle	{index DNS/DHCP}
 	:admin		{
 			    {admtitle always}
-			    {consultmx always}
-			    {consultnet always}
-			    {listecorresp always}
+			    {admlmx always}
+			    {lnet always}
+			    {lusers always}
 			    {search always}
 			    {modetabl always}
 			    {modcommu always}
 			    {modhinfo always}
 			    {modreseau always}
 			    {moddomaine always}
-			    {admrelsel always}
+			    {admmrel always}
+			    {admmx always}
 			    {modzone always}
 			    {modzone4 always}
 			    {modzone6 always}
@@ -535,37 +536,38 @@ snit::type ::netmagis {
 			    {modvlan always}
 			    {modeqtype always}
 			    {modeq always}
-			    {admgrpsel always}
-			    {admgenliste always}
-			    {admparliste always}
-			    {statcor always}
-			    {statetab always}
+			    {admgrp always}
+			    {admzgen always}
+			    {admpar always}
+			    {statuser always}
+			    {statorg always}
 			    {topotop topo}
 			    {dnstitle dns}
 			    {topotitle topo}
 			    {mactitle mac}
 			}
-	consultmx	{consultmx {List MX}}
-	consultnet	{consultnet {List networks}}
-	listecorresp	{listecorresp {List users}}
-	modetabl	{admrefliste?type=etabl {Modify organizations}}
-	modcommu	{admrefliste?type=commu {Modify communities}}
-	modhinfo	{admrefliste?type=hinfo {Modify machine types}}
-	modreseau	{admrefliste?type=reseau {Modify networks}}
-	moddomaine	{admrefliste?type=domaine {Modify domains}}
-	admrelsel	{admrelsel {Modify mailhost}}
-	modzone		{admrefliste?type=zone {Modify zones}}
-	modzone4	{admrefliste?type=zone4 {Modify reverse IPv4 zones}}
-	modzone6	{admrefliste?type=zone6 {Modify reverse IPv6 zones}}
-	moddhcpprofil	{admrefliste?type=dhcpprofil {Modify DHCP profiles}}
-	modvlan		{admrefliste?type=vlan {Modify Vlans}}
-	modeqtype	{admrefliste?type=eqtype {Modify equipment types}}
-	modeq		{admrefliste?type=eq {Modify equipments}}
-	admgrpsel	{admgrpsel {Modify users and groups}}
-	admgenliste	{admgenliste {Force zone generation}}
-	admparliste	{admparliste {Application parameters}}
-	statcor		{statcor {Statistics by user}}
-	statetab	{statetab {Statistics by organization}}
+	admlmx		{admlmx {List MX}}
+	lnet		{lnet {List networks}}
+	lusers		{lusers {List users}}
+	modetabl	{admref?type=etabl {Modify organizations}}
+	modcommu	{admref?type=commu {Modify communities}}
+	modhinfo	{admref?type=hinfo {Modify machine types}}
+	modreseau	{admref?type=reseau {Modify networks}}
+	moddomaine	{admref?type=domaine {Modify domains}}
+	admmrel		{admmrel {Modify mailhost}}
+	admmx		{admmx {Modify MX}}
+	modzone		{admref?type=zone {Modify zones}}
+	modzone4	{admref?type=zone4 {Modify reverse IPv4 zones}}
+	modzone6	{admref?type=zone6 {Modify reverse IPv6 zones}}
+	moddhcpprofil	{admref?type=dhcpprofil {Modify DHCP profiles}}
+	modvlan		{admref?type=vlan {Modify Vlans}}
+	modeqtype	{admref?type=eqtype {Modify equipment types}}
+	modeq		{admref?type=eq {Modify equipments}}
+	admgrp		{admgrp {Modify users and groups}}
+	admzgen		{admzgen {Force zone generation}}
+	admpar		{admpar {Application parameters}}
+	statuser	{statuser {Statistics by user}}
+	statorg		{statorg {Statistics by organization}}
 	topotop		{topotop {Topod status}}
 	:mac		{
 			    {macindex always}

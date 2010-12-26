@@ -14,6 +14,7 @@
 # History
 #   2010/11/15 : pda      : design
 #   2010/12/13 : pda      : i18n
+#   2010/12/26 : pda      : use cgi-dispatch (minimal modification)
 #
 
 #
@@ -27,18 +28,11 @@ set conf(page)		topotop.html
 # 
 
 set conf(next)		"topotop"
-set conf(nextpar)	"admparliste"
+set conf(nextpar)	"admpar"
 
 #
 # Script parameters
 #
-
-set conf(form) {
-   	 {refresh	0 1}
-   	 {nrefresh	0 1}
-	 {key		0 1}
-	 {arg		0 1}
-}
 
 # maximum number of lines in "processed equipement" cell
 set conf(maxeq)		10
@@ -100,27 +94,17 @@ set conf(tabeqmod) {
 	format {cooked}
     }
     pattern Title {
+	chars {bold}
+	align {center}
 	topbar {yes}
 	vbar {yes}
-	column {
-	    chars {bold}
-	    align {center}
-	}
+	column { }
 	vbar {yes}
-	column {
-	    chars {bold}
-	    align {center}
-	}
+	column { }
 	vbar {yes}
-	column {
-	    chars {bold}
-	    align {center}
-	}
+	column { }
 	vbar {yes}
-	column {
-	    chars {bold}
-	    align {center}
-	}
+	column { }
 	vbar {yes}
     }
     pattern Normal4 {
@@ -678,18 +662,16 @@ proc topotop-keepstate {dbfd datefmt arg} {
 }
 
 ##############################################################################
-# Main procedure
+# Display topo*d dashboard 
 ##############################################################################
 
-proc main {} {
+d cgi-register {} {
+     {refresh	0 1}
+     {nrefresh	0 1}
+     {key	0 1}
+     {arg	0 1}
+} {
     global conf
-
-    #
-    # Initialization
-    #
-
-    d init-cgi "admin" "admin" $conf(form) ftab dbfd tabuid
-    ::webapp::import-vars ftab $conf(form)
 
     # nrefresh (text field given by the user) has priority over refresh
     # value supplied in URL. Thus, the new URL will use nrefresh.
@@ -751,4 +733,8 @@ proc main {} {
 			    ]
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "admin" "admin"

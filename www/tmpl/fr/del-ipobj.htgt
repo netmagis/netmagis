@@ -41,8 +41,6 @@
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
 	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
 	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
-	<INPUT TYPE="HIDDEN" NAME="nextprog" VALUE="%NEXTPROG%">
-	<INPUT TYPE="HIDDEN" NAME="nextargs" VALUE="%NEXTARGS%">
 	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
     </FORM>
 }

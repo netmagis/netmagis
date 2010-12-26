@@ -2,11 +2,11 @@
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {23/04/2002}
+\set {date}   {23/05/2002}
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - IP address removal confirmation
+    Netmagis - Zone generation
 }
 
 \*******************************************************************************
@@ -27,22 +27,18 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Removal confirmation}
+    \titre {1} {Zone generation}
 
-    You asked for IP address '%ADR%' removal. This address is part
-    of object:
+    Select zones which must be re-generated:
 
-    %MACHINE%
+    \retrait {
+	<FORM METHOD="POST" ACTION="%URLFORM%">
+	    <input type="hidden" name="action" value="set">
+	    %ZONES%
 
-    \gras {Do you really want to remove this IP address (without
-	removing other informations)?}
-
-    <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
-	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
-	<INPUT TYPE="SUBMIT" VALUE="I confirm">
-    </FORM>
+	    <INPUT TYPE="SUBMIT" VALUE="Synchronize">
+	</FORM>
+    }
 }
 
 }

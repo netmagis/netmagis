@@ -9,6 +9,7 @@
 #			    remove SQL joints, 2 requests and tcl processing
 #   2010/11/30 : pda/jean : integration a Netmagis
 #   2010/12/12 : pda      : i18n
+#   2010/12/26 : pda      : use cgi-dispatch
 #
 
 #
@@ -27,8 +28,6 @@ set conf(next)		"mac"
 #
 # Script parameters
 #
-
-set conf(cmdhost)	"/usr/bin/host"
 
 set conf(tabsession) {
     global {
@@ -202,12 +201,6 @@ set conf(tabmenuportmac) {
 #
 # Script parameters
 #
-
-set conf(dbmac)          %BASEMAC%
-
-set conf(form)          {
-    {recherche    0 1}
-}
 
 set conf(sqldateformat) {'DD/MM/YYYY HH24:MI:SS'}
 set conf(clockformat)   {%d/%m/%Y %H:%M:%S}
@@ -829,8 +822,7 @@ proc resolve {type arg} {
     global conf
     global dnscache
 
-    if { !([regexp {^[a-z0-9\-.]+$} $arg] ||
-	   [regexp {^([0-9.]+|[0-9a-f:.]+)$} $arg]) } {
+    if {! ([regexp {^[a-z0-9\-.]+$} $arg] || [regexp {^([0-9.]+|[0-9a-f:.]+)$} $arg])} then {
 	return {}
     }
 
@@ -851,7 +843,8 @@ proc resolve {type arg} {
     # Extract "host" command result
     #
 
-    if { [catch {set buf [exec $conf(cmdhost) $arg]} msg]} then {
+    set hostcmd [get-local-conf "hostcmd"]
+    if {[catch {set buf [exec $conf(cmdhost) $arg]} msg]} then {
 	set buf ""
     }
 
@@ -870,65 +863,68 @@ proc resolve {type arg} {
 }
 
 ##############################################################################
-# Main procedure
+# Display page
 ##############################################################################
 
-proc main {} {
+d cgi-register {recherche {}} {} {
     global conf
 
     #
-    # Initialization
+    # End of script: output page and close database
     #
 
-    d init-cgi "mac" "" $conf(form) ftab dbfd tabuid
+    d urlset "%URLFORM%" $conf(next) {}
+    d result $conf(pagesearch) {}
+}
 
-    if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {
+##############################################################################
+# Search
+##############################################################################
+
+d cgi-register {recherche .+} {} {
+    global conf
+
+    #
+    # Open MAC database
+    #
+
+    set conninfo [get-conninfo "macdb"]
+    if {[catch {set dbfdmac [pg_connect -conninfo $conninfo]} msg]} then {
         d error $msg
     }
 
     #
-    # Argument analysis
+    # Guess search type
     #
 
-    set recherche [string tolower [string trim [lindex $ftab(recherche) 0]]]
+    set recherche [string tolower $recherche]
+    set l [guess-type $dbfdmac $recherche msg]
+    if {[llength $l] == 0} then {
+	d error $msg
+    } 
+    lassign $l type param
 
-    if {$recherche eq ""} then {
-	#
-	# End of script: output page and close database
-	#
+    #
+    # Display output
+    #
 
-	d urlset "%URLFORM%" $conf(next) {}
-	d result $conf(pagesearch) {}
-    } else {
-	#
-	# Guess search type
-	#
-
-	set l [guess-type $dbfdmac $recherche msg]
-	if {[llength $l] == 0} then {
-	    d error $msg
-	} 
-	lassign $l type param
-
-	#
-	# Display output
-	#
-
-	set tableau [html-result $dbfdmac $type $param]
-
-	if {$tableau eq ""} then {
-	    set tableau [mc "No information found"]
-	}
-
-	#
-	# End of script: output page and close database
-	#
-
-	d result $conf(page) [list \
-				    [list %RECHERCHE% [display-crit $dbfdmac $type $param]] \
-				    [list %TABLEAU%   $tableau] \
-				]
+    set tableau [html-result $dbfdmac $type $param]
+    if {$tableau eq ""} then {
+	set tableau [mc "No information found"]
     }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page) [list \
+				[list %RECHERCHE% [display-crit $dbfdmac $type $param]] \
+				[list %TABLEAU%   $tableau] \
+			    ]
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "mac" "droitmac"

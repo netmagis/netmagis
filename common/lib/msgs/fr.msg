@@ -35,6 +35,7 @@
  {Modify networks} {Modif réseaux}
  {Modify domains} {Modif domaines}
  {Modify mailhost} {Modif relais de messagerie}
+ {Modify MX} {Modif MX}
  {Modify zones} {Modif zones normales}
  {Modify reverse IPv4 zones} {Modif zones IPv4}
  {Modify reverse IPv6 zones} {Modif zones IPv6}
@@ -314,7 +315,7 @@
  {yes}		{oui}
  {no}		{non}
  {Netmagis administration} {Administration de Netmagis}
- {SMTP authorizations management} {Gestion des émetteurs SMTP}
+ {SMTP authorization management} {Gestion des émetteurs SMTP}
  {TTL management} {Gestion du TTL}
  {MAC module access} {Accès au module MAC}
  {Error on group permissions} {Erreur sur les droits du groupe}

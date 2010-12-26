@@ -2,11 +2,11 @@
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {23/04/2002}
+\set {date}   {24/04/2003}
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Confirmation de suppression d'adresse IP
+    Netmagis - Sélection du domaine
 }
 
 \*******************************************************************************
@@ -27,20 +27,14 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Confirmation de suppression}
+    \titre {1} {Modification des MX}
 
-    Vous avez demandé à supprimer l'adresse IP '%ADR%' de l'objet~:
-
-    %MACHINE%
-
-    \gras {Voulez-vous vraiment supprimer cette adresse IP (sans supprimer
-    les autres informations)~?}
+    Entrez le MX à modifier~:
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
-	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
-	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
+	<input type="hidden" name="action" value="edit">
+	<INPUT TYPE="TEXT" NAME="nom" SIZE=30 MAXLENGTH=60> .  %DOMAINE%
+	<INPUT TYPE="SUBMIT" VALUE="Sélectionner">
     </FORM>
 }
 

@@ -7,6 +7,7 @@
 #   2005/05/27 : jean     : design
 #   2010/11/30 : pda/jean : integration a Netmagis
 #   2010/12/12 : pda      : i18n
+#   2010/12/26 : pda      : use cgi-dispatch
 #
 
 #
@@ -19,11 +20,9 @@ set conf(page)          macstat.html
 # Script parameters
 #
 
-set conf(dbmac)          %BASEMAC%
-
 set conf(tabresultat) {
     global {
-        chars {12 normal}
+        chars {10 normal}
         align {left}
         botbar {yes}
         columns {75 25}
@@ -79,21 +78,20 @@ proc stat-addr {dbfd} {
     return [::arrgen::output "html" $conf(tabresultat) $lines]
 }
 
-#
-# Main procedure
-#
+###############################################################################
+# Display statistics
+###############################################################################
 
-proc main {} {
+d cgi-register {} {} {
     global conf
 
     #
-    # Initialization
+    # Open MAC database
     #
 
-    d init-cgi "mac" "" {} ftab dbfd tabuid
-
-    if {[catch {set dbfdmac [pg_connect -conninfo $conf(dbmac)]} msg]} then {
-        ::webapp::error-exit $conf(err) $msg
+    set conninfo [get-conninfo "macdb"]
+    if {[catch {set dbfdmac [pg_connect -conninfo $conninfo]} msg]} then {
+        d error $msg
     }
 
     #
@@ -112,4 +110,8 @@ proc main {} {
                             ]
 }
 
-::webapp::cgi-exec main
+###############################################################################
+# Main procedure
+###############################################################################
+
+d cgi-dispatch "mac" "droitmac"

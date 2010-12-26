@@ -1,0 +1,336 @@
+#!%TCLSH%
+
+#
+# Modification of mail relays
+#
+# Called by: admindex
+#
+# Parameters (form or url):
+#   - display domain selection page
+#	- action : empty
+#   - display edit page
+#	- action : "edit"
+#	- domaine : domain name to edit
+#   - store MX modifications
+#	- action : "mod"
+#	- domaine : domain name to modify
+#	- priorite* : MX priority for this domain
+#	- nom* : MX name for this domain
+#	- domaine* : MX domain for this domain
+#
+# History
+#   2004/03/04 : pda/jean : design
+#   2007/10/25 : jean     : log modify actions
+#   2010/12/09 : pda      : i18n
+#   2010/12/26 : pda      : use cgi-dispatch
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(page-sel)	admmrel-sel.html
+set conf(page-edit)	admmrel-edit.html
+set conf(page-mod)	admmrel-mod.html
+
+#
+# Next actions
+# 
+
+set conf(next)		"admmrel"
+
+#
+# Script parameters
+#
+
+set conf(tableau) {
+    global {
+	chars {12 normal}
+	columns {20 80}
+	botbar {yes}
+	align {left}
+    }
+    pattern Title {
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+    pattern Normal {
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+}
+
+#
+# Netmagis general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+
+##############################################################################
+# Utilities
+##############################################################################
+
+#
+# Insert a list of mail relays in the database
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- iddom : domain id
+#	- lrel : list of relays
+# Output:
+#   - return value: empty string or error message
+#
+# History
+#   2004/03/04 : pda/jean : copy from MX function
+#
+
+proc insert-relay {dbfd iddom lrel} {
+    foreach rel $lrel {
+	lassign $rel prio idmx
+	set sql "INSERT INTO dns.relais_dom (iddom, priorite, mx)
+				    VALUES ($iddom, $prio, $idmx)"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    return [mc "Relay insertion failed: %s" $msg]
+	}
+    }
+    return ""
+}
+
+##############################################################################
+# Display domain selection page
+##############################################################################
+
+d cgi-register {action {}} {
+} {
+    global conf
+
+    #
+    # Get domains authorized for the user
+    #
+
+    set w "dr_dom.rolemail <> 0"
+    set domain [menu-domain $dbfd $tabuid(idcor) "domaine" $w ""]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+    d result $conf(page-sel) [list \
+				[list %DOMAINE% $domain] \
+			    ]
+}
+
+##############################################################################
+# Display domain edit page
+##############################################################################
+
+d cgi-register {action edit} {
+    {domaine	1 1}
+} {
+    global conf
+
+    set idcor $tabuid(idcor)
+    set domain [lindex $ftab(domaine) 0]
+
+    #
+    # Check domain
+    #
+
+    set iddom -1
+    set msg [check-domain-relay $dbfd $tabuid(idcor) iddom $domain]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Display existing relay information
+    #
+
+    set width {10 50 40}
+    set titles [list \
+			[list "text" [mc "Priority"]] \
+			[list "text" [mc "Name"]] \
+			[list "text" [mc "Domain"]] \
+		    ]
+    set menudom [couple-domains $dbfd $tabuid(idcor) ""]
+    set spec [list \
+		{priorite {string 5}  {}} \
+		{nom      {string 30} {}} \
+		[list domaine [list menu $menudom] {}] \
+	    ]
+    set sql "SELECT rd.mx, rd.priorite, r.nom, d.nom AS domaine
+		FROM dns.relais_dom rd, dns.rr r, dns.domaine d
+		WHERE rd.iddom = $iddom
+			AND r.iddom = d.iddom
+			AND rd.mx = r.idrr
+		ORDER BY rd.priorite, d.nom, r.nom
+		"
+    set idnum "mx"
+
+    set msg [display-tabular $width $titles $spec $dbfd $sql $idnum tableau]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+    d result $conf(page-edit) [list \
+				[list %TABLEAU% $tableau] \
+				[list %DOMAINE% $domain] \
+			    ]
+}
+
+##############################################################################
+# Store modifications
+##############################################################################
+
+d cgi-register {action mod} {
+    {domaine		1 1}
+
+    {priorite[0-9]+	0 9999}
+    {nom[0-9]+		0 9999}
+    {domaine[0-9]+	0 9999}
+
+    {prioriten[0-9]+	0 9999}
+    {nomn[0-9]+		0 9999}
+    {domainen[0-9]+	0 9999}
+} {
+    global conf
+
+    #
+    # Initialization
+    #
+
+    set domain [string trim [lindex $ftab(domaine) 0]]
+
+    #
+    # Check domain
+    #
+
+    set iddom -1
+    set msg [check-domain-relay $dbfd $tabuid(idcor) iddom $domain]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Traverse list of form variables and build a list:
+    #		{{prio idmx} ... }
+    # where :
+    #  - prio = numeric priority
+    #  - idmx = id of an existing RR
+    #
+
+    set lrel {}
+    foreach c [array names ftab] {
+	if {[regexp {^priorite(n?)([0-9]+)$} $c bidon n idmx]} then {
+	    set idxprio priorite$n$idmx
+	    set idxnom  nom$n$idmx
+	    set idxdom  domaine$n$idmx
+	    if {[info exists ftab($idxprio)] && \
+			    [info exists ftab($idxnom)] && \
+			    [info exists ftab($idxdom)] \
+		    } then {
+		set fprio [string trim [lindex $ftab($idxprio) 0]]
+		set fname [string trim [lindex $ftab($idxnom)  0]]
+		set fdom  [string trim [lindex $ftab($idxdom)  0]]
+		if {$fprio ne ""} then {
+		    set mx [check-mx-target $dbfd $fprio $fname $fdom $tabuid(idcor) msg]
+		    if {$msg ne ""} then {
+			d error $msg
+		    }
+		    if {[info exists tmx([lindex $mx 1])]} then {
+			d error [mc "'%s' specified more than once" "$fname.$fdom"]
+		    }
+		    lappend lrel $mx
+		}
+	    } else {
+		d error [mc "Invalid form values (%s)" "$idxprio, $idxnom, $idxdom"]
+	    }
+	}
+    }
+
+    #
+    # Start transaction
+    #
+
+    d dblock {}
+
+    #
+    # First, delete all previous relays
+    #
+
+    set sql "DELETE FROM dns.relais_dom WHERE iddom = $iddom"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	d dbabort [mc "delete %s" [mc "old mail relays"]] $msg
+    }
+
+    #
+    # Insert relay RRs
+    #
+
+    set msg [insert-relay $dbfd $iddom $lrel]
+    if {$msg ne ""} then {
+	d dbabort [mc "add %s" [mc "new mail relays"]] $msg
+    }
+
+    #
+    # Unlock and commit modifications
+    #
+
+    d dbcommit [mc "modify %s" [mc "mail relays"]]
+
+    #
+    # Present informations stored in database
+    #
+
+    set lm {}
+    if {[llength $lrel] > 0} then {
+	set lines {}
+	lappend lines [list "Title" [mc "Priority"] [mc "Name"]]
+	foreach mx $lrel {
+	    lassign $mx prio idmx
+	    read-rr-by-id $dbfd $idmx tabmx
+	    set n "$tabmx(nom).$tabmx(domaine)"
+	    lappend lines [list Normal $prio $n]
+	    lappend lm $n
+	}
+	set tableau [::arrgen::output "html" $conf(tableau) $lines]
+	d writelog "modrelay" "relay replacement for $domain: [join $lm {, }]"
+    } else {
+	set tableau [mc "Mail relays deleted"]
+	d writelog "modrelay" "relay deleted for $domain"
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-mod) [list \
+				[list %TABLEAU% $tableau] \
+				[list %DOMAINE% $domain] \
+			    ]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "admin" "admin"

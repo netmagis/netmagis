@@ -38,7 +38,7 @@
 # Template pages used by this script
 #
 
-set conf(page)		del.html
+set conf(page)		del-sel.html
 set conf(page-name)	del-name.html
 set conf(page-alias)	del-alias.html
 set conf(page-oneip)	del-ip1.html
@@ -52,18 +52,7 @@ set conf(page-ok)	del-ok.html
 set conf(next)		"del"
 set conf(nextmap)	"net"
 set conf(nextlist)	"net"
-
-#
-# Script parameters
-#
-
-# field used to determine next step
-set conf(form)		{
-	{action		1 1}
-}
-
-set conf(form-suppr-ip)	{
-}
+set conf(nextipinact)	"ipinact"
 
 #
 # Netmagis general library
@@ -380,6 +369,9 @@ d cgi-register {action del-ip} {
 	list {
 	    d urlset "%URLSUITE%" $conf(nextlist) [list {dolist {yes}} [d nextargs]]
 	}
+	ipinact {
+	    d urlset "%URLSUITE%" $conf(nextipinact) [list [d nextargs]]
+	}
 	default {
 	    d urlset "%URLSUITE%" $conf(next) {}
 	}
@@ -389,12 +381,15 @@ d cgi-register {action del-ip} {
     # Prepare page display
     #
 
+    d urlset "%URLFORM%" $conf(next) {}
+
     switch -- "confirm=$confirm-lastadr=$lastadr" {
 	confirm=no-lastadr=no {
 	    #
 	    # Ask for confirmation to remove one of the IP addresses
 	    # 
 	    set page $conf(page-oneip)
+	    d urladdnext "%URLFORM%"
 	}
 	confirm=no-lastadr=yes {
 	    #
@@ -402,6 +397,7 @@ d cgi-register {action del-ip} {
 	    # of the whole object.
 	    # 
 	    set page $conf(page-obj)
+	    d urladdnext "%URLFORM%"
 	}
 	confirm=yes-lastadr=no {
 	    #
@@ -421,8 +417,6 @@ d cgi-register {action del-ip} {
 	    d error [mc "Internal error: impossible case '%s'" "confirm=$confirm, lastadr=$lastadr"]
 	}
     }
-
-    d urlset "%URLFORM%" $conf(next) {}
 
     d result $page [list \
 			[list %NOM%         $nom] \

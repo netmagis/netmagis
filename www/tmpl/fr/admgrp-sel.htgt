@@ -2,11 +2,11 @@
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {23/04/2002}
+\set {date}   {09/10/2007}
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Confirmation de suppression d'adresse IP
+    Netmagis - Sélection d'un groupe
 }
 
 \*******************************************************************************
@@ -27,20 +27,12 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Confirmation de suppression}
-
-    Vous avez demandé à supprimer l'adresse IP '%ADR%' de l'objet~:
-
-    %MACHINE%
-
-    \gras {Voulez-vous vraiment supprimer cette adresse IP (sans supprimer
-    les autres informations)~?}
+    \titre {1} {Modification des groupes et des correspondants}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
-	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
-	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
+	<input type="hidden" name="action" value="edit">
+	Sélectionnez le groupe à modifier~: %MENUORGGRP%
+	<INPUT TYPE="SUBMIT" VALUE="Ok">
     </FORM>
 }
 

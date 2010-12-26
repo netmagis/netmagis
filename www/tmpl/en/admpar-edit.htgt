@@ -1,12 +1,12 @@
 {
 \modele {texte}
 
-\set {auteur} {pda/jean}
-\set {date}   {23/04/2002}
+\set {auteur} {pda}
+\set {date}   {21/03/2001}
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - IP address removal confirmation
+    Netmagis - Application parameters edition
 }
 
 \*******************************************************************************
@@ -27,21 +27,11 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Removal confirmation}
-
-    You asked for IP address '%ADR%' removal. This address is part
-    of object:
-
-    %MACHINE%
-
-    \gras {Do you really want to remove this IP address (without
-	removing other informations)?}
+    \titre {1} {Application parameters edition}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
-	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
-	<INPUT TYPE="SUBMIT" VALUE="I confirm">
+	<input type="hidden" name="action" value="mod">
+	%TAB%
     </FORM>
 }
 

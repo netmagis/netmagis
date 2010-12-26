@@ -2,11 +2,11 @@
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {23/04/2002}
+\set {date}   {04/03/2004}
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - IP address removal confirmation
+    Netmagis - Domain selection
 }
 
 \*******************************************************************************
@@ -27,21 +27,26 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Removal confirmation}
+    \titre {1} {Modify mail relays}
 
-    You asked for IP address '%ADR%' removal. This address is part
-    of object:
+    If you use "mail roles", you must specify the host(s) which will
+    route mails for a domain. These mail relays:
 
-    %MACHINE%
+    \liste {
+	\item {are designated MX for mail roles of this domain (they
+	    receive mail for defined roles)
+	}
+	\item {must route mails to designated hosts (mailbox hosts
+	    in role terminology)
+	}
+    }
 
-    \gras {Do you really want to remove this IP address (without
-	removing other informations)?}
+    Select the domain for which you want to change relays:
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
-	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
-	<INPUT TYPE="SUBMIT" VALUE="I confirm">
+	<input type="hidden" name="action" value="edit">
+	Domaine~: %DOMAINE%
+	<INPUT TYPE="SUBMIT" VALUE="Select">
     </FORM>
 }
 

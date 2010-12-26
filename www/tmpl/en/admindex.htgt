@@ -32,12 +32,12 @@
     \titre {2} {Data viewing}
 
     \liste {
-	\item {List \lien {MX} {%URLCONSULTMX%}}
-	\item {List \lien {networks} {%URLCONSULTNET%}}
-	\item {List \lien {users} {%URLLISTECORRESP%}}
-	\item {Search for a \lien {user} {%URLCORRESP%} from a name or address}
-	\item {Consult \lien {statistics by user} {%URLSTATCOR%}}
-	\item {Consult \lien {statistics by organization} {%URLSTATETAB%} [Slow !]}
+	\item {List \lien {MX} {%URLADMLMX%}}
+	\item {List \lien {networks} {%URLLNET%}}
+	\item {List \lien {users} {%URLLUSERS%}}
+	\item {Search for a \lien {user} {%URLSEARCH%} from a name or address}
+	\item {Consult \lien {statistics by user} {%URLSTATUSER%}}
+	\item {Consult \lien {statistics by organization} {%URLSTATORG%} [Slow !]}
 	\item {Consult \lien {topo daemons dashboard} {%URLTOPOTOP%}}
     }
 
@@ -49,28 +49,28 @@
 	\item {Modify \lien {host types} {%URLREFHINFO%}}
 	\item {Modify \lien {networks} {%URLREFRESEAU%}}
 	\item {Modify \lien {domains} {%URLREFDOMAINE%}}
-	\item {Modify \lien {mail relays}{%URLADMRELSEL%} d'un domaine}
+	\item {Modify \lien {mail relays}{%URLADMMREL%} d'un domaine}
 	\item {Modify \lien {zones} {%URLREFZONE%}}
 	\item {Modify \lien {reverse IPv4 zones} {%URLREFZONE4%}}
 	\item {Modify \lien {reverse IPv6 zones} {%URLREFZONE6%}}
-	\item {Modify \lien {MX} {%URLADMMXSEL%}}
+	\item {Modify \lien {MX} {%URLADMMX%}}
 	\item {Modify \lien {DHCP profiles} {%URLREFDHCPPROFIL%}}
 	\item {Modify \lien {Vlans} {%URLREFVLAN%}}
 	\item {Modify \lien {equipment types} {%URLREFEQTYPE%}}
 	\item {Modify \lien {equipments} {%URLREFEQ%}}
-	\item {Modify \lien {groups and users} {%URLADMGRPSEL%}}
+	\item {Modify \lien {groups and users} {%URLADMGRP%}}
     }
 
     \titre {2} {Actions}
 
     \liste {
-	\item {Force \lien {zone generation} {%URLADMGENLISTE%}}
+	\item {Force \lien {zone generation} {%URLADMZGEN%}}
     }
 
     \titre {2} {Application administration}
 
     \liste {
-	\item {Modify \lien {application parameters} {%URLADMPARLISTE%}}
+	\item {Modify \lien {application parameters} {%URLADMPAR%}}
     }
 }
 

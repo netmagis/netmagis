@@ -8,39 +8,22 @@ SUBST		= $(TCLSH) \
 
 SCRIPTS 	= \
 		    index \
-		    admgenliste admgenset \
-		    admgrpedit admgrpmodif admgrpsel \
 		    admindex \
-		    admmxedit admmxmodif admmxsel \
-		    admparhelp admparliste admparmodif \
-		    admrefhelp admrefliste admrefmodif \
-		    admreledit admrelmodif admrelsel \
-		    add \
-		    consultmx \
-		    consultnet \
-		    del \
+		    admgrp \
+		    admmrel admmx \
+		    admpar admref \
+		    admzgen \
+		    admlmx \
+		    add del mod edit \
 		    dhcp \
-		    edit \
-		    eq \
-		    graph \
-		    ifchg \
-		    ipinact \
-		    l2 \
-		    l3 \
-		    listecorresp \
-		    listemx \
-		    listenet \
-		    mac \
-		    macindex \
-		    macstat \
+		    eq l2 l3 metro graph ifchg \
+		    lusers \
+		    lnet \
+		    macindex mac macstat ipinact \
 		    mail \
-		    metro \
-		    mod \
 		    net \
-		    perm \
-		    search \
-		    statcor \
-		    statetab \
+		    perm search \
+		    statuser statorg \
 		    topotop
 
 all:

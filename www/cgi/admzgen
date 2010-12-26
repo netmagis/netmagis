@@ -1,0 +1,117 @@
+#!%TCLSH%
+
+#
+# Force generation of one or more DNS zones
+#
+# Called by: index
+#
+# Parameters (form or url):
+#   - display zone list:
+#	- action : (empty)
+#   - force generation:
+#	- action : "set"
+#	- zones : list of zone names
+#
+# History
+#   2002/05/23 : pda/jean : design
+#   2002/07/09 : pda      : add nologin
+#   2003/05/13 : pda/jean : use auth base
+#   2007/10/25 : jean     : log modify actions
+#   2010/12/06 : pda      : i18n
+#   2010/12/26 : pda      : use cgi-dispatch
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(page-sel)	admzgen-sel.html
+set conf(page-mod)	admzgen-mod.html
+
+#
+# Next actions
+# 
+
+set conf(next)		"admzgen"
+
+#
+# Netmagis general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Display zone generation selection
+##############################################################################
+
+d cgi-register {action {}} {} {
+    global conf
+
+    #
+    # Get zone list
+    #
+
+    set lz [::pgsql::getcols $dbfd dns.zone "" "domaine ASC" {domaine domaine}]
+    set h [llength $lz]
+    set zones [::webapp::form-menu zones $h 1 $lz {}]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next) {}
+    d result $conf(page-sel) [list \
+				[list %ZONES% $zones] \
+			    ]
+}
+
+##############################################################################
+# Force zone generation
+##############################################################################
+
+d cgi-register {action set} {
+    {zones	0 9999}
+} {
+    global conf
+
+    #
+    # Force generation
+    #
+
+    d dblock {dns.zone}
+
+    foreach z $ftab(zones) {
+	set qz [::pgsql::quote $z]
+	set sql "UPDATE zone SET generer = 1 WHERE domaine = '$qz'"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    set op [mc "force generation for zone %s" $z]
+	    d dbabort $op $msg
+	}
+    }
+    set op [mc "force generation for zone %s"  [join $ftab(zones) " "]]
+    d dbcommit $op
+
+    d writelog "forcezgen" "zones $ftab(zones)"
+
+    #
+    # Get dns update interval
+    #
+
+    set interval [dnsconfig get "dnsupdateperiod"]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-mod) [list \
+				[list %INTERVAL% $interval] \
+				]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "admin" "admin"

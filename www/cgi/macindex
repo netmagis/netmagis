@@ -10,6 +10,7 @@
 # History
 #   2010/11/30 : pda/jean : design
 #   2010/12/12 : pda      : i18n
+#   2010/12/26 : pda      : use cgi-dispatch
 #
 
 #
@@ -27,17 +28,11 @@ source %LIBDNS%
 # ::webapp::cgidebug ; exit
 
 ##############################################################################
-# Main procedure
+# Display MAC module index
 ##############################################################################
 
-proc main {} {
+d cgi-register {} {} {
     global conf
-
-    #
-    # Initialization
-    #
-
-    d init-cgi "mac" "droitmac" {} ftab dbfd tabuid
 
     #
     # Build URLs
@@ -55,4 +50,8 @@ proc main {} {
     d result $conf(page) {}
 }
 
-::webapp::cgi-exec main $debug
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "mac" "droitmac"
