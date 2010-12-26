@@ -74,7 +74,6 @@ set conf(tableau) {
 	vbar {no}
 	column {
 	    multicolumn {2}
-	    color {10C090}
 	    align {center}
 	    botbar {no}
 	    format {raw}
@@ -135,7 +134,7 @@ d cgi-register {action {}} {
 		    set lsel {}
 		    set lmenu {}
 		    foreach mi [lindex $type 1] {
-			lassign mi val txt
+			lassign $mi val txt
 			set txt [mc $txt]
 			lappend lmenu [list $val $txt]
 			if {$val eq $curval} then {
@@ -158,6 +157,7 @@ d cgi-register {action {}} {
 
     set b [::webapp::form-submit "" [mc "Submit"]]
     append b [::webapp::form-reset  "" [mc "Reset"]]
+    set b [::webapp::helem "div" $b "id" "buttons"]
     lappend lines [list "Buttons" $b]
 
     set tab [::arrgen::output "html" $conf(tableau) $lines]
