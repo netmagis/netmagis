@@ -1,0 +1,809 @@
+#!/usr/bin/perl -w 
+
+#######################################################################
+# Processus d'interrogation de l'ensemble des equipements Osiris
+# - Interrogation SNMP + generation de graphes rrdtools
+# - Mise a jour de la base d'association Postgres pour les AP WiFi
+# - Mise a jour des fichiers d'etat du spanning tree pour l'ensemble
+#   des commutateurs du parc Osiris
+#
+# Ce processus travaille avec des sondes qui interrogent les
+# equipements.
+#
+# parametres :
+# option :  indique si le processus travaille sur l'ensemble des sondes, sur
+#           une liste de type de sonde executer ou a ignorer
+#
+# Les 2 parametres suivants determinent la maniere dont les processus
+# vont se partager l'execution des sondes
+# num_process   : donne le numero du process
+# nb_process    : donne le nombre total de processus
+
+use strict;
+use Sys::Syslog;                          # Misses setlogsock.
+use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
+use Net::SNMP;
+use SNMP_util;
+use Socket;
+use RRDs;
+use DBI;
+use POSIX;
+
+our $group = $ARGV[0];
+our $num_process = $ARGV[1];
+our $nb_process = $ARGV[2];
+
+
+# configuration par defaut
+our %config = (
+		'path_root' 		=> "/usr/local",
+		'dir_lock'		=> "/tmp/lock",
+		'dir_plugins'		=> "/usr/local/lib/netmagis/metroplugins",
+                'snmp_timeout'          => 4,
+                'conf_file'             => "%CONF%",
+);
+
+# liste des sondes
+our %function_probes = (
+		'ifNom-ap'		=> \&ifNom_ap,
+                'ifNom-snmp64'		=> \&ifNom_counter64,
+		'ifNom-broadcast64'	=> \&ifNom_broadcast64,
+		'ifNom-multicast64'	=> \&ifNom_multicast64,
+		'ifNom_error'		=> \&ifNom_error,
+                'ifNom-snmp32'		=> \&ifNom_counter32,
+                'CPU-serveur'		=> \&get_CPU_server,
+                'assoc_ap'		=> \&get_assoc_ap,
+                'Interrupt-serveur'	=> \&get_Interrupt_server,
+                'nb_connect_portcap'	=> \&get_nb_connect_portcap,
+                'ifIP-snmp'		=> \&get_if_by_ip,
+                'LOAD-serveur'		=> \&get_Load_server,
+                'get-bind-stat'		=> \&get_bind_stat,
+                'get_tps_disk'		=> \&tps_disk,
+                'get_mailq'		=> \&get_mailq,
+                'get_CPU_cisco'		=> \&get_CPU_cisco,
+                'get_CPU_juniper'	=> \&get_CPU_juniper,
+		'get_tempsRep'		=> \&get_generic,
+		'get_memory_by_proc'	=> \&get_generic,
+		'get_nb_mbuf_juniper'	=> \&get_generic,
+		'get_value_generic'	=> \&get_generic,
+		'nbauthwifi'		=> \&get_nbauthwifi,
+		'nbassocwifi'		=> \&get_nbassocwifi,
+		'juniper_filter_counter'	=> \&get_juniper_filter_counter,
+		'plugin'		=> \&get_plugins
+);
+
+require "%LIBMETRO%";
+
+# lecture du fichier de configuration general
+our %global_var = read_global_conf_file($config{'conf_file'});
+
+$config{'defaultdomain'} 	= $global_var{"defaultdomain"};
+$config{'syslog_facility'} 	= $global_var{"metropollerlogfacility"};
+$config{'path_bin'} 		= "$config{'path_root'}/bin";
+$config{'path_sondes'} 		= "$config{'path_root'}/lib";
+$config{'path_poll'} 		= "$config{'path_root'}/var/netmagis/metro";
+$config{'path_rrd_db'} 		= "$global_var{'rrddb'}/rrd";
+$config{'path_cache_probes'} 	= "$global_var{'rrddb'}/metroidx.cache";
+# recuperation du groupe de pollers
+$config{'options'} 		= $global_var{"gpopt_$group"};
+# arguments de connexion a la base PSQL
+$config{'PGHOST'} 		= $global_var{'macdbhost'};
+$config{'PGDATABASE'} 		= $global_var{'macdbname'};
+$config{'PGUSER'} 		= $global_var{'macdbuser'};
+$config{'PGPASSWORD'} 		= $global_var{'macdbpassword'};
+# fichiers de cache
+$config{'index_ap_file'} 	= $config{'path_cache_probes'} . "/ifapidx.cache";
+$config{'index_if64'} 		= $config{'path_cache_probes'} . "/if64idx.cache";
+$config{'index_if32'} 		= $config{'path_cache_probes'} . "/if32idx.cache";
+$config{'index_disk'} 		= $config{'path_cache_probes'} . "/diskidx.cache";
+$config{'index_generic'} 	= $config{'path_cache_probes'} . "/genericidx.cache";
+$config{'fichier_etat'} 	= $config{'path_var'} . "/wifi/ap_state.txt";
+$config{'index_juniper_filter'} = $config{'path_cache_probes'} . "/jnxidx.cache";
+# liste des ssid du reseau sans fil
+$config{'list_ssid_wifi'} 	= $global_var{"ssidwifi"};
+
+require "$config{'path_sondes'}/sensor-if-snmp-ap.pl";
+require "$config{'path_sondes'}/sensor-if-snmp64.pl";
+require "$config{'path_sondes'}/sensor-if-snmp32.pl";
+require "$config{'path_sondes'}/sensor-cpu-server.pl";
+require "$config{'path_sondes'}/sensor-assoc-ap.pl";
+require "$config{'path_sondes'}/sensor-interrupt-server.pl";
+require "$config{'path_sondes'}/sensor-nb-connect-portcap.pl";
+require "$config{'path_sondes'}/sensor-if-by-ip.pl";
+require "$config{'path_sondes'}/sensor-load-server.pl";
+require "$config{'path_sondes'}/sensor-bind-stat.pl";
+require "$config{'path_sondes'}/sensor-tps-disk.pl";
+require "$config{'path_sondes'}/sensor-mailq.pl";
+require "$config{'path_sondes'}/sensor-cpu-cisco.pl";
+require "$config{'path_sondes'}/sensor-cpu-juniper.pl";
+require "$config{'path_sondes'}/sensor-generic-gauge.pl";
+require "$config{'path_sondes'}/sensor-juniper-filter-counter.pl";
+require "$config{'path_sondes'}/sensor-plugins.pl";
+require "$config{'path_sondes'}/sensor-if-broadcast.pl";
+require "$config{'path_sondes'}/sensor-if-multicast.pl";
+require "$config{'path_sondes'}/sensor-if-error.pl";
+
+our $lock_liste_ap = 0;
+our $lock_liste_if64 = 0;
+our $lock_liste_if32 = 0;
+our $lock_liste_disk = 0;
+our $lock_liste_juniper_filter = 0;
+our $maj_if_ap_file = 0;
+our $maj_if64_file = 0;
+our $maj_if32_file = 0;
+our $maj_disk_file = 0;
+our $maj_generic_file = 0;
+our $maj_juniper_filter_file = 0;
+
+our %collsess;
+our %liste_ap;
+our %liste_ap_state;
+our %ApSnmpHashref = ();
+our %APSupSSID = ();
+our @total_activesess = ();
+our @total_authsess = ();
+our %mac_auth;
+
+our %ok_sondes = ();
+our %nok_sondes = ();
+
+our %ssid_osiris = init_list_ssid($config{'list_ssid_wifi'});
+
+init_test_sondes();
+
+# recuperation de la date et heure de lancement du script
+our %time = get_time();
+
+# lectures des options passees en parametres
+$ok_sondes{'all'} = 1;
+
+my @liste_options = split(/,/,$config{'options'});
+foreach my $elem (@liste_options)
+{
+    if($elem=~m/^!(.*)/)
+    {
+	$nok_sondes{$1} = 1;
+    }
+    else    
+    {
+	$ok_sondes{$elem} = 1;
+	$ok_sondes{'all'} = 0;
+    }
+}
+
+# multiprocessus calcul du resultat du modulo pour matcher une sonde
+our $modulo_match = $num_process % $nb_process;
+
+# Creation d'une socket syslog unix
+setlogsock("unix");
+
+# Message des logs demarrage du démon ####################
+writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+	"\t -> START. Demarrage du polling ########");
+
+
+##################################################################
+# gestion specifique pour les AP WiFi
+# recuperation de la liste des authentifies sur le WiFi
+if($ok_sondes{'assoc_ap'} == 1 && check_periodicity("*/5 * * * *"))
+{
+    writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+        "\t -> INFO : Recuperation des authentifies du reseau sans fil ...");
+    
+    get_authaccess();
+}
+
+#################################################################
+# Traitement des sondes
+#
+# lecture des fichiers en cache
+opendir(MAJDIR, $config{'path_poll'});
+our @FICHIERS=grep(/\.sensor$/, readdir MAJDIR);
+closedir(MAJDIR);
+
+open(IF_AP,$config{'index_ap_file'});
+our @liste_if_ap=<IF_AP>;
+close(IF_AP);
+
+open(IF_64,$config{'index_if64'});
+our @liste_if64=<IF_64>;
+close(IF_64);
+
+open(IF_32,$config{'index_if32'});
+our @liste_if32=<IF_32>;
+close(IF_32);
+
+open(DISK,$config{'index_disk'});
+our @liste_disk=<DISK>;
+close(DISK);
+
+open(URL,$config{'index_generic'});
+our @liste_generic=<URL>;
+close(URL);
+
+open(JUNFILTER,$config{'index_juniper_filter'});
+our @liste_juniper_filter=<JUNFILTER>;
+close(JUNFILTER);
+
+
+my $elem;
+my $compteur = 0;
+foreach $elem (@FICHIERS)
+{
+        if($elem=~m/^majDB/ || $elem=~m/^majMETRO$/ || $elem=~m/^majINDICATEUR$/)
+        {
+		$compteur += ouvre_fichier_conf($elem);
+        }
+}
+
+writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+        "\t -> $compteur sondes");
+
+Net::SNMP->snmp_dispatcher();
+
+# ecriture des fichiers qui stockent les index snmp des interfaces
+maj_if_files();
+
+########
+
+##################################################################
+# gestion specifique pour les AP WiFi
+if($ok_sondes{'assoc_ap'} == 1 && check_periodicity("*/5 * * * *"))
+{
+    ###################################
+    # création du tableau d'état des AP
+    writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+        "\t -> Ecriture du fichier de supervision des AP");
+
+    maj_liste_ap_state();
+
+    ################################################################
+    ## mise à jour de la base des associations WiFi
+    writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+        "\t -> MAJ de la base des associations WIFI");
+    
+    set_assoc_ap_base();
+}
+########
+
+
+writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+                "\t -> STOP. Fin du polling ###############");
+########
+
+
+
+##################################################################
+# FONCTIONS
+##################################################################
+
+##################################################################
+# mise à jour des fichiers contenant les index SNMP des interfaces
+# des équipements connus
+sub maj_if_files
+{
+	my $i;
+	my @fichier;
+
+	writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+	    "\t -> INFO : Mise à jour des fichiers de cache");
+
+	if($maj_if_ap_file == 1)
+	{
+		opendir(REPLOCK,$config{'dir_lock'});
+        	@fichier = grep(/ap32/,readdir REPLOCK);
+        	closedir(REPLOCK);
+
+		writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+                	"\t -> REECRITURE DU FICHIER INDEX AP");
+
+        	if($fichier[0] eq "")
+        	{
+        		open(LOCK,">$config{'dir_lock'}/ap32.lock");
+                	close(LOCK);
+
+			my $t_liste_if_ap = @liste_if_ap;
+                        
+			open(BD,">$config{'index_ap_file'}");
+	
+			for($i=0;$i<$t_liste_if_ap;$i++)
+			{
+				if($liste_if_ap[$i] =~/.*;.*;.*/)
+                                {
+				    print BD "$liste_if_ap[$i]\n";
+				}
+			}
+                
+			close(BD);
+
+                	unlink "$config{'dir_lock'}/ap32.lock";
+        	}
+	}
+	if($maj_if64_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/if64\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+		writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+                        "\t -> REECRITURE DU FICHIER INDEX 64");
+                
+		if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/if64.lock");
+                        close(LOCK);
+
+                        my $t_liste_if64 = @liste_if64;
+
+                        open(BD,">$config{'index_if64'}");
+
+                        for($i=0;$i<$t_liste_if64;$i++)
+                        {
+				if($liste_if64[$i] =~/.*;.*;.*/)
+                                {
+				    print BD "$liste_if64[$i]\n";
+				}
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/if64.lock";
+                }
+        }
+	if($maj_if32_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/if32\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+		writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+                        "\t -> REECRITURE DU FICHIER INDEX 32");
+                
+		if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/if32.lock");
+                        close(LOCK);
+
+                        my $t_liste_if32 = @liste_if32;
+
+                        open(BD,">$config{'index_if32'}");
+
+                        for($i=0;$i<$t_liste_if32;$i++)
+                        {   
+				# controle de la validite de la string
+				if($liste_if32[$i] =~/.*;.*;.*/)
+				{
+				    print BD "$liste_if32[$i]\n";
+				}
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/if32.lock";
+                }
+        }
+	if($maj_disk_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/disk\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+                writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+                        "\t -> REECRITURE DU FICHIER D'INDEX DES DISQUES");
+
+                if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/disk.lock");
+                        close(LOCK);
+
+                        my $t_liste_disk = @liste_disk;
+
+                        open(BD,">$config{'index_disk'}");
+
+                        for($i=0;$i<$t_liste_disk;$i++)
+                        {
+				# controle de la validite de la string
+                                if($liste_disk[$i] =~/.*;.*;.*/)
+                                {
+				    print BD "$liste_disk[$i]\n";
+				}
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/disk.lock";
+                }
+        }
+	if($maj_generic_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/generic\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+                writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+                        "\t -> REECRITURE DU FICHIER D'INDEX GENERIQUE");
+
+                if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/generic.lock");
+                        close(LOCK);
+
+                        my $t_liste_generic = @liste_generic;
+
+                        open(BD,">$config{'index_generic'}");
+
+                        for($i=0;$i<$t_liste_generic;$i++)
+                        {
+				if($liste_generic[$i] =~/.*;.*;.*/)
+                                {
+				    print BD "$liste_generic[$i]\n";
+				}
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/generic.lock";
+                }
+        }
+	if($maj_juniper_filter_file == 1)
+        {
+                opendir(REPLOCK,$config{'dir_lock'});
+                @fichier = grep(/juniper_filter\.lock/,readdir REPLOCK);
+                closedir(REPLOCK);
+
+                writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+                        "\t -> REECRITURE DU FICHIER D'INDEX DES FILTRES JUNIPER");
+
+                if($fichier[0] eq "")
+                {
+                        open(LOCK,">$config{'dir_lock'}/juniper_filter.lock");
+                        close(LOCK);
+
+                        my $t_liste_juniper_filter = @liste_juniper_filter;
+
+                        open(BD,">$config{'index_juniper_filter'}");
+
+                        for($i=0;$i<$t_liste_juniper_filter;$i++)
+                        {
+                                if($liste_juniper_filter[$i] =~/.*;.*;.*/)
+                                {
+                                    print BD "$liste_juniper_filter[$i]\n";
+                                }
+                        }
+
+                        close(BD);
+
+                        unlink "$config{'dir_lock'}/juniper_filter.lock";
+                }
+        }
+}
+
+
+###############################################################
+# lecture des fichiers contenant les ordres de polling
+sub ouvre_fichier_conf
+{
+	my ($file) = @_;
+	my ($sonde,$base,$host,$community,$l_param,$periodicity);
+	my $ok = 0;
+	my $num_ligne = 0;
+
+	open(FILE, "$config{'path_poll'}/$file");
+
+	#print LOG "fichier : $config{'path_poll'}/$file\n";
+	
+	while(<FILE>)
+	{
+		if(! /^#/ && ! /^\s+/)
+		{
+		    chomp;
+		    # detection d'un parametre de periodicite facon cron pour savoir si la sonde doit etre executee
+		    if(/(.*);(.*)/)
+		    {
+			$periodicity = $1;
+			($sonde,$base,$host,$community,$l_param) = (split(/\s+/,$2))[0,1,2,3,4];
+		    }
+		    # aucun parametre de periodicite, la sonde est execute par defaut
+		    else
+		    {
+			$periodicity = "*/5 * * * *";
+		     	($sonde,$base,$host,$community,$l_param) = (split(/\s+/,$_))[0,1,2,3,4];
+		    }		    
+	
+		    $num_ligne ++;
+
+        #print LOG "ligne : $periodicity;$sonde,$base,$host,$community,$l_param\n";
+		    
+		    # multiprocessus : ce processus doit-il traiter cette ligne?
+		    my $test_modulo = $num_ligne % $nb_process;
+		   
+		    if($test_modulo == $modulo_match)
+		    {
+			if(check_periodicity($periodicity))
+			{
+				$ok ++;
+				# nettoyage du nom de la sonde
+				$sonde = clean_probe($sonde);
+		    
+				# parametres a appliquer dans l'appel de chaque fonction
+				# $base,$host,$community,$l_param,$sonde
+				if(defined($function_probes{$sonde}))
+				{
+			    		if(($ok_sondes{'all'} == 1 || $ok_sondes{$sonde} == 1) && $nok_sondes{$sonde} != 1)
+			    		{
+						$function_probes{$sonde}->($base,$host,$community,$l_param,$sonde);
+			    		}
+			    		else
+			    		{
+						$ok --;
+			    		}
+				}
+				else
+				{
+			    		if(($ok_sondes{'all'} == 1 || $ok_sondes{$sonde} == 1) && $nok_sondes{$sonde} != 1)
+                            		{
+					writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
+				    		"\t -> WARNING: Sonde $sonde inexistante");
+					# aucune sonde trouvee, n'a rien fait
+					$ok --;
+			    		}
+				}
+			}
+		    }
+		}
+	}
+	close(FILE);
+
+	return $ok;
+}
+
+
+######################################
+# Nettoie le nom des sondes dans update_rrd qui disposent encore 
+# du chemin /local/obj999 ....
+sub clean_probe
+{
+    my ($sonde) = @_;
+    
+    my @decomp_rep = split(/\//,$sonde);
+    my $t_decomp_rep = @decomp_rep;
+    ($sonde) = (split(/\.pl/,$decomp_rep[$t_decomp_rep - 1]))[0];
+
+    return $sonde;
+}
+
+
+##########################################################
+# fonction de mise à jour du fichier de supervision des AP
+sub maj_liste_ap_state
+{
+    my $key;
+
+    open(STATE,">$config{'fichier_etat'}");
+    foreach $key (keys %liste_ap_state)
+    {
+	    print STATE "$key=$liste_ap_state{$key}\n";
+    }
+    close(STATE);
+}
+
+
+############################################################
+# initialisation des booleens qui indiquent au programme
+# les types de sondes a executer
+sub init_test_sondes
+{
+    foreach my $key (keys %function_probes)
+    {
+        $ok_sondes{$key} = 0;
+        $nok_sondes{$key} = 0;
+    }
+}
+
+############################################################
+# cree un tableau nominatif avec les index sql des tous les
+# ssid du reseau wifi
+sub init_list_ssid
+{
+    my ($l) = @_;
+
+    my %l_ssid;
+
+    chomp $l;
+    my @ll = split(/,/,$l);
+
+    foreach my $s (@ll)
+    {
+        $l_ssid{$s} = read_conf_file("$config{'conf_file'}","ID_SQL_$s");
+    }
+    
+    return %l_ssid;
+}
+
+############################################################
+# controle le parametre de periodicite du lancement d'une sonde
+# exemple :
+#   */5 * * * * : toutes les 5 minutes
+#   * */1 * * * : toute les heures
+#   sinon renseigner a la maniere de cron :
+#           minute hour    mday    month   wday (1 = lundi)
+# exemple : *      *       *       *       1 : tous les lundi
+#  
+# renvoie 1 si la sonde doit etre lancee
+sub check_periodicity
+{       
+        my($periodicity) = @_;
+
+	my($mwday,$mmonth,$mmday);
+        #print LOG "$periodicity, time = $time{WDAY}, $time{MON}, $time{MDAY}, $time{HOUR}:$time{MIN}\n";
+
+	my($min,$hour,$mday,$month,$wday) = (split(/\s+/,$periodicity))[0,1,2,3,4];
+
+        if($wday eq "*" || $wday !~/[1-7]/)
+        {
+		$mwday = $wday;                               
+                $wday = "0,1,2,3,4,5,6";
+        }                                  
+        if($month eq "*" || $month !~/[1-12]/)
+        {                    
+		$mmonth = $month;      
+                $month = "1,2,3,4,5,6,7,8,9,10,11,12";
+        }                                             
+        if($mday eq "*" || $mday !~/[1-31]/)          
+        {                        
+		$mmday = $mday;                     
+                $mday = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31";
+        }                                                                                                     
+        if($min eq "*")                                                                                       
+        {
+		if($mwday =~/[0-6]/ || $mmonth =~/[1-12]/ || $mmday =~/[1-31]/)
+		{
+			$min = 0;
+		}
+		else
+		{                                                                                                     
+                	$min = "0-59";
+		}                                                                                     
+        }                                                                                                     
+        elsif($min =~/\*\/([0-9]+)/)                                                                          
+        {                                                                                                     
+                my $temp_min ="";                                                                                 
+
+                for(my $i=0;$i<60;$i++)
+                {                      
+                        my $modulo = $i % $1;
+                        if($modulo == 0)     
+                        {                    
+                                $temp_min = "$temp_min" . "$i,";
+                        }                                       
+                }                                               
+                $min = $temp_min;                               
+        }                                                       
+        if($hour eq "*")                                        
+        {  
+		if($mwday =~/[0-6]/ || $mmonth =~/[1-12]/ || $mmday =~/[1-31]/)
+                {
+                        $hour = 0;
+                }
+                else
+                {
+                        $hour = "0-23";
+                }                                                     
+        }                                                       
+        elsif($hour  =~/\*\/([0-9]+)/)                          
+        {                                                       
+                my $temp = "";                                       
+
+                for(my $i=0;$i<23;$i++)
+                {                      
+                        my $modulo = $i % $1;
+                        if($modulo == 0)     
+                        {                    
+                                $temp = "$temp" . "$i,";
+                        }                               
+                }                                       
+                $hour = $temp;                          
+        }                                               
+
+
+        my $etap_check = 0;
+
+        my @l_wday = split(/,/,$wday);
+        for (my $i=0;$i<@l_wday;$i++) 
+        {           
+        #	print LOG "WDAY : $l_wday[$i] == $time{WDAY}";
+                
+		if($l_wday[$i] == $time{WDAY})
+                {                             
+                # on est dans le bon jour de la semaine pour executer la sonde
+                        $i = @l_wday;                                         
+                        $etap_check =1;                                       
+                }                                                             
+        }                                                                     
+        if($etap_check == 1)                                                    
+        {
+                #print LOG "=> OK\n";
+                
+		my @l_month = split(/,/,$month);                              
+                for (my $i=0;$i<@l_month;$i++)                                
+                {     
+	#	 	print LOG "MON : $l_month[$i] == $time{MON}";
+                                                        
+                        if($l_month[$i] == $time{MON})                        
+                        {        
+                        # on est dans le bon mois pour executer la sonde      
+                                $i = @l_month;                                
+                                $etap_check =2;                               
+                        }                                                     
+                }                                                             
+        }                                                                     
+        if($etap_check == 2)                                                    
+        {      
+		#print LOG "=> OK\n";
+                                                               
+                my @l_mday = split(/,/,$mday);                                
+                for (my $i=0;$i<@l_mday;$i++)
+                {
+			#print LOG "MDAY : $l_mday[$i] == $time{MDAY}";			
+
+                        if($l_mday[$i] == $time{MDAY})
+                        {
+                        # on est dans le bon mois pour executer la sonde
+                                $i = @l_mday;
+                                $etap_check =3;
+                        }
+                }
+        }
+        if($etap_check == 3)
+        {
+		#print LOG "=> OK\n";
+
+		if($hour eq "0-23")
+		{
+			$etap_check =4;
+
+			#print LOG "HOUR : $hour == $time{HOUR}";
+		}
+		else
+		{
+               	 	my @l_hour = split(/,/,$hour);
+                	for (my $i=0;$i<@l_hour;$i++)
+                	{
+		#	print LOG "HOUR : $l_hour[$i] == $time{HOUR}";
+
+                        	if($l_hour[$i] == $time{HOUR})
+                        	{
+                        	# on est dans le bon mois pour executer la sonde
+                                	$i = @l_hour;
+                                	$etap_check =4;
+                        	}
+                	}
+		}
+        }
+        if($etap_check == 4)
+        {
+		if($min eq "0-59")
+                {
+			return 1;
+			
+			#print LOG "=> OK\n";
+                }
+                else
+                {
+                	my @l_min= split(/,/,$min);
+                	for (my $i=0;$i<@l_min;$i++)
+                	{
+                        	if($l_min[$i] == $time{MIN})
+                        	{
+                        	# on est dans le bon mois pour executer la sonde
+                                	$i = @l_min;
+                                	return 1;
+					
+					#print LOG "=> OK\n";
+                        	}
+                	}
+        	}
+	}
+        return 0;
+}
+

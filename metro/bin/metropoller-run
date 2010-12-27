@@ -1,0 +1,40 @@
+#!/usr/bin/perl -w 
+
+use strict;
+use Sys::Syslog;                          # Misses setlogsock.
+use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
+
+our %config = ( 
+		'path_root'             => "/usr/local",
+		'conf_file'             => "%CONF%",
+                'syslog_facility'       => "local0",
+                'logopt'                => ""
+);
+
+require "%LIBMETRO%";
+
+# recuperation des groupes de pollers dans le fichier de conf
+my @groupes = split(/,/,read_conf_file($config{'conf_file'},"pollergroups"));
+
+my $syslogfacility = read_conf_file($config{'conf_file'},"metropollerlogfacility");
+
+# Message des logs demarrage du démon ####################
+writelog("metropoller-run",$config{'logopt'},"info",
+        "\t #######################################");
+
+my $dir_bin = "$config{'path_root'}/bin";
+
+my $i;
+for($i=0;$i<@groupes;$i++)
+{
+    my $nb_process = read_conf_file($config{'conf_file'},"gpnbproc_$groupes[$i]");
+
+    my $j;
+    for($j=1;$j<=$nb_process;$j++)
+    {
+	system("$dir_bin/poller $groupes[$i] $j $nb_process &");
+	sleep(1);
+    }
+}
+
+
