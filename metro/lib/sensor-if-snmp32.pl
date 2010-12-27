@@ -55,7 +55,7 @@ sub ifNom_counter32
 		my $oidout = "1.3.6.1.2.1.2.2.1.16.$if";
 		my $result = $snmp->get_request(
                 	-varbindlist   => [$oidin, $oidout],
-                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,4,$community] );
+                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
 
 	    }
 	    #sinon, recherche de l'index par rapport au nom de l'interface
@@ -149,7 +149,7 @@ sub ifNom_counter32
                 			my $oidout = "1.3.6.1.2.1.2.2.1.16.$index_interface";
                 			$r = $snmp->get_request(
                         			-varbindlist   => [$oidin, $oidout],
-                        			-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,4,$community] );
+                        			-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
 				}
 				else
 				{
@@ -279,7 +279,7 @@ sub get_if32_name
 
                 $r = $snmp->get_request(
                 	-varbindlist   => [$oidin, $oidout],
-                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,4,$community] );
+                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
 	}
 }
 

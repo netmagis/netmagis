@@ -84,7 +84,7 @@ sub get_oid_if
                 	my $oidout = "1.3.6.1.2.1.31.1.1.1.10.$oid_if";
                 	my $result = $snmp->get_request(
                         	-varbindlist   => [$oidin, $oidout],
-                        	-callback   => [ \&get_if_octet,$base,$host,$oid_if,$oidin,$oidout,$inverse,4,$community] );
+                        	-callback   => [ \&get_if_octet,$base,$host,$oid_if,$oidin,$oidout,$inverse,2,$community] );
 		}
 		else
 		{

@@ -208,6 +208,10 @@ Metrology server
 		*.rrd
 	    .../metroidx.cache
 
+    /var/log/
+        .../netmagis/
+	    .../metropoller.log
+            .../metrocreate.log
 
 MAC server
 ----------
