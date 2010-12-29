@@ -228,16 +228,14 @@ proc update-graph {full _tabeq routerdbmod leq leqvirt} {
 	set leqrancid {}
     } else {
 	# It is not a full rancid run.
-	# Remove dummy equipments. If, after this removal, there
+	# Remove dummy equipment "_vlan". If, after this removal, there
 	# is no equipment, distinguish from the "full-rancid" case.
-	foreach dummyeq {_vlan _routerdb} {
-		set pos [lsearch -exact $leq $dummyeq]
-		if {$pos != -1} then {
-		    set leqrancid [lreplace $leq $pos $pos]
-		} else {
-		    set leqrancid $leq
-		}
-	}
+        set pos [lsearch -exact $leq "_vlan"]
+        if {$pos != -1} then {
+            set leqrancid [lreplace $leq $pos $pos]
+        } else {
+            set leqrancid $leq
+        }
 	if {[llength $leqrancid] == 0} then {
 	    set callrancid 0
 	} else {
@@ -682,9 +680,9 @@ proc detect-mod {_tabeq} {
     foreach eq $l {
 	if {[info exists tabeq($eq)]} then {
 	    lappend leq $eq
-	} elseif {$eq eq "_vlan" || $eq eq "_routerdb"} then {
+	} elseif {$eq eq "_vlan"} then {
 	    lappend leq $eq
-	} else {
+	} elseif {$eq ne "_routerdb"} then {
 	    lappend lunk $eq
 	}
     }
