@@ -1445,6 +1445,9 @@ proc cisco-post-process {type fdout eq tab} {
 	    set linkname $t(eq!$eq!if!$iface!link!name)
 	    set l [split $linkname "|"]
 	    switch [llength $l] {
+		0 {
+		    # empty description, do nothing
+		}
 		1 {
 		    # interface normale, on ne fait rien
 		}
