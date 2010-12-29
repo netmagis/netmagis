@@ -680,7 +680,7 @@ proc detect-mod {_tabeq} {
     foreach eq $l {
 	if {[info exists tabeq($eq)]} then {
 	    lappend leq $eq
-	} elseif {$eq eq "_vlan"} then {
+	} elseif {$eq eq "_vlan" || $eq eq "_routerdb"} then {
 	    lappend leq $eq
 	} else {
 	    lappend lunk $eq
