@@ -1089,7 +1089,7 @@ proc juniper-parse-snmp {conf tab idx} {
     upvar $tab t
 
     array set kwtab {
-	trap-option	{2	NOP}
+	trap-options	{1	NOP}
 	trap-group	{2	NOP}
 	community	{2	juniper-parse-snmp-community}
 	location	{2	juniper-parse-snmp-location}
