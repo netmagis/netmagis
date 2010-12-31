@@ -37,7 +37,7 @@ Database server
 	.../sbin/
 	    .../netmagis-daily
 	    .../netmagis-backup
-	    ++++++++++++++ TOUS LES PROGRAMMES D'INSTALL
+	    ++++++++++++++ All other installed binaries
     /var/db/
 	.../netmagis/
 	    .../backup/
