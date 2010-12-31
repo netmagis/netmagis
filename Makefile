@@ -1,4 +1,4 @@
-DESTDIR		= /usr/local
+DESTDIR		?= /usr/local
 TCLSH		= /usr/local/bin/tclsh
 SINSTALL	= inst/install-script
 SUBST		= $(TCLSH) \
@@ -6,19 +6,23 @@ SUBST		= $(TCLSH) \
 			$(DESTDIR)/etc/netmagis.conf \
 			$(DESTDIR)/bin/netmagis-config
 
+uname := $(shell sh -c 'uname')
+
 # for www/htg/src
-TCLCONF		= /usr/local/lib/tcl8.6/tclConfig.sh
+ifeq ($(uname),Linux)
+TCLCONF		= /usr/lib/tclConfig.sh
+TCLSH		= /usr/bin/tclsh
+endif
 TCLCFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_INCLUDE_SPEC"')|sh`
 TCLLFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_LIB_SPEC $$TCL_LIBS"')|sh`
 
 usage:
 	@echo "available targets:"
 	@echo "	all"
-	@echo "	install-common
-	@echo "	install-database
-	@echo "	install-www
-	@echo "	install-utils
-	@echo "	install-detecteq
+	@echo "	install-common"
+	@echo "	install-www"
+	@echo "	install-utils"
+	@echo "	install-detecteq"
 	@echo "	install-topo"
 	@echo "	clean"
 
@@ -49,6 +53,4 @@ install-detecteq:
 clean:
 	cd www ; make clean
 	cd common ; make clean
-	cd database ; make clean
-	cd utils ; make clean
 	cd topo ; make clean
