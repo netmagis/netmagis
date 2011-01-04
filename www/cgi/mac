@@ -296,7 +296,10 @@ proc html-result {dbfd type param} {
     set tab ""
     switch $type {
 	nom {
-	    set lip [resolve "nom" $param]
+	    set lip [resolve "nom" $param resmsg]
+	    if {$resmsg ne ""} {
+		d error "resolve: $resmsg"
+	    }
 	    foreach ip $lip {
 		append tab [gen-ipmac $dbfd $ip ""]
 	    }
@@ -352,7 +355,10 @@ proc gen-idipmac-session {dbfd idipmac} {
 
     set lines {}
 
-    set dnsname [resolve "ip" $ip]
+    set dnsname [resolve "ip" $ip resmsg]
+    if {$resmsg ne ""} {
+	d error "resolve: $resmsg"
+    }
 
     set lienip [gen-link [display-ip $ip $dnsname] $ip]
     lappend lines [list Info [mc "IP address"] $lienip]
@@ -495,7 +501,10 @@ proc gen-ipmac {dbfd ip mac} {
 	incr n
 	set idipmac $tab(idipmac)
 	set lienidipmac [gen-link [mc "Details"] "idipmac:$idipmac"]
-	set dnsname [resolve "ip" $tab(ip)]
+	set dnsname [resolve "ip" $tab(ip) resmsg]
+	if {$resmsg ne ""} {
+	    d error "resolve: $resmsg"
+	}
 	set lienip [gen-link [display-ip $tab(ip) $dnsname] $tab(ip)]
 
 	pg_select $dbfd "SELECT extract(epoch from max(fin)) AS fin
@@ -818,10 +827,13 @@ proc display-mac {dbfd mac} {
 #  - return value: addresse list or domain name
 #
 
-proc resolve {type arg} {
+proc resolve {type arg _msg} {
     global conf
     global dnscache
+    upvar $_msg msg
 
+    set msg ""
+ 
     if {! ([regexp {^[a-z0-9\-.]+$} $arg] || [regexp {^([0-9.]+|[0-9a-f:.]+)$} $arg])} then {
 	return {}
     }
@@ -844,8 +856,9 @@ proc resolve {type arg} {
     #
 
     set hostcmd [get-local-conf "hostcmd"]
-    if {[catch {set buf [exec $conf(cmdhost) $arg]} msg]} then {
-	set buf ""
+    if {[catch {exec $hostcmd $arg} buf]} then {
+	set msg $buf
+        set buf ""
     }
 
     #
