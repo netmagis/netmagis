@@ -657,8 +657,11 @@ proc gen-portmac {dbfd crit} {
 
     foreach l [lsort -index end -integer $d] {
 	set t [lindex $l end]
-	lappend lines [lreplace $l end end \
-				[clock format $t -format "$conf(clockformat)"]]
+	set ndate [clock format $t -format "$conf(clockformat)"]]
+	if {[regexp {^01/01/1970} $ndate]} then {
+	    set ndate [mc "(no date)"]
+	}
+	lappend lines [lreplace $l end end $ndate]
     }
 
     if {$n > 0} then {
