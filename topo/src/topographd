@@ -649,23 +649,26 @@ proc read-coll {_tab _msg} {
 #
 # Detect modifications on equipments
 #
-# Input:
-#   - tabeq : array of equipment types/model, indexed by equipment fqdn
 # Output:
 #   - return value : list of modified equipments, or empty list
 # 
 # History 
 #   2010/10/21 : pda/jean : design
+#   2011/01/05 : jean : known equipements are pulled from rancid
 #
 
-proc detect-mod {_tabeq} {
-    upvar $_tabeq tabeq
+proc detect-mod {} {
 
     set l {}
     set sql "SELECT DISTINCT(eq) AS eq FROM topo.modeq WHERE processed = 0"
     if {! [toposqlselect $sql tab { lappend l $tab(eq) }]} then {
 	return {}
     }
+    
+    set sql "SELECT eq FROM topo.eq WHERE up=1"
+    if {! [toposqlselect $sql tab {set rancideq($tab(eq)) 1}]} then {
+	return {}
+    }   
 
     #
     # Check that equipment is managed by rancid
@@ -678,7 +681,7 @@ proc detect-mod {_tabeq} {
     set leq {}
     set lunk {}
     foreach eq $l {
-	if {[info exists tabeq($eq)]} then {
+	if {[info exists rancideq($eq)]} then {
 	    lappend leq $eq
 	} elseif {$eq eq "_vlan"} then {
 	    lappend leq $eq
@@ -871,7 +874,7 @@ proc main {argv0 argv} {
 	    continue
 	}
 
-	set leq [detect-mod tabeq]
+	set leq [detect-mod]
 	if {[llength $leq] > 0 || [llength $leqvirt] > 0} then {
 	    update-graph 0 tabeq {} $leq $leqvirt
 	}
