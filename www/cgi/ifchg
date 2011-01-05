@@ -389,7 +389,7 @@ d cgi-register {mode .+} {
 		set i [lindex $iface 0]
 		set stat [lindex $tabiface($i) 3]
 	    }
-	    if {$stat eq ""} then {
+	    if {$stat eq "" || $stat eq "-"} then {
 		set desc "X $desc"
 	    } else {
 		set desc "$desc <X $stat>"
