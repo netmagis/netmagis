@@ -2096,11 +2096,11 @@ version.
 
 Le prologue contient le RR de type SOA de la zone. Ce SOA contient
 en particulier le numéro de version. Lors de la génération des
-zones, la chaîne «~\texttt {\%VERSION\%}~» sera substituée par
+zones, la chaîne «~\texttt {\%ZONEVERSION\%}~» sera substituée par
 le numéro de version courant dans la base (en l'actualisant bien
 sûr). Pour cette raison, le script \texttt {remplir-zone} recherche
 dans le SOA le numéro de version courant et le substitue par la
-chaîne «~\texttt {\%VERSION\%}~» lors du remplissage du prologue
+chaîne «~\texttt {\%ZONEVERSION\%}~» lors du remplissage du prologue
 dans la base. Ceci est réalisé grâce à une expression régulière,
 qui vaut par défaut~:
 
@@ -2114,7 +2114,7 @@ version, la deuxième est le numéro de version lui-même et la troisième
 est ce qui suit (soit le commentaire «~\texttt {; Version}~» ici).
 Grâce à cette expression régulière, la cohérence du numéro de version
 actuel est vérifiée, puis il est remplacé par la fameuse chaîne
-«~\texttt {\%VERSION\%}~».
+«~\texttt {\%ZONEVERSION\%}~».
 
 Le script \texttt {remplir-domaine} doit être modifié pour~:
 

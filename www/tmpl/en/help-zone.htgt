@@ -40,7 +40,7 @@
     \titre {2} {\ancre {prologue} {Prologue}}
 
 	Text to add in the zone file before generated RR from database.
-	This text must contain string \gras {%VERSION%}, which will
+	This text must contain string \gras {%ZONEVERSION%}, which will
 	be replaced by the version number at generation time.
 
 	Notice: if there are special cases (example: 2 RR with same A
@@ -56,7 +56,7 @@
 ;
 
 @	IN	SOA	ns.mycompany.com. hostmaster.mycompany.com. (
-		    %VERSION%	; yy mm dd version
+		    %ZONEVERSION%	; yy mm dd version
 		    86400		; refresh = 1 d
 		    3600		; retry = 1 h
 		    3600000		; expire = 1000 hr (~ 41 d)

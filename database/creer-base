@@ -335,7 +335,7 @@ psql --quiet $BASE <<'EOF'
 		DEFAULT NEXTVAL ('seq_zone'),
 	domaine		TEXT,		-- le domaine à générer
 	version		INT,		-- numéro de version dans la zone
-	prologue	TEXT,		-- prologue de la zone (trou %VERSION%)
+	prologue	TEXT,		-- prologue de la zone (trou %ZONEVERSION%)
 	rrsup		TEXT,		-- ajouté à chaque génération de nom
 	generer		INT,		-- modifiée depuis dernière génération
 

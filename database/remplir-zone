@@ -31,7 +31,7 @@ set conf(pattern-fin)		{^; COUPER ICI}
 # - la chaîne représentant le numéro de version lui-même
 # - la chaîne après le numéro de version
 # La deuxième partie sera remplacée, après vérification de cohérence,
-# par %VERSION% dans le prologue installé dans la base.
+# par %ZONEVERSION% dans le prologue installé dans la base.
 #
 set conf(pattern-version)	{^([ \t]+)([0-9]+)([ \t]+;[ \t]*Version.*)}
 
@@ -122,7 +122,7 @@ proc lire-prologue {fichier patfin patversion} {
 		    puts stderr "Version '$p2' dans '$fichier' > $curver"
 		    puts stderr "Il faudra sans doute envisager de remettre à zéro les secondaires"
 		}
-		set ligne "$p1%VERSION%$p3"
+		set ligne "$p1%ZONEVERSION%$p3"
 		set version 1
 	    }
 	    append prologue "$ligne\n"

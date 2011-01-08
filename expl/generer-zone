@@ -198,8 +198,8 @@ proc generer-zone {dbfd domaine} {
     # Générer le prologue avec le numéro de version
     #
 
-    if {[regsub {%VERSION%} $prologue $nversion sprologue] != 1} then {
-	puts stderr "zone '$domaine' : %VERSION% non trouvé dans le prologue"
+    if {[regsub {%ZONEVERSION%} $prologue $nversion sprologue] != 1} then {
+	puts stderr "zone '$domaine' : %ZONEVERSION% non trouvé dans le prologue"
 	return 0
     }
 

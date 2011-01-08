@@ -596,3 +596,8 @@ CREATE OR REPLACE FUNCTION valide_ip_grp (INET, INTEGER)
 	    ) ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
+
+-- do not forget to upgrade the zone generation script on the DNS server
+update dns.zone_normale  set prologue=replace(prologue, '%VERSION%', '%ZONEVERSION%') ;
+update dns.zone_reverse4 set prologue=replace(prologue, '%VERSION%', '%ZONEVERSION%') ;
+update dns.zone_reverse6 set prologue=replace(prologue, '%VERSION%', '%ZONEVERSION%') ;

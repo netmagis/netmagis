@@ -41,7 +41,7 @@
 
 	Texte à ajouter dans le fichier de zone avant les RR générés
 	automatiquement à partir de la base. Ce texte doit contenir la
-	chaîne \gras {%VERSION%}, qui sera remplacée par le numéro
+	chaîne \gras {%ZONEVERSION%}, qui sera remplacée par le numéro
 	de version lors de la génération de la zone.
 
 	Note~: s'il y a des cas particuliers dans la génération de la
@@ -60,7 +60,7 @@
 ;
 
 @	IN	SOA	isis.u-strasbg.fr. hostmaster.u-strasbg.fr. (
-		    %VERSION%	; annee mois jour version
+		    %ZONEVERSION%	; annee mois jour version
 		    86400		; refresh = 1 j
 		    3600		; retry = 1 h
 		    3600000		; expire = 1000 heures (~ 41 j)
