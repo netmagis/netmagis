@@ -692,11 +692,12 @@ proc juniper-parse-family {conf tab idx} {
 	inet -
 	inet6 {
 	    array set kwtab {
-		filter		{1	NOP}
-		sampling	{1	NOP}
-		policer		{1	NOP}
-		address		{2	juniper-parse-if-address}
-		*		{2	NOP}
+		targeted-broadcast	{1	NOP}
+		filter			{1	NOP}
+		sampling		{1	NOP}
+		policer			{1	NOP}
+		address			{2	juniper-parse-if-address}
+		*			{2	NOP}
 	    }
 	    set unitnb $t(current!unitnb)
 	    set parm [lindex $conf 2]
