@@ -183,7 +183,6 @@ proc full-rancid-needed {_routerdbmod} {
 #
 # Input:
 #   - full : 1 if a full rancid is needed
-#   - _tabeq : in return, array containing type/model for all equipments
 #   - routerdbmod : result from detect-filemod, or empty
 #   - leq : list of modified equipments (may be with a fake "_vlan" equipement)
 #   - leqvirt : modified virtual equipments, whose date must be reset in
@@ -197,8 +196,7 @@ proc full-rancid-needed {_routerdbmod} {
 #   2010/11/12 : pda/jean : add leqvirt
 #
 
-proc update-graph {full _tabeq routerdbmod leq leqvirt} {
-    upvar $_tabeq tabeq
+proc update-graph {full routerdbmod leq leqvirt} {
     global conf
 
     #
@@ -318,16 +316,6 @@ proc update-graph {full _tabeq routerdbmod leq leqvirt} {
 	}
     }
     toposqlunlock "commit"
-
-    #
-    # Read again equipments and their type/model
-    #
-
-    set msg [read-eq-type tabeq]
-    if {! [string equal $msg ""]} then {
-	keep-state-mail "read-eq-type" "Cannot read equipment types ($msg)"
-	return 0
-    }
 
     return 1
 }
@@ -804,20 +792,6 @@ proc main {argv0 argv} {
     }
 
     #
-    # Initialize equipment list (which will be updated at each graph update)
-    #
-
-    set msg [read-eq-type tabeq]
-    if {$msg ne ""} then {
-	#
-	# Fatal error: daemon cannot start
-	#
-
-	puts stderr "Cannot read equipment types. Abort. ($msg)"
-	exit 1
-    }
-
-    #
     # Daemon main loop
     #
 
@@ -857,7 +831,7 @@ proc main {argv0 argv} {
 		    continue
 		}
 
-		if {! [update-graph 1 tabeq $routerdbmod {} $leqvirt]} then {
+		if {! [update-graph 1 $routerdbmod {} $leqvirt]} then {
 		    continue
 		}
 	    }
@@ -876,7 +850,7 @@ proc main {argv0 argv} {
 
 	set leq [detect-mod]
 	if {[llength $leq] > 0 || [llength $leqvirt] > 0} then {
-	    update-graph 0 tabeq {} $leq $leqvirt
+	    update-graph 0 {} $leq $leqvirt
 	}
     }
 }
