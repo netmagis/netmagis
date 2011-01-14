@@ -5216,6 +5216,12 @@ proc call-topo {cmd _msg} {
 
     set cmd "$topobindir/$cmd < $topograph"
 
+    set caching ""
+    catch {get-local-conf "cache"} caching
+    if {$caching eq "yes"} then {
+	set cmd "$topobindir/cache $cmd"
+    }
+
     if {$topohost eq ""} then {
 	set r [catch {exec sh -c $cmd} msg option]
     } else {
