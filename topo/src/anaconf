@@ -33,6 +33,7 @@ eval `%CONFPROG% \
 		topobindir \
 		checkrouterif \
 		ssidsensors \
+		cache \
 		`
 vlanfile=$eqgendir/_vlan.eq
 
@@ -181,6 +182,18 @@ build_graph ()
 }
 
 #
+# Command output cache update
+#
+
+update_cache ()
+{
+    if [ "$cache" = yes ]
+    then $topobindir/updatecache
+    fi
+}
+
+
+#
 # Check that SNMP community is specified on all equipments
 #
 
@@ -228,6 +241,7 @@ chain ()
 	&& analyze_conf $*	\
 	&& copy_eqvirt		\
 	&& build_graph		\
+	&& update_cache		\
 	&& check_snmp		\
 	&& check_dns
     return $?

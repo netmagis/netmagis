@@ -1,0 +1,64 @@
+#!%TCLSH%
+
+#
+# Update entries in cache if necessary or delete them
+#
+# Syntax:
+#	updatecache		(no argument)
+#
+# History :
+#   2011/01/13 : jean : design
+#
+
+source %LIBDNS%
+
+proc main {argv0 argv} {
+    global ctxt
+
+    set ctxt(dbfd1) ""
+    set ctxt(dbfd2) ""
+    set-log [get-local-conf "logger"]
+
+    config ::dnsconfig
+    lazy-connect
+
+    set r 0
+    #
+    # Fetch all cache entries
+    #
+
+    set sql "SELECT key, command, file, hit, runtime FROM topo.cache"
+    toposqlselect $sql tab {
+
+	set key $tab(key)
+	if {[cache-update-needed tab]} then {
+
+	    #
+	    # Run the command and cache the result
+	    #
+
+	    set cmd $tab(cmd)
+	    set run $cmd
+	    regsub -all {[<>|;'"${}()&\[\]*?]} $run {\\&} run
+	    if {[catch {exec sh -c $run} output]} then {
+		puts stderr "updatecahe : failed to run command '$run' ($output)"
+		set r 1
+	    } else {
+		set t2 [clock seconds]
+		puts $output
+		update-cache $cmd $key $output [expr $t2 - $t1]
+	    }
+	} else {
+
+	    #
+	    # Remove cache entry
+	    #
+
+	    cache-remove $key
+	}
+    }
+
+    return $r
+}
+
+exit [main $argv0 $argv]

@@ -130,6 +130,8 @@ package require webapp
 package require pgsql
 package require arrgen
 
+package require md5
+
 ##############################################################################
 # Library parameters
 ##############################################################################
@@ -7425,6 +7427,12 @@ proc call-topo {cmd _msg} {
 
     set cmd "$topobindir/$cmd < $topograph"
 
+    set caching ""
+    catch {get-local-conf "cache"} caching
+    if {$caching eq "yes"} then {
+	set cmd "$topobindir/cache $cmd"
+    }
+
     if {$topohost eq ""} then {
 	set r [catch {exec sh -c $cmd} msg option]
     } else {
@@ -8766,4 +8774,216 @@ proc sync-filemonitor {lf} {
     }
 
     return $r
+}
+
+
+#
+# Check if entry exists in cache
+#
+# Input:
+#   - parameters:
+#       - k : entry index in the cache
+# Output:
+#   - return value: true if entry exist, false otherwise
+#
+# History 
+#   2011/01/13 : jean : design
+#
+
+proc in-cache {k} {
+
+    set found 0
+    toposqlselect "SELECT * FROM topo.cache WHERE key='$k'" t {set found 1}
+    return $found
+}
+
+#
+# Dump existing entry from cache
+#
+# Input:
+#   - parameters:
+#       - k : entry index in the cache
+# Output:
+#   - parameters:
+#	- output : entry read from cache
+#   - return value: 1 if ok, 0 if error
+#
+# History 
+#   2011/01/13 : jean : design
+#
+
+proc hit-cache {k} {
+
+    set r 1
+    set output ""
+
+    #
+    # Get filename and read its content
+    #
+
+    if {! [toposqlselect "SELECT file FROM topo.cache WHERE key='$k'" tab \
+		{set file $tab(file)}] } then {
+	puts stderr "error getting cached filename from database"
+	set r 0
+    } else {
+	if {[catch {set fd [open "$file" "r"]} msg]} then {
+	    puts stderr "error while opening cached result file '$file' ($msg)"
+	    set r 0
+	} else {
+	    while {[gets $fd line] >= 0} {
+		puts $line
+	    }
+	    close $fd
+	}
+    }
+
+    # 
+    # Update cache hit and last read date
+    # 
+
+    if {$r} then {
+	set sql "UPDATE topo.cache SET lastread=now(),hit=hit+1 WHERE key='$k'"
+	if {! [toposqlexec $sql]} then {
+	    puts stderr "error updating cache statistics in database"
+	    set r 0
+	}
+    }
+
+    return $r
+}
+
+
+
+#
+# Create entry in cache 
+#
+# Input:
+#   - parameters:
+#       - cmd : entry index in the cache
+#       - k : entry index in the cache
+#       - output : value to cache
+#       - runtime : time taken to run the command
+# Output:
+#   - return value: 1 if ok, 0 if error
+#
+# History 
+#   2011/01/13 : jean : design
+#
+
+proc update-cache {cmd k output runtime} {
+    global conf
+
+    #
+    # Write content to file
+    #
+
+    set file "$conf(cachedir)/$k"
+    set nfile "$file.[clock clicks]"
+    if {[catch {set fd [open "$nfile" "w"]} msg]} then {
+	puts stderr "Error creating cached file '$nfile' ($msg)"
+	return 0
+    } else {
+	puts $fd $output
+	close $fd
+	file rename -force -- $nfile $file
+    }
+
+    #
+    # Create cache entry in database if necessary
+    #
+
+    if {[in-cache $k]} {
+	set sql "UPDATE topo.cache
+		SET file='$file',runtime=$runtime, lastrun=now()
+		WHERE key='$k'"
+	if {! [toposqlexec $sql]} then {
+	    puts stderr "Error updating cache entry 'k' in database"
+	    return 0
+	}
+    } else {
+	set sql "INSERT INTO topo.cache
+			(key, command, file, hit, runtime, lastrun)
+		    	VALUES ('$k', '$cmd', '$file', 0, $runtime, now())"
+	if {! [toposqlexec $sql]} then {
+	    puts stderr "Error creating cache entry in database"
+	    return 0
+	}
+    }
+    return 1
+}
+
+#
+# Delete an entry from cache 
+#
+# Input:
+#   - parameters:
+#       - k : entry index in the cache
+# Output:
+#   - return value: 1 if ok, 0 if error
+#
+# History 
+#   2011/01/14 : jean : design
+#
+
+proc cache-remove {k} {
+    global conf
+
+    #
+    # Get entry
+    #
+
+    set file ""
+    set sql "SELECT file FROM topo.cache WHERE key='$k'"
+    if {! [toposqlselect $sql tab {set file $tab(file)}]} then {
+	puts stderr "error accessing cache entry '$k' in database before file rm"
+	return 0
+    }
+
+    #
+    # Remove file
+    #
+
+    file delete -force -- $file
+
+    #
+    # Remove cache entry in database
+    #
+
+    if {[in-cache $k]} {
+	set sql "DELETE FROM topo.cache WHERE key='$k'"
+	if {! [toposqlexec $sql]} then {
+	    puts stderr "Error removing cache '$k' entry in database"
+	    return 0
+	}
+    }
+    
+    return 1
+}
+
+# 
+# Decide if a cache update is needed
+#
+# Input:
+#   - parameters:
+#       - hash array with following index and value
+#            key
+#            command
+#            file
+#            hit
+#            runtime 
+# Output:
+#   - return value: 1 if update needed, 0 otherwise
+#
+# History 
+#   2011/01/14 : jean : design
+#
+
+proc cache-update-needed {_tab} {
+    upvar $_tab tab
+
+    if {$tab(runtime)>5} then {
+    	return 1
+    } else {
+    	return 0
+    }
 }

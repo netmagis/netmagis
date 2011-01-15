@@ -237,6 +237,8 @@ proc guess-type {dbfd param _msg} {
     set type ""
     set msg  ""
 
+    set ipversion [::ip::version $param]
+
     if {[regexp {^[0-9a-f]{1,2}(:[0-9a-f]{1,2}){5}$} $param]} then {
 	# MAC address
 	set type "mac"
@@ -261,7 +263,7 @@ proc guess-type {dbfd param _msg} {
         # By VLAN
 	set type "vlan"
 	set param $vlan
-    } elseif {[regexp {^([0-9.]+|[0-9a-f:.]+)$} $param]} then {
+    } elseif {$ipversion == 4 || $ipversion == 6} then {
 	# IP Address
         set msg [check-ip-syntax $dbfd $param "inet"]
         if {$msg eq ""} then {
@@ -860,7 +862,12 @@ proc resolve {type arg _msg} {
 
     set hostcmd [get-local-conf "hostcmd"]
     if {[catch {exec $hostcmd $arg} buf]} then {
-	set msg $buf
+	if {[regexp {Host .+ not found} $buf]} then {
+	    # the host was not found, not an error
+	} else {
+	    # real error
+	    set msg $buf
+	}
         set buf ""
     }
 
