@@ -151,32 +151,24 @@
 
  cfg:authpgsql {Paramètres pour l'authentification interne}
 
- cfg:authmailfrom:desc {Utiliser le "From" spécifié dans "auth"}
- cfg:authmailfrom:help {Utiliser l'information provenant de l'application "auth" plutôt que le champ suivant.}
- cfg:mailfrom:desc {"From" des mails de modification de passwd}
- cfg:mailfrom:help {Champ "From" des mails envoyés par l'application à un utilisateur lors des changements de mot de passe.}
- cfg:authmailreplyto:desc {Utiliser le "Reply-To" spécifié dans "auth"}
- cfg:authmailreplyto:help {Utiliser l'information provenant de l'application "auth" plutôt que le champ suivant.}
- cfg:mailreplyto:desc {"Reply-To" des mails de modification de passwd}
- cfg:mailreplyto:help {Champ "Reply-To" des mails envoyés par l'application à un utilisateur lors des changements de mot de passe.}
- cfg:authmailcc:desc {Utiliser le "Cc" spécifié dans "auth"}
- cfg:authmailcc:help {Utiliser l'information provenant de l'application "auth" plutôt que le champ suivant.}
- cfg:mailcc:desc {"Cc" des mails de modification de passwd}
- cfg:mailcc:help {Destinataire(s) auxiliaires des mail envoyés par l'application à un utilisateur lors des changements de mot de passe.  Cela peut éventuellement être une liste d'adresses, l'espace faisant office de séparateur.}
- cfg:authmailbcc:desc {Utiliser le "Bcc" spécifié dans "auth"}
- cfg:authmailbcc:help {Utiliser l'information provenant de l'application "auth" plutôt que le champ suivant.}
- cfg:mailbcc:desc {"Bcc" des mails de modification de passwd}
- cfg:mailbcc:help {Destinataire(s) caché(s) des mail envoyés par l'application à un utilisateur lors des changements de mot de passe.  Cela peut éventuellement être une liste d'adresses, l'espace faisant office de séparateur.}
- cfg:authmailsubject:desc {Utiliser le "Subject" spécifié dans "auth"}
- cfg:authmailsubject:help {Utiliser l'information provenant de l'application "auth" plutôt que le champ suivant.}
- cfg:mailsubject:desc {"Subject" des mails de moditication de passwd}
- cfg:mailsubject:help {Champ "Subject" des mails envoyés par l'application à un utilisateur lors des changements de mot de passe.}
- cfg:authmailbody:desc {Utiliser le corps spécifié dans "auth"}
- cfg:authmailbody:help {Utiliser l'information provenant de l'application "auth" plutôt que le champ suivant.}
- cfg:mailbody:desc {Corps du mail de modification de passwd}
- cfg:mailbody:help {Corps des mails envoyés par l'application à un utilisateur lors des changements de mot de passe. Les parameters suivants sont substitués: <ul><li>%1$s : login de l'utilisateur</li> <li>%2$s : mot de passe généré</li></ul>.}
- cfg:groupes:desc {Groupes Web autorisés}
- cfg:groupes:help {Liste de groupes (conformément à l'authentification Apache) autorisés pour la création d'un utilisateur.  Si la liste est vide, tous les groupes existants dans la base d'authentification sont autorisés.}
+ cfg:authpgminpwlen:desc {Longueur minimum des mots de passe}
+ cfg:authpgminpwlen:help {Longueur minimum autorisée pour les mots de passe saisis dans le module d'authentification interne}
+ cfg:authpgmaxpwlen:desc {Longueur maximum des mots de passe}
+ cfg:authpgmaxpwlen:help {Longueur maximum autorisée pour les mots de passe saisis dans le module d'authentification interne}
+ cfg:authpgmailfrom:desc {"From" des mails de modification de passwd}
+ cfg:authpgmailfrom:help {Champ "From" des mails envoyés par l'application à un utilisateur lors des changements de mot de passe.}
+ cfg:authpgmailreplyto:desc {"Reply-To" des mails de modification de passwd}
+ cfg:authpgmailreplyto:help {Champ "Reply-To" des mails envoyés par l'application à un utilisateur lors des changements de mot de passe.}
+ cfg:authpgmailcc:desc {"Cc" des mails de modification de passwd}
+ cfg:authpgmailcc:help {Destinataire(s) auxiliaires des mail envoyés par l'application à un utilisateur lors des changements de mot de passe.  Cela peut éventuellement être une liste d'adresses, l'espace faisant office de séparateur.}
+ cfg:authpgmailbcc:desc {"Bcc" des mails de modification de passwd}
+ cfg:authpgmailbcc:help {Destinataire(s) caché(s) des mail envoyés par l'application à un utilisateur lors des changements de mot de passe.  Cela peut éventuellement être une liste d'adresses, l'espace faisant office de séparateur.}
+ cfg:authpgmailsubject:desc {"Subject" des mails de moditication de passwd}
+ cfg:authpgmailsubject:help {Champ "Subject" des mails envoyés par l'application à un utilisateur lors des changements de mot de passe.}
+ cfg:authpgmailbody:desc {Corps du mail de modification de passwd}
+ cfg:authpgmailbody:help {Corps des mails envoyés par l'application à un utilisateur lors des changements de mot de passe. Les parameters suivants sont substitués: <ul><li>%1$s : login de l'utilisateur</li> <li>%2$s : mot de passe généré</li></ul>.}
+ cfg:authpggroupes:desc {Groupes Web autorisés}
+ cfg:authpggroupes:help {Liste de groupes (conformément à l'authentification Apache) autorisés pour la création d'un utilisateur.  Si la liste est vide, tous les groupes existants dans la base d'authentification sont autorisés.}
 }
 
 ###############################################################################
@@ -217,7 +209,10 @@
  {Present}	{Présent}
  {Group}	{Groupe}
  {Log}		{Log}
+ {Realm}	{Royaume}
+ {Realms}	{Royaumes}
  {ERROR}	{ERREUR}
+ {%1s Regular expression %2s Phonetic} {%1$s Exp. régulière %2$s Phonétique}
 
  {This host holds mail addresses} {Cette machine héberge des adresses de messagerie}
  {Internal error: '%s' inserted, but not found in database} {Erreur interne : '%s' inséré, mais non retrouvé dans la base}
@@ -225,6 +220,7 @@
  {RR update impossible: %s} {Mise à jour du RR impossible : %s}
 
  {Name}		{Nom}
+ {First name}	{Prénom}
  {Domain}	{Domaine}
  {IP address}	{Adresse IP}
  {IP addresses}	{Adresses IP}
@@ -273,6 +269,7 @@
  {Declared addresses (IPv4+IPv6): %s} {Adresses déclarées (IPv4+IPv6) : %s}
  {List of declared addresses} {Liste des adresses déclarées}
  {Type}		{Type}
+ {Method}	{Méthode}
 
  {Invalid FQDN '%s'}	{FQDN '%s' invalide}
  {Invalid domain '%s'}	{Domaine '%s' invalide}
@@ -370,6 +367,39 @@
  {deactivated interface} {interface désactivée}
  {Changes currently processed:} {Modification(s) en cours de traitement :}
  {Graph currenty re-builded. Informations presented here are not necessarily consistent with current equipement configuration.} {Reconstruction du graphe en cours. Les informations fournies ne sont pas forcément cohérentes avec la configuration actuelle des équipements.}
+
+ {Unable to get realm list} {Impossible de récupérer la liste des royaumes}
+ {Unable to insert realm '%1$s': %2$s} {Ajout du royaume '%1$s' impossible: %2$s}
+ {Invalid realm syntax (^[a-z][-a-z0-9]*$)} {Syntaxe invalide pour le royaume (^[a-z][-a-z0-9]*$)}
+ {Realm '%s' insertion} {d'insertion du royaume '%s'}
+ {Realm '%s' modification} {de modification du royaume '%s'}
+ {Realm '%s' removal} {de suppression du royaume '%s'}
+ {Unable to remove realm '%1$s': %2$s} {Suppression du royaume '%1$s' impossible: %2$s}
+ {Realm '%s' not found} {Royaume '%s' non trouvé}
+ {Realm '%1$s' holds %2$s member(s). Delete them first} {Le groupe '%1$s' contient %2$s membre(s). Supprimez-les d'abord}
+ {<invalid>} {<invalide>}
+ {Invalid login syntax (^[a-z][-a-z0-9\.]*$)} {Syntaxe invalide pour le login ^[a-z][-a-z0-9\.]*$}
+ {Unable to insert account '%1$s': %2$s} {Ajout du compte '%1$s' impossible : %2$s}
+ {Unable to insert '%1$s' membership: %2$s} {Impossible d'ajouter l'appartenance de '%1$s' aux royaumes : %2$s}
+ {Internal error: invalid 'action' value (%s)} {Erreur interne : valeur '%s' invalide pour l'action}
+ {Some accounts match '%s'. Choose one, or ask for a new account} {Plusieurs comptes présentent des similitudes avec '%s'. Choisissez celui qui convient, ou alors demandez la création d'un nouveau compte}
+ {Some accounts match criteria. Choose one} {Plusieurs comptes répondent aux critères. Choisissez celui qui convient}
+ {Create a new account} {Créer un nouveau compte}
+ {No account found} {Aucun compte trouvé}
+ {Creation} {Création}
+ {Modification} {Modification}
+ {Unable to modify '%1$s': %2$s} {Impossible de modifier '%1$s' : %2$s}
+ {Invalid realm '%s'} {Royaume '%s' invalide}
+ {Account '%s' insertion} {d'ajout du compte '%s'}
+ {Account '%s' modification} {de modification du compte '%s'}
+ {You did not specify any criterion} {Vous n'avez saisi aucun critère}
+ {Unable to change password of '%1$s': %2$s} {Impossible de changer le mot de passe de '%1$s' : %2$s}
+ {Block account '%s'} {de blocage du compte '%s'}
+ {Password generation (%1$s) for %2$s} {de génération de mot de passe (%1$s) pour %2$s}
+ {Password has been sent by mail} {Le mot de passe a été envoyé par mail}
+ {Password change for '%s'} {de changement de mot de passe pour '%s'}
+ {Remove '%s' from application} {de suppression de '%s' de l'application}
+ {Account is still active in authentication subsystem} {Le compte reste toutefois actif dans le sous-système d'authentification}
 }
 
 ###############################################################################
@@ -395,6 +425,7 @@
  {creation of group %s} {création du groupe %s}
  {Login '%s' does not exist} {Le login '%s' n'existe pas}
  {Login '%s' found more than once} {Le login '%s' est ambigu}
+ {Login '%s' already exists} {Le login '%s' existe déjà}
  {modification of group %s} {modification du groupe %s}
  {Mail role edition} {Édition des rôles de messagerie}
  {Web role edition} {Édition des rôles de Web}
@@ -656,4 +687,11 @@
  {Vlan '%s' is not a voice Vlan} {Le vlan '%s' n'est pas un Vlan VoIP}
  {Special character '%s' is not allowed} {Le caractère spécial '%s' n'est pas autorisé}
  {Error during spool insertion: %s} {Ajout dans la file d'attente impossible : %s}
+ {Password mismatch} {Les mots de passe ne concordent pas}
+ {Invalid character in password} {Caractère invalide dans le mot de passe}
+ {Password to short (< %s characters)} {Mot de passe trop court (< %s caractères)}
+ {Invalid mail address, password is not modified} {Adresse mail invalide, mot de passe non modifié}
+ {Account has been removed from realms: %s} {Le compte a été supprimé des royaumes ci-après : %s}
+ {Error while removing realms %1$s: %2$s} {Erreur lors de la suppression des royaumes %1$s : %2$s}
+ {All} {Tous}
 }

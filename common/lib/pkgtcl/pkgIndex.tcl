@@ -9,6 +9,5 @@
 # full path name of this file's directory.
 
 package ifneeded arrgen 1.1 [list source [file join $dir arrgen.tcl]]
-package ifneeded auth 1.3 [list source [file join $dir auth.tcl]]
 package ifneeded pgsql 1.2 [list source [file join $dir pgsql.tcl]]
 package ifneeded webapp 1.14 [list source [file join $dir webapp.tcl]]

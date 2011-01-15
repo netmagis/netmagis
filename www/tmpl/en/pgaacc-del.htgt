@@ -1,0 +1,44 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {30/07/2003}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Internal auth - Account removal
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	    \elementbandeau {Actions} { %LINKS% }
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Remove '%LOGIN%'}
+
+    You asked for removal of account:
+
+    %UTILISATEUR%
+
+    \gras {Do you really want to remove this account?}
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del">
+	<INPUT TYPE="HIDDEN" NAME="state"  VALUE="ok">
+	<INPUT TYPE="HIDDEN" NAME="login"  VALUE="%LOGIN%">
+	<INPUT TYPE="SUBMIT" VALUE="I confirm">
+    </FORM>
+}
+
+}

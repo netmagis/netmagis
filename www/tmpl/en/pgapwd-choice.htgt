@@ -1,0 +1,75 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {21/03/2004}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Internal auth - Password change
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	    \elementbandeau {Actions} { %LINKS% }
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Password change}
+
+    <form method="post" action="%URLFORM%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {
+		    \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
+		} {Input a new password}
+	    }
+	    \lignetableau {
+		\casetableau {} {
+		    Input the new password (between
+		    %MINPWLEN% and %MAXPWLEN% characters,
+		    with at least one non alphabetic character.
+		}
+		\casetableau {} {
+		    <input type="password" name="pw1" size="%MAXPWLEN%">
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {
+		    Confirm the new password
+		}
+		\casetableau {} {
+		    <input type="password" name="pw2" size="%MAXPWLEN%">
+		}
+	    }
+	    \lignetableau {
+		\multicasetableau {2} {
+		    \centragehorizontal {CENTER}
+		} {
+		    <div id="buttons">
+		    <input type="submit" value="Change">
+		    </div>
+		}
+	    }
+	}
+    </form>
+}
+
+}

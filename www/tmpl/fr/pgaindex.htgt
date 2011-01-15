@@ -1,0 +1,51 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {09/01/2011}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Auth interne - Accueil
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application Netmagis
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	    \elementbandeau {Actions} { %LINKS% }
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Authentification interne}
+
+    \titre {2} {Gestion des comptes}
+
+    \liste {
+	\item {\lien {consulter un compte} {%URLACONSULT%}}
+	\item {\lien {imprimer un compte}  {%URLAIMPR%}}
+	\item {\lien {ajouter un compte}   {%URLAAJOUT%}}
+	\item {\lien {modifier un compte}  {%URLAMODIF%}}
+	\item {\lien {supprimer un compte} {%URLASUPPR%}}
+	\item {\lien {modifier un mot de passe} {%URLAPASSWD%}}
+    }
+
+    \titre {2} {Gestion des royaumes}
+
+    \liste {
+	\item {\lien {lister les royaumes}  {%URLRLIST%}}
+	\item {\lien {ajouter un royaume}   {%URLRADD%}}
+	\item {\lien {modifier un royaume}  {%URLRMOD%}}
+	\item {\lien {supprimer un royaume} {%URLRDEL%}}
+    }
+}
+
+}

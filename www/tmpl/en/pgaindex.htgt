@@ -1,0 +1,51 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {09/01/2011}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Internal auth - Welcome
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	    \elementbandeau {Actions} { %LINKS% }
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Internal authentication}
+
+    \titre {2} {Account management}
+
+    \liste {
+	\item {\lien {list accounts}     {%URLALIST%}}
+	\item {\lien {print accounts}    {%URLAPRINT%}}
+	\item {\lien {add an account}    {%URLAADD%}}
+	\item {\lien {modify an account} {%URLAMOD%}}
+	\item {\lien {remove an account} {%URLADEL%}}
+	\item {\lien {modify a password} {%URLAPASSWD%}}
+    }
+
+    \titre {2} {Realm management}
+
+    \liste {
+	\item {\lien {list realms}    {%URLRLIST%}}
+	\item {\lien {add a realm}    {%URLRADD%}}
+	\item {\lien {modify a realm} {%URLRMOD%}}
+	\item {\lien {remove a realm} {%URLRDEL%}}
+    }
+}
+
+}
