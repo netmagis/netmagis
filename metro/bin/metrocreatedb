@@ -397,7 +397,7 @@ sub load_dns_sql_sensors
     my $compteur = -1;
 
     #ouverture de la base PSQL
-    my $db =  DBI->connect("dbi:Pg:dbname=$var{dnsdbname};host=$var{'dnsdbhost'}",
+    my $db =  DBI->connect("dbi:Pg:dbname=$var{dnsdbname};host=$var{'dnsdbhost'}:port=$var{'dnsdbport'}",
 		$var{'dnsdbuser'}, $var{'dnsdbpassword'});
 
     if($db)

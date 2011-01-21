@@ -98,11 +98,13 @@ proc get-local-conf {key} {
 #
 # History
 #   2010/12/17 : pda      : design
+#   2011/01/21 : pda      : add port specification
 #
 
 proc get-conninfo {prefix} {
     set conninfo {}
-    foreach f {{host host} {dbname name} {user user} {password password}} {
+    foreach f {{host host} {port port} {dbname name}
+			{user user} {password password}} {
 	lassign $f connkey suffix
 	set v [get-local-conf "$prefix$suffix"]
 	regsub {['\\]} $v {\'} v
