@@ -5216,8 +5216,7 @@ proc call-topo {cmd _msg} {
 
     set cmd "$topobindir/$cmd < $topograph"
 
-    set caching ""
-    catch {get-local-conf "cache"} caching
+    set caching [get-local-conf "cache"]
     if {$caching eq "yes"} then {
 	set cmd "$topobindir/cache $cmd"
     }
@@ -6666,6 +6665,7 @@ proc update-cache {cmd k output runtime} {
     # Write content to file
     #
 
+    set conf(cachedir) [get-local-conf "cachedir"]
     set file "$conf(cachedir)/$k"
     set nfile "$file.[clock clicks]"
     if {[catch {set fd [open "$nfile" "w"]} msg]} then {
@@ -6770,7 +6770,7 @@ proc cache-remove {k} {
 proc cache-update-needed {_tab} {
     upvar $_tab tab
 
-    if {$tab(runtime)>5} then {
+    if {$tab(runtime)>5 && $tab(hit)>2} then {
     	return 1
     } else {
     	return 0
