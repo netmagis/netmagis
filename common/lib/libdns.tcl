@@ -12,6 +12,7 @@
 #   2006/01/30 : jean     : alias message in check-authorized-host
 #   2010/11/29 : pda      : i18n
 #   2010/12/17 : pda      : reworked installation and parameters
+#   2011/01/02 : pda      : integration of libauth in libdns
 #
 
 ##############################################################################
@@ -97,11 +98,13 @@ proc get-local-conf {key} {
 #
 # History
 #   2010/12/17 : pda      : design
+#   2011/01/21 : pda      : add port specification
 #
 
 proc get-conninfo {prefix} {
     set conninfo {}
-    foreach f {{host host} {dbname name} {user user} {password password}} {
+    foreach f {{host host} {port port} {dbname name}
+			{user user} {password password}} {
 	lassign $f connkey suffix
 	set v [get-local-conf "$prefix$suffix"]
 	regsub {['\\]} $v {\'} v
@@ -485,10 +488,10 @@ snit::type ::netmagis {
 			    {mod always}
 			    {mail always}
 			    {dhcprange always}
-			    {passwd always}
 			    {search always}
 			    {whereami always}
 			    {topotitle topo}
+			    {passwd pgauth}
 			    {mactitle mac}
 			    {admtitle admin}
 			}
@@ -499,7 +502,7 @@ snit::type ::netmagis {
 	mod		{mod Modify}
 	mail		{mail {Mail roles}}
 	dhcprange	{dhcp {DHCP ranges}}
-	passwd		{%PASSWDURL% Password}
+	passwd		{pgapasswd Password}
 	search		{search Search}
 	whereami	{search?crit=_ {Where am I?}}
 	topotitle	{eq Topology}
@@ -520,6 +523,7 @@ snit::type ::netmagis {
 	dnstitle	{index DNS/DHCP}
 	:admin		{
 			    {admtitle always}
+			    {pgatitle authadmin}
 			    {admlmx always}
 			    {lnet always}
 			    {lusers always}
@@ -548,6 +552,7 @@ snit::type ::netmagis {
 			    {topotitle topo}
 			    {mactitle mac}
 			}
+	pgatitle	{pgaindex {Internal Auth}}
 	admlmx		{admlmx {List MX}}
 	lnet		{lnet {List networks}}
 	lusers		{lusers {List users}}
@@ -584,6 +589,29 @@ snit::type ::netmagis {
 	mac		{mac {MAC search}}
 	ipinact		{ipinact {Inactive addresses}}
 	macstat		{macstat {MAC stats}}
+	:pgauth	{
+			    {pgatitle authadmin}
+			    {pgaalst authadmin}
+			    {pgaaprn authadmin}
+			    {pgaaadd authadmin}
+			    {pgaamod authadmin}
+			    {pgaadel authadmin}
+			    {pgaapasswd authadmin}
+			    {pgarlst authadmin}
+			    {pgaradd authadmin}
+			    {pgarmod authadmin}
+			    {pgardel authadmin}
+			}
+	pgaalst		{pgaacc?action=list {List accounts}}
+	pgaaprn		{pgaacc?action=print {Print accounts}}
+	pgaaadd		{pgaacc?action=add {Add account}}
+	pgaamod		{pgaacc?action=mod {Modify account}}
+	pgaadel		{pgaacc?action=del {Remove account}}
+	pgaapasswd	{pgaacc?action=passwd {Change account password}}
+	pgarlst		{pgarealm?action=list {List realms}}
+	pgaradd		{pgarealm?action=add {Add realm}}
+	pgarmod		{pgarealm?action=mod {Modify realm}}
+	pgardel		{pgarealm?action=del {Remove realm}}
     }
 
     ###########################################################################
@@ -648,8 +676,8 @@ snit::type ::netmagis {
 	set am [dnsconfig get "authmethod"]
 	switch $am {
 	    pgsql {
-		set m {-method postgresql}
-		lappend m [list "-db" $conninfo]
+		set m {-method opened-postgresql}
+		lappend m "-db" $dbfd
 	    }
 	    ldap {
 		foreach v {ldapurl ldapbinddn ldapbindpw ldapbasedn
@@ -1056,6 +1084,19 @@ snit::type ::netmagis {
 	if {$tabuid(admin)} then {
 	    lappend curcap "admin"
 	}
+	if {[dnsconfig get "authmethod"] eq "pgsql"} then {
+	    lappend curcap "pgauth"
+	    set qlogin [::pgsql::quote $login]
+	    set sql "SELECT r.admin
+			    FROM pgauth.realm r, pgauth.member m
+			    WHERE r.realm = m.realm
+				AND login = '$qlogin'"
+	    pg_select $dbfd $sql tab {
+		if {$tab(admin)} then {
+		    lappend curcap "authadmin"
+		}
+	    }
+	}
 
 	#
 	# Is this page an "admin" only page ?
@@ -1063,7 +1104,7 @@ snit::type ::netmagis {
 
 	if {[llength $attr] > 0} then {
 	    # XXX : for now, test only one attribute
-	    if {! [user-attribute $dbfd $tabuid(idcor) $attr]} then {
+	    if {! ($attr in $curcap)} then {
 		$self error [mc "User '%s' not authorized" $login]
 	    }
 	}
@@ -1535,19 +1576,15 @@ snit::type ::config {
 	    {ldapattraddr {string}}
 	}
 	{authpgsql
-	    {authmailfrom {bool}}
-	    {mailfrom {string}}
-	    {authmailreplyto {bool}}
-	    {mailreplyto {string}}
-	    {authmailcc {bool}}
-	    {mailcc {string}}
-	    {authmailbcc {bool}}
-	    {mailbcc {string}}
-	    {authmailsubject {bool}}
-	    {mailsubject {string}}
-	    {authmailbody {bool}}
-	    {mailbody {text}}
-	    {groupes {string}}
+	    {authpgminpwlen {string}}
+	    {authpgmaxpwlen {string}}
+	    {authpgmailfrom {string}}
+	    {authpgmailreplyto {string}}
+	    {authpgmailcc {string}}
+	    {authpgmailbcc {string}}
+	    {authpgmailsubject {string}}
+	    {authpgmailbody {text}}
+	    {authpggroupes {string}}
 	}
     }
 
@@ -5122,6 +5159,2182 @@ proc _store-tabular-add {dbfd _msg table _tabval} {
 
     set sql "INSERT INTO $table ([join $cols ,]) VALUES ([join $vals ,])"
     return [::pgsql::execsql $dbfd $sql msg]
+}
+
+##############################################################################
+# Internal authentication functions
+##############################################################################
+
+#
+# Internal (PostgreSQL) authenticaion management
+#
+# Historique
+#   2003/05/30 : pda/jean : design
+#   2003/06/12 : pda/jean : remove lsuser
+#   2003/06/13 : pda/jean : add genpw, chpw and showuser
+#   2003/06/27 : pda      : add edituser
+#   2003/07/28 : pda      : split name and christian name
+#   2003/12/11 : pda      : simplify
+#   2005/05/25 : pda/jean : use ldap
+#   2005/06/07 : pda/jean/zamboni : crypt command
+#   2005/08/24 : pda      : add ldap port
+#   2007/10/04 : jean     : ldap directory is no longer modified in setuser
+#   2007/11/29 : pda/jean : merge old auth.tcl package and libauth.tcl
+#   2011/01/02 : pda      : integration of libauth in libdns
+#
+
+# Fields in pgauth.user database table
+set libconf(fields)	{login password nom prenom mel tel mobile fax adr}
+
+# Fields : <title> <field spec> <form var name> <user>
+# with <user> = 1 if field contains information about user (else : search only)
+set libconf(editfields) {
+    {Login 	{string 10} login	1}
+    {Name	{string 40} nom		1}
+    {Method	{yesno {%1s Regular expression %2s Phonetic}} phren 0}
+    {{First name}	{string 40} prenom	1}
+    {Method	{yesno {%1s Regular expression %2s Phonetic}} phrep 0}
+    {Address	{text 3 40} adr		1}
+    {Mail	{string 40} mel		1}
+    {Phone	{string 15} tel		1}
+    {Fax	{string 15} fax		1}
+    {Mobile	{string 15} mobile	1}
+}
+set libconf(editrealms) {
+    {{Realms}	{list multi ...} realms 1}
+}
+
+#
+# Tabular formats (see arrgen(n)):
+#	- tabuchoice : user selection with clickable login
+#	- tabumod : user add/modify form
+#	- tabulist : user list (to display or print)
+#
+
+set libconf(tabuchoice) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {11 26 35 28 10}
+	latex {
+	    linewidth {267}
+	}
+    }
+    pattern Title {
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	align {center}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+    pattern User {
+	vbar {yes}
+	column {
+	    format {raw}
+	}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+}
+
+set libconf(tabumod) {
+    global {
+	align {left}
+	botbar {no}
+	columns {25 75}
+    }
+    pattern {Normal} {
+	vbar {no}
+	column { }
+	vbar {no}
+	column {
+	    format {raw}
+	}
+	vbar {no}
+    }
+}
+
+set libconf(tabulist) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {8 16 32 10 10 10 14 10}
+	latex {
+	    linewidth {267}
+	}
+    }
+    pattern Title {
+	title {yes}
+	topbar {yes}
+	chars {bold}
+	align {center}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+    pattern User {
+	chars {8}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+}
+
+######################################
+# User management
+######################################
+
+#
+# Read user entry
+#
+# Input:
+#   - parameters :
+#	- dbfd : database handle
+#	- login : user login
+#	- tab : array containing, in return, user information
+# Output:
+#   - return value : 1 if found, 0 if not found
+#   - parameter tab : 
+#	tab(login)	login
+#	tab(nom)	name
+#	tab(prenom)	christian name
+#	tab(mel)	email address
+#	tab(tel)	phone number
+#	tab(fax)	facsimile number
+#	tab(mobile)	mobile phone number
+#	tab(adr)	postal address
+#	tab(encryption)	"crypt" if password is encrypted
+#	tab(password)	password (crypted or not)
+#	tab(realms)	list of realms to which user belongs
+#
+# History
+#   2003/05/13 : pda/jean : design
+#   2003/05/30 : pda/jean : add realms
+#   2005/05/25 : pda/jean : add ldap code
+#   2007/12/04 : pda/jean : remove ldap code
+#   2010/12/29 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-getuser {dbfd login _tab} {
+    upvar $_tab tab
+    global libconf
+
+    set found 0
+    set qlogin [::pgsql::quote $login]
+    set sql "SELECT * FROM pgauth.user WHERE login = '$qlogin'"
+    pg_select $dbfd $sql tabsql {
+	foreach c $libconf(fields) {
+	    set tab($c) $tabsql($c)
+	}
+	set found 1
+    }
+    set tab(realms) {}
+    set sql "SELECT realm FROM pgauth.member WHERE login = '$qlogin'"
+    pg_select $dbfd $sql tabsql {
+	lappend tab(realms) $tabsql(realm)
+    }
+    return $found
+}
+
+#
+# Modify or create a user
+#
+# Input:
+#   - parameters :
+#	- dbfd : database handle
+#	- tab : see getuser
+#	- transact : "transaction" (by default) or "no transaction"
+# Output:
+#   - return value : empty string or error message
+#
+# Note : if password field is nul, a crypted "*" is set by default
+#	(meaning that this account is not active)
+#
+# History
+#   2003/05/13 : pda/jean : design
+#   2003/05/30 : pda/jean : add realms
+#   2003/08/05 : pda      : add transactions
+#   2007/12/04 : pda/jean : specialization for postgresql
+#   2010/12/29 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-setuser {dbfd _tab {transact transaction}} {
+    upvar $_tab tab
+    global libconf
+
+    if {! [regexp -- {^[a-z][-a-z0-9\.]*$} $tab(login)]} then {
+	return [mc {Invalid login syntax (^[a-z][-a-z0-9\.]*$)}]
+    }
+
+    if {$transact eq "transaction"} then {
+	set tr 1
+	d dblock {pgauth.user pgauth.member}
+    } else {
+	set tr 0
+    }
+
+    #
+    # Remove user
+    #
+    set msg [pgauth-deluser $dbfd $tab(login) "no transaction"]
+    if {$msg ne ""} then {
+	if {$tr} then {
+	    d dbabort [mc "delete %s" $tab(login)] $msg
+	}
+	return $msg
+    }
+
+    #
+    # If password does not exist, invalid login
+    #
+    if {! [info exists tab(password)]} then {
+	set tab(password) "*"
+    }
+
+    #
+    # Insert user data in database
+    #
+    set cols {}
+    set vals {}
+    foreach c $libconf(fields) {
+	if {[info exists tab($c)]} then {
+	    lappend cols $c
+	    lappend vals "'[::pgsql::quote $tab($c)]'"
+	}
+    }
+    set cols [join $cols ","]
+    set vals [join $vals ","]
+    set sql "INSERT INTO pgauth.user ($cols) VALUES ($vals)"
+    if {![::pgsql::execsql $dbfd $sql msg]} then {
+	if {$tr} then {
+	    d dbabort [mc "add %s" $tab(login)] $msg
+	}
+	return [mc {Unable to insert account '%1$s': %2$s} $tab(login) $msg]
+    }
+
+    #
+    # Insert membership
+    #
+    set sql ""
+    foreach r $tab(realms) {
+	append sql "INSERT INTO pgauth.member (login, realm) VALUES
+			('$tab(login)', '$r') ;"
+    }
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {$tr} then {
+	    d dbabort [mc "add %s" $tab(login)] $msg
+	}
+	return [mc {Unable to insert '%1$s' membership: %2$s} $tab(login) $msg]
+    }
+
+    #
+    # Transaction end
+    #
+    if {$tr} then {
+	d dbcommit [mc "add %s" $tab(login)]
+    }
+
+    return ""
+}
+
+#
+# Remove user entry
+#
+# Input:
+#   - parameters :
+#	- dbfd : database handle
+#	- login : login name
+#	- transact : "transaction" (default) or "no transaction"
+# Output:
+#   - return value : empty string or error message
+#
+# History
+#   2003/05/13 : pda/jean : design
+#   2003/05/30 : pda/jean : add realms
+#   2007/12/04 : pda/jean : specialization for postgresql
+#   2010/12/29 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-deluser {dbfd login {transact transaction}} {
+    if {$transact eq "transaction"} then {
+	set tr 1
+	d dblock {pgauth.user pgauth.member}
+    } else {
+	set tr 0
+    }
+
+    set qlogin [::pgsql::quote $login]
+    set sql "DELETE FROM pgauth.member WHERE login = '$qlogin'"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {$tr} then {
+	    d dbabort [mc "delete %s" $login] $msg
+	}
+	return $msg
+    }
+
+    set sql "DELETE FROM pgauth.user WHERE login = '$qlogin'"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {$tr} then {
+	    d dbabort [mc "delete %s" $login] $msg
+	}
+	return $msg
+    }
+
+
+    if {$tr} then {
+	d dbcommit [mc "add %s" $login]
+    }
+
+    return ""
+}
+
+#
+# Search a user with criterion
+#
+# Input:
+#   - parameters :
+#	- dbfd : database handle
+#	- tabcrit : array containing criterion
+#		login, nom, prenom, adr, mel, tel, mobile, fax, realm
+#		or phnom, phprenom for phonetic searches
+#	- sort (optional) : list {sort...} where
+#		sort = +/- sort-criterion
+# Output:
+#   - return value : list of found logins
+#
+# Note : each criterion is a regexp (* and ? only)
+#
+# History
+#   2003/06/06 : pda/jean : design
+#   2003/08/01 : pda/jean : phonetic criterions
+#   2003/08/11 : pda      : search "or" on more than one realm
+#   2007/12/04 : pda/jean : specialization for postgresql
+#   2010/12/29 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
+    upvar $_tabcrit tabcrit
+
+    #
+    # Build-up the "where" clause
+    #
+
+    set clauses {}
+    set nwheres 0
+    set from ""
+    foreach c {login phnom phprenom nom prenom adr mel tel mobile fax realm} {
+	if {[info exists tabcrit($c)]} then {
+	    set re $tabcrit($c)
+	    if {$re ne ""} then {
+		set re [::pgsql::quote $re]
+		# quote SQL special characters
+		regsub -all -- {%} $re {\\%} re
+		regsub -all -- {_} $re {\\_} re
+		# quote *our* special characters
+		regsub -all -- {\*} $re {%} re
+		regsub -all -- {\?} $re {_} re
+
+		if {$c eq "realm"} then {
+		    set from ", pgauth.member"
+		    set table "pgauth.member"
+		    lappend clauses "pgauth.user.login = member.login"
+		} else {
+		    set table "pgauth.user"
+		}
+
+		if {$c eq "phnom" || $c eq "phprenom"} then {
+		    lappend clauses "$table.$c = SOUNDEX('$re')"
+		} elseif {$c eq "realm"} then {
+		    set or {}
+		    foreach r $tabcrit(realm) {
+			set qr [::pgsql::quote $r]
+			lappend or "$table.realm = '$qr'"
+		    }
+		    if {[llength $or] > 0} then {
+			set sor [join $or " OR "]
+			lappend clauses "($sor)"
+		    }
+		} else {
+		    # ILIKE = LIKE sans tenir compte de la casse
+		    lappend clauses "$table.$c ILIKE '$re'"
+		}
+		incr nwheres
+	    }
+	}
+    }
+    if {$nwheres > 0} then {
+	set where [join $clauses " AND "]
+	set where "WHERE $where"
+    } else {
+	set where ""
+    }
+
+    #
+    # Build-up sort criterion
+    #
+
+    set sqlsort {}
+    set sqldistinct {}
+    foreach t $sort {
+	set way [string range $t 0 0]
+	set col [string range $t 1 end]
+	switch -- $way {
+	    -		{ set way "DESC" }
+	    +  		-
+	    default	{ set way "ASC" }
+	}
+	if {$col in {login nom prenom mel tel adr mobile fax}} then {
+	    lappend sqlsort "pgauth.user.$col $way"
+	    lappend sqldistinct "pgauth.user.$col"
+	}
+    }
+    if {[llength $sqlsort] == 0} then {
+	set orderby ""
+    } else {
+	set orderby [join $sqlsort ", "]
+	set orderby "ORDER BY $orderby"
+    }
+
+    if {[llength $sqldistinct] == 0} then {
+	set distinct ""
+    } else {
+	set distinct [join $sqldistinct ", "]
+	set distinct "DISTINCT ON ($distinct)"
+    }
+
+    #
+    # Build the list of logins
+    #
+
+    set lusers {}
+    set sql "SELECT $distinct pgauth.user.login
+		FROM pgauth.user $from
+		$where
+		$orderby"
+    pg_select $dbfd $sql tab {
+	lappend lusers $tab(login)
+    }
+
+    return $lusers
+}
+
+#
+# Crypt a password
+#
+# Input:
+#   - parameters :
+#	- str : string to crypt
+# Output:
+#   - return value : crypted string
+#
+# History
+#   2003/05/13 : pda/jean : design
+#   2005/07/22 : pda/jean : secure special characters
+#   2010/12/29 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-crypt {str} {
+    regsub -all {['\\]} $str {\\&} str
+    set crypt [get-local-conf "crypt"]
+    return [exec sh -c [format $crypt "'$str'"]]
+}
+
+#
+# Generate a semi-random password
+#
+# Input:
+#   - parameters : (none)
+# Output:
+#   - return value : generated clear-text password
+#
+# History
+#   2003/06/13 : pda/jean : design
+#   2010/12/29 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-genpw {} {
+    set pwgen [get-local-conf "pwgen"]
+    return [exec sh -c $pwgen]
+}
+
+#
+# Process password modification
+#
+# Input:
+#   - parameters :
+#	- dbfd : database handle
+#	- login : user login
+#	- action : list {action parameters} where:
+#		action = "block"    (no parameter)
+#		action = "generate" (no parameter)
+#		action = "change"   (parameters = password twice)
+#	- mail : {mail} or {nomail}, if the password must be sent by mail or not
+#		In the "mail" case, this parameter is a list
+#			{mail from replyto cc bcc subject body}
+#	- _newpw : in return, new password
+# Output:
+#   - return value : empty string or error message
+#
+# History
+#   2003/06/13 : pda/jean : design
+#   2003/12/08 : pda      : more complete "mail" parameter
+#   2010/12/29 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-chpw {dbfd login action mail _newpw} {
+    upvar $_newpw newpw
+    global libconf
+
+    if {! [pgauth-getuser $dbfd $login tab]} then {
+	return [mc "Login '%s' does not exist" $login]
+    }
+
+    switch -- [lindex $action 0] {
+	block {
+	    set newpw [mc "<invalid>"]
+	    set tab(password) "*"
+	}
+	generate {
+	    set newpw [pgauth-genpw]
+	    set tab(password) [pgauth-crypt $newpw]
+	}
+	change {
+	    lassign $action c pw1 pw2
+
+	    if {$pw1 ne $pw2} then {
+		return [mc "Password mismatch"]
+	    }
+	    set newpw $pw1
+
+	    if {[regexp {[\\'"`()]} $newpw]} then {
+		return [mc "Invalid character in password"]
+	    }
+
+	    set minpwlen [::dnsconfig get "authpgminpwlen"]
+	    set maxpwlen [::dnsconfig get "authpgmaxpwlen"]
+
+	    if {[string length $newpw] < $minpwlen} then {
+		return [mc "Password to short (< %s characters)" $minpwlen]
+	    }
+	    set newpw [string range $newpw 0 [expr $maxpwlen-1]]
+
+	    set tab(password) [pgauth-crypt $newpw]
+	}
+	default {
+	    return [mc "Internal error: invalid 'action' value (%s)" $action]
+	}
+    }
+
+    if {[lindex $mail 0] eq "mail"} then {
+	lassign $mail b from repl cc bcc subj body
+	if {[::webapp::valid-email $tab(mel)]} then {
+	    set body [format $body $login $newpw]
+	    ::webapp::mail $from $repl $tab(mel) $cc $bcc $subj $body
+	} else {
+	    return [mc "Invalid mail address, password is not modified"]
+	}
+    }
+
+    return [pgauth-setuser $dbfd tab]
+}
+
+######################################
+# Pgsql realm management
+######################################
+
+#
+# List existing realms
+#
+# Input:
+#   - parameters :
+#	- dbfd : database handle
+#	- tab : in return, array containing realm list
+#		tab(<realm>) {<descr> <list of users>}
+# Output:
+#   - return value : (none)
+#
+# History
+#   2003/05/30 : pda/jean : design
+#   2007/12/04 : pda/jean : specialization for postgresql
+#   2010/12/27 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-lsrealm {dbfd _tab} {
+    upvar $_tab tab
+
+    set sql "SELECT * FROM pgauth.realm"
+    pg_select $dbfd $sql tabsql {
+	set realm $tabsql(realm)
+	set descr $tabsql(descr)
+	set admin $tabsql(admin)
+	set members {}
+	set sqlm "SELECT login FROM pgauth.member WHERE realm = '$realm'"
+	pg_select $dbfd $sqlm tabm {
+	    lappend members $tabm(login)
+	}
+	set tab($realm) [list $descr $members $admin]
+    }
+}
+
+#
+# Add a PG realm into database
+#
+# Input:
+#   - parameters :
+#	- dbfd : database handle
+#	- realm : realm name
+#	- descr : realm description
+#	- admin : 0 or 1
+#	- _msg : in return, error message (if any)
+# Output:
+#   - return value : 1 (ok) or 0 (error)
+#   - parameter _msg : error message if any
+#
+# History
+#   2003/05/30 : pda/jean : design
+#   2007/12/04 : pda/jean : specialization for postgresql
+#   2010/12/27 : pda      : i18n and netmagis merge
+#   2011/01/07 : pda      : add admin
+#
+
+proc pgauth-addrealm {dbfd realm descr admin _msg} {
+    upvar $_msg msg
+
+    set msg ""
+    if {[regexp -- {^[a-z][-a-z0-9]*$} $realm]} then {
+	set qrealm [::pgsql::quote $realm]
+	set qdescr  [::pgsql::quote $descr]
+	set sql "INSERT INTO pgauth.realm (realm, descr, admin)
+				VALUES ('$qrealm', '$qdescr', $admin)"
+	if {! [::pgsql::execsql $dbfd $sql m]} then {
+	    set msg [mc {Unable to insert realm '%1$s': %2$s} $realm $m]
+	}
+    } else {
+	set msg [mc {Invalid realm syntax (^[a-z][-a-z0-9]*$)}]
+    }
+    return [string equal $msg ""]
+}
+
+#
+# Remove a realm from database
+#
+# Input:
+#   - parameters :
+#	- dbfd : database handle
+#	- realm : realm name
+#	- _msg : in return, error message (if any)
+# Output:
+#   - return value : 1 (ok) or 0 (error)
+#   - parameter _msg : error message if any
+#
+# Note : this function do not remove realms which have members
+#   (thanks to the SQL constraint)
+#
+# History
+#   2003/05/30 : pda/jean : design
+#   2007/12/04 : pda/jean : specialization for postgresql
+#   2010/12/28 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-delrealm {dbfd realm _msg} {
+    upvar $_msg msg
+
+    set msg ""
+    set qrealm [::pgsql::quote $realm]
+    set sql "DELETE FROM pgauth.realm WHERE realm = '$qrealm'"
+    if {! [::pgsql::execsql $dbfd $sql m]} then {
+	set msg [mc {Unable to remove realm '%1$s': %2$s} $realm $m]
+    }
+    return [string equal $msg ""]
+}
+
+#
+# Modify a realm
+#
+# Input:
+#   - parameters :
+#	- dbfd : database handle
+#	- realm : realm name
+#	- descr : realm description
+#	- admin : 0 or 1
+#	- members : list of members
+#	- _msg : in return, error message (if any)
+# Output:
+#   - return value : 1 (ok) or 0 (error)
+#   - parameter _msg : error message if any
+#
+# History
+#   2003/06/04 : pda/jean : design
+#   2007/12/04 : pda/jean : specialization for postgresql
+#   2010/12/29 : pda      : i18n and netmagis merge
+#   2011/01/07 : pda      : add admin
+#
+
+proc pgauth-setrealm {dbfd realm descr admin members _msg} {
+    upvar $_msg msg
+
+    set qrealm [::pgsql::quote $realm]
+
+    d dblock {}
+
+    #
+    # If realm does not exists, create it. If it exists, modify description.
+    #
+
+    set sql "SELECT realm FROM pgauth.realm WHERE realm = '$qrealm'"
+    set found 0
+    pg_select $dbfd $sql tab {
+	set found 1
+    }
+    if {! $found} then {
+	if {! [pgauth-addrealm $dbfd $realm $descr $admin msg]} then {
+	    d dbabort [mc "add %s" $realm] $msg
+	}
+    } else {
+	set qdescr [::pgsql::quote $descr]
+	set sql "UPDATE pgauth.realm
+			SET descr = '$qdescr', admin = $admin
+			WHERE realm = '$qrealm'"
+	if {! [::pgsql::execsql $dbfd $sql m]} then {
+	    d dbabort [mc "modify %s" $realm] $msg
+	}
+    }
+
+    #
+    # Remove member list
+    #
+    set sql "DELETE FROM pgauth.member WHERE realm = '$qrealm'"
+    if {! [::pgsql::execsql $dbfd $sql m]} then {
+	d dbabort [mc "modify %s" $realm] $msg
+    }
+
+    #
+    # Update member list
+    #
+    foreach login $members {
+	set qlogin [::pgsql::quote $login]
+	set sql "INSERT INTO pgauth.member (login, realm)
+			VALUES ('$qlogin', '$qrealm')"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    d dbabort [mc "add %s" "$login/$realm"] $msg
+	}
+    }
+
+    d dbcommit [mc "modify %s" $realm]
+
+    set msg ""
+    return 1
+}
+
+#
+# Returns an HTML menu to select realms
+#
+# Input:
+#   - parameters :
+#	- dbfd : database handle
+#	- var : name of form variable
+#	- multiple : 1 if multiple choice, 0 if only one choice
+#	- realmsel : list of preselected realms (or empty list)
+# Output:
+#   - return value : HTML code
+#
+# History
+#   2003/06/03 : pda/jean : design
+#   2003/06/13 : pda/jean : add parameter realmsel
+#   2003/06/27 : pda      : package
+#   2010/12/28 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-htmlrealmmenu {dbfd var multiple realmsel} {
+    #
+    # Index pre-selected realms
+    #
+    foreach r $realmsel {
+	set tabsel($r) ""
+    }
+
+    #
+    # Get realm list
+    #
+    pgauth-lsrealm $dbfd tabrlm
+
+    #
+    # Build key/value list for the menu
+    #
+
+    set l {}
+    set lsel {}
+    set idx 0
+    foreach r [lsort [array names tabrlm]] {
+	lappend l [list $r $r]
+	if {[info exists tabsel($r)]} then {
+	    lappend lsel $idx
+	}
+	incr idx
+    }
+
+    #
+    # Multiple choices?
+    #
+
+    if {$multiple} then {
+	set size [llength [array names tabrlm]]
+    } else {
+	set size 1
+    }
+
+    return [::webapp::form-menu $var $size $multiple $l $lsel]
+}
+
+######################################
+# HTML account management
+######################################
+
+#
+# Heart of CGI script for applications which manage users.
+#
+# Input:
+#   - parameters :
+#	- e : execution environment of the script, as an indexed array:
+#		dbfd : access to auth database
+#		url : url of CGI script
+#		realms : realms where application user can belong to.
+#			If realms = {}, we can access every realm
+#			If only one realm, realm list is not displayed when
+#				adding a user
+#		maxrealms : maximum number of realms displayed in the listbox
+#			or 0 to use exact number of displayed realms
+#		page-* : HTML/LaTeX templates
+#			-index : index of different actions
+#			-ok : action done
+#			-add1 : first page of user add
+#			-choice : choice of user, if more than one found
+#			-mod : parameter modification
+#			-del : confirm user removal
+#			-passwd : actions on user password
+#			-list : list of users
+#			-listtex : list of users in latex format
+#			-sel : user selection with criterion
+#		specif : application specific user data
+#				{{<title> <type>} ...}
+#			(see ::webapp::form-field for type)
+#		script-* : scripts to execute to access and display user
+#			characteristics, specific to an application:
+#			- getuser : display user information and returns a
+#				list {value ...} in the same order than
+#				in "specif" list
+#			- deluser : remove user from application
+#			- setuser : add or modify user in application
+#			- chkuser : check if a user modification is authorized
+#		mailfrom : mail header in case of password generation
+#		mailreplyto : mail header in case of password generation
+#		mailcc : mail header in case of password generation
+#		mailbcc : mail header in case of password generation
+#		mailsubject : mail header in case of password generation
+#		mailbody : mail header in case of password generation
+#	- ftab : form tab
+# Output:
+#   - return value : (none)
+#   - stdout : an HTML page
+#
+# History
+#   2003/07/29 : pda      : design
+#   2003/07/31 : pda/jean : done
+#   2003/12/14 : pda      : add mail*
+#   2010/12/29 : pda      : i18n and netmagis merge
+#   2011/01/07 : pda      : add ftab array
+#
+
+proc pgauth-accmanage {_e _ftab} {
+    upvar $_e e
+    upvar $_ftab ftab
+
+    set form {
+	{action 0 1}
+	{state  0 1}
+    }
+    pgauth-get-data ftab $form
+    ::webapp::import-vars ftab $form
+
+    switch -- $action {
+	add     { set l [pgauth-ac-add       e ftab $state] }
+	list    -
+	print   { set l [pgauth-ac-consprn   e ftab $state $action] }
+	del     -
+	mod     -
+	passwd  { set l [pgauth-ac-delmodpwd e ftab $state $action] }
+	default { set l [pgauth-ac-nothing   e ftab $state] }
+    }
+    lassign $l format page lsubst
+
+    lappend lsubst [list %ACTION% $action]
+    d urlset "%URLFORM%" $e(url) {}
+    d result $page $lsubst
+    exit 0
+}
+
+proc pgauth-get-data {_ftab form} {
+    upvar $_ftab ftab
+
+    if {[llength [::webapp::get-data ftab $form]] != [llength $form]} then {
+	d error [mc "Invalid input '%s'" $ftab(_error)]
+    }
+}
+
+proc pgauth-ac-nothing {_e _ftab state} {
+    upvar $_e e
+    upvar $_ftab ftab
+
+    return [list "html" $e(page-index) {}]
+}
+
+proc pgauth-ac-add {_e _ftab state} {
+    upvar $_e e
+    upvar $_ftab ftab
+
+    set lsubst {}
+    switch -- $state {
+	nom {
+	    #
+	    # User name has been introduced. Search this name.
+	    #
+	    set form {
+		    {nom 1 1}
+		}
+	    pgauth-get-data ftab $form
+
+	    set nom [lindex $ftab(nom) 0]
+	    set tabcrit(phnom) $nom
+	    set lusers [pgauth-searchuser $e(dbfd) tabcrit {+nom +prenom}]
+	    set nbut [llength $lusers]
+
+	    if {$nbut > 0} then {
+		#
+		# Some users match this name.
+		#
+		#	%ACTION%
+		#	%MESSAGE%
+		#	%LISTEUTILISATEURS%
+		#	%AUCUN%
+		#
+		set qnom [::webapp::html-string $nom]
+		set message [mc "Some accounts match '%s'. Choose one, or ask for a new account" $qnom]
+		lappend lsubst [list %MESSAGE% $message]
+
+		lappend lsubst [list %LISTEUTILISATEURS% \
+				    [pgauth-ac-display-choice e $lusers "ajout"] \
+				]
+
+		d urlset "" $e(url) [list {action add} \
+					{state nouveau} \
+					[list "nom" $nom] \
+				    ]
+		set url [d urlget ""]
+		set aucun [::webapp::helem "form" \
+				    [::webapp::form-submit {} [mc "Create a new account"]]
+				    "method" "post" "action" $url]
+		lappend lsubst [list %AUCUN% $aucun]
+
+		set page $e(page-choice)
+	    } else {
+		#
+		# No user match. Prepare the form to add a new user.
+		#
+		#	%ACTION%
+		#	%STATE%
+		#	%LOGIN%
+		#	%PARAMUTILISATEUR%
+		#	%TITRE%
+		#
+		set lsubst [pgauth-ac-display-mod e "_new" $nom]
+		set page $e(page-mod)
+	    }
+	}
+	plusdun {
+	    #
+	    # One user selected. Prepare form to input user modifications.
+	    #
+	    #	%ACTION%
+	    #	%STATE%
+	    #	%LOGIN%
+	    #	%PARAMUTILISATEUR%
+	    #	%TITRE%
+	    #
+	    set form {
+		    {login 1 1}
+		}
+	    pgauth-get-data ftab $form
+
+	    set login [lindex $ftab(login) 0]
+	    set lsubst [pgauth-ac-display-mod e $login ""]
+	    set page $e(page-mod)
+	}
+	nouveau {
+	    #
+	    # User addition required. Prepare form to input a new user.
+	    #
+	    #	%ACTION%
+	    #	%LOGIN%
+	    #	%PARAMUTILISATEUR%
+	    #
+	    set form {
+		    {nom 0 1}
+		}
+	    pgauth-get-data ftab $form
+
+	    set nom [lindex $ftab(nom) 0]
+
+	    set lsubst [pgauth-ac-display-mod e "_new" $nom]
+	    set page $e(page-mod)
+	}
+	creation {
+	    #
+	    # New user data is given. Create user, and give control
+	    # to the password modification page.
+	    #
+	    #	%ACTION% (passwd)
+	    #	%LOGIN%
+	    #
+	    set form {
+		    {login 1 1}
+	    }
+	    pgauth-get-data ftab $form
+
+	    set login [lindex $ftab(login) 0]
+	    if {[pgauth-getuser $e(dbfd) $login u]} then {
+		d error [mc "Login '%s' already exists" $login]
+	    }
+
+	    #
+	    # New user. Ignore supplementary and give control to
+	    # the password modification page.
+	    #
+	    pgauth-ac-store-mod e ftab $login
+
+	    set lsubst [concat $lsubst [pgauth-ac-display-passwd e $login]]
+	    set page $e(page-passwd)
+	}
+	ok {
+	    #
+	    # Store modification of an existing user.
+	    #
+	    #	%TITREACTION% (ajout)
+	    #	%COMPLEMENT%
+	    #
+	    set form {
+		    {login 1 1}
+	    }
+	    pgauth-get-data ftab $form
+
+	    set login [lindex $ftab(login) 0]
+	    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+		d error [mc "Login '%s' does not exist" $login]
+	    }
+
+	    #
+	    # Existing user in database
+	    #
+	    set lsubst [pgauth-ac-store-mod e ftab $login]
+	    set page $e(page-ok)
+	}
+	default {
+	    set page $e(page-add1)
+	}
+    }
+    return [list "html" $page $lsubst]
+}
+
+proc pgauth-ac-consprn {_e _ftab state mode} {
+    upvar $_e e
+    upvar $_ftab ftab
+    global libconf
+
+    set lsubst {}
+    set format "html"
+    switch -- $state {
+	criteres {
+	    #
+	    # Criterion is given
+	    #
+	    #	%NBUTILISATEURS%
+	    #	%S%
+	    #	%DATE%
+	    #	%HEURE%
+	    #	%TABLEAU%
+	    #
+
+	    set lusers [pgauth-ac-search-crit e ftab]
+	    if {[llength $lusers] == 0} then {
+		#
+		# No user found. Display again the criterion selection page.
+		#
+		set lsubst [pgauth-ac-display-crit e ftab [mc "No account found"]]
+		set page $e(page-sel)
+	    } else {
+		#
+		# Guess output format
+		#
+
+		switch $mode {
+		    list {
+			set tabfmt "html"
+			set page $e(page-list)
+		    }
+		    print {
+			set format "pdf"
+			set tabfmt "latex"
+			set page $e(page-listtex)
+		    }
+		}
+
+		#
+		# Display user list
+		#
+
+		set lines {}
+		lappend lines [list "Title" \
+				    [mc "Login"] \
+				    [mc "Name"] \
+				    [mc "Address"] \
+				    [mc "Mail"] \
+				    [mc "Phone"] \
+				    [mc "Fax"] \
+				    [mc "Mobile"] \
+				    [mc "Realms"] \
+				]
+		foreach login $lusers {
+		    if {[pgauth-getuser $e(dbfd) $login tab]} then {
+			set myrealms [pgauth-ac-my-realms e $tab(realms)]
+			lappend lines [list "User" \
+					    $tab(login) \
+					    "$tab(nom) $tab(prenom)" \
+					    $tab(adr) \
+					    $tab(mel) \
+					    $tab(tel) $tab(fax) $tab(mobile) \
+					    $myrealms
+					] \
+		    }
+		}
+		set tableau [::arrgen::output $tabfmt $libconf(tabulist) $lines]
+
+		#
+		# Time
+		#
+
+		set date  [clock format [clock seconds] -format "%d/%m/%Y"]
+		set heure [clock format [clock seconds] -format "%Hh%M"]
+
+		lappend lsubst [list %TABLEAU% $tableau]
+	    	lappend lsubst [list %NBUTILISATEURS% [llength $lusers]]
+		lappend lsubst [list %DATE% $date]
+		lappend lsubst [list %HEURE% $heure]
+	    }
+	}
+	default {
+	    #
+	    # Initial page to select criteria
+	    #
+	    #	%ACTION%
+	    #	%MESSAGE%
+	    #	%CRITERES%
+	    #
+	    set lsubst [pgauth-ac-display-crit e ftab ""]
+	    set page $e(page-sel)
+	}
+    }
+    return [list $format $page $lsubst]
+}
+
+proc pgauth-ac-delmodpwd {_e _ftab state action} {
+    upvar $_e e
+    upvar $_ftab ftab
+
+    switch -- $state {
+	criteres {
+	    #
+	    # Criterion was given
+	    #
+	    #	%LOGIN%
+	    #	%NOM%
+	    #	%PRENOM%
+	    #
+
+	    set lusers [pgauth-ac-search-crit e ftab]
+	    switch [llength $lusers] {
+		0 {
+		    #
+		    # No user found
+		    #
+		    set lsubst [pgauth-ac-display-crit e ftab [mc "No account found"]]
+		    set page $e(page-sel)
+		}
+		1 {
+		    #
+		    # Display page to remove, modify or change password
+		    # of an user
+		    #
+		    set login [lindex $lusers 0]
+		    switch -- $action {
+			del {
+			    set lsubst [pgauth-ac-display-del e $login]
+			    set page $e(page-del)
+			}
+			mod {
+			    set lsubst [pgauth-ac-display-mod e $login ""]
+			    set page $e(page-mod)
+			}
+			passwd {
+			    set lsubst [pgauth-ac-display-passwd e $login]
+			    set page $e(page-passwd)
+			}
+			default {
+			    d error [mc "Invalid input"]
+			}
+		    }
+		}
+		default {
+		    #
+		    # Some users match.
+		    #
+		    #	%ACTION%
+		    #	%MESSAGE%
+		    #	%LISTEUTILISATEURS%
+		    #	%AUCUN%
+		    #
+		    set message [mc "Some accounts match criteria. Choose one"]
+		    lappend lsubst [list %MESSAGE% $message]
+
+		    lappend lsubst [list %LISTEUTILISATEURS% \
+					[pgauth-ac-display-choice e $lusers $action] \
+				    ]
+
+		    lappend lsubst [list %AUCUN% ""]
+		    set page $e(page-choice)
+		}
+	    }
+	}
+	plusdun {
+	    #
+	    # Display page to remove, modify or change password of an user
+	    #
+	    set form {
+		{login 1 1}
+	    }
+	    pgauth-get-data ftab $form
+
+	    set login [lindex $ftab(login) 0]
+
+	    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+		d error [mc "Login '%s' does not exist" $login]
+	    }
+
+	    switch -- $action {
+		del {
+		    set lsubst [pgauth-ac-display-del e $login]
+		    set page $e(page-del)
+		}
+		mod {
+		    set lsubst [pgauth-ac-display-mod e $login ""]
+		    set page $e(page-mod)
+		}
+		passwd {
+		    set lsubst [pgauth-ac-display-passwd e $login]
+		    set page $e(page-passwd)
+		}
+		default {
+		    d error [mc "Invalid input"]
+		}
+	    }
+
+	}
+	ok {
+	    #
+	    # Perform action
+	    #
+
+	    set form {
+		{login 1 1}
+	    }
+	    pgauth-get-data ftab $form
+
+	    set login [lindex $ftab(login) 0]
+
+	    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+		d error [mc "Login '%s' does not exist" $login]
+	    }
+
+	    set page $e(page-ok)
+	    switch -- $action {
+		del {
+		    set lsubst [pgauth-ac-del-user e ftab $login]
+		}
+		mod {
+		    set lsubst [pgauth-ac-store-mod e ftab $login]
+		}
+		passwd {
+		    set lsubst [pgauth-ac-store-passwd e ftab $login]
+		}
+		default {
+		    d error [mc "Invalid input"]
+		}
+	    }
+	}
+	default {
+	    #
+	    # Initial page for criteria
+	    #
+	    #	%ACTION%
+	    #	%MESSAGE%
+	    #	%CRITERES%
+	    #
+	    set lsubst [pgauth-ac-display-crit e ftab ""]
+	    set page $e(page-sel)
+	}
+    }
+
+    return [list "html" $page $lsubst]
+}
+
+#
+# Utility functions for pgauth-accmanage
+#
+
+#
+# Returns a realm list, extract from "realms" , where only authorized
+# realms (i.e. those in e(realms)) are displayed. If e(realms) is
+# empty, all realms may be displayed.
+#
+
+proc pgauth-ac-my-realms {_e realms} {
+    upvar $_e e
+
+    if {[llength $e(realms)] == 0} then {
+	set rr $realms
+    } else {
+	foreach r $e(realms) {
+	    set x($r) 0
+	}
+	set rr {}
+	foreach r $realms {
+	    if {[info exists x($r)]} then {
+		lappend rr $r
+	    }
+	}
+    }
+    return $rr
+}
+
+#
+# Returns a list of users with associated URLs
+#
+# Return : value for %LISTEUTILISATEURS%
+#
+
+proc pgauth-ac-display-choice {_e lusers action} {
+    upvar $_e e
+    global libconf
+
+    set lines {}
+    lappend lines [list "Title" \
+			    [mc "Login"] \
+			    [mc "Name"] \
+			    [mc "Address"] \
+			    [mc "Mail"] \
+			    [mc "Realms"] \
+			]
+    foreach login $lusers {
+	if {[pgauth-getuser $e(dbfd) $login tab]} then {
+	    set hlogin [::webapp::html-string $login]
+	    d urlset "" $e(url) [list [list "action" $action] \
+					{state plusdun} \
+					[list "login" $login] \
+				    ]
+	    set url [d urlget ""]
+	    set urllogin [::webapp:helem "a" $hlogin "href" $url]
+	    set myrealms [pgauth-ac-my-realms e $tab(realms)]
+	    lappend lines [list "User" \
+					$urllogin "$tab(nom) $tab(prenom)" \
+					$tab(adr) $tab(mel) $myrealms
+				    ]
+	}
+    }
+    return [::arrgen::output "html" $libconf(tabuchoice) $lines]
+}
+
+#
+# Returns a form part to input user information
+#
+# Retour : values for %LOGIN%, %PARAMUTILISATEUR%, %STATE% and %TITRE%
+#
+
+proc pgauth-ac-display-mod {_e login nom} {
+    upvar $_e e
+    global libconf
+
+    #
+    # Get auth data for user, or simulate them if this is a creation
+    #
+
+    set new [string equal $login "_new"]
+    if {$new} then {
+	array set u {
+	    login {}
+	    nom {}
+	    prenom {}
+	    adr {}
+	    mel {}
+	    tel {}
+	    fax {}
+	    mobile {}
+	    realms {}
+	}
+	set u(nom) $nom
+	set state "creation"
+	set title [mc "Creation"]
+    } else {
+	if {! [pgauth-getuser $e(dbfd) $login u]} then {
+	    d error [mc "Login '%s' does not exist" $login]
+	}
+	set state "ok"
+	set title [mc "Modification"]
+    }
+
+    #
+    # Realm edition choice
+    #
+
+    set menurealms [pgauth-build-realm-index $e(dbfd) "list" \
+				0 $e(realms) $e(maxrealms) gidx]
+
+    #
+    # Get existing values, or default values for a new user
+    #
+
+    set valu [uplevel 3 [format $e(script-getuser) $login]]
+
+    #
+    # Input fields for user
+    #
+
+    set lines {}
+
+    foreach c [concat $libconf(editfields) $libconf(editrealms)] {
+	lassign $c ctitle spec var user
+	if {$var eq "login" && ! $new} then {
+	    #
+	    # Special case for "login" field if editable
+	    #
+	    set t [::webapp::html-string $login]
+	    append t [::webapp::form-hidden "login" $login]
+	} elseif {$var eq "realms"} then {
+	    #
+	    # Special case for realms
+	    #
+	    if {[llength $menurealms] == 0} then {
+		set t ""
+	    } else {
+		set lidx {}
+		foreach r $u(realms) {
+		    if {[info exists gidx($r)]} then {
+			lappend lidx $gidx($r)
+		    }
+		}
+		set t [::webapp::form-field $menurealms $var $lidx]
+	    }
+	} elseif {$user} then {
+	    #
+	    # General case : a field to modify
+	    #
+	    if {[lindex $spec 0] eq "yesno"} then {
+		set spec [list "yesno" [mc [lindex $spec 1]]]
+	    }
+	    set t [::webapp::form-field $spec $var $u($var)]
+	} else {
+	    #
+	    # Else, it is only a field for search (eg: phnom/phprenom)
+	    #
+	    set t ""
+	}
+
+	if {$t ne ""} then {
+	    set l [list Normal [mc $ctitle] $t]
+	    lappend lines $l
+	}
+    }
+
+    #
+    # Generate input field specific to the application
+    #
+
+    set n 0
+    foreach c $e(specif) v $valu {
+	lassign $c ctitle spec
+	incr n
+	set var "uvar$n"
+	lappend lines [list "Normal" $ctitle [::webapp::form-field $spec $var $v]]
+    }
+
+    set paramutilisateur [::arrgen::output html $libconf(tabumod) $lines]
+
+    #
+    # Substitution lists
+    #
+
+    lappend lsubst [list %LOGIN%	    $login]
+    lappend lsubst [list %PARAMUTILISATEUR% $paramutilisateur]
+    lappend lsubst [list %STATE%	    $state]
+    lappend lsubst [list %TITRE%	    $title]
+
+    return $lsubst
+}
+
+#
+# Store user information (new or modification)
+#
+# Return : values for %TITREACTION% and %COMPLEMENT%
+#
+
+proc pgauth-ac-store-mod {_e _ftab login} {
+    upvar $_e e
+    upvar $_ftab ftab
+    global libconf
+
+    #
+    # Check if the script is authorized to modify user
+    #
+    set msg [uplevel 3 [format $e(script-chkuser) $login]]
+    if {$msg ne ""} then {
+	d error [mc {Unable to modify '%1$s': %2$s} $login $msg]
+    }
+
+    #
+    # Extract field values
+    #
+
+    set form [pgauth-build-form-spec "mod" \
+			[concat $libconf(editfields) $libconf(editrealms)] \
+			$e(specif) \
+		    ]
+    pgauth-get-data ftab $form
+
+    #
+    # Get existing data from database
+    #
+    set u(realms) {}
+    set new [expr ! [pgauth-getuser $e(dbfd) $login u]]
+
+    d dblock {pgauth.user pgauth.member}
+
+    #
+    # Set user data. Realms will be set after.
+    #
+    foreach c $libconf(editfields) {
+	lassign $c title spec var user
+	if {$user} then {
+	    set u($var) [lindex $ftab($var) 0]
+	}
+    }
+
+    #
+    # Realm management
+    #	- if e(realms) is empty
+    #		authorize all specific realms in form
+    #	- if e(realms) contains only one element
+    #		do not use form data, and add realm in database
+    #	- lif e(realms) contains more than one element
+    #		use form data, and set all realms present in e(realms)
+    #
+    pgauth-lsrealm $e(dbfd) tabrlm
+    switch [llength $e(realms)] {
+	0 {
+	    foreach r $ftab(realms) {
+		if {! [info exists tabrlm($r)]} then {
+		    d error [mc "Invalid realm '%s'" $r]
+		}
+	    }
+	    set u(realms) $ftab(realms)
+	}
+	1 {
+	    set found 0
+	    set er [lindex $e(realms) 0]
+	    foreach r $u(realms) {
+		if {$r eq $er} then {
+		    set found 1
+		    break
+		}
+	    }
+	    if {! $found} then {
+		lappend u(realms) $er
+	    }
+	}
+	default {
+	    foreach r $e(realms) {
+		set ar($r) 1
+	    }
+
+	    # nr = u realms, minus realms from e(realms)
+	    set nr {}
+	    foreach r $u(realms) {
+		if {! [info exists ar($r)]} then {
+		    lappend nr $r
+		}
+	    }
+	    set u(realms) $nr
+
+	    # add form realms, if they are also in ar()
+	    foreach r $ftab(realms) {
+		if {! [info exists tabrlm($r)]} then {
+		    d error [mc "Invalid realm '%s'" $r]
+		}
+		if {[info exists ar($r)]} then {
+		    lappend u(realms) $r
+		}
+	    }
+	}
+    }
+
+    #
+    # Store user in database
+    #
+    set msg [pgauth-setuser $e(dbfd) u "no transaction"]
+    if {$msg ne ""} then {
+	d dbabort [mc "add %s" $login] $msg
+    }
+
+
+    #
+    # Store application specific data
+    #
+    set lval {}
+    set i 1
+    while {[info exists ftab(uvar$i)]} {
+	lappend lval $ftab(uvar$i)
+	incr i
+    }
+
+    set msg [uplevel 3 [format $e(script-setuser) $login $lval]]
+    if {$msg ne ""} then {
+	d dbabort [mc "add %s" $login] $msg
+    }
+
+    #
+    # C'est fini, on y va !
+    #
+    d dbcommit [mc "add %s" $login]
+
+    if {$new} then {
+	set title [mc "Account '%s' insertion" $login]
+    } else {
+	set title [mc "Account '%s' modification" $login]
+    }
+
+    set lsubst {}
+    lappend lsubst [list %TITREACTION% $title]
+    lappend lsubst [list %COMPLEMENT% ""]
+    return $lsubst
+}
+
+#
+# Display search criterion
+#
+# Return : values for %CRITERES% and %MESSAGE%
+#
+
+proc pgauth-ac-display-crit {_e _ftab msg} {
+    upvar $_e e
+    upvar $_ftab ftab
+    global libconf
+
+    #
+    # Realm management
+    #
+
+    set menurealms [pgauth-build-realm-index $e(dbfd) "menu" 1 $e(realms) 1 {}]
+    if {[llength $menurealms] == 0} then {
+	set menurealms {hidden}
+    }
+
+    #
+    # Generate input form
+    #
+
+    set lines {}
+    foreach c [concat $libconf(editfields) $libconf(editrealms)] {
+	lassign $c title spec var user
+	if {$var eq "realms"} then {
+	    set t [::webapp::form-field $menurealms $var ""]
+	} else {
+	    if {[lindex $spec 0] eq "yesno"} then {
+		set spec [list "yesno" [mc [lindex $spec 1]]]
+	    }
+	    set t [::webapp::form-field $spec $var ""]
+	}
+
+	set l [list "Normal" [mc $title] $t]
+	lappend lines $l
+    }
+    set crit [::arrgen::output html $libconf(tabumod) $lines]
+
+    set lsubst {}
+    lappend lsubst [list %CRITERES% $crit]
+    lappend lsubst [list %MESSAGE% $msg]
+
+    return $lsubst
+}
+
+#
+# Exploit search criterion to return a list of users
+#
+# Return : list of found logins
+#
+
+proc pgauth-ac-search-crit {_e _ftab} {
+    upvar $_e e
+    upvar $_ftab ftab
+    global libconf
+
+    #
+    # Get parameters
+    #
+
+    set form [pgauth-build-form-spec "crit" \
+			[concat $libconf(editfields) $libconf(editrealms)] \
+			{} \
+		    ]
+    pgauth-get-data ftab $form
+
+    foreach f $form {
+	set var [lindex $f 0]
+	set $var [string trim [lindex $ftab($var) 0]]
+    }
+
+    #
+    # If no clause is specified, return an appropriate message (without
+    # returning all users, which could be long).
+    # If we really want all users, one must explicit this by using the
+    # "*" special character in a criterion.
+    #
+
+    set ncrit 0
+    foreach var {login nom prenom mel adr realms} {
+	if {[set $var] ne ""} then {
+	    incr ncrit
+	}
+    }
+
+    set allrealms 1
+    if {! ($realms eq "_" || $realms eq "")} then {
+	set allrealms 0
+	incr ncrit
+    }
+
+    if {$ncrit == 0} then {
+	d error [mc "You did not specify any criterion"]
+    }
+
+    #
+    # Use phonetic search
+    #
+
+    if {[regexp {^[01]$} $phren] && $phren} then {
+	set phnom ""
+    } else {
+	set phnom $nom
+	set nom ""
+    }
+
+    if {[regexp {^[01]$} $phrep] && $phrep} then {
+	set phprenom ""
+    } else {
+	set phprenom $prenom
+	set prenom ""
+    }
+
+    #
+    # Search with specified criterion
+    #
+    # Special case for realms: we search for the specified realm, or
+    # all realms (those defined, or those found in database) is nothing
+    # is specified.
+    #
+
+    foreach var {login nom prenom phnom phprenom mel adr} {
+	set tabcrit($var) [set $var]
+    }
+
+    if {$allrealms} then {
+	if {[llength $e(realms)] > 0} then {
+	    set tabcrit(realm) $e(realms)
+	}
+    } else {
+	set lr $e(realms)
+	if {[llength $lg] == 0} then {
+	    pgauth-lsrealm $e(dbfd) tabrlm
+	    set lr [array names tabrlm]
+	}
+	if {[lsearch -exact $lr $realms] == -1} then {
+	    d error [mc "Realm '%s' not found" $realms]
+	}
+	set tabcrit(realm) $realms
+    }
+
+    return [pgauth-searchuser $e(dbfd) tabcrit {+nom +prenom}]
+}
+
+#
+# Display possible actions for a password change
+#
+# Return : values for %LOGIN%, %NOM% and %PRENOM%.
+#
+
+proc pgauth-ac-display-passwd {_e login} {
+    upvar $_e e
+
+    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+	d error [mc "Login '%s' does not exist" $login]
+    }
+
+    set login  [::webapp::html-string $login]
+    set nom    [::webapp::html-string $u(nom)]
+    set prenom [::webapp::html-string $u(prenom)]
+
+    set minpwlen [::dnsconfig get "authpgminpwlen"]
+    set maxpwlen [::dnsconfig get "authpgmaxpwlen"]
+
+    set lsubst {}
+    lappend lsubst [list %LOGIN%    $login]
+    lappend lsubst [list %NOM%      $nom]
+    lappend lsubst [list %PRENOM%   $prenom]
+    lappend lsubst [list %MINPWLEN% $minpwlen]
+    lappend lsubst [list %MAXPWLEN% $maxpwlen]
+
+    return $lsubst
+}
+
+#
+# Store a password
+#
+# Return : values for %TITREACTION% and %COMPLEMENT%
+#
+
+proc pgauth-ac-store-passwd {_e _ftab login} {
+    upvar $_e e
+    upvar $_ftab ftab
+
+    #
+    # Check if the script is authorized to modify user
+    #
+    set msg [uplevel 3 [format $e(script-chkuser) $login]]
+    if {$msg ne ""} then {
+	d error [mc {Unable to change password of '%1$s': %2$s} $login $msg]
+    }
+
+    #
+    # Get form values
+    #
+    set form {
+	{pw1	0 1}
+	{pw2	0 1}
+	{block	0 1}
+	{gen	0 1}
+	{change	0 1}
+    }
+
+    pgauth-get-data ftab $form
+    ::webapp::import-vars ftab $form
+
+    set hlogin [::webapp::html-string $login]
+
+    if {$block ne ""} then {
+	set msg [pgauth-chpw $e(dbfd) $login {block} "nomail" {}]
+	set res [mc "Block account '%s'" $hlogin]
+	set comp ""
+    } elseif {$gen ne ""} then {
+	set mail [list "mail" $e(mailfrom) $e(mailreplyto) \
+			    $e(mailcc) $e(mailbcc) \
+			    [encoding convertto iso8859-1 $e(mailsubject)] \
+			    [encoding convertto iso8859-1 $e(mailbody)]]
+	set msg [pgauth-chpw $e(dbfd) $login {generate} $mail newpw]
+	set res [mc {Password generation (%1$s) for %2$s} $newpw $hlogin]
+	set comp [mc "Password has been sent by mail"]
+    } elseif {$change ne ""} then {
+	set pw1 [lindex $ftab(pw1) 0]
+	set pw2 [lindex $ftab(pw2) 0]
+	set msg [pgauth-chpw $e(dbfd) $login [list "change" $pw1 $pw2] "nomail" {}]
+	set res [mc "Password change for '%s'" $hlogin]
+	set comp ""
+    } else {
+	d error [mc "Invalid input"]
+    }
+
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Display result
+    #
+
+    set lsubst {}
+    lappend lsubst [list %TITREACTION% $res]
+    lappend lsubst [list %COMPLEMENT% $comp]
+
+    return $lsubst
+}
+
+#
+# Display removal confirmation page
+#
+# Return : value for %UTILISATEUR%
+#
+
+proc pgauth-ac-display-del {_e login} {
+    upvar $_e e
+
+    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+	return [mc "Login '%s' does not exist" $login]
+    }
+
+    set lsubst {}
+    lappend lsubst [list %UTILISATEUR%  $login]
+    lappend lsubst [list %LOGIN%  [::webapp::html-string $login]]
+    return $lsubst
+}
+
+#
+# Remove user
+#
+# Return : values for %TITREACTION% and %COMPLEMENT%
+#
+
+proc pgauth-ac-del-user {_e _ftab login} {
+    upvar $_e e
+    upvar $_ftab ftab
+
+    #
+    # Default messages
+    #
+    set msg [mc Remove '%s' from application" $login]
+    set comp [mc "Account is still active in authentication subsystem"]
+
+    #
+    # Check if the script is authorized to modify user
+    #
+    set msg [uplevel 3 [format $e(script-chkuser) $login]]
+    if {$msg ne ""} then {
+	d error [mc {Unable to modify '%1$s': %2$s} $login $msg]
+    }
+
+    #
+    # Remove rights on application
+    #
+    set msg [uplevel 3 [format $e(script-deluser) $login]]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Remove from realms
+    #
+    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+	set comp [mc "Login '%s' does not exist" $login]
+    } else {
+	set rmr {}
+	set nr {}
+	foreach r $u(realms) {
+	    if {[lsearch -exact $e(realms) $r] == -1} then {
+		# realm is not one of the realms to remove
+		lappend nr $r
+	    } else {
+		# realm to remove
+		lappend rmr $r
+	    }
+	}
+	if {[llength $nr] != [llength $u(realms)]} then {
+	    set u(realms) $nr
+	    set m [pgauth-setuser $e(dbfd) u]
+	    if {$m eq ""} then {
+		set rmr [join $rmr ", "]
+		set comp [mc "Account has been removed from realms: %s" $rmr]
+	    } else {
+		set comp [mc {Error while removing realms %1$s: %2$s} $rmr $m]
+	    }
+	}
+    }
+
+    set lsubst {}
+    lappend lsubst [list %TITREACTION% [::webapp::html-string $msg]]
+    lappend lsubst [list %COMPLEMENT% [::webapp::html-string $comp]]
+    return $lsubst
+}
+
+#
+# Build a form spec
+#
+# Input:
+#	- modif : "mod" or "crit"
+#	- spec1 : see variable libconf(editfields)
+#	- spec2 : see e(specif) in pgauth-accmanage
+# Output:
+#	- list ready for get-data
+#
+
+proc pgauth-build-form-spec {modif spec1 spec2} {
+    set form {}
+
+    foreach c $spec1 {
+	lassign $c title spec var user
+	set kw [lindex $spec 0]
+	if {$modif eq "mod"} then {
+	    if {$user} then {
+		switch -- $kw {
+		    list	{ lappend form [list $var 0 99999] }
+		    default	{ lappend form [list $var 1 1] }
+		}
+	    }
+	} else {
+	    switch -- $kw {
+		list	{ lappend form [list $var 1 1] }
+		default	{ lappend form [list $var 1 1] }
+	    }
+	}
+    }
+
+    set nvar 0
+    foreach c $spec2 {
+	incr nvar
+	set kw [lindex [lindex $c 1] 0]
+	set var "uvar$nvar"
+	switch -- $kw {
+	    list	{ lappend form [list $var 0 99999] }
+	    default	{ lappend form [list $var 1 1] }
+	}
+    }
+
+    return $form
+}
+
+#
+# Build a menu or a listbox with realms
+#
+# Input:
+#	- dbfd : database handle
+#	- type : list or menu
+#	- all : true if entry "All" should be displayed
+#	- rlmlist : list of realms to manage
+#	- maxrlm : max number of realms to display
+#	- _gidx : in return, array of indexes
+# Output :
+#	- field ready to be displayed by form-field
+#
+
+proc pgauth-build-realm-index {dbfd type all rlmlist maxrlm _gidx} {
+    upvar $_gidx gidx
+
+    pgauth-lsrealm $dbfd tabrlm
+
+    set menurealms {}
+    set i 0
+    switch [llength $rlmlist] {
+	0 {
+	    #
+	    # Menu with all available realms
+	    #
+	    if {$all} then {
+		lappend menurealms [list "_" [mc "All"]]
+		incr i
+	    }
+	    foreach r [lsort [array names tabrlm]] {
+		set gidx($r) $i
+		lappend menurealms [list $r $r]
+		incr i
+	    }
+	}
+	1 {
+	    #
+	    # Don't authorize realm input
+	    #
+	}
+	default {
+	    #
+	    # Authorize selected realm input
+	    #
+	    if {$all} then {
+		lappend menurealms [list "_" [mc "All"]]
+		incr i
+	    }
+	    foreach r $rlmlist {
+		if {[info exists tabrlm($r)]} then {
+		    set gidx($r) $i
+		    lappend menurealms [list $r $r]
+		} else {
+		    lappend menurealms [list [mc "Invalid realm '%s'] $r]
+		}
+		incr i
+	    }
+	}
+    }
+
+    set nrealms [llength $menurealms]
+    if {$nrealms > 0} then {
+	if {$maxrlm > 0 && $nrealms > $maxrlm} then {
+	    set nrealms $maxrlm
+	}
+	if {$type eq "list"} then {
+	    set menurealms [linsert $menurealms 0 "list" "multi" $nrealms]
+	} else {
+	    set menurealms [linsert $menurealms 0 "menu"]
+	}
+    }
+
+    return $menurealms
 }
 
 ##############################################################################

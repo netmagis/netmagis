@@ -1,0 +1,33 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {21/03/2004}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Auth interne - Mot de passe modifié
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application Netmagis
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	    \elementbandeau {Actions} { %LINKS% }
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Action effectuée}
+
+    Le mot de passe a été modifié.
+}
+
+}

@@ -24,7 +24,8 @@ SCRIPTS 	= \
 		    net \
 		    perm search \
 		    statuser statorg \
-		    topotop
+		    topotop \
+		    pgaindex pgapasswd pgarealm pgaacc
 
 all:
 	@echo ">>> Making all in `pwd`"

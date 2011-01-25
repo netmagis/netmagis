@@ -1,0 +1,69 @@
+#!%TCLSH%
+
+#
+# Display internal auth operations
+#
+# Called by: index
+#
+# Parameters (form or url): none
+#
+# History
+#   2011/01/09 : pda      : design
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(page)		pgaindex.html
+
+#
+# Next actions
+#
+
+set conf(next-account)	"pgaacc"
+set conf(next-realm)	"pgarealm"
+
+#
+# Netmagis general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-register {} {} {
+    global conf
+
+    #
+    # URL and substitution list building
+    #
+
+    foreach action {list print add mod del passwd} {
+	set up [string toupper $action]
+	set args [list [list "action" $action]]
+	d urlset "%URLA$up%" $conf(next-account) $args
+    }
+
+    foreach action {list add mod del} {
+	set up [string toupper $action]
+	set args [list [list "action" $action]]
+	d urlset "%URLR$up%" $conf(next-realm) $args
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page) {}
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "pgauth" "authadmin"

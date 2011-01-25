@@ -1,0 +1,553 @@
+#!%TCLSH%
+
+#
+# Manage realms
+#
+# Called by: pgaindex
+#
+# Parameters (form or url):
+#   - display realm page
+#	- action : "list"
+#   - display add page
+#	- action : "add"
+#	- realm : (none)
+#   - process new realm addition
+#	- action : "add"
+#	- realm : realm name
+#	- descr : realm description
+#   - display selection page for modification
+#	- action : "mod"
+#   - edit realm members (modification)
+#	- buttons: store, reset, left, right
+#	- if store
+#		- realm : selected realm name
+#		- descr : modified realm description
+#		- truemembers : select members
+#		- users : not used
+#		- members : not used
+#	- if right
+#		- realm : selected realm name
+#		- descr : modified realm description
+#		- truemembers : select members
+#		- users : users to add to the realm (i.e. to truemembers)
+#		- members : not used
+#	- if left
+#		- realm : selected realm name
+#		- descr : modified realm description
+#		- truemembers : select members
+#		- users : not used
+#		- members : users to remove from the realm (i.e. from truemembers)
+#   - display selection page for removal
+#	- action : "del"
+#   - process realm removal
+#	- action : "del"
+#	- realm : realm name
+#
+#
+# History
+#   2003/05/30 : pda/jean : design
+#   2003/06/27 : pda      : use cgi-exec
+#   2007/12/04 : pda/jean : integration in netmagis
+#   2010/12/27 : pda      : i18n and netmagis merge
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(page-index)	pgarlm-index.html
+set conf(page-list)	pgarlm-list.html
+set conf(page-add)	pgarlm-add.html
+set conf(page-modsel)	pgarlm-modsel.html
+set conf(page-modedit)	pgarlm-modedit.html
+set conf(page-del)	pgarlm-del.html
+set conf(page-ok)	pga-ok.html
+
+#
+# Next actions
+#
+
+set conf(next)		"pgarealm"
+
+# listbox size for realm edition
+set conf(size)		20
+
+#
+# Realm list
+#
+
+set conf(tabrlm) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {20 70 10}
+    }
+    pattern Realm {
+	vbar {yes}
+	column {
+	    chars {bold}
+	}
+	vbar {yes}
+	column {
+	    multicolumn {2}
+	}
+	vbar {yes}
+    }
+    pattern RealmAdmin {
+	vbar {yes}
+	column {
+	    chars {bold}
+	}
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+    pattern Users {
+	vbar {yes}
+	column {
+	    multicolumn {3}
+	}
+	vbar {yes}
+    }
+}
+
+
+#
+# Netmagis general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Display realm index page
+##############################################################################
+
+d cgi-register {
+    action {}
+} {} {
+    global conf
+
+    foreach action {list add mod del} {
+	set up [string toupper $action]
+	d urlset "%URL$up%" $conf(next) [list [list "action" $action]]
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-index) [list \
+			    ]
+}
+
+##############################################################################
+# Display realm list page
+##############################################################################
+
+d cgi-register {
+    action list
+} {} {
+    global conf
+
+    #
+    # Get realm list
+    #
+
+    pgauth-lsrealm $dbfd tabrlm
+
+    #
+    # Display realm list
+    #
+
+    set lines {}
+    foreach r [lsort [array names tabrlm]] {
+	lassign $tabrlm($r) descr members admin
+	if {$admin} then {
+	    set admin [mc "Admin"]
+	} else {
+	    set admin ""
+	}
+	lappend lines [list RealmAdmin $r $descr $admin]
+	lappend lines [list Users [join [lsort $members] " "]]
+    }
+
+    set realms [::arrgen::output "html" $conf(tabrlm) $lines]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-list) [list \
+				[list %REALMS% $realms] \
+			    ]
+}
+
+##############################################################################
+# Display realm add page
+##############################################################################
+
+d cgi-register {
+    action add
+    realm {}
+} {} {
+    global conf
+
+    #
+    # Get realm list
+    #
+
+    pgauth-lsrealm $dbfd tabrlm
+
+    #
+    # Display realm list
+    #
+
+    set lines {}
+    foreach r [lsort [array names tabrlm]] {
+	set descr [lindex $tabrlm($r) 0]
+	lappend lines [list Realm $r $descr]
+    }
+
+    set realms [::arrgen::output "html" $conf(tabrlm) $lines]
+
+    #
+    # Admin Yes/No
+    #
+
+    set yes [mc "yes"]
+    set no [mc "no"]
+    set fmt "%1\$s $yes &nbsp; %2\$s $no"
+    set admin [::webapp::form-yesno "admin" 0 $fmt]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next)
+
+    d result $conf(page-add) [list \
+				[list %REALMS% $realms] \
+				[list %ADMIN% $admin] \
+			    ]
+}
+
+##############################################################################
+# Store new realm
+##############################################################################
+
+d cgi-register {
+    action add
+    realm .+
+} {
+    {descr	1 1}
+    {admin	1 1}
+} {
+    global conf
+
+    #
+    # Check admin form value
+    #
+
+    if {$admin ne "0" && $admin ne "1"} then {
+	d error [mc "Invalid input"]
+    }
+
+    #
+    # Add realm in database
+    #
+
+    if {! [pgauth-addrealm $dbfd $realm $descr $admin msg]} then {
+	d error $msg
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    set title [mc {Realm '%s' insertion} $realm]
+    d result $conf(page-ok) [list \
+				[list %TITREACTION% $title] \
+				[list %COMPLEMENT% ""] \
+			    ]
+}
+
+##############################################################################
+# Display realm mod page
+##############################################################################
+
+d cgi-register {
+    action mod
+    realm {}
+} {} {
+    global conf
+
+    #
+    # Get realm selection menu
+    #
+
+    set menurealm [pgauth-htmlrealmmenu $dbfd "realm" 0 {}]
+    if {$menurealm eq ""} then {
+	d error [mc "Unable to get realm list"]
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next)
+
+    d result $conf(page-modsel) [list \
+				[list %MENUREALM% $menurealm] \
+			    ]
+}
+
+##############################################################################
+# Update modified realm
+##############################################################################
+
+d cgi-register {
+    action mod-edit.*
+} {
+    {realm	1 1}
+    {descr	0 1}
+    {admin	0 1}
+    {truemembers 0 1}
+    {users	0 99999}
+    {members	0 99999}
+    {store	0 1}
+    {reset	0 1}
+    {left	0 1}
+    {right	0 1}
+} {
+    global conf
+
+    #
+    # Check realm information
+    #
+
+    pgauth-lsrealm $dbfd tabrlm
+    if {! [info exists tabrlm($realm)]} then {
+	d error [mc "Realm '%s' not found" $realm]
+    }
+
+    #
+    # Is this the first time we enter this cgi?
+    #
+
+    if {$action eq "mod-editfirst"} then {
+	set reset "yes"
+    }
+
+    if {$reset ne ""} then {
+	#
+	# Reset : use values from database
+	#
+	lassign $tabrlm($realm) descr truemembers admin
+    }
+
+    #
+    # Admin
+    #
+
+    if {$admin eq ""} then {
+	set admin 0
+    }
+    if {$admin ne "0" && $admin ne "1"} then {
+	d error [mc "Invalid input"]
+    }
+
+    #
+    # Button values:
+    #   - store : store current values
+    #   - left : add users to realm
+    #   - right : remove users from realm
+    #   - reset : welcome in the loop
+    #
+
+    if {$store ne ""} then {
+	#
+	# Store realm modification
+	#
+
+	if {! [pgauth-setrealm $dbfd $realm $descr $admin $truemembers msg]} then {
+	    d error $msg
+	}
+
+	#
+	# End of script: output page and close database
+	#
+
+	set title [mc {Realm '%s' modification} $realm]
+	d result $conf(page-ok) [list \
+				    [list %TITREACTION% $title] \
+				    [list %COMPLEMENT% ""] \
+				]
+	return
+    } elseif {$right ne ""} then {
+	set truemembers [mod-members $truemembers $users {}]
+    } elseif {$left ne ""} then {
+	set truemembers [mod-members $truemembers {} $members]
+    }
+
+    #
+    # Admin menu
+    #
+
+    set yes [mc "yes"]
+    set no [mc "no"]
+    set fmt "%1\$s $yes &nbsp; %2\$s $no"
+    set admin [::webapp::form-yesno "admin" $admin $fmt]
+
+    # 
+    # Listbox for members
+    #
+
+    set l {}
+    foreach u [lsort $truemembers] {
+	set tab($u) {}
+	lappend l [list $u $u]
+    }
+    set members [::webapp::form-menu members $conf(size) 1 $l {}]
+
+    #
+    # Listbox for all other users
+    #
+
+    set l {}
+    foreach u [pgauth-searchuser $dbfd nonexistentarray {+login}] {
+	if {! [info exists tab($u)]} then {
+	    lappend l [list $u $u]
+	}
+    }
+    set users [::webapp::form-menu users $conf(size) 1 $l {}]
+
+    #
+    # End of script: output page and close database
+    #
+
+    set qdescr [::webapp::html-string $descr]
+    d urlset "%URLFORM%" $conf(next)
+    d result $conf(page-modedit) [list \
+				[list %REALM%       $realm] \
+				[list %DESCR%       $qdescr] \
+				[list %ADMIN%       $admin] \
+				[list %TRUEMEMBERS% $truemembers] \
+				[list %ALL%         $users] \
+				[list %MEMBERLIST%  $members] \
+			    ]
+}
+
+proc mod-members {truemembers more less} {
+    #
+    # Initial set
+    #
+
+    foreach m $truemembers {
+	set tab($m) {}
+    }
+
+    #
+    # Add "more" members
+    #
+
+    foreach m $more {
+	set tab($m) {}
+    }
+
+    #
+    # Remove "less" members
+    #
+
+    foreach m $less {
+	catch {unset tab($m)}
+    }
+
+    #
+    # return result back
+    #
+
+    return [array names tab]
+}
+
+##############################################################################
+# Display realm removal page
+##############################################################################
+
+d cgi-register {
+    action del
+    realm {}
+} {} {
+    global conf
+
+    #
+    # Get realm selection menu
+    #
+
+    set menurealm [pgauth-htmlrealmmenu $dbfd "realm" 0 {}]
+    if {$menurealm eq ""} then {
+	d error [mc "Unable to get realm list"]
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next)
+    d result $conf(page-del) [list \
+				[list %MENUREALM% $menurealm] \
+			    ]
+}
+
+##############################################################################
+# Remove realm
+##############################################################################
+
+d cgi-register {
+    action del
+    realm .+
+} {} {
+    global conf
+
+    #
+    # Check realm information
+    #
+
+    pgauth-lsrealm $dbfd tabrlm
+    if {! [info exists tabrlm($realm)]} then {
+	d error [mc "Realm '%s' not found" $realm]
+    }
+
+    set nusers [llength [lindex $tabrlm($realm) 1]]
+    if {$nusers > 0} then {
+	d error [mc {Realm '%1$s' holds %2$s members. Delete them first} $realm $nusers]
+    }
+
+    #
+    # Remove the realm
+    #
+
+    if {! [pgauth-delrealm $dbfd $realm msg]} then {
+	d error $msg
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    set title [mc {Realm '%s' removal} $realm]
+    d result $conf(page-ok) [list \
+				[list %TITREACTION% $title] \
+				[list %COMPLEMENT% ""] \
+			    ]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "pgauth" "authadmin"

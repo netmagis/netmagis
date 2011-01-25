@@ -4,8 +4,7 @@ TCLSH		= /usr/local/bin/tclsh
 FILES =	\
 	webapp.tcl \
 	arrgen.tcl \
-	pgsql.tcl \
-	auth.tcl
+	pgsql.tcl
 
 all:	pkgIndex.tcl
 	@echo ">>> Making all in `pwd`"

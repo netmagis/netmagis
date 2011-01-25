@@ -1,0 +1,38 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {31/07/2003}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Auth interne - Gestion des royaumes
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application Netmagis
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	    \elementbandeau {Actions} { %LINKS% }
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Gestion des royaumes}
+
+    \liste {
+	\item {\lien {lister les royaumes}  {%URLLIST%}}
+	\item {\lien {ajouter un royaume}   {%URLADD%}}
+	\item {\lien {modifier un royaume}  {%URLMOD%}}
+	\item {\lien {supprimer un royaume} {%URLDEL%}}
+    }
+}
+
+}

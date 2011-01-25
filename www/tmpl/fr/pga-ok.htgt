@@ -1,0 +1,35 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {30/05/2003}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Auth interne - Action effectuée
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application Netmagis
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	    \elementbandeau {Actions} { %LINKS% }
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Action effectuée}
+
+    L'action %TITREACTION% a été effectuée avec succès.
+
+    %COMPLEMENT%
+}
+
+}

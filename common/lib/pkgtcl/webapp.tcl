@@ -1073,10 +1073,9 @@ proc ::webapp::call-cgi {script formtab} {
 
 set ::webapp::gotform 0
 
-proc ::webapp::get-data {formtab param} {
-    global ::webapp::gotform
-
-    upvar $formtab tab
+proc ::webapp::get-data {_ftab param} {
+    global ::webapp::gotform ::webapp::formtab
+    upvar $_ftab ftab
 
     if {! $::webapp::gotform} then {
 	#
@@ -1094,9 +1093,9 @@ proc ::webapp::get-data {formtab param} {
 	#
 
 	set lus 0
-	incr lus [::webapp::recuperer-pathinfo    tab $param]
-	incr lus [::webapp::recuperer-querystring tab $param]
-	incr lus [::webapp::recuperer-form        tab $param]
+	incr lus [::webapp::recuperer-pathinfo    ftab $param]
+	incr lus [::webapp::recuperer-querystring ftab $param]
+	incr lus [::webapp::recuperer-form        ftab $param]
 
 	#
 	# Si on n'a rien lu, il n'y a rien à vérifier
@@ -1119,16 +1118,16 @@ proc ::webapp::get-data {formtab param} {
 	set nbmin [lindex $p 1]
 	set nbmax [lindex $p 2]
 	set def   [lindex $p 3]
-	if {[info exists tab($nom)]} then {
-	    if {[::webapp::trouve-form tab $nom $nbmin $nbmax] == 0} then {
+	if {[info exists ftab($nom)]} then {
+	    if {[::webapp::trouve-form ftab $nom $nbmin $nbmax] == 0} then {
 		return {}
 	    }
 	    set specfield($nom) 1
 	} else {
 	    set trouve 0
-	    foreach p [array names tab] {
+	    foreach p [array names ftab] {
 		if {[regexp "^$nom\$" $p]} then {
-		    if {[::webapp::trouve-form tab $p $nbmin $nbmax] == 0} then {
+		    if {[::webapp::trouve-form ftab $p $nbmin $nbmax] == 0} then {
 			return {}
 		    }
 		    set specfield($p) 1
@@ -1138,10 +1137,10 @@ proc ::webapp::get-data {formtab param} {
 
 	    if {! $trouve} then {
 		if {$nbmin > 0} then {
-		    set tab(_error) "mandatory field '$nom' not found"
+		    set ftab(_error) "mandatory field '$nom' not found"
 		    return {}
 		} else {
-		    set tab($nom) $def
+		    set ftab($nom) $def
 		    set specfield($nom) 1
 		}
 	    }
@@ -2352,7 +2351,7 @@ snit::type ::webapp::authuser {
 
 snit::type ::webapp::authbase {
 
-    # Option method: ldap, postgresql
+    # Option method: ldap, postgresql, opened-postgresql
     option -method  -default "none"
 
     # Option db :
@@ -2367,6 +2366,8 @@ snit::type ::webapp::authbase {
     #	  dbname=...
     #	  user=...
     #	  password=...
+    #	pour opened-postgresql:
+    #	  handle
     option -db      -default {}
 
     # Option attrmap :
@@ -2402,9 +2403,10 @@ snit::type ::webapp::authbase {
 	set n 0
 
 	switch $options(-method) {
+	    opened-postgresql -
 	    postgresql {
 		set qlogin [::pgsql::quote $login]
-		set sql "SELECT * FROM utilisateurs WHERE login = '$qlogin'"
+		set sql "SELECT * FROM pgauth.user WHERE login = '$qlogin'"
 		set av {}
 		pg_select $handle $sql tab {
 		    set av [array get tab]
@@ -2462,6 +2464,9 @@ snit::type ::webapp::authbase {
     proc Connect {selfns} {
 	set db $options(-db)
 	switch $options(-method) {
+	    opened-postgresql {
+		set handle $db
+	    }
 	    postgresql {
 		if {[catch {set handle [pg_connect -conninfo $db]} msg]} then {
 		    error $msg
@@ -2500,6 +2505,9 @@ snit::type ::webapp::authbase {
 
     proc Disconnect {selfns} {
 	switch $options(-method) {
+	    opened-postgresql {
+		# nothing
+	    }
 	    postgresql {
 		if {[catch {pg_disconnect $handle} msg]} then {
 		    error $msg

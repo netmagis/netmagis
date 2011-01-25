@@ -1,0 +1,115 @@
+#!%TCLSH%
+
+#
+# Manage users
+#
+# Called by: pgaindex
+#
+# Parameters (form or url):
+#   - display password modification page
+#	- pw1, pw2 : (empty)
+#   - process password modification
+#	- pw1, pw2 : new password
+#
+# History
+#   2003/08/10 : pda      : design
+#   2007/12/04 : pda/jean : integration in netmagis
+#   2010/12/29 : pda      : i18n and netmagis merge
+#
+
+#
+# Template pages used by this script, and environnement used in
+# pgauth-accmanage
+#
+
+set e(page-index)	pgaacc-index.html
+set e(page-ok)		pga-ok.html
+set e(page-add1)	pgaacc-add1.html
+set e(page-choice)	pgaacc-choice.html
+set e(page-mod)		pgaacc-mod.html
+set e(page-del)		pgaacc-del.html
+set e(page-passwd)	pgaacc-pass.html
+set e(page-list)	pgaacc-list.html
+set e(page-listtex)	pgaacc-list.tex
+set e(page-sel)		pgaacc-sel.html
+
+set e(maxrealms)	0
+set e(specif)		{}
+
+#
+# Next actions
+#
+
+set conf(next)		"pgaacc"
+
+#
+# Netmagis general library
+#
+
+source %LIBDNS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Pgauth-accmanage functions
+##############################################################################
+
+proc dns-getuser {login} {
+    return {}
+}
+
+proc dns-deluser {login} {
+    global e
+
+    return [pgauth-deluser $e(dbfd) $login]
+}
+
+proc dns-setuser {login attr} {
+    return ""
+}
+
+proc dns-chkuser {loginadmin loginuser} {
+    return ""
+}
+
+##############################################################################
+# Heart of account management
+##############################################################################
+
+d cgi-register {} {
+} {
+    global conf
+    global e
+
+    #
+    # Build environment
+    #
+
+    set e(dbfd) $dbfd
+
+    set e(script-getuser) [list dns-getuser {%1$s}]
+    set e(script-deluser) [list dns-deluser {%1$s}]
+    set e(script-setuser) [list dns-setuser {%1$s} {%2$s}]
+    set e(script-chkuser) [list dns-chkuser $login {%1$s}]
+
+    set e(url)		$conf(next)
+    set e(realms)	{}
+
+    foreach p {from replyto cc bcc subject body} {
+	set param mail$p
+	set e($param) [dnsconfig get "authpgmail$p"]
+    }
+
+    #
+    # Everything is done in this function
+    #
+
+    pgauth-accmanage e ftab
+}
+
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "pgauth" "authadmin"
