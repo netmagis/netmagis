@@ -33,6 +33,7 @@
 
 # packages nécessaires pour l'acces à la base d'authentification
 
+package require mime ;			# tcllib 
 package require snit ;			# tcllib >= 1.10
 package require ldapx ;			# tcllib >= 1.10
 package require pgsql ;			# package local
@@ -1730,7 +1731,7 @@ proc ::webapp::valid-email {email} {
 #	- bcc : destinataire caché, si besoin est
 #	- subject : le sujet
 #	- texte : le texte
-#	- type : le type du mail, par défaut 'text/plain; charset="iso8859-15"'
+#	- type : le type du mail, par défaut 'text/plain; charset="utf-8"'
 #
 # Sortie :
 #   - valeur de retour : aucune
@@ -1757,7 +1758,10 @@ proc ::webapp::mail {from replyto to cc bcc subject texte {type {}}} {
 	puts $fd "Reply-to: $replyto"
     }
     if {[string equal $type ""]} then {
-	set type {text/plain; charset="iso-8859-15"}
+	set type {text/plain; charset="utf-8"}
+    }
+    if {! [string is ascii $subject]} then {
+	set subject [::mime::word_encode "utf-8" "quoted-printable" $subject]
     }
     puts $fd "Subject: $subject"
     puts $fd "Mime-Version: 1.0"
