@@ -15,18 +15,29 @@ source %LIBDNS%
 proc main {argv0 argv} {
     global ctxt
 
+    #
+    # Initialize parameters
+    #
+
     set ctxt(dbfd1) ""
     set ctxt(dbfd2) ""
+
     set-log [get-local-conf "logger"]
 
     config ::dnsconfig
+        
     lazy-connect
 
+    set ctxt(maxstatus) [dnsconfig get "topomaxstatus"]
+
     set r 0
+
     #
     # Fetch all cache entries
     #
 
+    set-status "Updating cache"
+    set topograph  [get-local-conf "topograph"]
     set sql "SELECT key, command, file, hit, runtime FROM topo.cache"
     toposqlselect $sql tab {
 
@@ -37,15 +48,16 @@ proc main {argv0 argv} {
 	    # Run the command and cache the result
 	    #
 
-	    set cmd $tab(cmd)
+	    set cmd $tab(command)
 	    set run $cmd
 	    regsub -all {[<>|;'"${}()&\[\]*?]} $run {\\&} run
+	    set run "$run < $topograph"
+	    set t1 [clock seconds]
 	    if {[catch {exec sh -c $run} output]} then {
-		puts stderr "updatecahe : failed to run command '$run' ($output)"
+		puts stderr "updatecache : failed to run command '$run' ($output)"
 		set r 1
 	    } else {
 		set t2 [clock seconds]
-		puts $output
 		update-cache $cmd $key $output [expr $t2 - $t1]
 	    }
 	} else {
@@ -57,6 +69,8 @@ proc main {argv0 argv} {
 	    cache-remove $key
 	}
     }
+
+    set-status "Cache update done"
 
     return $r
 }
