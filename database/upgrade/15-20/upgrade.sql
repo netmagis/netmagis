@@ -220,6 +220,23 @@ CREATE TABLE topo.filemonitor (
 ) ;
 
 ------------------------------------------------------------------------------
+-- Topo programs result cache
+------------------------------------------------------------------------------
+
+CREATE TABLE topo.cache (
+	key	    TEXT,		-- hash key
+	command	    TEXT,		-- command called with arguments
+	file	    TEXT,		-- file containing cached command output
+	hit	    INTEGER,		-- number of calls for this entry
+	runtime	    INTEGER,		-- time taken for last command execution
+	lastread    TIMESTAMP		-- last time the entry was read
+		    WITHOUT TIME ZONE,
+	lastrun	    TIMESTAMP		-- last time the entry was written
+		    WITHOUT TIME ZONE,
+	PRIMARY KEY (key)
+) ;
+
+------------------------------------------------------------------------------
 -- Vlan table
 ------------------------------------------------------------------------------
 
@@ -305,7 +322,7 @@ GRANT INSERT ON topo.modeq TO detecteq ;
 
 GRANT ALL
     ON topo.modeq, topo.ifchanges, topo.lastrun, topo.keepstate, topo.dr_eq,
-	topo.sensor, topo.filemonitor, topo.vlan,
+	topo.sensor, topo.filemonitor, topo.cache, topo.vlan,
 	topo.seq_eqtype, topo.seq_eq, topo.eqtype, topo.eq
     TO dns, pda, jean ;
 
