@@ -1160,7 +1160,18 @@ authpgmailcc
 authpgmailbcc	
 authpgmailsubject	Password change
 authpgmailbody	Password changed (%2$s) for user %1$s. Best regards.
-authpggroupes	
+authpggroupes	netmagis
+\.
+
+    -- id 0 is used in zone creation script
+    COPY dns.hinfo (texte, tri, present) FROM stdin;
+Unspecified	0	0
+PC/Windows	10	1
+PC/Unix	20	1
+Macintosh/MacOS	30	1
+Other/Unix	50	1
+Printer	70	1
+Network equipment	100	1
 \.
 
     COPY dns.dhcp (generer) FROM stdin;
@@ -1187,6 +1198,7 @@ hp
 
     COPY pgauth.realm (realm, descr, admin) FROM stdin;
 authadmin	Administrators of internal PostgreSQL auth	1
+netmagis	Netmagis users	0
 \.
 
     COPY global.groupe (nom, admin) FROM stdin;
@@ -1206,6 +1218,7 @@ db-create-user ()
     INSERT INTO pgauth.user (login, password, nom, prenom)
 	VALUES ('$user', '*', 'Boss', 'Joe') ;
     INSERT INTO pgauth.member (login, realm) VALUES ('$user', 'authadmin') ;
+    INSERT INTO pgauth.member (login, realm) VALUES ('$user', 'netmagis') ;
     INSERT INTO global.corresp (login, present, idgrp) VALUES ('$user', 1, 1) ;
 EOF
 
