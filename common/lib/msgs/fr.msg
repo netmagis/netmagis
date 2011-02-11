@@ -25,6 +25,7 @@
  {Networks} {Réseaux}
  {DNS/DHCP} {DNS/DHCP}
 
+ {Internal Auth} {Authentification interne}
  {List MX} {Lister MX}
  {List networks} {Lister réseaux}
  {List users} {Lister correspondants}
@@ -54,6 +55,17 @@
  {MAC search} {Recherche MAC}
  {Inactive addresses} {Adresses inactives}
  {MAC stats} {Stats MAC}
+
+ {List accounts} {Lister comptes}
+ {Print accounts} {Imprimer comptes}
+ {Add account} {Ajouter compte}
+ {Modify account} {Modifier compte}
+ {Remove account} {Supprimer compte}
+ {Change account password} {Changer mot de passe d'un compte}
+ {List realms} {Lister royaumes}
+ {Add realm} {Ajouter royaume}
+ {Modify realm} {Modifier royaume}
+ {Remove realm} {Supprimer royaume}
 
  {Unknown module '%s'} {Module '%s' inconnu}
 }

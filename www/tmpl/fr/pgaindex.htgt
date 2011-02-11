@@ -30,11 +30,11 @@
     \titre {2} {Gestion des comptes}
 
     \liste {
-	\item {\lien {consulter un compte} {%URLACONSULT%}}
-	\item {\lien {imprimer un compte}  {%URLAIMPR%}}
-	\item {\lien {ajouter un compte}   {%URLAAJOUT%}}
-	\item {\lien {modifier un compte}  {%URLAMODIF%}}
-	\item {\lien {supprimer un compte} {%URLASUPPR%}}
+	\item {\lien {lister des comptes} {%URLALIST%}}
+	\item {\lien {imprimer des comptes}  {%URLAPRINT%}}
+	\item {\lien {ajouter un compte}   {%URLAADD%}}
+	\item {\lien {modifier un compte}  {%URLAMOD%}}
+	\item {\lien {supprimer un compte} {%URLADEL%}}
 	\item {\lien {modifier un mot de passe} {%URLAPASSWD%}}
     }
 
