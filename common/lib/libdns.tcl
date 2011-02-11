@@ -590,6 +590,7 @@ snit::type ::netmagis {
 	ipinact		{ipinact {Inactive addresses}}
 	macstat		{macstat {MAC stats}}
 	:pgauth	{
+			    {admtitle always}
 			    {pgatitle authadmin}
 			    {pgaalst authadmin}
 			    {pgaaprn authadmin}
@@ -601,6 +602,9 @@ snit::type ::netmagis {
 			    {pgaradd authadmin}
 			    {pgarmod authadmin}
 			    {pgardel authadmin}
+			    {dnstitle dns}
+			    {topotitle topo}
+			    {mactitle mac}
 			}
 	pgaalst		{pgaacc?action=list {List accounts}}
 	pgaaprn		{pgaacc?action=print {Print accounts}}
