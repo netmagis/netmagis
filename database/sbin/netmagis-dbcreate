@@ -83,7 +83,7 @@ db-create ()
 
 db-schemas ()
 {
-    psql --no-psqlrc --quiet --file - <<'EOF'
+    psql --no-psqlrc --quiet --file - <<'EOF' 2>&1 | grep -v 'NOTICE: .* will create implicit'
 
     CREATE SCHEMA global ;
     CREATE SCHEMA dns ;
@@ -1189,21 +1189,24 @@ hp
 authadmin	Administrators of internal PostgreSQL auth	1
 \.
 
-    -- default root user is deactivated (password blocked)
-    COPY pgauth.user (login, password, nom, prenom) FROM stdin;
-admin	*	Boss	Joe
-\.
-
-    COPY pgauth.member (login, realm) FROM stdin;
-admin	authadmin
-\.
-
     COPY global.groupe (nom, admin) FROM stdin;
 wheel	1
 \.
+EOF
+}
 
-    COPY global.corresp (login, present, idgrp) FROM stdin;
-admin	1	1
+##############################################################################
+# Create users
+##############################################################################
+
+db-create-user ()
+{
+    user="$1"
+    psql --no-psqlrc --quiet --file - <<EOF
+    INSERT INTO pgauth.user (login, password, nom, prenom)
+	VALUES ('$user', '*', 'Boss', 'Joe') ;
+    INSERT INTO pgauth.member (login, realm) VALUES ('$user', 'authadmin') ;
+    INSERT INTO global.corresp (login, present, idgrp) VALUES ('$user', 1, 1) ;
 EOF
 
     if [ "$pwgen" != "" -a "$crypt" != "" ]
@@ -1213,10 +1216,10 @@ EOF
 	cryptpw=`$cmd`
 	psql --no-psqlrc --quiet -c "UPDATE pgauth.user
 					SET password = '$cryptpw'
-					WHERE login = 'admin'"
-	echo "Password for user 'admin' is '$adminpw'." >&2
-	echo "You can change it within netmagis application" >&2
+					WHERE login = '$user'"
+	echo "Password for user '$user' is '$adminpw'." >&2
     fi
+
 }
 
 ##############################################################################
@@ -1304,7 +1307,17 @@ db-insert-config
 for u in $rootusers
 do
     grant-root $u
+    db-create-user $u
 done
+
+if [ "$pwgen" = "" -o "$crypt" = "" ]
+then
+    echo "Netmagis configuration parameter 'pwgen' and/or 'crypt' uninitialized" >&2
+    echo "Users $rootusers have been created" >&2
+else
+    echo "You can change passwords within netmagis application" >&2
+fi
+
 
 grant-www $dnsdbuser
 
