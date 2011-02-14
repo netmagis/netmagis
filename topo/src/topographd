@@ -536,7 +536,7 @@ proc sensors {} {
     #
 
     lappend sql "DELETE FROM topo.sensor
-			WHERE lastseen + interval '$ctxt(sensorexpire)' < now()"
+		    WHERE lastseen + interval '$ctxt(sensorexpire) days' < now()"
 
     #
     # Send the huuuuuge SQL command
