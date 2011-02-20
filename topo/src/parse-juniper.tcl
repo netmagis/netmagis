@@ -65,6 +65,14 @@ proc juniper-read-conf {fd} {
     set conf ""
     while {[gets $fd ligne] > -1} {
 	regsub { ## SECRET-DATA$} $ligne {} ligne
+
+	# join bracketed statement running on consecutive lines
+	if { [regexp {^\s*\S+\s\[[^\]]*$} $ligne]} then {
+		while { ![eof $fd] && ![regexp {\]} $ligne]} {
+		    append ligne [gets $fd]
+		}
+	}
+
 	if {! [regexp {/\*.*\*/} $ligne]} then {
 	    regsub -all { \[ (.*) \];$} $ligne { { \1 } ;} ligne
 	    regsub -all {;$} $ligne { { } } ligne
@@ -73,8 +81,6 @@ proc juniper-read-conf {fd} {
     }
     return $conf
 }
-
-
 
 #
 # Convertit une adresse au format Juniper (adr d'i/f + "/" + longueur préfixe)
