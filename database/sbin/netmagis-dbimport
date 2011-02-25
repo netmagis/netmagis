@@ -1,0 +1,593 @@
+#!%TCLSH%
+
+#
+# Import DNS data into Netmagis database
+#
+# Syntax:
+#   netmagis-dbimport <op> <param> ... <param>
+#
+#   To import domain data:
+#	netmagis-dbimport domain <domainname> <zonefile>
+#
+# History
+#   2002/02/10 : pda      : design
+#   2011/02/14 : pda      : update to netmagis database
+#
+
+source %LIBDNS%
+
+#
+# Pattern to distinguish zone prologue (including non standard RRs) 
+# from standard RRs
+#
+
+set conf(pattern)	{^; CUT HERE}
+
+#
+# Serial pattern
+# The searched string should contain three parts, separated by parenthesis
+# - string before serial number
+# - serial number
+# - string after serial number
+# The searched pattern catch lines such as:
+#	"      2011021801        ; Serial"
+# The serial will be replaced, after consistency check, by %ZONEVERSION%
+# in the zone prologue in the database.
+#
+
+set conf(serial)	{^(\s+)(\d+)(\s*;\s*serial.*)}
+
+#
+# Authorized RR types and classes
+#
+
+set conf(types)		{A AAAA NS CNAME SOA PTR HINFO MINFO MX TXT}
+set conf(classes)	{IN}
+
+#
+# Authorized values
+#
+
+set conf(syntax-group)	{^\w[-\w]+$}
+set conf(syntax-user)	{^\w[-\w]+$}
+
+#
+# Self explanatory
+#
+
+set conf(usage) {usage: %s <op> <param> ... <param>
+    To import groups (create groups and users):
+	netmagis-dbimport group <file>
+    To import domain permissions (create domains and associate permissions):
+	netmagis-dbimport domain-perm <file>
+    To import domain data (create domain and associated RR):
+	netmagis-dbimport domain <domainname> <zonefile>
+}
+
+##############################################################################
+# Small utility functions
+##############################################################################
+
+set here(prog)	""
+set here(file)	""
+set here(line)	""
+
+proc warning {msg} {
+    global here
+
+    set prefix ""
+    if {$here(prog) ne ""} then {
+	append prefix $here(prog)
+	if {$here(file) ne ""} then {
+	    append prefix "/$here(file)"
+	    if {$here(line) ne ""} then {
+		append prefix "($here(line))"
+	    }
+	}
+	append prefix ": "
+    }
+    puts stderr "$prefix$msg"
+}
+
+proc fatal-error {msg} {
+    warning $msg
+    exit 1
+}
+
+proc usage {} {
+    global conf here
+
+    fatal-error [format $conf(usage) $here(prog)]
+}
+
+proc setprog {argv0} {
+    global here
+
+    regsub {.*/} $argv0 {} argv0
+    set here(prog) $argv0
+    set here(file) ""
+    set here(line) ""
+}
+proc openfile {filename} {
+    global here
+
+    if {[catch {set fd [open $filename "r"]} msg]} then {
+	fatal-error "Cannot open '$filename' ($msg)"
+    }
+    set here(file) $filename
+    set here(line) 0
+    return $fd
+}
+proc closefile {fd} {
+    global here
+
+    set here(file) ""
+    set here(line) ""
+    return [close $fd]
+}
+proc readline {fd _line {clean {}}} {
+    global here
+    upvar $_line line
+
+    incr here(line)
+    set r [gets $fd line]
+    if {$r != -1 && $clean eq "clean"} then {
+	regsub -all {\s*#.*} $line "" line
+	regsub {^\s+} $line "" line
+	regsub {\s+} $line " " line
+    }
+    return $r
+}
+
+##############################################################################
+# Various file reading
+##############################################################################
+
+
+#####################
+
+proc read-zone-prologue {fd _serial} {
+    global conf
+
+    set prologue ""
+    set serial 0
+    set end 0
+    while {! $end && [gets $fd line] > -1} {
+	if {! $end && [regexp -- $conf(pattern) $line]} then {
+	    set end 1
+	}
+	if { ! $end} then {
+	    if {[regexp -nocase $conf(serial) $line x p1 p2 p3]} then {
+		set curser [clock format [clock seconds] -format "%Y%m%d"]
+		append curser "01"
+	    }
+	    if {$p2 > $curser} then {
+		warning "Version 
+	    }
+	}
+    }
+}
+
+##############################################################################
+# Import group contents
+##############################################################################
+
+#
+# Group definition file
+# Format:
+#	group login ... login
+# Examples:
+#	tech jim joe
+#	sales arthur
+#
+
+proc read-group {file _tab} {
+    global conf
+    upvar $_tab tab
+
+    set fd [openfile $file]
+    while {[readline $fd line "clean"] > -1} {
+	if {$line ne ""} then {
+	    set group [lindex $line 0]
+	    if {! [regexp $conf(syntax-group) $group]} then {
+		warning "Invalid group syntax for '$group'"
+		continue
+	    }
+	    set tab($group) {}
+	    foreach c [lreplace $line 0 0] {
+		if {! [regexp $conf(syntax-user) $c]} then {
+		    warning "Invalid user syntax for '$c'"
+		    continue
+		}
+		if {[info exists tc($c)]} then {
+		    warning "User '$c' already specified in group $tc($c)"
+		} else {
+		    set tc($c) $group
+		    lappend tab($group) $c
+		}
+	    }
+	}
+    }
+    closefile $fd
+}
+
+proc import-group {argv dbfd} {
+    #
+    # Syntax checking
+    #
+
+    if {[llength $argv] != 1} then {
+	usage
+    }
+
+    lassign $argv file
+
+    #
+    # Read file and database reference
+    #
+
+    read-group $file tabgrp
+
+    #
+    # Read group and user definition from database
+    #
+    
+    pg_select $dbfd "SELECT * FROM global.groupe" tab {
+	set refg($tab(nom)) $tab(idgrp)
+    }
+    pg_select $dbfd "SELECT * FROM global.corresp" tab {
+	set refc($tab(login)) [list $tab(idcor) $tab(idgrp)]
+    }
+    pg_select $dbfd "SELECT * FROM pgauth.user" tab {
+	set refu($tab(login)) ""
+    }
+
+    #
+    # Add groups not in database
+    #
+
+    set sql {}
+    foreach g [array names tabgrp] {
+	if {! [info exists refg($g)]} then {
+	    set g [::pgsql::quote $g]
+	    lappend sql "INSERT INTO global.groupe (nom) VALUES ('$g')"
+	}
+    }
+    if {[llength $sql] > 0} then {
+	set sql [join $sql ";"]
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    return "$msg\nAbort"
+	}
+
+	# re-read idgrp
+	pg_select $dbfd "SELECT * FROM global.groupe" tab {
+	    set refg($tab(nom)) $tab(idgrp)
+	}
+    }
+
+    #
+    # Create missing users or reset group membership for existing users
+    #
+
+    set sql {}
+    foreach g [array names tabgrp] {
+	set idgrp $refg($g)
+	foreach c $tabgrp($g) {
+	    if {[info exists refc($c)]} then {
+		lassign $refc($c) idcor idg
+		if {$idg != $idgrp} then {
+		    lappend sql "UPDATE global.corresp
+					SET idgrp = $idgrp
+					WHERE idcor = $idcor"
+		}
+	    } else {
+		set c [::pgsql::quote $c]
+		lappend sql "INSERT INTO global.corresp (login, present, idgrp)
+					VALUES ('$c', 1, $idgrp)"
+	    }
+	}
+    }
+    if {[llength $sql] > 0} then {
+	set sql [join $sql ";"]
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    return "$msg\nAbort"
+	}
+    }
+
+    #
+    # For internal (postgresql) auth, create users
+    # and add them into netmagis realm
+    # Existing pgauth users are supposed to be already in
+    # the netmagis realm.
+    #
+
+    set am [dnsconfig get "authmethod"]
+    if {$am eq "pgsql"} then {
+	set rlm [dnsconfig get "authpggroupes"]
+	set sql {}
+	foreach g [array names tabgrp] {
+	    foreach c $tabgrp($g) {
+		if {! [info exists refu($c)]} then {
+		    set p [pgauth-genpw]
+		    puts stderr "Password for user '$c' is '$p'."
+		    set pc [pgauth-crypt $p]
+		    set qc [::pgsql::quote $c]
+		    set qpc [::pgsql::quote $pc]
+		    lappend sql "INSERT INTO pgauth.user (login, password)
+					VALUES ('$qc', '$qpc')"
+		}
+	    }
+	}
+	if {[llength $sql] > 0} then {
+	    set sql [join $sql ";"]
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		return "$msg\nAbort"
+	    }
+	}
+    }
+
+    return ""
+}
+
+##############################################################################
+# Import domain permissions
+##############################################################################
+
+#
+# Domain permissions file
+# Format:
+#	domain op sortorder group group group...
+#		where op = ALLBUT or SET
+# Examples:
+#	mycompany.com ALLBUT 100 sales marketing
+#	myproduct.com SET 200 tech engineering
+#	myproduct.com SET 50 marketing
+#
+
+proc read-domain-perm {file _tab} {
+    upvar $_tab tab
+
+    set fd [openfile $file]
+    while {[readline $fd line "clean"] > -1} {
+	if {$line ne ""} then {
+	    set groups [lassign $line domain op sort]
+	    set err 0
+
+	    set msg [check-fqdn-syntax "" $domain f1 f2]
+	    if {$msg ne ""} then {
+		set err 1
+		warning $msg
+	    }
+	    if {! ($op in {ALLBUT SET})} then {
+		set err 1
+		warning "unrecognized keyworkd '$op'"
+	    }
+	    if {! $err} then {
+		lappend tab($domain) [list $op $sort $groups]
+	    }
+	}
+    }
+    closefile $fd
+}
+
+proc import-domain-perm {argv dbfd} {
+    #
+    # Syntax checking and read file
+    #
+
+    if {[llength $argv] != 1} then {
+	usage
+    }
+
+    lassign $argv file
+
+    read-domain-perm $file tabdom
+
+    #
+    # Read groups from database
+    #
+
+    pg_select $dbfd "SELECT * FROM global.groupe" tab {
+	set tabgrp($tab(nom)) $tab(idgrp)
+    }
+
+    #
+    # Check existence of all specified groups
+    # If a group doesn't exist, it is a fatal error
+    #
+
+    set allgroups {}
+    foreach d [array names tabdom] {
+	foreach l $tabdom($d) {
+	    lassign $l op sort groups
+	    set allgroups [concat $allgroups $groups]
+	}
+    }
+    set allgroups [lsort -unique $allgroups]
+    set err 0
+    foreach g $allgroups {
+	if {! [info exists tabgrp($g)]} then {
+	    set err 1
+	    warning "Group '$g' not in database"
+	}
+    }
+    if {$err} then {
+	return "Abort"
+    }
+
+    #
+    # Get domains missing in database and update them
+    #
+
+    foreach d [array names tabdom] {
+	set missing($d) yes
+    }
+    pg_select $dbfd "SELECT * FROM dns.domaine" tab {
+	set d $tab(nom)
+	if {[info exists missing($d)]} then {
+	    unset missing($d)
+	}
+    }
+    set sql {}
+    foreach d [array names missing] {
+	set d [::pgsql::quote $d]
+	lappend sql "INSERT INTO dns.domaine (nom) VALUES ('$d')"
+    }
+    if {[llength $sql] > 0} then {
+	set sql [join $sql ";"]
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    return "$msg\nAbort"
+	}
+    }
+
+    #
+    # Re-read domains to get id of new domain
+    #
+
+    pg_select $dbfd "SELECT * FROM dns.domaine" tab {
+	set tabiddom($tab(nom)) $tab(iddom)
+    }
+
+    #
+    # Empty domain permissions
+    #
+
+    set sql "DELETE FROM dns.dr_dom"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	return "$msg\nAbort"
+    }
+
+    #
+    # Fill domain permissions
+    #
+
+    set sql {}
+    foreach d [array names tabdom] {
+	foreach l $tabdom($d) {
+	    lassign $l op sort groups
+
+	    if {! [info exists tabiddom($d)]} then {
+		return "Unknown domain '$d'. Abort"
+	    }
+	    set iddom $tabiddom($d)
+
+	    switch -- $op {
+		ALLBUT {
+		    set w {}
+		    foreach g $groups {
+			if {! [info exists tabgrp($g)]} then {
+			    return "Unknown group '$g'. Abort"
+			}
+			set idgrp $tabgrp($g)
+			lappend w "idgrp <> $idgrp"
+		    }
+		    if {$w ne ""} then {
+			set w [join $w " AND "]
+			set w "WHERE $w"
+		    }
+		    lappend sql "INSERT INTO dns.dr_dom (idgrp, iddom, tri)
+					(SELECT idgrp, $iddom, $sort
+					    FROM global.groupe $w)"
+		}
+		SET {
+		    foreach g $groups {
+			if {! [info exists tabgrp($g)]} then {
+			    return "Unknown group '$g'. Abort"
+			}
+			set idgrp $tabgrp($g)
+			lappend sql "INSERT INTO dns.dr_dom (idgrp, iddom, tri)
+					    VALUES ($idgrp, $iddom, $sort)"
+		    }
+		}
+	    }
+	}
+    }
+    if {[llength $sql] > 0} then {
+	set sql [join $sql ";"]
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    return "$msg\nAbort"
+	}
+    }
+
+    return ""
+}
+
+##############################################################################
+# Import domain data
+##############################################################################
+
+proc zone-get-token {rrpart} {
+    global conf
+
+    if {[regexp "^\[0-9]+$" $rrpart]} then {
+	return TTL
+    }
+    set rrpart [string toupper $rrpart]
+    if {$rrpart in $conf(classes)} then {
+	return CLASS
+    }
+    if {$rrpart in $conf(types)} then {
+	return TYPE
+    }
+    return OTHER
+}
+
+proc zone-analyze-rr {line _tab oldname} {
+}
+
+proc import-domain {argv dbfd} {
+}
+
+##############################################################################
+# Main program
+##############################################################################
+
+proc main {argv0 argv} {
+    global conf
+
+    setprog $argv0
+
+    #
+    # Netmagis database access
+    #
+
+    set msg [d init-script dbfd tabcor]
+    if {$msg ne ""} then {
+	fatal-error "$msg\nAborted."
+    }
+
+    #
+    # Argument checking
+    #
+
+    set op [lindex $argv 0]
+    set fct [info procs "import-$op"]
+    if {[llength $fct] != 1} then {
+	usage
+    }
+
+    #
+    # Lock database, do the work, and commit modifications
+    #
+
+    set msg [d dblock {}]
+    if {$msg ne ""} then {
+	fatal-error $msg
+    }
+
+    set msg [$fct [lreplace $argv 0 0] $dbfd]
+    if {$msg ne ""} then {
+	set msg [d dbabort "import" $msg]
+	fatal-error $msg
+    }
+
+    set msg [d dbcommit "import"]
+    if {$msg ne ""} then {
+	fatal-error $msg
+    }
+
+    d end
+    return 0
+}
+
+exit [main $argv0 $argv]

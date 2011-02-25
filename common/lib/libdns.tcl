@@ -407,6 +407,7 @@ array set libconf {
 #   2010/11/09 : pda      : add init-script
 #   2010/11/29 : pda      : i18n
 #   2010/12/21 : pda/jean : add version in class
+#   2011/02/18 : pda      : add scriptmode
 #
 
 snit::type ::netmagis {
@@ -421,6 +422,9 @@ snit::type ::netmagis {
 
     # database handle
     variable db ""
+
+    # mode : script, cgi, daemon
+    variable scriptmode ""
 
     # locale in use : either specified by browser, or specified by user
     variable locale "C"
@@ -992,6 +996,8 @@ snit::type ::netmagis {
 	    $self error $msg
 	}
 
+	set scriptmode "cgi"
+
 	#
 	# Add default parameters in form analysis
 	# Default parameters are:
@@ -1221,6 +1227,8 @@ snit::type ::netmagis {
 	if {$msg ne ""} then {
 	    return $msg
 	}
+
+	set scriptmode "script"
 
 	return ""
     }
@@ -1463,25 +1471,36 @@ snit::type ::netmagis {
     #
 
     method dblock {tablelist} {
+	set msg ""
 	if {! [::pgsql::lock $db $tablelist msg]} then {
 	    if {[llength $tablelist] == 0} then {
 		set tl [join $tablelist ", "]
-		$self error [mc {Cannot lock table(s) %1$s: %2$s} $tl $msg]
+		set msg [mc {Cannot lock table(s) %1$s: %2$s} $tl $msg]
 	    } else {
-		$self error [mc "Cannot lock database: %s" $msg]
+		set msg [mc "Cannot lock database: %s" $msg]
+	    }
+	    if {$scriptmode eq "cgi"} then {
+		$self error $msg
 	    }
 	}
+	return $msg
     }
 
     method dbcommit {op} {
+	set msg ""
 	if {! [::pgsql::unlock $db "commit" msg]} then {
-	    $self dbabort $op $msg
+	    set msg [$self dbabort $op $msg]
 	}
+	return $msg
     }
 
     method dbabort {op msg} {
 	::pgsql::unlock $db "abort" m
-	$self error [mc {Cannot perform operation "%1$s": %2$s} $op $msg]
+	set msg [mc {Cannot perform operation "%1$s": %2$s} $op $msg]
+	if {$scriptmode eq "cgi"} then {
+	    $self error $msg
+	}
+	return $msg
     }
 }
 
@@ -3045,7 +3064,7 @@ proc display-rr {dbfd idrr _trr} {
 #	- fqdn : name to test
 #	- _name : host name in return
 #	- _domain : host domain in return
-#	- _iddom : domain id in return
+#	- _iddom : domain id in return (leave empty to not check domain existence)
 # Output:
 #   - return value: empty string or error message
 #   - parameter _name : host name found
@@ -3056,12 +3075,12 @@ proc display-rr {dbfd idrr _trr} {
 #   2004/09/21 : pda/jean : design
 #   2004/09/29 : pda/jean : add _domain parameter
 #   2010/11/29 : pda      : i18n
+#   2011/02/18 : pda      : iddom is optional
 #
 
-proc check-fqdn-syntax {dbfd fqdn _name _domain _iddom} {
+proc check-fqdn-syntax {dbfd fqdn _name _domain {_iddom {}}} {
     upvar $_name name
     upvar $_domain domain
-    upvar $_iddom iddom
 
     if {! [regexp {^([^\.]+)\.(.*)$} $fqdn bidon name domain]} then {
 	return [mc "Invalid FQDN '%s'" $fqdn]
@@ -3072,9 +3091,13 @@ proc check-fqdn-syntax {dbfd fqdn _name _domain _iddom} {
 	return $msg
     }
 
-    set iddom [read-domain $dbfd $domain]
-    if {$iddom < 0} then {
-	return [mc "Invalid domain '%s'" $domain]
+    if {$_iddom ne ""} then {
+	upvar $_iddom iddom
+
+	set iddom [read-domain $dbfd $domain]
+	if {$iddom < 0} then {
+	    return [mc "Invalid domain '%s'" $domain]
+	}
     }
 
     return ""

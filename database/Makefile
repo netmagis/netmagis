@@ -7,5 +7,6 @@ all:
 install:
 	@echo ">>> Making install in `pwd`"
 	cd sbin ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd examples ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 clean:

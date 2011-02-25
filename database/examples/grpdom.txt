@@ -1,0 +1,28 @@
+#
+# Example file for initial netmagis database creation:
+#	Domains and group permissions for these domains
+#
+# Use with netmagis-dbimport:
+#	netmagis-dbimport domain-perm grpdom.txt
+#
+# Format:
+#	<domain> ALLBUT|SET <prio> <group> ... <group>
+# ALLBUT : domain is authorized for all groups except those specified
+# SET : domain is authorized for all specified groups
+#
+# Notes:
+# - groups must already exist in database
+# - domains may or may not already exist in database
+#
+# History
+#   2002/04/19 : pda : design
+#   2002/04/23 : pda : add priority
+#   2011/02/25 : pda : i18n
+#
+
+univ-machin.fr		ALLBUT	10	esiatf wheel
+
+bidon.org		SET	20	lga
+
+esiatf.fr		SET	50	wheel tech
+esiatf.fr		SET	10	esiatf

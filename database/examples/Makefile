@@ -7,10 +7,10 @@ SUBST		= $(TCLSH) \
 			$(DESTDIR)/bin/netmagis-config
 
 SCRIPTS = \
-	netmagis-dbcreate \
-	netmagis-dbimport
+	run-all.sh
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/sbin
-	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/sbin
+	mkdir -p $(DESTDIR)/share/examples
+	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/share/examples
+	cp *.txt $(DESTDIR)/share/examples

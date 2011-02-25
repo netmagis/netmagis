@@ -1,0 +1,27 @@
+#
+# Example file for initial netmagis database creation:
+#	Groups
+#
+# Use with netmagis-dbimport:
+#	netmagis-dbimport group group.txt
+#
+# Format:
+#	<group> <login> ... <login>
+#
+# Notes:
+# - proper auth (internal or LDAP) must already be configured
+# - groups may or may not already exist in database
+# - users may or may not already exist in database
+#
+# History:
+#   2011/02/25 : pda : i18n
+#
+
+wheel	pda jean
+tech	gerard
+
+lma	marcel
+lec	edouard
+lga	gabriel
+esiatf	robert raymond
+labo2	lara
