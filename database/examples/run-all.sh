@@ -8,4 +8,5 @@
 netmagis-dbcreate \
     && netmagis-dbimport group		group.txt \
     && netmagis-dbimport domain-perm	grpdom.txt \
+    && netmagis-dbimport network 	network.txt \
     && echo "Succeeded"

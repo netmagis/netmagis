@@ -1,0 +1,100 @@
+#
+# Example file for initial netmagis database creation:
+#	Networks
+#
+# Use with netmagis-dbimport:
+#	netmagis-dbimport network network.txt
+#
+# Format:
+#	block of <key>=<value> lines
+#	blocks are closed by an empty line
+#
+#	Each key is one of:
+#       name=Backbone
+#       address=172.16.1.0      or address=172.16.1.0/24
+#       netmask=255.255.255.0   or empty
+#	(a network may have an IPv4 AND an IPv6 address)
+#       gateway=172.16.1.254    or empty
+#	(a network may have an IPv4 AND an IPv6 gateway)
+#       comment=Backbone and servers
+#       org=My Company
+#       community=sales
+#       location=Campus 1
+#       groups=wheel tech
+#
+# Notes:
+# - groups must already exist in database
+# - communities and organisations may or may not exist in database
+# - networks must not exist in database
+#
+# History:
+#   2011/02/25 : pda : i18n
+#
+
+name=Backbone
+address=172.16.1.0/24
+address=2001:db8:1:1::/64
+comment=Backbone + servers
+org=UM
+community=Research
+location=Campus 1
+groups=wheel tech
+
+name=LMA
+address=172.16.11.0/24
+address=2001:db8:1:2::/64
+gateway=172.16.11.254
+community=Research
+org=UM
+location=Campus 1 - Red building
+groups=lma
+
+name=LEC
+address=172.16.12.0
+netmask=255.255.255.0
+gateway=172.16.12.254
+comment=Laboratoire d'études des canidés
+community=Research
+org=UM
+location=Campus 1 - Blue building
+groups=lec
+
+name=LGA
+address=172.16.13.0
+netmask=255.255.255.0
+gateway=172.16.13.254
+comment=Laboratoire de Génie des Alpages
+community=Research
+org=UM
+location=Campus 1 - Yellow building
+groups=lga
+
+name=Accounting office
+address=172.16.14.0
+netmask=255.255.254.0
+gateway=172.16.15.254
+comment=Accounting office
+org=UM
+community=Administration
+location=Campus 2 - Green building
+groups=wheel tech
+
+name=Labo2
+address=172.16.20.0
+netmask=255.255.255.0
+gateway=172.16.20.254
+comment=Laboratoire 2
+community=Research
+location=Campus 1 - Pink building
+org=UM
+groups=labo2
+
+name=ESIATF
+address=192.168.1.0
+netmask=255.255.255.0
+gateway=192.168.1.254
+comment=Ecole Supérieure d'Ingénieurs À Tout Faire
+community=Teaching
+location=Campus 2 - Black building
+groups=esiatf
+org=ESIATF

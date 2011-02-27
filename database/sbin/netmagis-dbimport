@@ -58,6 +58,8 @@ set conf(syntax-user)	{^\w[-\w]+$}
 set conf(usage) {usage: %s <op> <param> ... <param>
     To import groups (create groups and users):
 	netmagis-dbimport group <file>
+    To import networks (create networks, organizations, communities)
+	netmagis-dbimport network <file>
     To import domain permissions (create domains and associate permissions):
 	netmagis-dbimport domain-perm <file>
     To import domain data (create domain and associated RR):
@@ -143,6 +145,108 @@ proc readline {fd _line {clean {}}} {
 # Various file reading
 ##############################################################################
 
+#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxxx
+#
+# Lecture dans la base pour constituer un tableau indexé par des clefs
+#
+
+proc lire-id {dbfd tabid table idx val} {
+    upvar $tabid tid
+
+    pg_select $dbfd "SELECT $idx AS idx, $val AS val FROM $table" tab {
+	set i $tab(idx)
+	set v $tab(val)
+	set tid($i) $v
+    }
+}
+
+#
+# Read a key=value file
+# and store result in an array indexed by:
+#	tab(nrec)	<record count>
+#	tab(<n>:<key>) <value>
+#		where <n> is the record index (starting from 1)
+#
+
+proc read-key-value-file {file _tab lkeys} {
+    upvar $_tab tab
+
+    set err 0
+    set fd [openfile $file]
+    set nrec 0
+    while {[readline $fd line "clean"] > -1} {
+	#
+	# Empty line : new record
+	#
+	if {$line eq ""} then {
+	    if {! [check-record nrec t tab $lkeys]} then {
+		set err 1
+	    }
+	    catch {unset t}
+	} else {
+	    if {! [regexp {([^=]*)=(.*)} $line bidon kw val]} then {
+		warning "Invalid syntax '$line'"
+		set err 1
+	    }
+
+	    set found 0
+	    foreach c $lkeys {
+		lassign $c k min max
+		if {$kw eq $k} then {
+		    lappend t($kw) $val
+		    set found 1
+		    break
+		}
+	    }
+	    if {! $found} then {
+		warning "Invalid keyword '$kw' in '$line'"
+		set err 1
+	    }
+	}
+    }
+
+    #
+    # Special case: last record
+    #
+    if {! [check-record nrec t tab $lkeys]} then {
+	set err 1
+    }
+
+    closefile $fd
+    set tab(nrec) $nrec
+
+    if {$err} then {
+	fatal-error "Error(s) detected in '$file'. Abort."
+    }
+}
+
+proc check-record {_nrec _t _tab lkeys} {
+    upvar $_nrec nrec
+    upvar $_t t
+    upvar $_tab tab
+
+    set r 1
+    if {[llength [array names t]] > 0} then {
+	incr nrec
+	foreach c $lkeys {
+	    lassign $c k min max
+	    if {! [info exists t($k)]} then {
+		set t($k) {}
+	    }
+	    set n [llength $t($k)]
+	    if {$n < $min} then {
+		set r 0
+		warning "Keyword '$k' : specified less than $min times"
+	    }
+	    if {$n > $max} then {
+		set r 0
+		warning "Keyword '$k' : specified more than $max times"
+	    }
+	    set tab($nrec:$k) $t($k)
+	}
+    }
+    return $r
+}
 
 #####################
 
@@ -315,6 +419,315 @@ proc import-group {argv dbfd} {
 		    set qpc [::pgsql::quote $pc]
 		    lappend sql "INSERT INTO pgauth.user (login, password)
 					VALUES ('$qc', '$qpc')"
+		}
+	    }
+	}
+	if {[llength $sql] > 0} then {
+	    set sql [join $sql ";"]
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		return "$msg\nAbort"
+	    }
+	}
+    }
+
+    return ""
+}
+
+##############################################################################
+# Import networks
+##############################################################################
+
+#
+# Network definition file
+# Format:
+#	key=val, where key is one of name, address, netmask, comment, org,
+#		community, location, groups
+#	new networks are introduced by an empty line
+# Examples:
+#	name=Backbone
+#	address=172.16.1.0	or address=172.16.1.0/24
+#	netmask=255.255.255.0	or empty
+#	gateway=172.16.1.254	or empty
+#	comment=Backbone and servers
+#	org=My Company
+#	community=sales
+#	location=Campus 1
+#	groups=wheel tech
+#
+
+proc read-network {file _tab} {
+    upvar $_tab tab
+
+    set keys {
+	{name 1 1}
+	{address 1 2}
+	{netmask 0 2}
+	{gateway 0 2}
+	{comment 0 1}
+	{org 1 1}
+	{community 1 1}
+	{location 0 1}
+	{groups 1 1}
+    }
+    read-key-value-file $file tab $keys
+}
+
+
+proc import-network {argv dbfd} {
+    package require ip
+
+    #
+    # Syntax checking
+    #
+
+    if {[llength $argv] != 1} then {
+	usage
+    }
+
+    lassign $argv file
+
+    #
+    # Read file and database reference
+    #
+
+    read-network $file tabnet
+
+    #
+    # Read referential data from database
+    #
+    
+    pg_select $dbfd "SELECT * FROM global.groupe" tab {
+	set refgroup($tab(nom)) [list $tab(idgrp) $tab(admin)]
+    }
+    pg_select $dbfd "SELECT * FROM dns.communaute" tab {
+	set refcommu($tab(nom)) $tab(idcommu)
+    }
+    pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
+	set reforg($tab(nom)) $tab(idetabl)
+    }
+
+    #
+    # Check that all groups exist
+    #
+
+    set r 0
+    for {set i 1} {$i <= $tabnet(nrec)} {incr i} {
+	foreach g [lindex $tabnet($i:groups) 0] {
+	    if {! [info exists refgroup($g)]} then {
+		set r 1
+		warning "Unknown group '$g'"
+	    }
+	}
+    }
+    if {$r} then {
+	return "Missing groups. Abort."
+    }
+
+    #
+    # Add referential data (organisations, communities) not in database
+    #
+
+    set sql {}
+    for {set i 1} {$i <= $tabnet(nrec)} {incr i} {
+	set o [lindex $tabnet($i:org) 0]
+	if {! [info exists reforg($o)]} then {
+	    set qo [::pgsql::quote $o]
+	    lappend sql "INSERT INTO dns.etablissement (nom) VALUES ('$qo')"
+	    set reforg($o) ""
+	}
+	set c [lindex $tabnet($i:community) 0]
+	if {! [info exists refcommu($c)]} then {
+	    set qc [::pgsql::quote $c]
+	    lappend sql "INSERT INTO dns.communaute (nom) VALUES ('$qc')"
+	    set refcommu($c) ""
+	}
+    }
+    if {[llength $sql] > 0} then {
+	set sql [join $sql ";"]
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    return "$msg\nAbort"
+	}
+
+	# re-read referential data
+	pg_select $dbfd "SELECT * FROM dns.communaute" tab {
+	    set refcommu($tab(nom)) $tab(idcommu)
+	}
+	pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
+	    set reforg($tab(nom)) $tab(idetabl)
+	}
+    }
+
+    #
+    # Add subnets
+    #
+
+    for {set i 1} {$i <= $tabnet(nrec)} {incr i} {
+	set name [lindex $tabnet($i:name) 0]
+
+	#
+	# Normalize IPv4 and IPv6 addresses
+	#
+
+	set ad(4) ""
+	set ad(6) ""
+	set gw(4) ""
+	set gw(6) ""
+	set idxmask 0
+
+	foreach a $tabnet($i:address) {
+	    set version [::ip::version $a]
+	    set mask [::ip::mask $a]
+	    if {$mask eq ""} then {
+		if {$version == 6} then {
+		    return "IPv6 address '$a' without prefix length"
+		}
+		set netmask [lindex $tabnet($i:netmask) $idxmask]
+		incr idxmask
+		if {$netmask eq ""} then {
+		    return "IP address '$a' without subnet mask"
+		}
+		set mask [::ip::maskToLength $netmask]
+		append a "/$mask"
+	    }
+
+	    if {$ad($version) ne ""} then {
+		return "IPv$version address supplied twice"
+	    }
+	    set ad($version) [::ip::normalize $a]
+	}
+	if {$idxmask < [llength $tabnet($i:netmask)]} then {
+	    return "Unused netmask= line"
+	}
+	if {$ad(4) eq "" && $ad(6) eq ""} then {
+	    return "Network '$name' without any IPv4 or IPv6 address"
+	}
+
+	#
+	# Check gateway addresses if supplied
+	#
+
+	foreach g $tabnet($i:gateway) {
+	    set version [::ip::version $g]
+	    if {$ad($version) eq ""} then {
+		return "IPv$version gateway supplied without IPv$version network"
+	    }
+	    set mask [::ip::mask $ad($version)]
+	    if {! [::ip::equal $ad($version) "$g/$mask"]} then {
+		return "Invalid gateway $g for network $ad($version)"
+	    }
+	    set gw($version) [::ip::normalize $g]
+	}
+
+	#
+	# Get organisation and community ids
+	#
+
+	set org   [lindex $tabnet($i:org) 0]
+	set idorg $reforg($org)
+
+	set commu [lindex $tabnet($i:community) 0]
+	set idcommu $refcommu($commu)
+
+	#
+	# Other data
+	#
+
+	set qcomm  [::pgsql::quote [lindex $tabnet($i:comment) 0]]
+	set qloc   [::pgsql::quote [lindex $tabnet($i:location) 0]]
+
+	set qname  [::pgsql::quote $name]
+
+	foreach v [array names ad] {
+	    if {$ad($v) eq ""} then {
+		set qad($v) NULL
+	    } else {
+		set qad($v) "'$ad($v)'"
+	    }
+	}
+	foreach v [array names gw] {
+	    if {$gw($v) eq ""} then {
+		set qgw($v) NULL
+	    } else {
+		set qgw($v) "'$gw($v)'"
+	    }
+	}
+
+	#
+	# Network insertion
+	#
+
+	set sql "INSERT INTO dns.reseau (nom, localisation, commentaire,
+					idetabl, idcommu, adr4, gw4, adr6, gw6)
+			VALUES ('$qname', '$qloc', '$qcomm', $idorg, $idcommu,
+					$qad(4), $qgw(4), $qad(6), $qgw(6))"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    return "$msg\nAbort"
+	}
+
+	set w {}
+	if {$ad(4) ne ""} then {
+	    lappend w "adr4 = '$ad(4)'"
+	}
+	if {$ad(6) ne ""} then {
+	    lappend w "adr6 = '$ad(6)'"
+	}
+	set w [join $w " AND "]
+
+	set idnet -1
+	set sql "SELECT idreseau FROM dns.reseau WHERE $w"
+	pg_select $dbfd $sql tab {
+	    set idnet $tab(idreseau)
+	}
+	if {$idnet == -1} then {
+	    return "Network '$name' inserted, but not found in database"
+	}
+
+	#
+	# Insert group access to this network
+	#
+
+	set sql {}
+	foreach g [lindex $tabnet($i:groups) 0] {
+	    lassign $refgroup($g) idgrp admin
+	    lappend sql "INSERT INTO dns.dr_reseau (idgrp, idreseau, tri)
+					VALUES ($idgrp, $idnet, 100)"
+	}
+	if {[llength $sql] > 0} then {
+	    set sql [join $sql ";"]
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		return "$msg\nAbort"
+	    }
+	}
+
+	#
+	# Insert group IP rights
+	# Default forbidden addresses are the network address itself,
+	# broadcast address and, for non admin groups, gateway address.
+	#
+
+	set sql {}
+	foreach g [lindex $tabnet($i:groups) 0] {
+	    lassign $refgroup($g) idgrp admin
+	    if {$ad(4) ne ""} then {
+		lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+				VALUES ($idgrp, '$ad(4)', 1)"
+		set adr0 [::ip::prefix $ad(4)]
+		lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+				VALUES ($idgrp, '$adr0', 0)"
+		set adrb [::ip::broadcastAddress $ad(4)]
+		lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+				VALUES ($idgrp, '$adrb', 0)"
+		if {! $admin && $gw(4) ne ""} then {
+		    lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+				    VALUES ($idgrp, '$gw(4)/32', 0)"
+		}
+	    }
+	    if {$ad(6) ne ""} then {
+		lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+				VALUES ($idgrp, '$ad(6)', 1)"
+		if {! $admin && $gw(6) ne ""} then {
+		    lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+				    VALUES ($idgrp, '$gw(6)/128', 0)"
 		}
 	    }
 	}
