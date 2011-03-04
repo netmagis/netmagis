@@ -3,7 +3,7 @@
 #	Domains and group permissions for these domains
 #
 # Use with netmagis-dbimport:
-#	netmagis-dbimport domain-perm grpdom.txt
+#	netmagis-dbimport domain domain.txt
 #
 # Format:
 #	<domain> ALLBUT|SET <prio> <group> ... <group>

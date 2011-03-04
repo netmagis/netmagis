@@ -60,10 +60,10 @@ set conf(usage) {usage: %s <op> <param> ... <param>
 	netmagis-dbimport group <file>
     To import networks (create networks, organizations, communities)
 	netmagis-dbimport network <file>
-    To import domain permissions (create domains and associate permissions):
-	netmagis-dbimport domain-perm <file>
-    To import domain data (create domain and associated RR):
-	netmagis-dbimport domain <domainname> <zonefile>
+    To import domains (create domains and associate permissions):
+	netmagis-dbimport domain <file>
+    To import zone data (import zone prologue, and zone RR into domain)
+	netmagis-dbimport zone <domainname> <zonefile>
 }
 
 ##############################################################################
@@ -144,21 +144,6 @@ proc readline {fd _line {clean {}}} {
 ##############################################################################
 # Various file reading
 ##############################################################################
-
-#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxxx
-#
-# Lecture dans la base pour constituer un tableau indexé par des clefs
-#
-
-proc lire-id {dbfd tabid table idx val} {
-    upvar $tabid tid
-
-    pg_select $dbfd "SELECT $idx AS idx, $val AS val FROM $table" tab {
-	set i $tab(idx)
-	set v $tab(val)
-	set tid($i) $v
-    }
-}
 
 #
 # Read a key=value file
@@ -757,7 +742,7 @@ proc import-network {argv dbfd} {
 #	myproduct.com SET 50 marketing
 #
 
-proc read-domain-perm {file _tab} {
+proc read-domain {file _tab} {
     upvar $_tab tab
 
     set fd [openfile $file]
@@ -783,7 +768,7 @@ proc read-domain-perm {file _tab} {
     closefile $fd
 }
 
-proc import-domain-perm {argv dbfd} {
+proc import-domain {argv dbfd} {
     #
     # Syntax checking and read file
     #
@@ -794,7 +779,7 @@ proc import-domain-perm {argv dbfd} {
 
     lassign $argv file
 
-    read-domain-perm $file tabdom
+    read-domain $file tabdom
 
     #
     # Read groups from database
@@ -948,7 +933,7 @@ proc zone-get-token {rrpart} {
 proc zone-analyze-rr {line _tab oldname} {
 }
 
-proc import-domain {argv dbfd} {
+proc import-zone {argv dbfd} {
 }
 
 ##############################################################################
