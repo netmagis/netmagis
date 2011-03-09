@@ -114,4 +114,4 @@ d cgi-register {} {} {
 # Main procedure
 ###############################################################################
 
-d cgi-dispatch "mac" "droitmac"
+d cgi-dispatch "mac" "mac"
