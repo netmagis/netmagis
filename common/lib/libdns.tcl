@@ -4127,7 +4127,7 @@ proc read-hinfo {dbfd text} {
 #
 
 proc read-dhcp-profile {dbfd text} {
-    if {$text ne ""} then {
+    if {$text eq ""} then {
 	set iddhcpprofil 0
     } else {
 	set qtext [::pgsql::quote $text]
