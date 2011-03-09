@@ -421,7 +421,7 @@ proc gen-idportmac-session {dbfd idportmac} {
 			]
 	set eq [get-eq-name $dbfd $tab(ideq)]
 	lappend lines [list "Info" \
-			    [mc "Équipement"] \
+			    [mc "Equipement"] \
 			    [gen-link $eq "eq:$tab(ideq)"] \
 			]
 	lappend lines [list "Info" \
@@ -950,4 +950,4 @@ d cgi-register {recherche .+} {} {
 # Main procedure
 ##############################################################################
 
-d cgi-dispatch "mac" "droitmac"
+d cgi-dispatch "mac" "mac"
