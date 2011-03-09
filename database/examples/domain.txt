@@ -21,6 +21,8 @@
 #
 
 univ-machin.fr		ALLBUT	10	esiatf wheel
+labo2.univ-machin.fr	SET	20	labo2
+labo2.univ-machin.fr	SET	30	wheel
 
 bidon.org		SET	20	lga
 

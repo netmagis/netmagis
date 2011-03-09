@@ -2,25 +2,25 @@
 ; Zone 16.172.in-addr.arpa
 ;
 ;
-; Historique
-;   2004/04/13 : pda : conception d'une zone exemple
+; History
+;   2004/04/13 : pda : design example zone
 ;
 
 @	IN	SOA	ns1.univ-machin.fr. hostmaster.univ-machin.fr. (
-		    2004041301		; version
-		    86400		; refresh = 1 j
+		    2004041301		; serial
+		    86400		; refresh = 1 day
 		    3600		; retry = 1 h
-		    3600000		; expire = 1000 heures (~ 41 j)
-		    86400		; default ttl = 1 j
+		    3600000		; expire = 1000 hours (~ 41 day)
+		    86400		; default ttl = 1 day
 		)
 
 ;
-; Le TTL par défaut des enregistrements de la zone
+; Default TLL for zone records
 ;
 $TTL	86400
 
 ;
-; Les serveurs autoritaires pour la zone
+; Authoritative servers for this zone
 ;
 
 			IN	NS	ns1.univ-machin.fr.
@@ -31,10 +31,9 @@ $TTL	86400
 			IN	NS	ns1.univ-machin.fr.
 			IN	NS	ns2.univ-machin.fr.
 
-; COUPER ICI -------------------------------------------------------------
+; CUT HERE -------------------------------------------------------------
 
-; Comme pour toutes les zones "reverse", ce qui suit n'est pas utilisé
-; par les scripts de chargement.
+; As for all reverse zones, PTR are not used in import script
 
 1.1			IN	PTR	ns1.univ-machin.fr.
 2.1			IN	PTR	ns2.univ-machin.fr.

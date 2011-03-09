@@ -16,6 +16,8 @@
 
 source %LIBDNS%
 
+package require ip
+
 #
 # Pattern to distinguish zone prologue (including non standard RRs) 
 # from standard RRs
@@ -55,15 +57,18 @@ set conf(syntax-user)	{^\w[-\w]+$}
 # Self explanatory
 #
 
-set conf(usage) {usage: %s <op> <param> ... <param>
+set conf(usage) {usage: %1$s [-v] <op> <param> ... <param>
     To import groups (create groups and users):
-	netmagis-dbimport group <file>
+	%1$s group <file>
     To import networks (create networks, organizations, communities)
-	netmagis-dbimport network <file>
+	%1$s network <file>
     To import domains (create domains and associate permissions):
-	netmagis-dbimport domain <file>
+	%1$s domain <file>
     To import zone data (import zone prologue, and zone RR into domain)
-	netmagis-dbimport zone <domainname> <zonefile>
+	%1$s zone <domainname> <zonefile> <selector> <rrsupfile> <login>
+	    selector = domainname or cidr (172.16/16, 2001:660:1234::/48)
+	    rrsup = file containing some RRs which are added to every A/AAAA RR
+	    login = login of an existing user
 }
 
 ##############################################################################
@@ -127,15 +132,15 @@ proc closefile {fd} {
     set here(line) ""
     return [close $fd]
 }
-proc readline {fd _line {clean {}}} {
+proc readline {fd _line {comment {}}} {
     global here
     upvar $_line line
 
     incr here(line)
     set r [gets $fd line]
-    if {$r != -1 && $clean eq "clean"} then {
-	regsub -all {\s*#.*} $line "" line
-	regsub {^\s+} $line "" line
+    if {$r != -1 && $comment ne ""} then {
+	regsub -all "${comment}.*" $line "" line
+	set line [string trim $line]
 	regsub {\s+} $line " " line
     }
     return $r
@@ -159,7 +164,7 @@ proc read-key-value-file {file _tab lkeys} {
     set err 0
     set fd [openfile $file]
     set nrec 0
-    while {[readline $fd line "clean"] > -1} {
+    while {[readline $fd line "#"] > -1} {
 	#
 	# Empty line : new record
 	#
@@ -233,30 +238,6 @@ proc check-record {_nrec _t _tab lkeys} {
     return $r
 }
 
-#####################
-
-proc read-zone-prologue {fd _serial} {
-    global conf
-
-    set prologue ""
-    set serial 0
-    set end 0
-    while {! $end && [gets $fd line] > -1} {
-	if {! $end && [regexp -- $conf(pattern) $line]} then {
-	    set end 1
-	}
-	if { ! $end} then {
-	    if {[regexp -nocase $conf(serial) $line x p1 p2 p3]} then {
-		set curser [clock format [clock seconds] -format "%Y%m%d"]
-		append curser "01"
-	    }
-	    if {$p2 > $curser} then {
-		warning "Version 
-	    }
-	}
-    }
-}
-
 ##############################################################################
 # Import group contents
 ##############################################################################
@@ -275,7 +256,7 @@ proc read-group {file _tab} {
     upvar $_tab tab
 
     set fd [openfile $file]
-    while {[readline $fd line "clean"] > -1} {
+    while {[readline $fd line "#"] > -1} {
 	if {$line ne ""} then {
 	    set group [lindex $line 0]
 	    if {! [regexp $conf(syntax-group) $group]} then {
@@ -300,7 +281,7 @@ proc read-group {file _tab} {
     closefile $fd
 }
 
-proc import-group {argv dbfd} {
+proc import-group {verbose argv dbfd} {
     #
     # Syntax checking
     #
@@ -310,6 +291,10 @@ proc import-group {argv dbfd} {
     }
 
     lassign $argv file
+
+    if {$verbose} {
+	puts stderr "Importing groups from $file"
+    }
 
     #
     # Read file and database reference
@@ -458,8 +443,7 @@ proc read-network {file _tab} {
 }
 
 
-proc import-network {argv dbfd} {
-    package require ip
+proc import-network {verbose argv dbfd} {
 
     #
     # Syntax checking
@@ -470,6 +454,10 @@ proc import-network {argv dbfd} {
     }
 
     lassign $argv file
+
+    if {$verbose} {
+	puts stderr "Importing networks from $file"
+    }
 
     #
     # Read file and database reference
@@ -746,7 +734,7 @@ proc read-domain {file _tab} {
     upvar $_tab tab
 
     set fd [openfile $file]
-    while {[readline $fd line "clean"] > -1} {
+    while {[readline $fd line "#"] > -1} {
 	if {$line ne ""} then {
 	    set groups [lassign $line domain op sort]
 	    set err 0
@@ -768,7 +756,7 @@ proc read-domain {file _tab} {
     closefile $fd
 }
 
-proc import-domain {argv dbfd} {
+proc import-domain {verbose argv dbfd} {
     #
     # Syntax checking and read file
     #
@@ -778,6 +766,10 @@ proc import-domain {argv dbfd} {
     }
 
     lassign $argv file
+
+    if {$verbose} {
+	puts stderr "Importing domains from $file"
+    }
 
     read-domain $file tabdom
 
@@ -911,8 +903,101 @@ proc import-domain {argv dbfd} {
 }
 
 ##############################################################################
-# Import domain data
+# Import zone data
 ##############################################################################
+
+proc read-zone {file domain reverse _prologue _tabaddr _tabcname} {
+    global conf
+    upvar $_prologue prologue
+    upvar $_tabaddr tabaddr
+    upvar $_tabcname tabcname
+
+    set fd [openfile $file]
+
+    #
+    # Look for the prologue
+    # 
+
+    set prologue ""
+    set serialfound 0
+    set endprol 0
+    while {! $endprol && [readline $fd line ""] > -1} {
+	if {[regexp -- $conf(pattern) $line]} then {
+	    set endprol 1
+	} else {
+	    if {[regexp -nocase $conf(serial) $line x p1 curserial p2]} then {
+		set newserial [clock format [clock seconds] -format "%Y%m%d"]
+		append newserial "01"
+		if {$newserial < $curserial} then {
+		    warning "Version '$curserial' in file is lower than Netmagis default serial '$newserial'"
+		    warning "You will have to reset this zone your secondary DNS servers"
+		}
+		set line "$p1%ZONEVERSION%$p2"
+		set serialfound 1
+	    }
+	    append prologue $line
+	    append prologue "\n"
+	}
+    }
+    if {! $endprol} then {
+	fatal-error "End of prologue pattern '$conf(pattern)' not found"
+    }
+    if {! $serialfound} then {
+	fatal-error "Serial pattern '$conf(serial)' not found"
+    }
+
+    #
+    # Analyze zone RR
+    #
+
+    if {! $reverse} then {
+	set oldname ""
+	while {[readline $fd line ""] > -1} {
+	    lassign [zone-analyze-rr $line $oldname] type name data
+	    switch $type {
+		NS -
+		MX -
+		NOTHING {
+		    # nothing. Surprising, eh?
+		}
+		A -
+		AAAA {
+		    if {[info exists tabcname($name)]} then {
+			warning "$name is already a CNAME: $tabcname($name) (CNAME ignored)"
+			unset tabcname($name)
+		    }
+		    set data [::ip::normalize $data]
+		    if {! [existing-rr-ip $name $data]} then {
+			lappend tabaddr($name) $data
+		    }
+		}
+		CNAME {
+		    # Example: a CNAME b.mycompany.com.
+		    # or:      a CNAME b
+		    if {[info exists tabcname($name)]} then {
+			warning "$name already has a CNAME: $tabcname($name) (ignored)"
+		    } elseif {[info exists tabaddr($name)]} then {
+			warning "$name already has an IP address: $tabaddr($name) (CNAME ignored)"
+		    } else {
+			# cname(a) => b.mycompany.com. or b
+			if {[string range $data end end] ne "."} then {
+			    append data ".$domain."
+			}
+			if {! [existing-rr-cname $name $data]} then {
+			    set tabcname($name) $data
+			}
+		    }
+		}
+		default {
+		    warning "Unrecognized RR type '$type' (ignored)"
+		}
+	    }
+	    set oldname $name
+	}
+    }
+
+    closefile $fd
+}
 
 proc zone-get-token {rrpart} {
     global conf
@@ -930,10 +1015,351 @@ proc zone-get-token {rrpart} {
     return OTHER
 }
 
-proc zone-analyze-rr {line _tab oldname} {
+proc zone-analyze-rr {line oldname} {
+    # Remove comments and blank characters at end of line (blanks
+    # at the beginning of the line must not be removed since they
+    # are significant!).
+    regsub -all -- ";.*" $line "" line
+    set line [string trimright $line]
+
+    # remove empty lines
+    if {$line eq ""} then {
+	return [list "NOTHING" $oldname ""]
+    }
+
+    # split line
+    regsub -all -- {\s+} $line " " line
+    set l [split $line " "]
+
+    # Find the RR name. If the RR begins with a blank character,
+    # name is previous RR name (RFC 1035, page 34)
+    set name [string tolower [lindex $l 0]]
+    if {$name eq ""} then {
+	set name $oldname
+    }
+    if {$name ne ""} then {
+	set msg [check-name-syntax $name]
+	if {$msg ne ""} then {
+	    fatal-error $msg
+	}
+    }
+
+    # Skip TTL and Class, until RR type is found
+    set i 1
+    set typefound 0
+    while {$i <= [llength $l]-1 && ! $typefound} {
+	set tok [zone-get-token [lindex $l $i]]
+	switch $tok {
+	    TTL -
+	    CLASS {
+		# do nothing. Just skip to next token
+		incr i
+	    }
+	    TYPE {
+		# break
+		set typefound 1
+	    }
+	    default {
+		fatal-error "Unrecognized RR ($line)"
+	    }
+	}
+    }
+    if {! $typefound} then {
+	fatal-error "RR without type ($line)"
+    }
+
+    set type [string toupper [lindex $l $i]]
+    set data [string tolower [lrange $l [expr $i + 1] end]]
+
+    return [list $type $name $data]
 }
 
-proc import-zone {argv dbfd} {
+proc get-existing-rr {dbfd iddom} {
+    global existingrr
+
+    set sql "SELECT r.nom AS name, i.adr AS addr
+			FROM dns.rr r, dns.rr_ip i
+			WHERE r.idrr = i.idrr AND iddom = $iddom"
+    pg_select $dbfd $sql tab {
+	lappend existingrr(ip:$tab(name)) [::ip::normalize $tab(addr)]
+    }
+
+    set sql "SELECT r1.nom AS name, r2.nom AS cname1, d.nom AS cname2
+			FROM dns.rr r1, dns.rr_cname c, dns.rr r2, dns.domaine d
+			WHERE r1.idrr = c.idrr
+				AND c.cname = r2.idrr
+				AND r2.iddom = d.iddom
+				AND r1.iddom = $iddom"
+    pg_select $dbfd $sql tab {
+	set existingrr(cname:$tab(name)) "$tab(cname1).$tab(cname2)."
+    }
+}
+
+proc existing-rr {name} {
+    global existingrr
+
+    return [expr [info exists existingrr(ip:$name)] \
+			|| [info exists existingrr(cname:$name)] ]
+}
+
+proc existing-rr-ip {name addr} {
+    global existingrr
+
+    set r 0
+    set i ip:$name
+    if {[info exists existingrr($i)]} then {
+	if {$addr in $existingrr($i)} then {
+	    set r 1
+	}
+    }
+    return $r
+}
+
+proc existing-rr-cname {name cname} {
+    global existingrr
+
+    set r 0
+    set i cname:$name
+    if {[info exists existingrr($i)]} then {
+	if {$existingrr($i) eq $cname} then {
+	    set r 1
+	} else {
+	    warning "$name is already a CNAME pointing to $existingrr($i) (ignored)"
+	    set r 1
+	}
+    }
+    return $r
+}
+
+proc import-zone {verbose argv dbfd} {
+    #
+    # Syntax checking and read file
+    #
+
+    if {[llength $argv] != 5} then {
+	usage
+    }
+    lassign $argv domain file selector rrsupfile login
+
+    if {$verbose} {
+	puts stderr "Importing zone for $domain from $file"
+    }
+
+    #
+    # Read user id
+    #
+
+    set qlogin [::pgsql::quote $login]
+    set sql "SELECT idcor FROM global.corresp WHERE login = '$qlogin'"
+    set idcor -1
+    pg_select $dbfd $sql tab {
+	set idcor $tab(idcor)
+    }
+    if {$idcor == -1} then {
+	fatal-error "Login '$login' not found"
+    }
+
+    #
+    # Read existing domains
+    #
+
+    set sql "SELECT nom, iddom FROM dns.domaine"
+    pg_select $dbfd $sql tab {
+	set tabdom($tab(nom)) $tab(iddom)
+    }
+
+    #
+    # Read zone RRs for normal domains
+    #
+
+    set version [::ip::version $selector]
+    if {$version == -1} then {
+	if {! [info exists tabdom($domain)]} then {
+	    fatal-error "Domain '$domain' not found"
+	}
+	set iddom $tabdom($domain)
+	get-existing-rr $dbfd $iddom
+	set reverse 0
+    } else {
+	set reverse 1
+    }
+
+    #
+    # Read zone file :
+    # - parse prologue and get existing serial
+    # - parse all A/AAAA records and place them in tabaddr
+    # - parse all CNAME records and place them in tabcname 
+    #
+
+    read-zone $file $domain $reverse prologue tabaddr tabcname
+
+    if {$verbose >= 3} then {
+	if {[array exists tabaddr]} then {
+	    parray tabaddr
+	}
+	if {[array exists tabcname]} then {
+	    parray tabcname
+	}
+    }
+
+    #
+    # Import addresses and CNAMEs into database
+    #
+
+    set err 0
+
+    if {$version == -1} then {
+	#
+	# Import IP addresses
+	#
+
+	foreach name [lsort [array names tabaddr]] {
+	    catch {unset trr}
+	    if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
+		if {$verbose >= 2} then {
+		    puts stderr "Adding RR $name"
+		}
+		set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
+		if {$msg ne ""} then {
+		    warning "Unable to add $name ($msg)"
+		    set err 1
+		    continue
+		}
+	    }
+	    foreach a $tabaddr($name) {
+		if {$verbose >= 2} then {
+		    puts stderr "Adding IP $name / $a"
+		}
+		set sql "INSERT INTO dns.rr_ip (idrr, adr)
+					VALUES ($trr(idrr), '$a')"
+		if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		    warning "Unable to add $name/$a ($msg)"
+		    set err 1
+		}
+	    }
+	}
+
+	#
+	# Read all RR which are not of type CNAME
+	# baserr(a.mycompany.com) = idrr of a.mycompany.com
+	#
+
+	set sql "SELECT rr.nom || '.' || d.nom || '.' AS name, rr.idrr
+			FROM dns.rr, dns.domaine d
+			WHERE rr.iddom = d.iddom
+			    AND rr.idrr NOT IN (SELECT idrr FROM dns.rr_cname)"
+	pg_select $dbfd $sql tab {
+	    set name $tab(name)
+	    set idrr $tab(idrr)
+	    set baserr($name) $idrr
+	}
+
+	#
+	# Get all CNAME read from the file
+	#
+
+	foreach name [lsort [array names tabcname]] {
+	    catch {unset trr}
+	    if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
+		if {$verbose >= 2} then {
+		    puts stderr "Adding RR $name"
+		}
+		set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
+		if {$msg ne ""} then {
+		    warning "Unable to add $name ($msg)"
+		    set err 1
+		    continue
+		}
+	    }
+
+	    set ref $tabcname($name)
+	    if {[regexp {^([^.]+)\.(.+).$} $ref x n dom]} then {
+		if {[info exists tabdom($dom)]} then {
+		    catch {unset tref}
+		    if {[read-rr-by-name $dbfd $n $tabdom($dom) tref]} then {
+			if {$verbose >= 2} then {
+			    puts stderr "Adding CNAME $name / $a"
+			}
+			set sql "INSERT INTO dns.rr_cname (idrr, cname)
+					    VALUES ($trr(idrr), $tref(idrr))"
+			if {! [::pgsql::execsql $dbfd $sql msg]} then {
+			    warning "Unable to add CNAME $name -> $ref ($msg)"
+			    set err 1
+			}
+		    } else {
+			warning "CNAME '$name' points to non existant '$ref'. Ignored.\nImport zone $domain one more time when '$dom' zone is imported"
+		    }
+		} else {
+		    warning "Illegal CNAME domain ($name -> $ref)"
+		    set err 1
+		}
+	    } else {
+		warning "Illegal CNAME syntax ($name -> $ref)"
+		set err 1
+	    }
+	}
+    }
+
+    #
+    # Reads rrsup file
+    #
+
+    set fd [open $rrsupfile "r"]
+    set rrsup [read $fd]
+    close $fd
+
+    #
+    # Import zone prologue
+    #
+
+    set qdomain [::pgsql::quote $domain]
+    set qprologue [::pgsql::quote $prologue]
+    set qrrsup [::pgsql::quote $rrsup]
+    set qselector [::pgsql::quote $selector]
+
+    set serial [clock format [clock seconds] -format "%Y%m%d"]
+    append serial "01"
+
+    switch $version {
+	-1 { set table "dns.zone_normale" }
+	4 { set table "dns.zone_reverse4" }
+	6 { set table "dns.zone_reverse6" }
+    }
+
+    # use same id if it already exists
+    set idzone -1
+    set sql "SELECT idzone FROM $table WHERE domaine = '$qdomain'"
+    pg_select $dbfd $sql tab {
+	set idzone $tab(idzone)
+    }
+    if {$idzone == -1} then {
+	set sql "INSERT INTO $table (domaine, version, prologue,
+					rrsup, generer, selection)
+			VALUES ('$qdomain', $serial, '$qprologue',
+					'$qrrsup', 1, '$qselector')"
+    } else {
+	set sql "UPDATE $table SET domaine = '$qdomain',
+				    version = $serial,
+				    prologue = '$qprologue',
+				    rrsup = '$qrrsup',
+				    generer = 1,
+				    selection = '$qselector'
+				WHERE idzone = $idzone"
+    }
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	warning "Unable to change '$domain' zone specification"
+	set err 1
+    }
+
+    #
+    # Returns (with or without an error"
+    #
+
+    if {$err} then {
+	return "Error(s) detected. Abort."
+    }
+
+    return ""
 }
 
 ##############################################################################
@@ -958,6 +1384,24 @@ proc main {argv0 argv} {
     # Argument checking
     #
 
+    set verbose 0
+    while {[llength $argv] > 0} {
+	set a [lindex $argv 0]
+	switch -glob -- $a {
+	    -v {
+		incr verbose
+		set argv [lreplace $argv 0 0]
+	    }
+	    -* {
+		warning "Unknown option '$a'"
+		usage
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
     set op [lindex $argv 0]
     set fct [info procs "import-$op"]
     if {[llength $fct] != 1} then {
@@ -973,7 +1417,7 @@ proc main {argv0 argv} {
 	fatal-error $msg
     }
 
-    set msg [$fct [lreplace $argv 0 0] $dbfd]
+    set msg [$fct $verbose [lreplace $argv 0 0] $dbfd]
     if {$msg ne ""} then {
 	set msg [d dbabort "import" $msg]
 	fatal-error $msg
