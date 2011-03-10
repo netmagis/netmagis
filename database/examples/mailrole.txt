@@ -1,9 +1,16 @@
 #
-# Les roles de messagerie définis pour nos domaines
+# Exemple file for initial netmagis database creation:
+#	Mail roles
 #
+# Use with netmagis-dbimport:
+#	netmagis-dbimport mailrole mailrole.txt login
 #
-# Historique
-#   2004/04/13 : pda/jean : zone exemple
+# Format:
+#	<mail address> <mailbox host>
+#
+# History
+#   2004/04/13 : pda/jean : design
+#   2011/03/10 : pda      : i18n
 #
 
 lma.univ-machin.fr	zeus.univ-machin.fr
