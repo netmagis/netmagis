@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Import DNS data into Netmagis database
+# Import existing DNS data into Netmagis database
 #
 # Syntax:
 #   netmagis-dbimport <op> <param> ... <param>
@@ -69,6 +69,8 @@ set conf(usage) {usage: %1$s [-v] <op> <param> ... <param>
 	    selector = domainname or cidr (172.16/16, 2001:660:1234::/48)
 	    rrsup = file containing some RRs which are added to every A/AAAA RR
 	    login = login of an existing user
+    To import mail roles (create mail role):
+	%1$s mailrole <file>
 }
 
 ##############################################################################
@@ -730,7 +732,7 @@ proc import-network {verbose argv dbfd} {
 #	myproduct.com SET 50 marketing
 #
 
-proc read-domain {file _tab} {
+proc read-domain-file {file _tab} {
     upvar $_tab tab
 
     set fd [openfile $file]
@@ -771,7 +773,7 @@ proc import-domain {verbose argv dbfd} {
 	puts stderr "Importing domains from $file"
     }
 
-    read-domain $file tabdom
+    read-domain-file $file tabdom
 
     #
     # Read groups from database
@@ -1357,6 +1359,145 @@ proc import-zone {verbose argv dbfd} {
 
     if {$err} then {
 	return "Error(s) detected. Abort."
+    }
+
+    return ""
+}
+
+##############################################################################
+# Import mail roles
+##############################################################################
+
+#
+# Mail role file
+# Format:
+#	mail-address mailbox-host
+# Examples:
+#	sales.mycompany.com mboxhost.mycompany.com
+#
+
+proc read-mailrole {file} {
+    set l {}
+    set err 0
+    set fd [openfile $file]
+    while {[readline $fd line "#"] > -1} {
+	if {$line ne ""} then {
+	    set line [string tolower $line]
+	    if {[regexp {^([^.]+)\.(\S+)\s+([^.]+)\.(\S+)$} $line x n1 d1 n2 d2]} then {
+		set mailaddr "$n1.$d1"
+		if {[info exists tab($mailaddr)]} then {
+		    set err 1
+		    warning "Mail address '$mailaddr' already specified"
+		} else {
+		    set tab($mailaddr) ""
+		    lappend l [list $n1 $d1 $n2 $d2]
+		}
+	    } else {
+		set err 1
+		warning "Invalid line '$line'"
+	    }
+	}
+    }
+    closefile $fd
+    if {$err} then {
+	fatal-error "Abort."
+    }
+    return $l
+}
+
+proc import-mailrole {verbose argv dbfd} {
+    #
+    # Syntax checking and read file
+    #
+
+    if {[llength $argv] != 2} then {
+	usage
+    }
+
+    lassign $argv file login
+
+    if {$verbose} {
+	puts stderr "Importing mail roles from $file"
+    }
+
+    #
+    # Read user id
+    #
+
+    set qlogin [::pgsql::quote $login]
+    set sql "SELECT idcor FROM global.corresp WHERE login = '$qlogin'"
+    set idcor -1
+    pg_select $dbfd $sql tab {
+	set idcor $tab(idcor)
+    }
+    if {$idcor == -1} then {
+	return "Login '$login' not found"
+    }
+
+    #
+    # Read file
+    #
+
+    set lmr [read-mailrole $file]
+
+    #
+    # Read domains
+    #
+
+    pg_select $dbfd "SELECT iddom, nom FROM dns.domaine" tab {
+	set tabdom($tab(nom)) $tab(iddom)
+    }
+
+    #
+    # Postprocess input to check syntax, and to insert mail roles
+    # in database (no check if mail roles already exist)
+    #
+
+    set err 0
+    foreach mr $lmr {
+	lassign $mr n1 d1 n2 d2
+
+	if {! [info exists tabdom($d1)]} then {
+	    set err 1
+	    warning "Unknown domain '$d1' for '$n1.$d1'"
+	} else {
+	    set iddom1 $tabdom($d1)
+	    if {! [read-rr-by-name $dbfd $n1 $iddom1 trr1]} then {
+		set msg [add-rr $dbfd $n1 $iddom1 "" 0 "" 0 -1 "" "" "" $idcor trr1]
+		if {$msg ne ""} then {
+		    set err 1
+		    warning $msg
+		}
+	    }
+	}
+
+	if {! [info exists tabdom($d2)]} then {
+	    set err 1
+	    warning "Unknown domain '$d2' for '$n2.$d2'"
+	} else {
+	    set iddom2 $tabdom($d2)
+	    if {[read-rr-by-name $dbfd $n2 $iddom2 trr2]} then {
+		if {[llength $trr2(ip)] == 0} then {
+		    set err 1
+		    warning "'$n2.$d2' is not a host"
+		}
+	    } else {
+		set err 1
+		warning "Unknown host '$n2.$d2'"
+	    }
+	}
+
+	if {! $err} then {
+	    set sql "INSERT INTO dns.role_mail (idrr, heberg)
+			VALUES ($trr1(idrr), $trr2(idrr))"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		return "$msg\nAbort"
+	    }
+	}
+    }
+
+    if {$err} then {
+	return "Abort."
     }
 
     return ""
