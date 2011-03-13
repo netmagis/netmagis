@@ -806,6 +806,7 @@ db-schemas ()
 	END ;
 	$$ LANGUAGE plpgsql ;
 
+    -- called when an IPv6 address is modified
     CREATE OR REPLACE FUNCTION gen_rev4 (INET)
 	RETURNS INTEGER AS $$
 	BEGIN
@@ -814,7 +815,7 @@ db-schemas ()
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
 
-    -- appelé lors de la modification d'une adresse IPv6
+    -- called when an IPv6 address is modified
     CREATE OR REPLACE FUNCTION gen_rev6 (INET)
 	RETURNS INTEGER AS $$
 	BEGIN
@@ -895,6 +896,13 @@ db-schemas ()
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
 
+    CREATE TRIGGER tr_modifier_ip
+	AFTER INSERT OR UPDATE OR DELETE
+	ON dns.rr_ip
+	FOR EACH ROW
+	EXECUTE PROCEDURE modifier_ip ()
+	;
+
     CREATE OR REPLACE FUNCTION modifier_mxcname ()
 	RETURNS trigger AS $$
 	BEGIN
@@ -918,7 +926,21 @@ db-schemas ()
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
 
-    -- modifier le RR et les zones reverses pour toutes les adresses IP
+    CREATE TRIGGER tr_modifier_cname
+	AFTER INSERT OR UPDATE OR DELETE
+	ON dns.rr_cname
+	FOR EACH ROW
+	EXECUTE PROCEDURE modifier_mxcname ()
+	;
+
+    CREATE TRIGGER tr_modifier_mx
+	AFTER INSERT OR UPDATE OR DELETE
+	ON dns.rr_mx
+	FOR EACH ROW
+	EXECUTE PROCEDURE modifier_mxcname ()
+	;
+
+    -- modify RR and reverse zones for all IP addresses
     CREATE OR REPLACE FUNCTION modifier_rr ()
 	RETURNS trigger AS $$
 	BEGIN
@@ -966,6 +988,14 @@ db-schemas ()
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
 
+    CREATE TRIGGER tr_modifier_rr
+	AFTER INSERT OR UPDATE OR DELETE
+	ON dns.rr
+	FOR EACH ROW
+	EXECUTE PROCEDURE modifier_rr ()
+	;
+
+    -- called when a mail relay is modified
     CREATE OR REPLACE FUNCTION gen_relais (INTEGER)
 	RETURNS INTEGER AS $$
 	BEGIN
@@ -975,6 +1005,72 @@ db-schemas ()
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
 
+    CREATE OR REPLACE FUNCTION modifier_relais ()
+	RETURNS trigger AS $$
+	BEGIN
+	    IF TG_OP = 'INSERT'
+	    THEN
+		PERFORM sum (gen_relais (NEW.iddom)) ;
+	    END IF ;
+
+	    IF TG_OP = 'UPDATE'
+	    THEN
+		PERFORM sum (gen_relais (NEW.iddom)) ;
+		PERFORM sum (gen_relais (OLD.iddom)) ;
+	    END IF ;
+
+	    IF TG_OP = 'DELETE'
+	    THEN
+		PERFORM sum (gen_relais (OLD.iddom)) ;
+	    END IF ;
+
+	    RETURN NEW ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    CREATE TRIGGER tr_modifier_relais
+	AFTER INSERT OR UPDATE OR DELETE
+	ON dns.relais_dom
+	FOR EACH ROW
+	EXECUTE PROCEDURE modifier_relais ()
+	;
+
+    -- called when a zone is changed
+    CREATE OR REPLACE FUNCTION modifier_zone ()
+	RETURNS TRIGGER AS $$
+	BEGIN
+	    IF NEW.prologue <> OLD.prologue
+		    OR NEW.rrsup <> OLD.rrsup
+		    OR NEW.selection <> OLD.selection
+	    THEN
+		NEW.generer := 1 ;
+	    END IF ;
+	    RETURN NEW ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    CREATE TRIGGER tr_modifier_zone
+	BEFORE UPDATE
+	ON dns.zone_normale
+	FOR EACH ROW
+	EXECUTE PROCEDURE modifier_zone ()
+	;
+
+    CREATE TRIGGER tr_modifier_zone4
+	BEFORE UPDATE
+	ON dns.zone_reverse4
+	FOR EACH ROW
+	EXECUTE PROCEDURE modifier_zone ()
+	;
+
+    CREATE TRIGGER tr_modifier_zone6
+	BEFORE UPDATE
+	ON dns.zone_reverse6
+	FOR EACH ROW
+	EXECUTE PROCEDURE modifier_zone ()
+	;
+
+    -- called when a DHCP parameter (network, range or profile) is modified
     CREATE OR REPLACE FUNCTION generer_dhcp ()
 	RETURNS TRIGGER AS $$
 	BEGIN
@@ -982,6 +1078,30 @@ db-schemas ()
 	    RETURN NEW ;
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
+
+    CREATE TRIGGER tr_modifier_dhcprange
+	BEFORE UPDATE
+	ON dns.dhcprange
+	FOR EACH ROW
+	EXECUTE PROCEDURE generer_dhcp ()
+	;
+
+    CREATE TRIGGER tr_modifier_reseau
+	BEFORE UPDATE
+	ON dns.reseau
+	FOR EACH ROW
+	EXECUTE PROCEDURE generer_dhcp ()
+	;
+
+    CREATE TRIGGER tr_modifier_dhcpprofil
+	BEFORE UPDATE
+	ON dns.dhcpprofil
+	FOR EACH ROW
+	EXECUTE PROCEDURE generer_dhcp ()
+	;
+
+
+
 
     CREATE OR REPLACE FUNCTION valide_ip_cor (INET, INTEGER)
 	RETURNS BOOLEAN AS $$
