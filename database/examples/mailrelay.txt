@@ -1,0 +1,20 @@
+#
+# Exemple file for initial netmagis database creation:
+#	Mail relays
+#
+# Use with netmagis-dbimport:
+#	netmagis-dbimport mailrelay mailrelay.txt
+#
+# Note : each relay must already exist in database. If a relay
+#   is not in our domains, one must create an empty domain.
+#
+# Format:
+#	<domain> <prio> <relay> <prio> <relay> ...
+#
+# History
+#   2004/04/12 : pda      : design
+#   2011/03/10 : pda      : i18n
+#
+
+univ-machin.fr	10 relais1.univ-machin.fr	20 relais2.univ-machin.fr
+esiatf.fr	10 relais1.univ-machin.fr	20 relais2.univ-machin.fr
