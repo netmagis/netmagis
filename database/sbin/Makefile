@@ -8,7 +8,8 @@ SUBST		= $(TCLSH) \
 
 SCRIPTS = \
 	netmagis-dbcreate \
-	netmagis-dbimport
+	netmagis-dbimport \
+	netmagis-maint
 
 install:
 	@echo ">>> Making install in `pwd`"

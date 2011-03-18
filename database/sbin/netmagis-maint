@@ -1,0 +1,127 @@
+#!/bin/sh
+
+#
+# Daily and hourly maintenance job
+# - database backup
+# - copy database to sandbox database
+# - garbage collect database
+# - spool expiration
+#
+# This script is meant to be run by cron, with entries such as:
+#	0 8-18 * * * netmagis /usr/local/sbin/netmagis-maint hourly
+#	0 23   * * * netmagis /usr/local/sbin/netmagis-maint daily
+#
+# History
+#   2002/06/04 : pda : design script to copy to development database
+#   2002/06/19 : pda : design backup script
+#   2002/07/25 : pda : merge in only one script
+#   2011/03/18 : pda : i18n
+#
+
+usage ()
+{
+    echo "usage: $0 hourly|daily" >&2
+    exit 1
+}
+
+##############################################################################
+# Configuration file read
+##############################################################################
+
+init-env ()
+{
+    varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser"
+    eval `%CONFPROG% -c $varlist`
+
+    if [ $? != 0 ]
+    then
+	usage
+	exit 1
+    fi
+
+    PGHOST="$dnsdbhost"
+    PGPORT="$dnsdbport"
+    PGDATABASE="$dnsdbname"
+    export PGHOST PGPORT PGDATABASE
+
+    # these variables are searched in a second pass, since they can be
+    # empty (the first pass used the "-c" flag)
+    varlist="dumpdir dbcopy"
+    eval `%CONFPROG% $varlist`
+
+}
+
+backup ()
+{
+    if [ "$dumpdir" != "" ]
+    then pg_dump --file $dumpdir/dump.$NOW $PGDATABASE
+    fi
+}
+
+copy ()
+{
+    if [ "$dumpdir" != "" -a "$dbcopy" != "" ]
+    then
+	FILE=$dumpdir/dump.bin
+	dropdb $dbcopy 2> /dev/null
+	createdb -E unicode $dbcopy 2> /dev/null
+	pg_dump --file=$FILE --format=c $PGDATABASE \
+	    && pg_restore --dbname=$dbcopy $FILE
+    fi
+}
+
+vacuum ()
+{
+    vacuumdb --quiet --full $PGDATABASE
+}
+
+get-config ()
+{
+    psql -Aqtc "SELECT valeur FROM global.config WHERE clef = '\$1'" $PGDATABASE
+}
+
+clean-spools ()
+{
+    ifchangeexpire=`get-config ifchangeexpire`
+    if expr "$ifchangeexpire" : "[0-9][0-9]*$" > /dev/null
+    then
+	psql -d $PGDATABASE -q -c \
+	    "DELETE FROM topo.ifchanges
+		WHERE processed = 1 AND NOW()-reqdate > '\$ifchangexpire days'"
+    fi
+
+    modeqexpire=`get-config modeqexpire`
+    if expr "$modeqexpire" : "[0-9][0-9]*$" > /dev/null
+    then
+	psql -d $PGDATABASE -q -c \
+	    "DELETE FROM topo.modeq
+		WHERE processed = 1 AND NOW()-date > '\$modeqexpire days'"
+    fi
+}
+
+init-env
+NOW=`date +%a-%H`			# day of week & hour
+
+case "$1" in
+    daily)
+	if backup && copy && clean-spools && vacuum
+	then exitcode=0
+	else exitcode=1
+	fi
+	;;
+    hourly)
+	if backup
+	then exitcode=0
+	else exitcode=1
+	fi
+	;;
+    *)
+	usage
+	;;
+esac
+
+if [ $exitcode = 1 ]
+then echo "Error during daily $PGDATABASE database maintenance" >&2
+fi
+
+exit $exitcode
