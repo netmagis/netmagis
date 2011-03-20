@@ -14,11 +14,11 @@ TCLLFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_LIB_SPEC $$TCL_LIBS"')|sh`
 usage:
 	@echo "available targets:"
 	@echo "	all"
-	@echo "	install-common
-	@echo "	install-database
-	@echo "	install-www
-	@echo "	install-utils
-	@echo "	install-detecteq
+	@echo "	install-common"
+	@echo "	install-database"
+	@echo "	install-www"
+	@echo "	install-utils"
+	@echo "	install-detecteq"
 	@echo "	install-topo"
 	@echo "	clean"
 
