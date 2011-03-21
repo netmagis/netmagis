@@ -16,11 +16,11 @@ CREATE USER detecteq ;
 CREATE SCHEMA global ;
 CREATE SCHEMA dns ;
 CREATE SCHEMA topo ;
+CREATE SCHEMA pgauth ;
 
-GRANT USAGE  ON SCHEMA global, dns, topo TO pda, jean, dns ;
-GRANT USAGE  ON SCHEMA         dns, topo TO                 detecteq ;
-GRANT CREATE ON SCHEMA global, dns, topo TO pda, jean ;
-
+GRANT USAGE  ON SCHEMA global, dns, topo, pgauth TO pda, jean, dns ;
+GRANT USAGE  ON SCHEMA         dns, topo         TO                 detecteq ;
+GRANT CREATE ON SCHEMA global, dns, topo, pgauth TO pda, jean ;
 
 ALTER TABLE config  SET SCHEMA global ;
 ALTER TABLE corresp SET SCHEMA global ;
@@ -314,6 +314,45 @@ CREATE TRIGGER tr_mod_eq
     EXECUTE PROCEDURE modif_routerdb () ;
 
 ------------------------------------------------------------------------------
+-- pgauth tables
+------------------------------------------------------------------------------
+
+CREATE TABLE pgauth.user (
+    login	TEXT,		-- login name
+    password	TEXT,		-- crypted password
+    nom		TEXT,		-- name
+    prenom	TEXT,		-- first name
+    mel		TEXT,		-- mail
+    tel		TEXT,		-- phone number
+    mobile	TEXT,		-- mobile phone number
+    fax		TEXT,		-- facsimile number
+    adr		TEXT,		-- address
+
+    -- fields managed by a trigger function
+    phnom	TEXT,		-- phonetical name
+    phprenom	TEXT,		-- phonetical first name
+
+    PRIMARY KEY (login)
+) ;
+
+CREATE TABLE pgauth.realm (
+    realm	TEXT,		-- realm name
+    descr	TEXT,		-- description
+    admin	INT DEFAULT 0,	-- 1 if admin
+
+    PRIMARY KEY (realm)
+) ;
+
+CREATE TABLE pgauth.member (
+    login	TEXT,		-- login name
+    realm	TEXT,		-- realm for this user
+
+    FOREIGN KEY (login) REFERENCES pgauth.user (login),
+    FOREIGN KEY (realm) REFERENCES pgauth.realm (realm),
+    PRIMARY KEY (login, realm)
+) ;
+
+------------------------------------------------------------------------------
 -- Authorizations
 ------------------------------------------------------------------------------
 
@@ -324,6 +363,7 @@ GRANT ALL
     ON topo.modeq, topo.ifchanges, topo.lastrun, topo.keepstate, topo.dr_eq,
 	topo.sensor, topo.filemonitor, topo.cache, topo.vlan,
 	topo.seq_eqtype, topo.seq_eq, topo.eqtype, topo.eq
+	pgauth.user, pgauth.realm, pgauth.member
     TO dns, pda, jean ;
 
 ------------------------------------------------------------------------------
@@ -613,6 +653,72 @@ CREATE OR REPLACE FUNCTION valide_ip_grp (INET, INTEGER)
 	    ) ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
+
+\encoding latin9
+CREATE FUNCTION soundex (TEXT) RETURNS TEXT AS '
+	array set soundexFrenchCode {
+	    a 0 b 1 c 2 d 3 e 0 f 9 g 7 h 0 i 0 j 7 k 2 l 4 m 5
+	    n 5 o 0 p 1 q 2 r 6 s 8 t 3 u 0 v 9 w 9 x 8 y 0 z 8
+	}
+	set accentedFrenchMap {
+	    é e  ë e  ê e  è e   É E  Ë E  Ê E  È E
+	     ä a  â a  à a        Ä A  Â A  À A
+	     ï i  î i             Ï I  Î I
+	     ö o  ô o             Ö O  Ô O
+	     ü u  û u  ù u        Ü U  Û U  Ù U
+	     ç ss                 Ç SS
+	}
+	set key ""
+
+	# Map accented characters
+	set TempIn [string map $accentedFrenchMap $1]
+
+	# Only use alphabetic characters, so strip out all others
+	# also, soundex index uses only lower case chars, so force to lower
+
+	regsub -all {[^a-z]} [string tolower $TempIn] {} TempIn
+	if {[string length $TempIn] == 0} {
+	    return Z000
+	}
+	set last [string index $TempIn 0]
+	set key  [string toupper $last]
+	set last $soundexFrenchCode($last)
+
+	# Scan rest of string, stop at end of string or when the key is
+	# full
+
+	set count    1
+	set MaxIndex [string length $TempIn]
+
+	for {set index 1} {(($count < 4) && ($index < $MaxIndex))} {incr index } {
+	    set chcode $soundexFrenchCode([string index $TempIn $index])
+	    # Fold together adjacent letters sharing the same code
+	    if {![string equal $last $chcode]} {
+		set last $chcode
+		# Ignore code==0 letters except as separators
+		if {$last != 0} then {
+		    set key $key$last
+		    incr count
+		}
+	    }
+	}
+	return [string range ${key}0000 0 3]
+    ' LANGUAGE 'pltcl' WITH (isStrict) ;
+
+CREATE FUNCTION add_soundex () RETURNS TRIGGER AS '
+    BEGIN
+	NEW.phnom    := SOUNDEX (NEW.nom) ;
+	NEW.phprenom := SOUNDEX (NEW.prenom) ;
+	RETURN NEW ;
+    END ;
+    ' LANGUAGE 'plpgsql' ;
+
+CREATE TRIGGER phnom
+    BEFORE INSERT OR UPDATE
+    ON pgauth.user
+    FOR EACH ROW
+    EXECUTE PROCEDURE add_soundex ()
+    ;
 
 -- do not forget to upgrade the zone generation script on the DNS server
 update dns.zone_normale  set prologue=replace(prologue, '%VERSION%', '%ZONEVERSION%') ;
