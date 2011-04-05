@@ -478,10 +478,6 @@ proc cisco-parse-interface {active line tab idx} {
 	# sous-interface d'une interface physique
 	#
 
-	if {! [string equal $physifname $t($idx!current!physif)]} then {
-	    cisco-warning "Interface '$ifname' is not a sub-interface of '$t(idx!current!physif)'"
-	    set error 1
-	}
 	lappend t($idx!if!$physifname!subif) $ifname
 
     } else {
