@@ -391,7 +391,7 @@ d cgi-register {action store} {
     set qcommentaire [::pgsql::quote $commentaire]
     set qrespnom     [::pgsql::quote $respnom]
     set qrespmel     [::pgsql::quote $respmel]
-    set sql "UPDATE rr SET
+    set sql "UPDATE dns.rr SET
 			    nom = '$qnom',
 			    iddom = $iddom,
 			    mac = $qmac,
@@ -404,7 +404,7 @@ d cgi-register {action store} {
 			    respmel = '$qrespmel'
 			WHERE idrr = $trr(idrr)"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-       d dbabort [mc "modify %s" "$nom.$domaine"]
+       d dbabort [mc "modify %s" "$nom.$domaine"] $msg
     }
 
     set msg [touch-rr $dbfd $trr(idrr)]

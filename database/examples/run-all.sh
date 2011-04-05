@@ -27,6 +27,7 @@ netmagis-dbcreate \
     && netmagis-dbimport -v zone 4.3.2.1.0.6.6.0.1.0.0.2.ip6.arpa \
 			zones/4.3.2.1.0.6.6.0.1.0.0.2.ip6.arpa 2001:660:1234::/48 \
 			/dev/null pda \
+    && netmagis-dbimport -v mailrelay mailrelay.txt \
     && netmagis-dbimport -v mailrole mailrole.txt pda \
     && echo "Succeeded"
 

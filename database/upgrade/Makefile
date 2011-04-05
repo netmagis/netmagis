@@ -6,12 +6,7 @@ SUBST		= $(TCLSH) \
 			$(DESTDIR)/etc/netmagis.conf \
 			$(DESTDIR)/bin/netmagis-config
 
-SCRIPTS = \
-	netmagis-dbcreate \
-	netmagis-dbimport \
-	netmagis-maint
-
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/sbin
-	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/sbin
+	mkdir -p $(DESTDIR)/share/upgrade
+	tar cf - [0-9]* | tar xvf - -C $(DESTDIR)/share/upgrade
