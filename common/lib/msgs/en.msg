@@ -23,6 +23,10 @@
 
  cfg:dhcp {DHCP parameters}
 
+ cfg:dhcpdefdomain:desc {default domain name}
+ cfg:dhcpdefdomain:help {Default Domain Name sent to DHCP clients without a profile}
+ cfg:dhcpdefdnslist:desc {default Domain Name Server list}
+ cfg:dhcpdefdnslist:help {Default Domain Name Server list sent to DHCP clients without a profile}
  cfg:default_lease_time:desc {default_lease_time}
  cfg:default_lease_time:help {Value in seconds, for DHCP parameter "default_lease_time" used in the dynamic range generation. This value is used if the range specific parameter is null.}
  cfg:max_lease_time:desc {max_lease_time}

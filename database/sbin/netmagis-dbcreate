@@ -1246,6 +1246,7 @@ default_lease_time	600
 max_lease_time	3600
 min_lease_time	300
 topoactive	0
+dhcpdefdomain	mycompany.com
 defdomain	mycompany.com
 topofrom	nobody.topo@mycompany.com
 topoto	noc@mycompany.com another@mycompany.com
