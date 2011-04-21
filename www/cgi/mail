@@ -430,7 +430,7 @@ d cgi-register {action mod} {
 
 	    set idrr $trr(idrr)
 
-	    set sql "UPDATE role_mail
+	    set sql "UPDATE dns.role_mail
 				SET heberg = $newtrrh(idrr)
 				WHERE idrr = $idrr"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
