@@ -16,6 +16,7 @@ usage:
 	@echo "	all"
 	@echo "	install-common"
 	@echo "	install-database"
+	@echo "	install-servers"
 	@echo "	install-www"
 	@echo "	install-utils"
 	@echo "	install-detecteq"
@@ -32,6 +33,9 @@ install-common:
 
 install-database:
 	cd database ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+
+install-servers:
+	cd servers ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 install-www:
 	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
