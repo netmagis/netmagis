@@ -9,7 +9,6 @@ SUBST		= $(TCLSH) \
 SHARE = \
 	crontab.bind \
 	crontab.dhcp \
-	crontab.dns \
 	crontab.droitsmtp \
 	crontab.relay
 

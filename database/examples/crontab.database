@@ -1,0 +1,20 @@
+#
+# Example crontab for Netmagis database maintenance
+#
+# History
+#   2011/04/22 : pda : i18n
+#
+
+#
+# Daily maintenance (backup, copy on pre-production dabase, vacuum)
+#
+
+0 23 * * * netmagis /usr/local/sbin/netmagis-maint daily
+
+#
+# Perform an hourly database dump on working days, and a daily
+# database dump on non working days
+#
+
+0 8-18 * * Mon-Fri /usr/local/sbin/netmagis-maint daily
+0 12   * * Sat,Sun /usr/local/sbin/netmagis-maint daily
