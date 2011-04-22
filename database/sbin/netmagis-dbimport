@@ -246,15 +246,6 @@ proc check-record {_nrec _t _tab lkeys} {
 # Various database read
 ##############################################################################
 
-proc read-all-domains {dbfd _tabdom} {
-    upvar $_tabdom tabdom
-
-    set sql "SELECT nom, iddom FROM dns.domaine"
-    pg_select $dbfd $sql tab {
-	set tabdom($tab(nom)) $tab(iddom)
-    }
-}
-
 proc read-idcor {dbfd login} {
     set qlogin [::pgsql::quote $login]
     set sql "SELECT idcor FROM global.corresp WHERE login = '$qlogin'"
@@ -861,7 +852,7 @@ proc import-domain {verbose argv dbfd} {
     # Re-read domains to get id of new domain
     #
 
-    read-all-domains $dbfd tabiddom
+    read-all-domains $dbfd tabiddom tabid
 
     #
     # Empty domain permissions
@@ -1183,7 +1174,7 @@ proc import-zone {verbose argv dbfd} {
     # Read existing domains
     #
 
-    read-all-domains $dbfd tabdom
+    read-all-domains $dbfd tabdom tabid
 
     #
     # Read zone RRs for normal domains
@@ -1452,7 +1443,7 @@ proc import-mailrelay {verbose argv dbfd} {
     # Read domains
     #
 
-    read-all-domains $dbfd tabdom
+    read-all-domains $dbfd tabdom tabid
 
     #
     # Postprocess input to check syntax, and to insert mail relays
@@ -1587,7 +1578,7 @@ proc import-mailrole {verbose argv dbfd} {
     # Read domains
     #
 
-    read-all-domains $dbfd tabdom
+    read-all-domains $dbfd tabdom tabid
 
     #
     # Postprocess input to check syntax, and to insert mail roles

@@ -3052,6 +3052,36 @@ proc display-rr {dbfd idrr _trr} {
 }
 
 ##############################################################################
+# Read domains
+##############################################################################
+
+#
+# Read all domains from database
+#
+# Input:
+#   - parameters:
+#	- dbfd: database handle
+#	- _tabdom: array to fill with domain names
+#	- _tabid: array to fill with domain ids
+# Output:
+#   - parameter _tabdom: tabdom(<domainname>) <id>
+#   - parameter _tabid: tabdom(<id>) <domainname>
+#
+# History
+#   2011/03/20 : pda      : place in library
+#
+
+proc read-all-domains {dbfd _tabdom _tabid} {
+    upvar $_tabdom tabdom
+
+    set sql "SELECT nom, iddom FROM dns.domaine"
+    pg_select $dbfd $sql tab {
+	set tabdom($tab(nom)) $tab(iddom)
+	set tabid($tab(iddom)) $tab(nom)
+    }
+}
+
+##############################################################################
 # Syntax check
 ##############################################################################
 
