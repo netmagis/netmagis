@@ -19,3 +19,5 @@ install:
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)/bin
 	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/bin
+
+clean:

@@ -51,8 +51,10 @@ install-detecteq:
 	cd detecteq ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 clean:
-	cd www ; make clean
 	cd common ; make clean
 	cd database ; make clean
+	cd servers ; make clean
+	cd www ; make clean
 	cd utils ; make clean
+	cd detecteq ; make clean
 	cd topo ; make clean

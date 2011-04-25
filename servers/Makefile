@@ -27,3 +27,5 @@ install:
 	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/sbin
 	mkdir -p $(DESTDIR)/share/examples
 	$(SINSTALL) -m 0644 $(SUBST) $(SHARE) $(DESTDIR)/share/examples
+
+clean:
