@@ -1561,6 +1561,8 @@ snit::type ::config {
 	    {defuser {string}}
 	}
 	{dhcp
+	    {dhcpdefdomain {string}}
+	    {dhcpdefdnslist {string}}
 	    {default_lease_time {string}}
 	    {max_lease_time {string}}
 	    {min_lease_time {string}}

@@ -297,7 +297,7 @@ proc output-list {dbfd lcidr _tabuid format} {
 			dhcprange.iddhcpprofil AS dhcp2,
 			hinfo.texte, corresp.login
 		    FROM dns.rr, dns.domaine, dns.hinfo, global.corresp,
-			rr_ip LEFT OUTER JOIN dhcprange
+			dns.rr_ip LEFT OUTER JOIN dns.dhcprange
 			    ON (rr_ip.adr >= dhcprange.min
 				AND rr_ip.adr <= dhcprange.max)
 		    WHERE rr.idrr = rr_ip.idrr

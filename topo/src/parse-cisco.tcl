@@ -478,10 +478,6 @@ proc cisco-parse-interface {active line tab idx} {
 	# sous-interface d'une interface physique
 	#
 
-	if {! [string equal $physifname $t($idx!current!physif)]} then {
-	    cisco-warning "Interface '$ifname' is not a sub-interface of '$t(idx!current!physif)'"
-	    set error 1
-	}
 	lappend t($idx!if!$physifname!subif) $ifname
 
     } else {
@@ -698,11 +694,15 @@ proc cisco-parse-ip-address {active line tab idx} {
     if {$active && ![string equal $t($idx!current!if) ""]} then {
 	set ifname $t($idx!current!if)
 
-	set addr [lindex $line 0]
-	set mask [lindex $line 1]
+	# IPv6, or IPv4 if regexp fails
+	if {! [regexp {^([0-9a-fA-F:]+)/([0-9]+)$} $line bidon addr preflen]} {
 
-	# extraire la longueur du préfixe à partir du masque
-	set preflen [cisco-convert-mask-to-preflen $mask]
+	    set addr [lindex $line 0]
+	    set mask [lindex $line 1]
+
+	    # extraire la longueur du préfixe à partir du masque
+	    set preflen [cisco-convert-mask-to-preflen $mask]
+	}
 
 	# convertir l'adresse et le masque en CIDR du réseau
 	set cidr [cisco-convert-ifadr-to-cidr $addr/$preflen]

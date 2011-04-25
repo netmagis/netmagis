@@ -378,6 +378,8 @@ topographddelay	5
 toposendddelay	5
 topomaxstatus	100
 sensorexpire	30
+dhcpdefdomain	mycompany.com
+dhcpdefdnslist	1.2.3.4,5.6.7.8
 modeqexpire	30
 ifchangeexpire	30
 fullrancidmin	2
