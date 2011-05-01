@@ -426,6 +426,9 @@ snit::type ::netmagis {
     # mode : script, cgi, daemon
     variable scriptmode ""
 
+    # in script or daemon mode, name of executing program
+    variable scriptargv0
+
     # locale in use : either specified by browser, or specified by user
     variable locale "C"
     # locale specified by browser
@@ -1188,7 +1191,7 @@ snit::type ::netmagis {
     #
     # Input:
     #   - _dbfd : database handle, in return
-    #   - login : user's login
+    #   - argv0 : script argv0
     #   - _tabuid : array containing, in return, user's characteristics
     #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
     #			idcor, idgrp, present)
@@ -1198,7 +1201,7 @@ snit::type ::netmagis {
     #   - object $ah : access to authentication base
     #
 
-    method init-script {_dbfd _tabuid} {
+    method init-script {_dbfd argv0 _tabuid} {
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
 
@@ -1229,6 +1232,8 @@ snit::type ::netmagis {
 	}
 
 	set scriptmode "script"
+	regsub {.*/} $argv0 {} argv0
+	set scriptargv0 $argv0
 
 	return ""
     }
@@ -1269,10 +1274,20 @@ snit::type ::netmagis {
     #
 
     method error {msg} {
-	set msg [::webapp::html-string $msg]
-	regsub -all "\n" $msg "<br>" msg
-	$self result $errorpage [list [list %MESSAGE% $msg]]
-	exit 0
+	switch $scriptmode {
+	    cgi {
+		set msg [::webapp::html-string $msg]
+		regsub -all "\n" $msg "<br>" msg
+		$self result $errorpage [list [list %MESSAGE% $msg]]
+		exit 0
+	    }
+	    daemon -
+	    script {
+		puts stderr "$scriptargv0: $msg"
+		$self end
+		exit 1
+	    }
+	}
     }
 
     ###########################################################################
