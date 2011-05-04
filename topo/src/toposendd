@@ -47,10 +47,11 @@ source %LIBDNS%
 # The confcmd array contains commands adapted to each equipment type.
 # Indices are:
 #   type:model:action
-# Model may be "*"
+# Model may be a glob pattern (*, *29?0* etc.)
 # Example :
 #   confcmd(cisco:3750:ifaccess) ...
 #   confcmd(cisco:*:ifaccess) ...
+# The longest pattern matched for model is kept.
 # The value is a list of command lines to send to the equipment.
 #
 # Different actions are:
@@ -99,9 +100,18 @@ array set confcmd {
     cisco:*:prologue {
 	{configure terminal}
     }
+    cisco:*29?0*:ifreset {
+	{interface %1$s}
+	{default switchport nonegotiate}
+	{default switchport trunk allowed vlan}
+	{default switchport trunk native vlan}
+	{default switchport access vlan}
+	{default switchport mode}
+    }
     cisco:*:ifreset {
 	{interface %1$s}
 	{no switchport}
+	{switchport voice vlan none}
 	{switchport}
     }
     cisco:*:ifdisable {
@@ -114,6 +124,7 @@ array set confcmd {
     }
     cisco:*:ifaccess {
 	{interface %1$s}
+	{switchport mode access}
 	{switchport access vlan %2$s}
 	{spanning-tree portfast}
     }
@@ -457,7 +468,7 @@ proc execute-cmd {fqdn type model lcmd _msg} {
 #
 # Input:
 #   - type : equipment type (ex: cisco, juniper...)
-#   - model : equipment model (ex: 3750, M20...)
+#   - model : equipment model (ex: 3750, M20, * ...) ; may be a glob pattern
 #   - context : see confcmd array
 # Sortie
 #   - return value : command to execute, or empty list if not found
@@ -467,16 +478,26 @@ proc execute-cmd {fqdn type model lcmd _msg} {
 #
 
 proc fetch-cmd {type model context} {
-    global confcmd
-    
-    set r {}
-    if {[info exists confcmd($type:*:$context)]} then {
-	set r $confcmd($type:*:$context)
-    } elseif {[info exists confcmd($type:$model:$context)]} then {
-	set r $confcmd($type:$model:$context)
-    }
+	global confcmd
 
-    return $r
+	set l {}
+	foreach elem [array names confcmd] {
+	    lassign [split $elem ":"] etype emodel econtext
+	    if {$etype eq $type && $econtext eq $context && \
+		[string match $emodel $model]} {
+		    #
+		    # Build a list of couples {pattern_length command}
+		    # in order to keep the longest pattern matched
+		    #
+		    lappend l	[list \
+				    [string length $emodel] \
+				    $confcmd($type:$emodel:$context) \
+				]
+		}
+	}
+
+	set r [lindex [lsort -integer -index 0 $l] end]
+	return [lindex $r 1]
 }
 
 
