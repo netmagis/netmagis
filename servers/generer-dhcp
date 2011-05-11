@@ -329,11 +329,11 @@ proc generer-dhcp {dbfd} {
 				set addprofile $dhcpprofil($id)
 				puts stdout [indent-profile $addprofile 2]
 				# Ajout du domaine si le profile n'en contient pas
-				if {! [regexp {option domain-name} $addprofile]} {
+				if {! [regexp {option domain-name } $addprofile]} {
 					puts stdout "\t\toption domain-name \"$dhcpdef(dhcpdefdomain)\" ;"
 				}
 				# Ajout des serveur de nom par defaut si le profile n'en contient pas
-				if {! [regexp {option domain-name-servers} $addprofile]} {
+				if {! [regexp {option domain-name-servers } $addprofile]} {
 					puts stdout "\t\toption domain-name-servers $dhcpdef(dhcpdefdnslist) ;"
 				}
 			} else {
