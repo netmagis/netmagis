@@ -1674,9 +1674,11 @@ proc juniper-post-process {model fdout eq tab} {
 		ether-id {
 		    set t(eq!$eq!if!$iface!link!type) trunk
 
-		    set a [lindex $t(eq!$eq!if!$iface!link!allowedvlans) 0]
-		    set oldvlan [lindex $a 0]
-		    set t(eq!$eq!if!$iface!native-vlan) $oldvlan
+		    if {[info exist t(eq!$eq!if!$iface!link!allowedvlans)]} then {
+			set a [lindex $t(eq!$eq!if!$iface!link!allowedvlans) 0]
+			set oldvlan [lindex $a 0]
+			set t(eq!$eq!if!$iface!native-vlan) $oldvlan
+		    }
 		    lappend t(eq!$eq!if!$iface!link!allowedvlans) [list $id $id]
 		}
 		ether-untagged {
