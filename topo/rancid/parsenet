@@ -1,0 +1,280 @@
+#!/usr/bin/perl
+
+use strict;
+
+our %net_struct;
+our %host;
+my $ifname;
+my $router;
+
+my $snmp_community = "public";
+
+my $ifconfig = `ifconfig`;
+my $routage = `sysctl net.inet.ip.forwarding`;
+my $hostname = `hostname`;
+my $systype=`uname -s`;
+chomp($systype);
+
+# parsing du hostname
+chomp $hostname;
+
+if($hostname =~ /\./)
+{
+	my @fqdn = split(/\./,$hostname);
+	$host{name} = $fqdn[0];
+	$host{domain} = $fqdn[1];
+	
+	for(my $i = 2; $i < @fqdn; $i++)
+	{
+		$host{domain} = "$host{domain}.$fqdn[$i]";
+	}
+}
+else
+{	
+	$host{name} = $hostname;
+	$host{domain} = "";
+}
+
+
+# le serveur est il un routeur?
+if($routage=~/net.inet.ip.forwarding=([0-1])/)
+{
+	$router = $1;
+	$net_struct{router}{status} = $1;
+	$net_struct{router}{type} = "router";	
+}
+
+# parsing de de la commande ifconfig
+my @l = split(/\n/,$ifconfig);
+
+for(my $i=0;$i<@l;$i++)
+{
+	if($l[$i]=~/^(.*): flags=[0-9a-zA-Z]+<([A-Za-z0-9]+),/)
+	{
+                $ifname = $1;
+		if ($2 eq "UP")
+		{
+			$net_struct{$ifname}{status} = $2;
+		}
+		else
+		{
+			$net_struct{$ifname}{status} = "DOWN";
+		}
+	}
+	if($l[$i]=~/^(.*): flags=[0-9a-zA-Z]+<>/)
+	{
+                $ifname = $1;
+		$net_struct{$ifname}{status} = "UNKNOWN";
+	}
+	if($l[$i]=~/vlan: ([0-9]+) .*parent interface: ([A-Za-z0-9]+)/)
+	{
+		#vlan: 977 priority: 0 parent interface: em0
+		$net_struct{$ifname}{type} = "vlan";
+		$net_struct{$ifname}{vlanid} = $1;
+		$net_struct{$ifname}{parent} = $2;
+	}
+	if($l[$i]=~/media: Ethernet/)
+	{
+		$net_struct{$ifname}{type} = "Ethernet";
+	}
+	if($l[$i]=~/groups: ([A-Za-z0-9]+)/)
+	{
+		$net_struct{$ifname}{type} = $1;
+	}
+	if($l[$i]=~/(vlan[0-9]+) flags=[0-9a-zA-Z]+/)
+	{
+		$net_struct{$ifname}{vlanif}{$1} = 1;
+	}
+	if($l[$i]=~/inet ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+) netmask ([0-9a-fA-FxX\.]+)/)
+        {
+		my $ip = $1;
+		my $nm = $2;
+		if($nm =~ s/^0x([\da-f]{8})/\1/i)
+		{
+			$nm = join '.', unpack "C*", pack "H*", $nm;
+		}
+                $net_struct{$ifname}{inet}{"$ip $nm"} = 1;
+        }
+	if($l[$i]=~/inet6 ([0-9a-fA-F:]+) prefixlen ([0-9]+)/ && $l[$i]!~/inet6 fe80:/)
+        {
+                $net_struct{$ifname}{inet6}{"$1/$2"} = 1;
+        }
+	if($l[$i]=~/lladdr ([0-9a-fA-F:]+)/)
+	{
+		$net_struct{$ifname}{mac} = $1;
+	}
+}
+
+read_tab_asso();
+
+print "!\n!\n! uname: $systype\n";
+print "!\n!\n! IOS like : \n! ----------\n!\n!\n";
+
+gen_ios_output();
+
+#############################################################
+# lecture d'un tableau associatif a 2 dimensions
+#
+sub read_tab_asso
+{
+        foreach my $key (sort keys %net_struct)
+        {
+                print "! $key {\n";
+                foreach my $kkey (keys %{$net_struct{$key}})
+                {
+			if($kkey eq "vlanif" || $kkey eq "inet" || $kkey eq "inet6")
+			{
+				print "! \t$kkey -> \n";
+				foreach my $kkkey (keys %{$net_struct{$key}{$kkey}})
+				{
+					print "! \t\t -> $kkkey\n";
+				}
+			}
+			else
+			{
+                        	print "! \t$kkey -> $net_struct{$key}{$kkey}\n";
+			}
+                }
+                print "! }\n";
+        }
+}
+
+sub gen_ios_output
+{
+	printhost();
+	
+	my $bridge_group = 0;
+
+	# triatement des routers
+	foreach my $key (sort keys %net_struct)
+        {
+		if($net_struct{$key}{type} eq "router" && $net_struct{$key}{wr} != 1)
+                {       
+                        if($net_struct{$key}{status} == 1)
+                        {       
+                                print "ip-routing\n!\n";
+                        }
+                        else
+                        {       
+                                print "no ip-routing\n!\n";
+                        }
+
+			$net_struct{$key}{wr} = 1;
+                }
+	}
+
+	# traitement des bridges
+	foreach my $key (sort keys %net_struct)
+        {
+		# si on trouve un bridge
+		if($net_struct{$key}{'type'} eq "bridge" && $net_struct{$key}{wr} != 1)
+		{
+			# equipement en mode bridge
+			print "bridge irb\n!\n";
+
+			$bridge_group ++;
+	
+			# interface bridge	
+			print "interface BVI$bridge_group\n";
+			# ecriture adresses IP associees au bridge
+			foreach my $ip (keys %{$net_struct{$key}{inet}})
+        		{
+                		print " ip address $ip\n";
+        		}
+			foreach my $ip6 (keys %{$net_struct{$key}{inet6}})
+                        {       
+                                print " ip address $ip6\n";
+                        }
+
+			print "!\n";
+			
+			foreach my $kkey (keys %{$net_struct{$key}{vlanif}})
+			{
+				printiface($kkey,$bridge_group);
+			}
+			
+			$net_struct{$key}{wr} = 1;
+		}
+	}
+
+	# les interfaces qui suivent ne font pas partie d'un bridge-group
+	$bridge_group = 0;
+
+	# ecriture des autres interfaces
+	foreach my $key (sort keys %net_struct)
+        { 
+		if(($net_struct{$key}{'type'} eq "Ethernet" || $net_struct{$key}{'type'} eq "vlan")
+			&& $net_struct{$key}{wr} != 1)
+		{	
+			printiface($key,$bridge_group);
+		}
+	}
+
+	# ecriture des parametrages SNMP
+	print "snmp-server community $snmp_community RO\n";
+	print "snmp-server chassis-id $host{name}\n!\n";
+
+}
+
+sub printiface
+{
+	my ($name,$bridge_group) = @_;
+
+	if($net_struct{$name}{wr} != 1)
+	{	
+		# formatage nom du lien
+                my $link = $net_struct{$name}{mac};
+                $link =~ s/://g;
+
+		# si on est en presence d'une interface vlan
+		if($net_struct{$name}{type} eq "vlan")
+		{
+			print "interface $net_struct{$name}{parent}.$net_struct{$name}{vlanid}\n";
+			print " description <X M$host{name}$link\.$net_struct{$name}{vlanid}>\n";
+			print " encapsulation dot1Q $net_struct{$name}{vlanid}\n";	
+		}
+        	else
+		{
+			print "interface $name\n";
+			if($net_struct{$name}{status} eq "UP" && $net_struct{$name}{mac} =~ /[0-9a-fA-F:]+/)
+		 	{
+				print " description L$link\n";
+			}
+			else
+			{
+				print " description X\n";
+			}
+		}
+		# ajout dans le bridge group de l'interface
+		if($bridge_group > 0)
+		{
+			print " bridge-group $bridge_group\n"
+		}
+
+		# ecriture adresses IP
+		foreach my $ip (keys %{$net_struct{$name}{inet}})
+		{
+			print " ip address $ip\n";
+		}
+		foreach my $ip6 (keys %{$net_struct{$name}{inet6}})
+       		{
+                 	print " ip address $ip6\n";
+        	}
+
+		print "!\n";
+
+		$net_struct{$name}{wr} = 1;
+	}
+}
+
+sub printhost
+{
+	if($host{name} ne "")
+	{
+		print "hostname $host{name}\n!\n";
+	}
+	if($host{domain} ne "")
+	{
+		print "ip domain name $host{domain}\n!\n";
+	}	
+}

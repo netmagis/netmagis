@@ -33,6 +33,7 @@ SCRIPTS = \
 	parse-hp.tcl	\
 	parse-cisco.tcl	\
 	parse-juniper.tcl	\
+	parse-server.tcl	\
 	ssidsensors	\
 	topographd	\
 	toposendd	\

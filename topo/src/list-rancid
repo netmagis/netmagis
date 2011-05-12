@@ -41,6 +41,11 @@ fetch_model_juniper ()
     sed -n "/^# Chassis/s/.* \([^ ]*\)$/\1/p" "$1"
 }
 
+fetch_model_server ()
+{
+    sed -n "/^! uname: \([^ ]*\)$/s//\1/p" "$1"
+}
+
 IFS=":"
 grep ":up$" $DB | egrep -v "$IGNORE" |
     while read eq type up
@@ -59,6 +64,9 @@ grep ":up$" $DB | egrep -v "$IGNORE" |
 		    ;;
 		juniper)
 		    model=`fetch_model_juniper "$DIR/$eq"`
+		    ;;
+		server)
+		    model=`fetch_model_server "$DIR/$eq"`
 		    ;;
 		*)
 		    echo "Unsupported type '$type' for '$eq' in $DB" >&2

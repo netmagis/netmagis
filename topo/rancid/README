@@ -1,0 +1,44 @@
+Rancid patch to collect server network configuration
+
+* How it works
+
+  This is completely based on the idea and the code of Michael Stefaniuc : 
+
+  http://www.shrubbery.net/pipermail/rancid-discuss/2005-November/001276.html
+
+  This patch creates a new type of network equipement called "server"
+  in Rancid. To use it, you need to declare your server in rancid
+  as any other equipements, and choose "server" as equipement type.
+
+  Rancid calls wrancid (a wrapper) to fetch the configuration on
+  the server. The wrapper starts another program (serverscript)
+  which :
+  - connects via ssh to the server
+  - starts a script on the server (called "parsenet")
+  Parsenet outputs the network configuration in an IOS-like format
+  Rancid records the output and versions it, as it woukd do with
+  any other equipement.
+
+  NB : you need to setup a trust relationship between the rancid
+  host and the server.  We advise you to user a user with the least
+  priviledges on the server (ie. not root) and to only grant him
+  the rights to execute "parsenet" (via sudo for example).
+
+* Installation
+
+  * patch the rancid front-end script (rancid-fe) in the
+  rancid binary directory on your system : /usr/lib/rancid/bin
+  on Debian/Ubuntu, /usr/local/libexec/rancid on FreeBSD
+  (the patch is against Rancid 2.3.6) :
+
+	cd "your rancid binary directory"
+  	patch -p1 < ~/netmagis/topo/rancid/rancid-server.patch
+
+  * copy the generic wrapper and the script called by the wrapper
+  in the same directory :
+
+  	cp topo/rancid/wrancid topo/rancid/serverscript \
+		"you rancid binary directory"
+	
+  * On each server you want to poll with rancid, install the
+    "parsenet" script in /usr/local/bin

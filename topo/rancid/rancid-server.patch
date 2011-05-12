@@ -1,0 +1,12 @@
+*** rancid-fe.orig	Tue Apr  5 16:40:15 2011
+--- rancid-fe	Tue Apr  5 17:17:34 2011
+*************** $vendor =~ tr/[A-Z]/[a-z]/;
+*** 82,87 ****
+--- 82,88 ----
+      'riverstone'	=> 'rivrancid',
+      'smc'		=> 'srancid',
+      'tnt'		=> 'tntrancid',
++     'server'		=> 'wrancid',
+      'zebra'		=> 'zrancid'
+  );
+  
