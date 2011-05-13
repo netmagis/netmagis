@@ -524,7 +524,7 @@ proc newnode {} {
 
 proc usage {argv0} {
     puts stderr \
-	"$argv0 libdir cisco|hp|juniper modele fichier-conf eq-name \[debug\]"
+	"$argv0 libdir cisco|hp|juniper|server modele fichier-conf eq-name \[debug\]"
 }
 
 proc main {argv0 argv} {
