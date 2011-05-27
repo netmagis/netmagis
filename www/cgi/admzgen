@@ -84,7 +84,7 @@ d cgi-register {action set} {
 
     foreach z $ftab(zones) {
 	set qz [::pgsql::quote $z]
-	set sql "UPDATE zone SET generer = 1 WHERE domaine = '$qz'"
+	set sql "UPDATE dns.zone SET generer = 1 WHERE domaine = '$qz'"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    set op [mc "force generation for zone %s" $z]
 	    d dbabort $op $msg

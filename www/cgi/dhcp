@@ -120,7 +120,9 @@ proc output-edit {dbfd netid _tabuid} {
 	}
     regsub -- "%MENUDOM%" $spec "$menudom" spec
     regsub -- "%MENUDHCP%" $spec "$menudhcp" spec
-    set sql "SELECT * FROM dns.dhcprange
+    set sql "SELECT iddhcprange, min, max, iddom, default_lease_time,
+		max_lease_time, COALESCE(iddhcpprofil,0) AS iddhcpprofil
+                        FROM dns.dhcprange
 			WHERE min <<= '$lcidr'
 			    AND max <<= '$lcidr'
 			    AND valide_dhcprange_grp ($idgrp, min, max)
