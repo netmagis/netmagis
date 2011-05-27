@@ -1,0 +1,327 @@
+#!%TCLSH%
+
+#
+# Mail route generation for sendmail
+#
+# Syntax:
+#	mkmroute [-h][-v][-n]
+#	    -h: help
+#	    -v: verbose output
+#	    -n: don't modify files
+#
+# History:
+#   2004/03/09 : pda/jean : original specification
+#   2004/03/09 : pda/jean : design
+#   2011/05/14 : pda      : i18n and re-design
+#
+
+source %LIBDNS%
+
+#
+# Self explanatory
+#
+
+set conf(usage) {usage: %1$s [-h][-v][-n]}
+
+#
+# Generates a mail route text
+#
+# Input:
+#   - parameters
+#	- dbfd: database handle
+#	- mrouteprologue: name of file containing mail route prologue
+#	- mroutefmt: format of individual mail routes (1: address, 2: mail host)
+#	- _mroutetxt : variable containing generated text in return
+# Output:
+#   - return value: empty string, or error message
+#   - variable _mroutetxt: generated mail routes
+#
+# History
+#   2004/03/09 : pda/jean : design
+#   2011/05/14 : pda      : use configuration variables
+#
+
+proc gen-mroute {dbfd mrouteprologue mroutefmt _mroutetxt} {
+    upvar $_mroutetxt mroutetxt
+
+    #
+    # Step 1: read prologue
+    #
+
+    if {[catch {set fd [open $mrouteprologue "r"]} err]} then {
+	return $err
+    }
+    set mroutetxt [read $fd]
+    close $fd
+
+    #
+    # Step 2: read mail routes from database
+    #
+
+    set sql "SELECT r1.nom || '.' || d1.nom AS nom,
+		    r2.nom || '.' || d2.nom AS nomh
+		FROM dns.rr r1, dns.domaine d1,
+		    dns.rr r2, dns.domaine d2,
+		    dns.role_mail
+		WHERE role_mail.idrr = r1.idrr
+		    AND r1.iddom = d1.iddom
+		    AND role_mail.heberg = r2.idrr
+		    AND r2.iddom = d2.iddom
+		ORDER BY d2.nom ASC, r2.nom ASC, d1.nom ASC, r1.nom ASC
+		"
+    pg_select $dbfd $sql tab {
+	append mroutetxt [format $mroutefmt $tab(nom) $tab(nomh)]
+	append mroutetxt "\n"
+    }
+
+    return ""
+}
+
+#
+# Compare old file contents with new contents as a variable
+#
+# Input:
+#   - parameters
+#	- file: name of file
+#	- text: new file content
+#	- _errmsg: variable containing error message in return
+# Output:
+#   - return value: -1 (error), 0 (no change), or 1 (change)
+#   - variable _errmsg: error message, if return value = -1
+#
+# History
+#   2004/03/09 : pda/jean : design
+#   2011/05/14 : pda      : use configuration variables
+#   2011/05/22 : pda      : make it simpler
+#
+
+proc compare-file-with-text {file text _errmsg} {
+    upvar $_errmsg errmsg
+
+    set r 1
+    if {[file exists $file]} then {
+	if {[catch {set fd [open $file "r"]} errmsg]} then {
+	    set r -1
+	} else {
+	    set old [read $fd]
+	    close $fd
+
+	    if {$old eq $text} then {
+		set r 0
+	    }
+	}
+    }
+
+    return $r
+}
+
+#
+# Show difference between old file and new contents
+#
+# Input:
+#   - parameters
+#	- cmd: diff command
+#	- file: name of file
+#	- text: new file content
+#	- _errmsg: variable containing error message in return
+# Output:
+#   - return value: 1 (ok) or 0 (error)
+#   - variable _errmsg: error message, if return value = 0
+#
+# History
+#   2011/05/22 : pda      : specification
+#
+
+proc show-diff-file-text {cmd file text} {
+    set c [format $cmd $file]
+    append c "|| exit 0"
+    catch {exec sh -c $c << $text} r
+    puts stdout $r
+}
+
+#
+# Install new contents in a file, and run appropriate command
+#
+# Input:
+#   - parameters
+#	- file: name of file
+#	- text: new file content
+#	- cmd: command to apply to file or empty string
+#	- _errmsg: variable containing error message in return
+# Output:
+#   - return value: 1 (ok) or 0 (error)
+#   - variable _errmsg: error message, if return value = 0
+#
+# History
+#   2004/03/09 : pda/jean : design
+#   2011/05/14 : pda      : use configuration variables
+#   2011/05/22 : pda      : simplification
+#
+
+proc install-file-from-text {file text cmd _errmsg} {
+    upvar $_errmsg errmsg
+
+    set exists [file exists $file]
+
+    #
+    # Step 1: install new file
+    #
+
+    set newfile "$file.new"
+    set oldfile "$file.old"
+
+    # Step 2a: install contents in a new file
+    if {[catch {set fd [open $newfile "w"]} errmsg]} then {
+	set errmsg "Cannot write in $newfile\n$errmsg"
+	return 0
+    }
+    puts -nonewline $fd $text
+    close $fd
+
+    # Step 2b: backup old file
+    if {$exists} then {
+	if {[catch {file rename -force -- $file $oldfile} errmsg]} then {
+	    set errmsg "Cannot preserve $file in $oldfile\n$errmsg"
+	    return 0
+	}
+    }
+
+    # Step 2c: atomatically install new file contents
+    if {[catch {file rename -force -- $newfile $file} errmsg]} then {
+	set errmsg "Cannot install new $file\n$errmsg"
+	if {$exists} then {
+	    catch {file rename -force -- $oldfile $file}
+	}
+	return 0
+    }
+
+    #
+    # Step 3: run appropriate command if needed
+    #
+
+    if {$cmd ne ""} then {
+	if {[catch {exec sh -c $cmd} errmsg]} then {
+	    set errmsg "Cannot run command $cmd\n$errmsg"
+	    catch {file rename -force -- $file $newfile}
+	    if {$exists} then {
+		catch {file rename -force -- $oldfile $file}
+	    }
+	    return 0
+	}
+    }
+
+    return 1
+}
+
+##############################################################################
+# main
+##############################################################################
+
+proc usage {argv0} {
+    global conf
+
+    regsub ".*/" $argv0 "" argv0
+    puts stderr [format $conf(usage) $argv0]
+    exit 1
+}
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Netmagis database access
+    #
+
+    set msg [d init-script dbfd $argv0 tabcor]
+    if {$msg ne ""} then {
+	fatal-error "$msg\nAbort."
+    }
+
+    #
+    # Argument checking
+    #
+
+    set verbose 0
+    set doit 1
+
+    while {[llength $argv] > 0} {
+	set a [lindex $argv 0]
+	switch -glob -- $a {
+	    -h {
+		usage $argv0
+	    }
+	    -v {
+		set verbose 1
+		set argv [lreplace $argv 0 0]
+	    }
+	    -n {
+		set doit 0
+		set argv [lreplace $argv 0 0]
+	    }
+	    -* {
+		warning "Unknown option '$a'"
+		usage $argv0
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    if {[llength $argv] > 1} then {
+	usage $argv0
+    }
+
+    #
+    # Get configuration values
+    #
+
+    foreach o {diff mroutefile mrouteprologue mroutefmt mroutecmd} {
+	set $o [get-local-conf $o]
+    }
+
+    #
+    # Do the work
+    #
+
+    set msg [gen-mroute $dbfd $mrouteprologue $mroutefmt txt]
+    if {$msg ne ""} then {
+	d error $msg
+	return 1
+    }
+
+    switch [compare-file-with-text $mroutefile $txt msg] {
+	-1 {
+	    d error $msg
+	}
+	0 {
+	    # nothing
+	    if {! $doit} then {
+		puts stdout "Mail routes are not modified"
+		if {$verbose} then {
+		    puts -nonewline stdout $txt
+		}
+	    }
+	}
+	1 {
+	    if {$doit} then {
+		if {$verbose} then {
+		    show-diff-file-text $diff $mroutefile $txt
+		}
+		if {! [install-file-from-text $mroutefile $txt $mroutecmd msg]} then {
+		    d error $msg
+		}
+	    } else {
+		puts stdout "Mail routes are modified"
+		if {$verbose} then {
+		    puts -nonewline stdout $txt
+		}
+	    }
+	}
+    }
+
+    d end
+    return 0
+}
+
+exit [main $argv0 $argv]

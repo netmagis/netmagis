@@ -10,15 +10,14 @@ SHARE = \
 	crontab.bind \
 	crontab.dhcp \
 	crontab.droitsmtp \
-	crontab.relay
+	crontab.mroute
 
 SCRIPTS = \
 	generer-dhcp \
-	generer-routages \
 	generer-zone \
 	mkdhcp \
 	mkdroitsmtp \
-	mkroutages \
+	mkmroute \
 	mkzones
 
 install:
