@@ -3090,6 +3090,7 @@ proc display-rr {dbfd idrr _trr} {
 
 proc read-all-domains {dbfd _tabdom _tabid} {
     upvar $_tabdom tabdom
+    upvar $_tabid  tabid
 
     set sql "SELECT nom, iddom FROM dns.domaine"
     pg_select $dbfd $sql tab {
