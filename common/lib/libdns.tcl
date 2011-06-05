@@ -1749,6 +1749,160 @@ snit::type ::config {
 }
 
 ##############################################################################
+# File installation class
+##############################################################################
+
+#
+# File installation class
+#
+# This class is meant to simplify installation of new files in tree
+# hierarchy.
+#
+# When a file is added, its contents are written in a ".new" file and
+# the name is queued in internal instance variable fileq.
+# When a commit is requested, all original files are renamed into ".old"
+# files and ".new" file replace original files.
+# When an abort is requested, all ".new" files are removed.
+#
+# Methods:
+# - init
+#	reset a new file list
+# - add filename filecontent
+#	add a new file based on its contents (as a textual value)
+#	returns empty string if succeeds
+# - abort
+#	reset new files
+# - commit
+#	apply modifications
+#	returns empty string if succeeds
+# - uncommit
+#	undo previous commit
+#	returns empty string if succeeds
+#
+# History
+#   2011/06/05 : pda      : design
+#
+
+snit::type ::fileinst {
+    # file queue
+    variable fileq {}
+
+    # state
+    variable state "init"
+
+    # reset queue to empty state
+    method init {} {
+	set fileq {}
+    }
+
+    # add a file contents into the queue
+    method add {name contents} {
+	if {$state eq "init" || $state eq "nonempty"} then {
+	    set nf "$name.new"
+	    catch {file delete -force $nf}
+	    if {! [catch {set fd [open "$nf" "w"]} err]} then {
+		puts -nonewline $fd $contents
+		if {! [catch {close $fd} err]} then {
+		    lappend fileq $name
+		    set err ""
+		}
+	    }
+	    set state "nonempty"
+	} else {
+	    set err "cannot add file: state != 'init' && state != 'nonempty'"
+	}
+	return $err
+    }
+
+    # commit new files
+    method commit {} {
+	set err ""
+	if {$state eq "init" || $state eq "nonempty"} then {
+
+	    # we use a "for" loop instead of a "foreach" since the index i
+	    # will be used if anything goes wrong
+	    set n [llength $fileq]
+	    for {set i 0} {$i < $n} {incr i} {
+		set f [lindex $fileq $i]
+		set nf "$f.new"
+		set of "$f.old"
+
+		# make a backup of original file if it exists
+		catch {file delete -force $of}
+		if {[file exists $f]} then {
+		    if {[catch {file rename -force $f $of} msg]} then {
+			set err "cannot rename $f to $of\n$msg"
+			break
+		    }
+		}
+		
+		# install new file
+		if {[catch {file rename $nf $f} msg]} then {
+		    set err "cannot rename $nf to $f\n$msg"
+		    break
+		}
+	    }
+
+	    if {$err eq ""} then {
+		set state "commit"
+	    } else {
+		for {set j 0} {$j <= $i} {incr j} {
+		    set f [lindex $fileq $j]
+		    set nf "$f.new"
+		    set of "$f.old"
+
+		    if {! [file exists $nf]} then {
+			catch {file rename -force $f $nf}
+		    }
+
+		    if {[file exists $of]} then {
+			catch {file rename -force $of $f}
+		    }
+		}
+	    }
+	} else {
+	    set err "cannot add file: state != 'init' && state != 'nonempty'"
+	}
+
+	return $err
+    }
+
+    # undo previous commit
+    method uncommit {} {
+	if {$state eq "commit"} then {
+	    set err ""
+	    set n [llength $fileq]
+	    for {set i 0} {$i < $n} {incr i} {
+		set f [lindex $fileq $i]
+		set nf "$f.new"
+		set of "$f.old"
+
+		if {[catch {file rename -force $f $nf} msg]} then {
+		    append err "cannot rename $f to $nf\n$msg\n"
+		} else {
+		    if {[file exists $of]} then {
+			if {[catch {file rename -force $of $f} msg]} then {
+			    append err "cannot rename $of to $f\n$msg\n"
+			}
+		    }
+		}
+	    }
+	} else {
+	    set err "cannot commit: state != 'commit'"
+	}
+	return $err
+    }
+
+    # abort new files
+    method abort {} {
+	foreach f $fileq {
+	    catch {file delete -force "$f.new"}
+	}
+	set fileq {}
+    }
+}
+
+##############################################################################
 # Cosmetic
 ##############################################################################
 

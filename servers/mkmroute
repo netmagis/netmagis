@@ -156,59 +156,28 @@ proc show-diff-file-text {cmd file text} {
 #   2004/03/09 : pda/jean : design
 #   2011/05/14 : pda      : use configuration variables
 #   2011/05/22 : pda      : simplification
+#   2011/06/05 : pda      : use fileinst class
 #
 
 proc install-file-from-text {file text cmd _errmsg} {
     upvar $_errmsg errmsg
 
-    set exists [file exists $file]
-
-    #
-    # Step 1: install new file
-    #
-
-    set newfile "$file.new"
-    set oldfile "$file.old"
-
-    # Step 2a: install contents in a new file
-    if {[catch {set fd [open $newfile "w"]} errmsg]} then {
-	set errmsg "Cannot write in $newfile\n$errmsg"
-	return 0
-    }
-    puts -nonewline $fd $text
-    close $fd
-
-    # Step 2b: backup old file
-    if {$exists} then {
-	if {[catch {file rename -force -- $file $oldfile} errmsg]} then {
-	    set errmsg "Cannot preserve $file in $oldfile\n$errmsg"
-	    return 0
-	}
-    }
-
-    # Step 2c: atomatically install new file contents
-    if {[catch {file rename -force -- $newfile $file} errmsg]} then {
-	set errmsg "Cannot install new $file\n$errmsg"
-	if {$exists} then {
-	    catch {file rename -force -- $oldfile $file}
-	}
-	return 0
-    }
-
-    #
-    # Step 3: run appropriate command if needed
-    #
-
-    if {$cmd ne ""} then {
-	if {[catch {exec sh -c $cmd} errmsg]} then {
-	    set errmsg "Cannot run command $cmd\n$errmsg"
-	    catch {file rename -force -- $file $newfile}
-	    if {$exists} then {
-		catch {file rename -force -- $oldfile $file}
+    set fq [::fileinst create %AUTO%]
+    set errmsg [$fq add $file $text]
+    if {$errmsg eq ""} then {
+	set errmsg [$fq commit]
+	if {$errmsg eq "" && $cmd ne ""} then {
+	    if {[catch {exec sh -c $cmd} errmsg]} then {
+		set errmsg "Cannot run command $cmd\n$errmsg"
+		set msg [$fq uncommit]
+		if {$msg ne ""} then {
+		    append errmsg "\n$msg"
+		}
+		return 0
 	    }
-	    return 0
 	}
     }
+    $fq destroy
 
     return 1
 }

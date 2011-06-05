@@ -1,149 +1,88 @@
-#!/usr/local/bin/tclsh8.5
+#!%TCLSH%
 
-
 #
-# Script de génération d'une zone DNS
+# DNS zone generation for BIND
 #
-# Syntaxe :
-#	generer-zone [ <nom-de-zone> ]
+# Syntax:
+#	mkzone [-h][-v][-n] [ <zone-name> ]
 #
+# XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxxx
 # - si le nom-de-zone n'est pas fourni, retourne une liste
 #	des zones dans la base pour lesquelles il faut une
 #	génération
 # - si le nom-de-zone est fourni, génère sur la sortie standard
 #	le fichier correspondant à la zone
 #
-# Historique
-#   2002/04/23 : pda/jean : spécification
-#   2002/04/23 : pda/jean : conception
-#   2002/05/23 : pda/jean : substitution de %NOM% pour les rr supplémentaires
-#   2004/01/14 : pda/jean : passage en IPv6
-#   2004/01/20 : pda/jean : mise en production de la nouvelle version
-#   2004/03/09 : pda/jean : génération des rôles de messagerie
-#   2008/12/09 : jean     : gestion du TTL
+# History:
+#   2002/04/23 : pda/jean : specification
+#   2002/04/23 : pda/jean : design
+#   2002/05/23 : pda/jean : substution of %NOM% for supplementary RR
+#   2004/01/14 : pda/jean : generation of IPv6 AAAA records
+#   2004/03/09 : pda/jean : generation of mail roles
+#   2008/12/09 : jean     : TTL management
+#   2011/05/29 : pda      : i18n and re-design
 #
 
+source %LIBDNS%
 
 #
-# Valeurs par défaut du script
+# Self explanatory
 #
 
-set conf(base)		{host=crc.u-strasbg.fr dbname=dns
-				user=dns password=mot-de-passe-de-dns}
-#set conf(base)		{host=crc.u-strasbg.fr dbname=devdns
-#				user=dns password=mot-de-passe-de-dns}
-
-package require Pgtcl
+set conf(usage) {usage: %1$s [-h][-v][-n] [<zone-name>]}
 
 #
-# Neutralise les caractères spéciaux figurant dans une chaîne,
-# de façon à pouvoir la passer au moteur SQL.
-# - double toutes les apostrophes
+# Return the list of zones which must be genareted (or the list of all zones)
 #
-# Entrée :
-#   - paramètres
-#	- chaine : chaîne à traiter
-#	- maxindex (optionnel) : taille maximum de la chaîne
-# Sortie :
-#   - valeur de retour : la chaîne traitée
+# Input:
+#   - dbfd: database handle
+#   - all: 1 if all zones are required, 0 if only zones which must be generated
+# Output:
+#   - return value: list of zone names
 #
-# Historique
-#   1999/07/14 : pda : conception et codage
-#   1999/10/24 : pda : mise en package
+# History:
+#   2002/04/26 : pda/jean : design
 #
 
-proc quote {chaine {maxindex 99999}} {
-    set chaine [string range $chaine 0 $maxindex]
-    regsub -all {'} $chaine {&&} chaine
-    regsub -all {\\} $chaine {&&} chaine
-    return $chaine
-}
-
-#
-# Exécute une commande sql, et affiche une erreur et sort
-# en cas de problème. Retourne le résultat de la commande
-# (résultat pour pg_result).
-#
-# Entrée :
-#   - paramètres
-#	- dbfd : la base
-#	- cmd : la commande à passer
-#	- result : contient en retour le nom de la variable contenant l'erreur
-# Sortie :
-#   - valeur de retour : 1 si tout est ok, 0 sinon
-#   - variable result :
-#	- si erreur, la variable contient le message d'erreur
-#
-# Historique
-#   1999/07/14 : pda : conception et codage
-#   1999/10/24 : pda : mise en package
-#
-
-proc execsql {dbfd cmd result} {
-    upvar $result rmsg
-
-    set res [pg_exec $dbfd $cmd]
-    if {! [string equal [pg_result $res -status] PGRES_COMMAND_OK]} then {
-	set ok 0
-	set rmsg "$cmd : [pg_result $res -error]"
+proc get-zones {dbfd all} {
+    if {$all} then {
+	set crit ""
     } else {
-	set ok 1
-	set rmsg {}
+	set crit "WHERE generer = 1"
     }
-    pg_result $res -clear
-    return $ok
+    set l {}
+    pg_select $dbfd "SELECT domaine FROM dns.zone $crit" tab {
+	lappend l $tab(domaine)
+    }
+    return $l
 }
 
 #
-# Retourne une liste des zones à générer (ou la liste de toutes
-# les zones)
+# Generates zone content
 #
-# Entrée :
-#   - dbfd : accès à la base
-#   - tout : 1 s'il faut toutes les zones, 0 si seult la liste des zones modifiées
-# Sortie :
-#   - valeur de retour : liste de noms de zone
+# Input:
+#   - dbfd: database handle
+#   - zone: name of zone to generate
+#   - _txt: in return, zone contents or error message
+# Output:
+#   - return value: 1 if ok, 0 if error
+#   - parameter _txt: zone contents or error message
 #
-# Historique :
-#   2002/04/26 : pda/jean : conception
-#
-
-proc liste-zones {dbfd tout} {
-    if {$tout} then {
-	set critere ""
-    } else {
-	set critere "WHERE generer = 1"
-    }
-    set liste {}
-    pg_select $dbfd "SELECT domaine FROM dns.zone $critere" tab {
-	lappend liste $tab(domaine)
-    }
-    return $liste
-}
-
-#
-# Renvoie sur la sortie standard la liste des RR de la zone
-#
-# Entrée :
-#   - dbfd : accès à la base
-#   - domaine : le nom du domaine à générer
-# Sortie :
-#   - valeur de retour : 1 si ok, 0 si erreur
-#   - sortie standard : la liste des RR, prête pour named
-#   - sortie d'erreur : les erreurs s'il y en a
-#
-# Historique :
-#   2002/04/26 : pda/jean : conception
-#   2002/05/02 : pda/jean : multiples table "zone*" avec héritage
+# History:
+#   2002/04/26 : pda/jean : design
+#   2002/05/02 : pda/jean : multiple "zone*" table with inheritance
+#   2011/05/29 : pda      : interface change
 #
 
-proc generer-zone {dbfd domaine} {
-    set qdomaine [quote $domaine]
+proc gen-zone {dbfd zone _txt} {
+    upvar $_txt txt
+
+    set qzone [::pgsql::quote $zone]
 
     set sql "SELECT n.nspname || '.' || c.relname AS table,
 			zone.version, zone.prologue, zone.rrsup, zone.generer
 		    FROM dns.zone, pg_class c, pg_namespace n
-		    WHERE domaine = '$qdomaine'
+		    WHERE domaine = '$qzone'
 			AND c.oid = zone.tableoid
 			AND c.relnamespace = n.oid
 			"
@@ -156,35 +95,34 @@ proc generer-zone {dbfd domaine} {
     }
 
     #
-    # Récupérer le critère de sélection
+    # Get selection criterion
     #
 
-    set sql "SELECT selection FROM $table WHERE domaine = '$qdomaine'" 
+    set sql "SELECT selection FROM $table WHERE domaine = '$qzone'" 
     pg_select $dbfd $sql tab {
 	set selection	$tab(selection)
     }
 
     #
-    # Trouver le bon nouveau numéro de version pour la zone
+    # Compute the new version number for the zone
     #
 
     set adate [string range $version 0 7]
 
-    # On distingue le cas de la version sur un ou deux chiffres 
+    # version number with one or two digits
     set digit1  [string range $version 8 8]
     set digit2  [string range $version 9 9]
-    if { $digit1 == 0 } then {
+    if {$digit1 == 0} then {
         set anum $digit2
     } else {
         set anum "$digit1$digit2"
     }
 
-
     set ndate [clock format [clock seconds] -format "%Y%m%d"]
 
-    if {[string equal $adate $ndate]} then {
+    if {$adate eq $ndate} then {
 	if {$anum >= 99} then {
-	    puts stderr "zone '$domaine' : numéro de version d'aujourd'hui trop grand ($anum)"
+	    set txt "zone '$zone': version number too large today ($anum)"
 	    return 0
 	}
 	set nnum [format "%02d" [expr $anum + 1]]
@@ -195,98 +133,98 @@ proc generer-zone {dbfd domaine} {
     set nversion "$ndate$nnum"
 
     #
-    # Générer le prologue avec le numéro de version
+    # Generate prologue with version number
     #
 
     if {[regsub {%ZONEVERSION%} $prologue $nversion sprologue] != 1} then {
-	puts stderr "zone '$domaine' : %ZONEVERSION% non trouvé dans le prologue"
+	set txt "zone '$zone': %ZONEVERSION% not found in prologue"
 	return 0
     }
 
-    puts stdout $sprologue
+    set txt $sprologue
+    append txt "\n"
 
     #
-    # Distinguer suivant le format de génération
+    # Distinguish generation format
     #
 
     switch -- $table {
 	dns.zone_normale {
-	    if {! [generer-normal $dbfd $domaine $selection $rrsup]} then {
+	    if {! [gen-normal $dbfd $zone $selection $rrsup txt]} then {
 		return 0
 	    }
 	}
 	dns.zone_reverse4 {
-	    if {! [generer-ipv4 $dbfd $domaine $selection $rrsup]} then {
+	    if {! [gen-ipv4 $dbfd $zone $selection $rrsup txt]} then {
 		return 0
 	    }
 	}
 	dns.zone_reverse6 {
-	    if {! [generer-ipv6 $dbfd $domaine $selection $rrsup]} then {
+	    if {! [gen-ipv6 $dbfd $zone $selection $rrsup txt]} then {
 		return 0
 	    }
 	}
 	default {
-	    puts stderr "zone '$domaine' : table invalide ('$table')"
+	    set txt "zone '$zone': invalid table ('$table')"
 	    return 0
 	}
     }
 
     #
-    # Fin de la génération : se rappeler du numéro de version ainsi
-    # que du fait que nous avons généré la zone
+    # End of generation: keep version number as well as zone is generated
     #
 
     set sql "UPDATE dns.zone SET version = $nversion, generer = 0
-		    WHERE domaine = '$qdomaine'"
-    if {! [execsql $dbfd $sql m]} then {
-	puts stderr $m
+		    WHERE domaine = '$qzone'"
+    if {! [::pgsql::execsql $dbfd $sql m]} then {
+	set txt $m
 	return 0
     }
 
     #
-    # Tout va bien !
+    # Generation successfull
     #
 
     return 1
 }
 
 #
-# Renvoie sur la sortie standard les RR d'une zone normale
+# Return zone contents for a normal zone
 #
-# Entrée :
-#   - dbfd : accès à la base
-#   - domaine : le nom du domaine à générer
-#   - selection : le critère de sélection des RR (le nom de domaine)
-#   - rrsup : les RR ajoutés à chaque nom généré
-# Sortie :
-#   - valeur de retour : 1 si ok, 0 si erreur
-#   - sortie standard : la liste des RR, prête pour named
-#   - sortie d'erreur : les erreurs s'il y en a
+# Input:
+#   - dbfd: database handle
+#   - zone: name of zone to generate
+#   - selection: selection criterion (domain name)
+#   - rrsup: RR to add to each generated name
+#   - _txt: in return, zone contents or error message
+# Output:
+#   - return value: 1 if ok, 0 if error
+#   - parameter _txt: zone contents or error message
 #
-# Historique :
-#   2002/04/26 : pda/jean : conception
-#   2004/03/09 : pda/jean : ajout de la géneration des rôles de messagerie
+# History:
+#   2002/04/26 : pda/jean : design
+#   2004/03/09 : pda/jean : add mail role generation
 #
 
-proc generer-normal {dbfd domaine selection rrsup} {
-    if {! [recuperer-domaines $dbfd tabdom]} then {
-	return 0
-    }
+proc gen-normal {dbfd zone selection rrsup _txt} {
+    upvar $_txt txt
+
+    read-all-domains $dbfd "" tabiddom
 
     #
-    # Récupérer l'ID du domaine sur lequel on travaille
+    # Get working domain id
     #
     set iddom -1
-    pg_select $dbfd "SELECT iddom FROM dns.domaine WHERE nom = '$domaine'" tab {
+    pg_select $dbfd "SELECT iddom FROM dns.domaine WHERE nom = '$zone'" tab {
 	set iddom $tab(iddom)
     }
     if {$iddom == -1} then {
-	puts stderr "Zone $domaine : domaine non trouvé dans la base"
+	set txt "Zone $zone: domain not found in database"
 	return 0
     }
 
     #
-    # Sortir toutes les adresses IP (v4 ou v6)
+    # Get all IP (v4 or v6) addresses
     #
 
     set sql "SELECT rr.nom, rr.ttl, rr_ip.adr, family(rr_ip.adr) AS family
@@ -306,24 +244,24 @@ proc generer-normal {dbfd domaine selection rrsup} {
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	puts stdout "$nom   $ttl    IN	$a	$tab(adr)"
+	append txt "$nom   $ttl    IN	$a	$tab(adr)"
+	append txt "\n"
 
-	if {! [string equal $rrsup ""] && ! [info exists affiche($nom)]} then {
+	if {$rrsup ne "" && ! [info exists affiche($nom)]} then {
 	    set affiche($nom) ""
 	    set r $rrsup
 	    regsub -all -- {%NOM%} $r $nom r
-	    puts stdout $r
+	    append txt $r
+	    append txt "\n"
 	}
     }
 
     #
-    # Sortir tous les MX
-    #	"a MX n b"
-    #		rr1 décrit a
-    #		rr2 décrit b
+    # Get all MX: "a MX n b" (rr1 is a, rr2 is b)
     #
 
-    set sql "SELECT rr1.nom,rr1.ttl,rr_mx.priorite,rr2.nom AS nom2,rr2.iddom AS iddom2
+    set sql "SELECT rr1.nom, rr1.ttl, rr_mx.priorite,
+			    rr2.nom AS nom2, rr2.iddom AS iddom2
 			FROM dns.rr rr1, dns.rr_mx, dns.rr rr2
 			WHERE rr1.iddom = $iddom
 			    AND rr1.idrr = rr_mx.idrr
@@ -333,21 +271,19 @@ proc generer-normal {dbfd domaine selection rrsup} {
 	set nom $tab(nom)
 	set ttl $tab(ttl)
 	set d $tab(iddom2)
-	set complet "$tab(nom2).$tabdom($d)."
+	set fqdn2 "$tab(nom2).$tabiddom($d)."
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	puts stdout "$nom   $ttl    IN	MX	$tab(priorite) $complet"
+	append txt "$nom   $ttl    IN	MX	$tab(priorite) $fqdn2"
+	append txt "\n"
     }
 
     #
-    # Sortir tous les aliases
-    # "a CNAME b"
-    #		rr1 décrit a
-    #		rr2 décrit b
+    # Get all aliases: "a CNAME b" (rr1 is a, rr2 is b)
     #
 
-    set sql "SELECT rr1.nom,rr1.ttl,rr2.nom AS nom2,rr2.iddom AS iddom2
+    set sql "SELECT rr1.nom, rr1.ttl, rr2.nom AS nom2, rr2.iddom AS iddom2
 			FROM dns.rr rr1, dns.rr_cname, dns.rr rr2
 			WHERE rr1.iddom = $iddom
 			    AND rr1.idrr = rr_cname.idrr
@@ -355,16 +291,17 @@ proc generer-normal {dbfd domaine selection rrsup} {
 			ORDER BY rr1.nom"
     pg_select $dbfd $sql tab {
 	set d $tab(iddom2)
-	set complet "$tab(nom2).$tabdom($d)."
+	set fqdn2 "$tab(nom2).$tabiddom($d)."
 	set ttl $tab(ttl)
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	puts stdout "$tab(nom)	$ttl	IN	CNAME	$complet"
+	append txt "$tab(nom)	$ttl	IN	CNAME	$fqdn2"
+	append txt "\n"
     }
 
     #
-    # Y a t'il des relais définis pour le domaine ?
+    # Is there some mail relays for this domain?
     #
 
     set sql "SELECT relais_dom.priorite,
@@ -381,11 +318,11 @@ proc generer-normal {dbfd domaine selection rrsup} {
     }
 
     #
-    # Récupérer tous les rôles de messagerie du domaine
+    # Get all mail roles
     #
 
     if {[llength $relais] > 0} then {
-	set sql "SELECT rr.nom,rr.ttl
+	set sql "SELECT rr.nom, rr.ttl
 			FROM dns.role_mail, dns.rr
 			WHERE role_mail.idrr = rr.idrr
 			    AND rr.iddom = $iddom
@@ -397,47 +334,47 @@ proc generer-normal {dbfd domaine selection rrsup} {
 		if {$ttl == -1} then {
 		    set ttl ""
 		}
-		puts stdout "$tab(nom)	$ttl	$r"
+		append txt "$tab(nom)	$ttl	$r"
+		append txt "\n"
 	    }
 	}
     }
 
     #
-    # Fini !
+    # Done!
     #
 
     return 1
 }
 
 #
-# Renvoie sur la sortie standard les RR d'une zone reverse IPv4
+# Return zone contents for a IPv4 reverse zone
 #
-# Entrée :
-#   - dbfd : accès à la base
-#   - domaine : le nom du domaine à générer
-#   - selection : le critère de sélection des RR (CIDR)
-#   - rrsup : les RR ajoutés à chaque adresse PTR générée
-# Sortie :
-#   - valeur de retour : 1 si ok, 0 si erreur
-#   - sortie standard : la liste des RR, prête pour named
-#   - sortie d'erreur : les erreurs s'il y en a
+# Input:
+#   - dbfd: database handle
+#   - zone: name of zone to generate
+#   - selection: selection criterion (CIDR)
+#   - rrsup: RR to add to each generated PTR address
+#   - _txt: in return, zone contents or error message
+# Output:
+#   - return value: 1 if ok, 0 if error
+#   - parameter _txt: zone contents or error message
 #
-# Historique :
-#   2002/04/26 : pda/jean : conception
+# History:
+#   2002/04/26 : pda/jean : design
 #
 
-proc generer-ipv4 {dbfd domaine selection rrsup} {
-    if {! [recuperer-domaines $dbfd tabdom]} then {
-	return 0
-    }
+proc gen-ipv4 {dbfd zone selection rrsup _txt} {
+    upvar $_txt txt
+
+    read-all-domains $dbfd "" tabiddom
 
     #
-    # Récupérer la longueur du préfixe CIDR pour savoir combien
-    # d'octets on conserve dans le nom du RR
+    # Get CIDR prefix length to compute how many bytes we keep in RR name
     #
 
     if {! [regexp {.*/([0-9]*)} $selection bidon prefixlen]} then {
-	puts stderr "zone '$domaine' : critère de sélection invalide ('$selection')"
+	set txt "zone '$zone' : invalid selection criterion ('$selection')"
 	return 0
     }
     
@@ -446,7 +383,6 @@ proc generer-ipv4 {dbfd domaine selection rrsup} {
     } elseif {$prefixlen >= 16} then {
 	set first 2
     } elseif {$prefixlen >= 8} then {
-	# y a t'il des classes A sur Osiris ?
 	set first 1
     }
 
@@ -457,23 +393,24 @@ proc generer-ipv4 {dbfd domaine selection rrsup} {
 			ORDER BY rr_ip.adr"
     pg_select $dbfd $sql tab {
 	#
-	# Sortir le PTR
+	# Get PTR
 	#
 
-	set droite "$tab(nom).$tabdom($tab(iddom))."
+	set fqdn "$tab(nom).$tabiddom($tab(iddom))."
 
 	set adr $tab(adr)
-	set lgauche {}
-	foreach octet [lrange [split $adr "."] $first 3] {
-	    set lgauche [linsert $lgauche 0 $octet]
+	set lname {}
+	foreach byte [lrange [split $adr "."] $first 3] {
+	    set lname [linsert $lname 0 $byte]
 	}
-	set gauche [join $lgauche "."]
+	set name [join $lname "."]
 
 	set ttl $tab(ttl)
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	puts "$gauche	$ttl	IN	PTR	$droite"
+	append txt "$name	$ttl	IN	PTR	$fqdn"
+	append txt "\n"
 
     }
 
@@ -481,45 +418,39 @@ proc generer-ipv4 {dbfd domaine selection rrsup} {
 }
 
 #
-# Renvoie sur la sortie standard les RR d'une zone reverse IPv6
+# Return zone contents for a IPv6 reverse zone
 #
-# Entrée :
-#   - dbfd : accès à la base
-#   - domaine : le nom du domaine à générer
-#   - selection : le critère de sélection des RR
-#   - rrsup : les RR ajoutés à chaque adresse PTR générée
-# Sortie :
-#   - valeur de retour : 1 si ok, 0 si erreur
-#   - sortie standard : la liste des RR, prête pour named
-#   - sortie d'erreur : les erreurs s'il y en a
+# Input:
+#   - dbfd: database handle
+#   - zone: name of zone to generate
+#   - selection: selection criterion
+#   - rrsup: RR to add to each generated PTR address
+#   - _txt: in return, zone contents or error message
+# Output:
+#   - return value: 1 if ok, 0 if error
+#   - parameter _txt: zone contents or error message
 #
-# Historique :
-#   2002/04/26 : pda/jean : spécification
-#   2004/01/14 : pda/jean : rédaction
+# History:
+#   2002/04/26 : pda/jean : specification
+#   2004/01/14 : pda/jean : design
 #
 
-proc generer-ipv6 {dbfd domaine selection rrsup} {
-    if {! [recuperer-domaines $dbfd tabdom]} then {
-	return 0
-    }
+proc gen-ipv6 {dbfd zone selection rrsup _txt} {
+    upvar $_txt txt
+
+    read-all-domains $dbfd "" tabiddom
 
     #
-    # Récupérer la longueur du préfixe CIDR pour savoir combien
-    # d'octets on conserve dans le nom du RR
+    # Get prefix length to compute how many nibbles we keep in RR name
     #
 
     if {! [regexp {.*/([0-9]*)} $selection bidon prefixlen]} then {
-	puts stderr "zone '$domaine' : critère de sélection invalide ('$selection')"
+	set txt "zone '$zone': invalid selection criterion ('$selection')"
 	return 0
     }
 
-    #
-    # Calculer le nombre de quartets à générer en partie gauche du RR
-    # et sortir une erreur si ce nombre n'est pas entier.
-    #
-
     if {$prefixlen % 4 != 0} then {
-	puts stderr "zone '$domaine' : préfixe non multiple de 4 ('$selection')"
+	set txt "zone '$zone': prefix not multiple of 4 ('$selection')"
 	return 0
     }
     
@@ -532,22 +463,19 @@ proc generer-ipv6 {dbfd domaine selection rrsup} {
 			ORDER BY rr_ip.adr"
     pg_select $dbfd $sql tab {
 	#
-	# Elimination des cas particuliers des adresses contenant
-	# un "::" situé au début ou à la fin de l'adresse
+	# Remove particular case where address contains "::" at the beginning
+	# or at the end
 	#
 
 	regsub {^::} $tab(adr) {0::} adr
 	regsub {::$} $adr {::0} adr
 
 	#
-	# Traitement du cas particulier des adresses compatibles
-	# IPv4 : on les transforme en adresses en format IPv6
-	# (i.e. uniquement avec de l'hexa séparé par des ":")
+	# IPv4 compatible IPv6 addresses (last part = a.b.c.d)
 	#
 
 	set l [split $adr ":"]
 
-	# cas particulier des adresses compatibles v4 (dernier = a.b.c.d)
 	set ip4 [split [lindex $l end] "."]
 	if {[llength $ip4] == 4} then {
 	    set l [lreplace $l end end]
@@ -560,22 +488,21 @@ proc generer-ipv6 {dbfd domaine selection rrsup} {
 	}
 
 	#
-	# Traitement du cas des "::" dans l'adresse
+	# If there is a "::" in address
 	#
 
 	set n [llength $l]
-	set lg0 [expr 8 - $n]
-	set posvide [lsearch $l {}]
-	if {$posvide >= 0} then {
-	    set l [concat [lrange $l 0 [expr $posvide - 1]] \
-			  [lrange {0 0 0 0 0 0 0 0} 0 $lg0] \
-			  [lrange $l [expr $posvide + 1] end] \
+	set len0 [expr 8 - $n]
+	set posempty [lsearch $l {}]
+	if {$posempty >= 0} then {
+	    set l [concat [lrange $l 0 [expr $posempty - 1]] \
+			  [lrange {0 0 0 0 0 0 0 0} 0 $len0] \
+			  [lrange $l [expr $posempty + 1] end] \
 		      ]
 	}
 
 	#
-	# Chaque élément de la liste doit être un quartet, et on
-	# renverse la liste en même temps.
+	# Each list element should be a nibble. Reverse the list.
 	#
 
 	set nl {}
@@ -586,49 +513,25 @@ proc generer-ipv6 {dbfd domaine selection rrsup} {
 	}
 
 	#
-	# Ne retenir que les nbq premiers quartets
+	# Keep only first nbq nibbles
 	#
 
-	set gauche [join [lrange $nl 0 [expr $nbq - 1]] "."]
+	set name [join [lrange $nl 0 [expr $nbq - 1]] "."]
 
 	#
-	# Sortir le PTR
+	# Get out the PTR
 	#
 
-	set droite "$tab(nom).$tabdom($tab(iddom))."
+	set fqdn "$tab(nom).$tabiddom($tab(iddom))."
 
 	set ttl $tab(ttl)
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	puts "$gauche	$ttl	IN	PTR	$droite"
+	append txt "$name	$ttl	IN	PTR	$fqdn"
+	append txt "\n"
     }
 
-    return 1
-}
-
-#
-# Renvoie dans un tableau la liste des domaines connus dans la base
-#
-# Entrée :
-#   - dbfd : accès à la base
-#   - tabdom : tableau contenant en retour les domaines
-# Sortie :
-#   - valeur de retour : 1 si ok, 0 si erreur
-#   - paramètre tabdom : tabdom(iddom) nom-domaine
-#   - sortie d'erreur : les erreurs s'il y en a
-#
-# Historique :
-#   2002/04/26 : pda/jean : conception
-#
-
-proc recuperer-domaines {dbfd tabdom} {
-    upvar $tabdom td
-
-    pg_select $dbfd "SELECT iddom, nom FROM dns.domaine" tab {
-	set iddom $tab(iddom)
-	set td($iddom) $tab(nom)
-    }
     return 1
 }
 
@@ -636,41 +539,97 @@ proc recuperer-domaines {dbfd tabdom} {
 # main
 ##############################################################################
 
+proc usage {argv0} {
+    global conf
+
+    regsub ".*/" $argv0 "" argv0
+    puts stderr [format $conf(usage) $argv0]
+    exit 1
+}
+
 proc main {argv0 argv} {
     global conf
+
+    #
+    # Netmagis database access
+    #
+
+    set msg [d init-script dbfd $argv0 tabcor]
+    if {$msg ne ""} then {
+	puts stderr $msg
+	return 1
+    }
+
+    #
+    # Argument checking
+    #
+
+    while {[llength $argv] > 0} {
+	set a [lindex $argv 0]
+	switch -glob -- $a {
+	    -h {
+		usage $argv0
+	    }
+	    -v {
+		set verbose 1
+		set argv [lreplace $argv 0 0]
+	    }
+	    -n {
+		set doit 0
+		set argv [lreplace $argv 0 0]
+	    }
+	    -* {
+		warning "Unknown option '$a'"
+		usage $argv0
+	    }
+	    default {
+		break
+	    }
+	}
+    }
 
     if {[llength $argv] > 1} then {
 	puts stderr "usage: $argv0 [ <nom-de-zone> ]"
 	return 1
     }
 
-    if {[catch {set dbfd [pg_connect -conninfo $conf(base)]} msg]} then {
-	puts stderr "$argv0: cannot access base ($msg)"
-	return 1
+    #
+    # Get configuration values
+    #
+
+    foreach o {diff mroutefile mrouteprologue mroutefmt mroutecmd} {
+	set $o [get-local-conf $o]
     }
 
-    set sql "BEGIN WORK ; LOCK zone ; \
-		LOCK zone_normale ; LOCK zone_reverse4 ; LOCK zone_reverse6"
-    if {! [execsql $dbfd $sql m]} then { puts stderr $m ; exit 1 }
+    #
+    #
+    #
+
+
+    set msg [d dblock {dns.zone_normale dns.zone_reverse4 dns.zone_reverse6}]
+    if {$msg ne ""} then {
+	d error $msg
+    }
 
     switch [llength $argv] {
 	0 {
-	    set liste [liste-zones $dbfd 0]
+	    set liste [get-zones $dbfd 0]
 	    foreach z $liste {
 		puts $z
 	    }
 	}
 	1 {
-	    if {! [generer-zone $dbfd [lindex $argv 0]]} then {
-		set sql "ABORT WORK"
-		execsql $dbfd $sql m
-		return 1
+	    if {! [gen-zone $dbfd [lindex $argv 0] txt]} then {
+		set msg [d dbabort "zone generation" $txt]
+		d error $msg
 	    }
 	}
     }
 
-    set sql "COMMIT WORK"
-    if {! [execsql $dbfd $sql m]} then { puts stderr $m ; exit 1 }
+    set msg [d dbcommit "zone generation"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
 
     pg_disconnect $dbfd
 
