@@ -1902,6 +1902,68 @@ snit::type ::fileinst {
     }
 }
 
+#
+# Compare old file contents with new contents as a variable
+#
+# Input:
+#   - parameters
+#	- file: name of file
+#	- text: new file content
+#	- _errmsg: variable containing error message in return
+# Output:
+#   - return value: -1 (error), 0 (no change), or 1 (change)
+#   - variable _errmsg: error message, if return value = -1
+#
+# History
+#   2004/03/09 : pda/jean : design
+#   2011/05/14 : pda      : use configuration variables
+#   2011/05/22 : pda      : make it simpler
+#
+
+proc compare-file-with-text {file text _errmsg} {
+    upvar $_errmsg errmsg
+
+    set r 1
+    if {[file exists $file]} then {
+	if {[catch {set fd [open $file "r"]} errmsg]} then {
+	    set r -1
+	} else {
+	    set old [read $fd]
+	    close $fd
+
+	    if {$old eq $text} then {
+		set r 0
+	    }
+	}
+    }
+
+    return $r
+}
+
+#
+# Show difference between old file and new contents
+#
+# Input:
+#   - parameters
+#	- cmd: diff command
+#	- file: name of file
+#	- text: new file content
+#	- _errmsg: variable containing error message in return
+# Output:
+#   - return value: 1 (ok) or 0 (error)
+#   - variable _errmsg: error message, if return value = 0
+#
+# History
+#   2011/05/22 : pda      : specification
+#
+
+proc show-diff-file-text {cmd file text} {
+    set c [format $cmd $file]
+    append c "|| exit 0"
+    catch {exec sh -c $c << $text} r
+    puts stdout $r
+}
+
 ##############################################################################
 # Cosmetic
 ##############################################################################
@@ -7677,7 +7739,7 @@ proc call-topo {cmd _msg} {
 }
 
 #
-# Utilitaire pour le tri des interfaces : compare deux noms d'interface
+# Compare two interface names (for sort function)
 #
 # Input:
 #   - parameters:

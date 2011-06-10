@@ -14,7 +14,6 @@ SHARE = \
 
 SCRIPTS = \
 	generer-dhcp \
-	generer-zone \
 	mkdhcp \
 	mkdroitsmtp \
 	mkmroute \
