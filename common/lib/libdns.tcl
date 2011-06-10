@@ -1945,6 +1945,7 @@ proc compare-file-with-text {file text _errmsg} {
 #
 # Input:
 #   - parameters
+#	- fd : file descriptor
 #	- cmd: diff command
 #	- file: name of file
 #	- text: new file content
@@ -1955,13 +1956,18 @@ proc compare-file-with-text {file text _errmsg} {
 #
 # History
 #   2011/05/22 : pda      : specification
+#   2011/06/10 : pda      : add fd parameter
+#   2011/06/10 : pda      : add special case for non-existant file
 #
 
-proc show-diff-file-text {cmd file text} {
+proc show-diff-file-text {fd cmd file text} {
+    if {! [file exists $file]} then {
+	set file "/dev/null"
+    }
     set c [format $cmd $file]
     append c "|| exit 0"
     catch {exec sh -c $c << $text} r
-    puts stdout $r
+    puts $fd $r
 }
 
 ##############################################################################

@@ -1,7 +1,7 @@
 #!%TCLSH%
 
 #
-# Mail route generation for sendmail
+# Mail route generation for sendmail (or other MTAs)
 #
 # Syntax:
 #	mkmroute [-h][-q][-v][-n]
@@ -26,7 +26,7 @@ source %LIBDNS%
 set conf(usage) {usage: %1$s [-h][-q][-v][-n]
     -h : get this help
     -q : keep silent on normal operation
-    -v : verbose (show diffs)
+    -v : verbose (show file or diffs)
     -n : don't perform file installation
 }
 
@@ -223,19 +223,19 @@ proc main {argv0 argv} {
 	    }
 	}
 	1 {
+	    if {$verbose >= 0} then {
+		puts "Mail routes are modified"
+	    }
 	    if {$doit} then {
 		if {$verbose == 1} then {
-		    show-diff-file-text $diff $mroutefile $txt
+		    show-diff-file-text stdout $diff $mroutefile $txt
 		}
 		if {! [install-file-from-text $mroutefile $txt $mroutecmd msg]} then {
 		    d error $msg
 		}
 	    } else {
-		if {$verbose >= 0} then {
-		    puts "Mail routes are modified"
-		    if {$verbose == 1} then {
-			puts -nonewline $txt
-		    }
+		if {$verbose == 1} then {
+		    puts -nonewline $txt
 		}
 	    }
 	}

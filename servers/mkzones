@@ -4,7 +4,7 @@
 # Perform DNS zone generation for BIND
 #
 # Syntax:
-#	mkzone [-h][-v][-n] [ <zone-name> ... <zone-name>]
+#	mkzone [-h][-q][-v][-n] [ <zone-name> ... <zone-name>]
 #
 # If zone names are supplied, zone generation is done only for these
 # zones. Else, only modified zones (those which have the bit "generer")
@@ -663,8 +663,8 @@ proc main {argv0 argv} {
 
 	set fname "$zonedir/$z"
 
-	if {[file exists $fname] && $verbose == 1} then {
-	    show-diff-file-text $diff "$fname" $txt
+	if {$verbose == 1} then {
+	    show-diff-file-text stdout $diff "$fname" $txt
 	}
 
 	#
