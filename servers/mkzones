@@ -612,8 +612,7 @@ proc main {argv0 argv} {
     }
 
     if {[llength $argv] > 1} then {
-	puts stderr "usage: $argv0 [ <nom-de-zone> ]"
-	return 1
+	usage $argv0
     }
 
     #
