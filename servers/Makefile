@@ -13,7 +13,6 @@ SHARE = \
 	crontab.mroute
 
 SCRIPTS = \
-	generer-dhcp \
 	mkdhcp \
 	mkdroitsmtp \
 	mkmroute \
