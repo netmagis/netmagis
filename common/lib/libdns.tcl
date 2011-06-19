@@ -636,6 +636,7 @@ snit::type ::netmagis {
     #	- selfs : current object
     #	- _dbfd : database handle, in return
     #   - login : user's login
+    #   - anon : "anon" (don't fetch identity in auth database) or "id" (fetch)
     #	- usedefuser : use default user name if login is not found
     #   - _tabuid : array containing, in return, user's characteristics
     #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
@@ -645,7 +646,7 @@ snit::type ::netmagis {
     #	- return value: empty string or error message
     #
 
-    proc init-common {selfns _dbfd login usedefuser _tabuid} {
+    proc init-common {selfns _dbfd login anon usedefuser _tabuid} {
 	global ah
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
@@ -723,8 +724,15 @@ snit::type ::netmagis {
 	    }
 	}
 
-	set ah [::webapp::authbase create %AUTO%]
-	$ah configurelist $m
+	switch $anon {
+	    id {
+		set ah [::webapp::authbase create %AUTO%]
+		$ah configurelist $m
+	    }
+	    anon {
+		set ah ""
+	    }
+	}
 
 	#
 	# Reads all user's characteristics. If this user is not
@@ -994,7 +1002,7 @@ snit::type ::netmagis {
 	# Common initialization work
 	#
 
-	set msg [init-common $selfns dbfd $login false tabuid]
+	set msg [init-common $selfns dbfd $login "id" false tabuid]
 	if {$msg ne ""} then {
 	    $self error $msg
 	}
@@ -1226,7 +1234,7 @@ snit::type ::netmagis {
 	# Common initialization work
 	#
 
-	set msg [init-common $selfns dbfd $login true tabuid]
+	set msg [init-common $selfns dbfd $login "anon" true tabuid]
 	if {$msg ne ""} then {
 	    return $msg
 	}
@@ -2400,13 +2408,13 @@ proc user-attribute {dbfd idcor attr} {
 #	- login : user login
 #	- _tabuid : array containing, in return:
 #		login	login of the user
-#		nom	user name
-#		prenom	user christian name
-#		mel	user mail
-#		tel	user phone
-#		mobile	user mobile phone
-#		fax	user fax
-#		adr	user address
+#		nom	user name [if ah global variable is set]
+#		prenom	user christian name [if ah global variable is set]
+#		mel	user mail [if ah global variable is set]
+#		tel	user phone [if ah global variable is set]
+#		mobile	user mobile phone [if ah global variable is set]
+#		fax	user fax [if ah global variable is set]
+#		adr	user address [if ah global variable is set]
 #		idcor	user id in the database
 #		idgrp	group id in the database
 #		groupe	group name
@@ -2429,6 +2437,7 @@ proc user-attribute {dbfd idcor attr} {
 #   2007/10/05 : pda/jean : adaptation to "authuser" and "authbase" objects
 #   2010/11/09 : pda      : renaming (car plus de recherche par id)
 #   2010/11/29 : pda      : i18n
+#   2011/06/17 : pda      : add test on ah global variable
 #
 
 proc read-user {dbfd login _tabuid _msg} {
@@ -2438,35 +2447,37 @@ proc read-user {dbfd login _tabuid _msg} {
 
     catch {unset tabuid}
 
-    #
-    # Attributes common to all applications
-    #
+    if {$ah ne ""} then {
+	#
+	# Attributes common to all applications
+	#
 
-    set u [::webapp::authuser create %AUTO%]
-    if {[catch {set n [$ah getuser $login $u]} m]} then {
-	set msg [mc "Authentication base problem: %s" $m]
-	return -1
-    }
-    
-    switch $n {
-	0 {
-	    set msg [mc "User '%s' is not in the authentication base" $login]
-	    return 0
+	set u [::webapp::authuser create %AUTO%]
+	if {[catch {set n [$ah getuser $login $u]} m]} then {
+	    set msg [mc "Authentication base problem: %s" $m]
+	    return -1
 	}
-	1 { 
-	    set msg ""
+	
+	switch $n {
+	    0 {
+		set msg [mc "User '%s' is not in the authentication base" $login]
+		return 0
+	    }
+	    1 { 
+		set msg ""
+	    }
+	    default {
+		set msg [mc "Found more than one entry for login '%s' in the authentication base" $login]
+		return $n
+	    }
 	}
-	default {
-	    set msg [mc "Found more than one entry for login '%s' in the authentication base" $login]
-	    return $n
-	}
-    }
 
-    foreach c {login password nom prenom mel tel mobile fax adr} {
-	set tabuid($c) [$u get $c]
-    }
+	foreach c {login password nom prenom mel tel mobile fax adr} {
+	    set tabuid($c) [$u get $c]
+	}
 
-    $u destroy
+	$u destroy
+    }
 
     #
     # Netmagis specific characteristics
