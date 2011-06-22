@@ -14,11 +14,12 @@ TCLLFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_LIB_SPEC $$TCL_LIBS"')|sh`
 usage:
 	@echo "available targets:"
 	@echo "	all"
-	@echo "	install-common
-	@echo "	install-database
-	@echo "	install-www
-	@echo "	install-utils
-	@echo "	install-detecteq
+	@echo "	install-common"
+	@echo "	install-database"
+	@echo "	install-servers"
+	@echo "	install-www"
+	@echo "	install-utils"
+	@echo "	install-detecteq"
 	@echo "	install-topo"
 	@echo "	clean"
 
@@ -32,6 +33,9 @@ install-common:
 
 install-database:
 	cd database ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+
+install-servers:
+	cd servers ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 install-www:
 	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
@@ -47,8 +51,10 @@ install-detecteq:
 	cd detecteq ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 clean:
-	cd www ; make clean
 	cd common ; make clean
 	cd database ; make clean
+	cd servers ; make clean
+	cd www ; make clean
 	cd utils ; make clean
+	cd detecteq ; make clean
 	cd topo ; make clean

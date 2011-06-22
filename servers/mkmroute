@@ -1,0 +1,248 @@
+#!%TCLSH%
+
+#
+# Mail route generation for sendmail (or other MTAs)
+#
+# Syntax:
+#	mkmroute [-h][-q][-v][-n]
+#	    -h: help
+#	    -q: silent operation
+#	    -v: verbose output
+#	    -n: don't modify files
+#
+# History:
+#   2004/03/09 : pda/jean : original specification
+#   2004/03/09 : pda/jean : design
+#   2011/05/14 : pda      : i18n and re-design
+#   2011/06/10 : pda      : clarify verbose levels
+#
+
+source %LIBDNS%
+
+#
+# Self explanatory
+#
+
+set conf(usage) {usage: %1$s [-h][-q][-v][-n]
+    -h : get this help
+    -q : keep silent on normal operation
+    -v : verbose (show file or diffs)
+    -n : don't perform file installation
+}
+
+#
+# Generates a mail route text
+#
+# Input:
+#   - parameters
+#	- dbfd: database handle
+#	- mrouteprologue: name of file containing mail route prologue
+#	- mroutefmt: format of individual mail routes (1: address, 2: mail host)
+#	- _mroutetxt : variable containing generated text in return
+# Output:
+#   - return value: empty string, or error message
+#   - variable _mroutetxt: generated mail routes
+#
+# History
+#   2004/03/09 : pda/jean : design
+#   2011/05/14 : pda      : use configuration variables
+#
+
+proc gen-mroute {dbfd mrouteprologue mroutefmt _mroutetxt} {
+    upvar $_mroutetxt mroutetxt
+
+    #
+    # Step 1: read prologue
+    #
+
+    if {[catch {set fd [open $mrouteprologue "r"]} err]} then {
+	return $err
+    }
+    set mroutetxt [read $fd]
+    close $fd
+
+    #
+    # Step 2: read mail routes from database
+    #
+
+    set sql "SELECT r1.nom || '.' || d1.nom AS nom,
+		    r2.nom || '.' || d2.nom AS nomh
+		FROM dns.rr r1, dns.domaine d1,
+		    dns.rr r2, dns.domaine d2,
+		    dns.role_mail
+		WHERE role_mail.idrr = r1.idrr
+		    AND r1.iddom = d1.iddom
+		    AND role_mail.heberg = r2.idrr
+		    AND r2.iddom = d2.iddom
+		ORDER BY d2.nom ASC, r2.nom ASC, d1.nom ASC, r1.nom ASC
+		"
+    pg_select $dbfd $sql tab {
+	append mroutetxt [format $mroutefmt $tab(nom) $tab(nomh)]
+	append mroutetxt "\n"
+    }
+
+    return ""
+}
+
+#
+# Install new contents in a file, and run appropriate command
+#
+# Input:
+#   - parameters
+#	- file: name of file
+#	- text: new file content
+#	- cmd: command to apply to file or empty string
+#	- _errmsg: variable containing error message in return
+# Output:
+#   - return value: 1 (ok) or 0 (error)
+#   - variable _errmsg: error message, if return value = 0
+#
+# History
+#   2004/03/09 : pda/jean : design
+#   2011/05/14 : pda      : use configuration variables
+#   2011/05/22 : pda      : simplification
+#   2011/06/05 : pda      : use fileinst class
+#
+
+proc install-file-from-text {file text cmd _errmsg} {
+    upvar $_errmsg errmsg
+
+    set fq [::fileinst create %AUTO%]
+    set errmsg [$fq add $file $text]
+    if {$errmsg eq ""} then {
+	set errmsg [$fq commit]
+	if {$errmsg eq "" && $cmd ne ""} then {
+	    if {[catch {exec sh -c $cmd} errmsg]} then {
+		set errmsg "Cannot run command $cmd\n$errmsg"
+		set msg [$fq uncommit]
+		if {$msg ne ""} then {
+		    append errmsg "\n$msg"
+		}
+		return 0
+	    }
+	}
+    }
+    $fq destroy
+
+    return 1
+}
+
+##############################################################################
+# main
+##############################################################################
+
+proc usage {argv0} {
+    global conf
+
+    regsub ".*/" $argv0 "" argv0
+    puts -nonewline stderr [format $conf(usage) $argv0]
+    exit 1
+}
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Netmagis database access
+    #
+
+    set msg [d init-script dbfd $argv0 tabcor]
+    if {$msg ne ""} then {
+	fatal-error "$msg\nAbort."
+    }
+
+    #
+    # Argument checking
+    #
+
+    set verbose 0
+    set doit 1
+
+    while {[llength $argv] > 0} {
+	set a [lindex $argv 0]
+	switch -glob -- $a {
+	    -h {
+		usage $argv0
+	    }
+	    -q {
+		set verbose -1
+		set argv [lreplace $argv 0 0]
+	    }
+	    -v {
+		set verbose 1
+		set argv [lreplace $argv 0 0]
+	    }
+	    -n {
+		set doit 0
+		set argv [lreplace $argv 0 0]
+	    }
+	    -* {
+		warning "Unknown option '$a'"
+		usage $argv0
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    if {[llength $argv] > 1} then {
+	usage $argv0
+    }
+
+    #
+    # Get configuration values
+    #
+
+    foreach o {diff mroutefile mrouteprologue mroutefmt mroutecmd} {
+	set $o [get-local-conf $o]
+    }
+
+    #
+    # Do the work
+    #
+
+    set msg [gen-mroute $dbfd $mrouteprologue $mroutefmt txt]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    switch [compare-file-with-text $mroutefile $txt msg] {
+	-1 {
+	    d error $msg
+	}
+	0 {
+	    # nothing
+	    if {! $doit} then {
+		if {$verbose >= 0} then {
+		    puts "Mail routes are not modified"
+		    if {$verbose == 1} then {
+			puts -nonewline $txt
+		    }
+		}
+	    }
+	}
+	1 {
+	    if {$verbose >= 0} then {
+		puts "Mail routes are modified"
+	    }
+	    if {$doit} then {
+		if {$verbose == 1} then {
+		    show-diff-file-text stdout $diff $mroutefile $txt
+		}
+		if {! [install-file-from-text $mroutefile $txt $mroutecmd msg]} then {
+		    d error $msg
+		}
+	    } else {
+		if {$verbose == 1} then {
+		    puts -nonewline $txt
+		}
+	    }
+	}
+    }
+
+    d end
+    return 0
+}
+
+exit [main $argv0 $argv]

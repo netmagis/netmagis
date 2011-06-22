@@ -31,13 +31,11 @@ proc usage {argv0} {
 proc main {argv0 argv} {
     global conf
 
-    regsub {.*/} $argv0 {} argv0
-
     #
     # Initialize
     #
 
-    set msg [d init-script dbfd tabcor]
+    set msg [d init-script dbfd $argv0 tabcor]
     if {$msg ne ""} then {
 	puts stderr "$msg"
 	puts stderr "Aborted."

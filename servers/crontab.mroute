@@ -1,0 +1,7 @@
+#
+# Example crontab for mkroute script: generates mail route database
+# This crontab should be installed on mail relays.
+#
+
+MAILTO = hostmaster@mycompany.com
+*/5	* * * *	/local/sbin/mkmroute

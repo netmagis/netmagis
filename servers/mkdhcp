@@ -1,0 +1,552 @@
+#!%TCLSH%
+
+#
+# Perform DHCP generation for ISC DHCPD
+#
+# Syntax:
+#	mkdhcp [-h][-q][-v][-n]
+#
+# History:
+#   2004/08/05 : pda/jean : specification
+#   2004/08/06 : pda/jean : design
+#   2005/03/31 : pda	  : add DHCP groups
+#   2008/07/12 : jean 	  : use profiles in ranges
+#   2008/07/16 : jean	  : use failover in ranges
+#   2011/04/21 : jean	  : use groups everywhere
+#   2011/06/10 : pda      : i18n and re-design
+#
+
+source %LIBDNS%
+
+#
+# Self explanatory
+#
+
+set conf(usage) {usage: %1$s [-h]|-q][-v][-n]
+    -h : get this help
+    -q : keep silent on normal operation
+    -v : verbose (show diffs)
+    -n : don't perform file installation
+}
+
+#
+# Default profile
+#
+
+set conf(defprofile) {
+    option domain-name "%DEFDOMAIN%";
+    option domain-name-servers %DEFRESOLV%;"
+}
+
+#######################################################
+#######################################################
+#
+# Chaine de configuration pour la redondance dhcp
+#
+# Pour un serveur isc-dhcp sans redondance
+#set conf(failover)		{}
+# Pour un serveur isc-dhcp avec redondance
+set conf(failover)		{failover peer "dhcp"; }
+#######################################################
+#######################################################
+
+#
+# Test if DHCP configuration has been modified
+#
+# Input:
+#   - dbfd: database handle
+# Output:
+#   - return value: 0 (not modified) or 1 (modified)
+#
+# History:
+#   2004/08/05 : pda/jean : design
+#
+
+proc need-dhcp-generation {dbfd} {
+    set r 0
+    pg_select $dbfd "SELECT generer FROM dns.dhcp" tab {
+	set r [expr {$tab(generer) > 0}]
+    }
+    return $r
+}
+
+#
+# DHCP configuration has been modified
+#
+# Input:
+#   - dbfd: database handle
+# Output:
+#   - return value: error string or empty string
+#
+# History:
+#   2011/06/13 : pda      : design
+#
+
+proc record-dhcp-generation {dbfd} {
+    set sql "UPDATE dns.dhcp SET generer = 0"
+    if {[::pgsql::execsql $dbfd $sql msg]} then {
+	set msg ""
+    }
+    return $msg
+}
+
+#
+# Indent a DHCP profile
+#
+# Input:
+#   - prof: profile contents
+#   - n: indent level
+# Output:
+#   - return value: new profile
+#
+# History:
+#   2011/06/10 : pda      : documentation
+#
+
+proc indent-profile {prof n} {
+    set indent [string repeat "\t" $n]
+
+    set lprof [split $prof "\n"]
+    set p [join $lprof "\n$indent"]
+
+    return "$indent$p"
+}
+
+#
+# Returns DHCP configuration as a text
+#
+# Input:
+#   - dbfd: database handle
+#   - _txt: in return, DHCP configuration
+#   - _err: in return, error message (fatal or non-fatal)
+# Output:
+#   - return value: 1 if ok, 0 if fatal error
+#   - parameter _txt: DHCP configuration text
+#   - parameter _err: error message (fatal or non-fatal)
+#
+# History:
+#   2004/08/05 : pda/jean : design
+#   2005/03/31 : pda	  : add DHCP groups
+#   2011/06/10 : pda	  : interface change
+#
+
+proc gen-dhcp {dbfd _txt _err} {
+    global conf
+    upvar $_txt txt
+    upvar $_err err
+
+    set txt {}
+    set err {}
+
+    #
+    # Useful to let tools (such as vi) match parenthesis in this code
+    #
+
+    set accg "\{"
+    set accd "\}"
+
+    #
+    # Get default DHCP parameter values from database
+    #
+
+    foreach k {default_lease_time
+		max_lease_time
+		min_lease_time
+		dhcpdefdomain
+		dhcpdefdnslist} {
+	set dhcpdef($k) [dnsconfig get $k]
+    }
+
+    #
+    # Get range attributes and store them in an array "range" indexed by
+    # network address
+    #
+
+    set sql "SELECT HOST(reseau.adr4) AS addr, domaine.nom AS dom, dhcprange.*
+		    FROM dns.reseau, dns.dhcprange, dns.domaine
+		    WHERE reseau.dhcp > 0
+			    AND domaine.iddom = dhcprange.iddom
+			    AND dhcprange.min <<= reseau.adr4
+			    AND dhcprange.max <<= reseau.adr4
+		    "
+    pg_select $dbfd $sql tab {
+	if {$tab(default_lease_time) == 0} then {
+	    set tab(default_lease_time) $dhcpdef(default_lease_time)
+	}
+	if {$tab(max_lease_time) == 0} then {
+	    set tab(max_lease_time) $dhcpdef(max_lease_time)
+	}
+	lappend range($tab(addr)) [list $tab(dom) \
+					$tab(min) \
+					$tab(max) \
+					$tab(default_lease_time) \
+					$tab(max_lease_time) \
+					$tab(iddhcpprofil) \
+				    ]
+    }
+
+    #
+    # Get DHCP profiles
+    #
+
+    set sql "SELECT iddhcpprofil, nom, texte FROM dns.dhcpprofil"
+    pg_select $dbfd $sql tab {
+	set id $tab(iddhcpprofil)
+	set dhcpprofil($id)      $tab(texte)
+	set dhcpprofil($id:name) $tab(nom)
+    }
+
+    #
+    # Provide a default profile
+    #
+
+    set p $conf(defprofile)
+    regsub "%DEFDOMAIN%" $p $dhcpdef(dhcpdefdomain) p
+    regsub "%DEFRESOLV%" $p $dhcpdef(dhcpdefdnslist) p
+    set dhcpprofil(:default) $p
+    set dhcpprofil(:default:name) "hosts without a profile"
+
+    #
+    # Generates configuration for each DHCP-enabled IPv4 network
+    #
+
+    set sql "SELECT HOST(adr4) AS network, MASKLEN(adr4) AS masklen,
+			    NETMASK(adr4) AS netmask, gw4, nom
+		    FROM dns.reseau
+		    WHERE dhcp > 0 AND gw4 IS NOT NULL
+		    ORDER BY network
+		    "
+    pg_select $dbfd $sql tab {
+	set network $tab(network)
+	set masklen $tab(masklen)
+
+	lappend txt "# $tab(nom)"
+	lappend txt "subnet $network netmask $tab(netmask) $accg"
+	lappend txt "\toption routers $tab(gw4);"
+	if {[info exists range($network)]} then {
+	    foreach pool $range($network) {
+		lassign $pool dom min max default_lease_time max_lease_time iddhcpprofil
+
+		lappend txt "\tpool $accg"
+
+		if {[info exists conf(failover)] && $conf(failover) ne ""} then {
+		    lappend txt "\t\t$conf(failover)"
+		}
+		set addprofile ""
+		if {[info exists dhcpprofil($iddhcpprofil)]} then {
+		    set addprofile $dhcpprofil($iddhcpprofil)
+		    lappend txt [indent-profile $addprofile 2]
+		}
+		lappend txt "\t\trange $min $max;"
+		lappend txt "\t\tdeny dynamic bootp clients;"
+
+		# Add a domain name if profile does not provide one
+		if {! [regexp {option\s+domain-name\s+} $addprofile]} then {
+		    if {$dom ne ""} then {
+			lappend txt "\t\toption domain-name \"$dom\";"
+		    } else {
+			lappend txt "\t\toption domain-name \"$dhcpdef(dhcpdefdomain)\";"
+		    }
+		}
+
+		# Add default resolvers if profile does not include them
+		if {! [regexp {option\s+domain-name-servers\s+} $addprofile]} then {
+		    lappend txt "\t\toption domain-name-servers $dhcpdef(dhcpdefdnslist);"
+		}
+		if {$max_lease_time < $dhcpdef(min_lease_time)} then {
+		    lappend err "Max-lease-time too small ($max_lease_time) for <$min,$max>"
+		    lappend txt "\t\t# max-lease-time $max_lease_time;"
+		} else {
+		    lappend txt "\t\tmax-lease-time $max_lease_time;"
+		}
+		if {$default_lease_time < $dhcpdef(min_lease_time)} then {
+		    lappend err "Default-lease-time too small ($default_lease_time) for <$min,$max>"
+		    lappend txt "\t\t# default-lease-time $default_lease_time;"
+		} else {
+		    lappend txt "\t\tdefault-lease-time $default_lease_time;"
+		}
+
+		lappend txt "\t$accd"
+	    }
+	}
+
+	#
+	# Generates all host groups: get hosts which have a valid MAC
+	# address in current network
+	#
+
+	array unset groups
+	set sql2 "SELECT rr.nom || '.' || domaine.nom AS host,
+			    rr.mac,
+			    rr_ip.adr,
+			    rr.iddhcpprofil
+			FROM dns.rr, dns.domaine, dns.rr_ip, dns.reseau
+			WHERE rr.iddom = domaine.iddom
+			    AND rr.idrr = rr_ip.idrr
+			    AND rr_ip.adr <<= '$network/$masklen'
+			    AND reseau.adr4 = '$network/$masklen'
+			    AND reseau.dhcp > 0
+			    AND rr.mac IS NOT NULL
+			ORDER BY rr.iddhcpprofil
+			"
+	pg_select $dbfd $sql2 tab2 {
+	    set ip $tab2(adr)
+	    set host $tab2(host)
+
+	    # Empty if no profile
+	    set id $tab2(iddhcpprofil)
+	    if {$id eq ""} then {
+		set id ":default"
+	    }
+
+	    # Generates a unique name if this host has more than one address
+	    set nocc ""
+	    if {[info exists occur($host)]} then {
+		set nocc $occur($host)
+		incr occur($host)
+	    } else {
+		set occur($host) 1
+	    }
+
+	    append groups($id) "\t\thost $host$nocc $accg\n"
+	    append groups($id) "\t\t\tstash-agent-options true ;\n"
+
+	    append groups($id) "\t\t\thardware ethernet $tab2(mac);\n"
+	    append groups($id) "\t\t\tfixed-address $tab2(adr);\n"
+	    append groups($id) "\t\t\toption host-name \"$host\";\n"
+	    append groups($id) "\t\t$accd\n"
+	}
+
+	#
+	# Generate groups for this network
+	#
+
+	foreach id [array names groups] {
+	    lappend txt "\tgroup $accg # start group for $dhcpprofil($id:name)"
+	    if {[info exists dhcpprofil($id)]} then {
+		set addprofile $dhcpprofil($id)
+		lappend txt [indent-profile $addprofile 2]
+
+		# Add a domain name if profile does not provide one
+		if {! [regexp {option\s+domain-name\s+} $addprofile]} then {
+		    lappend txt "\t\toption domain-name \"$dhcpdef(dhcpdefdomain)\";"
+		}
+
+		# Add default resolvers if profile does not include them
+		if {! [regexp {option\s+domain-name-servers\s+} $addprofile]} then {
+		    lappend txt "\t\toption domain-name-servers $dhcpdef(dhcpdefdnslist);"
+		}
+	    } else {
+		lappend err "Unknown DHCP profile '$id'"
+	    }
+	    lappend txt $groups($id)
+	    lappend txt "\t$accd # end group for $dhcpprofil($id:name)"
+	}
+
+	lappend txt "$accd # end subnet $tab(nom)"
+	lappend txt ""
+    }
+
+    #
+    # End of generation
+    #
+
+    set txt [join $txt "\n"]
+    set err [join $err "\n"]
+
+    return 1
+}
+
+##############################################################################
+# main
+##############################################################################
+
+proc usage {argv0} {
+    global conf
+
+    regsub ".*/" $argv0 "" argv0
+    puts -nonewline stderr [format $conf(usage) $argv0]
+    exit 1
+}
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Initialization : Netmagis database access and file queue
+    #
+
+    set msg [d init-script dbfd $argv0 tabcor]
+    if {$msg ne ""} then {
+	puts stderr $msg
+	return 1
+    }
+
+    set fq [::fileinst create %AUTO%]
+
+    #
+    # Argument checking
+    #
+
+    set verbose 0
+    set doit 1
+
+    while {[llength $argv] > 0} {
+	set a [lindex $argv 0]
+	switch -glob -- $a {
+	    -h {
+		usage $argv0
+	    }
+	    -q {
+		set verbose -1
+		set argv [lreplace $argv 0 0]
+	    }
+	    -v {
+		set verbose 1
+		set argv [lreplace $argv 0 0]
+	    }
+	    -n {
+		set doit 0
+		set argv [lreplace $argv 0 0]
+	    }
+	    -* {
+		warning "Unknown option '$a'"
+		usage $argv0
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    if {[llength $argv] > 0} then {
+	usage $argv0
+    }
+
+    #
+    # Get configuration values
+    #
+
+    foreach o {diff dhcpfile dhcptest dhcpcmd} {
+	set $o [get-local-conf $o]
+    }
+
+    #
+    # Lock tables such as we do not miss some modification
+    #
+
+    set msg [d dblock {dns.dhcp dns.rr dns.reseau dns.dhcprange}]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Generate DHCP configuration
+    #
+
+    if {[need-dhcp-generation $dbfd]} then {
+
+	#
+	# Perform DHCP configuration
+	#
+
+	if {[gen-dhcp $dbfd txt err]} then {
+	    #
+	    # Generation succeeded, even with some small errors
+	    #
+
+	    # display small errors (if empty, does not display anything)
+	    puts -nonewline stdout $err
+
+	    # display diffs
+	    if {$verbose == 1} then {
+		show-diff-file-text stdout $diff $dhcpfile $txt
+	    }
+
+	    if {$doit} then {
+		#
+		# Install file, test configuration file and restart daemon
+		#
+
+		set msg [$fq add $dhcpfile $txt]
+		if {$msg ne ""} then {
+		    set msg [d dbabort "DHCP generation" $msg]
+		    d error $msg
+		}
+
+		set msg [$fq commit]
+		if {$msg ne ""} then {
+		    set msg [d dbabort "DHCP generation" $msg]
+		    d error $msg
+		}
+
+		# test configuration
+		if {$dhcptest ne ""} then {
+		    if {[catch {exec sh -c $dhcptest} msg]} then {
+			set msg "Cannot run command '$dhcptest'\n$msg"
+			set m [$fq uncommit]
+			if {$m ne ""} then {
+			    append msg "\n$m"
+			}
+			d dbabort "DHCP generation" ""
+			d error $msg
+		    }
+		}
+
+		# now that configuration is tested, register that
+		# DHCP configuration was generated
+		set msg [record-dhcp-generation $dbfd]
+		if {$msg ne ""} then {
+		    set m [$fq uncommit]
+		    if {$m ne ""} then {
+			append msg "\n$m"
+		    }
+		    d dbabort "DHCP generation" ""
+		    d error $msg
+		}
+
+		# restart daemon
+		if {$dhcpcmd ne ""} then {
+		    if {[catch {exec sh -c $dhcpcmd} msg]} then {
+			set msg "Cannot run command '$dhcpcmd'\n$msg"
+			set m [$fq uncommit]
+			if {$m ne ""} then {
+			    append msg "\n$m"
+			}
+			d dbabort "DHCP generation" ""
+			d error $msg
+		    }
+		}
+
+		# commit modifications
+		set msg [d dbcommit "DHCP generation"]
+		if {$msg ne ""} then {
+		    d error $msg
+		}
+	    }
+
+	} else {
+	    #
+	    # Error during generation
+	    #
+	    set msg [d dbabort "DHCP generation" $txt]
+	    d error $msg
+	}
+
+    } else {
+	if {$verbose >= 1} then {
+	    puts stderr "No DHCP generation"
+	}
+    }
+
+    #
+    # End of work
+    #
+
+    $fq destroy
+
+    d end
+    return 0
+}
+
+exit [main $argv0 $argv]

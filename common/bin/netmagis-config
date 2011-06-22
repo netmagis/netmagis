@@ -4,6 +4,7 @@ source %LIBDNS%
 
 proc usage {argv0} {
     set usage {usage: %s [-c][-h] param ... param}
+    regsub {.*/} $argv0 {} argv0
     puts stderr [format $usage $argv0]
 }
 

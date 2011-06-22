@@ -426,6 +426,9 @@ snit::type ::netmagis {
     # mode : script, cgi, daemon
     variable scriptmode ""
 
+    # in script or daemon mode, name of executing program
+    variable scriptargv0
+
     # locale in use : either specified by browser, or specified by user
     variable locale "C"
     # locale specified by browser
@@ -633,6 +636,7 @@ snit::type ::netmagis {
     #	- selfs : current object
     #	- _dbfd : database handle, in return
     #   - login : user's login
+    #   - anon : "anon" (don't fetch identity in auth database) or "id" (fetch)
     #	- usedefuser : use default user name if login is not found
     #   - _tabuid : array containing, in return, user's characteristics
     #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
@@ -642,7 +646,7 @@ snit::type ::netmagis {
     #	- return value: empty string or error message
     #
 
-    proc init-common {selfns _dbfd login usedefuser _tabuid} {
+    proc init-common {selfns _dbfd login anon usedefuser _tabuid} {
 	global ah
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
@@ -720,8 +724,15 @@ snit::type ::netmagis {
 	    }
 	}
 
-	set ah [::webapp::authbase create %AUTO%]
-	$ah configurelist $m
+	switch $anon {
+	    id {
+		set ah [::webapp::authbase create %AUTO%]
+		$ah configurelist $m
+	    }
+	    anon {
+		set ah ""
+	    }
+	}
 
 	#
 	# Reads all user's characteristics. If this user is not
@@ -991,7 +1002,7 @@ snit::type ::netmagis {
 	# Common initialization work
 	#
 
-	set msg [init-common $selfns dbfd $login false tabuid]
+	set msg [init-common $selfns dbfd $login "id" false tabuid]
 	if {$msg ne ""} then {
 	    $self error $msg
 	}
@@ -1188,7 +1199,7 @@ snit::type ::netmagis {
     #
     # Input:
     #   - _dbfd : database handle, in return
-    #   - login : user's login
+    #   - argv0 : script argv0
     #   - _tabuid : array containing, in return, user's characteristics
     #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
     #			idcor, idgrp, present)
@@ -1198,7 +1209,7 @@ snit::type ::netmagis {
     #   - object $ah : access to authentication base
     #
 
-    method init-script {_dbfd _tabuid} {
+    method init-script {_dbfd argv0 _tabuid} {
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
 
@@ -1223,12 +1234,14 @@ snit::type ::netmagis {
 	# Common initialization work
 	#
 
-	set msg [init-common $selfns dbfd $login true tabuid]
+	set msg [init-common $selfns dbfd $login "anon" true tabuid]
 	if {$msg ne ""} then {
 	    return $msg
 	}
 
 	set scriptmode "script"
+	regsub {.*/} $argv0 {} argv0
+	set scriptargv0 $argv0
 
 	return ""
     }
@@ -1269,10 +1282,20 @@ snit::type ::netmagis {
     #
 
     method error {msg} {
-	set msg [::webapp::html-string $msg]
-	regsub -all "\n" $msg "<br>" msg
-	$self result $errorpage [list [list %MESSAGE% $msg]]
-	exit 0
+	switch $scriptmode {
+	    cgi {
+		set msg [::webapp::html-string $msg]
+		regsub -all "\n" $msg "<br>" msg
+		$self result $errorpage [list [list %MESSAGE% $msg]]
+		exit 0
+	    }
+	    daemon -
+	    script {
+		puts stderr "$scriptargv0: $msg"
+		$self end
+		exit 1
+	    }
+	}
     }
 
     ###########################################################################
@@ -1734,6 +1757,228 @@ snit::type ::config {
 }
 
 ##############################################################################
+# File installation class
+##############################################################################
+
+#
+# File installation class
+#
+# This class is meant to simplify installation of new files in tree
+# hierarchy.
+#
+# When a file is added, its contents are written in a ".new" file and
+# the name is queued in internal instance variable fileq.
+# When a commit is requested, all original files are renamed into ".old"
+# files and ".new" file replace original files.
+# When an abort is requested, all ".new" files are removed.
+#
+# Methods:
+# - init
+#	reset a new file list
+# - add filename filecontent
+#	add a new file based on its contents (as a textual value)
+#	returns empty string if succeeds
+# - abort
+#	reset new files
+# - commit
+#	apply modifications
+#	returns empty string if succeeds
+# - uncommit
+#	undo previous commit
+#	returns empty string if succeeds
+#
+# History
+#   2011/06/05 : pda      : design
+#
+
+snit::type ::fileinst {
+    # file queue
+    variable fileq {}
+
+    # state
+    variable state "init"
+
+    # reset queue to empty state
+    method init {} {
+	set fileq {}
+    }
+
+    # add a file contents into the queue
+    method add {name contents} {
+	if {$state eq "init" || $state eq "nonempty"} then {
+	    set nf "$name.new"
+	    catch {file delete -force $nf}
+	    if {! [catch {set fd [open "$nf" "w"]} err]} then {
+		puts -nonewline $fd $contents
+		if {! [catch {close $fd} err]} then {
+		    lappend fileq $name
+		    set err ""
+		}
+	    }
+	    set state "nonempty"
+	} else {
+	    set err "cannot add file: state != 'init' && state != 'nonempty'"
+	}
+	return $err
+    }
+
+    # commit new files
+    method commit {} {
+	set err ""
+	if {$state eq "init" || $state eq "nonempty"} then {
+
+	    # we use a "for" loop instead of a "foreach" since the index i
+	    # will be used if anything goes wrong
+	    set n [llength $fileq]
+	    for {set i 0} {$i < $n} {incr i} {
+		set f [lindex $fileq $i]
+		set nf "$f.new"
+		set of "$f.old"
+
+		# make a backup of original file if it exists
+		catch {file delete -force $of}
+		if {[file exists $f]} then {
+		    if {[catch {file rename -force $f $of} msg]} then {
+			set err "cannot rename $f to $of\n$msg"
+			break
+		    }
+		}
+		
+		# install new file
+		if {[catch {file rename $nf $f} msg]} then {
+		    set err "cannot rename $nf to $f\n$msg"
+		    break
+		}
+	    }
+
+	    if {$err eq ""} then {
+		set state "commit"
+	    } else {
+		for {set j 0} {$j <= $i} {incr j} {
+		    set f [lindex $fileq $j]
+		    set nf "$f.new"
+		    set of "$f.old"
+
+		    if {! [file exists $nf]} then {
+			catch {file rename -force $f $nf}
+		    }
+
+		    if {[file exists $of]} then {
+			catch {file rename -force $of $f}
+		    }
+		}
+	    }
+	} else {
+	    set err "cannot add file: state != 'init' && state != 'nonempty'"
+	}
+
+	return $err
+    }
+
+    # undo previous commit
+    method uncommit {} {
+	if {$state eq "commit"} then {
+	    set err ""
+	    set n [llength $fileq]
+	    for {set i 0} {$i < $n} {incr i} {
+		set f [lindex $fileq $i]
+		set nf "$f.new"
+		set of "$f.old"
+
+		if {[catch {file rename -force $f $nf} msg]} then {
+		    append err "cannot rename $f to $nf\n$msg\n"
+		} else {
+		    if {[file exists $of]} then {
+			if {[catch {file rename -force $of $f} msg]} then {
+			    append err "cannot rename $of to $f\n$msg\n"
+			}
+		    }
+		}
+	    }
+	} else {
+	    set err "cannot commit: state != 'commit'"
+	}
+	return $err
+    }
+
+    # abort new files
+    method abort {} {
+	foreach f $fileq {
+	    catch {file delete -force "$f.new"}
+	}
+	set fileq {}
+    }
+}
+
+#
+# Compare old file contents with new contents as a variable
+#
+# Input:
+#   - parameters
+#	- file: name of file
+#	- text: new file content
+#	- _errmsg: variable containing error message in return
+# Output:
+#   - return value: -1 (error), 0 (no change), or 1 (change)
+#   - variable _errmsg: error message, if return value = -1
+#
+# History
+#   2004/03/09 : pda/jean : design
+#   2011/05/14 : pda      : use configuration variables
+#   2011/05/22 : pda      : make it simpler
+#
+
+proc compare-file-with-text {file text _errmsg} {
+    upvar $_errmsg errmsg
+
+    set r 1
+    if {[file exists $file]} then {
+	if {[catch {set fd [open $file "r"]} errmsg]} then {
+	    set r -1
+	} else {
+	    set old [read $fd]
+	    close $fd
+
+	    if {$old eq $text} then {
+		set r 0
+	    }
+	}
+    }
+
+    return $r
+}
+
+#
+# Show difference between old file and new contents
+#
+# Input:
+#   - parameters
+#	- fd : file descriptor
+#	- cmd: diff command
+#	- file: name of file
+#	- text: new file content
+#	- _errmsg: variable containing error message in return
+# Output:
+#   - return value: 1 (ok) or 0 (error)
+#   - variable _errmsg: error message, if return value = 0
+#
+# History
+#   2011/05/22 : pda      : specification
+#   2011/06/10 : pda      : add fd parameter
+#   2011/06/10 : pda      : add special case for non-existant file
+#
+
+proc show-diff-file-text {fd cmd file text} {
+    if {! [file exists $file]} then {
+	set file "/dev/null"
+    }
+    set c [format $cmd $file]
+    append c "|| exit 0"
+    catch {exec sh -c $c << $text} r
+    puts $fd $r
+}
+
+##############################################################################
 # Cosmetic
 ##############################################################################
 
@@ -2163,13 +2408,13 @@ proc user-attribute {dbfd idcor attr} {
 #	- login : user login
 #	- _tabuid : array containing, in return:
 #		login	login of the user
-#		nom	user name
-#		prenom	user christian name
-#		mel	user mail
-#		tel	user phone
-#		mobile	user mobile phone
-#		fax	user fax
-#		adr	user address
+#		nom	user name [if ah global variable is set]
+#		prenom	user christian name [if ah global variable is set]
+#		mel	user mail [if ah global variable is set]
+#		tel	user phone [if ah global variable is set]
+#		mobile	user mobile phone [if ah global variable is set]
+#		fax	user fax [if ah global variable is set]
+#		adr	user address [if ah global variable is set]
 #		idcor	user id in the database
 #		idgrp	group id in the database
 #		groupe	group name
@@ -2192,6 +2437,7 @@ proc user-attribute {dbfd idcor attr} {
 #   2007/10/05 : pda/jean : adaptation to "authuser" and "authbase" objects
 #   2010/11/09 : pda      : renaming (car plus de recherche par id)
 #   2010/11/29 : pda      : i18n
+#   2011/06/17 : pda      : add test on ah global variable
 #
 
 proc read-user {dbfd login _tabuid _msg} {
@@ -2201,35 +2447,37 @@ proc read-user {dbfd login _tabuid _msg} {
 
     catch {unset tabuid}
 
-    #
-    # Attributes common to all applications
-    #
+    if {$ah ne ""} then {
+	#
+	# Attributes common to all applications
+	#
 
-    set u [::webapp::authuser create %AUTO%]
-    if {[catch {set n [$ah getuser $login $u]} m]} then {
-	set msg [mc "Authentication base problem: %s" $m]
-	return -1
-    }
-    
-    switch $n {
-	0 {
-	    set msg [mc "User '%s' is not in the authentication base" $login]
-	    return 0
+	set u [::webapp::authuser create %AUTO%]
+	if {[catch {set n [$ah getuser $login $u]} m]} then {
+	    set msg [mc "Authentication base problem: %s" $m]
+	    return -1
 	}
-	1 { 
-	    set msg ""
+	
+	switch $n {
+	    0 {
+		set msg [mc "User '%s' is not in the authentication base" $login]
+		return 0
+	    }
+	    1 { 
+		set msg ""
+	    }
+	    default {
+		set msg [mc "Found more than one entry for login '%s' in the authentication base" $login]
+		return $n
+	    }
 	}
-	default {
-	    set msg [mc "Found more than one entry for login '%s' in the authentication base" $login]
-	    return $n
-	}
-    }
 
-    foreach c {login password nom prenom mel tel mobile fax adr} {
-	set tabuid($c) [$u get $c]
-    }
+	foreach c {login password nom prenom mel tel mobile fax adr} {
+	    set tabuid($c) [$u get $c]
+	}
 
-    $u destroy
+	$u destroy
+    }
 
     #
     # Netmagis specific characteristics
@@ -3051,6 +3299,37 @@ proc display-rr {dbfd idrr _trr} {
 
     set html [::arrgen::output "html" $libconf(tabmachine) $lines]
     return $html
+}
+
+##############################################################################
+# Read domains
+##############################################################################
+
+#
+# Read all domains from database
+#
+# Input:
+#   - parameters:
+#	- dbfd: database handle
+#	- _tabdom: array to fill with domain names
+#	- _tabid: array to fill with domain ids
+# Output:
+#   - parameter _tabdom: tabdom(<domainname>) <id>
+#   - parameter _tabid: tabdom(<id>) <domainname>
+#
+# History
+#   2011/03/20 : pda      : place in library
+#
+
+proc read-all-domains {dbfd _tabdom _tabid} {
+    upvar $_tabdom tabdom
+    upvar $_tabid  tabid
+
+    set sql "SELECT nom, iddom FROM dns.domaine"
+    pg_select $dbfd $sql tab {
+	set tabdom($tab(nom)) $tab(iddom)
+	set tabid($tab(iddom)) $tab(nom)
+    }
 }
 
 ##############################################################################
@@ -7477,7 +7756,7 @@ proc call-topo {cmd _msg} {
 }
 
 #
-# Utilitaire pour le tri des interfaces : compare deux noms d'interface
+# Compare two interface names (for sort function)
 #
 # Input:
 #   - parameters:
