@@ -309,7 +309,7 @@ proc gen-dhcp {dbfd _txt _err} {
 	    }
 
 	    append groups($id) "\t\thost $host$nocc $accg\n"
-	    append groups($id) "\t\t\tstash-agent-options true ;\n"
+	    append groups($id) "\t\t\tstash-agent-options true;\n"
 
 	    append groups($id) "\t\t\thardware ethernet $tab2(mac);\n"
 	    append groups($id) "\t\t\tfixed-address $tab2(adr);\n"
