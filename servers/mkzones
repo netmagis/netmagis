@@ -258,7 +258,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	append txt "$nom   $ttl    IN	$a	$tab(adr)"
+	append txt "$nom	$ttl	IN	$a	$tab(adr)"
 	append txt "\n"
 
 	if {$rrsup ne "" && ! [info exists affiche($nom)]} then {
@@ -289,7 +289,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	append txt "$nom   $ttl    IN	MX	$tab(priorite) $fqdn2"
+	append txt "$nom	$ttl	IN	MX	$tab(priorite) $fqdn2"
 	append txt "\n"
     }
 
