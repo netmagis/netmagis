@@ -245,7 +245,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 			FROM dns.rr, dns.rr_ip
 			WHERE rr.iddom = $iddom
 			    AND rr.idrr = rr_ip.idrr
-			ORDER BY rr.nom, rr_ip.adr"
+			ORDER BY upper(rr.nom), rr_ip.adr"
     pg_select $dbfd $sql tab {
 	set nom    $tab(nom)
 	set ttl    $tab(ttl)
@@ -280,7 +280,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 			WHERE rr1.iddom = $iddom
 			    AND rr1.idrr = rr_mx.idrr
 			    AND rr2.idrr = rr_mx.mx
-			ORDER BY rr1.nom"
+			ORDER BY upper(rr1.nom)"
     pg_select $dbfd $sql tab {
 	set nom $tab(nom)
 	set ttl $tab(ttl)
@@ -302,7 +302,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 			WHERE rr1.iddom = $iddom
 			    AND rr1.idrr = rr_cname.idrr
 			    AND rr2.idrr = rr_cname.cname
-			ORDER BY rr1.nom"
+			ORDER BY upper(rr1.nom)"
     pg_select $dbfd $sql tab {
 	set d $tab(iddom2)
 	set fqdn2 "$tab(nom2).$tabiddom($d)."
@@ -319,16 +319,16 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
     #
 
     set sql "SELECT relais_dom.priorite,
-			rr.nom || '.' || domaine.nom || '.' AS nom
+			rr.nom || '.' || domaine.nom || '.' AS rrname
 		    FROM dns.relais_dom, dns.rr, dns.domaine
 		    WHERE relais_dom.iddom = $iddom
 			AND relais_dom.mx = rr.idrr
 			AND rr.iddom = domaine.iddom
-		    ORDER BY relais_dom.priorite ASC, nom ASC
+		    ORDER BY relais_dom.priorite ASC, domaine.nom, upper(rr.nom)
 		"
     set relais {}
     pg_select $dbfd $sql tab {
-	lappend relais "IN	MX	$tab(priorite) $tab(nom)"
+	lappend relais "IN	MX	$tab(priorite) $tab(rrname)"
     }
 
     #
@@ -340,7 +340,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 			FROM dns.role_mail, dns.rr
 			WHERE role_mail.idrr = rr.idrr
 			    AND rr.iddom = $iddom
-			ORDER BY rr.nom ASC
+			ORDER BY upper(rr.nom) ASC
 			"
 	pg_select $dbfd $sql tab {
 	    foreach r $relais {
