@@ -497,7 +497,7 @@ d cgi-register {action add-host} {
 		if {$iddhcpprofil == 0} then {
 		    set iddhcpprofil NULL
 		}
-		set sql "UPDATE rr SET
+		set sql "UPDATE dns.rr SET
 					mac = $qmac,
 					iddhcpprofil = $iddhcpprofil,
 					idhinfo = $idhinfo,
