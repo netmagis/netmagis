@@ -35,7 +35,7 @@ set conf(usage) {usage: %1$s [-h]|-q][-v][-n]
 
 set conf(defprofile) {
     option domain-name "%DEFDOMAIN%";
-    option domain-name-servers %DEFRESOLV%;"
+    option domain-name-servers %DEFRESOLV%;
 }
 
 #######################################################
@@ -142,8 +142,8 @@ proc gen-dhcp {dbfd _txt _err} {
     # Useful to let tools (such as vi) match parenthesis in this code
     #
 
-    set accg "\{"
-    set accd "\}"
+    set lbkt "\{"
+    set rbkt "\}"
 
     #
     # Get default DHCP parameter values from database
@@ -203,7 +203,14 @@ proc gen-dhcp {dbfd _txt _err} {
     set p $conf(defprofile)
     regsub "%DEFDOMAIN%" $p $dhcpdef(dhcpdefdomain) p
     regsub "%DEFRESOLV%" $p $dhcpdef(dhcpdefdnslist) p
-    set dhcpprofil(:default) $p
+    set l {}
+    foreach e [split $p "\n"] {
+	set e [string trim $e]
+	if {$e ne ""} then {
+	    lappend l $e
+	}
+    }
+    set dhcpprofil(:default) [join $l "\n"]
     set dhcpprofil(:default:name) "hosts without a profile"
 
     #
@@ -221,13 +228,13 @@ proc gen-dhcp {dbfd _txt _err} {
 	set masklen $tab(masklen)
 
 	lappend txt "# $tab(nom)"
-	lappend txt "subnet $network netmask $tab(netmask) $accg"
+	lappend txt "subnet $network netmask $tab(netmask) $lbkt"
 	lappend txt "\toption routers $tab(gw4);"
 	if {[info exists range($network)]} then {
 	    foreach pool $range($network) {
 		lassign $pool dom min max default_lease_time max_lease_time iddhcpprofil
 
-		lappend txt "\tpool $accg"
+		lappend txt "\tpool $lbkt"
 
 		if {[info exists conf(failover)] && $conf(failover) ne ""} then {
 		    lappend txt "\t\t$conf(failover)"
@@ -266,7 +273,7 @@ proc gen-dhcp {dbfd _txt _err} {
 		    lappend txt "\t\tdefault-lease-time $default_lease_time;"
 		}
 
-		lappend txt "\t$accd"
+		lappend txt "\t$rbkt"
 	    }
 	}
 
@@ -287,7 +294,7 @@ proc gen-dhcp {dbfd _txt _err} {
 			    AND reseau.adr4 = '$network/$masklen'
 			    AND reseau.dhcp > 0
 			    AND rr.mac IS NOT NULL
-			ORDER BY rr.iddhcpprofil
+			ORDER BY rr.iddhcpprofil, rr_ip.adr
 			"
 	pg_select $dbfd $sql2 tab2 {
 	    set ip $tab2(adr)
@@ -308,21 +315,21 @@ proc gen-dhcp {dbfd _txt _err} {
 		set occur($host) 1
 	    }
 
-	    append groups($id) "\t\thost $host$nocc $accg\n"
+	    append groups($id) "\t\thost $host$nocc $lbkt\n"
 	    append groups($id) "\t\t\tstash-agent-options true;\n"
 
 	    append groups($id) "\t\t\thardware ethernet $tab2(mac);\n"
 	    append groups($id) "\t\t\tfixed-address $tab2(adr);\n"
 	    append groups($id) "\t\t\toption host-name \"$host\";\n"
-	    append groups($id) "\t\t$accd\n"
+	    append groups($id) "\t\t$rbkt\n"
 	}
 
 	#
 	# Generate groups for this network
 	#
 
-	foreach id [array names groups] {
-	    lappend txt "\tgroup $accg # start group for $dhcpprofil($id:name)"
+	foreach id [lsort [array names groups]] {
+	    lappend txt "\tgroup $lbkt # start group for $dhcpprofil($id:name)"
 	    if {[info exists dhcpprofil($id)]} then {
 		set addprofile $dhcpprofil($id)
 		lappend txt [indent-profile $addprofile 2]
@@ -340,10 +347,10 @@ proc gen-dhcp {dbfd _txt _err} {
 		lappend err "Unknown DHCP profile '$id'"
 	    }
 	    lappend txt $groups($id)
-	    lappend txt "\t$accd # end group for $dhcpprofil($id:name)"
+	    lappend txt "\t$rbkt # end group for $dhcpprofil($id:name)"
 	}
 
-	lappend txt "$accd # end subnet $tab(nom)"
+	lappend txt "$rbkt # end subnet $tab(nom)"
 	lappend txt ""
     }
 
