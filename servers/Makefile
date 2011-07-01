@@ -9,12 +9,12 @@ SUBST		= $(TCLSH) \
 SHARE = \
 	crontab.bind \
 	crontab.dhcp \
-	crontab.droitsmtp \
+	crontab.smtpf \
 	crontab.mroute
 
 SCRIPTS = \
 	mkdhcp \
-	mkdroitsmtp \
+	mksmtpf \
 	mkmroute \
 	mkzones
 

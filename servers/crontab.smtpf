@@ -1,0 +1,8 @@
+#
+# Example crontab for mksmtpf script: generate IP filter to acccept
+# SMTP connexions from authorized hosts only.
+# This crontab should be installed on mail relays.
+#
+
+MAILTO = hostmaster@mycompany.com
+*/1	* * * *	root /local/sbin/mksmtpf
