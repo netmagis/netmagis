@@ -14,6 +14,7 @@
 #   2008/07/16 : jean	  : use failover in ranges
 #   2011/04/21 : jean	  : use groups everywhere
 #   2011/06/10 : pda      : i18n and re-design
+#   2011/07/01 : pda      : add a proper failover configuration
 #
 
 source %LIBDNS%
@@ -37,18 +38,6 @@ set conf(defprofile) {
     option domain-name "%DEFDOMAIN%";
     option domain-name-servers %DEFRESOLV%;
 }
-
-#######################################################
-#######################################################
-#
-# Chaine de configuration pour la redondance dhcp
-#
-# Pour un serveur isc-dhcp sans redondance
-#set conf(failover)		{}
-# Pour un serveur isc-dhcp avec redondance
-set conf(failover)		{failover peer "dhcp"; }
-#######################################################
-#######################################################
 
 #
 # Test if DHCP configuration has been modified
@@ -117,6 +106,7 @@ proc indent-profile {prof n} {
 #
 # Input:
 #   - dbfd: database handle
+#   - dhcpfailover: failover configuration text, if any
 #   - _txt: in return, DHCP configuration
 #   - _err: in return, error message (fatal or non-fatal)
 # Output:
@@ -128,9 +118,10 @@ proc indent-profile {prof n} {
 #   2004/08/05 : pda/jean : design
 #   2005/03/31 : pda	  : add DHCP groups
 #   2011/06/10 : pda	  : interface change
+#   2011/07/01 : pda	  : re-add failover
 #
 
-proc gen-dhcp {dbfd _txt _err} {
+proc gen-dhcp {dbfd dhcpfailover _txt _err} {
     global conf
     upvar $_txt txt
     upvar $_err err
@@ -236,8 +227,8 @@ proc gen-dhcp {dbfd _txt _err} {
 
 		lappend txt "\tpool $lbkt"
 
-		if {[info exists conf(failover)] && $conf(failover) ne ""} then {
-		    lappend txt "\t\t$conf(failover)"
+		if {$dhcpfailover ne ""} then {
+		    lappend txt "\t\t$dhcpfailover"
 		}
 		set addprofile ""
 		if {[info exists dhcpprofil($iddhcpprofil)]} then {
@@ -434,7 +425,7 @@ proc main {argv0 argv} {
     # Get configuration values
     #
 
-    foreach o {diff dhcpfile dhcptest dhcpcmd} {
+    foreach o {diff dhcpfile dhcpfailover dhcptest dhcpcmd} {
 	set $o [get-local-conf $o]
     }
 
@@ -457,7 +448,7 @@ proc main {argv0 argv} {
 	# Perform DHCP configuration
 	#
 
-	if {[gen-dhcp $dbfd txt err]} then {
+	if {[gen-dhcp $dbfd $dhcpfailover txt err]} then {
 	    #
 	    # Generation succeeded, even with some small errors
 	    #
