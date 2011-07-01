@@ -1,14 +1,9 @@
 #
-# La crontab de l'utilisateur "bind" (sur le serveur DNS)
-#
-#
-# Historique
-#   2002/05/02 : pda/jean : génération des zones DNS à partir de la base
-#   2002/06/03 : pda/jean : génération toutes les 10 minutes
-#   2004/04/13 : pda/jean : changement de nom
+# Example crontab for mkzones script: generates zones for BIND.
+# This crontab should be installd on DNS authoritative server.
 #
 
-SHELL = /bin/sh
-MAILTO = hostmaster@u-strasbg.fr
+MAILTO = hostmaster@mycompany.com
 
+# use flag -q if status messages are not wanted
 */10 * * * * /local/sbin/mkzones
