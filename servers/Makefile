@@ -9,14 +9,15 @@ SUBST		= $(TCLSH) \
 SHARE = \
 	crontab.bind \
 	crontab.dhcp \
+	crontab.mroute \
 	crontab.smtpf \
-	crontab.mroute
+	pf.conf.sample
 
 SCRIPTS = \
+	mkzones \
 	mkdhcp \
-	mksmtpf \
 	mkmroute \
-	mkzones
+	mksmtpf
 
 install:
 	@echo ">>> Making install in `pwd`"
