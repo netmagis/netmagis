@@ -1,6 +1,6 @@
 DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
-SINSTALL	= ../../inst/install-script
+NINSTALL	= ../../ninstall
 SUBST		= $(TCLSH) \
 			$(DESTDIR)/lib/netmagis/libdns.tcl \
 			$(DESTDIR)/etc/netmagis.conf \
@@ -33,6 +33,6 @@ all:
 install:
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)/www/netmagis
-	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/www/netmagis
+	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/www/netmagis
 
 clean:

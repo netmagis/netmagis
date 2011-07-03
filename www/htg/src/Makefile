@@ -1,6 +1,6 @@
 DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
-SINSTALL	= ../../../inst/install-script
+NINSTALL	= ../../../ninstall
 SUBST		= $(TCLSH) \
 		    $(DESTDIR)/lib/netmagis/libdns.tcl \
 		    $(DESTDIR)/etc/netmagis.conf \
@@ -25,7 +25,7 @@ install:	htgtcl
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)/bin
 	install -m 0755 htgtcl $(DESTDIR)/bin
-	$(SINSTALL) -m 0755 \
+	$(NINSTALL) -m 0755 \
 		-e "s|%HTGBINDIR%|$(DESTDIR)/bin|" \
 		-e "s|%HTGMODLDIR%|$(DESTDIR)/lib/netmagis/htg/models|" \
 		$(SUBST) htg htg2html $(DESTDIR)/bin

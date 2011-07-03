@@ -1,6 +1,6 @@
 DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
-SINSTALL	= ../../inst/install-script
+NINSTALL	= ../../ninstall
 SUBST		= $(TCLSH) \
 			$(DESTDIR)/lib/netmagis/libdns.tcl \
 			$(DESTDIR)/etc/netmagis.conf \
@@ -57,7 +57,7 @@ install: $(PROGS) $(SCRIPTS)
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)/lib/netmagis/topo
 	install -m 0755 $(PROGS) $(DESTDIR)/lib/netmagis/topo
-	$(SINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/lib/netmagis/topo
+	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/lib/netmagis/topo
 
 clean:
 	rm -f *.o $(PROGS) *.core

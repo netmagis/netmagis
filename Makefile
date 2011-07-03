@@ -1,6 +1,6 @@
 DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
-SINSTALL	= inst/install-script
+NINSTALL	= ./ninstall
 SUBST		= $(TCLSH) \
 			$(DESTDIR)/lib/netmagis/libdns.tcl \
 			$(DESTDIR)/etc/netmagis.conf \

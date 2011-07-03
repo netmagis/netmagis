@@ -1,6 +1,6 @@
 DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
-SINSTALL	= ../inst/install-script
+NINSTALL	= ../ninstall
 SUBST		= $(TCLSH) \
 			$(DESTDIR)/lib/netmagis/libdns.tcl \
 			$(DESTDIR)/etc/netmagis.conf \
@@ -14,9 +14,9 @@ install:
 	mkdir -p $(DESTDIR)/etc
 	install -m 0644 netmagis.conf $(DESTDIR)/etc/netmagis.conf.sample
 	mkdir -p $(DESTDIR)/bin
-	$(SINSTALL) -m 0755 $(SUBST) netmagis-config $(DESTDIR)/bin
+	$(NINSTALL) -m 0755 $(SUBST) netmagis-config $(DESTDIR)/bin
 	mkdir -p $(DESTDIR)/lib/netmagis
-	$(SINSTALL) -m 0644 $(SUBST) libdns.tcl $(DESTDIR)/lib/netmagis
+	$(NINSTALL) -m 0644 $(SUBST) libdns.tcl $(DESTDIR)/lib/netmagis
 	mkdir -p $(DESTDIR)/lib/netmagis/pkgtcl
 	cd pkgtcl && make DESTDIR=$(DESTDIR)/lib/netmagis/pkgtcl clean install
 	mkdir -p $(DESTDIR)/lib/netmagis/msgs 
