@@ -1648,7 +1648,7 @@ proc main {argv0 argv} {
     # Netmagis database access
     #
 
-    set msg [d init-script dbfd $argv0 tabcor]
+    set msg [d init-script dbfd $argv0 true tabcor]
     if {$msg ne ""} then {
 	fatal-error "$msg\nAborted."
     }

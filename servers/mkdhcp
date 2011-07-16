@@ -374,7 +374,7 @@ proc main {argv0 argv} {
     # Initialization : Netmagis database access and file queue
     #
 
-    set msg [d init-script dbfd $argv0 tabcor]
+    set msg [d init-script dbfd $argv0 true tabcor]
     if {$msg ne ""} then {
 	puts stderr $msg
 	return 1

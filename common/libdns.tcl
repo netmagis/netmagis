@@ -1200,6 +1200,7 @@ snit::type ::netmagis {
     # Input:
     #   - _dbfd : database handle, in return
     #   - argv0 : script argv0
+    #   - usedefuser : use default user name if login is not found
     #   - _tabuid : array containing, in return, user's characteristics
     #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
     #			idcor, idgrp, present)
@@ -1209,7 +1210,7 @@ snit::type ::netmagis {
     #   - object $ah : access to authentication base
     #
 
-    method init-script {_dbfd argv0 _tabuid} {
+    method init-script {_dbfd argv0 usedefuser _tabuid} {
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
 
@@ -1234,7 +1235,7 @@ snit::type ::netmagis {
 	# Common initialization work
 	#
 
-	set msg [init-common $selfns dbfd $login "anon" true tabuid]
+	set msg [init-common $selfns dbfd $login "anon" $usedefuser tabuid]
 	if {$msg ne ""} then {
 	    return $msg
 	}
@@ -2501,7 +2502,7 @@ proc read-user {dbfd login _tabuid _msg} {
 
     if {$tabuid(idcor) == -1} then {
 	set msg [mc "User '%s' is not in the Netmagis base" $login]
-	return -1
+	return 0
     }
 
     #
