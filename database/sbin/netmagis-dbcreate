@@ -23,6 +23,7 @@
 #   2007/11/27 : pda/jean   : add log table
 #   2011/01/21 : pda        : i18n
 #   2011/01/21 : pda        : use new config file
+#   2011/07/17 : pda        : defuser is given a value and created
 #
 
 usage ()
@@ -35,6 +36,8 @@ usage ()
     ) >&2
     exit 1
 }
+
+defuser="nobody"
 
 ##############################################################################
 # Configuration file read
@@ -1241,7 +1244,6 @@ datefmt	%d/%m/%Y %H:%M:%S
 jourfmt	%a %d %b %Y
 authmethod	pgsql
 dnsupdateperiod	600
-defuser	admin
 default_lease_time	600
 max_lease_time	3600
 min_lease_time	300
@@ -1326,6 +1328,9 @@ netmagis	Netmagis users	0
 wheel	1
 \.
 EOF
+
+    psql --no-psqlrc --quiet -c "INSERT INTO global.config
+					VALUES ('defuser', '$defuser')"
 }
 
 ##############################################################################
@@ -1443,6 +1448,8 @@ do
     grant-root $u
     db-create-user $u
 done
+
+db-create-user $defuser
 
 if [ "$pwgen" = "" -o "$crypt" = "" ]
 then
