@@ -201,7 +201,7 @@ proc main {argv0 argv} {
 
 		# test configuration
 		if {$pftest ne ""} then {
-		    if {[catch {exec sh -c $pftest} msg]} then {
+		    if {[catch {exec -ignorestderr sh -c $pftest} msg]} then {
 			set msg "Cannot run command '$pftest'\n$msg"
 			set m [$fq uncommit]
 			if {$m ne ""} then {
@@ -213,7 +213,7 @@ proc main {argv0 argv} {
 
 		# install configuration
 		if {$pfcmd ne ""} then {
-		    if {[catch {exec sh -c $pfcmd} msg]} then {
+		    if {[catch {exec -ignorestderr sh -c $pfcmd} msg]} then {
 			set msg "Cannot run command '$pfcmd'\n$msg"
 			set m [$fq uncommit]
 			if {$m ne ""} then {

@@ -480,7 +480,7 @@ proc main {argv0 argv} {
 
 		# test configuration
 		if {$dhcptest ne ""} then {
-		    if {[catch {exec sh -c $dhcptest} msg]} then {
+		    if {[catch {exec -ignorestderr sh -c $dhcptest} msg]} then {
 			set msg "Cannot run command '$dhcptest'\n$msg"
 			set m [$fq uncommit]
 			if {$m ne ""} then {
@@ -505,7 +505,7 @@ proc main {argv0 argv} {
 
 		# restart daemon
 		if {$dhcpcmd ne ""} then {
-		    if {[catch {exec sh -c $dhcpcmd} msg]} then {
+		    if {[catch {exec -ignorestderr sh -c $dhcpcmd} msg]} then {
 			set msg "Cannot run command '$dhcpcmd'\n$msg"
 			set m [$fq uncommit]
 			if {$m ne ""} then {

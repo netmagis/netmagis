@@ -112,7 +112,7 @@ proc install-file-from-text {file text cmd _errmsg} {
     if {$errmsg eq ""} then {
 	set errmsg [$fq commit]
 	if {$errmsg eq "" && $cmd ne ""} then {
-	    if {[catch {exec sh -c $cmd} errmsg]} then {
+	    if {[catch {exec -ignorestderr sh -c $cmd} errmsg]} then {
 		set errmsg "Cannot run command $cmd\n$errmsg"
 		set msg [$fq uncommit]
 		if {$msg ne ""} then {

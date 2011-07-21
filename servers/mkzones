@@ -692,7 +692,7 @@ proc main {argv0 argv} {
 	}
 
 	if {$zonecmd ne ""} then {
-	    if {[catch {exec sh -c $zonecmd} msg]} then {
+	    if {[catch {exec -ignorestderr sh -c $zonecmd} msg]} then {
 		set msg "Cannot run command '$zonecmd'\n$msg"
 		set m [$fq uncommit]
 		if {$m ne ""} then {
