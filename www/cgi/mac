@@ -209,7 +209,7 @@ set conf(clockformat)   {%d/%m/%Y %H:%M:%S}
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 

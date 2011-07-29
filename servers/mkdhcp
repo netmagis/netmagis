@@ -17,7 +17,7 @@
 #   2011/07/01 : pda      : add a proper failover configuration
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 #
 # Self explanatory

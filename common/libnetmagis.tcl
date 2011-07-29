@@ -13,6 +13,7 @@
 #   2010/11/29 : pda      : i18n
 #   2010/12/17 : pda      : reworked installation and parameters
 #   2011/01/02 : pda      : integration of libauth in libdns
+#   2011/07/29 : pda      : renamed to libnetmagis
 #
 
 ##############################################################################
@@ -4646,7 +4647,7 @@ proc menu-ttl {dbfd field _tabuid ttl} {
 # History :
 #   2002/04/11 : pda/jean : coding
 #   2002/04/23 : pda      : add display priority
-#   2002/05/03 : pda/jean : migrated in the libdns
+#   2002/05/03 : pda/jean : migrated in libdns
 #   2002/05/06 : pda/jean : use groups
 #   2003/04/24 : pda/jean : decompose in two procedures
 #   2004/02/06 : pda/jean : add where clause

@@ -23,7 +23,7 @@ set conf(page)		macindex.html
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 

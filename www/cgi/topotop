@@ -277,7 +277,7 @@ set conf(tabmodlog) $conf(tabks)
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 

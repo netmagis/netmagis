@@ -14,7 +14,7 @@
 #   2010/12/18 : pda      : use new install system
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 ##############################################################################
 # Petites fonctions utilitaires

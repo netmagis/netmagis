@@ -51,7 +51,7 @@ set conf(extractcoll)	"extractcoll -w %s"
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 

@@ -1,6 +1,6 @@
 #!%TCLSH%
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 proc usage {argv0} {
     set usage {usage: %s [-c][-h] param ... param}

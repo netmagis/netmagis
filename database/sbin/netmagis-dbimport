@@ -14,7 +14,7 @@
 #   2011/03/13 : pda      : end import programming
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 package require ip
 

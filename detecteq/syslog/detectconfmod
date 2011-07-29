@@ -18,7 +18,7 @@
 #   2010/12/20 : pda      : reworked installation
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 proc main {argv0 argv} {
 

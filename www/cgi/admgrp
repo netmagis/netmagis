@@ -257,7 +257,7 @@ set conf(tabdhcpprofil) {
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 

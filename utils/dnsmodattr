@@ -25,7 +25,7 @@
 #   2010/12/18 : pda      : use new install system
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 set conf(attrs)		{mac hinfo respnom respmel commentaire dhcpprofil ttl droitsmtp}
 

@@ -15,7 +15,7 @@
 #   2011/06/26 : pda      : i18n and redesign
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 #
 # Self explanatory

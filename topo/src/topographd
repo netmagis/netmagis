@@ -40,7 +40,7 @@ set conf(extractcoll)	{extractcoll -a -s -w}
 set conf(start-rancid)	{start-rancid %1$s}
 set conf(anaconf)	{anaconf}
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 ##############################################################################
 # Graph updating

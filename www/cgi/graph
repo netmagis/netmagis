@@ -33,7 +33,7 @@ set conf(idrfmt)	{http://%1$s/bin/gengraph?%2$s&debut=%3$d&fin=%4$d}
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 

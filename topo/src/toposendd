@@ -39,7 +39,7 @@
 
 set conf(extracteq)	{extracteq -a %1$s %2$s}
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 #
 # Modification commands to send to each equipment

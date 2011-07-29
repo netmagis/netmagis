@@ -17,7 +17,7 @@
 #   2011/06/10 : pda      : clarify verbose levels
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 #
 # Self explanatory
