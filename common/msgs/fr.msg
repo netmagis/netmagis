@@ -488,6 +488,7 @@
  {Community management} {Gestion des communautés}
  {Host type management} {Gestion des types de machines}
  {Network management} {Gestion des réseaux}
+ {Equipment management} {Gestion des équipements}
  {Domain management} {Gestion des domaines}
  {Zone management} {Gestion des zones}
  {DHCP profile management} {Gestion des profils DHCP}
