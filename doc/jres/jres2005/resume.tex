@@ -1,0 +1,59 @@
+%%% si vous voulez compiler avec pdflatex
+%\pdfoutput=1
+\input {format.tex}
+\documentclass {article}
+    \usepackage {jres05-resume}
+
+\begin {document}
+
+%
+% Le titre, les auteurs et les mots-clefs
+%
+
+\centerline {\LARGE{\bf {Le système d'information du réseau Osiris~:}}} \par
+\vspace* {1mm}
+\centerline {\LARGE{\bf {de la fibre optique jusqu'aux services}}}
+\par
+\vspace* {5mm}
+
+\Auteur {Pierre David}
+		{Centre Réseau Communication, Université Louis Pasteur}
+		{Pierre.David} {crc.u-strasbg.fr}
+\Auteur {Jean Benoit}
+		{Centre Réseau Communication, Université Louis Pasteur}
+		{Jean.Benoit} {crc.u-strasbg.fr}
+
+
+\begin {motsclefs}
+    Système d'information réseau, documentation, schémas réseau,
+    organisation
+\end {motsclefs}
+
+\begin {resume}
+    Avec une complexité technique croissante et une attente de
+    fiabilité de plus en plus forte des utilisateurs, les opérateurs
+    des réseaux universitaires sont obligés d'industrialiser leur
+    mode de gestion.
+
+    Le CRC, gestionnaire du réseau métropolitain strasbourgeois
+    Osiris, s'est engagé dans une démarche pour élaborer un système
+    d'information complet, avec comme objectifs de permettre la
+    délégation des opérations, l'automatisation des tâches
+    d'exploitation, la documentation des informations et la visibilité
+    vers les correspondants réseau.
+
+    Partant de la base de l'application WebDNS, nous montrons comment
+    notre approche s'est progressivement structurée pour constituer
+    à terme un ensemble complet et cohérent. Intégrant un élément
+    souvent oublié, les configurations des équipements actifs, nous
+    sommes à mêmes d'envisager des applications innovantes, comme
+    par exemple la production automatique de schémas du réseau ou
+    la vérification de cohérence de certains points.
+
+    Notre approche est tournée vers l'ensemble de la communauté
+    universitaire, puisque certains des outils sont déjà diffusés
+    et les autres le seront si l'intérêt le justifie.
+
+\end {resume}
+
+\end {document}

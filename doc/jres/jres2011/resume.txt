@@ -1,0 +1,13 @@
+Gérer son Système d'Information Réseau avec Netmagis
+
+Netmagis (pour Network Management Information System) est un nouveau logiciel, basé sur WebDNS déjà présenté lors de précédents JRES et maintenant sous licence CeCILL-B. Netmagis est destiné à faciliter différentes facettes de la gestion d'un réseau.
+
+Netmagis permet de déléguer simplement des opérations sur le "système d'information réseau" à des correspondants : gestion IPv4 et IPv6, DNS, DHCP, routage de messagerie, gestion des exceptions dans un environnement SMTP authentifié, vision de la topologie réseau, configuration de ports d'équipements réseau multi-constructeurs (Cisco, Juniper et HP), métrologie, etc.
+
+Ce logiciel a été conçu pour fonctionner sur de petits comme sur de grands réseaux. À titre d'exemple, Netmagis est utilisé sur le réseau métropolitain strasbourgeois Osiris pour gérer plus de 400 sous-réseaux et près de 1500 équipements, délégués à environ 200 correspondants réseau.
+
+La gestion du référentiel réseau est au coeur de Netmagis. Il contient l'ensemble des données du système d'information réseau (réseaux, adressage, vlan, etc.) et permet notamment de visualiser la disponibilités des blocs d'adresses. Il maintient de manière centralisée les différents acteurs (client, correspondants) et les informations et les ressources qui leur sont associées (réseau, adresses, etc.).
+
+Une partie du référentiel est constituée par une modélisation du réseau sous forme de graphe, dérivé automatiquement des configurations des équipements (commutateurs, routeurs). Par exemple, sur Osiris, de simples commentaires de l'administrateur réseau dans les équipements génèrent automatiquement plus de 15000 sondes interrogées périodiquement.
+
+Grâce à la cohérence du référentiel, à la délégation d'opérations et à l'automatisation de nombreuses tâches, Netmagis est l'outil indispensable pour une gestion rigoureuse et efficace du réseau.
