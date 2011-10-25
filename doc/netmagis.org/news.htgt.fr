@@ -1,0 +1,123 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Nouveautés
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Nouveautés
+    } {
+	\elementbandeau {Sommaire} {
+	    \reference {\lien {Nouveautés}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Spécifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Télécharger}	{/download.html}}
+	    \reference {\lien {Copies d'écran}	{/screenshots.html}}
+	    \reference {\lien {Démonstration}	{/demo.html}}
+	    \reference {\lien {Développement}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis : Nouveautés}
+
+
+    \titre {2} {[25/10/2011] Netmagis et WebDNS}
+
+    Ce site accueille le nouveau logiciel Netmagis, logiciel bâti sur
+    le socle WebDNS.
+    
+    Le vieux site \lien {webdns.u-strasbg.fr} {http://webdns.u-strasbg.fr}
+    reste toujours accessible si vous souhaitez accéder aux anciennes
+    versions de WebDNS.
+
+    \titre {2} {[16/11/2010] La version 1.5 de WebDNS est disponible}
+
+    La \lien {version 1.5 de WebDNS} {http://webdns.u-strasbg.fr/download.html} est disponible.
+
+    Parmi les nouveautés les plus importantes, on peut noter~:
+
+    \liste {
+	\item {Gestion du «~droit d'émettre en SMTP non authentifié~»
+	    pour faciliter la migration de sites à SMTP authentifié.
+	}
+	\item {La gestion des profils DHCP a été améliorée
+	}
+	\item {Il est maintenant possible de renommer facilement
+	    des machines
+	}
+	\item {Le TTL (Time To Live) DNS est maintenant gérable
+	    finement au niveau de chaque enregistrement
+	}
+	\item {La «~carte~» des adresses IPv4 facilite grandement
+	    la gestion de l'espace d'adressage d'un réseau
+	}
+    }
+
+    N'hésitez pas à consulter les \lien {release-notes}
+    {http://webdns.u-strasbg.fr/install-1.5/node128.html} pour la liste complète des
+    modifications.
+
+
+    \titre {2} {[16/11/2010] Utilisation de github}
+
+    Jusqu'à très récemment, les sources de WebDNS résidaient dans
+    un dépôt de sources privé.
+
+    Les \lien {sources de WebDNS} {https://github.com/pdav/netmagis}
+    ont maintenant migré vers un nouveau gestionnaire de versions
+    (GIT) et une forge publique (\lien {github} {http://github.com}).
+
+    Ceci a pour but de permettre~:
+    \liste {
+	\item {un suivi plus transparent des modifications du source
+	}
+	\item {l'utilisation des fonctionnalités avancées de cette
+	    forge
+	}
+	\item {la contribution au projet par de nouveaux contributeurs
+	}
+    }
+
+    Même si toutes les fonctionnalités ne sont pas encore pleinement
+    activées, n'hésitez pas à ouvrir un compte sur cette forge et
+    «~souscrire~» au projet.
+
+
+    \titre {2} {[13/04/2008] La version 1.4 est disponible}
+
+    La \lien {version 1.4} {http://webdns.u-strasbg.fr/download.html} est disponible. La
+    principale nouveauté de cette version est la refonte de
+    l'authentification, qui peut maintenant s'adosser à un annuaire
+    LDAP existant.
+
+
+    \titre {2} {[10/04/2008] Annonce du site Web sur la liste Webdns}
+
+    Le \lien {site de WebDNS} {http://webdns.u-strasbg.fr/} a été annoncé sur la \lien {liste
+    de diffusion WebDNS} {support.html}.
+
+
+    \titre {2} {[13/03/2008] Ouverture du site Web}
+
+    Le nouveau \lien {site de WebDNS} {http://webdns.u-strasbg.fr/} est enfin ouvert~!
+
+
+}
+
+}

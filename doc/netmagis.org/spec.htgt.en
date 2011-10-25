@@ -1,0 +1,425 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Specifications
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Specifications
+    } {
+	\elementbandeau {Contents} {
+	    \reference {\lien {What's new}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Specifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Download}	{/download.html}}
+	    \reference {\lien {Screenshots}	{/screenshots.html}}
+	    \reference {\lien {Demonstration}	{/demo.html}}
+	    \reference {\lien {Development}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis: Specifications}
+
+    Netmagis is an application designed to ease network administration,
+    It provides data management for DNS and DHCP servers,
+    a modelization of the network with a graph, allowing an automatic
+    map generation of the network topology (on the routing and the switching
+    level) and the visualization of metrology informations.
+
+    It is also a web application, meaning accessing informations
+    become really easy.
+
+    \titre {2} {User functions}
+
+    For the user, Netmagis offers the following functions:
+
+    \liste {
+	\item {add, modify and delete a host
+	    (A record for IPv4 addresses or AAAA for IPv6 addresses);
+	}
+	\item {associate informations for each host:
+	    \liste {
+		\item {one or more IPv4 and IPv6 addresses,}
+		\item {optionnale MAC address (allowing to define
+		    a static DHCP allocation),
+		}
+		\item {DHCP profile (allowing to define DHCP options
+		    like a network boot or a terminal),
+		}
+		\item {host type, choosen in a list defined by the administrator 
+		(eg. PC, printer etc.),
+		}
+		\item {any comment,}
+		\item {name and email address of the person in charge of a host ;}
+	    }
+	}
+	\item {add, modify and delete address
+	    intervals for a dynamic DHCP server;
+	}
+	\item {display a list or a map of all hosts in a network;
+	}
+	\item {add, modify and delete aliases (CNAME DNS records);
+	}
+	\item {add, modify and delete "mail roles" which define MX records;
+	}
+	\item {consultation of the people in charge of a host;
+	}
+	\item {display level 2 map (switching) and
+	    level 3 (routing) of the network if the user
+            allowed to consult them;
+	}
+	\item {modify switch interfaces to set the desired VLAN
+	    (including the ToIP VLAN if it exists);
+	}
+	\item {consult metrology informations regarding the network
+	      equipements if the user is allowed to see them.
+	}
+    }
+
+    \titre {2} {Administrator functions}
+
+    For the administrator, Netmagis offers the following functions:
+
+    \liste {
+	\item {manage access rights of user groups:
+	    allowed networks and allowed IP addresses, authorised DNS domains,
+	    accessible DHCP profiles and network equipements;
+	}
+	\item {manage networks, DNS domains, zones, 
+	    network administrators et groups, user communities, DHCP
+	    profiles, etc.;
+	}
+	\item {definition of mail relays for domains;
+	}
+	\item {definition of a zone "prologue", including
+		the SOA record in which the serial number
+		will be generated for each zone modification;
+	}
+	\item {MAC address search and network equipement interface search
+		given an IP address;
+	}
+	\item {statistics (by organization, by network, etc.);
+	}
+    }
+
+    Besides, for mass-modification, or to automate some operations,
+    Netmagis also provides command-line script to add hosts,
+    modify informations pertaining to a host,
+    etc.
+
+    Netmagis can rely on your LDAP directory for authentication.
+    In the case you don't have any LDAP directory, Netmagis include an application
+    to manage user into a PostgreSQL database.
+
+    \titre {2} {Main characteristics}
+
+    The following objects are managed by Netmagis:
+
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Objects}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Attributes}}
+	}
+	\lignetableau {
+	    \casetableau {} {Hosts}
+	    \casetableau {} {Name (FQDN), Address(es) IPv4/IPv6, type,
+	    	MAC address (optional), comment, person or group in charge.
+		In addition, depending on configuration:
+		TTL, allowed to use unauthenticated SMTP 
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Aliases}
+	    \casetableau {} {Names (FQDN) of the alias and of the
+	    	referenced host
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Mail relay}
+	    \casetableau {} {Names (FQDN) of the MX and of the host which
+			receives the messages
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Networks}
+	    \casetableau {} {Name, geographical localization, IPv4 and/or IPv6 address
+		passerelle par défaut, activation
+		du service DHCP, organisme, communauté, commentaire
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Domain}
+	    \casetableau {} {Domain name}
+	}
+	\lignetableau {
+	    \casetableau {} {Zones}
+	    \casetableau {} {Name, records to put in the prologue,
+		selection criteria (domain or IP address range)
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {DHCP profiles}
+	    \casetableau {} {Name, lines to insert into the
+		dhcpd.conf configuration file for ISC DHCPD
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Dynamic DHCP interval}
+	    \casetableau {} {IPv4 address interval, domain name,
+		DHCP profile, default and maximum leases time
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {VLANs}
+	    \casetableau {} {VLAN, VLAN Id and «ToIP» capability
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Equipements}
+	    \casetableau {} {Name, type, et status (active or not)
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Network administrator groups}
+	    \casetableau {} {Logins of group membres in the authentication
+		database (LDAP or PostgreSQL), access rights
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Group rights}
+	    \casetableau {} {Database administrator right, network rights
+		IP addresses rights, domain name rights
+		accessible DHCP profiles, host TTL modification rights,
+		unauthenticated SMTP rights,
+		network equipements read access rights,
+		network equipements modification access rights
+	    }
+	}
+    }
+
+
+    \titre {2} {Authentication et user account management}
+
+    Authentication is currently done at the web server level
+    (eg: modules \lien {mod_auth_pgsql}
+    {http://www.giuseppetanzilli.it/mod_auth_pgsql2/} or mod_auth_ldap
+    with Apache).
+
+    Account management is done:
+
+    \liste {
+	\item {either with an existing LDAP or PostgreSQL infrastructure 
+	    In that case, you manage user accounts with your own tools,
+	    and Netmagis will fetch informations concerning the users
+	    using their login
+	}
+	\item {or with a dedicated PostgreSQL database, in that 
+		case you will use the user management built into Netmagis.
+	}
+    }
+
+
+    \titre {2} {Hardware prerequisite}
+
+    Netmagis is a lightweight application and does'nt need a lot of 
+    computing power.
+
+    Moreover, you could if you wish so (but it is in no way obligatory), install
+    each component on a distinct server:
+
+    \liste {
+	\item {Web server}
+	\item {Data server (PostgreSQL)}
+	\item {Authentication server (LDAP or PostgreSQL)}
+	\item {DNS server}
+	\item {DHCP server (if necessary)}
+	\item {Mail relay server (if necessary)}
+	\item {Network equipements management server (if necessary)}
+	\item {Metrology server (if necessary)}
+    }
+
+    Of course, one computer could host one or several services listed above.
+    You should decide according to your own constraints regarding your
+    current network architecture and the security level required.
+
+    \titre {2} {Software prerequisite}
+
+    Netmagis needs the following software:
+
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Type}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Software}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Minimum version}
+	    }
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Mandatory}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Comment}}
+	}
+	\lignetableau {
+	    \casetableau {} {Web server}
+	    \casetableau {} {\lien {Apache} {http://www.apache.org}}
+	    \casetableau {} {Any}
+	    \casetableau {} {Mandatory}
+	    \casetableau {} {Any web server compatible
+		with CGI interface can do
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {RDBMS}
+	    \casetableau {} {\lien {PostgreSQL} {http://www.postgresql.org}}
+	    \casetableau {} {\gt= 8.3}
+	    \casetableau {} {Mandatory}
+	    \casetableau {} {PostgreSQL is mandatory in order
+		to use network address datatypes, stored procedures,
+		triggers et transactions
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Language}
+	    \casetableau {} {\lien {Tcl} {http://fr.wikipedia.org/wiki/Tool_Command_Language}}
+	    \casetableau {} {\gt= 8.5}
+	    \casetableau {} {Mandatory}
+	    \casetableau {} {Programming Language used
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Library}
+	    \casetableau {} {\lien {Tcllib} {http://www.tcl.tk/software/tcllib/}}
+	    \casetableau {} {\gt= 1.10}
+	    \casetableau {} {Mandatory}
+	    \casetableau {} {Tcllib contains essential functions
+		like LDAP directory access or OO extensions
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Authentication}
+	    \casetableau {} {\lien {mod_auth_pgsql} {http://www.giuseppetanzilli.it/mod_auth_pgsql2/}}
+	    \casetableau {} {\gt= 2.0 for Apache}
+	    \casetableau {} {Optional}
+	    \casetableau {} {This Apache module must be used
+		if you choose to rely on a PostgreSQL database dedicated to Netmagis
+		for authentication
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Authentication}
+	    \casetableau {} {mod_auth_ldap}
+	    \casetableau {} {included in Apache}
+	    \casetableau {} {Optional}
+	    \casetableau {} {This Apache module must be used if
+		you choose to rely on your existing LDAP 
+		directory for authentication 
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Encryption}
+	    \casetableau {} {\lien {OpenSSL} {http://www.openssl.org}}
+	    \casetableau {} {any}
+	    \casetableau {} {Mandatory}
+	    \casetableau {} {OpenSSL can encrypt strings
+		(password for example) on the command line.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Password generation}
+	    \casetableau {} {\lien {pwgen} {http://sourceforge.net/projects/pwgen/}}
+	    \casetableau {} {\gt= 1.5}
+	    \casetableau {} {Mandatory}
+	    \casetableau {} {Generate a password when creating a user account
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {PDF generation}
+	    \casetableau {} {\lien {LaTeX} {http://www.tug.org/texlive/}}
+	    \casetableau {} {}
+	    \casetableau {} {Optional}
+	    \casetableau {} {pdflatex is used to generate
+		the PDF files when printing lists.
+		We recommend either the teTeX distribution or the TeX-Live distribution.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Network equipements management}
+	    \casetableau {} {\lien {Rancid} {http://shrubbery.net/rancid/}}
+	    \casetableau {} {}
+	    \casetableau {} {Optional}
+	    \casetableau {} {Rancid is used simultaneously to
+		collect network equipement configurations and
+		to send modifications to equipements
+		(to set VLAN to interface)
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Language}
+	    \casetableau {} {\lien {Perl} {http://www.perl.org/}}
+	    \casetableau {} {5.x}
+	    \casetableau {} {Optional}
+	    \casetableau {} {Used for the optional metrology module 
+
+		NB: the required Perl modules are not documented yet
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Metrology database}
+	    \casetableau {} {\lien {RRDTools} {http://oss.oetiker.ch/rrdtool/}}
+	    \casetableau {} {}
+	    \casetableau {} {Optional}
+	    \casetableau {} {Used for the optional metrology module 
+	    }
+	}
+    }
+}
+
+}

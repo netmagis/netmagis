@@ -21,6 +21,7 @@ usage:
 	@echo "	install-utils"
 	@echo "	install-detecteq"
 	@echo "	install-topo"
+	@echo "	install-netmagis.org"
 	@echo "	clean"
 
 all:
@@ -49,6 +50,12 @@ install-topo:
 
 install-detecteq:
 	cd detecteq ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+
+install-netmagis.org:
+	# compilation of htg if needed
+	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
+		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" all
+	cd doc/netmagis.org ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 clean:
 	cd common ; make clean

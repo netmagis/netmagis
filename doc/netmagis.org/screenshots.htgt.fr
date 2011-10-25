@@ -1,0 +1,187 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Copies d'écran
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Copies d'écran
+    } {
+	\elementbandeau {Sommaire} {
+	    \reference {\lien {Nouveautés}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Spécifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Télécharger}	{/download.html}}
+	    \reference {\lien {Copies d'écran}	{/screenshots.html}}
+	    \reference {\lien {Démonstration}	{/demo.html}}
+	    \reference {\lien {Développement}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis : Copies d'écran}
+
+    Vous trouverez ci-dessous quelques copies d'écrans de l'application
+    \lien {Netmagis} {/intro.html} version 1.5.
+
+    Vous pouvez de plus expérimenter l'application grâce à une
+    \lien {version de démonstration} {/demo.html} accessible en
+    ligne.
+
+
+    \titre {2} {Accueil}
+
+	Cette copie d'écran montre le menu d'accueil et les différentes
+	possibilités offertes à tous les utilisateurs de Netmagis.
+
+	\retrait {\lien {\image {vign-accueil.png} {Menu d'accueil}} {shot-accueil.png}}
+
+    \titre {2} {Consultation des informations}
+
+	La première copie d'écran montre le rappel des informations
+	associées au correspondant réseau (afin qu'il puisse signaler
+	les modifications éventuelles) issues de votre annuaire
+	LDAP ou de la base WebAuth, et montre ensuite les différents
+	réseaux (IPv4 et/ou IPv6, avec l'établissement) qui lui
+	sont accessibles. À partir de là, il est possible soit de
+	sélectionner un réseau (ou plusieurs comme sur la copie),
+	soit de saisir directement dans la zone appropriée le préfixe
+	d'un réseau.
+
+	\retrait {\lien {\image {vign-consult1.png} {Sélection des réseaux à afficher}} {shot-consult1.png}}
+
+	Une fois le ou les réseaux sélectionnés, l'application
+	affiche les informations associées aux machines enregistrées
+	(nom principal en caractères droits et aliases en italiques,
+	adresses IPv4 ou IPv6, etc.).
+
+	\retrait {\lien {\image {vign-consult2.png} {Affichage des machines du réseau}} {shot-consult2.png}}
+
+	On notera que la base de démonstration étant issue du
+	chargement initial de la base, à partir de fichiers de zone
+	de BIND existants, un certain nombre d'informations ne sont
+	pas renseignées (adresse MAC, système, commentaires, etc.).
+
+	L'application permet également d'afficher une «~carte~»
+	représentant visuellement l'allocation des adresses IP.
+
+	\retrait {\lien {\image {vign-map.png} {Affichage des machines du réseau}} {shot-map.png}}
+
+	À partir de cette carte, il est possible d'ajouter une
+	machine, ou de modifier ou de supprimer une machine existante.
+
+    \titre {2} {Ajout d'une machine}
+
+	Cette copie d'écran montre la saisie d'une machine, la
+	recherche d'un bloc d'adresses libres, ainsi que la saisie
+	d'un alias (on ne fait en réalité qu'une seule des trois
+	saisies à la fois). L'exemple montre le menu des domaines
+	accessibles au correspondant réseau. Ici, le correspondant
+	a saisi toutes les informations (y compris l'adresse MAC
+	puisque le correspondant souhaite utiliser les fonctionnalités
+	DHCP de l'application), bien que la plupart soient optionnelles.
+
+	\retrait {\lien {\image {vign-ajout.png} {Ajout d'une machine}} {shot-ajout.png}}
+
+	On notera que les types de machines du menu sont définis
+	par l'administrateur de l'application, ainsi que les domaines
+	et leur accessibilité pour les correspondants réseau.
+
+	Étant donné que l'utilisateur a coché la case «~Émettre en
+	SMTP~», la machine concernée sera donc autorisée à émettre
+	en SMTP non authentifié après que l'utilisateur ait validé
+	des éléments de contexte stipulés sur la captre d'écran
+	suivante. L'activation de cette possibilité «~émettre en
+	SMTP~» est bien sûr configurable par l'administrateur et
+	nécessite un support de filtrage sur les relais de messagerie,
+	comme expliqué dans la documentation.
+
+	\retrait {\lien {\image {vign-smtp.png} {Ajout d'une machine}} {shot-smtp.png}}
+
+	Il est également possible d'ajouter des adresses supplémentaires
+	pour une machine existante. C'est par exemple le cas lorsque
+	vous souhaitez ajouter une adresse IPv6 à une machine ayant
+	déjà une adresse IPv4. L'application le détecte automatiquement
+	et vous demande alors confirmation de l'ajout.
+
+	La recherche de bloc d'adresses libres débouche sur la page
+	suivante. Celle-ci montre tous les blocs disponibles. Dans
+	la base de démonstration, comme on le voit ci-dessus dans
+	la «~carte~» (accessible également depuis la page d'ajout)
+	il n'y a qu'un seul gros espace libre après les quelques
+	machines déclarées. Enfin, même si ce n'est pas visible
+	dans la base exemple, les intervalles DHCP dynamiques sont
+	correctement gérés.
+
+	\retrait {\lien {\image {vign-seq.png} {Ajout d'une machine}} {shot-seq.png}}
+
+	Après avoir choisi le bloc de son choix, l'utilisateur
+	entame la saisie des machines demandées.
+
+
+    \titre {2} {Suppression d'une machine}
+
+	La copie d'écran ci-dessous montre l'interface de suppression
+	d'une machine (ou d'un alias)~: par nom ou par adresse IP.
+
+	\retrait {\lien {\image {vign-suppr.png} {Suppression d'une machine}} {shot-suppr.png}}
+
+    \titre {2} {Modification d'une machine}
+
+	Il est possible de modifier les attributs d'une machine. Pour
+	cela, la première étape est de la sélectionner, comme montré
+	sur la copie d'écran ci-après~:
+
+	\retrait {\lien {\image {vign-modif1.png} {Sélection de la machine à modifier}} {shot-modif1.png}}
+
+	Ensuite, la page présente tous les attributs de la machine
+	pour modification.
+
+	\retrait {\lien {\image {vign-modif2.png} {Édition des attributs de la machine}} {shot-modif2.png}}
+
+    \titre {2} {Modification des paramètres DHCP}
+
+	Netmagis permet de saisir des adresses MAC pour réaliser des
+	allocations DHCP statiques (i.e. l'adresse IPv4 est associée
+	à une adresse MAC). Il est également possible de réserver
+	des plages d'adresses IPv4 pour les allocations dynamiques.
+	La copie d'écran ci-dessous montre la sélection du réseau
+	pour lequel le correspondant souhaite éditer les plages.
+
+	\retrait {\lien {\image {vign-dhcp1.png} {Sélection de la plage DHCP à modifier}} {shot-dhcp1.png}}
+
+	La copie d'écran ci-dessous montre la plage définie pour
+	le réseau. Il est possible de modifier cette plage, de la
+	supprimer ou d'en ajouter de nouvelles avec le même menu.
+
+	\retrait {\lien {\image {vign-dhcp2.png} {Édition de la plage DHCP}} {shot-dhcp2.png}}
+
+    \titre {2} {Menu d'administration}
+
+	Enfin, la copie d'écran ci-dessous montre le menu réservé
+	aux administrateurs de l'application (accessible seulement
+	depuis la page d'accueil).
+
+	\retrait {\lien {\image {vign-admin.png} {Menu d'administration de Netmagis}} {shot-admin.png}}
+
+	Vous pouvez découvrir et expérimenter toutes les possibilités
+	d'administration grâce à la \lien {version de démonstration}
+	{/demo.html} accessible en ligne.
+}
+
+}

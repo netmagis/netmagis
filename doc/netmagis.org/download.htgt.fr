@@ -1,0 +1,109 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Téléchargement
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Téléchargement
+    } {
+	\elementbandeau {Sommaire} {
+	    \reference {\lien {Nouveautés}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Spécifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Télécharger}	{/download.html}}
+	    \reference {\lien {Copies d'écran}	{/screenshots.html}}
+	    \reference {\lien {Démonstration}	{/demo.html}}
+	    \reference {\lien {Développement}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis : Téléchargement}
+
+    \titre {2} {Version 2.0}
+
+    Bientôt ici !
+
+    \titre {2} {Version 1.5}
+
+    La version 1.5 est disponible en téléchargement sur
+    \lien {ftp://ftp.u-strasbg.fr/pub/crc/webdns/webdns-1.5.tgz}
+	{ftp://ftp.u-strasbg.fr/pub/crc/webdns/webdns-1.5.tgz}
+
+    N'oubliez pas de \lien {lire la documentation et vous abonner
+    à la liste de diffusion} {/support.html}~!
+
+
+    \titre {2} {Version 1.4}
+
+    La version 1.4 est disponible en téléchargement sur
+    \lien {ftp://ftp.u-strasbg.fr/pub/crc/webdns/webdns-1.4.tgz}
+	{ftp://ftp.u-strasbg.fr/pub/crc/webdns/webdns-1.4.tgz}
+
+    Note~: contrairement aux versions antérieures, il n'y a plus
+    besoin de télécharger l'application WebAuth~: elle est fournie
+    avec Netmagis.
+
+    N'oubliez pas de \lien {lire la documentation et vous abonner
+    à la liste de diffusion} {/support.html}~!
+
+
+    \titre {2} {Version 1.3}
+
+    Téléchargez les deux fichiers~:
+
+    \liste {
+	\item {\lien
+	    {ftp://ftp.u-strasbg.fr/pub/crc/webdns/webdns-1.3.tgz}
+	    {ftp://ftp.u-strasbg.fr/pub/crc/webdns/webdns-1.3.tgz}
+	}
+	\item {\lien
+	    {ftp://ftp.u-strasbg.fr/pub/crc/webdns/webauth-1.0.tgz}
+	    {ftp://ftp.u-strasbg.fr/pub/crc/webdns/webauth-1.0.tgz}
+	}
+    }
+
+    N'oubliez pas de \lien {lire la documentation et vous abonner
+    à la liste de diffusion} {/support.html}~!
+
+
+    \titre {2} {Version 1.2}
+
+    Téléchargez les deux fichiers~:
+
+    \liste {
+	\item {\lien
+	    {ftp://ftp.u-strasbg.fr/pub/crc/webdns/webdns-1.2.tgz}
+	    {ftp://ftp.u-strasbg.fr/pub/crc/webdns/webdns-1.2.tgz}
+	}
+	\item {\lien
+	    {ftp://ftp.u-strasbg.fr/pub/crc/webdns/webauth-1.0.tgz}
+	    {ftp://ftp.u-strasbg.fr/pub/crc/webdns/webauth-1.0.tgz}
+	}
+    }
+
+    N'oubliez pas de \lien {lire la documentation et vous abonner
+    à la liste de diffusion} {/support.html}~!
+
+    \titre {2} {Version 1.1 et antérieures}
+
+    Désolé, ces versions ne sont plus disponibles.
+}
+
+}

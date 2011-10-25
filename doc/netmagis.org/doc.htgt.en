@@ -1,0 +1,90 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Documentation
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Documentation
+    } {
+	\elementbandeau {Contents} {
+	    \reference {\lien {What's new}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Specifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Download}	{/download.html}}
+	    \reference {\lien {Screenshots}	{/screenshots.html}}
+	    \reference {\lien {Demonstration}	{/demo.html}}
+	    \reference {\lien {Development}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis: Documentation}
+
+    \titre {2} {Installation manual}
+
+    Documentation is coming...
+
+    \titre {2} {Articles in French}
+
+    Netmagis was the basis of three papers in the French speaking
+    conference \lien {JRES} {http://www.jres.org}:
+    \liste {
+	\item {an article to announce the 2.0 release.
+	    See the \lien {JRES 2011} {http://2011.jres.org} website.
+	}
+	\item {an article to present the network information system
+	    for the Osiris metropolitan area network in Strasbourg (France),
+	    during JRES'05. This shows the ecosystem of Netmagis.
+	    You can consult:
+	    \liste {
+		\item {\lien {article} {http://2005.jres.org/paper/82.pdf}}
+		\item {\lien {slides} {http://2005.jres.org/slides/82.sxi}}
+		\item {\lien {video} {http://video.univ-valenciennes.fr:8080/ramgen/jres2005/82.rm}}
+	    }
+	}
+	\item {a poster at the JRES'03 conference. There is also a
+	    \lien {short paper} {http://2003.jres.org/actes/paper.144.pdf}.
+	}
+    }
+
+    Even if the JRES conference is focused on Education and Research
+    networks, Netmagis can be used in various environments (ISP, small
+    businesses, corporate networks, etc.).
+
+
+    Moreover, Netmagis is used to ease transition of an organization
+    to authentified SMTP. This is described in this
+    \lien {presentation}
+    {https://2009.jres.org/planning_files/summary/html/124.htm}
+    at the JRES'09 conference.
+
+    \titre {2} {Old documentations (in French)}
+
+    Release 1.5 installation manual:
+	\lien {PDF} {http://webdns.u-strasbg.fr/install-1.5.pdf}
+	\lien {HTML} {http://webdns.u-strasbg.fr/install-1.5/index.html}
+
+    Release 1.4 installation manual:
+	\lien {PDF} {http://webdns.u-strasbg.fr/install-1.4.pdf}
+	\lien {HTML} {http://webdns.u-strasbg.fr/install-1.4/index.html}
+
+
+}
+
+}

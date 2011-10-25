@@ -1,0 +1,172 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Screenshots
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Screenshots
+    } {
+	\elementbandeau {Contents} {
+	    \reference {\lien {What's new}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Specifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Download}	{/download.html}}
+	    \reference {\lien {Screenshots}	{/screenshots.html}}
+	    \reference {\lien {Demonstration}	{/demo.html}}
+	    \reference {\lien {Development}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis: Screenshots}
+
+    You will find some \lien {Netmagis} {/intro.html} (release 1.5)
+    screenshots.
+
+    Moreover, you can experiment this application thanks to a on-line
+    \lien {demonstration version} {/demo.html}.
+
+
+    \titre {2} {Main menu}
+
+	This screenshot shows the main menu and the various
+	functionnalities for every Netmagis user.
+
+	\retrait {\lien {\image {vign-accueil.png} {Main menu}} {shot-accueil.png}}
+
+    \titre {2} {Information consultation}
+
+	The first screenshot shows informations stored for the user
+	(such as she report any modifications), coming from your
+	LDAP directory or from the integrated authentication database.
+	It next shows available networks (IPv4 as well as IPv6, with
+	organization). Starting from here, it is possible to select
+	one or more networks or to type directly the network address.
+
+	\retrait {\lien {\image {vign-consult1.png} {Network selection}} {shot-consult1.png}}
+
+	Once the network is selected, Netmagis displays informations
+	about registered hosts (main name, aliases in italics, IPv4 and
+	IPv6 addresses, etc.).
+
+	\retrait {\lien {\image {vign-consult2.png} {Display hosts in network}} {shot-consult2.png}}
+
+	You may notice that demonstration database is derived from the
+	initial loading of the database, from existing BIND zone files,
+	some informations are not stored (MAC address, OS, comments,
+	etc.).
+
+	Netmagis can display an "address map" graphically showing
+	IP address allocation.
+
+	\retrait {\lien {\image {vign-map.png} {Display of hosts in network}} {shot-map.png}}
+
+	Starting from this map, it is possible to add a new host, or
+	to modify or delete an existing host.
+
+    \titre {2} {Host addition}
+
+	This screenshot shows addition of a host, the search for a
+	contiguous block of free addresses, and addition fo an alias (you
+	can do only one of these actions at a time). This example shows
+	the menu of available domains for a user. Here, the user has
+	typed all informations (including the MAC address since she
+	wish to use the DHCP functionnality of Netmagis), even if most
+	of them are optional.
+
+	\retrait {\lien {\image {vign-ajout.png} {Host addition}} {shot-ajout.png}}
+
+	You may notice that OS types are defined by the Netmagis
+	administrator, as well as domains and access rights to these
+	domains.
+
+	Since the user has checked the "Emit with SMTP" box, the host
+	will be authorized to emit mails with non authenticated SMTP
+	when the user will approve some context elements presented on
+	the next screenshot. Activation of this functionnality is
+	of course configurable by the administrator and needs IP
+	filtering support on your mail relays, as explained in the
+	documentation.
+
+	\retrait {\lien {\image {vign-smtp.png} {Host addition}} {shot-smtp.png}}
+
+	It is also possible to add more addresses to an existing host.
+	It is the case for example when you want to add an IPv6 address
+	to a host having already an IPv4 address. Netmagis detect
+	addition of multiple addresses and ask for confirmation.
+
+	Research for a contiguous block of free addresses give the next
+	page, which shows all available blocks. In the demonstration
+	database, as seen above in the "map", there is only one large
+	free block after some declared hosts. Even if they are not shown
+	in the demonstration database, dynamic DHCP ranges are correctly
+	managed.
+
+	\retrait {\lien {\image {vign-seq.png} {Host addition}} {shot-seq.png}}
+
+	When the user has choosen a block, she may start to enter
+	informations about the hosts she want to add.
+
+    \titre {2} {Host deletion}
+
+	The next screenshot shows deletion of a host (or an alias) by
+	name or by IP address.
+
+	\retrait {\lien {\image {vign-suppr.png} {Host deletion}} {shot-suppr.png}}
+
+    \titre {2} {Host modification}
+
+	It is possible to modify host attributes. The first step is to
+	select the host, has shown in the next screenshot:
+
+	\retrait {\lien {\image {vign-modif1.png} {Selection of the host to modify}} {shot-modif1.png}}
+
+	Next, the page shows all host attributes to modify.
+
+	\retrait {\lien {\image {vign-modif2.png} {Host attributes edition}} {shot-modif2.png}}
+
+    \titre {2} {DHCP parameters modification}
+
+	Netmagis stores MAC addresses to perform DHCP static allocation
+	(i.e. IPv4 address is associated to a MAC address). It is also
+	possible to define address ranges for dynamic allocation. The
+	next screenshot shows the network selection page in order to
+	edit DHCP ranges.
+
+	\retrait {\lien {\image {vign-dhcp1.png} {Network selection for DHCP range modification}} {shot-dhcp1.png}}
+
+	The next screenshot shows one range defined for this network. Is
+	is possible to modify this range, to delete it, or to add new
+	ones with the same menu.
+
+	\retrait {\lien {\image {vign-dhcp2.png} {DHCP range edition}} {shot-dhcp2.png}}
+
+    \titre {2} {Administrator menu}
+
+	The next screenshot shows the menu allowed only for
+	the Netmagis administrator.
+
+	\retrait {\lien {\image {vign-admin.png} {Netmagis administration menu}} {shot-admin.png}}
+
+	You can discover by yourself and experiment all administration
+	possibilities with the on-line \lien {demonstration version}
+	{/demo.html}.
+}
+
+}

@@ -1,0 +1,55 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Support
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Introduction
+    } {
+	\elementbandeau {Sommaire} {
+	    \reference {\lien {Nouveautés}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Spécifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Télécharger}	{/download.html}}
+	    \reference {\lien {Copies d'écran}	{/screenshots.html}}
+	    \reference {\lien {Démonstration}	{/demo.html}}
+	    \reference {\lien {Développement}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis : Support}
+
+    Le principal moyen de vous tenir informé des évolutions de Netmagis
+    et d'obtenir de l'aide est de vous abonner à la liste de diffusion~:
+
+    \retrait {
+	\lien {\teletype {netmagis à freelists.org}} {https://www.freelists.org/list/netmagis}
+    }
+
+    Il est également conseillé de chercher les réponses dans
+    la \lien {documentation} {/doc.html}.
+
+    Enfin, il est possible d'utiliser le \lien {gestionnaire de
+    bugs} {https://github.com/pdav/netmagis/issues} associé aux
+    \lien {sources de Netmagis} {https://github.com/pdav/netmagis/} sur
+    la forge \lien {https://github.com} {github.com}.
+}
+
+}

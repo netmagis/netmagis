@@ -1,0 +1,90 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Introduction
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Introduction
+    } {
+	\elementbandeau {Contents} {
+	    \reference {\lien {What's new}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Specifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Download}	{/download.html}}
+	    \reference {\lien {Screenshots}	{/screenshots.html}}
+	    \reference {\lien {Demonstration}	{/demo.html}}
+	    \reference {\lien {Development}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis: Introduction}
+
+    Netmagis is a complete application, which allows a network
+    administrator to:
+
+    \liste {
+	\item {manage \gras {IPv4} and \gras {IPv6} addresses;
+	}
+	\item {generate data for your \gras {DNS server} and
+	    get \lien {BIND} {http://www.isc.org/products/BIND/}
+	    zone files \gras {always up to date and consistant};
+	}
+	\item {\gras {delegate} DNS management to other network 
+	    administrators or every non-specialist of DNS management;
+	}
+	\item {specify groups of users and very fine \gras {access
+	    privileges} on address (even until every IPv4 or IPv6
+	    address), on domains, etc;
+	}
+	\item {manage \gras {DHCP allocations} (both static or dynamic)
+	    with \gras {profiles} to parametrize network boot;
+	}
+	\item {use your existing \gras {LDAP directory} to manage
+	    accounts, or manage accounts with the Netmagis database;
+	}
+	\item {manage a \gras {large number} of networks, users
+	    domains, DHCP profiles, etc.;
+	}
+	\item {visualize with \gras {automatically generated network
+	    maps} your network topology (switched or routed);
+	}
+	\item {give l'\gras {access on these maps to users};
+	}
+	\item {\gras {assign VLAN} to equipment interfaces via
+	    a simple Web interface (for Cisco, HP or Juniper
+	    equipments);
+	}
+	\item {\gras {delegate VLAN assignment} to other network
+	    administrators or every non-specialist of equipment
+	    management;
+	}
+	\item {access to \gras {traffic graphs} that you have
+	    specified on your equipments.
+	}
+    }
+
+    Netmagis uses a database describing your networks, privileges that
+    you give to groups of users, DHCP profiles that you want to assign
+    to DHCP ranges or hosts, etc. Netmagis is de facto a true \gras
+    {network information system}.
+
+}
+
+}
