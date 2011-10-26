@@ -11,6 +11,9 @@ TCLCONF		= /usr/local/lib/tcl8.6/tclConfig.sh
 TCLCFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_INCLUDE_SPEC"')|sh`
 TCLLFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_LIB_SPEC $$TCL_LIBS"')|sh`
 
+# for packaging and libnetmagis.tcl
+VERSION		= 2.0b1
+
 usage:
 	@echo "available targets:"
 	@echo "	all"
@@ -22,6 +25,7 @@ usage:
 	@echo "	install-detecteq"
 	@echo "	install-topo"
 	@echo "	install-netmagis.org"
+	@echo "	distrib"
 	@echo "	clean"
 
 all:
@@ -30,7 +34,8 @@ all:
 	cd topo ; make all
 
 install-common:
-	cd common ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd common ; \
+	    make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) VERSION=$(VERSION) install
 
 install-database:
 	cd database ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
@@ -57,6 +62,13 @@ install-netmagis.org:
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" all
 	cd doc/netmagis.org ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
+distrib: clean
+	rm -rf /tmp/netmagis-$(VERSION)
+	mkdir /tmp/netmagis-$(VERSION)
+	tar cf - * | tar xf - -C /tmp/netmagis-$(VERSION)
+	tar -czf netmagis-$(VERSION).tgz -C /tmp netmagis-$(VERSION)
+	rm -rf /tmp/netmagis-$(VERSION)
+
 clean:
 	cd common ; make clean
 	cd database ; make clean
@@ -65,3 +77,4 @@ clean:
 	cd utils ; make clean
 	cd detecteq ; make clean
 	cd topo ; make clean
+	rm -f netmagis-*.tgz

@@ -413,7 +413,7 @@ array set libconf {
 
 snit::type ::netmagis {
     # Netmagis version
-    variable version "1.5"
+    variable version "%NMVERSION%"
 
     # cgi script dispatching (see cgi-register)
     # critform : list of field names

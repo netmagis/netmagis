@@ -16,7 +16,8 @@ install:
 	mkdir -p $(DESTDIR)/bin
 	$(NINSTALL) -m 0755 $(SUBST) netmagis-config $(DESTDIR)/bin
 	mkdir -p $(DESTDIR)/lib/netmagis
-	$(NINSTALL) -m 0644 $(SUBST) libnetmagis.tcl $(DESTDIR)/lib/netmagis
+	$(NINSTALL) -m 0644 -e "s/%NMVERSION%/$(VERSION)/" \
+		$(SUBST) libnetmagis.tcl $(DESTDIR)/lib/netmagis
 	mkdir -p $(DESTDIR)/lib/netmagis/pkgtcl
 	cd pkgtcl && make DESTDIR=$(DESTDIR)/lib/netmagis/pkgtcl clean install
 	mkdir -p $(DESTDIR)/lib/netmagis/msgs 
