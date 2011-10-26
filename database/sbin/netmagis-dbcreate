@@ -81,6 +81,7 @@ db-exists ()
 db-create ()
 {
     createdb -E unicode || exit 1
+    createlang plpgsql
     createlang pltcl
 }
 
