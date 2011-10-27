@@ -32,8 +32,8 @@ use strict;
 sub check_param ;
 
 # fichier de configuration principal et chargement des fonctions de base
-our $conf_file = "%CONF%";
-require "%LIBMETRO%";
+our $conf_file = "%CONFFILE%";
+require "%DESTDIR%/lib/netmagis/libmetro.pl";
 #
 # lecture du fichier de configuration general
 our %global_conf = read_global_conf_file($conf_file);
@@ -43,7 +43,7 @@ our %liste_taille = (   'petit' => 1,
                         'grand' => 1
                     );
 
-our $rep_lib = $global_conf{metrolibdir};
+our $rep_lib = "%DESTDIR%/lib/netmagis";
 
 our $generate_graph_cmd = "gen-rrdgraph.pl";
 

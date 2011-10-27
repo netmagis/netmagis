@@ -45,7 +45,7 @@ install: all
 	#
 	# install default files
 	#
-	tar cf - defaults | tar xf - -C $(DESTDIR)/lib/netmagis
+	tar cf - -C share . | tar xf - -C $(DESTDIR)/share/examples/netmagis
 
 clean:
 	cd htg ; make clean

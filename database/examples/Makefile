@@ -14,8 +14,8 @@ FILES = *.txt \
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/share/examples
-	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/share/examples
-	install -m 0644 $(FILES) $(DESTDIR)/share/examples
-	mkdir -p $(DESTDIR)/share/examples/zones
-	install -m 0644 zones/* $(DESTDIR)/share/examples/zones
+	mkdir -p $(DESTDIR)/share/examples/netmagis
+	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/share/examples/netmagis
+	install -m 0644 $(FILES) $(DESTDIR)/share/examples/netmagis
+	mkdir -p $(DESTDIR)/share/examples/netmagis/zones
+	install -m 0644 zones/* $(DESTDIR)/share/examples/netmagis/zones

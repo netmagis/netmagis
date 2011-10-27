@@ -7,4 +7,4 @@
 MAILTO = hostmaster@mycompany.com
 
 # use flag -q if status messages are not wanted
-*/1	* * * *	root /local/sbin/mksmtpf
+*/1	* * * *	%DESTDIR%/sbin/mksmtpf

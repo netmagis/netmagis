@@ -7,10 +7,10 @@ use strict;
 use Sys::Syslog; 
 use Sys::Syslog qw(:DEFAULT setlogsock);
 
-my $conf_file="%CONF%";
-my $dir_bin="%BINDIR%";
+my $conf_file="%CONFFILE%";
+my $dir_bin="%DESTDIR%/bin";
 
-require "%LIBMETRO%";
+require "%DESTDIR%/lib/netmagis/libmetro.pl";
 
 my %config = read_global_conf_file($conf_file);
 

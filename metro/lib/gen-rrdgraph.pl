@@ -46,13 +46,13 @@ my $legendes = $ARGV[6];
 
 #system("echo $id >> /tmp/genere_graph.out");
 
-require "%LIBMETRO%";
+require "%DESTDIR%/lib/netmagis/libmetro.pl";
 
 # lecture du fichier de configuration general
-our %global_conf = read_global_conf_file("%CONF%");
+our %global_conf = read_global_conf_file("%CONFFILE%");
 
 # load graph library
-require "$global_conf{metrolibdir}/libgraph.pl";
+require "%DESTDIR%/lib/netmagis/libgraph.pl";
 
 # repertoire dans lequel sont stockees les definitions de graphs
 our $dir_graph = $global_conf{metrodatadir} . "/graph" ;

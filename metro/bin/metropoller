@@ -33,10 +33,10 @@ our $group = $ARGV[0];
 our $num_process = $ARGV[1];
 our $nb_process = $ARGV[2];
 
-require "%LIBMETRO%";
+require "%DESTDIR%/lib/netmagis/libmetro.pl";
 
 # lecture du fichier de configuration general
-our %global_conf = read_global_conf_file("%CONF%");
+our %global_conf = read_global_conf_file("%CONFFILE%");
 
 our %config = ();
 
@@ -45,11 +45,11 @@ $config{dir_lock}		= $global_conf{metrodatadir} . "/lock" ;
 $config{defaultdomain} 	= $global_conf{defaultdomain};
 $config{syslog_facility} 	= $global_conf{"metropollerlogfacility"};
 $config{path_bin} 		= $config{path_root} . "/bin";
-$config{path_probes} 		= $config{metrolibdir};
+$config{path_probes} 		= "%DESTDIR%/lib/netmagis/probes";
 $config{path_poll} 		= $config{metrodatadir} . "/poller";
 $config{path_rrd_db} 		= $global_conf{metrodatadir} . "/db";
 $config{path_cache_probes} 	= $global_conf{metrodatadir} . "/cache";
-$config{dir_plugins}		= $global_conf{metrolibdir} . "/plugins";
+$config{dir_plugins}		= "%DESTDIR%/lib/netmagis" . "/plugins";
 # recuperation du groupe de pollers
 $config{options} 		= $global_conf{"gpopt_$group"};
 # arguments de connexion a la base PSQL
