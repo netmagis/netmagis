@@ -10,38 +10,35 @@
 #   2010/12/21 : suppression de l'installation Idris
 #
 
-DESTMETRO = /local/services/www-metro
-DESTEXPL  = /local/obj999
-CONF      = /local/obj999/etc/obj999.conf
-LIBMETRO  = $(DESTEXPL)/lib/libmetro.pl
-PASSWDMAC = pas-fou-non-?
-PASSWDDNS = pas-fou-non-?
-
-WWWUSER	  = www-data:obj999
-BINUSER   = obj999:obj999
+DESTDIR = /usr/local
+CRONDIR = /etc/cron.d
+CONF    = $(DESTDIR)/etc/netmagis.conf
+BINDIR  = $(DESTDIR)/bin/netmagis/metro
+CGIDIR  = $(DESTDIR)/www/netmagis
+LIBDIR  = $(DESTDIR)/lib/netmagis/metro
+DATADIR = $(DESTDIR)/var/netmagis/metro
+LIBMETRO  = $(DESTDIR)/lib/netmagis/metro/libmetro.pl
 
 SUBST	= \
+	-e "s|%DESTDIR%|$(DESTDIR)|" \
+	-e "s|%BINDIR%|$(BINDIR)|" \
 	-e "s|%CONF%|$(CONF)|" \
 	-e "s|%LIBMETRO%|$(LIBMETRO)|"
 
-install: install-metro install-binlib
-
-install-metro:
-	for d in $(DESTMETRO) $(DESTMETRO)/bin ; do \
-	    [ -d $$d ] || mkdir $$d ; \
+install:
+	for d in $(DATADIR) $(LIBDIR) $(CGIDIR) $(BINDIR); do \
+	    mkdir -p $$d ; \
 	done
-	(cd metro ; for i in bin/[a-z]* ; do \
-	    sed $(SUBST) $$i > $(DESTMETRO)/$$i ; \
+	for d in poller cache lock log db spool graph wifi; do \
+	    mkdir -p $(DATADIR)/$$d ; \
+	done
+	(cd bin ; for i in * ; do \
+		sed $(SUBST) $$i > $(BINDIR)/$$i ; \
+		chmod +x $(BINDIR)/$$i ; \
 	done )
-	chmod +x $(DESTMETRO)/bin/*
-	chown $(WWWUSER) $(DESTMETRO) $(DESTMETRO)/bin $(DESTMETRO)/bin/*
-
-install-binlib:
-	for d in $(DESTEXPL) $(DESTEXPL)/bin $(DESTEXPL)/lib ; do \
-	    [ -d $$d ] || mkdir $$d ; \
-	done
-	for i in bin/[a-z]* lib/[a-z]* ; do \
-	    sed $(SUBST) $$i > $(DESTEXPL)/$$i ; \
-	done
-	chmod +x $(DESTEXPL)/bin/*
-	chown -R $(BINUSER) $(DESTEXPL)/bin $(DESTEXPL)/lib
+	(cd lib ; for i in * ; do \
+		sed $(SUBST) $$i > $(LIBDIR)/$$i ; \
+	done )
+	(cd www/bin ; for i in * ; do \
+		sed $(SUBST) $$i > $(CGIDIR)/$$i ; \
+	done )

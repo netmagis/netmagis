@@ -33,15 +33,42 @@ our $group = $ARGV[0];
 our $num_process = $ARGV[1];
 our $nb_process = $ARGV[2];
 
+require "%LIBMETRO%";
 
-# configuration par defaut
-our %config = (
-		'path_root' 		=> "/usr/local",
-		'dir_lock'		=> "/tmp/lock",
-		'dir_plugins'		=> "/usr/local/lib/netmagis/metroplugins",
-                'snmp_timeout'          => 4,
-                'conf_file'             => "%CONF%",
-);
+# lecture du fichier de configuration general
+our %global_conf = read_global_conf_file("%CONF%");
+
+our %config = ();
+
+$config{path_root} = "%DESTDIR%" ;
+$config{dir_lock}		= $global_conf{metrodatadir} . "/lock" ;
+$config{defaultdomain} 	= $global_conf{defaultdomain};
+$config{syslog_facility} 	= $global_conf{"metropollerlogfacility"};
+$config{path_bin} 		= $config{path_root} . "/bin";
+$config{path_probes} 		= $config{metrolibdir};
+$config{path_poll} 		= $config{metrodatadir} . "/poller";
+$config{path_rrd_db} 		= $global_conf{metrodatadir} . "/db";
+$config{path_cache_probes} 	= $global_conf{metrodatadir} . "/cache";
+$config{dir_plugins}		= $global_conf{metrolibdir} . "/plugins";
+# recuperation du groupe de pollers
+$config{options} 		= $global_conf{"gpopt_$group"};
+# arguments de connexion a la base PSQL
+$config{PGHOST} 		= $global_conf{macdbhost};
+$config{PGDATABASE} 		= $global_conf{macdbname};
+$config{PGUSER} 		= $global_conf{macdbuser};
+$config{PGPASSWORD} 		= $global_conf{macdbpassword};
+# fichiers de cache
+$config{index_ap_file} 	= $config{path_cache_probes} . "/ifapidx.cache";
+$config{index_if64} 		= $config{path_cache_probes} . "/if64idx.cache";
+$config{index_if32} 		= $config{path_cache_probes} . "/if32idx.cache";
+$config{index_disk} 		= $config{path_cache_probes} . "/diskidx.cache";
+$config{index_generic} 	= $config{path_cache_probes} . "/genericidx.cache";
+$config{index_juniper_filter} = $config{path_cache_probes} . "/jnxidx.cache";
+$config{fichier_etat} 	= $config{metrodatadir} . "/wifi/ap_state.txt";
+# liste des ssid du reseau sans fil
+$config{list_ssid_wifi} 	= $global_conf{ssidwifi};
+# timeout snmp
+$config{snmp_timeout} = $global_conf{snmptimeout};
 
 # liste des sondes
 our %function_probes = (
@@ -72,56 +99,27 @@ our %function_probes = (
 		'plugin'		=> \&get_plugins
 );
 
-require "%LIBMETRO%";
-
-# lecture du fichier de configuration general
-our %global_var = read_global_conf_file($config{'conf_file'});
-
-$config{'defaultdomain'} 	= $global_var{"defaultdomain"};
-$config{'syslog_facility'} 	= $global_var{"metropollerlogfacility"};
-$config{'path_bin'} 		= "$config{'path_root'}/bin";
-$config{'path_sondes'} 		= "$config{'path_root'}/lib";
-$config{'path_poll'} 		= "$config{'path_root'}/var/netmagis/metro";
-$config{'path_rrd_db'} 		= "$global_var{'rrddb'}/rrd";
-$config{'path_cache_probes'} 	= "$global_var{'rrddb'}/metroidx.cache";
-# recuperation du groupe de pollers
-$config{'options'} 		= $global_var{"gpopt_$group"};
-# arguments de connexion a la base PSQL
-$config{'PGHOST'} 		= $global_var{'macdbhost'};
-$config{'PGDATABASE'} 		= $global_var{'macdbname'};
-$config{'PGUSER'} 		= $global_var{'macdbuser'};
-$config{'PGPASSWORD'} 		= $global_var{'macdbpassword'};
-# fichiers de cache
-$config{'index_ap_file'} 	= $config{'path_cache_probes'} . "/ifapidx.cache";
-$config{'index_if64'} 		= $config{'path_cache_probes'} . "/if64idx.cache";
-$config{'index_if32'} 		= $config{'path_cache_probes'} . "/if32idx.cache";
-$config{'index_disk'} 		= $config{'path_cache_probes'} . "/diskidx.cache";
-$config{'index_generic'} 	= $config{'path_cache_probes'} . "/genericidx.cache";
-$config{'fichier_etat'} 	= $config{'path_var'} . "/wifi/ap_state.txt";
-$config{'index_juniper_filter'} = $config{'path_cache_probes'} . "/jnxidx.cache";
-# liste des ssid du reseau sans fil
-$config{'list_ssid_wifi'} 	= $global_var{"ssidwifi"};
-
-require "$config{'path_sondes'}/sensor-if-snmp-ap.pl";
-require "$config{'path_sondes'}/sensor-if-snmp64.pl";
-require "$config{'path_sondes'}/sensor-if-snmp32.pl";
-require "$config{'path_sondes'}/sensor-cpu-server.pl";
-require "$config{'path_sondes'}/sensor-assoc-ap.pl";
-require "$config{'path_sondes'}/sensor-interrupt-server.pl";
-require "$config{'path_sondes'}/sensor-nb-connect-portcap.pl";
-require "$config{'path_sondes'}/sensor-if-by-ip.pl";
-require "$config{'path_sondes'}/sensor-load-server.pl";
-require "$config{'path_sondes'}/sensor-bind-stat.pl";
-require "$config{'path_sondes'}/sensor-tps-disk.pl";
-require "$config{'path_sondes'}/sensor-mailq.pl";
-require "$config{'path_sondes'}/sensor-cpu-cisco.pl";
-require "$config{'path_sondes'}/sensor-cpu-juniper.pl";
-require "$config{'path_sondes'}/sensor-generic-gauge.pl";
-require "$config{'path_sondes'}/sensor-juniper-filter-counter.pl";
-require "$config{'path_sondes'}/sensor-plugins.pl";
-require "$config{'path_sondes'}/sensor-if-broadcast.pl";
-require "$config{'path_sondes'}/sensor-if-multicast.pl";
-require "$config{'path_sondes'}/sensor-if-error.pl";
+# load all probes
+require $config{path_probes} . "/sensor-if-snmp-ap.pl";
+require $config{path_probes} . "/sensor-if-snmp64.pl";
+require $config{path_probes} . "/sensor-if-snmp32.pl";
+require $config{path_probes} . "/sensor-cpu-server.pl";
+require $config{path_probes} . "/sensor-assoc-ap.pl";
+require $config{path_probes} . "/sensor-interrupt-server.pl";
+require $config{path_probes} . "/sensor-nb-connect-portcap.pl";
+require $config{path_probes} . "/sensor-if-by-ip.pl";
+require $config{path_probes} . "/sensor-load-server.pl";
+require $config{path_probes} . "/sensor-bind-stat.pl";
+require $config{path_probes} . "/sensor-tps-disk.pl";
+require $config{path_probes} . "/sensor-mailq.pl";
+require $config{path_probes} . "/sensor-cpu-cisco.pl";
+require $config{path_probes} . "/sensor-cpu-juniper.pl";
+require $config{path_probes} . "/sensor-generic-gauge.pl";
+require $config{path_probes} . "/sensor-juniper-filter-counter.pl";
+require $config{path_probes} . "/sensor-plugins.pl";
+require $config{path_probes} . "/sensor-if-broadcast.pl";
+require $config{path_probes} . "/sensor-if-multicast.pl";
+require $config{path_probes} . "/sensor-if-error.pl";
 
 our $lock_liste_ap = 0;
 our $lock_liste_if64 = 0;
@@ -147,7 +145,7 @@ our %mac_auth;
 our %ok_sondes = ();
 our %nok_sondes = ();
 
-our %ssid_osiris = init_list_ssid($config{'list_ssid_wifi'});
+our %ssids = init_list_ssid($config{'list_ssid_wifi'});
 
 init_test_sondes();
 

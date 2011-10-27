@@ -24,9 +24,11 @@ usage:
 	@echo "	install-utils"
 	@echo "	install-detecteq"
 	@echo "	install-topo"
+	@echo " install-metro"
 	@echo "	install-netmagis.org"
 	@echo "	distrib"
 	@echo "	clean"
+
 
 all:
 	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
@@ -52,6 +54,9 @@ install-utils:
 
 install-topo:
 	cd topo ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+
+install-metro:
+	cd metro ; make DESTDIR=$(DESTDIR) install
 
 install-detecteq:
 	cd detecteq ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install

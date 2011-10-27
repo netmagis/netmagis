@@ -93,7 +93,7 @@ sub ifNom_error
 			my $oid = "1.3.6.1.2.1.2.2.1.2.$index_interface";
 			$r = $snmp->get_request(
 				-varbindlist   => [$oid],
-				-callback   => [ \&get_if64_name, $sonde,$base,$host,$community,$if,$oid,$index_interface,$inverse,"broadcast"] );
+				-callback   => [ \&get_if64_name,$base,$host,$community,$if,$oid,$index_interface,$inverse,"broadcast"] );
 
 		}
 		# sinon, il faut rechercher l'index de l'interface et remplir le fichier nom<=>idex

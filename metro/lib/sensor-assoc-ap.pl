@@ -249,11 +249,11 @@ sub get_snmp_assoc_ap
 			# hack contre mauvaise implementation des mibs
 			if($ssid eq "osiris" && $tab[$i][2] != 0)
 			{
-			    $tab[$i][2] == 0;
+			    $tab[$i][2] = 0;
 			}
 			elsif(($ssid eq "osiris-sec" || $ssid eq "osiris-lab" || $ssid eq "eduroam") && $tab[$i][2] != 1)
 			{
-			    $tab[$i][2] == 1;
+			    $tab[$i][2] = 1;
 			}
 			##############################################
          	
@@ -777,7 +777,7 @@ sub set_assoc_ap_base
     else
     {
         writelog("metropoller",$config{'logopt'},"info",
-                "\t\t -> ERREUR DB : Impossible d'ouvrir $config{'PGDATABASE'} : $DBI::errstr");
+                "\t\t -> ERREUR DB : Impossible d'ouvrir $config{'PGDATABASE'} : ". $db->errstr);
     }
 }
 
@@ -875,7 +875,7 @@ sub set_auth_db
 		{
 		    #l'adresse MAC de la machine est enregistree une seule fois dans 
 		    #chaque table. Cas le plus typique
-		    if($ssid_osiris{$tab_trouveactiveassoc[$j][3]} eq $tab_trouveactiveauth[$j][3])
+		    if($ssids{$tab_trouveactiveassoc[$j][3]} eq $tab_trouveactiveauth[$j][3])
 		    {
 			#si le serveur d'authentification correspond au SSID
 			print RAP "===> maj date $tab_trouveactiveauth[$j][2], set fin = now\n";
@@ -907,9 +907,9 @@ sub set_auth_db
 		    my $date_deb = 0;
 		    for($k=$j;$k<$t_trouveactiveauth;$k++)
 		    {
-			if($ssid_osiris{$tab_trouveactiveassoc[$j][3]} ne $tab_trouveactiveauth[$k][3])
+			if($ssids{$tab_trouveactiveassoc[$j][3]} ne $tab_trouveactiveauth[$k][3])
 			{
-			    print RAP "<> test : $ssid_osiris{$tab_trouveactiveassoc[$j][3]},$tab_trouveactiveassoc[$j][3] ne $tab_trouveactiveauth[$k][3] = oui\n";
+			    print RAP "<> test : $ssids{$tab_trouveactiveassoc[$j][3]},$tab_trouveactiveassoc[$j][3] ne $tab_trouveactiveauth[$k][3] = oui\n";
 			    #si le serveur d'authentification ne correspond pas au SSID, on ferme
 			    if(($time - 300) > $tab_trouveactiveauth[$k][4])
 			    {

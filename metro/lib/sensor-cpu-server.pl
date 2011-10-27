@@ -13,6 +13,8 @@ sub get_CPU_server
 {
 	my ($base,$host,$community,$num_cpu) = @_;
 
+	my $r;
+
 	if($num_cpu eq "")
 	{
 	    $num_cpu = 0;

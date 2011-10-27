@@ -53,7 +53,7 @@ sub get_plugins
 		}
 		
    		# lancement du script d'indicateur avec les parametres
-		`$config{'dir_plugins'}/$nom_indicateur $param`;
+		`$config{dir_plugins}/$nom_indicateur $param`;
 	}
 	#close(DEBUG);
 }
