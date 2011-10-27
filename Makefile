@@ -17,6 +17,8 @@ VERSION		= 2.0b1
 usage:
 	@echo "available targets:"
 	@echo "	all"
+	@echo "	all-topo"
+	@echo "	all-www"
 	@echo "	install-common"
 	@echo "	install-database"
 	@echo "	install-servers"
@@ -24,15 +26,19 @@ usage:
 	@echo "	install-utils"
 	@echo "	install-detecteq"
 	@echo "	install-topo"
-	@echo " install-metro"
+	@echo "	install-metro"
 	@echo "	install-netmagis.org"
 	@echo "	distrib"
 	@echo "	clean"
+	@echo "	nothing"
 
+all:	all-www all-topo
 
-all:
+all-www:
 	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" all
+
+all-topo:
 	cd topo ; make all
 
 install-common:
@@ -45,21 +51,21 @@ install-database:
 install-servers:
 	cd servers ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
-install-www:
+install-www: all-www
 	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" install
 
 install-utils:
 	cd utils ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
-install-topo:
+install-topo: all-topo
 	cd topo ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
-
-install-metro:
-	cd metro ; make DESTDIR=$(DESTDIR) install
 
 install-detecteq:
 	cd detecteq ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+
+install-metro:
+	cd metro ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 install-netmagis.org:
 	# compilation of htg if needed
@@ -82,4 +88,7 @@ clean:
 	cd utils ; make clean
 	cd detecteq ; make clean
 	cd topo ; make clean
-	rm -f netmagis-*.tgz
+	cd metro ; make clean
+	rm -f netmagis-*.tar.gz
+
+nothing:
