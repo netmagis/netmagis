@@ -18,9 +18,9 @@ macdbname	mac
 macdbuser	dns
 macdbpassword	password-of-macdbuser
 
-pkgtcl		/usr/local/lib/netmagis/pkgtcl
+pkgtcl		%DESTDIR%/lib/netmagis/pkgtcl
 
-msgsdir		/usr/local/lib/netmagis/msgs
+msgsdir		%DESTDIR%/lib/netmagis/msgs
 
 # just display my login name
 whoami		"id -u -n"
@@ -118,9 +118,9 @@ pfcmd		"pfctl -q -t smtpf -T replace -f /etc/smtpf.pf"
 # Web module
 ##############################################################################
 
-templatedir	/usr/local/lib/netmagis/tmpl
+templatedir	%DESTDIR%/lib/netmagis/tmpl
 
-nologinfile	/usr/local/etc/netmagis.nologin
+nologinfile	%DESTDIR%/etc/netmagis.nologin
 
 # empty string (internal auth) or external URL to change password
 #passwdurl	https://www.mycompany.com/chpasswd?uid=%s
@@ -141,7 +141,7 @@ topohost	""
 topouser	""
 
 # topo* keys are used also by the web and the topo modules
-topobindir	/usr/local/lib/netmagis/topo
+topobindir	%DESTDIR%/lib/netmagis/topo
 topograph	/var/netmagis/network.graph
 
 metrohost	metro.mycompany.com
@@ -166,7 +166,7 @@ fpingcmd	/usr/local/sbin/fping %s
 # takes a message on stdin and write it in the syslog
 logger		/usr/bin/logger -i -p local0.err -t topod
 
-eqvirtdir	/usr/local/var/netmagis/eqvirt
+eqvirtdir	/var/netmagis/eqvirt
 eqgendir	/var/netmagis/eqgen
 
 # check if router interfaces are declared in the DNS (yes/no)
@@ -182,12 +182,12 @@ ssidsensors	yes
 # default domain name
 defaultdomain   	u-strasbg.fr
 
-metrolibdir		/usr/local/lib/netmagis/metro
-metrodatadir		/usr/local/var/netmagis/metro
+metrolibdir		%DESTDIR%/lib/netmagis/metro
+metrodatadir		/var/netmagis/metro
 # rrdtool executable
 rrdtool         	/usr/bin/rrdtool
 # rrdtool databases
-rrddb			/usr/local/var/netmagis/metro/db
+rrddb			/var/netmagis/metro/db
 # rrdtool database : time of retention of the data (years)
 rrddbretention		10
 
