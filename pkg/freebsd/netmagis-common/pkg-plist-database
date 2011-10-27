@@ -1,0 +1,30 @@
+sbin/netmagis-dbcreate
+sbin/netmagis-dbimport
+sbin/netmagis-maint
+share/examples/crontab.database
+share/examples/domain.txt
+share/examples/group.txt
+share/examples/mailrelay.txt
+share/examples/mailrole.txt
+share/examples/network.txt
+share/examples/rrsup.txt
+share/examples/run-all.sh
+share/examples/zones/1.168.192.in-addr.arpa
+share/examples/zones/16.172.in-addr.arpa
+share/examples/zones/4.3.2.1.0.6.6.0.1.0.0.2.ip6.arpa
+share/examples/zones/bidon.org
+share/examples/zones/esiatf.fr
+share/examples/zones/labo2.univ-machin.fr
+share/examples/zones/univ-machin.fr
+share/upgrade/12-13/upgrade.sql
+share/upgrade/13-14/upgrade.sql
+share/upgrade/14-15/upgrade.sql
+share/upgrade/15-20/README.pgauth
+share/upgrade/15-20/pgauth.sed
+share/upgrade/15-20/upgrade.sql
+@dirrm share/upgrade/15-20
+@dirrm share/upgrade/14-15
+@dirrm share/upgrade/13-14
+@dirrm share/upgrade/12-13
+@dirrm share/upgrade
+@dirrm share/examples/zones
