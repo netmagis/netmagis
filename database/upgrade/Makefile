@@ -8,5 +8,5 @@ SUBST		= $(TCLSH) \
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/share/upgrade
-	tar cf - [0-9]* | tar xvf - -C $(DESTDIR)/share/upgrade
+	mkdir -p $(DESTDIR)/share/examples/netmagis/upgrade
+	tar cf - [0-9]* | tar xvf - -C $(DESTDIR)/share/examples/netmagis/upgrade
