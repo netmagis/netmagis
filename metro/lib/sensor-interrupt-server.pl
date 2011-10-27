@@ -12,6 +12,7 @@ sub get_Interrupt_server
 {
 	my ($base,$host,$community) = @_;
 
+	my $r ;
 	# Paramétrage des requètes SNMP
         my ($snmp, $error) = Net::SNMP->session(
                 -hostname   => $host,

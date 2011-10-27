@@ -121,7 +121,7 @@ sub GaugeWiFi
 
         	my @liste_arg;
         	my $plusline="";
-        	my $drawlineavg,$drawlinemax;
+        	my ($drawlineavg,$drawlinemax);
 
         	my $ttl = @{$l[0]};
 
@@ -169,22 +169,22 @@ sub GaugeWiFi
 		# comparaison des legendes pour la mise en page
         	my @legend;
 		my $t_legend;
-		my $maxlengthlengend = 0;
+		my $maxlengthlegend = 0;
 
         	if($l[0][0]{'legend'} ne "")
         	{
             		@legend = split(//,$l[0][0]{'legend'});
-            		$maxlengthlengend = @legend;
-			$t_legend = $maxlengthlengend;
+            		$maxlengthlegend = @legend;
+			$t_legend = $maxlengthlegend;
         	}
-        	$maxlengthlengend = $maxlengthlengend + 6;
+        	$maxlengthlegend = $maxlengthlegend + 6;
 	
 		# ecriture de la legende en entree
-        	my $spaces = get_spaces(0,$maxlengthlengend,11);
+        	my $spaces = get_spaces(0,$maxlengthlegend,11);
         	push @liste_arg,"comment";
         	push @liste_arg,"$spaces      min      max     moyen   actuel\\n";
-        	my $gprintavg,$gprintmax;
-        	$spaces = get_spaces($t_legend,$maxlengthlengend,8);
+        	my ($gprintavg,$gprintmax);
+        	$spaces = get_spaces($t_legend,$maxlengthlegend,8);
         	# ecriture de la courbe en input
         	$drawlineavg->{'type'} = "area";
         	$drawlineavg->{'color'} = $color_lines{'avg'};
@@ -222,7 +222,7 @@ sub GaugeWiFi
 		# ecriture de la valeur MAX selon l'intervalle de temps
         	if(($end - $start) > 800000)
         	{
-	                $spaces = get_spaces($t_legend,$maxlengthlengend,0);
+	                $spaces = get_spaces($t_legend,$maxlengthlegend,0);
 	                # ecriture de la courbe en input
 	                $drawlinemax->{'type'} = "line";
 	                $drawlinemax->{'color'} = $color_lines{'max'};
@@ -366,8 +366,8 @@ sub aggregGaugeWiFi
 
     	# comparaison des legendes pour la mise en page
     	my %llegend;
-    	$llegend{'total'} = split(//,$drawtotal->{'legend'});
-    	my $maxlengthlengend = $llegend{'total'};
+    	$llegend{'total'} = length($drawtotal->{'legend'});
+    	my $maxlengthlegend = $llegend{'total'};
 
     	for($i=0;$i<$tl;$i++)
     	{
@@ -375,20 +375,20 @@ sub aggregGaugeWiFi
         	{
             		$l[$i][0]{'legend'} = $l[$i][0]{'graph'};
         	}
-        	$llegend{$i} = split(//,$l[$i][0]{'legend'});
-        	if($maxlengthlengend < $llegend{$i})
+        	$llegend{$i} = length($l[$i][0]{'legend'});
+        	if($maxlengthlegend < $llegend{$i})
         	{
-            		$maxlengthlengend = $llegend{$i};
+            		$maxlengthlegend = $llegend{$i};
         	}
     	}
-    	$maxlengthlengend = $maxlengthlengend + 4;
+    	$maxlengthlegend = $maxlengthlegend + 4;
 
     	# ecriture de la legende en entree
-    	my $spaces = get_spaces(0,$maxlengthlengend,8);
+    	my $spaces = get_spaces(0,$maxlengthlegend,8);
     	push @liste_arg1,"comment";
     	push @liste_arg1,"$spaces min      max     moyen   actuel\\n";
     	my $gprinttotal;
-    	$spaces = get_spaces($llegend{'total'},$maxlengthlengend,0);
+    	$spaces = get_spaces($llegend{'total'},$maxlengthlegend,0);
     	push @liste_total,"comment";
     	push @liste_total,$spaces;
 	$gprinttotal->{0}->{'draw'}="total";
@@ -422,7 +422,7 @@ sub aggregGaugeWiFi
 		push @liste_total,$drawline->{$i};
 		$gprint->{$i}->{0}->{'draw'}=$drawline->{$i}->{'name'};
 		$gprint->{$i}->{0}->{'format'}="MIN:%5.0lf %S";
-		$spaces = get_spaces($llegend{$i},$maxlengthlengend,0);
+		$spaces = get_spaces($llegend{$i},$maxlengthlegend,0);
 		push @liste_total,"comment";
 		push @liste_total,$spaces;
 		push @liste_total,"gprint";
@@ -487,7 +487,7 @@ sub trafic
 
 	my @liste_arg;
         my $plusline="";
-	my $drawlinein,$drawlineout;
+	my ($drawlinein,$drawlineout);
 
 	my $ttl = @{$l[0]};
 
@@ -557,23 +557,23 @@ sub trafic
 	my %llegend;
 	if($l[0][0]{'legend'} ne "")
         {
-	    $llegend{'in'} = split(//,$l[0][0]{'legend'});
-	    my $maxlengthlengend = $llegend{'in'};
-	    $llegend{'out'} = split(//,$l[0][0]{'legend'});
+	    $llegend{'in'} = length($l[0][0]{'legend'});
+	    my $maxlengthlegend = $llegend{'in'};
+	    $llegend{'out'} = length($l[0][0]{'legend'});
 	}
 	else
 	{
 	    $llegend{'in'} = 0;
 	    $llegend{'out'} = 0;
 	}
-	$maxlengthlengend = $maxlengthlengend + 6;
+	$maxlengthlegend = $maxlengthlegend + 6;
 
 	# ecriture de la legende en entree
-	my $spaces = get_spaces(0,$maxlengthlengend,17);
+	my $spaces = get_spaces(0,$maxlengthlegend,17);
 	push @liste_arg,"comment";
 	push @liste_arg,"$spaces maximum          moyen        actuel\\n";
-	my $gprintin,$gprintout,$gprintinmax,$gprintoutmax;
-	$spaces = get_spaces($llegend{'in'},$maxlengthlengend,0);
+	my ($gprintin,$gprintout,$gprintinmax,$gprintoutmax);
+	$spaces = get_spaces($llegend{'in'},$maxlengthlegend,0);
 	# ecriture de la courbe en input
 	$drawlinein->{'type'} = "area";
 	$drawlinein->{'color'} = $color_lines{'input'};
@@ -601,7 +601,7 @@ sub trafic
 	if(($end - $start) > 800000)
         {
 	    # ecriture de la legende en entree
-	    $spaces = get_spaces($llegend{'in'},$maxlengthlengend,-6);
+	    $spaces = get_spaces($llegend{'in'},$maxlengthlegend,-6);
 	    # ecriture de la courbe en input
 	    $drawlineinmax->{'type'} = "line";
 	    $drawlineinmax->{'color'} = $color_lines{'maxinput'};
@@ -626,7 +626,7 @@ sub trafic
 	    push @liste_arg,$gprintinmax->{2};
 
 	    # ecriture de la legende en entree
-            $spaces = get_spaces($llegend{'out'},$maxlengthlengend,-6);
+            $spaces = get_spaces($llegend{'out'},$maxlengthlegend,-6);
             # ecriture de la courbe en input
             $drawlineoutmax->{'type'} = "line";
             $drawlineoutmax->{'color'} = $color_lines{'maxoutput'};
@@ -652,7 +652,7 @@ sub trafic
         }
 
 	# ecriture de la courbe en output
-	$spaces = get_spaces($llegend{'out'},$maxlengthlengend,0);
+	$spaces = get_spaces($llegend{'out'},$maxlengthlegend,0);
 	$drawlineout->{'type'} = "line";
         $drawlineout->{'color'} = $color_lines{'output'};
         $drawlineout->{'name'} = "outputbits";
@@ -718,7 +718,7 @@ sub aggreg_trafic
     my @liste_total;
 
     # creation des parametres pour le cumul total
-    my $drawtotalin,$drawtotalout;
+    my ($drawtotalin,$drawtotalout);
     $drawtotalin->{'type'} = "area";
     $drawtotalin->{'color'} = $couleur_cumul;
     $drawtotalin->{'name'} = "totalinputbits";
@@ -728,7 +728,7 @@ sub aggreg_trafic
     $drawtotalout->{'name'} = "totaloutputbits";
     $drawtotalout->{'legend'} = "total sortant";
    
-    my $drawlinein,$drawlineout; 
+    my ($drawlinein,$drawlineout);
     # dereferencement
     my @l = @$ref_l;
    
@@ -808,12 +808,12 @@ sub aggreg_trafic
 
     # comparaison des legendes pour la mise en page
     my %llegend;
-    $llegend{'totalin'} = split(//,$drawtotalin->{'legend'});
-    my $maxlengthlengend = $llegend{'totalin'};
-    $llegend{'totalout'} = split(//,$drawtotalout->{'legend'});
-    if($maxlengthlengend < $llegend{'totalout'})
+    $llegend{'totalin'} = length($drawtotalin->{'legend'});
+    my $maxlengthlegend = $llegend{'totalin'};
+    $llegend{'totalout'} = length($drawtotalout->{'legend'});
+    if($maxlengthlegend < $llegend{'totalout'})
     {
-        $maxlengthlengend = $llegend{'totalout'};
+        $maxlengthlegend = $llegend{'totalout'};
     }
 
     for($i=0;$i<$tl;$i++)
@@ -822,20 +822,20 @@ sub aggreg_trafic
         {
             $l[$i][0]{'legend'} = $l[$i][0]{'graph'};
         }
-        $llegend{$i} = split(//,$l[$i][0]{'legend'});
-        if($maxlengthlengend < $llegend{$i})
+        $llegend{$i} = length($l[$i][0]{'legend'});
+        if($maxlengthlegend < $llegend{$i})
         {
-            $maxlengthlengend = $llegend{$i};
+            $maxlengthlegend = $llegend{$i};
         }
     }
-    $maxlengthlengend = $maxlengthlengend + 4;
+    $maxlengthlegend = $maxlengthlegend + 4;
 
     # ecriture de la legende en entree
-    my $spaces = get_spaces(0,$maxlengthlengend,10);
+    my $spaces = get_spaces(0,$maxlengthlegend,10);
     push @liste_arg1,"comment";
     push @liste_arg1,"$spaces maximum          moyen        actuel\\n";
-    my $gprinttotalin,$gprinttotalout;
-    $spaces = get_spaces($llegend{'totalin'},$maxlengthlengend,0);
+    my ($gprinttotalin,$gprinttotalout);
+    $spaces = get_spaces($llegend{'totalin'},$maxlengthlegend,0);
     push @liste_total,"comment";
     push @liste_total,$spaces;
     $gprinttotalin->{0}->{'draw'}="totalinputbits";
@@ -857,7 +857,7 @@ sub aggreg_trafic
     push @liste_total,"draw";
     push @liste_total,$drawtotaloutpositif;
     # ecriture de la legende en sortie
-    $spaces = get_spaces($llegend{'totalout'},$maxlengthlengend,0);
+    $spaces = get_spaces($llegend{'totalout'},$maxlengthlegend,0);
     push @liste_total,"comment";
     push @liste_total,$spaces;
     $gprinttotalout->{0}->{'draw'}="totaloutputbitspos";
@@ -874,7 +874,7 @@ sub aggreg_trafic
     push @liste_total,$gprinttotalout->{2};
 
     my $drawlineoutpositif;
-    my $gprintin,$gprintout;
+    my ($gprintin,$gprintout);
     # on cree les objets draw pour afficher les lignes
     for($i=0;$i<$tl;$i++)
     {
@@ -892,7 +892,7 @@ sub aggreg_trafic
 	push @liste_total,$drawlinein->{$i};
 	$gprintin->{$i}->{0}->{'draw'}=$drawlinein->{$i}->{'name'};
 	$gprintin->{$i}->{0}->{'format'}="MAX:%7.2lf %Sb/s";
-	$spaces = get_spaces($llegend{$i},$maxlengthlengend,-3);
+	$spaces = get_spaces($llegend{$i},$maxlengthlegend,-3);
 	push @liste_total,"comment";
 	push @liste_total,$spaces;
 	push @liste_total,"gprint";
@@ -916,7 +916,7 @@ sub aggreg_trafic
         push @liste_total,$drawlineoutpositif->{$i};
 	$gprintout->{$i}->{0}->{'draw'}=$drawlineoutpositif->{$i}->{'name'};
         $gprintout->{$i}->{0}->{'format'}="MAX:%7.2lf %Sb/s";
-	$spaces = get_spaces($llegend{$i},$maxlengthlengend,-4);
+	$spaces = get_spaces($llegend{$i},$maxlengthlegend,-4);
         push @liste_total,"comment";
         push @liste_total,$spaces;
         push @liste_total,"gprint";
@@ -950,13 +950,13 @@ sub aggreg_trafic
 #		la plus longue, ajustement en nombre de blancs.
 sub get_spaces
 {
-    my ($nb_char,$maxlengthlengend,$ajust) = @_;
+    my ($nb_char,$maxlengthlegend,$ajust) = @_;
     
     my $string = " ";
 
-    my $nb_spaces = $maxlengthlengend - $nb_char + $ajust;
+    my $nb_spaces = $maxlengthlegend - $nb_char + $ajust;
 
-    system("echo \"($nb_char,$maxlengthlengend,$ajust) => $nb_spaces\" >> /var/tmp/sortie.txt");
+    system("echo \"($nb_char,$maxlengthlegend,$ajust) => $nb_spaces\" >> /var/tmp/sortie.txt");
 
     for(my $i=0;$i<$nb_spaces;$i++)
     {
@@ -3069,19 +3069,19 @@ sub counter_generic
         {
             $l[$i][0]{'legend'} = $l[$i][0]{'graph'};
         }
-        $llegend{$i} = split(//,$l[$i][0]{'legend'});
-        if($maxlengthlengend < $llegend{$i})
+        $llegend{$i} = length($l[$i][0]{'legend'});
+        if($maxlengthlegend < $llegend{$i})
         {
-            $maxlengthlengend = $llegend{$i};
+            $maxlengthlegend = $llegend{$i};
         }
     }
-    $maxlengthlengend = $maxlengthlengend + 4;
+    $maxlengthlegend = $maxlengthlegend + 4;
 
     # ecriture de la legende en entree
-    my $spaces = get_spaces(0,$maxlengthlengend,10);
+    my $spaces = get_spaces(0,$maxlengthlegend,10);
     push @liste_arg1,"comment";
     push @liste_arg1,"$spaces maximum          moyen        actuel\\n";
-    my $gprint,$gprintmax;
+    my ($gprint,$gprintmax);
 
     # on cree les objets draw pour afficher les lignes
     for($i=0;$i<$tl;$i++)
@@ -3103,7 +3103,7 @@ sub counter_generic
         push @liste_total,$drawline->{$i};
         $gprint->{$i}->{0}->{'draw'}=$drawline->{$i}->{'name'};
         $gprint->{$i}->{0}->{'format'}="MAX:%7.2lf %Sb/s";
-        $spaces = get_spaces($llegend{$i},$maxlengthlengend,-3);
+        $spaces = get_spaces($llegend{$i},$maxlengthlegend,-3);
         push @liste_total,"comment";
         push @liste_total,$spaces;
         push @liste_total,"gprint";
@@ -3130,7 +3130,7 @@ sub counter_generic
 	    push @liste_total,$drawlinemax->{$i};
 	    $gprintmax->{$i}->{0}->{'draw'}=$drawlinemax->{$i}->{'name'};
 	    $gprintmax->{$i}->{0}->{'format'}="MAX:%7.2lf %Sb/s";
-	    $spaces = get_spaces($llegend{$i},$maxlengthlengend,-3);
+	    $spaces = get_spaces($llegend{$i},$maxlengthlegend,-3);
 	    push @liste_total,"comment";
 	    push @liste_total,$spaces;
 	    push @liste_total,"gprint";
@@ -3186,7 +3186,7 @@ sub packets
 
 	my @liste_arg;
         my $plusline="";
-	my $drawlinein,$drawlineout;
+	my ($drawlinein,$drawlineout);
 
 	my $ttl = @{$l[0]};
 
@@ -3256,23 +3256,23 @@ sub packets
 	my %llegend;
 	if($l[0][0]{'legend'} ne "")
         {
-	    $llegend{'in'} = split(//,$l[0][0]{'legend'});
-	    my $maxlengthlengend = $llegend{'in'};
-	    $llegend{'out'} = split(//,$l[0][0]{'legend'});
+	    $llegend{'in'} = length($l[0][0]{'legend'});
+	    my $maxlengthlegend = $llegend{'in'};
+	    $llegend{'out'} = length($l[0][0]{'legend'});
 	}
 	else
 	{
 	    $llegend{'in'} = 0;
 	    $llegend{'out'} = 0;
 	}
-	$maxlengthlengend = $maxlengthlengend + 2;
+	$maxlengthlegend = $maxlengthlegend + 2;
 
 	# ecriture de la legende en entree
-	my $spaces = get_spaces(0,$maxlengthlengend,14);
+	my $spaces = get_spaces(0,$maxlengthlegend,14);
 	push @liste_arg,"comment";
 	push @liste_arg,"$spaces maximum          moyen        actuel\\n";
-	my $gprintin,$gprintout,$gprintinmax,$gprintoutmax;
-	$spaces = get_spaces($llegend{'in'},$maxlengthlengend,-12);
+	my ($gprintin,$gprintout,$gprintinmax,$gprintoutmax);
+	$spaces = get_spaces($llegend{'in'},$maxlengthlegend,-12);
 	# ecriture de la courbe en input
 	$drawlinein->{'type'} = "area";
 	$drawlinein->{'color'} = $color_lines{'input'};
@@ -3300,7 +3300,7 @@ sub packets
 	if(($end - $start) > 800000)
         {
 	    # ecriture de la legende en entree
-	    $spaces = get_spaces($llegend{'in'},$maxlengthlengend,-12);
+	    $spaces = get_spaces($llegend{'in'},$maxlengthlegend,-12);
 	    # ecriture de la courbe en input
 	    $drawlineinmax->{'type'} = "line";
 	    $drawlineinmax->{'color'} = $color_lines{'maxinput'};
@@ -3325,7 +3325,7 @@ sub packets
 	    push @liste_arg,$gprintinmax->{2};
 
 	    # ecriture de la legende en entree
-            $spaces = get_spaces($llegend{'out'},$maxlengthlengend,-12);
+            $spaces = get_spaces($llegend{'out'},$maxlengthlegend,-12);
             # ecriture de la courbe en input
             $drawlineoutmax->{'type'} = "line";
             $drawlineoutmax->{'color'} = $color_lines{'maxoutput'};
@@ -3351,7 +3351,7 @@ sub packets
         }
 
 	# ecriture de la courbe en output
-	$spaces = get_spaces($llegend{'out'},$maxlengthlengend,-12);
+	$spaces = get_spaces($llegend{'out'},$maxlengthlegend,-12);
 	$drawlineout->{'type'} = "line";
         $drawlineout->{'color'} = $color_lines{'output'};
         $drawlineout->{'name'} = "outputbits";

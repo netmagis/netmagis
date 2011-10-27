@@ -11,6 +11,8 @@
 sub get_nb_connect_portcap
 {
 	my ($base,$host,$community) = @_;
+	
+	my $r;
 
 	# Paramétrage des requètes SNMP
         my ($snmp, $error) = Net::SNMP->session(

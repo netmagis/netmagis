@@ -1,40 +1,38 @@
 #!/usr/bin/perl -w 
 
-use strict;
-use Sys::Syslog;                          # Misses setlogsock.
-use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
+# launched by crontab every 1 minute
+# start all pollers groups
 
-our %config = ( 
-		'path_root'             => "/usr/local",
-		'conf_file'             => "%CONF%",
-                'syslog_facility'       => "local0",
-                'logopt'                => ""
-);
+use strict;
+use Sys::Syslog; 
+use Sys::Syslog qw(:DEFAULT setlogsock);
+
+my $conf_file="%CONF%";
+my $dir_bin="%BINDIR%";
 
 require "%LIBMETRO%";
 
-# recuperation des groupes de pollers dans le fichier de conf
-my @groupes = split(/,/,read_conf_file($config{'conf_file'},"pollergroups"));
+my %config = read_global_conf_file($conf_file);
 
-my $syslogfacility = read_conf_file($config{'conf_file'},"metropollerlogfacility");
+# get pollers groups
+my @groupes = split(/,/,$config{pollergroups});
 
-# Message des logs demarrage du démon ####################
-writelog("metropoller-run",$config{'logopt'},"info",
+my $syslogfacility = $config{pollerlogfacility} ;
+
+# log message for starting of pollers
+writelog("metropoller-run", $config{pollerlogopt}, "info",
         "\t #######################################");
-
-my $dir_bin = "$config{'path_root'}/bin";
 
 my $i;
 for($i=0;$i<@groupes;$i++)
 {
-    my $nb_process = read_conf_file($config{'conf_file'},"gpnbproc_$groupes[$i]");
+    # get number of process for each poller group member
+    my $nb_process = $config{"gpnbproc_$groupes[$i]"};
 
     my $j;
     for($j=1;$j<=$nb_process;$j++)
     {
-	system("$dir_bin/poller $groupes[$i] $j $nb_process &");
+	system("$dir_bin/metropoller $groupes[$i] $j $nb_process &");
 	sleep(1);
     }
 }
-
-

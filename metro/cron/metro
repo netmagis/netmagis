@@ -1,0 +1,5 @@
+# start pollers
+*/1     *   *   *   *   root  	%BINDIR%/metropoller-run > /tmp/poller 2>&1
+
+59  	*   *   *   *   root  	%BINDIR%/metrocreatedb > /tmp/metrocreatedb 2>&1
+

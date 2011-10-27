@@ -13,6 +13,7 @@ sub tps_disk
     my ($base,$host,$community,$disk) = @_;
     
     my $dsk = "";	
+    my $r;
 
     if(! $community)
     {
@@ -73,7 +74,7 @@ sub tps_disk
 		my $oid = "1.3.6.1.4.1.2021.13.15.1.1.2.$index_disk";
 		$r = $snmp->get_request(
 		    -varbindlist   => [$oid],
-		    -callback   => [ \&get_disk_name,$sonde,$base,$host,$community,$disk,$oid,$index_disk] );
+		    -callback   => [ \&get_disk_name,$base,$host,$community,$disk,$oid,$index_disk] );
 	    }
 	    # sinon, il faut rechercher l'index du disque et remplir le fichier nom<=>idex
 	    else
@@ -142,7 +143,7 @@ sub tps_disk
 
 sub get_disk_name 
 {
-	my ($session,$sonde,$base,$host,$community,$dsk,$oid,$id_disk) = @_;	
+	my ($session,$base,$host,$community,$dsk,$oid,$id_disk) = @_;	
 
 	my $result;
 	my $ok_interro;

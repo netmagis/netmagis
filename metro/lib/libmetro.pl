@@ -351,7 +351,7 @@ sub creeBaseOsirisAP
 {
     my ($fichier,$speed)=@_;
     
-    my $rrdtool = read_conf_file($conf_file "rrdtool");
+    my $rrdtool = read_conf_file($conf_file,"rrdtool");
     system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     setBaseMaxSpeed($fichier,$speed);
 }
@@ -575,7 +575,7 @@ sub ctrl_ip
         }
         else
         {
-                $return -1;
+                return -1;
         }
         return($ip_val);
 }
