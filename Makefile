@@ -71,7 +71,7 @@ distrib: clean
 	rm -rf /tmp/netmagis-$(VERSION)
 	mkdir /tmp/netmagis-$(VERSION)
 	tar cf - --exclude "pkg/*" * | tar xf - -C /tmp/netmagis-$(VERSION)
-	tar -czf netmagis-$(VERSION).tgz -C /tmp netmagis-$(VERSION)
+	tar -czf netmagis-$(VERSION).tar.gz -C /tmp netmagis-$(VERSION)
 	rm -rf /tmp/netmagis-$(VERSION)
 
 clean:
