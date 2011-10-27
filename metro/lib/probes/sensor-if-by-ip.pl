@@ -13,6 +13,7 @@ sub get_if_by_ip
 	my ($base,$host,$community,$ip) = @_;
 
 	my $inverse = 0;
+	my $r ;
 	# Paramétrage des requètes SNMP
         my ($snmp, $error) = Net::SNMP->session(
                 -hostname   	=> $host,

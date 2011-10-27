@@ -23,6 +23,8 @@ sub get_generic
     
     my $sonde_trouve = "";	
 
+    my $r;
+
     if(! $community)
     {
 	writelog("sonde-generic-gauge",$config{'logopt'},"info",
@@ -82,7 +84,7 @@ sub get_generic
 		my $oid = "1.3.6.1.4.1.2021.8.1.2.$index_sonde";
 		$r = $snmp->get_request(
 		    -varbindlist   => [$oid],
-		    -callback   => [ \&get_generic_name,$sonde,$base,$host,$community,$generic,$oid,$index_sonde,$type_sonde] );
+		    -callback   => [ \&get_generic_name,$base,$host,$community,$generic,$oid,$index_sonde,$type_sonde] );
 	    }
 	    # sinon, il faut rechercher l'index de l'URL et remplir le fichier nom<=>idex
 	    else
@@ -150,7 +152,7 @@ sub get_generic
 
 sub get_generic_name 
 {
-	my ($session,$sonde,$base,$host,$community,$sonde_trouve,$oid,$id_generic,$type_sonde) = @_;	
+	my ($session,$base,$host,$community,$sonde_trouve,$oid,$id_generic,$type_sonde) = @_;	
 
 	my $result;
 	my $ok_interro;

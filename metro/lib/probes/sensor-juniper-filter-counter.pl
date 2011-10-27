@@ -73,7 +73,7 @@ sub get_juniper_filter_counter
 			my $oid = "1.3.6.1.4.1.2636.3.5.2.1.6.$index_filter";
 			$r = $snmp->get_request(
 				-varbindlist   => [$oid],
-				-callback   => [ \&get_filter_name, $sonde,$base,$host,$community,$filter,$oid,$index_filter] );
+				-callback   => [ \&get_filter_name, $base,$host,$community,$filter,$oid,$index_filter] );
 
 		}
 		# sinon, il faut rechercher l'index du filtre et remplir le fichier nom<=>idex
@@ -142,7 +142,7 @@ sub get_juniper_filter_counter
 
 sub get_filter_name 
 {
-	my ($session,$sonde,$base,$host,$community,$filter,$oid,$id_if) = @_;	
+	my ($session,$base,$host,$community,$filter,$oid,$id_if) = @_;	
 
 	my $result;
 	my $ok_interro;

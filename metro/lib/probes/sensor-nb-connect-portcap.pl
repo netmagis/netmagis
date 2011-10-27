@@ -1,15 +1,18 @@
-# $Id: sonde-mailq.pl,v 1.1.1.1 2008/06/13 08:55:51 pda Exp $
+# $Id: sonde-nb-connect-portcap.pl,v 1.1.1.1 2008/06/13 08:55:51 pda Exp $
 #
 #
 # ###################################################################
 # boggia : Creation : 27/03/08
 #
-# fonctions qui permettent de récupérer en SNMP la taille de la mailq
-# d'un serveur
+# prend en parametre l'ip du portail captif et la communaute snmp
+# renvoie le nombre de connexions simultanées
 #
-sub get_mailq
+#
+sub get_nb_connect_portcap
 {
 	my ($base,$host,$community) = @_;
+	
+	my $r;
 
 	# Paramétrage des requètes SNMP
         my ($snmp, $error) = Net::SNMP->session(
@@ -23,20 +26,20 @@ sub get_mailq
 
         if (!defined($snmp))
         {
-		writelog("get_mailq",$config{'logopt'},"info",
+		writelog("get_cnt_portcap",$config{'logopt'},"info",
                 	"\t -> ERROR: SNMP connect error: $error");
         }
 
 		
-	my $oid = "1.3.6.1.4.1.2121.255.1.1";
+	my $oid = "1.3.6.1.4.1.2021.8.1.100.1";
 	$r = $snmp->get_request(
 		-varbindlist   => [$oid],
-		-callback   => [ \&get_snmp_mailq,$base,$host,$oid] );
+		-callback   => [ \&get_snmp_nb_connect_portcap,$base,$host,$oid] );
 
 }
 
 
-sub get_snmp_mailq
+sub get_snmp_nb_connect_portcap
 {
         my ($session,$base,$host,$oid) = @_;
 
@@ -44,18 +47,18 @@ sub get_snmp_mailq
         {
                 my $error  = $session->error;
 	
-		writelog("get_mailq",$config{'logopt'},"info",
-                	"\t -> ERROR: get_mailq($host) Error: $error");
+		writelog("get_cnt_portcap",$config{'logopt'},"info",
+                	"\t -> ERROR: get_nb_connect_portcap($host) Error: $error");
         }
         else
         {
-                my $mailq = $session->var_bind_list->{$oid};
+                my $nb_connect = $session->var_bind_list->{$oid};
 	
-		RRDs::update ("$base","N:$mailq");
+		RRDs::update ("$base","N:$nb_connect");
                 my $ERR=RRDs::error;
 		if($ERR)
 		{
-			writelog("get_mailq",$config{'logopt'},"info",
+			writelog("get_cnt_portcap",$config{'logopt'},"info",
                 		"\t -> ERROR while updating $base: $ERR");
 		}
         }

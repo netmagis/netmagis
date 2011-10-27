@@ -6,4 +6,4 @@
 MAILTO = hostmaster@mycompany.com
 
 # use flag -q if status messages are not wanted
-*/5	* * * *	/local/sbin/mkmroute
+*/5	* * * *	%DESTDIR%/sbin/mkmroute

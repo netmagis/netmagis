@@ -29,20 +29,21 @@ use CGI qw/:standard/;
 use CGI::Pretty qw( :html3 );
 use strict;
 
+sub check_param ;
+
 # fichier de configuration principal et chargement des fonctions de base
-our $conf_file = "%CONF%";
-require "%LIBMETRO%";
+our $conf_file = "%CONFFILE%";
+require "%DESTDIR%/lib/netmagis/libmetro.pl";
 #
 # lecture du fichier de configuration general
-our %global_var = read_global_conf_file($conf_file);
+our %global_conf = read_global_conf_file($conf_file);
 
 our %liste_taille = (   'petit' => 1,
                         'moyen' => 1,
                         'grand' => 1
                     );
 
-our $metro_path = $global_var{'/usr/local'};
-our $rep_lib = "$metro_path/netmagis/metro/lib";
+our $rep_lib = "%DESTDIR%/lib/netmagis";
 
 our $generate_graph_cmd = "gen-rrdgraph.pl";
 
@@ -73,7 +74,7 @@ else
 
 
 # contrôle la validité du nom du graphe et du temps
-sub check_param()
+sub check_param
 {
     my ($id,$debut,$fin,$taille) = @_;
 

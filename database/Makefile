@@ -9,5 +9,6 @@ install:
 	cd sbin ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 	cd examples ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 	cd upgrade  ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	mkdir -p $(DESTDIR)/var/netmagis/dbdump
 
 clean:

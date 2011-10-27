@@ -16,6 +16,8 @@ sub get_CPU_juniper
 		're'		   => 9,
 	);
 
+	my $r;
+
 	# on definit par defaut la ssb
 	if(!defined($id_carte{$carte}))
 	{
@@ -53,6 +55,7 @@ sub get_snmp_cpu_re0
 {
         my ($session,$base,$host,$community,$oid_cpu_re0,$carte,$id_carte) = @_;
 
+	my $r;
 	my $cpu_re0;
 	# si une re existe dans le slot 0
 	if (defined($session->var_bind_list))

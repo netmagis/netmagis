@@ -24,9 +24,11 @@ usage:
 	@echo "	install-utils"
 	@echo "	install-detecteq"
 	@echo "	install-topo"
+	@echo " install-metro"
 	@echo "	install-netmagis.org"
 	@echo "	distrib"
 	@echo "	clean"
+
 
 all:
 	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
@@ -53,6 +55,9 @@ install-utils:
 install-topo:
 	cd topo ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
+install-metro:
+	cd metro ; make DESTDIR=$(DESTDIR) install
+
 install-detecteq:
 	cd detecteq ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
@@ -65,8 +70,8 @@ install-netmagis.org:
 distrib: clean
 	rm -rf /tmp/netmagis-$(VERSION)
 	mkdir /tmp/netmagis-$(VERSION)
-	tar cf - * | tar xf - -C /tmp/netmagis-$(VERSION)
-	tar -czf netmagis-$(VERSION).tgz -C /tmp netmagis-$(VERSION)
+	tar cf - --exclude "pkg/*" * | tar xf - -C /tmp/netmagis-$(VERSION)
+	tar -czf netmagis-$(VERSION).tar.gz -C /tmp netmagis-$(VERSION)
 	rm -rf /tmp/netmagis-$(VERSION)
 
 clean:

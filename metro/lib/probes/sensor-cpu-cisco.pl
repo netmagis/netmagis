@@ -12,6 +12,8 @@ sub get_CPU_cisco
 {
 	my ($base,$host,$community) = @_;
 
+	my $r;
+
 	# Paramétrage des requètes SNMP
         my ($snmp, $error) = Net::SNMP->session(
                 -hostname   => $host,

@@ -11,6 +11,8 @@
 sub ifNom_counter32
 {
     my ($base,$host,$community,$if) = @_;
+	
+    my $r ;
 
     if(! $community)
     {
@@ -98,7 +100,7 @@ sub ifNom_counter32
 			my $oid = "1.3.6.1.2.1.2.2.1.2.$index_interface";
 			$r = $snmp->get_request(
 				-varbindlist   => [$oid],
-				-callback   => [ \&get_if32_name, $sonde,$base,$host,$community,$if,$oid,$index_interface,$inverse] );
+				-callback   => [ \&get_if32_name, $base,$host,$community,$if,$oid,$index_interface,$inverse] );
 
 		}
 		# sinon, il faut rechercher l'index de l'interface et remplir le fichier nom<=>idex
@@ -170,7 +172,7 @@ sub ifNom_counter32
 
 sub get_if32_name 
 {
-	my ($session,$sonde,$base,$host,$community,$if,$oid,$id_if,$inverse) = @_;	
+	my ($session,$base,$host,$community,$if,$oid,$id_if,$inverse) = @_;	
 
 	my $result;
 	my $ok_interro;

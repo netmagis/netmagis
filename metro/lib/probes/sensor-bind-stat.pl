@@ -15,6 +15,8 @@ sub get_bind_stat
 {
 	my ($base,$host,$community) = @_;
 
+	my $r;
+
 	# Paramétrage des requètes SNMP
         my ($snmp, $error) = Net::SNMP->session(
                 -hostname   => $host,

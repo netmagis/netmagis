@@ -8,7 +8,7 @@
 # broadcast 64 bits
 #
 
-sub ifNom_multicast64 
+sub ifNom_broadcast64 
 {
 	my ($base,$host,$community,$if) = @_;
 
@@ -33,7 +33,7 @@ sub ifNom_multicast64
         
 	if (!defined($snmp)) 
 	{
-		writelog("get_if_multicast64",$config{'logopt'},"info",
+		writelog("get_if_broadcast64",$config{'logopt'},"info",
 			"\t -> ERROR: SNMP connect error: $error");
         }
 	else
@@ -46,8 +46,8 @@ sub ifNom_multicast64
         	#print "conf avec index\n";
 		chomp $if;
 		
-		$oidin = "1.3.6.1.2.1.31.1.1.1.2.$if";
-		$oidout = "1.3.6.1.2.1.31.1.1.1.4.$if";
+		$oidin = "1.3.6.1.2.1.31.1.1.1.3.$if";
+		$oidout = "1.3.6.1.2.1.31.1.1.1.5.$if";
 		$result = $snmp->get_request(
                 	-varbindlist   => [$oidin, $oidout],
                 	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
@@ -93,7 +93,7 @@ sub ifNom_multicast64
 			my $oid = "1.3.6.1.2.1.2.2.1.2.$index_interface";
 			$r = $snmp->get_request(
 				-varbindlist   => [$oid],
-				-callback   => [ \&get_if64_name, $sonde,$base,$host,$community,$if,$oid,$index_interface,$inverse,"broadcast"] );
+				-callback   => [ \&get_if64_name, $base,$host,$community,$if,$oid,$index_interface,$inverse,"broadcast"] );
 
 		}
 		# sinon, il faut rechercher l'index de l'interface et remplir le fichier nom<=>idex
@@ -139,8 +139,8 @@ sub ifNom_multicast64
 						$lock_liste_if64 = 0;	
 					}
 					
-					$oidin = "1.3.6.1.2.1.31.1.1.1.2.$index_interface";
-                			$oidout = "1.3.6.1.2.1.31.1.1.1.4.$index_interface";
+					$oidin = "1.3.6.1.2.1.31.1.1.1.3.$index_interface";
+                			$oidout = "1.3.6.1.2.1.31.1.1.1.5.$index_interface";
                 			$r = $snmp->get_request(
                         			-varbindlist   => [$oidin, $oidout],
                         			-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );

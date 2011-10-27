@@ -2,13 +2,13 @@
 #
 #
 # ###################################################################
-# boggia : Creation : 03/12/2010
+# boggia : Creation : 27/03/08
 #
-# fonctions qui permettent de récupérer en SNMP les compteurs d'erreurs 
-# des interfaces
+# fonctions qui permettent de récupérer en SNMP les compteurs de
+# broadcast 64 bits
 #
 
-sub ifNom_error 
+sub ifNom_multicast64 
 {
 	my ($base,$host,$community,$if) = @_;
 
@@ -46,8 +46,8 @@ sub ifNom_error
         	#print "conf avec index\n";
 		chomp $if;
 		
-		$oidin = "1.3.6.1.2.1.2.2.1.14.$if";
-		$oidout = "1.3.6.1.2.1.2.2.1.20.$if";
+		$oidin = "1.3.6.1.2.1.31.1.1.1.2.$if";
+		$oidout = "1.3.6.1.2.1.31.1.1.1.4.$if";
 		$result = $snmp->get_request(
                 	-varbindlist   => [$oidin, $oidout],
                 	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
@@ -93,7 +93,7 @@ sub ifNom_error
 			my $oid = "1.3.6.1.2.1.2.2.1.2.$index_interface";
 			$r = $snmp->get_request(
 				-varbindlist   => [$oid],
-				-callback   => [ \&get_if64_name, $sonde,$base,$host,$community,$if,$oid,$index_interface,$inverse,"broadcast"] );
+				-callback   => [ \&get_if64_name, $base,$host,$community,$if,$oid,$index_interface,$inverse,"broadcast"] );
 
 		}
 		# sinon, il faut rechercher l'index de l'interface et remplir le fichier nom<=>idex
@@ -139,8 +139,8 @@ sub ifNom_error
 						$lock_liste_if64 = 0;	
 					}
 					
-					$oidin = "1.3.6.1.2.1.2.2.1.14.$index_interface";
-                			$oidout = "1.3.6.1.2.1.2.2.1.20.$index_interface";
+					$oidin = "1.3.6.1.2.1.31.1.1.1.2.$index_interface";
+                			$oidout = "1.3.6.1.2.1.31.1.1.1.4.$index_interface";
                 			$r = $snmp->get_request(
                         			-varbindlist   => [$oidin, $oidout],
                         			-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );

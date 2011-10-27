@@ -12,6 +12,7 @@ sub ifNom_ap
 {
 	my ($base,$host,$community,$if) = @_;
 	
+	my $r ;
 	#cherche si trafic inverse sur l'interface ou pas
 	my $inverse = 0;
 	if($if =~m/^-/)
@@ -90,7 +91,7 @@ sub ifNom_ap
 			my $oid = "1.3.6.1.2.1.31.1.1.1.1.$index_interface";
 			$r = $snmp->get_request(
 				-varbindlist   => [$oid],
-				-callback   => [ \&get_if_name, $sonde,$base,$host,$community,$if,$oid,$index_interface,$inverse] );
+				-callback   => [ \&get_if_name, $base,$host,$community,$if,$oid,$index_interface,$inverse] );
 
 		}
 		# sinon, il faut rechercher l'index de l'interface et remplir le fichier nom<=>idex
@@ -163,9 +164,10 @@ sub ifNom_ap
 
 sub get_if_name 
 {
-	my ($session,$sonde,$base,$host,$community,$if,$oid,$id_if,$inverse) = @_;	
+	my ($session,$base,$host,$community,$if,$oid,$id_if,$inverse) = @_;	
 
 	my $result="";
+	my $r="";
 	my $ok_interro;
 	#$id_if="";
 
@@ -177,7 +179,6 @@ sub get_if_name
 		-retries        => 2,
 	        -nonblocking   => 0x1 );
 
-	my $r;
 	my $err=0;
 
 	if (!defined($session->var_bind_list)) 
