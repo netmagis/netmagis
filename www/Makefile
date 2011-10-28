@@ -45,6 +45,7 @@ install: all
 	#
 	# install default files
 	#
+	mkdir -p $(DESTDIR)/share/examples/netmagis
 	tar cf - -C share . | tar xf - -C $(DESTDIR)/share/examples/netmagis
 
 clean:

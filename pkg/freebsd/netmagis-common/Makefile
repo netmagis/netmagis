@@ -34,6 +34,12 @@ RUN_DEPENDS+=	postmaster:${PORTSDIR}/databases/postgresql${PGSQL_VER}-server \
 		pwgen:${PORTSDIR}/sysutils/pwgen2
 .endif
 
+.if $(PKGNAMESUFFIX) == "-www"
+RUN_DEPENDS+=	pdflatex:${PORTSDIR}/print/teTeX-base \
+		dot:${PORTSDIR}/graphics/graphviz \
+		pwgen:${PORTSDIR}/sysutils/pwgen2
+.endif
+
 PLIST=		${PKGDIR}/pkg-plist${PKGNAMESUFFIX}
 
 
@@ -222,7 +228,7 @@ MAN7=		ABORT.7 ALTER_AGGREGATE.7 ALTER_COLLATION.7 ALTER_CONVERSION.7 \
 
 # Variables used in netmagis Makefiles
 MAKE_ARGS+=	DESTDIR=$(PREFIX)
-MAKE_ARGS+=	TCLSH=$(TCLSH)
+MAKE_ARGS+=	TCLSH=$(TCLSH) TCLCONF=$(TCL_LIBDIR)/tclConfig.sh
 
 .if $(PKGNAMESUFFIX) == "-topo" || $(PKGNAMESUFFIX) == "-www"
 ALL_TARGET=all$(PKGNAMESUFFIX?=)
