@@ -24,6 +24,7 @@ install:
 	mkdir -p $(DESTDIR)/sbin
 	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/sbin
 	mkdir -p $(DESTDIR)/share/examples/netmagis
-	$(NINSTALL) -m 0644 $(SUBST) $(SHARE) $(DESTDIR)/share/examples/netmagis
+	$(NINSTALL) -m 0644 -e "s|%DESTDIR%|$(DESTDIR)|" $(SUBST) \
+			$(SHARE) $(DESTDIR)/share/examples/netmagis
 
 clean:
