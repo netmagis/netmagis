@@ -6,13 +6,13 @@
 # Common modules
 ##############################################################################
 
-dnsdbhost	dbcrc.u-strasbg.fr
+dnsdbhost	db.mycompany.com
 dnsdbport	5432
 dnsdbname	netmagis
 dnsdbuser	dns
 dnsdbpassword	password-of-dnsdbuser
 
-macdbhost	dbcrc.u-strasbg.fr
+macdbhost	db.mycompany.com
 macdbport	5432
 macdbname	mac
 macdbuser	dns
@@ -151,8 +151,8 @@ metrohost	metro.mycompany.com
 ##############################################################################
 
 rancidcmd	/usr/local/libexec/rancid/rancid-run
-ranciddb	/usr/local/var/rancid/router.db
-rancidconfdir	/usr/local/var/rancid/configs
+ranciddb	/usr/local/var/rancid/mygroup/router.db
+rancidconfdir	/usr/local/var/rancid/mygroup/configs
 
 # how to send commands on equipments
 # -u user on equipment (modconf here)
