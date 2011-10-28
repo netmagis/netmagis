@@ -327,7 +327,7 @@ lib/netmagis/tmpl/fr/topotop.html
 %%WWWDIR%%/statuser
 %%WWWDIR%%/topotop
 @dirrm %%WWWDIR%%
-%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%
+%%PORTEXAMPLES%%@dirrmtry %%EXAMPLESDIR%%
 @dirrm lib/netmagis/tmpl/fr
 @dirrm lib/netmagis/tmpl/en
 @dirrm lib/netmagis/tmpl
@@ -359,4 +359,4 @@ lib/netmagis/tmpl/fr/topotop.html
 @dirrm lib/netmagis/htg/doc/pres19980629
 @dirrm lib/netmagis/htg/doc
 @dirrm lib/netmagis/htg
-@dirrm lib/netmagis
+@dirrmtry lib/netmagis

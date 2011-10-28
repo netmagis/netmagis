@@ -22,13 +22,13 @@ sbin/netmagis-maint
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/esiatf.fr
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/labo2.univ-machin.fr
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/univ-machin.fr
-@dirrm var/netmagis/dbdump
-@dirrm var/netmagis
-@dirrm var
+@dirrmtry var/netmagis/dbdump
+@dirrmtry var/netmagis
+@dirrmtry var
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/zones
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/15-20
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/14-15
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/13-14
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/12-13
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade
-%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%
+%%PORTEXAMPLES%%@dirrmtry %%EXAMPLESDIR%%

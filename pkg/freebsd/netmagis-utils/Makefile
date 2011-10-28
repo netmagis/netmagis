@@ -14,4 +14,6 @@ COMMENT=	Netmagis client scripts for DNS, DHCP, etc.
 
 MASTERDIR=	${.CURDIR}/../netmagis-common
 
+PLIST=		${.CURDIR}/pkg-plist
+
 .include "${MASTERDIR}/Makefile"

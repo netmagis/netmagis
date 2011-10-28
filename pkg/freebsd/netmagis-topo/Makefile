@@ -8,9 +8,9 @@
 # See Mk/bsd.databases.mk for more info
 
 PORTNAME=	netmagis
-PKGNAMESUFFIX=	-database
+PKGNAMESUFFIX=	-topo
 
-COMMENT=	Netmagis database installation
+COMMENT=	Netmagis Topology module
 
 MASTERDIR=	${.CURDIR}/../netmagis-common
 
