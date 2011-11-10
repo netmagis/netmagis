@@ -164,6 +164,7 @@ array set confcmd {
 	{set interfaces %1$s description "%2$s"}
     }
     juniper:*:ifvoice {
+	{set interfaces %1$s unit 0 family ethernet-switching}
 	{set ethernet-switching-options voip interface %1$s vlan %2$s}
     }
     juniper:*:epilogue {
