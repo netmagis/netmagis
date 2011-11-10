@@ -1,16 +1,14 @@
-# New ports collection makefile for:	PostgreSQL-client
-# Date created:				2009-07-08
-# Whom:					Palle Girgensohn <girgen@FreeBSD.org>
+# New ports collection makefile for:	Netmagis
+# Date created:		Nov 10 2011
+# Whom:			Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
 #
-# $FreeBSD: ports/databases/postgresql91-client/Makefile,v 1.1 2011/06/11 23:14:29 girgen Exp $
+# $FreeBSD:$
 #
-# To depend on postgresql-client, set USE_PGSQL=yes.
-# See Mk/bsd.databases.mk for more info
 
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-www
 
-COMMENT=	Netmagis Web application
+COMMENT=	The Network Management Information System - Web interface
 
 MASTERDIR=	${.CURDIR}/../netmagis-common
 

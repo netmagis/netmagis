@@ -9,4 +9,4 @@ SUBST		= $(TCLSH) \
 install:
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)/bin
-	$(NINSTALL) -m 0755 $(SUBST) metro* $(DESTDIR)/bin
+	$(NINSTALL) -m 0755 -e 's|%DESTDIR%|$(DESTDIR)|' $(SUBST) metro* $(DESTDIR)/bin

@@ -6,9 +6,9 @@
 #
 
 PORTNAME=	netmagis
-PKGNAMESUFFIX=	-topo
+PKGNAMESUFFIX=	-metro
 
-COMMENT=	The Network Management Information System - Topology module
+COMMENT=	The Network Management Information System - Metrology module
 
 MASTERDIR=	${.CURDIR}/../netmagis-common
 

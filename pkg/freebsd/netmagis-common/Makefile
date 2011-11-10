@@ -1,8 +1,8 @@
-# New ports collection makefile for:	PostgreSQL
-# Date created:		November 13, 1998
-# Whom:			Marc G. Fournier <scrappy@FreeBSD.org>
+# New ports collection makefile for:	Netmagis
+# Date created:		Nov 10 2011
+# Whom:			Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
 #
-# $FreeBSD: ports/databases/postgresql91-server/Makefile,v 1.231 2011/10/20 21:07:29 crees Exp $
+# $FreeBSD:$
 #
 
 PORTNAME?=	netmagis
@@ -13,8 +13,8 @@ MASTER_SITES=	XXXX
 MASTER_SITE_SUBDIR=	XXXX
 PKGNAMESUFFIX?=	-common
 
-MAINTAINER?=	girgen@FreeBSD.org
-COMMENT?=	The most advanced open-source network management system available anywhere
+MAINTAINER?=	pdagog@gmail.com
+COMMENT?=	The Network Management Information System - Common files
 
 USE_TCL=	85+
 
@@ -35,7 +35,7 @@ RUN_DEPENDS+=	postmaster:${PORTSDIR}/databases/postgresql${PGSQL_VER}-server \
 .endif
 
 .if $(PKGNAMESUFFIX) == "-www"
-USE_APACHE=	2.2+
+USE_APACHE=	22+
 RUN_DEPENDS+=	pdflatex:${PORTSDIR}/print/teTeX-base \
 		dot:${PORTSDIR}/graphics/graphviz \
 		pwgen:${PORTSDIR}/sysutils/pwgen2 \
@@ -49,22 +49,14 @@ RUN_DEPENDS+=	rancid-run:${PORTSDIR}/net-mgmt/rancid \
 		fping:${PORTSDIR}/net/fping
 .endif
 
+.if $(PKGNAMESUFFIX) == "-metro"
+USE_PERL5=	yes
 
-##############################################################################
-#WRKSRC=		${WRKDIR}/netmagis-${DISTVERSION}
-#DIST_SUBDIR=	postgresql
-#
-#UNIQUENAME?=	${PORTNAME}91
-#LATEST_LINK?=	${PKGNAMEPREFIX}${UNIQUENAME}${PKGNAMESUFFIX}
-#
-#PKGINSTALL?=	${PKGDIR}/pkg-install${PKGNAMESUFFIX}
-#
-#PG_USER?=	pgsql
-#PG_GROUP?=	${PG_USER}
-#PG_UID?=	70
-#
-##############################################################################
-
+RUN_DEPENDS+=	p5-DBD-Pg>0:${PORTSDIR}/databases/p5-DBD-Pg \
+		p5-Net-SNMP>=0:$(PORTSDIR)/net-mgmt/p5-Net-SNMP \
+		p5-SNMP_Session>=0:$(PORTSDIR)/net-mgmt/p5-SNMP_Session \
+		p5-RRDTool-OO>=0:${PORTSDIR}/devel/p5-RRDTool-OO
+.endif
 
 post-install:
 	@if [ -f $(PKGMESSAGE) ] ; then $(CAT) $(PKGMESSAGE) ; fi
