@@ -40,6 +40,11 @@
 
     Bientôt ici !
 
+    Les utilisateurs aventureux peuvent telecharger la
+    \lien {version 2.0 beta 1}
+    	{download/netmagis-2.0b1.tar.gz}
+
+
     \titre {2} {Version 1.5}
 
     La version 1.5 est disponible en téléchargement sur
