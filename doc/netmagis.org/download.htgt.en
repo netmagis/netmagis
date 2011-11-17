@@ -41,7 +41,8 @@
     Soon!
 
     Adventurous users may download \lien {version 2.0 beta 1}
-    	{download/netmagis-2.0b1.tar.gz}
+    	{files/netmagis-2.0b1.tar.gz}
+	and \lien {FreebBSD ports files} {files/netmagis-freebsd-ports-2.0b1.tar.gz}.
 
     \titre {2} {Release 1.5}
 

@@ -1,0 +1,675 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Introduction
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Introduction
+    } {
+	\elementbandeau {Contents} {
+	    \reference {\lien {What's new}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Specifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Download}	{/download.html}}
+	    \reference {\lien {Screenshots}	{/screenshots.html}}
+	    \reference {\lien {Demonstration}	{/demo.html}}
+	    \reference {\lien {Development}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis installation}
+
+    \**********************************************************************
+
+    \titre {2} {How things work}
+
+
+    \**********************************************************************
+
+    \titre {2} {Program and file installation}
+
+    \titre {3} {Determining which packages are needed}
+
+    The netmagis is divided into packages in order to install only what
+    you need:
+
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Package}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {common}}
+	    \casetableau {} {This package is mandatory for all
+		installations. It includes common library file and
+		configuration file example}
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {database}}
+	    \casetableau {} {Database server (maintenance and
+		installation scripts, as well as scripts to upgrade
+		database from previous versions)
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {www}}
+	    \casetableau {} {Web application (CGI scripts, HTML
+		templates, Apache configuration files, etc.)
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {servers}}
+	    \casetableau {} {Scripts running on various servers (DNS,
+		DHCP, mail router)
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {utils}}
+	    \casetableau {} {Scripts to ease batch modifications of
+		hosts in the database
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {topo}}
+	    \casetableau {} {Backend used to fetch configuration data
+		from network equipments, modelize topology in a graph,
+		and optionnaly inject new ports configuration to
+		equipements.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {metro}}
+	    \casetableau {} {Backend used to poll equipments for
+		metrology information.
+	    }
+	}
+    }
+
+    \titre {3} {Installing from FreeBSD ports}
+
+    At this time, the supported way to install Netmagis is via
+    FreeBSD ports, which are provided in a \lien {separate archive}
+    {/download.html} (file netmagis-freebsd-ports-*.tar.gz associated
+    with appropriate netmagis version).
+
+    Once the file is downloaded on a failry recent FreeBSD system
+    (minimum FreeBSD 8.2-RELEASE with \lien {up-to-date ports}
+    {http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/updating-upgrading-portsnap.html}),
+    use:
+
+    \retrait {\teletype {
+	# tar xzvf netmagis-freebsd-ports-2.0.tgz -C /usr/ports/net-mgmt/
+    }}
+
+    In order to install a netmagis package, just enter the
+    following commands (just as well as \lien {any other port}
+    {http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/ports-using.html}):
+
+    \retrait {\teletype {
+    	# cd /usr/ports/net-mgmt/netmagis-database \br
+	# make install
+    }}
+
+    The provided ports automatically install required dependancies.
+
+    \titre {3} {Installing from Ubuntu packages}
+
+    Not yet available. From now, either find a FreeBSD machine or install
+    from source distribution  (see below).
+
+    \titre {3} {Installing from Netmagis source distribution}
+
+    \enumeration {
+    \item {Download the \lien {Netmagis distribution file}
+	{/download.html} and unpack the archive:
+
+	\retrait {\teletype {
+	    $ tar xzvf netmagis-2.0b1.tar.gz
+	}}
+
+	Alternatively, if you are adventurous, you may also fetch the
+	current Netmagis sources directly from the \lien {github repository}
+	{http://github.com/pdav/netmagis}. Provided that \teletype {git} is
+	installed on your system, use this command:
+
+	\retrait {\teletype {
+	    $ git clone git@github.com:pdav/netmagis.git
+	}}
+    }
+    \item {Install \lien {required dependancies} {/spec.html}.
+	Please note that Tcl is a required dependancy for all packages.
+
+    }
+    \item {Choose an installation directory. You may use \teletype
+	{/local/netmagis/} for example. Netmagis's Makefile will install a
+	hierarchy such as:
+
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\casetableau {} {.../etc/}
+		\casetableau {} {various configuration files}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../bin/}
+		\casetableau {} {programs which should be called as an ordinary
+		    users}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../sbin/}
+		\casetableau {} {programs which should be called as the root
+		    user}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../lib/}
+		\casetableau {} {libraries, messages, and programs which are
+		    not meant to be called by humans}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../share/}
+		\casetableau {} {examples, default configuration files,
+		    database upgrade scripts, etc.}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../var/}
+		\casetableau {} {files generated by \italique {topo} or
+		    \italique {metro} packages}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../www/}
+		\casetableau {} {Web application (installed by \italique
+		    {www} package)}
+	    }
+	}
+
+    }
+    \item {Modify the top-level Makefile variables to suit your choices:
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\casetableau {} {DESTDIR}
+		\casetableau {} {Installation directory}
+	    }
+	    \lignetableau {
+		\casetableau {} {TCLSH}
+		\casetableau {} {Full path name of tclsh interpreter}
+	    }
+	    \lignetableau {
+		\casetableau {} {TCLCFLAGS}
+		\casetableau {} {Tcl compilation flags (only for www
+		    package)}
+	    }
+	    \lignetableau {
+		\casetableau {} {TCLLFLAGS}
+		\casetableau {} {Tcl link edition flags (only for www
+		    package)}
+	    }
+	}
+
+    }
+    \item {Install the \italique {package}:
+	\retrait{\teletype {
+	    # make install-common
+	}}
+    }
+    \item {Install the desired package(s). For example, if you want to
+	install the \italique {database} and the \italique {utils}
+	packages, type:
+	\retrait{\teletype {
+	    # make install-database \br
+	    # make install-utils
+	}}
+    }
+    }
+
+    That's it! You may now proceed to initial configuration.
+
+    \**********************************************************************
+
+    \titre {2} {Initial configuration}
+
+    \titre {3} {PosgreSQL configuration}
+
+    On the host where you installed the \italique {database} port,
+    you should have a PostgreSQL server. The recommanded version is at
+    least 9.1.
+
+    You have to check that your PostgreSQL installation: allow connections
+    (and authenticate with password) from hosts which act as client
+    of the Netmagis database (all hosts where you installed a
+    netmagis package). This is usually configured in file \teletype
+    {~pgsql/data/pg_hba.conf} (where \teletype {pgsql} is the name of
+    the PostgreSQL priviledged user).
+
+    You have to create at least two PostgreSQL users (with the
+    PostgreSQL \teletype {createuser} program):
+
+    \liste {
+	\item {the first one (default used by Netmagis: \gras {dns})
+	    does not have any special privilege: it will be used by
+	    various scripts (including CGI scripts) to connect to the
+	    database.
+	}
+	\item {the second ones (may be more than one user) are
+	    priviledged users (superuser in PostgreSQL terminology).
+	    The first of them is used for various database administration
+	    tasks such as database creation, database daily maintenance,
+	    etc. It may be convenient to use real login names since these
+	    users are authorized to connect to the Web applcation even
+	    when it is in "maintenance mode".
+	}
+    }
+
+    \titre {3} {The Netmagis configuration file}
+
+    The Netmagis configuration file is located in \teletype
+    {.../etc/netmagis.conf}. The \italique {common} package do
+    not install this file (in order to leave your file intact if
+    you previousely installed Netmagis), but a copy in \teletype
+    {.../etc/netmagis.conf.sample}. Copy it manually to \teletype
+    {.../etc/netmagis.conf}, and edit it.
+
+    The following table list only directives you would want to modify
+    for a fresh installation.
+
+    \retrait {
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+	\lignetableau {
+	    \multicasetableau {2} {\centragehorizontal {CENTER}}
+		{Directives for all packages}
+	}
+	\lignetableau {
+	    \casetableau {} {dnsdb...}
+	    \casetableau {} {Information needed to connect to the
+		PostgreSQL server, with unpriviledged user.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {whoami}
+	    \casetableau {} {Command used to get login name of the user
+		who is running the current program. It should display
+		exclusively the login name. Default value is suitable
+		for FreeBSD and Ubuntu.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {rootusers}
+	    \casetableau {} {Login names of priviledged PostgreSQL
+		users, who are also Netmagis users allowed to enter the
+		application even when it is in "maintenance mode".
+	    }
+	}
+    }
+    }
+
+    \titre {3} {Database installation}
+
+    \retrait {
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \multicasetableau {2} {\centragehorizontal {CENTER}}
+		{\gras {netmagis.conf directives}}
+	}
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+	\lignetableau {
+	    \multicasetableau {2} {} {Directives for the
+		\italique {database} package
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {dbcopy}
+	    \casetableau {} {Name of a copy of the Netmagis database,
+		generated every night (see the \teletype {netmagis-maint}
+		program in the \italique {database} package). This copy
+		lets you experiment and work on data without fear.
+	    }
+	}
+    }
+    }
+
+    \titre {3} {Web application installation}
+
+    \retrait {
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \multicasetableau {2} {\centragehorizontal {CENTER}}
+		{\gras {netmagis.conf directives}}
+	}
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+	\lignetableau {
+	    \multicasetableau {2} {\centragehorizontal {CENTER}}
+		{Directives for the \italique {www} package}
+	}
+	\lignetableau {
+	    \casetableau {} {passwdurl}
+	    \casetableau {} {}
+	}
+	\lignetableau {
+	    \casetableau {} {host}
+	    \casetableau {} {}
+	}
+	\lignetableau {
+	    \casetableau {} {pwgen}
+	    \casetableau {} {}
+	}
+	\lignetableau {
+	    \casetableau {} {crypt}
+	    \casetableau {} {}
+	}
+    }
+    }
+
+    \titre {3} {Servers package installation}
+
+    \retrait {
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \multicasetableau {2} {\centragehorizontal {CENTER}}
+		{\gras {netmagis.conf directives}}
+	}
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+	\lignetableau {
+	    \multicasetableau {2} {\centragehorizontal {CENTER}}
+		{Directives for the \italique {servers} package}
+	}
+	\lignetableau {
+	    \casetableau {} {diff}
+	    \casetableau {} {Command used to signal differences between
+		two version of server files (DNS zones, DHCP files, etc.).
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {zonedir}
+	    \casetableau {} {Directory where your DNS zone files are
+		read by your DNS daemon (for the \italique {servers}
+		package)
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {zonecmd}
+	    \casetableau {} {Command used to make your DNS daemon reload
+		the generated zone files. The default command is for
+		BIND 9.x.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {mroutefile}
+	    \casetableau {} {File read by sendmail (or Postfix)
+		to get mail routing information. The default line format
+		(see "mroutefmt" directive) ressembles:
+		\retrait {\teletype {specific.domain.com
+		smtp.[host.domain.com]}}
+		which means that mail addressed to
+		someone@specific.domain.com is to be sent to host
+		host.domain.com.
+
+		Note~: if you don't plan to use mail route generation,
+		don't panic! This directive (and the next ones) will
+		not be used.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {mrouteprologue}
+	    \casetableau {} {Prologue of the generated mail route file.
+		This prologue allows you to mention specific mail route
+		information which cannot be extracted from the database.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {mroutefmt}
+	    \casetableau {} {Format of mail route entries: %1$s is the
+		mail address and %2$s is the host accepting mails for
+		this address.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {mroutecmd}
+	    \casetableau {} {Command used to make your Sendmail daemon
+		reload the generated route file.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {dhcpfile}
+	    \casetableau {} {Location of generated file for ISC dhcpd
+		daemon. This file should be included by your main
+		\teletype {dhcpd.conf} file (see you ISC dhcpd
+		configuration).
+
+		Note~: if you don't plan to use DHCP generation,
+		don't panic! This directive (and the next ones) will
+		not be used.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {dhcpfailover}
+	    \casetableau {} {Line to add to generated pools if you use
+		ISC DHCP failover feature (DHCP redundancy over 2
+		servers). Leave empty if you don't use this feature.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {dhcptest}
+	    \casetableau {} {Command used to check DHCP configuration
+		file before restarting ISC dhcpd daemon. This is needed
+		since Netmagis administrators may add faulty DHCP
+		profiles, and ISC dhcpd daemon is not very tolerant to
+		configuration errors. Please note that this command
+		contains the location of your main teletype {dhcpd.conf}
+		file.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {dhcpcmd}
+	    \casetableau {} {Command used to make your ISC dhpcd daemon
+		reload the configuration.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {pffile}
+	    \casetableau {} {File where the PF packet filter (on *BSD
+		hosts) expects to find the contents of the table giving
+		IP addresses of hosts allowed to use unauthenticated
+		SMTP, i.e. hosts allowed to connect to TCP port 25.
+
+		This is typically used
+
+		Note~: if you don't plan to use DHCP generation,
+		don't panic! This directive (and the next ones) will
+		not be used.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {pffmt}
+	    \casetableau {} {}
+	}
+	\lignetableau {
+	    \casetableau {} {pfprologue}
+	    \casetableau {} {}
+	}
+	\lignetableau {
+	    \casetableau {} {pftest}
+	    \casetableau {} {Command used to check the generated file}
+	}
+	\lignetableau {
+	    \casetableau {} {pfcmd}
+	    \casetableau {} {Command used to reload the generated pf table}
+	}
+    }
+    }
+
+    \titre {3} {Topo package installation}
+
+    \retrait {
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \multicasetableau {2} {\centragehorizontal {CENTER}}
+		{\gras {netmagis.conf directives}}
+	}
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+    }
+    }
+
+    \titre {3} {Metro package installation}
+
+    \retrait {
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \multicasetableau {2} {\centragehorizontal {CENTER}}
+		{\gras {netmagis.conf directives}}
+	}
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+    }
+    }
+
+    \**********************************************************************
+
+    \titre {2} {Insert your data in database}
+
+    \**********************************************************************
+
+    \titre {2} {Upgrading from previous versions}
+}
+
+}

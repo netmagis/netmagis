@@ -73,6 +73,8 @@ install-netmagis.org:
 	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" all
 	cd doc/netmagis.org ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd doc/install ; make DESTDIR=$(DESTDIR)/install-$(VERSION) \
+		TCLSH=$(TCLSH) install
 
 distrib: clean
 	rm -rf /tmp/netmagis-$(VERSION)
