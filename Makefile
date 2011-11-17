@@ -93,7 +93,7 @@ freebsd-ports:
 	fi
 	for i in pkg/freebsd/netmagis-* ; do (cd $$i ; make clean) ; done
 	cd pkg/freebsd/netmagis-common ; make makesum
-	tar -czf netmagis-$(VERSION)-freebsd-ports.tar.gz -C pkg freebsd
+	tar -czf netmagis-freebsd-ports-$(VERSION).tar.gz -C pkg/freebsd .
 
 clean:
 	cd common ; make clean
