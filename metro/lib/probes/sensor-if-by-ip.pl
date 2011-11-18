@@ -10,7 +10,7 @@
 
 sub get_if_by_ip
 {
-	my ($base,$host,$community,$ip) = @_;
+	my ($base,$host,$community,$ip,$sonde,$periodicity) = @_;
 
 	my $inverse = 0;
 	my $r ;
@@ -26,7 +26,7 @@ sub get_if_by_ip
 
         if (!defined($snmp))
         {
-		writelog("get_if_by_ip",$config{'logopt'},"info",
+		writelog("get_if_by_ip",$config{syslog_facility},"info",
 			"\t -> ERROR: SNMP connect error: $error");
         }
 	else
@@ -41,14 +41,14 @@ sub get_if_by_ip
 	
 		$r = $snmp->get_request(
 			-varbindlist   => [$oid],
-			-callback   => [ \&get_oid_if,$base,$host,$community,$oid,$inverse] );
+			-callback   => [ \&get_oid_if,$base,$host,$community,$oid,$inverse,$periodicity] );
 	}
 }
 
 
 sub get_oid_if
 {
-	my($session,$base,$host,$community,$oid,$inverse) = @_;
+	my($session,$base,$host,$community,$oid,$inverse,$periodicity) = @_;
 	
 	my $oid_if;
 	
@@ -56,7 +56,7 @@ sub get_oid_if
         {
                 my $error  = $session->error;
 			
-		writelog("get_if_by_ip",$config{'logopt'},"info",
+		writelog("get_if_by_ip",$config{syslog_facility},"info",
 			"\t -> ERROR: get_oid_if($host) Error: $error");
         }
 	else
@@ -77,7 +77,7 @@ sub get_oid_if
 
         		if (!defined($snmp))
         		{
-				writelog("get_if_by_ip",$config{'logopt'},"info",
+				writelog("get_if_by_ip",$config{syslog_facility},"info",
 					"\t -> ERROR: SNMP connect error: $error");
         		}
 
@@ -85,11 +85,11 @@ sub get_oid_if
                 	my $oidout = "1.3.6.1.2.1.31.1.1.1.10.$oid_if";
                 	my $result = $snmp->get_request(
                         	-varbindlist   => [$oidin, $oidout],
-                        	-callback   => [ \&get_if_octet,$base,$host,$oid_if,$oidin,$oidout,$inverse,2,$community] );
+                        	-callback   => [ \&get_if_octet,$base,$host,$oid_if,$oidin,$oidout,$inverse,2,$community,$periodicity] );
 		}
 		else
 		{
-			writelog("get_if_by_ip",$config{'logopt'},"info",
+			writelog("get_if_by_ip",$config{syslog_facility},"info",
 				"\t -> ERROR: get_oid_if($host) Error: OID invalide : $oid_if");
 		}
 	}
@@ -101,14 +101,14 @@ sub get_oid_if
 # recupere le resultat des requetes SNMP sur les interfaces
 sub get_if_octet
 {
-        my ($session,$base,$host,$if,$oidin,$oidout,$inverse,$arg,$community) = @_;
+        my ($session,$base,$host,$if,$oidin,$oidout,$inverse,$arg,$community,$periodicity) = @_;
 
         my ($r_in,$r_out);
         if (!defined($session->var_bind_list))
         {
                 my $error  = $session->error;
 
-                writelog("metropoller_$group$num_process",$config{'logopt'},"info",
+                writelog("metropoller_$group$num_process",$config{syslog_facility},"info",
                         "\t -> ERROR: get_if_octet($host) Error: $error");
         }
         else
@@ -125,12 +125,12 @@ sub get_if_octet
                                 my $ERR=RRDs::error;
                                 if ($ERR)
                                 {
-                                        writelog("metropoller_$group$num_process",$config{'logopt'},"info",
+                                        writelog("metropoller_$group$num_process",$config{syslog_facility},"info",
                                                 "\t -> ERROR while updating $base: $ERR");
 					# s'il n'y a pas de base on en cree une
                                     	if($ERR =~/No such file or directory/)
                                     	{
-                                        	if($base =~/$config{'path_rrd_db'}/)
+                                        	if($base =~/^$config{'path_rrd_db'}/)
                                         	{
                                             		my @decomp_oid = split(/\./,$oidin);
                                             		my $t_decomp_oid = @decomp_oid;
@@ -140,14 +140,14 @@ sub get_if_octet
 								|| $oidin =~/1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.2\./
                                                                 || $oidin =~/1.3.6.1.2.1.2.2.1.14/)
 							{
-                                            			creeBaseBroadcast($base,$speed);
+                                            			creeBaseBroadcast($base,$speed,$periodicity);
 							}
 							# sinon compteur de trafic
 							else
 							{	
-								creeBaseTrafic($base,$speed);
+								creeBaseTrafic($base,$speed,$periodicity);
 							}
-                                            		writelog("get_if_snmp_$group$num_process",$config{'logopt'},"info",
+                                            		writelog("get_if_snmp_$group$num_process",$config{syslog_facility},"info",
                                                 	"\t -> create $base,$host,$if,$oidin,$oidout,$inverse,$arg,$speed");
                                         	}
                                     	}
@@ -160,19 +160,19 @@ sub get_if_octet
                                 my $ERR=RRDs::error;
                                 if ($ERR)
                                 {
-                                    writelog("metropoller_$group$num_process",$config{'logopt'},"info",
+                                    writelog("metropoller_$group$num_process",$config{syslog_facility},"info",
                                                 "\t -> ERROR while updating $base: $ERR");
 
                                     # s'il n'y a pas de base on en cree une
                                     if($ERR =~/No such file or directory/)
                                     {
-                                        if($base =~/$config{'path_rrd_db'}/)
+                                        if($base =~/^$config{'path_rrd_db'}/)
                                         {
                                             my @decomp_oid = split(/\./,$oidin);
                                             my $t_decomp_oid = @decomp_oid;
                                             my $speed = get_snmp_ifspeed("$community\@$host",$decomp_oid[$t_decomp_oid-1]);
-                                            creeBaseTrafic($base,$speed);
-                                            writelog("get_if_snmp_$group$num_process",$config{'logopt'},"info",
+                                            creeBaseTrafic($base,$speed,$periodicity);
+                                            writelog("get_if_snmp_$group$num_process",$config{syslog_facility},"info",
                                                 "\t -> create $base,$host,$if,$oidin,$oidout,$inverse,$arg,$speed");
                                         }
                                     }
@@ -187,12 +187,12 @@ sub get_if_octet
                                 my $ERR=RRDs::error;
                                 if ($ERR)
                                 {
-					writelog("metropoller_$group$num_process",$config{'logopt'},"info",
+					writelog("metropoller_$group$num_process",$config{syslog_facility},"info",
                                                 "\t -> ERROR while updating $base: $ERR");
 					# s'il n'y a pas de base, on en cree une
 					if($ERR =~/No such file or directory/)
                                         {
-                                                if($base =~/$config{'path_rrd_db'}/)
+                                                if($base =~/^$config{'path_rrd_db'}/)
                                                 {
                                                         my @decomp_oid = split(/\./,$oidin);
                                                         my $t_decomp_oid = @decomp_oid;
@@ -203,14 +203,14 @@ sub get_if_octet
 								|| $oidin =~/1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.2\./
 								|| $oidin =~/1.3.6.1.2.1.2.2.1.14/)
                                                         {
-                                                                creeBaseBroadcast($base,$speed);
+                                                                creeBaseBroadcast($base,$speed,$periodicity);
                                                         }
                                                         # sinon compteur de trafic
                                                         else
                                                         {
-                                                                creeBaseTrafic($base,$speed);
+                                                                creeBaseTrafic($base,$speed,$periodicity);
                                                         }
-                                                        writelog("get_if_snmp_$group$num_process",$config{'logopt'},"info",
+                                                        writelog("get_if_snmp_$group$num_process",$config{syslog_facility},"info",
                                                         "\t -> create $base,$host,$if,$oidin,$oidout,$inverse,$arg,$speed");
                                                 }
                                         }
@@ -223,18 +223,18 @@ sub get_if_octet
                                 my $ERR=RRDs::error;
                                 if ($ERR)
                                 {
-                                        writelog("metropoller_$group$num_process",$config{'logopt'},"info",
+                                        writelog("metropoller_$group$num_process",$config{syslog_facility},"info",
                                                 "\t -> ERROR while updating $base: $ERR");
                                     # s'il n'y a pas de base on en cree une
                                     if($ERR =~/No such file or directory/)
                                     {
-                                        if($base =~/$config{'path_rrd_db'}/)
+                                        if($base =~/^$config{'path_rrd_db'}/)
                                         {
                                             my @decomp_oid = split(/\./,$oidin);
                                             my $t_decomp_oid = @decomp_oid;
                                             my $speed = get_snmp_ifspeed("$community\@$host",$decomp_oid[$t_decomp_oid-1]);
-                                            creeBaseTrafic($base,$speed);
-                                            writelog("get_if_snmp_$group$num_process",$config{'logopt'},"info",
+                                            creeBaseTrafic($base,$speed,$periodicity);
+                                            writelog("get_if_snmp_$group$num_process",$config{syslog_facility},"info",
                                                 "\t -> create $base,$host,$if,$oidin,$oidout,$inverse,$arg,$speed");
                                         }
                                     }

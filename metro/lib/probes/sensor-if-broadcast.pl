@@ -10,7 +10,7 @@
 
 sub ifNom_broadcast64 
 {
-	my ($base,$host,$community,$if) = @_;
+	my ($base,$host,$community,$if,$sonde,$periodicity) = @_;
 
 	my ($oidin,$oidout,$result,$r);
 	#cherche si trafic inverse sur l'interface ou pas
@@ -33,7 +33,7 @@ sub ifNom_broadcast64
         
 	if (!defined($snmp)) 
 	{
-		writelog("get_if_broadcast64",$config{'logopt'},"info",
+		writelog("get_if_broadcast64",$config{syslog_facility},"info",
 			"\t -> ERROR: SNMP connect error: $error");
         }
 	else
@@ -50,7 +50,7 @@ sub ifNom_broadcast64
 		$oidout = "1.3.6.1.2.1.31.1.1.1.5.$if";
 		$result = $snmp->get_request(
                 	-varbindlist   => [$oidin, $oidout],
-                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
+                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community,$periodicity] );
 
 	    }
 	    #sinon, recherche de l'index par rapport au nom de l'interface
@@ -60,28 +60,14 @@ sub ifNom_broadcast64
 		my $ligne = "";
 		my $index_interface = "";
 
-		# on recherche l'interface dans le fichier nom<=>index	
-		my $t_liste_if64 = @liste_if64;
-	
-		for($i=0;$i<$t_liste_if64;$i++)
+		# on recherche l'interface dans le fichier de cache d'index
+		if(exists $idxcache{$host}{$if})
 		{
-			if($liste_if64[$i] !~/^#/ && $liste_if64[$i] !~/^\s*$/)
+			if($idxcache{$host}{$if} ne "")
 			{
-	                	chomp $liste_if64[$i];
-	                        (my $ip, my $inter, my $ind) = split(/;/,$liste_if64[$i]);
-  
-	                      	#si l'interface recherchee est trouvee
-	                       	#on remplit la variable index
-	                    	if($inter eq $if && $ip eq $host && $ind ne "")
-	                        {
-                        		$trouve_inter = 1;
-                        	      	$index_interface = $ind;
-					$i = $t_liste_if64;
-        	                       	#print "\non trouve l'interface $index_interface\n";
- 	                     	}
-	               }
-			
-
+				$trouve_inter = 1;
+				$index_interface = $idxcache{$host}{$if};
+			}
 		}
 	
 		my $ok_interro = 0;
@@ -93,7 +79,7 @@ sub ifNom_broadcast64
 			my $oid = "1.3.6.1.2.1.2.2.1.2.$index_interface";
 			$r = $snmp->get_request(
 				-varbindlist   => [$oid],
-				-callback   => [ \&get_if64_name, $base,$host,$community,$if,$oid,$index_interface,$inverse,"broadcast"] );
+				-callback   => [ \&get_if64_name, $base,$host,$community,$if,$oid,$index_interface,$inverse,"broadcast",$periodicity] );
 
 		}
 		# sinon, il faut rechercher l'index de l'interface et remplir le fichier nom<=>idex
@@ -128,32 +114,24 @@ sub ifNom_broadcast64
 				# on remplit le fichier nom<=>index et on iterroge l'equipement
 				if($ok_interro == 1)
        		 		{
-                			if($lock_liste_if64 == 0)
-                			{
-						$lock_liste_if64 = 1;
-
-						$ligne = "$host;$if;$index_interface";
-						push @liste_if64,$ligne;
-	
-						$maj_if64_file = 1;				
-						$lock_liste_if64 = 0;	
-					}
+					$idxcache{$host}{$if} = $index_interface;
+					$maj_cache_file = 1;
 					
 					$oidin = "1.3.6.1.2.1.31.1.1.1.3.$index_interface";
                 			$oidout = "1.3.6.1.2.1.31.1.1.1.5.$index_interface";
                 			$r = $snmp->get_request(
                         			-varbindlist   => [$oidin, $oidout],
-                        			-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
+                        			-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community,$periodicity] );
 				}
 				else
 				{
-					writelog("get_if_broadcast64",$config{'logopt'},"info",
+					writelog("get_if_broadcast64",$config{syslog_facility},"info",
 						"\t -> ERROR: interface $if inexistante sur $host");
 				}
 			}
 			else
 			{
-				writelog("get_if_broadcast64",$config{'logopt'},"info",
+				writelog("get_if_broadcast64",$config{syslog_facility},"info",
                                 	"\t -> ERROR: $community\@$host ne répond pas");
 			}
 		}
