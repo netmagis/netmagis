@@ -64,6 +64,80 @@ sub read_global_conf_file
     return %var;
 }
 
+
+###########################################################
+# function : test the existance of a lock file
+sub check_lock_file
+{
+	my($dir,$file,$process) = @_;
+	
+	# test directory
+	# if not exists create it
+	if (-d $dir)
+	{
+		if (-e "$dir/$file")
+		{
+			#lock file exists
+			return 1;
+		}
+		else
+		{
+			return 0;	
+		}
+	}
+	else
+	{
+		create_directory($dir,$process);
+		
+		# no lock file
+		return 0;
+	}
+}
+
+
+###########################################################
+# function : create a lock file
+sub create_lock_file
+{
+	my($dir,$file,$process) = @_;
+
+        # check directory
+        # if not exists create it
+        if (-d $dir)
+        {
+		open(LOCK,">$dir/$file");
+    		close(LOCK);
+        }
+        else
+        {
+		create_directory($dir,$process);
+        	open(LOCK,">$dir/$file");
+                close(LOCK);        
+        }
+}
+
+###########################################################
+# function : delete a lock file
+sub delete_lock_file
+{
+	my($file) = @_;
+
+	unlink $file;
+}
+
+###########################################################
+# function : create a directory
+sub create_directory
+{
+	my($dir,$process,$facility) = @_;
+	
+	my $res = `mkdir -p $dir`;
+                 
+        writelog("$process","$facility","info",
+                "\t INFO : creation du repertoire $dir");
+}
+
+
 ###########################################################
 # fonction de nettoyage de chaines de caractères
 # enlève les espaces à la fin d'une chaine de char
@@ -90,7 +164,6 @@ sub gethostnamebyaddr
     my ($ip) = @_;
 
     my $iaddr = inet_aton($ip);    
-#my $hostname  = gethost($ip)->name;
     my $hostname  = gethostbyaddr($iaddr, AF_INET);
     ($hostname)=(split(/\./,$hostname))[0];
 
@@ -150,6 +223,21 @@ sub dateSQL2time
     return $t ;
 }
 
+
+###########################################################
+#
+# Convertit une date en time_t au format SQL
+#
+sub time2sql {
+
+    my $t = pop(@_) ;
+
+    my @tm = localtime($t) ;
+
+    my $datestring = strftime ("%Y-%m-%d %H:%M:%S", @tm) ;
+
+    return $datestring ;
+}
 
 ###########################################################
 # conversion des débits max en bits/s en X*10eY
@@ -235,17 +323,17 @@ sub setBaseMaxSpeed
 # retourne la vitesse d'une interface
 sub get_snmp_ifspeed
 {
-    my ($param,$index,$interf) = @_;
+    my ($param,$index,$interf,$facility) = @_;
 
     my $speed;
 
     # recherche de l'interface dans le tableau des interfaces
-    foreach my $key (keys %var)
+    foreach my $key (keys %global_conf)
     {
-        if($key=~/^IFSPEED_/)
+        if($key=~/^ifspeed_/)
         {
 		my $nameif = $key;
-		($nameif) = (split(/IFSPEED_/,$key))[1];
+		($nameif) = (split(/ifspeed_/,$key))[1];
 		if($interf=~/$nameif/)
 		{
                 	$speed = $var{$key};
@@ -261,11 +349,9 @@ sub get_snmp_ifspeed
                 # recuperation de l'oid de l'interface
                 $index = get_snmp_ifindex($param,$interf);
         }
-        #&snmpmapOID("speed","1.3.6.1.2.1.2.2.1.5.$index");
         &snmpmapOID("speed","1.3.6.1.2.1.31.1.1.1.15.$index");
         my @speed = &snmpget($param, "speed");
         $speed = $speed[0];
-	print "$param,$interf => $speed\n";
     }
 
     if($speed ne "")
@@ -276,7 +362,7 @@ sub get_snmp_ifspeed
     }
     else
     {
-        writelog("metrocreatedb","","info",
+        writelog("metrocreatedb","$facility","info",
             "\t ERREUR : Vitesse de ($param,$interf,index : $index) non definie, force à 100 Mb/s");
         return 100000000;
     }
@@ -309,39 +395,74 @@ sub get_snmp_ifindex
 
 
 ###########################################################
-# creation de la Base RRD pour le trafic sur un port ainsi 
+# creation de la Base RRD pour le trafic sur un port ainsi
 # que la disponibilite reseau
 sub creeBaseTrafic
 {
-    my ($fichier,$speed)=@_;
- 
-    my $rrdtool = read_conf_file($conf_file,"rrdtool");
-    system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-    setBaseMaxSpeed($fichier,$speed);
+    	my ($fichier,$speed,$period)=@_;
+
+        if($period eq "* * * * *")
+    	{
+                creeBaseTrafic1min($fichier,$speed);
+    	}
+        else
+        {	
+		my $rrdtool = read_conf_file($conf_file,"rrdtool");
+                system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+        	setBaseMaxSpeed($fichier,$speed);
+        }
 }
 
 ###########################################################
-# creation de la Base RRD pour le trafic de broadcast sur 
+# creation de la Base RRD pour le trafic sur un port avec
+# echantillon a 1 minute
+sub creeBaseTrafic1min
+{
+    	my ($fichier,$speed)=@_;
+	
+	my $rrdtool = read_conf_file($conf_file,"rrdtool");
+    	system("$rrdtool create $fichier -s 60 DS:input:COUNTER:120:U:U DS:output:COUNTER:120:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    	setBaseMaxSpeed($fichier,$speed);
+}
+
+
+###########################################################
+# creation de la Base RRD pour le trafic de broadcast sur
 # un port ainsi que la disponibilite reseau
 sub creeBaseBroadcast
 {
-    my ($fichier,$speed)=@_;
+    	my ($fichier,$speed,$period)=@_;
 
-    my $rrdtool = read_conf_file($conf_file,"rrdtool");
-    system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:8760 RRA:MAX:0.5:24:8760");
-    setBaseMaxSpeed($fichier,$speed);
+	my $rrdtool = read_conf_file($conf_file,"rrdtool");
+        if($period eq "* * * * *")
+    	{
+        	system("$rrdtool create $fichier -s 60 DS:input:COUNTER:120:U:U DS:output:COUNTER:120:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    	}
+    	else
+    	{
+        	system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:8760 RRA:MAX:0.5:24:8760");
+    	}
+        setBaseMaxSpeed($fichier,$speed);
 }
+
 
 ###########################################################
 # creation d'une base rrd pour un compteur generique
 sub creeBaseCounter
 {
-    my ($fichier,$speed) = @_;
+   	my ($fichier,$speed,$period) = @_;
 
-    my $rrdtool = read_conf_file($conf_file,"rrdtool");
-    system("$rrdtool create $fichier DS:value:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-    my $maxspeed = convert_nb_to_exp($speed);
-    system("$rrdtool tune $fichier --maximum value:$maxspeed");
+    	my $rrdtool = read_conf_file($conf_file,"rrdtool");
+	if($period eq "* * * * *")
+    	{
+        	system("$rrdtool create $fichier -s 60 DS:value:COUNTER:120:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    	}
+    	else
+    	{
+        	system("$rrdtool create $fichier DS:value:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    	}
+   	my $maxspeed = convert_nb_to_exp($speed);
+    	system("$rrdtool tune $fichier --maximum value:$maxspeed");
 }
 
 ###########################################################
@@ -540,9 +661,14 @@ sub creeBaseNbMbuf
 # de valeurs en octets sous forme de jauge
 sub creeBaseNbGeneric
 {
-    my ($fichier)=@_;
+    my ($fichier,$period)=@_;
 
     my $rrdtool = read_conf_file($conf_file,"rrdtool");
+
+    if($period eq "* * * * *")
+    {
+    	system("$rrdtool create $fichier -s 60 DS:value:GAUGE:120:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    }
     system("$rrdtool create $fichier DS:value:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
@@ -599,7 +725,7 @@ sub check_host
     	}
     	else
     	{
-        	writelog("check_host","","info",
+        	writelog("check_host","$facility","info",
             	"\t ERREUR : Echec interrogation SNMP pour sysoid ($param)");
         	
 		return -1;

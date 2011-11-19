@@ -32,7 +32,7 @@ sub ifNom_ap
         
 	if (!defined($snmp)) 
 	{
-		writelog("get_if_snmp_ap",$config{'logopt'},"info",
+		writelog("get_if_snmp_ap",$config{syslog_facility},"info",
                 	"\t -> ERROR: SNMP connect error: $error");
         }
 
@@ -149,13 +149,13 @@ sub ifNom_ap
 				}
 				else
 				{
-					writelog("get_if_snmp_ap",$config{'logopt'},"info",
+					writelog("get_if_snmp_ap",$config{syslog_facility},"info",
                 				"\t -> ERROR: Erreur, interface $if inexistante sur $host");
 				}
 			}
 			else
                         {
-				writelog("get_if_snmp_ap",$config{'logopt'},"info",
+				writelog("get_if_snmp_ap",$config{syslog_facility},"info",
                                 	"\t -> ERROR: $community\@$host ne répond pas");
                         }
 		}
@@ -185,7 +185,7 @@ sub get_if_name
 	{
        		my $error  = $session->error;
 		
-		writelog("get_if_snmp_ap",$config{'logopt'},"info",
+		writelog("get_if_snmp_ap",$config{syslog_facility},"info",
                 	"\t -> ERROR: get_if_name($host) Error: $error");
 		
 		$err=1;
@@ -206,7 +206,7 @@ sub get_if_name
         {
                 $ok_interro = 0;
                
-		writelog("get_if_snmp_ap",$config{'logopt'},"info",
+		writelog("get_if_snmp_ap",$config{syslog_facility},"info",
                 	"\t -> ERROR: L'interface trouvee ne correspond pas a son index reel");
 		
 		# cherche liste des interfaces
@@ -254,14 +254,14 @@ sub get_if_name
 			}
 			else
 			{
-				writelog("get_if_snmp_ap",$config{'logopt'},"info",
+				writelog("get_if_snmp_ap",$config{syslog_facility},"info",
                 			"\t -> ERROR: Fichier interf_ap.txt locké. Pas de mise à jour");
 			}
 			$id_if = $index_interface;
 		}
 		else
 		{
-			writelog("get_if_snmp_ap",$config{'logopt'},"info",
+			writelog("get_if_snmp_ap",$config{syslog_facility},"info",
                         	"\t -> ERROR: interface $if inexistante sur $host. Pas de mise à jour.");
 		}
         }

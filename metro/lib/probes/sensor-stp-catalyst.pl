@@ -47,7 +47,7 @@ sub get_stp_catalyst
 
 	if (!defined($snmp))
 	{
-	    #writelog("get_stp_catalyst",$config{'logopt'},"info",
+	    #writelog("get_stp_catalyst",$config{syslog_facility},"info",
             #     "\t -> ERROR: SNMP connect error: $error");
 	}
 	else
@@ -62,7 +62,7 @@ sub get_stp_catalyst
     }
     else
     {
-	#writelog("get_stp_catalyst",$config{'logopt'},"info",
+	#writelog("get_stp_catalyst",$config{syslog_facility},"info",
         #         "\t -> WARNING : $host toujours en cours d'interrogation");
     }
 }
@@ -76,7 +76,7 @@ sub get_snmp_bridge_id
     #l'equipement ne repond pas
     {
         my $error  = $session->error;
-        #writelog("get_stp_catalyst",$config{'logopt'},"info",
+        #writelog("get_stp_catalyst",$config{syslog_facility},"info",
         #         "\t -> ERROR: get_stp_catalyst($host) Error: $error");
         #print "ERROR: get_stp_catalyst($host) Error: $error\n";
     }
@@ -114,7 +114,7 @@ sub get_snmp_bridge_id
 
                 if (!defined($snmp))
                 {
-                    #writelog("get_assoc_ap",$config{'logopt'},"info",
+                    #writelog("get_assoc_ap",$config{syslog_facility},"info",
                     #    "\t -> ERROR: SNMP connect error: $error");
                     #print "ERROR: SNMP connect error: $error\n";
                 }
@@ -140,7 +140,7 @@ sub get_snmp_rootBridge
     #l'equipement ne repond pas
     {
         my $error  = $session->error;
-        #writelog("get_stp_catalyst",$config{'logopt'},"info",
+        #writelog("get_stp_catalyst",$config{syslog_facility},"info",
         #         "\t -> ERROR: get_stp_catalyst($host) Error: $error");
         #print "ERROR: get_stp_catalyst($host) Error: $error\n";
     }
@@ -166,7 +166,7 @@ sub get_snmp_rootBridge
 
         if (!defined($snmp))
         {
-	    #writelog("get_assoc_ap",$config{'logopt'},"info",
+	    #writelog("get_assoc_ap",$config{syslog_facility},"info",
 	    #    "\t -> ERROR: SNMP connect error: $error");
             ##print "ERROR: SNMP connect error: $error\n";
         }
@@ -190,7 +190,7 @@ sub get_snmp_rootPort
     #l'equipement ne repond pas
     {
         my $error  = $session->error;
-        #writelog("get_stp_catalyst",$config{'logopt'},"info",
+        #writelog("get_stp_catalyst",$config{syslog_facility},"info",
         #         "\t -> ERROR: get_stp_catalyst($host) Error: $error");
 	#print "ERROR: get_stp_catalyst($host) Error: $error\n";
     }
@@ -211,7 +211,7 @@ sub get_snmp_rootPort
 
 	if (!defined($snmp))
 	{
-	    #writelog("get_assoc_ap",$config{'logopt'},"info",
+	    #writelog("get_assoc_ap",$config{syslog_facility},"info",
                    #    "\t -> ERROR: SNMP connect error: $error");
 	    #print "ERROR: SNMP connect error: $error\n";
 	}
