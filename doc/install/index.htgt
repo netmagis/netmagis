@@ -613,6 +613,9 @@
 	Select any item in the left menu to check that your authentication
 	parameters are correctly configured.
     }
+    \item {If you are using internal Netmagis authentication, change
+	your password (unless you want to keep the generated one...).
+    }
     }
 
     Congratulations! The Web application is now installed.
