@@ -2,11 +2,11 @@
 \modele {texte}
 
 \set {auteur}	{pda/jean}
-\set {date}	{25/10/2011}
+\set {date}	{18/11/2011}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    Netmagis - Introduction
+    Netmagis - Installation manual
 }
 
 \*******************************************************************************
@@ -285,40 +285,43 @@
     you should have a PostgreSQL server. The recommanded version is at
     least 9.1.
 
-    You have to check that your PostgreSQL installation: allow connections
-    (and authenticate with password) from hosts which act as client
-    of the Netmagis database (all hosts where you installed a
-    netmagis package). This is usually configured in file \teletype
-    {~pgsql/data/pg_hba.conf} (where \teletype {pgsql} is the name of
-    the PostgreSQL priviledged user).
+    You have to check that your PostgreSQL installation allow connections
+    (and authenticate users with password) from hosts which act as
+    clients of the Netmagis database (all hosts where you installed
+    a netmagis package). This is usually configured in file \teletype
+    {&tilde;pgsql/data/pg_hba.conf} (where \teletype {pgsql} is the name
+    of the PostgreSQL administror).
 
-    You have to create at least two PostgreSQL users (with the
-    PostgreSQL \teletype {createuser} program):
+    Netmagis needs at least two PostgreSQL users. You can create them
+    with the PostgreSQL \teletype {createuser} program:
 
     \liste {
 	\item {the first one (default used by Netmagis: \gras {dns})
 	    does not have any special privilege: it will be used by
 	    various scripts (including CGI scripts) to connect to the
-	    database.
+	    database. Use the command:
+	    \retrait\teletype {createuser --no-superuser --no-createrole --no-createdb dns}
 	}
-	\item {the second ones (may be more than one user) are
-	    priviledged users (superuser in PostgreSQL terminology).
+	\item {the second ones (you may have more than one user) are
+	    priviledged users (superusers in PostgreSQL terminology).
 	    The first of them is used for various database administration
 	    tasks such as database creation, database daily maintenance,
-	    etc. It may be convenient to use real login names since these
-	    users are authorized to connect to the Web applcation even
-	    when it is in "maintenance mode".
+	    etc. These users should be real Unix users, as well as
+	    Netmagis users. Notably, they are authorized to connect to
+	    the Web application even when it is in "maintenance mode".
+	    Create them with:
+	    \retrait\teletype {createuser --superuser joe}
 	}
     }
 
     \titre {3} {The Netmagis configuration file}
 
     The Netmagis configuration file is located in \teletype
-    {.../etc/netmagis.conf}. The \italique {common} package do
-    not install this file (in order to leave your file intact if
-    you previousely installed Netmagis), but a copy in \teletype
-    {.../etc/netmagis.conf.sample}. Copy it manually to \teletype
-    {.../etc/netmagis.conf}, and edit it.
+    {.../etc/netmagis.conf} on each host where Netmagis is instaleld.
+    The \italique {common} package does not install this file (in order
+    to leave your file intact if you previousely installed Netmagis), but
+    it installs a copy in \teletype {.../etc/netmagis.conf.sample}. Copy
+    it manually to \teletype {.../etc/netmagis.conf}, and edit it.
 
     The following table list only directives you would want to modify
     for a fresh installation.
@@ -340,10 +343,6 @@
 	\lignetableau {
 	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
 	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
-	}
-	\lignetableau {
-	    \multicasetableau {2} {\centragehorizontal {CENTER}}
-		{Directives for all packages}
 	}
 	\lignetableau {
 	    \casetableau {} {dnsdb...}
@@ -369,7 +368,19 @@
     }
     }
 
+    Use the script \teletype {netmagis-config} (check your PATH) to
+    test that Netmagis understands your modifications. The command:
+    \retrait\teletype {$ netmagis-config dnsdbhost}
+    should display a string such as:
+    \retrait\teletype {dnsdbhost="myhost.mycompany.com"}
+
+    You can now proceed to database installation.
+
     \titre {3} {Database installation}
+
+    PostgreSQL server should be initialized as described
+    above. Netmagis should then be installed by providing
+    \teletype {.../etc/netmagis.conf} directives:
 
     \retrait {
     \tableau {
@@ -386,30 +397,117 @@
 	}
     } {
 	\lignetableau {
-	    \multicasetableau {2} {\centragehorizontal {CENTER}}
-		{\gras {netmagis.conf directives}}
-	}
-	\lignetableau {
 	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
 	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
-	}
-	\lignetableau {
-	    \multicasetableau {2} {} {Directives for the
-		\italique {database} package
-	    }
 	}
 	\lignetableau {
 	    \casetableau {} {dbcopy}
 	    \casetableau {} {Name of a copy of the Netmagis database,
 		generated every night (see the \teletype {netmagis-maint}
 		program in the \italique {database} package). This copy
-		lets you experiment and work on data without fear.
+		lets you experiment and work on data without fear. \br
+		If this directive is empty, the maintenance command
+		will not create a copy of the database.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {pwgen}
+	    \casetableau {} {Command line to generate a random password}
+	}
+	\lignetableau {
+	    \casetableau {} {crypt}
+	    \casetableau {} {Command line to encrypt a password,
+		compatible with the mod_auth_pgsql Apache module
 	    }
 	}
     }
     }
 
+    \liste {
+    \item {
+	If you are upgrading from a previous WebDNS or Netmagis installation,
+	please see the "\lien {Upgrading from previous version} {#upgrading}"
+	section at the end of this document.
+    }
+    \item {
+	If you are installing Netmagis for the first time, after you
+	configured the \teletype {netmagis.conf} file, run the command
+	(as one of the priviledged users listed in \teletype {rootusers}
+	directive):
+	\retrait\teletype {$ .../sbin/netmagis-dbcreate}
+	This command:
+	\liste {
+	    \item {creates the Netmagis database (it fails if the database
+		already exists)}
+	    \item {creates the SQL schemas, tables, functions and triggers}
+	    \item {provides default values for Netmagis parameters}
+	    \item {creates Netmagis users listed in \teletype {rootusers}
+		directive (in \teletype {.../etc/netmagis.conf} file)
+	    }
+	    \item {creates a Netmagis user called \teletype {nobody}}
+	    \item {assigns all Netmagis users a random password, and
+		displays them on standard output}
+	    \item {grants appropriate access to tables to the
+		\teletype {dnsdbuser} and \teletype {rootusers} users.
+	    }
+	}
+	Users a created in the Netmagis database, including the internal
+	authentication schema.
+	\liste {
+	    \item {if you use an LDAP authentication, \teletype {rootusers}
+		users should exist in your LDAP directory.}
+	    \item {if you plan to use the internal authentication database,
+		note the generated passwords as they will be needed in the
+		Web application installation}
+	}
+    }
+    \item {Unless you are upgrading from previous versions, you should
+	import your data into the database. Doing so is described in
+	the "\lien {Import your data in database} {#import}" section
+	below.
+
+	Since this is a long task, if you want to test your installation,
+	you may try to import example data.  You may do so by issuing
+	the command:
+	\retrait\teletype {$ cd .../share/examples/netmagis \br
+	    $ ./run-all.sh
+	}
+
+	You can later destroy and re-create the database with your
+	own data.
+    }
+    \item {Install the sample crontab (\teletype
+	{.../share/examples/netmagis/crontab.database}) in your default
+	cron system. This crontab should be run by one of the \teletype
+	{rootusers}.
+
+	FreeBSD users: if you install this crontab in the global \teletype
+	{/etc/crontab}, please provide a user name just before the
+	command name.
+
+	The \teletype {.../sbin/netmagis-maint} command performs some
+	maintenance tasks:
+	\liste {
+	    \item {make a hourly backup of database in the directory
+		named in the \teletype {dumpdir} directive from
+		\teletype {.../etc/netmagis.conf}
+	    }
+	    \item {copy the current database in a copy named after the
+		\teletype {dbcopy} directive
+	    }
+	    \item {performs a PostgreSQL vacuum operation}
+	    \item {remove some old entries in Netmagis internal spools}
+	}
+    }
+    }
+
+    Netmagis database is now installed. Proceed now to the Web application
+    installation.
+
     \titre {3} {Web application installation}
+
+    To store user accounts, the Web application can use either an existing
+    external LDAP directory or the internal PostgreSQL database.
 
     \retrait {
     \tableau {
@@ -434,27 +532,90 @@
 	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
 	}
 	\lignetableau {
-	    \multicasetableau {2} {\centragehorizontal {CENTER}}
-		{Directives for the \italique {www} package}
-	}
-	\lignetableau {
 	    \casetableau {} {passwdurl}
-	    \casetableau {} {}
+	    \casetableau {} {URL which should be displayed to let users
+		change their password, if you use an external LDAP
+		authentication. Leave empty if you use internal
+		PostgreSQL authentication.}
 	}
 	\lignetableau {
-	    \casetableau {} {host}
-	    \casetableau {} {}
+	    \casetableau {} {hostcmd}
+	    \casetableau {} {Path to the \teletype {host} command}
 	}
 	\lignetableau {
 	    \casetableau {} {pwgen}
-	    \casetableau {} {}
+	    \casetableau {} {Command line to generate a random password
+		(not used for LDAP authentication)
+	    }
 	}
 	\lignetableau {
 	    \casetableau {} {crypt}
-	    \casetableau {} {}
+	    \casetableau {} {Command line to encrypt a password
+		(not used for LDAP authentication)
+	    }
 	}
     }
     }
+
+    \liste {
+    \item {A default Apache configuration file is provided in
+	\teletype {..../share/examples/netmagis/httpd.conf}.  Adapt this
+	file and include it in your main Apache configuration file.
+
+	\liste {
+	    \item {If you are using an external LDAP directory to
+		authenticate your users, copy the sample
+		Apache configuration file provided in \teletype
+		{.../share/examples/netmagis/auth-ldap.conf} in your
+		Apache configuration directory, adapt it to your local
+		configuration.
+	    }
+	    \item {If you are using CAS (Central Authentication Service) to
+		authenticate your users...  
+		TO BE WRITTEN
+	    }
+	    \item {If you are using the internal Netmagis authentication,
+		check that the \teletype {auth_pgsql} module is
+		loaded in your main Apache configuration file
+		(\teletype {httpd.conf}), with a line such as:
+		\retrait\teletype {LoadModule auth_pgsql_module
+		libexec/apache22/mod_auth_pgsql.so}
+
+		Next, copy the sample Apache configuration file provided
+		in \teletype {.../share/examples/netmagis/auth-pgsql.conf}
+		in your Apache configuration directory, adapt it to your
+		local configuration. Check the \teletype {Auth_PG_host},
+		\teletype {Auth_PG_port}, \teletype {Auth_PG_database},
+		\teletype {Auth_PG_user} and \teletype {Auth_PG_pwd}
+		configuration lines.
+	    }
+	}
+    }
+    \item {Direct now your Web browser to the \teletype
+	{http://youhost/netmagis/index}, and connect with your login name.
+	If you use the internal Netmagis PostgreSQL authentication,
+	use the password generated by the \teletype {netmagis-dbcreate}
+	command, during the database creation phase.
+
+	You should see a main menu such as \lien {this one}
+	{http://netmagis.org/shot-accueil.png}.
+    }
+    \item {If you are using LDAP or CAS authentication, go into the
+	\gras {Admin} menu (on the left vertical bar), then to the \gras
+	{Application parameters} menu.
+
+	In the "\gras {LDAP authentication parameters}" section,
+	adapt values to your LDAP directory. Then select the \gras
+	{LDAP} item in the \gras {Authentication method} menu
+	(in the "\gras {General parameters}" section). Then, click on
+	the \gras {Submit} button to register your new configuration.
+
+	Select any item in the left menu to check that your authentication
+	parameters are correctly configured.
+    }
+    }
+
+    Congratulations! The Web application is now installed.
 
     \titre {3} {Servers package installation}
 
@@ -479,10 +640,6 @@
 	\lignetableau {
 	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
 	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
-	}
-	\lignetableau {
-	    \multicasetableau {2} {\centragehorizontal {CENTER}}
-		{Directives for the \italique {servers} package}
 	}
 	\lignetableau {
 	    \casetableau {} {diff}
@@ -515,7 +672,7 @@
 		someone@specific.domain.com is to be sent to host
 		host.domain.com.
 
-		Note~: if you don't plan to use mail route generation,
+		Note: if you don't plan to use mail route generation,
 		don't panic! This directive (and the next ones) will
 		not be used.
 	    }
@@ -547,7 +704,7 @@
 		\teletype {dhcpd.conf} file (see you ISC dhcpd
 		configuration).
 
-		Note~: if you don't plan to use DHCP generation,
+		Note: if you don't plan to use DHCP generation,
 		don't panic! This directive (and the next ones) will
 		not be used.
 	    }
@@ -585,7 +742,7 @@
 
 		This is typically used
 
-		Note~: if you don't plan to use DHCP generation,
+		Note: if you don't plan to use DHCP generation,
 		don't panic! This directive (and the next ones) will
 		not be used.
 	    }
@@ -665,11 +822,11 @@
 
     \**********************************************************************
 
-    \titre {2} {Insert your data in database}
+    \titre {2} {\ancre {import} {Import your data in database}}
 
     \**********************************************************************
 
-    \titre {2} {Upgrading from previous versions}
+    \titre {2} {\ancre {upgrading} {Upgrading from previous versions}}
 }
 
 }
