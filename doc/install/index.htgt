@@ -139,12 +139,15 @@
 	# make install
     }}
 
-    The provided ports automatically install required dependancies.
+    The provided ports automatically install required dependencies.
 
-    \titre {3} {Installing from Ubuntu packages}
+    \titre {3} {Installing from Debian/Ubuntu packages}
 
-    Not yet available. From now, either find a FreeBSD machine or install
-    from source distribution  (see below).
+    Not yet available. At this time, either find a FreeBSD machine or
+    install from source distribution  (see below).
+
+    You can \lien {contribute to Netmagis}
+    {https://github.com/pdav/netmagis} by providing packet files.
 
     \titre {3} {Installing from Netmagis source distribution}
 
@@ -165,8 +168,8 @@
 	    $ git clone git@github.com:pdav/netmagis.git
 	}}
     }
-    \item {Install \lien {required dependancies} {/spec.html}.
-	Please note that Tcl is a required dependancy for all packages.
+    \item {Install \lien {required dependencies} {/spec.html}.
+	Please note that Tcl is a required dependency for all packages.
 
     }
     \item {Choose an installation directory. You may use \teletype
@@ -174,7 +177,7 @@
 	hierarchy such as:
 
 	\tableau {
-	    \taille {100}
+	    \* \taille {100}
 	    \bordure {1} {}
 	} {
 	    \casedefauttableau {
@@ -225,7 +228,7 @@
     }
     \item {Modify the top-level Makefile variables to suit your choices:
 	\tableau {
-	    \taille {100}
+	    \* \taille {100}
 	    \bordure {1} {}
 	} {
 	    \casedefauttableau {
@@ -615,186 +618,777 @@
     }
     \item {If you are using internal Netmagis authentication, change
 	your password (unless you want to keep the generated one...).
+
+	Change also your name (as well as other account informations)
+	with the \gras {Admin} / \gras {Internal Auth} / \gras {Modify
+	account} menu.
     }
     }
 
     Congratulations! The Web application is now installed.
 
+    \titre {3} {Utils package installation}
+
+    The \italique {utils} package is optional: it contains commands
+    to add, delete or modify individual hosts, as well as DNS zone
+    prologues. These commands are designed to be used wth the Unix shell.
+
+    Installation is very simple: only common \teletype {netmagis.conf}
+    directives to connect to the database are needed.
+    
+    Notice, however, that this file (including password to connect to
+    the database) must be readable to all users of these scripts. This
+    may be a security risk if you make this file readable for all users,
+    but you can also control access to the configuration file and to
+    the scripts based on a group policy.
+
+    The provided commands are:
+    \liste {
+    \item {\teletype {dnsaddhost \italique {fqdn addr}}: adds the
+	specified host with the IPv4 or IPv6 address
+    }
+    \item {\teletype {dnsaddalias \italique {fqdn-alias fqdn-host}}:
+	adds the specified alias to an existing host.
+    }
+    \item {\teletype {dnsdelhost \italique {fqdn}}: deletes the
+	specified host
+    }
+    \item {\teletype {dnsdelip \italique {addr}}: deletes an IP address.
+	If this is the last, deletes the host.
+    }
+    \item {\teletype {dnsmodattr \italique {fqdn key val key val ...}}:
+	modify an existing host. Possibles keys are:
+	\liste {
+	    \item {\teletype {mac}: value is the MAC address
+	    }
+	    \item {\teletype {hinfo}: value is the exact name of the
+		the machine type, as listed
+		in the \gras {Modify machine types} administrator menu.
+		or in the
+		\teletype {dns.hinfo} SQL table
+
+	    }
+	    \item {\teletype {respnom}: name of user responsible for
+		this host
+	    }
+	    \item {\teletype {respmel}: mail address of user responsible
+		for this host
+	    }
+	    \item {\teletype {commentaire}: comment associated to this
+		host
+	    }
+	    \item {\teletype {dhcpprofil}: value is the exact name of
+		the DHCP profile, as listed
+		in the \gras {Modify DHCP profiles} administrator menu.
+		or in the
+		\teletype {dns.dhcpprofil} SQL table
+	    }
+	    \item {\teletype {ttl}: value is the specific TTL value for
+		this host, in seconds, or empty string to remove the
+		specific value
+	    }
+	    \item {\teletype {droitsmtp}: value is 0 to remove the right
+		to emit mail with unauthenticated SMTP, or 1 to add the
+		right.
+	    }
+	}
+    }
+    \item {\teletype {dnsreadprol \italique {zone}}: displays on
+	standard output the DNS zone prologue specified by its domain
+	name.
+    }
+    \item {\teletype {dnswriteprol \italique {zone file}}: use the named
+	file as the zone prologue. Since this operation may have a great
+	impact, manual confirmation is required.
+    }
+    }
+
+
     \titre {3} {Servers package installation}
 
-    \retrait {
-    \tableau {
-	\taille {100}
-	\bordure {1} {}
-    } {
-	\casedefauttableau {
-	    \centragehorizontal {LEFT}
-	    \centragevertical {MIDDLE}
-	}
-	\casedefauttableau {
-	    \centragehorizontal {LEFT}
-	    \centragevertical {MIDDLE}
-	}
-    } {
-	\lignetableau {
-	    \multicasetableau {2} {\centragehorizontal {CENTER}}
-		{\gras {netmagis.conf directives}}
-	}
-	\lignetableau {
-	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
-	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
-	}
-	\lignetableau {
-	    \casetableau {} {diff}
-	    \casetableau {} {Command used to signal differences between
-		two version of server files (DNS zones, DHCP files, etc.).
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {zonedir}
-	    \casetableau {} {Directory where your DNS zone files are
-		read by your DNS daemon (for the \italique {servers}
-		package)
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {zonecmd}
-	    \casetableau {} {Command used to make your DNS daemon reload
-		the generated zone files. The default command is for
-		BIND 9.x.
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {mroutefile}
-	    \casetableau {} {File read by sendmail (or Postfix)
-		to get mail routing information. The default line format
-		(see "mroutefmt" directive) ressembles:
-		\retrait {\teletype {specific.domain.com
-		smtp.[host.domain.com]}}
-		which means that mail addressed to
-		someone@specific.domain.com is to be sent to host
-		host.domain.com.
+    The \italique {servers} package must be installed on your main BIND
+    server, on your DHCP server, and on your mail router, depending on
+    the features you want.
 
-		Note: if you don't plan to use mail route generation,
-		don't panic! This directive (and the next ones) will
-		not be used.
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {mrouteprologue}
-	    \casetableau {} {Prologue of the generated mail route file.
-		This prologue allows you to mention specific mail route
-		information which cannot be extracted from the database.
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {mroutefmt}
-	    \casetableau {} {Format of mail route entries: %1$s is the
-		mail address and %2$s is the host accepting mails for
-		this address.
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {mroutecmd}
-	    \casetableau {} {Command used to make your Sendmail daemon
-		reload the generated route file.
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {dhcpfile}
-	    \casetableau {} {Location of generated file for ISC dhcpd
-		daemon. This file should be included by your main
-		\teletype {dhcpd.conf} file (see you ISC dhcpd
-		configuration).
+    \liste {
+    \item {On all servers, you will have to configure \teletype
+	{.../etc/netmagis.conf} with the following directive:
 
-		Note: if you don't plan to use DHCP generation,
-		don't panic! This directive (and the next ones) will
-		not be used.
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}}
+		    {\gras {netmagis.conf directives}}
+	    }
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	    }
+	    \lignetableau {
+		\casetableau {} {diff}
+		\casetableau {} {Command line used to signal differences
+		    between two versions of a server file (DNS zones,
+		    DHCP files, etc.).
+		}
 	    }
 	}
-	\lignetableau {
-	    \casetableau {} {dhcpfailover}
-	    \casetableau {} {Line to add to generated pools if you use
-		ISC DHCP failover feature (DHCP redundancy over 2
-		servers). Leave empty if you don't use this feature.
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {dhcptest}
-	    \casetableau {} {Command used to check DHCP configuration
-		file before restarting ISC dhcpd daemon. This is needed
-		since Netmagis administrators may add faulty DHCP
-		profiles, and ISC dhcpd daemon is not very tolerant to
-		configuration errors. Please note that this command
-		contains the location of your main teletype {dhcpd.conf}
-		file.
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {dhcpcmd}
-	    \casetableau {} {Command used to make your ISC dhpcd daemon
-		reload the configuration.
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {pffile}
-	    \casetableau {} {File where the PF packet filter (on *BSD
-		hosts) expects to find the contents of the table giving
-		IP addresses of hosts allowed to use unauthenticated
-		SMTP, i.e. hosts allowed to connect to TCP port 25.
 
-		This is typically used
+    }
+    \item {On your \gras {main BIND server}, provide values for the
+	following directives:
 
-		Note: if you don't plan to use DHCP generation,
-		don't panic! This directive (and the next ones) will
-		not be used.
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}}
+		    {\gras {netmagis.conf directives}}
+	    }
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	    }
+	    \lignetableau {
+		\casetableau {} {zonedir}
+		\casetableau {} {Directory where your DNS zone files are
+		    read by your DNS daemon
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {zonecmd}
+		\casetableau {} {Command used to make your DNS daemon reload
+		    the generated zone files. The default command is for
+		    BIND 9.x.
+
+		    Please note that if this command fails, zone
+		    generation is aborted and old zone files are restored.
+
+		    If you have configured a cluster of name servers,
+		    you can use this directive to propagate inforamtion
+		    to other nodes.
+		}
 	    }
 	}
-	\lignetableau {
-	    \casetableau {} {pffmt}
-	    \casetableau {} {}
+
+	Once you configured \teletype {.../etc/netmagis.conf} file, run
+	(as the user who have access to the \teletype {zonedir}
+	directory and to the \teletype {zonecmd} command):
+	\retrait\teletype {$ .../sbin/mkzone -n -v}
+	This command tests zone generation, without performing any
+	file modification.
+
+	You can force generation of some zones by using the \gras {Admin}
+	/ \gras {Force zone generation}. This sets a flag in the \teletype
+	{dns.zone} SQL table, which is read by the \teletype {mkzone}
+	to find modified zones.
+
+	Test now a real zone generation by using:
+	\retrait\teletype {$ .../sbin/mkzone -v}
+
+	If everything is ok, you can use the sample \teletype
+	{.../share/examples/netmagis/crontab.bind} to install the periodic
+	zone generation for the user. Remember that the SOA serial number
+	is limited to 2 digits (i.e. 99 modifications by day), so there is
+	no more than 4 modifications by hour on average (over 24 hours).
+
+	FreeBSD users: if you install this crontab in the global \teletype
+	{/etc/crontab}, please provide a user name just before the
+	command name.
+
+    }
+    \item {Netmagis is designed to aliment a central \lien {ISC DHCP
+	server} {http://www.isc.org/software/dhcp}.  If you want to use
+	this functionnality on other networks, you need to activate DHCP
+	relay in your router configurations.
+
+	The Netmagis can also handle \gras {failover} configuration
+	in order to provide a redundant DHCP service based on 2 ISC
+	DHCP servers.
+
+	On your \gras {DHCP server}, provide values for the following
+	directives:
+
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}}
+		    {\gras {netmagis.conf directives}}
+	    }
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	    }
+	    \lignetableau {
+		\casetableau {} {dhcpfile}
+		\casetableau {} {Location of generated file for ISC dhcpd
+		    daemon. This file should be included by your main
+		    \teletype {dhcpd.conf} file (see you ISC dhcpd
+		    configuration), with a line such as:
+		    \retrait\teletype {include "/etc/dhcp-gen.conf"}
+
+		    Note: if you don't plan to use DHCP generation,
+		    don't panic! This directive (and the next ones) will
+		    not be used.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {dhcpfailover}
+		\casetableau {} {Line to add to generated pools if you use
+		    ISC DHCP failover feature (DHCP redundancy over 2
+		    servers). Leave empty if you don't use this feature.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {dhcptest}
+		\casetableau {} {Command used to check DHCP configuration
+		    file before restarting ISC dhcpd daemon. This is needed
+		    since Netmagis administrators may add faulty DHCP
+		    profiles, and ISC dhcpd daemon is not very tolerant to
+		    configuration errors. Please note that this command
+		    contains the location of your main teletype {dhcpd.conf}
+		    file.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {dhcpcmd}
+		\casetableau {} {Command used to make your ISC dhpcd daemon
+		    reload the configuration.
+		}
+	    }
 	}
-	\lignetableau {
-	    \casetableau {} {pfprologue}
-	    \casetableau {} {}
+
+	Once you configured \teletype {.../etc/netmagis.conf} file, run
+	as root:
+	\retrait\teletype {$ .../sbin/mkdhcp -n -v}
+	This command tests DHCP file generation, without performing any
+	file modification.
+
+	Test now a real DHCP file generation by using:
+	\retrait\teletype {$ .../sbin/mkdhcp -v}
+
+	If everything is ok, you can use the sample \teletype
+	{.../share/examples/netmagis/crontab.dhcp} to install the periodic
+	DHCP file generation. You should run the DHCP file generation
+	soon after the DNS zone generation (such that new host names
+	are not generated in DHCP file before they are known in the DNS).
+
+	FreeBSD users: if you install this crontab in the global \teletype
+	{/etc/crontab}, please provide a user name just before the
+	command name.
+
+    }
+    \item {Netmagis can be used to generate mail routes for you central
+	mail router. Routes are generated following "mail roles", whose
+	modifications are enabled individually for each allowed domain
+	in the \gras {Admin} / \gras {Modify users and groups} menu.
+
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}}
+		    {\gras {netmagis.conf directives}}
+	    }
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	    }
+	    \lignetableau {
+		\casetableau {} {mroutefile}
+		\casetableau {} {File read by sendmail (or Postfix)
+		    to get mail routing information. The default line format
+		    (see "mroutefmt" directive) ressembles:
+		    \retrait {\teletype {specific.domain.com
+		    smtp.[host.domain.com]}}
+		    which means that mail addressed to
+		    someone@specific.domain.com is to be sent to host
+		    host.domain.com.
+
+		    Note: if you don't plan to use mail route generation,
+		    don't panic! This directive (and the next ones) will
+		    not be used.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {mrouteprologue}
+		\casetableau {} {Prologue of the generated mail route file.
+		    This prologue allows you to mention specific mail route
+		    information which cannot be extracted from the database.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {mroutefmt}
+		\casetableau {} {Format of mail route entries: %1$s is the
+		    mail address and %2$s is the host accepting mails for
+		    this address.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {mroutecmd}
+		\casetableau {} {Command used to make your Sendmail daemon
+		    reload the generated route file.
+		    
+		    If your mail router is a cluster of hosts, this
+		    command will have to propagate the file and restart
+		    the daemon on other nodes.
+		}
+	    }
 	}
-	\lignetableau {
-	    \casetableau {} {pftest}
-	    \casetableau {} {Command used to check the generated file}
+
+	Once you configured \teletype {.../etc/netmagis.conf} file, run
+	as root:
+	\retrait\teletype {$ .../sbin/mkmroute -n -v}
+	This command tests mail routes file generation, without performing
+	any file modification.
+
+	Test now a real file generation by using:
+	\retrait\teletype {$ .../sbin/mkmroute -v}
+
+	If everything is ok, you can use the sample \teletype
+	{.../share/examples/netmagis/crontab.mroute} to install the
+	periodic file generation.
+
+	FreeBSD users: if you install this crontab in the global \teletype
+	{/etc/crontab}, please provide a user name just before the
+	command name.
+
+    }
+    \item {If you use authenticated SMTP, you know than some hosts
+	(copiers, embedded measurement machines, etc.) may not be able
+	to use authenticated SMTP. Some exceptions must be done.
+
+	Netmagis helps you handle these exceptions, by providing a
+	special flag to each host.  Right to activate this flag is
+	enabled for each group in the \gras {Admin} / \gras {Modify
+	users and groups} menu.
+
+	To activate this functionnality, some prerequisites are needed
+	on your mail infrastructure:
+	\liste {
+	    \item {Authenticated SMTP message submission is enabled on
+		TCP port 587
+	    }
+	    \item {Unauthenticated SMTP access is enabled on TCP port
+		25
+	    }
+	    \item {All your routers restrict use of port 25, such as
+		internal hosts can only open connections to mail
+		submission hosts
+	    }
+	    \item {Your mail submissions hosts accept connections on
+		port 25 only from authorized hosts. \br
+		A configuration file for a *BSD PF (packet filter)
+		is provided as an example in
+		\teletype {.../share/examples/netmagis/pf.conf.sample}.
+		You will notice that the \gras {smtpf} table is read
+		from a file, generated by Netmagis.
+	    }
 	}
-	\lignetableau {
-	    \casetableau {} {pfcmd}
-	    \casetableau {} {Command used to reload the generated pf table}
+
+	With this infrastructure, provide values for the following
+	directives on your mail submission hosts:
+
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}}
+		    {\gras {netmagis.conf directives}}
+	    }
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	    }
+	    \lignetableau {
+		\casetableau {} {pffile}
+		\casetableau {} {File where the PF packet filter (on *BSD
+		    hosts) expects to find the contents of the table giving
+		    IP addresses of hosts allowed to use unauthenticated
+		    SMTP, i.e. hosts allowed to connect to TCP port 25.
+
+		    Note: if you don't plan to use Netmagis to control
+		    which hosts have access to unauthenticated SMTP, don't
+		    panic! This directive (and the next ones) will not
+		    be used.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {pffmt}
+		\casetableau {} {Format of generated file (containing
+		    the \gras {smtpf} table) included in \teletype
+		    {pffile}}
+	    }
+	    \lignetableau {
+		\casetableau {} {pfprologue}
+		\casetableau {} {Lines to prepend, if any, to the
+		    generated file. May be set to \teletype {/dev/null}
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {pftest}
+		\casetableau {} {Command used to check the generated file}
+	    }
+	    \lignetableau {
+		\casetableau {} {pfcmd}
+		\casetableau {} {Command used to reload the generated pf table}
+	    }
 	}
+
+	Once you configured \teletype {.../etc/netmagis.conf} file, run
+	as root:
+	\retrait\teletype {$ .../sbin/mksmtpf -n -v}
+	This command tests filter file generation, without performing
+	any file modification.
+
+	Test now a real file generation by using:
+	\retrait\teletype {$ .../sbin/mksmtpf -v}
+
+	If everything is ok, you can use the sample \teletype
+	{.../share/examples/netmagis/crontab.smtpf} to install the
+	periodic file generation.
+
+	FreeBSD users: if you install this crontab in the global \teletype
+	{/etc/crontab}, please provide a user name just before the
+	command name.
+
     }
     }
+
+    Congratulations! You have installed the \italique {servers} package.
+    The Netmagis is ready to be used, for its core functionnality.
 
     \titre {3} {Topo package installation}
 
-    \retrait {
-    \tableau {
-	\taille {100}
-	\bordure {1} {}
-    } {
-	\casedefauttableau {
-	    \centragehorizontal {LEFT}
-	    \centragevertical {MIDDLE}
-	}
-	\casedefauttableau {
-	    \centragehorizontal {LEFT}
-	    \centragevertical {MIDDLE}
-	}
-    } {
-	\lignetableau {
-	    \multicasetableau {2} {\centragehorizontal {CENTER}}
-		{\gras {netmagis.conf directives}}
-	}
-	\lignetableau {
-	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
-	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+    One of the moste innovative parts of Netmagis is the \italique {topo}
+    package, which provides a complete infrastructure to fetch and analyze
+    network equipments configuration files and modelize the network as
+    a graph. This allows for automatic generation of network L2 and L3
+    maps, equipment port configuration, as well as interactions with
+    the metrology package.
+
+    At this time, Juniper, Cisco and HP equipments (switches and routers)
+    are supported.
+
+    For security reasons, one would often use a separate server to run
+    the \italique {topo} package. This server is located within the
+    administration VLAN of equipments. The interface between the \italique
+    {topo} package and the rest of Netmagis is:
+    \liste {
+	\item {the ability to send mail from the \italique {topo}
+	    server}
+	\item {an SSH access to the \italique {topo} from the Netmagis
+	    Web application, via a non-priviledged account
 	}
     }
+
+    The rest of this section describes the \italique {topo} package
+    installation.
+
+    The first part is configuration of the \italique {topo} server.
+
+    \liste {
+	\item {The first step of installation is to configure the \gras
+	    {rancid} software (prerequisite of the \italique {topo}
+	    package) on the \italique {topo} server:
+
+	    TO BE WRITTEN
+	}
+	\item {To let \italique {topo} knows which equipments are on
+	    each side of a network link, you have to add information in
+	    equipment configurations. This information is a link name
+	    (or number) prefixed with L, bracketed with "&lt;" and "&gt;",
+	    and added to the description of the interface on each side
+	    of the link:
+
+	    \tableau {
+		\* \taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Equipment}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Example}}
+		}
+		\lignetableau {
+		    \casetableau {} {Juniper}
+		    \casetableau {} {\teletype {ge-0/1/0 \{ \br
+			~ ~ ~description "blah blah &lt;L233&gt;; \br
+			~ ~ ~...\br
+			\}
+			}}
+		}
+		\lignetableau {
+		    \casetableau {} {Cisco}
+		    \casetableau {} {\teletype {interface GigabitEthernet0/1\br
+			~ ~description blah blah &lt;L233&gt;}}
+		}
+		\lignetableau {
+		    \casetableau {} {HP}
+		    \casetableau {} {\teletype {interface A1\br
+			~ ~description blah blah &lt;L233&gt;}}
+		}
+	    }
+
+	    Ports connected to individual hosts must be marked with a
+	    "&lt;X\>" to indicate a terminal node in the graph.
+	}
+	\item {Configure \teletype {.../etc/netmagis.conf} on the
+	    \italique {topo} server:
+
+	    \tableau {
+		\taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \multicasetableau {2} {\centragehorizontal {CENTER}}
+			{\gras {netmagis.conf directives}}
+		}
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+		}
+		\lignetableau {
+		    \casetableau {} {rancidcmd}
+		    \casetableau {} {Command used to launch \teletype
+			{rancid}}
+		}
+		\lignetableau {
+		    \casetableau {} {ranciddb}
+		    \casetableau {} {Rancid database. Notice that the
+			rancid group (mygroup in the example provided
+			with Netmagis) is a component of the pathname
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {rancidconfdir}
+		    \casetableau {} {Directory where equipment
+			configurations are stored by rancid (also with
+			the rancid group as a component of the pathname)
+
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {sendcisco...}
+		    \casetableau {} {Command used to propagate new
+			port configuration on an equipment, if you choose
+			to enable the functionnality of letting users
+			modify interface configuration
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {fpingcmd}
+		    \casetableau {} {Command used to launch \teletype
+			{fping}, in order to test equipment before
+			sending commands to change port configuration}
+		}
+		\lignetableau {
+		    \casetableau {} {logger}
+		    \casetableau {} {Command used to send a message to
+			syslog}
+		}
+		\lignetableau {
+		    \casetableau {} {eqvirtdir}
+		    \casetableau {} {Directory used for "virtual
+			equipments". Each file is a specially crafted
+			configuration which represent one equipment
+			whose configuration cannot be fetched by rancid
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {eqgendir}
+		    \casetableau {} {Directory used to store results
+			of analysis of rancid fetched configurations
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {topobindir}
+		    \casetableau {} {Directory where all \italique
+			{topo} programs are searched
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {topograph}
+		    \casetableau {} {Path name of the graph built
+			during \italique {topo} analysis
+		    }
+		}
+	    }
+
+	}
+	\item {Change the ownership to the \gras {rancid} user:
+	    \retrait\teletype {# chown -R rancid .../var/netmagis}
+	}
+	\item {As the \gras {rancid} user, run the following command:
+	    \retrait\teletype {$ .../lib/netmagis/topo/anaconf}
+
+	    You will undoubtly notice a large number of warnings, that
+	    you will correct with the time. If no fatal error has been
+	    encountered, you will normally find in \teletype
+	    {.../var/netmagis/network.graph} the modelization of your
+	    network. This is a binary file.
+
+	    You can use the commands (which all take the binary graph as
+	    standard input):
+	    \liste {
+		\item {\teletype {.../lib/netmagis/topo/dumpgraph}:
+		    dumps the graph in clear text
+		}
+		\item {\teletype {.../lib/netmagis/topo/extracteq}:
+		    given and equipment name, displays all interfaces
+		    characteristics.
+		}
+	    }
+	}
+	\item {TO BE WRITTEN : topographd and toposendd}
+	\item {TO BE WRITTEN : syslogd & radiusd}
     }
+
+    You need now to come back to the server which hosts the Web
+    application.
+
+    \liste {
+	\item {Configure \teletype {.../etc/netmagis.conf} on the
+	    \italique {www} server:
+
+	    \tableau {
+		\taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \multicasetableau {2} {\centragehorizontal {CENTER}}
+			{\gras {netmagis.conf directives}}
+		}
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+		}
+		\lignetableau {
+		    \casetableau {} {topohost}
+		    \casetableau {} {Host name of the \italique {topo}
+			server}
+		}
+		\lignetableau {
+		    \casetableau {} {topouser}
+		    \casetableau {} {Name of \teletype {rancid} user
+			on the \italique {topo} server}
+		}
+		\lignetableau {
+		    \casetableau {} {topobindir}
+		    \casetableau {} {Directory where all \italique
+			{topo} programs are searched on the \italique
+			{topo} server
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {topograph}
+		    \casetableau {} {Path name of the graph built
+			during \italique {topo} analysis
+			on the \italique {topo} server
+		    }
+		}
+	    }
+
+	}
+	\item {TO BE WRITTEN : ssh key for nobody AND put it on the
+	    \italique {topo} server
+	}
+	\item {Connect your web browser to the Netmagis application,
+	    and activate the \italique {topo} module in the \gras {Admin}
+	    / \gras {Application parameters} menu.
+
+	    You can also change parameters such as "Default domain",
+	    "Topo mail sender" and "Topo mail receiver".
+
+	    After activation of the \italique {topo} module, you will
+	    see a new \gras {Topology} entry in the left menu.
+
+	}
+
+	\item {TO BE WRITTEN : how to enable interface modification
+	}
+    }
+
+    Congratulations! You've configured the \italique {topology} module.
+    You can now consult your equipments, your network maps, and even
+    modify interfaces of your equipments if you enabled this feature!
 
     \titre {3} {Metro package installation}
 
