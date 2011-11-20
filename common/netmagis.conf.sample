@@ -170,9 +170,9 @@ eqvirtdir	%DESTDIR%/var/netmagis/eqvirt
 eqgendir	%DESTDIR%/var/netmagis/eqgen
 
 # check if router interfaces are declared in the DNS (yes/no)
-checkrouterif	no		# not yet ready
+checkrouterif	no		# future use
 # apply local policy to get ssid sensors (yes/no)
-ssidsensors	yes
+ssidsensors	no		# future use
 
 
 ##############################################################################
