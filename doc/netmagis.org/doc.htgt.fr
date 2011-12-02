@@ -37,8 +37,8 @@
     \titre {1} {Netmagis : Documentation}
 
     \titre {2} {Documentation d'installation}
-
-    Documentation à venir...
+	
+    \lien {Instructions d'installation détaillées} {/install-2.0/}.
 
     \titre {2} {Articles}
 

@@ -12,7 +12,7 @@ TCLCFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_INCLUDE_SPEC"')|sh`
 TCLLFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_LIB_SPEC $$TCL_LIBS"')|sh`
 
 # for packaging and libnetmagis.tcl
-VERSION		= 2.0b1
+VERSION		= 2.0
 
 usage:
 	@echo "available targets:"

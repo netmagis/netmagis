@@ -38,13 +38,13 @@
 
     \titre {2} {Version 2.0}
 
-    Bientôt ici !
+    La version 2.0 est disponible en téléchargement sur
+    \lien {http://netmagis.org/files/netmagis-2.0.tar.gz} {/files/netmagis-2.0.tar.gz}
+    	et les \lien {fichiers pour les ports de FreeBSD}
+		{http://netmagis.org/files/netmagis-freebsd-ports-2.0.tar.gz}.
 
-    Les utilisateurs aventureux peuvent telecharger la
-    \lien {version 2.0 beta 1}
-    	{files/netmagis-2.0b1.tar.gz} et les \lien {fichiers pour les
-	ports de FreeBSD} {files/netmagis-freebsd-ports-2.0b1.tar.gz}.
-
+    N'oubliez pas de \lien {lire la documentation et vous abonner
+    à la liste de diffusion} {/support.html}~!
 
     \titre {2} {Version 1.5}
 

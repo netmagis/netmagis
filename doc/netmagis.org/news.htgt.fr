@@ -34,8 +34,12 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Netmagis : Nouveautés}
+    \titre {1} {Netmagis : Nouveauté}
 
+    \titre {2} {[2011/11/21] La version 2.0 de Netmagis est disponible}
+
+    La \lien {version 2.0 de Netmagis} {/download.html}
+    est disponible.
 
     \titre {2} {[25/10/2011] Netmagis et WebDNS}
 
