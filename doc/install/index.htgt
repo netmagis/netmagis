@@ -40,6 +40,8 @@
 
     \titre {2} {How things work}
 
+    TO BE WRITTEN
+
 
     \**********************************************************************
 
@@ -71,31 +73,42 @@
 	    \casetableau {} {\italique {common}}
 	    \casetableau {} {This package is mandatory for all
 		installations. It includes common library file and
-		configuration file example}
+		configuration file example.}
 	}
 	\lignetableau {
 	    \casetableau {} {\italique {database}}
 	    \casetableau {} {Database server (maintenance and
 		installation scripts, as well as scripts to upgrade
-		database from previous versions)
+		database from previous versions).
 	    }
 	}
 	\lignetableau {
 	    \casetableau {} {\italique {www}}
 	    \casetableau {} {Web application (CGI scripts, HTML
-		templates, Apache configuration files, etc.)
+		templates, Apache configuration files, etc.).
 	    }
 	}
 	\lignetableau {
 	    \casetableau {} {\italique {servers}}
 	    \casetableau {} {Scripts running on various servers (DNS,
-		DHCP, mail router)
+		DHCP, mail router).
 	    }
 	}
 	\lignetableau {
 	    \casetableau {} {\italique {utils}}
 	    \casetableau {} {Scripts to ease batch modifications of
-		hosts in the database
+		hosts in the database.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {detecteq}}
+	    \casetableau {} {Set of files or programs to detect
+		configuration modifications on network equipments.
+		This package must be installed on your central syslog
+		server (for Cisco and Juniper equipments) and your
+		central Freeradius server (for HP equipments).
+		This package is needed if you plan to run the
+		\italique {topo} package.
 	    }
 	}
 	\lignetableau {
@@ -103,7 +116,11 @@
 	    \casetableau {} {Backend used to fetch configuration data
 		from network equipments, modelize topology in a graph,
 		and optionnaly inject new ports configuration to
-		equipements.
+		equipements. \br
+		In order to run properly, this package needs to know
+		when a modification of configuration is done on any
+		network equipment. This is the role of the \italique
+		{detecteq} package.
 	    }
 	}
 	\lignetableau {
@@ -1109,6 +1126,126 @@
     Congratulations! You have installed the \italique {servers} package.
     The Netmagis is ready to be used, for its core functionnality.
 
+    \titre {3} {Detecteq package installation}
+
+    The \italique {topo} package needs to know when the configuration
+    of a network equipment has been changed. These changes are detected
+    via:
+    \liste {
+	\item {\gras {syslog} for Cisco and Juniper equipments}
+	\item {\gras {radius} for HP equipements. In this case, since
+	    HP equipments are unable to report configuration changes
+	    via Syslog, the hack is based on Radius accounting which
+	    detects user logout (which do not strictly imply a
+	    configuration change).
+	}
+    }
+
+    Thus, the \italique {detecteq} package must be installed on your
+    central syslog (syslog, syslog-ng, etc.) server and/or your central
+    radius server, depending on your equipments. Since modification
+    events are sent to the database, the \italique {detecteq} package
+    does not need to be installed on the same server as the \italique
+    {topo} server.
+
+    \gras {Syslog configuration}:
+
+    \liste {
+	\item {On Cisco and Juniper equipments, you need to configure a
+	    syslog server if not already done. For example:
+
+	    \tableau {
+		\* \taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Equipment}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Example}}
+		}
+		\lignetableau {
+		    \casetableau {} {Juniper}
+		    \casetableau {} {\teletype {system \{ \br
+			~ ~ ~syslog \{ \br
+			~ ~ ~ ~ ~ ~host \italique {syslog-server.my.domain} \{ \br
+			~ ~ ~ ~ ~ ~ ~ ~ ~any notice;\br
+			~ ~ ~ ~ ~ ~ ~ ~ ~facility-override local2;\br
+			~ ~ ~ ~ ~ ~\}\br
+			~ ~ ~\}\br
+			\}
+			}}
+		}
+		\lignetableau {
+		    \casetableau {} {Cisco}
+		    \casetableau {} {\teletype
+			{logging \italique {syslog-server.my.domain}\br
+			logging facility local2}
+		    }
+		}
+	    }
+	}
+	\item {Configure \teletype {.../etc/netmagis.conf} for access to
+	    the Netmagis database
+	}
+	\item {Update your syslog configuration file and use a line
+	    such as:
+	    \retrait\teletype {local2.*  |exec /usr/local/sbin/detectconfmod}
+
+	    Adapt this line to your syslog facility and the \italique
+	    {detecteq} installation path.  You can also use other
+	    syslog daemons such as syslog-ng if they provide the "pipe
+	    to program" functionnality.
+	}
+    }
+
+    \gras {Freeradius configuration}:
+
+    \liste {
+	\item {On HP equipements, configure Radius accounting using the
+	    following command:
+
+	    \tableau {
+		\* \taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Equipment}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Example}}
+		}
+		\lignetableau {
+		    \casetableau {} {HP}
+		    \casetableau {} {\teletype
+			{radius-server host \italique {radius.my.domain}
+			    key \italique {secret}
+			    acct-port 1813
+			    }
+		    }
+		}
+	    }
+	}
+	\item {Configure your existing Freeradius using the SQL
+	    accounting module and the example files provided in
+	    \teletype {.../share/examples/netmagis/radius/} directory.
+	}
+    }
+
     \titre {3} {Topo package installation}
 
     One of the moste innovative parts of Netmagis is the \italique {topo}
@@ -1141,9 +1278,59 @@
     \liste {
 	\item {The first step of installation is to configure the \gras
 	    {rancid} software (prerequisite of the \italique {topo}
-	    package) on the \italique {topo} server:
+	    package) on the \italique {topo} server.
 
-	    TO BE WRITTEN
+	    Detailed information can be found in the README coming with
+	    the rancid package. However, here are the minimal steps to
+	    a quick configuration:
+
+	    \liste {
+		\item {Check that the \teletype {rancid} user is created
+		}
+		\item {Choose a unique "group" name for all your network
+		    equipments. The \italique {topo} package uses the
+		    name \teletype {mygroup} by default. The name must
+		    be configured in the file \teletype {rancid.conf}
+		    (location is system dependant), in the line
+		    beginning with \teletype {LIST_OF_GROUPS}.
+		    While you are here, notice the \teletype {BASEDIR}
+		    directory name.
+		}
+		\item {Configure a mail alias \teletype
+		    {rancid-\italique {groupname}} (in \teletype
+		    {/etc/aliases} or equivalent) to receive notifications
+		    when rancid detects modifications.
+		}
+		\item {Configure the \teletype {&tilde;rancid/.cloginrc}
+		    file with authentication information. For example:
+		    \retrait\teletype {
+			add method * \{telnet\} \br
+			add password myrouter \{pw\} \{enablepw\} \br
+			add password sw-* \{anotherpw\} \{anotherenablepw\}
+		    }
+		}
+		\item {Initialize the directory tree by running:
+		    \retrait\teletype {rancid-cvs}
+		}
+		\item {In order to test your rancid installation, name
+		    some equipments in the \teletype {router.db} file,
+		    which should be located in \teletype
+		    {$BASEDIR/\italique {group-name}/router.db}.
+		    See the rancid README for instructions.
+
+		    This file will be overwritten by the \italique
+		    {topo} package with information from the Netmagis
+		    database.
+		}
+		\item {Test your installation by running:
+		    \retrait\teletype {rancid-run}
+		}
+		\item {The rancid README says to run \teletype
+		    {rancid-run} periocally with \gras {cron}. Do not
+		    do this, since the \italique {topo} package will
+		    call rancid when needed.
+		}
+	    }
 	}
 	\item {To let \italique {topo} knows which equipments are on
 	    each side of a network link, you have to add information in
@@ -1185,7 +1372,7 @@
 		\lignetableau {
 		    \casetableau {} {HP}
 		    \casetableau {} {\teletype {interface A1\br
-			~ ~description blah blah &lt;L233&gt;}}
+			~ ~name "blah blah &lt;L233&gt;"}}
 		}
 	    }
 
@@ -1225,23 +1412,23 @@
 		    \casetableau {} {ranciddb}
 		    \casetableau {} {Rancid database. Notice that the
 			rancid group (mygroup in the example provided
-			with Netmagis) is a component of the pathname
+			with Netmagis) is a component of the pathname.
 		    }
 		}
 		\lignetableau {
 		    \casetableau {} {rancidconfdir}
 		    \casetableau {} {Directory where equipment
 			configurations are stored by rancid (also with
-			the rancid group as a component of the pathname)
-
+			the rancid group as a component of the
+			pathname).
 		    }
 		}
 		\lignetableau {
-		    \casetableau {} {sendcisco...}
-		    \casetableau {} {Command used to propagate new
+		    \casetableau {} {sendcisco, sendhp, sendjuniper}
+		    \casetableau {} {Commands used to propagate new
 			port configuration on an equipment, if you choose
 			to enable the functionnality of letting users
-			modify interface configuration
+			modify interface configuration.
 		    }
 		}
 		\lignetableau {
@@ -1291,13 +1478,13 @@
 	    \retrait\teletype {$ .../lib/netmagis/topo/anaconf}
 
 	    You will undoubtly notice a large number of warnings, that
-	    you will correct with the time. If no fatal error has been
+	    you will correct with time. If no fatal error has been
 	    encountered, you will normally find in \teletype
 	    {.../var/netmagis/network.graph} the modelization of your
 	    network. This is a binary file.
 
-	    You can use the commands (which all take the binary graph as
-	    standard input):
+	    To check that things are ok, you can use the commands (which
+	    all take the binary graph as standard input):
 	    \liste {
 		\item {\teletype {.../lib/netmagis/topo/dumpgraph}:
 		    dumps the graph in clear text
@@ -1308,8 +1495,37 @@
 		}
 	    }
 	}
-	\item {TO BE WRITTEN : topographd and toposendd}
-	\item {TO BE WRITTEN : syslogd & radiusd}
+	\item {Be sure that the \italique {detecteq} package is properly
+	    installed on your central syslog server and/or your central
+	    radius server.
+	}
+	\item {Run the \teletype {topographd} and the \teletype
+	    {toposendd} daemons via the provided startup scripts:
+
+	    \tableau {
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \casetableau {} {FreeBSD}
+		    \casetableau {} {\teletype {/usr/local/etc/rc.d/topographd}
+			\br
+			\teletype {/usr/local/etc/rc.d/toposendd}}
+		}
+		\lignetableau {
+		    \casetableau {} {Linux}
+		    \casetableau {} {TO BE WRITTEN}
+		}
+	    }
+	}
     }
 
     You need now to come back to the server which hosts the Web
@@ -1343,12 +1559,16 @@
 		\lignetableau {
 		    \casetableau {} {topohost}
 		    \casetableau {} {Host name of the \italique {topo}
-			server}
+			server, or empty if the \italique {topo} package
+			is installed on the same server as the \italique
+			{www} package}
 		}
 		\lignetableau {
 		    \casetableau {} {topouser}
 		    \casetableau {} {Name of \teletype {rancid} user
-			on the \italique {topo} server}
+			on the \italique {topo} server, or empty if the
+			\italique {topo} package is installed on the
+			same server as the \italique {www} package}
 		}
 		\lignetableau {
 		    \casetableau {} {topobindir}
@@ -1367,8 +1587,19 @@
 	    }
 
 	}
-	\item {TO BE WRITTEN : ssh key for nobody AND put it on the
-	    \italique {topo} server
+	\item {If the \italique {topo} package is installed on a
+	    different server than the \italique {www} package, you must
+	    provide a way for the Web server to make SSH requests to
+	    the \italique {topo} server. In order to do that, identify
+	    the name of the user running your Apache server (locate
+	    the \teletype {User} in the Apache configuration files).
+
+	    Make sure this user has a valid home directory. Then, as
+	    this user, create a SSH keypair (without pass-phrase):
+	    \retrait\teletype {ssh-keygen}
+	    Copy the public key (\teletype {&tilde;/.ssh/id_rsa.pub}) to
+	    the \teletype {&tilde;rancid/.ssh/.ssh/authorized_keys} on the
+	    \italique {topo} server.
 	}
 	\item {Connect your web browser to the Netmagis application,
 	    and activate the \italique {topo} module in the \gras {Admin}
@@ -1379,10 +1610,20 @@
 
 	    After activation of the \italique {topo} module, you will
 	    see a new \gras {Topology} entry in the left menu.
-
 	}
-
-	\item {TO BE WRITTEN : how to enable interface modification
+	\item {Input your network equipments and your VLANs via the
+	    \gras {Admin} / \gras {Modify equipments} and \gras {Modify
+	    Vlans} menus.
+	}
+	\item {You can monitor the \teletype {topographd} and \teletype
+	    {toposendd} daemons with the \gras {Admin} / \gras {Topod
+	    status} menu.
+	}
+	\item {If you want users to be able to modify interface
+	    configuration within the Web application, enter the \gras
+	    {Admin} / \gras {Modify users and groups} menu, and input
+	    regular expressions in the \gras {Permissions on network
+	    equipments} section.
 	}
     }
 
@@ -1391,6 +1632,8 @@
     modify interfaces of your equipments if you enabled this feature!
 
     \titre {3} {Metro package installation}
+
+    TO BE WRITTEN
 
     \retrait {
     \tableau {
@@ -1421,9 +1664,59 @@
 
     \titre {2} {\ancre {import} {Import your data in database}}
 
+    TO BE WRITTEN
+
     \**********************************************************************
 
     \titre {2} {\ancre {upgrading} {Upgrading from previous versions}}
+
+    \titre {3} {Upgrading from Netmagis / WebDNS v1.5}
+
+    Upgrading from the previous Netmagis/WebDNS version is simple.
+
+    First, make a backup of the old WebDNS database.
+
+    Next, install \italique {common}, \italique {database} packages,
+    and configure them according to installation instructions (except
+    database creation).
+
+    On the database server, go to the \teletype
+    {.../share/examples/netmagis/upgrade/} directory, and then:
+
+    \liste {
+	\item {As the priviledged user, run the \teletype {upgrade.sql}
+	    script on your existing database (have I already said that
+	    you should make a backup first?):
+
+	    \retrait\teletype {$ psql -f upgrade.sql \italique {webdns-database-name}}
+
+	}
+	\item {If you have configured the PostgreSQL authentication
+	    system, make a dump of your old \italique {auth} database:
+
+	    \retrait\teletype {$ pg_dump \italique {auth-database-name} > /tmp/auth.dump}
+
+	    Next, apply the script to merge database authentication in
+	    the Netmagis database:
+
+	    \retrait\teletype {$ pg_dump --data-only \italique
+		{auth-database-name} | sed -f pgauth.sed > /tmp/pgauth.load}
+
+	    You should take a look on the \teletype {/tmp/pgauth.load}
+	    to see if everything is ok. Then, load the converted file:
+
+	    \retrait\teletype {$ psql -f /tmp/pgauth.load \italique
+		{webdns-database-name}}
+	}
+    }
+
+    Next, install the \italique {www} package, and follow installation
+    instructions.  If you use PostgreSQL authentication, do not forget
+    to update the Apache configuration to use to the new tables in the
+    Netmagis database.
+
+    \titre {3} {Upgrading from previous versions}
+
 }
 
 }
