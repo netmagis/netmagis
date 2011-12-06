@@ -16,7 +16,7 @@
 
 \*******************************************************************************
 \bandeau {
-	Documentationocumentation
+	Documentation
     } {
 	\elementbandeau {Sommaire} {
 	    \reference {\lien {Nouveautés}	{/news.html}}
@@ -38,7 +38,7 @@
 
     \titre {2} {Documentation d'installation}
 	
-    \lien {Instructions d'installation détaillées} {/install-2.0/}.
+    \lien {Instructions d'installation détaillées} {/install-2.1b1/}.
 
     \titre {2} {Articles}
 

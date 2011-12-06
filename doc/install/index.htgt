@@ -1670,6 +1670,9 @@
 
     \titre {2} {\ancre {upgrading} {Upgrading from previous versions}}
 
+    gras {Important}: to upgrade from an old version, you must follow upgrade
+    procedure for \italique {\gras {all} intermediate versions}.
+
     \titre {3} {Upgrading from Netmagis / WebDNS v1.5}
 
     Upgrading from the previous Netmagis/WebDNS version is simple.
@@ -1681,9 +1684,13 @@
     database creation).
 
     On the database server, go to the \teletype
-    {.../share/examples/netmagis/upgrade/} directory, and then:
+    {.../share/examples/netmagis/upgrade/15-20/} directory, and then:
 
     \liste {
+	\item {Inspect the \teletype {upgrade.sql} script, and adapt
+	    login names of users in the GRANT lines.
+
+	}
 	\item {As the priviledged user, run the \teletype {upgrade.sql}
 	    script on your existing database (have I already said that
 	    you should make a backup first?):
@@ -1707,6 +1714,18 @@
 
 	    \retrait\teletype {$ psql -f /tmp/pgauth.load \italique
 		{webdns-database-name}}
+
+	    Next, issue the SQL command with \teletype {psql}:
+
+	    \retrait\teletype {INSERT INTO global.config (clef, valeur)
+		VALUES ('authmethod', 'pgsql') ;}
+
+	}
+	\item {If you have configured the LDAP authentication, issue the SQL
+	    command with \teletype {psql}:
+
+	    \retrait\teletype {INSERT INTO global.config (clef, valeur)
+		VALUES ('authmethod', 'ldap') ;}
 	}
     }
 
