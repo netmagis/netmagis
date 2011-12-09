@@ -44,7 +44,7 @@ set conf(urlgraph)	"graph"
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 

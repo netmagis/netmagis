@@ -53,7 +53,7 @@ set conf(neatocmd)	"%s -Gmaxiter=10000"
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 

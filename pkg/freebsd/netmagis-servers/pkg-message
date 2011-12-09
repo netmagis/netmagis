@@ -1,0 +1,20 @@
+=================================================================
+                **** NOTE ****
+
+1) Have you configured the Netmagis database?
+	See the netmagis-database port
+	and /usr/local/etc/netmagis.conf
+
+2) This port does not install a particular DNS or DHCP server
+
+3) Following your needs, install the appropriate crontab for each
+    functionnality you desire from:
+	/usr/local/share/examples/netmagis/crontab.*
+
+4) If you want the "non-authenticated SMTP filter" functionnality,
+    modify your pf.conf filter according to:
+	/usr/local/share/examples/netmagis/pf.conf.sample
+
+For FULL configuration instructions, see
+	http://netmagis.org
+=================================================================

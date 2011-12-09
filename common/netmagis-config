@@ -1,0 +1,59 @@
+#!%TCLSH%
+
+source %LIBNETMAGIS%
+
+proc usage {argv0} {
+    set usage {usage: %s [-c][-h] param ... param}
+    regsub {.*/} $argv0 {} argv0
+    puts stderr [format $usage $argv0]
+}
+
+proc get-conf-list {check arg} {
+    set failed 0
+    set l {}
+    foreach a $arg {
+	set v [get-local-conf $a]
+	if {$check && $v eq ""} then {
+	    puts stderr "Netmagis configuration parameter '$a' is not iniialized"
+	    set failed 1
+	}
+	regsub -all {"\\*?\[\]`} $v {\\&} v
+	lappend l "$a=\"$v\""
+    }
+    if {! $failed} then {
+	puts stdout [join $l " "]
+    }
+    return $failed
+}
+
+proc main {argv0 argv} {
+    set check 0
+    while {[llength $argv] > 0} {
+	switch -glob -- [lindex $argv 0] {
+	    -c {
+		set check 1
+		set argv [lreplace $argv 0 0]
+	    }
+	    -h {
+		usage $argv0
+		exit 0
+	    }
+	    -* {
+		usage $argv0
+		exit 1
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    if {[llength $argv] == 0} then {
+	usage $argv0
+	exit 1
+    }
+
+    return [get-conf-list $check $argv]
+}
+
+exit [main $argv0 $argv]

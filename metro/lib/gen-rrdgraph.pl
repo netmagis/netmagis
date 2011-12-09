@@ -46,26 +46,21 @@ my $legendes = $ARGV[6];
 
 #system("echo $id >> /tmp/genere_graph.out");
 
-# fichier de configuration principal et chargement des fonctions de base
-my $conf_file = "%CONF%";
-require "%LIBMETRO%";
-require "%LIBGRAPH%";
+require "%DESTDIR%/lib/netmagis/libmetro.pl";
 
-#
 # lecture du fichier de configuration general
-our %global_var = read_global_conf_file($conf_file);
+our %global_conf = read_global_conf_file("%CONFFILE%");
+
+# load graph library
+require "%DESTDIR%/lib/netmagis/libgraph.pl";
 
 # repertoire dans lequel sont stockees les definitions de graphs
-our $dir_graph = "/usr/local/var/netmagis/metro"
+our $dir_graph = $global_conf{metrodatadir} . "/graph" ;
 
-
-# repertoire dans lequel sont stockes les scripts de generation de graphs
-my $rep_modeles = $global_var{"DIR_BIN_MODELS"};
 # fichiers dans lesquels se trouvent la liste des graphiques existants avec le modele a utiliser
 opendir(DIR, $dir_graph);
 our @files_rrd_graph=grep(/\.graph$/, readdir DIR);
 closedir(DIR);
-
 
 if($id ne "-")
 {
@@ -146,7 +141,7 @@ sub get_graph
  
     for($i=0;$i<$t;$i++)
     {
-	my $file = $global_var{$files_rrd_graph[$i]};
+	my $file = $global_conf{$files_rrd_graph[$i]};
    
 	# cherche le graph dans le fichier
 	open(INDEXGRAPH,"$file");

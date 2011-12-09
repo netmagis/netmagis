@@ -1,11 +1,12 @@
 #!%TCLSH%
 
 #
-# Mail route generation for sendmail
+# Mail route generation for sendmail (or other MTAs)
 #
 # Syntax:
-#	mkmroute [-h][-v][-n]
+#	mkmroute [-h][-q][-v][-n]
 #	    -h: help
+#	    -q: silent operation
 #	    -v: verbose output
 #	    -n: don't modify files
 #
@@ -13,15 +14,21 @@
 #   2004/03/09 : pda/jean : original specification
 #   2004/03/09 : pda/jean : design
 #   2011/05/14 : pda      : i18n and re-design
+#   2011/06/10 : pda      : clarify verbose levels
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 #
 # Self explanatory
 #
 
-set conf(usage) {usage: %1$s [-h][-v][-n]}
+set conf(usage) {usage: %1$s [-h][-q][-v][-n]
+    -h : get this help
+    -q : keep silent on normal operation
+    -v : verbose (show file or diffs)
+    -n : don't perform file installation
+}
 
 #
 # Generates a mail route text
@@ -78,68 +85,6 @@ proc gen-mroute {dbfd mrouteprologue mroutefmt _mroutetxt} {
 }
 
 #
-# Compare old file contents with new contents as a variable
-#
-# Input:
-#   - parameters
-#	- file: name of file
-#	- text: new file content
-#	- _errmsg: variable containing error message in return
-# Output:
-#   - return value: -1 (error), 0 (no change), or 1 (change)
-#   - variable _errmsg: error message, if return value = -1
-#
-# History
-#   2004/03/09 : pda/jean : design
-#   2011/05/14 : pda      : use configuration variables
-#   2011/05/22 : pda      : make it simpler
-#
-
-proc compare-file-with-text {file text _errmsg} {
-    upvar $_errmsg errmsg
-
-    set r 1
-    if {[file exists $file]} then {
-	if {[catch {set fd [open $file "r"]} errmsg]} then {
-	    set r -1
-	} else {
-	    set old [read $fd]
-	    close $fd
-
-	    if {$old eq $text} then {
-		set r 0
-	    }
-	}
-    }
-
-    return $r
-}
-
-#
-# Show difference between old file and new contents
-#
-# Input:
-#   - parameters
-#	- cmd: diff command
-#	- file: name of file
-#	- text: new file content
-#	- _errmsg: variable containing error message in return
-# Output:
-#   - return value: 1 (ok) or 0 (error)
-#   - variable _errmsg: error message, if return value = 0
-#
-# History
-#   2011/05/22 : pda      : specification
-#
-
-proc show-diff-file-text {cmd file text} {
-    set c [format $cmd $file]
-    append c "|| exit 0"
-    catch {exec sh -c $c << $text} r
-    puts stdout $r
-}
-
-#
 # Install new contents in a file, and run appropriate command
 #
 # Input:
@@ -167,7 +112,7 @@ proc install-file-from-text {file text cmd _errmsg} {
     if {$errmsg eq ""} then {
 	set errmsg [$fq commit]
 	if {$errmsg eq "" && $cmd ne ""} then {
-	    if {[catch {exec sh -c $cmd} errmsg]} then {
+	    if {[catch {exec -ignorestderr sh -c $cmd} errmsg]} then {
 		set errmsg "Cannot run command $cmd\n$errmsg"
 		set msg [$fq uncommit]
 		if {$msg ne ""} then {
@@ -190,7 +135,7 @@ proc usage {argv0} {
     global conf
 
     regsub ".*/" $argv0 "" argv0
-    puts stderr [format $conf(usage) $argv0]
+    puts -nonewline stderr [format $conf(usage) $argv0]
     exit 1
 }
 
@@ -201,7 +146,7 @@ proc main {argv0 argv} {
     # Netmagis database access
     #
 
-    set msg [d init-script dbfd $argv0 tabcor]
+    set msg [d init-script dbfd $argv0 true tabcor]
     if {$msg ne ""} then {
 	fatal-error "$msg\nAbort."
     }
@@ -218,6 +163,10 @@ proc main {argv0 argv} {
 	switch -glob -- $a {
 	    -h {
 		usage $argv0
+	    }
+	    -q {
+		set verbose -1
+		set argv [lreplace $argv 0 0]
 	    }
 	    -v {
 		set verbose 1
@@ -256,7 +205,6 @@ proc main {argv0 argv} {
     set msg [gen-mroute $dbfd $mrouteprologue $mroutefmt txt]
     if {$msg ne ""} then {
 	d error $msg
-	return 1
     }
 
     switch [compare-file-with-text $mroutefile $txt msg] {
@@ -266,24 +214,28 @@ proc main {argv0 argv} {
 	0 {
 	    # nothing
 	    if {! $doit} then {
-		puts stdout "Mail routes are not modified"
-		if {$verbose} then {
-		    puts -nonewline stdout $txt
+		if {$verbose >= 0} then {
+		    puts "Mail routes are not modified"
+		    if {$verbose == 1} then {
+			puts -nonewline $txt
+		    }
 		}
 	    }
 	}
 	1 {
+	    if {$verbose >= 0} then {
+		puts "Mail routes are modified"
+	    }
 	    if {$doit} then {
-		if {$verbose} then {
-		    show-diff-file-text $diff $mroutefile $txt
+		if {$verbose == 1} then {
+		    show-diff-file-text stdout $diff $mroutefile $txt
 		}
 		if {! [install-file-from-text $mroutefile $txt $mroutecmd msg]} then {
 		    d error $msg
 		}
 	    } else {
-		puts stdout "Mail routes are modified"
-		if {$verbose} then {
-		    puts -nonewline stdout $txt
+		if {$verbose == 1} then {
+		    puts -nonewline $txt
 		}
 	    }
 	}

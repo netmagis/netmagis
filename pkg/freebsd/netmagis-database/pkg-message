@@ -1,0 +1,23 @@
+=================================================================
+                **** NOTE ****
+
+1) Have you configured the Netmagis application?
+	Copy /usr/local/etc/netmagis.conf.sample into
+	/usr/local/etc/netmagis.conf and adapt it.
+
+2) Create PostgreSQL users
+
+3) Run the Netmagis database creation script as a privileged
+    PostgreSQL user
+	/usr/local/sbin/netmagis-dbcreate
+
+4) Use the example database to fill your database
+	/usr/local/share/examples/netmagis/run-all.sh
+
+5) Adapt and install the crontab for the privileged PostgreSQL
+    user from:
+	/usr/local/share/examples/netmagis/crontab.database
+
+For FULL configuration instructions, see
+	http://netmagis.org
+=================================================================

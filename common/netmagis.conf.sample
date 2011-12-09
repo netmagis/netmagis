@@ -1,0 +1,224 @@
+#
+# Standard netmagis.conf file
+#
+
+##############################################################################
+# Common modules
+##############################################################################
+
+dnsdbhost	db.mycompany.com
+dnsdbport	5432
+dnsdbname	netmagis
+dnsdbuser	dns
+dnsdbpassword	password-of-dnsdbuser
+
+macdbhost	db.mycompany.com
+macdbport	5432
+macdbname	mac
+macdbuser	dns
+macdbpassword	password-of-macdbuser
+
+pkgtcl		%DESTDIR%/lib/netmagis/pkgtcl
+
+msgsdir		%DESTDIR%/lib/netmagis/msgs
+
+# just display my login name
+whoami		"id -u -n"
+
+debug		no
+cache		no
+cachedir	%DESTDIR%/var/netmagis/cache
+
+# list of users who can bypass the nologin test, separated by one space
+# and who can administer database
+rootusers	"pda jean"
+
+##############################################################################
+# Database maintenance
+##############################################################################
+
+dumpdir		%DESTDIR%/var/netmagis/dbdump
+dbcopy		netmagis-sandbox
+
+##############################################################################
+# Server scripts (BIND, ISC-DHCPD, Sendmail/Postfix)
+##############################################################################
+
+# diff command for verbose output
+diff		"diff --unified=0 %s -"
+
+########################################
+# mkzone
+########################################
+
+# where BIND daemon expects to find zone files
+zonedir		"/etc/namedb/master"
+
+# tell BIND to reload files
+zonecmd		"rndc reload"
+
+########################################
+# mkmroute
+########################################
+
+# where sendmail expects to find mail route file
+mroutefile	/etc/mail/mroute
+
+# static prologue for the mail routing file
+mrouteprologue	/etc/mail/mroute.prologue
+
+# format of lines in mail route file, adapted to sendmail
+#   %1$s: mail domain
+#   %2$s: mail host
+mroutefmt	"%1$-40s smtp.[%2$s]"
+
+# shell command to post-process file if a modification is done
+# You can include a command to propagate generated file to other
+# mail routers if you have more than one
+mroutecmd	"cd /etc/mail ; /usr/sbin/makemap -N hash mroute < mroute"
+
+########################################
+# mkdhcp
+########################################
+
+# where dhcpd expects to find generated config file (pointed to by dhcpd.conf)
+dhcpfile	/etc/dhcp-gen.conf
+
+# dhcp failover text to add to generated pools. Keep empty if you don't
+# have any DHCP failover configuration.
+#dhcpfailover	"failover peer "dhcp"; load balance max seconds 3;"
+dhcpfailover	""
+
+# command to test dhcpd configuration file
+dhcptest	"/usr/local/sbin/dhcpd -t -cf /etc/dhcpd.conf"
+
+# command to restart dhcpd
+dhcpcmd		"sh /usr/local/etc/rc.d/isc-dhcpd.sh restart"
+
+########################################
+# mksmtpf
+########################################
+
+# where filter expects to find generated file
+pffile		/etc/smtpf.pf
+
+# format of lines in filter file. Adapt to your packet filter
+pffmt		"%s"
+
+# static prologue for the filter file
+pfprologue	/etc/smtpf-prol.pf
+
+# command to test filter file
+pftest		"pfctl -q -n -t smtpf -T replace -f /etc/smtpf.pf"
+
+# command to reload filter
+pfcmd		"pfctl -q -t smtpf -T replace -f /etc/smtpf.pf"
+
+##############################################################################
+# Web module
+##############################################################################
+
+templatedir	%DESTDIR%/lib/netmagis/tmpl
+
+nologinfile	%DESTDIR%/etc/netmagis.nologin
+
+# empty string (internal auth) or external URL to change password
+#passwdurl	https://www.mycompany.com/chpasswd?uid=%s
+passwdurl	""			# internal
+
+neato		/usr/local/bin/neato
+dot		/usr/local/bin/dot
+ps2pdf		/usr/local/lib/netmagis/ps2pdf
+hostcmd		/usr/bin/host
+
+# if internal authentication
+pwgen		/usr/local/bin/pwgen --num-passwords=1 --numerals 12
+crypt		openssl passwd -1 %s
+
+
+# empty string = localhost
+topohost	""
+topouser	""
+
+# topo* keys are used also by the web and the topo modules
+topobindir	%DESTDIR%/lib/netmagis/topo
+topograph	%DESTDIR%/var/netmagis/network.graph
+
+metrohost	metro.mycompany.com
+
+##############################################################################
+# Topo module (on topohost machine)
+##############################################################################
+
+rancidcmd	/usr/local/libexec/rancid/rancid-run
+ranciddb	/usr/local/var/rancid/mygroup/router.db
+rancidconfdir	/usr/local/var/rancid/mygroup/configs
+
+# how to send commands on equipments
+# -u user on equipment (modconf here)
+# -p passwd on equipment
+sendcisco	/usr/local/libexec/rancid/clogin -autoenable -u modconf -p password
+sendhp		/usr/local/libexec/rancid/hlogin -autoenable -u modconf -p password
+sendjuniper	/usr/local/libexec/rancid/jlogin -u modconf -p password
+
+fpingcmd	/usr/local/sbin/fping %s
+
+# takes a message on stdin and write it in the syslog
+logger		/usr/bin/logger -i -p local0.err -t topod
+
+eqvirtdir	%DESTDIR%/var/netmagis/eqvirt
+eqgendir	%DESTDIR%/var/netmagis/eqgen
+
+# check if router interfaces are declared in the DNS (yes/no)
+checkrouterif	no		# future use
+# apply local policy to get ssid sensors (yes/no)
+ssidsensors	no		# future use
+
+
+##############################################################################
+# Metro module 
+##############################################################################
+
+# default domain name
+defaultdomain   u-strasbg.fr
+
+metrodatadir	%DESTDIR%/var/netmagis/metro
+
+rrdtool        	/usr/bin/rrdtool
+rrddb		%DESTDIR%/var/netmagis/metro/db
+# rrdtool database : time of retention of the data (years)
+rrddbretention	10
+
+# time of sensor activity in days after disappearance in topo database
+sensorsurvival 	30
+
+# configuration of polling processes
+#
+# create groups and associate to them type of sensors.
+# list of groups
+pollergroups	default,ap,plugins
+# by default all sensors are associated to a group
+# A group can be specialized with a list of type of sensors
+# add a "!" before a type of sensor to not execute sensors associated with it
+gpopt_ap	assoc_ap,nbauthwifi,nbassocwifi
+gpopt_default   !assoc_ap,!stp_catalyst,!nbauthwifi,!nbassocwifi,!indicateur
+gpopt_plugins	indicateur
+# set the number of processes poller launched for each group
+gpnbproc_ap  	1
+gpnbproc_default	3
+gpnbproc_plugins	1
+
+# set SNMP timeout
+snmptimeout	4
+
+# for wifi sensors. Declaration of ssids.
+ssidwifi	osiris,osiris-sec,osiris-lab,eduroam
+
+# optional : set the interfaces speed (Mbps) 
+# syntax : ifspeed_<interface_prefix>
+ifspeed_Dot11Radio      300
+
+# log configuration
+pollerlogfacility 	local0  # FIXME 
+majdblogfacility	local1  # FIXME
+pollerlogpt		info 	# FIXME

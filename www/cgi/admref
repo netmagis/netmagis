@@ -221,7 +221,7 @@ set conf(eq:table)		topo.eq
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 

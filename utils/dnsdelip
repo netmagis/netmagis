@@ -13,7 +13,7 @@
 #   2010/12/18 : pda      : use new install system
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 ##############################################################################
 # Petites fonctions utilitaires
@@ -170,7 +170,7 @@ proc main {argv0 argv} {
     # Initialisation des accès
     #
 
-    set msg [d init-script dbfd $argv0 tabcor]
+    set msg [d init-script dbfd $argv0 false tabcor]
     if {$msg ne ""} then {
 	puts stderr "$msg"
 	puts stderr "Aborted."

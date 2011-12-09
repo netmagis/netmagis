@@ -1,0 +1,1741 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{18/11/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Installation manual
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Introduction
+    } {
+	\elementbandeau {Contents} {
+	    \reference {\lien {What's new}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Specifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Download}	{/download.html}}
+	    \reference {\lien {Screenshots}	{/screenshots.html}}
+	    \reference {\lien {Demonstration}	{/demo.html}}
+	    \reference {\lien {Development}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis installation}
+
+    \**********************************************************************
+
+    \titre {2} {How things work}
+
+    TO BE WRITTEN
+
+
+    \**********************************************************************
+
+    \titre {2} {Program and file installation}
+
+    \titre {3} {Determining which packages are needed}
+
+    The netmagis is divided into packages in order to install only what
+    you need:
+
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Package}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {common}}
+	    \casetableau {} {This package is mandatory for all
+		installations. It includes common library file and
+		configuration file example.}
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {database}}
+	    \casetableau {} {Database server (maintenance and
+		installation scripts, as well as scripts to upgrade
+		database from previous versions).
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {www}}
+	    \casetableau {} {Web application (CGI scripts, HTML
+		templates, Apache configuration files, etc.).
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {servers}}
+	    \casetableau {} {Scripts running on various servers (DNS,
+		DHCP, mail router).
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {utils}}
+	    \casetableau {} {Scripts to ease batch modifications of
+		hosts in the database.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {detecteq}}
+	    \casetableau {} {Set of files or programs to detect
+		configuration modifications on network equipments.
+		This package must be installed on your central syslog
+		server (for Cisco and Juniper equipments) and your
+		central Freeradius server (for HP equipments).
+		This package is needed if you plan to run the
+		\italique {topo} package.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {topo}}
+	    \casetableau {} {Backend used to fetch configuration data
+		from network equipments, modelize topology in a graph,
+		and optionnaly inject new ports configuration to
+		equipements. \br
+		In order to run properly, this package needs to know
+		when a modification of configuration is done on any
+		network equipment. This is the role of the \italique
+		{detecteq} package.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {\italique {metro}}
+	    \casetableau {} {Backend used to poll equipments for
+		metrology information.
+	    }
+	}
+    }
+
+    \titre {3} {Installing from FreeBSD ports}
+
+    At this time, the supported way to install Netmagis is via
+    FreeBSD ports, which are provided in a \lien {separate archive}
+    {/download.html} (file netmagis-freebsd-ports-*.tar.gz associated
+    with appropriate netmagis version).
+
+    Once the file is downloaded on a failry recent FreeBSD system
+    (minimum FreeBSD 8.2-RELEASE with \lien {up-to-date ports}
+    {http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/updating-upgrading-portsnap.html}),
+    use:
+
+    \retrait {\teletype {
+	# tar xzvf netmagis-freebsd-ports-2.0.tgz -C /usr/ports/net-mgmt/
+    }}
+
+    In order to install a netmagis package, just enter the
+    following commands (just as well as \lien {any other port}
+    {http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/ports-using.html}):
+
+    \retrait {\teletype {
+    	# cd /usr/ports/net-mgmt/netmagis-database \br
+	# make install
+    }}
+
+    The provided ports automatically install required dependencies.
+
+    \titre {3} {Installing from Debian/Ubuntu packages}
+
+    Not yet available. At this time, either find a FreeBSD machine or
+    install from source distribution  (see below).
+
+    You can \lien {contribute to Netmagis}
+    {https://github.com/pdav/netmagis} by providing packet files.
+
+    \titre {3} {Installing from Netmagis source distribution}
+
+    \enumeration {
+    \item {Download the \lien {Netmagis distribution file}
+	{/download.html} and unpack the archive:
+
+	\retrait {\teletype {
+	    $ tar xzvf netmagis-2.0b1.tar.gz
+	}}
+
+	Alternatively, if you are adventurous, you may also fetch the
+	current Netmagis sources directly from the \lien {github repository}
+	{http://github.com/pdav/netmagis}. Provided that \teletype {git} is
+	installed on your system, use this command:
+
+	\retrait {\teletype {
+	    $ git clone git@github.com:pdav/netmagis.git
+	}}
+    }
+    \item {Install \lien {required dependencies} {/spec.html}.
+	Please note that Tcl is a required dependency for all packages.
+
+    }
+    \item {Choose an installation directory. You may use \teletype
+	{/local/netmagis/} for example. Netmagis's Makefile will install a
+	hierarchy such as:
+
+	\tableau {
+	    \* \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\casetableau {} {.../etc/}
+		\casetableau {} {various configuration files}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../bin/}
+		\casetableau {} {programs which should be called as an ordinary
+		    users}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../sbin/}
+		\casetableau {} {programs which should be called as the root
+		    user}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../lib/}
+		\casetableau {} {libraries, messages, and programs which are
+		    not meant to be called by humans}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../share/}
+		\casetableau {} {examples, default configuration files,
+		    database upgrade scripts, etc.}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../var/}
+		\casetableau {} {files generated by \italique {topo} or
+		    \italique {metro} packages}
+	    }
+	    \lignetableau {
+		\casetableau {} {.../www/}
+		\casetableau {} {Web application (installed by \italique
+		    {www} package)}
+	    }
+	}
+
+    }
+    \item {Modify the top-level Makefile variables to suit your choices:
+	\tableau {
+	    \* \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\casetableau {} {DESTDIR}
+		\casetableau {} {Installation directory}
+	    }
+	    \lignetableau {
+		\casetableau {} {TCLSH}
+		\casetableau {} {Full path name of tclsh interpreter}
+	    }
+	    \lignetableau {
+		\casetableau {} {TCLCFLAGS}
+		\casetableau {} {Tcl compilation flags (only for www
+		    package)}
+	    }
+	    \lignetableau {
+		\casetableau {} {TCLLFLAGS}
+		\casetableau {} {Tcl link edition flags (only for www
+		    package)}
+	    }
+	}
+
+    }
+    \item {Install the \italique {package}:
+	\retrait{\teletype {
+	    # make install-common
+	}}
+    }
+    \item {Install the desired package(s). For example, if you want to
+	install the \italique {database} and the \italique {utils}
+	packages, type:
+	\retrait{\teletype {
+	    # make install-database \br
+	    # make install-utils
+	}}
+    }
+    }
+
+    That's it! You may now proceed to initial configuration.
+
+    \**********************************************************************
+
+    \titre {2} {Initial configuration}
+
+    \titre {3} {PosgreSQL configuration}
+
+    On the host where you installed the \italique {database} port,
+    you should have a PostgreSQL server. The recommanded version is at
+    least 9.1.
+
+    You have to check that your PostgreSQL installation allow connections
+    (and authenticate users with password) from hosts which act as
+    clients of the Netmagis database (all hosts where you installed
+    a netmagis package). This is usually configured in file \teletype
+    {&tilde;pgsql/data/pg_hba.conf} (where \teletype {pgsql} is the name
+    of the PostgreSQL administror).
+
+    Netmagis needs at least two PostgreSQL users. You can create them
+    with the PostgreSQL \teletype {createuser} program:
+
+    \liste {
+	\item {the first one (default used by Netmagis: \gras {dns})
+	    does not have any special privilege: it will be used by
+	    various scripts (including CGI scripts) to connect to the
+	    database. Use the command:
+	    \retrait\teletype {createuser --no-superuser --no-createrole --no-createdb dns}
+	}
+	\item {the second ones (you may have more than one user) are
+	    priviledged users (superusers in PostgreSQL terminology).
+	    The first of them is used for various database administration
+	    tasks such as database creation, database daily maintenance,
+	    etc. These users should be real Unix users, as well as
+	    Netmagis users. Notably, they are authorized to connect to
+	    the Web application even when it is in "maintenance mode".
+	    Create them with:
+	    \retrait\teletype {createuser --superuser joe}
+	}
+    }
+
+    \titre {3} {The Netmagis configuration file}
+
+    The Netmagis configuration file is located in \teletype
+    {.../etc/netmagis.conf} on each host where Netmagis is instaleld.
+    The \italique {common} package does not install this file (in order
+    to leave your file intact if you previousely installed Netmagis), but
+    it installs a copy in \teletype {.../etc/netmagis.conf.sample}. Copy
+    it manually to \teletype {.../etc/netmagis.conf}, and edit it.
+
+    The following table list only directives you would want to modify
+    for a fresh installation.
+
+    \retrait {
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+	\lignetableau {
+	    \casetableau {} {dnsdb...}
+	    \casetableau {} {Information needed to connect to the
+		PostgreSQL server, with unpriviledged user.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {whoami}
+	    \casetableau {} {Command used to get login name of the user
+		who is running the current program. It should display
+		exclusively the login name. Default value is suitable
+		for FreeBSD and Ubuntu.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {rootusers}
+	    \casetableau {} {Login names of priviledged PostgreSQL
+		users, who are also Netmagis users allowed to enter the
+		application even when it is in "maintenance mode".
+	    }
+	}
+    }
+    }
+
+    Use the script \teletype {netmagis-config} (check your PATH) to
+    test that Netmagis understands your modifications. The command:
+    \retrait\teletype {$ netmagis-config dnsdbhost}
+    should display a string such as:
+    \retrait\teletype {dnsdbhost="myhost.mycompany.com"}
+
+    You can now proceed to database installation.
+
+    \titre {3} {Database installation}
+
+    PostgreSQL server should be initialized as described
+    above. Netmagis should then be installed by providing
+    \teletype {.../etc/netmagis.conf} directives:
+
+    \retrait {
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+	\lignetableau {
+	    \casetableau {} {dbcopy}
+	    \casetableau {} {Name of a copy of the Netmagis database,
+		generated every night (see the \teletype {netmagis-maint}
+		program in the \italique {database} package). This copy
+		lets you experiment and work on data without fear. \br
+		If this directive is empty, the maintenance command
+		will not create a copy of the database.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {pwgen}
+	    \casetableau {} {Command line to generate a random password}
+	}
+	\lignetableau {
+	    \casetableau {} {crypt}
+	    \casetableau {} {Command line to encrypt a password,
+		compatible with the mod_auth_pgsql Apache module
+	    }
+	}
+    }
+    }
+
+    \liste {
+    \item {
+	If you are upgrading from a previous WebDNS or Netmagis installation,
+	please see the "\lien {Upgrading from previous version} {#upgrading}"
+	section at the end of this document.
+    }
+    \item {
+	If you are installing Netmagis for the first time, after you
+	configured the \teletype {netmagis.conf} file, run the command
+	(as one of the priviledged users listed in \teletype {rootusers}
+	directive):
+	\retrait\teletype {$ .../sbin/netmagis-dbcreate}
+	This command:
+	\liste {
+	    \item {creates the Netmagis database (it fails if the database
+		already exists)}
+	    \item {creates the SQL schemas, tables, functions and triggers}
+	    \item {provides default values for Netmagis parameters}
+	    \item {creates Netmagis users listed in \teletype {rootusers}
+		directive (in \teletype {.../etc/netmagis.conf} file)
+	    }
+	    \item {creates a Netmagis user called \teletype {nobody}}
+	    \item {assigns all Netmagis users a random password, and
+		displays them on standard output}
+	    \item {grants appropriate access to tables to the
+		\teletype {dnsdbuser} and \teletype {rootusers} users.
+	    }
+	}
+	Users a created in the Netmagis database, including the internal
+	authentication schema.
+	\liste {
+	    \item {if you use an LDAP authentication, \teletype {rootusers}
+		users should exist in your LDAP directory.}
+	    \item {if you plan to use the internal authentication database,
+		note the generated passwords as they will be needed in the
+		Web application installation}
+	}
+    }
+    \item {Unless you are upgrading from previous versions, you should
+	import your data into the database. Doing so is described in
+	the "\lien {Import your data in database} {#import}" section
+	below.
+
+	Since this is a long task, if you want to test your installation,
+	you may try to import example data.  You may do so by issuing
+	the command:
+	\retrait\teletype {$ cd .../share/examples/netmagis \br
+	    $ ./run-all.sh
+	}
+
+	You can later destroy and re-create the database with your
+	own data.
+    }
+    \item {Install the sample crontab (\teletype
+	{.../share/examples/netmagis/crontab.database}) in your default
+	cron system. This crontab should be run by one of the \teletype
+	{rootusers}.
+
+	FreeBSD users: if you install this crontab in the global \teletype
+	{/etc/crontab}, please provide a user name just before the
+	command name.
+
+	The \teletype {.../sbin/netmagis-maint} command performs some
+	maintenance tasks:
+	\liste {
+	    \item {make a hourly backup of database in the directory
+		named in the \teletype {dumpdir} directive from
+		\teletype {.../etc/netmagis.conf}
+	    }
+	    \item {copy the current database in a copy named after the
+		\teletype {dbcopy} directive
+	    }
+	    \item {performs a PostgreSQL vacuum operation}
+	    \item {remove some old entries in Netmagis internal spools}
+	}
+    }
+    }
+
+    Netmagis database is now installed. Proceed now to the Web application
+    installation.
+
+    \titre {3} {Web application installation}
+
+    To store user accounts, the Web application can use either an existing
+    external LDAP directory or the internal PostgreSQL database.
+
+    \retrait {
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \multicasetableau {2} {\centragehorizontal {CENTER}}
+		{\gras {netmagis.conf directives}}
+	}
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+	\lignetableau {
+	    \casetableau {} {passwdurl}
+	    \casetableau {} {URL which should be displayed to let users
+		change their password, if you use an external LDAP
+		authentication. Leave empty if you use internal
+		PostgreSQL authentication.}
+	}
+	\lignetableau {
+	    \casetableau {} {hostcmd}
+	    \casetableau {} {Path to the \teletype {host} command}
+	}
+	\lignetableau {
+	    \casetableau {} {pwgen}
+	    \casetableau {} {Command line to generate a random password
+		(not used for LDAP authentication)
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {crypt}
+	    \casetableau {} {Command line to encrypt a password
+		(not used for LDAP authentication)
+	    }
+	}
+    }
+    }
+
+    \liste {
+    \item {A default Apache configuration file is provided in
+	\teletype {..../share/examples/netmagis/httpd.conf}.  Adapt this
+	file and include it in your main Apache configuration file.
+
+	\liste {
+	    \item {If you are using an external LDAP directory to
+		authenticate your users, copy the sample
+		Apache configuration file provided in \teletype
+		{.../share/examples/netmagis/auth-ldap.conf} in your
+		Apache configuration directory, adapt it to your local
+		configuration.
+	    }
+	    \item {If you are using CAS (Central Authentication Service) to
+		authenticate your users...  
+		TO BE WRITTEN
+	    }
+	    \item {If you are using the internal Netmagis authentication,
+		check that the \teletype {auth_pgsql} module is
+		loaded in your main Apache configuration file
+		(\teletype {httpd.conf}), with a line such as:
+		\retrait\teletype {LoadModule auth_pgsql_module
+		libexec/apache22/mod_auth_pgsql.so}
+
+		Next, copy the sample Apache configuration file provided
+		in \teletype {.../share/examples/netmagis/auth-pgsql.conf}
+		in your Apache configuration directory, adapt it to your
+		local configuration. Check the \teletype {Auth_PG_host},
+		\teletype {Auth_PG_port}, \teletype {Auth_PG_database},
+		\teletype {Auth_PG_user} and \teletype {Auth_PG_pwd}
+		configuration lines.
+	    }
+	}
+    }
+    \item {Direct now your Web browser to the \teletype
+	{http://youhost/netmagis/index}, and connect with your login name.
+	If you use the internal Netmagis PostgreSQL authentication,
+	use the password generated by the \teletype {netmagis-dbcreate}
+	command, during the database creation phase.
+
+	You should see a main menu such as \lien {this one}
+	{http://netmagis.org/shot-accueil.png}.
+    }
+    \item {If you are using LDAP or CAS authentication, go into the
+	\gras {Admin} menu (on the left vertical bar), then to the \gras
+	{Application parameters} menu.
+
+	In the "\gras {LDAP authentication parameters}" section,
+	adapt values to your LDAP directory. Then select the \gras
+	{LDAP} item in the \gras {Authentication method} menu
+	(in the "\gras {General parameters}" section). Then, click on
+	the \gras {Submit} button to register your new configuration.
+
+	Select any item in the left menu to check that your authentication
+	parameters are correctly configured.
+    }
+    \item {If you are using internal Netmagis authentication, change
+	your password (unless you want to keep the generated one...).
+
+	Change also your name (as well as other account informations)
+	with the \gras {Admin} / \gras {Internal Auth} / \gras {Modify
+	account} menu.
+    }
+    }
+
+    Congratulations! The Web application is now installed.
+
+    \titre {3} {Utils package installation}
+
+    The \italique {utils} package is optional: it contains commands
+    to add, delete or modify individual hosts, as well as DNS zone
+    prologues. These commands are designed to be used wth the Unix shell.
+
+    Installation is very simple: only common \teletype {netmagis.conf}
+    directives to connect to the database are needed.
+    
+    Notice, however, that this file (including password to connect to
+    the database) must be readable to all users of these scripts. This
+    may be a security risk if you make this file readable for all users,
+    but you can also control access to the configuration file and to
+    the scripts based on a group policy.
+
+    The provided commands are:
+    \liste {
+    \item {\teletype {dnsaddhost \italique {fqdn addr}}: adds the
+	specified host with the IPv4 or IPv6 address
+    }
+    \item {\teletype {dnsaddalias \italique {fqdn-alias fqdn-host}}:
+	adds the specified alias to an existing host.
+    }
+    \item {\teletype {dnsdelhost \italique {fqdn}}: deletes the
+	specified host
+    }
+    \item {\teletype {dnsdelip \italique {addr}}: deletes an IP address.
+	If this is the last, deletes the host.
+    }
+    \item {\teletype {dnsmodattr \italique {fqdn key val key val ...}}:
+	modify an existing host. Possibles keys are:
+	\liste {
+	    \item {\teletype {mac}: value is the MAC address
+	    }
+	    \item {\teletype {hinfo}: value is the exact name of the
+		the machine type, as listed
+		in the \gras {Modify machine types} administrator menu.
+		or in the
+		\teletype {dns.hinfo} SQL table
+
+	    }
+	    \item {\teletype {respnom}: name of user responsible for
+		this host
+	    }
+	    \item {\teletype {respmel}: mail address of user responsible
+		for this host
+	    }
+	    \item {\teletype {commentaire}: comment associated to this
+		host
+	    }
+	    \item {\teletype {dhcpprofil}: value is the exact name of
+		the DHCP profile, as listed
+		in the \gras {Modify DHCP profiles} administrator menu.
+		or in the
+		\teletype {dns.dhcpprofil} SQL table
+	    }
+	    \item {\teletype {ttl}: value is the specific TTL value for
+		this host, in seconds, or empty string to remove the
+		specific value
+	    }
+	    \item {\teletype {droitsmtp}: value is 0 to remove the right
+		to emit mail with unauthenticated SMTP, or 1 to add the
+		right.
+	    }
+	}
+    }
+    \item {\teletype {dnsreadprol \italique {zone}}: displays on
+	standard output the DNS zone prologue specified by its domain
+	name.
+    }
+    \item {\teletype {dnswriteprol \italique {zone file}}: use the named
+	file as the zone prologue. Since this operation may have a great
+	impact, manual confirmation is required.
+    }
+    }
+
+
+    \titre {3} {Servers package installation}
+
+    The \italique {servers} package must be installed on your main BIND
+    server, on your DHCP server, and on your mail router, depending on
+    the features you want.
+
+    \liste {
+    \item {On all servers, you will have to configure \teletype
+	{.../etc/netmagis.conf} with the following directive:
+
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}}
+		    {\gras {netmagis.conf directives}}
+	    }
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	    }
+	    \lignetableau {
+		\casetableau {} {diff}
+		\casetableau {} {Command line used to signal differences
+		    between two versions of a server file (DNS zones,
+		    DHCP files, etc.).
+		}
+	    }
+	}
+
+    }
+    \item {On your \gras {main BIND server}, provide values for the
+	following directives:
+
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}}
+		    {\gras {netmagis.conf directives}}
+	    }
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	    }
+	    \lignetableau {
+		\casetableau {} {zonedir}
+		\casetableau {} {Directory where your DNS zone files are
+		    read by your DNS daemon
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {zonecmd}
+		\casetableau {} {Command used to make your DNS daemon reload
+		    the generated zone files. The default command is for
+		    BIND 9.x.
+
+		    Please note that if this command fails, zone
+		    generation is aborted and old zone files are restored.
+
+		    If you have configured a cluster of name servers,
+		    you can use this directive to propagate inforamtion
+		    to other nodes.
+		}
+	    }
+	}
+
+	Once you configured \teletype {.../etc/netmagis.conf} file, run
+	(as the user who have access to the \teletype {zonedir}
+	directory and to the \teletype {zonecmd} command):
+	\retrait\teletype {$ .../sbin/mkzone -n -v}
+	This command tests zone generation, without performing any
+	file modification.
+
+	You can force generation of some zones by using the \gras {Admin}
+	/ \gras {Force zone generation}. This sets a flag in the \teletype
+	{dns.zone} SQL table, which is read by the \teletype {mkzone}
+	to find modified zones.
+
+	Test now a real zone generation by using:
+	\retrait\teletype {$ .../sbin/mkzone -v}
+
+	If everything is ok, you can use the sample \teletype
+	{.../share/examples/netmagis/crontab.bind} to install the periodic
+	zone generation for the user. Remember that the SOA serial number
+	is limited to 2 digits (i.e. 99 modifications by day), so there is
+	no more than 4 modifications by hour on average (over 24 hours).
+
+	FreeBSD users: if you install this crontab in the global \teletype
+	{/etc/crontab}, please provide a user name just before the
+	command name.
+
+    }
+    \item {Netmagis is designed to aliment a central \lien {ISC DHCP
+	server} {http://www.isc.org/software/dhcp}.  If you want to use
+	this functionnality on other networks, you need to activate DHCP
+	relay in your router configurations.
+
+	The Netmagis can also handle \gras {failover} configuration
+	in order to provide a redundant DHCP service based on 2 ISC
+	DHCP servers.
+
+	On your \gras {DHCP server}, provide values for the following
+	directives:
+
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}}
+		    {\gras {netmagis.conf directives}}
+	    }
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	    }
+	    \lignetableau {
+		\casetableau {} {dhcpfile}
+		\casetableau {} {Location of generated file for ISC dhcpd
+		    daemon. This file should be included by your main
+		    \teletype {dhcpd.conf} file (see you ISC dhcpd
+		    configuration), with a line such as:
+		    \retrait\teletype {include "/etc/dhcp-gen.conf"}
+
+		    Note: if you don't plan to use DHCP generation,
+		    don't panic! This directive (and the next ones) will
+		    not be used.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {dhcpfailover}
+		\casetableau {} {Line to add to generated pools if you use
+		    ISC DHCP failover feature (DHCP redundancy over 2
+		    servers). Leave empty if you don't use this feature.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {dhcptest}
+		\casetableau {} {Command used to check DHCP configuration
+		    file before restarting ISC dhcpd daemon. This is needed
+		    since Netmagis administrators may add faulty DHCP
+		    profiles, and ISC dhcpd daemon is not very tolerant to
+		    configuration errors. Please note that this command
+		    contains the location of your main teletype {dhcpd.conf}
+		    file.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {dhcpcmd}
+		\casetableau {} {Command used to make your ISC dhpcd daemon
+		    reload the configuration.
+		}
+	    }
+	}
+
+	Once you configured \teletype {.../etc/netmagis.conf} file, run
+	as root:
+	\retrait\teletype {$ .../sbin/mkdhcp -n -v}
+	This command tests DHCP file generation, without performing any
+	file modification.
+
+	Test now a real DHCP file generation by using:
+	\retrait\teletype {$ .../sbin/mkdhcp -v}
+
+	If everything is ok, you can use the sample \teletype
+	{.../share/examples/netmagis/crontab.dhcp} to install the periodic
+	DHCP file generation. You should run the DHCP file generation
+	soon after the DNS zone generation (such that new host names
+	are not generated in DHCP file before they are known in the DNS).
+
+	FreeBSD users: if you install this crontab in the global \teletype
+	{/etc/crontab}, please provide a user name just before the
+	command name.
+
+    }
+    \item {Netmagis can be used to generate mail routes for you central
+	mail router. Routes are generated following "mail roles", whose
+	modifications are enabled individually for each allowed domain
+	in the \gras {Admin} / \gras {Modify users and groups} menu.
+
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}}
+		    {\gras {netmagis.conf directives}}
+	    }
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	    }
+	    \lignetableau {
+		\casetableau {} {mroutefile}
+		\casetableau {} {File read by sendmail (or Postfix)
+		    to get mail routing information. The default line format
+		    (see "mroutefmt" directive) ressembles:
+		    \retrait {\teletype {specific.domain.com
+		    smtp.[host.domain.com]}}
+		    which means that mail addressed to
+		    someone@specific.domain.com is to be sent to host
+		    host.domain.com.
+
+		    Note: if you don't plan to use mail route generation,
+		    don't panic! This directive (and the next ones) will
+		    not be used.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {mrouteprologue}
+		\casetableau {} {Prologue of the generated mail route file.
+		    This prologue allows you to mention specific mail route
+		    information which cannot be extracted from the database.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {mroutefmt}
+		\casetableau {} {Format of mail route entries: %1$s is the
+		    mail address and %2$s is the host accepting mails for
+		    this address.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {mroutecmd}
+		\casetableau {} {Command used to make your Sendmail daemon
+		    reload the generated route file.
+		    
+		    If your mail router is a cluster of hosts, this
+		    command will have to propagate the file and restart
+		    the daemon on other nodes.
+		}
+	    }
+	}
+
+	Once you configured \teletype {.../etc/netmagis.conf} file, run
+	as root:
+	\retrait\teletype {$ .../sbin/mkmroute -n -v}
+	This command tests mail routes file generation, without performing
+	any file modification.
+
+	Test now a real file generation by using:
+	\retrait\teletype {$ .../sbin/mkmroute -v}
+
+	If everything is ok, you can use the sample \teletype
+	{.../share/examples/netmagis/crontab.mroute} to install the
+	periodic file generation.
+
+	FreeBSD users: if you install this crontab in the global \teletype
+	{/etc/crontab}, please provide a user name just before the
+	command name.
+
+    }
+    \item {If you use authenticated SMTP, you know than some hosts
+	(copiers, embedded measurement machines, etc.) may not be able
+	to use authenticated SMTP. Some exceptions must be done.
+
+	Netmagis helps you handle these exceptions, by providing a
+	special flag to each host.  Right to activate this flag is
+	enabled for each group in the \gras {Admin} / \gras {Modify
+	users and groups} menu.
+
+	To activate this functionnality, some prerequisites are needed
+	on your mail infrastructure:
+	\liste {
+	    \item {Authenticated SMTP message submission is enabled on
+		TCP port 587
+	    }
+	    \item {Unauthenticated SMTP access is enabled on TCP port
+		25
+	    }
+	    \item {All your routers restrict use of port 25, such as
+		internal hosts can only open connections to mail
+		submission hosts
+	    }
+	    \item {Your mail submissions hosts accept connections on
+		port 25 only from authorized hosts. \br
+		A configuration file for a *BSD PF (packet filter)
+		is provided as an example in
+		\teletype {.../share/examples/netmagis/pf.conf.sample}.
+		You will notice that the \gras {smtpf} table is read
+		from a file, generated by Netmagis.
+	    }
+	}
+
+	With this infrastructure, provide values for the following
+	directives on your mail submission hosts:
+
+	\tableau {
+	    \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\multicasetableau {2} {\centragehorizontal {CENTER}}
+		    {\gras {netmagis.conf directives}}
+	    }
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	    }
+	    \lignetableau {
+		\casetableau {} {pffile}
+		\casetableau {} {File where the PF packet filter (on *BSD
+		    hosts) expects to find the contents of the table giving
+		    IP addresses of hosts allowed to use unauthenticated
+		    SMTP, i.e. hosts allowed to connect to TCP port 25.
+
+		    Note: if you don't plan to use Netmagis to control
+		    which hosts have access to unauthenticated SMTP, don't
+		    panic! This directive (and the next ones) will not
+		    be used.
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {pffmt}
+		\casetableau {} {Format of generated file (containing
+		    the \gras {smtpf} table) included in \teletype
+		    {pffile}}
+	    }
+	    \lignetableau {
+		\casetableau {} {pfprologue}
+		\casetableau {} {Lines to prepend, if any, to the
+		    generated file. May be set to \teletype {/dev/null}
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {pftest}
+		\casetableau {} {Command used to check the generated file}
+	    }
+	    \lignetableau {
+		\casetableau {} {pfcmd}
+		\casetableau {} {Command used to reload the generated pf table}
+	    }
+	}
+
+	Once you configured \teletype {.../etc/netmagis.conf} file, run
+	as root:
+	\retrait\teletype {$ .../sbin/mksmtpf -n -v}
+	This command tests filter file generation, without performing
+	any file modification.
+
+	Test now a real file generation by using:
+	\retrait\teletype {$ .../sbin/mksmtpf -v}
+
+	If everything is ok, you can use the sample \teletype
+	{.../share/examples/netmagis/crontab.smtpf} to install the
+	periodic file generation.
+
+	FreeBSD users: if you install this crontab in the global \teletype
+	{/etc/crontab}, please provide a user name just before the
+	command name.
+
+    }
+    }
+
+    Congratulations! You have installed the \italique {servers} package.
+    The Netmagis is ready to be used, for its core functionnality.
+
+    \titre {3} {Detecteq package installation}
+
+    The \italique {topo} package needs to know when the configuration
+    of a network equipment has been changed. These changes are detected
+    via:
+    \liste {
+	\item {\gras {syslog} for Cisco and Juniper equipments}
+	\item {\gras {radius} for HP equipements. In this case, since
+	    HP equipments are unable to report configuration changes
+	    via Syslog, the hack is based on Radius accounting which
+	    detects user logout (which do not strictly imply a
+	    configuration change).
+	}
+    }
+
+    Thus, the \italique {detecteq} package must be installed on your
+    central syslog (syslog, syslog-ng, etc.) server and/or your central
+    radius server, depending on your equipments. Since modification
+    events are sent to the database, the \italique {detecteq} package
+    does not need to be installed on the same server as the \italique
+    {topo} server.
+
+    \gras {Syslog configuration}:
+
+    \liste {
+	\item {On Cisco and Juniper equipments, you need to configure a
+	    syslog server if not already done. For example:
+
+	    \tableau {
+		\* \taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Equipment}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Example}}
+		}
+		\lignetableau {
+		    \casetableau {} {Juniper}
+		    \casetableau {} {\teletype {system \{ \br
+			~ ~ ~syslog \{ \br
+			~ ~ ~ ~ ~ ~host \italique {syslog-server.my.domain} \{ \br
+			~ ~ ~ ~ ~ ~ ~ ~ ~any notice;\br
+			~ ~ ~ ~ ~ ~ ~ ~ ~facility-override local2;\br
+			~ ~ ~ ~ ~ ~\}\br
+			~ ~ ~\}\br
+			\}
+			}}
+		}
+		\lignetableau {
+		    \casetableau {} {Cisco}
+		    \casetableau {} {\teletype
+			{logging \italique {syslog-server.my.domain}\br
+			logging facility local2}
+		    }
+		}
+	    }
+	}
+	\item {Configure \teletype {.../etc/netmagis.conf} for access to
+	    the Netmagis database
+	}
+	\item {Update your syslog configuration file and use a line
+	    such as:
+	    \retrait\teletype {local2.*  |exec /usr/local/sbin/detectconfmod}
+
+	    Adapt this line to your syslog facility and the \italique
+	    {detecteq} installation path.  You can also use other
+	    syslog daemons such as syslog-ng if they provide the "pipe
+	    to program" functionnality.
+	}
+    }
+
+    \gras {Freeradius configuration}:
+
+    \liste {
+	\item {On HP equipements, configure Radius accounting using the
+	    following command:
+
+	    \tableau {
+		\* \taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Equipment}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Example}}
+		}
+		\lignetableau {
+		    \casetableau {} {HP}
+		    \casetableau {} {\teletype
+			{radius-server host \italique {radius.my.domain}
+			    key \italique {secret}
+			    acct-port 1813
+			    }
+		    }
+		}
+	    }
+	}
+	\item {Configure your existing Freeradius using the SQL
+	    accounting module and the example files provided in
+	    \teletype {.../share/examples/netmagis/radius/} directory.
+	}
+    }
+
+    \titre {3} {Topo package installation}
+
+    One of the moste innovative parts of Netmagis is the \italique {topo}
+    package, which provides a complete infrastructure to fetch and analyze
+    network equipments configuration files and modelize the network as
+    a graph. This allows for automatic generation of network L2 and L3
+    maps, equipment port configuration, as well as interactions with
+    the metrology package.
+
+    At this time, Juniper, Cisco and HP equipments (switches and routers)
+    are supported.
+
+    For security reasons, one would often use a separate server to run
+    the \italique {topo} package. This server is located within the
+    administration VLAN of equipments. The interface between the \italique
+    {topo} package and the rest of Netmagis is:
+    \liste {
+	\item {the ability to send mail from the \italique {topo}
+	    server}
+	\item {an SSH access to the \italique {topo} from the Netmagis
+	    Web application, via a non-priviledged account
+	}
+    }
+
+    The rest of this section describes the \italique {topo} package
+    installation.
+
+    The first part is configuration of the \italique {topo} server.
+
+    \liste {
+	\item {The first step of installation is to configure the \gras
+	    {rancid} software (prerequisite of the \italique {topo}
+	    package) on the \italique {topo} server.
+
+	    Detailed information can be found in the README coming with
+	    the rancid package. However, here are the minimal steps to
+	    a quick configuration:
+
+	    \liste {
+		\item {Check that the \teletype {rancid} user is created
+		}
+		\item {Choose a unique "group" name for all your network
+		    equipments. The \italique {topo} package uses the
+		    name \teletype {mygroup} by default. The name must
+		    be configured in the file \teletype {rancid.conf}
+		    (location is system dependant), in the line
+		    beginning with \teletype {LIST_OF_GROUPS}.
+		    While you are here, notice the \teletype {BASEDIR}
+		    directory name.
+		}
+		\item {Configure a mail alias \teletype
+		    {rancid-\italique {groupname}} (in \teletype
+		    {/etc/aliases} or equivalent) to receive notifications
+		    when rancid detects modifications.
+		}
+		\item {Configure the \teletype {&tilde;rancid/.cloginrc}
+		    file with authentication information. For example:
+		    \retrait\teletype {
+			add method * \{telnet\} \br
+			add password myrouter \{pw\} \{enablepw\} \br
+			add password sw-* \{anotherpw\} \{anotherenablepw\}
+		    }
+		}
+		\item {Initialize the directory tree by running:
+		    \retrait\teletype {rancid-cvs}
+		}
+		\item {In order to test your rancid installation, name
+		    some equipments in the \teletype {router.db} file,
+		    which should be located in \teletype
+		    {$BASEDIR/\italique {group-name}/router.db}.
+		    See the rancid README for instructions.
+
+		    This file will be overwritten by the \italique
+		    {topo} package with information from the Netmagis
+		    database.
+		}
+		\item {Test your installation by running:
+		    \retrait\teletype {rancid-run}
+		}
+		\item {The rancid README says to run \teletype
+		    {rancid-run} periocally with \gras {cron}. Do not
+		    do this, since the \italique {topo} package will
+		    call rancid when needed.
+		}
+	    }
+	}
+	\item {To let \italique {topo} knows which equipments are on
+	    each side of a network link, you have to add information in
+	    equipment configurations. This information is a link name
+	    (or number) prefixed with L, bracketed with "&lt;" and "&gt;",
+	    and added to the description of the interface on each side
+	    of the link:
+
+	    \tableau {
+		\* \taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Equipment}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Example}}
+		}
+		\lignetableau {
+		    \casetableau {} {Juniper}
+		    \casetableau {} {\teletype {ge-0/1/0 \{ \br
+			~ ~ ~description "blah blah &lt;L233&gt;; \br
+			~ ~ ~...\br
+			\}
+			}}
+		}
+		\lignetableau {
+		    \casetableau {} {Cisco}
+		    \casetableau {} {\teletype {interface GigabitEthernet0/1\br
+			~ ~description blah blah &lt;L233&gt;}}
+		}
+		\lignetableau {
+		    \casetableau {} {HP}
+		    \casetableau {} {\teletype {interface A1\br
+			~ ~name "blah blah &lt;L233&gt;"}}
+		}
+	    }
+
+	    Ports connected to individual hosts must be marked with a
+	    "&lt;X\>" to indicate a terminal node in the graph.
+	}
+	\item {Configure \teletype {.../etc/netmagis.conf} on the
+	    \italique {topo} server:
+
+	    \tableau {
+		\taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \multicasetableau {2} {\centragehorizontal {CENTER}}
+			{\gras {netmagis.conf directives}}
+		}
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+		}
+		\lignetableau {
+		    \casetableau {} {rancidcmd}
+		    \casetableau {} {Command used to launch \teletype
+			{rancid}}
+		}
+		\lignetableau {
+		    \casetableau {} {ranciddb}
+		    \casetableau {} {Rancid database. Notice that the
+			rancid group (mygroup in the example provided
+			with Netmagis) is a component of the pathname.
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {rancidconfdir}
+		    \casetableau {} {Directory where equipment
+			configurations are stored by rancid (also with
+			the rancid group as a component of the
+			pathname).
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {sendcisco, sendhp, sendjuniper}
+		    \casetableau {} {Commands used to propagate new
+			port configuration on an equipment, if you choose
+			to enable the functionnality of letting users
+			modify interface configuration.
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {fpingcmd}
+		    \casetableau {} {Command used to launch \teletype
+			{fping}, in order to test equipment before
+			sending commands to change port configuration}
+		}
+		\lignetableau {
+		    \casetableau {} {logger}
+		    \casetableau {} {Command used to send a message to
+			syslog}
+		}
+		\lignetableau {
+		    \casetableau {} {eqvirtdir}
+		    \casetableau {} {Directory used for "virtual
+			equipments". Each file is a specially crafted
+			configuration which represent one equipment
+			whose configuration cannot be fetched by rancid
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {eqgendir}
+		    \casetableau {} {Directory used to store results
+			of analysis of rancid fetched configurations
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {topobindir}
+		    \casetableau {} {Directory where all \italique
+			{topo} programs are searched
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {topograph}
+		    \casetableau {} {Path name of the graph built
+			during \italique {topo} analysis
+		    }
+		}
+	    }
+
+	}
+	\item {Change the ownership to the \gras {rancid} user:
+	    \retrait\teletype {# chown -R rancid .../var/netmagis}
+	}
+	\item {As the \gras {rancid} user, run the following command:
+	    \retrait\teletype {$ .../lib/netmagis/topo/anaconf}
+
+	    You will undoubtly notice a large number of warnings, that
+	    you will correct with time. If no fatal error has been
+	    encountered, you will normally find in \teletype
+	    {.../var/netmagis/network.graph} the modelization of your
+	    network. This is a binary file.
+
+	    To check that things are ok, you can use the commands (which
+	    all take the binary graph as standard input):
+	    \liste {
+		\item {\teletype {.../lib/netmagis/topo/dumpgraph}:
+		    dumps the graph in clear text
+		}
+		\item {\teletype {.../lib/netmagis/topo/extracteq}:
+		    given and equipment name, displays all interfaces
+		    characteristics.
+		}
+	    }
+	}
+	\item {Be sure that the \italique {detecteq} package is properly
+	    installed on your central syslog server and/or your central
+	    radius server.
+	}
+	\item {Run the \teletype {topographd} and the \teletype
+	    {toposendd} daemons via the provided startup scripts:
+
+	    \tableau {
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \casetableau {} {FreeBSD}
+		    \casetableau {} {\teletype {/usr/local/etc/rc.d/topographd}
+			\br
+			\teletype {/usr/local/etc/rc.d/toposendd}}
+		}
+		\lignetableau {
+		    \casetableau {} {Linux}
+		    \casetableau {} {TO BE WRITTEN}
+		}
+	    }
+	}
+    }
+
+    You need now to come back to the server which hosts the Web
+    application.
+
+    \liste {
+	\item {Configure \teletype {.../etc/netmagis.conf} on the
+	    \italique {www} server:
+
+	    \tableau {
+		\taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \multicasetableau {2} {\centragehorizontal {CENTER}}
+			{\gras {netmagis.conf directives}}
+		}
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+		}
+		\lignetableau {
+		    \casetableau {} {topohost}
+		    \casetableau {} {Host name of the \italique {topo}
+			server, or empty if the \italique {topo} package
+			is installed on the same server as the \italique
+			{www} package}
+		}
+		\lignetableau {
+		    \casetableau {} {topouser}
+		    \casetableau {} {Name of \teletype {rancid} user
+			on the \italique {topo} server, or empty if the
+			\italique {topo} package is installed on the
+			same server as the \italique {www} package}
+		}
+		\lignetableau {
+		    \casetableau {} {topobindir}
+		    \casetableau {} {Directory where all \italique
+			{topo} programs are searched on the \italique
+			{topo} server
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {topograph}
+		    \casetableau {} {Path name of the graph built
+			during \italique {topo} analysis
+			on the \italique {topo} server
+		    }
+		}
+	    }
+
+	}
+	\item {If the \italique {topo} package is installed on a
+	    different server than the \italique {www} package, you must
+	    provide a way for the Web server to make SSH requests to
+	    the \italique {topo} server. In order to do that, identify
+	    the name of the user running your Apache server (locate
+	    the \teletype {User} in the Apache configuration files).
+
+	    Make sure this user has a valid home directory. Then, as
+	    this user, create a SSH keypair (without pass-phrase):
+	    \retrait\teletype {ssh-keygen}
+	    Copy the public key (\teletype {&tilde;/.ssh/id_rsa.pub}) to
+	    the \teletype {&tilde;rancid/.ssh/.ssh/authorized_keys} on the
+	    \italique {topo} server.
+	}
+	\item {Connect your web browser to the Netmagis application,
+	    and activate the \italique {topo} module in the \gras {Admin}
+	    / \gras {Application parameters} menu.
+
+	    You can also change parameters such as "Default domain",
+	    "Topo mail sender" and "Topo mail receiver".
+
+	    After activation of the \italique {topo} module, you will
+	    see a new \gras {Topology} entry in the left menu.
+	}
+	\item {Input your network equipments and your VLANs via the
+	    \gras {Admin} / \gras {Modify equipments} and \gras {Modify
+	    Vlans} menus.
+	}
+	\item {You can monitor the \teletype {topographd} and \teletype
+	    {toposendd} daemons with the \gras {Admin} / \gras {Topod
+	    status} menu.
+	}
+	\item {If you want users to be able to modify interface
+	    configuration within the Web application, enter the \gras
+	    {Admin} / \gras {Modify users and groups} menu, and input
+	    regular expressions in the \gras {Permissions on network
+	    equipments} section.
+	}
+    }
+
+    Congratulations! You've configured the \italique {topology} module.
+    You can now consult your equipments, your network maps, and even
+    modify interfaces of your equipments if you enabled this feature!
+
+    \titre {3} {Metro package installation}
+
+    TO BE WRITTEN
+
+    \retrait {
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \multicasetableau {2} {\centragehorizontal {CENTER}}
+		{\gras {netmagis.conf directives}}
+	}
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+	}
+    }
+    }
+
+    \**********************************************************************
+
+    \titre {2} {\ancre {import} {Import your data in database}}
+
+    TO BE WRITTEN
+
+    \**********************************************************************
+
+    \titre {2} {\ancre {upgrading} {Upgrading from previous versions}}
+
+    gras {Important}: to upgrade from an old version, you must follow upgrade
+    procedure for \italique {\gras {all} intermediate versions}.
+
+    \titre {3} {Upgrading from Netmagis / WebDNS v1.5}
+
+    Upgrading from the previous Netmagis/WebDNS version is simple.
+
+    First, make a backup of the old WebDNS database.
+
+    Next, install \italique {common}, \italique {database} packages,
+    and configure them according to installation instructions (except
+    database creation).
+
+    On the database server, go to the \teletype
+    {.../share/examples/netmagis/upgrade/15-20/} directory, and then:
+
+    \liste {
+	\item {Inspect the \teletype {upgrade.sql} script, and adapt
+	    login names of users in the GRANT lines.
+
+	}
+	\item {As the priviledged user, run the \teletype {upgrade.sql}
+	    script on your existing database (have I already said that
+	    you should make a backup first?):
+
+	    \retrait\teletype {$ psql -f upgrade.sql \italique {webdns-database-name}}
+
+	}
+	\item {If you have configured the PostgreSQL authentication
+	    system, make a dump of your old \italique {auth} database:
+
+	    \retrait\teletype {$ pg_dump \italique {auth-database-name} > /tmp/auth.dump}
+
+	    Next, apply the script to merge database authentication in
+	    the Netmagis database:
+
+	    \retrait\teletype {$ pg_dump --data-only \italique
+		{auth-database-name} | sed -f pgauth.sed > /tmp/pgauth.load}
+
+	    You should take a look on the \teletype {/tmp/pgauth.load}
+	    to see if everything is ok. Then, load the converted file:
+
+	    \retrait\teletype {$ psql -f /tmp/pgauth.load \italique
+		{webdns-database-name}}
+
+	    Next, issue the SQL command with \teletype {psql}:
+
+	    \retrait\teletype {INSERT INTO global.config (clef, valeur)
+		VALUES ('authmethod', 'pgsql') ;}
+
+	}
+	\item {If you have configured the LDAP authentication, issue the SQL
+	    command with \teletype {psql}:
+
+	    \retrait\teletype {INSERT INTO global.config (clef, valeur)
+		VALUES ('authmethod', 'ldap') ;}
+	}
+    }
+
+    Next, install the \italique {www} package, and follow installation
+    instructions.  If you use PostgreSQL authentication, do not forget
+    to update the Apache configuration to use to the new tables in the
+    Netmagis database.
+
+    \titre {3} {Upgrading from previous versions}
+
+}
+
+}

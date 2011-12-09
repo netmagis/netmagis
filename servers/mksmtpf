@@ -1,0 +1,243 @@
+#!%TCLSH%
+
+#
+# Install IP filter for authorized SMTP hosts
+#
+# Syntax:
+#	mksmtpf [-h][-q][-v][-n]
+#	    -h: help
+#	    -q: silent operation
+#	    -v: verbose output
+#	    -n: don't modify files
+#
+# History:
+#   2008/08/xx : pda/jean : design
+#   2011/06/26 : pda      : i18n and redesign
+#
+
+source %LIBNETMAGIS%
+
+#
+# Self explanatory
+#
+
+set conf(usage) {usage: %1$s [-h]|-q][-v][-n]
+    -h : get this help
+    -q : keep silent on normal operation
+    -v : verbose (show diffs)*
+    -n : don't perform file installation
+}
+
+
+#
+# Generates a filter text
+#
+# Input:
+#   - parameters:
+#	- dbfd: database handle
+#	- pfprologue: name of file containing filter prologue
+#	- pffmt: format of individual filter lines 
+# Output:
+#   - return value: empty string, or error message
+#   - variable _pftxt: generated filter
+#
+# History
+#   2008/08/xx : pda/jean : design
+#
+
+proc gen-filter {dbfd pfprologue pffmt _pftxt} {
+    upvar $_pftxt pftxt
+
+    #
+    # Step 1: read prologue
+    #
+
+    if {[catch {set fd [open $pfprologue "r"]} err]} then {
+	return $err
+    }
+    set pftxt [read $fd]
+    close $fd
+
+    #
+    # Step 2: Get list of IPv4 and IPv6 addresses of hosts authorized
+    # to emit SMTP messages to the host running this script (typically
+    # the central mail hub of an organization).
+    # Note: the sort is done to emit addresses using the same order
+    # such as the resulting file do not contain any modification.
+    #
+    set sql "SELECT adr FROM dns.rr, dns.rr_ip
+			WHERE rr.droitsmtp = 1 AND rr.idrr = rr_ip.idrr
+			ORDER BY adr"
+    pg_select $dbfd $sql tab {
+	append pftxt [format $pffmt $tab(adr)]
+	append pftxt "\n"
+    }
+
+    return ""
+}
+
+
+##############################################################################
+# main
+##############################################################################
+
+proc usage {argv0} {
+    global conf
+
+    regsub ".*/" $argv0 "" argv0
+    puts -nonewline stderr [format $conf(usage) $argv0]
+    exit 1
+}
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Initialization : Netmagis database access and file queue
+    #
+
+    set msg [d init-script dbfd $argv0 true tabcor]
+    if {$msg ne ""} then {
+	puts stderr $msg
+	return 1
+    }
+
+    set fq [::fileinst create %AUTO%]
+
+    #
+    # Argument checking
+    #
+
+    set verbose 0
+    set doit 1
+
+    while {[llength $argv] > 0} {
+	set a [lindex $argv 0]
+	switch -glob -- $a {
+	    -h {
+		usage $argv0
+	    }
+	    -q {
+		set verbose -1
+		set argv [lreplace $argv 0 0]
+	    }
+	    -v {
+		set verbose 1
+		set argv [lreplace $argv 0 0]
+	    }
+	    -n {
+		set doit 0
+		set argv [lreplace $argv 0 0]
+	    }
+	    -* {
+		warning "Unknown option '$a'"
+		usage $argv0
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    if {[llength $argv] > 0} then {
+	usage $argv0
+    }
+
+    #
+    # Get configuration values
+    #
+
+    foreach o {diff pffile pffmt pfprologue pftest pfcmd} {
+	set $o [get-local-conf $o]
+    }
+
+    #
+    # Do the work
+    #
+
+    set msg [gen-filter $dbfd $pfprologue $pffmt txt]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    switch [compare-file-with-text $pffile $txt msg] {
+	-1 {
+	    d error $msg
+	}
+	0 {
+	    # nothing
+	    if {! $doit} then {
+		if {$verbose >= 0} then {
+		    puts "SMTP filters are not modified"
+		    if {$verbose == 1} then {
+			puts -nonewline $txt
+		    }
+		}
+	    }
+	}
+	1 {
+	    if {$verbose >= 0} then {
+		puts "SMTP filters are modified"
+	    }
+
+	    if {$doit} then {
+		if {$verbose == 1} then {
+		    show-diff-file-text stdout $diff $pffile $txt
+		}
+
+		#
+		# Install file, test configuration file and restart daemon
+		#
+
+		set msg [$fq add $pffile $txt]
+		if {$msg ne ""} then {
+		    d error $msg
+		}
+
+		set msg [$fq commit]
+		if {$msg ne ""} then {
+		    d error $msg
+		}
+
+		# test configuration
+		if {$pftest ne ""} then {
+		    if {[catch {exec -ignorestderr sh -c $pftest} msg]} then {
+			set msg "Cannot run command '$pftest'\n$msg"
+			set m [$fq uncommit]
+			if {$m ne ""} then {
+			    append msg "\n$m"
+			}
+			d error $msg
+		    }
+		}
+
+		# install configuration
+		if {$pfcmd ne ""} then {
+		    if {[catch {exec -ignorestderr sh -c $pfcmd} msg]} then {
+			set msg "Cannot run command '$pfcmd'\n$msg"
+			set m [$fq uncommit]
+			if {$m ne ""} then {
+			    append msg "\n$m"
+			}
+			d error $msg
+		    }
+		}
+	    } else {
+		if {$verbose == 1} then {
+		    puts -nonewline $txt
+		}
+	    }
+	}
+    }
+
+    #
+    # End of work
+    #
+
+    $fq destroy
+
+    d end
+    return 0
+}
+
+exit [main $argv0 $argv]

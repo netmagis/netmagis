@@ -10,7 +10,7 @@
 #   2011/01/13 : jean : design
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 proc main {argv0 argv} {
     global ctxt

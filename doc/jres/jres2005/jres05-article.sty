@@ -1,0 +1,113 @@
+%
+% Feuille de style LaTeX pour les articles de Jres'05
+%
+% Usage : copier ce fichier dans votre répertoire courant. Votre
+%	source LaTeX doit débuter par :
+%		\documentclass {article}
+%		\usepackage {jres05-article}
+%		\begin {document}
+%		...
+%
+% Historique
+%   2002/12/16 : pda : conception
+%   2005/06/01 : pda : adaptation pour 2005
+%
+
+\NeedsTeXFormat {LaTeX2e}
+\ProvidesPackage {jres05} [2005/05/31 0.2 (PDA)]
+\RequirePackage [francais] {babel}
+\RequirePackage [T1] {fontenc}
+
+\RequirePackage {graphicx}
+\RequirePackage {float}
+\RequirePackage {times}
+\RequirePackage {caption2}
+\RequirePackage [paper=a4paper,textwidth=176mm,
+	lmargin=17mm,rmargin=17mm,tmargin=20mm,bmargin=30mm] {geometry}
+\RequirePackage {multicol}
+
+\renewcommand {\captionfont} {\it}
+\renewcommand {\captionlabelfont} {\rm}
+\renewcommand {\captionlabeldelim} {~--}
+
+% placement par défaut des figures : HERE
+\floatplacement{figure}{H}
+\sloppy
+\flushbottom
+
+\frenchspacing
+\parindent	0mm
+\parskip	2mm
+
+\leftmargini	2em
+\leftmarginv	.5em
+\leftmarginvi	.5em
+
+%
+% Séparation entre les colonnes : 8 mm
+%
+\setlength\columnsep{8mm}
+
+%
+% Format des titres
+%
+
+\def\section{\@startsection {section}{1}{\z@}
+        {3ex plus 1ex minus -1ex}{2ex plus .2ex}{\Large\bf}}
+\def\subsection{\@startsection {subsection}{2}{\z@}
+        {1ex plus .4ex minus -.2ex}{1ex plus .2ex}{\large\bf}}
+\renewcommand{\subsubsection}[1]{\paragraph*{\bf #1.}}
+\def\paragraph{\@startsection {paragraph}{4}{\z@}
+        {-1ex plus -.2ex minus -.2ex}{-1em}{\normalsize\bf}}
+\def\subparagraph{\@startsection {subparagraph}{4}{\parindent}
+        {-1ex plus -.2ex minus -.2ex}{-1em}{\normalsize\bf}}
+
+%
+% Pas de numéros de pages ou autres en-têtes
+%
+\pagestyle {empty}
+
+
+%
+% \Titre {Titre de l'article}
+%
+\newcommand {\Titre} [1] {\centerline {\LARGE\bf #1} \par \vspace* {5mm}}
+
+%
+% \Auteur {Prénom Nom} {Laboratoire ou service} {adresse} {electronique}
+%
+\newcommand {\arobase} {\ifnum\pdfoutput=1%
+	{\includegraphics [natwidth=36,natheight=49,width=5pt] {arobase.png}}%
+	\else\texttt{@}\fi}
+
+\newcommand {\Auteur} [4] {{\large #1} \\
+	#2 \\
+	\texttt {#3}\arobase\texttt {#4} \par
+	\vspace* {2mm}}
+
+%
+% \Figure {Titre} {label pour référence} {nomfichier} {largeur}
+%
+\newcommand {\Figure} [4] {%
+    \begin{figure}%
+	\begin{center}
+	    \includegraphics[width=#4\linewidth]{#3}
+	\end{center}
+	\caption{#1}
+	\label{#2}
+    \end{figure}%
+}
+
+%
+% \begin {resume}
+%	...
+% \end {resume}
+%
+\newenvironment {resume} {\subsection* {Résumé} \em} {}
+
+%
+% \begin {motsclefs}
+%	...
+% \end {motsclefs}
+%
+\newenvironment {motsclefs} {\subsection* {Mots clefs}} {}

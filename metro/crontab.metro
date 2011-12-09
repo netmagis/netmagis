@@ -1,0 +1,5 @@
+# start pollers
+*/1     *   *   *   *   root  	%DESTDIR%/bin/metropoller-run > /tmp/poller 2>&1
+
+59  	*   *   *   *   root  	%DESTDIR%/bin/metrocreatedb > /tmp/metrocreatedb 2>&1
+

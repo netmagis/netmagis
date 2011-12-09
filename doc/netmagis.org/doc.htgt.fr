@@ -1,0 +1,87 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Documentation
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Documentation
+    } {
+	\elementbandeau {Sommaire} {
+	    \reference {\lien {Nouveautés}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Spécifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Télécharger}	{/download.html}}
+	    \reference {\lien {Copies d'écran}	{/screenshots.html}}
+	    \reference {\lien {Démonstration}	{/demo.html}}
+	    \reference {\lien {Développement}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis : Documentation}
+
+    \titre {2} {Documentation d'installation}
+	
+    \lien {Instructions d'installation détaillées} {/install-2.1b1/}.
+
+    \titre {2} {Articles}
+
+    Netmagis a fait l'objet de trois articles lors des \lien {JRES}
+    {http://www.jres.org}~:
+    \liste {
+	\item {une présentation de Netmagis lors des JRES 2011
+	    à l'occasion de l'annonce de la version 2.0
+	    Consultez le site des \lien {JRES 2011} {http://2011.jres.org}.
+	}
+	\item {une présentation du système d'information du CRC
+	    lors des JRES 2005, qui place Netmagis dans son contexte
+	    plus large. Vous pouvez consulter~:
+	    \liste {
+		\item {\lien {l'article} {http://2005.jres.org/paper/82.pdf}}
+		\item {\lien {le support de la présentation} {http://2005.jres.org/slides/82.sxi}}
+		\item {\lien {la vidéo de la présentation} {http://video.univ-valenciennes.fr:8080/ramgen/jres2005/82.rm}}
+	    }
+	}
+	\item {un poster lors des JRES 2003. Vous trouverez le court
+	    \lien {article} {http://2003.jres.org/actes/paper.144.pdf}
+	    en ligne.
+	}
+    }
+
+    En outre, la fonctionnalité de Netmagis utile pour le passage
+    d'un campus à SMTP authentifié est évoquée dans l'\lien {article
+    présenté aux JRES 2009}
+    {https://2009.jres.org/planning_files/summary/html/124.htm}
+    dont l'objet était le passage du campus Strasbourgeois à SMTP
+    authentifié.
+
+    \titre {2} {Anciennes documentations}
+
+    Document d'installation de la version 1.5~:
+	\lien {PDF} {http://webdns.u-strasbg.fr/install-1.5.pdf}
+	\lien {HTML} {http://webdns.u-strasbg.fr/install-1.5/index.html}
+
+    Document d'installation de la version 1.4~:
+	\lien {PDF} {http://webdns.u-strasbg.fr/install-1.4.pdf}
+	\lien {HTML} {http://webdns.u-strasbg.fr/install-1.4/index.html}
+
+
+}
+
+}

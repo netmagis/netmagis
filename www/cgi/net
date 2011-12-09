@@ -144,7 +144,7 @@ set conf(tableau) {
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 
@@ -289,7 +289,7 @@ proc output-list {dbfd lcidr _tabuid format} {
 	#
 
 	set jourfmt [dnsconfig get "jourfmt"]
-	set sql "SELECT rr.nom || '.' || domaine.nom AS nom,
+	set sql "SELECT DISTINCT rr.nom || '.' || domaine.nom AS nom,
 			rr_ip.adr,
 			rr.commentaire, rr.respnom, rr.respmel, rr.date,
 			rr.droitsmtp, rr.mac,

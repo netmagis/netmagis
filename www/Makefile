@@ -1,10 +1,10 @@
 DESTDIR	= /usr/local
 TCLSH	= /usr/local/bin/tclsh
-SINSTALL = ../inst/install-script
+NINSTALL = ../ninstall
 SUBST	= $(TCLSH) \
-	$(DESTDIR)/lib/netmagis/libdns.tcl \
-	$(DESTDIR)/etc/netmagis.conf \
-	$(DESTDIR)/bin/netmagis-config
+		$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
+		$(DESTDIR)/etc/netmagis.conf \
+		$(DESTDIR)/bin/netmagis-config
 
 TCLCFLAGS	= -I/usr/local/include/tcl8.5
 TCLLFLAGS	= -L/usr/local/lib -ltcl85 -lm
@@ -45,7 +45,7 @@ install: all
 	#
 	# install default files
 	#
-	tar cf - defaults | tar xf - -C $(DESTDIR)/lib/netmagis
+	cd share ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 clean:
 	cd htg ; make clean

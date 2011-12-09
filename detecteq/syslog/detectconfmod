@@ -3,7 +3,7 @@
 # 
 # This script is called from syslogd daemon, with a line such as:
 # 
-#     local2.*       |exec /local/applis/topo/bin/detectconfmod
+#     local2.*       |exec %DESTDIR%/sbin/detectconfmod
 # 
 # This script reads informations on a line by line basis, detects
 # configuration modification events and sends them to the DNS database.
@@ -18,7 +18,7 @@
 #   2010/12/20 : pda      : reworked installation
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 proc main {argv0 argv} {
 
@@ -26,7 +26,7 @@ proc main {argv0 argv} {
     # Initialization
     #
 
-    set msg [d init-script dbfd $argv0 tabcor]
+    set msg [d init-script dbfd $argv0 true tabcor]
     if {$msg ne ""} then {
 	puts stderr "$msg"
 	puts stderr "Aborted."

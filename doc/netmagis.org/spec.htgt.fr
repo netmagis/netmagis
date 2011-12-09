@@ -1,0 +1,447 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda/jean}
+\set {date}	{25/10/2011}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Spécifications
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Spécifications
+    } {
+	\elementbandeau {Sommaire} {
+	    \reference {\lien {Nouveautés}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Spécifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Télécharger}	{/download.html}}
+	    \reference {\lien {Copies d'écran}	{/screenshots.html}}
+	    \reference {\lien {Démonstration}	{/demo.html}}
+	    \reference {\lien {Développement}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis : Spécifications}
+
+    Netmagis est une application conçue pour faciliter l'administration
+    d'un réseau, à travers la gestion d'informations pour des serveurs
+    DNS et DHCP, mais également la modélisation du réseau sous forme d'un
+    graphe permettant d'avoir une génération automatique de plans de réseau
+    (au niveau commutation et au niveau routage) ou une visualisation
+    des informations de métrologie.
+
+    C'est par ailleurs une application Web, ce qui
+    signifie que l'accès aux informations est aisé.
+
+
+    \titre {2} {Fonctionnalités «~utilisateur~»}
+
+    Pour l'utilisateur, les fonctionnalités de Netmagis sont~:
+
+    \liste {
+	\item {ajout, modification et suppression d'une machine
+	    (enregistrements de type A pour les adresses IPv4 ou
+	    AAAA pour les adresses IPv6)~;
+	}
+	\item {association d'informations pour chaque machine~:
+	    \liste {
+		\item {une ou plusieurs adresses IPv4 et/ou IPv6,}
+		\item {adresse MAC éventuelle (permettant de définir une
+		    association DHCP statique),
+		}
+		\item {profil DHCP (permettant de définir des options
+		    comme par exemple pour un démarrage sans disque ou un
+		    terminal X),
+		}
+		\item {type, parmi une liste définie par l'administrateur
+		    de la base (exemple: PC, imprimante etc.),
+		}
+		\item {commentaire libre,}
+		\item {nom et adresse électronique de la personne responsable~;}
+	    }
+	}
+	\item {ajout, modification et suppression de plages d'adresses
+	    utilisables par un serveur DHCP dynamique~;
+	}
+	\item {consultation (sous forme de liste ou de «~carte~»
+	    visuelle) des machines d'un réseau~;
+	}
+	\item {ajout, modification et suppression des aliases
+	    (enregistrements de type CNAME)~;
+	}
+	\item {ajout, modification et suppression des «~rôles de
+	    messagerie~», permettant de définir des enregistrements
+	    de type MX~;
+	}
+	\item {consultation du ou des responsables d'une machine~;
+	}
+	\item {consultation des plans de niveau 2 (commutation) et
+	    niveau 3 (routage) des éléments du réseau en fonction
+	    des droits de l'utilisateur~;
+	}
+	\item {modification des interfaces des commutateurs pour les
+	    positionner dans le VLAN souhaité (y compris le VLAN ToIP
+	    s'il est présent)~;
+	}
+	\item {consultation des informations de métrologie sur les
+	    équipements en fonction des droits de l'utilisateur.
+	}
+    }
+
+    \titre {2} {Fonctionnalités «~administrateur~»}
+
+    Pour l'administrateur, Netmagis offre les possibilités suivantes~:
+
+    \liste {
+	\item {gestion des droits d'accès des groupes d'utilisateurs~:
+	    réseaux et adresses IP autorisés, domaines DNS accessibles,
+	    profils DHCP et équipements réseau~;
+	}
+	\item {gestion des réseaux, des domaines, des zones, des
+	    correspondants et des groupes, des communautés, des profils
+	    DHCP, etc.~;
+	}
+	\item {définition des relais de messagerie pour un ou
+	    plusieurs domaines~;
+	}
+	\item {définition du «~prologue~» de chaque zone, incluant
+	    l'enregistrement de type SOA dont le numéro de série sera
+	    modifié à chaque modification de la zone~;
+	}
+	\item {recherche d'adresse MAC et d'interface en fonction d'une
+	    adresse IP et d'une date~;
+	}
+	\item {extraction de statistiques (par organisme, par réseau,
+	    etc.)~;
+	}
+    }
+
+    En outre, pour les modifications de masse, ou pour automatiser
+    certaines opérations, Netmagis fournit également des scripts pour
+    ajouter des machines, modifier les informations d'une machine,
+    etc.
+
+    Enfin, l'application Netmagis peut s'adosser à votre annuaire
+    LDAP. Si vous n'en avez pas, Netmagis inclut une application pour
+    gérer les utilisateurs avec une base PostgreSQL.
+
+
+    \titre {2} {Principales caractéristiques}
+
+    Les objets gérés par Netmagis sont~:
+
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Objets}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Attributs}}
+	}
+	\lignetableau {
+	    \casetableau {} {Machines}
+	    \casetableau {} {Nom (FQDN), Adresse(s) IPv4/IPv6, type, adresse MAC
+		éventuelle, commentaire, personne ou groupe responsable.
+		En plus, et selon le paramétrage~:
+		TTL, droit d'émettre en SMTP non authentifié
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Aliases}
+	    \casetableau {} {Noms (FQDN) de l'alias et de la machine
+		référencée
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Relais de messagerie}
+	    \casetableau {} {Noms (FQDN) du MX et de la machine qui doit
+		recevoir les messages
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Réseaux}
+	    \casetableau {} {Nom, localisation géographique, adresses
+		IPv4 et/ou IPv6, passerelle par défaut, activation
+		du service DHCP, organisme, communauté, commentaire
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Domaines}
+	    \casetableau {} {Nom}
+	}
+	\lignetableau {
+	    \casetableau {} {Zones}
+	    \casetableau {} {Nom, enregistrements à mettre dans le
+		prologue, critère de sélection (domaine ou plage
+		d'adresses IP)
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Profils DHCP}
+	    \casetableau {} {Nom, lignes à insérer dans le fichier
+		dhcpd.conf de ISC DHCPD
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Plages DHCP dynamiques}
+	    \casetableau {} {Intervalle d'adresses IPv4, domaine,
+		profil, durées par défaut et maximum du bail
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {VLANs}
+	    \casetableau {} {Nom, numéro et capacité «~ToIP~» du VLAN
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Équipements}
+	    \casetableau {} {Nom, type, et état actif ou non
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Groupes de correspondants}
+	    \casetableau {} {Logins des membres du groupe dans la base
+		d'authentification (LDAP ou PostgreSQL), droits associés
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Droits d'un groupe}
+	    \casetableau {} {Droits d'administrer la base, droits
+		sur les réseaux, sur les adresses IP, sur les
+		domaines, sur les profils DHCP, sur la modification
+		des TTL individuels, sur la possibilité d'activer ou
+		désactiver le filtrage SMTP non authentifié, sur l'accès
+		en lecture sur les informations des équipements, sur l'accès
+		en modification aux interfaces des équipements
+	    }
+	}
+    }
+
+
+    \titre {2} {Authentification et gestion des comptes}
+
+    L'authentification est actuellement réalisée par le serveur Web
+    (par exemple~: modules \lien {mod_auth_pgsql}
+    {http://www.giuseppetanzilli.it/mod_auth_pgsql2/} ou mod_auth_ldap
+    avec Apache).
+
+    La gestion des comptes est réalisée~:
+
+    \liste {
+	\item {soit avec une infrastructure LDAP ou PostgreSQL
+	    existante. Dans ce cas, vous gérez vos comptes avec vos
+	    propres outils, et Netmagis ira chercher les informations
+	    sur les correspondants à partir de leur login
+	}
+	\item {soit avec une base PostgreSQL dédiée, auquel cas
+	    vous utiliserez la gestion des comptes intégrée à Netmagis.
+	}
+    }
+
+
+    \titre {2} {Prérequis matériels}
+
+    Netmagis est une application très légère qui nécessite très peu
+    de ressources.
+
+    De plus, à l'extrême (mais ce n'est pas imposé), les différents
+    constituants peuvent être séparées sur des systèmes distincts~:
+
+    \liste {
+	\item {Serveur Web}
+	\item {Serveur de données (PostgreSQL)}
+	\item {Serveur d'authentification (LDAP ou PostgreSQL)}
+	\item {Serveur DNS}
+	\item {Serveur DHCP (si nécessaire)}
+	\item {Serveur relais de messagerie (si nécessaire)}
+	\item {Serveur de gestion des équipements réseau (si nécessaire)}
+	\item {Serveur de métrologie (si nécessaire)}
+    }
+
+    Bien évidemment, une même machine peut supporter un ou plusieurs
+    de ces serveurs. C'est à vous de décider en fonction de vos
+    contraintes d'architecture réseau et de sécurité.
+
+
+    \titre {2} {Prérequis logiciels}
+
+    Netmagis repose sur les logiciels suivants~:
+
+    \tableau {
+	\taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Type}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Logiciel}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Version
+		minimum}
+	    }
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Nécessaire}}
+	    \casetableau {\centragehorizontal {CENTER}} {\gras {Commentaire}}
+	}
+	\lignetableau {
+	    \casetableau {} {Serveur Web}
+	    \casetableau {} {\lien {Apache} {http://www.apache.org}}
+	    \casetableau {} {N'importe laquelle}
+	    \casetableau {} {Indispensable}
+	    \casetableau {} {N'importe quel serveur Web compatible avec
+		l'interface CGI convient
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {SGBD}
+	    \casetableau {} {\lien {PostgreSQL} {http://www.postgresql.org}}
+	    \casetableau {} {\gt= 8.3}
+	    \casetableau {} {Indispensable}
+	    \casetableau {} {PostgreSQL est indispensable pour
+		bénéficier du type de données «~adresse IPv6~», des
+		procédures stockées, des triggers et des
+		transactions
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Langage}
+	    \casetableau {} {\lien {Tcl} {http://fr.wikipedia.org/wiki/Tool_Command_Language}}
+	    \casetableau {} {\gt= 8.5}
+	    \casetableau {} {Indispensable}
+	    \casetableau {} {Langage de programmation utilisé
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Bibliothèque}
+	    \casetableau {} {\lien {Tcllib} {http://www.tcl.tk/software/tcllib/}}
+	    \casetableau {} {\gt= 1.10}
+	    \casetableau {} {Indispensable}
+	    \casetableau {} {Tcllib contient des fonctions
+		indispensables, comme par exemple l'accès à
+		l'annuaire LDAP, ou les extensions objets
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Authentification}
+	    \casetableau {} {\lien {mod_auth_pgsql} {http://www.giuseppetanzilli.it/mod_auth_pgsql2/}}
+	    \casetableau {} {\gt= 2.0 pour Apache}
+	    \casetableau {} {Optionnel}
+	    \casetableau {} {Ce module Apache doit être utilisé si
+		vous choisissez d'utiliser l'authentification via
+		une base PostgreSQL spécifique pour Netmagis
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Authentification}
+	    \casetableau {} {mod_auth_ldap}
+	    \casetableau {} {fourni avec Apache}
+	    \casetableau {} {Optionnel}
+	    \casetableau {} {Ce module Apache doit être utilisé si
+		vous choisissez d'utiliser l'authentification via
+		votre annuaire LDAP existant
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Chiffrement}
+	    \casetableau {} {\lien {OpenSSL} {http://www.openssl.org}}
+	    \casetableau {} {N'importe laquelle}
+	    \casetableau {} {Indispensable}
+	    \casetableau {} {OpenSSL permet de chiffrer des chaînes
+		de caractères (mots de passe par exemple) en ligne
+		de commande.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Mot de passe}
+	    \casetableau {} {\lien {pwgen} {http://sourceforge.net/projects/pwgen/}}
+	    \casetableau {} {\gt= 1.5}
+	    \casetableau {} {Indispensable}
+	    \casetableau {} {Génère un mot de passe lors de la création
+		de compte
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Génération PDF}
+	    \casetableau {} {\lien {LaTeX} {http://www.tug.org/texlive/}}
+	    \casetableau {} {}
+	    \casetableau {} {Optionnel}
+	    \casetableau {} {Le programme pdflatex est utilisé pour
+		générer les fichiers PDF nécessaires pour l'impression
+		des listes. L'utilisation de la distribution teTeX
+		ou TeX-Live est recommandée.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Gestion des équipements réseau}
+	    \casetableau {} {\lien {Rancid} {http://shrubbery.net/rancid/}}
+	    \casetableau {} {}
+	    \casetableau {} {Optionnel}
+	    \casetableau {} {Rancid est utilisé à la fois pour collecter
+		les configurations des équipements et envoyer les
+		modifications (changement d'affectation de VLAN)
+		vers les équipements.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Langage}
+	    \casetableau {} {\lien {Perl} {http://www.perl.org/}}
+	    \casetableau {} {5.x}
+	    \casetableau {} {Optionnel}
+	    \casetableau {} {Utilisé pour le module optionnel de métrologie
+
+		Note~: les modules Perl nécessaires ne sont pas encore
+		documentés
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {Base de métrologie}
+	    \casetableau {} {\lien {RRDTools} {http://oss.oetiker.ch/rrdtool/}}
+	    \casetableau {} {}
+	    \casetableau {} {Optionnel}
+	    \casetableau {} {Utilisé pour le module optionnel de métrologie
+	    }
+	}
+    }
+}
+
+}

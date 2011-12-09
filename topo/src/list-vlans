@@ -17,7 +17,7 @@
 
 set conf(chars)		{/+. a-zA-Z0-9()<>_-}
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 ##############################################################################
 # Programme principal
@@ -35,7 +35,7 @@ proc main {argv0 argv} {
     # Initialize
     #
 
-    set msg [d init-script dbfd $argv0 tabcor]
+    set msg [d init-script dbfd $argv0 true tabcor]
     if {$msg ne ""} then {
 	puts stderr "$msg"
 	puts stderr "Aborted."

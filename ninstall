@@ -1,0 +1,107 @@
+#!/bin/sh
+
+#
+# Installation script
+#
+# This script ressembles the BSD "install" program, but it
+# also substitutes some patterns (TCLSH, LIBNETMAGIS, CONFFILE
+# and CONFPROG) while installing the files.
+#
+# Usage:
+#   ninstall opt tclsh libnetmagis conffile confprog file ... file dir
+#	with opt: [-m mode][-o owner][-g group][-d][-e sed-pattern]
+#
+
+mode=0755
+owner=
+group=
+createdir=false
+subst=
+
+usage ()
+{
+    (
+	echo "usage: `basename $0` opt tclsh libnetmagis conffile confprog file ... file dir"
+	echo "	opt: [-m mode][-o owner][-g group][-d][-e sed-pattern]"
+	echo "	Warning: no shell special characters in sed-pattern (including space)"
+    )
+}
+
+args=`getopt "dm:o:g:e:" $*`
+if [ $? != 0 ]
+then
+    usage
+    exit 1
+fi
+
+set -- $args
+
+while :
+do
+    case "$1" in
+	-d)	createdir=true ; shift ;;
+	-e)	subst="$subst -e $2" ; shift 2 ;;
+	-o)	owner=$2 ; shift 2 ;;
+	-g)	group=$2 ; shift 2 ;;
+	-m)	mode=$2 ; shift 2 ;;
+	--)	shift ; break ;;
+    esac
+done
+
+if [ $# -lt 6 ]
+then
+    usage
+    exit 1
+fi
+
+tclsh=$1
+libnetmagis=$2
+conffile=$3
+confprog=$4
+
+shift 4
+
+#
+# Search for dest directory (last argument) and create it if needed
+#
+
+files=""
+destdir=""
+while [ $# != 1 ]
+do
+    files=" $files $1"
+    shift
+done
+destdir="$1"
+
+if [ $createdir = true ]
+then
+    mkdir -p $destdir
+fi
+
+#
+# Process files
+#
+
+for f in $files
+do
+    b=`basename $f`
+    destfile="$destdir/$b"
+    sed \
+	    -e "s|%TCLSH%|$tclsh|g" \
+	    -e "s|%LIBNETMAGIS%|$libnetmagis|g" \
+	    -e "s|%CONFFILE%|$conffile|g" \
+	    -e "s|%CONFPROG%|$confprog|g" \
+	    $subst \
+	    $f > "$destfile" \
+	&& chmod $mode "$destfile" \
+	&& if [ ! -z "$owner" ] ; then chown $owner "$destfile" ; fi \
+	&& if [ ! -z "$group" ] ; then chgrp $group "$destfile" ; fi
+    if [ $? != 0 ]
+    then
+	echo "abort."
+	exit 1
+    fi
+done
+
+exit 0

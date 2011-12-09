@@ -27,7 +27,7 @@ set conf(page)		admindex.html
 # Netmagis general library
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 

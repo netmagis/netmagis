@@ -7,7 +7,7 @@
 #  2011/01/13 : jean : design
 #
 
-source %LIBDNS%
+source %LIBNETMAGIS%
 
 #
 # Main program

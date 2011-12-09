@@ -1,0 +1,44 @@
+Netmagis (pour Network Management Information System) est un nouveau logiciel destiné à faciliter différentes facettes de la gestion d'un réseau.
+
+Le socle sur lequel il a été conçu repose sur WebDNS, application Web présentée aux JRES 2003. Devant l'intérêt suscité à l'époque, un effort particulier avait été fait pour la diffuser et pour valider son ouverture (sous licence CECILL-B). WebDNS a été ensuite enrichie avec de nouvelles fonctionnalités, comme par exemple celles présentées lors des JRES 2005 : informations de topologie réseau et génération de graphes.
+
+Convaincus de l'intérêt de ce logiciel pour la communauté des gestionnaires de réseaux, nous avons entrepris un travail important pour en élargir la diffusion :
+- renommage en Netmagis, nettement moins réducteur que l'ancien nom WebDNS et reflétant mieux la nature de "système d'information réseau" de l'ensemble
+- internationalisation de l'application et du code : l'application est accessible en anglais et en français, l'ajout d'autres langues est bien évidemment possible
+- migration du code d'un gestionnaire de version privatif de l'université de Strasbourg vers une forge (github) accessible et ouverte à d'autres contributeurs
+- élimination des idiotismes propres à l'enseignement supérieur et à la recherche
+- simplification radicale de l'installation des différents composants du logiciel
+Il reste, d'ici la conférence, à terminer le nouveau site Web.
+
+La proposition de contribution aux JRES a pour but de présenter les évolutions majeures de Netmagis, ses fonctionnalités et les évolutions d'ores et déjà prévues.
+
+L'objectif initial de WebDNS était de déléguer simplement la gestion du DNS à des correspondants réseau ou à des gestionnaires de parc.  Pour ce faire, il a fallu formaliser plusieurs notions essentielles : les réseaux, les adresses, les correspondants, les domaines, les machines etc. WebDNS est devenu à la fois un fédérateur et un catalyseur pour le développement de plusieurs outils. Nous avons alors progressivement constitué autour du logiciel et de sa base de données un véritable système d'information réseau.
+
+Les fonctionnalités actuelles de Netmagis peuvent être réparties en cinq grands domaines :
+- la gestion des machines,
+- la gestion du réseau et des équipements réseau,
+- la gestion des adresses mac,
+- la gestion du référentiel réseau,
+- la gestion de l'authentification et des autorisations d'accès à l'application.
+
+Si la gestion des machines ne se substitue pas à un outil traditionnel de gestion de parc, elle a pour but d'assurer la gestion des données liées au DNS (génération des zones DNS), au DHCP (gestion d'un serveur DHCP central) et au routage de messagerie (définition des MX, routage intra-domaine, voire même gestion des exceptions dans un environnement SMTP authentifié).
+
+La gestion des réseaux et des équipements réseau s'organise autour de trois fonctions : la topologie, la métrologie, et la modification des configurations. L'interface web présente des cartes réseau cliquables de niveau 2 et niveau 3. Elle s'appuie sur un graphe modélisant le réseau, issu de l'analyse des configurations des différents équipements (commutateurs, routeurs). La mécanique de production du graphe fonctionne en environnement multi-constructeurs (Cisco, Juniper, HP). Une vue simplifiée de la configuration de l'équipement est également disponible, donnant notamment accès à diverses informations de métrologie (graphe des débits en entrée et en sortie des interfaces). Celles-ci sont dérivées automatiquement de la configuration de l'équipement, c'est à dire qu'un simple commentaire de l'administrateur réseau dans la configuration suffit à déclencher tout le processus d'installation d'une sonde interrogée périodiquement (plus de 15 000 sondes sont actives sur Osiris, et le processus d'interrogation a été particulièrement optimisé pour tenir cette échelle). Enfin, une fonctionnalité importante et novatrice est la possibilité de modifier l'affectation d'une interface à un VLAN (à condition que l'utilisateur y soit autorisé, ce qui permet la délégation de certaines opérations vers des gestionnaires de parc) dans un environnement rappelons-le multi-constructeurs.
+
+La gestion des adresses MAC a pour but de localiser des machines.  Des programmes de collecte sondent à intervalle régulier les équipements réseaux et enregistrent dans la base de données des associations entre des adresses IP et des adresses MAC ou entre des adresses MAC et des interfaces d'équipements pour les machines raccordées au réseau. Cela permet ensuite d'effectuer des recherches sur ces adresses, mais également de déterminer si des adresses ne sont plus actives depuis un certain temps.
+
+La gestion du référentiel réseau est au coeur de Netmagis. Il contient l'ensemble des données du système d'information réseau (réseaux, adressage, vlan, etc.) et permet notamment de visualiser la disponibilités des blocs d'adresses. Il maintient de manière centralisée les différents acteurs (client, correspondants) et les informations et les ressources qui leur sont associées (réseau, adresses, etc.).
+
+L'administration des accès à l'application, très liée au référentiel permet de gérer l'appartenance d'un correspondant à un groupe et d'attribuer des droits d'accès fins à un groupe.
+
+Enfin, l'authentification est réalisée soit sur un annuaire LDAP externe, soit sur la base PostgreSQL intégrée. Il est également possible d'utiliser le module de SSO CAS d'Apache pour s'intégrer dans un ENT d'établissement.
+
+Outre les fonctionnalités présentées, de nombreuses autres évolutions sont prévues à moyen terme :
+- la localisation géographique des équipements afin de générer des plans d'implantation
+- la convergence entre la gestion des machines, des adresses MAC et des équipements, pour offrir de nouvelles possibilités comme par exemple l'affichage des noms et des adresses des machines connectées sur les interfaces d'un équipement donné
+- l'augmentation de la fréquence des mises à jour des zones DNS afin de diminuer la latence entre une modification dans la base et la répercussion sur les serveurs DNS : l'objectif est de passer de quelques minutes à quelques secondes
+- la vérification a priori des configurations DNS et DHCP afin d'éviter toute erreur lors d'une modification manuelle de prologue de zone DNS ou de profil DHCP
+- le développement d'une API de type REST pour faciliter l'accès aux fonctions et aux données du SI réseau à d'autres applications
+- l'extension des fonctions de métrologie sur les équipements réseau par l'ajout de nouveaux type de graphe (taux de broadcast, taux d'erreur sur les interfaces etc.) et l'intégration automatique dans une plateforme de supervision de type Nagios.
+
+Netmagis va bien plus loin que l'ancien WebDNS. En élargissant le champ d'action du logiciel et en automatisant de nombreuses tâches, il simplifie grandement les opérations de gestion. L'expérience accumulée dans la gestion du réseau Strasbourgeois Osiris montre que la dimension et la complexité du réseau et des services ne laissent que peu de place à l'improvisation : Netmagis est devenu indispensable, il apporte efficacité et cohérence dans l'exploitation quotidienne. Nous espérons qu'il puisse être utile à d'autres, et nous souhaitons vivement que les utilisateurs nous fassent part de leurs retours d'expérience, de leurs suggestions et de leurs contributions.

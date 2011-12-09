@@ -1,12 +1,12 @@
 DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
-SINSTALL	= ../../inst/install-script
+NINSTALL	= ../../ninstall
 SUBST		= $(TCLSH) \
-			$(DESTDIR)/lib/netmagis/libdns.tcl \
+			$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
 			$(DESTDIR)/etc/netmagis.conf \
 			$(DESTDIR)/bin/netmagis-config
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/share/upgrade
-	tar cf - [0-9]* | tar xvf - -C $(DESTDIR)/share/upgrade
+	mkdir -p $(DESTDIR)/share/examples/netmagis/upgrade
+	tar cf - [0-9]* | tar xvf - -C $(DESTDIR)/share/examples/netmagis/upgrade
