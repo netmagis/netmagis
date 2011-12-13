@@ -6,13 +6,10 @@ SUBST		= $(TCLSH) \
 			$(DESTDIR)/etc/netmagis.conf \
 			$(DESTDIR)/bin/netmagis-config
 
-all:
-	@echo ">>> Making all in `pwd`"
+FILES = *.conf
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/sbin
-	$(NINSTALL) -m 0755 -e "s|%DESTDIR%|$(DESTDIR)|" \
-		$(SUBST) detectconfmod $(DESTDIR)/sbin
-
-clean:
+	mkdir -p $(DESTDIR)/share/examples/netmagis/radius
+	$(NINSTALL) -m 0644 -e "s|%DESTDIR%|$(DESTDIR)|" $(SUBST) \
+			$(FILES) $(DESTDIR)/share/examples/netmagis/radius

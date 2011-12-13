@@ -6,11 +6,10 @@
 #
 
 PORTNAME?=	netmagis
-DISTVERSION?=	2.0b1
+DISTVERSION?=	2.1b1
 PORTREVISION?=	1
 CATEGORIES?=	net-mgmt
-MASTER_SITES=	XXXX
-MASTER_SITE_SUBDIR=	XXXX
+MASTER_SITES=	http://netmagis.org/files/
 PKGNAMESUFFIX?=	-common
 
 MAINTAINER?=	pdagog@gmail.com

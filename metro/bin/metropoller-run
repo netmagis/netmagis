@@ -20,7 +20,7 @@ my @groupes = split(/,/,$config{pollergroups});
 my $syslogfacility = $config{pollerlogfacility} ;
 
 # log message for starting of pollers
-writelog("metropoller-run", $config{pollerlogopt}, "info",
+writelog("metropoller-run", $syslogfacility, "info",
         "\t #######################################");
 
 my $i;

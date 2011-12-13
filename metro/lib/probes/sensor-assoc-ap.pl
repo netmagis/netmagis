@@ -56,7 +56,7 @@ sub get_assoc_ap
 
         if (!defined($snmp))
         {
-		writelog("get_assoc_ap",$config{'logopt'},"info",
+		writelog("get_assoc_ap",$config{syslog_facility},"info",
         		"\t -> ERROR: SNMP connect error: $error");
         }
 	else
@@ -105,7 +105,7 @@ sub get_assoc
 
         	if (!defined($snmp))
 		{
-		    writelog("get_assoc_ap",$config{'logopt'},"info",
+		    writelog("get_assoc_ap",$config{syslog_facility},"info",
 	                "\t -> ERROR: SNMP connect error: $error");
 		}
 		else
@@ -119,7 +119,7 @@ sub get_assoc
         }
         else
         {
-                writelog("get_assoc_ap",$config{'logopt'},"info",
+                writelog("get_assoc_ap",$config{syslog_facility},"info",
                         "\t -> ERROR: $host aucune liste d'interfaces pour ce point d'accès");
 
 		# on veut le nom de l'AP pour la supervision de l'etat de l'AP
@@ -156,7 +156,7 @@ sub get_snmp_assoc_ap
 
     if(!$hostname)
     {
-        writelog("get_assoc_ap",$config{'logopt'},"info",
+        writelog("get_assoc_ap",$config{syslog_facility},"info",
 	    "\t -> ERROR: echec de resolution de $host = $hostname dans $base");
     }
 
@@ -295,7 +295,7 @@ sub get_snmp_assoc_ap
 
 		if($error=~m/No response from remote host/)
 		{
-			writelog("get_assoc_ap",$config{'logopt'},"info",
+			writelog("get_assoc_ap",$config{syslog_facility},"info",
                         	"\t -> ERROR: get_snmp_assoc_ap($host) Error: $error");
 
 			# l'AP ne répond pas
@@ -313,7 +313,7 @@ sub get_snmp_assoc_ap
 				my $E=RRDs::error;
 				if($E)
 	    			{
-				    writelog("get_assoc_ap",$config{'logopt'},"info",
+				    writelog("get_assoc_ap",$config{syslog_facility},"info",
 					"\t -> ERROR while updating $base: $E");
 				}
                         }
@@ -324,7 +324,7 @@ sub get_snmp_assoc_ap
         my $ERR=RRDs::error;
         if($ERR)
         {
-		writelog("get_assoc_ap",$config{'logopt'},"info",
+		writelog("get_assoc_ap",$config{syslog_facility},"info",
                 	"\t -> ERROR while updating $base: $ERR");
         }
 
@@ -338,7 +338,6 @@ sub get_snmp_assoc_ap
 	{
         	open(RAP, "$file_temp");
         	$ligne = <RAP>;
-        print "\n$ligne\n";
         	close(RAP);
         	chomp $ligne;
 	}
@@ -569,7 +568,7 @@ sub get_snmp_assoc_ap
     # a supprimer
     else
     {
-	writelog("get_assoc_ap",$config{'logopt'},"info",
+	writelog("get_assoc_ap",$config{syslog_facility},"info",
 	    "\t -> ERROR : Sonde en double : $base $host");
     }
 
@@ -589,7 +588,7 @@ sub get_authaccess
 
     if($db)
     {
-	writelog("get_authaccess",$config{'logopt'},"info",
+	writelog("get_authaccess",$config{syslog_facility},"info",
                 "\t -> INFO DB : Connexion a $config{'PGDATABASE'}");	
 	
 	#
@@ -630,19 +629,19 @@ sub get_authaccess
 	
 	if($index == 0)
         {
-            writelog("get_authaccess",$config{'logopt'},"info",
+            writelog("get_authaccess",$config{syslog_facility},"info",
                 "\t -> ERREUR DB : Echec chargement de la liste des authentifications actives de $config{'PGDATABASE'}");
         }
         else
         {
-            writelog("get_authaccess",$config{'logopt'},"info",
+            writelog("get_authaccess",$config{syslog_facility},"info",
                 "\t -> INFO DB : nombres d'authentifies WiFi dans $config{'PGDATABASE'} : $index");
         }
 
     }
     else
     {
-	writelog("get_authaccess",$config{'logopt'},"info",
+	writelog("get_authaccess",$config{syslog_facility},"info",
                 "\t -> ERROR : Connexion impossible a la base $config{'PGDATABASE'}");
     }
 }
@@ -667,7 +666,7 @@ sub set_assoc_ap_base
 	open(RAP, ">/tmp/fermeture_session");
 	####
 
-	writelog("get_assoc_ap",$config{'logopt'},"info",
+	writelog("get_assoc_ap",$config{syslog_facility},"info",
                 "\t -> INFO DB : Connexion à $config{'PGDATABASE'}");
 
 	#
@@ -688,7 +687,7 @@ sub set_assoc_ap_base
 
 	if($nb_ap == 0)
 	{
-	    writelog("get_assoc_ap",$config{'logopt'},"info",
+	    writelog("get_assoc_ap",$config{syslog_facility},"info",
 		"\t -> ERREUR DB : Echec chargement de la liste des AP de $config{'PGDATABASE'}");
 	}
 
@@ -736,7 +735,7 @@ sub set_assoc_ap_base
                         AND close=0" );
                         if(! $r->execute)
                         {
-                               writelog("get_assoc_ap",$config{'logopt'},"info",
+                               writelog("get_assoc_ap",$config{syslog_facility},"info",
                                "\t\t -> ERREUR DB : impossible des fermer la session d'association ($idassocwifi,$mac,$essid,$datefinassoc)");
                         }
 		}
@@ -746,12 +745,12 @@ sub set_assoc_ap_base
 
 	if($index == 0)
         {
-            writelog("get_assoc_ap",$config{'logopt'},"info",
+            writelog("get_assoc_ap",$config{syslog_facility},"info",
                 "\t -> ERREUR DB : Echec chargement de la liste des sessions actives de $config{'PGDATABASE'}");
         }
 	else
 	{
-	    writelog("get_assoc_ap",$config{'logopt'},"info",
+	    writelog("get_assoc_ap",$config{syslog_facility},"info",
                 "\t -> INFO DB : nombres d'associés WiFi dans $config{'PGDATABASE'} : $index");
 	}
 
@@ -770,13 +769,13 @@ sub set_assoc_ap_base
 	# dont l'adresse MAC du client n'est plus enregistree dans les associations
 	set_auth_db(@total_authsess);
 
-	writelog("metropoller",$config{'logopt'},"info",
+	writelog("metropoller",$config{syslog_facility},"info",
                 "\t\t -> INFO DB : Fin de la mise à jour de $config{'PGDATABASE'}");
 
     }
     else
     {
-        writelog("metropoller",$config{'logopt'},"info",
+        writelog("metropoller",$config{syslog_facility},"info",
                 "\t\t -> ERREUR DB : Impossible d'ouvrir $config{'PGDATABASE'} : ". $db->errstr);
     }
 }
@@ -888,7 +887,7 @@ sub set_auth_db
 			
 			if(! $r->execute)
 			{
-			    writelog("get_assoc_ap",$config{'logopt'},"info",
+			    writelog("get_assoc_ap",$config{syslog_facility},"info",
 				"\t\t -> ERREUR DB : impossible de maj la session d'auth ($tab_trouveactiveauth[$j][0],$tab_trouveactiveauth[$j][1],$tab_trouveactiveauth[$j][2]");
 			}
 
@@ -924,7 +923,7 @@ sub set_auth_db
 				    AND close=0" );
 				if(! $r->execute)
 				{
-				    writelog("get_assoc_ap",$config{'logopt'},"info",
+				    writelog("get_assoc_ap",$config{syslog_facility},"info",
 				    "\t\t -> ERREUR DB : impossible des fermer la session d'auth ($tab_trouveactiveauth[$k][0],$tab_trouveactiveauth[$k][1],$tab_trouveactiveauth[$k][2]");
 				}
 
@@ -953,7 +952,7 @@ sub set_auth_db
 				    AND close=0" );
 				if(! $r->execute)
 				{
-				    writelog("get_assoc_ap",$config{'logopt'},"info",
+				    writelog("get_assoc_ap",$config{syslog_facility},"info",
 					"\t\t -> ERREUR DB : impossible de maj la session d'auth ($tab_trouveactiveauth[$k][0],$tab_trouveactiveauth[$k][1],$tab_trouveactiveauth[$k][2]");
 				}
 			    }
@@ -968,7 +967,7 @@ sub set_auth_db
                                     AND close=0" );
 				if(! $r->execute)
 				{
-				    writelog("get_assoc_ap",$config{'logopt'},"info",
+				    writelog("get_assoc_ap",$config{syslog_facility},"info",
 					"\t\t -> ERREUR DB : impossible des fermer la session d'auth ($tab_trouveactiveauth[$k][0],$tab_trouveactiveauth[$k][1],$tab_trouveactiveauth[$k][2]");
 				}
 
@@ -996,7 +995,7 @@ sub set_auth_db
 		    AND close=0" );
 		if(! $r->execute)
                 {
-                    writelog("get_assoc_ap",$config{'logopt'},"info",
+                    writelog("get_assoc_ap",$config{syslog_facility},"info",
                         "\t\t -> ERREUR DB : impossible des fermer la session d'auth ($tab_trouveactiveauth[$j][0],$tab_trouveactiveauth[$j][1],$tab_trouveactiveauth[$j][2]");
                 }
 
@@ -1047,7 +1046,7 @@ sub set_assoc_db
 		    #############################################################################
 		    if(! $r->execute)
 		    {
-			writelog("get_assoc_ap",$config{'logopt'},"info",
+			writelog("get_assoc_ap",$config{syslog_facility},"info",
 			"\t\t -> ERREUR DB : impossible des fermer les session actives pour $hostname");
 		    }
 		    ##############################################################################
@@ -1107,7 +1106,7 @@ sub set_assoc_db
 #####################################################################
                 	if(! $r->execute)
                        	{
-			    writelog("metropoller",$config{'logopt'},"info",
+			    writelog("metropoller",$config{syslog_facility},"info",
 				"\t\t -> ERREUR DB : impossible des fermer les session actives pour $hostname");
                        	}
 #####################################################################
@@ -1131,7 +1130,7 @@ sub set_assoc_db
 #############################################################################
 		            if(! $r->execute)
 			    {
-				writelog("metropoller",$config{'logopt'},"info",
+				writelog("metropoller",$config{syslog_facility},"info",
 				"\t\t -> ERREUR DB : impossible d'insérer le nouveau couple : ('$mac_addr', '$ideq', '$ssid', '$crypt')");
 			    }	
 #############################################################################
@@ -1156,7 +1155,7 @@ sub set_assoc_db
 ##############################################################################
 		            if(! $r->execute)
 			    {
-				writelog("metropoller",$config{'logopt'},"info",
+				writelog("metropoller",$config{syslog_facility},"info",
 				    "\t\t -> ERREUR DB : impossible d'insérer la nouvelle session $idassocwifi pour $rhostname");
 			    }
 ##############################################################################
@@ -1177,7 +1176,7 @@ sub set_assoc_db
 #############################################################################
 	 	if(! $r->execute)
                 {
-		    writelog("metropoller",$config{'logopt'},"info",
+		    writelog("metropoller",$config{syslog_facility},"info",
                        	"\t\t -> ERREUR DB : impossible de fermer la session $activesess{$sess} pour $rhostname");
                 }
 ##############################################################################

@@ -10,7 +10,7 @@
 
 sub ifNom_error 
 {
-	my ($base,$host,$community,$if) = @_;
+	my ($base,$host,$community,$if,$sonde,$periodicity) = @_;
 
 	my ($oidin,$oidout,$result,$r);
 	#cherche si trafic inverse sur l'interface ou pas
@@ -33,7 +33,7 @@ sub ifNom_error
         
 	if (!defined($snmp)) 
 	{
-		writelog("get_if_multicast64",$config{'logopt'},"info",
+		writelog("get_if_multicast64",$config{syslog_facility},"info",
 			"\t -> ERROR: SNMP connect error: $error");
         }
 	else
@@ -50,7 +50,7 @@ sub ifNom_error
 		$oidout = "1.3.6.1.2.1.2.2.1.20.$if";
 		$result = $snmp->get_request(
                 	-varbindlist   => [$oidin, $oidout],
-                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
+                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community,$periodicity] );
 
 	    }
 	    #sinon, recherche de l'index par rapport au nom de l'interface
@@ -77,7 +77,6 @@ sub ifNom_error
                         		$trouve_inter = 1;
                         	      	$index_interface = $ind;
 					$i = $t_liste_if64;
-        	                       	#print "\non trouve l'interface $index_interface\n";
  	                     	}
 	               }
 			
@@ -93,7 +92,7 @@ sub ifNom_error
 			my $oid = "1.3.6.1.2.1.2.2.1.2.$index_interface";
 			$r = $snmp->get_request(
 				-varbindlist   => [$oid],
-				-callback   => [ \&get_if64_name,$base,$host,$community,$if,$oid,$index_interface,$inverse,"broadcast"] );
+				-callback   => [ \&get_if64_name,$base,$host,$community,$if,$oid,$index_interface,$inverse,"broadcast",$periodicity] );
 
 		}
 		# sinon, il faut rechercher l'index de l'interface et remplir le fichier nom<=>idex
@@ -143,17 +142,17 @@ sub ifNom_error
                 			$oidout = "1.3.6.1.2.1.2.2.1.20.$index_interface";
                 			$r = $snmp->get_request(
                         			-varbindlist   => [$oidin, $oidout],
-                        			-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
+                        			-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community,$periodicity] );
 				}
 				else
 				{
-					writelog("get_if_broadcast64",$config{'logopt'},"info",
+					writelog("get_if_broadcast64",$config{syslog_facility},"info",
 						"\t -> ERROR: interface $if inexistante sur $host");
 				}
 			}
 			else
 			{
-				writelog("get_if_broadcast64",$config{'logopt'},"info",
+				writelog("get_if_broadcast64",$config{syslog_facility},"info",
                                 	"\t -> ERROR: $community\@$host ne répond pas");
 			}
 		}

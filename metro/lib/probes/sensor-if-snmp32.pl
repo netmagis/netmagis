@@ -10,13 +10,13 @@
 
 sub ifNom_counter32
 {
-    my ($base,$host,$community,$if) = @_;
+    my ($base,$host,$community,$if,$sonde,$periodicity) = @_;
 	
     my $r ;
 
     if(! $community)
     {
-	writelog("ifNom_counter32",$config{'logopt'},"info",
+	writelog("ifNom_counter32",$config{syslog_facility},"info",
                         "\t -> ERROR: ($host,$if), Pas de communaute SNMP");
     }
     else
@@ -41,7 +41,7 @@ sub ifNom_counter32
         
 	if (!defined($snmp)) 
 	{
-		writelog("get_if_snmp32",$config{'logopt'},"info",
+		writelog("get_if_snmp32",$config{syslog_facility},"info",
 			"\t -> ERROR: SNMP connect error: ($host,$community,$if), $error");
         }
 	else
@@ -57,7 +57,7 @@ sub ifNom_counter32
 		my $oidout = "1.3.6.1.2.1.2.2.1.16.$if";
 		my $result = $snmp->get_request(
                 	-varbindlist   => [$oidin, $oidout],
-                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
+                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community,$periodicity] );
 
 	    }
 	    #sinon, recherche de l'index par rapport au nom de l'interface
@@ -100,7 +100,7 @@ sub ifNom_counter32
 			my $oid = "1.3.6.1.2.1.2.2.1.2.$index_interface";
 			$r = $snmp->get_request(
 				-varbindlist   => [$oid],
-				-callback   => [ \&get_if32_name, $base,$host,$community,$if,$oid,$index_interface,$inverse] );
+				-callback   => [ \&get_if32_name, $base,$host,$community,$if,$oid,$index_interface,$inverse,$periodicity] );
 
 		}
 		# sinon, il faut rechercher l'index de l'interface et remplir le fichier nom<=>idex
@@ -151,17 +151,17 @@ sub ifNom_counter32
                 			my $oidout = "1.3.6.1.2.1.2.2.1.16.$index_interface";
                 			$r = $snmp->get_request(
                         			-varbindlist   => [$oidin, $oidout],
-                        			-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
+                        			-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community,$periodicity] );
 				}
 				else
 				{
-					writelog("get_if_snmp32",$config{'logopt'},"info",
+					writelog("get_if_snmp32",$config{syslog_facility},"info",
 						"\t -> ERROR: interface $if inexistante sur $host");
 				}
 			}
 			else
 			{
-				writelog("get_if_snmp32",$config{'logopt'},"info",
+				writelog("get_if_snmp32",$config{syslog_facility},"info",
 					"\t -> ERROR: $community\@$host ne répond pas");
 			}
 		}
@@ -170,9 +170,10 @@ sub ifNom_counter32
     }
 }
 
+
 sub get_if32_name 
 {
-	my ($session,$base,$host,$community,$if,$oid,$id_if,$inverse) = @_;	
+	my ($session,$base,$host,$community,$if,$oid,$id_if,$inverse,$periodicity) = @_;	
 
 	my $result;
 	my $ok_interro;
@@ -193,7 +194,7 @@ sub get_if32_name
 	{
        		my $error  = $session->error;
 
-		writelog("get_if_snmp32",$config{'logopt'},"info",
+		writelog("get_if_snmp32",$config{syslog_facility},"info",
 			"\t -> ERROR: get_if_name($host) Error: $error");
 		
 		$err=1;
@@ -214,7 +215,7 @@ sub get_if32_name
         {
                 $ok_interro = 0;
                
-		writelog("get_if_snmp32",$config{'logopt'},"info",
+		writelog("get_if_snmp32",$config{syslog_facility},"info",
                 	"\t -> ERROR: L'interface trouvee ne correspond pas a son index reel");
 		
 		# cherche liste des interfaces
@@ -262,14 +263,14 @@ sub get_if32_name
 			}
 			else
 			{
-				writelog("get_if_snmp32",$config{'logopt'},"info",
+				writelog("get_if_snmp32",$config{syslog_facility},"info",
 					"\t -> ERROR: Fichier if32.txt locké. Pas de mise à jour");
 			}
 			$id_if = $index_interface;
 		}
 		else
 		{
-			writelog("get_if_snmp32",$config{'logopt'},"info",
+			writelog("get_if_snmp32",$config{syslog_facility},"info",
 				"\t -> ERROR: interface $if inexistante sur $host. Pas de mise à jour.");
 		}
         }
@@ -281,7 +282,7 @@ sub get_if32_name
 
                 $r = $snmp->get_request(
                 	-varbindlist   => [$oidin, $oidout],
-                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community] );
+                	-callback   => [ \&get_if_octet,$base,$host,$if,$oidin,$oidout,$inverse,2,$community,$periodicity] );
 	}
 }
 

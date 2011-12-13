@@ -12,7 +12,7 @@ TCLCFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_INCLUDE_SPEC"')|sh`
 TCLLFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_LIB_SPEC $$TCL_LIBS"')|sh`
 
 # for packaging and libnetmagis.tcl
-VERSION		= 2.0b1
+VERSION		= 2.1b1
 
 usage:
 	@echo "available targets:"
@@ -29,6 +29,7 @@ usage:
 	@echo "	install-metro"
 	@echo "	install-netmagis.org"
 	@echo "	distrib"
+	@echo "	freebsd-ports"
 	@echo "	clean"
 	@echo "	nothing"
 
@@ -72,6 +73,8 @@ install-netmagis.org:
 	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" all
 	cd doc/netmagis.org ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd doc/install ; make DESTDIR=$(DESTDIR)/install-$(VERSION) \
+		TCLSH=$(TCLSH) install
 
 distrib: clean
 	rm -rf /tmp/netmagis-$(VERSION)
@@ -83,6 +86,16 @@ distrib: clean
 	    | tar xf - -C /tmp/netmagis-$(VERSION)
 	tar -czf netmagis-$(VERSION).tar.gz -C /tmp netmagis-$(VERSION)
 	rm -rf /tmp/netmagis-$(VERSION)
+
+freebsd-ports:
+	@if [ `uname -s` != FreeBSD ] ; then \
+	    echo "Please, make this target on a FreeBSD host" ; \
+	    echo "once netmagis-$(VERSION).tar.gz is on the master site" ; \
+	    exit 1 ; \
+	fi
+	for i in pkg/freebsd/netmagis-* ; do (cd $$i ; make clean) ; done
+	cd pkg/freebsd/netmagis-common ; make makesum
+	tar -czf netmagis-freebsd-ports-$(VERSION).tar.gz -C pkg/freebsd .
 
 clean:
 	cd common ; make clean

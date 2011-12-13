@@ -40,7 +40,7 @@
     et d'obtenir de l'aide est de vous abonner à la liste de diffusion~:
 
     \retrait {
-	\lien {\teletype {netmagis à freelists.org}} {https://www.freelists.org/list/netmagis}
+	\lien {\teletype {netmagis à freelists.org}} {http://www.freelists.org/list/netmagis}
     }
 
     Il est également conseillé de chercher les réponses dans

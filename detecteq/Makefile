@@ -7,6 +7,6 @@ all:
 install: all
 	@echo ">>> Making install in `pwd`"
 	cd syslog ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd radius ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 
 clean:
-	cd syslog ; make clean
