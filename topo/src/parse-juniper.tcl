@@ -1149,8 +1149,10 @@ proc juniper-parse-snmp-location {conf tab idx} {
     upvar $tab t
 
     set error 0
+    set ipmac 0
+    set portmac 0
     set line [lindex $conf 1]
-    if {[parse-location $line location blablah msg]} then {
+    if {[parse-location $line location ipmac portmac blablah msg]} then {
 	if {! [string equal $location ""]} then {
 	    set t($idx!location) [list $location $blablah]
 	}
@@ -1158,6 +1160,9 @@ proc juniper-parse-snmp-location {conf tab idx} {
 	juniper-warning "$idx: $msg ($line)"
 	set error 1
     }
+
+    set t($idx!ipmac) $ipmac
+    set t($idx!portmac) $portmac
 
     return $error
 }
@@ -1432,7 +1437,17 @@ proc juniper-post-process {model fdout eq tab} {
     } else {
 	set l "-"
     }
-    puts $fdout "eq $eq type juniper model $model snmp $c location $l manual 0"
+    if {[info exists t(eq!$eq!ipmac)]} then {
+	set ipmac $t(eq!$eq!ipmac)
+    } else {
+	set ipmac 0
+    }
+    if {[info exists t(eq!$eq!portmac)]} then {
+	set portmac $t(eq!$eq!portmac)
+    } else {
+	set portmac 0
+    }
+    puts $fdout "eq $eq type juniper model $model snmp $c location $l ipmac $ipmac portmac $portmac manual 0"
 
     #
     # Parcourir la liste des interfaces, dont on complétera les

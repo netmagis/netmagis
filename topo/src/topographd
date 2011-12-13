@@ -36,7 +36,7 @@
 #  2010/12/18 : pda      : rework installation
 #
 
-set conf(extractcoll)	{extractcoll -a -s -w}
+set conf(extractcoll)	{extractcoll -a -s -w -i -p}
 set conf(start-rancid)	{start-rancid %1$s}
 set conf(anaconf)	{anaconf}
 
@@ -575,6 +575,8 @@ proc sensors {} {
 #	trafic      <id coll> <eq> <community> <phys iface> <vlan|->
 #	nbassocwifi <id coll> <eq> <community> <phys iface> <ssid>
 #	nbauthwifi  <id coll> <eq> <community> <phys iface> <ssid>
+#	port        <id coll> <eq> <community> <eqtype> <vlan id> {<iflist...>}
+#	ipmac       <id coll> <eq> <community> <eqtype>
 #
 # History
 #   2008/07/28 : pda/boggia : design
@@ -582,6 +584,7 @@ proc sensors {} {
 #   2010/11/09 : pda/jean   : topographd integration
 #   2010/12/19 : pda        : use call-topo
 #   2010/12/21 : pda        : any message is not automatically an error
+#   2011/12/08 : jean       : portmac and ipmac collector integration
 #
 
 proc read-coll {_tab _msg} {
@@ -609,6 +612,14 @@ proc read-coll {_tab _msg} {
 	    nbauthwifi {
 		lassign $l kw id eq comm iface ssid
 		set sensor [list $kw $eq $comm $iface $ssid]
+	    }
+	    portmac {
+		lassign $l kw id eq comm eqtype ifacelist vlanid
+		set sensor [list "portmac.$eqtype" $eq $comm $ifacelist $vlanid]
+	    }
+	    ipmac {
+		lassign $l kw id eq comm eqtype 
+		set sensor [list "ipmac" $eq $comm {} {}]
 	    }
 	    default {
 		lappend lwarn "Unknown sensor type ($l)"

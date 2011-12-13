@@ -153,15 +153,24 @@ proc parse-desc {desc _linkname _statname _descname _msg} {
 # Analyse des localisations d'équipement
 ##############################################################################
 
-proc parse-location {desc _location _blablah _msg} {
+proc parse-location {desc _location _ipmac _portmac _blablah _msg} {
     upvar $_location location
+    upvar $_ipmac ipmac
+    upvar $_portmac portmac
     upvar $_blablah blablah
     upvar $_msg msg
 
     # exemples de syntaxe admises :
     # <CxxBxxLxxAxx> blablah
+    # <CxxBxxLxxAxx I> blablah
+    # <CxxBxxLxxAxx I P> blablah
+    # <I> blablah
+    # <I P> blablah
+    #
 
     set location ""
+    set portmac 0
+    set ipmac 0
     set blablah  ""
 
     set r 1
@@ -171,6 +180,7 @@ proc parse-location {desc _location _blablah _msg} {
 	#
 
     } elseif {[regexp {([^<]*)<\s*([^<>]+)>(.*)} $desc bidon p1 liste p2]} then {
+
 	if {[regexp -nocase {C[0-9]+B[0-9]+L[0-9]+A[0-9]+} $liste]} then {
 	    set location $liste
 	    set blablah [string trim "[string trim $p1] [string trim $p2]"]
@@ -184,10 +194,14 @@ proc parse-location {desc _location _blablah _msg} {
 	    #
 
 	    binary scan $location H* location
-
-	} else {
-	    set msg "invalid location syntax '<$liste>'"
-	    set r 0
+	}
+    	# I -> ipmac
+	if {[regexp -nocase {\yI\y} $liste]} then {
+		set ipmac 1
+	}
+    	# P -> portmac
+	if {[regexp -nocase {\yP\y} $liste]} then {
+		set portmac 1
 	}
     } else {
 	set msg "invalid location syntax '$desc'"

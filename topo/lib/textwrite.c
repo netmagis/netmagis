@@ -26,13 +26,15 @@ static void text_write_eq (FILE *fp)
 	selected = MK_ISSELECTED (n) || MK_ISSELECTED (eq) ;
 	if (selected && ! MK_ISSET (eq, MK_PRINTED))
 	{
-	    fprintf (fp, "eq %s type %s model %s snmp %s location %s manual %d\n",
+	    fprintf (fp, "eq %s type %s model %s snmp %s location %s manual %d ipmac %d portmac %d\n",
 				eq->name,
 				eq->type,
 				eq->model,
 				(eq->snmp == NULL ? "-" : eq->snmp),
 				(eq->location == NULL ? "-" : eq->location),
-				eq->manual
+				eq->manual,
+				eq->ipmac,
+				eq->portmac
 			    ) ;
 	    MK_SET (eq, MK_PRINTED) ;
 	}
