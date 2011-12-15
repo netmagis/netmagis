@@ -28,6 +28,19 @@ void *my_malloc (size_t s)
 }
 
 /******************************************************************************
+Resize string
+******************************************************************************/
+
+void my_resize (char *p, size_t s)
+{
+    char *tmp;
+		    
+    tmp = my_malloc(s) ;
+    memcpy(tmp, p, strlen(p)+1);
+    p = tmp ;
+}
+
+/******************************************************************************
 Check an existing node and returns a pointer to it
 ******************************************************************************/
 
@@ -262,6 +275,8 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	{ "native",	1, },
 	{ "voice",	1, },
 	{ "manual",	1, },
+	{ "ipmac",	1, },
+	{ "portmac",	1, },
     } ;
 
 
@@ -619,6 +634,8 @@ static void process_eq (char *tab [0], int ntab)
     char *eqsnmp ;
     char *eqlocation ;
     int eqmanual ;
+    int eqipmac ;
+    int eqportmac ;
     struct attrtab *attrtab ;			/* head of attribute table */
     struct attrvallist *av ;
     static struct attrcheck eqattr [] = {
@@ -627,6 +644,8 @@ static void process_eq (char *tab [0], int ntab)
 	{ "snmp", 1, 1},
 	{ "location", 0, 1},
 	{ "manual", 0, 1},
+	{ "ipmac", 0, 1},
+	{ "portmac", 0, 1},
 	{ NULL, 0, 0}
     } ;
 
@@ -699,6 +718,12 @@ static void process_eq (char *tab [0], int ntab)
     av = attr_get_vallist (attrtab, "manual") ;
     eqmanual = ((av == NULL) ? 1 : atoi (attr_get_val (av))) ;
 
+    av = attr_get_vallist (attrtab, "ipmac") ;
+    eqipmac = ((av == NULL) ? 0 : atoi (attr_get_val (av))) ;
+
+    av = attr_get_vallist (attrtab, "portmac") ;
+    eqportmac = ((av == NULL) ? 0 : atoi (attr_get_val (av))) ;
+
     eq->type = symtab_to_name (symtab_get (eqtype)) ;
     eq->model = symtab_to_name (symtab_get (eqmodel)) ;
     if (strcmp (eqsnmp, "-") == 0)
@@ -708,6 +733,8 @@ static void process_eq (char *tab [0], int ntab)
 	eq->location = NULL ;
     else eq->location = symtab_to_name (symtab_get (eqlocation)) ;
     eq->manual = eqmanual ;
+    eq->ipmac = eqipmac ;
+    eq->portmac = eqportmac ;
 
     attr_close (attrtab) ;
 }

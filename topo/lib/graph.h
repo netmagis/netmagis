@@ -181,7 +181,7 @@ extern int lineno ;
 void error (int syserr, char *msg) ;
 void inconsistency (char *fmt, ...) ;
 void *my_malloc (size_t s) ;
-
+void my_resize (char *p, size_t s) ;
 
 /******************************************************************************
 Symbol table functions
@@ -344,6 +344,7 @@ struct node
 
 #define	MK_L2TRANSPORT		(1<<0)	/* used by transport_vlan_on_L2 */
 #define	MK_SELECTED		(1<<1)	/* used by select_xxx */
+#define	MK_PORTMAC		(1<<2)	/* used by output_portmac */
 #define	MK_LAST			MK_SELECTED
 
 #define	MK_SET(p,b)		((p)->mark |= (b))
@@ -404,6 +405,10 @@ struct eq
     int manual ;			/* 1: manual config, 0: obtained from eq */
 
     int mark ;				/* used by drawl2 */
+
+    /* Equipement-level sensor */
+    int ipmac ;
+    int portmac ;
 
     struct eq *next ;
 } ;
@@ -548,6 +553,7 @@ struct graphhdr
 #define	VERSION9	9		/* disabled interfaces */
 #define	VERSION10	10		/* voice vlans */
 #define	VERSION11	11		/* manual configuration */
+#define	VERSION12	12		/* ipmac and portmac sensor */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

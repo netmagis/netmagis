@@ -9,13 +9,17 @@ Example of output format
 trafic      <id coll> <eq> <community> <phys iface> <vlan id|->
 nbassocwifi <id coll> <eq> <community> <phys iface> <ssid>
 nbauthwifi  <id coll> <eq> <community> <phys iface> <ssid>
-
+portmac    <id coll> <eq> <community> <eqtype> <if1,if2...> <vlan id>
+ipmac   <id coll> <eq> <community>
 
 trafic M123 crc-rc1 commsnmp ge-1/2/3 58
 trafic M125 crc-cc1 commsnmp GigaMachin-4/5/6 58
 trafic M125 toto-ce1 commsnmp GigaMachin-0/1 -
 nbassocwifi Mtruc.asso titi-ap1 commsnmp Dot11Radio0 osiris
 nbauthwifi  Mtruc.auth titi-ap1 commsnmp Dot11Radio0 osiris
+portmac  Pcrc-cc1.123 crc-cc1 commsnmp cisco Gi0/1,Gi0/2,Gi0/3 123
+ipmac Icrc-rc1 crc-rc1 public
+
 ******************************************************************************/
 
 /******************************************************************************
@@ -95,6 +99,125 @@ void output_collect_L2 (FILE *fp, struct node *L2node)
 	    output_collect_L1 (fp, L1node) ;
     }
 }
+/******************************************************************************
+Output ipmac
+******************************************************************************/
+
+void output_ipmac (FILE *fp, struct eq *eq)
+{
+    /* ipmac <id coll> <eq> <community> */
+    fprintf (fp, "ipmac I%s %s %s\n",
+		    eq->name,
+		    eq->name,
+		    eq->snmp
+		) ;
+}
+
+
+/******************************************************************************
+Output portmac
+******************************************************************************/
+
+void output_portmac (FILE *fp, struct node *bridgenode)
+{
+    struct linklist *ll ;
+    struct node *n ;
+    vlanset_t vlanset;
+    char *iflist ;
+    vlan_t v;
+    
+    /* get all VLAN ids */
+    vlan_zero(vlanset);
+    for (ll = bridgenode->linklist ; ll != NULL ; ll = ll->next)
+    {
+    	struct link *l ; struct node *other ;
+
+	l = ll->link ;
+	other = getlinkpeer (l, bridgenode) ;
+	if(other->nodetype == NT_L2)
+		vlan_set (vlanset, other->u.l2.vlan);
+    }
+
+    /* for each VLAN found */
+    for (v = 0 ; v < MAXVLAN ; v++)
+    {
+    	if(vlan_isset (vlanset, v)) 
+	{
+	    iflist = NULL ;
+
+	    /* process each L2 node */
+	    for (ll = bridgenode->linklist ; ll != NULL ; ll = ll->next)
+	    {
+		struct link *l ;
+		struct node *L2node ;
+
+		l = ll->link ;
+		L2node = getlinkpeer (l, bridgenode) ;
+
+		/* examine associated L1 */
+		if(L2node->nodetype == NT_L2)
+		{
+		    struct node *L1node ;
+
+
+		    L1node = get_neighbour (L2node, NT_L1) ;
+
+		    /* only edge L1 interface */
+		    if(L1node != NULL
+			    && MK_ISSELECTED (L1node)
+			    && !MK_ISSET(L1node, MK_PORTMAC)
+			    && strcmp (L1node->u.l1.link, EXTLINK) == 0)
+		    {
+			    char *ifname = L1node->u.l1.ifname;
+
+			    if(iflist == NULL)
+			    {
+				iflist=my_malloc(strlen(ifname)+2) ;
+			    }
+			    else
+			    {
+				my_resize(iflist, strlen(iflist)+strlen(ifname)+2) ;
+			     	strcat(iflist, ",") ;
+			    }
+				
+
+			    /* add to interface list */
+			    strcat(iflist, ifname) ;
+			    /* mark node */
+			    MK_SET(L1node, MK_PORTMAC) ;
+		    }
+		}
+	    }
+
+	    /* output portmac collect */
+	    if(iflist != NULL)
+	    {
+		/* portmac <id_collect> <eq> <comm> <eqtype> <vlan> <iflist>*/
+		fprintf (fp, "portmac P%s.%d %s %s %s %s %d\n",
+			    bridgenode->eq->name,
+			    v,
+			    bridgenode->eq->name,
+			    bridgenode->eq->snmp,
+			    bridgenode->eq->type,
+			    iflist,
+			    v
+			) ;
+
+		free(iflist);
+	    }
+
+	    /* clear mark */
+	    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	    {
+		if(n->nodetype == NT_L1)
+		    MK_CLEAR (n, MK_PORTMAC) ;
+	    }
+
+	}
+    }
+
+}
+
 
 /******************************************************************************
 Main function
@@ -102,7 +225,7 @@ Main function
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]* [-s] [-w] [eq]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]* [-s] [-w] [-p] [eq]\n", progname) ;
     exit (1) ;
 }
 
@@ -113,9 +236,9 @@ int main (int argc, char *argv [])
     char *prog, *errstr ;
     int c, err ;
     char *eqname ;
-    struct eq *eq ;
+    struct eq *eq, *neq ;
     struct node *n ;
-    int dumpstat, dumpwifi ;
+    int dumpstat, dumpwifi, dumppmac, dumpipmac ;
 
     /*
      * Analyzes arguments
@@ -125,10 +248,12 @@ int main (int argc, char *argv [])
     err = 0 ;
     dumpstat = 0 ;
     dumpwifi = 0 ;
+    dumppmac = 0 ;
+    dumpipmac = 0 ;
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "an:e:E:tmsw")) != -1)
+    while ((c = getopt (argc, argv, "an:e:E:timpsw")) != -1)
     {
 	switch (c)
 	{
@@ -150,6 +275,12 @@ int main (int argc, char *argv [])
 	    case 'w' :
 		dumpwifi = 1 ;
 		break ;
+	    case 'p' :
+		dumppmac = 1 ;
+		break ;
+	    case 'i' :
+		dumpipmac = 1 ;
+		break ;
 	    case '?' :
 	    default :
 		usage (prog) ;
@@ -159,10 +290,12 @@ int main (int argc, char *argv [])
     if (err)
 	exit (1) ;
 
-    if (dumpstat == 0 && dumpwifi == 0)
+    if (dumpstat == 0 && dumpwifi == 0 && dumppmac == 0 && dumpipmac == 0)
     {
 	dumpstat = 1 ;
 	dumpwifi = 1 ;
+	dumppmac = 1 ;
+	dumpipmac = 1 ;
     }
 
     argc -= optind ;
@@ -226,6 +359,35 @@ int main (int argc, char *argv [])
 	}
     }
 
+    if (dumppmac)
+    {
+	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+	{
+	    if ((eq == NULL || n->eq == eq)
+			&& n->nodetype == NT_BRIDGE
+		    	&& n->eq->portmac
+			&& MK_ISSELECTED (n->eq))
+			output_portmac (stdout, n) ;
+	}
+    }
+
+    if (dumpipmac)
+    {
+	if (eq == NULL)
+	{
+	    for (neq = mobj_head (eqmobj) ; neq != NULL ; neq = neq->next)
+	    {
+		if(neq->ipmac && MK_ISSELECTED (neq))
+		    output_ipmac (stdout, neq) ;
+	    }
+	}
+	else
+	{
+	    if(eq->ipmac && MK_ISSELECTED (neq))
+		output_ipmac (stdout, eq) ;
+	}
+    }
+ 
     if (dumpstat)
     {
 	for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
@@ -239,7 +401,6 @@ int main (int argc, char *argv [])
 	    }
 	}
     }
-
     sel_end () ;
     exit (0) ;
 }
