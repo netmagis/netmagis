@@ -66,6 +66,8 @@ void rel_to_abs (MOBJ *graph [])
 	RELTOABS (eqtab [i].model, strtab) ;
 	RELTOABS (eqtab [i].snmp, strtab) ;
 	RELTOABS (eqtab [i].location, strtab) ;
+	RELTOABS (eqtab [i].enhead, nodetab) ;
+	RELTOABS (eqtab [i].entail, nodetab) ;
 	RELTOABS (eqtab [i].next, eqtab) ;
     }
 
@@ -75,6 +77,7 @@ void rel_to_abs (MOBJ *graph [])
 	RELTOABS (nodetab [i].name, strtab) ;
 	RELTOABS (nodetab [i].eq, eqtab) ;
 	RELTOABS (nodetab [i].next, nodetab) ;
+	RELTOABS (nodetab [i].enext, nodetab) ;
 	RELTOABS (nodetab [i].linklist, llisttab) ;
 
 	switch (nodetab [i].nodetype)

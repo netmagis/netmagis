@@ -68,6 +68,8 @@ void abs_to_rel (MOBJ *graph [])
 	ABSTOREL (eqtab [i].model, strtab) ;
 	ABSTOREL (eqtab [i].snmp, strtab) ;
 	ABSTOREL (eqtab [i].location, strtab) ;
+	ABSTOREL (eqtab [i].enhead, nodetab) ;
+	ABSTOREL (eqtab [i].entail, nodetab) ;
 	ABSTOREL (eqtab [i].next, eqtab) ;
     }
 
@@ -77,6 +79,7 @@ void abs_to_rel (MOBJ *graph [])
 	ABSTOREL (nodetab [i].name, strtab) ;
 	ABSTOREL (nodetab [i].eq, eqtab) ;
 	ABSTOREL (nodetab [i].next, nodetab) ;
+	ABSTOREL (nodetab [i].enext, nodetab) ;
 	ABSTOREL (nodetab [i].linklist, llisttab) ;
 
 	switch (nodetab [i].nodetype)

@@ -160,15 +160,12 @@ static void sel_mark_eq (struct eq *eq, int allow_deny)
 	MK_SELECT (eq) ;
     else MK_DESELECT (eq) ;
 
-    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
-    {
-	if (n->eq == eq)
-	{
-	    if (allow_deny)
-		MK_SELECT (n) ;
-	    else MK_DESELECT (n) ;
-	}
-    }
+    if (allow_deny)
+	for (n = eq->enhead; n != NULL ; n = n->enext)
+	    MK_SELECT (n) ;
+    else
+	for (n = eq->enhead; n != NULL ; n = n->enext)
+	    MK_DESELECT (n) ;
 }
 
 static void sel_mark_regexp (regex_t *rc, int allow_deny)

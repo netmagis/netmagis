@@ -338,6 +338,7 @@ struct node
     vlanset_t vlanset ;			/* vlans transported on this node */
     int mark ;				/* used by various places. See below */
 
+    struct node *enext ;		/* next entry in equipement node list */
     struct node *next ;			/* next entry in node list */
 } ;
 
@@ -410,7 +411,12 @@ struct eq
     int ipmac ;
     int portmac ;
 
+    /* Equipement list of nodes */
+    struct node *enhead;
+    struct node *entail;
+
     struct eq *next ;
+
 } ;
 
 struct eq *eq_lookup (char *name) ;
@@ -554,6 +560,7 @@ struct graphhdr
 #define	VERSION10	10		/* voice vlans */
 #define	VERSION11	11		/* manual configuration */
 #define	VERSION12	12		/* ipmac and portmac sensor */
+#define	VERSION13	13		/* optimization */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

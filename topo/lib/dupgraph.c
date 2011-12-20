@@ -406,6 +406,8 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	TRANSPTR (neweqtab [i].model) ;
 	TRANSPTR (neweqtab [i].snmp) ;
 	TRANSPTR (neweqtab [i].location) ;
+	TRANSPTR (neweqtab [i].enhead) ;
+	TRANSPTR (neweqtab [i].entail) ;
 	TRANSPTR (neweqtab [i].next) ;
     }
     TRANSHEAD (new [EQMOBJIDX], old [EQMOBJIDX]) ;
@@ -419,6 +421,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	TRANSPTR (newnodetab [i].name) ;
 	TRANSPTR (newnodetab [i].eq) ;
 	TRANSPTR (newnodetab [i].linklist) ;
+	TRANSPTR (newnodetab [i].enext) ;
 	TRANSPTR (newnodetab [i].next) ;
 
 	switch (newnodetab [i].nodetype)

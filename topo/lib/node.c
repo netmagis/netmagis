@@ -24,6 +24,14 @@ struct node *create_node (char *name, struct eq *eq, enum nodetype nodetype)
     n->linklist = NULL ;
     symtab_to_node (p) = n ;
 
+    /* add to alternate node list in equipement */
+    n->enext = NULL;
+    if(eq->enhead == NULL)
+	eq->enhead = n;
+    if(eq->entail != NULL)
+    	eq->entail->enext = n;
+    eq->entail = n;
+
     return n ;
 }
 
