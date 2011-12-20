@@ -24,7 +24,6 @@ PROGS = \
 SCRIPTS = \
 	anaconf		\
 	analyze	\
-	cache		\
 	checkdns	\
 	decodename	\
 	doteq		\
@@ -37,7 +36,6 @@ SCRIPTS = \
 	ssidsensors	\
 	topographd	\
 	toposendd	\
-	updatecache	\
 	start-rancid	\
 	sendmail
 

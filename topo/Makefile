@@ -13,7 +13,6 @@ install: all
 	mkdir -p $(DESTDIR)/var/netmagis
 	mkdir -p $(DESTDIR)/var/netmagis/eqvirt
 	mkdir -p $(DESTDIR)/var/netmagis/eqgen
-	mkdir -p $(DESTDIR)/var/netmagis/cache
 
 clean:
 	cd lib ; make clean

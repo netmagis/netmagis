@@ -26,8 +26,6 @@ msgsdir		%DESTDIR%/lib/netmagis/msgs
 whoami		"id -u -n"
 
 debug		no
-cache		no
-cachedir	%DESTDIR%/var/netmagis/cache
 
 # list of users who can bypass the nologin test, separated by one space
 # and who can administer database
@@ -174,6 +172,8 @@ checkrouterif	no		# future use
 # apply local policy to get ssid sensors (yes/no)
 ssidsensors	no		# future use
 
+copycommand	/usr/bin/ssh
+copydest	""
 
 ##############################################################################
 # Metro module 

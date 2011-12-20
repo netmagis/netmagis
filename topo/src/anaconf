@@ -33,7 +33,8 @@ eval `%CONFPROG% \
 		topobindir \
 		checkrouterif \
 		ssidsensors \
-		cache \
+		copycommand \
+		copydest \
 		`
 vlanfile=$eqgendir/_vlan.eq
 
@@ -182,18 +183,6 @@ build_graph ()
 }
 
 #
-# Command output cache update
-#
-
-update_cache ()
-{
-    if [ "$cache" = yes ]
-    then $topobindir/updatecache
-    fi
-}
-
-
-#
 # Check that SNMP community is specified on all equipments
 #
 
@@ -229,6 +218,19 @@ check_dns ()
     return 0
 }
 
+#
+# Copy graph to another host if configured
+#
+
+copy_graph ()
+{
+    if [ -n "$copycommand" -a -n "$copydest" ] 
+    then
+	$copycommand $topograph $copydest
+    fi
+    return 0
+}
+
 ##############################################################################
 # Phase chaining
 ##############################################################################
@@ -241,7 +243,7 @@ chain ()
 	&& analyze_conf $*	\
 	&& copy_eqvirt		\
 	&& build_graph		\
-	&& update_cache		\
+	&& copy_graph		\
 	&& check_snmp		\
 	&& check_dns
     return $?
