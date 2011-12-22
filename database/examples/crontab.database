@@ -19,5 +19,5 @@
 # database dump on non working days
 #
 
-0 8-18 * * Mon-Fri %DESTDIR%/sbin/netmagis-maint daily
-0 12   * * Sat,Sun %DESTDIR%/sbin/netmagis-maint daily
+0 8-18 * * Mon-Fri %DESTDIR%/sbin/netmagis-maint hourly
+0 12   * * Sat,Sun %DESTDIR%/sbin/netmagis-maint hourly

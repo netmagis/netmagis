@@ -28,7 +28,7 @@ usage ()
 # Configuration file read
 ##############################################################################
 
-init-env ()
+init_env ()
 {
     varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser"
     eval `%CONFPROG% -c $varlist`
@@ -75,14 +75,14 @@ vacuum ()
     vacuumdb --quiet --full $PGDATABASE
 }
 
-get-config ()
+get_config ()
 {
     psql -Aqtc "SELECT valeur FROM global.config WHERE clef = '\$1'" $PGDATABASE
 }
 
-clean-spools ()
+clean_spools ()
 {
-    ifchangeexpire=`get-config ifchangeexpire`
+    ifchangeexpire=`get_config ifchangeexpire`
     if expr "$ifchangeexpire" : "[0-9][0-9]*$" > /dev/null
     then
 	psql -d $PGDATABASE -q -c \
@@ -90,7 +90,7 @@ clean-spools ()
 		WHERE processed = 1 AND NOW()-reqdate > '\$ifchangexpire days'"
     fi
 
-    modeqexpire=`get-config modeqexpire`
+    modeqexpire=`get_config modeqexpire`
     if expr "$modeqexpire" : "[0-9][0-9]*$" > /dev/null
     then
 	psql -d $PGDATABASE -q -c \
@@ -99,12 +99,12 @@ clean-spools ()
     fi
 }
 
-init-env
+init_env
 NOW=`date +%a-%H`			# day of week & hour
 
 case "$1" in
     daily)
-	if backup && copy && clean-spools && vacuum
+	if backup && copy && clean_spools && vacuum
 	then exitcode=0
 	else exitcode=1
 	fi
