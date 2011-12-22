@@ -43,7 +43,7 @@ defuser="nobody"
 # Configuration file read
 ##############################################################################
 
-init-env ()
+init_env ()
 {
     varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser rootusers"
     eval `%CONFPROG% -c $varlist`
@@ -69,7 +69,7 @@ init-env ()
 # Database creation
 ##############################################################################
 
-db-exists ()
+db_exists ()
 {
     if psql --no-psqlrc -c "" 2> /dev/null
     then r=0
@@ -78,14 +78,14 @@ db-exists ()
     return $r
 }
 
-db-create ()
+db_create ()
 {
     createdb -E unicode || exit 1
     createlang plpgsql
     createlang pltcl
 }
 
-db-schemas ()
+db_schemas ()
 {
     psql --no-psqlrc --quiet --file - <<'EOF' 2>&1 | grep -v 'NOTICE: .* will create implicit'
 
@@ -1236,7 +1236,7 @@ EOF
 # Default values for config keys
 ##############################################################################
 
-db-insert-config ()
+db_insert_config ()
 {
     psql --no-psqlrc --quiet --file - <<'EOF'
 
@@ -1338,7 +1338,7 @@ EOF
 # Create users
 ##############################################################################
 
-db-create-user ()
+db_create_user ()
 {
     user="$1"
     psql --no-psqlrc --quiet --file - <<EOF
@@ -1357,7 +1357,7 @@ EOF
 	psql --no-psqlrc --quiet -c "UPDATE pgauth.user
 					SET password = '$cryptpw'
 					WHERE login = '$user'"
-	echo "Password for user '$user' is '$adminpw'." >&2
+	echo "Password for Netmagis user '$user' is '$adminpw'." >&2
     fi
 
 }
@@ -1366,7 +1366,7 @@ EOF
 # Database permissions
 ##############################################################################
 
-grant-root ()
+grant_root ()
 {
     user=$1
     psql --no-psqlrc --quiet --file - <<EOF
@@ -1376,7 +1376,7 @@ grant-root ()
 EOF
 }
 
-grant-www ()
+grant_www ()
 {
     user=$1
     psql --no-psqlrc --quiet --file - <<EOF
@@ -1394,7 +1394,7 @@ EOF
 # Initialize environnement
 #
 
-init-env
+init_env
 
 #
 # Syntax checking
@@ -1431,26 +1431,26 @@ do
     esac
 done
 
-if db-exists
+if db_exists
 then
     echo "Database '$PGDATABASE' already exists" >&2
     echo "Use 'dropdb' command to destroy database first" >&2
     exit 1
 fi
 
-db-create
+db_create
 
-db-schemas
+db_schemas
 
-db-insert-config
+db_insert_config
 
 for u in $rootusers
 do
-    grant-root $u
-    db-create-user $u
+    grant_root $u
+    db_create_user $u
 done
 
-db-create-user $defuser
+db_create_user $defuser
 
 if [ "$pwgen" = "" -o "$crypt" = "" ]
 then
@@ -1461,6 +1461,6 @@ else
 fi
 
 
-grant-www $dnsdbuser
+grant_www $dnsdbuser
 
 exit 0
