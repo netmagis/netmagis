@@ -8941,7 +8941,7 @@ proc detect-dirmod {dir _err} {
     # First pass: get all files in directory and keep them in an array:
     #	ntab(<file>) <date>
     #
-    foreach file [glob "$dir/*.eq"] {
+    foreach file [glob -nocomplain "$dir/*.eq"] {
 	if {[catch {file mtime $file} date]} then {
 	    append err "$date\n"
 	} else {
