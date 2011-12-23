@@ -1530,6 +1530,10 @@
 		    call rancid when needed.
 		}
 	    }
+
+	    Notice: this is not related to Netmagis installation, but you
+	    should consider installing a Web interface to CVS (CVSWeb)
+	    to ease tracking of your equipement configuration history.
 	}
 	\item {To let \italique {topo} knows which equipments are on
 	    each side of a network link, you have to add information in
