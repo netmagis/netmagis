@@ -131,6 +131,49 @@
 	}
     }
 
+    Packages are designed such as they may be installed on one unique
+    server as well as each on its dedicated server, depending on
+    your security requirements, performance considerations or site
+    specificities.
+
+    \liste {
+	\item {a large site may wish to separate all components:
+	    \liste {
+		\item {the \italique {www} package is installed on a
+		    central web hosting platform
+		}
+		\item {the \italique {database} package is installed on
+		    a central database cluster
+		}
+		\item {the \italique {servers} package is installed on
+		    the existing DNS and DHCP server, as well as on mail
+		    relay cluster
+		}
+		\item {the \italique {detecteq} package is installed on
+		    both the central syslog server and the central
+		    Radius server
+		}
+		\item {the \italique {topo} package is installed on a
+		    dedicated virtual server, for security reasons
+		    (access to the network equipements via the
+		    administration VLAN)
+		}
+		\item {the \italique {metro} package is installed on a
+		    dedicated physical server for performance and
+		    security reasons
+		}
+	    }
+	}
+	\item {on the opposite, a small site may wish to run all
+	    packages on a unique virtual server.
+	}
+    }
+
+    It is recommanded that the \italique {www} and the \italique {topo}
+    packages be installed on the same architecture (CPU and OS), even
+    if the servers are physically distinct.
+
+
     \titre {3} {Installing from FreeBSD ports}
 
     At this time, the supported way to install Netmagis is via
@@ -188,6 +231,29 @@
     \item {Install \lien {required dependencies} {/spec.html}.
 	Please note that Tcl is a required dependency for all packages.
 
+	Linux (Ubuntu/Debian) note:
+	\retrait \teletype {
+	    # common and database \br
+	    aptitude -y install make git \\ \br
+	    ~ ~ ~ ~ postgresql-9.1 postgresql-pltcl-9.1 libpgtcl1.5  \\ \br
+	    ~ ~ ~ ~ tcl8.5 tcl8.5-dev tcllib pwgen
+
+	    # www \br
+	    aptitude -y install \ \br
+	    ~ ~ ~ ~ apache2 libapache2-mod-auth-pgsql \\ \br
+	    ~ ~ ~ ~ netpbm tetex-bin graphviz transfig
+
+	    # topo \br
+	    aptitude -y install \\ \br
+	    ~ ~ ~ ~ gcc fping rancid default-mta
+
+	    # metro \br
+	    aptitude -y install \\ \br
+	    ~ ~ ~ ~ libsnmp-session-perl libsnmp-perl libnet-snmp-perl librrdtool-oo-perl libdbd-pg-perl
+
+	    # ldap authentication \br
+	    aptitude -y install openldap-utils slapd
+	}
     }
     \item {Choose an installation directory. You may use \teletype
 	{/local/netmagis/} for example. Netmagis's Makefile will install a
@@ -266,14 +332,9 @@
 		\casetableau {} {Full path name of tclsh interpreter}
 	    }
 	    \lignetableau {
-		\casetableau {} {TCLCFLAGS}
-		\casetableau {} {Tcl compilation flags (only for www
-		    package)}
-	    }
-	    \lignetableau {
-		\casetableau {} {TCLLFLAGS}
-		\casetableau {} {Tcl link edition flags (only for www
-		    package)}
+		\casetableau {} {TCLCONF}
+		\casetableau {} {Tcl configuration script
+		    (example: \teletype {/usr/lib/tcl8.5/tclConfig.sh} on Linux or \teletype {/usr/local/lib/tcl8.5/tclConfig.sh} on FreeBSD)}
 	    }
 	}
 
@@ -309,18 +370,46 @@
     (and authenticate users with password) from hosts which act as
     clients of the Netmagis database (all hosts where you installed
     a netmagis package). This is usually configured in file \teletype
-    {&tilde;pgsql/data/pg_hba.conf} (where \teletype {pgsql} is the name
-    of the PostgreSQL administror).
+    {pg_hba.conf} which is located in:
+    \tableau {
+	\* \taille {100}
+	\bordure {1} {}
+    } {
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+	\casedefauttableau {
+	    \centragehorizontal {LEFT}
+	    \centragevertical {MIDDLE}
+	}
+    } {
+	\lignetableau {
+	    \casetableau {} {FreeBSD}
+	    \casetableau {} {in directory \teletype
+		{&tilde;pgsql/data/pg_hba.conf}
+		(where \teletype {pgsql} is the name of the PostgreSQL
+		administror)}
+	}
+	\lignetableau {
+	    \casetableau {} {Linux (Debian/Ubuntu)}
+	    \casetableau {} {in directory
+		\teletype {/etc/postgresql/9.1/main/pg_hba.conf}
+	    }
+	}
+    }
 
     Netmagis needs at least two PostgreSQL users. You can create them
-    with the PostgreSQL \teletype {createuser} program:
+    (as the PostgreSQL administor user: \teletype {pgsql} on FreeBSD,
+    \teletype {postgres} on Linux) with the PostgreSQL \teletype
+    {createuser} program:
 
     \liste {
 	\item {the first one (default used by Netmagis: \gras {dns})
 	    does not have any special privilege: it will be used by
 	    various scripts (including CGI scripts) to connect to the
 	    database. Use the command:
-	    \retrait\teletype {createuser --no-superuser --no-createrole --no-createdb dns}
+	    \retrait\teletype {createuser --no-superuser --no-createrole --no-createdb --pwprompt dns}
 	}
 	\item {the second ones (you may have more than one user) are
 	    priviledged users (superusers in PostgreSQL terminology).
@@ -330,7 +419,7 @@
 	    Netmagis users. Notably, they are authorized to connect to
 	    the Web application even when it is in "maintenance mode".
 	    Create them with:
-	    \retrait\teletype {createuser --superuser joe}
+	    \retrait\teletype {createuser --superuser --pwprompt joe}
 	}
     }
 
@@ -452,11 +541,14 @@
     \item {
 	If you are installing Netmagis for the first time, after you
 	configured the \teletype {netmagis.conf} file, run the command
-	(as one of the priviledged users listed in \teletype {rootusers}
-	directive):
-	\retrait\teletype {$ .../sbin/netmagis-dbcreate}
+	\retrait\teletype {$ .../sbin/netmagis-dbcreate -u \italique {user} -w \italique {password}}
 	This command:
 	\liste {
+	    \item {is executed as one of the priviledged users (those
+		listed in \teletype {rootusers} directive; default is
+		to use the first user specified in the \teletype
+		{rootusers} directive)
+	    }
 	    \item {creates the Netmagis database (it fails if the database
 		already exists)}
 	    \item {creates the SQL schemas, tables, functions and triggers}
@@ -1133,10 +1225,10 @@
     via:
     \liste {
 	\item {\gras {syslog} for Cisco and Juniper equipments}
-	\item {\gras {radius} for HP equipements. In this case, since
-	    HP equipments are unable to report configuration changes
-	    via Syslog, the hack is based on Radius accounting which
-	    detects user logout (which do not strictly imply a
+	\item {\gras {radius accounting} for HP equipements. In this
+	    case, since HP equipments are unable to report configuration
+	    changes via Syslog, the hack is based on Radius accounting
+	    which detects user logout (which do not strictly imply a
 	    configuration change).
 	}
     }
@@ -1147,6 +1239,20 @@
     events are sent to the database, the \italique {detecteq} package
     does not need to be installed on the same server as the \italique
     {topo} server.
+
+    \gras {Network equipment configuration}:
+
+    In order to automate configuration fetching from a central server,
+    a unique user should be defined on every network equipment. Let us
+    call it \gras {conf}. This user should have the right to execute the
+    \teletype {show configuration} commmand (or similar), which means
+    it must have the "admin" privilege.
+
+    Moreover, at least on HP equipments, there should be another distinct
+    user (let us call it \gras {modconf}) which should be able to modify
+    the configuration in order to change interface characteristics. This
+    second user is needed for Radius to distinguish regular configuration
+    fetching from configuration modification.
 
     \gras {Syslog configuration}:
 
@@ -1203,6 +1309,42 @@
 	    {detecteq} installation path.  You can also use other
 	    syslog daemons such as syslog-ng if they provide the "pipe
 	    to program" functionnality.
+
+	    Note: on Linux (Debian/Ubuntu), the default syslog program
+	    (\teletype {rsyslogd}) does not support the "pipe to program"
+	    functionnality. An alternative is to install the \teletype
+	    {syslog-ng} package and configure it with lines such as:
+	    \retrait\teletype {
+		source remote \{ \br
+		~ ~ ~ udp(port(514)); \br
+		\}
+
+		filter myequip \{ \br
+		~ ~ ~ netmask ("10.20.30.0/24"); \br
+		\};
+
+		destination mylogs \{ \br
+		~ ~ ~ file ("/var/log/myeq.log"); \br
+		\};
+
+		destination detectconfmod \{ \br
+		~ ~ ~ program ("/usr/local/sbin/detectconfmod"); \br
+		\};
+
+		log \{ \br
+		~ ~ ~ source(remote); \br
+		~ ~ ~ filter(myequip); \br
+		~ ~ ~ destination(detectconfmod); \br
+		~ ~ ~ destination(mylogs); \br
+		~ ~ ~ flags(final); \br
+		\}
+	    }
+	}
+	\item {Be sure to keep hostnames in generated logs. You should
+	    get lines such as (example on a Cisco switch):\br
+	    \retrait\teletype {Dec 23 11:52:26 \gras {adm-sw}
+		%SYS-5-CONFIG_I: 
+		Configured from console by joe on vty0 (192.168.1.1)}
 	}
     }
 
@@ -1239,16 +1381,36 @@
 		    }
 		}
 	    }
+
 	}
 	\item {Configure your existing Freeradius using the SQL
 	    accounting module and the example files provided in
 	    \teletype {.../share/examples/netmagis/radius/} directory.
+
+	    TO BE WRITTEN: explain in detail this installation.
+
+	}
+	\item {As described above, the Radius accounting server needs
+	    to distinguish regular configuration fetching from
+	    configuration modification. This is done using the \teletype
+	    {topo.ignoreequsers} table which contains login names of
+	    the users to ignore.
+
+	    The default user is named \gras {conf}. If want to change
+	    names of users which perform read-only (i.e. fetch)
+	    operations, issue the following SQL commands with \teletype
+	    {psql}:
+	    \retrait\teletype {
+		DELETE FROM topo.ignoreequsers; \br
+		INSERT INTO topo.ignoreequsers VALUES ('joe'); \br
+		INSERT INTO topo.ignoreequsers VALUES ('bill');
+	    }
 	}
     }
 
     \titre {3} {Topo package installation}
 
-    One of the moste innovative parts of Netmagis is the \italique {topo}
+    One of the most innovative parts of Netmagis is the \italique {topo}
     package, which provides a complete infrastructure to fetch and analyze
     network equipments configuration files and modelize the network as
     a graph. This allows for automatic generation of network L2 and L3
@@ -1258,20 +1420,41 @@
     At this time, Juniper, Cisco and HP equipments (switches and routers)
     are supported.
 
+    \titre {4} {Relations between \italique {topo} and \italique {www} packages}
+
+    You have the choice to run the \italique {topo} and \italique {www}
+    packages on the same host or on distinct hosts.
+
     For security reasons, one would often use a separate server to run
-    the \italique {topo} package. This server is located within the
-    administration VLAN of equipments. The interface between the \italique
-    {topo} package and the rest of Netmagis is:
+    the \italique {topo} package. This server should be located within
+    the administration VLAN of equipments, if you have one.
+    
+    The interface between the \italique {topo} package and the rest of
+    Netmagis is:
     \liste {
 	\item {the ability to send mail from the \italique {topo}
-	    server}
-	\item {an SSH access to the \italique {topo} from the Netmagis
-	    Web application, via a non-priviledged account
+	    server
+
+	}
+	\item {the ability for the \italique {www} package to access
+	    data extracted from the network graph built on the \italique
+	    {topo} server: the \italique {topo} server pushes (via a
+	    SSH connection) the file containing the built graph, and
+	    the \italique {www} server runs extract commands on demand.
+
+	    This means that the \italique {topo} package must also be
+	    installed on the \italique {www} server to provide these
+	    commands.
+
+	    This also means that the architecture of the two servers must
+	    be compatible (CPU and OS) since the graph is a binary file.
 	}
     }
 
     The rest of this section describes the \italique {topo} package
     installation.
+
+    \titre {4} {On the topo server}
 
     The first part is configuration of the \italique {topo} server.
 
@@ -1298,19 +1481,31 @@
 		}
 		\item {Configure a mail alias \teletype
 		    {rancid-\italique {groupname}} (in \teletype
-		    {/etc/aliases} or equivalent) to receive notifications
+		    {/etc/aliases} or equivalent, don't forget to run
+		    the command \teletype {newaliases} or equivalent)
+		    to receive notifications
 		    when rancid detects modifications.
 		}
 		\item {Configure the \teletype {&tilde;rancid/.cloginrc}
 		    file with authentication information. For example:
 		    \retrait\teletype {
-			add method * \{telnet\} \br
+			add method * \{ssh\} \br
 			add password myrouter \{pw\} \{enablepw\} \br
 			add password sw-* \{anotherpw\} \{anotherenablepw\}
 		    }
+		    See the \teletype {cloginrc(5)} manual page for
+		    details about this configuration file.
+
+		    Be sure that this file belongs to the \teletype
+		    {rancid} user and has mode 0600.
 		}
-		\item {Initialize the directory tree by running:
+		\item {Initialize the directory tree by running (as the
+		    \teletype {rancid} user):
 		    \retrait\teletype {rancid-cvs}
+		    This program is located in \teletype
+		    {/usr/local/libexec/rancid/rancid-cvs} on FreeBSD
+		    and in \teletype {/usr/lib/rancid/bin/rancid-cvs}
+		    on Linux (Debian/Ubuntu).
 		}
 		\item {In order to test your rancid installation, name
 		    some equipments in the \teletype {router.db} file,
@@ -1324,6 +1519,10 @@
 		}
 		\item {Test your installation by running:
 		    \retrait\teletype {rancid-run}
+		    The test is ok if you received a mail with the
+		    equipment configuration, which is also stored in the
+		    \teletype {$BASEDIR/\italique {group-name}/configs/}
+		    directory.
 		}
 		\item {The rancid README says to run \teletype
 		    {rancid-run} periocally with \gras {cron}. Do not
@@ -1405,8 +1604,8 @@
 		}
 		\lignetableau {
 		    \casetableau {} {rancidcmd}
-		    \casetableau {} {Command used to launch \teletype
-			{rancid}}
+		    \casetableau {} {Path to the \teletype
+			{rancid-run} command}
 		}
 		\lignetableau {
 		    \casetableau {} {ranciddb}
@@ -1468,6 +1667,15 @@
 			during \italique {topo} analysis
 		    }
 		}
+		\lignetableau {
+		    \casetableau {} {topocpgraph}
+		    \casetableau {} {Parameters (user@host remote-path)
+			used to copy the graph built during \italique
+			{topo} analysis to the \italique {www}
+			server. Leave empty if the \italique {topo}
+			and \italique {www} servers are the same host.
+		    }
+		}
 	    }
 
 	}
@@ -1477,7 +1685,7 @@
 	\item {As the \gras {rancid} user, run the following command:
 	    \retrait\teletype {$ .../lib/netmagis/topo/anaconf}
 
-	    You will undoubtly notice a large number of warnings, that
+	    You will undoubtly notice a large number of warning that
 	    you will correct with time. If no fatal error has been
 	    encountered, you will normally find in \teletype
 	    {.../var/netmagis/network.graph} the modelization of your
@@ -1486,12 +1694,15 @@
 	    To check that things are ok, you can use the commands (which
 	    all take the binary graph as standard input):
 	    \liste {
-		\item {\teletype {.../lib/netmagis/topo/dumpgraph}:
-		    dumps the graph in clear text
+		\item {dump the graph in clear text:
+		    \retrait\teletype {.../lib/netmagis/topo/dumpgraph -a
+			&lt; .../var/netmagis/network.graph}
 		}
-		\item {\teletype {.../lib/netmagis/topo/extracteq}:
-		    given and equipment name, displays all interfaces
-		    characteristics.
+		\item {display all interfaces characteristics of an
+		    equipment:
+		    \retrait\teletype {.../lib/netmagis/topo/extracteq -a
+			\italique {equipment}
+			&lt; .../var/netmagis/network.graph}
 		}
 	    }
 	}
@@ -1516,24 +1727,74 @@
 	    } {
 		\lignetableau {
 		    \casetableau {} {FreeBSD}
-		    \casetableau {} {\teletype {/usr/local/etc/rc.d/topographd}
+		    \casetableau {} {\teletype
+			{/usr/local/etc/rc.d/topographd.sh}
 			\br
-			\teletype {/usr/local/etc/rc.d/toposendd}}
+			\teletype {/usr/local/etc/rc.d/toposendd.sh}}
 		}
 		\lignetableau {
 		    \casetableau {} {Linux}
-		    \casetableau {} {TO BE WRITTEN}
+		    \casetableau {} {copy or link
+			\teletype {.../etc/rc.d/topographd.sh} and
+			\teletype {.../etc/rc.d/toposend.sh}
+		    to \teletype {/etc/init.d} directory}
 		}
 	    }
 	}
+	\item {If you have choosen to install the \italique {topo}
+	    and \italique {www} packages on different servers, you have
+	    to configure the SSH connection from the \gras {rancid} user
+	    on the \italique {topo} server to a user on the \italique
+	    {www} server.
+
+	    This SSH connection is used to copy the network graph computed
+	    by the \gras {rancid} user on the \italique {topo} server
+	    to the \italique {www} server.  The destination user on
+	    the \italique {www} server will own the copied graph, which
+	    must be readable by the CGI scripts running under the Apache
+	    user. This destination user may be, for example, the Apache
+	    user (called www, www-data, nobody, etc., see the "\teletype
+	    {User}" directive in Apache configuration files). Let us
+	    call it the \gras {w} user.  Make sure this \gras {w} user
+	    (on the \italique {www} server) has a home directory and a
+	    valid shell.
+
+	    Then, as the \gras {rancid} user on the \italique {topo}
+	    server, create a SSH keypair (without pass-phrase):
+	    \retrait\teletype {ssh-keygen}
+	    Copy the public key (\teletype
+	    {&tilde;rancid/.ssh/id_rsa.pub}) to the \teletype
+	    {&tilde;w/.ssh/authorized_keys} on the \italique {www} server.
+
+	    Make sure that the \teletype {topocpgraph} configuration
+	    parameter is initialized with a line such as:
+	    \retrait\teletype {topocpgraph w@www.my.domain
+		.../var/netmagis/network.graph}
+	    Warning: the path supplied here is the path of the graph
+	    on the \italique {server}, which should match the \teletype
+	    {topograph} configuration parameter \gras {on the \italique
+	    {www} server}.
+	}
+	\item {If you have choosen to install the \italique {topo}
+	    and \italique {www} packages on the same server, make sure
+	    that the \teletype {topocpgraph} configuration parameter
+	    is empty.
+	}
     }
+
+
+    \titre {4} {On the www server}
 
     You need now to come back to the server which hosts the Web
     application.
 
     \liste {
-	\item {Configure \teletype {.../etc/netmagis.conf} on the
-	    \italique {www} server:
+	\item {If you have choosen distinct \italique {www} and \italique
+	    {topo} servers, you must first install the \italique {topo}
+	    package (on the \italique {www} server) in order to use
+	    programs which extract data from the network graph. Then,
+	    you have to configure the following directives in \teletype
+	    {.../etc/netmagis.conf} on the \italique {www} server:
 
 	    \tableau {
 		\taille {100}
@@ -1557,63 +1818,48 @@
 		    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
 		}
 		\lignetableau {
-		    \casetableau {} {topohost}
-		    \casetableau {} {Host name of the \italique {topo}
-			server, or empty if the \italique {topo} package
-			is installed on the same server as the \italique
-			{www} package}
-		}
-		\lignetableau {
-		    \casetableau {} {topouser}
-		    \casetableau {} {Name of \teletype {rancid} user
-			on the \italique {topo} server, or empty if the
-			\italique {topo} package is installed on the
-			same server as the \italique {www} package}
-		}
-		\lignetableau {
 		    \casetableau {} {topobindir}
 		    \casetableau {} {Directory where all \italique
-			{topo} programs are searched on the \italique
-			{topo} server
+			{topo} programs are searched (on the \italique
+			{www} server)
 		    }
 		}
 		\lignetableau {
 		    \casetableau {} {topograph}
-		    \casetableau {} {Path name of the graph built
-			during \italique {topo} analysis
-			on the \italique {topo} server
+		    \casetableau {} {Path name of the graph copied
+			onto the \italique {www} server.
 		    }
 		}
 	    }
 
 	}
-	\item {If the \italique {topo} package is installed on a
-	    different server than the \italique {www} package, you must
-	    provide a way for the Web server to make SSH requests to
-	    the \italique {topo} server. In order to do that, identify
-	    the name of the user running your Apache server (locate
-	    the \teletype {User} in the Apache configuration files).
-
-	    Make sure this user has a valid home directory. Then, as
-	    this user, create a SSH keypair (without pass-phrase):
-	    \retrait\teletype {ssh-keygen}
-	    Copy the public key (\teletype {&tilde;/.ssh/id_rsa.pub}) to
-	    the \teletype {&tilde;rancid/.ssh/.ssh/authorized_keys} on the
-	    \italique {topo} server.
-	}
-	\item {Connect your web browser to the Netmagis application,
-	    and activate the \italique {topo} module in the \gras {Admin}
-	    / \gras {Application parameters} menu.
-
-	    You can also change parameters such as "Default domain",
-	    "Topo mail sender" and "Topo mail receiver".
-
+	\item {Direct your web browser to the Netmagis application,
+	    and go to the \gras {Admin} / \gras {Application parameters}
+	    menu. In this menu:
+	    \liste {
+		\item {activate the \italique {topo} module}
+		\item {change the "Default domain" value: the
+		    domain name of your network equipments}
+		\item {change the "Topo mail sender" value: you may
+		    use an invalid address such as automatic mails
+		    generated by the \italique {topo} server don't
+		    receive replies.}
+		\item {change the "Topo mail receiver" value:
+		    {topo} mails will be sent to this address rather
+		    than to the genuine \teletype {rancid-\italique
+		    {groupname}} alias you've previousely defined.
+		}
+	    }
 	    After activation of the \italique {topo} module, you will
 	    see a new \gras {Topology} entry in the left menu.
 	}
-	\item {Input your network equipments and your VLANs via the
-	    \gras {Admin} / \gras {Modify equipments} and \gras {Modify
-	    Vlans} menus.
+	\item {Make sure that all your network equipments (and the
+	    default domain) exist as hosts (and domain) in the Netmagis
+	    database.
+	}
+	\item {Input your network equipments (as fully qualified domain
+	    names) and your VLANs via the \gras {Admin} / \gras {Modify
+	    equipments} and \gras {Modify Vlans} menus.
 	}
 	\item {You can monitor the \teletype {topographd} and \teletype
 	    {toposendd} daemons with the \gras {Admin} / \gras {Topod
