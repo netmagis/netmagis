@@ -552,7 +552,7 @@
 	    \item {creates the Netmagis database (it fails if the database
 		already exists)}
 	    \item {creates the SQL schemas, tables, functions and triggers}
-	    \item {provides default values for Netmagis parameters}
+	    \item {provides default values for Netmagis directives}
 	    \item {creates Netmagis users listed in \teletype {rootusers}
 		directive (in \teletype {.../etc/netmagis.conf} file)
 	    }
@@ -1280,12 +1280,12 @@
 		\lignetableau {
 		    \casetableau {} {Juniper}
 		    \casetableau {} {\teletype {system \{ \br
-			~ ~ ~syslog \{ \br
-			~ ~ ~ ~ ~ ~host \italique {syslog-server.my.domain} \{ \br
-			~ ~ ~ ~ ~ ~ ~ ~ ~any notice;\br
-			~ ~ ~ ~ ~ ~ ~ ~ ~facility-override local2;\br
-			~ ~ ~ ~ ~ ~\}\br
-			~ ~ ~\}\br
+			~ ~ syslog \{ \br
+			~ ~ ~ ~host \italique {syslog-server.my.domain} \{ \br
+			~ ~ ~ ~ ~ ~any notice;\br
+			~ ~ ~ ~ ~ ~facility-override local2;\br
+			~ ~ ~ ~\}\br
+			~ ~ \}\br
 			\}
 			}}
 		}
@@ -1316,27 +1316,27 @@
 	    {syslog-ng} package and configure it with lines such as:
 	    \retrait\teletype {
 		source remote \{ \br
-		~ ~ ~ udp(port(514)); \br
+		~ ~ udp(port(514)); \br
 		\}
 
 		filter myequip \{ \br
-		~ ~ ~ netmask ("10.20.30.0/24"); \br
+		~ ~ netmask ("10.20.30.0/24"); \br
 		\};
 
 		destination mylogs \{ \br
-		~ ~ ~ file ("/var/log/myeq.log"); \br
+		~ ~ file ("/var/log/myeq.log"); \br
 		\};
 
 		destination detectconfmod \{ \br
-		~ ~ ~ program ("/usr/local/sbin/detectconfmod"); \br
+		~ ~ program ("/usr/local/sbin/detectconfmod"); \br
 		\};
 
 		log \{ \br
-		~ ~ ~ source(remote); \br
-		~ ~ ~ filter(myequip); \br
-		~ ~ ~ destination(detectconfmod); \br
-		~ ~ ~ destination(mylogs); \br
-		~ ~ ~ flags(final); \br
+		~ ~ source(remote); \br
+		~ ~ filter(myequip); \br
+		~ ~ destination(detectconfmod); \br
+		~ ~ destination(mylogs); \br
+		~ ~ flags(final); \br
 		\}
 	    }
 	}
@@ -1562,20 +1562,20 @@
 		\lignetableau {
 		    \casetableau {} {Juniper}
 		    \casetableau {} {\teletype {ge-0/1/0 \{ \br
-			~ ~ ~description "blah blah &lt;L233&gt;; \br
-			~ ~ ~...\br
-			\}
-			}}
+			    ~ ~ description "blah blah &lt;L233&gt;; \br
+			    \}
+			}
+		    }
 		}
 		\lignetableau {
 		    \casetableau {} {Cisco}
 		    \casetableau {} {\teletype {interface GigabitEthernet0/1\br
-			~ ~description blah blah &lt;L233&gt;}}
+			~ ~ description blah blah &lt;L233&gt;}}
 		}
 		\lignetableau {
 		    \casetableau {} {HP}
 		    \casetableau {} {\teletype {interface A1\br
-			~ ~name "blah blah &lt;L233&gt;"}}
+			~ ~ name "blah blah &lt;L233&gt;"}}
 		}
 	    }
 
@@ -1776,13 +1776,11 @@
 		.../var/netmagis/network.graph}
 	    Warning: the path supplied here is the path of the graph
 	    on the \italique {server}, which should match the \teletype
-	    {topograph} configuration parameter \gras {on the \italique
-	    {www} server}.
+	    {topograph} directive \gras {on the \italique {www} server}.
 	}
 	\item {If you have choosen to install the \italique {topo}
 	    and \italique {www} packages on the same server, make sure
-	    that the \teletype {topocpgraph} configuration parameter
-	    is empty.
+	    that the \teletype {topocpgraph} directive is empty.
 	}
     }
 
@@ -1883,207 +1881,231 @@
 
     \titre {3} {Metro package installation}
 
-    The Metro package provides metrology data collection on equipments
-    such as:
+    The Metro package provides metrology data collection on equipments.
+    Data collected include:
     \liste {
 	\item {traffic}
-	\item {ip/mac associations (ARP tables)}
-	\item {port/mac associations (Forwarding tables)}
+	\item {ip&lt;-&gt;mac associations (ARP tables)}
+	\item {port&lt;-&gt;mac associations (Forwarding tables)}
     }
 
-    At this time all kind of equipments (which run SNMP MIB-2 Agent) are
-    supported for traffic or ip/mac collection.
-    For port/mac collection Cisco, Juniper and HP equipements are supported.
+    At this time, all kinds of equipments are supported for traffic and
+    ip/mac collection, provided they run a standard SNMP MIB-2 agent.
+    For port/mac collection, Cisco, Juniper and HP equipements are
+    supported.
 
-    The metro application is made up of two main programs :
+    The metro application is made up of two main programs:
     \liste {
-	\item{\teletype {metrocreatedb} which creates metrology sensors based on the
-	    metrology collection points defined in the topo database. Those
-		points are extracted from the equipement configurations by the 
-		\teletype {topo} tool chain}
-	\item{\teletype {metropoller} which performs data collection for each sensor}
+	\item {\teletype {metrocreatedb} which creates metrology sensors
+	    based on the metrology collection points defined in the
+	    Netmagis database, resulting from equipement configuration
+	    fetching by the \italique {topo} module.
+	}
+	\item {\teletype {metropoller} which performs data collection
+	    for each sensor
+	}
     }
 
-    The first part of this section describes the configuration of the \teletype {metro} module.
+    The first part of this section describes the configuration of the
+    \italique {metro} package.
 
     \liste {
-	\item {Configure .../etc/netmagis.conf on the metro server :
+	\item {Configure \teletype {.../etc/netmagis.conf} on the
+	    \italique {metro} server:
 
-	    \retrait {
-		    \tableau {
-			\taille {100}
-			\bordure {1} {}
-		    } {
-			\casedefauttableau {
-			    \centragehorizontal {LEFT}
-			    \centragevertical {MIDDLE}
-			}
-			\casedefauttableau {
-			    \centragehorizontal {LEFT}
-			    \centragevertical {MIDDLE}
-			}
-		    } {
-			\lignetableau {
-			    \multicasetableau {2} {\centragehorizontal {CENTER}}
-				{\gras {netmagis.conf directives}}
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
-			    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {metrodatadir}
-			    \casetableau {\centragehorizontal {CENTER}} {Directory where
-			    reporting, logs, rrdtool databases are stored}
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {rrdtool}
-			    \casetableau {\centragehorizontal {CENTER}} {Command used to launch
-			    rrdtool}
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {rrddb}
-			    \casetableau {\centragehorizontal {CENTER}} {
-			    Directory where rrdtool databases are stored (please, reserve a
-			    sufficient disk space). It is usually a sub-directory of
-				\teletype {metrodatadir} but it can be on a separate directory
-				if you need more disk space. FIXME: remove and keep only metrodatadir
+	    \retrait\tableau {
+		\taille {100}
+		\bordure {1} {}
+	    } {
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+		\casedefauttableau {
+		    \centragehorizontal {LEFT}
+		    \centragevertical {MIDDLE}
+		}
+	    } {
+		\lignetableau {
+		    \multicasetableau {2} {\centragehorizontal {CENTER}}
+			{\gras {netmagis.conf directives}}
+		}
+		\lignetableau {
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Directive}}
+		    \casetableau {\centragehorizontal {CENTER}} {\gras {Description}}
+		}
+		\lignetableau {
+		    \casetableau {} {metrodatadir}
+		    \casetableau {} {Main data directory, where
+			reporting, logs and rrdtool databases
+			are stored (in sub-directories)
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {rrdtool}
+		    \casetableau {} {Pathname to the \teletype
+			{rrdtool} command
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {rrddb}
+		    \casetableau {} {Directory where rrdtool databases
+			are stored. Reserve enough disk space for this
+			directory.  It is usually a sub-directory of
+			\teletype {metrodatadir} but it can be a separate
+			directory if you need more disk space.
+
+			FIXME: remove and keep only metrodatadir
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {sensorsurvival}
+		    \casetableau {} {Grace period (in days) before
+			sensor removal.  This is needed when a sensor
+			is no longer updated by \italique {topo} (this
+			can be caused by a volontary removal or a bad
+			configuration of the equipment). So for safety
+			reasons, the polling is really stopped on this
+			sensor only after this grace period.
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {pollergroups}
+		    \casetableau {} {
+			FIXME: provide description of directive first,
+			and explanation after.
+
+			Sensors sharing the same characteristics can be
+			put in the same group:
+			\liste {
+			    \item {the running time is short, so
+				running them in the same group allows
+				a high level of parallelization ; for
+				example, the traffic collection sensors
+				are usually put in the same group
+			    }
+			    \item {the sensors are specialized and
+				the SNMP collection takes more time
 			    }
 			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {sensorsurvival}
-			    \casetableau {\centragehorizontal {CENTER}} {
-			    If a sensor is no more
-			    updated by \teletype {topo}, this can be caused by a volontary suppression
-			    or a misconfiguration of the equipment. So for security reasons,
-			    the polling is stopped on this sensor only after the "sensorsurvival"
-			    time in days.}
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {pollergroups}
-			    \casetableau {\centragehorizontal {CENTER}} {
-				Sensors sharing the same characteristics can be put in the same group :
-				\liste {
-					\item {the running time is short, so
-						running them in the same group
-						allows a high level of parallelization ;
-						for example, the trafic collection
-						sensors are usually put in the
-						same group
-					}
-					\item {the sensors are specialized and
-						the SNMP collection takes more time
-					}
-				}
-			    It is recommanded to start with the grouping provided
-			    in the default configuration and refine the
-			    configuration afterwards.
-				
-			    You must declare all your groups with the variable "pollergroups".
-			    The names of the different groups are separated by a ",".
+			We recommand to start with the grouping provided
+			in the default configuration and refine the
+			configuration afterwards.
+
+			You must declare all your groups with the
+			directive "pollergroups".  Names of the different
+			groups are separated by a ",".
+
+			FIXME: groups should be separated by a space
+			instead of a comma
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {gpopt_&lt;pollergroupname&gt;}
+		    \casetableau {} {The gpopt_* directives define
+			which sensor types are associated with each
+			group defined with the directive "pollergroups".
+			\liste {
+			    \item {If no sensor type is specified,
+				all sensor types will be executed by
+				the poller group.
 			    }
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {gpopt_<pollergroupname>}
-			    \casetableau {\centragehorizontal {CENTER}} {
-				    The gpopt_* variables define which sensor types are associated
-				    with each group defined with the variable "pollergroups".
-				    \liste {
-					\item {If no sensor type is specified, all sensor
-					types will be executed by the poller group.
-					}
-					\item {If you want that a poller group executes
-					only some of sensor types, write the list of
-					type names separated by a "," to the "gpopt_GROUP"
-					variable.
-					\br
-					Example : gpopt_GP2 ipmac,portmac.cisco
-					}
-					\item {If you want that a poller group
-					executes all sensor types except "ipmac"
-					and "portmac.cisco", write a "!" before each
-					type name of sensor separated by a "," to the
-					"gpopt_GROUP" variable.
-					\br
-					Example : gpopt_GP1 !ipmac,!portmac.cisco
-					}
-				    }
-				}
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {gpnbproc_<pollergroupname>}
-			    \casetableau {\centragehorizontal {CENTER}} {
-			    Set the number of process launched at the same time for each
-			    poller group. The data collection is shared between
-			    the different process which run in parallel.
-			    You can raise the number of process to lower the
-			    total execution time for all sensors.
+			    \item {If you want that a poller
+				group collects only some of sensor types,
+				write the list of type names separated
+				by a "," to the "gpopt_GROUP" directive.
+				\br
+				Example: gpopt_GP2 ipmac,portmac.cisco
 			    }
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {ifspeed_<ifaceprefixname>}
-			    \casetableau {\centragehorizontal {CENTER}} {
-			    Set the speed in Mbit/s associated to the prefix name of interface
-			    type. This configuration is useful to tune the max values
-			    of rrd databases when the SNMP ifspeed values collected on the
-			    interfaces are not reliable. For example:\br
-					ifspeed_Dot11Radio      300\br
-			    will limit the maximum speed for all interface called "Dot11Radio..."
-			    (cisco Aironet radio interface) to 300 Mb/s.	
-			    }
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {pollerlogfacility}
-			    \casetableau {\centragehorizontal {CENTER}} {
-			    Set the syslog facility for data collection.
-			    }
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {majdblogfacility}
-			    \casetableau {\centragehorizontal {CENTER}} {
-			    Set the syslog facility for sensor creation.
-			    }
-			}
-			\lignetableau {
-			    \casetableau {\centragehorizontal {CENTER}} {pollerlogpt}
-			    \casetableau {\centragehorizontal {CENTER}} {
-			    Set the default syslog level. (FIXME: change variable
-			    to pollerloglevel)
+			    \item {If you want that a poller group
+				collects all sensor types except "ipmac"
+				and "portmac.cisco", write a "!" before
+				each type name of sensor separated by a
+				"," to the "gpopt_GROUP" directive.
+				\br
+				Example: gpopt_GP1 !ipmac,!portmac.cisco
 			    }
 			}
 		    }
 		}
+		\lignetableau {
+		    \casetableau {} {gpnbproc_&lt;pollergroupname&gt;}
+		    \casetableau {} {Set the number of processes
+			launched simultaneously for each poller group. The
+			data collection task is shared between the
+			different processes which run in parallel.
+			You can raise the number of processes to reduce
+			the total execution time for all sensors.
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {ifspeed_&lt;ifaceprefixname&gt;}
+		    \casetableau {} {Set the speed (in Mbit/s)
+			associated to the prefix name of an interface
+			type. This configuration is useful to tune the
+			maximum values of rrd databases when the SNMP
+			ifspeed values collected on the interfaces are
+			not reliable.
+			\br
+			For example: ifspeed_Dot11Radio 300\br
+			will limit the maximum speed for all interfaces
+			called "Dot11Radio..."	(cisco Aironet radio
+			interface) to 300&nbsp;Mb/s.
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {pollerlogfacility}
+		    \casetableau {} {Set the syslog facility for
+			data collectors.
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {majdblogfacility}
+		    \casetableau {} {Set the syslog facility for
+			sensor creation.
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {pollerlogpt}
+		    \casetableau {} {Set the default syslog
+			level. (FIXME: change directive to
+			pollerloglevel)
+		    }
+		}
 	    }
-	\item {When the metro section of the configuration file is set
-	    up, it's time to activate the creation of new sensors and
-	    data collection.
+	}
+	\item {Activate the creation of new sensors and collection of
+	    data. For this, you must create a user that will run all the
+	    \italique {metro} programs and make this user the owner of
+	    all the metrodatadir and rrddir directory trees. Let us call
+	    this user \gras {m}.
 
-	    You must create a user that will run all the metro programs
-	    and make this user the owner of all the metrodatadir and
-	    rrddir directory trees. Let's call this user \gras {m}
-	    
-	    Install the sample crontab
-	    (.../share/examples/netmagis/crontab.metro) in your default
-	    cron system and set the user in the crontab to \gras {m}.
+	    Install the sample crontab (\teletype
+	    {.../share/examples/netmagis/crontab.metro}) in your default
+	    cron system. This crontab should be run by the user \gras {m}.
 
-	    After the fisrt execution of .../bin/metrocreatedb
-	    the polling can start.
-
-	    Now Metro is ready to work.
+	    After the fisrt execution of \teletype
+	    {.../bin/metrocreatedb}, polling can start.
 	}
     }
 
-    You can now create sensors in the equipment configurations :
+    The \italique {metro} package is now ready to work. You can create
+    sensors in the equipment configurations:
+
     \liste {
-	\item {To activate a traffic sensor on an interface in your
-	   equipement configuration, you have to add information in the
-	   interface description.
-           \br
-	   This information is a sensor name (or number) prefixed with
-	   \gras{M}, bracketed with "&lt;" and "&gt;" added to the \teletype {topo}
-           link information.
-           \br
-           Important: each sensor name must be unique.
+	\item {To activate a traffic sensor on an equipment interface,
+	    the only thing to do is to add information in the interface
+	    description on the equipment, as you have done with \italique
+	    {topo} module.
+
+	    This information is the string \gras {M} concatened with
+	    the name of the sensor. You can use any unique name for a
+	    sensor. For example, Netmagis authors use the link number
+	    (used with the \italique {topo} module) associated with the
+	    name of the equipement (since a link number is present on
+	    each end of the link), but you can use your own convention.
+
+	    For example:
 	    \tableau {
 		\* \taille {100}
 		\bordure {1} {}
@@ -2103,52 +2125,49 @@
 		}
 		\lignetableau {
 		    \casetableau {} {Juniper}
-		    \casetableau {} {
-                        \teletype {ge-0/1/0 \{ \br
-			~ ~ ~description "core link &lt;L233 M233.eqname&gt;; \br
-			~ ~ ~...\br
+		    \casetableau {} {\teletype {
+			ge-0/1/0 \{ \br
+			~ ~ description "core link &lt;L233 M233.eqname&gt;"; \br
+			\} \br
+		    	ge-0/1/1 \{ \br
+			~ ~ description "edge port &lt;X Meqname.desc&gt;"; \br
 			\}
 			}
-		    	\teletype {ge-0/1/1 \{ \br
-			~ ~ ~description "edge port &lt;X Meqname.desc&gt;; \br
-			~ ~ ~...\br
-			\}
-			}
-			}
+		    }
 		}
 		\lignetableau {
 		    \casetableau {} {Cisco}
-		    \casetableau {} {
-                        \teletype {interface GigabitEthernet0/1\br
-			~ ~description core link &lt;L233 M233.eqname&gt;}
+		    \casetableau {} {\teletype {
+			interface GigabitEthernet0/1\br
+			~ ~ description core link &lt;L233 M233.eqname&gt;
 			\br
-                        \teletype {interface GigabitEthernet0/2\br
-			~ ~description edge port &lt;X Meqname.desc&gt;}
-                        }
+                        interface GigabitEthernet0/2\br
+			~ ~ description edge port &lt;X Meqname.desc&gt;
+			}
+		    }
 		}
 		\lignetableau {
 		    \casetableau {} {HP}
-		    \casetableau {} {
-			\teletype {
+		    \casetableau {} {\teletype {
                         interface A1\br
-			~ ~name "core link &lt;L233 M233.eqname&gt;"}
-			\br
-			\teletype {
+			~ ~ name "core link &lt;L233 M233.eqname&gt;" \br
                         interface A2\br
-			~ ~name "edge port &lt;X Meqname.desc&gt;"}
+			~ ~ name "edge port &lt;X Meqname.desc&gt;"
 			}
+		    }
 		}
 	    }
-	    \br
+
 	}
-	\item {
-           To activate an ipmac sensor in your equipement configuration,
-           you have to add information in the SNMP Syslocation description.
-           \br
-	   This information is just a \gras{I}, bracketed with "&lt;"
-	   and "&gt;" added to syslocation string.
-           \br
+	\item {To activate an ipmac sensor in your equipement
+	    configuration, you have to add information in the SNMP
+	    sysLocation description.
+
+	   This information is just the letter \gras {I}, bracketed with
+	   "&lt;" and "&gt;" added to syslocation string.
+
            Important: The sensor works only if routing is enabled.
+
 	    \tableau {
 		\* \taille {100}
 		\bordure {1} {}
@@ -2168,41 +2187,37 @@
 		}
 		\lignetableau {
 		    \casetableau {} {Juniper}
-		    \casetableau {} {
-                        \teletype {
-				snmp \{\br
-    				~ ~ ~ location "coucou, I'm here &lt;I&gt;"; \br
-				\}
-				}
+		    \casetableau {} {\teletype {
+			    snmp \{\br
+			    ~ ~ location "hi, I'm here &lt;I&gt;"; \br
+			    \}
 			}
+		    }
 		}
 		\lignetableau {
 		    \casetableau {} {Cisco}
-		    \casetableau {} {
-                        \teletype {
-				snmp-server location coucou, I'm here &lt;I&gt;\br
-				}
+		    \casetableau {} {\teletype {
+			    snmp-server location hi, I'm here &lt;I&gt;\br
 			}
+		    }
 		}
 		\lignetableau {
 		    \casetableau {} {HP}
-		    \casetableau {} {
-			\teletype {
-				snmp-server location "I'm here &lt;I&gt;"\br
+		    \casetableau {} {\teletype {
+			    snmp-server location "I'm here &lt;I&gt;"\br
 			}
+		    }
 		}
 	    }
-	    }
-	    \br
+
 	}
-	\item {
-           To activate a \gras{portmac} sensor in your equipement
-           configuration, it is the same process is an ipmac sensor ;
-	   just use &lt;P&gt; instead of &lt;I&gt;.
-	    \br
-	    Important note : If you want activate both ipmac and portmac
-	    sensors on the same equipment insert the string "&lt;I P&gt;
-	    in syslocation description.
+	\item {To activate a \gras{portmac} sensor in your equipement
+	    configuration, it is the same process is an ipmac sensor;
+	    just use &lt;P&gt; (instead of &lt;I&gt;).
+
+	    Important note: if you want activate both ipmac and portmac
+	    sensors on the same equipment, insert the string "&lt;I P&gt;
+	    in the sysLocation description.
 	}
     }
 
