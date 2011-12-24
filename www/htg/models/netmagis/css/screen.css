@@ -62,7 +62,7 @@ td#titre-page h1 {
 	text-transform: uppercase;
 	color: #63698d;			/*  bleu logo*/
 	font-weight: bold;
-	font-size: 18px;
+	font-size: 24px;
 	letter-spacing: 2px;
 	line-height: 30px;
 }
@@ -106,7 +106,7 @@ td#texte-page {
 /* Le pied de page */
 #pied-page {
 	color: #63798d;			/* gris bleu */
-	font-size: 8px;
+	font-size: 12px;
 	vertical-align: middle;
 }
 
@@ -278,7 +278,7 @@ dt.menu-meteo a img {
         color: #00536c;			/* bleu foncé */
         text-align: center;
         vertical-align: middle;
-        font-size: 16px;
+        font-size: 24px;
         font-weight: bold;
 }
 
@@ -292,14 +292,14 @@ dt.menu-meteo a img {
 	color: #cc5229;			/* orange */
 	list-style: disc inside url(images/puce1.gif);
 	text-align: left;
-	font-size: 13px;
+	font-size: 20px;
 	font-weight: bold;
 }
 
 #texte-page h4 {
 	text-align: left;
 	color: #313131;			/* gris presque noirs */
-	font-size: 13px;
+	font-size: 16px;
 	font-weight: bold;
 }
 
