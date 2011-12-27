@@ -419,7 +419,7 @@ sub print_portmac_report
         	{
                 	foreach my $mac (keys %{$table_forwarding->{$host}{$vlan}})
                 	{
-                        	print REPORT "$time{TIME_T};$mac;$table_forwarding->{$host}{$vlan}{$mac}\n"
+                        	print REPORT "$time{TIME_T};$mac;$table_forwarding->{$host}{$vlan}{$mac};$vlan\n"
                 	}
                	 	close(REPORT);
         	}

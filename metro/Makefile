@@ -8,7 +8,7 @@ SUBST		= $(TCLSH) \
 
 SHARE	= crontab.metro
 
-SUBDIRS = cache lock log db spool graph wifi 
+SUBDIRS = cache lock log db spool graph wifi report
 
 all:
 	@echo ">>> Making all in `pwd`"

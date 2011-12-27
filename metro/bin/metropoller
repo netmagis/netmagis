@@ -55,6 +55,7 @@ $config{path_poll} 		= $global_conf{metrodatadir} . "/poller";
 $config{path_rrd_db} 		= $global_conf{metrodatadir} . "/db";
 $config{path_cache_probes} 	= $global_conf{metrodatadir} . "/cache";
 $config{dir_plugins}		= "%DESTDIR%/lib/netmagis" . "/plugins";
+$config{dir_report}		= $global_conf{metrodatadir} . "/report";
 # recuperation du groupe de pollers
 $config{options} 		= $global_conf{"gpopt_$group"};
 # arguments de connexion a la base PSQL
@@ -83,7 +84,11 @@ our %function_probes = (
 		'get_value_generic'	=> \&get_generic,
 		'nbauthwifi'		=> \&get_nbauthwifi,
 		'nbassocwifi'		=> \&get_nbassocwifi,
-		'plugin'		=> \&get_plugins
+		'plugin'		=> \&get_plugins,
+		'ipmac'			=> \&get_arp_table,
+		'portmac.cisco'		=> \&get_portmac_cisco,
+		'portmac.hp'		=> \&get_portmac_hp,
+		'portmac.juniper'	=> \&get_portmac_juniper
 );
 
 # load all probes
@@ -97,6 +102,8 @@ require $config{path_probes} . "/sensor-plugins.pl";
 require $config{path_probes} . "/sensor-if-broadcast.pl";
 require $config{path_probes} . "/sensor-if-multicast.pl";
 require $config{path_probes} . "/sensor-if-error.pl";
+require $config{path_probes} . "/sensor-arp-table.pl";
+require $config{path_probes} . "/sensor-portmac.pl";
 
 our $lock_cache_file = 0;
 our $maj_cache_file = 0;
@@ -194,10 +201,7 @@ my $elem;
 my $compteur = 0;
 foreach $elem (@FICHIERS)
 {
-        #if($elem=~m/^majDB/ || $elem=~m/^majMETRO$/ || $elem=~m/^majINDICATEUR$/)
-        #{
 	$compteur += ouvre_fichier_conf($elem);
-        #}
 }
 
 writelog("poller_$group$num_process",$config{'syslog_facility'},"info",
