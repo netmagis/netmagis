@@ -103,6 +103,10 @@ proc match-eq {type_model} {
 				style=filled fillcolor=lightgrey
 				fixedsize height=1}
 	}
+	juniper/EX2* -
+	juniper/EX4* {
+	    set attr {shape=box style=filled fillcolor=SteelBlue height=.25}
+	}
 	alcatel/switch {
 	    set attr {shape=box height=.35}
 	}
