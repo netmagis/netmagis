@@ -757,6 +757,8 @@ snit::type ::netmagis {
 		}
 	    }
 	    1 {
+	    	# Set at least the login
+	    	set tabuid(login) $login
 	    }
 	    default {
 		return $msg
