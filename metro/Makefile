@@ -6,7 +6,7 @@ SUBST		= $(TCLSH) \
 			$(DESTDIR)/etc/netmagis.conf \
 			$(DESTDIR)/bin/netmagis-config
 
-SHARE	= crontab.metro
+SHARE	= crontab.metro apache_metro.conf
 
 SUBDIRS = cache lock log db spool graph wifi report
 
@@ -19,7 +19,8 @@ install:
 	cd lib ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 	cd ws ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
 	mkdir -p $(DESTDIR)/share/examples/netmagis
-	$(NINSTALL) -m 0644 $(SUBST) $(SHARE) $(DESTDIR)/share/examples/netmagis
+	$(NINSTALL) -m 0644 -e "s|%DESTDIR%|$(DESTDIR)|" $(SUBST) \
+		$(SHARE) $(DESTDIR)/share/examples/netmagis
 	cd $(DESTDIR) ; mkdir -p var/netmagis/metro
 	cd $(DESTDIR)/var/netmagis/metro ; \
 	    for i in $(SUBDIRS) ; do mkdir -p $$i ; done
