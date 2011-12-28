@@ -379,16 +379,6 @@ db_schemas ()
 	PRIMARY KEY (idrr)
     ) ;
 
-    -- Groups having right to manage mail boxes (not used at this time)
-    CREATE TABLE dns.dr_mbox (
-	idgrp		INT,		-- group id
-	idmail		INT,		-- id of "mail adress"
-
-	FOREIGN KEY (idgrp)  REFERENCES global.groupe (idgrp),
-	FOREIGN KEY (idmail) REFERENCES dns.role_mail (idrr),
-	PRIMARY KEY (idgrp, idmail)
-    ) ;
-
     -- Mail relays for a domain
     CREATE TABLE dns.relais_dom (
 	iddom		INT,		-- domain id
