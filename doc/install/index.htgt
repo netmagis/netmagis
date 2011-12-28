@@ -249,7 +249,8 @@
 
 	    # metro \br
 	    aptitude -y install \\ \br
-	    ~ ~ ~ ~ libsnmp-session-perl libsnmp-perl libnet-snmp-perl librrdtool-oo-perl libdbd-pg-perl
+	    ~ ~ ~ ~ libsnmp-session-perl libsnmp-perl libnet-snmp-perl librrdtool-oo-perl \\ \br
+		~ ~ ~ ~  libdbd-pg-perl rrdtool
 
 	    # ldap authentication \br
 	    aptitude -y install openldap-utils slapd
@@ -2056,13 +2057,23 @@
 		\lignetableau {
 		    \casetableau {} {pollerlogfacility}
 		    \casetableau {} {Set the syslog facility for
-			data collectors.
+			data collectors. Modify your syslog configuration accordingly. Example for syslog-ng:\br
+			\teletype {
+				~ ~ filter f_local0 \{ facility(local0); \};\br
+				~ ~ destination d_pollerlog \{ file(".../metro/log/poller.log"); \};\br
+				~ ~ log \{ source(s_src); filter(f_local0); destination(d_pollerlog); \};\br
+			}
 		    }
 		}
 		\lignetableau {
 		    \casetableau {} {majdblogfacility}
 		    \casetableau {} {Set the syslog facility for
-			sensor creation.
+			sensor creation. Modify your syslog configuration accordingly. Example for syslog-ng:\br
+			\teletype {
+				~ ~ filter f_local1 \{ facility(local1); \};\br
+				~ ~ destination d_majdblog \{ file(".../metro/log/majdb.log"); \};\br
+				~ ~ log \{ source(s_src); filter(f_local1); destination(d_majdblog); \};\br
+			}
 		    }
 		}
 		\lignetableau {
@@ -2070,6 +2081,13 @@
 		    \casetableau {} {Set the default syslog
 			level. (FIXME: change directive to
 			pollerloglevel)
+		    }
+		}
+		\lignetableau {
+		    \casetableau {} {metrohost}
+		    \casetableau {} {Set to the server name hosting the metro package ; if 
+				metro is installed on the same server as the www package
+				set it to "localhost".
 		    }
 		}
 	    }
@@ -2086,6 +2104,15 @@
 
 	    After the fisrt execution of \teletype
 	    {.../bin/metrocreatedb}, polling can start.
+	}
+	\item {Allow access from the www server to the metro webservice:
+		NB: the www host must be trusted by the metro server.
+		The access to the webservice is not authentified.\br
+		Copy the file .../share/examples/apache-metro.conf to your
+		apache configuration directory and adapt it to your environment.
+		The line starting with \teletype {Allow from} must have the IP address
+		of the server running the www package. If www and metro both run on the
+		same host, just put \teletype {localhost}.
 	}
     }
 
