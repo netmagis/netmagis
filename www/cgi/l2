@@ -499,7 +499,11 @@ d cgi-register {} {
 		switch -- $format {
 		    pdf {
 			set ps2pdf [get-local-conf "ps2pdf"]
-			set fd [open "|$prog -Tps $tmp.dot 2> /dev/null | $ps2pdf - -" "r"]
+			set cmd "|$prog -Tps $tmp.dot 2>$tmp.err | $ps2pdf - -"
+			if {[catch {open $cmd "r"} fd]} then {
+			    set msg [read-file "$tmp.err"]
+			    d error [mc "Error executing command '%1$s': %2$s" $cmd $msg]
+			}
 			fconfigure $fd -translation binary
 			set pdf [read $fd]
 			close $fd
@@ -507,7 +511,11 @@ d cgi-register {} {
 			d end
 		    }
 		    png {
-			set fd [open "| $prog -Tpng $tmp.dot 2>/dev/null" "r"]
+			set cmd "| $prog -Tpng $tmp.dot 2>$tmp.err"
+			if {[catch {open $cmd "r"} fd]} then {
+			    set msg [read-file "$tmp.err"]
+			    d error [mc "Error executing command '%1$s': %2$s" $cmd $msg]
+			}
 			fconfigure $fd -translation binary
 			set img [read $fd]
 			close $fd
@@ -515,21 +523,25 @@ d cgi-register {} {
 			d end
 		    }
 		    default {
-			set map [exec sh -c "$prog -Tcmapx < $tmp.dot 2> /dev/null"]
+			set cmd "$prog -Tcmapx <$tmp.dot 2>$tmp.err"
+			if {[catch {exec sh -c $cmd} map]}  {
+			    set msg [read-file "$tmp.err"]
+			    d error [mc "Error executing command '%1$s': %2$s" $cmd $msg]
+			}
 			d result $conf(page1) [list \
-						    [list %MSGSTA% $msgsta] \
-						    [list %DESC%  $desc] \
-						    [list %URLIMG% $urlimg] \
-						    [list %URLPDF% $urlpdf] \
-						    [list %MAP%   $map] \
-						    [list %EQ%    ""] \
-						    [list %VLAN%  $qvlan] \
-						    [list %ADDR%  ""] \
-						]
+					    [list %MSGSTA% $msgsta] \
+					    [list %DESC%  $desc] \
+					    [list %URLIMG% $urlimg] \
+					    [list %URLPDF% $urlpdf] \
+					    [list %MAP%   $map] \
+					    [list %EQ%    ""] \
+					    [list %VLAN%  $qvlan] \
+					    [list %ADDR%  ""] \
+					]
 		    }
 		}
 
-		file delete -force -- $tmp.dot
+		file delete -force -- $tmp.dot $tmp.err
 	    }
 	}
 	default {
