@@ -433,7 +433,7 @@ sub get_snmp_ifindex
 # que la disponibilite reseau
 sub creeBaseTrafic
 {
-    	my ($fichier,$speed,$period)=@_;
+    	my ($fichier,$speed,$facility,$period)=@_;
 
         if($period eq "* * * * *")
     	{
@@ -442,12 +442,15 @@ sub creeBaseTrafic
         else
         {	
 		my $rrdtool = read_conf_file($conf_file,"rrdtool");
-                if(not system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800"))
+                if(system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800") != 0)
 		{
 			  writelog("creeBaseTrafic","$facility","info",
-                		"\t ERREUR : creation de $fichier : $!");		
+                		"\t ERREUR : cannot execute $rrdtool : $!");		
 		}
-        	setBaseMaxSpeed($fichier,$speed);
+		else
+		{
+        		setBaseMaxSpeed($fichier,$speed);
+		}
         }
 }
 
