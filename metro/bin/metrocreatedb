@@ -43,8 +43,8 @@ our %sensor_types = (
 	'ifNom-snmp64'		=> { 'graph'=>'trafic','rrd'=>'1','period'=>'*/5 * * * *' },
 	'nbauthwifi'		=> { 'graph'=>'nbauthwifi','rrd'=>'1','period'=>'*/5 * * * *' },
 	'nbassocwifi'		=> { 'graph'=>'nbassocwifi','rrd'=>'1','period'=>'*/5 * * * *' },
-	'broadcast'		=> { 'graph'=>'broadcast','rrd'=>'1','period'=>'*/5 * * * *' },
-	'multicast'		=> { 'graph'=>'multicast','rrd'=>'1','period'=>'*/5 * * * *' },
+	'broadcast'		=> { 'graph'=>'broadcast','rrd'=>'1','period'=>'* * * * *' },
+	'multicast'		=> { 'graph'=>'multicast','rrd'=>'1','period'=>'* * * * *' },
 	'ipmac'			=> { 'graph'=>'ipmac','rrd'=>'1','period'=>'*/5 * * * *' },
 	'portmac.cisco'		=> { 'graph'=>'portmac','rrd'=>'0','period'=>'*/5 * * * *' },
 	'portmac.juniper'	=> { 'graph'=>'portmac','rrd'=>'0','period'=>'*/5 * * * *' },
@@ -144,7 +144,7 @@ if(check_lock_file($lockdir,"update_metro.lock","metrocreatedb") == 0)
         	message_erreur("ERREUR : Liste des sondes envoyée par TOPO vide => Aucune mise à jour.");
 
         	writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
-                        "\t ERREUR : fichier de mise à jour des sondes vide.");
+                        "\t ERREUR : sensor update file empty");
         	writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
                         "\t Fin du programme ######################");
         	
@@ -409,7 +409,7 @@ sub charger_liste_sup_prod
      else
      {
 	 writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
-            "\t ERREUR : echec ouverture du fichier $global_conf{SUP_EQ}");
+            "\t WARNING : echec ouverture du fichier $global_conf{SUP_EQ}");
      }	
 }
 
@@ -472,9 +472,9 @@ sub charger_liste_majMETRO
     }
     else
     {
-	message_erreur("ERREUR : ouverture du fichier $sensorfile echouee");
+	message_erreur("WARNING : ouverture du fichier $sensorfile echouee");
 	writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
-	    "\t ERREUR : ouverture du fichier $sensorfile echouee");
+	    "\t WARNING : ouverture du fichier $sensorfile echouee");
     }
 
     # DEBUG
@@ -1316,7 +1316,7 @@ sub trafic
             }
             else
             {
-		#$sonde_majMETRO{$base}{period} = "*/5 * * * *";
+		$sonde_majMETRO{$base}{period} = "*/5 * * * *";
             }
 	    
 	    # suppression de l'en du tableau $sonde_maj_sonde
@@ -1335,7 +1335,7 @@ sub trafic
 	    }
 	    else
 	    {
-		creeBaseTrafic($base,$speed,$sonde_majMETRO{$base}{period});
+		creeBaseTrafic($base,$speed,$global_conf{majdblogfacility},$sonde_majMETRO{$base}{period});
 		
 		writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
                     "\t INFO : Creation de $base");
@@ -1407,6 +1407,7 @@ sub traficPaquets
 	    $sonde_majMETRO{$base}{params} = $interf;
 	    $sonde_majMETRO{$base}{type} = $typeSonde;
 	    $sonde_majMETRO{$base}{graph} = $typeSonde;
+	    $sonde_majMETRO{$base}{period} = "*/5 * * * *";
 	    
 	    writelog("cree-base-metro","","info",
               	"\t INFO : Base $base, type = $sonde_majMETRO{$base}{type}");

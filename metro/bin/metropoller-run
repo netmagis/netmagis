@@ -32,7 +32,12 @@ for($i=0;$i<@groupes;$i++)
     my $j;
     for($j=1;$j<=$nb_process;$j++)
     {
-	system("$dir_bin/metropoller $groupes[$i] $j $nb_process &");
+	if(system("$dir_bin/metropoller $groupes[$i] $j $nb_process &") == 0)
+	{
+		writelog("metropoller-run",$config{pollerlogfacility},"info",
+        		"\t -> STARTING metropoller group '$groupes[$i]' process $j of $nb_process");
+	}
+
 	sleep(1);
     }
 }

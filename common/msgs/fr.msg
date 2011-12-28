@@ -558,6 +558,7 @@
  {Error while reading wifi sensors: %s} {Erreur lors de la lecture des sondes Wifi : %s}
  {Error while reading Vlans: %s} {Erreur lors de la lecture des Vlans : %s}
  {Error while reading networks: %s} {Erreur lors de la lecture des réseaux : %s}
+ {Error executing command '%1$s': %2$s} {Erreur d'exécution de la commande %1$s : %2$s}
  {No equipment found} {Aucun équipement trouvé}
  {equipments} {équipements}
  {develop} {tout dérouler}
