@@ -141,10 +141,8 @@ sub get_graph
  
     for($i=0;$i<$t;$i++)
     {
-	my $file = $global_conf{$files_rrd_graph[$i]};
-   
 	# cherche le graph dans le fichier
-	open(INDEXGRAPH,"$file");
+ 	open(INDEXGRAPH,"$dir_graph/$files_rrd_graph[$i]");
 
 	my $line;
 	while($line = <INDEXGRAPH>)
