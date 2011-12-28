@@ -6,7 +6,7 @@ SUBST		= $(TCLSH) \
 			$(DESTDIR)/etc/netmagis.conf \
 			$(DESTDIR)/bin/netmagis-config
 
-SHARE	= crontab.metro apache_metro.conf
+SHARE	= crontab.metro apache-metro.conf
 
 SUBDIRS = cache lock log db spool graph wifi report
 
