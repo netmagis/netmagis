@@ -144,7 +144,7 @@ if(check_lock_file($lockdir,"update_metro.lock","metrocreatedb") == 0)
         	message_erreur("ERREUR : Liste des sondes envoyée par TOPO vide => Aucune mise à jour.");
 
         	writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
-                        "\t ERREUR : fichier de mise à jour des sondes vide.");
+                        "\t ERREUR : sensor update file empty");
         	writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
                         "\t Fin du programme ######################");
         	
@@ -409,7 +409,7 @@ sub charger_liste_sup_prod
      else
      {
 	 writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
-            "\t ERREUR : echec ouverture du fichier $global_conf{SUP_EQ}");
+            "\t WARNING : echec ouverture du fichier $global_conf{SUP_EQ}");
      }	
 }
 
@@ -472,9 +472,9 @@ sub charger_liste_majMETRO
     }
     else
     {
-	message_erreur("ERREUR : ouverture du fichier $sensorfile echouee");
+	message_erreur("WARNING : ouverture du fichier $sensorfile echouee");
 	writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
-	    "\t ERREUR : ouverture du fichier $sensorfile echouee");
+	    "\t WARNING : ouverture du fichier $sensorfile echouee");
     }
 
     # DEBUG
