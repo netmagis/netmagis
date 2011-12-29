@@ -12,3 +12,5 @@ install:
 	$(NINSTALL) -m 0755 -e 's|%DESTDIR%|$(DESTDIR)|' $(SUBST) *.pl $(DESTDIR)/lib/netmagis
 	mkdir -p $(DESTDIR)/lib/netmagis/probes
 	$(NINSTALL) -m 0755 -e 's|%DESTDIR%|$(DESTDIR)|' $(SUBST) probes/*.pl $(DESTDIR)/lib/netmagis/probes
+	mkdir -p $(DESTDIR)/lib/netmagis/plugins
+	$(NINSTALL) -m 0755 -e 's|%DESTDIR%|$(DESTDIR)|' $(SUBST) plugins/* $(DESTDIR)/lib/netmagis/plugins

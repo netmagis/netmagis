@@ -343,6 +343,7 @@ sub get_time
         return %t;
 }
 
+
 ###########################################################
 # donne une limite de débit maximum aux mesures inscrites 
 # dans une base
@@ -355,6 +356,7 @@ sub setBaseMaxSpeed
     system("$rrdtool tune $base --maximum input:$maxspeed");
     system("$rrdtool tune $base --maximum output:$maxspeed");
 }
+
 
 ###########################################################
 # retourne la vitesse d'une interface
@@ -405,6 +407,7 @@ sub get_snmp_ifspeed
     }
 }
 
+
 ###########################################################
 # retourne l'index de l'interface par rapport a un nom
 sub get_snmp_ifindex
@@ -440,7 +443,7 @@ sub creeBaseTrafic
 
         if($period eq "* * * * *")
     	{
-                creeBaseTrafic1min($fichier,$speed);
+                creeBaseTrafic1min($fichier,$speed,$facility);
     	}
         else
         {	
@@ -462,11 +465,18 @@ sub creeBaseTrafic
 # echantillon a 1 minute
 sub creeBaseTrafic1min
 {
-    	my ($fichier,$speed)=@_;
+    	my ($fichier,$speed,$facility)=@_;
 	
 	my $rrdtool = read_conf_file($conf_file,"rrdtool");
-    	system("$rrdtool create $fichier -s 60 DS:input:COUNTER:120:U:U DS:output:COUNTER:120:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-    	setBaseMaxSpeed($fichier,$speed);
+	
+    	if(system("$rrdtool create $fichier -s 60 DS:input:COUNTER:120:U:U DS:output:COUNTER:120:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800") == 0)
+	{
+
+	}
+	else
+	{
+    		setBaseMaxSpeed($fichier,$speed);
+	}
 }
 
 
