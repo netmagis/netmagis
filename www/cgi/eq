@@ -698,7 +698,7 @@ proc format-one-eq {eqname iface _tabuid} {
 	#
 	# Final result
 	#
-	append text [::webapp::helem "li" [::webapp::helem "p" $txt]]
+	append text [::webapp::helem "li" [::webapp::helem "p" $txt] STYLE "padding: 0 ; background: none ; list-style: outside url(/images/dash.gif) disc;"]
     }
 
     set text [::webapp::helem "ul" $text]
