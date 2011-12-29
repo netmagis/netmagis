@@ -187,38 +187,51 @@ metrodatadir	%DESTDIR%/var/netmagis/metro
 rrdtool        	/usr/bin/rrdtool
 rrddb		%DESTDIR%/var/netmagis/metro/db
 # rrdtool database : time of retention of the data (years)
-rrddbretention	10
+# rrddbretention	10
 
 # time of sensor activity in days after disappearance in topo database
 sensorsurvival 	30
 
-# configuration of polling processes
+# Configuration of polling processes 
 #
-# create groups and associate to them type of sensors.
-# list of groups
-pollergroups	default,ap,plugins
-# by default all sensors are associated to a group
-# A group can be specialized with a list of type of sensors
-# add a "!" before a type of sensor to not execute sensors associated with it
-gpopt_ap	assoc_ap,nbauthwifi,nbassocwifi
-gpopt_default   !assoc_ap,!stp_catalyst,!nbauthwifi,!nbassocwifi,!indicateur
-gpopt_plugins	indicateur
-# set the number of processes poller launched for each group
-gpnbproc_ap  	1
+## create groups and associate to them type of sensors.
+### list of groups
+pollergroups	default,plugins
+#
+### by default all type of probes are associated to the group default
+### except the type "plugin"
+gpopt_default   !plugin
+### the probe type "plugin" is associated to the group plugins
+gpopt_plugins	plugin
+#
+## Set here the number of processes poller launched for each group
 gpnbproc_default	3
 gpnbproc_plugins	1
+
+## Here is a more specific group configuration example :
+## 3 groups are created.
+## - The default group executes all type of probes except "plugin","ipmac",
+## "portmac.cisco","portmac.hp",portmac.juniper".
+## - The ipmacport group executes only the type of probes "ipmac","portmac.cisco",
+## "portmac.hp",portmac.juniper".
+## - The plugin group executes only the type of probes "plugin".
+# pollergroups	default,ipmacport,plugins
+# gpopt_default   !plugin,!ipmac,!portmac.cisco,!portmac.hp,!portmac.juniper
+# gpopt_ipmacport ipmac,portmac.cisco,portmac.hp,portmac.juniper
+# gpopt_plugins	plugin
+# gpnbproc_default	3
+# gpnbproc_ipmacport  	1
+# gpnbproc_plugins	1
 
 # set SNMP timeout
 snmptimeout	4
 
-# for wifi sensors. Declaration of ssids.
-ssidwifi	osiris,osiris-sec,osiris-lab,eduroam
-
 # optional : set the interfaces speed (Mbps) 
 # syntax : ifspeed_<interface_prefix>
 ifspeed_Dot11Radio      300
+ifspeed_FastEthernet	100
 
 # log configuration
-pollerlogfacility 	local0  # FIXME 
-majdblogfacility	local1  # FIXME
-pollerlogpt		info 	# FIXME
+pollerlogfacility 	local0  # log for polling
+majdblogfacility	local1  # log for probes creation
+pollerlogpt		info 	# default log level

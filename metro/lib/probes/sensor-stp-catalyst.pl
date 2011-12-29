@@ -226,25 +226,6 @@ sub get_snmp_rootPort
 }
 
 
-# convertion de la reponse SNMP en adresse Mac
-sub set_Id2Mac
-{
-    my ($Id) = @_;
-    
-    my @bridgeId = split(//,$Id);
-    my $t_bridgeId = @bridgeId;
-    $hexa = "";
-    for($i=$t_bridgeId - 12;$i<$t_bridgeId;$i = $i+2)
-    {
-	$hexa = "$hexa" . "$bridgeId[$i]" . "$bridgeId[$i+1]:";
-    }
-    my ($h1,$h2,$h3,$h4,$h5,$h6) = split(/:/,$hexa);
-    my $mac="$h1:$h2:$h3:$h4:$h5:$h6";
-
-    return $mac;
-}
-
-
 sub get_snmp_port_state
 {
     my ($session,$host,$community,$vlan,$state_oid,$bridgeId,$rootBridgeId,$rootPort) = @_;

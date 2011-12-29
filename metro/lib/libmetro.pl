@@ -281,6 +281,38 @@ sub convert_nb_to_exp
 }
 
 
+##############################################
+# convert SNMP phys addr octet string to
+# readable mac address
+sub set_Id2Mac
+{
+    my ($Id) = @_;
+
+    my @hId = split(//,$Id);
+    my $t_hId = @hId;
+    my $hexa = "";
+    my $i;
+
+    for($i=$t_hId - 12;$i<$t_hId;$i = $i+2)
+    {
+        $hexa = "$hexa" . "$hId[$i]" . "$hId[$i+1]:";
+    }
+
+    my ($h1,$h2,$h3,$h4,$h5,$h6) = split(/:/,$hexa);
+
+    my $mac="$h1:$h2:$h3:$h4:$h5:$h6";
+
+    if($mac =~ /[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+/)
+    {
+	return $mac;
+    }
+    else
+    {
+	return 0;
+    }
+}
+
+
 ###########################################################
 #
 # Renvoie la date decomposee par champs dans un tableau nominatif.
@@ -302,6 +334,8 @@ sub get_time
 
         $t{YEAR} += 1900;
         $t{MON} += 1;
+
+	$t{TIME_T} = $time;
 
         return %t;
 }
@@ -399,7 +433,7 @@ sub get_snmp_ifindex
 # que la disponibilite reseau
 sub creeBaseTrafic
 {
-    	my ($fichier,$speed,$period)=@_;
+    	my ($fichier,$speed,$facility,$period)=@_;
 
         if($period eq "* * * * *")
     	{
@@ -408,8 +442,15 @@ sub creeBaseTrafic
         else
         {	
 		my $rrdtool = read_conf_file($conf_file,"rrdtool");
-                system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-        	setBaseMaxSpeed($fichier,$speed);
+                if(system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800") != 0)
+		{
+			  writelog("creeBaseTrafic","$facility","info",
+                		"\t ERREUR : cannot execute $rrdtool : $!");		
+		}
+		else
+		{
+        		setBaseMaxSpeed($fichier,$speed);
+		}
         }
 }
 

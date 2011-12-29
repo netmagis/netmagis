@@ -181,7 +181,7 @@ extern int lineno ;
 void error (int syserr, char *msg) ;
 void inconsistency (char *fmt, ...) ;
 void *my_malloc (size_t s) ;
-void my_resize (char *p, size_t s) ;
+char *append (char *old, char *a) ;
 
 /******************************************************************************
 Symbol table functions

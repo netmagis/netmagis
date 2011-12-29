@@ -123,7 +123,7 @@ void output_portmac (FILE *fp, struct node *bridgenode)
     struct linklist *ll ;
     struct node *n ;
     vlanset_t vlanset;
-    char *iflist ;
+    char *iflist = NULL;
     vlan_t v;
     
     /* get all VLAN ids */
@@ -143,8 +143,6 @@ void output_portmac (FILE *fp, struct node *bridgenode)
     {
     	if(vlan_isset (vlanset, v)) 
 	{
-	    iflist = NULL ;
-
 	    /* process each L2 node */
 	    for (ll = bridgenode->linklist ; ll != NULL ; ll = ll->next)
 	    {
@@ -159,7 +157,6 @@ void output_portmac (FILE *fp, struct node *bridgenode)
 		{
 		    struct node *L1node ;
 
-
 		    L1node = get_neighbour (L2node, NT_L1) ;
 
 		    /* only edge L1 interface */
@@ -170,19 +167,12 @@ void output_portmac (FILE *fp, struct node *bridgenode)
 		    {
 			    char *ifname = L1node->u.l1.ifname;
 
-			    if(iflist == NULL)
+			    if(iflist != NULL)
 			    {
-				iflist=my_malloc(strlen(ifname)+2) ;
+			    	iflist = append(iflist, ",") ;
 			    }
-			    else
-			    {
-				my_resize(iflist, strlen(iflist)+strlen(ifname)+2) ;
-			     	strcat(iflist, ",") ;
-			    }
-				
+			    iflist = append(iflist, ifname) ;
 
-			    /* add to interface list */
-			    strcat(iflist, ifname) ;
 			    /* mark node */
 			    MK_SET(L1node, MK_PORTMAC) ;
 		    }
@@ -204,6 +194,7 @@ void output_portmac (FILE *fp, struct node *bridgenode)
 			) ;
 
 		free(iflist);
+		iflist = NULL;
 	    }
 
 	    /* clear mark */
@@ -216,6 +207,10 @@ void output_portmac (FILE *fp, struct node *bridgenode)
 	}
     }
 
+    if(iflist != NULL)
+    {
+    	free(iflist);
+    }
 }
 
 
@@ -383,7 +378,7 @@ int main (int argc, char *argv [])
 	}
 	else
 	{
-	    if(eq->ipmac && MK_ISSELECTED (neq))
+	    if(eq->ipmac && MK_ISSELECTED (eq))
 		output_ipmac (stdout, eq) ;
 	}
     }

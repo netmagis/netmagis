@@ -8591,6 +8591,30 @@ proc topo-verbositer {msg level} {
     }
 }
 
+#
+# Read a whole file and return its content
+#
+# Input: 
+#   - filename : file name
+# Output: none
+#
+# Return value: file content as a string or empty if error
+#
+# History
+#   2011/10/21 : jean : design
+#
+
+proc read-file {filename} {
+
+    set r ""
+    if {! [catch {open $filename "r"} fd]} then {
+    	set r [read $fd]
+    	close $fd
+    }
+    
+    return $r
+}
+
 ##############################################################################
 # Status management
 ##############################################################################
