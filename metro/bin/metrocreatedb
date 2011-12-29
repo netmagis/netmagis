@@ -136,8 +136,6 @@ if(check_lock_file($lockdir,"update_metro.lock","metrocreatedb") == 0)
     	# chargement de la liste des nouvelles sondes via la base DNS
     	my $lecture_maj_sondes = load_dns_sql_sensors();
 
-	print "load_dns_sql_sensors()\n";
-
     	# si le chargement de la liste des nouvelles sondes echoue.
     	if($lecture_maj_sondes == -1)
     	{
@@ -166,7 +164,8 @@ if(check_lock_file($lockdir,"update_metro.lock","metrocreatedb") == 0)
     	# suppression des sondes de metrologie perimees
     	test_bases_expirees();
 
-	print "test_bases_expirees\n";
+	# create plugins portmac and ipmac for mac database
+        enable_plugin_ipmac_portmac();
 
     	# creation ou suppression de sondes de metrologie
     	creeSupprSonde();
@@ -1049,6 +1048,63 @@ sub ajouter_sonde
         }
     }
 }
+
+###########################################################
+# create plugin probe 
+# error codes : 
+# 0 ok
+sub enable_plugin_ipmac_portmac
+{
+   	#select valeur from global.config where clef='macactive'
+   	my $db =  DBI->connect("dbi:Pg:dbname=$global_conf{dnsdbname};host=$global_conf{'dnsdbhost'}",
+                $global_conf{'dnsdbuser'}, $global_conf{'dnsdbpassword'});
+   	
+	if($db)
+   	{
+       	
+		writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
+               		"\t -> INFO : Connect to $global_conf{dnsdbname} database. Read global.conf table.");
+
+      		my $sql = "SELECT valeur from global.config 
+               		WHERE clef='macactive'";
+
+       		my $cursor = $db->prepare($sql);
+       		$cursor->execute;
+
+       		my $value = $cursor->fetchrow; 
+       
+		if($value == 1)
+       		{
+   			# write portmac-plugin
+   			$sonde_majMETRO{'plugin-portmac'}{type} = "plugin";
+   			$sonde_majMETRO{'plugin-portmac'}{ip} = "x";
+   			$sonde_majMETRO{'plugin-portmac'}{community} = "x";
+   			$sonde_majMETRO{'plugin-portmac'}{params} = "";
+   			$sonde_majMETRO{'plugin-portmac'}{period} = "*/5 * * * *";
+   			$sonde_majMETRO{'plugin-portmac'}{graph} = "none";
+   			# write ipmac-plugin
+   			$sonde_majMETRO{'plugin-ipmac'}{type} = "plugin";
+   			$sonde_majMETRO{'plugin-ipmac'}{ip} = "x";
+   			$sonde_majMETRO{'plugin-ipmac'}{community} = "x";
+   			$sonde_majMETRO{'plugin-ipmac'}{params} = "";
+   			$sonde_majMETRO{'plugin-ipmac'}{period} = "*/5 * * * *";
+   			$sonde_majMETRO{'plugin-ipmac'}{graph} = "none";
+
+			writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
+                        	"\t -> INFO : Active the sessions data storage to mac database");
+		}
+
+   		return 0;		
+     	}
+     	else
+     	{
+		writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
+                        "\t -> ERROR : Connect to $global_conf{dnsdbname} failed.");
+    	}
+	
+	return 1;
+}
+
 
 ###########################################################
 # create probe to get portmac/mac associations on switches 
