@@ -132,36 +132,57 @@ namespace eval webapp {
 	<style type="text/css">
 	<!--
 
-	ul#%ID% ul {
-	  background: url("%TREEIMAGES%/tree-line.gif") repeat-y 0px 0px;
-	  padding-left: 24px;
-	  margin-left: 0;
-	}
+        html body ul#%ID% ul {
+          background: url("%TREEIMAGES%/tree-line.gif") repeat-y 0px 0px;
+          padding-left: 24px;
+          margin-left: 0;
+        }
 
-	ul#%ID% ul.last {
-	  background: none;
-	}
+        html body ul#%ID% ul.last {
+          background: none;
+        }
 
-	ul#%ID% li {
-	  list-style: none;
-	  padding: 0;
-	  margin: 0;
-	  line-height: 100%;
-	}
+        html body ul#%ID% li {
+          background: none;
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
 
-	ul#%ID% a {
-	  padding: 0;
-	  margin: 0;
-	}
+        html body ul#%ID% li ul li {
+          background: none;
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
 
-	ul#%ID% img {
-	  padding: 0;
-	  margin: 0;
-	}
+        html body ul#%ID% li ul li ul li{
+          background: none;
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
 
-	ul#%ID% img.click {
-	  cursor: pointer;
-	}
+        html body ul#%ID% li ul li ul li ul li{
+          background: none;
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+
+        html body ul#%ID% a {
+          padding: 0;
+          margin: 0;
+        }
+
+        html body ul#%ID% img {
+          padding: 0;
+          margin: 0;
+        }
+
+        html body ul#%ID% img.click {
+          cursor: pointer;
+        }
 
 	-->
 	</style>
