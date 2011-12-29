@@ -6,6 +6,9 @@
 # de métrologie
 ###########################################################
 
+use Sys::Syslog;
+use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
+
 ###########################################################
 # fonction de lecture de fichier de conf
 # prend un fichier de conf et une variable recherchee en param
@@ -766,7 +769,7 @@ sub check_host
     	}
     	else
     	{
-        	writelog("check_host","$facility","info",
+        	writelog("check_host",$facility,"info",
             	"\t ERREUR : Echec interrogation SNMP pour sysoid ($param)");
         	
 		return -1;
@@ -786,7 +789,7 @@ sub writelog
         }
         else
         {
-            print "Impossible de loger\n";
+            print "Impossible de logger\n";
         }
 }
 
@@ -808,7 +811,200 @@ sub read_tab_asso
         }
 }
 
+#############################################################
+# Connect to database
+sub db_connect
+{
+        my ($dbname, $dbhost, $dbuser, $dbpassword) = @_;
+
+	my $db =  DBI->connect("dbi:Pg:dbname=$dbname;host=$dbhost",
+		$dbuser, $dbpassword)
+			|| die ("Cannot connect to '$dbname': ". $DBI::errstr);
+
+	return $db ;
+}
+
+#############################################################
+# Execute a SQL command, log the error 
+# return 0 if error, 1 otherwise
+# Parameters:
+#	db		: handle of an opened database
+#	sql		: sql command
+sub db_exec
+{
+	my ($db,$sql) = @_;
+
+	my $r = 0;
+
+	if($db->do($sql)) {
+		$r = 1;
+	} else {
+		writelog($current_process_name, $current_log_facility, "err",
+				"\t ERROR: (db_exec) failed in query '$sql': ".
+				$DBI::errstr);
+	}
+
+	return $r;
+}
+
+#############################################################
+# Set the current log facility
+sub set_log_facility 
+{
+	my $facility = shift;
+
+	our $current_log_facility = $facility;
+}
+#############################################################
+# Set the current process name
+sub set_process_name
+{
+	my $name = shift;
+
+	our $current_process_name = $name;
+}
 
 
+#############################################################
+# List a directory
+# return a list of file names matching a pattern or 
+# an empty list if the directory cannot be read
+sub lsfiles 
+{
+        my ($dir, $pattern) = @_;
+
+        my @l = () ;
+        my $d = $dir;
+        $d =~ s,/$,,;
+        if(opendir(DIR, $dir)) {
+                @l = map {$d . "/" . $_} grep (/$pattern/, readdir(DIR));
+                closedir(DIR);
+        } else {
+		writelog($current_process_name,$current_log_facility,"err",
+			"\t ERROR : (lsfiles) cannot list directory $dir");
+	}
+
+        return @l;
+}
+
+#############################################################
+# Load sessions from file
+#
+# Parameters : file name
+#
+# Each file has the following format : 
+#	timestamp;field1;field2;...
+# Example for ipmac
+#	1323794702;130.79.73.127;00:e0:4c:39:0b:1e
+# Store each line into a hash where :
+# 	- the key is the concatenation of all the fields 
+#		except timestamp, separated with ";"
+#	- the value is the timestamp
+# Example :
+#	  $hash{"130.79.73.127;00:e0:4c:39:0b:1e"} = "2010-12-31 14:21:00"
+#
+# Return a hash reference
+#
+sub load_sessions
+{
+	my $file = shift;
+
+	if(open(F,$file)) {
+		writelog($current_process_name,$current_log_facility,"err",
+			"\t ERROR: (load_session) cannot open '$file' ($!)");
+	}
+
+	my %sessions ;
+	while(<F>) {
+		# format : 1323794702;130.79.73.127;00:e0:4c:39:0b:1e
+		my ($t,$data) = (/^(\d+);(.*)/);
+		# Convert time_t to SQL timestamp
+		$sessions{$data} = strftime("%Y-%m-%d %H:%M:%S", localtime($t));
+	}
+	close(F);
+
+	my $r;
+	if(%sessions) {
+		$r = \%sessions;
+	}
+
+	return $r;
+}
+
+#############################################################
+# Extract equipment address from report file name
+sub guess_eq
+{
+	my $file = shift;
+
+	$file =~ /.*ipmac_([0-9.]+)/;
+
+	return $1;
+}
+
+#############################################################
+# Update all sessions in database
+# Parameters:
+#	db		: handle of an opened database
+#	table		: table name
+#	src		: source of the polled session
+#	polled_sessions : hash of session polled
+#
+sub update_sessions
+{
+	my ($db,$table,$src,$polled_sessions) = @_;
+	
+	db_exec($db,"START TRANSACTION");
+
+	# Create a temporary table
+	db_exec($db,"CREATE TEMPORARY TABLE polled (LIKE $table)");
+
+	# Load polled session data into temporary table
+	my $copyfields = "start,stop,src,closed,data";
+
+	db_exec($db,"COPY polled ($copyfields) FROM STDIN");
+	foreach my $k (keys %{$polled_sessions}) {
+		my $time = $polled_sessions->{$k};
+
+		# Each key contains the data values separated by ';'
+		$k =~ s{;}{,}g;
+		# Since data is a composite type, it must be between parentheses
+		# and separated by ','
+		$db->pg_putcopydata("$time\t$time\t$src\tFALSE\t($k)\n");
+	}
+	$db->pg_putcopyend();
+
+	# Update open sessions matching all the polled session 
+	db_exec($db,"UPDATE $table SET stop=polled.stop FROM polled
+			WHERE $table.closed=FALSE AND
+				$table.src='$src' AND
+				polled.data=$table.data"
+		);
+
+	# Create new sessions :
+	# (for a given source)
+	# - compare polled sessions <> previously open sessions
+	# - create only sessions which are not in previously open sessions
+	db_exec($db,"INSERT INTO $table (start,stop,src,closed,data)
+			SELECT start,stop,src,FALSE,data FROM polled
+			WHERE polled.data NOT IN (	SELECT data FROM $table
+							WHERE closed=FALSE AND
+								src='$src'
+						)"
+		);
+
+	# Close old sessions :
+	# close open sessions that do not appear in polled source 
+	db_exec($db,"UPDATE $table SET closed=TRUE
+			WHERE closed=FALSE AND src='$src' AND
+				data NOT IN (SELECT data FROM polled)"
+		);	
+
+	# Destroy temporary table
+	db_exec($db,"DROP TABLE IF EXIST polled");
+
+	# Commit changes
+	db_exec($db,"COMMIT");
+}
 
 return 1;
