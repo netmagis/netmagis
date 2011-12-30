@@ -917,28 +917,28 @@ sub lsfiles
 #
 sub load_sessions
 {
-	my $file = shift;
+    my $file = shift;
+    my $r;
 
-	if(open(F,$file)) {
-		writelog($current_process_name,$current_log_facility,"err",
-			"\t ERROR: (load_session) cannot open '$file' ($!)");
-	}
-
+    if(open(F,$file)) {
 	my %sessions ;
 	while(<F>) {
-		# format : 1323794702;130.79.73.127;00:e0:4c:39:0b:1e
-		my ($t,$data) = (/^(\d+);(.*)/);
-		# Convert time_t to SQL timestamp
-		$sessions{$data} = strftime("%Y-%m-%d %H:%M:%S", localtime($t));
+	    # format : 1323794702;130.79.73.127;00:e0:4c:39:0b:1e
+	    my ($t,$data) = (/^(\d+);(.*)/);
+	    # Convert time_t to SQL timestamp
+	    $sessions{$data} = strftime("%Y-%m-%d %H:%M:%S", localtime($t));
 	}
 	close(F);
 
-	my $r;
 	if(%sessions) {
-		$r = \%sessions;
+	    $r = \%sessions;
 	}
+    } else {
+	writelog($current_process_name,$current_log_facility,"err",
+		"\t ERROR: (load_session) cannot open '$file' ($!)");
+    }
 
-	return $r;
+    return $r;
 }
 
 #############################################################
@@ -947,9 +947,9 @@ sub guess_eq
 {
 	my $file = shift;
 
-	$file =~ /.*ipmac_([0-9.]+)/;
+	$file =~ /.*(port|ip)mac_([0-9.]+)/;
 
-	return $1;
+	return $2;
 }
 
 #############################################################
@@ -1011,7 +1011,7 @@ sub update_sessions
 		);	
 
 	# Destroy temporary table
-	db_exec($db,"DROP TABLE IF EXIST polled");
+	db_exec($db,"DROP TABLE polled");
 
 	# Commit changes
 	db_exec($db,"COMMIT");

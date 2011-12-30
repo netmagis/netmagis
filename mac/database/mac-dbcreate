@@ -16,6 +16,8 @@ BASE=mac
 PGPASSWORD=mot-de-passe-de-mac
 export PGPASSWORD
 
+USER=netmagis
+
 ##############################################################################
 # POUR EVITER LES ERREURS (LANCEMENT MALENCONTREUX DE CE SCRIPT)
 
@@ -23,11 +25,8 @@ exit 0
 
 ##############################################################################
 
-dropdb $BASE > /dev/null 2> /dev/null
-
-createdb -E unicode $BASE
-
 psql -q $BASE <<'EOF'
+    DROP SCHEMA mac CASCADE ;
     CREATE SCHEMA mac ;
 
     -- Generic session table which will be used to associate some
@@ -75,12 +74,13 @@ psql -q $BASE <<'EOF'
     CREATE INDEX ON mac.portmac (start);
     CREATE INDEX ON mac.portmac ( ((data).mac) );
     CREATE INDEX ON mac.portmac ( ((data).port) );
-    CREATE INDEX ON mac.portmac ( ((data).vlan) );
+    CREATE INDEX ON mac.portmac ( ((data).vlanid) );
 
     -- rights
     -- FIXME : change user name
     GRANT ALL
-	ON ipmac, portmac
-	TO "mac-test" ;
-
+	ON mac.ipmac, mac.portmac
+	TO $USER ;
+    GRANT TEMP ON DATABASE $BASE TO $USER;
+    GRANT USAGE ON SCHEMA mac TO $USER;
 EOF
