@@ -1017,4 +1017,43 @@ sub update_sessions
 	db_exec($db,"COMMIT");
 }
 
-return 1;
+#############################################################
+# Process all session files
+# Parameters:
+#	db		: handle of an opened database
+#	table		: table name
+#	dir		: report directory
+#	filepattern    : filename pattern of the report files
+#
+sub process_sessions {
+    my ($db, $table, $dir, $filepattern) = @_;
+
+    # Load data files
+    my @filelist = lsfiles($dir, $filepattern) ;
+
+    # Update sessions for each file
+    foreach my $file (@filelist) {
+        my $src=guess_eq($file);
+
+        # Source found
+	if($src) {
+	    my $polled_sessions = load_sessions($file);
+	    my $suppress = 0;
+
+	    if(! $polled_sessions) {
+	    # empty file, remove it
+		$suppress = 1;
+	    } else {
+		if(update_sessions($db,$table,$src,$polled_sessions)) {
+		    $suppress = 1;
+		}
+	    }
+
+	    if($suppress) {
+		unlink($file);
+	    }
+	}
+    }
+}
+
+    return 1;
