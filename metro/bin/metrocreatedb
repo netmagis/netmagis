@@ -46,9 +46,9 @@ our %sensor_types = (
 	'broadcast'		=> { 'graph'=>'broadcast','rrd'=>'1','period'=>'* * * * *' },
 	'multicast'		=> { 'graph'=>'multicast','rrd'=>'1','period'=>'* * * * *' },
 	'ipmac'			=> { 'graph'=>'ipmac','rrd'=>'1','period'=>'*/5 * * * *' },
-	'portmac.cisco'		=> { 'graph'=>'portmac','rrd'=>'0','period'=>'*/5 * * * *' },
-	'portmac.juniper'	=> { 'graph'=>'portmac','rrd'=>'0','period'=>'*/5 * * * *' },
-	'portmac.hp'		=> { 'graph'=>'portmac','rrd'=>'0','period'=>'*/5 * * * *' },
+	'portmac.cisco'		=> { 'graph'=>'portmac','rrd'=>'0','period'=>'3,8,13,18,23,28,33,38,43,48,53,58 * * * *' },
+	'portmac.juniper'	=> { 'graph'=>'portmac','rrd'=>'0','period'=>'3,8,13,18,23,28,33,38,43,48,53,58 * * * *' },
+	'portmac.hp'		=> { 'graph'=>'portmac','rrd'=>'0','period'=>'3,8,13,18,23,28,33,38,43,48,53,58 * * * *' },
 );
 
 
