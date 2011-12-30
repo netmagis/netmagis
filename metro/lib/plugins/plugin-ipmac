@@ -22,17 +22,8 @@ my $table = "mac.ipmac";
 my $db =  db_connect($global_conf{'macdbname'}, $global_conf{'macdbhost'},
 		$global_conf{'macdbuser'}, $global_conf{'macdbpassword'});
 
-# Load data files
 my $filepattern = "ipmac_.*";
-my @filelist = lsfiles($global_conf{'metrodatadir'}. "/report/", $filepattern);
-# Update sessions for each file
-foreach my $file (@filelist) {
-	my $src=guess_eq($file);
-	my $polled_sessions = load_sessions($file);
-	if($polled_sessions && $src) {
-		if(update_sessions($db,$table,$src,$polled_sessions)) {
-			# Suppress file when processed
-			unlink($file);
-		}
-	}
-}
+my $dir = $global_conf{'metrodatadir'}. "/report/";
+
+# Process all session files
+process_sessions($db, $table, $dir, $filepattern);

@@ -1056,4 +1056,4 @@ sub process_sessions {
     }
 }
 
-    return 1;
+return 1;
