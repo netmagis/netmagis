@@ -47,8 +47,6 @@ set conf(nextl3)	"l3"
 set conf(dumpgraph)	"dumpgraph -o rnet %s"
 set conf(extractl3)	"extractl3 %s %s"
 
-set conf(neatocmd)	"%s -Gmaxiter=10000"
-
 #
 # Netmagis general library
 #
@@ -61,86 +59,13 @@ source %LIBNETMAGIS%
 # Utilities
 ##############################################################################
 
-proc prologue {format} {
-    set g "graph l3graph \{\n"
-    switch $format {
-	pdf {
-	    append g {
-		fontsize = 14 ;
-		margin = .3 ;
-		center = true ;
-		page="8.26,11.69" ;
-
-		size="11,7.6" ;
-		orientation = landscape ;
-
-		/* len = 0.5 ; */
-		/* ranksep = 0.5 */
-		fontname = Helvetica ;
-
-		node [fontname = Helvetica, fontsize = 10,
-			    color = grey
-			] ;
-		edge [fontname = Helvetica, fontsize = 8,
-			    /* len = 1.4, */
-			    len = 2.2,
-			    labelfontname = Helvetica, labelfontsize = 6,
-			    color = grey
-			] ;
-
-		overlap = false ;
-		spline = true ;
-	    }
-	}
-	png -
-	default {
-	    append g {
-		fontsize = 14 ;
-		margin = .3 ;
-		center = true ;
-
-		orientation = portrait ;
-
-		/* len = 0.5 ; */
-		/* ranksep = 0.5 */
-		fontname = Helvetica ;
-
-		node [fontname = Helvetica, fontsize = 10,
-			    color = grey
-			] ;
-		edge [fontname = Helvetica, fontsize = 8,
-			    len = 3.0,
-			    labelfontname = Helvetica, labelfontsize = 6,
-			    color = grey
-			] ;
-
-		overlap = false ;
-		spline = true ;
-	    }
-	}
-    }
-    return $g
-}
-
-proc title {label} {
-    return "label = \"$label\" ;\n"
-}
-
-proc epilogue {format} {
-    return "\}\n"
-}
-
-proc gen-dot {format cmd} {
+proc gen-graph {dbfd gv format xl3} {
     global conf
 
-    set dot [prologue $format]
-    if {! [call-topo $cmd msg]} then {
-	return ""
-    }
-    foreach line [split $msg "\n"] {
+    foreach line [split $xl3 "\n"] {
 	switch -- [lindex $line 0] {
 	    selection {
-		append dot [title [lreplace $line 0 0]]
+		$gv title [lreplace $line 0 0]
 	    }
 	    eq {
 		lassign $line kw nodename nodetype
@@ -174,9 +99,7 @@ proc gen-dot {format cmd} {
 		set url [d urlget ""]
 		lappend attrlist "href=\"$url\""
 
-		set attr [join $attrlist ", "]
-
-		append dot "\"$nodename\" \[$attr\] ;\n"
+		$gv node $nodename $attrlist
 	    }
 	    direct {
 		lassign $line kw eq1 if1 ip1 linkname eq2 if2 ip2
@@ -184,8 +107,7 @@ proc gen-dot {format cmd} {
 					headlabel=\"$if2\\n$ip2\" \
 					taillabel=\"$if1\\n$ip1\" \
 				    ]
-		set attr [join $attrlist ", "]
-		append dot "\"$eq1\" -- \"$eq2\" \[$attr\] ;\n"
+		$gv link $eq1 $eq2 $attrlist
 	    }
 	    cloud {
 		lassign $line kw nodename bcastref vlans networks
@@ -213,22 +135,26 @@ proc gen-dot {format cmd} {
 		    lappend attrlist "href=\"$url\""
 		}
 
-		set attr [join $attrlist ", "]
-
-		append dot "\"$nodename\" \[$attr\] ;\n"
+		$gv node $nodename $attrlist
 	    }
 	    link {
 		lassign $line kw eqname ifname ipaddr linkname cloud
 		set attrlist [list headlabel=\"$linkname\" \
 					taillabel=\"$ifname\\n$ipaddr\" \
 				    ]
-		set attr [join $attrlist ", "]
-		append dot "\"$eqname\" -- \"$cloud\" \[$attr\] ;\n"
+		$gv link $eqname $cloud $attrlist
 	    }
 	}
     }
-    append dot [epilogue $format]
-    return $dot
+
+    #
+    # Graph processors
+    #
+
+    set dotcmd [get-local-conf "neato"]
+    set ps2pdf [get-local-conf "ps2pdf"]
+
+    return [$gv graphviz $format $dotcmd $ps2pdf]
 }
 
 ##############################################################################
@@ -296,6 +222,20 @@ d cgi-register {} {
 				    [list %ONLOAD% ""] \
 				]
     } else {
+	set gv [::gvgraph %AUTO%]
+
+	#
+	# Checks the output format
+	#
+
+	if {$format eq ""} then {
+	    set format "map"
+	}
+	set msg [$gv check-format $format]
+	if {$msg ne ""} then {
+	    d error $msg
+	}
+
 	#
 	# Validate IP address
 	#
@@ -320,79 +260,54 @@ d cgi-register {} {
 	}
 
 	#
-	# Get informations from graph
+	# Get data from graph
 	#
 
-	set xl3 [format $conf(extractl3) $tabuid(flagsr) [join $lnet " "]]
-	set dot [gen-dot $format $xl3]
-	set fd [open "$tmp.dot" "w"]
-	puts $fd $dot
-	close $fd
-
-	#
-	# Select format and ouput page
-	#
-
-	set prog [format $conf(neatocmd) [get-local-conf "neato"]]
-
-	d urlset "" $conf(nextl3) [list \
-					[list "format" "png"] \
-					[list "addr" $addr] \
-				    ]
-	set urlimg [d urlget ""]
-
-	d urlset "" $conf(nextl3) [list \
-					[list "format" "pdf"] \
-					[list "addr" $addr] \
-				    ]
-	set urlpdf [d urlget ""]
-
-	switch -- $format {
-	    pdf {
-		set ps2pdf [get-local-conf "ps2pdf"]
-		set cmd "|$prog -Tps $tmp.dot 2>$tmp.err | $ps2pdf - -"
-		if {[catch {open $cmd "r"} fd]} then {
-		    set msg [read-file "$tmp.err"]
-		    d error [mc "Error executing command '%1$s': %2$s" $cmd $msg]
-		}
-		fconfigure $fd -translation binary
-		set pdf [read $fd]
-		close $fd
-		::webapp::send rawpdf $pdf
-		d end
-	    }
-	    png {
-		set cmd "| $prog -Tpng $tmp.dot 2>$tmp.err"
-		if {[catch {open $cmd "r"} fd]} then {
-		    set msg [read-file "$tmp.err"]
-		    d error [mc "Error executing command '%1$s': %2$s" $cmd $msg]
-		}
-		fconfigure $fd -translation binary
-		set img [read $fd]
-		close $fd
-		::webapp::send png $img
-		d end
-	    }
-	    default {
-		set cmd "$prog -Tcmapx <$tmp.dot 2>$tmp.err"
-		if {[catch {exec sh -c $cmd} map]} then {
-		    set msg [read-file "$tmp.err"]
-		    d error [mc "Error executing command '%1$s': %2$s" $cmd $msg]
-		}
-		d result $conf(page1) [list \
-					    [list %MSGSTA% $msgsta] \
-					    [list %EQ%     ""] \
-					    [list %VLAN%   ""] \
-					    [list %RESEAU% $lnet] \
-					    [list %ADDR%   $addr] \
-					    [list %URLIMG% $urlimg] \
-					    [list %URLPDF% $urlpdf] \
-					    [list %MAP%    $map] \
-					]
-	    }
+	set cmd [format $conf(extractl3) $tabuid(flagsr) [join $lnet " "]]
+	if {! [call-topo $cmd xl3]} then {
+	    d error [mc "Error while reading networks: %s" $xl3]
 	}
 
-	file delete -force -- $tmp.dot $tmp.err
+	#
+	# Sketch the resulting data
+	#
+
+	if {[gen-graph $dbfd $gv $format $xl3]} then {
+	    switch -- $format {
+		pdf {
+		    ::webapp::send rawpdf [$gv output]
+		    d end
+		}
+		png {
+		    ::webapp::send png [$gv output]
+		    d end
+		}
+		map {
+		    d urlset "" $conf(nextl3) [list {format png} [list "addr" $addr]]
+		    set urlimg [d urlget ""]
+
+		    d urlset "" $conf(nextl3) [list {format pdf} [list "addr" $addr]]
+		    set urlpdf [d urlget ""]
+
+		    set map [$gv output]
+		    d result $conf(page1) [list \
+						[list %MSGSTA% $msgsta] \
+						[list %EQ%     ""] \
+						[list %VLAN%   ""] \
+						[list %RESEAU% $lnet] \
+						[list %ADDR%   $addr] \
+						[list %URLIMG% $urlimg] \
+						[list %URLPDF% $urlpdf] \
+						[list %MAP%    $map] \
+					    ]
+		}
+		default {
+		    d error "Internal error"
+		}
+	    }
+	} else {
+	    d error [$gv error]
+	}
     }
 }
 

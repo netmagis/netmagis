@@ -1983,6 +1983,230 @@ proc show-diff-file-text {fd cmd file text} {
 }
 
 ##############################################################################
+# Graphviz graphs
+##############################################################################
+
+#
+# Graph generation class with Graphviz
+#
+# This class is a simple way to generate a Netmagis graph.
+#
+# Methods:
+# - reset
+#	reset graph parameters
+#	set the output format for the graph
+# - title <string>
+#	set graph title (default: empty string, hence no title)
+# - node <nodename> { <attr> ... } (with <attr> ::= "name=value")
+#	set a node
+# - link <nodename> <nodename> { <attr> ... }
+#	mark a link between nodes
+# - graphviz <png|pdf> <dot path> <ps2pdf path>
+#	calls graphviz on the current graph and returns 1 if success
+#	and 0 if error.
+# - error
+#	returns error message from graphviz call (if graphviz method returned 0)
+# - output
+#	returns generated graph (if graphviz method returned 1)
+#
+# History
+#   2011/12/29 : pda      : design
+#
+
+snit::type ::gvgraph {
+
+    variable title  ""
+    variable nnodes 0
+    variable nodesandlinks {}
+    variable error ""
+    variable output ""
+
+    # graph skeleton
+    #	%1$s : nodes and links
+    #	%2$s : graph title
+    variable skeleton -array {
+	map {
+	    graph g {
+		charset = "UTF-8";
+		fontsize = 14;
+		fontname = Helvetica;
+		margin = .3;
+		center = true;
+		orientation = portrait;
+		maxiter = 1000 ;
+		node [fontname=Helvetica,fontsize=10, color=grey];
+		edge [fontname=Helvetica,fontsize=8, len=1.4, labelfontname=Helvetica, labelfontsize=6, color=grey];
+		overlap = false;
+		spline = true;
+		%1$s
+		%2$s
+	    }
+	}
+	png {
+	    graph g {
+		charset = "UTF-8";
+		fontsize = 14;
+		fontname = Helvetica;
+		margin = .3;
+		center = true;
+		orientation = portrait;
+		maxiter = 1000 ;
+		node [fontname=Helvetica,fontsize=10, color=grey];
+		edge [fontname=Helvetica,fontsize=8, len=1.4, labelfontname=Helvetica, labelfontsize=6, color=grey];
+		overlap = false;
+		spline = true;
+		%1$s
+		%2$s
+	    }
+	}
+	pdf {
+	    graph g {
+		charset = "UTF-8";
+		fontsize = 14;
+		fontname = Helvetica;
+		margin = .3;
+		center = true;
+		page = "8.26,11.69";
+		size = "11,7.6";
+		orientation = landscape;
+		maxiter = 1000 ;
+		node [fontname=Helvetica,fontsize=10, color=grey];
+		edge [fontname=Helvetica,fontsize=8, len=1.4, labelfontname=Helvetica, labelfontsize=6, color=grey];
+		overlap = false;
+		spline = true;
+		%1$s
+		%2$s
+	    }
+	}
+    }
+
+    # %1$s : path to the dot cmd
+    # %2$s : path to the ps2pdf cmd
+    # %3$s : dot file name
+    # %4$s : error file name
+    variable gvcmd -array {
+	map {|%1$s -Tcmapx %3$s 2>%4$s}
+	png {|%1$s -Tpng %3$s 2>%4$s}
+	pdf {|%1$s -Tps %3$s 2>%4$s | %2$s - -}
+    }
+
+    # reset graph to initial state
+    method reset {} {
+	set title ""
+	set nodesandlinks {}
+	set nnodes 0
+	set error ""
+	set output ""
+    }
+
+    # returns an error message if format is not valid
+    method check-format {format} {
+	if {! [info exists skeleton($format)]} then {
+	    return [format [mc "Invalid format '%s'"] $format]
+	}
+	return ""
+
+    }
+
+    # set title of the graph (empty string means no title)
+    method title {t} {
+	set title $t
+    }
+
+    # add a node to the graph
+    method node {name attrlist} {
+	set attr [join $attrlist ","]
+	lappend nodesandlinks "\"$name\" \[$attr\];"
+    }
+
+    # add a link to the graph
+    method link {n1 n2 attrlist} {
+	set attr [join $attrlist ","]
+	lappend nodesandlinks "\"$n1\" -- \"$n2\" \[$attr\];"
+    }
+
+    # calls graphviz and returns 1 if no error. Caller must use
+    # error and output methods to get the result.
+    method graphviz {format dotcmd ps2pdfcmd} {
+	#
+	# Barks if format is invalid
+	#
+	set error [$self check-format $format]
+	if {$error ne ""} then {
+	    return 0
+	}
+
+	# temporary file
+	set tmp "/tmp/gv-[pid]"
+
+	#
+	# Builds the dot file for the graph
+	#
+
+	if {$title eq ""} then {
+	    set t ""
+	} else {
+	    set t "label = \"$title\";\n"
+	}
+
+	set dot [format $skeleton($format) [join $nodesandlinks "\n"] $t]
+	set fd [open "$tmp.dot" "w"]
+	fconfigure $fd -encoding utf-8
+	puts $fd $dot
+	close $fd
+
+	#
+	# Calls graphviz
+	#
+
+	set cmd [format $gvcmd($format) $dotcmd $ps2pdfcmd $tmp.dot $tmp.err]
+
+	if {[catch {open $cmd "r"} fd]} then {
+	    set error [format [mc "Error generating graph (%s)"] $fd]
+	    set r 0
+	} else {
+	    fconfigure $fd -translation binary
+	    set output [read $fd]
+	    if {[catch {close $fd} error]} then {
+		set r 0
+	    } else {
+		set r 1
+	    }
+	}
+
+	#
+	# Has an error occurred?
+	#
+
+	if {$r == 0} then {
+	    if {! [catch {open $tmp.err "r"} fderr]} then {
+		append error "\n"
+		append error [read $fderr]
+		close $fderr
+	    }
+	}
+
+	file delete -force -- $tmp.dot $tmp.err
+
+	#
+	# Returns appropriate code : 1 (success) or 0 (failure)
+	#
+
+	return $r
+    }
+
+    # returns the error message resulting from the previous graphviz invocation
+    method error {} {
+	return $error
+    }
+
+    # returns the output resulting from the previous graphviz invocation
+    method output {} {
+	return $output
+    }
+}
+
+##############################################################################
 # Cosmetic
 ##############################################################################
 
@@ -4932,6 +5156,7 @@ proc check-netid {dbfd netid idgrp priv version _msg} {
 #		is {id type defval}, where
 #		- id : column id in the table, and name of firld (idNN or idnNN)
 #		- type : "text", "string N", "bool", "menu L", "textarea {W H}"
+#			or "image URL"
 #		- defval : default value for new lines
 #	- dbfd : database handle
 #	- sql : SQL request to get column values (notably the id column)
@@ -5100,7 +5325,9 @@ proc _display-tabular-line {cspec _tab idnum} {
     foreach s $cspec {
 	lassign $s id type defval
 
-	set value $tab($id)
+	if {$id ne ""} then {
+	    set value $tab($id)
+	}
 
 	lassign $type typekw typeopt
 
@@ -5132,6 +5359,9 @@ proc _display-tabular-line {cspec _tab idnum} {
 	    textarea {
 		lassign $typeopt width height
 		set item [::webapp::form-text $ref $height $width 0 $value]
+	    }
+	    image {
+		set item [format $typeopt $id]
 	    }
 	}
 	lappend line $item
@@ -8589,30 +8819,6 @@ proc topo-verbositer {msg level} {
     if {$level <= $ctxt(verbose)} then {
 	puts stderr $msg
     }
-}
-
-#
-# Read a whole file and return its content
-#
-# Input: 
-#   - filename : file name
-# Output: none
-#
-# Return value: file content as a string or empty if error
-#
-# History
-#   2011/10/21 : jean : design
-#
-
-proc read-file {filename} {
-
-    set r ""
-    if {! [catch {open $filename "r"} fd]} then {
-    	set r [read $fd]
-    	close $fd
-    }
-    
-    return $r
 }
 
 ##############################################################################

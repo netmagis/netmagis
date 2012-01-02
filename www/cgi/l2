@@ -48,9 +48,6 @@ set conf(nextl3)	"l3"
 set conf(dumpgraph)	"dumpgraph -o vlan %s"
 set conf(extractl2)	"extractl2 %s %s %s %d"
 
-set conf(dotcmd)	"%s"
-set conf(neatocmd)	"%s -Gmaxiter=10000"
-
 set conf(maxdot)	12
 
 #
@@ -65,7 +62,7 @@ source %LIBNETMAGIS%
 # Utilities
 ##############################################################################
 
-proc match-eq {type_model} {
+proc match-eq {dbfd type_model} {
     switch -glob -- $type_model {
 	juniper/M* {
 	    set attr {shape=circle
@@ -152,64 +149,6 @@ proc conv-ifname {ifname} {
     return $ifname
 }
 
-proc prologue {format} {
-    set g "graph l2graph \{"
-    switch $format {
-	pdf {
-	    append g {
-		fontsize = 14 ;
-		fontname = "Helvetica" ;
-		margin = .3 ;
-		center = true ;
-		page="8.26,11.69" ;
-
-		size="11,7.6" ;
-		orientation = landscape ;
-
-		fontname = Helvetica ;
-
-		node [fontname = Helvetica, fontsize = 10,
-			    color = grey
-			] ;
-		edge [fontname = Helvetica, fontsize = 8,
-			    len = 1.4,
-			    labelfontname = Helvetica, labelfontsize = 6,
-			    color = grey
-			] ;
-
-		overlap = false ;
-		spline = true ;
-	    }
-	}
-	png -
-	default {
-	    append g {
-		fontsize = 14 ;
-		fontname = "Helvetica" ;
-		margin = .3 ;
-		center = true ;
-
-		orientation = portrait ;
-
-		fontname = Helvetica ;
-
-		node [fontname = Helvetica, fontsize = 10,
-			    color = grey
-			] ;
-		edge [fontname = Helvetica, fontsize = 8,
-			    len = 1.4,
-			    labelfontname = Helvetica, labelfontsize = 6,
-			    color = grey
-			] ;
-
-		overlap = false ;
-		spline = true ;
-	    }
-	}
-    }
-    return "$g\n"
-}
-
 proc title {vlanlist _tabvlan} {
     upvar $_tabvlan tabvlan
 
@@ -240,24 +179,15 @@ proc title {vlanlist _tabvlan} {
     if {$vl eq "" && $vlan0} then {
 	set vl "Vlan 0"
     }
-    return "label = \"$vl\" ;\n"
+    return $vl
 }
 
-proc epilogue {format} {
-    return "\}\n"
-}
-
-
-proc gen-dot {format eq iface vlan cmd _tabvlan _nnodes} {
+proc gen-graph {dbfd gv format eq iface vlan xl2 _tabvlan} {
     global conf
-    upvar $_nnodes nnodes
     upvar $_tabvlan tabvlan
 
     set nnodes 0
-    if {! [call-topo $cmd msg]} then {
-	return ""
-    }
-    foreach line [split $msg "\n"] {
+    foreach line [split $xl2 "\n"] {
 	switch [lindex $line 0] {
 	    vlans {
 		set vlans [lreplace $line 0 0]
@@ -278,18 +208,16 @@ proc gen-dot {format eq iface vlan cmd _tabvlan _nnodes} {
     # Display all these informations
     #
 
-    set dot [prologue $format]
-    append dot [title $vlans tabvlan]
+    $gv title [title $vlans tabvlan]
 
     foreach eqname [array names tabeq] {
-	set attrlist [match-eq $tabeq($eqname)]
+	set attrlist [match-eq $dbfd $tabeq($eqname)]
 
 	d urlset "" $conf(nexteq) [list [list "eq" $eqname]]
 	set url [d urlget ""]
 	lappend attrlist "href=\"$url\""
 
-	set attr [join $attrlist ", "]
-	append dot "\"$eqname\" \[$attr\] ;\n"
+	$gv node $eqname $attrlist
     }
 
     foreach link [array names tablink] {
@@ -302,13 +230,26 @@ proc gen-dot {format eq iface vlan cmd _tabvlan _nnodes} {
 				headlabel=\"$if2\" \
 				taillabel=\"$if1\" \
 			    ]
-	set attr [join $attrlist ", "]
-	append dot "\"$eq1\" -- \"$eq2\" \[$attr\] ;\n"
+	$gv link $eq1 $eq2 $attrlist
     }
 
-    append dot [epilogue $format]
+    #
+    # Select graph processor
+    #
 
-    return $dot
+    if {$nnodes > $conf(maxdot)} then {
+	set prog [get-local-conf "neato"]
+    } else {
+	set prog [get-local-conf "dot"]
+    }
+
+    set ps2pdf [get-local-conf "ps2pdf"]
+
+    #
+    # Generates graph
+    #
+
+    return [$gv graphviz $format $prog $ps2pdf]
 }
 
 proc search-vlan {vlan _tabvlan} {
@@ -427,8 +368,22 @@ d cgi-register {} {
 				    ]
 	}
 	1 {
+	    set gv [::gvgraph %AUTO%]
+
 	    #
-	    # Search for vlan name
+	    # Checks the output format
+	    #
+
+	    if {$format eq ""} then {
+		set format "map"
+	    }
+	    set msg [$gv check-format $format]
+	    if {$msg ne ""} then {
+		d error $msg
+	    }
+
+	    #
+	    # Search vlan name
 	    #
 
 	    set v [lindex $lvlans 0]
@@ -443,12 +398,11 @@ d cgi-register {} {
 	    set qvlan [::webapp::html-string $vlan]
 
 	    #
-	    # Get informations from graph
+	    # Get data from graph
 	    #
 
-	    set xl2 [format $conf(extractl2) $tabuid(flagsr) $eq $iface $v]
-	    set dot [gen-dot $format $eq $iface $v $xl2 tabvlan nnodes]
-	    if {$dot eq ""} then {
+	    set cmd [format $conf(extractl2) $tabuid(flagsr) $eq $iface $v]
+	    if {! [call-topo $cmd xl2]} then {
 		set liste [mc "Vlan '%s' not found" $qvlan]
 		d result $conf(pagen) [list \
 					[list %MSGSTA% $msgsta] \
@@ -460,74 +414,39 @@ d cgi-register {} {
 					[list %HEADER% ""] \
 					[list %ONLOAD% ""] \
 				    ]
-	    } else {
-		set fd [open "$tmp.dot" "w"]
-		puts $fd $dot
-		close $fd
+	    }
 
-		#
-		# Select graph processor
-		#
+	    #
+	    # Sketch the resulting data
+	    #
 
-		if {$nnodes > $conf(maxdot)} then {
-		    set prog [get-local-conf "neato"]
-		    set prog [format $conf(neatocmd) $prog]
-		} else {
-		    set prog [get-local-conf "dot"]
-		    set prog [format $conf(dotcmd) $prog]
-		}
-
-		d urlset "" $conf(nextl2) [list \
-						[list "format" "png"] \
-						[list "eq" $eq] \
-						[list "iface" $iface] \
-						[list "vlan" $vlan] \
-					    ]
-		set urlimg [d urlget ""]
-		d urlset "" $conf(nextl2) [list \
-						[list "format" "pdf"] \
-						[list "eq" $eq] \
-						[list "iface" $iface] \
-						[list "vlan" $vlan] \
-					    ]
-		set urlpdf [d urlget ""]
-
-		#
-		# Select format and output page
-		#
-
+	    if {[gen-graph $dbfd $gv $format $eq $iface $v $xl2 tabvlan]} then {
 		switch -- $format {
 		    pdf {
-			set ps2pdf [get-local-conf "ps2pdf"]
-			set cmd "|$prog -Tps $tmp.dot 2>$tmp.err | $ps2pdf - -"
-			if {[catch {open $cmd "r"} fd]} then {
-			    set msg [read-file "$tmp.err"]
-			    d error [mc "Error executing command '%1$s': %2$s" $cmd $msg]
-			}
-			fconfigure $fd -translation binary
-			set pdf [read $fd]
-			close $fd
-			::webapp::send rawpdf $pdf
+			::webapp::send rawpdf [$gv output]
 			d end
 		    }
 		    png {
-			set cmd "| $prog -Tpng $tmp.dot 2>$tmp.err"
-			if {[catch {open $cmd "r"} fd]} then {
-			    set msg [read-file "$tmp.err"]
-			    d error [mc "Error executing command '%1$s': %2$s" $cmd $msg]
-			}
-			fconfigure $fd -translation binary
-			set img [read $fd]
-			close $fd
-			::webapp::send png $img
+			::webapp::send png [$gv output]
 			d end
 		    }
-		    default {
-			set cmd "$prog -Tcmapx <$tmp.dot 2>$tmp.err"
-			if {[catch {exec sh -c $cmd} map]}  {
-			    set msg [read-file "$tmp.err"]
-			    d error [mc "Error executing command '%1$s': %2$s" $cmd $msg]
-			}
+		    map {
+			d urlset "" $conf(nextl2) [list \
+							[list "format" "png"] \
+							[list "eq" $eq] \
+							[list "iface" $iface] \
+							[list "vlan" $vlan] \
+						    ]
+			set urlimg [d urlget ""]
+			d urlset "" $conf(nextl2) [list \
+							[list "format" "pdf"] \
+							[list "eq" $eq] \
+							[list "iface" $iface] \
+							[list "vlan" $vlan] \
+						    ]
+			set urlpdf [d urlget ""]
+
+			set map [$gv output]
 			d result $conf(page1) [list \
 					    [list %MSGSTA% $msgsta] \
 					    [list %DESC%  $desc] \
@@ -539,9 +458,12 @@ d cgi-register {} {
 					    [list %ADDR%  ""] \
 					]
 		    }
+		    default {
+			d error "Internal error"
+		    }
 		}
-
-		file delete -force -- $tmp.dot $tmp.err
+	    } else {
+		d error [$gv error]
 	    }
 	}
 	default {

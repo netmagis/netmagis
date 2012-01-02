@@ -558,7 +558,7 @@
  {Error while reading wifi sensors: %s} {Erreur lors de la lecture des sondes Wifi : %s}
  {Error while reading Vlans: %s} {Erreur lors de la lecture des Vlans : %s}
  {Error while reading networks: %s} {Erreur lors de la lecture des réseaux : %s}
- {Error executing command '%1$s': %2$s} {Erreur d'exécution de la commande %1$s : %2$s}
+ {Error generating graph '%s'} {Erreur lors de la génération du graphe (%s)}
  {No equipment found} {Aucun équipement trouvé}
  {equipments} {équipements}
  {develop} {tout dérouler}
@@ -587,6 +587,7 @@
  {no inactive host found} {aucune machine inactive trouvée}
  {Vlan %1$s: %2$s} {Vlan %1$s : %2$s}
  {Vlan '%s' not found} {Vlan '%s' non trouvé}
+ {Invalid format '%s'} {Format '%s' invalide}
  {Invalid router instance '%s'} {Instance de routage '%s' invalide}
  {Invalid node type '%1$s' for %2$s} {Type de noeud '%1$s' invalide pour %2$s}
  {IP networks} {réseaux IP}
