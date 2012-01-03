@@ -36,6 +36,11 @@
 
     \titre {1} {Netmagis installation}
 
+    \gras {Warning: this installation documentation is written
+    for the upcoming Netmagis version (2.1). The current version
+    is available only on \lien {Netmagis Github repository}
+    {http://github.com/pdav/netmagis} at this time.}
+
     \**********************************************************************
 
     \titre {2} {How things work}
