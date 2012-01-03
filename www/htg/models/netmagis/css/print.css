@@ -307,6 +307,13 @@ dt.menu-meteo a img {
 	font-weight: bold;
 }
 
+#texte-page h5 {
+	text-align: left;
+	color: #313131;			/* gris presque noirs */
+	font-size: 13px;
+	font-weight: bold;
+}
+
 #texte-page a:link,
 #texte-page a:active,
 #texte-page a:visited {
