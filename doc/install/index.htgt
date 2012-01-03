@@ -1778,8 +1778,7 @@
 
 	    Make sure that the \teletype {topocpgraph} configuration
 	    parameter is initialized with a line such as:
-	    \retrait\teletype {topocpgraph w@www.my.domain
-		.../var/netmagis/network.graph}
+	    \retrait\teletype {topocpgraph w@www.my.domain:.../var/netmagis/network.graph}
 	    Warning: the path supplied here is the path of the graph
 	    on the \italique {server}, which should match the \teletype
 	    {topograph} directive \gras {on the \italique {www} server}.
