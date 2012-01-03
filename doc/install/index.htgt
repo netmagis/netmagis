@@ -1674,7 +1674,7 @@
 		}
 		\lignetableau {
 		    \casetableau {} {topocpgraph}
-		    \casetableau {} {Parameters (user@host remote-path)
+		    \casetableau {} {Parameters (user@host:remote-path)
 			used to copy the graph built during \italique
 			{topo} analysis to the \italique {www}
 			server. Leave empty if the \italique {topo}
