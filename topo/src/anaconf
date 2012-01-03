@@ -33,8 +33,7 @@ eval `%CONFPROG% \
 		topobindir \
 		checkrouterif \
 		ssidsensors \
-		copycommand \
-		copydest \
+		topocpgraph \
 		`
 vlanfile=$eqgendir/_vlan.eq
 
@@ -224,9 +223,13 @@ check_dns ()
 
 copy_graph ()
 {
-    if [ -n "$copycommand" -a -n "$copydest" ] 
+    if [ -n "$topocpgraph" -a -n "$topograph" ]
     then
-	$copycommand $topograph $copydest
+    	userhost=`echo "$topocpgraph" | cut -f1 -d:`
+    	destfile=`echo "$topocpgraph" | cut -f2 -d:`
+    	scp -q $topograph $userhost:$destfile.new && \
+	    ssh -q $userhost \
+	    	"mv $destfile $destfile.old;mv $destfile.new $destfile"
     fi
     return 0
 }
