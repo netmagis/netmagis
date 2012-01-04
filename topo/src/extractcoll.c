@@ -123,8 +123,8 @@ void output_portmac (FILE *fp, struct node *bridgenode)
     struct linklist *ll ;
     struct node *n ;
     vlanset_t vlanset;
-    char *iflist = NULL;
     vlan_t v;
+    int done = 0;
     
     /* get all VLAN ids */
     vlan_zero(vlanset);
@@ -167,11 +167,20 @@ void output_portmac (FILE *fp, struct node *bridgenode)
 		    {
 			    char *ifname = L1node->u.l1.ifname;
 
-			    if(iflist != NULL)
+			    if(!done)
 			    {
-			    	iflist = append(iflist, ",") ;
+				/* portmac <id_collect> <eq> <comm> <eqtype> <iflist> <vlan> */
+				fprintf (fp, "portmac P%s.%d %s %s %s",
+					    bridgenode->eq->name,
+					    v,
+					    bridgenode->eq->name,
+					    bridgenode->eq->snmp,
+					    bridgenode->eq->type
+					) ;
+
+				done = 1 ;
 			    }
-			    iflist = append(iflist, ifname) ;
+			    fprintf(fp, " %s", ifname) ;
 
 			    /* mark node */
 			    MK_SET(L1node, MK_PORTMAC) ;
@@ -179,23 +188,13 @@ void output_portmac (FILE *fp, struct node *bridgenode)
 		}
 	    }
 
-	    /* output portmac collect */
-	    if(iflist != NULL)
+	    if(done)
 	    {
-		/* portmac <id_collect> <eq> <comm> <eqtype> <vlan> <iflist>*/
-		fprintf (fp, "portmac P%s.%d %s %s %s %s %d\n",
-			    bridgenode->eq->name,
-			    v,
-			    bridgenode->eq->name,
-			    bridgenode->eq->snmp,
-			    bridgenode->eq->type,
-			    iflist,
-			    v
-			) ;
-
-		free(iflist);
-		iflist = NULL;
+		/* output vlan id */
+	        fprintf(fp, " %d\n", v) ;
+	    	done = 0 ;
 	    }
+
 
 	    /* clear mark */
 	    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
@@ -205,11 +204,6 @@ void output_portmac (FILE *fp, struct node *bridgenode)
 	    }
 
 	}
-    }
-
-    if(iflist != NULL)
-    {
-    	free(iflist);
     }
 }
 
