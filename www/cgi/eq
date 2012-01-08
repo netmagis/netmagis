@@ -288,7 +288,7 @@ proc place-into-tree {_thier list cumul} {
 	} else {
 	    set idx $word
 	}
-	if {! [info exists thier($idx)]} then {
+	if {! ([info exists thier($root)] && $idx in $thier($root))} then {
 	    lappend thier($root) $idx
 	}
 	set root $idx
