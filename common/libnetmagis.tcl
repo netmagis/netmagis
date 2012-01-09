@@ -1400,6 +1400,17 @@ snit::type ::netmagis {
 	}
 
 	#
+	# Path to pdflatex
+	#
+
+	if {$fmt eq "pdf"} then {
+	    set path [get-local-conf "pdflatex"]
+	    if {$path ne ""} then {
+		::webapp::cmdpath "pdflatex" $path
+	    }
+	}
+
+	#
 	# Send resulting page
 	#
 

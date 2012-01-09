@@ -29,6 +29,7 @@
 #   2010/11/27 : pda      : envoi utf-8 systématique
 #   2010/12/09 : pda      : ajout form-submit et form-reset
 #   2010/12/16 : pda      : add import-vars optional fspec parameter
+#   2012/01/09 : pda      : add cmdpath
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -40,7 +41,7 @@ package require pgsql ;			# package local
 
 # package require Pgtcl
 
-package provide webapp 1.14
+package provide webapp 1.15
 
 namespace eval webapp {
     namespace export log pathinfo user locale \
@@ -54,9 +55,8 @@ namespace eval webapp {
 	mail \
 	random \
 	nologin send error-exit \
-	debug \
-	cgidebug \
-	cgi-exec
+	debug cgidebug cgi-exec \
+	cmdpath
 
     variable tmpdir	/tmp
     variable pdflatex	/usr/local/bin/pdflatex
@@ -186,6 +186,18 @@ namespace eval webapp {
 
 	-->
 	</style>
+    }
+}
+
+##############################################################################
+# Set some variables
+##############################################################################
+
+proc ::webapp::cmdpath {cmd path} {
+    switch $cmd {
+	pdflatex { set ::webapp::pdflatex $path }
+	tmpdir   { set ::webapp::tmpdir	$path }
+	sendmail { set ::webapp::sendmail $path }
     }
 }
 
