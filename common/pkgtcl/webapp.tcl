@@ -2021,6 +2021,7 @@ proc ::webapp::sortie-bin {type page fichier} {
 #   2002/05/11 : pda : conception et codage
 #   2002/05/12 : pda : ajout de debuginfos
 #   2008/02/27 : jean/zamboni : ajout filename
+#   2012/01/09 : pda : encoding to utf8
 #
 
 proc ::webapp::sortie-latex {page fichier} {
@@ -2059,6 +2060,7 @@ proc ::webapp::sortie-latex {page fichier} {
 	    "Impossible de créer '$texfile': <PRE>$errorInfo</PRE>"
 	return
     }
+    fconfigure $fd -encoding utf-8
     puts $fd $page
     close $fd
 

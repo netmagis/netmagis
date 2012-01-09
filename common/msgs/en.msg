@@ -13,6 +13,8 @@
  cfg:jourfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
  cfg:authmethod:desc {Authentication method}
  cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.)}
+ cfg:pageformat:desc {Paper format}
+ cfg:pageformat:help {Paper format for generated printable pages}
 
  cfg:dns {DNS parameters}
 

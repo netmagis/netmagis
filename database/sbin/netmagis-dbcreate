@@ -1246,6 +1246,7 @@ db_insert_config ()
 datefmt	%d/%m/%Y %H:%M:%S
 jourfmt	%a %d %b %Y
 authmethod	pgsql
+pageformat	a4
 dnsupdateperiod	600
 default_lease_time	600
 max_lease_time	3600

@@ -1408,6 +1408,14 @@ snit::type ::netmagis {
 	    if {$path ne ""} then {
 		::webapp::cmdpath "pdflatex" $path
 	    }
+
+	    set pageformat [string tolower [::dnsconfig get "pageformat"]]
+	    switch -- $pageformat {
+		letter { set pageformat "letterpaper" }
+		a4 -
+		default { set pageformat "a4paper" }
+	    }
+	    lappend lsubst [list %PAGEFORMAT% $pageformat]
 	}
 
 	#
@@ -1625,6 +1633,7 @@ snit::type ::config {
 	    {datefmt {string}}
 	    {jourfmt {string}}
 	    {authmethod {menu {{pgsql Internal} {ldap {LDAP}}}}}
+	    {pageformat {menu {{a4 A4} {letter Letter}}} }
 	}
 	{dns
 	    {dnsupdateperiod {string}}
@@ -2067,6 +2076,7 @@ snit::type ::gvgraph {
     # graph skeleton
     #	%1$s : nodes and links
     #	%2$s : graph title
+    #	%3$s : page & size attributes (meaningful only for PDF graphs)
     variable skeleton -array {
 	map {
 	    graph g {
@@ -2109,8 +2119,7 @@ snit::type ::gvgraph {
 		fontname = Helvetica;
 		margin = .3;
 		center = true;
-		page = "8.26,11.69";
-		size = "11,7.6";
+		%3$s
 		orientation = landscape;
 		maxiter = 1000 ;
 		node [fontname=Helvetica,fontsize=10, color=grey];
@@ -2186,13 +2195,23 @@ snit::type ::gvgraph {
 	# Builds the dot file for the graph
 	#
 
+	# title
 	if {$title eq ""} then {
 	    set t ""
 	} else {
 	    set t "label = \"$title\";\n"
 	}
 
-	set dot [format $skeleton($format) [join $nodesandlinks "\n"] $t]
+	# page format
+	set pageformat [string tolower [::dnsconfig get "pageformat"]]
+	switch -- $pageformat {
+	    letter { set paper {page = "8.5,11"; size = "10.3,7.8";} }
+	    a4 -
+	    default { set paper {page = "8.26,11.69"; size = "11,7.6";} }
+	}
+
+	set dot [format $skeleton($format) [join $nodesandlinks "\n"] $t $paper]
+
 	set fd [open "$tmp.dot" "w"]
 	fconfigure $fd -encoding utf-8
 	puts $fd $dot

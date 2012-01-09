@@ -2,7 +2,7 @@
 %
 %
 
-\documentclass [a4paper,%ORIENTATION%] {article}
+\documentclass [%PAGEFORMAT%,%ORIENTATION%] {article}
 
     % Package "francais" inadapt\'e car il met des espaces avant les ":"
     % ce qui est g\^enant dans l'impression des adresses MAC et IPv6
@@ -15,7 +15,7 @@
     \renewcommand {\familydefault} {phv}
     \usepackage {marvosym}			% pour l'euro (\EUR)
 
-    \usepackage [pdftex,a4paper,margin=15mm,nohead,nofoot] {geometry}
+    \usepackage [pdftex,%PAGEFORMAT%,margin=15mm,nohead,nofoot] {geometry}
 
     \usepackage {supertabular}
 

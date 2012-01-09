@@ -82,6 +82,8 @@
  cfg:jourfmt:help {Format d'affichage des dates (sans l'heure). Voir la page de manuel clock(n) de Tcl.}
  cfg:authmethod:desc {Méthode d'authentification}
  cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.)}
+ cfg:pageformat:desc {Format de papier}
+ cfg:pageformat:help {Format de papier pour les pages imprimables}
 
  cfg:dns {Paramètres DNS}
 
