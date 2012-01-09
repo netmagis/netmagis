@@ -44,6 +44,7 @@
  {Modify Vlans} {Modif Vlans}
  {Modify equipment types} {Modif types d'équipement}
  {Modify equipments} {Modif équipements}
+ {Modify Graphviz attributes} {Modif attributs Graphviz}
  {Modify users and groups} {Modif groupes}
  {Force zone generation} {Forcer zones}
  {Application parameters} {Modif paramètres}

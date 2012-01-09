@@ -390,6 +390,8 @@ array set libconf {
 #	sets the current module, used for the links menu
 #   error
 #	returns an error page and close access to application
+#   errimg
+#	returns an error image and close access to application
 #   result
 #	returns a page and close access to application
 #   writelog
@@ -409,6 +411,7 @@ array set libconf {
 #   2010/11/29 : pda      : i18n
 #   2010/12/21 : pda/jean : add version in class
 #   2011/02/18 : pda      : add scriptmode
+#   2012/01/02 : pda      : add errimg
 #
 
 snit::type ::netmagis {
@@ -550,6 +553,7 @@ snit::type ::netmagis {
 			    {modvlan always}
 			    {modeqtype always}
 			    {modeq always}
+			    {moddotattr always}
 			    {admgrp always}
 			    {admzgen always}
 			    {admpar always}
@@ -578,6 +582,7 @@ snit::type ::netmagis {
 	modvlan		{admref?type=vlan {Modify Vlans}}
 	modeqtype	{admref?type=eqtype {Modify equipment types}}
 	modeq		{admref?type=eq {Modify equipments}}
+	moddotattr	{admref?type=dotattr {Modify Graphviz attributes}}
 	admgrp		{admgrp {Modify users and groups}}
 	admzgen		{admzgen {Force zone generation}}
 	admpar		{admpar {Application parameters}}
@@ -1295,6 +1300,33 @@ snit::type ::netmagis {
 	    }
 	    daemon -
 	    script {
+		puts stderr "$scriptargv0: $msg"
+		$self end
+		exit 1
+	    }
+	}
+    }
+
+    ###########################################################################
+    # Returns an error as an image and properly close access to application
+    # (and database)
+    #
+    # Input:
+    #   - msg : (translated) error message
+    # Output:
+    #   - return value: none (this method don't return)
+    #
+
+    method errimg {msg} {
+	switch $scriptmode {
+	    cgi {
+		::webapp::send png [errimg $msg]
+		$self end
+		exit 1
+	    }
+	    daemon -
+	    default {
+		# should not occur
 		puts stderr "$scriptargv0: $msg"
 		$self end
 		exit 1
@@ -2204,6 +2236,87 @@ snit::type ::gvgraph {
     method output {} {
 	return $output
     }
+}
+
+##############################################################################
+# Generates an error message as a bitmap image
+##############################################################################
+
+proc errimg {msg} {
+    set gv [::gvgraph %AUTO%]
+    $gv node "ERROR $msg" {shape=rectangle color=red style=filled}
+    if {[$gv graphviz "png" [get-local-conf "dot"] ""]} then {
+	set img [$gv output]
+    } else {
+	# ouch! This is a text...
+	set img [$gv error]
+    }
+    $gv destroy
+    return $img
+}
+
+##############################################################################
+# Get graphviz node attributes from a regular expression
+##############################################################################
+
+#
+# Initialize data structure for dotattr-match-get
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- type : 2 or 3, depending upon the type of graph
+#	- _tabdot : empty data structure for pattern matching
+# Output:
+#   - return value: none
+#   - parameter _tabdot:
+#	tabdot(_) {<re> ... <re>}		(in matching order)
+#	tabdot(<re>) <attributes>
+#
+# History
+#   2012/01/09 : pda      : design
+#
+
+proc dotattr-match-init {dbfd type _tabdot} {
+    upvar $_tabdot tabdot
+
+    catch {unset tabdot}
+    set sql "SELECT regexp, gvattr FROM topo.dotattr
+				WHERE type = $type ORDER BY rank"
+    set tabdot(_) {}
+    pg_select $dbfd $sql tab {
+	set re $tab(regexp)
+	set at $tab(gvattr)
+	lappend tabdot(_) $re
+	set tabdot($re) $at
+    }
+}
+
+#
+# Match a string against regexp in order to find graphviz node attributes
+#
+# Input:
+#   - parameters:
+#	- string : string to match (x/y for L2 graph, x for L3 graph)
+#	- _tabdot : array initialized by dotattr-match-init
+# Output:
+#   - return value: graphviz attributes
+#
+# History
+#   2012/01/09 : pda      : design
+#
+
+proc dotattr-match-get {str _tabdot} {
+    upvar $_tabdot tabdot
+
+    set attr {}
+    foreach re $tabdot(_) {
+	if {[regexp $re $str]} then {
+	    set attr $tabdot($re)
+	    break
+	}
+    }
+    return $attr
 }
 
 ##############################################################################
@@ -5145,7 +5258,7 @@ proc check-netid {dbfd netid idgrp priv version _msg} {
 ##############################################################################
 
 #
-# Generate HTML code to displau and edit table content.
+# Generate HTML code to display and edit table content.
 #
 # Input:
 #   - parameters:
@@ -5154,9 +5267,9 @@ proc check-netid {dbfd netid idgrp priv version _msg} {
 #		is {type value} where type = "html" or "text"
 #	- cspec : list of column specifications, each element
 #		is {id type defval}, where
-#		- id : column id in the table, and name of firld (idNN or idnNN)
-#		- type : "text", "string N", "bool", "menu L", "textarea {W H}"
-#			or "image URL"
+#		- id : column id in the table, and name of field (idNN or idnNN)
+#		- type : "text", "string N", "int N", "bool", "menu L",
+#			"textarea {W H}" or "image URL"
 #		- defval : default value for new lines
 #	- dbfd : database handle
 #	- sql : SQL request to get column values (notably the id column)
@@ -5211,7 +5324,7 @@ proc display-tabular {cwidth ctitle cspec dbfd sql idnum _tab} {
 
     pg_select $dbfd $sql tabsql {
 	set tabsql(:$idnum) $tabsql($idnum)
-	lappend lines [_display-tabular-line $cspec tabsql $idnum]
+	lappend lines [_display-tabular-line $cspec tabsql $idnum "existing"]
     }
 
     #
@@ -5225,7 +5338,7 @@ proc display-tabular {cwidth ctitle cspec dbfd sql idnum _tab} {
 
     for {set i 1} {$i <= 5} {incr i} {
 	set tabdef(:$idnum) "n$i"
-	lappend lines [_display-tabular-line $cspec tabdef $idnum]
+	lappend lines [_display-tabular-line $cspec tabdef $idnum "new"]
     }
 
     #
@@ -5306,6 +5419,7 @@ proc _build-array-spec {cwidth ctitle cspec} {
 #	- cspec : see display-tabular
 #	- tab : array indexed by fields specified in cspec (see display-tabular)
 #	- idnum : column name of the numeric id
+#	- new : "existing" or "new"
 # Output:
 #   - return value: an "arrgen" line
 #
@@ -5316,19 +5430,17 @@ proc _build-array-spec {cwidth ctitle cspec} {
 #   2002/05/06 : pda/jean : add type textarea
 #   2002/05/16 : pda      : convert to arrgen
 #   2010/12/04 : pda      : i18n
+#   2012/01/02 : pda      : add parameter new
 #
 
-proc _display-tabular-line {cspec _tab idnum} {
+proc _display-tabular-line {cspec _tab idnum new} {
     upvar $_tab tab
 
     set line {Normal}
     foreach s $cspec {
 	lassign $s id type defval
 
-	if {$id ne ""} then {
-	    set value $tab($id)
-	}
-
+	set value $tab($id)
 	lassign $type typekw typeopt
 
 	set num $tab(:$idnum)
@@ -5339,6 +5451,9 @@ proc _display-tabular-line {cspec _tab idnum} {
 		set item $value
 	    }
 	    string {
+		set item [::webapp::form-text $ref 1 $typeopt 0 $value]
+	    }
+	    int {
 		set item [::webapp::form-text $ref 1 $typeopt 0 $value]
 	    }
 	    bool {
@@ -5361,7 +5476,11 @@ proc _display-tabular-line {cspec _tab idnum} {
 		set item [::webapp::form-text $ref $height $width 0 $value]
 	    }
 	    image {
-		set item [format $typeopt $id]
+		if {$new eq "new"} then {
+		    set item "&nbsp;"
+		} else {
+		    set item [format $typeopt $num]
+		}
 	    }
 	}
 	lappend line $item
@@ -5385,16 +5504,31 @@ proc _display-tabular-line {cspec _tab idnum} {
 #	- idnum : column name of the numeric id
 #	- table : name of the SQL table to modify
 #	- _ftab : array containing form field values
+#	- check : name of a procedure to call on complete row
 # Output:
 #   - return value: none, this function exits if an error is encountered
 #
 # Notes :
-#   - format of "cspec" is {{column defval} ...}, where:
-#	- column is the column id in the table
-#	- defval, if present, is the default value to store in the table
+#   - format of "cspec" is {{column type defval} ...}, where:
+#	- column: column id in the table
+#	- type : "text", "string N", "int N", "bool", "menu L",
+#		"textarea {W H}" or "image URL"
+#	- defval: the default value to store in the table
 #		if the value is not provided
 #   - first column of "cspec" is the key used to know if an entry must
-#	be added or delete.
+#	be added or deleted.
+#   - the check procedure will be called with parameters:
+#		$check op dbfd _msg id idnum table _tabval
+#	where:
+#	- op : nop, mod, add, del
+#	- dbfd : database handle
+#	- _msg : error message if any
+#	- id : id (value) of entry to modify (null if op == add)
+#	- idnum : column name of the numeric id
+#	- table : name of the SQL table to modify
+#	- _tabval : array containing new values	(null if op == del)
+#	the check procedure may modify _tabval.
+#	It must returns 1 (ok) or 0 (err)
 #
 # History
 #   2001/11/02 : pda      : specification and documentation
@@ -5402,9 +5536,11 @@ proc _display-tabular-line {cspec _tab idnum} {
 #   2002/05/03 : pda/jean : remove an old constraint
 #   2010/12/04 : pda      : i18n
 #   2010/12/14 : pda      : use db lock methods
+#   2012/01/03 : pda      : use ftab indexes rather than count until max index
+#   2012/01/09 : pda      : add type to cspec and check parameter
 #
 
-proc store-tabular {dbfd cspec idnum table _ftab} {
+proc store-tabular {dbfd cspec idnum table _ftab check} {
     upvar $_ftab ftab
 
     #
@@ -5414,28 +5550,20 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
     d dblock [list $table]
 
     #
-    # Last used id
-    #
-
-    set max 0
-    pg_select $dbfd "SELECT MAX($idnum) FROM $table" tab {
-	set max $tab(max)
-    }
-
-    #
-    # Key to know if an entry must be deleted (for existing ids) or
-    # added (for new ids)
+    # Get used ids
     #
 
     set key [lindex [lindex $cspec 0] 0]
+
+    set lid [array names ftab -regexp "^$key\[0-9\]+$"]
+    regsub -all "\[\[:<:\]\]($key)(\[0-9\])" $lid {\2} lid
+    set lid [lsort -increasing $lid]
 
     #
     # Traversal of existing ids in the database
     #
 
-    set id 1
-
-    for {set id 1} {$id <= $max} {incr id} {
+    foreach id $lid {
 	if {[info exists ftab(${key}${id})]} {
 	    _fill-tabval $cspec "" $id ftab tabval
 
@@ -5444,7 +5572,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
 		# Delete entry
 		#
 
-		set ok [_store-tabular-del $dbfd msg $id $idnum $table]
+		set ok [_store-tabular-del $dbfd msg $id $idnum $table $check]
 		if {! $ok} then {
 		    #
 		    # When deletion is not possible, we must return an
@@ -5462,7 +5590,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
 		# Modify entry
 		#
 
-		set ok [_store-tabular-mod $dbfd msg $id $idnum $table tabval]
+		set ok [_store-tabular-mod $dbfd msg $id $idnum $table tabval $check]
 		if {! $ok} then {
 		    d dbabort [mc "modify %s" $tabval($key)] $msg
 		}
@@ -5483,7 +5611,7 @@ proc store-tabular {dbfd cspec idnum table _ftab} {
 	    # Add entry
 	    #
 
-	    set ok [_store-tabular-add $dbfd msg $table tabval]
+	    set ok [_store-tabular-add $dbfd msg $table tabval $check]
 	    if {! $ok} then {
 		d dbabort [mc "add %s" $tabval($key)] $msg
 	    }
@@ -5530,34 +5658,31 @@ proc _fill-tabval {cspec prefix num _ftab _tabval} {
     upvar $_ftab ftab
     upvar $_tabval tabval
 
-    foreach coldefval $cspec {
+    catch {unset tabval}
 
-	set col [lindex $coldefval 0]
+    foreach c $cspec {
+	lassign $c var type defval
 
-	if {[llength $coldefval] == 2} then {
-	    #
-	    # Default value: we do not get them from the form
-	    #
+	set form ${var}${prefix}${num}
 
-	    set val [lindex $coldefval 1]
-
+	if {[info exists ftab($form)]} then {
+	    set tabval($var) [string trim [lindex $ftab($form) 0]]
 	} else {
-	    #
-	    # No default value : we search a value in the form data.
-	    # If not found, it is a boolean which has not been checked.
-	    # The value is thus 0.
-	    #
-
-	    set form ${col}${prefix}${num}
-
-	    if {[info exists ftab($form)]} then {
-		set val [string trim [lindex $ftab($form) 0]]
-	    } else {
-		set val {0}
+	    switch [lindex $type 0] {
+		bool {
+		    # boolean not checked is absent from form values
+		    set tabval($var) 0
+		}
+		image {
+		    # don't set variable
+		    # the generated value is used as a comparison
+		    # in order to check if value has been modified
+		}
+		default {
+		    set tabval($var) $defval
+		}
 	    }
 	}
-
-	set tabval($col) $val
     }
 }
 
@@ -5572,6 +5697,7 @@ proc _fill-tabval {cspec prefix num _ftab _tabval} {
 #	- idnum : column name of the numeric id
 #	- table : name of the SQL table to modify
 #	- _tabval : array containing new values
+#	- check : name of a procedure to call
 # Output:
 #   - return value: 1 if ok, 0 if error
 #   - parameters:
@@ -5585,7 +5711,7 @@ proc _fill-tabval {cspec prefix num _ftab _tabval} {
 #   2010/12/04 : pda      : i18n
 #
 
-proc _store-tabular-mod {dbfd _msg id idnum table _tabval} {
+proc _store-tabular-mod {dbfd _msg id idnum table _tabval check} {
     upvar $_msg msg
     upvar $_tabval tabval
 
@@ -5593,34 +5719,37 @@ proc _store-tabular-mod {dbfd _msg id idnum table _tabval} {
     # There is no need to modify anything if all values are identical.
     #
 
-    set diff 0
+    set same 1
     pg_select $dbfd "SELECT * FROM $table WHERE $idnum = $id" tab {
 	foreach attribut [array names tabval] {
 	    if {$tabval($attribut) ne $tab($attribut)} then {
-		set diff 1
+		set same 0
 		break
 	    }
 	}
     }
 
-    set ok 1
-
-    if {$diff} then {
+    if {$same} then {
+	set ok [$check "nop" $dbfd msg $id $idnum $table tabval]
+    } else {
 	#
-	# It's diffent, we must do the work...
+	# It's different, we must do the work...
 	#
 
-	set l {}
-	foreach attr [array names tabval] {
-	    if {$tabval($attr) eq ""} then {
-		set v "NULL"
-	    } else {
-		set v "'[::pgsql::quote $tabval($attr)]'"
+	set ok [$check "mod" $dbfd msg $id $idnum $table tabval]
+	if {$ok} then {
+	    set l {}
+	    foreach attr [array names tabval] {
+		if {$tabval($attr) eq ""} then {
+		    set v "NULL"
+		} else {
+		    set v "'[::pgsql::quote $tabval($attr)]'"
+		}
+		lappend l "$attr = $v"
 	    }
-	    lappend l "$attr = $v"
+	    set sql "UPDATE $table SET [join $l ,] WHERE $idnum = $id"
+	    set ok [::pgsql::execsql $dbfd $sql msg]
 	}
-	set sql "UPDATE $table SET [join $l ,] WHERE $idnum = $id"
-	set ok [::pgsql::execsql $dbfd $sql msg]
     }
 
     return $ok
@@ -5648,11 +5777,15 @@ proc _store-tabular-mod {dbfd _msg id idnum table _tabval} {
 #   2010/12/04 : pda      : i18n
 #
 
-proc _store-tabular-del {dbfd _msg id idnum table} {
+proc _store-tabular-del {dbfd _msg id idnum table check} {
     upvar $_msg msg
 
-    set sql "DELETE FROM $table WHERE $idnum = $id"
-    return [::pgsql::execsql $dbfd $sql msg]
+    set ok [$check "del" $dbfd msg $id $idnum $table {}]
+    if {$ok} then {
+	set sql "DELETE FROM $table WHERE $idnum = $id"
+	set ok [::pgsql::execsql $dbfd $sql msg]
+    }
+    return $ok
 }
 
 #
@@ -5677,30 +5810,34 @@ proc _store-tabular-del {dbfd _msg id idnum table} {
 #   2010/12/04 : pda      : i18n
 #
 
-proc _store-tabular-add {dbfd _msg table _tabval} {
+proc _store-tabular-add {dbfd _msg table _tabval check} {
     upvar $_msg msg
     upvar $_tabval tabval
 
-    #
-    # Column names
-    #
-    set cols [array names tabval]
+    set ok [$check "add" $dbfd msg {} {} $table tabval]
+    if {$ok} then {
+	#
+	# Column names
+	#
+	set cols [array names tabval]
 
-    #
-    # Column values
-    #
-    set vals {}
-    foreach c $cols {
-	if {$tabval($c) eq ""} then {
-	    set v "NULL"
-	} else {
-	    set v "'[::pgsql::quote $tabval($c)]'"
+	#
+	# Column values
+	#
+	set vals {}
+	foreach c $cols {
+	    if {$tabval($c) eq ""} then {
+		set v "NULL"
+	    } else {
+		set v "'[::pgsql::quote $tabval($c)]'"
+	    }
+	    lappend vals $v
 	}
-	lappend vals $v
-    }
 
-    set sql "INSERT INTO $table ([join $cols ,]) VALUES ([join $vals ,])"
-    return [::pgsql::execsql $dbfd $sql msg]
+	set sql "INSERT INTO $table ([join $cols ,]) VALUES ([join $vals ,])"
+	set ok [::pgsql::execsql $dbfd $sql msg]
+    }
+    return $ok
 }
 
 ##############################################################################

@@ -62,80 +62,6 @@ source %LIBNETMAGIS%
 # Utilities
 ##############################################################################
 
-proc match-eq {dbfd type_model} {
-    switch -glob -- $type_model {
-	juniper/M* {
-	    set attr {shape=circle
-				style=filled fillcolor=lightgrey
-				fixedsize height=1}
-	}
-	cisco/12000* {
-	    set attr {shape=doublecircle
-				style=filled fillcolor=lightgrey
-				fixedsize height=1}
-	}
-	juniper/EX8* -
-	juniper/Chassis* -
-	cisco/WS-C45* {
-	    set attr {shape=box style=filled fillcolor=lightblue}
-	}
-	cisco/WS-C37* -
-	cisco/WS-C29* {
-	    set attr {shape=box style=filled fillcolor=lightblue height=.25}
-	}
-	cisco/WS-*PS  {
-	    set attr {shape=box style=filled fillcolor=yellow height=.25}
-	}
-	cisco/37*  {
-	    set attr {shape=octagon style=filled fillcolor=orange1 height=.25}
-	}
-	cisco/38*  {
-	    set attr {shape=octagon style=filled fillcolor=orange1}
-	}
-	cisco/*routeur -
-	cisco/1605* -
-	cisco/1721* -
-	cisco/7206* {
-	    set attr {shape=circle
-				style=filled fillcolor=lightgrey
-				fixedsize height=1}
-	}
-	juniper/EX2* -
-	juniper/EX4* {
-	    set attr {shape=box style=filled fillcolor=SteelBlue height=.25}
-	}
-	alcatel/switch {
-	    set attr {shape=box height=.35}
-	}
-	nuage/* {
-	    set attr {shape=ellipse style=filled fillcolor=palegreen width=1.5}
-	}
-	fwroutebridge* {
-	    set attr {shape=Mcircle
-				style=filled fillcolor=tomato
-				height=1}
-	}
-	fwroute* {
-	    set attr {shape=circle
-				style=filled fillcolor=tomato
-				height=1}
-	}
-	fw* {
-	    set attr {shape=box style=filled fillcolor=tomato height=.25}
-	}
-	switch* {
-	    set attr {shape=box style=filled fillcolor=lightgrey height=.25}
-	}
-	hp* {
-	    set attr {shape=box style=filled fillcolor=pink height=.25}
-	}
-	default {
-	    set attr {shape=triangle}
-	}
-    }
-    return $attr
-}
-
 proc conv-ifname {ifname} {
     foreach p {
 		{ GigabitEthernet Gi}
@@ -208,10 +134,12 @@ proc gen-graph {dbfd gv format eq iface vlan xl2 _tabvlan} {
     # Display all these informations
     #
 
+    dotattr-match-init $dbfd 2 td
+
     $gv title [title $vlans tabvlan]
 
     foreach eqname [array names tabeq] {
-	set attrlist [match-eq $dbfd $tabeq($eqname)]
+	set attrlist [dotattr-match-get $tabeq($eqname) td]
 
 	d urlset "" $conf(nexteq) [list [list "eq" $eqname]]
 	set url [d urlget ""]

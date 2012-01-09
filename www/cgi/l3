@@ -62,6 +62,8 @@ source %LIBNETMAGIS%
 proc gen-graph {dbfd gv format xl3} {
     global conf
 
+    dotattr-match-init $dbfd 3 td
+
     foreach line [split $xl3 "\n"] {
 	switch -- [lindex $line 0] {
 	    selection {
@@ -69,6 +71,7 @@ proc gen-graph {dbfd gv format xl3} {
 	    }
 	    eq {
 		lassign $line kw nodename nodetype
+		set attrlist [dotattr-match-get $nodetype td]
 		switch $nodetype {
 		    router {
 			if {! [regexp -- {([^:]+):(.*)} $nodename bidon eqname rinst]} then {
@@ -79,16 +82,10 @@ proc gen-graph {dbfd gv format xl3} {
 			    _v6 { set label "$eqname\\ndefault (IPv6)" }
 			    default { set label "$eqname\\r$rinst" }
 			}
-			set attrlist {shape=circle
-					    style=filled fillcolor=lightgrey
-					    fixedsize height=1.5}
 			lappend attrlist label=\"$label\"
 		    }
 		    host {
 			set eqname $nodename
-			set attrlist {shape=box
-					    style=filled fillcolor=lightblue
-					    height=.25}
 		    }
 		    default {
 			d error [mc {Invalid node type '%1$s' for %2$s} $nodetype $nodename]
@@ -111,9 +108,7 @@ proc gen-graph {dbfd gv format xl3} {
 	    }
 	    cloud {
 		lassign $line kw nodename bcastref vlans networks
-		set attrlist {shape=ellipse
-				style=filled fillcolor=palegreen
-				width=1.5}
+		set attrlist [dotattr-match-get "cloud" td]
 		set l {}
 		set vlanid -1
 		foreach vl $vlans {

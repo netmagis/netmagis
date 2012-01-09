@@ -1,0 +1,82 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Modification des attributs Graphviz
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application Netmagis
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Attributs Graphviz des nœuds}
+
+    Cette page permet de modifier les attributs des nœuds dans les
+    graphes réseau (\lien {L2} {l2} et \lien {L3} {l3}) générés à
+    l'aide du logiciel \lien {Graphviz} {http://graphviz.org}.
+
+    \titre {2} {\ancre {rank} {Tri}}
+
+	Chaque motif a un ordre de tri. Durant le tracé du graphe,
+	les motifs sont cherchés dans l'ordre numérique croissant,
+	ce qui permet d'utiliser des expressions régulières plus
+	spécifiques en premier et des expressions plus générales
+	vers la fin.
+
+	Notez que les valeurs de tri doivent être uniques.
+
+    \titre {2} {\ancre {type} {Type}}
+
+	Le type de graphe pour lequel ce motif est utilisé. Vous
+	pouvez utiliser "L2" pour les \lien {graphes de niveau 2}
+	{l2} ou "L3" pour les \lien {graphes IP} {l3}.
+
+    \titre {2} {\ancre {regexp} {Regexp}}
+
+	Expression régulière de sélection:
+	\liste {
+	    \item {Pour les graphes de niveau 2, la chaîne
+		«~type/modèle~» est construite avec le nom du
+		constructeur («~cisco~», «~juniper~», «~hp~», etc.)
+		et le modèle de l'équipement tel que trouvé par
+		Rancid. Cette chaîne est ensuite confrontée aux
+		expressions régulières pour sélectionner les attributs
+		à affecter au nœud pour la génération Graphviz.
+	    }
+	    \item {pour les graphes de niveau 3, 3 types de nœuds sont
+		utilisés: «~router~», «~host~» et «~cloud~».
+	    }
+	}
+
+    \titre {2} {\ancre {gvattr} {Attributs}}
+
+	Il s'agit des attributs \lien {Graphviz} {http://graphviz.org}
+	utilisés pour dessiner un nœud. Vous pouvez trouver une
+	description détaillée des attributs dans la \lien {documentation
+	de Graphviz} {http://graphviz.org/content/attrs}.
+
+    \titre {2} {\ancre {png} {Image}}
+
+	Image du nœud telle que dessinée par \lien {Graphviz}
+	{http://graphviz.org}.
+}
+
+}
