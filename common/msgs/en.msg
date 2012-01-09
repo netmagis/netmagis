@@ -12,23 +12,23 @@
  cfg:jourfmt:desc {Date display format}
  cfg:jourfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
  cfg:authmethod:desc {Authentication method}
- cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.)}
+ cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.).}
  cfg:pageformat:desc {Paper format}
- cfg:pageformat:help {Paper format for generated printable pages}
+ cfg:pageformat:help {Paper format for generated printable pages.}
 
  cfg:dns {DNS parameters}
 
  cfg:dnsupdateperiod:desc {DNS update period}
- cfg:dnsupdateperiod:help {Duration between DNS zone generations on the DNS server (should be kept in sync with the associated CRON period)}
+ cfg:dnsupdateperiod:help {Duration between DNS zone generations on the DNS server (should be kept in sync with the associated CRON period).}
  cfg:defuser:desc {Default user}
- cfg:defuser:help {Default user is used in Netmagis command line programs, when the user's login is not found in the Netmagis database}
+ cfg:defuser:help {Default user is used in Netmagis command line programs, when the user's login is not found in the Netmagis database.}
 
  cfg:dhcp {DHCP parameters}
 
- cfg:dhcpdefdomain:desc {default domain name}
- cfg:dhcpdefdomain:help {Default Domain Name sent to DHCP clients without a profile}
- cfg:dhcpdefdnslist:desc {default Domain Name Server list}
- cfg:dhcpdefdnslist:help {Default Domain Name Server list sent to DHCP clients without a profile}
+ cfg:dhcpdefdomain:desc {Default domain name}
+ cfg:dhcpdefdomain:help {Default domain Name sent to DHCP clients without profile.}
+ cfg:dhcpdefdnslist:desc {Default name servers list}
+ cfg:dhcpdefdnslist:help {Default list of name servers sent to DHCP clients without profile, separated by spaces.}
  cfg:default_lease_time:desc {default_lease_time}
  cfg:default_lease_time:help {Value in seconds, for DHCP parameter "default_lease_time" used in the dynamic range generation. This value is used if the range specific parameter is null.}
  cfg:max_lease_time:desc {max_lease_time}
@@ -41,7 +41,7 @@
  cfg:topoactive:desc {Topo module activation}
  cfg:topoactive:help {Check this box to activate the "Topo" module.}
  cfg:defdomain:desc {Default domain}
- cfg:defdomain:help {Default domain name, since some equipments do not report FQDNs}
+ cfg:defdomain:help {Default domain name, since some equipments do not report FQDNs.}
  cfg:topofrom:desc {Topo mail sender}
  cfg:topofrom:help {"From" header of mails sent by the topod daemon when it detects modifications or abnormalities.}
  cfg:topoto:desc {Topo mail receiver}
@@ -75,7 +75,7 @@
  cfg:ldapbinddn:desc {Bind DN}
  cfg:ldapbinddn:help {Bind DN to authenticate against LDAP server. Example : cn=admin,dc=mycompany,dc=com}
  cfg:ldapbindpw:desc {Bind password}
- cfg:ldapbindpw:help {Password to authenticate against LDAP server}
+ cfg:ldapbindpw:help {Password to authenticate against LDAP server.}
  cfg:ldapbasedn:desc {Base DN}
  cfg:ldapbasedn:help {Base DN for people searches. Example: ou=people,dc=domaine,dc=fr}
  cfg:ldapsearchlogin:desc {User search request}
@@ -87,50 +87,36 @@
  cfg:ldapattrname:desc {Attribute "nom"}
  cfg:ldapattrname:help {LDAP attribute to get user's name. Example: "sn"}
  cfg:ldapattrgivenname:desc {Attribute "first name"}
- cfg:ldapattrgivenname:help {LDAP attribute to get user's first name. Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattrgivenname:help {LDAP attribute to get user's first name. Attributes may be empty or made from one or more LDAP attributes which will be joined together.}
  cfg:ldapattrmail:desc {Attribute "mail addresse"}
- cfg:ldapattrmail:help {LDAP attribute to get user's mail address. Example: "mail". Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattrmail:help {LDAP attribute to get user's mail address. Example: "mail". Attributes may be empty or made from one or more LDAP attributes which will be joined together.}
  cfg:ldapattrphone:desc {Attribute "telephone number"}
- cfg:ldapattrphone:help {LDAP attribute to get user's telephone number. Example: "telephoneNumber". Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattrphone:help {LDAP attribute to get user's telephone number. Example: "telephoneNumber". Attributes may be empty or made from one or more LDAP attributes which will be joined together.}
  cfg:ldapattrmobile:desc {Attribute "mobile phone"}
- cfg:ldapattrmobile:help {LDAP attribute to get user's mobile phone number. Example: "". Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattrmobile:help {LDAP attribute to get user's mobile phone number. Example: "". Attributes may be empty or made from one or more LDAP attributes which will be joined together.}
  cfg:ldapattrfax:desc {Attribute "facsimile"}
- cfg:ldapattrfax:help {LDAP attribute to get user's facsimile number. Example: "facsimileTelephoneNumber". Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattrfax:help {LDAP attribute to get user's facsimile number. Example: "facsimileTelephoneNumber". Attributes may be empty or made from one or more LDAP attributes which will be joined together.}
  cfg:ldapattraddr:desc {Attribute "address"}
- cfg:ldapattraddr:help {LDAP attribute to get user's postal address. Example: "postalAddress postalCode l". Attributes may be empty or made from one or more LDAP attributes which will be joined together}
+ cfg:ldapattraddr:help {LDAP attribute to get user's postal address. Example: "postalAddress postalCode l". Attributes may be empty or made from one or more LDAP attributes which will be joined together.}
 
  cfg:authpgsql {Internal authentication parameters}
 
- cfg:authmailfrom:desc {Use the "From" specified in "auth"}
- cfg:authmailfrom:help {Use the information from the "auth" application, rather than the next parameter in this list.}
- cfg:mailfrom:desc {Sender of mails when a password change}
- cfg:mailfrom:help {"From" header of mails sent by the application to an user when a password change occurs.}
-
- cfg:authmailreplyto:desc {Use the "Reply-To" specified in "auth"}
- cfg:authmailreplyto:help {Use the information from the "auth" application, rather than the next parameter in this list.}
- cfg:mailreplyto:desc {"Reply-To" of mails when a password change}
- cfg:mailreplyto:help {"Reply-To" header of mails sent by the application to an user when a password change occurs.}
-
- cfg:authmailcc:desc {Use the "Cc" specified in "auth"}
- cfg:authmailcc:help {Use the information from the "auth" application, rather than the next parameter in this list.}
- cfg:mailcc:desc {"Cc" of mails when a password change}
- cfg:mailcc:help {"Cc" header of mails sent by the application to an user when a password change occurs.. This may be an address list, separated by spaces.}
-
- cfg:authmailbcc:desc {Use the "Bcc" specified in "auth"}
- cfg:authmailbcc:help {Use the information from the "auth" application, rather than the next parameter in this list.}
- cfg:mailbcc:desc {"Bcc" of mails when a password change}
- cfg:mailbcc:help {"Bcc" header of mails sent by the application to an user when a password change occurs.. This may be an address list, separated by spaces.}
-
- cfg:authmailsubject:desc {Use the "Subject" specified in "auth"}
- cfg:authmailsubject:help {Use the information from the "auth" application, rather than the next parameter in this list.}
- cfg:mailsubject:desc {"Subject" of mails when a password change}
- cfg:mailsubject:help {"Subject" header of mails sent by the application to an user when a password change occurs.}
-
- cfg:authmailbody:desc {Use the body specified in "auth"}
- cfg:authmailbody:help {Use the information from the "auth" application, rather than the next parameter in this list.}
- cfg:mailbody:desc {Body of mails when a password change}
- cfg:mailbody:help {Body of mails sent by the application to an user when a password change occurs. Following parameters are substitued: '%1$s'=login, '%2$s'=generated password.}
-
- cfg:groupes:desc {Authorized Web groups}
- cfg:groupes:help {List of groups (according to Apache daemon authentication) authorized to create an user. If the list is empty, all existing groups are authorized.}
+ cfg:authpgminpwlen:desc {Password minimum length}
+ cfg:authpgminpwlen:help {Minimum authorized length for passwords entered with the internal authentication module.}
+ cfg:authpgmaxpwlen:desc {Password maximum length}
+ cfg:authpgmaxpwlen:help {Maximum authorized length for passwords entered with the internal authentication module.}
+ cfg:authpgmailfrom:desc {Mail "From" for password change}
+ cfg:authpgmailfrom:help {"From" header of mails sent by the application to an user when a password change occurs.}
+ cfg:authpgmailreplyto:desc {Mail "Reply-To" for password change}
+ cfg:authpgmailreplyto:help {"Reply-To" header of mails sent by the application to an user when a password change occurs.}
+ cfg:authpgmailcc:desc {Mail "Cc" for password change}
+ cfg:authpgmailcc:help {"Cc" header of mails sent by the application to an user when a password change occurs. This may be a list of addresses, separated by spaces.}
+ cfg:authpgmailbcc:desc {Mail "Bcc" for password change}
+ cfg:authpgmailbcc:help {"Bcc" header of mails sent by the application to an user when a password change occurs. This may be a list of addresses, separated by spaces.}
+ cfg:authpgmailsubject:desc {Mail "Subject" for password change}
+ cfg:authpgmailsubject:help {"Subject" header of mails sent by the application to an user when a password change occurs.}
+ cfg:authpgmailbody:desc {Mail body for password change}
+ cfg:authpgmailbody:help {Body of mails sent by the application to an user when a password change occurs. Following parameters are substitued: '%1$s'=login, '%2$s'=generated password.}
+ cfg:authpggroupes:desc {Authorized Web groups}
+ cfg:authpggroupes:help {List of groups (according to Apache daemon authentication) authorized to create an user. If the list is empty, all existing groups are authorized.}
 }
