@@ -37,18 +37,18 @@ our $conf_file = "%CONFFILE%";
 our %global_conf = read_global_conf_file($conf_file);
 
 our %sensor_types = (
-	'trafic'       		=> { 'graph'=>'trafic','rrd'=>'1','period'=>'*/5 * * * *' },
-	'trafic1min'		=> { 'graph'=>'trafic','rrd'=>'1','period'=>'* * * * *' },
-	'ifNom-snmp32'		=> { 'graph'=>'trafic','rrd'=>'1','period'=>'*/5 * * * *' },
-	'ifNom-snmp64'		=> { 'graph'=>'trafic','rrd'=>'1','period'=>'*/5 * * * *' },
-	'nbauthwifi'		=> { 'graph'=>'nbauthwifi','rrd'=>'1','period'=>'*/5 * * * *' },
-	'nbassocwifi'		=> { 'graph'=>'nbassocwifi','rrd'=>'1','period'=>'*/5 * * * *' },
-	'broadcast'		=> { 'graph'=>'broadcast','rrd'=>'1','period'=>'* * * * *' },
-	'multicast'		=> { 'graph'=>'multicast','rrd'=>'1','period'=>'* * * * *' },
-	'ipmac'			=> { 'graph'=>'ipmac','rrd'=>'1','period'=>'*/5 * * * *' },
-	'portmac.cisco'		=> { 'graph'=>'portmac','rrd'=>'0','period'=>'3,8,13,18,23,28,33,38,43,48,53,58 * * * *' },
-	'portmac.juniper'	=> { 'graph'=>'portmac','rrd'=>'0','period'=>'3,8,13,18,23,28,33,38,43,48,53,58 * * * *' },
-	'portmac.hp'		=> { 'graph'=>'portmac','rrd'=>'0','period'=>'3,8,13,18,23,28,33,38,43,48,53,58 * * * *' },
+	'trafic'       		=> { 'graph'=>'trafic','rrd'=>'1','period'=>'*/5 * * * *','enabled'=>'1' },
+	'trafic1min'		=> { 'graph'=>'trafic','rrd'=>'1','period'=>'* * * * *','enabled'=>'1' },
+	'ifNom-snmp32'		=> { 'graph'=>'trafic','rrd'=>'1','period'=>'*/5 * * * *','enabled'=>'1' },
+	'ifNom-snmp64'		=> { 'graph'=>'trafic','rrd'=>'1','period'=>'*/5 * * * *','enabled'=>'1' },
+	'nbauthwifi'		=> { 'graph'=>'nbauthwifi','rrd'=>'1','period'=>'*/5 * * * *','enabled'=>'1' },
+	'nbassocwifi'		=> { 'graph'=>'nbassocwifi','rrd'=>'1','period'=>'*/5 * * * *','enabled'=>'1' },
+	'broadcast'		=> { 'graph'=>'broadcast','rrd'=>'1','period'=>'* * * * *','enabled'=>'1' },
+	'multicast'		=> { 'graph'=>'multicast','rrd'=>'1','period'=>'* * * * *','enabled'=>'1' },
+	'ipmac'			=> { 'graph'=>'ipmac','rrd'=>'1','period'=>'*/5 * * * *','enabled'=>'1' },
+	'portmac.cisco'		=> { 'graph'=>'portmac','rrd'=>'0','period'=>'3,8,13,18,23,28,33,38,43,48,53,58 * * * *','enabled'=>'1' },
+	'portmac.juniper'	=> { 'graph'=>'portmac','rrd'=>'0','period'=>'3,8,13,18,23,28,33,38,43,48,53,58 * * * *','enabled'=>'1' },
+	'portmac.hp'		=> { 'graph'=>'portmac','rrd'=>'0','period'=>'3,8,13,18,23,28,33,38,43,48,53,58 * * * *','enabled'=>'1' },
 );
 
 
@@ -214,9 +214,26 @@ sub creeSupprSonde
 {
     my $key;
     my $compteur_keys;
+    my %sensor_disabled;
+    my $sdis = 0;
+
     # liste toute les sondes envoyees par TOPO
     foreach $key (keys %sonde_maj_sonde)
     {
+	# if sensor type not enabled
+	if($sensor_types{$sonde_maj_sonde{$key}{type}}{enabled} == 0)
+	{
+		if(not exists $sensor_disabled{$sonde_maj_sonde{$key}{type}})
+		{
+			$sensor_disabled{$sonde_maj_sonde{$key}{type}} = 0;
+			$sdis = 1;
+		}
+		
+		$sensor_disabled{$sonde_maj_sonde{$key}{type}} ++;	
+			
+		next;		
+	}
+
 	$compteur_keys ++;
 	# teste si la sonde existe déjà dans la table majMETRO (mise a jour des sondes)
 	if(defined($sonde_majMETRO{$key}))
@@ -317,7 +334,7 @@ sub creeSupprSonde
 		}
 	    }
 	}
-	# nouvelle sonde
+	# new sensor
 	else
 	{
 	    my $nom_pt_metro = get_nom_pt_metro($key);
@@ -325,13 +342,32 @@ sub creeSupprSonde
 	    message_erreur("NOUVEAU point de metrologie : \"$nom_pt_metro\". Parametres ($sonde_maj_sonde{$key}{ip},
 			$sonde_maj_sonde{$key}{community},$sonde_maj_sonde{$key}{params}), sonde $compteur_keys");
 	    
+	    writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
+                        "\t INFO : NOUVEAU point de metrologie : \"$nom_pt_metro\". Parametres ($sonde_maj_sonde{$key}{ip},
+                        $sonde_maj_sonde{$key}{community},$sonde_maj_sonde{$key}{params}), sonde $compteur_keys");
+
 	    ajouter_sonde($key,$sonde_maj_sonde{$key}{type},
                           $sonde_maj_sonde{$key}{ip},
                           $sonde_maj_sonde{$key}{community},
                           $sonde_maj_sonde{$key}{params});
 	}
     }
-   
+  
+    # if some sensor type are disabled, write warning log message.
+    if($sdis == 1)
+    {
+           my $list = "";
+           foreach my $s (%sensor_disabled)
+           {
+                $list = "$list (type = $s, $sensor_disabled{$s} sensors)";
+           }
+
+           writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
+               "\t WARNING : The following sensors types are disabled :$list. 
+               Set the global variable %sensor_type to enable them.");
+    } 
+
+ 
     # tentatives d'écriture des fichiers mis à jour
     my $essais = 5;
     my $ok = 0;
@@ -714,6 +750,7 @@ sub test_bases_expirees
                  	delete $quarantaine{$key};
                  }
         }
+
 	# reecriture du fichier de quarantaine	
 	open(QUA,">$quarantinefile");
 	foreach $key (keys %quarantaine)

@@ -248,6 +248,12 @@ sub get_snmp_index2ifacedesc
                 {
                         if($table_forwarding->{$host}{$br_id}{$mac} eq "$1")
                         {
+				# delete Juniper interface unit extension
+			 	if($hashref->{$key} =~ /(.*)\.[0-9]+$/)
+                                {
+                                        $hashref->{$key} = $1;
+                                }
+
                                 if(exists_in_iface_list($hashref->{$key},$iflist) == 1)
                                 {
                                         $table_forwarding->{$host}{$br_id}{$mac} = $hashref->{$key};
@@ -269,7 +275,7 @@ sub get_snmp_index2ifacedesc
 
 sub get_qbridge
 {
-        my ($session,$snmp,$host,$community,$vlanlist,$iflist) = @_;
+        my ($session,$snmp,$host,$community,$vlanlist,$iflist,$table_forwarding) = @_;
 
         if(defined($session->var_bind_list()))
         {
@@ -277,14 +283,18 @@ sub get_qbridge
                 my $key = '';
                 my $hashref = $session->var_bind_list();
 
+		my %vlan2qbridge;
+
+		my $p_vlan2qbridge = \%vlan2qbridge;
+
                 foreach $key (keys %$hashref)
                 {
                         chomp($key);
 
                         $key =~ /([0-9]+)$/;
 
-                        $vlan2qbridge{vlan}{$$hashref{$key}} = $1;
-                        $vlan2qbridge{br}{$1} = $$hashref{$key};
+                        $vlan2qbridge{br}{$$hashref{$key}} = $1;
+                        $vlan2qbridge{vlan}{$1} = $$hashref{$key};
                 }
 
                 if (defined($snmp))
@@ -292,14 +302,14 @@ sub get_qbridge
                         my $Oid = "1.3.6.1.2.1.17.7.1.2.2.1.2";
 
                         # if only one vlan as parameters, modify the oid for the associated bridgeId
-                        if(get_nb_vlan_in_list($vlanlist) == 1 && exists $vlan2qbridge{br}{$vlanlist})
+                        if(get_nb_elem_in_list($vlanlist) == 1 && exists $vlan2qbridge{br}{$vlanlist})
                         {
                                 $Oid = "$Oid.$vlan2qbridge{br}{$vlanlist}";
                         }
 
                         my $res = $snmp->get_table(
                         $Oid,
-                        -callback   => [ \&get_snmp_qbridge,$snmp,$host,$community,$vlanlist,$iflist] );
+                        -callback   => [ \&get_snmp_qbridge,$snmp,$host,$community,$vlanlist,$iflist,$table_forwarding,$p_vlan2qbridge] );
                 }
         }
 }
@@ -307,7 +317,7 @@ sub get_qbridge
 
 sub get_snmp_qbridge
 {
-    my ($session,$snmp,$host,$community,$vlanlist,$iflist) = @_;
+    my ($session,$snmp,$host,$community,$vlanlist,$iflist,$table_forwarding,$vlan2qbridge) = @_;
 
     if(defined($session->var_bind_list()))
     {
@@ -332,7 +342,7 @@ sub get_snmp_qbridge
 
                 if("$a:$b:$c:$d:$e:$f" ne "00:00:00:00:00:00")
                 {
-                        $table_forwarding{$host}{$vlan2qbridge{vlan}{$br_id}}{"$a:$b:$c:$d:$e:$f"} = "$$hashref{$key}";
+                        $table_forwarding->{$host}{$vlan2qbridge->{vlan}{$br_id}}{"$a:$b:$c:$d:$e:$f"} = "$$hashref{$key}";
                         $compteur ++;
                 }
             }
@@ -342,7 +352,7 @@ sub get_snmp_qbridge
                 my $Oid = "1.3.6.1.2.1.17.1.4.1.2";
                 my $res = $snmp->get_table(
                         $Oid,
-                        -callback   => [ \&get_snmp_bridge_iface_index,$snmp,$host,$community,$vlanlist,$iflist] );
+                        -callback   => [ \&get_snmp_bridge_iface_index,$snmp,$host,$community,$vlanlist,$iflist,$table_forwarding] );
         }
      }
 }
@@ -350,7 +360,7 @@ sub get_snmp_qbridge
 
 sub get_snmp_bridge_iface_index
 {
-    my ($session,$snmp,$host,$community,$vlanlist,$iflist) = @_;
+    my ($session,$snmp,$host,$community,$vlanlist,$iflist,$table_forwarding) = @_;
 
     if(defined($session->var_bind_list()))
     {
@@ -364,13 +374,13 @@ sub get_snmp_bridge_iface_index
 
             $key =~ /([0-9]+)$/;
 
-            foreach my $br_id (keys %{$table_forwarding{$host}})
+            foreach my $br_id (keys %{$table_forwarding->{$host}})
             {
-                foreach my $mac (keys %{$table_forwarding{$host}{$br_id}})
+                foreach my $mac (keys %{$table_forwarding->{$host}{$br_id}})
                 {
-                        if($table_forwarding{$host}{$br_id}{$mac} eq "$1")
+                        if($table_forwarding->{$host}{$br_id}{$mac} eq "$1")
                         {
-                                $table_forwarding{$host}{$br_id}{$mac} = $$hashref{$key};
+                                $table_forwarding->{$host}{$br_id}{$mac} = $$hashref{$key};
                         }
                 }
             }
@@ -380,7 +390,7 @@ sub get_snmp_bridge_iface_index
                 my $Oid = "1.3.6.1.2.1.2.2.1.2";
                 my $res = $snmp->get_table(
                         $Oid,
-                        -callback   => [ \&get_snmp_index2ifacedesc,$snmp,$host,$community,$vlanlist,$iflist] );
+                        -callback   => [ \&get_snmp_index2ifacedesc,$snmp,$host,$community,$vlanlist,$iflist,$table_forwarding] );
         }
      }
 }
@@ -430,6 +440,17 @@ sub print_portmac_report
         	}
 	}
 }
+
+
+sub get_nb_elem_in_list
+{
+        my ($list) = @_;
+
+        my @i = split(/\s+/,$list);
+
+        return @i;
+}
+
 
 
 return 1;
