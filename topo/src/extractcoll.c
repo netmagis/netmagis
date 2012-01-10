@@ -170,17 +170,21 @@ void output_portmac (FILE *fp, struct node *bridgenode)
 			    if(!done)
 			    {
 				/* portmac <id_collect> <eq> <comm> <eqtype> <iflist> <vlan> */
-				fprintf (fp, "portmac P%s.%d %s %s %s",
+				fprintf (fp, "portmac P%s.%d %s %s %s %s",
 					    bridgenode->eq->name,
 					    v,
 					    bridgenode->eq->name,
 					    bridgenode->eq->snmp,
-					    bridgenode->eq->type
+					    bridgenode->eq->type,
+					    ifname
 					) ;
 
 				done = 1 ;
 			    }
-			    fprintf(fp, " %s", ifname) ;
+			    else
+			    {
+				fprintf(fp, ",%s", ifname) ;
+			    }
 
 			    /* mark node */
 			    MK_SET(L1node, MK_PORTMAC) ;
