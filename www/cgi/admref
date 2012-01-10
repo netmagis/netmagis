@@ -9,7 +9,10 @@
 #   - display edit page
 #	- action : (empty)
 #	- type : etabl, commu, hinfo, reseau, domaine, zone, zone4, zone6,
-#		vlan, eq, eqtype
+#		vlan, eq, eqtype, dotattr
+#   - display graphviz generated image
+#	- action : "image"
+#	- type : dotattr
 #   - display help page
 #	- action : "help"
 #	- type : see above
@@ -40,6 +43,7 @@
 #   2010/12/13 : pda/jean : add eq and eqtype tables
 #   2010/12/26 : pda      : use cgi-dispatch
 #   2010/12/26 : pda      : use same spec for all store-tabular
+#   2011/12/28 : pda      : add dotattr type
 #
 
 
@@ -48,6 +52,7 @@
 # 
 
 set conf(next)		"admref"
+set conf(nextimg)	"admref"
 set conf(nextindex)	"index"
 set conf(nextadmindex)	"admindex"
 
@@ -69,6 +74,7 @@ set conf(etabl:id)		idetabl
 set conf(etabl:help)		help-etabl.html
 set conf(etabl:return)		"Return to organization modification"
 set conf(etabl:table)		dns.etablissement
+set conf(etabl:proc)		admref-nop
 
 ##############################################################################
 # Communities
@@ -80,13 +86,14 @@ set conf(commu:id)		idcommu
 set conf(commu:help)		help-commu.html
 set conf(commu:return)		"Return to community modification"
 set conf(commu:table)		dns.communaute
+set conf(commu:proc)		admref-nop
 
 ##############################################################################
 # Hinfo
 
 set conf(hinfo:ptitle) 	"Host type management"
 set conf(hinfo:cols)		{ {60 texte {Description} {string 30} {}}
-				  {20 tri {Sort} {string 10} {}}
+				  {20 tri {Sort} {int 10} 100}
 				  {20 present {Present} {bool} 1}
 				}
 set conf(hinfo:sql)		"SELECT * FROM dns.hinfo ORDER BY tri ASC, texte ASC"
@@ -94,6 +101,7 @@ set conf(hinfo:id)		idhinfo
 set conf(hinfo:help)		help-hinfo.html
 set conf(hinfo:return)		"Return to host information modification"
 set conf(hinfo:table)		dns.hinfo
+set conf(hinfo:proc)		admref-nop
 
 ##############################################################################
 # Networks
@@ -115,6 +123,7 @@ set conf(reseau:id)		idreseau
 set conf(reseau:help)		help-reseau.html
 set conf(reseau:return)		"Return to network modification"
 set conf(reseau:table)		dns.reseau
+set conf(reseau:proc)		admref-nop
 
 ##############################################################################
 # Domains
@@ -126,6 +135,7 @@ set conf(domaine:id)		iddom
 set conf(domaine:help)		help-domaine.html
 set conf(domaine:return)	"Return to domain modification"
 set conf(domaine:table)		dns.domaine
+set conf(domaine:proc)		admref-nop
 
 ##############################################################################
 # Zones
@@ -141,6 +151,7 @@ set conf(zone:id)		idzone
 set conf(zone:help)		help-zone.html
 set conf(zone:return)		"Return to zone modification"
 set conf(zone:table)		dns.zone_normale
+set conf(zone:proc)		admref-nop
 
 ##############################################################################
 # Zones reverse IPv4
@@ -152,6 +163,7 @@ set conf(zone4:id)		$conf(zone:id)
 set conf(zone4:help)		$conf(zone:help)
 set conf(zone4:return) 		$conf(zone:return)
 set conf(zone4:table)		dns.zone_reverse4
+set conf(zone4:proc)		$conf(zone:proc)
 
 ##############################################################################
 # Zones reverse IPv6
@@ -163,6 +175,7 @@ set conf(zone6:id)		$conf(zone:id)
 set conf(zone6:help)		$conf(zone:help)
 set conf(zone6:return) 		$conf(zone:return)
 set conf(zone6:table)		dns.zone_reverse6
+set conf(zone6:proc)		$conf(zone:proc)
 
 ##############################################################################
 # DHCP profiles
@@ -176,12 +189,13 @@ set conf(dhcpprofil:id)		iddhcpprofil
 set conf(dhcpprofil:help)	help-dhcpprofil.html
 set conf(dhcpprofil:return)	"Return to DHCP profile modification"
 set conf(dhcpprofil:table)	dns.dhcpprofil
+set conf(dhcpprofil:proc)	admref-nop
 
 ##############################################################################
 # Vlans
 
 set conf(vlan:ptitle)	"Vlan management"
-set conf(vlan:cols)		{ {15 vlanid {Vlan-Id} {string 10} {}}
+set conf(vlan:cols)		{ {15 vlanid {Vlan-Id} {int 10} {}}
 				  {75 descr {Description} {string 40} {}}
 				  {10 voip {VoIP Vlan} {bool} 0}
 				}
@@ -190,6 +204,7 @@ set conf(vlan:id)		vlanid
 set conf(vlan:help)		help-vlan.html
 set conf(vlan:return)		"Return to Vlan modification"
 set conf(vlan:table)		topo.vlan
+set conf(vlan:proc)		admref-nop
 
 ##############################################################################
 # Topo (rancid) equipment types
@@ -201,6 +216,7 @@ set conf(eqtype:id)		idtype
 set conf(eqtype:help)		help-eqtype.html
 set conf(eqtype:return)		"Return to equipment type modification"
 set conf(eqtype:table)		topo.eqtype
+set conf(eqtype:proc)		admref-nop
 
 ##############################################################################
 # Topo equipments
@@ -215,6 +231,24 @@ set conf(eq:id)			ideq
 set conf(eq:help)		help-eq.html
 set conf(eq:return)		"Return to equipment modification"
 set conf(eq:table)		topo.eq
+set conf(eq:proc)		admref-nop
+
+##############################################################################
+# Graphviz node attributes
+
+set conf(dotattr:ptitle) "Graphviz node attributes for equipments"
+set conf(dotattr:cols)		{ {10 rank {Sort} {int 8} {}}
+				  {5  type {Type} {menu {{2 L2} {3 L3}}} {}}
+				  {20 regexp {Regexp} {string 16} {}}
+				  {35 gvattr {Attributes} {textarea {40 4}} {}}
+				  {30 png {Image} {image {%URLIMG%}} {}}
+				}
+set conf(dotattr:sql)		"SELECT * FROM topo.dotattr ORDER BY rank ASC"
+set conf(dotattr:id)		rank
+set conf(dotattr:help)		help-dotattr.html
+set conf(dotattr:return)	"Return to Graphviz nodes attributes"
+set conf(dotattr:table)		topo.dotattr
+set conf(dotattr:proc)		dotattr-check
 
 
 #
@@ -286,6 +320,18 @@ d cgi-register {action {}} {
 	    regsub -- "%MENUTYPE%" $colspecs "$menutype" colspecs
 	    regsub -- "%MENUUP%" $colspecs "$menuup" colspecs
 	}
+	dotattr {
+	    # we can't use a %s in an URL since the "%" character will be posted
+	    d urlset "" $conf(nextimg) {{action image} {type dotattr} {id PCENT}}
+	    set urlimg [::webapp::helem "img" "" \
+				"src" [d urlget ""] \
+				"alt" "Graphviz representation" \
+			    ]
+	    # urlimg contains some "&" and the "PCENT"
+	    regsub -all -- "&" $urlimg {\\&} urlimg
+	    regsub -- "PCENT" $urlimg {%1$s} urlimg
+	    regsub -- "%URLIMG%" $colspecs "$urlimg" colspecs
+	}
     }
 
     #
@@ -307,6 +353,83 @@ d cgi-register {action {}} {
 				[list %TABLEAU% $tab] \
 				[list %TITREPAGE% $ptitle] \
 			    ]
+}
+
+##############################################################################
+# Display graphviz generated image
+##############################################################################
+
+proc dotattr-install-image {dbfd id regexp attr} {
+    #
+    # Generate the bitmap image with graphviz
+    #
+
+    set gv [::gvgraph %AUTO%]
+    set dotcmd [get-local-conf "dot"]
+    $gv node $regexp $attr
+    if {[$gv graphviz "png" $dotcmd ""]} then {
+	set png [$gv output]
+	binary scan $png "H*" hex
+	set hex "\\x$hex"
+    } else {
+	set png [errimg [$gv error]]
+	set hex ""
+    }
+    $gv destroy
+
+    #
+    # Install the image in database if no error
+    #
+
+    if {$hex ne ""} then {
+	set sql "UPDATE topo.dotattr SET png = '$hex' WHERE rank = $id"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    set png [errimg $msg]
+	}
+    }
+
+    return $png
+}
+
+# get graphviz image from database. If none exists, generates one from
+# attributes
+
+proc dotattr-get-image {dbfd id} {
+    set sql "SELECT * FROM topo.dotattr WHERE rank = $id"
+    set png ""
+    set found 0
+    pg_select $dbfd $sql tab {
+	if {$tab(png) eq "" || [string range $tab(png) 0 1] ne {\x}} then {
+	    set png [dotattr-install-image $dbfd $id $tab(regexp) $tab(gvattr)]
+	} else {
+	    set png [binary format "H*" [string range $tab(png) 2 end]]
+	}
+	set found 1
+    }
+    if {! $found} then {
+	set png [errimg "ERROR : cannot find image for rank '$id'"]
+    }
+    return $png
+}
+
+d cgi-register {action image} {
+    {type	1 1}
+    {id		1 1}
+} {
+    global conf
+
+    switch -- $type {
+	dotattr {
+	    if {! [regexp {^[0-9]+$} $id]} then {
+		d errimg "'$id' is not an number"
+	    }
+	    ::webapp::send png [dotattr-get-image $dbfd $id]
+	    d end
+	}
+	default {
+	    d errimg [mc "Type '%s' not supported" $type]
+	}
+    }
 }
 
 ##############################################################################
@@ -336,6 +459,41 @@ d cgi-register {action help} {
 ##############################################################################
 # Modify data
 ##############################################################################
+
+proc admref-nop {args} {
+    # ok
+    return 1
+}
+
+proc dotattr-check {op dbfd _msg id idnum table _tabval} {
+    upvar $_msg msg
+    upvar $_tabval tabval
+
+    set ok 1
+
+    # op = nop, mod, add, del
+    if {$op eq "mod" || $op eq "add"} then {
+	#
+	# Generate the bitmap image with graphviz
+	#
+
+	set dotcmd [get-local-conf "dot"]
+	set gv [::gvgraph %AUTO%]
+	$gv node $tabval(regexp) $tabval(gvattr)
+	if {[$gv graphviz "png" $dotcmd ""]} then {
+	    # we don't use the result since we should use the \x prefix
+	    # for binary data, prefix which will be transformed by
+	    # the pgsql::quote function
+	    set tabval(png) ""
+	} else {
+	    set msg [$gv error]
+	    set ok 0
+	}
+	$gv destroy
+    }
+
+    return $ok
+}
 
 d cgi-register {action mod} {
     {type	1 1}
@@ -369,14 +527,14 @@ d cgi-register {action mod} {
     set spec {}
     foreach c $conf($type:cols) {
 	lassign $c width var desc formtype defval
-	lappend spec $var
+	lappend spec [list $var $formtype $defval]
     }
 
     #
     # Store modifications in database
     #
 
-    store-tabular $dbfd $spec $conf($type:id) $conf($type:table) ftab
+    store-tabular $dbfd $spec $conf($type:id) $conf($type:table) ftab $conf($type:proc)
     d writelog "modref" "modification of reference table $conf($type:table)"
 
     #

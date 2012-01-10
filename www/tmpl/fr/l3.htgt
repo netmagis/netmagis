@@ -61,7 +61,7 @@
 	</TR>
     </TABLE>
 
-    <IMG SRC="%URLIMG%" USEMAP="#l3graph" />
+    <IMG SRC="%URLIMG%" USEMAP="#g" />
     %MAP%
 
     \lien {version imprimable} {%URLPDF%}

@@ -29,6 +29,7 @@
 #   2010/11/27 : pda      : envoi utf-8 systématique
 #   2010/12/09 : pda      : ajout form-submit et form-reset
 #   2010/12/16 : pda      : add import-vars optional fspec parameter
+#   2012/01/09 : pda      : add cmdpath
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -40,7 +41,7 @@ package require pgsql ;			# package local
 
 # package require Pgtcl
 
-package provide webapp 1.14
+package provide webapp 1.15
 
 namespace eval webapp {
     namespace export log pathinfo user locale \
@@ -54,9 +55,8 @@ namespace eval webapp {
 	mail \
 	random \
 	nologin send error-exit \
-	debug \
-	cgidebug \
-	cgi-exec
+	debug cgidebug cgi-exec \
+	cmdpath
 
     variable tmpdir	/tmp
     variable pdflatex	/usr/local/bin/pdflatex
@@ -186,6 +186,18 @@ namespace eval webapp {
 
 	-->
 	</style>
+    }
+}
+
+##############################################################################
+# Set some variables
+##############################################################################
+
+proc ::webapp::cmdpath {cmd path} {
+    switch $cmd {
+	pdflatex { set ::webapp::pdflatex $path }
+	tmpdir   { set ::webapp::tmpdir	$path }
+	sendmail { set ::webapp::sendmail $path }
     }
 }
 
@@ -2009,6 +2021,7 @@ proc ::webapp::sortie-bin {type page fichier} {
 #   2002/05/11 : pda : conception et codage
 #   2002/05/12 : pda : ajout de debuginfos
 #   2008/02/27 : jean/zamboni : ajout filename
+#   2012/01/09 : pda : encoding to utf8
 #
 
 proc ::webapp::sortie-latex {page fichier} {
@@ -2047,6 +2060,7 @@ proc ::webapp::sortie-latex {page fichier} {
 	    "Impossible de créer '$texfile': <PRE>$errorInfo</PRE>"
 	return
     }
+    fconfigure $fd -encoding utf-8
     puts $fd $page
     close $fd
 

@@ -44,6 +44,7 @@
  {Modify Vlans} {Modif Vlans}
  {Modify equipment types} {Modif types d'équipement}
  {Modify equipments} {Modif équipements}
+ {Modify Graphviz attributes} {Modif attributs Graphviz}
  {Modify users and groups} {Modif groupes}
  {Force zone generation} {Forcer zones}
  {Application parameters} {Modif paramètres}
@@ -80,17 +81,23 @@
  cfg:jourfmt:desc {Format d'affichage des jours}
  cfg:jourfmt:help {Format d'affichage des dates (sans l'heure). Voir la page de manuel clock(n) de Tcl.}
  cfg:authmethod:desc {Méthode d'authentification}
- cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.)}
+ cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.).}
+ cfg:pageformat:desc {Format de papier}
+ cfg:pageformat:help {Format de papier pour les pages imprimables.}
 
  cfg:dns {Paramètres DNS}
 
  cfg:dnsupdateperiod:desc {Délai de mise à jour DNS}
- cfg:dnsupdateperiod:help {Durée entre deux générations de zones DNS sur le serveur DNS (doit être identique à la valeur CRON correspondante)}
+ cfg:dnsupdateperiod:help {Durée entre deux générations de zones DNS sur le serveur DNS (doit être identique à la valeur CRON correspondante).}
  cfg:defuser:desc {Utilisateur par défaut}
  cfg:defuser:help {L'utilisateur par défaut est utilisé dans les programmes Netmagis en ligne de commande lorsque le login de l'utilisateur n'existe pas dans la base Netmagis.}
 
  cfg:dhcp {Paramètres DHCP}
 
+ cfg:dhcpdefdomain:desc {Domaine par défaut}
+ cfg:dhcpdefdomain:help {Domaine envoyé par défaut aux clients DHCP sans profil.}
+ cfg:dhcpdefdnslist:desc {Serveurs DNS par défaut}
+ cfg:dhcpdefdnslist:help {Serveurs DNS envoyés par défaut aux clients DHCP sans profil, séparés par des espaces.}
  cfg:default_lease_time:desc {default_lease_time}
  cfg:default_lease_time:help {Valeur du parameter DHCP "default_lease_time" utilisé lors de la génération d'intervalles dynamiques, en secondes. Cette valeur est utilisée si le parameter spécifique de l'intervalle est nul.}
  cfg:max_lease_time:desc {max_lease_time}
@@ -103,7 +110,7 @@
  cfg:topoactive:desc {Activation de Topo}
  cfg:topoactive:help {Cocher cette case pour activer l'accès à la fonctionnalité "Topo".}
  cfg:defdomain:desc {Domaine par défaut}
- cfg:defdomain:help {Domaine par défaut, car certains équipements ne se signalement pas avec un nom pleinement qualifié}
+ cfg:defdomain:help {Domaine par défaut, car certains équipements ne se signalement pas avec un nom pleinement qualifié.}
  cfg:topofrom:desc {"From" des mails de topo}
  cfg:topofrom:help {Champ "From" des mails envoyés par le démon topod lors des détections de modification ou d'anomalie.}
  cfg:topoto:desc {Destinataire des mails de topo}
@@ -128,7 +135,7 @@
  cfg:mac {Paramètres du module "MAC"}
 
  cfg:macactive:desc {Activation de Mac}
- cfg:macactive:help {Cocher cette case pour activer l'accès à la fonctionnalité "Mac"}
+ cfg:macactive:help {Cocher cette case pour activer l'accès à la fonctionnalité "Mac".}
 
  cfg:authldap {Paramètres pour l'authentification LDAP}
 
@@ -137,7 +144,7 @@
  cfg:ldapbinddn:desc {Bind DN}
  cfg:ldapbinddn:help {DN permettant l'authentification sur le serveur LDAP. Exemple : cn=admin,dc=domaine,dc=fr}
  cfg:ldapbindpw:desc {Mot de passe de Bind}
- cfg:ldapbindpw:help {Mot de passe pour le DN permettant l'authentification sur le serveur LDAP}
+ cfg:ldapbindpw:help {Mot de passe pour le DN permettant l'authentification sur le serveur LDAP.}
  cfg:ldapbasedn:desc {DN de base}
  cfg:ldapbasedn:help {DN de base à partir duquel il faut faire les requêtes sur les personnes. Exemple : ou=people,dc=domaine,dc=fr}
  cfg:ldapsearchlogin:desc {Requête de recherche d'utilisateur}
@@ -149,24 +156,24 @@
  cfg:ldapattrname:desc {Attribut "nom"}
  cfg:ldapattrname:help {Attribut LDAP correspondant au nom. Exemple : "sn"}
  cfg:ldapattrgivenname:desc {Attribut "prénom"}
- cfg:ldapattrgivenname:help {Attribut LDAP correspondant au prénom. Exemple : "givenName". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattrgivenname:help {Attribut LDAP correspondant au prénom. Exemple : "givenName". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage.}
  cfg:ldapattrmail:desc {Attribut "mél"}
- cfg:ldapattrmail:help {Attribut LDAP correspondant à l'adresse mail de la personne. Exemple : "mail". Les attributs peuvent également être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattrmail:help {Attribut LDAP correspondant à l'adresse mail de la personne. Exemple : "mail". Les attributs peuvent également être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage.}
  cfg:ldapattrphone:desc {Attribut "téléphone"}
- cfg:ldapattrphone:help {Attribut LDAP correspondant au numéro de téléphone. Exemple : "telephoneNumber". Les attributs peuvent être vides, ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattrphone:help {Attribut LDAP correspondant au numéro de téléphone. Exemple : "telephoneNumber". Les attributs peuvent être vides, ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage.}
  cfg:ldapattrmobile:desc {Attribut "portable"}
- cfg:ldapattrmobile:help {Attribut LDAP correspondant au numéro de téléphone mobile. Exemple : "". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattrmobile:help {Attribut LDAP correspondant au numéro de téléphone mobile. Exemple : "". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage.}
  cfg:ldapattrfax:desc {Attribut "fax"}
- cfg:ldapattrfax:help {Attribut LDAP correspondant au numéro de fax. Exemple : "facsimileTelephoneNumber". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattrfax:help {Attribut LDAP correspondant au numéro de fax. Exemple : "facsimileTelephoneNumber". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage.}
  cfg:ldapattraddr:desc {Attribut "adresse"}
- cfg:ldapattraddr:help {Attribut LDAP correspondant à l'adresse. Exemple : "postalAddress postalCode l". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage}
+ cfg:ldapattraddr:help {Attribut LDAP correspondant à l'adresse. Exemple : "postalAddress postalCode l". Les attributs peuvent être vides ou composés d'un ou plusieurs attributs LDAP qui seront accolés à l'affichage.}
 
  cfg:authpgsql {Paramètres pour l'authentification interne}
 
  cfg:authpgminpwlen:desc {Longueur minimum des mots de passe}
- cfg:authpgminpwlen:help {Longueur minimum autorisée pour les mots de passe saisis dans le module d'authentification interne}
+ cfg:authpgminpwlen:help {Longueur minimum autorisée pour les mots de passe saisis dans le module d'authentification interne.}
  cfg:authpgmaxpwlen:desc {Longueur maximum des mots de passe}
- cfg:authpgmaxpwlen:help {Longueur maximum autorisée pour les mots de passe saisis dans le module d'authentification interne}
+ cfg:authpgmaxpwlen:help {Longueur maximum autorisée pour les mots de passe saisis dans le module d'authentification interne.}
  cfg:authpgmailfrom:desc {"From" des mails de modification de passwd}
  cfg:authpgmailfrom:help {Champ "From" des mails envoyés par l'application à un utilisateur lors des changements de mot de passe.}
  cfg:authpgmailreplyto:desc {"Reply-To" des mails de modification de passwd}
@@ -178,7 +185,7 @@
  cfg:authpgmailsubject:desc {"Subject" des mails de moditication de passwd}
  cfg:authpgmailsubject:help {Champ "Subject" des mails envoyés par l'application à un utilisateur lors des changements de mot de passe.}
  cfg:authpgmailbody:desc {Corps du mail de modification de passwd}
- cfg:authpgmailbody:help {Corps des mails envoyés par l'application à un utilisateur lors des changements de mot de passe. Les parameters suivants sont substitués: <ul><li>%1$s : login de l'utilisateur</li> <li>%2$s : mot de passe généré</li></ul>.}
+ cfg:authpgmailbody:help {Corps des mails envoyés par l'application à un utilisateur lors des changements de mot de passe. Les parameters suivants sont substitués: <ul><li>%1$s : login de l'utilisateur</li> <li>%2$s : mot de passe généré</li></ul>}
  cfg:authpggroupes:desc {Groupes Web autorisés}
  cfg:authpggroupes:help {Liste de groupes (conformément à l'authentification Apache) autorisés pour la création d'un utilisateur.  Si la liste est vide, tous les groupes existants dans la base d'authentification sont autorisés.}
 }
@@ -558,7 +565,7 @@
  {Error while reading wifi sensors: %s} {Erreur lors de la lecture des sondes Wifi : %s}
  {Error while reading Vlans: %s} {Erreur lors de la lecture des Vlans : %s}
  {Error while reading networks: %s} {Erreur lors de la lecture des réseaux : %s}
- {Error executing command '%1$s': %2$s} {Erreur d'exécution de la commande %1$s : %2$s}
+ {Error generating graph '%s'} {Erreur lors de la génération du graphe (%s)}
  {No equipment found} {Aucun équipement trouvé}
  {equipments} {équipements}
  {develop} {tout dérouler}
@@ -587,6 +594,7 @@
  {no inactive host found} {aucune machine inactive trouvée}
  {Vlan %1$s: %2$s} {Vlan %1$s : %2$s}
  {Vlan '%s' not found} {Vlan '%s' non trouvé}
+ {Invalid format '%s'} {Format '%s' invalide}
  {Invalid router instance '%s'} {Instance de routage '%s' invalide}
  {Invalid node type '%1$s' for %2$s} {Type de noeud '%1$s' invalide pour %2$s}
  {IP networks} {réseaux IP}

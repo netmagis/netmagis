@@ -1,0 +1,78 @@
+{
+\modele {texte}
+
+\set {auteur} {pda}
+\set {date}   {15/05/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Vlans
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Graphviz node attributes}
+
+    Node attributes for \lien {graphviz} {http://graphviz.org}-generated
+    network graphs (\lien {L2} {l2} and \lien {L3} {l3}).
+
+    \titre {2} {\ancre {rank} {Sort}}
+
+	Each pattern has a sort order. During graph sketching,
+	pattern are searched in the ascending order, which allows
+	to specify more specific regular expressions first and more
+	general ones at the end.
+
+	Please note that sort values must be unique.
+
+    \titre {2} {\ancre {type} {Type}}
+
+	Type of graph where this pattern is used. You can use "L2"
+	for \lien {vlan graphs} {l2} or "L3" for \lien {IP graphs}
+	{l3}.
+
+    \titre {2} {\ancre {regexp} {Regexp}}
+
+	Regular expression to select the pattern.
+	\liste {
+	    \item {For L2 graphs, a string is built with "type/model"
+		where "type" is the constructor (e.g. "cisco",
+		"juniper", "hp", etc.) and "model" is the model of
+		the equipment as found by Rancid. This string is
+		then matched with regexps to get the graphviz node
+		attributes.
+	    }
+	    \item {For L3 graphs, 3 types of nodes are used:
+		"router", "host" and "cloud"
+	    }
+	}
+
+    \titre {2} {\ancre {gvattr} {Attributes}}
+
+	\lien {Graphviz} {http://graphviz.org} attributes used to
+	sketch nodes. You can find a detailed description of
+	attributes in the \lien {Graphviz documentation}
+	{http://graphviz.org/content/attrs}.
+
+    \titre {2} {\ancre {png} {Image}}
+
+	Image of node as drawn by \lien {Graphviz} {http://graphviz.org}.
+}
+
+}

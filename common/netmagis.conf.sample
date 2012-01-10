@@ -124,6 +124,7 @@ nologinfile	%DESTDIR%/etc/netmagis.nologin
 #passwdurl	https://www.mycompany.com/chpasswd?uid=%s
 passwdurl	""			# internal
 
+pdflatex	/usr/local/bin/pdflatex
 neato		/usr/local/bin/neato
 dot		/usr/local/bin/dot
 ps2pdf		/usr/local/lib/netmagis/ps2pdf
