@@ -1,4 +1,3 @@
-DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
 
 FILES =	\
@@ -6,16 +5,16 @@ FILES =	\
 	arrgen.tcl \
 	pgsql.tcl
 
-all:	pkgIndex.tcl
-	@echo ">>> Making all in `pwd`"
+build:	pkgIndex.tcl
+	@echo ">>> Making build in `pwd`"
 
 pkgIndex.tcl:	$(FILES)
 	echo "pkg_mkIndex ." | $(TCLSH)
 	chmod g+w pkgIndex.tcl
 
-install: all
+install: build
 	@echo ">>> Making install in `pwd`"
-	install -m 0644 *.tcl *.n $(DESTDIR)
+	install -m 0644 *.tcl *.n $(DESTDIR)/$(NMLIBDIR)/pkgtcl
 
 clean:
 	rm -f pkgIndex.tcl 

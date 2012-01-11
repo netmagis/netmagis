@@ -3,7 +3,7 @@
 # 
 # This script is called from syslogd daemon, with a line such as:
 # 
-#     local2.*       |exec %DESTDIR%/sbin/detectconfmod
+#     local2.*       |exec %SBINDIR%/detectconfmod
 # 
 # This script reads informations on a line by line basis, detects
 # configuration modification events and sends them to the DNS database.

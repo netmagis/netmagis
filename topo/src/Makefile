@@ -1,10 +1,4 @@
-DESTDIR		= /usr/local
-TCLSH		= /usr/local/bin/tclsh
 NINSTALL	= ../../ninstall
-SUBST		= $(TCLSH) \
-			$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
-			$(DESTDIR)/etc/netmagis.conf \
-			$(DESTDIR)/bin/netmagis-config
 
 LIBDIR = ../lib
 CFLAGS = -g -Wall -I$(LIBDIR)
@@ -39,8 +33,8 @@ SCRIPTS = \
 	start-rancid	\
 	sendmail
 
-all:	$(PROGS)
-	@echo ">>> Making all in `pwd`"
+build:	$(PROGS)
+	@echo ">>> Making build in `pwd`"
 
 dumpgraph:	dumpgraph.c	$(LIBDIR)/libgraph.a
 buildgraph:	buildgraph.c	$(LIBDIR)/libgraph.a
@@ -53,9 +47,9 @@ getnetif:	getnetif.c	$(LIBDIR)/libgraph.a
 
 install: $(PROGS) $(SCRIPTS)
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/lib/netmagis/topo
-	install -m 0755 $(PROGS) $(DESTDIR)/lib/netmagis/topo
-	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/lib/netmagis/topo
+	mkdir -p $(DESTDIR)/$(NMLIBDIR)/topo
+	install -m 0755 $(PROGS) $(DESTDIR)/$(NMLIBDIR)/topo
+	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/$(NMLIBDIR)/topo
 
 clean:
 	rm -f *.o $(PROGS) *.core

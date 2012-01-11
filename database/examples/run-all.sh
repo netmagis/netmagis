@@ -5,6 +5,9 @@
 # import data.
 #
 
+PATH=%SBINDIR%:$PATH
+export PATH
+
 netmagis-dbcreate \
     && netmagis-dbimport -v group group.txt \
     && netmagis-dbimport -v domain domain.txt \

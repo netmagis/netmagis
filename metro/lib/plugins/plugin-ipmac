@@ -5,7 +5,7 @@ use POSIX;
 use warnings;
 use strict;
 
-require "%DESTDIR%/lib/netmagis/libmetro.pl";
+require "%NMLIBDIR%/libmetro.pl";
 
 # Read configuration file
 our $conf_file = "%CONFFILE%";

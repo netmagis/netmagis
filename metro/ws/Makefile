@@ -1,12 +1,7 @@
-DESTDIR		= /usr/local
-TCLSH		= /usr/local/bin/tclsh
 NINSTALL	= ../../ninstall
-SUBST		= $(TCLSH) \
-			$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
-			$(DESTDIR)/etc/netmagis.conf \
-			$(DESTDIR)/bin/netmagis-config
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/www/metro
-	$(NINSTALL) -m 0755 -e "s|%DESTDIR%|$(DESTDIR)|" $(SUBST) gengraph $(DESTDIR)/www/metro
+	mkdir -p $(DESTDIR)/$(NMWSDIR)
+	$(NINSTALL) -m 0755 -e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
+			$(SUBST) gengraph $(DESTDIR)/$(NMWSDIR)

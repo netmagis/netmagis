@@ -1,10 +1,4 @@
-DESTDIR		= /usr/local
-TCLSH		= /usr/local/bin/tclsh
 NINSTALL	= ../ninstall
-SUBST		= $(TCLSH) \
-			$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
-			$(DESTDIR)/etc/netmagis.conf \
-			$(DESTDIR)/bin/netmagis-config
 
 SCRIPTS = \
 	dnsaddalias \
@@ -17,7 +11,7 @@ SCRIPTS = \
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/bin
-	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/bin
+	mkdir -p $(DESTDIR)/$(BINDIR)
+	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/$(BINDIR)
 
 clean:

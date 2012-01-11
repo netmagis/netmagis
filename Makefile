@@ -1,10 +1,42 @@
-DESTDIR		= /usr/local
+DESTDIR		= 
+
+PREFIX		= /local
+
+# Standard OS directories
+BINDIR		= $(PREFIX)/bin
+SBINDIR		= $(PREFIX)/sbin
+ETCDIR		= $(PREFIX)/etc
+MANDIR		= $(PREFIX)/man
+RCDIR		= $(PREFIX)/etc/rc.d
+
+# Netmagis specific directories
+NMDOCDIR	= $(PREFIX)/share/doc/netmagis
+NMXMPDIR	= $(PREFIX)/share/examples/netmagis
+NMLIBDIR	= $(PREFIX)/lib/netmagis
+NMVARDIR	= $(PREFIX)/var/netmagis
+NMCGIDIR	= $(PREFIX)/www/netmagis
+NMWSDIR		= $(PREFIX)/www/metro
+
 TCLSH		= /usr/local/bin/tclsh
 NINSTALL	= ./ninstall
 SUBST		= $(TCLSH) \
-			$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
-			$(DESTDIR)/etc/netmagis.conf \
-			$(DESTDIR)/bin/netmagis-config
+			$(NMLIBDIR)/libnetmagis.tcl \
+			$(ETCDIR)/netmagis.conf \
+			$(BINDIR)/netmagis-config
+
+DIRS		= \
+			BINDIR=$(BINDIR) \
+			SBINDIR=$(SBINDIR) \
+			ETCDIR=$(ETCDIR) \
+			MANDIR=$(MANDIR) \
+			RCDIR=$(RCDIR) \
+			NMDOCDIR=$(NMDOCDIR) \
+			NMXMPDIR=$(NMXMPDIR) \
+			NMLIBDIR=$(NMLIBDIR) \
+			NMVARDIR=$(NMVARDIR) \
+			NMCGIDIR=$(NMCGIDIR) \
+			NMWSDIR=$(NMWSDIR) \
+			DESTDIR=$(DESTDIR)
 
 # for www/htg/src
 TCLCONF		= /usr/local/lib/tcl8.6/tclConfig.sh
@@ -16,9 +48,9 @@ VERSION		= 2.1b1
 
 usage:
 	@echo "available targets:"
-	@echo "	all"
-	@echo "	all-topo"
-	@echo "	all-www"
+	@echo "	build"
+	@echo "	build-topo"
+	@echo "	build-www"
 	@echo "	install-common"
 	@echo "	install-database"
 	@echo "	install-servers"
@@ -33,47 +65,47 @@ usage:
 	@echo "	clean"
 	@echo "	nothing"
 
-all:	all-www all-topo
+build: build-www build-topo
 
-all-www:
-	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
-		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" all
+build-www:
+	cd www ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
+		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" build
 
-all-topo:
-	cd topo ; make all
+build-topo:
+	cd topo ; make build
 
+install: install-common install-database install-servers install-utils \
+	    install-detecteq install-topo install-metro install-www
+	
 install-common:
 	cd common ; \
-	    make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) VERSION=$(VERSION) install
+	    make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) VERSION=$(VERSION) install
 
 install-database:
-	cd database ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd database ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 install-servers:
-	cd servers ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd servers ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
-install-www: all-www
-	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
+install-www: build-www
+	cd www ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" install
 
 install-utils:
-	cd utils ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd utils ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
-install-topo: all-topo
-	cd topo ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+install-topo: build-topo
+	cd topo ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 install-detecteq:
-	cd detecteq ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd detecteq ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 install-metro:
-	cd metro ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd metro ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
-install-netmagis.org:
-	# compilation of htg if needed
-	cd www ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) \
-		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" all
-	cd doc/netmagis.org ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
-	cd doc/install ; make DESTDIR=$(DESTDIR)/install-$(VERSION) \
+install-netmagis.org: build-www
+	cd doc/netmagis.org ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd doc/install ; make $(DIRS)/install-$(VERSION) \
 		TCLSH=$(TCLSH) install
 
 distrib: clean

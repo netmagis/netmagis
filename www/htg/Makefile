@@ -1,24 +1,18 @@
-DESTDIR		= /usr/local
-TCLSH		= /usr/local/bin/tclsh
 NINSTALL	= ../../ninstall
-SUBST		= $(TCLSH) \
-			$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
-			$(DESTDIR)/etc/netmagis.conf \
-			$(DESTDIR)/bin/netmagis-config
 
 TCLCFLAGS	= -I/usr/local/include/tcl8.5
 TCLLFLAGS	= -L/usr/local/lib -ltcl85 -lm
 
-all:
-	@echo ">>> Making all in `pwd`"
-	cd src ; make TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" all
+build:
+	@echo ">>> Making build in `pwd`"
+	cd src ; make TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" build
 
-install: all
+install: build
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/bin
-	cd src ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
-	mkdir -p $(DESTDIR)/lib/netmagis/htg
-	tar cf - models doc | tar xf - -C $(DESTDIR)/lib/netmagis/htg
+	mkdir -p $(DESTDIR)/$(BINDIR)
+	cd src ; make $(DIRS) install
+	mkdir -p $(DESTDIR)/$(NMLIBDIR)/htg
+	tar cf - models doc | tar xf - -C $(DESTDIR)/$(NMLIBDIR)/htg
 
 clean:
 	cd src ; make clean

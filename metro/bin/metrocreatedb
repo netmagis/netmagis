@@ -25,7 +25,7 @@ use DBI;
 use warnings;
 use strict;
 
-require "%DESTDIR%/lib/netmagis/libmetro.pl";
+require "%NMLIBDIR%/libmetro.pl";
 
 # tunning du module SNMP pour ne pas afficher les erreurs sur la sortie
 # standard en cas d'echec d'interrogation

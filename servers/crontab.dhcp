@@ -7,4 +7,4 @@
 MAILTO = hostmaster@mycompany.com
 
 # use flag -q if status messages are not wanted
-1-59/10 * * * * %DESTDIR%/sbin/mkdhcp
+1-59/10 * * * * %SBINDIR%/mkdhcp

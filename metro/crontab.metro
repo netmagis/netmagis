@@ -1,5 +1,5 @@
 # start pollers
-*/1     *   *   *   *   netmagis  	%DESTDIR%/bin/metropoller-run > /tmp/poller 2>&1
+*/1     *   *   *   *   netmagis  	%BINDIR%/metropoller-run >/tmp/poller 2>&1
 
-59  	*   *   *   *   netmagis  	%DESTDIR%/bin/metrocreatedb > /tmp/metrocreatedb 2>&1
+59  	*   *   *   *   netmagis  	%BINDIR%/metrocreatedb >/tmp/metrocreatedb 2>&1
 

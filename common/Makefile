@@ -1,28 +1,24 @@
-DESTDIR		= /usr/local
-TCLSH		= /usr/local/bin/tclsh
 NINSTALL	= ../ninstall
-SUBST		= $(TCLSH) \
-			$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
-			$(DESTDIR)/etc/netmagis.conf \
-			$(DESTDIR)/bin/netmagis-config
 
-all:
-	@echo ">>> Making all in `pwd`"
+build:
+	@echo ">>> Making build in `pwd`"
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/etc
-	$(NINSTALL) -m 0644 -e "s|%DESTDIR%|$(DESTDIR)|" \
-			$(SUBST) netmagis.conf.sample $(DESTDIR)/etc
-	mkdir -p $(DESTDIR)/bin
-	$(NINSTALL) -m 0755 $(SUBST) netmagis-config $(DESTDIR)/bin
-	mkdir -p $(DESTDIR)/lib/netmagis
+	mkdir -p $(DESTDIR)/$(ETCDIR)
+	$(NINSTALL) -m 0644 \
+			-e "s|%ETCDIR%|$(ETCDIR)|" \
+			-e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
+			-e "s|%NMVARDIR%|$(NMVARDIR)|" \
+			$(SUBST) netmagis.conf.sample $(DESTDIR)/$(ETCDIR)
+	mkdir -p $(DESTDIR)/$(BINDIR)
+	$(NINSTALL) -m 0755 $(SUBST) netmagis-config $(DESTDIR)/$(BINDIR)
+	mkdir -p $(DESTDIR)/$(NMLIBDIR)
 	$(NINSTALL) -m 0644 -e "s/%NMVERSION%/$(VERSION)/" \
-		$(SUBST) libnetmagis.tcl $(DESTDIR)/lib/netmagis
-	mkdir -p $(DESTDIR)/lib/netmagis/pkgtcl
-	cd pkgtcl && make DESTDIR=$(DESTDIR)/lib/netmagis/pkgtcl \
-		TCLSH=$(TCLSH) clean install
-	mkdir -p $(DESTDIR)/lib/netmagis/msgs 
-	tar cf - msgs | tar xvf - -C $(DESTDIR)/lib/netmagis
+		$(SUBST) libnetmagis.tcl $(DESTDIR)/$(NMLIBDIR)
+	mkdir -p $(DESTDIR)/$(NMLIBDIR)/pkgtcl
+	cd pkgtcl && make $(DIRS) TCLSH=$(TCLSH) clean install
+	mkdir -p $(DESTDIR)/$(NMLIBDIR)/msgs 
+	tar cf - msgs | tar xvf - -C $(DESTDIR)/$(NMLIBDIR)
 
 clean:

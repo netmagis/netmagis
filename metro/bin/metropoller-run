@@ -8,9 +8,9 @@ use Sys::Syslog;
 use Sys::Syslog qw(:DEFAULT setlogsock);
 
 my $conf_file="%CONFFILE%";
-my $dir_bin="%DESTDIR%/bin";
+my $dir_bin="%BINDIR%";
 
-require "%DESTDIR%/lib/netmagis/libmetro.pl";
+require "%NMLIBDIR%/libmetro.pl";
 
 my %config = read_global_conf_file($conf_file);
 

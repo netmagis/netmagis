@@ -23,8 +23,8 @@ OBJS = \
 	sel.o
 
 
-all:	libgraph.a
-	@echo ">>> Making all in `pwd`"
+build:	libgraph.a
+	@echo ">>> Making build in `pwd`"
 
 libgraph.a:	$(OBJS)
 	ar r libgraph.a $(OBJS)

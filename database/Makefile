@@ -1,14 +1,14 @@
 DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
 
-all:
-	@echo ">>> Making all in `pwd`"
+build:
+	@echo ">>> Making build in `pwd`"
 
 install:
 	@echo ">>> Making install in `pwd`"
-	cd sbin ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
-	cd examples ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
-	cd upgrade  ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
-	mkdir -p $(DESTDIR)/var/netmagis/dbdump
+	cd sbin ; make $(DIRS) install
+	cd examples ; make $(DIRS) install
+	cd upgrade  ; make $(DIRS) install
+	mkdir -p $(DESTDIR)/$(NMVARDIR)/dbdump
 
 clean:

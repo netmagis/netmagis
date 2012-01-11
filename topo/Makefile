@@ -1,18 +1,17 @@
 DESTDIR		= /usr/local
 TCLSH		= /usr/local/bin/tclsh
 
-all:
-	@echo ">>> Making all in `pwd`"
-	cd lib ; make
-	cd src ; make
+build:
+	@echo ">>> Making build in `pwd`"
+	cd lib ; make build
+	cd src ; make build
 
-install: all
+install: build
 	@echo ">>> Making install in `pwd`"
-	cd src ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
-	cd etc ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
-	mkdir -p $(DESTDIR)/var/netmagis
-	mkdir -p $(DESTDIR)/var/netmagis/eqvirt
-	mkdir -p $(DESTDIR)/var/netmagis/eqgen
+	cd src ; make $(DIRS) install
+	cd etc ; make $(DIRS) install
+	mkdir -p $(DESTDIR)/$(NMVARDIR)/eqvirt
+	mkdir -p $(DESTDIR)/$(NMVARDIR)/eqgen
 
 clean:
 	cd lib ; make clean

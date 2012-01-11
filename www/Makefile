@@ -1,51 +1,42 @@
-DESTDIR	= /usr/local
-TCLSH	= /usr/local/bin/tclsh
 NINSTALL = ../ninstall
-SUBST	= $(TCLSH) \
-		$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
-		$(DESTDIR)/etc/netmagis.conf \
-		$(DESTDIR)/bin/netmagis-config
 
-TCLCFLAGS	= -I/usr/local/include/tcl8.5
-TCLLFLAGS	= -L/usr/local/lib -ltcl85 -lm
+build:
+	@echo ">>> Making build in `pwd`"
+	cd htg ; make TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" build
 
-all:
-	@echo ">>> Making all in `pwd`"
-	cd htg ; make TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)"
-
-install: all
+install: build
 	@echo ">>> Making install in `pwd`"
 	#
 	# install CGI
 	#
-	mkdir -p $(DESTDIR)/www/netmagis
-	cd cgi ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	mkdir -p $(DESTDIR)/$(NMCGIDIR)
+	cd cgi ; make $(DIRS) $(SUBST) install
 	#
 	# install ps2pdf
 	#
-	mkdir -p $(DESTDIR)/lib/netmagis
-	install -m 0755 ps2pdf $(DESTDIR)/lib/netmagis/
+	mkdir -p $(DESTDIR)/$(NMLIBDIR)
+	install -m 0755 ps2pdf $(DESTDIR)/$(NMLIBDIR)
 	#
 	# install htg and models
 	#
-	cd htg ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd htg ; make $(DIRS) install
 	#
 	# install tmpl pages
 	#
-	mkdir -p $(DESTDIR)/lib/netmagis/tmpl
+	mkdir -p $(DESTDIR)/$(NMLIBDIR)/tmpl
 	./htg/src/htg2html -b htg/src -d htg/models -m default \
-			tmpl /tmp/htgtmp $(DESTDIR)/lib/netmagis/tmpl
+			tmpl /tmp/htgtmp $(DESTDIR)/$(NMLIBDIR)/tmpl
 	rm -rf /tmp/htgtmp
-	cd $(DESTDIR)/lib/netmagis/tmpl ; ln -s en C
+	cd $(DESTDIR)/$(NMLIBDIR)/tmpl ; ln -s en C
 	#
 	# install css and images
 	#
-	rm -f $(DESTDIR)/www/netmagis/css
-	ln -s $(DESTDIR)/lib/netmagis/htg/models/default/css $(DESTDIR)/www/netmagis
+	rm -f $(DESTDIR)/$(NMCGIDIR)/css
+	ln -s $(DESTDIR)/$(NMLIBDIR)/htg/models/default/css $(DESTDIR)/$(NMCGIDIR)
 	#
 	# install default files
 	#
-	cd share ; make DESTDIR=$(DESTDIR) TCLSH=$(TCLSH) install
+	cd share ; make $(DIRS) install
 
 clean:
 	cd htg ; make clean

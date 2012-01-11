@@ -33,7 +33,7 @@ sub check_param ;
 
 # fichier de configuration principal et chargement des fonctions de base
 our $conf_file = "%CONFFILE%";
-require "%DESTDIR%/lib/netmagis/libmetro.pl";
+require "%NMLIBDIR%/libmetro.pl";
 #
 # lecture du fichier de configuration general
 our %global_conf = read_global_conf_file($conf_file);
@@ -43,7 +43,7 @@ our %liste_taille = (   'petit' => 1,
                         'grand' => 1
                     );
 
-our $rep_lib = "%DESTDIR%/lib/netmagis";
+our $rep_lib = "%NMLIBDIR%";
 
 our $generate_graph_cmd = "gen-rrdgraph.pl";
 

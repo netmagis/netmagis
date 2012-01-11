@@ -18,9 +18,9 @@ macdbname	mac
 macdbuser	dns
 macdbpassword	password-of-macdbuser
 
-pkgtcl		%DESTDIR%/lib/netmagis/pkgtcl
+pkgtcl		%NMLIBDIR%/pkgtcl
 
-msgsdir		%DESTDIR%/lib/netmagis/msgs
+msgsdir		%NMLIBDIR%/msgs
 
 # just display my login name
 whoami		"id -u -n"
@@ -35,7 +35,7 @@ rootusers	"pda jean"
 # Database maintenance
 ##############################################################################
 
-dumpdir		%DESTDIR%/var/netmagis/dbdump
+dumpdir		%NMVARDIR%/dbdump
 dbcopy		netmagis-sandbox
 
 ##############################################################################
@@ -116,9 +116,9 @@ pfcmd		"pfctl -q -t smtpf -T replace -f /etc/smtpf.pf"
 # Web module
 ##############################################################################
 
-templatedir	%DESTDIR%/lib/netmagis/tmpl
+templatedir	%NMLIBDIR%/tmpl
 
-nologinfile	%DESTDIR%/etc/netmagis.nologin
+nologinfile	%ETCDIR%/netmagis.nologin
 
 # empty string (internal auth) or external URL to change password
 #passwdurl	https://www.mycompany.com/chpasswd?uid=%s
@@ -140,8 +140,8 @@ topohost	""
 topouser	""
 
 # topo* keys are used also by the web and the topo modules
-topobindir	%DESTDIR%/lib/netmagis/topo
-topograph	%DESTDIR%/var/netmagis/network.graph
+topobindir	%NMLIBDIR%/topo
+topograph	%NMVARDIR%/network.graph
 
 metrohost	metro.mycompany.com
 
@@ -165,8 +165,8 @@ fpingcmd	/usr/local/sbin/fping %s
 # takes a message on stdin and write it in the syslog
 logger		/usr/bin/logger -i -p local0.err -t topod
 
-eqvirtdir	%DESTDIR%/var/netmagis/eqvirt
-eqgendir	%DESTDIR%/var/netmagis/eqgen
+eqvirtdir	%NMVARDIR%/eqvirt
+eqgendir	%NMVARDIR%/eqgen
 
 # check if router interfaces are declared in the DNS (yes/no)
 checkrouterif	no		# future use
@@ -183,10 +183,10 @@ copydest	""
 # default domain name
 defaultdomain   u-strasbg.fr
 
-metrodatadir	%DESTDIR%/var/netmagis/metro
+metrodatadir	%NMVARDIR%/metro
 
 rrdtool        	/usr/bin/rrdtool
-rrddb		%DESTDIR%/var/netmagis/metro/db
+rrddb		%NMVARDIR%/metro/db
 # rrdtool database : time of retention of the data (years)
 # rrddbretention	10
 

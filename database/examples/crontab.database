@@ -12,12 +12,12 @@
 # Daily maintenance (backup, copy on pre-production database, vacuum)
 #
 
-0 23 * * * %DESTDIR%/sbin/netmagis-maint daily
+0 23 * * * %SBINDIR%/netmagis-maint daily
 
 #
 # Perform an hourly database dump on working days, and a daily
 # database dump on non working days
 #
 
-0 8-18 * * Mon-Fri %DESTDIR%/sbin/netmagis-maint hourly
-0 12   * * Sat,Sun %DESTDIR%/sbin/netmagis-maint hourly
+0 8-18 * * Mon-Fri %SBINDIR%/netmagis-maint hourly
+0 12   * * Sat,Sun %SBINDIR%/netmagis-maint hourly

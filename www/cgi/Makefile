@@ -1,10 +1,4 @@
-DESTDIR		= /usr/local
-TCLSH		= /usr/local/bin/tclsh
 NINSTALL	= ../../ninstall
-SUBST		= $(TCLSH) \
-			$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
-			$(DESTDIR)/etc/netmagis.conf \
-			$(DESTDIR)/bin/netmagis-config
 
 SCRIPTS 	= \
 		    index \
@@ -27,12 +21,12 @@ SCRIPTS 	= \
 		    topotop \
 		    pgaindex pgapasswd pgarealm pgaacc
 
-all:
-	@echo ">>> Making all in `pwd`"
+build:
+	@echo ">>> Making build in `pwd`"
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/www/netmagis
-	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/www/netmagis
+	mkdir -p $(DESTDIR)/$(NMCGIDIR)
+	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/$(NMCGIDIR)
 
 clean:
