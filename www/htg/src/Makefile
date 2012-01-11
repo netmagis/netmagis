@@ -19,12 +19,12 @@ htgtcl:		$(OBJS)
 
 install:	htgtcl
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/$(BINDIR)
-	install -m 0755 htgtcl $(DESTDIR)/$(BINDIR)
+	mkdir -p $(DESTDIR)$(BINDIR)
+	install -m 0755 htgtcl $(DESTDIR)$(BINDIR)
 	$(NINSTALL) -m 0755 \
 		-e "s|%HTGBINDIR%|$(BINDIR)|" \
 		-e "s|%HTGMODLDIR%|$(NMLIBDIR)/htg/models|" \
-		$(SUBST) htg htg2html $(DESTDIR)/$(BINDIR)
+		$(SUBST) htg htg2html $(DESTDIR)$(BINDIR)
 
 clean:
 	rm -f htgtcl *.o a.out *.core

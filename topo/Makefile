@@ -10,8 +10,8 @@ install: build
 	@echo ">>> Making install in `pwd`"
 	cd src ; make $(DIRS) install
 	cd etc ; make $(DIRS) install
-	mkdir -p $(DESTDIR)/$(NMVARDIR)/eqvirt
-	mkdir -p $(DESTDIR)/$(NMVARDIR)/eqgen
+	mkdir -p $(DESTDIR)$(NMVARDIR)/eqvirt
+	mkdir -p $(DESTDIR)$(NMVARDIR)/eqgen
 
 clean:
 	cd lib ; make clean

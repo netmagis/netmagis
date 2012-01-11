@@ -9,6 +9,6 @@ install:
 	cd sbin ; make $(DIRS) install
 	cd examples ; make $(DIRS) install
 	cd upgrade  ; make $(DIRS) install
-	mkdir -p $(DESTDIR)/$(NMVARDIR)/dbdump
+	mkdir -p $(DESTDIR)$(NMVARDIR)/dbdump
 
 clean:

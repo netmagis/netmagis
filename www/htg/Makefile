@@ -9,10 +9,10 @@ build:
 
 install: build
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/$(BINDIR)
+	mkdir -p $(DESTDIR)$(BINDIR)
 	cd src ; make $(DIRS) install
-	mkdir -p $(DESTDIR)/$(NMLIBDIR)/htg
-	tar cf - models doc | tar xf - -C $(DESTDIR)/$(NMLIBDIR)/htg
+	mkdir -p $(DESTDIR)$(NMLIBDIR)/htg
+	tar cf - models doc | tar xf - -C $(DESTDIR)$(NMLIBDIR)/htg
 
 clean:
 	cd src ; make clean

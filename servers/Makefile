@@ -15,10 +15,10 @@ SCRIPTS = \
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/$(SBINDIR)
-	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/$(SBINDIR)
-	mkdir -p $(DESTDIR)/$(NMXMPDIR)
+	mkdir -p $(DESTDIR)$(SBINDIR)
+	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)$(SBINDIR)
+	mkdir -p $(DESTDIR)$(NMXMPDIR)
 	$(NINSTALL) -m 0644 -e "s|%SBINDIR%|$(SBINDIR)|" $(SUBST) \
-			$(SHARE) $(DESTDIR)/$(NMXMPDIR)
+			$(SHARE) $(DESTDIR)$(NMXMPDIR)
 
 clean:

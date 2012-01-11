@@ -26,7 +26,7 @@ build:
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/$(NMCGIDIR)
-	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/$(NMCGIDIR)
+	mkdir -p $(DESTDIR)$(NMCGIDIR)
+	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)$(NMCGIDIR)
 
 clean:

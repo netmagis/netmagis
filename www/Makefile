@@ -9,13 +9,13 @@ install: build
 	#
 	# install CGI
 	#
-	mkdir -p $(DESTDIR)/$(NMCGIDIR)
-	cd cgi ; make $(DIRS) $(SUBST) install
+	mkdir -p $(DESTDIR)$(NMCGIDIR)
+	cd cgi ; make $(DIRS) install
 	#
 	# install ps2pdf
 	#
-	mkdir -p $(DESTDIR)/$(NMLIBDIR)
-	install -m 0755 ps2pdf $(DESTDIR)/$(NMLIBDIR)
+	mkdir -p $(DESTDIR)$(NMLIBDIR)
+	install -m 0755 ps2pdf $(DESTDIR)$(NMLIBDIR)
 	#
 	# install htg and models
 	#
@@ -23,16 +23,16 @@ install: build
 	#
 	# install tmpl pages
 	#
-	mkdir -p $(DESTDIR)/$(NMLIBDIR)/tmpl
+	mkdir -p $(DESTDIR)$(NMLIBDIR)/tmpl
 	./htg/src/htg2html -b htg/src -d htg/models -m default \
-			tmpl /tmp/htgtmp $(DESTDIR)/$(NMLIBDIR)/tmpl
+			tmpl /tmp/htgtmp $(DESTDIR)$(NMLIBDIR)/tmpl
 	rm -rf /tmp/htgtmp
-	cd $(DESTDIR)/$(NMLIBDIR)/tmpl ; ln -s en C
+	cd $(DESTDIR)$(NMLIBDIR)/tmpl ; ln -s en C
 	#
 	# install css and images
 	#
-	rm -f $(DESTDIR)/$(NMCGIDIR)/css
-	ln -s $(DESTDIR)/$(NMLIBDIR)/htg/models/default/css $(DESTDIR)/$(NMCGIDIR)
+	rm -f $(DESTDIR)$(NMCGIDIR)/css
+	ln -s $(DESTDIR)$(NMLIBDIR)/htg/models/default/css $(DESTDIR)$(NMCGIDIR)
 	#
 	# install default files
 	#

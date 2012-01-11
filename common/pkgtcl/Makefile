@@ -14,7 +14,7 @@ pkgIndex.tcl:	$(FILES)
 
 install: build
 	@echo ">>> Making install in `pwd`"
-	install -m 0644 *.tcl *.n $(DESTDIR)/$(NMLIBDIR)/pkgtcl
+	install -m 0644 *.tcl *.n $(DESTDIR)$(NMLIBDIR)/pkgtcl
 
 clean:
 	rm -f pkgIndex.tcl 

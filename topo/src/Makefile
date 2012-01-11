@@ -47,9 +47,9 @@ getnetif:	getnetif.c	$(LIBDIR)/libgraph.a
 
 install: $(PROGS) $(SCRIPTS)
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)/$(NMLIBDIR)/topo
-	install -m 0755 $(PROGS) $(DESTDIR)/$(NMLIBDIR)/topo
-	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)/$(NMLIBDIR)/topo
+	mkdir -p $(DESTDIR)$(NMLIBDIR)/topo
+	install -m 0755 $(PROGS) $(DESTDIR)$(NMLIBDIR)/topo
+	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)$(NMLIBDIR)/topo
 
 clean:
 	rm -f *.o $(PROGS) *.core
