@@ -51,6 +51,7 @@ usage:
 	@echo "	build"
 	@echo "	build-topo"
 	@echo "	build-www"
+	@echo "	install"
 	@echo "	install-common"
 	@echo "	install-database"
 	@echo "	install-servers"

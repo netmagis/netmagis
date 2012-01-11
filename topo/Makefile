@@ -1,5 +1,4 @@
-DESTDIR		= /usr/local
-TCLSH		= /usr/local/bin/tclsh
+NINSTALL	= ../ninstall
 
 build:
 	@echo ">>> Making build in `pwd`"

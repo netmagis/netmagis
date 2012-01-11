@@ -1,5 +1,8 @@
 NINSTALL	= ../../ninstall
 
+build:
+	@echo ">>> Making build in `pwd`"
+
 install:
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(NMLIBDIR)/$(NMLIBDIR)
@@ -11,3 +14,5 @@ install:
 	mkdir -p $(DESTDIR)$(NMLIBDIR)/plugins
 	$(NINSTALL) -m 0755 -e 's|%NMLIBDIR%|$(NMLIBDIR)|' $(SUBST) plugins/* \
 			$(DESTDIR)$(NMLIBDIR)/plugins
+
+clean:

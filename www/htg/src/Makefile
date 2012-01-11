@@ -1,4 +1,3 @@
-TCLSH		= /usr/local/bin/tclsh
 NINSTALL	= ../../../ninstall
 
 TCLCFLAGS	= -I/usr/local/include/tcl8.5

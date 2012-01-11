@@ -1,5 +1,8 @@
 NINSTALL	= ../../ninstall
 
+build:
+	@echo ">>> Making build in `pwd`"
+
 install:
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)$(BINDIR)
@@ -7,3 +10,5 @@ install:
 		-e 's|%NMLIBDIR%|$(NMLIBDIR)|' \
 		-e 's|%BINDIR%|$(BINDIR)|' \
 		$(SUBST) metro* $(DESTDIR)$(BINDIR)
+
+clean:
