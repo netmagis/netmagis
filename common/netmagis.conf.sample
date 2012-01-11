@@ -50,7 +50,7 @@ diff		"diff --unified=0 %s -"
 ########################################
 
 # where BIND daemon expects to find zone files
-zonedir		"/etc/namedb/master"
+zonedir		/etc/namedb/master
 
 # tell BIND to reload files
 zonecmd		"rndc reload"
@@ -127,7 +127,7 @@ passwdurl	""			# internal
 pdflatex	/usr/local/bin/pdflatex
 neato		/usr/local/bin/neato
 dot		/usr/local/bin/dot
-ps2pdf		/usr/local/lib/netmagis/ps2pdf
+ps2pdf		%NMLIBDIR%/ps2pdf
 hostcmd		/usr/bin/host
 
 # if internal authentication
