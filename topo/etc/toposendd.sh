@@ -9,7 +9,7 @@
 #   2010/12/15 : pda/jean : split for toposendd
 #
 
-toposendd_program=%SBINDIR%/toposendd
+toposendd_program=%NMLIBDIR%/topo/toposendd
 
 case "$1" in
         start)

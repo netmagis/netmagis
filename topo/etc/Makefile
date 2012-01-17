@@ -10,7 +10,7 @@ build:
 install:
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)$(RCDIR)
-	$(NINSTALL) -m 0755 -e "s|%SBINDIR%|$(SBINDIR)|" \
+	$(NINSTALL) -m 0755 -e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
 		$(SUBST) $(SCRIPTS) $(DESTDIR)$(RCDIR)
 
 clean:

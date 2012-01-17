@@ -9,7 +9,7 @@
 #   2010/12/15 : pda/jean : split for topographd
 #
 
-topographd_program=%SBINDIR%/topographd
+topographd_program=%NMLIBDIR%/topo/topographd
 
 case "$1" in
         start)
