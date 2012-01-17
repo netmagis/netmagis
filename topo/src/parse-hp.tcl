@@ -90,6 +90,7 @@ proc hp-parse {libdir model fdin fdout tab eq} {
 	name				{CALL hp-parse-name}
 	trunk				{CALL hp-parse-trunk}
 	snmp-server			NEXT
+	snmp-server-location		{CALL hp-parse-snmp-location}
 	snmp-server-community		{CALL hp-parse-snmp-community}
 	untagged			{CALL hp-parse-untagged}
 	tagged				{CALL hp-parse-tagged}
@@ -378,6 +379,38 @@ proc hp-parse-trunk {active line tab idx} {
 	warning "Invalid trunk specification ($line)"
 	set error 1
     }
+
+    return $error
+}
+
+#
+# Entrée :
+#   - line = <localisation> <blah blah>
+#   - idx = eq!<eqname>
+# Remplit :
+#   - tab(eq!<nom eq>!location) {<localisation> ...}
+#
+# Historique
+#   2012/01/17 : jean : recuperation de cisco-parse-snmp-location
+#
+
+proc hp-parse-snmp-location {active line tab idx} {
+    upvar $tab t
+
+    set error 0
+    set ipmac 0
+    set portmac 0
+    if {[parse-location $line location ipmac portmac blablah msg]} then {
+        if {! [string equal $location ""]} then {
+            set t($idx!location) [list $location $blablah]
+        }
+    } else {
+        warning "$idx: $msg ($line)"
+        set error 1
+    }
+
+    set t($idx!ipmac) $ipmac
+    set t($idx!portmac) $portmac
 
     return $error
 }
