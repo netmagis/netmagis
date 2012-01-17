@@ -15,6 +15,7 @@ sbin/netmagis-maint
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/upgrade/15-20/README.pgauth
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/upgrade/15-20/pgauth.sed
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/upgrade/15-20/upgrade.sql
+%%PORTEXAMPLES%%%%EXAMPLESDIR%%/upgrade/20-21/upgrade.sql
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/1.168.192.in-addr.arpa
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/16.172.in-addr.arpa
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/4.3.2.1.0.6.6.0.1.0.0.2.ip6.arpa
@@ -26,9 +27,11 @@ sbin/netmagis-maint
 @dirrmtry var/netmagis
 @dirrmtry var
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/zones
+%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/20-21
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/15-20
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/14-15
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/13-14
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/12-13
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade
 %%PORTEXAMPLES%%@dirrmtry %%EXAMPLESDIR%%
+@exec mkdir -p %D/var/netmagis/dbdump

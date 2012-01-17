@@ -4,11 +4,10 @@ bin/metropoller-run
 lib/netmagis/gen-rrdgraph.pl
 lib/netmagis/libgraph.pl
 lib/netmagis/libmetro.pl
+lib/netmagis/plugins/plugin-ipmac
+lib/netmagis/plugins/plugin-portmac
+lib/netmagis/probes/sensor-arp-table.pl
 lib/netmagis/probes/sensor-assoc-ap.pl
-lib/netmagis/probes/sensor-bind-stat.pl
-lib/netmagis/probes/sensor-cpu-cisco.pl
-lib/netmagis/probes/sensor-cpu-juniper.pl
-lib/netmagis/probes/sensor-cpu-server.pl
 lib/netmagis/probes/sensor-generic-gauge.pl
 lib/netmagis/probes/sensor-if-broadcast.pl
 lib/netmagis/probes/sensor-if-by-ip.pl
@@ -17,20 +16,16 @@ lib/netmagis/probes/sensor-if-multicast.pl
 lib/netmagis/probes/sensor-if-snmp-ap.pl
 lib/netmagis/probes/sensor-if-snmp32.pl
 lib/netmagis/probes/sensor-if-snmp64.pl
-lib/netmagis/probes/sensor-interrupt-server.pl
-lib/netmagis/probes/sensor-juniper-filter-counter.pl
-lib/netmagis/probes/sensor-load-server.pl
-lib/netmagis/probes/sensor-mailq.pl
-lib/netmagis/probes/sensor-mbuf-juniper.pl
-lib/netmagis/probes/sensor-nb-connect-portcap.pl
 lib/netmagis/probes/sensor-plugins.pl
+lib/netmagis/probes/sensor-portmac.pl
 lib/netmagis/probes/sensor-stp-catalyst.pl
-lib/netmagis/probes/sensor-tps-disk.pl
+%%PORTEXAMPLES%%%%EXAMPLESDIR%%/apache-metro.conf
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/crontab.metro
 www/metro/gengraph
 @dirrm www/metro
 @dirrm var/netmagis/metro/wifi
 @dirrm var/netmagis/metro/spool
+@dirrm var/netmagis/metro/report
 @dirrm var/netmagis/metro/log
 @dirrm var/netmagis/metro/lock
 @dirrm var/netmagis/metro/graph
@@ -40,12 +35,19 @@ www/metro/gengraph
 @dirrm var/netmagis
 @dirrm var
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%
+@dirrm lib/netmagis/tmp/netmagis/lib/netmagis
+@dirrm lib/netmagis/tmp/netmagis/lib
+@dirrm lib/netmagis/tmp/netmagis
+@dirrm lib/netmagis/tmp
 @dirrm lib/netmagis/probes
+@dirrm lib/netmagis/plugins
 @dirrm lib/netmagis
 @exec mkdir -p %D/var/netmagis/metro/wifi
 @exec mkdir -p %D/var/netmagis/metro/spool
+@exec mkdir -p %D/var/netmagis/metro/report
 @exec mkdir -p %D/var/netmagis/metro/log
 @exec mkdir -p %D/var/netmagis/metro/lock
 @exec mkdir -p %D/var/netmagis/metro/graph
 @exec mkdir -p %D/var/netmagis/metro/db
 @exec mkdir -p %D/var/netmagis/metro/cache
+@exec mkdir -p %D/lib/netmagis/tmp/netmagis/lib/netmagis

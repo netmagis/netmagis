@@ -63,6 +63,7 @@ lib/netmagis/htg/models/empty/texte/html.tcl
 lib/netmagis/htg/models/empty/texte/latex.tcl
 lib/netmagis/htg/models/empty/transp/fond.html
 lib/netmagis/htg/models/empty/transp/html.tcl
+lib/netmagis/htg/models/netmagis/css/images/favicon.png
 lib/netmagis/htg/models/netmagis/css/images/fond-titre.gif
 lib/netmagis/htg/models/netmagis/css/images/logo.png
 lib/netmagis/htg/models/netmagis/css/images/puce1.gif
@@ -128,6 +129,7 @@ lib/netmagis/tmpl/en/error.html
 lib/netmagis/tmpl/en/help-commu.html
 lib/netmagis/tmpl/en/help-dhcpprofil.html
 lib/netmagis/tmpl/en/help-domaine.html
+lib/netmagis/tmpl/en/help-dotattr.html
 lib/netmagis/tmpl/en/help-eq.html
 lib/netmagis/tmpl/en/help-eqtype.html
 lib/netmagis/tmpl/en/help-etabl.html
@@ -227,6 +229,7 @@ lib/netmagis/tmpl/fr/error.html
 lib/netmagis/tmpl/fr/help-commu.html
 lib/netmagis/tmpl/fr/help-dhcpprofil.html
 lib/netmagis/tmpl/fr/help-domaine.html
+lib/netmagis/tmpl/fr/help-dotattr.html
 lib/netmagis/tmpl/fr/help-eq.html
 lib/netmagis/tmpl/fr/help-eqtype.html
 lib/netmagis/tmpl/fr/help-etabl.html

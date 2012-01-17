@@ -1,9 +1,6 @@
-etc/rc.d/topographd.sh
-etc/rc.d/toposendd.sh
 lib/netmagis/topo/anaconf
 lib/netmagis/topo/analyze
 lib/netmagis/topo/buildgraph
-lib/netmagis/topo/cache
 lib/netmagis/topo/checkdns
 lib/netmagis/topo/decodename
 lib/netmagis/topo/doteq
@@ -25,14 +22,11 @@ lib/netmagis/topo/ssidsensors
 lib/netmagis/topo/start-rancid
 lib/netmagis/topo/topographd
 lib/netmagis/topo/toposendd
-lib/netmagis/topo/updatecache
 @dirrmtry var/netmagis/eqvirt
 @dirrmtry var/netmagis/eqgen
-@dirrmtry var/netmagis/cache
 @dirrmtry var/netmagis
 @dirrmtry var
-@dirrmtry lib/netmagis/topo
-@dirrmtry lib/netmagis
+@dirrm lib/netmagis/topo
+@dirrm lib/netmagis
 @exec mkdir -p %D/var/netmagis/eqvirt
 @exec mkdir -p %D/var/netmagis/eqgen
-@exec mkdir -p %D/var/netmagis/cache
