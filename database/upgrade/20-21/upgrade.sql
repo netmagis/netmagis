@@ -12,6 +12,8 @@ COPY global.config (clef, valeur) FROM stdin;
 pageformat	a4
 \.
 
+DROP TABLE topo.cache ;
+
 CREATE TABLE topo.dotattr (
     rank	INTEGER,	-- sort order
     type	INTEGER,	-- 2: l2, 3: l3 graph
