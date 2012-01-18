@@ -149,8 +149,7 @@ metrohost	metro.mycompany.com
 ##############################################################################
 
 rancidcmd	/usr/local/libexec/rancid/rancid-run
-ranciddb	/usr/local/var/rancid/mygroup/router.db
-rancidconfdir	/usr/local/var/rancid/mygroup/configs
+ranciddir	/usr/local/var/rancid/mygroup	# group base directory
 
 # how to send commands on equipments
 # -u user on equipment (modconf here)
