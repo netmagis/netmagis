@@ -1620,14 +1620,14 @@
 		\lignetableau {
 		    \casetableau {} {ranciddir}
 		    \casetableau {} {Rancid group directory (usually
-			\teletype {$BASEDIR/\italique {group-name}/}
+			\teletype {$BASEDIR/\italique {group-name}/})
 			where are located:
 			\liste {
 			    \item {the \teletype {router.db} file which
 				lists all polled equipments
 			    }
 			    \item {the \teletype {configs/} directory
-				which will contain all configurations
+				which contains all configurations
 				fetched by rancid
 			    }
 			}
