@@ -125,8 +125,7 @@ nologinfile	%ETCDIR%/netmagis.nologin
 passwdurl	""			# internal
 
 pdflatex	/usr/local/bin/pdflatex
-neato		/usr/local/bin/neato
-dot		/usr/local/bin/dot
+dot		/usr/local/bin/dot	# part of graphviz
 ps2pdf		%NMLIBDIR%/ps2pdf
 hostcmd		/usr/bin/host
 

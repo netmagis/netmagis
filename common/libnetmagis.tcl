@@ -2053,7 +2053,7 @@ proc show-diff-file-text {fd cmd file text} {
 #	set a node
 # - link <nodename> <nodename> { <attr> ... }
 #	mark a link between nodes
-# - graphviz <png|pdf> <dot path> <ps2pdf path>
+# - graphviz <png|pdf> <engine> <dot path> <ps2pdf path>
 #	calls graphviz on the current graph and returns 1 if success
 #	and 0 if error.
 # - error
@@ -2063,6 +2063,7 @@ proc show-diff-file-text {fd cmd file text} {
 #
 # History
 #   2011/12/29 : pda      : design
+#   2012/01/18 : pda      : only one dot command for all layout engines
 #
 
 snit::type ::gvgraph {
@@ -2076,10 +2077,12 @@ snit::type ::gvgraph {
     # graph skeleton
     #	%1$s : nodes and links
     #	%2$s : graph title
-    #	%3$s : page & size attributes (meaningful only for PDF graphs)
+    #	%3$s : layout engine (dot or neato)
+    #	%4$s : page & size attributes (meaningful only for PDF graphs)
     variable skeleton -array {
 	map {
 	    graph g {
+		layout = %3$s;
 		charset = "UTF-8";
 		fontsize = 14;
 		fontname = Helvetica;
@@ -2097,6 +2100,7 @@ snit::type ::gvgraph {
 	}
 	png {
 	    graph g {
+		layout = %3$s;
 		charset = "UTF-8";
 		fontsize = 14;
 		fontname = Helvetica;
@@ -2114,12 +2118,13 @@ snit::type ::gvgraph {
 	}
 	pdf {
 	    graph g {
+		layout = %3$s;
 		charset = "UTF-8";
 		fontsize = 14;
 		fontname = Helvetica;
 		margin = .3;
 		center = true;
-		%3$s
+		%4$s
 		orientation = landscape;
 		maxiter = 1000 ;
 		node [fontname=Helvetica,fontsize=10, color=grey];
@@ -2179,7 +2184,7 @@ snit::type ::gvgraph {
 
     # calls graphviz and returns 1 if no error. Caller must use
     # error and output methods to get the result.
-    method graphviz {format dotcmd ps2pdfcmd} {
+    method graphviz {format engine dotcmd ps2pdfcmd} {
 	#
 	# Barks if format is invalid
 	#
@@ -2192,7 +2197,7 @@ snit::type ::gvgraph {
 	set tmp "/tmp/gv-[pid]"
 
 	#
-	# Builds the dot file for the graph
+	# Builds the gv (dot) file for the graph
 	#
 
 	# title
@@ -2210,9 +2215,14 @@ snit::type ::gvgraph {
 	    default { set paper {page = "8.26,11.69"; size = "11,7.6";} }
 	}
 
-	set dot [format $skeleton($format) [join $nodesandlinks "\n"] $t $paper]
+	set dot [format $skeleton($format) \
+			[join $nodesandlinks "\n"] \
+			$t \
+			$engine \
+			$paper
+		    ]
 
-	set fd [open "$tmp.dot" "w"]
+	set fd [open "$tmp.gv" "w"]
 	fconfigure $fd -encoding utf-8
 	puts $fd $dot
 	close $fd
@@ -2221,7 +2231,7 @@ snit::type ::gvgraph {
 	# Calls graphviz
 	#
 
-	set cmd [format $gvcmd($format) $dotcmd $ps2pdfcmd $tmp.dot $tmp.err]
+	set cmd [format $gvcmd($format) $dotcmd $ps2pdfcmd $tmp.gv $tmp.err]
 
 	if {[catch {open $cmd "r"} fd]} then {
 	    set error [format [mc "Error generating graph (%s)"] $fd]
@@ -2248,7 +2258,7 @@ snit::type ::gvgraph {
 	    }
 	}
 
-	file delete -force -- $tmp.dot $tmp.err
+	file delete -force -- $tmp.gv $tmp.err
 
 	#
 	# Returns appropriate code : 1 (success) or 0 (failure)
@@ -2275,7 +2285,7 @@ snit::type ::gvgraph {
 proc errimg {msg} {
     set gv [::gvgraph %AUTO%]
     $gv node "ERROR $msg" {shape=rectangle color=red style=filled}
-    if {[$gv graphviz "png" [get-local-conf "dot"] ""]} then {
+    if {[$gv graphviz "png" "dot" [get-local-conf "dot"] ""]} then {
 	set img [$gv output]
     } else {
 	# ouch! This is a text...

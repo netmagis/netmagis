@@ -166,18 +166,19 @@ proc gen-graph {dbfd gv format eq iface vlan xl2 _tabvlan} {
     #
 
     if {$nnodes > $conf(maxdot)} then {
-	set prog [get-local-conf "neato"]
+	set engine "neato"
     } else {
-	set prog [get-local-conf "dot"]
+	set engine "dot"
     }
 
+    set dot    [get-local-conf "dot" ]
     set ps2pdf [get-local-conf "ps2pdf"]
 
     #
     # Generates graph
     #
 
-    return [$gv graphviz $format $prog $ps2pdf]
+    return [$gv graphviz $format $engine $dot $ps2pdf]
 }
 
 proc search-vlan {vlan _tabvlan} {
