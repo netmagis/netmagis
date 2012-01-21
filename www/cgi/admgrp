@@ -309,7 +309,7 @@ proc val-group {dbfd group exist} {
 
 proc del-group {dbfd idgrp idorphan} {
     set ltab {global.groupe global.corresp
-		dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom
+		dns.dr_reseau dns.dr_ip dns.dr_dom
 		dns.dr_dhcpprofil}
     d dblock $ltab
 
@@ -317,7 +317,7 @@ proc del-group {dbfd idgrp idorphan} {
     # Remove permissions
     #
 
-    foreach table {dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom dns.dr_dhcpprofil} {
+    foreach table {dns.dr_reseau dns.dr_ip dns.dr_dom dns.dr_dhcpprofil} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "delete %s" $table] $msg
@@ -1219,7 +1219,7 @@ d cgi-register {action mod} {
     #
 
     set ltab {global.groupe global.corresp
-		dns.dr_reseau dns.dr_mbox dns.dr_ip dns.dr_dom
+		dns.dr_reseau dns.dr_ip dns.dr_dom
 		dns.dr_dhcpprofil} 
     d dblock $ltab
 
