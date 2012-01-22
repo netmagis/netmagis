@@ -77,6 +77,10 @@
 			    \casetableau {} {Permission to use MAC module}
 			    \casetableau {} {%DROITMAC%}
 			}
+			\lignetableau {
+			    \casetableau {} {Permission to generate link numbers}
+			    \casetableau {} {%DROITGENL%}
+			}
 		    }
 		}
 	    }

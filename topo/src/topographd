@@ -34,6 +34,7 @@
 # History
 #  2010/02/16 : pda/jean : design
 #  2010/12/18 : pda      : rework installation
+#  2012/01/18 : pda      : ranciddb -> ranciddir
 #
 
 set conf(extractcoll)	{extractcoll -a -s -w -i -p}
@@ -732,7 +733,9 @@ proc main {argv0 argv} {
 
     set-log [get-local-conf "logger"]
 
-    set ctxt(routerdb) [get-local-conf "ranciddb"]
+    set ctxt(routerdb) [get-local-conf "ranciddir"]
+    append ctxt(routerdb) "/router.db"
+
     set eqvirtdir [get-local-conf "eqvirtdir"]
     set ctxt(topobindir) [get-local-conf "topobindir"]
 

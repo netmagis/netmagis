@@ -367,7 +367,7 @@ proc dotattr-install-image {dbfd id regexp attr} {
     set gv [::gvgraph %AUTO%]
     set dotcmd [get-local-conf "dot"]
     $gv node $regexp $attr
-    if {[$gv graphviz "png" $dotcmd ""]} then {
+    if {[$gv graphviz "png" "dot" $dotcmd ""]} then {
 	set png [$gv output]
 	binary scan $png "H*" hex
 	set hex "\\x$hex"
@@ -480,7 +480,7 @@ proc dotattr-check {op dbfd _msg id idnum table _tabval} {
 	set dotcmd [get-local-conf "dot"]
 	set gv [::gvgraph %AUTO%]
 	$gv node $tabval(regexp) $tabval(gvattr)
-	if {[$gv graphviz "png" $dotcmd ""]} then {
+	if {[$gv graphviz "png" "dot" $dotcmd ""]} then {
 	    # we don't use the result since we should use the \x prefix
 	    # for binary data, prefix which will be transformed by
 	    # the pgsql::quote function

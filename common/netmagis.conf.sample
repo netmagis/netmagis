@@ -125,8 +125,7 @@ nologinfile	%ETCDIR%/netmagis.nologin
 passwdurl	""			# internal
 
 pdflatex	/usr/local/bin/pdflatex
-neato		/usr/local/bin/neato
-dot		/usr/local/bin/dot
+dot		/usr/local/bin/dot	# part of graphviz
 ps2pdf		%NMLIBDIR%/ps2pdf
 hostcmd		/usr/bin/host
 
@@ -150,8 +149,7 @@ metrohost	metro.mycompany.com
 ##############################################################################
 
 rancidcmd	/usr/local/libexec/rancid/rancid-run
-ranciddb	/usr/local/var/rancid/mygroup/router.db
-rancidconfdir	/usr/local/var/rancid/mygroup/configs
+ranciddir	/usr/local/var/rancid/mygroup	# group base directory
 
 # how to send commands on equipments
 # -u user on equipment (modconf here)

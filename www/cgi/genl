@@ -1,0 +1,58 @@
+#!%TCLSH%
+
+#
+# Generate a link number
+#
+# Called by: index
+#
+# Parameters (form or url): none
+#
+# History
+#   2012/01/21 : jean      : design
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(page)		genl.html
+
+#
+# Netmagis general library
+#
+
+source %LIBNETMAGIS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-register {} {} {
+    global conf
+
+
+    if {! $tabuid(droitgenl)} {
+	d error [mc "You are not authorized to generate a link number"]
+    } else {
+	set link [gen-link-number $dbfd]
+	if {$link == -1} {
+		d error [mc "Error while generating a link number"]
+	}
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page) [list \
+				[list %LINK% $link] \
+			    ]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "topo" ""

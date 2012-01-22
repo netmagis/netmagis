@@ -25,6 +25,7 @@
 #   2011/01/21 : pda        : use new config file
 #   2011/07/17 : pda        : defuser is given a value and created
 #   2011/12/28 : pda        : add dotattr table
+#   2011/01/21 : jean       : add droitgenl attribute
 #
 
 usage ()
@@ -110,6 +111,7 @@ db_schemas ()
 	droitsmtp	INT DEFAULT 0,	-- 1 if right to manage SMTP senders
 	droitttl	INT DEFAULT 0,	-- 1 if right to edit TTL for a host
 	droitmac	INT DEFAULT 0,	-- 1 if right to access MAC module
+	droitgenl	INT DEFAULT 0,	-- 1 if right to generate a link number
 
 	UNIQUE (nom),
 	PRIMARY KEY (idgrp)
@@ -547,21 +549,6 @@ db_schemas ()
 	    PRIMARY KEY (path)
     ) ;
 
-    -- Topo programs result cache
-
-    CREATE TABLE topo.cache (
-	    key		TEXT,		    -- hash key
-	    command	TEXT,		    -- command called with arguments
-	    file	TEXT,		    -- file containing cached command output
-	    hit		INTEGER,	    -- number of calls for this entry
-	    runtime	INTEGER,	    -- time taken for last command execution
-	    lastread	TIMESTAMP	    -- last time the entry was read
-			WITHOUT TIME ZONE,
-	    lastrun	TIMESTAMP	    -- last time the entry was written
-			WITHOUT TIME ZONE,
-	    PRIMARY KEY (key)
-    ) ;
-
     -- Vlan table
 
     CREATE TABLE topo.vlan (
@@ -622,6 +609,9 @@ db_schemas ()
 
 	PRIMARY KEY (rank)
     ) ;
+
+    -- to generate link numbers
+    CREATE SEQUENCE topo.seq_link START 1 ;
 
     CREATE OR REPLACE FUNCTION modif_routerdb () RETURNS trigger AS $$
 	BEGIN

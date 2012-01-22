@@ -12,6 +12,8 @@ COPY global.config (clef, valeur) FROM stdin;
 pageformat	a4
 \.
 
+DROP TABLE topo.cache ;
+
 CREATE TABLE topo.dotattr (
     rank	INTEGER,	-- sort order
     type	INTEGER,	-- 2: l2, 3: l3 graph
@@ -50,3 +52,15 @@ COPY topo.dotattr (rank, type, regexp, gvattr) FROM stdin;
 20200	3	host	shape=box\nstyle=filled fillcolor=lightblue\nheight=.25
 20300	3	cloud	shape=ellipse\nstyle=filled fillcolor=palegreen\nwidth=1.5
 \.
+
+------------------------------------------------------------------------------
+-- link number generation
+------------------------------------------------------------------------------
+
+CREATE SEQUENCE topo.seq_link START 1 ;
+
+ALTER TABLE global.groupe
+    ADD COLUMN droitgenl INT DEFAULT 0
+    ;
+
+UPDATE global.groupe SET droitgenl = 0 ;

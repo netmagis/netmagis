@@ -1618,18 +1618,19 @@
 			{rancid-run} command}
 		}
 		\lignetableau {
-		    \casetableau {} {ranciddb}
-		    \casetableau {} {Rancid database. Notice that the
-			rancid group (mygroup in the example provided
-			with Netmagis) is a component of the pathname.
-		    }
-		}
-		\lignetableau {
-		    \casetableau {} {rancidconfdir}
-		    \casetableau {} {Directory where equipment
-			configurations are stored by rancid (also with
-			the rancid group as a component of the
-			pathname).
+		    \casetableau {} {ranciddir}
+		    \casetableau {} {Rancid group directory (usually
+			\teletype {$BASEDIR/\italique {group-name}/})
+			where are located:
+			\liste {
+			    \item {the \teletype {router.db} file which
+				lists all polled equipments
+			    }
+			    \item {the \teletype {configs/} directory
+				which contains all configurations
+				fetched by rancid
+			    }
+			}
 		    }
 		}
 		\lignetableau {

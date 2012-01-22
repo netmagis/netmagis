@@ -19,14 +19,14 @@
 #   2010/11/17 : pda/jean   : stop sending sensors
 #   2010/11/23 : pda        : remove status file
 #   2010/12/18 : pda        : rework installation
+#   2012/01/18 : pda        : rancidconfdir + ranciddb -> ranciddir
 #
 
 TMP=/tmp/topo.$$
 TMPERR=/tmp/topoerr.$$
 
 eval `%CONFPROG% \
-		ranciddb \
-		rancidconfdir \
+		ranciddir \
 		eqvirtdir \
 		eqgendir \
 		topograph \
@@ -68,7 +68,7 @@ usage ()
 list_rancid ()
 {
     verbose "calling 'list-rancid'"
-    $topobindir/list-rancid $ranciddb $rancidconfdir > $TMP
+    $topobindir/list-rancid $ranciddir/router.db $ranciddir/configs > $TMP
     return $?
 }
 
@@ -135,7 +135,7 @@ analyze_eq ()
 	if [ x"$model" = x ]
 	then model="UNKNOWN"
 	fi
-	$topobindir/analyze $topobindir $type "$model" $rancidconfdir/$name $n \
+	$topobindir/analyze $topobindir $type "$model" $ranciddir/configs/$name $n \
 	    > $eqgendir/$n.eq
 	r=0			# at least one equipment found
     done

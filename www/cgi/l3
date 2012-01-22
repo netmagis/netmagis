@@ -146,10 +146,10 @@ proc gen-graph {dbfd gv format xl3} {
     # Graph processors
     #
 
-    set dotcmd [get-local-conf "neato"]
+    set dotcmd [get-local-conf "dot"]
     set ps2pdf [get-local-conf "ps2pdf"]
 
-    return [$gv graphviz $format $dotcmd $ps2pdf]
+    return [$gv graphviz $format "neato" $dotcmd $ps2pdf]
 }
 
 ##############################################################################
