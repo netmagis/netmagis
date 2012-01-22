@@ -523,6 +523,7 @@ snit::type ::netmagis {
 			    {eq always}
 			    {l2 always}
 			    {l3 always}
+			    {genlink always}
 			    {topotop admin}
 			    {dnstitle dns}
 			    {mactitle mac}
@@ -532,6 +533,7 @@ snit::type ::netmagis {
 	l2		{l2 Vlans}
 	l3		{l3 Networks}
 	dnstitle	{index DNS/DHCP}
+	genlink		{genl {Link number}}
 	:admin		{
 			    {admtitle always}
 			    {pgatitle authadmin}
@@ -2441,17 +2443,18 @@ proc display-user {_tabuid} {
 #   2010/11/03 : pda/jean : add equipment permissions
 #   2010/11/30 : pda/jean : add mac permissions
 #   2010/12/01 : pda      : i18n
+#   2012/01/21 : jean     : add generate link number permissions
 #
 
 proc display-group {dbfd idgrp} {
     global libconf
 
     #
-    # Get specific permissions: admin, droitsmtp, droitttl and droitmac
+    # Get specific permissions: admin, droitsmtp, droitttl, droitmac and droitgenl
     #
 
     set lines {}
-    set sql "SELECT admin, droitsmtp, droitttl, droitmac
+    set sql "SELECT admin, droitsmtp, droitttl, droitmac, droitgenl
 			FROM global.groupe
 			WHERE idgrp = $idgrp"
     pg_select $dbfd $sql tab {
@@ -2475,10 +2478,16 @@ proc display-group {dbfd idgrp} {
 	} else {
 	    set droitmac [mc "no"]
 	}
+	if {$tab(droitgenl)} then {
+	    set droitgenl [mc "yes"]
+	} else {
+	    set droitgenl [mc "no"]
+	}
 	lappend lines [list DROIT [mc "Netmagis administration"] $admin]
 	lappend lines [list DROIT [mc "SMTP authorization management"] $droitsmtp]
 	lappend lines [list DROIT [mc "TTL management"] $droitttl]
 	lappend lines [list DROIT [mc "MAC module access"] $droitmac]
+	lappend lines [list DROIT [mc "Generate link numbers"] $droitgenl]
     }
     if {[llength $lines] > 0} then {
 	set tabperm [::arrgen::output "html" $libconf(tabperm) $lines]
@@ -2804,6 +2813,7 @@ proc user-attribute {dbfd idcor attr} {
 #		droitsmtp 1 if permission to add hosts authorized to emit with SMTP
 #		droitttl 1 if permission to edit host TTL
 #		droitmac 1 if permission to use the MAC module
+#		droitgenl 1 if permission to generate a link number
 #		reseaux	list of authorized networks
 #		eq	regexp matching authorized equipments
 #		flagsr	flags -n/-e/-E/etc to use in topo programs
@@ -2819,6 +2829,7 @@ proc user-attribute {dbfd idcor attr} {
 #   2010/11/09 : pda      : renaming (car plus de recherche par id)
 #   2010/11/29 : pda      : i18n
 #   2011/06/17 : pda      : add test on ah global variable
+#   2012/01/21 : jean     : add generate link number permission
 #
 
 proc read-user {dbfd login _tabuid _msg} {
@@ -2878,6 +2889,7 @@ proc read-user {dbfd login _tabuid _msg} {
 	set tabuid(droitsmtp)	$tab(droitsmtp)
 	set tabuid(droitttl)	$tab(droitttl)
 	set tabuid(droitmac)	$tab(droitmac)
+	set tabuid(droitgenl)	$tab(droitgenl)
     }
 
     if {$tabuid(idcor) == -1} then {
@@ -8882,6 +8894,32 @@ proc eq-graph-status {dbfd eq {iface {}}} {
 
     return $html
 }
+
+#
+# Generate a new link number
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+# Output:
+#   - return value: value of the newly generated link number or -1 if error
+#
+# History:
+#   2012/01/21 : jean     : design
+#
+
+proc gen-link-number {dbfd} {
+
+    set r -1
+
+    set sql "SELECT nextval('topo.seq_link') AS linknumber"
+    pg_select $dbfd $sql tab {
+	set r $tab(linknumber)
+    }
+
+    return $r
+}
+
 
 ##############################################################################
 # Topo*d subsystem

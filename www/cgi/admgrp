@@ -18,6 +18,7 @@
 #	- droitsmtp : permission to authorize hosts to emit with SMTP (0 or 1)
 #	- droitttl : permission to modify hosts TTL (0 or 1)
 #	- droitmac : permission to use MAC module (0 or 1)
+#	- droitgenl : permission to generate a link number (0 or 1)
 #	- confirm : yes or no
 #	- loginN : group members
 #	- domaineN : valid domains
@@ -51,6 +52,7 @@
 #   2010/11/30 : pda/jean : add droitmac
 #   2010/12/06 : pda      : i18n
 #   2010/12/26 : pda      : use cgi-dispatch
+#   2012/01/21 : jean     : add droitgenl
 #
 
 #
@@ -413,6 +415,7 @@ d cgi-register {action edit} {
 	set droitsmtp 0
 	set droitttl 0
 	set droitmac 0
+	set droitgenl 0
     } else {
 	set qgroup [::webapp::html-string $orggrp]
 	set title [mc "Edition of group '%s'" $qgroup]
@@ -420,7 +423,7 @@ d cgi-register {action edit} {
 	set msggrp [mc "Modify group name or erase it to remove the group"]
 	set pqgroup [::pgsql::quote $orggrp]
 	set idgrp -1
-	set sql "SELECT idgrp, admin, droitsmtp, droitttl, droitmac
+	set sql "SELECT idgrp, admin, droitsmtp, droitttl, droitmac, droitgenl
 			FROM global.groupe
 			WHERE nom = '$pqgroup'"
 	pg_select $dbfd $sql tab {
@@ -429,6 +432,7 @@ d cgi-register {action edit} {
 	    set droitsmtp $tab(droitsmtp)
 	    set droitttl $tab(droitttl)
 	    set droitmac $tab(droitmac)
+	    set droitgenl $tab(droitgenl)
 	}
 
 	if {$idgrp == -1} then {
@@ -444,6 +448,7 @@ d cgi-register {action edit} {
     set droitsmtp [::webapp::form-yesno "droitsmtp" $droitsmtp $fmt]
     set droitttl [::webapp::form-yesno "droitttl" $droitttl $fmt]
     set droitmac [::webapp::form-yesno "droitmac" $droitmac $fmt]
+    set droitgenl [::webapp::form-yesno "droitgenl" $droitgenl $fmt]
 
     #
     # Extract the list of users belonging to this group
@@ -707,6 +712,7 @@ d cgi-register {action edit} {
 				[list %DROITSMTP% $droitsmtp] \
 				[list %DROITTTL% $droitttl] \
 				[list %DROITMAC% $droitmac] \
+				[list %DROITGENL% $droitgenl] \
 				[list %MESSAGEGROUPE% $msggrp] \
 				[list %LISTECOR% $listecor] \
 				[list %LISTEDOMAINES% $listedomaines] \
@@ -729,6 +735,7 @@ d cgi-register {action mod} {
     {droitsmtp		1 1}
     {droitttl		1 1}
     {droitmac		1 1}
+    {droitgenl		1 1}
     {login[0-9]+	0 9999}
     {tridom[0-9]+	0 9999}
     {domaine[0-9]+	0 9999}
@@ -760,7 +767,7 @@ d cgi-register {action mod} {
 
     if {$idorphan == -1} then {
 	set sql "INSERT INTO global.groupe
-				(nom, admin, droitsmtp, droitttl, droitmac)
+				(nom, admin, droitsmtp, droitttl, droitmac, droitgenl)
 			    VALUES ('', 0, 0, 0, 0)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d error [mc "Cannot create group of orphaned users"]
@@ -835,7 +842,7 @@ d cgi-register {action mod} {
     # Test various permissions
     #
 
-    foreach f {admin droitsmtp droitttl droitmac} {
+    foreach f {admin droitsmtp droitttl droitmac droitgenl} {
 	set $f [set v [string trim [lindex $ftab($f) 0]]]
 	if {$v ne "0" && $v ne "1"} then {
 	    d error [mc {Invalid value '%1$s' for form variable '%2$s'} $v $f]
@@ -1228,8 +1235,8 @@ d cgi-register {action mod} {
     if {$do eq "add"} then {
 	set qnewgrp [::pgsql::quote $newgrp]
 	set sql "INSERT INTO global.groupe
-				(nom, admin, droitsmtp, droitttl, droitmac)
-			VALUES ('$qnewgrp', $admin, $droitsmtp, $droitttl, $droitmac)"
+				(nom, admin, droitsmtp, droitttl, droitmac, droitgenl)
+			VALUES ('$qnewgrp', $admin, $droitsmtp, $droitttl, $droitmac, $droitgenl)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "add %s" $newgrp] $msg
 	} 
@@ -1264,7 +1271,8 @@ d cgi-register {action mod} {
 		    SET admin = $admin,
 			droitsmtp = $droitsmtp,
 			droitttl = $droitttl,
-			droitmac = $droitmac
+			droitmac = $droitmac,
+			droitgenl = $droitgenl
 		    WHERE idgrp = $idgrp"
 
     # Create or assign users

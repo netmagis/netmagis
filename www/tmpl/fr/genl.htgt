@@ -1,0 +1,44 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {21/01/2012}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Générer a numéro de lien
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\set {header} {
+    <style type="text/css">
+	#nextpart \{
+	    display: %DISPLAY%;
+	\}
+    </style>
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Générer un numéro de lien}
+
+	Nouveau numéro de lien : %LINK%
+
+}
+
+}

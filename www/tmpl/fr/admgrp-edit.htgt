@@ -77,6 +77,10 @@
 			    \casetableau {} {Accès au module MAC}
 			    \casetableau {} {%DROITMAC%}
 			}
+			\lignetableau {
+			    \casetableau {} {Accès à la génération de numéro de lien}
+			    \casetableau {} {%DROITGENL%}
+			}
 		    }
 		}
 	    }

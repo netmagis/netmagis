@@ -23,6 +23,7 @@
  {Equipments} {Équipements}
  {Vlans} {Vlans}
  {Networks} {Réseaux}
+ {Link number} {Numéro de lien}
  {DNS/DHCP} {DNS/DHCP}
 
  {Internal Auth} {Authentification interne}
@@ -715,5 +716,7 @@
  {Invalid mail address, password is not modified} {Adresse mail invalide, mot de passe non modifié}
  {Account has been removed from realms: %s} {Le compte a été supprimé des royaumes ci-après : %s}
  {Error while removing realms %1$s: %2$s} {Erreur lors de la suppression des royaumes %1$s : %2$s}
+ {You are not authorized to generate a link number} {Vous n'êtes pas autorisé à générer un numéro de lien}
+ {Error while generating a link number} {Erreur dans la génération d'un numéro de lien}
  {All} {Tous}
 }
