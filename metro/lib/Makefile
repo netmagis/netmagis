@@ -5,7 +5,7 @@ build:
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(NMLIBDIR)/$(NMLIBDIR)
+	mkdir -p $(DESTDIR)$(NMLIBDIR)
 	$(NINSTALL) -m 0755 -e 's|%NMLIBDIR%|$(NMLIBDIR)|' $(SUBST) *.pl \
 			$(DESTDIR)$(NMLIBDIR)
 	mkdir -p $(DESTDIR)$(NMLIBDIR)/probes
