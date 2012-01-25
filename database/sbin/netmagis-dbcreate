@@ -599,6 +599,21 @@ db_schemas ()
 	PRIMARY KEY (ideq)
     ) ;
 
+    CREATE SEQUENCE topo.seq_confcmd START 1 ;
+
+    CREATE TABLE topo.confcmd (
+	idccmd		INTEGER		-- entry id
+		DEFAULT NEXTVAL ('topo.seq_confcmd'),
+	idtype		INTEGER,	-- equipment type
+	action		TEXT,		-- action selector : prologue, ifreset
+	rank		INTEGER,	-- sort order
+	model		TEXT,		-- regexp matching equipment model
+	command		TEXT,		-- command to send
+
+	FOREIGN KEY (idtype) REFERENCES topo.eqtype (idtype),
+	PRIMARY KEY (idccmd)
+    ) ;
+
     -- graphviz attributes for equipements in L2 graphs
     CREATE TABLE topo.dotattr (
 	rank		INTEGER,	-- sort order
@@ -1312,6 +1327,34 @@ cisco
 juniper
 hp
 \.
+
+    COPY topo.confcmd (idtype, action, rank, model, command) FROM stdin;
+1	prologue	100	.*	configure terminal
+1	ifreset	90	.*29.0.*	interface %1$s\ndefault switchport nonegotiate\ndefault switchport trunk allowed vlan\ndefault switchport trunk native vlan\ndefault switchport access vlan\ndefault switchport mode
+1	ifreset	100	.*	interface %1$s\nno switchport\nswitchport voice vlan none\nswitchport
+1	ifdisable	100	.*	interface %1$s\nshutdown
+1	ifenable	100	.*	interface %1$s\nno shutdown
+1	ifaccess	100	.*	interface %1$s\nswitchport mode access\nswitchport access vlan %2$s\nspanning-tree portfast 
+1	ifvoice	100	.*	interface %1$s\nswitchport voice vlan %2$s
+1	ifdesc	100	.*	interface %1$s\ndescription %2$s
+1	epilogue	100	.*	line con 0\nexit\nexit\nwrite memory 
+2	prologue	100	.*	configure
+2	ifreset	100	.*	delete interfaces %1$s unit 0 family ethernet-switching\ndelete ethernet-switching-options voip interface %1$s
+2	ifdisable	100	.*	set interfaces %1$s disable
+2	ifenable	100	.*	delete interfaces %1$s disable
+2	ifaccess	100	.*	set interfaces %1$s unit 0 family ethernet-switching port-mode access\nset interfaces %1$s unit 0 family ethernet-switching vlan members %2$s
+2	ifdesc	100	.*	set interfaces %1$s description "%2$s"
+2	ifvoice	100	.*	set interfaces %1$s unit 0 family ethernet-switching\nset ethernet-switching-options voip interface %1$s vlan %2$s
+2	epilogue	100	.*	commit\nexit configuration
+3	prologue	100	.*	configure terminal
+3	resetvlan	100	.*	vlan %2$s\nno tagged %1$s\nno untagged %1$s
+3	ifenable	100	.*	interface %1$s\nenable
+3	ifdisable	100	.*	interface %1$s\ndisable
+3	ifaccess	100	.*	vlan %2$s\nuntagged %1$s
+3	ifvoice	100	.*	vlan %2$s\ntagged %1$s
+3	ifdesc	100	.*	interface %1$s\nname "%2$s"
+3	epilogue	100	.*	vlan 1\nexit\nexit\nwrite memory
+\.  
 
     COPY topo.dotattr (rank, type, regexp, gvattr) FROM stdin;
 10100	2	juniper/M.*	shape=circle\nstyle=filled fillcolor=lightgrey\nfixedsize height=1
