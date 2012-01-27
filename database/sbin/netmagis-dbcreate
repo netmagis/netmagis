@@ -1354,7 +1354,7 @@ hp
 3	ifvoice	100	.*	vlan %2$s\ntagged %1$s
 3	ifdesc	100	.*	interface %1$s\nname "%2$s"
 3	epilogue	100	.*	vlan 1\nexit\nexit\nwrite memory
-\.  
+\.
 
     COPY topo.dotattr (rank, type, regexp, gvattr) FROM stdin;
 10100	2	juniper/M.*	shape=circle\nstyle=filled fillcolor=lightgrey\nfixedsize height=1
