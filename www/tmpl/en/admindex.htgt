@@ -58,6 +58,7 @@
 	\item {Modify \lien {Vlans} {%URLREFVLAN%}}
 	\item {Modify \lien {equipment types} {%URLREFEQTYPE%}}
 	\item {Modify \lien {equipments} {%URLREFEQ%}}
+	\item {Modify \lien {equipement configuration commands} {%URLREFCONFCMD%}}
 	\item {Modify \lien {Graphviz attributes} {%URLREFDOTATTR%}}
 	\item {Modify \lien {groups and users} {%URLADMGRP%}}
     }

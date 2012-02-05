@@ -9,7 +9,7 @@
 #   - display edit page
 #	- action : (empty)
 #	- type : etabl, commu, hinfo, reseau, domaine, zone, zone4, zone6,
-#		vlan, eq, eqtype, dotattr
+#		vlan, eq, eqtype, confcmd, dotattr
 #   - display graphviz generated image
 #	- action : "image"
 #	- type : dotattr
@@ -44,6 +44,7 @@
 #   2010/12/26 : pda      : use cgi-dispatch
 #   2010/12/26 : pda      : use same spec for all store-tabular
 #   2011/12/28 : pda      : add dotattr type
+#   2012/01/25 : pda      : add confcmd type
 #
 
 
@@ -234,6 +235,35 @@ set conf(eq:table)		topo.eq
 set conf(eq:proc)		admref-nop
 
 ##############################################################################
+# Topo configuration commands for equipments
+
+set conf(confcmd:ptitle) "Configuration commands management"
+set conf(confcmd:cols)		{ {10 rank {Rank} {int 4} {}}
+				  {10 idtype {Type} {menu {%MENUTYPE%}} {}}
+				  {10 action {Action} {menu {
+							{epilogue  epilogue}
+							{ifaccess  ifaccess}
+							{ifdesc    ifdesc}
+							{ifdisable ifdisable}
+							{ifenable  ifenable}
+							{ifreset   ifreset}
+							{ifvoice   ifvoice}
+							{prologue  prologue}
+							{resetvlan resetvlan}
+							}} {} }
+				  {30 model {Model} {string 10} {}}
+				  {40 command {Command} {textarea {40 5}} {}}
+				}
+set conf(confcmd:sql)		"SELECT * FROM topo.confcmd c, topo.eqtype e
+					WHERE c.idtype = e.idtype
+					ORDER BY e.type, c.action, c.rank ASC"
+set conf(confcmd:id)		idccmd
+set conf(confcmd:help)		help-confcmd.html
+set conf(confcmd:return)	"Return to modification of configuration commands"
+set conf(confcmd:table)		topo.confcmd
+set conf(confcmd:proc)		admref-nop
+
+##############################################################################
 # Graphviz node attributes
 
 set conf(dotattr:ptitle) "Graphviz node attributes for equipments"
@@ -319,6 +349,11 @@ d cgi-register {action {}} {
 	    set menuup [list [list 1 [mc "Up"]] [list 0 [mc "Down"]]]
 	    regsub -- "%MENUTYPE%" $colspecs "$menutype" colspecs
 	    regsub -- "%MENUUP%" $colspecs "$menuup" colspecs
+	}
+	confcmd {
+	    set menutype [::pgsql::getcols $dbfd topo.eqtype "" "type ASC" \
+						{idtype type}]
+	    regsub -- "%MENUTYPE%" $colspecs "$menutype" colspecs
 	}
 	dotattr {
 	    # we can't use a %s in an URL since the "%" character will be posted
