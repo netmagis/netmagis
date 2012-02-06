@@ -411,6 +411,18 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
     return ""
 }
 
+# 
+# Dummy check function called by store-tabular
+#
+# Output:
+#   - return value: always true
+#
+
+proc dhcp-nop {args} {
+    # ok
+    return 1
+}
+
 ##############################################################################
 # Display network selection page
 ##############################################################################
@@ -515,7 +527,7 @@ d cgi-register {action edit} {
 	{iddhcpprofil}
     }
 
-    store-tabular $dbfd $spec iddhcprange dns.dhcprange ftab
+    store-tabular $dbfd $spec iddhcprange dns.dhcprange ftab dhcp-nop
     d writelog "moddhcp" "modified dhcp ranges: [join $lcidr {, }]"
 
     #
