@@ -379,19 +379,6 @@ d cgi-register {action mod} {
 		d dbabort [mc "add %s" [mc "mail role"]] $msg
 	    }
 
-	    #
-	    # Assign a permission for mailbox host. This permission
-	    # is placed for the group.
-	    # XXX : this table is not used at this time
-	    #
-
-	    set sql "INSERT INTO dns.dr_mbox (idgrp, idmail)
-				VALUES ($tabuid(idgrp), $trr(idrr))"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [mc "add %s" [mc "mailbox permissions"]] $msg
-	    }
-
-	    set lm "add mail role $fqdn -> $fqdnh"
 	}
 	0-1 {
 	    #
@@ -403,8 +390,7 @@ d cgi-register {action mod} {
 
 	    set idrr $trr(idrr)
 
-	    set sql "DELETE FROM dns.dr_mbox WHERE idmail = $idrr ;
-		    DELETE FROM dns.role_mail WHERE idrr = $idrr"
+	    set sql "DELETE FROM dns.role_mail WHERE idrr = $idrr"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		d dbabort [mc "delete %s" [mc "mail role"]] $msg
 	    }

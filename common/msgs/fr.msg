@@ -45,6 +45,7 @@
  {Modify Vlans} {Modif Vlans}
  {Modify equipment types} {Modif types d'équipement}
  {Modify equipments} {Modif équipements}
+ {Modify configuration commands} {Modif commandes de configuration}
  {Modify Graphviz attributes} {Modif attributs Graphviz}
  {Modify users and groups} {Modif groupes}
  {Force zone generation} {Forcer zones}
@@ -501,8 +502,10 @@
  {Zone management} {Gestion des zones}
  {DHCP profile management} {Gestion des profils DHCP}
  {Vlan management} {Gestion des Vlans}
- {Equipment type management}
- {Equipment management}
+ {Equipment type management} {Gestion des types d'équipement}
+ {Equipment management} {Gestion des équipements}
+ {Configuration commands management} {Gestion des commandes de configuration}
+ {Graphviz node attributes for equipments} {Attributs des noeuds Graphviz pour les équipements}
  {return to organization modification} {revenir à la modification des organismes}
  {return to community modification} {revenir à la modification des communautés}
  {return to host information modification} {revenir à la modification des types de machines}
@@ -513,9 +516,15 @@
  {return to Vlan modification} {revenir à la modification des Vlans}
  {return to equipment type modification} {revenir à la modification des types d'équipement}
  {return to equipment modification} {revenir à la modification des équipements}
+ {Return to modification of configuration commands} {revenir à la modification des commandes de configuration}
+ {Return to Graphviz nodes attributes} {revenir aux attributs des noeuds Graphviz}
  {Up/Down} {Actif/Inactif}
  {Up} {Actif}
  {Down} {Inactif}
+ {Rank} {Rang}
+ {Action} {Action}
+ {Model} {Modèle}
+ {Command} {Commande}
  {Relay insertion failed: %s} {Insertion du relais impossible : %s}
  {Old relay deletion failed: %s} {Suppression des anciens relais impossible : %s}
  {Mail relays deleted} {Relais de messagerie supprimés}

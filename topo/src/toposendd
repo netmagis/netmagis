@@ -41,172 +41,6 @@ set conf(extracteq)	{extracteq -a %1$s %2$s}
 
 source %LIBNETMAGIS%
 
-#
-# Modification commands to send to each equipment
-#
-# The confcmd array contains commands adapted to each equipment type.
-# Indices are:
-#   type:model:action
-# Model may be a glob pattern (*, *29?0* etc.)
-# Example :
-#   confcmd(cisco:3750:ifaccess) ...
-#   confcmd(cisco:*:ifaccess) ...
-# The longest pattern matched for model is kept.
-# The value is a list of command lines to send to the equipment.
-#
-# Different actions are:
-#   
-#   prologue
-#	enter in configuration mode
-#   ifreset
-#	reset interface to a known state (most of the time, by removing
-#	all vlans)
-#	Parameters :
-#	    %1$ : interface name
-#   resetvlans
-#	when an interface cannot be reset in a known state (for example
-#	on HP switches), this is the command to execute for each vlan
-#	to remove it.
-#	Parameters :
-#	    %1$ : interface name
-#	    %2$ : vlan-id
-#   ifaccess
-#	set an access vlan on an interface
-#	Parameters :
-#	    %1$ : interface name
-#	    %2$ : vlan-id
-#   ifvoice
-#	set a voip vlan on an interface
-#	Parameters :
-#	    %1$ : interface name
-#	    %2$ : vlan-id
-#   ifdesc
-#	set interface description
-#	Parameters :
-#	    %1$ : interface name
-#	    %2$ : description
-#   epilogue
-#	exit configuration mode an commit modification
-#   exec
-#	shell command to call to send other commands to the equipment.
-#	This is the only shell command, all other actions are sent to
-#	equipments.
-#	Notice: this action is not initially in this array, since it
-#	value is got from local configuration file.
-#
-#
-
-array set confcmd {
-    cisco:*:prologue {
-	{configure terminal}
-    }
-    cisco:*29?0*:ifreset {
-	{interface %1$s}
-	{default switchport nonegotiate}
-	{default switchport trunk allowed vlan}
-	{default switchport trunk native vlan}
-	{default switchport access vlan}
-	{default switchport mode}
-    }
-    cisco:*:ifreset {
-	{interface %1$s}
-	{no switchport}
-	{switchport voice vlan none}
-	{switchport}
-    }
-    cisco:*:ifdisable {
-	{interface %1$s}
-	{shutdown}
-    }
-    cisco:*:ifenable {
-	{interface %1$s}
-	{no shutdown}
-    }
-    cisco:*:ifaccess {
-	{interface %1$s}
-	{switchport mode access}
-	{switchport access vlan %2$s}
-	{spanning-tree portfast}
-    }
-    cisco:*:ifvoice {
-	{interface %1$s}
-	{switchport voice vlan %2$s}
-    }
-    cisco:*:ifdesc {
-	{interface %1$s}
-	{description %2$s}
-    }
-    cisco:*:epilogue {
-	{line con 0}
-	{exit}
-	{exit}
-	{write memory}
-    }
-
-    juniper:*:prologue {
-	{configure}
-    }
-    juniper:*:ifreset {
-	{delete interfaces %1$s unit 0 family ethernet-switching}
-	{delete ethernet-switching-options voip interface %1$s}
-    }
-    juniper:*:ifdisable {
-	{set interfaces %1$s disable}
-    }
-    juniper:*:ifenable {
-	{delete interfaces %1$s disable}
-    }
-    juniper:*:ifaccess {
-	{set interfaces %1$s unit 0 family ethernet-switching port-mode access}
-	{set interfaces %1$s unit 0 family ethernet-switching vlan members %2$s}
-    }
-    juniper:*:ifdesc {
-	{set interfaces %1$s description "%2$s"}
-    }
-    juniper:*:ifvoice {
-	{set interfaces %1$s unit 0 family ethernet-switching}
-	{set ethernet-switching-options voip interface %1$s vlan %2$s}
-    }
-    juniper:*:epilogue {
-	{commit}
-	{exit configuration}
-    }
-
-    hp:*:prologue {
-	{configure terminal}
-    }
-    hp:*:resetvlans {
-	{vlan %2$s}
-	{no tagged %1$s}
-	{no untagged %1$s}
-    }
-    hp:*:ifenable {
-	{interface %1$s}
-	{enable}
-    }
-    hp:*:ifdisable {
-	{interface %1$s}
-	{disable}
-    }
-    hp:*:ifaccess {
-	{vlan %2$s}
-	{untagged %1$s}
-    }
-    hp:*:ifvoice {
-	{vlan %2$s}
-	{tagged %1$s}
-    }
-    hp:*:ifdesc {
-	{interface %1$s}
-	{name "%2$s"}
-    }
-    hp:*:epilogue {
-	{vlan 1}
-	{exit}
-	{exit}
-	{write memory}
-    }
-}
 
 ##############################################################################
 # Send changes to equipments
@@ -298,7 +132,6 @@ proc send-changes {_tabeq} {
 # Output:
 #   - return value : list of command lines to send to equipment or
 #		empty list if an error occurred
-#		ou liste vide en cas d'erreur
 #   - parameter lreqdate : see above
 # 
 # History : 
@@ -404,6 +237,37 @@ proc mod-to-conf {idrr eq type model _lreqdate} {
 }
 
 #
+# Load shell commands use to send configuration commands to equipments
+#
+# Input:
+#    - none
+# Output:
+#    - return value: 1 if send command are valid in ctxt array, 0 if error
+#    - global ctxt(send...): shell commands for each equipment type
+#    - global ctxt(send): 1 if send commands are already in ctxt(send...)
+#
+# History : 
+#   2012/01/25 : pda/jean : design
+#
+
+proc get-send {} {
+    global ctxt
+
+    if {! $ctxt(send)} then {
+	set lt {}
+	set sql "SELECT type FROM topo.eqtype"
+    	if {[toposqlselect $sql tab { lappend lt $tab(type) }]} then {
+	    foreach t $lt {
+		set ctxt(send$t) [get-local-conf "send$t"]
+	    }
+	    set ctxt(send) 1
+	}
+    }
+
+    return $ctxt(send)
+}
+
+#
 # Send commands on an equipment
 #
 # Input:
@@ -412,7 +276,7 @@ proc mod-to-conf {idrr eq type model _lreqdate} {
 #   - model : equipment model (ex: 3750, M20...)
 #   - lcmd : list of commands to send
 #   - _msg : in return, error message or command output
-# Sortie
+# Output
 #   - return value : 1 if ok, 0 if error
 #
 # History : 
@@ -421,6 +285,7 @@ proc mod-to-conf {idrr eq type model _lreqdate} {
 
 proc execute-cmd {fqdn type model lcmd _msg} {
     upvar $_msg msg
+    global ctxt
 
     set-status "Sending command to $fqdn"
 
@@ -429,7 +294,20 @@ proc execute-cmd {fqdn type model lcmd _msg} {
     puts $fd [join $lcmd "\n"]
     close $fd
     
-    set exec [fetch-cmd $type $model "exec"]
+    if {![get-send]} then {
+	set msg "Unable to read send* commands"
+    	return 0
+    }
+
+    if {[info exists ctxt(send$type)]} then {
+    	set exec $ctxt(send$type)
+    } elseif {$ctxt($send$type) eq ""} then {
+	set msg "Directive 'send$type' not configured in netmagis.conf"
+    	return 0
+    } else {
+	set msg "Unknown equipment type '$type'"
+    	return 0
+    }
 
     if {[catch {exec sh -c "$exec -x $tmp $fqdn"} msg]} then {
 	set r 0
@@ -469,36 +347,85 @@ proc execute-cmd {fqdn type model lcmd _msg} {
 #
 # Input:
 #   - type : equipment type (ex: cisco, juniper...)
-#   - model : equipment model (ex: 3750, M20, * ...) ; may be a glob pattern
-#   - context : see confcmd array
-# Sortie
-#   - return value : command to execute, or empty list if not found
+#   - model : equipment model (ex: 3750, M20, ...)
+#   - context : action selection (ex: ifaccess, ifenable, ...)
+# Output:
+#   - return value : list of commands to execute, or empty list if not found
+#
+# Note:
+#     The confcmd table contains commands adapted to each equipment type.
+#
+#     model may be a regular expression (.*, .*29.0.* etc.)
+#     The lowest ranked regexp matched for model is kept.
+#
+#     "command"  is a list of command lines to send to the equipment.
+#
+#     Different actions are:
+#       
+#       prologue
+#	    enter in configuration mode
+#       ifreset
+#	    reset interface to a known state (most of the time, by removing
+#	    all vlans)
+#	    Parameters :
+#		%1$ : interface name
+#       resetvlan
+#	    when an interface cannot be reset in a known state (for example
+#	    on HP switches), this is the command to execute for each vlan
+#	    to remove it.
+#	    Parameters :
+#		%1$ : interface name
+#		%2$ : vlan-id
+#       ifaccess
+#	    set an access vlan on an interface
+#	    Parameters :
+#		%1$ : interface name
+#		%2$ : vlan-id
+#       ifvoice
+#	    set a voip vlan on an interface
+#	    Parameters :
+#		%1$ : interface name
+#		%2$ : vlan-id
+#       ifdesc
+#	    set interface description
+#	    Parameters :
+#		%1$ : interface name
+#		%2$ : description
+#       epilogue
+#	    exit configuration mode an commit modification
 #
 # History : 
 #   2010/02/16 : pda/jean : design
+#   2012/01/25 : pda/jean : adaptation to database
 #
 
 proc fetch-cmd {type model context} {
-	global confcmd
+    set qtype [::pgsql::quote $type]
+    set qcontext [::pgsql::quote $context]
+    set sql "SELECT c.model, c.command
+    		FROM topo.confcmd c, topo.eqtype e
+		WHERE c.idtype = e.idtype
+		    AND e.type = '$qtype'
+		    AND c.action = '$qcontext'
+    		ORDER BY c.rank ASC
+    		"
+    set l {}
+    if {! [toposqlselect $sql tab { lappend l [list $tab(model) $tab(command)] }]} then {
+    	return {}
+    }
 
-	set l {}
-	foreach elem [array names confcmd] {
-	    lassign [split $elem ":"] etype emodel econtext
-	    if {$etype eq $type && $econtext eq $context && \
-		[string match $emodel $model]} {
-		    #
-		    # Build a list of couples {pattern_length command}
-		    # in order to keep the longest pattern matched
-		    #
-		    lappend l	[list \
-				    [string length $emodel] \
-				    $confcmd($type:$emodel:$context) \
-				]
-		}
+    set r {}
+    foreach elem $l {
+	lassign $elem remodel command
+	if {[regexp "^$remodel\$" $model]} then {
+	    # Translate command as a text into a list such as
+	    # complex commands can be built
+	    set r [split $command "\n"]
+	    break
 	}
+    }
 
-	set r [lindex [lsort -integer -index 0 $l] end]
-	return [lindex $r 1]
+    return $r
 }
 
 
@@ -527,7 +454,7 @@ proc resetif {eq type model iface} {
 	lappend lcmd [format $fmt $iface]
     }
 
-    set l2 [fetch-cmd $type $model "resetvlans"]
+    set l2 [fetch-cmd $type $model "resetvlan"]
     if {[llength $l2]>0} then {
 	foreach vlan [get-vlans $eq $iface] {
 	    foreach fmt $l2 {
@@ -746,10 +673,10 @@ proc usage {argv0} {
 
 proc main {argv0 argv} {
     global ctxt
-    global confcmd
 
     set ctxt(dbfd1) ""
     set ctxt(dbfd2) ""
+    set ctxt(send) 0
     set verbose 0
 
     #
@@ -759,11 +686,6 @@ proc main {argv0 argv} {
     set-log [get-local-conf "logger"]
 
     set ctxt(fpingcmd) [get-local-conf "fpingcmd"]
-
-    foreach type {hp cisco juniper} {
-	set idx "$type:*:exec"
-	set confcmd($idx) [get-local-conf "send$type"]
-    }
 
     set graph [get-local-conf "topograph"]
 

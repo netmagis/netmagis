@@ -404,9 +404,9 @@ proc juniper-parse-if {conf tab idx} {
 	ether-options		{1	juniper-parse-if-gigopt}
 	aggregated-ether-options {1	NOP}
 	vlan-tagging		{1	juniper-parse-if-vlan-tagging}
-	traceoptions		{1	NOP}
 	member-range		{4	juniper-parse-member-range}
 	member			{2	juniper-parse-member}
+	traceoptions		{1	NOP}
 	apply-groups		{2	NOP}
 	*			{2	ERROR}
     }
@@ -573,6 +573,7 @@ proc juniper-parse-if-unit {conf tab idx} {
 	disable		{1	juniper-parse-unit-disable}
 	tunnel		{1	NOP}
 	apply-groups	{2	NOP}
+	traceoptions	{1	NOP}
 	*		{2	ERROR}
     }
 
@@ -707,6 +708,7 @@ proc juniper-parse-family {conf tab idx} {
 		policer			{1	NOP}
 		address			{2	juniper-parse-if-address}
 		apply-groups		{2	NOP}
+		traceoptions		{1	NOP}
 		*			{2	NOP}
 	    }
 	    set unitnb $t(current!unitnb)
@@ -722,6 +724,7 @@ proc juniper-parse-family {conf tab idx} {
 		port-mode	{2	juniper-parse-l2switch-portmode}
 		vlan		{1	juniper-parse-l2switch-vlan}
 		native-vlan-id	{2	juniper-parse-l2switch-nativevlan}
+		traceoptions	{1	NOP}
 		*		{2	NOP}
 	    }
 	    set t($idx!l2switch) on
@@ -779,6 +782,7 @@ proc juniper-parse-l2switch-vlan {conf tab idx} {
     array set kwtab {
 	members		{3	juniper-parse-l2switch-vlan-members}
 	apply-groups	{2	NOP}
+	traceoptions	{1	NOP}
 	*		{1	ERROR}
     }
     set error [juniper-parse-list kwtab [lindex $conf 1] t "$idx"]
@@ -849,6 +853,7 @@ proc juniper-parse-if-address {conf tab idx} {
 	arp		    {4	NOP}
 	destination	    {2	NOP}
 	apply-groups	    {2	NOP}
+	traceoptions	    {1	NOP}
 	*		    {2	ERROR}
     }
 
@@ -889,6 +894,7 @@ proc juniper-parse-vrrp {conf tab idx} {
 	virtual-inet6-address	{2	juniper-parse-vrrp-vadr}
 	accept-data		{1	NOP}
 	apply-groups	    	{2	NOP}
+	traceoptions	    	{1	NOP}
 	*			{2	NOP}
     }
 
@@ -951,6 +957,7 @@ proc juniper-parse-if-gigopt {conf tab idx} {
         no-auto-negotiation	{1	NOP}
         no-flow-control		{1	NOP}
 	apply-groups	    	{2	NOP}
+	traceoptions	    	{1	NOP}
 	*			{2	ERROR}
     }
     return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
@@ -1012,6 +1019,7 @@ proc juniper-parse-routing-options {conf tab idx} {
 	static			{1	juniper-parse-static-routes}
 	autonomous-system	{2	NOP}
 	apply-groups	    	{2	NOP}
+	traceoptions	    	{1	NOP}
 	*			{1	NOP}
     }
 
@@ -1036,6 +1044,7 @@ proc juniper-parse-static-routes {conf tab idx} {
 	route		{juniper-parse-count-route juniper-parse-route-entry}
 	rib-group	{2	NOP}
 	apply-groups	{2	NOP}
+	traceoptions	{1	NOP}
 	*		{1	ERROR}
     }
 
@@ -1111,6 +1120,7 @@ proc juniper-parse-snmp {conf tab idx} {
 	community	{2	juniper-parse-snmp-community}
 	location	{2	juniper-parse-snmp-location}
 	apply-groups	{2	NOP}
+	traceoptions	{1	NOP}
 	*		{1	ERROR}
     }
 
@@ -1183,6 +1193,7 @@ proc juniper-parse-ethernet-swopt {conf tab idx} {
     array set kwtab {
 	voip		{1	juniper-parse-voip}
 	apply-groups	{2	NOP}
+	traceoptions	{1	NOP}
 	*		{1	NOP}
     }
 
@@ -1205,6 +1216,7 @@ proc juniper-parse-voip {conf tab idx} {
     array set kwtab {
 	interface	{2	juniper-parse-voip-iface}
 	apply-groups	{2	NOP}
+	traceoptions	{1	NOP}
 	*		{1	NOP}
     }
 
@@ -1229,6 +1241,7 @@ proc juniper-parse-voip-iface {conf tab idx} {
     array set kwtab {
 	vlan		{2	juniper-parse-voip-iface-vlan}
 	apply-groups	{2	NOP}
+	traceoptions	{1	NOP}
 	*		{2	NOP}
     }
 
@@ -1292,6 +1305,7 @@ proc juniper-parse-vlans {conf tab idx} {
 
     array set kwtab {
 	apply-groups	{2	NOP}
+	traceoptions	{1	NOP}
 	*		{1	juniper-parse-vlans-entry}
     }
 

@@ -555,6 +555,7 @@ snit::type ::netmagis {
 			    {modvlan always}
 			    {modeqtype always}
 			    {modeq always}
+			    {modconfcmd always}
 			    {moddotattr always}
 			    {admgrp always}
 			    {admzgen always}
@@ -584,6 +585,7 @@ snit::type ::netmagis {
 	modvlan		{admref?type=vlan {Modify Vlans}}
 	modeqtype	{admref?type=eqtype {Modify equipment types}}
 	modeq		{admref?type=eq {Modify equipments}}
+	modconfcmd	{admref?type=confcmd {Modify configuration commands}}
 	moddotattr	{admref?type=dotattr {Modify Graphviz attributes}}
 	admgrp		{admgrp {Modify users and groups}}
 	admzgen		{admzgen {Force zone generation}}

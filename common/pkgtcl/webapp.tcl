@@ -69,7 +69,7 @@ namespace eval webapp {
 				link meta param}
     # url des images (pour la génération d'arbre interactif)
     # relativement à la racine du serveur web
-    variable treeimages	/images
+    variable treeimages	css/images
 
     # code Javascript de l'arbre interactif
     variable treejs {
