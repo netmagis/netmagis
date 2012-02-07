@@ -51,6 +51,15 @@ our %sensor_types = (
 	'portmac.hp'		=> { 'graph'=>'portmac','rrd'=>'0','period'=>'3,8,13,18,23,28,33,38,43,48,53,58 * * * *','enabled'=>'1' },
 );
 
+# For special tunning for sensor types.
+# To alter values of %sensor_type variable, you must create the following file
+# and set %sensor_type fields.
+if(-e "%NMLIBDIR%/sensors-options.pl")
+{
+        require "%NMLIBDIR%/sensors-options.pl";
+}
+
+
 
 # fichier de configuration principal et chargement des fonctions de base
 our $datadir = $global_conf{metrodatadir};

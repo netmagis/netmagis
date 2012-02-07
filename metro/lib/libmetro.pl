@@ -849,6 +849,7 @@ sub db_exec
 	if($db->do($sql)) {
 		$r = 1;
 	} else {
+		print STDERR "ERROR: (db_exec) failed in query '$sql': ".  $DBI::errstr;
 		writelog($current_process_name, $current_log_facility, "err",
 				"\t ERROR: (db_exec) failed in query '$sql': ".
 				$DBI::errstr);
@@ -879,12 +880,15 @@ sub set_process_name
 # List a directory
 # return a list of file names matching a pattern or 
 # an empty list if the directory cannot be read
+# Each file contains a full path
 sub lsfiles 
 {
         my ($dir, $pattern) = @_;
 
         my @l = () ;
         my $d = $dir;
+
+        # remove final slash
         $d =~ s,/$,,;
         if(opendir(DIR, $dir)) {
                 @l = map {$d . "/" . $_} grep (/$pattern/, readdir(DIR));
@@ -917,39 +921,53 @@ sub lsfiles
 #
 sub load_sessions
 {
-    my $file = shift;
-    my $r;
+    my @files = @_;
 
-    if(open(F,$file)) {
-	my %sessions ;
-	while(<F>) {
-	    # format : 1323794702;130.79.73.127;00:e0:4c:39:0b:1e
-	    my ($t,$data) = (/^(\d+);(.*)/);
-	    # Convert time_t to SQL timestamp
-	    $sessions{$data} = strftime("%Y-%m-%d %H:%M:%S", localtime($t));
+    my $r = undef;
+    my %sessions ;
+    foreach my $f (@files) {
+	if(open(F,$f)) {
+	    while(<F>) {
+		# Format : 1323794702;130.79.73.127;00:e0:4c:39:0b:1e
+		my ($t,$data) = (/^(\d+);(.*)/);
+		# Convert time_t to SQL timestamp
+		$sessions{$data} = strftime("%Y-%m-%d %H:%M:%S", localtime($t));
+	    }
+	    close(F);
+	} else {
+	    writelog($current_process_name,$current_log_facility,"err",
+			"\t ERROR: (load_session) cannot open '$f' ($!)");
 	}
-	close(F);
+    }
 
-	if(%sessions) {
-	    $r = \%sessions;
-	}
-    } else {
-	writelog($current_process_name,$current_log_facility,"err",
-		"\t ERROR: (load_session) cannot open '$file' ($!)");
+    # If sessions not empty
+    if(%sessions) {
+	$r = \%sessions;
     }
 
     return $r;
 }
 
-#############################################################
-# Extract equipment address from report file name
-sub guess_eq
+################################################################
+# Extract IP address of the polled source from a report filename
+#
+# The filename has the following format (where 1.2.3.4 is the ip address
+# of the source) :
+# 	/path/to/the/report/dir/probetype_1.2.3.4
+#
+# In some case the filename can have extra elements after the address :
+# 	/path/to/the/report/dir/probetype_1.2.3.4_otherthings
+#
+sub guess_src_name
 {
-	my $file = shift;
+	my $filename = shift;
 
-	$file =~ /.*(port|ip)mac_([0-9.]+)/;
-
-	return $2;
+	my ($type,$address,$other) = split(/_/,$filename);
+	if($address =~ m/([0-9.]+|[0-9a-f:]+)/) {
+		return $address ;
+	} else {
+		return "";
+	}
 }
 
 #############################################################
@@ -964,15 +982,17 @@ sub update_sessions
 {
 	my ($db,$table,$src,$polled_sessions) = @_;
 	
-	db_exec($db,"START TRANSACTION");
+	#db_exec($db,"START TRANSACTION");
 
 	# Create a temporary table
-	db_exec($db,"CREATE TEMPORARY TABLE polled (LIKE $table)");
+	(my $underscored_src = $src) =~ s/[:.]/_/g; 
+	my $polled = sprintf('%s_%s', $table, $underscored_src );
+	db_exec($db,"CREATE TABLE $polled (LIKE $table)");
 
 	# Load polled session data into temporary table
 	my $copyfields = "start,stop,src,closed,data";
 
-	db_exec($db,"COPY polled ($copyfields) FROM STDIN");
+	db_exec($db,"COPY $polled ($copyfields) FROM STDIN");
 	foreach my $k (keys %{$polled_sessions}) {
 		my $time = $polled_sessions->{$k};
 
@@ -981,14 +1001,15 @@ sub update_sessions
 		# Since data is a composite type, it must be between parentheses
 		# and separated by ','
 		$db->pg_putcopydata("$time\t$time\t$src\tFALSE\t($k)\n");
+
 	}
 	$db->pg_putcopyend();
 
 	# Update open sessions matching all the polled session 
-	db_exec($db,"UPDATE $table SET stop=polled.stop FROM polled
+	db_exec($db,"UPDATE $table SET stop=$polled.stop FROM $polled
 			WHERE $table.closed=FALSE AND
 				$table.src='$src' AND
-				polled.data=$table.data"
+				$polled.data=$table.data"
 		);
 
 	# Create new sessions :
@@ -996,8 +1017,8 @@ sub update_sessions
 	# - compare polled sessions <> previously open sessions
 	# - create only sessions which are not in previously open sessions
 	db_exec($db,"INSERT INTO $table (start,stop,src,closed,data)
-			SELECT start,stop,src,FALSE,data FROM polled
-			WHERE polled.data NOT IN (	SELECT data FROM $table
+			SELECT start,stop,src,FALSE,data FROM $polled
+			WHERE $polled.data NOT IN (	SELECT data FROM $table
 							WHERE closed=FALSE AND
 								src='$src'
 						)"
@@ -1007,14 +1028,14 @@ sub update_sessions
 	# close open sessions that do not appear in polled source 
 	db_exec($db,"UPDATE $table SET closed=TRUE
 			WHERE closed=FALSE AND src='$src' AND
-				data NOT IN (SELECT data FROM polled)"
+				data NOT IN (SELECT data FROM $polled)"
 		);	
 
 	# Destroy temporary table
-	db_exec($db,"DROP TABLE polled");
+	db_exec($db,"DROP TABLE $polled");
 
 	# Commit changes
-	db_exec($db,"COMMIT");
+	#db_exec($db,"COMMIT");
 }
 
 #############################################################
@@ -1023,37 +1044,62 @@ sub update_sessions
 #	db		: handle of an opened database
 #	table		: table name
 #	dir		: report directory
-#	filepattern    : filename pattern of the report files
+#	sensortype      : filename pattern of the report files
 #
 sub process_sessions {
-    my ($db, $table, $dir, $filepattern) = @_;
+    my ($db, $table, $dir, $sensortype) = @_;
+
+    my $lockdir = $global_conf{"metrodatadir"} . "/lock";
+
+    my $process = "plugin-$sensortype";
+    if(check_lock_file($lockdir,"$process.lock", $process)!= 0) {
+	writelog($current_process_name,$current_log_facility,"err",
+			"\t ERROR: (process_session) already running");
+	return -1;
+    }
+
+    create_lock_file($lockdir, "$process.lock", $process);
 
     # Load data files
-    my @filelist = lsfiles($dir, $filepattern) ;
+    my $pattern = sprintf("^%s_.*", $sensortype);
+    my @filelist = lsfiles($dir, $pattern) ;
 
-    # Update sessions for each file
-    foreach my $file (@filelist) {
-        my $src=guess_eq($file);
+    # Get all unique source names that produced a report
+    my %srclist ;
+    foreach my $f (@filelist) {
+        my $src = guess_src_name($f);
+	if ($src ne "") {
+	    $srclist{$src} = 1;
+	}
+    }
 
-        # Source found
-	if($src) {
-	    my $polled_sessions = load_sessions($file);
-	    my $suppress = 0;
+    # Update sessions for each source
+    foreach my $src (keys %srclist) {
 
-	    if(! $polled_sessions) {
-	    # empty file, remove it
+	# Read all files for this source
+	# The filename format is described in guess_src_name
+	my $pattern = sprintf('^%s_(%s|%s_.*)$',$sensortype, $src, $src);
+	my @files = lsfiles ($dir, $pattern);
+	my $polled_sessions = load_sessions(@files);
+
+	my $suppress = 0;
+
+	if(! $polled_sessions) {
+	    # No session means the file is empty -> remove it later
+	    $suppress = 1;
+	} else {
+	    if(update_sessions($db,$table,$src,$polled_sessions)) {
 		$suppress = 1;
-	    } else {
-		if(update_sessions($db,$table,$src,$polled_sessions)) {
-		    $suppress = 1;
-		}
 	    }
-
-	    if($suppress) {
-		unlink($file);
+	}
+	if($suppress) {
+	    foreach my $f (@files) {
+		unlink($f);
 	    }
 	}
     }
+
+    delete_lock_file("$lockdir/$process.lock");
 }
 
 return 1;

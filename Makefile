@@ -1,6 +1,6 @@
 DESTDIR		= 
 
-PREFIX		= /local
+PREFIX		= /local/netmagis
 
 # Standard OS directories
 BINDIR		= $(PREFIX)/bin

@@ -425,7 +425,8 @@ sub print_portmac_report
 
 	foreach my $vlan (keys %{$table_forwarding->{$host}})
 	{
-        	if(open(REPORT,">$config{dir_report}/portmac_$host:$vlan"))
+		my $hv = $host . "_" . $vlan;
+        	if(open(REPORT,">$config{dir_report}/portmac_$hv"))
         	{
                 	foreach my $mac (keys %{$table_forwarding->{$host}{$vlan}})
                 	{

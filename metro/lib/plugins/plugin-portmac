@@ -22,8 +22,8 @@ my $table = "mac.portmac";
 my $db =  db_connect($global_conf{'macdbname'}, $global_conf{'macdbhost'},
 		$global_conf{'macdbuser'}, $global_conf{'macdbpassword'});
 
-my $filepattern = "portmac_.*";
+my $sensortype = "portmac";
 my $dir = $global_conf{'metrodatadir'}. "/report/";
 
 # Process all session files
-process_sessions($db, $table, $dir, $filepattern);
+process_sessions($db, $table, $dir, $sensortype);
