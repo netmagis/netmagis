@@ -988,6 +988,18 @@ sub update_sessions
 	(my $underscored_src = $src) =~ s/[:.]/_/g; 
 	my $polled = sprintf('%s_%s', $table, $underscored_src );
 	db_exec($db,"CREATE TABLE $polled (LIKE $table)");
+# DEBUG START
+my $macdbpassword=read_conf_file("%CONFFILE%","macdbpassword");
+my $macdbhost=read_conf_file("%CONFFILE%","macdbhost");
+my $macdbport=read_conf_file("%CONFFILE%","macdbport");
+my $macdbname=read_conf_file("%CONFFILE%","macdbname");
+my $macdbuser=read_conf_file("%CONFFILE%","macdbuser");
+my $PSQL="PGPASSWORD=$macdbpassword psql -h $macdbhost -d $macdbname -U $macdbuser";
+
+my $date;
+chomp($date=`date`);
+open(D,">>/tmp/DBG"); print D $date . " Created table $polled\n"; close(D);
+# DEBUG END
 
 	# Load polled session data into temporary table
 	my $copyfields = "start,stop,src,closed,data";
@@ -1001,9 +1013,26 @@ sub update_sessions
 		# Since data is a composite type, it must be between parentheses
 		# and separated by ','
 		$db->pg_putcopydata("$time\t$time\t$src\tFALSE\t($k)\n");
+# DEBUG START
+open(D,">>/tmp/DBG"); 
+chomp($date=`date`);
+print D $date . " Inserting into table $polled: $time\t$time\t$src\tFALSE\t($k)\n";
+close(D);
+# DEBUG END
 
 	}
 	$db->pg_putcopyend();
+
+# DEBUG START
+open(D,">>/tmp/DBG"); 
+chomp($date=`date`);
+print D $date . " Will update the stop field in table $table for the following lines:\n";
+close(D);
+# DEBUG END
+
+# DEBUG START
+system("$PSQL -c \"SELECT * FROM $table, $polled WHERE $table.closed=FALSE AND $table.src='$src' AND $polled.data=$table.data\" >>/tmp/DBG");
+# DEBUG END
 
 	# Update open sessions matching all the polled session 
 	db_exec($db,"UPDATE $table SET stop=$polled.stop FROM $polled
@@ -1011,6 +1040,14 @@ sub update_sessions
 				$table.src='$src' AND
 				$polled.data=$table.data"
 		);
+
+# DEBUG START
+open(D,">>/tmp/DBG"); 
+chomp($date=`date`);
+print D $date . " Will create new sessions in table $table with the following lines:\n";
+close(D);
+system("$PSQL -c \"SELECT start,stop,src,FALSE,data FROM $polled WHERE $polled.data NOT IN (	SELECT data FROM $table WHERE closed=FALSE AND src='$src')\" >>/tmp/DBG");
+# DEBUG END
 
 	# Create new sessions :
 	# (for a given source)
@@ -1024,6 +1061,14 @@ sub update_sessions
 						)"
 		);
 
+# DEBUG START
+open(D,">>/tmp/DBG"); 
+chomp($date=`date`);
+print D $date . " Will close these sessions in table $table :\n";
+close(D);
+system("$PSQL -c \"SELECT * FROM $table WHERE closed=FALSE AND src='$src' AND data NOT IN (SELECT data FROM $polled)\" >>/tmp/DBG");
+# DEBUG END
+	
 	# Close old sessions :
 	# close open sessions that do not appear in polled source 
 	db_exec($db,"UPDATE $table SET closed=TRUE
@@ -1076,10 +1121,23 @@ sub process_sessions {
     # Update sessions for each source
     foreach my $src (keys %srclist) {
 
+# DEBUG START
+open(D,">>/tmp/DBG"); 
+chomp($date=`date`);
+print D $date . " plugin-$sensortype ($$) processing data for $src\n";
+close(D);
+# DEBUG END
+
 	# Read all files for this source
 	# The filename format is described in guess_src_name
 	my $pattern = sprintf('^%s_(%s|%s_.*)$',$sensortype, $src, $src);
 	my @files = lsfiles ($dir, $pattern);
+# DEBUG START
+open(D,">>/tmp/DBG"); 
+chomp($date=`date`);
+print D $date . " plugin-$sensortype ($$) files for $src:" . join(',',@files)."\n" ;
+close(D);
+# DEBUG END
 	my $polled_sessions = load_sessions(@files);
 
 	my $suppress = 0;
@@ -1093,9 +1151,19 @@ sub process_sessions {
 	    }
 	}
 	if($suppress) {
-	    foreach my $f (@files) {
-		unlink($f);
-	    }
+# DEBUG START
+# move files instead of delete
+	    my $bkp = "$dir/report.$src/" . `date +%Y%m%d.%H%M%S` ;
+	    system("mkdir -p $bkp");
+	    chdir($dir);
+	    system("mv " . join(" ",@files) . " $bkp");
+
+#	    foreach my $f (@files) {
+#		unlink($f);
+#	    }
+
+# DEBUG END
+
 	}
     }
 
