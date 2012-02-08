@@ -2191,7 +2191,9 @@
 	    }
 
 	}
-	\item {To activate an ipmac sensor in your equipement
+	\item {To collect ip-mac and port-mac session, you need to enable
+		the mac module in the application configuration in the Admin web interface.\br
+		To activate an ipmac sensor in your equipement
 	    configuration, you have to add information in the SNMP
 	    sysLocation description.
 
