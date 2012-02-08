@@ -221,7 +221,8 @@ source %LIBNETMAGIS%
 # Guess parameter type
 #
 # Input: 
-#   - dbfd : database handle
+#   - mdbfd : mac database handle
+#   - ndbfd : netmagis database handle
 #   - param : parameter given by the user
 #   - _msg : in return, error message
 # Output:
@@ -231,7 +232,7 @@ source %LIBNETMAGIS%
 #   - msg : empty string or error message
 #
 
-proc guess-type {dbfd param _msg} {
+proc guess-type {mdbfd ndbfd param _msg} {
     upvar $_msg msg
 
     set type ""
@@ -239,33 +240,45 @@ proc guess-type {dbfd param _msg} {
 
     set ipversion [::ip::version $param]
 
-    if {[regexp {^[0-9a-f]{1,2}(:[0-9a-f]{1,2}){5}$} $param]} then {
+    set mac_re {[0-9a-f]{1,2}(:[0-9a-f]{1,2}){5}}
+    set ip4_re {[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+}
+    set ip6_re {[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+}
+    set port_re {[0-9a-zA-Z/.\-]+}
+    set vlan_re {[0-9]+}
+    set ipmac_assoc_re "$mac_re,$ip4_re"
+    set portmac_assoc_re "$ip4_re,$mac_re,$port_re,$vlan_re"
+    set eq_re {[A-Za-z0-9\-.]}
+
+
+    if {[regexp "^$mac_re\$" $param]} then {
 	# MAC address
 	set type "mac"
     } elseif {[regexp {^[0-9a-f]{4}(.[0-9a-f]{4}){2}$} $param]} then {
 	# MAC address with Cisco format (00AB.1234.5678)
 	set n {([0-9a-f]{2})}
-	regsub  "^$n$n.$n$n.$n$n" $param {\1:\2:\3:\4:\5:\6} param
+	regsub "^$n$n.$n$n.$n$n" $param {\1:\2:\3:\4:\5:\6} param
 	set type "mac"
-    } elseif {[regexp {^portmac_assoc:(.+,.+,.+)$} $param dummy portmac_assoc]} then {
+    } elseif {[regexp "^portmac_assoc:($portmac_assoc_re)\$" $param dummy \
+		portmac_assoc]} then {
         # portmac association
 	set type "portmac_assoc"
 	set param $portmac_assoc
-    } elseif {[regexp {^ipmac_assoc:(.+,.+)$} $param dummy ipmac_assoc]} then {
+    } elseif {[regexp "^ipmac_assoc:($ipmac_assoc_re)\$" $param dummy \
+		ipmac_assoc]} then {
         # ipmac association
 	set type "ipmac_assoc"
 	set param $ipmac_assoc
-    } elseif {[regexp {^eq:([a-z0-9\-.]+)$} $param dummy eq]} then {
+    } elseif {[regexp "^eq:($eq_re)\$" $param dummy eq]} then {
         # By equipment
 	set type "equipement"
 	set param $eq
-    } elseif {[regexp {^vlan:([a-z0-9\-.]+)$} $param dummy vlan]} then {
+    } elseif {[regexp "^vlan:($vlan_re)\$" $param dummy vlan]} then {
         # By VLAN
 	set type "vlan"
 	set param $vlan
     } elseif {$ipversion == 4 || $ipversion == 6} then {
 	# IP Address
-        set msg [check-ip-syntax $dbfd $param "inet"]
+        set msg [check-ip-syntax $ndbfd $param "inet"]
         if {$msg eq ""} then {
   	    set type "ip"
 	} else {
@@ -287,14 +300,15 @@ proc guess-type {dbfd param _msg} {
 # Display an HTML result with search result
 #
 # Input:
-#   - dbfd : database handle
+#   - mdbfd : mac database handle
+#   - ndbfd : netmagis database handle
 #   - type : search type (ip, mac, etc.)
 #   - param : search criterion
 # Output:
 #   - return value : HTML code
 #
 
-proc html-result {dbfd type param} {
+proc html-result {mdbfd ndbfd type param} {
     set tab ""
     switch $type {
 	nom {
@@ -303,27 +317,27 @@ proc html-result {dbfd type param} {
 		d error "resolve: $resmsg"
 	    }
 	    foreach ip $lip {
-		append tab [gen-choice-ipmac $dbfd $ip ""]
+		append tab [gen-choice-ipmac $mdbfd $ndbfd $ip ""]
 	    }
 	}
 	ip {
-	    append tab [gen-choice-ipmac $dbfd $param ""]
+	    append tab [gen-choice-ipmac $mdbfd $ndbfd $param ""]
 	}
 	portmac_assoc {
-	    append tab [gen-ipmac-assoc $dbfd $param]
+	    append tab [gen-portmac-assoc $mdbfd $ndbfd $param]
 	}
 	ipmac_assoc {
-	    append tab [gen-portmac-assoc $dbfd $param]
+	    append tab [gen-ipmac-assoc $mdbfd $ndbfd $param]
 	}
 	equipement {
-	    append tab [gen-eq $dbfd $param]
+	    append tab [gen-eq $mdbfd $ndbfd $param]
 	}
 	vlan {
-	    append tab [gen-vlan $dbfd $param]
+	    append tab [gen-vlan $mdbfd $ndbfd $param]
 	}
 	mac {
-	    append tab [gen-choice-ipmac $dbfd "" $param]
- 	    append tab [gen-mac $dbfd $param]
+	    append tab [gen-choice-ipmac $mdbfd $ndbfd "" $param]
+ 	    append tab [gen-mac $mdbfd $ndbfd $param]
 	}
 	default {
 	    d error [mc "Internal error: invalid parameter type '%s'" $type]
@@ -340,20 +354,20 @@ proc html-result {dbfd type param} {
 #      html string containing ip-mac association sessions
 #
 
-proc gen-ipmac-assoc {dbfd ipmac_assoc} {
+proc gen-ipmac-assoc {mdbfd ndbfd ipmac_assoc} {
     global conf
 
     #
     # Check if IP and MAC addresses exist
     #
 
-    lassign [split $ipmac_assoc ","] searchip searchmac
+    lassign [split $ipmac_assoc ","] searchmac searchip
     set ip ""
     set mac ""
-    set sql "SELECT ip, mac FROM mac.ipmac
+    set sql "SELECT (data).ip, (data).mac FROM mac.ipmac
 		WHERE (data).ip = '$searchip' AND (data).mac = '$searchmac'
 		LIMIT 1"
-    pg_select $dbfd $sql tab {
+    pg_select $mdbfd $sql tab {
 	set ip $tab(ip)
 	set mac $tab(mac)
     }
@@ -372,7 +386,7 @@ proc gen-ipmac-assoc {dbfd ipmac_assoc} {
     lappend lines [list Info [mc "IP address"] $iplink]
 
     lappend lines [list Info [mc "MAC address"] \
-			[gen-link [display-mac $dbfd $mac] $mac] \
+			[gen-link [display-mac $mdbfd $mac] $mac] \
 		    ]
 
     #
@@ -381,13 +395,13 @@ proc gen-ipmac-assoc {dbfd ipmac_assoc} {
 
     set found 0
     set sql "SELECT  to_char(start,$conf(sqldateformat)) AS dstart,
-			to_char(fin,$conf(sqldateformat)) AS dstop,
-			close
+			to_char(stop,$conf(sqldateformat)) AS dstop,
+			closed AS closed
 		FROM mac.ipmac
 		WHERE (data).ip = '$ip' AND (data).mac = '$mac'
 		ORDER BY start DESC"
-    pg_select $dbfd $sql tab2 {
-	if {$tab2(close)} then { set pat "Close" } else { set pat "Active" }
+    pg_select $mdbfd $sql tab2 {
+	if {$tab2(closed)} then { set pat "Close" } else { set pat "Active" }
 	if {$found == 0} then {
 	    lappend lines [list Active [mc "Start"] [mc "End"]]
 	    set found 1
@@ -410,25 +424,26 @@ proc gen-ipmac-assoc {dbfd ipmac_assoc} {
 # Display a portmac session list, for a given idportmac
 #
 
-proc gen-portmac-session {dbfd portmac_assoc} {
+proc gen-portmac-assoc {mdbfd ndbfd portmac_assoc} {
     global conf
 
-    lassign [split $portmac_assoc ","] searchmac searchport searchvlan
+    lassign [split $portmac_assoc ","] searchsrc searchmac searchport searchvlan
     set lines {}
     set sql "SELECT (data).mac AS mac,
 		    (data).port AS port,
 		    src AS src,
-		    (data).idvlan AS idvlan
+		    (data).vlanid AS vlanid
 		FROM mac.portmac
 		WHERE (data).mac='$searchmac'
-			AND (data).port='$searchport' 
-			AND (data).vlan='$searchvlan'"
-    pg_select $dbfd $sql tab {
+			AND lower((data).port)='$searchport' 
+			AND (data).vlanid=$searchvlan
+			AND src='$searchsrc'"
+    pg_select $mdbfd $sql tab {
 	lappend lines [list "Info" \
 			    [mc "MAC address"] \
-			    [gen-link [display-mac $dbfd $tab(mac)] $tab(mac)] \
+			    [gen-link [display-mac $mdbfd $tab(mac)] $tab(mac)] \
 			]
-	set eq [get-eq-name $dbfd $tab(src)]
+	set eq [get-eq-name $ndbfd $tab(src)]
 	lappend lines [list "Info" \
 			    [mc "Equipement"] \
 			    [gen-link $eq "eq:$tab(src)"] \
@@ -437,29 +452,29 @@ proc gen-portmac-session {dbfd portmac_assoc} {
 			    [mc "Interface"] \
 			    $tab(port) \
 			]
-	set vlan [display-vlan $dbfd $tab(idvlan)]
+	set vlan [display-vlan $ndbfd $tab(vlanid)]
 	lappend lines [list "Info" \
 			    [mc "Vlan"] \
-			    [gen-link $vlan "vlan:$tab(idvlan)"] \
+			    [gen-link $vlan "vlan:$tab(vlanid)"] \
 			]
     }
 
     set found 0
     set sql "SELECT to_char(portmac.start,$conf(sqldateformat)) AS dstart,
 		    to_char(portmac.stop,$conf(sqldateformat)) AS dstop,
-		    portmac.close AS close
+		    portmac.closed AS closed
 		FROM mac.portmac
 		WHERE (data).mac='$searchmac'
 			AND (data).port='$searchport' 
-			AND (data).vlan='$searchvlan'
+			AND (data).vlanid=$searchvlan
 		ORDER BY portmac.stop DESC"
-    pg_select $dbfd $sql tab2 {
+    pg_select $mdbfd $sql tab2 {
 	if {$found==0} then {
 	    lappend lines [list Active [mc "Start"] [mc "End"]]
 	    set found 1
 	}
 
-	if {$tab2(close)} then { set pat "Close" } else { set pat "Active" }
+	if {$tab2(closed)} then { set pat "Close" } else { set pat "Active" }
 	lappend lines [list $pat $tab2(dstart) $tab2(dstop)]
     }
 
@@ -477,7 +492,7 @@ proc gen-portmac-session {dbfd portmac_assoc} {
 #  - return value : HTML code
 #
 
-proc gen-choice-ipmac {dbfd ip mac} {
+proc gen-choice-ipmac {mdbfd ndbfd ip mac} {
     global conf
 
     # This case should not happen
@@ -511,18 +526,18 @@ proc gen-choice-ipmac {dbfd ip mac} {
     set sql "SELECT DISTINCT (data).ip AS ip, (data).mac AS mac
 		FROM mac.ipmac WHERE [join $crit AND]"
     set d {}
-    pg_select $dbfd $sql tab {
+    pg_select $mdbfd $sql tab {
 	incr n
-	set ipmac_assoc_link [gen-link [mc "Details"] "$tab(mac),$tab(ip)"]
+	set ipmac_assoc_link [gen-link [mc "Details"] "ipmac_assoc:$tab(mac),$tab(ip)"]
 	set dnsname [resolve "ip" $tab(ip) resmsg]
 	if {$resmsg ne ""} {
 	    d error "resolve: $resmsg"
 	}
 	set iplink [gen-link [display-ip $tab(ip) $dnsname] $tab(ip)]
 
-	pg_select $dbfd "SELECT extract(epoch from max(stop)) AS laststop
+	pg_select $mdbfd "SELECT extract(epoch from max(stop)) AS laststop
 		FROM mac.ipmac
-		WHERE (data).ip=$tab(ip) AND (data).mac=$tab(mac)" tab2 {
+		WHERE (data).ip='$tab(ip)' AND (data).mac='$tab(mac)'" tab2 {
 	    set laststop $tab2(laststop)
 	}
 
@@ -531,7 +546,7 @@ proc gen-choice-ipmac {dbfd ip mac} {
 	} else {
 	    set laststop 0
 	}
-	set maclink [gen-link [display-mac $dbfd $tab(mac)] $tab(mac)]
+	set maclink [gen-link [display-mac $mdbfd $tab(mac)] $tab(mac)]
 	lappend d [list Data $ipmac_assoc_link $iplink $maclink $laststop]
     }
 
@@ -572,30 +587,31 @@ proc gen-choice-ipmac {dbfd ip mac} {
 #  - return value : HTML code
 #
 
-proc gen-mac {dbfd mac} {
+proc gen-mac {mdbfd ndbfd mac} {
     if {$mac eq ""} then {
 	return ""
     }
-    return [gen-choice-portmac $dbfd "(data).mac='$mac'"]
+    return [gen-choice-portmac $mdbfd $ndbfd "(data).mac='$mac'"]
 }
 
 #
 # Display a menu of MAC-Port-Vlan for an equipment
 #
 # Input:
-#  - eq : equipment name
+#   - mdbfd : mac database handle
+#   - ndbfd : netmagis database handle
+#   - eq : equipment name
 #
 # Output:
 #  - return value : HTML code
 #
 
-proc gen-eq {dbfd eq} {
-    set eqaddr [get-eq-address $dbfd $eq]
-XXXXXX fixme -> get-eq-address
+proc gen-eq {mdbfd ndbfd eq} {
+    set eqaddr [get-eq-addr $ndbfd $eq]
     if {$eqaddr eq ""} then {
 	return [mc "Equipment '%s' not found" $eq]
     }
-    return [gen-choice-portmac $dbfd "portmac.src=$eqaddr"]
+    return [gen-choice-portmac $mdbfd $ndbfd "portmac.src=$eqaddr"]
 }
 
 #
@@ -608,11 +624,11 @@ XXXXXX fixme -> get-eq-address
 #  - return value : HTML code
 #
 
-proc gen-vlan {dbfd vlanid} {
-    if {[display-vlan $dbfd $vlanid] eq ""} then {
+proc gen-vlan {mdbfd ndbfd vlanid} {
+    if {[display-vlan $ndbfd $vlanid] eq ""} then {
 	return [mc "Vlan '%s' not found" $vlanid]
     }
-    return [gen-choice-portmac $dbfd "(data).vlanid=$vlanid"]
+    return [gen-choice-portmac $mdbfd $ndbfd "(data).vlanid=$vlanid"]
 }
 
 #
@@ -620,7 +636,7 @@ proc gen-vlan {dbfd vlanid} {
 # according to a criterion (SQL expression).
 #
     
-proc gen-choice-portmac {dbfd crit} {
+proc gen-choice-portmac {mdbfd ndbfd crit} {
     global conf
 
     set n 0
@@ -634,7 +650,7 @@ proc gen-choice-portmac {dbfd crit} {
 			    [mc "Vlan"] \
 			    [mc "Last occurrence"] \
 			]
-    set sql "SELECT DISTINCT 	src,
+    set sql "SELECT DISTINCT 	src AS src,
     				(data).mac AS mac,
 				(data).port AS port,
 				(data).vlanid AS vlanid
@@ -642,25 +658,25 @@ proc gen-choice-portmac {dbfd crit} {
 		    WHERE	$crit
 		    GROUP BY    src, data"
     set d {}
-    pg_select $dbfd $sql tab {
+    pg_select $mdbfd $sql tab {
 	incr n
-	set portmac_assoc_link [gen-link [mc "Details"]
-		    "portmac:$tab(src),$tab(mac),$tab(port),$tab(vlan)"]
-	set maclink [gen-link [display-mac $dbfd $tab(mac)] $tab(mac)]
+	set portmac_assoc_link [gen-link [mc "Details"] \
+		    "portmac_assoc:$tab(src),$tab(mac),$tab(port),$tab(vlanid)"]
+	set maclink [gen-link [display-mac $mdbfd $tab(mac)] $tab(mac)]
 
 	set vlanid $tab(vlanid)
-	set vlanlink [gen-link [display-vlan $dbfd $vlanid] "vlan:$vlanid"]
-	set eqname [get-eq-name $dbfd $tab(src)] 
-	set eqlink [gen-link $eqname "eq:$src"]
+	set vlanlink [gen-link [display-vlan $ndbfd $vlanid] "vlan:$vlanid"]
+	set eqname [get-eq-name $ndbfd $tab(src)] 
+	set eqlink [gen-link [display-eq $eqname] "eq:$tab(src)"]
 
 	set sql "SELECT extract(epoch from max(stop)) AS stop
 		    FROM mac.portmac
-		    WHERE src='$tab(src)
+		    WHERE src='$tab(src)'
 			    AND (data).mac='$tab(mac)'
-			    AND (data).port='$tab(port)',
-			    AND (data).vlanid='$tab(vlanid)'"
+			    AND (data).port='$tab(port)'
+			    AND (data).vlanid=$tab(vlanid)"
 	set stop ""
-	pg_select $dbfd $sql tab2 {
+	pg_select $mdbfd $sql tab2 {
 	    set stop $tab2(stop)
 	}
 
@@ -680,7 +696,7 @@ proc gen-choice-portmac {dbfd crit} {
 
     foreach l [lsort -index end -integer $d] {
 	set t [lindex $l end]
-	set ndate [clock format $t -format "$conf(clockformat)"]]
+	set ndate [clock format $t -format "$conf(clockformat)"]
 	if {[regexp {^01/01/1970} $ndate]} then {
 	    set ndate [mc "(no date)"]
 	}
@@ -713,21 +729,22 @@ proc gen-link {text target} {
 # Display a Vlan name: "vlanid (description)" or "vlanid"
 #
 
-proc display-vlan {dbfd vlanid} {
+proc display-vlan {ndbfd vlanid} {
     global cachevlan
 
     if {[info exists cachevlan($vlanid)]} then {
-	set vlandesc $cachevlan($vlanid)
+	set descr $cachevlan($vlanid)
     } else {
-	set vlandesc ""
-	pg_select $dbfd "SELECT descr FROM topo.vlan WHERE vlanid=$vlanid" tab {
-	    set vlandesc $tab(descr)
+	set descr ""
+	set sql "SELECT descr AS descr FROM topo.vlan WHERE vlanid=$vlanid"
+	pg_select $ndbfd $sql tab {
+	    set descr $tab(descr)
 	}
-	set cachevlan($vlanid) $vlandesc
+	set cachevlan($vlanid) $descr
     }
 
-    if {$vlandesc ne ""} then {
-	set dispvlan "$vlanid ($vlandesc)"
+    if {$descr ne ""} then {
+	set dispvlan "$vlanid ($descr)"
     } else {
 	set dispvlan $vlanid
     }
@@ -735,13 +752,25 @@ proc display-vlan {dbfd vlanid} {
     return $dispvlan
 }
 
+proc display-eq {eq} {
+    global conf
+
+    regsub "\.$conf(defaultdomain)\$" $eq "" eq
+	
+    return $eq
+}
+
 #
 # Search equipment name given its address
+#
+# Input:
+#   - ndbfd : netmagis database handle
+#   - addr : ip address of equipment
 #
 # Return: equipment name or empty string if not found
 #
 
-proc get-eq-name {dbfd addr} {
+proc get-eq-name {ndbfd addr} {
     global cacheeq
 
     if {[info exists cacheeq(addr:$addr)]} then {
@@ -751,9 +780,9 @@ proc get-eq-name {dbfd addr} {
 	set sql "SELECT rr.nom || '.' || domaine.nom AS fqdn
 		    FROM dns.rr_ip, dns.rr, dns.domaine
 		    WHERE rr_ip.adr='$addr'
-		    	AND rr.idrr=rr_ip.idrr"
-			AND rr.iddom=domaine.iddom
-	pg_select $dbfd $sql tab {
+		    	AND rr.idrr=rr_ip.idrr
+			AND rr.iddom=domaine.iddom"
+	pg_select $ndbfd $sql tab {
 	    set eq $tab(fqdn)
 	}
 	set cacheeq(name:$eq) $addr
@@ -769,23 +798,23 @@ proc get-eq-name {dbfd addr} {
 # Return: equipment IP address or empty string if not found
 #
 
-proc get-eq-addr {dbfd eq} {
+proc get-eq-addr {ndbfd eq} {
     global cacheeq
 
     if {[info exists cacheeq(name:$eq)]} then {
 	set addr $cacheeq(name:$eq)
     } else {
-	set l [split $tab(eq) "."]
+	set l [split $eq "."]
 	set shortname [lindex $l 0]
 	set domain [join [lrange $l 1 end] "."]
 	set sql "SELECT rr_ip.adr AS addr
 		    FROM dns.rr_ip, dns.rr, dns.domaine
-		    WHERE rr.idrr=rr_ip.idrr"
-		    	AND rr.iddom=domaine.iddom"
+		    WHERE rr.idrr=rr_ip.idrr
+		    	AND rr.iddom=domaine.iddom
 		    	AND rr.nom='$shortname'
-		    	AND domaine.nom='$domain'
+		    	AND domaine.nom='$domain'"
 	set addr ""
-	pg_select $dbfd $sql tab {
+	pg_select $ndbfd $sql tab {
 		set addr $tab(addr)
 	}
 	set cacheeq(addr:$addr) $eq
@@ -795,16 +824,16 @@ proc get-eq-addr {dbfd eq} {
 }
 
 #
-# Display search criterion on result page as a readable text
+# Display search criterion on result page as a (somewhat) readable text
 #
 
-proc display-crit {dbfd type param} {
+proc display-crit {ndbfd type param} {
     switch $type {
 	mac		{ set m "MAC address %s" }
 	ip        	{ set m "IP address %s" }
-	ipmac_assoc	{ set m "this association IP-MAC" }
-	portmac_assoc	{ set m "this MAC-Port-Vlan association" }
-	vlan		{ set m "Vlan %s" ; set param [display-vlan $dbfd $param] }
+	ipmac_assoc	{ set m "IP-MAC" }
+	portmac_assoc	{ set m "MAC-Port-Vlan" }
+	vlan		{ set m "Vlan %s" ; set param [display-vlan $ndbfd $param] }
 	nom		{ set m "host %s" }
 	default		{ set m "???" }
     }
@@ -838,7 +867,7 @@ proc display-ip {ip dnsname} {
 #	(no change since OUI is not found)
 #
 
-proc display-mac {dbfd mac} {
+proc display-mac {mdbfd mac} {
     global ouicache
 
     if {[info exists ouicache($mac)]} then {
@@ -846,7 +875,7 @@ proc display-mac {dbfd mac} {
     }
 
     set manuf 0
-    pg_select $dbfd "SELECT manuf('$mac') AS m" tab {
+    pg_select $mdbfd "SELECT manuf('$mac') AS m" tab {
 	set manuf $tab(m)
     }
 
@@ -945,11 +974,24 @@ d cgi-register {recherche .+} {} {
     global conf
 
     #
+    # Save netmagis database handler
+    #
+
+    set ndbfd $dbfd
+
+
+    #
+    # Get default domain
+    #
+
+    set conf(defaultdomain) [dnsconfig get "defdomain"]
+
+    #
     # Open MAC database
     #
 
     set conninfo [get-conninfo "macdb"]
-    if {[catch {set dbfdmac [pg_connect -conninfo $conninfo]} msg]} then {
+    if {[catch {set mdbfd [pg_connect -conninfo $conninfo]} msg]} then {
         d error $msg
     }
 
@@ -958,7 +1000,7 @@ d cgi-register {recherche .+} {} {
     #
 
     set recherche [string tolower $recherche]
-    set l [guess-type $dbfdmac $recherche msg]
+    set l [guess-type $mdbfd $ndbfd $recherche msg]
     if {[llength $l] == 0} then {
 	d error $msg
     } 
@@ -968,7 +1010,7 @@ d cgi-register {recherche .+} {} {
     # Display output
     #
 
-    set table [html-result $dbfdmac $type $param]
+    set table [html-result $mdbfd $ndbfd $type $param]
     if {$table eq ""} then {
 	set table [mc "No information found"]
     }
@@ -977,10 +1019,11 @@ d cgi-register {recherche .+} {} {
     # End of script: output page and close database
     #
 
-    d result $conf(page) [list \
-				[list %RECHERCHE% [display-crit $dbfdmac $type $param]] \
-				[list %TABLEAU%   $table] \
-			    ]
+    d result $conf(page) \
+	[list \
+		[list %RECHERCHE% [display-crit $mdbfd $type $param]] \
+		[list %TABLEAU%   $table] \
+	    ]
 }
 
 ##############################################################################
