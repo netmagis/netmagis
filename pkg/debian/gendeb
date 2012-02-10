@@ -1,0 +1,103 @@
+#!/bin/sh
+
+# Variables
+export DEBEMAIL=jean@unistra.fr
+export DEBFULLNAME="Jean BENOIT"
+
+TCLSH=/usr/bin/tclsh8.5
+TCLCONF=/usr/lib/tcl8.5/tclConfig.sh
+
+BASEURL=http://www.netmagis.org/files/
+VERSION=2.1b1
+if [ $# != 0 ]
+then
+    VERSION=$1
+fi
+
+TGZ=netmagis-$VERSION.tar.gz
+URL=$BASEURL/$TGZ
+
+PORTSDIR=$PWD/../freebsd
+
+SUBST="-e s/%VERSION%/$VERSION/g"
+
+# Functions
+
+modmakefile()
+{
+    sed --in-place=.bak \
+    	-e "/^TCLSH/d" \
+    	-e "/^TCLCONF/d" \
+	-e "/^PREFIX.*/s||PREFIX=|" \
+	-e "/^BINDIR/s|/bin|/usr&|" \
+	-e "/^SBINDIR/s|/sbin|/usr&|" \
+	-e "/^MANDIR/s|/man|/usr&|" \
+	-e "/^RCDIR/s|/rc.d|/init.d|" \
+	-e "/^NMDOCDIR/s|/share|/usr&|" \
+	-e "/^NMXMPDIR/s|/share/.*|/usr/share/doc/netmagis/examples|" \
+	-e "/^NMLIBDIR/s|/lib|/usr&|" \
+	-e "/^NMCGIDIR/s|/www/netmagis|/usr/lib/cgi-bin/netmagis|" \
+	-e "/^NMWSDIR/s|/www/netmagis|/usr/lib/cgi-bin/metro|" \
+	-e "/^PREFIX/a \
+TCLSH=$TCLSH\\
+TCLCONF=$TCLCONF
+" \
+    	-e "/^usage:/i \
+firsttarget:build\\
+
+" \
+	$1
+}
+
+geninstall()
+{
+    src=$1
+    dst=$2
+
+    sed \
+	-e "/@/d" \
+	-e "s|^bin|usr/&|" \
+	-e "s|^sbin|usr/&|" \
+	-e "s|^lib|usr/&|" \
+	-e "s|^www/metro|usr/lib/cgi-bin/metro|" \
+	-e "s|^www/netmagis|usr/lib/cgi-bin/netmagis|" \
+	-e "s|^%%WWWDIR%%|usr/lib/cgi-bin/netmagis|" \
+	-e "s|^%%PORTEXAMPLES%%%%EXAMPLESDIR%%|usr/share/doc/netmagis/examples|" \
+	$src > $dst
+
+}
+
+# Fetch the tarball
+[ -f $TGZ ] || wget $URL 
+
+# Erase package files
+rm -f netmagis_$VERSION.orig.tar.gz netmagis-*_${VERSION}_all.deb
+
+# Create work directory
+DIR=netmagis-$VERSION
+
+rm -fr $DIR
+
+tar xzf $TGZ
+
+modmakefile $DIR/Makefile
+
+cd $DIR
+
+# Prepare debian directory and backup orig file
+dh_make -m -p netmagis_2.1b1 -f ../$TGZ </dev/null
+
+# Copy debian files
+for i in changelog control copyright rules README.Debian
+do
+    sed $SUBST ../$i > debian/$i
+done
+
+# Generate install files
+for i in $PORTSDIR/netmagis-*/pkg-plist
+do
+    pkgname=`echo $i | sed 's|.*/\(netmagis-[a-z]*\)/pkg-plist$|\1|'`
+    geninstall $i debian/$pkgname.install
+done
+
+debuild -us -uc
