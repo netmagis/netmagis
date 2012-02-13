@@ -1,7 +1,7 @@
 # $Id: libmetro.pl,v 1.2 2008/06/26 07:13:14 boggia Exp $
 ###########################################################
 #   Creation : 26/03/08 : boggia
-# 
+#
 #Fichier contenant les fonctions génériques des programmes
 # de métrologie
 ###########################################################
@@ -14,7 +14,7 @@ use Sys::Syslog qw(:DEFAULT setlogsock);  # Also gets setlogsock
 # prend un fichier de conf et une variable recherchee en param
 # renvoie la valeur de la variable
 # appelee par :
-# read_conf_file("nom_fichier_conf","variable_recherchee"); 
+# read_conf_file("nom_fichier_conf","variable_recherchee");
 #
 sub read_conf_file
 {
@@ -48,14 +48,14 @@ sub read_conf_file
 sub read_global_conf_file
 {
     my ($file) = @_;
-    
+
     my $line;
 
     open(CONFFILE, $file);
     while($line=<CONFFILE>)
     {
 	if( $line!~ /^#/ && $line!~ /^\s+/)
-	{   
+	{
 	    chomp $line;
 	    my ($variable,$value) = (split(/\s+/,$line))[0,1];
 
@@ -73,7 +73,7 @@ sub read_global_conf_file
 sub check_lock_file
 {
 	my($dir,$file,$process) = @_;
-	
+
 	# test directory
 	# if not exists create it
 	if (-d $dir)
@@ -85,13 +85,13 @@ sub check_lock_file
 		}
 		else
 		{
-			return 0;	
+			return 0;
 		}
 	}
 	else
 	{
 		create_directory($dir,$process);
-		
+
 		# no lock file
 		return 0;
 	}
@@ -115,7 +115,7 @@ sub create_lock_file
         {
 		create_directory($dir,$process);
         	open(LOCK,">$dir/$file");
-                close(LOCK);        
+                close(LOCK);
         }
 }
 
@@ -133,9 +133,9 @@ sub delete_lock_file
 sub create_directory
 {
 	my($dir,$process,$facility) = @_;
-	
+
 	my $res = `mkdir -p $dir`;
-                 
+
         writelog("$process","$facility","info",
                 "\t INFO : creation du repertoire $dir");
 }
@@ -150,10 +150,10 @@ sub clean_var
 
     my $s = $string;
     my $test = chop $s;
-    
+
     if($test eq " ")
     {
-	$string = $s;	
+	$string = $s;
     }
 
     return $string;
@@ -166,7 +166,7 @@ sub gethostnamebyaddr
 {
     my ($ip) = @_;
 
-    my $iaddr = inet_aton($ip);    
+    my $iaddr = inet_aton($ip);
     my $hostname  = gethostbyaddr($iaddr, AF_INET);
     ($hostname)=(split(/\./,$hostname))[0];
 
@@ -181,9 +181,9 @@ sub getaddrbyhostname
     my ($hostname) = @_;
 
     my $packed_ip = gethostbyname($hostname);
-    if (defined $packed_ip) 
+    if (defined $packed_ip)
     {
- 	return inet_ntoa($packed_ip); 
+ 	return inet_ntoa($packed_ip);
     }
     else
     {
@@ -196,7 +196,7 @@ sub getaddrbyhostname
 # Convertit une chaine de date de la base SQL
 # au format time_t en heure locale
 #
-sub dateSQL2time 
+sub dateSQL2time
 {
     my ($date) = @_ ;
 
@@ -208,7 +208,7 @@ sub dateSQL2time
     # Format :
     # 2005-05-18 10:02:53.980149
     # 2007-04-27 12:03:17.980149
-    if($date=~ /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/) 
+    if($date=~ /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/)
     {
         $a = $1 - 1900;
         $m = $2 - 1 ;
@@ -345,7 +345,7 @@ sub get_time
 
 
 ###########################################################
-# donne une limite de débit maximum aux mesures inscrites 
+# donne une limite de débit maximum aux mesures inscrites
 # dans une base
 sub setBaseMaxSpeed
 {
@@ -446,12 +446,12 @@ sub creeBaseTrafic
                 creeBaseTrafic1min($fichier,$speed,$facility);
     	}
         else
-        {	
+        {
 		my $rrdtool = read_conf_file($conf_file,"rrdtool");
                 if(system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800") != 0)
 		{
 			  writelog("creeBaseTrafic","$facility","info",
-                		"\t ERREUR : cannot execute $rrdtool : $!");		
+                		"\t ERREUR : cannot execute $rrdtool : $!");
 		}
 		else
 		{
@@ -466,9 +466,9 @@ sub creeBaseTrafic
 sub creeBaseTrafic1min
 {
     	my ($fichier,$speed,$facility)=@_;
-	
+
 	my $rrdtool = read_conf_file($conf_file,"rrdtool");
-	
+
     	if(system("$rrdtool create $fichier -s 60 DS:input:COUNTER:120:U:U DS:output:COUNTER:120:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800") == 0)
 	{
 
@@ -511,6 +511,10 @@ sub creeBaseCounter
     	{
         	system("$rrdtool create $fichier -s 60 DS:value:COUNTER:120:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     	}
+        elsif($period eq "*/15 * * * *")
+        {
+                system("$rrdtool create $fichier -s 900 DS:value:COUNTER:1800:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+        }
     	else
     	{
         	system("$rrdtool create $fichier DS:value:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
@@ -525,7 +529,7 @@ sub creeBaseCounter
 sub creeBaseOsirisAP
 {
     my ($fichier,$speed)=@_;
-    
+
     my $rrdtool = read_conf_file($conf_file,"rrdtool");
     system("$rrdtool create $fichier DS:input:COUNTER:600:U:U DS:output:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     setBaseMaxSpeed($fichier,$speed);
@@ -536,13 +540,13 @@ sub creeBaseOsirisAP
 sub creeBaseApAssoc
 {
     my ($fichier)=@_;
-    
+
     my $rrdtool = read_conf_file($conf_file,"rrdtool");
     system("$rrdtool create $fichier DS:wpa:GAUGE:600:U:U DS:clair:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
-# METROi : creation d'une base d'associes ou d'authentifies 
+# METROi : creation d'une base d'associes ou d'authentifies
 # pour un AP WiFi
 sub creeBaseAuthassocwifi
 {
@@ -553,18 +557,18 @@ sub creeBaseAuthassocwifi
 }
 
 ###########################################################
-# fonction de creation d'une base RRD pour une collecte des 
+# fonction de creation d'une base RRD pour une collecte des
 # donnees en % de la CPU
 sub creeBaseCPU
 {
     my ($fichier)=@_;
 
-    my $rrdtool = read_conf_file($conf_file,"rrdtool");	
+    my $rrdtool = read_conf_file($conf_file,"rrdtool");
     system("$rrdtool create $fichier DS:cpu_system:GAUGE:600:U:U DS:cpu_user:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
 ###########################################################
-# fonction de creation d'une base RRD pour la collecte du 
+# fonction de creation d'une base RRD pour la collecte du
 # nombre d'interruptions systeme d'une machine
 sub creeBaseInterupt
 {
@@ -581,7 +585,7 @@ sub creeBaseLoad
 {
     my ($fichier)=@_;
 
-    my $rrdtool = read_conf_file($conf_file,"rrdtool");	
+    my $rrdtool = read_conf_file($conf_file,"rrdtool");
     system("$rrdtool create $fichier DS:load_5m:GAUGE:600:U:U DS:load_15m:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
 
@@ -591,7 +595,7 @@ sub creeBaseLoad
 sub creeBaseMemory
 {
     my ($fichier)=@_;
-	
+
     my $rrdtool = read_conf_file($conf_file,"rrdtool");
     system("$rrdtool create $fichier DS:memoire:GAUGE:600:U:U DS:swap:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
@@ -602,7 +606,7 @@ sub creeBaseMemory
 sub creeBaseCPUCisco
 {
     my ($fichier)=@_;
- 
+
     my $rrdtool = read_conf_file($conf_file,"rrdtool");
     system("$rrdtool create $fichier DS:cpu_1min:GAUGE:600:U:U DS:cpu_5min:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
@@ -614,7 +618,7 @@ sub creeBaseCPUCisco
 sub creeBaseCPUJuniper
 {
     my ($fichier)=@_;
- 
+
     my $rrdtool = read_conf_file($conf_file,"rrdtool");
     system("$rrdtool create $fichier DS:cpu0:GAUGE:600:U:U DS:cpu1:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
@@ -625,7 +629,7 @@ sub creeBaseCPUJuniper
 sub creeBaseBind_stat
 {
      my ($fichier)=@_;
-    
+
      my $rrdtool = read_conf_file($conf_file,"rrdtool");
 
      system("$rrdtool create $fichier DS:success:COUNTER:600:U:U DS:failure:COUNTER:600:U:U DS:nxdomain:COUNTER:600:U:U DS:recursion:COUNTER:600:U:U DS:referral:COUNTER:600:U:U DS:nxrrset:COUNTER:600:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
@@ -640,9 +644,9 @@ sub creeBaseBind_stat
 sub creeBaseTPSDisk
 {
      my ($fichier)=@_;
- 
+
      my $rrdtool = read_conf_file($conf_file,"rrdtool");
- 
+
      system("$rrdtool create $fichier DS:ioreads:COUNTER:600:U:U DS:iowrites:COUNTER:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
     system("$rrdtool tune $fichier --maximum ioreads:1.0000000000e+06 iowrites:1.0000000000e+06");
 }
@@ -651,7 +655,7 @@ sub creeBaseTPSDisk
 sub creeBaseMailq
 {
      my ($fichier)=@_;
-     
+
      my $rrdtool = read_conf_file($conf_file,"rrdtool");
      system("$rrdtool create $fichier DS:mailq:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
@@ -694,7 +698,7 @@ sub creeBaseTpsRepWWWFast
 sub creeBaseVolumeOctets
 {
     my ($fichier)=@_;
- 
+
     my $rrdtool = read_conf_file($conf_file,"rrdtool");
     system("$rrdtool create $fichier DS:octets:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
 }
@@ -715,15 +719,22 @@ sub creeBaseNbMbuf
 # de valeurs en octets sous forme de jauge
 sub creeBaseNbGeneric
 {
-    my ($fichier,$period)=@_;
+    	my ($fichier,$period)=@_;
 
-    my $rrdtool = read_conf_file($conf_file,"rrdtool");
+    	my $rrdtool = read_conf_file($conf_file,"rrdtool");
 
-    if($period eq "* * * * *")
-    {
-    	system("$rrdtool create $fichier -s 60 DS:value:GAUGE:120:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
-    }
-    system("$rrdtool create $fichier DS:value:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    	if($period eq "* * * * *")
+    	{
+    		system("$rrdtool create $fichier -s 60 DS:value:GAUGE:120:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+    	}
+	elsif($period eq "*/15 * * * *")
+        {
+		system("$rrdtool create $fichier -s 900 DS:value:GAUGE:1800:U:U RRA:AVERAGE:0.5:1:525600 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+	}
+    	else
+ 	{
+		system("$rrdtool create $fichier DS:value:GAUGE:600:U:U RRA:AVERAGE:0.5:1:210240 RRA:AVERAGE:0.5:24:43800 RRA:MAX:0.5:24:43800");
+	}
 }
 
 ###########################################################
@@ -761,18 +772,18 @@ sub ctrl_ip
 }
 
 ###########################################################
-# controle snmp d'un host dans le but de recuperer le 
+# controle snmp d'un host dans le but de recuperer le
 # sysoid
 # si ok, renvoie l'oid de l'equipement
 # sinon renvoie -1
 sub check_host
 {
 	my ($ip,$snmp_com) = @_;
-	
+
 	my $param = $snmp_com."@".$ip;
         &snmpmapOID("oid","1.3.6.1.2.1.1.2.0");
         my @sys_oid = &snmpget($param,"oid");
-	
+
 	if($sys_oid[0] ne "")
     	{
         	return $sys_oid[0];
@@ -781,7 +792,7 @@ sub check_host
     	{
         	writelog("check_host",$facility,"info",
             	"\t ERREUR : Echec interrogation SNMP pour sysoid ($param)");
-        	
+
 		return -1;
     	}
 }
@@ -828,14 +839,16 @@ sub db_connect
         my ($dbname, $dbhost, $dbuser, $dbpassword) = @_;
 
 	my $db =  DBI->connect("dbi:Pg:dbname=$dbname;host=$dbhost",
-		$dbuser, $dbpassword)
-			|| die ("Cannot connect to '$dbname': ". $DBI::errstr);
+		$dbuser, $dbpassword);
+	if (! $db) {
+		print STDERR "Cannot connect to '$dbname': ". $DBI::errstr;
+	}
 
 	return $db ;
 }
 
 #############################################################
-# Execute a SQL command, log the error 
+# Execute a SQL command, log the error
 # return 0 if error, 1 otherwise
 # Parameters:
 #	db		: handle of an opened database
@@ -860,7 +873,7 @@ sub db_exec
 
 #############################################################
 # Set the current log facility
-sub set_log_facility 
+sub set_log_facility
 {
 	my $facility = shift;
 
@@ -878,10 +891,10 @@ sub set_process_name
 
 #############################################################
 # List a directory
-# return a list of file names matching a pattern or 
+# return a list of file names matching a pattern or
 # an empty list if the directory cannot be read
 # Each file contains a full path
-sub lsfiles 
+sub lsfiles
 {
         my ($dir, $pattern) = @_;
 
@@ -906,12 +919,12 @@ sub lsfiles
 #
 # Parameters : file name
 #
-# Each file has the following format : 
+# Each file has the following format :
 #	timestamp;field1;field2;...
 # Example for ipmac
 #	1323794702;130.79.73.127;00:e0:4c:39:0b:1e
 # Store each line into a hash where :
-# 	- the key is the concatenation of all the fields 
+# 	- the key is the concatenation of all the fields
 #		except timestamp, separated with ";"
 #	- the value is the timestamp
 # Example :
@@ -981,11 +994,11 @@ sub guess_src_name
 sub update_sessions
 {
 	my ($db,$table,$src,$polled_sessions) = @_;
-	
+
 	#db_exec($db,"START TRANSACTION");
 
 	# Create a temporary table
-	(my $underscored_src = $src) =~ s/[:.]/_/g; 
+	(my $underscored_src = $src) =~ s/[:.]/_/g;
 	my $polled = sprintf('%s_%s', $table, $underscored_src );
 	db_exec($db,"CREATE TABLE $polled (LIKE $table)");
 # DEBUG START
@@ -1014,7 +1027,7 @@ open(D,">>/tmp/DBG"); print D $date . " Created table $polled\n"; close(D);
 		# and separated by ','
 		$db->pg_putcopydata("$time\t$time\t$src\tFALSE\t($k)\n");
 # DEBUG START
-open(D,">>/tmp/DBG"); 
+open(D,">>/tmp/DBG");
 chomp($date=`date`);
 print D $date . " Inserting into table $polled: $time\t$time\t$src\tFALSE\t($k)\n";
 close(D);
@@ -1024,7 +1037,7 @@ close(D);
 	$db->pg_putcopyend();
 
 # DEBUG START
-open(D,">>/tmp/DBG"); 
+open(D,">>/tmp/DBG");
 chomp($date=`date`);
 print D $date . " Will update the stop field in table $table for the following lines:\n";
 close(D);
@@ -1034,7 +1047,7 @@ close(D);
 system("$PSQL -c \"SELECT * FROM $table, $polled WHERE $table.closed=FALSE AND $table.src='$src' AND $polled.data=$table.data\" >>/tmp/DBG");
 # DEBUG END
 
-	# Update open sessions matching all the polled session 
+	# Update open sessions matching all the polled session
 	db_exec($db,"UPDATE $table SET stop=$polled.stop FROM $polled
 			WHERE $table.closed=FALSE AND
 				$table.src='$src' AND
@@ -1042,7 +1055,7 @@ system("$PSQL -c \"SELECT * FROM $table, $polled WHERE $table.closed=FALSE AND $
 		);
 
 # DEBUG START
-open(D,">>/tmp/DBG"); 
+open(D,">>/tmp/DBG");
 chomp($date=`date`);
 print D $date . " Will create new sessions in table $table with the following lines:\n";
 close(D);
@@ -1062,19 +1075,19 @@ system("$PSQL -c \"SELECT start,stop,src,FALSE,data FROM $polled WHERE $polled.d
 		);
 
 # DEBUG START
-open(D,">>/tmp/DBG"); 
+open(D,">>/tmp/DBG");
 chomp($date=`date`);
 print D $date . " Will close these sessions in table $table :\n";
 close(D);
 system("$PSQL -c \"SELECT * FROM $table WHERE closed=FALSE AND src='$src' AND data NOT IN (SELECT data FROM $polled)\" >>/tmp/DBG");
 # DEBUG END
-	
+
 	# Close old sessions :
-	# close open sessions that do not appear in polled source 
+	# close open sessions that do not appear in polled source
 	db_exec($db,"UPDATE $table SET closed=TRUE
 			WHERE closed=FALSE AND src='$src' AND
 				data NOT IN (SELECT data FROM $polled)"
-		);	
+		);
 
 	# Destroy temporary table
 	db_exec($db,"DROP TABLE $polled");
@@ -1122,7 +1135,7 @@ sub process_sessions {
     foreach my $src (keys %srclist) {
 
 # DEBUG START
-open(D,">>/tmp/DBG"); 
+open(D,">>/tmp/DBG");
 chomp($date=`date`);
 print D $date . " plugin-$sensortype ($$) processing data for $src\n";
 close(D);
@@ -1133,7 +1146,7 @@ close(D);
 	my $pattern = sprintf('^%s_(%s|%s_.*)$',$sensortype, $src, $src);
 	my @files = lsfiles ($dir, $pattern);
 # DEBUG START
-open(D,">>/tmp/DBG"); 
+open(D,">>/tmp/DBG");
 chomp($date=`date`);
 print D $date . " plugin-$sensortype ($$) files for $src:" . join(',',@files)."\n" ;
 close(D);
