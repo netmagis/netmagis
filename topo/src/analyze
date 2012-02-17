@@ -174,7 +174,7 @@ proc parse-location {desc _location _ipmac _portmac _blablah _msg} {
     set blablah  ""
 
     set r 1
-    if {[regexp {X .*} $desc]} {
+    if {[regexp {^["]*X.*} $desc]} {
 	#
 	# Si la description commence par X, on ne fait rien
 	#
