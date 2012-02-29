@@ -246,7 +246,7 @@
 	    # www \br
 	    aptitude -y install \ \br
 	    ~ ~ ~ ~ apache2 libapache2-mod-auth-pgsql \\ \br
-	    ~ ~ ~ ~ netpbm tetex-bin graphviz transfig
+	    ~ ~ ~ ~ netpbm texlive-latex-base graphviz transfig
 
 	    # topo \br
 	    aptitude -y install \\ \br

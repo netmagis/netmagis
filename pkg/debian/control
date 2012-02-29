@@ -2,7 +2,7 @@ Source: netmagis
 Section: net
 Priority: extra
 Maintainer: jean <jean@unistra.fr>
-Build-Depends: debhelper (>= 8.0.0), tcl8.5-dev
+Build-Depends: debhelper (>= 8.0.0), tcl8.5-dev, gcc
 Standards-Version: 3.9.2
 Homepage: http://netmagis.org/
 #Vcs-Git: git://git.debian.org/collab-maint/netmagis.git
@@ -11,16 +11,16 @@ Homepage: http://netmagis.org/
 Package: netmagis-common
 Architecture: all
 Depends: tcl (>= 8.5), tcllib, libpgtcl
-Description: netmagis software
+Description: netmagis common infrastructure
 
 Package: netmagis-database
 Architecture: all
-Depends: netmagis-common, postgresql (>= 9.1), postgresql-pltcl (>= 9.1), pwgen (>= 2.0)
+Depends: netmagis-common, postgresql (>= 9.1), postgresql-pltcl-9.1, pwgen (>= 2.0)
 Description: netmagis software
 
 Package: netmagis-metro
 Architecture: all
-Depends: netmagis-common
+Depends: netmagis-common, perl, libdbd-pg-perl, libsnmp-session-perl, libnet-snmp-perl, librrdtool-oo-perl
 Description: netmagis software
 
 Package: netmagis-servers
@@ -30,7 +30,7 @@ Description: netmagis software
 
 Package: netmagis-topo
 Architecture: all
-Depends: netmagis-common
+Depends: netmagis-common, rancid, fping, default-mta
 Description: netmagis software
 
 Package: netmagis-utils
@@ -40,6 +40,6 @@ Description: netmagis software
 
 Package: netmagis-www
 Architecture: all
-Depends: netmagis-common
+Depends: netmagis-common, texlive-latex-base, netpbm, graphviz, transfig, apache2, libapache2-mod-auth-pgsql
 Description: netmagis software
 
