@@ -1662,7 +1662,7 @@ proc cisco-post-process {type fdout eq tab} {
 	    if {[regexp {^Vlan([0-9]+)} $iface bidon vlan]} then {
 		if {[info exists t(eq!$eq!if!$iface!networks)]} then {
 		    set nodeL2 [newnode]
-		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $vlan native 1 stat -"
+		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $vlan native 1 stat - ifname -"
 		    puts $fdout "link $nodeL2 $nodeB"
 
 		    foreach nodeL3 [cisco-output-ip4 $fdout t $eq $iface] {
@@ -1681,7 +1681,7 @@ proc cisco-post-process {type fdout eq tab} {
 			# il ne peut y avoir qu'un seul "vlan" sur un lien natif
 			set arg $t(eq!$eq!if!$iface!link!vlans)
 
-			puts $fdout "node $nodeL2 type L2 eq $eq vlan $arg native 1 stat -"
+			puts $fdout "node $nodeL2 type L2 eq $eq vlan $arg native 1 stat - ifname -"
 		    }
 		    trunk {
 			# Liste des vlans pour ce lien
@@ -1737,7 +1737,7 @@ proc cisco-post-process {type fdout eq tab} {
 	    set iface BVI$bgid
 	    if {[info exists t(eq!$eq!if!$iface!networks)]} then {
 		set nodeL2 [newnode]
-		puts $fdout "node $nodeL2 type L2 eq $eq vlan 0 native 0 stat -"
+		puts $fdout "node $nodeL2 type L2 eq $eq vlan 0 native 0 stat - ifname -"
 		puts $fdout "link $nodeL2 $nodeB"
 		foreach nodeL3 [cisco-output-ip4 $fdout t $eq BVI$bgid] {
 		    lappend ip4 $nodeL3
@@ -1785,9 +1785,17 @@ proc cisco-post-process {type fdout eq tab} {
 		    } else {
 			set statname "-"
 		    }
+		    if {[info exists  t(eq!$eq!if!$iface!subifname!$subif)]} then {
+			set subifname $t(eq!$eq!if!$iface!subifname!$subif)
+			if {[string equal $subifname ""]} then {
+			    set subifname "-"
+			}
+		    } else {
+			set subifname "-"
+		    }
 		    set vlanid $t(eq!$eq!if!$subif!link!vlans)
 		    set nodeL2 [newnode]
-		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $vlanid native 0 stat $statname"
+		    puts $fdout "node $nodeL2 type L2 eq $eq vlan $vlanid native 0 stat $statname ifname $subifname"
 
 		    puts $fdout "link $nodeL2 $nodeL1"
 
@@ -1849,7 +1857,7 @@ proc cisco-post-process {type fdout eq tab} {
 		#
 
 		set nodeL2 [newnode]
-		puts $fdout "node $nodeL2 type L2 eq $eq vlan 0 native 1 stat -"
+		puts $fdout "node $nodeL2 type L2 eq $eq vlan 0 native 1 stat - ifname -"
 		puts $fdout "link $nodeL2 $nodeL1"
 
 		foreach nodeL3 [cisco-output-ip4 $fdout t $eq $iface] {

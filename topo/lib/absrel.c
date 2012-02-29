@@ -93,6 +93,7 @@ void abs_to_rel (MOBJ *graph [])
 		break ;
 	    case NT_L2 :
 		ABSTOREL (nodetab [i].u.l2.stat, strtab) ;
+		ABSTOREL (nodetab [i].u.l2.ifname, strtab) ;
 		break ;
 	    case NT_ROUTER :
 		ABSTOREL (nodetab [i].u.router.name, strtab) ;
