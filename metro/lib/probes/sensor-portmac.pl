@@ -69,7 +69,7 @@ sub get_portmac_juniper
                 my $Oid = "1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5";
                 my $res = $snmp->get_table(
                         $Oid,
-                        -callback   => [ \&get_qbridge,$snmp,$host,$community,$vlanlist,$iflist,$p_table_forwarding] );
+                        -callback   => [ \&get_qbridge,$snmp,$host,$community,$vlanlist,$iflist,$p_table_forwarding,"juniper"] );
         }
 }
 
@@ -104,7 +104,7 @@ sub get_portmac_hp
                 my $Oid = "1.3.6.1.2.1.17.7.1.4.2.1.3.0";
                 my $res = $snmp->get_table(
                         $Oid,
-                        -callback   => [ \&get_qbridge,$snmp,$host,$community,$vlanlist,$iflist,$p_table_forwarding] );
+                        -callback   => [ \&get_qbridge,$snmp,$host,$community,$vlanlist,$iflist,$p_table_forwarding,"hp"] );
         }
 }
 
@@ -275,7 +275,7 @@ sub get_snmp_index2ifacedesc
 
 sub get_qbridge
 {
-        my ($session,$snmp,$host,$community,$vlanlist,$iflist,$table_forwarding) = @_;
+        my ($session,$snmp,$host,$community,$vlanlist,$iflist,$table_forwarding,$vendor) = @_;
 
         if(defined($session->var_bind_list()))
         {
@@ -293,8 +293,16 @@ sub get_qbridge
 
                         $key =~ /([0-9]+)$/;
 
-                        $vlan2qbridge{br}{$$hashref{$key}} = $1;
-                        $vlan2qbridge{vlan}{$1} = $$hashref{$key};
+                       	if($vendor eq "juniper")
+                        {
+                                $vlan2qbridge{br}{$$hashref{$key}} = $1;
+                                $vlan2qbridge{vlan}{$1} = $$hashref{$key};
+                        }
+                        elsif($vendor eq "hp")
+                        {
+                                $vlan2qbridge{br}{$1} = $$hashref{$key};
+                                $vlan2qbridge{vlan}{$$hashref{$key}} = $1;
+                        }
                 }
 
                 if (defined($snmp))
