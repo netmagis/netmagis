@@ -80,15 +80,25 @@ void output_collect_L2 (FILE *fp, struct node *L2node)
 
 	if (L2node->u.l2.stat != NULL)
 	{
-	    /* trafic <id collect> <eq> <comm> <logical iface> <phys iface> <vlan id> */
-	    fprintf (fp, "trafic %s %s %s %s %d\n",
+	    fprintf (fp, "trafic %s %s %s ",
 			    L2node->u.l2.stat,
 			    L1node->eq->name,
-			    L1node->eq->snmp,
-			    L1node->u.l2.ifname,
-			    L1node->u.l1.ifname,
-			    L2node->u.l2.vlan
-			) ;
+			    L1node->eq->snmp
+	    	) ;
+	    /* 
+	     * Logical interface name present
+	     */
+	    if(L2node->u.l2.ifname != NULL && strcmp(L2node->u.l2.ifname, "-"))
+	    {
+	    	/* trafic <id collect> <eq> <comm> <logical iface> - */
+	    	fprintf (fp, "%s -\n", L2node->u.l2.ifname) ;
+	    }
+	    else
+	    {
+	    	/* trafic <id collect> <eq> <comm> <phys iface> vlan */
+		fprintf (fp, "%s %d\n", L1node->u.l1.ifname, L2node->u.l2.vlan) ;
+	    }
+
 	    L2node->mark = 0 ;
 	}
 
