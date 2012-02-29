@@ -435,6 +435,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 		break ;
 	    case NT_L2 :
 		TRANSPTR (newnodetab [i].u.l2.stat) ;
+		TRANSPTR (newnodetab [i].u.l2.ifname) ;
 		break ;
 	    case NT_L3 :
 	    case NT_BRIDGE :

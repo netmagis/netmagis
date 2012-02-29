@@ -292,6 +292,7 @@ struct L2
     vlan_t vlan ;
     int	native ;			/* true if native vlan */
     char *stat ;			/* collect point */
+    char *ifname ;			/* logical interface name */
 } ;
 
 struct L3
@@ -561,6 +562,7 @@ struct graphhdr
 #define	VERSION11	11		/* manual configuration */
 #define	VERSION12	12		/* ipmac and portmac sensor */
 #define	VERSION13	13		/* optimization */
+#define	VERSION14	14		/* logical interface name */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;

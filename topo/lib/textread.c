@@ -264,6 +264,7 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	{ "manual",	1, },
 	{ "ipmac",	1, },
 	{ "portmac",	1, },
+	{ "ifname",	1, },
     } ;
 
 
@@ -472,6 +473,7 @@ static void process_L2 (struct attrtab *attrtab, struct node *n)
     char *s ;
     vlan_t vlan ;
     char *stat ;
+    char *ifname ;
     struct attrvallist *av ;
 
     av = attr_get_vallist (attrtab, "native") ;
@@ -499,6 +501,14 @@ static void process_L2 (struct attrtab *attrtab, struct node *n)
 	stat = NULL ;
     }
     n->u.l2.stat = stat ;
+
+    ifname = attr_get_val (attr_get_vallist (attrtab, "ifname")) ;
+    ifname = symtab_to_name (symtab_get (ifname)) ;
+    if (strcmp (ifname, "-") == 0) {
+	ifname = NULL ;
+    }
+    n->u.l2.ifname = ifname ;
+
 }
 
 static void process_L3 (struct attrtab *attrtab, struct node *n)
@@ -765,6 +775,7 @@ static void process_node (char *tab [], int ntab)
 			{ "eq", 1, 1 },
 			{ "vlan", 1, 1 },
 		        { "stat", 1, 1 },
+		        { "ifname", 1, 1 },
 			{ "native", 0, 1 },
 			{ NULL, 0 },
 		},

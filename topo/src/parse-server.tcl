@@ -123,6 +123,8 @@ proc server-parse-parent-iface {active line tab idx} {
 
     # ajoute dans la liste des sous-interfaces pour l'interface parente
     lappend t($idx!if!$parent!subif) $subif
+    # force le nom de l'interface logique
+    set t($idx!if!$parent!subifname!$subif) $subif
 
     if {[lsearch $t($idx!if) $parent] == -1} then {
     	lappend t($idx!if) $parent

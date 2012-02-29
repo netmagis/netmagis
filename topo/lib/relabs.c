@@ -91,6 +91,7 @@ void rel_to_abs (MOBJ *graph [])
 		break ;
 	    case NT_L2 :
 		RELTOABS (nodetab [i].u.l2.stat, strtab) ;
+		RELTOABS (nodetab [i].u.l2.ifname, strtab) ;
 		break ;
 	    case NT_ROUTER :
 		RELTOABS (nodetab [i].u.router.name, strtab) ;
