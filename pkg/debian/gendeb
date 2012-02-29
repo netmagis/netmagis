@@ -37,7 +37,7 @@ modmakefile()
 	-e "/^NMXMPDIR/s|/share/.*|/usr/share/doc/netmagis/examples|" \
 	-e "/^NMLIBDIR/s|/lib|/usr&|" \
 	-e "/^NMCGIDIR/s|/www/netmagis|/usr/lib/cgi-bin/netmagis|" \
-	-e "/^NMWSDIR/s|/www/netmagis|/usr/lib/cgi-bin/metro|" \
+	-e "/^NMWSDIR/s|/www/metro|/usr/lib/cgi-bin/metro|" \
 	-e "/^PREFIX/a \
 TCLSH=$TCLSH\\
 TCLCONF=$TCLCONF
