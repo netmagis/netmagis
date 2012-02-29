@@ -1,13 +1,41 @@
 #!/usr/bin/perl
 
+###############################################
+# Netmagis tool
+# Parse the network configurations of the host
+# and convert them to IOS pseudo CLI
+###############################################
+
 use strict;
+
+###############################################
+# IMPORTANT ! 
+# LOCAL settings
+#
+# set here the SNMP community used by the snmp
+# agent of this serveur
+my $snmp_community = "o2get";
+#
+# enable here the portmac collection
+# set 0 to disable
+# set 1 to enable
+our $portmac = 0;
+#
+# enable here the ipmac collection
+# set 0 to disable
+# set 1 to enable
+our $ipmac = 1;
+#
+# enable here the traffic statistics collectiona
+# set 0 to disable
+# set 1 to enable
+our $traffic_stats = 0;
+###############################################
 
 our %net_struct;
 our %host;
 my $ifname;
 my $router;
-
-my $snmp_community = "public";
 
 my $ifconfig = `ifconfig`;
 my $routage = `sysctl net.inet.ip.forwarding`;
@@ -36,8 +64,8 @@ else
 }
 
 
-# le serveur est il un routeur?
-if($routage=~/net.inet.ip.forwarding=([0-1])/)
+# is the server a router?
+if($routage=~/net.inet.ip.forwarding.*([0-1])/)
 {
 	$router = $1;
 	$net_struct{router}{status} = $1;
@@ -100,6 +128,10 @@ for(my $i=0;$i<@l;$i++)
                 $net_struct{$ifname}{inet6}{"$1/$2"} = 1;
         }
 	if($l[$i]=~/lladdr ([0-9a-fA-F:]+)/)
+	{
+		$net_struct{$ifname}{mac} = $1;
+	}
+	if($l[$i]=~/ether ([0-9a-fA-F:]+)/)
 	{
 		$net_struct{$ifname}{mac} = $1;
 	}
@@ -212,8 +244,25 @@ sub gen_ios_output
 
 	# ecriture des parametrages SNMP
 	print "snmp-server community $snmp_community RO\n";
-	print "snmp-server chassis-id $host{name}\n!\n";
-
+	print "snmp-server chassis-id $host{name}\n";
+    
+	my $sysloc_string = "snmp-server location";
+	my $print_loc = 0;
+	if($portmac == 1)
+	{
+	    $sysloc_string = "$sysloc_string <P>";
+	    $print_loc = 1;
+	}
+	if($ipmac == 1)
+	{
+	    $sysloc_string = "$sysloc_string <I>";
+	    $print_loc = 1;
+	}
+	if($print_loc == 1)
+	{
+	    print "$sysloc_string\n";
+	}
+	print "!\n";
 }
 
 sub printiface
@@ -222,15 +271,24 @@ sub printiface
 
 	if($net_struct{$name}{wr} != 1)
 	{	
-		# formatage nom du lien
-                my $link = $net_struct{$name}{mac};
-                $link =~ s/://g;
-
 		# si on est en presence d'une interface vlan
 		if($net_struct{$name}{type} eq "vlan")
 		{
-			print "interface $net_struct{$name}{parent}.$net_struct{$name}{vlanid}\n";
-			print " description <X M$host{name}$link\.$net_struct{$name}{vlanid}>\n";
+			#print "interface $net_struct{$name}{parent}.$net_struct{$name}{vlanid}\n";
+			print "interface $name\n";
+    
+			if($traffic_stats == 1)
+			{
+			    my $link = $net_struct{$net_struct{$name}{parent}}{mac};
+                            $link =~ s/://g;
+			    print " description <X M$host{name}$link\.$net_struct{$name}{vlanid}>\n";
+			}
+			else
+			{			
+			    print " description X\n";
+			}
+			#print " description <X M$host{name}$link\.$net_struct{$name}{vlanid}>\n";
+			print " parent-iface $net_struct{$name}{parent}\n";
 			print " encapsulation dot1Q $net_struct{$name}{vlanid}\n";	
 		}
         	else
@@ -238,7 +296,17 @@ sub printiface
 			print "interface $name\n";
 			if($net_struct{$name}{status} eq "UP" && $net_struct{$name}{mac} =~ /[0-9a-fA-F:]+/)
 		 	{
-				print " description L$link\n";
+				my $link = $net_struct{$name}{mac};
+				$link =~ s/://g;
+
+				if($traffic_stats == 1)
+				{
+				    print " description <L$link M$host{name}$link>\n";
+				}
+				else
+				{
+				    print " description L$link\n";
+				}
 			}
 			else
 			{
