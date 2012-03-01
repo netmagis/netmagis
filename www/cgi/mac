@@ -258,6 +258,11 @@ proc guess-type {mdbfd ndbfd param _msg} {
 	set n {([0-9a-f]{2})}
 	regsub "^$n$n.$n$n.$n$n" $param {\1:\2:\3:\4:\5:\6} param
 	set type "mac"
+    } elseif {[regexp {^[0-9a-f]{6}-[0-9a-f]{6}$} $param]} then {
+	# MAC address with HP format (00206b-7a1477)
+	set n {([0-9a-f]{2})}
+	regsub "^$n$n$n-$n$n$n" $param {\1:\2:\3:\4:\5:\6} param
+	set type "mac"
     } elseif {[regexp "^portmac_assoc:($portmac_assoc_re)\$" $param dummy \
 		portmac_assoc]} then {
         # portmac association
@@ -428,6 +433,9 @@ proc gen-portmac-assoc {mdbfd ndbfd portmac_assoc} {
     global conf
 
     lassign [split $portmac_assoc ","] searchsrc searchmac searchport searchvlan
+    if {$searchvlan eq ""} then {
+	set searchvlan 0
+    }
     set lines {}
     set sql "SELECT (data).mac AS mac,
 		    (data).port AS port,
@@ -664,6 +672,9 @@ proc gen-choice-portmac {mdbfd ndbfd crit} {
 		    "portmac_assoc:$tab(src),$tab(mac),$tab(port),$tab(vlanid)"]
 	set maclink [gen-link [display-mac $mdbfd $tab(mac)] $tab(mac)]
 
+    	if {$tab(vlanid) eq ""} then {
+	    set tab(vlanid) 0
+	}
 	set vlanid $tab(vlanid)
 	set vlanlink [gen-link [display-vlan $ndbfd $vlanid] "vlan:$vlanid"]
 	set eqname [get-eq-name $ndbfd $tab(src)] 
@@ -736,9 +747,13 @@ proc display-vlan {ndbfd vlanid} {
 	set descr $cachevlan($vlanid)
     } else {
 	set descr ""
-	set sql "SELECT descr AS descr FROM topo.vlan WHERE vlanid=$vlanid"
-	pg_select $ndbfd $sql tab {
-	    set descr $tab(descr)
+	if {[regexp {^[0-9]+$} $vlanid]} then {
+	    set sql "SELECT descr AS descr FROM topo.vlan WHERE vlanid=$vlanid"
+	    pg_select $ndbfd $sql tab {
+		set descr $tab(descr)
+	    }
+	} else {
+	    set descr "-"
 	}
 	set cachevlan($vlanid) $descr
     }
