@@ -53,27 +53,43 @@ diff		"diff --unified=0 %s -"
 zonedir		/etc/namedb/master
 
 # tell BIND to reload files
-zonecmd		"rndc reload"
+zonecmd		"/usr/sbin/rndc reload"
 
 ########################################
 # mkmroute
 ########################################
 
+#
+# Sendmail
+#
+
 # where sendmail expects to find mail route file
-mroutefile	/etc/mail/mroute
+mroutefile	/etc/mail/mailertable
 
 # static prologue for the mail routing file
-mrouteprologue	/etc/mail/mroute.prologue
+mrouteprologue	/etc/mail/mailertable.prologue
 
 # format of lines in mail route file, adapted to sendmail
 #   %1$s: mail domain
 #   %2$s: mail host
-mroutefmt	"%1$-40s smtp.[%2$s]"
+# If you use the Kit Jussieu to configure sendmail
+#mroutefmt	"%1$-40s smtp.[%2$s]"
+# If you use the m4 system to configure sendmail
+mroutefmt	"%1$-40s smtp:%2$s"
 
 # shell command to post-process file if a modification is done
 # You can include a command to propagate generated file to other
 # mail routers if you have more than one
-mroutecmd	"cd /etc/mail ; /usr/sbin/makemap -N hash mroute < mroute"
+mroutecmd	"cd /etc/mail ; /usr/sbin/makemap -N hash mailertable < mailertable"
+
+#
+# Postfix
+#
+
+#mroutefile	/usr/local/etc/postfix/transport
+#mrouteprologue	/usr/local/etc/postfix/transport.prologue
+#mroutefmt	"%1$-40s smtp:[%2$s]"
+#mroutecmd	"/usr/local/sbin/postmap /usr/local/etc/postfix/transport"
 
 ########################################
 # mkdhcp
