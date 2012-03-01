@@ -4,7 +4,7 @@
 export DEBEMAIL=jean@unistra.fr
 export DEBFULLNAME="Jean BENOIT"
 
-TCLSH=/usr/bin/tclsh8.5
+TCLSH=/usr/bin/tclsh
 TCLCONF=/usr/lib/tcl8.5/tclConfig.sh
 
 BASEURL=http://www.netmagis.org/files/
@@ -67,11 +67,33 @@ geninstall()
 
 }
 
+modconf()
+{
+    src=$1
+
+    sed -i \
+	-e "s|/etc/namedb/master|/etc/bind|" \
+	-e "s|/usr/local/bin/pdflatex|/usr/bin/pdflatex|" \
+	-e "s|/usr/local/bin/dot|/usr/bin/dot|" \
+	-e "s|/usr/local/bin/pwgen|/usr/bin/pwgen|" \
+	-e "s|/usr/local/etc/rc.d/isc-dhcpd.sh|/etc/init.d/isc-dhcpd-server|" \
+	-e "s|/etc/dhcp-gen.conf|/etc/dhcp/dhcp-gen.conf|" \
+	-e "s|/usr/local/sbin/dhcpd|/usr/sbin/dhcpd|" \
+	-e "s|/etc/dhcpd.conf|/etc/dhcp/dhcpd.conf|" \
+	-e "s|/usr/lib/rancid/bin/rancid-run|/usr/bin/rancid-run|" \
+	-e "s|/usr/local/sbin/fping|/usr/bin/fping|" \
+	-e "s|/usr/local/var/rancid/mygroup|/var/lib/rancid/mygroup|" \
+	-e "s|/usr/local/libexec/rancid/clogin|/usr/lib/rancid/bin/clogin|" \
+	-e "s|/usr/local/libexec/rancid/hlogin|/usr/lib/rancid/bin/hlogin|" \
+	-e "s|/usr/local/libexec/rancid/jlogin|/usr/lib/rancid/bin/jlogin|" \
+	$src
+}
+
 # Fetch the tarball
 [ -f $TGZ ] || wget $URL 
 
 # Erase package files
-rm -f netmagis_$VERSION.orig.tar.gz netmagis-*_${VERSION}_all.deb
+rm -f netmagis_${VERSION}*.orig.tar.gz netmagis-*_${VERSION}*.deb
 
 # Create work directory
 DIR=netmagis-$VERSION
@@ -82,13 +104,18 @@ tar xzf $TGZ
 
 modmakefile $DIR/Makefile
 
+modconf $DIR/common/netmagis.conf.sample
+
 cd $DIR
 
 # Prepare debian directory and backup orig file
-dh_make -m -p netmagis_2.1b1 -f ../$TGZ </dev/null
+dh_make -m -p netmagis_${VERSION} -f ../$TGZ </dev/null
+
+# Remove templates
+rm -f debian/*.EX debian/*.ex
 
 # Copy debian files
-for i in changelog control copyright rules README.Debian
+for i in control copyright rules README.Debian
 do
     sed $SUBST ../$i > debian/$i
 done
