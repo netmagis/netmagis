@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+
+# set here the SNMP community used by the snmp
+# agent of this serveur
+$snmp_community = "toto";
+#
+# enable here the portmac collection
+# set 0 to disable
+# set 1 to enable
+$portmac = 0;
+#
+# enable here the ipmac collection
+# set 0 to disable
+# set 1 to enable
+$ipmac = 1;
+#
+# enable here the traffic statistics collectiona
+# set 0 to disable
+# set 1 to enable
+$traffic_stats = 1;
+
+return 1;
