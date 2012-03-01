@@ -24,13 +24,23 @@ our $portmac = 0;
 # enable here the ipmac collection
 # set 0 to disable
 # set 1 to enable
-our $ipmac = 1;
+our $ipmac = 0;
 #
 # enable here the traffic statistics collectiona
 # set 0 to disable
 # set 1 to enable
 our $traffic_stats = 0;
 ###############################################
+
+# Special tunning for local settings 
+# To alter values of $snmp_community, $portmac, $ipmac and $traffic_stats 
+# variables you must create the following file and set %sensor_type fields.
+# This is very usefull is case of script upgrade.
+if(-e "/home/conf/parsenet-options.pl")
+{
+        require "/home/conf/parsenet-options.pl";
+}
+
 
 our %net_struct;
 our %host;
