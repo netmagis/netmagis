@@ -14,7 +14,7 @@ use strict;
 #
 # set here the SNMP community used by the snmp
 # agent of this serveur
-my $snmp_community = "public";
+our $snmp_community = "public";
 #
 # enable here the portmac collection
 # set 0 to disable
