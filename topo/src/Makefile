@@ -23,15 +23,17 @@ SCRIPTS = \
 	doteq		\
 	list-rancid	\
 	list-vlans	\
-	parse-hp.tcl	\
-	parse-cisco.tcl	\
-	parse-juniper.tcl	\
-	parse-server.tcl	\
 	ssidsensors	\
 	topographd	\
 	toposendd	\
 	start-rancid	\
 	sendmail
+
+LIBS	= \
+	parse-hp.tcl	\
+	parse-cisco.tcl	\
+	parse-juniper.tcl	\
+	parse-server.tcl
 
 build:	$(PROGS)
 	@echo ">>> Making build in `pwd`"
@@ -50,6 +52,7 @@ install: $(PROGS) $(SCRIPTS)
 	mkdir -p $(DESTDIR)$(NMLIBDIR)/topo
 	install -m 0755 $(PROGS) $(DESTDIR)$(NMLIBDIR)/topo
 	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)$(NMLIBDIR)/topo
+	$(NINSTALL) -m 0644 $(SUBST) $(LIBS)    $(DESTDIR)$(NMLIBDIR)/topo
 
 clean:
 	rm -f *.o $(PROGS) *.core
