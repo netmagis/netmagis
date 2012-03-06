@@ -1,0 +1,83 @@
+How to release a Netmagis version?
+
+2012/03/06	pda, jean
+
+This document describes step by step the Netmagis release engineering process.
+
+TODO:
+    - update screenshots
+    - update demo application
+
+1. On the web server
+
+    1.a. Be sure to get the files updated
+
+	cd $NETMAGIS
+	git pull
+
+    1.b. Update the CHANGES file
+
+    1.c. Update version number in the top-level Makefile
+
+	cd $NETMAGIS
+	vi Makefile		# Modify the VERSION variable
+
+    1.d. Update installation documentation
+
+	cd $NETMAGIS/docs/install
+	vi index.*
+	cd $NETMAGIS 
+	make ...
+XXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+    1.e. Create netmagis distribution file
+
+	cd $NETMAGIS 
+	make distrib
+	mv netmagis*.tar.gz /www/docs/files/
+
+    1.f. Update web site 
+
+	cd $NETMAGIS/docs/netmagis.org
+	vi index.* news.* doc.* download.*
+	make ...
+XXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+    1.g. Commit changes
+
+	git commit -a
+	git push
+
+2. On the FreeBSD host
+
+    2.a. Be sure to get the files updated
+
+	cd $NETMAGIS
+	git pull
+    
+    2.b. Generate ports
+
+	cd $NETMAGIS
+    	make freebsd-ports
+
+    2.c. Copy ports to the web server
+
+    	scp netmagis-freebsd-ports-*.tar.gz netmagis.org:/www/docs/files/
+
+3. On the Debian/Ubuntu host
+
+    3.a. Be sure to get the files updated
+
+	cd $NETMAGIS
+	git pull
+    
+    3.b. Generate debian packages
+
+	cd $NETMAGIS
+    	make debian-packages
+
+    3.c. Copy packages to the web server
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    	scp netmagis-*.deb netmagis.org:/www/docs/files/
+
