@@ -8,11 +8,12 @@ TCLSH=/usr/bin/tclsh
 TCLCONF=/usr/lib/tcl8.5/tclConfig.sh
 
 BASEURL=http://www.netmagis.org/files/
-VERSION=2.1b1
-if [ $# != 0 ]
+if [ $# != 1 ]
 then
-    VERSION=$1
+    echo Usage: $0 version >&2
+    exit 1
 fi
+VERSION=$1
 
 TGZ=netmagis-$VERSION.tar.gz
 URL=$BASEURL/$TGZ

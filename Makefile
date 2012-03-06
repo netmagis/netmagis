@@ -63,6 +63,7 @@ usage:
 	@echo "	install-netmagis.org"
 	@echo "	distrib"
 	@echo "	freebsd-ports"
+	@echo "	debian-packages"
 	@echo "	clean"
 	@echo "	nothing"
 
@@ -129,6 +130,15 @@ freebsd-ports:
 	for i in pkg/freebsd/netmagis-* ; do (cd $$i ; make clean) ; done
 	cd pkg/freebsd/netmagis-common ; make makesum
 	tar -czf netmagis-freebsd-ports-$(VERSION).tar.gz -C pkg/freebsd .
+
+debian-packages:
+	@if [ `uname -s` != Linux ] ; then \
+	    echo "Please, make this target on a Debian/Ubuntu host" ; \
+	    echo "once netmagis-$(VERSION).tar.gz is on the master site" ; \
+	    exit 1 ; \
+	fi
+	cd pkg/debian ; make VERSION=$(VERSION) release
+	cp pkg/debian/netmagis-$(VERSION)-debian-*.tar.gz .
 
 clean:
 	cd common ; make clean

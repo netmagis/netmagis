@@ -78,6 +78,4 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXX
 
     3.c. Copy packages to the web server
 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    	scp netmagis-*.deb netmagis.org:/www/docs/files/
-
+	scp netmagis-*-debian-*.tar.gz netmagis.org:/www/docs/files/
