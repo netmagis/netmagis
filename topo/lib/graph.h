@@ -413,8 +413,8 @@ struct eq
     int portmac ;
 
     /* Equipement list of nodes */
-    struct node *enhead;
-    struct node *entail;
+    struct node *enhead ;
+    struct node *entail ;
 
     struct eq *next ;
 

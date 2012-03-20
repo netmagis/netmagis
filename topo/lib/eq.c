@@ -32,6 +32,8 @@ struct eq *eq_get (char *name, int nameinsymtab)
 	if (! nameinsymtab)
 	    name = symtab_to_name (symtab_get (name)) ;
 	eq->name = name ;
+    	eq->enhead = NULL ;
+    	eq->entail = NULL ;
     }
     return eq ;
 }
