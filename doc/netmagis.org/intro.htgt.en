@@ -65,7 +65,7 @@
 	\item {visualize with \gras {automatically generated network
 	    maps} your network topology (switched or routed);
 	}
-	\item {give l'\gras {access on these maps to users};
+	\item {give \gras {access on these maps to users};
 	}
 	\item {\gras {assign VLAN} to equipment interfaces via
 	    a simple Web interface (for Cisco, HP or Juniper

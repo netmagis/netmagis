@@ -1,53 +1,48 @@
 #!/usr/bin/perl
 
-# $Id: gengraph,v 1.4 2008-07-30 15:21:47 boggia Exp $
 # ###################################################################
-#  boggia : Creation : 25/03/08
+# create RRD tool graph
 #
-# génération du graphique RRD tool
+#    Summay : specification of http://<metrowebsite>/bin/gengraph
+#	parameters :
+#	    [ title = <title of the graph> ]
+#		=> if not set : default generic legend
+#	    idX = <sensor-id> [+ <sensor-id> [+ <sensor-id> ...]]
+#	    [ legendX = <legend> ]
+#		=> if not set : default generic legend
+#	    [ size = <small|medium|big|LxH> ]
+#		=> if not set : medium
+#	    start = <start time (time_t)> end = <end time (time_t)> i
+#	    | start = -<second before end time (time_t)> end = <now>
 #
-#    Résumé : specification de http://idris/bin/gengraph
-#	paramètres :
-#	    [ titre = <titre> ]
-#	    idX = <ptmetro> [+ <ptmetro> [+ <ptmetro> ...]]
-#	    [ legendeX = <legende> ]
-#		=> si pas indiquée : légende par défaut déterminée par idris
-#	    [ taille = <petit|moyen|grand|LxH> ]
-#		=> si pas indiquée : moyen
-#	    debut = <date en format time_t>
-#	    fin = <date en format time_t>
-#   Exemple :
+#   Example :
 #	http://idris/bin/gengraph?
-#		titre=trafic sur les points d'accès de l'INSA
-#		&id1=Minsa-ap1.osiris+Minsa-ap2.osiris+....
-#		&id2=Minsa-ap2.osiris-sec+Minsa-ap2.osiris-sec+...
-#		&taille=200x100
-#		&debut=...&fin=
+#		title=aggregated traffic from bat42
+#		&id1=Minsa-cg1+Minsa-cg2+....
+#		&id2=Minsa-cg3+Minsa-cg4+...
+#		&size=200x100
+#		&start=...&end=
 #
 
 use CGI qw/:standard/;
 use CGI::Pretty qw( :html3 );
 use strict;
 
-sub check_param ;
-
-# fichier de configuration principal et chargement des fonctions de base
+# netmagis configuration file and libraries
 our $conf_file = "%CONFFILE%";
+our $rep_lib = "%NMLIBDIR%";
 require "%NMLIBDIR%/libmetro.pl";
-#
-# lecture du fichier de configuration general
+
+# read netmagis configuration file
 our %global_conf = read_global_conf_file($conf_file);
 
-our %liste_taille = (   'petit' => 1,
-                        'moyen' => 1,
-                        'grand' => 1
+# definition of graph size list
+our %liste_taille = (   'small' => 1,
+                        'medium' => 1,
+                        'big' => 1
                     );
 
-our $rep_lib = "%NMLIBDIR%";
-
-our $generate_graph_cmd = "gen-rrdgraph.pl";
-
-# initialisation des parametres utiles a la generation de graphes
+# initialization of default parameters for graph generation
 our %param = (
 		'type'		    => "-",
                 'start'		    => "0",
@@ -56,10 +51,15 @@ our %param = (
                 'title'		    => "",
 );
 
-my @liste = (param());
+# script for graph generation
+our $generate_graph_cmd = "gen-rrdgraph.pl";
 
+
+# get cgi parameters
+my @liste = (param());
 capture_liste(@liste);
 
+# check cgi parameters
 my $message_erreur = check_param();
 
 if($message_erreur)
@@ -69,17 +69,27 @@ if($message_erreur)
 }
 else
 {
+	# if cgi parameters are correct
 	create_and_send_graph();
 }
 
 
-# contrôle la validité du nom du graphe et du temps
+###########################################################################
+# functions
+
+##
+# check the validity of parameters
 sub check_param
 {
     my ($id,$debut,$fin,$taille) = @_;
 
-    my $message_erreur = 0; 
-    if($param{'end'}!~m/[0-9]+/ || $param{'start'}!~m/[0-9]+/)
+    my $message_erreur = 0;
+    if($param{'end'} eq "now" && $param{'start'} =~m/-([0-9]+)/)
+    {
+                $param{'end'} = time;
+                $param{'start'} = $param{'end'} - $1;
+    }
+    elsif($param{'end'}!~m/[0-9]+/ || $param{'start'}!~m/[0-9]+/)
     {
 	$message_erreur = "erreur date";
     }
@@ -89,15 +99,15 @@ sub check_param
     }
     elsif($param{'size'} ne "" && !defined($liste_taille{$param{'size'}}) && $param{'size'}!~m/[0-9]+x[0-9]+/)
     {
-	$message_erreur = "erreur : taille de graphique non définie. Utiliser \"petit\", \"moyen\", \"grand\"";
+	$message_erreur = "erreur : taille de graphique non définie. Utiliser \"small\", \"medium\", \"big\"";
 	$message_erreur = "$message_erreur ou bien \"<largeur>x<hauteur>\"";
     }
     return $message_erreur;
 }
 
 
-# fonction qui crée l'image, la récupère sur la sortie standard
-# et l'affiche sur la sortie standard
+##
+# create jpg file and print it on standard output
 sub create_and_send_graph
 {
     my $gengraphcmd = "$rep_lib/$generate_graph_cmd ";
@@ -111,11 +121,11 @@ sub create_and_send_graph
 	foreach my $key (sort keys %{$param{'id'}})
 	{
 	    if($compteurid == 0)
-	    {	
+	    {
 		$param_id = $param{'id'}{$key} . $param_id;
 		if(exists $param{'legend'}{$key})
-        	{   
-		    $param_legend = $param{'legend'}{$key} . $param_legend;   
+        	{
+		    $param_legend = $param{'legend'}{$key} . $param_legend;
 		}
 	    }
 	    elsif($compteurid > 0)
@@ -129,7 +139,7 @@ sub create_and_send_graph
 	    $compteurid ++;
 	}
 
-	# generation de la commande pour creer le graphique	
+	# set command for graph generation
 	my $gengraphcmd = "$rep_lib/$generate_graph_cmd $param_id $param{'type'} $param{'start'} $param{'end'} $param{'size'}";
 
 	if($param{'title'} ne "")
@@ -157,8 +167,9 @@ sub create_and_send_graph
     }
 }
 
-# fonction qui classifie les parametres CGI
-# et les classe dans des tableaux nominatifs
+
+##
+# classify cgi parameters
 sub capture_liste
 {
     my (@liste) = @_;
@@ -166,11 +177,11 @@ sub capture_liste
     my ($elem,$arg);
     my $index_id = -1;
     my $index_legende = -1;
- 
+
     foreach $elem (@liste)
     {
         $arg = param($elem);
-	
+
         if($elem =~m/^id/)
         {
 	    if($elem =~m/^id([0-9]+)/)
@@ -178,20 +189,20 @@ sub capture_liste
 		$index_id = $1;
 	    }
 	    else
-	    {	
+	    {
 		$index_id ++;
 	    }
-	    
+
 	    $arg =~s/ /\+/g;
-	    
+
 	    $param{'id'}{$index_id} = $arg;
         }
-	elsif($elem =~m/^legende/)
+	elsif($elem =~m/^legend/)
 	{
-	    if($elem =~m/^legende([0-9]+)/)
+	    if($elem =~m/^legende([0-9]+)/ or m/^legend([0-9]+)/)
 	    {
 		$index_legende = $1;
-	    }	
+	    }
 	    else
 	    {
 		$index_legende ++;
@@ -200,21 +211,21 @@ sub capture_liste
 	}
 	elsif($elem eq "type")
 	{
-	   $param{'type'} = $arg; 
+	   $param{'type'} = $arg;
 	}
-	elsif($elem eq "taille")
+	elsif($elem eq "taille" or $elem eq "size")
 	{
 	    $param{'size'} = $arg;
 	}
-	elsif($elem eq "debut" && $arg=~m/[0-9]+/)
+	elsif(($elem eq "debut" or $elem eq "start") && $arg=~m/[0-9]+/)
 	{
 	    $param{'start'} = $arg;
 	}
-	elsif($elem eq "fin" && $arg=~m/[0-9]+/)
+	elsif(($elem eq "fin" or $elem eq "end") && ($arg=~m/[0-9]+/ || $arg=~m/now/))
         {
 	    $param{'end'} = $arg;
         }
-	elsif($elem eq "titre")
+	elsif($elem eq "titre" or $elem eq "title")
 	{
 	    $param{'title'} = $arg;
 	}

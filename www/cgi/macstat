@@ -57,13 +57,13 @@ proc stat-addr {dbfd} {
     # list of couples <desc, request>
     set lcouples {
 	"Number of unique MAC addresses"
-	"SELECT count(DISTINCT mac) AS r FROM portmac" 
+	"SELECT count(DISTINCT ((data).mac)) AS r FROM mac.portmac" 
 	"Number of unique IPv4 addresses"
-	"SELECT count(DISTINCT ip) AS r FROM ipmac WHERE family(ip)=4"
+	"SELECT count(DISTINCT ((data).ip)) AS r FROM mac.ipmac WHERE family((data).ip)=4"
 	"Number of unique IPv6 addresses"
-	"SELECT count(DISTINCT ip) AS r FROM ipmac WHERE family(ip)=6"
+	"SELECT count(DISTINCT ((data).ip)) AS r FROM mac.ipmac WHERE family((data).ip)=6"
 	"Number of distinct MAC addresses associated with an IPv6 address"
-	"SELECT count(DISTINCT(mac)) AS r FROM ipmac WHERE family(ip)=6"
+	"SELECT count(DISTINCT(((data).mac))) AS r FROM mac.ipmac WHERE family((data).ip)=6"
     }
 
     set lines {}

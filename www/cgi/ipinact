@@ -82,7 +82,7 @@ source %LIBNETMAGIS%
 
 proc get-host-name {dbfd addr} {
     set sql "SELECT rr.nom || '.' || domaine.nom AS nom
-			FROM rr, rr_ip, domaine
+			FROM dns.rr, dns.rr_ip, dns.domaine
 			WHERE rr.idrr=rr_ip.idrr
 			    AND rr.iddom=domaine.iddom
 			    AND rr_ip.adr='$addr'
@@ -171,7 +171,7 @@ d cgi-register {} {
 
 	set datefmt $conf(sqldateformat)
 	set sql "SELECT ip, to_char (most_recent_date,$datefmt) AS derndate
-		     FROM ipmac2
+		     FROM mac.ipmac2
 		     WHERE ip <<= '$cidr' AND
 			   most_recent_date < now() - interval '$occurrence month'
 		     ORDER BY ip"
