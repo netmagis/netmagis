@@ -247,7 +247,7 @@ proc guess-type {mdbfd ndbfd param _msg} {
     set vlan_re {[0-9]+}
     set ipmac_assoc_re "$mac_re,$ip4_re"
     set portmac_assoc_re "$ip4_re,$mac_re,$port_re,$vlan_re"
-    set eq_re {[A-Za-z0-9\-.]}
+    set eq_re $ip4_re
 
 
     if {[regexp "^$mac_re\$" $param]} then {
@@ -608,18 +608,17 @@ proc gen-mac {mdbfd ndbfd mac} {
 # Input:
 #   - mdbfd : mac database handle
 #   - ndbfd : netmagis database handle
-#   - eq : equipment name
+#   - eq : equipment ip address
 #
 # Output:
 #  - return value : HTML code
 #
 
 proc gen-eq {mdbfd ndbfd eq} {
-    set eqaddr [get-eq-addr $ndbfd $eq]
-    if {$eqaddr eq ""} then {
-	return [mc "Equipment '%s' not found" $eq]
+    if {$eq eq ""} then {
+	return [mc "Equipment address empty"]
     }
-    return [gen-choice-portmac $mdbfd $ndbfd "portmac.src=$eqaddr"]
+    return [gen-choice-portmac $mdbfd $ndbfd "portmac.src='$eq'"]
 }
 
 #
