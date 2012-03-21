@@ -340,6 +340,7 @@ struct node
     int mark ;				/* used by various places. See below */
 
     struct node *enext ;		/* next entry in equipement node list */
+    struct node *eprev ;		/* previous entry in equipement node list */
     struct node *next ;			/* next entry in node list */
 } ;
 

@@ -421,8 +421,9 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 	TRANSPTR (newnodetab [i].name) ;
 	TRANSPTR (newnodetab [i].eq) ;
 	TRANSPTR (newnodetab [i].linklist) ;
-	TRANSPTR (newnodetab [i].enext) ;
 	TRANSPTR (newnodetab [i].next) ;
+	TRANSPTR (newnodetab [i].enext) ;
+	TRANSPTR (newnodetab [i].eprev) ;
 
 	switch (newnodetab [i].nodetype)
 	{

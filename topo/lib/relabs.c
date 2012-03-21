@@ -78,6 +78,7 @@ void rel_to_abs (MOBJ *graph [])
 	RELTOABS (nodetab [i].eq, eqtab) ;
 	RELTOABS (nodetab [i].next, nodetab) ;
 	RELTOABS (nodetab [i].enext, nodetab) ;
+	RELTOABS (nodetab [i].eprev, nodetab) ;
 	RELTOABS (nodetab [i].linklist, llisttab) ;
 
 	switch (nodetab [i].nodetype)

@@ -316,7 +316,7 @@ void remove_link_to_me (struct node *from, struct node *me)
 
 void remove_l2pat_brpat (void)
 {
-    struct node *n, *nprev, *nnext, *other ;
+    struct node *n, *nprev, *nnext, *other, *enext, *eprev;
     struct linklist *ll, *llnext ;
 
     nprev = NULL ;
@@ -364,6 +364,28 @@ void remove_l2pat_brpat (void)
 		mobj_sethead (nodemobj, nnext) ;
 	    else
 		nprev->next = nnext ;
+
+	    /*
+	     * Modify equipment node list accordingly
+	     */
+
+	    if ( (enext = n->enext) != NULL)
+	    {
+		enext->eprev = n->eprev;
+		if (n->eq->enhead == n)
+		{
+		    n->eq->enhead = enext;
+		    enext->eprev = NULL;
+		}
+	    }
+	    if ( (eprev = n->eprev) != NULL)
+	    {
+		eprev->enext = n->enext;
+		if (n->eq->entail == n) {
+		    n->eq->enhead = eprev;
+		    eprev->enext = NULL;
+		}
+	    }
 
 	    mobj_free (nodemobj, n) ;
 	}
