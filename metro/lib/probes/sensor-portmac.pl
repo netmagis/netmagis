@@ -386,9 +386,10 @@ sub get_snmp_bridge_iface_index
             {
                 foreach my $mac (keys %{$table_forwarding->{$host}{$br_id}})
                 {
-                        if($table_forwarding->{$host}{$br_id}{$mac} eq "$1")
+			if($table_forwarding->{$host}{$br_id}{$mac} eq "$1" && !exists $table_forwarding->{ok}{$host}{$br_id}{$mac})
                         {
                                 $table_forwarding->{$host}{$br_id}{$mac} = $$hashref{$key};
+                                $table_forwarding->{ok}{$host}{$br_id}{$mac} = 1;
                         }
                 }
             }
