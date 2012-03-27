@@ -18,6 +18,7 @@
 
 name=toposendd
 rcvar=toposendd_enable
+command_interpreter=%TCLSH%
 
 load_rc_config $name
 

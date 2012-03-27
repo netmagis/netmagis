@@ -18,6 +18,7 @@
 
 name=topographd
 rcvar=topographd_enable
+command_interpreter=%TCLSH%
 
 load_rc_config $name
 
