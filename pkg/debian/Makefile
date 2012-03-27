@@ -1,6 +1,8 @@
 #
 # This makefile provides 3 targets:
 # - build: generate binary debian packages which can be installed by gdebi
+#   This target should not be called directly but from the top-level Makefile
+#   through "make debian-build"
 # - release: generate binary and source packages and create 2 tarballs : 
 #		netmagis-$VERSION-debian-$ARCH.tar.gz
 #		netmagis-$VERSION-debian-src.tar.gz

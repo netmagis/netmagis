@@ -140,6 +140,11 @@ debian-packages:
 	cd pkg/debian ; make VERSION=$(VERSION) release
 	cp pkg/debian/netmagis-$(VERSION)-debian-*.tar.gz .
 
+debian-build:
+	cd pkg/debian ; make VERSION=$(VERSION) build
+	@echo
+	@echo "Please cd to "pkg/debian" and install the .deb files with gdebi"
+
 clean:
 	cd common ; make clean
 	cd database ; make clean
