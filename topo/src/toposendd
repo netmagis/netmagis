@@ -35,6 +35,7 @@
 #  2010/02/16 : pda/jean : design
 #  2010/10/15 : pda/jean : splitted in a different daemon
 #  2010/12/19 : pda      : rework installation
+#  2012/03/27 : pda/jean : daemonization
 #
 
 set conf(extracteq)	{extracteq -a %1$s %2$s}
@@ -656,8 +657,10 @@ proc reread-eq-type {force graph _tabeq} {
 # Main program
 ##############################################################################
 
-set usage {usage: %1$s [-h][-v <n>]
+# The -z option is reserved for internal use
+set usage {usage: %1$s [-h][-f][-v <n>]
     -h         : display this text
+    -f         : run in foreground
     -v <n>     : verbose level (0 = none, 1 = minimum, 99 = max)
 }
 
@@ -678,6 +681,8 @@ proc main {argv0 argv} {
     set ctxt(dbfd2) ""
     set ctxt(send) 0
     set verbose 0
+    set foreground 0
+    set daemonized 0
 
     #
     # Get configuration values from local file
@@ -713,6 +718,15 @@ proc main {argv0 argv} {
 		usage $argv0
 		return 0
 	    }
+	    -f {
+		set foreground 1
+	    }
+	    -z {
+	    	# This option is not meant to be used by a human
+		# It implies that the program is being rerun in order to be
+		# daemonized
+		set daemonized 1
+	    }
 	    -v {
 		set verbose [lindex $argv 1]
 		set argv [lreplace $argv 0 1]
@@ -731,6 +745,15 @@ proc main {argv0 argv} {
     if {[llength $argv] != 0} then {
 	usage $argv0
 	return 1
+    }
+
+    if {! $foreground && ! $daemonized} then {
+    	set argstr {}
+	if {$verbose > 0} then {
+	    lappend argstr -v $verbose
+	}
+	lappend argstr "-z"
+	run-as-daemon $argv0 [join $argstr " "]
     }
 
     reset-status

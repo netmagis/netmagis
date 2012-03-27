@@ -1,0 +1,30 @@
+#! /bin/sh
+
+# PROVIDE: topographd
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+
+#
+# Add the following lines to /etc/rc.conf to enable topographd:
+#
+# topographd_enable="YES"
+#
+# # Optionnal variables:
+# topographd_flags=""
+# topographd_user="rancid"
+#
+
+. /etc/rc.subr
+
+name=topographd
+rcvar=topographd_enable
+
+load_rc_config $name
+
+: ${topographd_enable:=NO}
+: ${topographd_flags:=""}
+: ${topographd_user:="rancid"}
+
+command="%NMLIBDIR%/topo/topographd"
+
+run_rc_command "$1"

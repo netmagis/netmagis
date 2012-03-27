@@ -14,7 +14,7 @@ toposendd_program=%NMLIBDIR%/topo/toposendd
 case "$1" in
         start)
 		echo -n ' toposendd'
-		su rancid -c "$toposendd_program &"
+		su rancid -c "$toposendd_program"
 		;;
 	stop)
 		/bin/kill `ps axwww | grep "$toposendd_program" | grep -v "grep" | cut -c1-5`
@@ -22,13 +22,13 @@ case "$1" in
 	restart)
 		echo "Restart toposendd"
 		/bin/kill `ps axwww | egrep "$toposendd_program" | grep -v "grep" | cut -c1-5`
-		su rancid -c "$toposendd_program &"
+		su rancid -c "$toposendd_program"
 		;;
 	debug)
 		shift
 		echo "Reload toposendd with level $1"
 		/bin/kill `ps axwww | grep $toposendd_program | grep -v "grep" | cut -c1-5`
-		su rancid -c "$toposendd_program -v $1 &"
+		su rancid -c "$toposendd_program -v $1"
 		;;
 	*)
 		echo "Usage: $0 {start | stop | restart | debug n}"

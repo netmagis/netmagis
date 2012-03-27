@@ -14,7 +14,7 @@ topographd_program=%NMLIBDIR%/topo/topographd
 case "$1" in
         start)
 		echo -n ' topographd'
-		su rancid -c "$topographd_program &"
+		su rancid -c "$topographd_program"
 		;;
 	stop)
 		/bin/kill `ps axwww | grep "$topographd_program" | grep -v "grep" | cut -c1-5`
@@ -22,13 +22,13 @@ case "$1" in
 	restart)
 		echo "Restart topographd"
 		/bin/kill `ps axwww | egrep "$topographd_program" | grep -v "grep" | cut -c1-5`
-		su rancid -c "$topographd_program &"
+		su rancid -c "$topographd_program"
 		;;
 	debug)
 		shift
 		echo "Reload topographd with level $1"
 		/bin/kill `ps axwww | grep $topographd_program | grep -v "grep" | cut -c1-5`
-		su rancid -c "$topographd_program -v $1 &"
+		su rancid -c "$topographd_program -v $1"
 		;;
 	*)
 		echo "Usage: $0 {start | stop | restart | debug n}"

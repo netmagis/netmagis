@@ -8954,6 +8954,23 @@ proc report-leave {cmd code result leave} {
     puts "< $cmd -> $code/$result"
 }
 
+#
+# Run a program as a daemon
+#
+# Input: 
+#   - argv0  : path to the script
+#   - argstr : argument string
+# Output: none
+#
+# History
+#   2012/03/27 : pda/jean : design
+#
+
+proc run-as-daemon {argv0 argstr} {
+    exec sh -c "exec $argv0 $argstr" &
+    exit 0
+}
+
 ##############################################################################
 # Utility functions
 ##############################################################################

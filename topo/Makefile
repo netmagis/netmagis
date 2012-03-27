@@ -8,7 +8,7 @@ build:
 install: build
 	@echo ">>> Making install in `pwd`"
 	cd src ; make $(DIRS) install
-	cd etc ; make $(DIRS) install
+	cd rc ; make $(DIRS) install
 	mkdir -p $(DESTDIR)$(NMVARDIR)/eqvirt
 	mkdir -p $(DESTDIR)$(NMVARDIR)/eqgen
 
