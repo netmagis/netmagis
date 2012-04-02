@@ -343,6 +343,7 @@ d cgi-register {} {
 					[list %HEADER% ""] \
 					[list %ONLOAD% ""] \
 				    ]
+		exit 0
 	    }
 
 	    #
