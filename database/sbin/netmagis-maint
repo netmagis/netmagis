@@ -30,7 +30,7 @@ usage ()
 
 init_env ()
 {
-    varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser"
+    varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword"
     eval `%CONFPROG% -c $varlist`
 
     if [ $? != 0 ]
@@ -42,7 +42,9 @@ init_env ()
     PGHOST="$dnsdbhost"
     PGPORT="$dnsdbport"
     PGDATABASE="$dnsdbname"
-    export PGHOST PGPORT PGDATABASE
+    PGUSER="$dnsdbuser"
+    PGPASSWORD="$dnsdbpassword"
+    export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
 
     # these variables are searched in a second pass, since they can be
     # empty (the first pass used the "-c" flag)
@@ -54,7 +56,10 @@ init_env ()
 backup ()
 {
     if [ "$dumpdir" != "" ]
-    then pg_dump --file $dumpdir/dump.$NOW $PGDATABASE
+    then
+	pg_dump --file=$dumpdir/dump.$NOW \
+		--schema=global --schema=dns --schema=topo --schema=pgauth \
+		$PGDATABASE
     fi
 }
 
@@ -63,16 +68,18 @@ copy ()
     if [ "$dumpdir" != "" -a "$dbcopy" != "" ]
     then
 	FILE=$dumpdir/dump.bin
-	dropdb $dbcopy 2> /dev/null
-	createdb -E unicode $dbcopy 2> /dev/null
-	pg_dump --file=$FILE --format=c $PGDATABASE \
-	    && pg_restore --dbname=$dbcopy $FILE
+	pg_dump --file=$FILE --format=c \
+		--schema=global --schema=dns --schema=topo --schema=pgauth \
+		$PGDATABASE \
+	    && pg_restore --clean --no-owner --dbname=$dbcopy $FILE
     fi
 }
 
 vacuum ()
 {
-    vacuumdb --quiet --full $PGDATABASE
+    vacuumdb --quiet --full $PGDATABASE 2>&1 \
+	| grep -v "WARNING:.* only superuser can vacuum it"
+    return 0
 }
 
 get_config ()

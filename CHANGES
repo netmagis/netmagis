@@ -9,6 +9,11 @@ Version 2.1 - 2012/04/??
     - pdflatex path is now a configuration directive
     - simplify rancid configuration directives (ranciddb+rancidconfdir -> ranciddir)
     - remove the never used dr_mbox table
+    - netmagis-dbcreate: creation of mac database
+    - netmagis-dbcreate: creation of a copy of netmagis main database
+    - simplify user configuration : only one unprivileged user is needed
+	for database creation (and one more if mac database is different)
+    - netmagis-maint: can work as unprivileged database user
 
 Version 2.0 - 2011/11/23
     - change name for Netmagis (old name was WebDNS)

@@ -285,7 +285,7 @@
 	    \lignetableau {
 		\casetableau {} {.../bin/}
 		\casetableau {} {programs which should be called as an ordinary
-		    users}
+		    user}
 	    }
 	    \lignetableau {
 		\casetableau {} {.../sbin/}
@@ -405,29 +405,15 @@
 	}
     }
 
-    Netmagis needs at least two PostgreSQL users. You can create them
-    (as the PostgreSQL administor user: \teletype {pgsql} on FreeBSD,
-    \teletype {postgres} on Linux) with the PostgreSQL \teletype
-    {createuser} program:
+    Netmagis uses only one PostgreSQL user, without privilege.
+    You must create it (as the PostgreSQL administor user: \teletype
+    {pgsql} on FreeBSD, \teletype {postgres} on Linux) with the
+    PostgreSQL \teletype {createuser} program:
 
-    \liste {
-	\item {the first one (default used by Netmagis: \gras {dns})
-	    does not have any special privilege: it will be used by
-	    various scripts (including CGI scripts) to connect to the
-	    database. Use the command:
-	    \retrait\teletype {createuser --no-superuser --no-createrole --no-createdb --pwprompt dns}
-	}
-	\item {the second ones (you may have more than one user) are
-	    priviledged users (superusers in PostgreSQL terminology).
-	    The first of them is used for various database administration
-	    tasks such as database creation, database daily maintenance,
-	    etc. These users should be real Unix users, as well as
-	    Netmagis users. Notably, they are authorized to connect to
-	    the Web application even when it is in "maintenance mode".
-	    Create them with:
-	    \retrait\teletype {createuser --superuser --pwprompt joe}
-	}
-    }
+    \retrait\teletype {createuser --no-superuser --no-createrole --no-createdb --pwprompt dns}
+
+    Even if you want to use a different database for the \italique
+    {module}, you can use the same user.
 
     \titre {3} {The Netmagis configuration file}
 
@@ -462,7 +448,17 @@
 	\lignetableau {
 	    \casetableau {} {dnsdb...}
 	    \casetableau {} {Information needed to connect to the
-		PostgreSQL server, with unpriviledged user.
+		PostgreSQL server, with an unpriviledged user.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {macdb...}
+	    \casetableau {} {Information needed to connect to the
+		PostgreSQL server for the \italique {mac} module,
+		with unpriviledged user. If you don't want to use
+		a separate database, or if you don't want to use the
+		\italique {mac} module, use exactly the same values
+		as for the the \teletype {dnsdb...} parameters.
 	    }
 	}
 	\lignetableau {
@@ -475,8 +471,8 @@
 	}
 	\lignetableau {
 	    \casetableau {} {rootusers}
-	    \casetableau {} {Login names of priviledged PostgreSQL
-		users, who are also Netmagis users allowed to enter the
+	    \casetableau {} {Login names of Netmagis users allowed to
+		access the
 		application even when it is in "maintenance mode".
 	    }
 	}
@@ -550,13 +546,13 @@
 	\retrait\teletype {$ .../sbin/netmagis-dbcreate -u \italique {user} -w \italique {password}}
 	This command:
 	\liste {
-	    \item {is executed as one of the priviledged users (those
-		listed in \teletype {rootusers} directive; default is
-		to use the first user specified in the \teletype
-		{rootusers} directive)
-	    }
 	    \item {creates the Netmagis database (it fails if the database
-		already exists)}
+		is already created)}
+	    \item {creates the MAC database if it is different from the
+		main Netmagis database (it fails if the database
+		is already created)}
+	    \item {creates a copy of the Netmagis database for
+		test purpose (see the \teletype {dbcopy} parameter above)}
 	    \item {creates the SQL schemas, tables, functions and triggers}
 	    \item {provides default values for Netmagis directives}
 	    \item {creates Netmagis users listed in \teletype {rootusers}
@@ -565,12 +561,14 @@
 	    \item {creates a Netmagis user called \teletype {nobody}}
 	    \item {assigns all Netmagis users a random password, and
 		displays them on standard output}
-	    \item {grants appropriate access to tables to the
-		\teletype {dnsdbuser} and \teletype {rootusers} users.
-	    }
 	}
-	Users a created in the Netmagis database, including the internal
-	authentication schema.
+	As this command needs to create databases, you have to
+	provide the user and password of the privileged PostgreSQL
+	user (\teletype {pgsql} user on FreeBSD, \teletype {postgres}
+	user on Linux).
+	\br
+	Users are created in the Netmagis database, including the
+	internal authentication schema.
 	\liste {
 	    \item {if you use an LDAP authentication, \teletype {rootusers}
 		users should exist in your LDAP directory.}
@@ -596,8 +594,7 @@
     }
     \item {Install the sample crontab (\teletype
 	{.../share/examples/netmagis/crontab.database}) in your default
-	cron system. This crontab should be run by one of the \teletype
-	{rootusers}.
+	cron system. This crontab can be run by any unprivileged user.
 
 	FreeBSD users: if you install this crontab in the global \teletype
 	{/etc/crontab}, please provide a user name just before the

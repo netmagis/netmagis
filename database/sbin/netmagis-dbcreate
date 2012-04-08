@@ -4,8 +4,7 @@
 # Netmagis database creation
 #
 # Syntax :
-#	netmagis-dbcreate [-d database][-u user][-w password]
-# (no argument)
+#	netmagis-dbcreate [-u user][-w password] [netmagis] [mac] [copy]
 #
 # History
 #   2002/02/11 : pda        : design
@@ -25,20 +24,30 @@
 #   2011/01/21 : pda        : use new config file
 #   2011/07/17 : pda        : defuser is given a value and created
 #   2011/12/28 : pda        : add dotattr table
-#   2011/01/21 : jean       : add droitgenl attribute
+#   2012/01/21 : jean       : add droitgenl attribute
+#   2012/04/08 : pda        : simplify users
+#   2012/04/08 : pda        : mac database creation
 #
 
 usage ()
 {
     (
-	echo "usage: $0 [-d database][-u user][-w password]"
-	echo "	-d: database (default: 'dnsdbname' parameter)"
-	echo "	-u: user who owns the database (default: first 'rootusers')"
-	echo "	-w: password (default: ask in each PostgreSQL command)"
+	echo "usage: $0 [-u user][-w password] [netmagis] [mac] [copy]"
+	echo "	-u: user allowed to create databases"
+	echo "		(default: PGUSER variable or 'dnsdbuser' parameter)"
+	echo "	-w: password "
+	echo "		(default: PGPASSWORD variable, or 'dnsdbpassword' parameter)"
+	echo "  netmagis : create netmagis database and schemas"
+	echo "  mac      : create mac database and schema"
+	echo "  copy     : create a copy of netmagis database"
+	echo ""
+	echo "Notice that the -u user will only be used for database creation."
+	echo "Owners of databases are given by the dnsdbuser/macdbuser parameters."
     ) >&2
     exit 1
 }
 
+# defuser is used for initial database migration
 defuser="nobody"
 
 ##############################################################################
@@ -47,7 +56,8 @@ defuser="nobody"
 
 init_env ()
 {
-    varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser rootusers"
+    # Main netmagis database parameters (dnsdb*)
+    varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword rootusers"
     eval `%CONFPROG% -c $varlist`
 
     if [ $? != 0 ]
@@ -56,39 +66,153 @@ init_env ()
 	exit 1
     fi
 
+    # Mac database parameters (macdb*)
+    varlist="macdbhost macdbport macdbname macdbuser macdbpassword"
+    eval `%CONFPROG% -c $varlist`
+
+    if [ $? != 0 ]
+    then
+	usage
+	exit 1
+    fi
+
+    # These variables are searched in a second pass, since they can be empty
+    # (the first pass used the "-c" flag) 
+    varlist="pwgen crypt dbcopy"
+    eval `%CONFPROG% $varlist`
+}
+
+##############################################################################
+# Generic database creation
+##############################################################################
+
+# $1 = owner of database
+# returns an error if creation failed
+db_create_if_not_exists ()
+{
+    r=0
+    if psql --no-psqlrc -c "" 2> /dev/null
+    then :
+    else
+	createdb -E unicode --owner="$1"
+	r=$?
+    fi
+    return $r
+}
+
+# $* = schemas to test
+# returns true if schema exists
+db_test_schemas ()
+{
+    schemas=`psql --quiet --no-psqlrc --tuples-only --no-align \
+		    -c "SELECT nspname FROM pg_catalog.pg_namespace"`
+    r=1
+    for i
+    do
+	if echo "$schemas" | grep "^$i$" > /dev/null
+	then
+	    (
+		echo "Error: schema '$i' already exists in database '$PGDATABASE'"
+		echo "Use either 'DROP SCHEMA $i' SQL command to destroy schema"
+		echo "or 'dropdb $PGDATABASE' shell command to destroy database"
+	    ) >&2
+	    r=0
+	    break
+	fi
+    done
+    return $r
+}
+
+##############################################################################
+# Language creation
+##############################################################################
+
+# $1 = language
+# exits if creation failed
+create_language ()
+{
+    if psql --quiet --no-psqlrc -c "CREATE EXTENSION IF NOT EXISTS $1"
+    then :
+    else
+	echo "Unable to create language "$1" in database '$PGDATABASE'" >&2
+	exit 1
+    fi
+}
+
+##############################################################################
+# Create netmagis database
+##############################################################################
+
+create_netmagis ()
+{
+    echo "Creating main Netmagis database as '$dnsdbname'"
+
     PGHOST="$dnsdbhost"
     PGPORT="$dnsdbport"
     PGDATABASE="$dnsdbname"
     export PGHOST PGPORT PGDATABASE
 
-    # these variables searched in a second pass, since they can be empty
-    # (the first pass used the "-c" flag) 
-    varlist="pwgen crypt"
-    eval `%CONFPROG% $varlist`
-}
+    ###############################
+    # Create main netmagis database as the priviledged user
+    ###############################
 
-##############################################################################
-# Database creation
-##############################################################################
+    PGUSER="$puser"
+    PGPASSWORD="$ppassword"
+    export PGUSER PGPASSWORD
 
-db_exists ()
-{
-    if psql --no-psqlrc -c "" 2> /dev/null
-    then r=0
-    else r=1
+    if db_create_if_not_exists "$dnsdbuser"
+    then :
+    else
+	echo "Erreur while creating database '$PGDATABASE'" 2>&1
+	exit 1
     fi
-    return $r
+
+    # exit if schema already exist
+    if db_test_schemas "global" "dns" "topo" "pgauth"
+    then
+	exit 1
+    fi
+
+    ###############################
+    # Initialize main netmagis database schemas and contents
+    ###############################
+
+    PGUSER="$dnsdbuser"
+    PGPASSWORD="$dnsdbpassword"
+    export PGUSER PGPASSWORD
+
+    create_language plpgsql
+    create_language pltcl
+
+    create_netmagis_schemas
+
+    netmagis_insert_config
+
+    for u in $rootusers
+    do
+	netmagis_create_user $u
+    done
+
+    netmagis_create_user $defuser
+
+    if [ "$pwgen" = "" -o "$crypt" = "" ]
+    then
+	echo "Netmagis configuration parameter 'pwgen' and/or 'crypt' uninitialized" >&2
+	echo "Users $rootusers have been created" >&2
+    else
+	echo "You can change passwords within netmagis application" >&2
+    fi
 }
 
-db_create ()
-{
-    createdb -E unicode || exit 1
-    createlang plpgsql
-    createlang pltcl
-}
+##############################################################################
+# Netmagis schema creation
+##############################################################################
 
-db_schemas ()
+create_netmagis_schemas ()
 {
+    PGCLIENTENCODING=utf8
+    export PGCLIENTENCODING
+
     psql --no-psqlrc --quiet --file - <<'EOF' 2>&1 | grep -v 'NOTICE: .* will create implicit'
 
     CREATE SCHEMA global ;
@@ -1172,8 +1296,7 @@ db_schemas ()
 	PRIMARY KEY (login, realm)
     ) ;
 
-    \encoding utf8
-    CREATE FUNCTION soundex (TEXT) RETURNS TEXT AS '
+    CREATE FUNCTION pgauth.soundex (TEXT) RETURNS TEXT AS '
 	    array set soundexFrenchCode {
 		a 0 b 1 c 2 d 3 e 0 f 9 g 7 h 0 i 0 j 7 k 2 l 4 m 5
 		n 5 o 0 p 1 q 2 r 6 s 8 t 3 u 0 v 9 w 9 x 8 y 0 z 8
@@ -1222,10 +1345,10 @@ db_schemas ()
 	    return [string range ${key}0000 0 3]
 	' LANGUAGE 'pltcl' WITH (isStrict) ;
 
-    CREATE FUNCTION add_soundex () RETURNS TRIGGER AS '
+    CREATE FUNCTION pgauth.add_soundex () RETURNS TRIGGER AS '
 	BEGIN
-	    NEW.phnom    := SOUNDEX (NEW.nom) ;
-	    NEW.phprenom := SOUNDEX (NEW.prenom) ;
+	    NEW.phnom    := pgauth.SOUNDEX (NEW.nom) ;
+	    NEW.phprenom := pgauth.SOUNDEX (NEW.prenom) ;
 	    RETURN NEW ;
 	END ;
 	' LANGUAGE 'plpgsql' ;
@@ -1234,16 +1357,16 @@ db_schemas ()
 	BEFORE INSERT OR UPDATE
 	ON pgauth.user
 	FOR EACH ROW
-	EXECUTE PROCEDURE add_soundex ()
+	EXECUTE PROCEDURE pgauth.add_soundex ()
 	;
 EOF
 }
 
 ##############################################################################
-# Default values for config keys
+# Default values for Netmagis config keys
 ##############################################################################
 
-db_insert_config ()
+netmagis_insert_config ()
 {
     psql --no-psqlrc --quiet --file - <<'EOF'
 
@@ -1399,10 +1522,10 @@ EOF
 }
 
 ##############################################################################
-# Create users
+# Create Netmagis users
 ##############################################################################
 
-db_create_user ()
+netmagis_create_user ()
 {
     user="$1"
     psql --no-psqlrc --quiet --file - <<EOF
@@ -1427,27 +1550,140 @@ EOF
 }
 
 ##############################################################################
-# Database permissions
+# Create mac database
 ##############################################################################
 
-grant_root ()
+create_mac ()
 {
-    user=$1
-    psql --no-psqlrc --quiet --file - <<EOF
-	GRANT CREATE, USAGE ON SCHEMA global, dns, topo, pgauth TO $user ;
-	GRANT ALL ON ALL TABLES IN SCHEMA global, dns, topo, pgauth TO $user ;
-	GRANT ALL ON ALL SEQUENCES IN SCHEMA global, dns, topo, pgauth TO $user ;
+    echo "Creating MAC database as '$macdbname'"
+
+    PGHOST="$macdbhost"
+    PGPORT="$macdbport"
+    PGDATABASE="$macdbname"
+    export PGHOST PGPORT PGDATABASE
+
+    ###############################
+    # Create mac database as the priviledged user
+    ###############################
+
+    PGUSER="$puser"
+    PGPASSWORD="$ppassword"
+    export PGUSER PGPASSWORD
+
+    if db_create_if_not_exists "$macdbuser"
+    then :
+    else
+	echo "Erreur while creating database '$PGDATABASE'" 2>&1
+	exit 1
+    fi
+
+    # exit if schema already exist
+    if db_test_schemas "mac"
+    then
+	exit 1
+    fi
+
+    ###############################
+    # Initialize mac database schemas and contents
+    ###############################
+
+    PGUSER="$macdbuser"
+    PGPASSWORD="$macdbpassword"
+    export PGUSER PGPASSWORD
+
+    create_mac_schemas
+}
+
+##############################################################################
+# Mac database 
+##############################################################################
+
+create_mac_schemas ()
+{
+    psql --no-psqlrc --quiet --file - <<'EOF' 2>&1 | grep -v 'NOTICE: .* will create implicit'
+
+    CREATE SCHEMA mac ;
+
+    -- Generic session table which will be used to associate some
+    -- data (ip-mac, port-mac-vlan) with a start and a stop date
+    CREATE TABLE mac.session (
+	start		TIMESTAMP,  	-- session start
+	stop		TIMESTAMP,  	-- session stop
+	src		INET,		-- origin of the information
+	closed		BOOLEAN		-- 1 if session timed out
+    ) ;
+
+    -- Postgresql composite type to instantiate a generic session
+    -- as an IP-MAC session
+    CREATE TYPE mac.ipmac_t AS (
+	ip		INET,		-- IP address
+	mac		MACADDR		-- MAC address
+    );
+
+    -- IP-MAC session instance
+    CREATE TABLE mac.ipmac (
+	data		mac.ipmac_t
+    ) INHERITS (mac.session) ;
+
+    CREATE INDEX ON mac.ipmac (src);
+    CREATE INDEX ON mac.ipmac (data);
+    CREATE INDEX ON mac.ipmac (closed);
+    CREATE INDEX ON mac.ipmac (stop);
+    CREATE INDEX ON mac.ipmac (start);
+    CREATE INDEX ON mac.ipmac ( ((data).ip) );
+    CREATE INDEX ON mac.ipmac ( ((data).mac) );
+
+    CREATE TYPE mac.portmac_t AS (
+	mac		MACADDR,	-- MAC address
+	port		TEXT,		-- port name
+	vlanid		INTEGER		-- VLAN id
+    ) ;
+    CREATE TABLE mac.portmac (
+	data		mac.portmac_t
+    ) INHERITS (mac.session) ;
+
+    CREATE INDEX ON mac.portmac (src);
+    CREATE INDEX ON mac.portmac (data);
+    CREATE INDEX ON mac.portmac (closed);
+    CREATE INDEX ON mac.portmac (stop);
+    CREATE INDEX ON mac.portmac (start);
+    CREATE INDEX ON mac.portmac ( ((data).mac) );
+    CREATE INDEX ON mac.portmac ( ((data).port) );
+    CREATE INDEX ON mac.portmac ( ((data).vlanid) );
 EOF
 }
 
-grant_www ()
+##############################################################################
+# Create copy database
+##############################################################################
+
+create_copy ()
 {
-    user=$1
-    psql --no-psqlrc --quiet --file - <<EOF
-	GRANT USAGE ON SCHEMA global, dns, topo, pgauth TO $user ;
-	GRANT ALL ON ALL TABLES IN SCHEMA global, dns, topo, pgauth TO $user ;
-	GRANT ALL ON ALL SEQUENCES IN SCHEMA global, dns, topo, pgauth TO $user ;
-EOF
+    if [ -z "$dbcopy" ]
+    then return
+    fi
+
+    echo "Creating copy of Netmagis database as '$dbcopy'"
+
+    PGHOST="$dnsdbhost"
+    PGPORT="$dnsdbport"
+    PGDATABASE="$dbcopy"
+    export PGHOST PGPORT PGDATABASE
+
+    ###############################
+    # Create copy database as the priviledged user
+    ###############################
+
+    PGUSER="$puser"
+    PGPASSWORD="$ppassword"
+    export PGUSER PGPASSWORD
+
+    if db_create_if_not_exists "$dbcopy"
+    then :
+    else
+	echo "Erreur while creating database '$PGDATABASE'" 2>&1
+	exit 1
+    fi
 }
 
 ##############################################################################
@@ -1464,7 +1700,7 @@ init_env
 # Syntax checking
 #       
  
-args=`getopt hd:u:w: $*`
+args=`getopt hu:w: $*`
 
 if [ $? != 0 ]
 then usage
@@ -1472,18 +1708,23 @@ fi
 
 set -- $args
 
-PGUSER="`echo $rootusers | sed 's/[ 	].*//'`" ; export PGUSER
+if [ ! -z "$PGUSER" ]
+then puser="$PGUSER"
+else puser="$dnsdbuser"
+fi
+
+if [ ! -z "$PGPASSWORD" ]
+then ppassword="$PGPASSWORD"
+else ppassword="$dnsdbpassword"
+fi
 
 while true
 do
     case "$1" in
-	-d) PGDATABASE="$2" ; export PGDATABASE
+	-u) puser="$2"		# priviledged user
 	    shift 2
 	    ;;
-	-u) PGUSER="$2" ; export PGUSER
-	    shift 2
-	    ;;
-	-w) PGPASSWORD="$2" ; export PGPASSWORD
+	-w) ppassword="$2"	# priviledged password
 	    shift 2
 	    ;;
 	-h) usage
@@ -1495,36 +1736,38 @@ do
     esac
 done
 
-if db_exists
-then
-    echo "Database '$PGDATABASE' already exists" >&2
-    echo "Use 'dropdb' command to destroy database first" >&2
-    exit 1
+if [ $# = 0 ]
+then set netmagis mac copy
 fi
 
-db_create
+#
+# Check actions
+#
 
-db_schemas
-
-db_insert_config
-
-for u in $rootusers
+for action
 do
-    grant_root $u
-    db_create_user $u
+    case "$action" in
+	netmagis|mac|copy) ;;
+	*)
+	    echo "Unknown action '$action'" >&2
+	    usage
+	    exit 1
+	    ;;
+    esac
 done
 
-db_create_user $defuser
+#
+# Do actions
+#
 
-if [ "$pwgen" = "" -o "$crypt" = "" ]
-then
-    echo "Netmagis configuration parameter 'pwgen' and/or 'crypt' uninitialized" >&2
-    echo "Users $rootusers have been created" >&2
-else
-    echo "You can change passwords within netmagis application" >&2
-fi
+for action
+do
+    case "$action" in
+	netmagis) create_netmagis ;;
+	mac)      create_mac ;;
+	copy)     create_copy ;;
+    esac
+done
 
-
-grant_www $dnsdbuser
 
 exit 0

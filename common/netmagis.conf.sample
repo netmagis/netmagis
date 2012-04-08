@@ -12,6 +12,8 @@ dnsdbname	netmagis
 dnsdbuser	dns
 dnsdbpassword	password-of-dnsdbuser
 
+# Mac database. If it is shared with the main netmagis database, use
+# *exactly* the same values as for dnsdb* parameters
 macdbhost	db.mycompany.com
 macdbport	5432
 macdbname	mac
@@ -27,8 +29,8 @@ whoami		"id -u -n"
 
 debug		no
 
-# list of users who can bypass the nologin test, separated by one space
-# and who can administer database
+# List of Netmagis users who can bypass the nologin test, separated by a space.
+# They are created when the database is created with netmagis-dbcreate
 rootusers	"pda jean"
 
 ##############################################################################
