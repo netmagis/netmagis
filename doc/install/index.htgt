@@ -368,14 +368,14 @@
 
     \titre {3} {PosgreSQL configuration}
 
-    On the host where you installed the \italique {database} port,
+    On the host where you installed the \italique {database} module,
     you should have a PostgreSQL server. The recommanded version is at
     least 9.1.
 
     You have to check that your PostgreSQL installation allow connections
     (and authenticate users with password) from hosts which act as
     clients of the Netmagis database (all hosts where you installed
-    a netmagis package). This is usually configured in file \teletype
+    a netmagis module). This is usually configured in file \teletype
     {pg_hba.conf} which is located in:
     \tableau {
 	\* \taille {100}
@@ -392,20 +392,20 @@
     } {
 	\lignetableau {
 	    \casetableau {} {FreeBSD}
-	    \casetableau {} {in directory \teletype
+	    \casetableau {} {\teletype
 		{&tilde;pgsql/data/pg_hba.conf}
 		(where \teletype {pgsql} is the name of the PostgreSQL
 		administror)}
 	}
 	\lignetableau {
 	    \casetableau {} {Linux (Debian/Ubuntu)}
-	    \casetableau {} {in directory
+	    \casetableau {} {
 		\teletype {/etc/postgresql/9.1/main/pg_hba.conf}
 	    }
 	}
     }
 
-    Netmagis uses only one PostgreSQL user, without privilege.
+    Netmagis uses only one PostgreSQL user, without special privilege.
     You must create it (as the PostgreSQL administor user: \teletype
     {pgsql} on FreeBSD, \teletype {postgres} on Linux) with the
     PostgreSQL \teletype {createuser} program:
@@ -413,7 +413,7 @@
     \retrait\teletype {createuser --no-superuser --no-createrole --no-createdb --pwprompt dns}
 
     Even if you want to use a different database for the \italique
-    {module}, you can use the same user.
+    {mac} module, you can use the same user.
 
     \titre {3} {The Netmagis configuration file}
 
@@ -455,7 +455,7 @@
 	    \casetableau {} {macdb...}
 	    \casetableau {} {Information needed to connect to the
 		PostgreSQL server for the \italique {mac} module,
-		with unpriviledged user. If you don't want to use
+		with an unpriviledged user. If you don't want to use
 		a separate database, or if you don't want to use the
 		\italique {mac} module, use exactly the same values
 		as for the the \teletype {dnsdb...} parameters.
@@ -563,9 +563,10 @@
 		displays them on standard output}
 	}
 	As this command needs to create databases, you have to
-	provide the user and password of the privileged PostgreSQL
-	user (\teletype {pgsql} user on FreeBSD, \teletype {postgres}
-	user on Linux).
+	provide the user and password of a privileged PostgreSQL
+	user (for example: \teletype {pgsql} user on FreeBSD, \teletype
+	{postgres} user on Linux).
+
 	\br
 	Users are created in the Netmagis database, including the
 	internal authentication schema.
@@ -586,7 +587,7 @@
 	you may try to import example data.  You may do so by issuing
 	the command:
 	\retrait\teletype {$ cd .../share/examples/netmagis \br
-	    $ ./run-all.sh
+	    $ sh ./run-all.sh
 	}
 
 	You can later destroy and re-create the database with your
