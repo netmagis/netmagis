@@ -749,8 +749,15 @@ create_netmagis_schemas ()
 	PRIMARY KEY (rank)
     ) ;
 
-    -- to generate link numbers
+    -- link number and description
     CREATE SEQUENCE topo.seq_link START 1 ;
+    CREATE TABLE topo.link (
+	idlink          INT             -- group id
+	     DEFAULT NEXTVAL ('topo.seq_link'),
+	descr           TEXT,           -- link description
+																
+	PRIMARY KEY (idlink)
+    ) ;
 
     CREATE OR REPLACE FUNCTION modif_routerdb () RETURNS trigger AS $$
 	BEGIN

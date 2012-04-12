@@ -2,42 +2,122 @@
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {21/01/2012}
+\set {date}   {04/04/2012}
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Générer a numéro de lien
+	Netmagis - Gestion des liens
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    Netmagis application
+	Netmagis application
 }
 
 
 \*******************************************************************************
 \bandeau {
 	Netmagis v%VERSION%
-    } {
+	} {
 	\elementbandeau {Actions} {
-	    %LINKS%
+		%LINKS%
 	}
-}
-
-\set {header} {
-    <style type="text/css">
-	#nextpart \{
-	    display: %DISPLAY%;
-	\}
-    </style>
 }
 
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Générer un numéro de lien}
+	\titre {1} {Edition d'un lien}
 
-	Nouveau numéro de lien : %LINK%
+	\tableau {
+	\bordure {0} {}
+	\taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		    \casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		    } {\gras {Nouveau lien}}
+	    }
+	    \lignetableau {
+		    \casetableau {} {
+		    <FORM METHOD="POST" ACTION="%URLFORM%">
+			    <INPUT TYPE="HIDDEN" NAME="action" VALUE="create">
+			    \tableau {
+				    \bordure {0} {}
+				    \* \taille {100}
+			    } {
+				    \casedefauttableau {\centragehorizontal {LEFT}}
+				    \casedefauttableau {\centragehorizontal {LEFT}}
+			    } {
+				\lignetableau {
+					\casetableau {} {Description}
+					\casetableau {} {
+					    <INPUT TYPE="TEXT" NAME="descr" SIZE="60">
+					}
+				}
+				\lignetableau {
+					\multicasetableau {2} {\centragehorizontal {CENTER}} {
+					    <INPUT TYPE="SUBMIT" VALUE="Create">
+					}
+				}
+			    }
+		    </FORM>
+		    }
+	    }
+	    \lignetableau {
+		    \casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		    } {\gras {Réutiliser un lien existant}}
+	    }
+	    \lignetableau {
+		    \casetableau {} {
+		    <FORM METHOD="POST" ACTION="%URLFORM%">
+			    <INPUT TYPE="HIDDEN" NAME="action" VALUE="reuse">
+			    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="no">
+			    \tableau {
+				    \bordure {0} {}
+				    \* \taille {100}
+			    } {
+				    \casedefauttableau {\centragehorizontal {LEFT}}
+				    \casedefauttableau {\centragehorizontal {LEFT}}
+			    } {
+				\lignetableau {
+					\casetableau {} {Numéro du lien}
+					\casetableau {} {
+					    <INPUT TYPE="TEXT" NAME="id" SIZE="10">
+					}
+				}
+				\lignetableau {
+					\casetableau {} {Description}
+					\casetableau {} {
+					    <INPUT TYPE="TEXT" NAME="descr" SIZE="60">
+					}
+				}
+				\lignetableau {
+					\multicasetableau {2} {\centragehorizontal {CENTER}} {
+					    <INPUT TYPE="SUBMIT" VALUE="Réutiliser">
+					}
+				}
+			    }
+		    </FORM>
+		    }
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		} {\gras {Liste des liens}}
+	    }
+	    \lignetableau {
+		\casetableau {} {
+		    %LIST%
+		}
+	    }
+	}
 
 }
 

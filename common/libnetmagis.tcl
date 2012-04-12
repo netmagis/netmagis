@@ -523,7 +523,7 @@ snit::type ::netmagis {
 			    {eq always}
 			    {l2 always}
 			    {l3 always}
-			    {genlink always}
+			    {genl topogenl}
 			    {topotop admin}
 			    {dnstitle dns}
 			    {mactitle mac}
@@ -533,7 +533,7 @@ snit::type ::netmagis {
 	l2		{l2 Vlans}
 	l3		{l3 Networks}
 	dnstitle	{index DNS/DHCP}
-	genlink		{genl {Link number}}
+	genl		{genl {Link number}}
 	:admin		{
 			    {admtitle always}
 			    {pgatitle authadmin}
@@ -1113,6 +1113,9 @@ snit::type ::netmagis {
 	}
 	if {[dnsconfig get "macactive"] && $tabuid(droitmac)} then {
 	    lappend curcap "mac"
+	}
+	if {$tabuid(droitgenl)} then {
+	    lappend curcap "topogenl"
 	}
 	if {$tabuid(admin)} then {
 	    lappend curcap "admin"
@@ -8895,31 +8898,6 @@ proc eq-graph-status {dbfd eq {iface {}}} {
     }
 
     return $html
-}
-
-#
-# Generate a new link number
-#
-# Input:
-#   - parameters:
-#	- dbfd : database handle
-# Output:
-#   - return value: value of the newly generated link number or -1 if error
-#
-# History:
-#   2012/01/21 : jean     : design
-#
-
-proc gen-link-number {dbfd} {
-
-    set r -1
-
-    set sql "SELECT nextval('topo.seq_link') AS linknumber"
-    pg_select $dbfd $sql tab {
-	set r $tab(linknumber)
-    }
-
-    return $r
 }
 
 

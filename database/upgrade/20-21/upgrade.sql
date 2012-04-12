@@ -113,7 +113,16 @@ COPY topo.dotattr (rank, type, regexp, gvattr) FROM stdin;
 -- link number generation
 ------------------------------------------------------------------------------
 
+-- link number and description
 CREATE SEQUENCE topo.seq_link START 1 ;
+CREATE TABLE topo.link (
+    idlink	INT	-- group id
+		DEFAULT NEXTVAL ('topo.seq_link'),
+    descr	TEXT,	-- link description
+
+    PRIMARY KEY (idlink)
+) ;
+
 
 ALTER TABLE global.groupe
     ADD COLUMN droitgenl INT DEFAULT 0

@@ -1,0 +1,50 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {21/01/2012}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Gestion des liens
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\set {header} {
+    <style type="text/css">
+	#nextpart \{
+	    display: %DISPLAY%;
+	\}
+    </style>
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modifier le lien %ID%}
+
+    Modifier le lien %ID%:
+
+	<FORM METHOD="POST" ACTION="%URLFORM%">
+	    Description:~<INPUT TYPE="TEXT" NAME="descr" VALUE="%DESCR%" SIZE="60">
+	    <INPUT TYPE="HIDDEN" NAME="id" VALUE="%ID%">
+	    <INPUT TYPE="HIDDEN" NAME="action" VALUE="mod">
+	    <INPUT TYPE="SUBMIT" VALUE="Modify">
+	</FORM>
+}
+
+}
