@@ -728,4 +728,12 @@
  {You are not authorized to generate a link number} {Vous n'êtes pas autorisé à générer un numéro de lien}
  {Error while generating a link number} {Erreur dans la génération d'un numéro de lien}
  {All} {Tous}
+ {Id} {Identifiant}
+ {Description} {Description}
+ {Edit} {Modifier}
+ {Invalid link number (%s)} {Numéro de lien invalide (%s)} 
+ {Non-existent link number (%s)} {Numéro de lien inexistant (%s)}
+ {Error while generating a link number} {Erreur dans la génération d'un numéro de lien}
+ {Can't modify link %s (%s)} {Impossible de modifier le lien %s (%s)}
+ {Can't reuse link %s (%s)} {Impossible de réutiliser le lien %s (%s)}
 }
