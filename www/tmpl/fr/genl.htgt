@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-	\titre {1} {Edition d'un lien}
+	\titre {1} {Gestion des liens}
 
 	\tableau {
 	\bordure {0} {}
@@ -60,7 +60,7 @@
 				}
 				\lignetableau {
 					\multicasetableau {2} {\centragehorizontal {CENTER}} {
-					    <INPUT TYPE="SUBMIT" VALUE="Create">
+					    <INPUT TYPE="SUBMIT" VALUE="Créer">
 					}
 				}
 			    }
@@ -86,7 +86,7 @@
 				    \casedefauttableau {\centragehorizontal {LEFT}}
 			    } {
 				\lignetableau {
-					\casetableau {} {Numéro du lien}
+					\casetableau {} {Numéro}
 					\casetableau {} {
 					    <INPUT TYPE="TEXT" NAME="id" SIZE="10">
 					}
