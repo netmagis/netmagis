@@ -720,12 +720,14 @@ proc main {argv0 argv} {
 	    }
 	    -f {
 		set foreground 1
+		set argv [lreplace $argv 0 0]
 	    }
 	    -z {
 	    	# This option is not meant to be used by a human
 		# It implies that the program is being rerun in order to be
 		# daemonized
 		set daemonized 1
+		set argv [lreplace $argv 0 0]
 	    }
 	    -v {
 		set verbose [lindex $argv 1]
