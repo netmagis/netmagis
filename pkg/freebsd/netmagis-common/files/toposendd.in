@@ -18,7 +18,7 @@
 
 name=toposendd
 rcvar=toposendd_enable
-command_interpreter=%TCLSH%
+command_interpreter=%%TCLSH%%
 
 load_rc_config $name
 
@@ -26,6 +26,6 @@ load_rc_config $name
 : ${toposendd_flags:=""}
 : ${toposendd_user:="rancid"}
 
-command="%NMLIBDIR%/topo/toposendd"
+command="%%PREFIX%%/sbin/toposendd"
 
 run_rc_command "$1"

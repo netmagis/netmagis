@@ -24,10 +24,12 @@ SCRIPTS = \
 	list-rancid	\
 	list-vlans	\
 	ssidsensors	\
-	topographd	\
-	toposendd	\
 	start-rancid	\
 	sendmail
+
+DAEMONS = \
+	topographd	\
+	toposendd
 
 LIBS	= \
 	parse-hp.tcl	\
@@ -53,6 +55,8 @@ install: $(PROGS) $(SCRIPTS)
 	install -m 0755 $(PROGS) $(DESTDIR)$(NMLIBDIR)/topo
 	$(NINSTALL) -m 0755 $(SUBST) $(SCRIPTS) $(DESTDIR)$(NMLIBDIR)/topo
 	$(NINSTALL) -m 0644 $(SUBST) $(LIBS)    $(DESTDIR)$(NMLIBDIR)/topo
+	mkdir -p $(DESTDIR)$(SBINDIR)
+	$(NINSTALL) -m 0755 $(SUBST) $(DAEMONS) $(DESTDIR)$(SBINDIR)
 
 clean:
 	rm -f *.o $(PROGS) *.core

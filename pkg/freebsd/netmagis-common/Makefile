@@ -44,6 +44,8 @@ RUN_DEPENDS+=	pdflatex:${PORTSDIR}/print/teTeX-base \
 .endif
 
 .if ${PKGNAMESUFFIX} == "-topo"
+USE_RC_SUBR=	topographd toposendd
+SUB_LIST=	TCLSH=${TCLSH}
 RUN_DEPENDS+=	rancid-run:${PORTSDIR}/net-mgmt/rancid \
 		fping:${PORTSDIR}/net/fping
 .endif
