@@ -1,0 +1,116 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda}
+\set {date}	{23/04/2012}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Upgrade instructions
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Introduction
+    } {
+	\elementbandeau {Contents} {
+	    \reference {\lien {What's new}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Specifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Download}	{/download.html}}
+	    \reference {\lien {Screenshots}	{/screenshots.html}}
+	    \reference {\lien {Demonstration}	{/demo.html}}
+	    \reference {\lien {Development}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis: Upgrade instructions}
+
+    \gras {Important}: to upgrade from an old version, you must follow upgrade
+    procedure for \italique {\gras {all} intermediate versions}.
+
+    \***********************************************************************
+
+    \titre {2} {\ancre {v2.1} {Upgrading to Netmagis 2.1 from Netmagis 2.0}}
+
+    Don't forget to read \lien {release notes} {/relnotes.html#v2.1}.
+
+    TO BE WRITTEN
+
+    \titre {2} {\ancre {v2.0} {Upgrading to Netmagis 2.0 from WebDNS 1.5}}
+
+    Don't forget to read \lien {release notes} {/relnotes.html#v2.0}.
+
+    Upgrading from the previous Netmagis/WebDNS version is simple.
+
+    First, make a backup of the old WebDNS database.
+
+    Next, install \italique {common}, \italique {database} packages,
+    and configure them according to installation instructions (except
+    database creation).
+
+    On the database server, go to the \teletype
+    {.../share/examples/netmagis/upgrade/15-20/} directory, and then:
+
+    \liste {
+	\item {Inspect the \teletype {upgrade.sql} script, and adapt
+	    login names of users in the GRANT lines.
+
+	}
+	\item {As the priviledged user, run the \teletype {upgrade.sql}
+	    script on your existing database (have I already said that
+	    you should make a backup first?):
+
+	    \retrait\teletype {$ psql -f upgrade.sql \italique {webdns-database-name}}
+
+	}
+	\item {If you have configured the PostgreSQL authentication
+	    system, make a dump of your old \italique {auth} database:
+
+	    \retrait\teletype {$ pg_dump \italique {auth-database-name} > /tmp/auth.dump}
+
+	    Next, apply the script to merge database authentication in
+	    the Netmagis database:
+
+	    \retrait\teletype {$ pg_dump --data-only \italique
+		{auth-database-name} | sed -f pgauth.sed > /tmp/pgauth.load}
+
+	    You should take a look on the \teletype {/tmp/pgauth.load}
+	    to see if everything is ok. Then, load the converted file:
+
+	    \retrait\teletype {$ psql -f /tmp/pgauth.load \italique
+		{webdns-database-name}}
+
+	    Next, issue the SQL command with \teletype {psql}:
+
+	    \retrait\teletype {INSERT INTO global.config (clef, valeur)
+		VALUES ('authmethod', 'pgsql') ;}
+
+	}
+	\item {If you have configured the LDAP authentication, issue the SQL
+	    command with \teletype {psql}:
+
+	    \retrait\teletype {INSERT INTO global.config (clef, valeur)
+		VALUES ('authmethod', 'ldap') ;}
+	}
+    }
+
+    Next, install the \italique {www} package, and follow installation
+    instructions.  If you use PostgreSQL authentication, do not forget
+    to update the Apache configuration to use to the new tables in the
+    Netmagis database.
+
+
+}
+
+}

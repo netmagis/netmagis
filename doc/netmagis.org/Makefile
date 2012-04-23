@@ -14,9 +14,9 @@ install:
 	#
 	# install HTML files
 	#
-	for i in *.htgt.?? ; \
+	for i in *.htgt.?? *.htgt ; \
 	do \
-	    h=`echo $$i | sed 's/\.htgt\./\.html\./'` ; \
+	    h=`echo $$i | sed 's/\.htgt/\.html/'` ; \
 	    $(HTGBINDIR)/htgtcl $(HTGBINDIR)/htg -d $(HTGDIR)/models \
 			-m default $$i > $(DESTDIR)/$$h \
 		    || exit 1 ; \

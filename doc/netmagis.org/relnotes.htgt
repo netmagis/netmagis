@@ -1,0 +1,181 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda}
+\set {date}	{23/04/2012}
+
+\*******************************************************************************
+\partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
+    Netmagis - Release notes
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Introduction
+    } {
+	\elementbandeau {Contents} {
+	    \reference {\lien {What's new}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Specifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Download}	{/download.html}}
+	    \reference {\lien {Screenshots}	{/screenshots.html}}
+	    \reference {\lien {Demonstration}	{/demo.html}}
+	    \reference {\lien {Development}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis: Release notes}
+
+    Release notes contain the significant changes in each Netmagis
+    release.
+
+    A more detailed change log is provided in the \lien {CHANGES}
+    {https://github.com/pdav/netmagis/blob/master/CHANGES} file.
+    Complete list of changes can be obtained by viewing the
+    \lien {github.com commits} {http://github.com/pdav/netmagis}.
+
+
+    \titre {2} {\ancre {v2.1} {Netmagis 2.1}}
+
+    Release date: soon.
+
+    This release is the first since the initial Netmagis release in
+    november 2011. It brings integration of two major tools (Metro and
+    Mac modules) and focuses on ease of installation, even if it
+    provides some other new and nice features.
+
+    \liste {
+	\item {The Metro module is now integrated. If equipments
+	    are configured with proper \italique {sensor names},
+	    the metrology module periodically polls them for traffic
+	    information, and traffic graphs are available in the
+	    Netmagis Web interface.
+	
+	}
+	\item {The MAC module is now integrated. It register in the
+	    Netmagis database (or another database if you fear performance
+	    problems) MAC-Ports associations as well as MAC-IP associations.
+	    These informations are available in the Netmagis Web interface.
+
+	}
+	\item {Linux Debian/Ubuntu packages are now provided (as well
+	    as FreeBSD ports) for ease of installation. Appropriate
+	    documentation is provided as well.
+
+	}
+	\item {PostgreSQL users are now simplified: you need to create
+	    only one user, which will be used everywhere.
+
+	}
+	\item {Symbols used in L2 and L3 graphs (topology module) may now
+	    be modified by the administrator through the Netmagis Web
+	    admin interface.
+
+	}
+	\item {Some parameters such as paper format and pdflatex program
+	    path are now configurable through the Netmagis Web admin
+	    interface.
+
+	}
+	\item {The Rancid configuration has been simplified: the
+	    \teletype {ranciddb} and \teletype {rancidconfdir}
+	    parameters are removed and the new \teletype {ranciddir}
+	    replaces them in \teletype {netmagis.conf} file.
+
+	}
+	\item {The generated network graph built by the topology
+	    module is now copied from the topo server to the www server
+	    (if they are different servers). This brings more
+	    performance.
+
+	}
+
+    }
+
+    See \lien {upgrade instructions} {/upgrade.html#v2.1}
+    for upgrading from version 2.0.
+
+
+    \titre {2} {\ancre {v2.0} {Netmagis 2.0}}
+    
+    Release date : 23 november 2011
+
+    This release is the first Netmagis release. Previous releases were
+    called WebDNS. It brings many fundamental modifications.
+
+    \liste {
+	\item {Name changed to Netmagis to reflect the new
+	    functionnalities introduced, which form a real network
+	    information system rather than a simple management tool.
+
+	}
+	\item {Netmagis has a new logo.
+
+	}
+	\item {Application is internationalized. Web pages and messages
+	    are translated in both French and English. All scripts have
+	    been rewritten.
+
+	}
+	\item {Topo module has been integrated.
+
+	}
+	\item {Installation process is easier, by providing more
+	    scripting and modularization.
+
+	}
+	\item {FreeBSD ports are provided for a very easy installation.
+
+	}
+	\item {A single data import script is now provided, which
+	    more generic import instructions.
+
+	}
+	\item {Database is now splitted into different schemas to
+	    provide further extensibility and separation.
+
+	}
+	\item {A new IPv4 address map allows users to easily find
+	    available addresses.
+
+	}
+	\item {New option in host addition page allow for searching
+	    a pool of IPv4 free addresses.
+
+	}
+	\item {DHCP generation allows for one machine to get a different
+	    IP address within each connected network.
+
+	}
+	\item {DHCP generation supports DHCP server high availability
+	    (failover).
+
+	}
+	\item {Bug fix in dnsmodattr : HINFO specification was
+	    incorrectly handled.
+
+	}
+    }
+
+    See \lien {upgrade instructions} {/upgrade.html#v2.0}
+    for upgrading from WebDNS v1.5.
+
+
+    \titre {2} {Previous Netmagis/WebDNS versions}
+
+    Previous Netmagis/WebDNS are described on the
+    \lien {old WebDNS web site} {http://webdns.u-strasbg.fr}.
+
+}
+
+}

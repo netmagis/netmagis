@@ -38,7 +38,25 @@
 
     \titre {2} {Installation manual}
 
-    \lien {Detailed installation instructions} {/install-2.1b1/}.
+    \lien {Detailed installation instructions} {install-2.1.html}.
+
+    \titre {2} {Release notes and upgrade instructions}
+
+    \lien {Release notes} {relnotes.html} explain differences with
+    previous versions. \lien {Upgrade instructions} {upgrade.html}
+    explain how to upgrade from previous versions of Netmagis.
+
+    \titre {2} {Presentations in English}
+
+    Netmagis have been the subject of a talk in:
+    \liste {
+	\item {FOSDEM 2012 in Brussels. You can view this talk at
+	    \lien {http://fosdem.org/2012/schedule/event/netmagis}
+	    {http://fosdem.org/2012/schedule/event/netmagis}. You
+	    may also \lien {watch the video}
+	    {http://video.fosdem.org/2012/lightningtalks/netmagis.webm}.
+	}
+    }
 
     \titre {2} {Articles in French}
 
@@ -46,7 +64,8 @@
     conference \lien {JRES} {http://www.jres.org}:
     \liste {
 	\item {an article to announce the 2.0 release.
-	    See the \lien {JRES 2011} {http://2011.jres.org} website.
+	    See the \lien {JRES 2011}
+	    {https://2011.jres.org/archives/35/index.htm} website.
 	}
 	\item {an article to present the network information system
 	    for the Osiris metropolitan area network in Strasbourg (France),

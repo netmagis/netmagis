@@ -107,8 +107,6 @@ install-metro:
 
 install-netmagis.org: build-www
 	cd doc/netmagis.org ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
-	cd doc/install ; make $(DIRS)/install-$(VERSION) \
-		TCLSH=$(TCLSH) install
 
 distrib: clean
 	rm -rf /tmp/netmagis-$(VERSION)

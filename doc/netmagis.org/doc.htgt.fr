@@ -38,7 +38,29 @@
 
     \titre {2} {Documentation d'installation}
 	
-    \lien {Instructions d'installation détaillées} {/install-2.1b1/}.
+    \lien {Instructions d'installation détaillées} {/install-2.1.html}.
+
+    \titre {2} {Documentation de version et procédures de mise à jour}
+
+    Les \lien {documentations de version} {relnotes.html} (en anglais)
+    expliquent les différences avec les versions précédentes de
+    Netmagis.
+    Les \lien {procédures de mise à jour} {upgrade.html} expliquent
+    quant à elles comment mettre à jour une installation de Netmagis
+    avec une nouvelle version.
+
+    \titre {2} {Présentations en Anglais}
+
+    Netmagis a fait l'objet d'une présentation :
+    \liste {
+	\item {lors du FOSDEM 2012 à Bruxelles. Vous pouvez accéder
+	    à cette présentation à l'adresse~:
+	    \lien {http://fosdem.org/2012/schedule/event/netmagis}
+	    {http://fosdem.org/2012/schedule/event/netmagis}. Vous
+	    pouvez également \lien {regarder la vidéo}
+	    {http://video.fosdem.org/2012/lightningtalks/netmagis.webm}.
+	}
+    }
 
     \titre {2} {Articles}
 

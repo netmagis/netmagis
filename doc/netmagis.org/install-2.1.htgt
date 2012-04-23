@@ -41,6 +41,9 @@
     is available only on \lien {Netmagis Github repository}
     {http://github.com/pdav/netmagis} at this time.}
 
+    Note: if you are installing from a previous version of Netmagis,
+    you should rather read \lien {upgrade instructions} {upgrade.html}.
+
     \**********************************************************************
 
     \titre {2} {How things work}
@@ -537,8 +540,8 @@
     \liste {
     \item {
 	If you are upgrading from a previous WebDNS or Netmagis installation,
-	please see the "\lien {Upgrading from previous version} {#upgrading}"
-	section at the end of this document.
+	please see the "\lien {Upgrading from previous version}
+	{upgrade.html}" section at the end of this document.
     }
     \item {
 	If you are installing Netmagis for the first time, after you
@@ -2272,76 +2275,6 @@
     \titre {2} {\ancre {import} {Import your data in database}}
 
     TO BE WRITTEN
-
-    \**********************************************************************
-
-    \titre {2} {\ancre {upgrading} {Upgrading from previous versions}}
-
-    gras {Important}: to upgrade from an old version, you must follow upgrade
-    procedure for \italique {\gras {all} intermediate versions}.
-
-    \titre {3} {Upgrading from Netmagis / WebDNS v1.5}
-
-    Upgrading from the previous Netmagis/WebDNS version is simple.
-
-    First, make a backup of the old WebDNS database.
-
-    Next, install \italique {common}, \italique {database} packages,
-    and configure them according to installation instructions (except
-    database creation).
-
-    On the database server, go to the \teletype
-    {.../share/examples/netmagis/upgrade/15-20/} directory, and then:
-
-    \liste {
-	\item {Inspect the \teletype {upgrade.sql} script, and adapt
-	    login names of users in the GRANT lines.
-
-	}
-	\item {As the priviledged user, run the \teletype {upgrade.sql}
-	    script on your existing database (have I already said that
-	    you should make a backup first?):
-
-	    \retrait\teletype {$ psql -f upgrade.sql \italique {webdns-database-name}}
-
-	}
-	\item {If you have configured the PostgreSQL authentication
-	    system, make a dump of your old \italique {auth} database:
-
-	    \retrait\teletype {$ pg_dump \italique {auth-database-name} > /tmp/auth.dump}
-
-	    Next, apply the script to merge database authentication in
-	    the Netmagis database:
-
-	    \retrait\teletype {$ pg_dump --data-only \italique
-		{auth-database-name} | sed -f pgauth.sed > /tmp/pgauth.load}
-
-	    You should take a look on the \teletype {/tmp/pgauth.load}
-	    to see if everything is ok. Then, load the converted file:
-
-	    \retrait\teletype {$ psql -f /tmp/pgauth.load \italique
-		{webdns-database-name}}
-
-	    Next, issue the SQL command with \teletype {psql}:
-
-	    \retrait\teletype {INSERT INTO global.config (clef, valeur)
-		VALUES ('authmethod', 'pgsql') ;}
-
-	}
-	\item {If you have configured the LDAP authentication, issue the SQL
-	    command with \teletype {psql}:
-
-	    \retrait\teletype {INSERT INTO global.config (clef, valeur)
-		VALUES ('authmethod', 'ldap') ;}
-	}
-    }
-
-    Next, install the \italique {www} package, and follow installation
-    instructions.  If you use PostgreSQL authentication, do not forget
-    to update the Apache configuration to use to the new tables in the
-    Netmagis database.
-
-    \titre {3} {Upgrading from previous versions}
 
 }
 
