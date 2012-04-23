@@ -1,6 +1,10 @@
 ------------------------------------------------------------------------------
 -- Database upgrade to 2.1 version
 --
+-- Warning: the database is now owned by the new unpriviledged PostgreSQL
+-- user (see http://www.netmagis.org/relnotes.html). Be sure to apply
+-- all upgrade instructions (http://www.netmagis.org/upgrade.html#v2.1)
+--
 -- Use:
 --	- psql -f upgrade.sql database-name
 --

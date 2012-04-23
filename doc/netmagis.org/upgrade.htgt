@@ -45,7 +45,67 @@
 
     Don't forget to read \lien {release notes} {/relnotes.html#v2.1}.
 
-    TO BE WRITTEN
+    First, make a backup of your existing Netmagis database.
+
+    One of the changes in Netmagis 2.1 release is the use of only
+    one unpriviledged PostgreSQL user (the one you specified with the
+    parameter \teletype {dnsdbuser} in the \teletype {netmagis.conf}
+    file). This simplifies considerably the installation, but the upgrade
+    needs to take this into account: you need to transfer ownership of
+    the database to this unpriviledged user. Assuming this user is
+    called "\teletype {dns}":
+
+    To do so:
+    \liste {
+	\item {as your existing administrative user, dump the
+	    database:
+	    \retrait\teletype {$ pg_dump \italique
+		{netmagis-database-name} \> /tmp/dns.dump}
+	}
+	\item {as the PostgreSQL administrator user (\teletype {pgsql}
+	    on FreeBSD, \teletype {postgres} on Linux), create the
+	    unpriviledged user:
+	    \retrait\teletype {pgsql$ createuser --no-superuser --no-createrole
+		--no-createdb --pwprompt dns}
+	}
+	\item {always as this PostgreSQL administrator user, delete the
+	    old database and create the new database with the correct
+	    ownership:
+	    \retrait {
+		\teletype {pgsql$ dropdb \italique {netmagis-database-name}}
+		\br
+		\teletype {pgsql$ createdb -E unicode --owner=dns \italique
+		    {netmagis-database-name}}
+	    }
+	}
+	\item {as the unpriviledged user, restore the database contents:
+	    \retrait\teletype {$ psql -f /tmp/dns.dump \italique
+	    {netmagis-database-name}}
+	}
+    }
+
+    Next, on the database server, go to the \teletype
+    {.../share/examples/netmagis/upgrade/20-21/} directory, and then:
+
+    \liste {
+	\item {Inspect the \teletype {upgrade.sql} script
+	}
+	\item {As the unpriviledged user, run this script:
+	    \retrait\teletype {$ psql -f upgrade.sql \italique {netmagis-database-name}}
+	}
+	\item {Next, specify in \teletype {netmagis.conf} where you
+	    want to create the MAC database (see \lien {installation
+	    instructions} {/install-2.1.html})
+	}
+	\item {Next, create the MAC schema, with the newly installed
+	    \teletype {netmagis-dbcreate} script:
+	    \retrait\teletype {$ netmagis-dbcreate -u pgsql -w passwd mac}
+	    where \teletype {pgsql} is the name of the PosgreSQL
+	    administrator user and \teletype {passwd} its password.
+	}
+    }
+
+    \***********************************************************************
 
     \titre {2} {\ancre {v2.0} {Upgrading to Netmagis 2.0 from WebDNS 1.5}}
 
