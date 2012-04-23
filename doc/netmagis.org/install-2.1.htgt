@@ -189,13 +189,13 @@
     {/download.html} (file netmagis-freebsd-ports-*.tar.gz associated
     with appropriate netmagis version).
 
-    Once the file is downloaded on a failry recent FreeBSD system
-    (minimum FreeBSD 8.2-RELEASE with \lien {up-to-date ports}
+    Once the file is downloaded on a fairly recent FreeBSD system
+    (minimum FreeBSD 8.3-RELEASE with \lien {up-to-date ports}
     {http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/updating-upgrading-portsnap.html}),
     use:
 
     \retrait {\teletype {
-	# tar xzvf netmagis-freebsd-ports-2.0.tgz -C /usr/ports/net-mgmt/
+	# tar xzvf netmagis-freebsd-ports-2.1.tgz -C /usr/ports/net-mgmt/
     }}
 
     In order to install a netmagis package, just enter the
@@ -214,9 +214,6 @@
     Not yet available. At this time, either find a FreeBSD machine or
     install from source distribution  (see below).
 
-    You can \lien {contribute to Netmagis}
-    {https://github.com/pdav/netmagis} by providing packet files.
-
     \titre {3} {Installing from Netmagis source distribution}
 
     \enumeration {
@@ -224,7 +221,7 @@
 	{/download.html} and unpack the archive:
 
 	\retrait {\teletype {
-	    $ tar xzvf netmagis-2.0b1.tar.gz
+	    $ tar xzvf netmagis-2.1.tar.gz
 	}}
 
 	Alternatively, if you are adventurous, you may also fetch the
