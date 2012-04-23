@@ -50,6 +50,15 @@
     La présentation de Jean aura lieu à partir de 16h30 le mardi 24 avril.
 
 
+    \titre {2} {[2012/02/05] Netmagis au FOSDEM}
+
+    Jean Benoit présente Netmagis au \lien {FOSDEM 2012}
+    {http://www.fosdem.org} qui se tient à Bruxelles (Belgique).
+    Tous les détails sont sur
+    \lien {http://fosdem.org/2012/schedule/event/netmagis}
+    {http://fosdem.org/2012/schedule/event/netmagis}.
+
+
     \titre {2} {[2011/11/21] La version 2.0 de Netmagis est disponible}
 
     La \lien {version 2.0 de Netmagis} {/download.html}
