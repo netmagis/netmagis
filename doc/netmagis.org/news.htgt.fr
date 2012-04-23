@@ -34,7 +34,21 @@
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Netmagis : Nouveauté}
+    \titre {1} {Netmagis : Nouveautés}
+
+    \titre {2} {[2012/04/23] Netmagis au Campus Monitoring workshop de GEANT}
+
+    Jean Benoit présentera Netmagis au
+    \lien {Campus Monitoring workshop de GEANT}
+    {http://www.ces.net/events/2012/campus-monitoring/} qui se déroulera
+    à Brno (République Tchèque).
+
+    Le flux vidéo sera accessible à l'adresse
+    \lien {http://server3.streaming.cesnet.cz/rec1-1}
+	{http://server3.streaming.cesnet.cz/rec1-1}.
+
+    La présentation de Jean aura lieu à partir de 16h30 le mardi 24 avril.
+
 
     \titre {2} {[2011/11/21] La version 2.0 de Netmagis est disponible}
 
