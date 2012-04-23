@@ -10,7 +10,7 @@ Default directories
     SBINDIR	/usr/local/sbin				/usr/sbin
     ETCDIR	/usr/local/etc				/usr/etc
     MANDIR	/usr/local/man				/usr/man
-    RCDIR	/usr/local/etc/rc.d			/usr/etc/rc.d
+    RCDIR	/usr/local/etc/rc.d			/etc/init.d
 
     Netmagis specific directories
 
@@ -148,8 +148,8 @@ Topo server
 	    .../buildgraph
 	    ...
     RCDIR/
-	.../toposendd.sh
-	.../topographd.sh
+	.../toposendd
+	.../topographd
     SBINDIR
 	.../toposendd
 	.../topographd
