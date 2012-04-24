@@ -5,21 +5,25 @@ Version 2.1 - 2012/04/??
     - simplify graphviz calls: provide a Tcl class
     - simplify graphviz calls: only one configuration parameter (dot)
     - graphviz shapes are no longer hardcoded, but are web-configurable
+    - equipment config. cmd are no longer hardcoded, but are web-configurable
     - paper format is now configurable (Letter or A4) via the parameter web-menu
     - pdflatex path is now a configuration directive
-    - simplify rancid configuration directives (ranciddb+rancidconfdir -> ranciddir)
+    - simplify rancid configuration directives (rancid{db+confdir}->ranciddir)
     - remove the never used dr_mbox table
     - netmagis-dbcreate: creation of mac database
     - netmagis-dbcreate: creation of a copy of netmagis main database
     - simplify user configuration : only one unprivileged user is needed
 	for database creation (and one more if mac database is different)
     - netmagis-maint: can work as unprivileged database user
+    - provide a script to manage link numbers in topology module
+    - greatly improve installation documentation
 
 Version 2.0 - 2011/11/23
     - change name for Netmagis (old name was WebDNS)
     - internationalize application (mostly the Web part)
     - rewrite all scripts
     - topo module integration
+    - new configuration system
     - use schemas to separate each module data
     - rights on equipments are now located in the database in a specific
 	table (topo.dr_eq) and can be edited in group edition page

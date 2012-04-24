@@ -73,6 +73,10 @@
 	    documentation is provided as well.
 
 	}
+	\item {Greatly improve \lien {installation documentation}
+	    {install-2.1.html}.
+
+	}
 	\item {PostgreSQL users are now simplified: you need to create
 	    only one user, which will be used everywhere.
 
@@ -93,10 +97,20 @@
 	    replaces them in \teletype {netmagis.conf} file.
 
 	}
+	\item {Configuration commands (used to determine which commands
+	    are to be sent to an equipment in order to modify port
+	    configuration) are now editable through the Web application
+	    and are no longer hard-coded in the \teletype {toposend} program.
+
+	}
 	\item {The generated network graph built by the topology
 	    module is now copied from the topo server to the www server
 	    (if they are different servers). This brings more
 	    performance.
+
+	}
+	\item {Graphviz dot and neato commands are the same command. The
+	    \teletype {netmagis.conf} file is simplified accordingly.
 
 	}
 
@@ -135,6 +149,12 @@
 
 	}
 	\item {FreeBSD ports are provided for a very easy installation.
+
+	}
+	\item {The configuration system has been centralized in the
+	    database (for host independant configuration) and in a
+	    local \teletype {netmagis.conf} file (for host dependant
+	    configuration).
 
 	}
 	\item {A single data import script is now provided, which
