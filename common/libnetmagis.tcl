@@ -8140,6 +8140,7 @@ proc topo-status {dbfd admin} {
 # History
 #   2010/12/14 : pda/jean : design
 #   2010/12/19 : pda      : added topouser
+#   2012/04/24 : pda      : the graph file is local to the www server
 #
 
 proc call-topo {cmd _msg} {
@@ -8154,27 +8155,8 @@ proc call-topo {cmd _msg} {
     set topograph  [get-local-conf "topograph"]
     set topohost   [get-local-conf "topohost"]
 
-    if {$topohost ne ""} then {
-	set hostname [exec "hostname"]
-	if {[string tolower $topohost] eq [string tolower $hostname]} then {
-	    set topohost ""
-	} else {
-	    set topouser [get-local-conf "topouser"]
-	}
-    }
-
     set cmd "$topobindir/$cmd < $topograph"
-
-    if {$topohost eq ""} then {
-	set r [catch {exec sh -c $cmd} msg option]
-    } else {
-	if {$topouser ne ""} then {
-	    set r [catch {exec ssh -l $topouser $topohost $cmd} msg]
-	} else {
-	    set r [catch {exec ssh $topohost $cmd} msg]
-	}
-    }
-
+    set r [catch {exec sh -c $cmd} msg option]
     return [expr !$r]
 }
 

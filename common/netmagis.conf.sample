@@ -151,15 +151,9 @@ hostcmd		/usr/bin/host
 pwgen		/usr/local/bin/pwgen --num-passwords=1 --numerals 12
 crypt		openssl passwd -1 %s
 
+# check also topobindir and topograph below
 
-# empty string = localhost
-topohost	""
-topouser	""
-
-# topo* keys are used also by the web and the topo modules
-topobindir	%NMLIBDIR%/topo
-topograph	%NMVARDIR%/network.graph
-
+# host holding metrology graphs
 metrohost	metro.mycompany.com
 
 ##############################################################################
@@ -189,8 +183,16 @@ checkrouterif	no		# future use
 # apply local policy to get ssid sensors (yes/no)
 ssidsensors	no		# future use
 
-copycommand	/usr/bin/ssh
-copydest	""
+# topobindir and topograph keys are used by the web and the topo modules
+topobindir	%NMLIBDIR%/topo
+topograph	%NMVARDIR%/network.graph
+
+# copy the graph to the www server
+# string of the form: "user@host:remote-path" or empty string
+# - empty string: don't copy (only if topo and www hosts are the same server)
+# - remote-path should match "topograph" definition on the www server
+#topocpgraph	www@netmagis.mycompany.com:%NMVARDIR%/network.graph
+topocpgraph	""
 
 ##############################################################################
 # Metro module 

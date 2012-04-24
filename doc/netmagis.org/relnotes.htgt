@@ -104,9 +104,9 @@
 
 	}
 	\item {The generated network graph built by the topology
-	    module is now copied from the topo server to the www server
-	    (if they are different servers). This brings more
-	    performance.
+	    module is now copied from the topo server (by the \teletype
+	    {topographd} program) to the www server (if they are distinct
+	    servers). This brings more performance to the Web application.
 
 	}
 	\item {Graphviz dot and neato commands are the same command. The
