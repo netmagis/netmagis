@@ -58,6 +58,7 @@ source %LIBNETMAGIS%
 #
 # History 
 #   2010/12/13 : pda/jean : design
+#   2012/04/25 : pda      : create file if it doesn't exist (even if no modif)
 #
 
 proc update-routerdb {} {
@@ -70,7 +71,7 @@ proc update-routerdb {} {
 	return "Cannot read equipment modification from database"
     }
 
-    if {$found} then {
+    if {$found || ! [file exists $ctxt(routerdb)]} then {
 	set sql "SELECT e.eq, t.type, e.up
 			FROM topo.eq e, topo.eqtype t
 			WHERE e.idtype = t.idtype"
@@ -824,10 +825,11 @@ proc main {argv0 argv} {
     if {$verbose > 0} then {
 	set-trace {toposqlselect toposqlexec toposqllock toposqlunlock
 		    keep-state-mail
-		    full-rancid-needed update-graph
-		    rancid anaconf read-eq-type
+		    update-routerdb full-rancid-needed update-graph
+		    rancid anaconf sensors read-coll read-eq-type
 		    detect-mod
 		    detect-filemod detect-dirmod sync-filemonitor}
+
     }
 
     #
