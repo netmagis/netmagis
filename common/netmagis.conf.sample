@@ -160,7 +160,7 @@ metrohost	metro.mycompany.com
 # Topo module (on topohost machine)
 ##############################################################################
 
-rancidcmd	/usr/local/libexec/rancid/rancid-run
+rancidcmd	/usr/local/bin/rancid-run
 ranciddir	/usr/local/var/rancid/mygroup	# group base directory
 
 # how to send commands on equipments
