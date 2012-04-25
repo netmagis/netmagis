@@ -16,7 +16,7 @@
 
 \*******************************************************************************
 \bandeau {
-	Introduction
+	Installation
     } {
 	\elementbandeau {Contents} {
 	    \reference {\lien {What's new}	{/news.html}}
@@ -1477,7 +1477,7 @@
 
     \titre {3} {On the topo server}
 
-    The first part is configuration of the \italique {topo} server.
+    The first part is the configuration of the \italique {topo} server.
 
     \liste {
 	\item {The first step of installation is to configure the \gras
@@ -1546,9 +1546,9 @@
 		    directory.
 		}
 		\item {The rancid README says to run \teletype
-		    {rancid-run} periocally with \gras {cron}. Do not
-		    do this, since the \italique {topo} package will
-		    call rancid when needed.
+		    {rancid-run} periocally with \teletype {cron}.
+		    \gras {Do not do this}: the \italique {topo}
+		    package will call rancid when needed.
 		}
 	    }
 
@@ -1556,10 +1556,10 @@
 	    should consider installing a Web interface to CVS (CVSWeb)
 	    to ease tracking of your equipement configuration history.
 	}
-	\item {To let \italique {topo} knows which equipments are on
-	    each side of a network link, you have to add information in
-	    equipment configurations. This information is a link name
-	    (or number) prefixed with L, bracketed with "&lt;" and "&gt;",
+	\item {The \italique {topo} package must know which equipments
+	    are on each side of a network link. Therefore, you have to
+	    add information in equipment configurations: a link name (or
+	    number) prefixed with L, bracketed with "&lt;" and "&gt;",
 	    and added to the description of the interface on each side
 	    of the link:
 
@@ -1599,6 +1599,11 @@
 			~ ~ name "blah blah &lt;L233&gt;"}}
 		}
 	    }
+
+	    You are advised to use the Web application (\gras {Topo}
+	    / \gras {Link number} menu item) to get and register link
+	    numbers. This way, you keep track of used link numbers,
+	    and link numbers are ensured to be unique.
 
 	    Ports connected to individual hosts must be marked with a
 	    "&lt;X\>" to indicate a terminal node in the graph.
@@ -1754,13 +1759,13 @@
 		\lignetableau {
 		    \casetableau {} {FreeBSD}
 		    \casetableau {} {\teletype
-			{/usr/local/etc/rc.d/topographd.sh}
+			{/usr/local/etc/rc.d/topographd}
 			\br
-			\teletype {/usr/local/etc/rc.d/toposendd.sh}}
+			\teletype {/usr/local/etc/rc.d/toposendd}}
 		}
 		\lignetableau {
 		    \casetableau {} {Linux}
-		    \casetableau {} {copy or link
+		    \casetableau {} {copy or link XXXXXXXXXXX
 			\teletype {.../etc/rc.d/topographd.sh} and
 			\teletype {.../etc/rc.d/toposend.sh}
 		    to \teletype {/etc/init.d} directory}
@@ -1895,6 +1900,8 @@
 	    equipments} section.
 	}
     }
+
+    \titre {3} {Configuring Topo}
 
     Congratulations! You've configured the \italique {topology} module.
     You can now consult your equipments, your network maps, and even

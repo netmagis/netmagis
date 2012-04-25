@@ -16,7 +16,7 @@
 
 \*******************************************************************************
 \bandeau {
-	Introduction
+	Import DNS data
     } {
 	\elementbandeau {Contents} {
 	    \reference {\lien {What's new}	{/news.html}}

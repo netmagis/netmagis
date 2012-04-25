@@ -16,7 +16,7 @@
 
 \*******************************************************************************
 \bandeau {
-	Introduction
+	Release notes
     } {
 	\elementbandeau {Contents} {
 	    \reference {\lien {What's new}	{/news.html}}
