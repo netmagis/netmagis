@@ -5194,13 +5194,13 @@ proc allowed-networks {dbfd idgrp priv} {
 # History
 #   2006/05/24 : pda/jean/boggia : extract procedure heart in allowed-networks
 #   2010/12/01 : pda      : i18n
+#   2012/04/26 : pda      : fix bug where non-html chars are replaced here
 #
 
 proc read-networks {dbfd idgrp priv} {
     set lnet {}
     foreach r [allowed-networks $dbfd $idgrp $priv] {
 	lassign $r idnet cidr4 cidr6 name
-	set name [::webapp::html-string $name]
 	lappend lnet [list $idnet [format "%s\t%s\t(%s)" $cidr4 $cidr6 $name]]
     }
     return $lnet
