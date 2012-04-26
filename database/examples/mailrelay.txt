@@ -12,9 +12,10 @@
 #	<domain> <prio> <relay> <prio> <relay> ...
 #
 # History
-#   2004/04/12 : pda      : design
-#   2011/03/10 : pda      : i18n
+#   2004/04/12 : pda : design
+#   2011/03/10 : pda : i18n
+#   2012/04/26 : pda : convert to an english based example
 #
 
-univ-machin.fr	10 relais1.univ-machin.fr	20 relais2.univ-machin.fr
-esiatf.fr	10 relais1.univ-machin.fr	20 relais2.univ-machin.fr
+mycompany.com	10 mx1.mycompany.com	20 mx2.mycompany.com
+subsid.co.zz	10 mx1.mycompany.com	20 mx2.mycompany.com

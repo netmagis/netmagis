@@ -18,13 +18,14 @@
 #   2002/04/19 : pda : design
 #   2002/04/23 : pda : add priority
 #   2011/02/25 : pda : i18n
+#   2012/04/26 : pda : convert to an english based example
 #
 
-univ-machin.fr		ALLBUT	10	esiatf wheel
-labo2.univ-machin.fr	SET	20	labo2
-labo2.univ-machin.fr	SET	30	wheel
+mycompany.com		ALLBUT	10	subsid plant
+plant2.mycompany.com	SET	10	plant
+plant2.mycompany.com	SET	30	wheel tech
 
-bidon.org		SET	20	lga
+myevent.org		SET	20	mktg wheel
 
-esiatf.fr		SET	50	wheel tech
-esiatf.fr		SET	10	esiatf
+subsid.co.zz		SET	50	wheel tech
+subsid.co.zz		SET	5	subsid

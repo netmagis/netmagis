@@ -6,8 +6,8 @@
 ;   2004/04/13 : pda : design example zone
 ;
 
-@	IN	SOA	ns1.univ-machin.fr. hostmaster.univ-machin.fr. (
-		    2004041301		; serial
+@	IN	SOA	ns1.mycompany.com. hostmaster.mycompany.com. (
+		    2012042601		; serial
 		    86400		; refresh = 1 day
 		    3600		; retry = 1 h
 		    3600000		; expire = 1000 hours (~ 41 day)
@@ -23,13 +23,13 @@ $TTL	86400
 ; Authoritative servers for this zone
 ;
 
-			IN	NS	ns1.univ-machin.fr.
-			IN	NS	ns2.univ-machin.fr.
-			IN	NS	shiva.univ-bidule.fr.
+			IN	NS	ns1.mycompany.com.
+			IN	NS	ns2.mycompany.com.
+			IN	NS	ns.myisp.com.
 
 ; CUT HERE -------------------------------------------------------------
 
 ; As for all reverse zones, PTR are not used in import script
-1			IN	PTR	www.esiatf.fr.
-2			IN	PTR	mailetu.esiatf.fr.
-254			IN	PTR	r-campus2.univ-machin.fr.
+1			IN	PTR	www.subsid.co.zz.
+2			IN	PTR	mail-sales.subsid.co.zz.
+254			IN	PTR	r-campus2.mycompany.com.

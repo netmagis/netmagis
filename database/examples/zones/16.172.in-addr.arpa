@@ -6,8 +6,8 @@
 ;   2004/04/13 : pda : design example zone
 ;
 
-@	IN	SOA	ns1.univ-machin.fr. hostmaster.univ-machin.fr. (
-		    2004041301		; serial
+@	IN	SOA	ns1.mycompany.com. hostmaster.mycompany.com. (
+		    2012042601		; serial
 		    86400		; refresh = 1 day
 		    3600		; retry = 1 h
 		    3600000		; expire = 1000 hours (~ 41 day)
@@ -23,36 +23,39 @@ $TTL	86400
 ; Authoritative servers for this zone
 ;
 
-			IN	NS	ns1.univ-machin.fr.
-			IN	NS	ns2.univ-machin.fr.
-			IN	NS	shiva.univ-bidule.fr.
+			IN	NS	ns1.mycompany.com.
+			IN	NS	ns2.mycompany.com.
+			IN	NS	ns.myisp.com.
 
-100			IN	NS	ailleurs.labo1.univ-machin.fr.
-			IN	NS	ns1.univ-machin.fr.
-			IN	NS	ns2.univ-machin.fr.
+1.100			IN	NS	elesewhere.plant2.mycompany.com.
+			IN	NS	ns1.mycompany.com.
+			IN	NS	ns2.mycompany.com.
 
 ; CUT HERE -------------------------------------------------------------
 
 ; As for all reverse zones, PTR are not used in import script
 
-1.1			IN	PTR	ns1.univ-machin.fr.
-2.1			IN	PTR	ns2.univ-machin.fr.
-3.1			IN	PTR	relais.univ-machin.fr.
-253.1			IN	PTR	r-campus2.univ-machin.fr
-254.1			IN	PTR	r-campus1.univ-machin.fr
+1.1			IN	PTR	ns1.mycompany.com.
+2.1			IN	PTR	ns2.mycompany.com.
+3.1			IN	PTR	mx1.mycompany.com.
+4.1			IN	PTR	mx2.mycompany.com.
+101.1			IN	PTR	sw1.mycompany.com.
+102.1			IN	PTR	sw2.mycompany.com.
+253.1			IN	PTR	r-campus2.mycompany.com
+254.1			IN	PTR	r-campus1.mycompany.com
 
-1.11			IN	PTR	zeus.univ-machin.fr.
-2.11			IN	PTR	apollon.univ-machin.fr.
-3.11			IN	PTR	aphrodite.univ-machin.fr.
-254.11			IN	PTR	r-campus1.univ-machin.fr.
+1.11			IN	PTR	zeus.mycompany.com.
+2.11			IN	PTR	venus.mycompany.com.
+3.11			IN	PTR	aphrodite.mycompany.com.
+254.11			IN	PTR	r-campus1.mycompany.com.
 
-1.12			IN	PTR	droopy.univ-machin.fr.
-2.12			IN	PTR	pluto.univ-machin.fr.
-3.12			IN	PTR	dingo.univ-machin.fr.
-254.12			IN	PTR	r-campus1.univ-machin.fr.
+1.12			IN	PTR	droopy.mycompany.com.
+2.12			IN	PTR	pluto.mycompany.com.
+3.12			IN	PTR	dingo.mycompany.com.
+254.12			IN	PTR	r-campus1.mycompany.com.
 
-1.13			IN	PTR	athanase.univ-machin.fr.
-2.13			IN	PTR	trouillette.univ-machin.fr.
-3.13			IN	PTR	cassolette.univ-machin.fr.
-4.13			IN	PTR	boitalette.univ-machin.fr.
-254.13			IN	PTR	r-campus2.univ-machin.fr.
+1.13			IN	PTR	daffy.mycompany.com.
+2.13			IN	PTR	bugs.mycompany.com.
+3.13			IN	PTR	screwy.mycompany.com.
+4.13			IN	PTR	porky.mycompany.com.
+254.13			IN	PTR	r-campus2.mycompany.com.

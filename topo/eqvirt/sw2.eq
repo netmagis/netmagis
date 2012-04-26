@@ -17,6 +17,7 @@
 # 
 # History:
 #   2012/04/13 : pda      : provide this example
+#   2012/04/26 : pda      : bring in sync with default database example
 #
 
 ###############################################################################
@@ -38,7 +39,7 @@
 #	to change VLAN on ports)
 # 
 
-eq sw2 type cisco model 3750 snmp public location - manual 1
+eq sw2 type cisco model WS-C3750 snmp public location - manual 1
 
 ###############################################################################
 # Nodes provided by this equipment
@@ -113,7 +114,7 @@ node sw2:p0-789 type L2 eq sw2 vlan 789 stat - desc - ifname - native 0
 node sw2:p1     type L2 eq sw2 vlan 0   stat - desc - ifname - native 1
 node sw2:p2     type L2 eq sw2 vlan 0   stat - desc - ifname - native 1
 node sw2:up-456 type L2 eq sw2 vlan 456 stat - desc - ifname - native 0
-node sw2:up-789 type L2 eq sw2 vlan 456 stat - desc - ifname - native 0
+node sw2:up-789 type L2 eq sw2 vlan 789 stat - desc - ifname - native 0
 
 ###############################################################################
 # Connexions between nodes on this equipment

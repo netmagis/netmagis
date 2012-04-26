@@ -1,13 +1,13 @@
 ;
-; Zone esiatf.fr
+; Zone subsid.co.zz
 ;
 ;
 ; History
 ;   2004/04/13 : pda : design example zone
 ;
 
-@	IN	SOA	ns1.univ-machin.fr. hostmaster.esiatf.fr. (
-		    2004041301		; serial
+@	IN	SOA	ns1.mycompany.com. hostmaster.subsid.co.zz. (
+		    2012042601		; serial
 		    86400		; refresh = 1 day
 		    3600		; retry = 1 h
 		    3600000		; expire = 1000 hours (~ 41 day)
@@ -23,15 +23,16 @@ $TTL	86400
 ; Authoritative servers for this zone
 ;
 
-			IN	NS	ns1.univ-machin.fr.
-			IN	NS	ns2.univ-machin.fr.
-			IN	NS	shiva.univ-bidule.fr.
+			IN	NS	ns1.mycompany.com.
+			IN	NS	ns2.mycompany.com.
+			IN	NS	ns.myisp.com.
 
 ;
 ; Default MX for the domain itself
 ;
 
-			IN	MX	10 relais.univ-machin.fr.
+			IN	MX	10 mx1.mycompany.com.
+			IN	MX	10 mx2.mycompany.com.
 
 ;
 ; hack
@@ -42,4 +43,4 @@ localhost		IN	A	127.0.0.1
 ; CUT HERE -------------------------------------------------------------
 
 www			IN	A	192.168.1.1
-mailetu			IN	A	192.168.1.2
+mail-sales		IN	A	192.168.1.2

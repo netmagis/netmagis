@@ -12,16 +12,21 @@
 # - proper auth (internal or LDAP) must already be configured
 # - groups may or may not already exist in database
 # - users may or may not already exist in database
+# - group wheel is created by default (netmagis-dbcreate) with
+#	admin priviledges
+# - users cited in the rootusers parameter of the netmagis.conf file
+#	are automatically added to the group wheel when the database
+#	is created
 #
 # History:
 #   2011/02/25 : pda : i18n
+#   2012/04/26 : pda : add comment about the group wheel
+#   2012/04/26 : pda : convert to an english based example
 #
 
 wheel	pda jean
-tech	gerard
+tech	bob alice
 
-lma	marcel
-lec	edouard
-lga	gabriel
-esiatf	robert raymond
-labo2	lara
+mktg	charles
+plant	terry
+subsid	john dennis

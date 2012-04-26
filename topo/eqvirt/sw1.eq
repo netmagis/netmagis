@@ -17,6 +17,7 @@
 # 
 # History:
 #   2012/04/13 : pda      : provide this example
+#   2012/04/26 : pda      : bring in sync with default database example
 #
 
 ###############################################################################
@@ -38,7 +39,7 @@
 #	to change VLAN on ports)
 # 
 
-eq sw1 type cisco model 2950 snmp public location - manual 1
+eq sw1 type cisco model WS-C2950 snmp public location - manual 1
 
 ###############################################################################
 # Nodes provided by this equipment

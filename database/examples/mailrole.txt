@@ -11,9 +11,10 @@
 # History
 #   2004/04/13 : pda/jean : design
 #   2011/03/10 : pda      : i18n
+#   2012/04/26 : pda      : convert to an english based example
 #
 
-lma.univ-machin.fr	zeus.univ-machin.fr
-lec.univ-machin.fr	droopy.univ-machin.fr
-lga.univ-machin.fr	athanase.univ-machin.fr
-etu.esiatf.fr		mailetu.esiatf.fr
+sales.mycompany.com	zeus.mycompany.com
+mktg.mycompany.com	venus.mycompany.com
+its.mycompany.com	aphrodite.mycompany.com
+sales.subsid.co.zz	mail-sales.subsid.co.zz
