@@ -40,6 +40,9 @@
 
     \lien {Detailed installation instructions} {install-2.1.html}.
 
+    You may also be interested in reading the \lien {\italique {topo}
+    module configuration documentation} {config-topo.html}.
+
     \titre {2} {Release notes and upgrade instructions}
 
     \lien {Release notes} {relnotes.html} explain differences with

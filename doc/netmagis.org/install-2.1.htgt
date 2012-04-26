@@ -1906,6 +1906,9 @@
 
     \titre {3} {Configuring Topo}
 
+    The \lien {Topo configuration documentation} {config-topo.html}
+    has all information to complete the Topo configuration.
+
     Congratulations! You've configured the \italique {topo} package.
     You can now consult your equipments, your network maps, and even
     modify interfaces of your equipments if you enabled this feature!

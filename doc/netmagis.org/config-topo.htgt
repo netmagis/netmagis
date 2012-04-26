@@ -310,6 +310,32 @@
 
     \titre {2} {Adding virtual equipments}
 
+    It may happen that some equipments do not fit the model described
+    above:
+    \liste {
+	\item {some equipments are not smart enough to have a
+	    configuration file
+	}
+	\item {some equipments are not under your responsability,
+	    so you don't have their password
+	}
+	\item {or their syntax is not recognized by the \italique {topo}
+	    package
+	}
+    }
+    If it happens, and this equipment is needed to complete the graph,
+    you have to build a \italique {virtual equipment}. Virtual equipments
+    are files (in the directory specified by the \teletype {virteqdir}
+    parameter of \teletype {netmagis.conf} file). Each file is a model
+    of the corresponding equipment.
+
+    Some example virtual equipments are available in the \teletype
+    {.../share/examples/eqvirt/} directory installed with the \italique
+    {topo} package. They are heavily commented.
+
+    The \teletype {.../lib/netmagis/topo/doteq} script is a convenient
+    way to graphically display the structure of a virtual (or real)
+    equipment. It can help you build your description and find bugs.
 
 }
 

@@ -40,6 +40,10 @@
 	
     \lien {Instructions d'installation détaillées} {/install-2.1.html}.
 
+    Vous pouvez aussi être intéressé par la lecture de la \lien
+    {documentation de configuration du module \italique {topo}}
+    {config-topo.html}.
+
     \titre {2} {Documentation de version et procédures de mise à jour}
 
     Les \lien {documentations de version} {relnotes.html} (en anglais)
