@@ -49,7 +49,7 @@
 	\item {Modify \lien {host types} {%URLREFHINFO%}}
 	\item {Modify \lien {networks} {%URLREFRESEAU%}}
 	\item {Modify \lien {domains} {%URLREFDOMAINE%}}
-	\item {Modify \lien {mail relays}{%URLADMMREL%} d'un domaine}
+	\item {Modify \lien {mail relays}{%URLADMMREL%} of a domain}
 	\item {Modify \lien {zones} {%URLREFZONE%}}
 	\item {Modify \lien {reverse IPv4 zones} {%URLREFZONE4%}}
 	\item {Modify \lien {reverse IPv6 zones} {%URLREFZONE6%}}
