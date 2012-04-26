@@ -192,6 +192,9 @@
     The \italique {group-name} should be referenced in the \teletype
     {network.txt} file. Each user must belong to one group only.
 
+    The group \teletype {wheel} is created, with admin privileges,
+    by default by the \teletype {netmagis-dbcreate} program when
+
     Each user is created in the authentication database if you enabled
     it. If you use LDAP authentication, it is assumed that your users
     already exist in your directory (the import program does not check
