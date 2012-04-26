@@ -427,7 +427,7 @@
 # CGI Scripts
 ::msgcat::mcmset fr {
  {force generation for zone %s} {forçage de la génération de la zone %s}
- {Cannot create group of orphaned users} {Impossible de créer le groupe des utilisateurs orphelins}
+ {Cannot create group of orphaned users} {Impossible de créer le groupe des utilisateurs orphelins (%s)}
  {New group creation} {Création d'un nouveau groupe}
  {Type the name of group to create} {Entrez le nom du groupe à créer}
  {Edition of group '%s'} {Édition du groupe '%s'}

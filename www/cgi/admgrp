@@ -768,9 +768,9 @@ d cgi-register {action mod} {
     if {$idorphan == -1} then {
 	set sql "INSERT INTO global.groupe
 				(nom, admin, droitsmtp, droitttl, droitmac, droitgenl)
-			    VALUES ('', 0, 0, 0, 0)"
+			    VALUES ('', 0, 0, 0, 0, 0)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    d error [mc "Cannot create group of orphaned users"]
+	    d error [mc "Cannot create group of orphaned users (%s)" $msg]
 	} 
 	pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = ''" tab {
 	    set idorphan $tab(idgrp)
