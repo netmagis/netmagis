@@ -1,0 +1,316 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda}
+\set {date}	{24/04/2012}
+
+\*******************************************************************************
+\partie {banniere} { \* Window title
+    Netmagis - Topo package configuration
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Topo configuration
+    } {
+	\elementbandeau {Contents} {
+	    \reference {\lien {What's new}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Specifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Download}	{/download.html}}
+	    \reference {\lien {Screenshots}	{/screenshots.html}}
+	    \reference {\lien {Demonstration}	{/demo.html}}
+	    \reference {\lien {Development}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Topo package configuration}
+
+    The \italique {topo} package is one of the most innovative parts of
+    the Netmagis software. This document describes its configuration.
+
+
+    \**********************************************************************
+
+    \titre {2} {Principles of operation}
+
+    \titre {3} {The topographd daemon}
+
+    The \teletype {topographd} daemon perform the following tasks:
+    \liste {
+	\item {it reads the vlan list from the database (that
+	    you manage via the \gras {Admin} / \gras {Modify VLANs} menu)
+	    and the equipment list (that you manage via the \gras {Admin}
+	    / \gras {Modify equipments} menu)
+	}
+	\item {it then generates a \teletype {router.db} file
+	    (under the format expected by the \lien {Rancid software}
+	    {http://www.shrubbery.net/rancid/}) and then calls
+	    this software to fetch all configuration files from your
+	    equipments
+	}
+	\item {it performs a syntactic analysis on the fetched
+	    configuration files to get a model of each equipment
+	}
+	\item {it then collects all "\italique {virtual equipments}"
+	    that you have designed in order to represent equipments
+	    which either are not fetchable via Rancid (equipments not
+	    smart enough, or equipments not administered by you) or are
+	    not analyzable by the \italique {topo} package
+	}
+	\item {from all these files (models from real equipments and
+	    models from virtual equipments), it builds a graph of the
+	    whole network, by joining links based on an information
+	    (link name) which must be set on each network interface
+	}
+	\item {if an error or an anomaly is detected, a mail is sent
+	    to the address you configured (via the \gras {Admin} / \gras
+	    {Application parameters} menu), and the error message is
+	    stored in the database (you can watch it with the \gras
+	    {Topo status} menu)
+	}
+	\item {the network graph is then copied to the \italique {www}
+	    server in order to present informations to users
+	}
+	\item {a sensor list is stored in the database, which will be
+	    used by the \italique {metro} package to initialize SNMP
+	    polling
+	}
+    }
+
+    Each time an equipment is modified, an event is reported either
+    to a syslog server or a Radius server. The \italique {detecteq}
+    package reports these events in the database. Other changes (such
+    as when the equipment or vlan list is modified in the database,
+    or a virtual equipment file is modified) are reported.
+
+    So, the network graph is rebuilt:
+    \liste {
+	\item {each time an equipment configuration is changed}
+	\item {each time the equipment list or vlan list is modified}
+	\item {each time a virtual equipment file is modified}
+    }
+    In addition to these events, the full network graph is rebuilt by
+    fetching all configuration files each night, between 2:00 and 4:00
+    AM (you can change these parameters via the \gras {Admin} / \gras
+    {Application parameters} menu)
+
+    \titre {3} {The Web application}
+
+    The web application, if the \italique {topo} package is enabled
+    (via the \gras {Admin} / \gras {Application parameters} menu), will
+    allow access to users based on authorizations specified in the \gras
+    {Admin} / \gras {Modify users and groups}.
+
+    Informations are accessed from the network by using some
+    specialized programs such as \teletype {dumpgraph}, \teletype
+    {extracteq}, \teletype {extractl2}, etc. These informations are
+    displayed graphically using the great \lien {Graphviz software}
+    {http://www.graphviz.org}.
+
+
+    \titre {3} {The toposendd daemon}
+
+    Each time a user is modifying an interface port configuration (VLAN,
+    description or sensor) (via \gras {Topology} / \gras {Equipments}
+    / \gras {Edit}), an information is added to a pool of waiting
+    modifications that you can watch by using the \gras {Topod status}
+    / \gras {Waiting changes} menu).
+
+    The \teletype {toposendd} daemon perform the following tasks:
+    \liste {
+	\item {it reads the queue of waiting changes}
+	\item {for each equipment which must be modified, it builds the
+	    string of configuration commands (that you can specify to
+	    your local taste with the \gras {Admin} / \gras {Modify
+	    configuration commands})
+	}
+	\item {it then sends the string of configuration commands to
+	    the equipment using the \lien {Rancid software}
+	    {http://www.shrubbery.net/rancid/} (and more specifically
+	    the \teletype {send*} parameters of \teletype
+	    {netmagis.conf}.
+	}
+	\item {when the configuration is sent, the equipment reports
+	    a modification via syslog or radius, and the \teletype
+	    {topographd} will notice it and rebuild the network graph.
+	}
+    }
+
+
+    \**********************************************************************
+
+    \titre {2} {Configuring your equipments}
+
+    \titre {3} {Principles}
+
+    The approach used by Netmagis differ from other software in that
+    Netmagis does not try do discover your topology, but it
+    uses informations that \italique {you} provide via equipment
+    configurations, between "&lt;" and "&gt;" in interface descriptions.
+
+    These informations are twofold:
+    \liste {
+	\item {Connectivity between equipments: you specifiy the same
+	    link number or name on both equipment interfaces. Since each
+	    interface must have such an information, edge ports of your
+	    network (those connected to hosts or servers) are marked
+	    with a special symbol.
+	}
+	\item {Metrology sensors: you can specify a SNMP poller (and
+	    associated database) with each interface or VLAN, which will
+	    be used by the \italique {metro} package.
+	}
+    }
+
+    \titre {3} {Link numbers}
+
+    Netmagis provides an easy way to get and keep track of link numbers:
+    if a group is authorized (via the \gras {Admin} / \gras {Modify users
+    and groups} / \gras {Permission to generate link numbers} item),
+    the \gras {Topology} / \gras {Link number} menu item generates a
+    sequential, unique id which you can use as a link number.
+
+    Insert link numbers or names prefixed with a "L" letter, bracketed
+    with "&lt;" and "&gt;", in the description of the interface on
+    each side of the link:
+
+    \retrait
+	\tableau {
+	    \* \taille {100}
+	    \bordure {1} {}
+	} {
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	    \casedefauttableau {
+		\centragehorizontal {LEFT}
+		\centragevertical {MIDDLE}
+	    }
+	} {
+	    \lignetableau {
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Equipment}}
+		\casetableau {\centragehorizontal {CENTER}} {\gras {Example}}
+	    }
+	    \lignetableau {
+		\casetableau {} {Juniper}
+		\casetableau {} {\teletype {ge-0/1/0 \{ \br
+			~ ~ description "blah blah &lt;L233&gt;; \br
+			\}
+		    }
+		}
+	    }
+	    \lignetableau {
+		\casetableau {} {Cisco}
+		\casetableau {} {\teletype {interface GigabitEthernet0/1\br
+		    ~ ~ description blah blah &lt;L233&gt;}}
+	    }
+	    \lignetableau {
+		\casetableau {} {HP}
+		\casetableau {} {\teletype {interface A1\br
+		    ~ ~ name "blah blah &lt;L233&gt;"}}
+	    }
+	}
+
+    \titre {3} {Edge ports}
+
+    Ports connected to individual hosts must be marked with a
+    "&lt;X\>" to indicate a terminal node in the graph.
+
+    \titre {3} {Metrology sensors}
+
+    In addition, sensors may be added in the same way with a letter "S".
+    Use a meaningful string. For example, you can use the link number
+    and add the name of the equipment to mark the viewpoint on this
+    metrology graph.
+
+    For example, on a Juniper equipment:
+
+    \retrait\teletype {description "blah blah &lt;L233
+	S233.this-router&gt;"}
+
+    You can add sensors on edge ports. The name of the sensor may be an
+    port name, or another string. For example on a Cisco switch:
+
+    \retrait\teletype {description blah blah &lt;X myswitch.boss-pc&gt;"}
+
+    Metrology sensor names are kept for a certain duration. If you change
+    the port of one host, you can use again the sensor name on the new
+    port (provided you make it disappear from the old port since sensor
+    names must be unique at one time). This way, you can preserve history.
+
+
+    \**********************************************************************
+
+    \titre {2} {Integrating your equipments into Netmagis}
+
+    \titre {3} {Enable topo}
+
+    To enable the \italique {topo} package, you must:
+
+    \liste {
+	\item {configure the application to enable the \italique {topo}
+	    package, via the \gras {Admin} / \gras {Application
+	    parameters} / \gras {Enable topo} item). You must also
+	    provide valid email addresses for the \teletype {topographd}
+	    email report.
+	}
+	\item {start the \teletype {topographd} daemon (and optionaly
+	    the \teletype {toposendd} daemon if you want to change port
+	    characteristics from the Web application).
+	}
+	\item {check the \gras {Topod status} page for running errors
+	}
+    }
+
+    \titre {3} {Inserting new equipments}
+
+    As described above (see \teletype {topographd} description), you
+    just have to add your equipment name in the equipment list (via the
+    \gras {Admin} / \gras {Modify equipments}).
+
+    Make sure that your equipments are registered as hosts in the
+    Netmagis database.
+
+
+    \titre {3} {Slow start}
+
+    It this is the first time you configure the Netmagis \italique
+    {topo} package, the suggested way is to:
+
+    \liste {
+	\item {modify an equipment configuration to have only edge
+	    ports (i.e. marked with "\teletype {&lt;X&gt;}")
+	}
+	\item {wait for the \teletype {topographd} daemon, and check
+	    the \gras {Topo} / \gras {Equipment} page
+	}
+	\item {change an interface for a link number, and add the remote
+	    equipment with all interfaces marked with "\teletype
+	    {&lt;X&gt;}" except the linked port.
+	}
+    }
+
+    This way, you can add the first equipments and correct errors as
+    soon as they occur.
+
+
+    \**********************************************************************
+
+    \titre {2} {Adding virtual equipments}
+
+
+}
+
+}

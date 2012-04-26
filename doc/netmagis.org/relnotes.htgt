@@ -51,18 +51,18 @@
 
     This release is the first since the initial Netmagis release in
     november 2011. It brings integration of two major tools (Metro and
-    Mac modules) and focuses on ease of installation, even if it
+    Mac packages) and focuses on ease of installation, even if it
     provides some other new and nice features.
 
     \liste {
-	\item {The Metro module is now integrated. If equipments
+	\item {The Metro package is now integrated. If equipments
 	    are configured with proper \italique {sensor names},
-	    the metrology module periodically polls them for traffic
+	    the metrology package periodically polls them for traffic
 	    information, and traffic graphs are available in the
 	    Netmagis Web interface.
 	
 	}
-	\item {The MAC module is now integrated. It register in the
+	\item {The MAC package is now integrated. It register in the
 	    Netmagis database (or another database if you fear performance
 	    problems) MAC-Ports associations as well as MAC-IP associations.
 	    These informations are available in the Netmagis Web interface.
@@ -81,7 +81,7 @@
 	    only one user, which will be used everywhere.
 
 	}
-	\item {Symbols used in L2 and L3 graphs (topology module) may now
+	\item {Symbols used in L2 and L3 graphs (topology package) may now
 	    be modified by the administrator through the Netmagis Web
 	    admin interface.
 
@@ -104,7 +104,7 @@
 
 	}
 	\item {The generated network graph built by the topology
-	    module is now copied from the topo server (by the \teletype
+	    package is now copied from the topo server (by the \teletype
 	    {topographd} program) to the www server (if they are distinct
 	    servers). This brings more performance to the Web application.
 
@@ -141,7 +141,7 @@
 	    been rewritten.
 
 	}
-	\item {Topo module has been integrated.
+	\item {Topo package has been integrated.
 
 	}
 	\item {Installation process is easier, by providing more

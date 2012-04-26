@@ -366,14 +366,14 @@
 
     \titre {2} {Initial PostgreSQL configuration}
 
-    On the host where you installed the \italique {database} module,
+    On the host where you installed the \italique {database} package,
     you should have a PostgreSQL server. The recommanded version is at
     least 9.1.
 
     You have to check that your PostgreSQL installation allow connections
     (and authenticate users with password) from hosts which act as
     clients of the Netmagis database (all hosts where you installed
-    a netmagis module). This is usually configured in file \teletype
+    a netmagis package). This is usually configured in file \teletype
     {pg_hba.conf} which is located in:
     \tableau {
 	\* \taille {100}
@@ -411,7 +411,7 @@
     \retrait\teletype {createuser --no-superuser --no-createrole --no-createdb --pwprompt dns}
 
     Even if you want to use a different database for the \italique
-    {mac} module, you can use the same user.
+    {mac} package, you can use the same user.
 
     \**********************************************************************
 
@@ -454,10 +454,10 @@
 	\lignetableau {
 	    \casetableau {} {macdb...}
 	    \casetableau {} {Information needed to connect to the
-		PostgreSQL server for the \italique {mac} module,
+		PostgreSQL server for the \italique {mac} package,
 		with an unprivileged user. If you don't want to use
 		a separate database, or if you don't want to use the
-		\italique {mac} module, use exactly the same values
+		\italique {mac} package, use exactly the same values
 		as for the the \teletype {dnsdb...} parameters.
 	    }
 	}
@@ -1607,6 +1607,9 @@
 
 	    Ports connected to individual hosts must be marked with a
 	    "&lt;X\>" to indicate a terminal node in the graph.
+
+	    A complete description of the \italique {topo} configuration
+	    is \lien {available on a separate page} {config-topo.html}.
 	}
 	\item {Configure \teletype {.../etc/netmagis.conf} on the
 	    \italique {topo} server:
@@ -1865,7 +1868,7 @@
 	    and go to the \gras {Admin} / \gras {Application parameters}
 	    menu. In this menu:
 	    \liste {
-		\item {activate the \italique {topo} module}
+		\item {activate the \italique {topo} package}
 		\item {change the "Default domain" value: the
 		    domain name of your network equipments}
 		\item {change the "Topo mail sender" value: you may
@@ -1878,7 +1881,7 @@
 		    {groupname}} alias you've previousely defined.
 		}
 	    }
-	    After activation of the \italique {topo} module, you will
+	    After activation of the \italique {topo} package, you will
 	    see a new \gras {Topology} entry in the left menu.
 	}
 	\item {Make sure that all your network equipments (and the
@@ -1903,9 +1906,10 @@
 
     \titre {3} {Configuring Topo}
 
-    Congratulations! You've configured the \italique {topology} module.
+    Congratulations! You've configured the \italique {topo} package.
     You can now consult your equipments, your network maps, and even
     modify interfaces of your equipments if you enabled this feature!
+
 
     \**********************************************************************
 
@@ -1929,7 +1933,7 @@
 	\item {\teletype {metrocreatedb} which creates metrology sensors
 	    based on the metrology collection points defined in the
 	    Netmagis database, resulting from equipement configuration
-	    fetching by the \italique {topo} module.
+	    fetching by the \italique {topo} package.
 	}
 	\item {\teletype {metropoller} which performs data collection
 	    for each sensor
@@ -2152,12 +2156,12 @@
 	\item {To activate a traffic sensor on an equipment interface,
 	    the only thing to do is to add information in the interface
 	    description on the equipment, as you have done with \italique
-	    {topo} module.
+	    {topo} package.
 
 	    This information is the string \gras {M} concatened with
 	    the name of the sensor. You can use any unique name for a
 	    sensor. For example, Netmagis authors use the link number
-	    (used with the \italique {topo} module) associated with the
+	    (used with the \italique {topo} package) associated with the
 	    name of the equipement (since a link number is present on
 	    each end of the link), but you can use your own convention.
 
@@ -2216,7 +2220,7 @@
 
 	}
 	\item {To collect ip-mac and port-mac session, you need to enable
-		the mac module in the application configuration in the Admin web interface.\br
+		the mac package in the application configuration in the Admin web interface.\br
 		To activate an ipmac sensor in your equipement
 	    configuration, you have to add information in the SNMP
 	    sysLocation description.
