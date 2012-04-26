@@ -5,10 +5,12 @@
 # configuration.
 #
 # Usage:
+#	doteq < eqvirt.eq | gv -
 #	analyze ... | doteq > /tmp/eq.ps
 #
 # History
 #   2007/07/16 : pda : design
+#   2012/04/26 : pda : remove comments in source file
 #
 
 proc dot-init {} {
@@ -94,6 +96,7 @@ proc main {argv0 argv} {
     prologue
 
     while {[gets stdin l] >= 0} {
+	regsub {[[:space:]]*#.*} $l {} l
 	switch [lindex $l 0] {
 	    eq {
 		array set t $l
