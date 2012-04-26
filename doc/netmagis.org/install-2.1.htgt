@@ -448,14 +448,14 @@
 	\lignetableau {
 	    \casetableau {} {dnsdb...}
 	    \casetableau {} {Information needed to connect to the
-		PostgreSQL server, with an unpriviledged user.
+		PostgreSQL server, with an unprivileged user.
 	    }
 	}
 	\lignetableau {
 	    \casetableau {} {macdb...}
 	    \casetableau {} {Information needed to connect to the
 		PostgreSQL server for the \italique {mac} module,
-		with an unpriviledged user. If you don't want to use
+		with an unprivileged user. If you don't want to use
 		a separate database, or if you don't want to use the
 		\italique {mac} module, use exactly the same values
 		as for the the \teletype {dnsdb...} parameters.

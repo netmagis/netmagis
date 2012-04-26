@@ -48,11 +48,11 @@
     First, make a backup of your existing Netmagis database.
 
     One of the changes in Netmagis 2.1 release is the use of only
-    one unpriviledged PostgreSQL user (the one you specified with the
+    one unprivileged PostgreSQL user (the one you specified with the
     parameter \teletype {dnsdbuser} in the \teletype {netmagis.conf}
     file). This simplifies considerably the installation, but the upgrade
     needs to take this into account: you need to transfer ownership of
-    the database to this unpriviledged user. Assuming this user is
+    the database to this unprivileged user. Assuming this user is
     called "\teletype {dns}":
 
     To do so:
@@ -64,7 +64,7 @@
 	}
 	\item {as the PostgreSQL administrator user (\teletype {pgsql}
 	    on FreeBSD, \teletype {postgres} on Linux), create the
-	    unpriviledged user:
+	    unprivileged user:
 	    \retrait\teletype {pgsql$ createuser --no-superuser --no-createrole
 		--no-createdb --pwprompt dns}
 	}
@@ -78,7 +78,7 @@
 		    {netmagis-database-name}}
 	    }
 	}
-	\item {as the unpriviledged user, restore the database contents:
+	\item {as the unprivileged user, restore the database contents:
 	    \retrait\teletype {$ psql -f /tmp/dns.dump \italique
 	    {netmagis-database-name}}
 	}
@@ -90,7 +90,7 @@
     \liste {
 	\item {Inspect the \teletype {upgrade.sql} script
 	}
-	\item {As the unpriviledged user, run this script:
+	\item {As the unprivileged user, run this script:
 	    \retrait\teletype {$ psql -f upgrade.sql \italique {netmagis-database-name}}
 	}
 	\item {Next, specify in \teletype {netmagis.conf} where you
@@ -127,7 +127,7 @@
 	    login names of users in the GRANT lines.
 
 	}
-	\item {As the priviledged user, run the \teletype {upgrade.sql}
+	\item {As the privileged user, run the \teletype {upgrade.sql}
 	    script on your existing database (have I already said that
 	    you should make a backup first?):
 
