@@ -78,7 +78,7 @@
 			    \casetableau {} {%DROITMAC%}
 			}
 			\lignetableau {
-			    \casetableau {} {Accès à la génération de numéro de lien}
+			    \casetableau {} {Accès à la génération de numéros de liens Topo}
 			    \casetableau {} {%DROITGENL%}
 			}
 		    }

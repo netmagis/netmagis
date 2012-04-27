@@ -78,7 +78,7 @@
 			    \casetableau {} {%DROITMAC%}
 			}
 			\lignetableau {
-			    \casetableau {} {Permission to generate link numbers}
+			    \casetableau {} {Permission to generate Topo link numbers}
 			    \casetableau {} {%DROITGENL%}
 			}
 		    }
