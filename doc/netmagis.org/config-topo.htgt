@@ -326,8 +326,10 @@
     If it happens, and this equipment is needed to complete the graph,
     you have to build a \italique {virtual equipment}. Virtual equipments
     are files (in the directory specified by the \teletype {virteqdir}
-    parameter of \teletype {netmagis.conf} file). Each file is a model
-    of the corresponding equipment.
+    parameter of \teletype {netmagis.conf} file). Each file is a model of
+    the corresponding equipment. You do not need to add this equipment
+    to the equipment list in database, since \teletype {topographd}
+    will automatically detect the file in your virtual equipment directory.
 
     Some example virtual equipments are available in the \teletype
     {.../share/examples/eqvirt/} directory installed with the \italique
