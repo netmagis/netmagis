@@ -88,7 +88,7 @@
 		\casetableau {
 		    \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
-		} {\gras {Membres of the group}}
+		} {\gras {Members of the group}}
 	    }
 	    \lignetableau {
 		\casetableau {} {To remove a user, just delete
