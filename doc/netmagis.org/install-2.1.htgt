@@ -751,6 +751,13 @@
 
     \**********************************************************************
 
+    \titre {2} {Configuring Netmagis}
+
+    Documentation about common tasks in Netmagis configuration is provided
+    in a \lien {separate page} {config-netmagis.html}.
+
+    \**********************************************************************
+
     \titre {2} {Utils package installation}
 
     The \italique {utils} package is optional: it contains commands

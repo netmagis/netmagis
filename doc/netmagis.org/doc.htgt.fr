@@ -38,11 +38,18 @@
 
     \titre {2} {Documentation d'installation}
 	
-    \lien {Instructions d'installation détaillées} {/install-2.1.html}.
+    \lien {Instructions d'installation détaillées} {/install-2.1.html}
+    pour la version 2.1.
 
-    Vous pouvez aussi être intéressé par la lecture de la \lien
-    {documentation de configuration du module \italique {topo}}
-    {config-topo.html}.
+    Vous pouvez également être intéressé par la lecture de
+    \liste {
+	\item {le \lien {guide de configuration de Netmagis}
+	    {config-netmagis.html}~;
+	}
+	\item {la \lien {documentation de configuration du module
+	    \italique {topo}} {config-topo.html}.
+	}
+    }
 
     \titre {2} {Documentation de version et procédures de mise à jour}
 

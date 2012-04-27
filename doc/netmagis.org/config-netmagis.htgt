@@ -1,0 +1,159 @@
+{
+\modele {texte}
+
+\set {auteur}	{pda}
+\set {date}	{27/04/2012}
+
+\*******************************************************************************
+\partie {banniere} { \* Window title
+    Netmagis - Configuration
+}
+
+\*******************************************************************************
+\partie {titrepage} { \* Titre de la page
+    Netmagis
+}
+
+\*******************************************************************************
+\bandeau {
+	Configuration
+    } {
+	\elementbandeau {Contents} {
+	    \reference {\lien {What's new}	{/news.html}}
+	    \reference {\lien {Introduction}	{/intro.html}}
+	    \reference {\lien {Specifications}	{/spec.html}}
+	    \reference {\lien {Documentation}	{/doc.html}}
+	    \reference {\lien {Support}		{/support.html}}
+	    \reference {\lien {Download}	{/download.html}}
+	    \reference {\lien {Screenshots}	{/screenshots.html}}
+	    \reference {\lien {Demonstration}	{/demo.html}}
+	    \reference {\lien {Development}	{/dev.html}}
+	}
+}
+
+\*******************************************************************************
+\partie {texte} { \* Le texte proprement dit
+
+    \titre {1} {Netmagis configuration}
+
+    This documentation aims to help you in various day to day
+    configuration tasks.
+
+
+    \**********************************************************************
+
+    \titre {2} {Users and group management}
+
+    \titre {3} {LDAP or internal authentication ?}
+
+    A Netmagis user is based on two distinct concepts:
+    \liste {
+	\item {for Netmagis, a \italique {user} is just a login name
+	    with a few attributes such as the group membership. Access
+	    rights such as authorized networks, allowed IPv4 and IPv6
+	    addresses, and so on are related to the group.
+	}
+	\item {for the authentication subsystem (LDAP directory or
+	    internal PostgreSQL authentication), an \italique {account}
+	    is characterized by a login name, a name, a postal address,
+	    a telephone number, etc. Netmagis will fetch such informations
+	    from your authentication directory.
+	}
+    }
+    The login name is the only information common to the two concepts.
+
+    Consequently, a creation of a user must be handled differently
+    depending on whether you use LDAP or internal authentication:
+    \liste {
+	\item {If you use an LDAP directory, you must create the account
+	    through your usual LDAP tools, then you attach this login
+	    to an existing Netmagis group with the \gras {Admin} /
+	    \gras {Modify users and groups} menu.
+	}
+	\item {if you use the internal PostgreSQL authentication, you
+	    must first create the account with the \gras {Internal auth}
+	    / \gras {Add account} item. If you want to create a
+	    privileged account (i.e. which has rights to create new
+	    accounts), add the \teletype {authadmin} realm.
+	    Then, you can attach the created login to an existing
+	    Netmagis group with the \gras {Admin} / \gras {Modify users
+	    and groups} menu.
+	}
+    }
+
+    Note: with internal PostgreSQL authentication, you may use realms
+    to delimit parts of your web server. For example, you may allow
+    access to some documentations to some realm of users and some
+    other documentations to another realm. Netmagis, in the default
+    configuration, requires only a valid user (see the example \teletype
+    {auth-pgsql.conf} file provided with the \italique {www} package),
+    but you may change this.
+
+    Accounts and users can be independantly added or removed. If you
+    delete an account, the user is still present in the database, but
+    (s)he can't log-in. If you delete a user and keep the account,
+    (s)he can login but (s)he don't have any access.
+
+
+    \titre {3} {Users and groups}
+
+    You manage Netmagis users via the \gras {Admin} / \gras {Modify
+    users and groups} menu.
+
+    Adding a user is as simple as adding the login to the members of the
+    group. Removing a user is as simple as removing the login from the
+    members of the group. However, a user is not really removed from the
+    database if its name is attached to some hosts (each resource record
+    in the database stores the date and author of last modification):
+    in this case, the user is moved to a "group of orphaned users" which
+    do not have any access rights (and no name, so you can not normally
+    see it).
+
+    Moving a user from an old group to a new group is as simple as
+    removing it from the old group and add it to the new group.
+
+
+    \**********************************************************************
+
+    \titre {2} {Domain management}
+
+    Domain management is done with the \gras {Admin} / \gras {Modify
+    domains}: with this menu item, you can add, rename or remove domains
+    from the referential data.
+
+    Once a domain is added, you have to add it to each group that need
+    access to it, with a "sort order" (order in domain menus, for example
+    in host addition), and a "mail role" right (if you use Netmagis mail
+    routing). The "web role" right is not used at this time.
+
+    Don't forget to add a DNS zone for this domain (via the \gras {Admin}
+    / \gras {Modify zones} menu), as well as the corresponding zone on
+    your DNS servers.
+
+
+    \**********************************************************************
+
+    \titre {2} {Network management}
+
+    \titre {3} {Create a network}
+
+    \titre {3} {Allow access to the network}
+
+    \titre {3} {Remove, merge or split networks}
+
+
+    \**********************************************************************
+
+    \titre {2} {DHCP management}
+
+    \titre {3} {Make your networks DHCP aware}
+
+    \titre {3} {Allow access to DHCP}
+
+    \titre {3} {DHCP profiles management}
+
+
+
+}
+
+}
