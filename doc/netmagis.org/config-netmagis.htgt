@@ -119,7 +119,7 @@
 
     Domain management is done with the \gras {Admin} / \gras {Modify
     domains}: with this menu item, you can add, rename or remove domains
-    from the referential data.
+    from the reference data.
 
     Once a domain is added, you have to add it to each group that need
     access to it, with a "sort order" (order in domain menus, for example
@@ -135,12 +135,84 @@
 
     \titre {2} {Network management}
 
+    Network management is done with the \gras {Admin} / \gras {Modify
+    networks}: with this menu item, you can add, edit or remove networks
+    from the reference data.
+
     \titre {3} {Create a network}
+
+    Each network has the following attributes:
+    \liste {
+	\item {Name: a short name, used for example with IP address when
+	    you select a network for viewing it
+	}
+	\item {Location: use it as a comment}
+	\item {IPv4 address, IPv4 gateway, IPv6 address, IPv6 gateway:
+	    informations about the network. Please note that IPv4 gateway
+	    is only used by Netmagis to provide a default router in the
+	    DHCP configuration for this network. IPv6 gateway is not
+	    used. It may be interresting to give values to the gateway
+	    attributes (both IPv4 and IPv6) to have some reference data.
+	}
+	\item {DHCP enabled: check this box to enable DHCP configuration
+	    for this network.
+	}
+	\item {Organization, Community: these two attributes refer
+	    reference data (that you may modify via the corresponding
+	    \gras {Admin} sub-menu). You may use the community as you
+	    want.
+	}
+	\item {Comment: a comment about the network}
+    }
+
+    A good practice is to respect the "broadcast domain". A single network
+    should match a single broadcast domain. If you have been allocated a
+    /24 IPv4 network and you have choosen to split it in 4 /26 networks,
+    declare 4 networks in the Netmagis database.
+
+    Once a network is created, you must allow access to all groups that
+    need it.
 
     \titre {3} {Allow access to the network}
 
+    With the \gras {Admin} / \gras {Modify users and groups}, you can
+    grant access to the newly created network.
+
+    Access to a network is granted by two sections:
+    \liste {
+	\item {The "Allowed networks" section allow network appearance
+	    in menus (such as in the \gras {Consult} page). The "sort
+	    class" gives the order of network in such menus. The "DHCP
+	    management" allows this group to manage dynamic DHCP ranges,
+	    and "ACL management" is currently not used.
+	}
+	\item {The "IP access rights" section define allowed IPv4 and
+	    IPv6 addresses for this group. You can tune very precisely
+	    allowed and forbidden addresses.
+	}
+    }
+
+
     \titre {3} {Remove, merge or split networks}
 
+    In order to delete a network, you must remove it from every group
+    allowed to reference it ("Allowed networks" section). You should also
+    remove corresponding "IP access rights", even if it is not mandatory.
+
+    Next, you can remove the network from the \gras {Admin} / \gras
+    {Modify networks} menu.
+
+    If you want to merge two networks (for example assemble two /25
+    networks to get one /24 network), you have to delete one of them
+    as described above, and adjust the remaining network in the \gras
+    {Admin} / \gras {Modify networks} menu. Next, you have to adapt all
+    IP access rights in groups.
+
+    If you want to split a network into two new networks, go to the
+    \gras {Admin} / \gras {Modify networks}, adjust the old network to
+    become one of the new networks, and add the other new network. Then,
+    you have to adjust all groups using the old network, and grant access
+    rights to all groups using the new networks.
 
     \**********************************************************************
 
