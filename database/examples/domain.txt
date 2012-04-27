@@ -22,8 +22,8 @@
 #
 
 mycompany.com		ALLBUT	10	subsid plant
-plant2.mycompany.com	SET	10	plant
-plant2.mycompany.com	SET	30	wheel tech
+plant1.mycompany.com	SET	10	plant
+plant1.mycompany.com	SET	30	wheel tech
 
 myevent.org		SET	20	mktg wheel
 
