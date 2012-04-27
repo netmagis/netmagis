@@ -541,7 +541,7 @@ d cgi-register {action edit} {
     pg_select $dbfd $sql tab {
 	set res [format "%s\t%s\t(%s)" \
 			    $tab(adr4) $tab(adr6) \
-			    [::webapp::html-string $tab(nom)] \
+			    $tab(nom) \
 			]
 	lappend lres [list $tab(idreseau) $res]
 	set idxreseau($tab(idreseau)) $idx
