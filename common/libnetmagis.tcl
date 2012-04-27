@@ -6368,7 +6368,8 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
 	}
 	if {$col in {login nom prenom mel tel adr mobile fax}} then {
 	    lappend sqlsort "pgauth.user.$col $way"
-	    lappend sqldistinct "pgauth.user.$col"
+# XXX : I don't understand why I used this distinct clause
+#	    lappend sqldistinct "pgauth.user.$col"
 	}
     }
     if {[llength $sqlsort] == 0} then {
@@ -7751,7 +7752,7 @@ proc pgauth-ac-search-crit {_e _ftab} {
 	}
     } else {
 	set lr $e(realms)
-	if {[llength $lg] == 0} then {
+	if {[llength $lr] == 0} then {
 	    pgauth-lsrealm $e(dbfd) tabrlm
 	    set lr [array names tabrlm]
 	}

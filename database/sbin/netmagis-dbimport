@@ -321,17 +321,20 @@ proc import-group {verbose argv dbfd} {
     read-group $file tabgrp
 
     #
-    # Read group and user definition from database
+    # Read group, user, realm and account definition from database
     #
     
     pg_select $dbfd "SELECT * FROM global.groupe" tab {
 	set refg($tab(nom)) $tab(idgrp)
     }
     pg_select $dbfd "SELECT * FROM global.corresp" tab {
-	set refc($tab(login)) [list $tab(idcor) $tab(idgrp)]
+	set refu($tab(login)) [list $tab(idcor) $tab(idgrp)]
     }
     pg_select $dbfd "SELECT * FROM pgauth.user" tab {
-	set refu($tab(login)) ""
+	set refa($tab(login)) {}
+    }
+    pg_select $dbfd "SELECT * FROM pgauth.member" tab {
+	lappend refa($tab(login)) $tab(realm)
     }
 
     #
@@ -365,8 +368,8 @@ proc import-group {verbose argv dbfd} {
     foreach g [array names tabgrp] {
 	set idgrp $refg($g)
 	foreach c $tabgrp($g) {
-	    if {[info exists refc($c)]} then {
-		lassign $refc($c) idcor idg
+	    if {[info exists refu($c)]} then {
+		lassign $refu($c) idcor idg
 		if {$idg != $idgrp} then {
 		    lappend sql "UPDATE global.corresp
 					SET idgrp = $idgrp
@@ -396,17 +399,25 @@ proc import-group {verbose argv dbfd} {
     set am [dnsconfig get "authmethod"]
     if {$am eq "pgsql"} then {
 	set rlm [dnsconfig get "authpggroupes"]
+	set qrlm [::pgsql::quote $rlm]
 	set sql {}
 	foreach g [array names tabgrp] {
 	    foreach c $tabgrp($g) {
-		if {! [info exists refu($c)]} then {
+		if {! [info exists refa($c)]} then {
 		    set p [pgauth-genpw]
 		    puts stderr "Password for user '$c' is '$p'."
 		    set pc [pgauth-crypt $p]
 		    set qc [::pgsql::quote $c]
 		    set qpc [::pgsql::quote $pc]
-		    lappend sql "INSERT INTO pgauth.user (login, password)
-					VALUES ('$qc', '$qpc')"
+		    lappend sql "INSERT INTO pgauth.user (login, password,
+								nom, prenom)
+					VALUES ('$qc', '$qpc', 'User', 'Joe')"
+		    set refa($c) {}
+		}
+		if {[lsearch -exact $refa($c) $rlm] == -1} then {
+		    lappend sql "INSERT INTO pgauth.member (login, realm)
+					VALUES ('$qc', '$qrlm')"
+		    lappend refa($c) $rlm
 		}
 	    }
 	}
