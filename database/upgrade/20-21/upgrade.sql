@@ -16,6 +16,16 @@ COPY global.config (clef, valeur) FROM stdin;
 pageformat	a4
 \.
 
+ALTER FUNCTION soundex (TEXT) SET SCHEMA pgauth ;
+ALTER FUNCTION add_soundex () SET SCHEMA pgauth ;
+DROP TRIGGER phnom ;
+CREATE TRIGGER phnom
+	BEFORE INSERT OR UPDATE
+	ON pgauth.user
+	FOR EACH ROW
+	EXECUTE PROCEDURE pgauth.add_soundex ()
+	;
+
 DROP TABLE topo.cache ;
 
 CREATE SEQUENCE topo.seq_confcmd START 1;

@@ -6326,7 +6326,7 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
 		}
 
 		if {$c eq "phnom" || $c eq "phprenom"} then {
-		    lappend clauses "$table.$c = SOUNDEX('$re')"
+		    lappend clauses "$table.$c = pgauth.soundex('$re')"
 		} elseif {$c eq "realm"} then {
 		    set or {}
 		    foreach r $tabcrit(realm) {
@@ -7333,7 +7333,7 @@ proc pgauth-ac-display-choice {_e lusers action} {
 					[list "login" $login] \
 				    ]
 	    set url [d urlget ""]
-	    set urllogin [::webapp:helem "a" $hlogin "href" $url]
+	    set urllogin [::webapp::helem "a" $hlogin "href" $url]
 	    set myrealms [pgauth-ac-my-realms e $tab(realms)]
 	    lappend lines [list "User" \
 					$urllogin "$tab(nom) $tab(prenom)" \
