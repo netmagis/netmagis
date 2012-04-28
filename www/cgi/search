@@ -215,10 +215,24 @@ d cgi-register {crit .+} {} {
     global conf
 
     #
-    # Is criterion an IP address, a host name, anything else?
+    # Is criterion a MAC addres, an IP address, a host name, anything else?
     #
 
-    if {[check-ip-syntax $dbfd $crit "inet"] eq ""} then {
+    if {[check-mac-syntax $dbfd $crit] eq ""} then {
+	#
+	# MAC address
+	#
+	set addr ""
+
+	#
+	# Attempt to search for the host. It if exists, trr will
+	# be filled. If it does not exists, trr will not be created.
+	# We don't test result, since existence of trr(idrr) will
+	# suffice for next steps.
+	#
+	read-rr-by-mac $dbfd $crit trr
+
+     } elseif {[check-ip-syntax $dbfd $crit "inet"] eq ""} then {
 	#
 	# IP address
 	#

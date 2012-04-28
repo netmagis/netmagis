@@ -3017,6 +3017,42 @@ proc read-rr-by-name {dbfd name iddom _trr} {
 }
 
 #
+# Get all informations associated with a RR given by the MAC Address
+#
+# Input:
+#   - parameters:
+#       - dbfd : database handle
+#       - addr : address to search for
+#       - _trr : empty array
+# Output:
+#   - return value: 1 if ok, 0 if not found
+#   - _trr parameter : see read-rr-by-id
+#
+# Note: the given address is supposed to be syntaxically correct.
+#
+# History
+#   2012/04/28 : jean : integrated patch from Benoit.Mandy@u-bordeaux4.fr
+#
+
+proc read-rr-by-mac {dbfd addr _trr} {
+    upvar $_trr trr
+
+    set found 0
+    set sql "SELECT idrr FROM dns.rr WHERE mac = '$addr'"
+    pg_select $dbfd $sql tab {
+	set found 1
+	set idrr $tab(idrr)
+    }
+
+    if {$found} then {
+	set found [read-rr-by-id $dbfd $idrr trr]
+    }
+
+    return $found
+}
+
+
+#
 # Get all informations associated with a RR given by one of its IP address
 #
 # Input:
