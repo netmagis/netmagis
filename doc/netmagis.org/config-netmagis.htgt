@@ -113,6 +113,22 @@
     removing it from the old group and add it to the new group.
 
 
+    \titre {3} {Hint: substitute user}
+
+    This configuration guide often tells you to add an attribute to a
+    group. Netmagis allows administrators to substitute for another user
+    in order to see what she/he sees. In order to use this facility,
+    append the following string to a Netmagis URL:
+    \retrait{\teletype {?uid=}\italique {login} ~ ~ or
+	~ ~ \teletype {\&uid=}\italique {login}}
+    depending on the context. For example:
+    \retrait\teletype {http://yourhost/netmagis/index?uid=joe}
+
+    Using this facility, you may easily check exact rights that group
+    members have.
+
+
+
     \**********************************************************************
 
     \titre {2} {Domain management}
@@ -218,13 +234,67 @@
 
     \titre {2} {DHCP management}
 
+    Netmagis may be used to generate an ISC DHCP file for all your static
+    or dynamic IPv4 allocations. In order to do that, you have to:
+    \liste {
+	\item {configure a \lien {DHCP daemon}
+	    {http://www.isc.org/software/dhcp}	on a server, and enable
+	    DHCP relay on your routers}
+	\item {enable DHCP on the network in Netmagis}
+	\item {allow access to DHCP management for some groups}
+    }
+
+    In addition, you may create DHCP profiles, for example for network
+    booting (X11 or RDP terminals, printers, diskless hosts, etc.).
+
     \titre {3} {Make your networks DHCP aware}
 
-    \titre {3} {Allow access to DHCP}
+    In the \gras {Admin} / \gras {Modify networks} menu, check the box
+    "DHCP enabled". This will enable ISC DHCP file generation of hosts
+    for this network. Once you do that:
+    \liste {
+	\item {every host with an IP address in this network and a
+	    declared MAC address will have a static IP allocation
+	}
+	\item {every DHCP range in this network will have a
+	    corresponding dynamic allocation
+	}
+    }
+
+    \titre {3} {Allow access to DHCP management}
+
+    You need to allow access to DHCP management for some groups if you
+    want these groups to be able to manage dynamic ranges. To do that,
+    go to the \gras {Admin} / \gras {Modify users and groups}, and check
+    the box "DHCP management" in the "Allowed networks" section.
+    
+    Once enabled, group members will be able to use the \gras {DHCP
+    ranges} menu.
 
     \titre {3} {DHCP profiles management}
 
+    DHCP profiles management is only allowed for the groups having the
+    \gras {Admin} privilege (usually the \teletype {wheel} group). The
+    reason behind this is that an error (such as a syntax error, a
+    forgotten semicolon or anything similar) may be fatal to the DHCP
+    daemon. So, management of DHCP profiles is reserved to people which
+    should be able to recover from DHCP daemon errors.
 
+    In order to create a DHCP profile, you have to go to the \gras {Admin}
+    / \gras {Modify DHCP profiles} menu. Give a meaningful name for
+    the profile (it will appear in host addition menu) and type in the
+    corresponding configuration lines (with the \lien {ISC DHCP daemon
+    syntax} {http://www.isc.org/software/dhcp}).
+
+    Next, go the \gras {Admin} / \gras {Modify users and groups}, and
+    add a sort class to the newly created DHCP profile (sort class will
+    be used to give an order to profiles in the corresponding menu).
+
+    Then, members of this group can access the newly created DHCP profile
+    in the \gras {Add} host menu.
+
+    To remove a DHCP profile, as with other Netmagis objects, you have
+    to delete it from allowed users first.
 
 }
 
