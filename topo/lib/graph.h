@@ -208,9 +208,12 @@ struct symtab *symtab_get (char *name) ;
 IP address datatypes and functions
 ******************************************************************************/
 
+#define INET4 1
+#define INET6 2
+
 struct cidr46
 {
-    int family ;			/* AF_INET or AF_INET6 */
+    int family ;			/* INET4 or INET6 */
     union
     {
 	struct in_addr adr4 ;

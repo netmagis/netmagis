@@ -50,7 +50,7 @@ int ip_pton (char *text, ip_t *cidr)
 			cidr->preflen = 32 ;
 		    else if (cidr->preflen > 32)
 			r = 0 ;
-		    cidr->family = AF_INET ;
+		    cidr->family = INET4 ;
 		    break ;
 		default :		/* not possible... */
 		    r = 0 ;
@@ -62,7 +62,7 @@ int ip_pton (char *text, ip_t *cidr)
 		cidr->preflen = 128 ;
 	    else if (cidr->preflen > 128)
 		r = 0 ;
-	    cidr->family = AF_INET6 ;
+	    cidr->family = INET6 ;
 	    break ;
 	default :			/* not possible... */
 	    r = 0 ;
@@ -84,10 +84,10 @@ int ip_ntop (ip_t *cidr, iptext_t text, int prefix)
     size = sizeof (iptext_t) ;
     switch (cidr->family)
     {
-	case AF_INET :
+	case INET4 :
 	    p = inet_ntop (AF_INET, &cidr->u.adr4, text, size) ;
 	    break ;
-	case AF_INET6 :
+	case INET6 :
 	    p = inet_ntop (AF_INET6, &cidr->u.adr6, text, size) ;
 	    break ;
 	default :
@@ -111,10 +111,10 @@ int ip_equal (ip_t *adr1, ip_t *adr2)
     {
 	switch (adr1->family)
 	{
-	    case AF_INET :
+	    case INET4 :
 		r = ! bcmp (&adr1->u.adr4, &adr2->u.adr4, sizeof adr1->u.adr4) ;
 		break ;
-	    case AF_INET6 :
+	    case INET6 :
 		r = ! bcmp (&adr1->u.adr6, &adr2->u.adr6, sizeof adr1->u.adr6) ;
 		break ;
 	}
@@ -188,10 +188,10 @@ int ip_match (ip_t *adr, ip_t *network, int prefix)
 
     switch (network->family)
     {
-	case AF_INET :
+	case INET4 :
 	    r = prefix_match (&adr->u.adr4, &network->u.adr4, network->preflen) ;
 	    break ;
-	case AF_INET6 :
+	case INET6 :
 	    r = prefix_match (&adr->u.adr6, &network->u.adr6, network->preflen) ;
 	    break ;
 	default :
@@ -212,10 +212,10 @@ void ip_netof (ip_t *srcadr, ip_t *dstadr)
     dstadr->family = srcadr->family ;
     dstadr->preflen = srcadr->preflen ;
 
-    s = (srcadr->family == AF_INET) ?
+    s = (srcadr->family == INET4) ?
 			    (unsigned char *) &srcadr->u.adr4 :
 			    (unsigned char *) &srcadr->u.adr6 ;
-    d = (dstadr->family == AF_INET) ?
+    d = (dstadr->family == INET6) ?
 			    (unsigned char *) &dstadr->u.adr4 :
 			    (unsigned char *) &dstadr->u.adr6 ;
 
