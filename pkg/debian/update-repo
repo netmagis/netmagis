@@ -1,0 +1,49 @@
+#!/bin/sh
+
+if [ $# -ne 3 ]
+then
+	echo "Usage: $0 version pkgdir repodir" >&2
+	exit 1
+fi
+
+VERSION="$1"
+PKGDIR="$2"
+REPODIR="$3"
+
+BINSFX="dists/stable/main"
+BINDIR="$REPODIR/$BINSFX"
+
+# Check repository consistency
+if [ \! -d $BINDIR ]
+then
+    echo "Directory $BINDIR does not exist" >&2
+    exit 1
+fi
+
+# Check for packages
+for i in common database metro servers topo utils www 
+do
+    if ls $PKGDIR | grep -q "netmagis-${i}_$VERSION-.*\.deb"
+    then :
+    else
+	echo "Package $PKGDIR/netmagis-${i}_$VERSION-*.deb not found" >&2
+	exit 1
+    fi
+done
+
+# Guess architectures
+arch=`ls $PKGDIR|sed -n "/netmagis-.*_$VERSION-.*_\(.*\)\.deb/s//\1/p"|sort -u`
+
+# Copy packages
+for a in $arch
+do
+    mkdir -p $BINDIR/binary-$a
+    cp $PKGDIR/netmagis-*_$VERSION-*_$a.deb $BINDIR/binary-$a
+
+    # Generate Packages.gz relative to the debian directory
+    (
+	cd $REPODIR
+	/usr/bin/dpkg-scanpackages $BINSFX/binary-$a | \
+	    gzip -9 > $BINSFX/binary-$a/Packages.gz
+    )
+done

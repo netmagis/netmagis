@@ -2,6 +2,9 @@ DESTDIR		=
 
 PREFIX		= /local/netmagis
 
+# Debian repository path
+REPODIR		= /local/repo
+
 # Standard OS directories
 BINDIR		= $(PREFIX)/bin
 SBINDIR		= $(PREFIX)/sbin
@@ -64,6 +67,8 @@ usage:
 	@echo "	distrib"
 	@echo "	freebsd-ports"
 	@echo "	debian-packages"
+	@echo "	debian-build"
+	@echo "	debian-repo"
 	@echo "	clean"
 	@echo "	nothing"
 
@@ -142,6 +147,9 @@ debian-build:
 	cd pkg/debian ; make VERSION=$(VERSION) build
 	@echo
 	@echo "Please cd to "pkg/debian" and install the .deb files with gdebi"
+
+debian-repo:
+	pkg/debian/update-repo $(VERSION) pkg/debian $(REPODIR)
 
 clean:
 	cd common ; make clean
