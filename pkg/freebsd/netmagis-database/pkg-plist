@@ -18,11 +18,11 @@ sbin/netmagis-maint
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/upgrade/20-21/upgrade.sql
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/1.168.192.in-addr.arpa
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/16.172.in-addr.arpa
-%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/4.3.2.1.0.6.6.0.1.0.0.2.ip6.arpa
-%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/bidon.org
-%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/esiatf.fr
-%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/labo2.univ-machin.fr
-%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/univ-machin.fr
+%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/4.3.2.1.6.6.0.1.0.0.2.ip6.arpa
+%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/mycompany.com
+%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/myevent.org
+%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/plant1.mycompany.com
+%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/subsid.co.zz
 @dirrmtry var/netmagis/dbdump
 @dirrmtry var/netmagis
 @dirrmtry var
