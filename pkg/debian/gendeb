@@ -112,7 +112,7 @@ cd $DIR
 # Prepare debian directory and backup orig file
 dh_make -m -p netmagis_${VERSION} -f ../$TGZ </dev/null
 
-# Remove templates
+# Remove unused templates
 rm -f debian/*.EX debian/*.ex
 
 # Copy debian files
@@ -121,11 +121,18 @@ do
     sed $SUBST ../$i > debian/$i
 done
 
-# Generate install files
+# Generate install files from FreeBSD ports
 for i in $PORTSDIR/netmagis-*/pkg-plist
 do
     pkgname=`echo $i | sed 's|.*/\(netmagis-[a-z]*\)/pkg-plist$|\1|'`
     geninstall $i debian/$pkgname.install
 done
+
+# Add init scripts to install files (from FreeBSD ports)
+# These scripts will be copied in the "build" directory by the "rules" makefile
+cat >> debian/netmagis-topo.install <<EOF
+etc/init.d/topographd
+etc/init.d/toposendd
+EOF
 
 debuild -us -uc
