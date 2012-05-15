@@ -113,17 +113,17 @@ node rtr:v2-789 type L2 eq rtr vlan 789 stat - desc - ifname - native 0
 #
 
 node rtr:intercov4 type L3 eq rtr addr 192.168.1.254/24
-node rtr:intercov6 type L3 eq rtr addr 2001:660:1234:4000::1/64
+node rtr:intercov6 type L3 eq rtr addr 2001:db8:1234:4000::1/64
 
 node rtr:i123v4    type L3 eq rtr addr 172.16.1.254/24
-node rtr:i123v6    type L3 eq rtr addr 2001:660:1234:4001::1/64
+node rtr:i123v6    type L3 eq rtr addr 2001:db8:1234:4001::1/64
 
 node rtr:i456v4    type L3 eq rtr addr 172.16.11.254/24
-node rtr:i456v6    type L3 eq rtr addr 2001:660:1234:4011::1/64
+node rtr:i456v6    type L3 eq rtr addr 2001:db8:1234:4011::1/64
 
 node rtr:i789v4    type L3 eq rtr addr 172.16.12.254/24
 # no IPv6 is routed through this vlan
-# node rtr:i789v6    type L3 eq rtr addr 2001:660:1234:4012::1/64
+# node rtr:i789v6    type L3 eq rtr addr 2001:db8:1234:4012::1/64
 
 
 ###############################################################################

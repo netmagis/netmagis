@@ -34,7 +34,7 @@
 	Domain name.
 
 	Exemple~:
-	    \retrait {\verbatim {mycompany.com}}
+	    \retrait {\verbatim {example.com}}
 }
 
 }

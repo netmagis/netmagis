@@ -676,7 +676,7 @@ proc cisco-parse-native-vlan {active line tab idx} {
 
 #
 # Entrée :
-#   - line = "130.79.15.82 255.255.255.0 [secondary]"
+#   - line = "172.16.15.82 255.255.255.0 [secondary]"
 #   - idx = eq!<eqname>
 #   - tab(eq!<nom eq>!current!if) <ifname>
 # Remplit
@@ -718,7 +718,7 @@ proc cisco-parse-ip-address {active line tab idx} {
 
 #
 # Entrée :
-#   - line = "2001:660::/48 [secondary]"
+#   - line = "2001:db8::/48 [secondary]"
 #   - idx = eq!<eqname>
 #   - tab(eq!<nom eq>!current!if) <ifname>
 # Remplit

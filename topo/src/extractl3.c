@@ -19,14 +19,14 @@ cloud domaine-broadcast-1 \
 	{cidr v4 et v6 de tous les réseaux}
 
 # link to a cloud
-link crc-rc1:adm ge-4/5/6.18 {130.79.201.253 2001:660....} \
+link crc-rc1:adm ge-4/5/6.18 {172.16.201.253 2001:db8....} \
 	L103 \
 	domaine-broadcast-1
 
 # direct link between equipements
-direct crc-rc1:_v4 ge-0/0/0.7 {130.79.201.253 2001:660....} \
+direct crc-rc1:_v4 ge-0/0/0.7 {172.16.201.253 2001:db8....} \
 	L116 \
-	hemato-rc1:_v4 ge-1/2/3.7 {130.79.201.253 ...}
+	hemato-rc1:_v4 ge-1/2/3.7 {172.16.201.253 ...}
 
 ... (all link or direct)
 ******************************************************************************/

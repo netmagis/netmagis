@@ -49,7 +49,7 @@
 	IPv4 CIDR specification of network.
 
 	Exemple~:
-	    \retrait {\verbatim {130.79.201.128/25}}
+	    \retrait {\verbatim {172.16.201.128/25}}
 
     \titre {2} {\ancre {gw4} {IPv4 gateway}}
 
@@ -67,7 +67,7 @@
 	IPv6 specification of network.
 
 	Exemple~:
-	    \retrait {\verbatim {2001:660:4701:2001::/64}}
+	    \retrait {\verbatim {2001:db8:1234:2001::/64}}
 
     \titre {2} {\ancre {gw6} {IPv6 gateway}}
 

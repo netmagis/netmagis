@@ -153,7 +153,7 @@ create_netmagis ()
     export PGHOST PGPORT PGDATABASE
 
     ###############################
-    # Create main netmagis database as the priviledged user
+    # Create main netmagis database as the privileged user
     ###############################
 
     PGUSER="$puser"
@@ -285,7 +285,7 @@ create_netmagis_schemas ()
     CREATE TABLE dns.domaine (
 	iddom		INT		-- domain id
 		DEFAULT NEXTVAL ('dns.seq_domaine'),
-	nom		TEXT,		-- domain name (ex: "mycompany.com")
+	nom		TEXT,		-- domain name (ex: "example.com")
 
 	UNIQUE (nom),
 	PRIMARY KEY (iddom)
@@ -297,7 +297,7 @@ create_netmagis_schemas ()
     CREATE TABLE dns.etablissement (
 	idetabl		INT		-- organization id
 		DEFAULT NEXTVAL ('dns.seq_etablissement'),
-	nom		TEXT,		-- "My Company"
+	nom		TEXT,		-- "Example Corp."
 
 	PRIMARY KEY (idetabl)
     ) ;
@@ -1387,10 +1387,10 @@ default_lease_time	600
 max_lease_time	3600
 min_lease_time	300
 topoactive	0
-dhcpdefdomain	mycompany.com
-defdomain	mycompany.com
-topofrom	nobody.topo@mycompany.com
-topoto	noc@mycompany.com another@mycompany.com
+dhcpdefdomain	example.com
+defdomain	example.com
+topofrom	nobody.topo@example.com
+topoto	noc@example.com another@example.com
 topographddelay	5
 toposendddelay	5
 topomaxstatus	100
@@ -1400,10 +1400,10 @@ ifchangeexpire	30
 fullrancidmin	2
 fullrancidmax	4
 macactive	0
-ldapurl	ldap://ldap.mycompany.com/
-ldapbinddn	cn=admin,ou=accounts,ou=operators,dc=mycompany,dc=com
+ldapurl	ldap://ldap.example.com/
+ldapbinddn	cn=admin,ou=accounts,ou=operators,dc=example,dc=com
 ldapbindpw	*
-ldapbasedn	ou=people,dc=mycompany,dc=com
+ldapbasedn	ou=people,dc=example,dc=com
 ldapsearchlogin	(&(objectClass=People)(uid=%s))
 ldapattrlogin	uid
 ldapattrpassword	userPassword
@@ -1416,8 +1416,8 @@ ldapattrfax	facsimileTelephoneNumber
 ldapattraddr	postalAddress postalCode l
 authpgminpwlen	8
 authpgmaxpwlen	16
-authpgmailfrom	nobody.netmagis@mycompany.com
-authpgmailreplyto	nobody.netmagis@mycompany.com
+authpgmailfrom	nobody.netmagis@example.com
+authpgmailreplyto	nobody.netmagis@example.com
 authpgmailcc	
 authpgmailbcc	
 authpgmailsubject	Password change
@@ -1570,7 +1570,7 @@ create_mac ()
     export PGHOST PGPORT PGDATABASE
 
     ###############################
-    # Create mac database as the priviledged user
+    # Create mac database as the privileged user
     ###############################
 
     PGUSER="$puser"
@@ -1678,7 +1678,7 @@ create_copy ()
     export PGHOST PGPORT PGDATABASE
 
     ###############################
-    # Create copy database as the priviledged user
+    # Create copy database as the privileged user
     ###############################
 
     PGUSER="$puser"
@@ -1728,10 +1728,10 @@ fi
 while true
 do
     case "$1" in
-	-u) puser="$2"		# priviledged user
+	-u) puser="$2"		# privileged user
 	    shift 2
 	    ;;
-	-w) ppassword="$2"	# priviledged password
+	-w) ppassword="$2"	# privileged password
 	    shift 2
 	    ;;
 	-h) usage

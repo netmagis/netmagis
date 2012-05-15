@@ -14,7 +14,7 @@ iface GigaEthernet0/1
     <Ether ou Trunk ou Disabled>
     {X / L33 crc-rc1 ge-0/0/0}
     <nativevlan ou -1> 
-    <desc> {0 {} <ip> ...} {7 <vlan-desc-en-hexa> 130.79.....} ...
+    <desc> {0 {} <ip> ...} {7 <vlan-desc-en-hexa> 172.16.....} ...
 <all ifaces>
 vlan <id> <desc> <voip>
 

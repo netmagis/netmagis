@@ -6,7 +6,7 @@
 # Common modules
 ##############################################################################
 
-dnsdbhost	db.mycompany.com
+dnsdbhost	db.example.com
 dnsdbport	5432
 dnsdbname	netmagis
 dnsdbuser	dns
@@ -14,7 +14,7 @@ dnsdbpassword	password-of-dnsdbuser
 
 # Mac database. If it is shared with the main netmagis database, use
 # *exactly* the same values as for dnsdb* parameters
-macdbhost	db.mycompany.com
+macdbhost	db.example.com
 macdbport	5432
 macdbname	mac
 macdbuser	dns
@@ -139,7 +139,7 @@ templatedir	%NMLIBDIR%/tmpl
 nologinfile	%ETCDIR%/netmagis.nologin
 
 # empty string (internal auth) or external URL to change password
-#passwdurl	https://www.mycompany.com/chpasswd?uid=%s
+#passwdurl	https://www.example.com/chpasswd?uid=%s
 passwdurl	""			# internal
 
 pdflatex	/usr/local/bin/pdflatex
@@ -154,7 +154,7 @@ crypt		openssl passwd -1 %s
 # check also topobindir and topograph below
 
 # host holding metrology graphs
-metrohost	metro.mycompany.com
+metrohost	metro.example.com
 
 ##############################################################################
 # Topo module (on topohost machine)
@@ -191,7 +191,7 @@ topograph	%NMVARDIR%/network.graph
 # string of the form: "user@host:remote-path" or empty string
 # - empty string: don't copy (only if topo and www hosts are the same server)
 # - remote-path should match "topograph" definition on the www server
-#topocpgraph	www@netmagis.mycompany.com:%NMVARDIR%/network.graph
+#topocpgraph	www@netmagis.example.com:%NMVARDIR%/network.graph
 topocpgraph	""
 
 ##############################################################################

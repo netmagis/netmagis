@@ -250,9 +250,9 @@
 
     The \italique {mail-address} is the right part of a mail address.
     For example, suppose that you want to route mail addressed
-    to \teletype {*@marketing.mycompany.com} to the \teletype
-    {somehost.mycompany.com}, you will provide a line such as:
-    \retrait\teletype {marketing.mycompany.com ~ ~ ~ somehost.mycompany.com}
+    to \teletype {*@marketing.example.com} to the \teletype
+    {somehost.example.com}, you will provide a line such as:
+    \retrait\teletype {marketing.example.com ~ ~ ~ somehost.example.com}
 
     Warning: this file must be imported when all your zone files are
     imported, since it references hosts which must already exist in

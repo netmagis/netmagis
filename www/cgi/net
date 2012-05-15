@@ -256,7 +256,7 @@ proc output-list {dbfd lcidr _tabuid format} {
 	# Extract all aliases related to IP addresses in allowed ranges
 	# and put them in an array indexed by IP addresses
 	# Example :
-	#  cname(130.79.201.129) {aton.u-strasbg.fr diablo.u-strasbg.fr...}
+	#  cname(172.16.201.129) {aton.example.com diablo.example.com...}
 	#
 
 	set sql "SELECT alias.nom || '.' || domaine.nom AS nom, rr_ip.adr

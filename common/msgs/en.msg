@@ -73,7 +73,7 @@
  cfg:ldapurl:desc {LDAP server}
  cfg:ldapurl:help {URL to access LDAP server. Example: ldaps://ldap.domaine.fr:636/}
  cfg:ldapbinddn:desc {Bind DN}
- cfg:ldapbinddn:help {Bind DN to authenticate against LDAP server. Example : cn=admin,dc=mycompany,dc=com}
+ cfg:ldapbinddn:help {Bind DN to authenticate against LDAP server. Example : cn=admin,dc=example,dc=com}
  cfg:ldapbindpw:desc {Bind password}
  cfg:ldapbindpw:help {Password to authenticate against LDAP server.}
  cfg:ldapbasedn:desc {Base DN}

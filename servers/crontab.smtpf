@@ -4,7 +4,7 @@
 # This crontab should be installed on mail relays.
 #
 
-MAILTO = hostmaster@mycompany.com
+MAILTO = hostmaster@example.com
 
 # use flag -q if status messages are not wanted
 */1	* * * *	%SBINDIR%/mksmtpf

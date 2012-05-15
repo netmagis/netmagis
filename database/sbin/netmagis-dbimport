@@ -66,7 +66,7 @@ set conf(usage) {usage: %1$s [-v] <op> <param> ... <param>
 	%1$s domain <file>
     To import zone data (import zone prologue, and zone RR into domain)
 	%1$s zone <domainname> <zonefile> <selector> <rrsupfile> <login>
-	    selector = domainname or cidr (172.16/16, 2001:660:1234::/48)
+	    selector = domainname or cidr (172.16/16, 2001:db8:1234::/48)
 	    rrsup = file containing some RRs which are added to every A/AAAA RR
 	    login = login of an existing user
     To import mail relays (create mail relays for domains):
@@ -448,7 +448,7 @@ proc import-group {verbose argv dbfd} {
 #	netmask=255.255.255.0	or empty
 #	gateway=172.16.1.254	or empty
 #	comment=Backbone and servers
-#	org=My Company
+#	org=Example Corp
 #	community=sales
 #	location=Campus 1
 #	groups=wheel tech
@@ -754,9 +754,9 @@ proc import-network {verbose argv dbfd} {
 #	domain op sortorder group group group...
 #		where op = ALLBUT or SET
 # Examples:
-#	mycompany.com ALLBUT 100 sales marketing
-#	myproduct.com SET 200 tech engineering
-#	myproduct.com SET 50 marketing
+#	example.com ALLBUT 100 sales marketing
+#	example.org SET 200 tech engineering
+#	example.org SET 50 marketing
 #
 
 proc read-domain-file {file _tab} {
@@ -999,14 +999,14 @@ proc read-zone {file domain reverse _prologue _tabaddr _tabcname} {
 		    }
 		}
 		CNAME {
-		    # Example: a CNAME b.mycompany.com.
+		    # Example: a CNAME b.example.com.
 		    # or:      a CNAME b
 		    if {[info exists tabcname($name)]} then {
 			warning "$name already has a CNAME: $tabcname($name) (ignored)"
 		    } elseif {[info exists tabaddr($name)]} then {
 			warning "$name already has an IP address: $tabaddr($name) (CNAME ignored)"
 		    } else {
-			# cname(a) => b.mycompany.com. or b
+			# cname(a) => b.example.com. or b
 			if {[string range $data end end] ne "."} then {
 			    append data ".$domain."
 			}
@@ -1260,7 +1260,7 @@ proc import-zone {verbose argv dbfd} {
 
 	#
 	# Read all RR which are not of type CNAME
-	# baserr(a.mycompany.com) = idrr of a.mycompany.com
+	# baserr(a.example.com) = idrr of a.example.com
 	#
 
 	set sql "SELECT rr.nom || '.' || d.nom || '.' AS name, rr.idrr
@@ -1390,7 +1390,7 @@ proc import-zone {verbose argv dbfd} {
 # Format:
 #	domain prio relay prio relay ...
 # Examples:
-#	mycompany.com 10 mailhost1.mycompany.com 20 mailhost2.mycompany.com
+#	example.com 10 mailhost1.example.com 20 mailhost2.example.com
 #
 
 proc read-mailrelay {file} {
@@ -1523,7 +1523,7 @@ proc import-mailrelay {verbose argv dbfd} {
 # Format:
 #	mail-address mailbox-host
 # Examples:
-#	sales.mycompany.com mboxhost.mycompany.com
+#	sales.example.com mboxhost.example.com
 #
 
 proc read-mailrole {file} {

@@ -1,12 +1,12 @@
 ;
-; Zone myevent.org
+; Zone plant1.example.com
 ;
 ;
 ; History
 ;   2004/04/13 : pda : design example zone
 ;
 
-@	IN	SOA	ns1.mycompany.com. hostmaster.mycompany.com. (
+@	IN	SOA	ns1.example.com. hostmaster.example.com. (
 		    2012042601		; serial
 		    86400		; refresh = 1 day
 		    3600		; retry = 1 h
@@ -23,15 +23,16 @@ $TTL	86400
 ; Authoritative servers for this zone
 ;
 
-			IN	NS	ns1.mycompany.com.
-			IN	NS	ns2.mycompany.com.
+			IN	NS	ns1.example.com.
+			IN	NS	ns2.example.com.
 			IN	NS	ns.myisp.com.
 
 ;
 ; Default MX for the domain itself
 ;
 
-			IN	MX	10 mx1.mycompany.com.
+			IN	MX	10 mx1.example.com.
+			IN	MX	20 mx2.example.com.
 
 ;
 ; hack
@@ -41,4 +42,8 @@ localhost		IN	A	127.0.0.1
 
 ; CUT HERE -------------------------------------------------------------
 
-www			IN	CNAME	daffy.mycompany.com.
+asterix			IN	A	172.16.20.1
+www			IN	CNAME	asterix
+obelix			IN	A	172.16.20.2
+abraracourcix		IN	A	172.16.20.3
+assurancetourix		IN	A	172.16.20.4

@@ -17,5 +17,5 @@
 #   2012/04/26 : pda : convert to an english based example
 #
 
-mycompany.com	10 mx1.mycompany.com	20 mx2.mycompany.com
-subsid.co.zz	10 mx1.mycompany.com	20 mx2.mycompany.com
+example.com	10 mx1.example.com	20 mx2.example.com
+subsid.co.zz	10 mx1.example.com	20 mx2.example.com

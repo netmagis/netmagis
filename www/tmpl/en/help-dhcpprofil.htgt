@@ -52,7 +52,7 @@
     #
     # PC diskless boot using PXE
     #
-    server-name "myserver.mycompany.com" ;
+    server-name "myserver.example.com" ;
     server-identifier 10.1.2.3 ;
     next-server 10.1.2.3 ;                      # boot server
     filename "/pxeboot" ;

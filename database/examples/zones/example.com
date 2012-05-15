@@ -1,12 +1,12 @@
 ;
-; Zone mycompany.com
+; Zone example.com
 ;
 ;
 ; History
 ;   2004/04/13 : pda : design example zone
 ;
 
-@	IN	SOA	ns1.mycompany.com. hostmaster.mycompany.com. (
+@	IN	SOA	ns1.example.com. hostmaster.example.com. (
 		    2012042601		; serial
 		    86400		; refresh = 1 day
 		    3600		; retry = 1 h
@@ -23,16 +23,16 @@ $TTL	86400
 ; Authoritative servers for this zone
 ;
 
-			IN	NS	ns1.mycompany.com.
-			IN	NS	ns2.mycompany.com.
+			IN	NS	ns1.example.com.
+			IN	NS	ns2.example.com.
 			IN	NS	ns.myisp.com.
 
 ;
 ; Default MX for the domain itself
 ;
 
-			IN	MX	10 mx1.mycompany.com.
-			IN	MX	20 mx2.mycompany.com.
+			IN	MX	10 mx1.example.com.
+			IN	MX	20 mx2.example.com.
 
 ;
 ; hack
@@ -41,35 +41,35 @@ $TTL	86400
 localhost		IN	A	127.0.0.1
 
 ; this plant delegates sub-zone management to us
-plant1			IN	NS	ns1.mycompany.com.
-			IN	NS	ns2.mycompany.com.
+plant1			IN	NS	ns1.example.com.
+			IN	NS	ns2.example.com.
 
 ; this plant manages its own sub-zone
-plant2			IN	NS	elsewhere.plant2.mycompany.com.
-			IN	NS	ns1.mycompany.com.
-			IN	NS	ns2.mycompany.com.
+plant2			IN	NS	elsewhere.plant2.example.com.
+			IN	NS	ns1.example.com.
+			IN	NS	ns2.example.com.
 elsewhere.plant2	IN	A	172.16.100.1
 
 ; CUT HERE -------------------------------------------------------------
 
 ; backbone
 ns1			IN	A	172.16.1.1
-			IN	AAAA	2001:660:1234::1
+			IN	AAAA	2001:db8:1234::1
 ns2			IN	A	172.16.1.2
-			IN	AAAA	2001:660:1234::2
+			IN	AAAA	2001:db8:1234::2
 mx1			IN	A	172.16.1.3
-			IN	AAAA	2001:660:1234::3
+			IN	AAAA	2001:db8:1234::3
 mx2			IN	A	172.16.1.4
-			IN	AAAA	2001:660:1234::4
+			IN	AAAA	2001:db8:1234::4
 
 ; switches
 sw1			IN	A	192.16.1.101
 sw2			IN	A	192.16.1.102
 
 rtr			IN	A	172.16.1.254
-			IN	AAAA	2001:660:1234:4001::1/64
+			IN	AAAA	2001:db8:1234:4001::1/64
 another-router		IN	A	172.16.1.253
-			IN	AAAA	2001:660:1234:4001::2/64
+			IN	AAAA	2001:db8:1234:4001::2/64
 
 ; router has address in some blocks
 rtr			IN	A	192.168.1.254
@@ -80,7 +80,7 @@ jupiter			IN	CNAME	zeus
 venus			IN	A	172.16.11.2
 aphrodite		IN	A	172.16.11.3
 rtr			IN	A	172.16.11.254
-			IN	AAAA	2001:660:1234:4011::1/64
+			IN	AAAA	2001:db8:1234:4011::1/64
 
 ; ITS
 droopy			IN	A	172.16.12.1

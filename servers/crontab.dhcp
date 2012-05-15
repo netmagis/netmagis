@@ -4,7 +4,7 @@
 # This crontab should be installed on DHCP server.
 #
 
-MAILTO = hostmaster@mycompany.com
+MAILTO = hostmaster@example.com
 
 # use flag -q if status messages are not wanted
 1-59/10 * * * * %SBINDIR%/mkdhcp

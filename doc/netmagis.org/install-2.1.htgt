@@ -483,7 +483,7 @@
     test that Netmagis understands your modifications. The command:
     \retrait\teletype {$ netmagis-config dnsdbhost}
     should display a string such as:
-    \retrait\teletype {dnsdbhost="myhost.mycompany.com"}
+    \retrait\teletype {dnsdbhost="myhost.example.com"}
 
     You can now proceed to database installation.
 
@@ -1307,7 +1307,7 @@
 		    \casetableau {} {Juniper}
 		    \casetableau {} {\teletype {system \{ \br
 			~ ~ syslog \{ \br
-			~ ~ ~ ~host \italique {syslog-server.my.domain} \{ \br
+			~ ~ ~ ~host \italique {syslog-server.example.com} \{ \br
 			~ ~ ~ ~ ~ ~any notice;\br
 			~ ~ ~ ~ ~ ~facility-override local2;\br
 			~ ~ ~ ~\}\br
@@ -1318,7 +1318,7 @@
 		\lignetableau {
 		    \casetableau {} {Cisco}
 		    \casetableau {} {\teletype
-			{logging \italique {syslog-server.my.domain}\br
+			{logging \italique {syslog-server.example.com}\br
 			logging facility local2}
 		    }
 		}
@@ -1400,7 +1400,7 @@
 		\lignetableau {
 		    \casetableau {} {HP}
 		    \casetableau {} {\teletype
-			{radius-server host \italique {radius.my.domain}
+			{radius-server host \italique {radius.example.com}
 			    key \italique {secret}
 			    acct-port 1813
 			    }
@@ -1809,7 +1809,7 @@
 
 	    Make sure that the \teletype {topocpgraph} configuration
 	    parameter is initialized with a line such as:
-	    \retrait\teletype {topocpgraph w@www.my.domain:.../var/netmagis/network.graph}
+	    \retrait\teletype {topocpgraph w@www.example.com:.../var/netmagis/network.graph}
 	    Warning: the path supplied here is the path of the graph
 	    on the \italique {server}, which should match the \teletype
 	    {topograph} directive \gras {on the \italique {www} server}.

@@ -34,7 +34,7 @@
 	Domain name of the zone (without final dot).
 
 	Exemple~:
-	    \retrait {\verbatim {mycompany.com} \br
+	    \retrait {\verbatim {example.com} \br
 		\verbatim {168.192.in-addr.arpa}}
 
     \titre {2} {\ancre {prologue} {Prologue}}
@@ -49,13 +49,13 @@
 	Example~:
 	\retrait {
 	    \verbatim {;
-; Zone mycompany.com
+; Zone example.com
 ;
 ; History
 ;   2002/04/26 : jean/pda  : netmagis se
 ;
 
-@	IN	SOA	ns.mycompany.com. hostmaster.mycompany.com. (
+@	IN	SOA	ns.example.com. hostmaster.example.com. (
 		    %ZONEVERSION%	; yy mm dd version
 		    86400		; refresh = 1 d
 		    3600		; retry = 1 h
@@ -72,15 +72,15 @@ $TTL	86400
 ; Authoritative nameservers
 ;
 
-		IN	NS	ns.mycompany.com.
+		IN	NS	ns.example.com.
 		IN	NS	ns.myisp.com.
 
 ;
 ; Default MX
 ;
 
-;		IN	MX	10	maihost1.mycompany.com.
-;		IN	MX	20	maihost2.mycompany.com.
+;		IN	MX	10	maihost1.example.com.
+;		IN	MX	20	maihost2.example.com.
 }
 	}
 
@@ -92,8 +92,8 @@ $TTL	86400
 
 	Example~:
 	\retrait {
-	    \verbatim {%NOM%	IN	MX	10 mailhost.mycompany.com.
-%NOM%	IN	MX	20 mailhost2.mycompany.com.}
+	    \verbatim {%NOM%	IN	MX	10 mailhost.example.com.
+%NOM%	IN	MX	20 mailhost2.example.com.}
 	}
 
     \titre {2} {\ancre {selection} {RR selection criterion}}
@@ -103,7 +103,7 @@ $TTL	86400
 	IPv6) zone, it is a network prefix.
 
 	Exemple~:
-	    \retrait {\verbatim {mycompany.com}\br
+	    \retrait {\verbatim {example.com}\br
 		\verbatim {192.168.17.0/24}
 	    }
 }

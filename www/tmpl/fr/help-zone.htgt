@@ -34,8 +34,8 @@
 	Nom de domaine de la zone (sans le point final).
 
 	Exemple~:
-	    \retrait {\verbatim {u-strasbg.fr} \br
-		\verbatim {79.130.in-addr.arpa}}
+	    \retrait {\verbatim {example.com} \br
+		\verbatim {2.0.192.in-addr.arpa}}
 
     \titre {2} {\ancre {prologue} {Prologue}}
 
@@ -121,8 +121,8 @@ localhost	IN	A	127.0.0.1
 	adresses.
 
 	Exemple~:
-	    \retrait {\verbatim {u-strasbg.fr}\br
-		\verbatim {130.79.0.0/16}
+	    \retrait {\verbatim {example.com}\br
+		\verbatim {192.0.2.0/24}
 	    }
 }
 

@@ -1,5 +1,5 @@
 ;
-; Zone 1.168.192.in-addr.arpa
+; Zone 4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa
 ;
 ;
 ; History
@@ -30,6 +30,3 @@ $TTL	86400
 ; CUT HERE -------------------------------------------------------------
 
 ; As for all reverse zones, PTR are not used in import script
-1			IN	PTR	www.subsid.co.zz.
-2			IN	PTR	mail-sales.subsid.co.zz.
-254			IN	PTR	r-campus2.example.com.

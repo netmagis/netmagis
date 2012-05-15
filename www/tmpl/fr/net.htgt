@@ -52,7 +52,7 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		     \centragehorizontal {CENTER}
-		} {\gras {... ou saisissez la plage par son préfixe (par ex. 130.79.200.0/24 ou 2001:660:2402:10::/64)}}
+		} {\gras {... ou saisissez la plage par son préfixe (par ex. 172.16.200.0/24 ou 2001:db8:1234:10::/64)}}
 	    }
 	    \lignetableau {
 		\casetableau {} {<INPUT TYPE="text" NAME="cidr" SIZE="49">}

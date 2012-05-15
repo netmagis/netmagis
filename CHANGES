@@ -19,6 +19,7 @@ Version 2.1 - 2012/04/??
     - greatly improve installation documentation
     - bug fix: users created with netmagis-dbimport can not log in
     - bug fix: internal auth "account list" page returned truncated results
+    - bug fix: use valid example domains and addresses in documentation and examples
 
 Version 2.0 - 2011/11/23
     - change name for Netmagis (old name was WebDNS)

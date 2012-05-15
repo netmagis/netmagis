@@ -14,7 +14,7 @@
 #   2012/04/26 : pda      : convert to an english based example
 #
 
-sales.mycompany.com	zeus.mycompany.com
-mktg.mycompany.com	venus.mycompany.com
-its.mycompany.com	aphrodite.mycompany.com
+sales.example.com	zeus.example.com
+mktg.example.com	venus.example.com
+its.example.com		aphrodite.example.com
 sales.subsid.co.zz	mail-sales.subsid.co.zz

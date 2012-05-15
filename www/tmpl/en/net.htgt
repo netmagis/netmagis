@@ -52,7 +52,7 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		     \centragehorizontal {CENTER}
-		} {\gras {... or enter a network prefix (e.g. 192.168.17.0/24 or 2001:660:2402:10::/64)}}
+		} {\gras {... or enter a network prefix (e.g. 192.168.17.0/24 or 2001:db8:1234:10::/64)}}
 	    }
 	    \lignetableau {
 		\casetableau {} {<INPUT TYPE="text" NAME="cidr" SIZE="49">}

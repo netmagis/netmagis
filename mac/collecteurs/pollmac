@@ -100,7 +100,7 @@ proc maj-session {dbfd lcoll type} {
 	    lappend ldb $lval
 	    #
 	    # On mémorise l'id dans un tableau associatif dont l'index est
-	    # la valeur de l'élément (ex. 130.79.201.129 a:b:c:d:e:f)
+	    # la valeur de l'élément (ex. 172.16.201.129 a:b:c:d:e:f)
 	    #
 	    set tid($lval) $id
 	}

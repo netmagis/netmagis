@@ -1,12 +1,12 @@
 ;
-; Zone 4.3.2.1.6.6.0.1.0.0.2.ip6.arpa
+; Zone example.org
 ;
 ;
 ; History
 ;   2004/04/13 : pda : design example zone
 ;
 
-@	IN	SOA	ns1.mycompany.com. hostmaster.mycompany.com. (
+@	IN	SOA	ns1.example.com. hostmaster.example.com. (
 		    2012042601		; serial
 		    86400		; refresh = 1 day
 		    3600		; retry = 1 h
@@ -23,10 +23,22 @@ $TTL	86400
 ; Authoritative servers for this zone
 ;
 
-			IN	NS	ns1.mycompany.com.
-			IN	NS	ns2.mycompany.com.
+			IN	NS	ns1.example.com.
+			IN	NS	ns2.example.com.
 			IN	NS	ns.myisp.com.
+
+;
+; Default MX for the domain itself
+;
+
+			IN	MX	10 mx1.example.com.
+
+;
+; hack
+;
+
+localhost		IN	A	127.0.0.1
 
 ; CUT HERE -------------------------------------------------------------
 
-; As for all reverse zones, PTR are not used in import script
+www			IN	CNAME	daffy.example.com.

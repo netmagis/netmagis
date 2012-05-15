@@ -1,2 +1,2 @@
-%NOM%	IN	MX	10	ns1.mycompany.com.
-%NOM%	IN	MX	20	ns2.mycompany.com.
+%NOM%	IN	MX	10	ns1.example.com.
+%NOM%	IN	MX	20	ns2.example.com.

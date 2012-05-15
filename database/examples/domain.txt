@@ -21,11 +21,11 @@
 #   2012/04/26 : pda : convert to an english based example
 #
 
-mycompany.com		ALLBUT	10	subsid plant
-plant1.mycompany.com	SET	10	plant
-plant1.mycompany.com	SET	30	wheel tech
+example.com		ALLBUT	10	subsid plant
+plant1.example.com	SET	10	plant
+plant1.example.com	SET	30	wheel tech
 
-myevent.org		SET	20	mktg wheel
+example.org		SET	20	mktg wheel
 
 subsid.co.zz		SET	50	wheel tech
 subsid.co.zz		SET	5	subsid

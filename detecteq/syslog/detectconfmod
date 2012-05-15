@@ -9,7 +9,7 @@
 # configuration modification events and sends them to the DNS database.
 # It looks for these patterns:
 # - Cisco
-#	Sep 30 10:56:33 crc-cg1 373: Sep 30 10:56:31: %SYS-5-CONFIG_I: Configured from console by jean on vty0 (130.79.202.1)
+#	Sep 30 10:56:33 crc-cg1 373: Sep 30 10:56:31: %SYS-5-CONFIG_I: Configured from console by jean on vty0 (172.16.202.1)
 # - Juniper :
 #	Sep 30 10:57:55 espla-rc1 mgd[91730]: UI_COMMIT: User 'jean' requested 'commit' operation (comment: none)
 #
