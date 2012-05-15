@@ -1685,7 +1685,7 @@ create_copy ()
     PGPASSWORD="$ppassword"
     export PGUSER PGPASSWORD
 
-    if db_create_if_not_exists "$dbcopy"
+    if db_create_if_not_exists "$dnsdbuser"
     then :
     else
 	echo "Erreur while creating database '$PGDATABASE'" 2>&1
