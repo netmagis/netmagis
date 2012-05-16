@@ -76,6 +76,24 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXX
 	cd $NETMAGIS
     	make debian-packages
 
-    3.c. Copy packages to the web server
+    3.c. Create repository if needed
+    	
+	mkdir -p /local/repo/conf
+	# add the following lines in /local/repo/conf/distributions
+	    Origin: netmagis
+	    Label: netmagis
+	    Codename: stable
+	    Architectures: amd64 i386
+	    Components: main
+	    Description: Apt repository for netmagis
 
-	scp netmagis-*-debian-*.tar.gz netmagis.org:/www/docs/files/
+    3.d. Update local repository
+
+	make debian-repo
+
+    3.e. Copy local repository to the web server
+
+	tar cf - -C /local repo | \
+		ssh netmagis.org tar xf - -C /www/docs/files
+
+

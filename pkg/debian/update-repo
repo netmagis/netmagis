@@ -1,5 +1,17 @@
 #!/bin/sh
 
+#
+# Create or update Debian repository
+#
+# Usage Example:
+#
+#    update-repo 2.1 $HOME/netmagis/pkg/debian /local/repo
+#
+# The package reprepro is required to run this script
+#
+# History:
+#   2012/05/16 : pda/jean : design
+
 if [ $# -ne 3 ]
 then
 	echo "Usage: $0 version pkgdir repodir" >&2
@@ -10,15 +22,13 @@ VERSION="$1"
 PKGDIR="$2"
 REPODIR="$3"
 
-BINSFX="dists/stable/main"
-BINDIR="$REPODIR/$BINSFX"
-
-# Check repository consistency
-if [ \! -d $BINDIR ]
+# Check repository existence
+if [ ! -d "$REPODIR" ]
 then
-    echo "Directory $BINDIR does not exist" >&2
+    echo "Directory $REPODIR does not exist" >&2
     exit 1
 fi
+
 
 # Check for packages
 for i in common database metro servers topo utils www 
@@ -31,19 +41,16 @@ do
     fi
 done
 
-# Guess architectures
-arch=`ls $PKGDIR|sed -n "/netmagis-.*_$VERSION-.*_\(.*\)\.deb/s//\1/p"|sort -u`
+# Create configuration file for reprepro
+cat > $REPODIR/conf/distributions <<EOF
+Origin: netmagis
+Label: netmagis
+Codename: stable
+Architectures: amd64 i386
+Components: main
+Description: Apt repository for netmagis
+#SignWith: <key-id>
+EOF
 
-# Copy packages
-for a in $arch
-do
-    mkdir -p $BINDIR/binary-$a
-    cp $PKGDIR/netmagis-*_$VERSION-*_$a.deb $BINDIR/binary-$a
-
-    # Generate Packages.gz relative to the debian directory
-    (
-	cd $REPODIR
-	/usr/bin/dpkg-scanpackages $BINSFX/binary-$a | \
-	    gzip -9 > $BINSFX/binary-$a/Packages.gz
-    )
-done
+# Create or update repository
+reprepro -b $REPODIR includedeb stable $PKGDIR/netmagis-*_$VERSION-*.deb
