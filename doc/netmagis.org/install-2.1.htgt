@@ -194,9 +194,9 @@
     {http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/updating-upgrading-portsnap.html}),
     use:
 
-    \retrait {\teletype {
+    \retrait\teletype {
 	# tar xzvf netmagis-freebsd-ports-2.1.tgz -C /usr/ports/net-mgmt/
-    }}
+    }
 
     In order to install a netmagis package, just enter the
     following commands (just as well as \lien {any other port}
@@ -211,8 +211,36 @@
 
     \titre {3} {Installing from Debian/Ubuntu packages}
 
-    Not yet available. At this time, either find a FreeBSD machine or
-    install from source distribution  (see below).
+    Append the following lines to your \teletype {/etc/apt/sources.list}:
+
+    \retrait\teletype {
+	deb http://netmagis.org/files/repo stable main \br
+	deb-src http://netmagis.org/files/repo stable main
+    }
+
+    And update your package database:
+
+    \retrait\teletype {
+	# apt-get update
+    }
+
+    If your system is based on the amd64 architecture (x86_64 in \teletype
+    "{uname -p}" output), you can install from binary packages (example
+    for the \italique {database} package):
+
+    \retrait\teletype {
+	# apt-get install netmagis-database
+    }
+
+    If your system is based on another architecture, you need to rebuild
+    from source package:
+
+    \retrait\teletype {
+	# apt-get install dpkg-dev \br
+	# apt-get build-dep netmagis \br
+	# apt-get source --build netmagis
+    }
+
 
     \titre {3} {Installing from Netmagis source distribution}
 
