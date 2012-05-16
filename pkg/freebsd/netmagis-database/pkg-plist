@@ -18,7 +18,7 @@ sbin/netmagis-maint
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/upgrade/20-21/upgrade.sql
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/1.168.192.in-addr.arpa
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/16.172.in-addr.arpa
-%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/4.3.2.1.6.6.0.1.0.0.2.ip6.arpa
+%%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/example.com
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/example.org
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/zones/plant1.example.com
