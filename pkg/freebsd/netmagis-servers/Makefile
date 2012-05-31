@@ -8,7 +8,7 @@
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-servers
 
-COMMENT=	The Network Management Information System - Server scripts
+COMMENT=	Netmagis module for dhcp, bind and mail servers
 
 MASTERDIR=	${.CURDIR}/../netmagis-common
 

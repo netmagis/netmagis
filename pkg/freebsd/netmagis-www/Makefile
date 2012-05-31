@@ -8,7 +8,7 @@
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-www
 
-COMMENT=	The Network Management Information System - Web interface
+COMMENT=	Netmagis web module
 
 MASTERDIR=	${.CURDIR}/../netmagis-common
 

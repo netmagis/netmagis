@@ -8,7 +8,7 @@
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-detecteq
 
-COMMENT=	The Network Management Information System - Equipment modification detection
+COMMENT=	Netmagis - Files for detection of equipment modifications
 
 MASTERDIR=	${.CURDIR}/../netmagis-common
 

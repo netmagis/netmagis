@@ -8,7 +8,7 @@
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-database
 
-COMMENT=	The Network Management Information System - Database server
+COMMENT=	Utilities for the netmagis database server
 
 MASTERDIR=	${.CURDIR}/../netmagis-common
 

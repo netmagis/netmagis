@@ -8,7 +8,7 @@
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-utils
 
-COMMENT=	The Network Management Information System - Utility scripts
+COMMENT=	Netmagis command-line utilities
 
 MASTERDIR=	${.CURDIR}/../netmagis-common
 

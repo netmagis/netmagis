@@ -13,7 +13,7 @@ MASTER_SITES=	http://netmagis.org/files/
 PKGNAMESUFFIX?=	-common
 
 MAINTAINER?=	pdagog@gmail.com
-COMMENT?=	The Network Management Information System - Common files
+COMMENT?=	Netmagis common infrastructure
 
 USE_TCL=	85+
 
