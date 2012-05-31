@@ -1,8 +1,5 @@
 #
-# This makefile provides 3 targets:
-# - build: generate binary debian packages which can be installed by gdebi
-#   This target should not be called directly but from the top-level Makefile
-#   through "make debian-build"
+# This makefile provides 2 targets:
 # - release: generate binary and source packages and create 2 tarballs : 
 #		netmagis-$VERSION-debian-$ARCH.tar.gz
 #		netmagis-$VERSION-debian-src.tar.gz
@@ -11,16 +8,13 @@
 # 
 #
 
-build:
-	@echo ">>> Making build in `pwd`"
-	sudo apt-get -y install devscripts dh-make
-	sh ./gendeb $(VERSION)
-
-release: clean build
+release: clean
 	@echo ">>> Making release in `pwd`"
-	ARCH=`echo netmagis-www*.deb | sed 's/.*_\([^.]*\)\.deb$$/\1/'`; \
-	    tar czf netmagis-$(VERSION)-debian-$$ARCH.tar.gz *.deb
-	tar czf netmagis-$(VERSION)-debian-src.tar.gz *.dsc *.orig.tar.gz *.debian.tar.gz
+	@which debuild >/dev/null 2>&1 || \
+	    ( echo 1>&2 "You need the 'devscripts' package: apt-get -y install devscripts" && exit 1 )
+	@which dh_make >/dev/null 2>&1 || \
+	    ( echo 1>&2 "You need the 'dh-make' package: apt-get -y install dh-make" && exit 2 )
+	sh ./gendeb $(VERSION)
 
 clean:
 	rm -rf netmagis*

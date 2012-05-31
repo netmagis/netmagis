@@ -115,6 +115,9 @@ dh_make -m -p netmagis_${VERSION} -f ../$TGZ </dev/null
 # Remove unused templates
 rm -f debian/*.EX debian/*.ex
 
+# Copy init files
+tar cf - -C .. etc | tar xf - -C debian
+
 # Copy debian files
 for i in control copyright rules README.Debian
 do

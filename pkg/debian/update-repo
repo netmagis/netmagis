@@ -42,11 +42,12 @@ do
 done
 
 # Create configuration file for reprepro
+mkdir -p $REPODIR/conf
 cat > $REPODIR/conf/distributions <<EOF
 Origin: netmagis
 Label: netmagis
 Codename: stable
-Architectures: amd64 i386
+Architectures: amd64 i386 source
 Components: main
 Description: Apt repository for netmagis
 #SignWith: <key-id>
@@ -54,3 +55,4 @@ EOF
 
 # Create or update repository
 reprepro -b $REPODIR includedeb stable $PKGDIR/netmagis-*_$VERSION-*.deb
+reprepro -b $REPODIR includedsc stable $PKGDIR/netmagis_$VERSION-*.dsc

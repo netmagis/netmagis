@@ -15,4 +15,4 @@ export DH_VERBOSE=1
 # Copy init scripts after installing files in build directory
 override_dh_auto_install:
 	dh_auto_install
-	tar cf - -C .. etc | tar xf - -C debian/tmp
+	tar cf - -C debian etc | tar xf - -C debian/tmp

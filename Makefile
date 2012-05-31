@@ -67,7 +67,6 @@ usage:
 	@echo "	distrib"
 	@echo "	freebsd-ports"
 	@echo "	debian-packages"
-	@echo "	debian-build"
 	@echo "	debian-repo"
 	@echo "	clean"
 	@echo "	nothing"
@@ -141,12 +140,6 @@ debian-packages:
 	    exit 1 ; \
 	fi
 	cd pkg/debian ; make VERSION=$(VERSION) release
-	cp pkg/debian/netmagis-$(VERSION)-debian-*.tar.gz .
-
-debian-build:
-	cd pkg/debian ; make VERSION=$(VERSION) build
-	@echo
-	@echo "Please cd to "pkg/debian" and install the .deb files with gdebi"
 
 debian-repo:
 	pkg/debian/update-repo $(VERSION) pkg/debian $(REPODIR)
