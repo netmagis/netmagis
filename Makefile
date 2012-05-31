@@ -49,6 +49,9 @@ TCLLFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_LIB_SPEC $$TCL_LIBS"')|sh`
 # for packaging and libnetmagis.tcl
 VERSION		= 2.1b1
 
+# build debian package for the following architectures
+DEBIAN_PKG_ARCH = i386
+
 usage:
 	@echo "available targets:"
 	@echo "	build"
@@ -67,6 +70,7 @@ usage:
 	@echo "	distrib"
 	@echo "	freebsd-ports"
 	@echo "	debian-packages"
+	@echo "	debian-packages-other-arch"
 	@echo "	debian-repo"
 	@echo "	clean"
 	@echo "	nothing"
@@ -140,6 +144,12 @@ debian-packages:
 	    exit 1 ; \
 	fi
 	cd pkg/debian ; make VERSION=$(VERSION) release
+
+debian-packages-other-arch:
+	cd pkg/debian ; \
+	for arch in $(DEBIAN_PKG_ARCH) ; do \
+	     make VERSION=$(VERSION) ARCH=$$arch release-arch ; \
+	done
 
 debian-repo:
 	pkg/debian/update-repo $(VERSION) pkg/debian $(REPODIR)

@@ -16,5 +16,8 @@ release: clean
 	    ( echo 1>&2 "You need the 'dh-make' package: apt-get -y install dh-make" && exit 2 )
 	sh ./gendeb $(VERSION)
 
+release-arch:
+	sh ./buildenv $(VERSION) $(ARCH)
+
 clean:
 	rm -rf netmagis*

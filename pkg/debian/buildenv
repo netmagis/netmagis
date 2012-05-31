@@ -1,0 +1,126 @@
+#!/bin/sh
+
+#
+# Build package for specified architecture and distribution
+# Should be run from the netmagis pkg/debian directory
+#
+# Usage:
+#       buildenv version [arch [distrib]]
+#
+
+ROOTDIR=/srv/chroot
+CONFDIR=/etc/schroot/chroot.d/
+
+# Default values
+ARCH=`uname -i`
+DISTRIB=`lsb_release --codename --short`
+
+# Check if root
+if [ `id --user` != 0 ] 
+then
+    echo "$0: must be root" >&2
+    exit 1
+fi
+
+# Handle arguments
+case $# in
+    1)
+    	VERSION="$1"
+    	;;
+    2)
+    	VERSION="$1"
+    	ARCH="$2"
+    	;;
+    3)
+    	VERSION="$1"
+    	ARCH="$2"
+    	DISTRIB="$3"
+	;;
+    *)	
+    	echo "Usage: $0 version [arch [distrib]]" >&2
+	exit 1
+    	;;
+esac
+
+# Select source
+case "$DISTRIB" in
+    oneiric|precise)
+	URL=http://archive.ubuntu.com/ubuntu/
+	;;
+    wheezy)
+    	URL=http://ftp.debian.org/debian
+	;;
+    *)
+    	echo "$0: Distrib '$DISTRIB' unknown" >&2
+	exit 1
+	;;
+esac
+
+case "$ARCH" in
+    i386)
+    	PERS="personality=linux32"
+    	;;
+    amd64|x86_64)
+    	PERS=""
+	ARCH=amd64
+    	;;
+    *)
+    	echo "$0: Arch '$ARCH' unknown" >&2
+	exit 1
+    	;;
+esac
+
+D=build_${DISTRIB}_${ARCH}
+
+# Schroot must be installed
+if which schroot >/dev/null 2>&1
+then :
+else
+    echo 1>&2 "$0: you need the 'schroot' package: apt-get -y install schroot"
+    exit 1
+fi
+
+# Configure chroot
+cat >$CONFDIR/$D.conf <<EOF
+[$D]
+description=$DISTRIB
+type=directory
+directory=$ROOTDIR/$D
+groups=root
+root-groups=root
+$PERS
+EOF
+
+# Install distribution
+rm -fr $ROOTDIR/$D
+debootstrap --arch $ARCH $DISTRIB $ROOTDIR/$D $URL
+
+# Install build dependancies
+SESSION=`schroot --begin-session -c $D`
+schroot --run-session -c $SESSION -- apt-get install -y dpkg-dev devscripts dh-make wget
+schroot --run-session -c $SESSION -- apt-get install -y debhelper tcl8.5-dev
+
+# Copy netmagis source
+NMDIR=$ROOTDIR/$D/netmagis
+mkdir $NMDIR
+tar cf - -C ../.. . | tar xf - -C $NMDIR
+
+# Build packages
+if schroot --run-session -c $SESSION -- sh -c "cd /netmagis/pkg/debian ; make VERSION=$VERSION release"
+then :
+else
+    echo "$0: Package build failed" >&2
+    exit 1
+fi
+
+# Copy built packages
+cp -v $NMDIR/pkg/debian/netmagis-*_$ARCH.deb .
+
+# Remove the 'at' package in the chroot to end session
+schroot --run-session -c $SESSION -- apt-get remove -y at
+
+# Close session and erase build environment
+schroot -e -c "$SESSION"
+rm -fr $ROOTDIR/$D $CONFDIR/$D.conf
+
+exit 0
