@@ -211,6 +211,12 @@
 
     \titre {3} {Installing from Debian/Ubuntu packages}
 
+    Linux packages are provided for installating on:
+    \liste {
+	\item {Ubuntu (minimum distribution is 11.10, Oneiric Ocelot)}
+	\item {Debian (minimum distribution is wheezy - testing)}
+    }
+
     Append the following lines to your \teletype {/etc/apt/sources.list}:
 
     \retrait\teletype {
@@ -218,27 +224,50 @@
 	deb-src http://netmagis.org/files/repo stable main
     }
 
-    And update your package database:
+    If you are using an Ubuntu distribution, check that the "\teletype
+    {universe}" section is enabled in \teletype {/etc/apt/sources.list}.
+
+    Now, update your package database:
 
     \retrait\teletype {
 	# apt-get update
     }
 
-    If your system is based on the amd64 architecture (x86_64 in \teletype
-    "{uname -p}" output), you can install from binary packages (example
-    for the \italique {database} package):
+    The next step depends upon your architecture:
 
-    \retrait\teletype {
-	# apt-get install netmagis-database
-    }
+    \liste {
+	\item {If your system is based on an i386 or amd64
+	    architecture (i386 or x86_64 in \teletype "{uname -i}"
+	    output), you can install from binary packages (example for
+	    the \italique {database} package):
 
-    If your system is based on another architecture, you need to rebuild
-    from source package:
+	    \retrait\teletype {
+		# apt-get install netmagis-database
+	    }
 
-    \retrait\teletype {
-	# apt-get install dpkg-dev \br
-	# apt-get build-dep netmagis \br
-	# apt-get source --build netmagis
+	    Since packages are not signed, you must manually answer
+	    "Yes" to the question "Install these packages without
+	    verification?".
+
+	}
+	\item {If your system is based on another architecture, you need
+	    to rebuild from source package:
+
+	    \retrait\teletype {
+		# apt-get install dpkg-dev \br
+		# apt-get build-dep netmagis \br
+		# apt-get source --build netmagis
+	    }
+
+	    Once the packages are built, install them with \teletype
+	    {gdebi} (example for the \italique {database} package and
+	    the \italique {pdp11} architecture):
+
+	    \retrait\teletype {
+		# apt-get install gdebi \br
+		# gdebi netmagis-database_2.1-1_pdp11.deb
+	    }
+	}
     }
 
 
