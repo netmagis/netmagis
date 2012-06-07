@@ -235,6 +235,8 @@ proc juniper-parse {libdir model fdin fdout tab eq} {
 
     array set kwtab {
 	version				{2	NOP}
+	groups				{1	NOP}
+	apply-groups			{2	NOP}
 	interfaces			{1	juniper-parse-interfaces}
 	snmp				{1	juniper-parse-snmp}
 	routing-options			{1	juniper-parse-routing-options}
