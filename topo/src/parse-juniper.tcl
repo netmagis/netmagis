@@ -405,6 +405,7 @@ proc juniper-parse-if {conf tab idx} {
 	gigether-options	{1	juniper-parse-if-gigopt}
 	ether-options		{1	juniper-parse-if-gigopt}
 	aggregated-ether-options {1	NOP}
+	encapsulation		{2 NOP}
 	vlan-tagging		{1	juniper-parse-if-vlan-tagging}
 	member-range		{4	juniper-parse-member-range}
 	member			{2	juniper-parse-member}
