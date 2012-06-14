@@ -51,6 +51,8 @@ VERSION		= 2.1b1
 
 # build debian package for the following architectures
 DEBIAN_PKG_ARCH = i386
+# default debian distribution
+DEBIAN_DISTRIB		= dev
 
 usage:
 	@echo "available targets:"
@@ -72,6 +74,7 @@ usage:
 	@echo "	debian-packages"
 	@echo "	debian-packages-other-arch"
 	@echo "	debian-repo"
+	@echo "	  (with optional variable DEBIAN_DISTRIB=stable)"
 	@echo "	clean"
 	@echo "	nothing"
 
@@ -152,7 +155,7 @@ debian-packages-other-arch:
 	done
 
 debian-repo:
-	pkg/debian/update-repo $(VERSION) pkg/debian $(REPODIR)
+	pkg/debian/update-repo $(VERSION) pkg/debian $(DEBIAN_DISTRIB) $(REPODIR)
 
 clean:
 	cd common ; make clean

@@ -22,38 +22,50 @@ TODO:
 	cd $NETMAGIS
 	vi Makefile		# Modify the VERSION variable
 
-    1.d. Update installation documentation
+    1.d. Create netmagis distribution file
 
-	cd $NETMAGIS/docs/install
-	vi index.*
-	cd $NETMAGIS 
-	make ...
-XXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-    1.e. Create netmagis distribution file
-
+	umask 002
 	cd $NETMAGIS 
 	make distrib
 	mv netmagis*.tar.gz /www/docs/files/
 
-    1.f. Update web site 
+    1.e. Update installation documentation and web site 
 
-	cd $NETMAGIS/docs/netmagis.org
+	umask 002
+	cd $NETMAGIS/doc/netmagis.org
+	cp install-$OLDVERSION.htgt install-$VERSION.htgt
+	# update installation documentation
+	vi install-$VERSION.htgt
+	# update links to new version (install, download etc.)
 	vi index.* news.* doc.* download.*
-	make ...
-XXXXXXXXXXXXXXXXXXXXXXXXXXX
+	cd $NETMAGIS
+	make \
+	    DESTDIR=/www/docs \
+	    TCLSH=/usr/local/bin/tclsh8.5 \
+	    TCLCONF=/usr/share/tcltk/tcl8.5/tclConfig.sh \
+	    install-netmagis.org
 
-    1.g. Commit changes
+    1.f. Commit changes
 
 	git commit -a
-	git push
+
+    1.g. Create branch if it is a new version (vX.Y.0)
+
+	git checkout -b X.Y
+	git push --all
+	
+    1.h. Tag the new version every time
+
+	git tag -m "version X.Y.Z" vX.Y.Z 
+	git push --tags
 
 2. On the FreeBSD host
 
     2.a. Be sure to get the files updated
 
 	cd $NETMAGIS
-	git pull
+	git pull --all
+	git checkout X.Y
     
     2.b. Generate ports
 
@@ -69,12 +81,14 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXX
     3.a. Be sure to get the files updated
 
 	cd $NETMAGIS
-	git pull
+	git pull --all
+	git checkout X.Y
     
     3.b. Generate debian packages
 
 	cd $NETMAGIS
     	make debian-packages
+    	sudo make debian-packages-other-arch
 
     3.c. Create repository if needed
     	
@@ -83,17 +97,24 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXX
 	    Origin: netmagis
 	    Label: netmagis
 	    Codename: stable
-	    Architectures: amd64 i386
+	    Architectures: amd64 i386 source
 	    Components: main
 	    Description: Apt repository for netmagis
 
+	    Origin: netmagis
+	    Label: netmagis
+	    Codename: dev
+	    Architectures: amd64 i386 source
+	    Components: main
+	    Description: Dev apt repository for netmagis
+
     3.d. Update local repository
 
-	make debian-repo
+	make DEBIAN_DISTRIB=stable debian-repo
+	# use DEBIAN_DISTRIB=dev to update the dev distribution
 
     3.e. Copy local repository to the web server
 
 	tar cf - -C /local repo | \
 		ssh netmagis.org tar xf - -C /www/docs/files
-
 

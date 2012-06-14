@@ -5,30 +5,46 @@
 #
 # Usage Example:
 #
-#    update-repo 2.1 $HOME/netmagis/pkg/debian /local/repo
+#    update-repo 2.1.0 $HOME/netmagis/pkg/debian stable /local/repo
+#
+#    update-repo 2.1.0b1 $HOME/netmagis/pkg/debian dev /local/repo
 #
 # The package reprepro is required to run this script
 #
 # History:
 #   2012/05/16 : pda/jean : design
 
-if [ $# -ne 3 ]
+if [ $# -ne 4 ]
 then
-	echo "Usage: $0 version pkgdir repodir" >&2
+	echo "Usage: $0 version pkgdir distrib repodir" >&2
 	exit 1
 fi
 
 VERSION="$1"
 PKGDIR="$2"
-REPODIR="$3"
+DISTRIB="$3"
+REPODIR="$4"
 
-# Check repository existence
+# Check for repository existence
 if [ ! -d "$REPODIR" ]
 then
-    echo "Directory $REPODIR does not exist" >&2
+    echo "Directory '$REPODIR' does not exist" >&2
+    exit 1
+fi
+conffile="$REPODIR"/conf/distributions
+if [ ! -f "$conffile" ]
+then
+    echo "File '$conffile' does not exist" >&2
     exit 1
 fi
 
+# Check for distribution
+if grep -q "^Codename:[ 	]*$DISTRIB$" "$conffile"
+then :
+else
+    echo "Distribution '$DISTRIB' not found in '$conffile'" >&2
+    exit 1
+fi
 
 # Check for packages
 for i in common database metro servers topo utils www 
@@ -41,18 +57,6 @@ do
     fi
 done
 
-# Create configuration file for reprepro
-mkdir -p $REPODIR/conf
-cat > $REPODIR/conf/distributions <<EOF
-Origin: netmagis
-Label: netmagis
-Codename: stable
-Architectures: amd64 i386 source
-Components: main
-Description: Apt repository for netmagis
-#SignWith: <key-id>
-EOF
-
-# Create or update repository
-reprepro -b $REPODIR includedeb stable $PKGDIR/netmagis-*_$VERSION-*.deb
-reprepro -b $REPODIR includedsc stable $PKGDIR/netmagis_$VERSION-*.dsc
+# Update repository
+reprepro -b $REPODIR includedeb $DISTRIB $PKGDIR/netmagis-*_$VERSION-*.deb
+reprepro -b $REPODIR includedsc $DISTRIB $PKGDIR/netmagis_$VERSION-*.dsc
