@@ -454,12 +454,13 @@
 	}
     }
 
-    Netmagis uses only one PostgreSQL user, without special privilege.
+    Netmagis uses only one PostgreSQL user, without special privilege
+    (except database creation privilege).
     You must create it (as the PostgreSQL administor user: \teletype
     {pgsql} on FreeBSD, \teletype {postgres} on Linux) with the
     PostgreSQL \teletype {createuser} program:
 
-    \retrait\teletype {createuser --no-superuser --no-createrole --no-createdb --pwprompt dns}
+    \retrait\teletype {createuser --no-superuser --no-createrole --createdb --pwprompt dns}
 
     Even if you want to use a different database for the \italique
     {mac} package, you can use the same user.
@@ -499,7 +500,7 @@
 	\lignetableau {
 	    \casetableau {} {dnsdb...}
 	    \casetableau {} {Information needed to connect to the
-		PostgreSQL server, with an unprivileged user.
+		PostgreSQL server, with an unprivileged user (see below).
 	    }
 	}
 	\lignetableau {
@@ -595,7 +596,7 @@
     \item {
 	If you are installing Netmagis for the first time, after you
 	configured the \teletype {netmagis.conf} file, run the command
-	\retrait\teletype {$ .../sbin/netmagis-dbcreate -u \italique {user} -w \italique {password}}
+	\retrait\teletype {$ .../sbin/netmagis-dbcreate}
 	This command:
 	\liste {
 	    \item {creates the Netmagis database (it fails if the database
@@ -614,11 +615,6 @@
 	    \item {assigns all Netmagis users a random password, and
 		displays them on standard output}
 	}
-	As this command needs to create databases, you have to
-	provide the user and password of a privileged PostgreSQL
-	user (for example: \teletype {pgsql} user on FreeBSD, \teletype
-	{postgres} user on Linux).
-
 	Users are created in the Netmagis database, including the
 	internal authentication schema.
 	\liste {

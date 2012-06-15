@@ -9,7 +9,7 @@
 dnsdbhost	db.example.com
 dnsdbport	5432
 dnsdbname	netmagis
-dnsdbuser	dns
+dnsdbuser	nm
 dnsdbpassword	password-of-dnsdbuser
 
 # Mac database. If it is shared with the main netmagis database, use
@@ -17,7 +17,7 @@ dnsdbpassword	password-of-dnsdbuser
 macdbhost	db.example.com
 macdbport	5432
 macdbname	mac
-macdbuser	dns
+macdbuser	nm
 macdbpassword	password-of-macdbuser
 
 pkgtcl		%NMLIBDIR%/pkgtcl

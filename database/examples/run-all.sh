@@ -8,12 +8,6 @@
 PATH=%SBINDIR%:$PATH
 export PATH
 
-#
-# You can use PGUSER and PGPASSWORD environment variables to provide 
-# netmagis-dbcreate with identity of a priviledged PostgreSQL user 
-# (in order to create the database), or you can use -u/-w switches.
-#
-
 netmagis-dbcreate && \
     netmagis-dbimport -v group group.txt && \
     netmagis-dbimport -v domain domain.txt && \

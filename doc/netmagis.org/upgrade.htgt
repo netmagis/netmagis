@@ -53,20 +53,20 @@
     file). This simplifies considerably the installation, but the upgrade
     needs to take this into account: you need to transfer ownership of
     the database to this unprivileged user. Assuming this user is
-    called "\teletype {dns}":
+    called "\teletype {nm}":
 
     To do so:
     \liste {
 	\item {as your existing administrative user, dump the
 	    database:
 	    \retrait\teletype {$ pg_dump \italique
-		{netmagis-database-name} \> /tmp/dns.dump}
+		{netmagis-database-name} \> /tmp/netmagis.dump}
 	}
 	\item {as the PostgreSQL administrator user (\teletype {pgsql}
 	    on FreeBSD, \teletype {postgres} on Linux), create the
 	    unprivileged user:
 	    \retrait\teletype {pgsql$ createuser --no-superuser --no-createrole
-		--no-createdb --pwprompt dns}
+		--createdb --pwprompt nm}
 	}
 	\item {always as this PostgreSQL administrator user, delete the
 	    old database and create the new database with the correct
@@ -74,12 +74,12 @@
 	    \retrait {
 		\teletype {pgsql$ dropdb \italique {netmagis-database-name}}
 		\br
-		\teletype {pgsql$ createdb -E unicode --owner=dns \italique
+		\teletype {pgsql$ createdb -E unicode --owner=nm \italique
 		    {netmagis-database-name}}
 	    }
 	}
 	\item {as the unprivileged user, restore the database contents:
-	    \retrait\teletype {$ psql -f /tmp/dns.dump \italique
+	    \retrait\teletype {$ psql -f /tmp/netmagis.dump \italique
 	    {netmagis-database-name}}
 	}
     }
@@ -99,9 +99,7 @@
 	}
 	\item {Next, create the MAC schema, with the newly installed
 	    \teletype {netmagis-dbcreate} script:
-	    \retrait\teletype {$ netmagis-dbcreate -u pgsql -w passwd mac}
-	    where \teletype {pgsql} is the name of the PosgreSQL
-	    administrator user and \teletype {passwd} its password.
+	    \retrait\teletype {$ netmagis-dbcreate mac}
 	}
     }
 

@@ -4,7 +4,7 @@
 # Netmagis database creation
 #
 # Syntax :
-#	netmagis-dbcreate [-u user][-w password] [netmagis] [mac] [copy]
+#	netmagis-dbcreate [netmagis] [mac] [copy]
 #
 # History
 #   2002/02/11 : pda        : design
@@ -27,22 +27,16 @@
 #   2012/01/21 : jean       : add droitgenl attribute
 #   2012/04/08 : pda        : simplify users
 #   2012/04/08 : pda        : mac database creation
+#   2012/06/15 : pda/jean   : drop -u/-w for an obsolete privileged user
 #
 
 usage ()
 {
     (
-	echo "usage: $0 [-u user][-w password] [netmagis] [mac] [copy]"
-	echo "	-u: user allowed to create databases"
-	echo "		(default: PGUSER variable or 'dnsdbuser' parameter)"
-	echo "	-w: password "
-	echo "		(default: PGPASSWORD variable, or 'dnsdbpassword' parameter)"
+	echo "usage: $0 [netmagis] [mac] [copy]"
 	echo "  netmagis : create netmagis database and schemas"
 	echo "  mac      : create mac database and schema"
 	echo "  copy     : create a copy of netmagis database"
-	echo ""
-	echo "Notice that the -u user will only be used for database creation."
-	echo "Owners of databases are given by the dnsdbuser/macdbuser parameters."
     ) >&2
     exit 1
 }
@@ -86,7 +80,6 @@ init_env ()
 # Generic database creation
 ##############################################################################
 
-# $1 = owner of database
 # returns an error if creation failed
 db_create_if_not_exists ()
 {
@@ -94,7 +87,8 @@ db_create_if_not_exists ()
     if psql --no-psqlrc -c "" 2> /dev/null
     then :
     else
-	createdb -E unicode --owner="$1"
+	# black magic: use template0 to avoid encoding incompatibility
+	createdb -E unicode --template=template0
 	r=$?
     fi
     return $r
@@ -150,17 +144,15 @@ create_netmagis ()
     PGHOST="$dnsdbhost"
     PGPORT="$dnsdbport"
     PGDATABASE="$dnsdbname"
-    export PGHOST PGPORT PGDATABASE
+    PGUSER="$dnsdbuser"
+    PGPASSWORD="$dnsdbpassword"
+    export PGHOST PGPORT PGDATABASE PHUSER PGPASSWORD
 
     ###############################
-    # Create main netmagis database as the privileged user
+    # Create main netmagis database
     ###############################
 
-    PGUSER="$puser"
-    PGPASSWORD="$ppassword"
-    export PGUSER PGPASSWORD
-
-    if db_create_if_not_exists "$dnsdbuser"
+    if db_create_if_not_exists
     then :
     else
 	echo "Erreur while creating database '$PGDATABASE'" 2>&1
@@ -177,16 +169,16 @@ create_netmagis ()
     # Initialize main netmagis database schemas and contents
     ###############################
 
-    PGUSER="$dnsdbuser"
-    PGPASSWORD="$dnsdbpassword"
-    export PGUSER PGPASSWORD
-
     create_language plpgsql
     create_language pltcl
 
     create_netmagis_schemas
 
     netmagis_insert_config
+
+    ###############################
+    # Create netmagis application users
+    ###############################
 
     for u in $rootusers
     do
@@ -1567,17 +1559,15 @@ create_mac ()
     PGHOST="$macdbhost"
     PGPORT="$macdbport"
     PGDATABASE="$macdbname"
-    export PGHOST PGPORT PGDATABASE
+    PGUSER="$macdbuser"
+    PGPASSWORD="$macdbpassword"
+    export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
 
     ###############################
-    # Create mac database as the privileged user
+    # Create mac database
     ###############################
 
-    PGUSER="$puser"
-    PGPASSWORD="$ppassword"
-    export PGUSER PGPASSWORD
-
-    if db_create_if_not_exists "$macdbuser"
+    if db_create_if_not_exists
     then :
     else
 	echo "Erreur while creating database '$PGDATABASE'" 2>&1
@@ -1593,10 +1583,6 @@ create_mac ()
     ###############################
     # Initialize mac database schemas and contents
     ###############################
-
-    PGUSER="$macdbuser"
-    PGPASSWORD="$macdbpassword"
-    export PGUSER PGPASSWORD
 
     create_mac_schemas
 }
@@ -1675,17 +1661,15 @@ create_copy ()
     PGHOST="$dnsdbhost"
     PGPORT="$dnsdbport"
     PGDATABASE="$dbcopy"
-    export PGHOST PGPORT PGDATABASE
+    PGUSER="$dnsdbuser"
+    PGPASSWORD="$dnsdbpassword"
+    export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
 
     ###############################
-    # Create copy database as the privileged user
+    # Create copy database
     ###############################
 
-    PGUSER="$puser"
-    PGPASSWORD="$ppassword"
-    export PGUSER PGPASSWORD
-
-    if db_create_if_not_exists "$dnsdbuser"
+    if db_create_if_not_exists
     then :
     else
 	echo "Erreur while creating database '$PGDATABASE'" 2>&1
@@ -1707,7 +1691,7 @@ init_env
 # Syntax checking
 #       
  
-args=`getopt hu:w: $*`
+args=`getopt h $*`
 
 if [ $? != 0 ]
 then usage
@@ -1715,25 +1699,9 @@ fi
 
 set -- $args
 
-if [ ! -z "$PGUSER" ]
-then puser="$PGUSER"
-else puser="$dnsdbuser"
-fi
-
-if [ ! -z "$PGPASSWORD" ]
-then ppassword="$PGPASSWORD"
-else ppassword="$dnsdbpassword"
-fi
-
 while true
 do
     case "$1" in
-	-u) puser="$2"		# privileged user
-	    shift 2
-	    ;;
-	-w) ppassword="$2"	# privileged password
-	    shift 2
-	    ;;
 	-h) usage
 	    exit 0
 	    ;;
