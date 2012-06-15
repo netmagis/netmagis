@@ -124,6 +124,8 @@ distrib: clean
 	mkdir /tmp/netmagis-$(VERSION)
 	tar cf - --exclude "pkg/*" \
 		--exclude "doc/jres/*" \
+		--exclude "doc/pres/*" \
+		--exclude "doc/old/*" \
 		--exclude "doc/netmagis.org" \
 		* \
 	    | tar xf - -C /tmp/netmagis-$(VERSION)
