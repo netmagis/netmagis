@@ -460,7 +460,7 @@
     {pgsql} on FreeBSD, \teletype {postgres} on Linux) with the
     PostgreSQL \teletype {createuser} program:
 
-    \retrait\teletype {createuser --no-superuser --no-createrole --createdb --pwprompt dns}
+    \retrait\teletype {createuser --no-superuser --no-createrole --createdb --pwprompt nm}
 
     Even if you want to use a different database for the \italique
     {mac} package, you can use the same user.
