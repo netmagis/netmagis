@@ -17,10 +17,11 @@ TODO:
 
     1.b. Update the CHANGES file
 
-    1.c. Update version number in the top-level Makefile
+    1.c. Update version number
 
 	cd $NETMAGIS
-	vi Makefile		# Modify the VERSION variable
+	vi Makefile				# Modify the VERSION variable
+	vi pkg/freebsd/netmagis-common/Makefile	# Modify the DISTVERSION var
 
     1.d. Create netmagis distribution file
 
