@@ -319,7 +319,7 @@
 	\lignetableau {
 	    \casetableau {} {RDBMS}
 	    \casetableau {} {\lien {PostgreSQL} {http://www.postgresql.org}}
-	    \casetableau {} {\gt= 8.3}
+	    \casetableau {} {\gt= 9.1}
 	    \casetableau {} {Mandatory}
 	    \casetableau {} {PostgreSQL is mandatory in order
 		to use network address datatypes, stored procedures,

@@ -71,6 +71,14 @@
 	    pouvez également \lien {regarder la vidéo}
 	    {http://video.fosdem.org/2012/lightningtalks/netmagis.webm}.
 	}
+	\item {lors du \lien {campus monitoring workshop}
+	    {http://www.ces.net/events/2012/campus-monitoring/}
+	    (à Brno, en République Tchèque, 24 avril 2012) de GEANT.
+	    Vous pouvez lire
+	    \lien {la présentation}
+	    {http://www.ces.net/events/2012/campus-monitoring/p/benoit-netmagis.pdf}
+	    (en PDF).
+	}
     }
 
     \titre {2} {Articles}

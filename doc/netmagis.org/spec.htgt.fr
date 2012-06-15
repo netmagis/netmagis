@@ -335,7 +335,7 @@
 	\lignetableau {
 	    \casetableau {} {SGBD}
 	    \casetableau {} {\lien {PostgreSQL} {http://www.postgresql.org}}
-	    \casetableau {} {\gt= 8.3}
+	    \casetableau {} {\gt= 9.1}
 	    \casetableau {} {Indispensable}
 	    \casetableau {} {PostgreSQL est indispensable pour
 		bénéficier du type de données «~adresse IPv6~», des
@@ -394,7 +394,7 @@
 	\lignetableau {
 	    \casetableau {} {Mot de passe}
 	    \casetableau {} {\lien {pwgen} {http://sourceforge.net/projects/pwgen/}}
-	    \casetableau {} {\gt= 1.5}
+	    \casetableau {} {\gt= 2.06}
 	    \casetableau {} {Indispensable}
 	    \casetableau {} {Génère un mot de passe lors de la création
 		de compte
