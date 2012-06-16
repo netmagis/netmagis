@@ -30,7 +30,7 @@ RUN_DEPENDS+=	netmagis-config:${PORTSDIR}/net-mgmt/netmagis-common
 .if ${PKGNAMESUFFIX} == "-database"
 RUN_DEPENDS+=	postmaster:${PORTSDIR}/databases/postgresql${PGSQL_VER}-server \
 		pltcl_listmod:${PORTSDIR}/databases/postgresql${PGSQL_VER}-pltcl \
-		pwgen:${PORTSDIR}/sysutils/pwgen2
+		pwgen:${PORTSDIR}/sysutils/pwgen
 .endif
 
 .if ${PKGNAMESUFFIX} == "-www"
