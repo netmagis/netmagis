@@ -60,7 +60,7 @@
 	    the metrology package periodically polls them for traffic
 	    information, and traffic graphs are available in the
 	    Netmagis Web interface.
-	
+
 	}
 	\item {The MAC package is now integrated. It register in the
 	    Netmagis database (or another database if you fear performance
