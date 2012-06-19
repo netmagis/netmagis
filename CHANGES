@@ -11,7 +11,6 @@ Version 2.1 - 2012/04/??
     - simplify rancid configuration directives (rancid{db+confdir}->ranciddir)
     - remove the never used dr_mbox table
     - netmagis-dbcreate: creation of mac database
-    - netmagis-dbcreate: creation of a copy of netmagis main database
     - simplify user configuration : only one unprivileged user is needed
 	for database creation (and one more if mac database is different)
     - netmagis-maint has been renamed into netmagis-dbmaint

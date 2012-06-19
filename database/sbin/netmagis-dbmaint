@@ -16,6 +16,7 @@
 #   2002/06/19 : pda : design backup script
 #   2002/07/25 : pda : merge in only one script
 #   2011/03/18 : pda : i18n
+#   2012/06/19 : pda : create copy database and simplify copying
 #
 
 usage ()
@@ -67,11 +68,13 @@ copy ()
 {
     if [ "$dumpdir" != "" -a "$dbcopy" != "" ]
     then
-	FILE=$dumpdir/dump.bin
-	pg_dump --file=$FILE --format=c \
-		--schema=global --schema=dns --schema=topo --schema=pgauth \
-		$PGDATABASE \
-	    && pg_restore --clean --no-owner --dbname=$dbcopy $FILE
+	# drop copy if it already exists
+	if psql -lAt | grep -q "^$dbcopy|"
+	then dropdb "$dbcopy"
+	fi
+
+	# create copy from the original database
+	createdb -E unicode --template="$PGDATABASE" "$dbcopy"
     fi
 }
 

@@ -604,8 +604,6 @@
 	    \item {creates the MAC database if it is different from the
 		main Netmagis database (it fails if the database
 		is already created)}
-	    \item {creates a copy of the Netmagis database for
-		test purpose (see the \teletype {dbcopy} parameter above)}
 	    \item {creates the SQL schemas, tables, functions and triggers}
 	    \item {provides default values for Netmagis directives}
 	    \item {creates Netmagis users listed in \teletype {rootusers}

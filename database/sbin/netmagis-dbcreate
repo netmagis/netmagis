@@ -4,7 +4,7 @@
 # Netmagis database creation
 #
 # Syntax :
-#	netmagis-dbcreate [netmagis] [mac] [copy]
+#	netmagis-dbcreate [netmagis] [mac]
 #
 # History
 #   2002/02/11 : pda        : design
@@ -28,15 +28,15 @@
 #   2012/04/08 : pda        : simplify users
 #   2012/04/08 : pda        : mac database creation
 #   2012/06/15 : pda/jean   : drop -u/-w for an obsolete privileged user
+#   2012/06/19 : pda        : don't create copy database
 #
 
 usage ()
 {
     (
-	echo "usage: $0 [netmagis] [mac] [copy]"
+	echo "usage: $0 [netmagis] [mac]"
 	echo "  netmagis : create netmagis database and schemas"
 	echo "  mac      : create mac database and schema"
-	echo "  copy     : create a copy of netmagis database"
     ) >&2
     exit 1
 }
@@ -72,7 +72,7 @@ init_env ()
 
     # These variables are searched in a second pass, since they can be empty
     # (the first pass used the "-c" flag) 
-    varlist="pwgen crypt dbcopy"
+    varlist="pwgen crypt"
     eval `%CONFPROG% $varlist`
 }
 
@@ -1647,37 +1647,6 @@ EOF
 }
 
 ##############################################################################
-# Create copy database
-##############################################################################
-
-create_copy ()
-{
-    if [ -z "$dbcopy" ]
-    then return
-    fi
-
-    echo "Creating copy of Netmagis database as '$dbcopy'"
-
-    PGHOST="$dnsdbhost"
-    PGPORT="$dnsdbport"
-    PGDATABASE="$dbcopy"
-    PGUSER="$dnsdbuser"
-    PGPASSWORD="$dnsdbpassword"
-    export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
-
-    ###############################
-    # Create copy database
-    ###############################
-
-    if db_create_if_not_exists
-    then :
-    else
-	echo "Erreur while creating database '$PGDATABASE'" 2>&1
-	exit 1
-    fi
-}
-
-##############################################################################
 # Main program
 ##############################################################################
 
@@ -1712,7 +1681,7 @@ do
 done
 
 if [ $# = 0 ]
-then set netmagis mac copy
+then set netmagis mac
 fi
 
 #
@@ -1722,7 +1691,7 @@ fi
 for action
 do
     case "$action" in
-	netmagis|mac|copy) ;;
+	netmagis|mac) ;;
 	*)
 	    echo "Unknown action '$action'" >&2
 	    usage
@@ -1740,7 +1709,6 @@ do
     case "$action" in
 	netmagis) create_netmagis ;;
 	mac)      create_mac ;;
-	copy)     create_copy ;;
     esac
 done
 
