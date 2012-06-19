@@ -44,8 +44,8 @@ The network described in these files is:
 	On this router:
 	    Interconnection = 192.168.1.1/30 and 2001:db8:0123:4000::1/64
 	    VLAN 123 = 172.16.1.254/24 and 2001:db8:0123:4001::1/64
-	    VLAN 456 = 172.16.11.254/244 and 2001:db8:0123:4011::11/64
-	    VLAN 789 = 172.16.12.254/244
+	    VLAN 456 = 172.16.11.254/24 and 2001:db8:0123:4011::11/64
+	    VLAN 789 = 172.16.12.254/24
 
     sw1 (a simple switch)
 	Gi0/0 --------------> a host
