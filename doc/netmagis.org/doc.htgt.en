@@ -59,7 +59,7 @@
 
     \titre {2} {Presentations in English}
 
-    Netmagis have been the subject of a talk in:
+    Netmagis have been the subject of various talks:
     \liste {
 	\item {FOSDEM 2012 in Brussels. You can view this talk at
 	    \lien {http://fosdem.org/2012/schedule/event/netmagis}
@@ -81,9 +81,14 @@
     Netmagis was the basis of three papers in the French speaking
     conference \lien {JRES} {http://www.jres.org}:
     \liste {
-	\item {an article to announce the 2.0 release.
-	    See the \lien {JRES 2011}
-	    {https://2011.jres.org/archives/35/index.htm} website.
+	\item {an article to announce the 2.0 release during
+	    \lien {JRES'11} {https://2011.jres.org/}.
+	    You can consult:
+	    \liste {
+		\item\lien {article} {https://2011.jres.org/archives/35/paper35_article.pdf}
+		\item\lien {slides} {https://2011.jres.org/archives/35/paper35_slides.odp}
+		\item\lien {video} {http://video.renater.fr/jres/2011/index.php?aid=35}
+	    }
 	}
 	\item {an article to present the network information system
 	    for the Osiris metropolitan area network in Strasbourg (France),

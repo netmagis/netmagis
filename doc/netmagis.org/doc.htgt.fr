@@ -62,7 +62,7 @@
 
     \titre {2} {Présentations en Anglais}
 
-    Netmagis a fait l'objet d'une présentation :
+    Netmagis a fait l'objet de présentations :
     \liste {
 	\item {lors du FOSDEM 2012 à Bruxelles. Vous pouvez accéder
 	    à cette présentation à l'adresse~:
@@ -86,9 +86,14 @@
     Netmagis a fait l'objet de trois articles lors des \lien {JRES}
     {http://www.jres.org}~:
     \liste {
-	\item {une présentation de Netmagis lors des JRES 2011
-	    à l'occasion de l'annonce de la version 2.0
-	    Consultez le site des \lien {JRES 2011} {http://2011.jres.org}.
+	\item {une présentation de Netmagis lors des \lien {JRES 2011}
+	    {http://2011.jres.org} à l'occasion de l'annonce de la
+	    version 2.0 Vous pouvez consulter~:
+	    \liste {
+		\item\lien {l'article} {https://2011.jres.org/archives/35/paper35_article.pdf}
+		\item\lien {le support de la présentation} {https://2011.jres.org/archives/35/paper35_slides.odp}
+		\item\lien {la vidéo de la présentation} {http://video.renater.fr/jres/2011/index.php?aid=35}
+	    }
 	}
 	\item {une présentation du système d'information du CRC
 	    lors des JRES 2005, qui place Netmagis dans son contexte
