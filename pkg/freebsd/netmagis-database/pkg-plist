@@ -1,6 +1,6 @@
 sbin/netmagis-dbcreate
 sbin/netmagis-dbimport
-sbin/netmagis-maint
+sbin/netmagis-dbmaint
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/crontab.database
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/domain.txt
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/group.txt

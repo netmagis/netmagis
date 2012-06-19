@@ -568,7 +568,7 @@
 	\lignetableau {
 	    \casetableau {} {dbcopy}
 	    \casetableau {} {Name of a copy of the Netmagis database,
-		generated every night (see the \teletype {netmagis-maint}
+		generated every night (see the \teletype {netmagis-dbmaint}
 		program in the \italique {database} package). This copy
 		lets you experiment and work on data without fear. \br
 		If this directive is empty, the maintenance command
@@ -647,7 +647,7 @@
 	{/etc/crontab}, please provide a user name just before the
 	command name.
 
-	The \teletype {.../sbin/netmagis-maint} command performs some
+	The \teletype {.../sbin/netmagis-dbmaint} command performs some
 	maintenance tasks:
 	\liste {
 	    \item {make a hourly backup of database in the directory

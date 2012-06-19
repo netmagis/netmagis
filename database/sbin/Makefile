@@ -3,7 +3,7 @@ NINSTALL	= ../../ninstall
 SCRIPTS = \
 	netmagis-dbcreate \
 	netmagis-dbimport \
-	netmagis-maint
+	netmagis-dbmaint
 
 install:
 	@echo ">>> Making install in `pwd`"

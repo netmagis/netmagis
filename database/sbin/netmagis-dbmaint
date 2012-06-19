@@ -8,8 +8,8 @@
 # - spool expiration
 #
 # This script is meant to be run by cron, with entries such as:
-#	0 8-18 * * * netmagis /usr/local/sbin/netmagis-maint hourly
-#	0 23   * * * netmagis /usr/local/sbin/netmagis-maint daily
+#	0 8-18 * * * netmagis /usr/local/sbin/netmagis-dbmaint hourly
+#	0 23   * * * netmagis /usr/local/sbin/netmagis-dbmaint daily
 #
 # History
 #   2002/06/04 : pda : design script to copy to development database
