@@ -1,0 +1,60 @@
+This directory contains example data to load into a fresh Netmagis
+installation. There are two main objectives:
+    - show how to import your own data
+    - quickly get a running Netmagis installation in order to
+	test the software
+Data are loaded through the "run-all.sh" script which you can copy
+and adapt to suit your own needs. See installation documentation
+on http://netmagis.org
+
+Furthermore, these data are used during the development stages to
+test the software.
+
+This document explains the scenario used in this example.
+
+- The main company (Example Corporation) is organized as (see
+    networks.txt):
+    - a marketing departement
+    - an IT departement
+    - a R&D departement
+    - a first plant, located on the main site
+    - a second plant, located on another site
+- recently, Example Corp has bought a subsidiary in a foreign country
+    (domain .zz), which is not yet merged on a network point of
+    view.
+- Example Corp has organized a non commercial event, which needs a
+    dedicated website (www.example.org)
+
+- on an network management point of view, some users can use Netmagis
+    (see networks.txt and group.txt):
+    - network engineers (members of the wheel group) are allowed
+	to administer the application itself, and have extended
+	rights on all networks
+    - network operators (members of the tech group) have access to
+	all managed networks
+    - operators from the marketing departement (members of the mktg
+	group) are allowed to modify the marketing network only
+    - operators from the plant 1 (members of the plant group) are
+	allowed to modify the plant 1 network only
+    - the subsidiary network is only managed by members of the
+	subsid group (other people can not manage this network).
+
+- on a DNS point of view (see domain.txt and zones/* files):
+    - example.com holds all hosts, except those below
+    - a delegated zone, plant1.example.com, holds all hosts from
+	Plant 1. With Netmagis installation and ease of use, this
+	subzone has been moved to the main DNS server since Plant
+	1 operators have been convinced to shutdown their own DNS
+	server.
+    - a delegated zone, plant2.example.com, is still managed on
+	another server by Plant 2 network operators.
+    - other zones are example.org and subsid.co.zz, which are
+	on the main DNS server.
+
+- on a mail point of view (see mailrelay.txt and mailrole.txt):
+    - all mail traffic is routed through mx[12].example.com
+    - internal mail routing accepts mail to:
+	sales.example.com
+	mktg.example.com
+	its.example.com
+	sales.subsid.co.zz

@@ -4,6 +4,7 @@ SCRIPTS = \
 	run-all.sh
 
 FILES = *.txt \
+	README.database \
 	crontab.database
 
 install:

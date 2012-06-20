@@ -42,8 +42,8 @@ localhost		IN	A	127.0.0.1
 
 ; CUT HERE -------------------------------------------------------------
 
-asterix			IN	A	172.16.20.1
+asterix			IN	A	172.16.14.1
 www			IN	CNAME	asterix
-obelix			IN	A	172.16.20.2
-abraracourcix		IN	A	172.16.20.3
-assurancetourix		IN	A	172.16.20.4
+obelix			IN	A	172.16.14.2
+abraracourcix		IN	A	172.16.14.3
+assurancetourix		IN	A	172.16.14.4
