@@ -58,3 +58,8 @@ This document explains the scenario used in this example.
 	mktg.example.com
 	its.example.com
 	sales.subsid.co.zz
+
+- on a DHCP point of view
+    - networks of Marketing, ITS, R&D and Plant 1 are DHCP enabled
+    - Marketing network has 2 dynamic DHCP ranges 172.16.11.100-119 and 140-149
+    - Plant 1 network has a dynamic DHCP range 172.16.15.1-99

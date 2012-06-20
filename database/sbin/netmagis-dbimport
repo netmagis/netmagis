@@ -12,6 +12,7 @@
 #   2002/02/10 : pda      : design
 #   2011/02/14 : pda      : update to netmagis database
 #   2011/03/13 : pda      : end import programming
+#   2011/06/20 : pda      : add dhcp keyword in networks import
 #
 
 source %LIBNETMAGIS%
@@ -440,7 +441,7 @@ proc import-group {verbose argv dbfd} {
 # Network definition file
 # Format:
 #	key=val, where key is one of name, address, netmask, comment, org,
-#		community, location, groups
+#		community, location, groups, dhcp
 #	new networks are introduced by an empty line
 # Examples:
 #	name=Backbone
@@ -452,6 +453,11 @@ proc import-group {verbose argv dbfd} {
 #	community=sales
 #	location=Campus 1
 #	groups=wheel tech
+#	dhcp=example.com  172.16.11.100-172.16.11.119  172.16.11.140-172.16.11.149
+#
+# Note: to enable DHCP on a network, use "dhcp=" with a domain and any number
+# of IPv4 address ranges. To just enable DHCP without any dynamic range, use
+# a domain name.
 #
 
 proc read-network {file _tab} {
@@ -467,10 +473,15 @@ proc read-network {file _tab} {
 	{community 1 1}
 	{location 0 1}
 	{groups 1 1}
+	{dhcp 0 1}
     }
     read-key-value-file $file tab $keys
 }
 
+proc ip-is-in-network {adr netadr} {
+    set mask [::ip::mask $netadr]
+    return [::ip::equal $netadr "$adr/$mask"]
+}
 
 proc import-network {verbose argv dbfd} {
 
@@ -506,6 +517,9 @@ proc import-network {verbose argv dbfd} {
     }
     pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
 	set reforg($tab(nom)) $tab(idetabl)
+    }
+    pg_select $dbfd "SELECT * FROM dns.domaine" tab {
+	set refdom($tab(nom)) $tab(iddom)
     }
 
     #
@@ -613,11 +627,55 @@ proc import-network {verbose argv dbfd} {
 	    if {$ad($version) eq ""} then {
 		return "IPv$version gateway supplied without IPv$version network"
 	    }
-	    set mask [::ip::mask $ad($version)]
-	    if {! [::ip::equal $ad($version) "$g/$mask"]} then {
+	    if {! [ip-is-in-network $g $ad($version)]} then {
 		return "Invalid gateway $g for network $ad($version)"
 	    }
 	    set gw($version) [::ip::normalize $g]
+	}
+
+	#
+	# DHCP ranges
+	# - check domain name
+	# - check IP addresses
+	#
+
+	set d [lindex $tabnet($i:dhcp) 0]
+	if {[regexp {^\s*(\S+)\s*([-0-9\. ]*)$} $d m domain lrange]} then {
+	    set dhcpon 1
+
+	    if {! [info exists refdom($domain)]} then {
+		return "Unknown domain '$d' in network '$name'"
+	    }
+	    set iddom $refdom($domain)
+
+	    foreach range $lrange {
+		lassign [split $range "-"] min max
+		if {[::ip::version $min] != 4 || [::ip::version $max] != 4} then {
+		    return "Invalid IPv4 range '$range' in network '$name'"
+		}
+
+		if {$ad(4) eq ""} then {
+		    return "Cannot set DHCP range on a not-IPv4 network '$name'"
+		}
+
+		if {! [ip-is-in-network $min $ad(4)]} then {
+		    return "DHCP '$min' is not in network '$name' ($ad(4))"
+		}
+		if {! [ip-is-in-network $max $ad(4)]} then {
+		    return "DHCP '$max' is not in network '$name' ($ad(4))"
+		}
+
+		# add DHCP range (without DHCP profile)
+		set sql "INSERT INTO dns.dhcprange (min, max, iddom)
+					VALUES ('$min', '$max', $iddom)"
+		if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		    return "$msg\nAbort"
+		}
+	    }
+	} elseif {[regexp {^\s*$} $d]} then {
+	    set dhcpon 0
+	} else {
+	    return "Invalid dhcp directive '$d' in network '$name'"
 	}
 
 	#
@@ -659,9 +717,11 @@ proc import-network {verbose argv dbfd} {
 	#
 
 	set sql "INSERT INTO dns.reseau (nom, localisation, commentaire,
-					idetabl, idcommu, adr4, gw4, adr6, gw6)
+					idetabl, idcommu, adr4, gw4, adr6, gw6,
+					dhcp)
 			VALUES ('$qname', '$qloc', '$qcomm', $idorg, $idcommu,
-					$qad(4), $qgw(4), $qad(6), $qgw(6))"
+					$qad(4), $qgw(4), $qad(6), $qgw(6),
+					$dhcpon)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    return "$msg\nAbort"
 	}
@@ -691,8 +751,8 @@ proc import-network {verbose argv dbfd} {
 	set sql {}
 	foreach g [lindex $tabnet($i:groups) 0] {
 	    lassign $refgroup($g) idgrp admin
-	    lappend sql "INSERT INTO dns.dr_reseau (idgrp, idreseau, tri)
-					VALUES ($idgrp, $idnet, 100)"
+	    lappend sql "INSERT INTO dns.dr_reseau (idgrp, idreseau, tri, dhcp)
+					VALUES ($idgrp, $idnet, 100, $dhcpon)"
 	}
 	if {[llength $sql] > 0} then {
 	    set sql [join $sql ";"]

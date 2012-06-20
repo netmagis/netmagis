@@ -21,15 +21,21 @@
 #       community=sales
 #       location=Site 1
 #       groups=wheel tech
+#	dhcp=example.com  172.16.11.100-172.16.11.119  172.16.11.140-172.16.11.149
 #
 # Notes:
 # - groups must already exist in database
 # - communities and organisations may or may not exist in database
 # - networks must not exist in database
+# - domains (used in dhcp keyword) must already exist in database
+# - to enable DHCP on a network, use "dhcp=" with a domain and any number
+#   of IPv4 address ranges. To just enable DHCP without any dynamic range
+#   (i.e. for static mapping), use only a domain name.
 #
 # History:
 #   2011/02/25 : pda : i18n
 #   2012/04/26 : pda : convert to an english based example
+#   2012/06/20 : pda : add dhcp keyworkd
 #
 
 name=Backbone
@@ -40,6 +46,7 @@ org=Example Corp.
 community=Computing
 location=Site 1
 groups=wheel tech
+dhcp=
 
 name=Marketing
 address=172.16.11.0/24
@@ -49,6 +56,7 @@ community=Admin
 org=Example Corp.
 location=Site 1 - Red building
 groups=wheel tech mktg
+dhcp=example.com  172.16.11.100-172.16.11.119  172.16.11.140-172.16.11.149
 
 name=ITS
 address=172.16.12.0
@@ -59,6 +67,7 @@ community=Computing
 location=Site 1 - Pink building
 org=Example Corp.
 groups=wheel tech
+dhcp=example.com
 
 name=R&D
 address=172.16.13.0
@@ -69,6 +78,7 @@ org=Example Corp.
 community=Research
 location=Site 2 - Green building
 groups=wheel tech
+dhcp=example.com
 
 name=Factory
 address=172.16.14.0
@@ -79,6 +89,7 @@ community=Plant 1
 org=Example Corp.
 location=Site 1 - Blue building
 groups=wheel tech plant
+dhcp=plant1.example.com  172.16.15.1-172.16.15.99
 
 name=Subsidary
 address=192.168.1.0
@@ -89,3 +100,4 @@ community=Plant
 location=Site 2 - Black building
 groups=subsid
 org=Subsidary & sons
+dhcp=

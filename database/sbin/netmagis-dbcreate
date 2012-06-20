@@ -314,7 +314,7 @@ create_netmagis_schemas ()
 	idetabl		INT,		-- organization this network belongs to
 	idcommu		INT,		-- administration, R&D, etc.
 	commentaire	TEXT,		-- comment
-	dhcp		INT DEFAULT 0,	-- activete DHCP (1) or no (0)
+	dhcp		INT DEFAULT 0,	-- activate DHCP (1) or no (0)
 	gw4		INET,		-- default network IPv4 gateway
 	gw6		INET,		-- default network IPv6 gateway
 
