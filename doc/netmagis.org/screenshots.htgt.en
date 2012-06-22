@@ -36,11 +36,12 @@
 
     \titre {1} {Netmagis: Screenshots}
 
-    You will find some \lien {Netmagis} {/intro.html} (release 1.5)
+    You will find some \lien {Netmagis} {/intro.html} (release 2.1.0)
     screenshots.
 
     Moreover, you can experiment this application thanks to a on-line
-    \lien {demonstration version} {/demo.html}.
+    demo (not available at this time).
+    \* \lien {demonstration version} {/demo.html}.
 
 
     \titre {2} {Main menu}
@@ -48,7 +49,7 @@
 	This screenshot shows the main menu and the various
 	functionnalities for every Netmagis user.
 
-	\retrait {\lien {\image {vign-accueil.png} {Main menu}} {shot-accueil.png}}
+	\retrait {\lien {\image {vign-index.png} {Main menu}} {shot-index.png}}
 
     \titre {2} {Information consultation}
 
@@ -90,7 +91,7 @@
 	wish to use the DHCP functionnality of Netmagis), even if most
 	of them are optional.
 
-	\retrait {\lien {\image {vign-ajout.png} {Host addition}} {shot-ajout.png}}
+	\retrait {\lien {\image {vign-add.png} {Host addition}} {shot-add.png}}
 
 	You may notice that OS types are defined by the Netmagis
 	administrator, as well as domains and access rights to these
@@ -128,18 +129,18 @@
 	The next screenshot shows deletion of a host (or an alias) by
 	name or by IP address.
 
-	\retrait {\lien {\image {vign-suppr.png} {Host deletion}} {shot-suppr.png}}
+	\retrait {\lien {\image {vign-del.png} {Host deletion}} {shot-del.png}}
 
     \titre {2} {Host modification}
 
 	It is possible to modify host attributes. The first step is to
 	select the host, has shown in the next screenshot:
 
-	\retrait {\lien {\image {vign-modif1.png} {Selection of the host to modify}} {shot-modif1.png}}
+	\retrait {\lien {\image {vign-mod1.png} {Selection of the host to modify}} {shot-mod1.png}}
 
 	Next, the page shows all host attributes to modify.
 
-	\retrait {\lien {\image {vign-modif2.png} {Host attributes edition}} {shot-modif2.png}}
+	\retrait {\lien {\image {vign-mod2.png} {Host attributes edition}} {shot-mod2.png}}
 
     \titre {2} {DHCP parameters modification}
 
@@ -156,6 +157,37 @@
 	ones with the same menu.
 
 	\retrait {\lien {\image {vign-dhcp2.png} {DHCP range edition}} {shot-dhcp2.png}}
+
+    \titre {2} {Topology module}
+
+	The topology module fetches configurations from network
+	equipments and analyzes them. It is then possible to have
+	a view of all equipments.
+
+	\retrait {\lien {\image {vign-topo.png} {Topo module welcome page}} {shot-topo.png}}
+
+	Selecting an equipment gives a detailed view:
+
+	\retrait {\lien {\image {vign-eq.png} {Equipment list}} {shot-eq.png}}
+
+	Allowed users (access is granted by rights on VLANs and
+	equipments) may follow the "Edit" link to change VLAN
+	assignment to individual ports.
+
+	\retrait {\lien {\image {vign-ifchg.png} {Interface modification}} {shot-ifchg.png}}
+
+	An added value of Netmagis is the network map: it is possible
+	to ask for the map of parts of your network (access is
+	granted by rights on VLANs and equipments).  Here is a L2
+	map (Netmagis provides also L3 maps).
+
+	\retrait {\lien {\image {vign-l2.png} {L2 network map}} {shot-l2.png}}
+
+	In the detailed view of equipments, following the "Traffic"
+	link brings you to the RRD-based traffic graphs.
+
+	\retrait {\lien {\image {vign-metro.png} {Traffic graph}} {shot-metro.png}}
+
 
     \titre {2} {Administrator menu}
 
