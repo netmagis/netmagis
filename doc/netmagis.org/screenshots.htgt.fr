@@ -37,7 +37,9 @@
     \titre {1} {Netmagis : Copies d'écran}
 
     Vous trouverez ci-dessous quelques copies d'écrans de l'application
-    \lien {Netmagis} {/intro.html} version 1.5.
+    \lien {Netmagis} {/intro.html} version 2.1.0 (les copies d'écran sont
+    en anglais, mais Netmagis affiche les pages en français si telle est
+    la langue configurée dans votre navigateur).
 
     Vous pouvez de plus expérimenter l'application grâce à une
     \lien {version de démonstration} {/demo.html} accessible en
@@ -49,7 +51,7 @@
 	Cette copie d'écran montre le menu d'accueil et les différentes
 	possibilités offertes à tous les utilisateurs de Netmagis.
 
-	\retrait {\lien {\image {vign-accueil.png} {Menu d'accueil}} {shot-accueil.png}}
+	\retrait {\lien {\image {vign-index.png} {Menu d'accueil}} {shot-index.png}}
 
     \titre {2} {Consultation des informations}
 
@@ -96,7 +98,7 @@
 	puisque le correspondant souhaite utiliser les fonctionnalités
 	DHCP de l'application), bien que la plupart soient optionnelles.
 
-	\retrait {\lien {\image {vign-ajout.png} {Ajout d'une machine}} {shot-ajout.png}}
+	\retrait {\lien {\image {vign-add.png} {Ajout d'une machine}} {shot-add.png}}
 
 	On notera que les types de machines du menu sont définis
 	par l'administrateur de l'application, ainsi que les domaines
@@ -139,7 +141,7 @@
 	La copie d'écran ci-dessous montre l'interface de suppression
 	d'une machine (ou d'un alias)~: par nom ou par adresse IP.
 
-	\retrait {\lien {\image {vign-suppr.png} {Suppression d'une machine}} {shot-suppr.png}}
+	\retrait {\lien {\image {vign-del.png} {Suppression d'une machine}} {shot-del.png}}
 
     \titre {2} {Modification d'une machine}
 
@@ -147,12 +149,12 @@
 	cela, la première étape est de la sélectionner, comme montré
 	sur la copie d'écran ci-après~:
 
-	\retrait {\lien {\image {vign-modif1.png} {Sélection de la machine à modifier}} {shot-modif1.png}}
+	\retrait {\lien {\image {vign-mod1.png} {Sélection de la machine à modifier}} {shot-mod1.png}}
 
 	Ensuite, la page présente tous les attributs de la machine
 	pour modification.
 
-	\retrait {\lien {\image {vign-modif2.png} {Édition des attributs de la machine}} {shot-modif2.png}}
+	\retrait {\lien {\image {vign-mod2.png} {Édition des attributs de la machine}} {shot-mod2.png}}
 
     \titre {2} {Modification des paramètres DHCP}
 
@@ -170,6 +172,36 @@
 	supprimer ou d'en ajouter de nouvelles avec le même menu.
 
 	\retrait {\lien {\image {vign-dhcp2.png} {Édition de la plage DHCP}} {shot-dhcp2.png}}
+
+    \titre {2} {Module de topologie}
+
+	Le module de topologie récupère les configurations des
+	équipements réseau et les analyse. Il est alors possible
+	d'avoir une vue de tous les équipements.
+
+	\retrait {\lien {\image {vign-topo.png} {Page d'accueil de topo}} {shot-topo.png}}
+
+	La sélection d'un équipement en donne une vue détaillée.
+
+	\retrait {\lien {\image {vign-eq.png} {Liste des équipments}} {shot-eq.png}}
+
+	Les utilisateurs autorisés (basé sur des droits sur les
+	VLANs et les équipements) peuvent suivre le lien "Edit"
+	pour changer l'affectation des VLANs aux ports.
+
+	\retrait {\lien {\image {vign-ifchg.png} {Modification d'interface}} {shot-ifchg.png}}
+
+	Un des intérêts de Netmagis est la possibilité d'avoir des
+	cartes du réseau (restreintes suivant les droits de
+	l'utilisateur. Netmagis fournit des cartes de niveau 2
+	comme ici ou des cartes de niveau 3.
+
+	\retrait {\lien {\image {vign-l2.png} {Carte réseau de niveau 2}} {shot-l2.png}}
+
+	Dans la vue détaillée d'un équipement, le lien "Trafic"
+	permet de consulter les graphes de trafic basés sur RRD.
+
+	\retrait {\lien {\image {vign-metro.png} {Graphe de trafic}} {shot-metro.png}}
 
     \titre {2} {Menu d'administration}
 
