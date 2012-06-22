@@ -761,7 +761,7 @@
 	command, during the database creation phase.
 
 	You should see a main menu such as \lien {this one}
-	{http://netmagis.org/shot-accueil.png}.
+	{http://netmagis.org/shot-index.png}.
     }
     \item {If you are using LDAP or CAS authentication, go into the
 	\gras {Admin} menu (on the left vertical bar), then to the \gras
@@ -879,6 +879,10 @@
 	impact, manual confirmation is required.
     }
     }
+
+    Note that users using this script must have a Netmagis account
+    with the same login as the Unix one.
+
 
     \**********************************************************************
 
