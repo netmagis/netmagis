@@ -67,9 +67,9 @@ sw1			IN	A	192.16.1.101
 sw2			IN	A	192.16.1.102
 
 rtr			IN	A	172.16.1.254
-			IN	AAAA	2001:db8:1234:4001::1/64
+			IN	AAAA	2001:db8:1234:4001::1
 another-router		IN	A	172.16.1.253
-			IN	AAAA	2001:db8:1234:4001::2/64
+			IN	AAAA	2001:db8:1234:4001::2
 
 ; router has address in some blocks
 rtr			IN	A	192.168.1.254
@@ -326,7 +326,7 @@ host252			IN	A	172.16.11.252
 host253			IN	A	172.16.11.253
 
 rtr			IN	A	172.16.11.254
-			IN	AAAA	2001:db8:1234:4011::1/64
+			IN	AAAA	2001:db8:1234:4011::1
 
 ; ITS
 droopy			IN	A	172.16.12.1
