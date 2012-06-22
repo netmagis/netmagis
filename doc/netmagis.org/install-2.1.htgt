@@ -351,7 +351,9 @@
 	    \lignetableau {
 		\casetableau {} {.../share/}
 		\casetableau {} {examples, default configuration files,
-		    database upgrade scripts, etc.}
+		    database upgrade scripts, etc. NB: on
+		    Debian/Ubuntu, examples files are in
+		    /usr/share/doc/netmagis/examples/}
 	    }
 	    \lignetableau {
 		\casetableau {} {.../var/}
@@ -630,7 +632,7 @@
 	Since this is a long task, if you want to test your installation,
 	you may try to import example data.  You may do so by issuing
 	the command:
-	\retrait\teletype {$ cd .../share/examples/netmagis \br
+	\retrait\teletype {$ cd .../share/examples/netmagis\br
 	    $ sh ./run-all.sh
 	}
 
@@ -722,7 +724,7 @@
     \liste {
     \item {A default Apache configuration file is provided in
 	\teletype {..../share/examples/netmagis/httpd.conf}.  Adapt this
-	file and include it in your main Apache configuration file.
+	file and include it in your Apache configuration.
 
 	\liste {
 	    \item {If you are using an external LDAP directory to
@@ -732,14 +734,13 @@
 		Apache configuration directory, adapt it to your local
 		configuration.
 	    }
-	    \item {If you are using CAS (Central Authentication Service) to
-		authenticate your users...
-		TO BE WRITTEN
-	    }
+\* \item {If you are using CAS (Central Authentication Service) to
+\*		authenticate your users...
+\*		TO BE WRITTEN
+\*	    }
 	    \item {If you are using the internal Netmagis authentication,
 		check that the \teletype {auth_pgsql} module is
-		loaded in your main Apache configuration file
-		(\teletype {httpd.conf}), with a line such as:
+		loaded in your Apache configuration, with a line such as:
 		\retrait\teletype {LoadModule auth_pgsql_module
 		libexec/apache22/mod_auth_pgsql.so}
 
