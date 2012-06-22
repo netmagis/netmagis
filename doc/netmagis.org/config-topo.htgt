@@ -230,7 +230,7 @@
 
     \titre {3} {Metrology sensors}
 
-    In addition, sensors may be added in the same way with a letter "S".
+    In addition, sensors may be added in the same way with a letter "M".
     Use a meaningful string. For example, you can use the link number
     and add the name of the equipment to mark the viewpoint on this
     metrology graph.
@@ -238,7 +238,7 @@
     For example, on a Juniper equipment:
 
     \retrait\teletype {description "blah blah &lt;L233
-	S233.this-router&gt;"}
+	M233.this-router&gt;"}
 
     You can add sensors on edge ports. The name of the sensor may be an
     port name, or another string. For example on a Cisco switch:
