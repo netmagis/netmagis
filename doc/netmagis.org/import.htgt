@@ -166,6 +166,12 @@
 		hosts (declare, edit, remove) in this network.
 	    }
 	}
+        \lignetableau {
+            \casetableau {} {dhcp}
+            \casetableau {} {Enable DHCP on this network, and
+                optionally provides dynamic ranges specification
+            }
+        }
     }
     }
 
@@ -181,6 +187,12 @@
     name g1 and g2 as groups for this network. After having imported
     your data, you will adjust access rights for g1 and g2 through
     the Web application.
+
+    To enable DHCP on a network, use \teletype {dhcp=} with at least a
+    domain name and any number (may be 0) of IPv4 address ranges. If
+    you just provide an empty declaration, DHCP will not be enabled.
+    If you don't provide any address range, the value of the domain name
+    if not important.
 
 
     \titre {3} {File \teletype {group.txt}}
