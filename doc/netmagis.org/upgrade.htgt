@@ -45,47 +45,64 @@
 
     Don't forget to read \lien {release notes} {/relnotes.html#v2.1}.
 
+    This procedure assumes that your existing Netmagis database is
+    already running with a version \>= 9.1 of PostgreSQL. If this
+    is not the case, read PostgreSQL upgrade instructions.
+
     First, make a backup of your existing Netmagis database.
 
     One of the changes in Netmagis 2.1 release is the use of only
     one unprivileged PostgreSQL user (the one you specified with the
     parameter \teletype {dnsdbuser} in the \teletype {netmagis.conf}
-    file). This simplifies considerably the installation, but the upgrade
-    needs to take this into account: you need to transfer ownership of
-    the database to this unprivileged user. Assuming this user is
-    called "\teletype {nm}":
+    file, let us call it "\teletype {nm}"). This simplifies considerably
+    the installation, but the upgrade needs to take this into account:
+    you need to transfer ownership of the database to this unprivileged
+    user. Assuming this user is called "\teletype {nm}":
 
-    To do so:
+    On the database server, do the following actions:
     \liste {
 	\item {as your existing administrative user, dump the
 	    database:
-	    \retrait\teletype {$ pg_dump \italique
-		{netmagis-database-name} \> /tmp/netmagis.dump}
+	    \retrait\teletype {$ pg_dump --no-owner \italique
+		{netmagis-database-name} | egrep -v "^(GRANT|REVOKE)"
+		\> /tmp/netmagis.dump}
 	}
 	\item {as the PostgreSQL administrator user (\teletype {pgsql}
 	    on FreeBSD, \teletype {postgres} on Linux), create the
 	    unprivileged user:
 	    \retrait\teletype {pgsql$ createuser --no-superuser --no-createrole
 		--createdb --pwprompt nm}
+	    where \teletype {nm} is the name of the PostgreSQL user to
+	    create.
 	}
-	\item {always as this PostgreSQL administrator user, delete the
-	    old database and create the new database with the correct
-	    ownership:
+	\item {as the \teletype {nm} PostgreSQL user, create a new
+	    database with the correct ownership:
 	    \retrait {
-		\teletype {pgsql$ dropdb \italique {netmagis-database-name}}
-		\br
-		\teletype {pgsql$ createdb -E unicode --owner=nm \italique
-		    {netmagis-database-name}}
+		\teletype {pgsql$ createdb --template=template0 -E unicode
+		    --owner=nm netmagis-new}
 	    }
 	}
-	\item {as the unprivileged user, restore the database contents:
-	    \retrait\teletype {$ psql -f /tmp/netmagis.dump \italique
-	    {netmagis-database-name}}
+	\item {next, restore the database contents:
+	    \retrait\teletype {$ psql --username=nm --host=localhost
+	    	-f /tmp/netmagis.dump netmagis-new}
+	}
+	\item {as the PostgreSQL administrator user (\teletype {pgsql}
+	    on FreeBSD, \teletype {postgres} on Linux), install the new
+	    database:
+	    \retrait {
+		\teletype {pgsql$ psql template1 -c 'ALTER DATABASE
+		    "\italique {netmagis-database-name}"
+		    RENAME TO "netmagis-old"'}
+		\br
+		\teletype {pgsql$ psql template1 -c 'ALTER DATABASE
+		    "netmagis-new" RENAME TO
+		    "\italique {netmagis-database-name}"'}
+	    }
 	}
     }
 
-    Next, on the database server, go to the \teletype
-    {.../share/examples/netmagis/upgrade/20-21/} directory, and then:
+    Next, go to the \teletype {.../share/examples/netmagis/upgrade/20-21/}
+    directory, and then:
 
     \liste {
 	\item {Inspect the \teletype {upgrade.sql} script
@@ -100,6 +117,19 @@
 	\item {Next, create the MAC schema, with the newly installed
 	    \teletype {netmagis-dbcreate} script:
 	    \retrait\teletype {$ netmagis-dbcreate mac}
+	}
+    }
+
+    When you have tested your new installation, you can remove the
+    old database:
+
+    \liste {
+	\item {As the PostgreSQL administrator user (\teletype {pgsql}
+	    on FreeBSD, \teletype {postgres} on Linux), delete the old
+	    database (are you sure you have a backup copy?)
+	    \retrait {
+		\teletype {pgsql$ dropdb netmagis-old}
+	    }
 	}
     }
 

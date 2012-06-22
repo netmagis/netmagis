@@ -5,6 +5,9 @@
 -- user (see http://www.netmagis.org/relnotes.html). Be sure to apply
 -- all upgrade instructions (http://www.netmagis.org/upgrade.html#v2.1)
 --
+-- Warning: this script requires that your database has been converted
+-- to PostgreSQL >= 9.1.
+--
 -- Use:
 --	- psql -f upgrade.sql database-name
 --
@@ -18,7 +21,7 @@ pageformat	a4
 
 ALTER FUNCTION soundex (TEXT) SET SCHEMA pgauth ;
 ALTER FUNCTION add_soundex () SET SCHEMA pgauth ;
-DROP TRIGGER phnom ;
+DROP TRIGGER phnom ON pgauth.user ;
 CREATE TRIGGER phnom
 	BEFORE INSERT OR UPDATE
 	ON pgauth.user
