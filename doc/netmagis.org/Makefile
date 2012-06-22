@@ -29,6 +29,6 @@ install:
 	#
 	# install PNG files
 	#
-	cp *.png.?? $(DESTDIR)
+	cp *.png* $(DESTDIR)
 
 clean:
