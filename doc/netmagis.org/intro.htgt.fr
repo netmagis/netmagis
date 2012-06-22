@@ -84,6 +84,9 @@
 	\item {voir les \gras {courbes de trafic} que vous aurez
 	    spécifiées sur vos équipements
 	}
+	\item {\gras {localisez les machines} par adresse IP, adresse
+	    MAC ou port d'équipement réseau
+	}
     }
 
     Netmagis s'appuie sur une base de données décrivant vos réseaux,

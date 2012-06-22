@@ -1,4 +1,4 @@
-Version 2.1 - 2012/04/??
+Version 2.1.0 - 2012/06/22
     - metro module integration
     - network graph is now copied from topo server to www server (if different)
     - much more complete installation documentation

@@ -6,7 +6,7 @@
 #
 
 PORTNAME?=	netmagis
-DISTVERSION?=	2.1b1
+DISTVERSION?=	2.1.0
 PORTREVISION?=	1
 CATEGORIES?=	net-mgmt
 MASTER_SITES=	http://netmagis.org/files/

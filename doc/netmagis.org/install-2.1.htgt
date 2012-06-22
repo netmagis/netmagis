@@ -36,10 +36,10 @@
 
     \titre {1} {Netmagis 2.1.x installation}
 
-    \gras {Warning: this installation documentation is written
-    for the upcoming Netmagis version (2.1.0). The current version
-    is available only on \lien {Netmagis Github repository}
-    {http://github.com/pdav/netmagis} at this time.}
+\*    \gras {Warning: this installation documentation is written
+\*    for the upcoming Netmagis version (2.1.0). The current version
+\*    is available only on \lien {Netmagis Github repository}
+\*    {http://github.com/pdav/netmagis} at this time.}
 
     Note: this installation documentation is for Netmagis version 2.1.x.
     if you are installing from a previous version of Netmagis,

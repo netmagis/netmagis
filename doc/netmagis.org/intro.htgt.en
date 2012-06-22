@@ -78,6 +78,9 @@
 	\item {access to \gras {traffic graphs} that you have
 	    specified on your equipments.
 	}
+	\item {\gras {locate hosts} by IP address, MAC address or
+	    network equipement port
+	}
     }
 
     Netmagis uses a database describing your networks, privileges that

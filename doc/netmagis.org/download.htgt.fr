@@ -36,6 +36,22 @@
 
     \titre {1} {Netmagis : Téléchargement}
 
+    \titre {2} {Version 2.1.0}
+
+    La version 2.1.0 est disponible en téléchargement sur
+    \lien {http://netmagis.org/files/netmagis-2.1.0.tar.gz} {/files/netmagis-2.1.0.tar.gz}
+
+    Les ports pour FreeBSD sont disponibles sur
+    \lien {http://netmagis.org/files/netmagis-freebsd-ports-2.1.0.tar.gz} {/files/netmagis-freebsd-ports-2.1.0.tar.gz}
+
+    Les paquets binaires pour Linux (Debian/Ubuntu) sont également
+    dosponibles. Voir la
+    \lien {documentation d'installation} {/install-2.1.html}.
+
+    N'oubliez pas de \lien {lire la documentation et vous abonner
+    à la liste de diffusion} {/support.html}~!
+
+
     \titre {2} {Version 2.0}
 
     La version 2.0 est disponible en téléchargement sur
