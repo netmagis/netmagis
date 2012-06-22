@@ -121,14 +121,10 @@
 	déjà une adresse IPv4. L'application le détecte automatiquement
 	et vous demande alors confirmation de l'ajout.
 
-	La recherche de bloc d'adresses libres débouche sur la page
-	suivante. Celle-ci montre tous les blocs disponibles. Dans
-	la base de démonstration, comme on le voit ci-dessus dans
-	la «~carte~» (accessible également depuis la page d'ajout)
-	il n'y a qu'un seul gros espace libre après les quelques
-	machines déclarées. Enfin, même si ce n'est pas visible
-	dans la base exemple, les intervalles DHCP dynamiques sont
-	correctement gérés.
+	La recherche de bloc d'adresses libres débouche sur la pag
+	suivante. Celle-ci montre tous les blocs disponibles. Ici,
+	l'utilisateur a demandéun bloc d'au moins 5 adresses, et
+	un seul bloc a été trouvé.
 
 	\retrait {\lien {\image {vign-seq.png} {Ajout d'une machine}} {shot-seq.png}}
 
@@ -206,10 +202,9 @@
     \titre {2} {Menu d'administration}
 
 	Enfin, la copie d'écran ci-dessous montre le menu réservé
-	aux administrateurs de l'application (accessible seulement
-	depuis la page d'accueil).
+	aux administrateurs de l'application.
 
-	\retrait {\lien {\image {vign-admin.png} {Menu d'administration de Netmagis}} {shot-admin.png}}
+	\retrait {\lien {\image {vign-admindex.png} {Menu d'administration de Netmagis}} {shot-admindex.png}}
 
 	Vous pouvez découvrir et expérimenter toutes les possibilités
 	d'administration grâce à la \lien {version de démonstration}

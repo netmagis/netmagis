@@ -113,11 +113,8 @@
 	addition of multiple addresses and ask for confirmation.
 
 	Research for a contiguous block of free addresses give the next
-	page, which shows all available blocks. In the demonstration
-	database, as seen above in the "map", there is only one large
-	free block after some declared hosts. Even if they are not shown
-	in the demonstration database, dynamic DHCP ranges are correctly
-	managed.
+	page, which shows all available blocks. In the example below, the
+	user is searching for a block of at least 5 free IPv4 addresses.
 
 	\retrait {\lien {\image {vign-seq.png} {Host addition}} {shot-seq.png}}
 
@@ -194,7 +191,7 @@
 	The next screenshot shows the menu allowed only for
 	the Netmagis administrator.
 
-	\retrait {\lien {\image {vign-admin.png} {Netmagis administration menu}} {shot-admin.png}}
+	\retrait {\lien {\image {vign-admindex.png} {Netmagis administration menu}} {shot-admindex.png}}
 
 	You can discover by yourself and experiment all administration
 	possibilities with the on-line \lien {demonstration version}
