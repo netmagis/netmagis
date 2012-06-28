@@ -48,7 +48,8 @@
     User name is \gras {demo} and password is \gras {demodemo}.
     This account has all administration privileges.
 
-    Follow \gras {\lien {this link} {/netmagis/}} to access the application.
+    \* Follow \gras {\lien {this link} {/netmagis/}} to access the application.
+    The demo application is not available at this time. Sorry.
 
 }
 
