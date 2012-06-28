@@ -55,7 +55,8 @@
 
     Release 2.0 is available on:
     \lien {http://netmagis.org/files/netmagis-2.0.tar.gz} {/files/netmagis-2.0.tar.gz}
-	and \lien {http://netmagis.org/files/netmagis-freebsd-ports-2.0.tar.gz}{FreebBSD ports files}.
+	and \lien {FreeBSD ports files}
+		{http://netmagis.org/files/netmagis-freebsd-ports-2.0.tar.gz}.
 
     Don't forget to \lien {read the documentation and to subscribe to
     the mailing list} {/support.html}!
