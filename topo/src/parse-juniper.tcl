@@ -242,6 +242,7 @@ proc juniper-parse {libdir model fdin fdout tab eq} {
 	routing-options			{1	juniper-parse-routing-options}
 	ethernet-switching-options	{1	juniper-parse-ethernet-swopt}
 	vlans				{1	juniper-parse-vlans}
+	bridge-domains			{1	juniper-parse-bridge-domains}
 	*				{1	NOP}
 
     }
@@ -252,6 +253,8 @@ proc juniper-parse {libdir model fdin fdout tab eq} {
     lappend t(eq) $eq
 
     set t(eq!$eq!if!disabled) {}
+    set t(eq!$eq!brcandidate) {}
+    set t(eq!$eq!brdomlist) {}
     set t(eq!$eq!ranges) {}
     set t(eq!$eq!voip!if!list) {}
 
@@ -401,11 +404,12 @@ proc juniper-parse-if {conf tab idx} {
     array set kwtab {
 	description		{2	juniper-parse-if-descr}
 	disable			{1	juniper-parse-if-disable}
+	native-vlan-id		{2	juniper-parse-if-nativevlan}
 	unit			{2	juniper-parse-if-unit}
 	gigether-options	{1	juniper-parse-if-gigopt}
 	ether-options		{1	juniper-parse-if-gigopt}
 	aggregated-ether-options {1	NOP}
-	encapsulation		{2 NOP}
+	encapsulation		{2	NOP}
 	vlan-tagging		{1	juniper-parse-if-vlan-tagging}
 	member-range		{4	juniper-parse-member-range}
 	member			{2	juniper-parse-member}
@@ -574,6 +578,7 @@ proc juniper-parse-if-unit {conf tab idx} {
 	vlan-id		{2	juniper-parse-vlan-id}
 	family		{2	juniper-parse-family}
 	disable		{1	juniper-parse-unit-disable}
+	encapsulation	{2	juniper-parse-unit-encap}
 	tunnel		{1	NOP}
 	apply-groups	{2	NOP}
 	traceoptions	{1	NOP}
@@ -588,16 +593,21 @@ proc juniper-parse-if-unit {conf tab idx} {
     set error [juniper-parse-list kwtab $unitparm t "$idx"]
     unset t(current!unitnb)
 
-    #
-    # Cas particulier : s'il n'y a aucun network, l'interface
-    # est considérée comme participant à un JunOS switch.
-    # Ce cas est nécessaire pour gérer la désactivation de
-    # port via l'interface Web.
-    #
-
-    if {! [info exists t($idx!vlan!$unitnb!networks)]} then {
-	set t($idx!l2switch) on
-    }
+# XXX
+# This code has been deactivated since some interface networks
+# may be emtpy on JunOS routers (eg interface connected to a
+# bridge domain) without being a switch.
+#
+#    #
+#    # Cas particulier : s'il n'y a aucun network, l'interface
+#    # est considérée comme participant à un JunOS switch.
+#    # Ce cas est nécessaire pour gérer la désactivation de
+#    # port via l'interface Web.
+#    #
+#
+#    if {! [info exists t($idx!vlan!$unitnb!networks)]} then {
+#	set t($idx!l2switch) on
+#    }
 
     return $error
 }
@@ -618,6 +628,24 @@ proc juniper-parse-unit-disable {conf tab idx} {
     set unit $t(current!unitnb)
     set t($idx!vlan!$unit!disable) yes
 
+    return 0
+}
+
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+# Remplit :
+#   nothing
+#
+# Historique :
+#   2010/03/24 : pda      : conception
+#
+
+proc juniper-parse-unit-encap {conf tab idx} {
+    upvar $tab t
+
+    # placeholder for future
     return 0
 }
 
@@ -733,7 +761,21 @@ proc juniper-parse-family {conf tab idx} {
 	    set t($idx!l2switch) on
 	    set parm [lindex $conf 2]
 	    set error [juniper-parse-list kwtab $parm t $idx]
-	    set error 0
+	}
+	bridge {
+	    array set kwtab {
+		filter		{1	NOP}
+		interface-mode	{2	juniper-parse-fbridge-ifmode}
+		vlan-id		{2	juniper-parse-fbridge-vlanid}
+		vlan-id-list	{2	juniper-parse-fbridge-vlanidlist}
+		*		{2	NOP}
+	    }
+	    set t($idx!link!allowedvlans) {}
+	    set parm [lindex $conf 2]
+	    set error [juniper-parse-list kwtab $parm t $idx]
+	    # append this interface to the list of candidates to a bridge domain
+	    set eq $t(eq)
+	    lappend t(eq!$eq!brcandidate) $t(current!iface)
 	}
 	default {
 	    juniper-warning "$idx: family '$fam' not supported"
@@ -818,25 +860,101 @@ proc juniper-parse-l2switch-vlan-members {conf tab idx} {
 #
 # Entrée :
 #   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
-#   - tab(current!unitnb) = <unit number>
 # Remplit :
-#   tab(eq!<eqname>!if!<ifname>!link!allowedvlans) {<vlan-id|vlan-name> ...}
 #   tab(eq!<eqname>!if!<ifname>!native-vlan) <vlan-id|vlan-name>
 #
+# Apparently used only for bridge family
+#
 # Historique
-#   2009/12/22 : pda/jean : conception
-#   2010/08/31 : pda/jean : gestion effective du vlan natif
+#   2012/07/03 : pda/jean : conception
 #
 
-proc juniper-parse-l2switch-nativevlan {conf tab idx} {
+proc juniper-parse-if-nativevlan {conf tab idx} {
     upvar $tab t
 
     set vlan [lindex $conf 1]
-    lappend t($idx!link!allowedvlans) [list $vlan $vlan]
     set t($idx!native-vlan) $vlan
     return 0
 }
 
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+#   - tab(current!unitnb) = <unit number>
+# Remplit :
+#   tab(eq!<eqname>!if!<ifname>!link!type) trunk|ether
+#
+# Historique
+#   2012/07/03 : pda/jean : conception
+#
+
+proc juniper-parse-fbridge-ifmode {conf tab idx} {
+    upvar $tab t
+
+    set error 0
+    set mode [lindex $conf 1]
+    switch $mode {
+	trunk {
+	    set t($idx!link!type) "trunk"
+	}
+	access {
+	    set t($idx!link!type) "ether"
+	}
+	default {
+	    juniper-warning "$idx: interface-mode '$mode' not supported"
+	    set error 1
+	}
+    }
+    return $error
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+# Remplit :
+#   tab(eq!<eqname>!if!<ifname>!link!allowedvlans) {id id}
+#
+# Historique
+#   2012/07/03 : pda/jean : conception
+#
+
+proc juniper-parse-fbridge-vlanid {conf tab idx} {
+    upvar $tab t
+
+    set vlan [lindex $conf 1]
+    lappend t($idx!link!allowedvlans) [list $vlan $vlan]
+    return 0
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+# Remplit :
+#   tab(eq!<eqname>!if!<ifname>!bridge!<vlanid>!mode) trunk (for all $vlanid)
+#   tab(eq!<eqname>!if!<ifname>!link!allowed-vlans) {{ min max } ...}
+#		(except native-vlan)
+#
+# Historique
+#   2012/07/03 : pda/jean : conception
+#
+
+proc juniper-parse-fbridge-vlanidlist {conf tab idx} {
+    upvar $tab t
+
+    # native vlan (if any) will be checked during post processing
+    # t(eq!<eq>!if!<ifname>!nativevlan) <vland-id>
+
+    set vlans [lindex $conf 1]
+    foreach v $vlans {
+	if {[regexp {^(\d+)-(\d+)$} $v bidon min max]} then {
+	    set l [list $min $max]
+	} else {
+	    set l [list $v $v]
+	}
+	lappend t($idx!link!allowedvlans) $l
+    }
+    return 0
+}
 
 #
 # Entrée :
@@ -1403,6 +1521,161 @@ proc juniper-parse-vlans-entry-l3-interface {conf tab idx} {
     return 0
 }
 
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - rien
+#
+# Historique :
+#   2012/07/03 : pda/jean : conception
+#
+
+proc juniper-parse-bridge-domains {conf tab idx} {
+    upvar $tab t
+
+    array set kwtab {
+	*		{1	juniper-parse-bridge-domains-entry}
+    }
+
+    return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - t(eq!<eq>!brdomlist) { <bdname> ...}
+#
+# Historique :
+#   2012/07/03 : pda/jean : conception
+#
+
+proc juniper-parse-bridge-domains-entry {conf tab idx} {
+    upvar $tab t
+
+    array set kwtab {
+	domain-type		{2	NOP}
+	bridge-options		{1	NOP}
+	vlan-id			{2	juniper-parse-bridged-vlanid}
+	vlan-id-list		{2	juniper-parse-bridged-vlanidlist}
+	interface		{2	juniper-parse-bridged-if}
+	routing-interface	{2	juniper-parse-bridged-routif}
+	*			{2	ERROR}
+    }
+
+    set bdname [lindex $conf 0]
+    set bdparm [lindex $conf 1]
+    set t(current!brdom) $bdname
+    set t($idx!brdom!$bdname!iflist) {}
+    set error [juniper-parse-list kwtab $bdparm t "$idx!brdom!$bdname"]
+    if {! $error} then {
+	lappend t($idx!brdomlist) $bdname
+    }
+    unset t(current!brdom)
+
+    return $error
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!brdom!<bdname>
+# Remplit :
+#   - t(eq!<eqname>!brdom!<bdname>!vlans) {{<vlanid> <vlanid>}}
+#
+# Historique :
+#   2012/07/10 : pda/jean : conception
+#
+
+proc juniper-parse-bridged-vlanid {conf tab idx} {
+    upvar $tab t
+
+    set vlanid [lindex $conf 1]
+    set t($idx!vlans) [list [list $vlanid $vlanid]]
+    return 0
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!brdom!<bdname>
+# Remplit :
+#   - t(eq!<eqname>!brdom!<bdname>!vlans) {{<vlanid> <vlanid>} ... }
+#
+# Historique :
+#   2012/07/10 : pda/jean : conception
+#
+
+proc juniper-parse-bridged-vlanidlist {conf tab idx} {
+    upvar $tab t
+
+    set t($idx!vlans) {}
+    set vlans [lindex $conf 1]
+    foreach v $vlans {
+	if {[regexp {^(\d+)-(\d+)$} $v bidon min max]} then {
+	    set l [list $min $max]
+	} else {
+	    set l [list $v $v]
+	}
+	lappend t($idx!vlans) $l
+    }
+    return 0
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!brdom!<bdname>
+# Remplit :
+#   - t(eq!<eqname>!brdom!<bdname>!vlans) {{<vlanid> <vlanid>} ... }
+#
+# Historique :
+#   2012/07/10 : pda/jean : conception
+#
+
+proc juniper-parse-bridged-if {conf tab idx} {
+    upvar $tab t
+
+    set eq $t(eq)
+    set brdom $t(current!brdom)
+
+    set ifname_unit [lindex $conf 1]
+    if {[regexp {^(.*)\.(\d+)$} $ifname_unit bidon iface unit]} then {
+	set error 0
+	if {[info exists t(eq!$eq!if!$iface!vlans)]
+	    && [lsearch -exact $t(eq!$eq!if!$iface!vlans) $unit] != -1} then {
+	    #
+	    # Mark this interface as participating to this bridge-domain
+	    #
+	    lappend t($idx!iflist) [list $iface $unit]
+	    lappend t(eq!$eq!if!$iface!brdom) $brdom
+
+	} else {
+	    juniper-warning "$eq: interface '$ifname_unit' not found in bridge domain"
+	    set error 1
+	}
+    } else {
+	juniper-warning "$eq: invalid interface '$ifname_unit' in bridge domain"
+	set error 1
+    }
+
+    return $error
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!brdom!<bdname>
+# Remplit :
+#	???????????????????????????????????????
+#   - t(eq!<eqname>!brdom!<bdname>!vlans) {{<vlanid> <vlanid>} ... }
+#
+# Historique :
+#   2012/07/10 : pda/jean : conception
+#
+
+proc juniper-parse-bridged-routif {conf tab idx} {
+    upvar $tab t
+
+    return 0
+}
 
 ###############################################################################
 # Traitement après analyse
@@ -1677,6 +1950,41 @@ proc juniper-post-process {model fdout eq tab} {
 	}
     }
 
+    # Propagate native-vlan information into allowed vlans
+    foreach iface $t(eq!$eq!if) {
+	if {[info exists t(eq!$eq!if!$iface!native-vlan)] &&
+		[info exists t(eq!$eq!if!$iface!link!allowedvlans)]} then {
+	    set nvlan $t(eq!$eq!if!$iface!native-vlan)
+	    set allow {}
+	    foreach cv $t(eq!$eq!if!$iface!link!allowedvlans) {
+		lassign $cv min max
+		if {$nvlan == $min} then {
+		    incr min
+		    if {$min < $max} then {
+			lappend allow [list $min $max]
+		    }
+		} elseif {$nvlan == $max} then {
+		    incr max -1
+		    if {$min < $max} then {
+			lappend allow [list $min $max]
+		    }
+		} elseif {$nvlan > $min && $nvlan < $max} then {
+		    set nmax [expr $nvlan-1]
+		    if {$min < $nmax} then {
+			lappend allow [list $min $nmax]
+		    }
+		    set nmin [expr $nvlan+1]
+		    if {$nmin < $max} then {
+			lappend allow [list $nmin $max]
+		    }
+		} else {
+		    lappend allow [list $min $max]
+		}
+	    }
+	    set t(eq!$eq!if!$iface!link!allowedvlans) $allow
+	}
+    }
+
     # Traiter les spécifications "voip" sur les interfaces, phase 2
     #
     # Ce qui est à faire dépend du statut actuel de l'interface
@@ -1756,6 +2064,72 @@ proc juniper-post-process {model fdout eq tab} {
 	}
     }
 
+    #
+    # On JunOS router, interface may candidate to some declared
+    # bridge domains or may be explicitely named by a bridge domain
+    # declaration.
+    # Explore all bridge domains to generate bridge (or bridge pattern)
+    # nodes, and mark selected interfaces.
+    #
+
+    foreach brdom $t(eq!$eq!brdomlist) {
+	#
+	# If this is a bridge domain with only one specified
+	# vlan, instantiate a bridge node specific for this vlan
+	# and not a bridge pattern (brpat) to instanciate.
+	#
+
+	set brnode 0
+	set vlans $t(eq!$eq!brdom!$brdom!vlans)
+	if {[llength $vlans] <= 1} then {
+	    lassign [lindex $vlans 0] min max
+	    if {$min eq $max} then {
+		set brnode [newnode]
+		puts $fdout "node $brnode type bridge"
+		set t(eq!$eq!brdom!$brdom!brnode) $brnode
+
+		#
+		# Mark (with the bridge node) all interfaces explicitely
+		# named in this bridge domain
+		#
+
+		foreach iface_unit $t(eq!$eq!brdom!$brdom!iflist) {
+		    lassign $iface_unit iface unit
+		    lappend t(eq!$eq!if!$iface!bridges) [list $brnode $unit $unit]
+		}
+	    }
+	}
+
+	#
+	# Gathers all interfaces which candidate to this bridge
+	#
+
+	foreach cv $vlans {
+	    # vlans allowed on the bridge
+	    lassign $cv brmin brmax
+
+	    foreach iface $t(eq!$eq!brcandidate) {
+		set allow {}
+		foreach ca $t(eq!$eq!if!$iface!link!allowedvlans) {
+		    lassign $ca amin amax
+
+		    #
+		    # Check intersection of intervals by computing
+		    # the resulting interval.
+		    #
+		    # nmin = max (amin, brmin)
+		    # nmax = min (amax, brmax)
+		    #
+		    set nmin [expr $amin < $brmin ? $brmin : $amin]
+		    set nmax [expr $amax > $brmax ? $brmax : $amax]
+		    if {$nmin <= $nmax} then {
+			lappend t(eq!$eq!if!$iface!bridges) [list $brnode $nmin $nmax]
+		    }
+		}
+	    }
+	}
+    }
+
     # XXX : pour l'instant, il n'y a qu'une seule instance de routage
     # dans *nos* Juniper...
     # En fait, il y en a deux : la "default" pour v4 et la "default" pour v6
@@ -1771,6 +2145,10 @@ proc juniper-post-process {model fdout eq tab} {
 
     # par défaut, pas de brpat
     set nodebrpat 0
+
+    if {$debug & 0x02} then {
+	debug-array t
+    }
 
     foreach iface $t(eq!$eq!if) {
 	if {[info exists agtab($iface)]} then {
@@ -1918,82 +2296,144 @@ proc juniper-post-process {model fdout eq tab} {
 
 		foreach v $arg {
 		    if {! [info exists t(eq!$eq!if!$iface!vlan!$v!disable)]} then {
-			#
-			# Interconnexion des VLAN aux interfaces physiques
-			#
-			set nodeL2 [newnode]
-			set t(eq!$eq!if!$iface!vlan!$v!node) $nodeL2
-			set statname $t(eq!$eq!if!$iface!vlan!$v!stat)
-			if {[string equal $statname ""]} then {
-			    set statname "-"
-			}
-			if {$v == 0} then {
-			    set native 1
-			} else {
-			    set native 0
-			}
-			puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname native $native ifname -"
-			puts $fdout "link $nodeL1 $nodeL2"
-
-			#
-			# Parcourir la liste des réseaux supportés par cette
-			# sous-interface.
-			#
-			foreach cidr $t(eq!$eq!if!$iface!vlan!$v!networks) {
-			    set ifname "$iface.$v"
-			    set idx "eq!$eq!if!$iface!vlan!$v!net!$cidr"
-
-			    # récupérer l'adresse du routeur dans ce réseau
-			    # (i.e. l'adresse IP de l'interface)
-			    set gwadr $t($idx)
-			    set preflen $t($idx!preflen)
-			    set nodeL3 [newnode]
-
-			    puts $fdout "node $nodeL3 type L3 eq $eq addr $gwadr/$preflen"
-			    puts $fdout "link $nodeL3 $nodeL2"
-
-			    if {[string first ":" $gwadr] != -1} then {
-				if {[string equal $nodeR6 ""]} then {
-				    set nodeR6 [newnode]
-				    puts $fdout "node $nodeR6 type router eq $eq instance _v6"
-				}
-				set nodeR $nodeR6
-			    } else {
-				if {[string equal $nodeR4 ""]} then {
-				    set nodeR4 [newnode]
-				    puts $fdout "node $nodeR4 type router eq $eq instance _v4"
-				}
-				set nodeR $nodeR4
+			if {[info exists t(eq!$eq!if!$iface!vlan!$v!networks)]} then {
+			    #
+			    # Interconnexion des VLAN aux interfaces physiques
+			    #
+			    set nodeL2 [newnode]
+			    set t(eq!$eq!if!$iface!vlan!$v!node) $nodeL2
+			    set statname $t(eq!$eq!if!$iface!vlan!$v!stat)
+			    if {[string equal $statname ""]} then {
+				set statname "-"
 			    }
+			    if {$v == 0} then {
+				set native 1
+			    } else {
+				set native 0
+			    }
+			    puts $fdout "node $nodeL2 type L2 eq $eq vlan $v stat $statname native $native ifname -"
+			    puts $fdout "link $nodeL1 $nodeL2"
 
-			    puts $fdout "link $nodeL3 $nodeR"
+			    #
+			    # Parcourir la liste des réseaux supportés par cette
+			    # sous-interface.
+			    #
+			    foreach cidr $t(eq!$eq!if!$iface!vlan!$v!networks) {
+				set ifname "$iface.$v"
+				set idx "eq!$eq!if!$iface!vlan!$v!net!$cidr"
 
-			    set static {}
+				# récupérer l'adresse du routeur dans ce réseau
+				# (i.e. l'adresse IP de l'interface)
+				set gwadr $t($idx)
+				set preflen $t($idx!preflen)
+				set nodeL3 [newnode]
 
-			    # parcourir les passerelles citées dans les routes statiques,
-			    # pour déterminer celles qui sont dans *ce* réseau
-			    if {[info exists t(eq!$eq!static!gw)]} then {
-				foreach gw $t(eq!$eq!static!gw) {
-				    set r [juniper-match-network $gw $cidr]
-				    if {$r == -1} then {
-					return 1
-				    } elseif {$r} then {
-					foreach n $t(eq!$eq!static!$gw) {
-					    append static "$n $gw "
+				puts $fdout "node $nodeL3 type L3 eq $eq addr $gwadr/$preflen"
+				puts $fdout "link $nodeL3 $nodeL2"
+
+				if {[string first ":" $gwadr] != -1} then {
+				    if {[string equal $nodeR6 ""]} then {
+					set nodeR6 [newnode]
+					puts $fdout "node $nodeR6 type router eq $eq instance _v6"
+				    }
+				    set nodeR $nodeR6
+				} else {
+				    if {[string equal $nodeR4 ""]} then {
+					set nodeR4 [newnode]
+					puts $fdout "node $nodeR4 type router eq $eq instance _v4"
+				    }
+				    set nodeR $nodeR4
+				}
+
+				puts $fdout "link $nodeL3 $nodeR"
+
+				set static {}
+
+				# parcourir les passerelles citées dans les routes statiques,
+				# pour déterminer celles qui sont dans *ce* réseau
+				if {[info exists t(eq!$eq!static!gw)]} then {
+				    foreach gw $t(eq!$eq!static!gw) {
+					set r [juniper-match-network $gw $cidr]
+					if {$r == -1} then {
+					    return 1
+					} elseif {$r} then {
+					    foreach n $t(eq!$eq!static!$gw) {
+						append static "$n $gw "
+					    }
 					}
 				    }
 				}
-			    }
 
-			    # est-ce qu'il y a du VRRP sur cette interface pour ce réseau ?
-			    if {[info exists t($idx!vrrp!virtual)]} then {
-				set vrrp "$t($idx!vrrp!virtual) $t($idx!vrrp!priority)"
-			    } else {
-				set vrrp "- -"
-			    }
+				# est-ce qu'il y a du VRRP sur cette interface pour ce réseau ?
+				if {[info exists t($idx!vrrp!virtual)]} then {
+				    set vrrp "$t($idx!vrrp!virtual) $t($idx!vrrp!priority)"
+				} else {
+				    set vrrp "- -"
+				}
 
-			    puts $fdout "rnet $cidr $nodeR $nodeL3 $nodeL2 $nodeL1 $vrrp $static"
+				puts $fdout "rnet $cidr $nodeR $nodeL3 $nodeL2 $nodeL1 $vrrp $static"
+			    }
 			}
+		    }
+		}
+
+		#
+		# Output interfaces (on JunOS router) marked as
+		# participating to a bridge domain
+		# 
+
+		if {[info exists t(eq!$eq!if!$iface!bridges)]} then {
+		    #
+		    # This interface has at least one unit which
+		    # participates to a bridge-domain
+		    #
+		    foreach b $t(eq!$eq!if!$iface!bridges) {
+			lassign $b brnode min max
+
+			if {$brnode == 0} then {
+			    if {$nodebrpat == 0} then {
+				set nodebrpat [newnode]
+				puts $fdout "node $nodebrpat type brpat eq $eq"
+			    }
+			    set brnode $nodebrpat
+			}
+
+			# Is there a sensor?
+			set statname ""
+			if {$min == $max} then {
+			    # if this unit has a specific description
+			    # it may have a declared sensor
+			    if {[info exists t(eq!$eq!if!$iface!vlan!$min!stat)]} then {
+				set statname $t(eq!$eq!if!$iface!vlan!$min!stat)
+			    }
+			}
+			if {$statname eq ""} then {
+			    set statname "-"
+			}
+
+			# native vlan ?
+			set native 0
+			if {$t(eq!$eq!if!$iface!link!type) eq "ether"} then {
+			    set native 1
+			}
+			if {[info exists t(eq!$eq!if!$iface!native-vlan)]} then {
+			    set nv $t(eq!$eq!if!$iface!native-vlan)
+			    if {$min == $max && $min == $nv} then {
+				set native 1
+			    }
+			}
+
+			set nodeL2 [newnode]
+			if {$min == $max} then {
+			    set ntype "L2"
+			    set allow "vlan $min"
+			} else {
+			    set ntype "L2pat"
+			    set allow "allow $min $max"
+			}
+			puts $fdout "node $nodeL2 type $ntype eq $eq $allow stat $statname native $native ifname -"
+			puts $fdout "link $nodeL1 $nodeL2"
+			puts $fdout "link $nodeL2 $brnode"
 		    }
 		}
 	    }
