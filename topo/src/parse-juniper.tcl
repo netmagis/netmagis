@@ -2085,7 +2085,7 @@ proc juniper-post-process {model fdout eq tab} {
 	    lassign [lindex $vlans 0] min max
 	    if {$min eq $max} then {
 		set brnode [newnode]
-		puts $fdout "node $brnode type bridge"
+		puts $fdout "node $brnode type bridge eq $eq"
 		set t(eq!$eq!brdom!$brdom!brnode) $brnode
 
 		#
