@@ -858,6 +858,28 @@ proc juniper-parse-l2switch-vlan-members {conf tab idx} {
 }
 
 #
+# EntrÃ©e :
+#   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
+#   - tab(current!unitnb) = <unit number>
+# Remplit :
+#   tab(eq!<eqname>!if!<ifname>!link!allowedvlans) {<vlan-id|vlan-name> ...}
+#   tab(eq!<eqname>!if!<ifname>!native-vlan) <vlan-id|vlan-name>
+#
+# Historique
+#   2009/12/22 : pda/jean : conception
+#   2010/08/31 : pda/jean : gestion effective du vlan natif
+#
+
+proc juniper-parse-l2switch-nativevlan {conf tab idx} {
+    upvar $tab t
+
+    set vlan [lindex $conf 1]
+    lappend t($idx!link!allowedvlans) [list $vlan $vlan]
+    set t($idx!native-vlan) $vlan
+    return 0
+}
+
+#
 # Entrée :
 #   - idx = eq!<eqname>!if!<ifname> ou eq!<eqname>!range!<range>
 # Remplit :
