@@ -62,8 +62,7 @@ $config{PGDATABASE} 		= $global_conf{macdbname};
 $config{PGUSER} 		= $global_conf{macdbuser};
 $config{PGPASSWORD} 		= $global_conf{macdbpassword};
 $config{fichier_etat} 		= $global_conf{metrodatadir} . "/wifi/ap_state.txt";
-# liste des ssid du reseau sans fil
-$config{list_ssid_wifi} 	= $global_conf{ssidwifi};
+
 # timeout snmp
 $config{snmp_timeout} 		= $global_conf{snmptimeout};
 
@@ -77,11 +76,8 @@ our %function_probes = (
 		'multicast'     	=> \&ifNom_multicast64,
 		'ifNom_error'		=> \&ifNom_error,
                 'ifNom-snmp32'		=> \&ifNom_counter32,
-                'assoc_ap'		=> \&get_assoc_ap,
                 'ifIP-snmp'		=> \&get_if_by_ip,
 		'get_value_generic'	=> \&get_generic,
-		'nbauthwifi'		=> \&get_nbauthwifi,
-		'nbassocwifi'		=> \&get_nbassocwifi,
 		'plugin'		=> \&get_plugins,
 		'ipmac'			=> \&get_arp_table,
 		'portmac.cisco'		=> \&get_portmac_cisco,
@@ -93,7 +89,6 @@ our %function_probes = (
 require $config{path_probes} . "/sensor-if-snmp-ap.pl";
 require $config{path_probes} . "/sensor-if-snmp64.pl";
 require $config{path_probes} . "/sensor-if-snmp32.pl";
-require $config{path_probes} . "/sensor-assoc-ap.pl";
 require $config{path_probes} . "/sensor-if-by-ip.pl";
 require $config{path_probes} . "/sensor-generic-gauge.pl";
 require $config{path_probes} . "/sensor-plugins.pl";
@@ -117,8 +112,6 @@ our %mac_auth;
 
 our %ok_sondes = ();
 our %nok_sondes = ();
-
-our %ssids = init_list_ssid($config{'list_ssid_wifi'});
 
 init_test_sondes();
 
