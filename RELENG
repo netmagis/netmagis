@@ -44,7 +44,9 @@ How to release, step by step
 	cd $NETMAGIS
 	git pull
 
-    1.b. Update the CHANGES file
+    1.b. Update the CHANGES file and the doc/netmagis/relnotes.htgt
+	to reflect changes made by the release, and don't forget
+	to update the release date
 
     1.c. Update version number
 
