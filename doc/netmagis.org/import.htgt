@@ -296,6 +296,11 @@
 	\item {first, make sure the serial number (in SOA record) is
 	    of the form YYYYMMDDnn (as recommanded by RFC 1912, page 3)
 	}
+	\item {put your serial number on a separated line and
+	    append the following comment to the line:
+	    \quote\teletype {; serial}
+	    such that the serial may be localized in the zone prologue
+	}
 	\item {insert a line beginning with:
 	    \retrait\teletype {; CUT HERE}
 	    to delimit prologue and host definitions
