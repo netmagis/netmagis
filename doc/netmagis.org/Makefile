@@ -27,8 +27,8 @@ install:
 	rm -rf $(DESTDIR)/css
 	tar cf - -C $(HTGDIR)/models/netmagis css | tar xvf - -C $(DESTDIR)
 	#
-	# install PNG files
+	# install PNG and other files
 	#
-	cp *.png* $(DESTDIR)
+	cp *.png* robots.txt $(DESTDIR)
 
 clean:

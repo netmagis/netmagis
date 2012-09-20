@@ -50,7 +50,9 @@
     Le compte est \gras {demo} et le mot de passe est \gras {demodemo}.
     Ce compte possède tous les droits d'administration de la base.
 
-    Suivez \gras {\lien {ce lien} {/netmagis/}} pour accéder à l'application.
+    \* Suivez \gras {\lien {ce lien} {/netmagis/}} pour accéder à l'application.
+    L'application de démo n'est pas disponible pour le moment.
+    Veuillez nous en excuser.
 
 }
 

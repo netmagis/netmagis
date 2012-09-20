@@ -48,8 +48,7 @@
 
     Enfin, il est possible d'utiliser le \lien {gestionnaire de
     bugs} {https://github.com/pdav/netmagis/issues} associé aux
-    \lien {sources de Netmagis} {https://github.com/pdav/netmagis/} sur
-    la forge \lien {https://github.com} {github.com}.
+    \lien {sources de Netmagis} {https://github.com/pdav/netmagis/}.
 }
 
 }

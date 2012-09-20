@@ -38,10 +38,10 @@
 
     \titre {2} {[2012/06/22] La version 2.1.0 de Netmagis est disponible}
 
-    La \lien {version 2.1.0 de Netmagis} {/download.html} est maintenant
-    disponible. Référez-vous aux \lien {/relnotes.html} {notes de
-    version} pour connaître toutes les nouveautées incluses dans
-    cette version.
+    La \lien {version 2.1.0 de Netmagis} {/download.html} est
+    maintenant disponible. Référez-vous aux \lien {notes de version}
+    {/relnotes.html} pour connaître toutes les nouveautées incluses
+    dans cette version.
 
 
     \titre {2} {[2012/04/23] Netmagis au Campus Monitoring workshop de GEANT}
