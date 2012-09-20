@@ -64,6 +64,9 @@
 		    <div id="buttons">
 		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consulter">
 		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Imprimer">
+		    <INPUT TYPE="SUBMIT" NAME="docsv" VALUE="Export CSV">
+		    ~
+		    ~
 		    <INPUT TYPE="SUBMIT" NAME="domap" VALUE="Carte des adresses">
 		    </div>
 		}

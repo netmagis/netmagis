@@ -10,7 +10,7 @@
 #	- plages : list of IP network ids
 #	- cidr : cidr given by user
 #   - output format
-#	- dolist, doprint or domap
+#	- dolist, doprint, docsv or domap
 #
 # History
 #   2002/03/27 : pda/jean : design
@@ -28,6 +28,7 @@
 #   2010/10/13 : pda      : added dhcp ranges in map
 #   2010/12/09 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
+#   2012/09/20 : pda/jean : add docsv
 #
 #
 # Template pages used by this script
@@ -155,6 +156,7 @@ source %LIBNETMAGIS%
 d cgi-register {
     domap {}
     dolist {}
+    docsv {}
     doprint {}
 } {
 } {
@@ -197,6 +199,7 @@ d cgi-register {
 				[list %PLAGES%  $ranges] \
 			    ]
 }
+
 ##############################################################################
 # Utility functions
 ##############################################################################
@@ -362,6 +365,14 @@ proc output-list {dbfd lcidr _tabuid format} {
 		latex {
 		    set nom "$nomprimaire \\textit \{$nomssecondaires\}"
 		}
+		csv {
+		    set ns [join $nomssecondaires ","]
+		    if {$ns eq ""} then {
+			set nom "$nomprimaire"
+		    } else {
+			set nom "$nomprimaire,$ns"
+		    }
+		}
 	    }
 	    lappend lines [list Normal \
 				$adr $nom $mac $dhcp \
@@ -373,7 +384,7 @@ proc output-list {dbfd lcidr _tabuid format} {
     }
 
     #
-    # Generate HTML code
+    # Generate HTML or CSV code
     #
 
     set tableau [::arrgen::output $format $conf(tableau) $lines]
@@ -406,6 +417,10 @@ proc output-list {dbfd lcidr _tabuid format} {
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
 				    ]
+	}
+	csv {
+	    ::webapp::send "csv" $tableau
+	    d end
 	}
     }
 }
@@ -672,6 +687,13 @@ proc output {dbfd _ftab _tabuid format} {
 # Display network list
 ##############################################################################
 
+d cgi-register {dolist .+} {
+    {plages	0 99999}
+    {cidr	1 99999}
+} {
+    output $dbfd ftab tabuid "html"
+}
+
 d cgi-register {doprint .+} {
     {plages	0 99999}
     {cidr	1 99999}
@@ -679,18 +701,18 @@ d cgi-register {doprint .+} {
     output $dbfd ftab tabuid "latex"
 }
 
+d cgi-register {docsv .+} {
+    {plages	0 99999}
+    {cidr	1 99999}
+} {
+    output $dbfd ftab tabuid "csv"
+}
+
 d cgi-register {domap .+} {
     {plages	0 99999}
     {cidr	1 99999}
 } {
     output $dbfd ftab tabuid "map"
-}
-
-d cgi-register {dolist .+} {
-    {plages	0 99999}
-    {cidr	1 99999}
-} {
-    output $dbfd ftab tabuid "html"
 }
 
 ##############################################################################
