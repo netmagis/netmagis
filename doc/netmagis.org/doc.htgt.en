@@ -51,6 +51,10 @@
 	}
     }
 
+    Adventurous users may find the
+    \lien {detailed installation instructions} {install-2.2.html}
+    for the upcoming 2.2 release.
+
     \titre {2} {Release notes and upgrade instructions}
 
     \lien {Release notes} {relnotes.html} explain differences with

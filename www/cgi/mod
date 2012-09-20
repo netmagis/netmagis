@@ -42,6 +42,7 @@
 #   2010/10/31 : pda      : add ttl
 #   2010/12/14 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
+#   2012/09/20 : pda/jean : remove dns update interval
 #
 
 #
@@ -226,12 +227,6 @@ d cgi-register {action store} {
 
     set login $tabuid(login)
     set idcor $tabuid(idcor)
-
-    #
-    # Get dns update interval
-    #
-
-    set interval [dnsconfig get "dnsupdateperiod"]
 
     #
     # Check host idrr
@@ -469,7 +464,6 @@ d cgi-register {action store} {
 					[list %COMMENTAIRE% $commentaire] \
 					[list %RESPNOM% $respnom] \
 					[list %RESPMEL% $respmel] \
-					[list %INTERVAL% $interval] \
 			    ]
     return 0
 }

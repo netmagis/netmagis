@@ -29,8 +29,8 @@
 
     \titre {1} {Modification stored}
 
-    The modification has been stored in database.  It will be
-    available on DNS servers within %INTERVAL% minutes.
+    The modification has been stored in database.  It will soon be
+    available on DNS servers.
 
     \tableau {
 	\bordure {1} {}

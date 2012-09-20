@@ -51,6 +51,10 @@
 	}
     }
 
+    Les utilisateurs aventureux pourront lire les
+    \lien {instructions d'installation détaillées} {/install-2.2.html}
+    pour la future version 2.2.
+
     \titre {2} {Documentation de version et procédures de mise à jour}
 
     Les \lien {documentations de version} {relnotes.html} (en anglais)

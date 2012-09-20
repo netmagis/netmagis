@@ -1,3 +1,8 @@
+Version 2.2.0 - ????/??/??
+    - improve DNS zone generation latency
+    - CSV export of a list of hosts (via the "Consult" menu item)
+    - bug fix: put back old description and sensor when editing multiple ifaces
+
 Version 2.1.0 - 2012/06/22
     - metro module integration
     - network graph is now copied from topo server to www server (if different)

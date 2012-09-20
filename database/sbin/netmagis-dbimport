@@ -34,7 +34,7 @@ set conf(pattern)	{^; CUT HERE}
 # - string after serial number
 # The searched pattern catch lines such as:
 #	"      2011021801        ; Serial"
-# The serial will be replaced, after consistency check, by %ZONEVERSION%
+# The serial will be replaced by %ZONEVERSION%
 # in the zone prologue in the database.
 #
 
@@ -993,9 +993,10 @@ proc import-domain {verbose argv dbfd} {
 # Import zone data
 ##############################################################################
 
-proc read-zone {file domain reverse _prologue _tabaddr _tabcname} {
+proc read-zone {file domain reverse _prologue _serial _tabaddr _tabcname} {
     global conf
     upvar $_prologue prologue
+    upvar $_serial serial
     upvar $_tabaddr tabaddr
     upvar $_tabcname tabcname
 
@@ -1013,12 +1014,7 @@ proc read-zone {file domain reverse _prologue _tabaddr _tabcname} {
 	    set endprol 1
 	} else {
 	    if {[regexp -nocase $conf(serial) $line x p1 curserial p2]} then {
-		set newserial [clock format [clock seconds] -format "%Y%m%d"]
-		append newserial "01"
-		if {$newserial < $curserial} then {
-		    warning "Version '$curserial' in file is lower than Netmagis default serial '$newserial'"
-		    warning "You will have to reset this zone your secondary DNS servers"
-		}
+		set serial $curserial
 		set line "$p1%ZONEVERSION%$p2"
 		set serialfound 1
 	    }
@@ -1270,7 +1266,7 @@ proc import-zone {verbose argv dbfd} {
     # - parse all CNAME records and place them in tabcname 
     #
 
-    read-zone $file $domain $reverse prologue tabaddr tabcname
+    read-zone $file $domain $reverse prologue serial tabaddr tabcname
 
     if {$verbose >= 3} then {
 	if {[array exists tabaddr]} then {
@@ -1395,9 +1391,6 @@ proc import-zone {verbose argv dbfd} {
     set qprologue [::pgsql::quote $prologue]
     set qrrsup [::pgsql::quote $rrsup]
     set qselector [::pgsql::quote $selector]
-
-    set serial [clock format [clock seconds] -format "%Y%m%d"]
-    append serial "01"
 
     switch $version {
 	-1 { set table "dns.zone_normale" }

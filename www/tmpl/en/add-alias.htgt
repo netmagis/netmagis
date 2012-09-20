@@ -31,8 +31,7 @@
 
     The alias has been added in database.
 
-    The modification will be available on DNS servers
-    within %INTERVAL% minutes.
+    The modification will soon be available on DNS servers.
 
     \tableau {
 	\bordure {1} {}

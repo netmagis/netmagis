@@ -89,8 +89,6 @@
 
  cfg:dns {Paramètres DNS}
 
- cfg:dnsupdateperiod:desc {Délai de mise à jour DNS}
- cfg:dnsupdateperiod:help {Durée entre deux générations de zones DNS sur le serveur DNS (doit être identique à la valeur CRON correspondante).}
  cfg:defuser:desc {Utilisateur par défaut}
  cfg:defuser:help {L'utilisateur par défaut est utilisé dans les programmes Netmagis en ligne de commande lorsque le login de l'utilisateur n'existe pas dans la base Netmagis.}
 

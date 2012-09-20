@@ -61,6 +61,48 @@ proc get-mod-zones {dbfd all} {
 }
 
 #
+# Compute the new serial of a zone
+#
+# Input:
+#   - serial: old serial number
+# Output:
+#   - return value: new serial number
+#
+# Algorithm (see issue #47):
+#   parse the current serial (from the zone_*.version column) to get
+#		yyyymmdd and nn
+#   if yyyymmdd < today
+#	then new serial := ctoday concatenated with 00
+#	else new serial := serial + 1
+#
+#   Properties of this algorithm:
+#	- the serial is strictly monotonic
+#	- it follows the yyyymmddnn convention when possible
+#		(for aestethic reasons)
+#	- if there is one modification every minute, starting from
+#		2012/09/20, this algorithm will overflow the 32-bit SOA
+#		serial in 4343,37 years, so in year 6355.
+#
+# History:
+#   2012/09/20 : pda/jean : design of the new auto-adaptative algorithm
+#
+
+proc new-serial {serial} {
+    if {[regexp {^(\d{8})(\d{2})$} $serial dummy odate onn]} then {
+	set today [clock format [clock seconds] -format "%Y%m%d"]
+	if {$odate < $today} then {
+	    set nserial "${today}00"
+	} else {
+	    set nserial [expr $serial+1]
+	}
+    } else {
+	set nserial [expr $serial+1]
+    }
+
+    return $nserial
+}
+
+#
 # Generates zone content
 #
 # Input:
@@ -121,30 +163,7 @@ proc gen-zone {dbfd zone _txt} {
     # Compute the new version number for the zone
     #
 
-    set adate [string range $version 0 7]
-
-    # version number with one or two digits
-    set digit1  [string range $version 8 8]
-    set digit2  [string range $version 9 9]
-    if {$digit1 == 0} then {
-        set anum $digit2
-    } else {
-        set anum "$digit1$digit2"
-    }
-
-    set ndate [clock format [clock seconds] -format "%Y%m%d"]
-
-    if {$adate eq $ndate} then {
-	if {$anum >= 99} then {
-	    set txt "zone '$zone': version number too large today ($anum)"
-	    return 0
-	}
-	set nnum [format "%02d" [expr $anum + 1]]
-    } else {
-	set nnum 01
-    }
-
-    set nversion "$ndate$nnum"
+    set nversion [new-serial $version]
 
     #
     # Generate prologue with version number

@@ -104,12 +104,6 @@ d cgi-register {action del-name} {
     set fqdn "$nom.$domaine"
 
     #
-    # Get dns update interval
-    #
-
-    set interval [dnsconfig get "dnsupdateperiod"]
-
-    #
     # Check name
     #
 
@@ -237,7 +231,6 @@ d cgi-register {action del-name} {
 
 	d result $conf(page-ok) [list \
 						[list %OBJET% $fqdn] \
-						[list %INTERVAL% $interval] \
 			    ]
     }
 }
@@ -257,12 +250,6 @@ d cgi-register {action del-ip} {
     {adr	1 1}
 } {
     global conf
-
-    #
-    # Get dns update interval
-    #
-
-    set interval [dnsconfig get "dnsupdateperiod"]
 
     #
     # Check IP address
@@ -424,7 +411,6 @@ d cgi-register {action del-ip} {
 			[list %ADR%         $adr] \
 			[list %MACHINE%     $host] \
 			[list %OBJET%       $objet] \
-			[list %INTERVAL%    $interval] \
 		    ]
 }
 

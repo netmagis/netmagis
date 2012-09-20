@@ -31,8 +31,7 @@
 
     '%OBJET%' has been removed.
 
-    The modification will be available on DNS servers
-    within %INTERVAL% minutes.
+    The modification will soon be available on DNS servers.
 
     Click \lien {here to continue} {%URLSUITE%}.
 }

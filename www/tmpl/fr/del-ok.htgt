@@ -31,8 +31,7 @@
 
     La suppression de '%OBJET%' est effectuée.
 
-    La modification sera effective sur les serveurs de nom d'ici
-    %INTERVAL% minutes.
+    La modification sera bientôt effective sur les serveurs de nom.
 
     Cliquer \lien {ici pour continuer} {%URLSUITE%}.
 }

@@ -6,4 +6,4 @@
 MAILTO = hostmaster@example.com
 
 # use flag -q if status messages are not wanted
-*/10 * * * * %SBINDIR%/mkzones
+*/1 * * * * %SBINDIR%/mkzones

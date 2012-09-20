@@ -45,6 +45,26 @@
     \lien {github.com commits} {http://github.com/pdav/netmagis}.
 
 
+    \titre {2} {\ancre {v2.2} {Netmagis 2.2}}
+
+    Release date: not yet.
+
+    \liste {
+	\item {The DNS zone generation latency has been improved.
+	    A new auto-adaptative algorithm has been implemented
+	    in order to allow more than 100 modifications of a
+	    zone in a day. The \teletype {mkzone} script may now
+	    run each minute.
+	}
+	\item {The "consult" page in the Web application may now
+	    export a list of hosts in CSV (Comma Separated Values)
+	    format.
+	}
+	\item {Bug fix: when using multiple interface edition,
+	    the description and sensors are no longer reset.
+	}
+    }
+
     \titre {2} {\ancre {v2.1} {Netmagis 2.1}}
 
     Release date: 22 june 2012.

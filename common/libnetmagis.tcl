@@ -1643,7 +1643,6 @@ snit::type ::config {
 	    {pageformat {menu {{a4 A4} {letter Letter}}} }
 	}
 	{dns
-	    {dnsupdateperiod {string}}
 	    {defuser {string}}
 	}
 	{dhcp

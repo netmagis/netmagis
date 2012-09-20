@@ -29,8 +29,7 @@
 
     \titre {1} {Zone generation}
 
-    Selected zone(s) will be available on DNS servers
-    within %INTERVAL% minutes.
+    Selected zone(s) will soon be available on DNS servers.
 }
 
 }

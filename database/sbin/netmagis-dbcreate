@@ -29,6 +29,7 @@
 #   2012/04/08 : pda        : mac database creation
 #   2012/06/15 : pda/jean   : drop -u/-w for an obsolete privileged user
 #   2012/06/19 : pda        : don't create copy database
+#   2012/09/20 : pda/jean   : remove dnsupdateperiod
 #
 
 usage ()
@@ -1374,7 +1375,6 @@ datefmt	%d/%m/%Y %H:%M:%S
 jourfmt	%a %d %b %Y
 authmethod	pgsql
 pageformat	a4
-dnsupdateperiod	600
 default_lease_time	600
 max_lease_time	3600
 min_lease_time	300

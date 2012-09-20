@@ -59,6 +59,7 @@
 #   2010/10/26 : pda      : check dhcpprofil case when no maC address
 #   2010/12/14 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
+#   2012/09/20 : pda/jean : remove dns update interval
 #
 
 #
@@ -261,12 +262,6 @@ d cgi-register {action add-host} {
 
     set login $tabuid(login)
     set idcor $tabuid(idcor)
-
-    #
-    # Get dns update interval
-    #
-
-    set interval [dnsconfig get "dnsupdateperiod"]
 
     #
     # Check name and domain
@@ -575,7 +570,6 @@ d cgi-register {action add-host} {
     set machine [display-rr $dbfd $trr(idrr) trr]
     d result $conf(page-host) [list \
 					    [list %MACHINE% $machine] \
-					    [list %INTERVAL% $interval] \
 			    ]
 }
 
@@ -735,12 +729,6 @@ d cgi-register {action add-alias} {
     set idcor $tabuid(idcor)
 
     #
-    # Get dns update interval
-    #
-
-    set interval [dnsconfig get "dnsupdateperiod"]
-
-    #
     # Check names of alias and host
     #
 
@@ -808,7 +796,6 @@ d cgi-register {action add-alias} {
 					    [list %DOMAINE%    $domaine] \
 					    [list %NOMREF%     $nomref] \
 					    [list %DOMAINEREF% $domaineref] \
-					    [list %INTERVAL%   $interval] \
 			    ]
     return 0
 }
