@@ -592,6 +592,7 @@
  {authorized special characters: -+/()&.:#_} {caractères spéciaux autorisés : -+/()&.:#_}
  {VoIP} {VoIP}
  {Sensors} {Sondes}
+ {Invalid sensor name '%s' (should be M...)} {Nom de sonde '%s' invalide (devrait être M...)}
  {Edit interfaces on %s} {Modification des interfaces de %s}
  {Interfaces} {Interfaces}
  {More than 6 months} {Plus de 6 mois}
