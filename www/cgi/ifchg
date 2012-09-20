@@ -428,12 +428,20 @@ d cgi-register {mode .+} {
 	set qiface [::pgsql::quote $i]
 	switch $mode {
 	    multi {
-		if {! ([info exists tabiface($i)] &&
-					[lindex $tabiface($i) 5] eq "")} then {
-		    # description is empty: (re)create one
-		    set qifdesc "X"
+		if {[info exists tabiface($i)]} then {
+		    # put back old values
+		    lassign $tabiface($i) name edit radio stat mode desc rem
+		    set qifdesc "<X"
+		    if {$stat ne "-"} then {
+			append qifdesc " S$stat"
+		    }
+		    append qifdesc ">"
+		    if {$desc ne "-"} then {
+			append qifdesc " "
+			append qifdesc [binary format H* $desc]
+		    }
 		} else {
-		    set qifdesc ""
+		    set qifdesc "X"
 		}
 	    }
 	    mono {
