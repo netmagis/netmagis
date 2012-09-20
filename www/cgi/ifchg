@@ -389,9 +389,13 @@ d cgi-register {mode .+} {
 		set i [lindex $iface 0]
 		set stat [lindex $tabiface($i) 3]
 	    }
+	    set stat [string trim $stat]
 	    if {$stat eq "" || $stat eq "-"} then {
 		set desc "X $desc"
 	    } else {
+		if {! [regexp {^M\S+$} $stat]} then {
+		    d error [mc "Invalid sensor name '%s' (should be M...)" $stat]
+		}
 		set desc "$desc <X $stat>"
 	    }
 	    set qifdesc [::pgsql::quote $desc]
@@ -430,15 +434,15 @@ d cgi-register {mode .+} {
 	    multi {
 		if {[info exists tabiface($i)]} then {
 		    # put back old values
-		    lassign $tabiface($i) name edit radio stat mode desc rem
+		    lassign $tabiface($i) oname oedit oradio ostat omode odesc rem
 		    set qifdesc "<X"
-		    if {$stat ne "-"} then {
-			append qifdesc " S$stat"
+		    if {$ostat ne "-"} then {
+			append qifdesc " $ostat"
 		    }
 		    append qifdesc ">"
-		    if {$desc ne "-"} then {
+		    if {$odesc ne "-"} then {
 			append qifdesc " "
-			append qifdesc [binary format H* $desc]
+			append qifdesc [binary format H* $odesc]
 		    }
 		} else {
 		    set qifdesc "X"
