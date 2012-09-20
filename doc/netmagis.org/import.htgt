@@ -298,7 +298,7 @@
 	}
 	\item {put your serial number on a separated line and
 	    append the following comment to the line:
-	    \quote\teletype {; serial}
+	    \retrait\teletype {; serial}
 	    such that the serial may be localized in the zone prologue
 	}
 	\item {insert a line beginning with:
