@@ -1,0 +1,43 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {27/09/2012}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Modification des vues
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application Netmagis
+}
+
+
+\*******************************************************************************
+\bandeau {
+	DNS  v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Gestion des vues}
+
+    \titre {2} {\ancre {name} {Vue}}
+
+	Nom de la vue. Une vue est un point d'observation, reflétant
+	ce qu'une classe de clients DNS peut voir. Une vue rassemblera
+	typiquement plusieurs zones.
+
+	Exemple~:
+	    \retrait {\verbatim {interne}} \br
+	    \retrait {\verbatim {externe}} \br
+}
+
+}

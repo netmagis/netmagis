@@ -548,6 +548,7 @@ snit::type ::netmagis {
 			    {moddomaine always}
 			    {admmrel always}
 			    {admmx always}
+			    {modview always}
 			    {modzone always}
 			    {modzone4 always}
 			    {modzone6 always}
@@ -578,6 +579,7 @@ snit::type ::netmagis {
 	moddomaine	{admref?type=domaine {Modify domains}}
 	admmrel		{admmrel {Modify mailhost}}
 	admmx		{admmx {Modify MX}}
+	modview		{admref?type=view {Modify views}}
 	modzone		{admref?type=zone {Modify zones}}
 	modzone4	{admref?type=zone4 {Modify reverse IPv4 zones}}
 	modzone6	{admref?type=zone6 {Modify reverse IPv6 zones}}
@@ -5652,6 +5654,16 @@ proc store-tabular {dbfd cspec idnum table _ftab check} {
     set lid [lsort -increasing $lid]
 
     #
+    # Get old ids, if we have to output a precise error message
+    # when SQL transaction has aborted.
+    #
+
+    pg_select $dbfd "SELECT $key, $idnum FROM $table" tab {
+	set okey $tab($idnum)
+	set oldkeys($okey) $tab($key)
+    }
+
+    #
     # Traversal of existing ids in the database
     #
 
@@ -5667,15 +5679,14 @@ proc store-tabular {dbfd cspec idnum table _ftab check} {
 		set ok [_store-tabular-del $dbfd msg $id $idnum $table $check]
 		if {! $ok} then {
 		    #
-		    # When deletion is not possible, we must return an
-		    # appropriate message, with the old value.
+		    # Deletion is not possible. Transaction may have been
+		    # aborted. Look into the saved keys
 		    #
-		    set oldkey ""
-		    pg_select $dbfd "SELECT $key FROM $table \
-				    WHERE $idnum = $id" t {
-			set oldkey $t($key)
+		    set okey ""
+		    if {[info exists oldkeys($id)]} then {
+			set okey $oldkeys($id)
 		    }
-		    d dbabort [mc "delete %s" $oldkey] $msg
+		    d dbabort [mc "delete %s" $okey] $msg
 		}
 	    } else {
 		#

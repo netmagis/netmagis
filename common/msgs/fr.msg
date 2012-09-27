@@ -38,6 +38,7 @@
  {Modify domains} {Modif domaines}
  {Modify mailhost} {Modif relais de messagerie}
  {Modify MX} {Modif MX}
+ {Modify views} {Modif vues}
  {Modify zones} {Modif zones normales}
  {Modify reverse IPv4 zones} {Modif zones IPv4}
  {Modify reverse IPv6 zones} {Modif zones IPv6}
@@ -241,6 +242,7 @@
  {Name}		{Nom}
  {First name}	{Prénom}
  {Domain}	{Domaine}
+ {View}		{Vue}
  {IP address}	{Adresse IP}
  {IP addresses}	{Adresses IP}
  {(none)}	{(aucune)}
@@ -497,6 +499,7 @@
  {Network management} {Gestion des réseaux}
  {Equipment management} {Gestion des équipements}
  {Domain management} {Gestion des domaines}
+ {View management} {Gestion des vues}
  {Zone management} {Gestion des zones}
  {DHCP profile management} {Gestion des profils DHCP}
  {Vlan management} {Gestion des Vlans}
@@ -509,6 +512,7 @@
  {return to host information modification} {revenir à la modification des types de machines}
  {return to network modification} {revenir à la modification des réseaux}
  {return to domain modification} {revenir à la modification des domaines}
+ {return to view modification} {revenir à la modification des vues}
  {return to zone modification} {revenir à la modification des zones}
  {return to DHCP profile modification} {revenir à la modification des profils DHCP}
  {return to Vlan modification} {revenir à la modification des Vlans}

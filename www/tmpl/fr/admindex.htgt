@@ -50,6 +50,7 @@
 	\item {Modifier les \lien {réseaux} {%URLREFRESEAU%}}
 	\item {Modifier les \lien {domaines} {%URLREFDOMAINE%}}
 	\item {Modifier les \lien {relais de messagerie} {%URLADMMREL%} d'un domaine}
+	\item {Modifier les \lien {vues} {%URLREFVIEW%}}
 	\item {Modifier les \lien {zones normales} {%URLREFZONE%}}
 	\item {Modifier les \lien {zones reverse IPv4} {%URLREFZONE4%}}
 	\item {Modifier les \lien {zones reverse IPv6} {%URLREFZONE6%}}

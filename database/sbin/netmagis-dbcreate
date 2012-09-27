@@ -332,6 +332,59 @@ create_netmagis_schemas ()
     ) ;
 
 
+    -- DNS views
+    -- There is one entry for each observation point, which means
+    -- a class of clients allowed to see informations. For example:
+    -- "internal" and "external"
+
+    CREATE SEQUENCE dns.seq_view START 1 ;
+    CREATE TABLE dns.view (
+	idview		INT		-- view id
+		DEFAULT NEXTVAL ('dns.seq_view'),
+	name		TEXT,		-- e.g.: "internal", "external"...
+
+	UNIQUE (name),
+	PRIMARY KEY (idview)
+    ) ;
+
+    -- DNS zone generation
+
+    CREATE SEQUENCE dns.seq_zone START 1 ;
+    CREATE TABLE dns.zone (
+	idzone		INT		-- zone id
+		DEFAULT NEXTVAL ('dns.seq_zone'),
+	name		TEXT,		-- zone name and name of generated file
+	idview		INT,		-- view id
+	version		INT,		-- version number
+	prologue	TEXT,		-- zone prologue (with %ZONEVERSION% pattern)
+	rrsup		TEXT,		-- added to each generated host
+	generer		INT,		-- modified since last generation
+    ) ;
+
+    CREATE TABLE dns.zone_normale (
+	selection	TEXT,		-- criterion to select names
+
+	UNIQUE (name),
+	FOREIGN KEY (idview) REFERENCES dns.view (idview),
+	PRIMARY KEY (idzone)
+    ) INHERITS (dns.zone) ;
+
+    CREATE TABLE dns.zone_reverse4 (
+	selection	CIDR		-- criterion to select addresses
+
+	UNIQUE (name),
+	FOREIGN KEY (idview) REFERENCES dns.view (idview),
+	PRIMARY KEY (idzone)
+    ) INHERITS (dns.zone) ;
+
+    CREATE TABLE dns.zone_reverse6 (
+	selection	CIDR		-- criterion to select addresses
+
+	UNIQUE (name),
+	FOREIGN KEY (idview) REFERENCES dns.view (idview),
+	PRIMARY KEY (idzone)
+    ) INHERITS (dns.zone) ;
+
     -- host types
 
     CREATE SEQUENCE dns.seq_hinfo MINVALUE 0 START 0 ;
@@ -371,6 +424,8 @@ create_netmagis_schemas ()
 	PRIMARY KEY (idgrp, iddom)
     ) ;
 
+    -- IP ranges allowed to groups
+
     CREATE TABLE dns.dr_ip (
 	idgrp		INT,		-- group
 	adr		CIDR,		-- network range
@@ -379,6 +434,20 @@ create_netmagis_schemas ()
 	FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
 	PRIMARY KEY (idgrp, adr)
     ) ;
+
+    -- views allowed to groups
+
+    CREATE TABLE dns.dr_view (
+	idgrp		INT,		-- group
+	idview		INT,		-- the view
+	sort		INT,		-- sort class
+	selected	INT,		-- selected by default in menus
+
+	FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+	FOREIGN KEY (idview) REFERENCES dns.view (idview),
+	PRIMARY KEY (idgrp, idview)
+    ) ;
+
 
     -- DHCP profiles
 
@@ -510,40 +579,6 @@ create_netmagis_schemas ()
 	FOREIGN KEY (mx)    REFERENCES dns.rr      (idrr),
 	PRIMARY KEY (iddom, mx)
     ) ;
-
-    -- DNS zone generation
-
-    CREATE SEQUENCE dns.seq_zone START 1 ;
-    CREATE TABLE dns.zone (
-	idzone		INT		-- zone id
-		DEFAULT NEXTVAL ('dns.seq_zone'),
-	name		TEXT,		-- zone name and name of generated file
-	version		INT,		-- version number
-	prologue	TEXT,		-- zone prologue (with %ZONEVERSION% pattern)
-	rrsup		TEXT,		-- added to each generated host
-	generer		INT,		-- modified since last generation
-    ) ;
-
-    CREATE TABLE dns.zone_normale (
-	selection	TEXT		-- criterion to select names
-
-	UNIQUE (name),
-	PRIMARY KEY (idzone)
-    ) INHERITS (dns.zone) ;
-
-    CREATE TABLE dns.zone_reverse4 (
-	selection	CIDR		-- criterion to select addresses
-
-	UNIQUE (name),
-	PRIMARY KEY (idzone)
-    ) INHERITS (dns.zone) ;
-
-    CREATE TABLE dns.zone_reverse6 (
-	selection	CIDR		-- criterion to select addresses
-
-	UNIQUE (name),
-	PRIMARY KEY (idzone)
-    ) INHERITS (dns.zone) ;
 
     -- To force generation of dhcpd.conf
 
