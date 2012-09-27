@@ -31,10 +31,14 @@
 
     \titre {2} {\ancre {domaine} {Domaine}}
 
-	Nom de domaine de la zone (sans le point final).
+	Nom de la zone. Ce nom est utilisé pour identifier une zone
+	en particulier (dans les menus de l'application par exemple)
+	ainsi que pour nommer le fichier généré par le script
+	\teletype {mkzones}.
 
 	Exemple~:
 	    \retrait {\verbatim {example.com} \br
+	        \verbatim {example.com.internal-view} \br
 		\verbatim {2.0.192.in-addr.arpa}}
 
     \titre {2} {\ancre {prologue} {Prologue}}

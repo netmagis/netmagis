@@ -142,12 +142,12 @@ set conf(domaine:proc)		admref-nop
 # Zones
 
 set conf(zone:ptitle)	"Zone management"
-set conf(zone:cols)		{ {15 domaine	{Domain} {string 15} {}}
+set conf(zone:cols)		{ {15 name	{Name} {string 15} {}}
 				  {45 prologue	{Prolog} {textarea {45 10}} {}}
 				  {25 rrsup	{Addtl RR} {textarea {30 10}} {}}
 				  {15 selection	{Criterion} {string 15} {}}
 				}
-set conf(zone:sql)		"SELECT * FROM dns.zone_normale ORDER BY domaine ASC"
+set conf(zone:sql)		"SELECT * FROM dns.zone_normale ORDER BY selection ASC"
 set conf(zone:id)		idzone
 set conf(zone:help)		help-zone.html
 set conf(zone:return)		"Return to zone modification"
@@ -159,7 +159,7 @@ set conf(zone:proc)		admref-nop
 
 set conf(zone4:ptitle)		$conf(zone:ptitle)
 set conf(zone4:cols)		$conf(zone:cols)
-set conf(zone4:sql)		"SELECT * FROM dns.zone_reverse4 ORDER BY domaine ASC"
+set conf(zone4:sql)		"SELECT * FROM dns.zone_reverse4 ORDER BY selection ASC"
 set conf(zone4:id)		$conf(zone:id)
 set conf(zone4:help)		$conf(zone:help)
 set conf(zone4:return) 		$conf(zone:return)
@@ -171,7 +171,7 @@ set conf(zone4:proc)		$conf(zone:proc)
 
 set conf(zone6:ptitle)		$conf(zone:ptitle)
 set conf(zone6:cols)		$conf(zone:cols)
-set conf(zone6:sql)		"SELECT * FROM dns.zone_reverse6 ORDER BY domaine ASC"
+set conf(zone6:sql)		"SELECT * FROM dns.zone_reverse6 ORDER BY selection ASC"
 set conf(zone6:id)		$conf(zone:id)
 set conf(zone6:help)		$conf(zone:help)
 set conf(zone6:return) 		$conf(zone:return)

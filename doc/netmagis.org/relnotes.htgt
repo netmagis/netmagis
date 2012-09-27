@@ -60,6 +60,9 @@
 	    export a list of hosts in CSV (Comma Separated Values)
 	    format.
 	}
+	\item {Reverse zones are listed in correct order (by IP
+	    address) in the "modify reverse IPv[46] zones" menu.
+	}
 	\item {Bug fix: when using multiple interface edition,
 	    the description and sensors are no longer reset.
 	}

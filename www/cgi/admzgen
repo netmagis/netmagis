@@ -53,7 +53,7 @@ d cgi-register {action {}} {} {
     # Get zone list
     #
 
-    set lz [::pgsql::getcols $dbfd dns.zone "" "domaine ASC" {domaine domaine}]
+    set lz [::pgsql::getcols $dbfd dns.zone "" "name ASC" {name name}]
     set h [llength $lz]
     set zones [::webapp::form-menu zones $h 1 $lz {}]
 
@@ -84,7 +84,7 @@ d cgi-register {action set} {
 
     foreach z $ftab(zones) {
 	set qz [::pgsql::quote $z]
-	set sql "UPDATE dns.zone SET generer = 1 WHERE domaine = '$qz'"
+	set sql "UPDATE dns.zone SET generer = 1 WHERE name = '$qz'"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    set op [mc "force generation for zone %s" $z]
 	    d dbabort $op $msg

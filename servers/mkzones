@@ -54,8 +54,8 @@ proc get-mod-zones {dbfd all} {
 	set crit "WHERE generer = 1"
     }
     set l {}
-    pg_select $dbfd "SELECT domaine FROM dns.zone $crit" tab {
-	lappend l $tab(domaine)
+    pg_select $dbfd "SELECT name FROM dns.zone $crit" tab {
+	lappend l $tab(name)
     }
     return $l
 }
@@ -127,7 +127,7 @@ proc gen-zone {dbfd zone _txt} {
     set sql "SELECT n.nspname || '.' || c.relname AS table,
 			zone.version, zone.prologue, zone.rrsup, zone.generer
 		    FROM dns.zone, pg_class c, pg_namespace n
-		    WHERE domaine = '$qzone'
+		    WHERE name = '$qzone'
 			AND c.oid = zone.tableoid
 			AND c.relnamespace = n.oid
 			"
@@ -154,7 +154,7 @@ proc gen-zone {dbfd zone _txt} {
     # Get selection criterion
     #
 
-    set sql "SELECT selection FROM $table WHERE domaine = '$qzone'" 
+    set sql "SELECT selection FROM $table WHERE name = '$qzone'" 
     pg_select $dbfd $sql tab {
 	set selection	$tab(selection)
     }
@@ -208,7 +208,7 @@ proc gen-zone {dbfd zone _txt} {
     #
 
     set sql "UPDATE dns.zone SET version = $nversion, generer = 0
-		    WHERE domaine = '$qzone'"
+		    WHERE name = '$qzone'"
     if {! [::pgsql::execsql $dbfd $sql m]} then {
 	set txt $m
 	return 0
@@ -248,11 +248,11 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
     # Get working domain id
     #
     set iddom -1
-    pg_select $dbfd "SELECT iddom FROM dns.domaine WHERE nom = '$zone'" tab {
+    pg_select $dbfd "SELECT iddom FROM dns.domaine WHERE nom = '$selection'" tab {
 	set iddom $tab(iddom)
     }
     if {$iddom == -1} then {
-	set txt "Zone $zone: domain not found in database"
+	set txt "Zone $zone: domain '$selection' not found in database"
 	return 0
     }
 

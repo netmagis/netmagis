@@ -30,6 +30,7 @@
 #   2012/06/15 : pda/jean   : drop -u/-w for an obsolete privileged user
 #   2012/06/19 : pda        : don't create copy database
 #   2012/09/20 : pda/jean   : remove dnsupdateperiod
+#   2012/09/27 : pda/jean   : rename dns.zone.domaine
 #
 
 usage ()
@@ -516,13 +517,13 @@ create_netmagis_schemas ()
     CREATE TABLE dns.zone (
 	idzone		INT		-- zone id
 		DEFAULT NEXTVAL ('dns.seq_zone'),
-	domaine		TEXT,		-- domain of zone (may be in in-addr.arpa)
+	name		TEXT,		-- zone name and name of generated file
 	version		INT,		-- version number
 	prologue	TEXT,		-- zone prologue (with %ZONEVERSION% pattern)
 	rrsup		TEXT,		-- added to each generated host
 	generer		INT,		-- modified since last generation
 
-	UNIQUE (domaine),
+	UNIQUE (name),
 	PRIMARY KEY (idzone)
     ) ;
 
