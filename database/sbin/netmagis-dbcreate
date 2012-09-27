@@ -522,21 +522,27 @@ create_netmagis_schemas ()
 	prologue	TEXT,		-- zone prologue (with %ZONEVERSION% pattern)
 	rrsup		TEXT,		-- added to each generated host
 	generer		INT,		-- modified since last generation
-
-	UNIQUE (name),
-	PRIMARY KEY (idzone)
     ) ;
 
     CREATE TABLE dns.zone_normale (
 	selection	TEXT		-- criterion to select names
+
+	UNIQUE (name),
+	PRIMARY KEY (idzone)
     ) INHERITS (dns.zone) ;
 
     CREATE TABLE dns.zone_reverse4 (
 	selection	CIDR		-- criterion to select addresses
+
+	UNIQUE (name),
+	PRIMARY KEY (idzone)
     ) INHERITS (dns.zone) ;
 
     CREATE TABLE dns.zone_reverse6 (
 	selection	CIDR		-- criterion to select addresses
+
+	UNIQUE (name),
+	PRIMARY KEY (idzone)
     ) INHERITS (dns.zone) ;
 
     -- To force generation of dhcpd.conf

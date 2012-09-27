@@ -66,6 +66,10 @@
 	\item {Bug fix: when using multiple interface edition,
 	    the description and sensors are no longer reset.
 	}
+	\item {Bug fix: some SQL constraints (on DNS zones)
+	    were not checked, which may have caused some
+	    (very obvious) inconsistencies in zone generation.
+	}
     }
 
     \titre {2} {\ancre {v2.1} {Netmagis 2.1}}

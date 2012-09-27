@@ -4,6 +4,7 @@ Version 2.2.0 - ????/??/??
     - explicit name of zone in the zone_* tables
     - correctly order (by addr) reverse zones in "modify reverse IPv[46] zones"
     - bug fix: put back old description and sensor when editing multiple ifaces
+    - bug fix: constraints were not checked on zone_* tables
 
 Version 2.1.0 - 2012/06/22
     - metro module integration
