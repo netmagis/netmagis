@@ -21,6 +21,9 @@
 #	- droitgenl : permission to generate a link number (0 or 1)
 #	- confirm : yes or no
 #	- loginN : group members
+#	- viewnameN : valid views
+#	- viewsortN : view sort class (if empty, we have to remove the view)
+#	- viewselN : selected view (0 or 1)
 #	- domaineN : valid domains
 #	- tridomN : domain sort class (if empty, we have to remove the domain)
 #	- rolemailN : permission to edit "mail roles" for this domain (0 or 1)
@@ -103,6 +106,39 @@ set conf(tabuidresp) {
 	vbar {no}
     }
 }
+
+set conf(tabviews) {
+    global {
+	chars {12 normal}
+	botbar {no}
+	columns {50 25 25}
+	align {center}
+	format {raw}
+    }
+    pattern Title {
+	topbar {no}
+	vbar {no}
+	chars {bold}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+    }
+    pattern Normal {
+	topbar {no}
+	vbar {no}
+	format {raw}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+	column { }
+	vbar {no}
+    }
+}
+
 set conf(tabdomaines) {
     global {
 	chars {12 normal}
@@ -476,6 +512,50 @@ d cgi-register {action edit} {
     set listecor [::arrgen::output "html" $conf(tabuidresp) $lines]
 
     #
+    # Extract view list, and select those which are already authorized
+    # for this group.
+    #
+
+    set lines {}
+    lappend lines [list "Title" \
+			    [mc "Sort class"] \
+			    [mc "Name"] \
+			    [mc "Selected by default"] \
+			]
+    set lview [::pgsql::getcols $dbfd dns.view "" "name ASC" {name name}]
+    set sql "SELECT view.name AS name, dr_view.sort, dr_view.selected
+			FROM dns.view, dns.dr_view
+			WHERE view.idview = dr_view.idview
+				AND dr_view.idgrp = $idgrp
+			ORDER BY dr_view.sort ASC, view.name ASC"
+    set nview 1
+    pg_select $dbfd $sql tab {
+	set v        $tab(name)
+	set sort     $tab(sort)
+	set selected $tab(selected)
+
+	set idx [lsearch -exact $lview [list $v $v]]
+	if {$idx == -1} then {
+	    d error [mc "Group has access to view '%s' which do not exists in database" $v]
+	}
+	set hsort [::webapp::form-text viewsort$nview 1 5 5 $sort]
+	set hview [::webapp::form-menu viewname$nview 1 0 $lview [list $idx]]
+	set hsel  [::webapp::form-bool viewsel$nview $selected]
+	lappend lines [list Normal $hsort $hview $hsel]
+	incr nview
+    }
+
+    for {set i 1} {$i <= 5} {incr i} {
+	set hsort [::webapp::form-text viewsort$nview 1 5 5 ""]
+	set hview [::webapp::form-menu viewname$nview 1 0 $lview {}]
+	set hsel  [::webapp::form-bool viewsel$nview 0]
+	lappend lines [list Normal $hsort $hview $hsel]
+	incr nview
+    }
+
+    set listviews [::arrgen::output "html" $conf(tabviews) $lines]
+
+    #
     # Extract domain list, and select those which are already authorized
     # for this group.
     #
@@ -682,7 +762,7 @@ d cgi-register {action edit} {
 
 	set idx [lsearch -exact $lprof [list $p $p]]
 	if {$idx == -1} then {
-	    d error [mc "Group have access to DHCP profile '%s' which do not exist in the database" $d]
+	    d error [mc "Group has access to DHCP profile '%s' which do not exist in the database" $d]
 	}
 	set htri  [::webapp::form-text tridhcpprof$nprof 1 5 5 $tri]
 	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof [list $idx]]
@@ -715,6 +795,7 @@ d cgi-register {action edit} {
 				[list %DROITGENL% $droitgenl] \
 				[list %MESSAGEGROUPE% $msggrp] \
 				[list %LISTECOR% $listecor] \
+				[list %LISTVIEWS% $listviews] \
 				[list %LISTEDOMAINES% $listedomaines] \
 				[list %LISTERESEAUX% $listereseaux] \
 				[list %LISTEDROITS% $listedroits] \
@@ -737,6 +818,9 @@ d cgi-register {action mod} {
     {droitmac		1 1}
     {droitgenl		1 1}
     {login[0-9]+	0 9999}
+    {viewname[0-9]+	0 9999}
+    {viewsort[0-9]+	0 9999}
+    {viewsel[0-9]+	0 9999}
     {tridom[0-9]+	0 9999}
     {domaine[0-9]+	0 9999}
     {rolemail[0-9]+	0 9999}
@@ -897,6 +981,44 @@ d cgi-register {action mod} {
 	if {[lindex $tcor($login) 0] == $idgrp} then {
 	    lappend lcordelete $login
 	}
+    }
+
+    #
+    # Test view validity and build the list of view-ids
+    #
+
+    foreach lv [::pgsql::getcols $dbfd dns.view "" "" {idview name}] {
+	set idview [lindex $lv 0]
+	set name   [lindex $lv 1]
+	set tabv($name) $idview
+    }
+
+    set lidview {}
+    set n 1
+    while {[info exists ftab(viewsort$n)] && [info exists ftab(viewname$n)]} {
+	set sort [string trim [lindex $ftab(viewsort$n) 0]]
+	if {[string length $sort] > 0} then {
+	    if {! [regexp -- {^[0-9]+$} $sort]} then {
+		d error [mc "Invalid view sort class '%s'" $sort]
+	    }
+
+	    set viewname [string trim [lindex $ftab(viewname$n) 0]]
+	    if {! [info exists tabv($viewname)]} then {
+		d error [mc "Invalid view '%s'" $viewname]
+	    }
+
+	    if {! [info exists ftab(viewsel$n)]} then {
+		set ftab(viewsel$n) 0
+	    }
+	    set viewsel [string trim [lindex $ftab(viewsel$n) 0]]
+	    if {! [regexp -- {^[01]$} $viewsel]} then {
+		d error [mc "Invalid selection mode '%s'" $viewsel]
+	    }
+
+	    lappend lidview [list $sort $tabv($viewname) $viewsel]
+	}
+
+	incr n
     }
 
     #
@@ -1095,6 +1217,7 @@ d cgi-register {action mod} {
 
     if {$confirm ne "yes"} then {
 	#
+	# - at least a view
 	# - at least a domain
 	# - at least a network
 	# - each network has one or more IP permissions
@@ -1136,6 +1259,11 @@ d cgi-register {action mod} {
 	    incr n
 	}
 	
+	# at least one view
+	if {[llength $lidview] == 0} then {
+	    lappend inconsist [mc "No selected view"]
+	}
+
 	# at least one domain
 	if {[llength $liddom] == 0} then {
 	    lappend inconsist [mc "No selected domain"]
@@ -1305,13 +1433,18 @@ d cgi-register {action mod} {
 			WHERE idgrp = $idorphan 
 			    AND idcor NOT IN (SELECT DISTINCT idcor FROM dns.rr)"
 
+    # Authorized views for this group
+    lappend cmd "DELETE FROM dns.dr_view WHERE idgrp = $idgrp"
+    foreach e $lidview {
+	lassign $e sort idview selected
+	lappend cmd "INSERT INTO dns.dr_view (idgrp, idview, sort, selected)
+			VALUES ($idgrp, $idview, $sort, $selected)"
+    }
+
     # Authorized domains for this group
     lappend cmd "DELETE FROM dns.dr_dom WHERE idgrp = $idgrp"
     foreach e $liddom {
-	set tri      [lindex $e 0]
-	set iddom    [lindex $e 1]
-	set rolemail [lindex $e 2]
-	set roleweb  [lindex $e 3]
+	lassign $e tri iddom rolemail roleweb
 	lappend cmd "INSERT INTO dns.dr_dom (idgrp, iddom, tri, rolemail, roleweb)
 			VALUES ($idgrp, $iddom, $tri, $rolemail, $roleweb)"
     }
@@ -1319,10 +1452,7 @@ d cgi-register {action mod} {
     # Authorized networks for this group
     lappend cmd "DELETE FROM dns.dr_reseau WHERE idgrp = $idgrp"
     foreach r $lidres {
-	set tri      [lindex $r 0]
-	set idreseau [lindex $r 1]
-	set dhcp     [lindex $r 2]
-	set acl      [lindex $r 3]
+	lassign $r tri idreseau dhcp acl
 	lappend cmd "INSERT INTO dns.dr_reseau (idgrp, idreseau, tri, dhcp, acl)
 			VALUES ($idgrp, $idreseau, $tri, $dhcp, $acl)"
     }
@@ -1330,8 +1460,7 @@ d cgi-register {action mod} {
     # IP permissions associated with the group
     lappend cmd "DELETE FROM dns.dr_ip WHERE idgrp = $idgrp"
     foreach e $ldrip {
-	set allow_deny [lindex $e 0]
-	set adr        [lindex $e 1]
+	lassign $e allow_deny adr
 	lappend cmd "INSERT INTO dns.dr_ip VALUES ($idgrp, '$adr', $allow_deny)"
     }
 
@@ -1347,8 +1476,7 @@ d cgi-register {action mod} {
     # DHCP profiles associated with the group
     lappend cmd "DELETE FROM dns.dr_dhcpprofil WHERE idgrp = $idgrp"
     foreach e $lidprof {
-	set tri          [lindex $e 0]
-	set iddhcpprofil [lindex $e 1]
+	lassign $e tri iddhcpprofil
 	lappend cmd "INSERT INTO dns.dr_dhcpprofil (idgrp, iddhcpprofil, tri)
 			VALUES ($idgrp, $iddhcpprofil, $tri)"
     }
@@ -1372,7 +1500,7 @@ d cgi-register {action mod} {
     set h [display-group $dbfd $idgrp]
     lassign $h \
 		tabdroits tablogins tabreseaux tabcidrhorsreseau \
-		tabdomaines tabdhcpprofils tabdreq
+		tabviews tabdomaines tabdhcpprofils tabdreq
 
     #
     # End of script: output page and close database
@@ -1382,9 +1510,10 @@ d cgi-register {action mod} {
 			    [list %NEWGRP% $newgrp] \
 			    [list %TABLOGINS% $tablogins] \
 			    [list %TABDROITS% $tabdroits] \
+			    [list %TABVIEWS% $tabviews] \
+			    [list %TABDOMAINES% $tabdomaines] \
 			    [list %TABRESEAUX% $tabreseaux] \
 			    [list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
-			    [list %TABDOMAINES% $tabdomaines] \
 			    [list %TABDHCPPROFILS% $tabdhcpprofils] \
 			    [list %TABDREQ% $tabdreq] \
 			]

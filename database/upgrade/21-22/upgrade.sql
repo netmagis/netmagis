@@ -58,3 +58,8 @@ CREATE TABLE dns.dr_view (
     FOREIGN KEY (idview) REFERENCES dns.view (idview),
     PRIMARY KEY (idgrp, idview)
 ) ;
+
+INSERT INTO dns.dr_view (idgrp, idview, sort, selected)
+    SELECT idgrp, idview, 100, 1
+	    FROM global.groupe, dns.view
+	    WHERE view.name = 'default' ;

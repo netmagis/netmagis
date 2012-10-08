@@ -1470,6 +1470,10 @@ Printer	70	1
 Network equipment	100	1
 \.
 
+    COPY dns.view (name) FROM stdin;
+default
+\.
+
     COPY dns.dhcp (generer) FROM stdin;
 0
 \.

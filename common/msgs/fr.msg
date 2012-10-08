@@ -293,6 +293,7 @@
  {Method}	{Méthode}
 
  {Invalid FQDN '%s'}	{FQDN '%s' invalide}
+ {Invalid view '%s'}	{Vue '%s' invalide}
  {Invalid domain '%s'}	{Domaine '%s' invalide}
  {Invalid name '%s'}	{Nom '%s' invalide}
  {'%1$s' is not a valid IPv%2$s address} {'%1$s' n'est pas une adresse IPv%2$s valide}
@@ -344,6 +345,7 @@
  {None (it's all right)} {Aucun (tout va bien)}
  {Mail role management} {Édition des rôles de messagerie}
  {Web role management} {Édition des rôles Web}
+ {No allowed view} {Aucune vue autorisée}
  {No allowed domain} {Aucun domaine autorisé}
  {No allowed DHCP profile} {Aucun profil DHCP autorisé}
  {Read} {Lecture}
@@ -433,14 +435,16 @@
  {Edition of group '%s'} {Édition du groupe '%s'}
  {Modify group name or erase it to remove the group} {Modifiez le nom du groupe ou effacez-le pour supprimer le groupe}
  {Group '%s' not found} {Groupe '%s' non trouvé}
+ {Group has access to view '%s' which do not exists in database} {Le groupe a accès à la vue '%s' qui n'existe pas dans la base}
  {Group has access to domain '%s' which do not exists in database} {Le groupe a accès au domaine '%s' qui n'existe pas dans la base}
  {Group has access to network '%s' which do not exists in database} {Le groupe a accès au réseau '%s' qui n'existe pas dans la base}
  {yes} {oui}
  {no} {non}
  {Sort class} {Classe de tri}
+ {Selected by default} {Sélectionnée par défaut}
  {DHCP management} {Gestion DHCP}
  {ACL management} {Gestion des ACL}
- {Group have access to DHCP profile '%s' which do not exist in the database} {Le groupe a accès au profil '%s' qui n'existe pas dans la base}
+ {Group has access to DHCP profile '%s' which do not exist in the database} {Le groupe a accès au profil '%s' qui n'existe pas dans la base}
  {Group '%s' already exist} {Le groupe '%s' existe déjà}
  {You must type a name for the group} {Il faut saisir un nom pour ce groupe}
  {creation of group %s} {création du groupe %s}
@@ -452,6 +456,8 @@
  {Web role edition} {Édition des rôles de Web}
  {Invalid value '%1$s' for form variable '%2$s'} {Valeur '%1$s' invalide pour le champ de formulaire '%2$s'}
  {Login '%1$s' already assigned to group '%2$s'} {Login '%1$s' déjà affecté au groupe '%2$s'}
+ {Invalid view sort class '%s'} {Classe de tri de vue '%s' invalide}
+ {Invalid selection mode '%s'} {Mode de sélection invalide '%s'}
  {Invalid domain sort class '%s'} {Classe de tri de domaine '%s' invalide}
  {Invalid mail role '%s'} {Role mail invalide '%s'}
  {Invalid web role '%s'} {Role web invalide '%s'}
@@ -464,6 +470,7 @@
  {Invalid regular expression pattern '%s'} {Motif d'expression régulière '%s' invalide}
  {Invalid DHCP profile sort class '%s'} {Classe de tri de profil DHCP '%s' invalide}
  {Invalid DHCP profile '%s'} {Profil DHCP '%s' invalide}
+ {No selected view} {Aucune vue sélectionnée}
  {No selected domain} {Aucun domaine sélectionné}
  {No selected network} {Aucun réseau sélectionné}
  {Network '%s' is not DHCP enabled} {Le réseau '%s' n'a pas la capacité DHCP}

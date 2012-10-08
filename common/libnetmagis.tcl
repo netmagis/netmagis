@@ -222,6 +222,22 @@ set libconf(tabnetworks) {
     }
 }
 
+set libconf(tabviews) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {75 25}
+    }
+    pattern Normal {
+	vbar {yes}
+	column { }
+	vbar {no}
+	column { }
+	vbar {yes}
+    }
+}
+
 set libconf(tabdomains) {
     global {
 	chars {10 normal}
@@ -2438,7 +2454,7 @@ proc display-user {_tabuid} {
 #	- idgrp : group id
 #   - global variables libconf(tab*) : array specification
 # Output:
-#   - return value: list of 7 HTML strings
+#   - return value: list of 8 HTML strings
 #
 # History
 #   2002/05/23 : pda/jean : specification et design
@@ -2450,6 +2466,7 @@ proc display-user {_tabuid} {
 #   2010/11/30 : pda/jean : add mac permissions
 #   2010/12/01 : pda      : i18n
 #   2012/01/21 : jean     : add generate link number permissions
+#   2012/10/08 : pda/jean : add views
 #
 
 proc display-group {dbfd idgrp} {
@@ -2626,14 +2643,38 @@ proc display-group {dbfd idgrp} {
     }
 
     #
+    # Get views
+    #
+
+    set lines {}
+    set sql "SELECT view.name AS name, dr_view.selected
+			FROM dns.dr_view, dns.view
+			WHERE dr_view.idview = view.idview
+				AND dr_view.idgrp = $idgrp
+			ORDER BY dr_view.sort ASC, view.name ASC"
+    pg_select $dbfd $sql tab {
+	set sel ""
+	if {$tab(selected)} then {
+	    set sel [mc "Selected by default"]
+	}
+
+	lappend lines [list Normal $tab(name) $sel]
+    }
+    if {[llength $lines] > 0} then {
+	set tabviews [::arrgen::output "html" $libconf(tabviews) $lines]
+    } else {
+	set tabviews [mc "No allowed view"]
+    }
+
+    #
     # Get domains
     #
 
     set lines {}
-    set sql "SELECT domaine.nom AS nom, dr_dom.rolemail, dr_dom.roleweb \
+    set sql "SELECT domaine.nom AS nom, dr_dom.rolemail, dr_dom.roleweb
 			FROM dns.dr_dom, dns.domaine
-			WHERE dr_dom.iddom = domaine.iddom \
-				AND dr_dom.idgrp = $idgrp \
+			WHERE dr_dom.iddom = domaine.iddom
+				AND dr_dom.idgrp = $idgrp
 			ORDER BY dr_dom.tri, domaine.nom"
     pg_select $dbfd $sql tab {
 	set rm ""
@@ -2706,6 +2747,7 @@ proc display-group {dbfd idgrp} {
 		    $tabuser \
 		    $tabnetworks \
 		    $tabcidrnonet \
+		    $tabviews \
 		    $tabdomains \
 		    $tabdhcpprofile \
 		    $tabdreq \
@@ -2785,9 +2827,9 @@ proc fermer-base {dbfd} {
 
 proc user-attribute {dbfd idcor attr} {
     set v 0
-    set sql "SELECT groupe.$attr \
-			FROM global.groupe, global.corresp \
-			WHERE corresp.idcor = $idcor \
+    set sql "SELECT groupe.$attr
+			FROM global.groupe, global.corresp
+			WHERE corresp.idcor = $idcor
 			    AND corresp.idgrp = groupe.idgrp"
     pg_select $dbfd $sql tab {
 	set v "$tab($attr)"
@@ -4877,8 +4919,8 @@ proc read-dhcp-profile {dbfd text} {
 
 proc menu-hinfo {dbfd field defval} {
     set lhinfo {}
-    set sql "SELECT texte FROM dns.hinfo \
-				WHERE present = 1 \
+    set sql "SELECT texte FROM dns.hinfo
+				WHERE present = 1
 				ORDER BY tri, texte"
     set i 0
     set defindex 0
