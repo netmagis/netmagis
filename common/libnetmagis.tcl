@@ -3159,16 +3159,17 @@ proc read-rr-by-ip {dbfd addr _trr} {
 #	_trr(respmel) : mail of the responsible person
 #	_trr(idcor) : id of user who has done the last modification
 #	_trr(date) : date of last modification
-#	_trr(ip) : list of all IP adresses
-#	_trr(mx) : MX list {{prio idrr} {prio idrr} ...}
-#	_trr(cname) : id of pointed RR, if the name is an alias
-#	_trr(aliases) : list of ids of all RR pointing to this object
+#	_trr(ip) : list of all IP adresses {{idview addr} ...}
+#	_trr(mx) : MX list {{idview prio idrr} {idview prio idrr} ...}
+#	_trr(cname) : id of pointed RR, if the name is an alias {idview idrr}
+#	_trr(aliases) : list of all RR pointing to this object {{idview idrr}..}
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(rolemail) : id of herbegeur
+#	_trr(rolemail) : id of herbegeur {{idview idheberg idviewheb} ...}
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 #	_trr(adrmail) : idrr of mail addresses hosted on this host
+#		{{idview idrradr idviewadr} ...}
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(roleweb) : 1 si role web pour ce rr
+#	_trr(roleweb) : list of idviews where this rr is a web role
 #
 # History
 #   2002/04/19 : pda/jean : design
@@ -3179,6 +3180,7 @@ proc read-rr-by-ip {dbfd addr _trr} {
 #   2008/07/24 : pda/jean : add droitsmtp
 #   2010/10/31 : pda      : add ttl
 #   2010/11/29 : pda      : i18n
+#   2012/10/08 : pda/jean : views
 #
 
 proc read-rr-by-id {dbfd idrr _trr} {
@@ -3222,36 +3224,72 @@ proc read-rr-by-id {dbfd idrr _trr} {
 	    set trr(domaine) $tab(nom)
 	}
 	set trr(ip) {}
-	pg_select $dbfd "SELECT adr FROM dns.rr_ip WHERE idrr = $idrr" tab {
-	    lappend trr(ip) $tab(adr)
+	set sql "SELECT idview, adr FROM dns.rr_ip WHERE idrr = $idrr"
+	pg_select $dbfd $sql tab {
+	    lappend trr(ip) [list $tab(idview) $tab(adr)]
 	}
 	set trr(mx) {}
-	pg_select $dbfd "SELECT priorite,mx FROM dns.rr_mx WHERE idrr = $idrr" tab {
-	    lappend trr(mx) [list $tab(priorite) $tab(mx)]
+	set sql "SELECT idview, priorite, mx FROM dns.rr_mx WHERE idrr = $idrr"
+	pg_select $dbfd $sql tab {
+	    lappend trr(mx) [list $tab(idview) $tab(priorite) $tab(mx)]
 	}
 	set trr(cname) ""
-	pg_select $dbfd "SELECT cname FROM dns.rr_cname WHERE idrr = $idrr" tab {
-	    set trr(cname) $tab(cname)
+	set sql "SELECT idview, cname FROM dns.rr_cname WHERE idrr = $idrr"
+	pg_select $dbfd $sql tab {
+	    set trr(cname) [list $tab(idview) $tab(cname)]
 	}
 	set trr(aliases) {}
-	pg_select $dbfd "SELECT idrr FROM dns.rr_cname WHERE cname = $idrr" tab {
-	    lappend trr(aliases) $tab(idrr)
+	set sql "SELECT idview, idrr FROM dns.rr_cname WHERE cname = $idrr"
+	pg_select $dbfd $sql tab {
+	    lappend trr(aliases) [list $tab(idview) $tab(idrr)]
 	}
 	set trr(rolemail) ""
-	pg_select $dbfd "SELECT heberg FROM dns.role_mail WHERE idrr = $idrr" tab {
-	    set trr(rolemail) $tab(heberg)
+	set sql "SELECT * FROM dns.role_mail WHERE idrr = $idrr"
+	pg_select $dbfd $sql tab {
+	    lappend trr(rolemail) [list $tab(idview) \
+	    				$tab(heberg) $tab(idviewheb)]
 	}
 	set trr(adrmail) {}
-	pg_select $dbfd "SELECT idrr FROM dns.role_mail WHERE heberg = $idrr" tab {
-	    lappend trr(adrmail) $tab(idrr)
+	set sql "SELECT * FROM dns.role_mail WHERE heberg = $idrr"
+	pg_select $dbfd $sql tab {
+	    lappend trr(adrmail) [list $tab(idviewheb) \
+	    				$tab(idrr) $tab(idviewrr)]
 	}
 	set trr(roleweb) 0
-	pg_select $dbfd "SELECT 1 FROM dns.role_web WHERE idrr = $idrr" tab {
-	    set trr(roleweb) 1
+	set sql "SELECT idview FROM dns.role_web WHERE idrr = $idrr"
+	pg_select $dbfd $sql tab {
+	    lappend trr(roleweb) $tab(idview)
 	}
     }
 
     return $found
+}
+
+#
+# Get all IP address in a view for a RR
+#
+# Input:
+#   - parameters:
+#       - _trr : see read-rr-by-id
+#	- idview : view
+# Output:
+#   - return value: list of IP addresses
+#
+# History
+#   2012/10/08 : pda/jean : design
+#
+
+proc ip-by-view {_trr idview} {
+    upvar $_trr trr
+
+    set lip {}
+    foreach ipview $trr(ip) {
+	lassign $ipview id ip
+	if {$id == $idview} then {
+	    lappend lip $ip
+	}
+    }
+    return $lip
 }
 
 #
@@ -3776,6 +3814,37 @@ proc display-rr {dbfd idrr _trr} {
 
     set html [::arrgen::output "html" $libconf(tabmachine) $lines]
     return $html
+}
+
+##############################################################################
+# Read views
+##############################################################################
+
+#
+# Read all views from database
+#
+# Input:
+#   - parameters:
+#	- dbfd: database handle
+#	- _tabview: array to fill with view names
+#	- _tabid: array to fill with view ids
+# Output:
+#   - parameter _tabview: tabview(<viewname>) <id>
+#   - parameter _tabid: tabview(<id>) <viewname>
+#
+# History
+#   2012/10/08 : pda/jean : views
+#
+
+proc read-all-views {dbfd _tabview _tabid} {
+    upvar $_tabview tabview
+    upvar $_tabid   tabid
+
+    set sql "SELECT name, idview FROM dns.view"
+    pg_select $dbfd $sql tab {
+	set tabview($tab(name)) $tab(idview)
+	set tabid($tab(idview)) $tab(name)
+    }
 }
 
 ##############################################################################

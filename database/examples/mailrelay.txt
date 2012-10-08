@@ -3,7 +3,7 @@
 #	Mail relays
 #
 # Use with netmagis-dbimport:
-#	netmagis-dbimport mailrelay mailrelay.txt
+#	netmagis-dbimport mailrelay viewname mailrelay.txt
 #
 # Note : each relay must already exist in database. If a relay
 #   is not in our domains, one must create an empty domain.
