@@ -358,7 +358,7 @@ create_netmagis_schemas ()
 	version		INT,		-- version number
 	prologue	TEXT,		-- zone prologue (with %ZONEVERSION% pattern)
 	rrsup		TEXT,		-- added to each generated host
-	generer		INT,		-- modified since last generation
+	generer		INT		-- modified since last generation
     ) ;
 
     CREATE TABLE dns.zone_normale (
@@ -370,7 +370,7 @@ create_netmagis_schemas ()
     ) INHERITS (dns.zone) ;
 
     CREATE TABLE dns.zone_reverse4 (
-	selection	CIDR		-- criterion to select addresses
+	selection	CIDR,		-- criterion to select addresses
 
 	UNIQUE (name),
 	FOREIGN KEY (idview) REFERENCES dns.view (idview),
@@ -378,7 +378,7 @@ create_netmagis_schemas ()
     ) INHERITS (dns.zone) ;
 
     CREATE TABLE dns.zone_reverse6 (
-	selection	CIDR		-- criterion to select addresses
+	selection	CIDR,		-- criterion to select addresses
 
 	UNIQUE (name),
 	FOREIGN KEY (idview) REFERENCES dns.view (idview),
@@ -527,46 +527,58 @@ create_netmagis_schemas ()
     CREATE TABLE dns.rr_ip (
 	idrr		INT,		-- RR
 	adr		INET,		-- IP (v4 or v6) address
+	idview		INT,		-- view in which this host is
 
-	FOREIGN KEY (idrr) REFERENCES dns.rr (idrr),
-	PRIMARY KEY (idrr, adr)
+	FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
+	FOREIGN KEY (idview) REFERENCES dns.view (idview),
+	PRIMARY KEY (idrr, adr, idview)
     ) ;
 
     CREATE TABLE dns.rr_cname (
 	idrr		INT,		-- RR
 	cname		INT,		-- pointed RR id
+	idview		INT,		-- view in which CNAME and pointed RR are
 
-	FOREIGN KEY (idrr)  REFERENCES dns.rr (idrr),
-	FOREIGN KEY (cname) REFERENCES dns.rr (idrr),
-	PRIMARY KEY (idrr, cname)
+	FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
+	FOREIGN KEY (cname)  REFERENCES dns.rr (idrr),
+	FOREIGN KEY (idview) REFERENCES dns.view (idview),
+	PRIMARY KEY (idrr, cname, idview)
     ) ;
 
     CREATE TABLE dns.rr_mx (
 	idrr		INT,		-- RR
 	priorite	INT,		-- priority
 	mx		INT,		-- pointed RR id
+	idview		INT,		-- view in which MX and pointed RR are
 
-	FOREIGN KEY (idrr) REFERENCES dns.rr (idrr),
-	FOREIGN KEY (mx)   REFERENCES dns.rr (idrr),
-	PRIMARY KEY (idrr, mx)
+	FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
+	FOREIGN KEY (mx)     REFERENCES dns.rr (idrr),
+	FOREIGN KEY (idview) REFERENCES dns.view (idview),
+	PRIMARY KEY (idrr, mx, idview)
     ) ;
 
     -- Web roles (not used at this time)
     CREATE TABLE dns.role_web (
 	idrr		INT,		-- Web server id
+	idview		INT,		-- view in which RR is
 
-	FOREIGN KEY (idrr) REFERENCES dns.rr (idrr),
-	PRIMARY KEY (idrr)
+	FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
+	FOREIGN KEY (idview) REFERENCES dns.view (idview),
+	PRIMARY KEY (idrr, idview)
     ) ;
 
     -- Mail roles
     CREATE TABLE dns.role_mail (
 	idrr		INT,		-- id of "mail address"
-	heberg		INT,		-- id of RR holding mboxes for this address
+	idviewrr	INT,		-- view in which RR is
+	heberg		INT,		-- RR holding mboxes for this address
+	idviewheb	INT,		-- view in which mbox RR is
 
-	FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
-	FOREIGN KEY (heberg) REFERENCES dns.rr (idrr),
-	PRIMARY KEY (idrr)
+	FOREIGN KEY (idrr)      REFERENCES dns.rr (idrr),
+	FOREIGN KEY (idviewrr)  REFERENCES dns.view (idview),
+	FOREIGN KEY (heberg)    REFERENCES dns.rr (idrr),
+	FOREIGN KEY (idviewheb) REFERENCES dns.view (idview),
+	PRIMARY KEY (idrr, idviewrr)
     ) ;
 
     -- Mail relays for a domain
@@ -574,10 +586,12 @@ create_netmagis_schemas ()
 	iddom		INT,		-- domain id
 	priorite	INT,		-- MX priority
 	mx		INT,		-- relay host for this domain
+	idview		INT,		-- view in which MX is
 
-	FOREIGN KEY (iddom) REFERENCES dns.domaine (iddom),
-	FOREIGN KEY (mx)    REFERENCES dns.rr      (idrr),
-	PRIMARY KEY (iddom, mx)
+	FOREIGN KEY (iddom)  REFERENCES dns.domaine (iddom),
+	FOREIGN KEY (mx)     REFERENCES dns.rr      (idrr),
+	FOREIGN KEY (idview) REFERENCES dns.view    (idview),
+	PRIMARY KEY (iddom, mx, idview)
     ) ;
 
     -- To force generation of dhcpd.conf
