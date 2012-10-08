@@ -58,7 +58,3 @@ CREATE TABLE dns.dr_view (
     FOREIGN KEY (idview) REFERENCES dns.view (idview),
     PRIMARY KEY (idgrp, idview)
 ) ;
-
-
-
->>>>>>> Stashed changes
