@@ -1,0 +1,19 @@
+#
+# Exemple file for initial netmagis database creation:
+#	Mail relays
+#
+# Use with netmagis-dbimport:
+#	netmagis-dbimport mailrelay viewname mailrelay.txt
+#
+# Note : each relay must already exist in database. If a relay
+#   is not in our domains, one must create an empty domain.
+#
+# Format:
+#	<domain> <prio> <relay> <prio> <relay> ...
+#
+# History
+#   2012/10/09 : pda : design of a multi-view example
+#
+
+example.com	10 mx1.example.com	20 mx2.example.com
+example.org	10 mx1.example.com	20 mx2.example.com

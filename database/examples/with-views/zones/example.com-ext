@@ -1,0 +1,67 @@
+;
+; Zone example.com
+;
+;
+; History
+;   2012/10/09 : pda : design multi-views example
+;
+
+@	IN	SOA	ns1.example.com. hostmaster.example.com. (
+		    2012100901		; serial
+		    86400		; refresh = 1 day
+		    3600		; retry = 1 h
+		    3600000		; expire = 1000 hours (~ 41 day)
+		    86400		; default ttl = 1 day
+		)
+
+;
+; Default TLL for zone records
+;
+$TTL	86400
+
+;
+; Authoritative servers for this zone
+;
+
+			IN	NS	ns1.example.com.
+			IN	NS	ns2.example.com.
+			IN	NS	ns.myisp.com.
+
+;
+; Default MX for the domain itself
+;
+
+			IN	MX	10 mx1.example.com.
+			IN	MX	20 mx2.example.com.
+
+;
+; hack
+;
+
+localhost		IN	A	127.0.0.1
+
+; CUT HERE -------------------------------------------------------------
+
+ns1			IN	A	198.51.100.1
+			IN	AAAA	2001:db8:1234::1
+ns2			IN	A	198.51.100.2
+			IN	AAAA	2001:db8:1234::2
+mx1			IN	A	198.51.100.3
+			IN	AAAA	2001:db8:1234::3
+mx2			IN	A	198.51.100.4
+			IN	AAAA	2001:db8:1234::4
+
+www			IN	A	198.51.100.5
+			IN	AAAA	2001:db8:1234::5
+
+; for historical reasons, this server is located on the internal
+; network must have a public address. Address translation is
+; assured by the firewall. Thus, addresses of historic.example.com
+; are different in internal and external views.
+historic		IN	A	198.51.100.10
+
+; firewall to the internal network
+fw			IN	A	198.51.100.200
+
+; router to the Internet
+gw			IN	A	198.51.100.254

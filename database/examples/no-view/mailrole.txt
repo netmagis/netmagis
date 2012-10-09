@@ -16,6 +16,6 @@
 #
 
 sales.example.com	zeus.example.com
-mktg.example.com	venus.example.com/external
-its.example.com		aphrodite.example.com/internal
-sales.subsid.co.zz	mail-sales.subsid.co.zz/internal
+mktg.example.com	venus.example.com
+its.example.com		aphrodite.example.com
+sales.subsid.co.zz	mail-sales.subsid.co.zz

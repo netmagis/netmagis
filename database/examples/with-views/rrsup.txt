@@ -1,0 +1,2 @@
+%NOM%	IN	MX	10	mx1.example.com.
+%NOM%	IN	MX	20	mx2.example.com.

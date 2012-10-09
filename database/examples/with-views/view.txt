@@ -18,5 +18,5 @@
 #   2012/10/08 : pda/jean : design
 #
 
-external		SET	100	wheel tech
+external		SET	100	wheel
 internal		ALLBUT	200
