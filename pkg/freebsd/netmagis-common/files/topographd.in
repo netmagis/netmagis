@@ -1,7 +1,10 @@
 #! /bin/sh
+#
+# $FreeBSD$
+#
 
 # PROVIDE: topographd
-# REQUIRE: DAEMON
+# REQUIRE: LOGIN
 # KEYWORD: shutdown
 
 #

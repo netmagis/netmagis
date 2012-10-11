@@ -1,9 +1,5 @@
-# New ports collection makefile for:	Netmagis
-# Date created:		Nov 10 2011
-# Whom:			Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
-#
+# Created by: Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
 # $FreeBSD:$
-#
 
 PORTNAME?=	netmagis
 DISTVERSION?=	2.1.0
@@ -59,11 +55,6 @@ RUN_DEPENDS+=	p5-DBD-Pg>0:${PORTSDIR}/databases/p5-DBD-Pg \
 		p5-RRDTool-OO>=0:${PORTSDIR}/devel/p5-RRDTool-OO
 .endif
 
-post-install:
-	@if [ -f ${PKGMESSAGE} ] ; then ${CAT} ${PKGMESSAGE} ; fi
-
-.include <bsd.port.mk>
-
 # Variables used in netmagis Makefiles
 MAKE_ARGS+=	DESTDIR=${DESTDIR} PREFIX=${PREFIX}
 MAKE_ARGS+=	TCLSH=${TCLSH} TCLCONF=${TCL_LIBDIR}/tclConfig.sh
@@ -75,3 +66,8 @@ ALL_TARGET=nothing
 .endif
 
 INSTALL_TARGET=	install${PKGNAMESUFFIX}
+
+post-install:
+	@if [ -f ${PKGMESSAGE} ] ; then ${CAT} ${PKGMESSAGE} ; fi
+
+.include <bsd.port.mk>

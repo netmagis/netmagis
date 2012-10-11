@@ -1,7 +1,10 @@
 #! /bin/sh
+#
+# $FreeBSD$
+#
 
 # PROVIDE: toposendd
-# REQUIRE: DAEMON
+# REQUIRE: LOGIN
 # KEYWORD: shutdown
 
 #
