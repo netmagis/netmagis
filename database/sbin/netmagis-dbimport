@@ -940,7 +940,7 @@ proc import-view {verbose argv dbfd} {
     set sql {}
     foreach v [array names missing] {
 	set v [::pgsql::quote $v]
-	lappend sql "INSERT INTO dns.view (name) VALUES ('$v')"
+	lappend sql "INSERT INTO dns.view (name, gendhcp) VALUES ('$v', 0)"
     }
     if {[llength $sql] > 0} then {
 	set sql [join $sql ";"]

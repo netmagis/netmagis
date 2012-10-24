@@ -31,6 +31,7 @@
 #   2012/06/19 : pda        : don't create copy database
 #   2012/09/20 : pda/jean   : remove dnsupdateperiod
 #   2012/09/27 : pda/jean   : rename dns.zone.domaine
+#   2012/10/24 : pda/jean   : dhcp generation is per view
 #
 
 usage ()
@@ -342,6 +343,7 @@ create_netmagis_schemas ()
 	idview		INT		-- view id
 		DEFAULT NEXTVAL ('dns.seq_view'),
 	name		TEXT,		-- e.g.: "internal", "external"...
+	gendhcp		INT,		-- 1 if dhcp conf must be generated
 
 	UNIQUE (name),
 	PRIMARY KEY (idview)
@@ -592,12 +594,6 @@ create_netmagis_schemas ()
 	FOREIGN KEY (mx)     REFERENCES dns.rr      (idrr),
 	FOREIGN KEY (idview) REFERENCES dns.view    (idview),
 	PRIMARY KEY (iddom, mx, idview)
-    ) ;
-
-    -- To force generation of dhcpd.conf
-
-    CREATE TABLE dns.dhcp (
-	generer INTEGER			-- 1 if dhcpd.conf must be generated
     ) ;
 
     ---------------------------------------------------------------------------
@@ -997,47 +993,66 @@ create_netmagis_schemas ()
 	END ;
 	$$ LANGUAGE plpgsql ;
 
-    -- called when an IPv6 address is modified
-    CREATE OR REPLACE FUNCTION gen_rev4 (INET)
+    -- called when an IPv6 address is modified ($1=addr, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_rev4 (INET, INTEGER)
 	RETURNS INTEGER AS $$
 	BEGIN
-	    UPDATE dns.zone_reverse4 SET generer = 1 WHERE $1 <<= selection ;
+	    UPDATE dns.zone_reverse4 SET generer = 1
+		WHERE $1 <<= selection AND idview = $2 ;
 	    RETURN 1 ;
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
 
-    -- called when an IPv6 address is modified
-    CREATE OR REPLACE FUNCTION gen_rev6 (INET)
+    -- called when an IPv6 address is modified ($1=addr, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_rev6 (INET, INTEGER)
 	RETURNS INTEGER AS $$
 	BEGIN
-	    UPDATE dns.zone_reverse6 SET generer = 1 WHERE $1 <<= selection ;
+	    UPDATE dns.zone_reverse6 SET generer = 1
+	    	WHERE $1 <<= selection AND idview = $2 ;
 	    RETURN 1 ;
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
 
-    -- ID du RR
-    CREATE OR REPLACE FUNCTION gen_norm_idrr (INTEGER)
+    -- ID of RR ($1=idrr, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_norm_idrr (INTEGER, INTEGER)
 	RETURNS INTEGER AS $$
 	BEGIN
 	    UPDATE dns.zone_normale SET generer = 1
-		    WHERE selection = (
+		    WHERE idview = $2
+			AND selection = (
 			    SELECT domaine.nom
 				    FROM dns.domaine, dns.rr
-				    WHERE rr.idrr = $1 AND rr.iddom = domaine.iddom
+				    WHERE rr.idrr = $1
+					AND rr.iddom = domaine.iddom
 			    ) ;
 	    RETURN 1 ;
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
 
-    CREATE OR REPLACE FUNCTION gen_norm_iddom (INTEGER)
+    -- ID of RR ($1=iddom, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_norm_iddom (INTEGER, INTEGER)
 	RETURNS INTEGER AS $$
 	BEGIN
 	    UPDATE dns.zone_normale SET generer = 1
-		    WHERE selection = (
+		    WHERE idview = $2
+			AND selection = (
 			    SELECT domaine.nom
 				    FROM dns.domaine
 				    WHERE domaine.iddom = $1
 			    ) ;
+	    RETURN 1 ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    -- called when a RR is modified in a view ($1=idrr, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_dhcp (INTEGER, INTEGER)
+	RETURNS INTEGER AS $$
+	BEGIN
+	    UPDATE dns.view SET gendhcp = 1
+		FROM dns.rr
+		    WHERE rr.idrr = $1
+			AND rr.mac IS NOT NULL
+			AND view.idview = $2 ;
 	    RETURN 1 ;
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
@@ -1047,40 +1062,31 @@ create_netmagis_schemas ()
 	BEGIN
 	    IF TG_OP = 'INSERT'
 	    THEN
-		PERFORM sum (gen_rev4 (NEW.adr)) ;
-		PERFORM sum (gen_rev6 (NEW.adr)) ;
-		PERFORM sum (gen_norm_idrr (NEW.idrr)) ;
+		PERFORM sum (gen_rev4 (NEW.adr, NEW.idview)) ;
+		PERFORM sum (gen_rev6 (NEW.adr, NEW.idview)) ;
+		PERFORM sum (gen_norm_idrr (NEW.idrr, NEW.idview)) ;
+		PERFORM sum (gen_dhcp (NEW.idrr, NEW.idview)) ;
 
-		UPDATE dns.dhcp SET generer = 1
-		    FROM dns.rr WHERE rr.idrr = NEW.idrr AND rr.mac IS NOT NULL ;
-
-		UPDATE dns.dhcp SET generer = 1
-		    FROM dns.rr WHERE rr.idrr = NEW.idrr AND rr.mac IS NOT NULL ;
 	    END IF ;
 
 	    IF TG_OP = 'UPDATE'
 	    THEN
-		PERFORM sum (gen_rev4 (NEW.adr)) ;
-		PERFORM sum (gen_rev4 (OLD.adr)) ;
-		PERFORM sum (gen_rev6 (NEW.adr)) ;
-		PERFORM sum (gen_rev6 (OLD.adr)) ;
-		PERFORM sum (gen_norm_idrr (NEW.idrr)) ;
-		PERFORM sum (gen_norm_idrr (OLD.idrr)) ;
-
-		UPDATE dns.dhcp SET generer = 1
-		    FROM dns.rr WHERE rr.idrr = OLD.idrr AND rr.mac IS NOT NULL ;
-		UPDATE dns.dhcp SET generer = 1
-		    FROM dns.rr WHERE rr.idrr = NEW.idrr AND rr.mac IS NOT NULL ;
+		PERFORM sum (gen_rev4 (NEW.adr, NEW.idview)) ;
+		PERFORM sum (gen_rev4 (OLD.adr, OLD.idview)) ;
+		PERFORM sum (gen_rev6 (NEW.adr, NEW.idview)) ;
+		PERFORM sum (gen_rev6 (OLD.adr, OLD.idview)) ;
+		PERFORM sum (gen_norm_idrr (NEW.idrr, NEW.idview)) ;
+		PERFORM sum (gen_norm_idrr (OLD.idrr, OLD.idview)) ;
+		PERFORM sum (gen_dhcp (NEW.idrr, NEW.idview)) ;
+		PERFORM sum (gen_dhcp (OLD.idrr, OLD.idview)) ;
 	    END IF ;
 
 	    IF TG_OP = 'DELETE'
 	    THEN
-		PERFORM sum (gen_rev4 (OLD.adr)) ;
-		PERFORM sum (gen_rev6 (OLD.adr)) ;
-		PERFORM sum (gen_norm_idrr (OLD.idrr)) ;
-
-		UPDATE dns.dhcp SET generer = 1
-		    FROM dns.rr WHERE rr.idrr = OLD.idrr AND rr.mac IS NOT NULL ;
+		PERFORM sum (gen_rev4 (OLD.adr, OLD.idview)) ;
+		PERFORM sum (gen_rev6 (OLD.adr, OLD.idview)) ;
+		PERFORM sum (gen_norm_idrr (OLD.idrr, OLD.idview)) ;
+		PERFORM sum (gen_dhcp (OLD.idrr, OLD.idview)) ;
 	    END IF ;
 
 	    RETURN NEW ;
@@ -1099,18 +1105,18 @@ create_netmagis_schemas ()
 	BEGIN
 	    IF TG_OP = 'INSERT'
 	    THEN
-		PERFORM sum (gen_norm_idrr (NEW.idrr)) ;
+		PERFORM sum (gen_norm_idrr (NEW.idrr, NEW.idview)) ;
 	    END IF ;
 
 	    IF TG_OP = 'UPDATE'
 	    THEN
-		PERFORM sum (gen_norm_idrr (NEW.idrr)) ;
-		PERFORM sum (gen_norm_idrr (OLD.idrr)) ;
+		PERFORM sum (gen_norm_idrr (NEW.idrr, NEW.idview)) ;
+		PERFORM sum (gen_norm_idrr (OLD.idrr, OLD.idview)) ;
 	    END IF ;
 
 	    IF TG_OP = 'DELETE'
 	    THEN
-		PERFORM sum (gen_norm_idrr (OLD.idrr)) ;
+		PERFORM sum (gen_norm_idrr (OLD.idrr, OLD.idview)) ;
 	    END IF ;
 
 	    RETURN NEW ;
@@ -1137,42 +1143,48 @@ create_netmagis_schemas ()
 	BEGIN
 	    IF TG_OP = 'INSERT'
 	    THEN
-		PERFORM sum (gen_norm_iddom (NEW.iddom)) ;
-		PERFORM sum (gen_rev4 (adr)) FROM dns.rr_ip WHERE idrr = NEW.idrr ;
-		PERFORM sum (gen_rev6 (adr)) FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_norm_iddom (NEW.iddom, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_rev4 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_rev6 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_dhcp (idrr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
 
-		IF NEW.mac IS NOT NULL
-		THEN
-		    UPDATE dns.dhcp SET generer = 1 ;
-		END IF ;
 	    END IF ;
 
 	    IF TG_OP = 'UPDATE'
 	    THEN
-		PERFORM sum (gen_norm_iddom (NEW.iddom)) ;
-		PERFORM sum (gen_rev4 (adr)) FROM dns.rr_ip WHERE idrr = NEW.idrr ;
-		PERFORM sum (gen_rev6 (adr)) FROM dns.rr_ip WHERE idrr = NEW.idrr ;
-		PERFORM sum (gen_norm_iddom (OLD.iddom)) ;
-		PERFORM sum (gen_rev4 (adr)) FROM dns.rr_ip WHERE idrr = OLD.idrr ;
-		PERFORM sum (gen_rev6 (adr)) FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+		PERFORM sum (gen_norm_iddom (NEW.iddom, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_rev4 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_rev6 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_norm_iddom (OLD.iddom, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+		PERFORM sum (gen_rev4 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+		PERFORM sum (gen_rev6 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
 
-		IF OLD.mac IS DISTINCT FROM NEW.mac
-		    OR OLD.iddhcpprofil IS DISTINCT FROM NEW.iddhcpprofil
-		THEN
-		    UPDATE dns.dhcp SET generer = 1 ;
-		END IF ;
+		-- rr_ip (giving idview) are the same for OLD and NEW
+		PERFORM sum (gen_dhcp (idrr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
 	    END IF ;
 
 	    IF TG_OP = 'DELETE'
 	    THEN
-		PERFORM sum (gen_norm_iddom (OLD.iddom)) ;
-		PERFORM sum (gen_rev4 (adr)) FROM dns.rr_ip WHERE idrr = OLD.idrr ;
-		PERFORM sum (gen_rev6 (adr)) FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+		PERFORM sum (gen_norm_iddom (OLD.iddom, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+		PERFORM sum (gen_rev4 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+		PERFORM sum (gen_rev6 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
 
-		IF OLD.mac IS NOT NULL
-		THEN
-		    UPDATE dns.dhcp SET generer = 1 ;
-		END IF ;
+		-- no need to modify the dns.view.gendhcp column
+		-- since all rr_ip should have been removed before
 	    END IF ;
 
 	    RETURN NEW ;
@@ -1186,12 +1198,14 @@ create_netmagis_schemas ()
 	EXECUTE PROCEDURE modifier_rr ()
 	;
 
-    -- called when a mail relay is modified
-    CREATE OR REPLACE FUNCTION gen_relais (INTEGER)
+    -- called when a mail relay is modified ($1=iddom, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_relais (INTEGER, INTEGER)
 	RETURNS INTEGER AS $$
 	BEGIN
 	    UPDATE dns.zone_normale SET generer = 1
-		WHERE selection = (SELECT nom FROM dns.domaine WHERE iddom = $1) ;
+		WHERE idview = $2
+		    AND selection =
+			(SELECT nom FROM dns.domaine WHERE iddom = $1) ;
 	    RETURN 1 ;
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
@@ -1201,18 +1215,18 @@ create_netmagis_schemas ()
 	BEGIN
 	    IF TG_OP = 'INSERT'
 	    THEN
-		PERFORM sum (gen_relais (NEW.iddom)) ;
+		PERFORM sum (gen_relais (NEW.iddom, NEW.idview)) ;
 	    END IF ;
 
 	    IF TG_OP = 'UPDATE'
 	    THEN
-		PERFORM sum (gen_relais (NEW.iddom)) ;
-		PERFORM sum (gen_relais (OLD.iddom)) ;
+		PERFORM sum (gen_relais (NEW.iddom, NEW.idview)) ;
+		PERFORM sum (gen_relais (OLD.iddom, OLD.idview)) ;
 	    END IF ;
 
 	    IF TG_OP = 'DELETE'
 	    THEN
-		PERFORM sum (gen_relais (OLD.iddom)) ;
+		PERFORM sum (gen_relais (OLD.iddom, OLD.idview)) ;
 	    END IF ;
 
 	    RETURN NEW ;
@@ -1262,10 +1276,11 @@ create_netmagis_schemas ()
 	;
 
     -- called when a DHCP parameter (network, range or profile) is modified
+    -- update all views
     CREATE OR REPLACE FUNCTION generer_dhcp ()
 	RETURNS TRIGGER AS $$
 	BEGIN
-	    UPDATE dns.dhcp SET generer = 1 ;
+	    UPDATE dns.view SET gendhcp = 1 ;
 	    RETURN NEW ;
 	END ;
 	$$ LANGUAGE 'plpgsql' ;
@@ -1290,8 +1305,6 @@ create_netmagis_schemas ()
 	FOR EACH ROW
 	EXECUTE PROCEDURE generer_dhcp ()
 	;
-
-
 
 
     CREATE OR REPLACE FUNCTION valide_ip_cor (INET, INTEGER)
@@ -1484,12 +1497,8 @@ Printer	70	1
 Network equipment	100	1
 \.
 
-    COPY dns.view (name) FROM stdin;
-default
-\.
-
-    COPY dns.dhcp (generer) FROM stdin;
-0
+    COPY dns.view (name, gendhcp) FROM stdin;
+default	0
 \.
 
     COPY topo.lastrun (date) FROM stdin;

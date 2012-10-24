@@ -8,6 +8,233 @@
 
 DELETE FROM global.config WHERE clef = 'dnsupdateperiod' ;
 
+DROP TABLE dns.dhcp ;
+
+-- Update trigger functions
+
+    -- called when an IPv6 address is modified ($1=addr, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_rev4 (INET, INTEGER)
+	RETURNS INTEGER AS $$
+	BEGIN
+	    UPDATE dns.zone_reverse4 SET generer = 1
+		WHERE $1 <<= selection AND idview = $2 ;
+	    RETURN 1 ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    -- called when an IPv6 address is modified ($1=addr, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_rev6 (INET, INTEGER)
+	RETURNS INTEGER AS $$
+	BEGIN
+	    UPDATE dns.zone_reverse6 SET generer = 1
+	    	WHERE $1 <<= selection AND idview = $2 ;
+	    RETURN 1 ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    -- ID of RR ($1=idrr, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_norm_idrr (INTEGER, INTEGER)
+	RETURNS INTEGER AS $$
+	BEGIN
+	    UPDATE dns.zone_normale SET generer = 1
+		    WHERE idview = $2
+			AND selection = (
+			    SELECT domaine.nom
+				    FROM dns.domaine, dns.rr
+				    WHERE rr.idrr = $1
+					AND rr.iddom = domaine.iddom
+			    ) ;
+	    RETURN 1 ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    -- ID of RR ($1=iddom, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_norm_iddom (INTEGER, INTEGER)
+	RETURNS INTEGER AS $$
+	BEGIN
+	    UPDATE dns.zone_normale SET generer = 1
+		    WHERE idview = $2
+			AND selection = (
+			    SELECT domaine.nom
+				    FROM dns.domaine
+				    WHERE domaine.iddom = $1
+			    ) ;
+	    RETURN 1 ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    -- called when a RR is modified in a view ($1=idrr, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_dhcp (INTEGER, INTEGER)
+	RETURNS INTEGER AS $$
+	BEGIN
+	    UPDATE dns.view SET gendhcp = 1
+		FROM dns.rr
+		    WHERE rr.idrr = $1
+			AND rr.mac IS NOT NULL
+			AND view.idview = $2 ;
+	    RETURN 1 ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    CREATE OR REPLACE FUNCTION modifier_ip ()
+	RETURNS trigger AS $$
+	BEGIN
+	    IF TG_OP = 'INSERT'
+	    THEN
+		PERFORM sum (gen_rev4 (NEW.adr, NEW.idview)) ;
+		PERFORM sum (gen_rev6 (NEW.adr, NEW.idview)) ;
+		PERFORM sum (gen_norm_idrr (NEW.idrr, NEW.idview)) ;
+		PERFORM sum (gen_dhcp (NEW.idrr, NEW.idview)) ;
+
+	    END IF ;
+
+	    IF TG_OP = 'UPDATE'
+	    THEN
+		PERFORM sum (gen_rev4 (NEW.adr, NEW.idview)) ;
+		PERFORM sum (gen_rev4 (OLD.adr, OLD.idview)) ;
+		PERFORM sum (gen_rev6 (NEW.adr, NEW.idview)) ;
+		PERFORM sum (gen_rev6 (OLD.adr, OLD.idview)) ;
+		PERFORM sum (gen_norm_idrr (NEW.idrr, NEW.idview)) ;
+		PERFORM sum (gen_norm_idrr (OLD.idrr, OLD.idview)) ;
+		PERFORM sum (gen_dhcp (NEW.idrr, NEW.idview)) ;
+		PERFORM sum (gen_dhcp (OLD.idrr, OLD.idview)) ;
+	    END IF ;
+
+	    IF TG_OP = 'DELETE'
+	    THEN
+		PERFORM sum (gen_rev4 (OLD.adr, OLD.idview)) ;
+		PERFORM sum (gen_rev6 (OLD.adr, OLD.idview)) ;
+		PERFORM sum (gen_norm_idrr (OLD.idrr, OLD.idview)) ;
+		PERFORM sum (gen_dhcp (OLD.idrr, OLD.idview)) ;
+	    END IF ;
+
+	    RETURN NEW ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    CREATE OR REPLACE FUNCTION modifier_mxcname ()
+	RETURNS trigger AS $$
+	BEGIN
+	    IF TG_OP = 'INSERT'
+	    THEN
+		PERFORM sum (gen_norm_idrr (NEW.idrr, NEW.idview)) ;
+	    END IF ;
+
+	    IF TG_OP = 'UPDATE'
+	    THEN
+		PERFORM sum (gen_norm_idrr (NEW.idrr, NEW.idview)) ;
+		PERFORM sum (gen_norm_idrr (OLD.idrr, OLD.idview)) ;
+	    END IF ;
+
+	    IF TG_OP = 'DELETE'
+	    THEN
+		PERFORM sum (gen_norm_idrr (OLD.idrr, OLD.idview)) ;
+	    END IF ;
+
+	    RETURN NEW ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    -- modify RR and reverse zones for all IP addresses
+    CREATE OR REPLACE FUNCTION modifier_rr ()
+	RETURNS trigger AS $$
+	BEGIN
+	    IF TG_OP = 'INSERT'
+	    THEN
+		PERFORM sum (gen_norm_iddom (NEW.iddom, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_rev4 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_rev6 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_dhcp (idrr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+
+	    END IF ;
+
+	    IF TG_OP = 'UPDATE'
+	    THEN
+		PERFORM sum (gen_norm_iddom (NEW.iddom, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_rev4 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_rev6 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+		PERFORM sum (gen_norm_iddom (OLD.iddom, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+		PERFORM sum (gen_rev4 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+		PERFORM sum (gen_rev6 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+
+		-- rr_ip (giving idview) are the same for OLD and NEW
+		PERFORM sum (gen_dhcp (idrr, idview))
+			FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+	    END IF ;
+
+	    IF TG_OP = 'DELETE'
+	    THEN
+		PERFORM sum (gen_norm_iddom (OLD.iddom, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+		PERFORM sum (gen_rev4 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+		PERFORM sum (gen_rev6 (adr, idview))
+			FROM dns.rr_ip WHERE idrr = OLD.idrr ;
+
+		-- no need to modify the dns.view.gendhcp column
+		-- since all rr_ip should have been removed before
+	    END IF ;
+
+	    RETURN NEW ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    -- called when a mail relay is modified ($1=iddom, $2=idview)
+    CREATE OR REPLACE FUNCTION gen_relais (INTEGER, INTEGER)
+	RETURNS INTEGER AS $$
+	BEGIN
+	    UPDATE dns.zone_normale SET generer = 1
+		WHERE idview = $2
+		    AND selection =
+			(SELECT nom FROM dns.domaine WHERE iddom = $1) ;
+	    RETURN 1 ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    CREATE OR REPLACE FUNCTION modifier_relais ()
+	RETURNS trigger AS $$
+	BEGIN
+	    IF TG_OP = 'INSERT'
+	    THEN
+		PERFORM sum (gen_relais (NEW.iddom, NEW.idview)) ;
+	    END IF ;
+
+	    IF TG_OP = 'UPDATE'
+	    THEN
+		PERFORM sum (gen_relais (NEW.iddom, NEW.idview)) ;
+		PERFORM sum (gen_relais (OLD.iddom, OLD.idview)) ;
+	    END IF ;
+
+	    IF TG_OP = 'DELETE'
+	    THEN
+		PERFORM sum (gen_relais (OLD.iddom, OLD.idview)) ;
+	    END IF ;
+
+	    RETURN NEW ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+    -- called when a DHCP parameter (network, range or profile) is modified
+    -- update all views
+    CREATE OR REPLACE FUNCTION generer_dhcp ()
+	RETURNS TRIGGER AS $$
+	BEGIN
+	    UPDATE dns.view SET gendhcp = 1 ;
+	    RETURN NEW ;
+	END ;
+	$$ LANGUAGE 'plpgsql' ;
+
+
 -- Add views
 
 CREATE SEQUENCE dns.seq_view START 1 ;
@@ -15,6 +242,7 @@ CREATE TABLE dns.view (
     idview	INT		-- view id
 	    DEFAULT NEXTVAL ('dns.seq_view'),
     name	TEXT,		-- e.g.: "internal", "external"...
+    gendhcp	INT,		-- 1 if dhcp conf must be generated
 
     UNIQUE (name),
     PRIMARY KEY (idview)
@@ -169,4 +397,3 @@ ALTER TABLE dns.relais_dom
     ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
     ADD PRIMARY KEY (iddom, mx, idview)
     ;
-
