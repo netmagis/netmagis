@@ -4,17 +4,19 @@
 # Mail route generation for sendmail (or other MTAs)
 #
 # Syntax:
-#	mkmroute [-h][-q][-v][-n]
+#	mkmroute [-h][-q][-v][-n] [-w <view>]
 #	    -h: help
 #	    -q: silent operation
 #	    -v: verbose output
 #	    -n: don't modify files
+#	    -w <view> : limit generation to view where mail host is
 #
 # History:
 #   2004/03/09 : pda/jean : original specification
 #   2004/03/09 : pda/jean : design
 #   2011/05/14 : pda      : i18n and re-design
 #   2011/06/10 : pda      : clarify verbose levels
+#   2012/10/24 : pda/jean : add views
 #
 
 source %LIBNETMAGIS%
@@ -23,11 +25,12 @@ source %LIBNETMAGIS%
 # Self explanatory
 #
 
-set conf(usage) {usage: %1$s [-h][-q][-v][-n]
+set conf(usage) {usage: %1$s [-h][-q][-v][-n][-w <view>]
     -h : get this help
     -q : keep silent on normal operation
     -v : verbose (show file or diffs)
     -n : don't perform file installation
+    -w <view> : limit generation to this view
 }
 
 #
@@ -36,6 +39,7 @@ set conf(usage) {usage: %1$s [-h][-q][-v][-n]
 # Input:
 #   - parameters
 #	- dbfd: database handle
+#	- idview: id specified view (where host is), or -1
 #	- mrouteprologue: name of file containing mail route prologue
 #	- mroutefmt: format of individual mail routes (1: address, 2: mail host)
 #	- _mroutetxt : variable containing generated text in return
@@ -46,9 +50,10 @@ set conf(usage) {usage: %1$s [-h][-q][-v][-n]
 # History
 #   2004/03/09 : pda/jean : design
 #   2011/05/14 : pda      : use configuration variables
+#   2012/10/24 : pda/jean : add views
 #
 
-proc gen-mroute {dbfd mrouteprologue mroutefmt _mroutetxt} {
+proc gen-mroute {dbfd idview mrouteprologue mroutefmt _mroutetxt} {
     upvar $_mroutetxt mroutetxt
 
     #
@@ -70,7 +75,8 @@ proc gen-mroute {dbfd mrouteprologue mroutefmt _mroutetxt} {
 		FROM dns.rr r1, dns.domaine d1,
 		    dns.rr r2, dns.domaine d2,
 		    dns.role_mail
-		WHERE role_mail.idrr = r1.idrr
+		WHERE ($idview = -1 OR idviewheb = $idview)
+		    AND role_mail.idrr = r1.idrr
 		    AND r1.iddom = d1.iddom
 		    AND role_mail.heberg = r2.idrr
 		    AND r2.iddom = d2.iddom
@@ -157,6 +163,7 @@ proc main {argv0 argv} {
 
     set verbose 0
     set doit 1
+    set view ""
 
     while {[llength $argv] > 0} {
 	set a [lindex $argv 0]
@@ -175,6 +182,10 @@ proc main {argv0 argv} {
 	    -n {
 		set doit 0
 		set argv [lreplace $argv 0 0]
+	    }
+	    -w {
+		set view [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
 	    }
 	    -* {
 		warning "Unknown option '$a'"
@@ -199,10 +210,26 @@ proc main {argv0 argv} {
     }
 
     #
+    # Check view name
+    #
+
+    set idview -1
+    if {$view ne ""} then {
+	set qview [::pgsql::quote $view]
+	set sql "SELECT idview FROM dns.view WHERE name = '$qview'"
+	pg_select $dbfd $sql tab {
+	    set idview $tab(idview)
+	}
+	if {$idview == -1} then {
+	    d error "View '$view' not found"
+	}
+    }
+
+    #
     # Do the work
     #
 
-    set msg [gen-mroute $dbfd $mrouteprologue $mroutefmt txt]
+    set msg [gen-mroute $dbfd $idview $mrouteprologue $mroutefmt txt]
     if {$msg ne ""} then {
 	d error $msg
     }
