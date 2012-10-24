@@ -925,9 +925,29 @@ proc import-view {verbose argv dbfd} {
     }
 
     #
+    # Remove unused views
+    #
+
+    set unused {}
+    pg_select $dbfd "SELECT * FROM dns.view" tab {
+	set v $tab(name)
+	if {! [info exists tabview($v)]} then {
+	    lappend unused "'[::pgsql::quote $v]'"
+	}
+    }
+    if {[llength $unused] > 0} then {
+	set unused [join $unused ", "]
+	set sql "DELETE FROM dns.view WHERE name in ($unused)"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    return "$msg\nAbort"
+	}
+    }
+
+    #
     # Get views missing in database and update them
     #
 
+    set sql {}
     foreach v [array names tabview] {
 	set missing($v) yes
     }
@@ -937,7 +957,6 @@ proc import-view {verbose argv dbfd} {
 	    unset missing($v)
 	}
     }
-    set sql {}
     foreach v [array names missing] {
 	set v [::pgsql::quote $v]
 	lappend sql "INSERT INTO dns.view (name, gendhcp) VALUES ('$v', 0)"
