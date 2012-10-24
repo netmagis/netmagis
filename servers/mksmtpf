@@ -4,15 +4,17 @@
 # Install IP filter for authorized SMTP hosts
 #
 # Syntax:
-#	mksmtpf [-h][-q][-v][-n]
+#	mksmtpf [-h][-q][-v][-n][-w <view-name><]
 #	    -h: help
 #	    -q: silent operation
 #	    -v: verbose output
 #	    -n: don't modify files
+#	    -w <view> : limit generation to this view
 #
 # History:
 #   2008/08/xx : pda/jean : design
 #   2011/06/26 : pda      : i18n and redesign
+#   2012/10/24 : pda/jean : add views
 #
 
 source %LIBNETMAGIS%
@@ -21,11 +23,12 @@ source %LIBNETMAGIS%
 # Self explanatory
 #
 
-set conf(usage) {usage: %1$s [-h]|-q][-v][-n]
+set conf(usage) {usage: %1$s [-h]|-q][-v][-n][-w <view>]
     -h : get this help
     -q : keep silent on normal operation
     -v : verbose (show diffs)*
     -n : don't perform file installation
+    -w <view> : limit generation to this view
 }
 
 
@@ -35,6 +38,7 @@ set conf(usage) {usage: %1$s [-h]|-q][-v][-n]
 # Input:
 #   - parameters:
 #	- dbfd: database handle
+#	- idview: id of specified view, or -1
 #	- pfprologue: name of file containing filter prologue
 #	- pffmt: format of individual filter lines 
 # Output:
@@ -43,9 +47,10 @@ set conf(usage) {usage: %1$s [-h]|-q][-v][-n]
 #
 # History
 #   2008/08/xx : pda/jean : design
+#   2012/10/24 : pda/jean : add views
 #
 
-proc gen-filter {dbfd pfprologue pffmt _pftxt} {
+proc gen-filter {dbfd idview pfprologue pffmt _pftxt} {
     upvar $_pftxt pftxt
 
     #
@@ -66,7 +71,9 @@ proc gen-filter {dbfd pfprologue pffmt _pftxt} {
     # such as the resulting file do not contain any modification.
     #
     set sql "SELECT adr FROM dns.rr, dns.rr_ip
-			WHERE rr.droitsmtp = 1 AND rr.idrr = rr_ip.idrr
+			WHERE ($idview = -1 OR idview = $idview)
+			    AND rr.droitsmtp = 1
+			    AND rr.idrr = rr_ip.idrr
 			ORDER BY adr"
     pg_select $dbfd $sql tab {
 	append pftxt [format $pffmt $tab(adr)]
@@ -110,6 +117,7 @@ proc main {argv0 argv} {
 
     set verbose 0
     set doit 1
+    set view ""
 
     while {[llength $argv] > 0} {
 	set a [lindex $argv 0]
@@ -128,6 +136,10 @@ proc main {argv0 argv} {
 	    -n {
 		set doit 0
 		set argv [lreplace $argv 0 0]
+	    }
+	    -w {
+		set view [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
 	    }
 	    -* {
 		warning "Unknown option '$a'"
@@ -152,10 +164,26 @@ proc main {argv0 argv} {
     }
 
     #
+    # Check view name
+    #
+
+    set idview -1
+    if {$view ne ""} then {
+	set qview [::pgsql::quote $view]
+	set sql "SELECT idview FROM dns.view WHERE name = '$qview'"
+	pg_select $dbfd $sql tab {
+	    set idview $tab(idview)
+	}
+	if {$idview == -1} then {
+	    d error "View '$view' not found"
+	}
+    }
+
+    #
     # Do the work
     #
 
-    set msg [gen-filter $dbfd $pfprologue $pffmt txt]
+    set msg [gen-filter $dbfd $idview $pfprologue $pffmt txt]
     if {$msg ne ""} then {
 	d error $msg
     }
