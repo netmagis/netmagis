@@ -4,7 +4,7 @@
 # Install IP filter for authorized SMTP hosts
 #
 # Syntax:
-#	mksmtpf [-h][-q][-v][-n][-w <view-name><]
+#	mksmtpf [-h][-q][-v][-n][-w <view-name>]
 #	    -h: help
 #	    -q: silent operation
 #	    -v: verbose output
