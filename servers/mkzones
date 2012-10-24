@@ -4,11 +4,13 @@
 # Perform DNS zone generation for BIND
 #
 # Syntax:
-#	mkzone [-h][-q][-v][-n] [ <zone-name> ... <zone-name>]
+#	mkzone [-h][-q][-v][-n] [-w <view-name>|<zone-name> ... <zone-name>]
 #
 # If zone names are supplied, zone generation is done only for these
 # zones. Else, only modified zones (those which have the bit "generer")
 # are generated.
+# If view-name is given, zone generation is limited to modified zones 
+# associated with this view.
 #
 # History:
 #   2002/04/23 : pda/jean : specification
@@ -18,6 +20,7 @@
 #   2004/03/09 : pda/jean : generation of mail roles
 #   2008/12/09 : jean     : TTL management
 #   2011/05/29 : pda      : i18n and re-design
+#   2012/10/24 : pda/jean : add views
 #
 
 source %LIBNETMAGIS%
@@ -26,11 +29,12 @@ source %LIBNETMAGIS%
 # Self explanatory
 #
 
-set conf(usage) {usage: %1$s [-h]|-q][-v][-n] [<zone-name> ... <zone-name>]
+set conf(usage) {usage: %1$s [-h]|-q][-v][-n] [-w <view>|<zone-name> ... <zone-name>]
     -h : get this help
     -q : keep silent on normal operation
     -v : verbose (show diffs)
     -n : don't perform file installation
+    -w <view> : limit generation to modified zones for this view
     <zone-name> ... : if supplied, force generation for these zones
 }
 
@@ -39,19 +43,19 @@ set conf(usage) {usage: %1$s [-h]|-q][-v][-n] [<zone-name> ... <zone-name>]
 #
 # Input:
 #   - dbfd: database handle
-#   - all: 1 if all zones are required, 0 if only zones which must be generated
+#   - idview: id of specified view, -1 if not specified
 # Output:
 #   - return value: list of zone names
 #
 # History:
 #   2002/04/26 : pda/jean : design
+#   2012/10/24 : pda/jean : add idview parameter and remove obsolete parameter
 #
 
-proc get-mod-zones {dbfd all} {
-    if {$all} then {
-	set crit ""
-    } else {
-	set crit "WHERE generer = 1"
+proc get-mod-zones {dbfd idview} {
+    set crit "WHERE generer = 1"
+    if {$idview != -1} then {
+	append crit " AND idview = $idview"
     }
     set l {}
     pg_select $dbfd "SELECT name FROM dns.zone $crit" tab {
@@ -117,6 +121,7 @@ proc new-serial {serial} {
 #   2002/04/26 : pda/jean : design
 #   2002/05/02 : pda/jean : multiple "zone*" table with inheritance
 #   2011/05/29 : pda      : interface change
+#   2012/10/24 : pda/jean : add views
 #
 
 proc gen-zone {dbfd zone _txt} {
@@ -125,7 +130,8 @@ proc gen-zone {dbfd zone _txt} {
     set qzone [::pgsql::quote $zone]
 
     set sql "SELECT n.nspname || '.' || c.relname AS table,
-			zone.version, zone.prologue, zone.rrsup, zone.generer
+			zone.version, zone.prologue, zone.rrsup, zone.generer,
+			zone.idview
 		    FROM dns.zone, pg_class c, pg_namespace n
 		    WHERE name = '$qzone'
 			AND c.oid = zone.tableoid
@@ -138,6 +144,7 @@ proc gen-zone {dbfd zone _txt} {
 	set prologue	$tab(prologue)
 	set rrsup	$tab(rrsup)
 	set generer	$tab(generer)
+	set idview	$tab(idview)
 	set found 1
     }
 
@@ -183,17 +190,17 @@ proc gen-zone {dbfd zone _txt} {
 
     switch -- $table {
 	dns.zone_normale {
-	    if {! [gen-normal $dbfd $zone $selection $rrsup txt]} then {
+	    if {! [gen-normal $dbfd $zone $selection $idview $rrsup txt]} then {
 		return 0
 	    }
 	}
 	dns.zone_reverse4 {
-	    if {! [gen-ipv4 $dbfd $zone $selection $rrsup txt]} then {
+	    if {! [gen-ipv4 $dbfd $zone $selection $idview $rrsup txt]} then {
 		return 0
 	    }
 	}
 	dns.zone_reverse6 {
-	    if {! [gen-ipv6 $dbfd $zone $selection $rrsup txt]} then {
+	    if {! [gen-ipv6 $dbfd $zone $selection $idview $rrsup txt]} then {
 		return 0
 	    }
 	}
@@ -228,6 +235,7 @@ proc gen-zone {dbfd zone _txt} {
 #   - dbfd: database handle
 #   - zone: name of zone to generate
 #   - selection: selection criterion (domain name)
+#   - idview: view associated with this zone
 #   - rrsup: RR to add to each generated name
 #   - _txt: in return, zone contents or error message
 # Output:
@@ -237,9 +245,10 @@ proc gen-zone {dbfd zone _txt} {
 # History:
 #   2002/04/26 : pda/jean : design
 #   2004/03/09 : pda/jean : add mail role generation
+#   2012/10/24 : pda/jean : add views
 #
 
-proc gen-normal {dbfd zone selection rrsup _txt} {
+proc gen-normal {dbfd zone selection idview rrsup _txt} {
     upvar $_txt txt
 
     read-all-domains $dbfd "" tabiddom
@@ -263,6 +272,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
     set sql "SELECT rr.nom, rr.ttl, rr_ip.adr, family(rr_ip.adr) AS family
 			FROM dns.rr, dns.rr_ip
 			WHERE rr.iddom = $iddom
+			    AND rr_ip.idview = $idview
 			    AND rr.idrr = rr_ip.idrr
 			ORDER BY upper(rr.nom), rr_ip.adr"
     pg_select $dbfd $sql tab {
@@ -299,6 +309,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 			WHERE rr1.iddom = $iddom
 			    AND rr1.idrr = rr_mx.idrr
 			    AND rr2.idrr = rr_mx.mx
+			    AND rr_mx.idview = $idview
 			ORDER BY upper(rr1.nom)"
     pg_select $dbfd $sql tab {
 	set nom $tab(nom)
@@ -321,6 +332,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 			WHERE rr1.iddom = $iddom
 			    AND rr1.idrr = rr_cname.idrr
 			    AND rr2.idrr = rr_cname.cname
+			    AND rr_cname.idview = $idview
 			ORDER BY upper(rr1.nom)"
     pg_select $dbfd $sql tab {
 	set d $tab(iddom2)
@@ -341,6 +353,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 			rr.nom || '.' || domaine.nom || '.' AS rrname
 		    FROM dns.relais_dom, dns.rr, dns.domaine
 		    WHERE relais_dom.iddom = $iddom
+			AND relais_dom.idview = $idview
 			AND relais_dom.mx = rr.idrr
 			AND rr.iddom = domaine.iddom
 		    ORDER BY relais_dom.priorite ASC, domaine.nom, upper(rr.nom)
@@ -358,6 +371,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 	set sql "SELECT rr.nom, rr.ttl
 			FROM dns.role_mail, dns.rr
 			WHERE role_mail.idrr = rr.idrr
+			    AND role_mail.idviewrr = $idview
 			    AND rr.iddom = $iddom
 			ORDER BY upper(rr.nom) ASC
 			"
@@ -387,6 +401,7 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 #   - dbfd: database handle
 #   - zone: name of zone to generate
 #   - selection: selection criterion (CIDR)
+#   - idview: view associated with this zone
 #   - rrsup: RR to add to each generated PTR address
 #   - _txt: in return, zone contents or error message
 # Output:
@@ -395,9 +410,10 @@ proc gen-normal {dbfd zone selection rrsup _txt} {
 #
 # History:
 #   2002/04/26 : pda/jean : design
+#   2012/10/24 : pda/jean : add views
 #
 
-proc gen-ipv4 {dbfd zone selection rrsup _txt} {
+proc gen-ipv4 {dbfd zone selection idview rrsup _txt} {
     upvar $_txt txt
 
     read-all-domains $dbfd "" tabiddom
@@ -422,6 +438,7 @@ proc gen-ipv4 {dbfd zone selection rrsup _txt} {
     set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom
 			FROM dns.rr_ip, dns.rr
 			WHERE rr_ip.adr <<= '$selection'
+			    AND rr_ip.idview = $idview
 			    AND rr_ip.idrr = rr.idrr
 			ORDER BY rr_ip.adr"
     pg_select $dbfd $sql tab {
@@ -457,6 +474,7 @@ proc gen-ipv4 {dbfd zone selection rrsup _txt} {
 #   - dbfd: database handle
 #   - zone: name of zone to generate
 #   - selection: selection criterion
+#   - idview: view associated with this zone
 #   - rrsup: RR to add to each generated PTR address
 #   - _txt: in return, zone contents or error message
 # Output:
@@ -466,9 +484,10 @@ proc gen-ipv4 {dbfd zone selection rrsup _txt} {
 # History:
 #   2002/04/26 : pda/jean : specification
 #   2004/01/14 : pda/jean : design
+#   2012/10/24 : pda/jean : add views
 #
 
-proc gen-ipv6 {dbfd zone selection rrsup _txt} {
+proc gen-ipv6 {dbfd zone selection idview rrsup _txt} {
     upvar $_txt txt
 
     read-all-domains $dbfd "" tabiddom
@@ -492,6 +511,7 @@ proc gen-ipv6 {dbfd zone selection rrsup _txt} {
     set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom
 			FROM dns.rr_ip, dns.rr
 			WHERE rr_ip.adr <<= '$selection'
+			    AND rr_ip.idview = $idview
 			    AND rr_ip.idrr = rr.idrr
 			ORDER BY rr_ip.adr"
     pg_select $dbfd $sql tab {
@@ -601,6 +621,7 @@ proc main {argv0 argv} {
 
     set verbose 0
     set doit 1
+    set view ""
 
     while {[llength $argv] > 0} {
 	set a [lindex $argv 0]
@@ -620,6 +641,10 @@ proc main {argv0 argv} {
 		set doit 0
 		set argv [lreplace $argv 0 0]
 	    }
+	    -w {
+		set view [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
 	    -* {
 		warning "Unknown option '$a'"
 		usage $argv0
@@ -630,7 +655,11 @@ proc main {argv0 argv} {
 	}
     }
 
-    if {[llength $argv] > 1} then {
+    #
+    # View name is incompatible with zone names
+    #
+
+    if {$view ne "" && [llength $argv] > 0} then {
 	usage $argv0
     }
 
@@ -652,11 +681,27 @@ proc main {argv0 argv} {
     }
 
     #
+    # Check view name
+    #
+
+    set idview -1
+    if {$view ne ""} then {
+	set qview [::pgsql::quote $view]
+	set sql "SELECT idview FROM dns.view WHERE name = '$qview'"
+	pg_select $dbfd $sql tab {
+	    set idview $tab(idview)
+	}
+	if {$idview == -1} then {
+	    d error "View '$view' not found"
+	}
+    }
+
+    #
     # Use specific zones, or fetches only modified zones?
     #
 
     if {[llength $argv] == 0} then {
-	set lz [get-mod-zones $dbfd 0]
+	set lz [get-mod-zones $dbfd $idview]
     } else {
 	set lz $argv
     }

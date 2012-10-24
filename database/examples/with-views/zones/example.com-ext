@@ -54,6 +54,8 @@ mx2			IN	A	198.51.100.4
 www			IN	A	198.51.100.5
 			IN	AAAA	2001:db8:1234::5
 
+a-marvelous-product	IN	CNAME	www
+
 ; for historical reasons, this server is located on the internal
 ; network must have a public address. Address translation is
 ; assured by the firewall. Thus, addresses of historic.example.com

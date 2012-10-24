@@ -55,6 +55,9 @@ mx2			IN	A	198.51.100.4
 www			IN	A	198.51.100.5
 			IN	AAAA	2001:db8:1234::5
 
+; this host is in DMZ, but name is only known in internal view
+antivirus		IN	A	198.51.100.6
+
 ; for historical reasons, this server is located on the internal
 ; network must have a public address. Address translation is
 ; assured by the firewall. Thus, addresses of historic.example.com
@@ -68,6 +71,8 @@ fw			IN	A	198.51.100.200
 gw			IN	A	198.51.100.254
 
 mailhost		IN	A	172.16.1.1
+
+intranet		IN	CNAME	host1
 
 ; blocks of addresses (with holes) to demonstrate Netmagis IP address map
 host1			IN	A	172.16.2.1
