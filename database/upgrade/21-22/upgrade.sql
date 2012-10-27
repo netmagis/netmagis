@@ -259,6 +259,9 @@ ALTER TABLE dns.zone
     ADD COLUMN idview INT
     ;
 
+ALTER TABLE dns.zone
+    DROP CONSTRAINT zone_pkey ;
+
 UPDATE dns.zone
     SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
 
@@ -307,8 +310,16 @@ ALTER TABLE dns.rr_ip
 ALTER TABLE dns.rr_ip
     ADD COLUMN idview INT ;
 
+-- temporarily remove trigger since it may take a looooong time
+DROP TRIGGER tr_modifier_ip ON dns.rr_ip ;
 UPDATE dns.rr_ip
     SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
+CREATE TRIGGER tr_modifier_ip
+    AFTER INSERT OR UPDATE OR DELETE
+    ON dns.rr_ip
+    FOR EACH ROW
+    EXECUTE PROCEDURE modifier_ip ()
+    ;
 
 ALTER TABLE dns.rr_ip
     ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
