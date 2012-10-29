@@ -15,6 +15,8 @@
  cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.).}
  cfg:pageformat:desc {Paper format}
  cfg:pageformat:help {Paper format for generated printable pages.}
+ cfg:schemaversion:desc {Schema version}
+ cfg:schemaversion:help {Current version of the database schema, used for consistency checks. This parameter is not writable.}
 
  cfg:dns {DNS parameters}
 

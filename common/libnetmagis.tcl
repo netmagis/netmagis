@@ -647,6 +647,7 @@ snit::type ::netmagis {
     # Input:
     #	- selfs : current object
     #	- _dbfd : database handle, in return
+    #   - smode : script mode ("cgi" or "script")
     #   - login : user's login
     #   - anon : "anon" (don't fetch identity in auth database) or "id" (fetch)
     #	- usedefuser : use default user name if login is not found
@@ -658,10 +659,12 @@ snit::type ::netmagis {
     #	- return value: empty string or error message
     #
 
-    proc init-common {selfns _dbfd login anon usedefuser _tabuid} {
+    proc init-common {selfns _dbfd smode login anon usedefuser _tabuid} {
 	global ah
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
+
+	set scriptmode $smode
 
 	#
 	# Access to Netmagis database
@@ -672,7 +675,6 @@ snit::type ::netmagis {
 	if {$dbfd eq ""} then {
 	    return [mc "Error accessing database: %s" $msg]
 	}
-	set db $dbfd
 
 	#
 	# Log initialization
@@ -692,6 +694,26 @@ snit::type ::netmagis {
 
 	config ::dnsconfig
 	dnsconfig setdb $dbfd
+
+	#
+	# Check compatibility with database schema version
+	# - empty string : pre-2.2 schema
+	# - non empty string : integer containing schema version 
+	# Netmagis version (x.y.... => xy) must match schema version.
+	#
+
+	if {! [regsub {^(\d+)\.(\d+).*} $version {\1\2} nver]} then {
+	    return [mc "Internal error: Netmagis version number '%s' unrecognized" $version]
+	}
+
+	set sver [dnsconfig  get "schemaversion"]
+	if {$sver eq ""} then {
+	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.sql"]
+	} elseif {$sver < $nver} then {
+	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.sql"]
+	} elseif {$sver > $nver} then {
+	    return [mc {Database schema '%1$s' is not yet recognized by Netmagis %2$s} $sver $version]
+	}
 
 	#
 	# Access to authentification mechanism (database or LDAP)
@@ -779,6 +801,12 @@ snit::type ::netmagis {
 	    return [mc "User '%s' not authorized" $login]
 	}
 	set eidcor $tabuid(idcor)
+
+	#
+	# Access to Netmagis is now initialized
+	#
+
+	set db $dbfd
 
 	return ""
     }
@@ -1016,12 +1044,10 @@ snit::type ::netmagis {
 	# Common initialization work
 	#
 
-	set msg [init-common $selfns dbfd $login "id" false tabuid]
+	set msg [init-common $selfns dbfd "cgi" $login "id" false tabuid]
 	if {$msg ne ""} then {
 	    $self error $msg
 	}
-
-	set scriptmode "cgi"
 
 	#
 	# Add default parameters in form analysis
@@ -1252,12 +1278,11 @@ snit::type ::netmagis {
 	# Common initialization work
 	#
 
-	set msg [init-common $selfns dbfd $login "anon" $usedefuser tabuid]
+	set msg [init-common $selfns dbfd "script" $login "anon" $usedefuser tabuid]
 	if {$msg ne ""} then {
 	    return $msg
 	}
 
-	set scriptmode "script"
 	regsub {.*/} $argv0 {} argv0
 	set scriptargv0 $argv0
 
@@ -1382,20 +1407,24 @@ snit::type ::netmagis {
 	}
 
 	#
-	# Constitute the links menu
+	# Constitute the links menu if the database access is initialized
 	#
 
 	if {$fmt eq "html"} then {
-	    set linksmenu [$self Get-links ":$curmodule"]
+	    if {$db eq ""} then {
+		set linksmenu ""
+	    } else {
+		set linksmenu [$self Get-links ":$curmodule"]
 
-	    foreach l $avlocale {
-		if {$l ne $locale} then {
-		    set utab(L) [list $homepage]
-		    set utab(L:nextprog) ""
-		    set url [make-url utab "L" $uid $euid $l $blocale]
-		    append linksmenu [::webapp::helem "li" \
-				[::webapp::helem "a" "\[$l\]" "href" $url] \
-			    ]
+		foreach l $avlocale {
+		    if {$l ne $locale} then {
+			set utab(L) [list $homepage]
+			set utab(L:nextprog) ""
+			set url [make-url utab "L" $uid $euid $l $blocale]
+			append linksmenu [::webapp::helem "li" \
+				    [::webapp::helem "a" "\[$l\]" "href" $url] \
+				]
+		    }
 		}
 	    }
 
@@ -1627,6 +1656,7 @@ snit::type ::netmagis {
 #   2001/03/21 : pda      : design getconfig/setconfig
 #   2010/10/25 : pda      : transform into a class
 #   2010/12/04 : pda      : i18n
+#   2012/10/27 : pda      : add read-only mode
 #
 
 snit::type ::config {
@@ -1636,67 +1666,68 @@ snit::type ::config {
     # configuration parameter specification
     # {{class class-spec} {class class-spec} ...}
     # class = class name
-    # class-spec = {{key type} {key type} ...}
+    # class-spec = {{key ro/rw type} {key ro/rw type} ...}
     variable configspec {
 	{general
-	    {datefmt {string}}
-	    {jourfmt {string}}
-	    {authmethod {menu {{pgsql Internal} {ldap {LDAP}}}}}
-	    {pageformat {menu {{a4 A4} {letter Letter}}} }
+	    {datefmt rw {string}}
+	    {jourfmt rw {string}}
+	    {authmethod rw {menu {{pgsql Internal} {ldap {LDAP}}}}}
+	    {pageformat rw {menu {{a4 A4} {letter Letter}}} }
+	    {schemaversion ro {string}}
 	}
 	{dns
-	    {defuser {string}}
+	    {defuser rw {string}}
 	}
 	{dhcp
-	    {dhcpdefdomain {string}}
-	    {dhcpdefdnslist {string}}
-	    {default_lease_time {string}}
-	    {max_lease_time {string}}
-	    {min_lease_time {string}}
+	    {dhcpdefdomain rw {string}}
+	    {dhcpdefdnslist rw {string}}
+	    {default_lease_time rw {string}}
+	    {max_lease_time rw {string}}
+	    {min_lease_time rw {string}}
 	}
 	{topo
-	    {topoactive {bool}}
-	    {defdomain {string}}
-	    {topofrom {string}}
-	    {topoto {string}}
-	    {topographddelay {string}}
-	    {toposendddelay {string}}
-	    {topomaxstatus {string}}
-	    {sensorexpire {string}}
-	    {modeqexpire {string}}
-	    {ifchangeexpire {string}}
-	    {fullrancidmin {string}}
-	    {fullrancidmax {string}}
+	    {topoactive rw {bool}}
+	    {defdomain rw {string}}
+	    {topofrom rw {string}}
+	    {topoto rw {string}}
+	    {topographddelay rw {string}}
+	    {toposendddelay rw {string}}
+	    {topomaxstatus rw {string}}
+	    {sensorexpire rw {string}}
+	    {modeqexpire rw {string}}
+	    {ifchangeexpire rw {string}}
+	    {fullrancidmin rw {string}}
+	    {fullrancidmax rw {string}}
 	}
 	{mac
-	    {macactive {bool}}
+	    {macactive rw {bool}}
 	}
 	{authldap
-	    {ldapurl {string}}
-	    {ldapbinddn {string}}
-	    {ldapbindpw {string}}
-	    {ldapbasedn {string}}
-	    {ldapsearchlogin {string}}
-	    {ldapattrlogin {string}}
-	    {ldapattrpassword {string}}
-	    {ldapattrname {string}}
-	    {ldapattrgivenname {string}}
-	    {ldapattrmail {string}}
-	    {ldapattrphone {string}}
-	    {ldapattrmobile {string}}
-	    {ldapattrfax {string}}
-	    {ldapattraddr {string}}
+	    {ldapurl rw {string}}
+	    {ldapbinddn rw {string}}
+	    {ldapbindpw rw {string}}
+	    {ldapbasedn rw {string}}
+	    {ldapsearchlogin rw {string}}
+	    {ldapattrlogin rw {string}}
+	    {ldapattrpassword rw {string}}
+	    {ldapattrname rw {string}}
+	    {ldapattrgivenname rw {string}}
+	    {ldapattrmail rw {string}}
+	    {ldapattrphone rw {string}}
+	    {ldapattrmobile rw {string}}
+	    {ldapattrfax rw {string}}
+	    {ldapattraddr rw {string}}
 	}
 	{authpgsql
-	    {authpgminpwlen {string}}
-	    {authpgmaxpwlen {string}}
-	    {authpgmailfrom {string}}
-	    {authpgmailreplyto {string}}
-	    {authpgmailcc {string}}
-	    {authpgmailbcc {string}}
-	    {authpgmailsubject {string}}
-	    {authpgmailbody {text}}
-	    {authpggroupes {string}}
+	    {authpgminpwlen rw {string}}
+	    {authpgmaxpwlen rw {string}}
+	    {authpgmailfrom rw {string}}
+	    {authpgmailreplyto rw {string}}
+	    {authpgmailcc rw {string}}
+	    {authpgmailbcc rw {string}}
+	    {authpgmailsubject rw {string}}
+	    {authpgmailbody rw {text}}
+	    {authpggroupes rw {string}}
 	}
     }
 
@@ -1706,6 +1737,7 @@ snit::type ::config {
     # (class)			{<cl1> ... <cln>}
     # (class:<cl1>)		{<k1> ... <kn>}
     # (key:<k1>:type)		{string|bool|text|menu ...}
+    # (key:<k1>:rw)		ro|rw
     #
 
     variable internal -array {}
@@ -1719,10 +1751,11 @@ snit::type ::config {
 	    set internal(class:$classname) {}
 
 	    foreach key [lreplace $class 0 0] {
-		lassign $key keyname keytype
+		lassign $key keyname keyrw keytype
 
 		lappend internal(class:$classname) $keyname
 		set internal(key:$keyname:type) $keytype
+		set internal(key:$keyname:rw) $keyrw
 	    }
 	}
     }
@@ -1757,6 +1790,15 @@ snit::type ::config {
 	    set lk [concat $lk $internal(class:$c)]
 	}
 	return $lk
+    }
+
+    # returns key rw/ro
+    method keyrw {key} {
+	set r ""
+	if {[info exists internal(key:$key:rw)]} then {
+	    set r $internal(key:$key:rw)
+	}
+	return $r
     }
 
     # returns key type
@@ -1803,17 +1845,25 @@ snit::type ::config {
     # set key value
     # returns empty string if ok, or an error message
     method set {key val} {
-	set r ""
-	set k [::pgsql::quote $key]
-	set sql "DELETE FROM global.config WHERE clef = '$k'"
-	if {[::pgsql::execsql $db $sql msg]} then {
-	    set v [::pgsql::quote $val]
-	    set sql "INSERT INTO global.config VALUES ('$k', '$v')"
-	    if {! [::pgsql::execsql $db $sql msg]} then {
-		set r [mc {Cannot set key '%1$s' to '%2$s': %3$s} $key $val $msg]
+	if {[info exists internal(key:$key:rw)]} then {
+	    if {$internal(key:$key:rw) eq "rw"} then {
+		set r ""
+		set k [::pgsql::quote $key]
+		set sql "DELETE FROM global.config WHERE clef = '$k'"
+		if {[::pgsql::execsql $db $sql msg]} then {
+		    set v [::pgsql::quote $val]
+		    set sql "INSERT INTO global.config VALUES ('$k', '$v')"
+		    if {! [::pgsql::execsql $db $sql msg]} then {
+			set r [mc {Cannot set key '%1$s' to '%2$s': %3$s} $key $val $msg]
+		    }
+		} else {
+		    set r [mc {Cannot fetch key '%1$s': %2$s} $key $msg]
+		}
+	    } else {
+		set r [mc {Cannot modify read-only key '%s'} $key]
 	    }
 	} else {
-	    set r [mc {Cannot fetch key '%1$s': %2$s} $key $msg]
+	    error [mc "Unknown configuration key '%s'" $key]
 	}
 
 	return $r

@@ -17,6 +17,7 @@
 #   2010/12/09 : pda      : i18n
 #   2010/12/18 : pda      : type menu
 #   2010/12/26 : pda      : use cgi-dispatch
+#   2012/10/27 : pda      : add rw/ro keys
 #
 
 #
@@ -115,39 +116,44 @@ d cgi-register {action {}} {
 
 	foreach key [dnsconfig keys $class] {
 
+	    set rw     [dnsconfig keyrw $key]
 	    set type   [dnsconfig keytype $key]
 	    set desc   [dnsconfig desc $key]
 	    set curval [dnsconfig get $key]
 
-	    switch -- [lindex $type 0] {
-		bool {
-		    set html [::webapp::form-yesno $key $curval {%1$sOui %2$sNon}]
-		}
-		string {
-		    set html [::webapp::form-text $key 1 60 0 $curval]
-		}
-		text {
-		    set html [::webapp::form-text $key 20 70 0 $curval]
-		}
-		menu {
-		    set idx 0
-		    set lsel {}
-		    set lmenu {}
-		    foreach mi [lindex $type 1] {
-			lassign $mi val txt
-			set txt [mc $txt]
-			lappend lmenu [list $val $txt]
-			if {$val eq $curval} then {
-			    set lsel [list $idx]
-			}
-			incr idx
+	    if {$rw eq "rw"} then {
+		switch -- [lindex $type 0] {
+		    bool {
+			set html [::webapp::form-yesno $key $curval {%1$sOui %2$sNon}]
 		    }
-		    set html [::webapp::form-menu $key 1 0 $lmenu $lsel]
+		    string {
+			set html [::webapp::form-text $key 1 60 0 $curval]
+		    }
+		    text {
+			set html [::webapp::form-text $key 20 70 0 $curval]
+		    }
+		    menu {
+			set idx 0
+			set lsel {}
+			set lmenu {}
+			foreach mi [lindex $type 1] {
+			    lassign $mi val txt
+			    set txt [mc $txt]
+			    lappend lmenu [list $val $txt]
+			    if {$val eq $curval} then {
+				set lsel [list $idx]
+			    }
+			    incr idx
+			}
+			set html [::webapp::form-menu $key 1 0 $lmenu $lsel]
+		    }
+		    default {
+			set msg [mc "Internal error: invalid key type '%s'" $key] \
+			set html [::webapp::helem "font" $msg "color" "#ff0000"]
+		    }
 		}
-		default {
-		    set msg [mc "Internal error: invalid key type '%s'" $key] \
-		    set html [::webapp::helem "font" $msg "color" "#ff0000"]
-		}
+	    } else {
+		set html [::webapp::html-string $curval]
 	    }
 
 	    set help [format $urlhelp $key $desc]
@@ -228,8 +234,12 @@ d cgi-register {action mod} {
     #
 
     set form {}
+    set lkeys {}
     foreach key [dnsconfig keys] {
-	lappend form [list $key 1 1]
+	if {[dnsconfig keyrw $key] eq "rw"} then {
+	    lappend form [list $key 1 1]
+	    lappend lkeys $key
+	}
     }
     if {[llength [::webapp::get-data ftab $form]] == 0} then {
 	d error [mc "Invalid input"]
@@ -242,7 +252,7 @@ d cgi-register {action mod} {
     d dblock {global.config}
 
     set lm {}
-    foreach key [dnsconfig keys] {
+    foreach key $lkeys {
 	set val [lindex $ftab($key) 0]
 	set msg [dnsconfig set $key $val]
 	if {$msg eq ""} then {

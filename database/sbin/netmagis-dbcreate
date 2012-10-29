@@ -1457,6 +1457,7 @@ authpgmailbcc
 authpgmailsubject	Password change
 authpgmailbody	Password changed (%2$s) for user %1$s. Best regards.
 authpggroupes	netmagis
+schemaversion	22
 \.
 
     -- id 0 is used in zone creation script

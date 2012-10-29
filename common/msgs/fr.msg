@@ -87,6 +87,8 @@
  cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.).}
  cfg:pageformat:desc {Format de papier}
  cfg:pageformat:help {Format de papier pour les pages imprimables.}
+ cfg:schemaversion:desc {Version de schéma}
+ cfg:schemaversion:help {Version actuelle du schéma de la base de données, utilisée pour des tests de cohérence. Ce paramètre n'est pas modifiable.}
 
  cfg:dns {Paramètres DNS}
 
@@ -195,6 +197,9 @@
 # Library
 ::msgcat::mcmset fr {
  {Error accessing database (%s)} {Erreur d'accès à la base de données (%s)}
+ {Internal error: Netmagis version number '%s' unrecognized} {Erreur interne : numéro de version de Netmagis '%s' non reconnue}
+ {Database schema is too old. See http://netmagis.org/upgrade.sql} {Le schéma de base de données est trop ancien. Consultez http://netmagis.org/upgrade.sql}
+ {Database schema '%1$s' is not yet recognized by Netmagis %2$s} {Le schéma de base de donnée '%1$s' n'est pas encore reconnu par Netmagis %2$s}
  {Connection refused (%s)} {Connexion refusée (%s)}
  {Unrecognized authentication method '%s'} {Méthode d'authentication '%s' non reconnue}
  {Invalid 'rootusers' configuration parameter} {Paramètre de configuration 'rootusers' invalide}

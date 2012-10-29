@@ -7,6 +7,7 @@
 ------------------------------------------------------------------------------
 
 DELETE FROM global.config WHERE clef = 'dnsupdateperiod' ;
+INSERT INTO global.config (clef, valeur) VALUES ('schemaversion', '22') ;
 
 ALTER TABLE dns.zone RENAME COLUMN domaine TO name ;
 

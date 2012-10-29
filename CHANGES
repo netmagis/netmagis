@@ -1,4 +1,5 @@
 Version 2.2.0 - ????/??/??
+    - include a check on database version number to ease upgrades
     - improve DNS zone generation latency
     - CSV export of a list of hosts (via the "Consult" menu item)
     - explicit name of zone in the zone_* tables

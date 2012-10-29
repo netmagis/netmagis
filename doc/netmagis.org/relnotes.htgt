@@ -63,6 +63,10 @@
 	\item {Reverse zones are listed in correct order (by IP
 	    address) in the "modify reverse IPv[46] zones" menu.
 	}
+	\item {Database now includes a schema version (in table
+	    config). Netmagis checks this version number in order
+	    to refuse to dammage not-upgraded databases.
+	}
 	\item {Bug fix: when using multiple interface edition,
 	    the description and sensors are no longer reset.
 	}
