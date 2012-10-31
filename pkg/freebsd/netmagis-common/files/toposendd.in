@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $FreeBSD$
+# $FreeBSD: ports/net-mgmt/netmagis-common/files/toposendd.in,v 1.1 2012/10/30 20:27:10 crees Exp $
 #
 
 # PROVIDE: toposendd
@@ -21,14 +21,13 @@
 
 name=toposendd
 rcvar=toposendd_enable
-command_interpreter=%%TCLSH%%
 
 load_rc_config $name
 
 : ${toposendd_enable:=NO}
-: ${toposendd_flags:=""}
-: ${toposendd_user:="rancid"}
+: ${toposendd_user:=rancid}
 
-command="%%PREFIX%%/sbin/toposendd"
+command_interpreter=%%TCLSH%%
+command=%%PREFIX%%/sbin/toposendd
 
-run_rc_command "$1"
+run_rc_command $1

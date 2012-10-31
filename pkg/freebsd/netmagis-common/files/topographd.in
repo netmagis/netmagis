@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $FreeBSD$
+# $FreeBSD: ports/net-mgmt/netmagis-common/files/topographd.in,v 1.1 2012/10/30 20:27:10 crees Exp $
 #
 
 # PROVIDE: topographd
@@ -21,14 +21,14 @@
 
 name=topographd
 rcvar=topographd_enable
-command_interpreter=%%TCLSH%%
 
 load_rc_config $name
 
 : ${topographd_enable:=NO}
-: ${topographd_flags:=""}
-: ${topographd_user:="rancid"}
+: ${topographd_user:=rancid}
 
-command="%%PREFIX%%/sbin/topographd"
+command_interpreter=%%TCLSH%%
 
-run_rc_command "$1"
+command=%%PREFIX%%/sbin/topographd
+
+run_rc_command $1
