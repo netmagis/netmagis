@@ -1,9 +1,5 @@
-# New ports collection makefile for:	Netmagis
-# Date created:		Nov 10 2011
-# Whom:			Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
-#
-# $FreeBSD:$
-#
+# Created by: Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
+# $FreeBSD: ports/net-mgmt/netmagis-common/Makefile,v 1.1 2012/10/30 20:27:10 crees Exp $
 
 PORTNAME?=	netmagis
 DISTVERSION?=	2.1.0
@@ -17,23 +13,21 @@ COMMENT?=	Netmagis common infrastructure
 
 USE_TCL=	85+
 
-USE_PGSQL=	yes
-WANT_PGSQL_VER=	91
+USE_PGSQL=	pgtcl
+WANT_PGSQL_VER=	91+
 
-RUN_DEPENDS+=	dtplite:${PORTSDIR}/devel/tcllib \
-		${LOCALBASE}/lib/pgtcl/pkgIndex.tcl:${PORTSDIR}/databases/pgtcl
+RUN_DEPENDS+=	dtplite:${PORTSDIR}/devel/tcllib
 
-.if ${PKGNAMESUFFIX} != "-common"
+.if ${PKGNAMESUFFIX} != -common
 RUN_DEPENDS+=	netmagis-config:${PORTSDIR}/net-mgmt/netmagis-common
 .endif
 
-.if ${PKGNAMESUFFIX} == "-database"
-RUN_DEPENDS+=	postmaster:${PORTSDIR}/databases/postgresql${PGSQL_VER}-server \
-		pltcl_listmod:${PORTSDIR}/databases/postgresql${PGSQL_VER}-pltcl \
-		pwgen:${PORTSDIR}/sysutils/pwgen
+.if ${PKGNAMESUFFIX} == -database
+RUN_DEPENDS+=	pwgen:${PORTSDIR}/sysutils/pwgen
+USE_PGSQL+=	server pltcl
 .endif
 
-.if ${PKGNAMESUFFIX} == "-www"
+.if ${PKGNAMESUFFIX} == -www
 USE_APACHE=	22+
 RUN_DEPENDS+=	pdflatex:${PORTSDIR}/print/teTeX-base \
 		dot:${PORTSDIR}/graphics/graphviz \
@@ -43,14 +37,14 @@ RUN_DEPENDS+=	pdflatex:${PORTSDIR}/print/teTeX-base \
 # FIXME add ap22-mod_auth_cas
 .endif
 
-.if ${PKGNAMESUFFIX} == "-topo"
+.if ${PKGNAMESUFFIX} == -topo
 USE_RC_SUBR=	topographd toposendd
 SUB_LIST=	TCLSH=${TCLSH}
 RUN_DEPENDS+=	rancid-run:${PORTSDIR}/net-mgmt/rancid \
 		fping:${PORTSDIR}/net/fping
 .endif
 
-.if ${PKGNAMESUFFIX} == "-metro"
+.if ${PKGNAMESUFFIX} == -metro
 USE_PERL5=	yes
 
 RUN_DEPENDS+=	p5-DBD-Pg>0:${PORTSDIR}/databases/p5-DBD-Pg \
@@ -59,19 +53,21 @@ RUN_DEPENDS+=	p5-DBD-Pg>0:${PORTSDIR}/databases/p5-DBD-Pg \
 		p5-RRDTool-OO>=0:${PORTSDIR}/devel/p5-RRDTool-OO
 .endif
 
-post-install:
-	@if [ -f ${PKGMESSAGE} ] ; then ${CAT} ${PKGMESSAGE} ; fi
-
-.include <bsd.port.mk>
-
 # Variables used in netmagis Makefiles
 MAKE_ARGS+=	DESTDIR=${DESTDIR} PREFIX=${PREFIX}
 MAKE_ARGS+=	TCLSH=${TCLSH} TCLCONF=${TCL_LIBDIR}/tclConfig.sh
 
-.if ${PKGNAMESUFFIX} == "-topo" || ${PKGNAMESUFFIX} == "-www"
+.if ${PKGNAMESUFFIX} == -topo || ${PKGNAMESUFFIX} == -www
 ALL_TARGET=build${PKGNAMESUFFIX?=}
 .else
 ALL_TARGET=nothing
 .endif
 
 INSTALL_TARGET=	install${PKGNAMESUFFIX}
+
+.if !target(post-install)
+post-install:
+	@if [ -f ${PKGMESSAGE} ] ; then ${CAT} ${PKGMESSAGE} ; fi
+.endif
+
+.include <bsd.port.mk>

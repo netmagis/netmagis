@@ -23,25 +23,24 @@ lib/netmagis/probes/sensor-stp-catalyst.pl
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/crontab.metro
 www/metro/gengraph
 @dirrm www/metro
-@dirrm var/netmagis/metro/wifi
-@dirrm var/netmagis/metro/spool
-@dirrm var/netmagis/metro/report
-@dirrm var/netmagis/metro/log
-@dirrm var/netmagis/metro/lock
-@dirrm var/netmagis/metro/graph
-@dirrm var/netmagis/metro/db
-@dirrm var/netmagis/metro/cache
-@dirrm var/netmagis/metro
-@dirrm var/netmagis
-@dirrm var
+@dirrmtry var/netmagis/metro/wifi
+@dirrmtry var/netmagis/metro/spool
+@dirrmtry var/netmagis/metro/report
+@dirrmtry var/netmagis/metro/log
+@dirrmtry var/netmagis/metro/lock
+@dirrmtry var/netmagis/metro/graph
+@dirrmtry var/netmagis/metro/db
+@dirrmtry var/netmagis/metro/cache
+@dirrmtry var/netmagis/metro
+@dirrmtry var/netmagis
+@dirrmtry var
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%
-@dirrm lib/netmagis/tmp/netmagis/lib/netmagis
-@dirrm lib/netmagis/tmp/netmagis/lib
-@dirrm lib/netmagis/tmp/netmagis
-@dirrm lib/netmagis/tmp
+@dirrmtry lib/netmagis/tmp/netmagis/lib/netmagis
+@dirrmtry lib/netmagis/tmp/netmagis/lib
+@dirrmtry lib/netmagis/tmp/netmagis
+@dirrmtry lib/netmagis/tmp
 @dirrm lib/netmagis/probes
 @dirrm lib/netmagis/plugins
-@dirrm lib/netmagis
 @exec mkdir -p %D/var/netmagis/metro/wifi
 @exec mkdir -p %D/var/netmagis/metro/spool
 @exec mkdir -p %D/var/netmagis/metro/report
