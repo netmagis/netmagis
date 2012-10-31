@@ -47,8 +47,8 @@ groups=staff wheel
 dhcp=example.com  172.16.5.1-172.16.8.254  172.16.10.100-172.16.10.199
 
 name=Public servers
-address=192.51.100.0/24
-address=2001:db8:1:1::/64
+address=198.51.100.0/24
+address=2001:db8:1234::/48
 community=DMZ
 org=Example Corp.
 location=Machine room
