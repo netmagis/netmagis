@@ -56,7 +56,7 @@
 		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="no">
 		    \tableau {
 			\bordure {0} {}
-			\* \taille {100}
+			\taille {100}
 		    } {
 			\casedefauttableau {\centragehorizontal {LEFT}}
 			\casedefauttableau {\centragehorizontal {LEFT}}
@@ -65,19 +65,21 @@
 		    } {
 			\lignetableau {
 			    \casetableau {} {Name}
-			    \multicasetableau {3} {} {
+			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
 				%DOMAINE%
 			    }
+			    \casetableau {} {%TTLLIBELLE%}
+			    \casetableau {} {%TTLVAL%}
 			}
 			\lignetableau {
 			    \casetableau {} {IP address}
-			    \multicasetableau {3} {} {
+			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="adr" SIZE="45" VALUE="%ADR%">
-				~ ~ ~
-				%TTLLIBELLE% %TTLVAL%
 			    }
+			    \casetableau {} {%VIEWLIBELLE%}
+			    \casetableau {} {%VIEWVAL%}
 			}
 			\lignetableau {
 			    \casetableau {} {MAC address}
@@ -112,8 +114,9 @@
 			    }
 			}
 			\lignetableau {
-			    \casetableau {} {~}
-			    \multicasetableau {3} {} {
+			    \multicasetableau {4} {
+				\centragehorizontal {CENTER}
+			    } {
 				<INPUT TYPE="SUBMIT" VALUE="Add">
 			    }
 			}
@@ -143,7 +146,7 @@
 		    <INPUT TYPE="HIDDEN" NAME="tri" VALUE="adr">
 		    \tableau {
 			\bordure {0} {}
-			\* \taille {100}
+			\taille {100}
 		    } {
 			\casedefauttableau {\centragehorizontal {LEFT}}
 			\casedefauttableau {\centragehorizontal {LEFT}}
@@ -161,8 +164,9 @@
 			    }
 			}
 			\lignetableau {
-			    \casetableau {} {~}
-			    \casetableau {} {
+			    \multicasetableau {2} {
+				\centragehorizontal {CENTER}
+			    } {
 				<INPUT TYPE="SUBMIT" NAME="dosearch" VALUE="Search">
 				~ ~ ~ ~
 				or 
@@ -187,30 +191,45 @@
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="add-alias">
 		    \tableau {
 			\bordure {0} {}
-			\* \taille {100}
+			\taille {100}
 		    } {
 			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {RIGHT}}
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {Alias name}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
-				.
-				%DOMAINE%
+				\tableau {
+				    \bordure {0} {}
+				} {
+				    \casedefauttableau {\centragehorizontal {LEFT}}
+				    \casedefauttableau {\centragehorizontal {LEFT}}
+				} {
+				    \lignetableau {
+					\casetableau {} {Alias name}
+					\casetableau {} {
+					    <INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+					    .
+					    %DOMAINE%
+					}
+				    }
+				    \lignetableau {
+					\casetableau {} {Host}
+					\casetableau {} {
+					    <INPUT TYPE="TEXT" NAME="nomref" SIZE="30">
+					    .
+					    %DOMAINEREF%
+					}
+				    }
+				}
 			    }
+			    \casetableau {} {%VIEWLIBELLE%}
+			    \casetableau {} {%VIEWVAL%}
 			}
 			\lignetableau {
-			    \casetableau {} {Host}
-			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nomref" SIZE="30">
-				.
-				%DOMAINEREF%
-			    }
-			}
-			\lignetableau {
-			    \casetableau {} {~}
-			    \casetableau {} {
+			    \multicasetableau {3} {
+				\centragehorizontal {CENTER}
+			    } {
 				<INPUT TYPE="SUBMIT" VALUE="Add">
 			    }
 			}

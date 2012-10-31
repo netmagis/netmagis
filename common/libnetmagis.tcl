@@ -796,6 +796,13 @@ snit::type ::netmagis {
 	}
 	set eidcor $tabuid(idcor)
 
+	#
+	# Initializes user object
+	#
+	::nmuser create ::u
+	u setdb $dbfd
+	u setlogin $login
+
 	return ""
     }
 
@@ -1108,6 +1115,8 @@ snit::type ::netmagis {
 	    if {! $tabuid(present)} then {
 		$self error [mc "User '%s' not authorized" $login]
 	    }
+
+	    u setlogin $login
 	}
 
 	#
@@ -1620,7 +1629,7 @@ snit::type ::netmagis {
 # of the Netmagis application.
 #
 # Methods:
-# - setdb $dbfd
+# - setdb dbfd
 #	set the database handle used to access parameters
 # - class
 #	returns all known classes
@@ -1834,6 +1843,131 @@ snit::type ::config {
 
 	return $r
     }
+}
+
+##############################################################################
+# User characteristics
+##############################################################################
+
+#
+# Netmagis user characteristics class
+#
+# This class stores all informations related to current Netmagis user
+#
+# Methods:
+# - setdb dbfd
+#	set the database handle used to access parameters
+# - setlogin login
+#	set the login name
+#
+# ....
+#
+# - viewname id
+#	returns view name associated to view id (or empty string if error)
+# - viewid name
+#	returns view id associated to view name (or -1 if error)
+# - myviewids
+#	get all authorized view ids
+# - isallowedview id
+#	check if a view is authorized (1 if ok, 0 if not)
+#
+# History
+#   2012/10/31 : pda/jean : design
+#
+
+snit::type ::nmuser {
+    # database handle
+    variable db ""
+    # login of user
+    variable login ""
+
+    # View management
+    # view information is loaded
+    variable viewsloaded 0
+    # allviews(id:<id>)=name
+    # allviews(name:<name>)=id
+    variable allviews -array {}
+    # authviews(<id>)=1
+    variable authviews -array {}
+
+    method setdb {dbfd} {
+	set db $dbfd
+    }
+
+    method setlogin {newlogin} {
+	if {$login ne $newlogin} then {
+	    set viewsisloaded 0
+	}
+	set login $newlogin
+    }
+
+
+    #######################################################################
+    # View management
+    #######################################################################
+
+    proc load-views {selfns} {
+	array unset allviews
+	set sql "SELECT * FROM dns.view"
+	pg_select $db $sql tab {
+	    set idview $tab(idview)
+	    set name   $tab(name)
+	    set allviews(id:$idview) $name
+	    set allviews(name:$name) $idview
+	}
+
+	array unset authviews
+#	set sql "SELECT d.idview
+#			FROM dns.dr_view d, global.corresp c
+#			WHERE d.idgrp = c.idgrp AND c.idcor = $idcor"
+	set qlogin [::pgsql::quote $login]
+	set sql "SELECT d.idview
+			FROM dns.dr_view d, global.corresp c
+			WHERE d.idgrp = c.idgrp AND c.login = '$qlogin'"
+	pg_select $db $sql tab {
+	    set idview $tab(idview)
+	    set authviews($idview) 1
+	}
+
+	set viewsloaded 1
+    }
+
+    method viewname {id} {
+	if {! $viewsloaded} then {
+	    load-views $selfns
+	}
+	set r -1
+	if {[info exists allviews(id:$id)]} then {
+	    set r $allviews(id:$id)
+	}
+	return $r
+    }
+
+    method viewid {name} {
+	if {! $viewsloaded} then {
+	    load-views $selfns
+	}
+	set r ""
+	if {[info exists allviews(name:$name)]} then {
+	    set r $allviews(name:$name)
+	}
+	return $r
+    }
+
+    method myviewids {} {
+	if {! $viewsloaded} then {
+	    load-views $selfns
+	}
+	return [array names authviews]
+    }
+
+    method isallowedview {id} {
+	if {! $viewsloaded} then {
+	    load-views $selfns
+	}
+	return [info exists authviews($id)]
+    }
+
 }
 
 ##############################################################################
@@ -2382,6 +2516,7 @@ proc dotattr-match-get {str _tabdot} {
     }
     return $attr
 }
+
 
 ##############################################################################
 # Cosmetic
@@ -3102,6 +3237,7 @@ proc read-rr-by-mac {dbfd addr _trr} {
 #   - parameters:
 #	- dbfd : database handle
 #	- addr : address to search for
+#	- idview : id of view
 #	- _trr : empty array
 # Output:
 #   - return value: 1 if ok, 0 if not found
@@ -3114,11 +3250,13 @@ proc read-rr-by-mac {dbfd addr _trr} {
 #   2010/11/29 : pda      : i18n
 #
 
-proc read-rr-by-ip {dbfd addr _trr} {
+proc read-rr-by-ip {dbfd addr idview _trr} {
     upvar $_trr trr
 
     set found 0
-    set sql "SELECT idrr FROM dns.rr_ip WHERE adr = '$addr'"
+    set sql "SELECT idrr
+			FROM dns.rr_ip
+    			WHERE adr = '$addr' AND idview = $idview"
     pg_select $dbfd $sql tab {
 	set found 1
 	set idrr $tab(idrr)
@@ -3161,7 +3299,7 @@ proc read-rr-by-ip {dbfd addr _trr} {
 #	_trr(date) : date of last modification
 #	_trr(ip) : list of all IP adresses {{idview addr} ...}
 #	_trr(mx) : MX list {{idview prio idrr} {idview prio idrr} ...}
-#	_trr(cname) : id of pointed RR, if the name is an alias {idview idrr}
+#	_trr(cname) : list of pointed RR, if name is an alias {{idview idrr}...}
 #	_trr(aliases) : list of all RR pointing to this object {{idview idrr}..}
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 #	_trr(rolemail) : id of herbegeur {{idview idheberg idviewheb} ...}
@@ -3236,7 +3374,7 @@ proc read-rr-by-id {dbfd idrr _trr} {
 	set trr(cname) ""
 	set sql "SELECT idview, cname FROM dns.rr_cname WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
-	    set trr(cname) [list $tab(idview) $tab(cname)]
+	    lappend trr(cname) [list $tab(idview) $tab(cname)]
 	}
 	set trr(aliases) {}
 	set sql "SELECT idview, idrr FROM dns.rr_cname WHERE cname = $idrr"
@@ -3266,7 +3404,7 @@ proc read-rr-by-id {dbfd idrr _trr} {
 }
 
 #
-# Get all IP address in a view for a RR
+# Get RR information filtered for a view
 #
 # Input:
 #   - parameters:
@@ -3279,17 +3417,95 @@ proc read-rr-by-id {dbfd idrr _trr} {
 #   2012/10/08 : pda/jean : design
 #
 
-proc ip-by-view {_trr idview} {
+proc rr-ip-by-view {_trr idview} {
     upvar $_trr trr
 
     set lip {}
-    foreach ipview $trr(ip) {
-	lassign $ipview id ip
-	if {$id == $idview} then {
-	    lappend lip $ip
+    if {[info exists trr(ip)]} then {
+	foreach ipview $trr(ip) {
+	    lassign $ipview id ip
+	    if {$id == $idview} then {
+		lappend lip $ip
+	    }
 	}
     }
     return $lip
+}
+
+proc rr-cname-by-view {_trr idview} {
+    upvar $_trr trr
+
+    set r ""
+    if {[info exists trr(cname)]} then {
+	foreach cv $trr(cname) {
+	    lassign $cv id cname
+	    if {$id == $idview} then {
+		set r $cname
+		break
+	    }
+	}
+    }
+    return $r
+}
+
+proc rr-aliases-by-view {_trr idview} {
+    upvar $_trr trr
+
+    set laliases {}
+    if {[info exists trr(aliases)]} then {
+	foreach alview $trr(aliases) {
+	    lassign $alview id idalias
+	    if {$id == $idview} then {
+		lappend laliases $ip
+	    }
+	}
+    }
+    return $laliases
+}
+
+proc rr-mx-by-view {_trr idview} {
+    upvar $_trr trr
+
+    set lmx {}
+    if {[info exists trr(mx)]} then {
+	foreach mxview $trr(mx) {
+	    lassign $mxview id prio idrr
+	    if {$id == $idview} then {
+		lappend lmx [list $prio $idrr]
+	    }
+	}
+    }
+    return $lmx
+}
+
+proc rr-rolemail-by-view {_trr idview} {
+    upvar $_trr trr
+
+    set lrm {}
+    if {[info exists trr(rolemail)]} then {
+	foreach rmview $trr(rolemail) {
+	    lassign $rmview id idheb idviewheb
+	    if {$id == $idview} then {
+		lappend lrm [list $idheb $idviewheb]
+	    }
+	}
+    }
+    return $lrm
+}
+
+proc rr-adrmail-by-view {_trr idview} {
+    upvar $_trr trr
+
+    set lam {}
+    if {[info exists trr(adrmail)]} then {
+	foreach amview $trr(adrmail) {
+	    lassign $amview id idrradr idviewadr
+	    if {$id == $idview} then {
+		lappend lam [list $idrradr $idviewadr]
+	    }
+	}
+    }
+    return $lam
 }
 
 #
@@ -3712,6 +3928,7 @@ proc touch-rr {dbfd idrr} {
 #   2008/07/25 : pda/jean : design
 #   2010/10/31 : pda      : add ttl
 #   2010/11/29 : pda      : i18n
+#   2012/10/31 : pda/jean : add views
 #
 
 proc display-rr {dbfd idrr _trr} {
@@ -3736,19 +3953,21 @@ proc display-rr {dbfd idrr _trr} {
     lappend lines [list Normal [mc "Name"] "$trr(nom).$trr(domaine)"]
 
     # IP address(es)
-    switch [llength $trr(ip)] {
-	0 {
-	    set at [mc "IP address"]
-	    set aa [mc "(none)"]
+    set nip [llength $trr(ip)]
+    if {$nip <= 1} then {
+	set at [mc "IP address and view"]
+    } else {
+	set at [mc "IP addresses and views"]
+    }
+    if {$nip == 0} then {
+	set aa [mc "(none)"]
+    } else {
+	set aa {}
+	foreach ipv $trr(ip) {
+	    lassign $ipv idview ip
+	    lappend aa "$ip ([u viewname $idview])"
 	}
-	1 {
-	    set at [mc "IP address"]
-	    set aa $trr(ip)
-	}
-	default {
-	    set at [mc "IP addresses"]
-	    set aa $trr(ip)
-	}
+	set aa [join $aa ", "]
     }
     lappend lines [list Normal $at $aa]
 
@@ -3803,9 +4022,10 @@ proc display-rr {dbfd idrr _trr} {
 
     # aliases
     set la {}
-    foreach idalias $trr(aliases) {
+    foreach va $trr(aliases) {
+	lassign $va idview idalias
 	if {[read-rr-by-id $dbfd $idalias ta]} then {
-	    lappend la "$ta(nom).$ta(domaine)"
+	    lappend la "$ta(nom).$ta(domaine) ([u viewname $idview])"
 	}
     }
     if {[llength $la] > 0} then {
@@ -3814,37 +4034,6 @@ proc display-rr {dbfd idrr _trr} {
 
     set html [::arrgen::output "html" $libconf(tabmachine) $lines]
     return $html
-}
-
-##############################################################################
-# Read views
-##############################################################################
-
-#
-# Read all views from database
-#
-# Input:
-#   - parameters:
-#	- dbfd: database handle
-#	- _tabview: array to fill with view names
-#	- _tabid: array to fill with view ids
-# Output:
-#   - parameter _tabview: tabview(<viewname>) <id>
-#   - parameter _tabid: tabview(<id>) <viewname>
-#
-# History
-#   2012/10/08 : pda/jean : views
-#
-
-proc read-all-views {dbfd _tabview _tabid} {
-    upvar $_tabview tabview
-    upvar $_tabid   tabid
-
-    set sql "SELECT name, idview FROM dns.view"
-    pg_select $dbfd $sql tab {
-	set tabview($tab(name)) $tab(idview)
-	set tabid($tab(idview)) $tab(name)
-    }
 }
 
 ##############################################################################
@@ -4096,6 +4285,74 @@ proc check-iddhcpprofil {dbfd iddhcpprofil _dhcpprofil _msg} {
 }
 
 ##############################################################################
+# View validation
+##############################################################################
+
+#
+# Checks if at least one view is selected (and issue error message)
+#
+# Input:
+#   - parameters:
+#	- idviews : list of view ids given by the user
+# Output:
+#   - return value: none if no error
+#
+# History
+#   2012/10/31 : pda/jean : design
+#
+
+proc at-least-one-view {idviews} {
+    if {[llength $idviews] == 0} then {
+	d error [mc "You must select at least one view"]
+    }
+}
+
+#
+# Checks if the selected views are authorized for this user
+#
+# Input:
+#   - parameters:
+#	- views : list of view ids given by the user
+# Output:
+#   - return value: empty string or error message
+#
+# History
+#   2012/10/30 : pda/jean : design
+#   2012/10/31 : pda/jean : use nmuser class
+#
+
+proc check-views {views} {
+    set msg ""
+
+    if {[llength $views] == 0} then {
+	set msg [mc "You must provide at least one view"]
+
+    } else {
+	#
+	# Check authorized views
+	#
+
+	set bad {}
+	foreach id $views {
+	    if {! [u isallowedview $id]} then {
+		set name [u viewname $id]
+		if {$name eq ""} then {
+		    set name $id
+		}
+		lappend bad $name
+	    }
+	}
+
+	if {[llength $bad]> 0} then {
+	    set bad [join $bad ", "]
+	    set msg [mc "You don't have access to these views: %s" $bad]
+	}
+    }
+
+    return $msg
+}
+
+##############################################################################
 # Domain validation
 ##############################################################################
 
@@ -4238,6 +4495,7 @@ proc check-authorized-ip {dbfd idcor adr} {
 # History
 #   2002/04/19 : pda/jean : design
 #   2010/11/29 : pda      : i18n
+#   2012/10/30 : pda/jean : add views
 #
 
 proc check-name-by-addresses {dbfd idcor idrr _trr} {
@@ -4255,13 +4513,20 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
     }
 
     #
-    # Check all addresses
+    # Check all addresses and views
     #
 
-    foreach ip $trr(ip) {
-	if {! [check-authorized-ip $dbfd $idcor $ip]} then {
-	    set ok 0
-	    break
+    if {[info exists trr(ip)]} then {
+	foreach viewip $trr(ip) {
+	    lassign $viewip idview ip
+	    if {! [u isallowedview $idview]} then {
+		set ok 0
+		break
+	    }
+	    if {! [check-authorized-ip $dbfd $idcor $ip]} then {
+		set ok 0
+		break
+	    }
 	}
     }
 
@@ -4278,6 +4543,7 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	- idcor : user id
 #	- name : name to test (first component of FQDN)
 #	- domain : domain to test (the n-1 last components of FQDN)
+#	- idviews : list of view ids in which this FQDN must be tested
 #	- trr : in return, information on the host (see read-rr-by-id)
 #	- context : the context to check
 # Output:
@@ -4288,7 +4554,7 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 # Detail of tests:
 #    According to context:
 #	"host"
-#	    check-domain (domain, idcor, "")
+#	    check-domain (domain, idcor, "") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
 #	    if name.domain is ADDRMAIL
@@ -4298,9 +4564,9 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #		then check-all-IP-addresses (machine, idcor)
 #	    if no test is false, then OK
 #	"existing-host"
-#	    identical to "host", but the name must be have at least one IP address
+#	    identical to "host", but the name must have at least one IP address
 #	"del-name"
-#	    check-domain (domain, idcor, "")
+#	    check-domain (domain, idcor, "") and views
 #	    if name.domain is ALIAS
 #		then check-all-IP-addresses (pointed host, idcor)
 #	    if name.domain is MX then error
@@ -4311,26 +4577,26 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #		      check-domain (domain, idcor, "")
 #	    if no test is false, then OK
 #	"alias"
-#	    check-domain (domain, idcor, "")
+#	    check-domain (domain, idcor, "") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
 #	    if name.domain is ADDRMAIL then error
 #	    if name.domain has IP addresses then error
 #	    if no test is false, then OK
 #	"mx"
-#	    check-domain (domain, idcor, "")
+#	    check-domain (domain, idcor, "") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX
 #		then check-all-IP-addresses (mail exchangers, idcor)
 #	    if name.domain is ADDRMAIL then error
 #	    if no test is false, then OK
 #	"addrmail"
-#	    check-domain (domain, idcor, "rolemail")
+#	    check-domain (domain, idcor, "rolemail") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
 #	    if name.domain is ADDRMAIL
 #		check-all-IP-addresses (mail host, idcor)
-#		      check-domain (domain, idcor, "")
+#		check-domain (domain, idcor, "")
 #	    if name.domain is HEBERGEUR
 #		check that is does not hold mail for another host besides itself
 #	    if name.domain has IP addresses
@@ -4343,14 +4609,17 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	    else check that all IP addresses are mine (with an AND)
 #	end if
 #
+# Bug: this procedure is never called with the "mx" parameter
+#
 # History
 #   2004/02/27 : pda/jean : specification
 #   2004/02/27 : pda/jean : coding
 #   2004/03/01 : pda/jean : use trr(iddom) instead of iddom
 #   2010/11/29 : pda      : i18n
+#   2012/10/30 : pda/jean : add views
 #
 
-proc check-authorized-host {dbfd idcor name domain _trr context} {
+proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
     upvar $_trr trr
 
     array set testrights {
@@ -4410,36 +4679,42 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
     }
 
     #
-    # Process tests in the given order, and break as soon as a test fails
+    # For each view, process tests in the given order, and break as
+    # soon as a test fails
     #
 
     set fqdn "$name.$domain"
-    set exists 0
-    foreach a $testrights($context) {
-	set parm [lindex $a 1]
-	switch [lindex $a 0] {
-	    domain {
-		set iddom -1
-		set msg [check-domain $dbfd $idcor iddom domain $parm]
-		if {$msg ne ""} then {
-		    return $msg
-		}
 
-		set exists [read-rr-by-name $dbfd $name $iddom trr]
-		if {! $exists} then {
-		    set trr(idrr) ""
-		    set trr(iddom) $iddom
+    foreach idview $idviews {
+	foreach a $testrights($context) {
+	    set parm [lindex $a 1]
+	    switch [lindex $a 0] {
+		domain {
+		    set msg [check-views [list $idview]]
+		    if {$msg ne ""} then {
+			return $msg
+		    }
+		    set viewname [u viewname $idview]
+
+		    set iddom -1
+		    set msg [check-domain $dbfd $idcor iddom domain $parm]
+		    if {$msg ne ""} then {
+			return $msg
+		    }
+
+		    if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
+			set trr(idrr) ""
+			set trr(iddom) $iddom
+		    }
 		}
-	    }
-	    alias {
-		if {$exists} then {
-		    set idrr $trr(cname)
-		    if {$idrr ne ""} then {
+		alias {
+		    set idcname [rr-cname-by-view trr $idview]
+		    if {$idcname ne ""} then {
 			switch $parm {
 			    REJECT {
-				read-rr-by-id $dbfd $idrr talias
+				read-rr-by-id $dbfd $idcname talias
 				set alias "$talias(nom).$talias(domaine)"
-				return [mc {'%1$s' is an alias of '%2$s'} $fqdn $alias]
+				return [mc {'%1$s' is an alias of '%2$s' in view '%3$s'} $fqdn $alias $viewname]
 			    }
 			    CHECK {
 				set ok [check-name-by-addresses $dbfd $idcor $idrr t]
@@ -4453,10 +4728,8 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 			}
 		    }
 		}
-	    }
-	    mx {
-		if {$exists} then {
-		    set lmx $trr(mx)
+		mx {
+		    set lmx [rr-mx-by-view trr $idview]
 		    foreach mx $lmx {
 			switch $parm {
 			    REJECT {
@@ -4475,15 +4748,14 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 			}
 		    }
 		}
-	    }
-	    addrmail {
-		if {$exists} then {
-		    set idrr $trr(rolemail)
-		    if {$idrr ne ""} then {
+		addrmail {
+		    set rm [rr-rolemail-by-view trr $idview]
+		    if {$rm ne ""} then {
+			lassign $rm idrr idviewheb
 			switch $parm {
 			    REJECT {
 				# IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-				return [mc "'%s' is a mail role" $fqdn]
+				return [mc {'%1$s' is a mail role in view '%2$s'} $fqdn $viewname]
 			    }
 			    CHECK {
 				if {! [read-rr-by-id $dbfd $idrr trrh]} then {
@@ -4511,21 +4783,14 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 			}
 		    }
 		}
-	    }
-	    hebergeur {
-		if {$exists} then {
-		    set ladr $trr(adrmail)
+		hebergeur {
+		    set ladr [rr-adrmail-by-view trr $idview]
 		    switch $parm {
-			REJECT {
-			    if {[llength $ladr] > 0} then {
-				return [mc "'%s' is a mail host for mail domains" $fqdn]
-			    }
-			}
 			CHECK {
-			    # remove the name from the list of mail
-			    # domains hosted on this host
-			    set pos [lsearch -exact $ladr $trr(idrr)]
-			    if {$pos != -1} then {
+			    # remove the name (in all views) from the list
+			    # of mail domains hosted on this host
+			    while {[set pos [lsearch -exact -index 0
+						$ladr $trr(idrr)]] != 1} {
 				set ladr [lreplace $ladr $pos $pos]
 			    }
 			    if {[llength $ladr] > 0} then {
@@ -4537,16 +4802,17 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 			}
 		    }
 		}
-	    }
-	    ip {
-		if {$exists} then {
+		ip {
+		    set lip [rr-ip-by-view trr $idview]
 		    switch $parm {
 			REJECT {
-			    return [mc "'%s' has IP addresses" $fqdn]
+			    if {[llength $lip] > 0} then {
+				return [mc {'%1$s' has IP addresses in view '%2$s'} $fqdn $viewname]
+			    }
 			}
 			EXISTS {
-			    if {$trr(ip) eq ""} then {
-				return [mc "Name '%s' is not a host" $fqdn]
+			    if {[llength $lip] == 0} then {
+				return [mc {Name '%1$s' is not a host in view '%2$s'} $fqdn $viewname]
 			    }
 			}
 			CHECK {
@@ -4558,10 +4824,6 @@ proc check-authorized-host {dbfd idcor name domain _trr context} {
 			default {
 			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			}
-		    }
-		} else {
-		    if {$parm eq "EXISTS"} {
-			return [mc "Name '%s' does not exist" $fqdn]
 		    }
 		}
 	    }
@@ -5264,6 +5526,70 @@ proc couple-domains {dbfd idcor where} {
     }
 
     return $lcouples
+}
+
+#
+# Get an HTML listbox to select some views. This may be either a simple
+# text with a hidden field if the group has access to only one view,
+# or a listbox.
+#
+# Input:
+#   - dbfd : database handle
+#   - idcor : user id
+#   - field : field name
+#   - sel : list of view id to pre-select, or empty list to pre-select
+#	default views (those cited in the dr_view.selected column)
+# Output:
+#   - return value: list with 2 HTML strings {title menu}
+#
+# History :
+#   2012/10/30 : pda/jean : design
+#
+
+proc menu-views {dbfd idcor field sel} {
+    set nsel [llength $sel]
+    set lsel {}
+    set lcouples {}
+    set sql "SELECT v.idview, v.name, d.selected
+		FROM dns.view v, dns.dr_view d, global.corresp
+		WHERE corresp.idcor = $idcor
+		    AND d.idgrp = corresp.idgrp
+		    AND v.idview = d.idview
+		ORDER BY d.sort ASC, v.name ASC"
+    set i 0
+    pg_select $dbfd $sql tab {
+	lappend lcouples [list $tab(idview) $tab(name)]
+	if {$nsel == 0} then {
+	    # no sel parameter given: use selected views for this group
+	    if {$tab(selected)} then {
+		lappend lsel $i
+	    }
+	} else {
+	    # sel is a list of idviews
+	    # search our idview in sel
+	    if {[lsearch -exact $sel $tab(idview)] != -1} then {
+		lappend lsel $i
+	    }
+	}
+	incr i
+    }
+
+    set nviews [llength $lcouples]
+    switch $nviews {
+	0 {
+	    d error [mc "Sorry, but you do not have access to any view"]
+	}
+	1 {
+	    set title ""
+	    set html [::webapp::form-hidden $field $v]
+	}
+	default {
+	    set title [mc "Views"]
+	    set html [::webapp::form-menu $field $nviews 1 $lcouples $lsel]
+	}
+    }
+
+    return [list $title $html]
 }
 
 ##############################################################################

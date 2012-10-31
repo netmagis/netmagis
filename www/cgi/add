@@ -60,6 +60,7 @@
 #   2010/12/14 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
 #   2012/09/20 : pda/jean : remove dns update interval
+#   2012/10/30 : pda/jean : add views
 #
 
 #
@@ -143,6 +144,12 @@ d cgi-register {action {}} {
     global conf
 
     #
+    # Get authorized views
+    #
+
+    lassign [menu-views $dbfd $tabuid(idcor) "idviews" {}] viewlibelle viewval
+
+    #
     # Get host types
     #
 
@@ -213,6 +220,8 @@ d cgi-register {action {}} {
     #
 
     d result $conf(page-add) [list \
+				[list %VIEWLIBELLE% $viewlibelle] \
+				[list %VIEWVAL% $viewval] \
 				[list %DOMAINE% $domaine] \
 				[list %DOMAINEREF% $domaineref] \
 				[list %MENUHINFO% $menuhinfo] \
@@ -248,6 +257,7 @@ d cgi-register {action add-host} {
     {confirm	1 1}
     {nom	1 1}
     {domaine	1 1}
+    {idviews	0 9999}
     {adr	1 1}
     {mac	1 1}
     {iddhcpprofil 1 1}
@@ -264,6 +274,12 @@ d cgi-register {action add-host} {
     set idcor $tabuid(idcor)
 
     #
+    # At least one view
+    #
+
+    at-least-one-view $idviews
+
+    #
     # Check name and domain
     #
 
@@ -273,7 +289,7 @@ d cgi-register {action add-host} {
     }
     set nom [string tolower $nom]
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "host"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine $idviews trr "host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -311,8 +327,11 @@ d cgi-register {action add-host} {
 	d error [mc "You don't have rights on '%s'" $adr]
     }
 
-    if {[read-rr-by-ip $dbfd $adr tabrrbidon]} then {
-	d error [mc "IP address '%s' already exists" $adr]
+    foreach idview $idviews {
+	if {[read-rr-by-ip $dbfd $adr $idview tabrrbidon]} then {
+	    set v [u viewname $idview]
+	    d error [mc {IP address '%1$s' already exists in view '%2$s'} $adr $v]
+	}
     }
 
     #
@@ -400,8 +419,8 @@ d cgi-register {action add-host} {
     # Common code for confirmation
     #
 
-    set l {nom domaine adr mac iddhcpprofil droitsmtp ttl hinfo commentaire
-			    respnom respmel}
+    set l {nom domaine adr idviews mac iddhcpprofil droitsmtp ttl hinfo
+			    commentaire respnom respmel}
     set hidden [::webapp::hide-parameters $l ftab]
 
     #
@@ -459,7 +478,7 @@ d cgi-register {action add-host} {
 	set msg [add-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
 		    $droitsmtp $ttl $commentaire $respnom $respmel $idcor trr]
 	if {$msg ne ""} then {
-	    d dbabort [mc "add %s" $nom]
+	    d dbabort [mc "add %s" $nom] $msg
 	}
 
     } else {
@@ -509,9 +528,14 @@ d cgi-register {action add-host} {
 	}
     }
 
-    set sql "INSERT INTO dns.rr_ip VALUES ($trr(idrr), '$adr')"
+    set sql {}
+    foreach idview $idviews {
+	lappend sql "INSERT INTO dns.rr_ip (idrr, adr, idview)
+			    VALUES ($trr(idrr), '$adr', $idview)"
+    }
+    set sql [join $sql "; "]
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-       d dbabort [mc "add %s" $adr]
+       d dbabort [mc "add %s" $adr] $msg
     }
 
     #
@@ -524,7 +548,10 @@ d cgi-register {action add-host} {
     }
 
     d dbcommit [mc "add %s" "$nom.$domaine"]
-    d writelog "addhost" "add $nom.$domaine ($adr)"
+    foreach idview $idviews {
+	set v [u viewname $idview]
+	d writelog "addhost" "add $nom.$domaine ($adr)/$v"
+    }
 
     #
     # Prepare next step in journey
@@ -722,11 +749,18 @@ d cgi-register {action add-alias} {
     {domaine	1 1}
     {nomref	1 1}
     {domaineref	1 1}
+    {idviews	0 9999}
 } {
     global conf
 
     set login $tabuid(login)
     set idcor $tabuid(idcor)
+
+    #
+    # At least one view
+    #
+
+    at-least-one-view $idviews
 
     #
     # Check names of alias and host
@@ -748,13 +782,13 @@ d cgi-register {action add-alias} {
     # Check alias and host permissions
     #
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "alias"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine $idviews trr "alias"]
     if {$msg ne ""} then {
 	d error $msg
     }
     set iddom $trr(iddom)
 
-    set msg [check-authorized-host $dbfd $idcor $nomref $domaineref trrref "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $nomref $domaineref $idviews trrref "existing-host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -769,33 +803,45 @@ d cgi-register {action add-alias} {
     # This name was unknown, insert a new RR for new alias name
     #
 
-    set msg [add-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor newrr]
-    if {$msg ne ""} then {
-	d dbabort [mc "add %s" $nom] $msg
+    if {$trr(idrr) eq ""} then {
+	set msg [add-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
+	if {$msg ne ""} then {
+	    d dbabort [mc "add %s" $nom] $msg
+	}
     }
 
     #
     # Add alias link between alias and host
     #
 
-    set sql "INSERT INTO dns.rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
+    set sql {}
+    foreach idview $idviews {
+	lappend sql "INSERT INTO dns.rr_cname (idrr, cname, idview)
+    				VALUES ($trr(idrr), $trrref(idrr), $idview)"
+    }
+    set sql [join $sql "; "]
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	d dbabort [mc "add %s" [mc "alias"]] $msg
     }
 
     
     d dbcommit [mc "add %s" "$nom.$domaine"]
-    d writelog "addalias" "add alias $nom.$domaine -> $nomref.$domaineref"
+    set allviews {}
+    foreach idview $idviews {
+	set v [u viewname $idview]
+	lappend allviews $v
+	d writelog "addalias" "add alias $nom.$domaine/$v -> $nomref.$domaineref"
+    }
 
     #
     # End of script: output page and close database
     #
 
+    set v [join $allviews ", "]
+
     d result $conf(page-alias) [list \
-					    [list %NOM%        $nom] \
-					    [list %DOMAINE%    $domaine] \
-					    [list %NOMREF%     $nomref] \
-					    [list %DOMAINEREF% $domaineref] \
+				    [list %FQDN%    "$nom.$domaine ($v)"] \
+				    [list %FQDNREF% "$nomref.$domaineref"] \
 			    ]
     return 0
 }

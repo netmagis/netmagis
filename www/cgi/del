@@ -131,7 +131,7 @@ d cgi-register {action del-name} {
 	# It is not an alias, there must be at least an IP address
 	#
 	if {$trr(ip) eq ""} then {
-	    d error [mc "Name '%s' is not a host" $fqdn]
+	    d error [mc {Name '%1$s' is not a host in view '%2$s'} $fqdn XXX]
 	}
 
     } else {

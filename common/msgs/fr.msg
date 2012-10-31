@@ -243,8 +243,10 @@
  {First name}	{Prénom}
  {Domain}	{Domaine}
  {View}		{Vue}
+ {Views}	{Vues}
  {IP address}	{Adresse IP}
- {IP addresses}	{Adresses IP}
+ {IP address and view}	{Adresse IP vue}
+ {IP addresses and views}	{Adresses IP et vues}
  {(none)}	{(aucune)}
  {MAC address}	{Adresse MAC}
  {DHCP profile}	{Profil DHCP}
@@ -304,16 +306,18 @@
  {No profile} {Aucun profil}
 
  {Internal error: invalid context '%s'} {Erreur interne : contexte '%s' invalide}
- {'%1$s' is an alias of '%2$s'} {'%1$s' est un alias de '%2$s'}
+ {'%1$s' is an alias of '%2$s' in view '%3$s'} {'%1$s' est un alias de '%2$s' dans la vue '%3$s'}
+ {You must provide at least one view} {Vous devez indiquer au moins une vue}
+ {You don't have access to these views: %s} {Vous n'avez pas accès à ces vues : %s}
  {You don't have rights on '%s'} {Vous n'avez pas les droits sur '%s'}
  {Internal error: invalid parameter '%1$s' for '%2$s'} {Erreur interne : paramètre invalide '%$1s' pour '%2$s'}
  {'%s' is a MX} {'%s' est un MX}
- {'%s' is a mail role} {'%s' est un rôle de messagerie}
+ {'%1$s' is a mail role in view '%2$s'} {'%1$s' est un rôle de messagerie dans la vue '%2$s'}
  {Internal error: id '%s' doesn't exists for a mail host} {Erreur interne : hébergeur d'id '%s' inexistant}
  {You don't have rights on host holding mail for '%s'} {Vous n'avez pas les droits sur l'hébergeur de '%s'}
  {'%s' is a mail host for mail domains} {'%s' est un hébergeur pour des adresses de messagerie}
- {'%s' has IP addresses} {'%s' a des adresses IP}
- {Name '%s' is not a host} {Le nom '%s' ne correspond pas à une machine}
+ {'%1$s' has IP addresses in view '%2$s'} {'%1$s' a des adresses IP dans la vue '%2$s'}
+ {Name '%1$s' is not a host in view '%2$s'} {Le nom '%1$s' ne correspond pas à une machine dans la vue '%2$s'}
  {Name '%s' does not exist} {Le nom '%s' n'existe pas}
  {Domain '%s' not found} {Domaine '%s' non trouvé}
  {Domain-id '%s' not found} {Identificateur de domaine '%s' non trouvé}
@@ -329,6 +333,7 @@
  {Use SMTP} {Émettre en SMTP}
  {TTL} {TTL}
  { (in seconds)} { (en secondes)}
+ {Sorry, but you do not have access to any view} {Désolé, mais vous n'avez accès à aucune vue}
  {Sorry, but you do not have any active domain} {Désolé, mais vous n'avez aucun domaine actif}
  {No profile} {Aucun profil}
  {yes}		{oui}
@@ -706,7 +711,7 @@
  {Change log of '%1$s' at %2$s} {Log des modifications de '%1$s' au %2$s}
  {No message for '%s'} {Aucun message pour '%s'}
  {Last message for '%1$s' at %2$s} {Dernier message pour '%1$s' au %2$s}
- {IP address '%s' already exists} {L'adresse '%s' existe déjà}
+ {IP address '%1$s' already exists in view '%2$s'} {L'adresse '%1$s' existe déjà dans la vue '%2$s'}
  {You cannot set a DHCP profile without assigning a MAC address} {Impossible de configurer un profil DHCP sans adresse MAC}
  {Host type '%s' not found} {Type de machine '%s' non trouvé}
  {Invalid address count '%s'} {Nombre '%s' d'adresses invalide}

@@ -42,11 +42,11 @@
     } {
 	\lignetableau {
 	    \casetableau {} {Nom de l'alias}
-	    \casetableau {} {%NOM%.%DOMAINE%}
+	    \casetableau {} {%FQDN%}
 	}
 	\lignetableau {
 	    \casetableau {} {Pointe vers}
-	    \casetableau {} {%NOMREF%.%DOMAINEREF%}
+	    \casetableau {} {%FQDNREF%}
 	}
     }
 }

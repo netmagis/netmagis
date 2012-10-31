@@ -261,6 +261,33 @@ proc read-idcor {dbfd login} {
     return $idcor
 }
 
+#
+# Read all views from database
+#
+# Input:
+#   - parameters:
+#	- dbfd: database handle
+#	- _tabview: array to fill with view names
+#	- _tabid: array to fill with view ids
+# Output:
+#   - parameter _tabview: tabview(<viewname>) <id>
+#   - parameter _tabid: tabview(<id>) <viewname>
+#
+# History
+#   2012/10/08 : pda/jean : views
+#
+
+proc read-all-views {dbfd _tabview _tabid} {
+    upvar $_tabview tabview
+    upvar $_tabid   tabid
+
+    set sql "SELECT name, idview FROM dns.view"
+    pg_select $dbfd $sql tab {
+	set tabview($tab(name)) $tab(idview)
+	set tabid($tab(idview)) $tab(name)
+    }
+}
+
 ##############################################################################
 # Import group contents
 ##############################################################################
@@ -1888,7 +1915,7 @@ proc import-mailrole {verbose argv dbfd} {
 	    set idviewheb $tabview($viewheb)
 	    set iddom2 $tabdom($d2)
 	    if {[read-rr-by-name $dbfd $n2 $iddom2 trr2]} then {
-		if {[llength [ip-by-view trr2 $idviewheb]] == 0} then {
+		if {[llength [rr-ip-by-view trr2 $idviewheb]] == 0} then {
 		    set err 1
 		    warning "'$n2.$d2' is not a host"
 		}
