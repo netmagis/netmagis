@@ -36,6 +36,13 @@
 
     \titre {1} {Netmagis : Nouveautés}
 
+    \titre {2} {[2012/10/31] Netmagis figure dans les ports de FreeBSD}
+
+    Grâce aux efforts patients de Chris Rees and Olli Hauer,
+    Netmagis \lien {figure maintenant dans les ports de FreeBSD}
+    {http://svnweb.FreeBSD.org/ports?view=revision&revision=306707}.
+
+
     \titre {2} {[2012/06/22] La version 2.1.0 de Netmagis est disponible}
 
     La \lien {version 2.1.0 de Netmagis} {/download.html} est

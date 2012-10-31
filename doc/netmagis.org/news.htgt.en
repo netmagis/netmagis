@@ -37,6 +37,13 @@
     \titre {1} {Netmagis: News}
 
 
+    \titre {2} {[2012/10/31] Netmagis is in the FreeBSD ports tree}
+
+    Thanks to patient efforts of Chris Rees and Olli Hauer,
+    Netmagis is now \lien {included in the FreeBSD ports tree}
+    {http://svnweb.FreeBSD.org/ports?view=revision&revision=306707}.
+
+
     \titre {2} {[2012/06/22] Netmagis 2.1.0 is released}
 
     The 2.1.0 version of Netmagis is available on the
