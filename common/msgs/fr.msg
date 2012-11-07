@@ -289,7 +289,7 @@
  {Responsible}	{Responsable}
  {location} {localisation}
  {description} {description}
- {Declared addresses (IPv4+IPv6): %s} {Adresses déclarées (IPv4+IPv6) : %s}
+ {Declared addresses (IPv4+IPv6) in view '%1$s': %2$s} {Adresses déclarées (IPv4+IPv6) dans la vue '%1$s' : %2$s}
  {List of declared addresses} {Liste des adresses déclarées}
  {Type}		{Type}
  {Method}	{Méthode}
@@ -634,8 +634,8 @@
  {%1$s MAC-IP address associations found for %2$s:} {%1$s associations IP-MAC trouvées pour %2$s :}
  {No MAC-IP address association found for %s} {Aucune association IP-MAC trouvée pour %s}
  {address not allowed} {adresse non accessible}
- {available address} {adresse disponible}
- {declared address} {adresse déclarée}
+ {available address in all views} {adresse disponible dans toutes les vues}
+ {declared address in at least one view} {adresse déclarée dans au moins une vue}
  {non-declared address within a DHCP range} {adresse non déclarée, figurant dans un intervalle DHCP}
  {declared address, within a DHCP range} {adresse déclarée, figurant dans un intervalle DHCP}
  {IPv4 address map} {Carte des adresses IPv4}

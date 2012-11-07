@@ -167,6 +167,7 @@
 			    \multicasetableau {2} {
 				\centragehorizontal {CENTER}
 			    } {
+				<INPUT TYPE="HIDDEN" NAME="idview" VALUE="%DUMBIDVIEW%">
 				<INPUT TYPE="SUBMIT" NAME="dosearch" VALUE="Rechercher">
 				~ ~ ~ ~
 				ou 

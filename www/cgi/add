@@ -61,6 +61,7 @@
 #   2010/12/25 : pda      : use cgi-dispatch
 #   2012/09/20 : pda/jean : remove dns update interval
 #   2012/10/30 : pda/jean : add views
+#   2012/11/07 : pda/jean : add dumb idview for address map
 #
 
 #
@@ -147,7 +148,14 @@ d cgi-register {action {}} {
     # Get authorized views
     #
 
-    lassign [menu-views $dbfd $tabuid(idcor) "idviews" {}] viewlibelle viewval
+    lassign [menu-views $dbfd $tabuid(idcor) "idviews" {} 1] disp viewval
+    if {$disp} then {
+	set viewlibelle [mc "Views"]
+    } else {
+	set viewlibelle ""
+    }
+    # get one valid view to satisfy "map" requirements
+    set dumbidview [lindex [u myviewids] 0]
 
     #
     # Get host types
@@ -233,6 +241,7 @@ d cgi-register {action {}} {
 				[list %DHCPPROFILMENU% $dhcpprofilmenu] \
 				[list %MENUPLAGE% $menuplage] \
 				[list %DISPLAY% $display] \
+				[list %DUMBIDVIEW% $dumbidview] \
 				[list %ADR% $adr] \
 			    ]
 }
@@ -616,6 +625,7 @@ d cgi-register {action add-multi} {
     {tri	0 1}
     {plage	1 1}
     {nbadr	1 1}
+    {idview	1 1}
 } {
     global conf
 
@@ -639,6 +649,7 @@ d cgi-register {action add-multi} {
 
     if {$domap ne ""} then {
 	set nftab(cidr) $lcidr
+	set nftab(idview) $idview
 	set nftab(domap) {yes}
 	puts stdout [::webapp::call-cgi $conf(script-map) nftab]
 	return 0

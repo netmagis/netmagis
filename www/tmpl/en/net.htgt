@@ -35,30 +35,62 @@
 	    \taille {100}
 	} {
 	    \casedefauttableau {\centragehorizontal {CENTER}}
+	    \casedefauttableau {\centragehorizontal {CENTER}}
 	} {
 	    \lignetableau {
-		\casetableau {} {%CORRESP%}
+		\multicasetableau {2} {} {%CORRESP%}
 	    }
 	    \lignetableau {
-		\casetableau {
-		     \couleurfond {#C0C0C0}
-		     \centragehorizontal {CENTER}
-		} {\gras {Select your networks in the following list...}}
+		\casetableau {} {
+		    \tableau {
+			\bordure {0} {}
+			\taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {CENTER}}
+		    } {
+			\lignetableau {
+			    \casetableau {
+				 \couleurfond {#C0C0C0}
+				 \centragehorizontal {CENTER}
+			    } {\gras {Select your networks in the following list...}}
+			}
+			\lignetableau {
+			    \casetableau {} {%PLAGES%}
+			}
+			\lignetableau {
+			    \casetableau {
+				 \couleurfond {#C0C0C0}
+				 \centragehorizontal {CENTER}
+			    } {\gras {... or enter a network prefix (e.g. 192.168.17.0/24 or 2001:db8:1234:10::/64)}}
+			}
+			\lignetableau {
+			    \casetableau {} {<INPUT TYPE="text" NAME="cidr" SIZE="49">}
+			}
+		    }
+		}
+		\casetableau {} {
+		    <div style="vertical-align: center; display: %DISPVIEW%">
+			\tableau {
+			    \bordure {0} {}
+			    \taille {100}
+			} {
+			    \casedefauttableau {\centragehorizontal {CENTER}}
+			} {
+			    \lignetableau {
+				\casetableau {
+				     \couleurfond {#C0C0C0}
+				     \centragehorizontal {CENTER}
+				} {\gras {Select view}}
+			    }
+			    \lignetableau {
+				\casetableau {} {%MENUVIEW%}
+			    }
+			}
+		    </div>
+		}
 	    }
 	    \lignetableau {
-		\casetableau {} {%PLAGES%}
-	    }
-	    \lignetableau {
-		\casetableau {
-		     \couleurfond {#C0C0C0}
-		     \centragehorizontal {CENTER}
-		} {\gras {... or enter a network prefix (e.g. 192.168.17.0/24 or 2001:db8:1234:10::/64)}}
-	    }
-	    \lignetableau {
-		\casetableau {} {<INPUT TYPE="text" NAME="cidr" SIZE="49">}
-	    }
-	    \lignetableau {
-		\casetableau {
+		\multicasetableau {2} {
 		     \centragehorizontal {CENTER}
 		} {
 		    <div id="buttons">

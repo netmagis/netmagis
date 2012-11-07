@@ -5539,14 +5539,18 @@ proc couple-domains {dbfd idcor where} {
 #   - field : field name
 #   - sel : list of view id to pre-select, or empty list to pre-select
 #	default views (those cited in the dr_view.selected column)
+#   - mult : 1 if multiple selection allowed (listbox) or 0 for a menu
 # Output:
-#   - return value: list with 2 HTML strings {title menu}
+#   - return value: list {disp html} where disp=true if view menu
+#	must be displayed, and html is html code (may be of "hidden"
+#	input type) to be inserted.
 #
 # History :
 #   2012/10/30 : pda/jean : design
+#   2012/11/07 : pda/jean : add mult parameter and change return value
 #
 
-proc menu-views {dbfd idcor field sel} {
+proc menu-views {dbfd idcor field sel mult} {
     set nsel [llength $sel]
     set lsel {}
     set lcouples {}
@@ -5580,16 +5584,22 @@ proc menu-views {dbfd idcor field sel} {
 	    d error [mc "Sorry, but you do not have access to any view"]
 	}
 	1 {
-	    set title ""
-	    set html [::webapp::form-hidden $field $v]
+	    set idview [lindex [lindex $lcouples 0] 0]
+	    set disp 0
+	    set html [::webapp::form-hidden $field $idview]
 	}
 	default {
-	    set title [mc "Views"]
-	    set html [::webapp::form-menu $field $nviews 1 $lcouples $lsel]
+	    set size $nviews
+	    set disp 1
+	    if {! $mult} then {
+		# dropdown menu instead of a listbox
+		set size 1
+	    }
+	    set html [::webapp::form-menu $field $size $mult $lcouples $lsel]
 	}
     }
 
-    return [list $title $html]
+    return [list $disp $html]
 }
 
 ##############################################################################
