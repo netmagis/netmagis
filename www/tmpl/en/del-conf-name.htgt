@@ -6,12 +6,12 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Confirmation de suppression de machine
+    Netmagis - Host removal confirmation
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    Application Netmagis
+    Netmagis application
 }
 
 
@@ -27,20 +27,36 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Confirmation de suppression}
+    \titre {1} {Removal confirmation}
 
-    Vous avez demandé à supprimer le nom '%NOM%.%DOMAINE%'.
-
-    %MACHINE%
-
-    \gras {Voulez-vous vraiment supprimer toutes ces informations~?}
+    You asked to remove the name '%NOM%.%DOMAINE%'.
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
+
+	%INFO%
+
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		} {\gras {Select items you want to remove}}
+	    }
+	}
+
+	%SELDEL%
+
+	\gras {Do you really want to remove the selected objects?}
+
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-name">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
 	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
 	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
-	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
+	<INPUT TYPE="SUBMIT" VALUE="I confirm">
     </FORM>
 }
 

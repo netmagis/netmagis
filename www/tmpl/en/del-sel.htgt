@@ -45,7 +45,6 @@
 	    \casetableau {} {
 		<FORM METHOD="POST" ACTION="%URLFORM%">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="del-name">
-		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="no">
 		    \tableau {
 			\bordure {0} {}
 			\* \taille {100}

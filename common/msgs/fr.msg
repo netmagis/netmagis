@@ -259,10 +259,12 @@
  {IPv6}		{IPv6}
  {SMTP emit right}	{Droit d'émission SMTP}
  {TTL}		{TTL}
- {Comment}		{Infos complémentaires}
+ {Comment}	{Infos complémentaires}
  {Responsible (name)}	{Responsable (nom + prénom)}
  {Responsible (mail)}	{Responsable (mél)}
  {Aliases}		{Aliases}
+ {Alias name}	{Nom de l'alias}
+ {Points to}	{Pointe vers}
  {Priority}	{Priorité}
  {MX}		{MX}
  {RR}		{RR}
@@ -300,7 +302,7 @@
  {Invalid name '%s'}	{Nom '%s' invalide}
  {'%1$s' is not a valid IPv%2$s address} {'%1$s' n'est pas une adresse IPv%2$s valide}
  {The '/' character is not valid in the address '%s'} {Le caractère '/' est interdit dans l'adresse '%s'}
- {Invalid syntax for '%s'} {Syntaxe invalide pour '%s'}
+ {Invalid syntax for IP address '%s'} {Syntaxe invalide pour l'adresse IP '%s'}
  {Invalid syntax '%s' for DHCP profile} {Syntaxe invalide pour le profil DHCP '%s'}
  {Invalid DHCP profile '%s'} {Profil DHCP '%s' invalide}
  {No profile} {Aucun profil}
@@ -310,7 +312,11 @@
  {You must provide at least one view} {Vous devez indiquer au moins une vue}
  {You don't have access to these views: %s} {Vous n'avez pas accès à ces vues : %s}
  {You don't have rights on '%s'} {Vous n'avez pas les droits sur '%s'}
+ {You don't have rights on some IP addresses of '%s'} {Vous n'avez pas les droits sur certaines adresses IP de '%s'}
+ {You don't have rights on some IP addresses of '%1$s' referenced by alias '%2$s'} {Vous n'avez pas les droits sur certaines adresses IP de '%1$s' référencé par l'alias '%2$s'}
+ {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} {Vous n'avez pas les droits sur certaines adresses IP de '%1$s' référencé par le MX '%2$s'}
  {Internal error: invalid parameter '%1$s' for '%2$s'} {Erreur interne : paramètre invalide '%$1s' pour '%2$s'}
+ {Error detected in view '%1$s': %2$s} {Erreur détectée dans la vue '%1$s' : %2$s}
  {'%s' is a MX} {'%s' est un MX}
  {'%1$s' is a mail role in view '%2$s'} {'%1$s' est un rôle de messagerie dans la vue '%2$s'}
  {Internal error: id '%s' doesn't exists for a mail host} {Erreur interne : hébergeur d'id '%s' inexistant}
@@ -319,6 +325,7 @@
  {'%1$s' has IP addresses in view '%2$s'} {'%1$s' a des adresses IP dans la vue '%2$s'}
  {Name '%1$s' is not a host in view '%2$s'} {Le nom '%1$s' ne correspond pas à une machine dans la vue '%2$s'}
  {Name '%s' does not exist} {Le nom '%s' n'existe pas}
+ {'%1$s' has been removed from view '%2$s'} {'%1$s' a été supprimé de la vue '%2$s'}
  {Domain '%s' not found} {Domaine '%s' non trouvé}
  {Domain-id '%s' not found} {Identificateur de domaine '%s' non trouvé}
  {MX '%1$s' points to a domain on which you don't have rights\n%2$s} {Le MX '%1$s' référence un domaine auquel vous n'avez pas accès\n%2$s}

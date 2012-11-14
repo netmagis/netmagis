@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Confirmation de suppression d'alias
+    Netmagis - Confirmation de suppression de machine
 }
 
 \*******************************************************************************
@@ -29,30 +29,31 @@
 
     \titre {1} {Confirmation de suppression}
 
-    Vous avez demandé à supprimer l'alias '%NOM%.%DOMAINE%'.
-
-    \tableau {
-	\bordure {1} {}
-	\taille {100}
-    } {
-	\casedefauttableau {\centragehorizontal {LEFT}}
-	\casedefauttableau {\centragehorizontal {LEFT}}
-    } {
-	\lignetableau {
-	    \casetableau {} {Nom de l'alias}
-	    \casetableau {} {%NOM%.%DOMAINE%}
-	}
-	\lignetableau {
-	    \casetableau {} {Pointe vers}
-	    \casetableau {} {%NOMREF%.%DOMAINEREF%}
-	}
-    }
-
-    \gras {Voulez-vous vraiment supprimer cet alias~?}
+    Vous avez demandé à supprimer le nom '%NOM%.%DOMAINE%'.
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
+
+	%INFO%
+
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		} {\gras {Sélectionnez les éléments à supprimer}}
+	    }
+	}
+
+	%SELDEL%
+
+	\gras {Voulez-vous vraiment supprimer les éléments sélectionnés ?}
+
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-name">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
 	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
 	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
 	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
