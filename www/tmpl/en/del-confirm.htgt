@@ -2,11 +2,11 @@
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {23/04/2002}
+\set {date}   {19/04/2002}
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - IP address removal confirmation
+    Netmagis - Host removal confirmation
 }
 
 \*******************************************************************************
@@ -24,23 +24,41 @@
 	}
 }
 
+\set {header} {
+    <style type="text/css">
+	abbr \{
+	    border-bottom: 1px dotted;
+	\}
+    </style>
+}
+
 \*******************************************************************************
 \partie {texte} {
 
     \titre {1} {Removal confirmation}
 
-    You asked for IP address '%ADR%' removal. This address is part
-    of object:
-
-    %MACHINE%
-
-    \gras {Do you really want to remove this IP address (without
-	removing other informations)?}
+    You asked to remove '%OBJECT%'.
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
-	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		} {\gras {Select items you want to remove}}
+	    }
+	}
+
+	%SELDEL%
+
+	\gras {Do you really want to remove the selected items?}
+
+	%HIDDEN%
 	<INPUT TYPE="SUBMIT" VALUE="I confirm">
     </FORM>
 }

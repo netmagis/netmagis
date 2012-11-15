@@ -44,7 +44,6 @@
 	\lignetableau {
 	    \casetableau {} {
 		<FORM METHOD="POST" ACTION="%URLFORM%">
-		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="del-name">
 		    \tableau {
 			\bordure {0} {}
 			\* \taille {100}
@@ -55,9 +54,9 @@
 			\lignetableau {
 			    \casetableau {} {Name to remove}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				<INPUT TYPE="TEXT" NAME="name" SIZE="30">
 				.
-				%DOMAINE%
+				%DOMAIN%
 			    }
 			}
 			\lignetableau {
@@ -80,8 +79,6 @@
 	\lignetableau {
 	    \casetableau {} {
 		<FORM METHOD="POST" ACTION="%URLFORM%">
-		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
-		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="no">
 		    \tableau {
 			\bordure {0} {}
 			\* \taille {100}
@@ -92,7 +89,8 @@
 			\lignetableau {
 			    \casetableau {} {Address to remove}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="adr" SIZE="45">
+				<INPUT TYPE="TEXT" NAME="addr" SIZE="45">
+				(or FQDN)
 			    }
 			}
 			\lignetableau {

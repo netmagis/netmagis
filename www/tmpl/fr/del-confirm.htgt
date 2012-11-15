@@ -2,11 +2,11 @@
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {23/04/2002}
+\set {date}   {19/04/2002}
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Confirmation de suppression d'adresse IP
+    Netmagis - Confirmation de suppression de machine
 }
 
 \*******************************************************************************
@@ -29,17 +29,28 @@
 
     \titre {1} {Confirmation de suppression}
 
-    Vous avez demandé à supprimer l'adresse IP '%ADR%' de l'objet~:
-
-    %MACHINE%
-
-    \gras {Voulez-vous vraiment supprimer cette adresse IP (sans supprimer
-    les autres informations)~?}
+    Vous avez demandé à supprimer '%OBJECT%'.
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
-	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		} {\gras {Sélectionnez les éléments à supprimer}}
+	    }
+	}
+
+	%SELDEL%
+
+	\gras {Voulez-vous vraiment supprimer les éléments sélectionnés ?}
+
+	%HIDDEN%
 	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
     </FORM>
 }

@@ -7,16 +7,21 @@
 #
 # Parameters (form or url):
 #   - display page
-#	- action : (empty)
-#   - name removal
-#	- action : "del-name"
-#	- nom : name of object to delete
-#	- domaine : domain of object to delete
+#   - name or IP address removal
+#	- action : "del"
+#	- name & domain : name and domain of object to remove
+#	- addr : IP address to remove or FQDN
+#		(addr is exclusive with name & domain)
 #	- idviews : selected (after confirmation) views
-#   - IP address removal
-#	- action : "del-ip"
-#	- confirm : "no" or "yes" (if confirm ok)
-#	- adr: IP address
+#
+# Note:
+#   If script is called for the first time, addr & name & domain are
+#	empty, so the script display the selection page
+#   When user inputs either a name&domain, or an addr (which may also
+#	be a fqdn), all found objects (in all views) are presented
+#	for confirmation
+#   When some objets are selected (idviews is not empty), removal is
+#	performed
 #
 # History
 #   2002/04/11 : pda/jean : design
@@ -33,19 +38,16 @@
 #   2010/12/14 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
 #   2012/11/13 : pda/jean : add views
+#   2012/11/14 : pda/jean : merge name and ip cases
 #
 
 #
 # Template pages used by this script
 #
 
-set conf(page)			del-sel.html
-set conf(page-conf-name)	del-conf-name.html
-set conf(page-conf-ip)		del-conf-ip.html
-set conf(page-ok)		del-ok.html
-
-set conf(page-oneip)	del-ip1.html
-set conf(page-obj)	del-ipobj.html
+set conf(page-sel)	del-sel.html
+set conf(page-confirm)	del-confirm.html
+set conf(page-ok)	del-ok.html
 
 #
 # Next actions
@@ -60,7 +62,7 @@ set conf(nextipinact)	"ipinact"
 # Script parameters
 #
 
-set conf(tab-confirm-name) {
+set conf(tab-confirm) {
     global {
 	chars {10 normal}
 	columns {5 10 85}
@@ -92,189 +94,62 @@ source %LIBNETMAGIS%
 # ::webapp::cgidebug ; exit
 
 ##############################################################################
-# Display page
+# Ask for confirmation
 ##############################################################################
 
-d cgi-register {action {}} {
-} {
-    global conf
+# mode : "addr" or "fqdn"
+# object : ip address for "addr" mode, or fqdn for "fqdn" mode
 
-    #
-    # Get domains authorized for the user
-    #
-
-    set domain [menu-domain $dbfd $tabuid(idcor) "domaine" "" ""]
-
-    #
-    # End of script: output page and close database
-    #
-
-    d urlset "%URLFORM%" $conf(next) {}
-    d result $conf(page) [list \
-				[list %DOMAINE% $domain] \
-			    ]
-}
-
-##############################################################################
-# Name removal
-##############################################################################
-
-# History
-#   2002/04/19 : pda/jean : design
-#
-
-d cgi-register {action del-name} {
-    {nom	1 1}
-    {domaine	1 1}
-    {idviews	0 9999}
-} {
-    global conf
-
-    set fqdn "$nom.$domaine"
-
-    #
-    # Are views selected? If so, this is a confirmation
-    #
-
-    set confirm [llength $idviews]
-    if {! $confirm} then {
-	#
-	# We must check all our views in order to search deletion
-	# candidates
-	#
-	set myviewids [u myviewids]
-	if {[llength $myviewids] == 0} then {
-	    d error "Sorry, but you do not have access to any view"
-	}
-    } else {
-	#
-	# User has selected one or more views. This is a confirmation.
-	# 
-	set myviewids $idviews
-    }
-
-    #
-    # Check name in all views
-    #
-
-    set nok 0
-    set nerr 0
-    foreach idview $myviewids {
-
-	set v [list $idview]
-	set vn [u viewname $idview]
-
-	set msg [check-authorized-host $dbfd $tabuid(idcor) $nom $domaine $v trr "del-name"]
-
-	set err 0
-	if {$msg ne ""} then {
-	    set err 1
-	} else {
-	    #
-	    # Is it an alias in this view?
-	    #
-
-	    set cname [rr-cname-by-view trr $idview]
-	    if {$cname eq ""} then {
-		#
-		# It is not an alias, there must be at least an IP address
-		#
-		set ip [rr-ip-by-view trr $idview]
-		if {$ip eq ""} then {
-		    set msg [mc {Name '%1$s' is not a host in view '%2$s'} $fqdn $vn]
-		    set err 1
-		}
-
-	    }
-	}
-
-	if {$err} then {
-	    set checkedviews($idview) [list $vn $msg]
-	    incr nerr
-	} else {
-	    set checkedviews($idview) [list $vn]
-	    incr nok
-	}
-    }
-
-    #
-    # Check that name exists
-    #
-
-    if {$trr(idrr) eq ""} then {
-	d error [mc "Name '%s' does not exist" $fqdn]
-    }
-
-    #
-    # Check that :
-    # - there is at least one view in which we can delete a name
-    # - there is no view in error, if this is a confirmation
-    #
-
-    if {$nok == 0 || ($confirm && $nerr > 0)} then {
-	set msg ""
-	foreach idview $myviewids {
-	    lassign $checkedviews($idview) vn m
-	    if {$m ne ""} then {
-		append msg [mc {Error detected in view '%1$s': %2$s} $vn $m]
-		append msg "\n"
-	    }
-	}
-	d error $msg
-    }
-
-    #
-    # At this point, myviewids contains:
-    # - all user's view ids (good and in error) if confirmation is needed
-    # - only good view ids if user has already confirmed
-    #
-
-
-    #
-    # Ask for confirmation if needed
-    #
-
-    if {! $confirm} then {
-	ask-confirm-name $dbfd $nok $myviewids checkedviews trr
-    } else {
-	process-del-name $dbfd $myviewids trr
-    }
-}
-
-proc ask-confirm-name {dbfd nok idviews _checkedviews _trr} {
-    upvar $_trr trr
+proc confirm {dbfd mode object nok idviews _checkedviews} {
     upvar $_checkedviews checkedviews
     global conf
 
     # display checkbutton for view only if there is more than a single view
     set dispconfview [expr $nok > 1]
 
-    if {$dispconfview} then {
-	set info [display-rr-core $dbfd -1 trr]
-    } else {
-	set info ""
-    }
-
     set lines {}
     foreach idview $idviews {
-	lassign $checkedviews($idview) vn msg
+	lassign $checkedviews($idview) vn msg t
 
-	if {$msg eq ""} then {
-	    #
-	    # Information about host found
-	    #
+	array unset trr
+	array set trr $t
 
-	    set cname [rr-cname-by-view trr $idview]
-	    if {$cname eq ""} then {
-		# This is not an alias
-		if {$dispconfview} then {
-		    set host [display-rr-host $dbfd $idview trr]
+	if {$msg ne ""} then {
+	    #
+	    # Error message
+	    #
+	    set check ""
+	    set host [::webapp::html-string $msg]
+	} else {
+	    set fqdn [::webapp::helem "abbr" "$trr(nom).$trr(domaine)" \
+				"title" \
+				[display-rr-title $dbfd trr $idview] \
+				]
+	    if {$mode eq "fqdn"} then {
+		#
+		# Information about host found
+		#
+
+		set cname [rr-cname-by-view trr $idview]
+		if {$cname eq ""} then {
+		    # This is not an alias
+		    set host [mc "Remove host '%s'" $fqdn]
 		} else {
-		    set host [display-rr $dbfd -1 trr]
+		    # This is an alias, display informations about target host
+		    set host [mc "Remove alias '%s'" $fqdn]
 		}
 	    } else {
-		# This is an alias, display informations about target host
-		set host [display-rr-cname $dbfd $idview trr]
+		#
+		# Information about IP address found.
+		# Is it the last IP address?
+		#
+
+		set lip [rr-ip-by-view trr $idview]
+		if {[llength $lip] == 1} then {
+		    set host [mc "Remove host '%s'" $fqdn]
+		} else {
+		    set host [mc {Remove IP address '%1$s' from host '%2$s'} $object $fqdn]
+		}
 	    }
 
 	    #
@@ -287,19 +162,17 @@ proc ask-confirm-name {dbfd nok idviews _checkedviews _trr} {
 		set c " CHECKED"
 	    }
 	    set check "<INPUT TYPE=CHECKBOX NAME=\"idviews\" VALUE=\"$idview\" $c>"
-
-	} else {
-	    #
-	    # Error message
-	    #
-	    set host [::webapp::html-string $msg]
-	    set check ""
 	}
-
 	lappend lines [list Line $check $vn $host]
     }
 
-    set seldel [::arrgen::output "html" $conf(tab-confirm-name) $lines]
+    set seldel [::arrgen::output "html" $conf(tab-confirm) $lines]
+
+    #
+    # Other parameters
+    #
+
+    set hidden [::webapp::form-hidden "addr" $object]
 
     #
     # Confirmation needed
@@ -308,17 +181,23 @@ proc ask-confirm-name {dbfd nok idviews _checkedviews _trr} {
     d urlset "%URLFORM%" $conf(next) {}
     d urladdnext "%URLFORM%"
 
-    d result $conf(page-conf-name) [list \
-					[list %NOM% $trr(nom)] \
-					[list %DOMAINE% $trr(domaine)] \
-					[list %INFO% $info] \
+    d result $conf(page-confirm) [list \
+					[list %OBJECT% $object] \
 					[list %SELDEL% $seldel] \
+					[list %HIDDEN% $hidden] \
 				    ]
 }
 
-proc process-del-name {dbfd idviews _trr} {
-    upvar $_trr trr
+##############################################################################
+# Process removal
+##############################################################################
+
+# mode : "addr" or "fqdn"
+# object : ip address for "addr" mode, or fqdn for "fqdn" mode
+
+proc remove {dbfd mode object idviews _checkedviews} {
     global conf
+    upvar $_checkedviews checkedviews
 
     #
     # Confirmation is accepted. All view ids have been checked.
@@ -327,42 +206,73 @@ proc process-del-name {dbfd idviews _trr} {
 
     d dblock {}
 
-    set fqdn "$trr(nom).$trr(domaine)"
     set log {}
     set result {}
 
     foreach idview $idviews {
-	set vn [u viewname $idview]
+	lassign $checkedviews($idview) vn msg t
 
-	set cname [rr-cname-by-view trr $idview]
-	if {$cname ne ""} then {
-	    if {! [del-alias-by-id $dbfd $trr(idrr) $idview msg]} then {
-		d dbabort [mc "delete %s" $fqdn/$vn] $msg
+	array unset trr
+	array set trr $t
+
+	set o $object
+
+	if {$mode eq "fqdn"} then {
+	    set cname [rr-cname-by-view trr $idview]
+	    if {$cname ne ""} then {
+		if {! [del-alias-by-id $dbfd $trr(idrr) $idview msg]} then {
+		    d dbabort [mc "delete %s" $object/$vn] $msg
+		}
+
+		set p "?"
+		if {[read-rr-by-id $dbfd $cname tc]} then {
+		    set p "$tc(nom).$tc(domaine)"
+		}
+		lappend log [list "delalias" "delete alias $object/$vn -> $p"]
+	    } else {
+		#
+		# This is not an alias: delete all RR dependancies:
+		# - aliases pointing this object
+		# - MX
+		# - IP addresses
+		#
+		if {! [del-rr-and-dependancies $dbfd trr $idview msg]} then {
+		    d dbabort [mc "delete %s" $object/$vn] $msg
+		}
+		lappend log [list "delname" "delete all of $object/$vn"]
 	    }
-
-	    set p "?"
-	    if {[read-rr-by-id $dbfd $cname tc]} then {
-		set p "$tc(nom).$tc(domaine)"
-	    }
-	    lappend log [list "delalias" "delete alias $fqdn -> $p"]
-
-	    lappend result [mc {'%1$s' has been removed from view '%2$s'} $fqdn $vn]
 	} else {
-	    #
-	    # This is not an alias: delete all RR dependancies:
-	    # - aliases pointing this object
-	    # - MX
-	    # - IP addresses
-	    #
-	    if {! [del-rr-and-dependancies $dbfd trr $idview msg]} then {
-		d dbabort [mc "delete %s" $fqdn/$vn] $msg
-	    }
-	    lappend log [list "delname" "delete all of $fqdn/$vn"]
-	}
+	    set fqdn "$trr(nom).$trr(domaine)"
+	    set lip [rr-ip-by-view trr $idview]
+	    if {[llength $lip] > 1} then {
+		#
+		# Only delete one of these addresses
+		#
 
+		if {! [del-one-ip-address $dbfd $object $idview msg]} then {
+		    d dbabort [mc "delete %s" $object/$vn] $msg
+		}
+		set msg [touch-rr $dbfd $trr(idrr)]
+		if {$msg ne ""} then {
+		    d dbabort [mc "modify %s" [mc "RR"]/$vn] $msg
+		}
+		lappend log [list "deladdr" "delete address $object from $fqdn/$vn"]
+	    } else {
+		#
+		# Delete the whole object
+		#
+
+		if {! [del-rr-and-dependancies $dbfd trr $idview msg]} then {
+		    d dbabort [mc "delete %s" $object/$vn] $msg
+		}
+		lappend log [list "deladdr" "delete address $object -> delete all $fqdn/$vn"]
+		set o $fqdn
+	    }
+	}
+	lappend result [mc {'%1$s' has been removed from view '%2$s'} $o $vn]
     }
 
-    d dbcommit [mc "delete %s" $fqdn]
+    d dbcommit [mc "delete %s" $object]
 
     #
     # Leave a trace
@@ -370,143 +280,6 @@ proc process-del-name {dbfd idviews _trr} {
 
     foreach l $log {
 	lassign $l logevt logmsg
-	d writelog $logevt $logmsg
-    }
-
-    #
-    # Prepare next step in journey
-    #
-
-    switch -- [d nextprog] {
-	map {
-	    d urlset "%URLSUITE%" $conf(nextmap) [list {domap {yes}} [d nextargs]]
-	}
-	list {
-	    d urlset "%URLSUITE%" $conf(nextlist) [list {dolist {yes}} [d nextargs]]
-	}
-	default {
-	    d urlset "%URLSUITE%" $conf(next) {}
-	}
-    }
-
-    #
-    # End of script: output page and close database
-    #
-
-    set result [join $result "<br>"]
-
-    d result $conf(page-ok) [list \
-				    [list %RESULT% $result] \
-			]
-}
-
-##############################################################################
-# IP address removal
-##############################################################################
-
-# History
-#   2002/04/23 : pda/jean : design
-#   2002/04/26 : pda/jean : design end
-#   2002/05/03 : pda/jean : keep a log of modification
-#
-
-d cgi-register {action del-ip} {
-    {confirm	1 1}
-    {adr	1 1}
-} {
-    global conf
-
-    #
-    # Check IP address
-    #
-
-    set msg [check-ip-syntax $dbfd $adr "inet"]
-    if {$msg ne ""} then {
-	d error $msg
-    }
-    if {! [check-authorized-ip $dbfd $tabuid(idcor) $adr]} then {
-	d error [mc "You don't have rights on '%s'" $adr]
-    }
-
-    #
-    # Check that this address exists and get all stored informations
-    #
-
-    if {! [read-rr-by-ip $dbfd $adr trr]} then {
-	d error [mc "Address '%s' not found" $adr]
-    }
-
-    #
-    # Check access to this name
-    #
-
-    set nom     $trr(nom)
-    set domaine $trr(domaine)
-    set msg [check-authorized-host $dbfd $tabuid(idcor) $nom $domaine bidon "del-name"]
-    if {$msg ne ""} then {
-	d error $msg
-    }
-    set fqdn "$nom.$domaine"
-
-    #
-    # Is it the last IP address?
-    #
-
-    if {[llength $trr(ip)] == 1} then {
-	set lastadr "yes"
-    } else {
-	set lastadr "no"
-    }
-
-    #
-    # Prepare display of informations, if needed
-    #
-
-    set objet ""
-    set host [display-rr $dbfd -1 trr]
-
-    #
-    # Remove only if confirmation is ok
-    #
-
-    if {$confirm eq "yes"} then {
-	#
-	# Proceed to removal
-	#
-
-	d dblock {}
-
-	if {! $lastadr} then {
-	    #
-	    # Only delete an IP address
-	    #
-
-	    set sql "DELETE FROM dns.rr_ip WHERE adr = '$adr'"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [mc "delete %s" $adr] $msg
-	    }
-	    set msg [touch-rr $dbfd $trr(idrr)]
-	    if {$msg ne ""} then {
-		d dbabort [mc "modify %s" [mc "RR"]] $msg
-	    }
-
-	    set logevt "deladdr"
-	    set logmsg "delete address $adr from $fqdn"
-
-	} else {
-	    #
-	    # Delete the whole object
-	    #
-
-	    if {! [del-rr-and-dependancies $dbfd trr msg]} then {
-		d dbabort [mc "delete %s" $fqdn] $msg
-	    }
-
-	    set logevt "deladr"
-	    set logmsg "delete address $adr -> delete all $fqdn"
-	}
-
-	d dbcommit [mc "delete %s" $adr]
 	d writelog $logevt $logmsg
     }
 
@@ -530,53 +303,250 @@ d cgi-register {action del-ip} {
     }
 
     #
-    # Prepare page display
+    # End of script: output page and close database
     #
 
-    d urlset "%URLFORM%" $conf(next) {}
+    set result [join $result "<br>"]
 
-    switch -- "confirm=$confirm-lastadr=$lastadr" {
-	confirm=no-lastadr=no {
+    d result $conf(page-ok) [list \
+				    [list %RESULT% $result] \
+			]
+}
+
+##############################################################################
+# CGI script
+##############################################################################
+
+# History
+#   2002/04/19 : pda/jean : design
+#
+
+d cgi-register {} {
+    {addr	0 1}
+    {name	0 1}
+    {domain	0 1}
+    {idviews	0 9999}
+} {
+    global conf
+
+    #
+    # Display the selection page if no parameter is given
+    #
+
+    if {$addr eq "" && $name eq "" && $domain eq ""} then {
+	#
+	# Get domains authorized for the user
+	#
+
+	set domain [menu-domain $dbfd $tabuid(idcor) "domain" "" ""]
+
+	#
+	# End of script: output page and close database
+	#
+
+	d urlset "%URLFORM%" $conf(next) {}
+	d result $conf(page-sel) [list \
+				    [list %DOMAIN% $domain] \
+				]
+	return 0
+    }
+
+    #
+    # Addr and name/iddom are mutually exclusive
+    #
+
+    if {$addr ne "" && ($name ne "" || $domain ne "")} then {
+	d error [mc "Invalid input"]
+    }
+
+    #
+    # Check wether it is an address (which may be a FQDN) or name+domain
+    #
+
+    if {$addr ne ""} then {
+	set object $addr
+	set msg [check-ip-syntax $dbfd $addr "inet"]
+	if {$msg ne ""} then {
 	    #
-	    # Ask for confirmation to remove one of the IP addresses
-	    # 
-	    set page $conf(page-oneip)
-	    d urladdnext "%URLFORM%"
+	    # This is not an IP address. It is perhaps a FQDN
+	    #
+	    set msg [check-fqdn-syntax $dbfd $addr name domain]
+	    if {$msg ne ""} then {
+		d error $msg
+	    }
+	    set addr ""
+	} else {
+	    #
+	    # This is an IP address. Check it.
+	    #
+	    if {! [check-authorized-ip $dbfd $tabuid(idcor) $addr]} then {
+		d error [mc "You don't have rights on '%s'" $adr]
+	    }
 	}
-	confirm=no-lastadr=yes {
-	    #
-	    # Ask for confirmation to remove the last IP address, and thus
-	    # of the whole object.
-	    # 
-	    set page $conf(page-obj)
-	    d urladdnext "%URLFORM%"
-	}
-	confirm=yes-lastadr=no {
-	    #
-	    # Address has been removed
-	    #
-	    set page $conf(page-ok)
-	    set objet $adr
-	}
-	confirm=yes-lastadr=yes {
-	    #
-	    # The whole object has been removed
-	    #
-	    set page $conf(page-ok)
-	    set objet "$nom.$domaine"
-	}
-	default {
-	    d error [mc "Internal error: impossible case '%s'" "confirm=$confirm, lastadr=$lastadr"]
+    } else {
+	# Check that name is not empty, or wrong domain
+	set msg [check-fqdn-syntax $dbfd "$name.$domain" name domain]
+	if {$msg ne ""} then {
+	    d error $msg
 	}
     }
 
-    d result $page [list \
-			[list %NOM%         $nom] \
-			[list %DOMAINE%     $domaine] \
-			[list %ADR%         $adr] \
-			[list %MACHINE%     $host] \
-			[list %OBJET%       $objet] \
-		    ]
+    #
+    # Identify proprer mode for later usage
+    #
+
+    if {$addr eq ""} then {
+	set mode "fqdn"
+	set object "$name.$domain"
+    } else {
+	set mode "addr"
+	set object $addr
+    }
+
+    #
+    # Are views selected? If so, this is a confirmation
+    #
+
+    set confirm [llength $idviews]
+    if {! $confirm} then {
+	#
+	# We must check all our views in order to search deletion
+	# candidates
+	#
+	set myviewids [u myviewids]
+	if {[llength $myviewids] == 0} then {
+	    d error "Sorry, but you do not have access to any view"
+	}
+    } else {
+	#
+	# User has selected one or more views. This is a confirmation.
+	# 
+	set myviewids $idviews
+    }
+
+    #
+    # Check object in all views
+    #
+
+    set nok 0
+    set nerr 0
+    set mvi {}
+    foreach idview $myviewids {
+	set v [list $idview]
+	set vn [u viewname $idview]
+
+	set found 0
+	set err 0
+
+	if {$mode eq "fqdn"} then {
+	    #
+	    # FQDN
+	    #
+
+	    set found 1
+	    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
+
+	    if {$msg ne ""} then {
+		set err 1
+	    } else {
+		#
+		# Is it an alias in this view?
+		#
+
+		set cname [rr-cname-by-view trr $idview]
+		if {$cname eq ""} then {
+		    #
+		    # It is not an alias, there must be at least an IP address
+		    #
+		    set ip [rr-ip-by-view trr $idview]
+		    if {$ip eq ""} then {
+			set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
+			set err 1
+		    }
+
+		}
+	    }
+	} else {
+	    #
+	    # IP address. Check that this address exists and get
+	    # all stored informations
+	    #
+
+	    if {[read-rr-by-ip $dbfd $addr $idview trr]} then {
+		#
+		# Check access to this name
+		#
+
+		set found 1
+		set name   $trr(nom)
+		set domain $trr(domaine)
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v bidon "del-name"]
+		if {$msg ne ""} then {
+		    set err 1
+		}
+	    }
+	}
+
+	if {$found} then {
+	    if {$err} then {
+		set checkedviews($idview) [list $vn $msg [array get trr]]
+		incr nerr
+	    } else {
+		set checkedviews($idview) [list $vn "" [array get trr]]
+		incr nok
+	    }
+	    lappend mvi $idview
+	}
+    }
+    set myviewids $mvi
+
+    #
+    # If asked for a name, check that name exists
+    #
+
+    if {$mode eq "fqdn" eq "" && $trr(idrr) eq ""} then {
+	d error [mc "Name '%s' does not exist" $object]
+    }
+
+    if {$mode eq "$addr" ne "" && $nok + $nerr == 0} then {
+	d error [mc "Address '%s' not found" $object]
+    }
+
+    #
+    # Check that :
+    # - there is at least one view in which we can delete a name
+    # - there is no view in error, if this is a confirmation
+    #
+
+    if {$nok == 0 || ($confirm && $nerr > 0)} then {
+	set msg ""
+	foreach idview $myviewids {
+	    lassign $checkedviews($idview) vn m t
+	    if {$m ne ""} then {
+		append msg [mc {Error detected in view '%1$s': %2$s} $vn $m]
+		append msg "\n"
+	    }
+	}
+	d error $msg
+    }
+
+    #
+    # At this point, myviewids contains:
+    # - all user's view ids (good and in error) if confirmation is needed
+    # - only good view ids if user has already confirmed
+    # Views which do not include the searched IP address are not in myviewids
+    #
+
+
+    #
+    # Ask for confirmation if needed
+    #
+
+    if {! $confirm} then {
+	confirm $dbfd $mode $object $nok $myviewids checkedviews
+    } else {
+	remove $dbfd $mode $object $myviewids checkedviews
+    }
 }
 
 ##############################################################################

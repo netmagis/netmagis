@@ -3555,7 +3555,6 @@ proc del-alias-by-id {dbfd idrr idview _msg} {
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- idrr : RR id
 #	- addr : address to delete
 #	- idview : view id
 #	- _msg : error message in return
@@ -3567,14 +3566,47 @@ proc del-alias-by-id {dbfd idrr idview _msg} {
 #   2002/04/19 : pda/jean : design
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
+#   2012/11/14 : pda/jean : delete idrr parameter
+#
 #
 
-proc del-ip-address {dbfd idrr addr idview _msg} {
+proc del-one-ip-address {dbfd addr idview _msg} {
+    upvar $_msg msg
+
+    set ok 0
+    set sql "DELETE FROM dns.rr_ip WHERE adr = '$addr'
+				    AND idview = $idview"
+    if {[::pgsql::execsql $dbfd $sql msg]} then {
+	set ok 1
+    }
+    return $ok
+}
+
+#
+# Delete all IP address for a RR
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- idrr : RR id
+#	- idview : view id
+#	- _msg : error message in return
+# Output:
+#   - return value: 1 if ok, 0 if error
+#   - parameter _msg : error message if any
+#
+# History
+#   2002/04/19 : pda/jean : design
+#   2010/11/29 : pda      : i18n
+#   2012/11/13 : pda/jean : add views
+#   2012/11/14 : pda/jean : delete addr parameter
+#
+
+proc del-all-ip-addresses {dbfd idrr idview _msg} {
     upvar $_msg msg
 
     set ok 0
     set sql "DELETE FROM dns.rr_ip WHERE idrr = $idrr
-				    AND adr = '$addr'
 				    AND idview = $idview"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set ok 1
@@ -3733,10 +3765,8 @@ proc del-rr-and-dependancies {dbfd _trr idview _msg} {
     # Delete all IP addresses
     #
 
-    foreach a [rr-ip-by-view trr $idview] {
-	if {! [del-ip-address $dbfd $idrr $a $idview msg]} then {
-	    return 0
-	}
+    if {! [del-all-ip-addresses $dbfd $idrr $idview msg]} then {
+	return 0
     }
 
     #
@@ -4038,116 +4068,22 @@ proc display-rr {dbfd idrr _trr} {
 }
 
 #
-# Display core RR informations with HTML
+# Display a RR in a HTML title
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- idrr : RR id to search for, or -1 if _trr is already initialized
-#	- _trr : empty array, or initialized array (id idrr=-1)
+#	- _trr : initialized array
+#	- idview : id of view
 # Output:
 #   - return value: empty string or error message
 #   - parameter _trr : see read-rr-by-id
-#   - global variables :
-#	- libconf(tabmachine) : array specification
 #
 # History
-#   2012/11/13 : pda/jean : design
+#   2012/11/14 : pda/jean : design
 #
 
-proc display-rr-core {dbfd idrr _trr} {
-    global libconf
-    upvar $_trr trr
-
-    #
-    # Read RR if needed
-    #
-
-    if {$idrr != -1 && [read-rr-by-id $dbfd $idrr trr] == -1} then {
-	return ""
-    }
-
-    #
-    # Display all fields
-    #
-
-    set lines {}
-
-    # name
-    lappend lines [list Normal [mc "Name"] "$trr(nom).$trr(domaine)"]
-
-    # MAC address
-    lappend lines [list Normal [mc "MAC address"] $trr(mac)]
-
-    # DHCP profile
-    lappend lines [list Normal [mc "DHCP profile"] $trr(dhcpprofil)]
-
-    # Machine type
-    lappend lines [list Normal [mc "Type"] $trr(hinfo)]
-
-    # Right to emit with non auth SMTP : display only if it is used
-    # (i.e. if there is at least one group wich owns this right)
-    set sql "SELECT COUNT(*) AS ndroitsmtp FROM global.groupe WHERE droitsmtp = 1"
-    set ndroitsmtp 0
-    pg_select $dbfd $sql tab {
-	set ndroitsmtp $tab(ndroitsmtp)
-    }
-    if {$ndroitsmtp > 0} then {
-	if {$trr(droitsmtp)} then {
-	    set droitsmtp [mc "Yes"]
-	} else {
-	    set droitsmtp [mc "No"]
-	}
-	lappend lines [list Normal [mc "SMTP emit right"] $droitsmtp]
-    }
-
-    # TTL : display only if it used
-    # (i.e. if there is at least one group wich owns this right and there
-    # is a value)
-    set sql "SELECT COUNT(*) AS ndroitttl FROM global.groupe WHERE droitttl = 1"
-    set ndroitttl 0
-    pg_select $dbfd $sql tab {
-	set ndroitttl $tab(ndroitttl)
-    }
-    if {$ndroitttl > 0} then {
-	set ttl $trr(ttl)
-	if {$ttl != -1} then {
-	    lappend lines [list Normal [mc "TTL"] $ttl]
-	}
-    }
-
-    # comment
-    lappend lines [list Normal [mc "Comment"] $trr(commentaire)]
-
-    # responsible (name)
-    lappend lines [list Normal [mc "Responsible (name)"] $trr(respnom)]
-
-    # responsible (mail)
-    lappend lines [list Normal [mc "Responsible (mail)"] $trr(respmel)]
-
-    set html [::arrgen::output "html" $libconf(tabmachine) $lines]
-    return $html
-}
-
-#
-# Display IP part (IP addresses or aliases pointing) with HTML
-#
-# Input:
-#   - parameters:
-#	- dbfd : database handle
-#	- idview : id of view
-#	- _trr : initialized array
-# Output:
-#   - return value: empty string or error message
-#   - global variables :
-#	- libconf(tabmachine) : array specification
-#
-# History
-#   2012/11/13 : pda/jean : design
-#
-
-proc display-rr-host {dbfd idview _trr} {
-    global libconf
+proc display-rr-title {dbfd _trr idview} {
     upvar $_trr trr
 
     #
@@ -4156,76 +4092,118 @@ proc display-rr-host {dbfd idview _trr} {
 
     set lines {}
 
-    set ip [rr-ip-by-view trr $idview]
-    # IP address(es)
-    set nip [llength $ip]
-    if {$nip <= 1} then {
-	set at [mc "IP address and view"]
-    } else {
-	set at [mc "IP addresses and views"]
-    }
-    if {$nip == 0} then {
-	set aa [mc "(none)"]
-    } else {
-	set aa [join $ip ", "]
-    }
-    lappend lines [list Normal $at $aa]
-
-    # aliases
-    set la {}
-    foreach idalias [rr-aliases-by-view trr $idview] {
-	if {[read-rr-by-id $dbfd $idalias ta]} then {
-	    lappend la "$ta(nom).$ta(domaine)"
-	}
-    }
-    if {[llength $la] > 0} then {
-	lappend lines [list Normal [mc "Aliases"] [join $la " "]]
-    }
-
-    set html [::arrgen::output "html" $libconf(tabmachine) $lines]
-    return $html
-}
-
-#
-# Display alias part with HTML
-#
-# Input:
-#   - parameters:
-#	- dbfd : database handle
-#	- idview : id of view
-#	- _trr : initialized array
-# Output:
-#   - return value: empty string or error message
-#   - global variables :
-#	- libconf(tabmachine) : array specification
-#
-# History
-#   2012/11/13 : pda/jean : design
-#
-
-proc display-rr-cname {dbfd idview _trr} {
-    global libconf
-    upvar $_trr trr
-
-    #
-    # Display all fields
-    #
-
-    # cname
-    set html ""
     set cname [rr-cname-by-view trr $idview]
     if {$cname ne ""} then {
-	set lines {}
+	#
+	# It is a CNAME
+	#
+
 	set fqdn "$trr(nom).$trr(domaine)"
-	lappend lines [list Normal [mc "Alias name"] $fqdn]
+	lappend lines "[mc {Alias name}]\t$fqdn"
 	if {[read-rr-by-id $dbfd $cname tc]} then {
 	    set fqdn2 "$tc(nom).$tc(domaine)"
-	    lappend lines [list Normal [mc "Points to"] $fqdn2]
-	    set html [::arrgen::output "html" $libconf(tabmachine) $lines]
+	    title-format lines "Points to" [list $fqdn2]
+	}
+    } else {
+	#
+	# It is a "normal" host
+	#
+
+	# name
+	title-format lines "Name" [list $trr(nom).$trr(domaine)]
+
+	# IP address(es)
+	set lip [rr-ip-by-view trr $idview]
+	set nip [llength $lip]
+	if {$nip <= 1} then {
+	    set k [mc "IP address"]
+	} else {
+	    set k [mc "IP addresses"]
+	}
+	if {$nip == 0} then {
+	    set lip [mc "(none)"]
+	}
+	title-format lines $k $lip
+
+	# MAC address
+	if {$trr(mac) ne ""} then {
+	    title-format lines "MAC address" [list $trr(mac)]
+	}
+
+	# DHCP profile
+	if {$trr(dhcpprofil) ne ""} then {
+	    title-format lines "DHCP profile" [list $trr(dhcpprofil)]
+	}
+
+	# Machine type
+	title-format lines "Type" [list $trr(hinfo)]
+
+	# Right to emit with non auth SMTP : display only if it is used
+	# (i.e. if there is at least one group wich owns this right)
+	set sql "SELECT COUNT(*) AS ndroitsmtp FROM global.groupe WHERE droitsmtp = 1"
+	set ndroitsmtp 0
+	pg_select $dbfd $sql tab {
+	    set ndroitsmtp $tab(ndroitsmtp)
+	}
+	if {$ndroitsmtp > 0} then {
+	    if {$trr(droitsmtp)} then {
+		set droitsmtp [mc "Yes"]
+	    } else {
+		set droitsmtp [mc "No"]
+	    }
+	    title-format lines "SMTP emit right" [list $droitsmtp]
+	}
+
+	# TTL : display only if it used
+	# (i.e. if there is at least one group wich owns this right and there
+	# is a value)
+	set sql "SELECT COUNT(*) AS ndroitttl FROM global.groupe WHERE droitttl = 1"
+	set ndroitttl 0
+	pg_select $dbfd $sql tab {
+	    set ndroitttl $tab(ndroitttl)
+	}
+	if {$ndroitttl > 0} then {
+	    set ttl $trr(ttl)
+	    if {$ttl != -1} then {
+		title-format lines "TTL" [list $ttl]
+	    }
+	}
+
+	# comment
+	if {$trr(commentaire) ne ""} then {
+	    title-format lines "Comment" [list $trr(commentaire)]
+	}
+
+	# responsible (name)
+	if {$trr(respnom) ne ""} then {
+	    title-format lines "Responsible (name)" [list $trr(respnom)]
+	}
+
+	# responsible (mail)
+	if {$trr(respmel) ne ""} then {
+	    title-format lines "Responsible (mail)" [list $trr(respmel)]
+	}
+
+	# aliases
+	set la {}
+	foreach idalias [rr-aliases-by-view trr $idview] {
+	    if {[read-rr-by-id $dbfd $idalias ta]} then {
+		lappend la "$ta(nom).$ta(domaine)"
+	    }
+	}
+	if {[llength $la] > 0} then {
+	    title-format lines "Aliases" $la
 	}
     }
 
-    return $html
+    return [join $lines "\n"]
+}
+
+proc title-format {_lines key lvalues} {
+    upvar $_lines lines
+
+    set lv [join $lvalues "\n\t"]
+    lappend lines "[mc $key]\t$lv"
 }
 
 ##############################################################################

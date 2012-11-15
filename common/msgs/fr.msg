@@ -245,6 +245,7 @@
  {View}		{Vue}
  {Views}	{Vues}
  {IP address}	{Adresse IP}
+ {IP addresses}	{Adresses IP}
  {IP address and view}	{Adresse IP vue}
  {IP addresses and views}	{Adresses IP et vues}
  {(none)}	{(aucune)}
@@ -497,6 +498,9 @@
  {'%s' specified more than once} {'%s' spécifié plus d'une fois}
  {Invalid form values (%s)} {Valeurs de formulaire invalides (%s)}
  {old MX} {anciens MX}
+ {Remove host '%s'} {Supprimer la machine '%s'}
+ {Remove alias '%s'} {Supprimer l'alias '%s'}
+ {Remove IP address '%1$s' from host '%2$s'} {Supprimer l'adresse '%1$s' de la machine '%2$s'}
  {Deletion of RR '%1$s' failed: %2$s} {Suppression du RR '%1$s' impossible : %2$s}
  {No MX given for %s} {Pas de MX fourni pour %s}
  {Addition or RR '%1$s' failed: %2$s} {Ajout du RR '%1$s' impossible : %2$s}
