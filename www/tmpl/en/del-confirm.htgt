@@ -25,11 +25,18 @@
 }
 
 \set {header} {
-    <style type="text/css">
-	abbr \{
-	    border-bottom: 1px dotted;
+    <script type="text/javascript">
+    <!--
+	function invdisp (id) \{
+	  var x = document.getElementById (id) ;
+	  if (x.style.display == "none") \{
+	    x.style.display = "block" ;
+	  \} else \{
+	    x.style.display = "none" ;
+	  \}
 	\}
-    </style>
+    //-->
+    </script>
 }
 
 \*******************************************************************************

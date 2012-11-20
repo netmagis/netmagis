@@ -76,6 +76,7 @@ set conf(tab-confirm) {
 	}
 	vbar {no}
 	column {
+	    format {raw}
 	}
 	vbar {no}
 	column {
@@ -107,9 +108,16 @@ proc confirm {dbfd mode object nok idviews _checkedviews} {
     # display checkbutton for view only if there is more than a single view
     set dispconfview [expr $nok > 1]
 
+    # terrible hack
+    set empty [::webapp::helem "span" "" "style" "display:none"]
+
     set lines {}
     foreach idview $idviews {
 	lassign $checkedviews($idview) vn msg t
+
+	set descid "hv$idview"
+	set buttid "bv$idview"
+	set desc ""
 
 	array unset trr
 	array set trr $t
@@ -121,9 +129,9 @@ proc confirm {dbfd mode object nok idviews _checkedviews} {
 	    set check ""
 	    set host [::webapp::html-string $msg]
 	} else {
-	    set fqdn [::webapp::helem "abbr" "$trr(nom).$trr(domaine)" \
-				"title" \
-				[display-rr-title $dbfd trr $idview] \
+	    set desc [display-rr $dbfd -1 trr $idview]
+	    set fqdn [::webapp::helem "a" "$trr(nom).$trr(domaine)" \
+				"href" "#" "onclick" "invdisp('$descid')" \
 				]
 	    if {$mode eq "fqdn"} then {
 		#
@@ -161,9 +169,16 @@ proc confirm {dbfd mode object nok idviews _checkedviews} {
 	    } else {
 		set c " CHECKED"
 	    }
-	    set check "<INPUT TYPE=CHECKBOX NAME=\"idviews\" VALUE=\"$idview\" $c>"
+	    set check "<INPUT TYPE=CHECKBOX NAME=\"idviews\" ID=\"$buttid\" VALUE=\"$idview\" $c>"
+
+	    set vn [::webapp::helem "label" $vn "for" $buttid]
 	}
 	lappend lines [list Line $check $vn $host]
+	set desc [::webapp::helem "span" $desc \
+				    "id" "$descid" \
+				    "style" "display:none" \
+				]
+	lappend lines [list Line $empty $empty $desc]
     }
 
     set seldel [::arrgen::output "html" $conf(tab-confirm) $lines]

@@ -29,7 +29,7 @@
 
     \titre {1} {Suppression effectuée}
 
-    La suppression de '%OBJET%' est effectuée.
+    %RESULT%
 
     La modification sera bientôt effective sur les serveurs de nom.
 

@@ -105,7 +105,7 @@ d cgi-register {} {
     # Prepare information display
     #
 
-    set machine [display-rr $dbfd -1 trr]
+    set machine [display-rr $dbfd -1 trr {}]
 
     #
     # Prepare next actions

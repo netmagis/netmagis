@@ -127,7 +127,7 @@ proc output-trr {dbfd crit addr _trr} {
     #
 
     if {[info exists trr(idrr)]} then {
-	append result [display-rr $dbfd -1 trr]
+	append result [display-rr $dbfd -1 trr {}]
 	append result "<P>"
     }
 

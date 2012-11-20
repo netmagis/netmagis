@@ -458,7 +458,7 @@ d cgi-register {action add-host} {
 	# Output a page with attribute list of the identified object
 	#
 
-	set host [display-rr $dbfd -1 trr]
+	set host [display-rr $dbfd -1 trr {}]
 	d urlset "%URLFORM%" $conf(nextadd) {}
 	d urladdnext "%URLFORM%"
 	d result $conf(page-exist) [list \
@@ -603,7 +603,7 @@ d cgi-register {action add-host} {
     # End of script: output page and close database
     #
 
-    set machine [display-rr $dbfd $trr(idrr) trr]
+    set machine [display-rr $dbfd $trr(idrr) trr {}]
     d result $conf(page-host) [list \
 					    [list %MACHINE% $machine] \
 			    ]
