@@ -451,7 +451,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
     }
 }
 
-proc output-map {dbfd lcidr idview _tabuid format} {
+proc output-map {dbfd lcidr _tabuid format} {
     upvar $_tabuid tabuid
     global conf
 
@@ -484,7 +484,6 @@ proc output-map {dbfd lcidr idview _tabuid format} {
     foreach cidr $lcidrv4 {
 	lappend nextargs cidr=$cidr
     }
-    lappend nextargs idview=$idview
     set nextargs [join $nextargs "&"]
 
     #
@@ -689,8 +688,6 @@ proc output {dbfd _ftab _tabuid format} {
     # Argument analysis
     #
 
-    set idview [lindex $ftab(idview) 0]
-
     set lcidr {}
     set l $ftab(cidr)
     foreach cidr $l {
@@ -729,21 +726,22 @@ proc output {dbfd _ftab _tabuid format} {
     }
 
     #
-    # Check access to view
-    #
-
-    set msg [check-views [list $idview]]
-    if {$msg ne ""} then {
-	d error $msg
-    }
-
-    #
     # Perform the action
     #
 
     if {$format eq "map"} then {
-	output-map $dbfd $lcidr $idview tabuid $format
+	output-map $dbfd $lcidr tabuid $format
     } else {
+	#
+	# Check access to view
+	#
+
+	set idview [lindex $ftab(idview) 0]
+	set msg [check-views [list $idview]]
+	if {$msg ne ""} then {
+	    d error $msg
+	}
+
 	output-list $dbfd $lcidr $idview tabuid $format
     }
 }
@@ -776,10 +774,10 @@ d cgi-register {docsv .+} {
     output $dbfd ftab tabuid "csv"
 }
 
+# idview is not used in map output
 d cgi-register {domap .+} {
     {plages	0 99999}
     {cidr	1 99999}
-    {idview	1 1}
 } {
     output $dbfd ftab tabuid "map"
 }
