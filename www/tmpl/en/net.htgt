@@ -97,9 +97,17 @@
 		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consult list">
 		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Print list">
 		    <INPUT TYPE="SUBMIT" NAME="docsv" VALUE="CSV export">
-		    ~
-		    ~
+		    <span style="color: white">%FORSELVIEW%</span>
+		    </div>
+		}
+	    }
+	    \lignetableau {
+		\multicasetableau {2} {
+		     \centragehorizontal {CENTER}
+		} {
+		    <div id="buttons">
 		    <INPUT TYPE="SUBMIT" NAME="domap" VALUE="Display map">
+		    <span style="color: white">%FORALLVIEWS%</span>
 		    </div>
 		}
 	    }

@@ -244,6 +244,8 @@
  {Domain}	{Domaine}
  {View}		{Vue}
  {Views}	{Vues}
+ {(for all views)} {(pour toutes les vues)}
+ {(for the selected view)} {(pour la vue sélectionnée)}
  {IP address}	{Adresse IP}
  {IP addresses}	{Adresses IP}
  {IP address and view}	{Adresse IP vue}

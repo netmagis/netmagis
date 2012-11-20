@@ -185,8 +185,12 @@ d cgi-register {
     append menuview $html
     if {$disp} then {
 	set dispview "block"
+	set dispforallviews [mc "(for all views)"]
+	set dispforselview [mc "(for the selected view)"]
     } else {
 	set dispview "none"
+	set dispforallviews ""
+	set dispforselview ""
     }
 
     #
@@ -214,6 +218,8 @@ d cgi-register {
 				[list %PLAGES%   $ranges] \
 				[list %DISPVIEW% $dispview] \
 				[list %MENUVIEW% $menuview] \
+				[list %FORALLVIEWS% $dispforallviews] \
+				[list %FORSELVIEW% $dispforselview] \
 			    ]
 }
 
