@@ -4115,6 +4115,45 @@ proc display-rr {dbfd idrr _trr idview} {
     return $html
 }
 
+#
+# Generates HTML code for a host description initially invisible
+# and a link to toggle its visibility.
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- _trr : initialized array (see read-rr-by-id)
+#	- idview : view id in which this host must be shown
+# Output:
+#   - return value: list {<link> <desc>} where:
+#	- link is the HTML code for the link to the host name
+#	- desc is the HTML code for the host information display
+#
+# Note: this function needs an "invdisp" Javascript function in the
+#   HTML page
+#
+# History
+#   2012/11/20 : pda/jean : design
+#   2012/11/29 : pda/jean : move to a library function
+#
+
+proc html-host-info {dbfd _trr idview} {
+    upvar $_trr trr
+
+    set descid "hv$idview"
+    set link [::webapp::helem "a" "$trr(nom).$trr(domaine)" \
+				    "href" "#" \
+				    "onclick" "invdisp('$descid')" \
+				    ]
+    set desc [display-rr $dbfd -1 trr $idview]
+    # normally, desc should not be empty
+    set desc [::webapp::helem "div" $desc \
+				    "id" "$descid" \
+				    "style" "display:none" \
+				]
+    return [list $link $desc] 
+}
+
 ##############################################################################
 # Read domains
 ##############################################################################
@@ -4429,6 +4468,186 @@ proc check-views {views} {
     }
 
     return $msg
+}
+
+#
+# Filter given view ids for host/address deletion/modification
+#
+# Input:
+#   - dbfd: database handle
+#   - _tabuid: user characteristics
+#   - mode: type of object ("fqdn" or "addr") to delete/modify
+#   - object: FQDN or IP address
+#   - idviews: list of idviews specified by user, may be empty for all views
+#   - _chkv: contains, in return, parameters of filtered views
+# Output:
+#   - return value: empty string or error message
+#   - array chkv:
+#	chkv(<idview>) = {<viewname> <errmsg or ""> <trr-ready-for-array-set>}
+#	chkv(idviews) = list of checked view ids
+#	chkv(nok) = number of error free idviews
+#
+# History
+#   2012/11/14 : pda/jean : design
+#   2012/11/29 : pda/jean : isolate as a library function
+#
+
+proc filter-views-for-host {dbfd _tabuid mode object idviews _chkv} {
+    upvar $_tabuid tabuid
+    upvar $_chkv chkv
+
+    #
+    # Are views selected?
+    #
+
+    set nviews [llength $idviews]
+    if {$nviews == 0} then {
+	#
+	# No view selected by user.  We must check all our views
+	# in order to search deletion/modification candidates.
+	#
+	set myviewids [u myviewids]
+	if {[llength $myviewids] == 0} then {
+	    return [mc "Sorry, but you do not have access to any view"]
+	}
+    } else {
+	#
+	# User has selected one or more views. This is a confirmation.
+	# 
+	set myviewids $idviews
+	set msg [check-views $myviewids]
+	if {$msg ne ""} then {
+	    return $msg
+	}
+    }
+
+    #
+    # Split FQDN into name and domain
+    #
+    if {$mode eq "fqdn"} then {
+	set msg [check-fqdn-syntax $dbfd $object name domain]
+	if {$msg ne ""} then {
+	    return $msg
+	}
+    }
+
+    #
+    # Check object in all views
+    #
+
+    set nok 0
+    set nerr 0
+    set mvi {}
+    foreach idview $myviewids {
+	set v [list $idview]
+	set vn [u viewname $idview]
+
+	set found 0
+	set err 0
+
+	if {$mode eq "fqdn"} then {
+	    #
+	    # FQDN
+	    #
+
+	    set found 1
+	    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
+
+	    if {$msg ne ""} then {
+		set err 1
+	    } else {
+		#
+		# Is it an alias in this view?
+		#
+
+		set cname [rr-cname-by-view trr $idview]
+		if {$cname eq ""} then {
+		    #
+		    # It is not an alias, there must be at least an IP address
+		    #
+		    set ip [rr-ip-by-view trr $idview]
+		    if {$ip eq ""} then {
+			set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
+			set err 1
+		    }
+
+		}
+	    }
+	} else {
+	    #
+	    # IP address. Check that this address exists and get
+	    # all stored informations
+	    #
+
+	    if {[read-rr-by-ip $dbfd $object $idview trr]} then {
+		#
+		# Check access to this name
+		#
+
+		set found 1
+		set name   $trr(nom)
+		set domain $trr(domaine)
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v bidon "del-name"]
+		if {$msg ne ""} then {
+		    set err 1
+		}
+	    }
+	}
+
+	if {$found} then {
+	    if {$err} then {
+		set chkv($idview) [list $vn $msg [array get trr]]
+		incr nerr
+	    } else {
+		set chkv($idview) [list $vn "" [array get trr]]
+		incr nok
+	    }
+	    lappend mvi $idview
+	}
+    }
+    set myviewids $mvi
+
+    #
+    # If asked for a name, check that name exists
+    #
+
+    if {$mode eq "fqdn" && $trr(idrr) eq ""} then {
+	return [mc "Name '%s' does not exist" $object]
+    }
+
+    if {$mode eq "addr" && $nok + $nerr == 0} then {
+	return [mc "Address '%s' not found" $object]
+    }
+
+    #
+    # Check that :
+    # - there is at least one view in which we can delete/modify a name
+    # - there is no view in error, if some views are specified
+    #
+
+    if {$nok == 0 || ($nviews && $nerr > 0)} then {
+	set msg ""
+	foreach idview $myviewids {
+	    lassign $chkv($idview) vn m t
+	    if {$m ne ""} then {
+		append msg [mc {Error detected in view '%1$s': %2$s} $vn $m]
+		append msg "\n"
+	    }
+	}
+	return $msg
+    }
+
+    #
+    # At this point, myviewids contains:
+    # - all user's view ids (good and in error) if confirmation is needed
+    # - only good view ids if user has already confirmed
+    # Views which do not include the searched IP address are not in myviewids
+    #
+
+    set chkv(idviews) $myviewids
+    set chkv(nok) $nok
+
+    return ""
 }
 
 ##############################################################################

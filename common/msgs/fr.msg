@@ -764,4 +764,8 @@
  {Error while generating a link number} {Erreur dans la génération d'un numéro de lien}
  {Can't modify link %s (%s)} {Impossible de modifier le lien %s (%s)}
  {Can't reuse link %s (%s)} {Impossible de réutiliser le lien %s (%s)}
+ {Address %1$s matches %2$s in view '%3$s'} {L'adresse %1$s correspond à %2$s dans la vue '%3$s'}
+ {<a href="%1$s">Remove</a> host '%2$s'} {<a href="%1$s">Supprimer</a> la machine '%2$s'}
+ {<a href="%1$s">Remove address '%2$s'</a> from '%3$s' (all other addresses of this host will stay)} {<a href="%1$s">Supprimer l'adresse '%2$s'</a> de '%3$s' (mais il restera les autres adresses)}
+ {<a href="%1$s">Edit informations</a> of '%2$s'} {<a href="%1$s">Éditer les informations</a> de '%2$s'}
 }

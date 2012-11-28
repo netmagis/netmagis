@@ -24,15 +24,20 @@
 	}
 }
 
-\* display (or not display) various items
 \set {header} {
-    <style type="text/css">
-	#suppruneip \{
-	    display: %DISPUNEIP%;
+    <script type="text/javascript">
+    <!--
+	function invdisp (id) \{
+	  var x = document.getElementById (id) ;
+	  if (x.style.display == "none") \{
+	    x.style.display = "block" ;
+	  \} else \{
+	    x.style.display = "none" ;
+	  \}
 	\}
-    </style>
+    //-->
+    </script>
 }
-
 
 \*******************************************************************************
 \partie {texte} {
@@ -41,23 +46,9 @@
 
     What do you want to do?
 
-    <ul>
-	<li>
-	    <a href="%URLSUPPR%">Remove</a> the host '%NOM%.%DOMAINE%'.
-	    </li>
-	<li id="suppruneip">
-	    <a href="%URLSUPPRIP%">Remove address '%ADR%'</a> from '%NOM%.%DOMAINE%'
-		(all other addresses of this host will stay).
-	    </li>
-	<li>
-	    <a href="%URLEDIT%">Edit informations</a> of '%NOM%.%DOMAINE%'.
-	    </li>
-	<li>
-	    <a href="%URLBACK%">Come back to previous display</a>
-	    </li>
-    </ul>
+    %ACTIONS%
 
-    %MACHINE%
+    Or you can <a href="%URLBACK%">go back to previous display</a>
 }
 
 }

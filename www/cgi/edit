@@ -3,15 +3,17 @@
 #
 # Choose which type of modification to apply to an IP address.
 #
-# Called by: liste (address map)
+# Called by: net (host list by view or address map)
 #
 # Parameters (form or url):
 #   - adr: IP address (v4 at this time)
+#   - idview (optional): view id (or all possible views if not provided)
 #
 # History
 #   2010/10/10 : pda      : specification
 #   2010/12/11 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
+#   2012/11/29 : pda/jean : add views
 #
 
 #
@@ -42,6 +44,7 @@ source %LIBNETMAGIS%
 
 d cgi-register {} {
     {adr	1 1}
+    {idview	0 1}
 } {
     global conf
 
@@ -67,71 +70,108 @@ d cgi-register {} {
     }
 
     #
-    # Check that given address exists, and get all related information.
+    # Get all possible views (if idview is not given) or get
+    # only filtered views (if idview is given)
     #
 
-    if {! [read-rr-by-ip $dbfd $addr trr]} then {
-	d error [mc "Address '%s' not found" $addr]
+    if {$idview == ""} then {
+	set idviews {}
+    } else {
+	set idviews [list $idview]
     }
-
-    #
-    # Check access to this name
-    #
-
-    set name   $trr(nom)
-    set domain $trr(domaine)
-    set msg [check-authorized-host $dbfd $idcor $name $domain bidon "del-name"]
+    set msg [filter-views-for-host $dbfd tabuid "addr" $adr $idviews chkv]
     if {$msg ne ""} then {
 	d error $msg
     }
 
+    set idviews $chkv(idviews)
+    set nok $chkv(nok)
+
     #
-    # Is there only one IP address for this host?
-    # If only 1 : delete address is equivalent to delete the host name
-    # If more than 1 : delete address only delete *one* address
-    # This test is made only to differentiate message "delete one
-    # IP address but do not delete name"
+    # Display selected actions for all views
     #
 
-    if {[llength $trr(ip)] == 1} then {
-	# do not display action
-	set dispuneip "none"
-    } else {
-	# display action
-	set dispuneip "block"
+    set actions ""
+    foreach idv $idviews {
+	lassign $chkv($idv) vn msg t
+
+	array unset trr
+	array set trr $t
+
+	set fqdn "$trr(nom).$trr(domaine)"
+
+	if {$msg eq ""} then {
+	    set vact ""
+
+	    #
+	    # Delete name
+	    #
+	    d urlset "" $conf(nextdel) [list \
+						[list "name" $trr(nom)] \
+						[list "domain" $trr(domaine)] \
+						[list "idviews" $idv] \
+					    ]
+	    d urladdnext ""
+	    set a [mc {<a href="%1$s">Remove</a> host '%2$s'} [d urlget ""] $fqdn]
+	    append vact [::webapp::helem "li" $a]
+	    append vact "\n"
+
+	    #
+	    # Delete IP address (if more than one IP address for this host)
+	    #
+
+	    set lip [rr-ip-by-view trr $idv]
+	    if {[llength $lip] > 1} then {
+		d urlset "" $conf(nextdel) [list \
+						    [list "addr" $addr] \
+						    [list "idviews" $idv] \
+						]
+		d urladdnext ""
+		set a [mc {<a href="%1$s">Remove address '%2$s'</a> from '%3$s' (all other addresses of this host will stay)} [d urlget ""] $addr $fqdn]
+		append vact [::webapp::helem "li" $a]
+		append vact "\n"
+	    }
+
+	    #
+	    # Modify informations
+	    #
+
+	    d urlset "" $conf(nextmod) [list \
+						[list "action" "edit"] \
+						[list "nom" $trr(nom)] \
+						[list "domaine" $trr(domaine)] \
+						[list "idviews" $idv] \
+					    ]
+	    d urladdnext ""
+	    set a [mc {<a href="%1$s">Edit informations</a> of '%2$s'} [d urlget ""] $fqdn]
+	    append vact [::webapp::helem "li" $a]
+	    append vact "\n"
+
+	    set vact [::webapp::helem "ul" $vact]
+
+	    #
+	    # Display view name only if more than view is available
+	    #
+
+	    lassign [html-host-info $dbfd trr $idv] link desc
+	    set title [mc {Address %1$s matches %2$s in view '%3$s'} $addr $link $vn]
+
+	    set html "$title\n$desc\n$vact"
+	    if {$nok <= 1} then {
+		append actions $html
+	    } else {
+		append actions [::webapp::helem "li" $html]
+	    }
+	}
+    }
+
+    if {$nok > 1} then {
+	set actions [::webapp::helem "ul" $actions]
     }
 
     #
-    # Prepare information display
+    # Next action
     #
-
-    set machine [display-rr $dbfd -1 trr {}]
-
-    #
-    # Prepare next actions
-    #
-
-    d urlset "%URLSUPPR%" $conf(nextdel) [list \
-						[list "action" "del-name"] \
-						[list "confirm" "yes"] \
-						[list "nom" $name] \
-						[list "domaine" $domain] \
-					    ]
-    d urladdnext "%URLSUPPR%"
-
-    d urlset "%URLSUPPRIP%" $conf(nextdel) [list \
-						[list "action" "del-ip"] \
-						[list "confirm" "yes"] \
-						[list "adr" $addr] \
-					    ]
-    d urladdnext "%URLSUPPRIP%"
-
-    d urlset "%URLEDIT%" $conf(nextmod) [list \
-						[list "action" "edit"] \
-						[list "nom" $name] \
-						[list "domaine" $domain] \
-					    ]
-    d urladdnext "%URLEDIT%"
 
     switch -- [d nextprog] {
 	map { set format "domap" }
@@ -149,10 +189,9 @@ d cgi-register {} {
 
     d result $conf(page) [list \
 				[list %ADR%         $addr] \
-				[list %NOM%         $name] \
-				[list %DOMAINE%     $domain] \
-				[list %MACHINE%     $machine] \
-				[list %DISPUNEIP%   $dispuneip] \
+				[list %NOM%         $trr(nom)] \
+				[list %DOMAINE%     $trr(domaine)] \
+				[list %ACTIONS%     $actions] \
 			    ]
 }
 

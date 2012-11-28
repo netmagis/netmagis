@@ -101,9 +101,12 @@ source %LIBNETMAGIS%
 # mode : "addr" or "fqdn"
 # object : ip address for "addr" mode, or fqdn for "fqdn" mode
 
-proc confirm {dbfd mode object nok idviews _checkedviews} {
-    upvar $_checkedviews checkedviews
+proc confirm {dbfd mode object _chkv} {
     global conf
+    upvar $_chkv chkv
+
+    set idviews $chkv(idviews)
+    set nok $chkv(nok)
 
     # display checkbutton for view only if there is more than a single view
     set dispconfview [expr $nok > 1]
@@ -113,11 +116,10 @@ proc confirm {dbfd mode object nok idviews _checkedviews} {
 
     set lines {}
     foreach idview $idviews {
-	lassign $checkedviews($idview) vn msg t
+	lassign $chkv($idview) vn msg t
 
-	set descid "hv$idview"
 	set buttid "bv$idview"
-	set desc ""
+	set desc $empty
 
 	array unset trr
 	array set trr $t
@@ -129,10 +131,11 @@ proc confirm {dbfd mode object nok idviews _checkedviews} {
 	    set check ""
 	    set host [::webapp::html-string $msg]
 	} else {
-	    set desc [display-rr $dbfd -1 trr $idview]
-	    set fqdn [::webapp::helem "a" "$trr(nom).$trr(domaine)" \
-				"href" "#" "onclick" "invdisp('$descid')" \
-				]
+	    #
+	    # Get host information
+	    #
+	    lassign [html-host-info $dbfd trr $idview] link desc
+
 	    if {$mode eq "fqdn"} then {
 		#
 		# Information about host found
@@ -141,10 +144,10 @@ proc confirm {dbfd mode object nok idviews _checkedviews} {
 		set cname [rr-cname-by-view trr $idview]
 		if {$cname eq ""} then {
 		    # This is not an alias
-		    set host [mc "Remove host '%s'" $fqdn]
+		    set host [mc "Remove host '%s'" $link]
 		} else {
 		    # This is an alias, display informations about target host
-		    set host [mc "Remove alias '%s'" $fqdn]
+		    set host [mc "Remove alias '%s'" $link]
 		}
 	    } else {
 		#
@@ -154,9 +157,9 @@ proc confirm {dbfd mode object nok idviews _checkedviews} {
 
 		set lip [rr-ip-by-view trr $idview]
 		if {[llength $lip] == 1} then {
-		    set host [mc "Remove host '%s'" $fqdn]
+		    set host [mc "Remove host '%s'" $link]
 		} else {
-		    set host [mc {Remove IP address '%1$s' from host '%2$s'} $object $fqdn]
+		    set host [mc {Remove IP address '%1$s' from host '%2$s'} $object $link]
 		}
 	    }
 
@@ -174,10 +177,6 @@ proc confirm {dbfd mode object nok idviews _checkedviews} {
 	    set vn [::webapp::helem "label" $vn "for" $buttid]
 	}
 	lappend lines [list Line $check $vn $host]
-	set desc [::webapp::helem "span" $desc \
-				    "id" "$descid" \
-				    "style" "display:none" \
-				]
 	lappend lines [list Line $empty $empty $desc]
     }
 
@@ -210,9 +209,11 @@ proc confirm {dbfd mode object nok idviews _checkedviews} {
 # mode : "addr" or "fqdn"
 # object : ip address for "addr" mode, or fqdn for "fqdn" mode
 
-proc remove {dbfd mode object idviews _checkedviews} {
+proc remove {dbfd mode object _chkv} {
     global conf
-    upvar $_checkedviews checkedviews
+    upvar $_chkv chkv
+
+    set idviews $chkv(idviews)
 
     #
     # Confirmation is accepted. All view ids have been checked.
@@ -225,7 +226,7 @@ proc remove {dbfd mode object idviews _checkedviews} {
     set result {}
 
     foreach idview $idviews {
-	lassign $checkedviews($idview) vn msg t
+	lassign $chkv($idview) vn msg t
 
 	array unset trr
 	array set trr $t
@@ -419,148 +420,22 @@ d cgi-register {} {
     }
 
     #
-    # Are views selected? If so, this is a confirmation
+    # Filter view ids
     #
 
-    set confirm [llength $idviews]
-    if {! $confirm} then {
-	#
-	# We must check all our views in order to search deletion
-	# candidates
-	#
-	set myviewids [u myviewids]
-	if {[llength $myviewids] == 0} then {
-	    d error "Sorry, but you do not have access to any view"
-	}
-    } else {
-	#
-	# User has selected one or more views. This is a confirmation.
-	# 
-	set myviewids $idviews
-    }
-
-    #
-    # Check object in all views
-    #
-
-    set nok 0
-    set nerr 0
-    set mvi {}
-    foreach idview $myviewids {
-	set v [list $idview]
-	set vn [u viewname $idview]
-
-	set found 0
-	set err 0
-
-	if {$mode eq "fqdn"} then {
-	    #
-	    # FQDN
-	    #
-
-	    set found 1
-	    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
-
-	    if {$msg ne ""} then {
-		set err 1
-	    } else {
-		#
-		# Is it an alias in this view?
-		#
-
-		set cname [rr-cname-by-view trr $idview]
-		if {$cname eq ""} then {
-		    #
-		    # It is not an alias, there must be at least an IP address
-		    #
-		    set ip [rr-ip-by-view trr $idview]
-		    if {$ip eq ""} then {
-			set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
-			set err 1
-		    }
-
-		}
-	    }
-	} else {
-	    #
-	    # IP address. Check that this address exists and get
-	    # all stored informations
-	    #
-
-	    if {[read-rr-by-ip $dbfd $addr $idview trr]} then {
-		#
-		# Check access to this name
-		#
-
-		set found 1
-		set name   $trr(nom)
-		set domain $trr(domaine)
-		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v bidon "del-name"]
-		if {$msg ne ""} then {
-		    set err 1
-		}
-	    }
-	}
-
-	if {$found} then {
-	    if {$err} then {
-		set checkedviews($idview) [list $vn $msg [array get trr]]
-		incr nerr
-	    } else {
-		set checkedviews($idview) [list $vn "" [array get trr]]
-		incr nok
-	    }
-	    lappend mvi $idview
-	}
-    }
-    set myviewids $mvi
-
-    #
-    # If asked for a name, check that name exists
-    #
-
-    if {$mode eq "fqdn" && $trr(idrr) eq ""} then {
-	d error [mc "Name '%s' does not exist" $object]
-    }
-
-    if {$mode eq "addr" && $nok + $nerr == 0} then {
-	d error [mc "Address '%s' not found" $object]
-    }
-
-    #
-    # Check that :
-    # - there is at least one view in which we can delete a name
-    # - there is no view in error, if this is a confirmation
-    #
-
-    if {$nok == 0 || ($confirm && $nerr > 0)} then {
-	set msg ""
-	foreach idview $myviewids {
-	    lassign $checkedviews($idview) vn m t
-	    if {$m ne ""} then {
-		append msg [mc {Error detected in view '%1$s': %2$s} $vn $m]
-		append msg "\n"
-	    }
-	}
+    set msg [filter-views-for-host $dbfd tabuid $mode $object $idviews chkv]
+    if {$msg ne ""} then {
 	d error $msg
     }
-
-    #
-    # At this point, myviewids contains:
-    # - all user's view ids (good and in error) if confirmation is needed
-    # - only good view ids if user has already confirmed
-    # Views which do not include the searched IP address are not in myviewids
-    #
-
 
     #
     # Ask for confirmation if needed
     #
 
-    if {! $confirm} then {
-	confirm $dbfd $mode $object $nok $myviewids checkedviews
+    if {[llength $idviews] == 0} then {
+	confirm $dbfd $mode $object chkv
     } else {
-	remove $dbfd $mode $object $myviewids checkedviews
+	remove $dbfd $mode $object chkv
     }
 }
 
