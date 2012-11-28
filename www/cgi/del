@@ -519,11 +519,11 @@ d cgi-register {} {
     # If asked for a name, check that name exists
     #
 
-    if {$mode eq "fqdn" eq "" && $trr(idrr) eq ""} then {
+    if {$mode eq "fqdn" && $trr(idrr) eq ""} then {
 	d error [mc "Name '%s' does not exist" $object]
     }
 
-    if {$mode eq "$addr" ne "" && $nok + $nerr == 0} then {
+    if {$mode eq "addr" && $nok + $nerr == 0} then {
 	d error [mc "Address '%s' not found" $object]
     }
 
