@@ -768,4 +768,5 @@
  {<a href="%1$s">Remove</a> host '%2$s'} {<a href="%1$s">Supprimer</a> la machine '%2$s'}
  {<a href="%1$s">Remove address '%2$s'</a> from '%3$s' (all other addresses of this host will stay)} {<a href="%1$s">Supprimer l'adresse '%2$s'</a> de '%3$s' (mais il restera les autres adresses)}
  {<a href="%1$s">Edit informations</a> of '%2$s'} {<a href="%1$s">Éditer les informations</a> de '%2$s'}
+ {<a href="%1$s">Modify '%2$s'</a> in view '%3s'} {<a href="%1$s">Modifier '%S2$s'</a> dans la vue '%3$s'}
 }

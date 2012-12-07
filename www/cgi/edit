@@ -85,7 +85,7 @@ d cgi-register {} {
     }
 
     set idviews $chkv(idviews)
-    set nok $chkv(nok)
+    set nok [llength $chkv(ok)]
 
     #
     # Display selected actions for all views
@@ -140,7 +140,7 @@ d cgi-register {} {
 						[list "action" "edit"] \
 						[list "nom" $trr(nom)] \
 						[list "domaine" $trr(domaine)] \
-						[list "idviews" $idv] \
+						[list "idview" $idv] \
 					    ]
 	    d urladdnext ""
 	    set a [mc {<a href="%1$s">Edit informations</a> of '%2$s'} [d urlget ""] $fqdn]

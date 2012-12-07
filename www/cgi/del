@@ -106,7 +106,7 @@ proc confirm {dbfd mode object _chkv} {
     upvar $_chkv chkv
 
     set idviews $chkv(idviews)
-    set nok $chkv(nok)
+    set nok [llength $chkv(ok)]
 
     # display checkbutton for view only if there is more than a single view
     set dispconfview [expr $nok > 1]

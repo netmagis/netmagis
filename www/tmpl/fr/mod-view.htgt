@@ -1,0 +1,38 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {11/04/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Sélection d'une machine à modifier
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application Netmagis
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Modification de machine dans le DNS}
+
+    Sélectionnez la vue dans laquelle vous voulez modifier
+    les informations :
+
+    %LIST%
+}
+
+}

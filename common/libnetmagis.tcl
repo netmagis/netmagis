@@ -3392,7 +3392,7 @@ proc read-rr-by-id {dbfd idrr _trr} {
 	set trr(rolemail) ""
 	set sql "SELECT * FROM dns.role_mail WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(rolemail) [list $tab(idview) \
+	    lappend trr(rolemail) [list $tab(idviewrr) \
 	    				$tab(heberg) $tab(idviewheb)]
 	}
 	set trr(adrmail) {}
@@ -3494,7 +3494,7 @@ proc rr-rolemail-by-view {_trr idview} {
 	foreach rmview $trr(rolemail) {
 	    lassign $rmview id idheb idviewheb
 	    if {$id == $idview} then {
-		lappend lrm [list $idheb $idviewheb]
+		set lrm [list $idheb $idviewheb]
 	    }
 	}
     }
@@ -3803,7 +3803,7 @@ proc del-rr-and-dependancies {dbfd _trr idview _msg} {
 # Output:
 #   - return value: empty string or error message
 #
-# Note : if the RR is not an orphaned one, it is not delete and
+# Note : if the RR is not an orphaned one, it is not deleted and
 #	an empty string is returned (it is a normal case, not an error).
 #
 # History
@@ -3909,6 +3909,52 @@ proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
 	}
     } else {
 	set msg [mc "RR addition impossible: %s" $msg]
+    }
+    return $msg
+}
+
+#
+# Update references to a RR when a new RR is created after a host renaming
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- oidrr: id of old RR
+#	- nidrr: id of new RR
+#	- idview: view id
+# Output:
+#   - return value: empty string, or error message
+#
+# History
+#   2012/12/07 : pda/jean : design
+#
+
+proc update-host-refs-in-view {dbfd oidrr nidrr idview} {
+    set sql {}
+    lappend sql "UPDATE dns.role_mail
+			    SET heberg = $nidrr
+			    WHERE heberg = $oidrr AND idviewheb = $idview"
+    lappend sql "UPDATE dns.role_web
+			    SET idrr = $nidrr
+			    WHERE idrr = $oidrr AND idview = $idview"
+    lappend sql "UPDATE dns.rr_ip
+			    SET idrr = $nidrr
+			    WHERE idrr = $oidrr AND idview = $idview"
+    lappend sql "UPDATE dns.rr_cname
+			    SET cname = $nidrr
+			    WHERE cname = $oidrr AND idview = $idview"
+    lappend sql "UPDATE dns.rr_mx
+			    SET mx = $nidrr
+			    WHERE mx = $oidrr AND idview = $idview"
+    lappend sql "UPDATE dns.relais_dom
+			    SET mx = $nidrr
+			    WHERE mx = $oidrr AND idview = $idview"
+    lappend sql "UPDATE topo.ifchanges
+			    SET idrr = $nidrr
+			    WHERE idrr = $oidrr"
+    set sql [join $sql ";"]
+    if {[::pgsql::execsql $dbfd $sql msg]} then {
+	set msg ""
     }
     return $msg
 }
@@ -4485,7 +4531,8 @@ proc check-views {views} {
 #   - array chkv:
 #	chkv(<idview>) = {<viewname> <errmsg or ""> <trr-ready-for-array-set>}
 #	chkv(idviews) = list of checked view ids
-#	chkv(nok) = number of error free idviews
+#	chkv(ok) = list of view ids ok
+#	chkv(err) = list of view ids in error
 #
 # History
 #   2012/11/14 : pda/jean : design
@@ -4495,6 +4542,9 @@ proc check-views {views} {
 proc filter-views-for-host {dbfd _tabuid mode object idviews _chkv} {
     upvar $_tabuid tabuid
     upvar $_chkv chkv
+
+    set chkv(ok) {}
+    set chkv(err) {}
 
     #
     # Are views selected?
@@ -4570,7 +4620,6 @@ proc filter-views-for-host {dbfd _tabuid mode object idviews _chkv} {
 			set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
 			set err 1
 		    }
-
 		}
 	    }
 	} else {
@@ -4597,9 +4646,11 @@ proc filter-views-for-host {dbfd _tabuid mode object idviews _chkv} {
 	if {$found} then {
 	    if {$err} then {
 		set chkv($idview) [list $vn $msg [array get trr]]
+		lappend chkv(err) $idview
 		incr nerr
 	    } else {
 		set chkv($idview) [list $vn "" [array get trr]]
+		lappend chkv(ok) $idview
 		incr nok
 	    }
 	    lappend mvi $idview
@@ -4645,7 +4696,6 @@ proc filter-views-for-host {dbfd _tabuid mode object idviews _chkv} {
     #
 
     set chkv(idviews) $myviewids
-    set chkv(nok) $nok
 
     return ""
 }
