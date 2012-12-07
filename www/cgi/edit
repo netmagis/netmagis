@@ -79,7 +79,7 @@ d cgi-register {} {
     } else {
 	set idviews [list $idview]
     }
-    set msg [filter-views-for-host $dbfd tabuid "addr" $adr $idviews chkv]
+    set msg [filter-views $dbfd tabuid "addr" $adr $idviews chkv]
     if {$msg ne ""} then {
 	d error $msg
     }

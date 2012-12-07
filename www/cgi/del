@@ -423,7 +423,7 @@ d cgi-register {} {
     # Filter view ids
     #
 
-    set msg [filter-views-for-host $dbfd tabuid $mode $object $idviews chkv]
+    set msg [filter-views $dbfd tabuid $mode $object $idviews chkv]
     if {$msg ne ""} then {
 	d error $msg
     }

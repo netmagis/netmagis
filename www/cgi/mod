@@ -272,7 +272,7 @@ d cgi-register {action edit} {
     } else {
 	set idviews [list $idview]
     }
-    set msg [filter-views-for-host $dbfd tabuid "fqdn" $fqdn $idviews chkv]
+    set msg [filter-views $dbfd tabuid "fqdn" $fqdn $idviews chkv]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -338,7 +338,7 @@ d cgi-register {action store} {
     #
 
     set fqdn "$trr(nom).$trr(domaine)"
-    set msg [filter-views-for-host $dbfd tabuid "fqdn" $fqdn [list $idview] chkv]
+    set msg [filter-views $dbfd tabuid "fqdn" $fqdn [list $idview] chkv]
     if {$msg ne ""} then {
 	d error $msg
     }

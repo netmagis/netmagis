@@ -4522,7 +4522,7 @@ proc check-views {views} {
 # Input:
 #   - dbfd: database handle
 #   - _tabuid: user characteristics
-#   - mode: type of object ("fqdn" or "addr") to delete/modify
+#   - mode: type of object ("fqdn", "addr" or "rolemail") to delete/modify
 #   - object: FQDN or IP address
 #   - idviews: list of idviews specified by user, may be empty for all views
 #   - _chkv: contains, in return, parameters of filtered views
@@ -4534,12 +4534,19 @@ proc check-views {views} {
 #	chkv(ok) = list of view ids ok
 #	chkv(err) = list of view ids in error
 #
+# Note:
+#   - "fqdn and "addr" modes are for host edition
+#	object may be a fqdn or an IP address
+#   - "rolemail" mode is for mail role edition
+#	object must be a fqdn
+#
 # History
 #   2012/11/14 : pda/jean : design
 #   2012/11/29 : pda/jean : isolate as a library function
+#   2012/12/07 : pda/jean : generalization
 #
 
-proc filter-views-for-host {dbfd _tabuid mode object idviews _chkv} {
+proc filter-views {dbfd _tabuid mode object idviews _chkv} {
     upvar $_tabuid tabuid
     upvar $_chkv chkv
 
@@ -4574,7 +4581,7 @@ proc filter-views-for-host {dbfd _tabuid mode object idviews _chkv} {
     #
     # Split FQDN into name and domain
     #
-    if {$mode eq "fqdn"} then {
+    if {$mode eq "fqdn" || $mode eq "rolemail"} then {
 	set msg [check-fqdn-syntax $dbfd $object name domain]
 	if {$msg ne ""} then {
 	    return $msg
@@ -4595,51 +4602,60 @@ proc filter-views-for-host {dbfd _tabuid mode object idviews _chkv} {
 	set found 0
 	set err 0
 
-	if {$mode eq "fqdn"} then {
-	    #
-	    # FQDN
-	    #
-
-	    set found 1
-	    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
-
-	    if {$msg ne ""} then {
-		set err 1
-	    } else {
+	switch $mode {
+	    fqdn {
 		#
-		# Is it an alias in this view?
+		# FQDN
 		#
 
-		set cname [rr-cname-by-view trr $idview]
-		if {$cname eq ""} then {
+		set found 1
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
+
+		if {$msg ne ""} then {
+		    set err 1
+		} else {
 		    #
-		    # It is not an alias, there must be at least an IP address
+		    # Is it an alias in this view?
 		    #
-		    set ip [rr-ip-by-view trr $idview]
-		    if {$ip eq ""} then {
-			set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
+
+		    set cname [rr-cname-by-view trr $idview]
+		    if {$cname eq ""} then {
+			#
+			# It is not an alias, there must be at least an IP address
+			#
+			set ip [rr-ip-by-view trr $idview]
+			if {$ip eq ""} then {
+			    set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
+			    set err 1
+			}
+		    }
+		}
+	    }
+	    addr {
+		#
+		# IP address. Check that this address exists and get
+		# all stored informations
+		#
+
+		if {[read-rr-by-ip $dbfd $object $idview trr]} then {
+		    #
+		    # Check access to this name
+		    #
+
+		    set found 1
+		    set name   $trr(nom)
+		    set domain $trr(domaine)
+		    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v bidon "del-name"]
+		    if {$msg ne ""} then {
 			set err 1
 		    }
 		}
 	    }
-	} else {
-	    #
-	    # IP address. Check that this address exists and get
-	    # all stored informations
-	    #
-
-	    if {[read-rr-by-ip $dbfd $object $idview trr]} then {
-		#
-		# Check access to this name
-		#
-
-		set found 1
-		set name   $trr(nom)
-		set domain $trr(domaine)
-		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v bidon "del-name"]
-		if {$msg ne ""} then {
-		    set err 1
-		}
+	    rolemail {
+		?
+	    }
+	    default {
+		return "Internal error: unknown mode '$mode'"
 	    }
 	}
 
@@ -5138,8 +5154,8 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 			CHECK {
 			    # remove the name (in all views) from the list
 			    # of mail domains hosted on this host
-			    while {[set pos [lsearch -exact -index 0
-						$ladr $trr(idrr)]] != 1} {
+			    while {[set pos [lsearch -exact -index 0 \
+						$ladr $trr(idrr)]] != -1} {
 				set ladr [lreplace $ladr $pos $pos]
 			    }
 			    if {[llength $ladr] > 0} then {
@@ -5372,6 +5388,7 @@ proc check-domain-relay {dbfd idcor _iddom domain} {
 #	- idcor : user id
 #	- name : name of the role (mail domain)
 #	- domain : domain of the role (mail domain)
+#	- idview: view id
 #	- trr : in return, contains trr (see read-rr-by-id)
 #	- trrh : in return, contains hosting trr (see read-rr-by-id)
 # Output:
@@ -5380,16 +5397,18 @@ proc check-domain-relay {dbfd idcor _iddom domain} {
 #	trr(iddom)=domain-id
 #   - parameter trrh : if trr(rolemail) exists, trrh contains RR. Else,
 #	trr is a false RR containing at lease trrh(nom) and trrh(domaine)
-#	trrh(nom) et trrh(domaine)
+#	trrh(nom) and trrh(domaine)
 #
 # History
 #   2004/02/12 : pda/jean : design
 #   2004/02/27 : pda/jean : centralization of access rights
 #   2004/03/01 : pda/jean : add trr and trrh
 #   2010/11/29 : pda      : i18n
+#   2012/12/07 : pda/jean : add views
+#   2012/12/07 : pda/jean : bug fix: check mailbox host too
 #
 
-proc check-role-mail {dbfd idcor name domain _trr _trrh} {
+proc check-role-mail {dbfd idcor name domain idview _trr _trrh} {
     upvar $_trr trr
     upvar $_trrh trrh
 
@@ -5399,7 +5418,7 @@ proc check-role-mail {dbfd idcor name domain _trr _trrh} {
     # Access rights check
     #
 
-    set msg [check-authorized-host $dbfd $idcor $name $domain trr "addrmail"]
+    set msg [check-authorized-host $dbfd $idcor $name $domain $idview trr "addrmail"]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -5413,14 +5432,22 @@ proc check-role-mail {dbfd idcor name domain _trr _trrh} {
     set trrh(domaine) ""
 
     if {$trr(idrr) ne ""} then {
-	set h $trr(rolemail)
-	if {$h ne ""} then {
+	set lrm [rr-rolemail-by-view trr $idview]
+	if {[llength $lrm] > 0} then {
+	    lassign $lrm idheberg idvh
+
 	    #
 	    # Name is an existing mail address. Do we have rights on it?
 	    #
-	    if {! [read-rr-by-id $dbfd $h trrh]} then {
+	    if {! [read-rr-by-id $dbfd $idheberg th]} then {
 		return [mc {Internal error on '%1$s': id '%2$s' of mail host not found} \
 				$fqdn $h]
+	    }
+	    set nh $th(nom)
+	    set dh $th(domaine)
+	    set msg [check-authorized-host $dbfd $idcor $nh $dh $idvh trrh "host"]
+	    if {$msg ne ""} then {
+		return $msg
 	    }
 	}
     }

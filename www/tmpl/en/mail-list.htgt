@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Edit mailbox host for %DOMAINE%}
+    \titre {1} {Edit mailbox host for %DOMAIN%}
 
     \tableau {
 	\bordure {0} {}
