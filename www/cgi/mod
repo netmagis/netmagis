@@ -107,51 +107,6 @@ d cgi-register {action {}} {
 ##############################################################################
 
 #
-# host found in more than one view: display view selection page
-#
-
-proc disp-view {_chkv} {
-    global conf
-    upvar $_chkv chkv
-
-    set idviews $chkv(idviews)
-
-    set html ""
-    foreach idview $idviews {
-	lassign $chkv($idview) vn msg t
-
-	if {$msg eq ""} then {
-	    array unset trr
-	    array set trr $t
-
-	    set fqdn "$trr(nom).$trr(domaine)"
-
-	    d urlset "" $conf(next) [list \
-					    [list "action" "edit"] \
-					    [list "nom" $trr(nom)] \
-					    [list "domaine" $trr(domaine)] \
-					    [list "idview" $idview] \
-					]
-	    d urladdnext ""
-	    set url [d urlget ""]
-
-	    set a [mc {<a href="%1$s">Modify '%2$s'</a> in view '%3$s'} $url $fqdn $vn]
-	    append html [::webapp::helem "li" $a]
-	    append html "\n"
-	}
-    }
-    set html [::webapp::helem "ul" $html]
-
-    #
-    # End of script: output page and close database
-    #
-
-    d result $conf(page-view) [list \
-					[list %LIST% $html] \
-			    ]
-}
-
-#
 # host found in only one view (or selected view): display host edition page
 #
 
@@ -285,7 +240,10 @@ d cgi-register {action edit} {
     if {[llength $chkv(ok)] == 1} then {
 	disp-edit $dbfd chkv tabuid
     } else {
-	disp-view chkv
+	set html [html-select-view chkv $conf(next)]
+	d result $conf(page-view) [list \
+					    [list %LIST% $html] \
+				]
     }
 }
 

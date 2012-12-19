@@ -24,6 +24,7 @@
 #	- action : "edit"
 #	- nom : name (first component of fqdn) of mail address (or empty)
 #	- domaine : domain (last components of fqdn) of mail address
+#	- idview: id of selected view, or empty if no view has been selected
 #   - modify mail host for a mail address
 #	- action : "mod"
 #	- nom : name (first component of fqdn) of mail address
@@ -44,6 +45,7 @@
 
 set conf(page-sel)	mail-sel.html
 set conf(page-list)	mail-list.html
+set conf(page-view)	mail-view.html
 set conf(page-edit)	mail-edit.html
 set conf(page-mod)	mail-mod.html
 
@@ -190,9 +192,10 @@ d cgi-register {action list} {
 
     set sql "
 	SELECT r1.nom AS namea, d1.nom AS domaina,
-		r2.nom AS nameh, d2.nom AS domainh
+		r2.nom AS nameh, d2.nom AS domainh, v2.name AS viewnameh
 	    FROM dns.role_mail, global.corresp,
-		dns.rr r1, dns.domaine d1, dns.rr r2, dns.domaine d2
+		dns.rr r1, dns.domaine d1, dns.rr r2, dns.domaine d2,
+		dns.view v2
 	    WHERE corresp.idcor = $idcor
 		AND role_mail.idrr = r1.idrr
 		AND r1.iddom = d1.iddom
@@ -224,11 +227,13 @@ d cgi-register {action list} {
 		AND role_mail.idviewheb IN
 			(SELECT idview FROM dns.dr_view drv
 					WHERE drv.idgrp = corresp.idgrp)
+		AND role_mail.idviewheb = v2.idview
 	    ORDER BY domaina ASC, namea ASC
 		"
     set lroles {}
     pg_select $dbfd $sql tab {
-	lappend lroles [list $tab(namea) $tab(domaina) $tab(nameh) $tab(domainh)]
+	lappend lroles [list $tab(namea) $tab(domaina) \
+				$tab(nameh) $tab(domainh) $tab(viewnameh)]
     }
 
     if {[llength $lroles] == 0} then {
@@ -241,7 +246,7 @@ d cgi-register {action list} {
 			    ]
 	foreach q $lroles {
 	    # link "..../mail?action=edit&nom=...&domaine=...&idview=..."
-	    lassign $q namea domaina nameh domainh
+	    lassign $q namea domaina nameh domainh viewnameh
 
 	    # only "RFC compatible" characters, no need to quote
 	    d urlset "" $conf(next) [list \
@@ -253,7 +258,7 @@ d cgi-register {action list} {
 	    set url [d urlget ""]
 	    set html [::webapp::helem "a" "$namea.$domaina" "href" $url]
 
-	    lappend lines [list Normal $html "$nameh.$domainh"]
+	    lappend lines [list Normal $html "$nameh.$domainh/$viewnameh"]
 	}
 	set tableau [::arrgen::output "html" $conf(tableau) $lines]
     }
@@ -306,29 +311,20 @@ d cgi-register {action add} {
     set vnh [u viewname $idviewh]
 
     #
-    # Check permission to declare a mail role and get informations on
-    # mailbox host.
+    # Check permission to declare a mail role
     #
 
-    set msg [check-role-mail $dbfd $idcor $name $domain $idview trr trrh]
+    set msg [check-authorized-host $dbfd $idcor $name $domain [list $idview] trr "add-addrmail"]
+
     if {$msg ne ""} then {
 	d error $msg
     }
 
     #
-    # Check that there is no existing mailbox host
-    #
-
-    set lrm [rr-rolemail-by-view trr $idview]
-    if {[llength $lrm] > 0} then {
-	d error [mc {There is already a mail role '%1$s' in view '%2$s'} $fqdn $vn]
-    }
-
-    #
     # Check future mailbox host
     #
-    
-    set msg [check-authorized-host $dbfd $idcor $nameh $domainh $idviewh trrh "existing-host"]
+
+    set msg [check-authorized-host $dbfd $idcor $nameh $domainh [list $idviewh] trrh "existing-host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -379,6 +375,72 @@ d cgi-register {action add} {
 # Select mail host
 ##############################################################################
 
+#
+# host found in only one view (or selected view): display host edition page
+#
+
+proc disp-edit {dbfd _chkv _tabuid} {
+    global conf
+    upvar $_chkv chkv
+    upvar $_tabuid tabuid
+
+    #
+    # Get id of found view
+    #
+
+    set idview [lindex $chkv(ok) 0]
+    lassign $chkv($idview) vn msg t
+    array set trr $t
+
+    set viewname [::webapp::html-string $vn]
+
+    #
+    # In order to display mail address
+    #
+
+    set nom $trr(nom)
+    set domaine $trr(domaine)
+
+    #
+    # Get RR of existing mailbox host
+    #
+
+    set rm [rr-rolemail-by-view trr $idview]
+    lassign $rm idrr idviewheb
+
+    if {! [read-rr-by-id $dbfd $idrr trrh]} then {
+	d error [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
+    }
+
+    set nameh $trrh(nom)
+    set domh $trrh(domaine)
+    set domainh [menu-domain $dbfd $tabuid(idcor) "domaineh" "" $domh]
+
+    set m [menu-views $dbfd $tabuid(idcor) "idviewh" [list $idviewheb] 0]
+    lassign $m disp viewval
+    if {$disp} then {
+	set viewlibelle [mc "View"]
+    } else {
+	set viewlibelle ""
+    }
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page-edit) [list \
+				    [list %NOM%       $nom] \
+				    [list %DOMAINE%   $domaine] \
+				    [list %IDVIEW%    $idview] \
+				    [list %VIEWNAME%  $viewname] \
+				    [list %NOMH%      $nameh] \
+				    [list %DOMAINEH%  $domainh] \
+				    [list %VIEWLIBELLEH% $viewlibelle] \
+				    [list %VIEWVALH%  $viewval] \
+				]
+}
+
+
 d cgi-register {action edit} {
     {nom	1 1}
     {domaine	1 1}
@@ -402,10 +464,6 @@ d cgi-register {action edit} {
     set domh ""
 
     #
-    # Do we have permission for this view
-    #
-
-    #
     # Check mail address syntax
     #
 
@@ -415,31 +473,34 @@ d cgi-register {action edit} {
     }
 
     #
-    # Check permission to edit this mail address
+    # Do we have permission for this mail role (may be in this particular view)
     #
 
-    set msg [check-role-mail $dbfd $idcor $nom $domaine trr trrh]
+    set fqdn "$nom.$domaine"
+    if {$idview eq ""} then {
+	set idviews {}
+    } else {
+	set idviews [list $idview]
+    }
+
+    set msg [filter-views $dbfd tabuid "rolemail" $fqdn $idviews chkv]
     if {$msg ne ""} then {
 	d error $msg
     }
 
-    set nameh $trrh(nom)
-    set domh $trrh(domaine)
-    set domainh [menu-domain $dbfd $idcor "domaineh" "" $domh]
-
-
-    d urlset "%URLFORM%" $conf(next) {}
-
     #
-    # End of script: output page and close database
+    # If only one view is found to be correct, go directly to the
+    # modify form
     #
 
-    d result $conf(page-edit) [list \
-				    [list %NOM%      $nom] \
-				    [list %DOMAINE%  $domaine] \
-				    [list %NOMH%     $nameh] \
-				    [list %DOMAINEH% $domainh] \
+    if {[llength $chkv(ok)] == 1} then {
+	disp-edit $dbfd chkv tabuid
+    } else {
+	set html [html-select-view chkv $conf(next)]
+	d result $conf(page-view) [list \
+					[list %LIST% $html] \
 				]
+    }
 }
 
 ##############################################################################
@@ -449,8 +510,10 @@ d cgi-register {action edit} {
 d cgi-register {action mod} {
     {nom	1 1}
     {domaine	1 1}
+    {idview	1 1}
     {nomh	1 1}
     {domaineh	1 1}
+    {idviewh	1 1}
 } {
     global conf
 
@@ -465,130 +528,76 @@ d cgi-register {action mod} {
     set fqdnh "$nameh.$domainh"
 
     #
-    # Check permission to declare a mail role and get informations on
-    # mailbox host.
+    # Do we have permission for this mail role
     #
 
-    set msg [check-role-mail $dbfd $idcor $name $domain trr oldtrrh]
+    set msg [filter-views $dbfd tabuid "rolemail" $fqdn [list $idview] chkv]
     if {$msg ne ""} then {
 	d error $msg
     }
-
-    set rrexist [expr ! [string equal $trr(idrr) ""]]
-    set oldnameh $oldtrrh(nom)
-
-    #
-    # If nameh exists, check syntax, existence and permission of
-    # new mailbox host. In the opposite case, this is a deletion.
-    #
-
-    set msg [check-authorized-host $dbfd $idcor $nameh $domainh newtrrh "host"]
-    if {$msg ne ""} then {
-	d error $msg
+    if {[llength $chkv(ok)] != 1} then {
+	d error "Internal error"
     }
 
+    set idv [lindex $chkv(ok) 0]
+    lassign $chkv($idv) vn msg t
+    array set trr $t
+    set idrr $trr(idrr)
+
     #
-    # If nameh exists, mailbox host should exist
+    # Check new mailbox host
     #
 
     if {$nameh ne ""} then {
-	if {$newtrrh(idrr) eq ""} then {
-	    d error [mc "Mailbox host name '%s' not found" $fqdnh]
+	set msg [check-authorized-host $dbfd $tabuid(idcor) $nameh $domainh [list $idviewh] trrh "existing-host"]
+	if {$msg ne ""} then {
+	    d error $msg
 	}
     }
 
     #
-    # Insert data in database
-    #
-    # SWITCH oldnameh AND nameh
-    #   empty     AND empty     => error
-    #	empty     AND non-empty => design
-    #	non-empty AND empty     => removal
-    #   non-empty AND non-empty => modification
+    # Insert data in database: if nameh is empty, it is a removal,
+    # else it is a modification.
     #
 
     d dblock {dns.rr dns.role_mail}
 
-    set emptyoldnameh [string equal $oldnameh ""]
-    set emptynewnameh [string equal $nameh ""]
+    if {$nameh eq ""} then {
+	#
+	# Mail role removal
+	#
 
-    set lm ""
-    switch "$emptyoldnameh-$emptynewnameh" {
-	1-1 {
-	    d error [mc "Mail role '%s' does not exist: you can't delete it" $fqdn]
+	set action [mc "deleted"]
+
+	set sql "DELETE FROM dns.role_mail
+			WHERE idrr = $idrr AND idviewrr = $idview"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    d dbabort [mc "delete %s" [mc "mail role"]] $msg
 	}
-	1-0 {
-	    #
-	    # Role creation
-	    #
-	    set action [mc "created"]
 
-	    if {! $rrexist} then {
-		#
-		# Name of mail address does not exist. Add appropriate RR.
-		#
-		set msg [add-rr $dbfd $name $trr(iddom) "" 0 "" 0 -1 \
-						"" "" "" $idcor trr]
-		if {$msg ne ""} then {
-		    d dbabort [mc "add %s" $name] $msg
-		} 
-	    }
-
-	    #
-	    # Add mail role in database
-	    #
-
-	    set sql "INSERT INTO dns.role_mail (idrr, heberg)
-			    VALUES ($trr(idrr), $newtrrh(idrr))"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [mc "add %s" [mc "mail role"]] $msg
-	    }
-
+	#
+	# RR removal (if possible)
+	#
+	set msg [del-orphaned-rr $dbfd $idrr]
+	if {$msg ne ""} then {
+	    d dbabort [mc "delete %s" [mc "RR"]] $msg
 	}
-	0-1 {
-	    #
-	    # Mail role removal. We know that mail role was existing
-	    # (thus, trr(idrr) is not empty).
-	    #
 
-	    set action [mc "deleted"]
+	set lm "delete mail role $fqdn"
+    } else {
+	#
+	# Mail role modification
+	#
 
-	    set idrr $trr(idrr)
+	set action [mc "modified"]
 
-	    set sql "DELETE FROM dns.role_mail WHERE idrr = $idrr"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [mc "delete %s" [mc "mail role"]] $msg
-	    }
-
-	    #
-	    # RR removal (if possible)
-	    #
-	    set msg [del-orphaned-rr $dbfd $idrr]
-	    if {$msg ne ""} then {
-		d dbabort [mc "delete %s" [mc "RR"]] $msg
-	    }
-
-	    set lm "delete mail role $fqdn"
+	set sql "UPDATE dns.role_mail
+			    SET heberg = $trrh(idrr), idviewheb = $idviewh
+			    WHERE idrr = $idrr AND idviewrr = $idview"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    d dbabort [mc "modify %s" [mc "mail role"]] $msg
 	}
-	0-0 {
-	    #
-	    # Mail role modification. We know that mail role was
-	    # existing (thus, trr(idrr) is not empty). We just
-	    # change mailbox host.
-	    #
-
-	    set action [mc "modified"]
-
-	    set idrr $trr(idrr)
-
-	    set sql "UPDATE dns.role_mail
-				SET heberg = $newtrrh(idrr)
-				WHERE idrr = $idrr"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		d dbabort [mc "modify %s" [mc "mail role"]] $msg
-	    }
-	    set lm "modify mail role $fqdn -> $fqdnh"
-	}
+	set lm "modify mail role $fqdn -> $fqdnh"
     }
 
     #

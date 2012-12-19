@@ -322,7 +322,7 @@
  {Error detected in view '%1$s': %2$s} {Erreur détectée dans la vue '%1$s' : %2$s}
  {'%s' is a MX} {'%s' est un MX}
  {'%1$s' is a mail role in view '%2$s'} {'%1$s' est un rôle de messagerie dans la vue '%2$s'}
- {There is already a mail role '%1$s' in view '%2$s'} {Il y a déjà un rôle de messagerie '%1$s' dans la vue '%2$s'}
+ {'%1$s' is a not mail role in view '%2$s'} {'%1$s' n'est pas un rôle de messagerie dans la vue '%2$s'}
  {Internal error: id '%s' doesn't exists for a mail host} {Erreur interne : hébergeur d'id '%s' inexistant}
  {You don't have rights on host holding mail for '%s'} {Vous n'avez pas les droits sur l'hébergeur de '%s'}
  {'%s' is a mail host for mail domains} {'%s' est un hébergeur pour des adresses de messagerie}

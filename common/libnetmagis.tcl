@@ -4652,7 +4652,12 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 		}
 	    }
 	    rolemail {
-		?
+		set found 1
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-addrmail"]
+
+		if {$msg ne ""} then {
+		    set err 1
+		}
 	    }
 	    default {
 		return "Internal error: unknown mode '$mode'"
@@ -4714,6 +4719,53 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
     set chkv(idviews) $myviewids
 
     return ""
+}
+
+#
+# HTML code for host/idview selection page
+#
+# Input:
+#   - _chkv: parameters of filtered views
+#   - next: script to call
+# Output:
+#   - return value: HTML code ready to be inserted in page
+#
+# History
+#   2012/12/19 : pda/jean : design
+#
+
+proc html-select-view {_chkv next} {
+    upvar $_chkv chkv
+
+    set idviews $chkv(idviews)
+
+    set html ""
+    foreach idview $idviews {
+	lassign $chkv($idview) vn msg t
+
+	if {$msg eq ""} then {
+	    array unset trr
+	    array set trr $t
+
+	    set fqdn "$trr(nom).$trr(domaine)"
+
+	    d urlset "" $next [list \
+				    [list "action" "edit"] \
+				    [list "nom" $trr(nom)] \
+				    [list "domaine" $trr(domaine)] \
+				    [list "idview" $idview] \
+				]
+	    d urladdnext ""
+	    set url [d urlget ""]
+
+	    set a [mc {<a href="%1$s">Modify '%2$s'</a> in view '%3$s'} $url $fqdn $vn]
+	    append html [::webapp::helem "li" $a]
+	    append html "\n"
+	}
+    }
+    set html [::webapp::helem "ul" $html]
+
+    return $html
 }
 
 ##############################################################################
@@ -4954,15 +5006,23 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #		then check-all-IP-addresses (mail exchangers, idcor)
 #	    if name.domain is ADDRMAIL then error
 #	    if no test is false, then OK
-#	"addrmail"
+#	"add-addrmail"
 #	    check-domain (domain, idcor, "rolemail") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
+#	    if name.domain is ADDRMAIL then error
+#	    if name.domain is MAILHOST then error
+#	    if name.domain has IP addresses
+#		check-all-IP-addresses (name.domain, idcor)
+#	    if no test is false, then OK
+#	"del-addrmail"
+#	    check-domain (domain, idcor, "rolemail") and views
+#	    if name.domain is ALIAS then error
+#	    if name.domain is MX then error
+#	    if name.domain is NOT ADDRMAIL then error
 #	    if name.domain is ADDRMAIL
 #		check-all-IP-addresses (mail host, idcor)
 #		check-domain (domain, idcor, "")
-#	    if name.domain is HEBERGEUR
-#		check that is does not hold mail for another host besides itself
 #	    if name.domain has IP addresses
 #		check-all-IP-addresses (name.domain, idcor)
 #	    if no test is false, then OK
@@ -5023,12 +5083,20 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 		    {ip		CHECK}
 		    {addrmail	REJECT}
 		}
-	addrmail	{
+	add-addrmail	{
+		    {domain	rolemail}
+		    {alias	REJECT}
+		    {mx		REJECT}
+		    {addrmail	REJECT}
+		    {mailhost	REJECT}
+		    {ip		CHECK}
+		}
+	del-addrmail	{
 		    {domain	rolemail}
 		    {alias	REJECT}
 		    {mx		REJECT}
 		    {addrmail	CHECK}
-		    {hebergeur	CHECK}
+		    {addrmail	EXISTS}
 		    {ip		CHECK}
 		}
     }
@@ -5114,12 +5182,14 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 		    }
 		}
 		addrmail {
+		    # get mailbox host for this address
 		    set rm [rr-rolemail-by-view trr $idview]
 		    if {$rm ne ""} then {
 			lassign $rm idrr idviewheb
 			switch $parm {
 			    REJECT {
-				# IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+				# This name is already a mail address
+				# (it already has a mailbox host)
 				return [mc {'%1$s' is a mail role in view '%2$s'} $fqdn $viewname]
 			    }
 			    CHECK {
@@ -5142,16 +5212,34 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 				    return $r
 				}
 			    }
+			    EXISTS {
+				# nothing
+			    }
+			    default {
+				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			    }
+			}
+		    } else {
+			# this address has no mailbox host, so it is
+			# not a mail role
+			switch $parm {
+			    REJECT -
+			    CHECK {
+				# nothing
+			    }
+			    EXISTS {
+				return [mc {'%1$s' is not a mail role in view '%2$s'} $fqdn $viewname]
+			    }
 			    default {
 				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			    }
 			}
 		    }
 		}
-		hebergeur {
+		mailhost {
 		    set ladr [rr-adrmail-by-view trr $idview]
 		    switch $parm {
-			CHECK {
+			REJECT {
 			    # remove the name (in all views) from the list
 			    # of mail domains hosted on this host
 			    while {[set pos [lsearch -exact -index 0 \
@@ -5373,82 +5461,6 @@ proc check-domain-relay {dbfd idcor _iddom domain} {
 	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domaine) trr "existing-host"]
 	if {$msg ne ""} then {
 	    return [mc {You don't have rights to some relays of domain '%1$s': %2$s} $domain $msg]
-	}
-    }
-
-    return ""
-}
-
-#
-# Check a mail role
-#
-# Input:
-#   - parameters:
-#       - dbfd : database handle
-#	- idcor : user id
-#	- name : name of the role (mail domain)
-#	- domain : domain of the role (mail domain)
-#	- idview: view id
-#	- trr : in return, contains trr (see read-rr-by-id)
-#	- trrh : in return, contains hosting trr (see read-rr-by-id)
-# Output:
-#   - return value: empty string or error message
-#   - parameter trr : if RR is found, contains RR, else trr(idrr)="" and
-#	trr(iddom)=domain-id
-#   - parameter trrh : if trr(rolemail) exists, trrh contains RR. Else,
-#	trr is a false RR containing at lease trrh(nom) and trrh(domaine)
-#	trrh(nom) and trrh(domaine)
-#
-# History
-#   2004/02/12 : pda/jean : design
-#   2004/02/27 : pda/jean : centralization of access rights
-#   2004/03/01 : pda/jean : add trr and trrh
-#   2010/11/29 : pda      : i18n
-#   2012/12/07 : pda/jean : add views
-#   2012/12/07 : pda/jean : bug fix: check mailbox host too
-#
-
-proc check-role-mail {dbfd idcor name domain idview _trr _trrh} {
-    upvar $_trr trr
-    upvar $_trrh trrh
-
-    set fqdn "$name.$domain"
-
-    #
-    # Access rights check
-    #
-
-    set msg [check-authorized-host $dbfd $idcor $name $domain $idview trr "addrmail"]
-    if {$msg ne ""} then {
-	return $msg
-    }
-
-    #
-    # Get hosting RR
-    #
-
-    catch {unset trrh}
-    set trrh(nom)     ""
-    set trrh(domaine) ""
-
-    if {$trr(idrr) ne ""} then {
-	set lrm [rr-rolemail-by-view trr $idview]
-	if {[llength $lrm] > 0} then {
-	    lassign $lrm idheberg idvh
-
-	    #
-	    # Name is an existing mail address. Do we have rights on it?
-	    #
-	    if {! [read-rr-by-id $dbfd $idheberg th]} then {
-		return [mc {Internal error on '%1$s': id '%2$s' of mail host not found} \
-				$fqdn $h]
-	    }
-	    set nh $th(nom)
-	    set dh $th(domaine)
-	    set msg [check-authorized-host $dbfd $idcor $nh $dh $idvh trrh "host"]
-	    if {$msg ne ""} then {
-		return $msg
-	    }
 	}
     }
 
