@@ -36,6 +36,13 @@
 
     \titre {1} {Netmagis : Téléchargement}
 
+    Si vous souhaitez installer à partir des fichiers source, vous pouvez
+    les obtenir sur \lien {https://github.com/pdav/netmagis}
+    {https://github.com/pdav/netmagis}. N'oubliez
+    pas de lire la \lien {documentation d'installation}
+    {/install-2.1.html#source}.
+
+
     \titre {2} {Version 2.1.0}
 
     La version 2.1.0 est disponible en téléchargement sur

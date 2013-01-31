@@ -265,7 +265,7 @@
     }
 
 
-    \titre {3} {Installing from Netmagis source distribution}
+    \titre {3} {\ancre {source} {Installing from Netmagis source distribution}}
 
     \enumeration {
     \item {Download the \lien {Netmagis distribution file}
@@ -281,7 +281,7 @@
 	installed on your system, use this command:
 
 	\retrait {\teletype {
-	    $ git clone git@github.com:pdav/netmagis.git
+	    $ git clone https://github.com/pdav/netmagis.git
 	}}
     }
     \item {Install \lien {required dependencies} {/spec.html}.
