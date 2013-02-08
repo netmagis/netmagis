@@ -6511,10 +6511,11 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
 #   2003/05/13 : pda/jean : design
 #   2005/07/22 : pda/jean : secure special characters
 #   2010/12/29 : pda      : i18n and netmagis merge
+#   2013/02/08 : pda/jean : apply schplurtz's patch
 #
 
 proc pgauth-crypt {str} {
-    regsub -all {['\\]} $str {\\&} str
+    regsub -all {'} $str {'\\''} str
     set crypt [get-local-conf "crypt"]
     return [exec sh -c [format $crypt "'$str'"]]
 }
