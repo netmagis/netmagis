@@ -32,7 +32,7 @@ install: build
 	# install css and images
 	#
 	rm -f $(DESTDIR)$(NMCGIDIR)/css
-	ln -s $(DESTDIR)$(NMLIBDIR)/htg/models/default/css $(DESTDIR)$(NMCGIDIR)
+	ln -s $(NMLIBDIR)/htg/models/default/css $(DESTDIR)$(NMCGIDIR)
 	#
 	# install default files
 	#
