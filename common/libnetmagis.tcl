@@ -967,6 +967,7 @@ snit::type ::netmagis {
 	set curcap {dns}
 	set locale "C"
 	set blocale "C"
+	set scriptmode "cgi"
 
 	set debug [get-local-conf "debug"]
 
@@ -1019,8 +1020,6 @@ snit::type ::netmagis {
 	if {$msg ne ""} then {
 	    $self error $msg
 	}
-
-	set scriptmode "cgi"
 
 	#
 	# Add default parameters in form analysis
@@ -1230,6 +1229,8 @@ snit::type ::netmagis {
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
 
+	set scriptmode "script"
+
 	#
 	# Locale
 	#
@@ -1256,7 +1257,6 @@ snit::type ::netmagis {
 	    return $msg
 	}
 
-	set scriptmode "script"
 	regsub {.*/} $argv0 {} argv0
 	set scriptargv0 $argv0
 
@@ -2758,7 +2758,9 @@ proc ouvrir-base {base _msg} {
 #
 
 proc fermer-base {dbfd} {
-    pg_disconnect $dbfd
+    if {$dbfd ne ""} then {
+	pg_disconnect $dbfd
+    }
 }
 
 ##############################################################################
