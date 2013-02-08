@@ -1,3 +1,22 @@
+Version 2.1.1 - 2013/02/08
+    - remove unused keyword "ssidwifi" from netmagis.conf
+    - import FreeBSD ports modifications from FreeBSD commiters
+    - bug fix: message is not issued when error occurs early in initialization
+    - bug fix: Debian package had an improper symbolic link (reported by
+	Martin Oesting and Christophe Martin)
+    - bug fix: Debian package depended on default-mta instead of
+    	mail-transfer-agent (reported by Thomas van Oudenhove)
+    - bug fix: character $ was invalid in database password (reported
+	by Martin Oesting)
+    - bug fix: characters [, ', (space) and \ in passwords raised an error
+	(reported by Christophe Martin)
+    - bug fix: characters ' or & in passwords raised an error in database import
+	(reported by Christophe Martin)
+    - bug fix: user name in auth-pgsql.conf did not match netmagis.conf
+	(reported by Martin Oesting)
+    - bug fix: sensor names were not checked for syntax conformance
+    - bug fix: descriptions were removed when editing multiple interfaces
+
 Version 2.1.0 - 2012/06/22
     - metro module integration
     - network graph is now copied from topo server to www server (if different)
