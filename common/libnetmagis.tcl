@@ -997,6 +997,7 @@ snit::type ::netmagis {
 	set curcap {dns}
 	set locale "C"
 	set blocale "C"
+	set scriptmode "cgi"
 
 	set debug [get-local-conf "debug"]
 
@@ -1257,6 +1258,8 @@ snit::type ::netmagis {
     method init-script {_dbfd argv0 usedefuser _tabuid} {
 	upvar $_dbfd dbfd
 	upvar $_tabuid tabuid
+
+	set scriptmode "script"
 
 	#
 	# Locale
@@ -2809,7 +2812,9 @@ proc ouvrir-base {base _msg} {
 #
 
 proc fermer-base {dbfd} {
-    pg_disconnect $dbfd
+    if {$dbfd ne ""} then {
+	pg_disconnect $dbfd
+    }
 }
 
 ##############################################################################
