@@ -100,6 +100,7 @@ proc get-local-conf {key} {
 # History
 #   2010/12/17 : pda      : design
 #   2011/01/21 : pda      : add port specification
+#   2013/02/08 : pda/jean : fix bug in values containing special characters
 #
 
 proc get-conninfo {prefix} {
@@ -108,8 +109,8 @@ proc get-conninfo {prefix} {
 			{user user} {password password}} {
 	lassign $f connkey suffix
 	set v [get-local-conf "$prefix$suffix"]
-	regsub {['\\]} $v {\'} v
-	lappend conninfo [list "$connkey='$v'"]
+	regsub {['\\]} $v {\\&} v
+	lappend conninfo "$connkey='$v'"
     }
     return [join $conninfo " "]
 }
