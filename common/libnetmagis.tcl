@@ -1871,6 +1871,15 @@ snit::type ::config {
 # - isallowedview id
 #	check if a view is authorized (1 if ok, 0 if not)
 #
+# - domainname id
+#	returns domain name associated to domain id (or empty string if error)
+# - domainid name
+#	returns domain id associated to domain name (or -1 if error)
+# - myiddom
+#	get all authorized domain ids
+# - isalloweddom id
+#	check if a domain is authorized (1 if ok, 0 if not)
+#
 # History
 #   2012/10/31 : pda/jean : design
 #
@@ -1891,6 +1900,17 @@ snit::type ::nmuser {
     variable authviews -array {}
     # myviewids : sorted list of views
     variable myviewids {}
+
+    # Domain management
+    # domain information is loaded
+    variable domainloaded 0
+    # alldom(id:<id>)=name
+    # alldom(name:<name>)=id
+    variable alldom -array {}
+    # authdom(<id>)=1
+    variable authdom -array {}
+    # myiddoms : sorted list of domains
+    variable myiddom {}
 
     method setdb {dbfd} {
 	set db $dbfd
@@ -1921,9 +1941,6 @@ snit::type ::nmuser {
 	    set allviews(name:$name) $idview
 	}
 
-#	set sql "SELECT d.idview
-#			FROM dns.dr_view d, global.corresp c
-#			WHERE d.idgrp = c.idgrp AND c.idcor = $idcor"
 	set qlogin [::pgsql::quote $login]
 	set sql "SELECT d.idview
 			FROM dns.dr_view d, dns.view v, global.corresp c
@@ -1974,6 +1991,75 @@ snit::type ::nmuser {
 	    load-views $selfns
 	}
 	return [info exists authviews($id)]
+    }
+
+    #######################################################################
+    # Domain management
+    #######################################################################
+
+    proc load-domains {selfns} {
+	array unset alldom
+	array unset authdom
+	set myviewids {}
+
+	set sql "SELECT * FROM dns.domaine"
+	pg_select $db $sql tab {
+	    set iddom $tab(iddom)
+	    set name   $tab(nom)
+	    set alldom(id:$iddom) $name
+	    set alldom(name:$name) $iddom
+	}
+
+	set qlogin [::pgsql::quote $login]
+	set sql "SELECT dr.iddom
+			FROM dns.dr_dom dr, dns.domaine d, global.corresp c
+			WHERE dr.idgrp = c.idgrp
+			    AND dr.iddom = d.iddom
+			    AND c.login = '$qlogin'
+			ORDER BY dr.tri ASC, d.nom ASC"
+	pg_select $db $sql tab {
+	    set iddom $tab(iddom)
+	    set authdom($iddom) 1
+	    lappend myiddom $tab(iddom)
+	}
+
+	set domainloaded 1
+    }
+
+    method domainname {id} {
+	if {! $domainloaded} then {
+	    load-domains $selfns
+	}
+	set r -1
+	if {[info exists alldom(id:$id)]} then {
+	    set r $alldom(id:$id)
+	}
+	return $r
+    }
+
+    method domainid {name} {
+	if {! $domainloaded} then {
+	    load-domains $selfns
+	}
+	set r ""
+	if {[info exists allviews(name:$name)]} then {
+	    set r $allviews(name:$name)
+	}
+	return $r
+    }
+
+    method myiddom {} {
+	if {! $domainloaded} then {
+	    load-domains $selfns
+	}
+	return $myiddom
+    }
+
+    method isallowedview {id} {
+	if {! $domainloaded} then {
+	    load-domains $selfns
+	}
+	return [info exists authdom($id)]
     }
 
 }
@@ -2525,6 +2611,64 @@ proc dotattr-match-get {str _tabdot} {
     return $attr
 }
 
+
+##############################################################################
+# HTML mask/unmask class
+##############################################################################
+
+#
+# HTML class
+#
+# This class provides methods to simplify HTML writing
+#
+# Methods:
+# - reset
+#	reset HTML parameters
+# - mask-next
+#	increment mask counter
+# - mask-link <text>
+#	HTML code for the link to unmask/mask text
+# - mask-text <text>
+#	HTML code to mask the text (such as it may be unmasked by the link)
+#
+# Note: this class needs an "invdisp" Javascript function in the
+#   HTML page
+#
+# History
+#   2012/12/19 : pda/jean : design
+#
+
+snit::type ::html {
+
+    variable mask_counter 0
+
+    # reset to initial state
+    method reset {} {
+	set mask_counter 0
+    }
+
+    # increment mask counter
+    method mask-next {} {
+	incr mask_counter
+    }
+
+    # HTML code for the link to unmask/mask text
+    method mask-link {text} {
+	return [::webapp::helem "a" $text \
+				"href" "#" \
+				"onclick" "invdisp('hv$mask_counter')" \
+				]
+    }
+
+    # HTML code to mask the text (such as it may be unmasked by the link)
+    method mask-text {text} {
+	return [::webapp::helem "div" $text \
+				"id" "hv$mask_counter" \
+				"style" "display:none" \
+				]
+    }
+
+}
 
 ##############################################################################
 # Cosmetic
