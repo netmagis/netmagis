@@ -76,6 +76,34 @@
 	}
     }
 
+    \titre {2} {\ancre {v2.1.1} {Netmagis 2.1.1}}
+
+    Release date: 27 february 2013.
+
+    This release is mainly a bug-fix release in order to ease
+    installation for new users.
+
+    \liste {
+	\item {fixes about various special characters in passwords
+	    (reported by Martin Oesting and Christophe Martin)
+	    }
+	\item {fix message when an error occurs early in application
+	    initialization
+	}
+	\item {various fixes on Topo package: descriptions were removed
+	    when editing multiple interfaces at once, and sensor names
+	    were not checked for syntax conformance)
+	}
+	\item {Debian package fixes with adapted dependancy (reported
+	    by Thomas van Oudenhove) and proper symbolic link (reported
+	    by Martin Oesting and Christophe Martin)
+	}
+	\item {FreeBSD port is now in sync with FreeBSD ports tree
+	    thanks to Olli Hauer and Chris Rees
+	}
+    }
+
+
     \titre {2} {\ancre {v2.1} {Netmagis 2.1}}
 
     Release date: 22 june 2012.

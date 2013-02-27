@@ -36,6 +36,15 @@
 
     \titre {1} {Netmagis : Nouveautés}
 
+    \titre {2} {[2013/02/27] La version 2.1.1 de Netmagis est disponible}
+
+    La \lien {version 2.1.1 de Netmagis} {/download.html} est
+    maintenant disponible. C'est principalement une version de correction
+    de bugs. Référez-vous aux \lien {notes de version}
+    {/relnotes.html} pour connaître toutes les nouveautées incluses
+    dans cette version.
+
+
     \titre {2} {[2012/10/31] Netmagis figure dans les ports de FreeBSD}
 
     Grâce aux efforts patients de Chris Rees and Olli Hauer,

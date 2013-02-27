@@ -37,6 +37,15 @@
     \titre {1} {Netmagis: News}
 
 
+    \titre {2} {[2013/02/27] Netmagis 2.1.1 is released}
+
+    The 2.1.1 version of Netmagis is available on the
+    \lien {Download} {/download.html} section. This is mainly
+    a bug-fix release. You can
+    read \lien {release notes} {/relnotes.html} to see
+    all new exciting features.
+
+
     \titre {2} {[2012/10/31] Netmagis is in the FreeBSD ports tree}
 
     Thanks to patient efforts of Chris Rees and Olli Hauer,

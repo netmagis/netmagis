@@ -189,7 +189,7 @@
     use:
 
     \retrait\teletype {
-	# tar xzvf netmagis-freebsd-ports-2.1.tgz -C /usr/ports/net-mgmt/
+	# tar xzvf netmagis-freebsd-ports-2.1.1.tgz -C /usr/ports/net-mgmt/
     }
 
     In order to install a netmagis package, just enter the
@@ -259,7 +259,7 @@
 
 	    \retrait\teletype {
 		# apt-get install gdebi \br
-		# gdebi netmagis-database_2.1-1_pdp11.deb
+		# gdebi netmagis-database_2.1.1-1_pdp11.deb
 	    }
 	}
     }
@@ -272,7 +272,7 @@
 	{/download.html} and unpack the archive:
 
 	\retrait {\teletype {
-	    $ tar xzvf netmagis-2.1.tar.gz
+	    $ tar xzvf netmagis-2.1.1.tar.gz
 	}}
 
 	Alternatively, if you are adventurous, you may also fetch the

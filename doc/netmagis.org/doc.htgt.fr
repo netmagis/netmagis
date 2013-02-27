@@ -39,7 +39,7 @@
     \titre {2} {Documentation d'installation}
 	
     \lien {Instructions d'installation détaillées} {/install-2.1.html}
-    pour la version 2.1.
+    pour les versions 2.1.x.
 
     Vous pouvez également être intéressé par la lecture de
     \liste {
