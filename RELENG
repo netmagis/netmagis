@@ -159,31 +159,31 @@ How to release, step by step
 
 4. Announce the release
 
-    3.a Post to the netmagis mailing-list
+    4.a Post to the netmagis mailing-list
 
 	If this is a major version, post to some other carefully
 	choosen lists
 
-    3.b Update Wikipedia pages
+    4.b Update Wikipedia pages
 
 	http://en.wikipedia.org/wiki/Internet_Protocol_Address_Management
 
-    3.c Close all remaining issues for this milestone
+    4.c Close all remaining issues for this milestone
 
 	https://github.com/pdav/netmagis/issues
 
 5. Prepare new version vX.Z
 
-    3.a Change git branch
+    5.a Change git branch
 
 	git checkout master
 
-    3.b Create a github milestone for the new version
+    5.b Create a github milestone for the new version
 
 	If needed, create a milestone vX.Z on
 	https://github.com/pdav/netmagis/issues/milestones
 
-    3.b Open release engineering issues for the new version
+    5.b Open release engineering issues for the new version
 
 	create issues labelled :
 	    CHANGES and release notes
