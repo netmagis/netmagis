@@ -5450,7 +5450,7 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 			set fqdnref "$t(nom).$t(domaine)"
 			switch $parm {
 			    REJECT {
-				return [mc {'%1$s' is an alias of '%2$s' in view '%3$s'} $fqdn $fqdnref $viewname]
+				return [mc {%1$s is an alias of host %2$s in view %3$s} $fqdn $fqdnref $viewname]
 			    }
 			    CHECK {
 				set ok [check-name-by-addresses $dbfd $idcor -1 t]

@@ -207,7 +207,29 @@ proc display-alias {dbfd _trr idview q} {
 
     # Display aliased host
     lassign [display-rr-masked $dbfd trra $idview $rrtmpl] link desc
-    set title [mc {%1$s is an alias to host %2$s in view %3$s} $fqdn $link [u viewname $idview]]
+    set title [mc {%1$s is an alias of host %2$s in view %3$s} $fqdn $link [u viewname $idview]]
+
+    return "$title $desc"
+}
+
+proc display-rolemail {dbfd _trr idview q} {
+    upvar $_trr trr
+
+    h mask-next
+    set fqdn "$trr(nom).$trr(domaine)"
+    lassign [rr-rolemail-by-view trr $idview] idheb idviewheb
+    if {! [read-rr-by-id $dbfd $idheb trrh]} then {
+	d error [mc {Cannot read host-id %s} $idheb]
+    }
+
+    set rrtmpl {
+	allowed-groups {search {q group:%s}}
+	ip {edit {adr %1$s} {idview %2$s}}
+    }
+
+    # Display aliased host
+    lassign [display-rr-masked $dbfd trrh $idviewheb $rrtmpl] link desc
+    set title [mc {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn [u viewname $idview] $link [u viewname $idviewheb]]
 
     return "$title $desc"
 }
@@ -309,6 +331,53 @@ proc cgi-search-150-host {dbfd q val type} {
 		    }
 		}
 	    }
+	}
+	default {
+	    d error [mc "Internal error: unknown type"]
+	}
+    }
+
+    return $lfound
+}
+
+proc cgi-search-160-mailrole {dbfd q val type} {
+    set lfound {}
+
+    switch $type {
+	string {
+	    if {[regexp {^[^.]+\..+$} $val]} then {
+		#
+		# Name and domain
+		#
+		set msg [check-fqdn-syntax $dbfd $val name domain iddom]
+		if {$msg ne ""} then {
+		    display-message $val $msg
+		}
+		set ldom [list $iddom]
+	    } else {
+		set msg [check-name-syntax $val]
+		if {$msg ne ""} then {
+		    display-message $val $msg
+		}
+		set ldom [u myiddom]
+		set name $val
+	    }
+
+	    foreach iddom $ldom {
+		if {[read-rr-by-name $dbfd $name $iddom trr]} then {
+		    foreach idview [u myviewids] {
+			set rm [rr-rolemail-by-view trr $idview]
+			if {[llength $rm] > 0} then {
+			    lappend lfound [display-rolemail $dbfd trr $idview $q]
+			}
+		    }
+		}
+	    }
+	}
+	mac -
+	inet -
+	cidr {
+	    d error [mc "Invalid search query '%s'" $q]
 	}
 	default {
 	    d error [mc "Internal error: unknown type"]
