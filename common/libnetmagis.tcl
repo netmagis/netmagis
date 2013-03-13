@@ -4826,7 +4826,8 @@ proc check-views {views} {
 # Input:
 #   - dbfd: database handle
 #   - _tabuid: user characteristics
-#   - mode: type of object ("fqdn", "addr" or "rolemail") to delete/modify
+#   - mode: type of object ("host", "host-or-alias", "addr" or "rolemail")
+#		to delete/modify
 #   - object: FQDN or IP address
 #   - idviews: list of idviews specified by user, may be empty for all views
 #   - _chkv: contains, in return, parameters of filtered views
@@ -4839,7 +4840,9 @@ proc check-views {views} {
 #	chkv(err) = list of view ids in error
 #
 # Note:
-#   - "fqdn and "addr" modes are for host edition
+#   - "host" and "addr" modes are for host edition
+#	object may be a fqdn or an IP address
+#   - "host-or-alias" and "addr" modes are for host deletion
 #	object may be a fqdn or an IP address
 #   - "rolemail" mode is for mail role edition
 #	object must be a fqdn
@@ -4848,6 +4851,7 @@ proc check-views {views} {
 #   2012/11/14 : pda/jean : design
 #   2012/11/29 : pda/jean : isolate as a library function
 #   2012/12/07 : pda/jean : generalization
+#   2013/03/13 : pda/jean : distinguish alias case
 #
 
 proc filter-views {dbfd _tabuid mode object idviews _chkv} {
@@ -4885,7 +4889,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
     #
     # Split FQDN into name and domain
     #
-    if {$mode eq "fqdn" || $mode eq "rolemail"} then {
+    if {$mode in {host host-or-alias rolemail}} then {
 	set msg [check-fqdn-syntax $dbfd $object name domain]
 	if {$msg ne ""} then {
 	    return $msg
@@ -4907,11 +4911,31 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 	set err 0
 
 	switch $mode {
-	    fqdn {
-		#
-		# FQDN
-		#
+	    host {
+		set found 1
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
 
+		if {$msg ne ""} then {
+		    set err 1
+		} else {
+		    #
+		    # Is it an alias in this view?
+		    #
+
+		    set cname [rr-cname-by-view trr $idview]
+		    if {$cname ne ""} then {
+			set msg [mc {Name '%1$s' is an alias in view '%2$s'} $object $vn]
+			set err 1
+		    } else {
+			set ip [rr-ip-by-view trr $idview]
+			if {$ip eq ""} then {
+			    set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
+			    set err 1
+			}
+		    }
+		}
+	    }
+	    host-or-alias {
 		set found 1
 		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
 
@@ -4987,7 +5011,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
     # If asked for a name, check that name exists
     #
 
-    if {$mode eq "fqdn" && $trr(idrr) eq ""} then {
+    if {$mode in {host host-or-alias} && $trr(idrr) eq ""} then {
 	return [mc "Name '%s' does not exist" $object]
     }
 

@@ -99,8 +99,8 @@ source %LIBNETMAGIS%
 # Ask for confirmation
 ##############################################################################
 
-# mode : "addr" or "fqdn"
-# object : ip address for "addr" mode, or fqdn for "fqdn" mode
+# mode : "addr" or "host-or-alias"
+# object : ip address for "addr" mode, or fqdn for "host-or-alias" mode
 
 proc confirm {dbfd mode object _chkv} {
     global conf
@@ -137,7 +137,7 @@ proc confirm {dbfd mode object _chkv} {
 	    #
 	    lassign [display-rr-masked $dbfd trr $idview {}] link desc
 
-	    if {$mode eq "fqdn"} then {
+	    if {$mode eq "host-or-alias"} then {
 		#
 		# Information about host found
 		#
@@ -207,8 +207,8 @@ proc confirm {dbfd mode object _chkv} {
 # Process removal
 ##############################################################################
 
-# mode : "addr" or "fqdn"
-# object : ip address for "addr" mode, or fqdn for "fqdn" mode
+# mode : "addr" or "host-or-alias"
+# object : ip address for "addr" mode, or fqdn for "host-or-alias" mode
 
 proc remove {dbfd mode object _chkv} {
     global conf
@@ -234,7 +234,7 @@ proc remove {dbfd mode object _chkv} {
 
 	set o $object
 
-	if {$mode eq "fqdn"} then {
+	if {$mode eq "host-or-alias"} then {
 	    set cname [rr-cname-by-view trr $idview]
 	    if {$cname ne ""} then {
 		if {! [del-alias-by-id $dbfd $trr(idrr) $idview msg]} then {
@@ -416,7 +416,7 @@ d cgi-register {} {
     #
 
     if {$addr eq ""} then {
-	set mode "fqdn"
+	set mode "host-or-alias"
 	set object "$name.$domain"
     } else {
 	set mode "addr"

@@ -501,6 +501,7 @@
  {'%s' is a mail host for mail domains} {'%s' est un hébergeur pour des adresses de messagerie}
  {'%s' is a MX} {'%s' est un MX}
  {'%s' is an alias} {'%s' est un alias}
+ {'%1$s' is an alias in view '%2$s'} {'%1$s' est un alias dans la vue '%2$s'}
  {%s is a Netmagis group} {%s est un groupe Netmagis}
  {Size of block} {Taille du bloc}
  {%s MAC-Port-VLAN associations found} {%s associations adresse MAC-Port-VLAN trouvées}
