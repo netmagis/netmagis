@@ -285,7 +285,9 @@ set libconf(tabmachine) {
 	vbar {yes}
 	column { }
 	vbar {yes}
-	column { }
+	column {
+	    format {raw}
+	}
 	vbar {yes}
     }
 }
@@ -531,7 +533,7 @@ snit::type ::netmagis {
 	dhcprange	{dhcp {DHCP ranges}}
 	passwd		{pgapasswd Password}
 	search		{search Search}
-	whereami	{search?crit=_ {Where am I?}}
+	whereami	{search?q=_ {Where am I?}}
 	topotitle	{eq Topology}
 	mactitle	{macindex Mac}
 	admtitle	{admindex Admin}
@@ -1045,6 +1047,8 @@ snit::type ::netmagis {
 	}
 
 	set scriptmode "cgi"
+
+	::html create ::h
 
 	#
 	# Add default parameters in form analysis
@@ -1890,6 +1894,13 @@ snit::type ::nmuser {
     # login of user
     variable login ""
 
+    # Group management
+    # Group information is loaded
+    variable groupsloaded 0
+    # allgroups(id:<id>)=name
+    # allgroups(name:<name>)=id
+    variable allgroups -array {}
+
     # View management
     # view information is loaded
     variable viewsloaded 0
@@ -1923,6 +1934,45 @@ snit::type ::nmuser {
 	set login $newlogin
     }
 
+
+    #######################################################################
+    # Group management
+    #######################################################################
+
+    proc load-groups {selfns} {
+	array unset allgroups
+
+	set sql "SELECT * FROM global.groupe"
+	pg_select $db $sql tab {
+	    set idgrp $tab(idgrp)
+	    set name  $tab(nom)
+	    set allgroups(id:$idgrp) $name
+	    set allgroups(name:$name) $idgrp
+	}
+	set groupsloaded 1
+    }
+
+    method groupname {id} {
+	if {! $groupsloaded} then {
+	    load-groups $selfns
+	}
+	set r -1
+	if {[info exists allgroups(id:$id)]} then {
+	    set r $allgroups(id:$id)
+	}
+	return $r
+    }
+
+    method groupid {name} {
+	if {! $groupsloaded} then {
+	    load-groups $selfns
+	}
+	set r ""
+	if {[info exists allgroups(name:$name)]} then {
+	    set r $allgroups(name:$name)
+	}
+	return $r
+    }
 
     #######################################################################
     # View management
@@ -2000,7 +2050,7 @@ snit::type ::nmuser {
     proc load-domains {selfns} {
 	array unset alldom
 	array unset authdom
-	set myviewids {}
+	set myiddom {}
 
 	set sql "SELECT * FROM dns.domaine"
 	pg_select $db $sql tab {
@@ -2042,8 +2092,8 @@ snit::type ::nmuser {
 	    load-domains $selfns
 	}
 	set r ""
-	if {[info exists allviews(name:$name)]} then {
-	    set r $allviews(name:$name)
+	if {[info exists alldom(name:$name)]} then {
+	    set r $alldom(name:$name)
 	}
 	return $r
     }
@@ -2055,7 +2105,7 @@ snit::type ::nmuser {
 	return $myiddom
     }
 
-    method isallowedview {id} {
+    method isalloweddom {id} {
 	if {! $domainloaded} then {
 	    load-domains $selfns
 	}
@@ -2486,7 +2536,7 @@ snit::type ::gvgraph {
 	set cmd [format $gvcmd($format) $dotcmd $ps2pdfcmd $tmp.gv $tmp.err]
 
 	if {[catch {open $cmd "r"} fd]} then {
-	    set error [format [mc "Error generating graph (%s)"] $fd]
+	    set error [format [mc "Error generating graph: %s"] $fd]
 	    set r 0
 	} else {
 	    fconfigure $fd -translation binary
@@ -2667,7 +2717,6 @@ snit::type ::html {
 				"style" "display:none" \
 				]
     }
-
 }
 
 ##############################################################################
@@ -4132,6 +4181,57 @@ proc touch-rr {dbfd idrr} {
 }
 
 #
+# Get group ids of all allowed groups for a list of IP addresses
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- laddr : IP addresses to test
+# Output:
+#   - return value: list of group ids
+#
+# History
+#   2013/02/27 : pda/jean : design
+#
+
+proc allowed-groups {dbfd laddr} {
+    array set algrp {}
+
+    foreach addr $laddr {
+	#
+	# Look for groups which have access to this IP address.
+	#
+
+	set sql "SELECT g.idgrp
+			FROM global.groupe g, dns.dr_reseau d, dns.reseau r
+			WHERE g.idgrp = d.idgrp
+			    AND d.idreseau = r.idreseau
+			    AND ('$addr' <<= r.adr4 OR '$addr' <<= r.adr6)
+			    "
+	set lidgrp {}
+	pg_select $dbfd $sql tab {
+	    lappend lidgrp $tab(idgrp)
+	}
+
+	#
+	# Among selected groups, search for those who have access to
+	# this host (checking all other permissions).
+	#
+
+	foreach idgrp $lidgrp {
+	    set sql "SELECT valide_ip_grp ('$addr', $idgrp) AS ok"
+	    pg_select $dbfd $sql tab {
+		if {$tab(ok) eq "t"} then {
+		    set algrp($idgrp) {}
+		}
+	    }
+	}
+    }
+
+    return [array names algrp]
+}
+
+#
 # Display a RR with HTML
 #
 # Input:
@@ -4140,11 +4240,27 @@ proc touch-rr {dbfd idrr} {
 #	- idrr : RR id to search for, or -1 if _trr is already initialized
 #	- _trr : empty array, or initialized array (id idrr=-1)
 #	- idview : view id, or empty string to get all views
+#	- rrtmpl: URL template for some fields (see below)
 # Output:
 #   - return value: empty string or error message
 #   - parameter _trr : see read-rr-by-id
 #   - global variables :
 #	- libconf(tabmachine) : array specification
+#
+# Note:
+#  - rrtmpl is a string ready for "array set" which has the following
+#	structure {key tmpl key tmpl ...}
+#	where key is one of:
+#		ip
+#		allowed-groups
+#		<may be more in the future>
+#	and tmpl has the following format:
+#		{url {formkey formval} {formkey formval}
+#	where url is the script name or any url (http://another.host/a/path)
+#	and formkey/formval are CGI parameters, where formval is formatted
+#	with value depending upon key:
+#		ip: %1$s <- ip, %2$s <- idview
+#		allowed-groups: %1$s <- groupname, %2$s <- ""
 #
 # History
 #   2008/07/25 : pda/jean : design
@@ -4152,9 +4268,10 @@ proc touch-rr {dbfd idrr} {
 #   2010/11/29 : pda      : i18n
 #   2012/10/31 : pda/jean : add views
 #   2012/11/20 : pda/jean : add view filter to display a single view
+#   2013/03/06 : pda/jean : add rrtmpl
 #
 
-proc display-rr {dbfd idrr _trr idview} {
+proc display-rr {dbfd idrr _trr idview rrtmpl} {
     global libconf
     upvar $_trr trr
 
@@ -4179,13 +4296,14 @@ proc display-rr {dbfd idrr _trr idview} {
     if {$idview ne ""} then {
 	set cname [rr-cname-by-view trr $idview]
 	if {$cname ne ""} then {
-
 	    set fqdn "$trr(nom).$trr(domaine)"
-	    if {[read-rr-by-id $dbfd $cname tc]} then {
-		set fqdn2 "$tc(nom).$tc(domaine)"
-		lappend lines [list Normal [mc "Alias name"] $fqdn]
-		lappend lines [list Normal [mc "Points to"] $fqdn2]
+	    if {! [read-rr-by-id $dbfd $cname tc]} then {
+		return [mc {Cannot read host-id %s} $idalias]
 	    }
+
+	    set fqdn2 "$tc(nom).$tc(domaine)"
+	    lappend lines [list Normal [mc "Alias name"] $fqdn]
+	    lappend lines [list Normal [mc "Points to"] $fqdn2]
 	}
     }
 
@@ -4205,13 +4323,16 @@ proc display-rr {dbfd idrr _trr idview} {
 	    } else {
 		set at [mc "IP addresses and views"]
 	    }
+	    set lip {}
 	    if {$nip == 0} then {
 		set aa [mc "(none)"]
 	    } else {
 		set aa {}
 		foreach ipv $trr(ip) {
 		    lassign $ipv idview ip
-		    lappend aa "$ip ([u viewname $idview])"
+		    set t [get-rr-tmpl "ip" $rrtmpl $ip $ip $idview]
+		    lappend aa "$t ([u viewname $idview])"
+		    lappend lip $ip
 		}
 		set aa [join $aa ", "]
 	    }
@@ -4226,7 +4347,11 @@ proc display-rr {dbfd idrr _trr idview} {
 	    if {$nip == 0} then {
 		set aa [mc "(none)"]
 	    } else {
-		set aa [join $lip ", "]
+		set aa {}
+		foreach ip $lip {
+		    lappend aa [get-rr-tmpl "ip" $rrtmpl $ip $ip $idview]
+		}
+		set aa [join $aa ", "]
 	    }
 	}
 	lappend lines [list Normal $at $aa]
@@ -4299,10 +4424,51 @@ proc display-rr {dbfd idrr _trr idview} {
 	if {[llength $la] > 0} then {
 	    lappend lines [list Normal [mc "Aliases"] [join $la " "]]
 	}
+
+	# mail addresses recognized by this host
+	set la {}
+	foreach i [rr-adrmail-by-view trr $idview] {
+	    lassign $i idadrmail idviewa
+	    if {[read-rr-by-id $dbfd $idadrmail ta]} then {
+		lappend la "$ta(nom).$ta(domaine)/[u viewname $idviewa]"
+	    }
+	}
+	if {[llength $la] > 0} then {
+	    lappend lines [list Normal [mc "Mail addresses"] [join $la " "]]
+	}
+
+	#
+	# Allowed groups
+	#
+
+	set lidgrp [allowed-groups $dbfd $lip]
+	set lg {}
+	foreach idgrp $lidgrp {
+	    set g [u groupname $idgrp]
+	    lappend lg [get-rr-tmpl "allowed-groups" $rrtmpl $g $g ""]
+	}
+	set lg [lsort $lg]
+	lappend lines [list Normal [mc "Allowed groups"] [join $lg " "]]
     }
 
     set html [::arrgen::output "html" $libconf(tabmachine) $lines]
     return $html
+}
+
+proc get-rr-tmpl {key rrtmpl text arg1 arg2} {
+    array set tmpl $rrtmpl
+
+    set text [::webapp::html-string $text]
+    if {[info exists tmpl($key)]} then {
+	set uarg [lreplace $tmpl($key) 0 0]
+	set uarg [format $uarg $arg1 $arg2]
+	d urlset "" [lindex $tmpl($key) 0] $uarg
+	set url [d urlget ""]
+	set link [::webapp::helem "a" $text "href" $url]
+    } else {
+	set link $text
+    }
+    return $link
 }
 
 #
@@ -4311,9 +4477,10 @@ proc display-rr {dbfd idrr _trr idview} {
 #
 # Input:
 #   - parameters:
-#	- dbfd : database handle
-#	- _trr : initialized array (see read-rr-by-id)
-#	- idview : view id in which this host must be shown
+#	- dbfd: database handle
+#	- _trr: initialized array (see read-rr-by-id)
+#	- idview: view id in which this host must be shown
+#	- rrtmpl: URL template for some fields (see display-rr)
 # Output:
 #   - return value: list {<link> <desc>} where:
 #	- link is the HTML code for the link to the host name
@@ -4325,22 +4492,15 @@ proc display-rr {dbfd idrr _trr idview} {
 # History
 #   2012/11/20 : pda/jean : design
 #   2012/11/29 : pda/jean : move to a library function
+#   2013/03/06 : pda/jean : add rrtmpl
 #
 
-proc html-host-info {dbfd _trr idview} {
+proc display-rr-masked {dbfd _trr idview rrtmpl} {
     upvar $_trr trr
 
-    set descid "hv$idview"
-    set link [::webapp::helem "a" "$trr(nom).$trr(domaine)" \
-				    "href" "#" \
-				    "onclick" "invdisp('$descid')" \
-				    ]
-    set desc [display-rr $dbfd -1 trr $idview]
-    # normally, desc should not be empty
-    set desc [::webapp::helem "div" $desc \
-				    "id" "$descid" \
-				    "style" "display:none" \
-				]
+    h mask-next
+    set link [h mask-link "$trr(nom).$trr(domaine)"]
+    set desc [h mask-text [display-rr $dbfd -1 trr $idview $rrtmpl]]
     return [list $link $desc] 
 }
 
@@ -4633,7 +4793,7 @@ proc check-views {views} {
     set msg ""
 
     if {[llength $views] == 0} then {
-	set msg [mc "You must provide at least one view"]
+	set msg [mc "You must select at least one view"]
 
     } else {
 	#
@@ -6952,9 +7112,9 @@ set libconf(fields)	{login password nom prenom mel tel mobile fax adr}
 set libconf(editfields) {
     {Login 	{string 10} login	1}
     {Name	{string 40} nom		1}
-    {Method	{yesno {%1s Regular expression %2s Phonetic}} phren 0}
+    {Method	{yesno {%1$s Regular expression %2$s Phonetic}} phren 0}
     {{First name}	{string 40} prenom	1}
-    {Method	{yesno {%1s Regular expression %2s Phonetic}} phrep 0}
+    {Method	{yesno {%1$s Regular expression %2$s Phonetic}} phrep 0}
     {Address	{text 3 40} adr		1}
     {Mail	{string 40} mel		1}
     {Phone	{string 15} tel		1}
@@ -8923,7 +9083,7 @@ proc pgauth-ac-del-user {_e _ftab login} {
     #
     # Default messages
     #
-    set msg [mc Remove '%s' from application" $login]
+    set msg [mc "Remove '%s' from application" $login]
     set comp [mc "Account is still active in authentication subsystem"]
 
     #
@@ -9077,7 +9237,7 @@ proc pgauth-build-realm-index {dbfd type all rlmlist maxrlm _gidx} {
 		    set gidx($r) $i
 		    lappend menurealms [list $r $r]
 		} else {
-		    lappend menurealms [list [mc "Invalid realm '%s'] $r]
+		    lappend menurealms [list [mc "Invalid realm '%s'"] $r]
 		}
 		incr i
 	    }

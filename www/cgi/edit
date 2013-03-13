@@ -29,6 +29,7 @@ set conf(page)		edit.html
 set conf(nextdel)	"del"
 set conf(nextmod)	"mod"
 set conf(nextlist)	"net"
+set conf(nextsearch)	"search"
 
 #
 # Netmagis general library
@@ -153,7 +154,7 @@ d cgi-register {} {
 	    # Display view name only if more than view is available
 	    #
 
-	    lassign [html-host-info $dbfd trr $idv] link desc
+	    lassign [display-rr-masked $dbfd trr $idv {}] link desc
 	    set title [mc {Address %1$s matches %2$s in view '%3$s'} $addr $link $vn]
 
 	    set html "$title\n$desc\n$vact"
@@ -174,14 +175,25 @@ d cgi-register {} {
     #
 
     switch -- [d nextprog] {
-	map { set format "domap" }
+	search {
+	    d urlset "%URLBACK%" $conf(nextsearch) [list \
+	    						[d nextargs] \
+						    ]
+	}
+	map {
+	    d urlset "%URLBACK%" $conf(nextlist) [list \
+							[list "domap" "yes"] \
+							[d nextargs] \
+						    ]
+	}
 	list -
-	default { set format "dolist" }
+	default {
+	    d urlset "%URLBACK%" $conf(nextlist) [list \
+							[list "dolist" "yes"] \
+							[d nextargs] \
+						    ]
+	}
     }
-    d urlset "%URLBACK%" $conf(nextlist) [list \
-						[list $format "yes"] \
-						[d nextargs] \
-					    ]
 
     #
     # End of script: output page and close database

@@ -524,7 +524,7 @@ d cgi-register {
 
     set nusers [llength [lindex $tabrlm($realm) 1]]
     if {$nusers > 0} then {
-	d error [mc {Realm '%1$s' holds %2$s members. Delete them first} $realm $nusers]
+	d error [mc {Realm '%1$s' holds %2$s member(s). Delete them first} $realm $nusers]
     }
 
     #

@@ -377,7 +377,7 @@ proc gen-ipmac-assoc {mdbfd ndbfd ipmac_assoc} {
 	set mac $tab(mac)
     }
     if {$ip eq ""} then {
-	return [mc "IP-MAC association (%s,%s) not found" $searchip $searchmac]
+	return [mc "IP-MAC association (%1$s,%2$s) not found" $searchip $searchmac]
     }
 
     set lines {}
@@ -453,7 +453,7 @@ proc gen-portmac-assoc {mdbfd ndbfd portmac_assoc} {
 			]
 	set eq [get-eq-name $ndbfd $tab(src)]
 	lappend lines [list "Info" \
-			    [mc "Equipement"] \
+			    [mc "Equipment"] \
 			    [gen-link $eq "eq:$tab(src)"] \
 			]
 	lappend lines [list "Info" \
@@ -616,7 +616,7 @@ proc gen-mac {mdbfd ndbfd mac} {
 
 proc gen-eq {mdbfd ndbfd eq} {
     if {$eq eq ""} then {
-	return [mc "Equipment address empty"]
+	return [mc "No equipment address"]
     }
     return [gen-choice-portmac $mdbfd $ndbfd "portmac.src='$eq'"]
 }

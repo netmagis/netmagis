@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Recherche de correspondant
+    Netmagis - Recherche
 }
 
 \*******************************************************************************
@@ -42,12 +42,11 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Recherche des correspondants associés à une machine}
+    \titre {1} {Recherche}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	Adresse ou machine (avec domaine)~:
-	    <INPUT TYPE="TEXT" NAME="crit" SIZE="49" VALUE="%CRITERE%">
-	    <INPUT TYPE="SUBMIT" VALUE="Chercher">
+	<INPUT TYPE="TEXT" NAME="q" SIZE="50" VALUE="%CRITERE%">
+	<INPUT TYPE="SUBMIT" VALUE="Chercher">
     </FORM>
 
     <HR>

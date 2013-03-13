@@ -54,6 +54,7 @@
 		<FORM METHOD="POST" ACTION="%URLFORM1%">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="add-host">
 		    <INPUT TYPE="HIDDEN" NAME="confirm" VALUE="no">
+		    <INPUT TYPE="HIDDEN" NAME="naddr" VALUE="%NADDR%">
 		    \tableau {
 			\bordure {0} {}
 			\taille {100}

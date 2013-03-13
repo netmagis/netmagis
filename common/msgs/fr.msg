@@ -30,7 +30,6 @@
  {List MX} {Lister MX}
  {List networks} {Lister réseaux}
  {List users} {Lister correspondants}
- {Search} {Chercher}
  {Modify organizations} {Modif établissements}
  {Modify communities} {Modif communautés}
  {Modify machine types} {Modif types de machines}
@@ -194,10 +193,8 @@
 ###############################################################################
 # Library
 ::msgcat::mcmset fr {
- {Error accessing database (%s)} {Erreur d'accès à la base de données (%s)}
- {Connection refused (%s)} {Connexion refusée (%s)}
+ {Error accessing database: %s} {Erreur d'accès à la base de données : %s}
  {Unrecognized authentication method '%s'} {Méthode d'authentication '%s' non reconnue}
- {Invalid 'rootusers' configuration parameter} {Paramètre de configuration 'rootusers' invalide}
  {No login: authentication failed} {Pas de login : l'authentification a échoué}
  {User '%s' not authorized} {Utilisateur '%s' non autorisé}
  {Authentication base problem: %s} {Problème dans la base d'authentification : %s}
@@ -232,7 +229,7 @@
  {Realm}	{Royaume}
  {Realms}	{Royaumes}
  {ERROR}	{ERREUR}
- {%1s Regular expression %2s Phonetic} {%1$s Exp. régulière %2$s Phonétique}
+ {%1$s Regular expression %2$s Phonetic} {%1$s Exp. régulière %2$s Phonétique}
 
  {This host holds mail addresses} {Cette machine héberge des adresses de messagerie}
  {Internal error: '%s' inserted, but not found in database} {Erreur interne : '%s' inséré, mais non retrouvé dans la base}
@@ -307,14 +304,14 @@
  {The '/' character is not valid in the address '%s'} {Le caractère '/' est interdit dans l'adresse '%s'}
  {Invalid syntax for IP address '%s'} {Syntaxe invalide pour l'adresse IP '%s'}
  {Invalid syntax '%s' for DHCP profile} {Syntaxe invalide pour le profil DHCP '%s'}
- {Invalid DHCP profile '%s'} {Profil DHCP '%s' invalide}
  {No profile} {Aucun profil}
 
  {Internal error: invalid context '%s'} {Erreur interne : contexte '%s' invalide}
  {'%1$s' is an alias of '%2$s' in view '%3$s'} {'%1$s' est un alias de '%2$s' dans la vue '%3$s'}
- {You must provide at least one view} {Vous devez indiquer au moins une vue}
+ {You must select at least one view} {Vous devez sélectionner au moins une vue}
  {You don't have access to these views: %s} {Vous n'avez pas accès à ces vues : %s}
  {You don't have rights on '%s'} {Vous n'avez pas les droits sur '%s'}
+ {You don't have rights on domain '%s'} {Vous n'avez pas les droits sur le domaine '%s'}
  {You don't have rights on some IP addresses of '%s'} {Vous n'avez pas les droits sur certaines adresses IP de '%s'}
  {You don't have rights on some IP addresses of '%1$s' referenced by alias '%2$s'} {Vous n'avez pas les droits sur certaines adresses IP de '%1$s' référencé par l'alias '%2$s'}
  {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} {Vous n'avez pas les droits sur certaines adresses IP de '%1$s' référencé par le MX '%2$s'}
@@ -322,7 +319,7 @@
  {Error detected in view '%1$s': %2$s} {Erreur détectée dans la vue '%1$s' : %2$s}
  {'%s' is a MX} {'%s' est un MX}
  {'%1$s' is a mail role in view '%2$s'} {'%1$s' est un rôle de messagerie dans la vue '%2$s'}
- {'%1$s' is a not mail role in view '%2$s'} {'%1$s' n'est pas un rôle de messagerie dans la vue '%2$s'}
+ {'%1$s' is not a mail role in view '%2$s'} {'%1$s' n'est pas un rôle de messagerie dans la vue '%2$s'}
  {Internal error: id '%s' doesn't exists for a mail host} {Erreur interne : hébergeur d'id '%s' inexistant}
  {You don't have rights on host holding mail for '%s'} {Vous n'avez pas les droits sur l'hébergeur de '%s'}
  {'%s' is a mail host for mail domains} {'%s' est un hébergeur pour des adresses de messagerie}
@@ -335,7 +332,6 @@
  {MX '%1$s' points to a domain on which you don't have rights\n%2$s} {Le MX '%1$s' référence un domaine auquel vous n'avez pas accès\n%2$s}
  {Invalid MX priority '%1$s' for '%2$s'} {Priorité de MX non valide '%1$s' pour '%2$s'}
  {You don't have rights to some relays of domain '%1$s': %2$s} {Vous n'avez pas les droits sur certains relais du domaine '%1$s' : %2$s}
- {Internal error on '%1$s': id '%2$s' of mail host not found} {Erreur interne sur '%1$s' : id de l'hébergeur '%2$s' non trouvé}
  {Impossible to use MAC address '%1$s' because IP address '%2$s' is in DHCP dynamic range [%3$s..%4$s]} {Impossible d'affecter l'adresse MAC '%1$s' car l'adresse IP '%2$s' figure dans l'intervalle DHCP dynamique [%3$s..%4$s]}
  {Invalid TTL: must be a positive integer} {TTL invalide : doit être un nombre entier positif}
  {Invalid TTL: must be less than %s} {TTL invalide : doit être inférieur à %s}
@@ -343,10 +339,9 @@
  {DHCP profile} {Profil DHCP}
  {Use SMTP} {Émettre en SMTP}
  {TTL} {TTL}
- { (in seconds)} { (en secondes)}
+ {(in seconds)} {(en secondes)}
  {Sorry, but you do not have access to any view} {Désolé, mais vous n'avez accès à aucune vue}
  {Sorry, but you do not have any active domain} {Désolé, mais vous n'avez aucun domaine actif}
- {No profile} {Aucun profil}
  {yes}		{oui}
  {no}		{non}
  {Netmagis administration} {Administration de Netmagis}
@@ -378,7 +373,7 @@
 
  {Unknown configuration key '%s'} {Clef de configuration '%s' inconnue}
  {Cannot set key '%1$s' to '%2$s: %3$s} {Impossible de modifier la clef '%1$s' à '%2$s' : %3$s}
- {Cannot fetch key '%1$s': %3$s} {Impossible de lire la clef '%1$s' : %2$s}
+ {Cannot fetch key '%1$s': %2$s} {Impossible de lire la clef '%1$s' : %2$s}
 
  {No message from anaconf} {Aucun message provenant d'anaconf}
  {(no date)} {(aucune date)}
@@ -397,12 +392,12 @@
  {Number of associated hosts on %s} {Nombre de machines associées sur %s}
  {Internal error: invalid extractcoll output format} {Erreur interne : format de sortie de extractcoll non valide}
  {No access: %s} {Accès impossible: %s}
- {Error during extraction of readable interfaces from '%1$s' (%2$s)} {Erreur lors de l'extraction des interfaces consultables de '%1$s' : %2$s}
- {Error during extraction of writable interfaces from '%1$s' (%2$s)} {Erreur lors de l'extraction des interfaces modifiables de '%1$s' : %2$s}
+ {Error during extraction of readable interfaces from '%1$s': %2$s} {Erreur lors de l'extraction des interfaces consultables de '%1$s' : %2$s}
+ {Error during extraction of writable interfaces from '%1$s': %2$s} {Erreur lors de l'extraction des interfaces modifiables de '%1$s' : %2$s}
  {Equipment '%s' not found} {Équipement '%s' non trouvé}
  {description='%s'} {description='%s'}
- {vlan='%s'} {vlan='%s'}
- {voip='%s'} {voip='%s'}
+ {vlan=%s} {vlan=%s}
+ {voip=%s} {voip=%s}
  {deactivated interface} {interface désactivée}
  {Changes currently processed:} {Modification(s) en cours de traitement :}
  {Graph currenty re-builded. Informations presented here are not necessarily consistent with current equipement configuration.} {Reconstruction du graphe en cours. Les informations fournies ne sont pas forcément cohérentes avec la configuration actuelle des équipements.}
@@ -445,7 +440,7 @@
 # CGI Scripts
 ::msgcat::mcmset fr {
  {force generation for zone %s} {forçage de la génération de la zone %s}
- {Cannot create group of orphaned users} {Impossible de créer le groupe des utilisateurs orphelins (%s)}
+ {Cannot create group of orphaned users (%s)} {Impossible de créer le groupe des utilisateurs orphelins (%s)}
  {New group creation} {Création d'un nouveau groupe}
  {Type the name of group to create} {Entrez le nom du groupe à créer}
  {Edition of group '%s'} {Édition du groupe '%s'}
@@ -454,8 +449,6 @@
  {Group has access to view '%s' which do not exists in database} {Le groupe a accès à la vue '%s' qui n'existe pas dans la base}
  {Group has access to domain '%s' which do not exists in database} {Le groupe a accès au domaine '%s' qui n'existe pas dans la base}
  {Group has access to network '%s' which do not exists in database} {Le groupe a accès au réseau '%s' qui n'existe pas dans la base}
- {yes} {oui}
- {no} {non}
  {Sort class} {Classe de tri}
  {Selected by default} {Sélectionnée par défaut}
  {DHCP management} {Gestion DHCP}
@@ -497,7 +490,6 @@
  {'%s' already has IP addresses} {'%s' a déjà des adresses IP}
  {'%s' is an alias} {'%s' est un alias}
  {Internal error: rr_mx table references RR '%s', not found in the rr table} {Erreur interne : table rr_mx référence le RR '%s', non trouvé dans la table rr}
- {MX insertion failed: %s} {Insertion du MX impossible : %s}
  {'%s' specified more than once} {'%s' spécifié plus d'une fois}
  {Invalid form values (%s)} {Valeurs de formulaire invalides (%s)}
  {old MX} {anciens MX}
@@ -517,7 +509,6 @@
  {new mail relays} {nouveaux relais de messagerie}
  {mail relays} {relais de messagerie}
  {mail role} {rôle de messagerie}
- {mailbox permissions} {droits d'accès aux boîtes aux lettres}
  {Type '%s' not supported} {Type '%s' non supporté}
  {Organization management} {Gestion des organismes}
  {Community management} {Gestion des communautés}
@@ -530,7 +521,6 @@
  {DHCP profile management} {Gestion des profils DHCP}
  {Vlan management} {Gestion des Vlans}
  {Equipment type management} {Gestion des types d'équipement}
- {Equipment management} {Gestion des équipements}
  {Configuration commands management} {Gestion des commandes de configuration}
  {Graphviz node attributes for equipments} {Attributs des noeuds Graphviz pour les équipements}
  {return to organization modification} {revenir à la modification des organismes}
@@ -554,15 +544,16 @@
  {Model} {Modèle}
  {Command} {Commande}
  {Relay insertion failed: %s} {Insertion du relais impossible : %s}
- {Old relay deletion failed: %s} {Suppression des anciens relais impossible : %s}
  {Mail relays deleted} {Relais de messagerie supprimés}
  {No authorized network} {Aucun réseau autorisé}
- {Host '%s' not found} {Machine '%s' non trouvée}
- {No default domain} {Pas de domaine par défaut}
- {Invalid search criterion '%s'} {Critère de recherche '%s' invalide}
- {Internal error: object pointed by alias is not found} {Erreur interne : l'objet pointé par l'alias n'est pas trouvé}
- {Internal error: mail host of role mail not found} {Erreur interne : hébergeur du rolemail non trouvé}
- {Internal error: no IP address} {Erreur interne : pas d'adresse IP}
+ {Invalid search query '%s'} {Requête '%s' invalide}
+ {Invalid search operator '%s'} {Opérateur de recherche '%s' invalide}
+ {String '%s' not found} {Chaîne '%s' non trouvée}
+ {%1$s is a host in view %2$s} {%1$s est une machine dans la vue %2$s}
+ {%1$s is an alias to host %2$s in view %3$s} {%1$s est un alias vers la machine %2$s dans la vue %3$s}
+ {%s is a Netmagis group} {%s est un groupe Netmagis}
+ {Empty group (no user)} {Groupe vide (sans utilisateur)}
+ {Internal error: unknown type} {Erreur interne : type inconnu}
  {Searched address: %s} {Adresse recherchée : %s}
  {You don't have access to any DHCP enabled network} {Vous n'avez accès à aucun réseau avec le droit DHCP}
  {Internal error: too many CIDR found} {Erreur interne : trop de CIDR trouvés}
@@ -603,7 +594,7 @@
  {Error while reading wifi sensors: %s} {Erreur lors de la lecture des sondes Wifi : %s}
  {Error while reading Vlans: %s} {Erreur lors de la lecture des Vlans : %s}
  {Error while reading networks: %s} {Erreur lors de la lecture des réseaux : %s}
- {Error generating graph '%s'} {Erreur lors de la génération du graphe (%s)}
+ {Error generating graph: '%s'} {Erreur lors de la génération du graphe : %s}
  {No equipment found} {Aucun équipement trouvé}
  {equipments} {équipements}
  {develop} {tout dérouler}
@@ -627,7 +618,6 @@
  {More than 9 months} {Plus de 9 mois}
  {More than one year} {Plus d'un an}
  {Invalid occurrence '%s'} {Occurrence '%s' invalide}
- {Last occurrence} {Dernière occurrence}
  {Inactive hosts in network %1$s since more than %2$s months: } {Machines inactives dans le réseau %1$s depuis plus de %2$s mois : }
  {%s inactive hosts} {%s machines inactives}
  {no inactive host found} {aucune machine inactive trouvée}
@@ -644,9 +634,9 @@
  {%1$s available addresses / %2$s total} {%1$s adresses disponibles / %2$s total}
  {Detail} {Détail}
  {Details} {Détails}
- {(no date)} {(date effacée)}
  {%1$s MAC-IP address associations found for %2$s:} {%1$s associations IP-MAC trouvées pour %2$s :}
  {No MAC-IP address association found for %s} {Aucune association IP-MAC trouvée pour %s}
+ {No equipment address} {Pas d'adresse d'équipement}
  {address not allowed} {adresse non accessible}
  {available address in all views} {adresse disponible dans toutes les vues}
  {declared address in at least one view} {adresse déclarée dans au moins une vue}
@@ -671,22 +661,18 @@
  {Invalid search string '%s'} {Châine de recherche '%s' incorrecte}
  {No information found} {Aucune information trouvée}
  {Internal error: invalid parameter type '%s'} {Erreur interne : type de paramètre invalide '%s'}
- {IP-MAC identifier '%s' not found} {Identifiant IP-MAC '%s' non trouvé}
  {Start} {Début}
  {End} {Fin}
- {No IP-MAC session found} {Aucune session IP-MAC trouvée}
+ {No IP-MAC association found} {Aucune association IP-MAC trouvée}
  {Sessions} {Sessions}
  {Last occurrence} {Dernière occurrence}
- {%s MAC-Equipment-port-vlan associations found} {%s associations adresse MAC-équipement-port-vlan trouvées}
- {No MAC-Equipment-port-vlan association found} {Aucune association adresse MAC-équipement-port-vlan trouvée}
- {Unknown equipemnt (id %s)} {Équipement inconnu (id %s)}
+ {%s MAC-Port-VLAN associations found} {%s associations adresse MAC-Port-VLAN trouvées}
+ {No MAC-Port-VLAN association found} {Aucune association adresse MAC-Port-VLAN trouvée}
+ {Unknown equipemnt (address %s)} {Équipement inconnu (adresse %s)}
  {MAC address %s} {l'adresse MAC %s}
  {IP address %s} {l'adresse IP %s}
- {this IP-MAC association} {cette association IP-MAC}
- {this MAC-Equipment-Port-Vlan association} {cette association AC-Équipement-Port-Vlan}
  {Vlan %s} {le vlan %s}
  {host %s} {la machine %s}
- {this IP-MAC association} {cette association IP-MAC}
  {Number of unique MAC addresses} {Nombre d'adresses MAC uniques}
  {Number of unique IPv4 addresses} {Nombre d'adresses IPv4 uniques}
  {Number of unique IPv6 addresses} {Nombre d'adresses IPv6 uniques}
@@ -694,9 +680,9 @@
  {Statistics about MAC/IP addresses} {Statistiques sur les adresses MAC/IP}
  {No mail role found for '%s'} {Aucun rôle de messagerie trouvé pour '%s'}
  {Mail address} {Adresse de messagerie}
+ {Mail addresses} {Adresses de messagerie}
+ {Allowed groups} {Groupes autorisés}
  {Mailbox host} {Hébergeur des boîtes}
- {Mailbox host name '%s' not found} {Nom d'hébergeur '%s' non trouvé}
- {Mail role '%s' does not exist: you can't delete it} {Le rôle '%s' n'existe pas. Vous ne pouvez pas le supprimer}
  {created} {créée}
  {deleted} {supprimée}
  {modified} {modifiée}
@@ -740,7 +726,6 @@
  {Host id %s not found} {Machine d'id %s non trouvée}
  {Host '%s' already exists} {La machine '%s' existe déjà}
  {(default zone value)} {(valeur par défaut de la zone)}
- {Internal error: impossible case '%s'} {Erreur interne : cas '%s' impossible}
  {Inconsistency in access rights for following interfaces: %s} {Incohérence sur les droits d'accès pour les interfaces suivantes : %s}
  {You did not selected any interface} {Vous n'avez pas sélectionné d'interface}
  {You don't have write access to interface '%1$s' on '%2$s'} {Vous n'avez mpas de le droit de modifier l'interface '%1$s' sur '%2$s'}
@@ -754,7 +739,6 @@
  {Invalid mail address, password is not modified} {Adresse mail invalide, mot de passe non modifié}
  {Account has been removed from realms: %s} {Le compte a été supprimé des royaumes ci-après : %s}
  {Error while removing realms %1$s: %2$s} {Erreur lors de la suppression des royaumes %1$s : %2$s}
- {You are not authorized to generate a link number} {Vous n'êtes pas autorisé à générer un numéro de lien}
  {Error while generating a link number} {Erreur dans la génération d'un numéro de lien}
  {All} {Tous}
  {Id} {Identifiant}
@@ -762,12 +746,12 @@
  {Edit} {Modifier}
  {Invalid link number (%s)} {Numéro de lien invalide (%s)} 
  {Non-existent link number (%s)} {Numéro de lien inexistant (%s)}
- {Error while generating a link number} {Erreur dans la génération d'un numéro de lien}
  {Can't modify link %s (%s)} {Impossible de modifier le lien %s (%s)}
  {Can't reuse link %s (%s)} {Impossible de réutiliser le lien %s (%s)}
  {Address %1$s matches %2$s in view '%3$s'} {L'adresse %1$s correspond à %2$s dans la vue '%3$s'}
  {<a href="%1$s">Remove</a> host '%2$s'} {<a href="%1$s">Supprimer</a> la machine '%2$s'}
  {<a href="%1$s">Remove address '%2$s'</a> from '%3$s' (all other addresses of this host will stay)} {<a href="%1$s">Supprimer l'adresse '%2$s'</a> de '%3$s' (mais il restera les autres adresses)}
  {<a href="%1$s">Edit informations</a> of '%2$s'} {<a href="%1$s">Éditer les informations</a> de '%2$s'}
- {<a href="%1$s">Modify '%2$s'</a> in view '%3s'} {<a href="%1$s">Modifier '%S2$s'</a> dans la vue '%3$s'}
+ {<a href="%1$s">Modify '%2$s'</a> in view '%3$s'} {<a href="%1$s">Modifier '%S2$s'</a> dans la vue '%3$s'}
+ {IP-MAC association (%1$s,%2$s) not found} {Association IP-MAC (%1$s,%2$s) non trouvée}
 }

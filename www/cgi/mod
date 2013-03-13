@@ -69,6 +69,7 @@ set conf(nextmap)	"net"
 set conf(nextlist)	"net"
 set conf(nextadd)	"add"
 set conf(nextdel)	"del"
+set conf(nextsearch)	"search"
 
 #
 # Netmagis general library
@@ -601,6 +602,9 @@ d cgi-register {action store} {
     #
 
     switch -- [d nextprog] {
+	search {
+	    d urlset "%URLSUITE%" $conf(nextsearch) [list [d nextargs]]
+	}
 	map {
 	    d urlset "%URLSUITE%" $conf(nextmap) [list {domap {yes}} [d nextargs]]
 	}

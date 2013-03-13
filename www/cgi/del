@@ -56,6 +56,7 @@ set conf(page-ok)	del-ok.html
 set conf(next)		"del"
 set conf(nextmap)	"net"
 set conf(nextlist)	"net"
+set conf(nextsearch)	"search"
 set conf(nextipinact)	"ipinact"
 
 #
@@ -134,7 +135,7 @@ proc confirm {dbfd mode object _chkv} {
 	    #
 	    # Get host information
 	    #
-	    lassign [html-host-info $dbfd trr $idview] link desc
+	    lassign [display-rr-masked $dbfd trr $idview {}] link desc
 
 	    if {$mode eq "fqdn"} then {
 		#
@@ -304,6 +305,9 @@ proc remove {dbfd mode object _chkv} {
     #
 
     switch -- [d nextprog] {
+	search {
+	    d urlset "%URLSUITE%" $conf(nextsearch) [list [d nextargs]]
+	}
 	map {
 	    d urlset "%URLSUITE%" $conf(nextmap) [list {domap {yes}} [d nextargs]]
 	}

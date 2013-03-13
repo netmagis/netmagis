@@ -203,7 +203,7 @@
 	    }
 	}
 	\lignetableau {
-	    \casetableau {} {Equipements}
+	    \casetableau {} {Equipments}
 	    \casetableau {} {Name, type, et status (active or not)
 	    }
 	}

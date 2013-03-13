@@ -1,12 +1,12 @@
 #!%TCLSH%
 
 #
-# Search users associated with a network, an IP address or a host name.
+# Search informations (host name, IP address, MAC address, groups, etc.)
 #
 # Called by: index
 #
 # Parameters (form or url):
-#	- critere : search criterion (ip, cidr, or fqdn, or _ for "here")
+#	- q: search query (ip, cidr, or fqdn, or _ for "here")
 #
 # History
 #   2002/07/25 : pda      : design
@@ -17,6 +17,8 @@
 #   2010/10/17 : pda      : add search case for "here"
 #   2010/12/10 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
+#   2013/03/06 : pda/jean : multi-views
+#   2013/03/13 : pda/jean : generalization to different object types
 #
 
 #
@@ -36,7 +38,7 @@ set conf(next)		"search"
 #
 
 set conf(form)	{
-	{critere	0 1 {}}
+	{q	0 1 {}}
 }
 
 #
@@ -51,36 +53,144 @@ source %LIBNETMAGIS%
 # Utilities
 ##############################################################################
 
-proc user-error {crit msg} {
+proc display-message {q msg} {
     global conf
 
-    set qmsg  [::webapp::html-string $msg]
-    set qcrit [::webapp::html-string $crit]
+    set qmsg [::webapp::html-string $msg]
+    set qq   [::webapp::html-string $q]
     set result [::webapp::helem "font" $qmsg "color" "#FF0000"]
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
-				[list %CRITERE% $qcrit] \
+				[list %CRITERE% $qq] \
 				[list %RESULTAT% $result] \
 			    ]
     exit 0
 }
 
+#
+# Parse a search query, which has the form
+#	[<sel>:]<val>
+# Examples:
+#	192.168.1.2 01
+#	01:02:03:04:05:06
+#	www.example.com
+#	host: www
+#	net: lab
+#
+# Input:
+#   - dbfd: database access
+#   - q: user query
+#   - _sel, _val, _type: see below
+# Output:
+#   - return value: empty string or error message
+#   - sel: list of selector procedures (see cgi-search-* procedures)
+#   - val: value to search
+#   - type: detected value type (mac, inet, cidr or string)
+#
+# History:
+#   2013/02/27: pda/jean : attempt to spec
+#   2013/03/06: pda/jean : design
+#
 
-proc display-host {dbfd _trr idview} {
+proc parse-query {dbfd q _sel _val _type} {
+    global conf
+
+    upvar $_sel sel
+    upvar $_val val
+    upvar $_type type
+
+    set sel ""
+    set val ""
+    set type ""
+
+    set q [string trim $q]
+    #
+    # Avoid case where the beginning of a MAC address is confused with
+    # an operator
+    #
+    if {$q eq "_"} then {
+	set sel "myaddr"
+	set val "_"
+	set type ""
+    } elseif {[check-mac-syntax $dbfd $q] eq ""} then {
+	set sel ""
+	set val $q
+	set type "mac"
+    } elseif {[check-ip-syntax $dbfd $q "inet"] eq ""} then {
+	set sel ""
+	set val $q
+	set type "inet"
+	set r ""
+    } elseif {[check-ip-syntax $dbfd $q "cidr"] eq ""} then {
+	set sel ""
+	set val $q
+	set type "cidr"
+	set r ""
+    } else {
+	#
+	# Check operator and value
+	#
+
+	if {[regexp {^(([a-z]+):\s*)?(\S+)$} $q dum1 dum2 sel val]} then {
+	    # nothing
+	} elseif {[regexp {^\S+$} $q val]} then {
+	    set sel ""
+	} else {
+	    return [mc "Invalid search query '%s'" $q]
+	}
+
+	#
+	# Recognize type
+	#
+
+	if {[check-mac-syntax $dbfd $val] eq ""} then {
+	    set type "mac"
+	} elseif {[check-ip-syntax $dbfd $val "inet"] eq ""} then {
+	    set type "inet"
+	} elseif {[check-ip-syntax $dbfd $val "cidr"] eq ""} then {
+	    set type "cidr"
+	} else {
+	    set type "string"
+	}
+    }
+
+    #
+    # Verify operator/type compatibility
+    #
+
+    if {$sel eq ""} then {
+	set sel [lsort [info procs "cgi-search-*-*"]]
+    } else {
+	set proc [info procs "cgi-search-*-$sel"]
+	if {$proc eq ""} then {
+	    return [mc "Invalid search operator '%s'" $sel]
+	}
+	set sel [list $proc]
+    }
+
+    return ""
+}
+
+proc display-host {dbfd _trr idview q} {
     upvar $_trr trr
 
-    h mask-next
-    set fqdn [h mask-link "$trr(nom).$trr(domaine)"]
-    # XXXXXXXXXX : non-translated message
-    set msg [mc {%1$s is a host in view %2$s} $fqdn [u viewname $idview]]
+    set rrtmpl {
+	allowed-groups {search {q group:%s}}
+	ip {edit {adr %1$s} {idview %2$s}}
+    }
 
-    set hostinfo [h mask-text [display-rr $dbfd -1 trr $idview]]
+    array set t $rrtmpl
+    lappend t(ip) {nextprog search}
+    lappend t(ip) [list "nextargs" "q=$q"]
+    set rrtmpl [array get t]
 
-    return "$msg $hostinfo"
+    lassign [display-rr-masked $dbfd trr $idview $rrtmpl] link desc
+    set title [mc {%1$s is a host in view %2$s} $link [u viewname $idview]]
+    return "$title $desc"
 }
 
 
-proc display-alias {dbfd _trr idview} {
+proc display-alias {dbfd _trr idview q} {
     upvar $_trr trr
 
     h mask-next
@@ -89,280 +199,210 @@ proc display-alias {dbfd _trr idview} {
     if {! [read-rr-by-id $dbfd $idalias trra]} then {
 	d error [mc {Cannot read host-id %s} $idalias]
     }
-    set fqdna [h mask-link "$trra(nom).$trra(domaine)"]
-    # XXXXXXXXXX : non-translated message
-    set msg [mc {%1$s is an alias to host %2$s in view %3$s} $fqdn $fqdna [u viewname $idview]]
 
-    set hostinfo [h mask-text [display-rr $dbfd -1 trra $idview]]
+    set rrtmpl {
+	allowed-groups {search {q group:%s}}
+	ip {edit {adr %1$s} {idview %2$s}}
+    }
 
-    return "$msg $hostinfo"
+    # Display aliased host
+    lassign [display-rr-masked $dbfd trra $idview $rrtmpl] link desc
+    set title [mc {%1$s is an alias to host %2$s in view %3$s} $fqdn $link [u viewname $idview]]
+
+    return "$title $desc"
 }
 
 
-
-
-
-
-
-
-
-
 ##############################################################################
-# OBSOLETE
+# Search cases
 ##############################################################################
 
-proc output-trr {dbfd crit addr _trr} {
-    global conf
-    upvar $_trr trr
+proc cgi-search-100-myaddr {dbfd q val type} {
+    global env
 
-    #
-    # If we come here, it means that the search criterion is ok.
-    # If trr(idrr) exists, it means that name or address match a real host.
-    #
-
-    #
-    # If it is an alias, look for the pointed host.
-    #
-
-    if {[info exists trr(cname)]} then {
-	if {$trr(cname) ne ""} then {
-	    set idrr $trr(cname)
-	    unset trr
-	    if {! [read-rr-by-id $dbfd $idrr trr]} then {
-		d error [mc "Internal error: object pointed by alias is not found"]
+    set lfound {}
+    if {[info exists env(REMOTE_ADDR)] && $val eq "_"} then {
+	set val $env(REMOTE_ADDR)
+	foreach idview [u myviewids] {
+	    if {[read-rr-by-ip $dbfd $val $idview trr]} then {
+		lappend lfound [display-host $dbfd trr $idview $q]
 	    }
 	}
+	if {[llength $lfound] == 0} then {
+	    lappend lfound [mc "Searched address: %s" $val]
+	}
     }
+    return $lfound
+}
 
-    #
-    # If it is a mail role, without IP address, look for mail host.
-    #
+proc cgi-search-150-host {dbfd q val type} {
+    set lfound {}
 
-    if {[info exists trr(rolemail)] && [llength $trr(ip)] == 0} then {
-	if {$trr(rolemail) ne ""} then {
-	    set idrr $trr(rolemail)
-	    unset trr
-	    if {! [read-rr-by-id $dbfd $idrr trr]} then {
-		d error [mc "Internal error: mail host of role mail not found"]
+    switch $type {
+	mac {
+	    #
+	    # Attempt to search for the host. It if exists, trr will
+	    # be filled. If it does not exists, trr will not be created.
+	    # We don't test result, since existence of trr(idrr) will
+	    # suffice for next steps.
+	    #
+	    if {[read-rr-by-mac $dbfd $val trr]} then {
+		set lhost {}
+		foreach idview [u myviewids] {
+		    if {[llength [rr-ip-by-view trr $idview]] > 0} then {
+			lappend lhost $idview
+			break
+		    }
+		}
+		foreach idview $lhost {
+		    lappend lfound [display-host $dbfd trr $idview $q]
+		}
 	    }
 	}
-    }
-
-    #
-    # If criterion was a name and not an IP address, extract one of its
-    # IP addresses (random among all IP addresses)
-    #
-
-    if {$addr eq ""} then {
-	if {! [info exists trr(ip)]} then {
-	    d error [mc "Internal error: no IP address"]
-	}
-	set addr [lindex $trr(ip) 0]
-    }
-
-    #
-    # Display address
-    #
-
-    set result ""
-    append result [mc "Searched address: %s" $addr]
-    append result "<P>\n"
-
-    #
-    # If we have found a host, display pertinent informations.
-    #
-
-    if {[info exists trr(idrr)]} then {
-	append result [display-rr $dbfd -1 trr {}]
-	append result "<P>"
-    }
-
-    #
-    # Look for users who have access to this IP address.
-    #
-
-    set sql "SELECT c.login, c.idcor
-		    FROM global.corresp c, global.groupe g,
-			dns.dr_reseau d, dns.reseau r
-		    WHERE c.idgrp = g.idgrp
-			AND g.idgrp = d.idgrp
-			AND d.idreseau = r.idreseau
-			AND ('$addr' <<= r.adr4 OR '$addr' <<= r.adr6)
-			ORDER BY g.admin, g.nom
-			"
-    set lcor {}
-    pg_select $dbfd $sql tab {
-	lappend lcor [list $tab(login) $tab(idcor)]
-    }
-
-    #
-    # Among selected users, search for those who have access to
-    # this host (checking all other permissions).
-    #
-
-    foreach cor $lcor {
-	lassign $cor login idcor
-	if {[check-authorized-ip $dbfd $idcor $addr]} then {
-	    set n [read-user $dbfd $login tabuid msg]
-	    if {$n != 1} then {
-		d error $msg
+	inet {
+	    #
+	    # Attempt to search for the host. It if exists, trr will
+	    # be filled. If it does not exists, trr will not be created.
+	    # We don't test result, since existence of trr(idrr) will
+	    # suffice for next steps.
+	    #
+	    foreach idview [u myviewids] {
+		if {[read-rr-by-ip $dbfd $val $idview trr]} then {
+		    lappend lfound [display-host $dbfd trr $idview $q]
+		}
 	    }
-	    append result [display-user tabuid]
-	    append result "\n<P>\n"
+	}
+	cidr {
+	}
+	string {
+	    if {[regexp {^[^.]+\..+$} $val]} then {
+		#
+		# Name and domain
+		#
+		set msg [check-fqdn-syntax $dbfd $val name domain iddom]
+		if {$msg ne ""} then {
+		    display-message $val $msg
+		}
+		set ldom [list $iddom]
+	    } else {
+		set msg [check-name-syntax $val]
+		if {$msg ne ""} then {
+		    display-message $val $msg
+		}
+		set ldom [u myiddom]
+		set name $val
+	    }
+
+	    foreach iddom $ldom {
+		if {[read-rr-by-name $dbfd $name $iddom trr]} then {
+		    foreach idview [u myviewids] {
+			if {[llength [rr-ip-by-view trr $idview]] > 0} then {
+			    lappend lfound [display-host $dbfd trr $idview $q]
+			}
+			if {[rr-cname-by-view trr $idview] ne ""} then {
+			    lappend lfound [display-alias $dbfd trr $idview $q]
+			}
+			# XXXXXXXX : complete this when admmx will be modified
+			if {[rr-mx-by-view trr $idview] ne ""} then {
+			    lappend lfound [display-mx $dbfd trr $idview $q]
+			}
+		    }
+		}
+	    }
+	}
+	default {
+	    d error [mc "Internal error: unknown type"]
 	}
     }
 
-    #
-    # End of script: output page and close database
-    #
+    return $lfound
+}
 
-    d urlset "%URLFORM%" $conf(next) {}
-    d result $conf(page) [list \
-				[list %CRITERE% $crit] \
-				[list %RESULTAT% $result] \
-			    ]
+proc cgi-search-400-group {dbfd q val type} {
+    set lfound {}
+
+    set idgrp [u groupid $val]
+    if {$idgrp ne ""} then {
+	#
+	# Get all login names for this group
+	#
+	set lcor {}
+	set sql "SELECT login FROM global.corresp
+				WHERE idgrp = $idgrp
+				ORDER BY login"
+	pg_select $dbfd $sql tab {
+	    lappend lcor $tab(login)
+	}
+
+	h mask-next
+	set link [h mask-link $val]
+	set title [mc "%s is a Netmagis group" $link]
+
+	# members of the group
+	if {[llength $lcor] == 0} then {
+	    set desc [mc "Empty group (no user)"]
+	} else {
+	    set desc ""
+	    foreach login $lcor {
+		set n [read-user $dbfd $login tabuid msg]
+		if {$n != 1} then {
+		    d error $msg
+		}
+		append desc "\n<p>\n"
+		append desc [display-user tabuid]
+	    }
+	}
+	set desc [h mask-text $desc]
+	lappend lfound "$title\n$desc"
+    }
+    return $lfound
 }
 
 ##############################################################################
 # Display empty page
 ##############################################################################
 
-d cgi-register {crit {}} {} {
+d cgi-register {q {}} {} {
 
     #
     # Not an error, strictly speaking, but treated as an error.
     #
 
-    user-error "" ""
+    display-message "" ""
 }
 
 ##############################################################################
 # Display given address (or my current IP address)
 ##############################################################################
 
-d cgi-register {crit .+} {} {
+d cgi-register {q .+} {} {
     global conf
     global env
 
     #
-    # One list element (HTML code) per entry found
+    # Parse query, check consistancy and deduce search cases
+    #
+
+    set msg [parse-query $dbfd $q sel val type]
+    if {$msg ne ""} then {
+	display-message $q $msg
+    }
+
+    #
+    # Loop through all possible search cases
     #
 
     set lfound {}
-
-    ::html create ::h
-
-    #
-    # Is criterion a MAC addres, an IP address, a host name, anything else?
-    #
-
-    if {$crit eq "_"} then {
-	if {[info exists env(REMOTE_ADDR)]} then {
-	    set crit $env(REMOTE_ADDR)
-	    set lfound {}
-	    foreach idview [u myviewids] {
-		if {[read-rr-by-ip $dbfd $crit $idview trr]} then {
-		    lappend lfound [display-host $dbfd trr $idview]
-		}
-	    }
-	    if {[llength $lfound] == 0} then {
-		set msg [mc "Searched address: %s" $crit]
-		user-error $crit $msg
-	    }
-	} else {
-	    user-error "" ""
-	}
-    } elseif {[check-mac-syntax $dbfd $crit] eq ""} then {
-	#
-	# MAC address
-	#
-	set addr ""
-
-	#
-	# Attempt to search for the host. It if exists, trr will
-	# be filled. If it does not exists, trr will not be created.
-	# We don't test result, since existence of trr(idrr) will
-	# suffice for next steps.
-	#
-	if {[read-rr-by-mac $dbfd $crit trr]} then {
-	    set lhost {}
-	    foreach idview [u myviewids] {
-		if {[llength [rr-ip-by-view trr $idview]] > 0} then {
-		    lappend lhost $idview
-		    break
-		}
-	    }
-	    foreach idview $lhost {
-		lappend lfound [display-host $dbfd trr $idview]
-	    }
-	}
-
-     } elseif {[check-ip-syntax $dbfd $crit "inet"] eq ""} then {
-	#
-	# IP address
-	#
-	set addr $crit
-
-	#
-	# Attempt to search for the host. It if exists, trr will
-	# be filled. If it does not exists, trr will not be created.
-	# We don't test result, since existence of trr(idrr) will
-	# suffice for next steps.
-	#
-	for idview [u myviewids] {
-	    if {[read-rr-by-ip $dbfd $crit $idview trr]} then {
-		lappend lfound [display-host $dbfd trr $idview]
-	    }
-	}
-
-    } elseif {[check-ip-syntax $dbfd $crit "cidr"] eq ""} then {
-	#
-	# CIDR
-	#
-	set addr $crit
-
-    } else {
-	set addr ""
-	if {[regexp {^[^.]+\..+$} $crit]} then {
-	    #
-	    # Name and domain
-	    #
-	    set msg [check-fqdn-syntax $dbfd $crit name domain iddom]
-	    if {$msg ne ""} then {
-		user-error $crit $msg
-	    }
-	    set ldom [list $iddom]
-	} else {
-	    set msg [check-name-syntax $crit]
-	    if {$msg ne ""} then {
-		user-error $crit $msg
-	    }
-	    set ldom [u myiddom]
-	    set name $crit
-	}
-
-	foreach iddom $ldom {
-	    if {[read-rr-by-name $dbfd $name $iddom trr]} then {
-		foreach idview [u myviewids] {
-		    if {[llength [rr-ip-by-view trr $idview]] > 0} then {
-			lappend lfound [display-host $dbfd trr $idview]
-		    }
-		    if {[rr-cname-by-view trr $idview] ne ""} then {
-			lappend lfound [display-alias $dbfd trr $idview]
-		    }
-		    if {[rr-mx-by-view trr $idview] ne ""} then {
-			lappend lfound [display-mx $dbfd trr $idview]
-		    }
-		    if {[rr-adrmail-by-view trr $idview] ne ""} then {
-			lappend lfound [display-adrmail $dbfd trr $idview]
-		    }
-		}
-	    }
-	}
+    foreach s $sel {
+	set lfound [concat $lfound [$s $dbfd $q $val $type]]
     }
 
+    #
+    # Did we find something?
+    #
+
     if {[llength $lfound] == 0} then {
-	user-error $crit [mc "Search string '%s' not found" $crit]
+	display-message $val [mc "String '%s' not found" $val]
     }
 
     #
@@ -382,7 +422,7 @@ d cgi-register {crit .+} {} {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
-				[list %CRITERE% $crit] \
+				[list %CRITERE% $q] \
 				[list %RESULTAT% $result] \
 			    ]
 }
