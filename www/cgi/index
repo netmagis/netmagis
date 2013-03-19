@@ -44,7 +44,7 @@ d cgi-register {} {} {
 	set up [string toupper $script]
 	d urlset "%URL$up%" "$script" {}
     }
-    d urlset "%URLWHERE%" "search" [list [list "crit" "_"]]
+    d urlset "%URLWHERE%" "search" [list [list "q" "_"]]
 
     #
     # End of script: output page and close database
