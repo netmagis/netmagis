@@ -47,7 +47,11 @@
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<input type="hidden" name="action" value="edit">
-	Domaine~: %DOMAINE%
+	Domaine %DOMAINE%
+	<span style="display: %DISPVIEW%">
+	    ~ ~ %MENUVIEW%
+	</span>
+	~ ~ ~
 	<INPUT TYPE="SUBMIT" VALUE="Sélectionner">
     </FORM>
 }

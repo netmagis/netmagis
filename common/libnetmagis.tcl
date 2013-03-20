@@ -5623,6 +5623,7 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 #	- prio : priority read from the form
 #	- name : MX name, read from the form
 #	- domain : MX domain name, read from the form
+#	- idview : view id
 #	- idcor : user id
 #	- _msg : error message
 # Output:
@@ -5636,9 +5637,10 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 #   2003/04/25 : pda/jean : design
 #   2004/03/04 : pda/jean : common procedure
 #   2010/11/29 : pda      : i18n
+#   2013/03/20 : pda      : add views
 #
 
-proc check-mx-target {dbfd prio name domain idcor _msg} {
+proc check-mx-target {dbfd prio name domain idview idcor _msg} {
     upvar $_msg msg
 
     #
@@ -5654,7 +5656,7 @@ proc check-mx-target {dbfd prio name domain idcor _msg} {
     # Check relay, domain, etc.
     #
 
-    set msg [check-authorized-host $dbfd $idcor $name $domain trr "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $name $domain [list $idview] trr "existing-host"]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -5754,6 +5756,7 @@ proc check-authorized-mx {dbfd idcor name _iddom domain _exists _trr} {
 #	- idcor : user id
 #	- _iddom : in return, id of found domain
 #	- domain : the domain to search
+#	- idview : view id
 # Output:
 #   - return value: empty string or error message
 #   - parameter iddom : id of found domain, or -1 if error
@@ -5761,9 +5764,10 @@ proc check-authorized-mx {dbfd idcor name _iddom domain _exists _trr} {
 # History
 #   2004/03/04 : pda/jean : design
 #   2010/11/29 : pda      : i18n
+#   2013/03/20 : pda      : add views
 #
 
-proc check-domain-relay {dbfd idcor _iddom domain} {
+proc check-domain-relay {dbfd idcor _iddom domain idview} {
     upvar $_iddom iddom
 
     #
@@ -5779,14 +5783,16 @@ proc check-domain-relay {dbfd idcor _iddom domain} {
     # Check that we own all specified relays
     #
 
+    set v [list $idview]
     set sql "SELECT r.nom AS nom, d.nom AS domaine
 		FROM dns.relais_dom rd, dns.rr r, dns.domaine d
 		WHERE rd.iddom = $iddom
+			AND rd.idview = $idview
 			AND r.iddom = d.iddom
 			AND rd.mx = r.idrr
 		"
     pg_select $dbfd $sql tab {
-	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domaine) trr "existing-host"]
+	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domaine) $v trr "existing-host"]
 	if {$msg ne ""} then {
 	    return [mc {You don't have rights to some relays of domain '%1$s': %2$s} $domain $msg]
 	}

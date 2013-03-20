@@ -23,6 +23,7 @@
 #   2007/10/25 : jean     : log modify actions
 #   2010/12/09 : pda      : i18n
 #   2010/12/26 : pda      : use cgi-dispatch
+#   2013/03/20 : pda      : add views
 #
 
 #
@@ -89,6 +90,7 @@ source %LIBNETMAGIS%
 #   - parameters:
 #	- dbfd : database handle
 #	- iddom : domain id
+#	- idview : view id
 #	- lrel : list of relays
 # Output:
 #   - return value: empty string or error message
@@ -97,11 +99,11 @@ source %LIBNETMAGIS%
 #   2004/03/04 : pda/jean : copy from MX function
 #
 
-proc insert-relay {dbfd iddom lrel} {
+proc insert-relay {dbfd iddom idview lrel} {
     foreach rel $lrel {
 	lassign $rel prio idmx
-	set sql "INSERT INTO dns.relais_dom (iddom, priorite, mx)
-				    VALUES ($iddom, $prio, $idmx)"
+	set sql "INSERT INTO dns.relais_dom (iddom, idview, priorite, mx)
+				    VALUES ($iddom, $idview, $prio, $idmx)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    return [mc "Relay insertion failed: %s" $msg]
 	}
@@ -125,12 +127,28 @@ d cgi-register {action {}} {
     set domain [menu-domain $dbfd $tabuid(idcor) "domaine" $w ""]
 
     #
+    # Get views authorized for the user
+    #
+
+    set menuview [mc "View"]
+    append menuview " "
+    lassign [menu-views $dbfd $tabuid(idcor) "idview" {} 0] disp html
+    append menuview $html
+    if {$disp} then {
+	set dispview "inline"
+    } else {
+	set dispview "none"
+    }
+
+    #
     # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-sel) [list \
-				[list %DOMAINE% $domain] \
+				[list %DOMAINE%  $domain] \
+				[list %DISPVIEW% $dispview] \
+				[list %MENUVIEW% $menuview] \
 			    ]
 }
 
@@ -140,6 +158,7 @@ d cgi-register {action {}} {
 
 d cgi-register {action edit} {
     {domaine	1 1}
+    {idview	1 1}
 } {
     global conf
 
@@ -147,11 +166,20 @@ d cgi-register {action edit} {
     set domain [lindex $ftab(domaine) 0]
 
     #
+    # Check view
+    #
+
+    set msg [check-views [list $idview]]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
     # Check domain
     #
 
     set iddom -1
-    set msg [check-domain-relay $dbfd $tabuid(idcor) iddom $domain]
+    set msg [check-domain-relay $dbfd $tabuid(idcor) iddom $domain $idview]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -175,6 +203,7 @@ d cgi-register {action edit} {
     set sql "SELECT rd.mx, rd.priorite, r.nom, d.nom AS domaine
 		FROM dns.relais_dom rd, dns.rr r, dns.domaine d
 		WHERE rd.iddom = $iddom
+			AND rd.idview = $idview
 			AND r.iddom = d.iddom
 			AND rd.mx = r.idrr
 		ORDER BY rd.priorite, d.nom, r.nom
@@ -194,6 +223,8 @@ d cgi-register {action edit} {
     d result $conf(page-edit) [list \
 				[list %TABLEAU% $tableau] \
 				[list %DOMAINE% $domain] \
+				[list %IDVIEW%  $idview] \
+				[list %VIEW%    [u viewname $idview]] \
 			    ]
 }
 
@@ -203,6 +234,7 @@ d cgi-register {action edit} {
 
 d cgi-register {action mod} {
     {domaine		1 1}
+    {idview		1 1}
 
     {priorite[0-9]+	0 9999}
     {nom[0-9]+		0 9999}
@@ -221,11 +253,20 @@ d cgi-register {action mod} {
     set domain [string trim [lindex $ftab(domaine) 0]]
 
     #
+    # Check view
+    #
+
+    set msg [check-views [list $idview]]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
     # Check domain
     #
 
     set iddom -1
-    set msg [check-domain-relay $dbfd $tabuid(idcor) iddom $domain]
+    set msg [check-domain-relay $dbfd $tabuid(idcor) iddom $domain $idview]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -252,7 +293,7 @@ d cgi-register {action mod} {
 		set fname [string trim [lindex $ftab($idxnom)  0]]
 		set fdom  [string trim [lindex $ftab($idxdom)  0]]
 		if {$fprio ne ""} then {
-		    set mx [check-mx-target $dbfd $fprio $fname $fdom $tabuid(idcor) msg]
+		    set mx [check-mx-target $dbfd $fprio $fname $fdom $idview $tabuid(idcor) msg]
 		    if {$msg ne ""} then {
 			d error $msg
 		    }
@@ -277,7 +318,8 @@ d cgi-register {action mod} {
     # First, delete all previous relays
     #
 
-    set sql "DELETE FROM dns.relais_dom WHERE iddom = $iddom"
+    set sql "DELETE FROM dns.relais_dom WHERE iddom = $iddom
+					    AND idview = $idview"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	d dbabort [mc "delete %s" [mc "old mail relays"]] $msg
     }
@@ -286,7 +328,7 @@ d cgi-register {action mod} {
     # Insert relay RRs
     #
 
-    set msg [insert-relay $dbfd $iddom $lrel]
+    set msg [insert-relay $dbfd $iddom $idview $lrel]
     if {$msg ne ""} then {
 	d dbabort [mc "add %s" [mc "new mail relays"]] $msg
     }
@@ -326,6 +368,7 @@ d cgi-register {action mod} {
     d result $conf(page-mod) [list \
 				[list %TABLEAU% $tableau] \
 				[list %DOMAINE% $domain] \
+				[list %VIEW%    [u viewname $idview]] \
 			    ]
 }
 
