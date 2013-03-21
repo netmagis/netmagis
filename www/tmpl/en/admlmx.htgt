@@ -37,12 +37,16 @@
 	    \taille {100}
 	} {
 	    \casedefauttableau {\centragehorizontal {CENTER}}
+	    \casedefauttableau {\centragehorizontal {RIGHT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
 	} {
 	    \lignetableau {
 		\casetableau {} {%LISTEDOMAINES%}
+		\casetableau {} {%VIEWLIBELLE%}
+		\casetableau {} {%VIEWVAL%}
 	    }
 	    \lignetableau {
-		\casetableau {
+		\multicasetableau {3} {
 		    \centragehorizontal {CENTER}
 		} {
 		    <div id="buttons">

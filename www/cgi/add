@@ -8,6 +8,8 @@
 # Parameters (form or url):
 #   - display edit page
 #	- action : (none)
+#	- adr : pre-filled IP address if any
+#	- naddr : number of IP addresses to add, if any
 #   - add host
 #	- action : "add-host"
 #	- confirm : "no" or "yes" (if confirmation)
@@ -22,6 +24,7 @@
 #	- commentaire : comments
 #	- respnom : name of the person responsible for this host
 #	- respmel : mail address of the person responsible for this host
+#	- naddr : number of IP addresses to add, if any
 #   - free address block search
 #	- action : "add-multi"
 #	- dosearch or domap : non-empty value (see add.html)
@@ -60,6 +63,9 @@
 #   2010/12/14 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
 #   2012/09/20 : pda/jean : remove dns update interval
+#   2012/10/30 : pda/jean : add views
+#   2012/11/07 : pda/jean : add dumb idview for address map
+#   2013/03/12 : pda      : add naddr parameter
 #
 
 #
@@ -139,8 +145,22 @@ source %LIBNETMAGIS%
 
 d cgi-register {action {}} {
     {adr 0 1}
+    {naddr 0 1}
 } {
     global conf
+
+    #
+    # Get authorized views
+    #
+
+    lassign [menu-views $dbfd $tabuid(idcor) "idviews" {} 1] disp viewval
+    if {$disp} then {
+	set viewlibelle [mc "Views"]
+    } else {
+	set viewlibelle ""
+    }
+    # get one valid view to satisfy "map" requirements
+    set dumbidview [lindex [u myviewids] 0]
 
     #
     # Get host types
@@ -201,6 +221,14 @@ d cgi-register {action {}} {
     }
 
     #
+    # Is an address count provided?
+    #
+
+    if {! [regexp {^[0-9]+$} $naddr]} then {
+	set naddr 1
+    }
+
+    #
     # Next scripts
     #
 
@@ -213,6 +241,8 @@ d cgi-register {action {}} {
     #
 
     d result $conf(page-add) [list \
+				[list %VIEWLIBELLE% $viewlibelle] \
+				[list %VIEWVAL% $viewval] \
 				[list %DOMAINE% $domaine] \
 				[list %DOMAINEREF% $domaineref] \
 				[list %MENUHINFO% $menuhinfo] \
@@ -224,7 +254,9 @@ d cgi-register {action {}} {
 				[list %DHCPPROFILMENU% $dhcpprofilmenu] \
 				[list %MENUPLAGE% $menuplage] \
 				[list %DISPLAY% $display] \
+				[list %DUMBIDVIEW% $dumbidview] \
 				[list %ADR% $adr] \
+				[list %NADDR% $naddr] \
 			    ]
 }
 
@@ -248,6 +280,7 @@ d cgi-register {action add-host} {
     {confirm	1 1}
     {nom	1 1}
     {domaine	1 1}
+    {idviews	0 9999}
     {adr	1 1}
     {mac	1 1}
     {iddhcpprofil 1 1}
@@ -257,11 +290,18 @@ d cgi-register {action add-host} {
     {commentaire 1 1}
     {respnom	1 1}
     {respmel	1 1}
+    {naddr	1 1}
 } {
     global conf
 
     set login $tabuid(login)
     set idcor $tabuid(idcor)
+
+    #
+    # At least one view
+    #
+
+    at-least-one-view $idviews
 
     #
     # Check name and domain
@@ -273,7 +313,7 @@ d cgi-register {action add-host} {
     }
     set nom [string tolower $nom]
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "host"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine $idviews trr "host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -311,8 +351,11 @@ d cgi-register {action add-host} {
 	d error [mc "You don't have rights on '%s'" $adr]
     }
 
-    if {[read-rr-by-ip $dbfd $adr tabrrbidon]} then {
-	d error [mc "IP address '%s' already exists" $adr]
+    foreach idview $idviews {
+	if {[read-rr-by-ip $dbfd $adr $idview tabrrbidon]} then {
+	    set v [u viewname $idview]
+	    d error [mc {IP address '%1$s' already exists in view '%2$s'} $adr $v]
+	}
     }
 
     #
@@ -400,8 +443,8 @@ d cgi-register {action add-host} {
     # Common code for confirmation
     #
 
-    set l {nom domaine adr mac iddhcpprofil droitsmtp ttl hinfo commentaire
-			    respnom respmel}
+    set l {nom domaine adr idviews mac iddhcpprofil droitsmtp ttl hinfo
+			    commentaire respnom respmel naddr}
     set hidden [::webapp::hide-parameters $l ftab]
 
     #
@@ -430,7 +473,7 @@ d cgi-register {action add-host} {
 	# Output a page with attribute list of the identified object
 	#
 
-	set host [display-rr $dbfd -1 trr]
+	set host [display-rr $dbfd -1 trr {} {}]
 	d urlset "%URLFORM%" $conf(nextadd) {}
 	d urladdnext "%URLFORM%"
 	d result $conf(page-exist) [list \
@@ -459,7 +502,7 @@ d cgi-register {action add-host} {
 	set msg [add-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
 		    $droitsmtp $ttl $commentaire $respnom $respmel $idcor trr]
 	if {$msg ne ""} then {
-	    d dbabort [mc "add %s" $nom]
+	    d dbabort [mc "add %s" $nom] $msg
 	}
 
     } else {
@@ -509,9 +552,14 @@ d cgi-register {action add-host} {
 	}
     }
 
-    set sql "INSERT INTO dns.rr_ip VALUES ($trr(idrr), '$adr')"
+    set sql {}
+    foreach idview $idviews {
+	lappend sql "INSERT INTO dns.rr_ip (idrr, adr, idview)
+			    VALUES ($trr(idrr), '$adr', $idview)"
+    }
+    set sql [join $sql "; "]
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-       d dbabort [mc "add %s" $adr]
+       d dbabort [mc "add %s" $adr] $msg
     }
 
     #
@@ -524,42 +572,43 @@ d cgi-register {action add-host} {
     }
 
     d dbcommit [mc "add %s" "$nom.$domaine"]
-    d writelog "addhost" "add $nom.$domaine ($adr)"
+    foreach idview $idviews {
+	set v [u viewname $idview]
+	d writelog "addhost" "add $nom.$domaine ($adr)/$v"
+    }
 
     #
-    # Prepare next step in journey
+    # Is there any address still to add?
     #
-     
-    switch -- [d nextprog] {
-	map {
-	    d urlset "%URLSUITE%" $conf(nextmap) [list {domap yes} [d nextargs]]
+
+    if {[regexp {^[0-9]+$} $naddr]} then {
+	incr naddr -1
+    } else {
+	set naddr 0
+    }
+
+    if {$naddr > 0} then {
+	set sql "SELECT INET('$adr')+1 AS adr"
+	pg_select $dbfd $sql tab {
+	    set nextadr $tab(adr)
 	}
-	sequence {
-	    foreach kv [split [d nextargs] "&"] {
-		if {[regexp {^([^=]+)=(.*)} $kv bidon k v]} then {
-		    lappend nf($k) $v
-		}
+	d urlset "%URLSUITE%" $conf(nextadd) [list \
+						    [list "adr" $nextadr] \
+						    [list "naddr" $naddr] \
+						]
+	d urladdnext "%URLSUITE%"
+    } else {
+	#
+	# Prepare next step in journey
+	#
+	 
+	switch -- [d nextprog] {
+	    map {
+		d urlset "%URLSUITE%" $conf(nextmap) [list {domap yes} [d nextargs]]
 	    }
-	    set nbadr 0
-	    if {[info exists nf(nbadr)]} then {
-		set nbadr $nf(nbadr)
-	    }
-
-	    if {$nbadr > 1} then {
-		incr nbadr -1
-		set sql "SELECT INET('$adr')+1 AS adr"
-		pg_select $dbfd $sql tab {
-		    set nadr $tab(adr)
-		}
-
-		d urlset "%URLSUITE%" $conf(nextadd) [list [list "adr" $nadr]]
-		d urlsetnext "%URLSUITE%" "sequence" "nbadr=$nbadr"
-	    } else {
+	    default {
 		d urlset "%URLSUITE%" $conf(nextadd) {}
 	    }
-	}
-	default {
-	    d urlset "%URLSUITE%" $conf(nextadd) {}
 	}
     }
 
@@ -567,7 +616,7 @@ d cgi-register {action add-host} {
     # End of script: output page and close database
     #
 
-    set machine [display-rr $dbfd $trr(idrr) trr]
+    set machine [display-rr $dbfd $trr(idrr) trr {} {}]
     d result $conf(page-host) [list \
 					    [list %MACHINE% $machine] \
 			    ]
@@ -589,6 +638,7 @@ d cgi-register {action add-multi} {
     {tri	0 1}
     {plage	1 1}
     {nbadr	1 1}
+    {idview	1 1}
 } {
     global conf
 
@@ -612,6 +662,7 @@ d cgi-register {action add-multi} {
 
     if {$domap ne ""} then {
 	set nftab(cidr) $lcidr
+	set nftab(idview) $idview
 	set nftab(domap) {yes}
 	puts stdout [::webapp::call-cgi $conf(script-map) nftab]
 	return 0
@@ -676,6 +727,7 @@ d cgi-register {action add-multi} {
 	lassign $l a n
 
 	set hidden [::webapp::form-hidden "adr" $a]
+	append hidden [::webapp::form-hidden "naddr" $nbadr]
 
 	# explicit choice button
 	switch [expr $nbadr==$n][expr $nbadr==1] {
@@ -688,7 +740,7 @@ d cgi-register {action add-multi} {
 	set button [::webapp::form-submit "" $msg]
 
 	d urlset "" $conf(nextadd) {}
-	d urlsetnext "" "sequence" "nbadr=$nbadr"
+	d urlsetnext "" "sequence" ""
 	set c [::webapp::helem "form" "$hidden$button" \
 					    "method" "post" \
 					    "action" [d urlget ""] \
@@ -722,11 +774,18 @@ d cgi-register {action add-alias} {
     {domaine	1 1}
     {nomref	1 1}
     {domaineref	1 1}
+    {idviews	0 9999}
 } {
     global conf
 
     set login $tabuid(login)
     set idcor $tabuid(idcor)
+
+    #
+    # At least one view
+    #
+
+    at-least-one-view $idviews
 
     #
     # Check names of alias and host
@@ -748,13 +807,13 @@ d cgi-register {action add-alias} {
     # Check alias and host permissions
     #
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "alias"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine $idviews trr "alias"]
     if {$msg ne ""} then {
 	d error $msg
     }
     set iddom $trr(iddom)
 
-    set msg [check-authorized-host $dbfd $idcor $nomref $domaineref trrref "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $nomref $domaineref $idviews trrref "existing-host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -769,33 +828,45 @@ d cgi-register {action add-alias} {
     # This name was unknown, insert a new RR for new alias name
     #
 
-    set msg [add-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor newrr]
-    if {$msg ne ""} then {
-	d dbabort [mc "add %s" $nom] $msg
+    if {$trr(idrr) eq ""} then {
+	set msg [add-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
+	if {$msg ne ""} then {
+	    d dbabort [mc "add %s" $nom] $msg
+	}
     }
 
     #
     # Add alias link between alias and host
     #
 
-    set sql "INSERT INTO dns.rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
+    set sql {}
+    foreach idview $idviews {
+	lappend sql "INSERT INTO dns.rr_cname (idrr, cname, idview)
+    				VALUES ($trr(idrr), $trrref(idrr), $idview)"
+    }
+    set sql [join $sql "; "]
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	d dbabort [mc "add %s" [mc "alias"]] $msg
     }
 
     
     d dbcommit [mc "add %s" "$nom.$domaine"]
-    d writelog "addalias" "add alias $nom.$domaine -> $nomref.$domaineref"
+    set allviews {}
+    foreach idview $idviews {
+	set v [u viewname $idview]
+	lappend allviews $v
+	d writelog "addalias" "add alias $nom.$domaine/$v -> $nomref.$domaineref"
+    }
 
     #
     # End of script: output page and close database
     #
 
+    set v [join $allviews ", "]
+
     d result $conf(page-alias) [list \
-					    [list %NOM%        $nom] \
-					    [list %DOMAINE%    $domaine] \
-					    [list %NOMREF%     $nomref] \
-					    [list %DOMAINEREF% $domaineref] \
+				    [list %FQDN%    "$nom.$domaine ($v)"] \
+				    [list %FQDNREF% "$nomref.$domaineref"] \
 			    ]
     return 0
 }

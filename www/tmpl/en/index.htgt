@@ -73,7 +73,7 @@
 	\item {\lien {manage mail roles}		{%URLMAIL%}}
 	\* \item {\lien {manage web roles}		{%URLWEB%}}
 	\item {\lien {manage DHCP dynamic ranges}	{%URLDHCP%}}
-	\item {\lien {search for a user}		{%URLSEARCH%}}
+	\item {\lien {search informations}		{%URLSEARCH%}}
  	\item {\lien {locate my current IP address}	{%URLWHERE%}}
     }
 

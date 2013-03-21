@@ -24,16 +24,20 @@
 	}
 }
 
-\* affichage ou non des différentes puces
-
 \set {header} {
-    <style type="text/css">
-	#suppruneip \{
-	    display: %DISPUNEIP%;
+    <script type="text/javascript">
+    <!--
+	function invdisp (id) \{
+	  var x = document.getElementById (id) ;
+	  if (x.style.display == "none") \{
+	    x.style.display = "block" ;
+	  \} else \{
+	    x.style.display = "none" ;
+	  \}
 	\}
-    </style>
+    //-->
+    </script>
 }
-
 
 \*******************************************************************************
 \partie {texte} {
@@ -42,23 +46,9 @@
 
     Que souhaitez-vous faire~?
 
-    <ul>
-	<li>
-	    <a href="%URLSUPPR%">Supprimer</a> la machine '%NOM%.%DOMAINE%'.
-	    </li>
-	<li id="suppruneip">
-	    <a href="%URLSUPPRIP%">Supprimer l'adresse '%ADR%'</a> de '%NOM%.%DOMAINE%'
-		(mais il restera les autres adresses).
-	    </li>
-	<li>
-	    <a href="%URLEDIT%">Éditer les informations</a> de '%NOM%.%DOMAINE%'.
-	    </li>
-	<li>
-	    <a href="%URLBACK%">Revenir à l'affichage précédent</a>
-	    </li>
-    </ul>
+    %ACTIONS%
 
-    %MACHINE%
+    Ou bien vous pouvez <a href="%URLBACK%">revenir à l'affichage précédent</a>.
 }
 
 }

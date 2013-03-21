@@ -46,6 +46,7 @@
 #   2011/12/28 : pda      : add dotattr type
 #   2012/01/25 : pda      : add confcmd type
 #   2012/09/27 : pda/jean : add views
+#   2012/10/24 : pda/jean : add view menu in zones
 #
 
 
@@ -156,9 +157,10 @@ set conf(view:proc)		admref-nop
 
 set conf(zone:ptitle)	"Zone management"
 set conf(zone:cols)		{ {15 name	{Name} {string 15} {}}
+				  {15 selection	{Criterion} {string 15} {}}
+				  {15 idview	{View} {menu {%MENUVIEW%}} {}}
 				  {45 prologue	{Prolog} {textarea {45 10}} {}}
 				  {25 rrsup	{Addtl RR} {textarea {30 10}} {}}
-				  {15 selection	{Criterion} {string 15} {}}
 				}
 set conf(zone:sql)		"SELECT * FROM dns.zone_normale ORDER BY selection ASC"
 set conf(zone:id)		idzone
@@ -367,6 +369,13 @@ d cgi-register {action {}} {
 	    set menutype [::pgsql::getcols $dbfd topo.eqtype "" "type ASC" \
 						{idtype type}]
 	    regsub -- "%MENUTYPE%" $colspecs "$menutype" colspecs
+	}
+	zone -
+	zone4 -
+	zone6 {
+	    set menuview [::pgsql::getcols $dbfd dns.view "" "name ASC" \
+						{idview name}]
+	    regsub -- "%MENUVIEW%" $colspecs "$menuview" colspecs
 	}
 	dotattr {
 	    # we can't use a %s in an URL since the "%" character will be posted

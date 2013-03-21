@@ -24,22 +24,48 @@
 	}
 }
 
+\set {header} {
+    <script type="text/javascript">
+    <!--
+	function invdisp (id) \{
+	  var x = document.getElementById (id) ;
+	  if (x.style.display == "none") \{
+	    x.style.display = "block" ;
+	  \} else \{
+	    x.style.display = "none" ;
+	  \}
+	\}
+    //-->
+    </script>
+}
+
 \*******************************************************************************
 \partie {texte} {
 
     \titre {1} {Removal confirmation}
 
-    You asked to remove the name '%NOM%.%DOMAINE%'.
-
-    %MACHINE%
-
-    \gras {Do you really want to remove all these informations?}
+    You asked to remove '%OBJECT%'.
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-name">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
-	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
-	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		} {\gras {Select items you want to remove}}
+	    }
+	}
+
+	%SELDEL%
+
+	\gras {Do you really want to remove the selected items?}
+
+	%HIDDEN%
 	<INPUT TYPE="SUBMIT" VALUE="I confirm">
     </FORM>
 }

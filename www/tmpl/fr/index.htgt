@@ -73,7 +73,7 @@
 	\item {\lien {de gérer les "rôles mail"}	{%URLMAIL%}}
 	\* \item {\lien {de gérer les "rôles web"}	{%URLWEB%}}
 	\item {\lien {de gérer les plages DHCP}	{%URLDHCP%}}
-	\item {\lien {de rechercher un correspondant}	{%URLSEARCH%}}
+	\item {\lien {de rechercher des informations}	{%URLSEARCH%}}
  	\item {\lien {de localiser mon adresse}		{%URLWHERE%}}
     }
 

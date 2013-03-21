@@ -478,7 +478,7 @@ proc display-eq-tree {root _thier _tabeq _tabwifi} {
 }
 
 ##############################################################################
-# Equipement display
+# Equipment display
 ##############################################################################
 
 proc format-one-eq {eqname iface _tabuid} {

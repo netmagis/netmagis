@@ -100,6 +100,18 @@
 		\casetableau {
 		    \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
+		} {\gras {Vues autorisées}}
+	    }
+	    \lignetableau {
+		\casetableau {} {Pour supprimer une vue,
+		    vider la case <<~Classe de tri~>>.
+
+		    %LISTVIEWS%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		    \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
 		} {\gras {Domaines autorisés}}
 	    }
 	    \lignetableau {

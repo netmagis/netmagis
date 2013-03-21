@@ -39,6 +39,14 @@
 
     %TABDROITS%
 
+    \titre {2} {Views}
+
+    %TABVIEWS%
+
+    \titre {2} {Domains}
+
+    %TABDOMAINES%
+
     \titre {2} {Networks}
 
     %TABRESEAUX%
@@ -46,10 +54,6 @@
     \titre {2} {IP permissions not in networks}
 
     %TABCIDRHORSRESEAU%
-
-    \titre {2} {Domains}
-
-    %TABDOMAINES%
 
     \titre {2} {DHCP profiles}
 

@@ -29,6 +29,7 @@
 #   2010/12/09 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
 #   2012/09/20 : pda/jean : add docsv
+#   2012/11/07 : pda/jean : add views
 #
 #
 # Template pages used by this script
@@ -175,6 +176,24 @@ d cgi-register {
     set user	[display-user tabuid]
 
     #
+    # View menu
+    #
+
+    set menuview [mc "View"]
+    append menuview " "
+    lassign [menu-views $dbfd $tabuid(idcor) "idview" {} 0] disp html
+    append menuview $html
+    if {$disp} then {
+	set dispview "block"
+	set dispforallviews [mc "(for all views)"]
+	set dispforselview [mc "(for the selected view)"]
+    } else {
+	set dispview "none"
+	set dispforallviews ""
+	set dispforselview ""
+    }
+
+    #
     # Get IP address ranges
     #
 
@@ -195,8 +214,12 @@ d cgi-register {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page) [list \
-				[list %CORRESP% $user] \
-				[list %PLAGES%  $ranges] \
+				[list %CORRESP%  $user] \
+				[list %PLAGES%   $ranges] \
+				[list %DISPVIEW% $dispview] \
+				[list %MENUVIEW% $menuview] \
+				[list %FORALLVIEWS% $dispforallviews] \
+				[list %FORSELVIEW% $dispforselview] \
 			    ]
 }
 
@@ -204,7 +227,7 @@ d cgi-register {
 # Utility functions
 ##############################################################################
 
-proc output-list {dbfd lcidr _tabuid format} {
+proc output-list {dbfd lcidr idview _tabuid format} {
     upvar $_tabuid tabuid
     global conf
 
@@ -232,12 +255,12 @@ proc output-list {dbfd lcidr _tabuid format} {
     foreach cidr $lcidr {
 	lappend nextargs cidr=$cidr
     }
+    lappend nextargs idview=$idview
     set nextargs [join $nextargs "&"]
 
     #
     # External loop : for each IP range given
     #
-
 
     foreach cidrplage $lcidr {
 	#
@@ -271,6 +294,8 @@ proc output-list {dbfd lcidr _tabuid format} {
 			AND NOT rr_ip.adr <<= ANY ($sqldeny)
 			AND rr_ip.adr <<= '$cidrplage'
 			AND domaine.iddom = alias.iddom
+			AND rr_ip.idview = $idview
+			AND rr_cname.idview = $idview
 		    ORDER BY alias.nom"
 	pg_select $dbfd $sql tab {
 	    lappend cname($tab(adr)) $tab(nom)
@@ -310,6 +335,7 @@ proc output-list {dbfd lcidr _tabuid format} {
 			AND domaine.iddom = rr.iddom
 			AND rr.idhinfo = hinfo.idhinfo
 			AND rr.idcor = corresp.idcor
+			AND rr_ip.idview = $idview
 		    ORDER BY rr_ip.adr"
 	pg_select $dbfd $sql tab {
 	    set nomprimaire	$tab(nom)
@@ -396,7 +422,7 @@ proc output-list {dbfd lcidr _tabuid format} {
     set datefmt [dnsconfig get "datefmt"]
     set date  [clock format [clock seconds] -format $datefmt]
 
-    set pline [mc "Declared addresses (IPv4+IPv6): %s" $nbhost]
+    set pline [mc {Declared addresses (IPv4+IPv6) in view '%1$s': %2$s} [u viewname $idview] $nbhost]
     set dhost [mc "List of declared addresses"]
 
     switch -- $format  {
@@ -576,14 +602,37 @@ proc output-map {dbfd lcidr _tabuid format} {
 	}
 
 	set p [mc {%1$s available addresses / %2$s total} $navail $n]
+	append p " "
 
-	set t [mc "Detail"]
-	d urlset "" $conf(next) [list \
-					    [list "dolist" "yes"] \
-					    [list "cidr" $cidr] \
-					]
-	set url [d urlget ""]
-	append p [::webapp::helem "a" "\[$t\]" "href" $url]
+	#
+	# Detail: depends upon the number of available views
+	#
+
+	set idviews [u myviewids]
+	if {[llength $idviews] == 1} then {
+	    set t [mc "Detail"]
+	    d urlset "" $conf(next) [list \
+						[list "dolist" "yes"] \
+						[list "cidr" $cidr] \
+						[list "idview" [lindex $idviews 0]] \
+					    ]
+	    set url [d urlget ""]
+	    append p [::webapp::helem "a" "\[$t\]" "href" $url]
+	} else {
+	    append p "<br>"
+	    append p [mc "Detail"]
+	    append p " "
+	    foreach id $idviews {
+		set t [u viewname $id]
+		d urlset "" $conf(next) [list \
+						    [list "dolist" "yes"] \
+						    [list "cidr" $cidr] \
+						    [list "idview" $id] \
+						]
+		set url [d urlget ""]
+		append p [::webapp::helem "a" "\[$t\]" "href" $url]
+	    }
+	}
 
 	append tableau [::webapp::helem "p" $p]
 	append tableau "\n"
@@ -598,8 +647,8 @@ proc output-map {dbfd lcidr _tabuid format} {
     set hlegend ""
     foreach {i class txt} {
 		0 notav {address not allowed}
-		1 noname-nodhcp {available address}
-		2 name-nodhcp {declared address}
+		1 noname-nodhcp {available address in all views}
+		2 name-nodhcp {declared address in at least one view}
 		3 noname-dhcp {non-declared address within a DHCP range}
 		4 name-dhcp {declared address, within a DHCP range}
 	    } {
@@ -676,10 +725,24 @@ proc output {dbfd _ftab _tabuid format} {
 	}
     }
 
+    #
+    # Perform the action
+    #
+
     if {$format eq "map"} then {
 	output-map $dbfd $lcidr tabuid $format
     } else {
-	output-list $dbfd $lcidr tabuid $format
+	#
+	# Check access to view
+	#
+
+	set idview [lindex $ftab(idview) 0]
+	set msg [check-views [list $idview]]
+	if {$msg ne ""} then {
+	    d error $msg
+	}
+
+	output-list $dbfd $lcidr $idview tabuid $format
     }
 }
 
@@ -690,6 +753,7 @@ proc output {dbfd _ftab _tabuid format} {
 d cgi-register {dolist .+} {
     {plages	0 99999}
     {cidr	1 99999}
+    {idview	1 1}
 } {
     output $dbfd ftab tabuid "html"
 }
@@ -697,6 +761,7 @@ d cgi-register {dolist .+} {
 d cgi-register {doprint .+} {
     {plages	0 99999}
     {cidr	1 99999}
+    {idview	1 1}
 } {
     output $dbfd ftab tabuid "latex"
 }
@@ -704,10 +769,12 @@ d cgi-register {doprint .+} {
 d cgi-register {docsv .+} {
     {plages	0 99999}
     {cidr	1 99999}
+    {idview	1 1}
 } {
     output $dbfd ftab tabuid "csv"
 }
 
+# idview is not used in map output
 d cgi-register {domap .+} {
     {plages	0 99999}
     {cidr	1 99999}

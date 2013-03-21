@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Recherche de correspondant
+    Netmagis - Recherche
 }
 
 \*******************************************************************************
@@ -24,15 +24,29 @@
 	}
 }
 
+\set {header} {
+    <script type="text/javascript">
+    <!--
+	function invdisp (id) \{
+	  var x = document.getElementById (id) ;
+	  if (x.style.display == "none") \{
+	    x.style.display = "block" ;
+	  \} else \{
+	    x.style.display = "none" ;
+	  \}
+	\}
+    //-->
+    </script>
+}
+
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Recherche des correspondants associés à une machine}
+    \titre {1} {Recherche}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	Adresse ou machine (avec domaine)~:
-	    <INPUT TYPE="TEXT" NAME="crit" SIZE="49" VALUE="%CRITERE%">
-	    <INPUT TYPE="SUBMIT" VALUE="Chercher">
+	<INPUT TYPE="TEXT" NAME="q" SIZE="50" VALUE="%CRITERE%">
+	<INPUT TYPE="SUBMIT" VALUE="Chercher">
     </FORM>
 
     <HR>

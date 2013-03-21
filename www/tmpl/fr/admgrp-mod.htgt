@@ -39,6 +39,14 @@
 
     %TABDROITS%
 
+    \titre {2} {Vues}
+
+    %TABVIEWS%
+
+    \titre {2} {Domaines}
+
+    %TABDOMAINES%
+
     \titre {2} {Réseaux}
 
     %TABRESEAUX%
@@ -46,10 +54,6 @@
     \titre {2} {Droits non rattachés à des réseaux}
 
     %TABCIDRHORSRESEAU%
-
-    \titre {2} {Domaines}
-
-    %TABDOMAINES%
 
     \titre {2} {Profils DHCP}
 

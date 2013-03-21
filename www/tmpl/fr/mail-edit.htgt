@@ -43,10 +43,11 @@
 	}
 	\lignetableau {
 	    \casetableau {} {
-		<FORM METHOD="POST" ACTION="%URLFORM%">
+		<FORM METHOD="POST" ACTION="mail">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="mod">
 		    <INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
 		    <INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
+		    <INPUT TYPE="HIDDEN" NAME="idview" VALUE="%IDVIEW%">
 		    \tableau {
 			\bordure {0} {}
 			\* \taille {100}
@@ -57,8 +58,9 @@
 			\lignetableau {
 			    \multicasetableau {2} {} {
 				Modifiez l'adresse de l'hébergeur pour
-				les boîtes aux lettres de "%NOM%.%DOMAINE%",
-				ou effacez la pour supprimer le rôle.
+				les boîtes aux lettres de '%NOM%.%DOMAINE%'
+				(dans la vue '%VIEWNAME%'),
+				ou effacez-la pour supprimer le rôle.
 			    }
 			}
 			\lignetableau {
@@ -67,6 +69,9 @@
 				<INPUT TYPE="TEXT" NAME="nomh" SIZE="30" VALUE="%NOMH%">
 				.
 				%DOMAINEH%
+				~ ~ ~
+				%VIEWLIBELLEH%
+				%VIEWVALH%
 			    }
 			}
 			\lignetableau {

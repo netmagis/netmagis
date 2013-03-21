@@ -27,12 +27,13 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modify %VNOM%.%VDOMAINE%}
+    \titre {1} {Modify %VNOM%.%VDOMAINE% in view %VIEWNAME%}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="store">
 	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="no">
 	<INPUT TYPE="HIDDEN" NAME="idrr" VALUE="%IDRR%">
+	<INPUT TYPE="HIDDEN" NAME="idview" VALUE="%IDVIEW%">
 	\tableau {
 	    \bordure {0} {}
 	    \taille {100}

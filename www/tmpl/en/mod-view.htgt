@@ -2,11 +2,11 @@
 \modele {texte}
 
 \set {auteur} {pda/jean}
-\set {date}   {23/04/2002}
+\set {date}   {11/04/2002}
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Host removal confirmation
+    Netmagis - Select a view to modify
 }
 
 \*******************************************************************************
@@ -27,21 +27,11 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Removal confirmation}
+    \titre {1} {Modify host}
 
-    You asked for IP address '%ADR%' removal, which match object:
+    Select view in which you want to modify informations:
 
-    %MACHINE%
-
-    \gras {Do you really want to remove this IP address and all
-	these informations?}
-
-    <FORM METHOD="POST" ACTION="%URLFORM%">
-	<INPUT TYPE="HIDDEN" NAME="action" VALUE="del-ip">
-	<INPUT TYPE="HIDDEN" NAME="confirm" VALUE="yes">
-	<INPUT TYPE="HIDDEN" NAME="adr" VALUE="%ADR%">
-	<INPUT TYPE="SUBMIT" VALUE="I confirm">
-    </FORM>
+    %LIST%
 }
 
 }

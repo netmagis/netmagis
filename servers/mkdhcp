@@ -4,7 +4,7 @@
 # Perform DHCP generation for ISC DHCPD
 #
 # Syntax:
-#	mkdhcp [-h][-q][-v][-n]
+#	mkdhcp [-h][-q][-v][-n][-w <view-name>]
 #
 # History:
 #   2004/08/05 : pda/jean : specification
@@ -15,6 +15,7 @@
 #   2011/04/21 : jean	  : use groups everywhere
 #   2011/06/10 : pda      : i18n and re-design
 #   2011/07/01 : pda      : add a proper failover configuration
+#   2012/10/24 : pda/jean : add views
 #
 
 source %LIBNETMAGIS%
@@ -23,11 +24,12 @@ source %LIBNETMAGIS%
 # Self explanatory
 #
 
-set conf(usage) {usage: %1$s [-h]|-q][-v][-n]
+set conf(usage) {usage: %1$s [-h]|-q][-v][-n][-w <view>]
     -h : get this help
     -q : keep silent on normal operation
     -v : verbose (show diffs)
     -n : don't perform file installation
+    -w <view> : limit generation to this view
 }
 
 #
@@ -44,17 +46,24 @@ set conf(defprofile) {
 #
 # Input:
 #   - dbfd: database handle
+#   - idview: view id if specified, or -1
 # Output:
 #   - return value: 0 (not modified) or 1 (modified)
 #
 # History:
 #   2004/08/05 : pda/jean : design
+#   2012/10/24 : pda/jean : add views
 #
 
-proc need-dhcp-generation {dbfd} {
+proc need-dhcp-generation {dbfd idview} {
     set r 0
-    pg_select $dbfd "SELECT generer FROM dns.dhcp" tab {
-	set r [expr {$tab(generer) > 0}]
+    set crit ""
+    if {$idview != -1} then {
+	set crit "AND idview = $idview"
+    }
+    set sql "SELECT COUNT(gendhcp) AS cnt FROM dns.view WHERE gendhcp = 1 $crit"
+    pg_select $dbfd $sql tab {
+	set r [expr {$tab(cnt) > 0}]
     }
     return $r
 }
@@ -64,15 +73,21 @@ proc need-dhcp-generation {dbfd} {
 #
 # Input:
 #   - dbfd: database handle
+#   - idview: view id if specified, or -1
 # Output:
 #   - return value: error string or empty string
 #
 # History:
 #   2011/06/13 : pda      : design
+#   2012/10/24 : pda/jean : add views
 #
 
-proc record-dhcp-generation {dbfd} {
-    set sql "UPDATE dns.dhcp SET generer = 0"
+proc record-dhcp-generation {dbfd idview} {
+    set crit ""
+    if {$idview != -1} then {
+	set crit "WHERE idview = $idview"
+    }
+    set sql "UPDATE dns.view SET gendhcp = 0 $crit"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
     }
@@ -106,6 +121,7 @@ proc indent-profile {prof n} {
 #
 # Input:
 #   - dbfd: database handle
+#   - idview: view id if specified, or -1
 #   - dhcpfailover: failover configuration text, if any
 #   - _txt: in return, DHCP configuration
 #   - _err: in return, error message (fatal or non-fatal)
@@ -119,9 +135,10 @@ proc indent-profile {prof n} {
 #   2005/03/31 : pda	  : add DHCP groups
 #   2011/06/10 : pda	  : interface change
 #   2011/07/01 : pda	  : re-add failover
+#   2012/10/24 : pda/jean : add views
 #
 
-proc gen-dhcp {dbfd dhcpfailover _txt _err} {
+proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
     global conf
     upvar $_txt txt
     upvar $_err err
@@ -151,6 +168,7 @@ proc gen-dhcp {dbfd dhcpfailover _txt _err} {
     #
     # Get range attributes and store them in an array "range" indexed by
     # network address
+    # XXX: range selection should depend on the view
     #
 
     set sql "SELECT HOST(reseau.adr4) AS addr, domaine.nom AS dom, dhcprange.*
@@ -177,7 +195,7 @@ proc gen-dhcp {dbfd dhcpfailover _txt _err} {
     }
 
     #
-    # Get DHCP profiles
+    # Get all DHCP profiles (not dependant on the view)
     #
 
     set sql "SELECT iddhcpprofil, nom, texte FROM dns.dhcpprofil"
@@ -279,7 +297,8 @@ proc gen-dhcp {dbfd dhcpfailover _txt _err} {
 			    rr_ip.adr,
 			    rr.iddhcpprofil
 			FROM dns.rr, dns.domaine, dns.rr_ip, dns.reseau
-			WHERE rr.iddom = domaine.iddom
+			WHERE ($idview = -1 OR idview = $idview)
+			    AND rr.iddom = domaine.iddom
 			    AND rr.idrr = rr_ip.idrr
 			    AND rr_ip.adr <<= '$network/$masklen'
 			    AND reseau.adr4 = '$network/$masklen'
@@ -388,6 +407,7 @@ proc main {argv0 argv} {
 
     set verbose 0
     set doit 1
+    set view ""
 
     while {[llength $argv] > 0} {
 	set a [lindex $argv 0]
@@ -406,6 +426,10 @@ proc main {argv0 argv} {
 	    -n {
 		set doit 0
 		set argv [lreplace $argv 0 0]
+	    }
+	    -w {
+		set view [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
 	    }
 	    -* {
 		warning "Unknown option '$a'"
@@ -433,22 +457,38 @@ proc main {argv0 argv} {
     # Lock tables such as we do not miss some modification
     #
 
-    set msg [d dblock {dns.dhcp dns.rr dns.reseau dns.dhcprange}]
+    set msg [d dblock {dns.view dns.rr dns.reseau dns.dhcprange}]
     if {$msg ne ""} then {
 	d error $msg
+    }
+
+    #
+    # Check view name
+    #
+
+    set idview -1
+    if {$view ne ""} then {
+	set qview [::pgsql::quote $view]
+	set sql "SELECT idview FROM dns.view WHERE name = '$qview'"
+	pg_select $dbfd $sql tab {
+	    set idview $tab(idview)
+	}
+	if {$idview == -1} then {
+	    d error "View '$view' not found"
+	}
     }
 
     #
     # Generate DHCP configuration
     #
 
-    if {[need-dhcp-generation $dbfd]} then {
+    if {[need-dhcp-generation $dbfd $idview]} then {
 
 	#
 	# Perform DHCP configuration
 	#
 
-	if {[gen-dhcp $dbfd $dhcpfailover txt err]} then {
+	if {[gen-dhcp $dbfd $idview $dhcpfailover txt err]} then {
 	    #
 	    # Generation succeeded, even with some small errors
 	    #
@@ -493,7 +533,7 @@ proc main {argv0 argv} {
 
 		# now that configuration is tested, register that
 		# DHCP configuration was generated
-		set msg [record-dhcp-generation $dbfd]
+		set msg [record-dhcp-generation $dbfd $idview]
 		if {$msg ne ""} then {
 		    set m [$fq uncommit]
 		    if {$m ne ""} then {

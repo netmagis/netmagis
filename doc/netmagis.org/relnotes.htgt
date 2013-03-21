@@ -50,6 +50,10 @@
     Release date: not yet.
 
     \liste {
+	\item {The "delete" page accepts FQDNs in the "IP address"
+	    field, such as people not wanting to browse the domain
+	    menu may quickly type the host name
+	}
 	\item {The DNS zone generation latency has been improved.
 	    A new auto-adaptative algorithm has been implemented
 	    in order to allow more than 100 modifications of a

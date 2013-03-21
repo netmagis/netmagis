@@ -35,39 +35,79 @@
 	    \taille {100}
 	} {
 	    \casedefauttableau {\centragehorizontal {CENTER}}
+	    \casedefauttableau {\centragehorizontal {CENTER}}
 	} {
 	    \lignetableau {
-		\casetableau {} {%CORRESP%}
+		\multicasetableau {2} {} {%CORRESP%}
 	    }
 	    \lignetableau {
-		\casetableau {
-		     \couleurfond {#C0C0C0}
-		     \centragehorizontal {CENTER}
-		} {\gras {Choisissez votre réseau dans la liste ci-dessous...}}
+		\casetableau {} {
+		    \tableau {
+			\bordure {0} {}
+			\taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {CENTER}}
+		    } {
+			\lignetableau {
+			    \casetableau {
+				 \couleurfond {#C0C0C0}
+				 \centragehorizontal {CENTER}
+			    } {\gras {Choisissez votre réseau dans la liste ci-dessous...}}
+			}
+			\lignetableau {
+			    \casetableau {} {%PLAGES%}
+			}
+			\lignetableau {
+			    \casetableau {
+				 \couleurfond {#C0C0C0}
+				 \centragehorizontal {CENTER}
+			    } {\gras {... ou saisissez la plage par son préfixe (par ex. 172.16.200.0/24 ou 2001:db8:1234:10::/64)}}
+			}
+			\lignetableau {
+			    \casetableau {} {<INPUT TYPE="text" NAME="cidr" SIZE="49">}
+			}
+		    }
+		}
+		\casetableau {} {
+		    <div style="vertical-align: center; display: %DISPVIEW%">
+			\tableau {
+			    \bordure {0} {}
+			    \taille {100}
+			} {
+			    \casedefauttableau {\centragehorizontal {CENTER}}
+			} {
+			    \lignetableau {
+				\casetableau {
+				     \couleurfond {#C0C0C0}
+				     \centragehorizontal {CENTER}
+				} {\gras {Sélectionnez une vue}}
+			    }
+			    \lignetableau {
+				\casetableau {} {%MENUVIEW%}
+			    }
+			}
+		    </div>
+		}
 	    }
 	    \lignetableau {
-		\casetableau {} {%PLAGES%}
-	    }
-	    \lignetableau {
-		\casetableau {
-		     \couleurfond {#C0C0C0}
-		     \centragehorizontal {CENTER}
-		} {\gras {... ou saisissez la plage par son préfixe (par ex. 172.16.200.0/24 ou 2001:db8:1234:10::/64)}}
-	    }
-	    \lignetableau {
-		\casetableau {} {<INPUT TYPE="text" NAME="cidr" SIZE="49">}
-	    }
-	    \lignetableau {
-		\casetableau {
+		\multicasetableau {2} {
 		     \centragehorizontal {CENTER}
 		} {
 		    <div id="buttons">
 		    <INPUT TYPE="SUBMIT" NAME="dolist" VALUE="Consulter">
 		    <INPUT TYPE="SUBMIT" NAME="doprint" VALUE="Imprimer">
 		    <INPUT TYPE="SUBMIT" NAME="docsv" VALUE="Export CSV">
-		    ~
-		    ~
+		    <span style="color: white">%FORSELVIEW%</span>
+		    </div>
+		}
+	    }
+	    \lignetableau {
+		\multicasetableau {2} {
+		     \centragehorizontal {CENTER}
+		} {
+		    <div id="buttons">
 		    <INPUT TYPE="SUBMIT" NAME="domap" VALUE="Carte des adresses">
+		    <span style="color: white">%FORALLVIEWS%</span>
 		    </div>
 		}
 	    }

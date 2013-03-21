@@ -12,10 +12,12 @@
 #	- action : "edit"
 #	- nom : name of MX to edit
 #	- domaine : domain of MX to edit
+#	- idview: view id
 #   - store MX modifications
 #	- action : "mod"
 #	- nom : name of MX to modify
 #	- domaine : domain of MX to modify
+#	- idview: view id
 #	- priorite* : MX priority
 #	- nom* : MX name
 #	- domaine* : MX domain
@@ -27,6 +29,7 @@
 #   2007/10/25 : jean     : log modify actions
 #   2010/12/06 : pda      : i18n
 #   2010/12/26 : pda      : use cgi-dispatch
+#   2013/03/21 : pda      : add views
 #
 
 #
@@ -93,20 +96,21 @@ source %LIBNETMAGIS%
 #	- dbfd : database handle
 #	- idrr : RR id
 #	- lmx : list of MX
+#	- idview : view id
 # Output:
-#   - valeur de retour : empty string or error message
+#   - return value : empty string or error message
 #
 # History
 #   2003/04/25 : pda/jean : design
 #   2010/12/14 : pda      : minor simplification
 #
 
-proc insert-mx {dbfd idrr lmx} {
+proc insert-mx {dbfd idrr lmx idview} {
     set msg ""
     foreach mx $lmx {
 	lassign $mx prio idmx
-	set sql "INSERT INTO dns.rr_mx (idrr, priorite, mx)
-				VALUES ($idrr, $prio, $idmx)"
+	set sql "INSERT INTO dns.rr_mx (idrr, priorite, mx, idview)
+				VALUES ($idrr, $prio, $idmx, $idview)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    break
 	}
@@ -129,12 +133,28 @@ d cgi-register {action {}} {
     set domain [menu-domain $dbfd $tabuid(idcor) "domaine" "" ""]
 
     #
+    # Get views authorized for the user
+    #
+
+    set menuview [mc "View"]
+    append menuview " "
+    lassign [menu-views $dbfd $tabuid(idcor) "idview" {} 0] disp html
+    append menuview $html
+    if {$disp} then {
+	set dispview "inline"
+    } else {
+	set dispview "none"
+    }
+
+    #
     # End of script: output page and close database
     #
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-sel) [list \
 				[list %DOMAINE% $domain] \
+				[list %DISPVIEW% $dispview] \
+				[list %MENUVIEW% $menuview] \
 			    ]
 }
 
@@ -145,6 +165,7 @@ d cgi-register {action {}} {
 d cgi-register {action edit} {
     {nom	1 1}
     {domaine	1 1}
+    {idview	1 1}
 } {
     global conf
 
@@ -156,10 +177,19 @@ d cgi-register {action edit} {
     set domain [lindex $ftab(domaine) 0]
 
     #
+    # Check view
+    #
+
+    set msg [check-views [list $idview]]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
     # Check MX 
     #
 
-    set msg [check-authorized-mx $dbfd $tabuid(idcor) $name iddom $domain exists trr]
+    set msg [check-authorized-mx $dbfd $tabuid(idcor) $name iddom $domain $idview exists trr]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -191,6 +221,7 @@ d cgi-register {action edit} {
 		WHERE m.idrr = $idrr
 			AND m.mx = r.idrr
 			AND r.iddom = d.iddom
+			AND m.idview = $idview
 		ORDER BY m.priorite, d.nom, r.nom
 		"
     set idnum "mx"
@@ -209,6 +240,8 @@ d cgi-register {action edit} {
 				[list %TABLEAU% $tableau] \
 				[list %NOM%     $name] \
 				[list %DOMAINE% $domain] \
+				[list %IDVIEW%  $idview] \
+				[list %VIEW%    [u viewname $idview]] \
 			    ]
 }
 
@@ -219,6 +252,7 @@ d cgi-register {action edit} {
 d cgi-register {action mod} {
     {nom		1 1}
     {domaine		1 1}
+    {idview		1 1}
 
     {priorite[0-9]+	0 9999}
     {nom[0-9]+		0 9999}
@@ -239,10 +273,19 @@ d cgi-register {action mod} {
     set fqdn   "$name.$domain"
 
     #
+    # Check view
+    #
+
+    set msg [check-views [list $idview]]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
     # Check MX
     #
 
-    set msg [check-authorized-mx $dbfd $tabuid(idcor) $name iddom $domain exists trr]
+    set msg [check-authorized-mx $dbfd $tabuid(idcor) $name iddom $domain $idview exists trr]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -269,7 +312,7 @@ d cgi-register {action mod} {
 		set fnom  [string trim [lindex $ftab($idxnom)  0]]
 		set fdom  [string trim [lindex $ftab($idxdom)  0]]
 		if {$fprio ne ""} then {
-		    set mx [check-mx-target $dbfd $fprio $fnom $fdom $tabuid(idcor) msg]
+		    set mx [check-mx-target $dbfd $fprio $fnom $fdom $idview $tabuid(idcor) msg]
 		    if {$msg ne ""} then {
 			d error $msg
 		    }
@@ -295,7 +338,8 @@ d cgi-register {action mod} {
 	# Delete all previous MX
 	#
 
-	set sql "DELETE FROM dns.rr_mx WHERE idrr = $trr(idrr)"
+	set sql "DELETE FROM dns.rr_mx WHERE idrr = $trr(idrr)
+					AND idview = $idview"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "delete %s" [mc "old MX"]] $msg
 	}
@@ -309,15 +353,15 @@ d cgi-register {action mod} {
 	    # Delete RR
 	    #
 
-	    set sql "DELETE FROM dns.rr WHERE idrr = $trr(idrr)"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    set msg [del-orphaned-rr $dbfd $trr(idrr)]
+	    if {$msg ne ""} then {
 		d dbabort [mc "delete %s" $fqdn] $msg
 	    }
 	} else {
 	    #
 	    # Insert MX RRs
 	    #
-	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
+	    set msg [insert-mx $dbfd $trr(idrr) $lmx $idview]
 	    if {$msg ne ""} then {
 		d dbabort [mc "add %s" "MX"] $msg
 	    }
@@ -348,7 +392,7 @@ d cgi-register {action mod} {
 	    #
 	    # Insert MX RRs
 	    #
-	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
+	    set msg [insert-mx $dbfd $trr(idrr) $lmx $idview]
 	    if {$msg ne ""} then {
 		d dbabort [mc "add %s" "MX"] $msg
 	    }
@@ -391,6 +435,7 @@ d cgi-register {action mod} {
 				[list %TABLEAU% $tableau] \
 				[list %NOM%     $name] \
 				[list %DOMAINE% $domain] \
+				[list %VIEW%    [u viewname $idview]] \
 			    ]
 }
 

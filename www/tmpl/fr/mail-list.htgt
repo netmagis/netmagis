@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Edition d'un hébergeur de messagerie dans %DOMAINE%}
+    \titre {1} {Edition d'un hébergeur de messagerie dans %DOMAIN%}
 
     \tableau {
 	\bordure {0} {}
@@ -43,7 +43,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {Sélectionnez l'adresse de messagerie
-		du domaine %DOMAINE% que vous voulez modifier ou supprimer
+		du domaine %DOMAIN% que vous voulez modifier ou supprimer
 	    }
 	}
 	\lignetableau {

@@ -1,18 +1,15 @@
 NINSTALL	= ../../ninstall
 
-SCRIPTS = \
-	run-all.sh
-
-FILES = *.txt \
-	README.database \
-	crontab.database
+FILES = crontab.database
 
 install:
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)$(NMXMPDIR)
-	$(NINSTALL) -m 0755 -e "s|%SBINDIR%|$(SBINDIR)|" $(SUBST) \
-			$(SCRIPTS) $(DESTDIR)$(NMXMPDIR)
 	$(NINSTALL) -m 0644 -e "s|%SBINDIR%|$(SBINDIR)|" $(SUBST) \
 			$(FILES) $(DESTDIR)$(NMXMPDIR)
-	mkdir -p $(DESTDIR)$(NMXMPDIR)/zones
-	install -m 0644 zones/* $(DESTDIR)$(NMXMPDIR)/zones
+	cd no-view ; make $(DIRS) install
+	cd with-views ; make $(DIRS) install
+
+clean:
+	cd no-view ; make clean
+	cd with-views ; make clean

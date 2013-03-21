@@ -398,7 +398,7 @@ Propagation of vlans in the graph
 void transport_vlan_on_L2 (struct node *n, vlan_t v) ;
 
 /******************************************************************************
-Equipement list
+Equipment list
 ******************************************************************************/
 
 struct eq
@@ -412,11 +412,11 @@ struct eq
 
     int mark ;				/* used by drawl2 */
 
-    /* Equipement-level sensor */
+    /* Equipment-level sensor */
     int ipmac ;
     int portmac ;
 
-    /* Equipement list of nodes */
+    /* Equipment list of nodes */
     struct node *enhead ;
     struct node *entail ;
 

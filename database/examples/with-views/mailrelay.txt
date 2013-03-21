@@ -3,7 +3,7 @@
 #	Mail relays
 #
 # Use with netmagis-dbimport:
-#	netmagis-dbimport mailrelay mailrelay.txt
+#	netmagis-dbimport mailrelay viewname mailrelay.txt
 #
 # Note : each relay must already exist in database. If a relay
 #   is not in our domains, one must create an empty domain.
@@ -12,10 +12,8 @@
 #	<domain> <prio> <relay> <prio> <relay> ...
 #
 # History
-#   2004/04/12 : pda : design
-#   2011/03/10 : pda : i18n
-#   2012/04/26 : pda : convert to an english based example
+#   2012/10/09 : pda : design of a multi-view example
 #
 
 example.com	10 mx1.example.com	20 mx2.example.com
-subsid.co.zz	10 mx1.example.com	20 mx2.example.com
+example.org	10 mx1.example.com	20 mx2.example.com

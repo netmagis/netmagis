@@ -1,0 +1,15 @@
+#
+# Exemple file for initial netmagis database creation:
+#	Mail roles
+#
+# Use with netmagis-dbimport:
+#	netmagis-dbimport mailrole viewname mailrole.txt login
+#
+# Format:
+#	<mail address> <mailbox host>[/<viewname>]
+#
+# History
+#   2012/10/09 : pda : design of a multi-view example
+#
+
+sales.example.com	mailhost.example.com/internal

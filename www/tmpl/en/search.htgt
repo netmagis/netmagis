@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Search users
+    Netmagis - Search
 }
 
 \*******************************************************************************
@@ -24,15 +24,29 @@
 	}
 }
 
+\set {header} {
+    <script type="text/javascript">
+    <!--
+	function invdisp (id) \{
+	  var x = document.getElementById (id) ;
+	  if (x.style.display == "none") \{
+	    x.style.display = "block" ;
+	  \} else \{
+	    x.style.display = "none" ;
+	  \}
+	\}
+    //-->
+    </script>
+}
+
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Search users associated with a host}
+    \titre {1} {Search}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
-	Name (with domain) or IP address:
-	    <INPUT TYPE="TEXT" NAME="crit" SIZE="49" VALUE="%CRITERE%">
-	    <INPUT TYPE="SUBMIT" VALUE="Search">
+	<INPUT TYPE="TEXT" NAME="q" SIZE="50" VALUE="%CRITERE%">
+	<INPUT TYPE="SUBMIT" VALUE="Search">
     </FORM>
 
     <HR>

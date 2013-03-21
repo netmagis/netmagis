@@ -29,7 +29,8 @@
 
     \titre {1} {MX modified}
 
-    MX associated to \gras {%NOM%.%DOMAINE%} have been updated:
+    MX associated to \gras {%NOM%.%DOMAINE%} in view \gras {%VIEW%}
+    have been updated:
 
     %TABLEAU%
 }

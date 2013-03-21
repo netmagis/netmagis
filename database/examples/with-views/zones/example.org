@@ -1,0 +1,44 @@
+;
+; Zone example.org
+;
+;
+; History
+;   2012/10/09 : pda : design multi-views example
+;
+
+@	IN	SOA	ns1.example.com. hostmaster.example.com. (
+		    2012100901		; serial
+		    86400		; refresh = 1 day
+		    3600		; retry = 1 h
+		    3600000		; expire = 1000 hours (~ 41 day)
+		    86400		; default ttl = 1 day
+		)
+
+;
+; Default TLL for zone records
+;
+$TTL	86400
+
+;
+; Authoritative servers for this zone
+;
+
+			IN	NS	ns1.example.com.
+			IN	NS	ns2.example.com.
+			IN	NS	ns.myisp.com.
+
+;
+; Default MX for the domain itself
+;
+
+			IN	MX	10 mx1.example.com.
+
+;
+; hack
+;
+
+localhost		IN	A	127.0.0.1
+
+; CUT HERE -------------------------------------------------------------
+
+www			IN	CNAME	www.example.com.

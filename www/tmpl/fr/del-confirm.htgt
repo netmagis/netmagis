@@ -1,0 +1,73 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {19/04/2002}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Confirmation de suppression de machine
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Application Netmagis
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\set {header} {
+    <script type="text/javascript">
+    <!--
+	function invdisp (id) \{
+	  var x = document.getElementById (id) ;
+	  if (x.style.display == "none") \{
+	    x.style.display = "block" ;
+	  \} else \{
+	    x.style.display = "none" ;
+	  \}
+	\}
+    //-->
+    </script>
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Confirmation de suppression}
+
+    Vous avez demandé à supprimer '%OBJECT%'.
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	\tableau {
+	    \bordure {0} {}
+	    \taille {100}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		     \centragehorizontal {CENTER}
+		} {\gras {Sélectionnez les éléments à supprimer}}
+	    }
+	}
+
+	%SELDEL%
+
+	\gras {Voulez-vous vraiment supprimer les éléments sélectionnés ?}
+
+	%HIDDEN%
+	<INPUT TYPE="SUBMIT" VALUE="Je confirme">
+    </FORM>
+}
+
+}

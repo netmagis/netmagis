@@ -36,10 +36,39 @@
 	ainsi que pour nommer le fichier généré par le script
 	\teletype {mkzones}.
 
-	Exemple~:
-	    \retrait {\verbatim {example.com} \br
-	        \verbatim {example.com.internal-view} \br
-		\verbatim {2.0.192.in-addr.arpa}}
+	Exemples~:
+	    \retrait {\teletype {example.com} \br
+	        \teletype {example.com.internal-view} \br
+		\teletype {2.0.192.in-addr.arpa}}
+
+    \titre {2} {\ancre {selection} {Critère de sélection des RR}}
+
+	Critère de sélection des RR à générer pour cette zone. Pour
+	une zone normale, c'est un nom de domaine. Pour une zone
+	<<~reverse~>> IPv4, c'est un CIDR pour sélectionner les
+	adresses.
+
+	Exemples~:
+	    \retrait {\teletype {example.com}\br
+		\teletype {192.0.2.0/24}
+	    }
+
+    \titre {2} {\ancre {idview} {Vue}}
+
+	Vue DNS pour cette zone. Les vues permettent aux serveurs
+	DNS de fournir des réponses différenciées en fonction par
+	exemple de l'adresse source du client (résolveur) DNS.
+
+	Un nom de domaine peut donc avoir plus qu'une zone, en
+	fonction des \lien {vues déclarées} {admref?type=view}.
+	Une zone est associée à une vue. Chaque adresse IP (ou
+	alias, ou rôle de messagerie, etc.) est également associée
+	à une vue.
+
+	Exemples~:
+	    \retrait {\teletype {interne}\br
+		\teletype {default}
+	    }
 
     \titre {2} {\ancre {prologue} {Prologue}}
 
@@ -116,18 +145,6 @@ localhost	IN	A	127.0.0.1
 	    \verbatim {%NOM%	IN	MX	10 isis.u-strasbg.fr.
 %NOM%	IN	MX	20 amon.u-strasbg.fr}
 	}
-
-    \titre {2} {\ancre {selection} {Critère de sélection des RR}}
-
-	Critère de sélection des RR à générer pour cette zone. Pour
-	une zone normale, c'est un nom de domaine. Pour une zone
-	<<~reverse~>> IPv4, c'est un CIDR pour sélectionner les
-	adresses.
-
-	Exemple~:
-	    \retrait {\verbatim {example.com}\br
-		\verbatim {192.0.2.0/24}
-	    }
 }
 
 }

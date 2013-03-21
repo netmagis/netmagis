@@ -49,6 +49,56 @@
 	    \casetableau {
 		 \couleurfond {#C0C0C0}
 		 \centragehorizontal {CENTER}
+	    } {\gras {Création d'un rôle de messagerie}}
+	}
+	\lignetableau {
+	    \casetableau {} {
+		<FORM METHOD="POST" ACTION="%URLFORM%">
+		    <input type="hidden" name="action" value="add">
+		    \tableau {
+			\bordure {0} {}
+			\* \taille {100}
+		    } {
+			\casedefauttableau {\centragehorizontal {LEFT}}
+			\casedefauttableau {\centragehorizontal {LEFT}}
+		    } {
+			\lignetableau {
+			    \casetableau {} {Adresse de messagerie}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				.
+				%DOMAINE%
+				<span style="display: %DISPVIEW%">
+				~ ~ ~ %MENUVIEW%
+				</span>
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {Hébergeur}
+			    \casetableau {} {
+				<INPUT TYPE="TEXT" NAME="nomh" SIZE="30">
+				.
+				%DOMAINEH%
+				<span style="display: %DISPVIEW%">
+				~ ~ ~ %MENUVIEWH%
+				</span>
+			    }
+			}
+			\lignetableau {
+			    \casetableau {} {~}
+			    \casetableau {} {
+				<INPUT TYPE="SUBMIT" VALUE="Ajouter">
+			    }
+			}
+		    }
+		</FORM>
+		\br
+	    }
+	}
+	\lignetableau {
+	    \casetableau {
+		 \couleurfond {#C0C0C0}
+		 \centragehorizontal {CENTER}
 	    } {\gras {Modification d'un rôle de messagerie}}
 	}
 	\lignetableau {
@@ -65,7 +115,7 @@
 			\lignetableau {
 			    \multicasetableau {2} {} {
 				Saisissez l'adresse de messagerie à
-				créer, modifier ou supprimer~:
+				modifier ou supprimer~:
 			    }
 			}
 			\lignetableau {
@@ -105,8 +155,9 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {Domaine de messagerie~:}
-			    \casetableau {} {%DOMAINE%}
+			    \casetableau {} {Domaine de messagerie}
+			    \casetableau {} {%DOMAINE% <span style="display: %DISPVIEW%">~ ~ ~ %MENUVIEW%</span>
+			    }
 			}
 			\lignetableau {
 			    \casetableau {} {~}

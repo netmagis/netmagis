@@ -245,7 +245,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
     maxlink = j ;
 
     /*
-     * Equipements
+     * Equipments
      */
 
     neweqtab = mobj_data (new [EQMOBJIDX]) ;
@@ -396,7 +396,7 @@ static void dup_all_mobj (MOBJ *new [], MOBJ *old [])
 
 
     /*
-     * Equipements
+     * Equipments
      */
 
     for (i = 0 ; i < maxeq ; i++)

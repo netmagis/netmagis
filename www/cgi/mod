@@ -10,10 +10,14 @@
 #	- action : (none)
 #   - display host edit page
 #	- action : "edit"
+#	- nom : original name of the host
+#	- domaine : original domain of the host
+#	- idview : view id (or empty if no view has been selected)
 #   - modification of host informations
 #	- action : "store"
 #	- confirm : "no" or "yes" (if confirm ok)
 #	- idrr : original idrr of host
+#	- idview : view id
 #	- nom : modified name of the host
 #	- domaine : modified domain of the host
 #	- mac : modified mac address
@@ -43,6 +47,7 @@
 #   2010/12/14 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
 #   2012/09/20 : pda/jean : remove dns update interval
+#   2012/11/29 : pda/jean : add views
 #
 
 #
@@ -50,6 +55,7 @@
 #
 
 set conf(page-sel)	mod-sel.html
+set conf(page-view)	mod-view.html
 set conf(page-edit)	mod-edit.html
 set conf(page-ok)	mod-ok.html
 set conf(page-smtp)	mod-smtp.html
@@ -63,6 +69,7 @@ set conf(nextmap)	"net"
 set conf(nextlist)	"net"
 set conf(nextadd)	"add"
 set conf(nextdel)	"del"
+set conf(nextsearch)	"search"
 
 #
 # Netmagis general library
@@ -100,51 +107,38 @@ d cgi-register {action {}} {
 # Display host edit page
 ##############################################################################
 
-d cgi-register {action edit} {
-    {nom	1 1}
-    {domaine	1 1}
-} {
+#
+# host found in only one view (or selected view): display host edition page
+#
+
+proc disp-edit {dbfd _chkv _tabuid} {
     global conf
+    upvar $_chkv chkv
+    upvar $_tabuid tabuid
 
     #
-    # Validate form input
+    # Get id of found view
     #
 
-    set name   $nom
-    set domain $domaine
+    set idview [lindex $chkv(ok) 0]
+    lassign $chkv($idview) vn msg t
+    array set trr $t
 
-    set msg [check-name-syntax $name]
-    if {$msg ne ""} then {
-	d error $msg
-    }
-    set name [string tolower $name]
-
-    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain trr "existing-host"]
-    if {$msg ne ""} then {
-	d error $msg
-    }
-
-    #
-    # Check host existence
-    #
-
-    if {$trr(idrr) eq ""} then {
-	d error [mc "Name '%s' does not exist" $name]
-    }
+    set hvn [::webapp::html-string $vn]
 
     #
     # In order to display original name of host
     #
 
-    set vname $name
-    set vdomain $domain
+    set vname $trr(nom)
+    set vdomain $trr(domaine)
 
     #
     # Default values for all fields
     #
 
-    set name [::webapp::form-text nom 1 20 64 $name]
-    set domain [menu-domain $dbfd $tabuid(idcor) domaine "" $domain]
+    set name [::webapp::form-text nom 1 20 64 $trr(nom)]
+    set domain [menu-domain $dbfd $tabuid(idcor) domaine "" $trr(domaine)]
 
     set val [::webapp::html-string $trr(mac)]
     set mac [::webapp::form-text mac 1 20 17 $val]
@@ -183,8 +177,10 @@ d cgi-register {action edit} {
 
     d result $conf(page-edit) [list \
 					[list %IDRR% $trr(idrr)] \
+					[list %IDVIEW% $idview] \
 					[list %VNOM% $vname] \
 					[list %VDOMAINE% $vdomain] \
+					[list %VIEWNAME% $hvn] \
 					[list %NOM% $name] \
 					[list %DOMAINE% $domain] \
 					[list %MAC% $mac] \
@@ -201,6 +197,57 @@ d cgi-register {action edit} {
 			    ]
 }
 
+d cgi-register {action edit} {
+    {nom	1 1}
+    {domaine	1 1}
+    {idview	0 1}
+} {
+    global conf
+
+    #
+    # Validate form input
+    #
+
+    set name   $nom
+    set domain $domaine
+    set fqdn "$name.$domain"
+
+    set msg [check-name-syntax $name]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+    set name [string tolower $name]
+
+    #
+    # Get all possible views (if idview is not given) or get
+    # only filtered views (if idview is given)
+    #
+
+    if {$idview == ""} then {
+	set idviews {}
+    } else {
+	set idviews [list $idview]
+    }
+    set msg [filter-views $dbfd tabuid "host" $fqdn $idviews chkv]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # If only one view is found to be correct, go directly to the
+    # modify form
+    #
+
+    if {[llength $chkv(ok)] == 1} then {
+	disp-edit $dbfd chkv tabuid
+    } else {
+	set html [html-select-view chkv $conf(next)]
+	d result $conf(page-view) [list \
+					    [list %LIST% $html] \
+				]
+    }
+}
+
 ##############################################################################
 # Store modifications
 ##############################################################################
@@ -212,6 +259,7 @@ d cgi-register {action edit} {
 d cgi-register {action store} {
     {confirm	1 1}
     {idrr	1 1}
+    {idview	1 1}
     {nom	1 1}
     {domaine	1 1}
     {mac	1 1}
@@ -244,7 +292,12 @@ d cgi-register {action store} {
 	d error [mc "Host id %s not found" $idrr]
     }
 
-    set msg [check-authorized-host $dbfd $idcor $trr(nom) $trr(domaine) trr "existing-host"]
+    #
+    # Check authorized access for host in view
+    #
+
+    set fqdn "$trr(nom).$trr(domaine)"
+    set msg [filter-views $dbfd tabuid "host" $fqdn [list $idview] chkv]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -259,15 +312,17 @@ d cgi-register {action store} {
     }
     set nom [string tolower $nom]
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine ntrr "host"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domaine [list $idview] ntrr "host"]
     if {$msg ne ""} then {
 	d error $msg
     }
-    if {$ntrr(idrr) != $idrr} then {
+    set nidrr $ntrr(idrr)
+    if {$nidrr != $idrr} then {
 	#
 	# New host or domain. We must check it does not already exist.
 	#
-    	if {[info exists ntrr(ip)] && [llength $ntrr(ip)] > 0} then {
+	set nlip [rr-ip-by-view ntrr $idview]
+    	if {[llength $nlip] > 0} then {
 	    d error [mc "Host '%s' already exists" "$nom.$domaine"]
 	}
     }
@@ -283,7 +338,7 @@ d cgi-register {action store} {
 	    d error $msg
 	}
     }
-    set msg [check-static-dhcp $dbfd $mac $trr(ip)]
+    set msg [check-static-dhcp $dbfd $mac [rr-ip-by-view trr $idview]]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -342,7 +397,7 @@ d cgi-register {action store} {
 	# Confirmation page
 	#
 
-	set l {idrr nom domaine mac iddhcpprofil hinfo droitsmtp ttl
+	set l {idrr idview nom domaine mac iddhcpprofil hinfo droitsmtp ttl
 			commentaire respnom respmel}
 	set hidden [::webapp::hide-parameters $l ftab]
 	d urlset "%URLFORM%" $conf(next) {}
@@ -366,43 +421,146 @@ d cgi-register {action store} {
 	set ttl $trr(ttl)
     }
 
-    if {$mac eq ""} then {
-	set qmac NULL
+    #
+    # Differentiate 3 cases:
+    #							
+    #	Case							ntrr(idrr) = ?
+    #	------------------------------------------		---------------
+    #	name does not change => use same RR			old $idrr
+    #	name changes and there is no RR for new name		empty
+    #	name changes and there is an existing RR for new name	value != $idrr
+    #
+
+    if {$nidrr eq ""} then {
+	#
+	# Create a new RR for the new name.
+	# Remove MAC from old RR first, since there is a unicity
+	# constraint on it.
+	#
+
+	set sql "UPDATE dns.rr SET mac = NULL WHERE idrr = $idrr"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	   d dbabort [mc "modify %s" "$nom.$domaine"] $msg
+	}
+
+	set msg [add-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
+					$droitsmtp $ttl \
+					$commentaire $respnom $respmel \
+					$tabuid(idcor) ntrr]
+	if {$msg ne ""} then {
+	    d dbabort [mc "modify %s" [mc "RR"]] $msg
+	}
+	set nidrr $ntrr(idrr)
+
+	#
+	# Update all references to the host in this view
+	#
+
+	set msg [update-host-refs-in-view $dbfd $idrr $nidrr $idview]
+	if {$msg ne ""} then {
+	    d dbabort [mc "modify %s" [mc "RR"]] $msg
+	}
+
+	#
+	# Remove old RR if possible
+	#
+
+	set msg [del-orphaned-rr $dbfd $idrr]
+	if {$msg ne ""} then {
+	    d dbabort [mc "modify %s" [mc "RR"]] $msg
+	}
+
+	set idrr $nidrr
+
     } else {
-	set qmac "'[::pgsql::quote $mac]'"
-    }
-    if {$iddhcpprofil == 0} then {
-	set qiddhcpprofil NULL
-    } else {
-	set qiddhcpprofil $iddhcpprofil
-    }
-    if {$ttl == -1} then {
-	set httl [mc "(default zone value)"]
-    } else {
-	set httl $ttl
+	if {$mac eq ""} then {
+	    set qmac NULL
+	} else {
+	    set qmac "'[::pgsql::quote $mac]'"
+	}
+	if {$iddhcpprofil == 0} then {
+	    set qiddhcpprofil NULL
+	} else {
+	    set qiddhcpprofil $iddhcpprofil
+	}
+	set qnom         [::pgsql::quote $nom]
+	set qcommentaire [::pgsql::quote $commentaire]
+	set qrespnom     [::pgsql::quote $respnom]
+	set qrespmel     [::pgsql::quote $respmel]
+
+	if {$nidrr eq $idrr} then {
+	    #
+	    # Name does not change
+	    #
+	    set sql "UPDATE dns.rr SET
+				    nom = '$qnom',
+				    iddom = $iddom,
+				    mac = $qmac,
+				    iddhcpprofil = $qiddhcpprofil,
+				    idhinfo = $idhinfo,
+				    droitsmtp = $droitsmtp,
+				    ttl = $ttl,
+				    commentaire = '$qcommentaire',
+				    respnom = '$qrespnom',
+				    respmel = '$qrespmel'
+				WHERE idrr = $idrr"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	       d dbabort [mc "modify %s" "$nom.$domaine"] $msg
+	    }
+	} else {
+	    #
+	    # Name does change. Remove old MAC since there is
+	    # a unicity constraint on it.
+	    #
+
+	    set sql "UPDATE dns.rr SET mac = NULL WHERE idrr = $idrr ;
+		     UPDATE dns.rr SET
+				    mac = $qmac,
+				    iddhcpprofil = $qiddhcpprofil,
+				    idhinfo = $idhinfo,
+				    droitsmtp = $droitsmtp,
+				    ttl = $ttl,
+				    commentaire = '$qcommentaire',
+				    respnom = '$qrespnom',
+				    respmel = '$qrespmel'
+				WHERE idrr = $nidrr
+				"
+	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	       d dbabort [mc "modify %s" "$nom.$domaine"] $msg
+	    }
+
+	    #
+	    # Update all references to the host in this view
+	    #
+
+	    set msg [update-host-refs-in-view $dbfd $idrr $nidrr $idview]
+	    if {$msg ne ""} then {
+		d dbabort [mc "modify %s" [mc "RR"]] $msg
+	    }
+
+	    #
+	    # Update old RR "last mod" values, and attempt to delete
+	    # it (updating is done in case deletion does not succeed)
+	    #
+
+	    set msg [touch-rr $dbfd $idrr]
+	    if {$msg ne ""} then {
+		d dbabort [mc "modify %s" [mc "RR"]] $msg
+	    }
+	    set msg [del-orphaned-rr $dbfd $idrr]
+	    if {$msg ne ""} then {
+		d dbabort [mc "modify %s" [mc "RR"]] $msg
+	    }
+
+	    set idrr $nidrr
+	}
     }
 
-    set qnom         [::pgsql::quote $nom]
-    set qcommentaire [::pgsql::quote $commentaire]
-    set qrespnom     [::pgsql::quote $respnom]
-    set qrespmel     [::pgsql::quote $respmel]
-    set sql "UPDATE dns.rr SET
-			    nom = '$qnom',
-			    iddom = $iddom,
-			    mac = $qmac,
-			    iddhcpprofil = $qiddhcpprofil,
-			    idhinfo = $idhinfo,
-			    droitsmtp = $droitsmtp,
-			    ttl = $ttl,
-			    commentaire = '$qcommentaire',
-			    respnom = '$qrespnom',
-			    respmel = '$qrespmel'
-			WHERE idrr = $trr(idrr)"
-    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-       d dbabort [mc "modify %s" "$nom.$domaine"] $msg
-    }
+    #
+    # Update RR "last mod" values
+    #
 
-    set msg [touch-rr $dbfd $trr(idrr)]
+    set msg [touch-rr $dbfd $idrr]
     if {$msg ne ""} then {
 	d dbabort [mc "modify %s" [mc "RR"]] $msg
     }
@@ -427,6 +585,12 @@ d cgi-register {action store} {
     set respnom     [html-tab-string $respnom]
     set respmel     [html-tab-string $respmel]
 
+    if {$ttl == -1} then {
+	set httl [mc "(default zone value)"]
+    } else {
+	set httl $ttl
+    }
+
     if {$droitsmtp} then {
 	set droitsmtp [mc "Yes"]
     } else {
@@ -438,6 +602,9 @@ d cgi-register {action store} {
     #
 
     switch -- [d nextprog] {
+	search {
+	    d urlset "%URLSUITE%" $conf(nextsearch) [list [d nextargs]]
+	}
 	map {
 	    d urlset "%URLSUITE%" $conf(nextmap) [list {domap {yes}} [d nextargs]]
 	}
