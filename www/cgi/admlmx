@@ -10,6 +10,7 @@
 #	(none)
 #   - list
 #	- domaine : domain list
+#	- idview: list of view ids
 #	- dolist or doprint : output format
 #
 # History
@@ -19,6 +20,7 @@
 #   2003/05/13 : pda/jean : use auth base
 #   2010/12/10 : pda      : i18n
 #   2010/12/26 : pda      : use cgi-dispatch
+#   2013/03/21 : pda      : add views
 #
 
 #
@@ -118,7 +120,7 @@ source %LIBNETMAGIS%
 # Output list
 ##############################################################################
 
-proc output {dbfd domains format} {
+proc output {dbfd domains idviews format} {
     global conf
 
     #
@@ -133,8 +135,13 @@ proc output {dbfd domains format} {
 	set tabdom($d) $iddom
     }
 
+    set msg [check-views $idviews]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
     #
-    # List MX for each domain
+    # List MX for each domain and view
     #
 
     set lines {}
@@ -144,61 +151,64 @@ proc output {dbfd domains format} {
 			    [mc "MX"] \
 			]
     foreach d [lsort $domains] {
-	lappend lines [list "Domain" $d]
-	set iddom $tabdom($d)
+	foreach idview $idviews {
+	    lappend lines [list "Domain" "$d / [u viewname $idview]"]
+	    set iddom $tabdom($d)
 
-	#
-	# Extract MX of domain, and store into a temporary variable.
-	#   tabmx(foo.u-strasbg.fr) = {{10 mx1.u-strasbg.fr} {20 mx2...}}
-	#
+	    #
+	    # Extract MX of domain, and store into a temporary variable.
+	    #   tabmx(foo.u-strasbg.fr) = {{10 mx1.u-strasbg.fr} {20 mx2...}}
+	    #
 
-	catch {unset tabmx}
-	set sql "SELECT r1.nom || '.' || d1.nom AS left,
-			m.priorite,
-			r2.nom || '.' || d2.nom AS right
-		    FROM dns.rr r1, dns.domaine d1, dns.rr_mx m, dns.rr r2, dns.domaine d2
-		    WHERE r1.iddom = d1.iddom
-			AND r1.idrr = m.idrr
-			AND m.mx = r2.idrr
-			AND r2.iddom = d2.iddom
-			AND r1.iddom = $iddom
-		    ORDER BY r1.nom ASC, m.priorite ASC"
-	pg_select $dbfd $sql tab {
-	    set left  $tab(left)
-	    set prio  $tab(priorite)
-	    set right $tab(right)
-	    lappend tabmx($left) [list $prio $right]
-	}
+	    catch {unset tabmx}
+	    set sql "SELECT r1.nom || '.' || d1.nom AS left,
+			    m.priorite,
+			    r2.nom || '.' || d2.nom AS right
+			FROM dns.rr r1, dns.domaine d1, dns.rr_mx m, dns.rr r2, dns.domaine d2
+			WHERE r1.iddom = d1.iddom
+			    AND r1.idrr = m.idrr
+			    AND m.mx = r2.idrr
+			    AND m.idview = $idview
+			    AND r2.iddom = d2.iddom
+			    AND r1.iddom = $iddom
+			ORDER BY r1.nom ASC, m.priorite ASC"
+	    pg_select $dbfd $sql tab {
+		set left  $tab(left)
+		set prio  $tab(priorite)
+		set right $tab(right)
+		lappend tabmx($left) [list $prio $right]
+	    }
 
-	#
-	# Process each MX
-	#
+	    #
+	    # Process each MX
+	    #
 
-	set lmx [lsort [array names tabmx]]
-	if {[llength $lmx] == 0} then {
-	    lappend lines [list "NoMX" [mc "(no MX for this domain)"]]
-	} else {
-	    foreach mx [lsort [array names tabmx]] {
-		set n [llength $tabmx($mx)]
-		for {set i 0} {$i < $n} {incr i} {
-		    lassign $tabmx($mx) prio right
+	    set lmx [lsort [array names tabmx]]
+	    if {[llength $lmx] == 0} then {
+		lappend lines [list "NoMX" [mc "(no MX for this domain)"]]
+	    } else {
+		foreach mx [lsort [array names tabmx]] {
+		    set n [llength $tabmx($mx)]
+		    for {set i 0} {$i < $n} {incr i} {
+			lassign [lindex $tabmx($mx) $i] prio right
 
-		    # output MX name only once
-		    if {$i == 0} then {
-			set left $mx
-		    } else {
-			set left ""
+			# output MX name only once
+			if {$i == 0} then {
+			    set left $mx
+			} else {
+			    set left ""
+			}
+
+			# do not display horizontal line under MX name,
+			# except for the last one
+			if {$i < $n - 1} then {
+			    set pattern "MX"
+			} else {
+			    set pattern "LastMX"
+			}
+
+			lappend lines [list $pattern $left $prio $right]
 		    }
-
-		    # do not display horizontal line under MX name,
-		    # except for the last one
-		    if {$i < $n - 1} then {
-			set pattern "MX"
-		    } else {
-			set pattern "LastMX"
-		    }
-
-		    lappend lines [list $pattern $left $prio $right]
 		}
 	    }
 	}
@@ -243,6 +253,20 @@ d cgi-register {
     global conf
 
     #
+    # Extract authorized views
+    #
+
+    lassign [menu-views $dbfd $tabuid(idcor) "idview" {} 1] disp viewval
+    if {$disp} then {
+	set viewlibelle [mc "Views"]
+    } else {
+	set viewlibelle ""
+    }
+    # get one valid view to satisfy "map" requirements
+    set dumbidview [lindex [u myviewids] 0]
+
+
+    #
     # Extract domain list (all)
     #
 
@@ -257,6 +281,8 @@ d cgi-register {
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-sel) [list \
 				[list %LISTEDOMAINES% $listedomaines] \
+				[list %VIEWLIBELLE% $viewlibelle] \
+				[list %VIEWVAL% $viewval] \
 			    ]
 }
 
@@ -266,10 +292,11 @@ d cgi-register {
 
 d cgi-register {dolist .+} {
     {domaine	0 99999}
+    {idview	0 99999}
 } {
     global conf
 
-    output $dbfd $domaine "html"
+    output $dbfd $domaine $idview "html"
 }
 
 ##############################################################################
@@ -278,10 +305,11 @@ d cgi-register {dolist .+} {
 
 d cgi-register {doprint .+} {
     {domaine	0 99999}
+    {idview	0 99999}
 } {
     global conf
 
-    output $dbfd $domaine "latex"
+    output $dbfd $domaine $idview "latex"
 }
 
 ##############################################################################

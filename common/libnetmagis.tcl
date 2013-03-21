@@ -5677,6 +5677,7 @@ proc check-mx-target {dbfd prio name domain idview idcor _msg} {
 #	- name : MX name
 #	- _iddom : in return, domain id
 #	- domain : MX domain name
+#	- idview: view id
 #	- idcor : user id
 #	- _exists : 1 if RR exists, 0 if not
 #	- _trr : RR information read from database
@@ -5686,9 +5687,10 @@ proc check-mx-target {dbfd prio name domain idview idcor _msg} {
 #
 # History
 #   2010/12/09 : pda      : isolate common code
+#   2013/03/21 : pda      : add views
 #
 
-proc check-authorized-mx {dbfd idcor name _iddom domain _exists _trr} {
+proc check-authorized-mx {dbfd idcor name _iddom domain idview _exists _trr} {
     upvar $_exists exists
     upvar $_iddom iddom
     upvar $_trr trr
@@ -5719,10 +5721,11 @@ proc check-authorized-mx {dbfd idcor name _iddom domain _exists _trr} {
 	# anything else which is not a MX
 	#
 
-	if {[llength $trr(ip)] > 0} then {
+	if {[llength [rr-ip-by-view trr $idview]] > 0} then {
 	    return [mc "'%s' already has IP addresses" $name]
 	}
-	if {[llength $trr(cname)] > 0} then {
+	set cname [rr-cname-by-view trr $idview]
+	if {$cname ne ""} then {
 	    return [mc "'%s' is an alias" $name]
 	}
 
@@ -5731,8 +5734,8 @@ proc check-authorized-mx {dbfd idcor name _iddom domain _exists _trr} {
 	# to access all referenced domains.
 	#
 
-	foreach mx $trr(mx) {
-	    set idmx [lindex $mx 1]
+	foreach lmx [rr-mx-by-view trr $idview] {
+	    lassign $lmx prio idmx
 	    if {! [read-rr-by-id $dbfd $idmx tabmx]} then {
 		return [mc "Internal error: rr_mx table references RR '%s', not found in the rr table" $idmx]
 	    }

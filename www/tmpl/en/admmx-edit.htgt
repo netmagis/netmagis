@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modify MX of %NOM%.%DOMAINE%}
+    \titre {1} {Modify MX of %NOM%.%DOMAINE% in view %VIEW%}
 
     \tableau {
 	\bordure {0} {}
@@ -59,6 +59,7 @@
 	<input type="hidden" name="action" value="mod">
 	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
 	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
+	<INPUT TYPE="HIDDEN" NAME="idview" VALUE="%IDVIEW%">
 	\tableau {
 	    \bordure {0} {}
 	    \taille {100}
