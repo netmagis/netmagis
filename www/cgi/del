@@ -243,7 +243,7 @@ proc remove {dbfd mode object _chkv} {
 
 		set p "?"
 		if {[read-rr-by-id $dbfd $cname tc]} then {
-		    set p "$tc(nom).$tc(domaine)"
+		    set p "$tc(nom).$tc(domain)"
 		}
 		lappend log [list "delalias" "delete alias $object/$vn -> $p"]
 	    } else {
@@ -259,7 +259,7 @@ proc remove {dbfd mode object _chkv} {
 		lappend log [list "delname" "delete all of $object/$vn"]
 	    }
 	} else {
-	    set fqdn "$trr(nom).$trr(domaine)"
+	    set fqdn "$trr(nom).$trr(domain)"
 	    set lip [rr-ip-by-view trr $idview]
 	    if {[llength $lip] > 1} then {
 		#

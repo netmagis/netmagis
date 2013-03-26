@@ -29,7 +29,7 @@
 
     \titre {1} {Mail relays modified}
 
-    Mail relays for \gras {%DOMAINE%} in view \gras {%VIEW%} have been
+    Mail relays for \gras {%DOMAIN%} in view \gras {%VIEW%} have been
     updated:
 
     %TABLEAU%

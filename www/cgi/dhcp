@@ -88,12 +88,13 @@ proc output-edit {dbfd netid _tabuid} {
 		    ]
 
     set menudom {}
-    set sql "SELECT d.iddom, d.nom FROM dns.domaine d, dns.dr_dom dr
+    set sql "SELECT d.iddom, d.name
+    			FROM dns.domain d, dns.dr_dom dr
 			WHERE d.iddom = dr.iddom
 				AND dr.idgrp = $idgrp
-			ORDER BY dr.tri ASC, d.nom ASC"
+			ORDER BY dr.tri ASC, d.name ASC"
     pg_select $dbfd $sql tab {
-	lappend menudom [list $tab(iddom) $tab(nom)]
+	lappend menudom [list $tab(iddom) $tab(name)]
     }
 
     set menudhcp {}
@@ -125,7 +126,7 @@ proc output-edit {dbfd netid _tabuid} {
                         FROM dns.dhcprange
 			WHERE min <<= '$lcidr'
 			    AND max <<= '$lcidr'
-			    AND valide_dhcprange_grp ($idgrp, min, max)
+			    AND dns.check_dhcprange_grp ($idgrp, min, max)
 			ORDER BY min"
     set id iddhcprange
 
@@ -359,7 +360,7 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
 	    # address.
 	    #
 
-	    set sql "SELECT valide_dhcprange_grp ($idgrp,'$min','$max') AS val"
+	    set sql "SELECT dns.check_dhcprange_grp ($idgrp,'$min','$max') AS val"
 	    pg_select $dbfd $sql tab {
 		if {$tab(val) eq "f"} then {
 		    return [mc {Range [%s] not authorized} "$min...$max"]

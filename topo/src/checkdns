@@ -323,7 +323,7 @@ proc lire-ifaces {fd tab} {
 #
 # Entrée :
 #   - base : paramètres de connexion à la base DNS
-#   - domain : nom de domaine
+#   - domain : domain name
 #   - routers : nom des routeurs considérés
 #   - tabfic : tableau issu de lire-ifaces
 #   - tabdns : tableau passé par nom
@@ -353,7 +353,7 @@ proc lire-dns {base domain routers tabfic tabdns} {
     # Récupère iddom
     #
 
-    pg_select $dbfd "SELECT iddom FROM dns.domaine WHERE nom = '$domain'" t {
+    pg_select $dbfd "SELECT iddom FROM dns.domain WHERE name = '$domain'" t {
 	set iddom $t(iddom)
     }
 
@@ -389,15 +389,15 @@ proc lire-dns {base domain routers tabfic tabdns} {
     set lif [join $lif ","]
 
     set sql "SELECT rr.nom AS nom, rr_ip.adr AS adr,
-			    rr.iddom AS iddom, domaine.nom AS domaine
-			FROM dns.rr, dns.rr_ip, dns.domaine
+			    rr.iddom AS iddom, domain.name AS domain
+			FROM dns.rr, dns.rr_ip, dns.domain
 			WHERE rr.idrr = rr_ip.idrr
-			    AND rr.iddom = domaine.iddom
+			    AND rr.iddom = domain.iddom
 			    AND rr_ip.adr IN ($lif)"
     pg_select $dbfd $sql tab {
 	set nom $tab(nom)
 	set ip  $tab(adr)
-	set dom $tab(domaine)
+	set dom $tab(domain)
 	if {$tab(iddom) != $iddom} then {
 	    puts stderr "$ip ($nom.$dom)) n'est pas dans $domain"
 	    set r 0
@@ -482,16 +482,16 @@ proc output-del {fdmsg fdscript tabdns} {
 #   - fdmsg : descripteur de fichier pour le message
 #   - fdscript : descripteur de fichier pour le script
 #   - tab : tableau (issu de lire-fic)
-#   - domaine : domaine à ajouter à tous les noms
+#   - domain : domain name to add to all names
 # Sortie :
 #   - valeur de retour : aucune
 #
 # Historique :
 #   2004/09/21 : pda/jean : conception
-#   2004/10/01 : pda/jean : ajout du paramètre domaine
+#   2004/10/01 : pda/jean : ajout du paramètre domain
 #
 
-proc output-add {fdmsg fdscript tabfic domaine} {
+proc output-add {fdmsg fdscript tabfic domain} {
     upvar $tabfic tfic
 
     puts $fdmsg ""
@@ -505,7 +505,7 @@ proc output-add {fdmsg fdscript tabfic domaine} {
     puts $fdscript ""
     puts $fdscript "# Ajouts"
     foreach ip [lsort [array names tfic]] {
-	puts $fdscript [format "dnsaddhost %-40s %s" "$tfic($ip).$domaine" $ip]
+	puts $fdscript [format "dnsaddhost %-40s %s" "$tfic($ip).$domain" $ip]
     }
 }
 

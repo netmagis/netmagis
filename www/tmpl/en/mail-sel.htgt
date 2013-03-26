@@ -65,7 +65,7 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
-				%DOMAINE%
+				%DOMAIN%
 				<span style="display: %DISPVIEW%">
 				~ ~ ~ %MENUVIEW%
 				</span>
@@ -76,7 +76,7 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nomh" SIZE="30">
 				.
-				%DOMAINEH%
+				%DOMAINH%
 				<span style="display: %DISPVIEW%">
 				~ ~ ~ %MENUVIEWH%
 				</span>
@@ -121,7 +121,7 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
-				%DOMAINE%
+				%DOMAIN%
 			    }
 			}
 			\lignetableau {
@@ -154,7 +154,7 @@
 		    } {
 			\lignetableau {
 			    \casetableau {} {Mail address}
-			    \casetableau {} {%DOMAINE%
+			    \casetableau {} {%DOMAIN%
 				<span style="display: %DISPVIEW%">
 				~ ~ ~ %MENUVIEW%
 				</span>

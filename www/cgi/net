@@ -285,20 +285,20 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	#  cname(172.16.201.129) {aton.example.com diablo.example.com...}
 	#
 
-	set sql "SELECT alias.nom || '.' || domaine.nom AS nom, rr_ip.adr
-		    FROM dns.rr alias, dns.rr canon, dns.rr_ip, dns.rr_cname, dns.domaine
+	set sql "SELECT alias.nom || '.' || domain.name AS name, rr_ip.adr
+		    FROM dns.rr alias, dns.rr canon, dns.rr_ip, dns.rr_cname, dns.domain
 		    WHERE canon.idrr = rr_cname.cname
 			AND rr_cname.idrr = alias.idrr
 			AND rr_ip.idrr = canon.idrr
 			AND rr_ip.adr <<= ANY ($sqlallow)
 			AND NOT rr_ip.adr <<= ANY ($sqldeny)
 			AND rr_ip.adr <<= '$cidrplage'
-			AND domaine.iddom = alias.iddom
+			AND domain.iddom = alias.iddom
 			AND rr_ip.idview = $idview
 			AND rr_cname.idview = $idview
 		    ORDER BY alias.nom"
 	pg_select $dbfd $sql tab {
-	    lappend cname($tab(adr)) $tab(nom)
+	    lappend cname($tab(adr)) $tab(name)
 	}
 
 	#
@@ -317,14 +317,14 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	#
 
 	set jourfmt [dnsconfig get "jourfmt"]
-	set sql "SELECT DISTINCT rr.nom || '.' || domaine.nom AS nom,
+	set sql "SELECT DISTINCT rr.nom || '.' || domain.name AS name,
 			rr_ip.adr,
 			rr.commentaire, rr.respnom, rr.respmel, rr.date,
 			rr.droitsmtp, rr.mac,
 			rr.iddhcpprofil AS dhcp1,
 			dhcprange.iddhcpprofil AS dhcp2,
 			hinfo.texte, corresp.login
-		    FROM dns.rr, dns.domaine, dns.hinfo, global.corresp,
+		    FROM dns.rr, dns.domain, dns.hinfo, global.corresp,
 			dns.rr_ip LEFT OUTER JOIN dns.dhcprange
 			    ON (rr_ip.adr >= dhcprange.min
 				AND rr_ip.adr <= dhcprange.max)
@@ -332,13 +332,13 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 			AND rr_ip.adr <<= ANY ($sqlallow)
 			AND NOT rr_ip.adr <<= ANY ($sqldeny)
 			AND rr_ip.adr <<= '$cidrplage'
-			AND domaine.iddom = rr.iddom
+			AND domain.iddom = rr.iddom
 			AND rr.idhinfo = hinfo.idhinfo
 			AND rr.idcor = corresp.idcor
 			AND rr_ip.idview = $idview
 		    ORDER BY rr_ip.adr"
 	pg_select $dbfd $sql tab {
-	    set nomprimaire	$tab(nom)
+	    set primary		$tab(name)
 	    set adr		$tab(adr)
 	    set mac		$tab(mac)
 	    set dhcp1		$tab(dhcp1)
@@ -352,9 +352,9 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	    set login		$tab(login)
 
 	    if {[info exists cname($adr)]} then {
-		set nomssecondaires $cname($adr)
+		set secondaries $cname($adr)
 	    } else {
-		set nomssecondaires ""
+		set secondaries ""
 	    }
 
 	    if {! [string equal $respmel ""]} then {
@@ -384,19 +384,19 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 		    d urlset "" $conf(nextedit) [list [list "adr" $adr]]
 		    d urlsetnext "" $nextprog $nextargs
 		    set url [d urlget ""]
-		    set nom "$nomprimaire "
-		    append nom [::webapp::helem "i" $nomssecondaires]
+		    set nom "$primary "
+		    append nom [::webapp::helem "i" $secondaries]
 		    set adr [::webapp::helem "a" $adr "href" $url]
 		}
 		latex {
-		    set nom "$nomprimaire \\textit \{$nomssecondaires\}"
+		    set nom "$primary \\textit \{$secondaries\}"
 		}
 		csv {
-		    set ns [join $nomssecondaires ","]
+		    set ns [join $secondaries ","]
 		    if {$ns eq ""} then {
-			set nom "$nomprimaire"
+			set nom "$primary"
 		    } else {
-			set nom "$nomprimaire,$ns"
+			set nom "$primary,$ns"
 		    }
 		}
 	    }
@@ -507,7 +507,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 	set html ""
 	set n 0
 	set navail 0
-	set sql "SELECT * FROM markcidr ('$cidr', $limite, $tabuid(idgrp))"
+	set sql "SELECT * FROM dns.mark_cidr ('$cidr', $limite, $tabuid(idgrp))"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d error [mc {Error in CIDR '%1$s': %2$s} $cidr $msg]
 	}

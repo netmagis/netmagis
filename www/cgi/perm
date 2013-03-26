@@ -52,7 +52,7 @@ d cgi-register {} {
     set grospaquet [display-group $dbfd $tabuid(idgrp)]
     set tabreseaux        [lindex $grospaquet 2]
     set tabcidrhorsreseau [lindex $grospaquet 3]
-    set tabdomaines       [lindex $grospaquet 4]
+    set tabdomains        [lindex $grospaquet 4]
     set tabdhcpprofil     [lindex $grospaquet 5]
 
     if {$tabcidrhorsreseau eq ""} then {
@@ -70,7 +70,7 @@ d cgi-register {} {
 			    [list %TABRESEAUX% $tabreseaux] \
 			    [list %TITRECIDRHORSRESEAU% $titrecidrhorsreseau] \
 			    [list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
-			    [list %TABDOMAINES% $tabdomaines] \
+			    [list %TABDOMAINS% $tabdomains] \
 			    [list %TABDHCPPROFIL% $tabdhcpprofil] \
 			    ]
 }

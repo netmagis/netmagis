@@ -118,7 +118,7 @@
 		\casetableau {} {Pour supprimer un domaine,
 		    vider la case <<~Classe de tri~>>.
 
-		    %LISTEDOMAINES%}
+		    %LISTDOMAINS%}
 	    }
 	    \lignetableau {
 		\casetableau {

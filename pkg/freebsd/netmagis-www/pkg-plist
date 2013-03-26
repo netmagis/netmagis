@@ -128,7 +128,7 @@ lib/netmagis/tmpl/en/eq.html
 lib/netmagis/tmpl/en/error.html
 lib/netmagis/tmpl/en/help-commu.html
 lib/netmagis/tmpl/en/help-dhcpprofil.html
-lib/netmagis/tmpl/en/help-domaine.html
+lib/netmagis/tmpl/en/help-domain.html
 lib/netmagis/tmpl/en/help-dotattr.html
 lib/netmagis/tmpl/en/help-eq.html
 lib/netmagis/tmpl/en/help-eqtype.html
@@ -228,7 +228,7 @@ lib/netmagis/tmpl/fr/eq.html
 lib/netmagis/tmpl/fr/error.html
 lib/netmagis/tmpl/fr/help-commu.html
 lib/netmagis/tmpl/fr/help-dhcpprofil.html
-lib/netmagis/tmpl/fr/help-domaine.html
+lib/netmagis/tmpl/fr/help-domain.html
 lib/netmagis/tmpl/fr/help-dotattr.html
 lib/netmagis/tmpl/fr/help-eq.html
 lib/netmagis/tmpl/fr/help-eqtype.html

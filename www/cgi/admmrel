@@ -10,13 +10,13 @@
 #	- action : empty
 #   - display edit page
 #	- action : "edit"
-#	- domaine : domain name to edit
+#	- domain : domain name to edit
 #   - store MX modifications
 #	- action : "mod"
-#	- domaine : domain name to modify
+#	- domain : domain name to modify
 #	- priorite* : MX priority for this domain
 #	- nom* : MX name for this domain
-#	- domaine* : MX domain for this domain
+#	- domain* : MX domain for this domain
 #
 # History
 #   2004/03/04 : pda/jean : design
@@ -124,7 +124,7 @@ d cgi-register {action {}} {
     #
 
     set w "dr_dom.rolemail <> 0"
-    set domain [menu-domain $dbfd $tabuid(idcor) "domaine" $w ""]
+    set domain [menu-domain $dbfd $tabuid(idcor) "domain" $w ""]
 
     #
     # Get views authorized for the user
@@ -146,7 +146,7 @@ d cgi-register {action {}} {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-sel) [list \
-				[list %DOMAINE%  $domain] \
+				[list %DOMAIN%   $domain] \
 				[list %DISPVIEW% $dispview] \
 				[list %MENUVIEW% $menuview] \
 			    ]
@@ -157,13 +157,13 @@ d cgi-register {action {}} {
 ##############################################################################
 
 d cgi-register {action edit} {
-    {domaine	1 1}
+    {domain	1 1}
     {idview	1 1}
 } {
     global conf
 
     set idcor $tabuid(idcor)
-    set domain [lindex $ftab(domaine) 0]
+    set domain [lindex $ftab(domain) 0]
 
     #
     # Check view
@@ -198,15 +198,15 @@ d cgi-register {action edit} {
     set spec [list \
 		{priorite {string 5}  {}} \
 		{nom      {string 30} {}} \
-		[list domaine [list menu $menudom] {}] \
+		[list domain [list menu $menudom] {}] \
 	    ]
-    set sql "SELECT rd.mx, rd.priorite, r.nom, d.nom AS domaine
-		FROM dns.relais_dom rd, dns.rr r, dns.domaine d
+    set sql "SELECT rd.mx, rd.priorite, r.nom, d.name AS domain
+		FROM dns.relais_dom rd, dns.rr r, dns.domain d
 		WHERE rd.iddom = $iddom
 			AND rd.idview = $idview
 			AND r.iddom = d.iddom
 			AND rd.mx = r.idrr
-		ORDER BY rd.priorite, d.nom, r.nom
+		ORDER BY rd.priorite, d.name, r.nom
 		"
     set idnum "mx"
 
@@ -222,7 +222,7 @@ d cgi-register {action edit} {
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-edit) [list \
 				[list %TABLEAU% $tableau] \
-				[list %DOMAINE% $domain] \
+				[list %DOMAIN%  $domain] \
 				[list %IDVIEW%  $idview] \
 				[list %VIEW%    [u viewname $idview]] \
 			    ]
@@ -233,16 +233,16 @@ d cgi-register {action edit} {
 ##############################################################################
 
 d cgi-register {action mod} {
-    {domaine		1 1}
+    {domain		1 1}
     {idview		1 1}
 
     {priorite[0-9]+	0 9999}
     {nom[0-9]+		0 9999}
-    {domaine[0-9]+	0 9999}
+    {domain[0-9]+	0 9999}
 
     {prioriten[0-9]+	0 9999}
     {nomn[0-9]+		0 9999}
-    {domainen[0-9]+	0 9999}
+    {domainn[0-9]+	0 9999}
 } {
     global conf
 
@@ -250,7 +250,7 @@ d cgi-register {action mod} {
     # Initialization
     #
 
-    set domain [string trim [lindex $ftab(domaine) 0]]
+    set domain [string trim [lindex $ftab(domain) 0]]
 
     #
     # Check view
@@ -284,7 +284,7 @@ d cgi-register {action mod} {
 	if {[regexp {^priorite(n?)([0-9]+)$} $c bidon n idmx]} then {
 	    set idxprio priorite$n$idmx
 	    set idxnom  nom$n$idmx
-	    set idxdom  domaine$n$idmx
+	    set idxdom  domain$n$idmx
 	    if {[info exists ftab($idxprio)] && \
 			    [info exists ftab($idxnom)] && \
 			    [info exists ftab($idxdom)] \
@@ -350,7 +350,7 @@ d cgi-register {action mod} {
 	foreach mx $lrel {
 	    lassign $mx prio idmx
 	    read-rr-by-id $dbfd $idmx tabmx
-	    set n "$tabmx(nom).$tabmx(domaine)"
+	    set n "$tabmx(nom).$tabmx(domain)"
 	    lappend lines [list Normal $prio $n]
 	    lappend lm $n
 	}
@@ -367,7 +367,7 @@ d cgi-register {action mod} {
 
     d result $conf(page-mod) [list \
 				[list %TABLEAU% $tableau] \
-				[list %DOMAINE% $domain] \
+				[list %DOMAIN%  $domain] \
 				[list %VIEW%    [u viewname $idview]] \
 			    ]
 }

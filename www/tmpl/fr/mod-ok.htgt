@@ -42,7 +42,7 @@
     } {
 	\lignetableau {
 	    \casetableau {} {Nom}
-	    \casetableau {} {%NOM%.%DOMAINE%}
+	    \casetableau {} {%NOM%.%DOMAIN%}
 	}
 	\lignetableau {
 	    \casetableau {} {Adresse MAC}

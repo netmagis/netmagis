@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modify '%DOMAINE%' mail relays in view '%VIEW%'}
+    \titre {1} {Modify '%DOMAIN%' mail relays in view '%VIEW%'}
 
     \tableau {
 	\bordure {0} {}
@@ -57,7 +57,7 @@
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<input type="hidden" name="action" value="mod">
-	<INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
+	<INPUT TYPE="HIDDEN" NAME="domain" VALUE="%DOMAIN%">
 	<INPUT TYPE="HIDDEN" NAME="idview" VALUE="%IDVIEW%">
 	\tableau {
 	    \bordure {0} {}

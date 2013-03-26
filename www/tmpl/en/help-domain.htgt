@@ -6,12 +6,12 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Modification des domaines
+    Netmagis - Domains
 }
 
 \*******************************************************************************
 \partie {titrepage} {
-    Application Netmagis
+    Netmagis application
 }
 
 
@@ -27,14 +27,14 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Gestion des domaines}
+    \titre {1} {Domain management}
 
-    \titre {2} {\ancre {texte} {Domaine}}
+    \titre {2} {\ancre {name} {Domain}}
 
-	Nom de domaine (nom complet sans le point final).
+	Domain name.
 
 	Exemple~:
-	    \retrait {\verbatim {u-strasbg.fr}}
+	    \retrait {\verbatim {example.com}}
 }
 
 }

@@ -48,7 +48,7 @@
 	\item {Modify \lien {communities} {%URLREFCOMMU%}}
 	\item {Modify \lien {host types} {%URLREFHINFO%}}
 	\item {Modify \lien {networks} {%URLREFRESEAU%}}
-	\item {Modify \lien {domains} {%URLREFDOMAINE%}}
+	\item {Modify \lien {domains} {%URLREFDOMAIN%}}
 	\item {Modify \lien {mail relays}{%URLADMMREL%} of a domain}
 	\item {Modify \lien {views} {%URLREFVIEW%}}
 	\item {Modify \lien {zones} {%URLREFZONE%}}

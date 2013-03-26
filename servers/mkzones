@@ -257,7 +257,8 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     # Get working domain id
     #
     set iddom -1
-    pg_select $dbfd "SELECT iddom FROM dns.domaine WHERE nom = '$selection'" tab {
+    set sql "SELECT iddom FROM dns.domain WHERE name = '$selection'"
+    pg_select $dbfd $sql tab {
 	set iddom $tab(iddom)
     }
     if {$iddom == -1} then {
@@ -350,13 +351,13 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     #
 
     set sql "SELECT relais_dom.priorite,
-			rr.nom || '.' || domaine.nom || '.' AS rrname
-		    FROM dns.relais_dom, dns.rr, dns.domaine
+			rr.nom || '.' || domain.name || '.' AS rrname
+		    FROM dns.relais_dom, dns.rr, dns.domain
 		    WHERE relais_dom.iddom = $iddom
 			AND relais_dom.idview = $idview
 			AND relais_dom.mx = rr.idrr
-			AND rr.iddom = domaine.iddom
-		    ORDER BY relais_dom.priorite ASC, domaine.nom, upper(rr.nom)
+			AND rr.iddom = domain.iddom
+		    ORDER BY relais_dom.priorite ASC, domain.name, upper(rr.nom)
 		"
     set relais {}
     pg_select $dbfd $sql tab {

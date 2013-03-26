@@ -564,7 +564,7 @@ snit::type ::netmagis {
 			    {modcommu always}
 			    {modhinfo always}
 			    {modreseau always}
-			    {moddomaine always}
+			    {moddomain always}
 			    {admmrel always}
 			    {admmx always}
 			    {modview always}
@@ -595,7 +595,7 @@ snit::type ::netmagis {
 	modcommu	{admref?type=commu {Modify communities}}
 	modhinfo	{admref?type=hinfo {Modify machine types}}
 	modreseau	{admref?type=reseau {Modify networks}}
-	moddomaine	{admref?type=domaine {Modify domains}}
+	moddomain	{admref?type=domain {Modify domains}}
 	admmrel		{admmrel {Modify mailhost}}
 	admmx		{admmx {Modify MX}}
 	modview		{admref?type=view {Modify views}}
@@ -2106,21 +2106,21 @@ snit::type ::nmuser {
 	array unset authdom
 	set myiddom {}
 
-	set sql "SELECT * FROM dns.domaine"
+	set sql "SELECT * FROM dns.domain"
 	pg_select $db $sql tab {
 	    set iddom $tab(iddom)
-	    set name   $tab(nom)
+	    set name   $tab(name)
 	    set alldom(id:$iddom) $name
 	    set alldom(name:$name) $iddom
 	}
 
 	set qlogin [::pgsql::quote $login]
 	set sql "SELECT dr.iddom
-			FROM dns.dr_dom dr, dns.domaine d, global.corresp c
+			FROM dns.dr_dom dr, dns.domain d, global.corresp c
 			WHERE dr.idgrp = c.idgrp
 			    AND dr.iddom = d.iddom
 			    AND c.login = '$qlogin'
-			ORDER BY dr.tri ASC, d.nom ASC"
+			ORDER BY dr.tri ASC, d.name ASC"
 	pg_select $db $sql tab {
 	    set iddom $tab(iddom)
 	    set authdom($iddom) 1
@@ -3061,11 +3061,11 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    set sql "SELECT domaine.nom AS nom, dr_dom.rolemail, dr_dom.roleweb
-			FROM dns.dr_dom, dns.domaine
-			WHERE dr_dom.iddom = domaine.iddom
+    set sql "SELECT domain.name AS name, dr_dom.rolemail, dr_dom.roleweb
+			FROM dns.dr_dom, dns.domain
+			WHERE dr_dom.iddom = domain.iddom
 				AND dr_dom.idgrp = $idgrp
-			ORDER BY dr_dom.tri, domaine.nom"
+			ORDER BY dr_dom.tri, domain.name"
     pg_select $dbfd $sql tab {
 	set rm ""
 	if {$tab(rolemail)} then {
@@ -3076,7 +3076,7 @@ proc display-group {dbfd idgrp} {
 	    set rw [mc "Web role management"]
 	}
 
-	lappend lines [list Domaine $tab(nom) $rm $rw]
+	lappend lines [list Domaine $tab(name) $rm $rw]
     }
     if {[llength $lines] > 0} then {
 	set tabdomains [::arrgen::output "html" $libconf(tabdomains) $lines]
@@ -3540,7 +3540,7 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #	_trr(idrr) : id of RR found
 #	_trr(nom) : name (first component of the FQDN)
 #	_trr(iddom) : domain id
-#	_trr(domaine) : domain name
+#	_trr(domain) : domain name
 #	_trr(mac) : MAC address
 #	_trr(iddhcpprofil) : DHCP profile id, or 0 if none
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
@@ -3599,7 +3599,7 @@ proc read-rr-by-id {dbfd idrr _trr} {
     }
 
     if {$found} then {
-	set trr(domaine) ""
+	set trr(domain) ""
 	if {$trr(iddhcpprofil) eq ""} then {
 	    set trr(iddhcpprofil) 0
 	    set trr(dhcpprofil) [mc "No profile"]
@@ -3614,9 +3614,9 @@ proc read-rr-by-id {dbfd idrr _trr} {
 	pg_select $dbfd $sql tab {
 	    set trr(hinfo) $tab(texte)
 	}
-	set sql "SELECT nom FROM dns.domaine WHERE iddom = $trr(iddom)"
+	set sql "SELECT name FROM dns.domain WHERE iddom = $trr(iddom)"
 	pg_select $dbfd $sql tab {
-	    set trr(domaine) $tab(nom)
+	    set trr(domain) $tab(name)
 	}
 	set trr(ip) {}
 	set sql "SELECT idview, adr FROM dns.rr_ip WHERE idrr = $idrr"
@@ -4275,7 +4275,7 @@ proc allowed-groups {dbfd laddr} {
 	#
 
 	foreach idgrp $lidgrp {
-	    set sql "SELECT valide_ip_grp ('$addr', $idgrp) AS ok"
+	    set sql "SELECT dns.check_ip_grp ('$addr', $idgrp) AS ok"
 	    pg_select $dbfd $sql tab {
 		if {$tab(ok) eq "t"} then {
 		    set algrp($idgrp) {}
@@ -4352,12 +4352,12 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
     if {$idview ne ""} then {
 	set cname [rr-cname-by-view trr $idview]
 	if {$cname ne ""} then {
-	    set fqdn "$trr(nom).$trr(domaine)"
+	    set fqdn "$trr(nom).$trr(domain)"
 	    if {! [read-rr-by-id $dbfd $cname tc]} then {
 		return [mc {Cannot read host-id %s} $idalias]
 	    }
 
-	    set fqdn2 "$tc(nom).$tc(domaine)"
+	    set fqdn2 "$tc(nom).$tc(domain)"
 	    lappend lines [list Normal [mc "Alias name"] $fqdn]
 	    lappend lines [list Normal [mc "Points to"] $fqdn2]
 	}
@@ -4369,7 +4369,7 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 
     if {$lines eq ""} then {
 	# name
-	lappend lines [list Normal [mc "Name"] "$trr(nom).$trr(domaine)"]
+	lappend lines [list Normal [mc "Name"] "$trr(nom).$trr(domain)"]
 
 	# IP address(es)
 	if {$idview eq ""} then {
@@ -4467,13 +4467,13 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	    foreach va $trr(aliases) {
 		lassign $va idview idalias
 		if {[read-rr-by-id $dbfd $idalias ta]} then {
-		    lappend la "$ta(nom).$ta(domaine) ([u viewname $idview])"
+		    lappend la "$ta(nom).$ta(domain) ([u viewname $idview])"
 		}
 	    }
 	} else {
 	    foreach idalias [rr-aliases-by-view trr $idview] {
 		if {[read-rr-by-id $dbfd $idalias ta]} then {
-		    lappend la "$ta(nom).$ta(domaine)"
+		    lappend la "$ta(nom).$ta(domain)"
 		}
 	    }
 	}
@@ -4486,7 +4486,7 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	foreach i [rr-adrmail-by-view trr $idview] {
 	    lassign $i idadrmail idviewa
 	    if {[read-rr-by-id $dbfd $idadrmail ta]} then {
-		lappend la "$ta(nom).$ta(domaine)/[u viewname $idviewa]"
+		lappend la "$ta(nom).$ta(domain)/[u viewname $idviewa]"
 	    }
 	}
 	if {[llength $la] > 0} then {
@@ -4555,7 +4555,7 @@ proc display-rr-masked {dbfd _trr idview rrtmpl} {
     upvar $_trr trr
 
     h mask-next
-    set link [h mask-link "$trr(nom).$trr(domaine)"]
+    set link [h mask-link "$trr(nom).$trr(domain)"]
     set desc [h mask-text [display-rr $dbfd -1 trr $idview $rrtmpl]]
     return [list $link $desc] 
 }
@@ -4584,10 +4584,10 @@ proc read-all-domains {dbfd _tabdom _tabid} {
     upvar $_tabdom tabdom
     upvar $_tabid  tabid
 
-    set sql "SELECT nom, iddom FROM dns.domaine"
+    set sql "SELECT name, iddom FROM dns.domain"
     pg_select $dbfd $sql tab {
-	set tabdom($tab(nom)) $tab(iddom)
-	set tabid($tab(iddom)) $tab(nom)
+	set tabdom($tab(name)) $tab(iddom)
+	set tabid($tab(iddom)) $tab(name)
     }
 }
 
@@ -5028,7 +5028,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 
 		    set found 1
 		    set name   $trr(nom)
-		    set domain $trr(domaine)
+		    set domain $trr(domain)
 		    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v bidon "del-name"]
 		    if {$msg ne ""} then {
 			set err 1
@@ -5131,12 +5131,12 @@ proc html-select-view {_chkv next} {
 	    array unset trr
 	    array set trr $t
 
-	    set fqdn "$trr(nom).$trr(domaine)"
+	    set fqdn "$trr(nom).$trr(domain)"
 
 	    d urlset "" $next [list \
 				    [list "action" "edit"] \
 				    [list "nom" $trr(nom)] \
-				    [list "domaine" $trr(domaine)] \
+				    [list "domain" $trr(domain)] \
 				    [list "idview" $idview] \
 				]
 	    d urladdnext ""
@@ -5174,7 +5174,7 @@ proc html-select-view {_chkv next} {
 proc read-domain {dbfd domain} {
     set domain [::pgsql::quote $domain]
     set iddom -1
-    pg_select $dbfd "SELECT iddom FROM dns.domaine WHERE nom = '$domain'" tab {
+    pg_select $dbfd "SELECT iddom FROM dns.domain WHERE name = '$domain'" tab {
 	set iddom $tab(iddom)
     }
     return $iddom
@@ -5216,9 +5216,9 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
 	    set msg [mc "Domain '%s' not found" $domain]
 	}
     } elseif {$domain eq ""} then {
-	set sql "SELECT domaine FROM dns.domaine WHERE iddom = $iddom"
+	set sql "SELECT name FROM dns.domain WHERE iddom = $iddom"
 	pg_select $dbfd $sql tab {
-	    set domain $tab(domaine)
+	    set domain $tab(name)
 	}
 	if {$domain eq ""} then {
 	    set msg [mc "Domain-id '%s' not found" $iddom]
@@ -5272,7 +5272,7 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
 
 proc check-authorized-ip {dbfd idcor adr} {
     set r 0
-    set sql "SELECT valide_ip_cor ('$adr', $idcor) AS ok"
+    set sql "SELECT dns.check_ip_cor ('$adr', $idcor) AS ok"
     pg_select $dbfd $sql tab {
 	set r [string equal $tab(ok) "t"]
     }
@@ -5527,7 +5527,7 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 		    set idcname [rr-cname-by-view trr $idview]
 		    if {$idcname ne ""} then {
 			read-rr-by-id $dbfd $idcname t
-			set fqdnref "$t(nom).$t(domaine)"
+			set fqdnref "$t(nom).$t(domain)"
 			switch $parm {
 			    REJECT {
 				return [mc {%1$s is an alias of host %2$s in view %3$s} $fqdn $fqdnref $viewname]
@@ -5555,7 +5555,7 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 				set idrr [lindex $mx 1]
 				set ok [check-name-by-addresses $dbfd $idcor $idrr t]
 				if {! $ok} then {
-				    set fqdnmx "$t(nom).$t(domaine)"
+				    set fqdnmx "$t(nom).$t(domain)"
 				    return [mc {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} $fqdnmx $fqdn]
 				}
 			    }
@@ -5589,7 +5589,7 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 
 				# Mail host checking
 				set bidon -1
-				set msg [check-domain $dbfd $idcor bidon trrh(domaine) ""]
+				set msg [check-domain $dbfd $idcor bidon trrh(domain) ""]
 				if {$msg ne ""} then {
 				    set r [mc "You don't have rights on host holding mail for '%s'" $fqdn]
 				    append r "\n$msg"
@@ -5796,9 +5796,9 @@ proc check-authorized-mx {dbfd idcor name _iddom domain idview _exists _trr} {
 		return [mc "Internal error: rr_mx table references RR '%s', not found in the rr table" $idmx]
 	    }
 	    set iddom $tabmx(iddom)
-	    set msg [check-domain $dbfd $idcor iddom tabmx(domaine) ""]
+	    set msg [check-domain $dbfd $idcor iddom tabmx(domain) ""]
 	    if {$msg ne ""} then {
-		return [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s} "$tabmx(nom).$tabmx(domaine)" $msg]
+		return [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s} "$tabmx(nom).$tabmx(domain)" $msg]
 	    }
 	}
     }
@@ -5843,15 +5843,15 @@ proc check-domain-relay {dbfd idcor _iddom domain idview} {
     #
 
     set v [list $idview]
-    set sql "SELECT r.nom AS nom, d.nom AS domaine
-		FROM dns.relais_dom rd, dns.rr r, dns.domaine d
+    set sql "SELECT r.nom AS nom, d.name AS domain
+		FROM dns.relais_dom rd, dns.rr r, dns.domain d
 		WHERE rd.iddom = $iddom
 			AND rd.idview = $idview
 			AND r.iddom = d.iddom
 			AND rd.mx = r.idrr
 		"
     pg_select $dbfd $sql tab {
-	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domaine) $v trr "existing-host"]
+	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domain) $v trr "existing-host"]
 	if {$msg ne ""} then {
 	    return [mc {You don't have rights to some relays of domain '%1$s': %2$s} $domain $msg]
 	}
@@ -6252,7 +6252,7 @@ proc menu-domain {dbfd idcor field where sel} {
 
     #
     # If there is only one domain, present it as a text. If more
-    # than one domaine, use a dropdown menu.
+    # than one domain, use a dropdown menu.
     #
 
     set ndom [llength $lcouples]
@@ -6295,15 +6295,15 @@ proc couple-domains {dbfd idcor where} {
     }
 
     set lcouples {}
-    set sql "SELECT domaine.nom
-		FROM dns.domaine, dns.dr_dom, global.corresp
-		WHERE domaine.iddom = dr_dom.iddom
+    set sql "SELECT domain.name
+		FROM dns.domain, dns.dr_dom, global.corresp
+		WHERE domain.iddom = dr_dom.iddom
 		    AND dr_dom.idgrp = corresp.idgrp
 		    AND corresp.idcor = $idcor
 		    $where
 		ORDER BY dr_dom.tri ASC"
     pg_select $dbfd $sql tab {
-	lappend lcouples [list $tab(nom) $tab(nom)]
+	lappend lcouples [list $tab(name) $tab(name)]
     }
 
     return $lcouples

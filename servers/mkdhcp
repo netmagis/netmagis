@@ -171,10 +171,10 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
     # XXX: range selection should depend on the view
     #
 
-    set sql "SELECT HOST(reseau.adr4) AS addr, domaine.nom AS dom, dhcprange.*
-		    FROM dns.reseau, dns.dhcprange, dns.domaine
+    set sql "SELECT HOST(reseau.adr4) AS addr, domain.name AS dom, dhcprange.*
+		    FROM dns.reseau, dns.dhcprange, dns.domain
 		    WHERE reseau.dhcp > 0
-			    AND domaine.iddom = dhcprange.iddom
+			    AND domain.iddom = dhcprange.iddom
 			    AND dhcprange.min <<= reseau.adr4
 			    AND dhcprange.max <<= reseau.adr4
 		    "
@@ -292,13 +292,13 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 	#
 
 	array unset groups
-	set sql2 "SELECT rr.nom || '.' || domaine.nom AS host,
+	set sql2 "SELECT rr.nom || '.' || domain.name AS host,
 			    rr.mac,
 			    rr_ip.adr,
 			    rr.iddhcpprofil
-			FROM dns.rr, dns.domaine, dns.rr_ip, dns.reseau
+			FROM dns.rr, dns.domain, dns.rr_ip, dns.reseau
 			WHERE ($idview = -1 OR idview = $idview)
-			    AND rr.iddom = domaine.iddom
+			    AND rr.iddom = domain.iddom
 			    AND rr.idrr = rr_ip.idrr
 			    AND rr_ip.adr <<= '$network/$masklen'
 			    AND reseau.adr4 = '$network/$masklen'

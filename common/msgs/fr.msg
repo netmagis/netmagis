@@ -471,20 +471,20 @@
  {Responsible (mail)}	{Responsable (mél)}
  {Responsible (name)}	{Responsable (nom + prénom)}
  {Responsible}	{Responsable}
- {return to application parameter modification} {revenir à la modification des paramètres de l'application}
- {return to community modification} {revenir à la modification des communautés}
- {return to DHCP profile modification} {revenir à la modification des profils DHCP}
- {return to domain modification} {revenir à la modification des domaines}
- {return to equipment modification} {revenir à la modification des équipements}
- {return to equipment type modification} {revenir à la modification des types d'équipement}
- {Return to Graphviz nodes attributes} {revenir aux attributs des noeuds Graphviz}
- {return to host information modification} {revenir à la modification des types de machines}
- {Return to modification of configuration commands} {revenir à la modification des commandes de configuration}
- {return to network modification} {revenir à la modification des réseaux}
- {return to organization modification} {revenir à la modification des organismes}
- {return to view modification} {revenir à la modification des vues}
- {return to Vlan modification} {revenir à la modification des Vlans}
- {return to zone modification} {revenir à la modification des zones}
+ {Return to application parameter modification} {Revenir à la modification des paramètres de l'application}
+ {Return to community modification} {Revenir à la modification des communautés}
+ {Return to DHCP profile modification} {Revenir à la modification des profils DHCP}
+ {Return to domain modification} {Revenir à la modification des domaines}
+ {Return to equipment modification} {Revenir à la modification des équipements}
+ {Return to equipment type modification} {Revenir à la modification des types d'équipement}
+ {Return to Graphviz nodes attributes} {Revenir aux attributs des noeuds Graphviz}
+ {Return to host information modification} {Revenir à la modification des types de machines}
+ {Return to modification of configuration commands} {Revenir à la modification des commandes de configuration}
+ {Return to network modification} {Revenir à la modification des réseaux}
+ {Return to organization modification} {Revenir à la modification des organismes}
+ {Return to view modification} {Revenir à la modification des vues}
+ {Return to Vlan modification} {Revenir à la modification des Vlans}
+ {Return to zone modification} {Revenir à la modification des zones}
  {RR addition impossible: %s} {Création du RR impossible : %s}
  {RR count} {Nombre de RR}
  {RR deleted} {RR supprimé}

@@ -48,7 +48,7 @@ proc del-host {dbfd login idcor fqdn} {
     # Validation du nom du host
     #
 
-    set msg [check-fqdn-syntax $dbfd $fqdn nom domaine iddom]
+    set msg [check-fqdn-syntax $dbfd $fqdn nom domain iddom]
     if {! [string equal $msg ""]} then {
 	return $msg
     }
@@ -58,7 +58,7 @@ proc del-host {dbfd login idcor fqdn} {
     # Valider le nom fourni
     #
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "del-name"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domain trr "del-name"]
     if {[string length $msg] > 0} then {
 	return $msg
     }
@@ -68,7 +68,7 @@ proc del-host {dbfd login idcor fqdn} {
     #
 
     if {[string equal $trr(idrr) ""]} then {
-	return "Le nom '$nom.$domaine' n'existe pas."
+	return "Le nom '$nom.$domain' n'existe pas."
     }
 
     #
@@ -82,7 +82,7 @@ proc del-host {dbfd login idcor fqdn} {
 	# Si ce n'est pas un alias, il doit y avoir au moins une adresse IP
 	#
 	if {[string equal $trr(ip) ""]} then {
-	    return "Le nom '$nom.$domaine' n'est pas une machine."
+	    return "Le nom '$nom.$domain' n'est pas une machine."
 	}
 
 	set logevt "supprnom"
@@ -99,7 +99,7 @@ proc del-host {dbfd login idcor fqdn} {
 	    return "Erreur interne. Alias non trouvé"
 	}
 
-	set p "$trrref(nom).$trrref(domaine)"
+	set p "$trrref(nom).$trrref(domain)"
 	set logevt "suppralias"
 	set logmsg "suppression de l'alias $fqdn -> $p"
     }

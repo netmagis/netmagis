@@ -1,3 +1,11 @@
+lib/netmagis/functions.sql
+lib/netmagis/schema-mac.sql
+lib/netmagis/schema-main.sql
+lib/netmagis/sql22/functions.sql
+lib/netmagis/sql22/schema-mac.sql
+lib/netmagis/sql22/schema-main.sql
+lib/netmagis/sql22/triggers.sql
+lib/netmagis/triggers.sql
 sbin/netmagis-dbcreate
 sbin/netmagis-dbimport
 sbin/netmagis-dbmaint
@@ -25,6 +33,7 @@ sbin/netmagis-dbmaint
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/upgrade/15-20/pgauth.sed
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/upgrade/15-20/upgrade.sql
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/upgrade/20-21/upgrade.sql
+%%PORTEXAMPLES%%%%EXAMPLESDIR%%/upgrade/21-22/upgrade.sql
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/with-views/README
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/with-views/domain.txt
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/with-views/group.txt

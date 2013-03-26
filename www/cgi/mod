@@ -11,7 +11,7 @@
 #   - display host edit page
 #	- action : "edit"
 #	- nom : original name of the host
-#	- domaine : original domain of the host
+#	- domain : original domain of the host
 #	- idview : view id (or empty if no view has been selected)
 #   - modification of host informations
 #	- action : "store"
@@ -19,7 +19,7 @@
 #	- idrr : original idrr of host
 #	- idview : view id
 #	- nom : modified name of the host
-#	- domaine : modified domain of the host
+#	- domain : modified domain of the host
 #	- mac : modified mac address
 #	- iddhcpprofil : modified DHCP profile (or 0)
 #	- hinfo : host type (id)
@@ -91,7 +91,7 @@ d cgi-register {action {}} {
     # Get domains authorized for the user
     #
 
-    set domain [menu-domain $dbfd $tabuid(idcor) "domaine" "" ""]
+    set domain [menu-domain $dbfd $tabuid(idcor) "domain" "" ""]
 
     #
     # End of script: output page and close database
@@ -99,7 +99,7 @@ d cgi-register {action {}} {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-sel) [list \
-				[list %DOMAINE% $domain] \
+				[list %DOMAIN% $domain] \
 			    ]
 }
 
@@ -131,14 +131,14 @@ proc disp-edit {dbfd _chkv _tabuid} {
     #
 
     set vname $trr(nom)
-    set vdomain $trr(domaine)
+    set vdomain $trr(domain)
 
     #
     # Default values for all fields
     #
 
     set name [::webapp::form-text nom 1 20 64 $trr(nom)]
-    set domain [menu-domain $dbfd $tabuid(idcor) domaine "" $trr(domaine)]
+    set domain [menu-domain $dbfd $tabuid(idcor) domain "" $trr(domain)]
 
     set val [::webapp::html-string $trr(mac)]
     set mac [::webapp::form-text mac 1 20 17 $val]
@@ -179,10 +179,10 @@ proc disp-edit {dbfd _chkv _tabuid} {
 					[list %IDRR% $trr(idrr)] \
 					[list %IDVIEW% $idview] \
 					[list %VNOM% $vname] \
-					[list %VDOMAINE% $vdomain] \
+					[list %VDOMAIN% $vdomain] \
 					[list %VIEWNAME% $hvn] \
 					[list %NOM% $name] \
-					[list %DOMAINE% $domain] \
+					[list %DOMAIN% $domain] \
 					[list %MAC% $mac] \
 					[list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
 					[list %DHCPPROFILMENU% $dhcpprofilmenu] \
@@ -199,7 +199,7 @@ proc disp-edit {dbfd _chkv _tabuid} {
 
 d cgi-register {action edit} {
     {nom	1 1}
-    {domaine	1 1}
+    {domain	1 1}
     {idview	0 1}
 } {
     global conf
@@ -209,7 +209,7 @@ d cgi-register {action edit} {
     #
 
     set name   $nom
-    set domain $domaine
+    set domain $domain
     set fqdn "$name.$domain"
 
     set msg [check-name-syntax $name]
@@ -261,7 +261,7 @@ d cgi-register {action store} {
     {idrr	1 1}
     {idview	1 1}
     {nom	1 1}
-    {domaine	1 1}
+    {domain	1 1}
     {mac	1 1}
     {iddhcpprofil 1 1}
     {hinfo	1 1}
@@ -296,7 +296,7 @@ d cgi-register {action store} {
     # Check authorized access for host in view
     #
 
-    set fqdn "$trr(nom).$trr(domaine)"
+    set fqdn "$trr(nom).$trr(domain)"
     set msg [filter-views $dbfd tabuid "host" $fqdn [list $idview] chkv]
     if {$msg ne ""} then {
 	d error $msg
@@ -312,7 +312,7 @@ d cgi-register {action store} {
     }
     set nom [string tolower $nom]
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine [list $idview] ntrr "host"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domain [list $idview] ntrr "host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -323,7 +323,7 @@ d cgi-register {action store} {
 	#
 	set nlip [rr-ip-by-view ntrr $idview]
     	if {[llength $nlip] > 0} then {
-	    d error [mc "Host '%s' already exists" "$nom.$domaine"]
+	    d error [mc "Host '%s' already exists" "$nom.$domain"]
 	}
     }
     set iddom $ntrr(iddom)
@@ -397,7 +397,7 @@ d cgi-register {action store} {
 	# Confirmation page
 	#
 
-	set l {idrr idview nom domaine mac iddhcpprofil hinfo droitsmtp ttl
+	set l {idrr idview nom domain mac iddhcpprofil hinfo droitsmtp ttl
 			commentaire respnom respmel}
 	set hidden [::webapp::hide-parameters $l ftab]
 	d urlset "%URLFORM%" $conf(next) {}
@@ -440,7 +440,7 @@ d cgi-register {action store} {
 
 	set sql "UPDATE dns.rr SET mac = NULL WHERE idrr = $idrr"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	   d dbabort [mc "modify %s" "$nom.$domaine"] $msg
+	   d dbabort [mc "modify %s" "$nom.$domain"] $msg
 	}
 
 	set msg [add-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
@@ -505,7 +505,7 @@ d cgi-register {action store} {
 				    respmel = '$qrespmel'
 				WHERE idrr = $idrr"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	       d dbabort [mc "modify %s" "$nom.$domaine"] $msg
+	       d dbabort [mc "modify %s" "$nom.$domain"] $msg
 	    }
 	} else {
 	    #
@@ -526,7 +526,7 @@ d cgi-register {action store} {
 				WHERE idrr = $nidrr
 				"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	       d dbabort [mc "modify %s" "$nom.$domaine"] $msg
+	       d dbabort [mc "modify %s" "$nom.$domain"] $msg
 	    }
 
 	    #
@@ -565,14 +565,14 @@ d cgi-register {action store} {
 	d dbabort [mc "modify %s" [mc "RR"]] $msg
     }
 
-    d dbcommit [mc "modify %s" "$nom.$domaine"]
+    d dbcommit [mc "modify %s" "$nom.$domain"]
 
     #
     # Update log
     #
 
-    set m "modify $trr(nom).$trr(domaine):"
-    foreach c {nom domaine mac dhcpprofil hinfo droitsmtp ttl commentaire respnom respmel} {
+    set m "modify $trr(nom).$trr(domain):"
+    foreach c {nom domain mac dhcpprofil hinfo droitsmtp ttl commentaire respnom respmel} {
 	append m " $c=[set $c]"
     }
     d writelog "modrr" $m
@@ -622,7 +622,7 @@ d cgi-register {action store} {
 
     d result $conf(page-ok) [list \
 					[list %NOM% $nom] \
-					[list %DOMAINE% $domaine] \
+					[list %DOMAIN% $domain] \
 					[list %MAC% $mac] \
 					[list %DHCPPROFIL% $dhcpprofil] \
 					[list %HINFO% $hinfo] \

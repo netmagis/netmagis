@@ -29,7 +29,7 @@
 
     \titre {1} {Gestion des zones DNS}
 
-    \titre {2} {\ancre {domaine} {Domaine}}
+    \titre {2} {\ancre {name} {Nom}}
 
 	Nom de la zone. Ce nom est utilisé pour identifier une zone
 	en particulier (dans les menus de l'application par exemple)

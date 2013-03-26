@@ -67,16 +67,28 @@ shift 4
 
 files=""
 destdir=""
+nfiles=0
 while [ $# != 1 ]
 do
     files=" $files $1"
+    nfiles=`expr $nfiles + 1`
     shift
 done
 destdir="$1"
 
+#
+# Particular case : destdir is a file. In this case, there must
+# be at most one file to install.
+#
+
+dest="dir"
 if [ $createdir = true ]
 then
     mkdir -p $destdir
+else
+    if [ $nfiles = 1 -a ! -d $destdir ]
+    then dest="file"
+    fi
 fi
 
 #
@@ -86,7 +98,12 @@ fi
 for f in $files
 do
     b=`basename $f`
-    destfile="$destdir/$b"
+
+    if [ $dest = "dir" ]
+    then destfile="$destdir/$b"
+    else destfile="$destdir"
+    fi
+
     sed \
 	    -e "s|%TCLSH%|$tclsh|g" \
 	    -e "s|%LIBNETMAGIS%|$libnetmagis|g" \

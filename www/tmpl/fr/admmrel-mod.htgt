@@ -29,7 +29,7 @@
 
     \titre {1} {Modification effectuée}
 
-    Les relais de messagerie associés à \gras {%DOMAINE%} pour la vue
+    Les relais de messagerie associés à \gras {%DOMAIN%} pour la vue
     \gras {%VIEW%} ont été mis à jour~:
 
     %TABLEAU%

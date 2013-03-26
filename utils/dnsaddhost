@@ -51,7 +51,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
     # Validation du nom du host
     #
 
-    set msg [check-fqdn-syntax $dbfd $fqdn nom domaine iddom]
+    set msg [check-fqdn-syntax $dbfd $fqdn nom domain iddom]
     if {! [string equal $msg ""]} then {
 	return $msg
     }
@@ -61,7 +61,7 @@ proc add-ip {dbfd login idcor fqdn adr} {
     # Valider le nom
     #
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "host"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domain trr "host"]
     if {! [string equal $msg ""]} then {
 	return $msg
     }

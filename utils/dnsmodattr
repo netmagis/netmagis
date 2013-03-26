@@ -219,7 +219,7 @@ proc update-rr {dbfd login idcor tabrr tabattr} {
     # Écrire le log
     #
 
-    set m "modification de $trr(nom).$trr(domaine) :"
+    set m "modification de $trr(nom).$trr(domain) :"
     foreach c [array names tattr] {
 	append m " $c=$tattr($c)"
     }
@@ -266,16 +266,16 @@ proc main {argv0 argv} {
     }
 
     #
-    # Valider le domaine, le nom (qui ne doit pas être un alias, un MX, etc)
+    # Check domain and name (which must not be an alias, a MX, etc.)
     #
 
     set fqdn [string tolower [lindex $argv 0]]
-    set msg [check-fqdn-syntax $dbfd $fqdn nom domaine iddom]
+    set msg [check-fqdn-syntax $dbfd $fqdn nom domain iddom]
     if {$msg ne ""} then {
 	puts stderr $msg
 	return 1
     }
-    set msg [check-authorized-host $dbfd $tabcor(idcor) $nom $domaine trr "existing-host"]
+    set msg [check-authorized-host $dbfd $tabcor(idcor) $nom $domain trr "existing-host"]
     if {[string length $msg] > 0} then {
         puts stderr "Modification d'attribut impossible : $msg"
 	return 1

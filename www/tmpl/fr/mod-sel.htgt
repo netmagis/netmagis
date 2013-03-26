@@ -57,7 +57,7 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
-				%DOMAINE%
+				%DOMAIN%
 			    }
 			}
 			\lignetableau {

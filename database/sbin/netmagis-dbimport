@@ -549,8 +549,8 @@ proc import-network {verbose argv dbfd} {
     pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
 	set reforg($tab(nom)) $tab(idetabl)
     }
-    pg_select $dbfd "SELECT * FROM dns.domaine" tab {
-	set refdom($tab(nom)) $tab(iddom)
+    pg_select $dbfd "SELECT * FROM dns.domain" tab {
+	set refdom($tab(name)) $tab(iddom)
     }
 
     #
@@ -1110,8 +1110,8 @@ proc import-domain {verbose argv dbfd} {
     foreach d [array names tabdom] {
 	set missing($d) yes
     }
-    pg_select $dbfd "SELECT * FROM dns.domaine" tab {
-	set d $tab(nom)
+    pg_select $dbfd "SELECT * FROM dns.domain" tab {
+	set d $tab(name)
 	if {[info exists missing($d)]} then {
 	    unset missing($d)
 	}
@@ -1119,7 +1119,7 @@ proc import-domain {verbose argv dbfd} {
     set sql {}
     foreach d [array names missing] {
 	set d [::pgsql::quote $d]
-	lappend sql "INSERT INTO dns.domaine (nom) VALUES ('$d')"
+	lappend sql "INSERT INTO dns.domain (name) VALUES ('$d')"
     }
     if {[llength $sql] > 0} then {
 	set sql [join $sql ";"]
@@ -1379,8 +1379,8 @@ proc get-existing-rr {dbfd idview iddom} {
 	lappend existingrr(ip:$tab(name)) [::ip::normalize $tab(addr)]
     }
 
-    set sql "SELECT r1.nom AS name, r2.nom AS cname1, d.nom AS cname2
-			FROM dns.rr r1, dns.rr_cname c, dns.rr r2, dns.domaine d
+    set sql "SELECT r1.nom AS name, r2.nom AS cname1, d.name AS cname2
+			FROM dns.rr r1, dns.rr_cname c, dns.rr r2, dns.domain d
 			WHERE r1.idrr = c.idrr
 				AND c.cname = r2.idrr
 				AND c.idview = $idview

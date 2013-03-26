@@ -48,7 +48,7 @@
 	\item {Modifier les \lien {communautés} {%URLREFCOMMU%}}
 	\item {Modifier les \lien {types de machines} {%URLREFHINFO%}}
 	\item {Modifier les \lien {réseaux} {%URLREFRESEAU%}}
-	\item {Modifier les \lien {domaines} {%URLREFDOMAINE%}}
+	\item {Modifier les \lien {domaines} {%URLREFDOMAIN%}}
 	\item {Modifier les \lien {relais de messagerie} {%URLADMMREL%} d'un domaine}
 	\item {Modifier les \lien {vues} {%URLREFVIEW%}}
 	\item {Modifier les \lien {zones normales} {%URLREFZONE%}}

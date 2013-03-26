@@ -49,7 +49,7 @@ proc add-alias {dbfd login idcor fqdnalias fqdnref} {
     # Vérifier le FDQN de l'alias
     #
 
-    set msg [check-fqdn-syntax $dbfd $fqdnalias nom domaine iddom]
+    set msg [check-fqdn-syntax $dbfd $fqdnalias nom domain iddom]
     if {! [string equal $msg ""]} then {
 	return $msg
     }
@@ -58,7 +58,7 @@ proc add-alias {dbfd login idcor fqdnalias fqdnref} {
     # Vérifier le FQDN de la cible
     #
 
-    set msg [check-fqdn-syntax $dbfd $fqdnref nomref domaineref iddomref]
+    set msg [check-fqdn-syntax $dbfd $fqdnref nomref domainref iddomref]
     if {! [string equal $msg ""]} then {
 	return $msg
     }
@@ -67,13 +67,13 @@ proc add-alias {dbfd login idcor fqdnalias fqdnref} {
     # Valider les noms d'alias et de machine.
     #
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine trr "alias"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domain trr "alias"]
     if {! [string equal $msg ""]} then {
 	return $msg
     }
     set iddom $trr(iddom)
 
-    set msg [check-authorized-host $dbfd $idcor $nomref $domaineref trrref "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $nomref $domainref trrref "existing-host"]
     if {! [string equal $msg ""]} then {
 	return $msg
     }

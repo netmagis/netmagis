@@ -69,7 +69,7 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
-				%DOMAINE%
+				%DOMAIN%
 			    }
 			    \casetableau {} {%TTLLIBELLE%}
 			    \casetableau {} {%TTLVAL%}
@@ -212,7 +212,7 @@
 					\casetableau {} {
 					    <INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 					    .
-					    %DOMAINE%
+					    %DOMAIN%
 					}
 				    }
 				    \lignetableau {
@@ -220,7 +220,7 @@
 					\casetableau {} {
 					    <INPUT TYPE="TEXT" NAME="nomref" SIZE="30">
 					    .
-					    %DOMAINEREF%
+					    %DOMAINREF%
 					}
 				    }
 				}

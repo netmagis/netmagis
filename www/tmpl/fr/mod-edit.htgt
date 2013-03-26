@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification des informations de %VNOM%.%VDOMAINE% dans la vue %VIEWNAME%}
+    \titre {1} {Modification des informations de %VNOM%.%VDOMAIN% dans la vue %VIEWNAME%}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="store">
@@ -45,7 +45,7 @@
 	} {
 	    \lignetableau {
 		\casetableau {} {Nom}
-		\multicasetableau {3} {} {%NOM%.%DOMAINE%}
+		\multicasetableau {3} {} {%NOM%.%DOMAIN%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Adresse MAC}

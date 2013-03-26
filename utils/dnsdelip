@@ -75,8 +75,8 @@ proc del-ip {dbfd login idcor adr} {
     # Valider l'accès à ce nom
     #
     set nom     $trr(nom)
-    set domaine $trr(domaine)
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine bidon "del-name"]
+    set domain $trr(domain)
+    set msg [check-authorized-host $dbfd $idcor $nom $domain bidon "del-name"]
     if {! [string equal $msg ""]} then {
 	return $msg
     }
@@ -125,7 +125,7 @@ proc del-ip {dbfd login idcor adr} {
 	}
 
 	set logevt "suppradr"
-	set logmsg "suppression de l'adresse $adr de $nom.$domaine"
+	set logmsg "suppression de l'adresse $adr de $nom.$domain"
 
     } else {
 	#
@@ -138,7 +138,7 @@ proc del-ip {dbfd login idcor adr} {
 	}
 
 	set logevt "suppradr"
-	set logmsg "suppression de l'adresse $adr -> suppression totale de $nom.$domaine"
+	set logmsg "suppression de l'adresse $adr -> suppression totale de $nom.$domain"
     }
 
     #

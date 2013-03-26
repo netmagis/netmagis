@@ -99,7 +99,7 @@ d cgi-register {} {
 	array unset trr
 	array set trr $t
 
-	set fqdn "$trr(nom).$trr(domaine)"
+	set fqdn "$trr(nom).$trr(domain)"
 
 	if {$msg eq ""} then {
 	    set vact ""
@@ -109,7 +109,7 @@ d cgi-register {} {
 	    #
 	    d urlset "" $conf(nextdel) [list \
 						[list "name" $trr(nom)] \
-						[list "domain" $trr(domaine)] \
+						[list "domain" $trr(domain)] \
 						[list "idviews" $idv] \
 					    ]
 	    d urladdnext ""
@@ -140,7 +140,7 @@ d cgi-register {} {
 	    d urlset "" $conf(nextmod) [list \
 						[list "action" "edit"] \
 						[list "nom" $trr(nom)] \
-						[list "domaine" $trr(domaine)] \
+						[list "domain" $trr(domain)] \
 						[list "idview" $idv] \
 					    ]
 	    d urladdnext ""
@@ -200,10 +200,10 @@ d cgi-register {} {
     #
 
     d result $conf(page) [list \
-				[list %ADR%         $addr] \
-				[list %NOM%         $trr(nom)] \
-				[list %DOMAINE%     $trr(domaine)] \
-				[list %ACTIONS%     $actions] \
+				[list %ADR%     $addr] \
+				[list %NOM%     $trr(nom)] \
+				[list %DOMAIN%  $trr(domain)] \
+				[list %ACTIONS% $actions] \
 			    ]
 }
 

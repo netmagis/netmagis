@@ -13,7 +13,7 @@ eq crc-rc1:adm		router
 eq hemato-rc1:_v4	router
 eq ns1			host
 
-cloud domaine-broadcast-1 \
+cloud broadcast-domain-1 \
 	{crc-rc1 i/f vlan} 	# arg. de extractl2 pour le dom. de broadcast
 	{titre... composé de tous les num de vlan et les desc associées}
 	{cidr v4 et v6 de tous les réseaux}
@@ -21,7 +21,7 @@ cloud domaine-broadcast-1 \
 # link to a cloud
 link crc-rc1:adm ge-4/5/6.18 {172.16.201.253 2001:db8....} \
 	L103 \
-	domaine-broadcast-1
+	broadcast--domain-1
 
 # direct link between equipements
 direct crc-rc1:_v4 ge-0/0/0.7 {172.16.201.253 2001:db8....} \

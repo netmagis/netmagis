@@ -67,7 +67,7 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
-				%DOMAINE%
+				%DOMAIN%
 				<span style="display: %DISPVIEW%">
 				~ ~ ~ %MENUVIEW%
 				</span>
@@ -78,7 +78,7 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nomh" SIZE="30">
 				.
-				%DOMAINEH%
+				%DOMAINH%
 				<span style="display: %DISPVIEW%">
 				~ ~ ~ %MENUVIEWH%
 				</span>
@@ -123,7 +123,7 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
 				.
-				%DOMAINE%
+				%DOMAIN%
 			    }
 			}
 			\lignetableau {
@@ -156,7 +156,7 @@
 		    } {
 			\lignetableau {
 			    \casetableau {} {Domaine de messagerie}
-			    \casetableau {} {%DOMAINE% <span style="display: %DISPVIEW%">~ ~ ~ %MENUVIEW%</span>
+			    \casetableau {} {%DOMAIN% <span style="display: %DISPVIEW%">~ ~ ~ %MENUVIEW%</span>
 			    }
 			}
 			\lignetableau {

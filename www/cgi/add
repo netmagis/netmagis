@@ -14,7 +14,7 @@
 #	- action : "add-host"
 #	- confirm : "no" or "yes" (if confirmation)
 #	- nom : name of host to add
-#	- domaine : domain of host to add
+#	- domain: domain of host to add
 #	- adr: IP address
 #	- mac : MAC address
 #	- iddhcpprofil : DHCP profil id, or 0
@@ -34,9 +34,9 @@
 #   - add alias
 #	- action : "add-alias"
 #	- nom : name of alias to add
-#	- domaine : domain of alias to add
+#	- domain : domain of alias to add
 #	- alias : name of canonical existing host
-#	- domaine2 : domain of canonical existing host
+#	- domain2 : domain of canonical existing host
 #
 # History
 #   2002/04/11 : pda/jean : design
@@ -186,8 +186,8 @@ d cgi-register {action {}} {
     # Get authorized domains
     #
 
-    set domaine    [menu-domain $dbfd $tabuid(idcor) domaine    "" ""]
-    set domaineref [menu-domain $dbfd $tabuid(idcor) domaineref "" ""]
+    set domain    [menu-domain $dbfd $tabuid(idcor) domain    "" ""]
+    set domainref [menu-domain $dbfd $tabuid(idcor) domainref "" ""]
 
     #
     # Get DHCP profile informations
@@ -243,8 +243,8 @@ d cgi-register {action {}} {
     d result $conf(page-add) [list \
 				[list %VIEWLIBELLE% $viewlibelle] \
 				[list %VIEWVAL% $viewval] \
-				[list %DOMAINE% $domaine] \
-				[list %DOMAINEREF% $domaineref] \
+				[list %DOMAIN% $domain] \
+				[list %DOMAINREF% $domainref] \
 				[list %MENUHINFO% $menuhinfo] \
 				[list %TTLLIBELLE% $ttllibelle] \
 				[list %TTLVAL% $ttlval] \
@@ -279,7 +279,7 @@ d cgi-register {action {}} {
 d cgi-register {action add-host} {
     {confirm	1 1}
     {nom	1 1}
-    {domaine	1 1}
+    {domain	1 1}
     {idviews	0 9999}
     {adr	1 1}
     {mac	1 1}
@@ -313,7 +313,7 @@ d cgi-register {action add-host} {
     }
     set nom [string tolower $nom]
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine $idviews trr "host"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domain $idviews trr "host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -443,7 +443,7 @@ d cgi-register {action add-host} {
     # Common code for confirmation
     #
 
-    set l {nom domaine adr idviews mac iddhcpprofil droitsmtp ttl hinfo
+    set l {nom domain adr idviews mac iddhcpprofil droitsmtp ttl hinfo
 			    commentaire respnom respmel naddr}
     set hidden [::webapp::hide-parameters $l ftab]
 
@@ -478,7 +478,7 @@ d cgi-register {action add-host} {
 	d urladdnext "%URLFORM%"
 	d result $conf(page-exist) [list \
 						[list %NOM%     $nom] \
-						[list %DOMAINE% $domaine] \
+						[list %DOMAIN%  $domain] \
 						[list %ADR%     $adr] \
 						[list %HIDDEN%  $hidden] \
 						[list %MACHINE% $host] \
@@ -571,10 +571,10 @@ d cgi-register {action add-host} {
 	d dbabort [mc "modify %s" [mc "RR"]] $msg
     }
 
-    d dbcommit [mc "add %s" "$nom.$domaine"]
+    d dbcommit [mc "add %s" "$nom.$domain"]
     foreach idview $idviews {
 	set v [u viewname $idview]
-	d writelog "addhost" "add $nom.$domaine ($adr)/$v"
+	d writelog "addhost" "add $nom.$domain ($adr)/$v"
     }
 
     #
@@ -687,7 +687,7 @@ d cgi-register {action add-multi} {
     #
 
     set sql "SELECT *
-		FROM ipranges ('$cidr', $conf(maxip), $idgrp)
+		FROM dns.ipranges ('$cidr', $conf(maxip), $idgrp)
 		WHERE n >= $nbadr
 		$order"
     set lranges {}
@@ -771,9 +771,9 @@ d cgi-register {action add-multi} {
 
 d cgi-register {action add-alias} {
     {nom	1 1}
-    {domaine	1 1}
+    {domain	1 1}
     {nomref	1 1}
-    {domaineref	1 1}
+    {domainref	1 1}
     {idviews	0 9999}
 } {
     global conf
@@ -807,13 +807,13 @@ d cgi-register {action add-alias} {
     # Check alias and host permissions
     #
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domaine $idviews trr "alias"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domain $idviews trr "alias"]
     if {$msg ne ""} then {
 	d error $msg
     }
     set iddom $trr(iddom)
 
-    set msg [check-authorized-host $dbfd $idcor $nomref $domaineref $idviews trrref "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $nomref $domainref $idviews trrref "existing-host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -850,12 +850,12 @@ d cgi-register {action add-alias} {
     }
 
     
-    d dbcommit [mc "add %s" "$nom.$domaine"]
+    d dbcommit [mc "add %s" "$nom.$domain"]
     set allviews {}
     foreach idview $idviews {
 	set v [u viewname $idview]
 	lappend allviews $v
-	d writelog "addalias" "add alias $nom.$domaine/$v -> $nomref.$domaineref"
+	d writelog "addalias" "add alias $nom.$domain/$v -> $nomref.$domainref"
     }
 
     #
@@ -865,8 +865,8 @@ d cgi-register {action add-alias} {
     set v [join $allviews ", "]
 
     d result $conf(page-alias) [list \
-				    [list %FQDN%    "$nom.$domaine ($v)"] \
-				    [list %FQDNREF% "$nomref.$domaineref"] \
+				    [list %FQDN%    "$nom.$domain ($v)"] \
+				    [list %FQDNREF% "$nomref.$domainref"] \
 			    ]
     return 0
 }

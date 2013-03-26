@@ -118,7 +118,7 @@
 		\casetableau {} {To remove a domain, just delete
 		    its "sort class".
 
-		    %LISTEDOMAINES%}
+		    %LISTDOMAINS%}
 	    }
 	    \lignetableau {
 		\casetableau {

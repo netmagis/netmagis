@@ -24,7 +24,7 @@
 #	- viewnameN : valid views
 #	- viewsortN : view sort class (if empty, we have to remove the view)
 #	- viewselN : selected view (0 or 1)
-#	- domaineN : valid domains
+#	- domainN : valid domains
 #	- tridomN : domain sort class (if empty, we have to remove the domain)
 #	- rolemailN : permission to edit "mail roles" for this domain (0 or 1)
 #	- rolewebN : permission to edit "web roles" for this domain (0 or 1)
@@ -139,7 +139,7 @@ set conf(tabviews) {
     }
 }
 
-set conf(tabdomaines) {
+set conf(tabdomains) {
     global {
 	chars {12 normal}
 	botbar {no}
@@ -567,16 +567,16 @@ d cgi-register {action edit} {
 			    [mc "Mail role edition"] \
 			    [mc "Web role edition"] \
 			]
-    set ldom [::pgsql::getcols $dbfd dns.domaine "" "nom ASC" {nom nom}]
-    set sql "SELECT domaine.nom AS nom, dr_dom.tri AS tri,
+    set ldom [::pgsql::getcols $dbfd dns.domain "" "name ASC" {name name}]
+    set sql "SELECT domain.name AS name, dr_dom.tri AS tri,
 				dr_dom.rolemail, dr_dom.roleweb
-			FROM dns.domaine, dns.dr_dom
-			WHERE domaine.iddom = dr_dom.iddom
+			FROM dns.domain, dns.dr_dom
+			WHERE domain.iddom = dr_dom.iddom
 				AND dr_dom.idgrp = $idgrp
-			ORDER BY dr_dom.tri ASC, domaine.nom ASC"
+			ORDER BY dr_dom.tri ASC, domain.name ASC"
     set ndom 1
     pg_select $dbfd $sql tab {
-	set d        $tab(nom)
+	set d        $tab(name)
 	set tri      $tab(tri)
 	set rolemail $tab(rolemail)
 	set roleweb  $tab(roleweb)
@@ -586,7 +586,7 @@ d cgi-register {action edit} {
 	    d error [mc "Group has access to domain '%s' which do not exists in database" $d]
 	}
 	set htri  [::webapp::form-text tridom$ndom 1 5 5 $tri]
-	set hdom  [::webapp::form-menu domaine$ndom 1 0 $ldom [list $idx]]
+	set hdom  [::webapp::form-menu domain$ndom 1 0 $ldom [list $idx]]
 	set hmail [::webapp::form-bool rolemail$ndom $rolemail]
 	set hweb  [::webapp::form-bool roleweb$ndom  $roleweb]
 	lappend lines [list Normal $htri $hdom $hmail $hweb]
@@ -595,14 +595,14 @@ d cgi-register {action edit} {
 
     for {set i 1} {$i <= 5} {incr i} {
 	set htri  [::webapp::form-text tridom$ndom 1 5 5 ""]
-	set hdom  [::webapp::form-menu domaine$ndom 1 0 $ldom {}]
+	set hdom  [::webapp::form-menu domain$ndom 1 0 $ldom {}]
 	set hmail [::webapp::form-bool rolemail$ndom 0]
 	set hweb  [::webapp::form-bool roleweb$ndom  0]
 	lappend lines [list Normal $htri $hdom $hmail $hweb]
 	incr ndom
     }
 
-    set listedomaines [::arrgen::output "html" $conf(tabdomaines) $lines]
+    set listdomains [::arrgen::output "html" $conf(tabdomains) $lines]
 
     #
     # Extract network list and select those which are authorized for the group
@@ -699,7 +699,7 @@ d cgi-register {action edit} {
 	incr n
     }
 
-    set listedroits [::arrgen::output "html" $conf(tabdrip) $lines]
+    set listdroits [::arrgen::output "html" $conf(tabdrip) $lines]
 
     #
     # Permissions on equipments (topo)
@@ -741,7 +741,7 @@ d cgi-register {action edit} {
 	incr n
     }
 
-    set listedreq [::arrgen::output "html" $conf(tabdreq) $lines]
+    set listdreq [::arrgen::output "html" $conf(tabdreq) $lines]
 
     #
     # DHCP profiles
@@ -777,7 +777,7 @@ d cgi-register {action edit} {
 	incr nprof
     }
 
-    set listedhcpprof [::arrgen::output "html" $conf(tabdhcpprofil) $lines]
+    set listdhcpprof [::arrgen::output "html" $conf(tabdhcpprofil) $lines]
 
     #
     # End of script: output page and close database
@@ -796,11 +796,11 @@ d cgi-register {action edit} {
 				[list %MESSAGEGROUPE% $msggrp] \
 				[list %LISTECOR% $listecor] \
 				[list %LISTVIEWS% $listviews] \
-				[list %LISTEDOMAINES% $listedomaines] \
+				[list %LISTDOMAINS% $listdomains] \
 				[list %LISTERESEAUX% $listereseaux] \
-				[list %LISTEDROITS% $listedroits] \
-				[list %LISTEDREQ% $listedreq] \
-				[list %LISTEDHCPPROFILS% $listedhcpprof] \
+				[list %LISTEDROITS% $listdroits] \
+				[list %LISTEDREQ% $listdreq] \
+				[list %LISTEDHCPPROFILS% $listdhcpprof] \
 			    ]
 }
 
@@ -822,7 +822,7 @@ d cgi-register {action mod} {
     {viewsort[0-9]+	0 9999}
     {viewsel[0-9]+	0 9999}
     {tridom[0-9]+	0 9999}
-    {domaine[0-9]+	0 9999}
+    {domain[0-9]+	0 9999}
     {rolemail[0-9]+	0 9999}
     {roleweb[0-9]+	0 9999}
     {trires[0-9]+	0 9999}
@@ -1025,24 +1025,23 @@ d cgi-register {action mod} {
     # Test domain validity and build the list of domain-ids
     #
 
-    foreach ld [::pgsql::getcols $dbfd dns.domaine "" "" {iddom nom}] {
-	set iddom [lindex $ld 0]
-	set name  [lindex $ld 1]
+    foreach ld [::pgsql::getcols $dbfd dns.domain "" "" {iddom name}] {
+	lassign $ld iddom name
 	set tabdom($name) $iddom
     }
 
     set liddom {}
     set n 1
-    while {[info exists ftab(tridom$n)] && [info exists ftab(domaine$n)]} {
+    while {[info exists ftab(tridom$n)] && [info exists ftab(domain$n)]} {
 	set tri [string trim [lindex $ftab(tridom$n) 0]]
 	if {[string length $tri] > 0} then {
 	    if {! [regexp -- {^[0-9]+$} $tri]} then {
 		d error [mc "Invalid domain sort class '%s'" $tri]
 	    }
 
-	    set domaine [string trim [lindex $ftab(domaine$n) 0]]
-	    if {! [info exists tabdom($domaine)]} then {
-		d error [mc "Invalid domain '%s'" $domaine]
+	    set domain [string trim [lindex $ftab(domain$n) 0]]
+	    if {! [info exists tabdom($domain)]} then {
+		d error [mc "Invalid domain '%s'" $domain]
 	    }
 
 	    if {! [info exists ftab(rolemail$n)]} then {
@@ -1061,7 +1060,7 @@ d cgi-register {action mod} {
 		d error [mc "Invalid web role '%s'" $roleweb]
 	    }
 
-	    lappend liddom [list $tri $tabdom($domaine) $rolemail $roleweb]
+	    lappend liddom [list $tri $tabdom($domain) $rolemail $roleweb]
 	}
 
 	incr n
@@ -1500,7 +1499,7 @@ d cgi-register {action mod} {
     set h [display-group $dbfd $idgrp]
     lassign $h \
 		tabdroits tablogins tabreseaux tabcidrhorsreseau \
-		tabviews tabdomaines tabdhcpprofils tabdreq
+		tabviews tabdomains tabdhcpprofils tabdreq
 
     #
     # End of script: output page and close database
@@ -1511,7 +1510,7 @@ d cgi-register {action mod} {
 			    [list %TABLOGINS% $tablogins] \
 			    [list %TABDROITS% $tabdroits] \
 			    [list %TABVIEWS% $tabviews] \
-			    [list %TABDOMAINES% $tabdomaines] \
+			    [list %TABDOMAINS% $tabdomains] \
 			    [list %TABRESEAUX% $tabreseaux] \
 			    [list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
 			    [list %TABDHCPPROFILS% $tabdhcpprofils] \

@@ -41,7 +41,7 @@
 	    \casedefauttableau {\centragehorizontal {LEFT}}
 	} {
 	    \lignetableau {
-		\casetableau {} {%LISTEDOMAINES%}
+		\casetableau {} {%LISTDOMAINS%}
 		\casetableau {} {%VIEWLIBELLE%}
 		\casetableau {} {%VIEWVAL%}
 	    }

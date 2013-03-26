@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Édition de l'hébergeur de messagerie %NOM%.%DOMAINE%}
+    \titre {1} {Édition de l'hébergeur de messagerie %NOM%.%DOMAIN%}
 
     \tableau {
 	\bordure {0} {}
@@ -46,7 +46,7 @@
 		<FORM METHOD="POST" ACTION="mail">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="mod">
 		    <INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
-		    <INPUT TYPE="HIDDEN" NAME="domaine" VALUE="%DOMAINE%">
+		    <INPUT TYPE="HIDDEN" NAME="domain" VALUE="%DOMAIN%">
 		    <INPUT TYPE="HIDDEN" NAME="idview" VALUE="%IDVIEW%">
 		    \tableau {
 			\bordure {0} {}
@@ -58,7 +58,7 @@
 			\lignetableau {
 			    \multicasetableau {2} {} {
 				Modifiez l'adresse de l'hébergeur pour
-				les boîtes aux lettres de '%NOM%.%DOMAINE%'
+				les boîtes aux lettres de '%NOM%.%DOMAIN%'
 				(dans la vue '%VIEWNAME%'),
 				ou effacez-la pour supprimer le rôle.
 			    }
@@ -68,7 +68,7 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="nomh" SIZE="30" VALUE="%NOMH%">
 				.
-				%DOMAINEH%
+				%DOMAINH%
 				~ ~ ~
 				%VIEWLIBELLEH%
 				%VIEWVALH%

@@ -8,7 +8,7 @@
 # Parameters (form or url):
 #   - display edit page
 #	- action : (empty)
-#	- type : etabl, commu, hinfo, reseau, domaine, view, zone, zone4, zone6,
+#	- type : etabl, commu, hinfo, reseau, domain, view, zone, zone4, zone6,
 #		vlan, eq, eqtype, confcmd, dotattr
 #   - display graphviz generated image
 #	- action : "image"
@@ -131,14 +131,14 @@ set conf(reseau:proc)		admref-nop
 ##############################################################################
 # Domains
 
-set conf(domaine:ptitle) "Domain management"
-set conf(domaine:cols)		{ {100 nom {Domain} {string 30} {}} }
-set conf(domaine:sql)		"SELECT * FROM dns.domaine ORDER BY nom ASC"
-set conf(domaine:id)		iddom
-set conf(domaine:help)		help-domaine.html
-set conf(domaine:return)	"Return to domain modification"
-set conf(domaine:table)		dns.domaine
-set conf(domaine:proc)		admref-nop
+set conf(domain:ptitle) "Domain management"
+set conf(domain:cols)		{ {100 name {Domain} {string 30} {}} }
+set conf(domain:sql)		"SELECT * FROM dns.domain ORDER BY name ASC"
+set conf(domain:id)		iddom
+set conf(domain:help)		help-domain.html
+set conf(domain:return)		"Return to domain modification"
+set conf(domain:table)		dns.domain
+set conf(domain:proc)		admref-nop
 
 ##############################################################################
 # Views

@@ -81,15 +81,15 @@ source %LIBNETMAGIS%
 ##############################################################################
 
 proc get-host-name {dbfd addr} {
-    set sql "SELECT rr.nom || '.' || domaine.nom AS nom
-			FROM dns.rr, dns.rr_ip, dns.domaine
-			WHERE rr.idrr=rr_ip.idrr
-			    AND rr.iddom=domaine.iddom
-			    AND rr_ip.adr='$addr'
+    set sql "SELECT rr.nom || '.' || domain.name AS name
+			FROM dns.rr, dns.rr_ip, dns.domain
+			WHERE rr.idrr = rr_ip.idrr
+			    AND rr.iddom = domain.iddom
+			    AND rr_ip.adr = '$addr'
 			"
     set name ""
     pg_select $dbfd $sql tab {
-	set name $tab(nom)
+	set name $tab(name)
     }
     return $name
 }

@@ -791,11 +791,11 @@ proc get-eq-name {ndbfd addr} {
 	set eq $cacheeq(addr:$addr)
     } else {
 	set eq [mc "Unknown equipment (address %s)" $addr]
-	set sql "SELECT rr.nom || '.' || domaine.nom AS fqdn
-		    FROM dns.rr_ip, dns.rr, dns.domaine
-		    WHERE rr_ip.adr='$addr'
-		    	AND rr.idrr=rr_ip.idrr
-			AND rr.iddom=domaine.iddom"
+	set sql "SELECT rr.nom || '.' || domain.name AS fqdn
+		    FROM dns.rr_ip, dns.rr, dns.domain
+		    WHERE rr_ip.adr = '$addr'
+		    	AND rr.idrr = rr_ip.idrr
+			AND rr.iddom = domain.iddom"
 	pg_select $ndbfd $sql tab {
 	    set eq $tab(fqdn)
 	}
@@ -822,14 +822,14 @@ proc get-eq-addr {ndbfd eq} {
 	set shortname [lindex $l 0]
 	set domain [join [lrange $l 1 end] "."]
 	set sql "SELECT rr_ip.adr AS addr
-		    FROM dns.rr_ip, dns.rr, dns.domaine
-		    WHERE rr.idrr=rr_ip.idrr
-		    	AND rr.iddom=domaine.iddom
-		    	AND rr.nom='$shortname'
-		    	AND domaine.nom='$domain'"
+		    FROM dns.rr_ip, dns.rr, dns.domain
+		    WHERE rr.idrr = rr_ip.idrr
+		    	AND rr.iddom = domain.iddom
+		    	AND rr.nom = '$shortname'
+		    	AND domain.name = '$domain'"
 	set addr ""
 	pg_select $ndbfd $sql tab {
-		set addr $tab(addr)
+	    set addr $tab(addr)
 	}
 	set cacheeq(addr:$addr) $eq
 	set cacheeq(name:$eq) $addr
