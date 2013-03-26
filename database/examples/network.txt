@@ -40,7 +40,7 @@
 
 name=Backbone
 address=172.16.1.0/24
-address=2001:db8:1:1::/64
+address=2001:db8:1234::/64
 comment=Backbone + servers
 org=Example Corp.
 community=Computing
@@ -50,7 +50,7 @@ dhcp=
 
 name=Marketing
 address=172.16.11.0/24
-address=2001:db8:1:2::/64
+address=2001:db8:1234:4001::/64
 gateway=172.16.11.254
 community=Admin
 org=Example Corp.
