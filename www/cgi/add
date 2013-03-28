@@ -487,94 +487,14 @@ d cgi-register {action add-host} {
     }
 
     #
-    # Handle one of two cases:
-    # - object does not have an IP address, or
-    # - it have IP address(es) and user has confirmed
-    # Insert object in database : (RR + IP addr) or only (IP addr)
+    # Insert object
     #
 
-    d dblock {dns.rr dns.rr_ip}
-
-    if {! $rrexist} then {
-	#
-	# Name did not exist, thus we insert a new RR
-	#
-	set msg [add-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
-		    $droitsmtp $ttl $commentaire $respnom $respmel $idcor trr]
-	if {$msg ne ""} then {
-	    d dbabort [mc "add %s" $nom] $msg
-	}
-
-    } else {
-	#
-	# RR was existing. Host informations may have been modified.
-	# Update only if needed.
-	#
-
-	if {! $exip} then {
-	    #
-	    # Addition to an existing RR (eg: declare a host when
-	    # only mail role was existing).
-	    #
-	    if {! ($mac eq $trr(mac)
-			&& $iddhcpprofil eq $trr(iddhcpprofil)
-		    	&& $hinfo eq $trr(hinfo)
-		    	&& $droitsmtp eq $trr(droitsmtp)
-		    	&& $ttl eq $trr(ttl)
-		    	&& $commentaire eq $trr(commentaire)
-		    	&& $respnom eq $trr(respnom)
-		    	&& $respmel eq $trr(respmel))} then {
-		if {$mac eq ""} then {
-		    set qmac NULL
-		} else {
-		    set qmac "'[::pgsql::quote $mac]'"
-		}
-		set qcommentaire [::pgsql::quote $commentaire]
-		set qrespnom     [::pgsql::quote $respnom]
-		set qrespmel     [::pgsql::quote $respmel]
-		if {$iddhcpprofil == 0} then {
-		    set iddhcpprofil NULL
-		}
-		set sql "UPDATE dns.rr SET
-					mac = $qmac,
-					iddhcpprofil = $iddhcpprofil,
-					idhinfo = $idhinfo,
-					droitsmtp = $droitsmtp,
-					ttl = $ttl,
-					commentaire = '$qcommentaire',
-					respnom = '$qrespnom',
-					respmel = '$qrespmel'
-				    WHERE idrr = $trr(idrr)"
-		if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		    d dbabort [mc "modify %s" [mc "host information"]] $msg
-		}
-	    }
-	}
-    }
-
-    set sql {}
-    foreach idview $idviews {
-	lappend sql "INSERT INTO dns.rr_ip (idrr, adr, idview)
-			    VALUES ($trr(idrr), '$adr', $idview)"
-    }
-    set sql [join $sql "; "]
-    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-       d dbabort [mc "add %s" $adr] $msg
-    }
-
-    #
-    # Keep a note about user
-    #
-
-    set msg [touch-rr $dbfd $trr(idrr)]
+    set msg [add-host $dbfd trr $nom $iddom $adr $idviews \
+    			$mac $iddhcpprofil $idhinfo $droitsmtp $ttl \
+			$commentaire $respnom $respmel $idcor]
     if {$msg ne ""} then {
-	d dbabort [mc "modify %s" [mc "RR"]] $msg
-    }
-
-    d dbcommit [mc "add %s" "$nom.$domain"]
-    foreach idview $idviews {
-	set v [u viewname $idview]
-	d writelog "addhost" "add $nom.$domain ($adr)/$v"
+	d error $msg
     }
 
     #

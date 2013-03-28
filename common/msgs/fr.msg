@@ -17,6 +17,8 @@
  {'%1$s' is not a valid IPv%2$s address} {'%1$s' n'est pas une adresse IPv%2$s valide}
  {%1$s MAC-IP address associations found for %2$s:} {%1$s associations IP-MAC trouvées pour %2$s :}
  {%1$s Regular expression %2$s Phonetic} {%1$s Exp. régulière %2$s Phonétique}
+ {Access denied to view '%s'} {Accès refusé à la vue '%s'}
+ {Access denied to IP address '%s'} {Accès refusé à l'adresse IP '%s'}
  {Account has been removed from realms: %s} {Le compte a été supprimé des royaumes ci-après : %s}
  {Account is still active in authentication subsystem} {Le compte reste toutefois actif dans le sous-système d'authentification}
  {Account '%s' insertion} {d'ajout du compte '%s'}

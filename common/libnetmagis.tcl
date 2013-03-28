@@ -4163,6 +4163,134 @@ proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
 }
 
 #
+# Add host
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- _trr: trr of existing fqdn or empty trr
+#	- name : name of RR to create (syntax must be conform to RFC)
+#	- iddom : domain id
+#	- addr: (single) IP address to add
+#	- idviews: list of view ids
+#	- mac : MAC address, or empty string
+#	- iddhcpprofil : DHCP profile id, or 0
+#	- idhinfo : idhinfo or empty string
+#	- droitsmtp : 1 if ok to emit with non auth SMTP
+#	- ttl : TTL value, or -1 for default value
+#	- comment : commment
+#	- respname : responsible person name
+#	- respmail : responsible person mail
+#	- idcor : user id
+# Output:
+#   - return value: empty string, or error message
+#   - parameter _trr: completed RR
+#
+# History
+#   2013/03/28 : pda/jean : shared code between www/cgi/ and utils/
+#
+
+proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droitsmtp ttl comment respname respmail idcor} {
+    upvar $_trr trr
+
+    #
+    # Handle one of two cases:
+    # - object does not have an IP address, or
+    # - it have IP address(es) and user has confirmed
+    # Insert object in database : (RR + IP addr) or only (IP addr)
+    #
+
+    d dblock {dns.rr dns.rr_ip}
+
+    if {$trr(idrr) == ""} then {
+	#
+	# Name did not exist, thus we insert a new RR
+	#
+	set msg [add-rr $dbfd $name $iddom $mac $iddhcpprofil $idhinfo \
+		    $droitsmtp $ttl $comment $respname $respmail $idcor trr]
+	if {$msg ne ""} then {
+	    return [d dbabort [mc "add %s" $name] $msg]
+	}
+
+    } else {
+	#
+	# RR was existing. Host informations may have been modified.
+	# Update only if needed.
+	#
+
+	if {$trr(ip) eq ""} then {
+	    #
+	    # Addition to an existing RR (eg: declare a host when
+	    # only mail role was existing).
+	    #
+	    if {! ($mac eq $trr(mac)
+			&& $iddhcpprofil eq $trr(iddhcpprofil)
+		    	&& $hinfo eq $trr(hinfo)
+		    	&& $droitsmtp eq $trr(droitsmtp)
+		    	&& $ttl eq $trr(ttl)
+		    	&& $comment eq $trr(commentaire)
+		    	&& $respname eq $trr(respnom)
+		    	&& $respmail eq $trr(respmel))} then {
+		if {$mac eq ""} then {
+		    set qmac NULL
+		} else {
+		    set qmac "'[::pgsql::quote $mac]'"
+		}
+		set qcomment  [::pgsql::quote $comment]
+		set qrespname [::pgsql::quote $respname]
+		set qrespmail [::pgsql::quote $respmail]
+		if {$iddhcpprofil == 0} then {
+		    set iddhcpprofil NULL
+		}
+		set sql "UPDATE dns.rr SET
+					mac = $qmac,
+					iddhcpprofil = $iddhcpprofil,
+					idhinfo = $idhinfo,
+					droitsmtp = $droitsmtp,
+					ttl = $ttl,
+					commentaire = '$qcomment',
+					respnom = '$qrespname',
+					respmel = '$qrespmail'
+				    WHERE idrr = $trr(idrr)"
+		if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		    return [d dbabort [mc "modify %s" [mc "host information"]] $msg]
+		}
+	    }
+	}
+    }
+
+    set sql {}
+    foreach idview $idviews {
+	lappend sql "INSERT INTO dns.rr_ip (idrr, adr, idview)
+			    VALUES ($trr(idrr), '$addr', $idview)"
+    }
+    set sql [join $sql "; "]
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+       return [d dbabort [mc "add %s" $addr] $msg]
+    }
+
+    #
+    # Keep a note about user
+    #
+
+    set msg [touch-rr $dbfd $trr(idrr)]
+    if {$msg ne ""} then {
+	d dbabort [mc "modify %s" [mc "RR"]] $msg
+    }
+
+    set domain [u domainname $iddom]
+
+    d dbcommit [mc "add %s" "$name.$domain"]
+    foreach idview $idviews {
+	set v [u viewname $idview]
+	d writelog "addhost" "add $name.$domain ($addr)/$v"
+    }
+
+    return ""
+}
+
+
+#
 # Update references to a RR when a new RR is created after a host renaming
 #
 # Input:
