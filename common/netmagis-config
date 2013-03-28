@@ -17,8 +17,9 @@ proc get-conf-list {check arg} {
 	    puts stderr "Netmagis configuration parameter '$a' is not iniialized"
 	    set failed 1
 	}
-	regsub -all {["\\$*?\[\]`]} $v {\\&} v
-	lappend l "$a=\"$v\""
+	regsub -all {\\} $v {&&} v
+	regsub -all {'} $v {'\\''} v
+	lappend l "$a='$v'"
     }
     if {! $failed} then {
 	puts stdout [join $l " "]
