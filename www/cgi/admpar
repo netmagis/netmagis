@@ -258,7 +258,7 @@ d cgi-register {action mod} {
 	if {$msg eq ""} then {
 	    lappend lm "$key ($val)"
 	} else {
-	    dbabort [mc "modify %s" $key] $msg
+	    d dbabort [mc "modify %s" $key] $msg
 	}
     }
 

@@ -1,167 +1,96 @@
 #!%TCLSH%
 
 #
-# Script pour ajouter un alias dans la base
+# Add an alias in Netmagis database
 #
-# Syntaxe :
-#   dnsaddalias <fqdn-alias> <fqdn-machine>
+# Syntax :
+#   dnsaddalias <fqdn-alias> <fqdn-host>
 #
-# Historique
-#   2004/09/24 : pda/jean : création à partir du script cgi
+# History
+#   2004/09/24 : pda/jean : design from cgi script
 #   2005/04/11 : pda/jean : adaptation
-#   2007/10/25 : jean     : log des actions de modification
+#   2007/10/25 : jean     : log modify actions
 #   2010/12/18 : pda      : use new install system
+#   2013/03/28 : pda/jean : add views
 #
 
 source %LIBNETMAGIS%
 
 ##############################################################################
-# Petites fonctions utilitaires
+# Small utility functions
 ##############################################################################
 
 proc syntax-error {argv0} {
     regsub {.*/} $argv0 {} argv0
-    puts stderr "usage: $argv0 fqdn-alias fqdn-machine"
-    exit 1
+    return "usage: $argv0 fqdn-alias fqdn-host view"
 }
 
 ##############################################################################
-# Ajout d'un alias
-##############################################################################
-
-#
-# Ajout d'un alias dans la base
-#
-# Entrée :
-#   - dbfd : accès à la base
-#   - idcor : id du correspondant faisant l'ajout
-#   - fqdnalias : nom complet de l'alias
-#   - fqdnref : nom complet de la cible de l'alias
-# Sortie :
-#   - valeur de retour : message d'erreur, ou chaîne vide si ok.
-#
-# Historique
-#   2004/09/29 : pda/jean : conception à partir du script CGI
-#
-
-proc add-alias {dbfd login idcor fqdnalias fqdnref} {
-    #
-    # Vérifier le FDQN de l'alias
-    #
-
-    set msg [check-fqdn-syntax $dbfd $fqdnalias nom domain iddom]
-    if {! [string equal $msg ""]} then {
-	return $msg
-    }
-
-    #
-    # Vérifier le FQDN de la cible
-    #
-
-    set msg [check-fqdn-syntax $dbfd $fqdnref nomref domainref iddomref]
-    if {! [string equal $msg ""]} then {
-	return $msg
-    }
-
-    #
-    # Valider les noms d'alias et de machine.
-    #
-
-    set msg [check-authorized-host $dbfd $idcor $nom $domain trr "alias"]
-    if {! [string equal $msg ""]} then {
-	return $msg
-    }
-    set iddom $trr(iddom)
-
-    set msg [check-authorized-host $dbfd $idcor $nomref $domainref trrref "existing-host"]
-    if {! [string equal $msg ""]} then {
-	return $msg
-    }
-
-    #
-    # Tous les tests sont ok, il faut insérer l'alias
-    #
-
-    if {! [::pgsql::lock $dbfd {dns.rr dns.rr_cname} msg]} then {
-	return "Transaction impossible : $msg"
-    }
-
-    #
-    # Rien n'existait pour ce nom, donc on insère un nouveau
-    # RR.
-    #
-
-    set msg [add-rr $dbfd $nom $iddom "" 0 "" 0 -1 "" "" "" $idcor newrr]
-    if {! [string equal $msg ""]} then {
-	return "Impossible d'insérer : $msg"
-    }
-
-    #
-    # Ajouter l'alias proprement dit
-    #
-
-    set sql "INSERT INTO dns.rr_cname VALUES ($newrr(idrr), $trrref(idrr))"
-    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	return "Impossible d'insérer l'alias : $msg"
-    }
-
-    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-       ::pgsql::unlock $dbfd "abort" m
-       return "L'insertion a échoué : $msg"
-    }
-
-    #
-    # Écrire le log
-    #
-
-    d writelog "ajoutalias" "ajout de l'alias $fqdnalias -> $fqdnref (ligne de commande)"
-
-    #
-    # Sortie du résultat
-    #
-
-    return ""
-}
-
-##############################################################################
-# Programme principal
+# Main program
 ##############################################################################
 
 proc main {argv0 argv} {
     global conf
 
     #
-    # Initialisation des accès
+    # Initialization
     #
 
     set msg [d init-script dbfd $argv0 false tabcor]
     if {$msg ne ""} then {
-	puts stderr "$msg"
-	puts stderr "Aborted."
-	return 1
+	d error $msg
     }
 
     #
-    # Validation des arguments
+    # Argument checking
     #
 
-    if {[llength $argv] != 2} then {
-	syntax-error $argv0
-	return 1
+    if {[llength $argv] != 3} then {
+	d error [syntax-error $argv0]
     }
+    lassign $argv fqdnalias fqdnref view
 
-    set fqdnalias [lindex $argv 0]
-    set fqdnref   [lindex $argv 1]
+    #
+    # Check access to view
+    #
 
-    set msg [add-alias $dbfd $tabcor(login) $tabcor(idcor) $fqdnalias $fqdnref]
-    if {! [string equal $msg ""]} then {
-	puts stderr $msg
-	puts stderr "Aborted."
-	return 1
+    set idview [u viewid $view]
+    if {$idview == -1} then {
+	d error [mc "Invalid view '%s'" $view]
+    }
+    if {! [u isallowedview $idview]} then {
+	d error [mc "Access denied to view '%s'" $view]
+    }
+    set idviews [list $idview]
+
+    #
+    # Check alias FDQN
+    #
+
+    set msg [check-fqdn-syntax $dbfd $fqdnalias name domain iddom]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+    set name [string tolower $name]
+
+    #
+    # Check host FQDN
+    #
+
+    set msg [check-fqdn-syntax $dbfd $fqdnref nameref domainref iddomref]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+    set nameref [string tolower $nameref]
+
+    set msg [add-alias $dbfd $idviews $name $domain \
+    				$nameref $domainref $tabcor(idcor)]
+    if {$msg ne ""} then {
+	d error $msg
     }
 
     #
-    # Déconnexion de la base
+    # End
     #
 
     d end

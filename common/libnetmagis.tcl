@@ -4209,7 +4209,7 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 	set msg [add-rr $dbfd $name $iddom $mac $iddhcpprofil $idhinfo \
 		    $droitsmtp $ttl $comment $respname $respmail $idcor trr]
 	if {$msg ne ""} then {
-	    return [d dbabort [mc "add %s" $name] $msg]
+	    d dbabort [mc "add %s" $name] $msg
 	}
 
     } else {
@@ -4253,7 +4253,7 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 					respmel = '$qrespmail'
 				    WHERE idrr = $trr(idrr)"
 		if {! [::pgsql::execsql $dbfd $sql msg]} then {
-		    return [d dbabort [mc "modify %s" [mc "host information"]] $msg]
+		    d dbabort [mc "modify %s" [mc "host information"]] $msg
 		}
 	    }
 	}
@@ -4266,7 +4266,7 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
     }
     set sql [join $sql "; "]
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-       return [d dbabort [mc "add %s" $addr] $msg]
+       d dbabort [mc "add %s" $addr] $msg
     }
 
     #
@@ -4284,6 +4284,90 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
     foreach idview $idviews {
 	set v [u viewname $idview]
 	d writelog "addhost" "add $name.$domain ($addr)/$v"
+    }
+
+    return ""
+}
+
+#
+# Add alias
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- _trr: trr of existing fqdn or empty trr
+#	- name : name of RR to create (syntax must be conform to RFC)
+#	- iddom : domain id
+#	- addr: (single) IP address to add
+#	- idviews: list of view ids
+#	- mac : MAC address, or empty string
+#	- iddhcpprofil : DHCP profile id, or 0
+#	- idhinfo : idhinfo or empty string
+#	- droitsmtp : 1 if ok to emit with non auth SMTP
+#	- ttl : TTL value, or -1 for default value
+#	- comment : commment
+#	- respname : responsible person name
+#	- respmail : responsible person mail
+#	- idcor : user id
+# Output:
+#   - return value: empty string, or error message
+#   - parameter _trr: completed RR
+#
+# History
+#   2013/03/28 : pda/jean : shared code between www/cgi/ and utils/
+#
+
+proc add-alias {dbfd idviews name domain nameref domainref idcor} {
+    #
+    # Check alias and host permissions
+    #
+
+    set msg [check-authorized-host $dbfd $idcor $name $domain $idviews trr "alias"]
+    if {$msg ne ""} then {
+	return $msg
+    }
+    set iddom $trr(iddom)
+
+    set msg [check-authorized-host $dbfd $idcor $nameref $domainref $idviews trrref "existing-host"]
+    if {$msg ne ""} then {
+	return $msg
+    }
+
+    #
+    # All test are ok, we just have to insert new alias
+    #
+
+    d dblock {dns.rr dns.rr_cname}
+
+    #
+    # This name was unknown, insert a new RR for new alias name
+    #
+
+    if {$trr(idrr) eq ""} then {
+	set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
+	if {$msg ne ""} then {
+	    d dbabort [mc "add %s" $name] $msg
+	}
+    }
+
+    #
+    # Add alias link between alias and host
+    #
+
+    set sql {}
+    foreach idview $idviews {
+	lappend sql "INSERT INTO dns.rr_cname (idrr, cname, idview)
+    				VALUES ($trr(idrr), $trrref(idrr), $idview)"
+    }
+    set sql [join $sql "; "]
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	d dbabort [mc "add %s" [mc "alias"]] $msg
+    }
+
+    d dbcommit [mc "add %s" "$name.$domain"]
+    foreach idview $idviews {
+	set v [u viewname $idview]
+	d writelog "addalias" "add alias $name.$domain/$v -> $nameref.$domainref"
     }
 
     return ""
