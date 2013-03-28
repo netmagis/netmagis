@@ -223,82 +223,29 @@ proc remove {dbfd mode object _chkv} {
 
     d dblock {}
 
-    set log {}
     set result {}
-
     foreach idview $idviews {
 	lassign $chkv($idview) vn msg t
 
 	array unset trr
 	array set trr $t
 
-	set o $object
-
 	if {$mode eq "host-or-alias"} then {
-	    set cname [rr-cname-by-view trr $idview]
-	    if {$cname ne ""} then {
-		if {! [del-alias-by-id $dbfd $trr(idrr) $idview msg]} then {
-		    d dbabort [mc "delete %s" $object/$vn] $msg
-		}
-
-		set p "?"
-		if {[read-rr-by-id $dbfd $cname tc]} then {
-		    set p "$tc(nom).$tc(domain)"
-		}
-		lappend log [list "delalias" "delete alias $object/$vn -> $p"]
-	    } else {
-		#
-		# This is not an alias: delete all RR dependancies:
-		# - aliases pointing this object
-		# - MX
-		# - IP addresses
-		#
-		if {! [del-rr-and-dependancies $dbfd trr $idview msg]} then {
-		    d dbabort [mc "delete %s" $object/$vn] $msg
-		}
-		lappend log [list "delname" "delete all of $object/$vn"]
+	    set delobj $object
+	    set msg [del-host $dbfd trr $idview]
+	    if {$msg ne ""} then {
+		d dbabort [mc "delete %s" $object/$vn] $msg
 	    }
 	} else {
-	    set fqdn "$trr(nom).$trr(domain)"
-	    set lip [rr-ip-by-view trr $idview]
-	    if {[llength $lip] > 1} then {
-		#
-		# Only delete one of these addresses
-		#
-
-		if {! [del-one-ip-address $dbfd $object $idview msg]} then {
-		    d dbabort [mc "delete %s" $object/$vn] $msg
-		}
-		set msg [touch-rr $dbfd $trr(idrr)]
-		if {$msg ne ""} then {
-		    d dbabort [mc "modify %s" [mc "RR"]/$vn] $msg
-		}
-		lappend log [list "deladdr" "delete address $object from $fqdn/$vn"]
-	    } else {
-		#
-		# Delete the whole object
-		#
-
-		if {! [del-rr-and-dependancies $dbfd trr $idview msg]} then {
-		    d dbabort [mc "delete %s" $object/$vn] $msg
-		}
-		lappend log [list "deladdr" "delete address $object -> delete all $fqdn/$vn"]
-		set o $fqdn
+	    set msg [del-ip $dbfd $object trr $idview delobj]
+	    if {$msg ne ""} then {
+		d dbabort [mc "delete %s" $object/$vn] $msg
 	    }
 	}
-	lappend result [mc {'%1$s' has been removed from view '%2$s'} $o $vn]
+	lappend result [mc {'%1$s' has been removed from view '%2$s'} $delobj $vn]
     }
 
     d dbcommit [mc "delete %s" $object]
-
-    #
-    # Leave a trace
-    #
-
-    foreach l $log {
-	lassign $l logevt logmsg
-	d writelog $logevt $logmsg
-    }
 
     #
     # Prepare next step in journey

@@ -99,7 +99,7 @@ proc main {argv0 argv} {
     set respmail ""
 
     set rrexists 0
-    if {$trr(idrr) != ""} then {
+    if {$trr(idrr) ne ""} then {
 	set rrexists 1
 
 	set mac		$trr(mac)

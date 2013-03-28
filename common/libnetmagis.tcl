@@ -3775,60 +3775,22 @@ proc rr-adrmail-by-view {_trr idview} {
 #	- idview : view id
 #	- _msg : error message in return
 # Output:
-#   - return value: 1 if ok, 0 if error
-#   - parameter _msg : error message if any
+#   - return value: error message or empty string
 #
 # History
 #   2002/04/19 : pda/jean : design
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
+#   2013/03/28 : pda/jean : interface simplification
 #
 
-proc del-alias-by-id {dbfd idrr idview _msg} {
-    upvar $_msg msg
-
-    set ok 0
+proc del-alias-by-id {dbfd idrr idview} {
+    set msg ""
     set sql "DELETE FROM dns.rr_cname WHERE idrr = $idrr AND idview = $idview"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg [del-orphaned-rr $dbfd $idrr]
-	if {$msg eq ""} then {
-	    set ok 1
-	}
     }
-    return $ok
-}
-
-#
-# Delete an IP address
-#
-# Input:
-#   - parameters:
-#	- dbfd : database handle
-#	- addr : address to delete
-#	- idview : view id
-#	- _msg : error message in return
-# Output:
-#   - return value: 1 if ok, 0 if error
-#   - parameter _msg : error message if any
-#
-# History
-#   2002/04/19 : pda/jean : design
-#   2010/11/29 : pda      : i18n
-#   2012/11/13 : pda/jean : add views
-#   2012/11/14 : pda/jean : delete idrr parameter
-#
-#
-
-proc del-one-ip-address {dbfd addr idview _msg} {
-    upvar $_msg msg
-
-    set ok 0
-    set sql "DELETE FROM dns.rr_ip WHERE adr = '$addr'
-				    AND idview = $idview"
-    if {[::pgsql::execsql $dbfd $sql msg]} then {
-	set ok 1
-    }
-    return $ok
+    return $msg
 }
 
 #
@@ -3839,28 +3801,25 @@ proc del-one-ip-address {dbfd addr idview _msg} {
 #	- dbfd : database handle
 #	- idrr : RR id
 #	- idview : view id
-#	- _msg : error message in return
 # Output:
-#   - return value: 1 if ok, 0 if error
-#   - parameter _msg : error message if any
+#   - return value: error message or empty string
 #
 # History
 #   2002/04/19 : pda/jean : design
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
 #   2012/11/14 : pda/jean : delete addr parameter
+#   2013/03/28 : pda/jean : interface simplification
 #
 
-proc del-all-ip-addresses {dbfd idrr idview _msg} {
-    upvar $_msg msg
-
-    set ok 0
+proc del-all-ip-addresses {dbfd idrr idview} {
+    set msg ""
     set sql "DELETE FROM dns.rr_ip WHERE idrr = $idrr
 				    AND idview = $idview"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
-	set ok 1
+	set msg ""
     }
-    return $ok
+    return $msg
 }
 
 #
@@ -3871,26 +3830,23 @@ proc del-all-ip-addresses {dbfd idrr idview _msg} {
 #	- dbfd : database handle
 #	- idrr : RR id of MX
 #	- idview : view id
-#	- _msg : error message in return
 # Output:
-#   - return value: 1 if ok, 0 if error
-#   - parameter _msg : error message if any
+#   - return value: error message or empty string
 #
 # History
 #   2002/04/19 : pda/jean : design
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
+#   2013/03/28 : pda/jean : interface simplification
 #
 
-proc del-mx-by-id {dbfd idrr idview _msg} {
-    upvar $_msg msg
-
-    set ok 0
+proc del-mx-by-id {dbfd idrr idview} {
+    set msg ""
     set sql "DELETE FROM dns.rr_mx WHERE idrr = $idrr AND idview = $idview"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
-	set ok 1
+	set msg ""
     }
-    return $ok
+    return $msg
 }
 
 #
@@ -3901,26 +3857,23 @@ proc del-mx-by-id {dbfd idrr idview _msg} {
 #	- dbfd : database handle
 #	- idrr : RR id
 #	- idview : view id
-#	- _msg : error message in return
 # Output:
-#   - return value: 1 if ok, 0 if error
-#   - parameter _msg : error message if any
+#   - return value: error message or empty string
 #
 # History
 #   2004/02/06 : pda/jean : design
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
+#   2013/03/28 : pda/jean : interface simplification
 #
 
-proc del-rolemail-by-id {dbfd idrr idview _msg} {
-    upvar $_msg msg
-
-    set ok 0
+proc del-rolemail-by-id {dbfd idrr idview} {
+    set msg ""
     set sql "DELETE FROM dns.role_mail WHERE idrr = $idrr AND idview = $idview"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
-	set ok 1
+	set msg ""
     }
-    return $ok
+    return $msg
 }
 
 #
@@ -3933,26 +3886,23 @@ proc del-rolemail-by-id {dbfd idrr idview _msg} {
 #	- dbfd : database handle
 #	- idrr : RR id
 #	- idview : view id
-#	- _msg : error message in return
 # Output:
-#   - return value: 1 if ok, 0 if error
-#   - parameter _msg : error message if any
+#   - return value: error message or empty string
 #
 # History
 #   2004/02/06 : pda/jean : design
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
+#   2013/03/28 : pda/jean : interface simplification
 #
 
-proc del-roleweb-by-id {dbfd idrr idview _msg} {
-    upvar $_msg msg
-
-    set ok 0
+proc del-roleweb-by-id {dbfd idrr idview} {
+    set msg ""
     set sql "DELETE FROM dns.role_web WHERE idrr = $idrr AND idview = $idview"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
-	set ok 1
+	set msg ""
     }
-    return $ok
+    return $msg
 }
 
 #
@@ -3963,21 +3913,19 @@ proc del-roleweb-by-id {dbfd idrr idview _msg} {
 #	- dbfd : database handle
 #	- _trr : RR informations (see read-rr-by-id)
 #	- idview : view id
-#	- _msg : error message in return
 # Output:
-#   - return value: 1 if ok, 0 if error
-#   - parameter _msg : error message if any
+#   - return value: error message or empty string
 #
 # History
 #   2002/04/19 : pda/jean : design
 #   2004/02/06 : pda/jean : add rolemail and roleweb
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
+#   2013/03/28 : pda/jean : interface simplification
 #
 
-proc del-rr-and-dependancies {dbfd _trr idview _msg} {
+proc del-rr-and-dependancies {dbfd _trr idview} {
     upvar $_trr trr
-    upvar $_msg msg
 
     set idrr $trr(idrr)
 
@@ -3987,8 +3935,7 @@ proc del-rr-and-dependancies {dbfd _trr idview _msg} {
 
     set addrmail [rr-adrmail-by-view trr $idview]
     if {[llength $addrmail] > 0} then {
-	set msg "This host holds mail addresses"
-	return 0
+	return [mc "This host holds mail addresses"]
     }
 
     #
@@ -3996,8 +3943,9 @@ proc del-rr-and-dependancies {dbfd _trr idview _msg} {
     # are other things such as mail domains)
     #
 
-    if {! [del-roleweb-by-id $dbfd $idrr $idview msg]} then {
-	return 0
+    set msg [del-roleweb-by-id $dbfd $idrr $idview]
+    if {$msg ne ""} then {
+	return $msg
     }
 
     #
@@ -4005,8 +3953,9 @@ proc del-rr-and-dependancies {dbfd _trr idview _msg} {
     #
 
     foreach a [rr-aliases-by-view trr $idview] {
-	if {! [del-alias-by-id $dbfd $a $idview msg]} then {
-	    return 0
+	set msg [del-alias-by-id $dbfd $a $idview]
+	if {$msg ne ""} then {
+	    return $msg
 	}
     }
 
@@ -4014,16 +3963,18 @@ proc del-rr-and-dependancies {dbfd _trr idview _msg} {
     # Delete all IP addresses
     #
 
-    if {! [del-all-ip-addresses $dbfd $idrr $idview msg]} then {
-	return 0
+    set msg [del-all-ip-addresses $dbfd $idrr $idview]
+    if {$msg ne ""} then {
+	return $msg
     }
 
     #
     # Delete all MX
     #
 
-    if {! [del-mx-by-id $dbfd $idrr $idview msg]} then {
-	return 0
+    set msg [del-mx-by-id $dbfd $idrr $idview]
+    if {$msg ne ""} then {
+	return $msg
     }
 
     #
@@ -4032,14 +3983,14 @@ proc del-rr-and-dependancies {dbfd _trr idview _msg} {
 
     set msg [del-orphaned-rr $dbfd $idrr]
     if {$msg ne ""} then {
-	return 0
+	return $msg
     }
 
     #
     # Finished !
     #
 
-    return 1
+    return ""
 }
 
 #
@@ -4373,6 +4324,121 @@ proc add-alias {dbfd idviews name domain nameref domainref idcor} {
     return ""
 }
 
+#
+# Delete a host or an alias
+#
+# Input:
+#   - parameters:
+#	- dbfd: database handle
+#	- trr: RR of name to remove
+#	- idview: view id
+# Output:
+#   - return value: empty string, or error message
+#
+# Note: we assume that an SQL transaction is already started
+#    by the calling procedure. No abort is done in this procedure.
+#
+# History
+#   2013/03/28 : pda/jean : shared code between www/cgi/ and utils/
+#
+
+proc del-host {dbfd _trr idview} {
+    upvar $_trr trr
+
+    set fqdn "$trr(nom).$trr(domain)"
+    set vn [u viewname $idview]
+
+    set cname [rr-cname-by-view trr $idview]
+    if {$cname ne ""} then {
+	set msg [del-alias-by-id $dbfd $trr(idrr) $idview]
+	if {$msg ne ""} then {
+	    return $msg
+	}
+
+	set p "?"
+	if {[read-rr-by-id $dbfd $cname tc]} then {
+	    set p "$tc(nom).$tc(domain)"
+	}
+	d writelog "delalias" "delete alias $fqdn/$vn -> $p"
+    } else {
+	#
+	# This is not an alias: delete all RR dependancies:
+	# - aliases pointing this object
+	# - MX
+	# - IP addresses
+	#
+	set msg [del-rr-and-dependancies $dbfd trr $idview]
+	if {$msg ne ""} then {
+	    return $msg
+	}
+	d writelog "delname" "delete all of $fqdn/$vn"
+    }
+
+    return ""
+}
+
+#
+# Delete one IP address 
+#
+# Input:
+#   - parameters:
+#	- dbfd: database handle
+#	- addr: IP address to remove
+#	- trr: RR in which this address is located
+#	- idview: view id
+#	- _delobj: will contain in return the deleted object
+# Output:
+#   - return value: empty string, or error message
+#   - parameter delobj: an IP address or a name if the whole object has
+#	been removed
+#
+# Note: we assume that an SQL transaction is already started
+#    by the calling procedure. No abort is done in this procedure.
+#
+# History
+#   2013/03/28 : pda/jean : shared code between www/cgi/ and utils/
+#
+
+proc del-ip {dbfd addr _trr idview _delobj} {
+    upvar $_trr trr
+
+    set fqdn "$trr(nom).$trr(domain)"
+    set vn [u viewname $idview]
+
+    set lip [rr-ip-by-view trr $idview]
+    if {[llength $lip] > 1} then {
+	#
+	# Only delete one of these addresses
+	#
+
+	set sql "DELETE FROM dns.rr_ip WHERE adr = '$addr'
+					AND idview = $idview"
+	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    return $msg
+	}
+
+	set msg [touch-rr $dbfd $trr(idrr)]
+	if {$msg ne ""} then {
+	    return $msg
+	}
+
+	d writelog [list "deladdr" "delete address $addr from $fqdn/$vn"]
+	set delobj $addr
+    } else {
+	#
+	# Delete the whole object
+	#
+
+	set msg [del-rr-and-dependancies $dbfd trr $idview]
+	if {$msg ne ""} then {
+	    return $msg
+	}
+	d writelog [list "deladdr" "delete address $object -> delete all $fqdn/$vn"]
+	set delobj $fqdn
+    }
+
+    return ""
+}
 
 #
 # Update references to a RR when a new RR is created after a host renaming
