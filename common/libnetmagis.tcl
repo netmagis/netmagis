@@ -4422,7 +4422,7 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 	    return $msg
 	}
 
-	d writelog [list "deladdr" "delete address $addr from $fqdn/$vn"]
+	d writelog "deladdr" "delete address $addr from $fqdn/$vn"
 	set delobj $addr
     } else {
 	#
@@ -4433,7 +4433,7 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 	if {$msg ne ""} then {
 	    return $msg
 	}
-	d writelog [list "deladdr" "delete address $object -> delete all $fqdn/$vn"]
+	d writelog "deladdr" "delete address $object -> delete all $fqdn/$vn"
 	set delobj $fqdn
     }
 

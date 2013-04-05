@@ -1,202 +1,118 @@
 #!%TCLSH%
 
-
 #
-# Script pour supprimer une adresse IP (voire une machine) dans la base
+# Remove an IP address (or a complete host) from the Netmagis database
 #
-# Syntaxe :
-#   dnsdelip <ip>
+# Syntax:
+#   dnsdelip <ip> <view>
 #
-# Historique
-#   2004/10/01 : pda/jean : conception
-#   2007/10/25 : jean     : log des actions de modification
+# History
+#   2004/10/01 : pda/jean : design
+#   2007/10/25 : jean     : log modify actions
 #   2010/12/18 : pda      : use new install system
+#   2013/04/05 : pda/jean : add views
 #
 
 source %LIBNETMAGIS%
 
 ##############################################################################
-# Petites fonctions utilitaires
+# Small utility functions
 ##############################################################################
 
 proc syntax-error {argv0} {
     regsub {.*/} $argv0 {} argv0
-    puts stderr "usage: $argv0 ip"
-    exit 1
+    return "usage: $argv0 ip view"
 }
 
 ##############################################################################
-# Suppression d'une adresse
-##############################################################################
-
-#
-# Suppression d'une adresse dans la base
-#
-# Entrée :
-#   - dbfd : accès à la base
-#   - idcor : id du correspondant faisant la suppression
-#   - adr : adresse IP à supprimer
-# Sortie :
-#   - valeur de retour : message d'erreur, ou chaîne vide si ok.
-#
-# Historique
-#   2004/10/01 : pda/jean : conception
-#
-
-proc del-ip {dbfd login idcor adr} {
-    #
-    # Vérifier la syntaxe de l'adresse IP
-    #
-
-    set m [check-ip-syntax $dbfd $adr "inet"]
-    if {[string length $m] > 0} then {
-	return "Erreur sur l'adresse '$adr': $m"
-    }
-
-    #
-    # Vérifier que l'adresse IP appartient bien à une des plages
-    # autorisées pour le correspondant
-    #
-
-    if {! [check-authorized-ip $dbfd $idcor $adr]} then {
-	return "Vous n'avez pas accès à l'adresse '$adr'"
-    }
-
-    #
-    # Vérifier que l'adresse existe, en récupérant toutes les
-    # informations de l'objet.
-    #
-
-    if {! [read-rr-by-ip $dbfd $adr trr]} then {
-	return "L'adresse '$adr' n'existe pas dans la base."
-    }
-
-    #
-    # Valider l'accès à ce nom
-    #
-    set nom     $trr(nom)
-    set domain $trr(domain)
-    set msg [check-authorized-host $dbfd $idcor $nom $domain bidon "del-name"]
-    if {! [string equal $msg ""]} then {
-	return $msg
-    }
-
-    #
-    # Est-ce la dernière adresse IP ou non ?
-    #
-
-    if {[llength $trr(ip)] == 1} then {
-	set lastadr "oui"
-    } else {
-	set lastadr "non"
-    }
-
-    #
-    # Verrouiller la base
-    #
-
-    if {! [::pgsql::lock $dbfd {} msg]} then {
-	return "Transaction impossible : $msg"
-    }
-
-    #
-    # Procéder à la destruction effective
-    #
-
-    if {[string equal $lastadr "non"]} then {
-	#
-	# Suppression d'une adresse seulement
-	#
-
-	set sql "DELETE FROM dns.rr_ip WHERE adr = '$adr'"
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	   ::pgsql::unkock $dbfd "abort" m
-	    return "La suppression a échoué.\n$msg"
-	}
-
-	#
-	# Se rappeler que le correspondant a fait la modification
-	#
-
-	set msg [touch-rr $dbfd $trr(idrr)]
-	if {! [string equal $msg ""]} then {
-	   ::pgsql::unkock $dbfd "abort" m
-	    return "Mise à jour impossible.\n$msg"
-	}
-
-	set logevt "suppradr"
-	set logmsg "suppression de l'adresse $adr de $nom.$domain"
-
-    } else {
-	#
-	# Suppression de l'objet entier
-	#
-
-	if {! [del-rr-and-dependancies $dbfd trr msg]} then {
-	    ::pgsql::unlock $dbfd "abort" m
-	    return "La suppression a échoué.\n$msg"
-	}
-
-	set logevt "suppradr"
-	set logmsg "suppression de l'adresse $adr -> suppression totale de $nom.$domain"
-    }
-
-    #
-    # Enregistrer les modifications dans la base et la déverrouiller.
-    #
-    if {! [::pgsql::unlock $dbfd "commit" msg]} then {
-       ::pgsql::unlock $dbfd "abort" m
-       return "La suppression a échoué. Abandon.\n$msg"
-    }
-
-    #
-    # Écrire le log
-    #
-
-    d writelog $logevt "$logmsg (ligne de commande)"
-
-    return ""
-}
-
-
-##############################################################################
-# Programme principal
+# Main program
 ##############################################################################
 
 proc main {argv0 argv} {
     global conf
 
     #
-    # Initialisation des accès
+    # Initialization
     #
 
     set msg [d init-script dbfd $argv0 false tabcor]
     if {$msg ne ""} then {
-	puts stderr "$msg"
-	puts stderr "Aborted."
-	return 1
+	d error $msg
     }
 
     #
-    # Validation des arguments
+    # Argument checking
     #
 
-    if {[llength $argv] != 1} then {
-	syntax-error $argv0
-	return 1
+    if {[llength $argv] != 2} then {
+	d error [syntax-error $argv0]
     }
+    lassign $argv addr view
 
-    set adr [lindex $argv 0]
+    #
+    # Check access to view
+    #
 
-    set msg [del-ip $dbfd $tabcor(login) $tabcor(idcor) $adr]
-    if {! [string equal $msg ""]} then {
-	puts stderr $msg
-	puts stderr "Aborted."
-	return 1
+    set idview [u viewid $view]
+    if {$idview == -1} then {
+	d error [mc "Invalid view '%s'" $view]
+    }
+    if {! [u isallowedview $idview]} then {
+	d error [mc "Access denied to view '%s'" $view]
+    }
+    set idviews [list $idview]
+
+    #
+    # IP address validation
+    #
+
+    set msg [check-ip-syntax $dbfd $addr "inet"]
+    if {$msg ne ""} then {
+	d error $msg
     }
 
     #
-    # Déconnexion de la base
+    # Check access to address
+    #
+
+    if {! [check-authorized-ip $dbfd $tabcor(idcor) $addr]} then {
+	d error [mc "You don't have rights on '%s'" $addr]
+    }
+
+    #
+    # Does the IP address exist?
+    #
+
+    if {! [read-rr-by-ip $dbfd $addr $idview trr]} then {
+	d error [mc "Address '%s' not found" $addr]
+    }
+
+    #
+    # Check access to host
+    #
+
+    set name   $trr(nom)
+    set domain $trr(domain)
+    set msg [check-authorized-host $dbfd $tabcor(idcor) $name $domain $idviews bidon "del-name"]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Process to the removal
+    #
+
+    d dblock {}
+
+    set msg [del-ip $dbfd $addr trr $idview delobj]
+    # delobj (deleted object: address or host name) is ignored in return
+    if {$msg ne ""} then {
+	d error [d dbabort "delete" $msg]
+    }
+    d dbcommit "delete"
+
+    #
+    # End
     #
 
     d end

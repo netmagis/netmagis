@@ -106,7 +106,7 @@ proc main {argv0 argv} {
 
     set msg [del-host $dbfd trr $idview]
     if {$msg ne ""} then {
-	d dbabort "delete" $msg
+	d error [d dbabort "delete" $msg]
     }
     d dbcommit "delete"
 
