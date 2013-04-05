@@ -386,7 +386,7 @@ d cgi-register {action add-host} {
 	d error $msg
     }
     if {$mac eq "" && $iddhcpprofil != 0} then {
-	d error [mc "You cannot set a DHCP profile without assigning a MAC address"]
+	d error [mc "You cannot set a DHCP profile without a MAC address"]
     }
 
     #

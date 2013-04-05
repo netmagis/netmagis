@@ -6139,6 +6139,35 @@ proc check-domain-relay {dbfd idcor _iddom domain idview} {
 }
 
 #
+# Check MAC against syntax errors and DHCP ranges
+#
+# Input:
+#   - parameters:
+#       - dbfd: database handle
+#	- mac: MAC address (empty or not empty)
+#	- trr: trr of host for which this MAC address is
+#	- idview: view id
+# Output:
+#   - return value: empty string or error message
+#
+# History
+#   2013/04/05 : pda/jean : design
+#
+
+proc check-mac {dbfd mac _trr idview} {
+    upvar $_trr trr
+
+    set msg ""
+    if {$mac ne ""} then {
+	set msg [check-mac-syntax $dbfd $mac]
+	if {$msg eq ""} then {
+	    set msg [check-static-dhcp $dbfd $mac [rr-ip-by-view trr $idview]]
+	}
+    }
+    return $msg
+}
+
+#
 # Check that no static DHCP association (IP address with an associate
 # non null MAC address) is within a DHCP range
 #

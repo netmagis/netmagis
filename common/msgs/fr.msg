@@ -238,6 +238,7 @@
  {Invalid FQDN '%s'}	{FQDN '%s' invalide}
  {Invalid graph size '%s'} {Taille du graphe invalide '%s'}
  {Invalid group name '%s' (allowed chars: letters, digits and minus symbol)} {Nom de groupe '%s' invalide (caractères autorisés : lettres, chiffres et caractère moins)}
+ {Invalid HINFO attribute '%s'} {Attribut HINFO '%s' invalide}
  {Invalid input} {Données invalides}
  {Invalid input '%s'} {Données invalides '%s'}
  {<invalid>} {<invalide>}
@@ -262,6 +263,7 @@
  {Invalid search string '%s'} {Châine de recherche '%s' incorrecte}
  {Invalid selection mode '%s'} {Mode de sélection invalide '%s'}
  {Invalid sensor name '%s' (should be M...)} {Nom de sonde '%s' invalide (devrait être M...)}
+ {Invalid SMTP emit right (must be 0 or 1)} {Droit SMTP invalide (doit être 0 ou 1)}
  {Invalid syntax for IP address '%s'} {Syntaxe invalide pour l'adresse IP '%s'}
  {Invalid syntax '%s' for DHCP profile} {Syntaxe invalide pour le profil DHCP '%s'}
  {Invalid TTL: must be a positive integer} {TTL invalide : doit être un nombre entier positif}
@@ -598,7 +600,7 @@
  {You can also <a href="%s">edit more than one interfaces</a> simultaneously} {Vous pouvez également <a href="%s">modifier plusieurs interfaces</a> simultanément}
  {You can not choose both a CIDR and a network} {Vous ne pouvez pas choisir un CIDR et une plage}
  {You cannot read this network} {Vous n'avez pas accès à ce réseau en consultation}
- {You cannot set a DHCP profile without assigning a MAC address} {Impossible de configurer un profil DHCP sans adresse MAC}
+ {You cannot set a DHCP profile without a MAC address} {Impossible de configurer un profil DHCP sans adresse MAC}
  {You can't modify interface %1$s on %2$s} {Vous ne pouvez pas modifier l'interface %1$s sur %2$s}
  {You did not selected any interface} {Vous n'avez pas sélectionné d'interface}
  {You did not specify any criterion} {Vous n'avez saisi aucun critère}
