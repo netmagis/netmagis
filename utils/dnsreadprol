@@ -1,76 +1,91 @@
 #!%TCLSH%
 
-
 #
-# Script pour lire le prologue d'une zone
+# Read zone prologue
 #
 # Syntaxe :
-#   dnsreadprol <zone>
+#   dnsreadprol <zone> <view>
 #
-# Historique
-#   2004/05/25 : pda      : conception en sh
-#   2005/04/11 : pda      : réécriture en Tcl pour bénéficier du Makefile
+# History
+#   2004/05/25 : pda      : design with sh
+#   2005/04/11 : pda      : rewriting with Tcl
 #   2010/12/18 : pda      : use new install system
+#   2013/04/05 : pda/jean : add views
 #
 
 source %LIBNETMAGIS%
 
 ##############################################################################
-# Petites fonctions utilitaires
+# Small utility functions
 ##############################################################################
 
 proc syntax-error {argv0} {
     regsub {.*/} $argv0 {} argv0
-    puts stderr "usage: $argv0 zone"
-    exit 1
+    return "usage: $argv0 zone view"
 }
 
 ##############################################################################
-# Programme principal
+# Main program
 ##############################################################################
 
 proc main {argv0 argv} {
     global conf
 
     #
-    # Initialisation des accès
+    # Initialization
     #
 
     set msg [d init-script dbfd $argv0 false tabcor]
     if {$msg ne ""} then {
-	puts stderr "$msg"
-	puts stderr "Aborted."
-	return 1
+	d error "$msg"
     }
 
     #
-    # Validation des arguments
+    # Argument checking
     #
 
-    if {[llength $argv] != 1} then {
-	syntax-error $argv0
-	return 1
+    if {[llength $argv] != 2} then {
+	d error [syntax-error $argv0]
     }
+    lassign $argv zone view
 
-    set zone [lindex $argv 0]
+    #
+    # Check access to view
+    #
+
+    set idview [u viewid $view]
+    if {$idview == -1} then {
+	d error [mc "Invalid view '%s'" $view]
+    }
+    if {! [u isallowedview $idview]} then {
+	d error [mc "Access denied to view '%s'" $view]
+    }
+    set idviews [list $idview]
+
+    #
+    # Get zone contents
+    #
+
     set qzone [::pgsql::quote $zone]
-    set sql "SELECT prologue FROM dns.zone WHERE name = '$qzone'"
+    set sql "SELECT prologue FROM dns.zone
+    				WHERE name = '$qzone' AND idview = $idview"
 
-    set trouve 0
+    set found 0
     pg_select $dbfd $sql tab {
-	set trouve 1
+	set found 1
 	puts -nonewline stdout $tab(prologue)
     }
-    if {! $trouve} then {
-	puts stderr "Zone '$zone' not found"
+
+    if {! $found} then {
+	d error [mc "Zone '%s' not found" $zone]
     }
 
     #
-    # Déconnexion de la base
+    # End
     #
 
     d end
-    return [expr !$trouve]
+    return 0
 }
 
 exit [main $argv0 $argv]

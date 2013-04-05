@@ -61,10 +61,12 @@
  {Cannot find registered CGI action} {Aucune action CGI trouvée}
  {Cannot lock database: %s} {Verrouillage impossible : %s}
  {Cannot lock table(s) %1$s: %2$s} {Verrouillage impossible pour la/les table(s) %1$s : %2$s}
+ {Cannot open file '%1$s': %2$s} {Impossible d'ouvrir le fichier '%1$s' : %2$s}
  {Cannot perform operation "%1$s": %2$s} {Opération "%1$s" impossible : %2$s}
  {Cannot read host-id %s} {Impossible de lire la machine d'identificateur %s}
  {Cannot read sensor list: %s} {Impossible de lire les points de collecte : %s}
  {Cannot set key '%1$s' to '%2$s: %3$s} {Impossible de modifier la clef '%1$s' à '%2$s' : %3$s}
+ {Cannot write zone prologue: %s} {Impossible de modifier le prologue de la zone : %s}
  {Can't modify link %s (%s)} {Impossible de modifier le lien %s (%s)}
  {Can't reuse link %s (%s)} {Impossible de réutiliser le lien %s (%s)}
  {Change account password} {Changer mot de passe d'un compte}
@@ -392,6 +394,7 @@
  {No block of %s free IPv4 address(es) found} {Aucun bloc de %s adresse(s) trouvé}
  {(no date)} {(aucune date)}
  {no description} {pas de description}
+ {No difference. Zone '%s' not modified} {Aucune différence. Zone '%s' non modifiée}
  {No equipment address} {Pas d'adresse d'équipement}
  {No equipment found} {Aucun équipement trouvé}
  { (no filter) } { (aucun filtre) }
@@ -620,6 +623,7 @@
  {You must choose a CIDR or at least one network} {Vous devez choisir un CIDR ou au moins une plage}
  {You must select at least one view} {Vous devez sélectionner au moins une vue}
  {You must type a name for the group} {Il faut saisir un nom pour ce groupe}
+ {Zone '%s' not found} {Zone '%s' non trouvée}
  {Zone management} {Gestion des zones}
 
 

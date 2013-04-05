@@ -1,84 +1,92 @@
 #!%TCLSH%
 
-
 #
-# Script pour écrire le prologue d'une zone dans la base
+# Write zone prologue to database (from file)
 #
-# Syntaxe :
-#   dnswriteprol <zone> <fichier>
+# Syntax:
+#   dnswriteprol <zone> <view> <file>
 #
-# Historique
-#   2004/05/25 : pda      : conception en sh
-#   2005/04/11 : pda      : réécriture en Tcl pour bénéficier du Makefile
-#   2007/10/25 : jean     : log des actions de modification
+# History
+#   2004/05/25 : pda      : design with sh
+#   2005/04/11 : pda      : rewriting with Tcl
+#   2007/10/25 : jean     : log modify actions
 #   2010/12/18 : pda      : use new install system
+#   2013/04/05 : pda/jean : add views
 #
 
 source %LIBNETMAGIS%
 
-set conf(interactive)	yes
-
 ##############################################################################
-# Petites fonctions utilitaires
+# Small utility functions
 ##############################################################################
 
 proc syntax-error {argv0} {
     regsub {.*/} $argv0 {} argv0
-    puts stderr "usage: $argv0 zone file"
-    exit 1
+    return "usage: $argv0 zone view file"
 }
 
 ##############################################################################
-# Programme principal
+# Main program
 ##############################################################################
 
 proc main {argv0 argv} {
     global conf
 
     #
-    # Initialisation des accès
+    # Initialization
     #
 
     set msg [d init-script dbfd $argv0 false tabcor]
     if {$msg ne ""} then {
-	puts stderr "$msg"
-	puts stderr "Aborted."
-	return 1
+	d error $msg
     }
 
     #
-    # Validation des arguments
+    # Argument checking
     #
 
-    if {[llength $argv] != 2} then {
-	syntax-error $argv0
-	return 1
+    if {[llength $argv] != 3} then {
+	d error [syntax-error $argv0]
     }
+    lassign $argv zone view file
 
-    set zone [lindex $argv 0]
-    set file [lindex $argv 1]
+    #
+    # Check access to view
+    #
+
+    set idview [u viewid $view]
+    if {$idview == -1} then {
+	d error [mc "Invalid view '%s'" $view]
+    }
+    if {! [u isallowedview $idview]} then {
+	d error [mc "Access denied to view '%s'" $view]
+    }
+    set idviews [list $idview]
+
+    #
+    # Check that zone exists
+    #
 
     set qzone [::pgsql::quote $zone]
-    set sql "SELECT prologue FROM dns.zone WHERE name = '$qzone'"
+    set sql "SELECT prologue FROM dns.zone
+    				WHERE name = '$qzone' AND idview = $idview"
 
-    set trouve 0
+    set found 0
     pg_select $dbfd $sql tab {
 	set old $tab(prologue)
-	set trouve 1
+	set found 1
     }
 
-    if {! $trouve} then {
-	puts stderr "Zone '$zone' not found"
-	return 1
+    if {! $found} then {
+	d error [mc "Zone '%s' not found" $zone]
     }
 
     #
-    # Récupération du fichier
+    # Get file contents
     #
 
     if {[catch {set fd [open $file "r"]} msg]} then {
-	puts stderr $msg
-	return 1
+	d error [mc {Cannot open file '%1$s': %2$s} $file $msg]
     }
     set new [read $fd]
     close $fd
@@ -87,68 +95,31 @@ proc main {argv0 argv} {
     # Tests
     #
 
-    if {[string equal $new $old]} then {
-	puts stderr "No difference. Zone '$zone' not modified."
+    if {$new eq $old} then {
+	puts stderr [mc "No difference. Zone '%s' not modified" $zone]
 	return 0
     }
 
-    if {$conf(interactive)} then {
-
-	#
-	# Afficher les diffs pour éviter des bourdes
-	#
-
-	set tmp1 "/tmp/dnswriteprol1.[pid]"
-	set tmp2 "/tmp/dnswriteprol2.[pid]"
-
-	foreach {fname text} [list $tmp1 $old $tmp2 $new] {
-	    if {[catch {set fd [open $fname "w"]} msg]} then {
-		puts stderr $msg
-		return 1
-	    }
-	    puts $fd $text
-	    close $fd
-	}
-
-	set diff [exec sh -c "diff $tmp1 $tmp2 ; exit 0"]
-	puts stdout $diff
-
-	puts -nonewline stdout {Modify [n] : }
-	flush stdout
-	gets stdin answer
-
-	file delete $tmp1 $tmp2
-
-	switch -glob -- $answer {
-	    {[oOyY]*} {
-		# rien : on continue en séquence
-	    }
-	    default {
-		puts stderr "Zone '$zone' not modified."
-		return 0
-	    }
-	}
-    }
-
     #
-    # Modification
+    # Process modification
     #
 
     set txt [::pgsql::quote $new]
-    set sql "UPDATE dns.zone SET prologue = '$txt' WHERE name = '$qzone'"
+    set sql "UPDATE dns.zone SET prologue = '$txt'
+    				WHERE name = '$qzone' AND idview = $idview"
 
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	return "Impossible de modifier : $msg"
+	return [mc "Cannot write zone prologue: %s" $msg]
     }
 
     #
-    # Écrire le log
+    # Write log
     #
 
-    d writelog "modifref" "modification du prologue de la zone '$zone' (ligne de commande)"
+    d writelog "modref" "modification of reference table zone for '$zone'"
 
     #
-    # Déconnexion de la base
+    # End
     #
 
     d end
