@@ -297,7 +297,7 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 			    rr_ip.adr,
 			    rr.iddhcpprofil
 			FROM dns.rr, dns.domain, dns.rr_ip, dns.reseau
-			WHERE ($idview = -1 OR idview = $idview)
+			WHERE ($idview = -1 OR rr.idview = $idview)
 			    AND rr.iddom = domain.iddom
 			    AND rr.idrr = rr_ip.idrr
 			    AND rr_ip.adr <<= '$network/$masklen'

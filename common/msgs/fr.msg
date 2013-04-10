@@ -276,11 +276,9 @@
  {Invalid view sort class '%s'} {Classe de tri de vue '%s' invalide}
  {Invalid view '%s'}	{Vue '%s' invalide}
  {Invalid web role '%s'} {Role web invalide '%s'}
- {IP address '%1$s' already exists in view '%2$s'} {L'adresse '%1$s' existe déjà dans la vue '%2$s'}
+ {IP address '%s' already exists} {L'adresse '%s' existe déjà}
  {IP address}	{Adresse IP}
- {IP address and view}	{Adresse IP vue}
  {IP addresses}	{Adresses IP}
- {IP addresses and views}	{Adresses IP et vues}
  {IP address %s} {l'adresse IP %s}
  {IP-MAC association (%1$s,%2$s) not found} {Association IP-MAC (%1$s,%2$s) non trouvée}
  {IP networks} {réseaux IP}
@@ -576,7 +574,6 @@
  {User}	{Utilisateur}
  {Use SMTP} {Émettre en SMTP}
  {View management} {Gestion des vues}
- {Views}	{Vues}
  {View}		{Vue}
  {Vlan %1$s: %2$s} {Vlan %1$s : %2$s}
  {vlan=%1$s, voip=%2$s, desc=%3$s} {vlan=%1$s, voip=%2$s, desc=%3$s}
@@ -621,7 +618,6 @@
  {You don't have rights to some relays of domain '%1$s': %2$s} {Vous n'avez pas les droits sur certains relais du domaine '%1$s' : %2$s}
  {You don't have write access to interface '%1$s' on '%2$s'} {Vous n'avez mpas de le droit de modifier l'interface '%1$s' sur '%2$s'}
  {You must choose a CIDR or at least one network} {Vous devez choisir un CIDR ou au moins une plage}
- {You must select at least one view} {Vous devez sélectionner au moins une vue}
  {You must type a name for the group} {Il faut saisir un nom pour ce groupe}
  {Zone '%s' not found} {Zone '%s' non trouvée}
  {Zone management} {Gestion des zones}

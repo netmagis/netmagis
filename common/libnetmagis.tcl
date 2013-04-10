@@ -244,7 +244,7 @@ set libconf(tabdomains) {
 	chars {10 normal}
 	align {left}
 	botbar {yes}
-	columns {50 25 25}
+	columns {66 33}
     }
     pattern Domaine {
 	vbar {yes}
@@ -252,8 +252,6 @@ set libconf(tabdomains) {
 	vbar {no}
 	column { }
 	vbar {no}
-	column { }
-	vbar {yes}
     }
 }
 
@@ -3061,7 +3059,7 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    set sql "SELECT domain.name AS name, dr_dom.rolemail, dr_dom.roleweb
+    set sql "SELECT domain.name AS name, dr_dom.rolemail
 			FROM dns.dr_dom, dns.domain
 			WHERE dr_dom.iddom = domain.iddom
 				AND dr_dom.idgrp = $idgrp
@@ -3071,12 +3069,7 @@ proc display-group {dbfd idgrp} {
 	if {$tab(rolemail)} then {
 	    set rm [mc "Mail role management"]
 	}
-	set rw ""
-	if {$tab(roleweb)} then {
-	    set rw [mc "Web role management"]
-	}
-
-	lappend lines [list Domaine $tab(name) $rm $rw]
+	lappend lines [list Domaine $tab(name) $rm]
     }
     if {[llength $lines] > 0} then {
 	set tabdomains [::arrgen::output "html" $libconf(tabdomains) $lines]
@@ -3414,6 +3407,33 @@ proc read-user {dbfd login _tabuid _msg} {
 ##############################################################################
 
 #
+# Return all RR with a given name (in different views)
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- name : name to search for
+#	- iddom : id of the domain in which to search for the name
+# Output:
+#   - return value: { {idrr idview} {idrr idview} ...}
+#
+# History
+#   2013/04/05 : pda/jean : design
+#
+
+proc all-rr-by-name {dbfd name iddom} {
+    set qname [::pgsql::quote $name]
+    set sql "SELECT idrr, idview FROM dns.rr
+    				WHERE nom = '$qname' AND iddom = $iddom"
+    set l {}
+    pg_select $dbfd $sql tab {
+	lappend l [list $tab(idrr) $tab(idview)]
+    }
+
+    return $l
+}
+
+#
 # Get all informations associated with a name
 #
 # Input:
@@ -3421,6 +3441,7 @@ proc read-user {dbfd login _tabuid _msg} {
 #	- dbfd : database handle
 #	- name : name to search for
 #	- iddom : id of the domain in which to search for the name
+#	- idview: view id
 #	- _trr : empty array
 # Output:
 #   - return value: 1 if ok, 0 if not found
@@ -3431,14 +3452,18 @@ proc read-user {dbfd login _tabuid _msg} {
 #   2002/04/19 : pda/jean : add name and iddom
 #   2002/04/19 : pda/jean : use read-rr-by-id
 #   2010/11/29 : pda      : i18n
+#   2013/04/05 : pda/jean : add view
 #
 
-proc read-rr-by-name {dbfd name iddom _trr} {
+proc read-rr-by-name {dbfd name iddom idview _trr} {
     upvar $_trr trr
 
     set qname [::pgsql::quote $name]
     set found 0
-    set sql "SELECT idrr FROM dns.rr WHERE nom = '$qname' AND iddom = $iddom"
+    set sql "SELECT idrr FROM dns.rr
+			    WHERE nom = '$qname'
+				AND iddom = $iddom
+				AND idview = $idview"
     pg_select $dbfd $sql tab {
 	set found 1
 	set idrr $tab(idrr)
@@ -3511,9 +3536,11 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
     upvar $_trr trr
 
     set found 0
-    set sql "SELECT idrr
-			FROM dns.rr_ip
-    			WHERE adr = '$addr' AND idview = $idview"
+    set sql "SELECT i.idrr
+			FROM dns.rr_ip i, dns.rr r
+    			WHERE i.idrr = r.idrr
+			    AND i.adr = '$addr'
+			    AND r.idview = $idview"
     pg_select $dbfd $sql tab {
 	set found 1
 	set idrr $tab(idrr)
@@ -3540,6 +3567,7 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #	_trr(idrr) : id of RR found
 #	_trr(nom) : name (first component of the FQDN)
 #	_trr(iddom) : domain id
+#	_trr(idview) : view id
 #	_trr(domain) : domain name
 #	_trr(mac) : MAC address
 #	_trr(iddhcpprofil) : DHCP profile id, or 0 if none
@@ -3564,7 +3592,6 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #	_trr(adrmail) : idrr of mail addresses hosted on this host
 #		{{idview idrradr idviewadr} ...}
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(roleweb) : list of idviews where this rr is a web role
 #
 # History
 #   2002/04/19 : pda/jean : design
@@ -3576,12 +3603,14 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #   2010/10/31 : pda      : add ttl
 #   2010/11/29 : pda      : i18n
 #   2012/10/08 : pda/jean : views
+#   2013/04/05 : pda/jean : temporary hack for views
+#   2013/04/10 : pda/jean : remove roleweb
 #
 
 proc read-rr-by-id {dbfd idrr _trr} {
     upvar $_trr trr
 
-    set fields {nom iddom
+    set fields {nom iddom idview
 	mac iddhcpprofil idhinfo droitsmtp ttl commentaire respnom respmel
 	idcor date}
 
@@ -3599,6 +3628,7 @@ proc read-rr-by-id {dbfd idrr _trr} {
     }
 
     if {$found} then {
+	set idview $trr(idview)
 	set trr(domain) ""
 	if {$trr(iddhcpprofil) eq ""} then {
 	    set trr(iddhcpprofil) 0
@@ -3619,41 +3649,42 @@ proc read-rr-by-id {dbfd idrr _trr} {
 	    set trr(domain) $tab(name)
 	}
 	set trr(ip) {}
-	set sql "SELECT idview, adr FROM dns.rr_ip WHERE idrr = $idrr"
+	set sql "SELECT adr FROM dns.rr_ip WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(ip) [list $tab(idview) $tab(adr)]
+	    lappend trr(ip) [list $idview $tab(adr)]
 	}
 	set trr(mx) {}
-	set sql "SELECT idview, priorite, mx FROM dns.rr_mx WHERE idrr = $idrr"
+	set sql "SELECT priorite, mx FROM dns.rr_mx WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(mx) [list $tab(idview) $tab(priorite) $tab(mx)]
+	    lappend trr(mx) [list $idview $tab(priorite) $tab(mx)]
 	}
 	set trr(cname) ""
-	set sql "SELECT idview, cname FROM dns.rr_cname WHERE idrr = $idrr"
+	set sql "SELECT cname FROM dns.rr_cname WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(cname) [list $tab(idview) $tab(cname)]
+	    lappend trr(cname) [list $idview $tab(cname)]
 	}
 	set trr(aliases) {}
-	set sql "SELECT idview, idrr FROM dns.rr_cname WHERE cname = $idrr"
+	set sql "SELECT idrr FROM dns.rr_cname WHERE cname = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(aliases) [list $tab(idview) $tab(idrr)]
+	    lappend trr(aliases) [list $idview $tab(idrr)]
 	}
+	# is this name a mail address?
 	set trr(rolemail) ""
-	set sql "SELECT * FROM dns.role_mail WHERE idrr = $idrr"
+	set sql "SELECT rm.heberg, rrh.idview AS idviewheb
+			    FROM dns.role_mail rm, dns.rr rrh
+			    WHERE rm.idrr = $idrr
+				AND rm.heberg = rrh.idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(rolemail) [list $tab(idviewrr) \
-	    				$tab(heberg) $tab(idviewheb)]
+	    lappend trr(rolemail) [list $idviewrr $tab(heberg) $tab(idviewheb)]
 	}
+	# all mail addresses pointing to this host
 	set trr(adrmail) {}
-	set sql "SELECT * FROM dns.role_mail WHERE heberg = $idrr"
+	set sql "SELECT rra.idrr, rra.idview AS idviewrr
+			    FROM dns.role_mail rm, dns.rr rra
+			    WHERE heberg = $idrr
+				AND rm.idrr = rra.idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(adrmail) [list $tab(idviewheb) \
-	    				$tab(idrr) $tab(idviewrr)]
-	}
-	set trr(roleweb) 0
-	set sql "SELECT idview FROM dns.role_web WHERE idrr = $idrr"
-	pg_select $dbfd $sql tab {
-	    lappend trr(roleweb) $tab(idview)
+	    lappend trr(adrmail) [list $idview $tab(idrr) $tab(idviewrr)]
 	}
     }
 
@@ -3772,7 +3803,6 @@ proc rr-adrmail-by-view {_trr idview} {
 #   - parameters:
 #	- dbfd : database handle
 #	- idrr : id of RR to delete (CNAME RR)
-#	- idview : view id
 #	- _msg : error message in return
 # Output:
 #   - return value: error message or empty string
@@ -3782,11 +3812,12 @@ proc rr-adrmail-by-view {_trr idview} {
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
 #   2013/03/28 : pda/jean : interface simplification
+#   2013/04/10 : pda/jean : remove views
 #
 
-proc del-alias-by-id {dbfd idrr idview} {
+proc del-alias-by-id {dbfd idrr} {
     set msg ""
-    set sql "DELETE FROM dns.rr_cname WHERE idrr = $idrr AND idview = $idview"
+    set sql "DELETE FROM dns.rr_cname WHERE rr_cname.idrr = rr.idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg [del-orphaned-rr $dbfd $idrr]
     }
@@ -3800,7 +3831,6 @@ proc del-alias-by-id {dbfd idrr idview} {
 #   - parameters:
 #	- dbfd : database handle
 #	- idrr : RR id
-#	- idview : view id
 # Output:
 #   - return value: error message or empty string
 #
@@ -3810,12 +3840,12 @@ proc del-alias-by-id {dbfd idrr idview} {
 #   2012/11/13 : pda/jean : add views
 #   2012/11/14 : pda/jean : delete addr parameter
 #   2013/03/28 : pda/jean : interface simplification
+#   2013/04/10 : pda/jean : remove views
 #
 
-proc del-all-ip-addresses {dbfd idrr idview} {
+proc del-all-ip-addresses {dbfd idrr} {
     set msg ""
-    set sql "DELETE FROM dns.rr_ip WHERE idrr = $idrr
-				    AND idview = $idview"
+    set sql "DELETE FROM dns.rr_ip WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
     }
@@ -3829,7 +3859,6 @@ proc del-all-ip-addresses {dbfd idrr idview} {
 #   - parameters:
 #	- dbfd : database handle
 #	- idrr : RR id of MX
-#	- idview : view id
 # Output:
 #   - return value: error message or empty string
 #
@@ -3838,11 +3867,12 @@ proc del-all-ip-addresses {dbfd idrr idview} {
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
 #   2013/03/28 : pda/jean : interface simplification
+#   2013/04/10 : pda/jean : remove views
 #
 
-proc del-mx-by-id {dbfd idrr idview} {
+proc del-mx-by-id {dbfd idrr} {
     set msg ""
-    set sql "DELETE FROM dns.rr_mx WHERE idrr = $idrr AND idview = $idview"
+    set sql "DELETE FROM dns.rr_mx WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
     }
@@ -3856,7 +3886,6 @@ proc del-mx-by-id {dbfd idrr idview} {
 #   - parameters:
 #	- dbfd : database handle
 #	- idrr : RR id
-#	- idview : view id
 # Output:
 #   - return value: error message or empty string
 #
@@ -3865,40 +3894,12 @@ proc del-mx-by-id {dbfd idrr idview} {
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
 #   2013/03/28 : pda/jean : interface simplification
+#   2013/04/10 : pda/jean : remove views
 #
 
-proc del-rolemail-by-id {dbfd idrr idview} {
+proc del-rolemail-by-id {dbfd idrr} {
     set msg ""
-    set sql "DELETE FROM dns.role_mail WHERE idrr = $idrr AND idview = $idview"
-    if {[::pgsql::execsql $dbfd $sql msg]} then {
-	set msg ""
-    }
-    return $msg
-}
-
-#
-# XXX : NOT USED
-#
-# Delete a roleweb
-#
-# Input:
-#   - parameters:
-#	- dbfd : database handle
-#	- idrr : RR id
-#	- idview : view id
-# Output:
-#   - return value: error message or empty string
-#
-# History
-#   2004/02/06 : pda/jean : design
-#   2010/11/29 : pda      : i18n
-#   2012/11/13 : pda/jean : add views
-#   2013/03/28 : pda/jean : interface simplification
-#
-
-proc del-roleweb-by-id {dbfd idrr idview} {
-    set msg ""
-    set sql "DELETE FROM dns.role_web WHERE idrr = $idrr AND idview = $idview"
+    set sql "DELETE FROM dns.role_mail rm WHERE rm.idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
     }
@@ -3912,7 +3913,6 @@ proc del-roleweb-by-id {dbfd idrr idview} {
 #   - parameters:
 #	- dbfd : database handle
 #	- _trr : RR informations (see read-rr-by-id)
-#	- idview : view id
 # Output:
 #   - return value: error message or empty string
 #
@@ -3922,12 +3922,14 @@ proc del-roleweb-by-id {dbfd idrr idview} {
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
 #   2013/03/28 : pda/jean : interface simplification
+#   2013/04/10 : pda/jean : remove views
 #
 
-proc del-rr-and-dependancies {dbfd _trr idview} {
+proc del-rr-and-dependancies {dbfd _trr} {
     upvar $_trr trr
 
     set idrr $trr(idrr)
+    set idview $trr(idview)
 
     #
     # If this host holds mail addresses, don't delete it.
@@ -3939,21 +3941,11 @@ proc del-rr-and-dependancies {dbfd _trr idview} {
     }
 
     #
-    # Delete roles pointing to this host (and not names which
-    # are other things such as mail domains)
-    #
-
-    set msg [del-roleweb-by-id $dbfd $idrr $idview]
-    if {$msg ne ""} then {
-	return $msg
-    }
-
-    #
     # Delete all aliases pointing to this object
     #
 
     foreach a [rr-aliases-by-view trr $idview] {
-	set msg [del-alias-by-id $dbfd $a $idview]
+	set msg [del-alias-by-id $dbfd $a]
 	if {$msg ne ""} then {
 	    return $msg
 	}
@@ -3963,7 +3955,7 @@ proc del-rr-and-dependancies {dbfd _trr idview} {
     # Delete all IP addresses
     #
 
-    set msg [del-all-ip-addresses $dbfd $idrr $idview]
+    set msg [del-all-ip-addresses $dbfd $idrr]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -3972,7 +3964,7 @@ proc del-rr-and-dependancies {dbfd _trr idview} {
     # Delete all MX
     #
 
-    set msg [del-mx-by-id $dbfd $idrr $idview]
+    set msg [del-mx-by-id $dbfd $idrr]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -4021,9 +4013,6 @@ proc del-orphaned-rr {dbfd idrr} {
 		break
 	    }
 	}
-	if {$orphaned && $trr(roleweb)} then {
-	    set orphaned 0
-	}
 
 	if {$orphaned} then {
 	    set sql "DELETE FROM dns.rr WHERE idrr = $idrr"
@@ -4044,6 +4033,7 @@ proc del-orphaned-rr {dbfd idrr} {
 #	- dbfd : database handle
 #	- name : name of RR to create (syntax must be conform to RFC)
 #	- iddom : domain id
+#	- idview: view id
 #	- mac : MAC address, or empty string
 #	- iddhcpprofil : DHCP profile id, or 0
 #	- idhinfo : HINFO or empty string (default is searched in the database)
@@ -4069,9 +4059,10 @@ proc del-orphaned-rr {dbfd idrr} {
 #   2008/07/24 : pda/jean : add droitsmtp
 #   2010/10/31 : pda      : add ttl
 #   2010/11/29 : pda      : i18n
+#   2013/04/05 : pda/jean : add views
 #
 
-proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
+proc add-rr {dbfd name iddom idview mac iddhcpprofil idhinfo droitsmtp ttl
 				comment respnom respmel idcor _trr} {
     upvar $_trr trr
 
@@ -4093,17 +4084,17 @@ proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
 	set iddhcpprofil NULL
     }
     set sql "INSERT INTO dns.rr
-		    (nom, iddom, mac, iddhcpprofil, $hinfodef
+		    (nom, iddom, idview, mac, iddhcpprofil, $hinfodef
 			droitsmtp, ttl, commentaire, respnom, respmel,
 			idcor)
 		VALUES
-		    ('$name', $iddom, $qmac, $iddhcpprofil, $hinfoval
+		    ('$name', $iddom, $idview, $qmac, $iddhcpprofil, $hinfoval
 			$droitsmtp, $ttl, '$qcomment', '$qrespnom', '$qrespmel',
 			$idcor)
 		    "
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
-	if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
+	if {! [read-rr-by-name $dbfd $name $iddom $idview trr]} then {
 	    set msg [mc "Internal error: '%s' inserted, but not found in database" $name]
 
 	}
@@ -4122,8 +4113,8 @@ proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
 #	- _trr: trr of existing fqdn or empty trr
 #	- name : name of RR to create (syntax must be conform to RFC)
 #	- iddom : domain id
+#	- idview: view id
 #	- addr: (single) IP address to add
-#	- idviews: list of view ids
 #	- mac : MAC address, or empty string
 #	- iddhcpprofil : DHCP profile id, or 0
 #	- idhinfo : idhinfo or empty string
@@ -4139,9 +4130,10 @@ proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
 #
 # History
 #   2013/03/28 : pda/jean : shared code between www/cgi/ and utils/
+#   2013/04/10 : pda/jean : accept only one view
 #
 
-proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droitsmtp ttl comment respname respmail idcor} {
+proc add-host {dbfd _trr name iddom idview addr mac iddhcpprofil idhinfo droitsmtp ttl comment respname respmail idcor} {
     upvar $_trr trr
 
     #
@@ -4157,8 +4149,9 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 	#
 	# Name did not exist, thus we insert a new RR
 	#
-	set msg [add-rr $dbfd $name $iddom $mac $iddhcpprofil $idhinfo \
-		    $droitsmtp $ttl $comment $respname $respmail $idcor trr]
+	set msg [add-rr $dbfd $name $iddom $idview \
+			$mac $iddhcpprofil $idhinfo $droitsmtp $ttl \
+			$comment $respname $respmail $idcor trr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "add %s" $name] $msg
 	}
@@ -4210,12 +4203,7 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 	}
     }
 
-    set sql {}
-    foreach idview $idviews {
-	lappend sql "INSERT INTO dns.rr_ip (idrr, adr, idview)
-			    VALUES ($trr(idrr), '$addr', $idview)"
-    }
-    set sql [join $sql "; "]
+    set sql "INSERT INTO dns.rr_ip (idrr, adr) VALUES ($trr(idrr), '$addr')"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
        d dbabort [mc "add %s" $addr] $msg
     }
@@ -4232,10 +4220,7 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
     set domain [u domainname $iddom]
 
     d dbcommit [mc "add %s" "$name.$domain"]
-    foreach idview $idviews {
-	set v [u viewname $idview]
-	d writelog "addhost" "add $name.$domain ($addr)/$v"
-    }
+    d writelog "addhost" "add $name.$domain ($addr)/[u viewname $idview]"
 
     return ""
 }
@@ -4248,17 +4233,10 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 #	- dbfd : database handle
 #	- _trr: trr of existing fqdn or empty trr
 #	- name : name of RR to create (syntax must be conform to RFC)
-#	- iddom : domain id
-#	- addr: (single) IP address to add
-#	- idviews: list of view ids
-#	- mac : MAC address, or empty string
-#	- iddhcpprofil : DHCP profile id, or 0
-#	- idhinfo : idhinfo or empty string
-#	- droitsmtp : 1 if ok to emit with non auth SMTP
-#	- ttl : TTL value, or -1 for default value
-#	- comment : commment
-#	- respname : responsible person name
-#	- respmail : responsible person mail
+#	- domain : domain name
+#	- idview: view id
+#	- nameref: name of existing host
+#	- domainref: domain name of existing host
 #	- idcor : user id
 # Output:
 #   - return value: empty string, or error message
@@ -4266,20 +4244,21 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 #
 # History
 #   2013/03/28 : pda/jean : shared code between www/cgi/ and utils/
+#   2013/04/10 : pda/jean : accept only one view
 #
 
-proc add-alias {dbfd idviews name domain nameref domainref idcor} {
+proc add-alias {dbfd name domain idview nameref domainref idcor} {
     #
     # Check alias and host permissions
     #
 
-    set msg [check-authorized-host $dbfd $idcor $name $domain $idviews trr "alias"]
+    set msg [check-authorized-host $dbfd $idcor $name $domain $idview trr "alias"]
     if {$msg ne ""} then {
 	return $msg
     }
     set iddom $trr(iddom)
 
-    set msg [check-authorized-host $dbfd $idcor $nameref $domainref $idviews trrref "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $nameref $domainref $idview trrref "existing-host"]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -4295,7 +4274,7 @@ proc add-alias {dbfd idviews name domain nameref domainref idcor} {
     #
 
     if {$trr(idrr) eq ""} then {
-	set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
+	set msg [add-rr $dbfd $name $iddom $idview "" 0 "" 0 -1 "" "" "" $idcor trr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "add %s" $name] $msg
 	}
@@ -4305,21 +4284,14 @@ proc add-alias {dbfd idviews name domain nameref domainref idcor} {
     # Add alias link between alias and host
     #
 
-    set sql {}
-    foreach idview $idviews {
-	lappend sql "INSERT INTO dns.rr_cname (idrr, cname, idview)
-    				VALUES ($trr(idrr), $trrref(idrr), $idview)"
-    }
-    set sql [join $sql "; "]
+    set sql "INSERT INTO dns.rr_cname (idrr, cname)
+			VALUES ($trr(idrr), $trrref(idrr))"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	d dbabort [mc "add %s" [mc "alias"]] $msg
     }
 
     d dbcommit [mc "add %s" "$name.$domain"]
-    foreach idview $idviews {
-	set v [u viewname $idview]
-	d writelog "addalias" "add alias $name.$domain/$v -> $nameref.$domainref"
-    }
+    d writelog "addalias" "add alias $name.$domain/[u viewname $idview] -> $nameref.$domainref"
 
     return ""
 }
@@ -4350,7 +4322,7 @@ proc del-host {dbfd _trr idview} {
 
     set cname [rr-cname-by-view trr $idview]
     if {$cname ne ""} then {
-	set msg [del-alias-by-id $dbfd $trr(idrr) $idview]
+	set msg [del-alias-by-id $dbfd $trr(idrr)]
 	if {$msg ne ""} then {
 	    return $msg
 	}
@@ -4367,7 +4339,7 @@ proc del-host {dbfd _trr idview} {
 	# - MX
 	# - IP addresses
 	#
-	set msg [del-rr-and-dependancies $dbfd trr $idview]
+	set msg [del-rr-and-dependancies $dbfd trr]
 	if {$msg ne ""} then {
 	    return $msg
 	}
@@ -4401,6 +4373,7 @@ proc del-host {dbfd _trr idview} {
 
 proc del-ip {dbfd addr _trr idview _delobj} {
     upvar $_trr trr
+    upvar $_delobj delobj
 
     set fqdn "$trr(nom).$trr(domain)"
     set vn [u viewname $idview]
@@ -4411,8 +4384,11 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 	# Only delete one of these addresses
 	#
 
-	set sql "DELETE FROM dns.rr_ip WHERE adr = '$addr'
-					AND idview = $idview"
+	set sql "DELETE FROM dns.rr_ip i
+			USING dns.rr r
+			WHERE r.idrr = i.idrr
+			    AND i.adr = '$addr'
+			    AND r.idview = $idview"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    return $msg
 	}
@@ -4429,7 +4405,7 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 	# Delete the whole object
 	#
 
-	set msg [del-rr-and-dependancies $dbfd trr $idview]
+	set msg [del-rr-and-dependancies $dbfd trr]
 	if {$msg ne ""} then {
 	    return $msg
 	}
@@ -4456,26 +4432,23 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 #   2012/12/07 : pda/jean : design
 #
 
-proc update-host-refs-in-view {dbfd oidrr nidrr idview} {
+proc update-host-refs {dbfd oidrr nidrr} {
     set sql {}
     lappend sql "UPDATE dns.role_mail
 			    SET heberg = $nidrr
-			    WHERE heberg = $oidrr AND idviewheb = $idview"
-    lappend sql "UPDATE dns.role_web
-			    SET idrr = $nidrr
-			    WHERE idrr = $oidrr AND idview = $idview"
+			    WHERE heberg = $oidrr"
     lappend sql "UPDATE dns.rr_ip
 			    SET idrr = $nidrr
-			    WHERE idrr = $oidrr AND idview = $idview"
+			    WHERE idrr = $oidrr"
     lappend sql "UPDATE dns.rr_cname
 			    SET cname = $nidrr
-			    WHERE cname = $oidrr AND idview = $idview"
+			    WHERE cname = $oidrr"
     lappend sql "UPDATE dns.rr_mx
 			    SET mx = $nidrr
-			    WHERE mx = $oidrr AND idview = $idview"
+			    WHERE mx = $oidrr"
     lappend sql "UPDATE dns.relais_dom
 			    SET mx = $nidrr
-			    WHERE mx = $oidrr AND idview = $idview"
+			    WHERE mx = $oidrr"
     lappend sql "UPDATE topo.ifchanges
 			    SET idrr = $nidrr
 			    WHERE idrr = $oidrr"
@@ -4650,43 +4623,21 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	lappend lines [list Normal [mc "Name"] "$trr(nom).$trr(domain)"]
 
 	# IP address(es)
-	if {$idview eq ""} then {
-	    set nip [llength $trr(ip)]
-	    if {$nip <= 1} then {
-		set at [mc "IP address and view"]
-	    } else {
-		set at [mc "IP addresses and views"]
-	    }
-	    set lip {}
-	    if {$nip == 0} then {
-		set aa [mc "(none)"]
-	    } else {
-		set aa {}
-		foreach ipv $trr(ip) {
-		    lassign $ipv idview ip
-		    set t [get-rr-tmpl "ip" $rrtmpl $ip $ip $idview]
-		    lappend aa "$t ([u viewname $idview])"
-		    lappend lip $ip
-		}
-		set aa [join $aa ", "]
-	    }
+	set lip [rr-ip-by-view trr $idview]
+	set nip [llength $lip]
+	if {$nip <= 1} then {
+	    set at [mc "IP address"]
 	} else {
-	    set lip [rr-ip-by-view trr $idview]
-	    set nip [llength $lip]
-	    if {$nip <= 1} then {
-		set at [mc "IP address"]
-	    } else {
-		set at [mc "IP addresses"]
+	    set at [mc "IP addresses"]
+	}
+	if {$nip == 0} then {
+	    set aa [mc "(none)"]
+	} else {
+	    set aa {}
+	    foreach ip $lip {
+		lappend aa [get-rr-tmpl "ip" $rrtmpl $ip $ip $idview]
 	    }
-	    if {$nip == 0} then {
-		set aa [mc "(none)"]
-	    } else {
-		set aa {}
-		foreach ip $lip {
-		    lappend aa [get-rr-tmpl "ip" $rrtmpl $ip $ip $idview]
-		}
-		set aa [join $aa ", "]
-	    }
+	    set aa [join $aa ", "]
 	}
 	lappend lines [list Normal $at $aa]
 
@@ -5091,25 +5042,6 @@ proc check-iddhcpprofil {dbfd iddhcpprofil _dhcpprofil _msg} {
 ##############################################################################
 
 #
-# Checks if at least one view is selected (and issue error message)
-#
-# Input:
-#   - parameters:
-#	- idviews : list of view ids given by the user
-# Output:
-#   - return value: none if no error
-#
-# History
-#   2012/10/31 : pda/jean : design
-#
-
-proc at-least-one-view {idviews} {
-    if {[llength $idviews] == 0} then {
-	d error [mc "You must select at least one view"]
-    }
-}
-
-#
 # Checks if the selected views are authorized for this user
 #
 # Input:
@@ -5238,7 +5170,6 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
     set nerr 0
     set mvi {}
     foreach idview $myviewids {
-	set v [list $idview]
 	set vn [u viewname $idview]
 
 	set found 0
@@ -5247,7 +5178,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 	switch $mode {
 	    host {
 		set found 1
-		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview trr "del-name"]
 
 		if {$msg ne ""} then {
 		    set err 1
@@ -5271,7 +5202,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 	    }
 	    host-or-alias {
 		set found 1
-		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview trr "del-name"]
 
 		if {$msg ne ""} then {
 		    set err 1
@@ -5307,7 +5238,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 		    set found 1
 		    set name   $trr(nom)
 		    set domain $trr(domain)
-		    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v bidon "del-name"]
+		    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview bidon "del-name"]
 		    if {$msg ne ""} then {
 			set err 1
 		    }
@@ -5315,7 +5246,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 	    }
 	    rolemail {
 		set found 1
-		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-addrmail"]
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview trr "del-addrmail"]
 
 		if {$msg ne ""} then {
 		    set err 1
@@ -5621,7 +5552,7 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	- idcor : user id
 #	- name : name to test (first component of FQDN)
 #	- domain : domain to test (the n-1 last components of FQDN)
-#	- idviews : list of view ids in which this FQDN must be tested
+#	- idview : view id in which this FQDN must be tested
 #	- trr : in return, information on the host (see read-rr-by-id)
 #	- context : the context to check
 # Output:
@@ -5703,9 +5634,10 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #   2004/03/01 : pda/jean : use trr(iddom) instead of iddom
 #   2010/11/29 : pda      : i18n
 #   2012/10/30 : pda/jean : add views
+#   2013/04/10 : pda/jean : accept only one view
 #
 
-proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
+proc check-authorized-host {dbfd idcor name domain idview _trr context} {
     upvar $_trr trr
 
     array set testrights {
@@ -5779,137 +5711,40 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 
     set fqdn "$name.$domain"
 
-    foreach idview $idviews {
-	foreach a $testrights($context) {
-	    set parm [lindex $a 1]
-	    switch [lindex $a 0] {
-		domain {
-		    set msg [check-views [list $idview]]
-		    if {$msg ne ""} then {
-			return $msg
-		    }
-		    set viewname [u viewname $idview]
-
-		    set iddom -1
-		    set msg [check-domain $dbfd $idcor iddom domain $parm]
-		    if {$msg ne ""} then {
-			return $msg
-		    }
-
-		    if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
-			set trr(idrr) ""
-			set trr(iddom) $iddom
-		    }
+    foreach a $testrights($context) {
+	set parm [lindex $a 1]
+	switch [lindex $a 0] {
+	    domain {
+		set msg [check-views [list $idview]]
+		if {$msg ne ""} then {
+		    return $msg
 		}
-		alias {
-		    set idcname [rr-cname-by-view trr $idview]
-		    if {$idcname ne ""} then {
-			read-rr-by-id $dbfd $idcname t
-			set fqdnref "$t(nom).$t(domain)"
-			switch $parm {
-			    REJECT {
-				return [mc {%1$s is an alias of host %2$s in view %3$s} $fqdn $fqdnref $viewname]
-			    }
-			    CHECK {
-				set ok [check-name-by-addresses $dbfd $idcor -1 t]
-				if {! $ok} then {
-				    return [mc {You don't have rights on some IP addresses of '%1$s' referenced by alias '%2$s'} $fqdnref $fqdn]
-				}
-			    }
-			    default {
-				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
-			    }
-			}
-		    }
-		}
-		mx {
-		    set lmx [rr-mx-by-view trr $idview]
-		    foreach mx $lmx {
-			switch $parm {
-			    REJECT {
-				return [mc "'%s' is a MX" $fqdn]
-			    }
-			    CHECK {
-				set idrr [lindex $mx 1]
-				set ok [check-name-by-addresses $dbfd $idcor $idrr t]
-				if {! $ok} then {
-				    set fqdnmx "$t(nom).$t(domain)"
-				    return [mc {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} $fqdnmx $fqdn]
-				}
-			    }
-			    default {
-				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
-			    }
-			}
-		    }
-		}
-		addrmail {
-		    # get mailbox host for this address
-		    set rm [rr-rolemail-by-view trr $idview]
-		    if {$rm ne ""} then {
-			lassign $rm idrr idviewheb
-			switch $parm {
-			    REJECT {
-				# This name is already a mail address
-				# (it already has a mailbox host)
-				return [mc {'%1$s' is a mail role in view '%2$s'} $fqdn $viewname]
-			    }
-			    CHECK {
-				if {! [read-rr-by-id $dbfd $idrr trrh]} then {
-				    return [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
-				}
+		set viewname [u viewname $idview]
 
-				# IP address check
-				set ok [check-name-by-addresses $dbfd $idcor -1 trrh]
-				if {! $ok} then {
-				    return [mc "You don't have rights on host holding mail for '%s'" $fqdn]
-				}
-
-				# Mail host checking
-				set bidon -1
-				set msg [check-domain $dbfd $idcor bidon trrh(domain) ""]
-				if {$msg ne ""} then {
-				    set r [mc "You don't have rights on host holding mail for '%s'" $fqdn]
-				    append r "\n$msg"
-				    return $r
-				}
-			    }
-			    EXISTS {
-				# nothing
-			    }
-			    default {
-				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
-			    }
-			}
-		    } else {
-			# this address has no mailbox host, so it is
-			# not a mail role
-			switch $parm {
-			    REJECT -
-			    CHECK {
-				# nothing
-			    }
-			    EXISTS {
-				return [mc {'%1$s' is not a mail role in view '%2$s'} $fqdn $viewname]
-			    }
-			    default {
-				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
-			    }
-			}
-		    }
+		set iddom -1
+		set msg [check-domain $dbfd $idcor iddom domain $parm]
+		if {$msg ne ""} then {
+		    return $msg
 		}
-		mailhost {
-		    set ladr [rr-adrmail-by-view trr $idview]
+
+		if {! [read-rr-by-name $dbfd $name $iddom $idview trr]} then {
+		    set trr(idrr) ""
+		    set trr(iddom) $iddom
+		}
+	    }
+	    alias {
+		set idcname [rr-cname-by-view trr $idview]
+		if {$idcname ne ""} then {
+		    read-rr-by-id $dbfd $idcname t
+		    set fqdnref "$t(nom).$t(domain)"
 		    switch $parm {
 			REJECT {
-			    # remove the name (in all views) from the list
-			    # of mail domains hosted on this host
-			    while {[set pos [lsearch -exact -index 0 \
-						$ladr $trr(idrr)]] != -1} {
-				set ladr [lreplace $ladr $pos $pos]
-			    }
-			    if {[llength $ladr] > 0} then {
-				return [mc "'%s' is a mail host for mail domains" $fqdn]
+			    return [mc {%1$s is an alias of host %2$s in view %3$s} $fqdn $fqdnref $viewname]
+			}
+			CHECK {
+			    set ok [check-name-by-addresses $dbfd $idcor -1 t]
+			    if {! $ok} then {
+				return [mc {You don't have rights on some IP addresses of '%1$s' referenced by alias '%2$s'} $fqdnref $fqdn]
 			    }
 			}
 			default {
@@ -5917,28 +5752,123 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 			}
 		    }
 		}
-		ip {
-		    set lip [rr-ip-by-view trr $idview]
+	    }
+	    mx {
+		set lmx [rr-mx-by-view trr $idview]
+		foreach mx $lmx {
 		    switch $parm {
 			REJECT {
-			    if {[llength $lip] > 0} then {
-				return [mc {'%1$s' has IP addresses in view '%2$s'} $fqdn $viewname]
+			    return [mc "'%s' is a MX" $fqdn]
+			}
+			CHECK {
+			    set idrr [lindex $mx 1]
+			    set ok [check-name-by-addresses $dbfd $idcor $idrr t]
+			    if {! $ok} then {
+				set fqdnmx "$t(nom).$t(domain)"
+				return [mc {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} $fqdnmx $fqdn]
+			    }
+			}
+			default {
+			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			}
+		    }
+		}
+	    }
+	    addrmail {
+		# get mailbox host for this address
+		set rm [rr-rolemail-by-view trr $idview]
+		if {$rm ne ""} then {
+		    lassign $rm idrr idviewheb
+		    switch $parm {
+			REJECT {
+			    # This name is already a mail address
+			    # (it already has a mailbox host)
+			    return [mc {'%1$s' is a mail role in view '%2$s'} $fqdn $viewname]
+			}
+			CHECK {
+			    if {! [read-rr-by-id $dbfd $idrr trrh]} then {
+				return [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
+			    }
+
+			    # IP address check
+			    set ok [check-name-by-addresses $dbfd $idcor -1 trrh]
+			    if {! $ok} then {
+				return [mc "You don't have rights on host holding mail for '%s'" $fqdn]
+			    }
+
+			    # Mail host checking
+			    set bidon -1
+			    set msg [check-domain $dbfd $idcor bidon trrh(domain) ""]
+			    if {$msg ne ""} then {
+				set r [mc "You don't have rights on host holding mail for '%s'" $fqdn]
+				append r "\n$msg"
+				return $r
 			    }
 			}
 			EXISTS {
-			    if {[llength $lip] == 0} then {
-				return [mc {Name '%1$s' is not a host in view '%2$s'} $fqdn $viewname]
-			    }
-			}
-			CHECK {
-			    set ok [check-name-by-addresses $dbfd $idcor -1 trr]
-			    if {! $ok} then {
-				return [mc "You don't have rights on some IP addresses of '%s'" $fqdn]
-			    }
+			    # nothing
 			}
 			default {
 			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			}
+		    }
+		} else {
+		    # this address has no mailbox host, so it is
+		    # not a mail role
+		    switch $parm {
+			REJECT -
+			CHECK {
+			    # nothing
+			}
+			EXISTS {
+			    return [mc {'%1$s' is not a mail role in view '%2$s'} $fqdn $viewname]
+			}
+			default {
+			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			}
+		    }
+		}
+	    }
+	    mailhost {
+		set ladr [rr-adrmail-by-view trr $idview]
+		switch $parm {
+		    REJECT {
+			# remove the name (in all views) from the list
+			# of mail domains hosted on this host
+			while {[set pos [lsearch -exact -index 0 \
+					    $ladr $trr(idrr)]] != -1} {
+			    set ladr [lreplace $ladr $pos $pos]
+			}
+			if {[llength $ladr] > 0} then {
+			    return [mc "'%s' is a mail host for mail domains" $fqdn]
+			}
+		    }
+		    default {
+			return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+		    }
+		}
+	    }
+	    ip {
+		set lip [rr-ip-by-view trr $idview]
+		switch $parm {
+		    REJECT {
+			if {[llength $lip] > 0} then {
+			    return [mc {'%1$s' has IP addresses in view '%2$s'} $fqdn $viewname]
+			}
+		    }
+		    EXISTS {
+			if {[llength $lip] == 0} then {
+			    return [mc {Name '%1$s' is not a host in view '%2$s'} $fqdn $viewname]
+			}
+		    }
+		    CHECK {
+			set ok [check-name-by-addresses $dbfd $idcor -1 trr]
+			if {! $ok} then {
+			    return [mc "You don't have rights on some IP addresses of '%s'" $fqdn]
+			}
+		    }
+		    default {
+			return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 		    }
 		}
 	    }
@@ -5990,7 +5920,7 @@ proc check-mx-target {dbfd prio name domain idview idcor _msg} {
     # Check relay, domain, etc.
     #
 
-    set msg [check-authorized-host $dbfd $idcor $name $domain [list $idview] trr "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $name $domain $idview trr "existing-host"]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -6048,7 +5978,7 @@ proc check-authorized-mx {dbfd idcor name _iddom domain idview _exists _trr} {
     # Get information about this name if it already exists
     #
 
-    set exists [read-rr-by-name $dbfd $name $iddom trr]
+    set exists [read-rr-by-name $dbfd $name $iddom $idview trr]
     if {$exists} then {
 	#
 	# If it already exists, check that it is not a A or CNAME or
@@ -6120,16 +6050,15 @@ proc check-domain-relay {dbfd idcor _iddom domain idview} {
     # Check that we own all specified relays
     #
 
-    set v [list $idview]
     set sql "SELECT r.nom AS nom, d.name AS domain
 		FROM dns.relais_dom rd, dns.rr r, dns.domain d
 		WHERE rd.iddom = $iddom
-			AND rd.idview = $idview
-			AND r.iddom = d.iddom
 			AND rd.mx = r.idrr
+			AND r.iddom = d.iddom
+			AND r.idview = $idview
 		"
     pg_select $dbfd $sql tab {
-	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domain) $v trr "existing-host"]
+	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domain) $idview trr "existing-host"]
 	if {$msg ne ""} then {
 	    return [mc {You don't have rights to some relays of domain '%1$s': %2$s} $domain $msg]
 	}
@@ -6617,9 +6546,9 @@ proc couple-domains {dbfd idcor where} {
 }
 
 #
-# Get an HTML listbox to select some views. This may be either a simple
+# Get an HTML menu to select one view. This may be either a simple
 # text with a hidden field if the group has access to only one view,
-# or a listbox.
+# or a menu.
 #
 # Input:
 #   - dbfd : database handle
@@ -6627,7 +6556,6 @@ proc couple-domains {dbfd idcor where} {
 #   - field : field name
 #   - sel : list of view id to pre-select, or empty list to pre-select
 #	default views (those cited in the dr_view.selected column)
-#   - mult : 1 if multiple selection allowed (listbox) or 0 for a menu
 # Output:
 #   - return value: list {disp html} where disp=true if view menu
 #	must be displayed, and html is html code (may be of "hidden"
@@ -6636,9 +6564,10 @@ proc couple-domains {dbfd idcor where} {
 # History :
 #   2012/10/30 : pda/jean : design
 #   2012/11/07 : pda/jean : add mult parameter and change return value
+#   2013/04/10 : pda/jean : remove mult parameter
 #
 
-proc menu-views {dbfd idcor field sel mult} {
+proc menu-view {dbfd idcor field sel} {
     set nsel [llength $sel]
     set lsel {}
     set lcouples {}
@@ -6677,13 +6606,8 @@ proc menu-views {dbfd idcor field sel mult} {
 	    set html [::webapp::form-hidden $field $idview]
 	}
 	default {
-	    set size $nviews
 	    set disp 1
-	    if {! $mult} then {
-		# dropdown menu instead of a listbox
-		set size 1
-	    }
-	    set html [::webapp::form-menu $field $size $mult $lcouples $lsel]
+	    set html [::webapp::form-menu $field 1 0 $lcouples $lsel]
 	}
     }
 
@@ -10371,6 +10295,8 @@ proc eq-iflist {eq _tabuid} {
 
 proc eq-graph-status {dbfd eq {iface {}}} {
     global libconf
+
+    XXX fix bug below (read-rr-by-name without idview)
 
     #
     # Search for equipment idrr in the database

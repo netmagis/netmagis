@@ -72,13 +72,12 @@ proc main {argv0 argv} {
     if {! [u isallowedview $idview]} then {
 	d error [mc "Access denied to view '%s'" $view]
     }
-    set idviews [list $idview]
 
     #
     # Check access to name
     #
 
-    set msg [check-authorized-host $dbfd $tabcor(idcor) $name $domain $idviews trr "host"]
+    set msg [check-authorized-host $dbfd $tabcor(idcor) $name $domain $idview trr "host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -133,14 +132,14 @@ proc main {argv0 argv} {
     #
 
     if {[read-rr-by-ip $dbfd $addr $idview trrbidon]} then {
-	d error [mc {IP address '%1$s' already exists in view '%2$s'} $addr $view]
+	d error [mc "IP address '%1$s' already exists" $addr]
     }
 
     #
     # Insert host and return result
     #
 
-    set msg [add-host $dbfd trr $name $iddom $addr $idviews \
+    set msg [add-host $dbfd trr $name $iddom $idview $addr \
     				$mac $iddhcpprofil "" $droitsmtp \
 				$ttl $comment $respname $respmail $tabcor(idcor)]
     if {$msg ne ""} then {

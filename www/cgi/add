@@ -15,6 +15,7 @@
 #	- confirm : "no" or "yes" (if confirmation)
 #	- nom : name of host to add
 #	- domain: domain of host to add
+#	- idview: view id in which the host must be added
 #	- adr: IP address
 #	- mac : MAC address
 #	- iddhcpprofil : DHCP profil id, or 0
@@ -35,6 +36,7 @@
 #	- action : "add-alias"
 #	- nom : name of alias to add
 #	- domain : domain of alias to add
+#	- idview: view id in which the alias must be added
 #	- alias : name of canonical existing host
 #	- domain2 : domain of canonical existing host
 #
@@ -66,6 +68,7 @@
 #   2012/10/30 : pda/jean : add views
 #   2012/11/07 : pda/jean : add dumb idview for address map
 #   2013/03/12 : pda      : add naddr parameter
+#   2013/04/10 : pda/jean : accept only one view
 #
 
 #
@@ -153,9 +156,9 @@ d cgi-register {action {}} {
     # Get authorized views
     #
 
-    lassign [menu-views $dbfd $tabuid(idcor) "idviews" {} 1] disp viewval
+    lassign [menu-view $dbfd $tabuid(idcor) "idview" {}] disp viewval
     if {$disp} then {
-	set viewlibelle [mc "Views"]
+	set viewlibelle [mc "View"]
     } else {
 	set viewlibelle ""
     }
@@ -174,7 +177,7 @@ d cgi-register {action {}} {
     #
 
     lassign [menu-droitsmtp $dbfd "droitsmtp" tabuid 0] \
-				droitsmtplibelle droitsmtpmenu
+	    droitsmtplibelle droitsmtpmenu
 
     #
     # Get TTL permission in order to display (or not display) TTL field
@@ -280,7 +283,7 @@ d cgi-register {action add-host} {
     {confirm	1 1}
     {nom	1 1}
     {domain	1 1}
-    {idviews	0 9999}
+    {idview	1 1}
     {adr	1 1}
     {mac	1 1}
     {iddhcpprofil 1 1}
@@ -298,12 +301,6 @@ d cgi-register {action add-host} {
     set idcor $tabuid(idcor)
 
     #
-    # At least one view
-    #
-
-    at-least-one-view $idviews
-
-    #
     # Check name and domain
     #
 
@@ -313,7 +310,7 @@ d cgi-register {action add-host} {
     }
     set nom [string tolower $nom]
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domain $idviews trr "host"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domain $idview trr "host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -351,11 +348,8 @@ d cgi-register {action add-host} {
 	d error [mc "You don't have rights on '%s'" $adr]
     }
 
-    foreach idview $idviews {
-	if {[read-rr-by-ip $dbfd $adr $idview tabrrbidon]} then {
-	    set v [u viewname $idview]
-	    d error [mc {IP address '%1$s' already exists in view '%2$s'} $adr $v]
-	}
+    if {[read-rr-by-ip $dbfd $adr $idview tabrrbidon]} then {
+	d error [mc "IP address '%s' already exists" $adr]
     }
 
     #
@@ -443,7 +437,7 @@ d cgi-register {action add-host} {
     # Common code for confirmation
     #
 
-    set l {nom domain adr idviews mac iddhcpprofil droitsmtp ttl hinfo
+    set l {nom domain adr idview mac iddhcpprofil droitsmtp ttl hinfo
 			    commentaire respnom respmel naddr}
     set hidden [::webapp::hide-parameters $l ftab]
 
@@ -473,7 +467,7 @@ d cgi-register {action add-host} {
 	# Output a page with attribute list of the identified object
 	#
 
-	set host [display-rr $dbfd -1 trr {} {}]
+	set host [display-rr $dbfd -1 trr $idview {}]
 	d urlset "%URLFORM%" $conf(nextadd) {}
 	d urladdnext "%URLFORM%"
 	d result $conf(page-exist) [list \
@@ -490,7 +484,7 @@ d cgi-register {action add-host} {
     # Insert object
     #
 
-    set msg [add-host $dbfd trr $nom $iddom $adr $idviews \
+    set msg [add-host $dbfd trr $nom $iddom $idview $adr \
     			$mac $iddhcpprofil $idhinfo $droitsmtp $ttl \
 			$commentaire $respnom $respmel $idcor]
     if {$msg ne ""} then {
@@ -536,7 +530,7 @@ d cgi-register {action add-host} {
     # End of script: output page and close database
     #
 
-    set machine [display-rr $dbfd $trr(idrr) trr {} {}]
+    set machine [display-rr $dbfd $trr(idrr) trr $idview {}]
     d result $conf(page-host) [list \
 					    [list %MACHINE% $machine] \
 			    ]
@@ -694,18 +688,12 @@ d cgi-register {action add-alias} {
     {domain	1 1}
     {nomref	1 1}
     {domainref	1 1}
-    {idviews	0 9999}
+    {idview	1 1}
 } {
     global conf
 
     set login $tabuid(login)
     set idcor $tabuid(idcor)
-
-    #
-    # At least one view
-    #
-
-    at-least-one-view $idviews
 
     #
     # Check names of alias and host
@@ -727,7 +715,7 @@ d cgi-register {action add-alias} {
     # Add alias
     #
 
-    set msg [add-alias $dbfd $idviews $nom $domain $nomref $domainref $idcor]
+    set msg [add-alias $dbfd $nom $domain $idview $nomref $domainref $idcor]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -736,14 +724,8 @@ d cgi-register {action add-alias} {
     # End of script: output page and close database
     #
 
-    set allviews {}
-    foreach idview $idviews {
-	lappend allviews [u viewname $idview]
-    }
-    set v [join $allviews ", "]
-
     d result $conf(page-alias) [list \
-				    [list %FQDN%    "$nom.$domain ($v)"] \
+				    [list %FQDN%    "$nom.$domain"] \
 				    [list %FQDNREF% "$nomref.$domainref"] \
 			    ]
     return 0

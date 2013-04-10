@@ -181,7 +181,7 @@ d cgi-register {
 
     set menuview [mc "View"]
     append menuview " "
-    lassign [menu-views $dbfd $tabuid(idcor) "idview" {} 0] disp html
+    lassign [menu-view $dbfd $tabuid(idcor) "idview" {}] disp html
     append menuview $html
     if {$disp} then {
 	set dispview "block"
@@ -294,8 +294,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 			AND NOT rr_ip.adr <<= ANY ($sqldeny)
 			AND rr_ip.adr <<= '$cidrplage'
 			AND domain.iddom = alias.iddom
-			AND rr_ip.idview = $idview
-			AND rr_cname.idview = $idview
+			AND canon.idview = $idview
 		    ORDER BY alias.nom"
 	pg_select $dbfd $sql tab {
 	    lappend cname($tab(adr)) $tab(name)
@@ -335,7 +334,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 			AND domain.iddom = rr.iddom
 			AND rr.idhinfo = hinfo.idhinfo
 			AND rr.idcor = corresp.idcor
-			AND rr_ip.idview = $idview
+			AND rr.idview = $idview
 		    ORDER BY rr_ip.adr"
 	pg_select $dbfd $sql tab {
 	    set primary		$tab(name)

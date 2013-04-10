@@ -316,8 +316,8 @@ proc cgi-search-150-host {dbfd q val type} {
 	    }
 
 	    foreach iddom $ldom {
-		if {[read-rr-by-name $dbfd $name $iddom trr]} then {
-		    foreach idview [u myviewids] {
+		foreach idview [u myviewids] {
+		    if {[read-rr-by-name $dbfd $name $iddom $idview trr]} then {
 			if {[llength [rr-ip-by-view trr $idview]] > 0} then {
 			    lappend lfound [display-host $dbfd trr $idview $q]
 			}
@@ -364,8 +364,8 @@ proc cgi-search-160-mailrole {dbfd q val type} {
 	    }
 
 	    foreach iddom $ldom {
-		if {[read-rr-by-name $dbfd $name $iddom trr]} then {
-		    foreach idview [u myviewids] {
+		foreach idview [u myviewids] {
+		    if {[read-rr-by-name $dbfd $name $iddom $idview trr]} then {
 			set rm [rr-rolemail-by-view trr $idview]
 			if {[llength $rm] > 0} then {
 			    lappend lfound [display-rolemail $dbfd trr $idview $q]

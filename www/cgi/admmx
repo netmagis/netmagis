@@ -96,7 +96,6 @@ source %LIBNETMAGIS%
 #	- dbfd : database handle
 #	- idrr : RR id
 #	- lmx : list of MX
-#	- idview : view id
 # Output:
 #   - return value : empty string or error message
 #
@@ -105,12 +104,12 @@ source %LIBNETMAGIS%
 #   2010/12/14 : pda      : minor simplification
 #
 
-proc insert-mx {dbfd idrr lmx idview} {
+proc insert-mx {dbfd idrr lmx} {
     set msg ""
     foreach mx $lmx {
 	lassign $mx prio idmx
-	set sql "INSERT INTO dns.rr_mx (idrr, priorite, mx, idview)
-				VALUES ($idrr, $prio, $idmx, $idview)"
+	set sql "INSERT INTO dns.rr_mx (idrr, priorite, mx)
+				VALUES ($idrr, $prio, $idmx)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    break
 	}
@@ -138,7 +137,7 @@ d cgi-register {action {}} {
 
     set menuview [mc "View"]
     append menuview " "
-    lassign [menu-views $dbfd $tabuid(idcor) "idview" {} 0] disp html
+    lassign [menu-view $dbfd $tabuid(idcor) "idview" {}] disp html
     append menuview $html
     if {$disp} then {
 	set dispview "inline"
@@ -221,7 +220,7 @@ d cgi-register {action edit} {
 		WHERE m.idrr = $idrr
 			AND m.mx = r.idrr
 			AND r.iddom = d.iddom
-			AND m.idview = $idview
+			AND r.idview = $idview
 		ORDER BY m.priorite, d.name, r.nom
 		"
     set idnum "mx"
@@ -338,8 +337,7 @@ d cgi-register {action mod} {
 	# Delete all previous MX
 	#
 
-	set sql "DELETE FROM dns.rr_mx WHERE idrr = $trr(idrr)
-					AND idview = $idview"
+	set sql "DELETE FROM dns.rr_mx WHERE idrr = $trr(idrr)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "delete %s" [mc "old MX"]] $msg
 	}
@@ -361,7 +359,7 @@ d cgi-register {action mod} {
 	    #
 	    # Insert MX RRs
 	    #
-	    set msg [insert-mx $dbfd $trr(idrr) $lmx $idview]
+	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
 	    if {$msg ne ""} then {
 		d dbabort [mc "add %s" "MX"] $msg
 	    }
@@ -383,7 +381,7 @@ d cgi-register {action mod} {
 	    #
 
 	    # XXX : No comment, nor any responsible. May be later...
-	    set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" \
+	    set msg [add-rr $dbfd $name $iddom $idview "" 0 "" 0 -1 "" "" "" \
 				$tabuid(idcor) trr]
 	    if {$msg ne ""} then {
 		d dbabort [mc "add %s" $fqdn] $msg
@@ -392,7 +390,7 @@ d cgi-register {action mod} {
 	    #
 	    # Insert MX RRs
 	    #
-	    set msg [insert-mx $dbfd $trr(idrr) $lmx $idview]
+	    set msg [insert-mx $dbfd $trr(idrr) $lmx]
 	    if {$msg ne ""} then {
 		d dbabort [mc "add %s" "MX"] $msg
 	    }

@@ -59,9 +59,10 @@ DROP FUNCTION IF EXISTS valide_ip_grp (INET, INTEGER)		CASCADE ;
 -- Schema changes
 ------------------------------------------------------------------------------
 
-
 DELETE FROM global.config WHERE clef = 'dnsupdateperiod' ;
 INSERT INTO global.config (clef, valeur) VALUES ('schemaversion', '22') ;
+
+DROP TABLE dns.role_web ;
 
 ALTER TABLE dns.seq_domaine RENAME TO seq_domain ;
 ALTER TABLE dns.domaine RENAME TO domain ;
@@ -136,103 +137,24 @@ INSERT INTO dns.dr_view (idgrp, idview, sort, selected)
 	    WHERE view.name = 'default' ;
 
 
--- Attach IP addresses to views
+-- Attach views to RR
 
-ALTER TABLE dns.rr_ip
-    DROP CONSTRAINT rr_ip_pkey ;
+ALTER TABLE dns.rr
+    DROP CONSTRAINT IF EXISTS rr_nom_key,
+    DROP CONSTRAINT IF EXISTS rr_nom_iddom_key,
+    DROP CONSTRAINT IF EXISTS rr_mac_key
+    ;
 
-ALTER TABLE dns.rr_ip
+ALTER TABLE dns.rr
     ADD COLUMN idview INT ;
 
-UPDATE dns.rr_ip
+UPDATE dns.rr
     SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
 
-ALTER TABLE dns.rr_ip
+ALTER TABLE dns.rr
     ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    ADD PRIMARY KEY (idrr, adr, idview)
-    ;
-
--- Attach CNAME to views (CNAME and pointed RR must be in the same view)
-
-ALTER TABLE dns.rr_cname
-    DROP CONSTRAINT rr_cname_pkey ;
-
-ALTER TABLE dns.rr_cname
-    ADD COLUMN idview INT ;
-
-UPDATE dns.rr_cname
-    SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
-
-ALTER TABLE dns.rr_cname
-    ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    ADD PRIMARY KEY (idrr, cname, idview)
-    ;
-
--- Attach MX to views (MX and pointed RR must be in the same view)
-
-ALTER TABLE dns.rr_mx
-    DROP CONSTRAINT rr_mx_pkey ;
-
-ALTER TABLE dns.rr_mx
-    ADD COLUMN idview INT ;
-
-UPDATE dns.rr_mx
-    SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
-
-ALTER TABLE dns.rr_mx
-    ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    ADD PRIMARY KEY (idrr, mx, idview)
-    ;
-
--- Attach roles to views
-
-ALTER TABLE dns.role_web
-    DROP CONSTRAINT role_web_pkey ;
-
-ALTER TABLE dns.role_web
-    ADD COLUMN idview INT ;
-
-UPDATE dns.role_web
-    SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
-
-ALTER TABLE dns.role_web
-    ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    ADD PRIMARY KEY (idrr, idview)
-    ;
-
-
-ALTER TABLE dns.role_mail
-    DROP CONSTRAINT role_mail_pkey ;
-
-ALTER TABLE dns.role_mail
-    ADD COLUMN idviewrr INT,
-    ADD COLUMN idviewheb INT ;
-
-UPDATE dns.role_mail
-    SET idviewrr = (SELECT idview FROM dns.view WHERE name = 'default'),
-	idviewheb = (SELECT idview FROM dns.view WHERE name = 'default')
-    ;
-
-ALTER TABLE dns.role_mail
-    ADD FOREIGN KEY (idviewrr) REFERENCES dns.view (idview),
-    ADD FOREIGN KEY (idviewheb) REFERENCES dns.view (idview),
-    ADD PRIMARY KEY (idrr, idviewrr)
-    ;
-
--- Attach mail relays to views
-
-ALTER TABLE dns.relais_dom
-    DROP CONSTRAINT relais_dom_pkey ;
-
-ALTER TABLE dns.relais_dom
-    ADD COLUMN idview INT ;
-
-UPDATE dns.relais_dom
-    SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
-
-ALTER TABLE dns.relais_dom
-    ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    ADD PRIMARY KEY (iddom, mx, idview)
+    ADD UNIQUE (nom, iddom, idview),
+    ADD UNIQUE (mac, idview)
     ;
 
 ------------------------------------------------------------------------------

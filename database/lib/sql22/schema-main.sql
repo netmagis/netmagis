@@ -291,8 +291,9 @@ CREATE TABLE dns.rr (
 		    DEFAULT NEXTVAL ('dns.seq_rr'),
     nom		TEXT,			-- name of RR (first component)
     iddom	INT,			-- domain name of RR
+    idview	INT,			-- view id
 
-    mac		MACADDR UNIQUE,		-- MAC address or NULL
+    mac		MACADDR,		-- MAC address or NULL
     iddhcpprofil INT,			-- DHCP profile or NULL
 
     idhinfo	INT DEFAULT 0,		-- host type
@@ -308,67 +309,50 @@ CREATE TABLE dns.rr (
 
     FOREIGN KEY (idcor)        REFERENCES global.corresp (idcor),
     FOREIGN KEY (iddom)        REFERENCES dns.domain     (iddom),
+    FOREIGN KEY (idview)       REFERENCES dns.view       (idview),
     FOREIGN KEY (iddhcpprofil) REFERENCES dns.dhcpprofil (iddhcpprofil),
     FOREIGN KEY (idhinfo)      REFERENCES dns.hinfo      (idhinfo),
-    UNIQUE (nom, iddom),
+    UNIQUE (nom, iddom, idview),
+    -- MAC address should be unique in a view
+    UNIQUE (mac, idview),
     PRIMARY KEY (idrr)
 ) ;
 
 CREATE TABLE dns.rr_ip (
     idrr	INT,			-- RR
     adr		INET,			-- IP (v4 or v6) address
-    idview	INT,			-- view in which this host is
 
     FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    PRIMARY KEY (idrr, adr, idview)
+    PRIMARY KEY (idrr, adr)
 ) ;
 
 CREATE TABLE dns.rr_cname (
     idrr	INT,			-- RR
     cname	INT,			-- pointed RR id
-    idview	INT,			-- view in which CNAME and pointed RR are
 
     FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
     FOREIGN KEY (cname)  REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    PRIMARY KEY (idrr, cname, idview)
+    PRIMARY KEY (idrr, cname)
 ) ;
 
 CREATE TABLE dns.rr_mx (
     idrr	INT,			-- RR
     priorite	INT,			-- priority
     mx		INT,			-- pointed RR id
-    idview	INT,			-- view in which MX and pointed RR are
 
     FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
     FOREIGN KEY (mx)     REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    PRIMARY KEY (idrr, mx, idview)
-) ;
-
--- Web roles (not used at this time)
-CREATE TABLE dns.role_web (
-    idrr	INT,			-- Web server id
-    idview	INT,			-- view in which RR is
-
-    FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    PRIMARY KEY (idrr, idview)
+    PRIMARY KEY (idrr, mx)
 ) ;
 
 -- Mail roles
 CREATE TABLE dns.role_mail (
     idrr	INT,			-- id of "mail address"
-    idviewrr	INT,			-- view in which RR is
     heberg	INT,			-- RR holding mboxes for this address
-    idviewheb	INT,			-- view in which mbox RR is
 
     FOREIGN KEY (idrr)      REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idviewrr)  REFERENCES dns.view (idview),
     FOREIGN KEY (heberg)    REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idviewheb) REFERENCES dns.view (idview),
-    PRIMARY KEY (idrr, idviewrr)
+    PRIMARY KEY (idrr)
 ) ;
 
 -- Mail relays for a domain
@@ -376,12 +360,10 @@ CREATE TABLE dns.relais_dom (
     iddom	INT,			-- domain id
     priorite	INT,			-- MX priority
     mx		INT,			-- relay host for this domain
-    idview	INT,			-- view in which MX is
 
     FOREIGN KEY (iddom)  REFERENCES dns.domain  (iddom),
     FOREIGN KEY (mx)     REFERENCES dns.rr      (idrr),
-    FOREIGN KEY (idview) REFERENCES dns.view    (idview),
-    PRIMARY KEY (iddom, mx, idview)
+    PRIMARY KEY (iddom, mx)
 ) ;
 
 ---------------------------------------------------------------------------

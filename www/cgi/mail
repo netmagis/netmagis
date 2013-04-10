@@ -128,7 +128,7 @@ d cgi-register {action {}} {
 
     set menuview [mc "View"]
     append menuview " "
-    lassign [menu-views $dbfd $tabuid(idcor) "idview" {} 0] disp html
+    lassign [menu-view $dbfd $tabuid(idcor) "idview" {}] disp html
     append menuview $html
     if {$disp} then {
 	set dispview "inline"
@@ -138,7 +138,7 @@ d cgi-register {action {}} {
 
     set menuviewh [mc "View"]
     append menuviewh " "
-    lassign [menu-views $dbfd $tabuid(idcor) "idviewh" {} 0] disp html
+    lassign [menu-view $dbfd $tabuid(idcor) "idviewh" {}] disp html
     append menuviewh $html
 
     #
@@ -223,11 +223,11 @@ d cgi-register {action list} {
 					WHERE NOT dns.check_ip_cor(adr, $idcor)
 					    AND r4.idrr = r2.idrr
 			    )
-		AND role_mail.idviewrr = $idview
-		AND role_mail.idviewheb IN
+		AND r1.idview = $idview
+		AND r2.idview = v2.idview
+		AND r2.idview IN
 			(SELECT idview FROM dns.dr_view drv
 					WHERE drv.idgrp = corresp.idgrp)
-		AND role_mail.idviewheb = v2.idview
 	    ORDER BY domaina ASC, namea ASC
 		"
     set lroles {}
@@ -314,7 +314,7 @@ d cgi-register {action add} {
     # Check permission to declare a mail role
     #
 
-    set msg [check-authorized-host $dbfd $idcor $name $domain [list $idview] trr "add-addrmail"]
+    set msg [check-authorized-host $dbfd $idcor $name $domain $idview trr "add-addrmail"]
 
     if {$msg ne ""} then {
 	d error $msg
@@ -324,7 +324,7 @@ d cgi-register {action add} {
     # Check future mailbox host
     #
 
-    set msg [check-authorized-host $dbfd $idcor $nameh $domainh [list $idviewh] trrh "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $nameh $domainh $idviewh trrh "existing-host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -347,8 +347,8 @@ d cgi-register {action add} {
 	}
     }
 
-    set sql "INSERT INTO dns.role_mail (idrr, idviewrr, heberg, idviewheb)
-		    VALUES ($trr(idrr), $idview, $trrh(idrr), $idviewh)"
+    set sql "INSERT INTO dns.role_mail (idrr, heberg)
+				VALUES ($trr(idrr), $trrh(idrr))"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	d dbabort [mc "add %s" [mc "mail role"]] $msg
     }
@@ -416,7 +416,7 @@ proc disp-edit {dbfd _chkv _tabuid} {
     set domh $trrh(domain)
     set domainh [menu-domain $dbfd $tabuid(idcor) "domainh" "" $domh]
 
-    set m [menu-views $dbfd $tabuid(idcor) "idviewh" [list $idviewheb] 0]
+    set m [menu-view $dbfd $tabuid(idcor) "idviewh" [list $idviewheb]]
     lassign $m disp viewval
     if {$disp} then {
 	set viewlibelle [mc "View"]
@@ -549,7 +549,7 @@ d cgi-register {action mod} {
     #
 
     if {$nameh ne ""} then {
-	set msg [check-authorized-host $dbfd $tabuid(idcor) $nameh $domainh [list $idviewh] trrh "existing-host"]
+	set msg [check-authorized-host $dbfd $tabuid(idcor) $nameh $domainh $idviewh trrh "existing-host"]
 	if {$msg ne ""} then {
 	    d error $msg
 	}
@@ -569,9 +569,8 @@ d cgi-register {action mod} {
 
 	set action [mc "deleted"]
 
-	set sql "DELETE FROM dns.role_mail
-			WHERE idrr = $idrr AND idviewrr = $idview"
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	set msg [del-rolemail-by-id $dbfd $idrr]
+	if {$msg ne ""} then {
 	    d dbabort [mc "delete %s" [mc "mail role"]] $msg
 	}
 
@@ -592,8 +591,11 @@ d cgi-register {action mod} {
 	set action [mc "modified"]
 
 	set sql "UPDATE dns.role_mail
-			    SET heberg = $trrh(idrr), idviewheb = $idviewh
-			    WHERE idrr = $idrr AND idviewrr = $idview"
+			    FROM dns.rr
+			    SET heberg = $trrh(idrr)
+			    WHERE role_mail.idrr = rr.idrr
+				AND rr.idrr = $idrr
+				AND rr.idview = $idview"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "modify %s" [mc "mail role"]] $msg
 	}

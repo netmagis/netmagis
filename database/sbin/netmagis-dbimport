@@ -1373,7 +1373,7 @@ proc get-existing-rr {dbfd idview iddom} {
     set sql "SELECT r.nom AS name, i.adr AS addr
 			FROM dns.rr r, dns.rr_ip i
 			WHERE r.idrr = i.idrr
-			    AND i.idview = $idview
+			    AND r.idview = $idview
 			    AND iddom = $iddom"
     pg_select $dbfd $sql tab {
 	lappend existingrr(ip:$tab(name)) [::ip::normalize $tab(addr)]
@@ -1383,7 +1383,7 @@ proc get-existing-rr {dbfd idview iddom} {
 			FROM dns.rr r1, dns.rr_cname c, dns.rr r2, dns.domain d
 			WHERE r1.idrr = c.idrr
 				AND c.cname = r2.idrr
-				AND c.idview = $idview
+				AND r1.idview = $idview
 				AND r2.iddom = d.iddom
 				AND r1.iddom = $iddom"
     pg_select $dbfd $sql tab {
@@ -1513,11 +1513,11 @@ proc import-zone {verbose argv dbfd} {
 
 	foreach name [lsort [array names tabaddr]] {
 	    catch {unset trr}
-	    if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
+	    if {! [read-rr-by-name $dbfd $name $iddom $idview trr]} then {
 		if {$verbose >= 2} then {
 		    puts stderr "Adding RR $name"
 		}
-		set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
+		set msg [add-rr $dbfd $name $iddom $idview "" 0 "" 0 -1 "" "" "" $idcor trr]
 		if {$msg ne ""} then {
 		    warning "Unable to add $name ($msg)"
 		    set err 1
@@ -1528,8 +1528,8 @@ proc import-zone {verbose argv dbfd} {
 		if {$verbose >= 2} then {
 		    puts stderr "Adding IP $name / $a"
 		}
-		set sql "INSERT INTO dns.rr_ip (idrr, adr, idview)
-					VALUES ($trr(idrr), '$a', $idview)"
+		set sql "INSERT INTO dns.rr_ip (idrr, adr)
+					VALUES ($trr(idrr), '$a')"
 		if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		    warning "Unable to add $name/$a ($msg)"
 		    set err 1
@@ -1543,11 +1543,11 @@ proc import-zone {verbose argv dbfd} {
 
 	foreach name [lsort [array names tabcname]] {
 	    catch {unset trr}
-	    if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
+	    if {! [read-rr-by-name $dbfd $name $iddom $idview trr]} then {
 		if {$verbose >= 2} then {
 		    puts stderr "Adding RR $name"
 		}
-		set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
+		set msg [add-rr $dbfd $name $iddom $idview "" 0 "" 0 -1 "" "" "" $idcor trr]
 		if {$msg ne ""} then {
 		    warning "Unable to add $name ($msg)"
 		    set err 1
@@ -1559,13 +1559,12 @@ proc import-zone {verbose argv dbfd} {
 	    if {[regexp {^([^.]+)\.(.+).$} $ref x n dom]} then {
 		if {[info exists tabdom($dom)]} then {
 		    catch {unset tref}
-		    if {[read-rr-by-name $dbfd $n $tabdom($dom) tref]} then {
+		    if {[read-rr-by-name $dbfd $n $tabdom($dom) $idview tref]} then {
 			if {$verbose >= 2} then {
 			    puts stderr "Adding CNAME $name / $a"
 			}
-			set sql "INSERT INTO dns.rr_cname (idrr, cname, idview)
-				    	VALUES ($trr(idrr), $tref(idrr),
-							$idview)"
+			set sql "INSERT INTO dns.rr_cname (idrr, cname)
+				    	VALUES ($trr(idrr), $tref(idrr))"
 			if {! [::pgsql::execsql $dbfd $sql msg]} then {
 			    warning "Unable to add CNAME $name -> $ref ($msg)"
 			    set err 1
@@ -1764,11 +1763,10 @@ proc import-mailrelay {verbose argv dbfd} {
 		    set err 1
 		    warning $msg
 		} else {
-		    if {[read-rr-by-name $dbfd $namer $iddomr trr]} then {
-			set sql "INSERT INTO dns.relais_dom (iddom, priorite,
-							mx, idview)
-					VALUES ($iddom, $prio,
-							$trr(idrr), $idview)"
+		    if {[read-rr-by-name $dbfd $namer $iddomr $idview trr]} then {
+			set sql "INSERT INTO dns.relais_dom
+						(iddom, priorite, mx)
+					VALUES ($iddom, $prio, $trr(idrr))"
 			if {! [::pgsql::execsql $dbfd $sql msg]} then {
 			    return "$msg\nAbort"
 			}
@@ -1891,8 +1889,8 @@ proc import-mailrole {verbose argv dbfd} {
 	    warning "Unknown domain '$d1' for '$n1.$d1'"
 	} else {
 	    set iddom1 $tabdom($d1)
-	    if {! [read-rr-by-name $dbfd $n1 $iddom1 trr1]} then {
-		set msg [add-rr $dbfd $n1 $iddom1 "" 0 "" 0 -1 "" "" "" $idcor trr1]
+	    if {! [read-rr-by-name $dbfd $n1 $iddom1 $idview trr1]} then {
+		set msg [add-rr $dbfd $n1 $iddom1 $idview "" 0 "" 0 -1 "" "" "" $idcor trr1]
 		if {$msg ne ""} then {
 		    set err 1
 		    warning $msg
@@ -1914,7 +1912,7 @@ proc import-mailrole {verbose argv dbfd} {
 	} else {
 	    set idviewheb $tabview($viewheb)
 	    set iddom2 $tabdom($d2)
-	    if {[read-rr-by-name $dbfd $n2 $iddom2 trr2]} then {
+	    if {[read-rr-by-name $dbfd $n2 $iddom2 $idviewheb trr2]} then {
 		if {[llength [rr-ip-by-view trr2 $idviewheb]] == 0} then {
 		    set err 1
 		    warning "'$n2.$d2' is not a host"
@@ -1926,9 +1924,8 @@ proc import-mailrole {verbose argv dbfd} {
 	}
 
 	if {! $err} then {
-	    set sql "INSERT INTO dns.role_mail (idrr, idviewrr,
-	    					heberg, idviewheb)
-			VALUES ($trr1(idrr), $idview, $trr2(idrr), $idviewheb)"
+	    set sql "INSERT INTO dns.role_mail (idrr, heberg)
+			VALUES ($trr1(idrr), $trr2(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		return "$msg\nAbort"
 	    }

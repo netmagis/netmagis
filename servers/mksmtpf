@@ -71,7 +71,7 @@ proc gen-filter {dbfd idview pfprologue pffmt _pftxt} {
     # such as the resulting file do not contain any modification.
     #
     set sql "SELECT adr FROM dns.rr, dns.rr_ip
-			WHERE ($idview = -1 OR idview = $idview)
+			WHERE ($idview = -1 OR rr.idview = $idview)
 			    AND rr.droitsmtp = 1
 			    AND rr.idrr = rr_ip.idrr
 			ORDER BY adr"

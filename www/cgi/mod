@@ -312,7 +312,7 @@ d cgi-register {action store} {
     }
     set nom [string tolower $nom]
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domain [list $idview] ntrr "host"]
+    set msg [check-authorized-host $dbfd $idcor $nom $domain $idview ntrr "host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -450,7 +450,7 @@ d cgi-register {action store} {
 	# Update all references to the host in this view
 	#
 
-	set msg [update-host-refs-in-view $dbfd $idrr $nidrr $idview]
+	set msg [update-host-refs $dbfd $idrr $nidrr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "modify %s" [mc "RR"]] $msg
 	}
@@ -527,7 +527,7 @@ d cgi-register {action store} {
 	    # Update all references to the host in this view
 	    #
 
-	    set msg [update-host-refs-in-view $dbfd $idrr $nidrr $idview]
+	    set msg [update-host-refs $dbfd $idrr $nidrr]
 	    if {$msg ne ""} then {
 		d dbabort [mc "modify %s" [mc "RR"]] $msg
 	    }

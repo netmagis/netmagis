@@ -273,7 +273,7 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     set sql "SELECT rr.nom, rr.ttl, rr_ip.adr, family(rr_ip.adr) AS family
 			FROM dns.rr, dns.rr_ip
 			WHERE rr.iddom = $iddom
-			    AND rr_ip.idview = $idview
+			    AND rr.idview = $idview
 			    AND rr.idrr = rr_ip.idrr
 			ORDER BY upper(rr.nom), rr_ip.adr"
     pg_select $dbfd $sql tab {
@@ -310,7 +310,7 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
 			WHERE rr1.iddom = $iddom
 			    AND rr1.idrr = rr_mx.idrr
 			    AND rr2.idrr = rr_mx.mx
-			    AND rr_mx.idview = $idview
+			    AND rr1.idview = $idview
 			ORDER BY upper(rr1.nom)"
     pg_select $dbfd $sql tab {
 	set nom $tab(nom)
@@ -333,7 +333,7 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
 			WHERE rr1.iddom = $iddom
 			    AND rr1.idrr = rr_cname.idrr
 			    AND rr2.idrr = rr_cname.cname
-			    AND rr_cname.idview = $idview
+			    AND rr1.idview = $idview
 			ORDER BY upper(rr1.nom)"
     pg_select $dbfd $sql tab {
 	set d $tab(iddom2)
@@ -354,9 +354,9 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
 			rr.nom || '.' || domain.name || '.' AS rrname
 		    FROM dns.relais_dom, dns.rr, dns.domain
 		    WHERE relais_dom.iddom = $iddom
-			AND relais_dom.idview = $idview
 			AND relais_dom.mx = rr.idrr
 			AND rr.iddom = domain.iddom
+			AND rr.idview = $idview
 		    ORDER BY relais_dom.priorite ASC, domain.name, upper(rr.nom)
 		"
     set relais {}
@@ -372,7 +372,7 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
 	set sql "SELECT rr.nom, rr.ttl
 			FROM dns.role_mail, dns.rr
 			WHERE role_mail.idrr = rr.idrr
-			    AND role_mail.idviewrr = $idview
+			    AND rr.idview = $idview
 			    AND rr.iddom = $iddom
 			ORDER BY upper(rr.nom) ASC
 			"
@@ -439,7 +439,7 @@ proc gen-ipv4 {dbfd zone selection idview rrsup _txt} {
     set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom
 			FROM dns.rr_ip, dns.rr
 			WHERE rr_ip.adr <<= '$selection'
-			    AND rr_ip.idview = $idview
+			    AND rr.idview = $idview
 			    AND rr_ip.idrr = rr.idrr
 			ORDER BY rr_ip.adr"
     pg_select $dbfd $sql tab {
@@ -512,7 +512,7 @@ proc gen-ipv6 {dbfd zone selection idview rrsup _txt} {
     set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom
 			FROM dns.rr_ip, dns.rr
 			WHERE rr_ip.adr <<= '$selection'
-			    AND rr_ip.idview = $idview
+			    AND rr.idview = $idview
 			    AND rr_ip.idrr = rr.idrr
 			ORDER BY rr_ip.adr"
     pg_select $dbfd $sql tab {
