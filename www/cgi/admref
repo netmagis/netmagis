@@ -8,7 +8,7 @@
 # Parameters (form or url):
 #   - display edit page
 #	- action : (empty)
-#	- type : etabl, commu, hinfo, reseau, domain, view, zone, zone4, zone6,
+#	- type : etabl, commu, hinfo, net, domain, view, zone, zone4, zone6,
 #		vlan, eq, eqtype, confcmd, dotattr
 #   - display graphviz generated image
 #	- action : "image"
@@ -109,24 +109,24 @@ set conf(hinfo:proc)		admref-nop
 ##############################################################################
 # Networks
 
-set conf(reseau:ptitle)	"Network management"
-set conf(reseau:cols)		{ {1 nom	{Name} {string 20} {}}
-				  {1 localisation {Location} {string 10} {}}
-				  {1 adr4	{IPv4 address} {string 15} {}}
+set conf(net:ptitle)	"Network management"
+set conf(net:cols)		{ {1 name	{Name} {string 20} {}}
+				  {1 location	{Location} {string 10} {}}
+				  {1 addr4	{IPv4 address} {string 15} {}}
 				  {1 gw4	{IPv4 gateway} {string 12} {}}
 				  {1 dhcp	{DHCP enabled} {bool} 0}
-				  {1 adr6	{Adr IPv6} {string 49} {}}
+				  {1 addr6	{IPv6 address} {string 49} {}}
 				  {1 gw6	{IPv6 gateway} {string 45} {}}
 				  {1 idetabl	{Organization} {menu {%MENUETABL%}} {}}
 				  {1 idcommu	{Community} {menu {%MENUCOMMU%}} {}}
-				  {1 commentaire {Comment} {string 15} {}}
+				  {1 comment	{Comment} {string 15} {}}
 				}
-set conf(reseau:sql)		"SELECT * FROM dns.reseau ORDER BY adr4"
-set conf(reseau:id)		idreseau
-set conf(reseau:help)		help-reseau.html
-set conf(reseau:return)		"Return to network modification"
-set conf(reseau:table)		dns.reseau
-set conf(reseau:proc)		admref-nop
+set conf(net:sql)		"SELECT * FROM dns.network ORDER BY addr4"
+set conf(net:id)		idnet
+set conf(net:help)		help-net.html
+set conf(net:return)		"Return to network modification"
+set conf(net:table)		dns.network
+set conf(net:proc)		admref-nop
 
 ##############################################################################
 # Domains
@@ -350,7 +350,7 @@ d cgi-register {action {}} {
     #
 
     switch -- $type {
-	reseau	{
+	net	{
 	    set menuetabl [::pgsql::getcols $dbfd dns.etablissement "" "nom ASC" \
 						{idetabl nom}]
 	    set menucommu [::pgsql::getcols $dbfd dns.communaute "" "nom ASC" \

@@ -167,7 +167,7 @@ set libconf(tabdreq) {
 	botbar {yes}
 	columns {20 80}
     }
-    pattern DroitEq {
+    pattern PermEq {
 	vbar {yes}
 	column { }
 	vbar {yes}
@@ -186,7 +186,7 @@ set libconf(tabnetworks) {
 	botbar {yes}
 	columns {15 35 15 35}
     }
-    pattern Reseau {
+    pattern Network {
 	vbar {yes}
 	column {
 	    align {center}
@@ -210,7 +210,7 @@ set libconf(tabnetworks) {
 	}
 	vbar {yes}
     }
-    pattern Droits {
+    pattern Perm {
 	vbar {yes}
 	column { }
 	vbar {yes}
@@ -561,7 +561,7 @@ snit::type ::netmagis {
 			    {modetabl always}
 			    {modcommu always}
 			    {modhinfo always}
-			    {modreseau always}
+			    {modnetwork always}
 			    {moddomain always}
 			    {admmrel always}
 			    {admmx always}
@@ -592,7 +592,7 @@ snit::type ::netmagis {
 	modetabl	{admref?type=etabl {Modify organizations}}
 	modcommu	{admref?type=commu {Modify communities}}
 	modhinfo	{admref?type=hinfo {Modify machine types}}
-	modreseau	{admref?type=reseau {Modify networks}}
+	modnetwork	{admref?type=net {Modify networks}}
 	moddomain	{admref?type=domain {Modify domains}}
 	admmrel		{admmrel {Modify mailhost}}
 	admmx		{admmx {Modify MX}}
@@ -2922,30 +2922,30 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    set sql "SELECT r.idreseau,
-			r.nom, r.localisation, r.adr4, r.adr6,
-			d.dhcp, d.acl,
+    set sql "SELECT n.idnet,
+			n.name, n.location, n.addr4, n.addr6,
+			p.dhcp, p.acl,
 			e.nom AS etabl,
 			c.nom AS commu
-		FROM dns.reseau r, dns.dr_reseau d, dns.etablissement e, dns.communaute c
-		WHERE d.idgrp = $idgrp
-			AND d.idreseau = r.idreseau
-			AND e.idetabl = r.idetabl
-			AND c.idcommu = r.idcommu
-		ORDER BY d.tri, r.adr4, r.adr6"
+		FROM dns.network n, dns.p_network p, dns.etablissement e, dns.communaute c
+		WHERE p.idgrp = $idgrp
+			AND p.idnet = n.idnet
+			AND e.idetabl = n.idetabl
+			AND c.idcommu = n.idcommu
+		ORDER BY p.sort, n.addr4, n.addr6"
     pg_select $dbfd $sql tab {
-	set r_nom 	[::webapp::html-string $tab(nom)]
-	set r_loc	[::webapp::html-string $tab(localisation)]
-	set r_etabl	$tab(etabl)
-	set r_commu	$tab(commu)
-	set r_dhcp	$tab(dhcp)
-	set r_acl	$tab(acl)
+	set n_name 	[::webapp::html-string $tab(name)]
+	set n_loc	[::webapp::html-string $tab(location)]
+	set n_etabl	$tab(etabl)
+	set n_commu	$tab(commu)
+	set n_dhcp	$tab(dhcp)
+	set n_acl	$tab(acl)
 
 	# dispaddr : used for a pleasant address formatting
 	set dispaddr {}
 	# where : part of the WHERE clause for address selection
 	set where  {}
-	foreach a {adr4 adr6} {
+	foreach a {addr4 addr6} {
 	    if {$tab($a) ne ""} then {
 		lappend dispaddr $tab($a)
 		lappend where "adr <<= '$tab($a)'"
@@ -2954,17 +2954,17 @@ proc display-group {dbfd idgrp} {
 	set dispaddr [join $dispaddr ", "]
 	set where [join $where " OR "]
 
-	lappend lines [list Reseau $r_nom]
-	lappend lines [list Normal4 [mc "Location"] $r_loc \
-				[mc "Organization"] $r_etabl]
+	lappend lines [list Network $n_name]
+	lappend lines [list Normal4 [mc "Location"] $n_loc \
+				[mc "Organization"] $n_etabl]
 	lappend lines [list Normal4 [mc "Range"] $dispaddr \
-				[mc "Community"] $r_commu]
+				[mc "Community"] $n_commu]
 
 	set perm {}
 
 	set pnet {}
-	if {$r_dhcp} then { lappend pnet "dhcp" }
-	if {$r_acl} then { lappend pnet "acl" }
+	if {$n_dhcp} then { lappend pnet "dhcp" }
+	if {$n_acl} then { lappend pnet "acl" }
 	if {[llength $pnet] > 0} then {
 	    lappend perm [join $pnet ", "]
 	}
@@ -2982,7 +2982,7 @@ proc display-group {dbfd idgrp} {
 	    lappend perm "$x $tab2(adr)"
 	}
 
-	lappend lines [list Droits [mc "Permissions"] [join $perm "\n"]]
+	lappend lines [list Perm [mc "Permissions"] [join $perm "\n"]]
     }
 
     if {[llength $lines] > 0} then {
@@ -3000,15 +3000,15 @@ proc display-group {dbfd idgrp} {
     set sql "SELECT adr, allow_deny
 		    FROM dns.dr_ip
 		    WHERE NOT (adr <<= ANY (
-				SELECT r.adr4
-					FROM dns.reseau r, dns.dr_reseau d
-					WHERE r.idreseau = d.idreseau
-						AND d.idgrp = $idgrp
+				SELECT n.addr4
+					FROM dns.network n, dns.p_network p
+					WHERE n.idnet = p.idnet
+						AND p.idgrp = $idgrp
 				UNION
-				SELECT r.adr6
-					FROM dns.reseau r, dns.dr_reseau d
-					WHERE r.idreseau = d.idreseau
-						AND d.idgrp = $idgrp
+				SELECT n.addr6
+					FROM dns.network n, dns.p_network p
+					WHERE n.idnet = p.idnet
+						AND p.idgrp = $idgrp
 				    ) )
 			AND idgrp = $idgrp
 		    ORDER BY adr"
@@ -3022,12 +3022,12 @@ proc display-group {dbfd idgrp} {
 	}
 	lappend perm "$x $tab(adr)"
     }
-    lappend lines [list Droits [mc "Permissions"] [join $perm "\n"]]
+    lappend lines [list Perm [mc "Permissions"] [join $perm "\n"]]
 
     if {$found} then {
-	set tabcidrnonet [::arrgen::output "html" $libconf(tabnetworks) $lines]
+	set tabcidralone [::arrgen::output "html" $libconf(tabnetworks) $lines]
     } else {
-	set tabcidrnonet [mc "None (it's all right)"]
+	set tabcidralone [mc "None (it's ok)"]
     }
 
     #
@@ -3118,7 +3118,7 @@ proc display-group {dbfd idgrp} {
 	if {$perm eq ""} then {
 	    set perm [mc "No permission"]
 	}
-	lappend lines [list DroitEq $text $perm]
+	lappend lines [list PermEq $text $perm]
     }
     set tabdreq [::arrgen::output "html" $libconf(tabdreq) $lines]
 
@@ -3129,7 +3129,7 @@ proc display-group {dbfd idgrp} {
     return [list    $tabperm \
 		    $tabuser \
 		    $tabnetworks \
-		    $tabcidrnonet \
+		    $tabcidralone \
 		    $tabviews \
 		    $tabdomains \
 		    $tabdhcpprofile \
@@ -3247,7 +3247,7 @@ proc user-attribute {dbfd idcor attr} {
 #		droitttl 1 if permission to edit host TTL
 #		droitmac 1 if permission to use the MAC module
 #		droitgenl 1 if permission to generate a link number
-#		reseaux	list of authorized networks
+#		networks list of authorized networks
 #		eq	regexp matching authorized equipments
 #		flagsr	flags -n/-e/-E/etc to use in topo programs
 #		flagsw	flags -n/-e/-E/etc to use in topo programs
@@ -3335,7 +3335,7 @@ proc read-user {dbfd login _tabuid _msg} {
     #
 
     # Read authorized CIDR
-    set tabuid(reseaux) [allowed-networks $dbfd $tabuid(idgrp) "consult"]
+    set tabuid(networks) [allowed-networks $dbfd $tabuid(idgrp) "consult"]
 
     # Read regexp to allow or deny access to equipments
     set tabuid(eqr) [read-authorized-eq $dbfd 0 $tabuid(idgrp)]
@@ -3363,7 +3363,7 @@ proc read-user {dbfd login _tabuid _msg} {
 	    # Build networks rights first: the user has access to
 	    # all interfaces that "his" networks reach (except if
 	    # has no right on an equipment)
-	    foreach r $tabuid(reseaux) {
+	    foreach r $tabuid(networks) {
 		set r4 [lindex $r 1]
 		if {$r4 ne ""} then {
 		    lappend flags "-n" $r4
@@ -4510,10 +4510,10 @@ proc allowed-groups {dbfd laddr} {
 	#
 
 	set sql "SELECT g.idgrp
-			FROM global.groupe g, dns.dr_reseau d, dns.reseau r
-			WHERE g.idgrp = d.idgrp
-			    AND d.idreseau = r.idreseau
-			    AND ('$addr' <<= r.adr4 OR '$addr' <<= r.adr6)
+			FROM global.groupe g, dns.p_network p, dns.network n
+			WHERE g.idgrp = p.idgrp
+			    AND p.idnet = n.idnet
+			    AND ('$addr' <<= n.addr4 OR '$addr' <<= n.addr6)
 			    "
 	set lidgrp {}
 	pg_select $dbfd $sql tab {
@@ -6648,11 +6648,11 @@ proc allowed-networks {dbfd idgrp priv} {
 	    set w2 ""
 	}
 	dhcp {
-	    set w1 "AND d.$priv > 0"
-	    set w2 "AND r.$priv > 0"
+	    set w1 "AND p.$priv > 0"
+	    set w2 "AND n.$priv > 0"
 	}
 	acl {
-	    set w1 "AND d.$priv > 0"
+	    set w1 "AND p.$priv > 0"
 	    set w2 ""
 	}
     }
@@ -6662,14 +6662,14 @@ proc allowed-networks {dbfd idgrp priv} {
     #
 
     set lnet {}
-    set sql "SELECT r.idreseau, r.nom, r.adr4, r.adr6
-			FROM dns.reseau r, dns.dr_reseau d
-			WHERE r.idreseau = d.idreseau
-			    AND d.idgrp = $idgrp
+    set sql "SELECT n.idnet, n.name, n.addr4, n.addr6
+			FROM dns.network n, dns.p_network p
+			WHERE n.idnet = p.idnet
+			    AND p.idgrp = $idgrp
 			    $w1 $w2
-			ORDER BY adr4, adr6"
+			ORDER BY addr4, addr6"
     pg_select $dbfd $sql tab {
-	lappend lnet [list $tab(idreseau) $tab(adr4) $tab(adr6) $tab(nom)]
+	lappend lnet [list $tab(idnet) $tab(addr4) $tab(addr6) $tab(name)]
     }
 
     return $lnet
@@ -6746,12 +6746,12 @@ proc check-netid {dbfd netid idgrp priv version _msg} {
 	    set c [mc "You cannot read this network"]
 	}
 	dhcp {
-	    set w1 "AND d.$priv > 0"
-	    set w2 "AND r.$priv > 0"
+	    set w1 "AND p.$priv > 0"
+	    set w2 "AND n.$priv > 0"
 	    set c [mc "You do not have DHCP access to this network"]
 	}
 	acl {
-	    set w1 "AND d.$priv > 0"
+	    set w1 "AND p.$priv > 0"
 	    set w2 ""
 	    set c [mc "You do not have ACL access to this network"]
 	}
@@ -6764,17 +6764,17 @@ proc check-netid {dbfd netid idgrp priv version _msg} {
     set lcidr {}
     set msg ""
 
-    set sql "SELECT r.adr4, r.adr6
-		    FROM dns.dr_reseau d, dns.reseau r
-		    WHERE d.idgrp = $idgrp
-			AND d.idreseau = r.idreseau
-			AND r.idreseau = $netid
+    set sql "SELECT n.addr4, n.addr6
+		    FROM dns.p_network p, dns.network n
+		    WHERE p.idgrp = $idgrp
+			AND p.idnet = n.idnet
+			AND n.idnet = $netid
 			$w1 $w2"
     set cidrplage4 ""
     set cidrplage6 ""
     pg_select $dbfd $sql tab {
-	set cidrplage4 $tab(adr4)
-	set cidrplage6 $tab(adr6)
+	set cidrplage4 $tab(addr4)
+	set cidrplage6 $tab(addr6)
     }
 
     if {[lsearch -exact $version 4] == -1} then {

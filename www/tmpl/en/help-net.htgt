@@ -29,14 +29,14 @@
 
     \titre {1} {Network management}
 
-    \titre {2} {\ancre {texte} {Name}}
+    \titre {2} {\ancre {name} {Name}}
 
 	Name of network.
 
 	Exemple~:
 	    \retrait {\verbatim {Servers network}}
 
-    \titre {2} {\ancre {localisation} {Location}}
+    \titre {2} {\ancre {location} {Location}}
 
 	Location of network, if it may be geographically located
 	at a specific location.
@@ -44,7 +44,7 @@
 	Example~:
 	    \retrait {\verbatim {Administration floor}}
 
-    \titre {2} {\ancre {adr4} {IPv4 address}}
+    \titre {2} {\ancre {addr4} {IPv4 address}}
 
 	IPv4 CIDR specification of network.
 
@@ -62,7 +62,7 @@
 	for authorized groups, ability to define dynamic DHCP
 	ranges).
 
-    \titre {2} {\ancre {adr6} {IPv6 address}}
+    \titre {2} {\ancre {addr6} {IPv6 address}}
 
 	IPv6 specification of network.
 
@@ -87,7 +87,7 @@
 	Example~:
 	    \retrait {\verbatim {Administration}}
 
-    \titre {2} {\ancre {commentaire} {Comment}}
+    \titre {2} {\ancre {comment} {Comment}}
 
 	Additionnal information about this network.
 }

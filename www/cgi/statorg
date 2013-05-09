@@ -113,9 +113,9 @@ d cgi-register {} {} {
 		    COUNT (rr_ip.adr) AS declared
 		FROM dns.etablissement e, dns.rr_ip
 		WHERE rr_ip.adr << ANY
-		    (SELECT adr4 FROM dns.reseau WHERE reseau.idetabl = e.idetabl
+		    (SELECT addr4 FROM dns.network WHERE network.idetabl = e.idetabl
 			UNION
-		     SELECT adr6 FROM dns.reseau WHERE reseau.idetabl = e.idetabl)
+		     SELECT addr6 FROM dns.network WHERE network.idetabl = e.idetabl)
 		GROUP BY e.nom
 		"
     set totaldecl 0
@@ -131,8 +131,8 @@ d cgi-register {} {} {
     #
 
     set sql "SELECT e.nom,
-		    SUM (2^(32 - MASKLEN (r.adr4))) AS allocated
-		FROM dns.etablissement e, dns.reseau r
+		    SUM (2^(32 - MASKLEN (n.addr4))) AS allocated
+		FROM dns.etablissement e, dns.network n
 		WHERE e.idetabl = r.idetabl
 		GROUP BY e.nom
 		"

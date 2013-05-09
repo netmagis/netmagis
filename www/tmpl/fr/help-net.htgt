@@ -29,14 +29,14 @@
 
     \titre {1} {Gestion des réseaux}
 
-    \titre {2} {\ancre {texte} {Intitulé}}
+    \titre {2} {\ancre {name} {Intitulé}}
 
 	Intitulé du réseau.
 
 	Exemple~:
 	    \retrait {\verbatim {CRC-POSTES}}
 
-    \titre {2} {\ancre {localisation} {Localisation}}
+    \titre {2} {\ancre {location} {Localisation}}
 
 	Localisation du réseau, si le réseau est géographiquement
 	situé à un endroit précis.
@@ -44,7 +44,7 @@
 	Exemple~:
 	    \retrait {\verbatim {Bât. Maths}}
 
-    \titre {2} {\ancre {adr4} {Adresse IPv4}}
+    \titre {2} {\ancre {addr4} {Adresse IPv4}}
 
 	Spécification CIDR IPv4 du réseau.
 
@@ -62,7 +62,7 @@
 	{dhcpd.conf} pour ce réseau, et définition possible, pour
 	les groupes autorisés, d'intervalles DHCP dynamiques).
 
-    \titre {2} {\ancre {adr6} {Adresse IPv6}}
+    \titre {2} {\ancre {addr6} {Adresse IPv6}}
 
 	Spécification IPv6 du réseau.
 
@@ -87,7 +87,7 @@
 	Exemple~:
 	    \retrait {\verbatim {Recherche}}
 
-    \titre {2} {\ancre {commentaire} {Infos complémentaires}}
+    \titre {2} {\ancre {comment} {Infos complémentaires}}
 
 	Information complémentaire à propos de ce réseau.
 }

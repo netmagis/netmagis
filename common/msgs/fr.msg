@@ -409,7 +409,7 @@
  {No MX given for %s} {Pas de MX fourni pour %s}
  {non-declared address within a DHCP range} {adresse non déclarée, figurant dans un intervalle DHCP}
  {(none)}	{(aucune)}
- {None (it's all right)} {Aucun (tout va bien)}
+ {None (it's ok)} {Aucun (tout va bien)}
  {Non-existent link number (%s)} {Numéro de lien inexistant (%s)}
  {no}		{non}
  {No}		{Non}

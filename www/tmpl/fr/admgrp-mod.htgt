@@ -49,11 +49,11 @@
 
     \titre {2} {Réseaux}
 
-    %TABRESEAUX%
+    %TABNETS%
 
     \titre {2} {Droits non rattachés à des réseaux}
 
-    %TABCIDRHORSRESEAU%
+    %TABCIDRALONE%
 
     \titre {2} {Profils DHCP}
 

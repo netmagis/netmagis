@@ -50,7 +50,7 @@
 	    \lignetableau {
 		\casetableau {} {... correspondant au CIDR}
 		\multicasetableau {4} {} {
-		    <INPUT TYPE="text" NAME="adr" SIZE=49>
+		    <INPUT TYPE="text" NAME="addr" SIZE=49>
 		}
 	    }
 	    \lignetableau {
@@ -69,9 +69,9 @@
 	    }
 	    \lignetableau {
 		\casetableau {} {... primaire par}
-		\casetableau {} {%MENUTRI1%}
+		\casetableau {} {%MENUSORT1%}
 		\casetableau {} {... secondaire par}
-		\casetableau {} {%MENUTRI2%}
+		\casetableau {} {%MENUSORT2%}
 	    }
 	    \lignetableau {
 		\multicasetableau {4} {

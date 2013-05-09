@@ -130,7 +130,7 @@
 		\casetableau {} {Pour supprimer un réseau,
 		    vider la case <<~Classe de tri~>>.
 
-		    %LISTERESEAUX%}
+		    %LISTNETS%}
 	    }
 	    \lignetableau {
 		\casetableau {

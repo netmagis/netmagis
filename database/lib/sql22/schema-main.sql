@@ -94,30 +94,30 @@ CREATE TABLE dns.communaute (
     PRIMARY KEY (idcommu)
 ) ;
 
-CREATE SEQUENCE dns.seq_reseau START 1 ;
-CREATE TABLE dns.reseau (
-    idreseau	INT			-- network id
-		    DEFAULT NEXTVAL ('dns.seq_reseau'),
-    nom		TEXT,			-- name (ex: "Servers")
-    localisation TEXT,			-- location if any
-    adr4	CIDR,			-- IPv4 address range
-    adr6	CIDR,			-- IPv6 address range
+CREATE SEQUENCE dns.seq_network START 1 ;
+CREATE TABLE dns.network (
+    idnet	INT			-- network id
+		    DEFAULT NEXTVAL ('dns.seq_network'),
+    name	TEXT,			-- name (ex: "Servers")
+    location TEXT,			-- location if any
+    addr4	CIDR,			-- IPv4 address range
+    addr6	CIDR,			-- IPv6 address range
     idetabl	INT,			-- organization this network belongs to
     idcommu	INT,			-- administration, R&D, etc.
-    commentaire	TEXT,			-- comment
+    comment	TEXT,			-- comment
     dhcp	INT DEFAULT 0,		-- activate DHCP (1) or no (0)
     gw4		INET,			-- default network IPv4 gateway
     gw6		INET,			-- default network IPv6 gateway
 
-    CONSTRAINT au_moins_un_prefixe_v4_ou_v6
-	CHECK (adr4 IS NOT NULL OR adr6 IS NOT NULL),
-    CONSTRAINT gw4_in_net CHECK (gw4 <<= adr4),
-    CONSTRAINT gw6_in_net CHECK (gw6 <<= adr6),
+    CONSTRAINT at_least_one_prefix_v4_or_v6
+	CHECK (addr4 IS NOT NULL OR addr6 IS NOT NULL),
+    CONSTRAINT gw4_in_net CHECK (gw4 <<= addr4),
+    CONSTRAINT gw6_in_net CHECK (gw6 <<= addr6),
     CONSTRAINT dhcp_needs_ipv4_gateway
 	CHECK (dhcp = 0 OR (dhcp != 0 AND gw4 IS NOT NULL)),
     FOREIGN KEY (idetabl) REFERENCES dns.etablissement (idetabl),
     FOREIGN KEY (idcommu) REFERENCES dns.communaute    (idcommu),
-    PRIMARY KEY (idreseau)
+    PRIMARY KEY (idnet)
 ) ;
 
 
@@ -189,16 +189,16 @@ CREATE TABLE dns.hinfo (
 
 -- ranges allowed to groups
 
-CREATE TABLE dns.dr_reseau (
+CREATE TABLE dns.p_network (
     idgrp	INT,			-- the group which manages this network
-    idreseau	INT,			-- the network
-    tri		INT,			-- sort class
+    idnet	INT,			-- the network
+    sort	INT,			-- sort class
     dhcp	INT DEFAULT 0,		-- perm to manage DHCP ranges
     acl		INT DEFAULT 0,		-- perm to manage ACL (later...)
 
-    FOREIGN KEY (idgrp)    REFERENCES global.groupe (idgrp),
-    FOREIGN KEY (idreseau) REFERENCES dns.reseau (idreseau),
-    PRIMARY KEY (idgrp, idreseau)
+    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idnet) REFERENCES dns.network (idnet),
+    PRIMARY KEY (idgrp, idnet)
 ) ;
 
 -- domains allowed to groups

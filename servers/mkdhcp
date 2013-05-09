@@ -171,12 +171,12 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
     # XXX: range selection should depend on the view
     #
 
-    set sql "SELECT HOST(reseau.adr4) AS addr, domain.name AS dom, dhcprange.*
-		    FROM dns.reseau, dns.dhcprange, dns.domain
-		    WHERE reseau.dhcp > 0
+    set sql "SELECT HOST(network.addr4) AS addr, domain.name AS dom, dhcprange.*
+		    FROM dns.network, dns.dhcprange, dns.domain
+		    WHERE network.dhcp > 0
 			    AND domain.iddom = dhcprange.iddom
-			    AND dhcprange.min <<= reseau.adr4
-			    AND dhcprange.max <<= reseau.adr4
+			    AND dhcprange.min <<= network.addr4
+			    AND dhcprange.max <<= network.addr4
 		    "
     pg_select $dbfd $sql tab {
 	if {$tab(default_lease_time) == 0} then {
@@ -226,17 +226,17 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
     # Generates configuration for each DHCP-enabled IPv4 network
     #
 
-    set sql "SELECT HOST(adr4) AS network, MASKLEN(adr4) AS masklen,
-			    NETMASK(adr4) AS netmask, gw4, nom
-		    FROM dns.reseau
+    set sql "SELECT HOST(addr4) AS prefix, MASKLEN(addr4) AS masklen,
+			    NETMASK(addr4) AS netmask, gw4, name
+		    FROM dns.network
 		    WHERE dhcp > 0 AND gw4 IS NOT NULL
-		    ORDER BY network
+		    ORDER BY prefix
 		    "
     pg_select $dbfd $sql tab {
-	set network $tab(network)
+	set network $tab(prefix)
 	set masklen $tab(masklen)
 
-	lappend txt "# $tab(nom)"
+	lappend txt "# $tab(name)"
 	lappend txt "subnet $network netmask $tab(netmask) $lbkt"
 	lappend txt "\toption routers $tab(gw4);"
 	if {[info exists range($network)]} then {
@@ -296,13 +296,13 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 			    rr.mac,
 			    rr_ip.adr,
 			    rr.iddhcpprofil
-			FROM dns.rr, dns.domain, dns.rr_ip, dns.reseau
+			FROM dns.rr, dns.domain, dns.rr_ip, dns.network
 			WHERE ($idview = -1 OR rr.idview = $idview)
 			    AND rr.iddom = domain.iddom
 			    AND rr.idrr = rr_ip.idrr
 			    AND rr_ip.adr <<= '$network/$masklen'
-			    AND reseau.adr4 = '$network/$masklen'
-			    AND reseau.dhcp > 0
+			    AND network.addr4 = '$network/$masklen'
+			    AND network.dhcp > 0
 			    AND rr.mac IS NOT NULL
 			ORDER BY rr.iddhcpprofil, rr_ip.adr
 			"
@@ -360,7 +360,7 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 	    lappend txt "\t$rbkt # end group for $dhcpprofil($id:name)"
 	}
 
-	lappend txt "$rbkt # end subnet $tab(nom)"
+	lappend txt "$rbkt # end subnet $tab(name)"
 	lappend txt ""
     }
 
@@ -457,7 +457,7 @@ proc main {argv0 argv} {
     # Lock tables such as we do not miss some modification
     #
 
-    set msg [d dblock {dns.view dns.rr dns.reseau dns.dhcprange}]
+    set msg [d dblock {dns.view dns.rr dns.network dns.dhcprange}]
     if {$msg ne ""} then {
 	d error $msg
     }

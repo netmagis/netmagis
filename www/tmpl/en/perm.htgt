@@ -35,11 +35,11 @@
 
     \titre {2} {Networks}
 
-    %TABRESEAUX%
+    %TABNETWORKS%
 
-    \titre {2} {%TITRECIDRHORSRESEAU%}
+    \titre {2} {%TITLECIDRALONE%}
 
-    %TABCIDRHORSRESEAU%
+    %TABCIDRALONE%
 
     \titre {2} {Domaine}
 

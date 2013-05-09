@@ -25,15 +25,15 @@
 #	- viewsortN : view sort class (if empty, we have to remove the view)
 #	- viewselN : selected view (0 or 1)
 #	- domainN : valid domains
-#	- tridomN : domain sort class (if empty, we have to remove the domain)
+#	- sortdomN : domain sort class (if empty, we have to remove the domain)
 #	- rolemailN : permission to edit "mail roles" for this domain (0 or 1)
 #	- rolewebN : permission to edit "web roles" for this domain (0 or 1)
-#	- reseauN : network ids for this group
-#	- triresN : network sort class (if empty, we have to remove this network)
+#	- netN : network ids for this group
+#	- sortnetN : network sort class (if empty, we have to remove this network)
 #	- dhcpN : permission to edit DHCP ranges for this network (0 or 1)
 #	- aclN : permission to edit ACL for this netwok (0 or 1)
 #	- adrN et allow_denyN : IP permissions for this group
-#	- tridhcpprofN : DHCP profile sort class (if empty, we have to remove this DHCP profile)
+#	- sortdhcpprofN : DHCP profile sort class (if empty, we have to remove this DHCP profile)
 #	- nomdhcpprofN : DHCP profile name
 #	- eqrwN : type of permission (read:0 or write:1) on equipments
 #	- eqallowN : allow/deny for equipments (0 or 1)
@@ -175,7 +175,7 @@ set conf(tabdomains) {
     }
 }
 
-set conf(tabreseaux) {
+set conf(tabnetworks) {
     global {
 	chars {12 normal}
 	botbar {no}
@@ -347,7 +347,7 @@ proc val-group {dbfd group exist} {
 
 proc del-group {dbfd idgrp idorphan} {
     set ltab {global.groupe global.corresp
-		dns.dr_reseau dns.dr_ip dns.dr_dom
+		dns.p_network dns.dr_ip dns.dr_dom
 		dns.dr_dhcpprofil}
     d dblock $ltab
 
@@ -355,7 +355,7 @@ proc del-group {dbfd idgrp idorphan} {
     # Remove permissions
     #
 
-    foreach table {dns.dr_reseau dns.dr_ip dns.dr_dom dns.dr_dhcpprofil} {
+    foreach table {dns.p_network dns.dr_ip dns.dr_dom dns.dr_dhcpprofil} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "delete %s" $table] $msg
@@ -568,7 +568,7 @@ d cgi-register {action edit} {
 			    [mc "Web role edition"] \
 			]
     set ldom [::pgsql::getcols $dbfd dns.domain "" "name ASC" {name name}]
-    set sql "SELECT domain.name AS name, dr_dom.tri AS tri,
+    set sql "SELECT domain.name AS name, dr_dom.tri AS sort,
 				dr_dom.rolemail, dr_dom.roleweb
 			FROM dns.domain, dns.dr_dom
 			WHERE domain.iddom = dr_dom.iddom
@@ -577,7 +577,7 @@ d cgi-register {action edit} {
     set ndom 1
     pg_select $dbfd $sql tab {
 	set d        $tab(name)
-	set tri      $tab(tri)
+	set sort     $tab(sort)
 	set rolemail $tab(rolemail)
 	set roleweb  $tab(roleweb)
 
@@ -585,20 +585,20 @@ d cgi-register {action edit} {
 	if {$idx == -1} then {
 	    d error [mc "Group has access to domain '%s' which do not exists in database" $d]
 	}
-	set htri  [::webapp::form-text tridom$ndom 1 5 5 $tri]
+	set hsort [::webapp::form-text sortdom$ndom 1 5 5 $sort]
 	set hdom  [::webapp::form-menu domain$ndom 1 0 $ldom [list $idx]]
 	set hmail [::webapp::form-bool rolemail$ndom $rolemail]
 	set hweb  [::webapp::form-bool roleweb$ndom  $roleweb]
-	lappend lines [list Normal $htri $hdom $hmail $hweb]
+	lappend lines [list Normal $hsort $hdom $hmail $hweb]
 	incr ndom
     }
 
     for {set i 1} {$i <= 5} {incr i} {
-	set htri  [::webapp::form-text tridom$ndom 1 5 5 ""]
+	set hsort [::webapp::form-text sortdom$ndom 1 5 5 ""]
 	set hdom  [::webapp::form-menu domain$ndom 1 0 $ldom {}]
 	set hmail [::webapp::form-bool rolemail$ndom 0]
 	set hweb  [::webapp::form-bool roleweb$ndom  0]
-	lappend lines [list Normal $htri $hdom $hmail $hweb]
+	lappend lines [list Normal $hsort $hdom $hmail $hweb]
 	incr ndom
     }
 
@@ -615,58 +615,55 @@ d cgi-register {action edit} {
 			[mc "DHCP management"] \
 			[mc "ACL management"] \
 		    ]
-    set lres {}
+    set lnet {}
     set idx 0
-    set sql "SELECT idreseau, nom, adr4, adr6 FROM dns.reseau ORDER BY adr4, adr6"
+    set sql "SELECT idnet, name, addr4, addr6 FROM dns.network
+    				ORDER BY addr4, addr6"
     pg_select $dbfd $sql tab {
-	set res [format "%s\t%s\t(%s)" \
-			    $tab(adr4) $tab(adr6) \
-			    $tab(nom) \
+	set net [format "%s\t%s\t(%s)" \
+			    $tab(addr4) $tab(addr6) \
+			    $tab(name) \
 			]
-	lappend lres [list $tab(idreseau) $res]
-	set idxreseau($tab(idreseau)) $idx
+	lappend lnet [list $tab(idnet) $net]
+	set idxnet($tab(idnet)) $idx
 	incr idx
     }
 
-    set sql "SELECT dr_reseau.idreseau,
-			dr_reseau.tri,
-			dr_reseau.dhcp,
-			dr_reseau.acl
-		FROM dns.reseau, dns.dr_reseau
-		WHERE reseau.idreseau = dr_reseau.idreseau
-			AND dr_reseau.idgrp = $idgrp
-		ORDER BY dr_reseau.tri ASC, reseau.adr4 ASC, reseau.adr6 ASC"
-    set nres 1
+    set sql "SELECT p.idnet, p.sort, p.dhcp, p.acl
+		FROM dns.network n, dns.p_network p
+		WHERE n.idnet = p.idnet AND p.idgrp = $idgrp
+		ORDER BY p.sort ASC, n.addr4 ASC, n.addr6 ASC"
+    set nnet 1
     pg_select $dbfd $sql tab {
-	set idreseau $tab(idreseau)
-	set tri      $tab(tri)
-	set dhcp     $tab(dhcp)
-	set acl      $tab(acl)
+	set idnet  $tab(idnet)
+	set sort   $tab(sort)
+	set dhcp   $tab(dhcp)
+	set acl    $tab(acl)
 
-	if {! [info exists idxreseau($idreseau)]} then {
-	    d error [mc "Group has access to network '%s' which do not exists in database" $idreseau]
+	if {! [info exists idxnet($idnet)]} then {
+	    d error [mc "Group has access to network '%s' which do not exists in database" $idnet]
 	}
-	set idx $idxreseau($idreseau)
+	set idx $idxnet($idnet)
 
-	set htri  [::webapp::form-text trires$nres 1 5 5 $tri]
-	set hres  [::webapp::form-menu reseau$nres 1 0 $lres [list $idx]]
-	set hdhcp [::webapp::form-bool dhcp$nres $dhcp]
-	set hacl  [::webapp::form-bool acl$nres $acl]
+	set hsort [::webapp::form-text sortnet$nnet 1 5 5 $sort]
+	set hnet  [::webapp::form-menu net$nnet 1 0 $lnet [list $idx]]
+	set hdhcp [::webapp::form-bool dhcp$nnet $dhcp]
+	set hacl  [::webapp::form-bool acl$nnet $acl]
 
-	lappend lines [list Normal $htri $hres $hdhcp $hacl]
-	incr nres
+	lappend lines [list Normal $hsort $hnet $hdhcp $hacl]
+	incr nnet
     }
 
     for {set i 1} {$i <= 5} {incr i} {
-	set htri  [::webapp::form-text trires$nres 1 5 5 ""]
-	set hres  [::webapp::form-menu reseau$nres 1 0 $lres {}]
-	set hdhcp [::webapp::form-bool dhcp$nres 0]
-	set hacl  [::webapp::form-bool acl$nres  0]
-	lappend lines [list Normal $htri $hres $hdhcp $hacl]
-	incr nres
+	set hsort [::webapp::form-text sortnet$nnet 1 5 5 ""]
+	set hnet  [::webapp::form-menu net$nnet 1 0 $lnet {}]
+	set hdhcp [::webapp::form-bool dhcp$nnet 0]
+	set hacl  [::webapp::form-bool acl$nnet  0]
+	lappend lines [list Normal $hsort $hnet $hdhcp $hacl]
+	incr nnet
     }
 
-    set listereseaux [::arrgen::output "html" $conf(tabreseaux) $lines]
+    set listnets [::arrgen::output "html" $conf(tabnetworks) $lines]
 
     #
     # Permissions
@@ -750,7 +747,7 @@ d cgi-register {action edit} {
     set lines {}
     lappend lines [list "Title" [mc "Sort class"] [mc "DHCP profile"]]
     set lprof [::pgsql::getcols $dbfd dns.dhcpprofil "" "nom ASC" {nom nom}]
-    set sql "SELECT p.nom AS nom, dr.tri AS tri
+    set sql "SELECT p.nom AS nom, dr.tri AS sort
 			FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p
 			WHERE dr.idgrp = $idgrp
 			    AND dr.iddhcpprofil = p.iddhcpprofil
@@ -758,22 +755,22 @@ d cgi-register {action edit} {
     set nprof 1
     pg_select $dbfd $sql tab {
 	set p        $tab(nom)
-	set tri      $tab(tri)
+	set sort     $tab(sort)
 
 	set idx [lsearch -exact $lprof [list $p $p]]
 	if {$idx == -1} then {
 	    d error [mc "Group has access to DHCP profile '%s' which do not exist in the database" $d]
 	}
-	set htri  [::webapp::form-text tridhcpprof$nprof 1 5 5 $tri]
+	set hsort [::webapp::form-text sortdhcpprof$nprof 1 5 5 $sort]
 	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof [list $idx]]
-	lappend lines [list Normal $htri $hprof]
+	lappend lines [list Normal $hsort $hprof]
 	incr nprof
     }
 
     for {set i 1} {$i <= 5} {incr i} {
-	set htri  [::webapp::form-text tridhcpprof$nprof 1 5 5 ""]
+	set hsort [::webapp::form-text sortdhcpprof$nprof 1 5 5 ""]
 	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof {}]
-	lappend lines [list Normal $htri $hprof]
+	lappend lines [list Normal $hsort $hprof]
 	incr nprof
     }
 
@@ -797,7 +794,7 @@ d cgi-register {action edit} {
 				[list %LISTECOR% $listecor] \
 				[list %LISTVIEWS% $listviews] \
 				[list %LISTDOMAINS% $listdomains] \
-				[list %LISTERESEAUX% $listereseaux] \
+				[list %LISTNETS% $listnets] \
 				[list %LISTEDROITS% $listdroits] \
 				[list %LISTEDREQ% $listdreq] \
 				[list %LISTEDHCPPROFILS% $listdhcpprof] \
@@ -821,17 +818,17 @@ d cgi-register {action mod} {
     {viewname[0-9]+	0 9999}
     {viewsort[0-9]+	0 9999}
     {viewsel[0-9]+	0 9999}
-    {tridom[0-9]+	0 9999}
+    {sortdom[0-9]+	0 9999}
     {domain[0-9]+	0 9999}
     {rolemail[0-9]+	0 9999}
     {roleweb[0-9]+	0 9999}
-    {trires[0-9]+	0 9999}
-    {reseau[0-9]+	0 9999}
+    {sortnet[0-9]+	0 9999}
+    {net[0-9]+		0 9999}
     {dhcp[0-9]+		0 9999}
     {acl[0-9]+		0 9999}
     {adr[0-9]+		0 9999}
     {allow[0-9]+	0 9999}
-    {tridhcpprof[0-9]+	0 9999}
+    {sortdhcpprof[0-9]+	0 9999}
     {nomdhcpprof[0-9]+	0 9999}
     {eqrw[0-9]+		0 9999}
     {eqallow[0-9]+	0 9999}
@@ -1032,11 +1029,11 @@ d cgi-register {action mod} {
 
     set liddom {}
     set n 1
-    while {[info exists ftab(tridom$n)] && [info exists ftab(domain$n)]} {
-	set tri [string trim [lindex $ftab(tridom$n) 0]]
-	if {[string length $tri] > 0} then {
-	    if {! [regexp -- {^[0-9]+$} $tri]} then {
-		d error [mc "Invalid domain sort class '%s'" $tri]
+    while {[info exists ftab(sortdom$n)] && [info exists ftab(domain$n)]} {
+	set sort [string trim [lindex $ftab(sortdom$n) 0]]
+	if {[string length $sort] > 0} then {
+	    if {! [regexp -- {^[0-9]+$} $sort]} then {
+		d error [mc "Invalid domain sort class '%s'" $sort]
 	    }
 
 	    set domain [string trim [lindex $ftab(domain$n) 0]]
@@ -1060,7 +1057,7 @@ d cgi-register {action mod} {
 		d error [mc "Invalid web role '%s'" $roleweb]
 	    }
 
-	    lappend liddom [list $tri $tabdom($domain) $rolemail $roleweb]
+	    lappend liddom [list $sort $tabdom($domain) $rolemail $roleweb]
 	}
 
 	incr n
@@ -1070,31 +1067,31 @@ d cgi-register {action mod} {
     # Test network ids and build a list
     #
 
-    foreach ld [::pgsql::getcols $dbfd dns.reseau "" "" {idreseau adr4 adr6 dhcp}] {
-	set idreseau [lindex $ld 0]
-	set ladr {}
+    foreach ld [::pgsql::getcols $dbfd dns.network "" "" {idnet addr4 addr6 dhcp}] {
+	set idnet [lindex $ld 0]
+	set laddr {}
 	foreach i {1 2} {
 	    set a [lindex $ld $i]
-	    if {! [string equal $a ""]} then {
-		lappend ladr $a
+	    if {$a ne ""} then {
+		lappend laddr $a
 	    }
 	}
-	set tabres($idreseau) $ladr
-	set tabdhcp($idreseau) [lindex $ld 3]
+	set tabnet($idnet) $laddr
+	set tabdhcp($idnet) [lindex $ld 3]
     }
 
-    set lidres {}
+    set lidnet {}
     set n 1
-    while {[info exists ftab(trires$n)] && [info exists ftab(reseau$n)]} {
-	set tri [string trim [lindex $ftab(trires$n) 0]]
-	if {[string length $tri] > 0} then {
-	    if {! [regexp -- {^[0-9]+$} $tri]} then {
-		d error [mc "Invalid network sort class '%s'" $tri]
+    while {[info exists ftab(sortnet$n)] && [info exists ftab(net$n)]} {
+	set sort [string trim [lindex $ftab(sortnet$n) 0]]
+	if {[string length $sort] > 0} then {
+	    if {! [regexp -- {^[0-9]+$} $sort]} then {
+		d error [mc "Invalid network sort class '%s'" $sort]
 	    }
 
-	    set idreseau [string trim [lindex $ftab(reseau$n) 0]]
-	    if {! [info exists tabres($idreseau)]} then {
-		d error [mc "Invalid network id '%s'" $idreseau]
+	    set idnet [string trim [lindex $ftab(net$n) 0]]
+	    if {! [info exists tabnet($idnet)]} then {
+		d error [mc "Invalid network id '%s'" $idnet]
 	    }
 
 	    if {! [info exists ftab(dhcp$n)]} then {
@@ -1113,7 +1110,7 @@ d cgi-register {action mod} {
 		d error [mc "Invalid ACL permission '%s'" $dhcp]
 	    }
 
-	    lappend lidres [list $tri $idreseau $dhcp $acl]
+	    lappend lidnet [list $sort $idnet $dhcp $acl]
 	}
 
 	incr n
@@ -1192,11 +1189,11 @@ d cgi-register {action mod} {
 
     set lidprof {}
     set n 1
-    while {[info exists ftab(tridhcpprof$n)] && [info exists ftab(nomdhcpprof$n)]} {
-	set tri [string trim [lindex $ftab(tridhcpprof$n) 0]]
-	if {[string length $tri] > 0} then {
-	    if {! [regexp -- {^[0-9]+$} $tri]} then {
-		d error [mc "Invalid DHCP profile sort class '%s'" $tri]
+    while {[info exists ftab(sortdhcpprof$n)] && [info exists ftab(nomdhcpprof$n)]} {
+	set sort [string trim [lindex $ftab(sortdhcpprof$n) 0]]
+	if {[string length $sort] > 0} then {
+	    if {! [regexp -- {^[0-9]+$} $sort]} then {
+		d error [mc "Invalid DHCP profile sort class '%s'" $sort]
 	    }
 
 	    set dhcpprofil [string trim [lindex $ftab(nomdhcpprof$n) 0]]
@@ -1204,7 +1201,7 @@ d cgi-register {action mod} {
 		d error [mc "Invalid DHCP profile '%s'" $dhcpprofil]
 	    }
 
-	    lappend lidprof [list $tri $tabdhcpprofil($dhcpprofil)]
+	    lappend lidprof [list $sort $tabdhcpprofil($dhcpprofil)]
 	}
 
 	incr n
@@ -1269,35 +1266,35 @@ d cgi-register {action mod} {
 	}
 
 	# at least one network
-	if {[llength $lidres] == 0} then {
+	if {[llength $lidnet] == 0} then {
 	    lappend inconsist [mc "No selected network"]
 	}
 
 	# authorize DHCP needs that the network be DHCP-enabled
-	foreach r $lidres {
-	    set idreseau [lindex $r 1]
+	foreach r $lidnet {
+	    set idnet [lindex $r 1]
 	    set dhcp [lindex $r 2]
-	    if {$dhcp && ! $tabdhcp($idreseau)} then {
-		lappend inconsist [mc "Network '%s' is not DHCP enabled" $tabres($idreseau)]
+	    if {$dhcp && ! $tabdhcp($idnet)} then {
+		lappend inconsist [mc "Network '%s' is not DHCP enabled" $tabnet($idnet)]
 	    }
 	}
 
 	# every network must at least have a IP address permission
-	foreach r $lidres {
-	    set idreseau [lindex $r 1]
-	    foreach adr $tabres($idreseau) {
+	foreach r $lidnet {
+	    set idnet [lindex $r 1]
+	    foreach addr $tabnet($idnet) {
 		set perm 0
 		foreach dr $droits_allow {
-		    pg_select $dbfd "SELECT '$adr' >>= '$dr' AS resultat" tab {
-			set resultat $tab(resultat)
+		    pg_select $dbfd "SELECT '$addr' >>= '$dr' AS result" tab {
+			set result $tab(result)
 		    }
-		    if {$resultat eq "t"} then {
+		    if {$result eq "t"} then {
 			set perm 1
 			break
 		    }
 		}
 		if {! $perm} then {
-		    lappend inconsist [mc "No 'allow' permission found for network '%s'" $adr]
+		    lappend inconsist [mc "No 'allow' permission found for network '%s'" $addr]
 		}
 	    }
 	}
@@ -1305,14 +1302,14 @@ d cgi-register {action mod} {
 	# no "allow" permission must be larger than a network
 	foreach dr $droits_allow {
 	    set larger 0
-	    foreach r $lidres {
-		set idreseau [lindex $r 1]
-		foreach adr $tabres($idreseau) {
-		    set sql "SELECT cidr '$adr' << cidr '$dr' AS resultat"
+	    foreach r $lidnet {
+		set idnet [lindex $r 1]
+		foreach addr $tabnet($idnet) {
+		    set sql "SELECT cidr '$addr' << cidr '$dr' AS result"
 		    pg_select $dbfd $sql tab {
-			set resultat $tab(resultat)
+			set result $tab(result)
 		    }
-		    if {$resultat eq "t"} then {
+		    if {$result eq "t"} then {
 			set larger 1
 			break
 		    }
@@ -1353,7 +1350,7 @@ d cgi-register {action mod} {
     #
 
     set ltab {global.groupe global.corresp
-		dns.dr_reseau dns.dr_ip dns.dr_dom
+		dns.p_network dns.dr_ip dns.dr_dom
 		dns.dr_dhcpprofil} 
     d dblock $ltab
 
@@ -1443,17 +1440,17 @@ d cgi-register {action mod} {
     # Authorized domains for this group
     lappend cmd "DELETE FROM dns.dr_dom WHERE idgrp = $idgrp"
     foreach e $liddom {
-	lassign $e tri iddom rolemail roleweb
+	lassign $e sort iddom rolemail roleweb
 	lappend cmd "INSERT INTO dns.dr_dom (idgrp, iddom, tri, rolemail, roleweb)
-			VALUES ($idgrp, $iddom, $tri, $rolemail, $roleweb)"
+			VALUES ($idgrp, $iddom, $sort, $rolemail, $roleweb)"
     }
 
     # Authorized networks for this group
-    lappend cmd "DELETE FROM dns.dr_reseau WHERE idgrp = $idgrp"
-    foreach r $lidres {
-	lassign $r tri idreseau dhcp acl
-	lappend cmd "INSERT INTO dns.dr_reseau (idgrp, idreseau, tri, dhcp, acl)
-			VALUES ($idgrp, $idreseau, $tri, $dhcp, $acl)"
+    lappend cmd "DELETE FROM dns.p_network WHERE idgrp = $idgrp"
+    foreach r $lidnet {
+	lassign $r sort idnet dhcp acl
+	lappend cmd "INSERT INTO dns.p_network (idgrp, idnet, sort, dhcp, acl)
+			VALUES ($idgrp, $idnet, $sort, $dhcp, $acl)"
     }
 
     # IP permissions associated with the group
@@ -1475,9 +1472,9 @@ d cgi-register {action mod} {
     # DHCP profiles associated with the group
     lappend cmd "DELETE FROM dns.dr_dhcpprofil WHERE idgrp = $idgrp"
     foreach e $lidprof {
-	lassign $e tri iddhcpprofil
+	lassign $e sort iddhcpprofil
 	lappend cmd "INSERT INTO dns.dr_dhcpprofil (idgrp, iddhcpprofil, tri)
-			VALUES ($idgrp, $iddhcpprofil, $tri)"
+			VALUES ($idgrp, $iddhcpprofil, $sort)"
     }
 
     #
@@ -1498,7 +1495,7 @@ d cgi-register {action mod} {
 
     set h [display-group $dbfd $idgrp]
     lassign $h \
-		tabdroits tablogins tabreseaux tabcidrhorsreseau \
+		tabdroits tablogins tabnets tabcidralone \
 		tabviews tabdomains tabdhcpprofils tabdreq
 
     #
@@ -1511,8 +1508,8 @@ d cgi-register {action mod} {
 			    [list %TABDROITS% $tabdroits] \
 			    [list %TABVIEWS% $tabviews] \
 			    [list %TABDOMAINS% $tabdomains] \
-			    [list %TABRESEAUX% $tabreseaux] \
-			    [list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
+			    [list %TABNETS% $tabnets] \
+			    [list %TABCIDRALONE% $tabcidralone] \
 			    [list %TABDHCPPROFILS% $tabdhcpprofils] \
 			    [list %TABDREQ% $tabdreq] \
 			]

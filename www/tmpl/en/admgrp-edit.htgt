@@ -130,7 +130,7 @@
 		\casetableau {} {To remove a network, just delete
 		    its "sort class".
 
-		    %LISTERESEAUX%}
+		    %LISTNETS%}
 	    }
 	    \lignetableau {
 		\casetableau {

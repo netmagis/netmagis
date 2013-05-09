@@ -747,8 +747,9 @@ proc import-network {verbose argv dbfd} {
 	# Network insertion
 	#
 
-	set sql "INSERT INTO dns.reseau (nom, localisation, commentaire,
-					idetabl, idcommu, adr4, gw4, adr6, gw6,
+	set sql "INSERT INTO dns.network (name, location, comment,
+					idetabl, idcommu,
+					addr4, gw4, addr6, gw6,
 					dhcp)
 			VALUES ('$qname', '$qloc', '$qcomm', $idorg, $idcommu,
 					$qad(4), $qgw(4), $qad(6), $qgw(6),
@@ -759,17 +760,17 @@ proc import-network {verbose argv dbfd} {
 
 	set w {}
 	if {$ad(4) ne ""} then {
-	    lappend w "adr4 = '$ad(4)'"
+	    lappend w "addr4 = '$ad(4)'"
 	}
 	if {$ad(6) ne ""} then {
-	    lappend w "adr6 = '$ad(6)'"
+	    lappend w "addr6 = '$ad(6)'"
 	}
 	set w [join $w " AND "]
 
 	set idnet -1
-	set sql "SELECT idreseau FROM dns.reseau WHERE $w"
+	set sql "SELECT idnet FROM dns.network WHERE $w"
 	pg_select $dbfd $sql tab {
-	    set idnet $tab(idreseau)
+	    set idnet $tab(idnet)
 	}
 	if {$idnet == -1} then {
 	    return "Network '$name' inserted, but not found in database"
@@ -782,7 +783,7 @@ proc import-network {verbose argv dbfd} {
 	set sql {}
 	foreach g [lindex $tabnet($i:groups) 0] {
 	    lassign $refgroup($g) idgrp admin
-	    lappend sql "INSERT INTO dns.dr_reseau (idgrp, idreseau, tri, dhcp)
+	    lappend sql "INSERT INTO dns.p_network (idgrp, idnet, sort, dhcp)
 					VALUES ($idgrp, $idnet, 100, $dhcpon)"
 	}
 	if {[llength $sql] > 0} then {

@@ -46,8 +46,8 @@ CREATE TRIGGER tr_mod_dhcprange
     BEFORE UPDATE ON dns.dhcprange
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_dhcp () ;
 
-CREATE TRIGGER tr_mod_reseau
-    BEFORE UPDATE ON dns.reseau
+CREATE TRIGGER tr_mod_network
+    BEFORE UPDATE ON dns.network
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_dhcp () ;
 
 CREATE TRIGGER tr_mod_dhcpprofil
