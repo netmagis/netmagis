@@ -8,7 +8,7 @@
 # Parameters (form or url):
 #   - display edit page
 #	- action : (empty)
-#	- type : etabl, commu, hinfo, net, domain, view, zone, zone4, zone6,
+#	- type : org, commu, hinfo, net, domain, view, zone, zone4, zone6,
 #		vlan, eq, eqtype, confcmd, dotattr
 #   - display graphviz generated image
 #	- action : "image"
@@ -70,14 +70,14 @@ set conf(page-mod)	adm-mod.html
 ##############################################################################
 # Organizations
 
-set conf(etabl:ptitle) 	"Organization management"
-set conf(etabl:cols)		{ {100 nom {Name} {string 30} {}} }
-set conf(etabl:sql)		"SELECT * FROM dns.etablissement ORDER BY nom ASC"
-set conf(etabl:id)		idetabl
-set conf(etabl:help)		help-etabl.html
-set conf(etabl:return)		"Return to organization modification"
-set conf(etabl:table)		dns.etablissement
-set conf(etabl:proc)		admref-nop
+set conf(org:ptitle) 	"Organization management"
+set conf(org:cols)		{ {100 name {Name} {string 30} {}} }
+set conf(org:sql)		"SELECT * FROM dns.organization ORDER BY name ASC"
+set conf(org:id)		idorg
+set conf(org:help)		help-org.html
+set conf(org:return)		"Return to organization modification"
+set conf(org:table)		dns.organization
+set conf(org:proc)		admref-nop
 
 ##############################################################################
 # Communities
@@ -117,7 +117,7 @@ set conf(net:cols)		{ {1 name	{Name} {string 20} {}}
 				  {1 dhcp	{DHCP enabled} {bool} 0}
 				  {1 addr6	{IPv6 address} {string 49} {}}
 				  {1 gw6	{IPv6 gateway} {string 45} {}}
-				  {1 idetabl	{Organization} {menu {%MENUETABL%}} {}}
+				  {1 idorg	{Organization} {menu {%MENUORG%}} {}}
 				  {1 idcommu	{Community} {menu {%MENUCOMMU%}} {}}
 				  {1 comment	{Comment} {string 15} {}}
 				}
@@ -351,11 +351,11 @@ d cgi-register {action {}} {
 
     switch -- $type {
 	net	{
-	    set menuetabl [::pgsql::getcols $dbfd dns.etablissement "" "nom ASC" \
-						{idetabl nom}]
+	    set menuorg [::pgsql::getcols $dbfd dns.organization "" "name ASC" \
+						{idorg name}]
 	    set menucommu [::pgsql::getcols $dbfd dns.communaute "" "nom ASC" \
 						{idcommu nom}]
-	    regsub -- "%MENUETABL%" $colspecs "$menuetabl" colspecs
+	    regsub -- "%MENUORG%" $colspecs "$menuorg" colspecs
 	    regsub -- "%MENUCOMMU%" $colspecs "$menucommu" colspecs
 	}
 	eq {

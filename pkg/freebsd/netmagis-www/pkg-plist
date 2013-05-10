@@ -132,9 +132,9 @@ lib/netmagis/tmpl/en/help-domain.html
 lib/netmagis/tmpl/en/help-dotattr.html
 lib/netmagis/tmpl/en/help-eq.html
 lib/netmagis/tmpl/en/help-eqtype.html
-lib/netmagis/tmpl/en/help-etabl.html
+lib/netmagis/tmpl/en/help-org.html
 lib/netmagis/tmpl/en/help-hinfo.html
-lib/netmagis/tmpl/en/help-reseau.html
+lib/netmagis/tmpl/en/help-net.html
 lib/netmagis/tmpl/en/help-vlan.html
 lib/netmagis/tmpl/en/help-zone.html
 lib/netmagis/tmpl/en/ifchg-mod.html
@@ -232,9 +232,9 @@ lib/netmagis/tmpl/fr/help-domain.html
 lib/netmagis/tmpl/fr/help-dotattr.html
 lib/netmagis/tmpl/fr/help-eq.html
 lib/netmagis/tmpl/fr/help-eqtype.html
-lib/netmagis/tmpl/fr/help-etabl.html
+lib/netmagis/tmpl/fr/help-org.html
 lib/netmagis/tmpl/fr/help-hinfo.html
-lib/netmagis/tmpl/fr/help-reseau.html
+lib/netmagis/tmpl/fr/help-net.html
 lib/netmagis/tmpl/fr/help-vlan.html
 lib/netmagis/tmpl/fr/help-zone.html
 lib/netmagis/tmpl/fr/ifchg-mod.html

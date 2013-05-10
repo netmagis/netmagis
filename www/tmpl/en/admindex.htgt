@@ -44,7 +44,7 @@
     \titre {2} {Data administration}
 
     \liste {
-	\item {Modify \lien {organizations} {%URLREFETABL%}}
+	\item {Modify \lien {organizations} {%URLREFORG%}}
 	\item {Modify \lien {communities} {%URLREFCOMMU%}}
 	\item {Modify \lien {host types} {%URLREFHINFO%}}
 	\item {Modify \lien {networks} {%URLREFNET%}}

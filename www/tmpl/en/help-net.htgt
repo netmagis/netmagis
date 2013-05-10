@@ -73,7 +73,7 @@
 
 	Address of IPv6 router for this network.
 
-    \titre {2} {\ancre {idetabl} {Organization}}
+    \titre {2} {\ancre {idorg} {Organization}}
 
 	Organization which own/use this network.
 

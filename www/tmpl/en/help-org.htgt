@@ -29,7 +29,7 @@
 
     \titre {1} {Organisation management}
 
-    \titre {2} {\ancre {nom} {Name}}
+    \titre {2} {\ancre {name} {Name}}
 
 	Organization name.
 

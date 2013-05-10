@@ -76,13 +76,13 @@ CREATE TABLE dns.domain (
 
 -- network, communities and organization descriptions
 
-CREATE SEQUENCE dns.seq_etablissement START 1 ;
-CREATE TABLE dns.etablissement (
-    idetabl	INT			-- organization id
-		    DEFAULT NEXTVAL ('dns.seq_etablissement'),
-    nom		TEXT,			-- "Example Corp."
+CREATE SEQUENCE dns.seq_organization START 1 ;
+CREATE TABLE dns.organization (
+    idorg	INT			-- organization id
+		    DEFAULT NEXTVAL ('dns.seq_organization'),
+    name	TEXT,			-- "Example Corp."
 
-    PRIMARY KEY (idetabl)
+    PRIMARY KEY (idorg)
 ) ;
 
 CREATE SEQUENCE dns.seq_communaute START 1 ;
@@ -102,7 +102,7 @@ CREATE TABLE dns.network (
     location TEXT,			-- location if any
     addr4	CIDR,			-- IPv4 address range
     addr6	CIDR,			-- IPv6 address range
-    idetabl	INT,			-- organization this network belongs to
+    idorg	INT,			-- organization this network belongs to
     idcommu	INT,			-- administration, R&D, etc.
     comment	TEXT,			-- comment
     dhcp	INT DEFAULT 0,		-- activate DHCP (1) or no (0)
@@ -115,7 +115,7 @@ CREATE TABLE dns.network (
     CONSTRAINT gw6_in_net CHECK (gw6 <<= addr6),
     CONSTRAINT dhcp_needs_ipv4_gateway
 	CHECK (dhcp = 0 OR (dhcp != 0 AND gw4 IS NOT NULL)),
-    FOREIGN KEY (idetabl) REFERENCES dns.etablissement (idetabl),
+    FOREIGN KEY (idorg) REFERENCES dns.organization (idorg),
     FOREIGN KEY (idcommu) REFERENCES dns.communaute    (idcommu),
     PRIMARY KEY (idnet)
 ) ;

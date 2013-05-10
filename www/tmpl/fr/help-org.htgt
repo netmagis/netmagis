@@ -29,7 +29,7 @@
 
     \titre {1} {Gestion des organismes}
 
-    \titre {2} {\ancre {nom} {Intitulé}}
+    \titre {2} {\ancre {name} {Intitulé}}
 
 	Intitulé de l'organisme.
 

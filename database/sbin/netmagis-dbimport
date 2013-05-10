@@ -546,8 +546,8 @@ proc import-network {verbose argv dbfd} {
     pg_select $dbfd "SELECT * FROM dns.communaute" tab {
 	set refcommu($tab(nom)) $tab(idcommu)
     }
-    pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
-	set reforg($tab(nom)) $tab(idetabl)
+    pg_select $dbfd "SELECT * FROM dns.organization" tab {
+	set reforg($tab(name)) $tab(idorg)
     }
     pg_select $dbfd "SELECT * FROM dns.domain" tab {
 	set refdom($tab(name)) $tab(iddom)
@@ -579,7 +579,7 @@ proc import-network {verbose argv dbfd} {
 	set o [lindex $tabnet($i:org) 0]
 	if {! [info exists reforg($o)]} then {
 	    set qo [::pgsql::quote $o]
-	    lappend sql "INSERT INTO dns.etablissement (nom) VALUES ('$qo')"
+	    lappend sql "INSERT INTO dns.organization (name) VALUES ('$qo')"
 	    set reforg($o) ""
 	}
 	set c [lindex $tabnet($i:community) 0]
@@ -599,8 +599,8 @@ proc import-network {verbose argv dbfd} {
 	pg_select $dbfd "SELECT * FROM dns.communaute" tab {
 	    set refcommu($tab(nom)) $tab(idcommu)
 	}
-	pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
-	    set reforg($tab(nom)) $tab(idetabl)
+	pg_select $dbfd "SELECT * FROM dns.organization" tab {
+	    set reforg($tab(name)) $tab(idorg)
 	}
     }
 
@@ -748,7 +748,7 @@ proc import-network {verbose argv dbfd} {
 	#
 
 	set sql "INSERT INTO dns.network (name, location, comment,
-					idetabl, idcommu,
+					idorg, idcommu,
 					addr4, gw4, addr6, gw6,
 					dhcp)
 			VALUES ('$qname', '$qloc', '$qcomm', $idorg, $idcommu,

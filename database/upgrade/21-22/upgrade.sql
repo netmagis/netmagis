@@ -65,50 +65,64 @@ INSERT INTO global.config (clef, valeur) VALUES ('schemaversion', '22') ;
 DROP TABLE dns.role_web ;
 
 -- Remove all constraints: we will rebuild them later
--- This is done to get new names which are consistent with the table name
+-- This is done in order to get new implicit names consistent with table name
+
+ALTER TABLE dns.etablissement
+    DROP CONSTRAINT IF EXISTS etablissement_pkey		CASCADE ;
 
 ALTER TABLE dns.domaine
-    DROP CONSTRAINT IF EXISTS domaine_nom_key CASCADE,
-    DROP CONSTRAINT IF EXISTS domaine_pkey CASCADE ;
+    DROP CONSTRAINT IF EXISTS domaine_nom_key			CASCADE,
+    DROP CONSTRAINT IF EXISTS domaine_pkey			CASCADE ;
 
 ALTER TABLE dns.dr_reseau
-    DROP CONSTRAINT IF EXISTS dr_reseau_idgrp_fkey CASCADE,
-    DROP CONSTRAINT IF EXISTS dr_reseau_idreseau_fkey CASCADE,
-    DROP CONSTRAINT IF EXISTS dr_reseau_pkey CASCADE
+    DROP CONSTRAINT IF EXISTS dr_reseau_idgrp_fkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS dr_reseau_idreseau_fkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS dr_reseau_pkey			CASCADE
     ;
 --?? ALTER TABLE dns.reseau DROP CONSTRAINT IF EXISTS reseau_idcommu_fkey CASCADE ;
---?? ALTER TABLE dns.reseau DROP CONSTRAINT IF EXISTS reseau_idetabl_fkey CASCADE ;
 
 ALTER TABLE dns.reseau
-    DROP CONSTRAINT IF EXISTS reseau_pkey,
-    DROP CONSTRAINT IF EXISTS au_moins_un_prefixe_v4_ou_v6,
+    DROP CONSTRAINT IF EXISTS reseau_pkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS reseau_idetabl_fkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS au_moins_un_prefixe_v4_ou_v6	CASCADE,
     DROP CONSTRAINT IF EXISTS gw4_in_net,
     DROP CONSTRAINT IF EXISTS gw6_in_net ;
 
 -- Rename tables and columns, and rebuild constraints
 
+ALTER TABLE dns.seq_etablissement RENAME TO seq_organization ;
+
+ALTER TABLE dns.etablissement RENAME TO organization ;
+ALTER TABLE dns.organization RENAME COLUMN idetabl	TO idorg ;
+ALTER TABLE dns.organization RENAME COLUMN nom		TO name ;
+ALTER TABLE dns.organization
+    ADD PRIMARY KEY (idorg) ;
+
 ALTER TABLE dns.seq_domaine RENAME TO seq_domain ;
 
 ALTER TABLE dns.domaine RENAME TO domain ;
-ALTER TABLE dns.domain RENAME COLUMN nom TO name ;
-ALTER TABLE dns.domain ADD PRIMARY KEY (iddom) ;
-ALTER TABLE dns.domain ADD UNIQUE (name) ;
+ALTER TABLE dns.domain RENAME COLUMN nom		TO name ;
+ALTER TABLE dns.domain
+    ADD UNIQUE (name),
+    ADD PRIMARY KEY (iddom) ;
 
 ALTER TABLE dns.seq_reseau RENAME TO seq_network ;
 
 ALTER TABLE dns.reseau RENAME TO network ;
-ALTER TABLE dns.network RENAME COLUMN idreseau     TO idnet ;
-ALTER TABLE dns.network RENAME COLUMN nom          TO name ;
-ALTER TABLE dns.network RENAME COLUMN localisation TO location ;
-ALTER TABLE dns.network RENAME COLUMN adr4         TO addr4 ;
-ALTER TABLE dns.network RENAME COLUMN adr6         TO addr6 ;
-ALTER TABLE dns.network RENAME COLUMN commentaire  TO comment ;
+ALTER TABLE dns.network RENAME COLUMN idreseau		TO idnet ;
+ALTER TABLE dns.network RENAME COLUMN nom		TO name ;
+ALTER TABLE dns.network RENAME COLUMN localisation	TO location ;
+ALTER TABLE dns.network RENAME COLUMN adr4		TO addr4 ;
+ALTER TABLE dns.network RENAME COLUMN adr6		TO addr6 ;
+ALTER TABLE dns.network RENAME COLUMN idetabl		TO idorg ;
+ALTER TABLE dns.network RENAME COLUMN commentaire	TO comment ;
 ALTER TABLE dns.network
     ADD CONSTRAINT at_least_one_prefix_v4_or_v6
 		CHECK (addr4 IS NOT NULL OR addr6 IS NOT NULL),
     ADD CONSTRAINT gw4_in_net CHECK (gw4 <<= addr4),
     ADD CONSTRAINT gw6_in_net CHECK (gw6 <<= addr6),
-ADD PRIMARY KEY (idnet) ;
+    ADD FOREIGN KEY (idorg) REFERENCES dns.organization (idorg),
+    ADD PRIMARY KEY (idnet) ;
 
 ALTER TABLE dns.dr_reseau RENAME TO p_network ;
 ALTER TABLE dns.p_network RENAME COLUMN idreseau TO idnet ;

@@ -558,7 +558,7 @@ snit::type ::netmagis {
 			    {lnet always}
 			    {lusers always}
 			    {search always}
-			    {modetabl always}
+			    {modorg always}
 			    {modcommu always}
 			    {modhinfo always}
 			    {modnetwork always}
@@ -589,7 +589,7 @@ snit::type ::netmagis {
 	admlmx		{admlmx {List MX}}
 	lnet		{lnet {List networks}}
 	lusers		{lusers {List users}}
-	modetabl	{admref?type=etabl {Modify organizations}}
+	modorg		{admref?type=org {Modify organizations}}
 	modcommu	{admref?type=commu {Modify communities}}
 	modhinfo	{admref?type=hinfo {Modify machine types}}
 	modnetwork	{admref?type=net {Modify networks}}
@@ -2925,18 +2925,19 @@ proc display-group {dbfd idgrp} {
     set sql "SELECT n.idnet,
 			n.name, n.location, n.addr4, n.addr6,
 			p.dhcp, p.acl,
-			e.nom AS etabl,
+			o.nom AS org,
 			c.nom AS commu
-		FROM dns.network n, dns.p_network p, dns.etablissement e, dns.communaute c
+		FROM dns.network n, dns.p_network p,
+			dns.organization o, dns.communaute c
 		WHERE p.idgrp = $idgrp
 			AND p.idnet = n.idnet
-			AND e.idetabl = n.idetabl
+			AND o.idorg = n.idorg
 			AND c.idcommu = n.idcommu
 		ORDER BY p.sort, n.addr4, n.addr6"
     pg_select $dbfd $sql tab {
 	set n_name 	[::webapp::html-string $tab(name)]
 	set n_loc	[::webapp::html-string $tab(location)]
-	set n_etabl	$tab(etabl)
+	set n_org	$tab(org)
 	set n_commu	$tab(commu)
 	set n_dhcp	$tab(dhcp)
 	set n_acl	$tab(acl)
@@ -2956,7 +2957,7 @@ proc display-group {dbfd idgrp} {
 
 	lappend lines [list Network $n_name]
 	lappend lines [list Normal4 [mc "Location"] $n_loc \
-				[mc "Organization"] $n_etabl]
+				[mc "Organization"] $n_org]
 	lappend lines [list Normal4 [mc "Range"] $dispaddr \
 				[mc "Community"] $n_commu]
 

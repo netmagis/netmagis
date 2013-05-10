@@ -73,7 +73,7 @@
 
 	Adresse du routeur IPv6 du réseau.
 
-    \titre {2} {\ancre {idetabl} {Organisme}}
+    \titre {2} {\ancre {ididorg} {Organisme}}
 
 	Organisme auquel se rattache le réseau.
 

@@ -8,11 +8,11 @@
 # Parameters (form or url):
 #   - selection criteria:
 #	- addr = cidr of network
-#	- etabl = list of organization ids
+#	- org = list of organization ids
 #	- commu = list of community ids
 #   - sort criteria
-#	- sort1 = addr4|addr6|name|etablissement|communaute|location|comment
-#	- sort2 = addr4|addr6|name|etablissement|communaute|location|comment
+#	- sort1 = addr4|addr6|name|organization|communaute|location|comment
+#	- sort2 = addr4|addr6|name|organization|communaute|location|comment
 #   - output format:
 #	- dolist, doprint or docsv
 #
@@ -116,7 +116,7 @@ source %LIBNETMAGIS%
 proc sort-crit {key} {
     switch -- $key {
 	name		{ set sql "n.name ASC" ; set txt [mc "Name"] }
-	etablissement	{ set sql "etabl ASC" ; set txt [mc "Organization"] }
+	organization	{ set sql "org ASC" ; set txt [mc "Organization"] }
 	communaute	{ set sql "commu ASC" ; set txt [mc "Community"] }
 	location	{ set sql "n.location ASC" ; set txt [mc "Location"] }
 	comment		{ set sql "n.comment ASC" ; set txt [mc "Description" }
@@ -164,23 +164,23 @@ proc output {dbfd _ftab format} {
     }
 
     # organization list
-    if {[info exists ftab(etabl)]} then {
-	set lsqletabl {}
-	set ltxtetabl {}
-	pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
-	    set te($tab(idetabl)) $tab(nom)
+    if {[info exists ftab(org)]} then {
+	set lsqlorg {}
+	set ltxtorg {}
+	pg_select $dbfd "SELECT * FROM dns.organization" tab {
+	    set to($tab(idorg)) $tab(name)
 	}
-	foreach idetabl $ftab(etabl) {
-	    if {! [info exists te($idetabl)]} then {
-		d error [mc "Organization id '%s' not found" $idetabl]
+	foreach idorg $ftab(org) {
+	    if {! [info exists to($idorg)]} then {
+		d error [mc "Organization id '%s' not found" $idorg]
 	    }
-	    lappend lsqletabl "n.idetabl = $idetabl"
-	    lappend ltxtetabl "$te($idetabl)"
+	    lappend lsqlorg "n.idorg = $idorg"
+	    lappend ltxtorg "$to($idorg)"
 	}
-	if {[llength $lsqletabl] > 0} then {
-	    set l [join $lsqletabl " OR "]
+	if {[llength $lsqlorg] > 0} then {
+	    set l [join $lsqlorg " OR "]
 	    append selection " AND ($l)"
-	    set t [join $ltxtetabl [mc " or "]]
+	    set t [join $ltxtorg [mc " or "]]
 	    lappend txtsel [mc "organization = %s" $t]
 	}
     }
@@ -223,9 +223,9 @@ proc output {dbfd _ftab format} {
 
     set sql "SELECT n.idnet,
 		    n.name, n.location, n.addr4, n.addr6, 
-		    e.nom AS etabl, c.nom AS commu, n.comment
-		FROM dns.network n, dns.etablissement e, dns.communaute c
-		WHERE n.idetabl = e.idetabl AND n.idcommu = c.idcommu
+		    o.name AS org, c.nom AS commu, n.comment
+		FROM dns.network n, dns.organization o, dns.communaute c
+		WHERE n.idorg = o.idorg AND n.idcommu = c.idcommu
 			$selection
 		ORDER BY $sqlsort1, $sqlsort2"
     set nnet 0
@@ -235,7 +235,7 @@ proc output {dbfd _ftab format} {
 				$tab(location) \
 				$tab(addr4) \
 				$tab(addr6) \
-				$tab(etabl) \
+				$tab(org) \
 				$tab(commu) \
 				$tab(comment) \
 			    ]
@@ -321,12 +321,12 @@ d cgi-register {
     # Extract organization and community lists, and make listboxes
     #
 
-    set le [::pgsql::getcols $dbfd dns.etablissement "" "nom ASC" {idetabl nom}]
-    set h [llength $le]
-    set listeetabl [::webapp::form-menu etabl $h 1 $le {}]
+    set lo [::pgsql::getcols $dbfd dns.organization "" "name ASC" {idorg name}]
+    set h [llength $lo]
+    set listorg [::webapp::form-menu org $h 1 $lo {}]
 
     set lc [::pgsql::getcols $dbfd dns.communaute "" "nom ASC" {idcommu nom}]
-    set h [llength $le]
+    set h [llength $lo]
     set listecommu [::webapp::form-menu commu $h 1 $lc {}]
 
     #
@@ -337,7 +337,7 @@ d cgi-register {
 			[list addr4		[mc "IPv4 address"]] \
 			[list addr6		[mc "IPv6 address"]] \
 			[list name		[mc "Name"]] \
-			[list etablissement	[mc "Organization"]] \
+			[list organization	[mc "Organization"]] \
 			[list communaute	[mc "Community"]] \
 			[list location		[mc "Location"]] \
 			[list comment		[mc "Comment"]] \
@@ -351,7 +351,7 @@ d cgi-register {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-sel) [list \
-				[list %LISTEETABL% $listeetabl] \
+				[list %LISTORG% $listorg] \
 				[list %LISTECOMMU% $listecommu] \
 				[list %MENUSORT1% $menu1] \
 				[list %MENUSORT2% $menu2] \
@@ -364,7 +364,7 @@ d cgi-register {
 
 d cgi-register {dolist .+} {
     {addr		1 1}
-    {etablissement	0 9999}
+    {organization	0 9999}
     {communaute		0 9999}
     {sort1		1 1}
     {sort2		1 1}
@@ -378,7 +378,7 @@ d cgi-register {dolist .+} {
 
 d cgi-register {doprint .+} {
     {addr		1 1}
-    {etablissement	0 9999}
+    {organization	0 9999}
     {communaute		0 9999}
     {sort1		1 1}
     {sort2		1 1}
@@ -392,7 +392,7 @@ d cgi-register {doprint .+} {
 
 d cgi-register {docsv .+} {
     {addr		1 1}
-    {etablissement	0 9999}
+    {organization	0 9999}
     {communaute		0 9999}
     {sort1		1 1}
     {sort2		1 1}

@@ -31,7 +31,7 @@ set conf(page)		statorg.html
 #	percentage of allocated address vs total
 #
 
-set conf(tabmachetabl) {
+set conf(tabhostorg) {
     global {
 	chars {10 normal}
 	columns {40 15 15 15 15}
@@ -109,20 +109,20 @@ d cgi-register {} {} {
     # Address count (v4 or v6) declared by organization
     #
 
-    set sql "SELECT e.nom,
+    set sql "SELECT o.name,
 		    COUNT (rr_ip.adr) AS declared
-		FROM dns.etablissement e, dns.rr_ip
+		FROM dns.organization o, dns.rr_ip
 		WHERE rr_ip.adr << ANY
-		    (SELECT addr4 FROM dns.network WHERE network.idetabl = e.idetabl
+		    (SELECT addr4 FROM dns.network WHERE network.idorg = o.idorg
 			UNION
-		     SELECT addr6 FROM dns.network WHERE network.idetabl = e.idetabl)
-		GROUP BY e.nom
+		     SELECT addr6 FROM dns.network WHERE network.idorg = o.idorg)
+		GROUP BY o.name
 		"
     set totaldecl 0
     pg_select $dbfd $sql tab {
-	set e $tab(nom)
+	set o $tab(name)
 	set n $tab(declared)
-	set etabl($e) [list $n 0]
+	set org($o) [list $n 0]
 	incr totaldecl $n
     }
 
@@ -130,20 +130,20 @@ d cgi-register {} {} {
     # Allocated IPv4 addresses count
     #
 
-    set sql "SELECT e.nom,
+    set sql "SELECT o.name,
 		    SUM (2^(32 - MASKLEN (n.addr4))) AS allocated
-		FROM dns.etablissement e, dns.network n
-		WHERE e.idetabl = r.idetabl
-		GROUP BY e.nom
+		FROM dns.organization o, dns.network n
+		WHERE o.idorg = n.idorg
+		GROUP BY o.name
 		"
     set totalalloc 0
     pg_select $dbfd $sql tab {
-	set e $tab(nom)
+	set o $tab(name)
 	set n $tab(allocated)
-	if {[info exists etabl($e)]} then {
-	    set etabl($e) [list [lindex $etabl($e) 0] $n]
+	if {[info exists org($o)]} then {
+	    set org($o) [list [lindex $org($o) 0] $n]
 	} else {
-	    set etabl($e) [list 0 $n]
+	    set org($o) [list 0 $n]
 	}
 	incr totalalloc $n
     }
@@ -162,11 +162,11 @@ d cgi-register {} {} {
 		    ]
     set ptotaldecl 0.0
     set ptotalalloc 0.0
-    foreach e [lsort [array names etabl]] {
-	lassign $etabl($e) ndecl nalloc
+    foreach o [lsort [array names org]] {
+	lassign $org($o) ndecl nalloc
 	set pcentdecl  [expr "$ndecl*100.0/$totaldecl"]
 	set pcentalloc [expr "$nalloc*100.0/$totalalloc"]
-	lappend lines [list "Normal" $e \
+	lappend lines [list "Normal" $o \
 				$ndecl  [format "%5.2f" $pcentdecl] \
 				$nalloc [format "%5.2f" $pcentalloc] \
 			    ]
@@ -179,14 +179,14 @@ d cgi-register {} {} {
 				$totalalloc [format "%5.2f" $ptotalalloc] \
 			    ]
 
-    set nbmachetabl [::arrgen::output "html" $conf(tabmachetabl) $lines]
+    set nbhostorg [::arrgen::output "html" $conf(tabhostorg) $lines]
 
     #
     # End of script: output page and close database
     #
 
     d result $conf(page) [list \
-				[list %NBMACHETABL% $nbmachetabl] \
+				[list %NUMHOSTORG% $nbhostorg] \
 			    ]
 }
 
