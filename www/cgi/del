@@ -347,7 +347,7 @@ d cgi-register {} {
 	    # This is an IP address. Check it.
 	    #
 	    if {! [check-authorized-ip $dbfd $tabuid(idcor) $addr]} then {
-		d error [mc "You don't have rights on '%s'" $adr]
+		d error [mc "You don't have rights on '%s'" $addr]
 	    }
 	}
     } else {

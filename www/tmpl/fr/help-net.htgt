@@ -73,14 +73,14 @@
 
 	Adresse du routeur IPv6 du réseau.
 
-    \titre {2} {\ancre {ididorg} {Organisme}}
+    \titre {2} {\ancre {idorg} {Organisme}}
 
 	Organisme auquel se rattache le réseau.
 
 	Exemple~:
 	    \retrait {\verbatim {Nations Unies}}
 
-    \titre {2} {\ancre {communaute} {Communauté}}
+    \titre {2} {\ancre {idcommu} {Communauté}}
 
 	Communauté hébergée sur le réseau.
 

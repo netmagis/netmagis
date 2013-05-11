@@ -11,8 +11,8 @@
 #	- org = list of organization ids
 #	- commu = list of community ids
 #   - sort criteria
-#	- sort1 = addr4|addr6|name|organization|communaute|location|comment
-#	- sort2 = addr4|addr6|name|organization|communaute|location|comment
+#	- sort1 = addr4|addr6|name|organization|community|location|comment
+#	- sort2 = addr4|addr6|name|organization|community|location|comment
 #   - output format:
 #	- dolist, doprint or docsv
 #
@@ -117,7 +117,7 @@ proc sort-crit {key} {
     switch -- $key {
 	name		{ set sql "n.name ASC" ; set txt [mc "Name"] }
 	organization	{ set sql "org ASC" ; set txt [mc "Organization"] }
-	communaute	{ set sql "commu ASC" ; set txt [mc "Community"] }
+	community	{ set sql "commu ASC" ; set txt [mc "Community"] }
 	location	{ set sql "n.location ASC" ; set txt [mc "Location"] }
 	comment		{ set sql "n.comment ASC" ; set txt [mc "Description" }
 	addr6		{ set sql "n.addr6 ASC" ; set txt [mc "IPv6 address"] }
@@ -164,13 +164,13 @@ proc output {dbfd _ftab format} {
     }
 
     # organization list
-    if {[info exists ftab(org)]} then {
+    if {[info exists ftab(organization)]} then {
 	set lsqlorg {}
 	set ltxtorg {}
 	pg_select $dbfd "SELECT * FROM dns.organization" tab {
 	    set to($tab(idorg)) $tab(name)
 	}
-	foreach idorg $ftab(org) {
+	foreach idorg $ftab(organization) {
 	    if {! [info exists to($idorg)]} then {
 		d error [mc "Organization id '%s' not found" $idorg]
 	    }
@@ -186,12 +186,12 @@ proc output {dbfd _ftab format} {
     }
 
     # Community list
-    if {[info exists ftab(commu)]} then {
+    if {[info exists ftab(community)]} then {
 	set lsqlcommu {}
-	pg_select $dbfd "SELECT * FROM dns.communaute" tab {
-	    set tc($tab(idcommu)) $tab(nom)
+	pg_select $dbfd "SELECT * FROM dns.community" tab {
+	    set tc($tab(idcommu)) $tab(name)
 	}
-	foreach idcommu $ftab(commu) {
+	foreach idcommu $ftab(community) {
 	    if {! [info exists tc($idcommu)]} then {
 		d error [mc "Community id '%s' not found" $idcommu]
 	    }
@@ -223,8 +223,8 @@ proc output {dbfd _ftab format} {
 
     set sql "SELECT n.idnet,
 		    n.name, n.location, n.addr4, n.addr6, 
-		    o.name AS org, c.nom AS commu, n.comment
-		FROM dns.network n, dns.organization o, dns.communaute c
+		    o.name AS org, c.name AS commu, n.comment
+		FROM dns.network n, dns.organization o, dns.community c
 		WHERE n.idorg = o.idorg AND n.idcommu = c.idcommu
 			$selection
 		ORDER BY $sqlsort1, $sqlsort2"
@@ -323,11 +323,11 @@ d cgi-register {
 
     set lo [::pgsql::getcols $dbfd dns.organization "" "name ASC" {idorg name}]
     set h [llength $lo]
-    set listorg [::webapp::form-menu org $h 1 $lo {}]
+    set listorg [::webapp::form-menu "organization" $h 1 $lo {}]
 
-    set lc [::pgsql::getcols $dbfd dns.communaute "" "nom ASC" {idcommu nom}]
+    set lc [::pgsql::getcols $dbfd dns.community "" "name ASC" {idcommu name}]
     set h [llength $lo]
-    set listecommu [::webapp::form-menu commu $h 1 $lc {}]
+    set listcommu [::webapp::form-menu "community" $h 1 $lc {}]
 
     #
     # Sort criteria
@@ -338,7 +338,7 @@ d cgi-register {
 			[list addr6		[mc "IPv6 address"]] \
 			[list name		[mc "Name"]] \
 			[list organization	[mc "Organization"]] \
-			[list communaute	[mc "Community"]] \
+			[list community		[mc "Community"]] \
 			[list location		[mc "Location"]] \
 			[list comment		[mc "Comment"]] \
 		    ]
@@ -351,8 +351,8 @@ d cgi-register {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-sel) [list \
-				[list %LISTORG% $listorg] \
-				[list %LISTECOMMU% $listecommu] \
+				[list %LISTORG%   $listorg] \
+				[list %LISTCOMMU% $listcommu] \
 				[list %MENUSORT1% $menu1] \
 				[list %MENUSORT2% $menu2] \
 			    ]
@@ -365,7 +365,7 @@ d cgi-register {
 d cgi-register {dolist .+} {
     {addr		1 1}
     {organization	0 9999}
-    {communaute		0 9999}
+    {community		0 9999}
     {sort1		1 1}
     {sort2		1 1}
 } {
@@ -379,7 +379,7 @@ d cgi-register {dolist .+} {
 d cgi-register {doprint .+} {
     {addr		1 1}
     {organization	0 9999}
-    {communaute		0 9999}
+    {community		0 9999}
     {sort1		1 1}
     {sort2		1 1}
 } {
@@ -393,7 +393,7 @@ d cgi-register {doprint .+} {
 d cgi-register {docsv .+} {
     {addr		1 1}
     {organization	0 9999}
-    {communaute		0 9999}
+    {community		0 9999}
     {sort1		1 1}
     {sort2		1 1}
 } {

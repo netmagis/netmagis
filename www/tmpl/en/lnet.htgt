@@ -57,7 +57,7 @@
 		\casetableau {} {... whose organization is}
 		\casetableau {} {%LISTORG%}
 		\casetableau {} {... whose community is}
-		\casetableau {} {%LISTECOMMU%}
+		\casetableau {} {%LISTCOMMU%}
 	    }
 	    \lignetableau {
 		\multicasetableau {4} {

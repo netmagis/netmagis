@@ -85,11 +85,11 @@ CREATE TABLE dns.organization (
     PRIMARY KEY (idorg)
 ) ;
 
-CREATE SEQUENCE dns.seq_communaute START 1 ;
-CREATE TABLE dns.communaute (
+CREATE SEQUENCE dns.seq_community START 1 ;
+CREATE TABLE dns.community (
     idcommu	INT			-- community id
-		    DEFAULT NEXTVAL ('dns.seq_communaute'),
-    nom		TEXT,			-- "Administration"
+		    DEFAULT NEXTVAL ('dns.seq_community'),
+    name	TEXT,			-- "Administration"
 
     PRIMARY KEY (idcommu)
 ) ;
@@ -116,7 +116,7 @@ CREATE TABLE dns.network (
     CONSTRAINT dhcp_needs_ipv4_gateway
 	CHECK (dhcp = 0 OR (dhcp != 0 AND gw4 IS NOT NULL)),
     FOREIGN KEY (idorg) REFERENCES dns.organization (idorg),
-    FOREIGN KEY (idcommu) REFERENCES dns.communaute    (idcommu),
+    FOREIGN KEY (idcommu) REFERENCES dns.community (idcommu),
     PRIMARY KEY (idnet)
 ) ;
 
@@ -216,18 +216,18 @@ CREATE TABLE dns.dr_dom (
 
 -- IP ranges allowed to groups
 
-CREATE TABLE dns.dr_ip (
+CREATE TABLE dns.p_ip (
     idgrp	INT,			-- group
-    adr		CIDR,			-- network range
+    addr	CIDR,			-- network range
     allow_deny	INT,			-- 1 = allow, 0 = deny
 
     FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
-    PRIMARY KEY (idgrp, adr)
+    PRIMARY KEY (idgrp, addr)
 ) ;
 
 -- views allowed to groups
 
-CREATE TABLE dns.dr_view (
+CREATE TABLE dns.p_view (
     idgrp	INT,			-- group
     idview	INT,			-- the view
     sort	INT,			-- sort class

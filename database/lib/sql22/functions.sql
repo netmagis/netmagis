@@ -530,9 +530,9 @@ CREATE OR REPLACE FUNCTION dns.check_ip_cor (INET, INTEGER)
 CREATE OR REPLACE FUNCTION dns.check_ip_grp (INET, INTEGER)
     RETURNS BOOLEAN AS $$
     BEGIN
-	RETURN ($1 <<= ANY (SELECT adr FROM dns.dr_ip
+	RETURN ($1 <<= ANY (SELECT addr FROM dns.p_ip
 				WHERE allow_deny = 1 AND idgrp = $2)
-	    AND NOT $1 <<= ANY (SELECT adr FROM dns.dr_ip
+	    AND NOT $1 <<= ANY (SELECT addr FROM dns.p_ip
 				WHERE allow_deny = 0 AND idgrp = $2)
 	    ) ;
     END ;

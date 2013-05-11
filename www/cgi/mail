@@ -226,8 +226,8 @@ d cgi-register {action list} {
 		AND r1.idview = $idview
 		AND r2.idview = v2.idview
 		AND r2.idview IN
-			(SELECT idview FROM dns.dr_view drv
-					WHERE drv.idgrp = corresp.idgrp)
+			(SELECT idview FROM dns.p_view pv
+					WHERE pv.idgrp = corresp.idgrp)
 	    ORDER BY domaina ASC, namea ASC
 		"
     set lroles {}

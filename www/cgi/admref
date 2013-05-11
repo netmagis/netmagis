@@ -83,12 +83,12 @@ set conf(org:proc)		admref-nop
 # Communities
 
 set conf(commu:ptitle) 	"Community management"
-set conf(commu:cols)		{ {100 nom {Name} {string 30} {}} }
-set conf(commu:sql)		"SELECT * FROM dns.communaute ORDER BY nom ASC"
+set conf(commu:cols)		{ {100 name {Name} {string 30} {}} }
+set conf(commu:sql)		"SELECT * FROM dns.community ORDER BY name ASC"
 set conf(commu:id)		idcommu
 set conf(commu:help)		help-commu.html
 set conf(commu:return)		"Return to community modification"
-set conf(commu:table)		dns.communaute
+set conf(commu:table)		dns.community
 set conf(commu:proc)		admref-nop
 
 ##############################################################################
@@ -353,8 +353,8 @@ d cgi-register {action {}} {
 	net	{
 	    set menuorg [::pgsql::getcols $dbfd dns.organization "" "name ASC" \
 						{idorg name}]
-	    set menucommu [::pgsql::getcols $dbfd dns.communaute "" "nom ASC" \
-						{idcommu nom}]
+	    set menucommu [::pgsql::getcols $dbfd dns.community "" "name ASC" \
+						{idcommu name}]
 	    regsub -- "%MENUORG%" $colspecs "$menuorg" colspecs
 	    regsub -- "%MENUCOMMU%" $colspecs "$menucommu" colspecs
 	}

@@ -269,12 +269,12 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	# by the CIDR
 	# 
 
-	set sqlallow "SELECT adr FROM dns.dr_ip WHERE
-			    (adr <<= '$cidrplage' OR adr >>= '$cidrplage')
+	set sqlallow "SELECT addr FROM dns.p_ip WHERE
+			    (addr <<= '$cidrplage' OR addr >>= '$cidrplage')
 			    AND allow_deny = 1
 			    AND idgrp = $tabuid(idgrp)"
-	set sqldeny "SELECT adr FROM dns.dr_ip WHERE
-			    (adr <<= '$cidrplage' OR adr >>= '$cidrplage')
+	set sqldeny "SELECT addr FROM dns.p_ip WHERE
+			    (addr <<= '$cidrplage' OR addr >>= '$cidrplage')
 			    AND allow_deny = 0
 			    AND idgrp = $tabuid(idgrp)"
 

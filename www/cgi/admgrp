@@ -32,7 +32,7 @@
 #	- sortnetN : network sort class (if empty, we have to remove this network)
 #	- dhcpN : permission to edit DHCP ranges for this network (0 or 1)
 #	- aclN : permission to edit ACL for this netwok (0 or 1)
-#	- adrN et allow_denyN : IP permissions for this group
+#	- addrN et allow_denyN : IP permissions for this group
 #	- sortdhcpprofN : DHCP profile sort class (if empty, we have to remove this DHCP profile)
 #	- nomdhcpprofN : DHCP profile name
 #	- eqrwN : type of permission (read:0 or write:1) on equipments
@@ -210,7 +210,7 @@ set conf(tabnetworks) {
     }
 }
 
-set conf(tabdrip) {
+set conf(tabpip) {
     global {
 	chars {12 normal}
 	botbar {no}
@@ -347,7 +347,7 @@ proc val-group {dbfd group exist} {
 
 proc del-group {dbfd idgrp idorphan} {
     set ltab {global.groupe global.corresp
-		dns.p_network dns.dr_ip dns.dr_dom
+		dns.p_network dns.p_ip dns.dr_dom
 		dns.dr_dhcpprofil}
     d dblock $ltab
 
@@ -355,7 +355,7 @@ proc del-group {dbfd idgrp idorphan} {
     # Remove permissions
     #
 
-    foreach table {dns.p_network dns.dr_ip dns.dr_dom dns.dr_dhcpprofil} {
+    foreach table {dns.p_network dns.p_ip dns.dr_dom dns.dr_dhcpprofil} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "delete %s" $table] $msg
@@ -523,11 +523,11 @@ d cgi-register {action edit} {
 			    [mc "Selected by default"] \
 			]
     set lview [::pgsql::getcols $dbfd dns.view "" "name ASC" {name name}]
-    set sql "SELECT view.name AS name, dr_view.sort, dr_view.selected
-			FROM dns.view, dns.dr_view
-			WHERE view.idview = dr_view.idview
-				AND dr_view.idgrp = $idgrp
-			ORDER BY dr_view.sort ASC, view.name ASC"
+    set sql "SELECT view.name AS name, p_view.sort, p_view.selected
+			FROM dns.view, dns.p_view
+			WHERE view.idview = p_view.idview
+				AND p_view.idgrp = $idgrp
+			ORDER BY p_view.sort ASC, view.name ASC"
     set nview 1
     pg_select $dbfd $sql tab {
 	set v        $tab(name)
@@ -671,17 +671,17 @@ d cgi-register {action edit} {
 
     set lines {}
     set n 1
-    set sql "SELECT adr, allow_deny \
-			FROM dns.dr_ip \
+    set sql "SELECT addr, allow_deny \
+			FROM dns.p_ip \
 			WHERE idgrp = $idgrp \
-			ORDER BY adr"
+			ORDER BY addr"
     pg_select $dbfd $sql tab {
 	set a $tab(allow_deny)
 	set menuallow [::webapp::form-menu allow$n 1 0 \
 					{{1 allow} {0 deny}} \
 					[list [expr 1 - $a]] \
 				    ]
-	set textcidr [::webapp::form-text adr$n 1 49 49 $tab(adr)]
+	set textcidr [::webapp::form-text addr$n 1 49 49 $tab(addr)]
 	lappend lines [list Normal $menuallow $textcidr]
 	incr n
     }
@@ -691,12 +691,12 @@ d cgi-register {action edit} {
 					{{1 allow} {0 deny}} \
 					{0} \
 				    ]
-	set textcidr [::webapp::form-text adr$n 1 49 49 ""]
+	set textcidr [::webapp::form-text addr$n 1 49 49 ""]
 	lappend lines [list Normal $menuallow $textcidr]
 	incr n
     }
 
-    set listdroits [::arrgen::output "html" $conf(tabdrip) $lines]
+    set listperms [::arrgen::output "html" $conf(tabpip) $lines]
 
     #
     # Permissions on equipments (topo)
@@ -795,7 +795,7 @@ d cgi-register {action edit} {
 				[list %LISTVIEWS% $listviews] \
 				[list %LISTDOMAINS% $listdomains] \
 				[list %LISTNETS% $listnets] \
-				[list %LISTEDROITS% $listdroits] \
+				[list %LISTPERMS% $listperms] \
 				[list %LISTEDREQ% $listdreq] \
 				[list %LISTEDHCPPROFILS% $listdhcpprof] \
 			    ]
@@ -826,7 +826,7 @@ d cgi-register {action mod} {
     {net[0-9]+		0 9999}
     {dhcp[0-9]+		0 9999}
     {acl[0-9]+		0 9999}
-    {adr[0-9]+		0 9999}
+    {addr[0-9]+		0 9999}
     {allow[0-9]+	0 9999}
     {sortdhcpprof[0-9]+	0 9999}
     {nomdhcpprof[0-9]+	0 9999}
@@ -1121,24 +1121,23 @@ d cgi-register {action mod} {
     #
 
     set n 1
-    set ldrip {}
-    set droits_allow {}
-    while {[info exists ftab(adr$n)] && [info exists ftab(allow$n)]} {
+    set lpip {}
+    set p_allow {}
+    while {[info exists ftab(addr$n)] && [info exists ftab(allow$n)]} {
 	set allow_deny [lindex $ftab(allow$n) 0]
-	if {!([string equal $allow_deny "0"] || \
-		[string equal $allow_deny "1"])} then {
+	if {! [regexp {^[01]$} $allow_deny]} then {
 	    d error [mc "Invalid value '%s' for allow/deny" $allow_deny]
 	}
 
-	set adr [string trim [lindex $ftab(adr$n) 0]]
-	if {[string length $adr] != 0} then {
-	    set m [check-ip-syntax $dbfd $adr "cidr"]
-	    if {[string length $m] > 0} then {
-		d error [mc "Invalid CIDR '%s'" $adr]
+	set addr [string trim [lindex $ftab(addr$n) 0]]
+	if {$addr ne ""} then {
+	    set m [check-ip-syntax $dbfd $addr "cidr"]
+	    if {$m ne ""} then {
+		d error [mc "Invalid CIDR '%s'" $addr]
 	    }
-	    lappend ldrip [list $allow_deny $adr]
+	    lappend lpip [list $allow_deny $addr]
 	    if {$allow_deny} then {
-		lappend droits_allow $adr
+		lappend p_allow $addr
 	    }
 	}
 
@@ -1284,8 +1283,8 @@ d cgi-register {action mod} {
 	    set idnet [lindex $r 1]
 	    foreach addr $tabnet($idnet) {
 		set perm 0
-		foreach dr $droits_allow {
-		    pg_select $dbfd "SELECT '$addr' >>= '$dr' AS result" tab {
+		foreach cidr $p_allow {
+		    pg_select $dbfd "SELECT '$addr' >>= '$cidr' AS result" tab {
 			set result $tab(result)
 		    }
 		    if {$result eq "t"} then {
@@ -1300,12 +1299,12 @@ d cgi-register {action mod} {
 	}
 
 	# no "allow" permission must be larger than a network
-	foreach dr $droits_allow {
+	foreach cidr $p_allow {
 	    set larger 0
 	    foreach r $lidnet {
 		set idnet [lindex $r 1]
 		foreach addr $tabnet($idnet) {
-		    set sql "SELECT cidr '$addr' << cidr '$dr' AS result"
+		    set sql "SELECT cidr '$addr' << cidr '$cidr' AS result"
 		    pg_select $dbfd $sql tab {
 			set result $tab(result)
 		    }
@@ -1317,7 +1316,7 @@ d cgi-register {action mod} {
 	    }
 
 	    if {$larger} then {
-		lappend inconsist [mc "'Allow' permission '%s' is too large" $dr]
+		lappend inconsist [mc "'Allow' permission '%s' is too large" $cidr]
 	    }
 	}
 
@@ -1350,7 +1349,7 @@ d cgi-register {action mod} {
     #
 
     set ltab {global.groupe global.corresp
-		dns.p_network dns.dr_ip dns.dr_dom
+		dns.p_network dns.p_ip dns.dr_dom
 		dns.dr_dhcpprofil} 
     d dblock $ltab
 
@@ -1430,10 +1429,10 @@ d cgi-register {action mod} {
 			    AND idcor NOT IN (SELECT DISTINCT idcor FROM dns.rr)"
 
     # Authorized views for this group
-    lappend cmd "DELETE FROM dns.dr_view WHERE idgrp = $idgrp"
+    lappend cmd "DELETE FROM dns.p_view WHERE idgrp = $idgrp"
     foreach e $lidview {
 	lassign $e sort idview selected
-	lappend cmd "INSERT INTO dns.dr_view (idgrp, idview, sort, selected)
+	lappend cmd "INSERT INTO dns.p_view (idgrp, idview, sort, selected)
 			VALUES ($idgrp, $idview, $sort, $selected)"
     }
 
@@ -1454,10 +1453,11 @@ d cgi-register {action mod} {
     }
 
     # IP permissions associated with the group
-    lappend cmd "DELETE FROM dns.dr_ip WHERE idgrp = $idgrp"
-    foreach e $ldrip {
-	lassign $e allow_deny adr
-	lappend cmd "INSERT INTO dns.dr_ip VALUES ($idgrp, '$adr', $allow_deny)"
+    lappend cmd "DELETE FROM dns.p_ip WHERE idgrp = $idgrp"
+    foreach e $lpip {
+	lassign $e allow_deny addr
+	lappend cmd "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
+					VALUES ($idgrp, '$addr', $allow_deny)"
     }
 
     # Equipment permissions (topo) associated with the group

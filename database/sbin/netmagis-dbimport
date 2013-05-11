@@ -543,8 +543,8 @@ proc import-network {verbose argv dbfd} {
     pg_select $dbfd "SELECT * FROM global.groupe" tab {
 	set refgroup($tab(nom)) [list $tab(idgrp) $tab(admin)]
     }
-    pg_select $dbfd "SELECT * FROM dns.communaute" tab {
-	set refcommu($tab(nom)) $tab(idcommu)
+    pg_select $dbfd "SELECT * FROM dns.community" tab {
+	set refcommu($tab(name)) $tab(idcommu)
     }
     pg_select $dbfd "SELECT * FROM dns.organization" tab {
 	set reforg($tab(name)) $tab(idorg)
@@ -585,7 +585,7 @@ proc import-network {verbose argv dbfd} {
 	set c [lindex $tabnet($i:community) 0]
 	if {! [info exists refcommu($c)]} then {
 	    set qc [::pgsql::quote $c]
-	    lappend sql "INSERT INTO dns.communaute (nom) VALUES ('$qc')"
+	    lappend sql "INSERT INTO dns.community (name) VALUES ('$qc')"
 	    set refcommu($c) ""
 	}
     }
@@ -596,8 +596,8 @@ proc import-network {verbose argv dbfd} {
 	}
 
 	# re-read referential data
-	pg_select $dbfd "SELECT * FROM dns.communaute" tab {
-	    set refcommu($tab(nom)) $tab(idcommu)
+	pg_select $dbfd "SELECT * FROM dns.community" tab {
+	    set refcommu($tab(name)) $tab(idcommu)
 	}
 	pg_select $dbfd "SELECT * FROM dns.organization" tab {
 	    set reforg($tab(name)) $tab(idorg)
@@ -803,24 +803,24 @@ proc import-network {verbose argv dbfd} {
 	foreach g [lindex $tabnet($i:groups) 0] {
 	    lassign $refgroup($g) idgrp admin
 	    if {$ad(4) ne ""} then {
-		lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+		lappend sql "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
 				VALUES ($idgrp, '$ad(4)', 1)"
 		set adr0 [::ip::prefix $ad(4)]
-		lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+		lappend sql "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
 				VALUES ($idgrp, '$adr0', 0)"
 		set adrb [::ip::broadcastAddress $ad(4)]
-		lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+		lappend sql "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
 				VALUES ($idgrp, '$adrb', 0)"
 		if {! $admin && $gw(4) ne ""} then {
-		    lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+		    lappend sql "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
 				    VALUES ($idgrp, '$gw(4)/32', 0)"
 		}
 	    }
 	    if {$ad(6) ne ""} then {
-		lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+		lappend sql "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
 				VALUES ($idgrp, '$ad(6)', 1)"
 		if {! $admin && $gw(6) ne ""} then {
-		    lappend sql "INSERT INTO dns.dr_ip (idgrp, adr, allow_deny)
+		    lappend sql "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
 				    VALUES ($idgrp, '$gw(6)/128', 0)"
 		}
 	    }
@@ -1006,7 +1006,7 @@ proc import-view {verbose argv dbfd} {
     # Empty view permissions
     #
 
-    set sql "DELETE FROM dns.dr_view"
+    set sql "DELETE FROM dns.p_view"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	return "$msg\nAbort"
     }
@@ -1039,7 +1039,7 @@ proc import-view {verbose argv dbfd} {
 			set w [join $w " AND "]
 			set w "WHERE $w"
 		    }
-		    lappend sql "INSERT INTO dns.dr_view (idgrp, idview,
+		    lappend sql "INSERT INTO dns.p_view (idgrp, idview,
 		    					sort, selected)
 					(SELECT idgrp, $idview, $sort, 0
 					    FROM global.groupe $w)"
@@ -1050,7 +1050,7 @@ proc import-view {verbose argv dbfd} {
 			    return "Unknown group '$g'. Abort"
 			}
 			set idgrp $tabgrp($g)
-			lappend sql "INSERT INTO dns.dr_view (idgrp, idview,
+			lappend sql "INSERT INTO dns.p_view (idgrp, idview,
 							sort, selected)
 					    VALUES ($idgrp, $idview, $sort, 0)"
 		    }

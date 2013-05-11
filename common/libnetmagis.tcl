@@ -2044,10 +2044,10 @@ snit::type ::nmuser {
 	}
 
 	set qlogin [::pgsql::quote $login]
-	set sql "SELECT d.idview
-			FROM dns.dr_view d, dns.view v, global.corresp c
-			WHERE d.idgrp = c.idgrp
-			    AND d.idview = v.idview
+	set sql "SELECT p.idview
+			FROM dns.p_view p, dns.view v, global.corresp c
+			WHERE p.idgrp = c.idgrp
+			    AND p.idview = v.idview
 			    AND c.login = '$qlogin'
 			ORDER BY d.sort ASC, v.name ASC"
 	pg_select $db $sql tab {
@@ -2925,10 +2925,10 @@ proc display-group {dbfd idgrp} {
     set sql "SELECT n.idnet,
 			n.name, n.location, n.addr4, n.addr6,
 			p.dhcp, p.acl,
-			o.nom AS org,
-			c.nom AS commu
+			o.name AS org,
+			c.name AS commu
 		FROM dns.network n, dns.p_network p,
-			dns.organization o, dns.communaute c
+			dns.organization o, dns.community c
 		WHERE p.idgrp = $idgrp
 			AND p.idnet = n.idnet
 			AND o.idorg = n.idorg
@@ -2949,7 +2949,7 @@ proc display-group {dbfd idgrp} {
 	foreach a {addr4 addr6} {
 	    if {$tab($a) ne ""} then {
 		lappend dispaddr $tab($a)
-		lappend where "adr <<= '$tab($a)'"
+		lappend where "addr <<= '$tab($a)'"
 	    }
 	}
 	set dispaddr [join $dispaddr ", "]
@@ -2969,18 +2969,18 @@ proc display-group {dbfd idgrp} {
 	if {[llength $pnet] > 0} then {
 	    lappend perm [join $pnet ", "]
 	}
-	set sql2 "SELECT adr, allow_deny
-			FROM dns.dr_ip
+	set sql2 "SELECT addr, allow_deny
+			FROM dns.p_ip
 			WHERE ($where)
 			    AND idgrp = $idgrp
-			ORDER BY adr"
+			ORDER BY addr"
 	pg_select $dbfd $sql2 tab2 {
 	    if {$tab2(allow_deny)} then {
 		set x "+"
 	    } else {
 		set x "-"
 	    }
-	    lappend perm "$x $tab2(adr)"
+	    lappend perm "$x $tab2(addr)"
 	}
 
 	lappend lines [list Perm [mc "Permissions"] [join $perm "\n"]]
@@ -2998,9 +2998,9 @@ proc display-group {dbfd idgrp} {
 
     set lines {}
     set found 0
-    set sql "SELECT adr, allow_deny
-		    FROM dns.dr_ip
-		    WHERE NOT (adr <<= ANY (
+    set sql "SELECT addr, allow_deny
+		    FROM dns.p_ip
+		    WHERE NOT (addr <<= ANY (
 				SELECT n.addr4
 					FROM dns.network n, dns.p_network p
 					WHERE n.idnet = p.idnet
@@ -3012,7 +3012,7 @@ proc display-group {dbfd idgrp} {
 						AND p.idgrp = $idgrp
 				    ) )
 			AND idgrp = $idgrp
-		    ORDER BY adr"
+		    ORDER BY addr"
     set perm {}
     pg_select $dbfd $sql tab {
 	set found 1
@@ -3021,7 +3021,7 @@ proc display-group {dbfd idgrp} {
 	} else {
 	    set x "-"
 	}
-	lappend perm "$x $tab(adr)"
+	lappend perm "$x $tab(addr)"
     }
     lappend lines [list Perm [mc "Permissions"] [join $perm "\n"]]
 
@@ -3036,11 +3036,11 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    set sql "SELECT view.name AS name, dr_view.selected
-			FROM dns.dr_view, dns.view
-			WHERE dr_view.idview = view.idview
-				AND dr_view.idgrp = $idgrp
-			ORDER BY dr_view.sort ASC, view.name ASC"
+    set sql "SELECT view.name AS name, p_view.selected
+			FROM dns.p_view, dns.view
+			WHERE p_view.idview = view.idview
+				AND p_view.idgrp = $idgrp
+			ORDER BY p_view.sort ASC, view.name ASC"
     pg_select $dbfd $sql tab {
 	set sel ""
 	if {$tab(selected)} then {
@@ -6556,7 +6556,7 @@ proc couple-domains {dbfd idcor where} {
 #   - idcor : user id
 #   - field : field name
 #   - sel : list of view id to pre-select, or empty list to pre-select
-#	default views (those cited in the dr_view.selected column)
+#	default views (those cited in the p_view.selected column)
 # Output:
 #   - return value: list {disp html} where disp=true if view menu
 #	must be displayed, and html is html code (may be of "hidden"
@@ -6572,12 +6572,12 @@ proc menu-view {dbfd idcor field sel} {
     set nsel [llength $sel]
     set lsel {}
     set lcouples {}
-    set sql "SELECT v.idview, v.name, d.selected
-		FROM dns.view v, dns.dr_view d, global.corresp
+    set sql "SELECT v.idview, v.name, p.selected
+		FROM dns.view v, dns.p_view p, global.corresp
 		WHERE corresp.idcor = $idcor
-		    AND d.idgrp = corresp.idgrp
-		    AND v.idview = d.idview
-		ORDER BY d.sort ASC, v.name ASC"
+		    AND p.idgrp = corresp.idgrp
+		    AND v.idview = p.idview
+		ORDER BY p.sort ASC, v.name ASC"
     set i 0
     pg_select $dbfd $sql tab {
 	lappend lcouples [list $tab(idview) $tab(name)]

@@ -68,25 +68,37 @@ DROP TABLE dns.role_web ;
 -- This is done in order to get new implicit names consistent with table name
 
 ALTER TABLE dns.etablissement
-    DROP CONSTRAINT IF EXISTS etablissement_pkey		CASCADE ;
+    DROP CONSTRAINT IF EXISTS etablissement_pkey		CASCADE
+    ;
+
+ALTER TABLE dns.communaute
+    DROP CONSTRAINT IF EXISTS communaute_pkey			CASCADE
+    ;
 
 ALTER TABLE dns.domaine
     DROP CONSTRAINT IF EXISTS domaine_nom_key			CASCADE,
-    DROP CONSTRAINT IF EXISTS domaine_pkey			CASCADE ;
+    DROP CONSTRAINT IF EXISTS domaine_pkey			CASCADE
+    ;
 
 ALTER TABLE dns.dr_reseau
     DROP CONSTRAINT IF EXISTS dr_reseau_idgrp_fkey		CASCADE,
     DROP CONSTRAINT IF EXISTS dr_reseau_idreseau_fkey		CASCADE,
     DROP CONSTRAINT IF EXISTS dr_reseau_pkey			CASCADE
     ;
---?? ALTER TABLE dns.reseau DROP CONSTRAINT IF EXISTS reseau_idcommu_fkey CASCADE ;
 
 ALTER TABLE dns.reseau
     DROP CONSTRAINT IF EXISTS reseau_pkey			CASCADE,
     DROP CONSTRAINT IF EXISTS reseau_idetabl_fkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS reseau_idcommu_fkey		CASCADE,
     DROP CONSTRAINT IF EXISTS au_moins_un_prefixe_v4_ou_v6	CASCADE,
     DROP CONSTRAINT IF EXISTS gw4_in_net,
-    DROP CONSTRAINT IF EXISTS gw6_in_net ;
+    DROP CONSTRAINT IF EXISTS gw6_in_net
+    ;
+
+ALTER TABLE dns.dr_ip
+    DROP CONSTRAINT IF EXISTS dr_ip_pkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS dr_ip_idgrp_fkey			CASCADE
+    ;
 
 -- Rename tables and columns, and rebuild constraints
 
@@ -97,6 +109,12 @@ ALTER TABLE dns.organization RENAME COLUMN idetabl	TO idorg ;
 ALTER TABLE dns.organization RENAME COLUMN nom		TO name ;
 ALTER TABLE dns.organization
     ADD PRIMARY KEY (idorg) ;
+
+ALTER TABLE dns.seq_communaute RENAME TO seq_community ;
+ALTER TABLE dns.communaute RENAME TO community ;
+ALTER TABLE dns.community RENAME COLUMN nom		TO name ;
+ALTER TABLE dns.community
+    ADD PRIMARY KEY (idcommu) ;
 
 ALTER TABLE dns.seq_domaine RENAME TO seq_domain ;
 
@@ -122,14 +140,21 @@ ALTER TABLE dns.network
     ADD CONSTRAINT gw4_in_net CHECK (gw4 <<= addr4),
     ADD CONSTRAINT gw6_in_net CHECK (gw6 <<= addr6),
     ADD FOREIGN KEY (idorg) REFERENCES dns.organization (idorg),
+    ADD FOREIGN KEY (idcommu) REFERENCES dns.community (idcommu),
     ADD PRIMARY KEY (idnet) ;
 
 ALTER TABLE dns.dr_reseau RENAME TO p_network ;
 ALTER TABLE dns.p_network RENAME COLUMN idreseau TO idnet ;
-ALTER TABLE dns.p_network RENAME COLUMN tri      TO sort ;
+ALTER TABLE dns.p_network RENAME COLUMN tri	      TO sort ;
 ALTER TABLE dns.p_network
     ADD PRIMARY KEY (idgrp, idnet),
     ADD FOREIGN KEY (idnet) REFERENCES dns.network (idnet),
+    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp) ;
+
+ALTER TABLE dns.dr_ip RENAME TO p_ip ;
+ALTER TABLE dns.p_ip RENAME COLUMN adr			TO addr ;
+ALTER TABLE dns.p_ip
+    ADD PRIMARY KEY (idgrp, addr),
     ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp) ;
 
 DROP TABLE dns.dhcp ;
@@ -184,7 +209,7 @@ ALTER TABLE dns.zone_reverse6
 
 -- Add a new access right to views
 
-CREATE TABLE dns.dr_view (
+CREATE TABLE dns.p_view (
     idgrp	INT,		-- group
     idview	INT,		-- the view
     sort	INT,		-- sort class
@@ -195,7 +220,7 @@ CREATE TABLE dns.dr_view (
     PRIMARY KEY (idgrp, idview)
 ) ;
 
-INSERT INTO dns.dr_view (idgrp, idview, sort, selected)
+INSERT INTO dns.p_view (idgrp, idview, sort, selected)
     SELECT idgrp, idview, 100, 1
 	    FROM global.groupe, dns.view
 	    WHERE view.name = 'default' ;

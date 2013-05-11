@@ -139,7 +139,7 @@
 		} {\gras {Droits d'accès IP}}
 	    }
 	    \lignetableau {
-		\casetableau {} {%LISTEDROITS%}
+		\casetableau {} {%LISTPERMS%}
 	    }
 	    \lignetableau {
 		\casetableau {
