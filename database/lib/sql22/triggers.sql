@@ -27,7 +27,7 @@ CREATE TRIGGER tr_mod_rr
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_rr () ;
 
 CREATE TRIGGER tr_mod_relay
-    AFTER INSERT OR UPDATE OR DELETE ON dns.relais_dom
+    AFTER INSERT OR UPDATE OR DELETE ON dns.relay_dom
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_relay () ;
 
 CREATE TRIGGER tr_mod_zone

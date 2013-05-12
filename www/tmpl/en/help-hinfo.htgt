@@ -29,7 +29,7 @@
 
     \titre {1} {Host type management}
 
-    \titre {2} {\ancre {texte} {Name}}
+    \titre {2} {\ancre {text} {Name}}
 
 	Host type.
 
@@ -39,7 +39,7 @@
 	Notice: type may change, but all hosts of this type will
 	have the new type.
 
-    \titre {2} {\ancre {tri} {Sort class}}
+    \titre {2} {\ancre {sort} {Sort class}}
 
 	In dropdown menus, host types are sorted using the primary
 	key "sort class" (integer ascending) and secondary key "host

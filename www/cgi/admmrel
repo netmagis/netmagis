@@ -14,7 +14,7 @@
 #   - store MX modifications
 #	- action : "mod"
 #	- domain : domain name to modify
-#	- priorite* : MX priority for this domain
+#	- prio* : MX priority for this domain
 #	- nom* : MX name for this domain
 #	- domain* : MX domain for this domain
 #
@@ -101,7 +101,7 @@ source %LIBNETMAGIS%
 proc insert-relay {dbfd iddom lrel} {
     foreach rel $lrel {
 	lassign $rel prio idmx
-	set sql "INSERT INTO dns.relais_dom (iddom, priorite, mx)
+	set sql "INSERT INTO dns.relay_dom (iddom, prio, mx)
 				    VALUES ($iddom, $prio, $idmx)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    return [mc "Relay insertion failed: %s" $msg]
@@ -122,7 +122,7 @@ d cgi-register {action {}} {
     # Get domains authorized for the user
     #
 
-    set w "dr_dom.rolemail <> 0"
+    set w "p_dom.rolemail <> 0"
     set domain [menu-domain $dbfd $tabuid(idcor) "domain" $w ""]
 
     #
@@ -195,17 +195,17 @@ d cgi-register {action edit} {
 		    ]
     set menudom [couple-domains $dbfd $tabuid(idcor) ""]
     set spec [list \
-		{priorite {string 5}  {}} \
-		{nom      {string 30} {}} \
+		{prio {string 5}  {}} \
+		{nom  {string 30} {}} \
 		[list domain [list menu $menudom] {}] \
 	    ]
-    set sql "SELECT rd.mx, rd.priorite, r.nom, d.name AS domain
-		FROM dns.relais_dom rd, dns.rr r, dns.domain d
+    set sql "SELECT rd.mx, rd.prio, r.nom, d.name AS domain
+		FROM dns.relay_dom rd, dns.rr r, dns.domain d
 		WHERE rd.iddom = $iddom
 			AND rd.mx = r.idrr
 			AND r.iddom = d.iddom
 			AND r.idview = $idview
-		ORDER BY rd.priorite, d.name, r.nom
+		ORDER BY rd.prio, d.name, r.nom
 		"
     set idnum "mx"
 
@@ -235,11 +235,11 @@ d cgi-register {action mod} {
     {domain		1 1}
     {idview		1 1}
 
-    {priorite[0-9]+	0 9999}
+    {prio[0-9]+		0 9999}
     {nom[0-9]+		0 9999}
     {domain[0-9]+	0 9999}
 
-    {prioriten[0-9]+	0 9999}
+    {prion[0-9]+	0 9999}
     {nomn[0-9]+		0 9999}
     {domainn[0-9]+	0 9999}
 } {
@@ -280,8 +280,8 @@ d cgi-register {action mod} {
 
     set lrel {}
     foreach c [array names ftab] {
-	if {[regexp {^priorite(n?)([0-9]+)$} $c bidon n idmx]} then {
-	    set idxprio priorite$n$idmx
+	if {[regexp {^prio(n?)([0-9]+)$} $c bidon n idmx]} then {
+	    set idxprio prio$n$idmx
 	    set idxnom  nom$n$idmx
 	    set idxdom  domain$n$idmx
 	    if {[info exists ftab($idxprio)] && \
@@ -317,10 +317,10 @@ d cgi-register {action mod} {
     # First, delete all previous relays
     #
 
-    set sql "DELETE FROM dns.relais_dom
+    set sql "DELETE FROM dns.relay_dom
     			USING dns.rr
-			WHERE rr.idrr = relais_dom.mx
-			    AND relais_dom.iddom = $iddom
+			WHERE rr.idrr = relay_dom.mx
+			    AND relay_dom.iddom = $iddom
 			    AND rr.idview = $idview"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	d dbabort [mc "delete %s" [mc "old mail relays"]] $msg

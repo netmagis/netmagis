@@ -1139,7 +1139,7 @@ proc import-domain {verbose argv dbfd} {
     # Empty domain permissions
     #
 
-    set sql "DELETE FROM dns.dr_dom"
+    set sql "DELETE FROM dns.p_dom"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	return "$msg\nAbort"
     }
@@ -1172,7 +1172,7 @@ proc import-domain {verbose argv dbfd} {
 			set w [join $w " AND "]
 			set w "WHERE $w"
 		    }
-		    lappend sql "INSERT INTO dns.dr_dom (idgrp, iddom, tri)
+		    lappend sql "INSERT INTO dns.p_dom (idgrp, iddom, sort)
 					(SELECT idgrp, $iddom, $sort
 					    FROM global.groupe $w)"
 		}
@@ -1182,7 +1182,7 @@ proc import-domain {verbose argv dbfd} {
 			    return "Unknown group '$g'. Abort"
 			}
 			set idgrp $tabgrp($g)
-			lappend sql "INSERT INTO dns.dr_dom (idgrp, iddom, tri)
+			lappend sql "INSERT INTO dns.p_dom (idgrp, iddom, sort)
 					    VALUES ($idgrp, $iddom, $sort)"
 		    }
 		}
@@ -1616,14 +1616,14 @@ proc import-zone {verbose argv dbfd} {
     }
     if {$idzone == -1} then {
 	set sql "INSERT INTO $table (name, idview, version, prologue,
-					rrsup, generer, selection)
+					rrsup, gen, selection)
 			VALUES ('$qzonename', $idview, $serial, '$qprologue',
 					'$qrrsup', 1, '$qselector')"
     } else {
 	set sql "UPDATE $table SET version = $serial,
 				    prologue = '$qprologue',
 				    rrsup = '$qrrsup',
-				    generer = 1,
+				    gen = 1,
 				    selection = '$qselector'
 				WHERE idzone = $idzone"
     }
@@ -1747,7 +1747,7 @@ proc import-mailrelay {verbose argv dbfd} {
 	    # access to this domain
 	    #
 
-	    set sql "UPDATE dns.dr_dom SET rolemail = 1 WHERE iddom = $iddom"
+	    set sql "UPDATE dns.p_dom SET rolemail = 1 WHERE iddom = $iddom"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		return "$msg\nAbort"
 	    }
@@ -1765,8 +1765,8 @@ proc import-mailrelay {verbose argv dbfd} {
 		    warning $msg
 		} else {
 		    if {[read-rr-by-name $dbfd $namer $iddomr $idview trr]} then {
-			set sql "INSERT INTO dns.relais_dom
-						(iddom, priorite, mx)
+			set sql "INSERT INTO dns.relay_dom
+						(iddom, prio, mx)
 					VALUES ($iddom, $prio, $trr(idrr))"
 			if {! [::pgsql::execsql $dbfd $sql msg]} then {
 			    return "$msg\nAbort"

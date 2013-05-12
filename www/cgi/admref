@@ -95,11 +95,11 @@ set conf(commu:proc)		admref-nop
 # Hinfo
 
 set conf(hinfo:ptitle) 	"Host type management"
-set conf(hinfo:cols)		{ {60 texte {Description} {string 30} {}}
-				  {20 tri {Sort} {int 10} 100}
+set conf(hinfo:cols)		{ {60 text {Description} {string 30} {}}
+				  {20 sort {Sort} {int 10} 100}
 				  {20 present {Present} {bool} 1}
 				}
-set conf(hinfo:sql)		"SELECT * FROM dns.hinfo ORDER BY tri ASC, texte ASC"
+set conf(hinfo:sql)		"SELECT * FROM dns.hinfo ORDER BY sort ASC, text ASC"
 set conf(hinfo:id)		idhinfo
 set conf(hinfo:help)		help-hinfo.html
 set conf(hinfo:return)		"Return to host information modification"

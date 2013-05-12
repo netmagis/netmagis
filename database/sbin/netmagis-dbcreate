@@ -282,7 +282,7 @@ schemaversion	22
 \.
 
     -- id 0 is used in zone creation script
-    COPY dns.hinfo (texte, tri, present) FROM stdin;
+    COPY dns.hinfo (text, sort, present) FROM stdin;
 Unspecified	0	0
 PC/Windows	10	1
 PC/Unix	20	1

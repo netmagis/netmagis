@@ -113,7 +113,7 @@ d cgi-register {action {}} {
     # Extract domains where user can declare "mail roles"
     #
 
-    set w "dr_dom.rolemail <> 0"
+    set w "p_dom.rolemail <> 0"
     set domain [menu-domain $dbfd $tabuid(idcor) "domain" $w ""]
 
     #
@@ -201,17 +201,17 @@ d cgi-register {action list} {
 		AND r1.iddom = d1.iddom
 		AND d1.name = '$domain'
 		AND r1.iddom =
-			(SELECT dd1.iddom FROM dns.dr_dom dd1
-					WHERE dd1.idgrp = corresp.idgrp
-					    AND dd1.iddom = r1.iddom
-					    AND dd1.rolemail > 0
+			(SELECT dd1.iddom FROM dns.p_dom p1
+					WHERE p1.idgrp = corresp.idgrp
+					    AND p1.iddom = r1.iddom
+					    AND p1.rolemail > 0
 			    )
 		AND role_mail.heberg = r2.idrr
 		AND r2.iddom = d2.iddom
 		AND r2.iddom =
-			(SELECT dd2.iddom FROM dns.dr_dom dd2
-					WHERE dd2.idgrp = corresp.idgrp
-					    AND dd2.iddom = r2.iddom
+			(SELECT dd2.iddom FROM dns.p_dom p2
+					WHERE p2.idgrp = corresp.idgrp
+					    AND p2.iddom = r2.iddom
 			    )
 		AND r2.idrr IN
 			(SELECT r3.idrr FROM dns.rr_ip r3

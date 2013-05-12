@@ -64,7 +64,7 @@ INSERT INTO global.config (clef, valeur) VALUES ('schemaversion', '22') ;
 
 DROP TABLE dns.role_web ;
 
--- Remove all constraints: we will rebuild them later
+-- Remove all constraints on "to be renamed" tables: we will rebuild them later
 -- This is done in order to get new implicit names consistent with table name
 
 ALTER TABLE dns.etablissement
@@ -73,6 +73,11 @@ ALTER TABLE dns.etablissement
 
 ALTER TABLE dns.communaute
     DROP CONSTRAINT IF EXISTS communaute_pkey			CASCADE
+    ;
+
+ALTER TABLE dns.dr_dom
+    DROP CONSTRAINT IF EXISTS dr_dom_idgrp_fkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS dr_dom_pkey			CASCADE
     ;
 
 ALTER TABLE dns.domaine
@@ -100,6 +105,13 @@ ALTER TABLE dns.dr_ip
     DROP CONSTRAINT IF EXISTS dr_ip_idgrp_fkey			CASCADE
     ;
 
+ALTER TABLE dns.relais_dom
+    DROP CONSTRAINT IF EXISTS relais_dom_pkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS relais_dom_iddom_fkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS relais_dom_mx_fkey		CASCADE
+    ;
+
+
 -- Rename tables and columns, and rebuild constraints
 
 ALTER TABLE dns.seq_etablissement RENAME TO seq_organization ;
@@ -115,6 +127,13 @@ ALTER TABLE dns.communaute RENAME TO community ;
 ALTER TABLE dns.community RENAME COLUMN nom		TO name ;
 ALTER TABLE dns.community
     ADD PRIMARY KEY (idcommu) ;
+
+ALTER TABLE dns.dr_dom RENAME TO p_dom ;
+ALTER TABLE dns.p_dom RENAME COLUMN tri			TO sort ;
+ALTER TABLE dns.p_dom DROP COLUMN roleweb ;
+ALTER TABLE dns.p_dom
+    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe(idgrp),
+    ADD PRIMARY KEY (idgrp, iddom) ;
 
 ALTER TABLE dns.seq_domaine RENAME TO seq_domain ;
 
@@ -145,17 +164,29 @@ ALTER TABLE dns.network
 
 ALTER TABLE dns.dr_reseau RENAME TO p_network ;
 ALTER TABLE dns.p_network RENAME COLUMN idreseau TO idnet ;
-ALTER TABLE dns.p_network RENAME COLUMN tri	      TO sort ;
+ALTER TABLE dns.p_network RENAME COLUMN tri		TO sort ;
 ALTER TABLE dns.p_network
-    ADD PRIMARY KEY (idgrp, idnet),
     ADD FOREIGN KEY (idnet) REFERENCES dns.network (idnet),
-    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp) ;
+    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    ADD PRIMARY KEY (idgrp, idnet) ;
 
 ALTER TABLE dns.dr_ip RENAME TO p_ip ;
 ALTER TABLE dns.p_ip RENAME COLUMN adr			TO addr ;
 ALTER TABLE dns.p_ip
-    ADD PRIMARY KEY (idgrp, addr),
-    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp) ;
+    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    ADD PRIMARY KEY (idgrp, addr) ;
+
+ALTER TABLE dns.relais_dom RENAME TO relay_dom ;
+ALTER TABLE dns.relay_dom RENAME COLUMN priorite	TO prio ;
+ALTER TABLE dns.relay_dom
+    ADD FOREIGN KEY (iddom)  REFERENCES dns.domain  (iddom),
+    ADD FOREIGN KEY (mx)     REFERENCES dns.rr      (idrr),
+    ADD PRIMARY KEY (iddom, mx) ;
+
+ALTER TABLE dns.hinfo RENAME COLUMN texte		TO text ;
+ALTER TABLE dns.hinfo RENAME COLUMN tri			TO sort ;
+
+ALTER TABLE dns.rr_mx RENAME COLUMN priorite		TO prio ;
 
 DROP TABLE dns.dhcp ;
 
@@ -176,12 +207,9 @@ INSERT INTO dns.view (name) VALUES ('default') ;
 
 -- Disambiguate zone name and attach zones to views
 
-ALTER TABLE dns.zone
-    RENAME COLUMN domaine TO name ;
-
-ALTER TABLE dns.zone
-    ADD COLUMN idview INT
-    ;
+ALTER TABLE dns.zone ADD COLUMN idview INT ;
+ALTER TABLE dns.zone RENAME COLUMN domaine		TO name ;
+ALTER TABLE dns.zone RENAME COLUMN generer		TO gen ;
 
 ALTER TABLE dns.zone
     DROP CONSTRAINT zone_pkey ;

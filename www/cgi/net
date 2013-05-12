@@ -322,7 +322,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 			rr.droitsmtp, rr.mac,
 			rr.iddhcpprofil AS dhcp1,
 			dhcprange.iddhcpprofil AS dhcp2,
-			hinfo.texte, corresp.login
+			hinfo.text, corresp.login
 		    FROM dns.rr, dns.domain, dns.hinfo, global.corresp,
 			dns.rr_ip LEFT OUTER JOIN dns.dhcprange
 			    ON (rr_ip.adr >= dhcprange.min
@@ -342,7 +342,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	    set mac		$tab(mac)
 	    set dhcp1		$tab(dhcp1)
 	    set dhcp2		$tab(dhcp2)
-	    set hinfo		$tab(texte)
+	    set hinfo		$tab(text)
 	    set commentaire	$tab(commentaire)
 	    set respnom    	$tab(respnom)
 	    set respmel    	$tab(respmel)

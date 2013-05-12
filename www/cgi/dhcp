@@ -89,10 +89,10 @@ proc output-edit {dbfd netid _tabuid} {
 
     set menudom {}
     set sql "SELECT d.iddom, d.name
-    			FROM dns.domain d, dns.dr_dom dr
-			WHERE d.iddom = dr.iddom
-				AND dr.idgrp = $idgrp
-			ORDER BY dr.tri ASC, d.name ASC"
+    			FROM dns.domain d, dns.p_dom p
+			WHERE d.iddom = p.iddom
+				AND p.idgrp = $idgrp
+			ORDER BY p.sort ASC, d.name ASC"
     pg_select $dbfd $sql tab {
 	lappend menudom [list $tab(iddom) $tab(name)]
     }

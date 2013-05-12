@@ -2049,7 +2049,7 @@ snit::type ::nmuser {
 			WHERE p.idgrp = c.idgrp
 			    AND p.idview = v.idview
 			    AND c.login = '$qlogin'
-			ORDER BY d.sort ASC, v.name ASC"
+			ORDER BY p.sort ASC, v.name ASC"
 	pg_select $db $sql tab {
 	    set idview $tab(idview)
 	    set authviews($idview) 1
@@ -2113,12 +2113,12 @@ snit::type ::nmuser {
 	}
 
 	set qlogin [::pgsql::quote $login]
-	set sql "SELECT dr.iddom
-			FROM dns.dr_dom dr, dns.domain d, global.corresp c
-			WHERE dr.idgrp = c.idgrp
-			    AND dr.iddom = d.iddom
+	set sql "SELECT p.iddom
+			FROM dns.p_dom p, dns.domain d, global.corresp c
+			WHERE p.idgrp = c.idgrp
+			    AND p.iddom = d.iddom
 			    AND c.login = '$qlogin'
-			ORDER BY dr.tri ASC, d.name ASC"
+			ORDER BY p.sort ASC, d.name ASC"
 	pg_select $db $sql tab {
 	    set iddom $tab(iddom)
 	    set authdom($iddom) 1
@@ -3060,11 +3060,11 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    set sql "SELECT domain.name AS name, dr_dom.rolemail
-			FROM dns.dr_dom, dns.domain
-			WHERE dr_dom.iddom = domain.iddom
-				AND dr_dom.idgrp = $idgrp
-			ORDER BY dr_dom.tri, domain.name"
+    set sql "SELECT domain.name AS name, p_dom.rolemail
+			FROM dns.p_dom, dns.domain
+			WHERE p_dom.iddom = domain.iddom
+				AND p_dom.idgrp = $idgrp
+			ORDER BY p_dom.sort, domain.name"
     pg_select $dbfd $sql tab {
 	set rm ""
 	if {$tab(rolemail)} then {
@@ -3641,9 +3641,9 @@ proc read-rr-by-id {dbfd idrr _trr} {
 		set trr(dhcpprofil) $tab(nom)
 	    }
 	}
-	set sql "SELECT texte FROM dns.hinfo WHERE idhinfo = $trr(idhinfo)"
+	set sql "SELECT text FROM dns.hinfo WHERE idhinfo = $trr(idhinfo)"
 	pg_select $dbfd $sql tab {
-	    set trr(hinfo) $tab(texte)
+	    set trr(hinfo) $tab(text)
 	}
 	set sql "SELECT name FROM dns.domain WHERE iddom = $trr(iddom)"
 	pg_select $dbfd $sql tab {
@@ -3655,9 +3655,9 @@ proc read-rr-by-id {dbfd idrr _trr} {
 	    lappend trr(ip) [list $idview $tab(adr)]
 	}
 	set trr(mx) {}
-	set sql "SELECT priorite, mx FROM dns.rr_mx WHERE idrr = $idrr"
+	set sql "SELECT prio, mx FROM dns.rr_mx WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(mx) [list $idview $tab(priorite) $tab(mx)]
+	    lappend trr(mx) [list $idview $tab(prio) $tab(mx)]
 	}
 	set trr(cname) ""
 	set sql "SELECT cname FROM dns.rr_cname WHERE idrr = $idrr"
@@ -4447,7 +4447,7 @@ proc update-host-refs {dbfd oidrr nidrr} {
     lappend sql "UPDATE dns.rr_mx
 			    SET mx = $nidrr
 			    WHERE mx = $oidrr"
-    lappend sql "UPDATE dns.relais_dom
+    lappend sql "UPDATE dns.relay_dom
 			    SET mx = $nidrr
 			    WHERE mx = $oidrr"
     lappend sql "UPDATE topo.ifchanges
@@ -5399,7 +5399,7 @@ proc read-domain {dbfd domain} {
 #	- idcor : user id
 #	- _iddom : domain id or -1 to read from domain
 #	- _domain : domain, or "" to read from iddom
-#	- roles : roles to test (column names in dr_dom)
+#	- roles : roles to test (column names in p_dom)
 # Output:
 #   - return value: empty string or error message
 #   - parameters _iddom and _domain : fetched values
@@ -5441,14 +5441,14 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
     if {$msg eq ""} then {
 	set where ""
 	foreach r $roles {
-	    append where "AND dr_dom.$r > 0 "
+	    append where "AND p_dom.$r > 0 "
 	}
 
 	set found 0
-	set sql "SELECT dr_dom.iddom FROM dns.dr_dom, global.corresp
+	set sql "SELECT p_dom.iddom FROM dns.p_dom, global.corresp
 			    WHERE corresp.idcor = $idcor
-				    AND corresp.idgrp = dr_dom.idgrp
-				    AND dr_dom.iddom = $iddom
+				    AND corresp.idgrp = p_dom.idgrp
+				    AND p_dom.iddom = $iddom
 				    $where
 				    "
 	pg_select $dbfd $sql tab {
@@ -6052,7 +6052,7 @@ proc check-domain-relay {dbfd idcor _iddom domain idview} {
     #
 
     set sql "SELECT r.nom AS nom, d.name AS domain
-		FROM dns.relais_dom rd, dns.rr r, dns.domain d
+		FROM dns.relay_dom rd, dns.rr r, dns.domain d
 		WHERE rd.iddom = $iddom
 			AND rd.mx = r.idrr
 			AND r.iddom = d.iddom
@@ -6209,7 +6209,7 @@ proc check-group-syntax {group} {
 proc read-hinfo {dbfd text} {
     set qtext [::pgsql::quote $text]
     set idhinfo -1
-    pg_select $dbfd "SELECT idhinfo FROM dns.hinfo WHERE texte = '$qtext'" tab {
+    pg_select $dbfd "SELECT idhinfo FROM dns.hinfo WHERE text = '$qtext'" tab {
 	set idhinfo $tab(idhinfo)
     }
     return $idhinfo
@@ -6268,14 +6268,14 @@ proc read-dhcp-profile {dbfd text} {
 
 proc menu-hinfo {dbfd field defval} {
     set lhinfo {}
-    set sql "SELECT texte FROM dns.hinfo
+    set sql "SELECT text FROM dns.hinfo
 				WHERE present = 1
-				ORDER BY tri, texte"
+				ORDER BY sort ASC, text ASC"
     set i 0
     set defindex 0
     pg_select $dbfd $sql tab {
-	lappend lhinfo [list $tab(texte) $tab(texte)]
-	if {$tab(texte) eq $defval} then {
+	lappend lhinfo [list $tab(text) $tab(text)]
+	if {$tab(text) eq $defval} then {
 	    set defindex $i
 	}
 	incr i
@@ -6533,12 +6533,12 @@ proc couple-domains {dbfd idcor where} {
 
     set lcouples {}
     set sql "SELECT domain.name
-		FROM dns.domain, dns.dr_dom, global.corresp
-		WHERE domain.iddom = dr_dom.iddom
-		    AND dr_dom.idgrp = corresp.idgrp
+		FROM dns.domain, dns.p_dom, global.corresp
+		WHERE domain.iddom = p_dom.iddom
+		    AND p_dom.idgrp = corresp.idgrp
 		    AND corresp.idcor = $idcor
 		    $where
-		ORDER BY dr_dom.tri ASC"
+		ORDER BY p_dom.sort ASC, domain.name ASC"
     pg_select $dbfd $sql tab {
 	lappend lcouples [list $tab(name) $tab(name)]
     }

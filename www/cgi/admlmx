@@ -162,7 +162,7 @@ proc output {dbfd domains idview format} {
 
 	catch {unset tabmx}
 	set sql "SELECT r1.nom || '.' || d1.name AS left,
-			m.priorite,
+			m.prio,
 			r2.nom || '.' || d2.name AS right
 		    FROM dns.rr r1, dns.domain d1,
 			dns.rr_mx m,
@@ -173,10 +173,10 @@ proc output {dbfd domains idview format} {
 			AND r1.idview = $idview
 			AND r2.iddom = d2.iddom
 			AND r1.iddom = $iddom
-		    ORDER BY r1.nom ASC, m.priorite ASC"
+		    ORDER BY r1.nom ASC, m.prio ASC"
 	pg_select $dbfd $sql tab {
 	    set left  $tab(left)
-	    set prio  $tab(priorite)
+	    set prio  $tab(prio)
 	    set right $tab(right)
 	    lappend tabmx($left) [list $prio $right]
 	}

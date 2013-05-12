@@ -7,7 +7,7 @@
 #	mkzone [-h][-q][-v][-n] [-w <view-name>|<zone-name> ... <zone-name>]
 #
 # If zone names are supplied, zone generation is done only for these
-# zones. Else, only modified zones (those which have the bit "generer")
+# zones. Else, only modified zones (those which have the bit "gen")
 # are generated.
 # If view-name is given, zone generation is limited to modified zones 
 # associated with this view.
@@ -53,7 +53,7 @@ set conf(usage) {usage: %1$s [-h]|-q][-v][-n] [-w <view>|<zone-name> ... <zone-n
 #
 
 proc get-mod-zones {dbfd idview} {
-    set crit "WHERE generer = 1"
+    set crit "WHERE gen = 1"
     if {$idview != -1} then {
 	append crit " AND idview = $idview"
     }
@@ -130,7 +130,7 @@ proc gen-zone {dbfd zone _txt} {
     set qzone [::pgsql::quote $zone]
 
     set sql "SELECT n.nspname || '.' || c.relname AS table,
-			zone.version, zone.prologue, zone.rrsup, zone.generer,
+			zone.version, zone.prologue, zone.rrsup, zone.gen,
 			zone.idview
 		    FROM dns.zone, pg_class c, pg_namespace n
 		    WHERE name = '$qzone'
@@ -143,7 +143,7 @@ proc gen-zone {dbfd zone _txt} {
 	set version	$tab(version)
 	set prologue	$tab(prologue)
 	set rrsup	$tab(rrsup)
-	set generer	$tab(generer)
+	set gen		$tab(gen)
 	set idview	$tab(idview)
 	set found 1
     }
@@ -214,7 +214,7 @@ proc gen-zone {dbfd zone _txt} {
     # End of generation: keep version number as well as zone is generated
     #
 
-    set sql "UPDATE dns.zone SET version = $nversion, generer = 0
+    set sql "UPDATE dns.zone SET version = $nversion, gen = 0
 		    WHERE name = '$qzone'"
     if {! [::pgsql::execsql $dbfd $sql m]} then {
 	set txt $m
@@ -304,7 +304,7 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     # Get all MX: "a MX n b" (rr1 is a, rr2 is b)
     #
 
-    set sql "SELECT rr1.nom, rr1.ttl, rr_mx.priorite,
+    set sql "SELECT rr1.nom, rr1.ttl, rr_mx.prio,
 			    rr2.nom AS nom2, rr2.iddom AS iddom2
 			FROM dns.rr rr1, dns.rr_mx, dns.rr rr2
 			WHERE rr1.iddom = $iddom
@@ -320,7 +320,7 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	append txt "$nom	$ttl	IN	MX	$tab(priorite) $fqdn2"
+	append txt "$nom	$ttl	IN	MX	$tab(prio) $fqdn2"
 	append txt "\n"
     }
 
@@ -350,25 +350,25 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     # Is there some mail relays for this domain?
     #
 
-    set sql "SELECT relais_dom.priorite,
+    set sql "SELECT relay_dom.prio,
 			rr.nom || '.' || domain.name || '.' AS rrname
-		    FROM dns.relais_dom, dns.rr, dns.domain
-		    WHERE relais_dom.iddom = $iddom
-			AND relais_dom.mx = rr.idrr
+		    FROM dns.relay_dom, dns.rr, dns.domain
+		    WHERE relay_dom.iddom = $iddom
+			AND relay_dom.mx = rr.idrr
 			AND rr.iddom = domain.iddom
 			AND rr.idview = $idview
-		    ORDER BY relais_dom.priorite ASC, domain.name, upper(rr.nom)
+		    ORDER BY relay_dom.prio ASC, domain.name, upper(rr.nom)
 		"
-    set relais {}
+    set relays {}
     pg_select $dbfd $sql tab {
-	lappend relais "IN	MX	$tab(priorite) $tab(rrname)"
+	lappend relays "IN	MX	$tab(prio) $tab(rrname)"
     }
 
     #
     # Get all mail roles
     #
 
-    if {[llength $relais] > 0} then {
+    if {[llength $relays] > 0} then {
 	set sql "SELECT rr.nom, rr.ttl
 			FROM dns.role_mail, dns.rr
 			WHERE role_mail.idrr = rr.idrr
@@ -377,7 +377,7 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
 			ORDER BY upper(rr.nom) ASC
 			"
 	pg_select $dbfd $sql tab {
-	    foreach r $relais {
+	    foreach r $relays {
 		set ttl $tab(ttl)
 		if {$ttl == -1} then {
 		    set ttl ""

@@ -148,7 +148,7 @@ CREATE TABLE dns.zone (
     version	INT,			-- version number
     prologue	TEXT,			-- zone prologue (with %ZONEVERSION% pattern)
     rrsup	TEXT,			-- added to each generated host
-    generer	INT			-- modified since last generation
+    gen		INT			-- modified since last generation
 ) ;
 
 CREATE TABLE dns.zone_normale (
@@ -181,8 +181,8 @@ CREATE SEQUENCE dns.seq_hinfo MINVALUE 0 START 0 ;
 CREATE TABLE dns.hinfo (
     idhinfo	INT			-- host type id
 		    DEFAULT NEXTVAL ('dns.seq_hinfo'),
-    texte	TEXT,			-- type as text
-    tri		INT,			-- sort class
+    text	TEXT,			-- type as text
+    sort	INT,			-- sort class
     present	INT,			-- present or not
     PRIMARY KEY (idhinfo)
 ) ;
@@ -203,12 +203,11 @@ CREATE TABLE dns.p_network (
 
 -- domains allowed to groups
 
-CREATE TABLE dns.dr_dom (
+CREATE TABLE dns.p_dom (
     idgrp	INT,			-- group
     iddom	INT,			-- domain id
-    tri		INT,			-- sort class
+    sort	INT,			-- sort class
     rolemail	INT DEFAULT 0,		-- perm to manage mail roles
-    roleweb	INT DEFAULT 0,		-- perm to manage web roles (later...)
 
     FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
     PRIMARY KEY (idgrp, iddom)
@@ -337,7 +336,7 @@ CREATE TABLE dns.rr_cname (
 
 CREATE TABLE dns.rr_mx (
     idrr	INT,			-- RR
-    priorite	INT,			-- priority
+    prio	INT,			-- priority
     mx		INT,			-- pointed RR id
 
     FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
@@ -356,9 +355,9 @@ CREATE TABLE dns.role_mail (
 ) ;
 
 -- Mail relays for a domain
-CREATE TABLE dns.relais_dom (
+CREATE TABLE dns.relay_dom (
     iddom	INT,			-- domain id
-    priorite	INT,			-- MX priority
+    prio	INT,			-- MX priority
     mx		INT,			-- relay host for this domain
 
     FOREIGN KEY (iddom)  REFERENCES dns.domain  (iddom),

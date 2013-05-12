@@ -235,7 +235,7 @@ CREATE OR REPLACE FUNCTION dns.ipranges (net CIDR, lim INTEGER, grp INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_rev4 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_reverse4 AS z SET generer = 1
+	UPDATE dns.zone_reverse4 AS z SET gen = 1
 	    FROM dns.rr
 	    WHERE $1 <<= selection
 		AND rr.idrr = $2
@@ -248,7 +248,7 @@ CREATE OR REPLACE FUNCTION dns.gen_rev4 (INET, INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_rev6 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_reverse6 AS z SET generer = 1
+	UPDATE dns.zone_reverse6 AS z SET gen = 1
 	    FROM dns.rr
 	    WHERE $1 <<= selection
 		AND rr.idrr = $2
@@ -261,7 +261,7 @@ CREATE OR REPLACE FUNCTION dns.gen_rev6 (INET, INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_norm_idrr (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_normale SET generer = 1
+	UPDATE dns.zone_normale SET gen = 1
 		WHERE (selection, idview) = 
 			(
 			    SELECT domain.name, rr.idview
@@ -277,7 +277,7 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_idrr (INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_norm_iddom (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_normale SET generer = 1
+	UPDATE dns.zone_normale SET gen = 1
 		WHERE idview = $2
 		    AND selection = (
 			SELECT domain.name
@@ -293,7 +293,7 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_iddom (INTEGER, INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_relay (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_normale SET generer = 1
+	UPDATE dns.zone_normale SET gen = 1
 	    WHERE selection = ( SELECT name FROM dns.domain WHERE iddom = $1 )
 		AND idview = ( SELECT idview FROM dns.rr WHERE idrr = $2 )
 	    ;
@@ -485,7 +485,7 @@ CREATE OR REPLACE FUNCTION dns.mod_zone ()
 		OR NEW.rrsup <> OLD.rrsup
 		OR NEW.selection <> OLD.selection
 	THEN
-	    NEW.generer := 1 ;
+	    NEW.gen := 1 ;
 	END IF ;
 	RETURN NEW ;
     END ;

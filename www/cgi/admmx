@@ -18,7 +18,7 @@
 #	- nom : name of MX to modify
 #	- domain : domain of MX to modify
 #	- idview: view id
-#	- priorite* : MX priority
+#	- prio* : MX priority
 #	- nom* : MX name
 #	- domain* : MX domain
 #
@@ -108,7 +108,7 @@ proc insert-mx {dbfd idrr lmx} {
     set msg ""
     foreach mx $lmx {
 	lassign $mx prio idmx
-	set sql "INSERT INTO dns.rr_mx (idrr, priorite, mx)
+	set sql "INSERT INTO dns.rr_mx (idrr, prio, mx)
 				VALUES ($idrr, $prio, $idmx)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    break
@@ -211,17 +211,17 @@ d cgi-register {action edit} {
 		    ]
     set menudom [couple-domains $dbfd $tabuid(idcor) ""]
     set cspec [list \
-		{priorite {string 5}  {}} \
-		{nom      {string 30} {}} \
+		{prio {string 5}  {}} \
+		{nom  {string 30} {}} \
 		[list domain [list menu $menudom] {}] \
 	    ]
-    set sql "SELECT m.mx, m.priorite, r.nom, d.name AS domain
+    set sql "SELECT m.mx, m.prio, r.nom, d.name AS domain
 		FROM dns.rr_mx m, dns.rr r, dns.domain d
 		WHERE m.idrr = $idrr
 			AND m.mx = r.idrr
 			AND r.iddom = d.iddom
 			AND r.idview = $idview
-		ORDER BY m.priorite, d.name, r.nom
+		ORDER BY m.prio, d.name, r.nom
 		"
     set idnum "mx"
 
@@ -253,11 +253,11 @@ d cgi-register {action mod} {
     {domain		1 1}
     {idview		1 1}
 
-    {priorite[0-9]+	0 9999}
+    {prio[0-9]+		0 9999}
     {nom[0-9]+		0 9999}
     {domain[0-9]+	0 9999}
 
-    {prioriten[0-9]+	0 9999}
+    {prion[0-9]+	0 9999}
     {nomn[0-9]+		0 9999}
     {domainn[0-9]+	0 9999}
 } {
@@ -299,8 +299,8 @@ d cgi-register {action mod} {
 
     set lmx {}
     foreach c [array names ftab] {
-	if {[regexp {^priorite(n?)([0-9]+)$} $c bidon n idmx]} then {
-	    set idxprio priorite$n$idmx
+	if {[regexp {^prio(n?)([0-9]+)$} $c bidon n idmx]} then {
+	    set idxprio prio$n$idmx
 	    set idxnom  nom$n$idmx
 	    set idxdom  domain$n$idmx
 	    if {[info exists ftab($idxprio)] && \

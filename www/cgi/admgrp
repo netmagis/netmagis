@@ -27,7 +27,6 @@
 #	- domainN : valid domains
 #	- sortdomN : domain sort class (if empty, we have to remove the domain)
 #	- rolemailN : permission to edit "mail roles" for this domain (0 or 1)
-#	- rolewebN : permission to edit "web roles" for this domain (0 or 1)
 #	- netN : network ids for this group
 #	- sortnetN : network sort class (if empty, we have to remove this network)
 #	- dhcpN : permission to edit DHCP ranges for this network (0 or 1)
@@ -107,11 +106,11 @@ set conf(tabuidresp) {
     }
 }
 
-set conf(tabviews) {
+set conf(tabdomains) {
     global {
 	chars {12 normal}
 	botbar {no}
-	columns {50 25 25}
+	columns {33 33 33}
 	align {center}
 	format {raw}
     }
@@ -139,41 +138,7 @@ set conf(tabviews) {
     }
 }
 
-set conf(tabdomains) {
-    global {
-	chars {12 normal}
-	botbar {no}
-	columns {25 25 25 25}
-	align {center}
-	format {raw}
-    }
-    pattern Title {
-	topbar {no}
-	vbar {no}
-	chars {bold}
-	column { }
-	vbar {no}
-	column { }
-	vbar {no}
-	column { }
-	vbar {no}
-	column { }
-	vbar {no}
-    }
-    pattern Normal {
-	topbar {no}
-	vbar {no}
-	format {raw}
-	column { }
-	vbar {no}
-	column { }
-	vbar {no}
-	column { }
-	vbar {no}
-	column { }
-	vbar {no}
-    }
-}
+set conf(tabviews) $conf(tabdomains)
 
 set conf(tabnetworks) {
     global {
@@ -347,7 +312,7 @@ proc val-group {dbfd group exist} {
 
 proc del-group {dbfd idgrp idorphan} {
     set ltab {global.groupe global.corresp
-		dns.p_network dns.p_ip dns.dr_dom
+		dns.p_network dns.p_ip dns.p_dom
 		dns.dr_dhcpprofil}
     d dblock $ltab
 
@@ -355,7 +320,7 @@ proc del-group {dbfd idgrp idorphan} {
     # Remove permissions
     #
 
-    foreach table {dns.p_network dns.p_ip dns.dr_dom dns.dr_dhcpprofil} {
+    foreach table {dns.p_network dns.p_ip dns.p_dom dns.dr_dhcpprofil} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "delete %s" $table] $msg
@@ -565,21 +530,18 @@ d cgi-register {action edit} {
 			    [mc "Sort class"] \
 			    [mc "Domain"] \
 			    [mc "Mail role edition"] \
-			    [mc "Web role edition"] \
 			]
     set ldom [::pgsql::getcols $dbfd dns.domain "" "name ASC" {name name}]
-    set sql "SELECT domain.name AS name, dr_dom.tri AS sort,
-				dr_dom.rolemail, dr_dom.roleweb
-			FROM dns.domain, dns.dr_dom
-			WHERE domain.iddom = dr_dom.iddom
-				AND dr_dom.idgrp = $idgrp
-			ORDER BY dr_dom.tri ASC, domain.name ASC"
+    set sql "SELECT domain.name AS name, p_dom.sort, p_dom.rolemail
+			FROM dns.domain, dns.p_dom
+			WHERE domain.iddom = p_dom.iddom
+				AND p_dom.idgrp = $idgrp
+			ORDER BY p_dom.sort ASC, domain.name ASC"
     set ndom 1
     pg_select $dbfd $sql tab {
 	set d        $tab(name)
 	set sort     $tab(sort)
 	set rolemail $tab(rolemail)
-	set roleweb  $tab(roleweb)
 
 	set idx [lsearch -exact $ldom [list $d $d]]
 	if {$idx == -1} then {
@@ -588,8 +550,7 @@ d cgi-register {action edit} {
 	set hsort [::webapp::form-text sortdom$ndom 1 5 5 $sort]
 	set hdom  [::webapp::form-menu domain$ndom 1 0 $ldom [list $idx]]
 	set hmail [::webapp::form-bool rolemail$ndom $rolemail]
-	set hweb  [::webapp::form-bool roleweb$ndom  $roleweb]
-	lappend lines [list Normal $hsort $hdom $hmail $hweb]
+	lappend lines [list Normal $hsort $hdom $hmail]
 	incr ndom
     }
 
@@ -597,8 +558,7 @@ d cgi-register {action edit} {
 	set hsort [::webapp::form-text sortdom$ndom 1 5 5 ""]
 	set hdom  [::webapp::form-menu domain$ndom 1 0 $ldom {}]
 	set hmail [::webapp::form-bool rolemail$ndom 0]
-	set hweb  [::webapp::form-bool roleweb$ndom  0]
-	lappend lines [list Normal $hsort $hdom $hmail $hweb]
+	lappend lines [list Normal $hsort $hdom $hmail]
 	incr ndom
     }
 
@@ -821,7 +781,6 @@ d cgi-register {action mod} {
     {sortdom[0-9]+	0 9999}
     {domain[0-9]+	0 9999}
     {rolemail[0-9]+	0 9999}
-    {roleweb[0-9]+	0 9999}
     {sortnet[0-9]+	0 9999}
     {net[0-9]+		0 9999}
     {dhcp[0-9]+		0 9999}
@@ -1049,15 +1008,7 @@ d cgi-register {action mod} {
 		d error [mc "Invalid mail role '%s'" $rolemail]
 	    }
 
-	    if {! [info exists ftab(roleweb$n)]} then {
-		set ftab(roleweb$n) 0
-	    }
-	    set roleweb [string trim [lindex $ftab(roleweb$n) 0]]
-	    if {! [regexp -- {^[01]$} $roleweb]} then {
-		d error [mc "Invalid web role '%s'" $roleweb]
-	    }
-
-	    lappend liddom [list $sort $tabdom($domain) $rolemail $roleweb]
+	    lappend liddom [list $sort $tabdom($domain) $rolemail]
 	}
 
 	incr n
@@ -1349,7 +1300,7 @@ d cgi-register {action mod} {
     #
 
     set ltab {global.groupe global.corresp
-		dns.p_network dns.p_ip dns.dr_dom
+		dns.p_network dns.p_ip dns.p_dom
 		dns.dr_dhcpprofil} 
     d dblock $ltab
 
@@ -1437,11 +1388,11 @@ d cgi-register {action mod} {
     }
 
     # Authorized domains for this group
-    lappend cmd "DELETE FROM dns.dr_dom WHERE idgrp = $idgrp"
+    lappend cmd "DELETE FROM dns.p_dom WHERE idgrp = $idgrp"
     foreach e $liddom {
-	lassign $e sort iddom rolemail roleweb
-	lappend cmd "INSERT INTO dns.dr_dom (idgrp, iddom, tri, rolemail, roleweb)
-			VALUES ($idgrp, $iddom, $sort, $rolemail, $roleweb)"
+	lassign $e sort iddom rolemail
+	lappend cmd "INSERT INTO dns.p_dom (idgrp, iddom, sort, rolemail)
+			VALUES ($idgrp, $iddom, $sort, $rolemail)"
     }
 
     # Authorized networks for this group
