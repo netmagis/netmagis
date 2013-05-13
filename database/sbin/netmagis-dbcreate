@@ -392,7 +392,7 @@ netmagis_create_user ()
 {
     user="$1"
     psql --no-psqlrc --quiet --file - <<EOF
-    INSERT INTO pgauth.user (login, password, nom, prenom)
+    INSERT INTO pgauth.user (login, password, lastname, firstname)
 	VALUES ('$user', '*', 'Boss', 'Joe') ;
     INSERT INTO pgauth.member (login, realm) VALUES ('$user', 'authadmin') ;
     INSERT INTO pgauth.member (login, realm) VALUES ('$user', 'netmagis') ;

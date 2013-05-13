@@ -568,16 +568,16 @@ CREATE TABLE topo.link (
 CREATE TABLE pgauth.user (
     login	TEXT,			-- login name
     password	TEXT,			-- crypted password
-    nom		TEXT,			-- name
-    prenom	TEXT,			-- christian name
-    mel		TEXT,			-- mail address
-    tel		TEXT,			-- telephone number
+    lastname	TEXT,			-- last name
+    firstname	TEXT,			-- first name
+    mail	TEXT,			-- mail address
+    phone	TEXT,			-- telephone number
     mobile	TEXT,			-- mobile phone number
     fax		TEXT,			-- facsimile number
-    adr		TEXT,			-- postal address
+    addr	TEXT,			-- postal address
     -- columns automatically managed by triggers
-    phnom	TEXT,			-- phonetical name
-    phprenom	TEXT,			-- phonetical christian name
+    phlast	TEXT,			-- phonetical last name
+    phfirst	TEXT,			-- phonetical first name
 
     PRIMARY KEY (login)
 ) ;

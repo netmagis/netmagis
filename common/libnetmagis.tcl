@@ -669,8 +669,8 @@ snit::type ::netmagis {
     #   - anon : "anon" (don't fetch identity in auth database) or "id" (fetch)
     #	- usedefuser : use default user name if login is not found
     #   - _tabuid : array containing, in return, user's characteristics
-    #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
-    #			idcor, idgrp, present)
+    #		(login, password, lastname, firstname, mail, phone, fax,
+    #			mobile, addr, idcor, idgrp, present)
     #
     # Output:
     #	- return value: empty string or error message
@@ -761,13 +761,13 @@ snit::type ::netmagis {
 		lappend m "-attrmap" [list \
 					"login" $ldapattrlogin \
 					"password" $ldapattrpassword \
-					"nom" $ldapattrname \
-					"prenom" $ldapattrgivenname \
-					"mel" $ldapattrmail \
-					"tel" $ldapattrphone \
+					"lastname" $ldapattrname \
+					"firstname" $ldapattrgivenname \
+					"maill" $ldapattrmail \
+					"phone" $ldapattrphone \
 					"mobile" $ldapattrmobile \
 					"fax" $ldapattrfax \
-					"adr" $ldapattraddr \
+					"addr" $ldapattraddr \
 					]
 	    }
 	    default {
@@ -977,8 +977,8 @@ snit::type ::netmagis {
     #		- dbfd : database descriptor
     #		- ftab : field array (see webapp::get-data)
     #		- tabuid : user's characteristics
-    #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
-    #			idcor, idgrp, present)
+    #		(login, password, lastname, firstname, mail, phone, fax,
+    #			mobile, addr, idcor, idgrp, present)
     # Output: (none)
     #
 
@@ -1274,8 +1274,8 @@ snit::type ::netmagis {
     #   - argv0 : script argv0
     #   - usedefuser : use default user name if login is not found
     #   - _tabuid : array containing, in return, user's characteristics
-    #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
-    #			idcor, idgrp, present)
+    #		(login, password, lastname, firstname, mail, phone, fax,
+    #			mobile, addr, idcor, idgrp, present)
     # Output:
     #   - return value: error message or empty string
     #   - object d : Netmagis context
@@ -2820,14 +2820,14 @@ proc display-user {_tabuid} {
     upvar $_tabuid tabuid
 
     set lines {}
-    lappend lines [list Normal [mc "User"] "$tabuid(nom) $tabuid(prenom)"]
+    lappend lines [list Normal [mc "User"] "$tabuid(lastname) $tabuid(firstname)"]
     foreach {txt key} {
 			Login	login
-			Mail	mel
-			Phone	tel
+			Mail	mail
+			Phone	phone
 			Mobile	mobile
 			Fax	fax
-			Address	adr
+			Address	addr
 		    } {
 	lappend lines [list Normal [mc $txt] $tabuid($key)]
     }
@@ -3232,14 +3232,14 @@ proc user-attribute {dbfd idcor attr} {
 #	- dbfd : database handle
 #	- login : user login
 #	- _tabuid : array containing, in return:
-#		login	login of the user
-#		nom	user name [if ah global variable is set]
-#		prenom	user christian name [if ah global variable is set]
-#		mel	user mail [if ah global variable is set]
-#		tel	user phone [if ah global variable is set]
+#		login	  login of the user
+#		lastname  user name [if ah global variable is set]
+#		firstname user first name [if ah global variable is set]
+#		mail	user mail [if ah global variable is set]
+#		phone	user phone [if ah global variable is set]
 #		mobile	user mobile phone [if ah global variable is set]
 #		fax	user fax [if ah global variable is set]
-#		adr	user address [if ah global variable is set]
+#		addr	user address [if ah global variable is set]
 #		idcor	user id in the database
 #		idgrp	group id in the database
 #		groupe	group name
@@ -3299,7 +3299,7 @@ proc read-user {dbfd login _tabuid _msg} {
 	    }
 	}
 
-	foreach c {login password nom prenom mel tel mobile fax adr} {
+	foreach c {login password lastname firstname mail phone mobile fax addr} {
 	    set tabuid($c) [$u get $c]
 	}
 
@@ -7427,19 +7427,19 @@ proc _store-tabular-add {dbfd _msg table _tabval check} {
 #
 
 # Fields in pgauth.user database table
-set libconf(fields)	{login password nom prenom mel tel mobile fax adr}
+set libconf(fields)	{login password lastname firstname mail phone mobile fax addr}
 
 # Fields : <title> <field spec> <form var name> <user>
 # with <user> = 1 if field contains information about user (else : search only)
 set libconf(editfields) {
     {Login 	{string 10} login	1}
-    {Name	{string 40} nom		1}
+    {Name	{string 40} lastname	1}
     {Method	{yesno {%1$s Regular expression %2$s Phonetic}} phren 0}
-    {{First name}	{string 40} prenom	1}
+    {{First name}	{string 40} firstname	1}
     {Method	{yesno {%1$s Regular expression %2$s Phonetic}} phrep 0}
-    {Address	{text 3 40} adr		1}
-    {Mail	{string 40} mel		1}
-    {Phone	{string 15} tel		1}
+    {Address	{text 3 40} addr	1}
+    {Mail	{string 40} mail	1}
+    {Phone	{string 15} phone	1}
     {Fax	{string 15} fax		1}
     {Mobile	{string 15} mobile	1}
 }
@@ -7586,13 +7586,13 @@ set libconf(tabulist) {
 #   - return value : 1 if found, 0 if not found
 #   - parameter tab : 
 #	tab(login)	login
-#	tab(nom)	name
-#	tab(prenom)	christian name
-#	tab(mel)	email address
-#	tab(tel)	phone number
+#	tab(lastname)	name
+#	tab(firstname)	christian name
+#	tab(mail)	email address
+#	tab(phone)	phone number
 #	tab(fax)	facsimile number
 #	tab(mobile)	mobile phone number
-#	tab(adr)	postal address
+#	tab(addr)	postal address
 #	tab(encryption)	"crypt" if password is encrypted
 #	tab(password)	password (crypted or not)
 #	tab(realms)	list of realms to which user belongs
@@ -7785,8 +7785,8 @@ proc pgauth-deluser {dbfd login {transact transaction}} {
 #   - parameters :
 #	- dbfd : database handle
 #	- tabcrit : array containing criterion
-#		login, nom, prenom, adr, mel, tel, mobile, fax, realm
-#		or phnom, phprenom for phonetic searches
+#		login, lastname, firstname, addr, mail, phone, mobile,
+#		fax, realm, or phlast, phfirst for phonetic searches
 #	- sort (optional) : list {sort...} where
 #		sort = +/- sort-criterion
 # Output:
@@ -7802,7 +7802,7 @@ proc pgauth-deluser {dbfd login {transact transaction}} {
 #   2010/12/29 : pda      : i18n and netmagis merge
 #
 
-proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
+proc pgauth-searchuser {dbfd _tabcrit {sort {+lastname +firstname}}} {
     upvar $_tabcrit tabcrit
 
     #
@@ -7812,7 +7812,7 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
     set clauses {}
     set nwheres 0
     set from ""
-    foreach c {login phnom phprenom nom prenom adr mel tel mobile fax realm} {
+    foreach c {login phlast phfirst lastname firstname addr mail phone mobile fax realm} {
 	if {[info exists tabcrit($c)]} then {
 	    set re $tabcrit($c)
 	    if {$re ne ""} then {
@@ -7832,7 +7832,7 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
 		    set table "pgauth.user"
 		}
 
-		if {$c eq "phnom" || $c eq "phprenom"} then {
+		if {$c eq "phlast" || $c eq "phfirst"} then {
 		    lappend clauses "$table.$c = pgauth.soundex('$re')"
 		} elseif {$c eq "realm"} then {
 		    set or {}
@@ -7845,7 +7845,7 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
 			lappend clauses "($sor)"
 		    }
 		} else {
-		    # ILIKE = LIKE sans tenir compte de la casse
+		    # ILIKE = case insensitive LIKE
 		    lappend clauses "$table.$c ILIKE '$re'"
 		}
 		incr nwheres
@@ -7873,7 +7873,7 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
 	    +  		-
 	    default	{ set way "ASC" }
 	}
-	if {$col in {login nom prenom mel tel adr mobile fax}} then {
+	if {$col in {login lastname firstname mail phone addr mobile fax}} then {
 	    lappend sqlsort "pgauth.user.$col $way"
 # XXX : I don't understand why I used this distinct clause
 #	    lappend sqldistinct "pgauth.user.$col"
@@ -8019,9 +8019,9 @@ proc pgauth-chpw {dbfd login action mail _newpw} {
 
     if {[lindex $mail 0] eq "mail"} then {
 	lassign $mail b from repl cc bcc subj body
-	if {[::webapp::valid-email $tab(mel)]} then {
+	if {[::webapp::valid-email $tab(mail)]} then {
 	    set body [format $body $login $newpw]
-	    ::webapp::mail $from $repl $tab(mel) $cc $bcc $subj $body
+	    ::webapp::mail $from $repl $tab(mail) $cc $bcc $subj $body
 	} else {
 	    return [mc "Invalid mail address, password is not modified"]
 	}
@@ -8095,7 +8095,7 @@ proc pgauth-addrealm {dbfd realm descr admin _msg} {
     set msg ""
     if {[regexp -- {^[a-z][-a-z0-9]*$} $realm]} then {
 	set qrealm [::pgsql::quote $realm]
-	set qdescr  [::pgsql::quote $descr]
+	set qdescr [::pgsql::quote $descr]
 	set sql "INSERT INTO pgauth.realm (realm, descr, admin)
 				VALUES ('$qrealm', '$qdescr', $admin)"
 	if {! [::pgsql::execsql $dbfd $sql m]} then {
@@ -8386,18 +8386,18 @@ proc pgauth-ac-add {_e _ftab state} {
 
     set lsubst {}
     switch -- $state {
-	nom {
+	name {
 	    #
 	    # User name has been introduced. Search this name.
 	    #
 	    set form {
-		    {nom 1 1}
+		    {lastname 1 1}
 		}
 	    pgauth-get-data ftab $form
 
-	    set nom [lindex $ftab(nom) 0]
-	    set tabcrit(phnom) $nom
-	    set lusers [pgauth-searchuser $e(dbfd) tabcrit {+nom +prenom}]
+	    set lastname [lindex $ftab(lastname) 0]
+	    set tabcrit(phlast) $lastname
+	    set lusers [pgauth-searchuser $e(dbfd) tabcrit {+lastname +firstname}]
 	    set nbut [llength $lusers]
 
 	    if {$nbut > 0} then {
@@ -8406,26 +8406,26 @@ proc pgauth-ac-add {_e _ftab state} {
 		#
 		#	%ACTION%
 		#	%MESSAGE%
-		#	%LISTEUTILISATEURS%
-		#	%AUCUN%
+		#	%LISTUSERS%
+		#	%NONE%
 		#
-		set qnom [::webapp::html-string $nom]
-		set message [mc "Some accounts match '%s'. Choose one, or ask for a new account" $qnom]
+		set qlast [::webapp::html-string $lastname]
+		set message [mc "Some accounts match '%s'. Choose one, or ask for a new account" $qlast]
 		lappend lsubst [list %MESSAGE% $message]
 
-		lappend lsubst [list %LISTEUTILISATEURS% \
+		lappend lsubst [list %LISTUSERS% \
 				    [pgauth-ac-display-choice e $lusers "ajout"] \
 				]
 
 		d urlset "" $e(url) [list {action add} \
 					{state nouveau} \
-					[list "nom" $nom] \
+					[list "lastname" $lastname] \
 				    ]
 		set url [d urlget ""]
 		set aucun [::webapp::helem "form" \
 				    [::webapp::form-submit {} [mc "Create a new account"]]
 				    "method" "post" "action" $url]
-		lappend lsubst [list %AUCUN% $aucun]
+		lappend lsubst [list %NONE% $aucun]
 
 		set page $e(page-choice)
 	    } else {
@@ -8435,22 +8435,22 @@ proc pgauth-ac-add {_e _ftab state} {
 		#	%ACTION%
 		#	%STATE%
 		#	%LOGIN%
-		#	%PARAMUTILISATEUR%
-		#	%TITRE%
+		#	%PARAMUSER%
+		#	%TITLE%
 		#
-		set lsubst [pgauth-ac-display-mod e "_new" $nom]
+		set lsubst [pgauth-ac-display-mod e "_new" $lastname]
 		set page $e(page-mod)
 	    }
 	}
-	plusdun {
+	morethanone {
 	    #
 	    # One user selected. Prepare form to input user modifications.
 	    #
 	    #	%ACTION%
 	    #	%STATE%
 	    #	%LOGIN%
-	    #	%PARAMUTILISATEUR%
-	    #	%TITRE%
+	    #	%PARAMUSER%
+	    #	%TITLE%
 	    #
 	    set form {
 		    {login 1 1}
@@ -8467,16 +8467,16 @@ proc pgauth-ac-add {_e _ftab state} {
 	    #
 	    #	%ACTION%
 	    #	%LOGIN%
-	    #	%PARAMUTILISATEUR%
+	    #	%PARAMUSER%
 	    #
 	    set form {
-		    {nom 0 1}
+		    {lastname 0 1}
 		}
 	    pgauth-get-data ftab $form
 
-	    set nom [lindex $ftab(nom) 0]
+	    set lastname [lindex $ftab(lastname) 0]
 
-	    set lsubst [pgauth-ac-display-mod e "_new" $nom]
+	    set lsubst [pgauth-ac-display-mod e "_new" $lastname]
 	    set page $e(page-mod)
 	}
 	creation {
@@ -8510,7 +8510,7 @@ proc pgauth-ac-add {_e _ftab state} {
 	    #
 	    # Store modification of an existing user.
 	    #
-	    #	%TITREACTION% (ajout)
+	    #	%TITLEACTION% (ajout)
 	    #	%COMPLEMENT%
 	    #
 	    set form {
@@ -8548,7 +8548,7 @@ proc pgauth-ac-consprn {_e _ftab state mode} {
 	    #
 	    # Criterion is given
 	    #
-	    #	%NBUTILISATEURS%
+	    #	%NBUSERS%
 	    #	%S%
 	    #	%DATE%
 	    #	%HEURE%
@@ -8599,10 +8599,10 @@ proc pgauth-ac-consprn {_e _ftab state mode} {
 			set myrealms [pgauth-ac-my-realms e $tab(realms)]
 			lappend lines [list "User" \
 					    $tab(login) \
-					    "$tab(nom) $tab(prenom)" \
-					    $tab(adr) \
-					    $tab(mel) \
-					    $tab(tel) $tab(fax) $tab(mobile) \
+					    "$tab(lastname) $tab(firstname)" \
+					    $tab(addr) \
+					    $tab(mail) \
+					    $tab(phone) $tab(fax) $tab(mobile) \
 					    $myrealms
 					] \
 		    }
@@ -8617,7 +8617,7 @@ proc pgauth-ac-consprn {_e _ftab state mode} {
 		set heure [clock format [clock seconds] -format "%Hh%M"]
 
 		lappend lsubst [list %TABLEAU% $tableau]
-	    	lappend lsubst [list %NBUTILISATEURS% [llength $lusers]]
+	    	lappend lsubst [list %NBUSERS% [llength $lusers]]
 		lappend lsubst [list %DATE% $date]
 		lappend lsubst [list %HEURE% $heure]
 	    }
@@ -8690,22 +8690,22 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 		    #
 		    #	%ACTION%
 		    #	%MESSAGE%
-		    #	%LISTEUTILISATEURS%
-		    #	%AUCUN%
+		    #	%LISTUSERS%
+		    #	%NONE%
 		    #
 		    set message [mc "Some accounts match criteria. Choose one"]
 		    lappend lsubst [list %MESSAGE% $message]
 
-		    lappend lsubst [list %LISTEUTILISATEURS% \
+		    lappend lsubst [list %LISTUSERS% \
 					[pgauth-ac-display-choice e $lusers $action] \
 				    ]
 
-		    lappend lsubst [list %AUCUN% ""]
+		    lappend lsubst [list %NONE% ""]
 		    set page $e(page-choice)
 		}
 	    }
 	}
-	plusdun {
+	morethanone {
 	    #
 	    # Display page to remove, modify or change password of an user
 	    #
@@ -8819,7 +8819,7 @@ proc pgauth-ac-my-realms {_e realms} {
 #
 # Returns a list of users with associated URLs
 #
-# Return : value for %LISTEUTILISATEURS%
+# Return : value for %LISTUSERS%
 #
 
 proc pgauth-ac-display-choice {_e lusers action} {
@@ -8838,15 +8838,15 @@ proc pgauth-ac-display-choice {_e lusers action} {
 	if {[pgauth-getuser $e(dbfd) $login tab]} then {
 	    set hlogin [::webapp::html-string $login]
 	    d urlset "" $e(url) [list [list "action" $action] \
-					{state plusdun} \
+					{state morethanone} \
 					[list "login" $login] \
 				    ]
 	    set url [d urlget ""]
 	    set urllogin [::webapp::helem "a" $hlogin "href" $url]
 	    set myrealms [pgauth-ac-my-realms e $tab(realms)]
 	    lappend lines [list "User" \
-					$urllogin "$tab(nom) $tab(prenom)" \
-					$tab(adr) $tab(mel) $myrealms
+					$urllogin "$tab(lastname) $tab(firstname)" \
+					$tab(addr) $tab(mail) $myrealms
 				    ]
 	}
     }
@@ -8856,10 +8856,10 @@ proc pgauth-ac-display-choice {_e lusers action} {
 #
 # Returns a form part to input user information
 #
-# Retour : values for %LOGIN%, %PARAMUTILISATEUR%, %STATE% and %TITRE%
+# Retour : values for %LOGIN%, %PARAMUSER%, %STATE% and %TITLE%
 #
 
-proc pgauth-ac-display-mod {_e login nom} {
+proc pgauth-ac-display-mod {_e login lastname} {
     upvar $_e e
     global libconf
 
@@ -8871,16 +8871,16 @@ proc pgauth-ac-display-mod {_e login nom} {
     if {$new} then {
 	array set u {
 	    login {}
-	    nom {}
-	    prenom {}
-	    adr {}
-	    mel {}
-	    tel {}
+	    lastname {}
+	    firstname {}
+	    addr {}
+	    mail {}
+	    phone {}
 	    fax {}
 	    mobile {}
 	    realms {}
 	}
-	set u(nom) $nom
+	set u(lastname) $lastname
 	set state "creation"
 	set title [mc "Creation"]
     } else {
@@ -8943,7 +8943,7 @@ proc pgauth-ac-display-mod {_e login nom} {
 	    set t [::webapp::form-field $spec $var $u($var)]
 	} else {
 	    #
-	    # Else, it is only a field for search (eg: phnom/phprenom)
+	    # Else, it is only a field for search (eg: phlast/phfirst)
 	    #
 	    set t ""
 	}
@@ -8972,10 +8972,10 @@ proc pgauth-ac-display-mod {_e login nom} {
     # Substitution lists
     #
 
-    lappend lsubst [list %LOGIN%	    $login]
-    lappend lsubst [list %PARAMUTILISATEUR% $paramutilisateur]
-    lappend lsubst [list %STATE%	    $state]
-    lappend lsubst [list %TITRE%	    $title]
+    lappend lsubst [list %LOGIN%     $login]
+    lappend lsubst [list %PARAMUSER% $paramutilisateur]
+    lappend lsubst [list %STATE%     $state]
+    lappend lsubst [list %TITLE%     $title]
 
     return $lsubst
 }
@@ -8983,7 +8983,7 @@ proc pgauth-ac-display-mod {_e login nom} {
 #
 # Store user information (new or modification)
 #
-# Return : values for %TITREACTION% and %COMPLEMENT%
+# Return : values for %TITLEACTION% and %COMPLEMENT%
 #
 
 proc pgauth-ac-store-mod {_e _ftab login} {
@@ -9121,7 +9121,7 @@ proc pgauth-ac-store-mod {_e _ftab login} {
     }
 
     set lsubst {}
-    lappend lsubst [list %TITREACTION% $title]
+    lappend lsubst [list %TITLEACTION% $title]
     lappend lsubst [list %COMPLEMENT% ""]
     return $lsubst
 }
@@ -9208,7 +9208,7 @@ proc pgauth-ac-search-crit {_e _ftab} {
     #
 
     set ncrit 0
-    foreach var {login nom prenom mel adr realms} {
+    foreach var {login lastname firstname mail addr realms} {
 	if {[set $var] ne ""} then {
 	    incr ncrit
 	}
@@ -9229,17 +9229,17 @@ proc pgauth-ac-search-crit {_e _ftab} {
     #
 
     if {[regexp {^[01]$} $phren] && $phren} then {
-	set phnom ""
+	set phlast ""
     } else {
-	set phnom $nom
-	set nom ""
+	set phlast $lastname
+	set lastname ""
     }
 
     if {[regexp {^[01]$} $phrep] && $phrep} then {
-	set phprenom ""
+	set phfirst ""
     } else {
-	set phprenom $prenom
-	set prenom ""
+	set phfirst $firstname
+	set firstname ""
     }
 
     #
@@ -9250,7 +9250,7 @@ proc pgauth-ac-search-crit {_e _ftab} {
     # is specified.
     #
 
-    foreach var {login nom prenom phnom phprenom mel adr} {
+    foreach var {login lastname firstname phlast phfirst mail addr} {
 	set tabcrit($var) [set $var]
     }
 
@@ -9270,7 +9270,7 @@ proc pgauth-ac-search-crit {_e _ftab} {
 	set tabcrit(realm) $realms
     }
 
-    return [pgauth-searchuser $e(dbfd) tabcrit {+nom +prenom}]
+    return [pgauth-searchuser $e(dbfd) tabcrit {+lastname +firstname}]
 }
 
 #
@@ -9287,18 +9287,18 @@ proc pgauth-ac-display-passwd {_e login} {
     }
 
     set login  [::webapp::html-string $login]
-    set nom    [::webapp::html-string $u(nom)]
-    set prenom [::webapp::html-string $u(prenom)]
+    set lastname  [::webapp::html-string $u(lastname)]
+    set firstname [::webapp::html-string $u(firstname)]
 
     set minpwlen [::dnsconfig get "authpgminpwlen"]
     set maxpwlen [::dnsconfig get "authpgmaxpwlen"]
 
     set lsubst {}
-    lappend lsubst [list %LOGIN%    $login]
-    lappend lsubst [list %NOM%      $nom]
-    lappend lsubst [list %PRENOM%   $prenom]
-    lappend lsubst [list %MINPWLEN% $minpwlen]
-    lappend lsubst [list %MAXPWLEN% $maxpwlen]
+    lappend lsubst [list %LOGIN%     $login]
+    lappend lsubst [list %LASTNAME%  $lastname]
+    lappend lsubst [list %FIRSTNAME% $firstname]
+    lappend lsubst [list %MINPWLEN%  $minpwlen]
+    lappend lsubst [list %MAXPWLEN%  $maxpwlen]
 
     return $lsubst
 }
@@ -9306,7 +9306,7 @@ proc pgauth-ac-display-passwd {_e login} {
 #
 # Store a password
 #
-# Return : values for %TITREACTION% and %COMPLEMENT%
+# Return : values for %TITLEACTION% and %COMPLEMENT%
 #
 
 proc pgauth-ac-store-passwd {_e _ftab login} {
@@ -9368,7 +9368,7 @@ proc pgauth-ac-store-passwd {_e _ftab login} {
     #
 
     set lsubst {}
-    lappend lsubst [list %TITREACTION% $res]
+    lappend lsubst [list %TITLEACTION% $res]
     lappend lsubst [list %COMPLEMENT% $comp]
 
     return $lsubst
@@ -9377,7 +9377,7 @@ proc pgauth-ac-store-passwd {_e _ftab login} {
 #
 # Display removal confirmation page
 #
-# Return : value for %UTILISATEUR%
+# Return : value for %USER%
 #
 
 proc pgauth-ac-display-del {_e login} {
@@ -9388,15 +9388,15 @@ proc pgauth-ac-display-del {_e login} {
     }
 
     set lsubst {}
-    lappend lsubst [list %UTILISATEUR%  $login]
-    lappend lsubst [list %LOGIN%  [::webapp::html-string $login]]
+    lappend lsubst [list %USER%  $login]
+    lappend lsubst [list %LOGIN% [::webapp::html-string $login]]
     return $lsubst
 }
 
 #
 # Remove user
 #
-# Return : values for %TITREACTION% and %COMPLEMENT%
+# Return : values for %TITLEACTION% and %COMPLEMENT%
 #
 
 proc pgauth-ac-del-user {_e _ftab login} {
@@ -9455,7 +9455,7 @@ proc pgauth-ac-del-user {_e _ftab login} {
     }
 
     set lsubst {}
-    lappend lsubst [list %TITREACTION% [::webapp::html-string $msg]]
+    lappend lsubst [list %TITLEACTION% [::webapp::html-string $msg]]
     lappend lsubst [list %COMPLEMENT% [::webapp::html-string $comp]]
     return $lsubst
 }

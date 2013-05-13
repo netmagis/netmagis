@@ -28,7 +28,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Liste des %TITRE% au %DATE%}
+    \titre {1} {Liste des %TITLE% au %DATE%}
 
     %TXT%
 

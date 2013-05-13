@@ -36,9 +36,9 @@
 \*	1- .
 \*	2- , or ask for account creation
 
-    %LISTEUTILISATEURS%
+    %LISTUSERS%
 
-    %AUCUN%
+    %NONE%
 }
 
 }

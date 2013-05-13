@@ -29,7 +29,7 @@
 
     Vous avez demandé à supprimer le compte suivant~:
 
-    %UTILISATEUR%
+    %USER%
 
     \gras {Voulez-vous vraiment supprimer ce compte~?}
 

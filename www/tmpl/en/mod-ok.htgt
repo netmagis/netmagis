@@ -72,7 +72,7 @@
 	    \casetableau {} {%RESPNOM%}
 	}
 	\lignetableau {
-	    \casetableau {} {Responsible (maill)}
+	    \casetableau {} {Responsible (mail)}
 	    \casetableau {} {%RESPMEL%}
 	}
     }

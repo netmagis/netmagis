@@ -268,7 +268,7 @@ proc output {dbfd _ftab format} {
 	    set txt "$txt1 $txt2: $txt3"
 
 	    d result $conf(page-html) [list \
-					[list %TITRE%	$title] \
+					[list %TITLE%	$title] \
 					[list %TXT%	$txt] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
@@ -296,7 +296,7 @@ proc output {dbfd _ftab format} {
 
 	    d result $conf(page-latex) [list \
 					[list %ORIENTATION%	"landscape"] \
-					[list %TITRE%	$title] \
+					[list %TITLE%	$title] \
 					[list %TXT%	$txt] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \

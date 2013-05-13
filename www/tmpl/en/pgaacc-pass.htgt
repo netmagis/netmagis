@@ -27,7 +27,7 @@
 
     \titre {1} {Modify password of '%LOGIN%'}
 
-    Account '%LOGIN%' (%PRENOM% %NOM%).
+    Account '%LOGIN%' (%FIRSTNAME% %LASTNAME%).
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="passwd">

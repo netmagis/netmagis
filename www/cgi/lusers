@@ -124,19 +124,19 @@ d cgi-register {} {} {
 	    }
 	    
 	    if {$n == 1} then {
-		set nomprenom	 "[$u get nom] [$u get prenom]"
-		set mel		 [$u get mel]
-		set tel		 [$u get tel]
-		set localisation [$u get adr]
+		set name	"[$u get lastname] [$u get firstname]"
+		set mail	[$u get mail]
+		set phone	[$u get phone]
+		set addr	[$u get addr]
 	    } else {
-		set nomprenom	[mc "ERROR"]
-		set mel		[mc "ERROR"]
-		set tel		[mc "ERROR"]
-		set localisation [mc "ERROR"]
+		set name	[mc "ERROR"]
+		set mail	[mc "ERROR"]
+		set phone	[mc "ERROR"]
+		set addr	[mc "ERROR"]
 	    }
 
             lappend lines [list Normal \
-				  $login $nomprenom $mel $tel $localisation \
+				  $login $name $mail $phone $addr \
 				  $present $nomgroupe ]
     }
 
@@ -149,7 +149,7 @@ d cgi-register {} {} {
     #
 
     d result $conf(page) [list \
-				[list %TITREPAGE%       $titrepage ] \
+				[list %TITLEPAGE%       $titrepage ] \
 				[list %LISTECOR%        $tab ] \
 			    ]
 }

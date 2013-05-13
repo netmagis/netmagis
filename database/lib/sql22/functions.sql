@@ -642,8 +642,8 @@ CREATE FUNCTION pgauth.soundex (TEXT)
 CREATE FUNCTION pgauth.add_soundex ()
     RETURNS TRIGGER AS '
     BEGIN
-	NEW.phnom    := pgauth.SOUNDEX (NEW.nom) ;
-	NEW.phprenom := pgauth.SOUNDEX (NEW.prenom) ;
+	NEW.phlast  := pgauth.SOUNDEX (NEW.lastname) ;
+	NEW.phfirst := pgauth.SOUNDEX (NEW.firstname) ;
 	RETURN NEW ;
     END ;
     ' LANGUAGE 'plpgsql' ;

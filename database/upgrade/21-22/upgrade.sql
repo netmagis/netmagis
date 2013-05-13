@@ -117,6 +117,14 @@ ALTER TABLE dns.relais_dom
 ALTER TABLE global.config RENAME COLUMN clef		TO key ;
 ALTER TABLE global.config RENAME COLUMN valeur		TO value ;
 
+ALTER TABLE pgauth.user RENAME COLUMN nom		TO lastname ;
+ALTER TABLE pgauth.user RENAME COLUMN prenom		TO firstname ;
+ALTER TABLE pgauth.user RENAME COLUMN mel		TO mail ;
+ALTER TABLE pgauth.user RENAME COLUMN tel		TO phone ;
+ALTER TABLE pgauth.user RENAME COLUMN adr		TO addr ;
+ALTER TABLE pgauth.user RENAME COLUMN phnom		TO phlast ;
+ALTER TABLE pgauth.user RENAME COLUMN phprenom		TO phfirst ;
+
 ALTER TABLE dns.seq_etablissement RENAME TO seq_organization ;
 
 ALTER TABLE dns.etablissement RENAME TO organization ;

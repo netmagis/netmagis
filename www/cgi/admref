@@ -408,7 +408,7 @@ d cgi-register {action {}} {
 
     d result $conf(page-edit) [list \
 				[list %TABLEAU% $tab] \
-				[list %TITREPAGE% $ptitle] \
+				[list %TITLEPAGE% $ptitle] \
 			    ]
 }
 

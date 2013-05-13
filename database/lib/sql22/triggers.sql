@@ -54,6 +54,6 @@ CREATE TRIGGER tr_mod_dhcpprofil
     BEFORE UPDATE ON dns.dhcpprofil
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_dhcp () ;
 
-CREATE TRIGGER tr_phnom
+CREATE TRIGGER tr_phonetic
     BEFORE INSERT OR UPDATE ON pgauth.user
     FOR EACH ROW EXECUTE PROCEDURE pgauth.add_soundex () ;

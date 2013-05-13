@@ -430,7 +430,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	    set tableau "$pline\n$tableau"
 
 	    d result $conf(listhtml) [list \
-					[list %TITRE%	$dhost] \
+					[list %TITLE%	$dhost] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
 				    ]
@@ -671,7 +671,7 @@ proc output-map {dbfd lcidr _tabuid format} {
     set date  [clock format [clock seconds] -format $datefmt]
 
     d result $conf(listhtml) [list \
-				[list %TITRE%	[mc "IPv4 address map"]] \
+				[list %TITLE%	[mc "IPv4 address map"]] \
 				[list %TABLEAU%	$tableau] \
 				[list %DATE%	$date] \
 			    ]

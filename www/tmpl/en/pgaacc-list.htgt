@@ -27,7 +27,7 @@
 
     \titre {1} {Account list}
 
-    %NBUTILISATEURS% account(s) on %DATE% at %HEURE%:
+    %NBUSERS% account(s) on %DATE% at %HEURE%:
 
     %TABLEAU%
 }

@@ -226,7 +226,7 @@ proc output {dbfd domains idview format} {
     switch -- $format  {
 	html	{
 	    d result $conf(page-html) [list \
-					[list %TITRE%	"MX"] \
+					[list %TITLE%	"MX"] \
 					[list %TXT%	""] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
@@ -235,7 +235,7 @@ proc output {dbfd domains idview format} {
 	latex	{
 	    d result $conf(page-latex) [list \
 					[list %ORIENTATION% "portrait"] \
-					[list %TITRE%	"MX"] \
+					[list %TITLE%	"MX"] \
 					[list %TXT%	""] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \

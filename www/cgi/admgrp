@@ -461,7 +461,7 @@ d cgi-register {action edit} {
     foreach login [::pgsql::getcols $dbfd global.corresp "idgrp = $idgrp" "login ASC" {login}] {
 	set n [read-user $dbfd $login tab comment]
 	if {$n == 1} then {
-	    set comment "$tab(prenom) $tab(nom)"
+	    set comment "$tab(lastname) $tab(firstname)"
 	}
 	set hlogin [::webapp::form-text login$nlogin 1 20 50 $login]
 	lappend lines [list Normal $hlogin "($comment)"]
@@ -742,7 +742,7 @@ d cgi-register {action edit} {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-edit) [list \
-				[list %TITRE% $title] \
+				[list %TITLE% $title] \
 				[list %ORGGRP% $orggrp] \
 				[list %NEWGRP% $newgrp] \
 				[list %ADMIN% $admin] \

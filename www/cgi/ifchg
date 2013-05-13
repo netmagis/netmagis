@@ -279,7 +279,7 @@ d cgi-register {mode {}} {
     d result $conf(page-sel) [list \
 			    [list %EQSTA%        $eqsta] \
 			    [list %EQ%           $eq] \
-			    [list %TITRE%        $title] \
+			    [list %TITLE%        $title] \
 			    [list %MODE%         $mode] \
 			    [list %MULTI%        $multi] \
 			    [list %LIBIFORDESC%  $libifordesc] \

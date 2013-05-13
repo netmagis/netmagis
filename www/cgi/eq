@@ -830,7 +830,7 @@ d cgi-register {} {
 	    d result $conf(page1) [list \
 				    [list %MSGSTA% $msgsta] \
 				    [list %EQSTA% $eqsta] \
-				    [list %TITRE% $title] \
+				    [list %TITLE% $title] \
 				    [list %TEXTE% $text] \
 				    [list %EQ%    $eq] \
 				    [list %VLAN%  ""] \

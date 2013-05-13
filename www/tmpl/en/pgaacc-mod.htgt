@@ -25,7 +25,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {%TITRE% of an account}
+    \titre {1} {%TITLE% of an account}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="%ACTION%">
@@ -43,7 +43,7 @@
 		} {\gras {Enter account information}}
 	    }
 	    \lignetableau {
-		\casetableau {} {%PARAMUTILISATEUR%}
+		\casetableau {} {%PARAMUSER%}
 	    }
 	    \lignetableau {
 		\casetableau {

@@ -441,8 +441,8 @@ proc import-group {verbose argv dbfd} {
 		    set pc [pgauth-crypt $p]
 		    set qc [::pgsql::quote $c]
 		    set qpc [::pgsql::quote $pc]
-		    lappend sql "INSERT INTO pgauth.user (login, password,
-								nom, prenom)
+		    lappend sql "INSERT INTO pgauth.user
+					(login, password, lastname, firstname)
 					VALUES ('$qc', '$qpc', 'User', 'Joe')"
 		    set refa($c) {}
 		}

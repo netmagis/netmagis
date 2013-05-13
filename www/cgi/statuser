@@ -128,7 +128,7 @@ d cgi-register {} {} {
 	}
 	
 	if {$n == 1} then {
-	    set name "[$u get nom] [$u get prenom]"
+	    set name "[$u get lastname] [$u get firstname]"
 	} else {
 	    set name $tab(login)
 	}

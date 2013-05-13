@@ -330,8 +330,8 @@ d cgi-register {action add-host} {
 	}
     } else {
 	if {$respnom eq "" && $respmel eq ""} then {
-	    set respnom "$tabuid(nom) $tabuid(prenom)"
-	    set respmel $tabuid(mel)
+	    set respnom "$tabuid(lastname) $tabuid(firstname)"
+	    set respmel $tabuid(mail)
 	}
     }
 
