@@ -40,10 +40,10 @@ CREATE TABLE global.corresp (
 -- Netmagis configuration parameters (those which are not in the
 -- configuration file)
 CREATE TABLE global.config (
-    clef	TEXT,			-- configuration key
-    valeur	TEXT,			-- key value
+    key		TEXT,			-- configuration key
+    value	TEXT,			-- key value
 
-    PRIMARY KEY (clef)
+    PRIMARY KEY (key)
 ) ;
 
 -- log

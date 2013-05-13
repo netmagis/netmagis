@@ -114,6 +114,9 @@ ALTER TABLE dns.relais_dom
 
 -- Rename tables and columns, and rebuild constraints
 
+ALTER TABLE global.config RENAME COLUMN clef		TO key ;
+ALTER TABLE global.config RENAME COLUMN valeur		TO value ;
+
 ALTER TABLE dns.seq_etablissement RENAME TO seq_organization ;
 
 ALTER TABLE dns.etablissement RENAME TO organization ;

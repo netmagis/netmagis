@@ -1854,8 +1854,8 @@ snit::type ::config {
     method get {key} {
 	if {[info exists internal(key:$key:type)]} then {
 	    set found 0
-	    pg_select $db "SELECT * FROM global.config WHERE clef = '$key'" tab {
-		set val $tab(valeur)
+	    pg_select $db "SELECT * FROM global.config WHERE key = '$key'" tab {
+		set val $tab(value)
 		set found 1
 	    }
 	    if {! $found} then {
@@ -1880,10 +1880,11 @@ snit::type ::config {
 	    if {$internal(key:$key:rw) eq "rw"} then {
 		set r ""
 		set k [::pgsql::quote $key]
-		set sql "DELETE FROM global.config WHERE clef = '$k'"
+		set sql "DELETE FROM global.config WHERE key = '$k'"
 		if {[::pgsql::execsql $db $sql msg]} then {
 		    set v [::pgsql::quote $val]
-		    set sql "INSERT INTO global.config VALUES ('$k', '$v')"
+		    set sql "INSERT INTO global.config (key, value)
+		    				VALUES ('$k', '$v')"
 		    if {! [::pgsql::execsql $db $sql msg]} then {
 			set r [mc {Cannot set key '%1$s' to '%2$s': %3$s} $key $val $msg]
 		    }

@@ -233,7 +233,7 @@ netmagis_insert_config ()
 {
     psql --no-psqlrc --quiet --file - <<'EOF'
 
-    COPY global.config (clef, valeur) FROM stdin;
+    COPY global.config (key, value) FROM stdin;
 datefmt	%d/%m/%Y %H:%M:%S
 jourfmt	%a %d %b %Y
 authmethod	pgsql
@@ -380,7 +380,7 @@ wheel	1
 \.
 EOF
 
-    psql --no-psqlrc --quiet -c "INSERT INTO global.config
+    psql --no-psqlrc --quiet -c "INSERT INTO global.config (key, value)
 					VALUES ('defuser', '$defuser')"
 }
 
