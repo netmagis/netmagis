@@ -45,9 +45,13 @@
 
     %TABDOMAINS%
 
+    \titre {2} {Vues}
+
+    %TABVIEWS%
+
     \titre {2} {Profils DHCP}
 
-    %TABDHCPPROFIL%
+    %TABDHCPPROFILE%
 }
 
 }

@@ -41,13 +41,17 @@
 
     %TABCIDRALONE%
 
-    \titre {2} {Domaine}
+    \titre {2} {Domains}
 
     %TABDOMAINS%
 
+    \titre {2} {Views}
+
+    %TABVIEWS%
+
     \titre {2} {DHCP profiles}
 
-    %TABDHCPPROFIL%
+    %TABDHCPPROFILE%
 }
 
 }

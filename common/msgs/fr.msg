@@ -44,8 +44,8 @@
  {Aliases}		{Aliases}
  {Alias name}	{Nom de l'alias}
  {Allocated addresses} {Adresses allouées}
+ {'Allow' permission '%s' outside any allowed network} {Le droit 'allow' '%s' est en dehors de tout réseau autorisé}
  {Allowed groups} {Groupes autorisés}
- {'Allow' permission '%s' is too large} {Le droit 'allow - %s' est trop grand}
  {All} {Tous}
  {and sorted by '%1$s' and by '%2$s'} {et triés par '%1$s' et par '%2$s'}
  {Application parameters} {Modif paramètres}

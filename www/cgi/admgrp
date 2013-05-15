@@ -1249,25 +1249,26 @@ d cgi-register {action mod} {
 	    }
 	}
 
-	# no "allow" permission must be larger than a network
+	# no "allow" permission outside allowed networks
 	foreach cidr $p_allow {
-	    set larger 0
+	    set found 0
 	    foreach r $lidnet {
 		set idnet [lindex $r 1]
 		foreach addr $tabnet($idnet) {
-		    set sql "SELECT cidr '$addr' << cidr '$cidr' AS result"
+		    # addr = v4 and/or v6
+		    set sql "SELECT cidr '$cidr' <<= cidr '$addr' AS result"
 		    pg_select $dbfd $sql tab {
 			set result $tab(result)
 		    }
 		    if {$result eq "t"} then {
-			set larger 1
+			set found 1
 			break
 		    }
 		}
 	    }
 
-	    if {$larger} then {
-		lappend inconsist [mc "'Allow' permission '%s' is too large" $cidr]
+	    if {! $found} then {
+		lappend inconsist [mc "'Allow' permission '%s' outside any allowed network" $cidr]
 	    }
 	}
 

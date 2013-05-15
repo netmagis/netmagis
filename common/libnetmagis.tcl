@@ -223,37 +223,31 @@ set libconf(tabnetworks) {
     }
 }
 
-set libconf(tabviews) {
-    global {
-	chars {10 normal}
-	align {left}
-	botbar {yes}
-	columns {75 25}
-    }
-    pattern Normal {
-	vbar {yes}
-	column { }
-	vbar {no}
-	column { }
-	vbar {yes}
-    }
-}
-
 set libconf(tabdomains) {
     global {
 	chars {10 normal}
 	align {left}
 	botbar {yes}
-	columns {66 33}
+	columns {50 50}
     }
-    pattern Domaine {
+    pattern Title {
+	chars {gras}
 	vbar {yes}
 	column { }
-	vbar {no}
+	vbar {yes}
 	column { }
-	vbar {no}
+	vbar {yes}
+    }
+    pattern Normal {
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
     }
 }
+
+set libconf(tabviews) $libconf(tabdomains)
 
 set libconf(tabdhcpprofile) {
     global {
@@ -3005,11 +2999,13 @@ proc display-group {dbfd idgrp} {
 				SELECT n.addr4
 					FROM dns.network n, dns.p_network p
 					WHERE n.idnet = p.idnet
+						AND n.addr4 IS NOT NULL
 						AND p.idgrp = $idgrp
 				UNION
 				SELECT n.addr6
 					FROM dns.network n, dns.p_network p
 					WHERE n.idnet = p.idnet
+						AND n.addr6 IS NOT NULL
 						AND p.idgrp = $idgrp
 				    ) )
 			AND idgrp = $idgrp
@@ -3037,6 +3033,7 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
+    lappend lines [list Title [mc "View"] [mc "Selected by default"]]
     set sql "SELECT view.name AS name, p_view.selected
 			FROM dns.p_view, dns.view
 			WHERE p_view.idview = view.idview
@@ -3045,7 +3042,9 @@ proc display-group {dbfd idgrp} {
     pg_select $dbfd $sql tab {
 	set sel ""
 	if {$tab(selected)} then {
-	    set sel [mc "Selected by default"]
+	    set sel [mc "Yes"]
+	} else {
+	    set sel [mc "No"]
 	}
 
 	lappend lines [list Normal $tab(name) $sel]
@@ -3061,6 +3060,7 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
+    lappend lines [list Title [mc "Domain"] [mc "Mail role management"]]
     set sql "SELECT domain.name AS name, p_dom.rolemail
 			FROM dns.p_dom, dns.domain
 			WHERE p_dom.iddom = domain.iddom
@@ -3069,9 +3069,11 @@ proc display-group {dbfd idgrp} {
     pg_select $dbfd $sql tab {
 	set rm ""
 	if {$tab(rolemail)} then {
-	    set rm [mc "Mail role management"]
+	    set rm [mc "Yes"]
+	} else {
+	    set rm [mc "No"]
 	}
-	lappend lines [list Domaine $tab(name) $rm]
+	lappend lines [list Normal $tab(name) $rm]
     }
     if {[llength $lines] > 0} then {
 	set tabdomains [::arrgen::output "html" $libconf(tabdomains) $lines]

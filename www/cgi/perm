@@ -49,11 +49,15 @@ d cgi-register {} {
     # Display group informations.
     #
 
-    set blob [display-group $dbfd $tabuid(idgrp)]
-    set tabnetworks	[lindex $blob 2]
-    set tabcidralone	[lindex $blob 3]
-    set tabdomains	[lindex $blob 4]
-    set tabdhcpprofil	[lindex $blob 5]
+    lassign [display-group $dbfd $tabuid(idgrp)] \
+	tabperm \
+	tabuser \
+	tabnetworks \
+	tabcidralone \
+	tabviews \
+	tabdomains \
+	tabdhcpprofile \
+	tabdreq 
 
     if {$tabcidralone eq ""} then {
 	set titlecidralone ""
@@ -71,7 +75,8 @@ d cgi-register {} {
 			    [list %TITLECIDRALONE% $titlecidralone] \
 			    [list %TABCIDRALONE% $tabcidralone] \
 			    [list %TABDOMAINS% $tabdomains] \
-			    [list %TABDHCPPROFIL% $tabdhcpprofil] \
+			    [list %TABVIEWS% $tabviews] \
+			    [list %TABDHCPPROFILE% $tabdhcpprofile] \
 			    ]
 }
 
