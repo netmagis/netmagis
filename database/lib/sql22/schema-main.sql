@@ -240,27 +240,27 @@ CREATE TABLE dns.p_view (
 
 -- DHCP profiles
 
-CREATE SEQUENCE dns.seq_dhcpprofil START 1 ;
-CREATE TABLE dns.dhcpprofil (
-    iddhcpprofil INT			-- DHCP profile id
-		    DEFAULT NEXTVAL ('dns.seq_dhcpprofil'),
-    nom 	TEXT UNIQUE,		-- DHCP profile name
-    texte	TEXT,			-- text to add before host declarations
+CREATE SEQUENCE dns.seq_dhcpprofile START 1 ;
+CREATE TABLE dns.dhcpprofile (
+    iddhcpprof	INT			-- DHCP profile id
+		    DEFAULT NEXTVAL ('dns.seq_dhcpprofile'),
+    name 	TEXT UNIQUE,		-- DHCP profile name
+    text	TEXT,			-- text to add before host declarations
 
-    CHECK (iddhcpprofil >= 1),
-    PRIMARY KEY (iddhcpprofil)
+    CHECK (iddhcpprof >= 1),
+    PRIMARY KEY (iddhcpprof)
 ) ;
 
 -- DHCP profiles allowed to groups
 
-CREATE TABLE dns.dr_dhcpprofil (
+CREATE TABLE dns.p_dhcpprofile (
     idgrp	INT,			-- group
-    iddhcpprofil INT,			-- DHCP profil
-    tri		INT,			-- sort class
+    iddhcpprof	INT,			-- DHCP profile
+    sort	INT,			-- sort class
 
-    FOREIGN KEY (idgrp)        REFERENCES global.groupe  (idgrp),
-    FOREIGN KEY (iddhcpprofil) REFERENCES dns.dhcpprofil (iddhcpprofil),
-    PRIMARY KEY (idgrp, iddhcpprofil)
+    FOREIGN KEY (idgrp)      REFERENCES global.groupe  (idgrp),
+    FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
+    PRIMARY KEY (idgrp, iddhcpprof)
 ) ;
 
 -- DHCP dynamic ranges
@@ -274,11 +274,11 @@ CREATE TABLE dns.dhcprange (
     iddom	INT,			-- domain returned by DHCP server
     default_lease_time	INT DEFAULT 0,	-- unit = second
     max_lease_time	INT DEFAULT 0,	-- unit = second
-    iddhcpprofil	INT,		-- DHCP profile for this range
+    iddhcpprof	INT,			-- DHCP profile for this range
 
     CHECK (min <= max),
     FOREIGN KEY (iddom) REFERENCES dns.domain (iddom),
-    FOREIGN KEY (iddhcpprofil) REFERENCES dns.dhcpprofil(iddhcpprofil),
+    FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
     PRIMARY KEY (iddhcprange)
 ) ;
 
@@ -293,7 +293,7 @@ CREATE TABLE dns.rr (
     idview	INT,			-- view id
 
     mac		MACADDR,		-- MAC address or NULL
-    iddhcpprofil INT,			-- DHCP profile or NULL
+    iddhcpprof	INT,			-- DHCP profile or NULL
 
     idhinfo	INT DEFAULT 0,		-- host type
     commentaire	TEXT,			-- comment
@@ -306,10 +306,10 @@ CREATE TABLE dns.rr (
     droitsmtp	INT DEFAULT 0,		-- 1 if this host may emit with SMTP
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
-    FOREIGN KEY (idcor)        REFERENCES global.corresp (idcor),
-    FOREIGN KEY (iddom)        REFERENCES dns.domain     (iddom),
-    FOREIGN KEY (idview)       REFERENCES dns.view       (idview),
-    FOREIGN KEY (iddhcpprofil) REFERENCES dns.dhcpprofil (iddhcpprofil),
+    FOREIGN KEY (idcor)      REFERENCES global.corresp  (idcor),
+    FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
+    FOREIGN KEY (idview)     REFERENCES dns.view        (idview),
+    FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
     FOREIGN KEY (idhinfo)      REFERENCES dns.hinfo      (idhinfo),
     UNIQUE (nom, iddom, idview),
     -- MAC address should be unique in a view

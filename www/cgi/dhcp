@@ -98,17 +98,15 @@ proc output-edit {dbfd netid _tabuid} {
     }
 
     set menudhcp {}
-    set sql "	(SELECT 0 AS iddhcpprofil, 'Aucun profil' AS nom)
-		UNION
-		(SELECT p.iddhcpprofil AS iddhcpprofil, p.nom AS nom
-		    FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p, global.corresp c
-		    WHERE c.idcor = $tabuid(idcor)
-			AND dr.idgrp = c.idgrp
-			AND dr.iddhcpprofil = p.iddhcpprofil
-		    ORDER BY dr.tri ASC)
-		ORDER BY nom"
+    lappend menudhcp [list 0 [mc "No profile"]]
+    set sql "SELECT d.iddhcpprof, d.name
+		FROM dns.p_dhcpprofile p, dns.dhcpprofile d, global.corresp c
+		WHERE c.idcor = $tabuid(idcor)
+		    AND p.idgrp = c.idgrp
+		    AND p.iddhcpprof = d.iddhcpprof
+		ORDER BY p.sort ASC, d.name ASC"
     pg_select $dbfd $sql tab {
-	lappend menudhcp [list $tab(iddhcpprofil) $tab(nom)]
+	lappend menudhcp [list $tab(iddhcpprof) $tab(name)]
     }
 
     set spec {
@@ -117,12 +115,12 @@ proc output-edit {dbfd netid _tabuid} {
 	    {iddom		{menu {%MENUDOM%}}	{}}
 	    {default_lease_time	{string 10}	0}
 	    {max_lease_time	{string 10}	0}
-	    {iddhcpprofil	{menu {%MENUDHCP%}}	0}
+	    {iddhcpprof		{menu {%MENUDHCP%}}	0}
 	}
     regsub -- "%MENUDOM%" $spec "$menudom" spec
     regsub -- "%MENUDHCP%" $spec "$menudhcp" spec
     set sql "SELECT iddhcprange, min, max, iddom, default_lease_time,
-		max_lease_time, COALESCE(iddhcpprofil,0) AS iddhcpprofil
+		max_lease_time, COALESCE(iddhcpprof,0) AS iddhcpprof
                         FROM dns.dhcprange
 			WHERE min <<= '$lcidr'
 			    AND max <<= '$lcidr'
@@ -261,7 +259,7 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
 	    default	{ set new 0 }
 	}
 
-	foreach c {min max iddom default_lease_time max_lease_time iddhcpprofil} {
+	foreach c {min max iddom default_lease_time max_lease_time iddhcpprof} {
 	    if {! [info exists ftab($c$i)]} then {
 		return [mc "Invalid input"]
 	    }
@@ -272,15 +270,15 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
 	set max			[string trim [lindex $ftab(max$i) 0]]
 	set default_lease_time	[string trim [lindex $ftab(default_lease_time$i) 0]]
 	set max_lease_time	[string trim [lindex $ftab(max_lease_time$i) 0]]
-	set iddhcpprofil	[string trim [lindex $ftab(iddhcpprofil$i) 0]]
+	set iddhcpprof		[string trim [lindex $ftab(iddhcpprof$i) 0]]
 
 	#
 	# Special case: when DHCP profile equals 0 (No profile)
 	# we must replace its value by an empty string.
 	#
 
-	if {$iddhcpprofil == 0} {
-	    set ftab(iddhcpprofil$i) [lreplace $ftab(iddhcpprofil$i) 0 0 ""]
+	if {$iddhcpprof == 0} {
+	    set ftab(iddhcpprof$i) [lreplace $ftab(iddhcpprof$i) 0 0 ""]
 	}
 
 	#
@@ -311,7 +309,7 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
 	    # Check DHCP profile
 	    #
 
-	    if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
+	    if {! [check-iddhcpprof $dbfd $iddhcpprof dhcpprofile msg]} then {
 		return $msg
 	    }
 
@@ -481,14 +479,14 @@ d cgi-register {action edit} {
     {iddom[0-9]+		0 9999}
     {default_lease_time[0-9]+	0 9999}
     {max_lease_time[0-9]+	0 9999}
-    {iddhcpprofil[0-9]+		0 9999}
+    {iddhcpprof[0-9]+		0 9999}
 
     {minn[0-9]+			1 9999}
     {maxn[0-9]+			1 9999}
     {iddomn[0-9]+		1 9999}
     {default_lease_timen[0-9]+	1 9999}
     {max_lease_timen[0-9]+	1 9999}
-    {iddhcpprofiln[0-9]+	1 9999}
+    {iddhcpprofn[0-9]+		1 9999}
 } {
     global conf
 
@@ -525,7 +523,7 @@ d cgi-register {action edit} {
 	{iddom}
 	{default_lease_time}
 	{max_lease_time}
-	{iddhcpprofil}
+	{iddhcpprof}
     }
 
     store-tabular $dbfd $spec iddhcprange dns.dhcprange ftab dhcp-nop

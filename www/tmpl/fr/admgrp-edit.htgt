@@ -192,7 +192,7 @@
 		\casetableau {} {Pour supprimer un accès à un profil,
 		    vider la case <<~Classe de tri~>>.
 
-		    %LISTEDHCPPROFILS%}
+		    %LISTDHCPPROFS%}
 	    }
 	    \lignetableau {
 		\casetableau {

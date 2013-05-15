@@ -50,7 +50,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {Profil DHCP}
-	    \casetableau {} {%DHCPPROFIL%}
+	    \casetableau {} {%DHCPPROFILE%}
 	}
 	\lignetableau {
 	    \casetableau {} {Machine}

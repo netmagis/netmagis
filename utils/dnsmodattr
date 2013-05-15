@@ -27,7 +27,7 @@
 
 source %LIBNETMAGIS%
 
-set conf(attrs)		{mac hinfo respnom respmel commentaire dhcpprofil ttl droitsmtp}
+set conf(attrs)		{mac hinfo respnom respmel commentaire dhcpprofile ttl droitsmtp}
 
 ##############################################################################
 # Small utility functions
@@ -125,19 +125,19 @@ proc update-rr {dbfd _trr idview _tattr} {
     # Check DHCP profile
     #
 
-    if {[info exists tattr(dhcpprofil)]} then {
-	set iddhcpprofil [read-dhcp-profile $dbfd $tattr(dhcpprofil)]
-	if {$iddhcpprofil == -1} then {
-	    return [mc "Invalid DHCP profile '%s'" $tattr(dhcpprofil)]
+    if {[info exists tattr(dhcpprofile)]} then {
+	set iddhcpprof [read-dhcp-profile $dbfd $tattr(dhcpprofile)]
+	if {$iddhcpprof == -1} then {
+	    return [mc "Invalid DHCP profile '%s'" $tattr(dhcpprofile)]
 	}
-	set tattr(dhcpprofil) $iddhcpprofil
-	set newiddhcpprofil $tattr(dhcpprofil)
+	set tattr(dhcpprofile) $iddhcpprof
+	set newiddhcpprof $tattr(dhcpprofil)
     } else {
-	set newiddhcpprofil $trr(iddhcpprofil)
+	set newiddhcpprof $trr(iddhcpprof)
     }
 
 
-    if {($newmac eq "" && $newiddhcpprofil != 0)} then {
+    if {($newmac eq "" && $newiddhcpprof != 0)} then {
 	return [mc "You cannot set a DHCP profile without a MAC address"]
     }
 
@@ -157,12 +157,12 @@ proc update-rr {dbfd _trr idview _tattr} {
 		# numeric value
 		lappend mod "droitsmtp = $v"
 	    }
-	    dhcpprofil {
+	    dhcpprofile {
 		# numeric value or empty string
 		if {$v eq "" || $v == 0} then {
-		    lappend mod "iddhcpprofil = NULL"
+		    lappend mod "iddhcpprof = NULL"
 		} else {
-		    lappend mod "iddhcpprofil = $v"
+		    lappend mod "iddhcpprof = $v"
 		}
 	    }
 	    ttl {

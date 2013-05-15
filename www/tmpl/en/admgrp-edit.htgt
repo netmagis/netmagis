@@ -188,7 +188,7 @@
 		\casetableau {} {To remove access to a DHCP profile,
 		    just delete its "sort class".
 
-		    %LISTEDHCPPROFILS%}
+		    %LISTDHCPPROF%}
 	    }
 	    \lignetableau {
 		\casetableau {

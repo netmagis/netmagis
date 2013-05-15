@@ -18,7 +18,7 @@
 #	- idview: view id in which the host must be added
 #	- adr: IP address
 #	- mac : MAC address
-#	- iddhcpprofil : DHCP profil id, or 0
+#	- iddhcpprof : DHCP profil id, or 0
 #	- hinfo : host type (text)
 #	- droitsmtp : non-existent or non-empty
 #	- ttl : value (or empty if not authorized)
@@ -53,7 +53,7 @@
 #   2003/05/13 : pda/jean : use auth base
 #   2004/01/14 : pda/jean : add IPv6
 #   2004/08/04 : pda/jean : add mac
-#   2005/04/08 : pda/jean : add dhcpprofil
+#   2005/04/08 : pda/jean : add dhcpprofile
 #   2007/10/25 : jean     : log modify actions
 #   2008/02/13 : pda/jean : responsible person is the current user by default
 #   2008/07/23 : pda/jean : add smtp emit right
@@ -61,7 +61,7 @@
 #   2010/01/01 : pda      : add add-multi
 #   2010/10/08 : pda      : add journey (via next)
 #   2010/10/09 : pda      : end add-multi coding
-#   2010/10/26 : pda      : check dhcpprofil case when no maC address
+#   2010/10/26 : pda      : check dhcpprofile case when no mac address
 #   2010/12/14 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
 #   2012/09/20 : pda/jean : remove dns update interval
@@ -196,8 +196,8 @@ d cgi-register {action {}} {
     # Get DHCP profile informations
     #
 
-    lassign [menu-dhcp-profile $dbfd "iddhcpprofil" $tabuid(idcor) 0] \
-				dhcpprofillibelle dhcpprofilmenu 
+    lassign [menu-dhcp-profile $dbfd "iddhcpprof" $tabuid(idcor) 0] \
+				dhcpproflibelle dhcpprofmenu 
 
     #
     # Get network addresses
@@ -253,8 +253,8 @@ d cgi-register {action {}} {
 				[list %TTLVAL% $ttlval] \
 				[list %DROITSMTPLIBELLE% $droitsmtplibelle] \
 				[list %DROITSMTPMENU% $droitsmtpmenu] \
-				[list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
-				[list %DHCPPROFILMENU% $dhcpprofilmenu] \
+				[list %DHCPPROFLIBELLE% $dhcpproflibelle] \
+				[list %DHCPPROFMENU% $dhcpprofmenu] \
 				[list %MENUPLAGE% $menuplage] \
 				[list %DISPLAY% $display] \
 				[list %DUMBIDVIEW% $dumbidview] \
@@ -274,7 +274,7 @@ d cgi-register {action {}} {
 #   2002/05/03 : pda/jean : store user in RR
 #   2003/04/24 : pda/jean : cannot add an IP address to a MX
 #   2004/08/04 : pda/jean : add mac
-#   2005/04/08 : pda/jean : add iddhcpprofil
+#   2005/04/08 : pda/jean : add iddhcpprof
 #   2010/10/31 : pda      : add ttl
 #   2010/12/16 : pda      : add fspec parameter
 #
@@ -286,7 +286,7 @@ d cgi-register {action add-host} {
     {idview	1 1}
     {adr	1 1}
     {mac	1 1}
-    {iddhcpprofil 1 1}
+    {iddhcpprof 1 1}
     {droitsmtp	0 1}
     {ttl	1 1}
     {hinfo	1 1}
@@ -376,10 +376,10 @@ d cgi-register {action add-host} {
     # Check DHCP profile
     #
 
-    if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
+    if {! [check-iddhcpprof $dbfd $iddhcpprof dhcpprofile msg]} then {
 	d error $msg
     }
-    if {$mac eq "" && $iddhcpprofil != 0} then {
+    if {$mac eq "" && $iddhcpprof != 0} then {
 	d error [mc "You cannot set a DHCP profile without a MAC address"]
     }
 
@@ -437,7 +437,7 @@ d cgi-register {action add-host} {
     # Common code for confirmation
     #
 
-    set l {nom domain adr idview mac iddhcpprofil droitsmtp ttl hinfo
+    set l {nom domain adr idview mac iddhcpprof droitsmtp ttl hinfo
 			    commentaire respnom respmel naddr}
     set hidden [::webapp::hide-parameters $l ftab]
 
@@ -485,7 +485,7 @@ d cgi-register {action add-host} {
     #
 
     set msg [add-host $dbfd trr $nom $iddom $idview $adr \
-    			$mac $iddhcpprofil $idhinfo $droitsmtp $ttl \
+    			$mac $iddhcpprof $idhinfo $droitsmtp $ttl \
 			$commentaire $respnom $respmel $idcor]
     if {$msg ne ""} then {
 	d error $msg

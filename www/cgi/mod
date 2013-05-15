@@ -21,7 +21,7 @@
 #	- nom : modified name of the host
 #	- domain : modified domain of the host
 #	- mac : modified mac address
-#	- iddhcpprofil : modified DHCP profile (or 0)
+#	- iddhcpprof : modified DHCP profile (or 0)
 #	- hinfo : host type (id)
 #	- droitsmtp : non existant, or non empty
 #	- ttl : value (or empty if now allowed)
@@ -41,7 +41,7 @@
 #   2008/02/13 : pda/jean : responsible person is the current user by default
 #   2008/07/25 : pda/jean : add smtp emit right
 #   2010/10/14 : pda      : add journey (via next)
-#   2010/10/26 : pda      : check dhcpprofil case when no maC address
+#   2010/10/26 : pda      : check dhcpprofile case when no mac address
 #   2010/10/26 : pda      : make name and domain editable
 #   2010/10/31 : pda      : add ttl
 #   2010/12/14 : pda      : i18n
@@ -142,8 +142,8 @@ proc disp-edit {dbfd _chkv _tabuid} {
 
     set val [::webapp::html-string $trr(mac)]
     set mac [::webapp::form-text mac 1 20 17 $val]
-    lassign [menu-dhcp-profile $dbfd iddhcpprofil $tabuid(idcor) $trr(iddhcpprofil)] \
-	dhcpprofillibelle dhcpprofilmenu
+    lassign [menu-dhcp-profile $dbfd iddhcpprof $tabuid(idcor) $trr(iddhcpprof)] \
+	dhcpproflibelle dhcpprofmenu
 
     set menuhinfo [menu-hinfo $dbfd hinfo $trr(hinfo)]
 
@@ -184,8 +184,8 @@ proc disp-edit {dbfd _chkv _tabuid} {
 					[list %NOM% $name] \
 					[list %DOMAIN% $domain] \
 					[list %MAC% $mac] \
-					[list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
-					[list %DHCPPROFILMENU% $dhcpprofilmenu] \
+					[list %DHCPPROFLIBELLE% $dhcpproflibelle] \
+					[list %DHCPPROFMENU% $dhcpprofmenu] \
 					[list %MENUHINFO% $menuhinfo] \
 					[list %DROITSMTPLIBELLE% $droitsmtplibelle] \
 					[list %DROITSMTPMENU% $droitsmtpmenu] \
@@ -263,7 +263,7 @@ d cgi-register {action store} {
     {nom	1 1}
     {domain	1 1}
     {mac	1 1}
-    {iddhcpprofil 1 1}
+    {iddhcpprof 1 1}
     {hinfo	1 1}
     {droitsmtp	0 1}
     {ttl	1 1}
@@ -336,10 +336,10 @@ d cgi-register {action store} {
 	d error $msg
     }
 
-    if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
+    if {! [check-iddhcpprof $dbfd $iddhcpprof dhcpprofile msg]} then {
 	d error $msg
     }
-    if {$mac eq "" && $iddhcpprofil != 0} then {
+    if {$mac eq "" && $iddhcpprof != 0} then {
 	d error [mc "You cannot set a DHCP profile without a MAC address"]
     }
 
@@ -390,7 +390,7 @@ d cgi-register {action store} {
 	# Confirmation page
 	#
 
-	set l {idrr idview nom domain mac iddhcpprofil hinfo droitsmtp ttl
+	set l {idrr idview nom domain mac iddhcpprof hinfo droitsmtp ttl
 			commentaire respnom respmel}
 	set hidden [::webapp::hide-parameters $l ftab]
 	d urlset "%URLFORM%" $conf(next) {}
@@ -437,7 +437,7 @@ d cgi-register {action store} {
 	   d dbabort [mc "modify %s" "$nom.$domain"] $msg
 	}
 
-	set msg [add-rr $dbfd $nom $iddom $idview $mac $iddhcpprofil $idhinfo \
+	set msg [add-rr $dbfd $nom $iddom $idview $mac $iddhcpprof $idhinfo \
 					$droitsmtp $ttl \
 					$commentaire $respnom $respmel \
 					$tabuid(idcor) ntrr]
@@ -472,10 +472,10 @@ d cgi-register {action store} {
 	} else {
 	    set qmac "'[::pgsql::quote $mac]'"
 	}
-	if {$iddhcpprofil == 0} then {
-	    set qiddhcpprofil NULL
+	if {$iddhcpprof == 0} then {
+	    set qiddhcpprof NULL
 	} else {
-	    set qiddhcpprofil $iddhcpprofil
+	    set qiddhcpprof $iddhcpprof
 	}
 	set qnom         [::pgsql::quote $nom]
 	set qcommentaire [::pgsql::quote $commentaire]
@@ -490,7 +490,7 @@ d cgi-register {action store} {
 				    nom = '$qnom',
 				    iddom = $iddom,
 				    mac = $qmac,
-				    iddhcpprofil = $qiddhcpprofil,
+				    iddhcpprof = $qiddhcpprof,
 				    idhinfo = $idhinfo,
 				    droitsmtp = $droitsmtp,
 				    ttl = $ttl,
@@ -510,7 +510,7 @@ d cgi-register {action store} {
 	    set sql "UPDATE dns.rr SET mac = NULL WHERE idrr = $idrr ;
 		     UPDATE dns.rr SET
 				    mac = $qmac,
-				    iddhcpprofil = $qiddhcpprofil,
+				    iddhcpprof = $qiddhcpprof,
 				    idhinfo = $idhinfo,
 				    droitsmtp = $droitsmtp,
 				    ttl = $ttl,
@@ -567,7 +567,7 @@ d cgi-register {action store} {
     #
 
     set m "modify $trr(nom).$trr(domain):"
-    foreach c {nom domain mac dhcpprofil hinfo droitsmtp ttl commentaire respnom respmel} {
+    foreach c {nom domain mac dhcpprofile hinfo droitsmtp ttl commentaire respnom respmel} {
 	append m " $c=[set $c]"
     }
     d writelog "modrr" $m
@@ -619,7 +619,7 @@ d cgi-register {action store} {
 					[list %NOM% $nom] \
 					[list %DOMAIN% $domain] \
 					[list %MAC% $mac] \
-					[list %DHCPPROFIL% $dhcpprofil] \
+					[list %DHCPPROFILE% $dhcpprofile] \
 					[list %HINFO% $hinfo] \
 					[list %DROITSMTP% $droitsmtp] \
 					[list %TTL% $httl] \

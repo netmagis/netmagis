@@ -33,7 +33,7 @@
 #	- aclN : permission to edit ACL for this netwok (0 or 1)
 #	- addrN et allow_denyN : IP permissions for this group
 #	- sortdhcpprofN : DHCP profile sort class (if empty, we have to remove this DHCP profile)
-#	- nomdhcpprofN : DHCP profile name
+#	- namedhcpprofN : DHCP profile name
 #	- eqrwN : type of permission (read:0 or write:1) on equipments
 #	- eqallowN : allow/deny for equipments (0 or 1)
 #	- eqpatN : regexp giving equipment permission (if empty, we have to remove this permission)
@@ -221,7 +221,7 @@ set conf(tabdreq) {
     }
 }
 
-set conf(tabdhcpprofil) {
+set conf(tabdhcpprofile) {
     global {
 	chars {12 normal}
 	botbar {no}
@@ -313,14 +313,14 @@ proc val-group {dbfd group exist} {
 proc del-group {dbfd idgrp idorphan} {
     set ltab {global.groupe global.corresp
 		dns.p_network dns.p_ip dns.p_dom
-		dns.dr_dhcpprofil}
+		dns.p_dhcpprofile}
     d dblock $ltab
 
     #
     # Remove permissions
     #
 
-    foreach table {dns.p_network dns.p_ip dns.p_dom dns.dr_dhcpprofil} {
+    foreach table {dns.p_network dns.p_ip dns.p_dom dns.p_dhcpprofile} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "delete %s" $table] $msg
@@ -706,15 +706,15 @@ d cgi-register {action edit} {
 
     set lines {}
     lappend lines [list "Title" [mc "Sort class"] [mc "DHCP profile"]]
-    set lprof [::pgsql::getcols $dbfd dns.dhcpprofil "" "nom ASC" {nom nom}]
-    set sql "SELECT p.nom AS nom, dr.tri AS sort
-			FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p
-			WHERE dr.idgrp = $idgrp
-			    AND dr.iddhcpprofil = p.iddhcpprofil
-			ORDER BY dr.tri ASC, p.nom ASC"
+    set lprof [::pgsql::getcols $dbfd dns.dhcpprofile "" "name ASC" {name name}]
+    set sql "SELECT d.name, p.sort
+			FROM dns.p_dhcpprofile p, dns.dhcpprofile d
+			WHERE p.idgrp = $idgrp
+			    AND p.iddhcpprof = d.iddhcpprof
+			ORDER BY p.sort ASC, d.name ASC"
     set nprof 1
     pg_select $dbfd $sql tab {
-	set p        $tab(nom)
+	set p        $tab(name)
 	set sort     $tab(sort)
 
 	set idx [lsearch -exact $lprof [list $p $p]]
@@ -722,19 +722,19 @@ d cgi-register {action edit} {
 	    d error [mc "Group has access to DHCP profile '%s' which do not exist in the database" $d]
 	}
 	set hsort [::webapp::form-text sortdhcpprof$nprof 1 5 5 $sort]
-	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof [list $idx]]
+	set hprof [::webapp::form-menu namedhcpprof$nprof 1 0 $lprof [list $idx]]
 	lappend lines [list Normal $hsort $hprof]
 	incr nprof
     }
 
     for {set i 1} {$i <= 5} {incr i} {
 	set hsort [::webapp::form-text sortdhcpprof$nprof 1 5 5 ""]
-	set hprof [::webapp::form-menu nomdhcpprof$nprof 1 0 $lprof {}]
+	set hprof [::webapp::form-menu namedhcpprof$nprof 1 0 $lprof {}]
 	lappend lines [list Normal $hsort $hprof]
 	incr nprof
     }
 
-    set listdhcpprof [::arrgen::output "html" $conf(tabdhcpprofil) $lines]
+    set listdhcpprof [::arrgen::output "html" $conf(tabdhcpprofile) $lines]
 
     #
     # End of script: output page and close database
@@ -757,7 +757,7 @@ d cgi-register {action edit} {
 				[list %LISTNETS% $listnets] \
 				[list %LISTPERMS% $listperms] \
 				[list %LISTEDREQ% $listdreq] \
-				[list %LISTEDHCPPROFILS% $listdhcpprof] \
+				[list %LISTDHCPPROF% $listdhcpprof] \
 			    ]
 }
 
@@ -788,7 +788,7 @@ d cgi-register {action mod} {
     {addr[0-9]+		0 9999}
     {allow[0-9]+	0 9999}
     {sortdhcpprof[0-9]+	0 9999}
-    {nomdhcpprof[0-9]+	0 9999}
+    {namedhcpprof[0-9]+	0 9999}
     {eqrw[0-9]+		0 9999}
     {eqallow[0-9]+	0 9999}
     {eqpat[0-9]+	0 9999}
@@ -1131,27 +1131,26 @@ d cgi-register {action mod} {
     # Test DHCP profile names
     #
 
-    foreach ld [::pgsql::getcols $dbfd dns.dhcpprofil "" "" {iddhcpprofil nom}] {
-	set iddhcpprofil [lindex $ld 0]
-	set name         [lindex $ld 1]
-	set tabdhcpprofil($name) $iddhcpprofil
+    foreach ld [::pgsql::getcols $dbfd dns.dhcpprofile "" "" {iddhcpprof name}] {
+	lassign $ld iddhcpprof name
+	set tabdhcpprofile($name) $iddhcpprof
     }
 
     set lidprof {}
     set n 1
-    while {[info exists ftab(sortdhcpprof$n)] && [info exists ftab(nomdhcpprof$n)]} {
+    while {[info exists ftab(sortdhcpprof$n)] && [info exists ftab(namedhcpprof$n)]} {
 	set sort [string trim [lindex $ftab(sortdhcpprof$n) 0]]
 	if {[string length $sort] > 0} then {
 	    if {! [regexp -- {^[0-9]+$} $sort]} then {
 		d error [mc "Invalid DHCP profile sort class '%s'" $sort]
 	    }
 
-	    set dhcpprofil [string trim [lindex $ftab(nomdhcpprof$n) 0]]
-	    if {! [info exists tabdhcpprofil($dhcpprofil)]} then {
-		d error [mc "Invalid DHCP profile '%s'" $dhcpprofil]
+	    set dhcpprofile [string trim [lindex $ftab(namedhcpprof$n) 0]]
+	    if {! [info exists tabdhcpprofile($dhcpprofile)]} then {
+		d error [mc "Invalid DHCP profile '%s'" $dhcpprofile]
 	    }
 
-	    lappend lidprof [list $sort $tabdhcpprofil($dhcpprofil)]
+	    lappend lidprof [list $sort $tabdhcpprofile($dhcpprofile)]
 	}
 
 	incr n
@@ -1302,7 +1301,7 @@ d cgi-register {action mod} {
 
     set ltab {global.groupe global.corresp
 		dns.p_network dns.p_ip dns.p_dom
-		dns.dr_dhcpprofil} 
+		dns.p_dhcpprofile} 
     d dblock $ltab
 
     # Create group if needed
@@ -1422,11 +1421,11 @@ d cgi-register {action mod} {
     }
 
     # DHCP profiles associated with the group
-    lappend cmd "DELETE FROM dns.dr_dhcpprofil WHERE idgrp = $idgrp"
+    lappend cmd "DELETE FROM dns.p_dhcpprofile WHERE idgrp = $idgrp"
     foreach e $lidprof {
-	lassign $e sort iddhcpprofil
-	lappend cmd "INSERT INTO dns.dr_dhcpprofil (idgrp, iddhcpprofil, tri)
-			VALUES ($idgrp, $iddhcpprofil, $sort)"
+	lassign $e sort iddhcpprof
+	lappend cmd "INSERT INTO dns.p_dhcpprofile (idgrp, iddhcpprof, sort)
+			VALUES ($idgrp, $iddhcpprof, $sort)"
     }
 
     #
@@ -1448,7 +1447,7 @@ d cgi-register {action mod} {
     set h [display-group $dbfd $idgrp]
     lassign $h \
 		tabdroits tablogins tabnets tabcidralone \
-		tabviews tabdomains tabdhcpprofils tabdreq
+		tabviews tabdomains tabdhcpprofiles tabdreq
 
     #
     # End of script: output page and close database
@@ -1462,7 +1461,7 @@ d cgi-register {action mod} {
 			    [list %TABDOMAINS% $tabdomains] \
 			    [list %TABNETS% $tabnets] \
 			    [list %TABCIDRALONE% $tabcidralone] \
-			    [list %TABDHCPPROFILS% $tabdhcpprofils] \
+			    [list %TABDHCPPROFILES% $tabdhcpprofiles] \
 			    [list %TABDREQ% $tabdreq] \
 			]
 }

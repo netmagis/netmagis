@@ -306,9 +306,9 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	# very complex and not very readable.
 	#
 
-	set sql "SELECT iddhcpprofil, nom FROM dns.dhcpprofil"
+	set sql "SELECT iddhcpprof, name FROM dns.dhcpprofile"
 	pg_select $dbfd $sql tab {
-	    set nomprofildhcp($tab(iddhcpprofil)) $tab(nom)
+	    set profdhcpname($tab(iddhcpprof)) $tab(name)
 	}
 
 	#
@@ -320,8 +320,8 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 			rr_ip.adr,
 			rr.commentaire, rr.respnom, rr.respmel, rr.date,
 			rr.droitsmtp, rr.mac,
-			rr.iddhcpprofil AS dhcp1,
-			dhcprange.iddhcpprofil AS dhcp2,
+			rr.iddhcpprof AS dhcp1,
+			dhcprange.iddhcpprof AS dhcp2,
 			hinfo.text, corresp.login
 		    FROM dns.rr, dns.domain, dns.hinfo, global.corresp,
 			dns.rr_ip LEFT OUTER JOIN dns.dhcprange
@@ -362,10 +362,10 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 		set responsable $respnom
 	    }
 
-	    if {[info exists nomprofildhcp($dhcp2)]} then {
-		set dhcp $nomprofildhcp($dhcp2)
-	    } elseif {[info exists nomprofildhcp($dhcp1)]} then {
-		set dhcp $nomprofildhcp($dhcp1)
+	    if {[info exists profdhcpname($dhcp2)]} then {
+		set dhcp $profdhcpname($dhcp2)
+	    } elseif {[info exists profdhcpname($dhcp1)]} then {
+		set dhcp $profdhcpname($dhcp1)
 	    } else {
 		set dhcp ""
 	    }

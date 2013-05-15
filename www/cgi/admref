@@ -196,16 +196,16 @@ set conf(zone6:proc)		$conf(zone:proc)
 ##############################################################################
 # DHCP profiles
 
-set conf(dhcpprofil:ptitle) "DHCP profile management"
-set conf(dhcpprofil:cols)	{ {20 nom {Name} {string 20} {}}
-				  {80 texte {Directives dhcpd.conf} {textarea {80 10}} {}}
+set conf(dhcpprof:ptitle) "DHCP profile management"
+set conf(dhcpprof:cols)		{ {20 name {Name} {string 20} {}}
+				  {80 text {Directives dhcpd.conf} {textarea {80 10}} {}}
 				}
-set conf(dhcpprofil:sql)	"SELECT * FROM dns.dhcpprofil ORDER BY nom ASC"
-set conf(dhcpprofil:id)		iddhcpprofil
-set conf(dhcpprofil:help)	help-dhcpprofil.html
-set conf(dhcpprofil:return)	"Return to DHCP profile modification"
-set conf(dhcpprofil:table)	dns.dhcpprofil
-set conf(dhcpprofil:proc)	admref-nop
+set conf(dhcpprof:sql)		"SELECT * FROM dns.dhcpprofile ORDER BY name ASC"
+set conf(dhcpprof:id)		iddhcpprof
+set conf(dhcpprof:help)		help-dhcpprof.html
+set conf(dhcpprof:return)	"Return to DHCP profile modification"
+set conf(dhcpprof:table)	dns.dhcpprofile
+set conf(dhcpprof:proc)		admref-nop
 
 ##############################################################################
 # Vlans

@@ -50,8 +50,8 @@
 	    \lignetableau {
 		\casetableau {} {Adresse MAC}
 		\casetableau {} {%MAC%}
-		\casetableau {} {%DHCPPROFILLIBELLE%}
-		\casetableau {} {%DHCPPROFILMENU%}
+		\casetableau {} {%DHCPPROFLIBELLE%}
+		\casetableau {} {%DHCPPROFMENU%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Machine}

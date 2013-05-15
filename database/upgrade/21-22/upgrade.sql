@@ -111,6 +111,17 @@ ALTER TABLE dns.relais_dom
     DROP CONSTRAINT IF EXISTS relais_dom_mx_fkey		CASCADE
     ;
 
+ALTER TABLE dns.dr_dhcpprofil
+    DROP CONSTRAINT IF EXISTS dr_dhcpprofil_pkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS dr_dhcpprofil_iddhcpprofil_fkey	CASCADE,
+    DROP CONSTRAINT IF EXISTS dr_dhcpprofil_idgrp_fkey		CASCADE
+    ;
+
+ALTER TABLE dns.dhcpprofil
+    DROP CONSTRAINT IF EXISTS dhcpprofil_pkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS dhcpprofil_nom_pkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS dhcpprofil_iddhcpprofil_check	CASCADE
+    ;
 
 -- Rename tables and columns, and rebuild constraints
 
@@ -198,6 +209,29 @@ ALTER TABLE dns.hinfo RENAME COLUMN texte		TO text ;
 ALTER TABLE dns.hinfo RENAME COLUMN tri			TO sort ;
 
 ALTER TABLE dns.rr_mx RENAME COLUMN priorite		TO prio ;
+
+ALTER TABLE dns.seq_dhcpprofil RENAME TO seq_dhcpprofile ;
+
+ALTER TABLE dns.dhcpprofil RENAME TO dhcpprofile ;
+ALTER TABLE dns.dhcpprofile RENAME COLUMN iddhcpprofil	TO iddhcpprof ;
+ALTER TABLE dns.dhcpprofile RENAME COLUMN nom		TO name ;
+ALTER TABLE dns.dhcpprofile RENAME COLUMN texte		TO text ;
+ALTER TABLE dns.dhcpprofile
+    ADD CONSTRAINT non_default CHECK (iddhcpprof >= 1),
+    ADD UNIQUE (name),
+    ADD PRIMARY KEY (iddhcpprof) ;
+
+ALTER TABLE dns.dr_dhcpprofil RENAME TO p_dhcpprofile ;
+ALTER TABLE dns.p_dhcpprofile RENAME COLUMN iddhcpprofil TO iddhcpprof ;
+ALTER TABLE dns.p_dhcpprofile RENAME COLUMN tri		TO sort ;
+ALTER TABLE dns.p_dhcpprofile
+    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    ADD FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
+    ADD PRIMARY KEY (idgrp, iddhcpprof) ;
+
+ALTER TABLE dns.dhcprange RENAME COLUMN iddhcpprofil	TO iddhcpprof ;
+
+ALTER TABLE dns.rr RENAME COLUMN iddhcpprofil		TO iddhcpprof ;
 
 DROP TABLE dns.dhcp ;
 

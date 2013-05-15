@@ -89,7 +89,7 @@ proc main {argv0 argv} {
 
     set mac ""
     set comment ""
-    set iddhcpprofil 0
+    set iddhcpprof 0
     set hinfo ""
     set droitsmtp 0
     set ttl -1
@@ -102,7 +102,7 @@ proc main {argv0 argv} {
 	set rrexists 1
 
 	set mac		$trr(mac)
-	set iddhcpprofil $trr(iddhcpprofil)
+	set iddhcpprof	$trr(iddhcpprof)
 	set droitsmtp	$trr(droitsmtp)
 	set ttl		$trr(ttl)
 	set comment	$trr(commentaire)
@@ -140,7 +140,7 @@ proc main {argv0 argv} {
     #
 
     set msg [add-host $dbfd trr $name $iddom $idview $addr \
-    				$mac $iddhcpprofil 0 $droitsmtp \
+    				$mac $iddhcpprof 0 $droitsmtp \
 				$ttl $comment $respname $respmail $tabcor(idcor)]
     if {$msg ne ""} then {
 	d error $msg

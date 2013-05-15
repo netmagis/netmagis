@@ -563,7 +563,7 @@ snit::type ::netmagis {
 			    {modzone always}
 			    {modzone4 always}
 			    {modzone6 always}
-			    {moddhcpprofil always}
+			    {moddhcpprof always}
 			    {modvlan always}
 			    {modeqtype always}
 			    {modeq always}
@@ -594,7 +594,7 @@ snit::type ::netmagis {
 	modzone		{admref?type=zone {Modify zones}}
 	modzone4	{admref?type=zone4 {Modify reverse IPv4 zones}}
 	modzone6	{admref?type=zone6 {Modify reverse IPv6 zones}}
-	moddhcpprofil	{admref?type=dhcpprofil {Modify DHCP profiles}}
+	moddhcpprof	{admref?type=dhcpprof {Modify DHCP profiles}}
 	modvlan		{admref?type=vlan {Modify Vlans}}
 	modeqtype	{admref?type=eqtype {Modify equipment types}}
 	modeq		{admref?type=eq {Modify equipments}}
@@ -3086,13 +3086,13 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    set sql "SELECT p.nom, dr.tri, p.texte
-			FROM dns.dhcpprofil p, dns.dr_dhcpprofil dr
-			WHERE p.iddhcpprofil = dr.iddhcpprofil
-				AND dr.idgrp = $idgrp
-			ORDER BY dr.tri, p.nom"
+    set sql "SELECT d.name, p.sort, d.text
+			FROM dns.dhcpprofile d, dns.p_dhcpprofile p
+			WHERE d.iddhcpprof = p.iddhcpprof
+				AND p.idgrp = $idgrp
+			ORDER BY p.sort, d.name"
     pg_select $dbfd $sql tab {
-	lappend lines [list DHCP $tab(nom) $tab(texte)]
+	lappend lines [list DHCP $tab(name) $tab(text)]
     }
     if {[llength $lines] > 0} then {
 	set tabdhcpprofile [::arrgen::output "html" $libconf(tabdhcpprofile) $lines]
@@ -3574,9 +3574,9 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #	_trr(idview) : view id
 #	_trr(domain) : domain name
 #	_trr(mac) : MAC address
-#	_trr(iddhcpprofil) : DHCP profile id, or 0 if none
+#	_trr(iddhcpprof) : DHCP profile id, or 0 if none
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(dhcpprofil) : DHCP profile name, or "Aucun profil DHCP"
+#	_trr(dhcpprof) : DHCP profile name, or "Aucun profil DHCP"
 #	_trr(idhinfo) : machine info id
 #	_trr(hinfo) : machine info text
 #	_trr(droitsmtp) : 1 if host has the right to emit with non auth SMTP
@@ -3616,7 +3616,7 @@ proc read-rr-by-id {dbfd idrr _trr} {
     upvar $_trr trr
 
     set fields {nom iddom idview
-	mac iddhcpprofil idhinfo droitsmtp ttl commentaire respnom respmel
+	mac iddhcpprof idhinfo droitsmtp ttl commentaire respnom respmel
 	idcor date}
 
     catch {unset trr}
@@ -3635,14 +3635,14 @@ proc read-rr-by-id {dbfd idrr _trr} {
     if {$found} then {
 	set idview $trr(idview)
 	set trr(domain) ""
-	if {$trr(iddhcpprofil) eq ""} then {
-	    set trr(iddhcpprofil) 0
-	    set trr(dhcpprofil) [mc "No profile"]
+	if {$trr(iddhcpprof) eq ""} then {
+	    set trr(iddhcpprof) 0
+	    set trr(dhcpprof) [mc "No profile"]
 	} else {
-	    set sql "SELECT nom FROM dns.dhcpprofil
-				WHERE iddhcpprofil = $trr(iddhcpprofil)"
+	    set sql "SELECT name FROM dns.dhcpprofile
+				WHERE iddhcpprof = $trr(iddhcpprof)"
 	    pg_select $dbfd $sql tab {
-		set trr(dhcpprofil) $tab(nom)
+		set trr(dhcpprof) $tab(name)
 	    }
 	}
 	set sql "SELECT text FROM dns.hinfo WHERE idhinfo = $trr(idhinfo)"
@@ -4076,7 +4076,7 @@ proc del-orphaned-rr {dbfd idrr} {
 #	- iddom : domain id
 #	- idview: view id
 #	- mac : MAC address, or empty string
-#	- iddhcpprofil : DHCP profile id, or 0
+#	- iddhcpprof : DHCP profile id, or 0
 #	- idhinfo : HINFO or empty string (default is searched in the database)
 #	- droitsmtp : 1 if ok to emit with non auth SMTP
 #	- ttl : TTL value, or -1 for default value
@@ -4103,7 +4103,7 @@ proc del-orphaned-rr {dbfd idrr} {
 #   2013/04/05 : pda/jean : add views
 #
 
-proc add-rr {dbfd name iddom idview mac iddhcpprofil idhinfo droitsmtp ttl
+proc add-rr {dbfd name iddom idview mac iddhcpprof idhinfo droitsmtp ttl
 				comment respnom respmel idcor _trr} {
     upvar $_trr trr
 
@@ -4121,15 +4121,15 @@ proc add-rr {dbfd name iddom idview mac iddhcpprofil idhinfo droitsmtp ttl
 	set hinfodef "idhinfo,"
 	set hinfoval "$idhinfo, "
     }
-    if {$iddhcpprofil == 0} then {
-	set iddhcpprofil NULL
+    if {$iddhcpprof == 0} then {
+	set iddhcpprof NULL
     }
     set sql "INSERT INTO dns.rr
-		    (nom, iddom, idview, mac, iddhcpprofil, $hinfodef
+		    (nom, iddom, idview, mac, iddhcpprof, $hinfodef
 			droitsmtp, ttl, commentaire, respnom, respmel,
 			idcor)
 		VALUES
-		    ('$name', $iddom, $idview, $qmac, $iddhcpprofil, $hinfoval
+		    ('$name', $iddom, $idview, $qmac, $iddhcpprof, $hinfoval
 			$droitsmtp, $ttl, '$qcomment', '$qrespnom', '$qrespmel',
 			$idcor)
 		    "
@@ -4157,7 +4157,7 @@ proc add-rr {dbfd name iddom idview mac iddhcpprofil idhinfo droitsmtp ttl
 #	- idview: view id
 #	- addr: (single) IP address to add
 #	- mac : MAC address, or empty string
-#	- iddhcpprofil : DHCP profile id, or 0
+#	- iddhcpprof : DHCP profile id, or 0
 #	- idhinfo : idhinfo (0 for default value)
 #	- droitsmtp : 1 if ok to emit with non auth SMTP
 #	- ttl : TTL value, or -1 for default value
@@ -4174,7 +4174,7 @@ proc add-rr {dbfd name iddom idview mac iddhcpprofil idhinfo droitsmtp ttl
 #   2013/04/10 : pda/jean : accept only one view
 #
 
-proc add-host {dbfd _trr name iddom idview addr mac iddhcpprofil idhinfo droitsmtp ttl comment respname respmail idcor} {
+proc add-host {dbfd _trr name iddom idview addr mac iddhcpprof idhinfo droitsmtp ttl comment respname respmail idcor} {
     upvar $_trr trr
 
     #
@@ -4191,7 +4191,7 @@ proc add-host {dbfd _trr name iddom idview addr mac iddhcpprofil idhinfo droitsm
 	# Name did not exist, thus we insert a new RR
 	#
 	set msg [add-rr $dbfd $name $iddom $idview \
-			$mac $iddhcpprofil $idhinfo $droitsmtp $ttl \
+			$mac $iddhcpprof $idhinfo $droitsmtp $ttl \
 			$comment $respname $respmail $idcor trr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "add %s" $name] $msg
@@ -4209,7 +4209,7 @@ proc add-host {dbfd _trr name iddom idview addr mac iddhcpprofil idhinfo droitsm
 	    # only mail role was existing).
 	    #
 	    if {! ($mac eq $trr(mac)
-			&& $iddhcpprofil eq $trr(iddhcpprofil)
+			&& $iddhcpprof eq $trr(iddhcpprof)
 		    	&& $idhinfo eq $trr(idhinfo)
 		    	&& $droitsmtp eq $trr(droitsmtp)
 		    	&& $ttl eq $trr(ttl)
@@ -4224,12 +4224,12 @@ proc add-host {dbfd _trr name iddom idview addr mac iddhcpprofil idhinfo droitsm
 		set qcomment  [::pgsql::quote $comment]
 		set qrespname [::pgsql::quote $respname]
 		set qrespmail [::pgsql::quote $respmail]
-		if {$iddhcpprofil == 0} then {
-		    set iddhcpprofil NULL
+		if {$iddhcpprof == 0} then {
+		    set iddhcpprof NULL
 		}
 		set sql "UPDATE dns.rr SET
 					mac = $qmac,
-					iddhcpprofil = $iddhcpprofil,
+					iddhcpprof = $iddhcpprof,
 					idhinfo = $idhinfo,
 					droitsmtp = $droitsmtp,
 					ttl = $ttl,
@@ -4686,7 +4686,7 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	lappend lines [list Normal [mc "MAC address"] $trr(mac)]
 
 	# DHCP profile
-	lappend lines [list Normal [mc "DHCP profile"] $trr(dhcpprofil)]
+	lappend lines [list Normal [mc "DHCP profile"] $trr(dhcpprof)]
 
 	# Machine type
 	lappend lines [list Normal [mc "Type"] $trr(hinfo)]
@@ -5040,12 +5040,12 @@ proc check-mac-syntax {dbfd mac} {
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- iddhcpprofil : id of DHCP profile, or 0
-#	- _dhcpprofil : variable contenant en retour le nom du profil
+#	- iddhcpprof : id of DHCP profile, or 0
+#	- _dhcpprof : variable contenant en retour le nom du profil
 #	- _msgvar : in return : error message
 # Output:
 #   - return value: 1 if ok, 0 if error
-#   - _dhcpprofil : name of found profile (or "No profile")
+#   - _dhcpprof : name of found profile (or "No profile")
 #   - _msg : error message, if any
 #
 # History
@@ -5053,25 +5053,25 @@ proc check-mac-syntax {dbfd mac} {
 #   2010/11/29 : pda      : i18n
 #
 
-proc check-iddhcpprofil {dbfd iddhcpprofil _dhcpprofil _msg} {
-    upvar $_dhcpprofil dhcpprofil
+proc check-iddhcpprof {dbfd iddhcpprof _dhcpprof _msg} {
+    upvar $_dhcpprof dhcpprof
     upvar $_msg msg
 
     set msg ""
 
-    if {! [regexp -- {^[0-9]+$} $iddhcpprofil]} then {
-	set msg [mc "Invalid syntax '%s' for DHCP profile" $iddhcpprofil]
+    if {! [regexp -- {^[0-9]+$} $iddhcpprof]} then {
+	set msg [mc "Invalid syntax '%s' for DHCP profile" $iddhcpprof]
     } else {
-	if {$iddhcpprofil != 0} then {
-	    set sql "SELECT nom FROM dns.dhcpprofil
-				WHERE iddhcpprofil = $iddhcpprofil"
-	    set msg [mc "Invalid DHCP profile '%s'" $iddhcpprofil]
+	if {$iddhcpprof != 0} then {
+	    set sql "SELECT name FROM dns.dhcpprofile
+				WHERE iddhcpprof = $iddhcpprof"
+	    set msg [mc "Invalid DHCP profile '%s'" $iddhcpprof]
 	    pg_select $dbfd $sql tab {
-		set dhcpprofil $tab(nom)
+		set dhcpprof $tab(name)
 		set msg ""
 	    }
 	} else {
-	    set dhcpprofil [mc "No profile"]
+	    set dhcpprof [mc "No profile"]
 	}
     }
 
@@ -6278,16 +6278,16 @@ proc read-hinfo {dbfd text} {
 
 proc read-dhcp-profile {dbfd text} {
     if {$text eq ""} then {
-	set iddhcpprofil 0
+	set iddhcpprof 0
     } else {
 	set qtext [::pgsql::quote $text]
-	set sql "SELECT iddhcpprofil FROM dns.dhcpprofil WHERE nom = '$qtext'"
-	set iddhcpprofil -1
+	set sql "SELECT iddhcpprof FROM dns.dhcpprofile WHERE name = '$qtext'"
+	set iddhcpprof -1
 	pg_select $dbfd $sql tab {
-	    set iddhcpprofil $tab(iddhcpprofil)
+	    set iddhcpprof $tab(iddhcpprof)
 	}
     }
-    return $iddhcpprofil
+    return $iddhcpprof
 }
 
 ##############################################################################
@@ -6334,7 +6334,7 @@ proc menu-hinfo {dbfd field defval} {
 #   - dbfd : database handle
 #   - field : field name
 #   - idcor : user id
-#   - iddhcpprofil : default selected profile, or 0
+#   - iddhcpprof : default selected profile, or 0
 # Output:
 #   - return value: list with 2 HTML strings {title menu}
 #
@@ -6344,23 +6344,23 @@ proc menu-hinfo {dbfd field defval} {
 #   2010/11/29 : pda      : i18n
 #
 
-proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
+proc menu-dhcp-profile {dbfd field idcor iddhcpprof} {
     #
     # Get all DHCP profiles for this group
     #
 
-    set sql "SELECT p.iddhcpprofil, p.nom
-		FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p, global.corresp c
+    set sql "SELECT d.iddhcpprof, d.name
+		FROM dns.p_dhcpprofile p, dns.dhcpprofile d, global.corresp c
 		WHERE c.idcor = $idcor
-		    AND dr.idgrp = c.idgrp
-		    AND dr.iddhcpprofil = p.iddhcpprofil
-		ORDER BY dr.tri ASC, p.nom"
+		    AND p.idgrp = c.idgrp
+		    AND p.iddhcpprof = d.iddhcpprof
+		ORDER BY p.sort ASC, d.name"
     set lprof {}
     set lsel {}
     set idx 1
     pg_select $dbfd $sql tab {
-	lappend lprof [list $tab(iddhcpprofil) $tab(nom)]
-	if {$tab(iddhcpprofil) == $iddhcpprofil} then {
+	lappend lprof [list $tab(iddhcpprof) $tab(name)]
+	if {$tab(iddhcpprof) == $iddhcpprof} then {
 	    lappend lsel $idx
 	}
 	incr idx
@@ -6375,16 +6375,16 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
 	# Is the default selected profile in our list?
 	#
 
-	if {$iddhcpprofil != 0 && [llength $lsel] == 0} then {
+	if {$iddhcpprof != 0 && [llength $lsel] == 0} then {
 	    #
 	    # We must add it at the end of the list.
 	    #
 
-	    set sql "SELECT iddhcpprofil, nom
-			    FROM dns.dhcpprofil
-			    WHERE iddhcpprofil = $iddhcpprofil"
+	    set sql "SELECT iddhcpprof, name
+			    FROM dns.dhcpprofile
+			    WHERE iddhcpprof = $iddhcpprof"
 	    pg_select $dbfd $sql tab {
-		lappend lprof [list $tab(iddhcpprofil) $tab(nom)]
+		lappend lprof [list $tab(iddhcpprof) $tab(name)]
 		lappend lsel $idx
 	    }
 	}
@@ -6404,7 +6404,7 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
 	#
 
 	set title ""
-	set html [::webapp::form-hidden $field $iddhcpprofil]
+	set html [::webapp::form-hidden $field $iddhcpprof]
     }
 
     return [list $title $html]

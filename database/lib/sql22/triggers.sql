@@ -50,8 +50,8 @@ CREATE TRIGGER tr_mod_network
     BEFORE UPDATE ON dns.network
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_dhcp () ;
 
-CREATE TRIGGER tr_mod_dhcpprofil
-    BEFORE UPDATE ON dns.dhcpprofil
+CREATE TRIGGER tr_mod_dhcpprofile
+    BEFORE UPDATE ON dns.dhcpprofile
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_dhcp () ;
 
 CREATE TRIGGER tr_phonetic

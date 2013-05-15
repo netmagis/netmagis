@@ -33,7 +33,7 @@
     one or more hosts.
 
 
-    \titre {2} {\ancre {texte} {Name}}
+    \titre {2} {\ancre {name} {Name}}
 
 	The name of the profile is used only in Netmagis application
 	itself (it does not appear in the \teletype {dhcpd.conf}
@@ -42,7 +42,7 @@
 	Example~:
 	    \retrait {\verbatim {x-terminal}}
 
-    \titre {2} {\ancre {texte} {Dhcpd.conf}}
+    \titre {2} {\ancre {text} {Dhcpd.conf}}
 
 	This field contains parameters supplied by DHCP server to
 	clients. Consult you DHCP server manual for syntax.

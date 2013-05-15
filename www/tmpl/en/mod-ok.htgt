@@ -49,7 +49,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {DHCP profile}
-	    \casetableau {} {%DHCPPROFIL%}
+	    \casetableau {} {%DHCPPROFILE%}
 	}
 	\lignetableau {
 	    \casetableau {} {Type}

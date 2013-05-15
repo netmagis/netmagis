@@ -33,7 +33,7 @@
     des paramètres dans le fichier \teletype {dhcpd.conf}.
 
 
-    \titre {2} {\ancre {texte} {Nom}}
+    \titre {2} {\ancre {name} {Nom}}
 
 	Le nom du profil est utilisé uniquement dans l'application
 	elle-même (il n'apparaît pas dans le fichier \teletype
@@ -43,7 +43,7 @@
 	Exemple~:
 	    \retrait {\verbatim {terminaux-x-de-marque-bidule}}
 
-    \titre {2} {\ancre {texte} {Directives dhcpd.conf}}
+    \titre {2} {\ancre {text} {Directives dhcpd.conf}}
 
 	Ce champ contient les paramètres transmis par le serveur
 	DHCP, sous forme de directives stockées dans le fichier

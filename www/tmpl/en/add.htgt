@@ -87,8 +87,8 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="mac" SIZE="20" MAXLENGTH="17">
 			    }
-			    \casetableau {} {%DHCPPROFILLIBELLE%}
-			    \casetableau {} {%DHCPPROFILMENU%}
+			    \casetableau {} {%DHCPPROFLIBELLE%}
+			    \casetableau {} {%DHCPPROFMENU%}
 			}
 			\lignetableau {
 			    \casetableau {} {Host type}
