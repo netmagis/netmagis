@@ -3588,6 +3588,7 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #	_trr(date) : date of last modification
 #	_trr(ip) : list of all IP adresses {{idview addr} ...}
 #	_trr(mx) : MX list {{idview prio idrr} {idview prio idrr} ...}
+#	_trr(mxtarg) : list of MX which target this host
 #	_trr(cname) : list of pointed RR, if name is an alias {{idview idrr}...}
 #	_trr(aliases) : list of all RR pointing to this object {{idview idrr}..}
 #IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
@@ -3661,6 +3662,11 @@ proc read-rr-by-id {dbfd idrr _trr} {
 	set sql "SELECT prio, mx FROM dns.rr_mx WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
 	    lappend trr(mx) [list $idview $tab(prio) $tab(mx)]
+	}
+	set trr(mxtarg) {}
+	set sql "SELECT idrr FROM dns.rr_mx WHERE mx = $idrr"
+	pg_select $dbfd $sql tab {
+	    lappend trr(mxtarg) [list $idview $tab(idrr)]
 	}
 	set trr(cname) ""
 	set sql "SELECT cname FROM dns.rr_cname WHERE idrr = $idrr"
@@ -3770,6 +3776,21 @@ proc rr-mx-by-view {_trr idview} {
     return $lmx
 }
 
+proc rr-mxtarg-by-view {_trr idview} {
+    upvar $_trr trr
+
+    set lmxt {}
+    if {[info exists trr(mxtarg)]} then {
+	foreach mxview $trr(mxtarg) {
+	    lassign $mxview id idrr
+	    if {$id == $idview} then {
+		lappend lmxt $idrr
+	    }
+	}
+    }
+    return $lmxt
+}
+
 proc rr-rolemail-by-view {_trr idview} {
     upvar $_trr trr
 
@@ -3821,7 +3842,7 @@ proc rr-adrmail-by-view {_trr idview} {
 
 proc del-alias-by-id {dbfd idrr} {
     set msg ""
-    set sql "DELETE FROM dns.rr_cname WHERE rr_cname.idrr = rr.idrr"
+    set sql "DELETE FROM dns.rr_cname WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg [del-orphaned-rr $dbfd $idrr]
     }
@@ -3942,6 +3963,22 @@ proc del-rr-and-dependancies {dbfd _trr} {
     set addrmail [rr-adrmail-by-view trr $idview]
     if {[llength $addrmail] > 0} then {
 	return [mc "This host holds mail addresses"]
+    }
+
+    #
+    # If this host is the target of any MX, don't delete it.
+    #
+
+    set mxt [rr-mxtarg-by-view trr $idview]
+    if {[llength $mxt] > 0} then {
+	return [mc "This host is the target of one or more MX"]
+    }
+    set sql "SELECT COUNT(*) FROM dns.relay_dom WHERE mx = $idrr"
+    pg_select $dbfd $sql tab {
+	set count $tab(count)
+    }
+    if {$count > 0} then {
+	return [mc "This host is the mail relay of one or more domains"]
     }
 
     #
@@ -5592,6 +5629,7 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	    check-domain (domain, idcor, "") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
+#	    if name.domain is target of a MX then error
 #	    if name.domain is ADDRMAIL then error
 #	    if name.domain has IP addresses then error
 #	    if no test is false, then OK
@@ -5615,6 +5653,7 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	    check-domain (domain, idcor, "rolemail") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
+#	    if name.domain is target of a MX then error
 #	    if name.domain is NOT ADDRMAIL then error
 #	    if name.domain is ADDRMAIL
 #		check-all-IP-addresses (mail host, idcor)

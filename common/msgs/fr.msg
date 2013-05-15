@@ -536,6 +536,8 @@
  {sums} {cumuls}
  {The '/' character is not valid in the address '%s'} {Le caractère '/' est interdit dans l'adresse '%s'}
  {This host holds mail addresses} {Cette machine héberge des adresses de messagerie}
+ {This host is the target of one or more MX} {Cette machine est la cible d'un ou plusieurs MX}
+ {This host is the mail relay of one or more domains} {Cette machine est le relais de messagerie d'un ou plusieurs domaines}
  {Title}	{Intitulé}
  {Topod messages} {Messages de topod}
  {Topod status} {Topod status}
