@@ -11,7 +11,6 @@
  {'%1$s' has IP addresses in view '%2$s'} {'%1$s' a des adresses IP dans la vue '%2$s'}
  {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} {%1$s dans la vue %2$s est une adresse de messagerie hébergée par %3$s dans la vue %4$s}
  {%1$s is a host in view %2$s} {%1$s est une machine dans la vue %2$s}
- {'%1$s' is a mail role in view '%2$s'} {'%1$s' est un rôle de messagerie dans la vue '%2$s'}
  {%1$s is an alias of host %2$s in view %3$s} {%1$s est un alias de la machine %2$s dans la vue %3$s}
  {'%1$s' is not a mail role in view '%2$s'} {'%1$s' n'est pas un rôle de messagerie dans la vue '%2$s'}
  {'%1$s' is not a valid IPv%2$s address} {'%1$s' n'est pas une adresse IPv%2$s valide}

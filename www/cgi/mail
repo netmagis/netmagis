@@ -201,7 +201,7 @@ d cgi-register {action list} {
 		AND r1.iddom = d1.iddom
 		AND d1.name = '$domain'
 		AND r1.iddom =
-			(SELECT dd1.iddom FROM dns.p_dom p1
+			(SELECT p1.iddom FROM dns.p_dom p1
 					WHERE p1.idgrp = corresp.idgrp
 					    AND p1.iddom = r1.iddom
 					    AND p1.rolemail > 0
@@ -209,7 +209,7 @@ d cgi-register {action list} {
 		AND role_mail.heberg = r2.idrr
 		AND r2.iddom = d2.iddom
 		AND r2.iddom =
-			(SELECT dd2.iddom FROM dns.p_dom p2
+			(SELECT p2.iddom FROM dns.p_dom p2
 					WHERE p2.idgrp = corresp.idgrp
 					    AND p2.iddom = r2.iddom
 			    )
@@ -341,7 +341,7 @@ d cgi-register {action add} {
 	#
 	# Name of mail address does not exist. Add appropriate RR.
 	#
-	set msg [add-rr $dbfd $name $trr(iddom) "" 0 "" 0 -1 "" "" "" $idcor trr]
+	set msg [add-rr $dbfd $name $trr(iddom) $idview "" 0 "" 0 -1 "" "" "" $idcor trr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "add %s" $name] $msg
 	}
@@ -591,8 +591,8 @@ d cgi-register {action mod} {
 	set action [mc "modified"]
 
 	set sql "UPDATE dns.role_mail
-			    FROM dns.rr
 			    SET heberg = $trrh(idrr)
+			    FROM dns.rr
 			    WHERE role_mail.idrr = rr.idrr
 				AND rr.idrr = $idrr
 				AND rr.idview = $idview"

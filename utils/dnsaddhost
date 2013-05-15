@@ -140,7 +140,7 @@ proc main {argv0 argv} {
     #
 
     set msg [add-host $dbfd trr $name $iddom $idview $addr \
-    				$mac $iddhcpprofil "" $droitsmtp \
+    				$mac $iddhcpprofil 0 $droitsmtp \
 				$ttl $comment $respname $respmail $tabcor(idcor)]
     if {$msg ne ""} then {
 	d error $msg

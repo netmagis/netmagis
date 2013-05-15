@@ -3677,7 +3677,7 @@ proc read-rr-by-id {dbfd idrr _trr} {
 			    WHERE rm.idrr = $idrr
 				AND rm.heberg = rrh.idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(rolemail) [list $idviewrr $tab(heberg) $tab(idviewheb)]
+	    lappend trr(rolemail) [list $idview $tab(heberg) $tab(idviewheb)]
 	}
 	# all mail addresses pointing to this host
 	set trr(adrmail) {}
@@ -4119,7 +4119,7 @@ proc add-rr {dbfd name iddom idview mac iddhcpprofil idhinfo droitsmtp ttl
 #	- addr: (single) IP address to add
 #	- mac : MAC address, or empty string
 #	- iddhcpprofil : DHCP profile id, or 0
-#	- idhinfo : idhinfo or empty string
+#	- idhinfo : idhinfo (0 for default value)
 #	- droitsmtp : 1 if ok to emit with non auth SMTP
 #	- ttl : TTL value, or -1 for default value
 #	- comment : commment
@@ -4171,7 +4171,7 @@ proc add-host {dbfd _trr name iddom idview addr mac iddhcpprofil idhinfo droitsm
 	    #
 	    if {! ($mac eq $trr(mac)
 			&& $iddhcpprofil eq $trr(iddhcpprofil)
-		    	&& $hinfo eq $trr(hinfo)
+		    	&& $idhinfo eq $trr(idhinfo)
 		    	&& $droitsmtp eq $trr(droitsmtp)
 		    	&& $ttl eq $trr(ttl)
 		    	&& $comment eq $trr(commentaire)
@@ -4411,7 +4411,7 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 	if {$msg ne ""} then {
 	    return $msg
 	}
-	d writelog "deladdr" "delete address $object -> delete all $fqdn/$vn"
+	d writelog "deladdr" "delete address $addr -> delete all $fqdn/$vn"
 	set delobj $fqdn
     }
 
@@ -5177,36 +5177,20 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 	set found 0
 	set err 0
 
+	catch {unset trr}
+
 	switch $mode {
-	    host {
-		set found 1
-		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview trr "del-name"]
-
-		if {$msg ne ""} then {
-		    set err 1
-		} else {
-		    #
-		    # Is it an alias in this view?
-		    #
-
-		    set cname [rr-cname-by-view trr $idview]
-		    if {$cname ne ""} then {
-			set msg [mc {Name '%1$s' is an alias in view '%2$s'} $object $vn]
-			set err 1
-		    } else {
-			set ip [rr-ip-by-view trr $idview]
-			if {$ip eq ""} then {
-			    set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
-			    set err 1
-			}
-		    }
-		}
-	    }
+	    host -
 	    host-or-alias {
 		set found 1
 		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview trr "del-name"]
 
-		if {$msg ne ""} then {
+		if {$trr(idrr) eq ""} then {
+		    #
+		    # Name does not exist in this view
+		    #
+		    set found 0
+		} elseif {$msg ne ""} then {
 		    set err 1
 		} else {
 		    #
@@ -5214,12 +5198,27 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 		    #
 
 		    set cname [rr-cname-by-view trr $idview]
-		    if {$cname eq ""} then {
+		    set ip [rr-ip-by-view trr $idview]
+		    if {$mode eq "host-or-alias"} then {
 			#
-			# It is not an alias, there must be at least an IP address
+			# mode == "host-or-alias"
+			# If it is not an alias, there must be at
+			# least an IP address
 			#
-			set ip [rr-ip-by-view trr $idview]
-			if {$ip eq ""} then {
+			if {$cname ne "" && $ip eq ""} then {
+			    set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
+			    set err 1
+			}
+		    } else {
+			#
+			# mode == "host"
+			# It must not be an alias and it must have at
+			# least an IP address
+			#
+			if {$cname ne ""} then {
+			    set msg [mc {Name '%1$s' is an alias in view '%2$s'} $object $vn]
+			    set err 1
+			} elseif {$ip eq ""} then {
 			    set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
 			    set err 1
 			}
@@ -5278,7 +5277,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
     # If asked for a name, check that name exists
     #
 
-    if {$mode in {host host-or-alias} && $trr(idrr) eq ""} then {
+    if {$mode in {host host-or-alias} && $nok + $nerr == 0} then {
 	return [mc "Name '%s' does not exist" $object]
     }
 
@@ -5781,16 +5780,18 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		set rm [rr-rolemail-by-view trr $idview]
 		if {$rm ne ""} then {
 		    lassign $rm idrr idviewheb
+		    # get mbox host
+		    if {! [read-rr-by-id $dbfd $idrr trrh]} then {
+			return [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
+		    }
 		    switch $parm {
 			REJECT {
 			    # This name is already a mail address
 			    # (it already has a mailbox host)
-			    return [mc {'%1$s' is a mail role in view '%2$s'} $fqdn $viewname]
+			    set fqdnm "$trrh(nom).$trrh(domain)"
+			    return [mc {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn $viewname $fqdnm [u viewname $idviewheb]]
 			}
 			CHECK {
-			    if {! [read-rr-by-id $dbfd $idrr trrh]} then {
-				return [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
-			    }
 
 			    # IP address check
 			    set ok [check-name-by-addresses $dbfd $idcor -1 trrh]

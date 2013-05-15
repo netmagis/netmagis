@@ -296,8 +296,7 @@ d cgi-register {action store} {
     # Check authorized access for host in view
     #
 
-    set fqdn "$trr(nom).$trr(domain)"
-    set msg [filter-views $dbfd tabuid "host" $fqdn [list $idview] chkv]
+    set msg [check-authorized-host $dbfd $idcor $trr(nom) $trr(domain) $idview trr "del-name"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -427,6 +426,7 @@ d cgi-register {action store} {
 
     if {$nidrr eq ""} then {
 	#
+	# Case "name changes and there is no RR for new name"
 	# Create a new RR for the new name.
 	# Remove MAC from old RR first, since there is a unicity
 	# constraint on it.
@@ -437,7 +437,7 @@ d cgi-register {action store} {
 	   d dbabort [mc "modify %s" "$nom.$domain"] $msg
 	}
 
-	set msg [add-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
+	set msg [add-rr $dbfd $nom $iddom $idview $mac $iddhcpprofil $idhinfo \
 					$droitsmtp $ttl \
 					$commentaire $respnom $respmel \
 					$tabuid(idcor) ntrr]
@@ -503,8 +503,8 @@ d cgi-register {action store} {
 	    }
 	} else {
 	    #
-	    # Name does change. Remove old MAC since there is
-	    # a unicity constraint on it.
+	    # Case "name changes and there is an existing RR for new name"
+	    # Remove old MAC since there is a unicity constraint on it.
 	    #
 
 	    set sql "UPDATE dns.rr SET mac = NULL WHERE idrr = $idrr ;
@@ -552,6 +552,7 @@ d cgi-register {action store} {
 
     #
     # Update RR "last mod" values
+    # idrr points to the new RR (or the original RR if there is no new RR)
     #
 
     set msg [touch-rr $dbfd $idrr]
