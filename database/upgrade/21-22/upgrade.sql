@@ -2,8 +2,13 @@
 -- Database upgrade to 2.2 version
 --
 -- Use:
---	- psql -f upgrade.sql database-name
+--	psql -f upgrade.sql database-name
 --
+-- Please, make a backup of your existing database first!
+-- Use a tool such as nohup or script in order to log output and check
+-- error messages:
+--	- Lines with "NOTICE:" are not important.
+--	- You should pay attention to lines with "ERROR:" 
 ------------------------------------------------------------------------------
 
 
@@ -56,40 +61,36 @@ DROP FUNCTION IF EXISTS valide_ip_cor (INET, INTEGER)		CASCADE ;
 DROP FUNCTION IF EXISTS valide_ip_grp (INET, INTEGER)		CASCADE ;
 
 ------------------------------------------------------------------------------
--- Schema changes
+-- Prepare table renaming: remove all constraints on "to be renamed"
+-- tables: we will rebuild them later. This is done in order to get
+-- new implicit names consistent with new table names.
 ------------------------------------------------------------------------------
 
-DELETE FROM global.config WHERE clef = 'dnsupdateperiod' ;
-INSERT INTO global.config (clef, valeur) VALUES ('schemaversion', '22') ;
+ALTER TABLE dns.relais_dom
+    DROP CONSTRAINT IF EXISTS relais_dom_pkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS relais_dom_iddom_fkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS relais_dom_mx_fkey		CASCADE ;
 
-DROP TABLE dns.role_web ;
+ALTER TABLE dns.dr_dhcpprofil
+    DROP CONSTRAINT IF EXISTS dr_dhcpprofil_pkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS dr_dhcpprofil_iddhcpprofil_fkey	CASCADE,
+    DROP CONSTRAINT IF EXISTS dr_dhcpprofil_idgrp_fkey		CASCADE ;
 
--- Remove all constraints on "to be renamed" tables: we will rebuild them later
--- This is done in order to get new implicit names consistent with table name
-
-ALTER TABLE dns.etablissement
-    DROP CONSTRAINT IF EXISTS etablissement_pkey		CASCADE
-    ;
-
-ALTER TABLE dns.communaute
-    DROP CONSTRAINT IF EXISTS communaute_pkey			CASCADE
-    ;
+ALTER TABLE dns.dr_ip
+    DROP CONSTRAINT IF EXISTS dr_ip_pkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS dr_ip_idgrp_fkey			CASCADE ;
 
 ALTER TABLE dns.dr_dom
     DROP CONSTRAINT IF EXISTS dr_dom_idgrp_fkey			CASCADE,
-    DROP CONSTRAINT IF EXISTS dr_dom_pkey			CASCADE
-    ;
-
-ALTER TABLE dns.domaine
-    DROP CONSTRAINT IF EXISTS domaine_nom_key			CASCADE,
-    DROP CONSTRAINT IF EXISTS domaine_pkey			CASCADE
-    ;
+    DROP CONSTRAINT IF EXISTS dr_dom_pkey			CASCADE ;
 
 ALTER TABLE dns.dr_reseau
     DROP CONSTRAINT IF EXISTS dr_reseau_idgrp_fkey		CASCADE,
     DROP CONSTRAINT IF EXISTS dr_reseau_idreseau_fkey		CASCADE,
-    DROP CONSTRAINT IF EXISTS dr_reseau_pkey			CASCADE
-    ;
+    DROP CONSTRAINT IF EXISTS dr_reseau_pkey			CASCADE ;
+
+ALTER TABLE dns.zone
+    DROP CONSTRAINT zone_pkey ;
 
 ALTER TABLE dns.reseau
     DROP CONSTRAINT IF EXISTS reseau_pkey			CASCADE,
@@ -97,47 +98,51 @@ ALTER TABLE dns.reseau
     DROP CONSTRAINT IF EXISTS reseau_idcommu_fkey		CASCADE,
     DROP CONSTRAINT IF EXISTS au_moins_un_prefixe_v4_ou_v6	CASCADE,
     DROP CONSTRAINT IF EXISTS gw4_in_net,
-    DROP CONSTRAINT IF EXISTS gw6_in_net
-    ;
+    DROP CONSTRAINT IF EXISTS gw6_in_net ;
 
-ALTER TABLE dns.dr_ip
-    DROP CONSTRAINT IF EXISTS dr_ip_pkey			CASCADE,
-    DROP CONSTRAINT IF EXISTS dr_ip_idgrp_fkey			CASCADE
-    ;
+ALTER TABLE dns.communaute
+    DROP CONSTRAINT IF EXISTS communaute_pkey			CASCADE ;
 
-ALTER TABLE dns.relais_dom
-    DROP CONSTRAINT IF EXISTS relais_dom_pkey			CASCADE,
-    DROP CONSTRAINT IF EXISTS relais_dom_iddom_fkey		CASCADE,
-    DROP CONSTRAINT IF EXISTS relais_dom_mx_fkey		CASCADE
-    ;
+ALTER TABLE dns.etablissement
+    DROP CONSTRAINT IF EXISTS etablissement_pkey		CASCADE ;
 
-ALTER TABLE dns.dr_dhcpprofil
-    DROP CONSTRAINT IF EXISTS dr_dhcpprofil_pkey		CASCADE,
-    DROP CONSTRAINT IF EXISTS dr_dhcpprofil_iddhcpprofil_fkey	CASCADE,
-    DROP CONSTRAINT IF EXISTS dr_dhcpprofil_idgrp_fkey		CASCADE
-    ;
+ALTER TABLE dns.domaine
+    DROP CONSTRAINT IF EXISTS domaine_nom_key			CASCADE,
+    DROP CONSTRAINT IF EXISTS domaine_pkey			CASCADE ;
+
+ALTER TABLE dns.rr
+    DROP CONSTRAINT IF EXISTS rr_nom_key,
+    DROP CONSTRAINT IF EXISTS rr_nom_iddom_key,
+    DROP CONSTRAINT IF EXISTS rr_mac_key ;
 
 ALTER TABLE dns.dhcpprofil
     DROP CONSTRAINT IF EXISTS dhcpprofil_pkey			CASCADE,
     DROP CONSTRAINT IF EXISTS dhcpprofil_nom_pkey		CASCADE,
-    DROP CONSTRAINT IF EXISTS dhcpprofil_iddhcpprofil_check	CASCADE
-    ;
+    DROP CONSTRAINT IF EXISTS dhcpprofil_iddhcpprofil_check	CASCADE ;
 
+------------------------------------------------------------------------------
 -- Rename tables and columns, and rebuild constraints
+------------------------------------------------------------------------------
+
+-- global schema
 
 ALTER TABLE global.config RENAME COLUMN clef		TO key ;
 ALTER TABLE global.config RENAME COLUMN valeur		TO value ;
 
-ALTER TABLE pgauth.user RENAME COLUMN nom		TO lastname ;
-ALTER TABLE pgauth.user RENAME COLUMN prenom		TO firstname ;
-ALTER TABLE pgauth.user RENAME COLUMN mel		TO mail ;
-ALTER TABLE pgauth.user RENAME COLUMN tel		TO phone ;
-ALTER TABLE pgauth.user RENAME COLUMN adr		TO addr ;
-ALTER TABLE pgauth.user RENAME COLUMN phnom		TO phlast ;
-ALTER TABLE pgauth.user RENAME COLUMN phprenom		TO phfirst ;
+DELETE FROM global.config WHERE key = 'dnsupdateperiod' ;
+INSERT INTO global.config (key, value) VALUES ('schemaversion', '22') ;
+
+
+-- dns schema
+
+ALTER TABLE dns.seq_domaine RENAME TO seq_domain ;
+ALTER TABLE dns.domaine RENAME TO domain ;
+ALTER TABLE dns.domain RENAME COLUMN nom		TO name ;
+ALTER TABLE dns.domain
+    ADD UNIQUE (name),
+    ADD PRIMARY KEY (iddom) ;
 
 ALTER TABLE dns.seq_etablissement RENAME TO seq_organization ;
-
 ALTER TABLE dns.etablissement RENAME TO organization ;
 ALTER TABLE dns.organization RENAME COLUMN idetabl	TO idorg ;
 ALTER TABLE dns.organization RENAME COLUMN nom		TO name ;
@@ -150,23 +155,7 @@ ALTER TABLE dns.community RENAME COLUMN nom		TO name ;
 ALTER TABLE dns.community
     ADD PRIMARY KEY (idcommu) ;
 
-ALTER TABLE dns.dr_dom RENAME TO p_dom ;
-ALTER TABLE dns.p_dom RENAME COLUMN tri			TO sort ;
-ALTER TABLE dns.p_dom DROP COLUMN roleweb ;
-ALTER TABLE dns.p_dom
-    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe(idgrp),
-    ADD PRIMARY KEY (idgrp, iddom) ;
-
-ALTER TABLE dns.seq_domaine RENAME TO seq_domain ;
-
-ALTER TABLE dns.domaine RENAME TO domain ;
-ALTER TABLE dns.domain RENAME COLUMN nom		TO name ;
-ALTER TABLE dns.domain
-    ADD UNIQUE (name),
-    ADD PRIMARY KEY (iddom) ;
-
 ALTER TABLE dns.seq_reseau RENAME TO seq_network ;
-
 ALTER TABLE dns.reseau RENAME TO network ;
 ALTER TABLE dns.network RENAME COLUMN idreseau		TO idnet ;
 ALTER TABLE dns.network RENAME COLUMN nom		TO name ;
@@ -184,59 +173,7 @@ ALTER TABLE dns.network
     ADD FOREIGN KEY (idcommu) REFERENCES dns.community (idcommu),
     ADD PRIMARY KEY (idnet) ;
 
-ALTER TABLE dns.dr_reseau RENAME TO p_network ;
-ALTER TABLE dns.p_network RENAME COLUMN idreseau TO idnet ;
-ALTER TABLE dns.p_network RENAME COLUMN tri		TO sort ;
-ALTER TABLE dns.p_network
-    ADD FOREIGN KEY (idnet) REFERENCES dns.network (idnet),
-    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
-    ADD PRIMARY KEY (idgrp, idnet) ;
-
-ALTER TABLE dns.dr_ip RENAME TO p_ip ;
-ALTER TABLE dns.p_ip RENAME COLUMN adr			TO addr ;
-ALTER TABLE dns.p_ip
-    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
-    ADD PRIMARY KEY (idgrp, addr) ;
-
-ALTER TABLE dns.relais_dom RENAME TO relay_dom ;
-ALTER TABLE dns.relay_dom RENAME COLUMN priorite	TO prio ;
-ALTER TABLE dns.relay_dom
-    ADD FOREIGN KEY (iddom)  REFERENCES dns.domain  (iddom),
-    ADD FOREIGN KEY (mx)     REFERENCES dns.rr      (idrr),
-    ADD PRIMARY KEY (iddom, mx) ;
-
-ALTER TABLE dns.hinfo RENAME COLUMN texte		TO text ;
-ALTER TABLE dns.hinfo RENAME COLUMN tri			TO sort ;
-
-ALTER TABLE dns.rr_mx RENAME COLUMN priorite		TO prio ;
-
-ALTER TABLE dns.seq_dhcpprofil RENAME TO seq_dhcpprofile ;
-
-ALTER TABLE dns.dhcpprofil RENAME TO dhcpprofile ;
-ALTER TABLE dns.dhcpprofile RENAME COLUMN iddhcpprofil	TO iddhcpprof ;
-ALTER TABLE dns.dhcpprofile RENAME COLUMN nom		TO name ;
-ALTER TABLE dns.dhcpprofile RENAME COLUMN texte		TO text ;
-ALTER TABLE dns.dhcpprofile
-    ADD CONSTRAINT non_default CHECK (iddhcpprof >= 1),
-    ADD UNIQUE (name),
-    ADD PRIMARY KEY (iddhcpprof) ;
-
-ALTER TABLE dns.dr_dhcpprofil RENAME TO p_dhcpprofile ;
-ALTER TABLE dns.p_dhcpprofile RENAME COLUMN iddhcpprofil TO iddhcpprof ;
-ALTER TABLE dns.p_dhcpprofile RENAME COLUMN tri		TO sort ;
-ALTER TABLE dns.p_dhcpprofile
-    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
-    ADD FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
-    ADD PRIMARY KEY (idgrp, iddhcpprof) ;
-
-ALTER TABLE dns.dhcprange RENAME COLUMN iddhcpprofil	TO iddhcpprof ;
-
-ALTER TABLE dns.rr RENAME COLUMN iddhcpprofil		TO iddhcpprof ;
-
-DROP TABLE dns.dhcp ;
-
 -- Add views
-
 CREATE SEQUENCE dns.seq_view START 1 ;
 CREATE TABLE dns.view (
     idview	INT		-- view id
@@ -247,20 +184,16 @@ CREATE TABLE dns.view (
     UNIQUE (name),
     PRIMARY KEY (idview)
 ) ;
-
 INSERT INTO dns.view (name) VALUES ('default') ;
 
 -- Disambiguate zone name and attach zones to views
 
 ALTER TABLE dns.zone ADD COLUMN idview INT ;
-ALTER TABLE dns.zone RENAME COLUMN domaine		TO name ;
-ALTER TABLE dns.zone RENAME COLUMN generer		TO gen ;
-
-ALTER TABLE dns.zone
-    DROP CONSTRAINT zone_pkey ;
-
 UPDATE dns.zone
     SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
+
+ALTER TABLE dns.zone RENAME COLUMN domaine		TO name ;
+ALTER TABLE dns.zone RENAME COLUMN generer		TO gen ;
 
 ALTER TABLE dns.zone_normale
     ADD UNIQUE (name),
@@ -280,8 +213,31 @@ ALTER TABLE dns.zone_reverse6
     ADD PRIMARY KEY (idzone)
     ;
 
--- Add a new access right to views
+ALTER TABLE dns.hinfo RENAME COLUMN texte		TO text ;
+ALTER TABLE dns.hinfo RENAME COLUMN tri			TO sort ;
 
+ALTER TABLE dns.dr_reseau RENAME TO p_network ;
+ALTER TABLE dns.p_network RENAME COLUMN idreseau TO idnet ;
+ALTER TABLE dns.p_network RENAME COLUMN tri		TO sort ;
+ALTER TABLE dns.p_network
+    ADD FOREIGN KEY (idnet) REFERENCES dns.network (idnet),
+    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    ADD PRIMARY KEY (idgrp, idnet) ;
+
+ALTER TABLE dns.dr_dom RENAME TO p_dom ;
+ALTER TABLE dns.p_dom RENAME COLUMN tri			TO sort ;
+ALTER TABLE dns.p_dom DROP COLUMN roleweb ;
+ALTER TABLE dns.p_dom
+    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe(idgrp),
+    ADD PRIMARY KEY (idgrp, iddom) ;
+
+ALTER TABLE dns.dr_ip RENAME TO p_ip ;
+ALTER TABLE dns.p_ip RENAME COLUMN adr			TO addr ;
+ALTER TABLE dns.p_ip
+    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    ADD PRIMARY KEY (idgrp, addr) ;
+
+-- Add a new access right to views
 CREATE TABLE dns.p_view (
     idgrp	INT,		-- group
     idview	INT,		-- the view
@@ -292,32 +248,70 @@ CREATE TABLE dns.p_view (
     FOREIGN KEY (idview) REFERENCES dns.view (idview),
     PRIMARY KEY (idgrp, idview)
 ) ;
-
 INSERT INTO dns.p_view (idgrp, idview, sort, selected)
     SELECT idgrp, idview, 100, 1
 	    FROM global.groupe, dns.view
 	    WHERE view.name = 'default' ;
 
+ALTER TABLE dns.seq_dhcpprofil RENAME TO seq_dhcpprofile ;
+ALTER TABLE dns.dhcpprofil RENAME TO dhcpprofile ;
+ALTER TABLE dns.dhcpprofile RENAME COLUMN iddhcpprofil	TO iddhcpprof ;
+ALTER TABLE dns.dhcpprofile RENAME COLUMN nom		TO name ;
+ALTER TABLE dns.dhcpprofile RENAME COLUMN texte		TO text ;
+ALTER TABLE dns.dhcpprofile
+    ADD CONSTRAINT non_default CHECK (iddhcpprof >= 1),
+    ADD UNIQUE (name),
+    ADD PRIMARY KEY (iddhcpprof) ;
 
--- Attach views to RR
+ALTER TABLE dns.dr_dhcpprofil RENAME TO p_dhcpprofile ;
+ALTER TABLE dns.p_dhcpprofile RENAME COLUMN iddhcpprofil TO iddhcpprof ;
+ALTER TABLE dns.p_dhcpprofile RENAME COLUMN tri		TO sort ;
+ALTER TABLE dns.p_dhcpprofile
+    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    ADD FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
+    ADD PRIMARY KEY (idgrp, iddhcpprof) ;
 
-ALTER TABLE dns.rr
-    DROP CONSTRAINT IF EXISTS rr_nom_key,
-    DROP CONSTRAINT IF EXISTS rr_nom_iddom_key,
-    DROP CONSTRAINT IF EXISTS rr_mac_key
-    ;
+ALTER TABLE dns.dhcprange RENAME COLUMN iddhcpprofil	TO iddhcpprof ;
 
-ALTER TABLE dns.rr
-    ADD COLUMN idview INT ;
-
+ALTER TABLE dns.rr ADD COLUMN idview INT ;
 UPDATE dns.rr
     SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
-
+ALTER TABLE dns.rr RENAME COLUMN iddhcpprofil		TO iddhcpprof ;
 ALTER TABLE dns.rr
     ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
     ADD UNIQUE (nom, iddom, idview),
     ADD UNIQUE (mac, idview)
     ;
+
+-- rr_ip
+
+ALTER TABLE dns.rr_mx RENAME COLUMN priorite		TO prio ;
+
+-- mail_role
+
+ALTER TABLE dns.relais_dom RENAME TO relay_dom ;
+ALTER TABLE dns.relay_dom RENAME COLUMN priorite	TO prio ;
+ALTER TABLE dns.relay_dom
+    ADD FOREIGN KEY (iddom)  REFERENCES dns.domain  (iddom),
+    ADD FOREIGN KEY (mx)     REFERENCES dns.rr      (idrr),
+    ADD PRIMARY KEY (iddom, mx) ;
+
+DROP TABLE dns.dhcp ;
+
+DROP TABLE dns.role_web ;
+
+-- topo schema
+
+
+-- pgauth schema
+
+ALTER TABLE pgauth.user RENAME COLUMN nom		TO lastname ;
+ALTER TABLE pgauth.user RENAME COLUMN prenom		TO firstname ;
+ALTER TABLE pgauth.user RENAME COLUMN mel		TO mail ;
+ALTER TABLE pgauth.user RENAME COLUMN tel		TO phone ;
+ALTER TABLE pgauth.user RENAME COLUMN adr		TO addr ;
+ALTER TABLE pgauth.user RENAME COLUMN phnom		TO phlast ;
+ALTER TABLE pgauth.user RENAME COLUMN phprenom		TO phfirst ;
 
 ------------------------------------------------------------------------------
 -- Create new functions/triggers for the new version

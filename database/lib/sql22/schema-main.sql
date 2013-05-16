@@ -99,7 +99,7 @@ CREATE TABLE dns.network (
     idnet	INT			-- network id
 		    DEFAULT NEXTVAL ('dns.seq_network'),
     name	TEXT,			-- name (ex: "Servers")
-    location TEXT,			-- location if any
+    location	TEXT,			-- location if any
     addr4	CIDR,			-- IPv4 address range
     addr6	CIDR,			-- IPv6 address range
     idorg	INT,			-- organization this network belongs to
