@@ -68,7 +68,7 @@ CREATE OR REPLACE FUNCTION dns.check_dhcprange_grp (INTEGER, INET, INET)
 --   - grp: group id
 -- Output:
 --    - table with columns:
---		adr   INET
+--		addr  INET
 --		avail INTEGER (see below)
 --		fqdn  TEXT
 --
@@ -113,7 +113,7 @@ CREATE OR REPLACE FUNCTION dns.mark_cidr (net CIDR, lim INTEGER, grp INTEGER)
 	END ;
 
 	CREATE TEMPORARY TABLE allip (
-	    adr INET,
+	    addr INET,
 	    avail INTEGER,
 		-- 0 : unavailable (broadcast addr, no right on addr, etc.)
 		-- 1 : not declared and not in a dhcp range
@@ -133,7 +133,7 @@ CREATE OR REPLACE FUNCTION dns.mark_cidr (net CIDR, lim INTEGER, grp INTEGER)
 	    SET fqdn = rr.nom || '.' || domain.name,
 		avail = 2
 	    FROM dns.rr_ip, dns.rr, dns.domain
-	    WHERE allip.adr = rr_ip.adr
+	    WHERE allip.addr = rr_ip.addr
 		AND rr_ip.idrr = rr.idrr
 		AND rr.iddom = domain.iddom
 		;
@@ -145,12 +145,12 @@ CREATE OR REPLACE FUNCTION dns.mark_cidr (net CIDR, lim INTEGER, grp INTEGER)
 			END
 	    FROM dns.dhcprange
 	    WHERE (avail = 1 OR avail = 2)
-		AND adr >= dhcprange.min
-		AND adr <= dhcprange.max
+		AND addr >= dhcprange.min
+		AND addr <= dhcprange.max
 	    ;
 
 	UPDATE allip SET avail = 0
-	    WHERE adr = min OR adr = max OR NOT dns.check_ip_grp (adr, grp) ;
+	    WHERE addr = min OR addr = max OR NOT dns.check_ip_grp (addr, grp) ;
 
 	RETURN ;
 
@@ -188,7 +188,7 @@ CREATE OR REPLACE FUNCTION dns.ipranges (net CIDR, lim INTEGER, grp INTEGER)
     BEGIN
 	PERFORM dns.mark_cidr (net, lim, grp) ;
 	inarange := FALSE ;
-	FOR r IN (SELECT adr, avail FROM allip ORDER BY adr)
+	FOR r IN (SELECT addr, avail FROM allip ORDER BY addr)
 	LOOP
 	    IF inarange THEN
 		-- (q.a, q.n) is already a valid range
@@ -202,7 +202,7 @@ CREATE OR REPLACE FUNCTION dns.ipranges (net CIDR, lim INTEGER, grp INTEGER)
 		-- not inside a range
 		IF r.avail = 1 THEN
 		    -- start a new range (q.a, q.n)
-		    q.a := r.adr ;
+		    q.a := r.addr ;
 		    q.n := 1 ;
 		    inarange := TRUE ;
 		END IF ;
@@ -337,8 +337,8 @@ CREATE OR REPLACE FUNCTION dns.mod_ip ()
     BEGIN
 	IF TG_OP = 'INSERT'
 	THEN
-	    PERFORM sum (dns.gen_rev4 (NEW.adr, NEW.idrr)) ;
-	    PERFORM sum (dns.gen_rev6 (NEW.adr, NEW.idrr)) ;
+	    PERFORM sum (dns.gen_rev4 (NEW.addr, NEW.idrr)) ;
+	    PERFORM sum (dns.gen_rev6 (NEW.addr, NEW.idrr)) ;
 	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr)) ;
 	    PERFORM sum (dns.gen_dhcp (NEW.idrr)) ;
 
@@ -346,10 +346,10 @@ CREATE OR REPLACE FUNCTION dns.mod_ip ()
 
 	IF TG_OP = 'UPDATE'
 	THEN
-	    PERFORM sum (dns.gen_rev4 (NEW.adr, NEW.idrr)) ;
-	    PERFORM sum (dns.gen_rev4 (OLD.adr, OLD.idrr)) ;
-	    PERFORM sum (dns.gen_rev6 (NEW.adr, NEW.idrr)) ;
-	    PERFORM sum (dns.gen_rev6 (OLD.adr, OLD.idrr)) ;
+	    PERFORM sum (dns.gen_rev4 (NEW.addr, NEW.idrr)) ;
+	    PERFORM sum (dns.gen_rev4 (OLD.addr, OLD.idrr)) ;
+	    PERFORM sum (dns.gen_rev6 (NEW.addr, NEW.idrr)) ;
+	    PERFORM sum (dns.gen_rev6 (OLD.addr, OLD.idrr)) ;
 	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr)) ;
 	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr)) ;
 	    PERFORM sum (dns.gen_dhcp (NEW.idrr)) ;
@@ -358,8 +358,8 @@ CREATE OR REPLACE FUNCTION dns.mod_ip ()
 
 	IF TG_OP = 'DELETE'
 	THEN
-	    PERFORM sum (dns.gen_rev4 (OLD.adr, OLD.idrr)) ;
-	    PERFORM sum (dns.gen_rev6 (OLD.adr, OLD.idrr)) ;
+	    PERFORM sum (dns.gen_rev4 (OLD.addr, OLD.idrr)) ;
+	    PERFORM sum (dns.gen_rev6 (OLD.addr, OLD.idrr)) ;
 	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr)) ;
 	    PERFORM sum (dns.gen_dhcp (OLD.idrr)) ;
 	END IF ;
@@ -421,9 +421,9 @@ CREATE OR REPLACE FUNCTION dns.mod_rr ()
 		    ;
 	    PERFORM sum (dns.gen_norm_iddom (OLD.iddom, OLD.idview))
 		    ;
-	    PERFORM sum (dns.gen_rev4 (rr_ip.adr, NEW.idrr))
+	    PERFORM sum (dns.gen_rev4 (rr_ip.addr, NEW.idrr))
 		    FROM dns.rr_ip WHERE rr_ip.idrr = NEW.idrr ;
-	    PERFORM sum (dns.gen_rev6 (rr_ip.adr, NEW.idrr))
+	    PERFORM sum (dns.gen_rev6 (rr_ip.addr, NEW.idrr))
 		    FROM dns.rr_ip WHERE rr_ip.idrr = NEW.idrr ;
 	    PERFORM sum (dns.gen_dhcp (NEW.idrr))
 		    ;

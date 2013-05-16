@@ -3061,14 +3061,14 @@ proc display-group {dbfd idgrp} {
 
     set lines {}
     lappend lines [list Title [mc "Domain"] [mc "Mail role management"]]
-    set sql "SELECT domain.name AS name, p_dom.rolemail
+    set sql "SELECT domain.name AS name, p_dom.mailrole
 			FROM dns.p_dom, dns.domain
 			WHERE p_dom.iddom = domain.iddom
 				AND p_dom.idgrp = $idgrp
 			ORDER BY p_dom.sort, domain.name"
     pg_select $dbfd $sql tab {
 	set rm ""
-	if {$tab(rolemail)} then {
+	if {$tab(mailrole)} then {
 	    set rm [mc "Yes"]
 	} else {
 	    set rm [mc "No"]
@@ -3543,7 +3543,7 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
     set sql "SELECT i.idrr
 			FROM dns.rr_ip i, dns.rr r
     			WHERE i.idrr = r.idrr
-			    AND i.adr = '$addr'
+			    AND i.addr = '$addr'
 			    AND r.idview = $idview"
     pg_select $dbfd $sql tab {
 	set found 1
@@ -3575,8 +3575,7 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #	_trr(domain) : domain name
 #	_trr(mac) : MAC address
 #	_trr(iddhcpprof) : DHCP profile id, or 0 if none
-#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(dhcpprof) : DHCP profile name, or "Aucun profil DHCP"
+#	_trr(dhcpprof) : DHCP profile name, or "No profile"
 #	_trr(idhinfo) : machine info id
 #	_trr(hinfo) : machine info text
 #	_trr(droitsmtp) : 1 if host has the right to emit with non auth SMTP
@@ -3586,22 +3585,19 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #	_trr(respmel) : mail of the responsible person
 #	_trr(idcor) : id of user who has done the last modification
 #	_trr(date) : date of last modification
-#	_trr(ip) : list of all IP adresses {{idview addr} ...}
+#	_trr(ip) : list of all IP addresses {{idview addr} ...}
 #	_trr(mx) : MX list {{idview prio idrr} {idview prio idrr} ...}
 #	_trr(mxtarg) : list of MX which target this host
 #	_trr(cname) : list of pointed RR, if name is an alias {{idview idrr}...}
 #	_trr(aliases) : list of all RR pointing to this object {{idview idrr}..}
-#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(rolemail) : id of herbegeur {{idview idheberg idviewheb} ...}
-#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(adrmail) : idrr of mail addresses hosted on this host
-#		{{idview idrradr idviewadr} ...}
-#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+#	_trr(mailrole) : id of mbox host {{idview idmboxhost idviewmbox} ...}
+#	_trr(mailaddr) : idrr of mail addresses hosted on this host
+#		{{idview idmailaddr idviewmailaddr} ...}
 #
 # History
 #   2002/04/19 : pda/jean : design
 #   2002/06/02 : pda/jean : hinfo becomes an index in a table
-#   2004/02/06 : pda/jean : add rolemail, adrmail and roleweb
+#   2004/02/06 : pda/jean : add mailrole, mailaddr and roleweb
 #   2004/08/05 : pda/jean : simplification and add mac
 #   2005/04/08 : pda/jean : add dhcpprofil
 #   2008/07/24 : pda/jean : add droitsmtp
@@ -3654,9 +3650,9 @@ proc read-rr-by-id {dbfd idrr _trr} {
 	    set trr(domain) $tab(name)
 	}
 	set trr(ip) {}
-	set sql "SELECT adr FROM dns.rr_ip WHERE idrr = $idrr"
+	set sql "SELECT addr FROM dns.rr_ip WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(ip) [list $idview $tab(adr)]
+	    lappend trr(ip) [list $idview $tab(addr)]
 	}
 	set trr(mx) {}
 	set sql "SELECT prio, mx FROM dns.rr_mx WHERE idrr = $idrr"
@@ -3679,22 +3675,22 @@ proc read-rr-by-id {dbfd idrr _trr} {
 	    lappend trr(aliases) [list $idview $tab(idrr)]
 	}
 	# is this name a mail address?
-	set trr(rolemail) ""
-	set sql "SELECT rm.heberg, rrh.idview AS idviewheb
-			    FROM dns.role_mail rm, dns.rr rrh
-			    WHERE rm.idrr = $idrr
-				AND rm.heberg = rrh.idrr"
+	set trr(mailrole) ""
+	set sql "SELECT mr.mboxhost, rrmb.idview AS idviewmbox
+			    FROM dns.mail_role mr, dns.rr rrmb
+			    WHERE mr.mailaddr = $idrr
+				AND mr.mboxhost = rrmb.idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(rolemail) [list $idview $tab(heberg) $tab(idviewheb)]
+	    lappend trr(mailrole) [list $idview $tab(mboxhost) $tab(idviewmbox)]
 	}
 	# all mail addresses pointing to this host
-	set trr(adrmail) {}
-	set sql "SELECT rra.idrr, rra.idview AS idviewrr
-			    FROM dns.role_mail rm, dns.rr rra
-			    WHERE heberg = $idrr
-				AND rm.idrr = rra.idrr"
+	set trr(mailaddr) {}
+	set sql "SELECT rrma.idrr AS idrrma, rrma.idview AS idviewma
+			    FROM dns.mail_role mr, dns.rr rrma
+			    WHERE mboxhost = $idrr
+				AND mr.mailaddr = rrma.idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(adrmail) [list $idview $tab(idrr) $tab(idviewrr)]
+	    lappend trr(mailaddr) [list $idview $tab(idrrma) $tab(idviewma)]
 	}
     }
 
@@ -3791,30 +3787,30 @@ proc rr-mxtarg-by-view {_trr idview} {
     return $lmxt
 }
 
-proc rr-rolemail-by-view {_trr idview} {
+proc rr-mailrole-by-view {_trr idview} {
     upvar $_trr trr
 
     set lrm {}
-    if {[info exists trr(rolemail)]} then {
-	foreach rmview $trr(rolemail) {
-	    lassign $rmview id idheb idviewheb
+    if {[info exists trr(mailrole)]} then {
+	foreach rmview $trr(mailrole) {
+	    lassign $rmview id idmboxhost idviewmboxhost
 	    if {$id == $idview} then {
-		set lrm [list $idheb $idviewheb]
+		set lrm [list $idmboxhost $idviewmboxhost]
 	    }
 	}
     }
     return $lrm
 }
 
-proc rr-adrmail-by-view {_trr idview} {
+proc rr-mailaddr-by-view {_trr idview} {
     upvar $_trr trr
 
     set lam {}
-    if {[info exists trr(adrmail)]} then {
-	foreach amview $trr(adrmail) {
-	    lassign $amview id idrradr idviewadr
+    if {[info exists trr(mailaddr)]} then {
+	foreach amview $trr(mailaddr) {
+	    lassign $amview id idrraddr idviewaddr
 	    if {$id == $idview} then {
-		lappend lam [list $idrradr $idviewadr]
+		lappend lam [list $idrraddr $idviewaddr]
 	    }
 	}
     }
@@ -3905,7 +3901,7 @@ proc del-mx-by-id {dbfd idrr} {
 }
 
 #
-# Delete a rolemail
+# Delete a mailrole
 #
 # Input:
 #   - parameters:
@@ -3922,9 +3918,9 @@ proc del-mx-by-id {dbfd idrr} {
 #   2013/04/10 : pda/jean : remove views
 #
 
-proc del-rolemail-by-id {dbfd idrr} {
+proc del-mailrole-by-id {dbfd idrr} {
     set msg ""
-    set sql "DELETE FROM dns.role_mail rm WHERE rm.idrr = $idrr"
+    set sql "DELETE FROM dns.mail_role WHERE mailaddr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
     }
@@ -3943,7 +3939,7 @@ proc del-rolemail-by-id {dbfd idrr} {
 #
 # History
 #   2002/04/19 : pda/jean : design
-#   2004/02/06 : pda/jean : add rolemail and roleweb
+#   2004/02/06 : pda/jean : add mailrole and roleweb
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
 #   2013/03/28 : pda/jean : interface simplification
@@ -3960,8 +3956,8 @@ proc del-rr-and-dependancies {dbfd _trr} {
     # If this host holds mail addresses, don't delete it.
     #
 
-    set addrmail [rr-adrmail-by-view trr $idview]
-    if {[llength $addrmail] > 0} then {
+    set mailaddr [rr-mailaddr-by-view trr $idview]
+    if {[llength $mailaddr] > 0} then {
 	return [mc "This host holds mail addresses"]
     }
 
@@ -4048,7 +4044,7 @@ proc del-orphaned-rr {dbfd idrr} {
     set msg ""
     if {[read-rr-by-id $dbfd $idrr trr]} then {
 	set orphaned 1
-	foreach x {ip mx aliases cname rolemail adrmail} {
+	foreach x {ip mx aliases cname mailrole mailaddr} {
 	    if {$trr($x) ne ""} then {
 		set orphaned 0
 		break
@@ -4244,7 +4240,7 @@ proc add-host {dbfd _trr name iddom idview addr mac iddhcpprof idhinfo droitsmtp
 	}
     }
 
-    set sql "INSERT INTO dns.rr_ip (idrr, adr) VALUES ($trr(idrr), '$addr')"
+    set sql "INSERT INTO dns.rr_ip (idrr, addr) VALUES ($trr(idrr), '$addr')"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
        d dbabort [mc "add %s" $addr] $msg
     }
@@ -4428,7 +4424,7 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 	set sql "DELETE FROM dns.rr_ip i
 			USING dns.rr r
 			WHERE r.idrr = i.idrr
-			    AND i.adr = '$addr'
+			    AND i.addr = '$addr'
 			    AND r.idview = $idview"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    return $msg
@@ -4475,9 +4471,9 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 
 proc update-host-refs {dbfd oidrr nidrr} {
     set sql {}
-    lappend sql "UPDATE dns.role_mail
-			    SET heberg = $nidrr
-			    WHERE heberg = $oidrr"
+    lappend sql "UPDATE dns.mail_role
+			    SET mboxhost = $nidrr
+			    WHERE hmboxhost = $oidrr"
     lappend sql "UPDATE dns.rr_ip
 			    SET idrr = $nidrr
 			    WHERE idrr = $oidrr"
@@ -4753,9 +4749,9 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 
 	# mail addresses recognized by this host
 	set la {}
-	foreach i [rr-adrmail-by-view trr $idview] {
-	    lassign $i idadrmail idviewa
-	    if {[read-rr-by-id $dbfd $idadrmail ta]} then {
+	foreach i [rr-mailaddr-by-view trr $idview] {
+	    lassign $i idmailaddr idviewa
+	    if {[read-rr-by-id $dbfd $idmailaddr ta]} then {
 		lappend la "$ta(nom).$ta(domain)/[u viewname $idviewa]"
 	    }
 	}
@@ -5133,7 +5129,7 @@ proc check-views {views} {
 # Input:
 #   - dbfd: database handle
 #   - _tabuid: user characteristics
-#   - mode: type of object ("host", "host-or-alias", "addr" or "rolemail")
+#   - mode: type of object ("host", "host-or-alias", "addr" or "mailrole")
 #		to delete/modify
 #   - object: FQDN or IP address
 #   - idviews: list of idviews specified by user, may be empty for all views
@@ -5151,7 +5147,7 @@ proc check-views {views} {
 #	object may be a fqdn or an IP address
 #   - "host-or-alias" and "addr" modes are for host deletion
 #	object may be a fqdn or an IP address
-#   - "rolemail" mode is for mail role edition
+#   - "mailrole" mode is for mail role edition
 #	object must be a fqdn
 #
 # History
@@ -5196,7 +5192,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
     #
     # Split FQDN into name and domain
     #
-    if {$mode in {host host-or-alias rolemail}} then {
+    if {$mode in {host host-or-alias mailrole}} then {
 	set msg [check-fqdn-syntax $dbfd $object name domain]
 	if {$msg ne ""} then {
 	    return $msg
@@ -5284,9 +5280,9 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 		    }
 		}
 	    }
-	    rolemail {
+	    mailrole {
 		set found 1
-		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview trr "del-addrmail"]
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview trr "del-mailaddr"]
 
 		if {$msg ne ""} then {
 		    set err 1
@@ -5519,9 +5515,9 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
 #   2010/11/29 : pda      : i18n
 #
 
-proc check-authorized-ip {dbfd idcor adr} {
+proc check-authorized-ip {dbfd idcor addr} {
     set r 0
-    set sql "SELECT dns.check_ip_cor ('$adr', $idcor) AS ok"
+    set sql "SELECT dns.check_ip_cor ('$addr', $idcor) AS ok"
     pg_select $dbfd $sql tab {
 	set r [string equal $tab(ok) "t"]
     }
@@ -5640,8 +5636,8 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #		then check-all-IP-addresses (mail exchangers, idcor)
 #	    if name.domain is ADDRMAIL then error
 #	    if no test is false, then OK
-#	"add-addrmail"
-#	    check-domain (domain, idcor, "rolemail") and views
+#	"add-mailaddr"
+#	    check-domain (domain, idcor, "mailrole") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
 #	    if name.domain is ADDRMAIL then error
@@ -5649,8 +5645,8 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	    if name.domain has IP addresses
 #		check-all-IP-addresses (name.domain, idcor)
 #	    if no test is false, then OK
-#	"del-addrmail"
-#	    check-domain (domain, idcor, "rolemail") and views
+#	"del-mailaddr"
+#	    check-domain (domain, idcor, "mailrole") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
 #	    if name.domain is target of a MX then error
@@ -5688,7 +5684,7 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		    {alias	REJECT}
 		    {mx		REJECT}
 		    {ip		CHECK}
-		    {addrmail	CHECK}
+		    {mailaddr	CHECK}
 		}
 	existing-host	{
 		    {domain	{}}
@@ -5696,43 +5692,43 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		    {mx		REJECT}
 		    {ip		CHECK}
 		    {ip		EXISTS}
-		    {addrmail	CHECK}
+		    {mailaddr	CHECK}
 		}
 	alias	{
 		    {domain	{}}
 		    {alias	REJECT}
 		    {mx		REJECT}
 		    {ip		REJECT}
-		    {addrmail	REJECT}
+		    {mailaddr	REJECT}
 		}
 	del-name	{
 		    {domain	{}}
 		    {alias	CHECK}
 		    {mx		REJECT}
 		    {ip		CHECK}
-		    {addrmail	CHECK}
+		    {mailaddr	CHECK}
 		}
 	mx	{
 		    {domain	{}}
 		    {alias	REJECT}
 		    {mx		CHECK}
 		    {ip		CHECK}
-		    {addrmail	REJECT}
+		    {mailaddr	REJECT}
 		}
-	add-addrmail	{
-		    {domain	rolemail}
+	add-mailaddr	{
+		    {domain	mailrole}
 		    {alias	REJECT}
 		    {mx		REJECT}
-		    {addrmail	REJECT}
+		    {mailaddr	REJECT}
 		    {mailhost	REJECT}
 		    {ip		CHECK}
 		}
-	del-addrmail	{
-		    {domain	rolemail}
+	del-mailaddr	{
+		    {domain	mailrole}
 		    {alias	REJECT}
 		    {mx		REJECT}
-		    {addrmail	CHECK}
-		    {addrmail	EXISTS}
+		    {mailaddr	CHECK}
+		    {mailaddr	EXISTS}
 		    {ip		CHECK}
 		}
     }
@@ -5816,11 +5812,11 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		    }
 		}
 	    }
-	    addrmail {
+	    mailaddr {
 		# get mailbox host for this address
-		set rm [rr-rolemail-by-view trr $idview]
+		set rm [rr-mailrole-by-view trr $idview]
 		if {$rm ne ""} then {
-		    lassign $rm idrr idviewheb
+		    lassign $rm idrr idviewmbx
 		    # get mbox host
 		    if {! [read-rr-by-id $dbfd $idrr trrh]} then {
 			return [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
@@ -5830,7 +5826,7 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 			    # This name is already a mail address
 			    # (it already has a mailbox host)
 			    set fqdnm "$trrh(nom).$trrh(domain)"
-			    return [mc {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn $viewname $fqdnm [u viewname $idviewheb]]
+			    return [mc {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn $viewname $fqdnm [u viewname $idviewmbx]]
 			}
 			CHECK {
 
@@ -5874,16 +5870,16 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		}
 	    }
 	    mailhost {
-		set ladr [rr-adrmail-by-view trr $idview]
+		set laddr [rr-mailaddr-by-view trr $idview]
 		switch $parm {
 		    REJECT {
 			# remove the name (in all views) from the list
 			# of mail domains hosted on this host
 			while {[set pos [lsearch -exact -index 0 \
-					    $ladr $trr(idrr)]] != -1} {
-			    set ladr [lreplace $ladr $pos $pos]
+					    $laddr $trr(idrr)]] != -1} {
+			    set laddr [lreplace $laddr $pos $pos]
 			}
-			if {[llength $ladr] > 0} then {
+			if {[llength $laddr] > 0} then {
 			    return [mc "'%s' is a mail host for mail domains" $fqdn]
 			}
 		    }
@@ -6085,7 +6081,7 @@ proc check-domain-relay {dbfd idcor _iddom domain idview} {
     # Check the domain
     #
 
-    set msg [check-domain $dbfd $idcor iddom domain "rolemail"]
+    set msg [check-domain $dbfd $idcor iddom domain "mailrole"]
     if {$msg ne ""} then {
 	return $msg
     }

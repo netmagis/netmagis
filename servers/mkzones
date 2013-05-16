@@ -270,12 +270,12 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     # Get all IP (v4 or v6) addresses
     #
 
-    set sql "SELECT rr.nom, rr.ttl, rr_ip.adr, family(rr_ip.adr) AS family
+    set sql "SELECT rr.nom, rr.ttl, rr_ip.addr, family(rr_ip.addr) AS family
 			FROM dns.rr, dns.rr_ip
 			WHERE rr.iddom = $iddom
 			    AND rr.idview = $idview
 			    AND rr.idrr = rr_ip.idrr
-			ORDER BY upper(rr.nom), rr_ip.adr"
+			ORDER BY upper(rr.nom), rr_ip.addr"
     pg_select $dbfd $sql tab {
 	set nom    $tab(nom)
 	set ttl    $tab(ttl)
@@ -288,7 +288,7 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	append txt "$nom	$ttl	IN	$a	$tab(adr)"
+	append txt "$nom	$ttl	IN	$a	$tab(addr)"
 	append txt "\n"
 
 	if {$rrsup ne "" && ! [info exists affiche($nom)]} then {
@@ -370,8 +370,8 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
 
     if {[llength $relays] > 0} then {
 	set sql "SELECT rr.nom, rr.ttl
-			FROM dns.role_mail, dns.rr
-			WHERE role_mail.idrr = rr.idrr
+			FROM dns.mail_role, dns.rr
+			WHERE mail_role.mailaddr = rr.idrr
 			    AND rr.idview = $idview
 			    AND rr.iddom = $iddom
 			ORDER BY upper(rr.nom) ASC
@@ -436,12 +436,12 @@ proc gen-ipv4 {dbfd zone selection idview rrsup _txt} {
 	set first 1
     }
 
-    set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom
+    set sql "SELECT rr_ip.addr, rr.nom, rr.ttl, rr.iddom
 			FROM dns.rr_ip, dns.rr
-			WHERE rr_ip.adr <<= '$selection'
+			WHERE rr_ip.addr <<= '$selection'
 			    AND rr.idview = $idview
 			    AND rr_ip.idrr = rr.idrr
-			ORDER BY rr_ip.adr"
+			ORDER BY rr_ip.addr"
     pg_select $dbfd $sql tab {
 	#
 	# Get PTR
@@ -449,9 +449,9 @@ proc gen-ipv4 {dbfd zone selection idview rrsup _txt} {
 
 	set fqdn "$tab(nom).$tabiddom($tab(iddom))."
 
-	set adr $tab(adr)
+	set addr $tab(addr)
 	set lname {}
-	foreach byte [lrange [split $adr "."] $first 3] {
+	foreach byte [lrange [split $addr "."] $first 3] {
 	    set lname [linsert $lname 0 $byte]
 	}
 	set name [join $lname "."]
@@ -509,26 +509,26 @@ proc gen-ipv6 {dbfd zone selection idview rrsup _txt} {
     
     set nbq [expr 32 - ($prefixlen / 4)]
 
-    set sql "SELECT rr_ip.adr, rr.nom, rr.ttl, rr.iddom
+    set sql "SELECT rr_ip.addr, rr.nom, rr.ttl, rr.iddom
 			FROM dns.rr_ip, dns.rr
-			WHERE rr_ip.adr <<= '$selection'
+			WHERE rr_ip.addr <<= '$selection'
 			    AND rr.idview = $idview
 			    AND rr_ip.idrr = rr.idrr
-			ORDER BY rr_ip.adr"
+			ORDER BY rr_ip.addr"
     pg_select $dbfd $sql tab {
 	#
 	# Remove particular case where address contains "::" at the beginning
 	# or at the end
 	#
 
-	regsub {^::} $tab(adr) {0::} adr
-	regsub {::$} $adr {::0} adr
+	regsub {^::} $tab(addr) {0::} addr
+	regsub {::$} $addr {::0} addr
 
 	#
 	# IPv4 compatible IPv6 addresses (last part = a.b.c.d)
 	#
 
-	set l [split $adr ":"]
+	set l [split $addr ":"]
 
 	set ip4 [split [lindex $l end] "."]
 	if {[llength $ip4] == 4} then {

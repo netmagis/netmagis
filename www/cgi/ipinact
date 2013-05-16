@@ -85,7 +85,7 @@ proc get-host-name {dbfd addr} {
 			FROM dns.rr, dns.rr_ip, dns.domain
 			WHERE rr.idrr = rr_ip.idrr
 			    AND rr.iddom = domain.iddom
-			    AND rr_ip.adr = '$addr'
+			    AND rr_ip.addr = '$addr'
 			"
     set name ""
     pg_select $dbfd $sql tab {
@@ -175,7 +175,7 @@ d cgi-register {} {
 		     WHERE ip <<= '$cidr' AND
 			   most_recent_date < now() - interval '$occurrence month'
 		     ORDER BY ip"
-	set nbadr 0
+	set naddr 0
         pg_select $dbfdmac $sql tab {
 	    set ip	    $tab(ip)
             set derndate    $tab(derndate)
@@ -186,27 +186,27 @@ d cgi-register {} {
 	    if {$nom ne ""} then {
 		d urlset "" $conf(nextmac) [list [list "recherche" $ip]]
 		set url [d urlget ""]
-		set adr [::webapp::helem "a" $ip "href" $url]
+		set addr [::webapp::helem "a" $ip "href" $url]
 
 		set t [mc "Delete"]
 		d urlset "" $conf(nextdel) [list \
 						    [list "action" "del-ip"] \
 						    [list "confirm" "no"] \
-						    [list "adr" $ip] \
+						    [list "addr" $ip] \
 						]
 		d urlsetnext "" $nextprog $nextargs
 		set url [d urlget ""]
 		set del [::webapp::helem "a" "\[$t\]" "href" $url]
 
-		lappend lines [list Normal $adr "$nom $del" $derndate]
-		incr nbadr
+		lappend lines [list Normal $addr "$nom $del" $derndate]
+		incr naddr
 	    }
 	}
 
 	set tableau "<BR>" 
 	append tableau [mc {Inactive hosts in network %1$s since more than %2$s months: } $cidr $occurrence]
-	if {$nbadr >0 } then {
-	    append tableau [mc "%s inactive hosts" $nbadr]
+	if {$naddr >0 } then {
+	    append tableau [mc "%s inactive hosts" $naddr]
 	    append tableau "\n"
 	    append tableau [::arrgen::output "html" $conf(tableau) $lines]
  	} else {

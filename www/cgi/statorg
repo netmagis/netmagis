@@ -110,9 +110,9 @@ d cgi-register {} {} {
     #
 
     set sql "SELECT o.name,
-		    COUNT (rr_ip.adr) AS declared
+		    COUNT (rr_ip.addr) AS declared
 		FROM dns.organization o, dns.rr_ip
-		WHERE rr_ip.adr << ANY
+		WHERE rr_ip.addr << ANY
 		    (SELECT addr4 FROM dns.network WHERE network.idorg = o.idorg
 			UNION
 		     SELECT addr6 FROM dns.network WHERE network.idorg = o.idorg)

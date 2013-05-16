@@ -110,6 +110,11 @@ ALTER TABLE dns.domaine
     DROP CONSTRAINT IF EXISTS domaine_nom_key			CASCADE,
     DROP CONSTRAINT IF EXISTS domaine_pkey			CASCADE ;
 
+ALTER TABLE dns.role_mail
+    DROP CONSTRAINT IF EXISTS role_mail_heberg_fkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS role_mail_idrr_fkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS role_mail_pkey			CASCADE ;
+
 ALTER TABLE dns.rr
     DROP CONSTRAINT IF EXISTS rr_nom_key,
     DROP CONSTRAINT IF EXISTS rr_nom_iddom_key,
@@ -226,6 +231,7 @@ ALTER TABLE dns.p_network
 
 ALTER TABLE dns.dr_dom RENAME TO p_dom ;
 ALTER TABLE dns.p_dom RENAME COLUMN tri			TO sort ;
+ALTER TABLE dns.p_dom RENAME COLUMN rolemail		TO mailrole ;
 ALTER TABLE dns.p_dom DROP COLUMN roleweb ;
 ALTER TABLE dns.p_dom
     ADD FOREIGN KEY (idgrp) REFERENCES global.groupe(idgrp),
@@ -280,14 +286,19 @@ ALTER TABLE dns.rr RENAME COLUMN iddhcpprofil		TO iddhcpprof ;
 ALTER TABLE dns.rr
     ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
     ADD UNIQUE (nom, iddom, idview),
-    ADD UNIQUE (mac, idview)
-    ;
+    ADD UNIQUE (mac, idview) ;
 
--- rr_ip
+ALTER TABLE dns.rr_ip RENAME COLUMN adr			TO addr ;
 
 ALTER TABLE dns.rr_mx RENAME COLUMN priorite		TO prio ;
 
--- mail_role
+ALTER TABLE dns.role_mail RENAME TO mail_role ;
+ALTER TABLE dns.mail_role RENAME COLUMN idrr		TO mailaddr ;
+ALTER TABLE dns.mail_role RENAME COLUMN heberg		TO mboxhost ;
+ALTER TABLE dns.mail_role
+    ADD FOREIGN KEY (mailaddr) REFERENCES dns.rr (idrr),
+    ADD FOREIGN KEY (mboxhost) REFERENCES dns.rr (idrr),
+    ADD PRIMARY KEY (mailaddr) ;
 
 ALTER TABLE dns.relais_dom RENAME TO relay_dom ;
 ALTER TABLE dns.relay_dom RENAME COLUMN priorite	TO prio ;

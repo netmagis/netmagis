@@ -374,8 +374,8 @@ proc check-dhcprange {dbfd _ftab idcor idgrp cidr} {
 			    FROM dns.rr, dns.rr_ip
 			    WHERE rr.mac IS NOT NULL
 				AND rr.idrr = rr_ip.idrr
-				AND rr_ip.adr >= '$min'
-				AND rr_ip.adr <= '$max'"
+				AND rr_ip.addr >= '$min'
+				AND rr_ip.addr <= '$max'"
 	    pg_select $dbfd $sql tab {
 		set nb $tab(nb)
 	    }

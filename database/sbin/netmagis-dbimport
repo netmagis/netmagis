@@ -509,9 +509,9 @@ proc read-network {file _tab} {
     read-key-value-file $file tab $keys
 }
 
-proc ip-is-in-network {adr netadr} {
-    set mask [::ip::mask $netadr]
-    return [::ip::equal $netadr "$adr/$mask"]
+proc ip-is-in-network {addr netaddr} {
+    set mask [::ip::mask $netaddr]
+    return [::ip::equal $netaddr "$addr/$mask"]
 }
 
 proc import-network {verbose argv dbfd} {
@@ -805,12 +805,12 @@ proc import-network {verbose argv dbfd} {
 	    if {$ad(4) ne ""} then {
 		lappend sql "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
 				VALUES ($idgrp, '$ad(4)', 1)"
-		set adr0 [::ip::prefix $ad(4)]
+		set addr0 [::ip::prefix $ad(4)]
 		lappend sql "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
-				VALUES ($idgrp, '$adr0', 0)"
-		set adrb [::ip::broadcastAddress $ad(4)]
+				VALUES ($idgrp, '$addr0', 0)"
+		set addrb [::ip::broadcastAddress $ad(4)]
 		lappend sql "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
-				VALUES ($idgrp, '$adrb', 0)"
+				VALUES ($idgrp, '$addrb', 0)"
 		if {! $admin && $gw(4) ne ""} then {
 		    lappend sql "INSERT INTO dns.p_ip (idgrp, addr, allow_deny)
 				    VALUES ($idgrp, '$gw(4)/32', 0)"
@@ -1371,7 +1371,7 @@ proc zone-analyze-rr {line oldname} {
 proc get-existing-rr {dbfd idview iddom} {
     global existingrr
 
-    set sql "SELECT r.nom AS name, i.adr AS addr
+    set sql "SELECT r.nom AS name, i.addr
 			FROM dns.rr r, dns.rr_ip i
 			WHERE r.idrr = i.idrr
 			    AND r.idview = $idview
@@ -1529,7 +1529,7 @@ proc import-zone {verbose argv dbfd} {
 		if {$verbose >= 2} then {
 		    puts stderr "Adding IP $name / $a"
 		}
-		set sql "INSERT INTO dns.rr_ip (idrr, adr)
+		set sql "INSERT INTO dns.rr_ip (idrr, addr)
 					VALUES ($trr(idrr), '$a')"
 		if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		    warning "Unable to add $name/$a ($msg)"
@@ -1747,7 +1747,7 @@ proc import-mailrelay {verbose argv dbfd} {
 	    # access to this domain
 	    #
 
-	    set sql "UPDATE dns.p_dom SET rolemail = 1 WHERE iddom = $iddom"
+	    set sql "UPDATE dns.p_dom SET mailrole = 1 WHERE iddom = $iddom"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		return "$msg\nAbort"
 	    }
@@ -1883,7 +1883,7 @@ proc import-mailrole {verbose argv dbfd} {
 
     set err 0
     foreach mr $lmr {
-	lassign $mr n1 d1 n2 d2 viewheb
+	lassign $mr n1 d1 n2 d2 viewmbox
 
 	if {! [info exists tabdom($d1)]} then {
 	    set err 1
@@ -1899,22 +1899,22 @@ proc import-mailrole {verbose argv dbfd} {
 	    }
 	}
 
-	if {$viewheb eq ""} then {
+	if {$viewmbox eq ""} then {
 	    # default view is current view
-	    set viewheb $viewname
+	    set viewmbox $viewname
 	}
 
-	if {! [info exists tabview($viewheb)]} then {
+	if {! [info exists tabview($viewmbox)]} then {
 	    set err 1
-	    warning "Unknown view '$viewheb' for '$n1.$d1->$n2.$d2/$viewheb'"
+	    warning "Unknown view '$viewmbox' for '$n1.$d1->$n2.$d2/$viewmbox'"
 	} elseif {! [info exists tabdom($d2)]} then {
 	    set err 1
 	    warning "Unknown domain '$d2' for '$n2.$d2'"
 	} else {
-	    set idviewheb $tabview($viewheb)
+	    set idviewmbox $tabview($viewmbox)
 	    set iddom2 $tabdom($d2)
-	    if {[read-rr-by-name $dbfd $n2 $iddom2 $idviewheb trr2]} then {
-		if {[llength [rr-ip-by-view trr2 $idviewheb]] == 0} then {
+	    if {[read-rr-by-name $dbfd $n2 $iddom2 $idviewmbox trr2]} then {
+		if {[llength [rr-ip-by-view trr2 $idviewmbox]] == 0} then {
 		    set err 1
 		    warning "'$n2.$d2' is not a host"
 		}
@@ -1925,7 +1925,7 @@ proc import-mailrole {verbose argv dbfd} {
 	}
 
 	if {! $err} then {
-	    set sql "INSERT INTO dns.role_mail (idrr, heberg)
+	    set sql "INSERT INTO dns.mail_role (mailaddr, mboxhost)
 			VALUES ($trr1(idrr), $trr2(idrr))"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		return "$msg\nAbort"

@@ -65,7 +65,7 @@
 			\lignetableau {
 			    \casetableau {} {Adresse de messagerie}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				<INPUT TYPE="TEXT" NAME="name" SIZE="30">
 				.
 				%DOMAIN%
 				<span style="display: %DISPVIEW%">
@@ -76,7 +76,7 @@
 			\lignetableau {
 			    \casetableau {} {Hébergeur}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nomh" SIZE="30">
+				<INPUT TYPE="TEXT" NAME="namem" SIZE="30">
 				.
 				%DOMAINH%
 				<span style="display: %DISPVIEW%">
@@ -121,7 +121,7 @@
 			\lignetableau {
 			    \casetableau {} {Adresse de messagerie}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				<INPUT TYPE="TEXT" NAME="name" SIZE="30">
 				.
 				%DOMAIN%
 			    }

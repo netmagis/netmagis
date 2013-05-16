@@ -35,7 +35,7 @@
 
     %MACHINE%
 
-    \gras {Voulez-vous vraiment ajouter la nouvelle adresse '%ADR%'
+    \gras {Voulez-vous vraiment ajouter la nouvelle adresse '%ADDR%'
     à la machine '%NOM%.%DOMAIN%'~?}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">

@@ -285,19 +285,19 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	#  cname(172.16.201.129) {aton.example.com diablo.example.com...}
 	#
 
-	set sql "SELECT alias.nom || '.' || domain.name AS name, rr_ip.adr
+	set sql "SELECT alias.nom || '.' || domain.name AS name, rr_ip.addr
 		    FROM dns.rr alias, dns.rr canon, dns.rr_ip, dns.rr_cname, dns.domain
 		    WHERE canon.idrr = rr_cname.cname
 			AND rr_cname.idrr = alias.idrr
 			AND rr_ip.idrr = canon.idrr
-			AND rr_ip.adr <<= ANY ($sqlallow)
-			AND NOT rr_ip.adr <<= ANY ($sqldeny)
-			AND rr_ip.adr <<= '$cidrplage'
+			AND rr_ip.addr <<= ANY ($sqlallow)
+			AND NOT rr_ip.addr <<= ANY ($sqldeny)
+			AND rr_ip.addr <<= '$cidrplage'
 			AND domain.iddom = alias.iddom
 			AND canon.idview = $idview
 		    ORDER BY alias.nom"
 	pg_select $dbfd $sql tab {
-	    lappend cname($tab(adr)) $tab(name)
+	    lappend cname($tab(addr)) $tab(name)
 	}
 
 	#
@@ -317,7 +317,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 
 	set jourfmt [dnsconfig get "jourfmt"]
 	set sql "SELECT DISTINCT rr.nom || '.' || domain.name AS name,
-			rr_ip.adr,
+			rr_ip.addr,
 			rr.commentaire, rr.respnom, rr.respmel, rr.date,
 			rr.droitsmtp, rr.mac,
 			rr.iddhcpprof AS dhcp1,
@@ -325,20 +325,20 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 			hinfo.text, corresp.login
 		    FROM dns.rr, dns.domain, dns.hinfo, global.corresp,
 			dns.rr_ip LEFT OUTER JOIN dns.dhcprange
-			    ON (rr_ip.adr >= dhcprange.min
-				AND rr_ip.adr <= dhcprange.max)
+			    ON (rr_ip.addr >= dhcprange.min
+				AND rr_ip.addr <= dhcprange.max)
 		    WHERE rr.idrr = rr_ip.idrr
-			AND rr_ip.adr <<= ANY ($sqlallow)
-			AND NOT rr_ip.adr <<= ANY ($sqldeny)
-			AND rr_ip.adr <<= '$cidrplage'
+			AND rr_ip.addr <<= ANY ($sqlallow)
+			AND NOT rr_ip.addr <<= ANY ($sqldeny)
+			AND rr_ip.addr <<= '$cidrplage'
 			AND domain.iddom = rr.iddom
 			AND rr.idhinfo = hinfo.idhinfo
 			AND rr.idcor = corresp.idcor
 			AND rr.idview = $idview
-		    ORDER BY rr_ip.adr"
+		    ORDER BY rr_ip.addr"
 	pg_select $dbfd $sql tab {
 	    set primary		$tab(name)
-	    set adr		$tab(adr)
+	    set addr		$tab(addr)
 	    set mac		$tab(mac)
 	    set dhcp1		$tab(dhcp1)
 	    set dhcp2		$tab(dhcp2)
@@ -350,8 +350,8 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	    set date		$tab(date)
 	    set login		$tab(login)
 
-	    if {[info exists cname($adr)]} then {
-		set secondaries $cname($adr)
+	    if {[info exists cname($addr)]} then {
+		set secondaries $cname($addr)
 	    } else {
 		set secondaries ""
 	    }
@@ -380,12 +380,12 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 
 	    switch -- $format {
 		html {
-		    d urlset "" $conf(nextedit) [list [list "adr" $adr]]
+		    d urlset "" $conf(nextedit) [list [list "addr" $addr]]
 		    d urlsetnext "" $nextprog $nextargs
 		    set url [d urlget ""]
 		    set nom "$primary "
 		    append nom [::webapp::helem "i" $secondaries]
-		    set adr [::webapp::helem "a" $adr "href" $url]
+		    set addr [::webapp::helem "a" $addr "href" $url]
 		}
 		latex {
 		    set nom "$primary \\textit \{$secondaries\}"
@@ -400,7 +400,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 		}
 	    }
 	    lappend lines [list Normal \
-				$adr $nom $mac $dhcp \
+				$addr $nom $mac $dhcp \
 				$hinfo $commentaire $responsable \
 				$droitsmtp \
 				$login $date]
@@ -511,14 +511,14 @@ proc output-map {dbfd lcidr _tabuid format} {
 	    d error [mc {Error in CIDR '%1$s': %2$s} $cidr $msg]
 	}
 
-	set sql "SELECT * FROM allip ORDER BY adr"
+	set sql "SELECT * FROM allip ORDER BY addr"
 
 	#
-	# Explore all adresses (not available, free, or busy)
+	# Explore all addresses (not available, free, or busy)
 	#
 
 	pg_select $dbfd $sql tab {
-	    set adr   $tab(adr)
+	    set addr  $tab(addr)
 	    set avail $tab(avail)
 	    set fqdn  $tab(fqdn)
 
@@ -527,10 +527,10 @@ proc output-map {dbfd lcidr _tabuid format} {
 
 	    # extract last byte of address
 	    set last ""
-	    regexp {[^.]*$} $adr last
+	    regexp {[^.]*$} $addr last
 
 	    if {$n % $maxrow == 0} then {
-		set line [::webapp::helem td $adr]
+		set line [::webapp::helem td $addr]
 	    }
 
 	    append line "\n"
@@ -541,7 +541,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 		}
 		1	{
 		    # not declared and not in a dhcp range
-		    d urlset "" $conf(nextadd) [list [list "adr" $adr]]
+		    d urlset "" $conf(nextadd) [list [list "addr" $addr]]
 		    d urlsetnext "" $nextprog $nextargs
 		    set url [d urlget ""]
 		    set h [::webapp::helem "a" $last "href" $url]
@@ -550,7 +550,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 		}
 		2	{
 		    # declared and not in a dhcprange
-		    d urlset "" $conf(nextedit) [list [list "adr" $adr]]
+		    d urlset "" $conf(nextedit) [list [list "addr" $addr]]
 		    d urlsetnext "" $nextprog $nextargs
 		    set url [d urlget ""]
 		    set h [::webapp::helem "a" $last "href" $url "title" $fqdn]
@@ -558,7 +558,7 @@ proc output-map {dbfd lcidr _tabuid format} {
 		}
 		3	{
 		    # not declared and in a dhcp range
-		    d urlset "" $conf(nextadd) [list [list "adr" $adr]]
+		    d urlset "" $conf(nextadd) [list [list "addr" $addr]]
 		    d urlsetnext "" $nextprog $nextargs
 		    set url [d urlget ""]
 		    set h [::webapp::helem "a" $last "href" $url]
@@ -566,14 +566,14 @@ proc output-map {dbfd lcidr _tabuid format} {
 		}
 		4	{
 		    # declared and in a dhcprange
-		    d urlset "" $conf(nextedit) [list [list "adr" $adr]]
+		    d urlset "" $conf(nextedit) [list [list "addr" $addr]]
 		    d urlsetnext "" $nextprog $nextargs
 		    set url [d urlget ""]
 		    set h [::webapp::helem "a" $last "href" $url "title" $fqdn]
 		    append line [::webapp::helem "td" $h "class" "name-dhcp"]
 		}
 		default {
-		    d error [mc {Internal error for '%1$s': avail=%2$s} $adr $avail]
+		    d error [mc {Internal error for '%1$s': avail=%2$s} $addr $avail]
 		}
 	    }
 

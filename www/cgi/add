@@ -8,7 +8,7 @@
 # Parameters (form or url):
 #   - display edit page
 #	- action : (none)
-#	- adr : pre-filled IP address if any
+#	- addr : pre-filled IP address if any
 #	- naddr : number of IP addresses to add, if any
 #   - add host
 #	- action : "add-host"
@@ -16,7 +16,7 @@
 #	- nom : name of host to add
 #	- domain: domain of host to add
 #	- idview: view id in which the host must be added
-#	- adr: IP address
+#	- addr: IP address
 #	- mac : MAC address
 #	- iddhcpprof : DHCP profil id, or 0
 #	- hinfo : host type (text)
@@ -29,9 +29,9 @@
 #   - free address block search
 #	- action : "add-multi"
 #	- dosearch or domap : non-empty value (see add.html)
-#	- tri : sort criterion ("nbadr" or "adr")
+#	- tri : sort criterion ("naddr" or "addr")
 #	- plage : selected network id
-#	- nbadr : block number
+#	- naddr : desired block size
 #   - add alias
 #	- action : "add-alias"
 #	- nom : name of alias to add
@@ -96,7 +96,7 @@ set conf(script-map)	"./net"
 #
 
 # maximum size (in IP address count) of block to search
-set conf(maxip)		1024
+set conf(maxip)		65536
 
 set conf(tableau-multi) {
     global {
@@ -147,7 +147,7 @@ source %LIBNETMAGIS%
 ##############################################################################
 
 d cgi-register {action {}} {
-    {adr 0 1}
+    {addr 0 1}
     {naddr 0 1}
 } {
     global conf
@@ -215,7 +215,7 @@ d cgi-register {action {}} {
     # Is an address already provided?
     #
 
-    if {$adr eq ""} then {
+    if {$addr eq ""} then {
 	# no: show rest of page
 	set display "block"
     } else {
@@ -258,7 +258,7 @@ d cgi-register {action {}} {
 				[list %MENUPLAGE% $menuplage] \
 				[list %DISPLAY% $display] \
 				[list %DUMBIDVIEW% $dumbidview] \
-				[list %ADR% $adr] \
+				[list %ADDR% $addr] \
 				[list %NADDR% $naddr] \
 			    ]
 }
@@ -284,7 +284,7 @@ d cgi-register {action add-host} {
     {nom	1 1}
     {domain	1 1}
     {idview	1 1}
-    {adr	1 1}
+    {addr	1 1}
     {mac	1 1}
     {iddhcpprof 1 1}
     {droitsmtp	0 1}
@@ -339,17 +339,17 @@ d cgi-register {action add-host} {
     # Check IP address
     #
 
-    set msg [check-ip-syntax $dbfd $adr "inet"]
+    set msg [check-ip-syntax $dbfd $addr "inet"]
     if {$msg ne ""} then {
 	d error $msg
     }
 
-    if {! [check-authorized-ip $dbfd $idcor $adr]} then {
-	d error [mc "You don't have rights on '%s'" $adr]
+    if {! [check-authorized-ip $dbfd $idcor $addr]} then {
+	d error [mc "You don't have rights on '%s'" $addr]
     }
 
-    if {[read-rr-by-ip $dbfd $adr $idview tabrrbidon]} then {
-	d error [mc "IP address '%s' already exists" $adr]
+    if {[read-rr-by-ip $dbfd $addr $idview tabrrbidon]} then {
+	d error [mc "IP address '%s' already exists" $addr]
     }
 
     #
@@ -367,7 +367,7 @@ d cgi-register {action add-host} {
     if {$exip} then {
 	set mactotest $trr(mac)
     }
-    set msg [check-static-dhcp $dbfd $mactotest [list $adr]]
+    set msg [check-static-dhcp $dbfd $mactotest [list $addr]]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -437,7 +437,7 @@ d cgi-register {action add-host} {
     # Common code for confirmation
     #
 
-    set l {nom domain adr idview mac iddhcpprof droitsmtp ttl hinfo
+    set l {nom domain addr idview mac iddhcpprof droitsmtp ttl hinfo
 			    commentaire respnom respmel naddr}
     set hidden [::webapp::hide-parameters $l ftab]
 
@@ -473,7 +473,7 @@ d cgi-register {action add-host} {
 	d result $conf(page-exist) [list \
 						[list %NOM%     $nom] \
 						[list %DOMAIN%  $domain] \
-						[list %ADR%     $adr] \
+						[list %ADDR%    $addr] \
 						[list %HIDDEN%  $hidden] \
 						[list %MACHINE% $host] \
 			    ]
@@ -484,7 +484,7 @@ d cgi-register {action add-host} {
     # Insert object
     #
 
-    set msg [add-host $dbfd trr $nom $iddom $idview $adr \
+    set msg [add-host $dbfd trr $nom $iddom $idview $addr \
     			$mac $iddhcpprof $idhinfo $droitsmtp $ttl \
 			$commentaire $respnom $respmel $idcor]
     if {$msg ne ""} then {
@@ -502,12 +502,12 @@ d cgi-register {action add-host} {
     }
 
     if {$naddr > 0} then {
-	set sql "SELECT INET('$adr')+1 AS adr"
+	set sql "SELECT INET('$addr')+1 AS addr"
 	pg_select $dbfd $sql tab {
-	    set nextadr $tab(adr)
+	    set nextaddr $tab(addr)
 	}
 	d urlset "%URLSUITE%" $conf(nextadd) [list \
-						    [list "adr" $nextadr] \
+						    [list "addr" $nextaddr] \
 						    [list "naddr" $naddr] \
 						]
 	d urladdnext "%URLSUITE%"
@@ -551,7 +551,7 @@ d cgi-register {action add-multi} {
     {domap	0 1}
     {tri	0 1}
     {plage	1 1}
-    {nbadr	1 1}
+    {naddr	1 1}
     {idview	1 1}
 } {
     global conf
@@ -586,13 +586,13 @@ d cgi-register {action add-multi} {
     # Continue to validate form input
     #
 
-    if {! [regexp {^[0-9]+$} $nbadr] || $nbadr < 1} then {
-       d error [mc "Invalid address count '%s'" $nbadr]
+    if {! [regexp {^[0-9]+$} $naddr] || $naddr < 1} then {
+       d error [mc "Invalid address count '%s'" $naddr]
     }
 
     switch -- $tri {
-	nbadr { set order "ORDER BY n ASC, a ASC" }
-	adr -
+	naddr { set order "ORDER BY n ASC, a ASC" }
+	addr -
 	default { set order "ORDER BY a ASC, n ASC" }
     }
 
@@ -602,7 +602,7 @@ d cgi-register {action add-multi} {
 
     set sql "SELECT *
 		FROM dns.ipranges ('$cidr', $conf(maxip), $idgrp)
-		WHERE n >= $nbadr
+		WHERE n >= $naddr
 		$order"
     set lranges {}
     pg_select $dbfd $sql tab {
@@ -610,7 +610,7 @@ d cgi-register {action add-multi} {
     }
 
     if {[llength $lranges] == 0} then {
-       d error [mc "No block of %s free IPv4 address(es) found" $nbadr]
+       d error [mc "No block of %s free IPv4 address(es) found" $naddr]
     }
 
     #
@@ -622,15 +622,15 @@ d cgi-register {action add-multi} {
     # base URL to perform sort
     set largs [list {action add-multi} \
 		    [list "plage" $plage] \
-		    [list "nbadr" $nbadr] \
+		    [list "naddr" $naddr] \
 		]
 
     # first line (with sort URLs)
-    d urlset "" $conf(nextadd) [concat $largs {{tri adr}}]
+    d urlset "" $conf(nextadd) [concat $largs {{tri addr}}]
     set url [d urlget ""]
     set c1 [::webapp::helem "a" [mc "First available IP address"] "href" $url]
 
-    d urlset "" $conf(nextadd) [concat $largs {{tri nbadr}}]
+    d urlset "" $conf(nextadd) [concat $largs {{tri naddr}}]
     set url [d urlget ""]
     set c2 [::webapp::helem "a" [mc "Size of block"] "href" $url]
 
@@ -640,17 +640,17 @@ d cgi-register {action add-multi} {
     foreach l $lranges {
 	lassign $l a n
 
-	set hidden [::webapp::form-hidden "adr" $a]
-	append hidden [::webapp::form-hidden "naddr" $nbadr]
+	set hidden [::webapp::form-hidden "addr" $a]
+	append hidden [::webapp::form-hidden "naddr" $naddr]
 
 	# explicit choice button
-	switch [expr $nbadr==$n][expr $nbadr==1] {
+	switch [expr $naddr==$n][expr $naddr==1] {
 	    11 { set fmt [mc "Choose this address"] }
 	    10 { set fmt [mc "Choose these %s addresses"] }
 	    01 { set fmt [mc "Choose the first address"] }
 	    00 { set fmt [mc "Choose the %s first addresses"] }
 	}
-	set msg [format $fmt $nbadr]
+	set msg [format $fmt $naddr]
 	set button [::webapp::form-submit "" $msg]
 
 	d urlset "" $conf(nextadd) {}

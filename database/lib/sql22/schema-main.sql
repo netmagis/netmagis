@@ -207,7 +207,7 @@ CREATE TABLE dns.p_dom (
     idgrp	INT,			-- group
     iddom	INT,			-- domain id
     sort	INT,			-- sort class
-    rolemail	INT DEFAULT 0,		-- perm to manage mail roles
+    mailrole	INT DEFAULT 0,		-- perm to manage mail roles
 
     FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
     PRIMARY KEY (idgrp, iddom)
@@ -319,10 +319,10 @@ CREATE TABLE dns.rr (
 
 CREATE TABLE dns.rr_ip (
     idrr	INT,			-- RR
-    adr		INET,			-- IP (v4 or v6) address
+    addr	INET,			-- IP (v4 or v6) address
 
     FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
-    PRIMARY KEY (idrr, adr)
+    PRIMARY KEY (idrr, addr)
 ) ;
 
 CREATE TABLE dns.rr_cname (
@@ -345,13 +345,13 @@ CREATE TABLE dns.rr_mx (
 ) ;
 
 -- Mail roles
-CREATE TABLE dns.role_mail (
-    idrr	INT,			-- id of "mail address"
-    heberg	INT,			-- RR holding mboxes for this address
+CREATE TABLE dns.mail_role (
+    mailaddr	INT,			-- id of "mail address"
+    mboxhost	INT,			-- RR holding mboxes for this address
 
-    FOREIGN KEY (idrr)      REFERENCES dns.rr (idrr),
-    FOREIGN KEY (heberg)    REFERENCES dns.rr (idrr),
-    PRIMARY KEY (idrr)
+    FOREIGN KEY (mailaddr) REFERENCES dns.rr (idrr),
+    FOREIGN KEY (mboxhost) REFERENCES dns.rr (idrr),
+    PRIMARY KEY (mailaddr)
 ) ;
 
 -- Mail relays for a domain

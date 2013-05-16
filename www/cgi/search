@@ -176,7 +176,7 @@ proc display-host {dbfd _trr idview q} {
 
     set rrtmpl {
 	allowed-groups {search {q group:%s}}
-	ip {edit {adr %1$s} {idview %2$s}}
+	ip {edit {addr %1$s} {idview %2$s}}
     }
 
     array set t $rrtmpl
@@ -202,7 +202,7 @@ proc display-alias {dbfd _trr idview q} {
 
     set rrtmpl {
 	allowed-groups {search {q group:%s}}
-	ip {edit {adr %1$s} {idview %2$s}}
+	ip {edit {addr %1$s} {idview %2$s}}
     }
 
     # Display aliased host
@@ -212,19 +212,19 @@ proc display-alias {dbfd _trr idview q} {
     return "$title $desc"
 }
 
-proc display-rolemail {dbfd _trr idview q} {
+proc display-mailrole {dbfd _trr idview q} {
     upvar $_trr trr
 
     h mask-next
     set fqdn "$trr(nom).$trr(domain)"
-    lassign [rr-rolemail-by-view trr $idview] idheb idviewheb
+    lassign [rr-mailrole-by-view trr $idview] idheb idviewheb
     if {! [read-rr-by-id $dbfd $idheb trrh]} then {
 	d error [mc {Cannot read host-id %s} $idheb]
     }
 
     set rrtmpl {
 	allowed-groups {search {q group:%s}}
-	ip {edit {adr %1$s} {idview %2$s}}
+	ip {edit {addr %1$s} {idview %2$s}}
     }
 
     # Display aliased host
@@ -366,9 +366,9 @@ proc cgi-search-160-mailrole {dbfd q val type} {
 	    foreach iddom $ldom {
 		foreach idview [u myviewids] {
 		    if {[read-rr-by-name $dbfd $name $iddom $idview trr]} then {
-			set rm [rr-rolemail-by-view trr $idview]
+			set rm [rr-mailrole-by-view trr $idview]
 			if {[llength $rm] > 0} then {
-			    lappend lfound [display-rolemail $dbfd trr $idview $q]
+			    lappend lfound [display-mailrole $dbfd trr $idview $q]
 			}
 		    }
 		}

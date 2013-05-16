@@ -77,7 +77,7 @@
 			\lignetableau {
 			    \casetableau {} {Adresse IP}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="adr" SIZE="45" VALUE="%ADR%">
+				<INPUT TYPE="TEXT" NAME="addr" SIZE="45" VALUE="%ADDR%">
 			    }
 			    \casetableau {} {%VIEWLIBELLE%}
 			    \casetableau {} {%VIEWVAL%}
@@ -144,7 +144,7 @@
 	    \casetableau {} {
 		<FORM METHOD="POST" ACTION="%URLFORM2%">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="add-multi">
-		    <INPUT TYPE="HIDDEN" NAME="tri" VALUE="adr">
+		    <INPUT TYPE="HIDDEN" NAME="tri" VALUE="addr">
 		    \tableau {
 			\bordure {0} {}
 			\taille {100}
@@ -161,7 +161,7 @@
 			\lignetableau {
 			    \casetableau {} {Nombre d'adresses consécutives}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nbadr" SIZE="30" VALUE="1">
+				<INPUT TYPE="TEXT" NAME="naddr" SIZE="30" VALUE="1">
 			    }
 			}
 			\lignetableau {

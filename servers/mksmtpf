@@ -70,13 +70,13 @@ proc gen-filter {dbfd idview pfprologue pffmt _pftxt} {
     # Note: the sort is done to emit addresses using the same order
     # such as the resulting file do not contain any modification.
     #
-    set sql "SELECT adr FROM dns.rr, dns.rr_ip
+    set sql "SELECT addr FROM dns.rr, dns.rr_ip
 			WHERE ($idview = -1 OR rr.idview = $idview)
 			    AND rr.droitsmtp = 1
 			    AND rr.idrr = rr_ip.idrr
-			ORDER BY adr"
+			ORDER BY addr"
     pg_select $dbfd $sql tab {
-	append pftxt [format $pffmt $tab(adr)]
+	append pftxt [format $pffmt $tab(addr)]
 	append pftxt "\n"
     }
 

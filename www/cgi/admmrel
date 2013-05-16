@@ -122,7 +122,7 @@ d cgi-register {action {}} {
     # Get domains authorized for the user
     #
 
-    set w "p_dom.rolemail <> 0"
+    set w "p_dom.mailrole <> 0"
     set domain [menu-domain $dbfd $tabuid(idcor) "domain" $w ""]
 
     #

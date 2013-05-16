@@ -26,7 +26,7 @@
 #	- viewselN : selected view (0 or 1)
 #	- domainN : valid domains
 #	- sortdomN : domain sort class (if empty, we have to remove the domain)
-#	- rolemailN : permission to edit "mail roles" for this domain (0 or 1)
+#	- mailroleN : permission to edit "mail roles" for this domain (0 or 1)
 #	- netN : network ids for this group
 #	- sortnetN : network sort class (if empty, we have to remove this network)
 #	- dhcpN : permission to edit DHCP ranges for this network (0 or 1)
@@ -532,7 +532,7 @@ d cgi-register {action edit} {
 			    [mc "Mail role edition"] \
 			]
     set ldom [::pgsql::getcols $dbfd dns.domain "" "name ASC" {name name}]
-    set sql "SELECT domain.name AS name, p_dom.sort, p_dom.rolemail
+    set sql "SELECT domain.name AS name, p_dom.sort, p_dom.mailrole
 			FROM dns.domain, dns.p_dom
 			WHERE domain.iddom = p_dom.iddom
 				AND p_dom.idgrp = $idgrp
@@ -541,7 +541,7 @@ d cgi-register {action edit} {
     pg_select $dbfd $sql tab {
 	set d        $tab(name)
 	set sort     $tab(sort)
-	set rolemail $tab(rolemail)
+	set mailrole $tab(mailrole)
 
 	set idx [lsearch -exact $ldom [list $d $d]]
 	if {$idx == -1} then {
@@ -549,7 +549,7 @@ d cgi-register {action edit} {
 	}
 	set hsort [::webapp::form-text sortdom$ndom 1 5 5 $sort]
 	set hdom  [::webapp::form-menu domain$ndom 1 0 $ldom [list $idx]]
-	set hmail [::webapp::form-bool rolemail$ndom $rolemail]
+	set hmail [::webapp::form-bool mailrole$ndom $mailrole]
 	lappend lines [list Normal $hsort $hdom $hmail]
 	incr ndom
     }
@@ -557,7 +557,7 @@ d cgi-register {action edit} {
     for {set i 1} {$i <= 5} {incr i} {
 	set hsort [::webapp::form-text sortdom$ndom 1 5 5 ""]
 	set hdom  [::webapp::form-menu domain$ndom 1 0 $ldom {}]
-	set hmail [::webapp::form-bool rolemail$ndom 0]
+	set hmail [::webapp::form-bool mailrole$ndom 0]
 	lappend lines [list Normal $hsort $hdom $hmail]
 	incr ndom
     }
@@ -780,7 +780,7 @@ d cgi-register {action mod} {
     {viewsel[0-9]+	0 9999}
     {sortdom[0-9]+	0 9999}
     {domain[0-9]+	0 9999}
-    {rolemail[0-9]+	0 9999}
+    {mailrole[0-9]+	0 9999}
     {sortnet[0-9]+	0 9999}
     {net[0-9]+		0 9999}
     {dhcp[0-9]+		0 9999}
@@ -1000,15 +1000,15 @@ d cgi-register {action mod} {
 		d error [mc "Invalid domain '%s'" $domain]
 	    }
 
-	    if {! [info exists ftab(rolemail$n)]} then {
-		set ftab(rolemail$n) 0
+	    if {! [info exists ftab(mailrole$n)]} then {
+		set ftab(mailrole$n) 0
 	    }
-	    set rolemail [string trim [lindex $ftab(rolemail$n) 0]]
-	    if {! [regexp -- {^[01]$} $rolemail]} then {
-		d error [mc "Invalid mail role '%s'" $rolemail]
+	    set mailrole [string trim [lindex $ftab(mailrole$n) 0]]
+	    if {! [regexp -- {^[01]$} $mailrole]} then {
+		d error [mc "Invalid mail role '%s'" $mailrole]
 	    }
 
-	    lappend liddom [list $sort $tabdom($domain) $rolemail]
+	    lappend liddom [list $sort $tabdom($domain) $mailrole]
 	}
 
 	incr n
@@ -1390,9 +1390,9 @@ d cgi-register {action mod} {
     # Authorized domains for this group
     lappend cmd "DELETE FROM dns.p_dom WHERE idgrp = $idgrp"
     foreach e $liddom {
-	lassign $e sort iddom rolemail
-	lappend cmd "INSERT INTO dns.p_dom (idgrp, iddom, sort, rolemail)
-			VALUES ($idgrp, $iddom, $sort, $rolemail)"
+	lassign $e sort iddom mailrole
+	lappend cmd "INSERT INTO dns.p_dom (idgrp, iddom, sort, mailrole)
+			VALUES ($idgrp, $iddom, $sort, $mailrole)"
     }
 
     # Authorized networks for this group

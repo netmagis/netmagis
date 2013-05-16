@@ -294,20 +294,20 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 	array unset groups
 	set sql2 "SELECT rr.nom || '.' || domain.name AS host,
 			    rr.mac,
-			    rr_ip.adr,
+			    rr_ip.addr,
 			    rr.iddhcpprof
 			FROM dns.rr, dns.domain, dns.rr_ip, dns.network
 			WHERE ($idview = -1 OR rr.idview = $idview)
 			    AND rr.iddom = domain.iddom
 			    AND rr.idrr = rr_ip.idrr
-			    AND rr_ip.adr <<= '$network/$masklen'
+			    AND rr_ip.addr <<= '$network/$masklen'
 			    AND network.addr4 = '$network/$masklen'
 			    AND network.dhcp > 0
 			    AND rr.mac IS NOT NULL
-			ORDER BY rr.iddhcpprof, rr_ip.adr
+			ORDER BY rr.iddhcpprof, rr_ip.addr
 			"
 	pg_select $dbfd $sql2 tab2 {
-	    set ip $tab2(adr)
+	    set ip $tab2(addr)
 	    set host $tab2(host)
 
 	    # Empty if no profile
@@ -329,7 +329,7 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 	    append groups($id) "\t\t\tstash-agent-options true;\n"
 
 	    append groups($id) "\t\t\thardware ethernet $tab2(mac);\n"
-	    append groups($id) "\t\t\tfixed-address $tab2(adr);\n"
+	    append groups($id) "\t\t\tfixed-address $ip;\n"
 	    append groups($id) "\t\t\toption host-name \"$host\";\n"
 	    append groups($id) "\t\t$rbkt\n"
 	}

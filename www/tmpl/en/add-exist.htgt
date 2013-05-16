@@ -35,7 +35,7 @@
 
     %MACHINE%
 
-    \gras {Do you really want to add the new IP address '%ADR%' to
+    \gras {Do you really want to add the new IP address '%ADDR%' to
     the '%NOM%.%DOMAIN%' host?}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
