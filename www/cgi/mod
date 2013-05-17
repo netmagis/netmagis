@@ -346,7 +346,7 @@ d cgi-register {action store} {
 	d error [mc "Host type '%s' not found" $hinfo]
     }
 
-    if {$tabuid(droitsmtp)} then {
+    if {$tabuid(p_smtp)} then {
 	if {$sendsmtp eq ""} then {
 	    set sendsmtp 0
 	} else {
@@ -356,7 +356,7 @@ d cgi-register {action store} {
 	set sendsmtp 0
     }
 
-    if {$tabuid(droitttl)} then {
+    if {$tabuid(p_ttl)} then {
 	if {$ttl eq ""} then {
 	    set ttl -1
 	} else {
@@ -405,10 +405,10 @@ d cgi-register {action store} {
 
     d dblock {dns.rr}
 
-    if {! $tabuid(droitsmtp)} then {
+    if {! $tabuid(p_smtp)} then {
 	set sendsmtp $trr(sendsmtp)
     }
-    if {! $tabuid(droitttl)} then {
+    if {! $tabuid(p_ttl)} then {
 	set ttl $trr(ttl)
     }
 

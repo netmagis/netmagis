@@ -100,9 +100,9 @@ proc output-edit {dbfd netid _tabuid} {
     set menudhcp {}
     lappend menudhcp [list 0 [mc "No profile"]]
     set sql "SELECT d.iddhcpprof, d.name
-		FROM dns.p_dhcpprofile p, dns.dhcpprofile d, global.corresp c
-		WHERE c.idcor = $tabuid(idcor)
-		    AND p.idgrp = c.idgrp
+		FROM dns.p_dhcpprofile p, dns.dhcpprofile d, global.nmuser u
+		WHERE u.idcor = $tabuid(idcor)
+		    AND p.idgrp = u.idgrp
 		    AND p.iddhcpprof = d.iddhcpprof
 		ORDER BY p.sort ASC, d.name ASC"
     pg_select $dbfd $sql tab {

@@ -322,8 +322,8 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 			rr.sendsmtp, rr.mac,
 			rr.iddhcpprof AS dhcp1,
 			dhcprange.iddhcpprof AS dhcp2,
-			hinfo.name AS hinfo, corresp.login
-		    FROM dns.rr, dns.domain, dns.hinfo, global.corresp,
+			hinfo.name AS hinfo, nmuser.login
+		    FROM dns.rr, dns.domain, dns.hinfo, global.nmuser,
 			dns.rr_ip LEFT OUTER JOIN dns.dhcprange
 			    ON (rr_ip.addr >= dhcprange.min
 				AND rr_ip.addr <= dhcprange.max)
@@ -333,7 +333,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 			AND rr_ip.addr <<= '$cidrplage'
 			AND domain.iddom = rr.iddom
 			AND rr.idhinfo = hinfo.idhinfo
-			AND rr.idcor = corresp.idcor
+			AND rr.idcor = nmuser.idcor
 			AND rr.idview = $idview
 		    ORDER BY rr_ip.addr"
 	pg_select $dbfd $sql tab {

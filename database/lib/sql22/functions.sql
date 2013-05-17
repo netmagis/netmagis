@@ -523,7 +523,7 @@ CREATE OR REPLACE FUNCTION dns.mod_dhcp ()
 CREATE OR REPLACE FUNCTION dns.check_ip_cor (INET, INTEGER)
     RETURNS BOOLEAN AS $$
     BEGIN
-	RETURN dns.check_ip_grp ($1, idgrp) FROM global.corresp WHERE idcor = $2 ;
+	RETURN dns.check_ip_grp ($1, idgrp) FROM global.nmuser WHERE idcor = $2 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
 

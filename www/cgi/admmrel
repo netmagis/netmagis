@@ -15,7 +15,7 @@
 #	- action : "mod"
 #	- domain : domain name to modify
 #	- prio* : MX priority for this domain
-#	- nom* : MX name for this domain
+#	- name* : MX name for this domain
 #	- domain* : MX domain for this domain
 #
 # History
@@ -302,7 +302,7 @@ d cgi-register {action mod} {
 		    lappend lrel $mx
 		}
 	    } else {
-		d error [mc "Invalid form values (%s)" "$idxprio, $idxnom, $idxdom"]
+		d error [mc "Invalid form values (%s)" "$idxprio, $idxname, $idxdom"]
 	    }
 	}
     }

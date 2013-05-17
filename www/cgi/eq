@@ -728,7 +728,7 @@ d cgi-register {} {
     # Initialization
     #
 
-    set msgsta [topo-status $dbfd $tabuid(admin)]
+    set msgsta [topo-status $dbfd $tabuid(p_admin)]
 
     d urlset "%URLFORMEQ%" $conf(nexteq) {}
     d urlset "%URLFORML2%" $conf(nextl2) {}

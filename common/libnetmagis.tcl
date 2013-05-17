@@ -151,7 +151,7 @@ set libconf(tabperm) {
 	botbar {yes}
 	columns {75 25}
     }
-    pattern DROIT {
+    pattern Normal {
 	vbar {yes}
 	column { }
 	vbar {yes}
@@ -1125,7 +1125,7 @@ snit::type ::netmagis {
 	#
 
 	set nuid [string trim [lindex $ftab(uid) 0]]
-	if {$nuid ne "" && $tabuid(admin)} then {
+	if {$nuid ne "" && $tabuid(p_admin)} then {
 	    array set tabouid [array get tabuid]
 	    array unset tabuid
 
@@ -1162,13 +1162,13 @@ snit::type ::netmagis {
 	if {[dnsconfig get "topoactive"]} then {
 	    lappend curcap "topo"
 	}
-	if {[dnsconfig get "macactive"] && $tabuid(droitmac)} then {
+	if {[dnsconfig get "macactive"] && $tabuid(p_mac)} then {
 	    lappend curcap "mac"
 	}
-	if {$tabuid(droitgenl)} then {
+	if {$tabuid(p_genl)} then {
 	    lappend curcap "topogenl"
 	}
-	if {$tabuid(admin)} then {
+	if {$tabuid(p_admin)} then {
 	    lappend curcap "admin"
 	}
 	if {[dnsconfig get "authmethod"] eq "pgsql"} then {
@@ -1989,10 +1989,10 @@ snit::type ::nmuser {
     proc load-groups {selfns} {
 	array unset allgroups
 
-	set sql "SELECT * FROM global.groupe"
+	set sql "SELECT * FROM global.nmgroup"
 	pg_select $db $sql tab {
 	    set idgrp $tab(idgrp)
-	    set name  $tab(nom)
+	    set name  $tab(name)
 	    set allgroups(id:$idgrp) $name
 	    set allgroups(name:$name) $idgrp
 	}
@@ -2040,10 +2040,10 @@ snit::type ::nmuser {
 
 	set qlogin [::pgsql::quote $login]
 	set sql "SELECT p.idview
-			FROM dns.p_view p, dns.view v, global.corresp c
-			WHERE p.idgrp = c.idgrp
+			FROM dns.p_view p, dns.view v, global.nmuser u
+			WHERE p.idgrp = u.idgrp
 			    AND p.idview = v.idview
-			    AND c.login = '$qlogin'
+			    AND u.login = '$qlogin'
 			ORDER BY p.sort ASC, v.name ASC"
 	pg_select $db $sql tab {
 	    set idview $tab(idview)
@@ -2109,10 +2109,10 @@ snit::type ::nmuser {
 
 	set qlogin [::pgsql::quote $login]
 	set sql "SELECT p.iddom
-			FROM dns.p_dom p, dns.domain d, global.corresp c
-			WHERE p.idgrp = c.idgrp
+			FROM dns.p_dom p, dns.domain d, global.nmuser u
+			WHERE p.idgrp = u.idgrp
 			    AND p.iddom = d.iddom
-			    AND c.login = '$qlogin'
+			    AND u.login = '$qlogin'
 			ORDER BY p.sort ASC, d.name ASC"
 	pg_select $db $sql tab {
 	    set iddom $tab(iddom)
@@ -2856,44 +2856,44 @@ proc display-group {dbfd idgrp} {
     global libconf
 
     #
-    # Get specific permissions: admin, droitsmtp, droitttl, droitmac and droitgenl
+    # Get specific permissions: p_admin, p_smtp, p_ttl, p_mac and p_genl
     #
 
     set lines {}
-    set sql "SELECT admin, droitsmtp, droitttl, droitmac, droitgenl
-			FROM global.groupe
+    set sql "SELECT p_admin, p_smtp, p_ttl, p_mac, p_genl
+			FROM global.nmgroup
 			WHERE idgrp = $idgrp"
     pg_select $dbfd $sql tab {
-	if {$tab(admin)} then {
-	    set admin [mc "yes"]
+	if {$tab(p_admin)} then {
+	    set p_admin [mc "yes"]
 	} else {
-	    set admin [mc "no"]
+	    set p_admin [mc "no"]
 	}
-	if {$tab(droitsmtp)} then {
-	    set droitsmtp [mc "yes"]
+	if {$tab(p_smtp)} then {
+	    set p_smtp [mc "yes"]
 	} else {
-	    set droitsmtp [mc "no"]
+	    set p_smtp [mc "no"]
 	}
-	if {$tab(droitttl)} then {
-	    set droitttl [mc "yes"]
+	if {$tab(p_ttl)} then {
+	    set p_ttl [mc "yes"]
 	} else {
-	    set droitttl [mc "no"]
+	    set p_ttl [mc "no"]
 	}
-	if {$tab(droitmac)} then {
-	    set droitmac [mc "yes"]
+	if {$tab(p_mac)} then {
+	    set p_mac [mc "yes"]
 	} else {
-	    set droitmac [mc "no"]
+	    set p_mac [mc "no"]
 	}
-	if {$tab(droitgenl)} then {
-	    set droitgenl [mc "yes"]
+	if {$tab(p_genl)} then {
+	    set p_genl [mc "yes"]
 	} else {
-	    set droitgenl [mc "no"]
+	    set p_genl [mc "no"]
 	}
-	lappend lines [list DROIT [mc "Netmagis administration"] $admin]
-	lappend lines [list DROIT [mc "SMTP authorization management"] $droitsmtp]
-	lappend lines [list DROIT [mc "TTL management"] $droitttl]
-	lappend lines [list DROIT [mc "MAC module access"] $droitmac]
-	lappend lines [list DROIT [mc "Generate link numbers"] $droitgenl]
+	lappend lines [list Normal [mc "Netmagis administration"] $p_admin]
+	lappend lines [list Normal [mc "SMTP authorization management"] $p_smtp]
+	lappend lines [list Normal [mc "TTL management"] $p_ttl]
+	lappend lines [list Normal [mc "MAC module access"] $p_mac]
+	lappend lines [list Normal [mc "Generate link numbers"] $p_genl]
     }
     if {[llength $lines] > 0} then {
 	set tabperm [::arrgen::output "html" $libconf(tabperm) $lines]
@@ -2906,7 +2906,7 @@ proc display-group {dbfd idgrp} {
     #
 
     set luser {}
-    set sql "SELECT login FROM global.corresp WHERE idgrp=$idgrp ORDER BY login"
+    set sql "SELECT login FROM global.nmuser WHERE idgrp=$idgrp ORDER BY login"
     pg_select $dbfd $sql tab {
 	lappend luser [::webapp::html-string $tab(login)]
     }
@@ -3216,10 +3216,10 @@ proc fermer-base {dbfd} {
 
 proc user-attribute {dbfd idcor attr} {
     set v 0
-    set sql "SELECT groupe.$attr
-			FROM global.groupe, global.corresp
-			WHERE corresp.idcor = $idcor
-			    AND corresp.idgrp = groupe.idgrp"
+    set sql "SELECT nmgroup.$attr
+			FROM global.nmgroup, global.nmuser
+			WHERE nmuser.idcor = $idcor
+			    AND nmuser.idgrp = nmgroup.idgrp"
     pg_select $dbfd $sql tab {
 	set v "$tab($attr)"
     }
@@ -3244,13 +3244,13 @@ proc user-attribute {dbfd idcor attr} {
 #		addr	user address [if ah global variable is set]
 #		idcor	user id in the database
 #		idgrp	group id in the database
-#		groupe	group name
+#		group	group name
 #		present	1 if "present" in the database
-#		admin	1 if admin
-#		droitsmtp 1 if permission to add hosts authorized to emit with SMTP
-#		droitttl 1 if permission to edit host TTL
-#		droitmac 1 if permission to use the MAC module
-#		droitgenl 1 if permission to generate a link number
+#		p_admin	1 if admin
+#		p_smtp  1 if permission to allow hosts to emit with SMTP
+#		p_ttl   1 if permission to edit host TTL
+#		p_mac   1 if permission to use the MAC module
+#		p_genl  1 if permission to generate a link number
 #		networks list of authorized networks
 #		eq	regexp matching authorized equipments
 #		flagsr	flags -n/-e/-E/etc to use in topo programs
@@ -3314,19 +3314,19 @@ proc read-user {dbfd login _tabuid _msg} {
 
     set qlogin [::pgsql::quote $login]
     set tabuid(idcor) -1
-    set sql "SELECT * FROM global.corresp, global.groupe
-			WHERE corresp.login = '$qlogin'
-			    AND corresp.idgrp = groupe.idgrp"
+    set sql "SELECT * FROM global.nmuser, global.nmgroup
+			WHERE nmuser.login = '$qlogin'
+			    AND nmuser.idgrp = nmgroup.idgrp"
     pg_select $dbfd $sql tab {
 	set tabuid(idcor)	$tab(idcor)
 	set tabuid(idgrp)	$tab(idgrp)
 	set tabuid(present)	$tab(present)
-	set tabuid(groupe)	$tab(nom)
-	set tabuid(admin)	$tab(admin)
-	set tabuid(droitsmtp)	$tab(droitsmtp)
-	set tabuid(droitttl)	$tab(droitttl)
-	set tabuid(droitmac)	$tab(droitmac)
-	set tabuid(droitgenl)	$tab(droitgenl)
+	set tabuid(group)	$tab(name)
+	set tabuid(p_admin)	$tab(p_admin)
+	set tabuid(p_smtp)	$tab(p_smtp)
+	set tabuid(p_ttl)	$tab(p_ttl)
+	set tabuid(p_mac)	$tab(p_mac)
+	set tabuid(p_genl)	$tab(p_genl)
     }
 
     if {$tabuid(idcor) == -1} then {
@@ -3351,7 +3351,7 @@ proc read-user {dbfd login _tabuid _msg} {
     set flagsw {}
     foreach rw {r w} {
 	set flags {}
-	if {$tabuid(admin)} then {
+	if {$tabuid(p_admin)} then {
 	    # Administrator sees the whole graph
 	    lappend flags "-a"
 
@@ -4548,7 +4548,7 @@ proc allowed-groups {dbfd laddr} {
 	#
 
 	set sql "SELECT g.idgrp
-			FROM global.groupe g, dns.p_network p, dns.network n
+			FROM global.nmgroup g, dns.p_network p, dns.network n
 			WHERE g.idgrp = p.idgrp
 			    AND p.idnet = n.idnet
 			    AND ('$addr' <<= n.addr4 OR '$addr' <<= n.addr6)
@@ -4690,12 +4690,12 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 
 	# Right to emit with non auth SMTP : display only if it is used
 	# (i.e. if there is at least one group wich owns this right)
-	set sql "SELECT COUNT(*) AS ndroitsmtp FROM global.groupe WHERE droitsmtp = 1"
-	set ndroitsmtp 0
+	set sql "SELECT COUNT(*) AS nsmtp FROM global.nmgroup WHERE p_smtp = 1"
+	set nsmtp 0
 	pg_select $dbfd $sql tab {
-	    set ndroitsmtp $tab(ndroitsmtp)
+	    set nsmtp $tab(nsmtp)
 	}
-	if {$ndroitsmtp > 0} then {
+	if {$nsmtp > 0} then {
 	    if {$trr(sendsmtp)} then {
 		set sendsmtp [mc "Yes"]
 	    } else {
@@ -4707,12 +4707,12 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	# TTL : display only if it used
 	# (i.e. if there is at least one group wich owns this right and there
 	# is a value)
-	set sql "SELECT COUNT(*) AS ndroitttl FROM global.groupe WHERE droitttl = 1"
-	set ndroitttl 0
+	set sql "SELECT COUNT(*) AS nttl FROM global.nmgroup WHERE p_ttl = 1"
+	set nttl 0
 	pg_select $dbfd $sql tab {
-	    set ndroitttl $tab(ndroitttl)
+	    set nttl $tab(nttl)
 	}
-	if {$ndroitttl > 0} then {
+	if {$nttl > 0} then {
 	    set ttl $trr(ttl)
 	    if {$ttl != -1} then {
 		lappend lines [list Normal [mc "TTL"] $ttl]
@@ -5029,8 +5029,6 @@ proc check-mac-syntax {dbfd mac} {
     return [check-ip-syntax $dbfd $mac "macaddr"]
 }
 
-#
-# XXX : NOT USED
 #
 # Check a DHCP profile id
 #
@@ -5481,9 +5479,9 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
 	}
 
 	set found 0
-	set sql "SELECT p_dom.iddom FROM dns.p_dom, global.corresp
-			    WHERE corresp.idcor = $idcor
-				    AND corresp.idgrp = p_dom.idgrp
+	set sql "SELECT p_dom.iddom FROM dns.p_dom, global.nmuser
+			    WHERE nmuser.idcor = $idcor
+				    AND nmuser.idgrp = p_dom.idgrp
 				    AND p_dom.iddom = $iddom
 				    $where
 				    "
@@ -6347,9 +6345,9 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprof} {
     #
 
     set sql "SELECT d.iddhcpprof, d.name
-		FROM dns.p_dhcpprofile p, dns.dhcpprofile d, global.corresp c
-		WHERE c.idcor = $idcor
-		    AND p.idgrp = c.idgrp
+		FROM dns.p_dhcpprofile p, dns.dhcpprofile d, global.nmuser u
+		WHERE u.idcor = $idcor
+		    AND p.idgrp = u.idgrp
 		    AND p.iddhcpprof = d.iddhcpprof
 		ORDER BY p.sort ASC, d.name"
     set lprof {}
@@ -6434,7 +6432,7 @@ proc menu-sendsmtp {dbfd field _tabuid sendsmtp} {
     #
 
 
-    if {$tabuid(droitsmtp)} then {
+    if {$tabuid(p_smtp)} then {
 	set title [mc "Use SMTP"]
 	set html [::webapp::form-bool $field $sendsmtp]
     } else {
@@ -6480,7 +6478,7 @@ proc menu-ttl {dbfd field _tabuid ttl} {
     # Get the group permission.
     #
 
-    if {$tabuid(droitttl)} then {
+    if {$tabuid(p_ttl)} then {
 	set title [mc "TTL"]
 	set html [::webapp::form-text $field 1 6 10 $ttl]
 	append html " "
@@ -6573,10 +6571,10 @@ proc couple-domains {dbfd idcor where} {
 
     set lcouples {}
     set sql "SELECT domain.name
-		FROM dns.domain, dns.p_dom, global.corresp
+		FROM dns.domain, dns.p_dom, global.nmuser
 		WHERE domain.iddom = p_dom.iddom
-		    AND p_dom.idgrp = corresp.idgrp
-		    AND corresp.idcor = $idcor
+		    AND p_dom.idgrp = nmuser.idgrp
+		    AND nmuser.idcor = $idcor
 		    $where
 		ORDER BY p_dom.sort ASC, domain.name ASC"
     pg_select $dbfd $sql tab {
@@ -6613,9 +6611,9 @@ proc menu-view {dbfd idcor field sel} {
     set lsel {}
     set lcouples {}
     set sql "SELECT v.idview, v.name, p.selected
-		FROM dns.view v, dns.p_view p, global.corresp
-		WHERE corresp.idcor = $idcor
-		    AND p.idgrp = corresp.idgrp
+		FROM dns.view v, dns.p_view p, global.nmuser
+		WHERE nmuser.idcor = $idcor
+		    AND p.idgrp = nmuser.idgrp
 		    AND v.idview = p.idview
 		ORDER BY p.sort ASC, v.name ASC"
     set i 0
@@ -6666,7 +6664,7 @@ proc menu-view {dbfd idcor field sel} {
 #   - parameters:
 #	- dbfd : database handle
 #	- idgrp : group id
-#	- droit : "consult", "dhcp" or "acl"
+#	- priv : "consult", "dhcp" or "acl"
 # Output:
 #   - return value: list of networks {idnet cidr4 cidr6 name}
 #
@@ -9856,8 +9854,7 @@ proc ip-in {ip net} {
 }
 
 #
-# Check metrology id 
-# Valide l'id du point de collecte par rapport aux droits du correspondant.
+# Check metrology id against user permissions
 #
 # Input:
 #   - parameters:

@@ -396,7 +396,7 @@ d cgi-register {action add-host} {
     # Check SMTP emit right
     #
 
-    if {$tabuid(droitsmtp)} then {
+    if {$tabuid(p_smtp)} then {
 	if {$sendsmtp eq ""} then {
 	    set sendsmtp 0
 	} else {
@@ -410,7 +410,7 @@ d cgi-register {action add-host} {
     # Check TTL
     #
 
-    if {$tabuid(droitttl)} then {
+    if {$tabuid(p_ttl)} then {
 	if {$ttl eq ""} then {
 	    set ttl -1
 	} else {

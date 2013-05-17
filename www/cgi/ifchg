@@ -125,7 +125,7 @@ d cgi-register {mode {}} {
 	# Get interface characteristics
 	#
 
-	lassign $tabiface($iface) nom edit radio ifstat ifmode desc lien natif
+	lassign $tabiface($iface) name edit radio ifstat ifmode desc lien natif
 	set trunk [lreplace $tabiface($iface) 0 7]
 
 	if {$edit ne "edit"} then {
@@ -212,7 +212,7 @@ d cgi-register {mode {}} {
 	}
 
 	# sensor menu
-	if {$tabuid(admin)} then {
+	if {$tabuid(p_admin)} then {
 	    if {$ifstat eq "-"} then {
 		set ifstat ""
 	    }
@@ -385,7 +385,7 @@ d cgi-register {mode .+} {
 		d error [mc "Special character '%s' is not allowed" $match]
 	    }
 	    # if user is admin, use the given sensor, else use the old sensor
-	    if {! $tabuid(admin)} then {
+	    if {! $tabuid(p_admin)} then {
 		set i [lindex $iface 0]
 		set stat [lindex $tabiface($i) 3]
 	    }

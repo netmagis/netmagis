@@ -170,7 +170,7 @@ d cgi-register {} {
 			    ]
 
 	set datefmt $conf(sqldateformat)
-	set sql "SELECT ip, to_char (most_recent_date,$datefmt) AS derndate
+	set sql "SELECT ip, to_char (most_recent_date,$datefmt) AS lastdate
 		     FROM mac.ipmac2
 		     WHERE ip <<= '$cidr' AND
 			   most_recent_date < now() - interval '$occurrence month'
@@ -178,12 +178,12 @@ d cgi-register {} {
 	set naddr 0
         pg_select $dbfdmac $sql tab {
 	    set ip	    $tab(ip)
-            set derndate    $tab(derndate)
-	    set nom [get-host-name $dbfd $ip]
+            set lastdate    $tab(lastdate)
+	    set name [get-host-name $dbfd $ip]
 	    #
 	    # Don't look for host not in database
 	    #
-	    if {$nom ne ""} then {
+	    if {$name ne ""} then {
 		d urlset "" $conf(nextmac) [list [list "recherche" $ip]]
 		set url [d urlget ""]
 		set addr [::webapp::helem "a" $ip "href" $url]
@@ -198,7 +198,7 @@ d cgi-register {} {
 		set url [d urlget ""]
 		set del [::webapp::helem "a" "\[$t\]" "href" $url]
 
-		lappend lines [list Normal $addr "$nom $del" $derndate]
+		lappend lines [list Normal $addr "$name $del" $lastdate]
 		incr naddr
 	    }
 	}

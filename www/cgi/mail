@@ -193,16 +193,16 @@ d cgi-register {action list} {
     set sql "
 	SELECT r1.name AS namea, d1.name AS domaina,
 		r2.name AS namem, d2.name AS domainm, v2.name AS viewnamem
-	    FROM dns.mail_role, global.corresp,
+	    FROM dns.mail_role, global.nmuser,
 		dns.rr r1, dns.domain d1, dns.rr r2, dns.domain d2,
 		dns.view v2
-	    WHERE corresp.idcor = $idcor
+	    WHERE nmuser.idcor = $idcor
 		AND mail_role.mailaddr = r1.idrr
 		AND r1.iddom = d1.iddom
 		AND d1.name = '$domain'
 		AND r1.iddom =
 			(SELECT p1.iddom FROM dns.p_dom p1
-					WHERE p1.idgrp = corresp.idgrp
+					WHERE p1.idgrp = nmuser.idgrp
 					    AND p1.iddom = r1.iddom
 					    AND p1.mailrole > 0
 			    )
@@ -210,7 +210,7 @@ d cgi-register {action list} {
 		AND r2.iddom = d2.iddom
 		AND r2.iddom =
 			(SELECT p2.iddom FROM dns.p_dom p2
-					WHERE p2.idgrp = corresp.idgrp
+					WHERE p2.idgrp = nmuser.idgrp
 					    AND p2.iddom = r2.iddom
 			    )
 		AND r2.idrr IN
@@ -227,7 +227,7 @@ d cgi-register {action list} {
 		AND r2.idview = v2.idview
 		AND r2.idview IN
 			(SELECT idview FROM dns.p_view pv
-					WHERE pv.idgrp = corresp.idgrp)
+					WHERE pv.idgrp = nmuser.idgrp)
 	    ORDER BY domaina ASC, namea ASC
 		"
     set lroles {}

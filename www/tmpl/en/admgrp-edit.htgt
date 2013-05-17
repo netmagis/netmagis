@@ -54,32 +54,32 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {%MESSAGEGROUPE%}
+			    \casetableau {} {%MSGGROUP%}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="newgrp" VALUE="%NEWGRP%">
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {Application administration}
-			    \casetableau {} {%ADMIN%}
+			    \casetableau {} {%PADMIN%}
 			}
 			\lignetableau {
 			    \casetableau {} {Permission to manage SMTP
 				emit right
 			    }
-			    \casetableau {} {%DROITSMTP%}
+			    \casetableau {} {%PSMTP%}
 			}
 			\lignetableau {
 			    \casetableau {} {Permission to manage hosts TTL}
-			    \casetableau {} {%DROITTTL%}
+			    \casetableau {} {%PTTL%}
 			}
 			\lignetableau {
 			    \casetableau {} {Permission to use MAC module}
-			    \casetableau {} {%DROITMAC%}
+			    \casetableau {} {%PMAC%}
 			}
 			\lignetableau {
 			    \casetableau {} {Permission to generate Topo link numbers}
-			    \casetableau {} {%DROITGENL%}
+			    \casetableau {} {%PGENL%}
 			}
 		    }
 		}

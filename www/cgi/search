@@ -396,7 +396,7 @@ proc cgi-search-400-group {dbfd q val type} {
 	# Get all login names for this group
 	#
 	set lcor {}
-	set sql "SELECT login FROM global.corresp
+	set sql "SELECT login FROM global.nmuser
 				WHERE idgrp = $idgrp
 				ORDER BY login"
 	pg_select $dbfd $sql tab {

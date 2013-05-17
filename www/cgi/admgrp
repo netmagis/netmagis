@@ -14,11 +14,11 @@
 #	- action : "mod"
 #	- orggrp : original group name, or "::nouveau"
 #	- newgrp : modified group name
-#	- admin : administration permission (0 or 1)
-#	- droitsmtp : permission to authorize hosts to emit with SMTP (0 or 1)
-#	- droitttl : permission to modify hosts TTL (0 or 1)
-#	- droitmac : permission to use MAC module (0 or 1)
-#	- droitgenl : permission to generate a link number (0 or 1)
+#	- p_admin : administration permission (0 or 1)
+#	- p_smtp : permission to authorize hosts to emit with SMTP (0 or 1)
+#	- p_ttl : permission to modify hosts TTL (0 or 1)
+#	- p_mac : permission to use MAC module (0 or 1)
+#	- p_genl : permission to generate a link number (0 or 1)
 #	- confirm : yes or no
 #	- loginN : group members
 #	- viewnameN : valid views
@@ -48,13 +48,13 @@
 #   2005/04/08 : pda/jean : DHCP profiles
 #   2007/10/09 : pda/jean : renaming admgrpedit
 #   2007/10/10 : pda/jean : centralization of group administration
-#   2008/07/23 : pda/jean : add droitsmtp
-#   2010/10/31 : pda      : add droitttl
+#   2008/07/23 : pda/jean : add p_smtp
+#   2010/10/31 : pda      : add p_ttl
 #   2010/11/03 : pda/jean : add dr_eq
-#   2010/11/30 : pda/jean : add droitmac
+#   2010/11/30 : pda/jean : add p_mac
 #   2010/12/06 : pda      : i18n
 #   2010/12/26 : pda      : use cgi-dispatch
-#   2012/01/21 : jean     : add droitgenl
+#   2012/01/21 : jean     : add p_genl
 #
 
 #
@@ -278,7 +278,8 @@ proc val-group {dbfd group exist} {
 
     set qgroup [::pgsql::quote $group]
     set idgrp -1
-    pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = '$qgroup'" tab {
+    set sql "SELECT idgrp FROM global.nmgroup WHERE name = '$qgroup'"
+    pg_select $dbfd $sql tab {
 	set idgrp $tab(idgrp)
     }
 
@@ -311,7 +312,7 @@ proc val-group {dbfd group exist} {
 #
 
 proc del-group {dbfd idgrp idorphan} {
-    set ltab {global.groupe global.corresp
+    set ltab {global.nmgroup global.nmuser
 		dns.p_network dns.p_ip dns.p_dom
 		dns.p_dhcpprofile}
     d dblock $ltab
@@ -331,10 +332,10 @@ proc del-group {dbfd idgrp idorphan} {
     # Get all users which must become orphans
     #
 
-    set sql "SELECT corresp.idcor
-		FROM global.corresp, dns.rr
-		WHERE corresp.idgrp = $idgrp AND rr.idcor = corresp.idcor
-		GROUP BY corresp.idcor"
+    set sql "SELECT nmuser.idcor
+		FROM global.nmuser, dns.rr
+		WHERE nmuser.idgrp = $idgrp AND rr.idcor = nmuser.idcor
+		GROUP BY nmuser.idcor"
     
     set lidcor {}
     pg_select $dbfd $sql tab {
@@ -347,10 +348,10 @@ proc del-group {dbfd idgrp idorphan} {
 
     if {[llength $lidcor] > 0} then {
 	set lcor [join $lidcor ","]
-	set sql "UPDATE global.corresp SET idgrp = $idorphan, present = 0
+	set sql "UPDATE global.nmuser SET idgrp = $idorphan, present = 0
 		    WHERE idcor IN ($lcor)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	    d dbabort [mc "modify %s" "global.corresp"] $msg
+	    d dbabort [mc "modify %s" "global.nmuser"] $msg
 	} 
     }
 
@@ -358,7 +359,7 @@ proc del-group {dbfd idgrp idorphan} {
     # Remove other users and the group itself
     #
 
-    foreach table {global.corresp global.groupe} {
+    foreach table {global.nmuser global.nmgroup} {
 	set sql "DELETE FROM $table WHERE idgrp = $idgrp"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "delete %s" $table] $msg
@@ -379,8 +380,8 @@ d cgi-register {action {}} {} {
     # Get group list and convert it to a menu
     #
 
-    set lgroup [::pgsql::getcols $dbfd "global.groupe" "nom <> ''" "nom ASC" \
-						{nom nom}]
+    set lgroup [::pgsql::getcols $dbfd "global.nmgroup" "name <> ''" \
+    						"name ASC" {name name}]
     set lgroup [linsert $lgroup 0 [list "::nouveau" [mc "Create group..."]]]
     set menuorggrp [::webapp::form-menu orggrp 1 0 $lgroup {0}]
 
@@ -412,11 +413,11 @@ d cgi-register {action edit} {
 	set newgrp ""
 	set msggrp [mc "Type the name of group to create"]
 	set idgrp -1
-	set admin 0
-	set droitsmtp 0
-	set droitttl 0
-	set droitmac 0
-	set droitgenl 0
+	set p_admin 0
+	set p_smtp 0
+	set p_ttl 0
+	set p_mac 0
+	set p_genl 0
     } else {
 	set qgroup [::webapp::html-string $orggrp]
 	set title [mc "Edition of group '%s'" $qgroup]
@@ -424,16 +425,16 @@ d cgi-register {action edit} {
 	set msggrp [mc "Modify group name or erase it to remove the group"]
 	set pqgroup [::pgsql::quote $orggrp]
 	set idgrp -1
-	set sql "SELECT idgrp, admin, droitsmtp, droitttl, droitmac, droitgenl
-			FROM global.groupe
-			WHERE nom = '$pqgroup'"
+	set sql "SELECT idgrp, p_admin, p_smtp, p_ttl, p_mac, p_genl
+			FROM global.nmgroup
+			WHERE name = '$pqgroup'"
 	pg_select $dbfd $sql tab {
-	    set idgrp $tab(idgrp)
-	    set admin $tab(admin)
-	    set droitsmtp $tab(droitsmtp)
-	    set droitttl $tab(droitttl)
-	    set droitmac $tab(droitmac)
-	    set droitgenl $tab(droitgenl)
+	    set idgrp   $tab(idgrp)
+	    set p_admin $tab(p_admin)
+	    set p_smtp  $tab(p_smtp)
+	    set p_ttl   $tab(p_ttl)
+	    set p_mac   $tab(p_mac)
+	    set p_genl  $tab(p_genl)
 	}
 
 	if {$idgrp == -1} then {
@@ -445,11 +446,11 @@ d cgi-register {action edit} {
     set no [mc "no"]
     set fmt "%1\$s $yes &nbsp; &nbsp; &nbsp;   %2\$s $no"
 
-    set admin [::webapp::form-yesno "admin" $admin $fmt]
-    set droitsmtp [::webapp::form-yesno "droitsmtp" $droitsmtp $fmt]
-    set droitttl [::webapp::form-yesno "droitttl" $droitttl $fmt]
-    set droitmac [::webapp::form-yesno "droitmac" $droitmac $fmt]
-    set droitgenl [::webapp::form-yesno "droitgenl" $droitgenl $fmt]
+    set p_admin [::webapp::form-yesno "p_admin" $p_admin $fmt]
+    set p_smtp  [::webapp::form-yesno "p_smtp" $p_smtp $fmt]
+    set p_ttl   [::webapp::form-yesno "p_ttl" $p_ttl $fmt]
+    set p_mac   [::webapp::form-yesno "p_mac" $p_mac $fmt]
+    set p_genl  [::webapp::form-yesno "p_genl" $p_genl $fmt]
 
     #
     # Extract the list of users belonging to this group
@@ -458,7 +459,8 @@ d cgi-register {action edit} {
     set lines {}
 
     set nlogin 1
-    foreach login [::pgsql::getcols $dbfd global.corresp "idgrp = $idgrp" "login ASC" {login}] {
+    foreach login [::pgsql::getcols $dbfd global.nmuser "idgrp = $idgrp" \
+    					"login ASC" {login}] {
 	set n [read-user $dbfd $login tab comment]
 	if {$n == 1} then {
 	    set comment "$tab(lastname) $tab(firstname)"
@@ -745,12 +747,12 @@ d cgi-register {action edit} {
 				[list %TITLE% $title] \
 				[list %ORGGRP% $orggrp] \
 				[list %NEWGRP% $newgrp] \
-				[list %ADMIN% $admin] \
-				[list %DROITSMTP% $droitsmtp] \
-				[list %DROITTTL% $droitttl] \
-				[list %DROITMAC% $droitmac] \
-				[list %DROITGENL% $droitgenl] \
-				[list %MESSAGEGROUPE% $msggrp] \
+				[list %PADMIN% $p_admin] \
+				[list %PSMTP% $p_smtp] \
+				[list %PTTL% $p_ttl] \
+				[list %PMAC% $p_mac] \
+				[list %PGENL% $p_genl] \
+				[list %MSGGROUP% $msggrp] \
 				[list %LISTECOR% $listecor] \
 				[list %LISTVIEWS% $listviews] \
 				[list %LISTDOMAINS% $listdomains] \
@@ -769,11 +771,11 @@ d cgi-register {action mod} {
     {confirm		1 1}
     {orggrp		1 1}
     {newgrp		1 1}
-    {admin		1 1}
-    {droitsmtp		1 1}
-    {droitttl		1 1}
-    {droitmac		1 1}
-    {droitgenl		1 1}
+    {p_admin		1 1}
+    {p_smtp		1 1}
+    {p_ttl		1 1}
+    {p_mac		1 1}
+    {p_genl		1 1}
     {login[0-9]+	0 9999}
     {viewname[0-9]+	0 9999}
     {viewsort[0-9]+	0 9999}
@@ -801,18 +803,18 @@ d cgi-register {action mod} {
     #
 
     set idorphan -1
-    pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = ''" tab {
+    pg_select $dbfd "SELECT idgrp FROM global.nmgroup WHERE name = ''" tab {
 	set idorphan $tab(idgrp)
     }
 
     if {$idorphan == -1} then {
-	set sql "INSERT INTO global.groupe
-				(nom, admin, droitsmtp, droitttl, droitmac, droitgenl)
+	set sql "INSERT INTO global.nmgroup
+				(name, p_admin, p_smtp, p_ttl, p_mac, p_genl)
 			    VALUES ('', 0, 0, 0, 0, 0)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d error [mc "Cannot create group of orphaned users (%s)" $msg]
 	} 
-	pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = ''" tab {
+	pg_select $dbfd "SELECT idgrp FROM global.nmgroup WHERE name = ''" tab {
 	    set idorphan $tab(idgrp)
 	}
     }
@@ -882,7 +884,7 @@ d cgi-register {action mod} {
     # Test various permissions
     #
 
-    foreach f {admin droitsmtp droitttl droitmac droitgenl} {
+    foreach f {p_admin p_smtp p_ttl p_mac p_genl} {
 	set $f [set v [string trim [lindex $ftab($f) 0]]]
 	if {$v ne "0" && $v ne "1"} then {
 	    d error [mc {Invalid value '%1$s' for form variable '%2$s'} $v $f]
@@ -900,14 +902,14 @@ d cgi-register {action mod} {
     
     # read all logins from database
 
-    set sql "SELECT corresp.login, groupe.nom, groupe.idgrp
-		FROM global.corresp, global.groupe
-		WHERE corresp.idgrp = groupe.idgrp"
+    set sql "SELECT nmuser.login, nmgroup.name, nmgroup.idgrp
+		FROM global.nmuser, global.nmgroup
+		WHERE nmuser.idgrp = nmgroup.idgrp"
     pg_select $dbfd $sql tab {
-	if {$tab(nom) eq ""} then {
+	if {$tab(name) eq ""} then {
 	    set torph($tab(login)) ""
 	} else {
-	    set tcor($tab(login)) [list $tab(idgrp) $tab(nom)]
+	    set tcor($tab(login)) [list $tab(idgrp) $tab(name)]
 	}
     }
 
@@ -1299,7 +1301,7 @@ d cgi-register {action mod} {
     # re-inserting them from input.
     #
 
-    set ltab {global.groupe global.corresp
+    set ltab {global.nmgroup global.nmuser
 		dns.p_network dns.p_ip dns.p_dom
 		dns.p_dhcpprofile} 
     d dblock $ltab
@@ -1308,9 +1310,9 @@ d cgi-register {action mod} {
 
     if {$do eq "add"} then {
 	set qnewgrp [::pgsql::quote $newgrp]
-	set sql "INSERT INTO global.groupe
-				(nom, admin, droitsmtp, droitttl, droitmac, droitgenl)
-			VALUES ('$qnewgrp', $admin, $droitsmtp, $droitttl, $droitmac, $droitgenl)"
+	set sql "INSERT INTO global.nmgroup
+				(name, p_admin, p_smtp, p_ttl, p_mac, p_genl)
+			VALUES ('$qnewgrp', $p_admin, $p_smtp, $p_ttl, $p_mac, $p_genl)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "add %s" $newgrp] $msg
 	} 
@@ -1323,7 +1325,7 @@ d cgi-register {action mod} {
 	if {$orggrp ne $newgrp} then {
 	    # Group renaming
 	    set qnewgrp [::pgsql::quote $newgrp]
-	    set sql "UPDATE global.groupe SET nom = '$qnewgrp' WHERE nom = '$qorggrp'"
+	    set sql "UPDATE global.nmgroup SET name = '$qnewgrp' WHERE name = '$qorggrp'"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		d dbabort [mc "rename %s" $orggrp]
 	    }
@@ -1333,7 +1335,8 @@ d cgi-register {action mod} {
     # Get group id
     set qnewgrp [::pgsql::quote $newgrp]
     set idgrp -1
-    pg_select $dbfd "SELECT idgrp FROM global.groupe WHERE nom = '$qnewgrp'" tab {
+    set sql "SELECT idgrp FROM global.nmgroup WHERE name = '$qnewgrp'"
+    pg_select $dbfd $sql tab {
 	set idgrp $tab(idgrp)
     }
     if {$idgrp == -1} then {
@@ -1341,26 +1344,26 @@ d cgi-register {action mod} {
     }
 
     # Update group attributes
-    lappend cmd "UPDATE global.groupe
-		    SET admin = $admin,
-			droitsmtp = $droitsmtp,
-			droitttl = $droitttl,
-			droitmac = $droitmac,
-			droitgenl = $droitgenl
+    lappend cmd "UPDATE global.nmgroup
+		    SET p_admin = $p_admin,
+			p_smtp = $p_smtp,
+			p_ttl = $p_ttl,
+			p_mac = $p_mac,
+			p_genl = $p_genl
 		    WHERE idgrp = $idgrp"
 
     # Create or assign users
     if {[llength $lcorcreate] > 0} then {
 	foreach login $lcorcreate {
 	    set qlogin [::pgsql::quote $login]
-	    lappend cmd "INSERT INTO global.corresp (login,present,idgrp)
+	    lappend cmd "INSERT INTO global.nmuser (login,present,idgrp)
 			    VALUES ('$qlogin',1,$idgrp)"
 	}
     }
     if {[llength $lcorassign] > 0} then {
 	foreach login $lcorassign {
 	    set qlogin [::pgsql::quote $login]
-	    lappend cmd "UPDATE global.corresp SET idgrp = $idgrp
+	    lappend cmd "UPDATE global.nmuser SET idgrp = $idgrp
 			    WHERE login = '$qlogin'"
 	}
     }
@@ -1369,13 +1372,13 @@ d cgi-register {action mod} {
     if {[llength $lcordelete] > 0} then {
 	foreach login $lcordelete {
 	    set qlogin [::pgsql::quote $login]
-	    lappend cmd "UPDATE global.corresp SET idgrp = $idorphan
+	    lappend cmd "UPDATE global.nmuser SET idgrp = $idorphan
 			    WHERE login = '$qlogin'"
 	}
     }
 
     # Delete all unneeded users
-    lappend cmd "DELETE FROM global.corresp 
+    lappend cmd "DELETE FROM global.nmuser 
 			WHERE idgrp = $idorphan 
 			    AND idcor NOT IN (SELECT DISTINCT idcor FROM dns.rr)"
 
@@ -1446,7 +1449,7 @@ d cgi-register {action mod} {
 
     set h [display-group $dbfd $idgrp]
     lassign $h \
-		tabdroits tablogins tabnets tabcidralone \
+		tabperms tablogins tabnets tabcidralone \
 		tabviews tabdomains tabdhcpprofiles tabdreq
 
     #
@@ -1456,7 +1459,7 @@ d cgi-register {action mod} {
     d result $conf(page-mod) [list \
 			    [list %NEWGRP% $newgrp] \
 			    [list %TABLOGINS% $tablogins] \
-			    [list %TABDROITS% $tabdroits] \
+			    [list %TABPERMS% $tabperms] \
 			    [list %TABVIEWS% $tabviews] \
 			    [list %TABDOMAINS% $tabdomains] \
 			    [list %TABNETS% $tabnets] \

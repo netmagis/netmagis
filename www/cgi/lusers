@@ -109,15 +109,15 @@ d cgi-register {} {} {
 
     set u [::webapp::authuser create %AUTO%]
 
-    set sql "SELECT login, present, groupe.nom \
-		FROM global.corresp, global.groupe \
-		WHERE groupe.idgrp = corresp.idgrp \
-		ORDER BY login"
+    set sql "SELECT u.login, u.present, g.name \
+		FROM global.nmuser u, global.nmgroup g \
+		WHERE g.idgrp = u.idgrp \
+		ORDER BY u.login"
 
     pg_select $dbfd $sql tab {
             set login		$tab(login)
             set present		$tab(present)
-            set nomgroupe	$tab(nom)
+            set groupname	$tab(name)
 
 	    if {[catch {set n [$ah getuser $login $u]} msg]} then {
 		d error [mc "Authentication base problem: %s" $msg]
@@ -137,7 +137,7 @@ d cgi-register {} {} {
 
             lappend lines [list Normal \
 				  $login $name $mail $phone $addr \
-				  $present $nomgroupe ]
+				  $present $groupname ]
     }
 
     $u destroy

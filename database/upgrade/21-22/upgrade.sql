@@ -129,6 +129,16 @@ ALTER TABLE dns.dhcpprofil
     DROP CONSTRAINT IF EXISTS dhcpprofil_nom_pkey		CASCADE,
     DROP CONSTRAINT IF EXISTS dhcpprofil_iddhcpprofil_check	CASCADE ;
 
+ALTER TABLE global.corresp
+    DROP CONSTRAINT IF EXISTS corresp_pkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS corresp_login_key			CASCADE,
+    DROP CONSTRAINT IF EXISTS corresp_idgrp_fkey		CASCADE ;
+
+ALTER TABLE global.groupe
+    DROP CONSTRAINT IF EXISTS groupe_pkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS groupe_nom_key			CASCADE ;
+
+
 ------------------------------------------------------------------------------
 -- Rename tables and columns, and rebuild constraints
 ------------------------------------------------------------------------------
@@ -140,6 +150,26 @@ ALTER TABLE global.config RENAME COLUMN valeur		TO value ;
 
 DELETE FROM global.config WHERE key = 'dnsupdateperiod' ;
 INSERT INTO global.config (key, value) VALUES ('schemaversion', '22') ;
+
+ALTER TABLE global.seq_groupe RENAME TO seq_nmgroup ;
+ALTER TABLE global.groupe RENAME TO nmgroup ;
+ALTER TABLE global.nmgroup RENAME COLUMN nom		TO name ;
+ALTER TABLE global.nmgroup RENAME COLUMN admin		TO p_admin ;
+ALTER TABLE global.nmgroup RENAME COLUMN droitsmtp	TO p_smtp ;
+ALTER TABLE global.nmgroup RENAME COLUMN droitttl	TO p_ttl ;
+ALTER TABLE global.nmgroup RENAME COLUMN droitmac	TO p_mac ;
+ALTER TABLE global.nmgroup RENAME COLUMN droitgenl	TO p_genl ;
+ALTER TABLE global.nmgroup
+    ADD UNIQUE (name),
+    ADD PRIMARY KEY (idgrp) ;
+
+ALTER TABLE global.seq_corresp RENAME TO seq_nmuser ;
+ALTER TABLE global.corresp RENAME TO nmuser ;
+ALTER TABLE global.nmuser
+    ADD UNIQUE (login),
+    ADD FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
+    ADD PRIMARY KEY (idcor) ;
+
 
 
 -- dns schema
@@ -232,7 +262,7 @@ ALTER TABLE dns.p_network RENAME COLUMN idreseau TO idnet ;
 ALTER TABLE dns.p_network RENAME COLUMN tri		TO sort ;
 ALTER TABLE dns.p_network
     ADD FOREIGN KEY (idnet) REFERENCES dns.network (idnet),
-    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    ADD FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     ADD PRIMARY KEY (idgrp, idnet) ;
 
 ALTER TABLE dns.dr_dom RENAME TO p_dom ;
@@ -240,13 +270,13 @@ ALTER TABLE dns.p_dom RENAME COLUMN tri			TO sort ;
 ALTER TABLE dns.p_dom RENAME COLUMN rolemail		TO mailrole ;
 ALTER TABLE dns.p_dom DROP COLUMN roleweb ;
 ALTER TABLE dns.p_dom
-    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe(idgrp),
+    ADD FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     ADD PRIMARY KEY (idgrp, iddom) ;
 
 ALTER TABLE dns.dr_ip RENAME TO p_ip ;
 ALTER TABLE dns.p_ip RENAME COLUMN adr			TO addr ;
 ALTER TABLE dns.p_ip
-    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    ADD FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     ADD PRIMARY KEY (idgrp, addr) ;
 
 -- Add a new access right to views
@@ -256,13 +286,13 @@ CREATE TABLE dns.p_view (
     sort	INT,		-- sort class
     selected	INT,		-- selected by default in menus
 
-    FOREIGN KEY (idgrp)  REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idgrp)  REFERENCES global.nmgroup (idgrp),
     FOREIGN KEY (idview) REFERENCES dns.view (idview),
     PRIMARY KEY (idgrp, idview)
 ) ;
 INSERT INTO dns.p_view (idgrp, idview, sort, selected)
     SELECT idgrp, idview, 100, 1
-	    FROM global.groupe, dns.view
+	    FROM global.nmgroup, dns.view
 	    WHERE view.name = 'default' ;
 
 ALTER TABLE dns.seq_dhcpprofil RENAME TO seq_dhcpprofile ;
@@ -279,7 +309,7 @@ ALTER TABLE dns.dr_dhcpprofil RENAME TO p_dhcpprofile ;
 ALTER TABLE dns.p_dhcpprofile RENAME COLUMN iddhcpprofil TO iddhcpprof ;
 ALTER TABLE dns.p_dhcpprofile RENAME COLUMN tri		TO sort ;
 ALTER TABLE dns.p_dhcpprofile
-    ADD FOREIGN KEY (idgrp)      REFERENCES global.groupe (idgrp),
+    ADD FOREIGN KEY (idgrp)      REFERENCES global.nmgroup (idgrp),
     ADD FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
     ADD PRIMARY KEY (idgrp, iddhcpprof) ;
 
@@ -295,7 +325,7 @@ ALTER TABLE dns.rr RENAME COLUMN droitsmtp		TO sendsmtp ;
 UPDATE dns.rr
     SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
 ALTER TABLE dns.rr
-    ADD FOREIGN KEY (idcor)      REFERENCES global.corresp  (idcor),
+    ADD FOREIGN KEY (idcor)      REFERENCES global.nmuser   (idcor),
     ADD FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
     ADD FOREIGN KEY (idview)     REFERENCES dns.view        (idview),
     ADD FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),

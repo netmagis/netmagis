@@ -7,33 +7,35 @@ CREATE SCHEMA pgauth ;
 -- global schema
 ---------------------------------------------------------------------------
 
--- users and groups
+-- Netmagis users and groups
+-- We can't use names "user" and "group" since they are reserved SQL words
+-- and using them would mean quoting every request.
 
-CREATE SEQUENCE global.seq_groupe START 1 ;
-CREATE TABLE global.groupe (
+CREATE SEQUENCE global.seq_nmgroup START 1 ;
+CREATE TABLE global.nmgroup (
     idgrp	INT			-- group id
-		    DEFAULT NEXTVAL ('global.seq_groupe'),
-    nom		TEXT,			-- group name
-    admin	INT DEFAULT 0,		-- 1 if root, 0 if normal user
-    droitsmtp	INT DEFAULT 0,		-- 1 if right to manage SMTP senders
-    droitttl	INT DEFAULT 0,		-- 1 if right to edit TTL for a host
-    droitmac	INT DEFAULT 0,		-- 1 if right to access MAC module
-    droitgenl	INT DEFAULT 0,		-- 1 if right to generate a link number
+		    DEFAULT NEXTVAL ('global.seq_nmgroup'),
+    name	TEXT,			-- group name
+    p_admin	INT DEFAULT 0,		-- 1 if root, 0 if normal user
+    p_smtp	INT DEFAULT 0,		-- 1 if right to manage SMTP senders
+    p_ttl	INT DEFAULT 0,		-- 1 if right to edit TTL for a host
+    p_mac	INT DEFAULT 0,		-- 1 if right to access MAC module
+    p_genl	INT DEFAULT 0,		-- 1 if right to generate a link number
 
-    UNIQUE (nom),
+    UNIQUE (name),
     PRIMARY KEY (idgrp)
 ) ;
 
-CREATE SEQUENCE global.seq_corresp START 1 ;
-CREATE TABLE global.corresp (
+CREATE SEQUENCE global.seq_nmuser START 1 ;
+CREATE TABLE global.nmuser (
     idcor	INT			-- user id
-		    DEFAULT NEXTVAL ('global.seq_corresp'),
+		    DEFAULT NEXTVAL ('global.seq_nmuser'),
     login	TEXT,			-- user name
     present	INT,			-- 1 if present, 0 if no longer here
     idgrp	INT,			-- group
 
     UNIQUE (login),
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     PRIMARY KEY (idcor)
 ) ;
 
@@ -196,7 +198,7 @@ CREATE TABLE dns.p_network (
     dhcp	INT DEFAULT 0,		-- perm to manage DHCP ranges
     acl		INT DEFAULT 0,		-- perm to manage ACL (later...)
 
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     FOREIGN KEY (idnet) REFERENCES dns.network (idnet),
     PRIMARY KEY (idgrp, idnet)
 ) ;
@@ -209,7 +211,7 @@ CREATE TABLE dns.p_dom (
     sort	INT,			-- sort class
     mailrole	INT DEFAULT 0,		-- perm to manage mail roles
 
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     PRIMARY KEY (idgrp, iddom)
 ) ;
 
@@ -220,7 +222,7 @@ CREATE TABLE dns.p_ip (
     addr	CIDR,			-- network range
     allow_deny	INT,			-- 1 = allow, 0 = deny
 
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     PRIMARY KEY (idgrp, addr)
 ) ;
 
@@ -232,7 +234,7 @@ CREATE TABLE dns.p_view (
     sort	INT,			-- sort class
     selected	INT,			-- selected by default in menus
 
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     FOREIGN KEY (idview) REFERENCES dns.view (idview),
     PRIMARY KEY (idgrp, idview)
 ) ;
@@ -258,7 +260,7 @@ CREATE TABLE dns.p_dhcpprofile (
     iddhcpprof	INT,			-- DHCP profile
     sort	INT,			-- sort class
 
-    FOREIGN KEY (idgrp)      REFERENCES global.groupe  (idgrp),
+    FOREIGN KEY (idgrp)      REFERENCES global.nmgroup  (idgrp),
     FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
     PRIMARY KEY (idgrp, iddhcpprof)
 ) ;
@@ -306,7 +308,7 @@ CREATE TABLE dns.rr (
     sendsmtp	INT DEFAULT 0,		-- 1 if this host may emit with SMTP
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
-    FOREIGN KEY (idcor)      REFERENCES global.corresp  (idcor),
+    FOREIGN KEY (idcor)      REFERENCES global.nmuser   (idcor),
     FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
     FOREIGN KEY (idview)     REFERENCES dns.view        (idview),
     FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
@@ -438,7 +440,7 @@ CREATE TABLE topo.dr_eq (
     pattern	TEXT NOT NULL,		-- regular expression
     allow_deny	INT,			-- 1 = allow, 0 = deny
 
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp)
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp)
 ) ;
 
 -- Sensor definition

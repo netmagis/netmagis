@@ -253,7 +253,7 @@ proc check-record {_nrec _t _tab lkeys} {
 
 proc read-idcor {dbfd login} {
     set qlogin [::pgsql::quote $login]
-    set sql "SELECT idcor FROM global.corresp WHERE login = '$qlogin'"
+    set sql "SELECT idcor FROM global.nmuser WHERE login = '$qlogin'"
     set idcor -1
     pg_select $dbfd $sql tab {
 	set idcor $tab(idcor)
@@ -356,10 +356,10 @@ proc import-group {verbose argv dbfd} {
     # Read group, user, realm and account definition from database
     #
     
-    pg_select $dbfd "SELECT * FROM global.groupe" tab {
-	set refg($tab(nom)) $tab(idgrp)
+    pg_select $dbfd "SELECT * FROM global.nmgroup" tab {
+	set refg($tab(name)) $tab(idgrp)
     }
-    pg_select $dbfd "SELECT * FROM global.corresp" tab {
+    pg_select $dbfd "SELECT * FROM global.nmuser" tab {
 	set refu($tab(login)) [list $tab(idcor) $tab(idgrp)]
     }
     pg_select $dbfd "SELECT * FROM pgauth.user" tab {
@@ -377,7 +377,7 @@ proc import-group {verbose argv dbfd} {
     foreach g [array names tabgrp] {
 	if {! [info exists refg($g)]} then {
 	    set g [::pgsql::quote $g]
-	    lappend sql "INSERT INTO global.groupe (nom) VALUES ('$g')"
+	    lappend sql "INSERT INTO global.nmgroup (name) VALUES ('$g')"
 	}
     }
     if {[llength $sql] > 0} then {
@@ -387,8 +387,8 @@ proc import-group {verbose argv dbfd} {
 	}
 
 	# re-read idgrp
-	pg_select $dbfd "SELECT * FROM global.groupe" tab {
-	    set refg($tab(nom)) $tab(idgrp)
+	pg_select $dbfd "SELECT * FROM global.nmgroup" tab {
+	    set refg($tab(name)) $tab(idgrp)
 	}
     }
 
@@ -403,13 +403,13 @@ proc import-group {verbose argv dbfd} {
 	    if {[info exists refu($c)]} then {
 		lassign $refu($c) idcor idg
 		if {$idg != $idgrp} then {
-		    lappend sql "UPDATE global.corresp
+		    lappend sql "UPDATE global.nmuser
 					SET idgrp = $idgrp
 					WHERE idcor = $idcor"
 		}
 	    } else {
 		set c [::pgsql::quote $c]
-		lappend sql "INSERT INTO global.corresp (login, present, idgrp)
+		lappend sql "INSERT INTO global.nmuser (login, present, idgrp)
 					VALUES ('$c', 1, $idgrp)"
 	    }
 	}
@@ -540,8 +540,8 @@ proc import-network {verbose argv dbfd} {
     # Read referential data from database
     #
     
-    pg_select $dbfd "SELECT * FROM global.groupe" tab {
-	set refgroup($tab(nom)) [list $tab(idgrp) $tab(admin)]
+    pg_select $dbfd "SELECT * FROM global.nmgroup" tab {
+	set refgroup($tab(name)) [list $tab(idgrp) $tab(p_admin)]
     }
     pg_select $dbfd "SELECT * FROM dns.community" tab {
 	set refcomm($tab(name)) $tab(idcomm)
@@ -889,8 +889,8 @@ proc check-groups-in-set-allbut {dbfd _tabfile _tabgrp} {
     # Read groups from database
     #
 
-    pg_select $dbfd "SELECT * FROM global.groupe" tab {
-	set tabgrp($tab(nom)) $tab(idgrp)
+    pg_select $dbfd "SELECT * FROM global.nmgroup" tab {
+	set tabgrp($tab(name)) $tab(idgrp)
     }
 
     #
@@ -1042,7 +1042,7 @@ proc import-view {verbose argv dbfd} {
 		    lappend sql "INSERT INTO dns.p_view (idgrp, idview,
 		    					sort, selected)
 					(SELECT idgrp, $idview, $sort, 0
-					    FROM global.groupe $w)"
+					    FROM global.nmgroup $w)"
 		}
 		SET {
 		    foreach g $groups {
@@ -1174,7 +1174,7 @@ proc import-domain {verbose argv dbfd} {
 		    }
 		    lappend sql "INSERT INTO dns.p_dom (idgrp, iddom, sort)
 					(SELECT idgrp, $iddom, $sort
-					    FROM global.groupe $w)"
+					    FROM global.nmgroup $w)"
 		}
 		SET {
 		    foreach g $groups {
