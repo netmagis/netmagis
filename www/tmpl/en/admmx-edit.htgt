@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modify MX of %NOM%.%DOMAIN% in view %VIEW%}
+    \titre {1} {Modify MX of %NAME%.%DOMAIN% in view %VIEW%}
 
     \tableau {
 	\bordure {0} {}
@@ -57,7 +57,7 @@
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<input type="hidden" name="action" value="mod">
-	<INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
+	<INPUT TYPE="HIDDEN" NAME="name" VALUE="%NAME%">
 	<INPUT TYPE="HIDDEN" NAME="domain" VALUE="%DOMAIN%">
 	<INPUT TYPE="HIDDEN" NAME="idview" VALUE="%IDVIEW%">
 	\tableau {

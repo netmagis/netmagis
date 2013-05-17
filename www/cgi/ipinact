@@ -81,7 +81,7 @@ source %LIBNETMAGIS%
 ##############################################################################
 
 proc get-host-name {dbfd addr} {
-    set sql "SELECT rr.nom || '.' || domain.name AS name
+    set sql "SELECT rr.name || '.' || domain.name AS name
 			FROM dns.rr, dns.rr_ip, dns.domain
 			WHERE rr.idrr = rr_ip.idrr
 			    AND rr.iddom = domain.iddom

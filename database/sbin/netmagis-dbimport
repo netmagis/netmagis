@@ -1371,7 +1371,7 @@ proc zone-analyze-rr {line oldname} {
 proc get-existing-rr {dbfd idview iddom} {
     global existingrr
 
-    set sql "SELECT r.nom AS name, i.addr
+    set sql "SELECT r.name, i.addr
 			FROM dns.rr r, dns.rr_ip i
 			WHERE r.idrr = i.idrr
 			    AND r.idview = $idview
@@ -1380,7 +1380,7 @@ proc get-existing-rr {dbfd idview iddom} {
 	lappend existingrr(ip:$tab(name)) [::ip::normalize $tab(addr)]
     }
 
-    set sql "SELECT r1.nom AS name, r2.nom AS cname1, d.name AS cname2
+    set sql "SELECT r1.name AS name, r2.name AS cname1, d.name AS cname2
 			FROM dns.rr r1, dns.rr_cname c, dns.rr r2, dns.domain d
 			WHERE r1.idrr = c.idrr
 				AND c.cname = r2.idrr

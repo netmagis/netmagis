@@ -292,7 +292,7 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 	#
 
 	array unset groups
-	set sql2 "SELECT rr.nom || '.' || domain.name AS host,
+	set sql2 "SELECT rr.name || '.' || domain.name AS host,
 			    rr.mac,
 			    rr_ip.addr,
 			    rr.iddhcpprof

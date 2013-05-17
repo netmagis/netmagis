@@ -191,8 +191,8 @@ d cgi-register {action list} {
     #
 
     set sql "
-	SELECT r1.nom AS namea, d1.name AS domaina,
-		r2.nom AS namem, d2.name AS domainm, v2.name AS viewnamem
+	SELECT r1.name AS namea, d1.name AS domaina,
+		r2.name AS namem, d2.name AS domainm, v2.name AS viewnamem
 	    FROM dns.mail_role, global.corresp,
 		dns.rr r1, dns.domain d1, dns.rr r2, dns.domain d2,
 		dns.view v2
@@ -398,7 +398,7 @@ proc disp-edit {dbfd _chkv _tabuid} {
     # In order to display mail address
     #
 
-    set name $trr(nom)
+    set name $trr(name)
     set domain $trr(domain)
 
     #
@@ -412,7 +412,7 @@ proc disp-edit {dbfd _chkv _tabuid} {
 	d error [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
     }
 
-    set namem $trrm(nom)
+    set namem $trrm(name)
     set domm $trrm(domain)
     set domainm [menu-domain $dbfd $tabuid(idcor) "domainm" "" $domm]
 

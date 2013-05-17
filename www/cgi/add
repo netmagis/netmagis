@@ -13,18 +13,18 @@
 #   - add host
 #	- action : "add-host"
 #	- confirm : "no" or "yes" (if confirmation)
-#	- nom : name of host to add
+#	- name : name of host to add
 #	- domain: domain of host to add
 #	- idview: view id in which the host must be added
 #	- addr: IP address
 #	- mac : MAC address
 #	- iddhcpprof : DHCP profil id, or 0
 #	- hinfo : host type (text)
-#	- droitsmtp : non-existent or non-empty
+#	- sendsmtp : non-existent or non-empty
 #	- ttl : value (or empty if not authorized)
-#	- commentaire : comments
-#	- respnom : name of the person responsible for this host
-#	- respmel : mail address of the person responsible for this host
+#	- comment : comments
+#	- respname : name of the person responsible for this host
+#	- respmail : mail address of the person responsible for this host
 #	- naddr : number of IP addresses to add, if any
 #   - free address block search
 #	- action : "add-multi"
@@ -34,7 +34,7 @@
 #	- naddr : desired block size
 #   - add alias
 #	- action : "add-alias"
-#	- nom : name of alias to add
+#	- name : name of alias to add
 #	- domain : domain of alias to add
 #	- idview: view id in which the alias must be added
 #	- alias : name of canonical existing host
@@ -176,8 +176,8 @@ d cgi-register {action {}} {
     # authorization button
     #
 
-    lassign [menu-droitsmtp $dbfd "droitsmtp" tabuid 0] \
-	    droitsmtplibelle droitsmtpmenu
+    lassign [menu-sendsmtp $dbfd "sendsmtp" tabuid 0] \
+	    sendsmtplibelle sendsmtpmenu
 
     #
     # Get TTL permission in order to display (or not display) TTL field
@@ -251,8 +251,8 @@ d cgi-register {action {}} {
 				[list %MENUHINFO% $menuhinfo] \
 				[list %TTLLIBELLE% $ttllibelle] \
 				[list %TTLVAL% $ttlval] \
-				[list %DROITSMTPLIBELLE% $droitsmtplibelle] \
-				[list %DROITSMTPMENU% $droitsmtpmenu] \
+				[list %SENDSMTPLIBELLE% $sendsmtplibelle] \
+				[list %SENDSMTPMENU% $sendsmtpmenu] \
 				[list %DHCPPROFLIBELLE% $dhcpproflibelle] \
 				[list %DHCPPROFMENU% $dhcpprofmenu] \
 				[list %MENUPLAGE% $menuplage] \
@@ -281,18 +281,18 @@ d cgi-register {action {}} {
 
 d cgi-register {action add-host} {
     {confirm	1 1}
-    {nom	1 1}
+    {name	1 1}
     {domain	1 1}
     {idview	1 1}
     {addr	1 1}
     {mac	1 1}
     {iddhcpprof 1 1}
-    {droitsmtp	0 1}
+    {sendsmtp	0 1}
     {ttl	1 1}
     {hinfo	1 1}
-    {commentaire 1 1}
-    {respnom	1 1}
-    {respmel	1 1}
+    {comment	1 1}
+    {respname	1 1}
+    {respmail	1 1}
     {naddr	1 1}
 } {
     global conf
@@ -304,13 +304,13 @@ d cgi-register {action add-host} {
     # Check name and domain
     #
 
-    set msg [check-name-syntax $nom]
+    set msg [check-name-syntax $name]
     if {$msg ne ""} then {
 	d error $msg
     }
-    set nom [string tolower $nom]
+    set name [string tolower $name]
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domain $idview trr "host"]
+    set msg [check-authorized-host $dbfd $idcor $name $domain $idview trr "host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -329,9 +329,9 @@ d cgi-register {action add-host} {
 	    set exip 1
 	}
     } else {
-	if {$respnom eq "" && $respmel eq ""} then {
-	    set respnom "$tabuid(lastname) $tabuid(firstname)"
-	    set respmel $tabuid(mail)
+	if {$respname eq "" && $respmail eq ""} then {
+	    set respname "$tabuid(lastname) $tabuid(firstname)"
+	    set respmail $tabuid(mail)
 	}
     }
 
@@ -397,13 +397,13 @@ d cgi-register {action add-host} {
     #
 
     if {$tabuid(droitsmtp)} then {
-	if {$droitsmtp eq ""} then {
-	    set droitsmtp 0
+	if {$sendsmtp eq ""} then {
+	    set sendsmtp 0
 	} else {
-	    set droitsmtp 1
+	    set sendsmtp 1
 	}
     } else {
-	set droitsmtp 0
+	set sendsmtp 0
     }
 
     #
@@ -437,15 +437,15 @@ d cgi-register {action add-host} {
     # Common code for confirmation
     #
 
-    set l {nom domain addr idview mac iddhcpprof droitsmtp ttl hinfo
-			    commentaire respnom respmel naddr}
+    set l {name domain addr idview mac iddhcpprof sendsmtp ttl hinfo
+			    comment respname respmail naddr}
     set hidden [::webapp::hide-parameters $l ftab]
 
     #
     # Ask for confirmation if user asked for SMTP emit right
     #
 
-    if {! $exip && $droitsmtp && $confirm ne "yes"} then {
+    if {! $exip && $sendsmtp && $confirm ne "yes"} then {
 	#
 	# Confirmation page
 	#
@@ -471,7 +471,7 @@ d cgi-register {action add-host} {
 	d urlset "%URLFORM%" $conf(nextadd) {}
 	d urladdnext "%URLFORM%"
 	d result $conf(page-exist) [list \
-						[list %NOM%     $nom] \
+						[list %NAME%    $name] \
 						[list %DOMAIN%  $domain] \
 						[list %ADDR%    $addr] \
 						[list %HIDDEN%  $hidden] \
@@ -484,9 +484,9 @@ d cgi-register {action add-host} {
     # Insert object
     #
 
-    set msg [add-host $dbfd trr $nom $iddom $idview $addr \
-    			$mac $iddhcpprof $idhinfo $droitsmtp $ttl \
-			$commentaire $respnom $respmel $idcor]
+    set msg [add-host $dbfd trr $name $iddom $idview $addr \
+    			$mac $iddhcpprof $idhinfo $sendsmtp $ttl \
+			$comment $respname $respmail $idcor]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -684,9 +684,9 @@ d cgi-register {action add-multi} {
 #
 
 d cgi-register {action add-alias} {
-    {nom	1 1}
+    {name	1 1}
     {domain	1 1}
-    {nomref	1 1}
+    {nameref	1 1}
     {domainref	1 1}
     {idview	1 1}
 } {
@@ -699,23 +699,23 @@ d cgi-register {action add-alias} {
     # Check names of alias and host
     #
 
-    set msg [check-name-syntax $nom]
+    set msg [check-name-syntax $name]
     if {$msg ne ""} then {
 	d error $msg
     }
-    set nom [string tolower $nom]
+    set name [string tolower $name]
 
-    set msg [check-name-syntax $nomref]
+    set msg [check-name-syntax $nameref]
     if {$msg ne ""} then {
 	d error $msg
     }
-    set nomref [string tolower $nomref]
+    set nameref [string tolower $nameref]
 
     #
     # Add alias
     #
 
-    set msg [add-alias $dbfd $nom $domain $idview $nomref $domainref $idcor]
+    set msg [add-alias $dbfd $name $domain $idview $nameref $domainref $idcor]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -725,8 +725,8 @@ d cgi-register {action add-alias} {
     #
 
     d result $conf(page-alias) [list \
-				    [list %FQDN%    "$nom.$domain"] \
-				    [list %FQDNREF% "$nomref.$domainref"] \
+				    [list %FQDN%    "$name.$domain"] \
+				    [list %FQDNREF% "$nameref.$domainref"] \
 			    ]
     return 0
 }

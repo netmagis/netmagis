@@ -137,13 +137,13 @@ localhost	IN	A	127.0.0.1
     \titre {2} {\ancre {rrsup} {RR supplémentaires}}
 
 	Texte à ajouter après chaque RR de type A ou MX.  Ce texte
-	doit contenir la chaîne \gras {%NOM%}, qui sera remplacée
+	doit contenir la chaîne \gras {%NAME%}, qui sera remplacée
 	par le nom du RR en cours de traitement.
 
 	Exemple~:
 	\retrait {
-	    \verbatim {%NOM%	IN	MX	10 isis.u-strasbg.fr.
-%NOM%	IN	MX	20 amon.u-strasbg.fr}
+	    \verbatim {%NAME%	IN	MX	10 isis.u-strasbg.fr.
+%NAME%	IN	MX	20 amon.u-strasbg.fr}
 	}
 }
 

@@ -90,7 +90,7 @@ proc main {argv0 argv} {
     # Check access to host
     #
 
-    set name   $trr(nom)
+    set name   $trr(name)
     set domain $trr(domain)
     set msg [check-authorized-host $dbfd $tabcor(idcor) $name $domain $idview bidon "del-name"]
     if {$msg ne ""} then {

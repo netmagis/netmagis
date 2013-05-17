@@ -288,7 +288,7 @@ CREATE SEQUENCE dns.seq_rr START 1 ;
 CREATE TABLE dns.rr (
     idrr	INT			-- RR id
 		    DEFAULT NEXTVAL ('dns.seq_rr'),
-    nom		TEXT,			-- name of RR (first component)
+    name	TEXT,			-- name of RR (first component)
     iddom	INT,			-- domain name of RR
     idview	INT,			-- view id
 
@@ -296,22 +296,22 @@ CREATE TABLE dns.rr (
     iddhcpprof	INT,			-- DHCP profile or NULL
 
     idhinfo	INT DEFAULT 0,		-- host type
-    commentaire	TEXT,			-- comment
-    respnom	TEXT,			-- name of responsible person
-    respmel	TEXT,			-- mail address of responsible person
+    comment	TEXT,			-- comment
+    respname	TEXT,			-- name of responsible person
+    respmail	TEXT,			-- mail address of responsible person
 
     idcor	INT,			-- last mod author
     date	TIMESTAMP (0) WITHOUT TIME ZONE		-- last mod date
 		    DEFAULT CURRENT_TIMESTAMP,
-    droitsmtp	INT DEFAULT 0,		-- 1 if this host may emit with SMTP
+    sendsmtp	INT DEFAULT 0,		-- 1 if this host may emit with SMTP
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (idcor)      REFERENCES global.corresp  (idcor),
     FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
     FOREIGN KEY (idview)     REFERENCES dns.view        (idview),
     FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
-    FOREIGN KEY (idhinfo)      REFERENCES dns.hinfo      (idhinfo),
-    UNIQUE (nom, iddom, idview),
+    FOREIGN KEY (idhinfo)    REFERENCES dns.hinfo       (idhinfo),
+    UNIQUE (name, iddom, idview),
     -- MAC address should be unique in a view
     UNIQUE (mac, idview),
     PRIMARY KEY (idrr)

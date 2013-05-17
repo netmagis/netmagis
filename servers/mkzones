@@ -15,7 +15,7 @@
 # History:
 #   2002/04/23 : pda/jean : specification
 #   2002/04/23 : pda/jean : design
-#   2002/05/23 : pda/jean : substution of %NOM% for supplementary RR
+#   2002/05/23 : pda/jean : substution of %NAME% for supplementary RR
 #   2004/01/14 : pda/jean : generation of IPv6 AAAA records
 #   2004/03/09 : pda/jean : generation of mail roles
 #   2008/12/09 : jean     : TTL management
@@ -270,14 +270,14 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     # Get all IP (v4 or v6) addresses
     #
 
-    set sql "SELECT rr.nom, rr.ttl, rr_ip.addr, family(rr_ip.addr) AS family
+    set sql "SELECT rr.name, rr.ttl, rr_ip.addr, family(rr_ip.addr) AS family
 			FROM dns.rr, dns.rr_ip
 			WHERE rr.iddom = $iddom
 			    AND rr.idview = $idview
 			    AND rr.idrr = rr_ip.idrr
-			ORDER BY upper(rr.nom), rr_ip.addr"
+			ORDER BY upper(rr.name), rr_ip.addr"
     pg_select $dbfd $sql tab {
-	set nom    $tab(nom)
+	set name   $tab(name)
 	set ttl    $tab(ttl)
 	set family $tab(family)
 	if {$family == 4} then {
@@ -288,13 +288,13 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	append txt "$nom	$ttl	IN	$a	$tab(addr)"
+	append txt "$name	$ttl	IN	$a	$tab(addr)"
 	append txt "\n"
 
-	if {$rrsup ne "" && ! [info exists affiche($nom)]} then {
-	    set affiche($nom) ""
+	if {$rrsup ne "" && ! [info exists affiche($name)]} then {
+	    set affiche($name) ""
 	    set r $rrsup
-	    regsub -all -- {%NOM%} $r $nom r
+	    regsub -all -- {%NAME%} $r $name r
 	    append txt $r
 	    append txt "\n"
 	}
@@ -304,23 +304,23 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     # Get all MX: "a MX n b" (rr1 is a, rr2 is b)
     #
 
-    set sql "SELECT rr1.nom, rr1.ttl, rr_mx.prio,
-			    rr2.nom AS nom2, rr2.iddom AS iddom2
+    set sql "SELECT rr1.name, rr1.ttl, rr_mx.prio,
+			    rr2.name AS name2, rr2.iddom AS iddom2
 			FROM dns.rr rr1, dns.rr_mx, dns.rr rr2
 			WHERE rr1.iddom = $iddom
 			    AND rr1.idrr = rr_mx.idrr
 			    AND rr2.idrr = rr_mx.mx
 			    AND rr1.idview = $idview
-			ORDER BY upper(rr1.nom)"
+			ORDER BY upper(rr1.name)"
     pg_select $dbfd $sql tab {
-	set nom $tab(nom)
+	set name $tab(name)
 	set ttl $tab(ttl)
 	set d $tab(iddom2)
-	set fqdn2 "$tab(nom2).$tabiddom($d)."
+	set fqdn2 "$tab(name2).$tabiddom($d)."
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	append txt "$nom	$ttl	IN	MX	$tab(prio) $fqdn2"
+	append txt "$name	$ttl	IN	MX	$tab(prio) $fqdn2"
 	append txt "\n"
     }
 
@@ -328,21 +328,21 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     # Get all aliases: "a CNAME b" (rr1 is a, rr2 is b)
     #
 
-    set sql "SELECT rr1.nom, rr1.ttl, rr2.nom AS nom2, rr2.iddom AS iddom2
+    set sql "SELECT rr1.name, rr1.ttl, rr2.name AS name2, rr2.iddom AS iddom2
 			FROM dns.rr rr1, dns.rr_cname, dns.rr rr2
 			WHERE rr1.iddom = $iddom
 			    AND rr1.idrr = rr_cname.idrr
 			    AND rr2.idrr = rr_cname.cname
 			    AND rr1.idview = $idview
-			ORDER BY upper(rr1.nom)"
+			ORDER BY upper(rr1.name)"
     pg_select $dbfd $sql tab {
 	set d $tab(iddom2)
-	set fqdn2 "$tab(nom2).$tabiddom($d)."
+	set fqdn2 "$tab(name2).$tabiddom($d)."
 	set ttl $tab(ttl)
 	if {$ttl == -1} then {
 	    set ttl ""
 	}
-	append txt "$tab(nom)	$ttl	IN	CNAME	$fqdn2"
+	append txt "$tab(name)	$ttl	IN	CNAME	$fqdn2"
 	append txt "\n"
     }
 
@@ -351,13 +351,13 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     #
 
     set sql "SELECT relay_dom.prio,
-			rr.nom || '.' || domain.name || '.' AS rrname
+			rr.name || '.' || domain.name || '.' AS rrname
 		    FROM dns.relay_dom, dns.rr, dns.domain
 		    WHERE relay_dom.iddom = $iddom
 			AND relay_dom.mx = rr.idrr
 			AND rr.iddom = domain.iddom
 			AND rr.idview = $idview
-		    ORDER BY relay_dom.prio ASC, domain.name, upper(rr.nom)
+		    ORDER BY relay_dom.prio ASC, domain.name, upper(rr.name)
 		"
     set relays {}
     pg_select $dbfd $sql tab {
@@ -369,12 +369,12 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
     #
 
     if {[llength $relays] > 0} then {
-	set sql "SELECT rr.nom, rr.ttl
+	set sql "SELECT rr.name, rr.ttl
 			FROM dns.mail_role, dns.rr
 			WHERE mail_role.mailaddr = rr.idrr
 			    AND rr.idview = $idview
 			    AND rr.iddom = $iddom
-			ORDER BY upper(rr.nom) ASC
+			ORDER BY upper(rr.name) ASC
 			"
 	pg_select $dbfd $sql tab {
 	    foreach r $relays {
@@ -382,7 +382,7 @@ proc gen-normal {dbfd zone selection idview rrsup _txt} {
 		if {$ttl == -1} then {
 		    set ttl ""
 		}
-		append txt "$tab(nom)	$ttl	$r"
+		append txt "$tab(name)	$ttl	$r"
 		append txt "\n"
 	    }
 	}
@@ -436,7 +436,7 @@ proc gen-ipv4 {dbfd zone selection idview rrsup _txt} {
 	set first 1
     }
 
-    set sql "SELECT rr_ip.addr, rr.nom, rr.ttl, rr.iddom
+    set sql "SELECT rr_ip.addr, rr.name, rr.ttl, rr.iddom
 			FROM dns.rr_ip, dns.rr
 			WHERE rr_ip.addr <<= '$selection'
 			    AND rr.idview = $idview
@@ -447,7 +447,7 @@ proc gen-ipv4 {dbfd zone selection idview rrsup _txt} {
 	# Get PTR
 	#
 
-	set fqdn "$tab(nom).$tabiddom($tab(iddom))."
+	set fqdn "$tab(name).$tabiddom($tab(iddom))."
 
 	set addr $tab(addr)
 	set lname {}
@@ -462,7 +462,6 @@ proc gen-ipv4 {dbfd zone selection idview rrsup _txt} {
 	}
 	append txt "$name	$ttl	IN	PTR	$fqdn"
 	append txt "\n"
-
     }
 
     return 1
@@ -509,7 +508,7 @@ proc gen-ipv6 {dbfd zone selection idview rrsup _txt} {
     
     set nbq [expr 32 - ($prefixlen / 4)]
 
-    set sql "SELECT rr_ip.addr, rr.nom, rr.ttl, rr.iddom
+    set sql "SELECT rr_ip.addr, rr.name, rr.ttl, rr.iddom
 			FROM dns.rr_ip, dns.rr
 			WHERE rr_ip.addr <<= '$selection'
 			    AND rr.idview = $idview
@@ -576,7 +575,7 @@ proc gen-ipv6 {dbfd zone selection idview rrsup _txt} {
 	# Get out the PTR
 	#
 
-	set fqdn "$tab(nom).$tabiddom($tab(iddom))."
+	set fqdn "$tab(name).$tabiddom($tab(iddom))."
 
 	set ttl $tab(ttl)
 	if {$ttl == -1} then {

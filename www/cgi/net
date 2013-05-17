@@ -23,7 +23,7 @@
 #   2004/01/14 : pda/jean : add IPv6
 #   2004/08/05 : pda/jean : add mac
 #   2004/08/06 : pda/jean : extend network permissions
-#   2008/09/24 : pda/jean : add droitsmtp
+#   2008/09/24 : pda/jean : add sendsmtp
 #   2010/10/07 : pda      : add free addresses
 #   2010/10/13 : pda      : added dhcp ranges in map
 #   2010/12/09 : pda      : i18n
@@ -285,7 +285,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	#  cname(172.16.201.129) {aton.example.com diablo.example.com...}
 	#
 
-	set sql "SELECT alias.nom || '.' || domain.name AS name, rr_ip.addr
+	set sql "SELECT alias.name || '.' || domain.name AS name, rr_ip.addr
 		    FROM dns.rr alias, dns.rr canon, dns.rr_ip, dns.rr_cname, dns.domain
 		    WHERE canon.idrr = rr_cname.cname
 			AND rr_cname.idrr = alias.idrr
@@ -295,7 +295,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 			AND rr_ip.addr <<= '$cidrplage'
 			AND domain.iddom = alias.iddom
 			AND canon.idview = $idview
-		    ORDER BY alias.nom"
+		    ORDER BY alias.name"
 	pg_select $dbfd $sql tab {
 	    lappend cname($tab(addr)) $tab(name)
 	}
@@ -316,10 +316,10 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	#
 
 	set jourfmt [dnsconfig get "jourfmt"]
-	set sql "SELECT DISTINCT rr.nom || '.' || domain.name AS name,
+	set sql "SELECT DISTINCT rr.name || '.' || domain.name AS name,
 			rr_ip.addr,
-			rr.commentaire, rr.respnom, rr.respmel, rr.date,
-			rr.droitsmtp, rr.mac,
+			rr.comment, rr.respname, rr.respmail, rr.date,
+			rr.sendsmtp, rr.mac,
 			rr.iddhcpprof AS dhcp1,
 			dhcprange.iddhcpprof AS dhcp2,
 			hinfo.name AS hinfo, corresp.login
@@ -343,10 +343,10 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	    set dhcp1		$tab(dhcp1)
 	    set dhcp2		$tab(dhcp2)
 	    set hinfo		$tab(hinfo)
-	    set commentaire	$tab(commentaire)
-	    set respnom    	$tab(respnom)
-	    set respmel    	$tab(respmel)
-	    set droitsmtp	$tab(droitsmtp)
+	    set comment		$tab(comment)
+	    set respname    	$tab(respname)
+	    set respmail    	$tab(respmail)
+	    set sendsmtp	$tab(sendsmtp)
 	    set date		$tab(date)
 	    set login		$tab(login)
 
@@ -356,10 +356,10 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 		set secondaries ""
 	    }
 
-	    if {! [string equal $respmel ""]} then {
-		set responsable "$respnom <$respmel>"
+	    if {$respmail ne ""} then {
+		set resp "$respname <$respmail>"
 	    } else {
-		set responsable $respnom
+		set resp $respname
 	    }
 
 	    if {[info exists profdhcpname($dhcp2)]} then {
@@ -372,10 +372,10 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 
 	    set date [clock format [clock scan $date] -format $jourfmt]
 
-	    if {$droitsmtp} then {
-		set droitsmtp [mc "Yes"]
+	    if {$sendsmtp} then {
+		set sendsmtp [mc "Yes"]
 	    } else {
-		set droitsmtp "-"
+		set sendsmtp "-"
 	    }
 
 	    switch -- $format {
@@ -383,26 +383,25 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 		    d urlset "" $conf(nextedit) [list [list "addr" $addr]]
 		    d urlsetnext "" $nextprog $nextargs
 		    set url [d urlget ""]
-		    set nom "$primary "
-		    append nom [::webapp::helem "i" $secondaries]
+		    set name "$primary "
+		    append name [::webapp::helem "i" $secondaries]
 		    set addr [::webapp::helem "a" $addr "href" $url]
 		}
 		latex {
-		    set nom "$primary \\textit \{$secondaries\}"
+		    set name "$primary \\textit \{$secondaries\}"
 		}
 		csv {
 		    set ns [join $secondaries ","]
 		    if {$ns eq ""} then {
-			set nom "$primary"
+			set name "$primary"
 		    } else {
-			set nom "$primary,$ns"
+			set name "$primary,$ns"
 		    }
 		}
 	    }
 	    lappend lines [list Normal \
-				$addr $nom $mac $dhcp \
-				$hinfo $commentaire $responsable \
-				$droitsmtp \
+				$addr $name $mac $dhcp \
+				$hinfo $comment $resp $sendsmtp \
 				$login $date]
 	    incr nbhost
 	}

@@ -13,7 +13,7 @@
 #   dnsmodattr www.example.com internal TTL ""        # put back default value
 #
 # Modifiable attributes (keys):
-#   MAC, HINFO, RESPNOM, RESPMEL, COMMENTAIRE, DHCPPROFIL, TTL, DROITSMTP
+#   MAC, HINFO, RESPNAME, RESPMAIL, COMMENT, DHCPPROFILE, TTL, SENDSMTP
 #
 # History
 #   2004/09/29 : pda/jean : specification
@@ -27,7 +27,7 @@
 
 source %LIBNETMAGIS%
 
-set conf(attrs)		{mac hinfo respnom respmel commentaire dhcpprofile ttl droitsmtp}
+set conf(attrs)		{mac hinfo respname respmail comment dhcpprofile ttl sendsmtp}
 
 ##############################################################################
 # Small utility functions
@@ -71,9 +71,9 @@ proc update-rr {dbfd _trr idview _tattr} {
     # Check SMTP rights
     #
 
-    if {[info exists tattr(droitsmtp)]} then {
-	set droitsmtp $tattr(droitsmtp)
-	if {$droitsmtp ne "" && (![regexp {^[0-1]$} $droitsmtp])} {
+    if {[info exists tattr(sendsmtp)]} then {
+	set sendsmtp $tattr(sendsmtp)
+	if {$sendsmtp ne "" && (![regexp {^[0-1]$} $sendsmtp])} {
 	    return [mc "Invalid SMTP emit right (must be 0 or 1)"]
 	}
     }
@@ -153,9 +153,9 @@ proc update-rr {dbfd _trr idview _tattr} {
 		# numeric value
 		lappend mod "idhinfo = $v"
 	    }
-	    droitsmtp {
+	    sendsmtp {
 		# numeric value
-		lappend mod "droitsmtp = $v"
+		lappend mod "sendsmtp = $v"
 	    }
 	    dhcpprofile {
 		# numeric value or empty string
@@ -200,7 +200,7 @@ proc update-rr {dbfd _trr idview _tattr} {
     # Update log
     #
 
-    set m "modify $trr(nom).$trr(domain):"
+    set m "modify $trr(name).$trr(domain):"
     foreach c [array names tattr] {
 	append m " $c=$tattr($c)"
     }

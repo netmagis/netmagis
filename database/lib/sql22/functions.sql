@@ -130,7 +130,7 @@ CREATE OR REPLACE FUNCTION dns.mark_cidr (net CIDR, lim INTEGER, grp INTEGER)
 	END LOOP ;
 
 	UPDATE allip
-	    SET fqdn = rr.nom || '.' || domain.name,
+	    SET fqdn = rr.name || '.' || domain.name,
 		avail = 2
 	    FROM dns.rr_ip, dns.rr, dns.domain
 	    WHERE allip.addr = rr_ip.addr

@@ -344,7 +344,7 @@ proc topotop-all {dbfd datefmt arg} {
     #
 
     set unproc {}
-    set sql "SELECT DISTINCT r.nom || '.' || d.name AS eq
+    set sql "SELECT DISTINCT r.name || '.' || d.name AS eq
 			FROM topo.ifchanges i, dns.rr r, dns.domain d
 			WHERE i.processed = 0
 			    AND i.idrr = r.idrr
@@ -505,16 +505,16 @@ proc topotop-ifchg {dbfd datefmt arg} {
 			[mc "Log"] \
 		    ]
     if {$arg eq ""} then {
-	set sql "SELECT r.nom || '.' || d.name AS eq, i.*
+	set sql "SELECT r.name || '.' || d.name AS eq, i.*
 			FROM topo.ifchanges i, dns.rr r, dns.domain d
 			WHERE i.idrr = r.idrr AND r.iddom = d.iddom
 			ORDER BY reqdate DESC"
     } else {
 	set qeq [::pgsql::quote $arg]
-	set sql "SELECT r.nom || '.' || d.name AS eq, i.*
+	set sql "SELECT r.name || '.' || d.name AS eq, i.*
 			FROM topo.ifchanges i, dns.rr r, dns.domain d
 			WHERE i.idrr = r.idrr AND r.iddom = d.iddom
-			    AND (r.nom || '.' || d.name) = '$qeq'
+			    AND (r.name || '.' || d.name) = '$qeq'
 			ORDER BY reqdate DESC"
     }
 
@@ -573,7 +573,7 @@ proc topotop-modlog {dbfd datefmt arg} {
     set qdate [::pgsql::quote $date]
     set sql "SELECT moddate, modlog FROM topo.ifchanges,
 					dns.rr r, dns.domain d
-			WHERE (r.nom || '.' || d.name) = '$qeq'
+			WHERE (r.name || '.' || d.name) = '$qeq'
 			    AND iface = '$qif'
 			    AND reqdate = '$qdate'"
     set lines {}

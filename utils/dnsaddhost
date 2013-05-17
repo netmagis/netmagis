@@ -91,7 +91,7 @@ proc main {argv0 argv} {
     set comment ""
     set iddhcpprof 0
     set hinfo ""
-    set droitsmtp 0
+    set sendsmtp 0
     set ttl -1
     set comment ""
     set respname ""
@@ -103,11 +103,11 @@ proc main {argv0 argv} {
 
 	set mac		$trr(mac)
 	set iddhcpprof	$trr(iddhcpprof)
-	set droitsmtp	$trr(droitsmtp)
+	set sendsmtp	$trr(sendsmtp)
 	set ttl		$trr(ttl)
-	set comment	$trr(commentaire)
-	set respname	$trr(respnom)
-	set respmail	$trr(respmel)
+	set comment	$trr(comment)
+	set respname	$trr(respname)
+	set respmail	$trr(respmail)
     }
 
     #
@@ -140,7 +140,7 @@ proc main {argv0 argv} {
     #
 
     set msg [add-host $dbfd trr $name $iddom $idview $addr \
-    				$mac $iddhcpprof 0 $droitsmtp \
+    				$mac $iddhcpprof 0 $sendsmtp \
 				$ttl $comment $respname $respmail $tabcor(idcor)]
     if {$msg ne ""} then {
 	d error $msg

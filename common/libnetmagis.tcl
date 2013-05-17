@@ -3428,7 +3428,7 @@ proc read-user {dbfd login _tabuid _msg} {
 proc all-rr-by-name {dbfd name iddom} {
     set qname [::pgsql::quote $name]
     set sql "SELECT idrr, idview FROM dns.rr
-    				WHERE nom = '$qname' AND iddom = $iddom"
+    				WHERE name = '$qname' AND iddom = $iddom"
     set l {}
     pg_select $dbfd $sql tab {
 	lappend l [list $tab(idrr) $tab(idview)]
@@ -3465,7 +3465,7 @@ proc read-rr-by-name {dbfd name iddom idview _trr} {
     set qname [::pgsql::quote $name]
     set found 0
     set sql "SELECT idrr FROM dns.rr
-			    WHERE nom = '$qname'
+			    WHERE name = '$qname'
 				AND iddom = $iddom
 				AND idview = $idview"
     pg_select $dbfd $sql tab {
@@ -3569,7 +3569,7 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #   - return value: 1 if ok, 0 if not found
 #   - parameter _trr :
 #	_trr(idrr) : id of RR found
-#	_trr(nom) : name (first component of the FQDN)
+#	_trr(name) : name (first component of the FQDN)
 #	_trr(iddom) : domain id
 #	_trr(idview) : view id
 #	_trr(domain) : domain name
@@ -3578,11 +3578,11 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #	_trr(dhcpprof) : DHCP profile name, or "No profile"
 #	_trr(idhinfo) : machine info id
 #	_trr(hinfo) : machine info text
-#	_trr(droitsmtp) : 1 if host has the right to emit with non auth SMTP
+#	_trr(sendsmtp) : 1 if host has the right to emit with non auth SMTP
 #	_trr(ttl) : TTL of the host (for all its IP addresses)
-#	_trr(commentaire) : comments
-#	_trr(respnom) : name of the responsible person
-#	_trr(respmel) : mail of the responsible person
+#	_trr(comment) : comments
+#	_trr(respname) : name of the responsible person
+#	_trr(respmail) : mail of the responsible person
 #	_trr(idcor) : id of user who has done the last modification
 #	_trr(date) : date of last modification
 #	_trr(ip) : list of all IP addresses {{idview addr} ...}
@@ -3600,7 +3600,7 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #   2004/02/06 : pda/jean : add mailrole, mailaddr and roleweb
 #   2004/08/05 : pda/jean : simplification and add mac
 #   2005/04/08 : pda/jean : add dhcpprofil
-#   2008/07/24 : pda/jean : add droitsmtp
+#   2008/07/24 : pda/jean : add sendsmtp
 #   2010/10/31 : pda      : add ttl
 #   2010/11/29 : pda      : i18n
 #   2012/10/08 : pda/jean : views
@@ -3611,8 +3611,8 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 proc read-rr-by-id {dbfd idrr _trr} {
     upvar $_trr trr
 
-    set fields {nom iddom idview
-	mac iddhcpprof idhinfo droitsmtp ttl commentaire respnom respmel
+    set fields {name iddom idview
+	mac iddhcpprof idhinfo sendsmtp ttl comment respname respmail
 	idcor date}
 
     catch {unset trr}
@@ -4074,11 +4074,11 @@ proc del-orphaned-rr {dbfd idrr} {
 #	- mac : MAC address, or empty string
 #	- iddhcpprof : DHCP profile id, or 0
 #	- idhinfo : HINFO or empty string (default is searched in the database)
-#	- droitsmtp : 1 if ok to emit with non auth SMTP
+#	- sendsmtp : 1 if ok to emit with non auth SMTP
 #	- ttl : TTL value, or -1 for default value
 #	- comment : commment
-#	- respnom : responsible person name
-#	- respmel : responsible person mail
+#	- respname : responsible person name
+#	- respmail : responsible person mail
 #	- idcor : user id
 #	- _trr : in return, will contain RR information
 # Output:
@@ -4093,14 +4093,14 @@ proc del-orphaned-rr {dbfd idrr} {
 #   2004/08/05 : pda/jean : add mac
 #   2004/10/05 : pda      : change date format
 #   2005/04/08 : pda/jean : add dhcpprofil
-#   2008/07/24 : pda/jean : add droitsmtp
+#   2008/07/24 : pda/jean : add sendsmtp
 #   2010/10/31 : pda      : add ttl
 #   2010/11/29 : pda      : i18n
 #   2013/04/05 : pda/jean : add views
 #
 
-proc add-rr {dbfd name iddom idview mac iddhcpprof idhinfo droitsmtp ttl
-				comment respnom respmel idcor _trr} {
+proc add-rr {dbfd name iddom idview mac iddhcpprof idhinfo sendsmtp ttl
+				comment respname respmail idcor _trr} {
     upvar $_trr trr
 
     if {$mac eq ""} then {
@@ -4108,9 +4108,9 @@ proc add-rr {dbfd name iddom idview mac iddhcpprof idhinfo droitsmtp ttl
     } else {
 	set qmac "'[::pgsql::quote $mac]'"
     }
-    set qcomment [::pgsql::quote $comment]
-    set qrespnom [::pgsql::quote $respnom]
-    set qrespmel [::pgsql::quote $respmel]
+    set qcomment  [::pgsql::quote $comment]
+    set qrespname [::pgsql::quote $respname]
+    set qrespmail [::pgsql::quote $respmail]
     set hinfodef ""
     set hinfoval ""
     if {$idhinfo ne ""} then {
@@ -4121,12 +4121,13 @@ proc add-rr {dbfd name iddom idview mac iddhcpprof idhinfo droitsmtp ttl
 	set iddhcpprof NULL
     }
     set sql "INSERT INTO dns.rr
-		    (nom, iddom, idview, mac, iddhcpprof, $hinfodef
-			droitsmtp, ttl, commentaire, respnom, respmel,
+		    (name, iddom, idview, mac, iddhcpprof, $hinfodef
+			sendsmtp, ttl, comment, respname, respmail,
 			idcor)
 		VALUES
 		    ('$name', $iddom, $idview, $qmac, $iddhcpprof, $hinfoval
-			$droitsmtp, $ttl, '$qcomment', '$qrespnom', '$qrespmel',
+			$sendsmtp, $ttl,
+			'$qcomment', '$qrespname', '$qrespmail',
 			$idcor)
 		    "
     if {[::pgsql::execsql $dbfd $sql msg]} then {
@@ -4155,7 +4156,7 @@ proc add-rr {dbfd name iddom idview mac iddhcpprof idhinfo droitsmtp ttl
 #	- mac : MAC address, or empty string
 #	- iddhcpprof : DHCP profile id, or 0
 #	- idhinfo : idhinfo (0 for default value)
-#	- droitsmtp : 1 if ok to emit with non auth SMTP
+#	- sendsmtp : 1 if ok to emit with non auth SMTP
 #	- ttl : TTL value, or -1 for default value
 #	- comment : commment
 #	- respname : responsible person name
@@ -4170,7 +4171,7 @@ proc add-rr {dbfd name iddom idview mac iddhcpprof idhinfo droitsmtp ttl
 #   2013/04/10 : pda/jean : accept only one view
 #
 
-proc add-host {dbfd _trr name iddom idview addr mac iddhcpprof idhinfo droitsmtp ttl comment respname respmail idcor} {
+proc add-host {dbfd _trr name iddom idview addr mac iddhcpprof idhinfo sendsmtp ttl comment respname respmail idcor} {
     upvar $_trr trr
 
     #
@@ -4187,7 +4188,7 @@ proc add-host {dbfd _trr name iddom idview addr mac iddhcpprof idhinfo droitsmtp
 	# Name did not exist, thus we insert a new RR
 	#
 	set msg [add-rr $dbfd $name $iddom $idview \
-			$mac $iddhcpprof $idhinfo $droitsmtp $ttl \
+			$mac $iddhcpprof $idhinfo $sendsmtp $ttl \
 			$comment $respname $respmail $idcor trr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "add %s" $name] $msg
@@ -4207,11 +4208,11 @@ proc add-host {dbfd _trr name iddom idview addr mac iddhcpprof idhinfo droitsmtp
 	    if {! ($mac eq $trr(mac)
 			&& $iddhcpprof eq $trr(iddhcpprof)
 		    	&& $idhinfo eq $trr(idhinfo)
-		    	&& $droitsmtp eq $trr(droitsmtp)
+		    	&& $sendsmtp eq $trr(sendsmtp)
 		    	&& $ttl eq $trr(ttl)
-		    	&& $comment eq $trr(commentaire)
-		    	&& $respname eq $trr(respnom)
-		    	&& $respmail eq $trr(respmel))} then {
+		    	&& $comment eq $trr(comment)
+		    	&& $respname eq $trr(respname)
+		    	&& $respmail eq $trr(respmail))} then {
 		if {$mac eq ""} then {
 		    set qmac NULL
 		} else {
@@ -4227,11 +4228,11 @@ proc add-host {dbfd _trr name iddom idview addr mac iddhcpprof idhinfo droitsmtp
 					mac = $qmac,
 					iddhcpprof = $iddhcpprof,
 					idhinfo = $idhinfo,
-					droitsmtp = $droitsmtp,
+					sendsmtp = $sendsmtp,
 					ttl = $ttl,
-					commentaire = '$qcomment',
-					respnom = '$qrespname',
-					respmel = '$qrespmail'
+					comment = '$qcomment',
+					respname = '$qrespname',
+					respmail = '$qrespmail'
 				    WHERE idrr = $trr(idrr)"
 		if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		    d dbabort [mc "modify %s" [mc "host information"]] $msg
@@ -4354,7 +4355,7 @@ proc add-alias {dbfd name domain idview nameref domainref idcor} {
 proc del-host {dbfd _trr idview} {
     upvar $_trr trr
 
-    set fqdn "$trr(nom).$trr(domain)"
+    set fqdn "$trr(name).$trr(domain)"
     set vn [u viewname $idview]
 
     set cname [rr-cname-by-view trr $idview]
@@ -4366,7 +4367,7 @@ proc del-host {dbfd _trr idview} {
 
 	set p "?"
 	if {[read-rr-by-id $dbfd $cname tc]} then {
-	    set p "$tc(nom).$tc(domain)"
+	    set p "$tc(name).$tc(domain)"
 	}
 	d writelog "delalias" "delete alias $fqdn/$vn -> $p"
     } else {
@@ -4412,7 +4413,7 @@ proc del-ip {dbfd addr _trr idview _delobj} {
     upvar $_trr trr
     upvar $_delobj delobj
 
-    set fqdn "$trr(nom).$trr(domain)"
+    set fqdn "$trr(name).$trr(domain)"
     set vn [u viewname $idview]
 
     set lip [rr-ip-by-view trr $idview]
@@ -4640,12 +4641,12 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
     if {$idview ne ""} then {
 	set cname [rr-cname-by-view trr $idview]
 	if {$cname ne ""} then {
-	    set fqdn "$trr(nom).$trr(domain)"
+	    set fqdn "$trr(name).$trr(domain)"
 	    if {! [read-rr-by-id $dbfd $cname tc]} then {
 		return [mc {Cannot read host-id %s} $idalias]
 	    }
 
-	    set fqdn2 "$tc(nom).$tc(domain)"
+	    set fqdn2 "$tc(name).$tc(domain)"
 	    lappend lines [list Normal [mc "Alias name"] $fqdn]
 	    lappend lines [list Normal [mc "Points to"] $fqdn2]
 	}
@@ -4657,7 +4658,7 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 
     if {$lines eq ""} then {
 	# name
-	lappend lines [list Normal [mc "Name"] "$trr(nom).$trr(domain)"]
+	lappend lines [list Normal [mc "Name"] "$trr(name).$trr(domain)"]
 
 	# IP address(es)
 	set lip [rr-ip-by-view trr $idview]
@@ -4695,12 +4696,12 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	    set ndroitsmtp $tab(ndroitsmtp)
 	}
 	if {$ndroitsmtp > 0} then {
-	    if {$trr(droitsmtp)} then {
-		set droitsmtp [mc "Yes"]
+	    if {$trr(sendsmtp)} then {
+		set sendsmtp [mc "Yes"]
 	    } else {
-		set droitsmtp [mc "No"]
+		set sendsmtp [mc "No"]
 	    }
-	    lappend lines [list Normal [mc "SMTP emit right"] $droitsmtp]
+	    lappend lines [list Normal [mc "SMTP emit right"] $sendsmtp]
 	}
 
 	# TTL : display only if it used
@@ -4719,13 +4720,13 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	}
 
 	# comment
-	lappend lines [list Normal [mc "Comment"] $trr(commentaire)]
+	lappend lines [list Normal [mc "Comment"] $trr(comment)]
 
 	# responsible (name)
-	lappend lines [list Normal [mc "Responsible (name)"] $trr(respnom)]
+	lappend lines [list Normal [mc "Responsible (name)"] $trr(respname)]
 
 	# responsible (mail)
-	lappend lines [list Normal [mc "Responsible (mail)"] $trr(respmel)]
+	lappend lines [list Normal [mc "Responsible (mail)"] $trr(respmail)]
 
 	# aliases
 	set la {}
@@ -4733,13 +4734,13 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	    foreach va $trr(aliases) {
 		lassign $va idview idalias
 		if {[read-rr-by-id $dbfd $idalias ta]} then {
-		    lappend la "$ta(nom).$ta(domain) ([u viewname $idview])"
+		    lappend la "$ta(name).$ta(domain) ([u viewname $idview])"
 		}
 	    }
 	} else {
 	    foreach idalias [rr-aliases-by-view trr $idview] {
 		if {[read-rr-by-id $dbfd $idalias ta]} then {
-		    lappend la "$ta(nom).$ta(domain)"
+		    lappend la "$ta(name).$ta(domain)"
 		}
 	    }
 	}
@@ -4752,7 +4753,7 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	foreach i [rr-mailaddr-by-view trr $idview] {
 	    lassign $i idmailaddr idviewa
 	    if {[read-rr-by-id $dbfd $idmailaddr ta]} then {
-		lappend la "$ta(nom).$ta(domain)/[u viewname $idviewa]"
+		lappend la "$ta(name).$ta(domain)/[u viewname $idviewa]"
 	    }
 	}
 	if {[llength $la] > 0} then {
@@ -4821,7 +4822,7 @@ proc display-rr-masked {dbfd _trr idview rrtmpl} {
     upvar $_trr trr
 
     h mask-next
-    set link [h mask-link "$trr(nom).$trr(domain)"]
+    set link [h mask-link "$trr(name).$trr(domain)"]
     set desc [h mask-text [display-rr $dbfd -1 trr $idview $rrtmpl]]
     return [list $link $desc] 
 }
@@ -5272,7 +5273,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 		    #
 
 		    set found 1
-		    set name   $trr(nom)
+		    set name   $trr(name)
 		    set domain $trr(domain)
 		    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview bidon "del-name"]
 		    if {$msg ne ""} then {
@@ -5376,11 +5377,11 @@ proc html-select-view {_chkv next} {
 	    array unset trr
 	    array set trr $t
 
-	    set fqdn "$trr(nom).$trr(domain)"
+	    set fqdn "$trr(name).$trr(domain)"
 
 	    d urlset "" $next [list \
 				    [list "action" "edit"] \
-				    [list "nom" $trr(nom)] \
+				    [list "name" $trr(name)] \
 				    [list "domain" $trr(domain)] \
 				    [list "idview" $idview] \
 				]
@@ -5774,7 +5775,7 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		set idcname [rr-cname-by-view trr $idview]
 		if {$idcname ne ""} then {
 		    read-rr-by-id $dbfd $idcname t
-		    set fqdnref "$t(nom).$t(domain)"
+		    set fqdnref "$t(name).$t(domain)"
 		    switch $parm {
 			REJECT {
 			    return [mc {%1$s is an alias of host %2$s in view %3$s} $fqdn $fqdnref $viewname]
@@ -5802,7 +5803,7 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 			    set idrr [lindex $mx 1]
 			    set ok [check-name-by-addresses $dbfd $idcor $idrr t]
 			    if {! $ok} then {
-				set fqdnmx "$t(nom).$t(domain)"
+				set fqdnmx "$t(name).$t(domain)"
 				return [mc {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} $fqdnmx $fqdn]
 			    }
 			}
@@ -5825,7 +5826,7 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 			REJECT {
 			    # This name is already a mail address
 			    # (it already has a mailbox host)
-			    set fqdnm "$trrh(nom).$trrh(domain)"
+			    set fqdnm "$trrh(name).$trrh(domain)"
 			    return [mc {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn $viewname $fqdnm [u viewname $idviewmbx]]
 			}
 			CHECK {
@@ -6046,7 +6047,7 @@ proc check-authorized-mx {dbfd idcor name _iddom domain idview _exists _trr} {
 	    set iddom $tabmx(iddom)
 	    set msg [check-domain $dbfd $idcor iddom tabmx(domain) ""]
 	    if {$msg ne ""} then {
-		return [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s} "$tabmx(nom).$tabmx(domain)" $msg]
+		return [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s} "$tabmx(name).$tabmx(domain)" $msg]
 	    }
 	}
     }
@@ -6090,7 +6091,7 @@ proc check-domain-relay {dbfd idcor _iddom domain idview} {
     # Check that we own all specified relays
     #
 
-    set sql "SELECT r.nom AS nom, d.name AS domain
+    set sql "SELECT r.name AS name, d.name AS domain
 		FROM dns.relay_dom rd, dns.rr r, dns.domain d
 		WHERE rd.iddom = $iddom
 			AND rd.mx = r.idrr
@@ -6098,7 +6099,7 @@ proc check-domain-relay {dbfd idcor _iddom domain idview} {
 			AND r.idview = $idview
 		"
     pg_select $dbfd $sql tab {
-	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domain) $idview trr "existing-host"]
+	set msg [check-authorized-host $dbfd $idcor $tab(name) $tab(domain) $idview trr "existing-host"]
 	if {$msg ne ""} then {
 	    return [mc {You don't have rights to some relays of domain '%1$s': %2$s} $domain $msg]
 	}
@@ -6414,7 +6415,7 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprof} {
 #   - dbfd : database handle
 #   - field : field name
 #   - _tabuid : user characteristics
-#   - droitsmtp : default selected value
+#   - sendsmtp : default selected value
 # Output:
 #   - return value: list with 2 HTML strings {title menu}
 #
@@ -6425,7 +6426,7 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprof} {
 #   2010/12/05 : pda      : use tabuid instead of idcor
 #
 
-proc menu-droitsmtp {dbfd field _tabuid droitsmtp} {
+proc menu-sendsmtp {dbfd field _tabuid sendsmtp} {
     upvar $_tabuid tabuid
 
     #
@@ -6435,10 +6436,10 @@ proc menu-droitsmtp {dbfd field _tabuid droitsmtp} {
 
     if {$tabuid(droitsmtp)} then {
 	set title [mc "Use SMTP"]
-	set html [::webapp::form-bool $field $droitsmtp]
+	set html [::webapp::form-bool $field $sendsmtp]
     } else {
 	set title ""
-	set html [::webapp::form-hidden $field $droitsmtp]
+	set html [::webapp::form-hidden $field $sendsmtp]
     }
 
     return [list $title $html]
@@ -8685,8 +8686,8 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 	    # Criterion was given
 	    #
 	    #	%LOGIN%
-	    #	%NOM%
-	    #	%PRENOM%
+	    #	%LASTNAME%
+	    #	%FIRSTNAME%
 	    #
 
 	    set lusers [pgauth-ac-search-crit e ftab]
@@ -9314,7 +9315,7 @@ proc pgauth-ac-search-crit {_e _ftab} {
 #
 # Display possible actions for a password change
 #
-# Return : values for %LOGIN%, %NOM% and %PRENOM%.
+# Return : values for %LOGIN%, %LASTNAME% and %FIRSTNAME%.
 #
 
 proc pgauth-ac-display-passwd {_e login} {

@@ -29,7 +29,7 @@
 
     \titre {1} {Modification effectuée}
 
-    Les MX associés à \gras {%NOM%.%DOMAIN%} dans la vue %VIEW%
+    Les MX associés à \gras {%NAME%.%DOMAIN%} dans la vue %VIEW%
     ont été mis à jour~:
 
     %TABLEAU%

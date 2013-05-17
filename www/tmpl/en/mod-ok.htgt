@@ -41,7 +41,7 @@
     } {
 	\lignetableau {
 	    \casetableau {} {Name}
-	    \casetableau {} {%NOM%.%DOMAIN%}
+	    \casetableau {} {%NAME%.%DOMAIN%}
 	}
 	\lignetableau {
 	    \casetableau {} {MAC address}
@@ -57,7 +57,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {Use SMTP}
-	    \casetableau {} {%DROITSMTP%}
+	    \casetableau {} {%SENDSMTP%}
 	}
 	\lignetableau {
 	    \casetableau {} {TTL}
@@ -65,15 +65,15 @@
 	}
 	\lignetableau {
 	    \casetableau {} {Comment}
-	    \casetableau {} {%COMMENTAIRE%}
+	    \casetableau {} {%COMMENT%}
 	}
 	\lignetableau {
 	    \casetableau {} {Responsible (name)}
-	    \casetableau {} {%RESPNOM%}
+	    \casetableau {} {%RESPNAME%}
 	}
 	\lignetableau {
 	    \casetableau {} {Responsible (mail)}
-	    \casetableau {} {%RESPMEL%}
+	    \casetableau {} {%RESPMAIL%}
 	}
     }
 

@@ -196,16 +196,16 @@ d cgi-register {action edit} {
     set menudom [couple-domains $dbfd $tabuid(idcor) ""]
     set spec [list \
 		{prio {string 5}  {}} \
-		{nom  {string 30} {}} \
+		{name {string 30} {}} \
 		[list domain [list menu $menudom] {}] \
 	    ]
-    set sql "SELECT rd.mx, rd.prio, r.nom, d.name AS domain
+    set sql "SELECT rd.mx, rd.prio, r.name, d.name AS domain
 		FROM dns.relay_dom rd, dns.rr r, dns.domain d
 		WHERE rd.iddom = $iddom
 			AND rd.mx = r.idrr
 			AND r.iddom = d.iddom
 			AND r.idview = $idview
-		ORDER BY rd.prio, d.name, r.nom
+		ORDER BY rd.prio, d.name, r.name
 		"
     set idnum "mx"
 
@@ -236,11 +236,11 @@ d cgi-register {action mod} {
     {idview		1 1}
 
     {prio[0-9]+		0 9999}
-    {nom[0-9]+		0 9999}
+    {name[0-9]+		0 9999}
     {domain[0-9]+	0 9999}
 
     {prion[0-9]+	0 9999}
-    {nomn[0-9]+		0 9999}
+    {namen[0-9]+	0 9999}
     {domainn[0-9]+	0 9999}
 } {
     global conf
@@ -282,14 +282,14 @@ d cgi-register {action mod} {
     foreach c [array names ftab] {
 	if {[regexp {^prio(n?)([0-9]+)$} $c bidon n idmx]} then {
 	    set idxprio prio$n$idmx
-	    set idxnom  nom$n$idmx
+	    set idxname name$n$idmx
 	    set idxdom  domain$n$idmx
 	    if {[info exists ftab($idxprio)] && \
-			    [info exists ftab($idxnom)] && \
+			    [info exists ftab($idxname)] && \
 			    [info exists ftab($idxdom)] \
 		    } then {
 		set fprio [string trim [lindex $ftab($idxprio) 0]]
-		set fname [string trim [lindex $ftab($idxnom)  0]]
+		set fname [string trim [lindex $ftab($idxname) 0]]
 		set fdom  [string trim [lindex $ftab($idxdom)  0]]
 		if {$fprio ne ""} then {
 		    set mx [check-mx-target $dbfd $fprio $fname $fdom $idview $tabuid(idcor) msg]
@@ -352,7 +352,7 @@ d cgi-register {action mod} {
 	foreach mx $lrel {
 	    lassign $mx prio idmx
 	    read-rr-by-id $dbfd $idmx tabmx
-	    set n "$tabmx(nom).$tabmx(domain)"
+	    set n "$tabmx(name).$tabmx(domain)"
 	    lappend lines [list Normal $prio $n]
 	    lappend lm $n
 	}

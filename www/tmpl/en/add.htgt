@@ -67,7 +67,7 @@
 			\lignetableau {
 			    \casetableau {} {Name}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				<INPUT TYPE="TEXT" NAME="name" SIZE="30">
 				.
 				%DOMAIN%
 			    }
@@ -93,25 +93,25 @@
 			\lignetableau {
 			    \casetableau {} {Host type}
 			    \casetableau {} {%MENUHINFO%}
-			    \casetableau {} {%DROITSMTPLIBELLE%}
-			    \casetableau {} {%DROITSMTPMENU%}
+			    \casetableau {} {%SENDSMTPLIBELLE%}
+			    \casetableau {} {%SENDSMTPMENU%}
 			}
 			\lignetableau {
 			    \casetableau {} {Comment}
 			    \multicasetableau {3} {} {
-				<INPUT TYPE="TEXT" NAME="commentaire" SIZE="50">
+				<INPUT TYPE="TEXT" NAME="comment" SIZE="50">
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {Responsible (name)}
 			    \multicasetableau {3} {} {
-				<INPUT TYPE="TEXT" NAME="respnom" SIZE="50">
+				<INPUT TYPE="TEXT" NAME="respname" SIZE="50">
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {Responsible (mail)}
 			    \multicasetableau {3} {} {
-				<INPUT TYPE="TEXT" NAME="respmel" SIZE="50">
+				<INPUT TYPE="TEXT" NAME="respmail" SIZE="50">
 			    }
 			}
 			\lignetableau {
@@ -210,7 +210,7 @@
 				    \lignetableau {
 					\casetableau {} {Alias name}
 					\casetableau {} {
-					    <INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+					    <INPUT TYPE="TEXT" NAME="name" SIZE="30">
 					    .
 					    %DOMAIN%
 					}
@@ -218,7 +218,7 @@
 				    \lignetableau {
 					\casetableau {} {Host}
 					\casetableau {} {
-					    <INPUT TYPE="TEXT" NAME="nomref" SIZE="30">
+					    <INPUT TYPE="TEXT" NAME="nameref" SIZE="30">
 					    .
 					    %DOMAINREF%
 					}

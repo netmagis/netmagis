@@ -70,8 +70,8 @@ proc gen-mroute {dbfd idview mrouteprologue mroutefmt _mroutetxt} {
     # Step 2: read mail routes from database
     #
 
-    set sql "SELECT r1.nom || '.' || d1.name AS addr,
-		    r2.nom || '.' || d2.name AS mbox
+    set sql "SELECT r1.name || '.' || d1.name AS addr,
+		    r2.name || '.' || d2.name AS mbox
 		FROM dns.rr r1, dns.domain d1,
 		    dns.rr r2, dns.domain d2,
 		    dns.mail_role
@@ -80,7 +80,7 @@ proc gen-mroute {dbfd idview mrouteprologue mroutefmt _mroutetxt} {
 		    AND r1.iddom = d1.iddom
 		    AND mail_role.mboxhost = r2.idrr
 		    AND r2.iddom = d2.iddom
-		ORDER BY d2.name ASC, r2.nom ASC, d1.name ASC, r1.nom ASC
+		ORDER BY d2.name ASC, r2.name ASC, d1.name ASC, r1.name ASC
 		"
     pg_select $dbfd $sql tab {
 	append mroutetxt [format $mroutefmt $tab(addr) $tab(mbox)]

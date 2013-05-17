@@ -10,16 +10,16 @@
 #	- action : empty
 #   - display MX edit page
 #	- action : "edit"
-#	- nom : name of MX to edit
+#	- name : name of MX to edit
 #	- domain : domain of MX to edit
 #	- idview: view id
 #   - store MX modifications
 #	- action : "mod"
-#	- nom : name of MX to modify
+#	- name : name of MX to modify
 #	- domain : domain of MX to modify
 #	- idview: view id
 #	- prio* : MX priority
-#	- nom* : MX name
+#	- name* : MX name
 #	- domain* : MX domain
 #
 # History
@@ -162,7 +162,7 @@ d cgi-register {action {}} {
 ##############################################################################
 
 d cgi-register {action edit} {
-    {nom	1 1}
+    {name	1 1}
     {domain	1 1}
     {idview	1 1}
 } {
@@ -172,7 +172,7 @@ d cgi-register {action edit} {
     # Initialization
     #
 
-    set name   [lindex $ftab(nom) 0]
+    set name   [lindex $ftab(name) 0]
     set domain [lindex $ftab(domain) 0]
 
     #
@@ -212,16 +212,16 @@ d cgi-register {action edit} {
     set menudom [couple-domains $dbfd $tabuid(idcor) ""]
     set cspec [list \
 		{prio {string 5}  {}} \
-		{nom  {string 30} {}} \
+		{name {string 30} {}} \
 		[list domain [list menu $menudom] {}] \
 	    ]
-    set sql "SELECT m.mx, m.prio, r.nom, d.name AS domain
+    set sql "SELECT m.mx, m.prio, r.name, d.name AS domain
 		FROM dns.rr_mx m, dns.rr r, dns.domain d
 		WHERE m.idrr = $idrr
 			AND m.mx = r.idrr
 			AND r.iddom = d.iddom
 			AND r.idview = $idview
-		ORDER BY m.prio, d.name, r.nom
+		ORDER BY m.prio, d.name, r.name
 		"
     set idnum "mx"
 
@@ -237,7 +237,7 @@ d cgi-register {action edit} {
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-edit) [list \
 				[list %TABLEAU% $tableau] \
-				[list %NOM%     $name] \
+				[list %NAME%    $name] \
 				[list %DOMAIN%  $domain] \
 				[list %IDVIEW%  $idview] \
 				[list %VIEW%    [u viewname $idview]] \
@@ -249,16 +249,16 @@ d cgi-register {action edit} {
 ##############################################################################
 
 d cgi-register {action mod} {
-    {nom		1 1}
+    {name		1 1}
     {domain		1 1}
     {idview		1 1}
 
     {prio[0-9]+		0 9999}
-    {nom[0-9]+		0 9999}
+    {name[0-9]+		0 9999}
     {domain[0-9]+	0 9999}
 
     {prion[0-9]+	0 9999}
-    {nomn[0-9]+		0 9999}
+    {namen[0-9]+	0 9999}
     {domainn[0-9]+	0 9999}
 } {
     global conf
@@ -267,7 +267,7 @@ d cgi-register {action mod} {
     # Initialization
     #
 
-    set name   [lindex $ftab(nom) 0]
+    set name   [lindex $ftab(name) 0]
     set domain [lindex $ftab(domain) 0]
     set fqdn   "$name.$domain"
 
@@ -301,27 +301,27 @@ d cgi-register {action mod} {
     foreach c [array names ftab] {
 	if {[regexp {^prio(n?)([0-9]+)$} $c bidon n idmx]} then {
 	    set idxprio prio$n$idmx
-	    set idxnom  nom$n$idmx
+	    set idxname name$n$idmx
 	    set idxdom  domain$n$idmx
 	    if {[info exists ftab($idxprio)] && \
-			    [info exists ftab($idxnom)] && \
+			    [info exists ftab($idxname)] && \
 			    [info exists ftab($idxdom)] \
 		    } then {
 		set fprio [string trim [lindex $ftab($idxprio) 0]]
-		set fnom  [string trim [lindex $ftab($idxnom)  0]]
+		set fname [string trim [lindex $ftab($idxname) 0]]
 		set fdom  [string trim [lindex $ftab($idxdom)  0]]
 		if {$fprio ne ""} then {
-		    set mx [check-mx-target $dbfd $fprio $fnom $fdom $idview $tabuid(idcor) msg]
+		    set mx [check-mx-target $dbfd $fprio $fname $fdom $idview $tabuid(idcor) msg]
 		    if {$msg ne ""} then {
 			d error $msg
 		    }
 		    if {[info exists tmx([lindex $mx 1])]} then {
-			d error [mc "'%s' specified more than once" "$fnom.$fdom"]
+			d error [mc "'%s' specified more than once" "$fname.$fdom"]
 		    }
 		    lappend lmx $mx
 		}
 	    } else {
-		d error [mc "Invalid form values (%s)" "$idxprio, $idxnom, $idxdom"]
+		d error [mc "Invalid form values (%s)" "$idxprio, $idxname, $idxdom"]
 	    }
 	}
     }
@@ -414,7 +414,7 @@ d cgi-register {action mod} {
 	foreach mx $lmx {
 	    lassign $mx prio idmx
 	    read-rr-by-id $dbfd $idmx tabmx
-	    set n "$tabmx(nom).$tabmx(domain)"
+	    set n "$tabmx(name).$tabmx(domain)"
 	    lappend lines [list "Normal" $prio $n]
 	    lappend lm $n
 	}
@@ -431,7 +431,7 @@ d cgi-register {action mod} {
 
     d result $conf(page-mod) [list \
 				[list %TABLEAU% $tableau] \
-				[list %NOM%     $name] \
+				[list %NAME%    $name] \
 				[list %DOMAIN%  $domain] \
 				[list %VIEW%    [u viewname $idview]] \
 			    ]

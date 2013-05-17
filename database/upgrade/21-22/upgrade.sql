@@ -116,9 +116,13 @@ ALTER TABLE dns.role_mail
     DROP CONSTRAINT IF EXISTS role_mail_pkey			CASCADE ;
 
 ALTER TABLE dns.rr
-    DROP CONSTRAINT IF EXISTS rr_nom_key,
-    DROP CONSTRAINT IF EXISTS rr_nom_iddom_key,
-    DROP CONSTRAINT IF EXISTS rr_mac_key ;
+    DROP CONSTRAINT IF EXISTS rr_pkey				CASCADE,
+    DROP CONSTRAINT IF EXISTS rr_mac_key			CASCADE,
+    DROP CONSTRAINT IF EXISTS rr_nom_iddom_key			CASCADE,
+    DROP CONSTRAINT IF EXISTS rr_idcor_fkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS rr_iddhcpprofil_fkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS rr_iddom_fkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS rr_idhinfo_fkey			CASCADE ;
 
 ALTER TABLE dns.dhcpprofil
     DROP CONSTRAINT IF EXISTS dhcpprofil_pkey			CASCADE,
@@ -252,7 +256,7 @@ CREATE TABLE dns.p_view (
     sort	INT,		-- sort class
     selected	INT,		-- selected by default in menus
 
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idgrp)  REFERENCES global.groupe (idgrp),
     FOREIGN KEY (idview) REFERENCES dns.view (idview),
     PRIMARY KEY (idgrp, idview)
 ) ;
@@ -275,20 +279,30 @@ ALTER TABLE dns.dr_dhcpprofil RENAME TO p_dhcpprofile ;
 ALTER TABLE dns.p_dhcpprofile RENAME COLUMN iddhcpprofil TO iddhcpprof ;
 ALTER TABLE dns.p_dhcpprofile RENAME COLUMN tri		TO sort ;
 ALTER TABLE dns.p_dhcpprofile
-    ADD FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    ADD FOREIGN KEY (idgrp)      REFERENCES global.groupe (idgrp),
     ADD FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
     ADD PRIMARY KEY (idgrp, iddhcpprof) ;
 
 ALTER TABLE dns.dhcprange RENAME COLUMN iddhcpprofil	TO iddhcpprof ;
 
 ALTER TABLE dns.rr ADD COLUMN idview INT ;
+ALTER TABLE dns.rr RENAME COLUMN nom			TO name ;
+ALTER TABLE dns.rr RENAME COLUMN iddhcpprofil		TO iddhcpprof ;
+ALTER TABLE dns.rr RENAME COLUMN commentaire		TO comment ;
+ALTER TABLE dns.rr RENAME COLUMN respnom		TO respname ;
+ALTER TABLE dns.rr RENAME COLUMN respmel		TO respmail ;
+ALTER TABLE dns.rr RENAME COLUMN droitsmtp		TO sendsmtp ;
 UPDATE dns.rr
     SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
-ALTER TABLE dns.rr RENAME COLUMN iddhcpprofil		TO iddhcpprof ;
 ALTER TABLE dns.rr
-    ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    ADD UNIQUE (nom, iddom, idview),
-    ADD UNIQUE (mac, idview) ;
+    ADD FOREIGN KEY (idcor)      REFERENCES global.corresp  (idcor),
+    ADD FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
+    ADD FOREIGN KEY (idview)     REFERENCES dns.view        (idview),
+    ADD FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
+    ADD FOREIGN KEY (idhinfo)    REFERENCES dns.hinfo       (idhinfo),
+    ADD UNIQUE (name, iddom, idview),
+    ADD UNIQUE (mac, idview),
+    ADD PRIMARY KEY (idrr) ;
 
 ALTER TABLE dns.rr_ip RENAME COLUMN adr			TO addr ;
 

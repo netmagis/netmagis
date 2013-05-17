@@ -29,14 +29,14 @@
 
     \titre {1} {Le nom existe déjà}
 
-    Il existe déjà une machine de nom '%NOM%.%DOMAIN%'.
+    Il existe déjà une machine de nom '%NAME%.%DOMAIN%'.
 
     Ses caractéristiques sont~:
 
     %MACHINE%
 
     \gras {Voulez-vous vraiment ajouter la nouvelle adresse '%ADDR%'
-    à la machine '%NOM%.%DOMAIN%'~?}
+    à la machine '%NAME%.%DOMAIN%'~?}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="add-host">

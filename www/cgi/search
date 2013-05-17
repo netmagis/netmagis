@@ -194,7 +194,7 @@ proc display-alias {dbfd _trr idview q} {
     upvar $_trr trr
 
     h mask-next
-    set fqdn "$trr(nom).$trr(domain)"
+    set fqdn "$trr(name).$trr(domain)"
     set idalias [rr-cname-by-view trr $idview]
     if {! [read-rr-by-id $dbfd $idalias trra]} then {
 	d error [mc {Cannot read host-id %s} $idalias]
@@ -216,7 +216,7 @@ proc display-mailrole {dbfd _trr idview q} {
     upvar $_trr trr
 
     h mask-next
-    set fqdn "$trr(nom).$trr(domain)"
+    set fqdn "$trr(name).$trr(domain)"
     lassign [rr-mailrole-by-view trr $idview] idheb idviewheb
     if {! [read-rr-by-id $dbfd $idheb trrh]} then {
 	d error [mc {Cannot read host-id %s} $idheb]
