@@ -156,9 +156,10 @@ ALTER TABLE dns.organization
 
 ALTER TABLE dns.seq_communaute RENAME TO seq_community ;
 ALTER TABLE dns.communaute RENAME TO community ;
+ALTER TABLE dns.community RENAME COLUMN idcommu		TO idcomm ;
 ALTER TABLE dns.community RENAME COLUMN nom		TO name ;
 ALTER TABLE dns.community
-    ADD PRIMARY KEY (idcommu) ;
+    ADD PRIMARY KEY (idcomm) ;
 
 ALTER TABLE dns.seq_reseau RENAME TO seq_network ;
 ALTER TABLE dns.reseau RENAME TO network ;
@@ -168,6 +169,7 @@ ALTER TABLE dns.network RENAME COLUMN localisation	TO location ;
 ALTER TABLE dns.network RENAME COLUMN adr4		TO addr4 ;
 ALTER TABLE dns.network RENAME COLUMN adr6		TO addr6 ;
 ALTER TABLE dns.network RENAME COLUMN idetabl		TO idorg ;
+ALTER TABLE dns.network RENAME COLUMN idcommu		TO idcomm ;
 ALTER TABLE dns.network RENAME COLUMN commentaire	TO comment ;
 ALTER TABLE dns.network
     ADD CONSTRAINT at_least_one_prefix_v4_or_v6
@@ -175,7 +177,7 @@ ALTER TABLE dns.network
     ADD CONSTRAINT gw4_in_net CHECK (gw4 <<= addr4),
     ADD CONSTRAINT gw6_in_net CHECK (gw6 <<= addr6),
     ADD FOREIGN KEY (idorg) REFERENCES dns.organization (idorg),
-    ADD FOREIGN KEY (idcommu) REFERENCES dns.community (idcommu),
+    ADD FOREIGN KEY (idcomm) REFERENCES dns.community (idcomm),
     ADD PRIMARY KEY (idnet) ;
 
 -- Add views
@@ -218,7 +220,7 @@ ALTER TABLE dns.zone_reverse6
     ADD PRIMARY KEY (idzone)
     ;
 
-ALTER TABLE dns.hinfo RENAME COLUMN texte		TO text ;
+ALTER TABLE dns.hinfo RENAME COLUMN texte		TO name ;
 ALTER TABLE dns.hinfo RENAME COLUMN tri			TO sort ;
 
 ALTER TABLE dns.dr_reseau RENAME TO p_network ;

@@ -45,7 +45,7 @@
 
     \liste {
 	\item {Modify \lien {organizations} {%URLREFORG%}}
-	\item {Modify \lien {communities} {%URLREFCOMMU%}}
+	\item {Modify \lien {communities} {%URLREFCOMM%}}
 	\item {Modify \lien {host types} {%URLREFHINFO%}}
 	\item {Modify \lien {networks} {%URLREFNET%}}
 	\item {Modify \lien {domains} {%URLREFDOMAIN%}}

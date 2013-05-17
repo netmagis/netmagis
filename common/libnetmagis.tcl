@@ -553,7 +553,7 @@ snit::type ::netmagis {
 			    {lusers always}
 			    {search always}
 			    {modorg always}
-			    {modcommu always}
+			    {modcomm always}
 			    {modhinfo always}
 			    {modnetwork always}
 			    {moddomain always}
@@ -584,7 +584,7 @@ snit::type ::netmagis {
 	lnet		{lnet {List networks}}
 	lusers		{lusers {List users}}
 	modorg		{admref?type=org {Modify organizations}}
-	modcommu	{admref?type=commu {Modify communities}}
+	modcomm		{admref?type=comm {Modify communities}}
 	modhinfo	{admref?type=hinfo {Modify machine types}}
 	modnetwork	{admref?type=net {Modify networks}}
 	moddomain	{admref?type=domain {Modify domains}}
@@ -2921,19 +2921,19 @@ proc display-group {dbfd idgrp} {
 			n.name, n.location, n.addr4, n.addr6,
 			p.dhcp, p.acl,
 			o.name AS org,
-			c.name AS commu
+			c.name AS comm
 		FROM dns.network n, dns.p_network p,
 			dns.organization o, dns.community c
 		WHERE p.idgrp = $idgrp
 			AND p.idnet = n.idnet
 			AND o.idorg = n.idorg
-			AND c.idcommu = n.idcommu
+			AND c.idcomm = n.idcomm
 		ORDER BY p.sort, n.addr4, n.addr6"
     pg_select $dbfd $sql tab {
 	set n_name 	[::webapp::html-string $tab(name)]
 	set n_loc	[::webapp::html-string $tab(location)]
 	set n_org	$tab(org)
-	set n_commu	$tab(commu)
+	set n_comm	$tab(comm)
 	set n_dhcp	$tab(dhcp)
 	set n_acl	$tab(acl)
 
@@ -2954,7 +2954,7 @@ proc display-group {dbfd idgrp} {
 	lappend lines [list Normal4 [mc "Location"] $n_loc \
 				[mc "Organization"] $n_org]
 	lappend lines [list Normal4 [mc "Range"] $dispaddr \
-				[mc "Community"] $n_commu]
+				[mc "Community"] $n_comm]
 
 	set perm {}
 
@@ -3641,9 +3641,9 @@ proc read-rr-by-id {dbfd idrr _trr} {
 		set trr(dhcpprof) $tab(name)
 	    }
 	}
-	set sql "SELECT text FROM dns.hinfo WHERE idhinfo = $trr(idhinfo)"
+	set sql "SELECT name FROM dns.hinfo WHERE idhinfo = $trr(idhinfo)"
 	pg_select $dbfd $sql tab {
-	    set trr(hinfo) $tab(text)
+	    set trr(hinfo) $tab(name)
 	}
 	set sql "SELECT name FROM dns.domain WHERE iddom = $trr(iddom)"
 	pg_select $dbfd $sql tab {
@@ -6248,7 +6248,7 @@ proc check-group-syntax {group} {
 proc read-hinfo {dbfd text} {
     set qtext [::pgsql::quote $text]
     set idhinfo -1
-    pg_select $dbfd "SELECT idhinfo FROM dns.hinfo WHERE text = '$qtext'" tab {
+    pg_select $dbfd "SELECT idhinfo FROM dns.hinfo WHERE name = '$qtext'" tab {
 	set idhinfo $tab(idhinfo)
     }
     return $idhinfo
@@ -6307,14 +6307,14 @@ proc read-dhcp-profile {dbfd text} {
 
 proc menu-hinfo {dbfd field defval} {
     set lhinfo {}
-    set sql "SELECT text FROM dns.hinfo
+    set sql "SELECT name FROM dns.hinfo
 				WHERE present = 1
-				ORDER BY sort ASC, text ASC"
+				ORDER BY sort ASC, name ASC"
     set i 0
     set defindex 0
     pg_select $dbfd $sql tab {
-	lappend lhinfo [list $tab(text) $tab(text)]
-	if {$tab(text) eq $defval} then {
+	lappend lhinfo [list $tab(name) $tab(name)]
+	if {$tab(name) eq $defval} then {
 	    set defindex $i
 	}
 	incr i

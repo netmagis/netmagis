@@ -8,7 +8,7 @@
 # Parameters (form or url):
 #   - display edit page
 #	- action : (empty)
-#	- type : org, commu, hinfo, net, domain, view, zone, zone4, zone6,
+#	- type : org, comm, hinfo, net, domain, view, zone, zone4, zone6,
 #		vlan, eq, eqtype, confcmd, dotattr
 #   - display graphviz generated image
 #	- action : "image"
@@ -82,24 +82,24 @@ set conf(org:proc)		admref-nop
 ##############################################################################
 # Communities
 
-set conf(commu:ptitle) 	"Community management"
-set conf(commu:cols)		{ {100 name {Name} {string 30} {}} }
-set conf(commu:sql)		"SELECT * FROM dns.community ORDER BY name ASC"
-set conf(commu:id)		idcommu
-set conf(commu:help)		help-commu.html
-set conf(commu:return)		"Return to community modification"
-set conf(commu:table)		dns.community
-set conf(commu:proc)		admref-nop
+set conf(comm:ptitle) 	"Community management"
+set conf(comm:cols)		{ {100 name {Name} {string 30} {}} }
+set conf(comm:sql)		"SELECT * FROM dns.community ORDER BY name ASC"
+set conf(comm:id)		idcomm
+set conf(comm:help)		help-comm.html
+set conf(comm:return)		"Return to community modification"
+set conf(comm:table)		dns.community
+set conf(comm:proc)		admref-nop
 
 ##############################################################################
 # Hinfo
 
 set conf(hinfo:ptitle) 	"Host type management"
-set conf(hinfo:cols)		{ {60 text {Description} {string 30} {}}
+set conf(hinfo:cols)		{ {60 name {Description} {string 30} {}}
 				  {20 sort {Sort} {int 10} 100}
 				  {20 present {Present} {bool} 1}
 				}
-set conf(hinfo:sql)		"SELECT * FROM dns.hinfo ORDER BY sort ASC, text ASC"
+set conf(hinfo:sql)		"SELECT * FROM dns.hinfo ORDER BY sort ASC, name ASC"
 set conf(hinfo:id)		idhinfo
 set conf(hinfo:help)		help-hinfo.html
 set conf(hinfo:return)		"Return to host information modification"
@@ -118,7 +118,7 @@ set conf(net:cols)		{ {1 name	{Name} {string 20} {}}
 				  {1 addr6	{IPv6 address} {string 49} {}}
 				  {1 gw6	{IPv6 gateway} {string 45} {}}
 				  {1 idorg	{Organization} {menu {%MENUORG%}} {}}
-				  {1 idcommu	{Community} {menu {%MENUCOMMU%}} {}}
+				  {1 idcomm	{Community} {menu {%MENUCOMM%}} {}}
 				  {1 comment	{Comment} {string 15} {}}
 				}
 set conf(net:sql)		"SELECT * FROM dns.network ORDER BY addr4"
@@ -353,10 +353,10 @@ d cgi-register {action {}} {
 	net	{
 	    set menuorg [::pgsql::getcols $dbfd dns.organization "" "name ASC" \
 						{idorg name}]
-	    set menucommu [::pgsql::getcols $dbfd dns.community "" "name ASC" \
-						{idcommu name}]
+	    set menucomm [::pgsql::getcols $dbfd dns.community "" "name ASC" \
+						{idcomm name}]
 	    regsub -- "%MENUORG%" $colspecs "$menuorg" colspecs
-	    regsub -- "%MENUCOMMU%" $colspecs "$menucommu" colspecs
+	    regsub -- "%MENUCOMM%" $colspecs "$menucomm" colspecs
 	}
 	eq {
 	    set menutype [::pgsql::getcols $dbfd topo.eqtype "" "type ASC" \

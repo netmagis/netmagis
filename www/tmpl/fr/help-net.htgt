@@ -80,7 +80,7 @@
 	Exemple~:
 	    \retrait {\verbatim {Nations Unies}}
 
-    \titre {2} {\ancre {idcommu} {Communauté}}
+    \titre {2} {\ancre {idcomm} {Communauté}}
 
 	Communauté hébergée sur le réseau.
 

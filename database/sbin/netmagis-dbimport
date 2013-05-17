@@ -544,7 +544,7 @@ proc import-network {verbose argv dbfd} {
 	set refgroup($tab(nom)) [list $tab(idgrp) $tab(admin)]
     }
     pg_select $dbfd "SELECT * FROM dns.community" tab {
-	set refcommu($tab(name)) $tab(idcommu)
+	set refcomm($tab(name)) $tab(idcomm)
     }
     pg_select $dbfd "SELECT * FROM dns.organization" tab {
 	set reforg($tab(name)) $tab(idorg)
@@ -583,10 +583,10 @@ proc import-network {verbose argv dbfd} {
 	    set reforg($o) ""
 	}
 	set c [lindex $tabnet($i:community) 0]
-	if {! [info exists refcommu($c)]} then {
+	if {! [info exists refcomm($c)]} then {
 	    set qc [::pgsql::quote $c]
 	    lappend sql "INSERT INTO dns.community (name) VALUES ('$qc')"
-	    set refcommu($c) ""
+	    set refcomm($c) ""
 	}
     }
     if {[llength $sql] > 0} then {
@@ -597,7 +597,7 @@ proc import-network {verbose argv dbfd} {
 
 	# re-read referential data
 	pg_select $dbfd "SELECT * FROM dns.community" tab {
-	    set refcommu($tab(name)) $tab(idcommu)
+	    set refcomm($tab(name)) $tab(idcomm)
 	}
 	pg_select $dbfd "SELECT * FROM dns.organization" tab {
 	    set reforg($tab(name)) $tab(idorg)
@@ -716,8 +716,8 @@ proc import-network {verbose argv dbfd} {
 	set org   [lindex $tabnet($i:org) 0]
 	set idorg $reforg($org)
 
-	set commu [lindex $tabnet($i:community) 0]
-	set idcommu $refcommu($commu)
+	set comm [lindex $tabnet($i:community) 0]
+	set idcomm $refcomm($comm)
 
 	#
 	# Other data
@@ -748,10 +748,10 @@ proc import-network {verbose argv dbfd} {
 	#
 
 	set sql "INSERT INTO dns.network (name, location, comment,
-					idorg, idcommu,
+					idorg, idcomm,
 					addr4, gw4, addr6, gw6,
 					dhcp)
-			VALUES ('$qname', '$qloc', '$qcomm', $idorg, $idcommu,
+			VALUES ('$qname', '$qloc', '$qcomm', $idorg, $idcomm,
 					$qad(4), $qgw(4), $qad(6), $qgw(6),
 					$dhcpon)"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {

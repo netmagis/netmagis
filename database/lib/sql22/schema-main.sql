@@ -87,11 +87,11 @@ CREATE TABLE dns.organization (
 
 CREATE SEQUENCE dns.seq_community START 1 ;
 CREATE TABLE dns.community (
-    idcommu	INT			-- community id
+    idcomm	INT			-- community id
 		    DEFAULT NEXTVAL ('dns.seq_community'),
     name	TEXT,			-- "Administration"
 
-    PRIMARY KEY (idcommu)
+    PRIMARY KEY (idcomm)
 ) ;
 
 CREATE SEQUENCE dns.seq_network START 1 ;
@@ -103,7 +103,7 @@ CREATE TABLE dns.network (
     addr4	CIDR,			-- IPv4 address range
     addr6	CIDR,			-- IPv6 address range
     idorg	INT,			-- organization this network belongs to
-    idcommu	INT,			-- administration, R&D, etc.
+    idcomm	INT,			-- administration, R&D, etc.
     comment	TEXT,			-- comment
     dhcp	INT DEFAULT 0,		-- activate DHCP (1) or no (0)
     gw4		INET,			-- default network IPv4 gateway
@@ -116,7 +116,7 @@ CREATE TABLE dns.network (
     CONSTRAINT dhcp_needs_ipv4_gateway
 	CHECK (dhcp = 0 OR (dhcp != 0 AND gw4 IS NOT NULL)),
     FOREIGN KEY (idorg) REFERENCES dns.organization (idorg),
-    FOREIGN KEY (idcommu) REFERENCES dns.community (idcommu),
+    FOREIGN KEY (idcomm) REFERENCES dns.community (idcomm),
     PRIMARY KEY (idnet)
 ) ;
 
@@ -181,7 +181,7 @@ CREATE SEQUENCE dns.seq_hinfo MINVALUE 0 START 0 ;
 CREATE TABLE dns.hinfo (
     idhinfo	INT			-- host type id
 		    DEFAULT NEXTVAL ('dns.seq_hinfo'),
-    text	TEXT,			-- type as text
+    name	TEXT,			-- type as text
     sort	INT,			-- sort class
     present	INT,			-- present or not
     PRIMARY KEY (idhinfo)
