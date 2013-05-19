@@ -2,7 +2,7 @@
 -- Database upgrade to 2.2 version
 --
 -- Use:
---	psql -f upgrade.sql database-name
+--	psql --no-psqlrc --single-translaction -f upgrade.sql database-name
 --
 -- Please, make a backup of your existing database first!
 -- Use a tool such as nohup or script in order to log output and check
@@ -11,6 +11,20 @@
 --	- You should pay attention to lines with "ERROR:" 
 ------------------------------------------------------------------------------
 
+-- create pgauth.* tables if they do not exist
+
+-- uncomment this line if you get error 'ERROR: schema "pgauth" does not exist'
+-- CREATE SCHEMA pgauth ;
+CREATE TABLE IF NOT EXISTS pgauth.user (
+    login TEXT, password TEXT, nom TEXT, prenom TEXT, mel TEXT, tel TEXT,
+    mobile TEXT, fax TEXT, adr TEXT, phnom TEXT, phprenom TEXT
+) ;
+CREATE TABLE IF NOT EXISTS pgauth.realm (
+    realm TEXT, descr TEXT, admin INT
+) ;
+CREATE TABLE IF NOT EXISTS pgauth.member (
+    login TEXT, realm TEXT
+) ;
 
 ------------------------------------------------------------------------------
 -- Remove triggers in order to quietly make changes on tables
