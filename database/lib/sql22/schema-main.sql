@@ -391,7 +391,7 @@ CREATE TABLE topo.ifchanges (
     reqdate	TIMESTAMP (0)		-- request date
 		    WITHOUT TIME ZONE
 		    DEFAULT CURRENT_TIMESTAMP,
-    idrr	INT,			-- equipement id
+    eq		TEXT,			-- fully qualified equipement name
     iface	TEXT,			-- interface name
     ifdesc	TEXT,			-- interface description
     ethervlan	INT,			-- access vlan id
@@ -401,8 +401,7 @@ CREATE TABLE topo.ifchanges (
 		     WITHOUT TIME ZONE,
     modlog	TEXT,			-- modification (or last attempt) log
 
-    FOREIGN KEY (idrr) REFERENCES dns.rr (idrr),
-    PRIMARY KEY (idrr, reqdate, iface)
+    PRIMARY KEY (eq, reqdate, iface)
 ) ;
 
 -- Last rancid run

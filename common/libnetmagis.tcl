@@ -4487,9 +4487,6 @@ proc update-host-refs {dbfd oidrr nidrr} {
     lappend sql "UPDATE dns.relay_dom
 			    SET mx = $nidrr
 			    WHERE mx = $oidrr"
-    lappend sql "UPDATE topo.ifchanges
-			    SET idrr = $nidrr
-			    WHERE idrr = $oidrr"
     set sql [join $sql ";"]
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
@@ -10334,26 +10331,6 @@ proc eq-iflist {eq _tabuid} {
 proc eq-graph-status {dbfd eq {iface {}}} {
     global libconf
 
-    XXX fix bug below (read-rr-by-name without idview)
-
-    #
-    # Search for equipment idrr in the database
-    #
-    
-    if {! [regexp {^([^.]+)\.(.+)$} $eq bidon host domain]} then {
-        set host $eq
-        set domain [dnsconfig get "defdomain"]
-    }
-
-    set iddom [read-domain $dbfd $domain]
-    if {$iddom == -1} then {
-	d error [mc "Domain '%s' not found" $domain]
-    }
-    if {! [read-rr-by-name $dbfd $host $iddom tabrr]} then {
-	d error [mc "Equipment '%s' not found" $eq]
-    }
-    set idrr $tabrr(idrr)
-
     #
     # Search for unprocessed modifications and build information.
     #
@@ -10364,8 +10341,10 @@ proc eq-graph-status {dbfd eq {iface {}}} {
 	set wif "AND iface = '$qiface'"
     }
 
+    set qeq [::pgsql::quote $eq]
+
     set sql "SELECT * FROM topo.ifchanges
-			WHERE idrr = $idrr AND processed = 0 $wif
+			WHERE eq = '$qeq' AND processed = 0 $wif
 			ORDER BY reqdate DESC"
     set lines {}
     lappend lines [list Title4 [mc "Date"] [mc "Login"] [mc "Interface"] [mc "Change"]]

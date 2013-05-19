@@ -63,29 +63,24 @@ proc send-changes {_tabeq} {
     upvar $_tabeq tabeq
 
     #
-    # Find modification requests and build a list {{idrr fqdn} {idrr fqdn}...}
+    # Find modification requests and build a list {fqdn fqdn...}
     #
 
-    set lc {}
-    set sql "SELECT DISTINCT (c.idrr) AS idrr,
-			rr.name || '.' || d.name AS fqdn
-		    FROM topo.ifchanges c, dns.rr, dns.domain d
-		    WHERE c.processed = 0
-			AND c.idrr = rr.idrr
-			AND rr.iddom = d.iddom"
-    if {! [toposqlselect $sql tab { lappend lc [list $tab(idrr) $tab(fqdn)] }]} then {
+    set leq {}
+    set sql "SELECT DISTINCT (eq) AS fqdn
+    			FROM topo.ifchanges
+			WHERE c.processed = 0"
+    if {! [toposqlselect $sql tab { lappend leq $tab(fqdn) }]} then {
 	return 0
     }
 
-    foreach c $lc {
-	lassign $c idrr eq
-
+    foreach eq $leq {
 	#
 	# Search equipment type and model from fqdn
 	#
 
 	if {! [info exists tabeq($eq)]} then {
-	    update-modlog $idrr "Unknown equipement type for '$eq'"
+	    update-modlog $eq "Unknown equipement type for '$eq'"
 	    continue
 	}
 	lassign $tabeq($eq) type model
@@ -95,8 +90,8 @@ proc send-changes {_tabeq} {
 	#
 
 	set msg [test-ping $eq]
-	if {! [string equal $msg ""]} then {
-	    update-modlog $idrr $msg
+	if {$msg ne ""} then {
+	    update-modlog $eq $msg
 	    continue
 	}
 
@@ -106,15 +101,15 @@ proc send-changes {_tabeq} {
 	# commands and mark these modifications as "processed"
 	#
 
-	set lcmd [mod-to-conf $idrr $eq $type $model lreqdate]
+	set lcmd [mod-to-conf $eq $eq $type $model lreqdate]
 	if {[llength $lcmd] == 0} then {
 	    continue
 	}
 
 	if {[execute-cmd $eq $type $model $lcmd msg]} then {
-	    mark-processed $idrr $lreqdate $msg
+	    mark-processed $eq $lreqdate $msg
 	} else {
-	    update-modlog $idrr $msg
+	    update-modlog $eq $msg
 	}
     }
 
@@ -125,7 +120,6 @@ proc send-changes {_tabeq} {
 # Translate modification requests into commands for this equipment
 #
 # Input:
-#   - idrr : equipment id
 #   - eq : equipment fqdn
 #   - type : equipment type (ex: cisco, juniper...)
 #   - model : equipment model (ex: 3750, M20...)
@@ -139,7 +133,7 @@ proc send-changes {_tabeq} {
 #   2010/10/14 : pda/jean : design
 #
 
-proc mod-to-conf {idrr eq type model _lreqdate} {
+proc mod-to-conf {eq type model _lreqdate} {
     upvar $_lreqdate lreqdate
 
     set lreqdate {}
@@ -156,10 +150,11 @@ proc mod-to-conf {idrr eq type model _lreqdate} {
     # Extract all modification requests for this equipment
     #
 
-    set sql "SELECT c.*
-		FROM topo.ifchanges c
-		WHERE c.idrr = $idrr AND c.processed = 0
-		ORDER BY c.reqdate ASC"
+    set qeq [::pgsql::quote $eq]
+    set sql "SELECT *
+		FROM topo.ifchanges
+		WHERE eq = '$qeq' AND processed = 0
+		ORDER BY reqdate ASC"
 
     set l {}
     if {! [toposqlselect $sql tab { lappend l [list $tab(reqdate) $tab(iface) \
@@ -541,7 +536,7 @@ proc test-ping {eq} {
 # Keep a log of configuration attempt
 #
 # Input:
-#   - idrr : equipment id
+#   - eq : equipment name
 #   - msg : error message
 # Output:
 #   - none
@@ -550,15 +545,16 @@ proc test-ping {eq} {
 #   2010/10/14 : pda/jean : design
 #
 
-proc update-modlog {idrr msg} {
+proc update-modlog {eq msg} {
     global ctxt
 
     set qmsg [::pgsql::quote $msg]
+    set qeq  [::pgsql::quote $eq]
     set sql "UPDATE topo.ifchanges
 		    SET modlog = '$qmsg', moddate = now ()
-		    WHERE idrr = $idrr AND processed = 0"
+		    WHERE eq = '$qeq' AND processed = 0"
     if {! [toposqlexec $sql]} then {
-	log-error "Cannot update modlog for idrr=$idrr"
+	log-error "Cannot update modlog for eq=$eq"
     }
 
     return
@@ -569,7 +565,7 @@ proc update-modlog {idrr msg} {
 # the equipment.
 #
 # Input:
-#   - idrr : equipment id
+#   - eq : equipment name
 #   - lreqdate : list of request dates
 #   - msg : log message
 # Output:
@@ -579,17 +575,18 @@ proc update-modlog {idrr msg} {
 #   2010/10/14 : pda/jean : design
 #
 
-proc mark-processed {idrr lreqdate msg} {
+proc mark-processed {eq lreqdate msg} {
     global ctxt
 
     set reqdate [join $lreqdate "', '"]
 
     set qmsg [::pgsql::quote $msg]
+    set qeq  [::pgsql::quote $eq]
     set sql "UPDATE topo.ifchanges
 		    SET processed = 1, modlog = '$qmsg', moddate = now ()
-		    WHERE idrr = $idrr AND reqdate IN ('$reqdate')"
+		    WHERE eq = '$qeq' AND reqdate IN ('$reqdate')"
     if {! [toposqlexec $sql]} then {
-	log-error "Cannot update 'processed' flag for idrr=$idrr"
+	log-error "Cannot update 'processed' flag for eq=$eq"
     }
 }
 

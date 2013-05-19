@@ -142,6 +142,10 @@ ALTER TABLE global.groupe
 ALTER TABLE topo.dr_eq
     DROP CONSTRAINT IF EXISTS dr_eq_idgrp_fkey			CASCADE ;
 
+ALTER TABLE topo.ifchanges
+    DROP CONSTRAINT IF EXISTS ifchanges_idrr_fkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS ifchanges_pkey			CASCADE ;
+
 ------------------------------------------------------------------------------
 -- Rename tables and columns, and rebuild constraints
 ------------------------------------------------------------------------------
@@ -363,6 +367,15 @@ DROP TABLE dns.role_web ;
 ALTER TABLE topo.dr_eq RENAME TO p_eq ;
 ALTER TABLE topo.p_eq
     ADD FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp) ;
+
+ALTER TABLE topo.ifchanges ADD COLUMN eq TEXT ;
+UPDATE topo.ifchanges SET eq = (SELECT rr.name || '.' || domain.name
+				    FROM dns.rr, dns.domain
+				    WHERE rr.idrr = ifchanges.idrr
+					AND rr.iddom = domain.iddom) ;
+ALTER TABLE topo.ifchanges DROP COLUMN idrr ;
+ALTER TABLE topo.ifchanges
+    ADD PRIMARY KEY (eq, reqdate, iface) ;
 
 -- pgauth schema
 
