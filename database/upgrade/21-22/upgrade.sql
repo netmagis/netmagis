@@ -139,6 +139,9 @@ ALTER TABLE global.groupe
     DROP CONSTRAINT IF EXISTS groupe_pkey			CASCADE,
     DROP CONSTRAINT IF EXISTS groupe_nom_key			CASCADE ;
 
+ALTER TABLE topo.dr_eq
+    DROP CONSTRAINT IF EXISTS dr_eq_idgrp_fkey			CASCADE ;
+
 ------------------------------------------------------------------------------
 -- Rename tables and columns, and rebuild constraints
 ------------------------------------------------------------------------------
@@ -357,6 +360,9 @@ DROP TABLE dns.role_web ;
 
 -- topo schema
 
+ALTER TABLE topo.dr_eq RENAME TO p_eq ;
+ALTER TABLE topo.p_eq
+    ADD FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp) ;
 
 -- pgauth schema
 

@@ -793,7 +793,7 @@ d cgi-register {} {
 	    # No matter whether or not we searched for an equipment.
 	    #
 
-	    set liste [mc "No equipment found"]
+	    set list [mc "No equipment found"]
 
 	    #
 	    # End of script: output page and close database
@@ -802,7 +802,7 @@ d cgi-register {} {
 	    d result $conf(pagen) [list \
 				    [list %MSGSTA% $msgsta] \
 				    [list %OBJETS% [mc "equipments"]] \
-				    [list %LISTE%  $liste] \
+				    [list %LIST%   $list] \
 				    [list %EQ%     $eq] \
 				    [list %VLAN%   ""] \
 				    [list %ADDR%   ""] \
@@ -843,15 +843,15 @@ d cgi-register {} {
 	    # and we found more than one. Sort equipments.
 	    #
 
-	    set liste ""
+	    set list ""
 	    foreach e [lsort [array names tabeq]] {
 		lassign $tabeq($e) type model
 		d urlset "" $conf(nexteq) [list [list "eq" $e]]
 		set url [d urlget ""]
 		set link [::webapp::helem "a" $e "href" $url]
-		append liste [::webapp::helem "li" "$link $type $model"]
+		append list [::webapp::helem "li" "$link $type $model"]
 	    }
-	    set liste [::webapp::helem "ul" $liste]
+	    set list [::webapp::helem "ul" $list]
 
 	    #
 	    # End of script: output page and close database
@@ -860,7 +860,7 @@ d cgi-register {} {
 	    d result $conf(pagen) [list \
 				    [list %MSGSTA% $msgsta] \
 				    [list %OBJETS% [mc "equipments"]] \
-				    [list %LISTE%  $liste] \
+				    [list %LIST%   $list] \
 				    [list %EQ%     $eq] \
 				    [list %VLAN%   ""] \
 				    [list %ADDR%   ""] \
@@ -888,7 +888,7 @@ d cgi-register {} {
 	    d result $conf(pagen) [list \
 				    [list %MSGSTA% $msgsta] \
 				    [list %OBJETS% [mc "equipments"]] \
-				    [list %LISTE%  $html] \
+				    [list %LIST%   $html] \
 				    [list %EQ%     $eq] \
 				    [list %VLAN%   ""] \
 				    [list %ADDR%   ""] \

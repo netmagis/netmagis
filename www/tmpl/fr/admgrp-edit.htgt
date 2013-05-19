@@ -94,7 +94,7 @@
 		\casetableau {} {Pour supprimer un correspondant,
 		    effacer son login.
 
-		    %LISTECOR%}
+		    %LISTUSERS%}
 	    }
 	    \lignetableau {
 		\casetableau {
@@ -180,7 +180,7 @@
 			}
 		    }
 
-		    %LISTEDREQ%}
+		    %LISTPERMEQ%}
 	    }
 	    \lignetableau {
 		\casetableau {

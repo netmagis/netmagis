@@ -434,7 +434,7 @@ CREATE TABLE topo.ignoreequsers (
 
 -- Access rights to equipements
 
-CREATE TABLE topo.dr_eq (
+CREATE TABLE topo.p_eq (
     idgrp	INT,			-- group upon which this access right applies
     rw		INT,			-- 0 : read, 1 : write
     pattern	TEXT NOT NULL,		-- regular expression

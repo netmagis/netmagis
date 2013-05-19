@@ -3107,7 +3107,7 @@ proc display-group {dbfd idgrp} {
     set lines {}
     foreach {rw text} [list 0 [mc "Read"] 1 [mc "Write"]] {
 	set sql "SELECT allow_deny, pattern
-			    FROM topo.dr_eq
+			    FROM topo.p_eq
 			    WHERE idgrp = $idgrp AND rw = $rw
 			    ORDER BY rw, allow_deny DESC, pattern"
 	set perm ""
@@ -10030,7 +10030,7 @@ proc read-authorized-eq {dbfd rw idgrp} {
     set r {}
     foreach allow_deny {1 0} {
 	set sql "SELECT pattern
-			FROM topo.dr_eq
+			FROM topo.p_eq
 			WHERE idgrp = $idgrp
 			    AND rw = $rw
 			    AND allow_deny = $allow_deny"

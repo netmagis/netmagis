@@ -50,7 +50,7 @@
 #   2007/10/10 : pda/jean : centralization of group administration
 #   2008/07/23 : pda/jean : add p_smtp
 #   2010/10/31 : pda      : add p_ttl
-#   2010/11/03 : pda/jean : add dr_eq
+#   2010/11/03 : pda/jean : add p_eq
 #   2010/11/30 : pda/jean : add p_mac
 #   2010/12/06 : pda      : i18n
 #   2010/12/26 : pda      : use cgi-dispatch
@@ -196,7 +196,7 @@ set conf(tabpip) {
     }
 }
 
-set conf(tabdreq) {
+set conf(tabpermeq) {
     global {
 	chars {12 normal}
 	botbar {no}
@@ -667,7 +667,7 @@ d cgi-register {action edit} {
     set lines {}
     set n 1
     set sql "SELECT rw, pattern, allow_deny \
-			FROM topo.dr_eq \
+			FROM topo.p_eq \
 			WHERE idgrp = $idgrp \
 			ORDER BY rw, allow_deny DESC, pattern"
     pg_select $dbfd $sql tab {
@@ -700,7 +700,7 @@ d cgi-register {action edit} {
 	incr n
     }
 
-    set listdreq [::arrgen::output "html" $conf(tabdreq) $lines]
+    set listpermeq [::arrgen::output "html" $conf(tabpermeq) $lines]
 
     #
     # DHCP profiles
@@ -753,12 +753,12 @@ d cgi-register {action edit} {
 				[list %PMAC% $p_mac] \
 				[list %PGENL% $p_genl] \
 				[list %MSGGROUP% $msggrp] \
-				[list %LISTECOR% $listecor] \
+				[list %LISTUSERS% $listecor] \
 				[list %LISTVIEWS% $listviews] \
 				[list %LISTDOMAINS% $listdomains] \
 				[list %LISTNETS% $listnets] \
 				[list %LISTPERMS% $listperms] \
-				[list %LISTEDREQ% $listdreq] \
+				[list %LISTPERMEQ% $listpermeq] \
 				[list %LISTDHCPPROF% $listdhcpprof] \
 			    ]
 }
@@ -1102,7 +1102,7 @@ d cgi-register {action mod} {
     #
 
     set n 1
-    set ldreq {}
+    set lpermeq {}
     while {[info exists ftab(eqpat$n)] &&
 		[info exists ftab(eqrw$n)] &&
 		[info exists ftab(eqallow$n)]} {
@@ -1123,7 +1123,7 @@ d cgi-register {action mod} {
 		d error [mc "Invalid regular expression pattern '%s'" $pattern]
 	    }
 
-	    lappend ldreq [list $rw $allow_deny $pattern]
+	    lappend lpermeq [list $rw $allow_deny $pattern]
 	}
 
 	incr n
@@ -1415,11 +1415,11 @@ d cgi-register {action mod} {
     }
 
     # Equipment permissions (topo) associated with the group
-    lappend cmd "DELETE FROM topo.dr_eq WHERE idgrp = $idgrp"
-    foreach e $ldreq {
+    lappend cmd "DELETE FROM topo.p_eq WHERE idgrp = $idgrp"
+    foreach e $lpermeq {
 	lassign $e rw allow_deny pattern
 	set pattern [::pgsql::quote $pattern]
-	lappend cmd "INSERT INTO topo.dr_eq (idgrp, rw, allow_deny, pattern)
+	lappend cmd "INSERT INTO topo.p_eq (idgrp, rw, allow_deny, pattern)
 				VALUES ($idgrp, $rw, $allow_deny, '$pattern')"
     }
 
@@ -1450,7 +1450,7 @@ d cgi-register {action mod} {
     set h [display-group $dbfd $idgrp]
     lassign $h \
 		tabperms tablogins tabnets tabcidralone \
-		tabviews tabdomains tabdhcpprofiles tabdreq
+		tabviews tabdomains tabdhcpprofiles tabpermeq
 
     #
     # End of script: output page and close database
@@ -1465,7 +1465,7 @@ d cgi-register {action mod} {
 			    [list %TABNETS% $tabnets] \
 			    [list %TABCIDRALONE% $tabcidralone] \
 			    [list %TABDHCPPROFILES% $tabdhcpprofiles] \
-			    [list %TABDREQ% $tabdreq] \
+			    [list %TABPERMEQ% $tabpermeq] \
 			]
 }
 

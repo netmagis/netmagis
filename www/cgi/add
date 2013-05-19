@@ -662,14 +662,14 @@ d cgi-register {action add-multi} {
 	lappend lines [list Normal $a $n $c]
     }
 
-    set liste [::arrgen::output "html" $conf(tableau-multi) $lines]
+    set list [::arrgen::output "html" $conf(tableau-multi) $lines]
 
     #
     # End of script: output page and close database
     #
 
     d result $conf(page-multi) [list \
-					    [list %LISTE% $liste] \
+					    [list %LIST% $list] \
 			    ]
     return 0
 }

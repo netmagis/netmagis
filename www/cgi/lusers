@@ -150,7 +150,7 @@ d cgi-register {} {} {
 
     d result $conf(page) [list \
 				[list %TITLEPAGE%       $titrepage ] \
-				[list %LISTECOR%        $tab ] \
+				[list %LISTUSERS%       $tab ] \
 			    ]
 }
 

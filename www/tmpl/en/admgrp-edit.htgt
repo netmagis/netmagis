@@ -94,7 +94,7 @@
 		\casetableau {} {To remove a user, just delete
 		    her/his login.
 
-		    %LISTECOR%}
+		    %LISTUSERS%}
 	    }
 	    \lignetableau {
 		\casetableau {
@@ -176,7 +176,7 @@
 			}
 		    }
 
-		    %LISTEDREQ%}
+		    %LISTPERMEQ%}
 	    }
 	    \lignetableau {
 		\casetableau {
