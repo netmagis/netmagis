@@ -344,11 +344,7 @@ proc topotop-all {dbfd datefmt arg} {
     #
 
     set unproc {}
-    set sql "SELECT DISTINCT r.nom || '.' || d.name AS eq
-			FROM topo.ifchanges i, dns.rr r, dns.domain d
-			WHERE i.processed = 0
-			    AND i.idrr = r.idrr
-			    AND r.iddom = d.iddom"
+    set sql "SELECT DISTINCT eq FROM topo.ifchanges WHERE processed = 0"
     pg_select $dbfd $sql tab {
 	d urlset "" $conf(next) [list {key ifchg} [list "arg" $tab(eq)]]
 	set url [d urlget ""]
@@ -495,7 +491,7 @@ proc topotop-ifchg {dbfd datefmt arg} {
 
     set lines {}
     lappend lines [list "Title" \
-			[mc "Équipement"] \
+			[mc "Equipment"] \
 			[mc "Interface"] \
 			[mc "Date"] \
 			[mc "Login"] \
@@ -504,19 +500,12 @@ proc topotop-ifchg {dbfd datefmt arg} {
 			[mc "Date sent"] \
 			[mc "Log"] \
 		    ]
-    if {$arg eq ""} then {
-	set sql "SELECT r.nom || '.' || d.name AS eq, i.*
-			FROM topo.ifchanges i, dns.rr r, dns.domain d
-			WHERE i.idrr = r.idrr AND r.iddom = d.iddom
-			ORDER BY reqdate DESC"
-    } else {
+    set w ""
+    if {$arg ne ""} then {
 	set qeq [::pgsql::quote $arg]
-	set sql "SELECT r.nom || '.' || d.name AS eq, i.*
-			FROM topo.ifchanges i, dns.rr r, dns.domain d
-			WHERE i.idrr = r.idrr AND r.iddom = d.iddom
-			    AND (r.nom || '.' || d.name) = '$qeq'
-			ORDER BY reqdate DESC"
+	set w "WHERE eq = '$qeq'"
     }
+    set sql "SELECT * FROM topo.ifchanges $w ORDER BY reqdate DESC"
 
     pg_select $dbfd $sql tab {
 	set reqdate [clock format [clock scan $tab(reqdate)] -format $datefmt]
@@ -571,9 +560,8 @@ proc topotop-modlog {dbfd datefmt arg} {
     set qeq [::pgsql::quote $eq]
     set qif [::pgsql::quote $iface]
     set qdate [::pgsql::quote $date]
-    set sql "SELECT moddate, modlog FROM topo.ifchanges,
-					dns.rr r, dns.domain d
-			WHERE (r.nom || '.' || d.name) = '$qeq'
+    set sql "SELECT moddate, modlog FROM topo.ifchanges
+			WHERE eq = '$qeq'
 			    AND iface = '$qif'
 			    AND reqdate = '$qdate'"
     set lines {}

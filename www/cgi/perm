@@ -49,16 +49,20 @@ d cgi-register {} {
     # Display group informations.
     #
 
-    set grospaquet [display-group $dbfd $tabuid(idgrp)]
-    set tabreseaux        [lindex $grospaquet 2]
-    set tabcidrhorsreseau [lindex $grospaquet 3]
-    set tabdomains        [lindex $grospaquet 4]
-    set tabdhcpprofil     [lindex $grospaquet 5]
+    lassign [display-group $dbfd $tabuid(idgrp)] \
+	tabperm \
+	tabuser \
+	tabnetworks \
+	tabcidralone \
+	tabviews \
+	tabdomains \
+	tabdhcpprofile \
+	tabdreq 
 
-    if {$tabcidrhorsreseau eq ""} then {
-	set titrecidrhorsreseau ""
+    if {$tabcidralone eq ""} then {
+	set titlecidralone ""
     } else {
-	set titrecidrhorsreseau [mc "Permissions not associated with any network"]
+	set titlecidralone [mc "Permissions not associated with any network"]
     }
 
     #
@@ -67,11 +71,12 @@ d cgi-register {} {
 
     d result $conf(page) [list \
 			    [list %CORRESP% $user] \
-			    [list %TABRESEAUX% $tabreseaux] \
-			    [list %TITRECIDRHORSRESEAU% $titrecidrhorsreseau] \
-			    [list %TABCIDRHORSRESEAU% $tabcidrhorsreseau] \
+			    [list %TABNETWORKS% $tabnetworks] \
+			    [list %TITLECIDRALONE% $titlecidralone] \
+			    [list %TABCIDRALONE% $tabcidralone] \
 			    [list %TABDOMAINS% $tabdomains] \
-			    [list %TABDHCPPROFIL% $tabdhcpprofil] \
+			    [list %TABVIEWS% $tabviews] \
+			    [list %TABDHCPPROFILE% $tabdhcpprofile] \
 			    ]
 }
 

@@ -2413,15 +2413,15 @@ snit::type ::webapp::authbase {
     # liste de couples
     #	<nom dans ce module> <nom dans la base>
     option -attrmap -default {
-	login    login
-	password password
-	nom      nom
-	prenom   prenom
-	mel      mel
-	tel      tel
-	mobile   mobile
-	fax      fax
-	adr      adr
+	login     login
+	password  password
+	lastname  lastname
+	firstname firstname
+	mail      mail
+	phone     phone
+	mobile    mobile
+	fax       fax
+	addr      addr
     }
 
     variable connected "no"

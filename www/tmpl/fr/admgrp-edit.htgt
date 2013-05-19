@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {%TITRE%}
+    \titre {1} {%TITLE%}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<input type="hidden" name="action" value="mod">
@@ -54,32 +54,32 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {%MESSAGEGROUPE%}
+			    \casetableau {} {%MSGGROUP%}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="newgrp" VALUE="%NEWGRP%">
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {Administration de l'application}
-			    \casetableau {} {%ADMIN%}
+			    \casetableau {} {%PADMIN%}
 			}
 			\lignetableau {
 			    \casetableau {} {Accès à la gestion des
 				droits d'émission SMTP
 			    }
-			    \casetableau {} {%DROITSMTP%}
+			    \casetableau {} {PSMTP%}
 			}
 			\lignetableau {
 			    \casetableau {} {Accès à la gestion des TTL}
-			    \casetableau {} {%DROITTTL%}
+			    \casetableau {} {%PTTL%}
 			}
 			\lignetableau {
 			    \casetableau {} {Accès au module MAC}
-			    \casetableau {} {%DROITMAC%}
+			    \casetableau {} {%PMAC%}
 			}
 			\lignetableau {
 			    \casetableau {} {Accès à la génération de numéros de liens Topo}
-			    \casetableau {} {%DROITGENL%}
+			    \casetableau {} {%PGENL%}
 			}
 		    }
 		}
@@ -94,7 +94,7 @@
 		\casetableau {} {Pour supprimer un correspondant,
 		    effacer son login.
 
-		    %LISTECOR%}
+		    %LISTUSERS%}
 	    }
 	    \lignetableau {
 		\casetableau {
@@ -130,7 +130,7 @@
 		\casetableau {} {Pour supprimer un réseau,
 		    vider la case <<~Classe de tri~>>.
 
-		    %LISTERESEAUX%}
+		    %LISTNETS%}
 	    }
 	    \lignetableau {
 		\casetableau {
@@ -139,7 +139,7 @@
 		} {\gras {Droits d'accès IP}}
 	    }
 	    \lignetableau {
-		\casetableau {} {%LISTEDROITS%}
+		\casetableau {} {%LISTPERMS%}
 	    }
 	    \lignetableau {
 		\casetableau {
@@ -180,7 +180,7 @@
 			}
 		    }
 
-		    %LISTEDREQ%}
+		    %LISTPERMEQ%}
 	    }
 	    \lignetableau {
 		\casetableau {
@@ -192,7 +192,7 @@
 		\casetableau {} {Pour supprimer un accès à un profil,
 		    vider la case <<~Classe de tri~>>.
 
-		    %LISTEDHCPPROFILS%}
+		    %LISTDHCPPROFS%}
 	    }
 	    \lignetableau {
 		\casetableau {

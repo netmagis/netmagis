@@ -282,13 +282,13 @@ proc lire-ifaces {fd tab} {
 	set vlanid [lindex $tabip($ip) 2]
 
 	regsub -all {/} $iface {-} iface
-	set nom    "$eq-$iface-$vlanid"
+	set name   "$eq-$iface-$vlanid"
 
 	if {[info exists t($ip)]} then {
-	    puts stderr "$ip a plusieurs nom : '$t($ip)' et '$nom'"
+	    puts stderr "$ip a plusieurs noms : '$t($ip)' et '$name'"
 	    set r 0
 	} else {
-	    set t($ip) $nom
+	    set t($ip) $name
 	}
     }
 
@@ -301,13 +301,13 @@ proc lire-ifaces {fd tab} {
 	set ip [lindex $tabvrrp($vlanid) 0]
 
 	if {[info exists tabvlan($vlanid)]} then {
-	    set nom "r-$tabvlan($vlanid)-$vlanid"
+	    set name "r-$tabvlan($vlanid)-$vlanid"
 
 	    if {[info exists t($ip)]} then {
-		puts stderr "$ip a plusieurs nom : '$t($ip)' et '$nom'"
+		puts stderr "$ip a plusieurs noms : '$t($ip)' et '$name'"
 		set r 0
 	    } else {
-		set t($ip) $nom
+		set t($ip) $name
 	    }
 	} else {
 	    puts stderr "Description missing for vlan $vlanid"
@@ -363,19 +363,19 @@ proc lire-dns {base domain routers tabfic tabdns} {
 
     set lpat {}
     foreach rtr $routers {
-	lappend lpat "nom LIKE '$rtr-%'"
+	lappend lpat "name LIKE '$rtr-%'"
     }
     set lpat [join $lpat " OR "]
 
-    set sql "SELECT rr.nom AS nom, rr_ip.adr AS adr
+    set sql "SELECT rr.name, rr_ip.addr
 			FROM dns.rr, dns.rr_ip 
 			WHERE rr.idrr = rr_ip.idrr
 			    AND rr.iddom = $iddom
 			    AND ( $lpat )"
     pg_select $dbfd $sql tab {
-	set nom $tab(nom)
-	set ip  $tab(adr)
-	set tdns($ip) $nom
+	set name $tab(name)
+	set ip   $tab(addr)
+	set tdns($ip) $name
     }
 
     #
@@ -388,26 +388,25 @@ proc lire-dns {base domain routers tabfic tabdns} {
     }
     set lif [join $lif ","]
 
-    set sql "SELECT rr.nom AS nom, rr_ip.adr AS adr,
-			    rr.iddom AS iddom, domain.name AS domain
+    set sql "SELECT rr.name, rr_ip.addr rr.iddom AS iddom, domain.name AS domain
 			FROM dns.rr, dns.rr_ip, dns.domain
 			WHERE rr.idrr = rr_ip.idrr
 			    AND rr.iddom = domain.iddom
-			    AND rr_ip.adr IN ($lif)"
+			    AND rr_ip.addr IN ($lif)"
     pg_select $dbfd $sql tab {
-	set nom $tab(nom)
-	set ip  $tab(adr)
-	set dom $tab(domain)
+	set name $tab(name)
+	set ip   $tab(addr)
+	set dom  $tab(domain)
 	if {$tab(iddom) != $iddom} then {
-	    puts stderr "$ip ($nom.$dom)) n'est pas dans $domain"
+	    puts stderr "$ip ($name.$dom)) n'est pas dans $domain"
 	    set r 0
 	} elseif {[info exists tdns($ip)]} then {
-	    if {! [string equal $tdns($ip) $nom]} then {
-		puts stderr "$ip a plusieurs nom : '$tdns($ip)' et '$nom'"
+	    if {! [string equal $tdns($ip) $name]} then {
+		puts stderr "$ip a plusieurs noms : '$tdns($ip)' et '$name'"
 		set r 0
 	    }
 	} else {
-	    set tdns($ip) $nom
+	    set tdns($ip) $name
 	}
     }
 

@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {%TITRE%}
+    \titre {1} {%TITLE%}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<input type="hidden" name="action" value="mod">
@@ -54,32 +54,32 @@
 			\casedefauttableau {\centragehorizontal {LEFT}}
 		    } {
 			\lignetableau {
-			    \casetableau {} {%MESSAGEGROUPE%}
+			    \casetableau {} {%MSGGROUP%}
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="newgrp" VALUE="%NEWGRP%">
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {Application administration}
-			    \casetableau {} {%ADMIN%}
+			    \casetableau {} {%PADMIN%}
 			}
 			\lignetableau {
 			    \casetableau {} {Permission to manage SMTP
 				emit right
 			    }
-			    \casetableau {} {%DROITSMTP%}
+			    \casetableau {} {%PSMTP%}
 			}
 			\lignetableau {
 			    \casetableau {} {Permission to manage hosts TTL}
-			    \casetableau {} {%DROITTTL%}
+			    \casetableau {} {%PTTL%}
 			}
 			\lignetableau {
 			    \casetableau {} {Permission to use MAC module}
-			    \casetableau {} {%DROITMAC%}
+			    \casetableau {} {%PMAC%}
 			}
 			\lignetableau {
 			    \casetableau {} {Permission to generate Topo link numbers}
-			    \casetableau {} {%DROITGENL%}
+			    \casetableau {} {%PGENL%}
 			}
 		    }
 		}
@@ -94,7 +94,7 @@
 		\casetableau {} {To remove a user, just delete
 		    her/his login.
 
-		    %LISTECOR%}
+		    %LISTUSERS%}
 	    }
 	    \lignetableau {
 		\casetableau {
@@ -130,7 +130,7 @@
 		\casetableau {} {To remove a network, just delete
 		    its "sort class".
 
-		    %LISTERESEAUX%}
+		    %LISTNETS%}
 	    }
 	    \lignetableau {
 		\casetableau {
@@ -139,7 +139,7 @@
 		} {\gras {IP access rights}}
 	    }
 	    \lignetableau {
-		\casetableau {} {%LISTEDROITS%}
+		\casetableau {} {%LISTPERMS%}
 	    }
 	    \lignetableau {
 		\casetableau {
@@ -176,7 +176,7 @@
 			}
 		    }
 
-		    %LISTEDREQ%}
+		    %LISTPERMEQ%}
 	    }
 	    \lignetableau {
 		\casetableau {
@@ -188,7 +188,7 @@
 		\casetableau {} {To remove access to a DHCP profile,
 		    just delete its "sort class".
 
-		    %LISTEDHCPPROFILS%}
+		    %LISTDHCPPROF%}
 	    }
 	    \lignetableau {
 		\casetableau {

@@ -60,7 +60,6 @@ proc main {argv0 argv} {
     if {! [u isallowedview $idview]} then {
 	d error [mc "Access denied to view '%s'" $view]
     }
-    set idviews [list $idview]
 
     #
     # IP address validation
@@ -91,9 +90,9 @@ proc main {argv0 argv} {
     # Check access to host
     #
 
-    set name   $trr(nom)
+    set name   $trr(name)
     set domain $trr(domain)
-    set msg [check-authorized-host $dbfd $tabcor(idcor) $name $domain $idviews bidon "del-name"]
+    set msg [check-authorized-host $dbfd $tabcor(idcor) $name $domain $idview bidon "del-name"]
     if {$msg ne ""} then {
 	d error $msg
     }

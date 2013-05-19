@@ -151,7 +151,7 @@ set libconf(tabperm) {
 	botbar {yes}
 	columns {75 25}
     }
-    pattern DROIT {
+    pattern Normal {
 	vbar {yes}
 	column { }
 	vbar {yes}
@@ -167,7 +167,7 @@ set libconf(tabdreq) {
 	botbar {yes}
 	columns {20 80}
     }
-    pattern DroitEq {
+    pattern PermEq {
 	vbar {yes}
 	column { }
 	vbar {yes}
@@ -186,7 +186,7 @@ set libconf(tabnetworks) {
 	botbar {yes}
 	columns {15 35 15 35}
     }
-    pattern Reseau {
+    pattern Network {
 	vbar {yes}
 	column {
 	    align {center}
@@ -210,7 +210,7 @@ set libconf(tabnetworks) {
 	}
 	vbar {yes}
     }
-    pattern Droits {
+    pattern Perm {
 	vbar {yes}
 	column { }
 	vbar {yes}
@@ -223,39 +223,31 @@ set libconf(tabnetworks) {
     }
 }
 
-set libconf(tabviews) {
-    global {
-	chars {10 normal}
-	align {left}
-	botbar {yes}
-	columns {75 25}
-    }
-    pattern Normal {
-	vbar {yes}
-	column { }
-	vbar {no}
-	column { }
-	vbar {yes}
-    }
-}
-
 set libconf(tabdomains) {
     global {
 	chars {10 normal}
 	align {left}
 	botbar {yes}
-	columns {50 25 25}
+	columns {50 50}
     }
-    pattern Domaine {
+    pattern Title {
+	chars {gras}
 	vbar {yes}
 	column { }
-	vbar {no}
+	vbar {yes}
 	column { }
-	vbar {no}
+	vbar {yes}
+    }
+    pattern Normal {
+	vbar {yes}
+	column { }
+	vbar {yes}
 	column { }
 	vbar {yes}
     }
 }
+
+set libconf(tabviews) $libconf(tabdomains)
 
 set libconf(tabdhcpprofile) {
     global {
@@ -560,10 +552,10 @@ snit::type ::netmagis {
 			    {lnet always}
 			    {lusers always}
 			    {search always}
-			    {modetabl always}
-			    {modcommu always}
+			    {modorg always}
+			    {modcomm always}
 			    {modhinfo always}
-			    {modreseau always}
+			    {modnetwork always}
 			    {moddomain always}
 			    {admmrel always}
 			    {admmx always}
@@ -571,7 +563,7 @@ snit::type ::netmagis {
 			    {modzone always}
 			    {modzone4 always}
 			    {modzone6 always}
-			    {moddhcpprofil always}
+			    {moddhcpprof always}
 			    {modvlan always}
 			    {modeqtype always}
 			    {modeq always}
@@ -591,10 +583,10 @@ snit::type ::netmagis {
 	admlmx		{admlmx {List MX}}
 	lnet		{lnet {List networks}}
 	lusers		{lusers {List users}}
-	modetabl	{admref?type=etabl {Modify organizations}}
-	modcommu	{admref?type=commu {Modify communities}}
+	modorg		{admref?type=org {Modify organizations}}
+	modcomm		{admref?type=comm {Modify communities}}
 	modhinfo	{admref?type=hinfo {Modify machine types}}
-	modreseau	{admref?type=reseau {Modify networks}}
+	modnetwork	{admref?type=net {Modify networks}}
 	moddomain	{admref?type=domain {Modify domains}}
 	admmrel		{admmrel {Modify mailhost}}
 	admmx		{admmx {Modify MX}}
@@ -602,7 +594,7 @@ snit::type ::netmagis {
 	modzone		{admref?type=zone {Modify zones}}
 	modzone4	{admref?type=zone4 {Modify reverse IPv4 zones}}
 	modzone6	{admref?type=zone6 {Modify reverse IPv6 zones}}
-	moddhcpprofil	{admref?type=dhcpprofil {Modify DHCP profiles}}
+	moddhcpprof	{admref?type=dhcpprof {Modify DHCP profiles}}
 	modvlan		{admref?type=vlan {Modify Vlans}}
 	modeqtype	{admref?type=eqtype {Modify equipment types}}
 	modeq		{admref?type=eq {Modify equipments}}
@@ -671,8 +663,8 @@ snit::type ::netmagis {
     #   - anon : "anon" (don't fetch identity in auth database) or "id" (fetch)
     #	- usedefuser : use default user name if login is not found
     #   - _tabuid : array containing, in return, user's characteristics
-    #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
-    #			idcor, idgrp, present)
+    #		(login, password, lastname, firstname, mail, phone, fax,
+    #			mobile, addr, idcor, idgrp, present)
     #
     # Output:
     #	- return value: empty string or error message
@@ -763,13 +755,13 @@ snit::type ::netmagis {
 		lappend m "-attrmap" [list \
 					"login" $ldapattrlogin \
 					"password" $ldapattrpassword \
-					"nom" $ldapattrname \
-					"prenom" $ldapattrgivenname \
-					"mel" $ldapattrmail \
-					"tel" $ldapattrphone \
+					"lastname" $ldapattrname \
+					"firstname" $ldapattrgivenname \
+					"maill" $ldapattrmail \
+					"phone" $ldapattrphone \
 					"mobile" $ldapattrmobile \
 					"fax" $ldapattrfax \
-					"adr" $ldapattraddr \
+					"addr" $ldapattraddr \
 					]
 	    }
 	    default {
@@ -979,8 +971,8 @@ snit::type ::netmagis {
     #		- dbfd : database descriptor
     #		- ftab : field array (see webapp::get-data)
     #		- tabuid : user's characteristics
-    #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
-    #			idcor, idgrp, present)
+    #		(login, password, lastname, firstname, mail, phone, fax,
+    #			mobile, addr, idcor, idgrp, present)
     # Output: (none)
     #
 
@@ -1133,7 +1125,7 @@ snit::type ::netmagis {
 	#
 
 	set nuid [string trim [lindex $ftab(uid) 0]]
-	if {$nuid ne "" && $tabuid(admin)} then {
+	if {$nuid ne "" && $tabuid(p_admin)} then {
 	    array set tabouid [array get tabuid]
 	    array unset tabuid
 
@@ -1170,13 +1162,13 @@ snit::type ::netmagis {
 	if {[dnsconfig get "topoactive"]} then {
 	    lappend curcap "topo"
 	}
-	if {[dnsconfig get "macactive"] && $tabuid(droitmac)} then {
+	if {[dnsconfig get "macactive"] && $tabuid(p_mac)} then {
 	    lappend curcap "mac"
 	}
-	if {$tabuid(droitgenl)} then {
+	if {$tabuid(p_genl)} then {
 	    lappend curcap "topogenl"
 	}
-	if {$tabuid(admin)} then {
+	if {$tabuid(p_admin)} then {
 	    lappend curcap "admin"
 	}
 	if {[dnsconfig get "authmethod"] eq "pgsql"} then {
@@ -1276,8 +1268,8 @@ snit::type ::netmagis {
     #   - argv0 : script argv0
     #   - usedefuser : use default user name if login is not found
     #   - _tabuid : array containing, in return, user's characteristics
-    #		(login, password, nom, prenom, mel, tel, fax, mobile, adr,
-    #			idcor, idgrp, present)
+    #		(login, password, lastname, firstname, mail, phone, fax,
+    #			mobile, addr, idcor, idgrp, present)
     # Output:
     #   - return value: error message or empty string
     #   - object d : Netmagis context
@@ -1856,8 +1848,8 @@ snit::type ::config {
     method get {key} {
 	if {[info exists internal(key:$key:type)]} then {
 	    set found 0
-	    pg_select $db "SELECT * FROM global.config WHERE clef = '$key'" tab {
-		set val $tab(valeur)
+	    pg_select $db "SELECT * FROM global.config WHERE key = '$key'" tab {
+		set val $tab(value)
 		set found 1
 	    }
 	    if {! $found} then {
@@ -1882,10 +1874,11 @@ snit::type ::config {
 	    if {$internal(key:$key:rw) eq "rw"} then {
 		set r ""
 		set k [::pgsql::quote $key]
-		set sql "DELETE FROM global.config WHERE clef = '$k'"
+		set sql "DELETE FROM global.config WHERE key = '$k'"
 		if {[::pgsql::execsql $db $sql msg]} then {
 		    set v [::pgsql::quote $val]
-		    set sql "INSERT INTO global.config VALUES ('$k', '$v')"
+		    set sql "INSERT INTO global.config (key, value)
+		    				VALUES ('$k', '$v')"
 		    if {! [::pgsql::execsql $db $sql msg]} then {
 			set r [mc {Cannot set key '%1$s' to '%2$s': %3$s} $key $val $msg]
 		    }
@@ -1996,10 +1989,10 @@ snit::type ::nmuser {
     proc load-groups {selfns} {
 	array unset allgroups
 
-	set sql "SELECT * FROM global.groupe"
+	set sql "SELECT * FROM global.nmgroup"
 	pg_select $db $sql tab {
 	    set idgrp $tab(idgrp)
-	    set name  $tab(nom)
+	    set name  $tab(name)
 	    set allgroups(id:$idgrp) $name
 	    set allgroups(name:$name) $idgrp
 	}
@@ -2046,12 +2039,12 @@ snit::type ::nmuser {
 	}
 
 	set qlogin [::pgsql::quote $login]
-	set sql "SELECT d.idview
-			FROM dns.dr_view d, dns.view v, global.corresp c
-			WHERE d.idgrp = c.idgrp
-			    AND d.idview = v.idview
-			    AND c.login = '$qlogin'
-			ORDER BY d.sort ASC, v.name ASC"
+	set sql "SELECT p.idview
+			FROM dns.p_view p, dns.view v, global.nmuser u
+			WHERE p.idgrp = u.idgrp
+			    AND p.idview = v.idview
+			    AND u.login = '$qlogin'
+			ORDER BY p.sort ASC, v.name ASC"
 	pg_select $db $sql tab {
 	    set idview $tab(idview)
 	    set authviews($idview) 1
@@ -2115,12 +2108,12 @@ snit::type ::nmuser {
 	}
 
 	set qlogin [::pgsql::quote $login]
-	set sql "SELECT dr.iddom
-			FROM dns.dr_dom dr, dns.domain d, global.corresp c
-			WHERE dr.idgrp = c.idgrp
-			    AND dr.iddom = d.iddom
-			    AND c.login = '$qlogin'
-			ORDER BY dr.tri ASC, d.name ASC"
+	set sql "SELECT p.iddom
+			FROM dns.p_dom p, dns.domain d, global.nmuser u
+			WHERE p.idgrp = u.idgrp
+			    AND p.iddom = d.iddom
+			    AND u.login = '$qlogin'
+			ORDER BY p.sort ASC, d.name ASC"
 	pg_select $db $sql tab {
 	    set iddom $tab(iddom)
 	    set authdom($iddom) 1
@@ -2821,14 +2814,14 @@ proc display-user {_tabuid} {
     upvar $_tabuid tabuid
 
     set lines {}
-    lappend lines [list Normal [mc "User"] "$tabuid(nom) $tabuid(prenom)"]
+    lappend lines [list Normal [mc "User"] "$tabuid(lastname) $tabuid(firstname)"]
     foreach {txt key} {
 			Login	login
-			Mail	mel
-			Phone	tel
+			Mail	mail
+			Phone	phone
 			Mobile	mobile
 			Fax	fax
-			Address	adr
+			Address	addr
 		    } {
 	lappend lines [list Normal [mc $txt] $tabuid($key)]
     }
@@ -2863,44 +2856,44 @@ proc display-group {dbfd idgrp} {
     global libconf
 
     #
-    # Get specific permissions: admin, droitsmtp, droitttl, droitmac and droitgenl
+    # Get specific permissions: p_admin, p_smtp, p_ttl, p_mac and p_genl
     #
 
     set lines {}
-    set sql "SELECT admin, droitsmtp, droitttl, droitmac, droitgenl
-			FROM global.groupe
+    set sql "SELECT p_admin, p_smtp, p_ttl, p_mac, p_genl
+			FROM global.nmgroup
 			WHERE idgrp = $idgrp"
     pg_select $dbfd $sql tab {
-	if {$tab(admin)} then {
-	    set admin [mc "yes"]
+	if {$tab(p_admin)} then {
+	    set p_admin [mc "yes"]
 	} else {
-	    set admin [mc "no"]
+	    set p_admin [mc "no"]
 	}
-	if {$tab(droitsmtp)} then {
-	    set droitsmtp [mc "yes"]
+	if {$tab(p_smtp)} then {
+	    set p_smtp [mc "yes"]
 	} else {
-	    set droitsmtp [mc "no"]
+	    set p_smtp [mc "no"]
 	}
-	if {$tab(droitttl)} then {
-	    set droitttl [mc "yes"]
+	if {$tab(p_ttl)} then {
+	    set p_ttl [mc "yes"]
 	} else {
-	    set droitttl [mc "no"]
+	    set p_ttl [mc "no"]
 	}
-	if {$tab(droitmac)} then {
-	    set droitmac [mc "yes"]
+	if {$tab(p_mac)} then {
+	    set p_mac [mc "yes"]
 	} else {
-	    set droitmac [mc "no"]
+	    set p_mac [mc "no"]
 	}
-	if {$tab(droitgenl)} then {
-	    set droitgenl [mc "yes"]
+	if {$tab(p_genl)} then {
+	    set p_genl [mc "yes"]
 	} else {
-	    set droitgenl [mc "no"]
+	    set p_genl [mc "no"]
 	}
-	lappend lines [list DROIT [mc "Netmagis administration"] $admin]
-	lappend lines [list DROIT [mc "SMTP authorization management"] $droitsmtp]
-	lappend lines [list DROIT [mc "TTL management"] $droitttl]
-	lappend lines [list DROIT [mc "MAC module access"] $droitmac]
-	lappend lines [list DROIT [mc "Generate link numbers"] $droitgenl]
+	lappend lines [list Normal [mc "Netmagis administration"] $p_admin]
+	lappend lines [list Normal [mc "SMTP authorization management"] $p_smtp]
+	lappend lines [list Normal [mc "TTL management"] $p_ttl]
+	lappend lines [list Normal [mc "MAC module access"] $p_mac]
+	lappend lines [list Normal [mc "Generate link numbers"] $p_genl]
     }
     if {[llength $lines] > 0} then {
 	set tabperm [::arrgen::output "html" $libconf(tabperm) $lines]
@@ -2913,7 +2906,7 @@ proc display-group {dbfd idgrp} {
     #
 
     set luser {}
-    set sql "SELECT login FROM global.corresp WHERE idgrp=$idgrp ORDER BY login"
+    set sql "SELECT login FROM global.nmuser WHERE idgrp=$idgrp ORDER BY login"
     pg_select $dbfd $sql tab {
 	lappend luser [::webapp::html-string $tab(login)]
     }
@@ -2924,67 +2917,68 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    set sql "SELECT r.idreseau,
-			r.nom, r.localisation, r.adr4, r.adr6,
-			d.dhcp, d.acl,
-			e.nom AS etabl,
-			c.nom AS commu
-		FROM dns.reseau r, dns.dr_reseau d, dns.etablissement e, dns.communaute c
-		WHERE d.idgrp = $idgrp
-			AND d.idreseau = r.idreseau
-			AND e.idetabl = r.idetabl
-			AND c.idcommu = r.idcommu
-		ORDER BY d.tri, r.adr4, r.adr6"
+    set sql "SELECT n.idnet,
+			n.name, n.location, n.addr4, n.addr6,
+			p.dhcp, p.acl,
+			o.name AS org,
+			c.name AS comm
+		FROM dns.network n, dns.p_network p,
+			dns.organization o, dns.community c
+		WHERE p.idgrp = $idgrp
+			AND p.idnet = n.idnet
+			AND o.idorg = n.idorg
+			AND c.idcomm = n.idcomm
+		ORDER BY p.sort, n.addr4, n.addr6"
     pg_select $dbfd $sql tab {
-	set r_nom 	[::webapp::html-string $tab(nom)]
-	set r_loc	[::webapp::html-string $tab(localisation)]
-	set r_etabl	$tab(etabl)
-	set r_commu	$tab(commu)
-	set r_dhcp	$tab(dhcp)
-	set r_acl	$tab(acl)
+	set n_name 	[::webapp::html-string $tab(name)]
+	set n_loc	[::webapp::html-string $tab(location)]
+	set n_org	$tab(org)
+	set n_comm	$tab(comm)
+	set n_dhcp	$tab(dhcp)
+	set n_acl	$tab(acl)
 
 	# dispaddr : used for a pleasant address formatting
 	set dispaddr {}
 	# where : part of the WHERE clause for address selection
 	set where  {}
-	foreach a {adr4 adr6} {
+	foreach a {addr4 addr6} {
 	    if {$tab($a) ne ""} then {
 		lappend dispaddr $tab($a)
-		lappend where "adr <<= '$tab($a)'"
+		lappend where "addr <<= '$tab($a)'"
 	    }
 	}
 	set dispaddr [join $dispaddr ", "]
 	set where [join $where " OR "]
 
-	lappend lines [list Reseau $r_nom]
-	lappend lines [list Normal4 [mc "Location"] $r_loc \
-				[mc "Organization"] $r_etabl]
+	lappend lines [list Network $n_name]
+	lappend lines [list Normal4 [mc "Location"] $n_loc \
+				[mc "Organization"] $n_org]
 	lappend lines [list Normal4 [mc "Range"] $dispaddr \
-				[mc "Community"] $r_commu]
+				[mc "Community"] $n_comm]
 
 	set perm {}
 
 	set pnet {}
-	if {$r_dhcp} then { lappend pnet "dhcp" }
-	if {$r_acl} then { lappend pnet "acl" }
+	if {$n_dhcp} then { lappend pnet "dhcp" }
+	if {$n_acl} then { lappend pnet "acl" }
 	if {[llength $pnet] > 0} then {
 	    lappend perm [join $pnet ", "]
 	}
-	set sql2 "SELECT adr, allow_deny
-			FROM dns.dr_ip
+	set sql2 "SELECT addr, allow_deny
+			FROM dns.p_ip
 			WHERE ($where)
 			    AND idgrp = $idgrp
-			ORDER BY adr"
+			ORDER BY addr"
 	pg_select $dbfd $sql2 tab2 {
 	    if {$tab2(allow_deny)} then {
 		set x "+"
 	    } else {
 		set x "-"
 	    }
-	    lappend perm "$x $tab2(adr)"
+	    lappend perm "$x $tab2(addr)"
 	}
 
-	lappend lines [list Droits [mc "Permissions"] [join $perm "\n"]]
+	lappend lines [list Perm [mc "Permissions"] [join $perm "\n"]]
     }
 
     if {[llength $lines] > 0} then {
@@ -2999,21 +2993,23 @@ proc display-group {dbfd idgrp} {
 
     set lines {}
     set found 0
-    set sql "SELECT adr, allow_deny
-		    FROM dns.dr_ip
-		    WHERE NOT (adr <<= ANY (
-				SELECT r.adr4
-					FROM dns.reseau r, dns.dr_reseau d
-					WHERE r.idreseau = d.idreseau
-						AND d.idgrp = $idgrp
+    set sql "SELECT addr, allow_deny
+		    FROM dns.p_ip
+		    WHERE NOT (addr <<= ANY (
+				SELECT n.addr4
+					FROM dns.network n, dns.p_network p
+					WHERE n.idnet = p.idnet
+						AND n.addr4 IS NOT NULL
+						AND p.idgrp = $idgrp
 				UNION
-				SELECT r.adr6
-					FROM dns.reseau r, dns.dr_reseau d
-					WHERE r.idreseau = d.idreseau
-						AND d.idgrp = $idgrp
+				SELECT n.addr6
+					FROM dns.network n, dns.p_network p
+					WHERE n.idnet = p.idnet
+						AND n.addr6 IS NOT NULL
+						AND p.idgrp = $idgrp
 				    ) )
 			AND idgrp = $idgrp
-		    ORDER BY adr"
+		    ORDER BY addr"
     set perm {}
     pg_select $dbfd $sql tab {
 	set found 1
@@ -3022,14 +3018,14 @@ proc display-group {dbfd idgrp} {
 	} else {
 	    set x "-"
 	}
-	lappend perm "$x $tab(adr)"
+	lappend perm "$x $tab(addr)"
     }
-    lappend lines [list Droits [mc "Permissions"] [join $perm "\n"]]
+    lappend lines [list Perm [mc "Permissions"] [join $perm "\n"]]
 
     if {$found} then {
-	set tabcidrnonet [::arrgen::output "html" $libconf(tabnetworks) $lines]
+	set tabcidralone [::arrgen::output "html" $libconf(tabnetworks) $lines]
     } else {
-	set tabcidrnonet [mc "None (it's all right)"]
+	set tabcidralone [mc "None (it's ok)"]
     }
 
     #
@@ -3037,15 +3033,18 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    set sql "SELECT view.name AS name, dr_view.selected
-			FROM dns.dr_view, dns.view
-			WHERE dr_view.idview = view.idview
-				AND dr_view.idgrp = $idgrp
-			ORDER BY dr_view.sort ASC, view.name ASC"
+    lappend lines [list Title [mc "View"] [mc "Selected by default"]]
+    set sql "SELECT view.name AS name, p_view.selected
+			FROM dns.p_view, dns.view
+			WHERE p_view.idview = view.idview
+				AND p_view.idgrp = $idgrp
+			ORDER BY p_view.sort ASC, view.name ASC"
     pg_select $dbfd $sql tab {
 	set sel ""
 	if {$tab(selected)} then {
-	    set sel [mc "Selected by default"]
+	    set sel [mc "Yes"]
+	} else {
+	    set sel [mc "No"]
 	}
 
 	lappend lines [list Normal $tab(name) $sel]
@@ -3061,22 +3060,20 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    set sql "SELECT domain.name AS name, dr_dom.rolemail, dr_dom.roleweb
-			FROM dns.dr_dom, dns.domain
-			WHERE dr_dom.iddom = domain.iddom
-				AND dr_dom.idgrp = $idgrp
-			ORDER BY dr_dom.tri, domain.name"
+    lappend lines [list Title [mc "Domain"] [mc "Mail role management"]]
+    set sql "SELECT domain.name AS name, p_dom.mailrole
+			FROM dns.p_dom, dns.domain
+			WHERE p_dom.iddom = domain.iddom
+				AND p_dom.idgrp = $idgrp
+			ORDER BY p_dom.sort, domain.name"
     pg_select $dbfd $sql tab {
 	set rm ""
-	if {$tab(rolemail)} then {
-	    set rm [mc "Mail role management"]
+	if {$tab(mailrole)} then {
+	    set rm [mc "Yes"]
+	} else {
+	    set rm [mc "No"]
 	}
-	set rw ""
-	if {$tab(roleweb)} then {
-	    set rw [mc "Web role management"]
-	}
-
-	lappend lines [list Domaine $tab(name) $rm $rw]
+	lappend lines [list Normal $tab(name) $rm]
     }
     if {[llength $lines] > 0} then {
 	set tabdomains [::arrgen::output "html" $libconf(tabdomains) $lines]
@@ -3089,13 +3086,13 @@ proc display-group {dbfd idgrp} {
     #
 
     set lines {}
-    set sql "SELECT p.nom, dr.tri, p.texte
-			FROM dns.dhcpprofil p, dns.dr_dhcpprofil dr
-			WHERE p.iddhcpprofil = dr.iddhcpprofil
-				AND dr.idgrp = $idgrp
-			ORDER BY dr.tri, p.nom"
+    set sql "SELECT d.name, p.sort, d.text
+			FROM dns.dhcpprofile d, dns.p_dhcpprofile p
+			WHERE d.iddhcpprof = p.iddhcpprof
+				AND p.idgrp = $idgrp
+			ORDER BY p.sort, d.name"
     pg_select $dbfd $sql tab {
-	lappend lines [list DHCP $tab(nom) $tab(texte)]
+	lappend lines [list DHCP $tab(name) $tab(text)]
     }
     if {[llength $lines] > 0} then {
 	set tabdhcpprofile [::arrgen::output "html" $libconf(tabdhcpprofile) $lines]
@@ -3110,7 +3107,7 @@ proc display-group {dbfd idgrp} {
     set lines {}
     foreach {rw text} [list 0 [mc "Read"] 1 [mc "Write"]] {
 	set sql "SELECT allow_deny, pattern
-			    FROM topo.dr_eq
+			    FROM topo.p_eq
 			    WHERE idgrp = $idgrp AND rw = $rw
 			    ORDER BY rw, allow_deny DESC, pattern"
 	set perm ""
@@ -3125,7 +3122,7 @@ proc display-group {dbfd idgrp} {
 	if {$perm eq ""} then {
 	    set perm [mc "No permission"]
 	}
-	lappend lines [list DroitEq $text $perm]
+	lappend lines [list PermEq $text $perm]
     }
     set tabdreq [::arrgen::output "html" $libconf(tabdreq) $lines]
 
@@ -3136,7 +3133,7 @@ proc display-group {dbfd idgrp} {
     return [list    $tabperm \
 		    $tabuser \
 		    $tabnetworks \
-		    $tabcidrnonet \
+		    $tabcidralone \
 		    $tabviews \
 		    $tabdomains \
 		    $tabdhcpprofile \
@@ -3219,10 +3216,10 @@ proc fermer-base {dbfd} {
 
 proc user-attribute {dbfd idcor attr} {
     set v 0
-    set sql "SELECT groupe.$attr
-			FROM global.groupe, global.corresp
-			WHERE corresp.idcor = $idcor
-			    AND corresp.idgrp = groupe.idgrp"
+    set sql "SELECT nmgroup.$attr
+			FROM global.nmgroup, global.nmuser
+			WHERE nmuser.idcor = $idcor
+			    AND nmuser.idgrp = nmgroup.idgrp"
     pg_select $dbfd $sql tab {
 	set v "$tab($attr)"
     }
@@ -3237,24 +3234,24 @@ proc user-attribute {dbfd idcor attr} {
 #	- dbfd : database handle
 #	- login : user login
 #	- _tabuid : array containing, in return:
-#		login	login of the user
-#		nom	user name [if ah global variable is set]
-#		prenom	user christian name [if ah global variable is set]
-#		mel	user mail [if ah global variable is set]
-#		tel	user phone [if ah global variable is set]
+#		login	  login of the user
+#		lastname  user name [if ah global variable is set]
+#		firstname user first name [if ah global variable is set]
+#		mail	user mail [if ah global variable is set]
+#		phone	user phone [if ah global variable is set]
 #		mobile	user mobile phone [if ah global variable is set]
 #		fax	user fax [if ah global variable is set]
-#		adr	user address [if ah global variable is set]
+#		addr	user address [if ah global variable is set]
 #		idcor	user id in the database
 #		idgrp	group id in the database
-#		groupe	group name
+#		group	group name
 #		present	1 if "present" in the database
-#		admin	1 if admin
-#		droitsmtp 1 if permission to add hosts authorized to emit with SMTP
-#		droitttl 1 if permission to edit host TTL
-#		droitmac 1 if permission to use the MAC module
-#		droitgenl 1 if permission to generate a link number
-#		reseaux	list of authorized networks
+#		p_admin	1 if admin
+#		p_smtp  1 if permission to allow hosts to emit with SMTP
+#		p_ttl   1 if permission to edit host TTL
+#		p_mac   1 if permission to use the MAC module
+#		p_genl  1 if permission to generate a link number
+#		networks list of authorized networks
 #		eq	regexp matching authorized equipments
 #		flagsr	flags -n/-e/-E/etc to use in topo programs
 #		flagsw	flags -n/-e/-E/etc to use in topo programs
@@ -3304,7 +3301,7 @@ proc read-user {dbfd login _tabuid _msg} {
 	    }
 	}
 
-	foreach c {login password nom prenom mel tel mobile fax adr} {
+	foreach c {login password lastname firstname mail phone mobile fax addr} {
 	    set tabuid($c) [$u get $c]
 	}
 
@@ -3317,19 +3314,19 @@ proc read-user {dbfd login _tabuid _msg} {
 
     set qlogin [::pgsql::quote $login]
     set tabuid(idcor) -1
-    set sql "SELECT * FROM global.corresp, global.groupe
-			WHERE corresp.login = '$qlogin'
-			    AND corresp.idgrp = groupe.idgrp"
+    set sql "SELECT * FROM global.nmuser, global.nmgroup
+			WHERE nmuser.login = '$qlogin'
+			    AND nmuser.idgrp = nmgroup.idgrp"
     pg_select $dbfd $sql tab {
 	set tabuid(idcor)	$tab(idcor)
 	set tabuid(idgrp)	$tab(idgrp)
 	set tabuid(present)	$tab(present)
-	set tabuid(groupe)	$tab(nom)
-	set tabuid(admin)	$tab(admin)
-	set tabuid(droitsmtp)	$tab(droitsmtp)
-	set tabuid(droitttl)	$tab(droitttl)
-	set tabuid(droitmac)	$tab(droitmac)
-	set tabuid(droitgenl)	$tab(droitgenl)
+	set tabuid(group)	$tab(name)
+	set tabuid(p_admin)	$tab(p_admin)
+	set tabuid(p_smtp)	$tab(p_smtp)
+	set tabuid(p_ttl)	$tab(p_ttl)
+	set tabuid(p_mac)	$tab(p_mac)
+	set tabuid(p_genl)	$tab(p_genl)
     }
 
     if {$tabuid(idcor) == -1} then {
@@ -3342,7 +3339,7 @@ proc read-user {dbfd login _tabuid _msg} {
     #
 
     # Read authorized CIDR
-    set tabuid(reseaux) [allowed-networks $dbfd $tabuid(idgrp) "consult"]
+    set tabuid(networks) [allowed-networks $dbfd $tabuid(idgrp) "consult"]
 
     # Read regexp to allow or deny access to equipments
     set tabuid(eqr) [read-authorized-eq $dbfd 0 $tabuid(idgrp)]
@@ -3354,7 +3351,7 @@ proc read-user {dbfd login _tabuid _msg} {
     set flagsw {}
     foreach rw {r w} {
 	set flags {}
-	if {$tabuid(admin)} then {
+	if {$tabuid(p_admin)} then {
 	    # Administrator sees the whole graph
 	    lappend flags "-a"
 
@@ -3370,7 +3367,7 @@ proc read-user {dbfd login _tabuid _msg} {
 	    # Build networks rights first: the user has access to
 	    # all interfaces that "his" networks reach (except if
 	    # has no right on an equipment)
-	    foreach r $tabuid(reseaux) {
+	    foreach r $tabuid(networks) {
 		set r4 [lindex $r 1]
 		if {$r4 ne ""} then {
 		    lappend flags "-n" $r4
@@ -3414,6 +3411,33 @@ proc read-user {dbfd login _tabuid _msg} {
 ##############################################################################
 
 #
+# Return all RR with a given name (in different views)
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- name : name to search for
+#	- iddom : id of the domain in which to search for the name
+# Output:
+#   - return value: { {idrr idview} {idrr idview} ...}
+#
+# History
+#   2013/04/05 : pda/jean : design
+#
+
+proc all-rr-by-name {dbfd name iddom} {
+    set qname [::pgsql::quote $name]
+    set sql "SELECT idrr, idview FROM dns.rr
+    				WHERE name = '$qname' AND iddom = $iddom"
+    set l {}
+    pg_select $dbfd $sql tab {
+	lappend l [list $tab(idrr) $tab(idview)]
+    }
+
+    return $l
+}
+
+#
 # Get all informations associated with a name
 #
 # Input:
@@ -3421,6 +3445,7 @@ proc read-user {dbfd login _tabuid _msg} {
 #	- dbfd : database handle
 #	- name : name to search for
 #	- iddom : id of the domain in which to search for the name
+#	- idview: view id
 #	- _trr : empty array
 # Output:
 #   - return value: 1 if ok, 0 if not found
@@ -3431,14 +3456,18 @@ proc read-user {dbfd login _tabuid _msg} {
 #   2002/04/19 : pda/jean : add name and iddom
 #   2002/04/19 : pda/jean : use read-rr-by-id
 #   2010/11/29 : pda      : i18n
+#   2013/04/05 : pda/jean : add view
 #
 
-proc read-rr-by-name {dbfd name iddom _trr} {
+proc read-rr-by-name {dbfd name iddom idview _trr} {
     upvar $_trr trr
 
     set qname [::pgsql::quote $name]
     set found 0
-    set sql "SELECT idrr FROM dns.rr WHERE nom = '$qname' AND iddom = $iddom"
+    set sql "SELECT idrr FROM dns.rr
+			    WHERE name = '$qname'
+				AND iddom = $iddom
+				AND idview = $idview"
     pg_select $dbfd $sql tab {
 	set found 1
 	set idrr $tab(idrr)
@@ -3511,9 +3540,11 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
     upvar $_trr trr
 
     set found 0
-    set sql "SELECT idrr
-			FROM dns.rr_ip
-    			WHERE adr = '$addr' AND idview = $idview"
+    set sql "SELECT i.idrr
+			FROM dns.rr_ip i, dns.rr r
+    			WHERE i.idrr = r.idrr
+			    AND i.addr = '$addr'
+			    AND r.idview = $idview"
     pg_select $dbfd $sql tab {
 	set found 1
 	set idrr $tab(idrr)
@@ -3538,51 +3569,50 @@ proc read-rr-by-ip {dbfd addr idview _trr} {
 #   - return value: 1 if ok, 0 if not found
 #   - parameter _trr :
 #	_trr(idrr) : id of RR found
-#	_trr(nom) : name (first component of the FQDN)
+#	_trr(name) : name (first component of the FQDN)
 #	_trr(iddom) : domain id
+#	_trr(idview) : view id
 #	_trr(domain) : domain name
 #	_trr(mac) : MAC address
-#	_trr(iddhcpprofil) : DHCP profile id, or 0 if none
-#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(dhcpprofil) : DHCP profile name, or "Aucun profil DHCP"
+#	_trr(iddhcpprof) : DHCP profile id, or 0 if none
+#	_trr(dhcpprof) : DHCP profile name, or "No profile"
 #	_trr(idhinfo) : machine info id
 #	_trr(hinfo) : machine info text
-#	_trr(droitsmtp) : 1 if host has the right to emit with non auth SMTP
+#	_trr(sendsmtp) : 1 if host has the right to emit with non auth SMTP
 #	_trr(ttl) : TTL of the host (for all its IP addresses)
-#	_trr(commentaire) : comments
-#	_trr(respnom) : name of the responsible person
-#	_trr(respmel) : mail of the responsible person
+#	_trr(comment) : comments
+#	_trr(respname) : name of the responsible person
+#	_trr(respmail) : mail of the responsible person
 #	_trr(idcor) : id of user who has done the last modification
 #	_trr(date) : date of last modification
-#	_trr(ip) : list of all IP adresses {{idview addr} ...}
+#	_trr(ip) : list of all IP addresses {{idview addr} ...}
 #	_trr(mx) : MX list {{idview prio idrr} {idview prio idrr} ...}
+#	_trr(mxtarg) : list of MX which target this host
 #	_trr(cname) : list of pointed RR, if name is an alias {{idview idrr}...}
 #	_trr(aliases) : list of all RR pointing to this object {{idview idrr}..}
-#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(rolemail) : id of herbegeur {{idview idheberg idviewheb} ...}
-#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(adrmail) : idrr of mail addresses hosted on this host
-#		{{idview idrradr idviewadr} ...}
-#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-#	_trr(roleweb) : list of idviews where this rr is a web role
+#	_trr(mailrole) : id of mbox host {{idview idmboxhost idviewmbox} ...}
+#	_trr(mailaddr) : idrr of mail addresses hosted on this host
+#		{{idview idmailaddr idviewmailaddr} ...}
 #
 # History
 #   2002/04/19 : pda/jean : design
 #   2002/06/02 : pda/jean : hinfo becomes an index in a table
-#   2004/02/06 : pda/jean : add rolemail, adrmail and roleweb
+#   2004/02/06 : pda/jean : add mailrole, mailaddr and roleweb
 #   2004/08/05 : pda/jean : simplification and add mac
 #   2005/04/08 : pda/jean : add dhcpprofil
-#   2008/07/24 : pda/jean : add droitsmtp
+#   2008/07/24 : pda/jean : add sendsmtp
 #   2010/10/31 : pda      : add ttl
 #   2010/11/29 : pda      : i18n
 #   2012/10/08 : pda/jean : views
+#   2013/04/05 : pda/jean : temporary hack for views
+#   2013/04/10 : pda/jean : remove roleweb
 #
 
 proc read-rr-by-id {dbfd idrr _trr} {
     upvar $_trr trr
 
-    set fields {nom iddom
-	mac iddhcpprofil idhinfo droitsmtp ttl commentaire respnom respmel
+    set fields {name iddom idview
+	mac iddhcpprof idhinfo sendsmtp ttl comment respname respmail
 	idcor date}
 
     catch {unset trr}
@@ -3599,61 +3629,68 @@ proc read-rr-by-id {dbfd idrr _trr} {
     }
 
     if {$found} then {
+	set idview $trr(idview)
 	set trr(domain) ""
-	if {$trr(iddhcpprofil) eq ""} then {
-	    set trr(iddhcpprofil) 0
-	    set trr(dhcpprofil) [mc "No profile"]
+	if {$trr(iddhcpprof) eq ""} then {
+	    set trr(iddhcpprof) 0
+	    set trr(dhcpprof) [mc "No profile"]
 	} else {
-	    set sql "SELECT nom FROM dns.dhcpprofil
-				WHERE iddhcpprofil = $trr(iddhcpprofil)"
+	    set sql "SELECT name FROM dns.dhcpprofile
+				WHERE iddhcpprof = $trr(iddhcpprof)"
 	    pg_select $dbfd $sql tab {
-		set trr(dhcpprofil) $tab(nom)
+		set trr(dhcpprof) $tab(name)
 	    }
 	}
-	set sql "SELECT texte FROM dns.hinfo WHERE idhinfo = $trr(idhinfo)"
+	set sql "SELECT name FROM dns.hinfo WHERE idhinfo = $trr(idhinfo)"
 	pg_select $dbfd $sql tab {
-	    set trr(hinfo) $tab(texte)
+	    set trr(hinfo) $tab(name)
 	}
 	set sql "SELECT name FROM dns.domain WHERE iddom = $trr(iddom)"
 	pg_select $dbfd $sql tab {
 	    set trr(domain) $tab(name)
 	}
 	set trr(ip) {}
-	set sql "SELECT idview, adr FROM dns.rr_ip WHERE idrr = $idrr"
+	set sql "SELECT addr FROM dns.rr_ip WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(ip) [list $tab(idview) $tab(adr)]
+	    lappend trr(ip) [list $idview $tab(addr)]
 	}
 	set trr(mx) {}
-	set sql "SELECT idview, priorite, mx FROM dns.rr_mx WHERE idrr = $idrr"
+	set sql "SELECT prio, mx FROM dns.rr_mx WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(mx) [list $tab(idview) $tab(priorite) $tab(mx)]
+	    lappend trr(mx) [list $idview $tab(prio) $tab(mx)]
+	}
+	set trr(mxtarg) {}
+	set sql "SELECT idrr FROM dns.rr_mx WHERE mx = $idrr"
+	pg_select $dbfd $sql tab {
+	    lappend trr(mxtarg) [list $idview $tab(idrr)]
 	}
 	set trr(cname) ""
-	set sql "SELECT idview, cname FROM dns.rr_cname WHERE idrr = $idrr"
+	set sql "SELECT cname FROM dns.rr_cname WHERE idrr = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(cname) [list $tab(idview) $tab(cname)]
+	    lappend trr(cname) [list $idview $tab(cname)]
 	}
 	set trr(aliases) {}
-	set sql "SELECT idview, idrr FROM dns.rr_cname WHERE cname = $idrr"
+	set sql "SELECT idrr FROM dns.rr_cname WHERE cname = $idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(aliases) [list $tab(idview) $tab(idrr)]
+	    lappend trr(aliases) [list $idview $tab(idrr)]
 	}
-	set trr(rolemail) ""
-	set sql "SELECT * FROM dns.role_mail WHERE idrr = $idrr"
+	# is this name a mail address?
+	set trr(mailrole) ""
+	set sql "SELECT mr.mboxhost, rrmb.idview AS idviewmbox
+			    FROM dns.mail_role mr, dns.rr rrmb
+			    WHERE mr.mailaddr = $idrr
+				AND mr.mboxhost = rrmb.idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(rolemail) [list $tab(idviewrr) \
-	    				$tab(heberg) $tab(idviewheb)]
+	    lappend trr(mailrole) [list $idview $tab(mboxhost) $tab(idviewmbox)]
 	}
-	set trr(adrmail) {}
-	set sql "SELECT * FROM dns.role_mail WHERE heberg = $idrr"
+	# all mail addresses pointing to this host
+	set trr(mailaddr) {}
+	set sql "SELECT rrma.idrr AS idrrma, rrma.idview AS idviewma
+			    FROM dns.mail_role mr, dns.rr rrma
+			    WHERE mboxhost = $idrr
+				AND mr.mailaddr = rrma.idrr"
 	pg_select $dbfd $sql tab {
-	    lappend trr(adrmail) [list $tab(idviewheb) \
-	    				$tab(idrr) $tab(idviewrr)]
-	}
-	set trr(roleweb) 0
-	set sql "SELECT idview FROM dns.role_web WHERE idrr = $idrr"
-	pg_select $dbfd $sql tab {
-	    lappend trr(roleweb) $tab(idview)
+	    lappend trr(mailaddr) [list $idview $tab(idrrma) $tab(idviewma)]
 	}
     }
 
@@ -3735,30 +3772,45 @@ proc rr-mx-by-view {_trr idview} {
     return $lmx
 }
 
-proc rr-rolemail-by-view {_trr idview} {
+proc rr-mxtarg-by-view {_trr idview} {
+    upvar $_trr trr
+
+    set lmxt {}
+    if {[info exists trr(mxtarg)]} then {
+	foreach mxview $trr(mxtarg) {
+	    lassign $mxview id idrr
+	    if {$id == $idview} then {
+		lappend lmxt $idrr
+	    }
+	}
+    }
+    return $lmxt
+}
+
+proc rr-mailrole-by-view {_trr idview} {
     upvar $_trr trr
 
     set lrm {}
-    if {[info exists trr(rolemail)]} then {
-	foreach rmview $trr(rolemail) {
-	    lassign $rmview id idheb idviewheb
+    if {[info exists trr(mailrole)]} then {
+	foreach rmview $trr(mailrole) {
+	    lassign $rmview id idmboxhost idviewmboxhost
 	    if {$id == $idview} then {
-		set lrm [list $idheb $idviewheb]
+		set lrm [list $idmboxhost $idviewmboxhost]
 	    }
 	}
     }
     return $lrm
 }
 
-proc rr-adrmail-by-view {_trr idview} {
+proc rr-mailaddr-by-view {_trr idview} {
     upvar $_trr trr
 
     set lam {}
-    if {[info exists trr(adrmail)]} then {
-	foreach amview $trr(adrmail) {
-	    lassign $amview id idrradr idviewadr
+    if {[info exists trr(mailaddr)]} then {
+	foreach amview $trr(mailaddr) {
+	    lassign $amview id idrraddr idviewaddr
 	    if {$id == $idview} then {
-		lappend lam [list $idrradr $idviewadr]
+		lappend lam [list $idrraddr $idviewaddr]
 	    }
 	}
     }
@@ -3772,7 +3824,6 @@ proc rr-adrmail-by-view {_trr idview} {
 #   - parameters:
 #	- dbfd : database handle
 #	- idrr : id of RR to delete (CNAME RR)
-#	- idview : view id
 #	- _msg : error message in return
 # Output:
 #   - return value: error message or empty string
@@ -3782,11 +3833,12 @@ proc rr-adrmail-by-view {_trr idview} {
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
 #   2013/03/28 : pda/jean : interface simplification
+#   2013/04/10 : pda/jean : remove views
 #
 
-proc del-alias-by-id {dbfd idrr idview} {
+proc del-alias-by-id {dbfd idrr} {
     set msg ""
-    set sql "DELETE FROM dns.rr_cname WHERE idrr = $idrr AND idview = $idview"
+    set sql "DELETE FROM dns.rr_cname WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg [del-orphaned-rr $dbfd $idrr]
     }
@@ -3800,7 +3852,6 @@ proc del-alias-by-id {dbfd idrr idview} {
 #   - parameters:
 #	- dbfd : database handle
 #	- idrr : RR id
-#	- idview : view id
 # Output:
 #   - return value: error message or empty string
 #
@@ -3810,12 +3861,12 @@ proc del-alias-by-id {dbfd idrr idview} {
 #   2012/11/13 : pda/jean : add views
 #   2012/11/14 : pda/jean : delete addr parameter
 #   2013/03/28 : pda/jean : interface simplification
+#   2013/04/10 : pda/jean : remove views
 #
 
-proc del-all-ip-addresses {dbfd idrr idview} {
+proc del-all-ip-addresses {dbfd idrr} {
     set msg ""
-    set sql "DELETE FROM dns.rr_ip WHERE idrr = $idrr
-				    AND idview = $idview"
+    set sql "DELETE FROM dns.rr_ip WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
     }
@@ -3829,7 +3880,6 @@ proc del-all-ip-addresses {dbfd idrr idview} {
 #   - parameters:
 #	- dbfd : database handle
 #	- idrr : RR id of MX
-#	- idview : view id
 # Output:
 #   - return value: error message or empty string
 #
@@ -3838,11 +3888,12 @@ proc del-all-ip-addresses {dbfd idrr idview} {
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
 #   2013/03/28 : pda/jean : interface simplification
+#   2013/04/10 : pda/jean : remove views
 #
 
-proc del-mx-by-id {dbfd idrr idview} {
+proc del-mx-by-id {dbfd idrr} {
     set msg ""
-    set sql "DELETE FROM dns.rr_mx WHERE idrr = $idrr AND idview = $idview"
+    set sql "DELETE FROM dns.rr_mx WHERE idrr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
     }
@@ -3850,13 +3901,12 @@ proc del-mx-by-id {dbfd idrr idview} {
 }
 
 #
-# Delete a rolemail
+# Delete a mailrole
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
 #	- idrr : RR id
-#	- idview : view id
 # Output:
 #   - return value: error message or empty string
 #
@@ -3865,40 +3915,12 @@ proc del-mx-by-id {dbfd idrr idview} {
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
 #   2013/03/28 : pda/jean : interface simplification
+#   2013/04/10 : pda/jean : remove views
 #
 
-proc del-rolemail-by-id {dbfd idrr idview} {
+proc del-mailrole-by-id {dbfd idrr} {
     set msg ""
-    set sql "DELETE FROM dns.role_mail WHERE idrr = $idrr AND idview = $idview"
-    if {[::pgsql::execsql $dbfd $sql msg]} then {
-	set msg ""
-    }
-    return $msg
-}
-
-#
-# XXX : NOT USED
-#
-# Delete a roleweb
-#
-# Input:
-#   - parameters:
-#	- dbfd : database handle
-#	- idrr : RR id
-#	- idview : view id
-# Output:
-#   - return value: error message or empty string
-#
-# History
-#   2004/02/06 : pda/jean : design
-#   2010/11/29 : pda      : i18n
-#   2012/11/13 : pda/jean : add views
-#   2013/03/28 : pda/jean : interface simplification
-#
-
-proc del-roleweb-by-id {dbfd idrr idview} {
-    set msg ""
-    set sql "DELETE FROM dns.role_web WHERE idrr = $idrr AND idview = $idview"
+    set sql "DELETE FROM dns.mail_role WHERE mailaddr = $idrr"
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
     }
@@ -3912,40 +3934,47 @@ proc del-roleweb-by-id {dbfd idrr idview} {
 #   - parameters:
 #	- dbfd : database handle
 #	- _trr : RR informations (see read-rr-by-id)
-#	- idview : view id
 # Output:
 #   - return value: error message or empty string
 #
 # History
 #   2002/04/19 : pda/jean : design
-#   2004/02/06 : pda/jean : add rolemail and roleweb
+#   2004/02/06 : pda/jean : add mailrole and roleweb
 #   2010/11/29 : pda      : i18n
 #   2012/11/13 : pda/jean : add views
 #   2013/03/28 : pda/jean : interface simplification
+#   2013/04/10 : pda/jean : remove views
 #
 
-proc del-rr-and-dependancies {dbfd _trr idview} {
+proc del-rr-and-dependancies {dbfd _trr} {
     upvar $_trr trr
 
     set idrr $trr(idrr)
+    set idview $trr(idview)
 
     #
     # If this host holds mail addresses, don't delete it.
     #
 
-    set addrmail [rr-adrmail-by-view trr $idview]
-    if {[llength $addrmail] > 0} then {
+    set mailaddr [rr-mailaddr-by-view trr $idview]
+    if {[llength $mailaddr] > 0} then {
 	return [mc "This host holds mail addresses"]
     }
 
     #
-    # Delete roles pointing to this host (and not names which
-    # are other things such as mail domains)
+    # If this host is the target of any MX, don't delete it.
     #
 
-    set msg [del-roleweb-by-id $dbfd $idrr $idview]
-    if {$msg ne ""} then {
-	return $msg
+    set mxt [rr-mxtarg-by-view trr $idview]
+    if {[llength $mxt] > 0} then {
+	return [mc "This host is the target of one or more MX"]
+    }
+    set sql "SELECT COUNT(*) FROM dns.relay_dom WHERE mx = $idrr"
+    pg_select $dbfd $sql tab {
+	set count $tab(count)
+    }
+    if {$count > 0} then {
+	return [mc "This host is the mail relay of one or more domains"]
     }
 
     #
@@ -3953,7 +3982,7 @@ proc del-rr-and-dependancies {dbfd _trr idview} {
     #
 
     foreach a [rr-aliases-by-view trr $idview] {
-	set msg [del-alias-by-id $dbfd $a $idview]
+	set msg [del-alias-by-id $dbfd $a]
 	if {$msg ne ""} then {
 	    return $msg
 	}
@@ -3963,7 +3992,7 @@ proc del-rr-and-dependancies {dbfd _trr idview} {
     # Delete all IP addresses
     #
 
-    set msg [del-all-ip-addresses $dbfd $idrr $idview]
+    set msg [del-all-ip-addresses $dbfd $idrr]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -3972,7 +4001,7 @@ proc del-rr-and-dependancies {dbfd _trr idview} {
     # Delete all MX
     #
 
-    set msg [del-mx-by-id $dbfd $idrr $idview]
+    set msg [del-mx-by-id $dbfd $idrr]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -4015,14 +4044,11 @@ proc del-orphaned-rr {dbfd idrr} {
     set msg ""
     if {[read-rr-by-id $dbfd $idrr trr]} then {
 	set orphaned 1
-	foreach x {ip mx aliases cname rolemail adrmail} {
+	foreach x {ip mx aliases cname mailrole mailaddr} {
 	    if {$trr($x) ne ""} then {
 		set orphaned 0
 		break
 	    }
-	}
-	if {$orphaned && $trr(roleweb)} then {
-	    set orphaned 0
 	}
 
 	if {$orphaned} then {
@@ -4044,14 +4070,15 @@ proc del-orphaned-rr {dbfd idrr} {
 #	- dbfd : database handle
 #	- name : name of RR to create (syntax must be conform to RFC)
 #	- iddom : domain id
+#	- idview: view id
 #	- mac : MAC address, or empty string
-#	- iddhcpprofil : DHCP profile id, or 0
+#	- iddhcpprof : DHCP profile id, or 0
 #	- idhinfo : HINFO or empty string (default is searched in the database)
-#	- droitsmtp : 1 if ok to emit with non auth SMTP
+#	- sendsmtp : 1 if ok to emit with non auth SMTP
 #	- ttl : TTL value, or -1 for default value
 #	- comment : commment
-#	- respnom : responsible person name
-#	- respmel : responsible person mail
+#	- respname : responsible person name
+#	- respmail : responsible person mail
 #	- idcor : user id
 #	- _trr : in return, will contain RR information
 # Output:
@@ -4066,13 +4093,14 @@ proc del-orphaned-rr {dbfd idrr} {
 #   2004/08/05 : pda/jean : add mac
 #   2004/10/05 : pda      : change date format
 #   2005/04/08 : pda/jean : add dhcpprofil
-#   2008/07/24 : pda/jean : add droitsmtp
+#   2008/07/24 : pda/jean : add sendsmtp
 #   2010/10/31 : pda      : add ttl
 #   2010/11/29 : pda      : i18n
+#   2013/04/05 : pda/jean : add views
 #
 
-proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
-				comment respnom respmel idcor _trr} {
+proc add-rr {dbfd name iddom idview mac iddhcpprof idhinfo sendsmtp ttl
+				comment respname respmail idcor _trr} {
     upvar $_trr trr
 
     if {$mac eq ""} then {
@@ -4080,30 +4108,31 @@ proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
     } else {
 	set qmac "'[::pgsql::quote $mac]'"
     }
-    set qcomment [::pgsql::quote $comment]
-    set qrespnom [::pgsql::quote $respnom]
-    set qrespmel [::pgsql::quote $respmel]
+    set qcomment  [::pgsql::quote $comment]
+    set qrespname [::pgsql::quote $respname]
+    set qrespmail [::pgsql::quote $respmail]
     set hinfodef ""
     set hinfoval ""
     if {$idhinfo ne ""} then {
 	set hinfodef "idhinfo,"
 	set hinfoval "$idhinfo, "
     }
-    if {$iddhcpprofil == 0} then {
-	set iddhcpprofil NULL
+    if {$iddhcpprof == 0} then {
+	set iddhcpprof NULL
     }
     set sql "INSERT INTO dns.rr
-		    (nom, iddom, mac, iddhcpprofil, $hinfodef
-			droitsmtp, ttl, commentaire, respnom, respmel,
+		    (name, iddom, idview, mac, iddhcpprof, $hinfodef
+			sendsmtp, ttl, comment, respname, respmail,
 			idcor)
 		VALUES
-		    ('$name', $iddom, $qmac, $iddhcpprofil, $hinfoval
-			$droitsmtp, $ttl, '$qcomment', '$qrespnom', '$qrespmel',
+		    ('$name', $iddom, $idview, $qmac, $iddhcpprof, $hinfoval
+			$sendsmtp, $ttl,
+			'$qcomment', '$qrespname', '$qrespmail',
 			$idcor)
 		    "
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
-	if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
+	if {! [read-rr-by-name $dbfd $name $iddom $idview trr]} then {
 	    set msg [mc "Internal error: '%s' inserted, but not found in database" $name]
 
 	}
@@ -4122,12 +4151,12 @@ proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
 #	- _trr: trr of existing fqdn or empty trr
 #	- name : name of RR to create (syntax must be conform to RFC)
 #	- iddom : domain id
+#	- idview: view id
 #	- addr: (single) IP address to add
-#	- idviews: list of view ids
 #	- mac : MAC address, or empty string
-#	- iddhcpprofil : DHCP profile id, or 0
-#	- idhinfo : idhinfo or empty string
-#	- droitsmtp : 1 if ok to emit with non auth SMTP
+#	- iddhcpprof : DHCP profile id, or 0
+#	- idhinfo : idhinfo (0 for default value)
+#	- sendsmtp : 1 if ok to emit with non auth SMTP
 #	- ttl : TTL value, or -1 for default value
 #	- comment : commment
 #	- respname : responsible person name
@@ -4139,9 +4168,10 @@ proc add-rr {dbfd name iddom mac iddhcpprofil idhinfo droitsmtp ttl
 #
 # History
 #   2013/03/28 : pda/jean : shared code between www/cgi/ and utils/
+#   2013/04/10 : pda/jean : accept only one view
 #
 
-proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droitsmtp ttl comment respname respmail idcor} {
+proc add-host {dbfd _trr name iddom idview addr mac iddhcpprof idhinfo sendsmtp ttl comment respname respmail idcor} {
     upvar $_trr trr
 
     #
@@ -4157,8 +4187,9 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 	#
 	# Name did not exist, thus we insert a new RR
 	#
-	set msg [add-rr $dbfd $name $iddom $mac $iddhcpprofil $idhinfo \
-		    $droitsmtp $ttl $comment $respname $respmail $idcor trr]
+	set msg [add-rr $dbfd $name $iddom $idview \
+			$mac $iddhcpprof $idhinfo $sendsmtp $ttl \
+			$comment $respname $respmail $idcor trr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "add %s" $name] $msg
 	}
@@ -4175,13 +4206,13 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 	    # only mail role was existing).
 	    #
 	    if {! ($mac eq $trr(mac)
-			&& $iddhcpprofil eq $trr(iddhcpprofil)
-		    	&& $hinfo eq $trr(hinfo)
-		    	&& $droitsmtp eq $trr(droitsmtp)
+			&& $iddhcpprof eq $trr(iddhcpprof)
+		    	&& $idhinfo eq $trr(idhinfo)
+		    	&& $sendsmtp eq $trr(sendsmtp)
 		    	&& $ttl eq $trr(ttl)
-		    	&& $comment eq $trr(commentaire)
-		    	&& $respname eq $trr(respnom)
-		    	&& $respmail eq $trr(respmel))} then {
+		    	&& $comment eq $trr(comment)
+		    	&& $respname eq $trr(respname)
+		    	&& $respmail eq $trr(respmail))} then {
 		if {$mac eq ""} then {
 		    set qmac NULL
 		} else {
@@ -4190,18 +4221,18 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 		set qcomment  [::pgsql::quote $comment]
 		set qrespname [::pgsql::quote $respname]
 		set qrespmail [::pgsql::quote $respmail]
-		if {$iddhcpprofil == 0} then {
-		    set iddhcpprofil NULL
+		if {$iddhcpprof == 0} then {
+		    set iddhcpprof NULL
 		}
 		set sql "UPDATE dns.rr SET
 					mac = $qmac,
-					iddhcpprofil = $iddhcpprofil,
+					iddhcpprof = $iddhcpprof,
 					idhinfo = $idhinfo,
-					droitsmtp = $droitsmtp,
+					sendsmtp = $sendsmtp,
 					ttl = $ttl,
-					commentaire = '$qcomment',
-					respnom = '$qrespname',
-					respmel = '$qrespmail'
+					comment = '$qcomment',
+					respname = '$qrespname',
+					respmail = '$qrespmail'
 				    WHERE idrr = $trr(idrr)"
 		if {! [::pgsql::execsql $dbfd $sql msg]} then {
 		    d dbabort [mc "modify %s" [mc "host information"]] $msg
@@ -4210,12 +4241,7 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 	}
     }
 
-    set sql {}
-    foreach idview $idviews {
-	lappend sql "INSERT INTO dns.rr_ip (idrr, adr, idview)
-			    VALUES ($trr(idrr), '$addr', $idview)"
-    }
-    set sql [join $sql "; "]
+    set sql "INSERT INTO dns.rr_ip (idrr, addr) VALUES ($trr(idrr), '$addr')"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
        d dbabort [mc "add %s" $addr] $msg
     }
@@ -4232,10 +4258,7 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
     set domain [u domainname $iddom]
 
     d dbcommit [mc "add %s" "$name.$domain"]
-    foreach idview $idviews {
-	set v [u viewname $idview]
-	d writelog "addhost" "add $name.$domain ($addr)/$v"
-    }
+    d writelog "addhost" "add $name.$domain ($addr)/[u viewname $idview]"
 
     return ""
 }
@@ -4248,17 +4271,10 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 #	- dbfd : database handle
 #	- _trr: trr of existing fqdn or empty trr
 #	- name : name of RR to create (syntax must be conform to RFC)
-#	- iddom : domain id
-#	- addr: (single) IP address to add
-#	- idviews: list of view ids
-#	- mac : MAC address, or empty string
-#	- iddhcpprofil : DHCP profile id, or 0
-#	- idhinfo : idhinfo or empty string
-#	- droitsmtp : 1 if ok to emit with non auth SMTP
-#	- ttl : TTL value, or -1 for default value
-#	- comment : commment
-#	- respname : responsible person name
-#	- respmail : responsible person mail
+#	- domain : domain name
+#	- idview: view id
+#	- nameref: name of existing host
+#	- domainref: domain name of existing host
 #	- idcor : user id
 # Output:
 #   - return value: empty string, or error message
@@ -4266,20 +4282,21 @@ proc add-host {dbfd _trr name iddom addr idviews mac iddhcpprofil idhinfo droits
 #
 # History
 #   2013/03/28 : pda/jean : shared code between www/cgi/ and utils/
+#   2013/04/10 : pda/jean : accept only one view
 #
 
-proc add-alias {dbfd idviews name domain nameref domainref idcor} {
+proc add-alias {dbfd name domain idview nameref domainref idcor} {
     #
     # Check alias and host permissions
     #
 
-    set msg [check-authorized-host $dbfd $idcor $name $domain $idviews trr "alias"]
+    set msg [check-authorized-host $dbfd $idcor $name $domain $idview trr "alias"]
     if {$msg ne ""} then {
 	return $msg
     }
     set iddom $trr(iddom)
 
-    set msg [check-authorized-host $dbfd $idcor $nameref $domainref $idviews trrref "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $nameref $domainref $idview trrref "existing-host"]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -4295,7 +4312,7 @@ proc add-alias {dbfd idviews name domain nameref domainref idcor} {
     #
 
     if {$trr(idrr) eq ""} then {
-	set msg [add-rr $dbfd $name $iddom "" 0 "" 0 -1 "" "" "" $idcor trr]
+	set msg [add-rr $dbfd $name $iddom $idview "" 0 "" 0 -1 "" "" "" $idcor trr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "add %s" $name] $msg
 	}
@@ -4305,21 +4322,14 @@ proc add-alias {dbfd idviews name domain nameref domainref idcor} {
     # Add alias link between alias and host
     #
 
-    set sql {}
-    foreach idview $idviews {
-	lappend sql "INSERT INTO dns.rr_cname (idrr, cname, idview)
-    				VALUES ($trr(idrr), $trrref(idrr), $idview)"
-    }
-    set sql [join $sql "; "]
+    set sql "INSERT INTO dns.rr_cname (idrr, cname)
+			VALUES ($trr(idrr), $trrref(idrr))"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	d dbabort [mc "add %s" [mc "alias"]] $msg
     }
 
     d dbcommit [mc "add %s" "$name.$domain"]
-    foreach idview $idviews {
-	set v [u viewname $idview]
-	d writelog "addalias" "add alias $name.$domain/$v -> $nameref.$domainref"
-    }
+    d writelog "addalias" "add alias $name.$domain/[u viewname $idview] -> $nameref.$domainref"
 
     return ""
 }
@@ -4345,19 +4355,19 @@ proc add-alias {dbfd idviews name domain nameref domainref idcor} {
 proc del-host {dbfd _trr idview} {
     upvar $_trr trr
 
-    set fqdn "$trr(nom).$trr(domain)"
+    set fqdn "$trr(name).$trr(domain)"
     set vn [u viewname $idview]
 
     set cname [rr-cname-by-view trr $idview]
     if {$cname ne ""} then {
-	set msg [del-alias-by-id $dbfd $trr(idrr) $idview]
+	set msg [del-alias-by-id $dbfd $trr(idrr)]
 	if {$msg ne ""} then {
 	    return $msg
 	}
 
 	set p "?"
 	if {[read-rr-by-id $dbfd $cname tc]} then {
-	    set p "$tc(nom).$tc(domain)"
+	    set p "$tc(name).$tc(domain)"
 	}
 	d writelog "delalias" "delete alias $fqdn/$vn -> $p"
     } else {
@@ -4367,7 +4377,7 @@ proc del-host {dbfd _trr idview} {
 	# - MX
 	# - IP addresses
 	#
-	set msg [del-rr-and-dependancies $dbfd trr $idview]
+	set msg [del-rr-and-dependancies $dbfd trr]
 	if {$msg ne ""} then {
 	    return $msg
 	}
@@ -4401,8 +4411,9 @@ proc del-host {dbfd _trr idview} {
 
 proc del-ip {dbfd addr _trr idview _delobj} {
     upvar $_trr trr
+    upvar $_delobj delobj
 
-    set fqdn "$trr(nom).$trr(domain)"
+    set fqdn "$trr(name).$trr(domain)"
     set vn [u viewname $idview]
 
     set lip [rr-ip-by-view trr $idview]
@@ -4411,8 +4422,11 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 	# Only delete one of these addresses
 	#
 
-	set sql "DELETE FROM dns.rr_ip WHERE adr = '$addr'
-					AND idview = $idview"
+	set sql "DELETE FROM dns.rr_ip i
+			USING dns.rr r
+			WHERE r.idrr = i.idrr
+			    AND i.addr = '$addr'
+			    AND r.idview = $idview"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    return $msg
 	}
@@ -4429,11 +4443,11 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 	# Delete the whole object
 	#
 
-	set msg [del-rr-and-dependancies $dbfd trr $idview]
+	set msg [del-rr-and-dependancies $dbfd trr]
 	if {$msg ne ""} then {
 	    return $msg
 	}
-	d writelog "deladdr" "delete address $object -> delete all $fqdn/$vn"
+	d writelog "deladdr" "delete address $addr -> delete all $fqdn/$vn"
 	set delobj $fqdn
     }
 
@@ -4456,29 +4470,23 @@ proc del-ip {dbfd addr _trr idview _delobj} {
 #   2012/12/07 : pda/jean : design
 #
 
-proc update-host-refs-in-view {dbfd oidrr nidrr idview} {
+proc update-host-refs {dbfd oidrr nidrr} {
     set sql {}
-    lappend sql "UPDATE dns.role_mail
-			    SET heberg = $nidrr
-			    WHERE heberg = $oidrr AND idviewheb = $idview"
-    lappend sql "UPDATE dns.role_web
-			    SET idrr = $nidrr
-			    WHERE idrr = $oidrr AND idview = $idview"
+    lappend sql "UPDATE dns.mail_role
+			    SET mboxhost = $nidrr
+			    WHERE hmboxhost = $oidrr"
     lappend sql "UPDATE dns.rr_ip
 			    SET idrr = $nidrr
-			    WHERE idrr = $oidrr AND idview = $idview"
+			    WHERE idrr = $oidrr"
     lappend sql "UPDATE dns.rr_cname
 			    SET cname = $nidrr
-			    WHERE cname = $oidrr AND idview = $idview"
+			    WHERE cname = $oidrr"
     lappend sql "UPDATE dns.rr_mx
 			    SET mx = $nidrr
-			    WHERE mx = $oidrr AND idview = $idview"
-    lappend sql "UPDATE dns.relais_dom
+			    WHERE mx = $oidrr"
+    lappend sql "UPDATE dns.relay_dom
 			    SET mx = $nidrr
-			    WHERE mx = $oidrr AND idview = $idview"
-    lappend sql "UPDATE topo.ifchanges
-			    SET idrr = $nidrr
-			    WHERE idrr = $oidrr"
+			    WHERE mx = $oidrr"
     set sql [join $sql ";"]
     if {[::pgsql::execsql $dbfd $sql msg]} then {
 	set msg ""
@@ -4537,10 +4545,10 @@ proc allowed-groups {dbfd laddr} {
 	#
 
 	set sql "SELECT g.idgrp
-			FROM global.groupe g, dns.dr_reseau d, dns.reseau r
-			WHERE g.idgrp = d.idgrp
-			    AND d.idreseau = r.idreseau
-			    AND ('$addr' <<= r.adr4 OR '$addr' <<= r.adr6)
+			FROM global.nmgroup g, dns.p_network p, dns.network n
+			WHERE g.idgrp = p.idgrp
+			    AND p.idnet = n.idnet
+			    AND ('$addr' <<= n.addr4 OR '$addr' <<= n.addr6)
 			    "
 	set lidgrp {}
 	pg_select $dbfd $sql tab {
@@ -4630,12 +4638,12 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
     if {$idview ne ""} then {
 	set cname [rr-cname-by-view trr $idview]
 	if {$cname ne ""} then {
-	    set fqdn "$trr(nom).$trr(domain)"
+	    set fqdn "$trr(name).$trr(domain)"
 	    if {! [read-rr-by-id $dbfd $cname tc]} then {
 		return [mc {Cannot read host-id %s} $idalias]
 	    }
 
-	    set fqdn2 "$tc(nom).$tc(domain)"
+	    set fqdn2 "$tc(name).$tc(domain)"
 	    lappend lines [list Normal [mc "Alias name"] $fqdn]
 	    lappend lines [list Normal [mc "Points to"] $fqdn2]
 	}
@@ -4647,46 +4655,24 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 
     if {$lines eq ""} then {
 	# name
-	lappend lines [list Normal [mc "Name"] "$trr(nom).$trr(domain)"]
+	lappend lines [list Normal [mc "Name"] "$trr(name).$trr(domain)"]
 
 	# IP address(es)
-	if {$idview eq ""} then {
-	    set nip [llength $trr(ip)]
-	    if {$nip <= 1} then {
-		set at [mc "IP address and view"]
-	    } else {
-		set at [mc "IP addresses and views"]
-	    }
-	    set lip {}
-	    if {$nip == 0} then {
-		set aa [mc "(none)"]
-	    } else {
-		set aa {}
-		foreach ipv $trr(ip) {
-		    lassign $ipv idview ip
-		    set t [get-rr-tmpl "ip" $rrtmpl $ip $ip $idview]
-		    lappend aa "$t ([u viewname $idview])"
-		    lappend lip $ip
-		}
-		set aa [join $aa ", "]
-	    }
+	set lip [rr-ip-by-view trr $idview]
+	set nip [llength $lip]
+	if {$nip <= 1} then {
+	    set at [mc "IP address"]
 	} else {
-	    set lip [rr-ip-by-view trr $idview]
-	    set nip [llength $lip]
-	    if {$nip <= 1} then {
-		set at [mc "IP address"]
-	    } else {
-		set at [mc "IP addresses"]
+	    set at [mc "IP addresses"]
+	}
+	if {$nip == 0} then {
+	    set aa [mc "(none)"]
+	} else {
+	    set aa {}
+	    foreach ip $lip {
+		lappend aa [get-rr-tmpl "ip" $rrtmpl $ip $ip $idview]
 	    }
-	    if {$nip == 0} then {
-		set aa [mc "(none)"]
-	    } else {
-		set aa {}
-		foreach ip $lip {
-		    lappend aa [get-rr-tmpl "ip" $rrtmpl $ip $ip $idview]
-		}
-		set aa [join $aa ", "]
-	    }
+	    set aa [join $aa ", "]
 	}
 	lappend lines [list Normal $at $aa]
 
@@ -4694,36 +4680,36 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	lappend lines [list Normal [mc "MAC address"] $trr(mac)]
 
 	# DHCP profile
-	lappend lines [list Normal [mc "DHCP profile"] $trr(dhcpprofil)]
+	lappend lines [list Normal [mc "DHCP profile"] $trr(dhcpprof)]
 
 	# Machine type
 	lappend lines [list Normal [mc "Type"] $trr(hinfo)]
 
 	# Right to emit with non auth SMTP : display only if it is used
 	# (i.e. if there is at least one group wich owns this right)
-	set sql "SELECT COUNT(*) AS ndroitsmtp FROM global.groupe WHERE droitsmtp = 1"
-	set ndroitsmtp 0
+	set sql "SELECT COUNT(*) AS nsmtp FROM global.nmgroup WHERE p_smtp = 1"
+	set nsmtp 0
 	pg_select $dbfd $sql tab {
-	    set ndroitsmtp $tab(ndroitsmtp)
+	    set nsmtp $tab(nsmtp)
 	}
-	if {$ndroitsmtp > 0} then {
-	    if {$trr(droitsmtp)} then {
-		set droitsmtp [mc "Yes"]
+	if {$nsmtp > 0} then {
+	    if {$trr(sendsmtp)} then {
+		set sendsmtp [mc "Yes"]
 	    } else {
-		set droitsmtp [mc "No"]
+		set sendsmtp [mc "No"]
 	    }
-	    lappend lines [list Normal [mc "SMTP emit right"] $droitsmtp]
+	    lappend lines [list Normal [mc "SMTP emit right"] $sendsmtp]
 	}
 
 	# TTL : display only if it used
 	# (i.e. if there is at least one group wich owns this right and there
 	# is a value)
-	set sql "SELECT COUNT(*) AS ndroitttl FROM global.groupe WHERE droitttl = 1"
-	set ndroitttl 0
+	set sql "SELECT COUNT(*) AS nttl FROM global.nmgroup WHERE p_ttl = 1"
+	set nttl 0
 	pg_select $dbfd $sql tab {
-	    set ndroitttl $tab(ndroitttl)
+	    set nttl $tab(nttl)
 	}
-	if {$ndroitttl > 0} then {
+	if {$nttl > 0} then {
 	    set ttl $trr(ttl)
 	    if {$ttl != -1} then {
 		lappend lines [list Normal [mc "TTL"] $ttl]
@@ -4731,13 +4717,13 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	}
 
 	# comment
-	lappend lines [list Normal [mc "Comment"] $trr(commentaire)]
+	lappend lines [list Normal [mc "Comment"] $trr(comment)]
 
 	# responsible (name)
-	lappend lines [list Normal [mc "Responsible (name)"] $trr(respnom)]
+	lappend lines [list Normal [mc "Responsible (name)"] $trr(respname)]
 
 	# responsible (mail)
-	lappend lines [list Normal [mc "Responsible (mail)"] $trr(respmel)]
+	lappend lines [list Normal [mc "Responsible (mail)"] $trr(respmail)]
 
 	# aliases
 	set la {}
@@ -4745,13 +4731,13 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	    foreach va $trr(aliases) {
 		lassign $va idview idalias
 		if {[read-rr-by-id $dbfd $idalias ta]} then {
-		    lappend la "$ta(nom).$ta(domain) ([u viewname $idview])"
+		    lappend la "$ta(name).$ta(domain) ([u viewname $idview])"
 		}
 	    }
 	} else {
 	    foreach idalias [rr-aliases-by-view trr $idview] {
 		if {[read-rr-by-id $dbfd $idalias ta]} then {
-		    lappend la "$ta(nom).$ta(domain)"
+		    lappend la "$ta(name).$ta(domain)"
 		}
 	    }
 	}
@@ -4761,10 +4747,10 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 
 	# mail addresses recognized by this host
 	set la {}
-	foreach i [rr-adrmail-by-view trr $idview] {
-	    lassign $i idadrmail idviewa
-	    if {[read-rr-by-id $dbfd $idadrmail ta]} then {
-		lappend la "$ta(nom).$ta(domain)/[u viewname $idviewa]"
+	foreach i [rr-mailaddr-by-view trr $idview] {
+	    lassign $i idmailaddr idviewa
+	    if {[read-rr-by-id $dbfd $idmailaddr ta]} then {
+		lappend la "$ta(name).$ta(domain)/[u viewname $idviewa]"
 	    }
 	}
 	if {[llength $la] > 0} then {
@@ -4833,7 +4819,7 @@ proc display-rr-masked {dbfd _trr idview rrtmpl} {
     upvar $_trr trr
 
     h mask-next
-    set link [h mask-link "$trr(nom).$trr(domain)"]
+    set link [h mask-link "$trr(name).$trr(domain)"]
     set desc [h mask-text [display-rr $dbfd -1 trr $idview $rrtmpl]]
     return [list $link $desc] 
 }
@@ -5041,19 +5027,17 @@ proc check-mac-syntax {dbfd mac} {
 }
 
 #
-# XXX : NOT USED
-#
 # Check a DHCP profile id
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
-#	- iddhcpprofil : id of DHCP profile, or 0
-#	- _dhcpprofil : variable contenant en retour le nom du profil
+#	- iddhcpprof : id of DHCP profile, or 0
+#	- _dhcpprof : variable contenant en retour le nom du profil
 #	- _msgvar : in return : error message
 # Output:
 #   - return value: 1 if ok, 0 if error
-#   - _dhcpprofil : name of found profile (or "No profile")
+#   - _dhcpprof : name of found profile (or "No profile")
 #   - _msg : error message, if any
 #
 # History
@@ -5061,25 +5045,25 @@ proc check-mac-syntax {dbfd mac} {
 #   2010/11/29 : pda      : i18n
 #
 
-proc check-iddhcpprofil {dbfd iddhcpprofil _dhcpprofil _msg} {
-    upvar $_dhcpprofil dhcpprofil
+proc check-iddhcpprof {dbfd iddhcpprof _dhcpprof _msg} {
+    upvar $_dhcpprof dhcpprof
     upvar $_msg msg
 
     set msg ""
 
-    if {! [regexp -- {^[0-9]+$} $iddhcpprofil]} then {
-	set msg [mc "Invalid syntax '%s' for DHCP profile" $iddhcpprofil]
+    if {! [regexp -- {^[0-9]+$} $iddhcpprof]} then {
+	set msg [mc "Invalid syntax '%s' for DHCP profile" $iddhcpprof]
     } else {
-	if {$iddhcpprofil != 0} then {
-	    set sql "SELECT nom FROM dns.dhcpprofil
-				WHERE iddhcpprofil = $iddhcpprofil"
-	    set msg [mc "Invalid DHCP profile '%s'" $iddhcpprofil]
+	if {$iddhcpprof != 0} then {
+	    set sql "SELECT name FROM dns.dhcpprofile
+				WHERE iddhcpprof = $iddhcpprof"
+	    set msg [mc "Invalid DHCP profile '%s'" $iddhcpprof]
 	    pg_select $dbfd $sql tab {
-		set dhcpprofil $tab(nom)
+		set dhcpprof $tab(name)
 		set msg ""
 	    }
 	} else {
-	    set dhcpprofil [mc "No profile"]
+	    set dhcpprof [mc "No profile"]
 	}
     }
 
@@ -5089,25 +5073,6 @@ proc check-iddhcpprofil {dbfd iddhcpprofil _dhcpprofil _msg} {
 ##############################################################################
 # View validation
 ##############################################################################
-
-#
-# Checks if at least one view is selected (and issue error message)
-#
-# Input:
-#   - parameters:
-#	- idviews : list of view ids given by the user
-# Output:
-#   - return value: none if no error
-#
-# History
-#   2012/10/31 : pda/jean : design
-#
-
-proc at-least-one-view {idviews} {
-    if {[llength $idviews] == 0} then {
-	d error [mc "You must select at least one view"]
-    }
-}
 
 #
 # Checks if the selected views are authorized for this user
@@ -5160,7 +5125,7 @@ proc check-views {views} {
 # Input:
 #   - dbfd: database handle
 #   - _tabuid: user characteristics
-#   - mode: type of object ("host", "host-or-alias", "addr" or "rolemail")
+#   - mode: type of object ("host", "host-or-alias", "addr" or "mailrole")
 #		to delete/modify
 #   - object: FQDN or IP address
 #   - idviews: list of idviews specified by user, may be empty for all views
@@ -5178,7 +5143,7 @@ proc check-views {views} {
 #	object may be a fqdn or an IP address
 #   - "host-or-alias" and "addr" modes are for host deletion
 #	object may be a fqdn or an IP address
-#   - "rolemail" mode is for mail role edition
+#   - "mailrole" mode is for mail role edition
 #	object must be a fqdn
 #
 # History
@@ -5223,7 +5188,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
     #
     # Split FQDN into name and domain
     #
-    if {$mode in {host host-or-alias rolemail}} then {
+    if {$mode in {host host-or-alias mailrole}} then {
 	set msg [check-fqdn-syntax $dbfd $object name domain]
 	if {$msg ne ""} then {
 	    return $msg
@@ -5238,18 +5203,25 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
     set nerr 0
     set mvi {}
     foreach idview $myviewids {
-	set v [list $idview]
 	set vn [u viewname $idview]
 
 	set found 0
 	set err 0
 
-	switch $mode {
-	    host {
-		set found 1
-		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
+	catch {unset trr}
 
-		if {$msg ne ""} then {
+	switch $mode {
+	    host -
+	    host-or-alias {
+		set found 1
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview trr "del-name"]
+
+		if {$trr(idrr) eq ""} then {
+		    #
+		    # Name does not exist in this view
+		    #
+		    set found 0
+		} elseif {$msg ne ""} then {
 		    set err 1
 		} else {
 		    #
@@ -5257,36 +5229,27 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 		    #
 
 		    set cname [rr-cname-by-view trr $idview]
-		    if {$cname ne ""} then {
-			set msg [mc {Name '%1$s' is an alias in view '%2$s'} $object $vn]
-			set err 1
-		    } else {
-			set ip [rr-ip-by-view trr $idview]
-			if {$ip eq ""} then {
+		    set ip [rr-ip-by-view trr $idview]
+		    if {$mode eq "host-or-alias"} then {
+			#
+			# mode == "host-or-alias"
+			# If it is not an alias, there must be at
+			# least an IP address
+			#
+			if {$cname ne "" && $ip eq ""} then {
 			    set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
 			    set err 1
 			}
-		    }
-		}
-	    }
-	    host-or-alias {
-		set found 1
-		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-name"]
-
-		if {$msg ne ""} then {
-		    set err 1
-		} else {
-		    #
-		    # Is it an alias in this view?
-		    #
-
-		    set cname [rr-cname-by-view trr $idview]
-		    if {$cname eq ""} then {
+		    } else {
 			#
-			# It is not an alias, there must be at least an IP address
+			# mode == "host"
+			# It must not be an alias and it must have at
+			# least an IP address
 			#
-			set ip [rr-ip-by-view trr $idview]
-			if {$ip eq ""} then {
+			if {$cname ne ""} then {
+			    set msg [mc {Name '%1$s' is an alias in view '%2$s'} $object $vn]
+			    set err 1
+			} elseif {$ip eq ""} then {
 			    set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
 			    set err 1
 			}
@@ -5305,17 +5268,17 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 		    #
 
 		    set found 1
-		    set name   $trr(nom)
+		    set name   $trr(name)
 		    set domain $trr(domain)
-		    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v bidon "del-name"]
+		    set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview bidon "del-name"]
 		    if {$msg ne ""} then {
 			set err 1
 		    }
 		}
 	    }
-	    rolemail {
+	    mailrole {
 		set found 1
-		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $v trr "del-addrmail"]
+		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview trr "del-mailaddr"]
 
 		if {$msg ne ""} then {
 		    set err 1
@@ -5345,7 +5308,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
     # If asked for a name, check that name exists
     #
 
-    if {$mode in {host host-or-alias} && $trr(idrr) eq ""} then {
+    if {$mode in {host host-or-alias} && $nok + $nerr == 0} then {
 	return [mc "Name '%s' does not exist" $object]
     }
 
@@ -5409,11 +5372,11 @@ proc html-select-view {_chkv next} {
 	    array unset trr
 	    array set trr $t
 
-	    set fqdn "$trr(nom).$trr(domain)"
+	    set fqdn "$trr(name).$trr(domain)"
 
 	    d urlset "" $next [list \
 				    [list "action" "edit"] \
-				    [list "nom" $trr(nom)] \
+				    [list "name" $trr(name)] \
 				    [list "domain" $trr(domain)] \
 				    [list "idview" $idview] \
 				]
@@ -5467,7 +5430,7 @@ proc read-domain {dbfd domain} {
 #	- idcor : user id
 #	- _iddom : domain id or -1 to read from domain
 #	- _domain : domain, or "" to read from iddom
-#	- roles : roles to test (column names in dr_dom)
+#	- roles : roles to test (column names in p_dom)
 # Output:
 #   - return value: empty string or error message
 #   - parameters _iddom and _domain : fetched values
@@ -5509,14 +5472,14 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
     if {$msg eq ""} then {
 	set where ""
 	foreach r $roles {
-	    append where "AND dr_dom.$r > 0 "
+	    append where "AND p_dom.$r > 0 "
 	}
 
 	set found 0
-	set sql "SELECT dr_dom.iddom FROM dns.dr_dom, global.corresp
-			    WHERE corresp.idcor = $idcor
-				    AND corresp.idgrp = dr_dom.idgrp
-				    AND dr_dom.iddom = $iddom
+	set sql "SELECT p_dom.iddom FROM dns.p_dom, global.nmuser
+			    WHERE nmuser.idcor = $idcor
+				    AND nmuser.idgrp = p_dom.idgrp
+				    AND p_dom.iddom = $iddom
 				    $where
 				    "
 	pg_select $dbfd $sql tab {
@@ -5548,9 +5511,9 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
 #   2010/11/29 : pda      : i18n
 #
 
-proc check-authorized-ip {dbfd idcor adr} {
+proc check-authorized-ip {dbfd idcor addr} {
     set r 0
-    set sql "SELECT dns.check_ip_cor ('$adr', $idcor) AS ok"
+    set sql "SELECT dns.check_ip_cor ('$addr', $idcor) AS ok"
     pg_select $dbfd $sql tab {
 	set r [string equal $tab(ok) "t"]
     }
@@ -5621,7 +5584,7 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	- idcor : user id
 #	- name : name to test (first component of FQDN)
 #	- domain : domain to test (the n-1 last components of FQDN)
-#	- idviews : list of view ids in which this FQDN must be tested
+#	- idview : view id in which this FQDN must be tested
 #	- trr : in return, information on the host (see read-rr-by-id)
 #	- context : the context to check
 # Output:
@@ -5658,6 +5621,7 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	    check-domain (domain, idcor, "") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
+#	    if name.domain is target of a MX then error
 #	    if name.domain is ADDRMAIL then error
 #	    if name.domain has IP addresses then error
 #	    if no test is false, then OK
@@ -5668,8 +5632,8 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #		then check-all-IP-addresses (mail exchangers, idcor)
 #	    if name.domain is ADDRMAIL then error
 #	    if no test is false, then OK
-#	"add-addrmail"
-#	    check-domain (domain, idcor, "rolemail") and views
+#	"add-mailaddr"
+#	    check-domain (domain, idcor, "mailrole") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
 #	    if name.domain is ADDRMAIL then error
@@ -5677,10 +5641,11 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	    if name.domain has IP addresses
 #		check-all-IP-addresses (name.domain, idcor)
 #	    if no test is false, then OK
-#	"del-addrmail"
-#	    check-domain (domain, idcor, "rolemail") and views
+#	"del-mailaddr"
+#	    check-domain (domain, idcor, "mailrole") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
+#	    if name.domain is target of a MX then error
 #	    if name.domain is NOT ADDRMAIL then error
 #	    if name.domain is ADDRMAIL
 #		check-all-IP-addresses (mail host, idcor)
@@ -5703,9 +5668,10 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #   2004/03/01 : pda/jean : use trr(iddom) instead of iddom
 #   2010/11/29 : pda      : i18n
 #   2012/10/30 : pda/jean : add views
+#   2013/04/10 : pda/jean : accept only one view
 #
 
-proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
+proc check-authorized-host {dbfd idcor name domain idview _trr context} {
     upvar $_trr trr
 
     array set testrights {
@@ -5714,7 +5680,7 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 		    {alias	REJECT}
 		    {mx		REJECT}
 		    {ip		CHECK}
-		    {addrmail	CHECK}
+		    {mailaddr	CHECK}
 		}
 	existing-host	{
 		    {domain	{}}
@@ -5722,43 +5688,43 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 		    {mx		REJECT}
 		    {ip		CHECK}
 		    {ip		EXISTS}
-		    {addrmail	CHECK}
+		    {mailaddr	CHECK}
 		}
 	alias	{
 		    {domain	{}}
 		    {alias	REJECT}
 		    {mx		REJECT}
 		    {ip		REJECT}
-		    {addrmail	REJECT}
+		    {mailaddr	REJECT}
 		}
 	del-name	{
 		    {domain	{}}
 		    {alias	CHECK}
 		    {mx		REJECT}
 		    {ip		CHECK}
-		    {addrmail	CHECK}
+		    {mailaddr	CHECK}
 		}
 	mx	{
 		    {domain	{}}
 		    {alias	REJECT}
 		    {mx		CHECK}
 		    {ip		CHECK}
-		    {addrmail	REJECT}
+		    {mailaddr	REJECT}
 		}
-	add-addrmail	{
-		    {domain	rolemail}
+	add-mailaddr	{
+		    {domain	mailrole}
 		    {alias	REJECT}
 		    {mx		REJECT}
-		    {addrmail	REJECT}
+		    {mailaddr	REJECT}
 		    {mailhost	REJECT}
 		    {ip		CHECK}
 		}
-	del-addrmail	{
-		    {domain	rolemail}
+	del-mailaddr	{
+		    {domain	mailrole}
 		    {alias	REJECT}
 		    {mx		REJECT}
-		    {addrmail	CHECK}
-		    {addrmail	EXISTS}
+		    {mailaddr	CHECK}
+		    {mailaddr	EXISTS}
 		    {ip		CHECK}
 		}
     }
@@ -5779,137 +5745,40 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 
     set fqdn "$name.$domain"
 
-    foreach idview $idviews {
-	foreach a $testrights($context) {
-	    set parm [lindex $a 1]
-	    switch [lindex $a 0] {
-		domain {
-		    set msg [check-views [list $idview]]
-		    if {$msg ne ""} then {
-			return $msg
-		    }
-		    set viewname [u viewname $idview]
-
-		    set iddom -1
-		    set msg [check-domain $dbfd $idcor iddom domain $parm]
-		    if {$msg ne ""} then {
-			return $msg
-		    }
-
-		    if {! [read-rr-by-name $dbfd $name $iddom trr]} then {
-			set trr(idrr) ""
-			set trr(iddom) $iddom
-		    }
+    foreach a $testrights($context) {
+	set parm [lindex $a 1]
+	switch [lindex $a 0] {
+	    domain {
+		set msg [check-views [list $idview]]
+		if {$msg ne ""} then {
+		    return $msg
 		}
-		alias {
-		    set idcname [rr-cname-by-view trr $idview]
-		    if {$idcname ne ""} then {
-			read-rr-by-id $dbfd $idcname t
-			set fqdnref "$t(nom).$t(domain)"
-			switch $parm {
-			    REJECT {
-				return [mc {%1$s is an alias of host %2$s in view %3$s} $fqdn $fqdnref $viewname]
-			    }
-			    CHECK {
-				set ok [check-name-by-addresses $dbfd $idcor -1 t]
-				if {! $ok} then {
-				    return [mc {You don't have rights on some IP addresses of '%1$s' referenced by alias '%2$s'} $fqdnref $fqdn]
-				}
-			    }
-			    default {
-				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
-			    }
-			}
-		    }
-		}
-		mx {
-		    set lmx [rr-mx-by-view trr $idview]
-		    foreach mx $lmx {
-			switch $parm {
-			    REJECT {
-				return [mc "'%s' is a MX" $fqdn]
-			    }
-			    CHECK {
-				set idrr [lindex $mx 1]
-				set ok [check-name-by-addresses $dbfd $idcor $idrr t]
-				if {! $ok} then {
-				    set fqdnmx "$t(nom).$t(domain)"
-				    return [mc {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} $fqdnmx $fqdn]
-				}
-			    }
-			    default {
-				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
-			    }
-			}
-		    }
-		}
-		addrmail {
-		    # get mailbox host for this address
-		    set rm [rr-rolemail-by-view trr $idview]
-		    if {$rm ne ""} then {
-			lassign $rm idrr idviewheb
-			switch $parm {
-			    REJECT {
-				# This name is already a mail address
-				# (it already has a mailbox host)
-				return [mc {'%1$s' is a mail role in view '%2$s'} $fqdn $viewname]
-			    }
-			    CHECK {
-				if {! [read-rr-by-id $dbfd $idrr trrh]} then {
-				    return [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
-				}
+		set viewname [u viewname $idview]
 
-				# IP address check
-				set ok [check-name-by-addresses $dbfd $idcor -1 trrh]
-				if {! $ok} then {
-				    return [mc "You don't have rights on host holding mail for '%s'" $fqdn]
-				}
-
-				# Mail host checking
-				set bidon -1
-				set msg [check-domain $dbfd $idcor bidon trrh(domain) ""]
-				if {$msg ne ""} then {
-				    set r [mc "You don't have rights on host holding mail for '%s'" $fqdn]
-				    append r "\n$msg"
-				    return $r
-				}
-			    }
-			    EXISTS {
-				# nothing
-			    }
-			    default {
-				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
-			    }
-			}
-		    } else {
-			# this address has no mailbox host, so it is
-			# not a mail role
-			switch $parm {
-			    REJECT -
-			    CHECK {
-				# nothing
-			    }
-			    EXISTS {
-				return [mc {'%1$s' is not a mail role in view '%2$s'} $fqdn $viewname]
-			    }
-			    default {
-				return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
-			    }
-			}
-		    }
+		set iddom -1
+		set msg [check-domain $dbfd $idcor iddom domain $parm]
+		if {$msg ne ""} then {
+		    return $msg
 		}
-		mailhost {
-		    set ladr [rr-adrmail-by-view trr $idview]
+
+		if {! [read-rr-by-name $dbfd $name $iddom $idview trr]} then {
+		    set trr(idrr) ""
+		    set trr(iddom) $iddom
+		}
+	    }
+	    alias {
+		set idcname [rr-cname-by-view trr $idview]
+		if {$idcname ne ""} then {
+		    read-rr-by-id $dbfd $idcname t
+		    set fqdnref "$t(name).$t(domain)"
 		    switch $parm {
 			REJECT {
-			    # remove the name (in all views) from the list
-			    # of mail domains hosted on this host
-			    while {[set pos [lsearch -exact -index 0 \
-						$ladr $trr(idrr)]] != -1} {
-				set ladr [lreplace $ladr $pos $pos]
-			    }
-			    if {[llength $ladr] > 0} then {
-				return [mc "'%s' is a mail host for mail domains" $fqdn]
+			    return [mc {%1$s is an alias of host %2$s in view %3$s} $fqdn $fqdnref $viewname]
+			}
+			CHECK {
+			    set ok [check-name-by-addresses $dbfd $idcor -1 t]
+			    if {! $ok} then {
+				return [mc {You don't have rights on some IP addresses of '%1$s' referenced by alias '%2$s'} $fqdnref $fqdn]
 			    }
 			}
 			default {
@@ -5917,28 +5786,125 @@ proc check-authorized-host {dbfd idcor name domain idviews _trr context} {
 			}
 		    }
 		}
-		ip {
-		    set lip [rr-ip-by-view trr $idview]
+	    }
+	    mx {
+		set lmx [rr-mx-by-view trr $idview]
+		foreach mx $lmx {
 		    switch $parm {
 			REJECT {
-			    if {[llength $lip] > 0} then {
-				return [mc {'%1$s' has IP addresses in view '%2$s'} $fqdn $viewname]
+			    return [mc "'%s' is a MX" $fqdn]
+			}
+			CHECK {
+			    set idrr [lindex $mx 1]
+			    set ok [check-name-by-addresses $dbfd $idcor $idrr t]
+			    if {! $ok} then {
+				set fqdnmx "$t(name).$t(domain)"
+				return [mc {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} $fqdnmx $fqdn]
+			    }
+			}
+			default {
+			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			}
+		    }
+		}
+	    }
+	    mailaddr {
+		# get mailbox host for this address
+		set rm [rr-mailrole-by-view trr $idview]
+		if {$rm ne ""} then {
+		    lassign $rm idrr idviewmbx
+		    # get mbox host
+		    if {! [read-rr-by-id $dbfd $idrr trrh]} then {
+			return [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
+		    }
+		    switch $parm {
+			REJECT {
+			    # This name is already a mail address
+			    # (it already has a mailbox host)
+			    set fqdnm "$trrh(name).$trrh(domain)"
+			    return [mc {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn $viewname $fqdnm [u viewname $idviewmbx]]
+			}
+			CHECK {
+
+			    # IP address check
+			    set ok [check-name-by-addresses $dbfd $idcor -1 trrh]
+			    if {! $ok} then {
+				return [mc "You don't have rights on host holding mail for '%s'" $fqdn]
+			    }
+
+			    # Mail host checking
+			    set bidon -1
+			    set msg [check-domain $dbfd $idcor bidon trrh(domain) ""]
+			    if {$msg ne ""} then {
+				set r [mc "You don't have rights on host holding mail for '%s'" $fqdn]
+				append r "\n$msg"
+				return $r
 			    }
 			}
 			EXISTS {
-			    if {[llength $lip] == 0} then {
-				return [mc {Name '%1$s' is not a host in view '%2$s'} $fqdn $viewname]
-			    }
-			}
-			CHECK {
-			    set ok [check-name-by-addresses $dbfd $idcor -1 trr]
-			    if {! $ok} then {
-				return [mc "You don't have rights on some IP addresses of '%s'" $fqdn]
-			    }
+			    # nothing
 			}
 			default {
 			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			}
+		    }
+		} else {
+		    # this address has no mailbox host, so it is
+		    # not a mail role
+		    switch $parm {
+			REJECT -
+			CHECK {
+			    # nothing
+			}
+			EXISTS {
+			    return [mc {'%1$s' is not a mail role in view '%2$s'} $fqdn $viewname]
+			}
+			default {
+			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			}
+		    }
+		}
+	    }
+	    mailhost {
+		set laddr [rr-mailaddr-by-view trr $idview]
+		switch $parm {
+		    REJECT {
+			# remove the name (in all views) from the list
+			# of mail domains hosted on this host
+			while {[set pos [lsearch -exact -index 0 \
+					    $laddr $trr(idrr)]] != -1} {
+			    set laddr [lreplace $laddr $pos $pos]
+			}
+			if {[llength $laddr] > 0} then {
+			    return [mc "'%s' is a mail host for mail domains" $fqdn]
+			}
+		    }
+		    default {
+			return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+		    }
+		}
+	    }
+	    ip {
+		set lip [rr-ip-by-view trr $idview]
+		switch $parm {
+		    REJECT {
+			if {[llength $lip] > 0} then {
+			    return [mc {'%1$s' has IP addresses in view '%2$s'} $fqdn $viewname]
+			}
+		    }
+		    EXISTS {
+			if {[llength $lip] == 0} then {
+			    return [mc {Name '%1$s' is not a host in view '%2$s'} $fqdn $viewname]
+			}
+		    }
+		    CHECK {
+			set ok [check-name-by-addresses $dbfd $idcor -1 trr]
+			if {! $ok} then {
+			    return [mc "You don't have rights on some IP addresses of '%s'" $fqdn]
+			}
+		    }
+		    default {
+			return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 		    }
 		}
 	    }
@@ -5990,7 +5956,7 @@ proc check-mx-target {dbfd prio name domain idview idcor _msg} {
     # Check relay, domain, etc.
     #
 
-    set msg [check-authorized-host $dbfd $idcor $name $domain [list $idview] trr "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $name $domain $idview trr "existing-host"]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -6048,7 +6014,7 @@ proc check-authorized-mx {dbfd idcor name _iddom domain idview _exists _trr} {
     # Get information about this name if it already exists
     #
 
-    set exists [read-rr-by-name $dbfd $name $iddom trr]
+    set exists [read-rr-by-name $dbfd $name $iddom $idview trr]
     if {$exists} then {
 	#
 	# If it already exists, check that it is not a A or CNAME or
@@ -6076,7 +6042,7 @@ proc check-authorized-mx {dbfd idcor name _iddom domain idview _exists _trr} {
 	    set iddom $tabmx(iddom)
 	    set msg [check-domain $dbfd $idcor iddom tabmx(domain) ""]
 	    if {$msg ne ""} then {
-		return [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s} "$tabmx(nom).$tabmx(domain)" $msg]
+		return [mc {MX '%1$s' points to a domain on which you don't have rights\n%2$s} "$tabmx(name).$tabmx(domain)" $msg]
 	    }
 	}
     }
@@ -6111,7 +6077,7 @@ proc check-domain-relay {dbfd idcor _iddom domain idview} {
     # Check the domain
     #
 
-    set msg [check-domain $dbfd $idcor iddom domain "rolemail"]
+    set msg [check-domain $dbfd $idcor iddom domain "mailrole"]
     if {$msg ne ""} then {
 	return $msg
     }
@@ -6120,16 +6086,15 @@ proc check-domain-relay {dbfd idcor _iddom domain idview} {
     # Check that we own all specified relays
     #
 
-    set v [list $idview]
-    set sql "SELECT r.nom AS nom, d.name AS domain
-		FROM dns.relais_dom rd, dns.rr r, dns.domain d
+    set sql "SELECT r.name AS name, d.name AS domain
+		FROM dns.relay_dom rd, dns.rr r, dns.domain d
 		WHERE rd.iddom = $iddom
-			AND rd.idview = $idview
-			AND r.iddom = d.iddom
 			AND rd.mx = r.idrr
+			AND r.iddom = d.iddom
+			AND r.idview = $idview
 		"
     pg_select $dbfd $sql tab {
-	set msg [check-authorized-host $dbfd $idcor $tab(nom) $tab(domain) $v trr "existing-host"]
+	set msg [check-authorized-host $dbfd $idcor $tab(name) $tab(domain) $idview trr "existing-host"]
 	if {$msg ne ""} then {
 	    return [mc {You don't have rights to some relays of domain '%1$s': %2$s} $domain $msg]
 	}
@@ -6279,7 +6244,7 @@ proc check-group-syntax {group} {
 proc read-hinfo {dbfd text} {
     set qtext [::pgsql::quote $text]
     set idhinfo -1
-    pg_select $dbfd "SELECT idhinfo FROM dns.hinfo WHERE texte = '$qtext'" tab {
+    pg_select $dbfd "SELECT idhinfo FROM dns.hinfo WHERE name = '$qtext'" tab {
 	set idhinfo $tab(idhinfo)
     }
     return $idhinfo
@@ -6305,16 +6270,16 @@ proc read-hinfo {dbfd text} {
 
 proc read-dhcp-profile {dbfd text} {
     if {$text eq ""} then {
-	set iddhcpprofil 0
+	set iddhcpprof 0
     } else {
 	set qtext [::pgsql::quote $text]
-	set sql "SELECT iddhcpprofil FROM dns.dhcpprofil WHERE nom = '$qtext'"
-	set iddhcpprofil -1
+	set sql "SELECT iddhcpprof FROM dns.dhcpprofile WHERE name = '$qtext'"
+	set iddhcpprof -1
 	pg_select $dbfd $sql tab {
-	    set iddhcpprofil $tab(iddhcpprofil)
+	    set iddhcpprof $tab(iddhcpprof)
 	}
     }
-    return $iddhcpprofil
+    return $iddhcpprof
 }
 
 ##############################################################################
@@ -6338,14 +6303,14 @@ proc read-dhcp-profile {dbfd text} {
 
 proc menu-hinfo {dbfd field defval} {
     set lhinfo {}
-    set sql "SELECT texte FROM dns.hinfo
+    set sql "SELECT name FROM dns.hinfo
 				WHERE present = 1
-				ORDER BY tri, texte"
+				ORDER BY sort ASC, name ASC"
     set i 0
     set defindex 0
     pg_select $dbfd $sql tab {
-	lappend lhinfo [list $tab(texte) $tab(texte)]
-	if {$tab(texte) eq $defval} then {
+	lappend lhinfo [list $tab(name) $tab(name)]
+	if {$tab(name) eq $defval} then {
 	    set defindex $i
 	}
 	incr i
@@ -6361,7 +6326,7 @@ proc menu-hinfo {dbfd field defval} {
 #   - dbfd : database handle
 #   - field : field name
 #   - idcor : user id
-#   - iddhcpprofil : default selected profile, or 0
+#   - iddhcpprof : default selected profile, or 0
 # Output:
 #   - return value: list with 2 HTML strings {title menu}
 #
@@ -6371,23 +6336,23 @@ proc menu-hinfo {dbfd field defval} {
 #   2010/11/29 : pda      : i18n
 #
 
-proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
+proc menu-dhcp-profile {dbfd field idcor iddhcpprof} {
     #
     # Get all DHCP profiles for this group
     #
 
-    set sql "SELECT p.iddhcpprofil, p.nom
-		FROM dns.dr_dhcpprofil dr, dns.dhcpprofil p, global.corresp c
-		WHERE c.idcor = $idcor
-		    AND dr.idgrp = c.idgrp
-		    AND dr.iddhcpprofil = p.iddhcpprofil
-		ORDER BY dr.tri ASC, p.nom"
+    set sql "SELECT d.iddhcpprof, d.name
+		FROM dns.p_dhcpprofile p, dns.dhcpprofile d, global.nmuser u
+		WHERE u.idcor = $idcor
+		    AND p.idgrp = u.idgrp
+		    AND p.iddhcpprof = d.iddhcpprof
+		ORDER BY p.sort ASC, d.name"
     set lprof {}
     set lsel {}
     set idx 1
     pg_select $dbfd $sql tab {
-	lappend lprof [list $tab(iddhcpprofil) $tab(nom)]
-	if {$tab(iddhcpprofil) == $iddhcpprofil} then {
+	lappend lprof [list $tab(iddhcpprof) $tab(name)]
+	if {$tab(iddhcpprof) == $iddhcpprof} then {
 	    lappend lsel $idx
 	}
 	incr idx
@@ -6402,16 +6367,16 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
 	# Is the default selected profile in our list?
 	#
 
-	if {$iddhcpprofil != 0 && [llength $lsel] == 0} then {
+	if {$iddhcpprof != 0 && [llength $lsel] == 0} then {
 	    #
 	    # We must add it at the end of the list.
 	    #
 
-	    set sql "SELECT iddhcpprofil, nom
-			    FROM dns.dhcpprofil
-			    WHERE iddhcpprofil = $iddhcpprofil"
+	    set sql "SELECT iddhcpprof, name
+			    FROM dns.dhcpprofile
+			    WHERE iddhcpprof = $iddhcpprof"
 	    pg_select $dbfd $sql tab {
-		lappend lprof [list $tab(iddhcpprofil) $tab(nom)]
+		lappend lprof [list $tab(iddhcpprof) $tab(name)]
 		lappend lsel $idx
 	    }
 	}
@@ -6431,7 +6396,7 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
 	#
 
 	set title ""
-	set html [::webapp::form-hidden $field $iddhcpprofil]
+	set html [::webapp::form-hidden $field $iddhcpprof]
     }
 
     return [list $title $html]
@@ -6445,7 +6410,7 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
 #   - dbfd : database handle
 #   - field : field name
 #   - _tabuid : user characteristics
-#   - droitsmtp : default selected value
+#   - sendsmtp : default selected value
 # Output:
 #   - return value: list with 2 HTML strings {title menu}
 #
@@ -6456,7 +6421,7 @@ proc menu-dhcp-profile {dbfd field idcor iddhcpprofil} {
 #   2010/12/05 : pda      : use tabuid instead of idcor
 #
 
-proc menu-droitsmtp {dbfd field _tabuid droitsmtp} {
+proc menu-sendsmtp {dbfd field _tabuid sendsmtp} {
     upvar $_tabuid tabuid
 
     #
@@ -6464,12 +6429,12 @@ proc menu-droitsmtp {dbfd field _tabuid droitsmtp} {
     #
 
 
-    if {$tabuid(droitsmtp)} then {
+    if {$tabuid(p_smtp)} then {
 	set title [mc "Use SMTP"]
-	set html [::webapp::form-bool $field $droitsmtp]
+	set html [::webapp::form-bool $field $sendsmtp]
     } else {
 	set title ""
-	set html [::webapp::form-hidden $field $droitsmtp]
+	set html [::webapp::form-hidden $field $sendsmtp]
     }
 
     return [list $title $html]
@@ -6510,7 +6475,7 @@ proc menu-ttl {dbfd field _tabuid ttl} {
     # Get the group permission.
     #
 
-    if {$tabuid(droitttl)} then {
+    if {$tabuid(p_ttl)} then {
 	set title [mc "TTL"]
 	set html [::webapp::form-text $field 1 6 10 $ttl]
 	append html " "
@@ -6603,12 +6568,12 @@ proc couple-domains {dbfd idcor where} {
 
     set lcouples {}
     set sql "SELECT domain.name
-		FROM dns.domain, dns.dr_dom, global.corresp
-		WHERE domain.iddom = dr_dom.iddom
-		    AND dr_dom.idgrp = corresp.idgrp
-		    AND corresp.idcor = $idcor
+		FROM dns.domain, dns.p_dom, global.nmuser
+		WHERE domain.iddom = p_dom.iddom
+		    AND p_dom.idgrp = nmuser.idgrp
+		    AND nmuser.idcor = $idcor
 		    $where
-		ORDER BY dr_dom.tri ASC"
+		ORDER BY p_dom.sort ASC, domain.name ASC"
     pg_select $dbfd $sql tab {
 	lappend lcouples [list $tab(name) $tab(name)]
     }
@@ -6617,17 +6582,16 @@ proc couple-domains {dbfd idcor where} {
 }
 
 #
-# Get an HTML listbox to select some views. This may be either a simple
+# Get an HTML menu to select one view. This may be either a simple
 # text with a hidden field if the group has access to only one view,
-# or a listbox.
+# or a menu.
 #
 # Input:
 #   - dbfd : database handle
 #   - idcor : user id
 #   - field : field name
 #   - sel : list of view id to pre-select, or empty list to pre-select
-#	default views (those cited in the dr_view.selected column)
-#   - mult : 1 if multiple selection allowed (listbox) or 0 for a menu
+#	default views (those cited in the p_view.selected column)
 # Output:
 #   - return value: list {disp html} where disp=true if view menu
 #	must be displayed, and html is html code (may be of "hidden"
@@ -6636,18 +6600,19 @@ proc couple-domains {dbfd idcor where} {
 # History :
 #   2012/10/30 : pda/jean : design
 #   2012/11/07 : pda/jean : add mult parameter and change return value
+#   2013/04/10 : pda/jean : remove mult parameter
 #
 
-proc menu-views {dbfd idcor field sel mult} {
+proc menu-view {dbfd idcor field sel} {
     set nsel [llength $sel]
     set lsel {}
     set lcouples {}
-    set sql "SELECT v.idview, v.name, d.selected
-		FROM dns.view v, dns.dr_view d, global.corresp
-		WHERE corresp.idcor = $idcor
-		    AND d.idgrp = corresp.idgrp
-		    AND v.idview = d.idview
-		ORDER BY d.sort ASC, v.name ASC"
+    set sql "SELECT v.idview, v.name, p.selected
+		FROM dns.view v, dns.p_view p, global.nmuser
+		WHERE nmuser.idcor = $idcor
+		    AND p.idgrp = nmuser.idgrp
+		    AND v.idview = p.idview
+		ORDER BY p.sort ASC, v.name ASC"
     set i 0
     pg_select $dbfd $sql tab {
 	lappend lcouples [list $tab(idview) $tab(name)]
@@ -6677,13 +6642,8 @@ proc menu-views {dbfd idcor field sel mult} {
 	    set html [::webapp::form-hidden $field $idview]
 	}
 	default {
-	    set size $nviews
 	    set disp 1
-	    if {! $mult} then {
-		# dropdown menu instead of a listbox
-		set size 1
-	    }
-	    set html [::webapp::form-menu $field $size $mult $lcouples $lsel]
+	    set html [::webapp::form-menu $field 1 0 $lcouples $lsel]
 	}
     }
 
@@ -6701,7 +6661,7 @@ proc menu-views {dbfd idcor field sel mult} {
 #   - parameters:
 #	- dbfd : database handle
 #	- idgrp : group id
-#	- droit : "consult", "dhcp" or "acl"
+#	- priv : "consult", "dhcp" or "acl"
 # Output:
 #   - return value: list of networks {idnet cidr4 cidr6 name}
 #
@@ -6724,11 +6684,11 @@ proc allowed-networks {dbfd idgrp priv} {
 	    set w2 ""
 	}
 	dhcp {
-	    set w1 "AND d.$priv > 0"
-	    set w2 "AND r.$priv > 0"
+	    set w1 "AND p.$priv > 0"
+	    set w2 "AND n.$priv > 0"
 	}
 	acl {
-	    set w1 "AND d.$priv > 0"
+	    set w1 "AND p.$priv > 0"
 	    set w2 ""
 	}
     }
@@ -6738,14 +6698,14 @@ proc allowed-networks {dbfd idgrp priv} {
     #
 
     set lnet {}
-    set sql "SELECT r.idreseau, r.nom, r.adr4, r.adr6
-			FROM dns.reseau r, dns.dr_reseau d
-			WHERE r.idreseau = d.idreseau
-			    AND d.idgrp = $idgrp
+    set sql "SELECT n.idnet, n.name, n.addr4, n.addr6
+			FROM dns.network n, dns.p_network p
+			WHERE n.idnet = p.idnet
+			    AND p.idgrp = $idgrp
 			    $w1 $w2
-			ORDER BY adr4, adr6"
+			ORDER BY addr4, addr6"
     pg_select $dbfd $sql tab {
-	lappend lnet [list $tab(idreseau) $tab(adr4) $tab(adr6) $tab(nom)]
+	lappend lnet [list $tab(idnet) $tab(addr4) $tab(addr6) $tab(name)]
     }
 
     return $lnet
@@ -6822,12 +6782,12 @@ proc check-netid {dbfd netid idgrp priv version _msg} {
 	    set c [mc "You cannot read this network"]
 	}
 	dhcp {
-	    set w1 "AND d.$priv > 0"
-	    set w2 "AND r.$priv > 0"
+	    set w1 "AND p.$priv > 0"
+	    set w2 "AND n.$priv > 0"
 	    set c [mc "You do not have DHCP access to this network"]
 	}
 	acl {
-	    set w1 "AND d.$priv > 0"
+	    set w1 "AND p.$priv > 0"
 	    set w2 ""
 	    set c [mc "You do not have ACL access to this network"]
 	}
@@ -6840,17 +6800,17 @@ proc check-netid {dbfd netid idgrp priv version _msg} {
     set lcidr {}
     set msg ""
 
-    set sql "SELECT r.adr4, r.adr6
-		    FROM dns.dr_reseau d, dns.reseau r
-		    WHERE d.idgrp = $idgrp
-			AND d.idreseau = r.idreseau
-			AND r.idreseau = $netid
+    set sql "SELECT n.addr4, n.addr6
+		    FROM dns.p_network p, dns.network n
+		    WHERE p.idgrp = $idgrp
+			AND p.idnet = n.idnet
+			AND n.idnet = $netid
 			$w1 $w2"
     set cidrplage4 ""
     set cidrplage6 ""
     pg_select $dbfd $sql tab {
-	set cidrplage4 $tab(adr4)
-	set cidrplage6 $tab(adr6)
+	set cidrplage4 $tab(addr4)
+	set cidrplage6 $tab(addr6)
     }
 
     if {[lsearch -exact $version 4] == -1} then {
@@ -7501,19 +7461,19 @@ proc _store-tabular-add {dbfd _msg table _tabval check} {
 #
 
 # Fields in pgauth.user database table
-set libconf(fields)	{login password nom prenom mel tel mobile fax adr}
+set libconf(fields)	{login password lastname firstname mail phone mobile fax addr}
 
 # Fields : <title> <field spec> <form var name> <user>
 # with <user> = 1 if field contains information about user (else : search only)
 set libconf(editfields) {
     {Login 	{string 10} login	1}
-    {Name	{string 40} nom		1}
+    {Name	{string 40} lastname	1}
     {Method	{yesno {%1$s Regular expression %2$s Phonetic}} phren 0}
-    {{First name}	{string 40} prenom	1}
+    {{First name}	{string 40} firstname	1}
     {Method	{yesno {%1$s Regular expression %2$s Phonetic}} phrep 0}
-    {Address	{text 3 40} adr		1}
-    {Mail	{string 40} mel		1}
-    {Phone	{string 15} tel		1}
+    {Address	{text 3 40} addr	1}
+    {Mail	{string 40} mail	1}
+    {Phone	{string 15} phone	1}
     {Fax	{string 15} fax		1}
     {Mobile	{string 15} mobile	1}
 }
@@ -7660,13 +7620,13 @@ set libconf(tabulist) {
 #   - return value : 1 if found, 0 if not found
 #   - parameter tab : 
 #	tab(login)	login
-#	tab(nom)	name
-#	tab(prenom)	christian name
-#	tab(mel)	email address
-#	tab(tel)	phone number
+#	tab(lastname)	name
+#	tab(firstname)	christian name
+#	tab(mail)	email address
+#	tab(phone)	phone number
 #	tab(fax)	facsimile number
 #	tab(mobile)	mobile phone number
-#	tab(adr)	postal address
+#	tab(addr)	postal address
 #	tab(encryption)	"crypt" if password is encrypted
 #	tab(password)	password (crypted or not)
 #	tab(realms)	list of realms to which user belongs
@@ -7859,8 +7819,8 @@ proc pgauth-deluser {dbfd login {transact transaction}} {
 #   - parameters :
 #	- dbfd : database handle
 #	- tabcrit : array containing criterion
-#		login, nom, prenom, adr, mel, tel, mobile, fax, realm
-#		or phnom, phprenom for phonetic searches
+#		login, lastname, firstname, addr, mail, phone, mobile,
+#		fax, realm, or phlast, phfirst for phonetic searches
 #	- sort (optional) : list {sort...} where
 #		sort = +/- sort-criterion
 # Output:
@@ -7876,7 +7836,7 @@ proc pgauth-deluser {dbfd login {transact transaction}} {
 #   2010/12/29 : pda      : i18n and netmagis merge
 #
 
-proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
+proc pgauth-searchuser {dbfd _tabcrit {sort {+lastname +firstname}}} {
     upvar $_tabcrit tabcrit
 
     #
@@ -7886,7 +7846,7 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
     set clauses {}
     set nwheres 0
     set from ""
-    foreach c {login phnom phprenom nom prenom adr mel tel mobile fax realm} {
+    foreach c {login phlast phfirst lastname firstname addr mail phone mobile fax realm} {
 	if {[info exists tabcrit($c)]} then {
 	    set re $tabcrit($c)
 	    if {$re ne ""} then {
@@ -7906,7 +7866,7 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
 		    set table "pgauth.user"
 		}
 
-		if {$c eq "phnom" || $c eq "phprenom"} then {
+		if {$c eq "phlast" || $c eq "phfirst"} then {
 		    lappend clauses "$table.$c = pgauth.soundex('$re')"
 		} elseif {$c eq "realm"} then {
 		    set or {}
@@ -7919,7 +7879,7 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
 			lappend clauses "($sor)"
 		    }
 		} else {
-		    # ILIKE = LIKE sans tenir compte de la casse
+		    # ILIKE = case insensitive LIKE
 		    lappend clauses "$table.$c ILIKE '$re'"
 		}
 		incr nwheres
@@ -7947,7 +7907,7 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+nom +prenom}}} {
 	    +  		-
 	    default	{ set way "ASC" }
 	}
-	if {$col in {login nom prenom mel tel adr mobile fax}} then {
+	if {$col in {login lastname firstname mail phone addr mobile fax}} then {
 	    lappend sqlsort "pgauth.user.$col $way"
 # XXX : I don't understand why I used this distinct clause
 #	    lappend sqldistinct "pgauth.user.$col"
@@ -8093,9 +8053,9 @@ proc pgauth-chpw {dbfd login action mail _newpw} {
 
     if {[lindex $mail 0] eq "mail"} then {
 	lassign $mail b from repl cc bcc subj body
-	if {[::webapp::valid-email $tab(mel)]} then {
+	if {[::webapp::valid-email $tab(mail)]} then {
 	    set body [format $body $login $newpw]
-	    ::webapp::mail $from $repl $tab(mel) $cc $bcc $subj $body
+	    ::webapp::mail $from $repl $tab(mail) $cc $bcc $subj $body
 	} else {
 	    return [mc "Invalid mail address, password is not modified"]
 	}
@@ -8169,7 +8129,7 @@ proc pgauth-addrealm {dbfd realm descr admin _msg} {
     set msg ""
     if {[regexp -- {^[a-z][-a-z0-9]*$} $realm]} then {
 	set qrealm [::pgsql::quote $realm]
-	set qdescr  [::pgsql::quote $descr]
+	set qdescr [::pgsql::quote $descr]
 	set sql "INSERT INTO pgauth.realm (realm, descr, admin)
 				VALUES ('$qrealm', '$qdescr', $admin)"
 	if {! [::pgsql::execsql $dbfd $sql m]} then {
@@ -8460,18 +8420,18 @@ proc pgauth-ac-add {_e _ftab state} {
 
     set lsubst {}
     switch -- $state {
-	nom {
+	name {
 	    #
 	    # User name has been introduced. Search this name.
 	    #
 	    set form {
-		    {nom 1 1}
+		    {lastname 1 1}
 		}
 	    pgauth-get-data ftab $form
 
-	    set nom [lindex $ftab(nom) 0]
-	    set tabcrit(phnom) $nom
-	    set lusers [pgauth-searchuser $e(dbfd) tabcrit {+nom +prenom}]
+	    set lastname [lindex $ftab(lastname) 0]
+	    set tabcrit(phlast) $lastname
+	    set lusers [pgauth-searchuser $e(dbfd) tabcrit {+lastname +firstname}]
 	    set nbut [llength $lusers]
 
 	    if {$nbut > 0} then {
@@ -8480,26 +8440,26 @@ proc pgauth-ac-add {_e _ftab state} {
 		#
 		#	%ACTION%
 		#	%MESSAGE%
-		#	%LISTEUTILISATEURS%
-		#	%AUCUN%
+		#	%LISTUSERS%
+		#	%NONE%
 		#
-		set qnom [::webapp::html-string $nom]
-		set message [mc "Some accounts match '%s'. Choose one, or ask for a new account" $qnom]
+		set qlast [::webapp::html-string $lastname]
+		set message [mc "Some accounts match '%s'. Choose one, or ask for a new account" $qlast]
 		lappend lsubst [list %MESSAGE% $message]
 
-		lappend lsubst [list %LISTEUTILISATEURS% \
+		lappend lsubst [list %LISTUSERS% \
 				    [pgauth-ac-display-choice e $lusers "ajout"] \
 				]
 
 		d urlset "" $e(url) [list {action add} \
 					{state nouveau} \
-					[list "nom" $nom] \
+					[list "lastname" $lastname] \
 				    ]
 		set url [d urlget ""]
 		set aucun [::webapp::helem "form" \
 				    [::webapp::form-submit {} [mc "Create a new account"]]
 				    "method" "post" "action" $url]
-		lappend lsubst [list %AUCUN% $aucun]
+		lappend lsubst [list %NONE% $aucun]
 
 		set page $e(page-choice)
 	    } else {
@@ -8509,22 +8469,22 @@ proc pgauth-ac-add {_e _ftab state} {
 		#	%ACTION%
 		#	%STATE%
 		#	%LOGIN%
-		#	%PARAMUTILISATEUR%
-		#	%TITRE%
+		#	%PARAMUSER%
+		#	%TITLE%
 		#
-		set lsubst [pgauth-ac-display-mod e "_new" $nom]
+		set lsubst [pgauth-ac-display-mod e "_new" $lastname]
 		set page $e(page-mod)
 	    }
 	}
-	plusdun {
+	morethanone {
 	    #
 	    # One user selected. Prepare form to input user modifications.
 	    #
 	    #	%ACTION%
 	    #	%STATE%
 	    #	%LOGIN%
-	    #	%PARAMUTILISATEUR%
-	    #	%TITRE%
+	    #	%PARAMUSER%
+	    #	%TITLE%
 	    #
 	    set form {
 		    {login 1 1}
@@ -8541,16 +8501,16 @@ proc pgauth-ac-add {_e _ftab state} {
 	    #
 	    #	%ACTION%
 	    #	%LOGIN%
-	    #	%PARAMUTILISATEUR%
+	    #	%PARAMUSER%
 	    #
 	    set form {
-		    {nom 0 1}
+		    {lastname 0 1}
 		}
 	    pgauth-get-data ftab $form
 
-	    set nom [lindex $ftab(nom) 0]
+	    set lastname [lindex $ftab(lastname) 0]
 
-	    set lsubst [pgauth-ac-display-mod e "_new" $nom]
+	    set lsubst [pgauth-ac-display-mod e "_new" $lastname]
 	    set page $e(page-mod)
 	}
 	creation {
@@ -8584,7 +8544,7 @@ proc pgauth-ac-add {_e _ftab state} {
 	    #
 	    # Store modification of an existing user.
 	    #
-	    #	%TITREACTION% (ajout)
+	    #	%TITLEACTION% (ajout)
 	    #	%COMPLEMENT%
 	    #
 	    set form {
@@ -8622,7 +8582,7 @@ proc pgauth-ac-consprn {_e _ftab state mode} {
 	    #
 	    # Criterion is given
 	    #
-	    #	%NBUTILISATEURS%
+	    #	%NBUSERS%
 	    #	%S%
 	    #	%DATE%
 	    #	%HEURE%
@@ -8673,10 +8633,10 @@ proc pgauth-ac-consprn {_e _ftab state mode} {
 			set myrealms [pgauth-ac-my-realms e $tab(realms)]
 			lappend lines [list "User" \
 					    $tab(login) \
-					    "$tab(nom) $tab(prenom)" \
-					    $tab(adr) \
-					    $tab(mel) \
-					    $tab(tel) $tab(fax) $tab(mobile) \
+					    "$tab(lastname) $tab(firstname)" \
+					    $tab(addr) \
+					    $tab(mail) \
+					    $tab(phone) $tab(fax) $tab(mobile) \
 					    $myrealms
 					] \
 		    }
@@ -8691,7 +8651,7 @@ proc pgauth-ac-consprn {_e _ftab state mode} {
 		set heure [clock format [clock seconds] -format "%Hh%M"]
 
 		lappend lsubst [list %TABLEAU% $tableau]
-	    	lappend lsubst [list %NBUTILISATEURS% [llength $lusers]]
+	    	lappend lsubst [list %NBUSERS% [llength $lusers]]
 		lappend lsubst [list %DATE% $date]
 		lappend lsubst [list %HEURE% $heure]
 	    }
@@ -8721,8 +8681,8 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 	    # Criterion was given
 	    #
 	    #	%LOGIN%
-	    #	%NOM%
-	    #	%PRENOM%
+	    #	%LASTNAME%
+	    #	%FIRSTNAME%
 	    #
 
 	    set lusers [pgauth-ac-search-crit e ftab]
@@ -8764,22 +8724,22 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 		    #
 		    #	%ACTION%
 		    #	%MESSAGE%
-		    #	%LISTEUTILISATEURS%
-		    #	%AUCUN%
+		    #	%LISTUSERS%
+		    #	%NONE%
 		    #
 		    set message [mc "Some accounts match criteria. Choose one"]
 		    lappend lsubst [list %MESSAGE% $message]
 
-		    lappend lsubst [list %LISTEUTILISATEURS% \
+		    lappend lsubst [list %LISTUSERS% \
 					[pgauth-ac-display-choice e $lusers $action] \
 				    ]
 
-		    lappend lsubst [list %AUCUN% ""]
+		    lappend lsubst [list %NONE% ""]
 		    set page $e(page-choice)
 		}
 	    }
 	}
-	plusdun {
+	morethanone {
 	    #
 	    # Display page to remove, modify or change password of an user
 	    #
@@ -8893,7 +8853,7 @@ proc pgauth-ac-my-realms {_e realms} {
 #
 # Returns a list of users with associated URLs
 #
-# Return : value for %LISTEUTILISATEURS%
+# Return : value for %LISTUSERS%
 #
 
 proc pgauth-ac-display-choice {_e lusers action} {
@@ -8912,15 +8872,15 @@ proc pgauth-ac-display-choice {_e lusers action} {
 	if {[pgauth-getuser $e(dbfd) $login tab]} then {
 	    set hlogin [::webapp::html-string $login]
 	    d urlset "" $e(url) [list [list "action" $action] \
-					{state plusdun} \
+					{state morethanone} \
 					[list "login" $login] \
 				    ]
 	    set url [d urlget ""]
 	    set urllogin [::webapp::helem "a" $hlogin "href" $url]
 	    set myrealms [pgauth-ac-my-realms e $tab(realms)]
 	    lappend lines [list "User" \
-					$urllogin "$tab(nom) $tab(prenom)" \
-					$tab(adr) $tab(mel) $myrealms
+					$urllogin "$tab(lastname) $tab(firstname)" \
+					$tab(addr) $tab(mail) $myrealms
 				    ]
 	}
     }
@@ -8930,10 +8890,10 @@ proc pgauth-ac-display-choice {_e lusers action} {
 #
 # Returns a form part to input user information
 #
-# Retour : values for %LOGIN%, %PARAMUTILISATEUR%, %STATE% and %TITRE%
+# Retour : values for %LOGIN%, %PARAMUSER%, %STATE% and %TITLE%
 #
 
-proc pgauth-ac-display-mod {_e login nom} {
+proc pgauth-ac-display-mod {_e login lastname} {
     upvar $_e e
     global libconf
 
@@ -8945,16 +8905,16 @@ proc pgauth-ac-display-mod {_e login nom} {
     if {$new} then {
 	array set u {
 	    login {}
-	    nom {}
-	    prenom {}
-	    adr {}
-	    mel {}
-	    tel {}
+	    lastname {}
+	    firstname {}
+	    addr {}
+	    mail {}
+	    phone {}
 	    fax {}
 	    mobile {}
 	    realms {}
 	}
-	set u(nom) $nom
+	set u(lastname) $lastname
 	set state "creation"
 	set title [mc "Creation"]
     } else {
@@ -9017,7 +8977,7 @@ proc pgauth-ac-display-mod {_e login nom} {
 	    set t [::webapp::form-field $spec $var $u($var)]
 	} else {
 	    #
-	    # Else, it is only a field for search (eg: phnom/phprenom)
+	    # Else, it is only a field for search (eg: phlast/phfirst)
 	    #
 	    set t ""
 	}
@@ -9046,10 +9006,10 @@ proc pgauth-ac-display-mod {_e login nom} {
     # Substitution lists
     #
 
-    lappend lsubst [list %LOGIN%	    $login]
-    lappend lsubst [list %PARAMUTILISATEUR% $paramutilisateur]
-    lappend lsubst [list %STATE%	    $state]
-    lappend lsubst [list %TITRE%	    $title]
+    lappend lsubst [list %LOGIN%     $login]
+    lappend lsubst [list %PARAMUSER% $paramutilisateur]
+    lappend lsubst [list %STATE%     $state]
+    lappend lsubst [list %TITLE%     $title]
 
     return $lsubst
 }
@@ -9057,7 +9017,7 @@ proc pgauth-ac-display-mod {_e login nom} {
 #
 # Store user information (new or modification)
 #
-# Return : values for %TITREACTION% and %COMPLEMENT%
+# Return : values for %TITLEACTION% and %COMPLEMENT%
 #
 
 proc pgauth-ac-store-mod {_e _ftab login} {
@@ -9195,7 +9155,7 @@ proc pgauth-ac-store-mod {_e _ftab login} {
     }
 
     set lsubst {}
-    lappend lsubst [list %TITREACTION% $title]
+    lappend lsubst [list %TITLEACTION% $title]
     lappend lsubst [list %COMPLEMENT% ""]
     return $lsubst
 }
@@ -9282,7 +9242,7 @@ proc pgauth-ac-search-crit {_e _ftab} {
     #
 
     set ncrit 0
-    foreach var {login nom prenom mel adr realms} {
+    foreach var {login lastname firstname mail addr realms} {
 	if {[set $var] ne ""} then {
 	    incr ncrit
 	}
@@ -9303,17 +9263,17 @@ proc pgauth-ac-search-crit {_e _ftab} {
     #
 
     if {[regexp {^[01]$} $phren] && $phren} then {
-	set phnom ""
+	set phlast ""
     } else {
-	set phnom $nom
-	set nom ""
+	set phlast $lastname
+	set lastname ""
     }
 
     if {[regexp {^[01]$} $phrep] && $phrep} then {
-	set phprenom ""
+	set phfirst ""
     } else {
-	set phprenom $prenom
-	set prenom ""
+	set phfirst $firstname
+	set firstname ""
     }
 
     #
@@ -9324,7 +9284,7 @@ proc pgauth-ac-search-crit {_e _ftab} {
     # is specified.
     #
 
-    foreach var {login nom prenom phnom phprenom mel adr} {
+    foreach var {login lastname firstname phlast phfirst mail addr} {
 	set tabcrit($var) [set $var]
     }
 
@@ -9344,13 +9304,13 @@ proc pgauth-ac-search-crit {_e _ftab} {
 	set tabcrit(realm) $realms
     }
 
-    return [pgauth-searchuser $e(dbfd) tabcrit {+nom +prenom}]
+    return [pgauth-searchuser $e(dbfd) tabcrit {+lastname +firstname}]
 }
 
 #
 # Display possible actions for a password change
 #
-# Return : values for %LOGIN%, %NOM% and %PRENOM%.
+# Return : values for %LOGIN%, %LASTNAME% and %FIRSTNAME%.
 #
 
 proc pgauth-ac-display-passwd {_e login} {
@@ -9361,18 +9321,18 @@ proc pgauth-ac-display-passwd {_e login} {
     }
 
     set login  [::webapp::html-string $login]
-    set nom    [::webapp::html-string $u(nom)]
-    set prenom [::webapp::html-string $u(prenom)]
+    set lastname  [::webapp::html-string $u(lastname)]
+    set firstname [::webapp::html-string $u(firstname)]
 
     set minpwlen [::dnsconfig get "authpgminpwlen"]
     set maxpwlen [::dnsconfig get "authpgmaxpwlen"]
 
     set lsubst {}
-    lappend lsubst [list %LOGIN%    $login]
-    lappend lsubst [list %NOM%      $nom]
-    lappend lsubst [list %PRENOM%   $prenom]
-    lappend lsubst [list %MINPWLEN% $minpwlen]
-    lappend lsubst [list %MAXPWLEN% $maxpwlen]
+    lappend lsubst [list %LOGIN%     $login]
+    lappend lsubst [list %LASTNAME%  $lastname]
+    lappend lsubst [list %FIRSTNAME% $firstname]
+    lappend lsubst [list %MINPWLEN%  $minpwlen]
+    lappend lsubst [list %MAXPWLEN%  $maxpwlen]
 
     return $lsubst
 }
@@ -9380,7 +9340,7 @@ proc pgauth-ac-display-passwd {_e login} {
 #
 # Store a password
 #
-# Return : values for %TITREACTION% and %COMPLEMENT%
+# Return : values for %TITLEACTION% and %COMPLEMENT%
 #
 
 proc pgauth-ac-store-passwd {_e _ftab login} {
@@ -9442,7 +9402,7 @@ proc pgauth-ac-store-passwd {_e _ftab login} {
     #
 
     set lsubst {}
-    lappend lsubst [list %TITREACTION% $res]
+    lappend lsubst [list %TITLEACTION% $res]
     lappend lsubst [list %COMPLEMENT% $comp]
 
     return $lsubst
@@ -9451,7 +9411,7 @@ proc pgauth-ac-store-passwd {_e _ftab login} {
 #
 # Display removal confirmation page
 #
-# Return : value for %UTILISATEUR%
+# Return : value for %USER%
 #
 
 proc pgauth-ac-display-del {_e login} {
@@ -9462,15 +9422,15 @@ proc pgauth-ac-display-del {_e login} {
     }
 
     set lsubst {}
-    lappend lsubst [list %UTILISATEUR%  $login]
-    lappend lsubst [list %LOGIN%  [::webapp::html-string $login]]
+    lappend lsubst [list %USER%  $login]
+    lappend lsubst [list %LOGIN% [::webapp::html-string $login]]
     return $lsubst
 }
 
 #
 # Remove user
 #
-# Return : values for %TITREACTION% and %COMPLEMENT%
+# Return : values for %TITLEACTION% and %COMPLEMENT%
 #
 
 proc pgauth-ac-del-user {_e _ftab login} {
@@ -9529,7 +9489,7 @@ proc pgauth-ac-del-user {_e _ftab login} {
     }
 
     set lsubst {}
-    lappend lsubst [list %TITREACTION% [::webapp::html-string $msg]]
+    lappend lsubst [list %TITLEACTION% [::webapp::html-string $msg]]
     lappend lsubst [list %COMPLEMENT% [::webapp::html-string $comp]]
     return $lsubst
 }
@@ -9891,8 +9851,7 @@ proc ip-in {ip net} {
 }
 
 #
-# Check metrology id 
-# Valide l'id du point de collecte par rapport aux droits du correspondant.
+# Check metrology id against user permissions
 #
 # Input:
 #   - parameters:
@@ -10068,7 +10027,7 @@ proc read-authorized-eq {dbfd rw idgrp} {
     set r {}
     foreach allow_deny {1 0} {
 	set sql "SELECT pattern
-			FROM topo.dr_eq
+			FROM topo.p_eq
 			WHERE idgrp = $idgrp
 			    AND rw = $rw
 			    AND allow_deny = $allow_deny"
@@ -10373,24 +10332,6 @@ proc eq-graph-status {dbfd eq {iface {}}} {
     global libconf
 
     #
-    # Search for equipment idrr in the database
-    #
-    
-    if {! [regexp {^([^.]+)\.(.+)$} $eq bidon host domain]} then {
-        set host $eq
-        set domain [dnsconfig get "defdomain"]
-    }
-
-    set iddom [read-domain $dbfd $domain]
-    if {$iddom == -1} then {
-	d error [mc "Domain '%s' not found" $domain]
-    }
-    if {! [read-rr-by-name $dbfd $host $iddom tabrr]} then {
-	d error [mc "Equipment '%s' not found" $eq]
-    }
-    set idrr $tabrr(idrr)
-
-    #
     # Search for unprocessed modifications and build information.
     #
 
@@ -10400,8 +10341,10 @@ proc eq-graph-status {dbfd eq {iface {}}} {
 	set wif "AND iface = '$qiface'"
     }
 
+    set qeq [::pgsql::quote $eq]
+
     set sql "SELECT * FROM topo.ifchanges
-			WHERE idrr = $idrr AND processed = 0 $wif
+			WHERE eq = '$qeq' AND processed = 0 $wif
 			ORDER BY reqdate DESC"
     set lines {}
     lappend lines [list Title4 [mc "Date"] [mc "Login"] [mc "Interface"] [mc "Change"]]

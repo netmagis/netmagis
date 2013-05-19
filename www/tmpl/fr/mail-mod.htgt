@@ -29,7 +29,7 @@
 
     \titre {1} {Action effectuée}
 
-    L'adresse de messagerie '%NOM%' a été %ACTION%.
+    L'adresse de messagerie '%NAME%' a été %ACTION%.
 }
 
 }

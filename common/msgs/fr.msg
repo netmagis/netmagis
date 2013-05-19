@@ -11,7 +11,6 @@
  {'%1$s' has IP addresses in view '%2$s'} {'%1$s' a des adresses IP dans la vue '%2$s'}
  {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} {%1$s dans la vue %2$s est une adresse de messagerie hébergée par %3$s dans la vue %4$s}
  {%1$s is a host in view %2$s} {%1$s est une machine dans la vue %2$s}
- {'%1$s' is a mail role in view '%2$s'} {'%1$s' est un rôle de messagerie dans la vue '%2$s'}
  {%1$s is an alias of host %2$s in view %3$s} {%1$s est un alias de la machine %2$s dans la vue %3$s}
  {'%1$s' is not a mail role in view '%2$s'} {'%1$s' n'est pas un rôle de messagerie dans la vue '%2$s'}
  {'%1$s' is not a valid IPv%2$s address} {'%1$s' n'est pas une adresse IPv%2$s valide}
@@ -45,8 +44,8 @@
  {Aliases}		{Aliases}
  {Alias name}	{Nom de l'alias}
  {Allocated addresses} {Adresses allouées}
+ {'Allow' permission '%s' outside any allowed network} {Le droit 'allow' '%s' est en dehors de tout réseau autorisé}
  {Allowed groups} {Groupes autorisés}
- {'Allow' permission '%s' is too large} {Le droit 'allow - %s' est trop grand}
  {All} {Tous}
  {and sorted by '%1$s' and by '%2$s'} {et triés par '%1$s' et par '%2$s'}
  {Application parameters} {Modif paramètres}
@@ -276,11 +275,9 @@
  {Invalid view sort class '%s'} {Classe de tri de vue '%s' invalide}
  {Invalid view '%s'}	{Vue '%s' invalide}
  {Invalid web role '%s'} {Role web invalide '%s'}
- {IP address '%1$s' already exists in view '%2$s'} {L'adresse '%1$s' existe déjà dans la vue '%2$s'}
+ {IP address '%s' already exists} {L'adresse '%s' existe déjà}
  {IP address}	{Adresse IP}
- {IP address and view}	{Adresse IP vue}
  {IP addresses}	{Adresses IP}
- {IP addresses and views}	{Adresses IP et vues}
  {IP address %s} {l'adresse IP %s}
  {IP-MAC association (%1$s,%2$s) not found} {Association IP-MAC (%1$s,%2$s) non trouvée}
  {IP networks} {réseaux IP}
@@ -411,7 +408,7 @@
  {No MX given for %s} {Pas de MX fourni pour %s}
  {non-declared address within a DHCP range} {adresse non déclarée, figurant dans un intervalle DHCP}
  {(none)}	{(aucune)}
- {None (it's all right)} {Aucun (tout va bien)}
+ {None (it's ok)} {Aucun (tout va bien)}
  {Non-existent link number (%s)} {Numéro de lien inexistant (%s)}
  {no}		{non}
  {No}		{Non}
@@ -539,6 +536,8 @@
  {sums} {cumuls}
  {The '/' character is not valid in the address '%s'} {Le caractère '/' est interdit dans l'adresse '%s'}
  {This host holds mail addresses} {Cette machine héberge des adresses de messagerie}
+ {This host is the target of one or more MX} {Cette machine est la cible d'un ou plusieurs MX}
+ {This host is the mail relay of one or more domains} {Cette machine est le relais de messagerie d'un ou plusieurs domaines}
  {Title}	{Intitulé}
  {Topod messages} {Messages de topod}
  {Topod status} {Topod status}
@@ -576,7 +575,6 @@
  {User}	{Utilisateur}
  {Use SMTP} {Émettre en SMTP}
  {View management} {Gestion des vues}
- {Views}	{Vues}
  {View}		{Vue}
  {Vlan %1$s: %2$s} {Vlan %1$s : %2$s}
  {vlan=%1$s, voip=%2$s, desc=%3$s} {vlan=%1$s, voip=%2$s, desc=%3$s}
@@ -621,7 +619,6 @@
  {You don't have rights to some relays of domain '%1$s': %2$s} {Vous n'avez pas les droits sur certains relais du domaine '%1$s' : %2$s}
  {You don't have write access to interface '%1$s' on '%2$s'} {Vous n'avez mpas de le droit de modifier l'interface '%1$s' sur '%2$s'}
  {You must choose a CIDR or at least one network} {Vous devez choisir un CIDR ou au moins une plage}
- {You must select at least one view} {Vous devez sélectionner au moins une vue}
  {You must type a name for the group} {Il faut saisir un nom pour ce groupe}
  {Zone '%s' not found} {Zone '%s' non trouvée}
  {Zone management} {Gestion des zones}

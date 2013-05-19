@@ -29,9 +29,9 @@
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="add">
-	<INPUT TYPE="HIDDEN" NAME="state"  VALUE="nom">
+	<INPUT TYPE="HIDDEN" NAME="state"  VALUE="name">
 	Name of user to add
-	    <INPUT TYPE="TEXT" NAME="nom" MAXLENGTH="60">
+	    <INPUT TYPE="TEXT" NAME="lastname" MAXLENGTH="60">
 	<INPUT TYPE="SUBMIT" VALUE="Add">
     </FORM>
 }

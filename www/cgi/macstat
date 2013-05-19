@@ -105,7 +105,7 @@ d cgi-register {} {} {
     #
 
     d result $conf(page) [list \
-                                [list %TITRE% [mc "Statistics about MAC/IP addresses"]] \
+                                [list %TITLE% [mc "Statistics about MAC/IP addresses"]] \
                                 [list %TABLEAU% $tableau] \
                             ]
 }

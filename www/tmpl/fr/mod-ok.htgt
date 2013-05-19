@@ -42,7 +42,7 @@
     } {
 	\lignetableau {
 	    \casetableau {} {Nom}
-	    \casetableau {} {%NOM%.%DOMAIN%}
+	    \casetableau {} {%NAME%.%DOMAIN%}
 	}
 	\lignetableau {
 	    \casetableau {} {Adresse MAC}
@@ -50,7 +50,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {Profil DHCP}
-	    \casetableau {} {%DHCPPROFIL%}
+	    \casetableau {} {%DHCPPROFILE%}
 	}
 	\lignetableau {
 	    \casetableau {} {Machine}
@@ -58,7 +58,7 @@
 	}
 	\lignetableau {
 	    \casetableau {} {Droit d'émission SMTP}
-	    \casetableau {} {%DROITSMTP%}
+	    \casetableau {} {%SENDSMTP%}
 	}
 	\lignetableau {
 	    \casetableau {} {TTL}
@@ -66,15 +66,15 @@
 	}
 	\lignetableau {
 	    \casetableau {} {Infos complémentaires}
-	    \casetableau {} {%COMMENTAIRE%}
+	    \casetableau {} {%COMMENT%}
 	}
 	\lignetableau {
 	    \casetableau {} {Responsable (nom + prénom)}
-	    \casetableau {} {%RESPNOM%}
+	    \casetableau {} {%RESPNAME%}
 	}
 	\lignetableau {
 	    \casetableau {} {Responsable (mél)}
-	    \casetableau {} {%RESPMEL%}
+	    \casetableau {} {%RESPMAIL%}
 	}
     }
 

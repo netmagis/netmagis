@@ -44,10 +44,10 @@
     \titre {2} {Data administration}
 
     \liste {
-	\item {Modify \lien {organizations} {%URLREFETABL%}}
-	\item {Modify \lien {communities} {%URLREFCOMMU%}}
+	\item {Modify \lien {organizations} {%URLREFORG%}}
+	\item {Modify \lien {communities} {%URLREFCOMM%}}
 	\item {Modify \lien {host types} {%URLREFHINFO%}}
-	\item {Modify \lien {networks} {%URLREFRESEAU%}}
+	\item {Modify \lien {networks} {%URLREFNET%}}
 	\item {Modify \lien {domains} {%URLREFDOMAIN%}}
 	\item {Modify \lien {mail relays}{%URLADMMREL%} of a domain}
 	\item {Modify \lien {views} {%URLREFVIEW%}}
@@ -55,7 +55,7 @@
 	\item {Modify \lien {reverse IPv4 zones} {%URLREFZONE4%}}
 	\item {Modify \lien {reverse IPv6 zones} {%URLREFZONE6%}}
 	\item {Modify \lien {MX} {%URLADMMX%}}
-	\item {Modify \lien {DHCP profiles} {%URLREFDHCPPROFIL%}}
+	\item {Modify \lien {DHCP profiles} {%URLREFDHCPPROF%}}
 	\item {Modify \lien {Vlans} {%URLREFVLAN%}}
 	\item {Modify \lien {equipment types} {%URLREFEQTYPE%}}
 	\item {Modify \lien {equipments} {%URLREFEQ%}}

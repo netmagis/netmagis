@@ -29,16 +29,16 @@
 
     %MESSAGE%
 \*    More than one account
-\*	1- has similarities with '%NOM%'.
+\*	1- has similarities with '%NAME%'.
 \*	2- match criteria
 \*
 \*    Choose:
 \*	1- .
 \*	2- , or ask for account creation
 
-    %LISTEUTILISATEURS%
+    %LISTUSERS%
 
-    %AUCUN%
+    %NONE%
 }
 
 }

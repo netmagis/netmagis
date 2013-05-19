@@ -8,7 +8,7 @@
 # Parameters (form or url):
 #   - display edit page
 #	- action : (empty)
-#	- type : etabl, commu, hinfo, reseau, domain, view, zone, zone4, zone6,
+#	- type : org, comm, hinfo, net, domain, view, zone, zone4, zone6,
 #		vlan, eq, eqtype, confcmd, dotattr
 #   - display graphviz generated image
 #	- action : "image"
@@ -70,36 +70,36 @@ set conf(page-mod)	adm-mod.html
 ##############################################################################
 # Organizations
 
-set conf(etabl:ptitle) 	"Organization management"
-set conf(etabl:cols)		{ {100 nom {Name} {string 30} {}} }
-set conf(etabl:sql)		"SELECT * FROM dns.etablissement ORDER BY nom ASC"
-set conf(etabl:id)		idetabl
-set conf(etabl:help)		help-etabl.html
-set conf(etabl:return)		"Return to organization modification"
-set conf(etabl:table)		dns.etablissement
-set conf(etabl:proc)		admref-nop
+set conf(org:ptitle) 	"Organization management"
+set conf(org:cols)		{ {100 name {Name} {string 30} {}} }
+set conf(org:sql)		"SELECT * FROM dns.organization ORDER BY name ASC"
+set conf(org:id)		idorg
+set conf(org:help)		help-org.html
+set conf(org:return)		"Return to organization modification"
+set conf(org:table)		dns.organization
+set conf(org:proc)		admref-nop
 
 ##############################################################################
 # Communities
 
-set conf(commu:ptitle) 	"Community management"
-set conf(commu:cols)		{ {100 nom {Name} {string 30} {}} }
-set conf(commu:sql)		"SELECT * FROM dns.communaute ORDER BY nom ASC"
-set conf(commu:id)		idcommu
-set conf(commu:help)		help-commu.html
-set conf(commu:return)		"Return to community modification"
-set conf(commu:table)		dns.communaute
-set conf(commu:proc)		admref-nop
+set conf(comm:ptitle) 	"Community management"
+set conf(comm:cols)		{ {100 name {Name} {string 30} {}} }
+set conf(comm:sql)		"SELECT * FROM dns.community ORDER BY name ASC"
+set conf(comm:id)		idcomm
+set conf(comm:help)		help-comm.html
+set conf(comm:return)		"Return to community modification"
+set conf(comm:table)		dns.community
+set conf(comm:proc)		admref-nop
 
 ##############################################################################
 # Hinfo
 
 set conf(hinfo:ptitle) 	"Host type management"
-set conf(hinfo:cols)		{ {60 texte {Description} {string 30} {}}
-				  {20 tri {Sort} {int 10} 100}
+set conf(hinfo:cols)		{ {60 name {Description} {string 30} {}}
+				  {20 sort {Sort} {int 10} 100}
 				  {20 present {Present} {bool} 1}
 				}
-set conf(hinfo:sql)		"SELECT * FROM dns.hinfo ORDER BY tri ASC, texte ASC"
+set conf(hinfo:sql)		"SELECT * FROM dns.hinfo ORDER BY sort ASC, name ASC"
 set conf(hinfo:id)		idhinfo
 set conf(hinfo:help)		help-hinfo.html
 set conf(hinfo:return)		"Return to host information modification"
@@ -109,24 +109,24 @@ set conf(hinfo:proc)		admref-nop
 ##############################################################################
 # Networks
 
-set conf(reseau:ptitle)	"Network management"
-set conf(reseau:cols)		{ {1 nom	{Name} {string 20} {}}
-				  {1 localisation {Location} {string 10} {}}
-				  {1 adr4	{IPv4 address} {string 15} {}}
+set conf(net:ptitle)	"Network management"
+set conf(net:cols)		{ {1 name	{Name} {string 20} {}}
+				  {1 location	{Location} {string 10} {}}
+				  {1 addr4	{IPv4 address} {string 15} {}}
 				  {1 gw4	{IPv4 gateway} {string 12} {}}
 				  {1 dhcp	{DHCP enabled} {bool} 0}
-				  {1 adr6	{Adr IPv6} {string 49} {}}
+				  {1 addr6	{IPv6 address} {string 49} {}}
 				  {1 gw6	{IPv6 gateway} {string 45} {}}
-				  {1 idetabl	{Organization} {menu {%MENUETABL%}} {}}
-				  {1 idcommu	{Community} {menu {%MENUCOMMU%}} {}}
-				  {1 commentaire {Comment} {string 15} {}}
+				  {1 idorg	{Organization} {menu {%MENUORG%}} {}}
+				  {1 idcomm	{Community} {menu {%MENUCOMM%}} {}}
+				  {1 comment	{Comment} {string 15} {}}
 				}
-set conf(reseau:sql)		"SELECT * FROM dns.reseau ORDER BY adr4"
-set conf(reseau:id)		idreseau
-set conf(reseau:help)		help-reseau.html
-set conf(reseau:return)		"Return to network modification"
-set conf(reseau:table)		dns.reseau
-set conf(reseau:proc)		admref-nop
+set conf(net:sql)		"SELECT * FROM dns.network ORDER BY addr4"
+set conf(net:id)		idnet
+set conf(net:help)		help-net.html
+set conf(net:return)		"Return to network modification"
+set conf(net:table)		dns.network
+set conf(net:proc)		admref-nop
 
 ##############################################################################
 # Domains
@@ -162,11 +162,11 @@ set conf(zone:cols)		{ {15 name	{Name} {string 15} {}}
 				  {45 prologue	{Prolog} {textarea {45 10}} {}}
 				  {25 rrsup	{Addtl RR} {textarea {30 10}} {}}
 				}
-set conf(zone:sql)		"SELECT * FROM dns.zone_normale ORDER BY selection ASC"
+set conf(zone:sql)		"SELECT * FROM dns.zone_forward ORDER BY selection ASC"
 set conf(zone:id)		idzone
 set conf(zone:help)		help-zone.html
 set conf(zone:return)		"Return to zone modification"
-set conf(zone:table)		dns.zone_normale
+set conf(zone:table)		dns.zone_forward
 set conf(zone:proc)		admref-nop
 
 ##############################################################################
@@ -196,16 +196,16 @@ set conf(zone6:proc)		$conf(zone:proc)
 ##############################################################################
 # DHCP profiles
 
-set conf(dhcpprofil:ptitle) "DHCP profile management"
-set conf(dhcpprofil:cols)	{ {20 nom {Name} {string 20} {}}
-				  {80 texte {Directives dhcpd.conf} {textarea {80 10}} {}}
+set conf(dhcpprof:ptitle) "DHCP profile management"
+set conf(dhcpprof:cols)		{ {20 name {Name} {string 20} {}}
+				  {80 text {Directives dhcpd.conf} {textarea {80 10}} {}}
 				}
-set conf(dhcpprofil:sql)	"SELECT * FROM dns.dhcpprofil ORDER BY nom ASC"
-set conf(dhcpprofil:id)		iddhcpprofil
-set conf(dhcpprofil:help)	help-dhcpprofil.html
-set conf(dhcpprofil:return)	"Return to DHCP profile modification"
-set conf(dhcpprofil:table)	dns.dhcpprofil
-set conf(dhcpprofil:proc)	admref-nop
+set conf(dhcpprof:sql)		"SELECT * FROM dns.dhcpprofile ORDER BY name ASC"
+set conf(dhcpprof:id)		iddhcpprof
+set conf(dhcpprof:help)		help-dhcpprof.html
+set conf(dhcpprof:return)	"Return to DHCP profile modification"
+set conf(dhcpprof:table)	dns.dhcpprofile
+set conf(dhcpprof:proc)		admref-nop
 
 ##############################################################################
 # Vlans
@@ -350,13 +350,13 @@ d cgi-register {action {}} {
     #
 
     switch -- $type {
-	reseau	{
-	    set menuetabl [::pgsql::getcols $dbfd dns.etablissement "" "nom ASC" \
-						{idetabl nom}]
-	    set menucommu [::pgsql::getcols $dbfd dns.communaute "" "nom ASC" \
-						{idcommu nom}]
-	    regsub -- "%MENUETABL%" $colspecs "$menuetabl" colspecs
-	    regsub -- "%MENUCOMMU%" $colspecs "$menucommu" colspecs
+	net	{
+	    set menuorg [::pgsql::getcols $dbfd dns.organization "" "name ASC" \
+						{idorg name}]
+	    set menucomm [::pgsql::getcols $dbfd dns.community "" "name ASC" \
+						{idcomm name}]
+	    regsub -- "%MENUORG%" $colspecs "$menuorg" colspecs
+	    regsub -- "%MENUCOMM%" $colspecs "$menucomm" colspecs
 	}
 	eq {
 	    set menutype [::pgsql::getcols $dbfd topo.eqtype "" "type ASC" \
@@ -408,7 +408,7 @@ d cgi-register {action {}} {
 
     d result $conf(page-edit) [list \
 				[list %TABLEAU% $tab] \
-				[list %TITREPAGE% $ptitle] \
+				[list %TITLEPAGE% $ptitle] \
 			    ]
 }
 

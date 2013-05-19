@@ -221,7 +221,7 @@ d cgi-register {} {
 } {
     global conf
 
-    set msgsta [topo-status $dbfd $tabuid(admin)]
+    set msgsta [topo-status $dbfd $tabuid(p_admin)]
 
     set tmp /tmp/l2-[pid]
 
@@ -284,11 +284,11 @@ d cgi-register {} {
 	    # No vlan found
 	    #
 
-	    set liste [mc "Vlan '%s' not found" $qvlan]
+	    set list [mc "Vlan '%s' not found" $qvlan]
 	    d result $conf(pagen) [list \
 					[list %MSGSTA% $msgsta] \
 					[list %OBJETS% "Vlans"] \
-					[list %LISTE%  $liste] \
+					[list %LIST%   $list] \
 					[list %EQ%     ""] \
 					[list %VLAN%   $qvlan] \
 					[list %ADDR%   ""] \
@@ -332,11 +332,11 @@ d cgi-register {} {
 
 	    set cmd [format $conf(extractl2) $tabuid(flagsr) $eq $iface $v]
 	    if {! [call-topo $cmd xl2]} then {
-		set liste [mc "Vlan '%s' not found" $qvlan]
+		set list [mc "Vlan '%s' not found" $qvlan]
 		d result $conf(pagen) [list \
 					[list %MSGSTA% $msgsta] \
 					[list %OBJETS% "Vlans"] \
-					[list %LISTE%  $liste] \
+					[list %LIST%   $list] \
 					[list %EQ%     ""] \
 					[list %VLAN%   $qvlan] \
 					[list %ADDR%   ""] \
@@ -401,7 +401,7 @@ d cgi-register {} {
 	    # Display vlan list (which is already sorted by search-vlan)
 	    #
 
-	    set liste {}
+	    set list {}
 	    foreach id $lvlans {
 		lassign $tabvlan($id) desc nets
 		if {[llength $nets] > 0} then {
@@ -411,11 +411,11 @@ d cgi-register {} {
 
 		d urlset "" $conf(nextl2) [list [list "vlan" $id]]
 		set url [d urlget ""]
-		lappend liste [webapp::helem "li" \
+		lappend list [webapp::helem "li" \
 					[::webapp::helem "a" "$id ($desc)" \
 						    "href" $url] ]
 	    }
-	    set liste [::webapp::helem "ul" [join $liste "\n"]]
+	    set list [::webapp::helem "ul" [join $list "\n"]]
 
 	    #
 	    # End of script: output page and close database
@@ -424,7 +424,7 @@ d cgi-register {} {
 	    d result $conf(pagen) [list \
 					[list %MSGSTA% $msgsta] \
 					[list %OBJETS% "Vlans"] \
-					[list %LISTE%  $liste] \
+					[list %LIST%   $list] \
 					[list %EQ%     ""] \
 					[list %VLAN%   $qvlan] \
 					[list %ADDR%   ""] \

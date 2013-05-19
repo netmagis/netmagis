@@ -112,10 +112,10 @@ d cgi-register {} {} {
 
     set u [::webapp::authuser create %AUTO%]
 
-    set sql "SELECT c.login, count(*) AS nb
-		    FROM dns.rr r, global.corresp c
+    set sql "SELECT u.login, count(*) AS nb
+		    FROM dns.rr r, global.nmuser u
 		    WHERE r.idcor = c.idcor
-		    GROUP BY c.login
+		    GROUP BY u.login
 		"
     set total 0
     set list {}
@@ -128,7 +128,7 @@ d cgi-register {} {} {
 	}
 	
 	if {$n == 1} then {
-	    set name "[$u get nom] [$u get prenom]"
+	    set name "[$u get lastname] [$u get firstname]"
 	} else {
 	    set name $tab(login)
 	}

@@ -84,7 +84,7 @@
  cfg:ldapattrlogin:help {LDAP attribute to get login name. Example: "uid"}
  cfg:ldapattrpassword:desc {Attribute "password"}
  cfg:ldapattrpassword:help {LDAP attribute to get encrypted password. Example: "userPassword"}
- cfg:ldapattrname:desc {Attribute "nom"}
+ cfg:ldapattrname:desc {Attribute "last name"}
  cfg:ldapattrname:help {LDAP attribute to get user's name. Example: "sn"}
  cfg:ldapattrgivenname:desc {Attribute "first name"}
  cfg:ldapattrgivenname:help {LDAP attribute to get user's first name. Attributes may be empty or made from one or more LDAP attributes which will be joined together.}

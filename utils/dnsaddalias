@@ -61,7 +61,6 @@ proc main {argv0 argv} {
     if {! [u isallowedview $idview]} then {
 	d error [mc "Access denied to view '%s'" $view]
     }
-    set idviews [list $idview]
 
     #
     # Check alias FDQN
@@ -83,7 +82,7 @@ proc main {argv0 argv} {
     }
     set nameref [string tolower $nameref]
 
-    set msg [add-alias $dbfd $idviews $name $domain \
+    set msg [add-alias $dbfd $name $domain $idview \
     				$nameref $domainref $tabcor(idcor)]
     if {$msg ne ""} then {
 	d error $msg

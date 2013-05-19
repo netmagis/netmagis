@@ -854,11 +854,11 @@
 	    \item {\teletype {commentaire}: comment associated to this
 		host
 	    }
-	    \item {\teletype {dhcpprofil}: value is the exact name of
+	    \item {\teletype {dhcpprofile}: value is the exact name of
 		the DHCP profile, as listed
 		in the \gras {Modify DHCP profiles} administrator menu.
 		or in the
-		\teletype {dns.dhcpprofil} SQL table
+		\teletype {dns.dhcpprofile} SQL table
 	    }
 	    \item {\teletype {ttl}: value is the specific TTL value for
 		this host, in seconds, or empty string to remove the

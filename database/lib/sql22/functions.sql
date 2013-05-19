@@ -68,7 +68,7 @@ CREATE OR REPLACE FUNCTION dns.check_dhcprange_grp (INTEGER, INET, INET)
 --   - grp: group id
 -- Output:
 --    - table with columns:
---		adr   INET
+--		addr  INET
 --		avail INTEGER (see below)
 --		fqdn  TEXT
 --
@@ -113,7 +113,7 @@ CREATE OR REPLACE FUNCTION dns.mark_cidr (net CIDR, lim INTEGER, grp INTEGER)
 	END ;
 
 	CREATE TEMPORARY TABLE allip (
-	    adr INET,
+	    addr INET,
 	    avail INTEGER,
 		-- 0 : unavailable (broadcast addr, no right on addr, etc.)
 		-- 1 : not declared and not in a dhcp range
@@ -130,10 +130,10 @@ CREATE OR REPLACE FUNCTION dns.mark_cidr (net CIDR, lim INTEGER, grp INTEGER)
 	END LOOP ;
 
 	UPDATE allip
-	    SET fqdn = rr.nom || '.' || domain.name,
+	    SET fqdn = rr.name || '.' || domain.name,
 		avail = 2
 	    FROM dns.rr_ip, dns.rr, dns.domain
-	    WHERE allip.adr = rr_ip.adr
+	    WHERE allip.addr = rr_ip.addr
 		AND rr_ip.idrr = rr.idrr
 		AND rr.iddom = domain.iddom
 		;
@@ -145,12 +145,12 @@ CREATE OR REPLACE FUNCTION dns.mark_cidr (net CIDR, lim INTEGER, grp INTEGER)
 			END
 	    FROM dns.dhcprange
 	    WHERE (avail = 1 OR avail = 2)
-		AND adr >= dhcprange.min
-		AND adr <= dhcprange.max
+		AND addr >= dhcprange.min
+		AND addr <= dhcprange.max
 	    ;
 
 	UPDATE allip SET avail = 0
-	    WHERE adr = min OR adr = max OR NOT dns.check_ip_grp (adr, grp) ;
+	    WHERE addr = min OR addr = max OR NOT dns.check_ip_grp (addr, grp) ;
 
 	RETURN ;
 
@@ -188,7 +188,7 @@ CREATE OR REPLACE FUNCTION dns.ipranges (net CIDR, lim INTEGER, grp INTEGER)
     BEGIN
 	PERFORM dns.mark_cidr (net, lim, grp) ;
 	inarange := FALSE ;
-	FOR r IN (SELECT adr, avail FROM allip ORDER BY adr)
+	FOR r IN (SELECT addr, avail FROM allip ORDER BY addr)
 	LOOP
 	    IF inarange THEN
 		-- (q.a, q.n) is already a valid range
@@ -202,7 +202,7 @@ CREATE OR REPLACE FUNCTION dns.ipranges (net CIDR, lim INTEGER, grp INTEGER)
 		-- not inside a range
 		IF r.avail = 1 THEN
 		    -- start a new range (q.a, q.n)
-		    q.a := r.adr ;
+		    q.a := r.addr ;
 		    q.n := 1 ;
 		    inarange := TRUE ;
 		END IF ;
@@ -231,34 +231,40 @@ CREATE OR REPLACE FUNCTION dns.ipranges (net CIDR, lim INTEGER, grp INTEGER)
 --    2002/??/?? : pda/jean : design
 --
 
--- called when an IPv6 address is modified ($1=addr, $2=idview)
+-- called when an IPv4 address is modified ($1=addr, $2=idrr)
 CREATE OR REPLACE FUNCTION dns.gen_rev4 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_reverse4 SET generer = 1
-	    WHERE $1 <<= selection AND idview = $2 ;
+	UPDATE dns.zone_reverse4 AS z SET gen = 1
+	    FROM dns.rr
+	    WHERE $1 <<= selection
+		AND rr.idrr = $2
+		AND z.idview = rr.idview ;
 	RETURN 1 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
 
--- called when an IPv6 address is modified ($1=addr, $2=idview)
+-- called when an IPv6 address is modified ($1=addr, $2=idrr)
 CREATE OR REPLACE FUNCTION dns.gen_rev6 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_reverse6 SET generer = 1
-	    WHERE $1 <<= selection AND idview = $2 ;
+	UPDATE dns.zone_reverse6 AS z SET gen = 1
+	    FROM dns.rr
+	    WHERE $1 <<= selection
+		AND rr.idrr = $2
+		AND z.idview = rr.idview ;
 	RETURN 1 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
 
--- ID of RR ($1=idrr, $2=idview)
-CREATE OR REPLACE FUNCTION dns.gen_norm_idrr (INTEGER, INTEGER)
+-- ID of RR ($1=idrr)
+CREATE OR REPLACE FUNCTION dns.gen_norm_idrr (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_normale SET generer = 1
-		WHERE idview = $2
-		    AND selection = (
-			SELECT domain.name
+	UPDATE dns.zone_forward SET gen = 1
+		WHERE (selection, idview) = 
+			(
+			    SELECT domain.name, rr.idview
 				FROM dns.domain, dns.rr
 				WHERE rr.idrr = $1
 				    AND rr.iddom = domain.iddom
@@ -271,7 +277,7 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_idrr (INTEGER, INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_norm_iddom (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_normale SET generer = 1
+	UPDATE dns.zone_forward SET gen = 1
 		WHERE idview = $2
 		    AND selection = (
 			SELECT domain.name
@@ -283,14 +289,14 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_iddom (INTEGER, INTEGER)
     $$ LANGUAGE 'plpgsql' ;
 
 -- utility function for the mod_relay trigger function
--- called when a mail relay is modified ($1=iddom, $2=idview)
+-- called when a mail relay is modified ($1=iddom, $2=idrr of mx)
 CREATE OR REPLACE FUNCTION dns.gen_relay (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_normale SET generer = 1
-	    WHERE idview = $2
-		AND selection =
-		    (SELECT name FROM dns.domain WHERE iddom = $1) ;
+	UPDATE dns.zone_forward SET gen = 1
+	    WHERE selection = ( SELECT name FROM dns.domain WHERE iddom = $1 )
+		AND idview = ( SELECT idview FROM dns.rr WHERE idrr = $2 )
+	    ;
 	RETURN 1 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
@@ -300,7 +306,6 @@ CREATE OR REPLACE FUNCTION dns.gen_relay (INTEGER, INTEGER)
 --
 -- Input:
 --   - $1: RR id
---   - $2: view id
 -- Output:
 --   - an unused integer value, just to be able to call sum() on result
 --
@@ -308,14 +313,14 @@ CREATE OR REPLACE FUNCTION dns.gen_relay (INTEGER, INTEGER)
 --    201?/??/?? : pda/jean : design
 --
 
-CREATE OR REPLACE FUNCTION dns.gen_dhcp (INTEGER, INTEGER)
+CREATE OR REPLACE FUNCTION dns.gen_dhcp (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.view SET gendhcp = 1
 	    FROM dns.rr
 		WHERE rr.idrr = $1
 		    AND rr.mac IS NOT NULL
-		    AND view.idview = $2 ;
+		    AND view.idview = rr.idview ;
 	RETURN 1 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
@@ -332,31 +337,31 @@ CREATE OR REPLACE FUNCTION dns.mod_ip ()
     BEGIN
 	IF TG_OP = 'INSERT'
 	THEN
-	    PERFORM sum (dns.gen_rev4 (NEW.adr, NEW.idview)) ;
-	    PERFORM sum (dns.gen_rev6 (NEW.adr, NEW.idview)) ;
-	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr, NEW.idview)) ;
-	    PERFORM sum (dns.gen_dhcp (NEW.idrr, NEW.idview)) ;
+	    PERFORM sum (dns.gen_rev4 (NEW.addr, NEW.idrr)) ;
+	    PERFORM sum (dns.gen_rev6 (NEW.addr, NEW.idrr)) ;
+	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr)) ;
+	    PERFORM sum (dns.gen_dhcp (NEW.idrr)) ;
 
 	END IF ;
 
 	IF TG_OP = 'UPDATE'
 	THEN
-	    PERFORM sum (dns.gen_rev4 (NEW.adr, NEW.idview)) ;
-	    PERFORM sum (dns.gen_rev4 (OLD.adr, OLD.idview)) ;
-	    PERFORM sum (dns.gen_rev6 (NEW.adr, NEW.idview)) ;
-	    PERFORM sum (dns.gen_rev6 (OLD.adr, OLD.idview)) ;
-	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr, NEW.idview)) ;
-	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr, OLD.idview)) ;
-	    PERFORM sum (dns.gen_dhcp (NEW.idrr, NEW.idview)) ;
-	    PERFORM sum (dns.gen_dhcp (OLD.idrr, OLD.idview)) ;
+	    PERFORM sum (dns.gen_rev4 (NEW.addr, NEW.idrr)) ;
+	    PERFORM sum (dns.gen_rev4 (OLD.addr, OLD.idrr)) ;
+	    PERFORM sum (dns.gen_rev6 (NEW.addr, NEW.idrr)) ;
+	    PERFORM sum (dns.gen_rev6 (OLD.addr, OLD.idrr)) ;
+	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr)) ;
+	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr)) ;
+	    PERFORM sum (dns.gen_dhcp (NEW.idrr)) ;
+	    PERFORM sum (dns.gen_dhcp (OLD.idrr)) ;
 	END IF ;
 
 	IF TG_OP = 'DELETE'
 	THEN
-	    PERFORM sum (dns.gen_rev4 (OLD.adr, OLD.idview)) ;
-	    PERFORM sum (dns.gen_rev6 (OLD.adr, OLD.idview)) ;
-	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr, OLD.idview)) ;
-	    PERFORM sum (dns.gen_dhcp (OLD.idrr, OLD.idview)) ;
+	    PERFORM sum (dns.gen_rev4 (OLD.addr, OLD.idrr)) ;
+	    PERFORM sum (dns.gen_rev6 (OLD.addr, OLD.idrr)) ;
+	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr)) ;
+	    PERFORM sum (dns.gen_dhcp (OLD.idrr)) ;
 	END IF ;
 
 	RETURN NEW ;
@@ -375,18 +380,18 @@ CREATE OR REPLACE FUNCTION dns.mod_mxcname ()
     BEGIN
 	IF TG_OP = 'INSERT'
 	THEN
-	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr, NEW.idview)) ;
+	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr)) ;
 	END IF ;
 
 	IF TG_OP = 'UPDATE'
 	THEN
-	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr, NEW.idview)) ;
-	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr, OLD.idview)) ;
+	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr)) ;
+	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr)) ;
 	END IF ;
 
 	IF TG_OP = 'DELETE'
 	THEN
-	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr, OLD.idview)) ;
+	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr)) ;
 	END IF ;
 
 	RETURN NEW ;
@@ -404,51 +409,33 @@ CREATE OR REPLACE FUNCTION dns.mod_mxcname ()
 CREATE OR REPLACE FUNCTION dns.mod_rr ()
     RETURNS trigger AS $$
     BEGIN
-	IF TG_OP = 'INSERT'
-	THEN
-	    PERFORM sum (dns.gen_norm_iddom (NEW.iddom, idview))
-		    FROM dns.rr_ip WHERE idrr = NEW.idrr ;
-	    PERFORM sum (dns.gen_rev4 (adr, idview))
-		    FROM dns.rr_ip WHERE idrr = NEW.idrr ;
-	    PERFORM sum (dns.gen_rev6 (adr, idview))
-		    FROM dns.rr_ip WHERE idrr = NEW.idrr ;
-	    PERFORM sum (dns.gen_dhcp (idrr, idview))
-		    FROM dns.rr_ip WHERE idrr = NEW.idrr ;
-
-	END IF ;
+	-- IF TG_OP = 'INSERT'
+	-- THEN
+	    -- no need to regenerate anything since no rr_* has
+	    -- been linked to this rr yet
+	-- END IF ;
 
 	IF TG_OP = 'UPDATE'
 	THEN
-	    PERFORM sum (dns.gen_norm_iddom (NEW.iddom, idview))
-		    FROM dns.rr_ip WHERE idrr = NEW.idrr ;
-	    PERFORM sum (dns.gen_rev4 (adr, idview))
-		    FROM dns.rr_ip WHERE idrr = NEW.idrr ;
-	    PERFORM sum (dns.gen_rev6 (adr, idview))
-		    FROM dns.rr_ip WHERE idrr = NEW.idrr ;
-	    PERFORM sum (dns.gen_norm_iddom (OLD.iddom, idview))
-		    FROM dns.rr_ip WHERE idrr = OLD.idrr ;
-	    PERFORM sum (dns.gen_rev4 (adr, idview))
-		    FROM dns.rr_ip WHERE idrr = OLD.idrr ;
-	    PERFORM sum (dns.gen_rev6 (adr, idview))
-		    FROM dns.rr_ip WHERE idrr = OLD.idrr ;
-
-	    -- rr_ip (giving idview) are the same for OLD and NEW
-	    PERFORM sum (dns.gen_dhcp (idrr, idview))
-		    FROM dns.rr_ip WHERE idrr = NEW.idrr ;
+	    PERFORM sum (dns.gen_norm_iddom (NEW.iddom, NEW.idview))
+		    ;
+	    PERFORM sum (dns.gen_norm_iddom (OLD.iddom, OLD.idview))
+		    ;
+	    PERFORM sum (dns.gen_rev4 (rr_ip.addr, NEW.idrr))
+		    FROM dns.rr_ip WHERE rr_ip.idrr = NEW.idrr ;
+	    PERFORM sum (dns.gen_rev6 (rr_ip.addr, NEW.idrr))
+		    FROM dns.rr_ip WHERE rr_ip.idrr = NEW.idrr ;
+	    PERFORM sum (dns.gen_dhcp (NEW.idrr))
+		    ;
+	    -- no need to regenerate reverse/dhcp for old rr since
+	    -- IP addresses did not change
 	END IF ;
 
-	IF TG_OP = 'DELETE'
-	THEN
-	    PERFORM sum (dns.gen_norm_iddom (OLD.iddom, idview))
-		    FROM dns.rr_ip WHERE idrr = OLD.idrr ;
-	    PERFORM sum (dns.gen_rev4 (adr, idview))
-		    FROM dns.rr_ip WHERE idrr = OLD.idrr ;
-	    PERFORM sum (dns.gen_rev6 (adr, idview))
-		    FROM dns.rr_ip WHERE idrr = OLD.idrr ;
-
-	    -- no need to modify the dns.view.gendhcp column
-	    -- since all rr_ip should have been removed before
-	END IF ;
+	-- IF TG_OP = 'DELETE'
+	-- THEN
+	    -- no need to regenerate anything since all rr_* have
+	    -- already been removed before
+	-- END IF ;
 
 	RETURN NEW ;
     END ;
@@ -466,18 +453,18 @@ CREATE OR REPLACE FUNCTION dns.mod_relay ()
     BEGIN
 	IF TG_OP = 'INSERT'
 	THEN
-	    PERFORM sum (dns.gen_relay (NEW.iddom, NEW.idview)) ;
+	    PERFORM sum (dns.gen_relay (NEW.iddom, NEW.mx)) ;
 	END IF ;
 
 	IF TG_OP = 'UPDATE'
 	THEN
-	    PERFORM sum (dns.gen_relay (NEW.iddom, NEW.idview)) ;
-	    PERFORM sum (dns.gen_relay (OLD.iddom, OLD.idview)) ;
+	    PERFORM sum (dns.gen_relay (NEW.iddom, NEW.mx)) ;
+	    PERFORM sum (dns.gen_relay (OLD.iddom, OLD.mx)) ;
 	END IF ;
 
 	IF TG_OP = 'DELETE'
 	THEN
-	    PERFORM sum (dns.gen_relay (OLD.iddom, OLD.idview)) ;
+	    PERFORM sum (dns.gen_relay (OLD.iddom, OLD.mx)) ;
 	END IF ;
 
 	RETURN NEW ;
@@ -498,7 +485,7 @@ CREATE OR REPLACE FUNCTION dns.mod_zone ()
 		OR NEW.rrsup <> OLD.rrsup
 		OR NEW.selection <> OLD.selection
 	THEN
-	    NEW.generer := 1 ;
+	    NEW.gen := 1 ;
 	END IF ;
 	RETURN NEW ;
     END ;
@@ -536,16 +523,16 @@ CREATE OR REPLACE FUNCTION dns.mod_dhcp ()
 CREATE OR REPLACE FUNCTION dns.check_ip_cor (INET, INTEGER)
     RETURNS BOOLEAN AS $$
     BEGIN
-	RETURN dns.check_ip_grp ($1, idgrp) FROM global.corresp WHERE idcor = $2 ;
+	RETURN dns.check_ip_grp ($1, idgrp) FROM global.nmuser WHERE idcor = $2 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
 
 CREATE OR REPLACE FUNCTION dns.check_ip_grp (INET, INTEGER)
     RETURNS BOOLEAN AS $$
     BEGIN
-	RETURN ($1 <<= ANY (SELECT adr FROM dns.dr_ip
+	RETURN ($1 <<= ANY (SELECT addr FROM dns.p_ip
 				WHERE allow_deny = 1 AND idgrp = $2)
-	    AND NOT $1 <<= ANY (SELECT adr FROM dns.dr_ip
+	    AND NOT $1 <<= ANY (SELECT addr FROM dns.p_ip
 				WHERE allow_deny = 0 AND idgrp = $2)
 	    ) ;
     END ;
@@ -655,8 +642,8 @@ CREATE FUNCTION pgauth.soundex (TEXT)
 CREATE FUNCTION pgauth.add_soundex ()
     RETURNS TRIGGER AS '
     BEGIN
-	NEW.phnom    := pgauth.SOUNDEX (NEW.nom) ;
-	NEW.phprenom := pgauth.SOUNDEX (NEW.prenom) ;
+	NEW.phlast  := pgauth.SOUNDEX (NEW.lastname) ;
+	NEW.phfirst := pgauth.SOUNDEX (NEW.firstname) ;
 	RETURN NEW ;
     END ;
     ' LANGUAGE 'plpgsql' ;

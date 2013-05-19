@@ -29,7 +29,7 @@
 
     \titre {1} {Mail role modified}
 
-    Mail address '%NOM%' has been %ACTION%.
+    Mail address '%NAME%' has been %ACTION%.
 }
 
 }

@@ -6,7 +6,7 @@
 # Called by: net (host list by view or address map)
 #
 # Parameters (form or url):
-#   - adr: IP address (v4 at this time)
+#   - addr: IP address (v4 at this time)
 #   - idview (optional): view id (or all possible views if not provided)
 #
 # History
@@ -44,7 +44,7 @@ source %LIBNETMAGIS%
 ##############################################################################
 
 d cgi-register {} {
-    {adr	1 1}
+    {addr	1 1}
     {idview	0 1}
 } {
     global conf
@@ -52,8 +52,6 @@ d cgi-register {} {
     #
     # Check parameters
     #
-
-    set addr $adr
 
     set msg [check-ip-syntax $dbfd $addr "inet"]
     if {$msg ne ""} then {
@@ -80,7 +78,7 @@ d cgi-register {} {
     } else {
 	set idviews [list $idview]
     }
-    set msg [filter-views $dbfd tabuid "addr" $adr $idviews chkv]
+    set msg [filter-views $dbfd tabuid "addr" $addr $idviews chkv]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -99,7 +97,7 @@ d cgi-register {} {
 	array unset trr
 	array set trr $t
 
-	set fqdn "$trr(nom).$trr(domain)"
+	set fqdn "$trr(name).$trr(domain)"
 
 	if {$msg eq ""} then {
 	    set vact ""
@@ -108,7 +106,7 @@ d cgi-register {} {
 	    # Delete name
 	    #
 	    d urlset "" $conf(nextdel) [list \
-						[list "name" $trr(nom)] \
+						[list "name" $trr(name)] \
 						[list "domain" $trr(domain)] \
 						[list "idviews" $idv] \
 					    ]
@@ -139,7 +137,7 @@ d cgi-register {} {
 
 	    d urlset "" $conf(nextmod) [list \
 						[list "action" "edit"] \
-						[list "nom" $trr(nom)] \
+						[list "name" $trr(name)] \
 						[list "domain" $trr(domain)] \
 						[list "idview" $idv] \
 					    ]
@@ -200,8 +198,8 @@ d cgi-register {} {
     #
 
     d result $conf(page) [list \
-				[list %ADR%     $addr] \
-				[list %NOM%     $trr(nom)] \
+				[list %ADDR%    $addr] \
+				[list %NAME%    $trr(name)] \
 				[list %DOMAIN%  $trr(domain)] \
 				[list %ACTIONS% $actions] \
 			    ]

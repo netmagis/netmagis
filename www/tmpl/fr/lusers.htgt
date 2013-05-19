@@ -27,9 +27,9 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {%TITREPAGE%}
+    \titre {1} {%TITLEPAGE%}
 
-    %LISTECOR%
+    %LISTUSERS%
 
 }
 

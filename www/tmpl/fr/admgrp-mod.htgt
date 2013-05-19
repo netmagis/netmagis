@@ -37,7 +37,7 @@
 
     \titre {2} {Attributs généraux}
 
-    %TABDROITS%
+    %TABPERMS%
 
     \titre {2} {Vues}
 
@@ -49,19 +49,19 @@
 
     \titre {2} {Réseaux}
 
-    %TABRESEAUX%
+    %TABNETS%
 
     \titre {2} {Droits non rattachés à des réseaux}
 
-    %TABCIDRHORSRESEAU%
+    %TABCIDRALONE%
 
     \titre {2} {Profils DHCP}
 
-    %TABDHCPPROFILS%
+    %TABDHCPPROFILES%
 
     \titre {2} {Équipements}
 
-    %TABDREQ%
+    %TABPERMEQ%
 }
 
 }

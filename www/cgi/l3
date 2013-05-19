@@ -166,7 +166,7 @@ d cgi-register {} {
     # Initialization
     #
 
-    set msgsta [topo-status $dbfd $tabuid(admin)]
+    set msgsta [topo-status $dbfd $tabuid(p_admin)]
 
     set tmp /tmp/l3-[pid]
 
@@ -193,14 +193,14 @@ d cgi-register {} {
 	# Sort IP addresses
 	#
 
-	set liste {}
+	set list {}
 	foreach addr [lsort -command compare-ip [array names tabip]] {
 	    d urlset "" $conf(nextl3) [list [list "addr" $addr]]
 	    set url [d urlget ""]
-	    lappend liste [::webapp::helem "li" \
+	    lappend list [::webapp::helem "li" \
 				[::webapp::helem "a" $addr "href" $url]]
 	}
-	set liste [::webapp::helem "ul" [join $liste "\n"]]
+	set list [::webapp::helem "ul" [join $list "\n"]]
 
 	#
 	# End of script: output page and close database
@@ -209,7 +209,7 @@ d cgi-register {} {
 	d result $conf(pagen) [list \
 				    [list %MSGSTA% $msgsta] \
 				    [list %OBJETS% [mc "IP networks"]] \
-				    [list %LISTE%  $liste] \
+				    [list %LIST% $list] \
 				    [list %EQ%     ""] \
 				    [list %VLAN%   ""] \
 				    [list %ADDR%   ""] \

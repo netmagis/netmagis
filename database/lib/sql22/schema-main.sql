@@ -7,43 +7,45 @@ CREATE SCHEMA pgauth ;
 -- global schema
 ---------------------------------------------------------------------------
 
--- users and groups
+-- Netmagis users and groups
+-- We can't use names "user" and "group" since they are reserved SQL words
+-- and using them would mean quoting every request.
 
-CREATE SEQUENCE global.seq_groupe START 1 ;
-CREATE TABLE global.groupe (
+CREATE SEQUENCE global.seq_nmgroup START 1 ;
+CREATE TABLE global.nmgroup (
     idgrp	INT			-- group id
-		    DEFAULT NEXTVAL ('global.seq_groupe'),
-    nom		TEXT,			-- group name
-    admin	INT DEFAULT 0,		-- 1 if root, 0 if normal user
-    droitsmtp	INT DEFAULT 0,		-- 1 if right to manage SMTP senders
-    droitttl	INT DEFAULT 0,		-- 1 if right to edit TTL for a host
-    droitmac	INT DEFAULT 0,		-- 1 if right to access MAC module
-    droitgenl	INT DEFAULT 0,		-- 1 if right to generate a link number
+		    DEFAULT NEXTVAL ('global.seq_nmgroup'),
+    name	TEXT,			-- group name
+    p_admin	INT DEFAULT 0,		-- 1 if root, 0 if normal user
+    p_smtp	INT DEFAULT 0,		-- 1 if right to manage SMTP senders
+    p_ttl	INT DEFAULT 0,		-- 1 if right to edit TTL for a host
+    p_mac	INT DEFAULT 0,		-- 1 if right to access MAC module
+    p_genl	INT DEFAULT 0,		-- 1 if right to generate a link number
 
-    UNIQUE (nom),
+    UNIQUE (name),
     PRIMARY KEY (idgrp)
 ) ;
 
-CREATE SEQUENCE global.seq_corresp START 1 ;
-CREATE TABLE global.corresp (
+CREATE SEQUENCE global.seq_nmuser START 1 ;
+CREATE TABLE global.nmuser (
     idcor	INT			-- user id
-		    DEFAULT NEXTVAL ('global.seq_corresp'),
+		    DEFAULT NEXTVAL ('global.seq_nmuser'),
     login	TEXT,			-- user name
     present	INT,			-- 1 if present, 0 if no longer here
     idgrp	INT,			-- group
 
     UNIQUE (login),
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     PRIMARY KEY (idcor)
 ) ;
 
 -- Netmagis configuration parameters (those which are not in the
 -- configuration file)
 CREATE TABLE global.config (
-    clef	TEXT,			-- configuration key
-    valeur	TEXT,			-- key value
+    key		TEXT,			-- configuration key
+    value	TEXT,			-- key value
 
-    PRIMARY KEY (clef)
+    PRIMARY KEY (key)
 ) ;
 
 -- log
@@ -76,48 +78,48 @@ CREATE TABLE dns.domain (
 
 -- network, communities and organization descriptions
 
-CREATE SEQUENCE dns.seq_etablissement START 1 ;
-CREATE TABLE dns.etablissement (
-    idetabl	INT			-- organization id
-		    DEFAULT NEXTVAL ('dns.seq_etablissement'),
-    nom		TEXT,			-- "Example Corp."
+CREATE SEQUENCE dns.seq_organization START 1 ;
+CREATE TABLE dns.organization (
+    idorg	INT			-- organization id
+		    DEFAULT NEXTVAL ('dns.seq_organization'),
+    name	TEXT,			-- "Example Corp."
 
-    PRIMARY KEY (idetabl)
+    PRIMARY KEY (idorg)
 ) ;
 
-CREATE SEQUENCE dns.seq_communaute START 1 ;
-CREATE TABLE dns.communaute (
-    idcommu	INT			-- community id
-		    DEFAULT NEXTVAL ('dns.seq_communaute'),
-    nom		TEXT,			-- "Administration"
+CREATE SEQUENCE dns.seq_community START 1 ;
+CREATE TABLE dns.community (
+    idcomm	INT			-- community id
+		    DEFAULT NEXTVAL ('dns.seq_community'),
+    name	TEXT,			-- "Administration"
 
-    PRIMARY KEY (idcommu)
+    PRIMARY KEY (idcomm)
 ) ;
 
-CREATE SEQUENCE dns.seq_reseau START 1 ;
-CREATE TABLE dns.reseau (
-    idreseau	INT			-- network id
-		    DEFAULT NEXTVAL ('dns.seq_reseau'),
-    nom		TEXT,			-- name (ex: "Servers")
-    localisation TEXT,			-- location if any
-    adr4	CIDR,			-- IPv4 address range
-    adr6	CIDR,			-- IPv6 address range
-    idetabl	INT,			-- organization this network belongs to
-    idcommu	INT,			-- administration, R&D, etc.
-    commentaire	TEXT,			-- comment
+CREATE SEQUENCE dns.seq_network START 1 ;
+CREATE TABLE dns.network (
+    idnet	INT			-- network id
+		    DEFAULT NEXTVAL ('dns.seq_network'),
+    name	TEXT,			-- name (ex: "Servers")
+    location	TEXT,			-- location if any
+    addr4	CIDR,			-- IPv4 address range
+    addr6	CIDR,			-- IPv6 address range
+    idorg	INT,			-- organization this network belongs to
+    idcomm	INT,			-- administration, R&D, etc.
+    comment	TEXT,			-- comment
     dhcp	INT DEFAULT 0,		-- activate DHCP (1) or no (0)
     gw4		INET,			-- default network IPv4 gateway
     gw6		INET,			-- default network IPv6 gateway
 
-    CONSTRAINT au_moins_un_prefixe_v4_ou_v6
-	CHECK (adr4 IS NOT NULL OR adr6 IS NOT NULL),
-    CONSTRAINT gw4_in_net CHECK (gw4 <<= adr4),
-    CONSTRAINT gw6_in_net CHECK (gw6 <<= adr6),
+    CONSTRAINT at_least_one_prefix_v4_or_v6
+	CHECK (addr4 IS NOT NULL OR addr6 IS NOT NULL),
+    CONSTRAINT gw4_in_net CHECK (gw4 <<= addr4),
+    CONSTRAINT gw6_in_net CHECK (gw6 <<= addr6),
     CONSTRAINT dhcp_needs_ipv4_gateway
 	CHECK (dhcp = 0 OR (dhcp != 0 AND gw4 IS NOT NULL)),
-    FOREIGN KEY (idetabl) REFERENCES dns.etablissement (idetabl),
-    FOREIGN KEY (idcommu) REFERENCES dns.communaute    (idcommu),
-    PRIMARY KEY (idreseau)
+    FOREIGN KEY (idorg) REFERENCES dns.organization (idorg),
+    FOREIGN KEY (idcomm) REFERENCES dns.community (idcomm),
+    PRIMARY KEY (idnet)
 ) ;
 
 
@@ -148,10 +150,10 @@ CREATE TABLE dns.zone (
     version	INT,			-- version number
     prologue	TEXT,			-- zone prologue (with %ZONEVERSION% pattern)
     rrsup	TEXT,			-- added to each generated host
-    generer	INT			-- modified since last generation
+    gen		INT			-- modified since last generation
 ) ;
 
-CREATE TABLE dns.zone_normale (
+CREATE TABLE dns.zone_forward (
     selection	TEXT,			-- criterion to select names
 
     UNIQUE (name),
@@ -181,59 +183,58 @@ CREATE SEQUENCE dns.seq_hinfo MINVALUE 0 START 0 ;
 CREATE TABLE dns.hinfo (
     idhinfo	INT			-- host type id
 		    DEFAULT NEXTVAL ('dns.seq_hinfo'),
-    texte	TEXT,			-- type as text
-    tri		INT,			-- sort class
+    name	TEXT,			-- type as text
+    sort	INT,			-- sort class
     present	INT,			-- present or not
     PRIMARY KEY (idhinfo)
 ) ;
 
 -- ranges allowed to groups
 
-CREATE TABLE dns.dr_reseau (
+CREATE TABLE dns.p_network (
     idgrp	INT,			-- the group which manages this network
-    idreseau	INT,			-- the network
-    tri		INT,			-- sort class
+    idnet	INT,			-- the network
+    sort	INT,			-- sort class
     dhcp	INT DEFAULT 0,		-- perm to manage DHCP ranges
     acl		INT DEFAULT 0,		-- perm to manage ACL (later...)
 
-    FOREIGN KEY (idgrp)    REFERENCES global.groupe (idgrp),
-    FOREIGN KEY (idreseau) REFERENCES dns.reseau (idreseau),
-    PRIMARY KEY (idgrp, idreseau)
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
+    FOREIGN KEY (idnet) REFERENCES dns.network (idnet),
+    PRIMARY KEY (idgrp, idnet)
 ) ;
 
 -- domains allowed to groups
 
-CREATE TABLE dns.dr_dom (
+CREATE TABLE dns.p_dom (
     idgrp	INT,			-- group
     iddom	INT,			-- domain id
-    tri		INT,			-- sort class
-    rolemail	INT DEFAULT 0,		-- perm to manage mail roles
-    roleweb	INT DEFAULT 0,		-- perm to manage web roles (later...)
+    sort	INT,			-- sort class
+    mailrole	INT DEFAULT 0,		-- perm to manage mail roles
 
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     PRIMARY KEY (idgrp, iddom)
 ) ;
 
 -- IP ranges allowed to groups
 
-CREATE TABLE dns.dr_ip (
+CREATE TABLE dns.p_ip (
     idgrp	INT,			-- group
-    adr		CIDR,			-- network range
+    addr	CIDR,			-- network range
     allow_deny	INT,			-- 1 = allow, 0 = deny
 
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
-    PRIMARY KEY (idgrp, adr)
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
+    PRIMARY KEY (idgrp, addr)
 ) ;
 
 -- views allowed to groups
 
-CREATE TABLE dns.dr_view (
+CREATE TABLE dns.p_view (
     idgrp	INT,			-- group
     idview	INT,			-- the view
     sort	INT,			-- sort class
     selected	INT,			-- selected by default in menus
 
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp),
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp),
     FOREIGN KEY (idview) REFERENCES dns.view (idview),
     PRIMARY KEY (idgrp, idview)
 ) ;
@@ -241,27 +242,27 @@ CREATE TABLE dns.dr_view (
 
 -- DHCP profiles
 
-CREATE SEQUENCE dns.seq_dhcpprofil START 1 ;
-CREATE TABLE dns.dhcpprofil (
-    iddhcpprofil INT			-- DHCP profile id
-		    DEFAULT NEXTVAL ('dns.seq_dhcpprofil'),
-    nom 	TEXT UNIQUE,		-- DHCP profile name
-    texte	TEXT,			-- text to add before host declarations
+CREATE SEQUENCE dns.seq_dhcpprofile START 1 ;
+CREATE TABLE dns.dhcpprofile (
+    iddhcpprof	INT			-- DHCP profile id
+		    DEFAULT NEXTVAL ('dns.seq_dhcpprofile'),
+    name 	TEXT UNIQUE,		-- DHCP profile name
+    text	TEXT,			-- text to add before host declarations
 
-    CHECK (iddhcpprofil >= 1),
-    PRIMARY KEY (iddhcpprofil)
+    CHECK (iddhcpprof >= 1),
+    PRIMARY KEY (iddhcpprof)
 ) ;
 
 -- DHCP profiles allowed to groups
 
-CREATE TABLE dns.dr_dhcpprofil (
+CREATE TABLE dns.p_dhcpprofile (
     idgrp	INT,			-- group
-    iddhcpprofil INT,			-- DHCP profil
-    tri		INT,			-- sort class
+    iddhcpprof	INT,			-- DHCP profile
+    sort	INT,			-- sort class
 
-    FOREIGN KEY (idgrp)        REFERENCES global.groupe  (idgrp),
-    FOREIGN KEY (iddhcpprofil) REFERENCES dns.dhcpprofil (iddhcpprofil),
-    PRIMARY KEY (idgrp, iddhcpprofil)
+    FOREIGN KEY (idgrp)      REFERENCES global.nmgroup  (idgrp),
+    FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
+    PRIMARY KEY (idgrp, iddhcpprof)
 ) ;
 
 -- DHCP dynamic ranges
@@ -275,11 +276,11 @@ CREATE TABLE dns.dhcprange (
     iddom	INT,			-- domain returned by DHCP server
     default_lease_time	INT DEFAULT 0,	-- unit = second
     max_lease_time	INT DEFAULT 0,	-- unit = second
-    iddhcpprofil	INT,		-- DHCP profile for this range
+    iddhcpprof	INT,			-- DHCP profile for this range
 
     CHECK (min <= max),
     FOREIGN KEY (iddom) REFERENCES dns.domain (iddom),
-    FOREIGN KEY (iddhcpprofil) REFERENCES dns.dhcpprofil(iddhcpprofil),
+    FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
     PRIMARY KEY (iddhcprange)
 ) ;
 
@@ -289,99 +290,81 @@ CREATE SEQUENCE dns.seq_rr START 1 ;
 CREATE TABLE dns.rr (
     idrr	INT			-- RR id
 		    DEFAULT NEXTVAL ('dns.seq_rr'),
-    nom		TEXT,			-- name of RR (first component)
+    name	TEXT,			-- name of RR (first component)
     iddom	INT,			-- domain name of RR
+    idview	INT,			-- view id
 
-    mac		MACADDR UNIQUE,		-- MAC address or NULL
-    iddhcpprofil INT,			-- DHCP profile or NULL
+    mac		MACADDR,		-- MAC address or NULL
+    iddhcpprof	INT,			-- DHCP profile or NULL
 
     idhinfo	INT DEFAULT 0,		-- host type
-    commentaire	TEXT,			-- comment
-    respnom	TEXT,			-- name of responsible person
-    respmel	TEXT,			-- mail address of responsible person
+    comment	TEXT,			-- comment
+    respname	TEXT,			-- name of responsible person
+    respmail	TEXT,			-- mail address of responsible person
 
     idcor	INT,			-- last mod author
     date	TIMESTAMP (0) WITHOUT TIME ZONE		-- last mod date
 		    DEFAULT CURRENT_TIMESTAMP,
-    droitsmtp	INT DEFAULT 0,		-- 1 if this host may emit with SMTP
+    sendsmtp	INT DEFAULT 0,		-- 1 if this host may emit with SMTP
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
-    FOREIGN KEY (idcor)        REFERENCES global.corresp (idcor),
-    FOREIGN KEY (iddom)        REFERENCES dns.domain     (iddom),
-    FOREIGN KEY (iddhcpprofil) REFERENCES dns.dhcpprofil (iddhcpprofil),
-    FOREIGN KEY (idhinfo)      REFERENCES dns.hinfo      (idhinfo),
-    UNIQUE (nom, iddom),
+    FOREIGN KEY (idcor)      REFERENCES global.nmuser   (idcor),
+    FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
+    FOREIGN KEY (idview)     REFERENCES dns.view        (idview),
+    FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
+    FOREIGN KEY (idhinfo)    REFERENCES dns.hinfo       (idhinfo),
+    UNIQUE (name, iddom, idview),
+    -- MAC address should be unique in a view
+    UNIQUE (mac, idview),
     PRIMARY KEY (idrr)
 ) ;
 
 CREATE TABLE dns.rr_ip (
     idrr	INT,			-- RR
-    adr		INET,			-- IP (v4 or v6) address
-    idview	INT,			-- view in which this host is
+    addr	INET,			-- IP (v4 or v6) address
 
     FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    PRIMARY KEY (idrr, adr, idview)
+    PRIMARY KEY (idrr, addr)
 ) ;
 
 CREATE TABLE dns.rr_cname (
     idrr	INT,			-- RR
     cname	INT,			-- pointed RR id
-    idview	INT,			-- view in which CNAME and pointed RR are
 
     FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
     FOREIGN KEY (cname)  REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    PRIMARY KEY (idrr, cname, idview)
+    PRIMARY KEY (idrr, cname)
 ) ;
 
 CREATE TABLE dns.rr_mx (
     idrr	INT,			-- RR
-    priorite	INT,			-- priority
+    prio	INT,			-- priority
     mx		INT,			-- pointed RR id
-    idview	INT,			-- view in which MX and pointed RR are
 
     FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
     FOREIGN KEY (mx)     REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    PRIMARY KEY (idrr, mx, idview)
-) ;
-
--- Web roles (not used at this time)
-CREATE TABLE dns.role_web (
-    idrr	INT,			-- Web server id
-    idview	INT,			-- view in which RR is
-
-    FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idview) REFERENCES dns.view (idview),
-    PRIMARY KEY (idrr, idview)
+    PRIMARY KEY (idrr, mx)
 ) ;
 
 -- Mail roles
-CREATE TABLE dns.role_mail (
-    idrr	INT,			-- id of "mail address"
-    idviewrr	INT,			-- view in which RR is
-    heberg	INT,			-- RR holding mboxes for this address
-    idviewheb	INT,			-- view in which mbox RR is
+CREATE TABLE dns.mail_role (
+    mailaddr	INT,			-- id of "mail address"
+    mboxhost	INT,			-- RR holding mboxes for this address
 
-    FOREIGN KEY (idrr)      REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idviewrr)  REFERENCES dns.view (idview),
-    FOREIGN KEY (heberg)    REFERENCES dns.rr (idrr),
-    FOREIGN KEY (idviewheb) REFERENCES dns.view (idview),
-    PRIMARY KEY (idrr, idviewrr)
+    FOREIGN KEY (mailaddr) REFERENCES dns.rr (idrr),
+    FOREIGN KEY (mboxhost) REFERENCES dns.rr (idrr),
+    PRIMARY KEY (mailaddr)
 ) ;
 
 -- Mail relays for a domain
-CREATE TABLE dns.relais_dom (
+CREATE TABLE dns.relay_dom (
     iddom	INT,			-- domain id
-    priorite	INT,			-- MX priority
+    prio	INT,			-- MX priority
     mx		INT,			-- relay host for this domain
-    idview	INT,			-- view in which MX is
 
     FOREIGN KEY (iddom)  REFERENCES dns.domain  (iddom),
     FOREIGN KEY (mx)     REFERENCES dns.rr      (idrr),
-    FOREIGN KEY (idview) REFERENCES dns.view    (idview),
-    PRIMARY KEY (iddom, mx, idview)
+    PRIMARY KEY (iddom, mx)
 ) ;
 
 ---------------------------------------------------------------------------
@@ -408,7 +391,7 @@ CREATE TABLE topo.ifchanges (
     reqdate	TIMESTAMP (0)		-- request date
 		    WITHOUT TIME ZONE
 		    DEFAULT CURRENT_TIMESTAMP,
-    idrr	INT,			-- equipement id
+    eq		TEXT,			-- fully qualified equipement name
     iface	TEXT,			-- interface name
     ifdesc	TEXT,			-- interface description
     ethervlan	INT,			-- access vlan id
@@ -418,8 +401,7 @@ CREATE TABLE topo.ifchanges (
 		     WITHOUT TIME ZONE,
     modlog	TEXT,			-- modification (or last attempt) log
 
-    FOREIGN KEY (idrr) REFERENCES dns.rr (idrr),
-    PRIMARY KEY (idrr, reqdate, iface)
+    PRIMARY KEY (eq, reqdate, iface)
 ) ;
 
 -- Last rancid run
@@ -451,13 +433,13 @@ CREATE TABLE topo.ignoreequsers (
 
 -- Access rights to equipements
 
-CREATE TABLE topo.dr_eq (
+CREATE TABLE topo.p_eq (
     idgrp	INT,			-- group upon which this access right applies
     rw		INT,			-- 0 : read, 1 : write
     pattern	TEXT NOT NULL,		-- regular expression
     allow_deny	INT,			-- 1 = allow, 0 = deny
 
-    FOREIGN KEY (idgrp) REFERENCES global.groupe (idgrp)
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp)
 ) ;
 
 -- Sensor definition
@@ -587,16 +569,16 @@ CREATE TABLE topo.link (
 CREATE TABLE pgauth.user (
     login	TEXT,			-- login name
     password	TEXT,			-- crypted password
-    nom		TEXT,			-- name
-    prenom	TEXT,			-- christian name
-    mel		TEXT,			-- mail address
-    tel		TEXT,			-- telephone number
+    lastname	TEXT,			-- last name
+    firstname	TEXT,			-- first name
+    mail	TEXT,			-- mail address
+    phone	TEXT,			-- telephone number
     mobile	TEXT,			-- mobile phone number
     fax		TEXT,			-- facsimile number
-    adr		TEXT,			-- postal address
+    addr	TEXT,			-- postal address
     -- columns automatically managed by triggers
-    phnom	TEXT,			-- phonetical name
-    phprenom	TEXT,			-- phonetical christian name
+    phlast	TEXT,			-- phonetical last name
+    phfirst	TEXT,			-- phonetical first name
 
     PRIMARY KEY (login)
 ) ;

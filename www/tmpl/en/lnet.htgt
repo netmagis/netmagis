@@ -50,14 +50,14 @@
 	    \lignetableau {
 		\casetableau {} {... matching network prefix}
 		\multicasetableau {4} {} {
-		    <INPUT TYPE="text" NAME="adr" SIZE=49>
+		    <INPUT TYPE="text" NAME="addr" SIZE=49>
 		}
 	    }
 	    \lignetableau {
 		\casetableau {} {... whose organization is}
-		\casetableau {} {%LISTEETABL%}
+		\casetableau {} {%LISTORG%}
 		\casetableau {} {... whose community is}
-		\casetableau {} {%LISTECOMMU%}
+		\casetableau {} {%LISTCOMM%}
 	    }
 	    \lignetableau {
 		\multicasetableau {4} {
@@ -69,9 +69,9 @@
 	    }
 	    \lignetableau {
 		\casetableau {} {... primary by}
-		\casetableau {} {%MENUTRI1%}
+		\casetableau {} {%MENUSORT1%}
 		\casetableau {} {... secondary by}
-		\casetableau {} {%MENUTRI2%}
+		\casetableau {} {%MENUSORT2%}
 	    }
 	    \lignetableau {
 		\multicasetableau {4} {

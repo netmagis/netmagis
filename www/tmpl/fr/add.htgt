@@ -67,7 +67,7 @@
 			\lignetableau {
 			    \casetableau {} {Nom}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+				<INPUT TYPE="TEXT" NAME="name" SIZE="30">
 				.
 				%DOMAIN%
 			    }
@@ -77,7 +77,7 @@
 			\lignetableau {
 			    \casetableau {} {Adresse IP}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="adr" SIZE="45" VALUE="%ADR%">
+				<INPUT TYPE="TEXT" NAME="addr" SIZE="45" VALUE="%ADDR%">
 			    }
 			    \casetableau {} {%VIEWLIBELLE%}
 			    \casetableau {} {%VIEWVAL%}
@@ -87,31 +87,31 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="mac" SIZE="20" MAXLENGTH="17">
 			    }
-			    \casetableau {} {%DHCPPROFILLIBELLE%}
-			    \casetableau {} {%DHCPPROFILMENU%}
+			    \casetableau {} {%DHCPPROFLIBELLE%}
+			    \casetableau {} {%DHCPPROFMENU%}
 			}
 			\lignetableau {
 			    \casetableau {} {Type de machine}
 			    \casetableau {} {%MENUHINFO%}
-			    \casetableau {} {%DROITSMTPLIBELLE%}
-			    \casetableau {} {%DROITSMTPMENU%}
+			    \casetableau {} {%SENDSMTPLIBELLE%}
+			    \casetableau {} {%SENDSMTPMENU%}
 			}
 			\lignetableau {
 			    \casetableau {} {Infos complémentaires}
 			    \multicasetableau {3} {} {
-				<INPUT TYPE="TEXT" NAME="commentaire" SIZE="50">
+				<INPUT TYPE="TEXT" NAME="comment" SIZE="50">
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {Responsable (nom et prénom)}
 			    \multicasetableau {3} {} {
-				<INPUT TYPE="TEXT" NAME="respnom" SIZE="50">
+				<INPUT TYPE="TEXT" NAME="respname" SIZE="50">
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {Responsable (mél)}
 			    \multicasetableau {3} {} {
-				<INPUT TYPE="TEXT" NAME="respmel" SIZE="50">
+				<INPUT TYPE="TEXT" NAME="respmail" SIZE="50">
 			    }
 			}
 			\lignetableau {
@@ -144,7 +144,7 @@
 	    \casetableau {} {
 		<FORM METHOD="POST" ACTION="%URLFORM2%">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="add-multi">
-		    <INPUT TYPE="HIDDEN" NAME="tri" VALUE="adr">
+		    <INPUT TYPE="HIDDEN" NAME="tri" VALUE="addr">
 		    \tableau {
 			\bordure {0} {}
 			\taille {100}
@@ -161,7 +161,7 @@
 			\lignetableau {
 			    \casetableau {} {Nombre d'adresses consécutives}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nbadr" SIZE="30" VALUE="1">
+				<INPUT TYPE="TEXT" NAME="naddr" SIZE="30" VALUE="1">
 			    }
 			}
 			\lignetableau {
@@ -210,7 +210,7 @@
 				    \lignetableau {
 					\casetableau {} {Nom de l'alias}
 					\casetableau {} {
-					    <INPUT TYPE="TEXT" NAME="nom" SIZE="30">
+					    <INPUT TYPE="TEXT" NAME="name" SIZE="30">
 					    .
 					    %DOMAIN%
 					}
@@ -218,7 +218,7 @@
 				    \lignetableau {
 					\casetableau {} {Pointe vers}
 					\casetableau {} {
-					    <INPUT TYPE="TEXT" NAME="nomref" SIZE="30">
+					    <INPUT TYPE="TEXT" NAME="nameref" SIZE="30">
 					    .
 					    %DOMAINREF%
 					}

@@ -171,12 +171,12 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
     # XXX: range selection should depend on the view
     #
 
-    set sql "SELECT HOST(reseau.adr4) AS addr, domain.name AS dom, dhcprange.*
-		    FROM dns.reseau, dns.dhcprange, dns.domain
-		    WHERE reseau.dhcp > 0
+    set sql "SELECT HOST(network.addr4) AS addr, domain.name AS dom, dhcprange.*
+		    FROM dns.network, dns.dhcprange, dns.domain
+		    WHERE network.dhcp > 0
 			    AND domain.iddom = dhcprange.iddom
-			    AND dhcprange.min <<= reseau.adr4
-			    AND dhcprange.max <<= reseau.adr4
+			    AND dhcprange.min <<= network.addr4
+			    AND dhcprange.max <<= network.addr4
 		    "
     pg_select $dbfd $sql tab {
 	if {$tab(default_lease_time) == 0} then {
@@ -190,7 +190,7 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 					$tab(max) \
 					$tab(default_lease_time) \
 					$tab(max_lease_time) \
-					$tab(iddhcpprofil) \
+					$tab(iddhcpprof) \
 				    ]
     }
 
@@ -198,11 +198,11 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
     # Get all DHCP profiles (not dependant on the view)
     #
 
-    set sql "SELECT iddhcpprofil, nom, texte FROM dns.dhcpprofil"
+    set sql "SELECT iddhcpprof, name, text FROM dns.dhcpprofile"
     pg_select $dbfd $sql tab {
-	set id $tab(iddhcpprofil)
-	set dhcpprofil($id)      $tab(texte)
-	set dhcpprofil($id:name) $tab(nom)
+	set id $tab(iddhcpprof)
+	set dhcpprofile($id)      $tab(text)
+	set dhcpprofile($id:name) $tab(name)
     }
 
     #
@@ -219,29 +219,29 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 	    lappend l $e
 	}
     }
-    set dhcpprofil(:default) [join $l "\n"]
-    set dhcpprofil(:default:name) "hosts without a profile"
+    set dhcpprofile(:default) [join $l "\n"]
+    set dhcpprofile(:default:name) "hosts without a profile"
 
     #
     # Generates configuration for each DHCP-enabled IPv4 network
     #
 
-    set sql "SELECT HOST(adr4) AS network, MASKLEN(adr4) AS masklen,
-			    NETMASK(adr4) AS netmask, gw4, nom
-		    FROM dns.reseau
+    set sql "SELECT HOST(addr4) AS prefix, MASKLEN(addr4) AS masklen,
+			    NETMASK(addr4) AS netmask, gw4, name
+		    FROM dns.network
 		    WHERE dhcp > 0 AND gw4 IS NOT NULL
-		    ORDER BY network
+		    ORDER BY prefix
 		    "
     pg_select $dbfd $sql tab {
-	set network $tab(network)
+	set network $tab(prefix)
 	set masklen $tab(masklen)
 
-	lappend txt "# $tab(nom)"
+	lappend txt "# $tab(name)"
 	lappend txt "subnet $network netmask $tab(netmask) $lbkt"
 	lappend txt "\toption routers $tab(gw4);"
 	if {[info exists range($network)]} then {
 	    foreach pool $range($network) {
-		lassign $pool dom min max default_lease_time max_lease_time iddhcpprofil
+		lassign $pool dom min max default_lease_time max_lease_time iddhcpprof
 
 		lappend txt "\tpool $lbkt"
 
@@ -249,8 +249,8 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 		    lappend txt "\t\t$dhcpfailover"
 		}
 		set addprofile ""
-		if {[info exists dhcpprofil($iddhcpprofil)]} then {
-		    set addprofile $dhcpprofil($iddhcpprofil)
+		if {[info exists dhcpprofile($iddhcpprof)]} then {
+		    set addprofile $dhcpprofile($iddhcpprof)
 		    lappend txt [indent-profile $addprofile 2]
 		}
 		lappend txt "\t\trange $min $max;"
@@ -292,26 +292,26 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 	#
 
 	array unset groups
-	set sql2 "SELECT rr.nom || '.' || domain.name AS host,
+	set sql2 "SELECT rr.name || '.' || domain.name AS host,
 			    rr.mac,
-			    rr_ip.adr,
-			    rr.iddhcpprofil
-			FROM dns.rr, dns.domain, dns.rr_ip, dns.reseau
-			WHERE ($idview = -1 OR idview = $idview)
+			    rr_ip.addr,
+			    rr.iddhcpprof
+			FROM dns.rr, dns.domain, dns.rr_ip, dns.network
+			WHERE ($idview = -1 OR rr.idview = $idview)
 			    AND rr.iddom = domain.iddom
 			    AND rr.idrr = rr_ip.idrr
-			    AND rr_ip.adr <<= '$network/$masklen'
-			    AND reseau.adr4 = '$network/$masklen'
-			    AND reseau.dhcp > 0
+			    AND rr_ip.addr <<= '$network/$masklen'
+			    AND network.addr4 = '$network/$masklen'
+			    AND network.dhcp > 0
 			    AND rr.mac IS NOT NULL
-			ORDER BY rr.iddhcpprofil, rr_ip.adr
+			ORDER BY rr.iddhcpprof, rr_ip.addr
 			"
 	pg_select $dbfd $sql2 tab2 {
-	    set ip $tab2(adr)
+	    set ip $tab2(addr)
 	    set host $tab2(host)
 
 	    # Empty if no profile
-	    set id $tab2(iddhcpprofil)
+	    set id $tab2(iddhcpprof)
 	    if {$id eq ""} then {
 		set id ":default"
 	    }
@@ -329,7 +329,7 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 	    append groups($id) "\t\t\tstash-agent-options true;\n"
 
 	    append groups($id) "\t\t\thardware ethernet $tab2(mac);\n"
-	    append groups($id) "\t\t\tfixed-address $tab2(adr);\n"
+	    append groups($id) "\t\t\tfixed-address $ip;\n"
 	    append groups($id) "\t\t\toption host-name \"$host\";\n"
 	    append groups($id) "\t\t$rbkt\n"
 	}
@@ -339,9 +339,9 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 	#
 
 	foreach id [lsort [array names groups]] {
-	    lappend txt "\tgroup $lbkt # start group for $dhcpprofil($id:name)"
-	    if {[info exists dhcpprofil($id)]} then {
-		set addprofile $dhcpprofil($id)
+	    lappend txt "\tgroup $lbkt # start group for $dhcpprofile($id:name)"
+	    if {[info exists dhcpprofile($id)]} then {
+		set addprofile $dhcpprofile($id)
 		lappend txt [indent-profile $addprofile 2]
 
 		# Add a domain name if profile does not provide one
@@ -357,10 +357,10 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 		lappend err "Unknown DHCP profile '$id'"
 	    }
 	    lappend txt $groups($id)
-	    lappend txt "\t$rbkt # end group for $dhcpprofil($id:name)"
+	    lappend txt "\t$rbkt # end group for $dhcpprofile($id:name)"
 	}
 
-	lappend txt "$rbkt # end subnet $tab(nom)"
+	lappend txt "$rbkt # end subnet $tab(name)"
 	lappend txt ""
     }
 
@@ -457,7 +457,7 @@ proc main {argv0 argv} {
     # Lock tables such as we do not miss some modification
     #
 
-    set msg [d dblock {dns.view dns.rr dns.reseau dns.dhcprange}]
+    set msg [d dblock {dns.view dns.rr dns.network dns.dhcprange}]
     if {$msg ne ""} then {
 	d error $msg
     }

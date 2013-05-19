@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Modification des communautés
+    Netmagis - Modification des organismes
 }
 
 \*******************************************************************************
@@ -27,18 +27,18 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Gestion des communautés}
+    \titre {1} {Gestion des organismes}
 
-    \titre {2} {\ancre {nom} {Intitulé}}
+    \titre {2} {\ancre {name} {Intitulé}}
 
-	Intitulé de la communauté.
+	Intitulé de l'organisme.
 
 	Exemple~:
-	    \retrait {\verbatim {Administration}}
+	    \retrait {\verbatim {Nations Unies}}
 
-	Attention~: l'intitulé peut changer, mais la communauté
-	reste la même. Tous les réseaux associés à cette communauté
-	restent associés avec le nouveau nom.
+	Attention~: l'intitulé peut changer, mais l'organisme
+	reste le même. Autrement, tous les réseaux associés à cet
+	organisme restent associés avec le nouveau nom.
 }
 
 }

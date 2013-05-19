@@ -29,16 +29,16 @@
 
     %MESSAGE%
 \*    Plusieurs comptes
-\*	1- présentent des similitudes avec '%NOM%'.
+\*	1- présentent des similitudes avec '%LASTNAME%'.
 \*	2- répondent aux critères
 \*
 \*    Choisissez celui qui vous convient
 \*	1- .
 \*	2- , ou alors demandez la création d'un nouveau.
 
-    %LISTEUTILISATEURS%
+    %LISTUSERS%
 
-    %AUCUN%
+    %NONE%
 }
 
 }

@@ -35,19 +35,23 @@
 
     \titre {2} {Réseaux}
 
-    %TABRESEAUX%
+    %TABNETWORKS%
 
-    \titre {2} {%TITRECIDRHORSRESEAU%}
+    \titre {2} {%TITLECIDRALONE%}
 
-    %TABCIDRHORSRESEAU%
+    %TABCIDRALONE%
 
     \titre {2} {Domaines}
 
     %TABDOMAINS%
 
+    \titre {2} {Vues}
+
+    %TABVIEWS%
+
     \titre {2} {Profils DHCP}
 
-    %TABDHCPPROFIL%
+    %TABDHCPPROFILE%
 }
 
 }

@@ -9,7 +9,7 @@
 # History
 #   2002/02/11 : pda        : design
 #   2002/02/12 : pda/jean   : adapt to new data model
-#   2002/04/19 : pda/jean   : unique constraint on nom+domain
+#   2002/04/19 : pda/jean   : unique constraint on name+domain
 #   2002/04/19 : pda        : unique constraint on domain name
 #   2002/04/23 : pda        : add priority in domain permissions
 #   2002/04/23 : pda/jean   : add zone generation management
@@ -24,7 +24,7 @@
 #   2011/01/21 : pda        : use new config file
 #   2011/07/17 : pda        : defuser is given a value and created
 #   2011/12/28 : pda        : add dotattr table
-#   2012/01/21 : jean       : add droitgenl attribute
+#   2012/01/21 : jean       : add p_genl attribute
 #   2012/04/08 : pda        : simplify users
 #   2012/04/08 : pda        : mac database creation
 #   2012/06/15 : pda/jean   : drop -u/-w for an obsolete privileged user
@@ -233,7 +233,7 @@ netmagis_insert_config ()
 {
     psql --no-psqlrc --quiet --file - <<'EOF'
 
-    COPY global.config (clef, valeur) FROM stdin;
+    COPY global.config (key, value) FROM stdin;
 datefmt	%d/%m/%Y %H:%M:%S
 jourfmt	%a %d %b %Y
 authmethod	pgsql
@@ -282,7 +282,7 @@ schemaversion	22
 \.
 
     -- id 0 is used in zone creation script
-    COPY dns.hinfo (texte, tri, present) FROM stdin;
+    COPY dns.hinfo (name, sort, present) FROM stdin;
 Unspecified	0	0
 PC/Windows	10	1
 PC/Unix	20	1
@@ -375,12 +375,12 @@ authadmin	Administrators of internal PostgreSQL auth	1
 netmagis	Netmagis users	0
 \.
 
-    COPY global.groupe (nom, admin) FROM stdin;
+    COPY global.nmgroup (name, p_admin) FROM stdin;
 wheel	1
 \.
 EOF
 
-    psql --no-psqlrc --quiet -c "INSERT INTO global.config
+    psql --no-psqlrc --quiet -c "INSERT INTO global.config (key, value)
 					VALUES ('defuser', '$defuser')"
 }
 
@@ -392,11 +392,11 @@ netmagis_create_user ()
 {
     user="$1"
     psql --no-psqlrc --quiet --file - <<EOF
-    INSERT INTO pgauth.user (login, password, nom, prenom)
+    INSERT INTO pgauth.user (login, password, lastname, firstname)
 	VALUES ('$user', '*', 'Boss', 'Joe') ;
     INSERT INTO pgauth.member (login, realm) VALUES ('$user', 'authadmin') ;
     INSERT INTO pgauth.member (login, realm) VALUES ('$user', 'netmagis') ;
-    INSERT INTO global.corresp (login, present, idgrp) VALUES ('$user', 1, 1) ;
+    INSERT INTO global.nmuser (login, present, idgrp) VALUES ('$user', 1, 1) ;
 EOF
 
     if [ "$pwgen" != "" -a "$crypt" != "" ]

@@ -43,7 +43,7 @@
     \titre {2} {\ancre {selection} {RR selection criterion}}
 
 	Criterion to select resource records for this zone. For a
-	standard zone, it is a domain name. For a reverse (IPv4 or
+	forward zone, it is a domain name. For a reverse (IPv4 or
 	IPv6) zone, it is a network prefix.
 
 	Examples~:
@@ -117,13 +117,13 @@ $TTL	86400
     \titre {2} {\ancre {rrsup} {Addtl RR}}
 
 	Text to add after each A or MX resource record. This
-	text must contains string \gras {%NOM%}, which will
+	text must contains string \gras {%NAME%}, which will
 	be replaced by the RR name.
 
 	Example~:
 	\retrait {
-	    \verbatim {%NOM%	IN	MX	10 mailhost.example.com.
-%NOM%	IN	MX	20 mailhost2.example.com.}
+	    \verbatim {%NAME%	IN	MX	10 mailhost.example.com.
+%NAME%	IN	MX	20 mailhost2.example.com.}
 	}
 }
 

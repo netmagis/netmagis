@@ -65,7 +65,7 @@ d cgi-register {} {
     # Initialization
     #
 
-    set msgsta [topo-status $dbfd $tabuid(admin)]
+    set msgsta [topo-status $dbfd $tabuid(p_admin)]
 
     #
     # Check graph id according to user's rights
@@ -158,7 +158,7 @@ d cgi-register {} {
     d result $conf(page) [list \
 			    [list %ADMIN%  "admin (future use)"] \
 			    [list %MSGSTA% $msgsta] \
-			    [list %TITRE%  $titre] \
+			    [list %TITLE%  $titre] \
 			    [list %ID%     $hid] \
 			    [list %JDEBUT% $jdebut] \
 			    [list %HDEBUT% $hdebut] \

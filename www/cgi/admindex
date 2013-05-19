@@ -47,8 +47,8 @@ d cgi-register {} {} {
 	set up [string toupper $script]
 	d urlset "%URL$up%" "$script" {}
     }
-    foreach ref {etabl commu hinfo reseau domain view
-    			zone zone4 zone6 dhcpprofil
+    foreach ref {org comm hinfo net domain view
+    			zone zone4 zone6 dhcpprof
 			vlan eq eqtype confcmd dotattr} {
 	set up [string toupper $ref]
 	set args [list [list "type" $ref]]

@@ -27,7 +27,7 @@
 
     \titre {1} {Action done}
 
-    %TITREACTION% action has been done.
+    %TITLEACTION% action has been done.
 
     %COMPLEMENT%
 }

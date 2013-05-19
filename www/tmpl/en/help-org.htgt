@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Communities
+    Netmagis - Organizations
 }
 
 \*******************************************************************************
@@ -27,17 +27,17 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Community management}
+    \titre {1} {Organisation management}
 
-    \titre {2} {\ancre {nom} {Name}}
+    \titre {2} {\ancre {name} {Name}}
 
-	Name of community.
+	Organization name.
 
-	Example~:
-	    \retrait {\verbatim {Administration}}
+	Exemple~:
+	    \retrait {\verbatim {United Nations}}
 
-	Notice: name may change, but community is still the same.
-	All networks associated to this community keep associated
+	Notice: name may change, but organization is still the same.
+	All networks associated to this organization keep associated
 	with the new name.
 }
 

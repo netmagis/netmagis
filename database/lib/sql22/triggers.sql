@@ -27,11 +27,11 @@ CREATE TRIGGER tr_mod_rr
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_rr () ;
 
 CREATE TRIGGER tr_mod_relay
-    AFTER INSERT OR UPDATE OR DELETE ON dns.relais_dom
+    AFTER INSERT OR UPDATE OR DELETE ON dns.relay_dom
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_relay () ;
 
 CREATE TRIGGER tr_mod_zone
-    BEFORE UPDATE ON dns.zone_normale
+    BEFORE UPDATE ON dns.zone_forward
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_zone () ;
 
 CREATE TRIGGER tr_mod_zone4
@@ -46,14 +46,14 @@ CREATE TRIGGER tr_mod_dhcprange
     BEFORE UPDATE ON dns.dhcprange
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_dhcp () ;
 
-CREATE TRIGGER tr_mod_reseau
-    BEFORE UPDATE ON dns.reseau
+CREATE TRIGGER tr_mod_network
+    BEFORE UPDATE ON dns.network
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_dhcp () ;
 
-CREATE TRIGGER tr_mod_dhcpprofil
-    BEFORE UPDATE ON dns.dhcpprofil
+CREATE TRIGGER tr_mod_dhcpprofile
+    BEFORE UPDATE ON dns.dhcpprofile
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_dhcp () ;
 
-CREATE TRIGGER tr_phnom
+CREATE TRIGGER tr_phonetic
     BEFORE INSERT OR UPDATE ON pgauth.user
     FOR EACH ROW EXECUTE PROCEDURE pgauth.add_soundex () ;

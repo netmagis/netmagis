@@ -10,7 +10,7 @@
 #	- action : (none)
 #   - display host edit page
 #	- action : "edit"
-#	- nom : original name of the host
+#	- name : original name of the host
 #	- domain : original domain of the host
 #	- idview : view id (or empty if no view has been selected)
 #   - modification of host informations
@@ -18,16 +18,16 @@
 #	- confirm : "no" or "yes" (if confirm ok)
 #	- idrr : original idrr of host
 #	- idview : view id
-#	- nom : modified name of the host
+#	- name : modified name of the host
 #	- domain : modified domain of the host
 #	- mac : modified mac address
-#	- iddhcpprofil : modified DHCP profile (or 0)
+#	- iddhcpprof : modified DHCP profile (or 0)
 #	- hinfo : host type (id)
-#	- droitsmtp : non existant, or non empty
+#	- sendsmtp : non existant, or non empty
 #	- ttl : value (or empty if now allowed)
-#	- commentaire : comments
-#	- respnom : name of person responsible for this host
-#	- respmel : mail of person responsible for this host
+#	- comment : comments
+#	- respname : name of person responsible for this host
+#	- respmail : mail of person responsible for this host
 #
 # History
 #   2002/05/03 : pda/jean : design
@@ -41,7 +41,7 @@
 #   2008/02/13 : pda/jean : responsible person is the current user by default
 #   2008/07/25 : pda/jean : add smtp emit right
 #   2010/10/14 : pda      : add journey (via next)
-#   2010/10/26 : pda      : check dhcpprofil case when no maC address
+#   2010/10/26 : pda      : check dhcpprofile case when no mac address
 #   2010/10/26 : pda      : make name and domain editable
 #   2010/10/31 : pda      : add ttl
 #   2010/12/14 : pda      : i18n
@@ -130,36 +130,36 @@ proc disp-edit {dbfd _chkv _tabuid} {
     # In order to display original name of host
     #
 
-    set vname $trr(nom)
+    set vname $trr(name)
     set vdomain $trr(domain)
 
     #
     # Default values for all fields
     #
 
-    set name [::webapp::form-text nom 1 20 64 $trr(nom)]
+    set name [::webapp::form-text name 1 20 64 $trr(name)]
     set domain [menu-domain $dbfd $tabuid(idcor) domain "" $trr(domain)]
 
     set val [::webapp::html-string $trr(mac)]
     set mac [::webapp::form-text mac 1 20 17 $val]
-    lassign [menu-dhcp-profile $dbfd iddhcpprofil $tabuid(idcor) $trr(iddhcpprofil)] \
-	dhcpprofillibelle dhcpprofilmenu
+    lassign [menu-dhcp-profile $dbfd iddhcpprof $tabuid(idcor) $trr(iddhcpprof)] \
+	dhcpproflibelle dhcpprofmenu
 
     set menuhinfo [menu-hinfo $dbfd hinfo $trr(hinfo)]
 
-    lassign [menu-droitsmtp $dbfd "droitsmtp" tabuid $trr(droitsmtp)] \
-	droitsmtplibelle droitsmtpmenu
+    lassign [menu-sendsmtp $dbfd "sendsmtp" tabuid $trr(sendsmtp)] \
+	sendsmtplibelle sendsmtpmenu
 
     lassign [menu-ttl $dbfd "ttl" tabuid $trr(ttl)] ttllibelle ttlval
 
-    set val [::webapp::html-string $trr(commentaire)]
-    set commentaire [::webapp::form-text commentaire 1 50 50 $val]
+    set val [::webapp::html-string $trr(comment)]
+    set comment [::webapp::form-text comment 1 50 50 $val]
 
-    set val [::webapp::html-string $trr(respnom)]
-    set respnom [::webapp::form-text respnom 1 50 50 $val]
+    set val [::webapp::html-string $trr(respname)]
+    set respname [::webapp::form-text respname 1 50 50 $val]
 
-    set val [::webapp::html-string $trr(respmel)]
-    set respmel [::webapp::form-text respmel 1 50 50 $val]
+    set val [::webapp::html-string $trr(respmail)]
+    set respmail [::webapp::form-text respmail 1 50 50 $val]
 
     #
     # Next script
@@ -178,27 +178,27 @@ proc disp-edit {dbfd _chkv _tabuid} {
     d result $conf(page-edit) [list \
 					[list %IDRR% $trr(idrr)] \
 					[list %IDVIEW% $idview] \
-					[list %VNOM% $vname] \
-					[list %VDOMAIN% $vdomain] \
+					[list %ONAME% $vname] \
+					[list %ODOMAIN% $vdomain] \
 					[list %VIEWNAME% $hvn] \
-					[list %NOM% $name] \
+					[list %NAME% $name] \
 					[list %DOMAIN% $domain] \
 					[list %MAC% $mac] \
-					[list %DHCPPROFILLIBELLE% $dhcpprofillibelle] \
-					[list %DHCPPROFILMENU% $dhcpprofilmenu] \
+					[list %DHCPPROFLIBELLE% $dhcpproflibelle] \
+					[list %DHCPPROFMENU% $dhcpprofmenu] \
 					[list %MENUHINFO% $menuhinfo] \
-					[list %DROITSMTPLIBELLE% $droitsmtplibelle] \
-					[list %DROITSMTPMENU% $droitsmtpmenu] \
+					[list %SENDSMTPLIBELLE% $sendsmtplibelle] \
+					[list %SENDSMTPMENU% $sendsmtpmenu] \
 					[list %TTLLIBELLE% $ttllibelle] \
 					[list %TTLVAL% $ttlval] \
-					[list %COMMENTAIRE% $commentaire] \
-					[list %RESPNOM% $respnom] \
-					[list %RESPMEL% $respmel] \
+					[list %COMMENT% $comment] \
+					[list %RESPNAME% $respname] \
+					[list %RESPMAIL% $respmail] \
 			    ]
 }
 
 d cgi-register {action edit} {
-    {nom	1 1}
+    {name	1 1}
     {domain	1 1}
     {idview	0 1}
 } {
@@ -208,8 +208,6 @@ d cgi-register {action edit} {
     # Validate form input
     #
 
-    set name   $nom
-    set domain $domain
     set fqdn "$name.$domain"
 
     set msg [check-name-syntax $name]
@@ -260,16 +258,16 @@ d cgi-register {action store} {
     {confirm	1 1}
     {idrr	1 1}
     {idview	1 1}
-    {nom	1 1}
+    {name	1 1}
     {domain	1 1}
     {mac	1 1}
-    {iddhcpprofil 1 1}
+    {iddhcpprof 1 1}
     {hinfo	1 1}
-    {droitsmtp	0 1}
+    {sendsmtp	0 1}
     {ttl	1 1}
-    {commentaire 1 1}
-    {respnom	1 1}
-    {respmel	1 1}
+    {comment	1 1}
+    {respname	1 1}
+    {respmail	1 1}
 } {
     global conf
 
@@ -296,8 +294,7 @@ d cgi-register {action store} {
     # Check authorized access for host in view
     #
 
-    set fqdn "$trr(nom).$trr(domain)"
-    set msg [filter-views $dbfd tabuid "host" $fqdn [list $idview] chkv]
+    set msg [check-authorized-host $dbfd $idcor $trr(name) $trr(domain) $idview trr "del-name"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -306,13 +303,13 @@ d cgi-register {action store} {
     # Check new name and domain
     #
 
-    set msg [check-name-syntax $nom]
+    set msg [check-name-syntax $name]
     if {$msg ne ""} then {
 	d error $msg
     }
-    set nom [string tolower $nom]
+    set name [string tolower $name]
 
-    set msg [check-authorized-host $dbfd $idcor $nom $domain [list $idview] ntrr "host"]
+    set msg [check-authorized-host $dbfd $idcor $name $domain $idview ntrr "host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -323,7 +320,7 @@ d cgi-register {action store} {
 	#
 	set nlip [rr-ip-by-view ntrr $idview]
     	if {[llength $nlip] > 0} then {
-	    d error [mc "Host '%s' already exists" "$nom.$domain"]
+	    d error [mc "Host '%s' already exists" "$name.$domain"]
 	}
     }
     set iddom $ntrr(iddom)
@@ -337,10 +334,10 @@ d cgi-register {action store} {
 	d error $msg
     }
 
-    if {! [check-iddhcpprofil $dbfd $iddhcpprofil dhcpprofil msg]} then {
+    if {! [check-iddhcpprof $dbfd $iddhcpprof dhcpprofile msg]} then {
 	d error $msg
     }
-    if {$mac eq "" && $iddhcpprofil != 0} then {
+    if {$mac eq "" && $iddhcpprof != 0} then {
 	d error [mc "You cannot set a DHCP profile without a MAC address"]
     }
 
@@ -349,17 +346,17 @@ d cgi-register {action store} {
 	d error [mc "Host type '%s' not found" $hinfo]
     }
 
-    if {$tabuid(droitsmtp)} then {
-	if {$droitsmtp eq ""} then {
-	    set droitsmtp 0
+    if {$tabuid(p_smtp)} then {
+	if {$sendsmtp eq ""} then {
+	    set sendsmtp 0
 	} else {
-	    set droitsmtp 1
+	    set sendsmtp 1
 	}
     } else {
-	set droitsmtp 0
+	set sendsmtp 0
     }
 
-    if {$tabuid(droitttl)} then {
+    if {$tabuid(p_ttl)} then {
 	if {$ttl eq ""} then {
 	    set ttl -1
 	} else {
@@ -376,9 +373,9 @@ d cgi-register {action store} {
     # If responsible person is not specified, this is the user by default
     #
 
-    if {$respnom eq "" && $respmel eq ""} then {
-	set respnom "$tabuid(nom) $tabuid(prenom)"
-	set respmel $tabuid(mel)
+    if {$respname eq "" && $respmail eq ""} then {
+	set respname "$tabuid(lastname) $tabuid(firstname)"
+	set respmail $tabuid(mail)
     }
 
     #
@@ -386,13 +383,13 @@ d cgi-register {action store} {
     # (and this right was now allowed before)
     #
 
-    if {! $trr(droitsmtp) && $droitsmtp && $confirm ne "yes"} then {
+    if {! $trr(sendsmtp) && $sendsmtp && $confirm ne "yes"} then {
 	#
 	# Confirmation page
 	#
 
-	set l {idrr idview nom domain mac iddhcpprofil hinfo droitsmtp ttl
-			commentaire respnom respmel}
+	set l {idrr idview name domain mac iddhcpprof hinfo sendsmtp ttl
+			comment respname respmail}
 	set hidden [::webapp::hide-parameters $l ftab]
 	d urlset "%URLFORM%" $conf(next) {}
 	d urladdnext "%URLFORM%"
@@ -408,10 +405,10 @@ d cgi-register {action store} {
 
     d dblock {dns.rr}
 
-    if {! $tabuid(droitsmtp)} then {
-	set droitsmtp $trr(droitsmtp)
+    if {! $tabuid(p_smtp)} then {
+	set sendsmtp $trr(sendsmtp)
     }
-    if {! $tabuid(droitttl)} then {
+    if {! $tabuid(p_ttl)} then {
 	set ttl $trr(ttl)
     }
 
@@ -427,6 +424,7 @@ d cgi-register {action store} {
 
     if {$nidrr eq ""} then {
 	#
+	# Case "name changes and there is no RR for new name"
 	# Create a new RR for the new name.
 	# Remove MAC from old RR first, since there is a unicity
 	# constraint on it.
@@ -434,12 +432,12 @@ d cgi-register {action store} {
 
 	set sql "UPDATE dns.rr SET mac = NULL WHERE idrr = $idrr"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	   d dbabort [mc "modify %s" "$nom.$domain"] $msg
+	   d dbabort [mc "modify %s" "$name.$domain"] $msg
 	}
 
-	set msg [add-rr $dbfd $nom $iddom $mac $iddhcpprofil $idhinfo \
-					$droitsmtp $ttl \
-					$commentaire $respnom $respmel \
+	set msg [add-rr $dbfd $name $iddom $idview $mac $iddhcpprof $idhinfo \
+					$sendsmtp $ttl \
+					$comment $respname $respmail \
 					$tabuid(idcor) ntrr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "modify %s" [mc "RR"]] $msg
@@ -450,7 +448,7 @@ d cgi-register {action store} {
 	# Update all references to the host in this view
 	#
 
-	set msg [update-host-refs-in-view $dbfd $idrr $nidrr $idview]
+	set msg [update-host-refs $dbfd $idrr $nidrr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "modify %s" [mc "RR"]] $msg
 	}
@@ -472,62 +470,62 @@ d cgi-register {action store} {
 	} else {
 	    set qmac "'[::pgsql::quote $mac]'"
 	}
-	if {$iddhcpprofil == 0} then {
-	    set qiddhcpprofil NULL
+	if {$iddhcpprof == 0} then {
+	    set qiddhcpprof NULL
 	} else {
-	    set qiddhcpprofil $iddhcpprofil
+	    set qiddhcpprof $iddhcpprof
 	}
-	set qnom         [::pgsql::quote $nom]
-	set qcommentaire [::pgsql::quote $commentaire]
-	set qrespnom     [::pgsql::quote $respnom]
-	set qrespmel     [::pgsql::quote $respmel]
+	set qname     [::pgsql::quote $name]
+	set qcomment  [::pgsql::quote $comment]
+	set qrespname [::pgsql::quote $respname]
+	set qrespmail [::pgsql::quote $respmail]
 
 	if {$nidrr eq $idrr} then {
 	    #
 	    # Name does not change
 	    #
 	    set sql "UPDATE dns.rr SET
-				    nom = '$qnom',
+				    name = '$qname',
 				    iddom = $iddom,
 				    mac = $qmac,
-				    iddhcpprofil = $qiddhcpprofil,
+				    iddhcpprof = $qiddhcpprof,
 				    idhinfo = $idhinfo,
-				    droitsmtp = $droitsmtp,
+				    sendsmtp = $sendsmtp,
 				    ttl = $ttl,
-				    commentaire = '$qcommentaire',
-				    respnom = '$qrespnom',
-				    respmel = '$qrespmel'
+				    comment = '$qcomment',
+				    respname = '$qrespname',
+				    respmail = '$qrespmail'
 				WHERE idrr = $idrr"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	       d dbabort [mc "modify %s" "$nom.$domain"] $msg
+	       d dbabort [mc "modify %s" "$name.$domain"] $msg
 	    }
 	} else {
 	    #
-	    # Name does change. Remove old MAC since there is
-	    # a unicity constraint on it.
+	    # Case "name changes and there is an existing RR for new name"
+	    # Remove old MAC since there is a unicity constraint on it.
 	    #
 
 	    set sql "UPDATE dns.rr SET mac = NULL WHERE idrr = $idrr ;
 		     UPDATE dns.rr SET
 				    mac = $qmac,
-				    iddhcpprofil = $qiddhcpprofil,
+				    iddhcpprof = $qiddhcpprof,
 				    idhinfo = $idhinfo,
-				    droitsmtp = $droitsmtp,
+				    sendsmtp = $sendsmtp,
 				    ttl = $ttl,
-				    commentaire = '$qcommentaire',
-				    respnom = '$qrespnom',
-				    respmel = '$qrespmel'
+				    comment = '$qcomment',
+				    respname = '$qrespname',
+				    respmail = '$qrespmail'
 				WHERE idrr = $nidrr
 				"
 	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	       d dbabort [mc "modify %s" "$nom.$domain"] $msg
+	       d dbabort [mc "modify %s" "$name.$domain"] $msg
 	    }
 
 	    #
 	    # Update all references to the host in this view
 	    #
 
-	    set msg [update-host-refs-in-view $dbfd $idrr $nidrr $idview]
+	    set msg [update-host-refs $dbfd $idrr $nidrr]
 	    if {$msg ne ""} then {
 		d dbabort [mc "modify %s" [mc "RR"]] $msg
 	    }
@@ -552,6 +550,7 @@ d cgi-register {action store} {
 
     #
     # Update RR "last mod" values
+    # idrr points to the new RR (or the original RR if there is no new RR)
     #
 
     set msg [touch-rr $dbfd $idrr]
@@ -559,14 +558,14 @@ d cgi-register {action store} {
 	d dbabort [mc "modify %s" [mc "RR"]] $msg
     }
 
-    d dbcommit [mc "modify %s" "$nom.$domain"]
+    d dbcommit [mc "modify %s" "$name.$domain"]
 
     #
     # Update log
     #
 
-    set m "modify $trr(nom).$trr(domain):"
-    foreach c {nom domain mac dhcpprofil hinfo droitsmtp ttl commentaire respnom respmel} {
+    set m "modify $trr(name).$trr(domain):"
+    foreach c {name domain mac dhcpprofile hinfo sendsmtp ttl comment respname respmail} {
 	append m " $c=[set $c]"
     }
     d writelog "modrr" $m
@@ -575,9 +574,9 @@ d cgi-register {action store} {
     # Display result
     #
 
-    set commentaire [html-tab-string $commentaire]
-    set respnom     [html-tab-string $respnom]
-    set respmel     [html-tab-string $respmel]
+    set comment  [html-tab-string $comment]
+    set respname [html-tab-string $respname]
+    set respmail [html-tab-string $respmail]
 
     if {$ttl == -1} then {
 	set httl [mc "(default zone value)"]
@@ -585,10 +584,10 @@ d cgi-register {action store} {
 	set httl $ttl
     }
 
-    if {$droitsmtp} then {
-	set droitsmtp [mc "Yes"]
+    if {$sendsmtp} then {
+	set sendsmtp [mc "Yes"]
     } else {
-	set droitsmtp [mc "No"]
+	set sendsmtp [mc "No"]
     }
 
     #
@@ -615,16 +614,16 @@ d cgi-register {action store} {
     #
 
     d result $conf(page-ok) [list \
-					[list %NOM% $nom] \
+					[list %NAME% $name] \
 					[list %DOMAIN% $domain] \
 					[list %MAC% $mac] \
-					[list %DHCPPROFIL% $dhcpprofil] \
+					[list %DHCPPROFILE% $dhcpprofile] \
 					[list %HINFO% $hinfo] \
-					[list %DROITSMTP% $droitsmtp] \
+					[list %SENDSMTP% $sendsmtp] \
 					[list %TTL% $httl] \
-					[list %COMMENTAIRE% $commentaire] \
-					[list %RESPNOM% $respnom] \
-					[list %RESPMEL% $respmel] \
+					[list %COMMENT% $comment] \
+					[list %RESPNAME% $respname] \
+					[list %RESPMAIL% $respmail] \
 			    ]
     return 0
 }

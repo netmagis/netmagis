@@ -55,7 +55,7 @@ d cgi-register {} {
     #
 
     set msg [check-metro-id $dbfd $id tabuid titre]
-    if {! $tabuid(admin) && $msg ne ""} then {
+    if {! $tabuid(p_admin) && $msg ne ""} then {
 	d error $msg
     }
 

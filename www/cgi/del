@@ -30,9 +30,9 @@
 #   2003/05/13 : pda/jean : use auth base
 #   2004/01/14 : pda/jean : add IPv6
 #   2004/08/05 : pda/jean : add mac
-#   2005/04/08 : pda/jean : add dhcpprofil
+#   2005/04/08 : pda/jean : add dhcpprofile
 #   2007/10/25 : jean     : log modify actions
-#   2008/07/24 : pda/jean : add droitsmtp
+#   2008/07/24 : pda/jean : add sendsmtp
 #   2008/07/29 : pda      : use display-rr
 #   2010/10/15 : pda      : add journey
 #   2010/12/14 : pda      : i18n
@@ -347,7 +347,7 @@ d cgi-register {} {
 	    # This is an IP address. Check it.
 	    #
 	    if {! [check-authorized-ip $dbfd $tabuid(idcor) $addr]} then {
-		d error [mc "You don't have rights on '%s'" $adr]
+		d error [mc "You don't have rights on '%s'" $addr]
 	    }
 	}
     } else {

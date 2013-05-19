@@ -27,7 +27,7 @@
 
     \titre {1} {Action effectuée}
 
-    L'action %TITREACTION% a été effectuée avec succès.
+    L'action %TITLEACTION% a été effectuée avec succès.
 
     %COMPLEMENT%
 }

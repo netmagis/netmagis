@@ -14,23 +14,23 @@
 #	- idview: id of selected view
 #   - add mail role
 #	- action: "add"
-#	- nom : name (first component of fqdn) of mail address
+#	- name : name (first component of fqdn) of mail address
 #	- domain : domain (last components of fqdn) of mail address
 #	- idview: view id of mail address
-#	- nomh : name (first component of fqdn) of mailbox host
-#	- domainh : domain (last components of fqdn) of mailbox host
-#	- idviewh: view id of mailbox host
+#	- namem : name (first component of fqdn) of mailbox host
+#	- domainm : domain (last components of fqdn) of mailbox host
+#	- idviewm: view id of mailbox host
 #   - display mail host for a mail address
 #	- action : "edit"
-#	- nom : name (first component of fqdn) of mail address (or empty)
+#	- name : name (first component of fqdn) of mail address (or empty)
 #	- domain : domain (last components of fqdn) of mail address
 #	- idview: id of selected view, or empty if no view has been selected
 #   - modify mail host for a mail address
 #	- action : "mod"
-#	- nom : name (first component of fqdn) of mail address
+#	- name : name (first component of fqdn) of mail address
 #	- domain : domain (last components of fqdn) of mail address
-#	- nomh : name (first component of fqdn) of mailbox host
-#	- domainh : domain (last components of fqdn) of mailbox host
+#	- namem : name (first component of fqdn) of mailbox host
+#	- domainm : domain (last components of fqdn) of mailbox host
 #
 # History
 #   2004/02/06 : pda/jean : design
@@ -113,14 +113,14 @@ d cgi-register {action {}} {
     # Extract domains where user can declare "mail roles"
     #
 
-    set w "dr_dom.rolemail <> 0"
+    set w "p_dom.mailrole <> 0"
     set domain [menu-domain $dbfd $tabuid(idcor) "domain" $w ""]
 
     #
     # Extract domains where user can have mailbox hosts
     #
 
-    set domainh [menu-domain $dbfd $tabuid(idcor) "domainh" "" ""]
+    set domainm [menu-domain $dbfd $tabuid(idcor) "domainm" "" ""]
 
     #
     # View menus
@@ -128,7 +128,7 @@ d cgi-register {action {}} {
 
     set menuview [mc "View"]
     append menuview " "
-    lassign [menu-views $dbfd $tabuid(idcor) "idview" {} 0] disp html
+    lassign [menu-view $dbfd $tabuid(idcor) "idview" {}] disp html
     append menuview $html
     if {$disp} then {
 	set dispview "inline"
@@ -136,10 +136,10 @@ d cgi-register {action {}} {
 	set dispview "none"
     }
 
-    set menuviewh [mc "View"]
-    append menuviewh " "
-    lassign [menu-views $dbfd $tabuid(idcor) "idviewh" {} 0] disp html
-    append menuviewh $html
+    set menuviewm [mc "View"]
+    append menuviewm " "
+    lassign [menu-view $dbfd $tabuid(idcor) "idviewm" {}] disp html
+    append menuviewm $html
 
     #
     # End of script: output page and close database
@@ -148,10 +148,10 @@ d cgi-register {action {}} {
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-sel) [list \
 				[list %DOMAIN%   $domain] \
-				[list %DOMAINH%  $domainh] \
+				[list %DOMAINM%  $domainm] \
 				[list %DISPVIEW% $dispview] \
 				[list %MENUVIEW% $menuview] \
-				[list %MENUVIEWH% $menuviewh] \
+				[list %MENUVIEWM% $menuviewm] \
 			    ]
 }
 
@@ -172,7 +172,7 @@ d cgi-register {action list} {
     #
 
     set iddom -1
-    set msg [check-domain $dbfd $idcor iddom domain "rolemail"]
+    set msg [check-domain $dbfd $idcor iddom domain "mailrole"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -191,49 +191,49 @@ d cgi-register {action list} {
     #
 
     set sql "
-	SELECT r1.nom AS namea, d1.name AS domaina,
-		r2.nom AS nameh, d2.name AS domainh, v2.name AS viewnameh
-	    FROM dns.role_mail, global.corresp,
+	SELECT r1.name AS namea, d1.name AS domaina,
+		r2.name AS namem, d2.name AS domainm, v2.name AS viewnamem
+	    FROM dns.mail_role, global.nmuser,
 		dns.rr r1, dns.domain d1, dns.rr r2, dns.domain d2,
 		dns.view v2
-	    WHERE corresp.idcor = $idcor
-		AND role_mail.idrr = r1.idrr
+	    WHERE nmuser.idcor = $idcor
+		AND mail_role.mailaddr = r1.idrr
 		AND r1.iddom = d1.iddom
 		AND d1.name = '$domain'
 		AND r1.iddom =
-			(SELECT dd1.iddom FROM dns.dr_dom dd1
-					WHERE dd1.idgrp = corresp.idgrp
-					    AND dd1.iddom = r1.iddom
-					    AND dd1.rolemail > 0
+			(SELECT p1.iddom FROM dns.p_dom p1
+					WHERE p1.idgrp = nmuser.idgrp
+					    AND p1.iddom = r1.iddom
+					    AND p1.mailrole > 0
 			    )
-		AND role_mail.heberg = r2.idrr
+		AND mail_role.mboxhost = r2.idrr
 		AND r2.iddom = d2.iddom
 		AND r2.iddom =
-			(SELECT dd2.iddom FROM dns.dr_dom dd2
-					WHERE dd2.idgrp = corresp.idgrp
-					    AND dd2.iddom = r2.iddom
+			(SELECT p2.iddom FROM dns.p_dom p2
+					WHERE p2.idgrp = nmuser.idgrp
+					    AND p2.iddom = r2.iddom
 			    )
 		AND r2.idrr IN
 			(SELECT r3.idrr FROM dns.rr_ip r3
-					WHERE dns.check_ip_cor(adr, $idcor)
+					WHERE dns.check_ip_cor(addr, $idcor)
 					    AND r3.idrr = r2.idrr
 			    )
 		AND r2.idrr NOT IN
 			(SELECT r4.idrr FROM dns.rr_ip r4
-					WHERE NOT dns.check_ip_cor(adr, $idcor)
+					WHERE NOT dns.check_ip_cor(addr, $idcor)
 					    AND r4.idrr = r2.idrr
 			    )
-		AND role_mail.idviewrr = $idview
-		AND role_mail.idviewheb IN
-			(SELECT idview FROM dns.dr_view drv
-					WHERE drv.idgrp = corresp.idgrp)
-		AND role_mail.idviewheb = v2.idview
+		AND r1.idview = $idview
+		AND r2.idview = v2.idview
+		AND r2.idview IN
+			(SELECT idview FROM dns.p_view pv
+					WHERE pv.idgrp = nmuser.idgrp)
 	    ORDER BY domaina ASC, namea ASC
 		"
     set lroles {}
     pg_select $dbfd $sql tab {
 	lappend lroles [list $tab(namea) $tab(domaina) \
-				$tab(nameh) $tab(domainh) $tab(viewnameh)]
+				$tab(namem) $tab(domainm) $tab(viewnamem)]
     }
 
     if {[llength $lroles] == 0} then {
@@ -245,20 +245,20 @@ d cgi-register {action list} {
 				[mc "Mailbox host"]  \
 			    ]
 	foreach q $lroles {
-	    # link "..../mail?action=edit&nom=...&domain=...&idview=..."
-	    lassign $q namea domaina nameh domainh viewnameh
+	    # link "..../mail?action=edit&name=...&domain=...&idview=..."
+	    lassign $q namea domaina namem domainm viewnamem
 
 	    # only "RFC compatible" characters, no need to quote
 	    d urlset "" $conf(next) [list \
 						[list "action" "edit"] \
-						[list "nom" $namea] \
+						[list "name" $namea] \
 						[list "domain" $domaina] \
 						[list "idview" $idview] \
 					]
 	    set url [d urlget ""]
 	    set html [::webapp::helem "a" "$namea.$domaina" "href" $url]
 
-	    lappend lines [list Normal $html "$nameh.$domainh/$viewnameh"]
+	    lappend lines [list Normal $html "$namem.$domainm/$viewnamem"]
 	}
 	set tableau [::arrgen::output "html" $conf(tableau) $lines]
     }
@@ -278,43 +278,43 @@ d cgi-register {action list} {
 ##############################################################################
 
 d cgi-register {action add} {
-    {nom	1 1}
+    {name	1 1}
     {domain	1 1}
     {idview	1 1}
-    {nomh	1 1}
-    {domainh	1 1}
-    {idviewh	1 1}
+    {namem	1 1}
+    {domainm	1 1}
+    {idviewm	1 1}
 } {
     global conf
 
     set idcor $tabuid(idcor)
 
-    set name    [string trim [lindex $ftab(nom) 0]]
+    set name    [string trim [lindex $ftab(name) 0]]
     set domain  [string trim [lindex $ftab(domain) 0]]
-    set nameh   [string trim [lindex $ftab(nomh) 0]]
-    set domainh [string trim [lindex $ftab(domainh) 0]]
+    set namem   [string trim [lindex $ftab(namem) 0]]
+    set domainm [string trim [lindex $ftab(domainm) 0]]
 
     set fqdn "$name.$domain"
-    set fqdnh "$nameh.$domainh"
+    set fqdnm "$namem.$domainm"
 
     #
     # Check view ids
     #
 
-    foreach v {idview idviewh} {
+    foreach v {idview idviewm} {
 	set msg [check-views [list [set $v]]]
 	if {$msg ne ""} then {
 	    d error $msg
 	}
     }
     set vn  [u viewname $idview]
-    set vnh [u viewname $idviewh]
+    set vnm [u viewname $idviewm]
 
     #
     # Check permission to declare a mail role
     #
 
-    set msg [check-authorized-host $dbfd $idcor $name $domain [list $idview] trr "add-addrmail"]
+    set msg [check-authorized-host $dbfd $idcor $name $domain $idview trr "add-mailaddr"]
 
     if {$msg ne ""} then {
 	d error $msg
@@ -324,7 +324,7 @@ d cgi-register {action add} {
     # Check future mailbox host
     #
 
-    set msg [check-authorized-host $dbfd $idcor $nameh $domainh [list $idviewh] trrh "existing-host"]
+    set msg [check-authorized-host $dbfd $idcor $namem $domainm $idviewm trrm "existing-host"]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -333,7 +333,7 @@ d cgi-register {action add} {
     # Add the mail role
     #
 
-    d dblock {dns.rr dns.role_mail}
+    d dblock {dns.rr dns.mail_role}
 
     set action [mc "created"]
 
@@ -341,14 +341,14 @@ d cgi-register {action add} {
 	#
 	# Name of mail address does not exist. Add appropriate RR.
 	#
-	set msg [add-rr $dbfd $name $trr(iddom) "" 0 "" 0 -1 "" "" "" $idcor trr]
+	set msg [add-rr $dbfd $name $trr(iddom) $idview "" 0 "" 0 -1 "" "" "" $idcor trr]
 	if {$msg ne ""} then {
 	    d dbabort [mc "add %s" $name] $msg
 	}
     }
 
-    set sql "INSERT INTO dns.role_mail (idrr, idviewrr, heberg, idviewheb)
-		    VALUES ($trr(idrr), $idview, $trrh(idrr), $idviewh)"
+    set sql "INSERT INTO dns.mail_role (mailaddr, mboxhost)
+				VALUES ($trr(idrr), $trrm(idrr))"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	d dbabort [mc "add %s" [mc "mail role"]] $msg
     }
@@ -359,14 +359,14 @@ d cgi-register {action add} {
     #
 
     d dbcommit [mc "modify %s" [mc "mail role"]]
-    d writelog "modmailrole" "add mail role $fqdn/$vn -> $fqdnh/$vnh"
+    d writelog "modmailrole" "add mail role $fqdn/$vn -> $fqdnm/$vnm"
 
     #
     # End of script: output page and close database
     #
 
     d result $conf(page-mod) [list \
-				[list %NOM% $fqdn] \
+				[list %NAME% $fqdn] \
 				[list %ACTION% $action] \
 			    ]
 }
@@ -398,25 +398,25 @@ proc disp-edit {dbfd _chkv _tabuid} {
     # In order to display mail address
     #
 
-    set nom $trr(nom)
+    set name $trr(name)
     set domain $trr(domain)
 
     #
     # Get RR of existing mailbox host
     #
 
-    set rm [rr-rolemail-by-view trr $idview]
-    lassign $rm idrr idviewheb
+    set rm [rr-mailrole-by-view trr $idview]
+    lassign $rm idrr idviewm
 
-    if {! [read-rr-by-id $dbfd $idrr trrh]} then {
+    if {! [read-rr-by-id $dbfd $idrr trrm]} then {
 	d error [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
     }
 
-    set nameh $trrh(nom)
-    set domh $trrh(domain)
-    set domainh [menu-domain $dbfd $tabuid(idcor) "domainh" "" $domh]
+    set namem $trrm(name)
+    set domm $trrm(domain)
+    set domainm [menu-domain $dbfd $tabuid(idcor) "domainm" "" $domm]
 
-    set m [menu-views $dbfd $tabuid(idcor) "idviewh" [list $idviewheb] 0]
+    set m [menu-view $dbfd $tabuid(idcor) "idviewm" [list $idviewm]]
     lassign $m disp viewval
     if {$disp} then {
 	set viewlibelle [mc "View"]
@@ -429,20 +429,20 @@ proc disp-edit {dbfd _chkv _tabuid} {
     #
 
     d result $conf(page-edit) [list \
-				    [list %NOM%       $nom] \
+				    [list %NAME%      $name] \
 				    [list %DOMAIN%    $domain] \
 				    [list %IDVIEW%    $idview] \
 				    [list %VIEWNAME%  $viewname] \
-				    [list %NOMH%      $nameh] \
-				    [list %DOMAINH%   $domainh] \
-				    [list %VIEWLIBELLEH% $viewlibelle] \
-				    [list %VIEWVALH%  $viewval] \
+				    [list %NAMEM%     $namem] \
+				    [list %DOMAINM%   $domainm] \
+				    [list %VIEWLIBELLEM% $viewlibelle] \
+				    [list %VIEWVALM%  $viewval] \
 				]
 }
 
 
 d cgi-register {action edit} {
-    {nom	1 1}
+    {name	1 1}
     {domain	1 1}
     {idview	0 1}
 } {
@@ -455,19 +455,19 @@ d cgi-register {action edit} {
     #
 
     set iddom -1
-    set msg [check-domain $dbfd $idcor iddom domain "rolemail"]
+    set msg [check-domain $dbfd $idcor iddom domain "mailrole"]
     if {$msg ne ""} then {
 	d error $msg
     }
 
-    set nameh ""
-    set domh ""
+    set namem ""
+    set domm ""
 
     #
     # Check mail address syntax
     #
 
-    set msg [check-name-syntax $nom]
+    set msg [check-name-syntax $name]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -476,14 +476,14 @@ d cgi-register {action edit} {
     # Do we have permission for this mail role (may be in this particular view)
     #
 
-    set fqdn "$nom.$domain"
+    set fqdn "$name.$domain"
     if {$idview eq ""} then {
 	set idviews {}
     } else {
 	set idviews [list $idview]
     }
 
-    set msg [filter-views $dbfd tabuid "rolemail" $fqdn $idviews chkv]
+    set msg [filter-views $dbfd tabuid "mailrole" $fqdn $idviews chkv]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -508,30 +508,30 @@ d cgi-register {action edit} {
 ##############################################################################
 
 d cgi-register {action mod} {
-    {nom	1 1}
+    {name	1 1}
     {domain	1 1}
     {idview	1 1}
-    {nomh	1 1}
-    {domainh	1 1}
-    {idviewh	1 1}
+    {namem	1 1}
+    {domainm	1 1}
+    {idviewm	1 1}
 } {
     global conf
 
     set idcor $tabuid(idcor)
 
-    set name    [string trim [lindex $ftab(nom) 0]]
+    set name    [string trim [lindex $ftab(name) 0]]
     set domain  [string trim [lindex $ftab(domain) 0]]
-    set nameh   [string trim [lindex $ftab(nomh) 0]]
-    set domainh [string trim [lindex $ftab(domainh) 0]]
+    set namem   [string trim [lindex $ftab(namem) 0]]
+    set domainm [string trim [lindex $ftab(domainm) 0]]
 
     set fqdn "$name.$domain"
-    set fqdnh "$nameh.$domainh"
+    set fqdnm "$namem.$domainm"
 
     #
     # Do we have permission for this mail role
     #
 
-    set msg [filter-views $dbfd tabuid "rolemail" $fqdn [list $idview] chkv]
+    set msg [filter-views $dbfd tabuid "mailrole" $fqdn [list $idview] chkv]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -548,30 +548,29 @@ d cgi-register {action mod} {
     # Check new mailbox host
     #
 
-    if {$nameh ne ""} then {
-	set msg [check-authorized-host $dbfd $tabuid(idcor) $nameh $domainh [list $idviewh] trrh "existing-host"]
+    if {$namem ne ""} then {
+	set msg [check-authorized-host $dbfd $tabuid(idcor) $namem $domainm $idviewm trrm "existing-host"]
 	if {$msg ne ""} then {
 	    d error $msg
 	}
     }
 
     #
-    # Insert data in database: if nameh is empty, it is a removal,
+    # Insert data in database: if namem is empty, it is a removal,
     # else it is a modification.
     #
 
-    d dblock {dns.rr dns.role_mail}
+    d dblock {dns.rr dns.mail_role}
 
-    if {$nameh eq ""} then {
+    if {$namem eq ""} then {
 	#
 	# Mail role removal
 	#
 
 	set action [mc "deleted"]
 
-	set sql "DELETE FROM dns.role_mail
-			WHERE idrr = $idrr AND idviewrr = $idview"
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	set msg [del-mailrole-by-id $dbfd $idrr]
+	if {$msg ne ""} then {
 	    d dbabort [mc "delete %s" [mc "mail role"]] $msg
 	}
 
@@ -591,13 +590,16 @@ d cgi-register {action mod} {
 
 	set action [mc "modified"]
 
-	set sql "UPDATE dns.role_mail
-			    SET heberg = $trrh(idrr), idviewheb = $idviewh
-			    WHERE idrr = $idrr AND idviewrr = $idview"
+	set sql "UPDATE dns.mail_role
+			    SET mboxhost = $trrm(idrr)
+			    FROM dns.rr
+			    WHERE mail_role.mailaddr = rr.idrr
+				AND rr.idrr = $idrr
+				AND rr.idview = $idview"
 	if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	    d dbabort [mc "modify %s" [mc "mail role"]] $msg
 	}
-	set lm "modify mail role $fqdn -> $fqdnh"
+	set lm "modify mail role $fqdn -> $fqdnm"
     }
 
     #
@@ -613,7 +615,7 @@ d cgi-register {action mod} {
     #
 
     d result $conf(page-mod) [list \
-				[list %NOM% $fqdn] \
+				[list %NAME% $fqdn] \
 				[list %ACTION% $action] \
 			    ]
 }

@@ -13,7 +13,7 @@
 #   dnsmodattr www.example.com internal TTL ""        # put back default value
 #
 # Modifiable attributes (keys):
-#   MAC, HINFO, RESPNOM, RESPMEL, COMMENTAIRE, DHCPPROFIL, TTL, DROITSMTP
+#   MAC, HINFO, RESPNAME, RESPMAIL, COMMENT, DHCPPROFILE, TTL, SENDSMTP
 #
 # History
 #   2004/09/29 : pda/jean : specification
@@ -27,7 +27,7 @@
 
 source %LIBNETMAGIS%
 
-set conf(attrs)		{mac hinfo respnom respmel commentaire dhcpprofil ttl droitsmtp}
+set conf(attrs)		{mac hinfo respname respmail comment dhcpprofile ttl sendsmtp}
 
 ##############################################################################
 # Small utility functions
@@ -71,9 +71,9 @@ proc update-rr {dbfd _trr idview _tattr} {
     # Check SMTP rights
     #
 
-    if {[info exists tattr(droitsmtp)]} then {
-	set droitsmtp $tattr(droitsmtp)
-	if {$droitsmtp ne "" && (![regexp {^[0-1]$} $droitsmtp])} {
+    if {[info exists tattr(sendsmtp)]} then {
+	set sendsmtp $tattr(sendsmtp)
+	if {$sendsmtp ne "" && (![regexp {^[0-1]$} $sendsmtp])} {
 	    return [mc "Invalid SMTP emit right (must be 0 or 1)"]
 	}
     }
@@ -125,19 +125,19 @@ proc update-rr {dbfd _trr idview _tattr} {
     # Check DHCP profile
     #
 
-    if {[info exists tattr(dhcpprofil)]} then {
-	set iddhcpprofil [read-dhcp-profile $dbfd $tattr(dhcpprofil)]
-	if {$iddhcpprofil == -1} then {
-	    return [mc "Invalid DHCP profile '%s'" $tattr(dhcpprofil)]
+    if {[info exists tattr(dhcpprofile)]} then {
+	set iddhcpprof [read-dhcp-profile $dbfd $tattr(dhcpprofile)]
+	if {$iddhcpprof == -1} then {
+	    return [mc "Invalid DHCP profile '%s'" $tattr(dhcpprofile)]
 	}
-	set tattr(dhcpprofil) $iddhcpprofil
-	set newiddhcpprofil $tattr(dhcpprofil)
+	set tattr(dhcpprofile) $iddhcpprof
+	set newiddhcpprof $tattr(dhcpprofil)
     } else {
-	set newiddhcpprofil $trr(iddhcpprofil)
+	set newiddhcpprof $trr(iddhcpprof)
     }
 
 
-    if {($newmac eq "" && $newiddhcpprofil != 0)} then {
+    if {($newmac eq "" && $newiddhcpprof != 0)} then {
 	return [mc "You cannot set a DHCP profile without a MAC address"]
     }
 
@@ -153,16 +153,16 @@ proc update-rr {dbfd _trr idview _tattr} {
 		# numeric value
 		lappend mod "idhinfo = $v"
 	    }
-	    droitsmtp {
+	    sendsmtp {
 		# numeric value
-		lappend mod "droitsmtp = $v"
+		lappend mod "sendsmtp = $v"
 	    }
-	    dhcpprofil {
+	    dhcpprofile {
 		# numeric value or empty string
 		if {$v eq "" || $v == 0} then {
-		    lappend mod "iddhcpprofil = NULL"
+		    lappend mod "iddhcpprof = NULL"
 		} else {
-		    lappend mod "iddhcpprofil = $v"
+		    lappend mod "iddhcpprof = $v"
 		}
 	    }
 	    ttl {
@@ -200,7 +200,7 @@ proc update-rr {dbfd _trr idview _tattr} {
     # Update log
     #
 
-    set m "modify $trr(nom).$trr(domain):"
+    set m "modify $trr(name).$trr(domain):"
     foreach c [array names tattr] {
 	append m " $c=$tattr($c)"
     }
@@ -248,7 +248,6 @@ proc main {argv0 argv} {
     if {! [u isallowedview $idview]} then {
 	d error [mc "Access denied to view '%s'" $view]
     }
-    set idviews [list $idview]
 
     #
     # Host name validation
@@ -271,7 +270,7 @@ proc main {argv0 argv} {
     # Check access to name
     #
 
-    set msg [check-authorized-host $dbfd $tabcor(idcor) $name $domain $idviews trr "existing-host"]
+    set msg [check-authorized-host $dbfd $tabcor(idcor) $name $domain $idview trr "existing-host"]
     if {$msg ne ""} then {
         d error $msg
     }

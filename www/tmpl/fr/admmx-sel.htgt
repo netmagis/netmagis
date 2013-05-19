@@ -33,7 +33,7 @@
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<input type="hidden" name="action" value="edit">
-	<INPUT TYPE="TEXT" NAME="nom" SIZE=30 MAXLENGTH=60> .  %DOMAIN%
+	<INPUT TYPE="TEXT" NAME="name" SIZE=30 MAXLENGTH=60> .  %DOMAIN%
 	<span style="display: %DISPVIEW%">
 	    ~ ~ %MENUVIEW%
 	</span>

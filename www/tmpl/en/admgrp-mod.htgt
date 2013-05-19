@@ -37,7 +37,7 @@
 
     \titre {2} {General attributes}
 
-    %TABDROITS%
+    %TABPERMS%
 
     \titre {2} {Views}
 
@@ -49,19 +49,19 @@
 
     \titre {2} {Networks}
 
-    %TABRESEAUX%
+    %TABNETS%
 
     \titre {2} {IP permissions not in networks}
 
-    %TABCIDRHORSRESEAU%
+    %TABCIDRALONE%
 
     \titre {2} {DHCP profiles}
 
-    %TABDHCPPROFILS%
+    %TABDHCPPROFILES%
 
     \titre {2} {Equipments}
 
-    %TABDREQ%
+    %TABPERMEQ%
 }
 
 }

@@ -7,12 +7,12 @@
 #
 # Parameters (form or url):
 #   - selection criteria:
-#	- adr = cidr of network
-#	- etabl = list of organization ids
-#	- commu = list of community ids
+#	- addr = cidr of network
+#	- org = list of organization ids
+#	- comm = list of community ids
 #   - sort criteria
-#	- tri1 = adr4|adr6|nom|etablissement|communaute|localisation|commentaire
-#	- tri2 = adr4|adr6|nom|etablissement|communaute|localisation|commentaire
+#	- sort1 = addr4|addr6|name|organization|community|location|comment
+#	- sort2 = addr4|addr6|name|organization|community|location|comment
 #   - output format:
 #	- dolist, doprint or docsv
 #
@@ -113,16 +113,16 @@ source %LIBNETMAGIS%
 # Utility functions
 ##############################################################################
 
-proc sort-crit {tri} {
-    switch -- $tri {
-	nom		{ set sql "r.nom ASC" ; set txt [mc "Name"] }
-	etablissement	{ set sql "etabl ASC" ; set txt [mc "Organization"] }
-	communaute	{ set sql "commu ASC" ; set txt [mc "Community"] }
-	localisation	{ set sql "r.localisation ASC" ; set txt [mc "Location"] }
-	commentaire	{ set sql "r.commentaire ASC" ; set txt [mc "Description" }
-	adr6		{ set sql "r.adr6 ASC" ; set txt [mc "IPv6 address"] }
-	adr4		-
-	default		{ set sql "r.adr4 ASC" ; set txt [mc "IPv4 address"] }
+proc sort-crit {key} {
+    switch -- $key {
+	name		{ set sql "n.name ASC" ; set txt [mc "Name"] }
+	organization	{ set sql "org ASC" ; set txt [mc "Organization"] }
+	community	{ set sql "comm ASC" ; set txt [mc "Community"] }
+	location	{ set sql "n.location ASC" ; set txt [mc "Location"] }
+	comment		{ set sql "n.comment ASC" ; set txt [mc "Description" }
+	addr6		{ set sql "n.addr6 ASC" ; set txt [mc "IPv6 address"] }
+	addr4		-
+	default		{ set sql "n.addr4 ASC" ; set txt [mc "IPv4 address"] }
     }
     return [list $sql $txt]
 }
@@ -142,8 +142,8 @@ proc output {dbfd _ftab format} {
     #
 
     # sort criteria
-    lassign [sort-crit [lindex $ftab(tri1) 0]] sqltri1 txttri1
-    lassign [sort-crit [lindex $ftab(tri2) 0]] sqltri2 txttri2
+    lassign [sort-crit [lindex $ftab(sort1) 0]] sqlsort1 txtsort1
+    lassign [sort-crit [lindex $ftab(sort2) 0]] sqlsort2 txtsort2
 
     #
     # Selection criteria
@@ -153,55 +153,55 @@ proc output {dbfd _ftab format} {
     set txtsel {}
 
     # cidr
-    set cidr [string trim [lindex $ftab(adr) 0]]
+    set cidr [string trim [lindex $ftab(addr) 0]]
     if {$cidr ne ""} then {
 	set msg [check-ip-syntax $dbfd $cidr "cidr"]
 	if {$msg ne ""} then {
 	    d error $msg
 	}
-	append selection "AND (r.adr4 <<= '$cidr' OR r.adr6 <<= '$cidr')"
+	append selection "AND (n.addr4 <<= '$cidr' OR n.addr6 <<= '$cidr')"
 	lappend txtsel [mc "CIDR matches '%s'" $cidr]
     }
 
     # organization list
-    if {[info exists ftab(etabl)]} then {
-	set lsqletabl {}
-	set ltxtetabl {}
-	pg_select $dbfd "SELECT * FROM dns.etablissement" tab {
-	    set te($tab(idetabl)) $tab(nom)
+    if {[info exists ftab(organization)]} then {
+	set lsqlorg {}
+	set ltxtorg {}
+	pg_select $dbfd "SELECT * FROM dns.organization" tab {
+	    set to($tab(idorg)) $tab(name)
 	}
-	foreach idetabl $ftab(etabl) {
-	    if {! [info exists te($idetabl)]} then {
-		d error [mc "Organization id '%s' not found" $idetabl]
+	foreach idorg $ftab(organization) {
+	    if {! [info exists to($idorg)]} then {
+		d error [mc "Organization id '%s' not found" $idorg]
 	    }
-	    lappend lsqletabl "r.idetabl = $idetabl"
-	    lappend ltxtetabl "$te($idetabl)"
+	    lappend lsqlorg "n.idorg = $idorg"
+	    lappend ltxtorg "$to($idorg)"
 	}
-	if {[llength $lsqletabl] > 0} then {
-	    set l [join $lsqletabl " OR "]
+	if {[llength $lsqlorg] > 0} then {
+	    set l [join $lsqlorg " OR "]
 	    append selection " AND ($l)"
-	    set t [join $ltxtetabl [mc " or "]]
+	    set t [join $ltxtorg [mc " or "]]
 	    lappend txtsel [mc "organization = %s" $t]
 	}
     }
 
     # Community list
-    if {[info exists ftab(commu)]} then {
-	set lsqlcommu {}
-	pg_select $dbfd "SELECT * FROM dns.communaute" tab {
-	    set tc($tab(idcommu)) $tab(nom)
+    if {[info exists ftab(community)]} then {
+	set lsqlcomm {}
+	pg_select $dbfd "SELECT * FROM dns.community" tab {
+	    set tc($tab(idcomm)) $tab(name)
 	}
-	foreach idcommu $ftab(commu) {
-	    if {! [info exists tc($idcommu)]} then {
-		d error [mc "Community id '%s' not found" $idcommu]
+	foreach idcomm $ftab(community) {
+	    if {! [info exists tc($idcomm)]} then {
+		d error [mc "Community id '%s' not found" $idcomm]
 	    }
-	    lappend lsqlcommu "r.idcommu = $idcommu"
-	    lappend ltxtcommu "$tc($idcommu)"
+	    lappend lsqlcomm "n.idcomm = $idcomm"
+	    lappend ltxtcomm "$tc($idcomm)"
 	}
-	if {[llength $lsqlcommu] > 0} then {
-	    set l [join $lsqlcommu " OR "]
+	if {[llength $lsqlcomm] > 0} then {
+	    set l [join $lsqlcomm " OR "]
 	    append selection " AND ($l)"
-	    set t [join $ltxtcommu [mc " or "]]
+	    set t [join $ltxtcomm [mc " or "]]
 	    lappend txtsel [mc "community = %s" $t]
 	}
     }
@@ -221,23 +221,23 @@ proc output {dbfd _ftab format} {
 			[mc "Description"] \
 		    ]
 
-    set sql "SELECT r.idreseau,
-		    r.nom, r.localisation, r.adr4, r.adr6, 
-		    e.nom AS etabl, c.nom AS commu, r.commentaire
-		FROM dns.reseau r, dns.etablissement e, dns.communaute c
-		WHERE r.idetabl = e.idetabl AND r.idcommu = c.idcommu
+    set sql "SELECT n.idnet,
+		    n.name, n.location, n.addr4, n.addr6, 
+		    o.name AS org, c.name AS comm, n.comment
+		FROM dns.network n, dns.organization o, dns.community c
+		WHERE n.idorg = o.idorg AND n.idcomm = c.idcomm
 			$selection
-		ORDER BY $sqltri1, $sqltri2"
+		ORDER BY $sqlsort1, $sqlsort2"
     set nnet 0
     pg_select $dbfd $sql tab {
 	lappend lines [list Normal \
-				$tab(nom) \
-				$tab(localisation) \
-				$tab(adr4) \
-				$tab(adr6) \
-				$tab(etabl) \
-				$tab(commu) \
-				$tab(commentaire) \
+				$tab(name) \
+				$tab(location) \
+				$tab(addr4) \
+				$tab(addr6) \
+				$tab(org) \
+				$tab(comm) \
+				$tab(comment) \
 			    ]
 	incr nnet
     }
@@ -263,12 +263,12 @@ proc output {dbfd _ftab format} {
 		}
 		append txt1 [::webapp::helem "ul" $tmp]
 	    }
-	    set txt2 [mc {and sorted by '%1$s' and by '%2$s'} $txttri1 $txttri2]
+	    set txt2 [mc {and sorted by '%1$s' and by '%2$s'} $txtsort1 $txtsort2]
 	    set txt3 [mc "%s selected network(s)." $nnet]
 	    set txt "$txt1 $txt2: $txt3"
 
 	    d result $conf(page-html) [list \
-					[list %TITRE%	$title] \
+					[list %TITLE%	$title] \
 					[list %TXT%	$txt] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
@@ -290,13 +290,13 @@ proc output {dbfd _ftab format} {
 		append tmp "\\end\{itemize\}"
 		append txt1 $tmp
 	    }
-	    set txt2 [mc {and sorted by '%1$s' and by '%2$s'} $txttri1 $txttri2]
+	    set txt2 [mc {and sorted by '%1$s' and by '%2$s'} $txtsort1 $txtsort2]
 	    set txt3 [mc "%s selected network(s)." $nnet]
 	    set txt "$txt1 $txt2: $txt3"
 
 	    d result $conf(page-latex) [list \
 					[list %ORIENTATION%	"landscape"] \
-					[list %TITRE%	$title] \
+					[list %TITLE%	$title] \
 					[list %TXT%	$txt] \
 					[list %TABLEAU%	$tableau] \
 					[list %DATE%	$date] \
@@ -321,29 +321,29 @@ d cgi-register {
     # Extract organization and community lists, and make listboxes
     #
 
-    set le [::pgsql::getcols $dbfd dns.etablissement "" "nom ASC" {idetabl nom}]
-    set h [llength $le]
-    set listeetabl [::webapp::form-menu etabl $h 1 $le {}]
+    set lo [::pgsql::getcols $dbfd dns.organization "" "name ASC" {idorg name}]
+    set h [llength $lo]
+    set listorg [::webapp::form-menu "organization" $h 1 $lo {}]
 
-    set lc [::pgsql::getcols $dbfd dns.communaute "" "nom ASC" {idcommu nom}]
-    set h [llength $le]
-    set listecommu [::webapp::form-menu commu $h 1 $lc {}]
+    set lc [::pgsql::getcols $dbfd dns.community "" "name ASC" {idcomm name}]
+    set h [llength $lo]
+    set listcomm [::webapp::form-menu "community" $h 1 $lc {}]
 
     #
     # Sort criteria
     #
 
     set sortcrit [list \
-			[list adr4		[mc "IPv4 address"]] \
-			[list adr6		[mc "IPv6 address"]] \
-			[list nom		[mc "Name"]] \
-			[list etablissement	[mc "Organization"]] \
-			[list communaute	[mc "Community"]] \
-			[list localisation	[mc "Location"]] \
-			[list commentaire	[mc "Comment"]] \
+			[list addr4		[mc "IPv4 address"]] \
+			[list addr6		[mc "IPv6 address"]] \
+			[list name		[mc "Name"]] \
+			[list organization	[mc "Organization"]] \
+			[list community		[mc "Community"]] \
+			[list location		[mc "Location"]] \
+			[list comment		[mc "Comment"]] \
 		    ]
-    set menu1 [::webapp::form-menu tri1 1 0 $sortcrit 0]
-    set menu2 [::webapp::form-menu tri2 1 0 $sortcrit 1]
+    set menu1 [::webapp::form-menu sort1 1 0 $sortcrit 0]
+    set menu2 [::webapp::form-menu sort2 1 0 $sortcrit 1]
 
     #
     # End of script: output page and close database
@@ -351,10 +351,10 @@ d cgi-register {
 
     d urlset "%URLFORM%" $conf(next) {}
     d result $conf(page-sel) [list \
-				[list %LISTEETABL% $listeetabl] \
-				[list %LISTECOMMU% $listecommu] \
-				[list %MENUTRI1% $menu1] \
-				[list %MENUTRI2% $menu2] \
+				[list %LISTORG%   $listorg] \
+				[list %LISTCOMM%  $listcomm] \
+				[list %MENUSORT1% $menu1] \
+				[list %MENUSORT2% $menu2] \
 			    ]
 }
 
@@ -363,11 +363,11 @@ d cgi-register {
 ##############################################################################
 
 d cgi-register {dolist .+} {
-    {adr		1 1}
-    {etablissement	0 9999}
-    {communaute		0 9999}
-    {tri1		1 1}
-    {tri2		1 1}
+    {addr		1 1}
+    {organization	0 9999}
+    {community		0 9999}
+    {sort1		1 1}
+    {sort2		1 1}
 } {
     output $dbfd ftab "html"
 }
@@ -377,11 +377,11 @@ d cgi-register {dolist .+} {
 ##############################################################################
 
 d cgi-register {doprint .+} {
-    {adr		1 1}
-    {etablissement	0 9999}
-    {communaute		0 9999}
-    {tri1		1 1}
-    {tri2		1 1}
+    {addr		1 1}
+    {organization	0 9999}
+    {community		0 9999}
+    {sort1		1 1}
+    {sort2		1 1}
 } {
     output $dbfd ftab "latex"
 }
@@ -391,11 +391,11 @@ d cgi-register {doprint .+} {
 ##############################################################################
 
 d cgi-register {docsv .+} {
-    {adr		1 1}
-    {etablissement	0 9999}
-    {communaute		0 9999}
-    {tri1		1 1}
-    {tri2		1 1}
+    {addr		1 1}
+    {organization	0 9999}
+    {community		0 9999}
+    {sort1		1 1}
+    {sort2		1 1}
 } {
     output $dbfd ftab "csv"
 }

@@ -27,7 +27,7 @@
 
     \titre {1} {Liste des comptes}
 
-    %NBUTILISATEURS% compte(s) au %DATE% à %HEURE%~:
+    %NBUSERS% compte(s) au %DATE% à %HEURE%~:
 
     %TABLEAU%
 }

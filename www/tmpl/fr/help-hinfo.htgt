@@ -29,7 +29,7 @@
 
     \titre {1} {Gestion des types de machines}
 
-    \titre {2} {\ancre {texte} {Intitulé}}
+    \titre {2} {\ancre {text} {Intitulé}}
 
 	Intitulé du type de machine.
 
@@ -40,7 +40,7 @@
 	rester le même. Autrement, toutes les machines de ce type
 	se retrouveront avec le nouvel intitulé.
 
-    \titre {2} {\ancre {tri} {Classe de tri}}
+    \titre {2} {\ancre {sort} {Classe de tri}}
 
 	Dans les menus déroulants, les types de machines sont triés
 	selon deux clefs~: le classe de tri d'abord, et l'intitulé

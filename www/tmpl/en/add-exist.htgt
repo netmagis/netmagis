@@ -29,14 +29,14 @@
 
     \titre {1} {Name already exists}
 
-    There is already a host named '%NOM%.%DOMAIN%'.
+    There is already a host named '%NAME%.%DOMAIN%'.
 
     Its characteristics are:
 
     %MACHINE%
 
-    \gras {Do you really want to add the new IP address '%ADR%' to
-    the '%NOM%.%DOMAIN%' host?}
+    \gras {Do you really want to add the new IP address '%ADDR%' to
+    the '%NAME%.%DOMAIN%' host?}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="add-host">

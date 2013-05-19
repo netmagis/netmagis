@@ -1101,7 +1101,7 @@ sub ajouter_sonde
 # 0 ok
 sub enable_plugin_ipmac_portmac
 {
-   	#select valeur from global.config where clef='macactive'
+   	#select value from global.config where key='macactive'
    	my $db =  DBI->connect("dbi:Pg:dbname=$global_conf{dnsdbname};host=$global_conf{'dnsdbhost'}",
                 $global_conf{'dnsdbuser'}, $global_conf{'dnsdbpassword'});
    	
@@ -1111,8 +1111,8 @@ sub enable_plugin_ipmac_portmac
 		writelog("metrocreatedb",$global_conf{majdblogfacility},"info",
                		"\t -> INFO : Connect to $global_conf{dnsdbname} database. Read global.conf table.");
 
-      		my $sql = "SELECT valeur from global.config 
-               		WHERE clef='macactive'";
+      		my $sql = "SELECT value from global.config 
+               		WHERE key='macactive'";
 
        		my $cursor = $db->prepare($sql);
        		$cursor->execute;

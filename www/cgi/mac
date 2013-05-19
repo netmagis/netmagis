@@ -227,7 +227,7 @@ source %LIBNETMAGIS%
 #   - _msg : in return, error message
 # Output:
 #   - return value: empty list (error) or list {type param} where
-#	- type = "ip", "nom", "mac", "idipmac", ... 
+#	- type = "ip", "name", "mac", "idipmac", ... 
 #	- param = canonical representation of parameter
 #   - msg : empty string or error message
 #
@@ -290,8 +290,8 @@ proc guess-type {mdbfd ndbfd param _msg} {
 	    return {}
 	}
     } elseif {[regexp {^[a-z0-9\-.]+$} $param]} then {
-        # Nom
-	set type "nom"
+        # name
+	set type "name"
     } else {
 	# Other
 	set msg [mc "Invalid search string '%s'" $param]
@@ -316,8 +316,8 @@ proc guess-type {mdbfd ndbfd param _msg} {
 proc html-result {mdbfd ndbfd type param} {
     set tab ""
     switch $type {
-	nom {
-	    set lip [resolve "nom" $param resmsg]
+	name {
+	    set lip [resolve "name" $param resmsg]
 	    if {$resmsg ne ""} {
 		d error "resolve: $resmsg"
 	    }
@@ -791,9 +791,9 @@ proc get-eq-name {ndbfd addr} {
 	set eq $cacheeq(addr:$addr)
     } else {
 	set eq [mc "Unknown equipment (address %s)" $addr]
-	set sql "SELECT rr.nom || '.' || domain.name AS fqdn
+	set sql "SELECT rr.name || '.' || domain.name AS fqdn
 		    FROM dns.rr_ip, dns.rr, dns.domain
-		    WHERE rr_ip.adr = '$addr'
+		    WHERE rr_ip.addr = '$addr'
 		    	AND rr.idrr = rr_ip.idrr
 			AND rr.iddom = domain.iddom"
 	pg_select $ndbfd $sql tab {
@@ -821,11 +821,11 @@ proc get-eq-addr {ndbfd eq} {
 	set l [split $eq "."]
 	set shortname [lindex $l 0]
 	set domain [join [lrange $l 1 end] "."]
-	set sql "SELECT rr_ip.adr AS addr
+	set sql "SELECT rr_ip.addr
 		    FROM dns.rr_ip, dns.rr, dns.domain
 		    WHERE rr.idrr = rr_ip.idrr
 		    	AND rr.iddom = domain.iddom
-		    	AND rr.nom = '$shortname'
+		    	AND rr.name = '$shortname'
 		    	AND domain.name = '$domain'"
 	set addr ""
 	pg_select $ndbfd $sql tab {
@@ -848,7 +848,7 @@ proc display-crit {ndbfd type param} {
 	ipmac_assoc	{ set m "IP-MAC" }
 	portmac_assoc	{ set m "MAC-Port-Vlan" }
 	vlan		{ set m "Vlan %s" ; set param [display-vlan $ndbfd $param] }
-	nom		{ set m "host %s" }
+	name		{ set m "host %s" }
 	default		{ set m "???" }
     }
     return [mc $m $param]
@@ -906,7 +906,7 @@ proc display-mac {mdbfd mac} {
 # DNS resolver : calls "host" command and produces an IP address list or a FQDN
 #
 # Input: 
-#  - type : "nom" for a standard resolution, "ip" for a reverse resolution
+#  - type : "name" for a standard resolution, "ip" for a reverse resolution
 #  - arg  : resolve parameter
 # Output: 
 #  - return value: addresse list or domain name
@@ -932,7 +932,7 @@ proc resolve {type arg _msg} {
     }
 
     switch $type {
-	"nom" { set pat "address" }
+	"name" { set pat "address" }
 	"ip"  { set pat "domain name pointer" }
     }
 

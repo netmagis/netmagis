@@ -271,7 +271,7 @@ d cgi-register {
 
     set title [mc {Realm '%s' insertion} $realm]
     d result $conf(page-ok) [list \
-				[list %TITREACTION% $title] \
+				[list %TITLEACTION% $title] \
 				[list %COMPLEMENT% ""] \
 			    ]
 }
@@ -384,7 +384,7 @@ d cgi-register {
 
 	set title [mc {Realm '%s' modification} $realm]
 	d result $conf(page-ok) [list \
-				    [list %TITREACTION% $title] \
+				    [list %TITLEACTION% $title] \
 				    [list %COMPLEMENT% ""] \
 				]
 	return
@@ -541,7 +541,7 @@ d cgi-register {
 
     set title [mc {Realm '%s' removal} $realm]
     d result $conf(page-ok) [list \
-				[list %TITREACTION% $title] \
+				[list %TITLEACTION% $title] \
 				[list %COMPLEMENT% ""] \
 			    ]
 }

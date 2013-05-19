@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Modification des informations de %VNOM%.%VDOMAIN% dans la vue %VIEWNAME%}
+    \titre {1} {Modification des informations de %ONAME%.%ODOMAIN% dans la vue %VIEWNAME%}
 
     <FORM METHOD="POST" ACTION="%URLFORM%">
 	<INPUT TYPE="HIDDEN" NAME="action" VALUE="store">
@@ -45,31 +45,31 @@
 	} {
 	    \lignetableau {
 		\casetableau {} {Nom}
-		\multicasetableau {3} {} {%NOM%.%DOMAIN%}
+		\multicasetableau {3} {} {%NAME%.%DOMAIN%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Adresse MAC}
 		\casetableau {} {%MAC%}
-		\casetableau {} {%DHCPPROFILLIBELLE%}
-		\casetableau {} {%DHCPPROFILMENU%}
+		\casetableau {} {%DHCPPROFLIBELLE%}
+		\casetableau {} {%DHCPPROFMENU%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Machine}
 		\casetableau {} {%MENUHINFO%}
-		\casetableau {} {%DROITSMTPLIBELLE%}
-		\casetableau {} {%DROITSMTPMENU%}
+		\casetableau {} {%SENDSMTPLIBELLE%}
+		\casetableau {} {%SENDSMTPMENU%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Infos complémentaires}
-		\multicasetableau {3} {} {%COMMENTAIRE%}
+		\multicasetableau {3} {} {%COMMENT%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Responsable (nom + prénom)}
-		\multicasetableau {3} {} {%RESPNOM%}
+		\multicasetableau {3} {} {%RESPNAME%}
 	    }
 	    \lignetableau {
 		\casetableau {} {Responsable (mél)}
-		\multicasetableau {3} {} {%RESPMEL%}
+		\multicasetableau {3} {} {%RESPMAIL%}
 	    }
 	    \lignetableau {
 		\casetableau {} {%TTLLIBELLE%}

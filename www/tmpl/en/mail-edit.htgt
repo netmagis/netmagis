@@ -27,7 +27,7 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Edit mailbox host for %NOM%.%DOMAIN% in view %VIEWNAME%}
+    \titre {1} {Edit mailbox host for %NAME%.%DOMAIN% in view %VIEWNAME%}
 
     \tableau {
 	\bordure {0} {}
@@ -45,7 +45,7 @@
 	    \casetableau {} {
 		<FORM METHOD="POST" ACTION="mail">
 		    <INPUT TYPE="HIDDEN" NAME="action" VALUE="mod">
-		    <INPUT TYPE="HIDDEN" NAME="nom" VALUE="%NOM%">
+		    <INPUT TYPE="HIDDEN" NAME="name" VALUE="%NAME%">
 		    <INPUT TYPE="HIDDEN" NAME="domain" VALUE="%DOMAIN%">
 		    <INPUT TYPE="HIDDEN" NAME="idview" VALUE="%IDVIEW%">
 		    \tableau {
@@ -58,19 +58,19 @@
 			\lignetableau {
 			    \multicasetableau {2} {} {
 				Modify mailbox host for mail address
-				'%NOM%.%DOMAIN%' (in view '%VIEWNAME'),
+				'%NAME%.%DOMAIN%' (in view '%VIEWNAME%'),
 				or delete it to remove the role.
 			    }
 			}
 			\lignetableau {
 			    \casetableau {} {Mailbox host}
 			    \casetableau {} {
-				<INPUT TYPE="TEXT" NAME="nomh" SIZE="30" VALUE="%NOMH%">
+				<INPUT TYPE="TEXT" NAME="namem" SIZE="30" VALUE="%NAMEM%">
 				.
-				%DOMAINH%
+				%DOMAINM%
 				~ ~ ~
-				%VIEWLIBELLEH%
-				%VIEWVALH%
+				%VIEWLIBELLEM%
+				%VIEWVALM%
 			    }
 			}
 			\lignetableau {
