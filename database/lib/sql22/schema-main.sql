@@ -153,7 +153,7 @@ CREATE TABLE dns.zone (
     gen		INT			-- modified since last generation
 ) ;
 
-CREATE TABLE dns.zone_normale (
+CREATE TABLE dns.zone_forward (
     selection	TEXT,			-- criterion to select names
 
     UNIQUE (name),

@@ -43,7 +43,7 @@
     \titre {2} {\ancre {selection} {RR selection criterion}}
 
 	Criterion to select resource records for this zone. For a
-	standard zone, it is a domain name. For a reverse (IPv4 or
+	forward zone, it is a domain name. For a reverse (IPv4 or
 	IPv6) zone, it is a network prefix.
 
 	Examples~:

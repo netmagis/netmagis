@@ -139,7 +139,7 @@ proc gen-zone {dbfd zone _txt} {
 			"
     set found 0
     pg_select $dbfd $sql tab {
-	set table	$tab(table)	;# dns.zone_normale, dns.zone_reverse[46]
+	set table	$tab(table)	;# dns.zone_forward, dns.zone_reverse[46]
 	set version	$tab(version)
 	set prologue	$tab(prologue)
 	set rrsup	$tab(rrsup)
@@ -189,8 +189,8 @@ proc gen-zone {dbfd zone _txt} {
     #
 
     switch -- $table {
-	dns.zone_normale {
-	    if {! [gen-normal $dbfd $zone $selection $idview $rrsup txt]} then {
+	dns.zone_forward {
+	    if {! [gen-fwd $dbfd $zone $selection $idview $rrsup txt]} then {
 		return 0
 	    }
 	}
@@ -229,7 +229,7 @@ proc gen-zone {dbfd zone _txt} {
 }
 
 #
-# Return zone contents for a normal zone
+# Return zone contents for a forward zone
 #
 # Input:
 #   - dbfd: database handle
@@ -248,7 +248,7 @@ proc gen-zone {dbfd zone _txt} {
 #   2012/10/24 : pda/jean : add views
 #
 
-proc gen-normal {dbfd zone selection idview rrsup _txt} {
+proc gen-fwd {dbfd zone selection idview rrsup _txt} {
     upvar $_txt txt
 
     read-all-domains $dbfd "" tabiddom
@@ -675,7 +675,7 @@ proc main {argv0 argv} {
     # Lock tables such as we do not miss some modification
     #
 
-    set msg [d dblock {dns.zone_normale dns.zone_reverse4 dns.zone_reverse6}]
+    set msg [d dblock {dns.zone_forward dns.zone_reverse4 dns.zone_reverse6}]
     if {$msg ne ""} then {
 	d error $msg
     }

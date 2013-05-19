@@ -90,7 +90,8 @@ ALTER TABLE dns.dr_reseau
     DROP CONSTRAINT IF EXISTS dr_reseau_pkey			CASCADE ;
 
 ALTER TABLE dns.zone
-    DROP CONSTRAINT zone_pkey ;
+    DROP CONSTRAINT IF EXISTS zone_pkey				CASCADE,
+    DROP CONSTRAINT IF EXISTS zone_domaine_key 			CASCADE ;
 
 ALTER TABLE dns.reseau
     DROP CONSTRAINT IF EXISTS reseau_pkey			CASCADE,
@@ -137,7 +138,6 @@ ALTER TABLE global.corresp
 ALTER TABLE global.groupe
     DROP CONSTRAINT IF EXISTS groupe_pkey			CASCADE,
     DROP CONSTRAINT IF EXISTS groupe_nom_key			CASCADE ;
-
 
 ------------------------------------------------------------------------------
 -- Rename tables and columns, and rebuild constraints
@@ -232,22 +232,20 @@ INSERT INTO dns.view (name) VALUES ('default') ;
 ALTER TABLE dns.zone ADD COLUMN idview INT ;
 UPDATE dns.zone
     SET idview = (SELECT idview FROM dns.view WHERE name = 'default') ;
-
 ALTER TABLE dns.zone RENAME COLUMN domaine		TO name ;
 ALTER TABLE dns.zone RENAME COLUMN generer		TO gen ;
 
-ALTER TABLE dns.zone_normale
+ALTER TABLE dns.zone_normale RENAME to zone_forward ;
+ALTER TABLE dns.zone_forward
     ADD UNIQUE (name),
     ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
     ADD PRIMARY KEY (idzone)
     ;
-
 ALTER TABLE dns.zone_reverse4
     ADD UNIQUE (name),
     ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),
     ADD PRIMARY KEY (idzone)
     ;
-
 ALTER TABLE dns.zone_reverse6
     ADD UNIQUE (name),
     ADD FOREIGN KEY (idview) REFERENCES dns.view (idview),

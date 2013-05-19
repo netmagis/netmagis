@@ -1274,7 +1274,7 @@ proc read-zone {file selector reverse _prologue _serial _tabaddr _tabcname} {
 		    } else {
 			# cname(a) => b.example.com. or b
 			if {[string range $data end end] ne "."} then {
-			    # selector is domain name for normal zones
+			    # selector is domain name for forward zones
 			    append data ".$selector."
 			}
 			if {! [existing-rr-cname $name $data]} then {
@@ -1602,7 +1602,7 @@ proc import-zone {verbose argv dbfd} {
     set qselector [::pgsql::quote $selector]
 
     switch $version {
-	-1 { set table "dns.zone_normale" }
+	-1 { set table "dns.zone_forward" }
 	4 { set table "dns.zone_reverse4" }
 	6 { set table "dns.zone_reverse6" }
     }

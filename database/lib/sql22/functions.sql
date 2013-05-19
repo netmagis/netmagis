@@ -231,7 +231,7 @@ CREATE OR REPLACE FUNCTION dns.ipranges (net CIDR, lim INTEGER, grp INTEGER)
 --    2002/??/?? : pda/jean : design
 --
 
--- called when an IPv6 address is modified ($1=addr, $2=idrr)
+-- called when an IPv4 address is modified ($1=addr, $2=idrr)
 CREATE OR REPLACE FUNCTION dns.gen_rev4 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
@@ -261,7 +261,7 @@ CREATE OR REPLACE FUNCTION dns.gen_rev6 (INET, INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_norm_idrr (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_normale SET gen = 1
+	UPDATE dns.zone_forward SET gen = 1
 		WHERE (selection, idview) = 
 			(
 			    SELECT domain.name, rr.idview
@@ -277,7 +277,7 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_idrr (INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_norm_iddom (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_normale SET gen = 1
+	UPDATE dns.zone_forward SET gen = 1
 		WHERE idview = $2
 		    AND selection = (
 			SELECT domain.name
@@ -293,7 +293,7 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_iddom (INTEGER, INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_relay (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_normale SET gen = 1
+	UPDATE dns.zone_forward SET gen = 1
 	    WHERE selection = ( SELECT name FROM dns.domain WHERE iddom = $1 )
 		AND idview = ( SELECT idview FROM dns.rr WHERE idrr = $2 )
 	    ;

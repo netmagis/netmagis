@@ -31,7 +31,7 @@ CREATE TRIGGER tr_mod_relay
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_relay () ;
 
 CREATE TRIGGER tr_mod_zone
-    BEFORE UPDATE ON dns.zone_normale
+    BEFORE UPDATE ON dns.zone_forward
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_zone () ;
 
 CREATE TRIGGER tr_mod_zone4
