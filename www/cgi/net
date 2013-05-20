@@ -315,7 +315,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 	# Get all allowed IP address and add them to the array.
 	#
 
-	set jourfmt [dnsconfig get "jourfmt"]
+	set dayfmt [dnsconfig get "dayfmt"]
 	set sql "SELECT DISTINCT rr.name || '.' || domain.name AS name,
 			rr_ip.addr,
 			rr.comment, rr.respname, rr.respmail, rr.date,
@@ -370,7 +370,7 @@ proc output-list {dbfd lcidr idview _tabuid format} {
 		set dhcp ""
 	    }
 
-	    set date [clock format [clock scan $date] -format $jourfmt]
+	    set date [clock format [clock scan $date] -format $dayfmt]
 
 	    if {$sendsmtp} then {
 		set sendsmtp [mc "Yes"]

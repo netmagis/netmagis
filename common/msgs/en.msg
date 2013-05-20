@@ -9,8 +9,8 @@
 
  cfg:datefmt:desc {Date/hour display format}
  cfg:datefmt:help {Date and time display format, used in data display and data editing. See Tcl clock(n) manual page for format specification.}
- cfg:jourfmt:desc {Date display format}
- cfg:jourfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
+ cfg:dayfmt:desc {Date display format}
+ cfg:dayfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
  cfg:authmethod:desc {Authentication method}
  cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.).}
  cfg:pageformat:desc {Paper format}

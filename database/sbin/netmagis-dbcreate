@@ -235,7 +235,7 @@ netmagis_insert_config ()
 
     COPY global.config (key, value) FROM stdin;
 datefmt	%d/%m/%Y %H:%M:%S
-jourfmt	%a %d %b %Y
+dayfmt	%a %d %b %Y
 authmethod	pgsql
 pageformat	a4
 default_lease_time	600

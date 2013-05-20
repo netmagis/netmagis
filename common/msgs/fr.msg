@@ -628,8 +628,8 @@
 
  cfg:datefmt:desc {Format d'affichage des dates/heures}
  cfg:datefmt:help {Format d'affichage des dates et des heures, utilisé dans l'édition et l'affichage des données. Voir la page de manuel clock(n) de Tcl.}
- cfg:jourfmt:desc {Format d'affichage des jours}
- cfg:jourfmt:help {Format d'affichage des dates (sans l'heure). Voir la page de manuel clock(n) de Tcl.}
+ cfg:dayfmt:desc {Format d'affichage des jours}
+ cfg:dayfmt:help {Format d'affichage des dates (sans l'heure). Voir la page de manuel clock(n) de Tcl.}
  cfg:authmethod:desc {Méthode d'authentification}
  cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.).}
  cfg:pageformat:desc {Format de papier}

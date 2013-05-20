@@ -171,6 +171,7 @@ ALTER TABLE global.config RENAME COLUMN valeur		TO value ;
 
 DELETE FROM global.config WHERE key = 'dnsupdateperiod' ;
 INSERT INTO global.config (key, value) VALUES ('schemaversion', '22') ;
+UPDATE global.config SET key = 'dayfmt' WHERE key = 'jourfmt' ;
 
 ALTER TABLE global.seq_groupe RENAME TO seq_nmgroup ;
 ALTER TABLE global.groupe RENAME TO nmgroup ;

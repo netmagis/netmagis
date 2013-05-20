@@ -1695,7 +1695,7 @@ snit::type ::config {
     variable configspec {
 	{general
 	    {datefmt rw {string}}
-	    {jourfmt rw {string}}
+	    {dayfmt rw {string}}
 	    {authmethod rw {menu {{pgsql Internal} {ldap {LDAP}}}}}
 	    {pageformat rw {menu {{a4 A4} {letter Letter}}} }
 	    {schemaversion ro {string}}
