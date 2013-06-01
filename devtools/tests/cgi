@@ -1,0 +1,101 @@
+#!%TCLSH%
+
+proc post-string {str} {
+    regsub -all {%}  $str "%25" str
+    regsub -all {\+} $str "%2B" str
+    regsub -all {\&} $str "%26" str
+    regsub -all "\n" $str "%0A" str
+    regsub -all "\r" $str "%0D" str
+    regsub -all {\<} $str "%3C" str
+    regsub -all {=}  $str "%3D" str
+    regsub -all {\>} $str "%3E" str
+    regsub -all {\?} $str "%3F" str
+    regsub -all {"}  $str "%22" str
+    regsub -all {"}  $str "%22" str
+    regsub -all { }  $str "%20" str
+    return $str
+}
+
+proc run {path login argv} {
+    global env
+
+    set env(REQUEST_METHOD) "GET"
+
+    set query {}
+    foreach kv $argv {
+	if {[regexp {^([^=]+)=(.*)} $kv match k v]} then {
+	    set k [post-string $k]
+	    set v [post-string $v]
+	    lappend query "$k=$v"
+	} else {
+	    puts stderr "Invalid argument '$kv'"
+	    exit 1
+	}
+    }
+    set env(QUERY_STRING) [join $query "&"]
+
+    if {$login ne ""} then {
+	set env(REMOTE_USER) $login
+    } else {
+	catch {unset env(REMOTE_USER)}
+    }
+
+    catch {unset env(PATH_INFO)}
+
+    if {[catch {exec -ignorestderr $path} msg]} then {
+	puts stderr "Script '$path' failed"
+	puts stderr $msg
+	set r 1
+    } else {
+	puts stdout $msg
+	set r 0
+    }
+
+    return $r
+}
+
+set usage {usage: %1$s [-h][-l login] path var=val var=val ...}
+
+proc usage {argv0} {
+    global usage
+
+    puts stderr [format $usage $argv0]
+}
+
+
+proc main {argv0 argv} {
+    set login ""
+
+    while {[llength $argv] > 0} {
+	set arg [lindex $argv 0]
+	switch -glob -- $arg {
+	    -l {
+		set login [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -h {
+		usage $argv0
+		return 0
+	    }
+	    -* {
+		usage $argv0
+		return 1
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    if {[llength $argv] == 0} then {
+	usage $argv0
+	return 1
+    }
+
+    set path [lindex $argv 0]
+    set argv [lreplace $argv 0 0]
+
+    return [run $path $login $argv]
+}
+
+return [main $argv0 $argv]

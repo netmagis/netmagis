@@ -187,3 +187,17 @@ Metrology server
 	.../crontab.metro
     NMWSDIR/
 	.../gengraph
+
+Test system
+-----------
+
+    SBINDIR/
+	.../netmagis-test
+
+    NMLIBDIR/
+	.../tests/
+	    .../sc-*.test
+    NMVARDIR/
+	.../tests/
+	    .../sc-*-*.out
+	    .../sc-*-*.err

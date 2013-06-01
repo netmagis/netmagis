@@ -69,6 +69,7 @@ usage:
 	@echo "	install-topo"
 	@echo "	install-metro"
 	@echo "	install-netmagis.org"
+	@echo "	install-devtools"
 	@echo "	distrib"
 	@echo "	freebsd-ports"
 	@echo "	debian-packages"
@@ -118,6 +119,9 @@ install-metro:
 
 install-netmagis.org: build-www
 	cd doc/netmagis.org ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+
+install-devtools:
+	cd devtools ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 distrib: clean
 	rm -rf /tmp/netmagis-$(VERSION)

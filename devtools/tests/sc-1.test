@@ -1,0 +1,6 @@
+# install :
+#	- param 1 = run-all.sh location
+#	- param 2 = grep string
+#install {ZZ} {}
+
+test add-1 {%NMLIBDIR%/tests/cgi -l pda %NMCGIDIR%/add} {<b>Add host}

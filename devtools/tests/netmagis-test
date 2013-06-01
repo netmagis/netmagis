@@ -1,0 +1,96 @@
+#!%TCLSH%
+
+#
+# This script runs one or more Netmagis tests
+#
+# Syntax:
+#	netmagis-test file.test ... file.test		# run specified tests
+#	netmagis-test					# run all tests
+#
+# Note: Netmagis instance must be installed (this is needed to provide
+# correct paths and password)
+#
+# Output of each test is 
+
+
+# pref:	directory and base name of test
+# cmd:	cmd to run
+# pattern: pattern to search in stdout
+# return value: 1 if run ok and pattern found in stdout
+
+proc run-and-grep {pref cmd pattern} {
+    set r 0
+
+    set out "$pref.out"
+    set err "$pref.err"
+
+    if {[catch {exec -ignorestderr sh -c $cmd > $out 2>$err} x]} then {
+	#
+	# An error occurrend
+	# r contains cmd standard output with a last
+	# line "child process exited abnormally"
+	# File contains cmd standard error
+	#
+    } else {
+	#
+	# Script terminated without error
+	# r contains cmd standard output
+	# File contains cmd standard error
+	#
+	set fd [open $out "r"]
+	set t [read $fd]
+	close $fd
+	if {[regexp $pattern $t]} then {
+	    set r 1
+	}
+    }
+    return $r
+}
+
+proc init {} {
+    global tabtests
+
+    catch {array unset tabtests}
+    set tabtests(idx) 0
+}
+
+proc load-examples {runall output} {
+    exec [$runall]
+}
+
+# register a test
+proc test {name cmd pattern} {
+    global tabtests
+
+    set idx $tabtests(idx)
+    set tabtests($idx) [list $name $cmd $pattern]
+    incr tabtests(idx)
+}
+
+proc run-tests {fd} {
+    global tabtests
+
+    set r 0
+    set ntests $tabtests(idx)
+    for {set i 0} {$i < $ntests} {incr i} {
+	lassign $tabtests($i) name cmd pattern
+	puts -nonewline $fd "$name: "
+	flush $fd
+	set rt [run-and-grep %NMVARDIR%/tests/$name $cmd $pattern]
+	if {$rt} then {
+	    puts $fd "ok"
+	} else {
+	    puts $fd "fail"
+	    set r 1
+	}
+    }
+    return $r
+}
+
+proc main {file} {
+    init
+    source $file
+    run-tests stdout
+}
+
+exit [main [lindex $argv 0]]
