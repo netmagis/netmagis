@@ -12,6 +12,81 @@
 #
 # Output of each test is 
 
+source %LIBNETMAGIS%
+
+set conf(var) "%NMVARDIR%/tests"
+
+##############################################################################
+# Register tests
+##############################################################################
+
+proc init {} {
+    global tabtests
+
+    catch {array unset tabtests}
+    set tabtests(idx) 0
+}
+
+proc add-action {l} {
+    global tabtests
+
+    set idx $tabtests(idx)
+    set tabtests($idx) $l
+    incr tabtests(idx)
+}
+
+# register a test
+proc test {name cmd pattern} {
+    add-action [list "test" $name $cmd $pattern]
+}
+
+# register a shell test
+proc test-sh {name cmd pattern} {
+    test $name $cmd $pattern
+}
+
+# register a dump
+proc save-db {name file} {
+    global conf
+
+    if {! [regexp {^/} $file]} then {
+	set file "$conf(var)/$file"
+    }
+    add-action [list "savedb" $name $file]
+}
+
+proc load-db {name file} {
+    global conf
+
+    if {! [regexp {^/} $file]} then {
+	set file "$conf(var)/$file"
+    }
+    add-action [list "loaddb" $name $file]
+}
+
+# register a CGI test
+proc test-cgi {name script user param pattern} {
+    if {! [regexp {^/} $script]} then {
+	set script "%NMCGIDIR/$script"
+    }
+    set cmd "%NMLIBDIR%/tests/cgi -l $user $script $param"
+    test $name $cmd $pattern
+}
+
+##############################################################################
+# Run tests
+##############################################################################
+
+proc prepend-sh-variables {cmd} {
+    return "eval `%BINDIR%/netmagis-config -c dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword`
+	    PGHOST=\"\$dnsdbhost\"
+	    PGPORT=\"\$dnsdbport\"
+	    PGDATABASE=\"\$dnsdbname\"
+	    PGUSER=\"\$dnsdbuser\"
+	    PGPASSWORD=\"\$dnsdbpassword\"
+	    export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
+	    $cmd"
+}
 
 # pref:	directory and base name of test
 # cmd:	cmd to run
@@ -47,36 +122,40 @@ proc run-and-grep {pref cmd pattern} {
     return $r
 }
 
-proc init {} {
-    global tabtests
-
-    catch {array unset tabtests}
-    set tabtests(idx) 0
+proc savedb {pref file} {
+    set cmd [prepend-sh-variables "pg_dump \$PGDATABASE > $file"]
+    return [run-and-grep $pref $cmd ""]
 }
 
-proc load-examples {runall output} {
-    exec [$runall]
-}
-
-# register a test
-proc test {name cmd pattern} {
-    global tabtests
-
-    set idx $tabtests(idx)
-    set tabtests($idx) [list $name $cmd $pattern]
-    incr tabtests(idx)
+proc loaddb {pref file} {
+    set cmd [prepend-sh-variables "dropdb \$PGDATABASE ; createdb -E unicode --template=template0 ; psql -f $file \$PGDATABASE"]
+    return [run-and-grep $pref $cmd ""]
 }
 
 proc run-tests {fd} {
     global tabtests
+    global conf
 
     set r 0
     set ntests $tabtests(idx)
     for {set i 0} {$i < $ntests} {incr i} {
-	lassign $tabtests($i) name cmd pattern
+	lassign $tabtests($i) action name cmd pattern
 	puts -nonewline $fd "$name: "
 	flush $fd
-	set rt [run-and-grep %NMVARDIR%/tests/$name $cmd $pattern]
+	switch $action {
+	    test {
+		set rt [run-and-grep $conf(var)/$name $cmd $pattern]
+	    }
+	    savedb {
+		set rt [savedb $conf(var)/$name $cmd]
+	    }
+	    loaddb {
+		set rt [loaddb $conf(var)/$name $cmd]
+	    }
+	    default {
+		set rt 0
+	    }
+	}
 	if {$rt} then {
 	    puts $fd "ok"
 	} else {
@@ -85,6 +164,15 @@ proc run-tests {fd} {
 	}
     }
     return $r
+}
+
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc load-examples {runall output} {
+    exec [$runall]
 }
 
 proc main {file} {

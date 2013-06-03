@@ -3,4 +3,18 @@
 #	- param 2 = grep string
 #install {ZZ} {}
 
-test add-1 {%NMLIBDIR%/tests/cgi -l pda %NMCGIDIR%/add} {<b>Add host}
+test-sh load-0 "eval `%BINDIR%/netmagis-config -c dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword`
+	PGHOST=\"\$dnsdbhost\"
+	PGPORT=\"\$dnsdbport\"
+	PGDATABASE=\"\$dnsdbname\"
+	PGUSER=\"\$dnsdbuser\"
+	PGPASSWORD=\"\$dnsdbpassword\"
+	export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
+	dropdb \$PGDATABASE
+	cd %NMXMPDIR%/with-views
+	sh ./run-all.sh" {Succeeded}
+
+save-db save-1 v22.db
+
+# test add-1 {%NMLIBDIR%/tests/cgi -l pda %NMCGIDIR%/add} {<b>Add host}
+test-cgi add-1 add pda {} {<b>Add host}
