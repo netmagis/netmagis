@@ -1,0 +1,28 @@
+#
+# Test for CGI add
+#
+# History:
+#   2013/06/03 : pda      : design
+#
+
+load-db restore v22.dump
+
+##############################################################################
+# display an empty page
+test-cgi welcome add pda {} {<b>Add host}
+
+##############################################################################
+# add a non-existing host foo1.example.com 198.51.100.99
+# idview=3 : external
+test-cgi host add pda {action=add-host confirm=no naddr=0 name=foo1 domain=example.com idview=3 mac=1:2:3:4:5:6 addr=198.51.100.99 ttl= iddhcpprof=0 hinfo=PC/Unix sendsmtp=0 comment= respname= respmail=} {Host has been added}
+
+##############################################################################
+# add a second address to an existing host foo1.example.com 198.51.100.98
+test-cgi addr-1 add pda {action=add-host confirm=no naddr=0 name=foo1 domain=example.com idview=3 mac= addr=198.51.100.98 ttl= iddhcpprof=0 hinfo=PC/Unix sendsmtp=0 comment= respname= respmail=} {There is already a host named}
+
+# add a second address to an existing host (confirm)
+test-cgi addr2-2 add pda {confirm=yes action=add-host naddr=0 name=foo1 domain=example.com idview=3 mac= addr=198.51.100.98 ttl= iddhcpprof=0 hinfo=PC/Unix sendsmtp=0 comment= respname= respmail=} {Host has been added}
+
+##############################################################################
+# add an alias foo2.example.org -> foo1.example.com
+test-cgi alias add pda {action=add-alias name=foo2 domain=example.org nameref=foo1 domainref=example.com idview=3} {The alias has been added}

@@ -1,8 +1,9 @@
 NINSTALL	= ../../ninstall
 
 PROG =	netmagis-test
-FILES = cgi
-TESTS = *.test
+FILES =	cgi
+TESTS =	*.test
+DUMP =	netmagis-2.1.1.dump
 
 install:
 	@echo ">>> Making install in `pwd`"
@@ -21,5 +22,6 @@ install:
 			    -e "s|%NMCGIDIR%|$(NMCGIDIR)|" \
 			    -e "s|%NMXMPDIR%|$(NMXMPDIR)|" \
 			    $(SUBST) $(TESTS) $(DESTDIR)$(NMLIBDIR)/tests
+	install -m 0644 $(DUMP) $(DESTDIR)$(NMLIBDIR)/tests
 
 clean:
