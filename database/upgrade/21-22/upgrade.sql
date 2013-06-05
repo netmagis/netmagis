@@ -107,6 +107,18 @@ ALTER TABLE dns.zone
     DROP CONSTRAINT IF EXISTS zone_pkey				CASCADE,
     DROP CONSTRAINT IF EXISTS zone_domaine_key 			CASCADE ;
 
+ALTER TABLE dns.zone_normale
+    DROP CONSTRAINT IF EXISTS zone_normale_pkey			CASCADE,
+    DROP CONSTRAINT IF EXISTS zone_normale_domaine_key 		CASCADE ;
+
+ALTER TABLE dns.zone_reverse4
+    DROP CONSTRAINT IF EXISTS zone_reverse4_pkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS zone_reverse4_domaine_key 	CASCADE ;
+
+ALTER TABLE dns.zone_reverse6
+    DROP CONSTRAINT IF EXISTS zone_reverse6_pkey		CASCADE,
+    DROP CONSTRAINT IF EXISTS zone_reverse6_domaine_key 	CASCADE ;
+
 ALTER TABLE dns.reseau
     DROP CONSTRAINT IF EXISTS reseau_pkey			CASCADE,
     DROP CONSTRAINT IF EXISTS reseau_idetabl_fkey		CASCADE,
