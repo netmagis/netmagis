@@ -67,7 +67,7 @@
 			    \casetableau {} {Accès à la gestion des
 				droits d'émission SMTP
 			    }
-			    \casetableau {} {PSMTP%}
+			    \casetableau {} {%PSMTP%}
 			}
 			\lignetableau {
 			    \casetableau {} {Accès à la gestion des TTL}
@@ -145,6 +145,18 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
+		} {\gras {Profils DHCP visibles}}
+	    }
+	    \lignetableau {
+		\casetableau {} {Pour supprimer un accès à un profil,
+		    vider la case <<~Classe de tri~>>.
+
+		    %LISTDHCPPROF%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
 		} {\gras {Droits d'accès sur les équipements réseau (Topo)}}
 	    }
 	    \lignetableau {
@@ -186,13 +198,10 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
-		} {\gras {Profils DHCP visibles}}
+		} {\gras {Réseaux de niveau 2 (Topo)}}
 	    }
 	    \lignetableau {
-		\casetableau {} {Pour supprimer un accès à un profil,
-		    vider la case <<~Classe de tri~>>.
-
-		    %LISTDHCPPROFS%}
+		\casetableau {} {%LISTL2ONLY%}
 	    }
 	    \lignetableau {
 		\casetableau {

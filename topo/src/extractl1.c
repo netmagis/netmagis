@@ -86,7 +86,7 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]* [-b|-B]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-a|-n cidr|-v vlan|-e regexp|-E regexp|-t|-m]* [-b|-B]\n", progname) ;
     fprintf (stderr, "\t-b: backbone interfaces\n") ;
     fprintf (stderr, "\t-B: non-backbone interfaces (i.e. terminal interfaces)\n") ;
     exit (1) ;
@@ -106,7 +106,7 @@ int main (int argc, char *argv [])
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "an:e:E:tmBb")) != -1) {
+    while ((c = getopt (argc, argv, "an:e:E:tv:mBb")) != -1) {
 	switch (c)
 	{
 	    case 'a' :
@@ -114,6 +114,7 @@ int main (int argc, char *argv [])
 	    case 'e' :
 	    case 'E' :
 	    case 't' :
+	    case 'v' :
 	    case 'm' :
 		if ((errstr = sel_register (c, optarg)) != NULL)
 		{

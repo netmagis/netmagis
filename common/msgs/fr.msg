@@ -185,6 +185,7 @@
  {Group has access to domain '%s' which do not exists in database} {Le groupe a accès au domaine '%s' qui n'existe pas dans la base}
  {Group has access to network '%s' which do not exists in database} {Le groupe a accès au réseau '%s' qui n'existe pas dans la base}
  {Group has access to view '%s' which do not exists in database} {Le groupe a accès à la vue '%s' qui n'existe pas dans la base}
+ {Group has access to vlan '%s' which does not exist in the database} {Le groupe a accès au vlan '%s' qui n'existe pas dans la base}
  {Group '%s' already exist} {Le groupe '%s' existe déjà}
  {Group '%s' not found} {Groupe '%s' non trouvé}
  {Host id %s not found} {Machine d'id %s non trouvée}
@@ -274,7 +275,7 @@
  {Invalid value '%s' for read/write} {Valeur '%s' incorrecte pour read/write}
  {Invalid view sort class '%s'} {Classe de tri de vue '%s' invalide}
  {Invalid view '%s'}	{Vue '%s' invalide}
- {Invalid web role '%s'} {Role web invalide '%s'}
+ {Invalid VLAN '%s'} {Vlan '%s' invalide}
  {IP address '%s' already exists} {L'adresse '%s' existe déjà}
  {IP address}	{Adresse IP}
  {IP addresses}	{Adresses IP}
@@ -288,6 +289,7 @@
  {IPv6 address} {Adresse IPv6}
  {IPv6 gateway} {Passerelle IPv6}
  {IPv6}		{IPv6}
+ {L2-only networks} {Réseaux de niveau 2}
  {Last full-rancid} {Dernier full-rancid}
  {Last message for '%1$s' at %2$s} {Dernier message pour '%1$s' au %2$s}
  {Last occurrence} {Dernière occurrence}
@@ -386,6 +388,7 @@
  {No allowed domain} {Aucun domaine autorisé}
  {No allowed network} {Aucun réseau autorisé}
  {No allowed view} {Aucune vue autorisée}
+ {No allowed L2-only network} {Aucun réseau de niveau 2 autorisé}
  {No 'allow' permission found for network '%s'} {Aucun droit 'allow' trouvé pour le réseau '%s}
  {No authorized network} {Aucun réseau autorisé}
  {No block of %s free IPv4 address(es) found} {Aucun bloc de %s adresse(s) trouvé}
@@ -579,6 +582,7 @@
  {Vlan %1$s: %2$s} {Vlan %1$s : %2$s}
  {vlan=%1$s, voip=%2$s, desc=%3$s} {vlan=%1$s, voip=%2$s, desc=%3$s}
  {Vlan-Id}	{Vlan-id}
+ {Vlan id '%s' out of range (1..4094)} {Vlan id '%s' invalide (1..4094)}
  {Vlan management} {Gestion des Vlans}
  {Vlan '%s' is a voice Vlan} {Le vlan '%s' est un Vlan VoIP}
  {Vlan '%s' is not a voice Vlan} {Le vlan '%s' n'est pas un Vlan VoIP}

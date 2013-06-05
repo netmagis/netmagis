@@ -209,7 +209,7 @@ MOBJ *mobjlist [NB_MOBJ] ;
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]* eq [iface]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-a|-n cidr|-v vlan|-e regexp|-E regexp|-t|-m]* eq [iface]\n", progname) ;
     exit (1) ;
 }
 
@@ -228,7 +228,7 @@ int main (int argc, char *argv [])
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "an:e:E:tm")) != -1)
+    while ((c = getopt (argc, argv, "an:e:E:tv:m")) != -1)
     {
 	switch (c)
 	{
@@ -237,6 +237,7 @@ int main (int argc, char *argv [])
 	    case 'e' :
 	    case 'E' :
 	    case 't' :
+	    case 'v' :
 	    case 'm' :
 		if ((errstr = sel_register (c, optarg)) != NULL)
 		{

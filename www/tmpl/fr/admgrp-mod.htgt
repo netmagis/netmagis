@@ -59,9 +59,13 @@
 
     %TABDHCPPROFILES%
 
-    \titre {2} {Équipements}
+    \titre {2} {Équipements réseau (Topo)}
 
     %TABPERMEQ%
+
+    \titre {2} {Réseaux de niveau 2 (Topo)}
+
+    %TABL2ONLY%
 }
 
 }

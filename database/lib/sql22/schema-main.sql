@@ -442,6 +442,16 @@ CREATE TABLE topo.p_eq (
     FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp)
 ) ;
 
+-- Access rights to L2-only networks
+
+CREATE TABLE topo.p_l2only (
+    idgrp	INT,			-- group upon which this access right applies
+    vlanid	INT,			-- 1...4094
+
+    PRIMARY KEY (idgrp, vlanid),
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp)
+) ;
+
 -- Sensor definition
 
 -- type trafic
@@ -492,7 +502,7 @@ CREATE TABLE topo.filemonitor (
 -- Vlan table
 
 CREATE TABLE topo.vlan (
-	vlanid	INT,			-- 1..4095
+	vlanid	INT,			-- 1..4094
 	descr	TEXT,			-- description
 	voip	INT DEFAULT 0,		-- 1 if VoIP vlan, 0 if standard vlan
 

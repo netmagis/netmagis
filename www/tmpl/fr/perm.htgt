@@ -52,6 +52,14 @@
     \titre {2} {Profils DHCP}
 
     %TABDHCPPROFILE%
+
+    \titre {2} {Équipements réseau (Topo)}
+
+    %TABPERMEQ%
+
+    \titre {2} {Réseaux de niveau 2 (Topo)}
+
+    %TABL2ONLY%
 }
 
 }

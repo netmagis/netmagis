@@ -392,6 +392,13 @@ ALTER TABLE topo.ifchanges DROP COLUMN idrr ;
 ALTER TABLE topo.ifchanges
     ADD PRIMARY KEY (eq, reqdate, iface) ;
 
+CREATE TABLE topo.p_l2only (
+    idgrp	INT,
+    vlanid	INT,
+    PRIMARY KEY (idgrp, vlanid),
+    FOREIGN KEY (idgrp) REFERENCES global.nmgroup (idgrp)
+) ;
+
 -- pgauth schema
 
 ALTER TABLE pgauth.user RENAME COLUMN nom		TO lastname ;

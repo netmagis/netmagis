@@ -267,6 +267,22 @@ set libconf(tabdhcpprofile) {
     }
 }
 
+set libconf(tabl2only) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {100}
+    }
+    pattern Normal {
+	vbar {yes}
+	column {
+	    format {lines}
+	}
+	vbar {yes}
+    }
+}
+
 set libconf(tabmachine) {
     global {
 	chars {10 normal}
@@ -2837,7 +2853,7 @@ proc display-user {_tabuid} {
 #	- idgrp : group id
 #   - global variables libconf(tab*) : array specification
 # Output:
-#   - return value: list of 8 HTML strings
+#   - return value: list of 9 HTML strings
 #
 # History
 #   2002/05/23 : pda/jean : specification et design
@@ -3127,6 +3143,24 @@ proc display-group {dbfd idgrp} {
     set tabdreq [::arrgen::output "html" $libconf(tabdreq) $lines]
 
     #
+    # Get VLAN-ids for L2-only networks
+    #
+
+    set lines {}
+    set sql "SELECT p.vlanid, v.descr
+			FROM topo.p_l2only p, topo.vlan v
+			WHERE p.idgrp = $idgrp AND v.vlanid = p.vlanid
+			ORDER BY p.vlanid ASC"
+    pg_select $dbfd $sql tab {
+	lappend lines [list Normal "$tab(vlanid) - $tab(descr)"]
+    }
+    if {[llength $lines] > 0} then {
+	set tabl2only [::arrgen::output "html" $libconf(tabl2only) $lines]
+    } else {
+	set tabl2only [mc "No allowed L2-only network"]
+    }
+
+    #
     # Return informations
     #
 
@@ -3138,6 +3172,7 @@ proc display-group {dbfd idgrp} {
 		    $tabdomains \
 		    $tabdhcpprofile \
 		    $tabdreq \
+		    $tabl2only \
 	    ]
 }
 
@@ -3253,8 +3288,8 @@ proc user-attribute {dbfd idcor attr} {
 #		p_genl  1 if permission to generate a link number
 #		networks list of authorized networks
 #		eq	regexp matching authorized equipments
-#		flagsr	flags -n/-e/-E/etc to use in topo programs
-#		flagsw	flags -n/-e/-E/etc to use in topo programs
+#		flagsr	flags -n/-e/-E/-v/etc to use in topo programs
+#		flagsw	flags -n/-e/-E/-v/etc to use in topo programs
 # Output:
 #   - return value: -1 if error, or number of found entries
 #   - parameter _tabuid : values in return
@@ -3338,6 +3373,9 @@ proc read-user {dbfd login _tabuid _msg} {
     # Topo specific characteristics
     #
 
+    # Read authorized L2-only networks
+    set tabuid(l2only) [allowed-l2only $dbfd $tabuid(idgrp)]
+
     # Read authorized CIDR
     set tabuid(networks) [allowed-networks $dbfd $tabuid(idgrp) "consult"]
 
@@ -3376,6 +3414,11 @@ proc read-user {dbfd login _tabuid _msg} {
 		if {$r6 ne ""} then {
 		    lappend flags "-n" $r6
 		}
+	    }
+
+	    # Next, build access rights on L2-only networks
+	    foreach vlan $tabuid(l2only) {
+		lappend flags "-v" $vlan
 	    }
 
 	    # Next, build access rights on equipements (part 1)
@@ -6709,6 +6752,34 @@ proc allowed-networks {dbfd idgrp priv} {
     }
 
     return $lnet
+}
+
+#
+# Return list of allowed vlan-id of L2-only networks for a given group 
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- idgrp : group id
+# Output:
+#   - return value: list of vlan ids
+#
+# History
+#   2013/01/24 : jean : adaptated from allowed-networks
+#
+
+proc allowed-l2only {dbfd idgrp} {
+    #
+    # Get all allowed vlans for this group
+    #
+
+    set lvlan {}
+    set sql "SELECT vlanid FROM topo.p_l2only WHERE idgrp = $idgrp"
+    pg_select $dbfd $sql tab {
+	lappend lvlan $tab(vlanid)
+    }
+
+    return $lvlan
 }
 
 #

@@ -229,7 +229,7 @@ Main function
 
 void usage (char *progname)
 {
-    fprintf (stderr, "Usage : %s [-a|-n cidr|-e regexp|-E regexp|-t|-m]* [-s] [-w] [-p] [eq]\n", progname) ;
+    fprintf (stderr, "Usage : %s [-a|-n cidr|-v vlan|-e regexp|-E regexp|-t|-m]* [-s] [-w] [-p] [eq]\n", progname) ;
     exit (1) ;
 }
 
@@ -257,7 +257,7 @@ int main (int argc, char *argv [])
 
     sel_init () ;
 
-    while ((c = getopt (argc, argv, "an:e:E:timpsw")) != -1)
+    while ((c = getopt (argc, argv, "an:e:E:tv:impsw")) != -1)
     {
 	switch (c)
 	{
@@ -267,6 +267,7 @@ int main (int argc, char *argv [])
 	    case 'E' :
 	    case 't' :
 	    case 'm' :
+	    case 'v' :
 		if ((errstr = sel_register (c, optarg)) != NULL)
 		{
 		    fprintf (stderr, "%s: %s\n", prog, errstr) ;

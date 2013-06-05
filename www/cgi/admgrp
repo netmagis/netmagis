@@ -255,6 +255,29 @@ set conf(tabdhcpprofile) {
     }
 }
 
+set conf(tabl2only) {
+    global {
+	chars {12 normal}
+	botbar {no}
+	columns {100}
+	align {center}
+    }
+    pattern Title {
+	topbar {no}
+	vbar {no}
+	chars {bold}
+	column { }
+	vbar {no}
+    }
+    pattern Normal {
+	topbar {no}
+	vbar {no}
+	column {
+	    format {raw}
+	}
+	vbar {no}
+    }
+}
 
 #
 # Netmagis general library
@@ -739,6 +762,44 @@ d cgi-register {action edit} {
     set listdhcpprof [::arrgen::output "html" $conf(tabdhcpprofile) $lines]
 
     #
+    # L2-only networks
+    #
+
+    set lines {}
+    set lv [list ""]
+    set idx 1
+    foreach v [::pgsql::getcols $dbfd topo.vlan "" "vlanid ASC" {vlanid descr}] {
+	lassign $v vlanid descr
+	lappend lv [list $descr "$vlanid - $descr"]
+	lappend tv($vlanid) $idx
+	incr idx
+    }
+    lappend lines [list "Title" [mc "L2-only networks"]]
+    set sql "SELECT vlanid AS vlanid
+			FROM topo.p_l2only
+			WHERE idgrp = $idgrp
+			ORDER BY vlanid ASC"
+    set nvlan 1
+    pg_select $dbfd $sql tab {
+	set vlanid $tab(vlanid)
+	if {! [info exists tv($vlanid)]} then {
+	    d error [mc "Group has access to vlan '%s' which does not exist in the database" $vlanid]
+	}
+	set idx $tv($vlanid)
+	set hvlan  [::webapp::form-menu vlan$nvlan 1 0 $lv [list $idx]]
+	lappend lines [list Normal $hvlan]
+	incr nvlan
+    }
+
+    for {set i 1} {$i <= 5} {incr i} {
+	set hvlan  [::webapp::form-menu vlan$nvlan 1 0 $lv [list 0]]
+	lappend lines [list Normal $hvlan]
+	incr nvlan
+    }
+
+    set listl2only [::arrgen::output "html" $conf(tabl2only) $lines]
+
+    #
     # End of script: output page and close database
     #
 
@@ -760,6 +821,7 @@ d cgi-register {action edit} {
 				[list %LISTPERMS% $listperms] \
 				[list %LISTPERMEQ% $listpermeq] \
 				[list %LISTDHCPPROF% $listdhcpprof] \
+				[list %LISTL2ONLY% $listl2only] \
 			    ]
 }
 
@@ -794,6 +856,7 @@ d cgi-register {action mod} {
     {eqrw[0-9]+		0 9999}
     {eqallow[0-9]+	0 9999}
     {eqpat[0-9]+	0 9999}
+    {vlanid[0-9]+	0 9999}
 } {
     global conf
     global ah
@@ -1159,6 +1222,32 @@ d cgi-register {action mod} {
     }
 
     #
+    # Test VLAN ids for L2-only networks
+    #
+
+    set lvlan {}
+    set n 1
+    foreach iv [::pgsql::getcols $dbfd topo.vlan "" "vlanid ASC" {vlanid descr}] {
+	lassign $iv vlanid descr
+	set tvlan($descr) $vlanid
+    }
+    while {[info exists ftab(vlan$n)]} {
+	set descr [string trim [lindex $ftab(vlan$n) 0]]
+	if {$descr ne ""} then {
+	    if {! [info exists tvlan($descr)]} then {
+		d error [mc "Invalid VLAN '%s'" $descr]
+	    }
+
+	    set vlanid $tvlan($descr)
+	    if {$vlanid < 1 || $vlanid > 4094} then {
+		d error [mc "Vlan id '%s' out of range (1..4094)" $vlanid]
+	    }
+	    lappend lvlan $vlanid
+	}
+	incr n
+    }
+
+    #
     # Test data consistency
     #
 
@@ -1431,6 +1520,13 @@ d cgi-register {action mod} {
 			VALUES ($idgrp, $iddhcpprof, $sort)"
     }
 
+    # L2-only VLAN ids authorized for the group
+    lappend cmd "DELETE FROM topo.p_l2only WHERE idgrp = $idgrp"
+    foreach vlanid $lvlan {
+	lappend cmd "INSERT INTO topo.p_l2only (idgrp, vlanid)
+			VALUES ($idgrp, $vlanid)"
+    }
+
     #
     # Proceed to database modification
     #
@@ -1450,7 +1546,7 @@ d cgi-register {action mod} {
     set h [display-group $dbfd $idgrp]
     lassign $h \
 		tabperms tablogins tabnets tabcidralone \
-		tabviews tabdomains tabdhcpprofiles tabpermeq
+		tabviews tabdomains tabdhcpprofiles tabpermeq tabl2only
 
     #
     # End of script: output page and close database
@@ -1466,6 +1562,7 @@ d cgi-register {action mod} {
 			    [list %TABCIDRALONE% $tabcidralone] \
 			    [list %TABDHCPPROFILES% $tabdhcpprofiles] \
 			    [list %TABPERMEQ% $tabpermeq] \
+			    [list %TABL2ONLY% $tabl2only] \
 			]
 }
 

@@ -145,6 +145,18 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
+		} {\gras {DHCP profiles}}
+	    }
+	    \lignetableau {
+		\casetableau {} {To remove access to a DHCP profile,
+		    just delete its "sort class".
+
+		    %LISTDHCPPROF%}
+	    }
+	    \lignetableau {
+		\casetableau {
+		     \couleurfond {#C0C0C0}
+		    \centragehorizontal {CENTER}
 		} {\gras {Permissions on network equipments (Topo module)}}
 	    }
 	    \lignetableau {
@@ -182,13 +194,10 @@
 		\casetableau {
 		     \couleurfond {#C0C0C0}
 		    \centragehorizontal {CENTER}
-		} {\gras {DHCP profiles}}
+		} {\gras {L2-only networks (Topo module)}}
 	    }
 	    \lignetableau {
-		\casetableau {} {To remove access to a DHCP profile,
-		    just delete its "sort class".
-
-		    %LISTDHCPPROF%}
+		\casetableau {} {%LISTL2ONLY%}
 	    }
 	    \lignetableau {
 		\casetableau {

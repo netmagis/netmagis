@@ -16,6 +16,7 @@ enum crittype
     CT_ALL,			/* for root only */
     CT_NET,			/* all ifaces in this broadcast domain */
     CT_REX,			/* all eq matching (or not) this regexp */
+    CT_VLAN,			/* all iface in this vlan */
     CT_TERM,			/* only keep terminal ifaces */
     CT_OWN,			/* only keep ifaces where we own all vlans */
 } ;
@@ -31,6 +32,11 @@ struct selrex
     regex_t rc ;
 } ;
 
+struct selvlan
+{
+    vlan_t id ;
+} ;
+
 struct sel
 {
     enum crittype crittype ;
@@ -38,6 +44,7 @@ struct sel
     {
 	struct selnet net ;
 	struct selrex rex ;
+	struct selvlan vlan ;
     } u ;
     struct sel *next ;
 } ;
@@ -80,6 +87,7 @@ char *sel_register (int opt, char *arg)
 {
     struct sel *sl ;
     ip_t a ;
+    vlan_t vlanid ;
     regex_t rc ;
     char *r ;
     static char errstr [100] ;
@@ -114,6 +122,15 @@ char *sel_register (int opt, char *arg)
 	    break ;
 	case 'm' :
 	    sl->crittype = CT_OWN ;
+	    break ;
+	case 'v' :
+	    vlanid = atoi(arg) ;
+	    if (vlanid > 0 && vlanid <= 4094)
+	    {
+		sl->crittype = CT_VLAN ;
+		sl->u.vlan.id = vlanid ;
+	    }
+	    else sprintf (errstr, "'%s' is not a valid vlan id", arg) ;
 	    break ;
 	default :
 	    sprintf (errstr, "internal error : '-%c' is not a valid option", opt) ;
@@ -167,6 +184,23 @@ static void sel_mark_eq (struct eq *eq, int allow_deny)
 	for (n = eq->enhead; n != NULL ; n = n->enext)
 	    MK_DESELECT (n) ;
 }
+
+static void sel_mark_vlan (vlan_t v)
+{
+    struct node *n, *l1node ;
+
+int c=0;
+    for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)
+    {
+	if (n->nodetype == NT_L2 && n->u.l2.vlan == v)
+	{
+c++;
+	    MK_SELECT (n) ;
+	    transport_vlan_on_L2 (n, v) ;
+	}
+    }
+}
+
 
 static void sel_mark_regexp (regex_t *rc, int allow_deny)
 {
@@ -312,6 +346,14 @@ void sel_mark (void)
 		 */
 
 		sel_mark_regexp (&sl->u.rex.rc, sl->u.rex.allow_deny) ;
+		break ;
+
+	    case CT_VLAN :
+		/*
+		 * Select nodes based on vlan id
+		 */
+
+		sel_mark_vlan (sl->u.vlan.id) ;
 		break ;
 
 	    case CT_TERM :

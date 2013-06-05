@@ -52,6 +52,14 @@
     \titre {2} {DHCP profiles}
 
     %TABDHCPPROFILE%
+
+    \titre {2} {Network equipments (Topo module)}
+
+    %TABPERMEQ%
+
+    \titre {2} {L2-only networks (Topo module)}
+
+    %TABL2ONLY%
 }
 
 }

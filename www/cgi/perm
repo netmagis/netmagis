@@ -57,7 +57,8 @@ d cgi-register {} {
 	tabviews \
 	tabdomains \
 	tabdhcpprofile \
-	tabdreq 
+	tabpermeq \
+	tabl2only
 
     if {$tabcidralone eq ""} then {
 	set titlecidralone ""
@@ -77,6 +78,8 @@ d cgi-register {} {
 			    [list %TABDOMAINS% $tabdomains] \
 			    [list %TABVIEWS% $tabviews] \
 			    [list %TABDHCPPROFILE% $tabdhcpprofile] \
+			    [list %TABPERMEQ% $tabpermeq] \
+			    [list %TABL2ONLY% $tabl2only] \
 			    ]
 }
 
