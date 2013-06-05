@@ -124,8 +124,8 @@ ALTER TABLE dns.reseau
     DROP CONSTRAINT IF EXISTS reseau_idetabl_fkey		CASCADE,
     DROP CONSTRAINT IF EXISTS reseau_idcommu_fkey		CASCADE,
     DROP CONSTRAINT IF EXISTS au_moins_un_prefixe_v4_ou_v6	CASCADE,
-    DROP CONSTRAINT IF EXISTS gw4_in_net,
-    DROP CONSTRAINT IF EXISTS gw6_in_net ;
+    DROP CONSTRAINT IF EXISTS gw4_in_net			CASCADE,
+    DROP CONSTRAINT IF EXISTS gw6_in_net 			CASCADE ;
 
 ALTER TABLE dns.communaute
     DROP CONSTRAINT IF EXISTS communaute_pkey			CASCADE ;
