@@ -69,7 +69,6 @@
 	\item {\lien {de modifier les informations}	{%URLMOD%}}
 	\item {\lien {de supprimer une machine}		{%URLDEL%}}
 	\item {\lien {de consulter mes droits d'accès}	{%URLPERM%}}
-	\item {\lien {de modifier mon mot de passe}	{%PASSWDURL%}}
 	\item {\lien {de gérer les "rôles mail"}	{%URLMAIL%}}
 	\* \item {\lien {de gérer les "rôles web"}	{%URLWEB%}}
 	\item {\lien {de gérer les plages DHCP}	{%URLDHCP%}}

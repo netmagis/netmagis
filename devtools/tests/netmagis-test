@@ -9,9 +9,9 @@
 #
 # Each test file is a TCL file, where you can use the following
 # directives:
-#   test <name> <cmd> <pattern>
-#   test-sh <name> <cmd> <pattern>
-#   test-cgi <name> <path-to-cgi> <user> <param> <pattern>
+#   test <name> <cmd> <pattern> [<pattern-err>]
+#   test-sh <name> <cmd> <pattern> [<pattern-err>]
+#   test-cgi <name> <path-to-cgi> <user> <param> <pattern> [<pattern-err>]
 #   save-db <name> <path-to-dbfile>
 #   load-db <name> <path-to-dbfile>
 # where:
@@ -21,7 +21,12 @@
 #	PG* environment variables are automatically set in order
 #	to provide access to the netmagis database (no support
 #	provided if the mac.* schema is located in another database)
-#   <pattern> is a regexp pattern, not anchored
+#   <pattern> is a regexp pattern, not anchored. If found, the test
+#	is viewed as successful
+#   <pattern-err> is an optionnal regexp pattern. If found, the
+#	test is viewed as failed. If both pattern-err and pattern
+#	match, test is viewed as failed. An empty regexp pattern
+#	is the same as no pattern.
 #   <path-to-cgi> is the path to the CGI script to be called. If this
 #	parameter does not begin with "/", %NMCGIDIR%/
 #	is automatically prepended.
@@ -70,7 +75,8 @@ proc init-actions {} {
     set tabtests(idx) 0
 }
 
-proc add-action {name cmd pattern} {
+# here, patterr is not optionnal
+proc add-action {name cmd pattern patterr} {
     global tabtests
     global currentfile
 
@@ -80,7 +86,7 @@ proc add-action {name cmd pattern} {
 	puts stderr "Test '$name' already provided. Skipping."
     } else {
 	set tabtests(/name:$name) {}
-	set tabtests($idx) [list $name $cmd $pattern]
+	set tabtests($idx) [list $name $cmd $pattern $patterr]
 	incr tabtests(idx)
     }
 }
@@ -104,24 +110,24 @@ proc prepend-sh-variables {cmd} {
 #
 
 # register a single test
-proc test {name cmd pattern} {
-    add-action $name $cmd $pattern
+proc test {name cmd pattern {patterr {}}} {
+    add-action $name $cmd $pattern $patterr
 }
 
 # register a shell test
-proc test-sh {name cmd pattern} {
-    add-action $name [prepend-sh-variables $cmd] $pattern
+proc test-sh {name cmd pattern {patterr {}}} {
+    add-action $name [prepend-sh-variables $cmd] $pattern $patterr
 }
 
 # register a CGI test
-proc test-cgi {name script user param pattern} {
+proc test-cgi {name script user param pattern {patterr {}}} {
     global conf
 
     if {! [regexp {^/} $script]} then {
 	set script "$conf(cgidir)/$script"
     }
     set cmd "$conf(libtest)/cgi -l $user $script $param"
-    add-action $name $cmd $pattern
+    add-action $name $cmd $pattern $patterr
 }
 
 # register a "save to dump file"
@@ -132,7 +138,7 @@ proc save-db {name file} {
 	set file "$conf(vartest)/$file"
     }
     set cmd [prepend-sh-variables "pg_dump \$PGDATABASE > $file"]
-    add-action $name $cmd "^$"
+    add-action $name $cmd "^$" {}
 }
 
 # register a "restore from dump file"
@@ -145,7 +151,7 @@ proc load-db {name file} {
     set cmd [prepend-sh-variables "dropdb \$PGDATABASE
     			createdb -E unicode --template=template0
 			psql -f $file \$PGDATABASE"]
-    add-action $name $cmd ""
+    add-action $name $cmd "" {}
 }
 
 ##############################################################################
@@ -154,40 +160,46 @@ proc load-db {name file} {
 
 # pref:	directory and base name of test
 # cmd:	cmd to run
-# pattern: pattern to search in stdout
+# pattern: pattern to search in stdout to consider test as successful
+# patterr: pattern to search in stdout to consider test as failed
 # return value: 1 if run ok and pattern found in stdout
 
-proc run-and-grep {pref cmd pattern} {
+proc run-and-grep {pref cmd pattern patterr} {
     set r 0
 
     set out "$pref.out"
     set err "$pref.err"
 
-    if {[catch {exec -ignorestderr sh -c $cmd > $out 2>$err} x]} then {
+    file delete -force -- $out $err
+
+    # save command in error file
+    set fd [open $err "w"]
+    puts $fd "Running $cmd"
+    close $fd
+
+    if {[catch {exec -ignorestderr sh -c $cmd > $out 2>>$err} x]} then {
 	#
 	# An error occurrend
 	# r contains cmd standard output with a last
 	# line "child process exited abnormally"
 	# File contains cmd standard error
 	#
+	set r 0
     } else {
 	#
 	# Script terminated without error
-	# r contains cmd standard output
-	# File contains cmd standard error
+	# Test patterns
 	#
 	set fd [open $out "r"]
 	set t [read $fd]
 	close $fd
-	if {[regexp $pattern $t]} then {
-	    set r 1
+	if {$patterr ne "" && [regexp $patterr $t]} then {
+	    set r 0
+	} else {
+	    if {[regexp $pattern $t]} then {
+		set r 1
+	    }
 	}
-    }
-    if {! $r} then {
-	set fd [open $err "a"]
-	puts $fd "Command was:"
-	puts $fd "\t$cmd"
-	close $fd
     }
     return $r
 }
@@ -206,10 +218,10 @@ proc run-all-tests {fd autostop} {
     set r 0
     set ntests $tabtests(idx)
     for {set i 0} {$i < $ntests} {incr i} {
-	lassign $tabtests($i) name cmd pattern
+	lassign $tabtests($i) name cmd pattern patterr
 	puts -nonewline $fd "$name: "
 	flush $fd
-	set rt [run-and-grep $conf(vartest)/$name $cmd $pattern]
+	set rt [run-and-grep $conf(vartest)/$name $cmd $pattern $patterr]
 	if {$rt} then {
 	    puts $fd "ok"
 	} else {
