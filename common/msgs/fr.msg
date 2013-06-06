@@ -267,6 +267,7 @@
  {Invalid sensor name '%s' (should be M...)} {Nom de sonde '%s' invalide (devrait être M...)}
  {Invalid SMTP emit right (must be 0 or 1)} {Droit SMTP invalide (doit être 0 ou 1)}
  {Invalid syntax for IP address '%s'} {Syntaxe invalide pour l'adresse IP '%s'}
+ {Invalid syntax for MAC address '%s'} {Syntaxe invalide pour l'adresse MAC '%s'}
  {Invalid syntax '%s' for DHCP profile} {Syntaxe invalide pour le profil DHCP '%s'}
  {Invalid TTL: must be a positive integer} {TTL invalide : doit être un nombre entier positif}
  {Invalid TTL: must be less than %s} {TTL invalide : doit être inférieur à %s}

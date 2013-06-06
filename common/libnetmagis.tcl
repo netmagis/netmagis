@@ -5027,6 +5027,7 @@ proc check-ip-syntax {dbfd addr type} {
 	default {
 	    set cast $type
 	    set fam ""
+	    set msg "?"
 	}
     }
     set addr [::pgsql::quote $addr]
@@ -5046,7 +5047,11 @@ proc check-ip-syntax {dbfd addr type} {
 	    }
 	}
     } else {
-	set r [mc "Invalid syntax for IP address '%s'" $addr]
+	if {$type eq "macaddr"} then {
+	    set r [mc "Invalid syntax for MAC address '%s'" $addr]
+	} else {
+	    set r [mc "Invalid syntax for IP address '%s'" $addr]
+	}
     }
     return $r
 }
