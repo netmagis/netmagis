@@ -13,7 +13,7 @@ test-sh upgr22 "psql --no-psqlrc --single-transaction \
 		    -f %NMXMPDIR%/upgrade/21-22/upgrade.sql && echo ok" {ok}
 
 # Check index from a valid user
-test-cgi index-1 index pda {} {Check the links menu}
+test-cgi index-1 index pda {} {Welcome in Netmagis application}
 
 # Check index from a non-existent user
 test-cgi index-2 index noone {} {User 'noone' is not in the authentication base}
@@ -23,3 +23,6 @@ test-cgi admindex-1 admindex pda {} {Administration module}
 
 # Check admindex from a non-authorized user
 test-cgi admindex-2 admindex bob {} {User 'bob' not authorized}
+
+# Check translation engine
+test-cgi index-fr index pda {l=fr} {Bienvenue dans l'application Netmagis}
