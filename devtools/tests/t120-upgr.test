@@ -1,17 +1,16 @@
 #
-# Initial loading of a database, saving it for
-# further tests.
+# Upgrade script
 #
 # History:
-#   2013/06/03 : pda      : design
+#   2013/06/06 : pda      : design
 #
 
-# Load database from distributed example script
-test-sh init "dropdb \$PGDATABASE
-		cd %NMXMPDIR%/with-views && sh ./run-all.sh" {Succeeded}
+# Load dump of previous version
+load-db load21 %NMLIBDIR%/tests/netmagis-2.1.1.dump
 
-# Save dump file
-save-db save v22.dump
+# Apply upgrade procedure
+test-sh upgr22 "psql --no-psqlrc --single-transaction \
+		    -f %NMXMPDIR%/upgrade/21-22/upgrade.sql && echo ok" {ok}
 
 # Check index from a valid user
 test-cgi index-1 index pda {} {Check the links menu}
