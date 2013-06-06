@@ -14,7 +14,7 @@ test-sh init "dropdb \$PGDATABASE
 save-db save v22.dump
 
 # Check index from a valid user
-test-cgi index-1 index pda {} {Welcome in Netmagis application} {%[A-Z0-9]+%}
+test-cgi index-1 index pda {} {Welcome in Netmagis application}
 
 # Check index from a non-existent user
 test-cgi index-2 index noone {} {User 'noone' is not in the authentication base}

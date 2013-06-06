@@ -126,6 +126,9 @@ proc test-cgi {name script user param pattern {patterr {}}} {
     if {! [regexp {^/} $script]} then {
 	set script "$conf(cgidir)/$script"
     }
+    if {$patterr eq ""} then {
+	set patterr {%[A-Z0-9_]+%}
+    }
     set cmd "$conf(libtest)/cgi -l $user $script $param"
     add-action $name $cmd $pattern $patterr
 }
@@ -165,26 +168,20 @@ proc load-db {name file} {
 # return value: 1 if run ok and pattern found in stdout
 
 proc run-and-grep {pref cmd pattern patterr} {
-    set r 0
+    # no error at this time
+    set reason ""
 
     set out "$pref.out"
     set err "$pref.err"
 
-    file delete -force -- $out $err
-
-    # save command in error file
-    set fd [open $err "w"]
-    puts $fd "Running $cmd"
-    close $fd
-
-    if {[catch {exec -ignorestderr sh -c $cmd > $out 2>>$err} x]} then {
+    if {[catch {exec -ignorestderr sh -c $cmd > $out 2>$err} x]} then {
 	#
 	# An error occurrend
 	# r contains cmd standard output with a last
 	# line "child process exited abnormally"
 	# File contains cmd standard error
 	#
-	set r 0
+	set reason "exit code != 0 ($x)"
     } else {
 	#
 	# Script terminated without error
@@ -194,13 +191,27 @@ proc run-and-grep {pref cmd pattern patterr} {
 	set t [read $fd]
 	close $fd
 	if {$patterr ne "" && [regexp $patterr $t]} then {
-	    set r 0
+	    set reason "error pattern '$patterr' matched in file $out"
 	} else {
-	    if {[regexp $pattern $t]} then {
-		set r 1
+	    if {! [regexp $pattern $t]} then {
+		set reason "pattern '$pattern' did not match in file $out"
 	    }
 	}
     }
+
+    #
+    # If failed, append details in error file
+    #
+    if {$reason eq ""} then {
+	set r 1
+    } else {
+	set fd [open $err "a"]
+	puts $fd "Running $cmd"
+	puts $fd "Fail reason: $reason"
+	close $fd
+	set r 0
+    }
+
     return $r
 }
 
