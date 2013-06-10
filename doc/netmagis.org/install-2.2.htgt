@@ -189,7 +189,7 @@
     use:
 
     \retrait\teletype {
-	# tar xzvf netmagis-freebsd-ports-2.1.tgz -C /usr/ports/net-mgmt/
+	# tar xzvf netmagis-freebsd-ports-2.2.0.tgz -C /usr/ports/net-mgmt/
     }
 
     In order to install a netmagis package, just enter the
@@ -259,7 +259,7 @@
 
 	    \retrait\teletype {
 		# apt-get install gdebi \br
-		# gdebi netmagis-database_2.1-1_pdp11.deb
+		# gdebi netmagis-database_2.2-1_pdp11.deb
 	    }
 	}
     }
@@ -272,7 +272,7 @@
 	{/download.html} and unpack the archive:
 
 	\retrait {\teletype {
-	    $ tar xzvf netmagis-2.1.tar.gz
+	    $ tar xzvf netmagis-2.2.0.tar.gz
 	}}
 
 	Alternatively, if you are adventurous, you may also fetch the
@@ -821,19 +821,19 @@
 
     The provided commands are:
     \liste {
-    \item {\teletype {dnsaddhost \italique {fqdn addr}}: adds the
+    \item {\teletype {dnsaddhost \italique {fqdn addr view}}: adds the
 	specified host with the IPv4 or IPv6 address
     }
-    \item {\teletype {dnsaddalias \italique {fqdn-alias fqdn-host}}:
+    \item {\teletype {dnsaddalias \italique {fqdn-alias fqdn-host view}}:
 	adds the specified alias to an existing host.
     }
-    \item {\teletype {dnsdelhost \italique {fqdn}}: deletes the
+    \item {\teletype {dnsdelhost \italique {fqdn view}}: deletes the
 	specified host
     }
-    \item {\teletype {dnsdelip \italique {addr}}: deletes an IP address.
+    \item {\teletype {dnsdelip \italique {addr view}}: deletes an IP address.
 	If this is the last, deletes the host.
     }
-    \item {\teletype {dnsmodattr \italique {fqdn key val key val ...}}:
+    \item {\teletype {dnsmodattr \italique {fqdn view key val key val ...}}:
 	modify an existing host. Possibles keys are:
 	\liste {
 	    \item {\teletype {mac}: value is the MAC address
@@ -845,13 +845,13 @@
 		\teletype {dns.hinfo} SQL table
 
 	    }
-	    \item {\teletype {respnom}: name of user responsible for
+	    \item {\teletype {respname}: name of user responsible for
 		this host
 	    }
-	    \item {\teletype {respmel}: mail address of user responsible
+	    \item {\teletype {respmaill}: mail address of user responsible
 		for this host
 	    }
-	    \item {\teletype {commentaire}: comment associated to this
+	    \item {\teletype {comment}: comment associated to this
 		host
 	    }
 	    \item {\teletype {dhcpprofile}: value is the exact name of
@@ -864,21 +864,24 @@
 		this host, in seconds, or empty string to remove the
 		specific value
 	    }
-	    \item {\teletype {droitsmtp}: value is 0 to remove the right
+	    \item {\teletype {sendsmtp}: value is 0 to remove the right
 		to emit mail with unauthenticated SMTP, or 1 to add the
 		right.
 	    }
 	}
     }
-    \item {\teletype {dnsreadprol \italique {zone}}: displays on
+    \item {\teletype {dnsreadprol \italique {zone view}}: displays on
 	standard output the DNS zone prologue specified by its domain
 	name.
     }
-    \item {\teletype {dnswriteprol \italique {zone file}}: use the named
+    \item {\teletype {dnswriteprol \italique {zone view file}}: use the named
 	file as the zone prologue. Since this operation may have a great
 	impact, manual confirmation is required.
     }
     }
+
+    With all these commands, you have to provide a view name. If you don't
+    use multiple views, just use the name "\teletype {default}".
 
     Note that users using this script must have a Netmagis account
     with the same login as the Unix one.
@@ -991,6 +994,13 @@
     Test now a real zone generation by using:
     \retrait\teletype {$ .../sbin/mkzone -v}
 
+    Each zone file will be named after the "Name" column in zone edition.
+
+    If you are using multiple views on different DNS servers, you
+    can use the \teletype {-w \italique {view}} option to limit zone
+    generation to a single view. By default, the \teletype {mkzone}
+    program generates zone files for all views.
+
     If everything is ok, you can use the sample \teletype
     {.../share/examples/netmagis/crontab.bind} to install the periodic
     zone generation for the user.
@@ -1091,6 +1101,14 @@
     Test now a real DHCP file generation by using:
     \retrait\teletype {$ .../sbin/mkdhcp -v}
 
+    If you are using multiple views, you need to supply a specific view
+    for which you are generating a DHCP file, with the \teletype {-w}
+    option:
+    \retrait\teletype {$ .../sbin/mkdhcp -v -w internal}
+    By default, the \teletype {mkdhcp} program generates a DHCP file
+    for all views, which is certainly not what you want if you are using
+    multiple views.
+
     If everything is ok, you can use the sample \teletype
     {.../share/examples/netmagis/crontab.dhcp} to install the periodic
     DHCP file generation. You should run the DHCP file generation
@@ -1179,6 +1197,20 @@
 
     Test now a real file generation by using:
     \retrait\teletype {$ .../sbin/mkmroute -v}
+
+    If you are using multiple views, you need to supply a specific view
+    for which you are generating mail routes, with the \teletype {-w}
+    option:
+    \retrait\teletype {$ .../sbin/mkmroute -v -w internal}
+    By default, the \teletype {mkmroute} program generates a routes
+    for all views, which is certainly not what you want if you are
+    using multiple views. For example, if you have a mail role \teletype
+    {sales.example.com} (in view external) which points to a mailbox
+    host named {server.example.com} (in view internal), chances are that
+    your mail router "sees" the "internal" view (otherwise, it could
+    not route mail to \teletype {server.example.com}). Thus, you have
+    to specify:
+    \retrait\teletype {$ .../sbin/mkmroute -v -w internal}
 
     If everything is ok, you can use the sample \teletype
     {.../share/examples/netmagis/crontab.mroute} to install the
@@ -1288,6 +1320,9 @@
 
     Test now a real file generation by using:
     \retrait\teletype {$ .../sbin/mksmtpf -v}
+
+    As with \teletype {mkmroute}, you can use the \teletype {-w \italique
+    {view}} option to specify a particular view.
 
     If everything is ok, you can use the sample \teletype
     {.../share/examples/netmagis/crontab.smtpf} to install the

@@ -149,6 +149,31 @@
 
     \**********************************************************************
 
+    \titre {2} {View management (starting from 2.2.*)}
+
+    View management is done with the \gras {Admin} / \gras {Modify
+    views}: with this menu item, you can add, rename or remove views
+    from the reference data.
+
+    Once a view is added, you have to add it to each group that need
+    access to it, with a "sort order" (order in view menus, for example
+    in host addition), and a "selected by default" checkbox which allows
+    to pre-select a default view for a given group.
+
+    Each host belongs to one view. Thus, even if you don't use multiple
+    views, you have to provide a view to each group. The default view
+    is named "\teletype {default}".
+
+    Each zone (forward or reverse) is also associated with a view. If
+    you use multiple views, you can have the same domain (criterion)
+    in two or more different zones. Zone files will be named after the
+    Name column (in zone edition). Thus, don't forget to add a DNS zone
+    for all view (via the \gras {Admin} / \gras {Modify zones} menu),
+    as well as the corresponding zone on your DNS servers.
+
+
+    \**********************************************************************
+
     \titre {2} {Network management}
 
     Network management is done with the \gras {Admin} / \gras {Modify

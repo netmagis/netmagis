@@ -213,6 +213,35 @@
     existence).
 
 
+    \titre {3} {File \teletype {view.txt}}
+
+    The \teletype {view.txt} file describes all your existing views
+    and permissions.
+
+    Each line of this file has the format:
+    \retrait{\italique {view-name} \teletype {SET}
+			\italique {priority group ... group}}
+    or:
+    \retrait{\italique {view-name} \teletype {ALLBUT}
+			\italique {priority group ... group}}
+    The \italique {view-name} is the name of the view, which may
+    be cited more than once. The \teletype {SET} directive specifies
+    that members of the cited groups have access to this view (i.e.
+    may declare, edit or remove hosts), and the \italique {priority}
+    is the rank of this domain in the drop-down menus (first items are
+    numerically lower).
+
+    The \teletype {ALLBUT} directive for a domain tells that all groups
+    are allowed to access this domain (with the \italique {priority}
+    giving the rank in the menu, as before), except those which are
+    cited.
+
+    Please note that this file is needed even if you don't use multiple
+    views. In this case, this file must contain only the "\teletype
+    {default}" view:
+    \retrait{\teletype {default SET 100} \italique {group ... group}}
+
+
     \titre {3} {File \teletype {domain.txt}}
 
     The \teletype {domain.txt} file describes all your existing domains
@@ -252,19 +281,34 @@
     reference it in this file. After importing your data, you will be
     able to add it manually.
 
+    This file is loaded in the context of a view, which should be the
+    most public view, since mail relays are advertised as MX records on
+    the Internet.
+
 
     \titre {3} {File \teletype {mailrole.txt}}
 
     If you use Netmagis to provide mail routing inside your domains,
     you need to build a \teletype {mailrole.txt} file where you will
     provide one line for each mail address:
-    \retrait\italique {mail-address ~ ~ ~ mailbox-host}
+    \retrait{\italique {mail-address ~ ~ ~ mailbox-host}[\teletype{/}\italique {view}]}
 
     The \italique {mail-address} is the right part of a mail address.
     For example, suppose that you want to route mail addressed
     to \teletype {*@marketing.example.com} to the \teletype
     {somehost.example.com}, you will provide a line such as:
     \retrait\teletype {marketing.example.com ~ ~ ~ somehost.example.com}
+
+    You can specify an optional view for mailbox-host. This file is
+    loaded in the context of a view (which should be the most public
+    view), but the mailbox-host may be located in a different view.
+
+    For example, you may want to advertise a mail address in a
+    public (e.g. \teletype {external}) view, but route to an internal
+    host. You will thus have a line which looks like: \retrait\teletype
+    {marketing.example.com ~ ~ ~ somehost.example.com/internal} and the
+    file will be loaded in the context of the "\teletype {external}",
+    referencing a host which exists in the "\teletype {internal}" view.
 
     Warning: this file must be imported when all your zone files are
     imported, since it references hosts which must already exist in
@@ -330,6 +374,7 @@
     are as follow:
 
     \retrait {\teletype {netmagis-dbimport -v zone}
+		    \italique {view-name}
 		    \italique {domain-name}
 		    \italique {file-name}
 		    \italique {selector}
@@ -341,6 +386,8 @@
 	\item {\teletype {-v} means "verbose"}
 	\item {\teletype {zone} tells the script that this is a zone
 	    (normal or reverse) import}
+	\item {\italique {view-name} is the view name in which the data
+	    will be loaded}
 	\item {\italique {domain-name} is the domain name of the zone}
 	\item {\italique {file-name} is the file containing the zone data}
 	\item {\italique {selector} is either a domain name (for a
