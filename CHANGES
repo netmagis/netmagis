@@ -13,6 +13,9 @@ Version 2.2.0 - ????/??/??
     - translate %NOM% into %NAME% in mkzone
     	POTENTIAL incompatibility: if you use the "Addtl RR" facility in
 	zone edition, please change %NOM% to %NAME%
+    - translate parameters for utils/dnsmodattr program
+    	POTENTIAL incompatibility: adapt your scripts if you use this program
+    - remove the never used web roles
     - move the table creation logic, triggers and functions to separate files
     - support bridge-domains on JunOS routers
     - improve DNS zone generation latency
