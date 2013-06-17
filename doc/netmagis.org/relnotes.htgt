@@ -47,36 +47,172 @@
 
     \titre {2} {\ancre {v2.2} {Netmagis 2.2}}
 
-    Release date: not yet.
+    Release date: very soon.
+
+    The 2.2.0 release of Netmagis is a major release, providing a
+    most wanted feature (support of multiple DNS views) as well as
+    large infrastructure changes.
+
+    Multiple DNS views, also called "\lien {Split-DNS}
+    {https://en.wikipedia.org/wiki/Split-horizon_DNS}", is a facility to
+    serve different data based on the source address (the view point).
+    For example, a host "www.example.com" may have the address 172.16.1.1
+    for the internal network, and 198.51.100.1 for the rest of the
+    Internet. Note that if you don't have multiple views, Netmagis will
+    consider that you are using only one view, named "default". The
+    support of multiple views in Netmagis has the following consequences:
 
     \liste {
-	\item {The "delete" page accepts FQDNs in the "IP address"
-	    field, such as people not wanting to browse the domain
-	    menu may quickly type the host name
+	\item {When you are adding a host or an alias, you need to
+	    provide the view. The menu is visible only if your group
+	    has access to more than one view.
 	}
-	\item {The DNS zone generation latency has been improved.
-	    A new auto-adaptative algorithm has been implemented
-	    in order to allow more than 100 modifications of a
-	    zone in a day. The \teletype {mkzone} script may now
-	    run each minute.
+	\item {When you are using the search block or the map, there
+	    is no view menu: an address is considered as free only if no
+	    name is declared for this address in \italique {all} views.
+	    If you choose an address on the map, you will then be asked
+	    for the view.
 	}
-	\item {The "consult" page in the Web application may now
-	    export a list of hosts in CSV (Comma Separated Values)
-	    format.
+	\item {When you are modifying a deleting a host, you only have
+	    to give the name. If more than one view match, you will be
+	    presented a page to choose your view.
 	}
-	\item {Reverse zones are listed in correct order (by IP
-	    address) in the "modify reverse IPv[46] zones" menu.
+	\item {Mail roles may point to different views. For
+	    example, the mail role "sales.example.com" in view
+	    "external" may point to the host "mbox.example.com" in
+	    view "internal". With this mail role, a MX record for
+	    "sales.example.com" will be advertised on the Internet,
+	    which points to the mail relay, and the mail relay can
+	    forward this mail to the "mbox.example.com" internal host.
 	}
-	\item {Database now includes a schema version (in table
-	    config). Netmagis checks this version number in order
-	    to refuse to dammage not-upgraded databases.
+	\item {The administrator menu has a new entry to manage individual
+	    views. With this menu, you can add or delete views, as well as
+	    modify their name.
 	}
-	\item {Bug fix: when using multiple interface edition,
-	    the description and sensors are no longer reset.
+	\item {Each zone is associated to a view. Note that the same
+	    domain may have multiple views. In the above example, there
+	    are two zones for the domain "\teletype {example.com}",
+	    one for the internal view, one for the external view, each
+	    associated to a different file name.
 	}
-	\item {Bug fix: some SQL constraints (on DNS zones)
-	    were not checked, which may have caused some
-	    (very obvious) inconsistencies in zone generation.
+	\item {The group edition page (in the admin menu) now provides
+	    access to views. You can then allow fine grain access rights.
+	}
+	\item {All programs in the \italique {utils} package (\teletype
+	    {dnsaddhost}, \teletype {dnsdelip}, etc.) now require a
+	    new (mandatory) argument for the view name, even you have
+	    only one view. Adapt your scripts if you have ones.
+	}
+	\item {All programs in the \italique {server} package (\teletype
+	    {mkzone}, \teletype {mkdhcp}, etc.) now accept  a new
+	    (optional) argument for the view name (-w viewname).
+	}
+	\item {A new example script shows how to import data with
+	    multiple views in the Netmagis database.
+	}
+	\item {An integrity constraint has been removed from the
+	    database (no more link from topo.ifchanges to dns.rr):
+	    hosts for which interface status may change are just
+	    a name (rather than a reference to a RR). This change
+	    is needed to simplify handling of multiple views.
+	}
+    }
+
+    This release offers also some internal architectural changes:
+
+    \liste {
+	\item {Include a check on database version number in order to
+	    ease database upgrades. Now, a new read-only application
+	    parameter "schemaversion" is provided by database creation
+	    script and upgrade procedures. This parameter is checked by
+	    all Netmagis programs. If the value in database differ from
+	    the hard-coded value in programs, an error is generated and
+	    the database is not corrupted.
+	}
+	\item {All database tables and columns have been translated
+	    into English (from French) in order to welcome more
+	    contributions from all users.
+	}
+	\item {In the same vein, %...%  holes in Web pages have been
+	    translated into English.
+	}
+	\item {Database creation logic have been splitted in table
+	    creation, function creation and trigger creation. All these
+	    logics are now located in their own SQL file, and thus can
+	    be shared with upgrade scripts.
+	}
+	\item {If you use the \italique {detecteq} module and have
+	    changed your \teletype {radius.conf} file, please modify
+	    the SQL request according to the new column names.
+	}
+	\item {If you use the "Addtl RR" facility in zone edition,
+	    please change %NOM% into %NAME%
+	}
+	\item {The "jourfmt" application parameter has been renamed
+	    to "dayfmt".
+	}
+	\item {Parameters for the \teletype {dnsmodattr} (in the
+	    \italique {utils} package have been translated. Please
+	    modify your scripts using \teletype {dnsmodattr}.
+	}
+    }
+
+    Other changes include:
+
+    \liste {
+	\item {A new search facility has been designed. It aims to be
+	    the central point of Netmagis GUI in future versions. At
+	    this time, you can search for hosts, aliases, and group
+	    names. More objects will be added in the future.
+	}
+	\item {Improve DNS zone generation latency: the \teletype {mkzone}
+	    can run each minute (with \teletype {cron}), thanks to a new
+	    algorithm which allows for more than 100 changes a day while
+	    keeping the serial number under the format YYYYMMDDnn. If
+	    there are more than 100 changes on the 2013/01/31, the serial
+	    will become 2013013200 for the 101th change, 2013013201 for
+	    the 102th change, etc. The first change on 2013/02/01 will
+	    make the serial become 2013020100.
+	}
+	\item {The never used web roles have been removed from Netmagis.
+	}
+	\item {The delete menu allows you to enter a fully-qualified
+	    domain name (without setting the domain menu) if you are
+	    a keyboard addict.
+	}
+	\item {The "consult" menu item can now export a list of hosts
+	    in CSV format.
+	}
+	\item {Some error messages are clarified.
+	}
+	\item {A new object "L2-only network" has been added in group
+	    access rights. This allows access to Topo informations for
+	    etworks not associated with IP addresses.
+	}
+	\item {Topo: the \teletype {bridge-domains} directive is now
+	    supported on JunOS routers.
+	}
+    }
+
+    At last, this release provides bug fixes:
+
+    \liste {
+	\item {In the "modify users and groups" menu, IP permissions
+	    outside any allowed network are now checked (but administrator
+	    may force these permissions).
+	}
+	\item {The "modify reverse IPv[46] zone" admin menu now correctly
+	    order zones by address.
+	}
+	\item {Integrity constraints were not enforced on zone_* tables
+	}
+	\item {Topo: descriptions and sensors are no longer removed
+	    when editing configuration of multiple interfaces.
+	}
+	\item {Topo: bridge nodes are now associated with an equipment
+	    in the graph.
+	}
+	\item {Topo: JunOS comments are no longer (incorrectly) parsed.
 	}
     }
 
