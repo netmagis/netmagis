@@ -52,8 +52,8 @@ sbin/netmagis-dbmaint
 @dirrmtry var/netmagis/dbdump
 @dirrmtry var/netmagis
 @dirrmtry var
-%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/no-view/zones
-%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/no-view
+%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/with-views/zones
+%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/with-views
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/21-22
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/20-21
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/15-20
@@ -61,7 +61,7 @@ sbin/netmagis-dbmaint
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/13-14
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade/12-13
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade
-%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/with-views/zones
-%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/with-views
+%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/no-view/zones
+%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/no-view
 %%PORTEXAMPLES%%@dirrmtry %%EXAMPLESDIR%%
 @exec mkdir -p %D/var/netmagis/dbdump
