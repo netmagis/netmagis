@@ -2,7 +2,7 @@
 \modele {texte}
 
 \set {auteur}	{pda/jean}
-\set {date}	{25/10/2011}
+\set {date}	{18/06/2013}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
@@ -37,7 +37,7 @@
     \titre {1} {Netmagis : Copies d'écran}
 
     Vous trouverez ci-dessous quelques copies d'écrans de l'application
-    \lien {Netmagis} {/intro.html} version 2.1.0 (les copies d'écran sont
+    \lien {Netmagis} {/intro.html} version 2.2.0 (les copies d'écran sont
     en anglais, mais Netmagis affiche les pages en français si telle est
     la langue configurée dans votre navigateur).
 
@@ -63,7 +63,8 @@
 	sont accessibles. À partir de là, il est possible soit de
 	sélectionner un réseau (ou plusieurs comme sur la copie),
 	soit de saisir directement dans la zone appropriée le préfixe
-	d'un réseau.
+	d'un réseau. Si vous n'avez accès qu'à une seule vue, le menu
+	de droite ("Select view") n'est pas affiché.
 
 	\retrait {\lien {\image {vign-consult1.png} {Sélection des réseaux à afficher}} {shot-consult1.png}}
 
@@ -92,17 +93,17 @@
 	Cette copie d'écran montre la saisie d'une machine, la
 	recherche d'un bloc d'adresses libres, ainsi que la saisie
 	d'un alias (on ne fait en réalité qu'une seule des trois
-	saisies à la fois). L'exemple montre le menu des domaines
-	accessibles au correspondant réseau. Ici, le correspondant
-	a saisi toutes les informations (y compris l'adresse MAC
-	puisque le correspondant souhaite utiliser les fonctionnalités
-	DHCP de l'application), bien que la plupart soient optionnelles.
+	saisies à la fois). Ici, le correspondant a saisi toutes les
+	informations (y compris l'adresse MAC puisque le correspondant
+	souhaite utiliser les fonctionnalités DHCP de l'application),
+	bien que la plupart soient optionnelles.
 
 	\retrait {\lien {\image {vign-add.png} {Ajout d'une machine}} {shot-add.png}}
 
 	On notera que les types de machines du menu sont définis
 	par l'administrateur de l'application, ainsi que les domaines
-	et leur accessibilité pour les correspondants réseau.
+	et les vues, avec leur accessibilité pour les correspondants
+	réseau.
 
 	Étant donné que l'utilisateur a coché la case «~Émettre en
 	SMTP~», la machine concernée sera donc autorisée à émettre
@@ -121,9 +122,9 @@
 	déjà une adresse IPv4. L'application le détecte automatiquement
 	et vous demande alors confirmation de l'ajout.
 
-	La recherche de bloc d'adresses libres débouche sur la pag
+	La recherche de bloc d'adresses libres débouche sur la page
 	suivante. Celle-ci montre tous les blocs disponibles. Ici,
-	l'utilisateur a demandéun bloc d'au moins 5 adresses, et
+	l'utilisateur a demandé un bloc d'au moins 5 adresses, et
 	un seul bloc a été trouvé.
 
 	\retrait {\lien {\image {vign-seq.png} {Ajout d'une machine}} {shot-seq.png}}
@@ -169,6 +170,27 @@
 
 	\retrait {\lien {\image {vign-dhcp2.png} {Édition de la plage DHCP}} {shot-dhcp2.png}}
 
+    \titre {2} {Recherche}
+
+	Grâce à la fonction de recherche, vous pouvez chercher un
+	nom de machine, une adresse IP ou MAC, ou un nom de groupe
+	(les critères seront élargis dans les versions postérieures
+	à la version 2.2).
+
+	\retrait {\lien {\image {vign-search1.png} {Recherche}} {shot-search1.png}}
+
+	Dans cet exemple, l'utilisateur a saisi le nom (non qualifié)
+	"www", qui a été trouvé dans les deux domaines "example.com" et
+	"example.org". Notez que ce nom figure dans le domaine example.com
+	dans les deux vues ("external" et "internal"). Chacun des liens
+	du résultat permet d'afficher le détail des informations~:
+
+	\retrait {\lien {\image {vign-search2.png} {Détail d'un résultat de la recherche}} {shot-search2.png}}
+
+	Ici, cliquer sur une adresse IP permet de l'éditer (pour modifier
+	ou supprimer l'adresse voire la machine). Cliquer sur le nom du
+	groupe permet de l'afficher.
+
     \titre {2} {Module de topologie}
 
 	Le module de topologie récupère les configurations des
@@ -194,10 +216,36 @@
 
 	\retrait {\lien {\image {vign-l2.png} {Carte réseau de niveau 2}} {shot-l2.png}}
 
+	Les éléments affichés sur les cartes sont personnalisables via
+	le menu d'administration, qui utilise pour ce faire la syntaxe
+	du langage \lien {Graphviz} {http://graphviz.org/}.
+
+	\retrait {\lien {\image {vign-grattr.png} {Édition des représentations des équipements}} {shot-grattr.png}}
+
 	Dans la vue détaillée d'un équipement, le lien "Trafic"
 	permet de consulter les graphes de trafic basés sur RRD.
 
 	\retrait {\lien {\image {vign-metro.png} {Graphe de trafic}} {shot-metro.png}}
+
+    \titre {2} {Module Mac}
+
+	Grâce à ce module, il est possible de chercher à localiser
+	une adresse MAC (ou adresse IP ou nom de machine) sur le réseau:
+
+	\retrait {\lien {\image {vign-mac1.png} {Localisation d'une adresse MAC}} {shot-mac1.png}}
+
+	On voit ci-dessous le résultat~: ensemble des associations IP-MAC
+	(une seule ici) et ensemble des ports des équipements où cette
+	adresse MAC a été vue (via les tables de commutation).
+
+	\retrait {\lien {\image {vign-mac2.png} {Résultat de la localisation d'une adresse MAC}} {shot-mac2.png}}
+
+	Ce module permet également de récupérer la liste des adresses
+	inutilisées (c'est-à-dire qui ne sont pas apparues sur les
+	équipements interrogés par Netmagis) pour un réseau donné
+	et une période donnée:
+
+	\retrait {\lien {\image {vign-ipinact.png} {Liste des adresses inactives}} {shot-ipinact.png}}
 
     \titre {2} {Menu d'administration}
 

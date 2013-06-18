@@ -2,7 +2,7 @@
 \modele {texte}
 
 \set {auteur}	{pda/jean}
-\set {date}	{25/10/2011}
+\set {date}	{18/06/2013}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
@@ -36,7 +36,7 @@
 
     \titre {1} {Netmagis: Screenshots}
 
-    You will find some \lien {Netmagis} {/intro.html} (release 2.1.0)
+    You will find some \lien {Netmagis} {/intro.html} (release 2.2.0)
     screenshots.
 
     Moreover, you can experiment this application thanks to a on-line
@@ -59,6 +59,8 @@
 	It next shows available networks (IPv4 as well as IPv6, with
 	organization). Starting from here, it is possible to select
 	one or more networks or to type directly the network address.
+	If you have access to only one view, the right menu ("Select
+	view") is not displayed.
 
 	\retrait {\lien {\image {vign-consult1.png} {Network selection}} {shot-consult1.png}}
 
@@ -84,18 +86,16 @@
     \titre {2} {Host addition}
 
 	This screenshot shows addition of a host, the search for a
-	contiguous block of free addresses, and addition fo an alias (you
-	can do only one of these actions at a time). This example shows
-	the menu of available domains for a user. Here, the user has
-	typed all informations (including the MAC address since she
+	contiguous block of free addresses, and addition fo an alias
+	(you can do only one of these actions at a time).  Here, the user
+	has typed all informations (including the MAC address since she
 	wish to use the DHCP functionnality of Netmagis), even if most
 	of them are optional.
 
 	\retrait {\lien {\image {vign-add.png} {Host addition}} {shot-add.png}}
 
 	You may notice that OS types are defined by the Netmagis
-	administrator, as well as domains and access rights to these
-	domains.
+	administrator, as well as domains and views and access rights.
 
 	Since the user has checked the "Emit with SMTP" box, the host
 	will be authorized to emit mails with non authenticated SMTP
@@ -155,6 +155,26 @@
 
 	\retrait {\lien {\image {vign-dhcp2.png} {DHCP range edition}} {shot-dhcp2.png}}
 
+    \titre {2} {Search}
+
+	Thanks to the search function, you may look for a host name,
+	an IP or MAC address, or a group name (other search criteria
+	will be added in future Netmagis releases).
+
+	\retrait {\lien {\image {vign-search1.png} {Search}} {shot-search1.png}}
+
+	In this example, user has given the (not qualified) name
+	"www" which has been found in two domains ("example.com" and
+	"example.org"). Please note that this name appears in two distinct
+	views ("external" and "internal") in the "example.com" domain. Each
+	link is used to display information details:
+
+	\retrait {\lien {\image {vign-search2.png} {Detail of search results}} {shot-search2.png}}
+
+	Here, by clicking on an IP address, one can edit it (to modify the
+	host or to remove this address or the host itself). Clicking on the
+	group name displays associated informations.
+
     \titre {2} {Topology module}
 
 	The topology module fetches configurations from network
@@ -180,11 +200,36 @@
 
 	\retrait {\lien {\image {vign-l2.png} {L2 network map}} {shot-l2.png}}
 
+	Items displayed on maps can be customized, via the administration
+	menu, which uses the \lien {Graphviz} {http://graphviz.org/}
+	language syntax.
+
+	\retrait {\lien {\image {vign-grattr.png} {Graph items customization}} {shot-grattr.png}}
+
 	In the detailed view of equipments, following the "Traffic"
 	link brings you to the RRD-based traffic graphs.
 
 	\retrait {\lien {\image {vign-metro.png} {Traffic graph}} {shot-metro.png}}
 
+
+    \titre {2} {Mac module}
+
+	Thanks to this module, it is possible to locate a MAC address
+	(or IP address or host name) on the network:
+
+	\retrait {\lien {\image {vign-mac1.png} {Locate a MAC address}} {shot-mac1.png}}
+
+	The result is displayed hereafter: set of IP-MAC associations
+	(only one here) and set of equipement ports where this MAC
+	address has been seen (via switching tables).
+
+	\retrait {\lien {\image {vign-mac2.png} {Result of MAC address search}} {shot-mac2.png}}
+
+	This module is also able to display the list of inactive addresses
+	(i.e. which did not appear on equipements polled by Netmagis) for a
+	given network and a given period:
+
+	\retrait {\lien {\image {vign-ipinact.png} {List of inactive addresses}} {shot-ipinact.png}}
 
     \titre {2} {Administrator menu}
 
