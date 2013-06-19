@@ -45,7 +45,7 @@
     It is also a web application, meaning accessing informations
     become really easy.
 
-    \titre {2} {User functions}
+    \titre {2} {Features for users}
 
     For the user, Netmagis offers the following functions:
 
@@ -68,6 +68,11 @@
 		\item {any comment,}
 		\item {name and email address of the person in charge of a host ;}
 	    }
+	}
+	\item {support for multiple DNS views (also called \lien
+	    {split DNS} {http://en.wikipedia.org/wiki/Split-horizon_DNS}):
+	    the same name can be associated to different IP addresses
+	    according to the appropriate DNS view.
 	}
 	\item {add, modify and delete address
 	    intervals for a dynamic DHCP server;
@@ -92,17 +97,18 @@
 	}
     }
 
-    \titre {2} {Administrator functions}
+    \titre {2} {Features for administrators}
 
     For the administrator, Netmagis offers the following functions:
 
     \liste {
 	\item {manage access rights of user groups:
-	    allowed networks and allowed IP addresses, authorised DNS domains,
+	    allowed networks and allowed IP addresses, authorized DNS domains,
+	    authorized DNS views,
 	    accessible DHCP profiles and network equipements;
 	}
-	\item {manage networks, DNS domains, zones, 
-	    network administrators et groups, user communities, DHCP
+	\item {manage networks, DNS domains, zones, views,
+	    network administrators and groups, user communities, DHCP
 	    profiles, etc.;
 	}
 	\item {definition of mail relays for domains;
@@ -150,10 +156,10 @@
 	}
 	\lignetableau {
 	    \casetableau {} {Hosts}
-	    \casetableau {} {Name (FQDN), Address(es) IPv4/IPv6, type,
-	    	MAC address (optional), comment, person or group in charge.
-		In addition, depending on configuration:
-		TTL, allowed to use unauthenticated SMTP 
+	    \casetableau {} {Name (FQDN), associated view, IPv4/IPv6
+		address(es), type, MAC address (optional), comment,
+		person or group in charge.  In addition, depending on
+		configuration: TTL, allowed to use unauthenticated SMTP
 	    }
 	}
 	\lignetableau {
@@ -180,9 +186,15 @@
 	    \casetableau {} {Domain name}
 	}
 	\lignetableau {
+	    \casetableau {} {Views}
+	    \casetableau {} {View name (no limit on number of managed views)
+	    }
+	}
+	\lignetableau {
 	    \casetableau {} {Zones}
 	    \casetableau {} {Name, records to put in the prologue,
-		selection criteria (domain or IP address range)
+		selection criteria (domain or IP address range),
+		associated view
 	    }
 	}
 	\lignetableau {

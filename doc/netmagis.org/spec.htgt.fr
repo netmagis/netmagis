@@ -73,6 +73,11 @@
 		\item {nom et adresse électronique de la personne responsable~;}
 	    }
 	}
+	\item {support des vues DNS (appelées parfois \lien
+	    {split DNS} {http://en.wikipedia.org/wiki/Split-horizon_DNS}):
+	    le même nom peut être associé à différentes adresses IP suivant
+	    la vue.
+	}
 	\item {ajout, modification et suppression de plages d'adresses
 	    utilisables par un serveur DHCP dynamique~;
 	}
@@ -107,10 +112,11 @@
 
     \liste {
 	\item {gestion des droits d'accès des groupes d'utilisateurs~:
-	    réseaux et adresses IP autorisés, domaines DNS accessibles,
-	    profils DHCP et équipements réseau~;
+	    réseaux et adresses IP autorisés, domaines et vues DNS
+	    accessibles, profils DHCP et équipements réseau~;
 	}
 	\item {gestion des réseaux, des domaines, des zones, des
+	    vues, des
 	    correspondants et des groupes, des communautés, des profils
 	    DHCP, etc.~;
 	}
@@ -162,10 +168,11 @@
 	}
 	\lignetableau {
 	    \casetableau {} {Machines}
-	    \casetableau {} {Nom (FQDN), Adresse(s) IPv4/IPv6, type, adresse MAC
-		éventuelle, commentaire, personne ou groupe responsable.
-		En plus, et selon le paramétrage~:
-		TTL, droit d'émettre en SMTP non authentifié
+	    \casetableau {} {Nom (FQDN), vue associée, adresse(s)
+		IPv4/IPv6, type, adresse MAC éventuelle, commentaire,
+		personne ou groupe responsable.  En plus, et selon
+		le paramétrage~: TTL, droit d'émettre en SMTP non
+		authentifié
 	    }
 	}
 	\lignetableau {
@@ -192,10 +199,15 @@
 	    \casetableau {} {Nom}
 	}
 	\lignetableau {
+	    \casetableau {} {Vues}
+	    \casetableau {} {Nom (pas de limite sur le nombre de vues gérées)
+	    }
+	}
+	\lignetableau {
 	    \casetableau {} {Zones}
 	    \casetableau {} {Nom, enregistrements à mettre dans le
 		prologue, critère de sélection (domaine ou plage
-		d'adresses IP)
+		d'adresses IP), vue associée
 	    }
 	}
 	\lignetableau {

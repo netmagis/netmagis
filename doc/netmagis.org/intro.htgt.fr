@@ -55,6 +55,9 @@
 	    \gras {droits d'accès très fins} sur les adresses (jusqu'à
 	    l'adresse IPv4 ou IPv6 près), les domaines, etc.~;
 	}
+	\item {supporter des configurations avancées telles que
+	    le support des \gras {vues DNS}~;
+	}
 	\item {gérer des \gras {allocations DHCP} statiques ou dynamiques,
 	    avec des \gras {profils} pour paramétrer le démarrage de
 	    vos équipements~;

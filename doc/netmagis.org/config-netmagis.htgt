@@ -149,7 +149,7 @@
 
     \**********************************************************************
 
-    \titre {2} {View management (starting from 2.2.*)}
+    \titre {2} {View management (for releases \>= 2.2)}
 
     View management is done with the \gras {Admin} / \gras {Modify
     views}: with this menu item, you can add, rename or remove views
@@ -166,10 +166,10 @@
 
     Each zone (forward or reverse) is also associated with a view. If
     you use multiple views, you can have the same domain (criterion)
-    in two or more different zones. Zone files will be named after the
-    Name column (in zone edition). Thus, don't forget to add a DNS zone
-    for all view (via the \gras {Admin} / \gras {Modify zones} menu),
-    as well as the corresponding zone on your DNS servers.
+    in two or more different zones. Generated zone files will be named
+    after the Name column (in zone edition). Thus, don't forget to add a
+    DNS zone for all view (via the \gras {Admin} / \gras {Modify zones}
+    menu), as well as the corresponding zone on your DNS servers.
 
 
     \**********************************************************************

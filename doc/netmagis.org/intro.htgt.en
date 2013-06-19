@@ -53,6 +53,9 @@
 	    privileges} on address (even until every IPv4 or IPv6
 	    address), on domains, etc;
 	}
+	\item {support advanced configurations such as
+	    \gras {split-DNS (or BIND views)};
+	}
 	\item {manage \gras {DHCP allocations} (both static or dynamic)
 	    with \gras {profiles} to parametrize network boot;
 	}

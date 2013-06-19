@@ -58,9 +58,10 @@
     serve different data based on the source address (the view point).
     For example, a host "www.example.com" may have the address 172.16.1.1
     for the internal network, and 198.51.100.1 for the rest of the
-    Internet. Note that if you don't have multiple views, Netmagis will
-    consider that you are using only one view, named "default". The
-    support of multiple views in Netmagis has the following consequences:
+    Internet. Netmagis provide support for an illimited number of views.
+    Note that if you don't need multiple views, Netmagis will consider
+    that you are using only one view, named "default". The support of
+    multiple views in Netmagis has the following consequences:
 
     \liste {
 	\item {When you are adding a host or an alias, you need to
@@ -75,25 +76,26 @@
 	}
 	\item {When you are modifying a deleting a host, you only have
 	    to give the name. If more than one view match, you will be
-	    presented a page to choose your view.
+	    presented a page to choose the appropriate view.
 	}
-	\item {Mail roles may point to different views. For
+	\item {Mail roles may point to hosts in different views. For
 	    example, the mail role "sales.example.com" in view
 	    "external" may point to the host "mbox.example.com" in
 	    view "internal". With this mail role, a MX record for
-	    "sales.example.com" will be advertised on the Internet,
-	    which points to the mail relay, and the mail relay can
-	    forward this mail to the "mbox.example.com" internal host.
+	    "sales.example.com" will be advertised on the Internet (e.g.
+	    "external" view), which points to the mail relay, and the
+	    mail relay can forward this mail to the "mbox.example.com"
+	    internal host.
 	}
 	\item {The administrator menu has a new entry to manage individual
 	    views. With this menu, you can add or delete views, as well as
 	    modify their name.
 	}
-	\item {Each zone is associated to a view. Note that the same
-	    domain may have multiple views. In the above example, there
-	    are two zones for the domain "\teletype {example.com}",
-	    one for the internal view, one for the external view, each
-	    associated to a different file name.
+	\item {Each zone is associated with a view. Note that a single
+	    domain may be associated with multiple views (hence multiple
+	    zones). For example, you may have two zones for the domain
+	    "\teletype {example.com}", one for the internal view, one for
+	    the external view, each associated to a different file name.
 	}
 	\item {The group edition page (in the admin menu) now provides
 	    access to views. You can then allow fine grain access rights.
@@ -160,24 +162,26 @@
     Other changes include:
 
     \liste {
-	\item {A new search facility has been designed. It aims to be
-	    the central point of Netmagis GUI in future versions. At
-	    this time, you can search for hosts, aliases, and group
-	    names. More objects will be added in the future.
+	\item {A new search facility has been designed: it aims to be
+	    the central point of Netmagis GUI in future versions. At this
+	    time, you can search for hosts, aliases, IP or MAC addresses
+	    and group names. More objects will be added in future
+	    versions.
 	}
 	\item {Improve DNS zone generation latency: the \teletype {mkzone}
-	    can run each minute (with \teletype {cron}), thanks to a new
-	    algorithm which allows for more than 100 changes a day while
-	    keeping the serial number under the format YYYYMMDDnn. If
-	    there are more than 100 changes on the 2013/01/31, the serial
-	    will become 2013013200 for the 101th change, 2013013201 for
-	    the 102th change, etc. The first change on 2013/02/01 will
-	    make the serial become 2013020100.
+	    program can run each minute (with \teletype {cron}),
+	    thanks to a new algorithm which allows for more than 100
+	    changes a day while keeping the serial number under the
+	    format YYYYMMDDnn (if there are more than 100 changes on
+	    the 2013/01/31, the serial will become 2013013200 for the
+	    101th change, 2013013201 for the 102th change, etc. The first
+	    change on 2013/02/01 will make the serial become
+	    2013020100).
 	}
-	\item {The never used web roles have been removed from Netmagis.
+	\item {The never used" web roles" have been removed from Netmagis.
 	}
-	\item {The delete menu allows you to enter a fully-qualified
-	    domain name (without setting the domain menu) if you are
+	\item {The "delete" menu allows you to enter a fully-qualified
+	    domain name (without using the domain menu) if you are
 	    a keyboard addict.
 	}
 	\item {The "consult" menu item can now export a list of hosts
@@ -187,7 +191,7 @@
 	}
 	\item {A new object "L2-only network" has been added in group
 	    access rights. This allows access to Topo informations for
-	    etworks not associated with IP addresses.
+	    networks not associated with IP addresses.
 	}
 	\item {Topo: the \teletype {bridge-domains} directive is now
 	    supported on JunOS routers.
@@ -198,13 +202,13 @@
 
     \liste {
 	\item {In the "modify users and groups" menu, IP permissions
-	    outside any allowed network are now checked (but administrator
-	    may force these permissions).
+	    outside any allowed network are now checked (but
+	    administrators may force these permissions).
 	}
 	\item {The "modify reverse IPv[46] zone" admin menu now correctly
 	    order zones by address.
 	}
-	\item {Integrity constraints were not enforced on zone_* tables
+	\item {Integrity constraints were not enforced on zone_* tables.
 	}
 	\item {Topo: descriptions and sensors are no longer removed
 	    when editing configuration of multiple interfaces.

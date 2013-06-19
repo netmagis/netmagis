@@ -56,15 +56,15 @@
     \titre {2} {Consultation des informations}
 
 	La première copie d'écran montre le rappel des informations
-	associées au correspondant réseau (afin qu'il puisse signaler
-	les modifications éventuelles) issues de votre annuaire
-	LDAP ou de la base WebAuth, et montre ensuite les différents
-	réseaux (IPv4 et/ou IPv6, avec l'établissement) qui lui
+	associées à l'utilisateur (afin qu'il puisse signaler les
+	modifications éventuelles) issues de votre annuaire LDAP
+	ou de l'authentification interne de Netmagis, et montre
+	ensuite les différents réseaux (IPv4 et/ou IPv6) qui lui
 	sont accessibles. À partir de là, il est possible soit de
-	sélectionner un réseau (ou plusieurs comme sur la copie),
-	soit de saisir directement dans la zone appropriée le préfixe
-	d'un réseau. Si vous n'avez accès qu'à une seule vue, le menu
-	de droite ("Select view") n'est pas affiché.
+	sélectionner un ou plusieurs réseaux, soit de saisir directement
+	dans la zone appropriée le préfixe d'un réseau. Si vous n'avez
+	accès qu'à une seule vue, le menu de droite ("Select view")
+	n'est pas affiché.
 
 	\retrait {\lien {\image {vign-consult1.png} {Sélection des réseaux à afficher}} {shot-consult1.png}}
 
@@ -93,8 +93,8 @@
 	Cette copie d'écran montre la saisie d'une machine, la
 	recherche d'un bloc d'adresses libres, ainsi que la saisie
 	d'un alias (on ne fait en réalité qu'une seule des trois
-	saisies à la fois). Ici, le correspondant a saisi toutes les
-	informations (y compris l'adresse MAC puisque le correspondant
+	saisies à la fois). Ici, l'utilisateur a saisi toutes les
+	informations (y compris l'adresse MAC puisque l'utilisateur
 	souhaite utiliser les fonctionnalités DHCP de l'application),
 	bien que la plupart soient optionnelles.
 
@@ -102,8 +102,7 @@
 
 	On notera que les types de machines du menu sont définis
 	par l'administrateur de l'application, ainsi que les domaines
-	et les vues, avec leur accessibilité pour les correspondants
-	réseau.
+	et les vues, avec les droits d'accès correspondants.
 
 	Étant donné que l'utilisateur a coché la case «~Émettre en
 	SMTP~», la machine concernée sera donc autorisée à émettre
@@ -140,6 +139,9 @@
 
 	\retrait {\lien {\image {vign-del.png} {Suppression d'une machine}} {shot-del.png}}
 
+	Si le nom est trouvé dans plusieurs vues, une page
+	supplémentaire permet de choisir la vue appropriée.
+
     \titre {2} {Modification d'une machine}
 
 	Il est possible de modifier les attributs d'une machine. Pour
@@ -148,8 +150,10 @@
 
 	\retrait {\lien {\image {vign-mod1.png} {Sélection de la machine à modifier}} {shot-mod1.png}}
 
-	Ensuite, la page présente tous les attributs de la machine
-	pour modification.
+	Comme pour la suppression de machine, si le nom est trouvé dans
+	plusieurs vues, une page supplémentaire permet de choisir la
+	vue appropriée.  Ensuite, la page présente tous les attributs
+	de la machine pour modification.
 
 	\retrait {\lien {\image {vign-mod2.png} {Édition des attributs de la machine}} {shot-mod2.png}}
 
@@ -160,13 +164,13 @@
 	à une adresse MAC). Il est également possible de réserver
 	des plages d'adresses IPv4 pour les allocations dynamiques.
 	La copie d'écran ci-dessous montre la sélection du réseau
-	pour lequel le correspondant souhaite éditer les plages.
+	pour lequel l'utilisateur souhaite éditer les plages.
 
 	\retrait {\lien {\image {vign-dhcp1.png} {Sélection de la plage DHCP à modifier}} {shot-dhcp1.png}}
 
-	La copie d'écran ci-dessous montre la plage définie pour
-	le réseau. Il est possible de modifier cette plage, de la
-	supprimer ou d'en ajouter de nouvelles avec le même menu.
+	La copie d'écran ci-dessous montre les plages définies pour le
+	réseau. Il est possible de modifier ces plages, d'en supprimer
+	ou d'en ajouter de nouvelles avec le même menu.
 
 	\retrait {\lien {\image {vign-dhcp2.png} {Édition de la plage DHCP}} {shot-dhcp2.png}}
 
@@ -193,9 +197,9 @@
 
     \titre {2} {Module de topologie}
 
-	Le module de topologie récupère les configurations des
-	équipements réseau et les analyse. Il est alors possible
-	d'avoir une vue de tous les équipements.
+	Le module de topologie récupère régulièrement les
+	configurations des équipements réseau et les analyse. Il est
+	alors possible d'avoir une vue de tous les équipements.
 
 	\retrait {\lien {\image {vign-topo.png} {Page d'accueil de topo}} {shot-topo.png}}
 
@@ -234,9 +238,9 @@
 
 	\retrait {\lien {\image {vign-mac1.png} {Localisation d'une adresse MAC}} {shot-mac1.png}}
 
-	On voit ci-dessous le résultat~: ensemble des associations IP-MAC
-	(une seule ici) et ensemble des ports des équipements où cette
-	adresse MAC a été vue (via les tables de commutation).
+	Le résultat est affiché ci-dessous~: associations IP-MAC et
+	ensemble des ports des équipements où cette adresse MAC a
+	été vue (via les tables de commutation).
 
 	\retrait {\lien {\image {vign-mac2.png} {Résultat de la localisation d'une adresse MAC}} {shot-mac2.png}}
 

@@ -68,17 +68,43 @@
 	    a line, the upgrade ran well and your database is now
 	    successfully upgraded.
 
-	    If you happen to encounter an error, be aware that the whole
-	    upgrade procedure is aborted: no modification is done on the
-	    database. If you can, diagnose the problem and correct it.
-	    Don't hesitate to share your fix with other people on the
-	    \lien {Netmagis list} {/support.html}.
+	    If you happen to encounter an error, be aware that the
+	    whole upgrade procedure is aborted (see the \teletype
+	    {--single-transaction} option of \teletype {psql}): no
+	    modification is done on the database. If you can, diagnose the
+	    problem and correct it.  Don't hesitate to share your fix with
+	    other people on the \lien {Netmagis list} {/support.html}.
 
 	    If you don't succeed in resolving the problem, please send
 	    us a copy of your database (\teletype {pg_dump} output) such
 	    as we can investigate.
 	}
     }
+
+    Since this release includes some large infrastructure changes,
+    you may have to modify some of your scripts or configuration:
+
+    \liste {
+	\item {If you have written scripts which calls programs in the
+	    \italique {utils} package (\teletype {dnsaddhost}, \teletype
+	    {dnsdelip}, etc.), you have to add a new (mandatory) argument
+	    \italique {view} to all calls (if you are just upgrading,
+	    a view named "\teletype {default}" has been created for you).
+
+	    The parameters for the \teletype {dnsmodattr} have been
+	    translated from French to English. If you have written
+	    scripts which calls this program, adapt them.
+	}
+	\item {If you use the \italique {detecteq} module and have
+	    changed your \teletype {radius.conf} file, please modify
+	    the SQL request according to the new column names (see the
+	    example file installed with the module).
+	}
+	\item {If you use the "Addtl RR" facility in zone edition,
+	    please replace "\teletype {%NOM%}" by "\teletype {%NAME%}".
+	}
+    }
+
 
     \***********************************************************************
 
