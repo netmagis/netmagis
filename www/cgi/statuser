@@ -88,11 +88,11 @@ source %LIBNETMAGIS%
 ##############################################################################
 
 proc compare {e1 e2} {
-    set nb1 [lindex $e1 0]
-    set nb2 [lindex $e2 0]
-    if {$nb1 < $nb2} then {
+    set cnt1 [lindex $e1 0]
+    set cnt2 [lindex $e2 0]
+    if {$cnt1 < $cnt2} then {
 	return 1
-    } elseif {$nb1 > $nb2} then {
+    } elseif {$cnt1 > $cnt2} then {
 	return -1
     }
     return [string compare [lindex $e1 1] [lindex $e2 1]]
@@ -107,14 +107,14 @@ d cgi-register {} {} {
     global ah
 
     #
-    # Compute statistics, and create a list {nb username}
+    # Compute statistics, and create a list {cnt username}
     #
 
     set u [::webapp::authuser create %AUTO%]
 
-    set sql "SELECT u.login, count(*) AS nb
+    set sql "SELECT u.login, count(*) AS cnt
 		    FROM dns.rr r, global.nmuser u
-		    WHERE r.idcor = c.idcor
+		    WHERE r.idcor = u.idcor
 		    GROUP BY u.login
 		"
     set total 0
@@ -133,8 +133,8 @@ d cgi-register {} {} {
 	    set name $tab(login)
 	}
 
-	lappend list [list $tab(nb) $name]
-	incr total $tab(nb)
+	lappend list [list $tab(cnt) $name]
+	incr total $tab(cnt)
     }
 
     $u destroy
@@ -157,21 +157,21 @@ d cgi-register {} {} {
 		    ]
     set ptotal 0.0
     foreach e $list {
-	lassign $e nb name
-	set pcent [expr "$nb*100.0/$total"]
-	lappend lines [list "Normal" $name $nb [format "%5.2f" $pcent]]
+	lassign $e cnt name
+	set pcent [expr "$cnt*100.0/$total"]
+	lappend lines [list "Normal" $name $cnt [format "%5.2f" $pcent]]
 	set ptotal [expr $ptotal + $pcent]
     }
     lappend lines [list "Total" [mc "Total"] $total [format "%5.2f" $ptotal]]
 
-    set nbrrcor [::arrgen::output "html" $conf(tabrrcor) $lines]
+    set cntrrcor [::arrgen::output "html" $conf(tabrrcor) $lines]
 
     #
     # End of script: output page and close database
     #
 
     d result $conf(page) [list \
-				[list %NBRRCOR% $nbrrcor] \
+				[list %NBRRCOR% $cntrrcor] \
 			    ]
 }
 
