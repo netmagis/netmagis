@@ -19,6 +19,7 @@
 #   2010/12/25 : pda      : use cgi-dispatch
 #   2013/03/06 : pda/jean : multi-views
 #   2013/03/13 : pda/jean : generalization to different object types
+#   2013/20/06 : schplurtz: fix bug
 #
 
 #
@@ -90,6 +91,7 @@ proc display-message {q msg} {
 # History:
 #   2013/02/27: pda/jean : attempt to spec
 #   2013/03/06: pda/jean : design
+#   2013/06/20: schplurtz : return more accurate search func list
 #
 
 proc parse-query {dbfd q _sel _val _type} {
@@ -103,6 +105,7 @@ proc parse-query {dbfd q _sel _val _type} {
     set val ""
     set type ""
 
+    set matchproc *
     set q [string trim $q]
     #
     # Avoid case where the beginning of a MAC address is confused with
@@ -112,20 +115,24 @@ proc parse-query {dbfd q _sel _val _type} {
 	set sel "myaddr"
 	set val "_"
 	set type ""
+	set matchproc myaddr
     } elseif {[check-mac-syntax $dbfd $q] eq ""} then {
 	set sel ""
 	set val $q
 	set type "mac"
+	set matchproc host
     } elseif {[check-ip-syntax $dbfd $q "inet"] eq ""} then {
 	set sel ""
 	set val $q
 	set type "inet"
+	set matchproc host
 	set r ""
     } elseif {[check-ip-syntax $dbfd $q "cidr"] eq ""} then {
 	set sel ""
 	set val $q
 	set type "cidr"
 	set r ""
+	set matchproc cidr ; # cgi-search*cidr not yet implemented
     } else {
 	#
 	# Check operator and value
@@ -143,12 +150,11 @@ proc parse-query {dbfd q _sel _val _type} {
 	# Recognize type
 	#
 
-	if {[check-mac-syntax $dbfd $val] eq ""} then {
-	    set type "mac"
-	} elseif {[check-ip-syntax $dbfd $val "inet"] eq ""} then {
+	if {[check-ip-syntax $dbfd $val "inet"] eq ""} then {
 	    set type "inet"
+	    set matchproc host
 	} elseif {[check-ip-syntax $dbfd $val "cidr"] eq ""} then {
-	    set type "cidr"
+	    set matchproc [set type "cidr"]
 	} else {
 	    set type "string"
 	}
@@ -159,7 +165,7 @@ proc parse-query {dbfd q _sel _val _type} {
     #
 
     if {$sel eq ""} then {
-	set sel [lsort [info procs "cgi-search-*-*"]]
+	set sel [lsort [info procs "cgi-search-*-$matchproc"]]
     } else {
 	set proc [info procs "cgi-search-*-$sel"]
 	if {$proc eq ""} then {
