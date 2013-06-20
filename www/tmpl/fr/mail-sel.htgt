@@ -78,9 +78,9 @@
 			    \casetableau {} {
 				<INPUT TYPE="TEXT" NAME="namem" SIZE="30">
 				.
-				%DOMAINH%
+				%DOMAINM%
 				<span style="display: %DISPVIEW%">
-				~ ~ ~ %MENUVIEWH%
+				~ ~ ~ %MENUVIEWM%
 				</span>
 			    }
 			}
