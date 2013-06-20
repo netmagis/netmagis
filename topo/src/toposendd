@@ -69,7 +69,7 @@ proc send-changes {_tabeq} {
     set leq {}
     set sql "SELECT DISTINCT (eq) AS fqdn
     			FROM topo.ifchanges
-			WHERE c.processed = 0"
+			WHERE processed = 0"
     if {! [toposqlselect $sql tab { lappend leq $tab(fqdn) }]} then {
 	return 0
     }
