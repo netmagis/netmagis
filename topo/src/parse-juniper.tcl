@@ -66,11 +66,7 @@ proc juniper-read-conf {fd} {
     while {[gets $fd ligne] > -1} {
 	regsub { ## SECRET-DATA$} $ligne {} ligne
 	# remove comment lines
-<<<<<<< HEAD
-	regsub {^#.*} $ligne {} ligne
-=======
 	regsub {^#} $ligne {} ligne
->>>>>>> 7a181f17f2bc078bb4fcdc4815987c6201b4d4aa
 
 	# join bracketed statement running on consecutive lines
 	if { [regexp {^\s*\S+\s\[[^\]]*$} $ligne]} then {
