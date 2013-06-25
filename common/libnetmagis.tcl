@@ -4517,7 +4517,7 @@ proc update-host-refs {dbfd oidrr nidrr} {
     set sql {}
     lappend sql "UPDATE dns.mail_role
 			    SET mboxhost = $nidrr
-			    WHERE hmboxhost = $oidrr"
+			    WHERE mboxhost = $oidrr"
     lappend sql "UPDATE dns.rr_ip
 			    SET idrr = $nidrr
 			    WHERE idrr = $oidrr"
