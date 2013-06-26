@@ -1,4 +1,4 @@
-Version 2.2.0 - ????/??/??
+Version 2.2.0 - 2013/06/26
     - provide support for multiple DNS views
     - new parameter "viewname" for all utils/dns* programs
     - new parmaeter "-w viewname" for all servers/mk* programs
