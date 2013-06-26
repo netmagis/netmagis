@@ -38,8 +38,8 @@
 
     \titre {2} {Documentation d'installation}
 	
-    \lien {Instructions d'installation détaillées} {/install-2.1.html}
-    pour les versions 2.1.x.
+    \lien {Instructions d'installation détaillées} {/install-2.2.html}
+    pour les versions 2.2.x.
 
     Vous pouvez également être intéressé par la lecture de
     \liste {
@@ -51,9 +51,14 @@
 	}
     }
 
-    Les utilisateurs aventureux pourront lire les
-    \lien {instructions d'installation détaillées} {/install-2.2.html}
-    pour la future version 2.2.
+    \* Les utilisateurs aventureux pourront lire les
+    \* \lien {instructions d'installation détaillées} {/install-2.2.html}
+    \* pour la future version 2.2.
+
+    Si vous installez une ancienne version de Netmagis, vous pouvez
+    lire les
+    \lien {instructions d'installation détaillées} {/install-2.1.html}
+    pour la version précédente (2.1).
 
     \titre {2} {Documentation de version et procédures de mise à jour}
 
@@ -122,6 +127,9 @@
     authentifié.
 
     \titre {2} {Anciennes documentations}
+
+    Document d'\lien {installation de la version 2.1} {install-2.1.html}
+    (en anglais).
 
     Document d'installation de la version 1.5~:
 	\lien {PDF} {http://webdns.u-strasbg.fr/install-1.5.pdf}

@@ -37,6 +37,16 @@
     \titre {1} {Netmagis: News}
 
 
+    \titre {2} {[2013/06/26] Netmagis 2.2.0 is released}
+
+    The 2.2.0 version of Netmagis is available on the
+    \lien {Download} {/download.html} section. This is a
+    major release, featuring DNS views as well as many
+    other additions.  You can
+    read \lien {release notes} {/relnotes.html} to see
+    all new exciting features.
+
+
     \titre {2} {[2013/02/27] Netmagis 2.1.1 is released}
 
     The 2.1.1 version of Netmagis is available on the

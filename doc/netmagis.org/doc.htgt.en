@@ -38,8 +38,8 @@
 
     \titre {2} {Installation manual}
 
-    \lien {Detailed installation instructions} {install-2.1.html}
-    for the 2.1.x releases.
+    \lien {Detailed installation instructions} {install-2.2.html}
+    for the 2.2.x releases.
 
     You may also be interested in reading:
     \liste {
@@ -51,9 +51,13 @@
 	}
     }
 
-    Adventurous users may find the
-    \lien {detailed installation instructions} {install-2.2.html}
-    for the upcoming 2.2 release.
+    \* Adventurous users may find the
+    \* \lien {detailed installation instructions} {install-2.2.html}
+    \* for the upcoming 2.2 release.
+
+    If you are installing an old version of Netmagis, you may want to
+    read \lien {detailed installation instructions} {install-2.1.html}
+    for the previous 2.1 release.
 
     \titre {2} {Release notes and upgrade instructions}
 
@@ -120,7 +124,11 @@
     {https://2009.jres.org/planning_files/summary/html/124.htm}
     at the JRES'09 conference.
 
-    \titre {2} {Old documentations (in French)}
+    \titre {2} {Old documentations}
+
+    Release 2.1 \lien {installation manual} {install-2.1.html}.
+
+    \titre {2} {Very old documentations (in French)}
 
     Release 1.5 installation manual:
 	\lien {PDF} {http://webdns.u-strasbg.fr/install-1.5.pdf}

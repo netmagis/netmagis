@@ -36,6 +36,15 @@
 
     \titre {1} {Netmagis : Nouveautés}
 
+    \titre {2} {[2013/06/26] La version 2.2.0 de Netmagis est disponible}
+
+    La \lien {version 2.2.0 de Netmagis} {/download.html} est maintenant
+    disponible. Il s'agit d'une version majeure, incluant les vues DNS et
+    bien d'autres ajouts.  Référez-vous aux \lien {notes de version}
+    {/relnotes.html} pour connaître toutes les nouveautées incluses
+    dans cette version.
+
+
     \titre {2} {[2013/02/27] La version 2.1.1 de Netmagis est disponible}
 
     La \lien {version 2.1.1 de Netmagis} {/download.html} est
