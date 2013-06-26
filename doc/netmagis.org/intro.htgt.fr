@@ -28,6 +28,7 @@
 	    \reference {\lien {Copies d'écran}	{/screenshots.html}}
 	    \reference {\lien {Démonstration}	{/demo.html}}
 	    \reference {\lien {Développement}	{/dev.html}}
+	    \reference {\lien {Licence}		{/license.html}}
 	}
 }
 

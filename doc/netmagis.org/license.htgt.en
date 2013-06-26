@@ -2,11 +2,11 @@
 \modele {texte}
 
 \set {auteur}	{pda/jean}
-\set {date}	{25/10/2011}
+\set {date}	{26/06/2013}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
-    Netmagis - Développement
+    Netmagis - License
 }
 
 \*******************************************************************************
@@ -16,7 +16,7 @@
 
 \*******************************************************************************
 \bandeau {
-	Développement
+	Licence
     } {
 	\elementbandeau {Sommaire} {
 	    \reference {\lien {Nouveautés}	{/news.html}}
@@ -28,21 +28,27 @@
 	    \reference {\lien {Copies d'écran}	{/screenshots.html}}
 	    \reference {\lien {Démonstration}	{/demo.html}}
 	    \reference {\lien {Développement}	{/dev.html}}
-	    \reference {\lien {Licence}		{/license.html}}
+	    \reference {\lien {License}		{/license.html}}
 	}
 }
 
 \*******************************************************************************
 \partie {texte} { \* Le texte proprement dit
 
-    \titre {1} {Netmagis : Développement}
+    \titre {1} {Netmagis : license}
 
-    L'ensemble des sources de \lien {Netmagis} {/intro.html} est
-    disponible sur la forge \lien {github} {https://github.com/pdav/netmagis/}.
+    \lien {Netmagis} {/} is a free software developped by Pierre
+    David, Jean Benoit and Sébastien Boggia. It is released by
+    Louis Pasteur University (now \lien {University of Strasbourg}
+    {http://www.unistra.fr}, France) under the \lien {CeCILL-B license}
+    {http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html}.
 
-    Vous pouvez utiliser le
-    \lien {gestionnaire de bugs} {https://github.com/pdav/netmagis/issues}
-    pour signaler un bug ou proposer un patch.
+    \lien {CeCILL licenses} {http://www.cecill.info/} are an initiative of
+    3 French public research organisations (CEA, CNRS and INRIA) to adapt
+    traditional (i.e. U.S.) free software licenses to French law.
+    For example, the CeCILL-B license used in Netmagis is an adaptation
+    of the BSD license, which allows for software reuse without any
+    constraint other than a strong citation obligation.
 
 }
 
