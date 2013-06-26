@@ -42,7 +42,7 @@
     La \lien {version 2.2.0 de Netmagis} {/download.html} est maintenant
     disponible. Il s'agit d'une version majeure, incluant les vues DNS et
     bien d'autres ajouts.  Référez-vous aux \lien {notes de version}
-    {/relnotes.html} pour connaître toutes les nouveautées incluses
+    {/relnotes.html} pour connaître toutes les nouveautés incluses
     dans cette version.
 
 
@@ -51,7 +51,7 @@
     La \lien {version 2.1.1 de Netmagis} {/download.html} est
     maintenant disponible. C'est principalement une version de correction
     de bugs. Référez-vous aux \lien {notes de version}
-    {/relnotes.html} pour connaître toutes les nouveautées incluses
+    {/relnotes.html} pour connaître toutes les nouveautés incluses
     dans cette version.
 
 
@@ -66,7 +66,7 @@
 
     La \lien {version 2.1.0 de Netmagis} {/download.html} est
     maintenant disponible. Référez-vous aux \lien {notes de version}
-    {/relnotes.html} pour connaître toutes les nouveautées incluses
+    {/relnotes.html} pour connaître toutes les nouveautés incluses
     dans cette version.
 
 
