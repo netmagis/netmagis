@@ -5284,7 +5284,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 			# If it is not an alias, there must be at
 			# least an IP address
 			#
-			if {$cname ne "" && $ip eq ""} then {
+			if {$cname eq "" && $ip eq ""} then {
 			    set msg [mc {Name '%1$s' is not a host in view '%2$s'} $object $vn]
 			    set err 1
 			}
