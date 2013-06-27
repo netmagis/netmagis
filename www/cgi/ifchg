@@ -409,7 +409,7 @@ d cgi-register {mode .+} {
     # the real user (not the substituted one)
     set qlogin [::pgsql::quote [lindex [d euid] 0]]
     # equipment name
-    set qeq [::psql::quote $eq]
+    set qeq [::pgsql::quote $eq]
 
     set sql {}
     foreach i $iface {
