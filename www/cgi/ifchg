@@ -409,7 +409,8 @@ d cgi-register {mode .+} {
     # the real user (not the substituted one)
     set qlogin [::pgsql::quote [lindex [d euid] 0]]
     # equipment name
-    set qeq [::pgsql::quote $eq]
+    set fqdn [format "%s.%s" $eq [dnsconfig get "defdomain"]]
+    set qeq [::pgsql::quote $fqdn]
 
     set sql {}
     foreach i $iface {
