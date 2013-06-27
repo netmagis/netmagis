@@ -101,7 +101,7 @@ proc send-changes {_tabeq} {
 	# commands and mark these modifications as "processed"
 	#
 
-	set lcmd [mod-to-conf $eq $eq $type $model lreqdate]
+	set lcmd [mod-to-conf $eq $type $model lreqdate]
 	if {[llength $lcmd] == 0} then {
 	    continue
 	}
