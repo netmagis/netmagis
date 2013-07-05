@@ -405,10 +405,12 @@
 	}}
     }
     \item {Install the desired package(s). For example, if you want to
-	install the \italique {database} and the \italique {utils}
+	install the \italique {database}, \italique {www} and the
+	\italique {utils}
 	packages, type:
 	\retrait{\teletype {
 	    # make install-database \br
+	    # make install-www \br
 	    # make install-utils
 	}}
     }
