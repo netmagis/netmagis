@@ -214,6 +214,8 @@ ALTER TABLE dns.domain RENAME COLUMN nom		TO name ;
 ALTER TABLE dns.domain
     ADD UNIQUE (name),
     ADD PRIMARY KEY (iddom) ;
+ALTER TABLE dns.domain ALTER COLUMN iddom
+    SET default NEXTVAL ('dns.seq_domain');
 
 ALTER TABLE dns.seq_etablissement RENAME TO seq_organization ;
 ALTER TABLE dns.etablissement RENAME TO organization ;
