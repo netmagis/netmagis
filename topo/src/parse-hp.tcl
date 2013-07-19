@@ -26,6 +26,8 @@ array set hpmodules {
     J4878B	4
     J4907A	16
     J8702A	24
+    j8702a	24
+    j9534a	24
     J90XXA      48
     J86yyA      1
     J86xxA      1

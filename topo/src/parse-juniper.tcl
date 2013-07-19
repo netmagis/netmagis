@@ -239,6 +239,7 @@ proc juniper-parse {libdir model fdin fdout tab eq} {
 	version				{2	NOP}
 	groups				{1	NOP}
 	apply-groups			{2	NOP}
+	apply-groups-except		{2	NOP}
 	interfaces			{1	juniper-parse-interfaces}
 	snmp				{1	juniper-parse-snmp}
 	routing-options			{1	juniper-parse-routing-options}
@@ -378,6 +379,7 @@ proc juniper-parse-interfaces {conf tab idx} {
 	tap		{1	NOP}
 	traceoptions	{1	NOP}
 	apply-groups	{2	NOP}
+	apply-groups-except	{2      NOP}
 	interface-range	{2	juniper-parse-if-range}
 	*		{1	juniper-parse-if}
     }
@@ -417,6 +419,7 @@ proc juniper-parse-if {conf tab idx} {
 	member			{2	juniper-parse-member}
 	traceoptions		{1	NOP}
 	apply-groups		{2	NOP}
+	apply-groups-except     {2      NOP}
 	*			{2	ERROR}
     }
 
@@ -583,6 +586,7 @@ proc juniper-parse-if-unit {conf tab idx} {
 	encapsulation	{2	juniper-parse-unit-encap}
 	tunnel		{1	NOP}
 	apply-groups	{2	NOP}
+	apply-groups-except	{2      NOP} 
 	traceoptions	{1	NOP}
 	*		{2	ERROR}
     }
@@ -741,6 +745,7 @@ proc juniper-parse-family {conf tab idx} {
 		policer			{1	NOP}
 		address			{2	juniper-parse-if-address}
 		apply-groups		{2	NOP}
+		apply-groups-except	{2      NOP}
 		traceoptions		{1	NOP}
 		*			{2	NOP}
 	    }
@@ -829,6 +834,7 @@ proc juniper-parse-l2switch-vlan {conf tab idx} {
     array set kwtab {
 	members		{3	juniper-parse-l2switch-vlan-members}
 	apply-groups	{2	NOP}
+	apply-groups-except	{2      NOP}
 	traceoptions	{1	NOP}
 	*		{1	ERROR}
     }
@@ -998,6 +1004,7 @@ proc juniper-parse-if-address {conf tab idx} {
 	arp		    {4	NOP}
 	destination	    {2	NOP}
 	apply-groups	    {2	NOP}
+	apply-groups-except	{2      NOP}
 	traceoptions	    {1	NOP}
 	*		    {2	ERROR}
     }
@@ -1039,6 +1046,7 @@ proc juniper-parse-vrrp {conf tab idx} {
 	virtual-inet6-address	{2	juniper-parse-vrrp-vadr}
 	accept-data		{1	NOP}
 	apply-groups	    	{2	NOP}
+	apply-groups-except	{2      NOP}
 	traceoptions	    	{1	NOP}
 	*			{2	NOP}
     }
@@ -1102,6 +1110,7 @@ proc juniper-parse-if-gigopt {conf tab idx} {
         no-auto-negotiation	{1	NOP}
         no-flow-control		{1	NOP}
 	apply-groups	    	{2	NOP}
+	apply-groups-except	{2      NOP}
 	traceoptions	    	{1	NOP}
 	*			{2	ERROR}
     }
@@ -1164,6 +1173,7 @@ proc juniper-parse-routing-options {conf tab idx} {
 	static			{1	juniper-parse-static-routes}
 	autonomous-system	{2	NOP}
 	apply-groups	    	{2	NOP}
+	apply-groups-except     {2      NOP}
 	traceoptions	    	{1	NOP}
 	*			{1	NOP}
     }
@@ -1189,6 +1199,7 @@ proc juniper-parse-static-routes {conf tab idx} {
 	route		{juniper-parse-count-route juniper-parse-route-entry}
 	rib-group	{2	NOP}
 	apply-groups	{2	NOP}
+	apply-groups-except	{2      NOP}
 	traceoptions	{1	NOP}
 	*		{1	ERROR}
     }
@@ -1265,6 +1276,7 @@ proc juniper-parse-snmp {conf tab idx} {
 	community	{2	juniper-parse-snmp-community}
 	location	{2	juniper-parse-snmp-location}
 	apply-groups	{2	NOP}
+	apply-groups-except	{2      NOP}
 	traceoptions	{1	NOP}
 	*		{1	ERROR}
     }
@@ -1338,6 +1350,7 @@ proc juniper-parse-ethernet-swopt {conf tab idx} {
     array set kwtab {
 	voip		{1	juniper-parse-voip}
 	apply-groups	{2	NOP}
+	apply-groups-except	{2      NOP}
 	traceoptions	{1	NOP}
 	*		{1	NOP}
     }
@@ -1361,6 +1374,7 @@ proc juniper-parse-voip {conf tab idx} {
     array set kwtab {
 	interface	{2	juniper-parse-voip-iface}
 	apply-groups	{2	NOP}
+	apply-groups-except	{2      NOP}
 	traceoptions	{1	NOP}
 	*		{1	NOP}
     }
@@ -1386,6 +1400,7 @@ proc juniper-parse-voip-iface {conf tab idx} {
     array set kwtab {
 	vlan		{2	juniper-parse-voip-iface-vlan}
 	apply-groups	{2	NOP}
+	apply-groups-except	{2      NOP}
 	traceoptions	{1	NOP}
 	*		{2	NOP}
     }
@@ -1450,6 +1465,7 @@ proc juniper-parse-vlans {conf tab idx} {
 
     array set kwtab {
 	apply-groups	{2	NOP}
+	apply-groups-except	{2      NOP}
 	traceoptions	{1	NOP}
 	*		{1	juniper-parse-vlans-entry}
     }
@@ -1579,6 +1595,7 @@ proc juniper-parse-bridge-domains-entry {conf tab idx} {
     upvar $tab t
 
     array set kwtab {
+	description		{2	NOP}
 	domain-type		{2	NOP}
 	bridge-options		{1	NOP}
 	vlan-id			{2	juniper-parse-bridged-vlanid}
