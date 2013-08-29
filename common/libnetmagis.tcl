@@ -31,6 +31,7 @@
 #
 # History
 #   2010/12/17 : pda      : design
+#   2013/08/29 : pda/jean : reset the internal representation before file read
 #
 
 proc read-local-conf-file {file} {
@@ -42,6 +43,7 @@ proc read-local-conf-file {file} {
     }
     set lineno 1
     set errors false
+    array unset netmagisconf
     while {[gets $fd line] >= 0} {
 	regsub {#.*} $line {} line
 	regsub {\s*$} $line {} line
@@ -1663,6 +1665,10 @@ snit::type ::netmagis {
 	    $self error $msg
 	}
 	return $msg
+    }
+
+    method version {} {
+	return $version
     }
 }
 

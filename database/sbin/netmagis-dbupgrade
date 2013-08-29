@@ -1,0 +1,176 @@
+#!%TCLSH%
+
+#
+# Upgrade a Netmagis database from one version to another
+#
+# Syntax:
+#   netmagis-dbupgrade [-f <netmagis.conf>] [<target-version>]
+#
+#	Without argument, this script displays
+#	- the current schema version guessed from the Netmagis database
+#	- the latest target version this script is able to upgrade to
+#	With an argument (22, 23, etc.), this script upgrade the
+#	the Netmagis database to the given target.
+#
+# See "conf(usage)" variable for exact syntax.
+#
+# History
+#   2013/08/29 : pda/jean : design
+#
+
+source %LIBNETMAGIS%
+
+#
+# Authorized values
+#
+
+set conf(balabla)	tagadabouzoug
+
+#
+# Self explanatory
+#
+
+set conf(usage) {usage: %1$s [-f <netmagis.conf>] [<target-version>]
+    -f : alternate netmagis.conf configuration file
+    Without target-version: displays current database and code versions
+    With target-version: upgrade the database to the given version
+}
+
+##############################################################################
+# Small utility functions
+##############################################################################
+
+proc warning {msg} {
+    puts stderr "$msg"
+}
+
+proc fatal-error {msg} {
+    warning $msg
+    exit 1
+}
+
+proc usage {} {
+    global conf
+    global argv0
+
+    fatal-error [format $conf(usage) $argv0]
+}
+
+##############################################################################
+# Database version guessing
+##############################################################################
+
+proc guess-schemaversion {} {
+    return "22"
+}
+
+##############################################################################
+# Database upgrade
+##############################################################################
+
+proc upgrade-database {target} {
+    ############################################ BEGIN OLD CODE
+    #
+    # Netmagis database access
+    #
+
+    set msg [d init-script dbfd $argv0 true tabcor]
+    if {$msg ne ""} then {
+	fatal-error "$msg\nAborted."
+    }
+
+
+    set op [lindex $argv 0]
+    set fct [info procs "import-$op"]
+    if {[llength $fct] != 1} then {
+	usage
+    }
+
+    #
+    # Lock database, do the work, and commit modifications
+    #
+
+    set msg [d dblock {}]
+    if {$msg ne ""} then {
+	fatal-error $msg
+    }
+
+    set msg [$fct $verbose [lreplace $argv 0 0] $dbfd]
+    if {$msg ne ""} then {
+	set msg [d dbabort "import" $msg]
+	fatal-error $msg
+    }
+
+    set msg [d dbcommit "import"]
+    if {$msg ne ""} then {
+	fatal-error $msg
+    }
+
+    d end
+    ############################################ END OLD CODE
+}
+
+##############################################################################
+# Main program
+##############################################################################
+
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Argument checking
+    #
+
+    set verbose 0
+    while {[llength $argv] > 0} {
+	set a [lindex $argv 0]
+	switch -glob -- $a {
+	    -f {
+		# alternate configuration file: re-read it now
+		# (default one was read with libnetmagis)
+		read-local-conf-file [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -v {
+		incr verbose
+		set argv [lreplace $argv 0 0]
+	    }
+	    -* {
+		warning "Unknown option '$a'"
+		usage
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    #
+    # Guess currrent database schema version
+    #
+
+    set schemaversion [guess-schema-version]
+
+    set codeversion [d version]
+    if {! [regsub {^(\d+)\.(\d+).*} $version {\1\2} codeversion]} then {
+	return "Internal error: Netmagis version number '%s' unrecognized" $version]
+    }
+
+    #
+    # Perform the action
+    switch {[llength $argv]} {
+	0 {
+	    puts "Guessed schema version: $schemaversion"
+	    puts "Latest schema supported: $codeversion"
+	}
+	1 {
+	    upgrade-database [lindex $argv 0]
+	}
+	default {
+	    usage
+	}
+    }
+    return 0
+}
+
+exit [main $argv0 $argv]
