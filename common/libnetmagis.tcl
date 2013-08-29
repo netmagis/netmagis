@@ -725,15 +725,20 @@ snit::type ::netmagis {
 	#
 	# Check compatibility with database schema version
 	# - empty string : pre-2.2 schema
-	# - non empty string : integer containing schema version 
+	# - non empty string : integer containing schema version
 	# Netmagis version (x.y.... => xy) must match schema version.
 	#
 
+	# get code version (from top-level Makefile)
 	if {! [regsub {^(\d+)\.(\d+).*} $version {\1\2} nver]} then {
 	    return [mc "Internal error: Netmagis version number '%s' unrecognized" $version]
 	}
 
-	set sver [dnsconfig  get "schemaversion"]
+	# get schema version (from database)
+	if {[catch {dnsconfig get "schemaversion"} sver]} then {
+	    set sver ""
+	}
+
 	if {$sver eq ""} then {
 	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.sql"]
 	} elseif {$sver < $nver} then {
