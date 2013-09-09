@@ -73,11 +73,14 @@ proc get-mod-zones {dbfd idview} {
 #   - return value: new serial number
 #
 # Algorithm (see issue #47):
-#   parse the current serial (from the zone_*.version column) to get
-#		yyyymmdd and nn
-#   if yyyymmdd < today
+#   if current serial is empty (new zone)
 #	then new serial := ctoday concatenated with 00
-#	else new serial := serial + 1
+#	else
+#	     parse the current serial (from the zone_*.version column)
+#	        to get yyyymmdd and nn
+#            if yyyymmdd < today
+#	 	 then new serial := ctoday concatenated with 00
+#		 else new serial := serial + 1
 #
 #   Properties of this algorithm:
 #	- the serial is strictly monotonic
@@ -89,11 +92,14 @@ proc get-mod-zones {dbfd idview} {
 #
 # History:
 #   2012/09/20 : pda/jean : design of the new auto-adaptative algorithm
+#   2013/09/09 :     jean : fix initial value bug
 #
 
 proc new-serial {serial} {
-    if {[regexp {^(\d{8})(\d{2})$} $serial dummy odate onn]} then {
-	set today [clock format [clock seconds] -format "%Y%m%d"]
+    set today [clock format [clock seconds] -format "%Y%m%d"]
+    if {$serial eq ""} then {
+	set nserial "${today}00"
+    } elseif {[regexp {^(\d{8})(\d{2})$} $serial dummy odate onn]} then {
 	if {$odate < $today} then {
 	    set nserial "${today}00"
 	} else {
