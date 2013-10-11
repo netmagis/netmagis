@@ -37,8 +37,8 @@
 #	- name : name of alias to add
 #	- domain : domain of alias to add
 #	- idview: view id in which the alias must be added
-#	- alias : name of canonical existing host
-#	- domain2 : domain of canonical existing host
+#	- nameref : name of canonical existing host
+#	- domainref : domain of canonical existing host
 #
 # History
 #   2002/04/11 : pda/jean : design
