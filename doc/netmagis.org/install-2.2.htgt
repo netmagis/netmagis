@@ -288,29 +288,67 @@
     \item {Install \lien {required dependencies} {/spec.html}.
 	Please note that Tcl is a required dependency for all packages.
 
-	Linux (Ubuntu/Debian) note:
-	\retrait \teletype {
-	    # common and database \br
-	    aptitude -y install make git \\ \br
-	    ~ ~ ~ ~ postgresql-9.1 postgresql-pltcl-9.1 libpgtcl1.5  \\ \br
-	    ~ ~ ~ ~ tcl8.5 tcl8.5-dev tcllib pwgen
+	\liste {
+	    \item {Linux (Ubuntu/Debian) note:
+		\retrait\teletype {
+		# common and database \br
+		aptitude -y install make git \\ \br
+		~ ~ ~ ~ postgresql-9.1 postgresql-pltcl-9.1 libpgtcl1.5  \\ \br
+		~ ~ ~ ~ tcl8.5 tcl8.5-dev tcllib pwgen
 
-	    # www \br
-	    aptitude -y install \ \br
-	    ~ ~ ~ ~ apache2 libapache2-mod-auth-pgsql \\ \br
-	    ~ ~ ~ ~ netpbm texlive-latex-base graphviz transfig
+		# www \br
+		aptitude -y install \ \br
+		~ ~ ~ ~ apache2 libapache2-mod-auth-pgsql \\ \br
+		~ ~ ~ ~ netpbm texlive-latex-base graphviz transfig
 
-	    # topo \br
-	    aptitude -y install \\ \br
-	    ~ ~ ~ ~ gcc fping rancid default-mta
+		# topo \br
+		aptitude -y install \\ \br
+		~ ~ ~ ~ gcc fping rancid default-mta
 
-	    # metro \br
-	    aptitude -y install \\ \br
-	    ~ ~ ~ ~ libsnmp-session-perl libsnmp-perl libnet-snmp-perl librrdtool-oo-perl \\ \br
-		~ ~ ~ ~  libdbd-pg-perl rrdtool
+		# metro \br
+		aptitude -y install \\ \br
+		~ ~ ~ ~ libsnmp-session-perl libsnmp-perl libnet-snmp-perl librrdtool-oo-perl \\ \br
+		    ~ ~ ~ ~  libdbd-pg-perl rrdtool
 
-	    # ldap authentication \br
-	    aptitude -y install openldap-utils slapd
+		# ldap authentication \br
+		aptitude -y install openldap-utils slapd
+		}
+	    }
+	\item {Linux (CentOS) note:
+
+		If you are installing for a CentOS distribution,
+		you need to install the \lien {Epel repository}
+		{http://mirror.ibcp.fr/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm}
+		or to download each package not in CentOS
+		repository (such as pwgen, tcllib, etc.) from \lien
+		{http://dl.fedoraproject.org/pub/epel/6}{http://dl.fedoraproject.org/pub/epel/6}.
+
+		Then, you can use \teletype {yum} to install dependancies:
+		\retrait\teletype {
+		# common and database \br
+		yum install tcl tcllib pwgen tcl-devel \\ \br
+		~ ~ ~ ~ tcl-pgtcl postgresql-server gcc \\ \br
+		~ ~ ~ ~ make postgresql-pltcl \br
+
+		# www \br
+		yum install httpd mod_auth_pgsql mod_ssl
+
+		# topo \br
+		yum install rancid fping
+
+		# metro \br
+		yum install rrdtool-perl net-snmp-libs net-snmp-perl \\ \br
+		~ ~ ~ ~ perl-Net-SNMP net-snmp-libs perl-Digest-HMAC \\ \br
+		~ ~ ~ ~ perl-IO-Socket-INET6 perl-Crypt-DES \\ \br
+		~ ~ ~ ~ perl-Net-SNMP perl-DBD-Pg
+		}
+
+		Then, change the top-level Makefile to suit your environnement:
+		\retrait\teletype {
+		TCLSH = /usr/bin/tclsh \br
+		TCLCONF = /usr/lib64/tcl8.5/tclConfig.sh \br
+		}
+	    }
 	}
     }
     \item {Choose an installation directory. You may use \teletype
