@@ -132,7 +132,7 @@ proc main {argv0 argv} {
     #
 
     if {[read-rr-by-ip $dbfd $addr $idview trrbidon]} then {
-	d error [mc "IP address '%1$s' already exists" $addr]
+	d error [mc "IP address '%s' already exists" $addr]
     }
 
     #
