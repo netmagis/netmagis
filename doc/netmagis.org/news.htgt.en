@@ -38,13 +38,34 @@
     \titre {1} {Netmagis: News}
 
 
+    \titre {2} {[2014/01/16] Netmagis 2.2.1 is released}
+
+    The 2.2.1 version of Netmagis is available on the
+    \lien {Download} {/download.html} section. This is a
+    maintenance release. See the
+    \lien {release notes} {/relnotes.html#v2.2.1} for 
+    the list of fixed bugs.
+
+
+    \titre {2} {[2013/12/12] Netmagis at JRES 2013}
+
+    Jean Benoit has presented Netmagis news in a "lightning talk" during
+    the \lien {JRES 2013} {http://2013.jres.org} conference held in
+    Montpellier (France) in decembre 2013.
+
+    The slides (in French) are available on:
+    \lien {https://conf-ng.jres.org/2013/planning.html#article_211}
+	{https://conf-ng.jres.org/2013/planning.html#article_211}
+    (see at the very bottom of the page).
+
+
     \titre {2} {[2013/06/26] Netmagis 2.2.0 is released}
 
     The 2.2.0 version of Netmagis is available on the
     \lien {Download} {/download.html} section. This is a
     major release, featuring DNS views as well as many
     other additions.  You can
-    read \lien {release notes} {/relnotes.html} to see
+    read \lien {release notes} {/relnotes.html#v2.2} to see
     all new exciting features.
 
 
@@ -53,7 +74,7 @@
     The 2.1.1 version of Netmagis is available on the
     \lien {Download} {/download.html} section. This is mainly
     a bug-fix release. You can
-    read \lien {release notes} {/relnotes.html} to see
+    read \lien {release notes} {/relnotes.html#v2.1.1} to see
     all new exciting features.
 
 
@@ -68,7 +89,7 @@
 
     The 2.1.0 version of Netmagis is available on the
     \lien {Download} {/download.html} section. You can
-    read \lien {release notes} {/relnotes.html} to see
+    read \lien {release notes} {/relnotes.html#v2.1} to see
     all new exciting features.
 
 

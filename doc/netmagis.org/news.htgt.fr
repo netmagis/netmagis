@@ -37,12 +37,32 @@
 
     \titre {1} {Netmagis : Nouveautés}
 
+    \titre {2} {[2014/01/16] La version 2.2.1 de Netmagis est disponible}
+
+    La \lien {version 2.2.1 de Netmagis} {/download.html} est maintenant
+    disponible. Il s'agit d'une version de maintenance, voir les
+    \lien {notes de version} {/relnotes.html#v2.2.1}
+    pour connaître la liste des problèmes résolus.
+
+
+    \titre {2} {[2013/12/12] Netmagis aux JRES 2013}
+
+    Jean Benoit a exposé les nouveautés de Netmagis lors d'un "lightning
+    talk" pendant les \lien {JRES 2013} {http://2013.jres.org} 
+    qui se sont tenues à Montpellier (France) en décembre 2013.
+
+    La présentation est disponible sur :
+    \lien {https://conf-ng.jres.org/2013/planning.html#article_211}
+	{https://conf-ng.jres.org/2013/planning.html#article_211}
+    (voir tout en bas de la page).
+
+
     \titre {2} {[2013/06/26] La version 2.2.0 de Netmagis est disponible}
 
     La \lien {version 2.2.0 de Netmagis} {/download.html} est maintenant
     disponible. Il s'agit d'une version majeure, incluant les vues DNS et
     bien d'autres ajouts.  Référez-vous aux \lien {notes de version}
-    {/relnotes.html} pour connaître toutes les nouveautés incluses
+    {/relnotes.html#v2.2} pour connaître toutes les nouveautés incluses
     dans cette version.
 
 
@@ -51,7 +71,7 @@
     La \lien {version 2.1.1 de Netmagis} {/download.html} est
     maintenant disponible. C'est principalement une version de correction
     de bugs. Référez-vous aux \lien {notes de version}
-    {/relnotes.html} pour connaître toutes les nouveautés incluses
+    {/relnotes.html#v2.1.1} pour connaître toutes les nouveautés incluses
     dans cette version.
 
 
@@ -66,7 +86,7 @@
 
     La \lien {version 2.1.0 de Netmagis} {/download.html} est
     maintenant disponible. Référez-vous aux \lien {notes de version}
-    {/relnotes.html} pour connaître toutes les nouveautés incluses
+    {/relnotes.html#v2.1} pour connaître toutes les nouveautés incluses
     dans cette version.
 
 

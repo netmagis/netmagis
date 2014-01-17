@@ -46,6 +46,41 @@
     \lien {github.com commits} {http://github.com/pdav/netmagis}.
 
 
+    \titre {2} {\ancre {v2.2.1} {Netmagis 2.2.1}}
+
+    Release date: 16 january 2014
+
+    The 2.2.1 release of Netmagis is a maintenance release, providing some
+    bug fixes:
+
+    \liste {
+	\item {it was impossible to delete aliases (see
+	    \lien {issue 103} {https://github.com/pdav/netmagis/issues/103})
+	}
+	\item {it was impossible to modify interfaces of an equipment in the
+	    topo module (see
+	    \lien {issue 104} {https://github.com/pdav/netmagis/issues/104})
+	}
+	\item {no command was sent to equipments in the topo module
+	    (see
+	    \lien {issue 106} {https://github.com/pdav/netmagis/issues/106})
+	}
+	\item {the ifchg CGI script, part of the topo module, was
+	    expecting a FQDN 
+	    (see
+	    \lien {issue 107} {https://github.com/pdav/netmagis/issues/107})
+	}
+	\item {the initial zone serial number was not conforming to specification
+	    (see
+	    \lien {issue 108} {https://github.com/pdav/netmagis/issues/108})
+	}
+	\item {a partial fix is provided to
+	    \lien {issue 100} {https://github.com/pdav/netmagis/issues/100}:
+	    no database upgrade script is provided, but the version check is
+	    now correct
+	}
+    }
+
     \titre {2} {\ancre {v2.2} {Netmagis 2.2}}
 
     Release date: 26 june 2013
