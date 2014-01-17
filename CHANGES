@@ -1,3 +1,11 @@
+Version 2.2.1 - 2014/01/17
+    - bug fix (issue #103): impossible to delete aliases
+    - bug fix (issue #104): impossible to modify an interface (topo module)
+    - bug fix (issue #106): no command sent to equipments (topo module)
+    - bug fix (issue #107): ifchg script expected a FQDN (topo module)
+    - minor bug fix (issue #108): initial zone serial number not conformant
+    - partial bug fix (issue #100): bad database schema version test
+
 Version 2.2.0 - 2013/06/26
     - provide support for multiple DNS views
     - new parameter "viewname" for all utils/dns* programs

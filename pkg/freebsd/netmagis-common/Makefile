@@ -2,7 +2,7 @@
 # $FreeBSD: ports/net-mgmt/netmagis-common/Makefile,v 1.1 2012/10/30 20:27:10 crees Exp $
 
 PORTNAME?=	netmagis
-DISTVERSION?=	2.2.0
+DISTVERSION?=	2.2.1
 PORTREVISION?=	1
 CATEGORIES?=	net-mgmt
 MASTER_SITES=	http://netmagis.org/files/
