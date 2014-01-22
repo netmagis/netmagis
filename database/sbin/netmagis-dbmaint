@@ -87,7 +87,7 @@ vacuum ()
 
 get_config ()
 {
-    psql -Aqtc "SELECT valeur FROM global.config WHERE clef = '\$1'" $PGDATABASE
+    psql -Aqtc "SELECT value FROM global.config WHERE key = '\$1'" $PGDATABASE
 }
 
 clean_spools ()
