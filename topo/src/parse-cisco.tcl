@@ -379,8 +379,15 @@ proc cisco-parse-vlan {active line tab idx} {
 
     set line [string trim $line]
     if {[info exists t($idx!current!ssid)]} then {
+
+    	# access point, under ssid directive
 	set ssid $t($idx!current!ssid)
 	set t($idx!ssid!$ssid!vlan) $line
+    } elseif {[info exists t($idx!current!if)]} then {
+    	# ASA, under interface directive 
+	set vlanid [lindex $line 0]
+	set ifname $t($idx!current!if)
+	cisco-set-ifattr t $idx!if!$ifname vlan $vlanid
     } else {
 	set idx "$idx!lvlan"
 	if {[regexp {^[-,0-9]+$} $line]} then {
