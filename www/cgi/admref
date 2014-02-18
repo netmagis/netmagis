@@ -220,7 +220,7 @@ set conf(vlan:id)		vlanid
 set conf(vlan:help)		help-vlan.html
 set conf(vlan:return)		"Return to Vlan modification"
 set conf(vlan:table)		topo.vlan
-set conf(vlan:proc)		admref-nop
+set conf(vlan:proc)		vlan-check
 
 ##############################################################################
 # Topo (rancid) equipment types
@@ -547,6 +547,27 @@ proc dotattr-check {op dbfd _msg id idnum table _tabval} {
 	    set ok 0
 	}
 	$gv destroy
+    }
+
+    return $ok
+}
+
+proc vlan-check {op dbfd _msg id idnum table _tabval} {
+    upvar $_msg msg
+    upvar $_tabval tabval
+
+    set ok 1
+
+    # op = nop, mod, add, del
+    if {$op eq "mod" || $op eq "add"} then {
+	#
+	# Check vlan name
+	#
+
+	if {[info exists tabval(descr)]} then {
+	    set ok [check-vlan-name $tabval(descr) msg]
+	}
+	# FIXME: we should also check VLAN id
     }
 
     return $ok

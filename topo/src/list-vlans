@@ -15,8 +15,6 @@
 #   2010/12/18 : pda           : rework installation
 #
 
-set conf(chars)		{/+. a-zA-Z0-9()<>_-}
-
 source %LIBNETMAGIS%
 
 ##############################################################################
@@ -78,8 +76,8 @@ proc main {argv0 argv} {
 	set vlanid $tab(vlanid)
 	set voip $tab(voip)
 
-	if {[regexp "\[^$conf(chars)\]" $desc]} then {
-	    puts stderr "$argv0: invalid characters in vlan $vlanid (not in $conf(chars))"
+	if {[check-vlan-name $descr msg]} then {
+	    puts stderr "$argv0: invalid characters in vlan $vlanid ($msg)"
 	    set err 1
 	}
 	binary scan $desc H* desc

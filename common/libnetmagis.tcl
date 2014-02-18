@@ -370,6 +370,8 @@ array set libconf {
     freq:2462	11
 }
 
+# Authorised characters for vlan name
+set libconf(vlan-chars)                {/+. a-zA-Z0-9()<>_-}
 
 ##############################################################################
 # Netmagis application framework
@@ -10487,6 +10489,39 @@ proc eq-graph-status {dbfd eq {iface {}}} {
     }
 
     return $html
+}
+
+
+#
+# Check if a VLAN name is valid
+#
+# Input:
+#   - parameters:
+#       - name : VLAN name
+#       - _msg : error message
+#   - global variable libconf(vlan-chars) : authorized characters
+# Output:
+#   - return value: 1 if name is valid, 0 otherwise
+#   - msg: error message
+#
+# History
+#   2014/02/18 : jean      : converted to function from "list-vlans"
+#
+
+proc check-vlan-name {name _msg} {
+    global libconf
+    upvar $_msg msg
+
+
+    if {[regexp "^\[$libconf(vlan-chars)\]+$" $name]} then {
+	set ok 1
+	set msg ""
+    } else {
+	set ok 0
+	set msg "invalid characters in vlan name '$name' (not in $libconf(vlan-chars))"
+    }
+
+    return $ok
 }
 
 
