@@ -76,7 +76,7 @@ proc main {argv0 argv} {
 	set vlanid $tab(vlanid)
 	set voip $tab(voip)
 
-	if {[check-vlan-name $descr msg]} then {
+	if {[check-vlan-name $desc msg]} then {
 	    puts stderr "$argv0: invalid characters in vlan $vlanid ($msg)"
 	    set err 1
 	}
