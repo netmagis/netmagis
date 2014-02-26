@@ -33,6 +33,7 @@
 #   2010/12/17 : pda      : design
 #   2013/08/29 : pda/jean : reset the internal representation before file read
 #   2014/02/26 : pda/jean : add the pseudo-parameter _conffile
+#   2014/02/26 : pda/jean : add the pseudo-parameter _version
 #
 
 proc read-local-conf-file {file} {
@@ -65,6 +66,7 @@ proc read-local-conf-file {file} {
 	exit 1
     }
     set netmagisconf(_conffile) $file
+    set netmagisconf(_version) "%NMVERSION%"
 }
 
 #
