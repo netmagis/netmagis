@@ -32,6 +32,7 @@
 # History
 #   2010/12/17 : pda      : design
 #   2013/08/29 : pda/jean : reset the internal representation before file read
+#   2014/02/26 : pda/jean : add the pseudo-parameter _conffile
 #
 
 proc read-local-conf-file {file} {
@@ -63,6 +64,7 @@ proc read-local-conf-file {file} {
     if {$errors} then {
 	exit 1
     }
+    set netmagisconf(_conffile) $file
 }
 
 #
