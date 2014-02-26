@@ -1308,6 +1308,8 @@ snit::type ::netmagis {
 	upvar $_tabuid tabuid
 
 	set scriptmode "script"
+	regsub {.*/} $argv0 {} argv0
+	set scriptargv0 $argv0
 
 	#
 	# Locale
@@ -1334,9 +1336,6 @@ snit::type ::netmagis {
 	if {$msg ne ""} then {
 	    return $msg
 	}
-
-	regsub {.*/} $argv0 {} argv0
-	set scriptargv0 $argv0
 
 	return ""
     }
