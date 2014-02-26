@@ -1,176 +1,356 @@
-#!%TCLSH%
+#!/bin/sh
 
 #
-# Upgrade a Netmagis database from one version to another
+# Netmagis database upgrade
 #
-# Syntax:
-#   netmagis-dbupgrade [-f <netmagis.conf>] [<target-version>]
+# Supported upgrade path from 2.0 to all current Netmagis versions.
 #
-#	Without argument, this script displays
-#	- the current schema version guessed from the Netmagis database
-#	- the latest target version this script is able to upgrade to
-#	With an argument (22, 23, etc.), this script upgrade the
-#	the Netmagis database to the given target.
-#
-# See "conf(usage)" variable for exact syntax.
-#
-# History
-#   2013/08/29 : pda/jean : design
+# Syntax :
+#	netmagis-dbupgrade [-f netmagis-conf] [target-version]
 #
 
-source %LIBNETMAGIS%
-
-#
-# Authorized values
-#
-
-set conf(balabla)	tagadabouzoug
-
-#
-# Self explanatory
-#
-
-set conf(usage) {usage: %1$s [-f <netmagis.conf>] [<target-version>]
-    -f : alternate netmagis.conf configuration file
-    Without target-version: displays current database and code versions
-    With target-version: upgrade the database to the given version
-}
-
-##############################################################################
-# Small utility functions
-##############################################################################
-
-proc warning {msg} {
-    puts stderr "$msg"
-}
-
-proc fatal-error {msg} {
-    warning $msg
+usage ()
+{
+    (
+	echo "usage: $0 [-f netmagis.conf] [target-version]"
+	echo "Without argument: display actual versions"
+	echo "With target argument: upgrade database to this version"
+    ) >&2
     exit 1
 }
 
-proc usage {} {
-    global conf
-    global argv0
-
-    fatal-error [format $conf(usage) $argv0]
-}
+# Directory where upgrade scripts are located
+UPGRADEDIR=%NMLIBDIR%/upgrade
 
 ##############################################################################
-# Database version guessing
+# Configuration file read
 ##############################################################################
 
-proc guess-schemaversion {} {
-    return "22"
-}
+init_env ()
+{
 
-##############################################################################
-# Database upgrade
-##############################################################################
+    # Main netmagis database parameters (dnsdb*)
+    varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword"
+    eval $(%CONFPROG% -f $_conffile -c $varlist)
 
-proc upgrade-database {target} {
-    ############################################ BEGIN OLD CODE
-    #
-    # Netmagis database access
-    #
-
-    set msg [d init-script dbfd $argv0 true tabcor]
-    if {$msg ne ""} then {
-	fatal-error "$msg\nAborted."
-    }
-
-
-    set op [lindex $argv 0]
-    set fct [info procs "import-$op"]
-    if {[llength $fct] != 1} then {
+    if [ $? != 0 ]
+    then
 	usage
-    }
+	exit 1
+    fi
 
-    #
-    # Lock database, do the work, and commit modifications
-    #
+    PGHOST="$dnsdbhost"
+    PGPORT="$dnsdbport"
+    PGDATABASE="$dnsdbname"
+    PGUSER="$dnsdbuser"
+    PGPASSWORD="$dnsdbpassword"
+    export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
 
-    set msg [d dblock {}]
-    if {$msg ne ""} then {
-	fatal-error $msg
-    }
+    # Mac database parameters (macdb*)
+    varlist="macdbhost macdbport macdbname macdbuser macdbpassword"
+    eval $(%CONFPROG% -f $_conffile -c $varlist)
 
-    set msg [$fct $verbose [lreplace $argv 0 0] $dbfd]
-    if {$msg ne ""} then {
-	set msg [d dbabort "import" $msg]
-	fatal-error $msg
-    }
+    if [ $? != 0 ]
+    then
+	usage
+	exit 1
+    fi
 
-    set msg [d dbcommit "import"]
-    if {$msg ne ""} then {
-	fatal-error $msg
-    }
+    # Other configuration parameters
+    varlist="_version"
+    eval $(%CONFPROG% -f $_conffile -c $varlist)
 
-    d end
-    ############################################ END OLD CODE
+    if [ $? != 0 ]
+    then
+	usage
+	exit 1
+    fi
 }
+
+##############################################################################
+# Test if column exists
+##############################################################################
+
+# $1 : schema
+# $2 : table
+# $3 : column
+column_exists ()
+{
+    count=$(psql --quiet --no-psqlrc --tuples-only --no-align \
+		    -c "SELECT 1-COUNT(*) FROM information_schema.columns
+		    		WHERE table_schema = '$1'
+				    AND table_name = '$2'
+				    AND column_name = '$3'
+		    	")
+    return $count
+}
+
+##############################################################################
+# Database version heuristic
+##############################################################################
+
+detect_schema_version ()
+{
+    v=-1			# unrecognized
+    if column_exists global config key
+    then
+	v=$(psql --quiet --no-psqlrc --tuples-only --no-align \
+			-c "SELECT value FROM global.config
+					WHERE key = 'schemaversion'")
+    elif column_exists topo confcmd idccmd
+    then v=21
+    elif column_exists topo sensor id
+    then v=20
+    else v=0			# pre-2.0
+    fi
+    echo $v
+}
+
+##############################################################################
+# Check target path
+##############################################################################
+
+# $1 = current version
+# $2 = target version
+check_target_path ()
+{
+    begin=$1
+    end=$2
+
+    # get all upgrade directories
+    list=$(cd $UPGRADEDIR ; ls -d *-* | sort -n)
+
+    # skip directories not in path
+    lastto=""
+    path=""
+    for d in $list
+    do
+	from=$(echo $d | sed 's/-.*//')
+	to=$(echo $d | sed 's/.*-//')
+	if [ $from = $begin -a $to -le $end ]
+	then
+	    path="$path $d"
+	    begin=$to
+	    lastto=$to
+	fi
+    done
+    # is the target version equal to the last item in the path?
+    if [ "$end" != "$lastto" ]
+    then
+	path=""
+    fi
+    echo $path
+}
+
+
+##############################################################################
+# SQL file execution
+##############################################################################
+
+# $1 = file (relative to %NMLIBDIR%)
+sql_file_execute ()
+{
+    PGCLIENTENCODING=utf8
+    export PGCLIENTENCODING
+
+    psql --no-psqlrc --quiet --file %NMLIBDIR%/$1 2>&1 \
+	| grep -v 'NOTICE: .* will create implicit'
+}
+
+##############################################################################
+# Language creation
+##############################################################################
+
+# $1 = language
+# exits if creation failed
+create_language ()
+{
+    if psql --quiet --no-psqlrc -c "CREATE EXTENSION IF NOT EXISTS $1"
+    then :
+    else
+	echo "Unable to create language "$1" in database '$PGDATABASE'" >&2
+	exit 1
+    fi
+}
+
+##############################################################################
+# Create netmagis database
+##############################################################################
+
+create_netmagis ()
+{
+    echo "Creating main Netmagis database as '$dnsdbname'"
+
+    PGHOST="$dnsdbhost"
+    PGPORT="$dnsdbport"
+    PGDATABASE="$dnsdbname"
+    PGUSER="$dnsdbuser"
+    PGPASSWORD="$dnsdbpassword"
+    export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
+
+    ###############################
+    # Create main netmagis database
+    ###############################
+
+    if db_create_if_not_exists
+    then :
+    else
+	echo "Erreur while creating database '$PGDATABASE'" 2>&1
+	exit 1
+    fi
+
+    # exit if schema already exist
+    if db_test_schemas "global" "dns" "topo" "pgauth"
+    then
+	exit 1
+    fi
+
+    ###############################
+    # Initialize main netmagis database schemas and contents
+    ###############################
+
+    create_language plpgsql
+    create_language pltcl
+
+    create_netmagis_schemas
+
+    netmagis_insert_config
+
+    ###############################
+    # Create netmagis application users
+    ###############################
+
+    for u in $rootusers
+    do
+	netmagis_create_user $u
+    done
+
+    netmagis_create_user $defuser
+
+    if [ "$pwgen" = "" -o "$crypt" = "" ]
+    then
+	echo "Netmagis configuration parameter 'pwgen' and/or 'crypt' uninitialized" >&2
+	echo "Users $rootusers have been created" >&2
+    else
+	echo "You can change passwords within netmagis application" >&2
+    fi
+}
+
 
 ##############################################################################
 # Main program
 ##############################################################################
 
-proc main {argv0 argv} {
-    global conf
+#
+# Get default configuration file location
+#
+eval $(%CONFPROG% -c _conffile)
 
-    #
-    # Argument checking
-    #
 
-    set verbose 0
-    while {[llength $argv] > 0} {
-	set a [lindex $argv 0]
-	switch -glob -- $a {
-	    -f {
-		# alternate configuration file: re-read it now
-		# (default one was read with libnetmagis)
-		read-local-conf-file [lindex $argv 1]
-		set argv [lreplace $argv 0 1]
-	    }
-	    -v {
-		incr verbose
-		set argv [lreplace $argv 0 0]
-	    }
-	    -* {
-		warning "Unknown option '$a'"
-		usage
-	    }
-	    default {
-		break
-	    }
-	}
-    }
+#
+# Syntax checking
+#       
+ 
+args=$(getopt hf: $*)
 
-    #
-    # Guess currrent database schema version
-    #
+if [ $? != 0 ]
+then usage
+fi
 
-    set schemaversion [guess-schema-version]
+set -- $args
 
-    set codeversion [d version]
-    if {! [regsub {^(\d+)\.(\d+).*} $version {\1\2} codeversion]} then {
-	return "Internal error: Netmagis version number '%s' unrecognized" $version]
-    }
+while true
+do
+    case "$1" in
+	-h) usage
+	    exit 0
+	    ;;
+	-f) _conffile=$2
+	    shift 2
+	    ;;
+	--) shift
+	    break
+	    ;;
+    esac
+done
 
-    #
-    # Perform the action
-    switch {[llength $argv]} {
-	0 {
-	    puts "Guessed schema version: $schemaversion"
-	    puts "Latest schema supported: $codeversion"
-	}
-	1 {
-	    upgrade-database [lindex $argv 0]
-	}
-	default {
-	    usage
-	}
-    }
-    return 0
-}
+case $# in
+    0)	target="" ;;
+    1)	target="$1" ;;
+    *)	usage ;;
+esac
 
-exit [main $argv0 $argv]
+#
+# Initialize environnement
+#
+
+init_env
+
+#
+# Detect versions
+#
+
+schemaversion=$(detect_schema_version)
+codeversion=$(echo $_version | sed 's/^\([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1\2/')
+
+if [ $schemaversion -gt $codeversion ]
+then
+    echo "Database schema ($schemaversion) is not yet recognized by Netmagis ($codeversion)" >&2
+    exit 1
+fi
+
+#
+# Just stop here if no target is specified
+#
+
+if [ -z "$target" ]
+then
+    echo "Detected schema version: $schemaversion"
+    echo "Latest schema supported: $codeversion"
+    exit 0
+fi
+
+#
+# Check upgrade path
+#
+
+upgrade_path=$(check_target_path $schemaversion $target)
+if [ -z "$upgrade_path" ]
+then
+    echo "Cannot find an upgrade path from $schemaversion to $target." >&2
+    exit 0
+fi
+
+#
+# Perform upgrade
+#
+
+echo "Preparing upgrade from $schemaversion to $target."
+
+TMP=/tmp/netmagis-dbupdate.$$
+
+for d in $upgrade_path
+do
+    u=$UPGRADEDIR/$d/upgrade.sql
+    if [ -f $u ]
+    then
+	echo "\\echo Upgrading: $d"
+	echo "\\i $u"
+    fi
+done > $TMP
+
+PGOPTIONS='--client-min-messages=warning'
+export PGOPTIONS
+
+if psql --quiet --no-psqlrc --single-transaction -f $TMP
+then
+    echo "Upgrade successful" >&2
+    r=0
+else
+    echo "Upgrade error. Aborted" >&2
+    r=1
+fi
+
+rm -f $TMP
+
+exit $r
