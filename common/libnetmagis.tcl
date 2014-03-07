@@ -746,9 +746,9 @@ snit::type ::netmagis {
 	}
 
 	if {$sver eq ""} then {
-	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.sql"]
+	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.html"]
 	} elseif {$sver < $nver} then {
-	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.sql"]
+	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.html"]
 	} elseif {$sver > $nver} then {
 	    return [mc {Database schema '%1$s' is not yet recognized by Netmagis %2$s} $sver $version]
 	}
