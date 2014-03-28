@@ -1,5 +1,5 @@
 # Created by: Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
-# $FreeBSD: ports/net-mgmt/netmagis-metro/Makefile,v 1.1 2012/10/30 20:33:09 crees Exp $
+# $FreeBSD: head/net-mgmt/netmagis-metro/Makefile 327757 2013-09-20 22:24:43Z bapt $
 
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-metro
@@ -13,4 +13,5 @@ MASTERDIR=	${.CURDIR}/../netmagis-common
 PKGMESSAGE=	${.CURDIR}/pkg-message
 PLIST=		${.CURDIR}/pkg-plist
 
+NO_STAGE=	yes
 .include "${MASTERDIR}/Makefile"

@@ -1,5 +1,5 @@
 # Created by: Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
-# $FreeBSD: ports/net-mgmt/netmagis-common/Makefile,v 1.1 2012/10/30 20:27:10 crees Exp $
+# $FreeBSD: head/net-mgmt/netmagis-common/Makefile 347600 2014-03-09 14:36:56Z miwi $
 
 PORTNAME?=	netmagis
 DISTVERSION?=	2.2.1
@@ -11,7 +11,7 @@ PKGNAMESUFFIX?=	-common
 MAINTAINER?=	pdagog@gmail.com
 COMMENT?=	Netmagis common infrastructure
 
-USE_TCL=	85+
+USES=		tcl:85+
 
 USE_PGSQL=	pgtcl
 WANT_PGSQL_VER=	91+
@@ -45,7 +45,7 @@ RUN_DEPENDS+=	rancid-run:${PORTSDIR}/net-mgmt/rancid \
 .endif
 
 .if ${PKGNAMESUFFIX} == -metro
-USE_PERL5=	yes
+USES+=		perl5
 
 RUN_DEPENDS+=	p5-DBD-Pg>0:${PORTSDIR}/databases/p5-DBD-Pg \
 		p5-Net-SNMP>=0:${PORTSDIR}/net-mgmt/p5-Net-SNMP \
@@ -64,6 +64,13 @@ ALL_TARGET=nothing
 .endif
 
 INSTALL_TARGET=	install${PKGNAMESUFFIX}
+
+# Change "cd foo; make" into "$(MAKE) -C foo" to unbreak parallel builds
+post-patch:
+	@${FIND} ${WRKSRC} -type f -name Makefile -print0 | ${XARGS} -0 \
+		${REINPLACE_CMD} -E 's,cd(.+) (;|&&) make,$$(MAKE) -C\1,'
+	@${REINPLACE_CMD} -E 's,cd (.+) ; (ln -s en ),\2\1/,' \
+		${WRKSRC}/www/Makefile
 
 .if !target(post-install)
 post-install:

@@ -61,6 +61,7 @@ sbin/netmagis-dbupgrade
 @dirrmtry lib/netmagis/upgrade/20-21
 @dirrmtry lib/netmagis/upgrade/21-22
 @dirrmtry lib/netmagis/upgrade
+@dirrmtry lib/netmagis
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/with-views/zones
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/with-views
 %%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/upgrade

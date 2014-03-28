@@ -1,5 +1,5 @@
 # Created by: Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
-# $FreeBSD: ports/net-mgmt/netmagis-detecteq/Makefile,v 1.1 2012/10/30 20:32:33 crees Exp $
+# $FreeBSD: head/net-mgmt/netmagis-detecteq/Makefile 347842 2014-03-11 05:17:43Z miwi $
 
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-detecteq
