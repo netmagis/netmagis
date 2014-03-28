@@ -1,5 +1,5 @@
 # Created by: Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
-# $FreeBSD: ports/net-mgmt/netmagis-database/Makefile,v 1.1 2012/10/30 20:29:52 crees Exp $
+# $FreeBSD: head/net-mgmt/netmagis-database/Makefile 347626 2014-03-09 14:41:46Z miwi $
 
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-database

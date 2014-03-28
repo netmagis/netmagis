@@ -1,3 +1,26 @@
+Version 2.2.2 - 2014/03/28
+    - new program "netmagis-dbupgrade" to ease database upgrade (issue #100,
+	based on a report by Schplurtz le deboulonné)
+    - update example httpd.conf to versions of Apache 2.2 and 2.4 (issue #122)
+    - package fix (issue #116): mod-auth-pgsql is not available on recent
+	Linux distributions based on Apache 2.4, so update dependency
+	according to the updated httpd.conf
+    - netmagis-config may use an alternate config file with -f (issue #119)
+    - netmagis-config may return config file name with _conffile (issue #119)
+    - netmagis-config may return code version with _version (issue #120)
+    - minor bug fix (issue #118): netmagis-dbmaint translation (reported
+	and fixed by plabanowski)
+    - bug fix (issue #121): improve an error message in netmagis-utils programs
+    - minor bug fix: bad URL to upgrade.html in database version check
+
+Version 2.2.1 - 2014/01/17
+    - bug fix (issue #103): impossible to delete aliases
+    - bug fix (issue #104): impossible to modify an interface (topo module)
+    - bug fix (issue #106): no command sent to equipments (topo module)
+    - bug fix (issue #107): ifchg script expected a FQDN (topo module)
+    - minor bug fix (issue #108): initial zone serial number not conformant
+    - partial bug fix (issue #100): bad database schema version test
+
 Version 2.2.0 - 2013/06/26
     - provide support for multiple DNS views
     - new parameter "viewname" for all utils/dns* programs

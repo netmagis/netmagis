@@ -1,5 +1,5 @@
 # Created by: Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
-# $FreeBSD: ports/net-mgmt/netmagis-www/Makefile,v 1.1 2012/10/30 20:36:34 crees Exp $
+# $FreeBSD: head/net-mgmt/netmagis-www/Makefile 327757 2013-09-20 22:24:43Z bapt $
 
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-www
@@ -13,4 +13,5 @@ MASTERDIR=	${.CURDIR}/../netmagis-common
 PKGMESSAGE=	${.CURDIR}/pkg-message
 PLIST=		${.CURDIR}/pkg-plist
 
+NO_STAGE=	yes
 .include "${MASTERDIR}/Makefile"

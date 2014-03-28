@@ -3,7 +3,7 @@ NINSTALL	= ../../../ninstall
 TCLCFLAGS	= -I/usr/local/include/tcl8.5
 TCLLFLAGS	= -L/usr/local/lib -ltcl85 -lm
 
-CC		= gcc -Wall
+CC		= cc -Wall
 #DEBUG		= -g
 OPT		= -O
 CFLAGS		= $(DEBUG) $(OPT) $(TCLCFLAGS)

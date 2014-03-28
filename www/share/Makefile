@@ -7,6 +7,6 @@ install:
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)$(NMXMPDIR)
 	$(NINSTALL) -m 0644 -e "s|%NMCGIDIR%|$(NMCGIDIR)|" \
-	    	$(SUBST) *.conf $(DESTDIR)$(NMXMPDIR)
+	    	$(SUBST) httpd.conf $(DESTDIR)$(NMXMPDIR)
 
 clean:

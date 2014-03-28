@@ -31,6 +31,9 @@
 #
 # History
 #   2010/12/17 : pda      : design
+#   2013/08/29 : pda/jean : reset the internal representation before file read
+#   2014/02/26 : pda/jean : add the pseudo-parameter _conffile
+#   2014/02/26 : pda/jean : add the pseudo-parameter _version
 #
 
 proc read-local-conf-file {file} {
@@ -42,6 +45,7 @@ proc read-local-conf-file {file} {
     }
     set lineno 1
     set errors false
+    array unset netmagisconf
     while {[gets $fd line] >= 0} {
 	regsub {#.*} $line {} line
 	regsub {\s*$} $line {} line
@@ -61,6 +65,8 @@ proc read-local-conf-file {file} {
     if {$errors} then {
 	exit 1
     }
+    set netmagisconf(_conffile) $file
+    set netmagisconf(_version) "%NMVERSION%"
 }
 
 #
@@ -742,9 +748,9 @@ snit::type ::netmagis {
 	}
 
 	if {$sver eq ""} then {
-	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.sql"]
+	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.html"]
 	} elseif {$sver < $nver} then {
-	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.sql"]
+	    return [mc "Database schema is too old. See http://netmagis.org/upgrade.html"]
 	} elseif {$sver > $nver} then {
 	    return [mc {Database schema '%1$s' is not yet recognized by Netmagis %2$s} $sver $version]
 	}
@@ -1304,6 +1310,8 @@ snit::type ::netmagis {
 	upvar $_tabuid tabuid
 
 	set scriptmode "script"
+	regsub {.*/} $argv0 {} argv0
+	set scriptargv0 $argv0
 
 	#
 	# Locale
@@ -1330,9 +1338,6 @@ snit::type ::netmagis {
 	if {$msg ne ""} then {
 	    return $msg
 	}
-
-	regsub {.*/} $argv0 {} argv0
-	set scriptargv0 $argv0
 
 	return ""
     }
@@ -1665,6 +1670,10 @@ snit::type ::netmagis {
 	    $self error $msg
 	}
 	return $msg
+    }
+
+    method version {} {
+	return $version
     }
 }
 

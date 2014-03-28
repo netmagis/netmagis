@@ -95,7 +95,7 @@
  {Creation} {Création}
  {creation of group %s} {création du groupe %s}
  {Criterion}	{Critère}
- {Database schema is too old. See http://netmagis.org/upgrade.sql} {Le schéma de base de données est trop ancien. Consultez http://netmagis.org/upgrade.sql}
+ {Database schema is too old. See http://netmagis.org/upgrade.html} {Le schéma de base de données est trop ancien. Consultez http://netmagis.org/upgrade.html}
  {Database schema '%1$s' is not yet recognized by Netmagis %2$s} {Le schéma de base de donnée '%1$s' n'est pas encore reconnu par Netmagis %2$s}
  {Date}		{Date}
  {Date sent}	{Date d'envoi}

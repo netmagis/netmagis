@@ -3,7 +3,7 @@
 source %LIBNETMAGIS%
 
 proc usage {argv0} {
-    set usage {usage: %s [-c][-h] param ... param}
+    set usage {usage: %s [-c][-h][-f _conffile] param ... param}
     regsub {.*/} $argv0 {} argv0
     puts stderr [format $usage $argv0]
 }
@@ -29,11 +29,16 @@ proc get-conf-list {check arg} {
 
 proc main {argv0 argv} {
     set check 0
+    set conffile ""
     while {[llength $argv] > 0} {
 	switch -glob -- [lindex $argv 0] {
 	    -c {
 		set check 1
 		set argv [lreplace $argv 0 0]
+	    }
+	    -f {
+		set conffile [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
 	    }
 	    -h {
 		usage $argv0
@@ -47,6 +52,10 @@ proc main {argv0 argv} {
 		break
 	    }
 	}
+    }
+
+    if {$conffile ne ""} then {
+	read-local-conf-file $conffile
     }
 
     if {[llength $argv] == 0} then {

@@ -1,5 +1,5 @@
 # Created by: Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
-# $FreeBSD: ports/net-mgmt/netmagis-topo/Makefile,v 1.1 2012/10/30 20:35:11 crees Exp $
+# $FreeBSD: head/net-mgmt/netmagis-topo/Makefile 347625 2014-03-09 14:41:25Z miwi $
 
 PORTNAME=	netmagis
 PKGNAMESUFFIX=	-topo
