@@ -2,7 +2,7 @@
 # $FreeBSD: head/net-mgmt/netmagis-common/Makefile 347600 2014-03-09 14:36:56Z miwi $
 
 PORTNAME?=	netmagis
-DISTVERSION?=	2.2.1
+DISTVERSION?=	2.2.2
 PORTREVISION?=	1
 CATEGORIES?=	net-mgmt
 MASTER_SITES=	http://netmagis.org/files/
