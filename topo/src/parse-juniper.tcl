@@ -1107,6 +1107,7 @@ proc juniper-parse-if-gigopt {conf tab idx} {
 	802.3ad			{2	juniper-parse-802-3ad}
 	link-mode		{2	NOP}
 	speed			{1	NOP}
+        auto-negotiation	{1	NOP}
         no-auto-negotiation	{1	NOP}
         no-flow-control		{1	NOP}
 	apply-groups	    	{2	NOP}
