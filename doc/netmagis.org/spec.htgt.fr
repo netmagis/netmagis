@@ -255,11 +255,7 @@
 
     \titre {2} {Authentification et gestion des comptes}
 
-    L'authentification est actuellement réalisée par le serveur Web
-    (par exemple~: modules \lien {mod_auth_pgsql}
-    {http://www.giuseppetanzilli.it/mod_auth_pgsql2/} ou mod_auth_ldap
-    avec Apache).
-
+    L'authentification est actuellement réalisée par le serveur Web.
     La gestion des comptes est réalisée~:
 
     \liste {
@@ -339,7 +335,7 @@
 	\lignetableau {
 	    \casetableau {} {Serveur Web}
 	    \casetableau {} {\lien {Apache} {http://www.apache.org}}
-	    \casetableau {} {N'importe laquelle}
+	    \casetableau {} {\gt= 2.2}
 	    \casetableau {} {Indispensable}
 	    \casetableau {} {N'importe quel serveur Web compatible avec
 		l'interface CGI convient
@@ -372,26 +368,6 @@
 	    \casetableau {} {Tcllib contient des fonctions
 		indispensables, comme par exemple l'accès à
 		l'annuaire LDAP, ou les extensions objets
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {Authentification}
-	    \casetableau {} {\lien {mod_auth_pgsql} {http://www.giuseppetanzilli.it/mod_auth_pgsql2/}}
-	    \casetableau {} {\gt= 2.0 pour Apache}
-	    \casetableau {} {Optionnel}
-	    \casetableau {} {Ce module Apache doit être utilisé si
-		vous choisissez d'utiliser l'authentification via
-		une base PostgreSQL spécifique pour Netmagis
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {Authentification}
-	    \casetableau {} {mod_auth_ldap}
-	    \casetableau {} {fourni avec Apache}
-	    \casetableau {} {Optionnel}
-	    \casetableau {} {Ce module Apache doit être utilisé si
-		vous choisissez d'utiliser l'authentification via
-		votre annuaire LDAP existant
 	    }
 	}
 	\lignetableau {

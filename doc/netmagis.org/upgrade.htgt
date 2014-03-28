@@ -37,8 +37,13 @@
 
     \titre {1} {Netmagis: Upgrade instructions}
 
-    \gras {Important}: to upgrade from an old version, you must follow upgrade
-    procedure for \italique {\gras {all} intermediate versions}.
+    Starting from 2.2.2, you can upgrade your database from any version
+    later than 2.1.x in one call to the \teletype {netmagis-dbupgrade}
+    program.
+
+    For previous versions, or to upgrade from a version older than
+    2.1.0, you must follow upgrade procedure for \italique {\gras {all}
+    intermediate versions}.
 
     \***********************************************************************
 
@@ -52,35 +57,20 @@
 
     First, make a backup of your existing Netmagis database.
 
-    On the database server, go to the \teletype
-    {.../share/examples/netmagis/upgrade/21-22/} and do the following
-    actions:
-
-    \liste {
-	\item {Inspect the \teletype {upgrade.sql} script
-	}
-	\item {As the Netmagis user, run this script:
-	    \retrait\teletype {$ psql -no-psqlrc --single-transaction -f upgrade.sql \italique {netmagis-database-name}}
-	    Note: you may want to run  this script with the \teletype
-	    {script} or \teletype {nohup} command in order to save output.
-	}
-	\item {Inspect the output of the previous script and search for
-	    lines containing "\teletype {ERROR:}". If you don't find such
-	    a line, the upgrade ran well and your database is now
-	    successfully upgraded.
-
-	    If you happen to encounter an error, be aware that the
-	    whole upgrade procedure is aborted (see the \teletype
-	    {--single-transaction} option of \teletype {psql}): no
-	    modification is done on the database. If you can, diagnose the
-	    problem and correct it.  Don't hesitate to share your fix with
-	    other people on the \lien {Netmagis list} {/support.html}.
-
-	    If you don't succeed in resolving the problem, please send
-	    us a copy of your database (\teletype {pg_dump} output) such
-	    as we can investigate.
-	}
+    On your database server, run the \teletype {netmagis-dbupgrade}
+    (without argument). You should see the following output:
+    \retrait {
+	\teletype {Detected schema version: 21} \br
+	\teletype {Latest schema supported: 22}
     }
+
+    This messages says that you database is detected as 2.1.x
+    installation, and the \teletype {netmagis-dbupgrade} is able to
+    upgrade it to 2.2.x. You can now run:
+    \retrait {
+	\teletype {# netmagis-dbupgrade 22}
+    }
+    to upgrade your database to 2.2.x.
 
     Since this release includes some large infrastructure changes,
     you may have to modify some of your scripts or configuration:

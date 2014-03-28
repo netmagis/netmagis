@@ -46,6 +46,70 @@
     \lien {github.com commits} {http://github.com/pdav/netmagis}.
 
 
+    \titre {2} {\ancre {v2.2.2} {Netmagis 2.2.2}}
+
+    Release date: 28 march 2014
+
+    The 2.2.2 release of Netmagis is a maintenance release, providing some
+    bug fixes:
+
+    \liste {
+	\item {a new program \teletype {netmagis-dbupgrade} has been
+	    created to ease database schema upgrading when a new version
+	    is issued. This solution for upgrading is different from the
+	    one proposed in \lien {issue 103}
+	    {https://github.com/pdav/netmagis/issues/103}, since we
+	    don't want automatic upgrade by package post-install scripts
+	    which could possibly break an production system.
+	}
+	\item {update package \italique {www}: it was broken by recent
+	    Linux distributions which default to Apache 2.4 and no longer
+	    provide the \teletype {mod-auth-pgsql} prerequisite.
+	    (see
+	    \lien {issue 116} {https://github.com/pdav/netmagis/issues/116})
+	}
+	\item {new example httpd.conf, adapted to Apache versions 2.2
+	    and 2.4, without using the \teletype {mod-auth-pgsql}
+	    authentication module
+	    (see
+	    \lien {issue 122} {https://github.com/pdav/netmagis/issues/122})
+	}
+	\item {the \teletype {netmagis-config} is modified:
+	    \liste {
+		\item {to accept an alternate configuration file with
+		    the \teletype {-f} flag (see \lien {issue 119}
+		    {https://github.com/pdav/netmagis/issues/119})
+		}
+		\item {to return the current configuration file
+		    with the pseudo-parameter \teletype {_conffile}
+		    (see \lien {issue 119}
+		    {https://github.com/pdav/netmagis/issues/119})
+		}
+		\item {to return the current Netmagis code version
+		    with the pseudo-parameter \teletype {_version}
+		    (see \lien {issue 120}
+		    {https://github.com/pdav/netmagis/issues/120})
+		}
+	    }
+	}
+	\item {some minor bug fixes:
+	    \liste {
+		\item {in \teletype {netmagis-dbmaint} translation
+		    (see \lien {issue 118}
+		    {https://github.com/pdav/netmagis/issues/118})
+		}
+		\item {in a rare error message in programs from
+		    the package \italique {utils} 
+		    (see \lien {issue 121}
+		    {https://github.com/pdav/netmagis/issues/121})
+		}
+		\item {in the URL returned by the version consistency
+		    check
+		}
+	    }
+	}
+    }
+
     \titre {2} {\ancre {v2.2.1} {Netmagis 2.2.1}}
 
     Release date: 16 january 2014

@@ -241,11 +241,7 @@
 
     \titre {2} {Authentication et user account management}
 
-    Authentication is currently done at the web server level
-    (eg: modules \lien {mod_auth_pgsql}
-    {http://www.giuseppetanzilli.it/mod_auth_pgsql2/} or mod_auth_ldap
-    with Apache).
-
+    Authentication is currently done at the web server level.
     Account management is done:
 
     \liste {
@@ -323,7 +319,7 @@
 	\lignetableau {
 	    \casetableau {} {Web server}
 	    \casetableau {} {\lien {Apache} {http://www.apache.org}}
-	    \casetableau {} {Any}
+	    \casetableau {} {\gt= 2.2}
 	    \casetableau {} {Mandatory}
 	    \casetableau {} {Any web server compatible
 		with CGI interface can do
@@ -354,26 +350,6 @@
 	    \casetableau {} {Mandatory}
 	    \casetableau {} {Tcllib contains essential functions
 		like LDAP directory access or OO extensions
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {Authentication}
-	    \casetableau {} {\lien {mod_auth_pgsql} {http://www.giuseppetanzilli.it/mod_auth_pgsql2/}}
-	    \casetableau {} {\gt= 2.0 for Apache}
-	    \casetableau {} {Optional}
-	    \casetableau {} {This Apache module must be used
-		if you choose to rely on a PostgreSQL database dedicated to Netmagis
-		for authentication
-	    }
-	}
-	\lignetableau {
-	    \casetableau {} {Authentication}
-	    \casetableau {} {mod_auth_ldap}
-	    \casetableau {} {included in Apache}
-	    \casetableau {} {Optional}
-	    \casetableau {} {This Apache module must be used if
-		you choose to rely on your existing LDAP 
-		directory for authentication 
 	    }
 	}
 	\lignetableau {

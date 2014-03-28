@@ -42,9 +42,10 @@
     \* is available only on \lien {Netmagis Github repository}
     \* {http://github.com/pdav/netmagis} at this time.}
 
-    Note: this installation documentation is for Netmagis version 2.2.x.
-    If you are installing from a previous version of Netmagis,
-    you should rather read \lien {upgrade instructions} {upgrade.html}.
+    Note: this installation documentation is for Netmagis version 2.2.x
+    (x \gt= 2) If you are installing from a previous version
+    of Netmagis, you should rather read \lien {upgrade instructions}
+    {upgrade.html}.
 
     \**********************************************************************
 
@@ -206,10 +207,10 @@
 
     \titre {3} {Installing from Debian/Ubuntu packages}
 
-    Linux packages are provided for installating on:
+    Linux packages are provided for installing on:
     \liste {
 	\item {Ubuntu (minimum distribution is 11.10, Oneiric Ocelot)}
-	\item {Debian (minimum distribution is wheezy - testing)}
+	\item {Debian (minimum distribution is wheezy - stable)}
     }
 
     Append the following lines to your \teletype {/etc/apt/sources.list}:
@@ -298,7 +299,7 @@
 
 		# www \br
 		aptitude -y install \ \br
-		~ ~ ~ ~ apache2 libapache2-mod-auth-pgsql \\ \br
+		~ ~ ~ ~ apache2 libaprutil1-dbd-pgsql \\ \br
 		~ ~ ~ ~ netpbm texlive-latex-base graphviz transfig
 
 		# topo \br
@@ -331,7 +332,7 @@
 		~ ~ ~ ~ make postgresql-pltcl \br
 
 		# www \br
-		yum install httpd mod_auth_pgsql mod_ssl
+		yum install httpd apr-util-pgsql mod_ssl
 
 		# topo \br
 		yum install rancid fping
@@ -775,35 +776,8 @@
     \liste {
     \item {A default Apache configuration file is provided in
 	\teletype {..../share/examples/netmagis/httpd.conf}.  Adapt this
-	file and include it in your Apache configuration.
-
-	\liste {
-	    \item {If you are using an external LDAP directory to
-		authenticate your users, copy the sample
-		Apache configuration file provided in \teletype
-		{.../share/examples/netmagis/auth-ldap.conf} in your
-		Apache configuration directory, adapt it to your local
-		configuration.
-	    }
-\* \item {If you are using CAS (Central Authentication Service) to
-\*		authenticate your users...
-\*		TO BE WRITTEN
-\*	    }
-	    \item {If you are using the internal Netmagis authentication,
-		check that the \teletype {auth_pgsql} module is
-		loaded in your Apache configuration, with a line such as:
-		\retrait\teletype {LoadModule auth_pgsql_module
-		libexec/apache22/mod_auth_pgsql.so}
-
-		Next, copy the sample Apache configuration file provided
-		in \teletype {.../share/examples/netmagis/auth-pgsql.conf}
-		in your Apache configuration directory, adapt it to your
-		local configuration. Check the \teletype {Auth_PG_host},
-		\teletype {Auth_PG_port}, \teletype {Auth_PG_database},
-		\teletype {Auth_PG_user} and \teletype {Auth_PG_pwd}
-		configuration lines.
-	    }
-	}
+	file (notably for your authentication choice) and include it in
+	your Apache configuration.
     }
     \item {Direct now your Web browser to the \teletype
 	{http://yourhost/netmagis/index}, and connect with your login name.
@@ -827,8 +801,9 @@
 	Select any item in the left menu to check that your authentication
 	parameters are correctly configured.
     }
-    \item {If you are using internal Netmagis authentication, change
-	your password (unless you want to keep the generated one...).
+    \item {If you are using internal (PostgreSQL based) Netmagis
+	authentication, change your password (unless you want to keep
+	the generated one).
 
 	Change also your name (as well as other account informations)
 	with the \gras {Admin} / \gras {Internal Auth} / \gras {Modify
