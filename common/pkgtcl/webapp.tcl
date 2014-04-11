@@ -41,7 +41,7 @@ package require pgsql ;			# package local
 
 # package require Pgtcl
 
-package provide webapp 1.15
+package provide webapp 1.16
 
 namespace eval webapp {
     namespace export log pathinfo user locale \
@@ -54,6 +54,7 @@ namespace eval webapp {
 	call-cgi \
 	mail \
 	random \
+	set-cookie get-cookie \
 	nologin send error-exit \
 	debug cgidebug cgi-exec \
 	cmdpath
@@ -1910,6 +1911,7 @@ proc ::webapp::random {} {
 #
 
 proc ::webapp::send {type page {fichier "output"}} {
+
     #
     # Détermine l'extension du fichier
     #
@@ -1948,11 +1950,15 @@ proc ::webapp::send {type page {fichier "output"}} {
 #
 # Historique
 #   2001/10/20 : pda : conception et codage
+#   2014/03/28 : pda/jean : add cookies
 #
 
 proc ::webapp::sortie-html {page} {
+    global wcooktab
+
     fconfigure stdout -encoding utf-8
     puts stdout "Content-type: text/html; charset=utf-8"
+    http-send-cookies
     puts stdout ""
     puts stdout $page
 }
@@ -1970,12 +1976,14 @@ proc ::webapp::sortie-html {page} {
 # Historique
 #   2002/10/24 : pda : conception et codage
 #   2008/02/27 : jean/zamboni : Content-type et filename
+#   2014/03/28 : pda/jean : add cookies
 #
 
 proc ::webapp::sortie-csv {page fichier} {
     fconfigure stdout -encoding utf-8
     puts stdout "Content-type: text/csv; charset=utf-8"
     puts stdout "Content-Disposition: attachment; filename=$fichier"
+    http-send-cookies
     puts stdout ""
     puts stdout $page
 }
@@ -1994,11 +2002,13 @@ proc ::webapp::sortie-csv {page fichier} {
 # Historique
 #   2002/05/21 : pda : conception et codage
 #   2008/02/27 : jean/zamboni : ajout filename
+#   2014/03/28 : pda/jean : add cookies
 #
 
 proc ::webapp::sortie-bin {type page fichier} {
     puts stdout "Content-type: $type"
     puts stdout "Content-Disposition: attachment; filename=$fichier"
+    http-send-cookies
     puts stdout ""
     flush stdout
     fconfigure stdout -translation binary
@@ -2089,6 +2099,7 @@ proc ::webapp::sortie-latex {page fichier} {
 
     puts stdout "Content-Type: application/pdf"
     puts stdout "Content-Disposition: attachment; filename=$fichier"
+    http-send-cookies
     puts stdout ""
     flush stdout
     fconfigure stdout -translation binary
@@ -2153,6 +2164,7 @@ proc ::webapp::cgidebug {} {
     global env argv
 
     puts "Content-type: text/html"
+    http-send-cookies
     puts ""
 
     puts "<TITLE>Debug information</TITLE>"
@@ -2565,6 +2577,113 @@ snit::type ::webapp::authbase {
 	set connected 0
     }
 }
+
+##############################################################################
+# Cookie management
+##############################################################################
+
+# Input:
+#   - name: cookie name (printable ascii chars, excluding [,; =])
+#   - val: cookie value (printable ascii chars, excluding [,; ])
+#   - expire: unix timestamp, or 0 if no expiration date
+#   - path:
+#   - domain:
+#   - secure:
+#   - httponly:
+# Output: none
+#
+# History:
+#   2014/03/28 : pda/jean : design
+
+proc ::webapp::set-cookie {name val expire path domain secure httponly} {
+    global wcooktab
+
+    set l {}
+
+    lappend l "$name=$val"
+    if {$expire > 0} then {
+	# Wdy, DD Mon YYYY HH:MM:SS GMT
+	set max [clock format $expire -gmt yes -format "%a, %d %b %Y %T GMT"]
+	lappend "Expires=$max"
+    }
+    if {$path ne ""} then {
+	lappend "Path=$path"
+    }
+    if {$domain ne ""} then {
+	lappend "Domain=$domain"
+    }
+    if {$secure} then {
+	lappend "Secure"
+    }
+    if {$httponly} then {
+	lappend "HttpOnly"
+    }
+
+    set wcooktab($name) [join $l "; "]
+}
+
+#
+# Send cookies to the browser as part of HTTP protocol
+#
+# Input:
+#   - global parameter wcooktab(): all cookies to return
+# Output: none
+#
+# History:
+#   2014/03/28 : pda/jean : design
+#
+
+proc ::webapp::http-send-cookies {} {
+    global wcooktab
+
+    foreach name [array names wcooktab] {
+	puts stdout "Set-Cookie: $wcooktab($name)"
+    }
+}
+
+#
+# Get a cookie (as returned by the browser) by its name
+#
+# Input:
+#   - name: name of the cookie to get
+# Output:
+#   - return value: value of cookie or ""
+#
+# History:
+#   2014/04/11 : pda/jean : design
+#
+
+set ::webapp::gotcookies 0
+
+proc ::webapp::get-cookie {name} {
+    global ::webapp::gotcookies
+    global rcooktab
+    global env
+
+    if {! $::webapp::gotcookies} then {
+	if {[info exists env(HTTP_COOKIE)]} then {
+	    foreach nv [split $env(HTTP_COOKIE) ";"] {
+		if {[regexp {^\s*([^=]+)=(.*)} $nv bidon n v]} then {
+		    set rcooktab($n) $v
+		}
+	    }
+	}
+	set ::webapp::gotcookies 1
+    }
+
+    if {[info exists rcooktab($name)]} then {
+	set v $rcooktab($name)
+    } else {
+	set v ""
+    }
+
+    return $v
+}
+
+
+##############################################################################
+# Log management
+##############################################################################
 
 #
 # Classe "systeme de log"
