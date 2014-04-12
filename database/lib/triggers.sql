@@ -1,1 +1,1 @@
-sql22/triggers.sql
+sql23/triggers.sql

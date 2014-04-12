@@ -96,7 +96,7 @@
  {creation of group %s} {création du groupe %s}
  {Criterion}	{Critère}
  {Database schema is too old. See http://netmagis.org/upgrade.html} {Le schéma de base de données est trop ancien. Consultez http://netmagis.org/upgrade.html}
- {Database schema '%1$s' is not yet recognized by Netmagis %2$s} {Le schéma de base de donnée '%1$s' n'est pas encore reconnu par Netmagis %2$s}
+ {Database schema '%1$s' is not yet recognized by Netmagis %2$s} {Le schéma de base de données '%1$s' n'est pas encore reconnu par Netmagis %2$s}
  {Date}		{Date}
  {Date sent}	{Date d'envoi}
  {deactivated interface} {interface désactivée}
@@ -312,6 +312,7 @@
  {Login '%s' already exists} {Le login '%s' existe déjà}
  {Login '%s' does not exist} {Le login '%s' n'existe pas}
  {Login '%s' found more than once} {Le login '%s' est ambigu}
+ {Login failed} {Échec d'authentification}
  {Log}		{Log}
  {MAC address}	{Adresse MAC}
  {MAC address %s} {l'adresse MAC %s}
@@ -637,6 +638,8 @@
  cfg:dayfmt:help {Format d'affichage des dates (sans l'heure). Voir la page de manuel clock(n) de Tcl.}
  cfg:authmethod:desc {Méthode d'authentification}
  cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.).}
+ cfg:authmexpire:desc {Délai maximum d'inactivité}
+ cfg:authmexpire:help {Durée maximale au bout de laquelle la session authentifiée est conservée}
  cfg:pageformat:desc {Format de papier}
  cfg:pageformat:help {Format de papier pour les pages imprimables.}
  cfg:schemaversion:desc {Version de schéma}

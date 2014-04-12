@@ -147,6 +147,13 @@ package require md5
 ##############################################################################
 
 #
+# Authentication pages
+#
+
+set libconf(page-login)		"login.html"
+set libconf(next-login)		"login"
+
+#
 # Various table specifications
 #
 
@@ -526,6 +533,8 @@ snit::type ::netmagis {
     #		elements are the terminal nodes)
     # The second type gives the display of a particular element.
     variable links -array {
+	:anon		{
+			}
 	:dns		{
 			    {index always}
 			    {net always}
@@ -677,51 +686,27 @@ snit::type ::netmagis {
     ###########################################################################
 
     #
-    # Common initialization work
+    # Database initialization
     #
     # Input:
     #	- selfs : current object
     #	- _dbfd : database handle, in return
-    #   - smode : script mode ("cgi" or "script")
-    #   - login : user's login
-    #   - anon : "anon" (don't fetch identity in auth database) or "id" (fetch)
-    #	- usedefuser : use default user name if login is not found
-    #   - _tabuid : array containing, in return, user's characteristics
-    #		(login, password, lastname, firstname, mail, phone, fax,
-    #			mobile, addr, idcor, idgrp, present)
     #
     # Output:
     #	- return value: empty string or error message
     #
 
-    proc init-common {selfns _dbfd smode login anon usedefuser _tabuid} {
-	global ah
+    proc init-database {selfns _dbfd} {
 	upvar $_dbfd dbfd
-	upvar $_tabuid tabuid
-
-	set scriptmode $smode
 
 	#
 	# Access to Netmagis database
 	#
 
 	set conninfo [get-conninfo "dnsdb"]
-	set dbfd [ouvrir-base $conninfo msg]
-	if {$dbfd eq ""} then {
+	if {[catch {set dbfd [pg_connect -conninfo $conninfo]} msg]} then {
 	    return [mc "Error accessing database: %s" $msg]
 	}
-
-	#
-	# Log initialization
-	#
-
-	set log [::webapp::log create %AUTO% \
-				    -subsys netmagis \
-				    -method opened-postgresql \
-				    -medium [list "db" $dbfd table global.log] \
-			]
-	set uid $login
-	set euid $login
 
 	#
 	# Access to configuration parameters (stored in the database)
@@ -754,6 +739,49 @@ snit::type ::netmagis {
 	} elseif {$sver > $nver} then {
 	    return [mc {Database schema '%1$s' is not yet recognized by Netmagis %2$s} $sver $version]
 	}
+
+	#
+	# Log initialization
+	#
+
+	set log [::webapp::log create %AUTO% \
+				    -subsys netmagis \
+				    -method opened-postgresql \
+				    -medium [list "db" $dbfd table global.log] \
+			]
+
+	#
+	# Access to database is initialized
+	#
+
+	set db $dbfd
+
+	return ""
+    }
+
+    #
+    # Common initialization work
+    #
+    # Input:
+    #	- selfs : current object
+    #	- dbfd : database handle
+    #   - login : user's login
+    #   - anon : "anon" (don't fetch identity in auth database) or "id" (fetch)
+    #	- usedefuser : use default user name if login is not found
+    #   - _tabuid : array containing, in return, user's characteristics
+    #		(login, password, lastname, firstname, mail, phone, fax,
+    #			mobile, addr, idcor, idgrp, present)
+    #
+    # Output:
+    #	- return value: empty string or error message
+    #
+
+    proc init-common {selfns dbfd login anon usedefuser _tabuid} {
+	global ah
+	upvar $_tabuid tabuid
+
+	set uid $login
+	set euid $login
 
 	#
 	# Access to authentification mechanism (database or LDAP)
@@ -852,8 +880,6 @@ snit::type ::netmagis {
 	#
 	# Access to Netmagis is now initialized
 	#
-
-	set db $dbfd
 
 	return ""
     }
@@ -1024,6 +1050,7 @@ snit::type ::netmagis {
     #
     # Input:
     #   - module : current module we are in ("dns", "admin" or "topo")
+    #		or "anon" to access unauthentified pages
     #   - attr : needed attribute to execute the script
     # Output:
     #   - return value: none
@@ -1032,13 +1059,12 @@ snit::type ::netmagis {
     #
 
     method cgi-dispatch {module attr} {
+	global libconf
+
 	#
 	# Builds-up a fictive context to easily return error messages
 	#
 
-	set login [::webapp::user]
-	set uid $login
-	set euid $login
 	set curmodule "dns"
 	set curcap {dns}
 	set locale "C"
@@ -1055,23 +1081,12 @@ snit::type ::netmagis {
 	$self locale $blocale
 
 	#
-	# Maintenance mode : access is forbidden to all, except
-	# for users specified in ROOT pattern.
+	# Database initialization
 	#
 
-	set ftest [get-local-conf "nologin"]
-	set rootusers [get-local-conf "rootusers"]
-	if {! [catch [lindex $rootusers 0]]} then {
-	    $self error "Invalid 'rootusers' configuration parameter"
-	}
-
-	if {[file exists $ftest]} then {
-	    if {$uid eq "" || ! ($uid in $rootusers)} then {
-		set fd [open $ftest "r"]
-		set msg [read $fd]
-		close $fd
-		$self error $msg
-	    }
+	set msg [init-database $selfns dbfd]
+	if {$msg ne ""} then {
+	    $self error $msg
 	}
 
 	#
@@ -1081,21 +1096,74 @@ snit::type ::netmagis {
 	set curmodule $module
 
 	#
-	# User's login
+	# Proceed to authentication if needed
 	#
 
-	if {$login eq ""} then {
-	    $self error [mc "No login: authentication failed"]
+	if {$module ne "anon"} then {
+	    set authtoken [::webapp::get-cookie "session"]
+	    if {! [check-authtoken $dbfd $authtoken login]} then {
+
+		#
+		# Get form values from user and put them in a hidden field
+		#
+
+		set param [::webapp::html-string [array get ftab]]
+
+		#
+		# Use existing login if found
+		#
+
+		set login [::webapp::html-string $login]
+
+		#
+		# Send resulting page
+		#
+
+		d urlset "%URLFORM%" $libconf(next-login) {}
+		d result $libconf(page-login) [list \
+						    [list %MESSAGE% ""] \
+						    [list %PARAM% $param] \
+						    [list %LOGIN%  $login] \
+						]
+		exit 0
+	    }
+
+	    set uid $login
+	    set euid $login
+
+	    #
+	    # Maintenance mode : access is forbidden to all, except
+	    # for users specified in ROOT pattern.
+	    #
+
+	    set ftest [get-local-conf "nologin"]
+	    set rootusers [get-local-conf "rootusers"]
+	    if {! [catch [lindex $rootusers 0]]} then {
+		$self error "Invalid 'rootusers' configuration parameter"
+	    }
+
+	    if {[file exists $ftest]} then {
+		if {$uid eq "" || ! ($uid in $rootusers)} then {
+		    set fd [open $ftest "r"]
+		    set msg [read $fd]
+		    close $fd
+		    $self error $msg
+		}
+	    }
+
+	    #
+	    # Common initialization work
+	    #
+
+	    set msg [init-common $selfns $dbfd $login "id" false tabuid]
+	    if {$msg ne ""} then {
+		$self error $msg
+	    }
 	}
 
 	#
-	# Common initialization work
+	# To help write HTML code
 	#
-
-	set msg [init-common $selfns dbfd "cgi" $login "id" false tabuid]
-	if {$msg ne ""} then {
-	    $self error $msg
-	}
 
 	::html create ::h
 
@@ -1150,26 +1218,64 @@ snit::type ::netmagis {
 	set dnextargs [string trim [lindex $ftab(nextargs) 0]]
 
 	#
-	# Perform user substitution (through the uid parameter)
+	# Set user capabilities
 	#
 
-	set nuid [string trim [lindex $ftab(uid) 0]]
-	if {$nuid ne "" && $tabuid(p_admin)} then {
-	    array set tabouid [array get tabuid]
-	    array unset tabuid
+	set curcap	{}
+	if {$module ne "anon"} then {
+	    #
+	    # Perform user substitution (through the uid parameter)
+	    #
 
-	    set uid $nuid
-	    set login $nuid
+	    set nuid [string trim [lindex $ftab(uid) 0]]
+	    if {$nuid ne "" && $tabuid(p_admin)} then {
+		array set tabouid [array get tabuid]
+		array unset tabuid
 
-	    set n [read-user $dbfd $login tabuid msg]
-	    if {$n != 1} then {
-		$self error $msg
+		set uid $nuid
+		set login $nuid
+
+		set n [read-user $dbfd $login tabuid msg]
+		if {$n != 1} then {
+		    $self error $msg
+		}
+		if {! $tabuid(present)} then {
+		    $self error [mc "User '%s' not authorized" $login]
+		}
+
+		u setlogin $login
 	    }
-	    if {! $tabuid(present)} then {
-		$self error [mc "User '%s' not authorized" $login]
-	    }
 
-	    u setlogin $login
+	    #
+	    # Computes capabilites, given local installation and/or user rights
+	    #
+
+	    lappend curcap "dns"
+	    if {[dnsconfig get "topoactive"]} then {
+		lappend curcap "topo"
+	    }
+	    if {[dnsconfig get "macactive"] && $tabuid(p_mac)} then {
+		lappend curcap "mac"
+	    }
+	    if {$tabuid(p_genl)} then {
+		lappend curcap "topogenl"
+	    }
+	    if {$tabuid(p_admin)} then {
+		lappend curcap "admin"
+	    }
+	    if {[dnsconfig get "authmethod"] eq "pgsql"} then {
+		lappend curcap "pgauth"
+		set qlogin [::pgsql::quote $login]
+		set sql "SELECT r.admin
+				FROM pgauth.realm r, pgauth.member m
+				WHERE r.realm = m.realm
+				    AND login = '$qlogin'"
+		pg_select $dbfd $sql tab {
+		    if {$tab(admin)} then {
+			lappend curcap "authadmin"
+		    }
+		}
+	    }
 	}
 
 	#
@@ -1182,37 +1288,6 @@ snit::type ::netmagis {
 	    unset ftab($p)
 	}
 
-	#
-	# Computes capacity, given local installation and/or user rights
-	#
-
-	set curcap	{}
-	lappend curcap "dns"
-	if {[dnsconfig get "topoactive"]} then {
-	    lappend curcap "topo"
-	}
-	if {[dnsconfig get "macactive"] && $tabuid(p_mac)} then {
-	    lappend curcap "mac"
-	}
-	if {$tabuid(p_genl)} then {
-	    lappend curcap "topogenl"
-	}
-	if {$tabuid(p_admin)} then {
-	    lappend curcap "admin"
-	}
-	if {[dnsconfig get "authmethod"] eq "pgsql"} then {
-	    lappend curcap "pgauth"
-	    set qlogin [::pgsql::quote $login]
-	    set sql "SELECT r.admin
-			    FROM pgauth.realm r, pgauth.member m
-			    WHERE r.realm = m.realm
-				AND login = '$qlogin'"
-	    pg_select $dbfd $sql tab {
-		if {$tab(admin)} then {
-		    lappend curcap "authadmin"
-		}
-	    }
-	}
 
 	#
 	# Is this page an "admin" only page ?
@@ -1331,10 +1406,19 @@ snit::type ::netmagis {
 	set login $msg
 
 	#
+	# Database initialization
+	#
+
+	set msg [init-database $selfns dbfd]
+	if {$msg ne ""} then {
+	    $self error $msg
+	}
+
+	#
 	# Common initialization work
 	#
 
-	set msg [init-common $selfns dbfd "script" $login "anon" $usedefuser tabuid]
+	set msg [init-common $selfns $dbfd $login "anon" $usedefuser tabuid]
 	if {$msg ne ""} then {
 	    return $msg
 	}
@@ -1352,7 +1436,9 @@ snit::type ::netmagis {
     #
 
     method end {} {
-	fermer-base $db
+	if {$db ne ""} then {
+	    pg_disconnect $db
+	}
     }
 
 
@@ -1729,6 +1815,7 @@ snit::type ::config {
 	    {datefmt rw {string}}
 	    {dayfmt rw {string}}
 	    {authmethod rw {menu {{pgsql Internal} {ldap {LDAP}}}}}
+	    {authexpire rw {string}}
 	    {pageformat rw {menu {{a4 A4} {letter Letter}}} }
 	    {schemaversion ro {string}}
 	}
@@ -3193,54 +3280,37 @@ proc display-group {dbfd idgrp} {
 }
 
 ##############################################################################
-# Access to database
+# Authentication
 ##############################################################################
 
 #
-# Initialize access to database
-#
-# Input:
-#   - parameters:
-#	- base : database connection parameters
-#	- _msg : error message, if any
-# Output:
-#   - return value: database handle, or empty string if error
-#
-# History
-#   2001/01/27 : pda      : design
-#   2001/10/09 : pda      : use conninfo to access database
-#   2010/11/29 : pda      : i18n
-#
-
-proc ouvrir-base {base _msg} {
-    upvar $_msg msg
-    global debug
-
-    if {[catch {set dbfd [pg_connect -conninfo $base]} msg]} then {
-	set dbfd ""
-    }
-
-    return $dbfd
-}
-
-#
-# Shutdown database access
+# Check authentication token
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
+#	- token : authentication token (given by the session cookie)
+#	- _login : in return, login of user (even if timeout)
 # Output:
-#   - return value: none
+#   - return value: true if the token is a valid authentication token
 #
 # History
-#   2001/01/27 : pda      : design
-#   2010/11/29 : pda      : i18n
+#   2014/04/11 : pda/jean : design
 #
 
-proc fermer-base {dbfd} {
-    if {$dbfd ne ""} then {
-	pg_disconnect $dbfd
+proc check-authtoken {dbfd token _login} {
+    upvar $_login login
+
+    set qtoken [::pgsql::quote $token]
+    set login ""
+    set valid false
+    set sql "SELECT u.login FROM global.nmuser u, global.session s
+    			WHERE s.token = '$qtoken' AND s.idcor = u.idcor"
+    pg_select $dbfd $sql tab {
+	set login $tab(login)
+	set valid true
     }
+    return $valid
 }
 
 ##############################################################################
@@ -3340,6 +3410,7 @@ proc read-user {dbfd login _tabuid _msg} {
 	
 	switch $n {
 	    0 {
+TAGADA BOUZOUH
 		set msg [mc "User '%s' is not in the authentication base" $login]
 		return 0
 	    }

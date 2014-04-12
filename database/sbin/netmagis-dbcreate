@@ -237,6 +237,7 @@ netmagis_insert_config ()
 datefmt	%d/%m/%Y %H:%M:%S
 dayfmt	%a %d %b %Y
 authmethod	pgsql
+authexpire	600
 pageformat	a4
 default_lease_time	600
 max_lease_time	3600
@@ -278,7 +279,7 @@ authpgmailbcc
 authpgmailsubject	Password change
 authpgmailbody	Password changed (%2$s) for user %1$s. Best regards.
 authpggroupes	netmagis
-schemaversion	22
+schemaversion	23
 \.
 
     -- id 0 is used in zone creation script

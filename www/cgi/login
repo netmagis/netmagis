@@ -1,0 +1,78 @@
+#!%TCLSH%
+
+#
+# Validates a pair login/password from a user
+#
+# Parameters (form or url): none
+#
+# History
+#   2014/04/11 : pda/jean : design
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(page-fail)	login.html
+
+#
+# Next actions
+# 
+
+set conf(next-fail)	"login"
+
+#
+# Netmagis general library
+#
+
+source %LIBNETMAGIS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Old-fashioned style of doing CGI programming
+##############################################################################
+
+d cgi-register {} {
+    {login	0 1}
+    {pw		0 1}
+    {param	0 1}
+} {
+    global conf
+
+    set message ""
+    if {[string trim $login] ne ""} then {
+	###############################################
+	# TEST LOGIN / PW
+
+	set ok 0
+	if {$ok} then {
+	    d result "AUTH REUSSIE"
+	}
+	set message [mc "Login failed"]
+    }
+
+    #
+    # Restitute form parameters
+    #
+
+    set param [::webapp::html-string $param]
+    set login [::webapp::html-string $login]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d urlset "%URLFORM%" $conf(next-fail) {}
+    d result $conf(page-fail) [list \
+				    [list %MESSAGE% $message] \
+				    [list %PARAM%   $param] \
+				    [list %LOGIN%   $login] \
+    				]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "anon" ""

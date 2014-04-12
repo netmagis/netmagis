@@ -11,6 +11,7 @@ SCRIPTS 	= \
 		    add del mod edit \
 		    dhcp \
 		    eq l2 l3 metro graph ifchg genl \
+		    login \
 		    lusers \
 		    lnet \
 		    macindex mac macstat ipinact \

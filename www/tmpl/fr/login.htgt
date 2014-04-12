@@ -1,0 +1,61 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {11/04/2014}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Connexion
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Connexion}
+
+    <FONT COLOR="#FF0000">%MESSAGE%</FONT>
+
+    <FORM METHOD="POST" ACTION="%URLFORM%">
+	\tableau {
+	    \bordure {0} {}
+	} {
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	    \casedefauttableau {\centragehorizontal {LEFT}}
+	} {
+	    \lignetableau {
+		\casetableau {} {Identifiant}
+		\casetableau {} {<INPUT TYPE="TEXT" NAME="login" SIZE="30" VALUE="%LOGIN%">}
+	    }
+	    \lignetableau {
+		\casetableau {} {Mot de passe}
+		\casetableau {} {<INPUT TYPE="PASSWORD" NAME="pw" SIZE="30">}
+	    }
+	    \lignetableau {
+		\multicasetableau {2} {
+		    \centragehorizontal {CENTER}
+		} {
+		    <INPUT TYPE="HIDDEN" NAME="param" VALUE="%PARAM%">
+		    <INPUT TYPE="SUBMIT" VALUE="Connexion">
+		}
+	    }
+	}
+    </FORM>
+}
+
+}
