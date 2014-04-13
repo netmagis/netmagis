@@ -3305,15 +3305,28 @@ proc display-group {dbfd idgrp} {
 proc check-authtoken {dbfd token _login} {
     upvar $_login login
 
+    set idle [dnsconfig get "authexpire"]
+
     set qtoken [::pgsql::quote $token]
     set login ""
     set valid false
     set sql "SELECT u.login FROM global.nmuser u, global.session s
-    			WHERE s.token = '$qtoken' AND s.idcor = u.idcor"
+    			WHERE s.token = '$qtoken'
+			    AND s.idcor = u.idcor
+			    AND s.lastaccess > NOW() - interval '$idle second'"
     pg_select $dbfd $sql tab {
 	set login $tab(login)
 	set valid true
     }
+
+    if {$valid} then {
+	set sql "UPDATE global.session
+			    SET lastaccess = NOW()
+			    WHERE token = '$qtoken'"
+	# no test of result
+	::pgsql::execsql $dbfd $sql msg
+    }
+
     return $valid
 }
 
@@ -3356,7 +3369,7 @@ proc create-authtoken {dbfd login _token} {
 
     set delay [dnsconfig get "authcleanup"]
     set sql "DELETE FROM global.session
-		    WHERE lastaccess < now() - interval '$delay day'"
+		    WHERE lastaccess < NOW() - interval '$delay day'"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	return [mc "Cannot register authentication token (%s)" $msg]
     }
