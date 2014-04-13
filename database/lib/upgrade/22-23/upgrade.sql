@@ -26,5 +26,7 @@ CREATE TABLE global.session (
 ) ;
 
 INSERT INTO global.config (key, value) VALUES ('authexpire', '600') ;
+INSERT INTO global.config (key, value) VALUES ('authcleanup', '30') ;
+INSERT INTO global.config (key, value) VALUES ('authtoklen', '32') ;
 
 UPDATE global.config SET value = '23' WHERE key = 'schemaversion' ;

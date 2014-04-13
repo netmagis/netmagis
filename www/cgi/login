@@ -29,8 +29,31 @@ source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 
+#
+# Check user password against the crypted password stored in database
+#
+
+proc check-password {dbfd login upw} {
+    set success false
+    set qlogin [::pgsql::quote $login]
+    set sql "SELECT password FROM pgauth.user WHERE login = '$qlogin'"
+    set dbpw ""
+    pg_select $dbfd $sql tab {
+	set dbpw $tab(password)
+    }
+
+    if {[regexp {^\$1\$([^\$]+)\$} $dbpw dummy salt]} then {
+	set crypted [exec openssl passwd -1 -salt $salt $upw]
+	if {$crypted eq $dbpw} then {
+	    set success true
+	}
+    }
+
+    return $success
+}
+
 ##############################################################################
-# Old-fashioned style of doing CGI programming
+# Display login page and validate access
 ##############################################################################
 
 d cgi-register {} {
@@ -42,14 +65,20 @@ d cgi-register {} {
 
     set message ""
     if {[string trim $login] ne ""} then {
-	###############################################
-	# TEST LOGIN / PW
-
-	set ok 0
+	set ok [check-password $dbfd $login $pw]
 	if {$ok} then {
-	    d result "AUTH REUSSIE"
+	    set msg [create-authtoken $dbfd $login token]
+	    if {$msg eq ""} then {
+		::webapp::set-cookie "session" $token 0 "" "" 0 0
+
+		set message [mc "Auth OK"]
+	    } else {
+		set message $msg
+	    }
+	} else {
+	    set message [mc "Login failed"]
 	}
-	set message [mc "Login failed"]
+
     }
 
     #

@@ -153,6 +153,8 @@ package require md5
 set libconf(page-login)		"login.html"
 set libconf(next-login)		"login"
 
+set libconf(token-length)	64
+
 #
 # Various table specifications
 #
@@ -1816,6 +1818,8 @@ snit::type ::config {
 	    {dayfmt rw {string}}
 	    {authmethod rw {menu {{pgsql Internal} {ldap {LDAP}}}}}
 	    {authexpire rw {string}}
+	    {authcleanup rw {string}}
+	    {authtoklen rw {string}}
 	    {pageformat rw {menu {{a4 A4} {letter Letter}}} }
 	    {schemaversion ro {string}}
 	}
@@ -3312,6 +3316,80 @@ proc check-authtoken {dbfd token _login} {
     }
     return $valid
 }
+
+#
+# Create an authentication token
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- login : the user for which we generate this token
+#	- _token : in return, generated token
+# Output:
+#   - return value: error message or empty string
+#   - database : token is registered in database
+#
+# History
+#   2014/04/12 : pda      : design
+#
+
+proc create-authtoken {dbfd login _token} {
+    upvar $_token token
+
+    #
+    # Search id for the login
+    #
+
+    set qlogin [::pgsql::quote $login]
+    set idcor -1
+    set sql "SELECT idcor FROM global.nmuser WHERE login = '$qlogin'"
+    pg_select $dbfd $sql tab {
+	set idcor $tab(idcor)
+    }
+    if {$idcor == -1} then {
+	return [mc "Login '%s' does not exist" $login]
+    }
+
+    #
+    # Clean-up old tokens
+    #
+
+    set delay [dnsconfig get "authcleanup"]
+    set sql "DELETE FROM global.session
+		    WHERE lastaccess < now() - interval '$delay day'"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	return [mc "Cannot register authentication token (%s)" $msg]
+    }
+
+    #
+    # Generates a unique (at a given time) token
+    #
+
+    set toklen [dnsconfig get "authtoklen"]
+
+    set found true
+    while {$found} {
+	set token [exec -ignorestderr openssl rand -hex $toklen]
+	set sql "SELECT idcor FROM global.session WHERE token = '$token'"
+	set found false
+	pg_select $dbfd $sql tab {
+	    set found true
+	}
+    }
+
+    #
+    # Register token in session table
+    #
+
+    set sql "INSERT INTO global.session (idcor, token)
+				VALUES ($idcor, '$token')"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	return [mc "Cannot register authentication token (%s)" $msg]
+    }
+
+    return ""
+}
+
 
 ##############################################################################
 # User access rights management

@@ -62,6 +62,7 @@
  {Cannot lock table(s) %1$s: %2$s} {Verrouillage impossible pour la/les table(s) %1$s : %2$s}
  {Cannot open file '%1$s': %2$s} {Impossible d'ouvrir le fichier '%1$s' : %2$s}
  {Cannot perform operation "%1$s": %2$s} {Opération "%1$s" impossible : %2$s}
+ {Cannot register authentication token (%s)} {Impossible d'enregistrer le token d'authentification (%s)}
  {Cannot read host-id %s} {Impossible de lire la machine d'identificateur %s}
  {Cannot read sensor list: %s} {Impossible de lire les points de collecte : %s}
  {Cannot set key '%1$s' to '%2$s: %3$s} {Impossible de modifier la clef '%1$s' à '%2$s' : %3$s}
@@ -638,8 +639,12 @@
  cfg:dayfmt:help {Format d'affichage des dates (sans l'heure). Voir la page de manuel clock(n) de Tcl.}
  cfg:authmethod:desc {Méthode d'authentification}
  cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.).}
- cfg:authmexpire:desc {Délai maximum d'inactivité}
- cfg:authmexpire:help {Durée maximale au bout de laquelle la session authentifiée est conservée}
+ cfg:authexpire:desc {Délai maximum d'inactivité}
+ cfg:authexpire:help {Durée maximale au bout de laquelle la session authentifiée est conservée.}
+ cfg:authcleanup:desc {Délai de suppression des tokens}
+ cfg:authcleanup:help {Délai au bout duquel les vieux tokens sont supprimés de la table des sessions (en jours)}
+ cfg:authtoklen:desc {Longueur du token}
+ cfg:authtoklen:help {Longueur du token d'authentification, en octets. Ne changez cette valeur que si vous comprenez de quoi il s'agit.}
  cfg:pageformat:desc {Format de papier}
  cfg:pageformat:help {Format de papier pour les pages imprimables.}
  cfg:schemaversion:desc {Version de schéma}

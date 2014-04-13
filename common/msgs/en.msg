@@ -13,8 +13,12 @@
  cfg:dayfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
  cfg:authmethod:desc {Authentication method}
  cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.).}
- cfg:authmexpire:desc {Idle timeout}
- cfg:authmexpire:help {Authenticated session idle timeout}
+ cfg:authexpire:desc {Idle timeout}
+ cfg:authexpire:help {Authenticated session idle timeout.}
+ cfg:authcleanup:desc {Token cleanup time}
+ cfg:authcleanup:help {Delay (in days) when old tokens are removed from the session table.}
+ cfg:authtoklen:desc {Token length}
+ cfg:authtoklen:help {Authentication token length in bytes. Don't change this unless you understand what you are doing.}
  cfg:pageformat:desc {Paper format}
  cfg:pageformat:help {Paper format for generated printable pages.}
  cfg:schemaversion:desc {Schema version}
