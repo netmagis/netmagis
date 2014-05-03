@@ -14,7 +14,7 @@
  cfg:authmethod:desc {Authentication method}
  cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.).}
  cfg:authexpire:desc {Idle timeout}
- cfg:authexpire:help {Authenticated session idle timeout.}
+ cfg:authexpire:help {Authenticated session idle timeout (in seconds).}
  cfg:authcleanup:desc {Token cleanup time}
  cfg:authcleanup:help {Delay (in days) when old tokens are removed from the session table.}
  cfg:authtoklen:desc {Token length}
