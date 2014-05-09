@@ -20,6 +20,10 @@
 	Netmagis v%VERSION%
     } {
 
+	\elementbandeau {Session} {
+	    <li>\lien {Connecté comme %LOGGEDAS%} {profile}</li>
+	    <li>\lien {Déconnexion} {login}</li>
+	}
 	\elementbandeau {Actions} {
 	    %LINKS%
 	}

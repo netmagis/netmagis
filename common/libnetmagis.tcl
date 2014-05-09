@@ -1549,6 +1549,12 @@ snit::type ::netmagis {
 	}
 
 	#
+	# Add the "logged as" information
+	#
+
+	lappend lsubst [list %LOGGEDAS% $euid]
+
+	#
 	# Constitute the links menu if the database access is initialized
 	#
 

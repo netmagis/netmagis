@@ -19,6 +19,10 @@
 \bandeau {
 	DNS  v%VERSION%
     } {
+	\elementbandeau {Session} {
+	    <li>\lien {Logged as %LOGGEDAS%} {profile}</li>
+	    <li>\lien {Disconnect} {login}</li>
+	}
 	\elementbandeau {Actions} {
 	    %LINKS%
 	}
