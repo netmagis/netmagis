@@ -1112,6 +1112,7 @@ snit::type ::netmagis {
 	    # the part of the code which references user capabilities.
 	    #
 	    set euid "(unknown)"
+	    set uid "(unknown)"
 	} else {
 	    #
 	    # Attempt to access a page restricted to valid users
@@ -1141,6 +1142,7 @@ snit::type ::netmagis {
 		#
 
 		set euid "(unknown)"
+		set uid "(unknown)"
 
 		#
 		# Send resulting page
@@ -3449,6 +3451,7 @@ proc check-authtoken {dbfd token _login} {
     set valid false
     set sql "SELECT u.login FROM global.nmuser u, global.session s
     			WHERE s.token = '$qtoken'
+			    AND s.valid = 1
 			    AND s.idcor = u.idcor
 			    AND s.lastaccess > NOW() - interval '$idle second'"
     pg_select $dbfd $sql tab {
@@ -3534,8 +3537,8 @@ proc create-authtoken {dbfd login _token} {
     # Register token in session table
     #
 
-    set sql "INSERT INTO global.session (idcor, token)
-				VALUES ($idcor, '$token')"
+    set sql "INSERT INTO global.session (idcor, token, valid)
+				VALUES ($idcor, '$token', 1)"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	return [mc "Cannot register authentication token (%s)" $msg]
     }

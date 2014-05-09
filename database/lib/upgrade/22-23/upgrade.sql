@@ -14,6 +14,7 @@
 CREATE TABLE global.session (
     token	TEXT NOT NULL,		-- auth token in session cookie
     idcor	INT,			-- user authenticated by this token
+    valid	INT,			-- 1 if token is valid, otherwise 0
     lastlogin	TIMESTAMP (0) WITHOUT TIME ZONE
                         DEFAULT CURRENT_TIMESTAMP
 			NOT NULL,	-- last successful login

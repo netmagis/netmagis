@@ -72,6 +72,7 @@ proc check-password {dbfd login upw} {
 
 d cgi-register {} {
     {login	0 1}
+    {logout	0 1}
     {pw		0 1}
     {script	0 1}
     {param	0 1}
@@ -79,31 +80,44 @@ d cgi-register {} {
     global conf
 
     set message ""
-    if {[string trim $login] ne ""} then {
-	set ok [check-password $dbfd $login $pw]
-	if {$ok} then {
-	    set msg [create-authtoken $dbfd $login token]
-	    if {$msg eq ""} then {
-		::webapp::set-cookie "session" $token 0 "" "" 0 0
+    if {$logout ne ""} then {
+	set qtoken [::pgsql::quote [::webapp::get-cookie "session"]]
+	set sql "UPDATE global.session SET valid = 0 WHERE token = '$qtoken'"
+	# no test of result
+	::pgsql::execsql $dbfd $sql msg
 
-		if {! [regexp {^[a-z0-9-]+$} $script]} then {
-		    set script "index"
-		    set param ""
-		}
-		if {[catch {array set ftab2 $param}]} then {
-		    set script "index"
-		    set param ""
-		}
+	set message [mc "Logout successful"]
 
-		puts stdout [::webapp::call-cgi [pwd]/$script ftab2]
-		exit 0
+	set script ""
+	set param ""
+	# leave login unmodified for the "login" page
+
+    } else {
+	if {[string trim $login] ne ""} then {
+	    set ok [check-password $dbfd $login $pw]
+	    if {$ok} then {
+		set msg [create-authtoken $dbfd $login token]
+		if {$msg eq ""} then {
+		    ::webapp::set-cookie "session" $token 0 "" "" 0 0
+
+		    if {! [regexp {^[a-z0-9-]+$} $script]} then {
+			set script "index"
+			set param ""
+		    }
+		    if {[catch {array set ftab2 $param}]} then {
+			set script "index"
+			set param ""
+		    }
+
+		    puts stdout [::webapp::call-cgi [pwd]/$script ftab2]
+		    exit 0
+		} else {
+		    set message $msg
+		}
 	    } else {
-		set message $msg
+		set message [mc "Login failed"]
 	    }
-	} else {
-	    set message [mc "Login failed"]
 	}
-
     }
 
     #

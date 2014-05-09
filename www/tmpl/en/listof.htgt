@@ -22,7 +22,7 @@
     } {
 	\elementbandeau {Session} {
 	    <li>\lien {Logged as %LOGGEDAS%} {profile}</li>
-	    <li>\lien {Disconnect} {login}</li>
+	    <li>\lien {Disconnect} {login?logout=yes}</li>
 	}
 	\elementbandeau {Actions} {
 	    %LINKS%

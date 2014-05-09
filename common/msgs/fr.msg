@@ -314,6 +314,7 @@
  {Login '%s' does not exist} {Le login '%s' n'existe pas}
  {Login '%s' found more than once} {Le login '%s' est ambigu}
  {Login failed} {Échec d'authentification}
+ {Logout successful} {Déconnexion réussie}
  {Log}		{Log}
  {MAC address}	{Adresse MAC}
  {MAC address %s} {l'adresse MAC %s}
