@@ -1099,17 +1099,35 @@ snit::type ::netmagis {
 	set curmodule $module
 
 	#
-	# Proceed to authentication if needed
+	# Keep track of authentication status
 	#
 
-	if {$module ne "anon"} then {
-	    set authtoken [::webapp::get-cookie "session"]
-	    if {! [check-authtoken $dbfd $authtoken login]} then {
+	set authtoken [::webapp::get-cookie "session"]
+	set authenticated [check-authtoken $dbfd $authtoken login]
+
+	if {$module eq "anon"} then {
+	    #
+	    # This is an anonymous page: no need for an authentication.
+	    # We just set the "logged as" message, and we will skip
+	    # the part of the code which references user capabilities.
+	    #
+	    set euid "(unknown)"
+	} else {
+	    #
+	    # Attempt to access a page restricted to valid users
+	    #
+
+	    if {! $authenticated} then {
 
 		#
-		# Get form values from user and put them in a hidden field
+		# Present the login page
+		# Get the script name (for later redirection) and
+		# form values from user and put them in hidden fields
 		#
 
+		set script [::webapp::html-string [::webapp::script-name]]
+
+		::webapp::get-data ftab [list {.* 0 9999}]
 		set param [::webapp::html-string [array get ftab]]
 
 		#
@@ -1119,13 +1137,20 @@ snit::type ::netmagis {
 		set login [::webapp::html-string $login]
 
 		#
+		# For the "logged as" message
+		#
+
+		set euid "(unknown)"
+
+		#
 		# Send resulting page
 		#
 
 		d urlset "%URLFORM%" $libconf(next-login) {}
 		d result $libconf(page-login) [list \
 						    [list %MESSAGE% ""] \
-						    [list %PARAM% $param] \
+						    [list %SCRIPT% $script] \
+						    [list %PARAM%  $param] \
 						    [list %LOGIN%  $login] \
 						]
 		exit 0
@@ -3437,6 +3462,9 @@ proc check-authtoken {dbfd token _login} {
 			    WHERE token = '$qtoken'"
 	# no test of result
 	::pgsql::execsql $dbfd $sql msg
+
+	# re-inject cookie (for login/call-cgi)
+	::webapp::set-cookie "session" $token 0 "" "" 0 0
     }
 
     return $valid
@@ -3613,7 +3641,6 @@ proc read-user {dbfd login _tabuid _msg} {
 	
 	switch $n {
 	    0 {
-TAGADA BOUZOUH
 		set msg [mc "User '%s' is not in the authentication base" $login]
 		return 0
 	    }

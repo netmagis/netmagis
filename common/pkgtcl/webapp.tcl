@@ -1024,10 +1024,12 @@ proc ::webapp::hide-parameters {champs formtab} {
 #   - REQUEST_METHOD : mis à GET
 #   - PATH_INFO : remis à ""
 #   - QUERY_STRING : la partie après le "?" dans l'URL
+#   - HTTP_COOKIE : les cookies enregistrés via set-cookie
 #   Les autres variables ne sont pas changées.
 #
 # Historique :
-#   2003/06/07 : pda : conception et codage
+#   2003/06/07 : pda      : conception et codage
+#   2014/05/09 : pda/jean : add cookies
 #
 
 proc ::webapp::call-cgi {script formtab} {
@@ -1060,6 +1062,17 @@ proc ::webapp::call-cgi {script formtab} {
     #
 
     catch {unset env(PATH_INFO)}
+
+    #
+    # Passer les cookies
+    #
+
+    set hc {}
+    global wcooktab
+    foreach name [array names wcooktab] {
+	lappend hc $wcooktab($name)
+    }
+    set env(HTTP_COOKIE) [join $hc ";"]
 
     #
     # Appeler le script
@@ -1954,8 +1967,6 @@ proc ::webapp::send {type page {fichier "output"}} {
 #
 
 proc ::webapp::sortie-html {page} {
-    global wcooktab
-
     fconfigure stdout -encoding utf-8
     puts stdout "Content-type: text/html; charset=utf-8"
     http-send-cookies

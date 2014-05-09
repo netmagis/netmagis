@@ -73,6 +73,7 @@ proc check-password {dbfd login upw} {
 d cgi-register {} {
     {login	0 1}
     {pw		0 1}
+    {script	0 1}
     {param	0 1}
 } {
     global conf
@@ -85,7 +86,17 @@ d cgi-register {} {
 	    if {$msg eq ""} then {
 		::webapp::set-cookie "session" $token 0 "" "" 0 0
 
-		set message [mc "Auth OK"]
+		if {! [regexp {^[a-z0-9-]+$} $script]} then {
+		    set script "index"
+		    set param ""
+		}
+		if {[catch {array set ftab2 $param}]} then {
+		    set script "index"
+		    set param ""
+		}
+
+		puts stdout [::webapp::call-cgi [pwd]/$script ftab2]
+		exit 0
 	    } else {
 		set message $msg
 	    }
@@ -99,6 +110,7 @@ d cgi-register {} {
     # Restitute form parameters
     #
 
+    set script [::webapp::html-string $script]
     set param [::webapp::html-string $param]
     set login [::webapp::html-string $login]
 
@@ -109,6 +121,7 @@ d cgi-register {} {
     d urlset "%URLFORM%" $conf(next-fail) {}
     d result $conf(page-fail) [list \
 				    [list %MESSAGE% $message] \
+				    [list %SCRIPT%  $script] \
 				    [list %PARAM%   $param] \
 				    [list %LOGIN%   $login] \
     				]
