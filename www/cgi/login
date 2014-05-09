@@ -35,17 +35,48 @@ source %LIBNETMAGIS%
 
 proc check-password {dbfd login upw} {
     set success false
-    set qlogin [::pgsql::quote $login]
-    set sql "SELECT password FROM pgauth.user WHERE login = '$qlogin'"
-    set dbpw ""
-    pg_select $dbfd $sql tab {
-	set dbpw $tab(password)
-    }
 
-    if {[regexp {^\$1\$([^\$]+)\$} $dbpw dummy salt]} then {
-	set crypted [exec openssl passwd -1 -salt $salt $upw]
-	if {$crypted eq $dbpw} then {
-	    set success true
+    set am [dnsconfig get "authmethod"]
+    switch $am {
+	pgsql {
+	    set qlogin [::pgsql::quote $login]
+	    set sql "SELECT password FROM pgauth.user WHERE login = '$qlogin'"
+	    set dbpw ""
+	    pg_select $dbfd $sql tab {
+		set dbpw $tab(password)
+	    }
+
+	    if {[regexp {^\$1\$([^\$]+)\$} $dbpw dummy salt]} then {
+
+		set cpwfile "/tmp/cpwfile.[pid]"
+		set fd [open "|openssl passwd -1 -salt $salt -stdin > $cpwfile" "w"] 
+		puts $fd $upw
+		if {[catch {close $fd} err]} then {
+		    # XXX : output an error message
+		} else {
+		    set fd [open $cpwfile "r"]
+		    set crypted [read $fd]
+		    close $fd
+		    file remove --force $cpwfile
+
+		    if {$crypted eq $dbpw} then {
+			set success true
+		    }
+		}
+	    }
+	}
+	ldap {
+	    set url       [dnsconfig get "ldapurl"]
+	    set basedn    [dnsconfig get "ldapbasedn"]
+	    set attrlogin [dnsconfig get "ldapattrlogin"]
+
+	    set userdn "$attrlogin=$login,$basedn"
+
+	    set handle [::ldapx::ldap create %AUTO%]
+	    if {[$handle connect $url $userdn $upw]} then {
+		set success true
+		$handle disconnect
+	    }
 	}
     }
 
