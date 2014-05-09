@@ -1,3 +1,7 @@
+Version 2.3 - 2014/??/??
+    - the "crypt" configuration parameter (in netmagis.conf) is no longer needed
+    - new "random" configuration parameter  (in netmagis.conf)
+
 Version 2.2.2 - 2014/03/28
     - new program "netmagis-dbupgrade" to ease database upgrade (issue #100,
 	based on a report by Schplurtz le deboulonné)

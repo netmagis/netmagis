@@ -46,24 +46,7 @@ proc check-password {dbfd login upw} {
 		set dbpw $tab(password)
 	    }
 
-	    if {[regexp {^\$1\$([^\$]+)\$} $dbpw dummy salt]} then {
-
-		set cpwfile "/tmp/cpwfile.[pid]"
-		set fd [open "|openssl passwd -1 -salt $salt -stdin > $cpwfile" "w"] 
-		puts $fd $upw
-		if {[catch {close $fd} err]} then {
-		    # XXX : output an error message
-		} else {
-		    set fd [open $cpwfile "r"]
-		    set crypted [read $fd]
-		    close $fd
-		    file remove --force $cpwfile
-
-		    if {$crypted eq $dbpw} then {
-			set success true
-		    }
-		}
-	    }
+	    set success [pgauth-checkpw $upw $dbpw]
 	}
 	ldap {
 	    set url       [dnsconfig get "ldapurl"]

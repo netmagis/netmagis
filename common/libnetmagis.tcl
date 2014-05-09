@@ -135,12 +135,13 @@ namespace import ::msgcat::*
 
 package require snit			;# tcllib
 package require ip			;# tcllib
+package require md5			;# tcllib
+package require md5crypt		;# tcllib
+package require uuid			;# tcllib
 
 package require webapp
 package require pgsql
 package require arrgen
-
-package require md5
 
 ##############################################################################
 # Library parameters
@@ -3284,6 +3285,111 @@ proc display-group {dbfd idgrp} {
 }
 
 ##############################################################################
+# Cryptographic functions
+##############################################################################
+
+#
+# Crypt a password
+#
+# Input:
+#   - parameters :
+#	- str : string to crypt
+# Output:
+#   - return value : crypted string
+#
+# History
+#   2003/05/13 : pda/jean : design
+#   2005/07/22 : pda/jean : secure special characters
+#   2010/12/29 : pda      : i18n and netmagis merge
+#   2013/02/08 : pda/jean : apply schplurtz's patch
+#   2014/05/09 : pda/jean : use md5crypt tcllib package
+#
+
+proc pgauth-crypt {str} {
+    return [md5crypt::md5crypt $str [::md5crypt::salt]]
+}
+
+#
+# Check a user-provided clear-text password against the crypted one in database
+#
+# Input:
+#   - parameters :
+#	- pw : clear-text password provided by the user
+#	- refpw : encrypted password from the database
+# Output:
+#   - return value : true if the encrypted passwords match
+#
+# History
+#   2014/05/09 : pda/jean : design
+#
+
+proc pgauth-checkpw {pw pwref} {
+    set success false
+    if {[regexp {^\$1\$([^\$]+)\$} $pwref dummy salt]} then {
+	set crypted [::md5crypt::md5crypt $pw $salt]
+	if {$crypted eq $pwref} then {
+	    set success true
+	}
+    }
+    return $success
+}
+
+#
+# Generate a semi-random password
+#
+# Input:
+#   - parameters : (none)
+# Output:
+#   - return value : generated clear-text password
+#
+# History
+#   2003/06/13 : pda/jean : design
+#   2010/12/29 : pda      : i18n and netmagis merge
+#
+
+proc pgauth-genpw {} {
+    set pwgen [get-local-conf "pwgen"]
+    return [exec sh -c $pwgen]
+}
+
+#
+# Generate n bytes of random
+#
+# Input:
+#   - parameters :
+#	- nbytes: number of bytes
+# Output:
+#   - return value : random string of hex characters
+#
+# History
+#   2014/05/09 : pda/jean : design
+#
+
+proc get-random {nbytes} {
+    set dev [get-local-conf "random"]
+    if {[catch {set fd [open $dev {RDONLY BINARY}]} msg]} then {
+	#
+	# Silently fall-back to a non cryptographically secure random
+	# if /dev/random is not available
+	#
+	expr srand([clock clicks -microseconds])
+	set r ""
+	for {set i 0} {$i < $nbytes} {incr i} {
+	    append r [binary format "c" [expr int(rand()*256)]]
+	}
+    } else {
+	#
+	# Successful open: read random bytes
+	#
+	set r [read $fd $nbytes]
+	close $fd
+    }
+
+    binary scan $r "H*" hex
+    return $hex
+}
+
+##############################################################################
 # Authentication
 ##############################################################################
 
@@ -3382,7 +3488,7 @@ proc create-authtoken {dbfd login _token} {
 
     set found true
     while {$found} {
-	set token [exec -ignorestderr openssl rand -hex $toklen]
+	set token [get-random $toklen]
 	set sql "SELECT idcor FROM global.session WHERE token = '$token'"
 	set found false
 	pg_select $dbfd $sql tab {
@@ -8195,46 +8301,6 @@ proc pgauth-searchuser {dbfd _tabcrit {sort {+lastname +firstname}}} {
     }
 
     return $lusers
-}
-
-#
-# Crypt a password
-#
-# Input:
-#   - parameters :
-#	- str : string to crypt
-# Output:
-#   - return value : crypted string
-#
-# History
-#   2003/05/13 : pda/jean : design
-#   2005/07/22 : pda/jean : secure special characters
-#   2010/12/29 : pda      : i18n and netmagis merge
-#   2013/02/08 : pda/jean : apply schplurtz's patch
-#
-
-proc pgauth-crypt {str} {
-    regsub -all {'} $str {'\\''} str
-    set crypt [get-local-conf "crypt"]
-    return [exec sh -c [format $crypt "'$str'"]]
-}
-
-#
-# Generate a semi-random password
-#
-# Input:
-#   - parameters : (none)
-# Output:
-#   - return value : generated clear-text password
-#
-# History
-#   2003/06/13 : pda/jean : design
-#   2010/12/29 : pda      : i18n and netmagis merge
-#
-
-proc pgauth-genpw {} {
-    set pwgen [get-local-conf "pwgen"]
-    return [exec sh -c $pwgen]
 }
 
 #

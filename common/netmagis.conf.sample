@@ -149,7 +149,9 @@ hostcmd		/usr/bin/host
 
 # if internal authentication
 pwgen		/usr/local/bin/pwgen --num-passwords=1 --numerals 12
-crypt		openssl passwd -1 %s
+
+# non-blocking pseudo-random number generator
+random		/dev/urandom
 
 # check also topobindir and topograph below
 
