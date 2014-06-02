@@ -1,5 +1,19 @@
 CREATE SCHEMA mac ;
 
+-- Ethernet OUI table
+CREATE TABLE mac.oui (
+  addr MACADDR NOT NULL,
+  name TEXT NOT NULL
+);
+-- Create an index to help lookups
+CREATE INDEX macoui_idx ON mac.oui (addr);
+
+-- Function to return manufacturer's name given MAC address
+CREATE FUNCTION mac.manuf (macaddr)
+        RETURNS TEXT AS '
+                SELECT name FROM mac.oui m WHERE TRUNC($1) = m.addr;
+' LANGUAGE SQL;
+
 -- Generic session table which will be used to associate some
 -- data (ip-mac, port-mac-vlan) with a start and a stop date
 CREATE TABLE mac.session (

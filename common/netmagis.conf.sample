@@ -254,3 +254,8 @@ ifspeed_FastEthernet	100
 pollerlogfacility 	local0  # log for polling
 majdblogfacility	local1  # log for probes creation
 pollerlogpt		info 	# default log level
+
+##############################################################################
+# MAC
+##############################################################################
+ouiurl		http://standards.ieee.org/develop/regauth/oui/oui.txt 
