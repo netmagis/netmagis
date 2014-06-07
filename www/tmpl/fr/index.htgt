@@ -72,7 +72,7 @@
 	\item {\lien {d'ajouter une machine}		{%URLADD%}}
 	\item {\lien {de modifier les informations}	{%URLMOD%}}
 	\item {\lien {de supprimer une machine}		{%URLDEL%}}
-	\item {\lien {de consulter mes droits d'accès}	{%URLPERM%}}
+	\item {\lien {de consulter mes droits d'accès}	{%URLPROFILE%}}
 	\item {\lien {de gérer les "rôles mail"}	{%URLMAIL%}}
 	\* \item {\lien {de gérer les "rôles web"}	{%URLWEB%}}
 	\item {\lien {de gérer les plages DHCP}	{%URLDHCP%}}

@@ -72,7 +72,7 @@
 	\item {\lien {add a host or an alias}		{%URLADD%}}
 	\item {\lien {modify informations about a host}	{%URLMOD%}}
 	\item {\lien {delete a host}			{%URLDEL%}}
-	\item {\lien {check my access rights}		{%URLPERM%}}
+	\item {\lien {check my access rights}		{%URLPROFILE%}}
 	\item {\lien {manage mail roles}		{%URLMAIL%}}
 	\* \item {\lien {manage web roles}		{%URLWEB%}}
 	\item {\lien {manage DHCP dynamic ranges}	{%URLDHCP%}}

@@ -40,7 +40,7 @@ d cgi-register {} {} {
     # URL and substitution list building
     #
 
-    foreach script {net add mod del perm mail web dhcp search} {
+    foreach script {net add mod del profile mail web dhcp search} {
 	set up [string toupper $script]
 	d urlset "%URL$up%" "$script" {}
     }

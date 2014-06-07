@@ -17,7 +17,7 @@ SCRIPTS 	= \
 		    macindex mac macstat ipinact \
 		    mail \
 		    net \
-		    perm search \
+		    profile search \
 		    statuser statorg \
 		    topotop \
 		    pgaindex pgapasswd pgarealm pgaacc

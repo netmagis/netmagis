@@ -20,7 +20,7 @@
 # Template pages used by this script
 #
 
-set conf(page)		perm.html
+set conf(page)		profile.html
 
 #
 # Netmagis general library
