@@ -1,5 +1,5 @@
 # Created by: Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
-# $FreeBSD: head/net-mgmt/netmagis-common/Makefile 347600 2014-03-09 14:36:56Z miwi $
+# $FreeBSD: head/net-mgmt/netmagis-common/Makefile 352229 2014-04-26 08:21:33Z culot $
 
 PORTNAME?=	netmagis
 DISTVERSION?=	2.2.2
