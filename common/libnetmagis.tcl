@@ -8677,7 +8677,7 @@ proc pgauth-htmlrealmmenu {dbfd var multiple realmsel} {
 #
 # Input:
 #   - parameters :
-#	- e : execution environment of the script, as an indexed array:
+#	- ae : auth execution environment of the script, as an indexed array:
 #		dbfd : access to auth database
 #		url : url of CGI script
 #		realms : realms where application user can belong to.
@@ -8727,8 +8727,8 @@ proc pgauth-htmlrealmmenu {dbfd var multiple realmsel} {
 #   2011/01/07 : pda      : add ftab array
 #
 
-proc pgauth-accmanage {_e _ftab} {
-    upvar $_e e
+proc pgauth-accmanage {_ae _ftab} {
+    upvar $_ae ae
     upvar $_ftab ftab
 
     set form {
@@ -8739,18 +8739,18 @@ proc pgauth-accmanage {_e _ftab} {
     ::webapp::import-vars ftab $form
 
     switch -- $action {
-	add     { set l [pgauth-ac-add       e ftab $state] }
+	add     { set l [pgauth-ac-add       ae ftab $state] }
 	list    -
-	print   { set l [pgauth-ac-consprn   e ftab $state $action] }
+	print   { set l [pgauth-ac-consprn   ae ftab $state $action] }
 	del     -
 	mod     -
-	passwd  { set l [pgauth-ac-delmodpwd e ftab $state $action] }
-	default { set l [pgauth-ac-nothing   e ftab $state] }
+	passwd  { set l [pgauth-ac-delmodpwd ae ftab $state $action] }
+	default { set l [pgauth-ac-nothing   ae ftab $state] }
     }
     lassign $l format page lsubst
 
     lappend lsubst [list %ACTION% $action]
-    d urlset "%URLFORM%" $e(url) {}
+    d urlset "%URLFORM%" $ae(url) {}
     d result $page $lsubst
     exit 0
 }
@@ -8763,15 +8763,15 @@ proc pgauth-get-data {_ftab form} {
     }
 }
 
-proc pgauth-ac-nothing {_e _ftab state} {
-    upvar $_e e
+proc pgauth-ac-nothing {_ae _ftab state} {
+    upvar $_ae ae
     upvar $_ftab ftab
 
-    return [list "html" $e(page-index) {}]
+    return [list "html" $ae(page-index) {}]
 }
 
-proc pgauth-ac-add {_e _ftab state} {
-    upvar $_e e
+proc pgauth-ac-add {_ae _ftab state} {
+    upvar $_ae ae
     upvar $_ftab ftab
 
     set lsubst {}
@@ -8787,7 +8787,7 @@ proc pgauth-ac-add {_e _ftab state} {
 
 	    set lastname [lindex $ftab(lastname) 0]
 	    set tabcrit(phlast) $lastname
-	    set lusers [pgauth-searchuser $e(dbfd) tabcrit {+lastname +firstname}]
+	    set lusers [pgauth-searchuser $ae(dbfd) tabcrit {+lastname +firstname}]
 	    set nbut [llength $lusers]
 
 	    if {$nbut > 0} then {
@@ -8804,10 +8804,10 @@ proc pgauth-ac-add {_e _ftab state} {
 		lappend lsubst [list %MESSAGE% $message]
 
 		lappend lsubst [list %LISTUSERS% \
-				    [pgauth-ac-display-choice e $lusers "ajout"] \
+				    [pgauth-ac-display-choice ae $lusers "ajout"] \
 				]
 
-		d urlset "" $e(url) [list {action add} \
+		d urlset "" $ae(url) [list {action add} \
 					{state nouveau} \
 					[list "lastname" $lastname] \
 				    ]
@@ -8817,7 +8817,7 @@ proc pgauth-ac-add {_e _ftab state} {
 				    "method" "post" "action" $url]
 		lappend lsubst [list %NONE% $aucun]
 
-		set page $e(page-choice)
+		set page $ae(page-choice)
 	    } else {
 		#
 		# No user match. Prepare the form to add a new user.
@@ -8828,8 +8828,8 @@ proc pgauth-ac-add {_e _ftab state} {
 		#	%PARAMUSER%
 		#	%TITLE%
 		#
-		set lsubst [pgauth-ac-display-mod e "_new" $lastname]
-		set page $e(page-mod)
+		set lsubst [pgauth-ac-display-mod ae "_new" $lastname]
+		set page $ae(page-mod)
 	    }
 	}
 	morethanone {
@@ -8848,8 +8848,8 @@ proc pgauth-ac-add {_e _ftab state} {
 	    pgauth-get-data ftab $form
 
 	    set login [lindex $ftab(login) 0]
-	    set lsubst [pgauth-ac-display-mod e $login ""]
-	    set page $e(page-mod)
+	    set lsubst [pgauth-ac-display-mod ae $login ""]
+	    set page $ae(page-mod)
 	}
 	nouveau {
 	    #
@@ -8866,8 +8866,8 @@ proc pgauth-ac-add {_e _ftab state} {
 
 	    set lastname [lindex $ftab(lastname) 0]
 
-	    set lsubst [pgauth-ac-display-mod e "_new" $lastname]
-	    set page $e(page-mod)
+	    set lsubst [pgauth-ac-display-mod ae "_new" $lastname]
+	    set page $ae(page-mod)
 	}
 	creation {
 	    #
@@ -8883,7 +8883,7 @@ proc pgauth-ac-add {_e _ftab state} {
 	    pgauth-get-data ftab $form
 
 	    set login [lindex $ftab(login) 0]
-	    if {[pgauth-getuser $e(dbfd) $login u]} then {
+	    if {[pgauth-getuser $ae(dbfd) $login u]} then {
 		d error [mc "Login '%s' already exists" $login]
 	    }
 
@@ -8891,10 +8891,10 @@ proc pgauth-ac-add {_e _ftab state} {
 	    # New user. Ignore supplementary and give control to
 	    # the password modification page.
 	    #
-	    pgauth-ac-store-mod e ftab $login
+	    pgauth-ac-store-mod ae ftab $login
 
-	    set lsubst [concat $lsubst [pgauth-ac-display-passwd e $login]]
-	    set page $e(page-passwd)
+	    set lsubst [concat $lsubst [pgauth-ac-display-passwd ae $login]]
+	    set page $ae(page-passwd)
 	}
 	ok {
 	    #
@@ -8909,25 +8909,25 @@ proc pgauth-ac-add {_e _ftab state} {
 	    pgauth-get-data ftab $form
 
 	    set login [lindex $ftab(login) 0]
-	    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+	    if {! [pgauth-getuser $ae(dbfd) $login u]} then {
 		d error [mc "Login '%s' does not exist" $login]
 	    }
 
 	    #
 	    # Existing user in database
 	    #
-	    set lsubst [pgauth-ac-store-mod e ftab $login]
-	    set page $e(page-ok)
+	    set lsubst [pgauth-ac-store-mod ae ftab $login]
+	    set page $ae(page-ok)
 	}
 	default {
-	    set page $e(page-add1)
+	    set page $ae(page-add1)
 	}
     }
     return [list "html" $page $lsubst]
 }
 
-proc pgauth-ac-consprn {_e _ftab state mode} {
-    upvar $_e e
+proc pgauth-ac-consprn {_ae _ftab state mode} {
+    upvar $_ae ae
     upvar $_ftab ftab
     global libconf
 
@@ -8945,13 +8945,13 @@ proc pgauth-ac-consprn {_e _ftab state mode} {
 	    #	%TABLEAU%
 	    #
 
-	    set lusers [pgauth-ac-search-crit e ftab]
+	    set lusers [pgauth-ac-search-crit ae ftab]
 	    if {[llength $lusers] == 0} then {
 		#
 		# No user found. Display again the criterion selection page.
 		#
-		set lsubst [pgauth-ac-display-crit e ftab [mc "No account found"]]
-		set page $e(page-sel)
+		set lsubst [pgauth-ac-display-crit ae ftab [mc "No account found"]]
+		set page $ae(page-sel)
 	    } else {
 		#
 		# Guess output format
@@ -8960,12 +8960,12 @@ proc pgauth-ac-consprn {_e _ftab state mode} {
 		switch $mode {
 		    list {
 			set tabfmt "html"
-			set page $e(page-list)
+			set page $ae(page-list)
 		    }
 		    print {
 			set format "pdf"
 			set tabfmt "latex"
-			set page $e(page-listtex)
+			set page $ae(page-listtex)
 		    }
 		}
 
@@ -8985,8 +8985,8 @@ proc pgauth-ac-consprn {_e _ftab state mode} {
 				    [mc "Realms"] \
 				]
 		foreach login $lusers {
-		    if {[pgauth-getuser $e(dbfd) $login tab]} then {
-			set myrealms [pgauth-ac-my-realms e $tab(realms)]
+		    if {[pgauth-getuser $ae(dbfd) $login tab]} then {
+			set myrealms [pgauth-ac-my-realms ae $tab(realms)]
 			lappend lines [list "User" \
 					    $tab(login) \
 					    "$tab(lastname) $tab(firstname)" \
@@ -9020,15 +9020,15 @@ proc pgauth-ac-consprn {_e _ftab state mode} {
 	    #	%MESSAGE%
 	    #	%CRITERES%
 	    #
-	    set lsubst [pgauth-ac-display-crit e ftab ""]
-	    set page $e(page-sel)
+	    set lsubst [pgauth-ac-display-crit ae ftab ""]
+	    set page $ae(page-sel)
 	}
     }
     return [list $format $page $lsubst]
 }
 
-proc pgauth-ac-delmodpwd {_e _ftab state action} {
-    upvar $_e e
+proc pgauth-ac-delmodpwd {_ae _ftab state action} {
+    upvar $_ae ae
     upvar $_ftab ftab
 
     switch -- $state {
@@ -9041,14 +9041,14 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 	    #	%FIRSTNAME%
 	    #
 
-	    set lusers [pgauth-ac-search-crit e ftab]
+	    set lusers [pgauth-ac-search-crit ae ftab]
 	    switch [llength $lusers] {
 		0 {
 		    #
 		    # No user found
 		    #
-		    set lsubst [pgauth-ac-display-crit e ftab [mc "No account found"]]
-		    set page $e(page-sel)
+		    set lsubst [pgauth-ac-display-crit ae ftab [mc "No account found"]]
+		    set page $ae(page-sel)
 		}
 		1 {
 		    #
@@ -9058,16 +9058,16 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 		    set login [lindex $lusers 0]
 		    switch -- $action {
 			del {
-			    set lsubst [pgauth-ac-display-del e $login]
-			    set page $e(page-del)
+			    set lsubst [pgauth-ac-display-del ae $login]
+			    set page $ae(page-del)
 			}
 			mod {
-			    set lsubst [pgauth-ac-display-mod e $login ""]
-			    set page $e(page-mod)
+			    set lsubst [pgauth-ac-display-mod ae $login ""]
+			    set page $ae(page-mod)
 			}
 			passwd {
-			    set lsubst [pgauth-ac-display-passwd e $login]
-			    set page $e(page-passwd)
+			    set lsubst [pgauth-ac-display-passwd ae $login]
+			    set page $ae(page-passwd)
 			}
 			default {
 			    d error [mc "Invalid input"]
@@ -9087,11 +9087,11 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 		    lappend lsubst [list %MESSAGE% $message]
 
 		    lappend lsubst [list %LISTUSERS% \
-					[pgauth-ac-display-choice e $lusers $action] \
+					[pgauth-ac-display-choice ae $lusers $action] \
 				    ]
 
 		    lappend lsubst [list %NONE% ""]
-		    set page $e(page-choice)
+		    set page $ae(page-choice)
 		}
 	    }
 	}
@@ -9106,22 +9106,22 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 
 	    set login [lindex $ftab(login) 0]
 
-	    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+	    if {! [pgauth-getuser $ae(dbfd) $login u]} then {
 		d error [mc "Login '%s' does not exist" $login]
 	    }
 
 	    switch -- $action {
 		del {
-		    set lsubst [pgauth-ac-display-del e $login]
-		    set page $e(page-del)
+		    set lsubst [pgauth-ac-display-del ae $login]
+		    set page $ae(page-del)
 		}
 		mod {
-		    set lsubst [pgauth-ac-display-mod e $login ""]
-		    set page $e(page-mod)
+		    set lsubst [pgauth-ac-display-mod ae $login ""]
+		    set page $ae(page-mod)
 		}
 		passwd {
-		    set lsubst [pgauth-ac-display-passwd e $login]
-		    set page $e(page-passwd)
+		    set lsubst [pgauth-ac-display-passwd ae $login]
+		    set page $ae(page-passwd)
 		}
 		default {
 		    d error [mc "Invalid input"]
@@ -9141,20 +9141,20 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 
 	    set login [lindex $ftab(login) 0]
 
-	    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+	    if {! [pgauth-getuser $ae(dbfd) $login u]} then {
 		d error [mc "Login '%s' does not exist" $login]
 	    }
 
-	    set page $e(page-ok)
+	    set page $ae(page-ok)
 	    switch -- $action {
 		del {
-		    set lsubst [pgauth-ac-del-user e ftab $login]
+		    set lsubst [pgauth-ac-del-user ae ftab $login]
 		}
 		mod {
-		    set lsubst [pgauth-ac-store-mod e ftab $login]
+		    set lsubst [pgauth-ac-store-mod ae ftab $login]
 		}
 		passwd {
-		    set lsubst [pgauth-ac-store-passwd e ftab $login]
+		    set lsubst [pgauth-ac-store-passwd ae ftab $login]
 		}
 		default {
 		    d error [mc "Invalid input"]
@@ -9169,8 +9169,8 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 	    #	%MESSAGE%
 	    #	%CRITERES%
 	    #
-	    set lsubst [pgauth-ac-display-crit e ftab ""]
-	    set page $e(page-sel)
+	    set lsubst [pgauth-ac-display-crit ae ftab ""]
+	    set page $ae(page-sel)
 	}
     }
 
@@ -9183,17 +9183,17 @@ proc pgauth-ac-delmodpwd {_e _ftab state action} {
 
 #
 # Returns a realm list, extract from "realms" , where only authorized
-# realms (i.e. those in e(realms)) are displayed. If e(realms) is
+# realms (i.ae. those in ae(realms)) are displayed. If ae(realms) is
 # empty, all realms may be displayed.
 #
 
-proc pgauth-ac-my-realms {_e realms} {
-    upvar $_e e
+proc pgauth-ac-my-realms {_ae realms} {
+    upvar $_ae ae
 
-    if {[llength $e(realms)] == 0} then {
+    if {[llength $ae(realms)] == 0} then {
 	set rr $realms
     } else {
-	foreach r $e(realms) {
+	foreach r $ae(realms) {
 	    set x($r) 0
 	}
 	set rr {}
@@ -9212,8 +9212,8 @@ proc pgauth-ac-my-realms {_e realms} {
 # Return : value for %LISTUSERS%
 #
 
-proc pgauth-ac-display-choice {_e lusers action} {
-    upvar $_e e
+proc pgauth-ac-display-choice {_ae lusers action} {
+    upvar $_ae ae
     global libconf
 
     set lines {}
@@ -9225,15 +9225,15 @@ proc pgauth-ac-display-choice {_e lusers action} {
 			    [mc "Realms"] \
 			]
     foreach login $lusers {
-	if {[pgauth-getuser $e(dbfd) $login tab]} then {
+	if {[pgauth-getuser $ae(dbfd) $login tab]} then {
 	    set hlogin [::webapp::html-string $login]
-	    d urlset "" $e(url) [list [list "action" $action] \
+	    d urlset "" $ae(url) [list [list "action" $action] \
 					{state morethanone} \
 					[list "login" $login] \
 				    ]
 	    set url [d urlget ""]
 	    set urllogin [::webapp::helem "a" $hlogin "href" $url]
-	    set myrealms [pgauth-ac-my-realms e $tab(realms)]
+	    set myrealms [pgauth-ac-my-realms ae $tab(realms)]
 	    lappend lines [list "User" \
 					$urllogin "$tab(lastname) $tab(firstname)" \
 					$tab(addr) $tab(mail) $myrealms
@@ -9249,8 +9249,8 @@ proc pgauth-ac-display-choice {_e lusers action} {
 # Retour : values for %LOGIN%, %PARAMUSER%, %STATE% and %TITLE%
 #
 
-proc pgauth-ac-display-mod {_e login lastname} {
-    upvar $_e e
+proc pgauth-ac-display-mod {_ae login lastname} {
+    upvar $_ae ae
     global libconf
 
     #
@@ -9274,7 +9274,7 @@ proc pgauth-ac-display-mod {_e login lastname} {
 	set state "creation"
 	set title [mc "Creation"]
     } else {
-	if {! [pgauth-getuser $e(dbfd) $login u]} then {
+	if {! [pgauth-getuser $ae(dbfd) $login u]} then {
 	    d error [mc "Login '%s' does not exist" $login]
 	}
 	set state "ok"
@@ -9285,14 +9285,14 @@ proc pgauth-ac-display-mod {_e login lastname} {
     # Realm edition choice
     #
 
-    set menurealms [pgauth-build-realm-index $e(dbfd) "list" \
-				0 $e(realms) $e(maxrealms) gidx]
+    set menurealms [pgauth-build-realm-index $ae(dbfd) "list" \
+				0 $ae(realms) $ae(maxrealms) gidx]
 
     #
     # Get existing values, or default values for a new user
     #
 
-    set valu [uplevel 3 [format $e(script-getuser) $login]]
+    set valu [uplevel 3 [format $ae(script-getuser) $login]]
 
     #
     # Input fields for user
@@ -9349,7 +9349,7 @@ proc pgauth-ac-display-mod {_e login lastname} {
     #
 
     set n 0
-    foreach c $e(specif) v $valu {
+    foreach c $ae(specif) v $valu {
 	lassign $c ctitle spec
 	incr n
 	set var "uvar$n"
@@ -9376,15 +9376,15 @@ proc pgauth-ac-display-mod {_e login lastname} {
 # Return : values for %TITLEACTION% and %COMPLEMENT%
 #
 
-proc pgauth-ac-store-mod {_e _ftab login} {
-    upvar $_e e
+proc pgauth-ac-store-mod {_ae _ftab login} {
+    upvar $_ae ae
     upvar $_ftab ftab
     global libconf
 
     #
     # Check if the script is authorized to modify user
     #
-    set msg [uplevel 3 [format $e(script-chkuser) $login]]
+    set msg [uplevel 3 [format $ae(script-chkuser) $login]]
     if {$msg ne ""} then {
 	d error [mc {Unable to modify '%1$s': %2$s} $login $msg]
     }
@@ -9395,7 +9395,7 @@ proc pgauth-ac-store-mod {_e _ftab login} {
 
     set form [pgauth-build-form-spec "mod" \
 			[concat $libconf(editfields) $libconf(editrealms)] \
-			$e(specif) \
+			$ae(specif) \
 		    ]
     pgauth-get-data ftab $form
 
@@ -9403,7 +9403,7 @@ proc pgauth-ac-store-mod {_e _ftab login} {
     # Get existing data from database
     #
     set u(realms) {}
-    set new [expr ! [pgauth-getuser $e(dbfd) $login u]]
+    set new [expr ! [pgauth-getuser $ae(dbfd) $login u]]
 
     d dblock {pgauth.user pgauth.member}
 
@@ -9419,15 +9419,15 @@ proc pgauth-ac-store-mod {_e _ftab login} {
 
     #
     # Realm management
-    #	- if e(realms) is empty
+    #	- if ae(realms) is empty
     #		authorize all specific realms in form
-    #	- if e(realms) contains only one element
+    #	- if ae(realms) contains only one element
     #		do not use form data, and add realm in database
-    #	- lif e(realms) contains more than one element
-    #		use form data, and set all realms present in e(realms)
+    #	- lif ae(realms) contains more than one element
+    #		use form data, and set all realms present in ae(realms)
     #
-    pgauth-lsrealm $e(dbfd) tabrlm
-    switch [llength $e(realms)] {
+    pgauth-lsrealm $ae(dbfd) tabrlm
+    switch [llength $ae(realms)] {
 	0 {
 	    foreach r $ftab(realms) {
 		if {! [info exists tabrlm($r)]} then {
@@ -9438,7 +9438,7 @@ proc pgauth-ac-store-mod {_e _ftab login} {
 	}
 	1 {
 	    set found 0
-	    set er [lindex $e(realms) 0]
+	    set er [lindex $ae(realms) 0]
 	    foreach r $u(realms) {
 		if {$r eq $er} then {
 		    set found 1
@@ -9450,11 +9450,11 @@ proc pgauth-ac-store-mod {_e _ftab login} {
 	    }
 	}
 	default {
-	    foreach r $e(realms) {
+	    foreach r $ae(realms) {
 		set ar($r) 1
 	    }
 
-	    # nr = u realms, minus realms from e(realms)
+	    # nr = u realms, minus realms from ae(realms)
 	    set nr {}
 	    foreach r $u(realms) {
 		if {! [info exists ar($r)]} then {
@@ -9478,7 +9478,7 @@ proc pgauth-ac-store-mod {_e _ftab login} {
     #
     # Store user in database
     #
-    set msg [pgauth-setuser $e(dbfd) u "no transaction"]
+    set msg [pgauth-setuser $ae(dbfd) u "no transaction"]
     if {$msg ne ""} then {
 	d dbabort [mc "add %s" $login] $msg
     }
@@ -9494,7 +9494,7 @@ proc pgauth-ac-store-mod {_e _ftab login} {
 	incr i
     }
 
-    set msg [uplevel 3 [format $e(script-setuser) $login $lval]]
+    set msg [uplevel 3 [format $ae(script-setuser) $login $lval]]
     if {$msg ne ""} then {
 	d dbabort [mc "add %s" $login] $msg
     }
@@ -9522,8 +9522,8 @@ proc pgauth-ac-store-mod {_e _ftab login} {
 # Return : values for %CRITERES% and %MESSAGE%
 #
 
-proc pgauth-ac-display-crit {_e _ftab msg} {
-    upvar $_e e
+proc pgauth-ac-display-crit {_ae _ftab msg} {
+    upvar $_ae ae
     upvar $_ftab ftab
     global libconf
 
@@ -9531,7 +9531,7 @@ proc pgauth-ac-display-crit {_e _ftab msg} {
     # Realm management
     #
 
-    set menurealms [pgauth-build-realm-index $e(dbfd) "menu" 1 $e(realms) 1 {}]
+    set menurealms [pgauth-build-realm-index $ae(dbfd) "menu" 1 $ae(realms) 1 {}]
     if {[llength $menurealms] == 0} then {
 	set menurealms {hidden}
     }
@@ -9570,8 +9570,8 @@ proc pgauth-ac-display-crit {_e _ftab msg} {
 # Return : list of found logins
 #
 
-proc pgauth-ac-search-crit {_e _ftab} {
-    upvar $_e e
+proc pgauth-ac-search-crit {_ae _ftab} {
+    upvar $_ae ae
     upvar $_ftab ftab
     global libconf
 
@@ -9645,13 +9645,13 @@ proc pgauth-ac-search-crit {_e _ftab} {
     }
 
     if {$allrealms} then {
-	if {[llength $e(realms)] > 0} then {
-	    set tabcrit(realm) $e(realms)
+	if {[llength $ae(realms)] > 0} then {
+	    set tabcrit(realm) $ae(realms)
 	}
     } else {
-	set lr $e(realms)
+	set lr $ae(realms)
 	if {[llength $lr] == 0} then {
-	    pgauth-lsrealm $e(dbfd) tabrlm
+	    pgauth-lsrealm $ae(dbfd) tabrlm
 	    set lr [array names tabrlm]
 	}
 	if {[lsearch -exact $lr $realms] == -1} then {
@@ -9660,7 +9660,7 @@ proc pgauth-ac-search-crit {_e _ftab} {
 	set tabcrit(realm) $realms
     }
 
-    return [pgauth-searchuser $e(dbfd) tabcrit {+lastname +firstname}]
+    return [pgauth-searchuser $ae(dbfd) tabcrit {+lastname +firstname}]
 }
 
 #
@@ -9669,10 +9669,10 @@ proc pgauth-ac-search-crit {_e _ftab} {
 # Return : values for %LOGIN%, %LASTNAME% and %FIRSTNAME%.
 #
 
-proc pgauth-ac-display-passwd {_e login} {
-    upvar $_e e
+proc pgauth-ac-display-passwd {_ae login} {
+    upvar $_ae ae
 
-    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+    if {! [pgauth-getuser $ae(dbfd) $login u]} then {
 	d error [mc "Login '%s' does not exist" $login]
     }
 
@@ -9699,14 +9699,14 @@ proc pgauth-ac-display-passwd {_e login} {
 # Return : values for %TITLEACTION% and %COMPLEMENT%
 #
 
-proc pgauth-ac-store-passwd {_e _ftab login} {
-    upvar $_e e
+proc pgauth-ac-store-passwd {_ae _ftab login} {
+    upvar $_ae ae
     upvar $_ftab ftab
 
     #
     # Check if the script is authorized to modify user
     #
-    set msg [uplevel 3 [format $e(script-chkuser) $login]]
+    set msg [uplevel 3 [format $ae(script-chkuser) $login]]
     if {$msg ne ""} then {
 	d error [mc {Unable to change password of '%1$s': %2$s} $login $msg]
     }
@@ -9728,21 +9728,21 @@ proc pgauth-ac-store-passwd {_e _ftab login} {
     set hlogin [::webapp::html-string $login]
 
     if {$block ne ""} then {
-	set msg [pgauth-chpw $e(dbfd) $login {block} "nomail" {}]
+	set msg [pgauth-chpw $ae(dbfd) $login {block} "nomail" {}]
 	set res [mc "Block account '%s'" $hlogin]
 	set comp ""
     } elseif {$gen ne ""} then {
-	set mail [list "mail" $e(mailfrom) $e(mailreplyto) \
-			    $e(mailcc) $e(mailbcc) \
-			    [encoding convertto iso8859-1 $e(mailsubject)] \
-			    [encoding convertto iso8859-1 $e(mailbody)]]
-	set msg [pgauth-chpw $e(dbfd) $login {generate} $mail newpw]
+	set mail [list "mail" $ae(mailfrom) $ae(mailreplyto) \
+			    $ae(mailcc) $ae(mailbcc) \
+			    [encoding convertto iso8859-1 $ae(mailsubject)] \
+			    [encoding convertto iso8859-1 $ae(mailbody)]]
+	set msg [pgauth-chpw $ae(dbfd) $login {generate} $mail newpw]
 	set res [mc {Password generation (%1$s) for %2$s} $newpw $hlogin]
 	set comp [mc "Password has been sent by mail"]
     } elseif {$change ne ""} then {
 	set pw1 [lindex $ftab(pw1) 0]
 	set pw2 [lindex $ftab(pw2) 0]
-	set msg [pgauth-chpw $e(dbfd) $login [list "change" $pw1 $pw2] "nomail" {}]
+	set msg [pgauth-chpw $ae(dbfd) $login [list "change" $pw1 $pw2] "nomail" {}]
 	set res [mc "Password change for '%s'" $hlogin]
 	set comp ""
     } else {
@@ -9770,10 +9770,10 @@ proc pgauth-ac-store-passwd {_e _ftab login} {
 # Return : value for %USER%
 #
 
-proc pgauth-ac-display-del {_e login} {
-    upvar $_e e
+proc pgauth-ac-display-del {_ae login} {
+    upvar $_ae ae
 
-    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+    if {! [pgauth-getuser $ae(dbfd) $login u]} then {
 	return [mc "Login '%s' does not exist" $login]
     }
 
@@ -9789,8 +9789,8 @@ proc pgauth-ac-display-del {_e login} {
 # Return : values for %TITLEACTION% and %COMPLEMENT%
 #
 
-proc pgauth-ac-del-user {_e _ftab login} {
-    upvar $_e e
+proc pgauth-ac-del-user {_ae _ftab login} {
+    upvar $_ae ae
     upvar $_ftab ftab
 
     #
@@ -9802,7 +9802,7 @@ proc pgauth-ac-del-user {_e _ftab login} {
     #
     # Check if the script is authorized to modify user
     #
-    set msg [uplevel 3 [format $e(script-chkuser) $login]]
+    set msg [uplevel 3 [format $ae(script-chkuser) $login]]
     if {$msg ne ""} then {
 	d error [mc {Unable to modify '%1$s': %2$s} $login $msg]
     }
@@ -9810,7 +9810,7 @@ proc pgauth-ac-del-user {_e _ftab login} {
     #
     # Remove rights on application
     #
-    set msg [uplevel 3 [format $e(script-deluser) $login]]
+    set msg [uplevel 3 [format $ae(script-deluser) $login]]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -9818,13 +9818,13 @@ proc pgauth-ac-del-user {_e _ftab login} {
     #
     # Remove from realms
     #
-    if {! [pgauth-getuser $e(dbfd) $login u]} then {
+    if {! [pgauth-getuser $ae(dbfd) $login u]} then {
 	set comp [mc "Login '%s' does not exist" $login]
     } else {
 	set rmr {}
 	set nr {}
 	foreach r $u(realms) {
-	    if {[lsearch -exact $e(realms) $r] == -1} then {
+	    if {[lsearch -exact $ae(realms) $r] == -1} then {
 		# realm is not one of the realms to remove
 		lappend nr $r
 	    } else {
@@ -9834,7 +9834,7 @@ proc pgauth-ac-del-user {_e _ftab login} {
 	}
 	if {[llength $nr] != [llength $u(realms)]} then {
 	    set u(realms) $nr
-	    set m [pgauth-setuser $e(dbfd) u]
+	    set m [pgauth-setuser $ae(dbfd) u]
 	    if {$m eq ""} then {
 		set rmr [join $rmr ", "]
 		set comp [mc "Account has been removed from realms: %s" $rmr]
@@ -9856,7 +9856,7 @@ proc pgauth-ac-del-user {_e _ftab login} {
 # Input:
 #	- modif : "mod" or "crit"
 #	- spec1 : see variable libconf(editfields)
-#	- spec2 : see e(specif) in pgauth-accmanage
+#	- spec2 : see ae(specif) in pgauth-accmanage
 # Output:
 #	- list ready for get-data
 #

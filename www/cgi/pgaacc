@@ -22,19 +22,19 @@
 # pgauth-accmanage
 #
 
-set e(page-index)	pgaacc-index.html
-set e(page-ok)		pga-ok.html
-set e(page-add1)	pgaacc-add1.html
-set e(page-choice)	pgaacc-choice.html
-set e(page-mod)		pgaacc-mod.html
-set e(page-del)		pgaacc-del.html
-set e(page-passwd)	pgaacc-pass.html
-set e(page-list)	pgaacc-list.html
-set e(page-listtex)	pgaacc-list.tex
-set e(page-sel)		pgaacc-sel.html
+set ae(page-index)	pgaacc-index.html
+set ae(page-ok)		pga-ok.html
+set ae(page-add1)	pgaacc-add1.html
+set ae(page-choice)	pgaacc-choice.html
+set ae(page-mod)	pgaacc-mod.html
+set ae(page-del)	pgaacc-del.html
+set ae(page-passwd)	pgaacc-pass.html
+set ae(page-list)	pgaacc-list.html
+set ae(page-listtex)	pgaacc-list.tex
+set ae(page-sel)	pgaacc-sel.html
 
-set e(maxrealms)	0
-set e(specif)		{}
+set ae(maxrealms)	0
+set ae(specif)		{}
 
 #
 # Next actions
@@ -59,9 +59,9 @@ proc dns-getuser {login} {
 }
 
 proc dns-deluser {login} {
-    global e
+    global ae
 
-    return [pgauth-deluser $e(dbfd) $login]
+    return [pgauth-deluser $ae(dbfd) $login]
 }
 
 proc dns-setuser {login attr} {
@@ -79,32 +79,32 @@ proc dns-chkuser {loginadmin loginuser} {
 d cgi-register {} {
 } {
     global conf
-    global e
+    global ae
 
     #
     # Build environment
     #
 
-    set e(dbfd) $dbfd
+    set ae(dbfd) $dbfd
 
-    set e(script-getuser) [list dns-getuser {%1$s}]
-    set e(script-deluser) [list dns-deluser {%1$s}]
-    set e(script-setuser) [list dns-setuser {%1$s} {%2$s}]
-    set e(script-chkuser) [list dns-chkuser $login {%1$s}]
+    set ae(script-getuser) [list dns-getuser {%1$s}]
+    set ae(script-deluser) [list dns-deluser {%1$s}]
+    set ae(script-setuser) [list dns-setuser {%1$s} {%2$s}]
+    set ae(script-chkuser) [list dns-chkuser $login {%1$s}]
 
-    set e(url)		$conf(next)
-    set e(realms)	{}
+    set ae(url)		$conf(next)
+    set ae(realms)	{}
 
     foreach p {from replyto cc bcc subject body} {
 	set param mail$p
-	set e($param) [dnsconfig get "authpgmail$p"]
+	set ae($param) [dnsconfig get "authpgmail$p"]
     }
 
     #
     # Everything is done in this function
     #
 
-    pgauth-accmanage e ftab
+    pgauth-accmanage ae ftab
 }
 
 
