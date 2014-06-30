@@ -264,7 +264,6 @@ ldapbindpw	*
 ldapbasedn	ou=people,dc=example,dc=com
 ldapsearchlogin	(&(objectClass=People)(uid=%s))
 ldapattrlogin	uid
-ldapattrpassword	userPassword
 ldapattrname	sn
 ldapattrgivenname	givenName
 ldapattrmail	mail

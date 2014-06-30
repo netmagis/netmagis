@@ -715,8 +715,6 @@
  cfg:ldapsearchlogin:help {Requête LDAP pour chercher un utilisateur à partir de son login. Exemple : "(&(objectClass=inetOrgPerson)(uid=%s))"}
  cfg:ldapattrlogin:desc {Attribut "login"}
  cfg:ldapattrlogin:help {Attribut LDAP correspondant au login. Exemple : "uid"}
- cfg:ldapattrpassword:desc {Attribut "mot de passe"}
- cfg:ldapattrpassword:help {Attribut LDAP correspondant au mot de passe. Exemple : "userPassword"}
  cfg:ldapattrname:desc {Attribut "nom"}
  cfg:ldapattrname:help {Attribut LDAP correspondant au nom. Exemple : "sn"}
  cfg:ldapattrgivenname:desc {Attribut "prénom"}

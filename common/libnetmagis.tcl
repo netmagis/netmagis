@@ -798,7 +798,7 @@ snit::type ::netmagis {
 	    }
 	    ldap {
 		foreach v {ldapurl ldapbinddn ldapbindpw ldapbasedn
-				ldapsearchlogin ldapattrlogin ldapattrpassword
+				ldapsearchlogin ldapattrlogin
 				ldapattrname ldapattrgivenname ldapattrmail
 				ldapattrphone ldapattrmobile ldapattrfax
 				ldapattraddr} {
@@ -814,7 +814,6 @@ snit::type ::netmagis {
 				    ]
 		lappend m "-attrmap" [list \
 					"login" $ldapattrlogin \
-					"password" $ldapattrpassword \
 					"lastname" $ldapattrname \
 					"firstname" $ldapattrgivenname \
 					"maill" $ldapattrmail \
@@ -1891,7 +1890,6 @@ snit::type ::config {
 	    {ldapbasedn rw {string}}
 	    {ldapsearchlogin rw {string}}
 	    {ldapattrlogin rw {string}}
-	    {ldapattrpassword rw {string}}
 	    {ldapattrname rw {string}}
 	    {ldapattrgivenname rw {string}}
 	    {ldapattrmail rw {string}}

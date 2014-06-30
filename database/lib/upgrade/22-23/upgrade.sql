@@ -26,6 +26,8 @@ CREATE TABLE global.session (
     PRIMARY KEY (token)
 ) ;
 
+DELETE FROM global.config where key = 'ldapattrpasswd' ;
+
 INSERT INTO global.config (key, value) VALUES ('authexpire', '600') ;
 INSERT INTO global.config (key, value) VALUES ('authcleanup', '30') ;
 INSERT INTO global.config (key, value) VALUES ('authtoklen', '32') ;

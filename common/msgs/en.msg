@@ -88,8 +88,6 @@
  cfg:ldapsearchlogin:help {LDAP request to search for an user using the login name. Example: "(&(objectClass=inetOrgPerson)(uid=%s))"}
  cfg:ldapattrlogin:desc {Attribute "login"}
  cfg:ldapattrlogin:help {LDAP attribute to get login name. Example: "uid"}
- cfg:ldapattrpassword:desc {Attribute "password"}
- cfg:ldapattrpassword:help {LDAP attribute to get encrypted password. Example: "userPassword"}
  cfg:ldapattrname:desc {Attribute "last name"}
  cfg:ldapattrname:help {LDAP attribute to get user's name. Example: "sn"}
  cfg:ldapattrgivenname:desc {Attribute "first name"}
