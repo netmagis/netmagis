@@ -1,5 +1,5 @@
 # Created by: Pierre David <pdagog@gmail.com>, Jean Benoit <jean@unistra.fr>
-# $FreeBSD: head/net-mgmt/netmagis-common/Makefile 352229 2014-04-26 08:21:33Z culot $
+# $FreeBSD: head/net-mgmt/netmagis-common/Makefile 361601 2014-07-12 06:57:47Z pi $
 
 PORTNAME?=	netmagis
 DISTVERSION?=	2.2.2
@@ -55,7 +55,7 @@ RUN_DEPENDS+=	p5-DBD-Pg>0:${PORTSDIR}/databases/p5-DBD-Pg \
 		p5-RRDTool-OO>=0:${PORTSDIR}/devel/p5-RRDTool-OO
 
 USES+=		shebangfix
-SHEBANG_FILES=	bin/metrocreatedb bin/metropoller bin/metropoller-run
+SHEBANG_FILES=	metro/bin/metrocreatedb metro/bin/metropoller metro/bin/metropoller-run
 .endif
 
 # Variables used in netmagis Makefiles
