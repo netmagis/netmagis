@@ -131,7 +131,7 @@ proc update-rr {dbfd _trr idview _tattr} {
 	    return [mc "Invalid DHCP profile '%s'" $tattr(dhcpprofile)]
 	}
 	set tattr(dhcpprofile) $iddhcpprof
-	set newiddhcpprof $tattr(dhcpprofil)
+	set newiddhcpprof $tattr(dhcpprofile)
     } else {
 	set newiddhcpprof $trr(iddhcpprof)
     }
