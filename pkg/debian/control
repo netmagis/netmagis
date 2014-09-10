@@ -25,7 +25,7 @@ Description: netmagis common infrastructure
 
 Package: netmagis-database
 Architecture: all
-Depends: netmagis-common, tcl (>= 8.5), postgresql (>= 9.1), postgresql-pltcl-9.1, pwgen (>= 2.0)
+Depends: netmagis-common, tcl (>= 8.5), postgresql (>= 9.1), postgresql-pltcl (>= 9.1), pwgen (>= 2.0)
 Description: Utilities for the netmagis database server
  Netmagis is a network management information system, 
  which allows a network administrator to:
