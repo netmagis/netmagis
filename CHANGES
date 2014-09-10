@@ -1,3 +1,11 @@
+Version 2.2.3 - 2014/??/??
+    - bug fix (issue #125 and #131) in dnsmodattr program with the dchpprofile keyword
+    - bug fix (issue #127) in topo module: Cisco ASA config is now analyzed as a router (and not a switch)
+    - bug fix (issue #90) in topo module: HP descriptions without link name were not detected as an error
+    - bug fix (issue #132) in MAC module: the OUI table was not filled
+    - bug fix (issue #129) for Debian packages: netmagis-database must not depend on exact 9.1 version of postgresql-pltcl
+    - maintenance (issue #128) for FreeBSD ports: adapt to the new staging FreeBSD infrastructure
+
 Version 2.2.2 - 2014/03/28
     - new program "netmagis-dbupgrade" to ease database upgrade (issue #100,
 	based on a report by Schplurtz le deboulonné)
