@@ -20,6 +20,9 @@ macdbname	mac
 macdbuser	nm
 macdbpassword	password-of-macdbuser
 
+# URL of IEEE OUI database
+ouiurl		http://standards.ieee.org/develop/regauth/oui/oui.txt 
+
 pkgtcl		%NMLIBDIR%/pkgtcl
 
 msgsdir		%NMLIBDIR%/msgs
@@ -254,8 +257,3 @@ ifspeed_FastEthernet	100
 pollerlogfacility 	local0  # log for polling
 majdblogfacility	local1  # log for probes creation
 pollerlogpt		info 	# default log level
-
-##############################################################################
-# MAC
-##############################################################################
-ouiurl		http://standards.ieee.org/develop/regauth/oui/oui.txt 
