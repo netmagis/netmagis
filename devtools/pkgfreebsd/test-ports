@@ -1,0 +1,87 @@
+#!/bin/sh
+
+PORTS_INSTALL="common
+	database www metro topo detecteq servers utils"
+PORTS_REMOVE="database www metro topo detecteq servers utils
+	common"
+
+usage ()
+{
+    echo "usage: $0 rm|build|test|lint" >&2
+    exit 1
+}
+
+needroot ()
+{
+    if [ `id -u` != 0 ]
+    then
+	echo "Need to be root" >&2
+	exit 1
+    fi
+}
+
+if [ $# = 0 ]
+then
+    usage
+fi
+
+for i
+do
+    case x"$i" in
+	xrm)
+	    needroot
+	    L=""
+	    for i in $PORTS_REMOVE
+	    do
+	        L="$L net-mgmt/netmagis-$i"
+	    done
+	    pkg remove -y $L
+	    ;;
+	xbuild)
+	    needroot
+	    L=""
+	    for i in $PORTS_INSTALL
+	    do
+	        L="$L net-mgmt/netmagis-$i"
+	    done
+	    portmaster $L
+	    ;;
+	xtest)
+	    for i in $PORTS_INSTALL
+	    do
+		( cd netmagis-$i && make clean )
+	    done
+
+	    for i in $PORTS_INSTALL
+	    do
+		(
+		    echo "-------------------------------------------"
+		    echo "netmagis-$i"
+		    echo "-------------------------------------------"
+		    cd netmagis-$i
+		    env DEVELOPER=yes \
+				make stage && \
+				make check-plist && \
+				make package PACKAGES=/tmp
+		)
+	    done
+	    ;;
+	xlint)
+	    for i in $PORTS_INSTALL
+	    do
+		(
+		    echo "-------------------------------------------"
+		    echo "netmagis-$i"
+		    echo "-------------------------------------------"
+		    cd netmagis-$i && make clean
+		    portlint -A
+		)
+	    done
+	    ;;
+	*)
+	    usage
+	    ;;
+    esac
+done
+
+exit 0
