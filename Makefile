@@ -47,7 +47,7 @@ TCLCFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_INCLUDE_SPEC"')|sh`
 TCLLFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_LIB_SPEC $$TCL_LIBS"')|sh`
 
 # for packaging and libnetmagis.tcl
-VERSION		= 2.2.2
+VERSION		= 2.2.3
 
 # build debian package for the following architectures
 DEBIAN_PKG_ARCH = i386

@@ -1,4 +1,4 @@
-Version 2.2.3 - 2014/??/??
+Version 2.2.3 - 2014/10/03
     - bug fix (issue #125 and #131) in dnsmodattr program with the dchpprofile keyword
     - bug fix (issue #127) in topo module: Cisco ASA config is now analyzed as a router (and not a switch)
     - bug fix (issue #90) in topo module: HP descriptions without link name were not detected as an error
