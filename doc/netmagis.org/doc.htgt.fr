@@ -93,10 +93,14 @@
 
     \titre {2} {Articles}
 
-    Netmagis a fait l'objet de trois articles lors des \lien {JRES}
+    Netmagis a fait l'objet de quatre articles lors des \lien {JRES}
     {http://www.jres.org}~:
     \liste {
-	\item {une présentation de Netmagis lors des \lien {JRES 2011}
+	\item {un lightning-talk sur les nouveautés de Netmagis lors des \lien {JRES 2013}
+	    {http://2013.jres.org} à l'occasion de l'annonce de la
+	    version 2.2. Vous pouvez consulter \lien {le support de la présentation} {https://conf-ng.jres.org/2013/document_revision_2173.html?download}
+	}
+	\item {une présentationde Netmagis lors des \lien {JRES 2011}
 	    {http://2011.jres.org} à l'occasion de l'annonce de la
 	    version 2.0 Vous pouvez consulter~:
 	    \liste {

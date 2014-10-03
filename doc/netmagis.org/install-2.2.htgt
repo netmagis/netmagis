@@ -43,7 +43,7 @@
     \* {http://github.com/pdav/netmagis} at this time.}
 
     Note: this installation documentation is for Netmagis version 2.2.x
-    (x \gt= 2) If you are installing from a previous version
+    (x \gt= 3) If you are installing from a previous version
     of Netmagis, you should rather read \lien {upgrade instructions}
     {upgrade.html}.
 
@@ -564,6 +564,14 @@
 		a separate database, or if you don't want to use the
 		\italique {mac} package, use exactly the same values
 		as for the the \teletype {dnsdb...} parameters.
+	    }
+	}
+	\lignetableau {
+	    \casetableau {} {ouiurl}
+	    \casetableau {} {URL to the IEEE OUI database (a default
+		value is provided in the sample configuration file). This
+		is necessary to populate the mac.oui table with Ethernet
+		vendor prefixes when the mac database is created.
 	    }
 	}
 	\lignetableau {
