@@ -15,9 +15,11 @@ lib/netmagis/upgrade/15-20/upgrade.sql
 lib/netmagis/upgrade/20-21/upgrade.sql
 lib/netmagis/upgrade/21-22/upgrade.sql
 sbin/netmagis-dbcreate
+sbin/netmagis-dbcreate
 sbin/netmagis-dbimport
 sbin/netmagis-dbmaint
 sbin/netmagis-dbupgrade
+sbin/netmagis-getoui
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/crontab.database
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/no-view/README
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/no-view/domain.txt
