@@ -1059,7 +1059,7 @@ snit::type ::netmagis {
 	# for users specified in ROOT pattern.
 	#
 
-	set ftest [get-local-conf "nologin"]
+	set ftest [get-local-conf "nologinfile"]
 	set rootusers [get-local-conf "rootusers"]
 	if {! [catch [lindex $rootusers 0]]} then {
 	    $self error "Invalid 'rootusers' configuration parameter"
