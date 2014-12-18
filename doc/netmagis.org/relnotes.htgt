@@ -46,6 +46,49 @@
     \lien {github.com commits} {http://github.com/pdav/netmagis}.
 
 
+    \titre {2} {\ancre {v2.2.4} {Netmagis 2.2.4}}
+
+    Release date: 18 december 2014
+
+    The 2.2.4 release of Netmagis is a maintenance release, providing some
+    bug fixes:
+
+    \liste {
+	\item {The \teletype {nologinfile} keyword was incorrectly
+	    spelled in the the \teletype {netmagis.conf}
+	    file (missing "\teletype {file}" in "\teletype {nologinfile}").
+	    Problem detected and corrected by Christophe Martin.
+	    See \lien {pull request 134}
+	    {https://github.com/pdav/netmagis/pull/134}.
+	    Update your own \teletype {netmagis.conf} to reflect the
+	    valid parameter name.
+	}
+	\item {The IEEE OUI list, needed for the \italique {mac}
+	    module, has moved. The sample configuration file
+	    (\teletype {netmagis.conf.sample})
+	    now reflects the new URL, thanks to Mathieu Parent. See
+	    \lien {pull request 133}
+	    {https://github.com/pdav/netmagis/pull/133}.
+	}
+	\item {In addition, the \teletype {netmagis-getoui} has been
+	    updated to follow HTTP redirections. See \lien {issue 137}
+	    {https://github.com/pdav/netmagis/issues/137}.
+
+	}
+	\item {To summarize, for \gras {users of previous Netmagis versions},
+	    update your \teletype {netmagis.conf}:
+	    \liste {
+		\item {replace the \teletype {nologin} parameter by
+		    \teletype {nologinfile}
+		}
+		\item {optionally replace the \teletype {ouiurl} URL
+		    by \teletype {http://www.ieee.org/netstorage/standards/oui.txt}
+		}
+	    }
+	}
+    }
+
+
     \titre {2} {\ancre {v2.2.3} {Netmagis 2.2.3}}
 
     Release date: 3 october 2014
