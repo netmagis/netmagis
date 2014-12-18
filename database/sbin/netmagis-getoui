@@ -27,6 +27,7 @@ package require http
 #
 # History
 #   2014/09/10 : pda/jean : design
+#   2014/12/18 : pda/jean : support HTTP redirects
 #
 
 proc read-oui {url _taboui} {
@@ -43,11 +44,22 @@ proc read-oui {url _taboui} {
 	return $code
     }
 
+    upvar #0 $token state
+
+    #
+    # Check for HTTP redirection first
+    #
+
+    if {[info exists state(meta)]} then {
+	array set meta $state(meta)
+	if {[info exists meta(Location)]} then {
+	    return [read-oui $meta(Location) taboui]
+	}
+    }
+
     #
     # Get body from fetched URL
     #
-
-    upvar #0 $token state
 
     set n 0
     foreach line [split $state(body) "\n"] {
