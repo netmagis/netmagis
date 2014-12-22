@@ -1,6 +1,21 @@
-Version 2.3 - 2014/??/??
+Version 2.3 - 2015/??/??
     - the "crypt" configuration parameter (in netmagis.conf) is no longer needed
     - new "random" configuration parameter  (in netmagis.conf)
+
+Version 2.2.4 - 2014/12/18
+    - bug fix (pull request #134 from Christophe Martin, alias schplurtz):
+	fix typo in netmagis.conf.sample file
+    - maintenance (pull request #133 from Mathieu Parent, alias sathieu):
+	IEEE OUI database has moved, update netmagis.conf.sample file
+    - maintenance (issue #137): netmagis-getoui supports HTTP redirects
+
+Version 2.2.3 - 2014/10/03
+    - bug fix (issue #125 and #131) in dnsmodattr program with the dchpprofile keyword
+    - bug fix (issue #127) in topo module: Cisco ASA config is now analyzed as a router (and not a switch)
+    - bug fix (issue #90) in topo module: HP descriptions without link name were not detected as an error
+    - bug fix (issue #132) in MAC module: the OUI table was not filled
+    - bug fix (issue #129) for Debian packages: netmagis-database must not depend on exact 9.1 version of postgresql-pltcl
+    - maintenance (issue #128) for FreeBSD ports: adapt to the new staging FreeBSD infrastructure
 
 Version 2.2.2 - 2014/03/28
     - new program "netmagis-dbupgrade" to ease database upgrade (issue #100,

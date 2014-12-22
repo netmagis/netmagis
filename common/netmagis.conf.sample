@@ -20,6 +20,9 @@ macdbname	mac
 macdbuser	nm
 macdbpassword	password-of-macdbuser
 
+# URL of IEEE OUI database
+ouiurl		http://www.ieee.org/netstorage/standards/oui.txt
+
 pkgtcl		%NMLIBDIR%/pkgtcl
 
 msgsdir		%NMLIBDIR%/msgs

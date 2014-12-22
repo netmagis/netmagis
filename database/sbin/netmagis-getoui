@@ -1,0 +1,183 @@
+#!%TCLSH%
+
+#
+# Import OUI file from IEEE to the Netmagis MAC database
+#
+# Syntax:
+#   netmagis-getoui
+#
+# History
+#   2014/09/10 : pda/jean : design
+#
+
+source %LIBNETMAGIS%
+
+package require http
+
+#
+# Read OUI file from IEEE and place information in taboui array
+#
+# Input:
+#   - parameters:
+#	- url: url to IEEE
+#	- _taboui: name of array to fill with OUI database
+# Output:
+#   - return value: error message or empty string
+#   - parameter _taboui: array is filled with taboui(mac) = manufacturer
+#
+# History
+#   2014/09/10 : pda/jean : design
+#   2014/12/18 : pda/jean : support HTTP redirects
+#
+
+proc read-oui {url _taboui} {
+    upvar $_taboui taboui
+
+    #
+    # Fetch URL
+    #
+
+    set token [::http::geturl $url]
+    set status [::http::status $token]
+    if {$status ne "ok"} then {
+	set code [::http::code $token]
+	return $code
+    }
+
+    upvar #0 $token state
+
+    #
+    # Check for HTTP redirection first
+    #
+
+    if {[info exists state(meta)]} then {
+	array set meta $state(meta)
+	if {[info exists meta(Location)]} then {
+	    return [read-oui $meta(Location) taboui]
+	}
+    }
+
+    #
+    # Get body from fetched URL
+    #
+
+    set n 0
+    foreach line [split $state(body) "\n"] {
+	if {[regexp {^  ([0-9a-fA-F]{2})-([0-9a-fA-F]{2})-([0-9a-fA-F]{2})\s+\(hex\)\s+(.*)} $line dummy h1 h2 h3 comp]} then {
+	    set mac "$h1:$h2:$h3"
+	    set taboui($mac) $comp
+	    incr n
+	}
+    }
+
+    #
+    # Better to be safe
+    #
+
+    if {$n == 0} then {
+	return "No OUI found"
+    }
+
+    return ""
+}
+
+#
+# Update MAC database with OUI information
+#
+# Input:
+#   - parameters:
+#	- mdbfd: MAC database handle
+#	- _taboui: name of array to fill with OUI database
+# Output:
+#   - return value: error message or empty string
+#
+# History
+#   2014/09/10 : pda/jean : design
+#
+
+proc update-oui {mdbfd _taboui} {
+    upvar $_taboui taboui
+
+    set sql "BEGIN TRANSACTION ;"
+    append sql "DELETE FROM mac.oui ;"
+    foreach mac [array names taboui] {
+	set qmanuf [::pgsql::quote $taboui($mac)]
+	set qmac "$mac:00:00:00"
+	append sql "INSERT INTO mac.oui (addr, name) VALUES ('$qmac', '$qmanuf') ;"
+    }
+    append sql "COMMIT TRANSACTION"
+
+    if {! [::pgsql::execsql $mdbfd $sql msg]} then {
+	pgsql::execsql $mdbfd "ROLLBACK TRANSACTION" m
+	return $msg
+    }
+
+    return ""
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+proc main {argv0 argv} {
+    if {[llength $argv] != 0} then {
+	puts stderr "usage: $argv0"
+	return 1
+    }
+
+    #
+    # Initialize Netmagis access
+    #
+
+    set msg [d init-script dbfd $argv0 true tabcor]
+    if {$msg ne ""} then {
+	puts stderr "$msg\nAborted."
+	return 1
+    }
+
+    #
+    # Get OUI file from IEEE and parse it
+    #
+
+    set ouiurl [get-local-conf "ouiurl"]
+    if {$ouiurl eq ""} then {
+	puts stderr "Invalid ouiurl parameter in netmagis.conf"
+	return 1
+    }
+
+    set msg [read-oui $ouiurl taboui]
+    if {$msg ne ""} then {
+	puts stderr "Cannot get OUI information from $ouiurl"
+	return 1
+    }
+
+    #
+    # Get access to the MAC database
+    #
+
+    set conninfo [get-conninfo "macdb"]
+    if {[catch {set mdbfd [pg_connect -conninfo $conninfo]} msg]} then {
+	puts stderr "Cannot access MAC database\n$msg"
+	return 1
+    }
+
+    #
+    # Update OUI information
+    #
+
+    set msg [update-oui $mdbfd taboui]
+    if {$msg ne ""} then {
+	puts stderr "Cannot update OUI information in MAC database"
+	return 1
+    }
+
+    #
+    # Close access to the MAC database
+    #
+
+    pg_disconnect $mdbfd
+
+    return 0
+}
+
+exit [main $argv0 $argv]

@@ -21,3 +21,8 @@
 
 0 8-18 * * Mon-Fri %SBINDIR%/netmagis-dbmaint hourly
 0 12   * * Sat,Sun %SBINDIR%/netmagis-dbmaint hourly
+
+#
+# Refresh OUI table every 1st of month at 03:05
+#
+5 3 1 * * %SBINDIR%/netmagis-getoui

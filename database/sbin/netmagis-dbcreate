@@ -75,7 +75,7 @@ init_env ()
 
     # These variables are searched in a second pass, since they can be empty
     # (the first pass used the "-c" flag) 
-    varlist="pwgen"
+    varlist="pwgen ouiurl"
     eval `%CONFPROG% $varlist`
 }
 
@@ -450,6 +450,7 @@ create_mac ()
     ###############################
 
     create_mac_schemas
+    insert_mac_oui
 }
 
 ##############################################################################
@@ -459,6 +460,11 @@ create_mac ()
 create_mac_schemas ()
 {
     sql_file_execute schema-mac.sql
+}
+
+insert_mac_oui ()
+{
+    %SBINDIR%/netmagis-getoui
 }
 
 ##############################################################################

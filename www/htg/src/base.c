@@ -594,7 +594,7 @@ int HTG_Cmd (ClientData clientdata, Tcl_Interp *interp,
 	{ "defchar",  HTG_Defchar , },
     } ;
     const char *s ;
-    int i, r ;
+    int i, r = TCL_ERROR ;
 
     if (objc > 1)
     {
@@ -608,6 +608,7 @@ int HTG_Cmd (ClientData clientdata, Tcl_Interp *interp,
 	    }
 	}
     }
+    else i = NTAB (optable) + 1 ;		/* no keyword => not found */
 
     if (i >= NTAB (optable))			/* not found */
     {

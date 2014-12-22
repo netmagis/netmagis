@@ -46,6 +46,103 @@
     \lien {github.com commits} {http://github.com/pdav/netmagis}.
 
 
+    \titre {2} {\ancre {v2.2.4} {Netmagis 2.2.4}}
+
+    Release date: 18 december 2014
+
+    The 2.2.4 release of Netmagis is a maintenance release, providing some
+    bug fixes:
+
+    \liste {
+	\item {The \teletype {nologinfile} keyword was incorrectly
+	    spelled in the the \teletype {netmagis.conf}
+	    file (missing "\teletype {file}" in "\teletype {nologinfile}").
+	    Problem detected and corrected by Christophe Martin.
+	    See \lien {pull request 134}
+	    {https://github.com/pdav/netmagis/pull/134}.
+	    Update your own \teletype {netmagis.conf} to reflect the
+	    valid parameter name.
+	}
+	\item {The IEEE OUI list, needed for the \italique {mac}
+	    module, has moved. The sample configuration file
+	    (\teletype {netmagis.conf.sample})
+	    now reflects the new URL, thanks to Mathieu Parent. See
+	    \lien {pull request 133}
+	    {https://github.com/pdav/netmagis/pull/133}.
+	}
+	\item {In addition, the \teletype {netmagis-getoui} has been
+	    updated to follow HTTP redirections. See \lien {issue 137}
+	    {https://github.com/pdav/netmagis/issues/137}.
+
+	}
+	\item {To summarize, for \gras {users of previous Netmagis versions},
+	    update your \teletype {netmagis.conf}:
+	    \liste {
+		\item {replace the \teletype {nologin} parameter by
+		    \teletype {nologinfile}
+		}
+		\item {optionally replace the \teletype {ouiurl} URL
+		    by \teletype {http://www.ieee.org/netstorage/standards/oui.txt}
+		}
+	    }
+	}
+    }
+
+
+    \titre {2} {\ancre {v2.2.3} {Netmagis 2.2.3}}
+
+    Release date: 3 october 2014
+
+    The 2.2.3 release of Netmagis is a maintenance release, providing some
+    bug fixes:
+
+    \liste {
+	\item {the \teletype {dchpprofile} keyword of the \teletype {dnsmodattr}
+	    program was incorrectly spelled
+	    (missing "e"). See \lien {issue 125}
+	    {https://github.com/pdav/netmagis/issues/125} and \lien
+	    {issue 131} {https://github.com/pdav/netmagis/issues/131}.
+	}
+	\item {Cisco ASA configuration files were incorrectly analyzed
+	    by the Topo module as switch configuration files. Syntax of
+	    these configuration files is closer to router configuration
+	    files. See \lien {issue 127}
+	    {https://github.com/pdav/netmagis/issues/127}.
+	}
+	\item {The Topo module did not report an error when the link
+	    name was missing in an interface description
+	    of an HP equipment.
+	    See \lien {issue 90} {https://github.com/pdav/netmagis/issues/90}.
+	}
+	\item {The MAC database includes a table for OUI attributed by the
+	    IEEE, but this table was not filled in. The new program
+	    \teletype {netmagis-getoui} fetches the current OUI data
+	    from the IEEE and stores it in the MAC database. This new
+	    program is called in the MAC database creation program as well
+	    as periodically with \teletype {cron}.
+	    See \lien {issue 132} {https://github.com/pdav/netmagis/issues/132}.
+
+	    Attention for \gras {users of previous Netmagis versions}:
+	    \liste {
+		\item {add the \teletype {ouiurl} to your \teletype {netmagis.conf}}
+		\item {add a call to the \teletype {netmagis-getoui}
+		    program in your \teletype {crontab} file (see
+		    the sample \teletype {crontab} in the \italique
+		    {database} module)
+		}
+	    }
+	}
+	\item {The Debian/Ubuntu netmagis-database package had a dependancy on the
+	    exact 9.1 version of postgresql-pltcl.
+	    See \lien {issue 129} {https://github.com/pdav/netmagis/issues/129}.
+	}
+	\item {The FreeBSD ports are now adapted to the new staging
+	    FreeBSD infrastructure.
+	    See \lien {issue 128} {https://github.com/pdav/netmagis/issues/128}.
+	}
+    }
+
+
     \titre {2} {\ancre {v2.2.2} {Netmagis 2.2.2}}
 
     Release date: 28 march 2014

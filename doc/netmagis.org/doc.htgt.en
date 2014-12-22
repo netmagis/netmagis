@@ -90,6 +90,9 @@
     Netmagis was the basis of three papers in the French speaking
     conference \lien {JRES} {http://www.jres.org}:
     \liste {
+	\item {a "lightning-talk" about the new functions in Netmagis during the \lien {JRES'13}
+	    {http://2013.jres.org}. You can read the \lien {slides} {https://conf-ng.jres.org/2013/document_revision_2173.html?download}
+	}
 	\item {an article to announce the 2.0 release during
 	    \lien {JRES'11} {https://2011.jres.org/}.
 	    You can consult:

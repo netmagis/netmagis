@@ -889,7 +889,7 @@ proc display-mac {mdbfd mac} {
     }
 
     set manuf 0
-    pg_select $mdbfd "SELECT manuf('$mac') AS m" tab {
+    pg_select $mdbfd "SELECT mac.manuf('$mac') AS m" tab {
 	set manuf $tab(m)
     }
 
