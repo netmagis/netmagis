@@ -48,6 +48,7 @@
  {Allowed groups} {Groupes autorisés}
  {All} {Tous}
  {and sorted by '%1$s' and by '%2$s'} {et triés par '%1$s' et par '%2$s'}
+ {anonymous} {anonyme}
  {Application parameters} {Modif paramètres}
  {assoc} {assoc}
  {auth} {auth}

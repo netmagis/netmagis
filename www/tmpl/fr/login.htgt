@@ -54,8 +54,6 @@
 		\multicasetableau {2} {
 		    \centragehorizontal {CENTER}
 		} {
-		    <INPUT TYPE="HIDDEN" NAME="script" VALUE="%SCRIPT%">
-		    <INPUT TYPE="HIDDEN" NAME="param" VALUE="%PARAM%">
 		    <INPUT TYPE="SUBMIT" VALUE="Connexion">
 		}
 	    }

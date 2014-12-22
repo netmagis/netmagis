@@ -1110,8 +1110,9 @@ snit::type ::netmagis {
 	    # We just set the "logged as" message, and we will skip
 	    # the part of the code which references user capabilities.
 	    #
-	    set euid "(unknown)"
-	    set uid "(unknown)"
+	    set euid [mc "(%s)" "anonymous"]
+	    set uid  $euid
+
 	} else {
 	    #
 	    # Attempt to access a page restricted to valid users
@@ -1120,18 +1121,8 @@ snit::type ::netmagis {
 	    if {! $authenticated} then {
 
 		#
-		# Present the login page
-		# Get the script name (for later redirection) and
-		# form values from user and put them in hidden fields
 		#
-
-		set script [::webapp::html-string [::webapp::script-name]]
-
-		::webapp::get-data ftab [list {.* 0 9999}]
-		set param [::webapp::html-string [array get ftab]]
-
-		#
-		# Use existing login if found
+		# Present the login page, using existing login if found
 		#
 
 		set login [::webapp::html-string $login]
@@ -1140,8 +1131,8 @@ snit::type ::netmagis {
 		# For the "logged as" message
 		#
 
-		set euid "(unknown)"
-		set uid "(unknown)"
+		set euid [mc "(%s)" "anonymous"]
+		set uid  $euid
 
 		#
 		# Send resulting page
@@ -1150,8 +1141,6 @@ snit::type ::netmagis {
 		d urlset "%URLFORM%" $libconf(next-login) {}
 		d result $libconf(page-login) [list \
 						    [list %MESSAGE% ""] \
-						    [list %SCRIPT% $script] \
-						    [list %PARAM%  $param] \
 						    [list %LOGIN%  $login] \
 						]
 		exit 0

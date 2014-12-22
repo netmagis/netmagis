@@ -20,6 +20,7 @@ set conf(page-fail)	login.html
 # 
 
 set conf(next-fail)	"login"
+set conf(next-index)	"index"
 
 #
 # Netmagis general library
@@ -74,8 +75,6 @@ d cgi-register {} {
     {login	0 1}
     {logout	0 1}
     {pw		0 1}
-    {script	0 1}
-    {param	0 1}
 } {
     global conf
 
@@ -88,8 +87,6 @@ d cgi-register {} {
 
 	set message [mc "Logout successful"]
 
-	set script ""
-	set param ""
 	# leave login unmodified for the "login" page
 
     } else {
@@ -100,16 +97,8 @@ d cgi-register {} {
 		if {$msg eq ""} then {
 		    ::webapp::set-cookie "session" $token 0 "" "" 0 0
 
-		    if {! [regexp {^[a-z0-9-]+$} $script]} then {
-			set script "index"
-			set param ""
-		    }
-		    if {[catch {array set ftab2 $param}]} then {
-			set script "index"
-			set param ""
-		    }
-
-		    puts stdout [::webapp::call-cgi [pwd]/$script ftab2]
+		    array set ftab2 {}
+		    puts stdout [::webapp::call-cgi [pwd]/$conf(next-index) ftab2]
 		    exit 0
 		} else {
 		    set message $msg
@@ -124,8 +113,6 @@ d cgi-register {} {
     # Restitute form parameters
     #
 
-    set script [::webapp::html-string $script]
-    set param [::webapp::html-string $param]
     set login [::webapp::html-string $login]
 
     #
@@ -135,8 +122,6 @@ d cgi-register {} {
     d urlset "%URLFORM%" $conf(next-fail) {}
     d result $conf(page-fail) [list \
 				    [list %MESSAGE% $message] \
-				    [list %SCRIPT%  $script] \
-				    [list %PARAM%   $param] \
 				    [list %LOGIN%   $login] \
     				]
 }
