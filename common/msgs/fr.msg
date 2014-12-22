@@ -642,7 +642,7 @@
  cfg:authmethod:desc {Méthode d'authentification}
  cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.).}
  cfg:authexpire:desc {Délai maximum d'inactivité}
- cfg:authexpire:help {Durée maximale (en secondes) au bout de laquelle la session authentifiée est conservée.}
+ cfg:authexpire:help {Durée maximale (en secondes) au bout de laquelle la session authentifiée est conservée. Conservez une valeur élevée (de quelques heures à quelques jours) de façon à ne pas interrompre les actions des utilisateurs.}
  cfg:authcleanup:desc {Délai de suppression des tokens}
  cfg:authcleanup:help {Délai au bout duquel les vieux tokens sont supprimés de la table des sessions (en jours)}
  cfg:authtoklen:desc {Longueur du token}
