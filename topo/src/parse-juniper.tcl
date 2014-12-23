@@ -1554,7 +1554,7 @@ proc juniper-parse-vlans-entry-l3-interface {conf tab idx} {
     upvar $tab t
 
     set ifaceunit [lindex $conf 1]
-    if {! [regexp {^(vlan)\.([0-9]+)} $ifaceunit bidon iface unit]} then {
+    if {! [regexp {^(vlan|irb)\.([0-9]+)} $ifaceunit bidon iface unit]} then {
 	juniper-warning "$idx: invalid l3-interface '$ifaceunit'"
     } else {
 	set t($idx!l3) [list $iface $unit]
@@ -1873,7 +1873,7 @@ proc juniper-post-process {model fdout eq tab} {
     #
 
     if {[info exists t(eq!$eq!vlans!names)]} then {
-	foreach nom $t(eq!$eq!vlans!names) {
+	foreach name $t(eq!$eq!vlans!names) {
 	    #
 	    # Conversion des noms de vlans : parcourir toutes les
 	    # "!allowedvlans" pour convertir les noms
@@ -1895,24 +1895,27 @@ proc juniper-post-process {model fdout eq tab} {
 	    }
 
 	    #
-	    # Inscription des interfaces vlan.<unit> dans le bon
+	    # Inscription des interfaces vlan.<unit> et irb.<unit> dans le bon
 	    # vlan-id
 	    #
-	    set nt(eq!$eq!if!vlan!vlans) {}
-	    if {[info exists t(eq!$eq!vlans!name!$nom!l3)]} then {
-		set ifaceunit $t(eq!$eq!vlans!name!$nom!l3)
-		set iface [lindex $ifaceunit 0]
-		set unit  [lindex $ifaceunit 1]
-		set vlanid $t(eq!$eq!vlans!name!$nom!id)
-
-		lappend nt(eq!$eq!if!vlan!vlans) $vlanid
-		foreach i [array names t -glob "eq!$eq!if!$iface!vlan!$unit!*"] {
-		    regexp "!$iface!vlan!$unit!(.*)" $i bidon reste
-		    set nt(eq!$eq!if!$iface!vlan!$vlanid!$reste) $t($i)
-		    unset t($i)
-		}
-		foreach i [array names nt] {
-		    set t($i) $nt($i)
+	    foreach iftype {vlan irb} {
+		array unset nt
+		if {[info exists t(eq!$eq!vlans!name!$name!l3)]} then {
+		    set ifaceunit $t(eq!$eq!vlans!name!$name!l3)
+		    set iface [lindex $ifaceunit 0]
+		    set unit  [lindex $ifaceunit 1]
+		    if [string eq $iface $iftype] {
+			set vlanid $t(eq!$eq!vlans!name!$name!id)
+			lappend nt(eq!$eq!if!$iftype!vlans) $vlanid
+			foreach i [array names t -glob "eq!$eq!if!$iface!vlan!$unit!*"] {
+			    regexp "!$iface!vlan!$unit!(.*)" $i bidon reste
+			    set nt(eq!$eq!if!$iface!vlan!$vlanid!$reste) $t($i)
+			    unset t($i)
+			}
+			foreach i [array names nt] {
+			    lappend t($i) $nt($i)
+			}
+		    }
 		}
 	    }
 	}
@@ -1925,14 +1928,14 @@ proc juniper-post-process {model fdout eq tab} {
     #
 
     if {[info exists t(eq!$eq!vlans!names)]} then {
-	foreach nom $t(eq!$eq!vlans!names) {
+	foreach name $t(eq!$eq!vlans!names) {
 	    #
 	    # Conversion des noms de vlans : parcourir toutes les
 	    # "!allowedvlans" pour convertir les noms
 	    #
-	    set vlanid $t(eq!$eq!vlans!name!$nom!id)
+	    set vlanid $t(eq!$eq!vlans!name!$name!id)
 	    foreach i [array names t -glob "*!native-vlan"] {
-		if {[string equal $nom $t($i)]} then {
+		if {[string equal $name $t($i)]} then {
 		    set t($i) $vlanid
 		}
 	    }
@@ -2223,9 +2226,9 @@ proc juniper-post-process {model fdout eq tab} {
 	}
 	set linktype $t(eq!$eq!if!$iface!link!type)
 
-	if {[string equal $iface "vlan"]} then {
+	if {[string equal $iface "vlan"] || [string equal $iface "irb"]} then {
 	    #
-	    # Traitement spécial pour les interface "vlan" qu'on
+	    # Traitement spécial pour les interface "vlan" et "irb" qu'on
 	    # trouve sur les JunOS switch
 	    # Cas réduit d'une interface physique sur JunOS routeur
 	    #
@@ -2234,6 +2237,10 @@ proc juniper-post-process {model fdout eq tab} {
 		foreach v $t(eq!$eq!if!$iface!vlans) {
 		    set nodeL2 [newnode]
 		    set t(eq!$eq!if!$iface!vlan!$v!node) $nodeL2
+		    if {![info exists t(eq!$eq!if!$iface!vlan!$v!stat)]} {
+			juniper-warning "Warning: '$iface.$v' l3-interface not defined"
+			continue
+		    }
 		    set statname $t(eq!$eq!if!$iface!vlan!$v!stat)
 		    if {[string equal $statname ""]} then {
 			set statname "-"
