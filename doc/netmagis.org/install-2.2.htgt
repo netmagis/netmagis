@@ -1539,9 +1539,50 @@
 	\item {Configure your existing Freeradius using the SQL
 	    accounting module and the example files provided in
 	    \teletype {.../share/examples/netmagis/radius/} directory.
-
-	    TO BE WRITTEN: explain in detail this installation.
-
+	    \teletype { \br
+		~ sql \{ \br
+			~ ~ database = "postgresql" \br
+			~ ~ driver = "rlm_sql_$\{database\}" \br
+			~ ~ server = "mydatabaseserver.example.com" \br
+			~ ~ login = "nmdetecteq" \br
+			~ ~ password = "mysecret1234" \br
+			~ ~ radius_db = "netmagis" \br
+			~ ~ sqltrace = no \br
+			~ ~ sqltracefile = $\{logdir\}/sqltrace.sql \br
+			~ ~ num_sql_socks = 5 \br
+			~ ~ connect_failure_retry_delay = 60 \br
+			~ ~ lifetime = 0 \br
+			~ ~ max_queries = 0 \br
+			~ ~ sql_user_name = "%\{User-Name\}" \br
+			~ ~ nas_query = "" \br
+			~ ~ authorize_check_query = "" \br
+			~ ~ authorize_reply_query = "" \br
+			~ ~ authorize_group_check_query = "" \br
+			~ ~ authorize_group_reply_query = "" \br
+			~ ~ accounting_onoff_query = "" \br
+			~ ~ accounting_update_query = "" \br
+			~ ~ accounting_update_query_alt = "" \br
+			~ ~ accounting_start_query = "" \br
+			~ ~ accounting_start_query_alt  = "" \br
+			~ ~ accounting_stop_query = " \\ \br
+				~ ~ ~ ~ INSERT INTO topo.modeq (eq,login) \\ \br
+				~ ~ ~ ~			( \\ \br
+				~ ~ ~ ~	~			SELECT rr.name || '.' || domain.name, \\ \br
+				~ ~ ~ ~	~				'%\{User-Name\}' \\ \br
+				~ ~ ~ ~	~			FROM dns.rr, dns.rr_ip, dns.domain \\ \br
+				~ ~ ~ ~	~			WHERE rr_ip.idrr = rr.idrr AND \\ \br
+				~ ~ ~ ~	~ ~				rr.iddom = domain.iddom AND \\ \br
+				~ ~ ~ ~	~ ~				rr_ip.addr = '%\{NAS-IP-Address\}' AND \\ \br
+				~ ~ ~ ~	~				'%\{User-Name\}' NOT IN ( \\ \br
+				~ ~ ~ ~	~ ~ ~					SELECT login \\ \br
+				~ ~ ~ ~	~ ~ ~					FROM topo.ignoreequsers) \\ \br
+				~ ~ ~ ~			) \\ \br
+				~ ~ ~ ~		" \br
+			~ ~ accounting_stop_query_alt = "" \br
+			~ ~ group_membership_query = "" \br
+			~ ~ postauth_query = "" \br
+		~ \} \br
+	   }
 	}
 	\item {As described above, the Radius accounting server needs
 	    to distinguish regular configuration fetching from
