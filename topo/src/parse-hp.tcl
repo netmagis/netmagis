@@ -63,6 +63,23 @@ proc hp-ajouter-iface {tab idx iface} {
     }
 }
 
+#
+# Input:
+#   iface = interface name
+# Output:
+#   Convert to title case ; example: trk1 -> Trk1
+#
+# Historique
+#   2014/12/21 : jean/sebastien : design
+#
+
+proc hp-normalize-iface-name {iface} {
+  if {[regexp {(.)(.*)} $iface dummy first rest]} {
+    set iface "[string toupper $first][string tolower $rest]"
+  }
+  return $iface
+}
+
 ###############################################################################
 # Analyse du fichier de configuration
 ###############################################################################
@@ -191,8 +208,9 @@ proc hp-parse-interface {active line tab idx} {
 
     set line [string trim $line]
     if {[regexp {^[-A-Za-z0-9]+$} $line]} then {
+        set iface [hp-normalize-iface-name $line]
 	set t($idx!context) "iface"
-	set t($idx!current!if) $line
+	set t($idx!current!if) $iface
 	#
 	# Il est possible que l'interface apparaisse deux fois
 	# dans le fichier de configuration :
@@ -206,13 +224,13 @@ proc hp-parse-interface {active line tab idx} {
 	#	exit
 	# => ne pas tout mettre à zéro.
 	#
-	if {! [info exists t($idx!if!$line!link!name)]} then {
-	    lappend t($idx!if) $line
-	    set t($idx!if!$line!link!name) ""
-	    set t($idx!if!$line!link!desc) ""
-	    set t($idx!if!$line!link!stat) ""
+	if {! [info exists t($idx!if!$iface!link!name)]} then {
+	    lappend t($idx!if) $iface
+	    set t($idx!if!$iface!link!name) ""
+	    set t($idx!if!$iface!link!desc) ""
+	    set t($idx!if!$iface!link!stat) ""
 
-	    hp-ajouter-iface t $idx $line
+	    hp-ajouter-iface t $idx $iface
 	}
     }
 
@@ -369,6 +387,7 @@ proc hp-parse-trunk {active line tab idx} {
     upvar $tab t
 
     if {[regexp {^\s*([-A-Za-z0-9,]+)\s+(\S+)} $line bidon subifs parentif]} then {
+	set parentif [hp-normalize-iface-name $parentif]
 	hp-ajouter-iface t $idx $parentif
 
 	set lsubif [parse-list $subifs yes $t($idx!modules)]
@@ -466,6 +485,7 @@ proc hp-parse-untagged {active line tab idx} {
 	set vlanid $t($idx!lvlan!lastid)
 	set liface [parse-list $line yes $t($idx!modules)]
 	foreach iface $liface {
+	    set iface [hp-normalize-iface-name $iface]
 	    set kw "vlan"
 	    if {[info exists t($idx!if!$iface!link!type)]} then {
 		if {[string equal $t($idx!if!$iface!link!type) "trunk"]} then {
@@ -498,6 +518,7 @@ proc hp-parse-tagged {active line tab idx} {
 	set vlanid $t($idx!lvlan!lastid)
 	set liface [parse-list $line yes $t($idx!modules)]
 	foreach iface $liface {
+	    set iface [hp-normalize-iface-name $iface]
 	    set error [hp-set-ifattr t $idx!if!$iface "type" "trunk"]
 	    if {$error} then {
 		break
