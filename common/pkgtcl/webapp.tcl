@@ -2812,14 +2812,7 @@ snit::type ::webapp::log {
 		    if {[string equal [set $c] ""]} then {
 			set t($c) NULL
 		    } else {
-			switch $c {
-			    date {
-				set t($c) "to_timestamp([set $c])"
-			    }
-			    default {
-				set t($c) "'[::pgsql::quote [set $c]]'"
-			    }
-			}
+			set t($c) "'[::pgsql::quote [set $c]]'"
 		    }
 		}
 		if {[string equal $date ""]} then {
@@ -2827,7 +2820,11 @@ snit::type ::webapp::log {
 		    set dateval ""
 		} else {
 		    set datecol "date,"
-		    set dateval "to_timestamp($date),"
+		    if {[regexp {^\d+$} $date]} then {
+			set dateval "to_timestamp($date),"
+		    } else {
+			set dateval "'[::pgsql::quote $date]',"
+		    }
 		}
 		set t(subsys) "'[::pgsql::quote $options(-subsys)]'"
 		set sql "INSERT INTO $table

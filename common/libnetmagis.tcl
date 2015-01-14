@@ -1758,24 +1758,34 @@ snit::type ::netmagis {
     # Input:
     #	- event : event name (examples : supprhost, suppralias etc.)
     #	- message : log message (example: parameters of the event)
+    #	- date (optional) : event date (in seconds since epoch)
+    #   - leuid (optional) : event owner
+    #	- ip (optional) : IP address
     #
     # Output: none
     #
     # History :
-    #   2007/10/?? : jean : design
-    #   2010/11/09 : pda  : dnscontext object and no more login parameter
+    #   2007/10/?? : jean     : design
+    #   2010/11/09 : pda      : dnscontext object and no more login parameter
+    #   2015/01/14 : pda/jean : add optional parameters date, leuid, ip
     #
 
-    method writelog {event msg} {
+    method writelog {event msg {date {}} {leuid {}} {ip {}}} {
 	global env
 
-	if {[info exists env(REMOTE_ADDR) ]} then {
-	    set ip $env(REMOTE_ADDR)    
-	} else {
-	    set ip ""
+	if {$ip eq {}} then {
+	    if {[info exists env(REMOTE_ADDR)]} then {
+		set ip $env(REMOTE_ADDR)    
+	    } else {
+		set ip ""
+	    }
 	}
 
-	$log log "" $event $euid $ip $msg
+	if {$leuid eq {}} then {
+	    set leuid $euid
+	}
+
+	$log log $date $event $leuid $ip $msg
     }
 
     #
@@ -3530,12 +3540,31 @@ proc create-authtoken {dbfd login _token} {
     # Clean-up old tokens
     #
 
+    d dblock {global.session}
+
     set delay [dnsconfig get "authcleanup"]
-    set sql "DELETE FROM global.session
-		    WHERE lastaccess < NOW() - interval '$delay day'"
+
+    set ldelete {}
+    set sql "SELECT s.token, s.valid, u.login, s.lastaccess
+		    FROM global.session s, global.nmuser u
+		    WHERE s.idcor = u.idcor
+			AND s.lastaccess < NOW() - interval '$delay day'"
+    pg_select $dbfd $sql tab {
+	if {$tab(valid)} then {
+	    set tok $tab(token)
+	    set la  $tab(lastaccess)
+	    set l   $tab(login)
+	    d writelog "auth" "lastaccess $l $tok" $la $l
+	}
+	lappend ldelete $tok
+    }
+    set ldelete [join $ldelete "' OR token = '"]
+    set sql "DELETE FROM global.session WHERE token = '$ldelete'"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	return [mc "Cannot register authentication token (%s)" $msg]
     }
+
+    d dbcommit "token expiration"
 
     #
     # Generates a unique (at a given time) token
