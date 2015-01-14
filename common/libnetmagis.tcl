@@ -1110,8 +1110,12 @@ snit::type ::netmagis {
 	    # We just set the "logged as" message, and we will skip
 	    # the part of the code which references user capabilities.
 	    #
-	    set euid [mc "(%s)" "anonymous"]
-	    set uid  $euid
+	    if {$authenticated} then {
+		set euid $login
+	    } else {
+		set euid "-"
+	    }
+	    set uid $euid
 
 	} else {
 	    #
@@ -1131,7 +1135,7 @@ snit::type ::netmagis {
 		# For the "logged as" message
 		#
 
-		set euid [mc "(%s)" "anonymous"]
+		set euid "-"
 		set uid  $euid
 
 		#
@@ -1567,7 +1571,12 @@ snit::type ::netmagis {
 	# Add the "logged as" information
 	#
 
-	lappend lsubst [list %LOGGEDAS% $euid]
+	if {$euid eq "-"} then {
+	    set loggedas [mc "Not connected"]
+	} else {
+	    set loggedas [mc "Logged as %s" $euid]
+	}
+	lappend lsubst [list %LOGGEDAS% $loggedas]
 
 	#
 	# Constitute the links menu if the database access is initialized
@@ -1645,16 +1654,40 @@ snit::type ::netmagis {
     }
 
     ###########################################################################
-    # Get the effective login and idcor of the user
+    # Get or set the effective login and idcor of the user
     #
-    # Input: none
+    # Input:
+    #   - if supplied: list {new effective login, new effective idcor} to set
+    #		(use {- -1} for anonymous user)
+    #   - if not supplied: just get effective login and idcor
     # Output:
     #   - return value: list {login idcor}
     #
 
-    method euid {} {
+    method euid {{neweuid {}}} {
+	if {$neweuid ne {}} then {
+	    lassign $neweuid euid eidcor
+	}
 	return [list $euid $eidcor]
     }
+
+    ###########################################################################
+    # Get or set the real login and idcor of the user
+    #
+    # Input:
+    #   - if supplied: real login to set (use "-" for anonymous user)
+    #   - if not supplied: just get login
+    # Output:
+    #   - return value: login
+    #
+
+    method uid {{newuid {}}} {
+	if {$newuid ne {}} then {
+	    set uid $newuid
+	}
+	return $uid
+    }
+
 
     ###########################################################################
     # URL framework

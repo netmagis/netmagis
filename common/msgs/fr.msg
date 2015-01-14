@@ -48,7 +48,6 @@
  {Allowed groups} {Groupes autorisés}
  {All} {Tous}
  {and sorted by '%1$s' and by '%2$s'} {et triés par '%1$s' et par '%2$s'}
- {anonymous} {anonyme}
  {Application parameters} {Modif paramètres}
  {assoc} {assoc}
  {auth} {auth}
@@ -309,6 +308,7 @@
  {location} {localisation}
  {location}	{localisation}
  {Location}	{Localisation}
+ {Logged as %s} {Connecté comme %s}
  {Login '%1$s' already assigned to group '%2$s'} {Login '%1$s' déjà affecté au groupe '%2$s'}
  {Login}	{Login}
  {Login '%s' already exists} {Le login '%s' existe déjà}
@@ -427,6 +427,7 @@
  {No selected view} {Aucune vue sélectionnée}
  {No sensor selected} {Aucun point de collecte sélectionné}
  {No valid CIDR: %s} {Aucun CIDR valide : %s}
+ {Not connected} {Non connecté}
  {Number of associated hosts on %s} {Nombre de machines associées sur %s}
  {Number of associated hosts on ssid %1$s of interface %2$s of %3$s} {Nombre de machines associées sur le ssid %1$s de l'interface %2$s de %3$s}
  {Number of auhentified users on %s} {Nombre d'utilisateurs authentifiés sur %s}

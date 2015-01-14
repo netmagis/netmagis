@@ -20,7 +20,7 @@
 	DNS  v%VERSION%
     } {
 	\elementbandeau {Session} {
-	    <li>\lien {Connecté comme %LOGGEDAS%} {profile}</li>
+	    <li>\lien {%LOGGEDAS%} {profile}</li>
 	    <li>\lien {Déconnexion} {login?logout=yes}</li>
 	}
 	\elementbandeau {Actions} {

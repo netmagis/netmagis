@@ -80,15 +80,22 @@ d cgi-register {} {
 
     set message ""
     if {$logout ne ""} then {
-	set qtoken [::pgsql::quote [::webapp::get-cookie "session"]]
-	set sql "UPDATE global.session SET valid = 0 WHERE token = '$qtoken'"
-	# no test of result
-	::pgsql::execsql $dbfd $sql msg
+	if {$uid eq "-"} then {
+	    set message ""
+	} else {
+	    set qtoken [::pgsql::quote [::webapp::get-cookie "session"]]
+	    set sql "UPDATE global.session SET valid = 0 WHERE token = '$qtoken'"
+	    # no test of result
+	    ::pgsql::execsql $dbfd $sql msg
+	    d writelog "auth" "logout [d uid] $qtoken"
 
-	set message [mc "Logout successful"]
+	    set message [mc "Logout successful"]
 
-	# leave login unmodified for the "login" page
+	    d uid "-"
+	    d euid {- -1}
 
+	    # leave login unmodified for the "login" page
+	}
     } else {
 	if {[string trim $login] ne ""} then {
 	    set ok [check-password $dbfd $login $pw]
@@ -96,6 +103,7 @@ d cgi-register {} {
 		set msg [create-authtoken $dbfd $login token]
 		if {$msg eq ""} then {
 		    ::webapp::set-cookie "session" $token 0 "" "" 0 0
+		    d writelog "auth" "login $login $token"
 
 		    array set ftab2 {}
 		    puts stdout [::webapp::call-cgi [pwd]/$conf(next-index) ftab2]
