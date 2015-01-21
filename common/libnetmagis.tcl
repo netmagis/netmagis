@@ -1883,7 +1883,6 @@ snit::type ::config {
 	    {dayfmt rw {string}}
 	    {authmethod rw {menu {{pgsql Internal} {ldap {LDAP}}}}}
 	    {authexpire rw {string}}
-	    {authcleanup rw {string}}
 	    {authtoklen rw {string}}
 	    {pageformat rw {menu {{a4 A4} {letter Letter}}} }
 	    {schemaversion ro {string}}
@@ -3474,6 +3473,10 @@ proc get-random {nbytes} {
 proc check-authtoken {dbfd token _login} {
     upvar $_login login
 
+    #
+    # Check our own authentication token
+    #
+
     set idle [dnsconfig get "authexpire"]
 
     set qtoken [::pgsql::quote $token]
@@ -3499,6 +3502,38 @@ proc check-authtoken {dbfd token _login} {
 	# re-inject cookie (for login/call-cgi)
 	::webapp::set-cookie "session" $token 0 "" "" 0 0
     }
+
+    #
+    # Clean-up old tokens (from anyone)
+    #
+
+    d dblock {global.session}
+
+    set ldelete {}
+    set sql "SELECT s.token, s.valid, u.login, s.lastaccess
+		    FROM global.session s, global.nmuser u
+		    WHERE s.idcor = u.idcor
+			AND s.lastaccess < NOW() - interval '$idle second'"
+    pg_select $dbfd $sql tab {
+	if {$tab(valid)} then {
+	    set tok $tab(token)
+	    set la  $tab(lastaccess)
+	    set l   $tab(login)
+	    d writelog "auth" "lastaccess $l $tok" $la $l
+	}
+	lappend ldelete $tok
+    }
+    set ldelete [join $ldelete "' OR token = '"]
+    set sql "DELETE FROM global.session WHERE token = '$ldelete'"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	return [mc "Cannot register authentication token (%s)" $msg]
+    }
+
+    d dbcommit "token expiration"
+
+    #
+    # Is our own token valid?
+    #
 
     return $valid
 }
@@ -3535,36 +3570,6 @@ proc create-authtoken {dbfd login _token} {
     if {$idcor == -1} then {
 	return [mc "Login '%s' does not exist" $login]
     }
-
-    #
-    # Clean-up old tokens
-    #
-
-    d dblock {global.session}
-
-    set delay [dnsconfig get "authcleanup"]
-
-    set ldelete {}
-    set sql "SELECT s.token, s.valid, u.login, s.lastaccess
-		    FROM global.session s, global.nmuser u
-		    WHERE s.idcor = u.idcor
-			AND s.lastaccess < NOW() - interval '$delay day'"
-    pg_select $dbfd $sql tab {
-	if {$tab(valid)} then {
-	    set tok $tab(token)
-	    set la  $tab(lastaccess)
-	    set l   $tab(login)
-	    d writelog "auth" "lastaccess $l $tok" $la $l
-	}
-	lappend ldelete $tok
-    }
-    set ldelete [join $ldelete "' OR token = '"]
-    set sql "DELETE FROM global.session WHERE token = '$ldelete'"
-    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	return [mc "Cannot register authentication token (%s)" $msg]
-    }
-
-    d dbcommit "token expiration"
 
     #
     # Generates a unique (at a given time) token

@@ -15,8 +15,6 @@
  cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.).}
  cfg:authexpire:desc {Idle timeout}
  cfg:authexpire:help {Authenticated session idle timeout (in seconds). Keep a large value (e.g. a few hours to a few days) in order not to break user actions.}
- cfg:authcleanup:desc {Token cleanup time}
- cfg:authcleanup:help {Delay (in days) when old tokens are removed from the session table.}
  cfg:authtoklen:desc {Token length}
  cfg:authtoklen:help {Authentication token length in bytes. Don't change this unless you understand what you are doing.}
  cfg:pageformat:desc {Paper format}

@@ -238,7 +238,6 @@ datefmt	%d/%m/%Y %H:%M:%S
 dayfmt	%a %d %b %Y
 authmethod	pgsql
 authexpire	36000
-authcleanup	30
 authtoklen	32
 pageformat	a4
 default_lease_time	600

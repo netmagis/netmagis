@@ -29,7 +29,6 @@ CREATE TABLE global.session (
 DELETE FROM global.config where key = 'ldapattrpasswd' ;
 
 INSERT INTO global.config (key, value) VALUES ('authexpire', '36000') ;
-INSERT INTO global.config (key, value) VALUES ('authcleanup', '30') ;
 INSERT INTO global.config (key, value) VALUES ('authtoklen', '32') ;
 
 UPDATE global.config SET value = '23' WHERE key = 'schemaversion' ;
