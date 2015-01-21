@@ -646,6 +646,8 @@
  cfg:authexpire:help {Durée maximale (en secondes) au bout de laquelle la session authentifiée est conservée. Conservez une valeur élevée (de quelques heures à quelques jours) de façon à ne pas interrompre les actions des utilisateurs.}
  cfg:authtoklen:desc {Longueur du token}
  cfg:authtoklen:help {Longueur du token d'authentification, en octets. Ne changez cette valeur que si vous comprenez de quoi il s'agit.}
+ cfg:wtmplimit:desc {Nombre de dernières connexions}
+ cfg:wtmplimit:help {Nombre maximum de lignes par utilisateur dans la liste des dernières connexions.}
  cfg:pageformat:desc {Format de papier}
  cfg:pageformat:help {Format de papier pour les pages imprimables.}
  cfg:schemaversion:desc {Version de schéma}

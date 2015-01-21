@@ -1884,6 +1884,7 @@ snit::type ::config {
 	    {authmethod rw {menu {{pgsql Internal} {ldap {LDAP}}}}}
 	    {authexpire rw {string}}
 	    {authtoklen rw {string}}
+	    {wtmplimit rw {string}}
 	    {pageformat rw {menu {{a4 A4} {letter Letter}}} }
 	    {schemaversion ro {string}}
 	}
@@ -3546,16 +3547,19 @@ proc check-authtoken {dbfd token _login} {
 #	- dbfd : database handle
 #	- login : the user for which we generate this token
 #	- _token : in return, generated token
+#	- _idcor : in return, id of user
 # Output:
 #   - return value: error message or empty string
 #   - database : token is registered in database
 #
 # History
 #   2014/04/12 : pda      : design
+#   2015/01/21 : pda/jean : added idcor parameter
 #
 
-proc create-authtoken {dbfd login _token} {
+proc create-authtoken {dbfd login _token _idcor} {
     upvar $_token token
+    upvar $_idcor idcor
 
     #
     # Search id for the login
@@ -3600,6 +3604,51 @@ proc create-authtoken {dbfd login _token} {
     return ""
 }
 
+
+proc register-user-login {dbfd idcor token} {
+    global env
+
+    set ip NULL
+    if {[info exists env(REMOTE_ADDR)]} then {
+	set ip "'$env(REMOTE_ADDR)'"
+    }
+
+    set sql "INSERT INTO global.utmp (idcor, token, ip)
+    		VALUES ($idcor, '$token', $ip)"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	return [mc "Cannot register user login (%s)" $msg]
+    }
+    return ""
+}
+
+proc register-user-logout {dbfd login token date reason} {
+    set idcor -1
+    set qlogin [::pgsql::quote $login]
+    set sql "SELECT idcor FROM global.nmuser WHERE login = '$qlogin'"
+    pg_select $dbfd $sql tab {
+	set idcor $tab(idcor)
+    }
+    if {$idcor == -1} then {
+	return [mc "Login '%s' does not exist" $login]
+    }
+    if {$date eq ""} then {
+	set date "now()"
+    } else {
+	set date "'$date'"
+    }
+
+    set sql "INSERT INTO global.wtmp (idcor, token, start, ip, stop, stopreason)
+		SELECT $idcor, token, start, ip, $date, '$reason'
+		    FROM global.utmp
+		    WHERE idcor = $idcor and token = '$token'
+		    ;
+	     DELETE FROM global.utmp
+		    WHERE idcor = $idcor and token = '$token'"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	return [mc "Cannot un-register connection (%s)" $msg]
+    }
+    return ""
+}
 
 ##############################################################################
 # User access rights management

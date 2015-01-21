@@ -39,6 +39,7 @@ CREATE TABLE global.nmuser (
     PRIMARY KEY (idcor)
 ) ;
 
+-- Current session tokens
 CREATE TABLE global.session (
     token	TEXT NOT NULL,		-- auth token in session cookie
     idcor	INT,			-- user authenticated by this token
@@ -53,6 +54,29 @@ CREATE TABLE global.session (
     FOREIGN KEY (idcor) REFERENCES global.nmuser (idcor),
     PRIMARY KEY (token)
 ) ;
+
+-- Template for utmp and wtmp tables
+CREATE TABLE global.tmp (
+    idcor	INT,			-- user
+    token	TEXT NOT NULL,		-- auth token in session cookie
+    start	TIMESTAMP (0) WITHOUT TIME ZONE
+                        DEFAULT CURRENT_TIMESTAMP
+			NOT NULL,	-- login time
+    ip		INET,			-- IP address at login time
+
+    FOREIGN KEY (idcor) REFERENCES global.nmuser (idcor),
+    PRIMARY KEY (idcor, token)
+) ;
+
+-- Currently logged-in users
+CREATE TABLE global.utmp () INHERITS (global.tmp) ;
+
+-- All current and previous users. Table limited to 'wtmplimit' entries by user
+CREATE TABLE global.wtmp (
+    stop	TIMESTAMP (0) WITHOUT TIME ZONE
+			NOT NULL,	-- logout or expiration time
+    stopreason	TEXT NOT NULL		-- 'logout', 'expired'
+) INHERITS (global.tmp) ;
 
 -- Netmagis configuration parameters (those which are not in the
 -- configuration file)

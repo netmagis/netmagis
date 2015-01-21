@@ -83,13 +83,16 @@ d cgi-register {} {
 	if {$uid eq "-"} then {
 	    set message ""
 	} else {
+	    ############### XXXX check if session is not already expired, in order to not log twice the same event
 	    set qtoken [::pgsql::quote [::webapp::get-cookie "session"]]
 	    set sql "UPDATE global.session SET valid = 0 WHERE token = '$qtoken'"
 	    # no test of result
 	    ::pgsql::execsql $dbfd $sql msg
 	    d writelog "auth" "logout [d uid] $qtoken"
-
-	    set message [mc "Logout successful"]
+	    set message [register-user-logout $dbfd [d uid] $qtoken "" "logout"]
+	    if {$message eq ""} then {
+		set message [mc "Logout successful"]
+	    }
 
 	    d uid "-"
 	    d euid {- -1}
@@ -100,10 +103,15 @@ d cgi-register {} {
 	if {[string trim $login] ne ""} then {
 	    set ok [check-password $dbfd $login $pw]
 	    if {$ok} then {
-		set msg [create-authtoken $dbfd $login token]
+		set msg [create-authtoken $dbfd $login token idcor]
 		if {$msg eq ""} then {
 		    ::webapp::set-cookie "session" $token 0 "" "" 0 0
 		    d writelog "auth" "login $login $token"
+
+		    set msg [register-user-login $dbfd $idcor $token]
+		    if {$msg ne ""} then {
+			d error $msg
+		    }
 
 		    array set ftab2 {}
 		    puts stdout [::webapp::call-cgi [pwd]/$conf(next-index) ftab2]
