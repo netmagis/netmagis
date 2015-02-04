@@ -3516,8 +3516,8 @@ proc check-authtoken {dbfd token _login} {
 		    WHERE s.idcor = u.idcor
 			AND s.lastaccess < NOW() - interval '$idle second'"
     pg_select $dbfd $sql tab {
+	set tok $tab(token)
 	if {$tab(valid)} then {
-	    set tok $tab(token)
 	    set la  $tab(lastaccess)
 	    set l   $tab(login)
 	    d writelog "auth" "lastaccess $l $tok" $la $l
