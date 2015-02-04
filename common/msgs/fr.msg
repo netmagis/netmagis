@@ -509,6 +509,7 @@
  {Selected by default} {Sélectionnée par défaut}
  {Sensor '%s' not found} {Point de collecte '%s' non trouvé}
  {Sensors} {Sondes}
+ {session creation for %s} {création de session pour %s}
  {session expiration} {expiration des sessions}
  {Sessions} {Sessions}
  {Shutdown interface} {Désactiver le port}

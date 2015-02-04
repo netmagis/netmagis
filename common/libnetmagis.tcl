@@ -3583,6 +3583,8 @@ proc register-user-login {dbfd login _token _idcor} {
     # lines)
     #
 
+    d dblock {global.utmp}
+
     set toklen [dnsconfig get "authtoklen"]
 
     set found true
@@ -3607,8 +3609,11 @@ proc register-user-login {dbfd login _token _idcor} {
     set sql "INSERT INTO global.utmp (idcor, token, ip)
     		VALUES ($idcor, '$token', $ip)"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	d dbabort [mc "session creation for %s" login] $msg
 	return [mc "Cannot register user login (%s)" $msg]
     }
+
+    d dbcommit [mc "session creation for %s" $login]
 
     #
     # Log successful flogin
