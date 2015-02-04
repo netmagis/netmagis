@@ -509,6 +509,7 @@
  {Selected by default} {Sélectionnée par défaut}
  {Sensor '%s' not found} {Point de collecte '%s' non trouvé}
  {Sensors} {Sondes}
+ {session expiration} {expiration des sessions}
  {Sessions} {Sessions}
  {Shutdown interface} {Désactiver le port}
  {Shutdown VoIP on this interface} {Désactiver la VoIP sur ce port}

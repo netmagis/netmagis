@@ -11,22 +11,6 @@
 --	- You should pay attention to lines with "ERROR:" 
 ------------------------------------------------------------------------------
 
--- Current session tokens
-CREATE TABLE global.session (
-    token	TEXT NOT NULL,		-- auth token in session cookie
-    idcor	INT,			-- user authenticated by this token
-    valid	INT,			-- 1 if token is valid, otherwise 0
-    lastlogin	TIMESTAMP (0) WITHOUT TIME ZONE
-                        DEFAULT CURRENT_TIMESTAMP
-			NOT NULL,	-- last successful login
-    lastaccess	TIMESTAMP (0) WITHOUT TIME ZONE
-                        DEFAULT CURRENT_TIMESTAMP
-			NOT NULL,	-- last access to a page
-
-    FOREIGN KEY (idcor) REFERENCES global.nmuser (idcor),
-    PRIMARY KEY (token)
-) ;
-
 -- Template for utmp and wtmp tables
 CREATE TABLE global.tmp (
     idcor	INT,			-- user
@@ -41,12 +25,16 @@ CREATE TABLE global.tmp (
 ) ;
 
 -- Currently logged-in users
-CREATE TABLE global.utmp () INHERITS (global.tmp) ;
+CREATE TABLE global.utmp (
+    lastaccess	TIMESTAMP (0) WITHOUT TIME ZONE
+                        DEFAULT CURRENT_TIMESTAMP
+			NOT NULL	-- last access to a page
+) INHERITS (global.tmp) ;
 
 -- All current and previous users. Table limited to 'wtmplimit' entries by user
 CREATE TABLE global.wtmp (
     stop	TIMESTAMP (0) WITHOUT TIME ZONE
-			NOT NULL,	-- logout or expiration time
+			NOT NULL,	-- logout or last access if expiration
     stopreason	TEXT NOT NULL		-- 'logout', 'expired'
 ) INHERITS (global.tmp) ;
 

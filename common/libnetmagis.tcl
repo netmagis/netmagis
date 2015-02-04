@@ -1125,13 +1125,6 @@ snit::type ::netmagis {
 	    if {! $authenticated} then {
 
 		#
-		#
-		# Present the login page, using existing login if found
-		#
-
-		set login [::webapp::html-string $login]
-
-		#
 		# For the "logged as" message
 		#
 
@@ -1145,7 +1138,7 @@ snit::type ::netmagis {
 		d urlset "%URLFORM%" $libconf(next-login) {}
 		d result $libconf(page-login) [list \
 						    [list %MESSAGE% ""] \
-						    [list %LOGIN%  $login] \
+						    [list %LOGIN%  ""] \
 						]
 		exit 0
 	    }
@@ -3463,84 +3456,88 @@ proc get-random {nbytes} {
 #   - parameters:
 #	- dbfd : database handle
 #	- token : authentication token (given by the session cookie)
-#	- _login : in return, login of user (even if timeout)
+#	- _login : in return, login of user or "" if the token is not valid
 # Output:
 #   - return value: true if the token is a valid authentication token
 #
 # History
 #   2014/04/11 : pda/jean : design
+#   2015/02/04 : pda/jean : simplify session management with *tmp tables
 #
 
 proc check-authtoken {dbfd token _login} {
     upvar $_login login
 
+    set idle [dnsconfig get "authexpire"]
+
+    #
+    # Expire old utmp entries
+    #
+
+    d dblock {global.utmp global.wtmp}
+
+    # Get the list of expired sessions for the log (see below)
+
+    set sql "SELECT u.login, t.token, t.lastaccess
+    			FROM global.nmuser u, global.utmp t
+			WHERE t.lastaccess < NOW() - interval '$idle second'
+			    AND u.idcor = t.idcor"
+    set lexp {}
+    pg_select $dbfd $sql tab {
+	lappend lexp [list $tab(login) $tab(token) $tab(lastaccess)]
+    }
+
+    # Transfer all expired utmp entries to wtmp
+
+    set sql "INSERT INTO global.wtmp (idcor, token, start, ip, stop, stopreason)
+		SELECT idcor, token, start, ip, lastaccess, 'expired'
+		    FROM global.utmp
+		    WHERE lastaccess < NOW() - interval '$idle second'
+		    ;
+	     DELETE FROM global.utmp
+		    WHERE lastaccess < NOW() - interval '$idle second'
+		    "
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	d dbabort [mc "session expiration"] $msg
+	return [mc "Cannot un-register connection (%s)" $msg]
+    }
+
+    # Log expired sessions
+
+    foreach e $lexp {
+	lassign $e l tok la
+	d writelog "auth" "lastaccess $l $tok" $la $l
+    }
+
+    d dbcommit "session expiration"
+
     #
     # Check our own authentication token
     #
 
-    set idle [dnsconfig get "authexpire"]
-
     set qtoken [::pgsql::quote $token]
     set login ""
-    set valid false
-    set sql "SELECT u.login FROM global.nmuser u, global.session s
-    			WHERE s.token = '$qtoken'
-			    AND s.valid = 1
-			    AND s.idcor = u.idcor
-			    AND s.lastaccess > NOW() - interval '$idle second'"
+    set found false
+    set sql "UPDATE global.utmp t
+		    SET lastaccess = NOW()
+		    FROM global.nmuser u
+		    WHERE token = '$qtoken' AND u.idcor = t.idcor
+		    RETURNING u.login"
     pg_select $dbfd $sql tab {
 	set login $tab(login)
-	set valid true
+	set found true
     }
 
-    if {$valid} then {
-	set sql "UPDATE global.session
-			    SET lastaccess = NOW()
-			    WHERE token = '$qtoken'"
-	# no test of result
-	::pgsql::execsql $dbfd $sql msg
-
+    if {$found} then {
 	# re-inject cookie (for login/call-cgi)
 	::webapp::set-cookie "session" $token 0 "" "" 0 0
     }
 
-    #
-    # Clean-up old tokens (from anyone)
-    #
-
-    d dblock {global.session}
-
-    set ldelete {}
-    set sql "SELECT s.token, s.valid, u.login, s.lastaccess
-		    FROM global.session s, global.nmuser u
-		    WHERE s.idcor = u.idcor
-			AND s.lastaccess < NOW() - interval '$idle second'"
-    pg_select $dbfd $sql tab {
-	set tok $tab(token)
-	if {$tab(valid)} then {
-	    set la  $tab(lastaccess)
-	    set l   $tab(login)
-	    d writelog "auth" "lastaccess $l $tok" $la $l
-	}
-	lappend ldelete $tok
-    }
-    set ldelete [join $ldelete "' OR token = '"]
-    set sql "DELETE FROM global.session WHERE token = '$ldelete'"
-    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	return [mc "Cannot register authentication token (%s)" $msg]
-    }
-
-    d dbcommit "token expiration"
-
-    #
-    # Is our own token valid?
-    #
-
-    return $valid
+    return $found
 }
 
 #
-# Create an authentication token
+# Register a user login and create an authentication token for a session
 #
 # Input:
 #   - parameters:
@@ -3557,7 +3554,8 @@ proc check-authtoken {dbfd token _login} {
 #   2015/01/21 : pda/jean : added idcor parameter
 #
 
-proc create-authtoken {dbfd login _token _idcor} {
+proc register-user-login {dbfd login _token _idcor} {
+    global env
     upvar $_token token
     upvar $_idcor idcor
 
@@ -3567,7 +3565,10 @@ proc create-authtoken {dbfd login _token _idcor} {
 
     set qlogin [::pgsql::quote $login]
     set idcor -1
-    set sql "SELECT idcor FROM global.nmuser WHERE login = '$qlogin'"
+    set sql "SELECT idcor
+		FROM global.nmuser
+		WHERE login = '$qlogin'
+		    AND present = 1"
     pg_select $dbfd $sql tab {
 	set idcor $tab(idcor)
     }
@@ -3577,6 +3578,9 @@ proc create-authtoken {dbfd login _token _idcor} {
 
     #
     # Generates a unique (at a given time) token
+    # In order to test if a generated token is already used, we search it
+    # in the global.tmp template table (which gathers all utmp and wtmp
+    # lines)
     #
 
     set toklen [dnsconfig get "authtoklen"]
@@ -3584,7 +3588,7 @@ proc create-authtoken {dbfd login _token _idcor} {
     set found true
     while {$found} {
 	set token [get-random $toklen]
-	set sql "SELECT idcor FROM global.session WHERE token = '$token'"
+	set sql "SELECT idcor FROM global.tmp WHERE token = '$token'"
 	set found false
 	pg_select $dbfd $sql tab {
 	    set found true
@@ -3592,21 +3596,8 @@ proc create-authtoken {dbfd login _token _idcor} {
     }
 
     #
-    # Register token in session table
+    # Register token in utmp table
     #
-
-    set sql "INSERT INTO global.session (idcor, token, valid)
-				VALUES ($idcor, '$token', 1)"
-    if {! [::pgsql::execsql $dbfd $sql msg]} then {
-	return [mc "Cannot register authentication token (%s)" $msg]
-    }
-
-    return ""
-}
-
-
-proc register-user-login {dbfd idcor token} {
-    global env
 
     set ip NULL
     if {[info exists env(REMOTE_ADDR)]} then {
@@ -3618,6 +3609,13 @@ proc register-user-login {dbfd idcor token} {
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	return [mc "Cannot register user login (%s)" $msg]
     }
+
+    #
+    # Log successful flogin
+    #
+
+    d writelog "auth" "login $login $token"
+
     return ""
 }
 
