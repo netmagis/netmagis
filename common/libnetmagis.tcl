@@ -1877,7 +1877,7 @@ snit::type ::config {
 	    {authmethod rw {menu {{pgsql Internal} {ldap {LDAP}}}}}
 	    {authexpire rw {string}}
 	    {authtoklen rw {string}}
-	    {wtmplimit rw {string}}
+	    {wtmpexpire rw {string}}
 	    {pageformat rw {menu {{a4 A4} {letter Letter}}} }
 	    {schemaversion ro {string}}
 	}
@@ -3468,7 +3468,8 @@ proc get-random {nbytes} {
 proc check-authtoken {dbfd token _login} {
     upvar $_login login
 
-    set idle [dnsconfig get "authexpire"]
+    set idle       [dnsconfig get "authexpire"]
+    set wtmpexpire [dnsconfig get "wtmpexpire"]
 
     #
     # Expire old utmp entries
@@ -3488,6 +3489,7 @@ proc check-authtoken {dbfd token _login} {
     }
 
     # Transfer all expired utmp entries to wtmp
+    # and delete old wtmp entries
 
     set sql "INSERT INTO global.wtmp (idcor, token, start, ip, stop, stopreason)
 		SELECT idcor, token, start, ip, lastaccess, 'expired'
@@ -3496,6 +3498,9 @@ proc check-authtoken {dbfd token _login} {
 		    ;
 	     DELETE FROM global.utmp
 		    WHERE lastaccess < NOW() - interval '$idle second'
+		    ;
+	     DELETE FROM global.wtmp
+		    WHERE stop < NOW() - interval '$wtmpexpire day'
 		    "
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	d dbabort [mc "session expiration"] $msg

@@ -31,7 +31,7 @@ CREATE TABLE global.utmp (
 			NOT NULL	-- last access to a page
 ) INHERITS (global.tmp) ;
 
--- All current and previous users. Table limited to 'wtmplimit' entries by user
+-- All current and previous users. Table limited to 'wtmpexpire' days
 CREATE TABLE global.wtmp (
     stop	TIMESTAMP (0) WITHOUT TIME ZONE
 			NOT NULL,	-- logout or last access if expiration
@@ -43,6 +43,6 @@ DELETE FROM global.config where key = 'ldapattrpasswd' ;
 
 INSERT INTO global.config (key, value) VALUES ('authexpire', '36000') ;
 INSERT INTO global.config (key, value) VALUES ('authtoklen', '32') ;
-INSERT INTO global.config (key, value) VALUES ('wtmplimit', '10') ;
+INSERT INTO global.config (key, value) VALUES ('wtmpexpire', '365') ;
 
 UPDATE global.config SET value = '23' WHERE key = 'schemaversion' ;

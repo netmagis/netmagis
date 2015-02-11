@@ -239,7 +239,7 @@ dayfmt	%a %d %b %Y
 authmethod	pgsql
 authexpire	36000
 authtoklen	32
-wtmplimit	10
+wtmpexpire	365
 pageformat	a4
 default_lease_time	600
 max_lease_time	3600

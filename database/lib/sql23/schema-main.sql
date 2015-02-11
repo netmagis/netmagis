@@ -59,7 +59,7 @@ CREATE TABLE global.utmp (
 			NOT NULL	-- last access to a page
 ) INHERITS (global.tmp) ;
 
--- All current and previous users. Table limited to 'wtmplimit' entries by user
+-- All current and previous users. Table limited to 'wtmpexpire' days
 CREATE TABLE global.wtmp (
     stop	TIMESTAMP (0) WITHOUT TIME ZONE
 			NOT NULL,	-- logout or last access if expiration

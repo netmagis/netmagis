@@ -17,8 +17,8 @@
  cfg:authexpire:help {Authenticated session idle timeout (in seconds). Keep a large value (e.g. a few hours to a few days) in order not to break user actions.}
  cfg:authtoklen:desc {Token length}
  cfg:authtoklen:help {Authentication token length in bytes. Don't change this unless you understand what you are doing.}
- cfg:wtmplimit:desc {Last login entries}
- cfg:wtmplimit:help {Maximum number of entries per user in the last login list.}
+ cfg:wtmpexpire:desc {Last login expiration}
+ cfg:wtmpexpire:help {Number of days to keep last login information.}
  cfg:pageformat:desc {Paper format}
  cfg:pageformat:help {Paper format for generated printable pages.}
  cfg:schemaversion:desc {Schema version}
