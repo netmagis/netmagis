@@ -293,6 +293,7 @@
  {IPv6}		{IPv6}
  {L2-only networks} {Réseaux de niveau 2}
  {Last full-rancid} {Dernier full-rancid}
+ {Last login on '%1$s' from '%2$s'.} {Dernière connexion le '%1$s' à partir de '%2$s'.}
  {Last message for '%1$s' at %2$s} {Dernier message pour '%1$s' au %2$s}
  {Last occurrence} {Dernière occurrence}
  {Last processed equipments} {Derniers équipements traités}
@@ -406,6 +407,7 @@
  {no inactive host found} {aucune machine inactive trouvée}
  {No information found} {Aucune information trouvée}
  {No IP-MAC association found} {Aucune association IP-MAC trouvée}
+ {No last login information.} {Pas d'information de dernière connexion.}
  {No login: authentication failed} {Pas de login : l'authentification a échoué}
  {No MAC-IP address association found for %s} {Aucune association IP-MAC trouvée pour %s}
  {No MAC-Port-VLAN association found} {Aucune association adresse MAC-Port-VLAN trouvée}

@@ -36,6 +36,8 @@
     Welcome in Netmagis application. This application allows you to
     manage DNS information.
 
+    %LASTLOGIN%
+
     \titre {2} {Introduction}
 
     This application interactively manages hosts (names and IP

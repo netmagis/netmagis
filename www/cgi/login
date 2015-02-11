@@ -103,7 +103,9 @@ d cgi-register {} {
 		if {$msg eq ""} then {
 		    ::webapp::set-cookie "session" $token 0 "" "" 0 0
 
-		    array set ftab2 {}
+		    array set ftab2 {
+			lastlogin {{yes}}
+		    }
 		    puts stdout [::webapp::call-cgi [pwd]/$conf(next-index) ftab2]
 		    exit 0
 		} else {
