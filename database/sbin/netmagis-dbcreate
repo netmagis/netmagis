@@ -271,8 +271,8 @@ ldapattrphone	telephoneNumber
 ldapattrmobile	
 ldapattrfax	facsimileTelephoneNumber
 ldapattraddr	postalAddress postalCode l
-authpgminpwlen	8
-authpgmaxpwlen	16
+authpgminpwlen	10
+authpgmaxpwlen	128
 authpgmailfrom	nobody.netmagis@example.com
 authpgmailreplyto	nobody.netmagis@example.com
 authpgmailcc	
