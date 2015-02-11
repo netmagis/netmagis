@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - My permissions
+    Netmagis - My profile
 }
 
 \*******************************************************************************
@@ -31,11 +31,15 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Consult my permissions}
+    \titre {1} {My profile}
 
     \titre {2} {General information}
 
     %CORRESP%
+
+    \titre {2} {Last logins}
+
+    %LASTLOGIN%
 
     \titre {2} {Networks}
 

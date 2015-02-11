@@ -6,7 +6,7 @@
 
 \*******************************************************************************
 \partie {banniere} {
-    Netmagis - Mes droits d'accès
+    Netmagis - Mon profil
 }
 
 \*******************************************************************************
@@ -31,11 +31,15 @@
 \*******************************************************************************
 \partie {texte} {
 
-    \titre {1} {Consultation des droits DNS}
+    \titre {1} {Mon profil}
 
     \titre {2} {Informations générales}
 
     %CORRESP%
+
+    \titre {2} {Dernières connexions}
+
+    %LASTLOGIN%
 
     \titre {2} {Réseaux}
 

@@ -21,6 +21,38 @@
 #
 
 set conf(page)		profile.html
+set conf(lastlogin)	10
+
+set conf(tablastlogin) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {25 25 25 25}
+    }
+    pattern Title {
+	vbar {yes}
+	column { chars {bold} }
+	vbar {yes}
+	column { chars {bold} }
+	vbar {yes}
+	column { chars {bold} }
+	vbar {yes}
+	column { chars {bold} }
+	vbar {yes}
+    }
+    pattern Normal {
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+}
 
 #
 # Netmagis general library
@@ -44,6 +76,26 @@ d cgi-register {} {
     #
 
     set user	[display-user tabuid]
+
+    #
+    # Display last logins
+    #
+
+    set sql "SELECT start, ip, stop, stopreason FROM global.wtmp
+		    WHERE idcor = $tabuid(idcor)
+		    ORDER BY start DESC
+		    LIMIT $conf(lastlogin)"
+    set lines {}
+    lappend lines [list "Title" [mc "Login time"] \
+				[mc "IP address"] \
+				[mc "Logout time"] \
+				[mc "Logout reason"] \
+			    ]
+    pg_select $dbfd $sql tab {
+	lappend lines [list "Normal" \
+			    $tab(start) $tab(ip) $tab(stop) $tab(stopreason)]
+    }
+    set lastlogin [::arrgen::output "html" $conf(tablastlogin) $lines]
 
     #
     # Display group informations.
@@ -72,6 +124,7 @@ d cgi-register {} {
 
     d result $conf(page) [list \
 			    [list %CORRESP% $user] \
+			    [list %LASTLOGIN% $lastlogin] \
 			    [list %TABNETWORKS% $tabnetworks] \
 			    [list %TITLECIDRALONE% $titlecidralone] \
 			    [list %TABCIDRALONE% $tabcidralone] \
