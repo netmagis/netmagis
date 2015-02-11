@@ -45,13 +45,13 @@ d cgi-register {} {
     if {$lastlogin eq ""} then {
 	set llmsg ""
     } else {
-	set llmsg [mc "No last login information."]
+	set llmsg [mc "Last login: no information"]
 	set sql "SELECT start, ip FROM global.wtmp
 	    		WHERE idcor = $tabuid(idcor)
 			ORDER BY start DESC
 			LIMIT 1"
 	pg_select $dbfd $sql tab {
-	    set llmsg [mc {Last login on '%1$s' from '%2$s'.} $tab(start) $tab(ip)]
+	    set llmsg [mc {Last login: %1$s from %2$s} $tab(start) $tab(ip)]
 	}
     }
 
