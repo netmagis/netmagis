@@ -145,6 +145,11 @@ for(my $i=0;$i<@l;$i++)
 	{
 		$net_struct{$ifname}{mac} = $1;
 	}
+	if($l[$i]=~/trunkport ([0-9a-zA-Z]+)/)
+	{
+		$net_struct{$ifname}{trunk}{$1} = 1;
+		$net_struct{$1}{trunkmember} = $ifname;
+	}
 }
 
 read_tab_asso();
@@ -162,12 +167,12 @@ sub read_tab_asso
         foreach my $key (sort keys %net_struct)
         {
                 print "! $key {\n";
-                foreach my $kkey (keys %{$net_struct{$key}})
+                foreach my $kkey (sort keys %{$net_struct{$key}})
                 {
-			if($kkey eq "vlanif" || $kkey eq "inet" || $kkey eq "inet6")
+			if($kkey eq "vlanif" || $kkey eq "inet" || $kkey eq "inet6" || $kkey eq "trunk")
 			{
 				print "! \t$kkey -> \n";
-				foreach my $kkkey (keys %{$net_struct{$key}{$kkey}})
+				foreach my $kkkey (sort keys %{$net_struct{$key}{$kkey}})
 				{
 					print "! \t\t -> $kkkey\n";
 				}
@@ -187,7 +192,7 @@ sub gen_ios_output
 	
 	my $bridge_group = 0;
 
-	# triatement des routers
+	# traitement des routers
 	foreach my $key (sort keys %net_struct)
         {
 		if($net_struct{$key}{type} eq "router" && $net_struct{$key}{wr} != 1)
@@ -219,18 +224,18 @@ sub gen_ios_output
 			# interface bridge	
 			print "interface BVI$bridge_group\n";
 			# ecriture adresses IP associees au bridge
-			foreach my $ip (keys %{$net_struct{$key}{inet}})
+			foreach my $ip (sort keys %{$net_struct{$key}{inet}})
         		{
                 		print " ip address $ip\n";
         		}
-			foreach my $ip6 (keys %{$net_struct{$key}{inet6}})
+			foreach my $ip6 (sort keys %{$net_struct{$key}{inet6}})
                         {       
                                 print " ip address $ip6\n";
                         }
 
 			print "!\n";
 			
-			foreach my $kkey (keys %{$net_struct{$key}{vlanif}})
+			foreach my $kkey (sort keys %{$net_struct{$key}{vlanif}})
 			{
 				printiface($kkey,$bridge_group);
 			}
@@ -284,7 +289,6 @@ sub printiface
 		# si on est en presence d'une interface vlan
 		if($net_struct{$name}{type} eq "vlan")
 		{
-			#print "interface $net_struct{$name}{parent}.$net_struct{$name}{vlanid}\n";
 			print "interface $name\n";
     
 			if($traffic_stats == 1)
@@ -301,6 +305,20 @@ sub printiface
 			print " parent-iface $net_struct{$name}{parent}\n";
 			print " encapsulation dot1Q $net_struct{$name}{vlanid}\n";	
 		}
+		# si on est en presence d'un trunk
+		elsif($net_struct{$name}{type} eq "Ethernet" && exists $net_struct{$name}{trunk})
+		{
+			print "interface $name\n";
+			
+			if($traffic_stats == 1)
+                        {
+                            print " description <X M$host{name}.$name>\n";
+                        }
+                        else
+                        {      
+                            print " description X\n";
+                        }
+		}
         	else
 		{
 			print "interface $name\n";
@@ -308,6 +326,11 @@ sub printiface
 		 	{
 				my $link = $net_struct{$name}{mac};
 				$link =~ s/://g;
+
+				if(exists $net_struct{$name}{trunkmember})
+                                {
+                                        $link = "$link-$name";
+                                }
 
 				if($traffic_stats == 1)
 				{
@@ -322,6 +345,12 @@ sub printiface
 			{
 				print " description X\n";
 			}
+			
+			if(exists $net_struct{$name}{trunkmember})
+			{
+				print " channel-group $net_struct{$name}{trunkmember} mode auto\n"
+			}
+			
 		}
 		# ajout dans le bridge group de l'interface
 		if($bridge_group > 0)
@@ -330,11 +359,11 @@ sub printiface
 		}
 
 		# ecriture adresses IP
-		foreach my $ip (keys %{$net_struct{$name}{inet}})
+		foreach my $ip (sort keys %{$net_struct{$name}{inet}})
 		{
 			print " ip address $ip\n";
 		}
-		foreach my $ip6 (keys %{$net_struct{$name}{inet6}})
+		foreach my $ip6 (sort keys %{$net_struct{$name}{inet6}})
        		{
                  	print " ip address $ip6\n";
         	}

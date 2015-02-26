@@ -826,9 +826,14 @@ proc cisco-parse-channel-group {active line tab idx} {
     upvar $tab t
 
     set ifname $t($idx!current!if)
-    set parentif [lindex $line 0]
+    set param [lindex $line 0]
+    if {[regexp {^[0-9]+$} $param]} {
+      set parentif "Port-channel$param"
+    else {
+      set parentif $param
+    }
     set i $idx!if!$ifname
-    return [cisco-set-ifattr t $i parentif "Port-channel$parentif"]
+    return [cisco-set-ifattr t $i parentif $parentif]
 }
 
 
