@@ -58,6 +58,7 @@
  {Cannot create group of orphaned users (%s)} {Impossible de créer le groupe des utilisateurs orphelins (%s)}
  {Cannot fetch key '%1$s': %2$s} {Impossible de lire la clef '%1$s' : %2$s}
  {Cannot find registered CGI action} {Aucune action CGI trouvée}
+ {Cannot get my own URL} {Impossible d'obtenir ma propre URL}
  {Cannot lock database: %s} {Verrouillage impossible : %s}
  {Cannot lock table(s) %1$s: %2$s} {Verrouillage impossible pour la/les table(s) %1$s : %2$s}
  {Cannot open file '%1$s': %2$s} {Impossible d'ouvrir le fichier '%1$s' : %2$s}
@@ -226,6 +227,7 @@
  {Invalid ACL permission '%s'} {Droit ACL invalide '%s'}
  {Invalid address count '%s'} {Nombre '%s' d'adresses invalide}
  {Invalid argument '%s'} {Argument '%s' invalide}
+ {Invalid CAS URL} {URL invalide pour CAS}
  {Invalid character in password} {Caractère invalide dans le mot de passe}
  {Invalid CIDR '%s'} {CIDR '%s' incorrect}
  {Invalid date or time '%1$s/%2$s'} {Date ou heure invalide '%1$s/%2$s'}
@@ -649,6 +651,7 @@
  cfg:dayfmt:help {Format d'affichage des dates (sans l'heure). Voir la page de manuel clock(n) de Tcl.}
  cfg:authmethod:desc {Méthode d'authentification}
  cfg:authmethod:help {La méthode d'authentification est basée sur un annuaire où trouver les informations sur les personnes (nom, adresse, etc.).}
+ cfg:authmethod:help {La méthode d'authentification peut être "Internal" pour la base d'utilisateurs intégrée (tables PostgreSQL), "LDAP" pour un annuaire externe, ou "CAS" pour une authentification unique à base de CAS et d'un annuaire LDAP.}
  cfg:authexpire:desc {Délai maximum d'inactivité}
  cfg:authexpire:help {Durée maximale (en secondes) au bout de laquelle la session authentifiée est conservée. Conservez une valeur élevée (de quelques heures à quelques jours) de façon à ne pas interrompre les actions des utilisateurs.}
  cfg:authtoklen:desc {Longueur du token}
@@ -710,7 +713,12 @@
  cfg:macactive:desc {Activation de Mac}
  cfg:macactive:help {Cocher cette case pour activer l'accès à la fonctionnalité "Mac".}
 
- cfg:authldap {Paramètres pour l'authentification LDAP}
+ cfg:authcas {Paramètres pour l'authentification CAS}
+
+ cfg:casurl:desc {URL CAS}
+ cfg:casurl:help {URL de base du service CAS, utilisée pour construire les URL de login, casValidate et casLogout.}
+
+ cfg:authldap {Paramètres LDAP}
 
  cfg:ldapurl:desc {Serveur LDAP}
  cfg:ldapurl:help {URL d'accès au serveur LDAP. Exemple : ldaps://ldap.domaine.fr:636/}

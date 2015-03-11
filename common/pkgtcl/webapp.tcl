@@ -30,6 +30,7 @@
 #   2010/12/09 : pda      : ajout form-submit et form-reset
 #   2010/12/16 : pda      : add import-vars optional fspec parameter
 #   2012/01/09 : pda      : add cmdpath
+#   2015/03/11 : pda/jean : add myurl
 #
 
 # packages nécessaires pour l'acces à la base d'authentification
@@ -41,10 +42,10 @@ package require pgsql ;			# package local
 
 # package require Pgtcl
 
-package provide webapp 1.16
+package provide webapp 1.17
 
 namespace eval webapp {
-    namespace export log pathinfo user locale \
+    namespace export log pathinfo user myurl locale \
 	form-field form-yesno form-bool form-menu form-text form-hidden \
 	form-submit form-reset \
 	hide-parameters file-subst \
@@ -55,7 +56,7 @@ namespace eval webapp {
 	mail \
 	random \
 	set-cookie get-cookie \
-	nologin send error-exit \
+	nologin send redirect error-exit \
 	debug cgidebug cgi-exec \
 	cmdpath
 
@@ -361,6 +362,55 @@ proc ::webapp::user {} {
 	set nm {}
     }
     return $nm
+}
+
+#
+# Returns the complete URL of current script
+#
+# Input:
+#   - level: nomber of components to remove from the end of the URL
+#	(0: complete URL, 1: remove the last component, etc.)
+#   - environment variables:
+#	- REQUEST_URI
+#	- REQUEST_SCHEME
+#	- SERVER_NAME
+#	- SERVER_PORT
+# Output:
+#   - return value: URL or empty string
+#
+# History:
+#   2015/03/11 : pda/jean : design
+#
+
+proc ::webapp::myurl {{level 0}} {
+    global env
+
+    foreach {v e} {
+		    uri    REQUEST_URI
+		    scheme REQUEST_SCHEME
+		    server SERVER_NAME
+		    port   SERVER_PORT
+		} {
+	if {! [info exists env($e)]} then {
+	    return ""
+	}
+	set $v $env($e)
+    }
+
+    # special case for IPv6 numeric addresses
+    if {[regexp {:} $server]} then {
+	set server "\[$server\]"
+    }
+
+    # remove some components from the request URI
+    for {set i 0} {$i < $level} {incr i} {
+	regsub {/[^/]*$} $uri {} uri
+    }
+    if {$uri eq ""} then {
+	set uri "/"
+    }
+
+    return "$scheme://$server:$port$uri"
 }
 
 #
@@ -2123,6 +2173,26 @@ proc ::webapp::sortie-latex {page fichier} {
     if {[lsearch $::webapp::debuginfos latexfiles] == -1} then {
 	file delete -force -- $texfile $pdffile $auxfile $logfile
     }
+}
+
+#
+# Sort une redirection
+#
+# Entrée :
+#   - paramètres :
+#	- url : redirect url (or relative path)
+# Sortie :   
+#   - envoi direct sur la sortie standard
+#
+# Historique
+#   2015/02/18 : pda/jean : creation
+#
+
+proc ::webapp::redirect {url} {
+    fconfigure stdout -encoding utf-8
+    puts stdout "Location: $url"
+    http-send-cookies
+    puts stdout ""
 }
 
 ##############################################################################

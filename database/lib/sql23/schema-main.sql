@@ -54,6 +54,7 @@ CREATE TABLE global.tmp (
 
 -- Currently logged-in users
 CREATE TABLE global.utmp (
+    casticket	TEXT,			-- CAS service ticket
     lastaccess	TIMESTAMP (0) WITHOUT TIME ZONE
                         DEFAULT CURRENT_TIMESTAMP
 			NOT NULL	-- last access to a page

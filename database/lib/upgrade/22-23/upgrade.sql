@@ -26,6 +26,7 @@ CREATE TABLE global.tmp (
 
 -- Currently logged-in users
 CREATE TABLE global.utmp (
+    casticket	TEXT,			-- CAS service ticket
     lastaccess	TIMESTAMP (0) WITHOUT TIME ZONE
                         DEFAULT CURRENT_TIMESTAMP
 			NOT NULL	-- last access to a page
@@ -44,5 +45,6 @@ DELETE FROM global.config where key = 'ldapattrpasswd' ;
 INSERT INTO global.config (key, value) VALUES ('authexpire', '36000') ;
 INSERT INTO global.config (key, value) VALUES ('authtoklen', '32') ;
 INSERT INTO global.config (key, value) VALUES ('wtmpexpire', '365') ;
+INSERT INTO global.config (key, value) VALUES ('casurl', 'https://cas.example.com/cas/') ;
 
 UPDATE global.config SET value = '23' WHERE key = 'schemaversion' ;

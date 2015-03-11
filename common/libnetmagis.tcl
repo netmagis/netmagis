@@ -796,6 +796,7 @@ snit::type ::netmagis {
 		set m {-method opened-postgresql}
 		lappend m "-db" $dbfd
 	    }
+	    casldap -
 	    ldap {
 		foreach v {ldapurl ldapbinddn ldapbindpw ldapbasedn
 				ldapsearchlogin ldapattrlogin
@@ -1123,6 +1124,25 @@ snit::type ::netmagis {
 	    #
 
 	    if {! $authenticated} then {
+
+		#
+		# Check for CAS auth first
+		#
+
+		set am [dnsconfig get "authmethod"]
+		if {$am eq "casldap"} then {
+		    set casurl [dnsconfig get "casurl"]
+		    if {$casurl eq ""} then {
+			d error [mc "Invalid CAS URL"]
+		    }
+		    set home [::webapp::myurl 1]
+		    if {$home eq ""} then {
+			d error [mc "Cannot get my own URL"]
+		    }
+		    set url "$casurl/login?service=$home/$libconf(next-login)"
+		    ::webapp::redirect $url
+		    exit 0
+		}
 
 		#
 		# For the "logged as" message
@@ -1874,7 +1894,7 @@ snit::type ::config {
 	{general
 	    {datefmt rw {string}}
 	    {dayfmt rw {string}}
-	    {authmethod rw {menu {{pgsql Internal} {ldap {LDAP}}}}}
+	    {authmethod rw {menu {{pgsql Internal} {ldap {LDAP}} {casldap CAS}}}}
 	    {authexpire rw {string}}
 	    {authtoklen rw {string}}
 	    {wtmpexpire rw {string}}
@@ -1907,6 +1927,9 @@ snit::type ::config {
 	}
 	{mac
 	    {macactive rw {bool}}
+	}
+	{authcas
+	    {casurl rw {string}}
 	}
 	{authldap
 	    {ldapurl rw {string}}
@@ -3542,26 +3565,28 @@ proc check-authtoken {dbfd token _login} {
 }
 
 #
-# Register a user login and create an authentication token for a session
+# Register a user login, create a session token and displays the index page
 #
 # Input:
 #   - parameters:
 #	- dbfd : database handle
 #	- login : the user for which we generate this token
-#	- _token : in return, generated token
 #	- _idcor : in return, id of user
+#	- casticket : service ticket returned by CAS server, or empty string
 # Output:
 #   - return value: error message or empty string
-#   - database : token is registered in database
+#   - database: token is registered in database
+#   - stdout: netmagis index page
 #
 # History
 #   2014/04/12 : pda      : design
 #   2015/01/21 : pda/jean : added idcor parameter
+#   2015/02/25 : pda/jean : add code common to PGSQL/LDAP and CAS
+#   2015/03/04 : pda/jean : register cas ticket
 #
 
-proc register-user-login {dbfd login _token _idcor} {
+proc register-user-login {dbfd login _idcor casticket} {
     global env
-    upvar $_token token
     upvar $_idcor idcor
 
     #
@@ -3610,9 +3635,14 @@ proc register-user-login {dbfd login _token _idcor} {
     if {[info exists env(REMOTE_ADDR)]} then {
 	set ip "'$env(REMOTE_ADDR)'"
     }
+    set qcas NULL
+    if {$casticket ne ""} then {
+	set qcas [::pgsql::quote $casticket]
+	set qcas "'$qcas'"
+    }
 
-    set sql "INSERT INTO global.utmp (idcor, token, ip)
-    		VALUES ($idcor, '$token', $ip)"
+    set sql "INSERT INTO global.utmp (idcor, token, casticket, ip)
+    		VALUES ($idcor, '$token', $qcas, $ip)"
     if {! [::pgsql::execsql $dbfd $sql msg]} then {
 	d dbabort [mc "session creation for %s" login] $msg
 	return [mc "Cannot register user login (%s)" $msg]
@@ -3625,6 +3655,12 @@ proc register-user-login {dbfd login _token _idcor} {
     #
 
     d writelog "auth" "login $login $token"
+
+    #
+    # Set session cookie
+    #
+
+    ::webapp::set-cookie "session" $token 0 "" "" 0 0
 
     return ""
 }

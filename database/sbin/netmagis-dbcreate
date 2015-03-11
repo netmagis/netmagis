@@ -258,6 +258,7 @@ ifchangeexpire	30
 fullrancidmin	2
 fullrancidmax	4
 macactive	0
+casurl	https://cas.example.com/cas/
 ldapurl	ldap://ldap.example.com/
 ldapbinddn	cn=admin,ou=accounts,ou=operators,dc=example,dc=com
 ldapbindpw	*

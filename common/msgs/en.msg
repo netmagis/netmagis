@@ -12,7 +12,7 @@
  cfg:dayfmt:desc {Date display format}
  cfg:dayfmt:help {Date display format (without hours). See Tcl clock(n) manual page for format specification.}
  cfg:authmethod:desc {Authentication method}
- cfg:authmethod:help {Authentication method is based on a directory where to find people information (name, address, etc.).}
+ cfg:authmethod:help {Authentication method. Choices are "internal" for internal user database (PostgreSQL tables), "LDAP" for an external directory or "CAS" for CAS single-sign-on associated with a LDAP directory.}
  cfg:authexpire:desc {Idle timeout}
  cfg:authexpire:help {Authenticated session idle timeout (in seconds). Keep a large value (e.g. a few hours to a few days) in order not to break user actions.}
  cfg:authtoklen:desc {Token length}
@@ -74,7 +74,12 @@
  cfg:macactive:desc {MAC module activation}
  cfg:macactive:help {Check this box to activate the "MAC" module.}
 
- cfg:authldap {LDAP authentication parameters}
+ cfg:authcas {CAS authentication parameters}
+
+ cfg:casurl:desc {CAS URL}
+ cfg:casurl:help {Base URL of CAS service. Used to build the login, casValidate and casLogout URLs.}
+
+ cfg:authldap {LDAP parameters}
 
  cfg:ldapurl:desc {LDAP server}
  cfg:ldapurl:help {URL to access LDAP server. Example: ldaps://ldap.domain.fr:636/}

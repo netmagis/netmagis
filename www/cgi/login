@@ -67,6 +67,191 @@ proc check-password {dbfd login upw} {
     return $success
 }
 
+#
+# Register user login and redirect to the index page
+#
+
+proc welcome-user {dbfd login _idcor casticket} {
+    upvar $_idcor idcor
+    global conf
+
+    set msg [register-user-login $dbfd $login idcor $casticket]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
+    # Redirect user to the index page
+    #
+
+    array set ftab2 {
+	lastlogin {{yes}}
+    }
+    puts stdout [::webapp::call-cgi [pwd]/$conf(next-index) ftab2]
+}
+
+##############################################################################
+# CAS authentication
+##############################################################################
+
+d cgi-register {ticket ^ST-[-A-Za-z0-9]+$} {
+    {ticket	1 1}
+} {
+    global conf
+    global libconf
+
+    #
+    # Specific packages required for the CAS case
+    #
+
+    package require http
+    package require tls
+    package require tdom
+
+    set am [dnsconfig get "authmethod"]
+    if {$am ne "casldap"} then {
+	::webapp::redirect "/login"
+	exit 0
+    }
+
+    set casurl [dnsconfig get "casurl"]
+    set home [::webapp::myurl 1]
+    set fmt "$casurl/serviceValidate?ticket=%s&service=$home/$libconf(next-login)"
+    set valurl [format $fmt $ticket]
+
+    #
+    # Send the validation request for the ticket received from the client
+    #
+
+    ### XXX CAS CHECK CA
+    ## ::tls::import ....
+    ::http::register https 443 ::tls::socket
+    set token [::http::geturl $valurl]
+
+    set status [::http::status $token]
+
+    if {$status ne "ok"} then {
+	d error [mc "Invalid CAS answer"]
+    }
+    
+    upvar #0 $token state
+
+    array set meta $state(meta)
+    switch -glob $meta(Content-Type) {
+	{text/plain;*} {
+	    # CAS v1
+	    d error [mc "Invalid CAS answer"]
+	}
+	{text/html;*} {
+	    # CAS v2
+	    set body $state(body)
+
+	    #
+	    # Obtained from auth-cas in OpenACS
+	    # This code uses the tdom package
+	    #
+
+	    set query "//cas:serviceResponse/cas:authenticationSuccess/cas:user/text()"
+	    dom parse $body document
+	    $document documentElement root
+	    set textNode [$root selectNodes $query]
+	    if {$textNode eq ""} then {
+		# validation failed, return error message
+		set query "//cas:serviceResponse/cas:authenticationFailure"
+		dom parse $body document
+		$document documentElement root
+
+		set textNode [$failureNode selectNodes text()]
+		set reason [$textNode nodeValue]
+		d error [mc "CAS login failed (%s)" $reason]
+	    }
+
+	    set login [$textNode nodeValue]
+
+	    welcome-user $dbfd $login idcor $ticket
+	}
+	{*} {
+	    d error [mc "Invalid CAS answer"]
+	}
+    }
+    exit 0
+}
+
+d cgi-register {logoutRequest ^.+$} {
+    {logoutRequest	1 1}
+} {
+    #
+    # This script is called when the CAS server process a logout request.
+    # Some user has requested a logout via a "Logout" button in an
+    # application (which may be Netmagis, but may be another application):
+    # the CAS server then signals every application registered with the
+    # CAS ticket that the session must be closed.
+    # We may be in one of these 2 cases:
+    # 1- logout is made via Netmagis: Netmagis has already processed the
+    #    logout request (line moved from global.utmp to global.wtmp table)
+    #    and we are called as for every application. Since the CAS ticket
+    #    is no longer in the global.utmp table, we ignore the request
+    # 2- logout is made via another application. We close the session
+    #    given the received CAS ticket.
+    #
+    # Example of logoutRequest:
+    # <samlp:LogoutRequest
+    #         xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+    #         ID="LR-40617-oR2kJ7sSlZjJ41FU4LpOPw5paOqurNSdlGZ"
+    #         Version="2.0"
+    #         IssueInstant="2015-02-25T11:51:29Z">
+    #     <saml:NameID xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+    #         @NOT_USED@
+    #     </saml:NameID>
+    #     <samlp:SessionIndex>
+    #         ST-226629-kovHNpibasDBPNXxf5s5-cas2
+    #     </samlp:SessionIndex>
+    # </samlp:LogoutRequest>
+    #
+
+    package require tdom
+
+    set query "//samlp:LogoutRequest/samlp:SessionIndex/text()"
+    dom parse $body document
+    $document documentElement root
+    set casticket [$root selectNodes $query]
+
+    if {$casticket eq ""} then {
+	# Emit a message for the Web server log
+	# (we cannot display an HTML page since this request is done
+	# by the CAS server)
+	puts stderr "CAS protocol error: no session ticket found"
+	exit 1
+    }
+
+    #
+    # Search the CAS ticket in our active sessions
+    #
+
+    set qcas [::pgsql::quote $casticket]
+    set login ""
+    set sql "SELECT login, token FROM global.utmp WHERE casticket = '$qcas'"
+    pg_select $dbfd $sql tab {
+	set login $tab(login)
+	set token $tab(token)
+    }
+
+    #
+    # Process to logout only if ticket has been found
+    #
+
+    if {$login ne ""} then {
+	set msg [register-user-logout $dbfd $login $token "" "logout"]
+	if {$msg ne ""} then {
+	    # Emit a message for the Web server log
+	    puts stderr "CAS logout: $msg"
+	    exit 1
+	}
+    }
+
+    exit 0
+}
+
 ##############################################################################
 # Display login page and validate access
 ##############################################################################
@@ -77,6 +262,8 @@ d cgi-register {} {
     {pw		0 1}
 } {
     global conf
+
+    set am [dnsconfig get "authmethod"]
 
     set message ""
     if {$logout ne ""} then {
@@ -92,28 +279,28 @@ d cgi-register {} {
 
 	    d uid "-"
 	    d euid {- -1}
-
 	    # leave login unmodified for the "login" page
+
+	    if {$am eq "casldap"} then {
+		set casurl [dnsconfig get "casurl"]
+		set url "$casurl/logout"
+		::webapp::redirect $url
+		exit 0
+	    }
+
 	}
     } else {
 	if {[string trim $login] ne ""} then {
 	    set ok [check-password $dbfd $login $pw]
 	    if {$ok} then {
-		set msg [register-user-login $dbfd $login token idcor]
-		if {$msg eq ""} then {
-		    ::webapp::set-cookie "session" $token 0 "" "" 0 0
-
-		    array set ftab2 {
-			lastlogin {{yes}}
-		    }
-		    puts stdout [::webapp::call-cgi [pwd]/$conf(next-index) ftab2]
-		    exit 0
-		} else {
-		    set message $msg
-		}
-	    } else {
-		set message [mc "Login failed"]
+		welcome-user $dbfd $login idcor ""
+		exit 0
 	    }
+	}
+
+	if {$am eq "casldap"} then {
+	    ::webapp::redirect index
+	    exit 0
 	}
     }
 

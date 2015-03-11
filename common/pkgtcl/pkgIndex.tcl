@@ -10,4 +10,4 @@
 
 package ifneeded arrgen 1.1 [list source [file join $dir arrgen.tcl]]
 package ifneeded pgsql 1.2 [list source [file join $dir pgsql.tcl]]
-package ifneeded webapp 1.16 [list source [file join $dir webapp.tcl]]
+package ifneeded webapp 1.17 [list source [file join $dir webapp.tcl]]
