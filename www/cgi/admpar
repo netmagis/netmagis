@@ -33,7 +33,7 @@ set conf(page-mod)	adm-mod.html
 # 
 
 set conf(next)		"admpar"
-set conf(nextindex)	"index"
+set conf(nextindex)	"start"
 set conf(nextadmindex)	"admindex"
 
 

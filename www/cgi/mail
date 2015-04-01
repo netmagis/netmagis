@@ -3,8 +3,6 @@
 #
 # Mail roles
 #
-# Called by: index
-#
 # Parameters (form or url): none
 #   - display selection page
 #	- action : (empty)

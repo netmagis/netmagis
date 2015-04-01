@@ -3,8 +3,6 @@
 #
 # MX modifications
 #
-# Called by: index
-#
 # Parameters (form or url):
 #   - display domain selection page
 #	- action : empty

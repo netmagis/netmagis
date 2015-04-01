@@ -20,7 +20,7 @@ set conf(page-fail)	login.html
 # 
 
 set conf(next-fail)	"login"
-set conf(next-index)	"index"
+set conf(next-index)	"start"
 
 #
 # Netmagis general library
@@ -68,7 +68,7 @@ proc check-password {dbfd login upw} {
 }
 
 #
-# Register user login and redirect to the index page
+# Register user login and redirect to the start page
 #
 
 proc welcome-user {dbfd login _idcor casticket} {
@@ -81,7 +81,7 @@ proc welcome-user {dbfd login _idcor casticket} {
     }
 
     #
-    # Redirect user to the index page
+    # Redirect user to the start page
     #
 
     array set ftab2 {
@@ -303,7 +303,7 @@ d cgi-register {} {
 	}
 
 	if {$am eq "casldap"} then {
-	    ::webapp::redirect index
+	    ::webapp::redirect start
 	    exit 0
 	}
     }

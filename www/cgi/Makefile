@@ -2,6 +2,7 @@ NINSTALL	= ../../ninstall
 
 SCRIPTS 	= \
 		    index \
+		    start \
 		    admindex \
 		    admgrp \
 		    admmrel admmx \

@@ -3,8 +3,6 @@
 #
 # Force generation of one or more DNS zones
 #
-# Called by: index
-#
 # Parameters (form or url):
 #   - display zone list:
 #	- action : (empty)

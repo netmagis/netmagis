@@ -3,8 +3,6 @@
 #
 # Search informations (host name, IP address, MAC address, groups, etc.)
 #
-# Called by: index
-#
 # Parameters (form or url):
 #	- q: search query (ip, cidr, or fqdn, or _ for "here")
 #

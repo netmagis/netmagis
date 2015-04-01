@@ -3,8 +3,6 @@
 #
 # Modification of mail relays
 #
-# Called by: admindex
-#
 # Parameters (form or url):
 #   - display domain selection page
 #	- action : empty

@@ -3,8 +3,6 @@
 #
 # Store host modifications
 #
-# Called by: index
-#
 # Parameters (form or url):
 #   - display edit page
 #	- action : (none)

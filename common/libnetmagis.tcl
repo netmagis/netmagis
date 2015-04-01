@@ -497,7 +497,13 @@ snit::type ::netmagis {
     variable errorpage "error.html"
 
     # HTML home page
-    variable homepage "index"
+    variable homepage -array {
+	:anon		index
+	:dns		start
+	:admin		admindex
+	:mac		macindex
+	:topo		eq
+    }
 
     # in order to come back from a travel in the Netmagis application
     variable dnextprog ""
@@ -539,7 +545,7 @@ snit::type ::netmagis {
 	:anon		{
 			}
 	:dns		{
-			    {index always}
+			    {start always}
 			    {net always}
 			    {add always}
 			    {del always}
@@ -553,7 +559,7 @@ snit::type ::netmagis {
 			    {mactitle mac}
 			    {admtitle admin}
 			}
-	index		{index Welcome}
+	start		{start Welcome}
 	net		{net Consult}
 	add		{add Add}
 	del		{del Delete}
@@ -579,7 +585,7 @@ snit::type ::netmagis {
 	eq		{eq Equipments}
 	l2		{l2 Vlans}
 	l3		{l3 Networks}
-	dnstitle	{index DNS/DHCP}
+	dnstitle	{start DNS/DHCP}
 	genl		{genl {Link number}}
 	:admin		{
 			    {admtitle always}
@@ -1603,7 +1609,7 @@ snit::type ::netmagis {
 
 		foreach l $avlocale {
 		    if {$l ne $locale} then {
-			set utab(L) [list $homepage]
+			set utab(L) [list $homepage(:$curmodule)]
 			set utab(L:nextprog) ""
 			set url [make-url utab "L" $uid $euid $l $blocale]
 			append linksmenu [::webapp::helem "li" \
@@ -3565,7 +3571,7 @@ proc check-authtoken {dbfd token _login} {
 }
 
 #
-# Register a user login, create a session token and displays the index page
+# Register a user login, create a session token and displays the start page
 #
 # Input:
 #   - parameters:
@@ -3576,7 +3582,6 @@ proc check-authtoken {dbfd token _login} {
 # Output:
 #   - return value: error message or empty string
 #   - database: token is registered in database
-#   - stdout: netmagis index page
 #
 # History
 #   2014/04/12 : pda      : design

@@ -56,7 +56,7 @@
 
 set conf(next)		"admref"
 set conf(nextimg)	"admref"
-set conf(nextindex)	"index"
+set conf(nextindex)	"start"
 set conf(nextadmindex)	"admindex"
 
 #

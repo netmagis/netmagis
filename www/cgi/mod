@@ -3,8 +3,6 @@
 #
 # Store host modifications
 #
-# Called by: index
-#
 # Parameters (form or url):
 #   - display host selection page
 #	- action : (none)

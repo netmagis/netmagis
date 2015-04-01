@@ -3,8 +3,6 @@
 #
 # List all machines within a network/IP range
 #
-# Called by: index
-#
 # Parameters (form or url):
 #   - selection criteria
 #	- plages : list of IP network ids

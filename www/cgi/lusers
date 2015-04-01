@@ -3,8 +3,6 @@
 #
 # List users
 #
-# Called by: index
-#
 # History
 #   2002/12/05 : jean     : design
 #   2003/05/13 : pda/jean : use auth base

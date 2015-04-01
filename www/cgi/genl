@@ -3,8 +3,6 @@
 #
 # Handle link numbers
 #
-# Called by: index
-#
 # Parameters (form or url): none
 #   - menu page with creation/reuse form and list
 #      - action: (none)

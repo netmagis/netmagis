@@ -1,9 +1,7 @@
 #!%TCLSH%
 
 #
-# Display general Netmagis index page
-#
-# Called by: /applis/dns/
+# Display general Netmagis starting page
 #
 # Parameters (form or url): none
 #
@@ -13,13 +11,14 @@
 #   2003/05/13 : pda/jean : use auth base
 #   2010/12/06 : pda      : i18n
 #   2010/12/25 : pda      : use cgi-dispatch
+#   2015/04/01 : pda/jean : rename index to start
 #
 
 #
 # Template pages used by this script
 #
 
-set conf(page)		index.html
+set conf(page)		start.html
 
 #
 # Netmagis general library
@@ -30,7 +29,7 @@ source %LIBNETMAGIS%
 # ::webapp::cgidebug ; exit
 
 ##############################################################################
-# Display index
+# Display start page
 ##############################################################################
 
 d cgi-register {} {
