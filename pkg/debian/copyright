@@ -3,9 +3,9 @@ Upstream-Name: netmagis
 Source: http://netmagis.org/
 
 Files: *
-Copyright: 2000-2012 pda@unistra.fr
-	   2000-2012 jean@unistra.fr
-	   2000-2012 boggia@unistra.fr
+Copyright: 2000-2015 pda@unistra.fr
+	   2000-2015 jean@unistra.fr
+	   2000-2015 boggia@unistra.fr
 License: CeCILL-B
  Copyright Université de Strasbourg
  Contributeurs : Pierre David (pda@unistra.fr) & Jean Benoit (jean@unistra.fr)

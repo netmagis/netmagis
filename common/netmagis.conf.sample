@@ -141,6 +141,10 @@ templatedir	%NMLIBDIR%/tmpl
 
 nologinfile	%ETCDIR%/netmagis.nologin
 
+# Root certificate authorities (used only when authenticating against a CAS
+# server)
+cafile		%CAFILE%
+
 # empty string (internal auth) or external URL to change password
 #passwdurl	https://www.example.com/chpasswd?uid=%s
 passwdurl	""			# internal

@@ -123,10 +123,14 @@ d cgi-register {ticket ^ST-[-A-Za-z0-9]+$} {
     # Send the validation request for the ticket received from the client
     #
 
-    ### XXX CAS CHECK CA
-    ## ::tls::import ....
-    ::http::register https 443 ::tls::socket
-    set token [::http::geturl $valurl]
+    set cafile [get-local-conf "cafile"]
+    if {$cafile eq "" || ! [file exists $cafile]} then {
+	d error [mc "CAS login failed (%s)" "invalid 'cafile' in netmagis.conf"]
+    }
+    ::http::register https 443 [list ::tls::socket -require 1 -cafile $cafile]
+    if {[catch {set token [::http::geturl $valurl]}]} then {
+	d error [mc "CAS login failed (%s)" "Cannot establish HTTPS connection to CAS server"]
+    }
 
     set status [::http::status $token]
 

@@ -36,7 +36,11 @@ USE_PGSQL+=	server pltcl
 .if ${PKGNAMESUFFIX} == -www
 USE_TEX=	tex
 RUN_DEPENDS+=	dot:${PORTSDIR}/graphics/graphviz \
-		pwgen:${PORTSDIR}/sysutils/pwgen
+		pwgen:${PORTSDIR}/sysutils/pwgen \
+		tcltls>=1.4.1:${PORTSDIR}/devel/tcltls \
+		tDOM>=0.8.0:${PORTSDIR}/www/tdom \
+		${LOCALBASE}/share/certs/ca-root-nss.crt:${PORTSDIR}/security/ca_root_nss
+
 .endif
 
 .if ${PKGNAMESUFFIX} == -topo

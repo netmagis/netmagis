@@ -102,7 +102,7 @@ Description: Netmagis command-line utilities
 
 Package: netmagis-www
 Architecture: any
-Depends: netmagis-common, tcl (>= 8.5), texlive-latex-base, netpbm, graphviz, transfig, apache2, libaprutil1-dbd-pgsql, ${shlibs:Depends}
+Depends: netmagis-common, tcl (>= 8.5), tcl-tls, tdom, ca-certificates, texlive-latex-base, netpbm, graphviz, transfig, apache2, libaprutil1-dbd-pgsql, ${shlibs:Depends}
 Description: Netmagis web module
  Netmagis is a network management information system, 
  which allows a network administrator to:

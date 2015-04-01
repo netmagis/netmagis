@@ -34,6 +34,7 @@ modmakefile()
 	-e "/^SBINDIR/s|/sbin|/usr&|" \
 	-e "/^MANDIR/s|/man|/usr&|" \
 	-e "/^RCDIR/s|/rc.d|/init.d|" \
+	-e "/^CAFILE/s|/.*|/etc/ssl/certs/ca-certificates.crt|" \
 	-e "/^NMDOCDIR/s|/share|/usr&|" \
 	-e "/^NMXMPDIR/s|/share/.*|/usr/share/doc/netmagis/examples|" \
 	-e "/^NMLIBDIR/s|/lib|/usr&|" \

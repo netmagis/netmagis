@@ -11,6 +11,7 @@ SBINDIR		= $(PREFIX)/sbin
 ETCDIR		= $(PREFIX)/etc
 MANDIR		= $(PREFIX)/man
 RCDIR		= $(PREFIX)/etc/rc.d
+CAFILE		= /usr/local/share/certs/ca-root-nss.crt
 
 # Netmagis specific directories
 NMDOCDIR	= $(PREFIX)/share/doc/netmagis
@@ -33,6 +34,7 @@ DIRS		= \
 			ETCDIR=$(ETCDIR) \
 			MANDIR=$(MANDIR) \
 			RCDIR=$(RCDIR) \
+			CAFILE=$(CAFILE) \
 			NMDOCDIR=$(NMDOCDIR) \
 			NMXMPDIR=$(NMXMPDIR) \
 			NMLIBDIR=$(NMLIBDIR) \
