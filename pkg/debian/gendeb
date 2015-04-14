@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e # Stop on first error
+
 # Variables
 export DEBEMAIL=jean@unistra.fr
 export DEBFULLNAME="Jean BENOIT"
@@ -17,6 +19,10 @@ VERSION=$1
 
 TGZ=netmagis-$VERSION.tar.gz
 URL=$BASEURL/$TGZ
+QUILTRC=$PWD/quiltrc
+dquilt() {
+  quilt --quiltrc="$QUILTRC" "$@"
+}
 
 PORTSDIR=$PWD/../freebsd
 
@@ -103,14 +109,20 @@ rm -fr $DIR
 
 tar xzf $TGZ
 
-modmakefile $DIR/Makefile
-
-modconf $DIR/common/netmagis.conf.sample
-
 cd $DIR
 
 # Prepare debian directory and backup orig file
 dh_make -m -p netmagis_${VERSION} -f ../$TGZ </dev/null
+dquilt new install.patch
+dquilt add Makefile
+dquilt add common/netmagis.conf.sample
+
+(
+cd ..
+modmakefile $DIR/Makefile
+
+modconf $DIR/common/netmagis.conf.sample
+)
 
 # Remove unused templates
 rm -f debian/*.EX debian/*.ex
@@ -138,4 +150,13 @@ etc/init.d/topographd
 etc/init.d/toposendd
 EOF
 
+dquilt refresh
+dquilt header
+# set patch headers as per http://dep.debian.net/deps/dep3/
+dquilt header -r <<EOH
+Description: Changes needed to build deb packages
+ Path adjustments inside Makefile and example file.
+Author: $DEBFULLNAME <$DEBEMAIL>
+Forwarded: not-needed
+EOH
 debuild -us -uc
