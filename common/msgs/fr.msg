@@ -312,6 +312,8 @@
  {location} {localisation}
  {location}	{localisation}
  {Location}	{Localisation}
+ {Log in}	{Connexion}
+ {Log out}	{Déconnexion}
  {Logged as %s} {Connecté comme %s}
  {Login '%1$s' already assigned to group '%2$s'} {Login '%1$s' déjà affecté au groupe '%2$s'}
  {Login}	{Login}
@@ -434,7 +436,6 @@
  {No selected view} {Aucune vue sélectionnée}
  {No sensor selected} {Aucun point de collecte sélectionné}
  {No valid CIDR: %s} {Aucun CIDR valide : %s}
- {Not connected} {Non connecté}
  {Number of associated hosts on %s} {Nombre de machines associées sur %s}
  {Number of associated hosts on ssid %1$s of interface %2$s of %3$s} {Nombre de machines associées sur le ssid %1$s de l'interface %2$s de %3$s}
  {Number of auhentified users on %s} {Nombre d'utilisateurs authentifiés sur %s}

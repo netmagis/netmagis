@@ -690,6 +690,17 @@ snit::type ::netmagis {
 	pgardel		{pgarealm?action=del {Remove realm}}
     }
 
+    #
+    # Links for the session menu
+    #
+
+    variable sessionlinks -array {
+	login		login
+	logout		login?logout=yes
+	profile		profile
+    }
+
+
     ###########################################################################
     # Internal procedures
     ###########################################################################
@@ -1590,12 +1601,28 @@ snit::type ::netmagis {
 	# Add the "logged as" information
 	#
 
+	set session {}
 	if {$euid eq "-"} then {
-	    set loggedas [mc "Not connected"]
+	    # Not logged in
+	    set m [mc "Log in"]
+	    set url $sessionlinks(login)
+	    append session [::webapp::helem "li" \
+				[::webapp::helem "a" "$m" "href" $url] \
+			    ]
 	} else {
-	    set loggedas [mc "Logged as %s" $euid]
+	    # Currently logged in
+	    set m [mc "Logged as %s" $euid]
+	    set url $sessionlinks(profile)
+	    append session [::webapp::helem "li" \
+				[::webapp::helem "a" "$m" "href" $url] \
+			    ]
+	    set m [mc "Log out"]
+	    set url $sessionlinks(logout)
+	    append session [::webapp::helem "li" \
+				[::webapp::helem "a" "$m" "href" $url] \
+			    ]
 	}
-	lappend lsubst [list %LOGGEDAS% $loggedas]
+	lappend lsubst [list %SESSION% $session]
 
 	#
 	# Constitute the links menu if the database access is initialized

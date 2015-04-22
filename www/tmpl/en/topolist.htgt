@@ -25,8 +25,7 @@
 	Netmagis v%VERSION%
     } {
 	\elementbandeau {Session} {
-	    <li>\lien {%LOGGEDAS%} {profile}</li>
-	    <li>\lien {Disconnect} {login?logout=yes}</li>
+	    %SESSION%
 	}
 	\elementbandeau {Actions} {
 	    %LINKS%

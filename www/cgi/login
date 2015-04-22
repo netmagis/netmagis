@@ -110,7 +110,7 @@ d cgi-register {ticket ^ST-[-A-Za-z0-9]+$} {
 
     set am [dnsconfig get "authmethod"]
     if {$am ne "casldap"} then {
-	::webapp::redirect "/login"
+	::webapp::redirect "login"
 	exit 0
     }
 
@@ -273,6 +273,11 @@ d cgi-register {} {
     if {$logout ne ""} then {
 	if {$uid eq "-"} then {
 	    set message ""
+
+	    if {$am eq "casldap"} then {
+		::webapp::redirect "index"
+		exit 0
+	    }
 	} else {
 	    set qtoken [::pgsql::quote [::webapp::get-cookie "session"]]
 	    set message [register-user-logout $dbfd [d uid] $qtoken "" "logout"]
@@ -303,7 +308,7 @@ d cgi-register {} {
 	}
 
 	if {$am eq "casldap"} then {
-	    ::webapp::redirect start
+	    ::webapp::redirect "start"
 	    exit 0
 	}
     }
