@@ -20,7 +20,10 @@ set conf(page-fail)	login.html
 # 
 
 set conf(next-fail)	"login"
-set conf(next-index)	"start"
+# welcome page (once logged in)
+set conf(next-start)	"start"
+# welcome page (anonymous)
+set conf(next-index)	"index"
 
 #
 # Netmagis general library
@@ -87,7 +90,7 @@ proc welcome-user {dbfd login _idcor casticket} {
     array set ftab2 {
 	lastlogin {{yes}}
     }
-    puts stdout [::webapp::call-cgi [pwd]/$conf(next-index) ftab2]
+    puts stdout [::webapp::call-cgi [pwd]/$conf(next-start) ftab2]
 }
 
 ##############################################################################
@@ -292,7 +295,8 @@ d cgi-register {} {
 
 	    if {$am eq "casldap"} then {
 		set casurl [dnsconfig get "casurl"]
-		set url "$casurl/logout"
+		set home [::webapp::myurl 1]
+		set url "$casurl/logout?service=$home/$conf(next-index)"
 		::webapp::redirect $url
 		exit 0
 	    }
