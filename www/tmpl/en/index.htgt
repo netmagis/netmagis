@@ -1,0 +1,67 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {01/04/2015}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Welcome
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis application
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Session} {
+	    %SESSION%
+	}
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {Welcome to the Netmagis application}
+
+    Welcome to the Netmagis application. Once logged in, this application
+    allows you to manage DNS information.
+
+    \titre {2} {Introduction}
+
+    This application interactively manages hosts (names and IP
+    addresses) on your network. These informations are stored in a
+    database, and are periodically propagated to DNS servers.
+
+    You may use classical operations:
+
+    \liste {
+	\item {add hosts or aliases}
+	\item {change informations associated with a host}
+	\item {delete hosts or aliases}
+    }
+
+    Additionnal informations are associated to each host:
+
+    \liste {
+	\item {host type: use it!}
+	\item {comment: this is a zone for you, don't hesitate
+	    to use it}
+	\item {responsible: the responsible person (user or
+	    sysadmin) for this host}
+    }
+
+    Feel free to use this database to manage your hosts.  In case
+    of suggestions for improvement, contact \lien {application
+    authors} {http://netmagis.org}.
+}
+
+}

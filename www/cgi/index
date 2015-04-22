@@ -1,0 +1,75 @@
+#!%TCLSH%
+
+#
+# Display anonymous welcome page
+#
+# Parameters (form or url): none
+#
+# History
+#   2015/04/01 : pda/jean : design
+#
+
+#
+# Template pages used by this script
+#
+
+set conf(page)		index.html
+
+#
+# Netmagis general library
+#
+
+source %LIBNETMAGIS%
+
+# ::webapp::cgidebug ; exit
+
+##############################################################################
+# Display start page
+##############################################################################
+
+d cgi-register {} {
+    {lastlogin	0 1}
+} {
+    global conf
+
+    #
+    # Display lastlogin information?
+    #
+    
+    if {$lastlogin eq ""} then {
+	set llmsg ""
+    } else {
+	set llmsg [mc "Last login: no information"]
+	set sql "SELECT start, ip FROM global.wtmp
+	    		WHERE idcor = $tabuid(idcor)
+			ORDER BY start DESC
+			LIMIT 1"
+	pg_select $dbfd $sql tab {
+	    set llmsg [mc {Last login: %1$s from %2$s} $tab(start) $tab(ip)]
+	}
+    }
+
+    #
+    # URL and substitution list building
+    #
+
+    foreach script {net add mod del profile mail web dhcp search} {
+	set up [string toupper $script]
+	d urlset "%URL$up%" "$script" {}
+    }
+    d urlset "%URLWHERE%" "search" [list [list "q" "_"]]
+
+    #
+    # End of script: output page and close database
+    #
+
+    d result $conf(page) [list \
+    				[list %LASTLOGIN% $llmsg] \
+			    ]
+}
+
+##############################################################################
+# Main procedure
+##############################################################################
+
+d cgi-dispatch "anon" ""
