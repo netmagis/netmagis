@@ -72,4 +72,4 @@ d cgi-register {} {
 # Main procedure
 ##############################################################################
 
-d cgi-dispatch "anon" ""
+d cgi-dispatch "dns" "anon"

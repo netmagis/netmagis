@@ -1085,7 +1085,7 @@ snit::type ::netmagis {
 	# Builds-up a fictive context to easily return error messages
 	#
 
-	set curmodule "dns"
+	set curmodule "anon"
 	set curcap {dns}
 	set locale "C"
 	set blocale "C"
@@ -1110,32 +1110,13 @@ snit::type ::netmagis {
 	}
 
 	#
-	# Current module
-	#
-
-	set curmodule $module
-
-	#
 	# Keep track of authentication status
 	#
 
 	set authtoken [::webapp::get-cookie "session"]
 	set authenticated [check-authtoken $dbfd $authtoken login]
 
-	if {$module eq "anon"} then {
-	    #
-	    # This is an anonymous page: no need for an authentication.
-	    # We just set the "logged as" message, and we will skip
-	    # the part of the code which references user capabilities.
-	    #
-	    if {$authenticated} then {
-		set euid $login
-	    } else {
-		set euid "-"
-	    }
-	    set uid $euid
-
-	} else {
+	if {$attr ne "anon"} then {
 	    #
 	    # Attempt to access a page restricted to valid users
 	    #
@@ -1143,11 +1124,15 @@ snit::type ::netmagis {
 	    if {! $authenticated} then {
 
 		#
-		# Check for CAS auth first
+		# Send login page
 		#
 
 		set am [dnsconfig get "authmethod"]
 		if {$am eq "casldap"} then {
+		    #
+		    # Check for CAS auth first
+		    #
+
 		    set casurl [dnsconfig get "casurl"]
 		    if {$casurl eq ""} then {
 			d error [mc "Invalid CAS URL"]
@@ -1158,28 +1143,40 @@ snit::type ::netmagis {
 		    }
 		    set url "$casurl/login?service=$home/$libconf(next-login)"
 		    ::webapp::redirect $url
-		    exit 0
+		} else {
+		    #
+		    # Normal login page for other authentication methods
+		    #
+
+		    # For the "logged as" message
+		    set euid "-"
+		    set uid  $euid
+
+		    #
+		    # Send resulting page
+		    #
+
+		    d urlset "%URLFORM%" $libconf(next-login) {}
+		    d result $libconf(page-login) [list \
+							[list %MESSAGE% ""] \
+							[list %LOGIN%  ""] \
+						    ]
 		}
-
-		#
-		# For the "logged as" message
-		#
-
-		set euid "-"
-		set uid  $euid
-
-		#
-		# Send resulting page
-		#
-
-		d urlset "%URLFORM%" $libconf(next-login) {}
-		d result $libconf(page-login) [list \
-						    [list %MESSAGE% ""] \
-						    [list %LOGIN%  ""] \
-						]
 		exit 0
 	    }
 
+	    #
+	    # If we get there, page is restricted to authenticated users,
+	    # and our user is authenticated
+	    #
+	}
+
+	#
+	# If user is authenticated, check maintenance mode and
+	# get user attributes
+	#
+
+	if {$authenticated} then {
 	    set uid $login
 	    set euid $login
 
@@ -1211,6 +1208,12 @@ snit::type ::netmagis {
 	    if {$msg ne ""} then {
 		$self error $msg
 	    }
+
+	    set curmodule $module
+
+	} else {
+	    set uid "-"
+	    set euid "-"
 	}
 
 	#
@@ -1273,8 +1276,8 @@ snit::type ::netmagis {
 	# Set user capabilities
 	#
 
-	set curcap	{}
-	if {$module ne "anon"} then {
+	set curcap	{anon}
+	if {$authenticated} then {
 	    #
 	    # Perform user substitution (through the uid parameter)
 	    #

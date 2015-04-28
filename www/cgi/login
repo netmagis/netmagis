@@ -291,6 +291,7 @@ d cgi-register {} {
 
 	    d uid "-"
 	    d euid {- -1}
+	    d module "anon"
 	    # leave login unmodified for the "login" page
 
 	    if {$am eq "casldap"} then {
@@ -300,7 +301,6 @@ d cgi-register {} {
 		::webapp::redirect $url
 		exit 0
 	    }
-
 	}
     } else {
 	if {[string trim $login] ne ""} then {
@@ -338,4 +338,4 @@ d cgi-register {} {
 # Main procedure
 ##############################################################################
 
-d cgi-dispatch "anon" ""
+d cgi-dispatch "dns" "anon"
