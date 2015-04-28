@@ -46,10 +46,7 @@ CREATE TABLE global.tmp (
     start	TIMESTAMP (0) WITHOUT TIME ZONE
                         DEFAULT CURRENT_TIMESTAMP
 			NOT NULL,	-- login time
-    ip		INET,			-- IP address at login time
-
-    FOREIGN KEY (idcor) REFERENCES global.nmuser (idcor),
-    PRIMARY KEY (idcor, token)
+    ip		INET			-- IP address at login time
 ) ;
 
 -- Currently logged-in users
@@ -57,14 +54,20 @@ CREATE TABLE global.utmp (
     casticket	TEXT,			-- CAS service ticket
     lastaccess	TIMESTAMP (0) WITHOUT TIME ZONE
                         DEFAULT CURRENT_TIMESTAMP
-			NOT NULL	-- last access to a page
+			NOT NULL,	-- last access to a page
+
+    FOREIGN KEY (idcor) REFERENCES global.nmuser (idcor),
+    PRIMARY KEY (idcor, token)
 ) INHERITS (global.tmp) ;
 
 -- All current and previous users. Table limited to 'wtmpexpire' days
 CREATE TABLE global.wtmp (
     stop	TIMESTAMP (0) WITHOUT TIME ZONE
 			NOT NULL,	-- logout or last access if expiration
-    stopreason	TEXT NOT NULL		-- 'logout', 'expired'
+    stopreason	TEXT NOT NULL,		-- 'logout', 'expired'
+
+    FOREIGN KEY (idcor) REFERENCES global.nmuser (idcor),
+    PRIMARY KEY (idcor, token)
 ) INHERITS (global.tmp) ;
 
 -- Netmagis configuration parameters (those which are not in the
