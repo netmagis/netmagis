@@ -321,6 +321,7 @@
  {Login '%s' does not exist} {Le login '%s' n'existe pas}
  {Login '%s' found more than once} {Le login '%s' est ambigu}
  {Login failed} {Échec d'authentification}
+ {Login failed due to an internal error} {Échec d'authentification suite à une erreur interne de l'application}
  {Login time}	{Connexion}
  {Logout reason}	{Raison}
  {Logout successful} {Déconnexion réussie}

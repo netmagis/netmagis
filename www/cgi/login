@@ -33,12 +33,29 @@ source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 
+# quote a value (e.g. "test") for an LDAP search (i.e. "(uid=test)")
+
+proc ldapsearchquote {item} {
+    set new [string map {
+			    (		\\28
+			    )		\\29
+			    *		\\2a
+			    |		\\7c
+			    \\		\\5c
+			} $item]
+    return $new
+}
+
 #
 # Check user password against the crypted password stored in database
+# and returns:
+# - -1 if a system error occurred (msg sent via stderr in Apache log)
+# - 0 if login was not successful
+# - 1 if login was successful
 #
 
 proc check-password {dbfd login upw} {
-    set success false
+    set success 0
 
     set am [dnsconfig get "authmethod"]
     switch $am {
@@ -54,15 +71,48 @@ proc check-password {dbfd login upw} {
 	}
 	ldap {
 	    set url       [dnsconfig get "ldapurl"]
+	    set binddn    [dnsconfig get "ldapbinddn"]
+	    set bindpw    [dnsconfig get "ldapbindpw"]
 	    set basedn    [dnsconfig get "ldapbasedn"]
-	    set attrlogin [dnsconfig get "ldapattrlogin"]
-
-	    set userdn "$attrlogin=$login,$basedn"
+	    set searchuid [dnsconfig get "ldapsearchlogin"]
 
 	    set handle [::ldapx::ldap create %AUTO%]
-	    if {[$handle connect $url $userdn $upw]} then {
-		set success true
-		$handle disconnect
+	    if {[$handle connect $url $binddn $bindpw]} then {
+		set qlogin [ldapsearchquote $login]
+		set filter [format $searchuid $login]
+
+		set e [::ldapx::entry create A%AUTO%]
+		if {[catch {set n [$handle read $basedn $filter $e]} m]} then {
+		    puts stderr "LDAP search for $login: $m"
+		    return -1
+		}
+		$handle destroy
+
+		switch $n {
+		    0 {
+			# no login found: success variable is already 0
+		    }
+		    1 {
+			set userdn [$e dn]
+
+			set handle [::ldapx::ldap create %AUTO%]
+			if {[$handle connect $url $userdn $upw]} then {
+			    set success 1
+			}
+			$handle destroy
+		    }
+		    default {
+			# more than one login found
+			puts stderr "More than one login found for '$login'. Check the ldapbasedn or ldapsearchlogin parameters."
+			set success -1
+		    }
+		}
+
+		$e destroy
+	    } else {
+		puts stderr "Cannot bind to ldap server: [$handle error]"
+		$handle destroy
+		set success -1
 	    }
 	}
     }
@@ -305,9 +355,20 @@ d cgi-register {} {
     } else {
 	if {[string trim $login] ne ""} then {
 	    set ok [check-password $dbfd $login $pw]
-	    if {$ok} then {
-		welcome-user $dbfd $login idcor ""
-		exit 0
+	    switch $ok {
+		-1 {
+		    # system error
+		    set message [mc "Login failed due to an internal error"]
+		}
+		0 {
+		    # login unsuccessful
+		    set message [mc "Login failed"]
+		}
+		1 {
+		    # login successful
+		    welcome-user $dbfd $login idcor ""
+		    exit 0
+		}
 	    }
 	}
 
