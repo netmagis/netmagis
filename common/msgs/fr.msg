@@ -249,6 +249,7 @@
  {<invalid>} {<invalide>}
  {Invalid link number (%s)} {Numéro de lien invalide (%s)} 
  {Invalid login syntax (^[a-z][-a-z0-9\.]*$)} {Syntaxe invalide pour le login ^[a-z][-a-z0-9\.]*$}
+ {Invalid login (%s)} {Login invalide (%s)}
  {Invalid mail address, password is not modified} {Adresse mail invalide, mot de passe non modifié}
  {Invalid mail role '%s'} {Role mail invalide '%s'}
  {Invalid max_lease_time value '%s'} {Valeur max_lease_time '%s' invalide}

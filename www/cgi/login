@@ -33,19 +33,6 @@ source %LIBNETMAGIS%
 
 # ::webapp::cgidebug ; exit
 
-# quote a value (e.g. "test") for an LDAP search (i.e. "(uid=test)")
-
-proc ldapsearchquote {item} {
-    set new [string map {
-			    (		\\28
-			    )		\\29
-			    *		\\2a
-			    |		\\7c
-			    \\		\\5c
-			} $item]
-    return $new
-}
-
 #
 # Check user password against the crypted password stored in database
 # and returns:
@@ -78,7 +65,6 @@ proc check-password {dbfd login upw} {
 
 	    set handle [::ldapx::ldap create %AUTO%]
 	    if {[$handle connect $url $binddn $bindpw]} then {
-		set qlogin [ldapsearchquote $login]
 		set filter [format $searchuid $login]
 
 		set e [::ldapx::entry create A%AUTO%]
@@ -224,6 +210,9 @@ d cgi-register {ticket ^ST-[-A-Za-z0-9]+$} {
 	    }
 
 	    set login [$textNode nodeValue]
+	    if {! [check-login $login]} then {
+		d error [mc "Invalid login (%s)" $login]
+	    }
 
 	    welcome-user $dbfd $login idcor $ticket
 	}
@@ -354,6 +343,10 @@ d cgi-register {} {
 	}
     } else {
 	if {[string trim $login] ne ""} then {
+	    if {! [check-login $login]} then {
+		d error [mc "Invalid login (%s)" $login]
+	    }
+
 	    set ok [check-password $dbfd $login $pw]
 	    switch $ok {
 		-1 {

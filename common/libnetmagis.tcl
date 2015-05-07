@@ -3734,6 +3734,23 @@ proc register-user-logout {dbfd login token date reason} {
 ##############################################################################
 
 #
+# Check login name validity
+#
+# Input:
+#   - parameters:
+#	- login : login name
+# Output:
+#   - return value: 1 (valid) or 0 (invalid)
+#
+# History
+#   2015/05/07 : pda/jean : design
+#
+
+proc check-login {name} {
+    return [expr ! [regexp {[()<>*]} $name]]
+}
+
+#
 # Search attributes associated to a user
 #
 # Input:
