@@ -70,6 +70,19 @@ CREATE TABLE global.wtmp (
     PRIMARY KEY (idcor, token)
 ) INHERITS (global.tmp) ;
 
+-- Failed login attempts
+CREATE TABLE global.authfail (
+    origin	TEXT,			-- login name or IP address
+    otype	TEXT,			-- type of origin ('ip' or 'login')
+    nfail	INTEGER,		-- failed attempts count
+    lastfail	TIMESTAMP (0)		-- date of last failed
+		    WITHOUT TIME ZONE
+		    DEFAULT CURRENT_TIMESTAMP,
+    blockexpire	TIMESTAMP (0) WITHOUT TIME ZONE,
+
+    PRIMARY KEY (origin, otype)
+) ;
+
 -- Netmagis configuration parameters (those which are not in the
 -- configuration file)
 CREATE TABLE global.config (

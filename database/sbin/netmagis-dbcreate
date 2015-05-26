@@ -258,6 +258,14 @@ ifchangeexpire	30
 fullrancidmin	2
 fullrancidmax	4
 macactive	0
+failloginthreshold1	3
+failloginthreshold2	10
+faillogindelay1	120
+faillogindelay2	300
+failipthreshold1	10
+failipthreshold2	30
+failipdelay1	300
+failipdelay2	1200
 casurl	https://cas.example.com/cas/
 ldapurl	ldap://ldap.example.com/
 ldapbinddn	cn=admin,ou=accounts,ou=operators,dc=example,dc=com

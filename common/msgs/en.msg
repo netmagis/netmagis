@@ -19,6 +19,22 @@
  cfg:authtoklen:help {Authentication token length in bytes. Don't change this unless you understand what you are doing.}
  cfg:wtmpexpire:desc {Last login expiration}
  cfg:wtmpexpire:help {Number of days to keep last login information.}
+ cfg:failloginthreshold1:desc {Fail login threshold 1}
+ cfg:failloginthreshold1:help {Threshold of bad login attempts. When this value is reached, the login is blocked with the delay given in the next parameter (Fail login delay 1)}
+ cfg:faillogindelay1:desc {Blocking login delay 1}
+ cfg:faillogindelay1:help {Delay (in seconds) to block the failed login when the first threshold of bad login attempts is reached}
+ cfg:failloginthreshold2:desc {Fail login threshold 2}
+ cfg:failloginthreshold2:help {Threshold of bad login attempts. When this value is reached, the login is blocked with the delay given in the next parameter (Fail login delay 2)}
+ cfg:faillogindelay2:desc {Blocking login delay 2}
+ cfg:faillogindelay2:help {Delay (in seconds) to block the failed login when the first threshold of bad login attempts is reached}
+ cfg:failipthreshold1:desc {Failed attempts threshold 1 for an IP address}
+ cfg:failipthreshold1:help {Threshold of bad login attempts for an IP address. When this value is reached, the IP address is blocked with the delay given in the next parameter (Fail ip delay 1)}
+ cfg:failipdelay1:desc {Blocking IP delay 1}
+ cfg:failipdelay1:help {Delay (in seconds) to block the IP address when the first threshold of bad attempts is reached for this IP address}
+ cfg:failipthreshold2:desc {Failed attempts threshold 1 for an IP address}
+ cfg:failipthreshold2:help {Threshold of bad login attempts for an IP address. When this value is reached, the IP address is blocked with the delay given in the next parameter (Fail ip delay 1)}
+ cfg:failipdelay2:desc {Blocking IP delay 1}
+ cfg:failipdelay2:help {Delay (in seconds) to block the IP address when the first threshold of bad attempts is reached for this IP address}
  cfg:pageformat:desc {Paper format}
  cfg:pageformat:help {Paper format for generated printable pages.}
  cfg:schemaversion:desc {Schema version}

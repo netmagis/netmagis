@@ -54,7 +54,11 @@ proc check-password {dbfd login upw} {
 		set dbpw $tab(password)
 	    }
 
-	    set success [pgauth-checkpw $upw $dbpw]
+	    if {[pgauth-checkpw $upw $dbpw]} then {
+		set success 1
+	    } else {
+		set success 0
+	    }
 	}
 	ldap {
 	    set url       [dnsconfig get "ldapurl"]
@@ -302,14 +306,157 @@ d cgi-register {logoutRequest ^.+$} {
 # Display login page and validate access
 ##############################################################################
 
+###############
+# A METTRE AU BON ENDROIT
+###############
+
+proc clean-authfail {dbfd} {
+    set sql "DELETE FROM global.authfail
+		    WHERE lastfail < LOCALTIMESTAMP - INTERVAL '1 DAY'"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	puts stderr "Error in expiration of failed logins: $msg"
+	# We don't exit with this error. In case the database is
+	# failing, we will report another database error later
+	# with an error message related to the action of the user.
+    }
+}
+
+# remove entry in case of successful login
+proc reset-authfail {dbfd otype origin} {
+    set qorigin [::pgsql::quote $origin]
+    set sql "DELETE FROM global.authfail
+		    WHERE otype = '$otype' AND origin = '$qorigin'"
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	puts stderr "Error in resetting failed $otype: $msg"
+    }
+}
+
+# update entry in case of failed login
+# Returns delay until end of blocking period
+
+proc update-authfail {dbfd otype origin} {
+    set failXthreshold1 [dnsconfig get "fail${otype}threshold1"]
+    set failXthreshold2 [dnsconfig get "fail${otype}threshold2"]
+    set failXdelay1     [dnsconfig get "fail${otype}delay1"]
+    set failXdelay2     [dnsconfig get "fail${otype}delay2"]
+
+    # critical section start
+    d dblock global.authfail
+
+    #
+    # Get current status
+    #
+
+    set qorigin [::pgsql::quote $origin]
+    set sql "SELECT nfail
+		    FROM global.authfail
+		    WHERE otype = '$otype' AND origin = '$qorigin'"
+    set nfail -1
+    pg_select $dbfd $sql tab {
+	set nfail $tab(nfail)
+    }
+
+    #
+    # Update current status according to various thresholds
+    #
+
+    if {$nfail == -1} then {
+	set sql "INSERT INTO global.authfail (origin, otype, nfail)
+		    VALUES ('$qorigin', '$otype', 1)"
+    } elseif {$nfail >= $failXthreshold2} then {
+	set sql "UPDATE global.authfail
+		    SET nfail = nfail+1,
+			lastfail = NOW (),
+			blockexpire = NOW() + '$failXdelay2 second'
+		    WHERE otype = '$otype' AND origin = '$qorigin'"
+    } elseif {$nfail >= $failXthreshold1} then {
+	set sql "UPDATE global.authfail
+		    SET nfail = nfail+1,
+			lastfail = NOW (),
+			blockexpire = NOW() + '$failXdelay1 second'
+		    WHERE otype = '$otype' AND origin = '$qorigin'"
+    } else {
+	set sql "UPDATE global.authfail
+		    SET nfail = nfail+1,
+			lastfail = NOW ()
+		    WHERE otype = '$otype' AND origin = '$qorigin'"
+    }
+
+    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	d dbabort "authfail update" $msg
+    }
+
+    #
+    #
+    #
+
+    # critical section end
+    d dbcommit "authfail update"
+
+    #
+    # Return delay until end of blocking
+    #
+
+    return [check-failed-delay $dbfd $otype $origin]
+}
+
+proc update-authfail-both {dbfd srcaddr login} {
+    set d1 [update-authfail $dbfd "ip"    $srcaddr]
+    set d2 [update-authfail $dbfd "login" $login]
+    return [expr max($d1,$d2)]
+}
+
+
+#
+# Input:
+#   - dbfd: database handle
+#   - otype: "ip" or "login"
+#   - origin: IP address or login name
+# Output:
+#   - return value: delay (in seconds) until access is allowed
+#	(or 0 if not blocked or negative value if access is allowed again)
+#
+
+proc check-failed-delay {dbfd otype origin} {
+    set qorigin [::pgsql::quote $origin]
+    set sql "SELECT EXTRACT (EPOCH FROM blockexpire - LOCALTIMESTAMP(0))
+			AS delay
+		FROM global.authfail
+    		WHERE otype = '$otype' AND origin = '$qorigin'
+		    AND blockexpire IS NOT NULL"
+    set delay 0
+    pg_select $dbfd $sql tab {
+	set delay $tab(delay)
+    }
+    return $delay
+}
+
+
+
+
 d cgi-register {} {
     {login	0 1}
     {logout	0 1}
     {pw		0 1}
 } {
     global conf
+    global env
+
+    if {[info exists env(REMOTE_ADDR]} then {
+	set srcaddr $env(REMOTE_ADDR)
+    } else {
+	set srcaddr "::1"
+    }
 
     set am [dnsconfig get "authmethod"]
+
+    clean-authfail $dbfd
+
+    set delay [check-failed-delay $dbfd "ip" $srcaddr]
+    if {$delay > 0} then {
+	set delay [update-authfail $dbfd "ip" $srcaddr]
+	d error [mc {IP address '%1$s' temporarily blocked. Retry in %2$d seconds} $srcaddr $delay]
+    }
 
     set message ""
     if {$logout ne ""} then {
@@ -347,6 +494,12 @@ d cgi-register {} {
 		d error [mc "Invalid login (%s)" $login]
 	    }
 
+	    set delay [check-failed-delay $dbfd "login" $login]
+	    if {$delay > 0} then {
+		set delay [update-authfail-both $dbfd $srcaddr $login]
+		d error [mc {Login '%1$s' temporarily blocked. Retry in %2$d secondes} $login $delay]
+	    }
+
 	    set ok [check-password $dbfd $login $pw]
 	    switch $ok {
 		-1 {
@@ -355,11 +508,18 @@ d cgi-register {} {
 		}
 		0 {
 		    # login unsuccessful
-		    set message [mc "Login failed"]
+		    set delay [update-authfail-both $dbfd $srcaddr $login]
+		    if {$delay <= 0} then {
+			set message [mc "Login failed"]
+		    } else {
+			set message [mc "Login failed. Please retry in %d seconds" $delay]
+		    }
 		}
 		1 {
 		    # login successful
 		    welcome-user $dbfd $login idcor ""
+		    reset-authfail $dbfd "ip"    $srcaddr
+		    reset-authfail $dbfd "login" $login
 		    exit 0
 		}
 	    }

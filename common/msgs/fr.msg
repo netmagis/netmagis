@@ -281,6 +281,7 @@
  {Invalid view sort class '%s'} {Classe de tri de vue '%s' invalide}
  {Invalid view '%s'}	{Vue '%s' invalide}
  {Invalid VLAN '%s'} {Vlan '%s' invalide}
+ {IP address '%1$s' temporarily blocked. Retry in %2$d seconds} {Adresse IP '%1$s' temporairement bloquée. Ré-essayez dans %2$d secondes}
  {IP address '%s' already exists} {L'adresse '%s' existe déjà}
  {IP address}	{Adresse IP}
  {IP addresses}	{Adresses IP}
@@ -321,7 +322,9 @@
  {Login '%s' already exists} {Le login '%s' existe déjà}
  {Login '%s' does not exist} {Le login '%s' n'existe pas}
  {Login '%s' found more than once} {Le login '%s' est ambigu}
+ {Login '%1$s' temporarily blocked. Retry in %2$d secondes} {Login '%1$s' temporairement bloqué. Ré-essayez dans %2$d secondes}
  {Login failed} {Échec d'authentification}
+ {Login failed. Please retry in %d seconds} {Échec d'authentification. Merci de ré-essayer dans %d secondes}
  {Login failed due to an internal error} {Échec d'authentification suite à une erreur interne de l'application}
  {Login time}	{Connexion}
  {Logout reason}	{Raison}
@@ -661,6 +664,23 @@
  cfg:authtoklen:help {Longueur du token d'authentification, en octets. Ne changez cette valeur que si vous comprenez de quoi il s'agit.}
  cfg:wtmpexpire:desc {Expiration des dernières connexions}
  cfg:wtmpexpire:help {Nombre de jours de conservation des informations de dernière connexion.}
+ cfg:failloginthreshold1:desc {Seuil 1 de tentatives de connexion}
+ cfg:failloginthreshold1:help {Seuil de tentatives de connexion. Quand cette valeur est atteinte, le nom de connexion est bloqué durant un délai indiqué avec le paramètre suivant (délai 1 de tentatives)}
+ cfg:faillogindelay1:desc {Délai de blocage 1 de nom de connexion}
+ cfg:faillogindelay1:help {Délai (en secondes) durant lequel le nom de connexion est bloqué lorsque le seuil 1 de tentatives est atteint}
+ cfg:failloginthreshold2:desc {Seuil 2 de tentatives de connexion}
+ cfg:failloginthreshold2:help {Seuil de tentatives de connexion. Quand cette valeur est atteinte, le nom de connexion est bloqué durant un délai indiqué avec le paramètre suivant (délai 2 de tentatives)}
+ cfg:faillogindelay2:desc {Délai de blocage 2 de nom de connexion}
+ cfg:faillogindelay2:help {Délai (en secondes) durant lequel le nom de connexion est bloqué lorsque le seuil 2 de tentatives est atteint}
+
+ cfg:failipthreshold1:desc {Seuil 1 de tentatives pour une adresse IP}
+ cfg:failipthreshold1:help {Seuil de tentatives de connexion pour une adresse IP donnée. Quand cette valeur est atteinte, l'adresse IP est bloquée durant un délai indiqué avec le paramètre suivant (délai 1 de tentatives IP)}
+ cfg:failipdelay1:desc {Délai de blocage 1 d'adresse IP}
+ cfg:failipdelay1:help {Délai (en secondes) durant lequel l'adresse IP est bloquée lorsque le seuil 1 de tentatives est atteint pour cette adresse IP}
+ cfg:failipthreshold2:desc {Seuil 2 de tentatives pour une adresse IP}
+ cfg:failipthreshold2:help {Seuil de tentatives de connexion pour une adresse IP donnée. Quand cette valeur est atteinte, l'adresse IP est bloquée durant un délai indiqué avec le paramètre suivant (délai 2 de tentatives IP)}
+ cfg:failipdelay2:desc {Délai de blocage 2 d'adresse IP}
+ cfg:failipdelay2:help {Délai (en secondes) durant lequel l'adresse IP est bloquée lorsque le seuil 2 de tentatives est atteint pour cette adresse IP}
  cfg:pageformat:desc {Format de papier}
  cfg:pageformat:help {Format de papier pour les pages imprimables.}
  cfg:schemaversion:desc {Version de schéma}

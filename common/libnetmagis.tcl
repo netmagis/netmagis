@@ -1934,6 +1934,14 @@ snit::type ::config {
 	    {authexpire rw {string}}
 	    {authtoklen rw {string}}
 	    {wtmpexpire rw {string}}
+	    {failloginthreshold1 rw {string}}
+	    {faillogindelay1 rw {string}}
+	    {failloginthreshold2 rw {string}}
+	    {faillogindelay2 rw {string}}
+	    {failipthreshold1 rw {string}}
+	    {failipdelay1 rw {string}}
+	    {failipthreshold2 rw {string}}
+	    {failipdelay2 rw {string}}
 	    {pageformat rw {menu {{a4 A4} {letter Letter}}} }
 	    {schemaversion ro {string}}
 	}

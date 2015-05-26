@@ -42,6 +42,19 @@ CREATE TABLE global.wtmp (
     PRIMARY KEY (idcor, token)
 ) INHERITS (global.tmp) ;
 
+-- Failed login attempts
+CREATE TABLE global.authfail (
+    origin	TEXT,			-- login name or IP address
+    otype	TEXT,			-- type of origin ('ip' or 'login')
+    nfail	INTEGER,		-- failed attempts count
+    lastfail	TIMESTAMP (0)		-- date of last failed
+		    WITHOUT TIME ZONE
+		    DEFAULT CURRENT_TIMESTAMP,
+    blockexpire	TIMESTAMP (0) WITHOUT TIME ZONE,
+
+    PRIMARY KEY (origin, otype)
+) ;
+
 
 DELETE FROM global.config where key = 'ldapattrpasswd' ;
 
@@ -49,5 +62,13 @@ INSERT INTO global.config (key, value) VALUES ('authexpire', '36000') ;
 INSERT INTO global.config (key, value) VALUES ('authtoklen', '32') ;
 INSERT INTO global.config (key, value) VALUES ('wtmpexpire', '365') ;
 INSERT INTO global.config (key, value) VALUES ('casurl', 'https://cas.example.com/cas/') ;
+INSERT INTO global.config (key, value) VALUES ('failloginthreshold1', '3') ;
+INSERT INTO global.config (key, value) VALUES ('failloginthreshold2', '10') ;
+INSERT INTO global.config (key, value) VALUES ('faillogindelay1', '120') ;
+INSERT INTO global.config (key, value) VALUES ('faillogindelay2', '300') ;
+INSERT INTO global.config (key, value) VALUES ('failipthreshold1', '10') ;
+INSERT INTO global.config (key, value) VALUES ('failipthreshold2', '30') ;
+INSERT INTO global.config (key, value) VALUES ('failipdelay1', '300') ;
+INSERT INTO global.config (key, value) VALUES ('failipdelay2', '1200') ;
 
 UPDATE global.config SET value = '23' WHERE key = 'schemaversion' ;
