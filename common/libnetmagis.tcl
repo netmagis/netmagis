@@ -317,6 +317,41 @@ set libconf(tabmachine) {
     }
 }
 
+set libconf(tabwtmp) {
+    global {
+	chars {10 normal}
+	align {left}
+	botbar {yes}
+	columns {15 25 25 25 25}
+    }
+    pattern Title {
+	vbar {yes}
+	column { chars {bold} }
+	vbar {yes}
+	column { chars {bold} }
+	vbar {yes}
+	column { chars {bold} }
+	vbar {yes}
+	column { chars {bold} }
+	vbar {yes}
+	column { chars {bold} }
+	vbar {yes}
+    }
+    pattern Normal {
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+	column { }
+	vbar {yes}
+    }
+}
+
 set libconf(tabuser) {
     global {
 	chars {10 normal}
@@ -594,6 +629,8 @@ snit::type ::netmagis {
 			    {lnet always}
 			    {lusers always}
 			    {search always}
+			    {whonow always}
+			    {wholast always}
 			    {modorg always}
 			    {modcomm always}
 			    {modhinfo always}
@@ -625,6 +662,8 @@ snit::type ::netmagis {
 	admlmx		{admlmx {List MX}}
 	lnet		{lnet {List networks}}
 	lusers		{lusers {List users}}
+	whonow		{who?action=now {Connected users}}
+	wholast		{who?action=last {Last connections}}
 	modorg		{admref?type=org {Modify organizations}}
 	modcomm		{admref?type=comm {Modify communities}}
 	modhinfo	{admref?type=hinfo {Modify machine types}}
@@ -3073,6 +3112,55 @@ proc display-user {_tabuid} {
 	lappend lines [list Normal [mc $txt] $tabuid($key)]
     }
     return [::arrgen::output "html" $libconf(tabuser) $lines]
+}
+
+#
+# Display last connections from one user or from all users
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- idcor: id of user, or -1 for all users
+# Output:
+#   - return value: HTML code ready to use
+#
+# History
+#   2015/06/05 : pda/jean : design
+#
+
+proc display-last-connections {dbfd idcor} {
+    global libconf
+
+    if {$idcor == -1} then {
+	set where ""
+	set limit ""
+    } else {
+	set where "AND w.idcor = $idcor"
+	set limit "LIMIT 10"
+    }
+
+    set sql "SELECT u.login, w.start, w.ip, w.stop, w.stopreason
+		    FROM global.wtmp w, global.nmuser u
+		    WHERE w.idcor = u.idcor $where
+		    ORDER BY start DESC
+		    $limit"
+    set lines {}
+    lappend lines [list "Title" [mc "Login"] \
+    				[mc "Login time"] \
+				[mc "IP address"] \
+				[mc "Logout time"] \
+				[mc "Logout reason"] \
+			    ]
+    pg_select $dbfd $sql tab {
+	lappend lines [list "Normal" \
+				$tab(login) \
+				$tab(start) \
+				$tab(ip) \
+				$tab(stop) \
+				$tab(stopreason) \
+			    ]
+    }
+    return [::arrgen::output "html" $libconf(tabwtmp) $lines]
 }
 
 #

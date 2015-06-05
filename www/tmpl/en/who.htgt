@@ -1,0 +1,39 @@
+{
+\modele {texte}
+
+\set {auteur} {pda/jean}
+\set {date}   {05/06/2015}
+
+\*******************************************************************************
+\partie {banniere} {
+    Netmagis - Users connections
+}
+
+\*******************************************************************************
+\partie {titrepage} {
+    Netmagis applcation
+}
+
+
+\*******************************************************************************
+\bandeau {
+	Netmagis v%VERSION%
+    } {
+	\elementbandeau {Session} {
+	    %SESSION%
+	}
+	\elementbandeau {Actions} {
+	    %LINKS%
+	}
+}
+
+\*******************************************************************************
+\partie {texte} {
+
+    \titre {1} {%TITLEPAGE%}
+
+    %TAB%
+
+}
+
+}

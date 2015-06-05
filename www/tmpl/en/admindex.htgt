@@ -39,6 +39,8 @@
 	\item {List \lien {networks} {%URLLNET%}}
 	\item {List \lien {users} {%URLLUSERS%}}
 	\item {Search for a \lien {user} {%URLSEARCH%} from a name or address}
+	\item {List \lien {currently connected users} {%URLWHO%?action=now}
+	    or \lien {last connected users} {%URLWHO%?action=last}}
 	\item {Consult \lien {statistics by user} {%URLSTATUSER%}}
 	\item {Consult \lien {statistics by organization} {%URLSTATORG%} [Slow !]}
 	\item {Consult \lien {topo daemons dashboard} {%URLTOPOTOP%}}

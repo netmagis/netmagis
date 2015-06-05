@@ -90,6 +90,7 @@
  {community = %s} {communauté = %s}
  {Configuration commands management} {Gestion des commandes de configuration}
  {Conflict between dynamic range [%1$s] and %2$s IP address(es) declared with a MAC address} {Conflit entre l'intervalle dynamique [%1$s] et %2$s adresse(s) IP déclée(s) avec une adresse MAC}
+ {Connected users} {Utilisateurs connectés}
  {Consult} {Consulter}
  {Create a new account} {Créer un nouveau compte}
  {created} {créée}
@@ -97,6 +98,7 @@
  {Creation} {Création}
  {creation of group %s} {création du groupe %s}
  {Criterion}	{Critère}
+ {Currently connected users} {Utilisateurs connectés}
  {Database schema is too old. See http://netmagis.org/upgrade.html} {Le schéma de base de données est trop ancien. Consultez http://netmagis.org/upgrade.html}
  {Database schema '%1$s' is not yet recognized by Netmagis %2$s} {Le schéma de base de données '%1$s' n'est pas encore reconnu par Netmagis %2$s}
  {Date}		{Date}
@@ -198,6 +200,7 @@
  {Host type '%s' not found} {Type de machine '%s' non trouvé}
  {Host type}	{Type de machine}
  {Id} {Identifiant}
+ {Idle time} {Durée d'inactivité}
  {Impossible to use MAC address '%1$s' because IP address '%2$s' is in DHCP dynamic range [%3$s..%4$s]} {Impossible d'affecter l'adresse MAC '%1$s' car l'adresse IP '%2$s' figure dans l'intervalle DHCP dynamique [%3$s..%4$s]}
  {Inactive addresses} {Adresses inactives}
  {inactive} {désactivé}
@@ -296,6 +299,8 @@
  {IPv6 gateway} {Passerelle IPv6}
  {IPv6}		{IPv6}
  {L2-only networks} {Réseaux de niveau 2}
+ {Last connected users} {Dernières connexions utilisateurs}
+ {Last connections} {Dernières connexions}
  {Last full-rancid} {Dernier full-rancid}
  {Last login: %1$s from %2$s} {Dernière connexion : %1$s à partir de %2$s}
  {Last login: no information} {Dernière connexion : pas d'information}

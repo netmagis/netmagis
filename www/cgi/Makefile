@@ -21,7 +21,8 @@ SCRIPTS 	= \
 		    profile search \
 		    statuser statorg \
 		    topotop \
-		    pgaindex pgapasswd pgarealm pgaacc
+		    pgaindex pgapasswd pgarealm pgaacc \
+		    who
 
 build:
 	@echo ">>> Making build in `pwd`"

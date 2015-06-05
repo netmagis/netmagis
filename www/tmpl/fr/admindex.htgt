@@ -39,6 +39,8 @@
 	\item {Lister les \lien {réseaux} {%URLLNET%}}
 	\item {Lister les \lien {correspondants} {%URLLUSERS%}}
 	\item {Chercher un \lien {correspondant} {%URLSEARCH%} à partir d'une adresse}
+	\item {Lister les \lien {utilisateurs actuellement connectés} {%URLWHO%?action=now}
+	    ou les \lien {dernières connexions utilisateurs} {%URLWHO%?action=last}}
 	\item {Consulter les \lien {statistiques par correspondant} {%URLSTATUSER%}}
 	\item {Consulter les \lien {statistiques par organisme} {%URLSTATORG%} [Lent !]}
 	\item {Consulter le \lien {tableau de bord de topod} {%URLTOPOTOP%}}

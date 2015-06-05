@@ -1,9 +1,12 @@
 Version 2.3 - 2015/??/??
+    - new "currently connected" and "last connections" pages
+    - new "fail*" configuration parameters (in netmagis.conf)
     - the "crypt" configuration parameter (in netmagis.conf) is no longer needed
     - new "random" configuration parameter  (in netmagis.conf)
     - add "CAS" as authentication method
     - add "casurl" Netmagis parameter to store the CAS service URL
     - add "cafile" configuration parameter (in netmagis.conf)
+    - improve DN search for LDAP authentication
 
 Version 2.2.4 - 2014/12/18
     - bug fix (pull request #134 from Christophe Martin, alias schplurtz):

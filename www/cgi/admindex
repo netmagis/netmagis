@@ -40,7 +40,7 @@ d cgi-register {} {} {
     # URL and substitution list building
     #
 
-    foreach script {admlmx statuser statorg lnet lusers search
+    foreach script {admlmx statuser statorg lnet lusers who search
 			admmrel admmx admgrp admzgen admpar topotop} {
 	set up [string toupper $script]
 	d urlset "%URL$up%" "$script" {}
