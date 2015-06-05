@@ -303,12 +303,12 @@ d cgi-register {logoutRequest ^.+$} {
 }
 
 ##############################################################################
-# Display login page and validate access
+# Authentication failure management
 ##############################################################################
 
-###############
-# A METTRE AU BON ENDROIT
-###############
+#
+# Remove all failed authentications older than 1 day
+#
 
 proc clean-authfail {dbfd} {
     set sql "DELETE FROM global.authfail
@@ -321,7 +321,10 @@ proc clean-authfail {dbfd} {
     }
 }
 
-# remove entry in case of successful login
+#
+# Remove failed authentication entry (for login/ip) in case of successful login
+#
+
 proc reset-authfail {dbfd otype origin} {
     set qorigin [::pgsql::quote $origin]
     set sql "DELETE FROM global.authfail
@@ -331,8 +334,10 @@ proc reset-authfail {dbfd otype origin} {
     }
 }
 
-# update entry in case of failed login
-# Returns delay until end of blocking period
+#
+# Update login/ip entry in case of failed login
+# Returns delay until end of blocking period (<= 0 if no more blocking)
+#
 
 proc update-authfail {dbfd otype origin} {
     set failXthreshold1 [dnsconfig get "fail${otype}threshold1"]
@@ -340,7 +345,10 @@ proc update-authfail {dbfd otype origin} {
     set failXdelay1     [dnsconfig get "fail${otype}delay1"]
     set failXdelay2     [dnsconfig get "fail${otype}delay2"]
 
-    # critical section start
+    #
+    # Start of critical section
+    #
+
     d dblock global.authfail
 
     #
@@ -387,10 +395,9 @@ proc update-authfail {dbfd otype origin} {
     }
 
     #
-    #
+    # End of critical section
     #
 
-    # critical section end
     d dbcommit "authfail update"
 
     #
@@ -400,6 +407,10 @@ proc update-authfail {dbfd otype origin} {
     return [check-failed-delay $dbfd $otype $origin]
 }
 
+#
+# In case of failed login attempt, ban both login and IP address
+#
+
 proc update-authfail-both {dbfd srcaddr login} {
     set d1 [update-authfail $dbfd "ip"    $srcaddr]
     set d2 [update-authfail $dbfd "login" $login]
@@ -407,6 +418,8 @@ proc update-authfail-both {dbfd srcaddr login} {
 }
 
 
+#
+# Delay until end of blocking period
 #
 # Input:
 #   - dbfd: database handle
@@ -431,8 +444,9 @@ proc check-failed-delay {dbfd otype origin} {
     return $delay
 }
 
-
-
+##############################################################################
+# Display login page and validate access
+##############################################################################
 
 d cgi-register {} {
     {login	0 1}
