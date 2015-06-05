@@ -3615,7 +3615,6 @@ proc check-authtoken {dbfd token _login} {
 #   - parameters:
 #	- dbfd : database handle
 #	- login : the user for which we generate this token
-#	- _idcor : in return, id of user
 #	- casticket : service ticket returned by CAS server, or empty string
 # Output:
 #   - return value: error message or empty string
@@ -3626,11 +3625,11 @@ proc check-authtoken {dbfd token _login} {
 #   2015/01/21 : pda/jean : added idcor parameter
 #   2015/02/25 : pda/jean : add code common to PGSQL/LDAP and CAS
 #   2015/03/04 : pda/jean : register cas ticket
+#   2015/06/05 : pda/jean : remove idcor parameter
 #
 
-proc register-user-login {dbfd login _idcor casticket} {
+proc register-user-login {dbfd login casticket} {
     global env
-    upvar $_idcor idcor
 
     #
     # Search id for the login

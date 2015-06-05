@@ -114,11 +114,10 @@ proc check-password {dbfd login upw} {
 # Register user login and redirect to the start page
 #
 
-proc welcome-user {dbfd login _idcor casticket} {
-    upvar $_idcor idcor
+proc welcome-user {dbfd login casticket} {
     global conf
 
-    set msg [register-user-login $dbfd $login idcor $casticket]
+    set msg [register-user-login $dbfd $login $casticket]
     if {$msg ne ""} then {
 	d error $msg
     }
@@ -218,7 +217,7 @@ d cgi-register {ticket ^ST-[-A-Za-z0-9]+$} {
 		d error [mc "Invalid login (%s)" $login]
 	    }
 
-	    welcome-user $dbfd $login idcor $ticket
+	    welcome-user $dbfd $login $ticket
 	}
 	{*} {
 	    d error [mc "Invalid CAS answer"]
@@ -531,7 +530,7 @@ d cgi-register {} {
 		}
 		1 {
 		    # login successful
-		    welcome-user $dbfd $login idcor ""
+		    welcome-user $dbfd $login ""
 		    reset-authfail $dbfd "ip"    $srcaddr
 		    reset-authfail $dbfd "login" $login
 		    exit 0
