@@ -169,7 +169,10 @@ d cgi-register {ticket ^ST-[-A-Za-z0-9]+$} {
     if {$cafile eq "" || ! [file exists $cafile]} then {
 	d error [mc "CAS login failed (%s)" "invalid 'cafile' in netmagis.conf"]
     }
-    ::http::register https 443 [list ::tls::socket -require 1 -cafile $cafile]
+    ::http::register https 443 [list ::tls::socket -tls1 1 \
+						    -require 1 \
+						    -cafile $cafile \
+						]
     if {[catch {set token [::http::geturl $valurl]}]} then {
 	d error [mc "CAS login failed (%s)" "Cannot establish HTTPS connection to CAS server"]
     }

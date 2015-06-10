@@ -20,8 +20,8 @@ macdbname	mac
 macdbuser	nm
 macdbpassword	password-of-macdbuser
 
-# URL of IEEE OUI database
-ouiurl		http://www.ieee.org/netstorage/standards/oui.txt
+# URL of Wireshark "manuf" file
+ouiurl		https://code.wireshark.org/review/gitweb?p=wireshark.git;a=blob_plain;f=manuf
 
 pkgtcl		%NMLIBDIR%/pkgtcl
 

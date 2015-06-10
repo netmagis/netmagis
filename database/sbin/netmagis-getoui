@@ -13,13 +13,14 @@
 source %LIBNETMAGIS%
 
 package require http
+package require tls
 
 #
-# Read OUI file from IEEE and place information in taboui array
+# Read OUI file from Wireshark repository and place information in taboui array
 #
 # Input:
 #   - parameters:
-#	- url: url to IEEE
+#	- url: url to Wireshark repo
 #	- _taboui: name of array to fill with OUI database
 # Output:
 #   - return value: error message or empty string
@@ -34,14 +35,30 @@ proc read-oui {url _taboui} {
     upvar $_taboui taboui
 
     #
+    # For HTTPS support
+    #
+
+    set cafile [get-local-conf "cafile"]
+    if {$cafile eq "" || ! [file exists $cafile]} then {
+	puts stderr "Invalid 'cafile' in netmagis.conf: check disabled"
+	::http::register https 443 [list ::tls::socket -tls1 1 -require 0]
+    } else {
+	::http::register https 443 [list ::tls::socket -tls1 1 -require 1 -cafile $cafile]
+    }
+
+    #
     # Fetch URL
     #
 
     set token [::http::geturl $url]
+    if {[catch {set token [::http::geturl $url]} msg]} then {
+	return "Cannot fetch url '$url': $msg"
+    }
+
     set status [::http::status $token]
     if {$status ne "ok"} then {
 	set code [::http::code $token]
-	return $code
+	return "Cannot fetch url '$url': $code"
     }
 
     upvar #0 $token state
@@ -64,6 +81,12 @@ proc read-oui {url _taboui} {
     set n 0
     foreach line [split $state(body) "\n"] {
 	if {[regexp {^  ([0-9a-fA-F]{2})-([0-9a-fA-F]{2})-([0-9a-fA-F]{2})\s+\(hex\)\s+(.*)} $line dummy h1 h2 h3 comp]} then {
+	    # IEEE OUI format
+	    set mac "$h1:$h2:$h3"
+	    set taboui($mac) $comp
+	    incr n
+	} elseif {[regexp {^([0-9a-fA-F]{2}):([0-9a-fA-F]{2}):([0-9a-fA-F]{2})\s+(\S+)} $line dummy h1 h2 h3 comp]} then {
+	    # Wireshark "manuf" file format
 	    set mac "$h1:$h2:$h3"
 	    set taboui($mac) $comp
 	    incr n
@@ -147,7 +170,7 @@ proc main {argv0 argv} {
 
     set msg [read-oui $ouiurl taboui]
     if {$msg ne ""} then {
-	puts stderr "Cannot get OUI information from $ouiurl"
+	puts stderr "Cannot get OUI information from $ouiurl\n$msg"
 	return 1
     }
 
@@ -167,7 +190,7 @@ proc main {argv0 argv} {
 
     set msg [update-oui $mdbfd taboui]
     if {$msg ne ""} then {
-	puts stderr "Cannot update OUI information in MAC database"
+	puts stderr "Cannot update OUI information in MAC database\n$msg"
 	return 1
     }
 
