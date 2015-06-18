@@ -829,7 +829,7 @@ proc cisco-parse-channel-group {active line tab idx} {
     set param [lindex $line 0]
     if {[regexp {^[0-9]+$} $param]} {
       set parentif "Port-channel$param"
-    else {
+    } else {
       set parentif $param
     }
     set i $idx!if!$ifname
