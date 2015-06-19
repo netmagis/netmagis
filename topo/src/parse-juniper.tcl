@@ -406,6 +406,7 @@ proc juniper-parse-if {conf tab idx} {
     upvar $tab t
 
     array set kwtab {
+	mtu			{2	NOP}
 	description		{2	juniper-parse-if-descr}
 	disable			{1	juniper-parse-if-disable}
 	native-vlan-id		{2	juniper-parse-if-nativevlan}
