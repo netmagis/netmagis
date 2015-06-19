@@ -785,7 +785,8 @@ proc cisco-parse-desc {active line tab idx} {
     upvar $tab t
 
     set error 0
-    if {! [string equal $t($idx!current!if) ""]} then {
+    if {[info exists t($idx!current!if)] && \
+	![string equal $t($idx!current!if) ""]} then {
 	set ifname $t($idx!current!if)
 
 	if {[parse-desc $line linkname statname descname msg]} then {
