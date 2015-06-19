@@ -1914,7 +1914,12 @@ proc juniper-post-process {model fdout eq tab} {
 			    unset t($i)
 			}
 			foreach i [array names nt] {
-			    lappend t($i) $nt($i)
+			    if {![info exists t($i)]} then {
+			    	set t($i) {}
+			    }
+			    foreach e $nt($i) {
+			    	lappend t($i) $e
+			    }
 			}
 		    }
 		}
