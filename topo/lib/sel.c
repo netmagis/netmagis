@@ -187,7 +187,7 @@ static void sel_mark_eq (struct eq *eq, int allow_deny)
 
 static void sel_mark_vlan (vlan_t v)
 {
-    struct node *n, *l1node ;
+    struct node *n ;
 
 int c=0;
     for (n = mobj_head (nodemobj) ; n != NULL ; n = n->next)

@@ -269,6 +269,7 @@ int main (int argc, char *argv [])
 	    break ;
 	default :
 	    usage (prog) ;
+	    exit (1) ;			/* to calm down clang */
     }
 
     /*

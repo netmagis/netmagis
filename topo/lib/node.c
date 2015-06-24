@@ -17,7 +17,7 @@ struct node *create_node (char *name, struct eq *eq, enum nodetype nodetype)
 
     s = symtab_to_name (p) ;
     MOBJ_ALLOC_INSERT (n, nodemobj) ;
-    memset (n, 0, sizeof n) ;
+    memset (n, 0, sizeof *n) ;
     n->name = s ;
     n->eq = eq ;
     n->nodetype = nodetype ;
