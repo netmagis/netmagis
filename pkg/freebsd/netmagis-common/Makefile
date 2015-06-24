@@ -34,7 +34,7 @@ WANT_PGSQL+=	server pltcl
 .endif
 
 .if ${PKGNAMESUFFIX} == -www
-USE_TEX=	tex
+USE_TEX=	full
 RUN_DEPENDS+=	dot:${PORTSDIR}/graphics/graphviz \
 		pwgen:${PORTSDIR}/sysutils/pwgen \
 		tcltls>=1.4.1:${PORTSDIR}/devel/tcltls \
