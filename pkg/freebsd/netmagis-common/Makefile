@@ -2,7 +2,7 @@
 # $FreeBSD: head/net-mgmt/netmagis-common/Makefile 361601 2014-07-12 06:57:47Z pi $
 
 PORTNAME?=	netmagis
-DISTVERSION?=	2.2.4
+DISTVERSION?=	2.3.0b1
 PORTREVISION?=	1
 CATEGORIES?=	net-mgmt
 MASTER_SITES=	http://netmagis.org/files/
@@ -17,10 +17,8 @@ COMMENT?=	Netmagis common infrastructure
 #LICENSE_FILE=	${WRKSRC}/LICENSE
 #LICENSE_PERMS=	dist-mirror dist-sell pkg-mirror pkg-sell auto-accept
 
-USES=		tcl:85+
-
-USE_PGSQL=	pgtcl
-WANT_PGSQL_VER=	91+
+USES=		tcl:85+ pgsql:9.1+
+WANT_PGSQL=	pgtcl
 
 RUN_DEPENDS+=	dtplite:${PORTSDIR}/devel/tcllib
 
@@ -29,8 +27,10 @@ RUN_DEPENDS+=	netmagis-config:${PORTSDIR}/net-mgmt/netmagis-common
 .endif
 
 .if ${PKGNAMESUFFIX} == -database
-RUN_DEPENDS+=	pwgen:${PORTSDIR}/sysutils/pwgen
-USE_PGSQL+=	server pltcl
+RUN_DEPENDS+=	pwgen:${PORTSDIR}/sysutils/pwgen \
+		tcltls>=1.4.1:${PORTSDIR}/devel/tcltls \
+		${LOCALBASE}/share/certs/ca-root-nss.crt:${PORTSDIR}/security/ca_root_nss
+WANT_PGSQL+=	server pltcl
 .endif
 
 .if ${PKGNAMESUFFIX} == -www
@@ -83,7 +83,7 @@ post-patch:
 
 .if !target(post-install)
 post-install:
-	@if [ -f ${PKGMESSAGE} ] ; then ${CAT} ${PKGMESSAGE} ; fi
+	@${DO_NADA}
 .endif
 
 .include <bsd.port.mk>
