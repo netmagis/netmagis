@@ -77,7 +77,7 @@
 	}
 	\item {It is now possible to disconnect from the application.
 	    This is a feature which was awaited by many users from a
-	    long time ago.
+	    long time.
 	}
 	\item {The new authentication framework has anti-brute-force
 	    protection. If many failed attempts are detected, delays
