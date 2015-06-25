@@ -18,12 +18,15 @@ Version 2.3.0 - 2015/??/??
     - support for Apache 2.4 (support removed for previous versions)
     - netmagis-getoui: added support for Wireshark "manuf" file
     - many minor bug fixes and improvements in the topo module:
+	- add Rancid3 support
 	- (juniper) support irb interfaces on ex4300
 	- (juniper) support mtu on interface definition
 	- (cisco) fix when encoutering a description before interface statement
 	- (cisco) fix missing parenthesis in Port-channel analysis
 	- (juniper) fix some lists which were stringified in post-processing
 	- (hp) support mixed case interface names
+    - bug fix (pull request #141 from Christophe Martin, alias schplurtz):
+	fix Debian packaging
 
 Version 2.2.4 - 2014/12/18
     - bug fix (pull request #134 from Christophe Martin, alias schplurtz):
