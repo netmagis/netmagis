@@ -71,4 +71,7 @@ INSERT INTO global.config (key, value) VALUES ('failipthreshold2', '30') ;
 INSERT INTO global.config (key, value) VALUES ('failipdelay1', '300') ;
 INSERT INTO global.config (key, value) VALUES ('failipdelay2', '1200') ;
 
+ALTER TABLE dns.rr_cname DROP CONSTRAINT rr_cname_pkey;
+ALTER TABLE dns.rr_cname ADD PRIMARY KEY (idrr);
+
 UPDATE global.config SET value = '23' WHERE key = 'schemaversion' ;

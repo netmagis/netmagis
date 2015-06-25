@@ -14,8 +14,9 @@ Version 2.3.0 - 2015/??/??
 	- new "toklen" for session token length
 	- new "authexpire" to expire session tokens
 	- new "authwtmpexpire" to expire the log of user connections
-    - improve DN search for LDAP authentication
     - support for Apache 2.4 (support removed for previous versions)
+    - add stricter database constraint for CNAMEs (issue 144 from
+	Christophe Martin, alias schplurtz)
     - netmagis-getoui: added support for Wireshark "manuf" file
     - many minor bug fixes and improvements in the topo module:
 	- add Rancid3 support
