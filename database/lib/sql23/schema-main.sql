@@ -377,7 +377,7 @@ CREATE TABLE dns.rr_cname (
 
     FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
     FOREIGN KEY (cname)  REFERENCES dns.rr (idrr),
-    PRIMARY KEY (idrr, cname)
+    PRIMARY KEY (idrr)
 ) ;
 
 CREATE TABLE dns.rr_mx (
