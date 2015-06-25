@@ -130,9 +130,10 @@
     modify informations pertaining to a host,
     etc.
 
-    Netmagis can rely on your LDAP directory for authentication.
-    In the case you don't have any LDAP directory, Netmagis include an application
-    to manage user into a PostgreSQL database.
+    Netmagis can rely on your LDAP directory and, optionally on your
+    CAS server, for authentication.  In the case you don't have any LDAP
+    directory or CAS server, Netmagis can directly manage users into a
+    PostgreSQL database.
 
     \titre {2} {Main characteristics}
 
@@ -241,8 +242,7 @@
 
     \titre {2} {Authentication et user account management}
 
-    Authentication is currently done at the web server level.
-    Account management is done:
+    Authentication is managed by Netmagis. Account management is done:
 
     \liste {
 	\item {either with an existing LDAP or PostgreSQL infrastructure 
@@ -254,6 +254,8 @@
 		case you will use the user management built into Netmagis.
 	}
     }
+
+    Authentication can also use a CAS server with a LDAP directory
 
 
     \titre {2} {Hardware prerequisite}
@@ -267,7 +269,7 @@
     \liste {
 	\item {Web server}
 	\item {Data server (PostgreSQL)}
-	\item {Authentication server (LDAP or PostgreSQL)}
+	\item {Authentication server (LDAP, CAS+LDAP or PostgreSQL)}
 	\item {DNS server}
 	\item {DHCP server (if necessary)}
 	\item {Mail relay server (if necessary)}
@@ -319,7 +321,7 @@
 	\lignetableau {
 	    \casetableau {} {Web server}
 	    \casetableau {} {\lien {Apache} {http://www.apache.org}}
-	    \casetableau {} {\gt= 2.2}
+	    \casetableau {} {\gt= 2.4}
 	    \casetableau {} {Mandatory}
 	    \casetableau {} {Any web server compatible
 		with CGI interface can do
@@ -346,7 +348,7 @@
 	\lignetableau {
 	    \casetableau {} {Library}
 	    \casetableau {} {\lien {Tcllib} {http://www.tcl.tk/software/tcllib/}}
-	    \casetableau {} {\gt= 1.10}
+	    \casetableau {} {\gt= 1.15}
 	    \casetableau {} {Mandatory}
 	    \casetableau {} {Tcllib contains essential functions
 		like LDAP directory access or OO extensions

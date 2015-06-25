@@ -141,9 +141,9 @@
     ajouter des machines, modifier les informations d'une machine,
     etc.
 
-    Enfin, l'application Netmagis peut s'adosser à votre annuaire
-    LDAP. Si vous n'en avez pas, Netmagis inclut une application pour
-    gérer les utilisateurs avec une base PostgreSQL.
+    Enfin, l'application Netmagis peut s'adosser à votre annuaire LDAP et
+    optionnellement à votre serveur CAS.  Si vous n'en avez pas, Netmagis
+    peut directement gérer les utilisateurs avec une base PostgreSQL.
 
 
     \titre {2} {Principales caractéristiques}
@@ -281,7 +281,7 @@
     \liste {
 	\item {Serveur Web}
 	\item {Serveur de données (PostgreSQL)}
-	\item {Serveur d'authentification (LDAP ou PostgreSQL)}
+	\item {Serveur d'authentification (LDAP, CAS+LDAP ou PostgreSQL)}
 	\item {Serveur DNS}
 	\item {Serveur DHCP (si nécessaire)}
 	\item {Serveur relais de messagerie (si nécessaire)}
@@ -292,6 +292,9 @@
     Bien évidemment, une même machine peut supporter un ou plusieurs
     de ces serveurs. C'est à vous de décider en fonction de vos
     contraintes d'architecture réseau et de sécurité.
+
+    L'authentification peut également être réalisée grâce à un serveur
+    CAS adossé à un annuaire LDAP.
 
 
     \titre {2} {Prérequis logiciels}
@@ -335,7 +338,7 @@
 	\lignetableau {
 	    \casetableau {} {Serveur Web}
 	    \casetableau {} {\lien {Apache} {http://www.apache.org}}
-	    \casetableau {} {\gt= 2.2}
+	    \casetableau {} {\gt= 2.4}
 	    \casetableau {} {Indispensable}
 	    \casetableau {} {N'importe quel serveur Web compatible avec
 		l'interface CGI convient
@@ -363,7 +366,7 @@
 	\lignetableau {
 	    \casetableau {} {Bibliothèque}
 	    \casetableau {} {\lien {Tcllib} {http://www.tcl.tk/software/tcllib/}}
-	    \casetableau {} {\gt= 1.10}
+	    \casetableau {} {\gt= 1.15}
 	    \casetableau {} {Indispensable}
 	    \casetableau {} {Tcllib contient des fonctions
 		indispensables, comme par exemple l'accès à

@@ -39,8 +39,8 @@
 
     \titre {2} {Installation manual}
 
-    \lien {Detailed installation instructions} {install-2.2.html}
-    for the 2.2.x releases.
+    \lien {Detailed installation instructions} {install-2.3.html}
+    for the 2.3.x releases.
 
     You may also be interested in reading:
     \liste {
@@ -57,8 +57,8 @@
     \* for the upcoming 2.2 release.
 
     If you are installing an old version of Netmagis, you may want to
-    read \lien {detailed installation instructions} {install-2.1.html}
-    for the previous 2.1 release.
+    read \lien {detailed installation instructions} {install-2.2.html}
+    for the previous 2.2 release.
 
     \titre {2} {Release notes and upgrade instructions}
 
@@ -129,6 +129,8 @@
     at the JRES'09 conference.
 
     \titre {2} {Old documentations}
+
+    Release 2.2 \lien {installation manual} {install-2.2.html}.
 
     Release 2.1 \lien {installation manual} {install-2.1.html}.
 

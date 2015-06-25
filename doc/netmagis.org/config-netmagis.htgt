@@ -54,7 +54,8 @@
 	    rights such as authorized networks, allowed IPv4 and IPv6
 	    addresses, and so on are related to the group.
 	}
-	\item {for the authentication subsystem (LDAP directory or
+	\item {for the authentication subsystem (LDAP directory used
+	    by LDAP or CAS authentication) or
 	    internal PostgreSQL authentication), an \italique {account}
 	    is characterized by a login name, a name, a postal address,
 	    a telephone number, etc. Netmagis will fetch such informations

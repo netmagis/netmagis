@@ -63,9 +63,10 @@
 	    avec des \gras {profils} pour paramétrer le démarrage de
 	    vos équipements~;
 	}
-	\item {utiliser votre \gras {annuaire LDAP} existant pour gérer les
-	    comptes des utilisateurs, ou alors gérer les comptes avec
-	    la base de données de Netmagis~;
+	\item {utiliser votre \gras {annuaire LDAP} et/ou votre \gras
+	    {serveur CAS} existants pour gérer les comptes des
+	    utilisateurs, ou alors gérer les comptes avec la base de
+	    données de Netmagis~;
 	}
 	\item {gérer un \gras {grand nombre} de réseaux, de
 	    correspondants, de domaines, de profils DHCP, etc.

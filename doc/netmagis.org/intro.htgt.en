@@ -60,8 +60,9 @@
 	\item {manage \gras {DHCP allocations} (both static or dynamic)
 	    with \gras {profiles} to parametrize network boot;
 	}
-	\item {use your existing \gras {LDAP directory} to manage
-	    accounts, or manage accounts with the Netmagis database;
+	\item {use your existing \gras {LDAP directory} and/or \gras {CAS
+	    server} to manage accounts and authentication, or manage
+	    accounts with the Netmagis database;
 	}
 	\item {manage a \gras {large number} of networks, users
 	    domains, DHCP profiles, etc.;

@@ -46,6 +46,134 @@
     \lien {github.com commits} {http://github.com/pdav/netmagis}.
 
 
+    \titre {2} {\ancre {v2.3.0} {Netmagis 2.3.0}}
+
+    Release date: ??
+
+    The 2.3.0 release of Netmagis is focused on the authentication
+    infrastructure:
+
+    \liste {
+	\item {Netmagis is no longer based on Apache authentication
+	    and, as such, no longer requires additionnal Apache modules
+	    such as \teletype {mod_auth_pgsql} which was not adapted to
+	    modern Apache distributions. Instead, authentication is now
+	    directly embedded in Netmagis itself, and the following
+	    methods are supported:
+	    \liste {
+		\item {internal database authentication: accounts are
+		    stored in the database, as with previous releases.
+		}
+		\item {LDAP-based authentication: user information and
+		    passwords are accessed from an LDAP directory (only
+		    group related information such as access rights are
+		    stored in the database), as with previous releases.
+		}
+		\item {CAS (Central Authentication Service) authentication
+		    with a LDAP directory for user information. This is
+		    a new feature of Netmagis.
+		}
+	    }
+	}
+	\item {It is now possible to disconnect from the application.
+	    This is a feature which was awaited by many users from a
+	    long time ago.
+	}
+	\item {The new authentication framework has anti-brute-force
+	    protection. If many failed attempts are detected, delays
+	    are introduced to slow down further attempts. Threshold
+	    and delay values are all configurable from the Admin /
+	    Application parameters menu.
+	}
+	\item {New Web pages have been introduced:
+	    \liste {
+		\item {The \teletype {index} page is now public (non
+		    password-protected).  it presents the Netmagis
+		    functionnality, but provides only access to the
+		    login page
+		}
+		\item {The \teletype {login} page manages user login and
+		    logout.
+		}
+		\item {The \teletype {profile} page lists the profile
+		    of the user and its last connections.
+		}
+		\item {The \teletype {who} page (only from the
+		    Administration menu) lists current or last
+		    connections.
+		}
+	    }
+	}
+	\item {Some configuration parameters (in \teletype {netmagis.conf})
+	    have been introduced or removed:
+	    \liste {
+		\item {The \teletype {crypt} parameter is no longer needed.
+		}
+		\item {A new \teletype {random} parameter has been
+		    added to reference the non-blocking pseudo-random
+		    generator device.
+		}
+		\item {A new \teletype {cafile} parameter has been
+		    added to point to the root certificate authority
+		    file, which is needed for CAS authentication and
+		    to retrieve the OUI file (for the \italique {mac}
+		    module).
+		}
+	    }
+	}
+	\item {Some application parameters (menu Admin / Application
+	    parameters) have been introduced to support the new
+	    authentication infrastructure.
+	}
+	\item {Database schema has been upgraded to 23, which means
+	    that all modules must be upgraded to a 2.3.x version.
+	}
+    }
+
+    In addition, the following modification have been done in this
+    Netmagis release:
+    \liste {
+	\item {Netmagis provides support for Apache 2.4.x only. Support
+	    for Apache 2.2.x has been dropped since it does not provide
+	    the \teletype {REQUEST_SCHEME} variable. See \lien {issue 143}
+	    {https://github.com/pdav/netmagis/issues/143} for a complete
+	    description, and the \lien {StackOverflow discussion}
+	    {http://stackoverflow.com/questions/18008135/is-serverrequest-scheme-reliable}
+	    for a work-around if you really want to stick with Apache 2.2.x.
+	}
+	\item {The OUI fetching was a maintenance nightmare since the
+	    URL of the IEEE OUI database was a constantly moving
+	    target. We now accept the Wireshark \teletype {manuf} file
+	    format and the \teletype {ouiurl} configuration parameter
+	    (in \teletype {netmagis.conf}) has been updated accordingly.
+	    See \lien {issue 138} {https://github.com/pdav/netmagis/issues/138}.
+	}
+	\item {Debian packaging has been improved by Christophe Martin.
+	    See \lien {pull request 141}
+	    {https://github.com/pdav/netmagis/pull/141}.
+	}
+	\item {Many minor improvements or bug fixes has been done for the
+	    \italique {topo} module:
+	    \liste {
+		\item {Support for Rancid3 has been added (while keeping
+		    compatibility with Rancid2)}
+		\item {Support for \teletype {irb} interfaces on Juniper
+		    EX4300 has been added}
+		\item {Support for MTU has been added on interface definition
+		    on Juniper equipements}
+		\item {A bug has been fixed on when encoutering a
+		    description before an interface statement on
+		    Cisco equipements}
+		\item {A bug has been fixed in Port-channel analysis
+		    on Cisco equipements}
+		\item {A bug has been fixed on Juniper post-processing}
+		\item {Support has been added for mixed-case interface
+		    names on HP switches}
+	    }
+	}
+    }
+
+
     \titre {2} {\ancre {v2.2.4} {Netmagis 2.2.4}}
 
     Release date: 18 december 2014

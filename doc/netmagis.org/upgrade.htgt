@@ -2,7 +2,7 @@
 \modele {texte}
 
 \set {auteur}	{pda}
-\set {date}	{23/04/2012}
+\set {date}	{24/06/2015}
 
 \*******************************************************************************
 \partie {banniere} { \* Le titre de la page (bandeau de la fenêtre)
@@ -38,14 +38,71 @@
     \titre {1} {Netmagis: Upgrade instructions}
 
     Starting from 2.2.2, you can upgrade your database from any version
-    later than 2.1.x in one call to the \teletype {netmagis-dbupgrade}
-    program.
+    later than 2.1.x with only one call to the \teletype
+    {netmagis-dbupgrade} program.
 
     For previous versions, or to upgrade from a version older than
     2.1.0, you must follow upgrade procedure for \italique {\gras {all}
     intermediate versions}.
 
     \***********************************************************************
+
+    \titre {2} {\ancre {v2.3} {Upgrading to Netmagis 2.3 from Netmagis 2.2}}
+
+    Don't forget to read \lien {release notes} {/relnotes.html#v2.3}.
+
+    This procedure assumes that your existing Netmagis database is
+    already running with a version \>= 9.1 of PostgreSQL and that your
+    Apache version is greater or equal to 2.4. If this is not the case,
+    read PostgreSQL upgrade instructions.
+
+    First, make a backup of your existing Netmagis database.
+
+    On your database server, run the \teletype {netmagis-dbupgrade}
+    program (without argument). You should see an output similar to:
+    \retrait {
+	\teletype {Detected schema version: 22}\br
+	\teletype {Latest schema supported: 23}
+    }
+
+    This messages says that you database is detected as 2.2.x (or lower)
+    installation, and the \teletype {netmagis-dbupgrade} is able to
+    upgrade it to 2.3.x. Run now:
+    \retrait {
+	\teletype {# netmagis-dbupgrade 23}
+    }
+    to upgrade your database to 2.3.x.
+
+    Since this release includes some large infrastructure changes
+    related to authentication, you may have to modify some of your
+    configuration files:
+
+    \liste {
+	\item {
+	    Change the following configuration parameters in your
+	    \teletype {netmagis.conf} files (using for example the default
+	    values supplied in the teletype {netmagis.conf.sample}):
+	    \liste {
+		\item {Remove the \teletype {crypt} parameter}
+		\item {Modify the \teletype {ouiurl} parameter}
+		\item {Add the \teletype {cafile} parameter}
+		\item {Add the \teletype {random} parameter}
+	    }
+	}
+	\item {
+	    Since the minimum Apache version is now 2.4, you have to adapt
+	    your \teletype {http.conf}. Use the example file supplied
+	    in \teletype {..../share/examples/netmagis/httpd.conf}, 
+	}
+    }
+
+    The authentication infrastructure is deeply modified with this
+    release: authentication is no longer performed by the Apache
+    server, but directly by the application. You should now use the
+    "Connection" item in the left side. Familiarize yourself with the new
+    authentication parameters in the "Admin" / "Application parameters"
+    menu.
+
 
     \titre {2} {\ancre {v2.2} {Upgrading to Netmagis 2.2 from Netmagis 2.1}}
 
@@ -58,7 +115,7 @@
     First, make a backup of your existing Netmagis database.
 
     On your database server, run the \teletype {netmagis-dbupgrade}
-    (without argument). You should see the following output:
+    program (without argument). You should see the following output:
     \retrait {
 	\teletype {Detected schema version: 21} \br
 	\teletype {Latest schema supported: 22}

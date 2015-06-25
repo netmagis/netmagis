@@ -38,6 +38,16 @@
     \titre {1} {Netmagis: News}
 
 
+    \titre {2} {[2015/06/25] Netmagis 2.3.0 is released}
+
+    The 2.3.0 version of Netmagis is available on the
+    \lien {Download} {/download.html} section. This is a
+    major release, featuring a new authentication framework
+    as well as other modifications.
+    See the \lien {release notes} {/relnotes.html#v2.3.0} for 
+    a list of modifications.
+
+
     \titre {2} {[2014/12/18] Netmagis 2.2.4 is released}
 
     The 2.2.4 version of Netmagis is available on the

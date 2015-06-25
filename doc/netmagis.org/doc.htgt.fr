@@ -39,8 +39,8 @@
 
     \titre {2} {Documentation d'installation}
 	
-    \lien {Instructions d'installation détaillées} {/install-2.2.html}
-    pour les versions 2.2.x.
+    \lien {Instructions d'installation détaillées} {/install-2.3.html}
+    pour les versions 2.3.x.
 
     Vous pouvez également être intéressé par la lecture de
     \liste {
@@ -58,8 +58,8 @@
 
     Si vous installez une ancienne version de Netmagis, vous pouvez
     lire les
-    \lien {instructions d'installation détaillées} {/install-2.1.html}
-    pour la version précédente (2.1).
+    \lien {instructions d'installation détaillées} {/install-2.2.html}
+    pour la version précédente (2.2).
 
     \titre {2} {Documentation de version et procédures de mise à jour}
 
@@ -132,6 +132,9 @@
     authentifié.
 
     \titre {2} {Anciennes documentations}
+
+    Document d'\lien {installation de la version 2.2} {install-2.2.html}
+    (en anglais).
 
     Document d'\lien {installation de la version 2.1} {install-2.1.html}
     (en anglais).
