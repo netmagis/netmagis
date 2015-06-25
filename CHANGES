@@ -1,4 +1,4 @@
-Version 2.3.0 - 2015/??/??
+Version 2.3.0 - 2015/06/25
     - modification of authentication infrastructure: Netmagis is no longer
 	based on Apache authentication
     - upgrade database schema to version 23
