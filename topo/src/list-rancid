@@ -46,8 +46,8 @@ fetch_model_server ()
     sed -n "/^! uname: \([^ ]*\)$/s//\1/p" "$1"
 }
 
-IFS=":"
-grep ":up$" $DB | egrep -v "$IGNORE" |
+IFS=":;"
+grep "[:;]up$" $DB | egrep -v "$IGNORE" |
     while read eq type up
     do
 	f="$DIR/$eq"
