@@ -10,10 +10,22 @@
 
 release: clean
 	@echo ">>> Making release in `pwd`"
-	@which debuild >/dev/null 2>&1 || \
-	    ( echo 1>&2 "You need the 'devscripts' package: apt-get -y install devscripts" && exit 1 )
-	@which dh_make >/dev/null 2>&1 || \
-	    ( echo 1>&2 "You need the 'dh-make' package: apt-get -y install dh-make" && exit 2 )
+	@missing_pkgs= ;                                                \
+	 for cmd_pkg_pair in                                            \
+	   "quilt         quilt"                                        \
+	   "debuild       devscripts"                                   \
+	   "dh_make       dh-make" ;                                    \
+	 do                                                             \
+	   set -- $$cmd_pkg_pair ;                                      \
+	   which $$1 >/dev/null 2>&1 ||                                 \
+	     missing_pkgs="$$missing_pkgs $$2" ;                        \
+	 done ;                                                         \
+	 test "$$missing_pkgs" && {                                     \
+	   printf '%s\n' "missing packages : $$missing_pkgs"            \
+	                 "you may install them with :"                  \
+	                 "apt-get -y install$$missing_pkgs" ;           \
+	   exit 1 ;                                                     \
+	 } || : yeah. We have all the needed packages...
 	sh ./gendeb $(VERSION)
 
 release-arch:
