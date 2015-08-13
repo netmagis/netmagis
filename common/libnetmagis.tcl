@@ -536,6 +536,7 @@ snit::type ::netmagis {
 	:anon		index
 	:dns		start
 	:admin		admindex
+	:pgauth		pgauth
 	:mac		macindex
 	:topo		eq
     }
