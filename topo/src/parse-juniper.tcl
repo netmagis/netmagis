@@ -760,6 +760,7 @@ proc juniper-parse-family {conf tab idx} {
 	}
 	ethernet-switching {
 	    array set kwtab {
+		interface-mode	{2	juniper-parse-l2switch-portmode}
 		port-mode	{2	juniper-parse-l2switch-portmode}
 		vlan		{1	juniper-parse-l2switch-vlan}
 		native-vlan-id	{2	juniper-parse-l2switch-nativevlan}
