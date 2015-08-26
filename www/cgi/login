@@ -136,7 +136,7 @@ proc welcome-user {dbfd login casticket} {
 # CAS authentication
 ##############################################################################
 
-d cgi-register {ticket ^ST-.{0,256}$} {
+d cgi-register {ticket ^ST-} {
     {ticket	1 1}
 } {
     global conf
