@@ -2337,24 +2337,24 @@ proc ::webapp::cgi-err {msg debug} {
 
     set page ""
     append page "<HTML>\n"
-    append page "<HEAD><TITLE>Erreur !</TITLE></HEAD>\n"
+    append page "<HEAD><TITLE>Error !</TITLE></HEAD>\n"
     append page "<BODY TEXT=#000000 BGCOLOR=#FFFFFF>\n"
     append page "<FONT FACE=\"Arial,Helvetica\">\n"
-    append page "<H1>Problème !</H1>\n"
+    append page "<H1>Internal error!</H1>\n"
 
     if {$debug} then {
 	set pwd    [exec pwd]  
 
-	append page "Erreur détectée dans l'exécution du script '$script'\n"
-	append page "à '$date'&nbsp;:\n"
+	append page "Error detected in script '$script'\n"
+	append page "on '$date'&nbsp;:\n"
 	append page "<HR>\n"
 	append page "<PRE>[::webapp::html-string $msg]</PRE>\n"
 	append page "<HR>\n"
 
-	append page "<H2>Contexte</H2>\n"
-	append page "Répertoire = $pwd<P>\n"
+	append page "<H2>Context</H2>\n"
+	append page "Directory = $pwd<P>\n"
 
-	append page "Paramètres&nbsp;:<BR>\n"
+	append page "Parameters&nbsp;:<BR>\n"
 	set n 0
 	append page "<UL>\n"
 	foreach i $argv {
@@ -2377,13 +2377,13 @@ proc ::webapp::cgi-err {msg debug} {
 	    append page "</CODE>\n"
 	}
     } else {
-	append page "Problème détecté dans l'application&nbsp;:\n"
+	append page "Error detected in script&nbsp;:\n"
 	append page "<UL>\n"
-	append page "<LI> à '$date'\n"
-	append page "<LI> dans le script '$script'\n"
+	append page "<LI> on '$date'\n"
+	append page "<LI> in '$script'\n"
 	append page "</UL>\n"
-	append page "Veuillez contacter l'administrateur du site\n"
-	append page "et lui envoyer copie de ce message.\n"
+	append page "Please contact your Netmagis administrator\n"
+	append page "and send her/him a copy of this message.\n"
 
 	puts stderr "\[$date\] webapp/$script: $msg"
     }
