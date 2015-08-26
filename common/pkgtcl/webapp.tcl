@@ -5,35 +5,35 @@
 # Historique
 #   1999/02/25 : pda : conception en package
 #   2000/07/19 : pda : ajout de generer-menu
-#   2001/02/28 : pda : suppression de get-raw-data ajouté par je ne sais pas qui
-#   2001/05/02 : pda : utilisation du package Pgtcl pour l'accès à PostgreSQL
-#   2001/10/20 : pda : ajout de la procédure sortie-html
-#   2002/05/11 : pda : ajout de la procédure sortie-latex
+#   2001/02/28 : pda : suppression de get-raw-data ajoutÃ© par je ne sais pas qui
+#   2001/05/02 : pda : utilisation du package Pgtcl pour l'accÃ¨s Ã  PostgreSQL
+#   2001/10/20 : pda : ajout de la procÃ©dure sortie-html
+#   2002/05/11 : pda : ajout de la procÃ©dure sortie-latex
 #   2002/05/11 : pda : ajout des variables tmp et pdflatex
-#   2002/05/20 : pda : ajout de la procédure send à la place de sortie-*
-#   2002/06/04 : pda : ajout de la procédure nologin
-#   2002/12/26 : pda : ajout de la procédure error-exit
-#   2003/06/07 : pda : ajout de la procédure call-cgi
-#   2003/06/27 : pda : ajout de la procédure cgi-exec
-#   2003/09/29 : pda : ajout de la procédure mail
-#   2003/11/05 : pda : utilisation de string equal à la place de string length
+#   2002/05/20 : pda : ajout de la procÃ©dure send Ã  la place de sortie-*
+#   2002/06/04 : pda : ajout de la procÃ©dure nologin
+#   2002/12/26 : pda : ajout de la procÃ©dure error-exit
+#   2003/06/07 : pda : ajout de la procÃ©dure call-cgi
+#   2003/06/27 : pda : ajout de la procÃ©dure cgi-exec
+#   2003/09/29 : pda : ajout de la procÃ©dure mail
+#   2003/11/05 : pda : utilisation de string equal Ã  la place de string length
 #   2004/02/12 : pda/jean : ajout form-bool
 #   2005/04/13 : pda : correction d'un bug dans form-text
 #   2006/08/29 : pda : ajout de import-vars
 #   2007/10/05 : pda/jean : ajout des objets auth et user
 #   2007/10/23 : pda/jean : ajout de l'objet log
 #   2008/06/12 : pda/jean : ajout de interactive-tree et helem
-#   2010/11/05 : pda      : méthode opened-postgresql pour l'objet log
+#   2010/11/05 : pda      : mÃ©thode opened-postgresql pour l'objet log
 #   2010/11/09 : pda      : suppression generer-menu
 #   2010/11/27 : pda      : ajout locale
-#   2010/11/27 : pda      : envoi utf-8 systématique
+#   2010/11/27 : pda      : envoi utf-8 systÃ©matique
 #   2010/12/09 : pda      : ajout form-submit et form-reset
 #   2010/12/16 : pda      : add import-vars optional fspec parameter
 #   2012/01/09 : pda      : add cmdpath
 #   2015/03/11 : pda/jean : add myurl
 #
 
-# packages nécessaires pour l'acces à la base d'authentification
+# packages nÃ©cessaires pour l'acces Ã  la base d'authentification
 
 package require mime ;			# tcllib 
 package require snit ;			# tcllib >= 1.10
@@ -69,8 +69,8 @@ namespace eval webapp {
     # cf http://www.w3.org/TR/1999/REC-html401-19991224/index/elements.html
     variable noendtags	{area base basefont br col frame hr img input isindex
 				link meta param}
-    # url des images (pour la génération d'arbre interactif)
-    # relativement à la racine du serveur web
+    # url des images (pour la gÃ©nÃ©ration d'arbre interactif)
+    # relativement Ã  la racine du serveur web
     variable treeimages	css/images
 
     # code Javascript de l'arbre interactif
@@ -78,13 +78,13 @@ namespace eval webapp {
 	<script type="text/javascript">
 	  <!--
 	    // fonction pour initialiser la vue de l'arborescence
-	    // id : id de l'ul de l'arborescence à initialiser
+	    // id : id de l'ul de l'arborescence Ã  initialiser
 	    // disp : "none" ou "block"
 	    // Cette fonction masque tous les ul compris sous l'id,
-	    // puis affiche juste l'ul correspondant à l'id
+	    // puis affiche juste l'ul correspondant Ã  l'id
 	    function multide(id, disp) {
 	      var x = document.getElementById (id) ;
-	      // vérification de cohérence
+	      // vÃ©rification de cohÃ©rence
 	      if (! x || x.nodeName != "UL")
 		return 'PAS UN UL' ;
 	      tab = x.getElementsByTagName ("UL") ;
@@ -94,26 +94,26 @@ namespace eval webapp {
 	      x.style.display = "block" ;
 	    }
 
-	    // fonction de déroulement/enroulement
-	    // img : un objet de type IMG (élément HTML) dont on
-	    //   veut dérouler/enrouler la liste associée
+	    // fonction de dÃ©roulement/enroulement
+	    // img : un objet de type IMG (Ã©lÃ©ment HTML) dont on
+	    //   veut dÃ©rouler/enrouler la liste associÃ©e
 	    //	 Typiquement, img est l'image "+" ou "-", et
-	    //   on veut dérouler/enrouler le ul qui suit
-	    //   dans la liste des frères
+	    //   on veut dÃ©rouler/enrouler le ul qui suit
+	    //   dans la liste des frÃ¨res
 	    function de(img) {
 	      var ul ;
-	      // vérification de cohérence
+	      // vÃ©rification de cohÃ©rence
 	      if (img.nodeName != "IMG")
 		return 'PAS UN IMG'
-	      // parcourir tous les frères pour trouver l'UL qui doit suivre
+	      // parcourir tous les frÃ¨res pour trouver l'UL qui doit suivre
 	      ul = img ;
 	      while (ul && ul.nodeName != "UL")
 		ul = ul.nextSibling ;
 	      if (! ul || ul.nodeName != "UL")
 		return 'PAS UN UL'
-	      // dérouler ou enrouler ?
+	      // dÃ©rouler ou enrouler ?
 	      if (ul.style.display == "none") {
-		// dérouler
+		// dÃ©rouler
 		ul.style.display = "block" ;
 		img.src = "%TREEIMAGES%/tree-minus.gif" ;
 		img.alt = "[-]" ;
@@ -129,7 +129,7 @@ namespace eval webapp {
 	</script>
     }
 
-    # CSS de l'arbre interactif (avec un trou correspondant à l'id)
+    # CSS de l'arbre interactif (avec un trou correspondant Ã  l'id)
     variable treecss {
 	<style type="text/css">
 	<!--
@@ -210,17 +210,17 @@ proc ::webapp::cmdpath {cmd path} {
 #
 # Positionne les informations de debug
 #
-# Entrée :
-#   - paramètres :
-#	- infos : listes de comportements à déboguer
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- infos : listes de comportements Ã  dÃ©boguer
 # Sortie :
 #   - valeur de retour : -
 #   - variables globales :
-#	- debuginfo : les informations de debug souhaitées
+#	- debuginfo : les informations de debug souhaitÃ©es
 #
 # Note : informations de debug possibles
-#	latexfiles : laisse les fichiers latex en l'état dans /tmp
-#	latexsource : sort le source latex et non le généré pdf
+#	latexfiles : laisse les fichiers latex en l'Ã©tat dans /tmp
+#	latexsource : sort le source latex et non le gÃ©nÃ©rÃ© pdf
 #
 # Historique :
 #   2002/05/12 : pda : conception
@@ -238,13 +238,13 @@ proc ::webapp::debug {infos} {
 #
 # Ajoute une ligne dans un fichier de log
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- fichier : nom du fichier de log
-#	- message : message à envoyer dans le log
+#	- message : message Ã  envoyer dans le log
 #   - variables d'environnement :
-#	- SCRIPT_NAME : voir procédure script-name
-#	- REMOTE_HOST, REMOTE_ADDR : nom du client, ou à défaut son adresse IP
+#	- SCRIPT_NAME : voir procÃ©dure script-name
+#	- REMOTE_HOST, REMOTE_ADDR : nom du client, ou Ã  dÃ©faut son adresse IP
 # Sortie :
 #   - pas de sortie
 #
@@ -283,9 +283,9 @@ proc ::webapp::log {fichier message} {
 #
 # Renvoie le contenu de la variable PATH_INFO
 #
-# Entrée :
+# EntrÃ©e :
 #   - variables d'environnement :
-#	- PATH_INFO : une chaîne de la forme "/relative/path/to/script"
+#	- PATH_INFO : une chaÃ®ne de la forme "/relative/path/to/script"
 # Sortie :
 #   - valeur de retour : liste des composants
 #
@@ -297,14 +297,14 @@ proc ::webapp::log {fichier message} {
 proc ::webapp::pathinfo {} {
     global env
 
-    # vérifie que la variable existe
+    # vÃ©rifie que la variable existe
     if {! [info exists env(PATH_INFO)]} then {
 	return {}
     }
 
-    # découpe la variable en éléments de liste
+    # dÃ©coupe la variable en Ã©lÃ©ments de liste
     set path [split $env(PATH_INFO) /]
-    # le premier élément est nul puisque le chemin commence par "/"
+    # le premier Ã©lÃ©ment est nul puisque le chemin commence par "/"
     set path [lreplace $path 0 0]
 
     return $path
@@ -314,9 +314,9 @@ proc ::webapp::pathinfo {} {
 #
 # Renvoie le nom du script courant
 #
-# Entrée :
+# EntrÃ©e :
 #   - variables d'environnement :
-#	- SCRIPT_NAME : une chaîne de la forme "/relative/path/to/script"
+#	- SCRIPT_NAME : une chaÃ®ne de la forme "/relative/path/to/script"
 # Sortie :
 #   - valeur de retour :
 #	- le nom, ou vide si rien
@@ -342,9 +342,9 @@ proc ::webapp::script-name {} {
 #
 # Renvoie le nom de l'utilisateur courant (authentification apache)
 #
-# Entrée :
+# EntrÃ©e :
 #   - variables d'environnement :
-#	- REMOTE_USER : une chaîne de la forme "login""
+#	- REMOTE_USER : une chaÃ®ne de la forme "login""
 # Sortie :
 #   - valeur de retour :
 #	- le nom, ou vide si rien
@@ -414,15 +414,15 @@ proc ::webapp::myurl {{level 0}} {
 }
 
 #
-# Renvoie les langues acceptées par l'utilisateur
+# Renvoie les langues acceptÃ©es par l'utilisateur
 #
-# Entrée :
+# EntrÃ©e :
 #   - avail : locales disponibles
 #   - variables d'environnement :
-#	- HTTP_ACCEPT_LANGUAGE : une chaîne au format RFC 2616
+#	- HTTP_ACCEPT_LANGUAGE : une chaÃ®ne au format RFC 2616
 #		lang[;q=\d],...
 # Sortie :
-#   - valeur de retour : locale à utiliser
+#   - valeur de retour : locale Ã  utiliser
 #
 # Historique :
 #   2010/11/27 : pda : conception et codage
@@ -433,8 +433,8 @@ proc ::webapp::locale {avail} {
 
     if {[info exists env(HTTP_ACCEPT_LANGUAGE)]} then {
 	#
-	# Analyse la chaîne et crée un tableau indexé par
-	# le facteur de qualité (q=)
+	# Analyse la chaÃ®ne et crÃ©e un tableau indexÃ© par
+	# le facteur de qualitÃ© (q=)
 	#
 	set accepted [string tolower $env(HTTP_ACCEPT_LANGUAGE)]
 	foreach a [split $accepted ","] {
@@ -469,7 +469,7 @@ proc ::webapp::locale {avail} {
 
 	#
 	# Croise avec les langages disponibles, en tenant
-	# compte du facteur de qualité
+	# compte du facteur de qualitÃ©
 	#
 	set avail [string tolower $avail]
 	set locale "C"
@@ -492,25 +492,25 @@ proc ::webapp::locale {avail} {
 }
 
 ##############################################################################
-# Génération de fragments de code HTML
+# GÃ©nÃ©ration de fragments de code HTML
 ##############################################################################
 
 #
-# Génération de balises HTML conformes à HTML 4.01
+# GÃ©nÃ©ration de balises HTML conformes Ã  HTML 4.01
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- tag : balise HTML ("img", "ul", "a", etc.)
-#	- content : texte associé au tag (entre les balises)
+#	- content : texte associÃ© au tag (entre les balises)
 #	- args : attributs de la balise
 # Sortie :
-#   - code HTML généré
+#   - code HTML gÃ©nÃ©rÃ©
 #
 # Exemple :
 #   puts [helem "a" "cliquer ici" "href" "http://www.tcl.tk"]
 #
 # Historique :
-#   2008/06/12 : pda/jean/lauce : intégration webapp
+#   2008/06/12 : pda/jean/lauce : intÃ©gration webapp
 #
 
 proc ::webapp::helem {tag content args} {
@@ -530,24 +530,24 @@ proc ::webapp::helem {tag content args} {
 }
 
 #
-# Génération du code HTML pour éditer un champ
+# GÃ©nÃ©ration du code HTML pour Ã©diter un champ
 #
-# Entrée :
-#   - paramètres :
-#	- spec : spécification du champ, sous la forme
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- spec : spÃ©cification du champ, sous la forme
 #		string [<largeur> [<largeurmax>]]
 #		hidden
 #		text [<hauteur> [<largeur>]]
-#		menu <item> ... <item>, où <item>={<valeur envoyée> <affichée>}
+#		menu <item> ... <item>, oÃ¹ <item>={<valeur envoyÃ©e> <affichÃ©e>}
 #		list <mono/multi> <taille> <item> ... <item>
 #		password [<largeur> [<largeurmax>]]
 #		bool
 #		hidden
 #		yesno [fmt]
 #	- var : variable du formulaire
-#	- val : valeur initiale (par défaut)
+#	- val : valeur initiale (par dÃ©faut)
 # Sortie :
-#   - code HTML généré
+#   - code HTML gÃ©nÃ©rÃ©
 #
 # Historique :
 #   2003/08/01 : pda : conception
@@ -629,15 +629,15 @@ proc ::webapp::form-field {spec var val} {
 }
 
 #
-# Génération du code HTML pour réaliser un item oui/non
+# GÃ©nÃ©ration du code HTML pour rÃ©aliser un item oui/non
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- var : variable du formulaire pour ce menu
-#	- defval : valeur par défaut
+#	- defval : valeur par dÃ©faut
 #	- fmt : format pour la sortie de l'HTML
 # Sortie :
-#   - code HTML généré
+#   - code HTML gÃ©nÃ©rÃ©
 #
 # Historique :
 #   2001/06/18 : pda : conception
@@ -658,14 +658,14 @@ proc ::webapp::form-yesno {var defval fmt} {
 }
 
 #
-# Génération du code HTML pour réaliser un item booléen (case cochée ou non)
+# GÃ©nÃ©ration du code HTML pour rÃ©aliser un item boolÃ©en (case cochÃ©e ou non)
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- var : variable du formulaire pour ce menu
-#	- defval : valeur par défaut (=0 ou !=0)
+#	- defval : valeur par dÃ©faut (=0 ou !=0)
 # Sortie :
-#   - code HTML généré
+#   - code HTML gÃ©nÃ©rÃ©
 #
 # Historique :
 #   2004/02/12 : pda/jean : conception
@@ -681,22 +681,22 @@ proc ::webapp::form-bool {var defval} {
 }
 
 #
-# Génération du code HTML pour réaliser un menu déroulant ou une
-# liste à choix multiples
+# GÃ©nÃ©ration du code HTML pour rÃ©aliser un menu dÃ©roulant ou une
+# liste Ã  choix multiples
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- var : variable du formulaire pour ce menu
-#	- taille : taille de la liste (1 si menu déroulant)
-#	- multiple : 1 si choix multiple autorisé, 0 sinon
-#	- liste : liste de couples { <valeur renvoyée> <item affiché> }
-#	- lsel : liste des indices des items sélectionnés
+#	- taille : taille de la liste (1 si menu dÃ©roulant)
+#	- multiple : 1 si choix multiple autorisÃ©, 0 sinon
+#	- liste : liste de couples { <valeur renvoyÃ©e> <item affichÃ©> }
+#	- lsel : liste des indices des items sÃ©lectionnÃ©s
 # Sortie :
-#   - code HTML généré
+#   - code HTML gÃ©nÃ©rÃ©
 #
 # Historique :
 #   2001/04/27 : pda      : conception
-#   2004/01/16 : pda/jean : correction d'un bug si lsel non trié
+#   2004/01/16 : pda/jean : correction d'un bug si lsel non triÃ©
 #
 
 proc ::webapp::form-menu {var taille multiple liste lsel} {
@@ -738,14 +738,14 @@ proc ::webapp::form-menu {var taille multiple liste lsel} {
 }
 
 #
-# Génération du code HTML pour réaliser un bouton (submit ou reset)
+# GÃ©nÃ©ration du code HTML pour rÃ©aliser un bouton (submit ou reset)
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- var : variable du formulaire pour ce menu ou {}
-#	- val : valeur par défaut (=0 ou !=0)
+#	- val : valeur par dÃ©faut (=0 ou !=0)
 # Sortie :
-#   - code HTML généré
+#   - code HTML gÃ©nÃ©rÃ©
 #
 # Historique :
 #   2010/12/09 : pda      : conception
@@ -772,21 +772,21 @@ proc ::webapp::form-reset {var val} {
 }
 
 #
-# Génération du code HTML pour réaliser une ligne de texte
+# GÃ©nÃ©ration du code HTML pour rÃ©aliser une ligne de texte
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- var : variable du formulaire pour cette ligne
-#	- hauteur : hauteur de l'entrée, ou 0 pour la hauteur par défaut
-#	- largeur : taille de l'entrée, ou 0 pour la taille par défaut
-#	- max : nb maximum de caractères autorisés, 0 pour la valeur par défaut
+#	- hauteur : hauteur de l'entrÃ©e, ou 0 pour la hauteur par dÃ©faut
+#	- largeur : taille de l'entrÃ©e, ou 0 pour la taille par dÃ©faut
+#	- max : nb maximum de caractÃ¨res autorisÃ©s, 0 pour la valeur par dÃ©faut
 #	- valeur : valeur initiale
 # Sortie :
-#   - code HTML généré
+#   - code HTML gÃ©nÃ©rÃ©
 #
 # Historique :
 #   2001/04/27 : pda : conception
-#   2005/04/13 : pda : manquait ">" si input sans valeur par défaut
+#   2005/04/13 : pda : manquait ">" si input sans valeur par dÃ©faut
 #
 
 proc ::webapp::form-text {var hauteur largeur max valeur} {
@@ -826,14 +826,14 @@ proc ::webapp::form-text {var hauteur largeur max valeur} {
 }
 
 #
-# Génération du code HTML pour réaliser un champ hidden
+# GÃ©nÃ©ration du code HTML pour rÃ©aliser un champ hidden
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- var : variable du formulaire pour ce menu
-#	- defval : valeur par défaut
+#	- defval : valeur par dÃ©faut
 # Sortie :
-#   - code HTML généré
+#   - code HTML gÃ©nÃ©rÃ©
 #
 # Historique :
 #   2003/08/03 : pda : conception
@@ -845,31 +845,31 @@ proc ::webapp::form-hidden {var defval} {
 }
 
 #
-# Génération d'un arbre interactif (avec Javascript)
+# GÃ©nÃ©ration d'un arbre interactif (avec Javascript)
 #
-# Entrée :
-#   - paramètres :
-#	- id : id de l'élément racine (tag html "ul") de l'arbre généré
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- id : id de l'Ã©lÃ©ment racine (tag html "ul") de l'arbre gÃ©nÃ©rÃ©
 #	- tree : arbre, au format :
 #		{<code-html> <arbre-fils> <arbre-fils> ... <arbre-fils>}
-#	    chaque <arbre-fils> pouvant être lui-même un arbre.
+#	    chaque <arbre-fils> pouvant Ãªtre lui-mÃªme un arbre.
 #	    Si un arbre n'a pas de racine unique, le <code-html> de la
 #	    racine est vide, et chaque fils constitue une racine.
-#	- expcoll : liste de deux textes à afficher (pour tout dérouler
+#	- expcoll : liste de deux textes Ã  afficher (pour tout dÃ©rouler
 #	    et tout enrouler, dans l'ordre)
 # Sortie :
-#   - valeur de retour : liste contenant les éléments suivants :
+#   - valeur de retour : liste contenant les Ã©lÃ©ments suivants :
 #		{head1 head2 onload html}
-#	où :
-#	- head1 : code HTML prêt à être inséré dans l'en-tête HTML
-#		de la page. Ce code est toujours le même quel que
+#	oÃ¹ :
+#	- head1 : code HTML prÃªt Ã  Ãªtre insÃ©rÃ© dans l'en-tÃªte HTML
+#		de la page. Ce code est toujours le mÃªme quel que
 #		soit l'arbre (fonctions Javascript)
-#	- head2 : code HTML prêt à être inséré dans l'en-tête HTML
-#		de la page. Ce code est spécifique à l'arbre
-#		(spécifications CSS dépendant de l'id)
-#	- onload : code Javascript pour l'état initial (enroulé ou déroulé)
+#	- head2 : code HTML prÃªt Ã  Ãªtre insÃ©rÃ© dans l'en-tÃªte HTML
+#		de la page. Ce code est spÃ©cifique Ã  l'arbre
+#		(spÃ©cifications CSS dÃ©pendant de l'id)
+#	- onload : code Javascript pour l'Ã©tat initial (enroulÃ© ou dÃ©roulÃ©)
 #		initial de l'arbre
-#	- html : code HTML pour l'arbre lui-même
+#	- html : code HTML pour l'arbre lui-mÃªme
 #
 # Exemple d'arbre :
 #	{/
@@ -896,14 +896,14 @@ proc ::webapp::interactive-tree {id tree expcoll} {
     set nchildren [llength $children]
 
     #
-    # Générer le code HTML non spécifique de l'en-tête
+    # GÃ©nÃ©rer le code HTML non spÃ©cifique de l'en-tÃªte
     #
 
     set head1 $::webapp::treejs
     regsub -all "%TREEIMAGES%" $head1 $::webapp::treeimages head1
 
     #
-    # Générer le code HTML de l'en-tête spécifique à cet arbre
+    # GÃ©nÃ©rer le code HTML de l'en-tÃªte spÃ©cifique Ã  cet arbre
     #
 
     set head2 $::webapp::treecss
@@ -911,13 +911,13 @@ proc ::webapp::interactive-tree {id tree expcoll} {
     regsub -all "%TREEIMAGES%" $head2 $::webapp::treeimages head2
 
     #
-    # Générer le code Javascript du "body onload"
+    # GÃ©nÃ©rer le code Javascript du "body onload"
     #
 
     set onload "javascript:multide('$id','none');"
 
     #
-    # Générer le code HTML de l'arbre
+    # GÃ©nÃ©rer le code HTML de l'arbre
     #
 
     if {$root eq ""} then {
@@ -936,7 +936,7 @@ proc ::webapp::interactive-tree {id tree expcoll} {
     set ul [helem ul $li "id" $id]
 
     #
-    # Afficher les boutons "tout enrouler" et "tout dérouler"
+    # Afficher les boutons "tout enrouler" et "tout dÃ©rouler"
     #
 
     if {[llength $expcoll] > 0} then {
@@ -959,7 +959,7 @@ proc ::webapp::interactive-tree {id tree expcoll} {
     }
 
     #
-    # Résultat final : assemblage des quatre éléments
+    # RÃ©sultat final : assemblage des quatre Ã©lÃ©ments
     #
 
     return [list $head1 $head2 $onload $ul]
@@ -967,7 +967,7 @@ proc ::webapp::interactive-tree {id tree expcoll} {
 
 # level : profondeur (1 .. n) de l'arbre en cours
 # tree : arbre en cours
-# last : 1 si l'arbre est le dernier des fils de l'arbre père
+# last : 1 si l'arbre est le dernier des fils de l'arbre pÃ¨re
 proc ::webapp::interactive-tree-rec {level tree last} {
     set root [lindex $tree 0]
     set children [lreplace $tree 0 0]
@@ -1012,15 +1012,15 @@ proc ::webapp::interactive-tree-rec {level tree last} {
 
 
 ##############################################################################
-# Cacher des paramètres dans une liste de champs INPUT HIDDEN
+# Cacher des paramÃ¨tres dans une liste de champs INPUT HIDDEN
 ##############################################################################
 
 #
-# Cache des paramètres dans une liste de champs INPUT HIDDEN
+# Cache des paramÃ¨tres dans une liste de champs INPUT HIDDEN
 #
-# Entrée :
-#   - paramètres : 
-#	- champs : liste de champs à chercher dans le tableau
+# EntrÃ©e :
+#   - paramÃ¨tres : 
+#	- champs : liste de champs Ã  chercher dans le tableau
 #	- formtab : tableau de champs tels qu'issu de get-data
 # Sortie :
 #   - valeur de retour : une suite de balises INPUT
@@ -1061,21 +1061,21 @@ proc ::webapp::hide-parameters {champs formtab} {
 #
 # Appelle un script CGI en respectant le protocole.
 #
-# Entrée :
-#   - paramètres :
-#	- formtab : tableau, passé par référence, contenant les champs
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- formtab : tableau, passÃ© par rÃ©fÃ©rence, contenant les champs
 #		de formulaire, tels que get-data les extrait
 #
 # Sortie :
 #   - valeur de retour : aucune
-#   - sortie standard : les données du script appelées sont envoyées sur stdout
+#   - sortie standard : les donnÃ©es du script appelÃ©es sont envoyÃ©es sur stdout
 #
-# Notes : les variables d'environnement suivantes sont modifiées
-#   - REQUEST_METHOD : mis à GET
-#   - PATH_INFO : remis à ""
-#   - QUERY_STRING : la partie après le "?" dans l'URL
-#   - HTTP_COOKIE : les cookies enregistrés via set-cookie
-#   Les autres variables ne sont pas changées.
+# Notes : les variables d'environnement suivantes sont modifiÃ©es
+#   - REQUEST_METHOD : mis Ã  GET
+#   - PATH_INFO : remis Ã  ""
+#   - QUERY_STRING : la partie aprÃ¨s le "?" dans l'URL
+#   - HTTP_COOKIE : les cookies enregistrÃ©s via set-cookie
+#   Les autres variables ne sont pas changÃ©es.
 #
 # Historique :
 #   2003/06/07 : pda      : conception et codage
@@ -1088,13 +1088,13 @@ proc ::webapp::call-cgi {script formtab} {
     upvar $formtab ftab
 
     #
-    # On utilise la méthode "GET"
+    # On utilise la mÃ©thode "GET"
     #
 
     set env(REQUEST_METHOD) "GET"
 
     #
-    # Positionner la "query string" en fonction des paramètres
+    # Positionner la "query string" en fonction des paramÃ¨tres
     #
 
     set query {}
@@ -1108,7 +1108,7 @@ proc ::webapp::call-cgi {script formtab} {
     set env(QUERY_STRING) [join $query "&"]
 
     #
-    #  Détruit PATH_INFO
+    #  DÃ©truit PATH_INFO
     #
 
     catch {unset env(PATH_INFO)}
@@ -1136,37 +1136,37 @@ proc ::webapp::call-cgi {script formtab} {
 ##############################################################################
 
 #
-# Récupère le contenu d'une FORM, ou de QUERY_STRING ou de PATH_INFO
-# et place dans le tableau fourni en paramètre les champs trouvés.
+# RÃ©cupÃ¨re le contenu d'une FORM, ou de QUERY_STRING ou de PATH_INFO
+# et place dans le tableau fourni en paramÃ¨tre les champs trouvÃ©s.
 #
-# Entrée :
-#   - paramètres :
-#	- formtab : tableau, passé par référence
-#	- param : liste des paramètres des champs, sous la forme
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- formtab : tableau, passÃ© par rÃ©fÃ©rence
+#	- param : liste des paramÃ¨tres des champs, sous la forme
 #		d'une liste {champ nbmin nbmax def}, avec :
 #			champ : nom du champ (regexp)
 #			nbmin/mbmax : nb d'occurrences du champ (si checkbox)
-#			def : valeur par défaut
+#			def : valeur par dÃ©faut
 #   - variables d'environnement :
-#	- CONTENT_TYPE : doit être "application/x-www-form-urlencoded"
-#	- REQUEST_METHOD : doit être POST
-#	- CONTENT_LENGTH : longueur des données du formulaire
-#	- PATH_INFO : la partie d'URL après le nom du script CGI
-#	- QUERY_STRING : la partie après le "?" dans l'URL
+#	- CONTENT_TYPE : doit Ãªtre "application/x-www-form-urlencoded"
+#	- REQUEST_METHOD : doit Ãªtre POST
+#	- CONTENT_LENGTH : longueur des donnÃ©es du formulaire
+#	- PATH_INFO : la partie d'URL aprÃ¨s le nom du script CGI
+#	- QUERY_STRING : la partie aprÃ¨s le "?" dans l'URL
 # Sortie :
-#   - paramètre formtab : chaque champ du formulaire est placé
-#	dans le tableau, avec comme index l'intitulé du champ
+#   - paramÃ¨tre formtab : chaque champ du formulaire est placÃ©
+#	dans le tableau, avec comme index l'intitulÃ© du champ
 #   - valeur de retour : {} si erreur, liste des champs lus si pas d'erreur
 #
 # Historique :
 #   1994/08/xx : pda : conception et codage
 #   1999/02/25 : pda : documentation
-#   1999/02/26 : pda : changement du test de CONTENT_TYPE (peut être vide)
-#   1999/04/05 : pda : possibilité d'avoir plusieurs fois le même champ
-#   1999/04/05 : pda : ajout de la vérification des champs
+#   1999/02/26 : pda : changement du test de CONTENT_TYPE (peut Ãªtre vide)
+#   1999/04/05 : pda : possibilitÃ© d'avoir plusieurs fois le mÃªme champ
+#   1999/04/05 : pda : ajout de la vÃ©rification des champs
 #   1999/10/02 : pda : gestion de plusieurs sources (pathinfo et querystring)
 #   1999/10/29 : pda : traitement des noms de champs comme des regexp
-#   1999/11/01 : pda : possibilité de multiples appels et chgt valeur de retour
+#   1999/11/01 : pda : possibilitÃ© de multiples appels et chgt valeur de retour
 #
 
 set ::webapp::gotform 0
@@ -1177,14 +1177,14 @@ proc ::webapp::get-data {_ftab param} {
 
     if {! $::webapp::gotform} then {
 	#
-	# On n'essayera plus de relire les paramètres (ça serait bloquant
-	# si on essayait de relire sur stdin) lors des appels ultérieurs.
+	# On n'essayera plus de relire les paramÃ¨tres (Ã§a serait bloquant
+	# si on essayait de relire sur stdin) lors des appels ultÃ©rieurs.
 	#
 
 	set ::webapp::gotform 1
 
 	#
-	# Récupérer les informations de :
+	# RÃ©cupÃ©rer les informations de :
 	#	- PATH_INFO
 	#	- QUERY_STRING
 	#	- les champs du formulaire
@@ -1196,7 +1196,7 @@ proc ::webapp::get-data {_ftab param} {
 	incr lus [::webapp::recuperer-form        ftab $param]
 
 	#
-	# Si on n'a rien lu, il n'y a rien à vérifier
+	# Si on n'a rien lu, il n'y a rien Ã  vÃ©rifier
 	#
 
 	if {$lus == 0} then {
@@ -1205,10 +1205,10 @@ proc ::webapp::get-data {_ftab param} {
     }
 
     #
-    # Boucle de vérification : analyser tous les champs
-    # listés en paramètre.
-    # En passant, on met specfield(champ) à 1 pour chaque champ
-    # trouvé dans le formulaire.
+    # Boucle de vÃ©rification : analyser tous les champs
+    # listÃ©s en paramÃ¨tre.
+    # En passant, on met specfield(champ) Ã  1 pour chaque champ
+    # trouvÃ© dans le formulaire.
     #
 
     foreach p $param {
@@ -1246,7 +1246,7 @@ proc ::webapp::get-data {_ftab param} {
     }
 
     #
-    # On renvoie maintenant la liste des éléments trouvés
+    # On renvoie maintenant la liste des Ã©lÃ©ments trouvÃ©s
     #
 
     return [array names specfield]
@@ -1301,16 +1301,16 @@ proc ::webapp::recuperer-querystring {formtab param} {
 }
 
 #
-# Décode les éléments d'un formulaire en format "x-www-form-urlencoded"
+# DÃ©code les Ã©lÃ©ments d'un formulaire en format "x-www-form-urlencoded"
 #
-# Entrée :
-#   - paramètres : 
+# EntrÃ©e :
+#   - paramÃ¨tres : 
 #	- formtab : tableau de champs, cf get-data
 # Sortie :
 #   - valeur de retour : 1 si ok, 0 si erreur
 #
 # Historique
-#   2003/06/01 : pda : séparation de recuperer-form
+#   2003/06/01 : pda : sÃ©paration de recuperer-form
 #
 
 proc ::webapp::x-www-form-urlencoded {formtab} {
@@ -1318,7 +1318,7 @@ proc ::webapp::x-www-form-urlencoded {formtab} {
     upvar $formtab tab
 
     #
-    # Méthode classique pour récupérer les champs
+    # MÃ©thode classique pour rÃ©cupÃ©rer les champs
     # des formulaires
     #
 
@@ -1334,18 +1334,18 @@ proc ::webapp::x-www-form-urlencoded {formtab} {
 }
 
 #
-# Décode une sous-partie MIME d'un formulaire en format "form-data"
+# DÃ©code une sous-partie MIME d'un formulaire en format "form-data"
 #
-# Entrée :
-#   - paramètres : 
+# EntrÃ©e :
+#   - paramÃ¨tres : 
 #	- formtab : tableau de champs, cf get-data
-#	- entete : l'en-tête de la sous-partie
+#	- entete : l'en-tÃªte de la sous-partie
 #	- corps : le corps de la sous-partie
 # Sortie :
 #   - valeur de retour : 1 si ok, 0 si erreur
 #
 # Notes :
-#   - le format de l'en-tête de la sous-partie est :
+#   - le format de l'en-tÃªte de la sous-partie est :
 #	Content-Disposition: form-data; name="<champ formulaire>"; filename="..."
 #	Content-Type: image/gif
 #   - le corps est le contenu du fichier.
@@ -1363,21 +1363,21 @@ proc ::webapp::get-mime-part {formtab entete corps} {
     set unquotere {^"([^"]*)"$}
 
     #
-    # Traitement de l'en-tête
+    # Traitement de l'en-tÃªte
     #
 
     regsub -all -- "\r\n" $entete "\n" entete
     foreach ligne [split $entete "\n"] {
 	#
-	# Première partie : séparer "nom: valeur" (ex: Content-Disposition: ...)
+	# PremiÃ¨re partie : sÃ©parer "nom: valeur" (ex: Content-Disposition: ...)
 	#
 	if {! [regexp $hdrre $ligne bidon hname hval]} then {
 	    return 0
 	}
-	# nom du champ d'en-tête
+	# nom du champ d'en-tÃªte
 	set hname [string tolower $hname]
 
-	# la valeur peut elle-même être de la forme "val;clef=val;clef=val..."
+	# la valeur peut elle-mÃªme Ãªtre de la forme "val;clef=val;clef=val..."
 	set hval [split $hval ";"]
 
 	set subhdrlist {}
@@ -1385,7 +1385,7 @@ proc ::webapp::get-mime-part {formtab entete corps} {
 	lappend subhdrlist [lindex $hval 0]
 
 	#
-	# Parcourir toutes les sous-valeurs de la ligne d'en-tête
+	# Parcourir toutes les sous-valeurs de la ligne d'en-tÃªte
 	#
 
 	foreach hv [lrange $hval 1 end] {
@@ -1402,10 +1402,10 @@ proc ::webapp::get-mime-part {formtab entete corps} {
 	array set sh $subhdrlist
 
 	#
-	# Une fois la ligne d'en-tête complètement parcourue, regarder
+	# Une fois la ligne d'en-tÃªte complÃ¨tement parcourue, regarder
 	# quels sont les associations "clef/valeur" obtenues.
 	# Ces associations sont dans le tableau sh()
-	#	sh(VALEUR) :	valeur du champ d'en-tête
+	#	sh(VALEUR) :	valeur du champ d'en-tÃªte
 	#	sh(name) :	nom de la variable du formulaire
 	#	sh(filename) :	nom du fichier fourni par le client
 	#
@@ -1475,8 +1475,8 @@ proc ::webapp::form-data {formtab contenttype} {
     upvar $formtab tab
 
     #
-    # Méthode pour récupérer les champs des formulaires
-    # spécifiée dans la RFC 1867, notamment pour gérer
+    # MÃ©thode pour rÃ©cupÃ©rer les champs des formulaires
+    # spÃ©cifiÃ©e dans la RFC 1867, notamment pour gÃ©rer
     # les fichiers.
     #
 
@@ -1486,7 +1486,7 @@ proc ::webapp::form-data {formtab contenttype} {
     }
 
     #
-    # Extraire le délimiteur
+    # Extraire le dÃ©limiteur
     #
 
     set boundary ""
@@ -1502,7 +1502,7 @@ proc ::webapp::form-data {formtab contenttype} {
     set boundary "--$boundary"
 
     #
-    # Lire les données du formulaire et les mettre en mémoire
+    # Lire les donnÃ©es du formulaire et les mettre en mÃ©moire
     #
 
     fconfigure stdin -translation binary
@@ -1514,7 +1514,7 @@ proc ::webapp::form-data {formtab contenttype} {
     close $fd
 
     #
-    # Rechercher le premier délimiteur
+    # Rechercher le premier dÃ©limiteur
     #
 
     set offset [string first $boundary $line 0]
@@ -1528,20 +1528,20 @@ proc ::webapp::form-data {formtab contenttype} {
 
     #
     # Invariants de boucle
-    #  - offset = indice juste après le délimiteur (qui correspond soit à
-    #			"\r\n", soit à "--\r\n" si c'est le dernier)
+    #  - offset = indice juste aprÃ¨s le dÃ©limiteur (qui correspond soit Ã 
+    #			"\r\n", soit Ã  "--\r\n" si c'est le dernier)
     #  - retval = 1 si aucune erreur ne s'est produite
     #
     #
 
     set retval 1
     while {[set next [string first $boundary $line $offset]] != -1} {
-	# - next = indice du délimiteur suivant
+	# - next = indice du dÃ©limiteur suivant
 
 	#
-	# Arrêt si le premier délimiteur correspond à une fin
+	# ArrÃªt si le premier dÃ©limiteur correspond Ã  une fin
 	# d'arguments. Ce cas ne devrait jamais arriver, mais
-	# il vaut mieux prévoir l'impossible...
+	# il vaut mieux prÃ©voir l'impossible...
 	#
 
 	if {[string equal [string range $line $offset [expr $offset+1]] "--"]} then {
@@ -1552,7 +1552,7 @@ proc ::webapp::form-data {formtab contenttype} {
 	incr offset 2
 
 	#
-	# Séparation de l'en-tête et du corps
+	# SÃ©paration de l'en-tÃªte et du corps
 	#
 
 	set sephdr [string first "\r\n\r\n" $line $offset]
@@ -1622,20 +1622,20 @@ proc ::webapp::recuperer-form {formtab param} {
 }
 
 #
-# Convertit une chaîne (données d'un formulaire) en caractères
+# Convertit une chaÃ®ne (donnÃ©es d'un formulaire) en caractÃ¨res
 # "normaux"
 #
-# Entrée :
-#   - paramètres :
-#	- str : la chaîne à convertir
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- str : la chaÃ®ne Ã  convertir
 # Sortie :
-#   - valeur de retour : la chaîne convertie
+#   - valeur de retour : la chaÃ®ne convertie
 #
 # Historique
 #   1994/08/xx : pda : conception et codage
 #   1999/02/25 : pda : documentation
 #   2001/02/28 : pda : remplacement des \r\n par \n
-#   2010/10/28 : pda : simplification du décodage, merci Tcl
+#   2010/10/28 : pda : simplification du dÃ©codage, merci Tcl
 #
 
 proc ::webapp::unpost-string {str} {
@@ -1645,7 +1645,7 @@ proc ::webapp::unpost-string {str} {
     regsub -all "\\+" $str " " str
 
     #
-    # Remplace tous les %xx par le caractère correspondant
+    # Remplace tous les %xx par le caractÃ¨re correspondant
     #
 
     set pos 0
@@ -1658,7 +1658,7 @@ proc ::webapp::unpost-string {str} {
     set new [encoding convertfrom utf-8 $str]
 
     #
-    # Nettoyage des mauvais caractères de fin de ligne
+    # Nettoyage des mauvais caractÃ¨res de fin de ligne
     #
     regsub -all -- "\r\n" $new "\n" new
     regsub -all -- "\r" $new "\n" new
@@ -1667,15 +1667,15 @@ proc ::webapp::unpost-string {str} {
 }
 
 #
-# Convertit une chaîne contenant éventuellement des caractères spéciaux
-# HTML en chaîne dans laquelle les caractères spéciaux sont remplacés
-# par des caractères "%.."
+# Convertit une chaÃ®ne contenant Ã©ventuellement des caractÃ¨res spÃ©ciaux
+# HTML en chaÃ®ne dans laquelle les caractÃ¨res spÃ©ciaux sont remplacÃ©s
+# par des caractÃ¨res "%.."
 #
-# Entrée :
-#   - paramètres :
-#	- str : la chaîne à convertir
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- str : la chaÃ®ne Ã  convertir
 # Sortie :
-#   - valeur de retour : la chaîne convertie
+#   - valeur de retour : la chaÃ®ne convertie
 #
 # Historique
 #   1999/11/01 : pda : conception
@@ -1683,7 +1683,7 @@ proc ::webapp::unpost-string {str} {
 
 proc ::webapp::post-string {str} {
     #
-    # Remplace tous les caractères spéciaux
+    # Remplace tous les caractÃ¨res spÃ©ciaux
     #
     regsub -all {%}  $str "%25" str
     regsub -all {\+} $str "%2B" str
@@ -1702,15 +1702,15 @@ proc ::webapp::post-string {str} {
 }
 
 #
-# Convertit une chaîne contenant éventuellement des caractères spéciaux
-# HTML en chaîne dans laquelle les caractères spéciaux sont remplacés
-# par des caractères "&...;"
+# Convertit une chaÃ®ne contenant Ã©ventuellement des caractÃ¨res spÃ©ciaux
+# HTML en chaÃ®ne dans laquelle les caractÃ¨res spÃ©ciaux sont remplacÃ©s
+# par des caractÃ¨res "&...;"
 #
-# Entrée :
-#   - paramètres :
-#	- str : la chaîne à convertir
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- str : la chaÃ®ne Ã  convertir
 # Sortie :
-#   - valeur de retour : la chaîne convertie
+#   - valeur de retour : la chaÃ®ne convertie
 #
 # Historique
 #   1999/11/02 : pda : conception
@@ -1718,7 +1718,7 @@ proc ::webapp::post-string {str} {
 
 proc ::webapp::html-string {str} {
     #
-    # Remplace tous les caractères spéciaux
+    # Remplace tous les caractÃ¨res spÃ©ciaux
     #
     regsub -all {\&} $str {\&amp;} str
     regsub -all {\<} $str {\&lt;} str
@@ -1731,13 +1731,13 @@ proc ::webapp::html-string {str} {
 #
 # Import form variables in individual Tcl variables
 #
-# Entrée :
-#   - paramètres :
-#	- _ftab : tableau, passé par référence, contenant les valeurs
-#	    des paramètres fournis au formulaire (see get-data)
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- _ftab : tableau, passÃ© par rÃ©fÃ©rence, contenant les valeurs
+#	    des paramÃ¨tres fournis au formulaire (see get-data)
 #	- fspec : optional form specification (see get-data)
 # Sortie :
-#   - variables nommées par formtab : initialisées
+#   - variables nommÃ©es par formtab : initialisÃ©es
 #   - valeur de retour : none
 #
 # Historique :
@@ -1787,18 +1787,18 @@ proc ::webapp::import-vars {_ftab {fspec {}}} {
 }
 
 ##############################################################################
-# Mail et adresses électroniques
+# Mail et adresses Ã©lectroniques
 ##############################################################################
 
 #
-# Vérifie si une adresse électronique est valide,
-# c'est à dire si elle vérifie les conditions suivantes :
-# - présence de "@"
+# VÃ©rifie si une adresse Ã©lectronique est valide,
+# c'est Ã  dire si elle vÃ©rifie les conditions suivantes :
+# - prÃ©sence de "@"
 # - absence d'espace et de tabulations
 #
-# Entrée :
-#   - paramètres : 
-#	- email : adresse électronique telle que saisie par l'utilisateur
+# EntrÃ©e :
+#   - paramÃ¨tres : 
+#	- email : adresse Ã©lectronique telle que saisie par l'utilisateur
 # Sortie :
 #   - valeur de retour : 0 (adresse incorrecte) ou 1 (adresse correcte)
 #
@@ -1819,23 +1819,23 @@ proc ::webapp::valid-email {email} {
 #
 # Envoi d'un mail
 #
-# Entrée :
-#   - paramètres :
-#	- from : l'émetteur
-#	- replyto : le destinataire des réponses
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- from : l'Ã©metteur
+#	- replyto : le destinataire des rÃ©ponses
 #	- to : le ou les destinataires
 #	- cc : le ou les destinataires, si besoin est
-#	- bcc : destinataire caché, si besoin est
+#	- bcc : destinataire cachÃ©, si besoin est
 #	- subject : le sujet
 #	- texte : le texte
-#	- type : le type du mail, par défaut 'text/plain; charset="utf-8"'
+#	- type : le type du mail, par dÃ©faut 'text/plain; charset="utf-8"'
 #
 # Sortie :
 #   - valeur de retour : aucune
 #
 # Historique :
 #   2003/09/29 : pda : conception et codage
-#   2009/02/23 : pda : ajout paramètre optionnel type
+#   2009/02/23 : pda : ajout paramÃ¨tre optionnel type
 #
 
 proc ::webapp::mail {from replyto to cc bcc subject texte {type {}}} {
@@ -1870,26 +1870,26 @@ proc ::webapp::mail {from replyto to cc bcc subject texte {type {}}} {
 }
 
 ##############################################################################
-# Génération d'une page HTML par substitution dans une page existante
+# GÃ©nÃ©ration d'une page HTML par substitution dans une page existante
 ##############################################################################
 
 #
-# Substitue, dans un fichier, des motifs par des valeurs calculées
+# Substitue, dans un fichier, des motifs par des valeurs calculÃ©es
 # par le script CGI.
 #
-# Entrée :
-#   - paramètres : 
+# EntrÃ©e :
+#   - paramÃ¨tres : 
 #	- fichier : le nom du fichier servant de base pour la substitution
 #	- subst : liste de susbtitutions, de la forme 
 #		{{motif valeur} {motif valeur} ...}
 #	- encoding: name of encoding
 # Sortie :
-#   - valeur de retour : le fichier susbtitué
+#   - valeur de retour : le fichier susbtituÃ©
 #
 # Historique
 #   1999/03/25 : pda : conception et codage
-#   1999/11/02 : pda : suppression de & comme caractère spécial
-#   2002/05/12 : pda : suppression de \ comme caractère spécial
+#   1999/11/02 : pda : suppression de & comme caractÃ¨re spÃ©cial
+#   2002/05/12 : pda : suppression de \ comme caractÃ¨re spÃ©cial
 #   2010/10/16 : pda : add encoding parameter
 #   2010/12/22 : pda/jean : encoding defaults to utf-8
 #
@@ -1919,12 +1919,12 @@ proc ::webapp::file-subst {fichier subst {encoding utf-8}} {
 ##############################################################################
 
 #
-# Récupère une chaîne aléatoire (ou pseudo-aléatoire)
+# RÃ©cupÃ¨re une chaÃ®ne alÃ©atoire (ou pseudo-alÃ©atoire)
 #
-# Entrée :
-#   - paramètres : -
+# EntrÃ©e :
+#   - paramÃ¨tres : -
 # Sortie :
-#   - valeur de retour : une chaîne de 20 chiffres
+#   - valeur de retour : une chaÃ®ne de 20 chiffres
 #
 # Historique
 #   1999/07/14 : pda : conception
@@ -1958,11 +1958,11 @@ proc ::webapp::random {} {
 #
 # Sort une page Web ou autre
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- type : le type de sortie, html ou pdf
 #	- page : la page (en html si html, en latex si pdf)
-#	- fichier : nom de fichier à renvoyer
+#	- fichier : nom de fichier Ã  renvoyer
 # Sortie :   
 #   - envoi direct sur la sortie standard
 #
@@ -1976,7 +1976,7 @@ proc ::webapp::random {} {
 proc ::webapp::send {type page {fichier "output"}} {
 
     #
-    # Détermine l'extension du fichier
+    # DÃ©termine l'extension du fichier
     #
     switch -- $type {
 	rawpdf	{ set ext "pdf" }
@@ -2005,8 +2005,8 @@ proc ::webapp::send {type page {fichier "output"}} {
 #
 # Sort une page Web ou autre
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- page : la page HTML, sans le content-type
 # Sortie :   
 #   - envoi direct sur la sortie standard
@@ -2027,10 +2027,10 @@ proc ::webapp::sortie-html {page} {
 #
 # Sort un fichier CSV
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- page : le fichier CSV, sans le content-type
-#	- fichier : nom de fichier à renvoyer
+#	- fichier : nom de fichier Ã  renvoyer
 # Sortie :   
 #   - envoi direct sur la sortie standard
 #
@@ -2052,11 +2052,11 @@ proc ::webapp::sortie-csv {page fichier} {
 #
 # Sort un document binaire
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- type : type MIME
 #	- page : le fichier
-#	- fichier : nom de fichier à renvoyer
+#	- fichier : nom de fichier Ã  renvoyer
 # Sortie :   
 #   - envoi direct sur la sortie standard
 #
@@ -2078,12 +2078,12 @@ proc ::webapp::sortie-bin {type page fichier} {
 
 
 #
-# Sort un document latex compilé en pdf
+# Sort un document latex compilÃ© en pdf
 #
-# Entrée :
-#   - paramètres :
-#	- page : le source latex, prêt à être compilé
-#	- fichier : nom de fichier à renvoyer
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- page : le source latex, prÃªt Ã  Ãªtre compilÃ©
+#	- fichier : nom de fichier Ã  renvoyer
 #   - variable globale debuginfos : valeur latexfiles
 # Sortie :   
 #   - envoi direct sur la sortie standard
@@ -2105,14 +2105,14 @@ proc ::webapp::sortie-latex {page fichier} {
     }
 
     #
-    # Le changement de répertoire est nécessaire car latex dépose
-    # des fichiers .aux, .log et .pdf dans le répertoire courant.
+    # Le changement de rÃ©pertoire est nÃ©cessaire car latex dÃ©pose
+    # des fichiers .aux, .log et .pdf dans le rÃ©pertoire courant.
     #
 
     cd $::webapp::tmpdir
 
     #
-    # Nommage des fichiers utilisés. Le répertoire est absolu,
+    # Nommage des fichiers utilisÃ©s. Le rÃ©pertoire est absolu,
     # c'est plus clair dans les messages d'erreur.
     #
 
@@ -2128,7 +2128,7 @@ proc ::webapp::sortie-latex {page fichier} {
 
     if {[catch {set fd [open $texfile "w"]} m]} then {
 	::webapp::sortie-html \
-	    "Impossible de créer '$texfile': <PRE>$errorInfo</PRE>"
+	    "Impossible de crÃ©er '$texfile': <PRE>$errorInfo</PRE>"
 	return
     }
     fconfigure $fd -encoding utf-8
@@ -2136,17 +2136,17 @@ proc ::webapp::sortie-latex {page fichier} {
     close $fd
 
     #
-    # Génération du fichier pdf
+    # GÃ©nÃ©ration du fichier pdf
     #
 
     if {[catch {set log [exec $::webapp::pdflatex $texfile]} msg]} then {
 	::webapp::sortie-html \
-	    "Impossible de générer '$pdffile': <PRE>$errorInfo</PRE>"
+	    "Impossible de gÃ©nÃ©rer '$pdffile': <PRE>$errorInfo</PRE>"
 	return
     }
 
     #
-    # Sortie du résultat
+    # Sortie du rÃ©sultat
     #
 
     if {[catch {set fd [open $pdffile "r"]} m]} then {
@@ -2178,8 +2178,8 @@ proc ::webapp::sortie-latex {page fichier} {
 #
 # Sort une redirection
 #
-# Entrée :
-#   - paramètres :
+# EntrÃ©e :
+#   - paramÃ¨tres :
 #	- url : redirect url (or relative path)
 # Sortie :   
 #   - envoi direct sur la sortie standard
@@ -2202,16 +2202,16 @@ proc ::webapp::redirect {url} {
 #
 # Sortie des erreurs dans une belle page Web
 #
-# Entrée :
-#   - paramètres :
-#	- page : fichier contenant la page HTML à trous
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- page : fichier contenant la page HTML Ã  trous
 #	- msg : le message d'erreur
-# Sortie : pas de sortie, la procédure fait un exit.
+# Sortie : pas de sortie, la procÃ©dure fait un exit.
 #
 # Historique
 #   2000/07/26 : pda     : conception
 #   2000/07/27 : pda     : documentation
-#   2001/10/20 : pda     : utilisation de la procédure de sortie
+#   2001/10/20 : pda     : utilisation de la procÃ©dure de sortie
 #   2002/12/26 : pda     : mise en package
 #   2003/12/11 : pda     : ajout du traitement de \n
 #
@@ -2227,13 +2227,13 @@ proc ::webapp::error-exit {page msg} {
 }
 
 ##############################################################################
-# Des fois, il faut bien avoir recours aux dernières extrémités...
+# Des fois, il faut bien avoir recours aux derniÃ¨res extrÃ©mitÃ©s...
 ##############################################################################
 
 #
-# Affiche tous les paramètres fournis au script CGI.
+# Affiche tous les paramÃ¨tres fournis au script CGI.
 #
-# Entrée : tout l'environnement d'un script CGI
+# EntrÃ©e : tout l'environnement d'un script CGI
 # Sortie :
 #   - envoi direct
 #
@@ -2279,20 +2279,20 @@ proc ::webapp::cgidebug {} {
 }
 
 ##############################################################################
-# Protéger l'accès à des applications
+# ProtÃ©ger l'accÃ¨s Ã  des applications
 ##############################################################################
 
 #
-# Teste l'existence d'un fichier et interdit l'accès à
+# Teste l'existence d'un fichier et interdit l'accÃ¨s Ã 
 # l'application si le fichier existe.
 #
-# Entrée :
-#   - paramètres :
-#	- ftest : fichier à tester, contenant le message d'interdiction
-#	- lusers : liste d'utilisateurs autorisés à accéder quand même
-#	- ferr : fichier HTML à trou (%MESSAGE% = message d'interdiction)
+# EntrÃ©e :
+#   - paramÃ¨tres :
+#	- ftest : fichier Ã  tester, contenant le message d'interdiction
+#	- lusers : liste d'utilisateurs autorisÃ©s Ã  accÃ©der quand mÃªme
+#	- ferr : fichier HTML Ã  trou (%MESSAGE% = message d'interdiction)
 #   - variables d'environnement :
-#	- REMOTE_USER : une chaîne de la forme "login""
+#	- REMOTE_USER : une chaÃ®ne de la forme "login""
 # Sortie :
 #   - envoi direct, ou rien du tout
 #
@@ -2320,7 +2320,7 @@ proc ::webapp::nologin {ftest lusers ferr} {
 }
 
 ##############################################################################
-# Une interface agréable pour la programmation des scripts CGI
+# Une interface agrÃ©able pour la programmation des scripts CGI
 ##############################################################################
 
 proc ::webapp::cgi-env {} {
@@ -2340,21 +2340,21 @@ proc ::webapp::cgi-err {msg debug} {
     append page "<HEAD><TITLE>Erreur !</TITLE></HEAD>\n"
     append page "<BODY TEXT=#000000 BGCOLOR=#FFFFFF>\n"
     append page "<FONT FACE=\"Arial,Helvetica\">\n"
-    append page "<H1>Problème !</H1>\n"
+    append page "<H1>ProblÃ¨me !</H1>\n"
 
     if {$debug} then {
 	set pwd    [exec pwd]  
 
-	append page "Erreur détectée dans l'exécution du script '$script'\n"
-	append page "à '$date'&nbsp;:\n"
+	append page "Erreur dÃ©tectÃ©e dans l'exÃ©cution du script '$script'\n"
+	append page "Ã  '$date'&nbsp;:\n"
 	append page "<HR>\n"
 	append page "<PRE>[::webapp::html-string $msg]</PRE>\n"
 	append page "<HR>\n"
 
 	append page "<H2>Contexte</H2>\n"
-	append page "Répertoire = $pwd<P>\n"
+	append page "RÃ©pertoire = $pwd<P>\n"
 
-	append page "Paramètres&nbsp;:<BR>\n"
+	append page "ParamÃ¨tres&nbsp;:<BR>\n"
 	set n 0
 	append page "<UL>\n"
 	foreach i $argv {
@@ -2377,9 +2377,9 @@ proc ::webapp::cgi-err {msg debug} {
 	    append page "</CODE>\n"
 	}
     } else {
-	append page "Problème détecté dans l'application&nbsp;:\n"
+	append page "ProblÃ¨me dÃ©tectÃ© dans l'application&nbsp;:\n"
 	append page "<UL>\n"
-	append page "<LI> à '$date'\n"
+	append page "<LI> Ã  '$date'\n"
 	append page "<LI> dans le script '$script'\n"
 	append page "</UL>\n"
 	append page "Veuillez contacter l'administrateur du site\n"
@@ -2393,12 +2393,12 @@ proc ::webapp::cgi-err {msg debug} {
 }
 
 #
-# Lance l'exécution d'un script CGI
+# Lance l'exÃ©cution d'un script CGI
 #
-# Entrée :
+# EntrÃ©e :
 #   - tout l'environnement d'un script CGI
-#   - paramètres :
-#	- script : nom du script à exécuter, avec paramètres éventuels
+#   - paramÃ¨tres :
+#	- script : nom du script Ã  exÃ©cuter, avec paramÃ¨tres Ã©ventuels
 #	- debug : 1 s'il faut sortir l'environnement, ou 0 pour un simple message
 # Sortie :
 #   - envoi direct
@@ -2412,7 +2412,7 @@ proc ::webapp::cgi-exec {script {debug 0}} {
 
     ::webapp::cgi-env
     if [catch $script msg] then {
-	# on n'utilise pas msg, car errorInfo le contient déjà
+	# on n'utilise pas msg, car errorInfo le contient dÃ©jÃ 
 	::webapp::cgi-err $errorInfo $debug
     }
     exit 0
@@ -2421,21 +2421,21 @@ proc ::webapp::cgi-exec {script {debug 0}} {
 #
 # Classe "utilisateur dans la base d'authentification"
 #
-# Représente les attributs d'un utilisateur tel qu'il est stocké
+# ReprÃ©sente les attributs d'un utilisateur tel qu'il est stockÃ©
 # dans la base d'authentification (PostgreSQL ou LDAP) sous une 
-# forme unifiée.
+# forme unifiÃ©e.
 #
 # Options :
 #   aucune
 #
-# Méthodes
-#   get	    : récupère la valeur (unique) d'un attribut
-#   set	    : modifie la valeur d'un attribut (en mémoire uniquement).
-#	      C'est une méthode utilisée uniquement par la classe authbase
-#   exists  : indique si l'utilisateur a été trouvé dans la base.
+# MÃ©thodes
+#   get	    : rÃ©cupÃ¨re la valeur (unique) d'un attribut
+#   set	    : modifie la valeur d'un attribut (en mÃ©moire uniquement).
+#	      C'est une mÃ©thode utilisÃ©e uniquement par la classe authbase
+#   exists  : indique si l'utilisateur a Ã©tÃ© trouvÃ© dans la base.
 #
 # Historique
-#   2007/10/05 : pda/jean : intégration et documentation
+#   2007/10/05 : pda/jean : intÃ©gration et documentation
 #
 
 snit::type ::webapp::authuser {
@@ -2466,19 +2466,19 @@ snit::type ::webapp::authuser {
 #
 # Classe "base d'authentification"
 #
-# Représente une base d'authentification et donne les moyens 
-# de récupérer les attributs d'un utilisateur
+# ReprÃ©sente une base d'authentification et donne les moyens 
+# de rÃ©cupÃ©rer les attributs d'un utilisateur
 #
 # Options :
 #   method  : "ldap" ou "postgresql"
-#   db	    : paramètres d'accès à la base d'authentification (cf. ci-dessous)
+#   db	    : paramÃ¨tres d'accÃ¨s Ã  la base d'authentification (cf. ci-dessous)
 #   attrmap : traduction d'attribut
 #
-# Méthodes
-#   getuser : recherche l'utilisateur par son login et récupère ses attributs
+# MÃ©thodes
+#   getuser : recherche l'utilisateur par son login et rÃ©cupÃ¨re ses attributs
 #
 # Historique
-#   2007/10/05 : pda/jean : intégration et documentation
+#   2007/10/05 : pda/jean : intÃ©gration et documentation
 #
 
 snit::type ::webapp::authbase {
@@ -2559,7 +2559,7 @@ snit::type ::webapp::authbase {
 		set av {}
 		if {$n == 1} then {
 		    #
-		    # On ne garde que la première valeur des champs multivalués
+		    # On ne garde que la premiÃ¨re valeur des champs multivaluÃ©s
 		    #
 
 		    array set x [$e getall]
@@ -2769,18 +2769,18 @@ proc ::webapp::get-cookie {name} {
 #
 # Classe "systeme de log"
 #
-# Représente l'acces a un support de journaux
+# ReprÃ©sente l'acces a un support de journaux
 #
 # Options :
 #   method  : "postgresql", "file", "syslog"
-#   medium  : paramètres 
-#   subsys  : nom générique de l'application
+#   medium  : paramÃ¨tres 
+#   subsys  : nom gÃ©nÃ©rique de l'application
 #
-# Méthodes
-#   log     : écrit un événement dans le journal
+# MÃ©thodes
+#   log     : Ã©crit un Ã©vÃ©nement dans le journal
 #
 # Historique
-#   2007/10/23 : pda/jean : intégration et documentation
+#   2007/10/23 : pda/jean : intÃ©gration et documentation
 #
 
 snit::type ::webapp::log {
