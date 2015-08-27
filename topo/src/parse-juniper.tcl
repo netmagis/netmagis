@@ -1352,6 +1352,7 @@ proc juniper-parse-ethernet-swopt {conf tab idx} {
 
     array set kwtab {
 	voip		{1	juniper-parse-voip}
+	analyzer	{2	NOP}
 	apply-groups	{2	NOP}
 	apply-groups-except	{2      NOP}
 	traceoptions	{1	NOP}
