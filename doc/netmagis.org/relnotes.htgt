@@ -46,6 +46,43 @@
     \lien {github.com commits} {http://github.com/pdav/netmagis}.
 
 
+    \titre {2} {\ancre {v2.3.1} {Netmagis 2.3.1}}
+
+    Release date: 28 august 2015
+
+    The 2.3.1 release of Netmagis is a maintenance release, providing some
+    bug fixes:
+
+    \liste {
+	\item {Validation of the CAS ticket was using a over-restrictive
+	    syntax.
+	    See \lien {pull request 145}
+	    {https://github.com/pdav/netmagis/pull/145} provided by
+	    Olivier Le Monnier.
+	}
+	\item {Access to internal authentication menu items was broken.
+	    Problem reported by Russell Sutherland.
+	    See \lien {issue 146}
+	                {https://github.com/pdav/netmagis/issues/146}.
+	}
+	\item {An internal error message, that you should never see,
+	    was still not translated to English.
+	    See \lien {issue 147}
+	                {https://github.com/pdav/netmagis/issues/147}.
+	}
+	\item {Previous release introduced a fix in the topo
+	    module. This fix revealed another subtile bug, which broke
+	    the graph generation.
+	    See \lien {issue 148}
+	                {https://github.com/pdav/netmagis/issues/148}.
+	}
+	\item {A minor improvement has been made in the topo module to
+	    support the "\teletype {analyzer}" keyword in the \teletype
+	    {ethernet-switching-options} block on Juniper switches.
+	}
+    }
+
+
     \titre {2} {\ancre {v2.3.0} {Netmagis 2.3.0}}
 
     Release date: 25 june 2015
