@@ -52,7 +52,7 @@ How to release, step by step
 
 	cd $NETMAGIS
 	vi Makefile				# Modify the VERSION variable
-	vi pkg/freebsd/netmagis-common/Makefile	# Modify the DISTVERSION var
+	vi pkg/freebsd/netmagis-common/Makefile	# Modify the PORTVERSION var
 
     1.d. Create netmagis distribution file
 

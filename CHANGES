@@ -1,3 +1,14 @@
+Version 2.3.1 - 2015/08/28
+    - bug fix (pull request #145 from Olivier Le Monnier): Netmagis was
+	too restrictive about CAS ticket syntax
+    - bug fix (issue #146, reported by Russell Sutherland): access to
+	internal authentication menu items were broken
+    - bug fix (issue #147): an error message was not translated in English
+    - bug fix (issue #148): release 2.3.0 introduced a fix in the topo
+	module. This fix revealed another bug, which broke the graph generation
+    - minor improvement in the topo module: support the "analyzer" keyword
+	in the ethernet-switching-options block on Juniper switches
+
 Version 2.3.0 - 2015/06/25
     - modification of authentication infrastructure: Netmagis is no longer
 	based on Apache authentication
