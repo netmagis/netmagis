@@ -56,23 +56,5 @@ sbin/netmagis-getoui
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/with-views/zones/example.com-ext
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/with-views/zones/example.com-int
 %%PORTEXAMPLES%%%%EXAMPLESDIR%%/with-views/zones/example.org
-@dirrmtry var/netmagis/dbdump
-@dirrmtry var/netmagis
-@dirrmtry var
-@dirrmtry lib/netmagis/sql22
-@dirrmtry lib/netmagis/sql23
-@dirrmtry lib/netmagis/upgrade/12-13
-@dirrmtry lib/netmagis/upgrade/13-14
-@dirrmtry lib/netmagis/upgrade/14-15
-@dirrmtry lib/netmagis/upgrade/15-20
-@dirrmtry lib/netmagis/upgrade/20-21
-@dirrmtry lib/netmagis/upgrade/21-22
-@dirrmtry lib/netmagis/upgrade/22-23
-@dirrmtry lib/netmagis/upgrade
-@dirrmtry lib/netmagis
-%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/with-views/zones
-%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/with-views
-%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/no-view/zones
-%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%/no-view
-%%PORTEXAMPLES%%@dirrmtry %%EXAMPLESDIR%%
-@exec mkdir -p %D/var/netmagis/dbdump
+@dir /var/netmagis/dbdump
+@dir /var/netmagis
