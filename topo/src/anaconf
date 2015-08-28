@@ -29,6 +29,7 @@ eval `%CONFPROG% \
 		ranciddir \
 		eqvirtdir \
 		eqgendir \
+		filterdir \
 		topograph \
 		topobindir \
 		checkrouterif \
@@ -121,6 +122,30 @@ analyze_conf ()
     return 0
 }
 
+#
+# Filter to rewrite equipement configuration file.
+# Original configuration is simply "piped" to a program
+#
+
+filter ()
+{
+  eqtype=$1
+  infile=$2
+
+  # The filter program is called only if it exists in "filterdir" directory ;
+  # "filterdir" is a variable defined in the configuration file
+
+  if [ -n "$filterdir" -a -f "$filterdir/$eqtype" ] ; then 
+
+    # The name of the program called is be the same as the equipment type 
+    # Example: /usr/lib/netmagis/filters/cisco
+
+    $filterdir/$eqtype $infile
+  else
+    cat $infile
+  fi
+}
+
 analyze_eq ()
 {
     r=1				# 1 if no equipment found
@@ -135,8 +160,11 @@ analyze_eq ()
 	if [ x"$model" = x ]
 	then model="UNKNOWN"
 	fi
-	$topobindir/analyze $topobindir $type "$model" $ranciddir/configs/$name $n \
+	eqconf="/tmp/$name.$$"
+	filter $type $ranciddir/configs/$name > $eqconf
+	$topobindir/analyze $topobindir $type "$model" $eqconf $n \
 	    > $eqgendir/$n.eq
+	rm $eqconf
 	r=0			# at least one equipment found
     done
     return $r
