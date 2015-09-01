@@ -140,7 +140,7 @@ filter ()
     # The name of the program called is be the same as the equipment type 
     # Example: /usr/lib/netmagis/filters/cisco
 
-    $filterdir/$eqtype $infile
+    $filterdir/$eqtype < $infile
   else
     cat $infile
   fi
