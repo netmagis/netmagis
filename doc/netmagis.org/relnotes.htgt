@@ -46,6 +46,17 @@
     \lien {github.com commits} {http://github.com/pdav/netmagis}.
 
 
+    \titre {2} {\ancre {v2.3.2} {Netmagis 2.3.2}}
+
+    Release date: 3 september 2015
+
+    The 2.3.2 release of Netmagis provide a fix to a bug introduced in the
+    2.3.1 release: validation of the CAS ticket (for CAS authentication)
+    was too restrictive in 2.3.0, so a patch has been proposed by Olivier
+    Le Monnier for 2.3.1 which has been extended (by Netmagis authors)
+    for genericity, but this extension in 2.3.1 was broken.
+
+
     \titre {2} {\ancre {v2.3.1} {Netmagis 2.3.1}}
 
     Release date: 28 august 2015

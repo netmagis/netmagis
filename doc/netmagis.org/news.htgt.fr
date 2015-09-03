@@ -37,6 +37,15 @@
 
     \titre {1} {Netmagis : Nouveautés}
 
+    \titre {2} {[2015/09/03] La version 2.3.2 de Netmagis est disponible}
+
+    La \lien {version 2.3.2 de Netmagis} {/download.html} est maintenant
+    disponible. Il s'agit d'une version de maintenance corrigeant un
+    problème introduit dans la version 2.3.1.
+    Voir les \lien {notes de version} {/relnotes.html#v2.3.2}
+    pour la description du problème.
+
+
     \titre {2} {[2015/08/28] La version 2.3.1 de Netmagis est disponible}
 
     La \lien {version 2.3.1 de Netmagis} {/download.html} est maintenant

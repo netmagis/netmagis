@@ -44,17 +44,33 @@
     {/install-2.2.html#source}.
 
 
+    \titre {2} {Version 2.3.2}
+
+    La version 2.3.2 est disponible en téléchargement sur
+    \lien {http://netmagis.org/files/netmagis-2.3.2.tar.gz} {/files/netmagis-2.3.2.tar.gz}
+
+    Les paquets binaires pour Linux (Debian/Ubuntu) également
+    disponibles. Voir la
+    \lien {documentation d'installation} {/install-2.3.html}.
+    Les ports et paquets binaires pour FreeBSD sont intégrés dans
+    FreeBSD et devraient apparaître rapidement après la sortie
+    de la version courante de Netmagis.
+
+    N'oubliez pas de \lien {lire la documentation et vous abonner
+    à la liste de diffusion} {/support.html}~!
+
+
     \titre {2} {Version 2.3.1}
 
     La version 2.3.1 est disponible en téléchargement sur
     \lien {http://netmagis.org/files/netmagis-2.3.1.tar.gz} {/files/netmagis-2.3.1.tar.gz}
 
-    Les ports pour FreeBSD sont disponibles sur
-    \lien {http://netmagis.org/files/netmagis-freebsd-ports-2.3.1.tar.gz} {/files/netmagis-freebsd-ports-2.3.1.tar.gz}
-
-    Les paquets binaires pour Linux (Debian/Ubuntu) sont également
+    Les paquets binaires pour Linux (Debian/Ubuntu) également
     disponibles. Voir la
     \lien {documentation d'installation} {/install-2.3.html}.
+    Les ports et paquets binaires pour FreeBSD sont intégrés dans
+    FreeBSD et devraient apparaître rapidement après la sortie
+    de la version courante de Netmagis.
 
     N'oubliez pas de \lien {lire la documentation et vous abonner
     à la liste de diffusion} {/support.html}~!

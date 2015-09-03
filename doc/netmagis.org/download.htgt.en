@@ -44,17 +44,29 @@
     the \lien {installation documentation} {/install-2.3.html#source}.
 
 
+    \titre {2} {Release 2.3.2}
+
+    Release 2.3.2 is available on
+    \lien {http://netmagis.org/files/netmagis-2.3.2.tar.gz} {/files/netmagis-2.3.2.tar.gz}
+
+    Linux (Debian/Ubuntu) binary packages are available. See the
+    \lien {installation documentation} {/install-2.3.html} to install
+    them. FreeBSD ports and binary packages are integrated in FreeBSD
+    and should appear soon after the Netmagis release.
+
+    Don't forget to \lien {read the documentation and to subscribe to
+    the mailing list} {/support.html}!
+
+
     \titre {2} {Release 2.3.1}
 
     Release 2.3.1 is available on
     \lien {http://netmagis.org/files/netmagis-2.3.1.tar.gz} {/files/netmagis-2.3.1.tar.gz}
 
-    FreeBSD port files are available on
-    \lien {http://netmagis.org/files/netmagis-freebsd-ports-2.3.1.tar.gz} {/files/netmagis-freebsd-ports-2.3.1.tar.gz}
-
-    Linux (Debian/Ubuntu) binary packages are also available. See the
+    Linux (Debian/Ubuntu) binary packages are available. See the
     \lien {installation documentation} {/install-2.3.html} to install
-    them.
+    them. FreeBSD ports and binary packages are integrated in FreeBSD
+    and should appear soon after the Netmagis release.
 
     Don't forget to \lien {read the documentation and to subscribe to
     the mailing list} {/support.html}!

@@ -38,6 +38,15 @@
     \titre {1} {Netmagis: News}
 
 
+    \titre {2} {[2015/09/03] Netmagis 2.3.2 is released}
+
+    The 2.3.2 version of Netmagis is available on the
+    \lien {Download} {/download.html} section. This is a
+    maintenance release fixing a bug introduced in 2.3.1.
+    See the \lien {release notes} {/relnotes.html#v2.3.2} for 
+    a description of the problem.
+
+
     \titre {2} {[2015/08/28] Netmagis 2.3.1 is released}
 
     The 2.3.1 version of Netmagis is available on the
