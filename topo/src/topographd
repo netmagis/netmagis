@@ -49,6 +49,43 @@ source %LIBNETMAGIS%
 ##############################################################################
 
 #
+# Detect separator in file using the following heuristic:
+# the expected format of the file is:
+#
+# <alpha-numeric characters>+<Separator>
+# Separator is the first non-alphanumeric character
+# found after the first field in the file.
+#
+# Input:
+#   - filename : file name to open
+# Output: 
+#   - return value : character used as separator (":", ";" etc.),
+#   - msg: error message if 
+#
+# History 
+#   2015/09/08 : jean/boggia : design
+#
+#
+
+proc detect-separator {filename _msg} {
+    upvar $_msg msg
+
+    set separator ""
+    set msg ""
+    if { [catch {set fd [open $filename "r"]} msg] } then {
+        set msg "detect-separator: cannot open $filename: $msg"
+    } else {
+        if {[gets $fd line] >= 0} then {
+            if {![regexp {^[a-zA-Z0-9-]+([^a-zA-Z0-9])} $line dummy separator]} then {
+                set msg "detect-separator: separator not found in $filename"
+            }
+        } else {
+            set msg "detect-separator: could not read first line of $filename"
+        }
+    }
+    return $separator
+}
+
 # Generate a new router.db rancid file
 #
 # Input:
@@ -80,6 +117,10 @@ proc update-routerdb {} {
 	    return "Cannot read equipment list from database"
 	}
 
+	set sep [detect-separator $ctxt(routerdb) msg]
+        if {msg ne ""} then
+	    return $msg
+        }
 	set new "$ctxt(routerdb).new"
 	if {[catch {set fd [open $new "w"]} msg]} then {
 	    return "Cannot create $new ($msg)"
@@ -87,7 +128,7 @@ proc update-routerdb {} {
 	foreach e $leq {
 	    lassign $e eq type up
 	    if {$up} then { set up "up" } else { set up "down" }
-	    puts $fd "$eq:$type:$up"
+	    puts $fd "$eq$sep$type$sep$up"
 	}
 	if {[catch {close $fd} msg]} then {
 	    return "Cannot close $new ($msg)"
