@@ -52,8 +52,9 @@ source %LIBNETMAGIS%
 # Detect separator in file using the following heuristic:
 # the expected format of the file is:
 #
-# <alpha-numeric characters>+<Separator>
-# Separator is the first non-alphanumeric character
+# <alpha-numeric characters or dot>+<Separator>
+# Separator is the first non-alphanumeric and non-dot character
+# (ie. a hostname or fully qualified domain name)
 # found after the first field in the file.
 #
 # Input:
@@ -72,11 +73,11 @@ proc detect-separator {filename _msg} {
 
     set separator ""
     set msg ""
-    if { [catch {set fd [open $filename "r"]} msg] } then {
-        set msg "detect-separator: cannot open $filename: $msg"
+    if { [catch {open $filename "r"} fd] } then {
+        set msg "detect-separator: cannot open $filename: $fd"
     } else {
         if {[gets $fd line] >= 0} then {
-            if {![regexp {^[a-zA-Z0-9-]+([^a-zA-Z0-9])} $line dummy separator]} then {
+            if {![regexp {^[.a-zA-Z0-9-]+([^.a-zA-Z0-9])} $line dummy separator]} then {
                 set msg "detect-separator: separator not found in $filename"
             }
         } else {
@@ -117,8 +118,9 @@ proc update-routerdb {} {
 	    return "Cannot read equipment list from database"
 	}
 
+	set msg ""
 	set sep [detect-separator $ctxt(routerdb) msg]
-        if {msg ne ""} then
+        if {$msg ne ""} then {
 	    return $msg
         }
 	set new "$ctxt(routerdb).new"
