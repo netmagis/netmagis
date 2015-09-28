@@ -1276,14 +1276,15 @@ proc juniper-parse-snmp {conf tab idx} {
     upvar $tab t
 
     array set kwtab {
-	trap-options	{1	NOP}
-	trap-group	{2	NOP}
-	community	{2	juniper-parse-snmp-community}
-	location	{2	juniper-parse-snmp-location}
-	apply-groups	{2	NOP}
+	trap-options	        {1	NOP}
+	trap-group	        {2	NOP}
+	community	        {2	juniper-parse-snmp-community}
+	location	        {2	juniper-parse-snmp-location}
+	apply-groups	        {2	NOP}
 	apply-groups-except	{2      NOP}
-	traceoptions	{1	NOP}
-	*		{1	ERROR}
+	traceoptions	        {1	NOP}
+	routing-instance-access	{1	NOP}
+	*		        {1	ERROR}
     }
 
     return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
