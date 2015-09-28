@@ -246,6 +246,7 @@ proc juniper-parse {libdir model fdin fdout tab eq} {
 	ethernet-switching-options	{1	juniper-parse-ethernet-swopt}
 	vlans				{1	juniper-parse-vlans}
 	bridge-domains			{1	juniper-parse-bridge-domains}
+	protocols			{1	juniper-parse-protocols}
 	*				{1	NOP}
 
     }
@@ -414,6 +415,7 @@ proc juniper-parse-if {conf tab idx} {
 	gigether-options	{1	juniper-parse-if-gigopt}
 	ether-options		{1	juniper-parse-if-gigopt}
 	aggregated-ether-options {1	NOP}
+	flexible-vlan-tagging   {1	NOP}
 	encapsulation		{2	NOP}
 	vlan-tagging		{1	juniper-parse-if-vlan-tagging}
 	member-range		{4	juniper-parse-member-range}
@@ -1585,6 +1587,7 @@ proc juniper-parse-bridge-domains {conf tab idx} {
     return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
 }
 
+
 #
 # Entrée :
 #   - idx = eq!<eqname>
@@ -1720,6 +1723,93 @@ proc juniper-parse-bridged-routif {conf tab idx} {
     upvar $tab t
 
     return 0
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - rien
+#
+# Historique :
+#   2015/09/28 : jean : conception
+#
+
+proc juniper-parse-protocols {conf tab idx} {
+    upvar $tab t
+
+    array set kwtab {
+	mvrp		{1	juniper-parse-protocols-mvrp}
+	*		{1	NOP}
+    }
+
+    return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
+}
+
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - rien
+#
+# Historique :
+#   2015/09/28 : jean : conception
+#
+
+proc juniper-parse-protocols-mvrp {conf tab idx} {
+    upvar $tab t
+
+    array set kwtab {
+        interface                    {2      juniper-parse-mvrp-iface}
+        apply-groups                 {2      NOP}
+        apply-groups-except          {2      NOP}
+        traceoptions                 {1      NOP}
+        *                            {1      NOP}
+    }
+
+    return [juniper-parse-list kwtab [lindex $conf 1] t $idx]
+}
+
+
+#
+# Entrée :
+#   - idx = eq!<eqname>
+# Remplit :
+#   - tab(eq!<eqname>!if!<ifname>!link!allowvlans) ... {1 4094}
+#
+# Historique :
+#   2015/09/28 : jean : adapted from parse-voip-iface
+#
+
+proc juniper-parse-mvrp-iface {conf tab idx} {
+    upvar $tab t
+
+    #
+    # interface :
+    #   - ge-n/n/n.0 : remove unit number
+    #   - all : unsupported yet
+    #
+
+    set iface [lindex $conf 1]
+
+    set error 0
+    switch $iface {
+	all		{ 
+	    juniper-warning "$eq: mvrp interface all not supported"
+            set error 1
+	}
+	default		{
+	    if {[regexp {(.*)\.(\d)$} $iface bidon iface unit]} then {
+		if {$unit != 0} then {
+		    juniper-warning "$idx: invalid unit '$iface.$unit'"
+		}
+	    }
+    	    set idx "$idx!if!$iface"
+	    lappend t($idx!link!allowedvlans) [list 1 4094]
+	}
+    }
+
+    return $error
 }
 
 ###############################################################################
