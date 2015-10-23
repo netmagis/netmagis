@@ -28,7 +28,7 @@ IGNORE="^[a-zA-Z0-9][-a-zA-Z0-9.]*:wrapper\."
 
 fetch_model_cisco ()
 {
-    sed -n "/^!Chassis type:/s/!Chassis type: \([^ ]*\) .*/\1/p" "$1"
+    sed -n "/^!Chassis type:/s/!Chassis type: \([^ ]*\).*/\1/p" "$1"
 }
 
 fetch_model_hp ()
