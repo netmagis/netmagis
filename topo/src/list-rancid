@@ -28,22 +28,22 @@ IGNORE="^[a-zA-Z0-9][-a-zA-Z0-9.]*:wrapper\."
 
 fetch_model_cisco ()
 {
-    sed -n "/^!Chassis type:/s/!Chassis type: \([^ ]*\).*/\1/p" "$1"
+    sed -n "/^!Chassis type:/s/!Chassis type: \([^ ]*\).*/\1/p" "$1"|head -n1
 }
 
 fetch_model_hp ()
 {
-    sed -n "/^;Chassis type:/s/;Chassis type: \([^ ]*\).*/\1/p" "$1"
+    sed -n "/^;Chassis type:/s/;Chassis type: \([^ ]*\).*/\1/p" "$1"|head -n1
 }
 
 fetch_model_juniper ()
 {
-    sed -n "/^# Chassis/s/.* \([^ ]*\)$/\1/p" "$1"
+    sed -n "/^# Chassis/s/.* \([^ ]*\)$/\1/p" "$1"|head -n1
 }
 
 fetch_model_server ()
 {
-    sed -n "/^! uname: \([^ ]*\)$/s//\1/p" "$1"
+    sed -n "/^! uname: \([^ ]*\)$/s//\1/p" "$1"|head -n1
 }
 
 IFS=":;"
