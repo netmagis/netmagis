@@ -20,7 +20,7 @@ RUN_DEPENDS+=	dtplite:${PORTSDIR}/devel/tcllib
 USES+=		pgsql:9.1+ tcl:85+
 WANT_PGSQL+=	pgtcl
 
-SLAVEDIRS= net-mgmt/netmagis-common \
+SLAVEDIRS=	net-mgmt/netmagis-common \
 	net-mgmt/netmagis-database \
 	net-mgmt/netmagis-detecteq \
 	net-mgmt/netmagis-metro \
