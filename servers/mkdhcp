@@ -117,6 +117,57 @@ proc indent-profile {prof n} {
 }
 
 #
+# generate dhcp name file from pattern
+#
+# Input:
+#   - pattern: the pattern
+#   - _tab: array of tokens values
+#   - _filename: in return, filename
+# Ouput:
+#   - return value: "" if ok, error msg if error
+#   - parameter _filename: filename
+#
+
+proc gen-dhcp-filename {pattern _tab _filename} {
+    upvar $_filename filename
+    upvar $_tab tab
+    set tokens [array names tab]
+    set lp {}
+    set p $pattern
+    while {1} {
+        set i [string first {%%} $p]
+        if {$i<0} {
+            lappend lp $p
+            set p ""
+            break
+        } else {
+            lappend lp [string range $p 0 $i-1]
+            set p [string range $p $i+2 end]
+        }
+    }
+    set re {%{([^\}]+)}}
+    set lp2 {}
+    foreach p $lp {
+        set i 0
+        while {1} {
+            if { ! [regexp -indices -start $i -- $re $p loc locv] } { break }
+            lassign $locv i1 i2
+            set v [string range $p $i1 $i2]
+            if {$v ni $tokens} {
+                return "token ($v) unknown in pattern ($pattern) !!!"
+            }
+            lassign $loc i1 i2
+            set v2 $tab($v)
+            set p [string replace $p $i1 $i2 $v2]
+            set i [expr $i1 + [string length $v2]]
+        }
+        lappend lp2 $p
+    }
+    set filename [join $lp2 {%%}]
+    return ""
+}
+
+#
 # Returns DHCP configuration as a text
 #
 # Input:
@@ -138,12 +189,15 @@ proc indent-profile {prof n} {
 #   2012/10/24 : pda/jean : add views
 #
 
-proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
+proc gen-dhcp {dbfd idview dhcpfailover _txt _nom _err} {
     global conf
-    upvar $_txt txt
+    upvar $_txt subnetedtxt
+    upvar $_nom subnetednom
     upvar $_err err
+    upvar dhcpsubnetfilepattern dhcpsubnetfilepattern
 
-    set txt {}
+    set subnetedtxt {}
+    set subnetednom {}
     set err {}
 
     #
@@ -235,6 +289,7 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
     pg_select $dbfd $sql tab {
 	set network $tab(prefix)
 	set masklen $tab(masklen)
+	set txt ""
 
 	lappend txt "# $tab(name)"
 	lappend txt "subnet $network netmask $tab(netmask) $lbkt"
@@ -362,13 +417,18 @@ proc gen-dhcp {dbfd idview dhcpfailover _txt _err} {
 
 	lappend txt "$rbkt # end subnet $tab(name)"
 	lappend txt ""
+
+    set txt [join $txt "\n"]
+    lappend subnetedtxt $txt
+    set msg [gen-dhcp-filename $dhcpsubnetfilepattern tab snom]
+    if {$msg ne ""} { lappend err "DHCP pattern error: $msg" }
+    lappend subnetednom $snom
     }
 
     #
     # End of generation
     #
 
-    set txt [join $txt "\n"]
     set err [join $err "\n"]
 
     return 1
@@ -449,9 +509,10 @@ proc main {argv0 argv} {
     # Get configuration values
     #
 
-    foreach o {diff dhcpfile dhcpfailover dhcptest dhcpcmd} {
+    foreach o {diff dhcpfile dhcpfailover dhcptest dhcpcmd dhcpsubnetfiles dhcpsubnetfilepattern} {
 	set $o [get-local-conf $o]
     }
+    set dhcpfileglobal "$dhcpfile-global.conf"
 
     #
     # Lock tables such as we do not miss some modification
@@ -485,10 +546,25 @@ proc main {argv0 argv} {
     if {[need-dhcp-generation $dbfd $idview]} then {
 
 	#
+	# test pattern
+	#
+	if {$dhcpsubnetfiles == 1} {
+	    unset -nocomplain tab
+	    array set tab { prefix 1.2.3.0 masklen 24 netmask 255.255.255.0 
+		    gw4 1.2.3.4 name "dummy" }
+	    unset -nocomplain _x
+	    set msg [gen-dhcp-filename $dhcpsubnetfilepattern tab _x]
+	    if {$msg ne ""} {
+                set msg [d dbabort "DHCP pattern" $msg]
+                d error $msg
+	    }
+	}
+
+	#
 	# Perform DHCP configuration
 	#
 
-	if {[gen-dhcp $dbfd $idview $dhcpfailover txt err]} then {
+	if {[gen-dhcp $dbfd $idview $dhcpfailover subnetedtxt subnetednom err]} then {
 	    #
 	    # Generation succeeded, even with some small errors
 	    #
@@ -496,21 +572,61 @@ proc main {argv0 argv} {
 	    # display small errors (if empty, does not display anything)
 	    puts -nonewline stdout $err
 
-	    # display diffs
-	    if {$verbose == 1} then {
-		show-diff-file-text stdout $diff $dhcpfile $txt
-	    }
+        set txt [join $subnetedtxt "\n"]
 
-	    if {$doit} then {
-		#
-		# Install file, test configuration file and restart daemon
-		#
-
-		set msg [$fq add $dhcpfile $txt]
-		if {$msg ne ""} then {
-		    set msg [d dbabort "DHCP generation" $msg]
+	if {$dhcpsubnetfiles == 1} {
+	    # generated filename from network name and check unicity
+	    set generatedsnom {}
+	    set msg ""
+	    foreach snom $subnetednom {
+		set snom [regsub -all {[^a-zA-Z0-9,.=+-]} $snom "_" ]
+		if {[lsearch -exact $generatedsnom $snom] != -1} {
+		    set msg [d dbabort "DHCP generation" "noms identiques: ($snom)"]
 		    d error $msg
 		}
+		lappend generatedsnom $snom
+	    }
+	}
+
+		# display diffs
+	if {$verbose == 1} then {
+	    if {$dhcpsubnetfiles == 1} {
+		# display name of files
+		foreach snom $generatedsnom {
+		    set dhcpsfile "$dhcpfile-$snom.conf"
+		    puts "DHCP generating nom=($snom) file=($dhcpsfile)"
+		}
+	    }
+        # diff with the global file
+		show-diff-file-text stdout $diff $dhcpfileglobal $txt
+	}
+
+	if {$doit} then {
+	    #
+	    # Install file, test configuration file and restart daemon
+	    #
+
+	if {$dhcpsubnetfiles == 1} {
+        set n [llength $generatedsnom]
+        set msg ""
+        for {set i 0} {$i<$n} {incr i} {
+            set snom [lindex $generatedsnom $i]
+            set stxt [lindex $subnetedtxt $i]
+            set dhcpsfile "$dhcpfile-$snom.conf"
+            set msg [$fq add $dhcpsfile $stxt]
+            if {$msg ne ""} then {
+                set msg [d dbabort "DHCP generation" $msg]
+                d error $msg
+            }
+        }
+	}
+
+        # generate global file for future diff
+        set msg [$fq add $dhcpfileglobal $txt]
+        if {$msg ne ""} then {
+            set msg [d dbabort "DHCP generation" $msg]
+            d error $msg
+        }
 
 		set msg [$fq commit]
 		if {$msg ne ""} then {

@@ -118,6 +118,19 @@ dhcptest	"/usr/local/sbin/dhcpd -t -cf /etc/dhcpd.conf"
 # command to restart dhcpd
 dhcpcmd		"sh /usr/local/etc/rc.d/isc-dhcpd.sh restart"
 
+# generate one file by subnet
+dhcpsubnetfiles 0
+dhcpsubnetfilepattern "%{prefix}-%{masklen}"
+# possibles vars :
+#     %{name} = name in netmagis
+#     %{prefix} = network address
+#     %{netmask} = netmask address
+#     %{masklen} = netmask length (CIDR)
+#     %{gw4} = IPv4 gateway
+#
+# result = <dhcpfile>-<dhcpsubnetfilepattern>.conf
+# Rq: all character not in [:alphanum:+-.,_=] replace by _
+
 ########################################
 # mksmtpf
 ########################################
