@@ -619,6 +619,7 @@
  {Vlan} {Vlan}
  {voip=%s} {voip=%s}
  {VoIP Vlan}	{Vlan VoIP}
+ {Local Vlan}	{Vlan local}
  {VoIP} {VoIP}
  {Waiting changes} {Changements en attente}
  {Web role edition} {Édition des rôles de Web}

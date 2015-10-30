@@ -45,6 +45,14 @@
 	Définir ce VLAN comme VoIP ou non. Cela permet d'autoriser
 	la configuration de VLAN VoIP sur les interfaces des
 	équipements.
+
+    \titre {2} {\ancre {localscope} {Vlan Local}}
+
+	Définir ce VLAN comme ayant une portée locale ou globale.
+	Le fait de sélection un Vlan comme ayant une portée locale
+	empêchera l'affichage des messages d'erreur de continuité 
+	dans la construction du graph.
+
 }
 
 }

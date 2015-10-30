@@ -44,6 +44,11 @@
 
 	Check this box to define this VLAN as a VoIP VLAN. This is
 	important during interface configuration.
+
+    \titre {2} {\ancre {localscope} {Local Vlan}}
+
+	Check this box to define this VLAN has local scope. This will
+	prevent display of continuity check error when building the graph.
 }
 
 }
