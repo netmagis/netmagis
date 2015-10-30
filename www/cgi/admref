@@ -213,7 +213,8 @@ set conf(dhcpprof:proc)		admref-nop
 set conf(vlan:ptitle)	"Vlan management"
 set conf(vlan:cols)		{ {15 vlanid {Vlan-Id} {int 10} {}}
 				  {75 descr {Description} {string 40} {}}
-				  {10 voip {VoIP Vlan} {bool} 0}
+				  {5 voip {VoIP Vlan} {bool} 0}
+				  {5 localvlan {Local VLAN} {bool} 0}
 				}
 set conf(vlan:sql)		"SELECT * FROM topo.vlan ORDER BY vlanid ASC"
 set conf(vlan:id)		vlanid
