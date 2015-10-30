@@ -194,7 +194,9 @@ void l2graph (void)
     vlanset_t verr ;
     struct node *ref [MAXVLAN] ;
     int i ;
+    struct vlan *tabvlan;
 
+    tabvlan = mobj_data (vlanmobj) ;
     for (i = 0 ; i < MAXVLAN ; i++)
 	ref [i] = NULL ;
 
@@ -214,9 +216,11 @@ void l2graph (void)
 	    v = n->u.l2.vlan ;
 	    if (v > 1 && ref [v] != NULL && ! vlan_isset (verr, v))
 	    {
-		inconsistency ("Vlan '%d' disconnected between %s:%s and %s:%s",
+		if(tabvlan [v].localscope == 0) {
+		    inconsistency ("Vlan '%d' disconnected between %s:%s and %s:%s",
 				v, ref [v]->eq->name, ref [v]->u.l1.ifname,
 				n->eq->name, ((l1!=NULL) ? l1->u.l1.ifname : "?")) ;
+		}
 		vlan_set (verr, v) ;
 	    }
 	    else ref [v] = l1 ;

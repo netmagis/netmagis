@@ -448,6 +448,8 @@ struct vlan
 {
     char *name ;
     int voice ;				/* 1 if voice vlan */
+    int localscope ;			/* 1 if vlan has local scope;
+					   if 0, global continuity is checked */
     int mark ;
     struct netlist *netlist ;
     struct lvlan *lvlan ;		/* local vlan descriptions */
@@ -567,6 +569,7 @@ struct graphhdr
 #define	VERSION12	12		/* ipmac and portmac sensor */
 #define	VERSION13	13		/* optimization */
 #define	VERSION14	14		/* logical interface name */
+#define	VERSION15	15		/* support for vlan scope */
 
 void abs_to_rel (MOBJ *graph []) ;
 void rel_to_abs (MOBJ *graph []) ;
