@@ -1,0 +1,34 @@
+blocs de libnetmagis.tcl à conserver
+    - soit dans libnetmagis.tcl (utilisé à plusieurs endroit)
+    - soit dans worker.tcl (utilisé seulement pour le web ou API REST)
+
+
+Configuration file processing		=> lib
+Library initialization			=> ???
+Library parameters			=> ???
+Netmagis application framework		=> work
+Configuration parameters		=> work
+User characteristics			=> work
+File installation class			=> lib
+Graphviz graphs				=> work
+Generates an error message as a bitmap image	=> work
+Get graphviz node attributes from a regular expression	=> work
+HTML mask/unmask class			=> work
+Cosmetic				=> work
+Cryptographic functions			=> work
+Authentication				=> work
+User access rights management		=> work
+Database management : resources records	=> work
+Read domains				=> work
+Syntax check				=> work
+View validation				=> work
+Domain validation			=> work
+User checking				=> work
+Hinfo checking				=> work
+DHCP profile checking			=> work
+Netmagis standard HTML menus		=> work
+Network managementr			=> work
+Edition of tabular data			=> work
+Storing tabular data			=> work
+Internal authentication functions	=> work
+Topo library (et suivants)		=> lib
