@@ -12,6 +12,11 @@ install: build
 	mkdir -p $(DESTDIR)$(NMCGIDIR)
 	cd cgi ; make $(DIRS) install
 	#
+	# install API
+	#
+	mkdir -p $(DESTDIR)$(NMCGIDIR)
+	cd nmd ; make $(DIRS) install
+	#
 	# install ps2pdf
 	#
 	mkdir -p $(DESTDIR)$(NMLIBDIR)

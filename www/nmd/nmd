@@ -25,7 +25,7 @@ proc scgi-connect {sock host port} {
 
 set tpid [tpool::create \
 		-minworkers 2 -maxworkers 4 -idletime 30 \
-		    -initcmd "source ./worker.tcl" \
+		    -initcmd "source %NMCGIDIR%/worker.tcl" \
 		]
 
 

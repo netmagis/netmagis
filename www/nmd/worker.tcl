@@ -1,3 +1,7 @@
+
+source %LIBNETMAGIS%
+
+
 package require html
 package require Pgtcl
 
@@ -31,88 +35,90 @@ proc scgi-accept-2 {sock ip port} {
     set body [read $sock $cl]
 
     handle-request $sock $headers $body
-}
-
-##############################################################################
-# 
-##############################################################################
-
-proc init-foo {} {
-    global dbfd
-
-    set cnx "dbname=netmagis user=nm password=are-you-crazy?"
-    set dbfd [pg_connect -conninfo $cnx]
-}
-
-proc handle-request {sock headers body} {
-    global dbfd
-
-    #
-    # Look for form value for "name"
-    #
-    set name ""
-    if {$body ne ""} then {
-	foreach pair [split $body &] {
-	    lassign [split $pair =] key val
-	    if {$key == "name"} then {
-		set name $val
-		break
-	    }
-	}
-    }
-
-    # exec sleep 10
-
-    if {$name eq ""} then {
-	puts $sock "Status: 200 OK"
-	puts $sock "Content-Type: text/html"
-	puts $sock ""
-	puts $sock "<HTML>"
-	puts $sock "<BODY>"
-	puts $sock {<FORM METHOD="POST" ACTION="/sdshdsqghd">}
-	puts $sock {Name&nbsp;:}
-	puts $sock {<INPUT TYPE="TEXT" NAME="name">}
-	puts $sock {<INPUT TYPE="SUBMIT" VALUE ="Consult">}
-	puts $sock {</FORM>}
-	puts $sock {</BODY>}
-	puts $sock {</HTML>}
-    } else {
-	puts $sock "Status: 200 OK"
-	puts $sock "Content-Type: text/html"
-	puts $sock ""
-	puts $sock "<HTML>"
-	puts $sock "<BODY>"
-	puts $sock {<TABLE>}
-	set sql "SELECT r.name || '.' || d.name AS name,
-				i.addr,
-				v.name AS view
-			    FROM dns.rr_ip i,
-				dns.rr r,
-				dns.domain d,
-				dns.view v
-			    WHERE r.name = '$name'
-				AND r.iddom = d.iddom
-				AND r.idrr = i.idrr
-				AND r.idview = v.idview
-			    "
-	pg_select $dbfd $sql tab {
-	    puts $sock {<TR>}
-	    puts $sock "<TD>$tab(name)</TD>"
-	    puts $sock "<TD>$tab(addr)</TD>"
-	    puts $sock "<TD>$tab(view)</TD>"
-	    puts $sock {</TR>}
-	}
-	puts $sock {</TABLE>}
-	puts $sock {</BODY>}
-	puts $sock {</HTML>}
-    }
 
     close $sock
 }
 
-init-foo
+##############################################################################
+# OBSOLETE
+##############################################################################
 
-puts "Thread [thread::id] ready"
+### proc init-foo {} {
+###     global dbfd
+### 
+###     set cnx "dbname=netmagis user=nm password=are-you-crazy?"
+###     set dbfd [pg_connect -conninfo $cnx]
+### }
+### 
+### proc handle-request {sock headers body} {
+###     global dbfd
+### 
+###     #
+###     # Look for form value for "name"
+###     #
+###     set name ""
+###     if {$body ne ""} then {
+### 	foreach pair [split $body &] {
+### 	    lassign [split $pair =] key val
+### 	    if {$key == "name"} then {
+### 		set name $val
+### 		break
+### 	    }
+### 	}
+###     }
+### 
+###     # exec sleep 10
+### 
+###     if {$name eq ""} then {
+### 	puts $sock "Status: 200 OK"
+### 	puts $sock "Content-Type: text/html"
+### 	puts $sock ""
+### 	puts $sock "<HTML>"
+### 	puts $sock "<BODY>"
+### 	puts $sock {<FORM METHOD="POST" ACTION="/sdshdsqghd">}
+### 	puts $sock {Name&nbsp;:}
+### 	puts $sock {<INPUT TYPE="TEXT" NAME="name">}
+### 	puts $sock {<INPUT TYPE="SUBMIT" VALUE ="Consult">}
+### 	puts $sock {</FORM>}
+### 	puts $sock {</BODY>}
+### 	puts $sock {</HTML>}
+###     } else {
+### 	puts $sock "Status: 200 OK"
+### 	puts $sock "Content-Type: text/html"
+### 	puts $sock ""
+### 	puts $sock "<HTML>"
+### 	puts $sock "<BODY>"
+### 	puts $sock {<TABLE>}
+### 	set sql "SELECT r.name || '.' || d.name AS name,
+### 				i.addr,
+### 				v.name AS view
+### 			    FROM dns.rr_ip i,
+### 				dns.rr r,
+### 				dns.domain d,
+### 				dns.view v
+### 			    WHERE r.name = '$name'
+### 				AND r.iddom = d.iddom
+### 				AND r.idrr = i.idrr
+### 				AND r.idview = v.idview
+### 			    "
+### 	pg_select $dbfd $sql tab {
+### 	    puts $sock {<TR>}
+### 	    puts $sock "<TD>$tab(name)</TD>"
+### 	    puts $sock "<TD>$tab(addr)</TD>"
+### 	    puts $sock "<TD>$tab(view)</TD>"
+### 	    puts $sock {</TR>}
+### 	}
+### 	puts $sock {</TABLE>}
+### 	puts $sock {</BODY>}
+### 	puts $sock {</HTML>}
+###     }
+### 
+###     close $sock
+### }
+### 
+### init-foo
+### 
+### puts "Thread [thread::id] ready"
 
 ### ##############################################################################
 ### # Library initialization
@@ -1248,12 +1254,6 @@ snit::type ::netmagis {
 	    set uid "-"
 	    set euid "-"
 	}
-
-	#
-	# To help write HTML code
-	#
-
-	::html create ::h
 
 	#
 	# Add default parameters in form analysis
@@ -2764,64 +2764,6 @@ proc dotattr-match-get {str _tabdot} {
 	}
     }
     return $attr
-}
-
-
-##############################################################################
-# HTML mask/unmask class
-##############################################################################
-
-#
-# HTML class
-#
-# This class provides methods to simplify HTML writing
-#
-# Methods:
-# - reset
-#	reset HTML parameters
-# - mask-next
-#	increment mask counter
-# - mask-link <text>
-#	HTML code for the link to unmask/mask text
-# - mask-text <text>
-#	HTML code to mask the text (such as it may be unmasked by the link)
-#
-# Note: this class needs an "invdisp" Javascript function in the
-#   HTML page
-#
-# History
-#   2012/12/19 : pda/jean : design
-#
-
-snit::type ::html {
-
-    variable mask_counter 0
-
-    # reset to initial state
-    method reset {} {
-	set mask_counter 0
-    }
-
-    # increment mask counter
-    method mask-next {} {
-	incr mask_counter
-    }
-
-    # HTML code for the link to unmask/mask text
-    method mask-link {text} {
-	return [::webapp::helem "a" $text \
-				"href" "#" \
-				"onclick" "invdisp('hv$mask_counter')" \
-				]
-    }
-
-    # HTML code to mask the text (such as it may be unmasked by the link)
-    method mask-text {text} {
-	return [::webapp::helem "div" $text \
-				"id" "hv$mask_counter" \
-				"style" "display:none" \
-				]
-    }
 }
 
 ##############################################################################
@@ -10037,3 +9979,157 @@ proc pgauth-build-realm-index {dbfd type all rlmlist maxrlm _gidx} {
 
     return $menurealms
 }
+
+##############################################################################
+# Request handling
+##############################################################################
+
+proc handle-request {sock headers body} {
+    global dbfd
+
+    puts stdout "HANDLE REQUEST : BEGIN"
+    set codetext [database-reconnect]
+    if {$codetext ne ""} then {
+	puts $sock "Status: $codetext"
+	return
+    }
+    puts stdout "HANDLE REQUEST : RECONNECTED"
+
+    #
+    # Look for form value for "name"
+    #
+    set name ""
+    if {$body ne ""} then {
+	foreach pair [split $body &] {
+	    lassign [split $pair =] key val
+	    if {$key == "name"} then {
+		set name $val
+		break
+	    }
+	}
+    }
+
+    # exec sleep 10
+
+    if {$name eq ""} then {
+	puts $sock "Status: 200 OK"
+	puts $sock "Content-Type: text/html"
+	puts $sock ""
+	puts $sock "<HTML>"
+	puts $sock "<BODY>"
+	puts $sock {<FORM METHOD="POST" ACTION="/sdshdsqghd">}
+	puts $sock {Name&nbsp;:}
+	puts $sock {<INPUT TYPE="TEXT" NAME="name">}
+	puts $sock {<INPUT TYPE="SUBMIT" VALUE ="Consult">}
+	puts $sock {</FORM>}
+	puts $sock {</BODY>}
+	puts $sock {</HTML>}
+    } else {
+	puts $sock "Status: 200 OK"
+	puts $sock "Content-Type: text/html"
+	puts $sock ""
+	puts $sock "<HTML>"
+	puts $sock "<BODY>"
+	puts $sock {<TABLE>}
+	set sql "SELECT r.name || '.' || d.name AS name,
+				i.addr,
+				v.name AS view
+			    FROM dns.rr_ip i,
+				dns.rr r,
+				dns.domain d,
+				dns.view v
+			    WHERE r.name = '$name'
+				AND r.iddom = d.iddom
+				AND r.idrr = i.idrr
+				AND r.idview = v.idview
+			    "
+	pg_select $dbfd $sql tab {
+	    puts $sock {<TR>}
+	    puts $sock "<TD>$tab(name)</TD>"
+	    puts $sock "<TD>$tab(addr)</TD>"
+	    puts $sock "<TD>$tab(view)</TD>"
+	    puts $sock {</TR>}
+	}
+	puts $sock {</TABLE>}
+	puts $sock {</BODY>}
+	puts $sock {</HTML>}
+    }
+}
+
+##############################################################################
+# Thread initialisation
+##############################################################################
+
+proc thread-init {} {
+    global dbfd
+
+    set dbfd "not connected"
+
+    #
+    # Create a global object for configuration parameters
+    #
+
+    config ::dnsconfig
+}
+
+proc database-reconnect {} {
+    global dbfd
+    global libconf
+
+    if {$dbfd ne "not connected"} then {
+	return {}
+    }
+
+    #
+    # Access to Netmagis database
+    #
+
+    set conninfo [get-conninfo "dnsdb"]
+    if {[catch {set dbfd [pg_connect -conninfo $conninfo]} msg]} then {
+	return "503 Database unavailable"
+    }
+
+    #
+    # Access to configuration parameters (stored in the database)
+    #
+
+    dnsconfig setdb $dbfd
+
+    #
+    # Check compatibility with database schema version
+    # - empty string : pre-2.2 schema
+    # - non empty string : integer containing schema version
+    # Netmagis version (x.y.... => xy) must match schema version.
+    #
+
+    # get code version (from top-level Makefile)
+    if {! [regsub {^(\d+)\.(\d+).*} $libconf(version) {\1\2} nver]} then {
+	return [format "500 Internal Server Error (Netmagis version number '%s' unrecognized)" $libconf(version)]
+    }
+
+    # get schema version (from database)
+    if {[catch {dnsconfig get "schemaversion"} sver]} then {
+	set sver ""
+    }
+
+    if {$sver eq ""} then {
+	return [format "500 Internal Server Error (Database schema is too old. See http://netmagis.org/upgrade.html)" $version]
+    } elseif {$sver < $nver} then {
+	return [format "500 Internal Server Error (Database schema is too old. See http://netmagis.org/upgrade.html)" $version]
+    } elseif {$sver > $nver} then {
+	return [format "500 Internal Server Error (Database schema '%1$s' is not yet recognized by Netmagis %2$s)" $sver $version]
+    }
+
+    #
+    # Log initialization
+    #
+
+    set log [::webapp::log create %AUTO% \
+				-subsys netmagis \
+				-method opened-postgresql \
+				-medium [list "db" $dbfd table global.log] \
+		    ]
+
+}
+
+thread-init
