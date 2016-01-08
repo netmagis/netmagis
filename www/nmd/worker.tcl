@@ -6,8 +6,10 @@ package require html
 package require Pgtcl
 
 proc scgi-accept {sock ip port} {
-    if {[catch {scgi-accept-2 $sock $ip $port} result]} then {
-	puts stderr $result
+    set code [catch {scgi-accept-2 $sock $ip $port} result err] 
+    if {$code == 1} then {
+	puts stderr "Erreur attrapée par scgi-accept:"
+	puts stderr [dict get $err -errorinfo]
     }
 }
 
@@ -9989,11 +9991,11 @@ proc handle-request {sock headers body} {
 
     puts stdout "HANDLE REQUEST : BEGIN"
     set codetext [database-reconnect]
+    puts stdout "codetext=$codetext"
     if {$codetext ne ""} then {
 	puts $sock "Status: $codetext"
 	return
     }
-    puts stdout "HANDLE REQUEST : RECONNECTED"
 
     #
     # Look for form value for "name"
@@ -10043,13 +10045,37 @@ proc handle-request {sock headers body} {
 				AND r.idrr = i.idrr
 				AND r.idview = v.idview
 			    "
-	pg_select $dbfd $sql tab {
-	    puts $sock {<TR>}
-	    puts $sock "<TD>$tab(name)</TD>"
-	    puts $sock "<TD>$tab(addr)</TD>"
-	    puts $sock "<TD>$tab(view)</TD>"
-	    puts $sock {</TR>}
+	puts stdout "AVANT TRY"
+	try {
+	    pg_execute $dbfd $sql {
+		puts $sock {<TR>}
+		puts $sock "<TD>$name</TD>"
+		puts $sock "<TD>$addr</TD>"
+		puts $sock "<TD>$view</TD>"
+		puts $sock {</TR>}
+	    }
+	} trap {NONE} {msg err} {
+	    # Pgtcl 1.9 returns errorcode == NONE
+	    set errinfo [dict get $err -errorinfo]
+	    if {[regexp "^PGRES_FATAL_ERROR" $errinfo]} then {
+		# XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+		# WE SHOULD DISTINGUISH :
+		# - TRANSIENT DATABASE ERRORS: DATABASE UNREACHABLE, etc
+		# - USER ERROR: WRONG PASSWORD, INTEGRITY CONSTRAINT
+		#	VIOLATION, etc.
+		# - PROGRAMMER ERRORS : BAD SQL SYNTAX, INVALID TABLE NAME,
+		#	etc.
+		# BUT IT SEEMS THAT Pgtcl DOES NOT RETURN ENOUGH INFO
+		# IN ORDER TO DISTINGUISH THESE CASES
+		#
+		puts stderr "ERREUR PG $errinfo"
+		database-disconnect
+	    } else {
+		# it is not a Pgtcl error
+		error $msg $errinfo NONE
+	    }
 	}
+	puts stdout "APRES TRY"
 	puts $sock {</TABLE>}
 	puts $sock {</BODY>}
 	puts $sock {</HTML>}
@@ -10072,6 +10098,13 @@ proc thread-init {} {
     config ::dnsconfig
 }
 
+proc database-disconnect {} {
+    global dbfd
+
+    catch {pg_disconnect $dbfd}
+    set dbfd "not connected"
+}
+
 proc database-reconnect {} {
     global dbfd
     global libconf
@@ -10079,6 +10112,7 @@ proc database-reconnect {} {
     if {$dbfd ne "not connected"} then {
 	return {}
     }
+    puts stderr "RECONNECT"
 
     #
     # Access to Netmagis database
@@ -10130,6 +10164,7 @@ proc database-reconnect {} {
 				-medium [list "db" $dbfd table global.log] \
 		    ]
 
+    return ""
 }
 
 thread-init
