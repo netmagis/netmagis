@@ -1,6 +1,9 @@
 
 source %LIBNETMAGIS%
 
+set debug 1
+
+set conf(static-dir)	.
 
 package require html
 package require Pgtcl
@@ -16,7 +19,20 @@ proc scgi-accept {sock ip port} {
 proc scgi-accept-2 {sock ip port} {
     thread::attach $sock
     fconfigure $sock -translation {binary crlf}
+
+    #
+    # Exemple from: https://python.ca/scgi/protocol.txt
+    #	"70:"
+    #   	"CONTENT_LENGTH" <00> "27" <00>
+    #		"SCGI" <00> "1" <00>
+    #		"REQUEST_METHOD" <00> "POST" <00>
+    #		"REQUEST_URI" <00> "/deepthought" <00>
+    #	","
+    #	"What is the answer to life?"
+    #
+
     set len ""
+    # Decode the length of the netstring: "70:..."
     while {1} {
 	set c [read $sock 1]
 	if {$c eq ":"} then {
@@ -24,13 +40,21 @@ proc scgi-accept-2 {sock ip port} {
 	}
 	append len $c
     }
+    # Read the value (all headers) of the netstring
     set data [read $sock $len]
 
+    # Read the final comma (which is not part of netstring len)
     set comma [read $sock 1]
+    if {$comma ne ","} then {
+	puts $sock "500 Internal server error"
+	close $sock
+	return
+    }
 
-    # remove last empty element
+    # Netstring contains headers. Decode them (without final \0)
     set headers [lrange [split $data \0] 0 end-1]
 
+    # Get content_length header
     set cl 0
     catch {set cl [dict get $headers CONTENT_LENGTH]}
 
@@ -40,87 +64,6 @@ proc scgi-accept-2 {sock ip port} {
 
     close $sock
 }
-
-##############################################################################
-# OBSOLETE
-##############################################################################
-
-### proc init-foo {} {
-###     global dbfd
-### 
-###     set cnx "dbname=netmagis user=nm password=are-you-crazy?"
-###     set dbfd [pg_connect -conninfo $cnx]
-### }
-### 
-### proc handle-request {sock headers body} {
-###     global dbfd
-### 
-###     #
-###     # Look for form value for "name"
-###     #
-###     set name ""
-###     if {$body ne ""} then {
-### 	foreach pair [split $body &] {
-### 	    lassign [split $pair =] key val
-### 	    if {$key == "name"} then {
-### 		set name $val
-### 		break
-### 	    }
-### 	}
-###     }
-### 
-###     # exec sleep 10
-### 
-###     if {$name eq ""} then {
-### 	puts $sock "Status: 200 OK"
-### 	puts $sock "Content-Type: text/html"
-### 	puts $sock ""
-### 	puts $sock "<HTML>"
-### 	puts $sock "<BODY>"
-### 	puts $sock {<FORM METHOD="POST" ACTION="/sdshdsqghd">}
-### 	puts $sock {Name&nbsp;:}
-### 	puts $sock {<INPUT TYPE="TEXT" NAME="name">}
-### 	puts $sock {<INPUT TYPE="SUBMIT" VALUE ="Consult">}
-### 	puts $sock {</FORM>}
-### 	puts $sock {</BODY>}
-### 	puts $sock {</HTML>}
-###     } else {
-### 	puts $sock "Status: 200 OK"
-### 	puts $sock "Content-Type: text/html"
-### 	puts $sock ""
-### 	puts $sock "<HTML>"
-### 	puts $sock "<BODY>"
-### 	puts $sock {<TABLE>}
-### 	set sql "SELECT r.name || '.' || d.name AS name,
-### 				i.addr,
-### 				v.name AS view
-### 			    FROM dns.rr_ip i,
-### 				dns.rr r,
-### 				dns.domain d,
-### 				dns.view v
-### 			    WHERE r.name = '$name'
-### 				AND r.iddom = d.iddom
-### 				AND r.idrr = i.idrr
-### 				AND r.idview = v.idview
-### 			    "
-### 	pg_select $dbfd $sql tab {
-### 	    puts $sock {<TR>}
-### 	    puts $sock "<TD>$tab(name)</TD>"
-### 	    puts $sock "<TD>$tab(addr)</TD>"
-### 	    puts $sock "<TD>$tab(view)</TD>"
-### 	    puts $sock {</TR>}
-### 	}
-### 	puts $sock {</TABLE>}
-### 	puts $sock {</BODY>}
-### 	puts $sock {</HTML>}
-###     }
-### 
-###     close $sock
-### }
-### 
-### init-foo
-### 
-### puts "Thread [thread::id] ready"
 
 ### ##############################################################################
 ### # Library initialization
@@ -9983,25 +9926,142 @@ proc pgauth-build-realm-index {dbfd type all rlmlist maxrlm _gidx} {
 }
 
 ##############################################################################
+# PostgreSQL interface
+##############################################################################
+
+#
+# Input:
+#   - db: "dns" or "mac"
+#   - sql: sql command to send to the database
+#   - tabname: name of an array used in the tcl script
+#   - script: tcl script to execute for each row
+# Output:
+#   - return value: empty string (no error) or sql error message
+#   - script error: a Tcl error is throwed
+#
+
+proc nm_pg_select {db sql tabname script} {
+    global dbfd
+    global debug
+
+    set r ""
+    try {
+	uplevel 1 [list pg_execute -array $tabname $dbfd($db) $sql $script]
+    } trap {NONE} {msg err} {
+	# Pgtcl 1.9 returns errorcode == NONE
+	set errinfo [dict get $err -errorinfo]
+	if {[regexp "^PGRES_FATAL_ERROR" $errinfo]} then {
+	    # reset db handle
+	    set info [pg_dbinfo status $dbfd($db)]
+	    if {$info ne "connection_ok"} then {
+		database-disconnect $db
+	    }
+
+	    # return a one-line message, or throw an error with the full stack?
+	    if {$debug} then {
+		error $msg $errinfo NONE
+	    } else {
+		set first [lindex [split $errinfo "\n"] 0]
+		regsub {.*ERROR:\s+} $first {} r
+	    }
+	} else {
+	    # it is not a Pgtcl error
+	    error $msg $errinfo NONE
+	}
+    }
+    return $r
+}
+
+##############################################################################
 # Request handling
 ##############################################################################
 
-proc handle-request {sock headers body} {
-    global dbfd
+#
+# Input:
+#   - sock: socket
+#   - headers: Tcl dictionnary containing http server informations
+#   - body: request body, including form parameters
+# Output:
+#   - stdout: <code> <text>
 
-    puts stdout "HANDLE REQUEST : BEGIN"
-    set codetext [database-reconnect]
-    puts stdout "codetext=$codetext"
+proc handle-request {sock headers body} {
+    if {[catch {set uri [dict get $headers DOCUMENT_URI]}]} then {
+	puts $sock "Status: 404 Not Found"
+	return
+    }
+
+    switch -regexp -matchvar last $uri {
+	{^/static/([[:alnum:]][-.[:alnum:]]*)$} {
+	    handle-static $sock [lindex $last 1]
+	}
+	{^/favicon\.ico$} {
+	    handle-static $sock favicon.png
+	}
+	{^/api/v1/([^/]+)$} {
+	    handle-api-v1 $sock [lindex $last 1] $headers $body
+	}
+	default {
+	    puts $sock "Status: 404 Not Found"
+	    return
+	}
+    }
+}
+
+proc handle-static {sock page} {
+    global conf
+
+    set path $conf(static-dir)/$page
+
+    if {[file exists $path]} then {
+	if {[catch {set fd [open $path "r"]}]} then {
+	    puts $sock "Status: XXX"
+	    return
+	}
+	set content [read $fd]
+	close $fd
+
+	# Determine Content-Type, based on file extension
+	switch -glob [string tolower $page] {
+	    *.png	{ set ct "image/png" }
+	    *.gif	{ set ct "image/gif" }
+	    *.jpg	{ set ct "image/jpeg" }
+	    *.jpeg	{ set ct "image/jpeg" }
+	    *.html	{ set ct "text/html" }
+	    default	{ set ct "text/plain" }
+	}
+
+	puts $sock "Status: 200 OK"
+	puts $sock "Content-Type: text/html"
+	puts $sock ""
+	puts $sock $content
+    } else {
+	puts $sock "Status: 404 Not Found"
+    }
+}
+
+proc handle-api-v1 {sock action headers body} {
+
+    set codetext [database-reconnect dns]
     if {$codetext ne ""} then {
 	puts $sock "Status: $codetext"
 	return
     }
+
+    set codetext [database-reconnect mac]
+    if {$codetext ne ""} then {
+	puts $sock "Status: $codetext"
+	return
+    }
+
+#				array set h $headers
+#				parray h
 
     #
     # Look for form value for "name"
     #
     set name ""
     if {$body ne ""} then {
+	############## XXXXXXX : improve decoding, make it robust
 	foreach pair [split $body &] {
 	    lassign [split $pair =] key val
 	    if {$key == "name"} then {
@@ -10045,37 +10105,15 @@ proc handle-request {sock headers body} {
 				AND r.idrr = i.idrr
 				AND r.idview = v.idview
 			    "
-	puts stdout "AVANT TRY"
-	try {
-	    pg_execute $dbfd $sql {
-		puts $sock {<TR>}
-		puts $sock "<TD>$name</TD>"
-		puts $sock "<TD>$addr</TD>"
-		puts $sock "<TD>$view</TD>"
-		puts $sock {</TR>}
-	    }
-	} trap {NONE} {msg err} {
-	    # Pgtcl 1.9 returns errorcode == NONE
-	    set errinfo [dict get $err -errorinfo]
-	    if {[regexp "^PGRES_FATAL_ERROR" $errinfo]} then {
-		# XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-		# WE SHOULD DISTINGUISH :
-		# - TRANSIENT DATABASE ERRORS: DATABASE UNREACHABLE, etc
-		# - USER ERROR: WRONG PASSWORD, INTEGRITY CONSTRAINT
-		#	VIOLATION, etc.
-		# - PROGRAMMER ERRORS : BAD SQL SYNTAX, INVALID TABLE NAME,
-		#	etc.
-		# BUT IT SEEMS THAT Pgtcl DOES NOT RETURN ENOUGH INFO
-		# IN ORDER TO DISTINGUISH THESE CASES
-		#
-		puts stderr "ERREUR PG $errinfo"
-		database-disconnect
-	    } else {
-		# it is not a Pgtcl error
-		error $msg $errinfo NONE
-	    }
-	}
-	puts stdout "APRES TRY"
+	puts stdout "AVANT PGEXEC"
+	set msg [nm_pg_select dns $sql t {
+	    puts $sock {<TR>}
+	    puts $sock "<TD>$t(name)</TD>"
+	    puts $sock "<TD>$t(addr)</TD>"
+	    puts $sock "<TD>$t(view)</TD>"
+	    puts $sock {</TR>}
+	} ]
+	puts stdout "APRES PGEXEC : msg=$msg"
 	puts $sock {</TABLE>}
 	puts $sock {</BODY>}
 	puts $sock {</HTML>}
@@ -10089,7 +10127,8 @@ proc handle-request {sock headers body} {
 proc thread-init {} {
     global dbfd
 
-    set dbfd "not connected"
+    set dbfd(dns) "not connected"
+    set dbfd(mac) "not connected"
 
     #
     # Create a global object for configuration parameters
@@ -10098,71 +10137,91 @@ proc thread-init {} {
     config ::dnsconfig
 }
 
-proc database-disconnect {} {
+proc database-disconnect {db} {
     global dbfd
 
-    catch {pg_disconnect $dbfd}
-    set dbfd "not connected"
+    catch {pg_disconnect $dbfd($db)}
+    set dbfd($db) "not connected"
 }
 
-proc database-reconnect {} {
+#
+# Input:
+#   - db: "dns" or "mac"
+#
+
+proc database-reconnect {db} {
     global dbfd
     global libconf
 
-    if {$dbfd ne "not connected"} then {
+    if {$dbfd($db) ne "not connected"} then {
 	return {}
     }
-    puts stderr "RECONNECT"
+    puts stderr "RECONNECT $db"
 
-    #
-    # Access to Netmagis database
-    #
+    switch $db {
+	dns {
+	    #
+	    # Access to Netmagis database
+	    #
 
-    set conninfo [get-conninfo "dnsdb"]
-    if {[catch {set dbfd [pg_connect -conninfo $conninfo]} msg]} then {
-	return "503 Database unavailable"
+	    set conninfo [get-conninfo "dnsdb"]
+	    if {[catch {set dbfd($db) [pg_connect -conninfo $conninfo]} msg]} then {
+		return "503 Database unavailable"
+	    }
+
+	    #
+	    # Access to configuration parameters (stored in the database)
+	    #
+
+	    dnsconfig setdb $dbfd($db)
+
+	    #
+	    # Check compatibility with database schema version
+	    # - empty string : pre-2.2 schema
+	    # - non empty string : integer containing schema version
+	    # Netmagis version (x.y.... => xy) must match schema version.
+	    #
+
+	    # get code version (from top-level Makefile)
+	    if {! [regsub {^(\d+)\.(\d+).*} $libconf(version) {\1\2} nver]} then {
+		return [format "500 Internal Server Error (Netmagis version number '%s' unrecognized)" $libconf(version)]
+	    }
+
+	    # get schema version (from database)
+	    if {[catch {dnsconfig get "schemaversion"} sver]} then {
+		set sver ""
+	    }
+
+	    if {$sver eq ""} then {
+		return [format "500 Internal Server Error (Database schema is too old. See http://netmagis.org/upgrade.html)" $version]
+	    } elseif {$sver < $nver} then {
+		return [format "500 Internal Server Error (Database schema is too old. See http://netmagis.org/upgrade.html)" $version]
+	    } elseif {$sver > $nver} then {
+		return [format "500 Internal Server Error (Database schema '%1$s' is not yet recognized by Netmagis %2$s)" $sver $version]
+	    }
+
+	    #
+	    # Log initialization
+	    #
+
+	    set log [::webapp::log create %AUTO% \
+					-subsys netmagis \
+					-method opened-postgresql \
+					-medium [list "db" $dbfd($db) table global.log] \
+			    ]
+	}
+	mac {
+	    #
+	    # Access to MAC database
+	    #
+
+	    set conninfo [get-conninfo "macdb"]
+	    if {[catch {set dbfd($db) [pg_connect -conninfo $conninfo]} msg]} then {
+		return "503 Database unavailable"
+	    }
+
+	}
     }
-
-    #
-    # Access to configuration parameters (stored in the database)
-    #
-
-    dnsconfig setdb $dbfd
-
-    #
-    # Check compatibility with database schema version
-    # - empty string : pre-2.2 schema
-    # - non empty string : integer containing schema version
-    # Netmagis version (x.y.... => xy) must match schema version.
-    #
-
-    # get code version (from top-level Makefile)
-    if {! [regsub {^(\d+)\.(\d+).*} $libconf(version) {\1\2} nver]} then {
-	return [format "500 Internal Server Error (Netmagis version number '%s' unrecognized)" $libconf(version)]
-    }
-
-    # get schema version (from database)
-    if {[catch {dnsconfig get "schemaversion"} sver]} then {
-	set sver ""
-    }
-
-    if {$sver eq ""} then {
-	return [format "500 Internal Server Error (Database schema is too old. See http://netmagis.org/upgrade.html)" $version]
-    } elseif {$sver < $nver} then {
-	return [format "500 Internal Server Error (Database schema is too old. See http://netmagis.org/upgrade.html)" $version]
-    } elseif {$sver > $nver} then {
-	return [format "500 Internal Server Error (Database schema '%1$s' is not yet recognized by Netmagis %2$s)" $sver $version]
-    }
-
-    #
-    # Log initialization
-    #
-
-    set log [::webapp::log create %AUTO% \
-				-subsys netmagis \
-				-method opened-postgresql \
-				-medium [list "db" $dbfd table global.log] \
-		    ]
 
     return ""
 }
