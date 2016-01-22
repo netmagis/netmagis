@@ -3,7 +3,8 @@ source %LIBNETMAGIS%
 
 set debug 1
 
-set conf(static-dir)	.
+set conf(static-dir)	/tmp
+set conf(api-dir)	/local/netmagis/www/netmagis/api
 
 package require html
 package require Pgtcl
@@ -9986,25 +9987,86 @@ proc nm_pg_select {db sql tabname script} {
 
 proc handle-request {sock headers body} {
     if {[catch {set uri [dict get $headers DOCUMENT_URI]}]} then {
-	puts $sock "Status: 404 Not Found"
+	api-error $sock 400 "Cannot read DOCUMENT_URI"
 	return
     }
+
+    puts "HANDLE-REQUEST $uri"
+				array set h $headers
+				parray h
 
     switch -regexp -matchvar last $uri {
 	{^/static/([[:alnum:]][-.[:alnum:]]*)$} {
 	    handle-static $sock [lindex $last 1]
 	}
-	{^/favicon\.ico$} {
-	    handle-static $sock favicon.png
-	}
-	{^/api/v1/([^/]+)$} {
-	    handle-api-v1 $sock [lindex $last 1] $headers $body
-	}
 	default {
-	    puts $sock "Status: 404 Not Found"
+	    #
+	    # Try API
+	    #
+
+	    regsub -all {/+} $uri {_} route
+	    if {[catch {set method [dict get $headers REQUEST_METHOD]}]} then {
+		api-error $sock 400 "Cannot read REQUEST_METHOD"
+		return
+	    }
+	    set method [string tolower $method]
+	    set procname "route-$route-$method"
+	    if {[llength [info procs $procname]] > 0} then {
+		$procname $sock $headers $body
+	    }
+
+	    api-error $sock 404 "'$uri' not found"
 	    return
 	}
     }
+}
+
+array set http_codes {
+    400 {Bad Request}
+    401 {Unauthorized}
+    402 {Payment Required}
+    403 {Forbidden}
+    404 {Not Found}
+    405 {Method Not Allowed}
+    406 {Not Acceptable}
+    407 {Proxy Authentication Required}
+    408 {Request Timeout}
+    409 {Conflict}
+    410 {Gone}
+    411 {Length Required}
+    412 {Precondition Failed}
+    413 {Request Entity Too Large}
+    414 {Request-URI Too Long}
+    415 {Unsupported Media Type}
+    416 {Requested Range Not Satisfiable}
+    417 {Expectation Failed}
+    418 {I'm a teapot (RFC 2324)}
+    420 {Enhance Your Calm (Twitter)}
+    422 {Unprocessable Entity (WebDAV)}
+    423 {Locked (WebDAV)}
+    424 {Failed Dependency (WebDAV)}
+    425 {Reserved for WebDAV}
+    426 {Upgrade Required}
+    428 {Precondition Required}
+    429 {Too Many Requests}
+    431 {Request Header Fields Too Large}
+    444 {No Response (Nginx)}
+    449 {Retry With (Microsoft)}
+    450 {Blocked by Windows Parental Controls (Microsoft)}
+    499 {Client Closed Request (Nginx)}
+}
+
+proc api-error {sock code msg} {
+    global http_codes
+
+    if {! [info exists http_codes($code)]} then {
+	set msg "Code $code substituted by 400. Original message: $msg"
+	set code 400
+    }
+    puts $sock "$code $http_codes($code)"
+    puts $sock "Content-Type: text/plain"
+    puts $sock ""
+    puts $sock $msg
 }
 
 proc handle-static {sock page} {
@@ -10013,29 +10075,35 @@ proc handle-static {sock page} {
     set path $conf(static-dir)/$page
 
     if {[file exists $path]} then {
-	if {[catch {set fd [open $path "r"]}]} then {
-	    puts $sock "Status: XXX"
+	# Determine Content-Type, based on file extension
+	switch -glob [string tolower $page] {
+	    *.png	{ set ct "image/png" ; set bin 1 }
+	    *.gif	{ set ct "image/gif" ; set bin 1 }
+	    *.jpg	{ set ct "image/jpeg" ; set bin 1 }
+	    *.jpeg	{ set ct "image/jpeg" ; set bin 1 }
+	    *.html	{ set ct "text/html" ; set bin 0 }
+	    default	{ set ct "text/plain" ; set bin 0 }
+	}
+
+	if {[catch {set fd [open $path "r"]} msg]} then {
+	    api-error $sock 404 "Cannot open '$page' ($msg)"
 	    return
+	}
+	if {$bin} then {
+	    fconfigure $fd -translation binary
 	}
 	set content [read $fd]
 	close $fd
 
-	# Determine Content-Type, based on file extension
-	switch -glob [string tolower $page] {
-	    *.png	{ set ct "image/png" }
-	    *.gif	{ set ct "image/gif" }
-	    *.jpg	{ set ct "image/jpeg" }
-	    *.jpeg	{ set ct "image/jpeg" }
-	    *.html	{ set ct "text/html" }
-	    default	{ set ct "text/plain" }
-	}
-
 	puts $sock "Status: 200 OK"
-	puts $sock "Content-Type: text/html"
+	puts $sock "Content-Type: $ct"
 	puts $sock ""
+	if {$bin} then {
+	    fconfigure $sock -translation binary
+	}
 	puts $sock $content
     } else {
-	puts $sock "Status: 404 Not Found"
+	api-error $sock 404 "'$page' not found"
     }
 }
 
@@ -10043,13 +10111,15 @@ proc handle-api-v1 {sock action headers body} {
 
     set codetext [database-reconnect dns]
     if {$codetext ne ""} then {
-	puts $sock "Status: $codetext"
+	lassign $codetext code msg
+	api-error $sock $code $msg
 	return
     }
 
     set codetext [database-reconnect mac]
     if {$codetext ne ""} then {
-	puts $sock "Status: $codetext"
+	lassign $codetext code msg
+	api-error $sock $code $msg
 	return
     }
 
@@ -10126,6 +10196,17 @@ proc handle-api-v1 {sock action headers body} {
 
 proc thread-init {} {
     global dbfd
+    global conf
+
+    #
+    # Load all API files
+    #
+
+    load-api $conf(api-dir)
+
+    #
+    # Prepare for DB connection
+    #
 
     set dbfd(dns) "not connected"
     set dbfd(mac) "not connected"
@@ -10135,6 +10216,8 @@ proc thread-init {} {
     #
 
     config ::dnsconfig
+
+    puts "READY [info procs route-*]"
 }
 
 proc database-disconnect {db} {
@@ -10142,6 +10225,30 @@ proc database-disconnect {db} {
 
     catch {pg_disconnect $dbfd($db)}
     set dbfd($db) "not connected"
+}
+
+proc api-handler {method script} {
+    global conf
+
+    set method [string tolower $method]
+
+    # conf(route) is set in load-api for each loaded file
+    # it contains /api/v1/foo
+    regsub -all {/} $conf(route) {_} procname
+
+    # build a proc named route-_api_v1_foo-get
+    set procname route-$procname-$method
+    uplevel \#0 [list proc $procname {sock headers body} $script]
+}
+
+proc load-api {base {path {}}} {
+    foreach f [glob -directory $base/$path -tails -nocomplain *] {
+	if {[file isdirectory $base/$path/$f]} then {
+	    load-api $base $path/$f
+	} else {
+	    uplevel \#0 "set conf(route) $path/$f ; source $base/$path/$f"
+	}
+    }
 }
 
 #
