@@ -419,8 +419,8 @@ d cgi-register {action mod} {
 	set tableau [::arrgen::output "html" $conf(tableau) $lines]
 	d writelog "addmx" "add mx [join $lm {, }] for $fqdn"
     } else {
-	set tableau [mc "RR deleted"]
-	d writelog "supprmx" "delete RR $fqdn"
+	set tableau [mc "MX deleted"]
+	d writelog "supprmx" "delete MX $fqdn"
     }
 
     #
