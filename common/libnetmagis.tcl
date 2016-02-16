@@ -6680,13 +6680,9 @@ proc check-authorized-mx {dbfd idcor name _iddom domain idview _exists _trr} {
     set exists [read-rr-by-name $dbfd $name $iddom $idview trr]
     if {$exists} then {
 	#
-	# If it already exists, check that it is not a A or CNAME or
-	# anything else which is not a MX
+	# If it already exists, check that it is not a CNAME 
 	#
 
-	if {[llength [rr-ip-by-view trr $idview]] > 0} then {
-	    return [mc "'%s' already has IP addresses" $name]
-	}
 	set cname [rr-cname-by-view trr $idview]
 	if {$cname ne ""} then {
 	    return [mc "'%s' is an alias" $name]

@@ -392,6 +392,7 @@
  {More than one year} {Plus d'un an}
  {MX '%1$s' points to a domain on which you don't have rights\n%2$s} {Le MX '%1$s' référence un domaine auquel vous n'avez pas accès\n%2$s}
  {MX}		{MX}
+ {MX deleted} {MX supprimé}
  {Name '%1$s' is not a host in view '%2$s'} {Le nom '%1$s' ne correspond pas à une machine dans la vue '%2$s'}
  {Name and aliases} {Noms et aliases}
  {Name}		{Nom}
@@ -518,7 +519,6 @@
  {Return to zone modification} {Revenir à la modification des zones}
  {RR addition impossible: %s} {Création du RR impossible : %s}
  {RR count} {Nombre de RR}
- {RR deleted} {RR supprimé}
  {RR}		{RR}
  {RR update impossible: %s} {Mise à jour du RR impossible : %s}
  {'%s' already has IP addresses} {'%s' a déjà des adresses IP}
