@@ -11,6 +11,7 @@
  {'%1$s' has IP addresses in view '%2$s'} {'%1$s' a des adresses IP dans la vue '%2$s'}
  {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} {%1$s dans la vue %2$s est une adresse de messagerie hébergée par %3$s dans la vue %4$s}
  {%1$s is a host in view %2$s} {%1$s est une machine dans la vue %2$s}
+ {%1$s is a MX (priority %2$s) to host %3$s in view %4$s} {%1$s est un MX (priorité %2$s) vers la machine %3$s dans la vue %4$s}
  {%1$s is an alias of host %2$s in view %3$s} {%1$s est un alias de la machine %2$s dans la vue %3$s}
  {'%1$s' is not a mail role in view '%2$s'} {'%1$s' n'est pas un rôle de messagerie dans la vue '%2$s'}
  {'%1$s' is not a valid IPv%2$s address} {'%1$s' n'est pas une adresse IPv%2$s valide}
@@ -65,6 +66,7 @@
  {Cannot perform operation "%1$s": %2$s} {Opération "%1$s" impossible : %2$s}
  {Cannot register authentication token (%s)} {Impossible d'enregistrer le token d'authentification (%s)}
  {Cannot read host-id %s} {Impossible de lire la machine d'identificateur %s}
+ {Cannot read MX with id %s} {Impossible de lire le MX d'identificateur %s}
  {Cannot read sensor list: %s} {Impossible de lire les points de collecte : %s}
  {Cannot set key '%1$s' to '%2$s: %3$s} {Impossible de modifier la clef '%1$s' à '%2$s' : %3$s}
  {Cannot write zone prologue: %s} {Impossible de modifier le prologue de la zone : %s}
