@@ -1497,6 +1497,7 @@ proc juniper-parse-vlans-entry {conf tab idx} {
 	description	{2	juniper-parse-vlans-entry-desc}
 	vlan-id		{2	juniper-parse-vlans-entry-vlan-id}
 	l3-interface	{2	juniper-parse-vlans-entry-l3-interface}
+	interface	{1	juniper-parse-vlans-entry-interface}
     }
 
     set nom [lindex $conf 0]
@@ -1545,6 +1546,44 @@ proc juniper-parse-vlans-entry-vlan-id {conf tab idx} {
     set t($idx!id) $vlanid
     return 0
 }
+
+#
+# Entrée :
+#   - idx = eq!<eqname>!vlans!name!<nom>
+# Remplit :
+#   - tab(eq!<eqname>!if!....!link!allowedvlans) {... {vlanid vlanid} ...}
+#
+# Historique :
+#   2016/03/04 : boggia/jean : conception
+#
+
+proc juniper-parse-vlans-entry-interface {conf tab idx} {
+    upvar $tab t
+
+    #
+    # get equipment name, current vlanid and interface bloc
+    #
+
+    set eq [lindex [split $idx !] 1]
+    set vlanid $t($idx!id)
+    set ifaces [lindex $conf 1]
+
+    #
+    # interface bloc is a list { ge-0/0/1.0 {} xe-0/2/1.0 {} ... }
+    #
+
+    foreach {iface dummy} $ifaces {
+        #
+        # remove unit number
+        #
+        regexp {(.+)\.0$} $iface dummy iface
+        set ifidx "eq!$eq!if!$iface!link!allowedvlans"
+        lappend t($ifidx) [list $vlanid $vlanid]
+    }
+
+    return 0
+}
+
 
 #
 # Entrée :
