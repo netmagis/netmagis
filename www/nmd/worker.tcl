@@ -9,6 +9,13 @@ set conf(api-dir)	/local/netmagis/www/netmagis/api
 package require html
 package require Pgtcl
 
+array set route {
+    get {}
+    post {}
+    put {}
+    delete {}
+}
+
 proc scgi-accept {sock ip port} {
     set code [catch {scgi-accept-2 $sock $ip $port} result err] 
     if {$code == 1} then {
@@ -10004,18 +10011,58 @@ proc handle-request {sock headers body} {
 	    # Try API
 	    #
 
-	    regsub -all {/+} $uri {_} route
+#	    regsub -all {/+} $uri {_} route
 	    if {[catch {set method [dict get $headers REQUEST_METHOD]}]} then {
 		api-error $sock 400 "Cannot read REQUEST_METHOD"
 		return
 	    }
 	    set method [string tolower $method]
-	    set procname "route-$route-$method"
-	    if {[llength [info procs $procname]] > 0} then {
-		$procname $sock $headers $body
+
+	    global route
+	    global dbfd
+
+
+	    set found 0
+	    foreach r $route($method) {
+		lassign $r re vars paramspec script
+
+		set l [regexp -inline $re $uri]
+		if {[llength $l] > 0} then {
+		    set i 0
+		    foreach val [lreplace $l 0 0] {
+			set var [lindex $vars $i]
+			# XXXXXXXXXXXXXXXXX
+			#uplevel \#0 {set $var $val}
+			set $var $val
+			incr i
+		    }
+		    #uplevel \#0 eval $script
+
+		    set codetext [database-reconnect dns]
+		    if {$codetext ne ""} then {
+			lassign $codetext code msg
+			api-error $sock $code $msg
+			return
+		    }
+
+		    set codetext [database-reconnect mac]
+		    if {$codetext ne ""} then {
+			lassign $codetext code msg
+			api-error $sock $code $msg
+			return
+		    }
+
+		    if {[catch $script msg]} then {
+			puts stderr "ERREUR pour '$uri': $msg"
+		    }
+		    set found 1
+		    break
+		}
 	    }
 
-	    api-error $sock 404 "'$uri' not found"
+	    if {! $found} then {
+		api-error $sock 404 "'$uri' not found"
+	    }
 	    return
 	}
     }
@@ -10202,7 +10249,9 @@ proc thread-init {} {
     # Load all API files
     #
 
-    load-api $conf(api-dir)
+#    if {! [load-api $conf(api-dir)]} then {
+#	exit 1
+#    }
 
     #
     # Prepare for DB connection
@@ -10227,29 +10276,77 @@ proc database-disconnect {db} {
     set dbfd($db) "not connected"
 }
 
-proc api-handler {method script} {
-    global conf
+proc api-handler {method pathspec paramspec script} {
+    global route
 
     set method [string tolower $method]
 
-    # conf(route) is set in load-api for each loaded file
-    # it contains /api/v1/foo
-    regsub -all {/} $conf(route) {_} procname
-
-    # build a proc named route-_api_v1_foo-get
-    set procname route-$procname-$method
-    uplevel \#0 [list proc $procname {sock headers body} $script]
-}
-
-proc load-api {base {path {}}} {
-    foreach f [glob -directory $base/$path -tails -nocomplain *] {
-	if {[file isdirectory $base/$path/$f]} then {
-	    load-api $base $path/$f
-	} else {
-	    uplevel \#0 "set conf(route) $path/$f ; source $base/$path/$f"
-	}
+    if {! [info exists route($method)]} then {
+	puts stderr "invalid method for route $pathspec"
+	exit 1
     }
+
+    #
+    # Check the path specification
+    #
+
+    set n1 [string length [regexp -all {[^(]} $pathspec]]
+    set n2 [string length [regexp -all {[^)]} $pathspec]]
+    set n3 [string length [regexp -all {[^:]} $pathspec]]
+    set n4 [regsub -all {\(([^:]+):[^)]+\)} $pathspec {} dummy]
+    if {$n1 != $n2 || $n2 != $n3 || $n3 != $n4} then {
+	puts stderr "invalid path specification '$pathspec'"
+	exit 1
+    }
+
+    #
+    # Extract variable names from path specification
+    #
+
+    set vars {}
+    foreach {all var} [regexp -all -inline {:([^)]+)\)} $pathspec] {
+	lappend vars $var
+    }
+
+    #
+    # Build regexp for URI matching
+    #
+
+    regsub -all {\(([^:]+):[^)]+\)} $pathspec {(\1)} re
+    set re "^$re$"
+
+    lappend route($method) [list $re $vars $paramspec $script]
 }
+
+api-handler get {/views/([0-9]+:idview)/names/([0-9]+:idrr)} {
+	crit	0 1
+    } {
+
+    puts stderr "BINGO !"
+    puts "idview=$idview"
+    puts "idrr=$idrr"
+
+    if {! [read-rr-by-id $dbfd(dns) $idrr trr]} then {
+	puts "NOT FOUND"
+    } else {
+	puts [array get trr]
+    }
+    puts FINI
+}
+
+#proc load-api {base {path {}}} {
+#    foreach f [glob -directory $base/$path -tails -nocomplain *] {
+#	if {[file isdirectory $base/$path/$f]} then {
+#	    load-api $base $path/$f
+#	} elseif {[file isfile $base/$path/$f]} then {
+#	    uplevel \#0 "set conf(route) $path/$f ; source $base/$path/$f"
+#	} else {
+#	    puts stderr "$base/$path/$f: unknown file type"
+#	    return false
+#	}
+#    }
+#    return true
+#}
 
 #
 # Input:

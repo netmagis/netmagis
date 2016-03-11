@@ -16,6 +16,11 @@ install: build
 	#
 	mkdir -p $(DESTDIR)$(NMCGIDIR)
 	cd nmd ; make $(DIRS) install
+
+	############################## WARNING : REMOVE AS SOON AS POSSIBLE
+		exit 1
+	############################## WARNING :
+
 	#
 	# install ps2pdf
 	#

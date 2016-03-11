@@ -1,0 +1,203 @@
+/pggroups
+    description: Collection of users for internal authentication
+    /{pggroupId}
+/pgusers
+    description: Collection of groups for internal authentication
+    /{pguserId}
+/config
+    description: Collection of configuration parameters
+    /{configId}
+/utmp
+    description: Collection of currently connected users
+/wtmp
+    description: Collection of last session records
+/groups
+    description: Collection of Netmagis groups
+    /{groupId}
+	description: a Netmagis group
+	/users
+	    description: Collection of Netmagis users belonging to a group
+	    /{userId}
+		description: a user belonging to a given group
+	/permissions
+	    description: Collection of all permissions for a given group
+	    /views
+		description: Collection of allowed views for a group
+		/{viewId}
+		    description: Permission on a view for a group
+	    /domains
+		description: Collection of allowed domains for a group
+		/{domainId}
+		    description: Permission on a domain for a group
+	    /dhcpprofiles
+		description: Collection of allowed DHCP profiles for a group
+		/{dhcpprofileId}
+		    description: Permission on a DHCP profile for a group
+	    /addresses
+		description: Collection of allowed IP addresses for a group
+		/{cidr}
+		    description: Permission on an IP address for a group
+	    /networks
+		description: Collection of allowed networks for a group
+		/{networkId}
+		    description: Permission on a network for a group
+	    /equipments
+		description: Collection of allowed equipments for a group
+		/{equipmentId}
+		    description: Permission on an equipment for a group
+	    /vlans
+		description: Collection of allowed VLANs without IP address for a group
+		/{vlanId}
+		    description: Permission on a VLAN without IP address for a group
+/domains
+    description: Collection of domains
+    get:
+	description: Get a list of allowed domains
+	queryParameters:
+	    mailrole:
+		description: Restrict list to domains with mailrole permission
+		required: false
+		default: "no"
+		type: boolean
+		example: "yes"
+	responses:
+	    200:
+		body:
+		    application/json:
+			example: |
+			    "domains": [
+				{
+				    "domainId": 5,
+				    "name": "example.com",
+				    "link": "/domains/5"
+				},
+				{
+				    "domainId": 19,
+				    "name": "example.org",
+				    "link": "/domains/19"
+				}
+			    ]
+    post: XXXXXXXXXXXXXXXXXXXXXXxx
+    /{domainId}
+	description: A single domain
+	get: XXX?
+	put: XXXXXXXXXXXXXXXXXXXXXXxx
+	delete:
+/dhcpranges
+/dhcpprofiles
+/networks
+    /{networkId}
+/communities
+    /{communityId}
+/organizations
+    /{organizationId}
+/hinfos
+    description: Collection of machine types (HINFO)
+    /{hinfoId}
+	description: A machine type (HINFO)
+/search
+    description: Collection of search results
+    get:
+	description:
+	queryParameters:
+	    q:
+		required: true
+		type: string
+		example: "foo"
+	responses:
+	    200:
+		body:
+		    application/json:
+			example: |
+			    [
+				{
+				    type: "domain",
+				    link: "/domains/5"
+				},
+				{
+				    type: "name",
+				    link: "/views/3/names/123"
+				},
+				{
+				    type: "name",
+				    link: "/views/27/names/456"
+				}
+			    ]
+/views
+    description: Collection of views
+    /{viewId}
+	description: A single view
+	get:
+	    description: Get a list of allowed views
+	    queryParameters: 
+	/zones
+	    description: Collection of zones
+	    /{zoneId}
+	/relays
+	    description: Collection of mail relays 
+	    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <--- TO DISCUSS LATER
+	    /{domainId}
+		description: mail relays for a given domain
+	/names
+	    description: Get a collection of names
+	    get:
+		acceptParameters:
+		    application/json
+		    application/pdf
+		    application/csv
+		queryParameters:
+		    name:
+		    cidr:
+		    domain:
+		    format: pdf, csv, ... ?
+		responses:
+		    200:
+			body:
+			    application/json:
+			    application/pdf:
+			    application/csv:
+	    /{nameId}
+		description: Get a single name
+		get:
+		    responses:
+			200:
+			    body:
+				application/json:
+				    example: |
+					{
+					    name: "atlas",
+					    domain: "example.org",
+					    domainlink: "/domain/5",
+					    mac: "00:11:22:33:44:55",
+					    hinfo: "pc/unix",
+					    hinfolink: "/hinfos/12",
+					    comment: "Simon's PC",
+					    respname: "John Doe",
+					    respmail: "doe@example.org",
+					    dhcpprofile: "diskless",
+					    dhcpprofilelink: "/dhcpprofiles/33",
+					    sendsmtp: "1",
+					    ttl: "3600",
+					    user: "jane",
+					    userlink: "/groups/25/users/17",
+					    cname: "other.example.org",  <exclusive with MX or addr>
+					    cnamelink: "/views/5/names/82",
+					    lastmod: "<time_t>"
+					    addr: [
+						"192.0.2.12",
+						"2001:db8::1",
+						"198.51.100.24",
+					    ],
+					    mx: [
+						{
+						    prio: 100,
+						    fqdn: "mx1.example.com",
+						    link: "/views/5/names/532"
+						},
+						{
+						    prio: 200,
+						    fqdn: "mx2.example.com",
+						    link: "/views/5/names/79"
+						}
+					    ],
+					}
