@@ -1,1 +1,1 @@
-sql23/schema-main.sql
+sql30/schema-main.sql
