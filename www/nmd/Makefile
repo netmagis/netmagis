@@ -4,7 +4,8 @@ SCRIPTS 	= \
 		    nmd
 
 WORKERS		= \
-		  worker.tcl
+		  worker.tcl \
+		  lib.tcl
 
 build:
 	@echo ">>> Making build in `pwd`"

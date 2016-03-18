@@ -134,70 +134,73 @@
 	    description: Collection of zones
 	    /{zoneId}
 	/relays
-	    description: Collection of mail relays 
+	    description: Collection of mail relays
 	    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <--- TO DISCUSS LATER
 	    /{domainId}
 		description: mail relays for a given domain
-	/names
-	    description: Get a collection of names
-	    get:
-		acceptParameters:
-		    application/json
-		    application/pdf
-		    application/csv
-		queryParameters:
-		    name:
-		    cidr:
-		    domain:
-		    format: pdf, csv, ... ?
-		responses:
-		    200:
-			body:
-			    application/json:
-			    application/pdf:
-			    application/csv:
-	    /{nameId}
-		description: Get a single name
-		get:
-		    responses:
-			200:
-			    body:
-				application/json:
-				    example: |
+/names
+    description: Get a collection of names
+    get:
+	acceptParameters:
+	    application/json
+	    application/pdf
+	    application/csv
+	queryParameters:
+	    idview: OBLIGATOIRE
+	    name:
+	    cidr:
+	    domain:
+	    format: pdf, csv, ... ?
+	responses:
+	    200:
+		body:
+		    application/json:
+		    application/pdf:
+		    application/csv:
+    /{nameId}
+	description: Get a single name
+	get:
+	    responses:
+		200:
+		    body:
+			application/json:
+			    example: |
+				{
+				    name: "atlas",
+				    domain: "example.org",
+				    domainlink: "/domain/5",
+				    view: "external",
+				    viewlink: "/views/5",
+				    mac: "00:11:22:33:44:55",
+				    hinfo: "pc/unix",
+				    hinfolink: "/hinfos/12",
+				    comment: "Simon's PC",
+				    respname: "John Doe",
+				    respmail: "doe@example.org",
+				    dhcpprofile: "diskless",
+				    dhcpprofilelink: "/dhcpprofiles/33",
+				    sendsmtp: "1",
+				    ttl: "3600",
+				    user: "jane",
+				    userlink: "/groups/25/users/17",
+				    cname: "other.example.org",  <exclusive with MX or addr>
+				    cnamelink: "/views/5/names/82",
+				    lastmod: "<time_t>"
+				    addr: [
+					"192.0.2.12",
+					"2001:db8::1",
+					"198.51.100.24",
+				    ],
+				    mx: [
 					{
-					    name: "atlas",
-					    domain: "example.org",
-					    domainlink: "/domain/5",
-					    mac: "00:11:22:33:44:55",
-					    hinfo: "pc/unix",
-					    hinfolink: "/hinfos/12",
-					    comment: "Simon's PC",
-					    respname: "John Doe",
-					    respmail: "doe@example.org",
-					    dhcpprofile: "diskless",
-					    dhcpprofilelink: "/dhcpprofiles/33",
-					    sendsmtp: "1",
-					    ttl: "3600",
-					    user: "jane",
-					    userlink: "/groups/25/users/17",
-					    cname: "other.example.org",  <exclusive with MX or addr>
-					    cnamelink: "/views/5/names/82",
-					    lastmod: "<time_t>"
-					    addr: [
-						"192.0.2.12",
-						"2001:db8::1",
-						"198.51.100.24",
-					    ],
-					    mx: [
-						{
-						    prio: 100,
-						    fqdn: "mx1.example.com",
-						    link: "/views/5/names/532"
-						},
-						{
-						    prio: 200,
-						    fqdn: "mx2.example.com",
-						    link: "/views/5/names/79"
-						}
-					    ],
+					    prio: 100,
+					    fqdn: "mx1.example.com",
+					    link: "/views/5/names/532"
+					},
+					{
+					    prio: 200,
+					    fqdn: "mx2.example.com",
+					    link: "/views/5/names/79"
 					}
+				    ],
+				}
