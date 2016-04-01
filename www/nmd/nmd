@@ -3,6 +3,12 @@
 #lappend auto_path [pwd]
 #package require scgi
 
+set conffile ./netmagis.conf
+
 source scgi.tcl
 
-::scgiserver::start -debug true -minworkers 1 "source w.tcl" "handle-request"
+::scgiserver::start \
+	    -debug true \
+	    -minworkers 1 \
+	    "set conffile $conffile ; source worker.tcl" \
+	    "handle-request"
