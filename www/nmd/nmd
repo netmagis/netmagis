@@ -1,33 +1,8 @@
-#!%TCLSH%
+#!/usr/bin/tclsh8.6
 
-package require Thread
+#lappend auto_path [pwd]
+#package require scgi
 
-##############################################################################
-# Moteur SCGI
-##############################################################################
+source scgi.tcl
 
-proc scgi-listen {port} {
-    socket -server scgi-connect-hack $port
-}
-
-proc scgi-connect-hack {sock host port} {
-    after 0 [list scgi-connect $sock $host $port]
-}
-
-proc scgi-connect {sock host port} {
-    global tpid
-    # global ljobs
-
-    thread::detach $sock
-    set jid [tpool::post $tpid "scgi-accept $sock $host $port"]
-    # puts stdout "job $jid posted"
-}
-
-set tpid [tpool::create \
-		-minworkers 2 -maxworkers 4 -idletime 30 \
-		    -initcmd "source %NMCGIDIR%/worker.tcl" \
-		]
-
-
-scgi-listen 8080
-vwait forever
+::scgiserver::start -debug true -minworkers 1 "source w.tcl" "handle-request"

@@ -3229,7 +3229,8 @@ proc check-authtoken {dbfd token _login} {
     set sql "SELECT u.login, t.token, t.lastaccess
     			FROM global.nmuser u, global.utmp t
 			WHERE t.lastaccess < NOW() - interval '$idle second'
-			    AND u.idcor = t.idcor"
+			    AND u.idcor = t.idcor
+			    AND t.api = 0"
     set lexp {}
     pg_select $dbfd $sql tab {
 	lappend lexp [list $tab(login) $tab(token) $tab(lastaccess)]
@@ -3242,9 +3243,11 @@ proc check-authtoken {dbfd token _login} {
 		SELECT idcor, token, start, ip, lastaccess, 'expired'
 		    FROM global.utmp
 		    WHERE lastaccess < NOW() - interval '$idle second'
+			AND api = 0
 		    ;
 	     DELETE FROM global.utmp
 		    WHERE lastaccess < NOW() - interval '$idle second'
+			AND api = 0
 		    ;
 	     DELETE FROM global.wtmp
 		    WHERE stop < NOW() - interval '$wtmpexpire day'
