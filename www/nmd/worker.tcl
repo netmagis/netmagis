@@ -102,7 +102,7 @@ proc handle-request {uri meth parm cookie} {
 
 		    ::scgiapp::set-body "YOU KNOW WHAT? I AM HAPPY..."
 
-		    ::dbdns select "SELECT value FROM global.config WHERE
+		    ::dbdns exec "SELECT value FROM global.config WHERE
 					    key = 'schemaversion'" tab {
 			::scgiapp::set-body " WITH schemaversion = $tab(value)"
 		    }
@@ -429,7 +429,7 @@ snit::type ::config {
     method get {key} {
 	if {[info exists internal(key:$key:type)]} then {
 	    set found 0
-	    $dbo select "SELECT * FROM global.config WHERE key = '$key'" tab {
+	    $dbo exec "SELECT * FROM global.config WHERE key = '$key'" tab {
 		set val $tab(value)
 		set found 1
 	    }
@@ -443,7 +443,7 @@ snit::type ::config {
 		}
 	    }
 	} else {
-	    error [mc "Unknown configuration key '%s'" $key]
+	    error "Unknown configuration key '$key'"
 	}
 	return $val
     }
@@ -455,22 +455,18 @@ snit::type ::config {
 	    if {$internal(key:$key:rw) eq "rw"} then {
 		set r ""
 		set k [pg_quote $key]
+		set v [pg_quote $val]
+
 		set sql "DELETE FROM global.config WHERE key = $k"
-		if {[$dbo exec $sql msg]} then {
-		    set v [pg_quote $val]
-		    set sql "INSERT INTO global.config (key, value)
-		    				VALUES ($k, $v)"
-		    if {! [::pgsql::execsql $db $sql msg]} then {
-			set r [mc {Cannot set key '%1$s' to '%2$s': %3$s} $key $val $msg]
-		    }
-		} else {
-		    set r [mc {Cannot fetch key '%1$s': %2$s} $key $msg]
-		}
+		$dbo exec $sql
+
+		set sql "INSERT INTO global.config (key, value) VALUES ($k, $v)"
+		$dbo exec $sql
 	    } else {
-		set r [mc {Cannot modify read-only key '%s'} $key]
+		error "Cannot modify read-only key '$key'"
 	    }
 	} else {
-	    error [mc "Unknown configuration key '%s'" $key]
+	    error "Unknown configuration key '$key'"
 	}
 
 	return $r
@@ -528,8 +524,6 @@ snit::type ::db {
 	}
 	set conninfo [join $conninfo " "]
 
-	puts "conninfo=$conninfo"
-
 	try {
 	    set dbfd [pg_connect -conninfo $conninfo]
 	} on error msg {
@@ -548,9 +542,22 @@ snit::type ::db {
 
     }
 
-    method select {sql tabname script} {
+    # exec sql [tab script]
+    method exec {sql args} {
 	try {
-	    uplevel 1 [list pg_execute -array $tabname $dbfd $sql $script]
+	    switch [llength $args] {
+		0 {
+		    uplevel 1 [list pg_execute $dbfd $sql]
+		}
+		2 {
+		    lassign $args tab script
+		    uplevel 1 [list pg_execute -array $tab $dbfd $sql $script]
+		}
+		default {
+		    error {wrong # args: should be "exec sql ?tab script?"}
+		}
+	    }
+
 	} trap {NONE} {msg err} {
 	    # Pgtcl 1.9 returns errorcode == NONE
 	    set errinfo [dict get $err -errorinfo]
