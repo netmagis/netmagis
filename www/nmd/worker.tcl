@@ -26,12 +26,11 @@ proc thread-init {conffile} {
     ::db create ::dbmac
     ::dbmac init "mac" ::lc ""
 
-		#
-		# Access to configuration parameters (stored in the database)
-		#
+    ::db-config create ::config
+    ::config setdb ::dbdns
 
-#		dnsconfig setdb $dbfd($db)
-
+    ::nm-log create ::log
+    ::log setdb ::dbdns
 
     #
     # Prepare for DB connection
@@ -46,133 +45,6 @@ proc thread-init {conffile} {
 
     # config ::dnsconfig
     # puts "READY [info procs route-*]"
-}
-
-##############################################################################
-# Request handling
-##############################################################################
-
-#
-# Input:
-#   - sock: socket
-#   - headers: Tcl dictionnary containing http server informations
-#   - body: request body, including form parameters
-# Output:
-#   - stdout: <code> <text>
-
-proc handle-request {uri meth parm cookie} {
-
-    switch -regexp -matchvar last $uri {
-	{^/static/([[:alnum:]][-.[:alnum:]]*)$} {
-	    if {$meth eq "get"} then {
-		handle-static [lindex $last 1]
-	    } else {
-		::scgiapp::scgi-error 405 {Method not allowed}
-	    }
-	}
-	default {
-	    #
-	    # Try API
-	    #
-
-	    global route
-
-	    set found 0
-	    foreach r $route($meth) {
-		lassign $r re vars paramspec authneeded script
-
-		set l [regexp -inline $re $uri]
-		if {[llength $l] > 0} then {
-		    set i 0
-		    foreach val [lreplace $l 0 0] {
-			set var [lindex $vars $i]
-			# XXXXXXXXXXXXXXXXX
-			#uplevel \#0 {set $var $val}
-			set $var $val
-			incr i
-		    }
-		    #uplevel \#0 eval $script
-
-		    try {
-			::dbdns reconnect
-			::dbmac reconnect
-		    } on error msg {
-			::scgiapp::scgi-error 503 $msg
-		    }
-
-		    ::scgiapp::set-body "YOU KNOW WHAT? I AM HAPPY..."
-
-		    ::dbdns exec "SELECT value FROM global.config WHERE
-					    key = 'schemaversion'" tab {
-			::scgiapp::set-body " WITH schemaversion = $tab(value)"
-		    }
-
-		    return
-
-		    d setdb $dbfd(dns)
-
-		    set authtoken "TOKENTEST"
-		    set authenticated [check-authtoken $dbfd(dns) $authtoken login]
-		    if {$authneeded} then {
-			if {! $authenticated} then {
-			    ::scgiapp::scgi-error 403 "Not authenticated"
-			}
-		    }
-
-		    if {$authenticated} then {
-			catch {u destroy}
-			::nmuser create ::u
-			u setdb $dbfd(dns)
-			u setlogin $login
-		    }
-
-		    if {[catch $script msg]} then {
-			puts stderr "ERREUR pour '$uri': $msg"
-		    }
-		    set found 1
-		    break
-		}
-	    }
-
-	    if {! $found} then {
-		error "'$uri' not found"
-	    }
-	    return
-	}
-    }
-}
-
-proc handle-static {page} {
-    global conf
-
-    set path $conf(static-dir)/$page
-
-    if {[file exists $path]} then {
-	# Determine Content-Type, based on file extension
-	switch -glob [string tolower $page] {
-	    *.png	{ set ct "image/png" ; set bin 1 }
-	    *.gif	{ set ct "image/gif" ; set bin 1 }
-	    *.jpg	{ set ct "image/jpeg" ; set bin 1 }
-	    *.jpeg	{ set ct "image/jpeg" ; set bin 1 }
-	    *.pdf	{ set ct "application/pdf" ; set bin 1 }
-	    *.html	{ set ct "text/html" ; set bin 0 }
-	    default	{ set ct "text/plain" ; set bin 0 }
-	}
-
-	if {[catch {set fd [open $path "r"]} msg]} then {
-	    ::scgiapp::scgi-error 404 "Cannot open '$page' ($msg)"
-	}
-	if {$bin} then {
-	    fconfigure $fd -translation binary
-	}
-	set content [read $fd]
-	close $fd
-
-	::scgiapp::set-header Content-type $ct
-	::scgiapp::set-body $content $bin
-    } else {
-	::scgiapp::scgi-error 404 "'$page' not found"
-    }
 }
 
 ##############################################################################
@@ -252,7 +124,7 @@ snit::type ::local-config {
 #	an error message.
 #
 
-snit::type ::config {
+snit::type ::db-config {
     # database object
     variable dbo ""
 
@@ -366,8 +238,8 @@ snit::type ::config {
 	}
     }
 
-    method setdb {dbo} {
-	set dbo $dbo
+    method setdb {db} {
+	set dbo $db
     }
 
     # returns all classes
@@ -529,17 +401,6 @@ snit::type ::db {
 	} on error msg {
 	    error "Database $dbprefix unavailable"
 	}
-
-#		#
-#		# Log initialization
-#		#
-#
-#		set log [::webapp::log create %AUTO% \
-#					    -subsys netmagis \
-#					    -method opened-postgresql \
-#					    -medium [list "db" $dbfd($db) table global.log] \
-#				]
-
     }
 
     # exec sql [tab script]
@@ -575,6 +436,180 @@ snit::type ::db {
 	}
     }
 }
+
+##############################################################################
+# Log management
+##############################################################################
+
+snit::type ::nm-log {
+
+    # database object
+    variable dbo
+
+    variable subsys "netmagis"
+    variable table "global.log"
+
+    method setdb {db} {
+	set dbo $db
+    }
+
+    method write {date event login ip msg} {
+	foreach v {event login ip msg} {
+	    if {[set $v] eq ""} then {
+		    set $v NULL
+	    } else {
+		set $v [pg_quote [set $v]]
+	    }
+	}
+	if {$date eq ""} then {
+	    set datecol ""
+	    set dateval ""
+	} else {
+	    set datecol "date,"
+	    if {[regexp {^\d+$} $date]} then {
+		set dateval "to_timestamp($date)"
+	    } else {
+		set dateval [pg_quote $date]
+	    }
+	    append dateval ","
+	}
+	set sub [pg_quote $subsys]
+	set sql "INSERT INTO $table
+			($datecol subsys, event, login, ip, msg)
+		    VALUES ($dateval $sub, $event, $login, $ip, $msg)"
+	$dbo exec $sql
+    }
+}
+
+##############################################################################
+# Request handling
+##############################################################################
+
+#
+# Input:
+#   - sock: socket
+#   - headers: Tcl dictionnary containing http server informations
+#   - body: request body, including form parameters
+# Output:
+#   - stdout: <code> <text>
+
+proc handle-request {uri meth parm cookie} {
+
+    switch -regexp -matchvar last $uri {
+	{^/static/([[:alnum:]][-.[:alnum:]]*)$} {
+	    if {$meth eq "get"} then {
+		handle-static [lindex $last 1]
+	    } else {
+		::scgiapp::scgi-error 405 {Method not allowed}
+	    }
+	}
+	default {
+	    #
+	    # Try API
+	    #
+
+	    global route
+
+	    set found 0
+	    foreach r $route($meth) {
+		lassign $r re vars paramspec authneeded script
+
+		set l [regexp -inline $re $uri]
+		if {[llength $l] > 0} then {
+		    set i 0
+		    foreach val [lreplace $l 0 0] {
+			set var [lindex $vars $i]
+			# XXXXXXXXXXXXXXXXX
+			#uplevel \#0 {set $var $val}
+			set $var $val
+			incr i
+		    }
+		    #uplevel \#0 eval $script
+
+		    try {
+			::dbdns reconnect
+			::dbmac reconnect
+		    } on error msg {
+			::scgiapp::scgi-error 503 $msg
+		    }
+
+		    ::scgiapp::set-body "YOU KNOW WHAT? I AM HAPPY..."
+		    ::log write "" "init" pda "" happy"
+
+		    ::dbdns exec "SELECT value FROM global.config WHERE
+					    key = 'schemaversion'" tab {
+			::scgiapp::set-body " WITH schemaversion = $tab(value)"
+		    }
+
+		    return
+
+		    d setdb $dbfd(dns)
+
+		    set authtoken "TOKENTEST"
+		    set authenticated [check-authtoken $dbfd(dns) $authtoken login]
+		    if {$authneeded} then {
+			if {! $authenticated} then {
+			    ::scgiapp::scgi-error 403 "Not authenticated"
+			}
+		    }
+
+		    if {$authenticated} then {
+			catch {u destroy}
+			::nmuser create ::u
+			u setdb $dbfd(dns)
+			u setlogin $login
+		    }
+
+		    if {[catch $script msg]} then {
+			puts stderr "ERREUR pour '$uri': $msg"
+		    }
+		    set found 1
+		    break
+		}
+	    }
+
+	    if {! $found} then {
+		error "'$uri' not found"
+	    }
+	    return
+	}
+    }
+}
+
+proc handle-static {page} {
+    global conf
+
+    set path $conf(static-dir)/$page
+
+    if {[file exists $path]} then {
+	# Determine Content-Type, based on file extension
+	switch -glob [string tolower $page] {
+	    *.png	{ set ct "image/png" ; set bin 1 }
+	    *.gif	{ set ct "image/gif" ; set bin 1 }
+	    *.jpg	{ set ct "image/jpeg" ; set bin 1 }
+	    *.jpeg	{ set ct "image/jpeg" ; set bin 1 }
+	    *.pdf	{ set ct "application/pdf" ; set bin 1 }
+	    *.html	{ set ct "text/html" ; set bin 0 }
+	    default	{ set ct "text/plain" ; set bin 0 }
+	}
+
+	if {[catch {set fd [open $path "r"]} msg]} then {
+	    ::scgiapp::scgi-error 404 "Cannot open '$page' ($msg)"
+	}
+	if {$bin} then {
+	    fconfigure $fd -translation binary
+	}
+	set content [read $fd]
+	close $fd
+
+	::scgiapp::set-header Content-type $ct
+	::scgiapp::set-body $content $bin
+    } else {
+	::scgiapp::scgi-error 404 "'$page' not found"
+    }
+}
+
+
 
 proc api-handler {method pathspec authneeded paramspec script} {
     global route
