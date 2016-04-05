@@ -435,6 +435,25 @@ snit::type ::db {
 	    }
 	}
     }
+
+    # lock {table ...}
+    method lock {ltab} {
+	set sql "BEGIN WORK ;"
+	foreach t $ltab {
+	    append sql " LOCK $t ;"
+	}
+	$self exec $sql
+    }
+
+    # unlock commit|abort
+    method unlock {action} {
+	switch -- $action {
+	    commit { set sql "COMMIT WORK" }
+	    abort  { set sql "ABORT WORK"  }
+	    default { error "Invalid parameter '$action'. Should be unlock commit|abort" }
+	}
+	$self exec $sql
+    }
 }
 
 ##############################################################################
