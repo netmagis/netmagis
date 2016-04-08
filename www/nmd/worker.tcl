@@ -21,7 +21,7 @@ proc thread-init {conffile} {
     ::lc read $conffile
 
     ::db create ::dbdns
-    ::dbdns init "dns" ::lc 3.0.foobar 		;# "%NMVERSION%"
+    ::dbdns init "dns" ::lc 3.0.0foobar 		;# "%NMVERSION%"
 
     ::db create ::dbmac
     ::dbmac init "mac" ::lc ""
@@ -29,7 +29,7 @@ proc thread-init {conffile} {
     ::db-config create ::config
     ::config setdb ::dbdns
 
-    ::nm-log create ::log
+    ::nmlog create ::log
     ::log setdb ::dbdns
 
     #
@@ -361,17 +361,23 @@ snit::type ::db {
     # Database handler (result of pg_connect)
     variable dbfd "not connected"
 
-    # Database handler (result of pg_connect)
-    variable dbversion
+    # Expected schema version
+    variable appver ""
+    variable nver ""
 
     # prefix: "dns" or "mac" (according to local configuration file)
     # confobj: access to the local configuration file
     # versioncheck: version number (such as 3.0.5beta1) or ""
 
-    method init {prefix confobj versioncheck} {
+    method init {prefix confobj {versioncheck {}}} {
 	set dbprefix $prefix
 	set lc $confobj
-	set dbversion $versioncheck
+	if {$versioncheck ne ""} then {
+	    if {! [regsub {^(\d+)\.(\d+).*} $versioncheck {\1\2} nver]} then {
+		error "Netmagis version '$versioncheck' unrecognized"
+	    }
+	    set appver $versioncheck
+	}
     }
 
     method disconnect {} {
@@ -401,6 +407,18 @@ snit::type ::db {
 	    set dbfd [pg_connect -conninfo $conninfo]
 	} on error msg {
 	    error "Database $dbprefix unavailable"
+	}
+
+	if {$appver ne ""} then {
+	    set sql "SELECT value FROM global.config
+				    WHERE key = 'schemaversion'"
+	    set sver ""
+	    $self exec $sql tab {
+		set sver $tab(value)
+	    }
+	    if {$sver != $nver} then {
+		error "DB version $sver does not match app version $appver"
+	    }
 	}
     }
 
@@ -459,7 +477,7 @@ snit::type ::db {
 # Log management
 ##############################################################################
 
-snit::type ::nm-log {
+snit::type ::nmlog {
 
     # database object
     variable dbo
@@ -503,8 +521,271 @@ snit::type ::nm-log {
 	set sql "INSERT INTO $table
 			($datecol subsys, event, login, ip, msg)
 		    VALUES ($dateval $sub, $event, $login, $ip, $msg)"
-puts "sql=$sql"
 	$dbo exec $sql
+    }
+}
+
+##############################################################################
+# User characteristics
+##############################################################################
+
+#
+# Netmagis user characteristics class
+#
+# This class stores all informations related to current Netmagis user
+#
+# Methods:
+# - setdb dbfd
+#	set the database handle used to access parameters
+# - setlogin login
+#	set the login name
+#
+# ....
+#
+# - viewname id
+#	returns view name associated to view id (or empty string if error)
+# - viewid name
+#	returns view id associated to view name (or -1 if error)
+# - myviewids
+#	get all authorized view ids
+# - isallowedview id
+#	check if a view is authorized (1 if ok, 0 if not)
+#
+# - domainname id
+#	returns domain name associated to domain id (or empty string if error)
+# - domainid name
+#	returns domain id associated to domain name (or -1 if error)
+# - myiddom
+#	get all authorized domain ids
+# - isalloweddom id
+#	check if a domain is authorized (1 if ok, 0 if not)
+#
+# History
+#   2012/10/31 : pda/jean : design
+#
+
+snit::type ::nmuser {
+    # database object
+    variable dbo ""
+    # login of user
+    variable login ""
+
+    # Group management
+    # Group information is loaded
+    variable groupsloaded 0
+    # allgroups(id:<id>)=name
+    # allgroups(name:<name>)=id
+    variable allgroups -array {}
+
+    # View management
+    # view information is loaded
+    variable viewsloaded 0
+    # allviews(id:<id>)=name
+    # allviews(name:<name>)=id
+    variable allviews -array {}
+    # authviews(<id>)=1
+    variable authviews -array {}
+    # myviewids : sorted list of views
+    variable myviewids {}
+
+    # Domain management
+    # domain information is loaded
+    variable domainloaded 0
+    # alldom(id:<id>)=name
+    # alldom(name:<name>)=id
+    variable alldom -array {}
+    # authdom(<id>)=1
+    variable authdom -array {}
+    # myiddoms : sorted list of domains
+    variable myiddom {}
+
+    method setdb {db} {
+	set dbo $db
+    }
+
+    method setlogin {newlogin} {
+	if {$login ne $newlogin} then {
+	    set viewsisloaded 0
+	}
+	set login $newlogin
+    }
+
+
+    #######################################################################
+    # Group management
+    #######################################################################
+
+    proc load-groups {selfns} {
+	array unset allgroups
+
+	set sql "SELECT * FROM global.nmgroup"
+	$dbo exec $sql tab {
+	    set idgrp $tab(idgrp)
+	    set name  $tab(name)
+	    set allgroups(id:$idgrp) $name
+	    set allgroups(name:$name) $idgrp
+	}
+	set groupsloaded 1
+    }
+
+    method groupname {id} {
+	if {! $groupsloaded} then {
+	    load-groups $selfns
+	}
+	set r -1
+	if {[info exists allgroups(id:$id)]} then {
+	    set r $allgroups(id:$id)
+	}
+	return $r
+    }
+
+    method groupid {name} {
+	if {! $groupsloaded} then {
+	    load-groups $selfns
+	}
+	set r ""
+	if {[info exists allgroups(name:$name)]} then {
+	    set r $allgroups(name:$name)
+	}
+	return $r
+    }
+
+    #######################################################################
+    # View management
+    #######################################################################
+
+    proc load-views {selfns} {
+	array unset allviews
+	array unset authviews
+	set myviewids {}
+
+	set sql "SELECT * FROM dns.view"
+	$dbo exec $sql tab {
+	    set idview $tab(idview)
+	    set name   $tab(name)
+	    set allviews(id:$idview) $name
+	    set allviews(name:$name) $idview
+	}
+
+	set qlogin [::pgsql::quote $login]
+	set sql "SELECT p.idview
+			FROM dns.p_view p, dns.view v, global.nmuser u
+			WHERE p.idgrp = u.idgrp
+			    AND p.idview = v.idview
+			    AND u.login = '$qlogin'
+			ORDER BY p.sort ASC, v.name ASC"
+	$dbo exec $sql tab {
+	    set idview $tab(idview)
+	    set authviews($idview) 1
+	    lappend myviewids $tab(idview)
+	}
+
+	set viewsloaded 1
+    }
+
+    method viewname {id} {
+	if {! $viewsloaded} then {
+	    load-views $selfns
+	}
+	set r -1
+	if {[info exists allviews(id:$id)]} then {
+	    set r $allviews(id:$id)
+	}
+	return $r
+    }
+
+    method viewid {name} {
+	if {! $viewsloaded} then {
+	    load-views $selfns
+	}
+	set r ""
+	if {[info exists allviews(name:$name)]} then {
+	    set r $allviews(name:$name)
+	}
+	return $r
+    }
+
+    method myviewids {} {
+	if {! $viewsloaded} then {
+	    load-views $selfns
+	}
+	return $myviewids
+    }
+
+    method isallowedview {id} {
+	if {! $viewsloaded} then {
+	    load-views $selfns
+	}
+	return [info exists authviews($id)]
+    }
+
+    #######################################################################
+    # Domain management
+    #######################################################################
+
+    proc load-domains {selfns} {
+	array unset alldom
+	array unset authdom
+	set myiddom {}
+
+	set sql "SELECT * FROM dns.domain"
+	$dbo exec $sql tab {
+	    set iddom $tab(iddom)
+	    set name   $tab(name)
+	    set alldom(id:$iddom) $name
+	    set alldom(name:$name) $iddom
+	}
+
+	set qlogin [::pgsql::quote $login]
+	set sql "SELECT p.iddom
+			FROM dns.p_dom p, dns.domain d, global.nmuser u
+			WHERE p.idgrp = u.idgrp
+			    AND p.iddom = d.iddom
+			    AND u.login = '$qlogin'
+			ORDER BY p.sort ASC, d.name ASC"
+	$dbo exec $sql tab {
+	    set iddom $tab(iddom)
+	    set authdom($iddom) 1
+	    lappend myiddom $tab(iddom)
+	}
+
+	set domainloaded 1
+    }
+
+    method domainname {id} {
+	if {! $domainloaded} then {
+	    load-domains $selfns
+	}
+	set r -1
+	if {[info exists alldom(id:$id)]} then {
+	    set r $alldom(id:$id)
+	}
+	return $r
+    }
+
+    method domainid {name} {
+	if {! $domainloaded} then {
+	    load-domains $selfns
+	}
+	set r ""
+	if {[info exists alldom(name:$name)]} then {
+	    set r $alldom(name:$name)
+	}
+	return $r
+    }
+
+    method myiddom {} {
+	if {! $domainloaded} then {
+	    load-domains $selfns
+	}
+	return $myiddom
+    }
+
+    method isalloweddom {id} {
+	if {! $domainloaded} then {
+	    load-domains $selfns
+	}
+	return [info exists authdom($id)]
     }
 }
 
@@ -660,19 +941,10 @@ proc handle-request {uri meth parm cookie} {
 		    }
 
 		    if {$login ne ""} then {
-			::scgiapp::set-body "YOU KNOW WHAT? $login IS HAPPY..."
-		    } else {
-			::scgiapp::set-body "YOU KNOW WHAT? NOBODY IS HAPPY..."
-		    }
-
-		    return
-
-
-		    if {$login ne ""} then {
-			catch {u destroy}
+			catch {::u destroy}
 			::nmuser create ::u
-			u setdb $dbfd(dns)
-			u setlogin $login
+			::u setdb ::dbdns
+			::u setlogin $login
 		    }
 
 		    if {[catch $script msg]} then {
