@@ -18,3 +18,4 @@ ALTER TABLE global.tmp ALTER COLUMN api SET DEFAULT 0 ;
 UPDATE global.tmp SET api = 0 ;
 
 UPDATE global.config SET value = '30' WHERE key = 'schemaversion' ;
+INSERT INTO global.config (key, value) VALUES ('apiexpire', '182') ;

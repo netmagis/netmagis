@@ -139,6 +139,7 @@ snit::type ::db-config {
 	    {authmethod rw {menu {{pgsql Internal} {ldap {LDAP}} {casldap CAS}}}}
 	    {authexpire rw {string}}
 	    {authtoklen rw {string}}
+	    {apiexpire rw {string}}
 	    {wtmpexpire rw {string}}
 	    {failloginthreshold1 rw {string}}
 	    {faillogindelay1 rw {string}}
@@ -445,14 +446,12 @@ snit::type ::db {
 	$self exec $sql
     }
 
-    # unlock commit|abort
-    method unlock {action} {
-	switch -- $action {
-	    commit { set sql "COMMIT WORK" }
-	    abort  { set sql "ABORT WORK"  }
-	    default { error "Invalid parameter '$action'. Should be unlock commit|abort" }
-	}
-	$self exec $sql
+    method commit {} {
+	$self exec "COMMIT WORK"
+    }
+
+    method abort {} {
+	$self exec "ABORT WORK"
     }
 }
 
@@ -472,7 +471,15 @@ snit::type ::nm-log {
 	set dbo $db
     }
 
-    method write {date event login ip msg} {
+    method write {event msg {date {}} {login {}} {ip {}}} {
+	if {$ip eq ""} then {
+	    set ip [::scgiapp::get-header "REMOTE_ADDR"]
+	}
+
+	if {$login eq ""} then {
+	    error XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx
+	}
+
 	foreach v {event login ip msg} {
 	    if {[set $v] eq ""} then {
 		    set $v NULL
@@ -496,8 +503,102 @@ snit::type ::nm-log {
 	set sql "INSERT INTO $table
 			($datecol subsys, event, login, ip, msg)
 		    VALUES ($dateval $sub, $event, $login, $ip, $msg)"
+puts "sql=$sql"
 	$dbo exec $sql
     }
+}
+
+##############################################################################
+# Authentication
+##############################################################################
+
+#
+# Check authentication token
+#
+# Input:
+#   - parameters:
+#	- token : authentication token (given by the session cookie)
+# Output:
+#   - return value: login or "" if invalid token
+#
+
+proc check-authtoken {token} {
+    set idle       [::config get "authexpire"]
+    set apiexpire  [::config get "apiexpire"]
+    set wtmpexpire [::config get "wtmpexpire"]
+
+    #
+    # Expire old utmp entries
+    #
+
+    ::dbdns lock {global.utmp global.wtmp}
+
+    # Get the list of expired sessions for the log (see below)
+
+    set sql "SELECT u.login, t.token, t.lastaccess
+    			FROM global.nmuser u, global.utmp t
+			WHERE t.lastaccess < NOW() - interval '$idle second'
+			    AND u.idcor = t.idcor
+			    AND t.api = 0"
+    set lexp {}
+    ::dbdns exec $sql tab {
+	lappend lexp [list $tab(login) $tab(token) $tab(lastaccess)]
+    }
+
+    # Transfer all expired interactive utmp entries to wtmp, delete
+    # all expired api utmp entries, and delete old wtmp entries
+
+    set sql "INSERT INTO global.wtmp (idcor, token, start, ip, stop, stopreason)
+		SELECT idcor, token, start, ip, lastaccess, 'expired'
+		    FROM global.utmp
+		    WHERE lastaccess < NOW() - interval '$idle second'
+			AND api = 0
+		    ;
+	     DELETE FROM global.utmp
+		    WHERE lastaccess < NOW() - interval '$idle second'
+			AND api = 0
+		    ;
+	     DELETE FROM global.utmp
+		    WHERE lastaccess < NOW() - interval '$apiexpire day'
+			AND api = 1
+		    ;
+	     DELETE FROM global.wtmp
+		    WHERE stop < NOW() - interval '$wtmpexpire day'
+		    "
+    ::dbdns exec $sql
+
+    # Log expired sessions
+
+    foreach e $lexp {
+	lassign $e l tok la
+	::log write "auth" "lastaccess $l $tok" $la $l
+    }
+
+    ::dbdns commit
+
+    #
+    # Check our own authentication token
+    #
+
+    set qtoken [pg_quote $token]
+    set login ""
+    set found false
+    set sql "UPDATE global.utmp t
+		    SET lastaccess = NOW()
+		    FROM global.nmuser u
+		    WHERE token = $qtoken AND u.idcor = t.idcor
+		    RETURNING u.login"
+    ::dbdns exec $sql tab {
+	set login $tab(login)
+	set found true
+    }
+
+    if {$found} then {
+	# re-inject cookie (for login/call-cgi)
+	::scgiapp::set-cookie "session" $token 0 "" "" 0 0
+    }
+
+    return $login
 }
 
 ##############################################################################
@@ -552,27 +653,22 @@ proc handle-request {uri meth parm cookie} {
 			::scgiapp::scgi-error 503 $msg
 		    }
 
-		    ::scgiapp::set-body "YOU KNOW WHAT? I AM HAPPY..."
-		    ::log write "" "init" pda "" happy"
+		    set authtoken [::scgiapp::dget $cookie "session"]
+		    set login [check-authtoken $authtoken]
+		    if {$authneeded && $login eq ""} then {
+			::scgiapp::scgi-error 403 "Not authenticated"
+		    }
 
-		    ::dbdns exec "SELECT value FROM global.config WHERE
-					    key = 'schemaversion'" tab {
-			::scgiapp::set-body " WITH schemaversion = $tab(value)"
+		    if {$login ne ""} then {
+			::scgiapp::set-body "YOU KNOW WHAT? $login IS HAPPY..."
+		    } else {
+			::scgiapp::set-body "YOU KNOW WHAT? NOBODY IS HAPPY..."
 		    }
 
 		    return
 
-		    d setdb $dbfd(dns)
 
-		    set authtoken "TOKENTEST"
-		    set authenticated [check-authtoken $dbfd(dns) $authtoken login]
-		    if {$authneeded} then {
-			if {! $authenticated} then {
-			    ::scgiapp::scgi-error 403 "Not authenticated"
-			}
-		    }
-
-		    if {$authenticated} then {
+		    if {$login ne ""} then {
 			catch {u destroy}
 			::nmuser create ::u
 			u setdb $dbfd(dns)
@@ -588,7 +684,7 @@ proc handle-request {uri meth parm cookie} {
 	    }
 
 	    if {! $found} then {
-		error "'$uri' not found"
+		::scgiapp::scgi-error 404 "'$uri' not found"
 	    }
 	    return
 	}

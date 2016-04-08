@@ -238,6 +238,7 @@ datefmt	%d/%m/%Y %H:%M:%S
 dayfmt	%a %d %b %Y
 authmethod	pgsql
 authexpire	36000
+apiexpire	182
 authtoklen	32
 wtmpexpire	365
 pageformat	a4

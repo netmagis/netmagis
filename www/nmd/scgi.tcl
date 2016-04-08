@@ -176,6 +176,7 @@ namespace eval ::scgiserver:: {
 	    # - rephdrs: reply headers
 	    # - repbody: reply body
 	    # - repbin: true if body is a binary format
+	    # - cooktab: dict of cookies
 	    # - done: boolean if output already done
 	    #
 
@@ -187,6 +188,7 @@ namespace eval ::scgiserver:: {
 		rephdrs {}
 		repbody {}
 		repbin {}
+		cooktab {}
 		done {}
 	    }
 
@@ -321,6 +323,46 @@ namespace eval ::scgiserver:: {
 		}
 	    }
 
+	    # Input:
+	    #   - name: cookie name (printable ascii chars, excluding [,; =])
+	    #   - val: cookie value (printable ascii chars, excluding [,; ])
+	    #   - expire: unix timestamp, or 0 if no expiration date
+	    #   - path:
+	    #   - domain:
+	    #   - secure:
+	    #   - httponly:
+	    # Output: none
+	    #
+	    # History:
+	    #   2014/03/28 : pda/jean : design
+
+	    proc set-cookie {name val expire path domain secure httponly} {
+		variable state
+
+		set l {}
+
+		lappend l "$name=$val"
+		if {$expire > 0} then {
+		    # Wdy, DD Mon YYYY HH:MM:SS GMT
+		    set max [clock format $expire -gmt yes -format "%a, %d %b %Y %T GMT"]
+		    lappend "Expires=$max"
+		}
+		if {$path ne ""} then {
+		    lappend "Path=$path"
+		}
+		if {$domain ne ""} then {
+		    lappend "Domain=$domain"
+		}
+		if {$secure} then {
+		    lappend "Secure"
+		}
+		if {$httponly} then {
+		    lappend "HttpOnly"
+		}
+
+		dict set state(cooktab) $name [join $l "; "]
+	    }
+
 	    proc set-body {data {binary false}} {
 		variable state
 
@@ -393,6 +435,11 @@ namespace eval ::scgiserver:: {
 		set-header Status "200" false
 		set-header Content-type "text/html" false
 		set-header Content-length $clen
+
+		# output registered cookies
+		dict for {name val} $state(cooktab) {
+		    set-header Set-Cookie $val false
+		}
 
 		foreach {k v} $state(rephdrs) {
 		    puts $state(sock) "$k: $v"
