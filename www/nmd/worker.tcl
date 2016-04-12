@@ -455,21 +455,55 @@ snit::type ::db {
 	}
     }
 
-    # lock {table ...}
-    method lock {ltab} {
-	set sql "BEGIN WORK ;"
+    # lock {table ...} script
+    method lock {ltab script} {
+	# Lock tables
+	lappend sql "BEGIN WORK"
 	foreach t $ltab {
-	    append sql " LOCK $t ;"
+	    lappend sql "LOCK $t"
 	}
-	$self exec $sql
+	$self exec [join $sql ";"]
+
+	try {
+	    uplevel 1 $script
+
+	} on ok {res dict} {
+	    # lock ... ok => commit
+	    $self exec "COMMIT WORK"
+	    return -code ok $res
+
+	} on return {res dict} {
+	    # lock ... ok => commit + return
+	    $self exec "COMMIT WORK"
+	    return -code return $res
+
+	} on continue {res dict} {
+	    # lock ... continue => commit + continue (a loop must exist)
+	    $self exec "COMMIT WORK"
+	    return -code continue $res
+
+	} on break {res dict} {
+	    # lock ... break => commit + break (a loop must exist)
+	    $self exec "COMMIT WORK"
+	    return -code break $res
+
+	} on error {res dict} {
+	    # lock ... error => abort with an error
+	    $self exec "ABORT WORK"
+	    error $res $::errorInfo
+
+	} on 6 {res dict} {
+	    # lock ... abort => abort without error
+	    $self exec "ABORT WORK"
+	    return -code ok $res
+
+	}
     }
 
-    method commit {} {
-	$self exec "COMMIT WORK"
-    }
-
-    method abort {} {
-	$self exec "ABORT WORK"
+    # valid only inside a "lock ... script" block
+    # => exit the script with the result, without any error
+    method abort {{res {}}} {
+	return -code 6 $res
     }
 }
 
@@ -812,50 +846,49 @@ proc check-authtoken {token} {
     # Expire old utmp entries
     #
 
-    ::dbdns lock {global.utmp global.wtmp}
+    ::dbdns lock {global.utmp global.wtmp} {
 
-    # Get the list of expired sessions for the log (see below)
+	# Get the list of expired sessions for the log (see below)
 
-    set sql "SELECT u.login, t.token, t.lastaccess
-    			FROM global.nmuser u, global.utmp t
-			WHERE t.lastaccess < NOW() - interval '$idle second'
-			    AND u.idcor = t.idcor
-			    AND t.api = 0"
-    set lexp {}
-    ::dbdns exec $sql tab {
-	lappend lexp [list $tab(login) $tab(token) $tab(lastaccess)]
+	set sql "SELECT u.login, t.token, t.lastaccess
+			    FROM global.nmuser u, global.utmp t
+			    WHERE t.lastaccess < NOW() - interval '$idle second'
+				AND u.idcor = t.idcor
+				AND t.api = 0"
+	set lexp {}
+	::dbdns exec $sql tab {
+	    lappend lexp [list $tab(login) $tab(token) $tab(lastaccess)]
+	}
+
+	# Transfer all expired interactive utmp entries to wtmp, delete
+	# all expired api utmp entries, and delete old wtmp entries
+
+	set sql "INSERT INTO global.wtmp (idcor, token, start, ip, stop, stopreason)
+		    SELECT idcor, token, start, ip, lastaccess, 'expired'
+			FROM global.utmp
+			WHERE lastaccess < NOW() - interval '$idle second'
+			    AND api = 0
+			;
+		 DELETE FROM global.utmp
+			WHERE lastaccess < NOW() - interval '$idle second'
+			    AND api = 0
+			;
+		 DELETE FROM global.utmp
+			WHERE lastaccess < NOW() - interval '$apiexpire day'
+			    AND api = 1
+			;
+		 DELETE FROM global.wtmp
+			WHERE stop < NOW() - interval '$wtmpexpire day'
+			"
+	::dbdns exec $sql
+
+	# Log expired sessions
+
+	foreach e $lexp {
+	    lassign $e l tok la
+	    ::log write "auth" "lastaccess $l $tok" $la $l
+	}
     }
-
-    # Transfer all expired interactive utmp entries to wtmp, delete
-    # all expired api utmp entries, and delete old wtmp entries
-
-    set sql "INSERT INTO global.wtmp (idcor, token, start, ip, stop, stopreason)
-		SELECT idcor, token, start, ip, lastaccess, 'expired'
-		    FROM global.utmp
-		    WHERE lastaccess < NOW() - interval '$idle second'
-			AND api = 0
-		    ;
-	     DELETE FROM global.utmp
-		    WHERE lastaccess < NOW() - interval '$idle second'
-			AND api = 0
-		    ;
-	     DELETE FROM global.utmp
-		    WHERE lastaccess < NOW() - interval '$apiexpire day'
-			AND api = 1
-		    ;
-	     DELETE FROM global.wtmp
-		    WHERE stop < NOW() - interval '$wtmpexpire day'
-		    "
-    ::dbdns exec $sql
-
-    # Log expired sessions
-
-    foreach e $lexp {
-	lassign $e l tok la
-	::log write "auth" "lastaccess $l $tok" $la $l
-    }
-
-    ::dbdns commit
 
     #
     # Check our own authentication token
