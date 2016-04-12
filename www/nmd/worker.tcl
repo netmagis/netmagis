@@ -907,60 +907,126 @@ proc handle-request {uri meth parm cookie} {
 	default {
 	    #
 	    # Try API
+	    # Search a suitable route among all routes registered
+	    # in the route() array by the api-handler procedure
 	    #
 
 	    global route
 
-	    set found 0
+	    set ok 0
 	    foreach r $route($meth) {
+		#
+		# Each route is registered as a list
+		#	{ re vars paramspec authneeded script }
+		# with:
+		# - re: regexp including groups "(...)" for variable
+		#	matching
+		# - vars: list of variables for group matching
+		# - paramspec: list of query parameters spec
+		#	{ param min param min ... }
+		#	example : { crit 0 field 1 }
+		#	- param: parameter name
+		#	- min: minimum number of occurrence (max is always 1)
+		# - authneeded: boolean true if access is restricted
+		#	to authenticated users
+		# - script: script to execute for this route
+		#
+
 		lassign $r re vars paramspec authneeded script
 
-		set l [regexp -inline $re $uri]
-		if {[llength $l] > 0} then {
-		    set i 0
-		    foreach val [lreplace $l 0 0] {
-			set var [lindex $vars $i]
-			# XXXXXXXXXXXXXXXXX
-			#uplevel \#0 {set $var $val}
-			set $var $val
-			incr i
-		    }
-		    #uplevel \#0 eval $script
-
-		    try {
-			::dbdns reconnect
-			::dbmac reconnect
-		    } on error msg {
-			::scgiapp::scgi-error 503 $msg
-		    }
-
-		    set authtoken [::scgiapp::dget $cookie "session"]
-		    set login [check-authtoken $authtoken]
-		    if {$authneeded && $login eq ""} then {
-			::scgiapp::scgi-error 403 "Not authenticated"
-		    }
-
-		    if {$login ne ""} then {
-			catch {::u destroy}
-			::nmuser create ::u
-			::u setdb ::dbdns
-			::u setlogin $login
-		    }
-
-		    if {[catch $script msg]} then {
-			puts stderr "ERREUR pour '$uri': $msg"
-		    }
-		    set found 1
+		lassign [check-route $uri $parm $re $vars $paramspec] ok tpar
+		if {$ok} then {
 		    break
 		}
 	    }
 
-	    if {! $found} then {
-		::scgiapp::scgi-error 404 "'$uri' not found"
+	    if {$ok} then {
+		#
+		# This route is ok. Try to reconnect to the database
+		# and check authentication
+		#
+
+		try {
+		    ::dbdns reconnect
+		    ::dbmac reconnect
+		} on error msg {
+		    ::scgiapp::scgi-error 503 $msg
+		}
+
+		set authtoken [::scgiapp::dget $cookie "session"]
+		set login [check-authtoken $authtoken]
+		if {$authneeded && $login eq ""} then {
+		    ::scgiapp::scgi-error 403 "Not authenticated"
+		}
+
+		if {$login ne ""} then {
+		    catch {::u destroy}
+		    ::nmuser create ::u
+		    ::u setdb ::dbdns
+		    ::u setlogin $login
+		}
+
+		#
+		# Run the script with all parameters imported
+		# Script is run with the following variables
+		#
+		# - parms() array
+		# - ::parm::<query-parameter-or-uri-variable>
+		# - login ???
+		# - may be other variables
+		#
+		::scgiapp::import-param ::parm $tpar
+		try {
+		    eval $script
+		} on error msg {
+		    ::scgiapp::scgi-error 500 $msg
+		}
+	    } else {
+		::scgiapp::scgi-error 404 "URI '$uri' not found"
 	    }
-	    return
 	}
     }
+}
+
+
+#
+# Check URI: try to match the regexp, extract named
+# groups and check parameter specifications
+# Named groups and parameters are stored in the tpar dict
+#
+# Returns: list { ok tpar }
+#
+
+proc check-route {uri parm re vars paramspec} {
+
+    set ok 0
+    set tpar [dict create]
+
+    set l [regexp -inline $re $uri]
+    if {[llength $l] > 0} then {
+
+	# Extract named groups if any
+	set i 0
+	foreach val [lreplace $l 0 0] {
+	    set var [lindex $vars $i]
+	    dict set tpar $var $val
+	    incr i
+	}
+
+	# Check parameters and 
+	set ok 1
+	foreach {var min} $paramspec {
+	    if {! [dict exists $parm $var] && $min > 0} then {
+		set ok 0
+		break
+	    } else {
+		set vals [::scgiapp::dget $parm $var]
+		dict set tpar $var [lindex $vals 0]
+	    }
+	}
+    }
+
+    return [list $ok $tpar]
 }
 
 proc handle-static {page} {
@@ -1016,7 +1082,6 @@ proc api-handler {method pathspec authneeded paramspec script} {
     set n2 [regexp -all {[)]} $pathspec]
     set n3 [regexp -all {[:]} $pathspec]
     set n4 [regsub -all {\(([^:]+):[^)]+\)} $pathspec {} dummy]
-    puts "pathspec=$pathspec, n1=$n1, n2=$n2, n3=$n3, n4=$n4"
     if {$n1 != $n2 || $n2 != $n3 || $n3 != $n4} then {
 	puts stderr "invalid path specification '$pathspec'"
 	exit 1
@@ -1042,8 +1107,8 @@ proc api-handler {method pathspec authneeded paramspec script} {
 }
 
 api-handler get {/login} no {
-	user	1 1
-	passwd	1 1
+	user	1
+	passwd	1
     } {
 
     ::scgiapp::set-json {{a 1 b 2 c {areuh tagada bouzouh}}}
@@ -1051,28 +1116,30 @@ api-handler get {/login} no {
 }
 
 api-handler get {/views} yes {
-	crit	0 1
+	crit	0
     } {
 }
 
 api-handler get {/views/([0-9]+:idview)} yes {
-	crit	0 1
+	crit	0
     } {
 }
 
 api-handler get {/names} yes {
-	view	1 1
+	view	1
     } {
+    puts "/names => view=$::parm::view"
 }
 
 api-handler get {/names/([0-9]+:idrr)} yes {
-	fields	0 1
+	fields	0
     } {
 
     puts stderr "BINGO !"
-    puts "idrr=$idrr"
+    puts "idrr=$::parm::idrr"
+    puts "fields=$::parm::fields"
 
-    if {! [read-rr-by-id $dbfd(dns) $idrr trr]} then {
+    if {! [read-rr-by-id $dbfd(dns) $::parm::idrr trr]} then {
 	puts "NOT FOUND"
     } else {
 	puts [array get trr]

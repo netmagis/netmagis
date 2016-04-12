@@ -496,6 +496,20 @@ namespace eval ::scgiserver:: {
 	    }
 
 	    #
+	    # Import parameters from a dictionary into a specific namespace
+	    # Use a fully qualified namespace (e.g.: ::foo for example)
+	    #
+
+	    proc import-param {ns dict} {
+		if {[namespace exists $ns]} then {
+		    namespace delete $ns
+		}
+		dict for {var val} $dict {
+		    namespace eval $ns [list variable $var $val]
+		}
+	    }
+
+	    #
 	    # Extract individual parameters
 	    # - parm: dictionary containing
 	    #
