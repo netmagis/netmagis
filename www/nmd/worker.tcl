@@ -976,11 +976,7 @@ proc handle-request {uri meth parm cookie} {
 		# - may be other variables
 		#
 		::scgiapp::import-param ::parm $tpar
-		try {
-		    eval $script
-		} on error msg {
-		    ::scgiapp::scgi-error 500 $msg
-		}
+		eval $script
 	    } else {
 		::scgiapp::scgi-error 404 "URI '$uri' not found"
 	    }
