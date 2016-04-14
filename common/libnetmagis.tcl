@@ -5879,7 +5879,7 @@ proc filter-views {dbfd _tabuid mode object idviews _chkv} {
 		set found 1
 		set msg [check-authorized-host $dbfd $tabuid(idcor) $name $domain $idview trr "del-name"]
 
-		if {$trr(idrr) eq ""} then {
+		if {[info exists trr(idrr)] && $trr(idrr) eq ""} then {
 		    #
 		    # Name does not exist in this view
 		    #

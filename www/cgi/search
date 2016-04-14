@@ -216,6 +216,35 @@ proc display-alias {dbfd _trr idview q} {
     return "$title $desc"
 }
 
+proc display-all-mx {dbfd _trr idview q} {
+    upvar $_trr trr
+
+    h mask-next
+    set fqdn "$trr(name).$trr(domain)"
+    set lmx [rr-mx-by-view trr $idview]
+
+    set rrtmpl {
+	allowed-groups {search {q group:%s}}
+	ip {edit {addr %1$s} {idview %2$s}}
+    }
+
+    set lfound {}
+    foreach mx $lmx {
+	lassign $mx prio idtarget
+	if {! [read-rr-by-id $dbfd $idtarget trrt]} then {
+	    d error [mc {Cannot read MX with id %s} $idtarget]
+	}
+
+	# Display MX target host
+	lassign [display-rr-masked $dbfd trrt $idview $rrtmpl] link desc
+	set title [mc {%1$s is a MX (priority %2$s) to host %3$s in view %4$s} $fqdn $prio $link [u viewname $idview]]
+
+	lappend lfound "$title $desc"
+    }
+
+    return $lfound
+}
+
 proc display-mailrole {dbfd _trr idview q} {
     upvar $_trr trr
 
@@ -328,9 +357,10 @@ proc cgi-search-150-host {dbfd q val type} {
 			if {[rr-cname-by-view trr $idview] ne ""} then {
 			    lappend lfound [display-alias $dbfd trr $idview $q]
 			}
-			# XXXXXXXX : complete this when admmx will be modified
 			if {[rr-mx-by-view trr $idview] ne ""} then {
-			    lappend lfound [display-mx $dbfd trr $idview $q]
+			    foreach l [display-all-mx $dbfd trr $idview $q] {
+				lappend lfound $l
+			    }
 			}
 		    }
 		}

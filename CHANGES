@@ -1,3 +1,6 @@
+Version 2.x.x - ?
+    - bug fix (issue #158): an was issued when a MX was searched for
+
 Version 2.3.1 - 2015/08/28
     - bug fix (pull request #145 from Olivier Le Monnier): Netmagis was
 	too restrictive about CAS ticket syntax

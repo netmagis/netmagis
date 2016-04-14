@@ -12,10 +12,14 @@
 #	Sep 30 10:56:33 crc-cg1 373: Sep 30 10:56:31: %SYS-5-CONFIG_I: Configured from console by jean on vty0 (172.16.202.1)
 # - Juniper :
 #	Sep 30 10:57:55 espla-rc1 mgd[91730]: UI_COMMIT: User 'jean' requested 'commit' operation (comment: none)
+#	- Cisco ASA :
+#	Nov 18 07:29:34 vpn %ASA-5-111008: User 'bcollet' executed the 'write' command
+#
 #
 # History:
 #   2010/10/14 : pda/jean : design
 #   2010/12/20 : pda      : reworked installation
+#   2015/11/18 : bcollet  : adding support for Cisco ASA
 #
 
 source %LIBNETMAGIS%
@@ -60,7 +64,12 @@ proc main {argv0 argv} {
 		#
 
 		set found 1
-	    }
+	    } elseif {[regexp {.*ASA-5-111008: User '(\S+)' executed the 'write' command} $line dummy login]} then {
+    #
+    # Cisco ASA
+    #
+    set found 1
+    }
 
 	    if {$found} then {
 		#
