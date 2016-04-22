@@ -5,7 +5,7 @@ SCRIPTS 	= \
 
 WORKERS		= \
 		  worker.tcl \
-		  lib.tcl
+		  scgi.tcl
 
 build:
 	@echo ">>> Making build in `pwd`"

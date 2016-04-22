@@ -604,6 +604,11 @@ snit::type ::nmuser {
     # login of user
     variable login ""
 
+    # ids of user
+    variable idcor -1
+    variable idgrp -1
+
+
     # Group management
     # Group information is loaded
     variable groupsloaded 0
@@ -642,6 +647,34 @@ snit::type ::nmuser {
 	    set viewsisloaded 0
 	}
 	set login $newlogin
+    }
+
+    method idcor {} {
+	if {$idcor == -1} then {
+	    set qlogin [pg_quote $login]
+	    set sql "SELECT idcor FROM global.nmuser WHERE login = $qlogin"
+	    $dbo exec $sql tab {
+		set idcor $tab(idcor)
+	    }
+	    if {$idcor == -1} then {
+		error "login '$login' not found"
+	    }
+	}
+	return $idcor
+    }
+
+    method idgrp {} {
+	if {$idgrp == -1} then {
+	    set qlogin [pg_quote $login]
+	    set sql "SELECT idgrp FROM global.nmuser WHERE login = $qlogin"
+	    $dbo exec $sql tab {
+		set idgrp $tab(idgrp)
+	    }
+	    if {$idgrp == -1} then {
+		error "login '$login' not found"
+	    }
+	}
+	return $idgrp
     }
 
 
@@ -1145,17 +1178,55 @@ api-handler get {/login} no {
 }
 
 api-handler get {/views} yes {
-	crit	0
     } {
+    set idgrp [::u idgrp]
+    set sql "SELECT array_to_json (array_agg (row_to_json (t))) AS res
+		    FROM (
+			SELECT v.name, '/views/' || v.idview AS link,
+				    p.selected, p.sort
+			    FROM dns.view v
+			    INNER JOIN dns.p_view p
+				ON v.idview = p.idview
+			    WHERE p.idgrp = $idgrp
+			    ORDER BY p.sort ASC, v.name ASC
+		    ) t
+		"
+    set r ""
+    ::dbdns exec $sql tab {
+	set r $tab(res)
+    }
+    ::scgiapp::set-header Content-Type application/json
+    ::scgiapp::set-body $r
 }
 
 api-handler get {/views/([0-9]+:idview)} yes {
-	crit	0
     } {
+    set idgrp [::u idgrp]
+    set sql "SELECT row_to_json (t) AS res
+		    FROM (
+			SELECT v.name, p.selected, p.sort
+			    FROM dns.view v
+			    INNER JOIN dns.p_view p
+				ON v.idview = p.idview
+			    WHERE p.idgrp = $idgrp
+				AND v.idview = $::parm::idview
+		    ) t
+		"
+    set r ""
+    ::dbdns exec $sql tab {
+	set r $tab(res)
+    }
+    if {$r eq ""} then {
+	::scgiapp::scgi-error 404 "View '$::parm::idview' not found"
+    }
+    ::scgiapp::set-header Content-Type application/json
+    ::scgiapp::set-body $r
 }
 
 api-handler get {/names} yes {
-	view	1
+	view	0
+	cidr	0
+	domain	0
     } {
     puts "/names => view=$::parm::view"
 }
