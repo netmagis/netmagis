@@ -549,7 +549,7 @@ CREATE TABLE topo.vlan (
 	vlanid	INT,			-- 1..4094
 	descr	TEXT,			-- description
 	voip	INT DEFAULT 0,		-- 1 if VoIP vlan, 0 if standard vlan
-	localscope INT DEFAULT 0;	-- 1 if VLAN has local scope,0 if global
+	localscope INT DEFAULT 0,	-- 1 if VLAN has local scope,0 if global
 
 	PRIMARY KEY (vlanid)
 ) ;
