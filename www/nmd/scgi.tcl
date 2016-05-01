@@ -275,6 +275,9 @@ namespace eval ::scgiserver:: {
 		# Decode the length of the netstring: "70:..."
 		while {1} {
 		    set c [read $sock 1]
+		    if {$c eq ""} then {
+			error "Invalid netstring length in SCGI protocol"
+		    }
 		    if {$c eq ":"} then {
 			break
 		    }
