@@ -5,12 +5,13 @@ SCRIPTS = \
 	netmagis-dbimport \
 	netmagis-dbmaint \
 	netmagis-dbupgrade \
-	netmagis-getoui
+	netmagis-getoui \
+	netmagis-restd \
 
 install:
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)$(SBINDIR)
+	mkdir -p $(DESTDIR)$(BINDIR)
 	$(NINSTALL) -m 0755 \
 		-e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
-		-e "s|%SBINDIR%|$(SBINDIR)|" $(SUBST) \
-		$(SCRIPTS) $(DESTDIR)$(SBINDIR)
+		-e "s|%BINDIR%|$(BINDIR)|" $(SUBST) \
+		$(SCRIPTS) $(DESTDIR)$(BINDIR)

@@ -63,9 +63,8 @@ usage:
 	@echo "	build-www"
 	@echo "	install"
 	@echo "	install-common"
-	@echo "	install-database"
+	@echo "	install-server"
 	@echo "	install-servers"
-	@echo "	install-www"
 	@echo "	install-utils"
 	@echo "	install-detecteq"
 	@echo "	install-topo"
@@ -83,6 +82,7 @@ usage:
 
 build: build-www build-topo
 
+# NEARLY OBSOLETE
 build-www:
 	cd www ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" build
@@ -90,19 +90,20 @@ build-www:
 build-topo:
 	cd topo ; make build
 
-install: install-common install-database install-servers install-utils \
+install: install-common install-server install-servers install-utils \
 	    install-detecteq install-topo install-metro install-www
 	
 install-common:
 	cd common ; \
 	    make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) VERSION=$(VERSION) install
 
-install-database:
-	cd database ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+install-server:
+	cd server ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 install-servers:
 	cd servers ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
+# NEARLY OBSOLETE
 install-www: build-www
 	cd www ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" install
@@ -119,6 +120,7 @@ install-detecteq:
 install-metro:
 	cd metro ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
+# PROBLEM
 install-netmagis.org: build-www
 	cd doc/netmagis.org ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
@@ -167,7 +169,7 @@ debian-repo:
 
 clean:
 	cd common ; make clean
-	cd database ; make clean
+	cd server ; make clean
 	cd servers ; make clean
 	cd www ; make clean
 	cd utils ; make clean
