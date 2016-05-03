@@ -61,6 +61,7 @@ usage:
 	@echo "	build"
 	@echo "	build-topo"
 	@echo "	build-www"
+	@echo "	build-server"
 	@echo "	install"
 	@echo "	install-common"
 	@echo "	install-server"
@@ -86,6 +87,9 @@ build: build-www build-topo
 build-www:
 	cd www ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" build
+
+build-server:
+	cd server ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) build
 
 build-topo:
 	cd topo ; make build
