@@ -1,20 +1,22 @@
 #!%TCLSH%
 
-source %LIBNETMAGIS%
+lappend auto_path %NMLIBDIR%/pkgtcl
+
+package require lconf
 
 proc usage {argv0} {
-    set usage {usage: %s [-c][-h][-f _conffile] param ... param}
+    set usage {usage: %s [-c][-h][-f conffile] param ... param}
     regsub {.*/} $argv0 {} argv0
     puts stderr [format $usage $argv0]
 }
 
-proc get-conf-list {check arg} {
+proc get-conf-list {cf check arg} {
     set failed 0
     set l {}
     foreach a $arg {
-	set v [get-local-conf $a]
+	set v [$cf get $a]
 	if {$check && $v eq ""} then {
-	    puts stderr "Netmagis configuration parameter '$a' is not iniialized"
+	    puts stderr "Netmagis configuration parameter '$a' is not initialized"
 	    set failed 1
 	}
 	regsub -all {\\} $v {&&} v
@@ -29,7 +31,7 @@ proc get-conf-list {check arg} {
 
 proc main {argv0 argv} {
     set check 0
-    set conffile ""
+    set conffile %CONFFILE%
     while {[llength $argv] > 0} {
 	switch -glob -- [lindex $argv 0] {
 	    -c {
@@ -54,16 +56,22 @@ proc main {argv0 argv} {
 	}
     }
 
-    if {$conffile ne ""} then {
-	read-local-conf-file $conffile
-    }
-
     if {[llength $argv] == 0} then {
 	usage $argv0
 	exit 1
     }
 
-    return [get-conf-list $check $argv]
+    set cf [::lconf::lconf create %AUTO%]
+
+    try {
+	$cf read $conffile
+    } on error {msg} {
+	puts stderr "Error reading '$conffile'"
+	puts stderr "$msg"
+	exit 1
+    }
+
+    return [get-conf-list $cf $check $argv]
 }
 
 exit [main $argv0 $argv]

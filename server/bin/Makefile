@@ -1,6 +1,7 @@
 NINSTALL	= ../../ninstall
 
 SCRIPTS = \
+	netmagis-config \
 	netmagis-dbcreate \
 	netmagis-dbimport \
 	netmagis-dbmaint \
