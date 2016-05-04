@@ -3,6 +3,7 @@ TCLSH		= /usr/local/bin/tclsh
 
 FILES =	\
 	worker.tcl \
+	libworker.tcl \
 	hdl-login.tcl \
 	hdl-names.tcl \
 	hdl-views.tcl \

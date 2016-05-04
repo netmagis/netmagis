@@ -1,8 +1,17 @@
 api-handler get {/names} yes {
 	view	0
-	cidr	0
+	name	0
 	domain	0
+	context	0
+	cidr	0
     } {
+    if {$::parm::context ne ""} then {
+	if {$::parm::view eq "" || $::parm::name eq "" || $::parm::domain eq ""} then {
+	    sgciapp::scgi-error 400 "'context' parameter can be used only if view/name/domain are provided"
+	}
+
+	if {[check-authorized-host
+    }
     puts "/names => view=$::parm::view"
 }
 

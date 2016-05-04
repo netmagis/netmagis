@@ -27,7 +27,7 @@ array set route {
 # Thread initialisation
 ##############################################################################
 
-proc thread-init {conffile} {
+proc thread-init {conffile wdir} {
     ::lconf::lconf create ::lc
     ::lc read $conffile
 
@@ -49,9 +49,8 @@ proc thread-init {conffile} {
 
     # config ::dnsconfig
     # puts "READY [info procs route-*]"
-}
 
-proc load-handlers {wdir} {
+    uplevel \#0 source $wdir/libworker.tcl
     foreach f [glob -nocomplain $wdir/hdl-*.tcl] {
 	uplevel \#0 source $f
     }
@@ -719,8 +718,7 @@ proc api-handler {method pathspec authneeded paramspec script} {
 }
 
 try {
-    thread-init $conffile
-    load-handlers $wrkdir
+    thread-init $conffile $wrkdir
 } on error msg {
     puts stderr $msg
     exit 1
