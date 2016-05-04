@@ -1,3 +1,12 @@
+#
+# worker program (worker thread to answer SCGI requests)
+#
+# Tcl variables initialized during the thread start
+# - conffile: pathname of configuration file
+# - wrkdir: pathname of the directory containing this file
+# - auto_path: path of Tcl packages specific to Netmagis
+#
+
 set conf(static-dir)	/tmp
 
 package require snit
@@ -19,8 +28,6 @@ array set route {
 ##############################################################################
 
 proc thread-init {conffile} {
-    global dbfd
-
     ::lconf::lconf create ::lc
     ::lc read $conffile
 
@@ -37,18 +44,17 @@ proc thread-init {conffile} {
     ::log setdb ::dbdns
 
     #
-    # Prepare for DB connection
-    #
-
-    set dbfd(dns) "not connected"
-    set dbfd(mac) "not connected"
-
-    #
     # Create a global object for configuration parameters
     #
 
     # config ::dnsconfig
     # puts "READY [info procs route-*]"
+}
+
+proc load-handlers {wdir} {
+    foreach f [glob -nocomplain $wdir/hdl-*.tcl] {
+	uplevel \#0 source $f
+    }
 }
 
 ##############################################################################
@@ -712,86 +718,9 @@ proc api-handler {method pathspec authneeded paramspec script} {
     lappend route($method) [list $re $vars $paramspec $authneeded $script]
 }
 
-api-handler get {/login} no {
-	user	1
-	passwd	1
-    } {
-
-    ::scgiapp::set-json {{a 1 b 2 c {areuh tagada bouzouh}}}
-
-}
-
-api-handler get {/views} yes {
-    } {
-    set idgrp [::u idgrp]
-    set sql "SELECT array_to_json (array_agg (row_to_json (t))) AS res
-		    FROM (
-			SELECT v.name, '/views/' || v.idview AS link,
-				    p.selected, p.sort
-			    FROM dns.view v
-			    INNER JOIN dns.p_view p
-				ON v.idview = p.idview
-			    WHERE p.idgrp = $idgrp
-			    ORDER BY p.sort ASC, v.name ASC
-		    ) t
-		"
-    set r ""
-    ::dbdns exec $sql tab {
-	set r $tab(res)
-    }
-    ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $r
-}
-
-api-handler get {/views/([0-9]+:idview)} yes {
-    } {
-    set idgrp [::u idgrp]
-    set sql "SELECT row_to_json (t) AS res
-		    FROM (
-			SELECT v.name, p.selected, p.sort
-			    FROM dns.view v
-			    INNER JOIN dns.p_view p
-				ON v.idview = p.idview
-			    WHERE p.idgrp = $idgrp
-				AND v.idview = $::parm::idview
-		    ) t
-		"
-    set r ""
-    ::dbdns exec $sql tab {
-	set r $tab(res)
-    }
-    if {$r eq ""} then {
-	::scgiapp::scgi-error 404 "View '$::parm::idview' not found"
-    }
-    ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $r
-}
-
-api-handler get {/names} yes {
-	view	0
-	cidr	0
-	domain	0
-    } {
-    puts "/names => view=$::parm::view"
-}
-
-api-handler get {/names/([0-9]+:idrr)} yes {
-	fields	0
-    } {
-
-    puts stderr "BINGO !"
-    puts "idrr=$::parm::idrr"
-    puts "fields=$::parm::fields"
-
-    if {! [read-rr-by-id $dbfd(dns) $::parm::idrr trr]} then {
-	puts "NOT FOUND"
-    } else {
-	puts [array get trr]
-    }
-}
-
 try {
     thread-init $conffile
+    load-handlers $wrkdir
 } on error msg {
     puts stderr $msg
     exit 1
