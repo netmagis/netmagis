@@ -1,14 +1,21 @@
 #!/usr/bin/tclsh8.6
 
-#lappend auto_path [pwd]
-#package require scgi
+set pkgdir %NMLIBDIR%/pkgtcl
+set pkgdir ../lib/pkgtcl
+
+lappend auto_path $pkgdir
+package require scgiserver
 
 set conffile ./netmagis.conf
 
-source scgi.tcl
+set wrkrdir %NMLIBDIR%/worker
+set wrkrdir ../lib/worker
 
 ::scgiserver::start \
 	    -debug true \
 	    -minworkers 1 \
-	    "set conffile $conffile ; source worker.tcl" \
+	    "set conffile $conffile
+		set wrkdir $wrkrdir
+		lappend auto_path $pkgdir
+		source $wrkrdir/worker.tcl" \
 	    "handle-request"

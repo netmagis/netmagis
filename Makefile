@@ -102,7 +102,7 @@ install-common:
 	    make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) VERSION=$(VERSION) install
 
 install-server:
-	cd server ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd server ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) VERSION=$(VERSION) install
 
 install-servers:
 	cd servers ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
