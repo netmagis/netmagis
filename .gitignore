@@ -8,6 +8,7 @@
 *.toc
 *.log
 *.bak
+*.swp
 # Compiled files
 *.[oa]
 topo/src/buildgraph
