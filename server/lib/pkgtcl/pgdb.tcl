@@ -22,16 +22,16 @@ namespace eval ::pgdb {
 
 	# prefix: "dns" or "mac" (according to local configuration file)
 	# confobj: access to the local configuration file
-	# versioncheck: version number (such as 3.0.5beta1) or ""
+	# check: version number (such as 3.0.5beta1) or ""
 
-	method init {prefix confobj {versioncheck {}}} {
+	method init {prefix confobj {check {}}} {
 	    set dbprefix $prefix
 	    set lc $confobj
-	    if {$versioncheck ne ""} then {
-		if {! [regsub {^(\d+)\.(\d+).*} $versioncheck {\1\2} nver]} then {
-		    error "Netmagis version '$versioncheck' unrecognized"
+	    if {$check ne ""} then {
+		if {! [regsub {^(\d+)\.(\d+).*} $check {\1\2} nver]} then {
+		    error "Netmagis version '$check' unrecognized"
 		}
-		set appver $versioncheck
+		set appver $check
 	    }
 	}
 
@@ -46,20 +46,19 @@ namespace eval ::pgdb {
 	    }
 
 	    #
-	    # Get conninfo string
+	    # Build connlist
 	    #
-	    set conninfo {}
+	    set connlist {}
 	    foreach f {{host host} {port port} {dbname name}
 				{user user} {password password}} {
 		lassign $f connkey suffix
 		set v [$lc get "${dbprefix}db${suffix}"]
-		regsub {['\\]} $v {\\&} v
-		lappend conninfo "$connkey='$v'"
+		lappend connlist $connkey
+		lappend connlist $v
 	    }
-	    set conninfo [join $conninfo " "]
 
 	    try {
-		set dbfd [pg_connect -conninfo $conninfo]
+		set dbfd [pg_connect -connlist $connlist]
 	    } on error msg {
 		error "Database $dbprefix unavailable"
 	    }
@@ -77,11 +76,15 @@ namespace eval ::pgdb {
 	    }
 	}
 
-	# exec sql [tab script]
+	# exec sql [tab script]		(throws an error)
+	# or
+	# exec sql msgvar		(returns 0 or 1)
 	method exec {sql args} {
+	    set r 1
 	    try {
 		switch [llength $args] {
-		    0 {
+		    0 -
+		    1 {
 			uplevel 1 [list pg_execute $dbfd $sql]
 		    }
 		    2 {
@@ -94,20 +97,27 @@ namespace eval ::pgdb {
 		}
 
 	    } trap {NONE} {msg err} {
-		# Pgtcl 1.9 returns errorcode == NONE
-		set errinfo [dict get $err -errorinfo]
-		if {[regexp "^PGRES_FATAL_ERROR" $errinfo]} then {
-		    # reset db handle
-		    set info [pg_dbinfo status $dbfd]
-		    if {$info ne "connection_ok"} then {
-			$self disconnect
-		    }
-		    error $msg
+		# Pgtcl 1.9 returns errorCode == NONE for all errors
+		if {[llength $args] == 1} then {
+		    upvar [lindex $args 0] umsg
+		    set umsg $msg
+		    set r 0
 		} else {
-		    # it is not a Pgtcl error
-		    error $msg $errinfo NONE
+		    set errinfo [dict get $err -errorinfo]
+		    if {[regexp "^PGRES_FATAL_ERROR" $errinfo]} then {
+			# reset db handle
+			set info [pg_dbinfo status $dbfd]
+			if {$info ne "connection_ok"} then {
+			    $self disconnect
+			}
+			error $msg
+		    } else {
+			# it is not a Pgtcl error
+			error $msg $errinfo NONE
+		    }
 		}
 	    }
+	    return $r
 	}
 
 	# lock {table ...} script
