@@ -30,7 +30,7 @@ api-handler get {/views/([0-9]+:idview)} yes {
 			    INNER JOIN dns.p_view p
 				ON v.idview = p.idview
 			    WHERE p.idgrp = $idgrp
-				AND v.idview = $::parm::idview
+				AND v.idview = $p::idview
 		    ) t
 		"
     set r ""
@@ -38,7 +38,7 @@ api-handler get {/views/([0-9]+:idview)} yes {
 	set r $tab(res)
     }
     if {$r eq ""} then {
-	::scgiapp::scgi-error 404 "View '$::parm::idview' not found"
+	::scgiapp::scgi-error 404 "View '$p::idview' not found"
     }
     ::scgiapp::set-header Content-Type application/json
     ::scgiapp::set-body $r

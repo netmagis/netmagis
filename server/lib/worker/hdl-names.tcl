@@ -5,14 +5,21 @@ api-handler get {/names} yes {
 	context	0
 	cidr	0
     } {
-    if {$::parm::context ne ""} then {
-	if {$::parm::view eq "" || $::parm::name eq "" || $::parm::domain eq ""} then {
-	    sgciapp::scgi-error 400 "'context' parameter can be used only if view/name/domain are provided"
+    if {$::p::context ne ""} then {
+	if {$p::view eq "" || $p::name eq "" || $p::domain eq ""} then {
+	    scgiapp::scgi-error 400 "'context' parameter can be used only if view/name/domain are provided"
 	}
-
-	if {[check-authorized-host
+	set idview [::u viewid $p::view]
+	if {$idview eq ""} then {
+	    scgiapp::scgi-error 404 "View not found"
+	}
+	if {[check-authorized-host ::dbdns [::u idcor] $p::name $p::domain $idview trr $p::context]} then {
+	    puts BINGO!
+	} else {
+	    scgiapp::scgi-error 403 Forbidden
+	}
     }
-    puts "/names => view=$::parm::view"
+    puts "/names => view=$p::view"
 }
 
 api-handler get {/names/([0-9]+:idrr)} yes {
@@ -20,10 +27,10 @@ api-handler get {/names/([0-9]+:idrr)} yes {
     } {
 
     puts stderr "BINGO !"
-    puts "idrr=$::parm::idrr"
-    puts "fields=$::parm::fields"
+    puts "idrr=$p::idrr"
+    puts "fields=$p::fields"
 
-    if {! [read-rr-by-id $dbfd(dns) $::parm::idrr trr]} then {
+    if {! [read-rr-by-id $dbfd(dns) $p::idrr trr]} then {
 	puts "NOT FOUND"
     } else {
 	puts [array get trr]

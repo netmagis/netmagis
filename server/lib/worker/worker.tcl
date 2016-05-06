@@ -47,9 +47,6 @@ proc thread-init {conffile wdir} {
     # Create a global object for configuration parameters
     #
 
-    # config ::dnsconfig
-    # puts "READY [info procs route-*]"
-
     uplevel \#0 source $wdir/libworker.tcl
     foreach f [glob -nocomplain $wdir/hdl-*.tcl] {
 	uplevel \#0 source $f
@@ -283,12 +280,12 @@ snit::type ::nmuser {
 	    set allviews(name:$name) $idview
 	}
 
-	set qlogin [::pgsql::quote $login]
+	set qlogin [pg_quote $login]
 	set sql "SELECT p.idview
 			FROM dns.p_view p, dns.view v, global.nmuser u
 			WHERE p.idgrp = u.idgrp
 			    AND p.idview = v.idview
-			    AND u.login = '$qlogin'
+			    AND u.login = $qlogin
 			ORDER BY p.sort ASC, v.name ASC"
 	$dbo exec $sql tab {
 	    set idview $tab(idview)
@@ -352,12 +349,12 @@ snit::type ::nmuser {
 	    set alldom(name:$name) $iddom
 	}
 
-	set qlogin [::pgsql::quote $login]
+	set qlogin [pg_quote $login]
 	set sql "SELECT p.iddom
 			FROM dns.p_dom p, dns.domain d, global.nmuser u
 			WHERE p.idgrp = u.idgrp
 			    AND p.iddom = d.iddom
-			    AND u.login = '$qlogin'
+			    AND u.login = $qlogin
 			ORDER BY p.sort ASC, d.name ASC"
 	$dbo exec $sql tab {
 	    set iddom $tab(iddom)
@@ -586,11 +583,11 @@ proc handle-request {uri meth parm cookie} {
 		# Script is run with the following variables
 		#
 		# - parms() array
-		# - ::parm::<query-parameter-or-uri-variable>
+		# - ::p::<query-parameter-or-uri-variable>
 		# - login ???
 		# - may be other variables
 		#
-		::scgiapp::import-param ::parm $tpar
+		::scgiapp::import-param ::p $tpar
 		eval $script
 	    } else {
 		::scgiapp::scgi-error 404 "URI '$uri' not found"
