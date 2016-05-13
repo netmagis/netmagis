@@ -13,13 +13,26 @@ api-handler get {/names} yes {
 	if {$idview eq ""} then {
 	    scgiapp::scgi-error 404 "View not found"
 	}
-	if {[check-authorized-host ::dbdns [::u idcor] $p::name $p::domain $idview trr $p::context]} then {
-	    puts BINGO!
+	set msg [check-authorized-host ::dbdns [::u idcor] $p::name $p::domain $idview trr $p::context]
+	if {$msg eq ""} then {
+	    set idrr $trr(idrr)
+	    if {$idrr eq ""} then {
+		scgiapp::scgi-error 404 "Not found"
+	    } else {
+		set sql "SELECT row_to_json (r)
+				FROM dns.full_rr r
+				WHERE idrr = $idrr"
+		set j ""
+		::dbdns exec $sql tab {
+		    set j $tab(row_to_json)
+		}
+		scgiapp::set-body $j
+		scgiapp::set-header Content-type application/json
+	    }
 	} else {
-	    scgiapp::scgi-error 403 Forbidden
+	    scgiapp::scgi-error 403 "Forbidden ($msg)"
 	}
     }
-    puts "/names => view=$p::view"
 }
 
 api-handler get {/names/([0-9]+:idrr)} yes {
