@@ -130,7 +130,7 @@ proc rr-null {_trr} {
 	    idview view viewlink mac
 	    idhinfo hinfo hinfolink
 	    comment respname respmail
-	    dhcpprofile dhcpprofilelink iddhcpprofile
+	    dhcpprof dhcpproflink iddhcpprof
 	    sendsmtp ttl
 	    user userlink idcor
 	    lastmod
