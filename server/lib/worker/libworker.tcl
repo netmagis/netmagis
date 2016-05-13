@@ -112,7 +112,7 @@ proc read-rr-by-id {dbfd idrr _trr} {
 proc read-rr {dbfd _trr where} {
     upvar $_trr trr
 
-    rr-null trr
+    catch {unset trr}
     set found 0
     set sql "SELECT row_to_json (r) FROM dns.full_rr_id r WHERE $where"
     $dbfd exec $sql tab {
@@ -120,31 +120,28 @@ proc read-rr {dbfd _trr where} {
 	set found 1
     }
 
-    return $found
-}
-
-proc rr-null {_trr} {
-    upvar $_trr trr
-
-    set l {idrr name iddom domain domainlink
-	    idview view viewlink mac
-	    idhinfo hinfo hinfolink
-	    comment respname respmail
-	    dhcpprof dhcpproflink iddhcpprof
-	    sendsmtp ttl
-	    user userlink idcor
-	    lastmod
-	    idcname cname cnamelink
-	    aliases
-	    idmboxhost idmboxhostview mboxhost mboxhostlink
-	    mailaddr
-	    mx mxtarg
-	    ip
-	    }
-    catch {unset trr}
-    foreach c $l {
-	set trr($c) {}
+    if {! $found} then {
+	set l {idrr name iddom domain domainlink
+		idview view viewlink mac
+		idhinfo hinfo hinfolink
+		comment respname respmail
+		dhcpprof dhcpproflink iddhcpprof
+		sendsmtp ttl
+		user userlink idcor
+		lastmod
+		idcname cname cnamelink
+		aliases
+		idmboxhost idmboxhostview mboxhost mboxhostlink
+		mailaddr
+		mx mxtarg
+		ip
+		}
+	foreach c $l {
+	    set trr($c) {}
+	}
     }
+
+    return $found
 }
 
 #
