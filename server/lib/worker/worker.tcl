@@ -48,7 +48,7 @@ proc thread-init {conffile wdir} {
     #
 
     uplevel \#0 source $wdir/libworker.tcl
-    foreach f [glob -nocomplain $wdir/hdl-*.tcl] {
+    foreach f [lsort [glob -nocomplain $wdir/hdl-*.tcl]] {
 	uplevel \#0 source $f
     }
 }
@@ -151,8 +151,16 @@ snit::type ::nmuser {
     variable login ""
 
     # ids of user
-    variable idcor -1
-    variable idgrp -1
+    variable ids {
+	idcor -1
+	idgrp -1
+	present 0
+	p_admin 0
+	p_smtp 0
+	p_ttl 0
+	p_mac 0
+	p_genl 0
+    }
 
 
     # Group management
@@ -195,32 +203,36 @@ snit::type ::nmuser {
 	set login $newlogin
     }
 
-    method idcor {} {
+    method fill {} {
+	set idcor [dict get $ids idcor]
 	if {$idcor == -1} then {
 	    set qlogin [pg_quote $login]
-	    set sql "SELECT idcor FROM global.nmuser WHERE login = $qlogin"
+	    set sql "SELECT g.*
+			    FROM global.nmuser
+				NATURAL INNER JOIN global.nmgroup g
+				WHERE login = $qlogin"
+	    set found 0
 	    $dbo exec $sql tab {
-		set idcor $tab(idcor)
+		set ids [array get tab]
+		set found 1
 	    }
-	    if {$idcor == -1} then {
+	    if {! $found} then {
 		error "login '$login' not found"
 	    }
 	}
-	return $idcor
+    }
+
+    method cap {cap} {
+	$self fill
+	return [dict get $ids $cap]
+    }
+
+    method idcor {} {
+	return [$self cap idcor]
     }
 
     method idgrp {} {
-	if {$idgrp == -1} then {
-	    set qlogin [pg_quote $login]
-	    set sql "SELECT idgrp FROM global.nmuser WHERE login = $qlogin"
-	    $dbo exec $sql tab {
-		set idgrp $tab(idgrp)
-	    }
-	    if {$idgrp == -1} then {
-		error "login '$login' not found"
-	    }
-	}
-	return $idgrp
+	return [$self cap idgrp]
     }
 
 
