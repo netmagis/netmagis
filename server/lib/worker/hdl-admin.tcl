@@ -52,11 +52,11 @@ api-handler get {/admin/([a-z._]+:table)} yes {
 	set j $tab(j)
     }
     ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $j yes
+    ::scgiapp::set-body $j
 }
 
 api-handler get {/admin/([a-z._]+:table)/([0-9]+:id)} yes {
     } {
     ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $j yes
+    ::scgiapp::set-body $j
 }

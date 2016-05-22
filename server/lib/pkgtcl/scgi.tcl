@@ -374,7 +374,7 @@ namespace eval ::scgiserver:: {
 	    }
 
 	    proc set-json {dict} {
-		set-header Content-type application/json
+		set-header Content-Type application/json
 		set-body [tcl2json $dict]
 	    }
 
@@ -429,15 +429,22 @@ namespace eval ::scgiserver:: {
 		    return
 		}
 
+		fconfigure $state(sock) -translation crlf
+
 		if {$state(repbin)} then {
 		    set clen [string length $state(repbody)]
 		} else {
-		    set clen [string bytelength $state(repbody)]
+		    set u [encoding convertto utf-8 $state(repbody)]
+		    set clen [string length $u]
+
+		    puts "bytelength=[string bytelength $state(repbody)]"
+		    puts "length=[string length $state(repbody)]"
+		    puts "length+encoding=$clen"
 		}
 
 		set-header Status "200" false
-		set-header Content-type "text/html" false
-		set-header Content-length $clen
+		set-header Content-Type "text/html" false
+		set-header Content-Length $clen
 
 		# output registered cookies
 		dict for {name val} $state(cooktab) {
@@ -448,9 +455,12 @@ namespace eval ::scgiserver:: {
 		    puts $state(sock) "$k: $v"
 		}
 		puts $state(sock) ""
+		flush $state(sock)
+
 		if {$state(repbin)} then {
-		    flush $state(sock)
 		    fconfigure $state(sock) -translation binary
+		} else {
+		    fconfigure $state(sock) -encoding utf-8 -translation binary
 		}
 		puts -nonewline $state(sock) $state(repbody)
 

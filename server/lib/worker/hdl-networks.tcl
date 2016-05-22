@@ -29,7 +29,7 @@ api-handler get {/networks} yes {
 	# puts "r=$r"
     }
     ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $r yes
+    ::scgiapp::set-body $r
 }
 
 api-handler get {/networks/([0-9]+:idnet)} yes {
