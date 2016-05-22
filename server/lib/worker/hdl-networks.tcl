@@ -52,7 +52,7 @@ api-handler get {/networks/([0-9]+:idnet)} yes {
 				INNER JOIN dns.organization o USING (idorg)
 				INNER JOIN dns.p_network p USING (idnet)
 			    WHERE p.idgrp = $idgrp
-				AND p.idnet = $p::idnet
+				AND p.idnet = $idnet
 		    ) t
 		"
     set r ""
@@ -60,7 +60,7 @@ api-handler get {/networks/([0-9]+:idnet)} yes {
 	set r $tab(res)
     }
     if {$r eq ""} then {
-	::scgiapp::scgi-error 404 "Network '$p::idnet' not found"
+	::scgiapp::scgi-error 404 "Network '$idnet' not found"
     }
     ::scgiapp::set-header Content-Type application/json
     ::scgiapp::set-body $r

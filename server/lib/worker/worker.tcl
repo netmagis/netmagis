@@ -507,6 +507,70 @@ proc check-authtoken {token} {
 }
 
 ##############################################################################
+# Handler registration
+##############################################################################
+
+proc api-handler {method pathspec authneeded paramspec script} {
+    global route
+
+    set method [string tolower $method]
+
+    if {! [info exists route($method)]} then {
+	puts stderr "invalid method for route $pathspec"
+	exit 1
+    }
+
+    #
+    # Check the path specification
+    #
+
+    set n1 [regexp -all {[(]} $pathspec]
+    set n2 [regexp -all {[)]} $pathspec]
+    set n3 [regexp -all {[:]} $pathspec]
+    set n4 [regsub -all {\(([^:]+):[^)]+\)} $pathspec {} dummy]
+    if {$n1 != $n2 || $n2 != $n3 || $n3 != $n4} then {
+	puts stderr "invalid path specification '$pathspec'"
+	exit 1
+    }
+
+    #
+    # Extract variable names from path specification
+    #
+
+    set vars {}
+    foreach {all var} [regexp -all -inline {:([^)]+)\)} $pathspec] {
+	lappend vars $var
+    }
+
+    #
+    # Build regexp for URI matching
+    #
+
+    regsub -all {\(([^:]+):[^)]+\)} $pathspec {(\1)} re
+    set re "^$re$"
+
+    #
+    # Create new procedure for this handler
+    # An API-handler is transformed into a procedure which accepts
+    # the following parameters
+    # - _meth: get/post/delete/put
+    # - _parm: all parameters
+    # - _cookie: a dict with cookie items (e.g. "dict get $cookie session")
+    # - all parameters given in the handler header
+    #
+
+    incr route(handlernum)
+    set hname "_handler-$route(handlernum)"
+    proc $hname {_meth _parm _cookie _paramdict} "
+	::scgiapp::import-param \$_paramdict
+	unset _paramdict
+	$script
+    "
+
+    lappend route($method) [list $re $vars $paramspec $authneeded $hname]
+}
+
+##############################################################################
 # Request handling
 ##############################################################################
 
@@ -553,10 +617,10 @@ proc handle-request {uri meth parm cookie} {
 		#	- min: minimum number of occurrence (max is always 1)
 		# - authneeded: boolean true if access is restricted
 		#	to authenticated users
-		# - script: script to execute for this route
+		# - hname: name of proc for this handler
 		#
 
-		lassign $r re vars paramspec authneeded script
+		lassign $r re vars paramspec authneeded hname
 
 		lassign [check-route $uri $parm $re $vars $paramspec] ok tpar
 		if {$ok} then {
@@ -591,16 +655,16 @@ proc handle-request {uri meth parm cookie} {
 		}
 
 		#
-		# Run the script with all parameters imported
-		# Script is run with the following variables
+		# Run the script as a procedure to avoid namespace
+		# pollution. The procedure is run with the following
+		# parameters:
+		# - meth: http method
+		# - parm: see scgiapp::parse-param procedure
+		# - cookie: dict containing cookie items
+		# - tpar: query parameters of handler
 		#
-		# - parms() array
-		# - ::p::<query-parameter-or-uri-variable>
-		# - login ???
-		# - may be other variables
-		#
-		::scgiapp::import-param ::p $tpar
-		eval $script
+
+		$hname $meth $parm $cookie $tpar
 	    } else {
 		::scgiapp::scgi-error 404 "URI '$uri' not found"
 	    }
@@ -683,48 +747,6 @@ proc handle-static {page} {
 }
 
 
-
-proc api-handler {method pathspec authneeded paramspec script} {
-    global route
-
-    set method [string tolower $method]
-
-    if {! [info exists route($method)]} then {
-	puts stderr "invalid method for route $pathspec"
-	exit 1
-    }
-
-    #
-    # Check the path specification
-    #
-
-    set n1 [regexp -all {[(]} $pathspec]
-    set n2 [regexp -all {[)]} $pathspec]
-    set n3 [regexp -all {[:]} $pathspec]
-    set n4 [regsub -all {\(([^:]+):[^)]+\)} $pathspec {} dummy]
-    if {$n1 != $n2 || $n2 != $n3 || $n3 != $n4} then {
-	puts stderr "invalid path specification '$pathspec'"
-	exit 1
-    }
-
-    #
-    # Extract variable names from path specification
-    #
-
-    set vars {}
-    foreach {all var} [regexp -all -inline {:([^)]+)\)} $pathspec] {
-	lappend vars $var
-    }
-
-    #
-    # Build regexp for URI matching
-    #
-
-    regsub -all {\(([^:]+):[^)]+\)} $pathspec {(\1)} re
-    set re "^$re$"
-
-    lappend route($method) [list $re $vars $paramspec $authneeded $script]
-}
 
 try {
     thread-init $conffile $wrkdir

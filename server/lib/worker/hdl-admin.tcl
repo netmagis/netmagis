@@ -35,13 +35,13 @@ api-handler get {/admin/([a-z._]+:table)} yes {
     global allowed_tables
     global allowed_groups
 
-    if {[dict exists $allowed_tables $p::table]} then {
+    if {[dict exists $allowed_tables $table]} then {
 	set sql "SELECT array_to_json (array_agg (row_to_json (t.*))) AS j
-			FROM $p::table t
+			FROM $table t
 		"
-    } elseif {[dict exists $allowed_groups $p::table]} then {
+    } elseif {[dict exists $allowed_groups $table]} then {
 	set sql "SELECT json_agg (t.*) AS j
-			FROM $p::table t
+			FROM $table t
 		"
     } else {
 	::scgiapp::scgi-error 404 [format "Table %d not found" $table]

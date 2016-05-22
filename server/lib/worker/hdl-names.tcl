@@ -5,16 +5,16 @@ api-handler get {/names} yes {
 	test	0
 	cidr	0
     } {
-    if {$::p::test ne ""} then {
-	if {$p::view eq "" || $p::name eq "" || $p::domain eq ""} then {
+    if {$test ne ""} then {
+	if {$view eq "" || $name eq "" || $domain eq ""} then {
 	    scgiapp::scgi-error 400 "'test' needs view/name/domain parameters"
 	}
-	set idview [::u viewid $p::view]
+	set idview [::u viewid $view]
 	if {$idview eq ""} then {
 	    scgiapp::scgi-error 404 "View not found"
 	}
 	set msg [check-authorized-host ::dbdns [::u idcor] \
-				    $p::name $p::domain $idview trr $p::test]
+				    $name $domain $idview trr $test]
 	if {$msg ne ""} then {
 	    set idrr $trr(idrr)
 	    if {$idrr eq ""} then {
@@ -34,7 +34,7 @@ api-handler get {/names} yes {
 	    scgiapp::scgi-error 403 "Forbidden ($msg)"
 	}
     } else {
-	scgiapp::set-body [sub-names $p::view $p::name $p::domain $p::cidr]
+	scgiapp::set-body [sub-names $view $name $domain $cidr]
 	scgiapp::set-header Content-Type application/json
     }
 }
@@ -44,10 +44,10 @@ api-handler get {/names/([0-9]+:idrr)} yes {
     } {
 
     puts stderr "BINGO !"
-    puts "idrr=$p::idrr"
-    puts "fields=$p::fields"
+    puts "idrr=$idrr"
+    puts "fields=$fields"
 
-    if {! [read-rr-by-id $dbfd(dns) $p::idrr trr]} then {
+    if {! [read-rr-by-id $dbfd(dns) $idrr trr]} then {
 	puts "NOT FOUND"
     } else {
 	puts [array get trr]

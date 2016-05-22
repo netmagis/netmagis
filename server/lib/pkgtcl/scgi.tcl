@@ -436,10 +436,6 @@ namespace eval ::scgiserver:: {
 		} else {
 		    set u [encoding convertto utf-8 $state(repbody)]
 		    set clen [string length $u]
-
-		    puts "bytelength=[string bytelength $state(repbody)]"
-		    puts "length=[string length $state(repbody)]"
-		    puts "length+encoding=$clen"
 		}
 
 		set-header Status "200" false
@@ -511,14 +507,21 @@ namespace eval ::scgiserver:: {
 	    #
 	    # Import parameters from a dictionary into a specific namespace
 	    # Use a fully qualified namespace (e.g.: ::foo for example)
+	    # or variables in the uplevel scope.
 	    #
 
-	    proc import-param {ns dict} {
-		if {[namespace exists $ns]} then {
-		    namespace delete $ns
-		}
-		dict for {var val} $dict {
-		    namespace eval $ns [list variable $var $val]
+	    proc import-param {dict {ns {}}} {
+		if {$ns ne ""} then {
+		    if {[namespace exists $ns]} then {
+			namespace delete $ns
+		    }
+		    dict for {var val} $dict {
+			namespace eval $ns [list variable $var $val]
+		    }
+		} else {
+		    dict for {var val} $dict {
+			uplevel [list set $var $val]
+		    }
 		}
 	    }
 
