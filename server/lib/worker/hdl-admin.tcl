@@ -29,7 +29,7 @@ set allowed_groups {
 api-handler get {/admin/([a-z._]+:table)} yes {
     } {
     if {! [::u cap "p_admin"]} then {
-	::scgiapp::scgi-error 403 "Forbidden"
+	::scgiapp::scgi-error 403 [mc "Forbidden"]
     }
 
     global allowed_tables
@@ -44,7 +44,7 @@ api-handler get {/admin/([a-z._]+:table)} yes {
 			FROM $table t
 		"
     } else {
-	::scgiapp::scgi-error 404 [format "Table %d not found" $table]
+	::scgiapp::scgi-error 404 [mc "Table %d not found" $table]
     }
 
     set j ""

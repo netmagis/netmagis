@@ -38,7 +38,7 @@ api-handler get {/views/([0-9]+:idview)} yes {
 	set r $tab(res)
     }
     if {$r eq ""} then {
-	::scgiapp::scgi-error 404 "View '$idview' not found"
+	::scgiapp::scgi-error 404 [mc "View '%s' not found" $idview]
     }
     ::scgiapp::set-header Content-Type application/json
     ::scgiapp::set-body $r

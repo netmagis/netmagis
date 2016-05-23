@@ -16,6 +16,9 @@ package require pgdb
 package require lconf
 package require dbconf
 
+package require msgcat
+namespace import ::msgcat::*
+
 array set route {
     get {}
     post {}
@@ -203,12 +206,12 @@ snit::type ::nmuser {
 	set login $newlogin
     }
 
-    method fill {} {
+    method cap {cap} {
 	set idcor [dict get $ids idcor]
 	if {$idcor == -1} then {
 	    set qlogin [pg_quote $login]
-	    set sql "SELECT g.*
-			    FROM global.nmuser
+	    set sql "SELECT u.idcor, g.*
+			    FROM global.nmuser u
 				NATURAL INNER JOIN global.nmgroup g
 				WHERE login = $qlogin"
 	    set found 0
@@ -220,19 +223,15 @@ snit::type ::nmuser {
 		error "login '$login' not found"
 	    }
 	}
-    }
-
-    method cap {cap} {
-	$self fill
 	return [dict get $ids $cap]
     }
 
     method idcor {} {
-	return [$self cap idcor]
+	return [$self cap "idcor"]
     }
 
     method idgrp {} {
-	return [$self cap idgrp]
+	return [$self cap "idgrp"]
     }
 
 
@@ -583,6 +582,10 @@ proc api-handler {method pathspec authneeded paramspec script} {
 #   - stdout: <code> <text>
 
 proc handle-request {uri meth parm cookie} {
+    global wrkdir
+
+    uplevel #0 mclocale "C"
+    uplevel #0 mcload $wrkdir/msgs
 
     switch -regexp -matchvar last $uri {
 	{^/static/([[:alnum:]][-.[:alnum:]]*)$} {
@@ -652,6 +655,18 @@ proc handle-request {uri meth parm cookie} {
 		    ::nmuser create ::u
 		    ::u setdb ::dbdns
 		    ::u setlogin $login
+		}
+
+		#
+		# Locale settings
+		#
+
+		if {[dict exists $parm "l"]} then {
+		    set l [string trim [lindex [dict get $parm "l"] 0]]
+		    if {$l ne ""} then {
+			uplevel #0 mclocale $l
+			uplevel #0 mcload $wrkdir/msgs
+		    }
 		}
 
 		#

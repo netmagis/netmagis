@@ -7,31 +7,29 @@ api-handler get {/names} yes {
     } {
     if {$test ne ""} then {
 	if {$view eq "" || $name eq "" || $domain eq ""} then {
-	    scgiapp::scgi-error 400 "'test' needs view/name/domain parameters"
+	    scgiapp::scgi-error 400 [mc "'test' needs view/name/domain parameters"]
 	}
 	set idview [::u viewid $view]
 	if {$idview eq ""} then {
-	    scgiapp::scgi-error 404 "View not found"
+	    scgiapp::scgi-error 404 [mc "View '%s' not found" $view]
 	}
 	set msg [check-authorized-host ::dbdns [::u idcor] \
 				    $name $domain $idview trr $test]
-	if {$msg ne ""} then {
+	if {$msg eq ""} then {
+	    set j {[]}
 	    set idrr $trr(idrr)
-	    if {$idrr eq ""} then {
-		scgiapp::scgi-error 404 "Not found"
-	    } else {
+	    if {$idrr ne ""} then {
 		set sql "SELECT json_build_array (row_to_json (r)) AS j
 				FROM dns.full_rr r
 				WHERE idrr = $idrr"
-		set j ""
 		::dbdns exec $sql tab {
 		    set j $tab(j)
 		}
-		scgiapp::set-body "\[$j\]"
-		scgiapp::set-header Content-Type application/json
 	    }
+	    scgiapp::set-body $j
+	    scgiapp::set-header Content-Type application/json
 	} else {
-	    scgiapp::scgi-error 403 "Forbidden ($msg)"
+	    scgiapp::scgi-error 403 [mc "Forbidden (%s)" $msg]
 	}
     } else {
 	scgiapp::set-body [sub-names $view $name $domain $cidr]

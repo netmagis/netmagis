@@ -429,7 +429,7 @@ namespace eval ::scgiserver:: {
 		    return
 		}
 
-		fconfigure $state(sock) -translation crlf
+		fconfigure $state(sock) -encoding utf-8 -translation crlf
 
 		if {$state(repbin)} then {
 		    set clen [string length $state(repbody)]
@@ -439,7 +439,7 @@ namespace eval ::scgiserver:: {
 		}
 
 		set-header Status "200" false
-		set-header Content-Type "text/html" false
+		set-header Content-Type "text/html; charset=utf-8" false
 		set-header Content-Length $clen
 
 		# output registered cookies
@@ -456,7 +456,7 @@ namespace eval ::scgiserver:: {
 		if {$state(repbin)} then {
 		    fconfigure $state(sock) -translation binary
 		} else {
-		    fconfigure $state(sock) -encoding utf-8 -translation binary
+		    fconfigure $state(sock) -encoding utf-8 -translation lf
 		}
 		puts -nonewline $state(sock) $state(repbody)
 

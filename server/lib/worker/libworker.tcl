@@ -19,7 +19,7 @@ proc check-views {views} {
     set msg ""
 
     if {[llength $views] == 0} then {
-	set msg [format "You must select at least one view"]
+	set msg [mc "No view selected"]
 
     } else {
 	#
@@ -39,7 +39,7 @@ proc check-views {views} {
 
 	if {[llength $bad]> 0} then {
 	    set bad [join $bad ", "]
-	    set msg [format "You don't have access to these views: %s" $bad]
+	    set msg [mc "You don't have access to these views: %s" $bad]
 	}
     }
 
@@ -287,7 +287,7 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
     if {$iddom == -1} then {
 	set iddom [read-domain $dbfd $domain]
 	if {$iddom == -1} then {
-	    set msg [format "Domain '%s' not found" $domain]
+	    set msg [mc "Domain '%s' not found" $domain]
 	}
     } elseif {$domain eq ""} then {
 	set sql "SELECT name FROM dns.domain WHERE iddom = $iddom"
@@ -295,7 +295,7 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
 	    set domain $tab(name)
 	}
 	if {$domain eq ""} then {
-	    set msg [format "Domain-id '%s' not found" $iddom]
+	    set msg [mc "Domain-id '%s' not found" $iddom]
 	}
     }
 
@@ -319,7 +319,7 @@ proc check-domain {dbfd idcor _iddom _domain roles} {
 	    set found 1
 	}
 	if {! $found} then {
-	    set msg [format "You don't have rights on domain '%s'" $domain]
+	    set msg [mc "You don't have rights on domain '%s'" $domain]
 	}
     }
 
@@ -564,7 +564,7 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
     #
 
     if {! [info exists testrights($context)]} then {
-	return [format "Internal error: invalid context '%s'" $context]
+	return [mc "Internal error: invalid context '%s'" $context]
     }
 
     #
@@ -601,16 +601,16 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		    set fqdnref "$t(name).$t(domain)"
 		    switch $parm {
 			REJECT {
-			    return [format {%1$s is an alias of host %2$s in view %3$s} $fqdn $fqdnref $viewname]
+			    return [mc {%1$s is an alias of host %2$s in view %3$s} $fqdn $fqdnref $viewname]
 			}
 			CHECK {
 			    set ok [check-name-by-addresses $dbfd $idcor -1 t]
 			    if {! $ok} then {
-				return [format {You don't have rights on some IP addresses of '%1$s' referenced by alias '%2$s'} $fqdnref $fqdn]
+				return [mc {You don't have rights on some IP addresses of '%1$s' referenced by alias '%2$s'} $fqdnref $fqdn]
 			    }
 			}
 			default {
-			    return [format {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			}
 		    }
 		}
@@ -620,18 +620,18 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		foreach mx $lmx {
 		    switch $parm {
 			REJECT {
-			    return [format "'%s' is a MX" $fqdn]
+			    return [mc "'%s' is a MX" $fqdn]
 			}
 			CHECK {
 			    set idrr [lindex $mx 1]
 			    set ok [check-name-by-addresses $dbfd $idcor $idrr t]
 			    if {! $ok} then {
 				set fqdnmx "$t(name).$t(domain)"
-				return [format {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} $fqdnmx $fqdn]
+				return [mc {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} $fqdnmx $fqdn]
 			    }
 			}
 			default {
-			    return [format {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			}
 		    }
 		}
@@ -643,28 +643,28 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		    lassign $rm idrr idviewmbx
 		    # get mbox host
 		    if {! [read-rr-by-id $dbfd $idrr trrh]} then {
-			return [format "Internal error: id '%s' doesn't exists for a mail host" $idrr]
+			return [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
 		    }
 		    switch $parm {
 			REJECT {
 			    # This name is already a mail address
 			    # (it already has a mailbox host)
 			    set fqdnm "$trrh(name).$trrh(domain)"
-			    return [format {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn $viewname $fqdnm [::u viewname $idviewmbx]]
+			    return [mc {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn $viewname $fqdnm [::u viewname $idviewmbx]]
 			}
 			CHECK {
 
 			    # IP address check
 			    set ok [check-name-by-addresses $dbfd $idcor -1 trrh]
 			    if {! $ok} then {
-				return [format "You don't have rights on host holding mail for '%s'" $fqdn]
+				return [mc "You don't have rights on host holding mail for '%s'" $fqdn]
 			    }
 
 			    # Mail host checking
 			    set bidon -1
 			    set msg [check-domain $dbfd $idcor bidon trrh(domain) ""]
 			    if {$msg ne ""} then {
-				set r [format "You don't have rights on host holding mail for '%s'" $fqdn]
+				set r [mc "You don't have rights on host holding mail for '%s'" $fqdn]
 				append r "\n$msg"
 				return $r
 			    }
@@ -673,7 +673,7 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 			    # nothing
 			}
 			default {
-			    return [format {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			}
 		    }
 		} else {
@@ -685,10 +685,10 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 			    # nothing
 			}
 			EXISTS {
-			    return [format {'%1$s' is not a mail role in view '%2$s'} $fqdn $viewname]
+			    return [mc {'%1$s' is not a mail role in view '%2$s'} $fqdn $viewname]
 			}
 			default {
-			    return [format {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			    return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 			}
 		    }
 		}
@@ -704,11 +704,11 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 			    set laddr [lreplace $laddr $pos $pos]
 			}
 			if {[llength $laddr] > 0} then {
-			    return [format "'%s' is a mail host for mail domains" $fqdn]
+			    return [mc "'%s' is a mail host for mail domains" $fqdn]
 			}
 		    }
 		    default {
-			return [format {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 		    }
 		}
 	    }
@@ -717,22 +717,22 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		switch $parm {
 		    REJECT {
 			if {[llength $lip] > 0} then {
-			    return [format {'%1$s' has IP addresses in view '%2$s'} $fqdn $viewname]
+			    return [mc {'%1$s' has IP addresses in view '%2$s'} $fqdn $viewname]
 			}
 		    }
 		    EXISTS {
 			if {[llength $lip] == 0} then {
-			    return [format {Name '%1$s' is not a host in view '%2$s'} $fqdn $viewname]
+			    return [mc {Name '%1$s' is not a host in view '%2$s'} $fqdn $viewname]
 			}
 		    }
 		    CHECK {
 			set ok [check-name-by-addresses $dbfd $idcor -1 trr]
 			if {! $ok} then {
-			    return [format "You don't have rights on some IP addresses of '%s'" $fqdn]
+			    return [mc "You don't have rights on some IP addresses of '%s1$'" $fqdn]
 			}
 		    }
 		    default {
-			return [format {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
+			return [mc {Internal error: invalid parameter '%1$s' for '%2$s'} $parm "$context/$a"]
 		    }
 		}
 	    }
