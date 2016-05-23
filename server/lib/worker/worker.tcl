@@ -51,9 +51,7 @@ proc thread-init {conffile wdir} {
     #
 
     uplevel \#0 source $wdir/libworker.tcl
-    foreach f [lsort [glob -nocomplain $wdir/hdl-*.tcl]] {
-	uplevel \#0 source $f
-    }
+    load-handlers $wdir
 }
 
 ##############################################################################
@@ -509,6 +507,34 @@ proc check-authtoken {token} {
 # Handler registration
 ##############################################################################
 
+#
+# Prefix for handler procedures
+#
+array set curhdl {name {} count 0}
+
+#
+# Load all procedure handlers
+#
+
+proc load-handlers {wdir} {
+    global curhdl
+
+    foreach f [lsort [glob -nocomplain $wdir/hdl-*.tcl]] {
+	#
+	# extract the future prefix for handler proc
+	#
+	set curhdl(name) $f
+	regsub {.*/(hdl-[^/]*).tcl$} $curhdl(name) {\1} curhdl(name)
+	regsub -all {[^-a-zA-Z0-9]+} $curhdl(name) {-} curhdl(name)
+	set curhdl(count) 0
+
+	#
+	# load handler
+	#
+	uplevel \#0 source $f
+    }
+}
+
 proc api-handler {method pathspec authneeded paramspec script} {
     global route
 
@@ -558,8 +584,10 @@ proc api-handler {method pathspec authneeded paramspec script} {
     # - all parameters given in the handler header
     #
 
-    incr route(handlernum)
-    set hname "_handler-$route(handlernum)"
+    global curhdl
+    incr curhdl(count)
+
+    set hname "_$curhdl(name)-$curhdl(count)"
     proc $hname {_meth _parm _cookie _paramdict} "
 	::scgiapp::import-param \$_paramdict
 	unset _paramdict
