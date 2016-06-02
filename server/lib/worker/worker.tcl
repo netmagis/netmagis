@@ -612,110 +612,92 @@ proc api-handler {method pathspec authneeded paramspec script} {
 
 proc handle-request {uri meth parm cookie} {
     global wrkdir
+    global route
 
-    uplevel #0 mclocale "C"
+    uplevel #0 mclocale "en"
     uplevel #0 mcload $wrkdir/msgs
 
-    switch -regexp -matchvar last $uri {
-	{^/static/([[:alnum:]][-.[:alnum:]]*)$} {
-	    if {$meth eq "get"} then {
-		handle-static [lindex $last 1]
-	    } else {
-		::scgiapp::scgi-error 405 {Method not allowed}
-	    }
+    set ok 0
+    foreach r $route($meth) {
+	#
+	# Each route is registered as a list
+	#	{ re vars paramspec authneeded script }
+	# with:
+	# - re: regexp including groups "(...)" for variable
+	#	matching
+	# - vars: list of variables for group matching
+	# - paramspec: list of query parameters spec
+	#	{ param min param min ... }
+	#	example : { crit 0 field 1 }
+	#	- param: parameter name
+	#	- min: minimum number of occurrence (max is always 1)
+	# - authneeded: boolean true if access is restricted
+	#	to authenticated users
+	# - hname: name of proc for this handler
+	#
+
+	lassign $r re vars paramspec authneeded hname
+
+	lassign [check-route $uri $parm $re $vars $paramspec] ok tpar
+	if {$ok} then {
+	    break
 	}
-	default {
-	    #
-	    # Try API
-	    # Search a suitable route among all routes registered
-	    # in the route() array by the api-handler procedure
-	    #
+    }
 
-	    global route
+    if {$ok} then {
+	#
+	# This route is ok. Try to reconnect to the database
+	# and check authentication
+	#
 
-	    set ok 0
-	    foreach r $route($meth) {
-		#
-		# Each route is registered as a list
-		#	{ re vars paramspec authneeded script }
-		# with:
-		# - re: regexp including groups "(...)" for variable
-		#	matching
-		# - vars: list of variables for group matching
-		# - paramspec: list of query parameters spec
-		#	{ param min param min ... }
-		#	example : { crit 0 field 1 }
-		#	- param: parameter name
-		#	- min: minimum number of occurrence (max is always 1)
-		# - authneeded: boolean true if access is restricted
-		#	to authenticated users
-		# - hname: name of proc for this handler
-		#
-
-		lassign $r re vars paramspec authneeded hname
-
-		lassign [check-route $uri $parm $re $vars $paramspec] ok tpar
-		if {$ok} then {
-		    break
-		}
-	    }
-
-	    if {$ok} then {
-		#
-		# This route is ok. Try to reconnect to the database
-		# and check authentication
-		#
-
-		try {
-		    ::dbdns reconnect
-		    ::dbmac reconnect
-		} on error msg {
-		    ::scgiapp::scgi-error 503 $msg
-		}
-
-		set authtoken [::scgiapp::dget $cookie "session"]
-		set login [check-authtoken $authtoken]
-		if {$authneeded && $login eq ""} then {
-		    ::scgiapp::scgi-error 403 "Not authenticated"
-		}
-
-		if {$login ne ""} then {
-		    catch {::u destroy}
-		    ::nmuser create ::u
-		    ::u setdb ::dbdns
-		    ::u setlogin $login
-		}
-
-		#
-		# Locale settings
-		#
-
-		if {[dict exists $parm "l"]} then {
-		    set l [string trim [lindex [dict get $parm "l"] 0]]
-		} else {
-		    set l [::scgiapp::get-locale {en fr}]
-		}
-
-		if {$l ne ""} then {
-		    uplevel #0 mclocale $l
-		    uplevel #0 mcload $wrkdir/msgs
-		}
-
-		#
-		# Run the script as a procedure to avoid namespace
-		# pollution. The procedure is run with the following
-		# parameters:
-		# - meth: http method
-		# - parm: see scgiapp::parse-param procedure
-		# - cookie: dict containing cookie items
-		# - tpar: query parameters of handler
-		#
-
-		$hname $meth $parm $cookie $tpar
-	    } else {
-		::scgiapp::scgi-error 404 "URI '$uri' not found"
-	    }
+	try {
+	    ::dbdns reconnect
+	    ::dbmac reconnect
+	} on error msg {
+	    ::scgiapp::scgi-error 503 $msg
 	}
+
+	set authtoken [::scgiapp::dget $cookie "session"]
+	set login [check-authtoken $authtoken]
+	if {$authneeded && $login eq ""} then {
+	    ::scgiapp::scgi-error 403 "Not authenticated"
+	}
+
+	if {$login ne ""} then {
+	    catch {::u destroy}
+	    ::nmuser create ::u
+	    ::u setdb ::dbdns
+	    ::u setlogin $login
+	}
+
+	#
+	# Locale settings
+	#
+
+	if {[dict exists $parm "l"]} then {
+	    set l [string trim [lindex [dict get $parm "l"] 0]]
+	} else {
+	    set l [::scgiapp::get-locale {en fr}]
+	}
+
+	if {$l ne ""} then {
+	    uplevel #0 mclocale $l
+	    uplevel #0 mcload $wrkdir/msgs
+	}
+
+	#
+	# Run the script as a procedure to avoid namespace
+	# pollution. The procedure is run with the following
+	# parameters:
+	# - meth: http method
+	# - parm: see scgiapp::parse-param procedure
+	# - cookie: dict containing cookie items
+	# - tpar: query parameters of handler
+	#
+
+	$hname $meth $parm $cookie $tpar
+    } else {
+	::scgiapp::scgi-error 404 "URI '$uri' not found"
     }
 }
 

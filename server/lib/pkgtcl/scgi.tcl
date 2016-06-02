@@ -653,7 +653,7 @@ namespace eval ::scgiserver:: {
 			}
 		    }
 		} else {
-		    set locale "C"
+		    set locale "en"
 		}
 		return $locale
 	    }
