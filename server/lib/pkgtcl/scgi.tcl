@@ -588,6 +588,77 @@ namespace eval ::scgiserver:: {
 	    }
 
 	    #
+	    # Parse accept-language header and choose the
+	    # appropriate language among those listed in the
+	    # "avail" list
+	    # accept-language is provided by the
+	    # HTTP_ACCEPT_LANGUAGE SCGI header, whose value
+	    # is a string under the RFC 2616 format
+	    #	lang [;q=\d+], ...
+	    #
+
+	    proc get-locale {avail} {
+		set accepted [string tolower [get-header HTTP_ACCEPT_LANGUAGE]]
+		if {$accepted ne ""} then {
+		    #
+		    # Parse accept-language string and build two arrays:
+		    # tabl($quality) {list of accepted languages}
+		    # tabq($lang) $quality
+		    #
+		    foreach a [split $accepted ","] {
+			regsub -all {\s+} $a {} a
+			set s [split $a ";"]
+			set lang [lindex $s 0]
+			set q 1
+			foreach param [lreplace $s 0 0] {
+			    regexp {^q=([.0-9]+)$} $param foo q
+			}
+			lappend tabl($q) $lang
+			set tabq($lang) $q
+		    }
+		    #
+		    # If there is a sub-language-tag, add the
+		    # language-tag if it does not exist.
+		    # There may be any number of sub-tags (e.g
+		    # en-us-nyc-manhattan)
+		    #
+		    foreach l [array names tabq] {
+			set q $tabq($l)
+			set ll [split $l "-"]
+			while {[llength $ll] > 1} {
+			    set ll [lreplace $ll end end]
+			    set llp [join $ll "-"]
+			    if {! [info exists tabq($llp)]} then {
+				lappend tabl($q) $llp
+				set tabq($llp) $q
+			    }
+			}
+		    }
+
+		    #
+		    # Filter accepted languages by available languages
+		    # using quality factor.
+		    #
+		    set avail [string tolower $avail]
+		    set locale "C"
+		    foreach q [lsort -real -decreasing [array names tabl]] {
+			foreach l $tabl($q) {
+			    if {[lsearch -exact $avail $l] != -1} then {
+				set locale $l
+				break
+			    }
+			}
+			if {$locale ne "C"} then {
+			    break
+			}
+		    }
+		} else {
+		    set locale "C"
+		}
+		return $locale
+	    }
+
+	    #
 	    # Get a value from a dictionary, using a default value
 	    # if key is not found.
 	    #
