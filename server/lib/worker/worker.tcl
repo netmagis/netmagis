@@ -8,6 +8,7 @@
 #
 
 set conf(static-dir)	/tmp
+set conf(lang)		{en fr}
 
 package require snit
 package require Pgtcl
@@ -691,10 +692,13 @@ proc handle-request {uri meth parm cookie} {
 
 		if {[dict exists $parm "l"]} then {
 		    set l [string trim [lindex [dict get $parm "l"] 0]]
-		    if {$l ne ""} then {
-			uplevel #0 mclocale $l
-			uplevel #0 mcload $wrkdir/msgs
-		    }
+		} else {
+		    set l [::scgiapp::get-locale {en fr}]
+		}
+
+		if {$l ne ""} then {
+		    uplevel #0 mclocale $l
+		    uplevel #0 mcload $wrkdir/msgs
 		}
 
 		#
