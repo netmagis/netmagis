@@ -1,9 +1,6 @@
 api-handler get {/login} no {
-	user	1
-	passwd	1
     } {
-
-    ::scgiapp::set-json {{a 1 b 2 c {areuh tagada bouzouh}}}
-
+    ::scgiapp::set-cookie session bla 0 / "" 0 0
+    ::scgiapp::set-header Content-Type text/html
+    ::scgiapp::set-body "<html><title>login ok</title><body>welcome!</body></html>"
 }
-
