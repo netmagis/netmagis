@@ -742,41 +742,6 @@ proc check-route {uri parm re vars paramspec} {
     return [list $ok $tpar]
 }
 
-proc handle-static {page} {
-    global conf
-
-    set path $conf(static-dir)/$page
-
-    if {[file exists $path]} then {
-	# Determine Content-Type, based on file extension
-	switch -glob [string tolower $page] {
-	    *.png	{ set ct "image/png" ; set bin 1 }
-	    *.gif	{ set ct "image/gif" ; set bin 1 }
-	    *.jpg	{ set ct "image/jpeg" ; set bin 1 }
-	    *.jpeg	{ set ct "image/jpeg" ; set bin 1 }
-	    *.pdf	{ set ct "application/pdf" ; set bin 1 }
-	    *.html	{ set ct "text/html" ; set bin 0 }
-	    default	{ set ct "text/plain" ; set bin 0 }
-	}
-
-	if {[catch {set fd [open $path "r"]} msg]} then {
-	    ::scgiapp::scgi-error 404 "Cannot open '$page' ($msg)"
-	}
-	if {$bin} then {
-	    fconfigure $fd -translation binary
-	}
-	set content [read $fd]
-	close $fd
-
-	::scgiapp::set-header Content-type $ct
-	::scgiapp::set-body $content $bin
-    } else {
-	::scgiapp::scgi-error 404 "'$page' not found"
-    }
-}
-
-
-
 try {
     thread-init $conffile $wrkdir
 } on error msg {
