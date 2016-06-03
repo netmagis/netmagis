@@ -1,6 +1,7 @@
 array set fileext {
     html text/html
     json application/json
+    js   application/javascript
     pdf  application/pdf
 }
 
@@ -39,6 +40,11 @@ api-handler get {/files/([-a-zA-Z0-9][-a-zA-Z0-9.]*:name)} yes {
 	close $fd
     } on error msg {
 	::scgiapp::scgi-error 404 [mc "Error reading file '%s'" $name]
+    }
+
+    # Replace templates variables by their values
+    if {$ext eq "html"} then {
+	regsub -all {%LANG%} $r $lang r
     }
 
     ::scgiapp::set-header Content-Type $mimetype
