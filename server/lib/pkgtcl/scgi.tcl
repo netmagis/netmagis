@@ -219,6 +219,7 @@ namespace eval ::scgiserver:: {
 		set state(sock) $sock
 		set state(done) false
 		set state(errcode) 500
+		set state(repbin) false
 
 		try {
 		    lassign [scgi-read $sock] state(reqhdrs) body
