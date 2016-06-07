@@ -150,7 +150,7 @@ namespace eval ::scgiserver:: {
 
 	namespace eval ::scgiapp:: {
 	    namespace export accept \
-			    get-header \
+			    get-header get-body-json \
 			    set-header set-body set-json set-cookie \
 			    scgi-error \
 			    output
@@ -314,6 +314,14 @@ namespace eval ::scgiserver:: {
 	    proc get-header {key {defval {}}} {
 		variable state
 		return [dget $state(reqhdrs) $key $defval]
+	    }
+
+	    proc get-body-json {parm} {
+		set btype [dict get $parm "_bodytype"]
+		if {$btype ne "json"} then {
+		    scgi-error 404 "Invalid type (JSON expected)"
+		}
+		return [dict get $parm "_body"]
 	    }
 
 	    proc set-header {key val {replace {true}}} {
@@ -493,7 +501,8 @@ namespace eval ::scgiserver:: {
 			}
 			{application/json} {
 			    dict set parm _bodytype "json"
-			    dict set parm _body [::json::json2dict $body]
+			    dict set parm _body $body
+			    dict set parm _bodydict [::json::json2dict $body]
 			}
 			default {
 			    dict set parm _bodytype $ctype

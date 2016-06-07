@@ -8,6 +8,7 @@
  {Forbidden (%s)} {Ressource non autorisée (%s)}
  {View '%s' not found} {Vue '%s' non trouvée}
  {Table '%s' not found} {Table '%s' non trouvée}
+ {Table '%s' not allowed} {Table '%s' interdite}
  {Network '%s' not found} {Réseau '%s' non trouvé}
  {Domain '%s' not found} {Domaine '%s' non trouvé}
  {Domain-id '%s' not found} {Identificateur de domaine '%s' non trouvé}
@@ -29,4 +30,7 @@
  {'%s' is a mail host for mail domains} {'%s' est un hébergeur de messagerie}
  {'%1$s' has IP addresses in view '%2$s'} {'%1$s' a des adresses IP dans la vue '%2$s'}
  {Name '%1$s' is not a host in view '%2$s'} {Le nom '%1$s' n'est pas une machine dans la vue '%2$s'}
+ {Resource %1$d of table %2$s not found} {Ressource %1$d de la table %2$s non trouvée}
+  {%s parameter is not numeric} {Le paramètre %s n'est pas numérique}
+  {Invalid JSON field '%s'} {Attribut JSON '%s' invalide}
 }
