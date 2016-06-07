@@ -9,6 +9,7 @@ install:
 	cd etc ; make $(DIRS) install
 	cd bin ; make $(DIRS) install
 	cd lib ; make $(DIRS) SUBST="$(SUBST)" VERSION=$(VERSION) install
+	cd www ; make NMLIBDIR=$(NMLIBDIR) install
 	cd examples ; make $(DIRS) install
 	mkdir -p $(DESTDIR)$(NMVARDIR)/dbdump
 

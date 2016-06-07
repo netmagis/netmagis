@@ -18,7 +18,9 @@ install: build
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)$(NMLIBDIR)/pkgtcl
 	for F in *.tcl ; do \
-	    $(NINSTALL) -m 0644 $(SUBST) $$F $(DESTDIR)$(NMLIBDIR)/pkgtcl ; \
+	    $(NINSTALL) -m 0644 \
+		    -e "s|%NMVERSION%|$(VERSION)|" \
+		    $(SUBST) $$F $(DESTDIR)$(NMLIBDIR)/pkgtcl ; \
 	done
 
 clean:

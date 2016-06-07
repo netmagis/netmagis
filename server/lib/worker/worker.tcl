@@ -7,6 +7,7 @@
 # - auto_path: path of Tcl packages specific to Netmagis
 #
 
+set conf(static-dir)	%NMLIBDIR%/www
 set conf(static-dir)	/tmp
 set conf(lang)		{en fr}
 
