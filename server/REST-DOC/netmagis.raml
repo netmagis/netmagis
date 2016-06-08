@@ -67,14 +67,12 @@
 			example: |
 			    "domains": [
 				{
-				    "domainId": 5,
-				    "name": "example.com",
-				    "link": "/domains/5"
+				    "iddom": 5,
+				    "name": "example.com"
 				},
 				{
-				    "domainId": 19,
-				    "name": "example.org",
-				    "link": "/domains/19"
+				    "iddom": 19,
+				    "name": "example.org"
 				}
 			    ]
     post: XXXXXXXXXXXXXXXXXXXXXXxx
@@ -83,7 +81,91 @@
 	get: XXX?
 	put: XXXXXXXXXXXXXXXXXXXXXXxx
 	delete:
+
 /dhcpranges
+    description: Collection of dynamic DHCP ranges
+    get:
+	description: get all DHCP ranges allowed for my group for a given addr
+	queryParameters:
+	    cidr:
+		required: true
+		type: cidr
+		example: 198.51.100.0/24
+	    responses:
+		200:
+		    body:
+			application/json:
+			    example: |
+				[
+				    {
+					iddhcprange: 1
+					min: 198.51.100.10
+					max: 198.51.100.20
+					iddom: 2
+					default_lease_time: null
+					max_lease_time: 3600
+					iddhcpprof: 3
+				    },
+				    ...
+				]
+    post:
+	description: add a new DHCP range
+	queryParameters: none
+	request:		XXX
+	    application/json:
+		example:
+		    {
+			min: 198.51.100.10
+			max: 198.51.100.20
+			iddom: 2
+			default_lease_time: null
+			max_lease_time: 3600
+			iddhcpprof: 3
+		    }
+	    note: no iddhcprange is given
+	responses:
+	    200:
+		body:
+		    application/json:
+			example:
+			    {
+				min: 198.51.100.10
+				max: 198.51.100.20
+				iddom: 2
+				default_lease_time: null
+				max_lease_time: 3600
+				iddhcpprof: 3
+			    }
+    /{iddhcprange}:
+	description: one dynamic DHCP range
+	put:
+	    description: updates an existing DHCP range
+	    request:		XXX
+		application/json
+		    example:
+			{
+			    min: 198.51.100.10
+			    max: 198.51.100.20
+			    iddom: 2
+			    default_lease_time: null
+			    max_lease_time: 3600
+			    iddhcpprof: 3
+			}
+	    responses:
+		200:
+		    body: empty
+	delete:
+	    description: deletes an existing DHCP range
+	    request:		XXX
+		body: empty
+	    responses:
+		200:
+		    body: empty
+
+
+
+
+
 /dhcpprofiles
 /networks
     /{networkId}
