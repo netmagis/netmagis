@@ -2,18 +2,18 @@
 # This file provides two packages to build a SCGI-based application
 #
 # It is in fact divided into 2 different packages:
-# - scgiserver: this package contains only one function to
+# - for the server: this package contains only one function to
 #	start the multi-threaded SCGI server
-# - scgiapp: this package is implicitely loaded into each thread
+# - for the app: this package is implicitely loaded into each thread
 #	started by the server (see thrscript)
 #
 
 package require Tcl 8.6
 package require Thread 2.7
 
-package provide scgiserver 0.1
+package provide scgi 0.1
 
-namespace eval ::scgiserver:: {
+namespace eval ::scgi:: {
     namespace export start
 
     ###########################################################################
@@ -40,7 +40,7 @@ namespace eval ::scgiserver:: {
     # HTTP proxy
     #
     # Usage:
-    #	::scgiserver::start [options] init-script handle-function
+    #	::scgi::start [options] init-script handle-function
     #	with standard options:
     #		-minworkers: minimum number of threads in thread pool
     #		-maxworkers: maximum number of threads in thread pool
@@ -51,7 +51,7 @@ namespace eval ::scgiserver:: {
     #
     #	and arguments:
     #	- init-script: script to call in each worker thread. This script
-    #		is called after creating the scgiapp package. Since
+    #		is called after creating the client scgi package. Since
     #		each thread is created with a default Tcl interpreter
     #		(thus containing only the initial set of Tcl commands),
     #		the init-script should source a file containing the
@@ -112,8 +112,8 @@ namespace eval ::scgiserver:: {
 			-maxworkers $p(-maxworkers) \
 			-idletime $p(-idletime) \
 			-initcmd "$thrscript ;
-				set ::scgiapp::handlefn $handlereq ;
-				set ::scgiapp::debug $p(-debug) ;
+				set ::scgi::handlefn $handlereq ;
+				set ::scgi::debug $p(-debug) ;
 				$initscript" \
 		    ]
 
@@ -133,7 +133,7 @@ namespace eval ::scgiserver:: {
 	variable tpid
 
 	::thread::detach $sock
-	set jid [tpool::post $tpid "::scgiapp::accept $sock $host $port"]
+	set jid [tpool::post $tpid "::scgi::accept $sock $host $port"]
     }
 
     ###########################################################################
@@ -148,16 +148,16 @@ namespace eval ::scgiserver:: {
 	package require json 1.1
 	package require json::write 1.0
 
-	namespace eval ::scgiapp:: {
+	namespace eval ::scgi:: {
 	    namespace export accept \
 			    get-header get-body-json \
 			    set-header set-body set-json set-cookie \
-			    scgi-error \
+			    serror \
 			    output
 
 	    #
 	    # Name of the function (called in accept) to handle requests
-	    # This variable is used in the ::scgiserver::start function.
+	    # This variable is used in the ::scgi::start function.
 	    #
 
 	    variable handlefn
@@ -194,7 +194,7 @@ namespace eval ::scgiserver:: {
 
 	    #
 	    # This function is called from the server thread
-	    # by the ::scgiserver::server-connect function,
+	    # by the ::scgi::server-connect function,
 	    # indirectly by the tpool::post command.
 	    # 
 
@@ -240,7 +240,7 @@ namespace eval ::scgiserver:: {
 		    }
 
 		    if {$debug} then {
-			set-body "<pre>Error during ::scgiapp::accept</pre>"
+			set-body "<pre>Error during ::scgi::accept</pre>"
 			set-body "\n<p>\n"
 			global errorInfo
 			set-body "<pre>$errorInfo</pre>"
@@ -304,7 +304,7 @@ namespace eval ::scgiserver:: {
 		return [list $hdrs $body]
 	    }
 
-	    proc scgi-error {code reason} {
+	    proc serror {code reason} {
 		variable state
 
 		set state(errcode) $code
@@ -319,7 +319,7 @@ namespace eval ::scgiserver:: {
 	    proc get-body-json {parm} {
 		set btype [dict get $parm "_bodytype"]
 		if {$btype ne "json"} then {
-		    scgi-error 404 "Invalid type (JSON expected)"
+		    serror 404 "Invalid type (JSON expected)"
 		}
 		return [dict get $parm "_body"]
 	    }

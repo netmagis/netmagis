@@ -16,8 +16,8 @@ api-handler get {/views} yes {
     ::dbdns exec $sql tab {
 	set r $tab(res)
     }
-    ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $r
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $r
 }
 
 api-handler get {/views/([0-9]+:idview)} yes {
@@ -38,8 +38,8 @@ api-handler get {/views/([0-9]+:idview)} yes {
 	set r $tab(res)
     }
     if {$r eq ""} then {
-	::scgiapp::scgi-error 404 [mc "View '%s' not found" $idview]
+	::scgi::serror 404 [mc "View '%s' not found" $idview]
     }
-    ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $r
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $r
 }

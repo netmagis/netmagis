@@ -4,14 +4,14 @@ set pkgdir %NMLIBDIR%/pkgtcl
 set pkgdir ../lib/pkgtcl
 
 lappend auto_path $pkgdir
-package require scgiserver
+package require scgi
 
 set conffile ./netmagis.conf
 
 set wrkrdir %NMLIBDIR%/worker
 set wrkrdir ../lib/worker
 
-::scgiserver::start \
+::scgi::start \
 	    -debug true \
 	    -minworkers 1 \
 	    "set conffile $conffile

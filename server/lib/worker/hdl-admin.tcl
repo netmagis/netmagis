@@ -29,13 +29,13 @@ set admin_tables {
 api-handler get {/admin/([a-z._]+:table)} yes {
     } {
     if {! [::u cap "p_admin"]} then {
-	::scgiapp::scgi-error 403 [mc "Forbidden"]
+	::scgi::serror 403 [mc "Forbidden"]
     }
 
     global admin_tables
 
     if {! [dict exists $admin_tables $table]} then {
-	::scgiapp::scgi-error 404 [mc "Table %s not found" $table]
+	::scgi::serror 404 [mc "Table %s not found" $table]
     }
     lassign [dict get $admin_tables $table] type lid
 
@@ -49,7 +49,7 @@ api-handler get {/admin/([a-z._]+:table)} yes {
 	if {[dict exists $_parm $id]} then {
 	    set val [lindex [dict get $_parm $id] 0]
 	    if {! [regexp {^[0-9]+$} $val]} then {
-		::scgiapp::scgi-error 404 [mc "%s parameter is not numeric" $id]
+		::scgi::serror 404 [mc "%s parameter is not numeric" $id]
 	    }
 	    lappend lwhere "$id = $val"
 	}
@@ -85,20 +85,20 @@ api-handler get {/admin/([a-z._]+:table)} yes {
 	set j $tab(j)
     }
 
-    ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $j
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
 }
 
 api-handler get {/admin/([a-z._]+:table)/([0-9]+:id)} yes {
     } {
     if {! [::u cap "p_admin"]} then {
-	::scgiapp::scgi-error 403 [mc "Forbidden"]
+	::scgi::serror 403 [mc "Forbidden"]
     }
 
     global admin_tables
 
     if {! [dict exists $admin_tables $table]} then {
-	::scgiapp::scgi-error 404 [mc "Table %s not found" $table]
+	::scgi::serror 404 [mc "Table %s not found" $table]
     }
     lassign [dict get $admin_tables $table] type lid
 
@@ -130,11 +130,11 @@ api-handler get {/admin/([a-z._]+:table)/([0-9]+:id)} yes {
     }
 
     if {! $found} then {
-	::scgiapp::scgi-error 404 [mc {Resource %1$d of table %2$s not found} $id $table]
+	::scgi::serror 404 [mc {Resource %1$d of table %2$s not found} $id $table]
     }
 
-    ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $j
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
 }
 
 #
@@ -152,21 +152,21 @@ api-handler get {/admin/([a-z._]+:table)/([0-9]+:id)} yes {
 api-handler post {/admin/([a-z._]+:table)} yes {
     } {
     if {! [::u cap "p_admin"]} then {
-	::scgiapp::scgi-error 403 [mc "Forbidden"]
+	::scgi::serror 403 [mc "Forbidden"]
     }
 
     global admin_tables
 
     if {! [dict exists $admin_tables $table]} then {
-	::scgiapp::scgi-error 404 [mc "Table %s not found" $table]
+	::scgi::serror 404 [mc "Table %s not found" $table]
     }
     lassign [dict get $admin_tables $table] type lid
 
     if {$type ne "ref"} then {
-	::scgiapp::scgi-error 403 [mc "Table %s not allowed" $table]
+	::scgi::serror 403 [mc "Table %s not allowed" $table]
     }
     set idname [lindex $lid 0]
-    set qbody [pg_quote [::scgiapp::get-body-json $_parm]]
+    set qbody [pg_quote [::scgi::get-body-json $_parm]]
 
     #
     # Insert the new item in collection
@@ -192,8 +192,8 @@ api-handler post {/admin/([a-z._]+:table)} yes {
 	}
     }
 
-    ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $j
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
 }
 
 #
@@ -209,16 +209,16 @@ api-handler post {/admin/([a-z._]+:table)} yes {
 api-handler put {/admin/([a-z._]+:table)/([0-9]+:id)} yes {
     } {
     if {! [::u cap "p_admin"]} then {
-	::scgiapp::scgi-error 403 [mc "Forbidden"]
+	::scgi::serror 403 [mc "Forbidden"]
     }
 
     global admin_tables
 
     if {! [dict exists $admin_tables $table]} then {
-	::scgiapp::scgi-error 404 [mc "Table %s not found" $table]
+	::scgi::serror 404 [mc "Table %s not found" $table]
     }
     lassign [dict get $admin_tables $table] type lid
-    set body [::scgiapp::get-body-json $_parm]
+    set body [::scgi::get-body-json $_parm]
     set qbody [pg_quote $body]
     set temp "temp[::thread::id]"
 
@@ -235,7 +235,7 @@ api-handler put {/admin/([a-z._]+:table)/([0-9]+:id)} yes {
 	set lcol [list $idname]
 	dict for {name val} [dict get $_parm "_bodydict"] {
 	    if {! [regexp {^[a-z][_a-z]*$} $name]} then {
-		::scgiapp::scgi-error 404 [mc "Invalid JSON field '%s'" $name]
+		::scgi::serror 404 [mc "Invalid JSON field '%s'" $name]
 	    }
 	    lappend lcol $name
 	}
@@ -267,6 +267,6 @@ api-handler put {/admin/([a-z._]+:table)/([0-9]+:id)} yes {
 	::dbdns exec $sql
     }
 
-    ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body ""
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body ""
 }

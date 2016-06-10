@@ -28,8 +28,8 @@ api-handler get {/networks} yes {
 	set r $tab(res)
 	# puts "r=$r"
     }
-    ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $r
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $r
 }
 
 api-handler get {/networks/([0-9]+:idnet)} yes {
@@ -60,8 +60,8 @@ api-handler get {/networks/([0-9]+:idnet)} yes {
 	set r $tab(res)
     }
     if {$r eq ""} then {
-	::scgiapp::scgi-error 404 [mc "Network '%s' not found" $idnet]
+	::scgi::serror 404 [mc "Network '%s' not found" $idnet]
     }
-    ::scgiapp::set-header Content-Type application/json
-    ::scgiapp::set-body $r
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $r
 }

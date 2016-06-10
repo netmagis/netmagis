@@ -74,7 +74,7 @@ snit::type ::nmlog {
 
     method write {event msg {date {}} {login {}} {ip {}}} {
 	if {$ip eq ""} then {
-	    set ip [::scgiapp::get-header "REMOTE_ADDR"]
+	    set ip [::scgi::get-header "REMOTE_ADDR"]
 	}
 
 	if {$login eq ""} then {
@@ -499,7 +499,7 @@ proc check-authtoken {token} {
 
     if {$found} then {
 	# re-inject cookie (for login/call-cgi)
-	::scgiapp::set-cookie "session" $token 0 "" "" 0 0
+	::scgi::set-cookie "session" $token 0 "" "" 0 0
     }
 
     return $login
@@ -591,7 +591,7 @@ proc api-handler {method pathspec authneeded paramspec script} {
 
     set hname "_$curhdl(name)-$curhdl(count)"
     proc $hname {_meth _parm _cookie _paramdict} "
-	::scgiapp::import-param \$_paramdict
+	::scgi::import-param \$_paramdict
 	unset _paramdict
 	$script
     "
@@ -655,13 +655,13 @@ proc handle-request {uri meth parm cookie} {
 	    ::dbdns reconnect
 	    ::dbmac reconnect
 	} on error msg {
-	    ::scgiapp::scgi-error 503 $msg
+	    ::scgi::serror 503 $msg
 	}
 
-	set authtoken [::scgiapp::dget $cookie "session"]
+	set authtoken [::scgi::dget $cookie "session"]
 	set login [check-authtoken $authtoken]
 	if {$authneeded && $login eq ""} then {
-	    ::scgiapp::scgi-error 403 "Not authenticated"
+	    ::scgi::serror 403 "Not authenticated"
 	}
 
 	if {$login ne ""} then {
@@ -678,7 +678,7 @@ proc handle-request {uri meth parm cookie} {
 	if {[dict exists $parm "l"]} then {
 	    set l [string trim [lindex [dict get $parm "l"] 0]]
 	} else {
-	    set l [::scgiapp::get-locale {en fr}]
+	    set l [::scgi::get-locale {en fr}]
 	}
 
 	if {$l ne ""} then {
@@ -691,14 +691,14 @@ proc handle-request {uri meth parm cookie} {
 	# pollution. The procedure is run with the following
 	# parameters:
 	# - meth: http method
-	# - parm: see scgiapp::parse-param procedure
+	# - parm: see scgi::parse-param procedure
 	# - cookie: dict containing cookie items
 	# - tpar: query parameters of handler
 	#
 
 	$hname $meth $parm $cookie $tpar
     } else {
-	::scgiapp::scgi-error 404 "URI '$uri' not found"
+	::scgi::serror 404 "URI '$uri' not found"
     }
 }
 
@@ -734,7 +734,7 @@ proc check-route {uri parm re vars paramspec} {
 		set ok 0
 		break
 	    } else {
-		set vals [::scgiapp::dget $parm $var]
+		set vals [::scgi::dget $parm $var]
 		dict set tpar $var [lindex $vals 0]
 	    }
 	}
