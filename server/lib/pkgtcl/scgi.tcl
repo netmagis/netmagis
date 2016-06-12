@@ -324,6 +324,69 @@ namespace eval ::scgi:: {
 		return [dict get $parm "_body"]
 	    }
 
+	    # check json attributes in the object against the
+	    # specification (see below), and store
+	    # individual values either in the array, or in variables
+	    # named after the attribute name in the upper context.
+	    # returns true if JSON input is valid, else false
+	    # Note: spec is a list of {attrname type [defval]}
+	    #	with type in {int inet4 text {}}
+
+	    proc check-json-attr {object spec {_tab {}}} {
+		if {$_tab ne ""} then {
+		    upvar $_tab tab
+		    set import false
+		} else {
+		    set import true
+		}
+
+		foreach s $spec {
+		    lassign $s k type defval
+		    set pos [lsearch -exact -index 0 $spec $k]
+		    if {$pos == -1} then {
+			return false
+		    }
+		    set v [dict get $object $k]
+		    switch $type {
+			{} {
+			    # no type check
+			    if {$v eq "null"} then {
+				set v $defval
+			    }
+			}
+			int {
+			    if {$v eq "null"} then {
+				set v $defval
+			    }
+			    if {[catch {expr $v+0}]} then {
+				return false
+			    }
+			}
+			inet4 {
+			    if {$v eq "null"} then {
+				set v $defval
+			    }
+			}
+			text {
+			    # null is not distinguishable from the string null
+			}
+			default {
+			    return false
+			}
+		    }
+		    if {$import} then {
+			uplevel [list set $k $v]
+		    } else {
+			set tab($k) $v
+		    }
+		    set spec [lreplace $spec $pos $pos]
+		}
+		if {[llength $spec] > 0} then {
+		    return false
+		}
+		return true
+	    }
+
 	    proc set-header {key val {replace {true}}} {
 		variable state
 
