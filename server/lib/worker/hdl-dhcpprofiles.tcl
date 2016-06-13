@@ -1,0 +1,47 @@
+##############################################################################
+
+api-handler get {/dhcpprofiles} yes {
+    } {
+    set idgrp [::u idgrp]
+    set sql "SELECT json_agg (t.*) AS j FROM (
+		SELECT d.iddhcpprof, d.name
+		    FROM dns.dhcpprofile d
+			INNER JOIN dns.p_dhcpprofile p USING (iddhcpprof)
+		    WHERE p.idgrp = $idgrp
+		    ORDER BY p.sort ASC
+		) AS t
+		"
+    set j {[]}
+    ::dbdns exec $sql tab {
+	set j $tab(j)
+    }
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
+}
+
+##############################################################################
+
+api-handler get {/dhcpprofiles/([0-9]+:iddhcpprof)} yes {
+    } {
+    set idgrp [::u idgrp]
+    set sql "SELECT row_to_json (t.*) AS j FROM (
+		SELECT d.iddhcpprof, d.name
+		    FROM dns.dhcpprofile d
+			INNER JOIN dns.p_dhcpprofile p USING (iddhcpprof)
+		    WHERE p.idgrp = $idgrp
+			AND d.iddhcpprof = $iddhcpprof
+		) AS t
+		"
+    set found 0
+    ::dbdns exec $sql tab {
+	set found 1
+	set j $tab(j)
+    }
+
+    if {! $found} then {
+	::scgi::serror 404 [mc "DHCP profile %s not found"]
+    }
+
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
+}
