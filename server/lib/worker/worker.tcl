@@ -622,7 +622,7 @@ proc handle-request {uri meth parm cookie} {
     uplevel #0 mclocale "en"
     uplevel #0 mcload $msgdir
 
-    set ok 0
+    set bestfit 0
     foreach r $route($meth) {
 	#
 	# Each route is registered as a list
@@ -644,65 +644,81 @@ proc handle-request {uri meth parm cookie} {
 	lassign $r re vars paramspec authneeded hname
 
 	lassign [check-route $uri $parm $re $vars $paramspec] ok tpar
-	if {$ok} then {
-	    break
+	switch $ok {
+	    0 { }
+	    1 {
+		if {$bestfit == 0} then {
+		    set bestfit 1
+		    set q $tpar
+		}
+	    }
+	    2 {
+		set bestfit 2
+		break
+	    }
 	}
     }
 
-    if {$ok} then {
-	#
-	# This route is ok. Try to reconnect to the database
-	# and check authentication
-	#
-
-	try {
-	    ::dbdns reconnect
-	    ::dbmac reconnect
-	} on error msg {
-	    ::scgi::serror 503 $msg
+    switch $bestfit {
+	0 {
+	    ::scgi::serror 404 "URI '$uri' not found"
 	}
-
-	set authtoken [::scgi::dget $cookie "session"]
-	set login [check-authtoken $authtoken]
-	if {$authneeded && $login eq ""} then {
-	    ::scgi::serror 403 "Not authenticated"
+	1 {
+	    ::scgi::serror 404 "Mandatory query parameter '$q' not found"
 	}
+	2 {
+	    #
+	    # This route is ok. Try to reconnect to the database
+	    # and check authentication
+	    #
 
-	if {$login ne ""} then {
-	    catch {::u destroy}
-	    ::nmuser create ::u
-	    ::u setdb ::dbdns
-	    ::u setlogin $login
+	    try {
+		::dbdns reconnect
+		::dbmac reconnect
+	    } on error msg {
+		::scgi::serror 503 $msg
+	    }
+
+	    set authtoken [::scgi::dget $cookie "session"]
+	    set login [check-authtoken $authtoken]
+	    if {$authneeded && $login eq ""} then {
+		::scgi::serror 403 "Not authenticated"
+	    }
+
+	    if {$login ne ""} then {
+		catch {::u destroy}
+		::nmuser create ::u
+		::u setdb ::dbdns
+		::u setlogin $login
+	    }
+
+	    #
+	    # Locale settings
+	    #
+
+	    if {[dict exists $parm "l"]} then {
+		set l [string trim [lindex [dict get $parm "l"] 0]]
+	    } else {
+		set l [::scgi::get-locale {en fr}]
+	    }
+
+	    if {$l ne ""} then {
+		uplevel #0 mclocale $l
+		uplevel #0 mcload $msgdir
+	    }
+
+	    #
+	    # Run the script as a procedure to avoid namespace
+	    # pollution. The procedure is run with the following
+	    # parameters:
+	    # - meth: http method
+	    # - parm: see scgi::parse-param procedure
+	    # - cookie: dict containing cookie items
+	    # - tpar: query parameters of handler
+	    #
+
+	    $hname $meth $parm $cookie $tpar
 	}
-
-	#
-	# Locale settings
-	#
-
-	if {[dict exists $parm "l"]} then {
-	    set l [string trim [lindex [dict get $parm "l"] 0]]
-	} else {
-	    set l [::scgi::get-locale {en fr}]
-	}
-
-	if {$l ne ""} then {
-	    uplevel #0 mclocale $l
-	    uplevel #0 mcload $msgdir
-	}
-
-	#
-	# Run the script as a procedure to avoid namespace
-	# pollution. The procedure is run with the following
-	# parameters:
-	# - meth: http method
-	# - parm: see scgi::parse-param procedure
-	# - cookie: dict containing cookie items
-	# - tpar: query parameters of handler
-	#
-
-	$hname $meth $parm $cookie $tpar
-    } else {
-	::scgi::serror 404 "URI '$uri' not found"
     }
 }
 
@@ -713,6 +729,8 @@ proc handle-request {uri meth parm cookie} {
 # Named groups and parameters are stored in the tpar dict
 #
 # Returns: list { ok tpar }
+# where ok = 0 if no match, 1 if route match without matching parameter
+# (returned in tpar) or 2 if ok
 #
 
 proc check-route {uri parm re vars paramspec} {
@@ -732,10 +750,11 @@ proc check-route {uri parm re vars paramspec} {
 	}
 
 	# Check parameters
-	set ok 1
+	set ok 2
 	foreach {var min} $paramspec {
 	    if {! [dict exists $parm $var] && $min > 0} then {
-		set ok 0
+		set ok 1
+		set tpar $var
 		break
 	    } else {
 		set vals [::scgi::dget $parm $var]
