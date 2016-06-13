@@ -24,7 +24,7 @@ set conf(usage) {usage: %s [-h][-d][-c conf][-a addr][-p port][-l libdir][-f fil
     -v vers: application version for schema checking (e.g. 3.0.0alpha)
 }
 
-proc usage {} {
+proc usage {argv0} {
     global conf
 
     puts stderr [format $conf(usage) $argv0]
@@ -53,7 +53,7 @@ proc main {argv0 argv} {
 	set a [lindex $argv 0]
 	switch -glob -- $a {
 	    -h {
-		usage
+		usage $argv0
 	    }
 	    -d {
 		set debug true
@@ -97,7 +97,7 @@ proc main {argv0 argv} {
 	    }
 	    -* {
 		puts stderr "Unknown option '$a'"
-		usage
+		usage $argv0
 	    }
 	    default {
 		break
@@ -106,7 +106,7 @@ proc main {argv0 argv} {
     }
 
     if {[llength $argv] > 0} then {
-	usage
+	usage $argv0
     }
 
     array set wconf [list \
