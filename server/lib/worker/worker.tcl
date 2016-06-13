@@ -2,13 +2,13 @@
 # worker program (worker thread to answer SCGI requests)
 #
 # Tcl variables initialized during the thread start
-# - conffile: pathname of configuration file
-# - wrkdir: pathname of the directory containing this file
+# - conf(conffile): pathname of configuration file
+# - conf(libdir): pathname of the directory containing worker/ and pkgtcl/
+# - conf(files): pathname of the directory containing *.html files
+# - conf(version): application version
 # - auto_path: path of Tcl packages specific to Netmagis
 #
 
-set conf(static-dir)	%NMLIBDIR%/www
-set conf(static-dir)	/tmp
 set conf(lang)		{en fr}
 
 package require snit
@@ -32,12 +32,14 @@ array set route {
 # Thread initialisation
 ##############################################################################
 
-proc thread-init {conffile wdir} {
+proc thread-init {conffile version wdir} {
+    global conf
+
     ::lconf::lconf create ::lc
     ::lc read $conffile
 
     ::pgdb::db create ::dbdns
-    ::dbdns init "dns" ::lc 3.0.0foobar 		;# "%NMVERSION%"
+    ::dbdns init "dns" ::lc $version
 
     ::pgdb::db create ::dbmac
     ::dbmac init "mac" ::lc ""
@@ -612,11 +614,13 @@ proc api-handler {method pathspec authneeded paramspec script} {
 #   - stdout: <code> <text>
 
 proc handle-request {uri meth parm cookie} {
-    global wrkdir
+    global conf
     global route
 
+    set msgdir conf(libdir)/worker/msgs
+
     uplevel #0 mclocale "en"
-    uplevel #0 mcload $wrkdir/msgs
+    uplevel #0 mcload $msgdir
 
     set ok 0
     foreach r $route($meth) {
@@ -683,7 +687,7 @@ proc handle-request {uri meth parm cookie} {
 
 	if {$l ne ""} then {
 	    uplevel #0 mclocale $l
-	    uplevel #0 mcload $wrkdir/msgs
+	    uplevel #0 mcload $msgdir
 	}
 
 	#
@@ -744,7 +748,7 @@ proc check-route {uri parm re vars paramspec} {
 }
 
 try {
-    thread-init $conffile $wrkdir
+    thread-init $conf(conffile) $conf(version) $conf(libdir)/worker
 } on error msg {
     puts stderr $msg
     exit 1

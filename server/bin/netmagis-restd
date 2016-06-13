@@ -1,21 +1,139 @@
-#!/usr/bin/tclsh8.6
+#!%TCLSH%
 
-set pkgdir %NMLIBDIR%/pkgtcl
-set pkgdir ../lib/pkgtcl
+set conf(conffile)	%CONFFILE%
+set conf(addr)		0.0.0.0
+set conf(port)		8080
+set conf(libdir)	%NMLIBDIR%
+set conf(files)		%NMLIBDIR%/www
+set conf(minw)		2
+set conf(maxw)		4
+set conf(idle)		30
+set conf(version)	%VERSION%
 
-lappend auto_path $pkgdir
-package require scgi
+set conf(usage) {usage: %s [-h][-d][-c conf][-a addr][-p port][-l libdir][-f files][-m min][-x max][-i idle][-v vers]
+    -h: this help message
+    -d: debug
+    -c conf: path to the configuration file
+    -a addr: listening address (e.g. 0.0.0.0)
+    -p port: listening port (e.g. 8080)
+    -l libdir: path to the libdir (with subdirectories worker/ and pkgtcl/)
+    -f files: path to the directory containing static files
+    -m min: minimum number of workers threads (e.g. 2)
+    -x max: maximum number of workers threads (e.g. 4)
+    -i idletime: maximum time in sec before a worker thread exists (e.g. 30)
+    -v vers: application version for schema checking (e.g. 3.0.0alpha)
+}
 
-set conffile ./netmagis.conf
+proc usage {} {
+    global conf
 
-set wrkrdir %NMLIBDIR%/worker
-set wrkrdir ../lib/worker
+    puts stderr [format $conf(usage) $argv0]
+    exit 1
+}
 
-::scgi::start \
-	    -debug true \
-	    -minworkers 1 \
-	    "set conffile $conffile
-		set wrkdir $wrkrdir
-		lappend auto_path $pkgdir
-		source $wrkrdir/worker.tcl" \
+proc main {argv0 argv} {
+    global conf
+
+    #
+    # Argument checking
+    #
+
+    set debug    false
+    set conffile $conf(conffile)
+    set addr     $conf(addr)
+    set port     $conf(port)
+    set libdir   $conf(libdir)
+    set files    $conf(files)
+    set minw     $conf(minw)
+    set maxw     $conf(maxw)
+    set idle     $conf(idle)
+    set version  $conf(version)
+
+    while {[llength $argv] > 0} {
+	set a [lindex $argv 0]
+	switch -glob -- $a {
+	    -h {
+		usage
+	    }
+	    -d {
+		set debug true
+		set argv [lreplace $argv 0 0]
+	    }
+	    -c {
+		set conffile [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -a {
+		set addr [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -p {
+		set port [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -l {
+		set libdir [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -f {
+		set files [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -m {
+		set minw [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -x {
+		set maxw [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -i {
+		set idle [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -v {
+		set version [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -* {
+		puts stderr "Unknown option '$a'"
+		usage
+	    }
+	    default {
+		break
+	    }
+	}
+    }
+
+    if {[llength $argv] > 0} then {
+	usage
+    }
+
+    array set wconf [list \
+			conffile $conffile \
+			libdir   $libdir \
+			files    $files \
+			version  $version \
+	]
+
+    global auto_path
+    lappend auto_path $libdir/pkgtcl
+    package require scgi
+
+    ::scgi::start \
+	    -debug $debug \
+	    -myaddr $addr \
+	    -myport $port \
+	    -minworkers $minw \
+	    -maxworkers $maxw \
+	    -idletime $idle \
+	    "set conf(conffile) $conffile
+		set conf(libdir)  $libdir
+		set conf(files)   $files
+		set conf(version) $version
+		lappend auto_path $libdir/pkgtcl
+		source $libdir/worker/worker.tcl" \
 	    "handle-request"
+}
+
+exit [main $argv0 $argv]

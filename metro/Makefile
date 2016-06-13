@@ -9,9 +9,9 @@ build:
 
 install:
 	@echo ">>> Making install in `pwd`"
-	cd bin ; make $(DIRS) install
-	cd lib ; make $(DIRS) install
-	cd ws ; make $(DIRS) install
+	cd bin ; $(MAKE) install
+	cd lib ; $(MAKE) install
+	cd ws ; $(MAKE) install
 	mkdir -p $(DESTDIR)$(NMXMPDIR)
 	$(NINSTALL) -m 0644 \
 		-e "s|%BINDIR%|$(BINDIR)|" \

@@ -5,7 +5,7 @@ build:
 
 install: build
 	@echo ">>> Making install in `pwd`"
-	cd syslog ; make $(DIRS) install
-	cd radius ; make $(DIRS) install
+	cd syslog ; $(MAKE) install
+	cd radius ; $(MAKE) install
 
 clean:

@@ -7,9 +7,9 @@ install:
 	mkdir -p $(DESTDIR)$(NMXMPDIR)
 	$(NINSTALL) -m 0644 -e "s|%SBINDIR%|$(SBINDIR)|" $(SUBST) \
 			$(FILES) $(DESTDIR)$(NMXMPDIR)
-	cd no-view ; make $(DIRS) install
-	cd with-views ; make $(DIRS) install
+	cd no-view ; $(MAKE) install
+	cd with-views ; $(MAKE) install
 
 clean:
-	cd no-view ; make clean
-	cd with-views ; make clean
+	cd no-view ; $(MAKE) clean
+	cd with-views ; $(MAKE) clean

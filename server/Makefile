@@ -2,16 +2,16 @@ NINSTALL	= ../ninstall
 
 build:
 	@echo ">>> Making build in `pwd`"
-	cd lib ; make build
+	cd lib ; $(MAKE) build
 
 install:
 	@echo ">>> Making install in `pwd`"
-	cd etc ; make $(DIRS) install
-	cd bin ; make $(DIRS) install
-	cd lib ; make $(DIRS) SUBST="$(SUBST)" VERSION=$(VERSION) install
-	cd www ; make NMLIBDIR=$(NMLIBDIR) install
-	cd examples ; make $(DIRS) install
+	cd etc ; $(MAKE) install
+	cd bin ; $(MAKE) install
+	cd lib ; $(MAKE) install
+	cd www ; $(MAKE) install
+	cd examples ; $(MAKE) install
 	mkdir -p $(DESTDIR)$(NMVARDIR)/dbdump
 
 clean:
-	cd lib ; make clean
+	cd lib ; $(MAKE) clean

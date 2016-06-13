@@ -2,7 +2,7 @@ NINSTALL = ../ninstall
 
 build:
 	@echo ">>> Making build in `pwd`"
-	cd htg ; make TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" build
+	cd htg ; $(MAKE) TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" build
 
 install: build
 	@echo ">>> Making install in `pwd`"
@@ -10,12 +10,12 @@ install: build
 	# install CGI
 	#
 	mkdir -p $(DESTDIR)$(NMCGIDIR)
-	cd cgi ; make $(DIRS) install
+	cd cgi ; $(MAKE) install
 	#
 	# install API
 	#
 	mkdir -p $(DESTDIR)$(NMCGIDIR)
-	cd nmd ; make $(DIRS) install
+	cd nmd ; $(MAKE) install
 
 	############################## WARNING : REMOVE AS SOON AS POSSIBLE
 		exit 1
@@ -29,7 +29,7 @@ install: build
 	#
 	# install htg and models
 	#
-	cd htg ; make $(DIRS) install
+	cd htg ; $(MAKE) install
 	#
 	# install tmpl pages
 	#
@@ -46,7 +46,7 @@ install: build
 	#
 	# install default files
 	#
-	cd share ; make $(DIRS) install
+	cd share ; $(MAKE) install
 
 clean:
-	cd htg ; make clean
+	cd htg ; $(MAKE) clean

@@ -4,19 +4,23 @@ TCLSH		= /usr/local/bin/tclsh
 FILES =	\
 	worker.tcl \
 	libworker.tcl \
+	hdl-admin.tcl \
+	hdl-dhcpranges.tcl \
+	hdl-domains.tcl \
 	hdl-files.tcl \
+	hdl-hinfos.tcl \
 	hdl-login.tcl \
 	hdl-names.tcl \
 	hdl-networks.tcl \
 	hdl-views.tcl \
 
+build:
+	@echo ">>> Making build in `pwd`"
+	cd msgs && $(MAKE) build
 
 install: ################## build
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)$(NMLIBDIR)/worker
-	for F in $(FILES) ; do \
-	    $(NINSTALL) -m 0644 \
-		    -e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
-		    $(SUBST) \
-		    $$F $(DESTDIR)$(NMLIBDIR)/worker ; \
-	done
+	$(NINSTALL) -m 0644 $(SUBST) \
+		    $(FILES) $(DESTDIR)$(NMLIBDIR)/worker ; \
+	cd msgs && $(MAKE) install

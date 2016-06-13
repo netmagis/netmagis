@@ -18,7 +18,7 @@ install:
 	$(NINSTALL) -m 0644 -e "s/%NMVERSION%/$(VERSION)/" \
 		$(SUBST) libnetmagis.tcl $(DESTDIR)$(NMLIBDIR)
 	mkdir -p $(DESTDIR)$(NMLIBDIR)/pkgtcl
-	cd pkgtcl && make $(DIRS) TCLSH=$(TCLSH) clean install
+	cd pkgtcl && $(MAKE) TCLSH=$(TCLSH) clean install
 	mkdir -p $(DESTDIR)$(NMLIBDIR)/msgs 
 	tar cf - msgs | tar xvf - -C $(DESTDIR)$(NMLIBDIR)
 

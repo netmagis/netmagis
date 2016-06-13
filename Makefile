@@ -1,3 +1,6 @@
+# for packaging and libnetmagis.tcl
+VERSION		= 3.0.0alpha
+
 DESTDIR		= 
 
 PREFIX		= /local/netmagis
@@ -28,7 +31,8 @@ SUBST		= $(TCLSH) \
 			$(ETCDIR)/netmagis.conf \
 			$(BINDIR)/netmagis-config
 
-DIRS		= \
+VARS		= \
+			VERSION=$(VERSION) \
 			BINDIR=$(BINDIR) \
 			SBINDIR=$(SBINDIR) \
 			ETCDIR=$(ETCDIR) \
@@ -47,9 +51,6 @@ DIRS		= \
 TCLCONF		= /usr/local/lib/tcl8.6/tclConfig.sh
 TCLCFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_INCLUDE_SPEC"')|sh`
 TCLLFLAGS	= `(cat $(TCLCONF) ; echo 'echo "$$TCL_LIB_SPEC $$TCL_LIBS"')|sh`
-
-# for packaging and libnetmagis.tcl
-VERSION		= 2.3.1
 
 # build debian package for the following architectures
 DEBIAN_PKG_ARCH = i386
@@ -85,51 +86,51 @@ build: build-www build-topo
 
 # NEARLY OBSOLETE
 build-www:
-	cd www ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
+	cd www ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" build
 
 build-server:
-	cd server ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) build
+	cd server ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) build
 
 build-topo:
-	cd topo ; make build
+	cd topo ; $(MAKE) build
 
 install: install-common install-server install-servers install-utils \
 	    install-detecteq install-topo install-metro install-www
 	
 install-common:
 	cd common ; \
-	    make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) VERSION=$(VERSION) install
+	    $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) VERSION=$(VERSION) install
 
 install-server:
-	cd server ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) VERSION=$(VERSION) install
+	cd server ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) VERSION=$(VERSION) install
 
 install-servers:
-	cd servers ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd servers ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 # NEARLY OBSOLETE
 install-www: build-www
-	cd www ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
+	cd www ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" install
 
 install-utils:
-	cd utils ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd utils ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 install-topo: build-topo
-	cd topo ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd topo ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 install-detecteq:
-	cd detecteq ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd detecteq ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 install-metro:
-	cd metro ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd metro ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 # PROBLEM
 install-netmagis.org: build-www
-	cd doc/netmagis.org ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd doc/netmagis.org ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 install-devtools:
-	cd devtools ; make $(DIRS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd devtools ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 distrib: clean
 	rm -rf /tmp/netmagis-$(VERSION)
@@ -150,8 +151,8 @@ freebsd-ports:
 	    echo "once netmagis-$(VERSION).tar.gz is on the master site" ; \
 	    exit 1 ; \
 	fi
-	for i in pkg/freebsd/netmagis-* ; do (cd $$i ; make clean) ; done
-	cd pkg/freebsd/netmagis-common ; make makesum
+	for i in pkg/freebsd/netmagis-* ; do (cd $$i ; $(MAKE) clean) ; done
+	cd pkg/freebsd/netmagis-common ; $(MAKE) makesum
 	tar -czf netmagis-freebsd-ports-$(VERSION).tar.gz -C pkg/freebsd .
 
 debian-packages:
@@ -160,26 +161,26 @@ debian-packages:
 	    echo "once netmagis-$(VERSION).tar.gz is on the master site" ; \
 	    exit 1 ; \
 	fi
-	cd pkg/debian ; make VERSION=$(VERSION) release
+	cd pkg/debian ; $(MAKE) VERSION=$(VERSION) release
 
 debian-packages-other-arch:
 	cd pkg/debian ; \
 	for arch in $(DEBIAN_PKG_ARCH) ; do \
-	     make VERSION=$(VERSION) ARCH=$$arch release-arch ; \
+	     $(MAKE) VERSION=$(VERSION) ARCH=$$arch release-arch ; \
 	done
 
 debian-repo:
 	pkg/debian/update-repo $(VERSION) pkg/debian $(DEBIAN_DISTRIB) $(REPODIR)
 
 clean:
-	cd common ; make clean
-	cd server ; make clean
-	cd servers ; make clean
-	cd www ; make clean
-	cd utils ; make clean
-	cd detecteq ; make clean
-	cd topo ; make clean
-	cd metro ; make clean
+	cd common ; $(MAKE) clean
+	cd server ; $(MAKE) clean
+	cd servers ; $(MAKE) clean
+	cd www ; $(MAKE) clean
+	cd utils ; $(MAKE) clean
+	cd detecteq ; $(MAKE) clean
+	cd topo ; $(MAKE) clean
+	cd metro ; $(MAKE) clean
 	rm -f netmagis-*.tar.gz
 
 nothing:

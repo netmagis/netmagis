@@ -5,6 +5,6 @@ build:
 
 install:
 	@echo ">>> Making install in `pwd`"
-	cd tests ; make $(DIRS) install
+	cd tests ; $(MAKE) install
 
 clean:

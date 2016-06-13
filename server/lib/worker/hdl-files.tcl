@@ -23,7 +23,7 @@ api-handler get {/files/([-a-zA-Z0-9][-a-zA-Z0-9.]*:name)} yes {
 
     set path ""
     foreach f [list $base.$lang.$ext $base.$ext] {
-	set p $conf(static-dir)/$f
+	set p $conf(files)/$f
 	if {[file exists $p]} then {
 	    set path $p
 	    break
