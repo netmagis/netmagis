@@ -1,11 +1,18 @@
 ##############################################################################
 
 api-handler get {/hinfos} yes {
+	present 0
     } {
+
+    set w [hinfo-test-present $present]
+    if {$w ne ""} then {
+	set w "WHERE $w"
+    }
+
     set sql "SELECT json_agg (t.*) AS j FROM (
-		SELECT idhinfo, name
+		SELECT idhinfo, name, present
 		    FROM dns.hinfo
-		    WHERE present != 0
+		    $w
 		    ORDER BY sort ASC
 		) AS t
 		"
@@ -20,13 +27,18 @@ api-handler get {/hinfos} yes {
 ##############################################################################
 
 api-handler get {/hinfos/([0-9]+:idhinfo)} yes {
+	present 0
     } {
-    set idgrp [::u idgrp]
-    set sql "SELECT json_agg (t.*) AS j FROM (
-		SELECT idhinfo
+    set w [hinfo-test-present $present]
+    if {$w ne ""} then {
+	set w "$w AND"
+    }
+
+    set sql "SELECT row_to_json (t.*) AS j FROM (
+		SELECT idhinfo, name
 		    FROM dns.hinfo
-		    WHERE present != 0
-			AND idhinfo = $idhinfo
+		    WHERE $w
+			idhinfo = $idhinfo
 		) AS t
 		"
     set found 0
@@ -41,4 +53,19 @@ api-handler get {/hinfos/([0-9]+:idhinfo)} yes {
 
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j
+}
+
+##############################################################################
+# Utility function
+##############################################################################
+
+proc hinfo-test-present {present} {
+    switch -exact -- $present {
+	{} { set w "" }
+	0  { set w "present = 0" }
+	1  { set w "present != 0" }
+	default {
+	    ::scgi::serror 412 [mc "Invalid present value '%s' $present]
+	}
+    }
 }
