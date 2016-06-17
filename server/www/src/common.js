@@ -1,7 +1,8 @@
 import React from 'react';
 
 
-export var APIURL = "http://130.79.91.54/stage-l2s4/nm_pages/api";
+export var APIURL = "http://130.79.91.54:82/";
+export var TODO_APIURL = "http://130.79.91.54:82/www/html/api";
 
 
 /* Same as $.getJSON but defines mimeType

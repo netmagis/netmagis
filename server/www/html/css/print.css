@@ -1,0 +1,578 @@
+
+/*
+ * Les couleurs utilisées dans cette feuille de style :
+ * - 313131 (gris presque noir) : titres h4
+ * - 515151 (gris normal)       : texte "normal" de la page
+ * - 818181 (gris clair)	: titre de la page
+ * - 00536c (bleu foncé Osiris) : titres h2 + liens dans le texte
+ * - 63798d (gris bleu)		: texte du pied de page
+ * - c7d2e2 (bleu clair)	: lignes de séparation
+ * - cc5229 (orange)		: blocs, liens, titres h3, etc.
+ * - d3dde5 (bleu soutenu)	: liséré bleu de la page, sous-titres du bandeau
+ * - eaf0f8 (bleu clair)	: fond des éléments du bandeau
+ */
+
+/*****************************************************************************
+ * Les grands éléments structurants de la page
+ */
+
+/* Le fond de la page et son cadre bi-couleur */
+body {
+	color: #515151;			/* texte : gris */
+	background-color: #eff2f7;	/* fond bleu clair */
+	margin: 3% 2% 3% 2%;		/* cadre bleu clair */
+	padding: 0px;
+  	border: 1px solid #d3dde5;	/* liséré bleu soutenu */
+	vertical-align: top;
+	text-align: justify;
+	font-size: 12px;
+        font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+
+table#fond-page {
+	background-color: white;
+	width: 100%;
+	border-spacing: 0px;
+  	border: 10px solid white;	/* cadre blanc autour du tableau */
+}
+
+img {
+  	border: 0px; 
+}
+
+/* Les logo, titre de page et lignes de séparation */
+td#logo {
+	border: 0px;
+	text-align: center;
+	vertical-align: top;
+        display: none;
+}
+
+td#titre-page {
+	border: 0px;
+	background-image: url(images/fond-titre.gif);
+	background-repeat: repeat-y;
+	background-position: 100% 0%;
+	text-align: center;
+	vertical-align: middle;
+        display: none;
+}
+
+td#titre-page h1 {
+	text-align: center;
+	text-transform: uppercase;
+	color: #818181;			/* gris clair */
+	font-weight: bold;
+	font-size: 24px;
+	letter-spacing: 2px;
+	line-height: 30px;
+}
+
+td#separation-haut,
+td#separation-bas {
+	display: none;
+	margin: 0px;
+	padding: 0px;
+	border-top: #c7d2e2;		/* bleu clair */
+	border-width: 1px 0 0 0;
+	border-style: solid none none none;
+}
+td#separation-haut div {
+	height: 8px;
+}
+td#separation-bas div {
+	height: 10px;
+}
+
+/* Le bandeau à gauche */
+td#bandeau {
+	display: none;
+	vertical-align: top;
+	background-color: #eaf0f8;	/* bleu clair */
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+	border-top: 10px solid white;
+        font-size: 10px;
+        font-weight: bold;
+}
+
+/* Le texte de la page */
+td#texte-page {
+	vertical-align: top;
+  	padding: 0px 20px 20px 20px;
+	text-align : justify;
+	line-height: 140%;
+	width: 100%;
+}
+
+/* Le pied de page */
+#pied-page {
+	color: #63798d;			/* gris bleu */
+	font-size: 12px;
+	vertical-align: middle;
+        display: none;
+}
+
+#pied-page a:link,
+#pied-page a:active,
+#pied-page a:hover,
+#pied-page a:visited {
+	color: #cc5229;			/* orange */
+}
+
+/******************************************************************************
+ * La définition des menus dans le bandeau de gauche, et des éléments qui
+ * les composent
+ *
+ * dl.menu
+ *  `-- dt.menu-separation	(ligne de séparation blanche)
+ *  |    `-- pas de texte
+ *  `-- dt.menu-titre		(texte blanc sur fond orange)
+ *  |    `-- texte
+ *  `-- dt			(pas de classe, texte orange sur fond bleu soutenu)
+ *  |    `-- texte
+ *  |    `-- a
+ *  |        `-- texte
+ *  `-- dd			(par défaut : pas affiché, pas de classe
+ *  |	 `-- ul				 pour simplifier l'écriture des menus)
+ *  |	      `-- li
+ *  |		   `-- a	(texte gris sur fond bleu clair)   
+ *  |		   `-- a.menu-auth (texte orange sur fond bleu clair)   
+ *  `-- dt.menu-meteo
+ *       `-- a
+ *            `-- img
+ */
+
+/*
+ * le dl initial et tout ce qui en hérite, en particulier les éléments
+ * des menus (ce qui est en dessous des menu-titre et menu-stitre, qui
+ * n'a pas de 'class').
+ */
+dl.menu {
+	width: 160px;
+	padding: 0px;
+	margin: 0px;
+  	text-align: left;
+	list-style: none;
+        display: none;
+}
+
+/* les sous-titres du menu, éléments clickables pour les "déployer" */
+.menu dt {
+	cursor: pointer;
+	color: #cc5229;			/* orange */
+	background-color: #d3dde5;	/* bleu soutenu (cf liséré) */
+        display: list-item;
+	list-style: disc inside url(images/puce1.gif);
+	font-weight: bold;
+	padding: 0px 0px 3px 5px;
+	margin-top: 10px;
+	text-transform: uppercase;
+	border-top: #8296bb;
+	border-width: 1px 0 0 0;
+	border-style: solid none none none;
+}
+
+/* quand ces sous-titres sont des liens, pas de changement de couleur */
+.menu dt a:link, .menu dt a:visited, .menu dt a:hover, .menu dt a:active {
+	color: #cc5229;			/* orange */
+	background-color: #d3dde5;	/* bleu soutenu (cf liséré) */
+	text-decoration: none;
+}
+
+dl.menu ul,
+dl.menu ul li {
+	margin: 0px;
+	padding: 0px;
+	text-align: left;
+	list-style: none;
+}
+
+dl.menu dd {
+        display: none;
+	margin: 0px;
+	padding: 0px;
+	text-align: left;
+	list-style: none;
+}
+
+
+/* éléments des menus, hérités du dl initial, pour en simplifier l'écriture */
+dl.menu ul li a {
+  	vertical-align: bottom;
+  	display: block;
+	padding: 3px 0px 3px 5px;
+	text-decoration: none;
+	color: #515151;			/* gris */
+}
+
+dl.menu ul li a:hover {
+	color: white;
+	background-color: #cc5229;	/* orange */
+}
+
+/* cas spécial pour les éléments en accès restreint : couleur différente */
+a.menu-auth:link,
+a.menu-auth:visited,
+a.menu-auth:active {
+	color: #cc5229;			/* orange */
+}
+a.menu-auth:hover {
+	color: white;
+	background-color: #cc5229;	/* orange */
+}
+
+
+/* ligne blanche de séparation dans les grandes parties du menu */
+dt.menu-separation {
+	display: block;
+	cursor: auto;
+  	height: 8px;
+  	background-color: white;
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+/* les titres des grandes parties du menu */
+dt.menu-titre {
+  	display: block;
+	cursor: auto;
+  	text-transform: uppercase;
+  	text-align: left;
+	padding: 3px 0px 3px 5px;
+  	margin: 0px;
+  	color: white;
+  	background-color: #cc5229;	/* orange */
+  	text-decoration: none;
+	border: 0px;
+}
+
+/* image météo dans le menu */
+dt.menu-meteo {
+	display: block;
+	cursor: auto;
+  	text-align: center;
+	padding: 0px;
+	margin: 0px;
+  	background-color: white;
+  	text-decoration: none;
+	border: 0px;
+}
+
+dt.menu-meteo a {
+	padding: 0px;
+	margin: 0px;
+  	background-color: white;
+}
+
+dt.menu-meteo a img {
+  	background-color: white;
+	display: block;
+}
+
+/******************************************************************************
+ * Les éléments du texte
+ * (cf ci-dessous pour cas spécial des news)
+ */
+
+#texte-page h2 {
+        padding: 15px 0px 0px 0px;
+        margin-bottom: 20px;
+        color: #00536c;			/* bleu foncé */
+        text-align: center;
+        vertical-align: middle;
+        font-size: 24px;
+        font-weight: bold;
+}
+
+/* accolée au h2, htg met une image qui ne servira que pour l'impression */
+#texte-page #image-a-imprimer-seulement {
+}
+
+#texte-page h3 {
+	display: list-item;
+	color: #cc5229;			/* orange */
+	list-style: disc inside url(images/puce1.gif);
+	text-align: left;
+	font-size: 20px;
+	font-weight: bold;
+}
+
+#texte-page h4 {
+	text-align: left;
+	color: #313131;			/* gris presque noirs */
+	font-size: 16px;
+	font-weight: bold;
+}
+
+#texte-page h5 {
+	text-align: left;
+	color: #313131;			/* gris presque noirs */
+	font-size: 13px;
+	font-weight: bold;
+}
+
+#texte-page a:link,
+#texte-page a:active,
+#texte-page a:visited {
+        color: #00536c;			/* bleu foncé */
+        text-decoration: underline;
+        margin: 0px 15px 10px 15px;
+}
+#texte-page a:hover {
+	color: #cc5229;			/* orange */
+	text-decoration: none;
+}
+
+#texte-page li {
+        text-align: justify;
+	margin-left: 15px;
+        padding-bottom: 3px; 
+        display: list-item ; 
+	list-style: disc outside url(images/puce2.gif);
+}
+
+#texte-page ul {
+	margin-left: 15px;
+	padding-left: 0px;
+}
+
+#texte-page li ul li {
+        text-align: justify;
+        display: list-item;
+	margin-left: 0px;
+        padding-left: 0px;
+	list-style: circle outside url(images/puce3.gif);
+}
+
+#texte-page li ul li ul li {
+        text-align: justify;
+	margin-left: 0px;
+        padding-left: 0px;
+        display: list-item;
+	list-style: square outside url(images/puce4.gif);
+}
+
+.separation-milieu {
+	padding: 0px;
+	margin: 10px 0px 10px 0px;
+	width: 100%;
+	border-bottom: #c7d2e2;		/* bleu clair */
+	border-width: 0 0 1px 0;
+	border-style: none none solid none;
+}
+
+/* pour le package arrgen */
+.tab-text8 { font-size: 10px; }
+.tab-text10 { font-size: 12px; }
+.tab-text12 { font-size: 14px; }
+.tab-text14 { font-size: 16px; }
+.tab-text16 { font-size: 20px; }
+.tab-text18 { font-size: 24px; }
+
+
+/******************************************************************************
+ * Présentation des pages d'accueil
+ */
+
+.alerte {
+	padding: 10px;
+	margin: 20px 30px 30px 30px;
+	border: 1px solid #cc5229; 	/* orange */
+  	text-align: center;
+}
+
+#texte-page .accueil {
+	padding: 0px;
+	margin: 0px 0px 0px 15px;
+	width: 100%;
+}
+
+#texte-page .accueil td {
+	vertical-align: top;
+	padding: 5px 2px 5px 10px;
+}
+
+#texte-page .accueil .separation-verticale {
+	padding: 0px;
+	margin: 0px;
+        border-left: #c7d2e2;		/* bleu clair */
+        border-width: 0 1px 0 0;
+        border-style: none solid none none;
+	color: #c7d2e2;			/* bleu clair */
+}
+#texte-page .accueil .separation-verticale div {
+	margin: 0px;
+	padding: 0px;
+	width: 1px;
+}
+
+#texte-page .accueil ul {
+	padding: 0px 0px 0px 5px;
+        margin: 0px;
+}
+
+#texte-page .accueil ul li {
+	padding: 15px 0px 0px 0px;
+        margin: 0px;
+        color: #cc5229;			/* orange */
+        text-align: left;
+        font-weight: bold;
+	list-style: disc inside url(images/puce1.gif);
+}
+
+#texte-page .accueil ul li ul {
+	padding: 10px 0px 0px 0px;
+}
+
+#texte-page .accueil ul li ul li {
+	padding: 0px 0px 0px 0px;
+	margin: 0px 0px 0px 20px;
+	color: #515151;			/* texte : gris */
+  	text-align: left;
+	font-weight: normal;
+	list-style: disc outside url(images/puce2.gif);
+}
+
+#texte-page .accueil img.icone {
+	padding-left: 20px;
+	margin: 0px;
+}
+
+#texte-page .accueil a {
+	color: #515151;			/* gris */
+	text-decoration: none;
+	text-align: left;
+        font-weight: bold;
+}
+
+#texte-page .accueil a:link,
+#texte-page .accueil a:active,
+#texte-page .accueil a:visited {
+	text-decoration: none;
+}
+
+#texte-page .accueil a:hover {
+	color: #cc5229;			/* orange */
+}
+
+#texte-page .accueil a.auth {
+	color: #cc5229;			/* orange */
+	text-decoration: none;
+	text-align: left;
+        font-weight: bold;
+}
+
+#texte-page .accueil a.auth:link,
+#texte-page .accueil a.auth:active,
+#texte-page .accueil a.auth:visited,
+#texte-page .accueil a.auth:hover {
+	text-decoration: none;
+}
+
+/******************************************************************************
+ * Les actus du CRC : les classes sont utilisées à la fois dans les pages
+ * d'accueil et dans les pages de texte classique.
+ *
+ * Les "document-trees" sont (dans une page normale) :
+ *
+ * td.texte-page			(page de texte normale)
+ *  `-- (le titre de la page)
+ *  `-- div.texte-news
+ *  |    `-- a				(ancre)
+ *  |    |    `-- h3
+ *  |    |         `-- span.news-date
+ *  |    |         |    `-- texte
+ *  |    |         `-- span.news-titre
+ *  |    |         |    `-- texte
+ *  |    |         `-- span.news-theme
+ *  |    |              `-- texte
+ *  |    `-- p
+ *  |    |    `-- texte
+ *  |    |         `-- span.news-qui
+ *  |    |              `-- texte
+ *  |    `-- p
+ *  |         `-- texte			(voir aussi)
+ *  |         `-- a
+ *  |             `-- texte
+ *  `-- div.texte-news
+ *  ...
+ *
+ * et (dans une page d'accueil) :
+ *
+ * td.texte-page			(page de texte normale)
+ *  `-- table + tr
+ *  |    `-- td.accueil-news
+ *  |         `-- h3
+ *  |         |    `-- span.news-date
+ *  |         |    |    `-- texte
+ *  |         |    `-- span.news-titre
+ *  |         |    |    `-- texte
+ *  |         |    `-- span.news-theme
+ *  |         |         `-- texte
+ *  |         `-- h3
+ *  |         ...
+ *  |         `-- a
+ *  |         |    `-- texte		(toutes les actualités)
+ *  |         `-- a			(lien vers le flux rss)
+ *  |              `-- img
+ */
+
+.news-date {
+	font-size: 90%;
+	font-weight: bold;
+}
+.news-theme {
+	color: #515151;			/* gris */
+	font-size: 85%;
+	font-weight: normal;
+}
+.news-qui {
+	font-size: 85%;
+}
+.texte-news a {
+	font-weight: normal;
+}
+
+td#texte-page .accueil-news {
+	padding: 20px 0px 0px 130px;
+	font-size: 9px;
+        margin: 0px;
+	background-image: url(images/journal.png);
+	background-repeat: no-repeat;
+	background-position: 0% 0%;
+}
+td#texte-page .accueil-news h3 {
+	display: block;
+	padding: 0px;
+        margin: 0px;
+        color: #515151;			/* gris */
+        text-align: left;
+	font-size: 10px;
+	font-weight: normal;
+}
+
+#texte-page .wifi {
+        font-size:9px;
+}
+
+#texte-page a.wifi,
+#texte-page a.wifi:link,
+#texte-page a.wifi:active,
+#texte-page a.wifi:visited {
+        color: #818181;
+}
+
+#texte-page a.wifi:hover {
+        color: #cc5229;
+        text-decoration: none;
+}
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+

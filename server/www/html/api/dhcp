@@ -1,0 +1,5 @@
+[
+	{ "Min" : "172.16.5.1" , "Max" : "172.16.5.1" , "Domain" : "foo.com",  "DefaultLease" : 0, "MaxLease": 0, "DhcpProf" : "None" },
+	{ "Min" : "172.16.6.1" , "Max" : "172.16.6.1" , "Domain" : "bar.com",  "DefaultLease" : 0, "MaxLease": 0, "DhcpProf" : "None" },
+	{ "Min" : "172.16.7.1" , "Max" : "172.16.7.1" , "Domain" : "toto.com", "DefaultLease" : 0, "MaxLease": 0, "DhcpProf" : "None" }
+]

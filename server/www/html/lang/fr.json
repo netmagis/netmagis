@@ -1,0 +1,11 @@
+{
+	"Name" : "Nom",
+	"First name": "Prenom",
+	"Last name": "Nom",
+	"Ip address" : "Adresse Ip",
+	"Add single host" : "Adjouter un host",
+	"Add block" : "Adjouter un block",
+	"View" : "Vue",
+	"Mac address": "Adresse Mac"
+}
+

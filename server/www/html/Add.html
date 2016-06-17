@@ -1,0 +1,315 @@
+
+
+<!doctype html public "-//w3c//dtd html 4.01//en">
+<html lang="fr">
+	<head>
+		<title>netmagis - add host or alias</title>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8">
+		<link rel="stylesheet" media="print" href="css/print.css" type="text/css">
+		<link rel="stylesheet" media="screen" href="css/screen.css" type="text/css">
+		<link rel="icon" type="image/png" href="http://localhost/netmagis/css/images/favicon.png">
+		<meta name="author" content="pda/jean">
+		<meta name="generator" content="htg">
+		<!-- cdns -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.3/jquery.min.js"></script> 
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mtjoasx8j1au+a5wdvnpi2lkffwweaa8hdddjzlplegxhjvme1fgjwpgmkzs7" crossorigin="anonymous">
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0msbjdehialfmubbqp6a4qrprq5ovfw37prr3j5elqxss1yvqotnepnhvp9aj7xs" crossorigin="anonymous"></script> 
+		<style type="text/css">
+			#nextpart {
+			display: block;
+			}
+		</style>
+	</head>
+	<body onload="" onunload="">
+		<table id="fond-page" cellspacing="0">
+			<tbody>
+				<tr>
+					<td id="logo">
+						<a href="http://localhost/"><img src="css/images/logo.png" alt="sommaire"></a>
+					</td>
+					<td id="titre-page">
+						<h1>netmagis application</h1>
+					</td>
+				</tr>
+				<tr>
+					<td id="separation-haut" colspan="2">
+						<div></div>
+					</td>
+				</tr>
+				<tr>
+					<td id="bandeau">
+						<dl class="menu">
+							<dt class="menu-titre">netmagis v2.3.2</dt>
+							<dt>session</dt>
+							<dd id="smenu10">
+								<ul>
+									<li><a href="http://localhost/netmagis/profile">logged as pda</a></li>
+									<li><a href="http://localhost/netmagis/login?logout=yes">log out</a></li>
+								</ul>
+							</dd>
+							<dt>actions</dt>
+							<dd id="smenu11">
+								<ul>
+									<li><a href="http://localhost/netmagis/start">welcome</a></li>
+									<li><a href="http://localhost/netmagis/net">consult</a></li>
+									<li><a href="http://localhost/netmagis/add">add</a></li>
+									<li><a href="http://localhost/netmagis/del">delete</a></li>
+									<li><a href="http://localhost/netmagis/mod">modify</a></li>
+									<li><a href="http://localhost/netmagis/mail">mail roles</a></li>
+									<li><a href="http://localhost/netmagis/dhcp">dhcp ranges</a></li>
+									<li><a href="http://localhost/netmagis/search">search</a></li>
+									<li><a href="http://localhost/netmagis/search?q=_">where am i?</a></li>
+									<li><a href="http://localhost/netmagis/pgapasswd">password</a></li>
+									<li><a href="http://localhost/netmagis/admindex">admin</a></li>
+									<li><a href="http://localhost/netmagis/start?l=fr">[fr]</a></li>
+								</ul>
+							</dd>
+						</dl>
+					</td>
+
+					<td id="texte-page">
+						<!--------------------------- start add app ------------------------------>
+						<ul id="mytabs" class="nav nav-tabs">
+							<li class="active"><a href="#host">host</a></li>
+							<li ><a href="#ip">ip</a></li>
+							<li ><a href="#alias">alias</a></li>
+							<li ><a href="#role">role</a></li>
+							<li ><a href="#mx">mx</a></li>
+						</ul>
+						<div class="tab-content">
+							<div id="host" class="tab-pane fade in active">
+								<h2> Add Host </h2>
+								<table width="100%" border="0">
+									<tbody>
+										<tr>
+											<td align="LEFT">
+												<form method="POST" action="add">
+													<!-- Hidden fields -->
+													<input name="action" value="add-host" type="HIDDEN">
+													<input name="confirm" value="no" type="HIDDEN">
+													<input name="naddr" value="1" type="HIDDEN">
+													<table width="100%" border="0">
+														<tbody>
+															<tr>
+																<td align="LEFT">Name</td>
+																<td align="LEFT">
+																	<input name="name" size="30" type="TEXT">
+																	.
+																	<select size="1" name="domain">
+																		<option selected="selected" value="example.com">example.com</option>
+																		<option value="example.org">example.org</option>
+																	</select>
+																</td>
+																<td align="RIGHT">TTL</td>
+																<td align="LEFT"><input name="ttl" size="6" maxlength="10" type="text"> (in seconds)</td>
+															</tr>
+															<tr>
+																<td align="LEFT">IP address</td>
+																<td align="LEFT">
+																	<input name="addr" size="45" type="TEXT">
+																</td>
+																<td align="RIGHT">View</td>
+																<td align="LEFT">
+																	<select size="1" name="idview">
+																		<option selected="selected" value="3">external</option>
+																		<option value="2">internal</option>
+																	</select>
+																</td>
+															</tr>
+															<tr>
+																<td align="LEFT">MAC address</td>
+																<td align="LEFT">
+																	<input name="mac" size="20" maxlength="17" type="TEXT">
+																</td>
+																<td align="RIGHT"></td>
+																<td align="LEFT"><input name="iddhcpprof" value="0" type="HIDDEN"></td>
+															</tr>
+															<tr>
+																<td align="LEFT">Host type</td>
+																<td align="LEFT">
+																	<select size="1" name="hinfo">
+																		<option value="PC/Windows" selected="selected">PC/Windows</option>
+																		<option value="PC/Unix">PC/Unix</option>
+																		<option value="Macintosh/MacOS">Macintosh/MacOS</option>
+																		<option value="Other/Unix">Other/Unix</option>
+																		<option value="Printer">Printer</option>
+																		<option value="Network equipment">Network equipment</option>
+																	</select>
+																</td>
+																<td align="RIGHT">Use SMTP</td>
+																<td align="LEFT"><input name="sendsmtp" value="1" type="CHECKBOX"></td>
+															</tr>
+															<tr>
+																<td align="LEFT">Comment</td>
+																<td colspan="3" align="LEFT">
+																	<input name="comment" size="50" type="TEXT">
+																</td>
+															</tr>
+															<tr>
+																<td align="LEFT">Responsible (name)</td>
+																<td colspan="3" align="LEFT">
+																	<input name="respname" size="50" type="TEXT">
+																</td>
+															</tr>
+															<tr>
+																<td align="LEFT">Responsible (mail)</td>
+																<td colspan="3" align="LEFT">
+																	<input name="respmail" size="50" type="TEXT">
+																</td>
+															</tr>
+															<tr>
+																<td colspan="4" align="CENTER">
+																	<input value="Add" type="SUBMIT">
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</form>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							<div id="ip" class="tab-pane fade" > 
+							<h1> Add Ip </h1> 
+							</div>
+							<div id="alias" class="tab-pane fade" > 
+							<h1> Add Alias </h1> 
+							</div>
+							<div id="role" class="tab-pane fade" > 
+							<h1> Add Role </h1> 
+							</div>
+						</div>
+						<script>
+							$(".nav-tabs a").click(function(){
+							    $(this).tab('show');
+							});
+						</script>
+						</td></tr></tbody></table>
+						<p>    </p>
+						<div id="nextpart">
+							<table width="100%" border="0">
+								<tbody>
+									<tr>
+										<td bgcolor="#C0C0C0" align="CENTER"><b>Search for an IPv4 block</b></td>
+									</tr>
+									<tr>
+										<td align="LEFT">
+											<form method="POST" action="add">
+												<input name="action" value="add-multi" type="HIDDEN">
+												<input name="tri" value="addr" type="HIDDEN">
+												<table width="100%" border="0">
+													<tbody>
+														<tr>
+															<td align="LEFT">IPv4 network</td>
+															<td align="LEFT">
+																<select size="1" name="plage">
+																	<option selected="selected" value="1">172.16.0.0/16		(Internal network)</option>
+																	<option value="2">198.51.100.0/24	2001:db8:1234::/48	(Public servers)</option>
+																</select>
+															</td>
+														</tr>
+														<tr>
+															<td align="LEFT">Address count</td>
+															<td align="LEFT">
+																<input name="naddr" size="30" value="1" type="TEXT">
+															</td>
+														</tr>
+														<tr>
+															<td colspan="2" align="CENTER">
+																<input name="idview" value="3" type="HIDDEN">
+																<input name="dosearch" value="Search" type="SUBMIT">
+																&nbsp; &nbsp; &nbsp; &nbsp;
+																or 
+																&nbsp; &nbsp; &nbsp; &nbsp;
+																<input name="domap" value="Consult map" type="SUBMIT">
+															</td>
+														</tr>
+													</tbody>
+												</table>
+											</form>
+											<br>
+										</td>
+									</tr>
+									<tr>
+										<td bgcolor="#C0C0C0" align="CENTER"><b>Add alias</b></td>
+									</tr>
+									<tr>
+										<td align="LEFT">
+											<form method="POST" action="add">
+												<input name="action" value="add-alias" type="HIDDEN">
+												<table width="100%" border="0">
+													<tbody>
+														<tr>
+															<td align="LEFT">
+																<table border="0">
+																	<tbody>
+																		<tr>
+																			<td align="LEFT">Alias name</td>
+																			<td align="LEFT">
+																				<input name="name" size="30" type="TEXT">
+																				.
+																				<select size="1" name="domain">
+																					<option selected="selected" value="example.com">example.com</option>
+																					<option value="example.org">example.org</option>
+																				</select>
+																			</td>
+																		</tr>
+																		<tr>
+																			<td align="LEFT">Host</td>
+																			<td align="LEFT">
+																				<input name="nameref" size="30" type="TEXT">
+																				.
+																				<select size="1" name="domainref">
+																					<option selected="selected" value="example.com">example.com</option>
+																					<option value="example.org">example.org</option>
+																				</select>
+																			</td>
+																		</tr>
+																	</tbody>
+																</table>
+															</td>
+															<td align="RIGHT">View</td>
+															<td align="LEFT">
+																<select size="1" name="idview">
+																	<option selected="selected" value="3">external</option>
+																	<option value="2">internal</option>
+																</select>
+															</td>
+														</tr>
+														<tr>
+															<td colspan="3" align="CENTER">
+																<input value="Add" type="SUBMIT">
+															</td>
+														</tr>
+													</tbody>
+												</table>
+											</form>
+											<br>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</td>
+					<!----------------------- End Add App -------------------------->    
+				</tr>
+				<tr>
+					<td id="separation-bas" colspan="2">
+						<div></div>
+					</td>
+				</tr>
+				<tr id="pied-page">
+					<td align="left">
+						<a href="https://github.com/pdav/netmagis/raw/master/LICENSE">Netmagis license</a>
+					</td>
+					<td align="right">
+						<a href="http://www.netmagis.org/">Netmagis Web site</a>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</body>
+</html>
+
+
