@@ -689,6 +689,7 @@ webpackJsonp([0],{
 	exports.getJSON = exports.TODO_APIURL = exports.APIURL = undefined;
 	exports.IPv4_dotquadA_to_intA = IPv4_dotquadA_to_intA;
 	exports.IPv4_intA_to_dotquadA = IPv4_intA_to_dotquadA;
+	exports.add_to_IPv4 = add_to_IPv4;
 
 	var _react = __webpack_require__(1);
 
@@ -728,6 +729,10 @@ webpackJsonp([0],{
 		var byte3 = strnum >>> 8 & 255;
 		var byte4 = strnum & 255;
 		return byte1 + '.' + byte2 + '.' + byte3 + '.' + byte4;
+	}
+
+	function add_to_IPv4(ip, n) {
+		return IPv4_intA_to_dotquadA(IPv4_dotquadA_to_intA(ip) + n);
 	}
 
 /***/ },
@@ -916,8 +921,6 @@ webpackJsonp([0],{
 	    the current (selected) contents of the dropdown */
 
 		getInitialState: function getInitialState() {
-			console.log("getInitialState");
-			console.log(this.props.children);
 
 			/* If defaultValue is defined use it as initial
 	  	   value, otherwise use the contents of the first
@@ -931,9 +934,6 @@ webpackJsonp([0],{
 	    or there are new children (see filter dropdown)  */
 
 		componentWillReceiveProps: function componentWillReceiveProps(newprops) {
-
-			console.log("componentWillReceiveProps");
-			console.log(this.props.children);
 
 			if (newprops.value != undefined) this.setState({ value: newprops.value });else if (newprops.children.length > 0) {
 				if (this.state.value == undefined /*|| 
@@ -956,7 +956,6 @@ webpackJsonp([0],{
 
 		/* Creates an element of the dropdown containing the text inside
 	    the given child (so make sure the child contains only text) */makeOption: function makeOption(child, index) {
-			console.log(child);
 			return _react2.default.createElement(
 				'li',
 				{ key: "dopt" + index },
@@ -970,7 +969,6 @@ webpackJsonp([0],{
 
 		/* Main render */
 		render: function render() {
-			console.log(this.props.children);
 			return _react2.default.createElement(
 				'div',
 				{ className: this.props.superClass },
@@ -4789,10 +4787,12 @@ webpackJsonp([0],{
 			/* Fill the networks array with the API answer */
 			init: function init(callback) {
 				C.getJSON(C.APIURL + '/networks', function (response) {
+					var networks = [];
 					for (var i = 0; i < response.length; i++) {
-						this.networks.push(response[i]["addr4"]);
-						this.networks.push(response[i]["addr6"]);
+						networks.push(response[i]["addr4"]);
+						networks.push(response[i]["addr6"]);
 					}
+					this.networks = networks;
 				}.bind(this), callback);
 			},
 
@@ -4874,11 +4874,29 @@ webpackJsonp([0],{
 		addr: {
 			addrs: [],
 
-			/* Fill the machines array with the API answer */
+			makeIpv6: function makeIpv6(cidr) {
+				return cidr + "#TODO";
+			},
+
+			makeIpv4: function makeIpv4(cidr) {
+				var c_m = cidr.split("/");
+				return C.add_to_IPv4(c_m[0], 1);
+			},
+
 			init: function init(callback) {
-				C.getJSON(C.APIURL + '/addr', function (response) {
-					this.addrs = response;
-				}.bind(this), callback);
+				Prompters.cidr.init(function () {
+					var cidrs = Prompters.cidr.getValues();
+					for (var i = 0; i < cidrs.length; i++) {
+						var addr;
+						if (cidrs[i].search(':') > 0) {
+							addr = this.makeIpv6(cidrs[i]);
+						} else {
+							addr = this.makeIpv4(cidrs[i]);
+						}
+						this.addrs.push(addr);
+					}
+				}.bind(this));
+				console.log(this.addrs);
 			},
 
 			getSuggestions: function getSuggestions(value, callback) {
@@ -4974,13 +4992,27 @@ webpackJsonp([0],{
 			},
 
 			updateRow: function updateRow(input) {
+				var iddom = Prompters.domain.name2Id(input.data.domain);
+				var data_req = $.extend({ iddom: iddom }, input.data);
+				delete data_req.domain;
 				console.log("--------- UPDATE ----------");
-				console.log("PUT /api/dhcpranges/" + input.key + " " + JSON.stringify(input.data));
+				console.log("PUT /api/dhcpranges/" + input.key + " " + JSON.stringify(data_req));
+				$.ajax({
+					method: 'PUT',
+					url: C.APIURL + "/dhcpranges/" + input.key,
+					data: JSON.stringify(data_req),
+					contentType: 'application/json'
+				});
 			},
 
 			deleteRow: function deleteRow(input) {
 				console.log("--------- DELETE ----------");
 				console.log("DELETE /api/dhcpranges/" + input.key);
+				return;
+				$.ajax({
+					method: 'DELETE',
+					url: C.APIURL + "/dhcpranges/" + input.key
+				});
 			}
 
 		}

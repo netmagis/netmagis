@@ -156,8 +156,6 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 	   the current (selected) contents of the dropdown */
 
 	getInitialState: function(){
-		console.log("getInitialState");
-		console.log(this.props.children);	
 	
 		/* If defaultValue is defined use it as initial
  		   value, otherwise use the contents of the first
@@ -185,8 +183,6 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 
 	componentWillReceiveProps: function(newprops) {
 		
-		console.log("componentWillReceiveProps");	
-		console.log(this.props.children);	
 		
 		if (newprops.value != undefined )
 				this.setState({value: newprops.value });	
@@ -218,7 +214,6 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 	/* Creates an element of the dropdown containing the text inside
 	   the given child (so make sure the child contains only text) */
 	makeOption: function(child, index){
-			console.log(child);	
 			return (
 				<li key={"dopt"+index}>
 					<a href="#" onClick={this.handleClick.bind(this,child)} >
@@ -232,7 +227,6 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 
 	/* Main render */
 	render: function(){
-		console.log(this.props.children);	
 		return (
 			<div className={this.props.superClass}>
 				<button className="btn btn-default dropdown-toggle" 

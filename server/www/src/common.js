@@ -39,3 +39,11 @@ export function IPv4_intA_to_dotquadA( strnum ) {
 	return ( byte1 + '.' + byte2 + '.' + byte3 + '.' + byte4 );
 }
  
+
+
+export function add_to_IPv4(ip,n){
+	return IPv4_intA_to_dotquadA(
+		IPv4_dotquadA_to_intA(ip)+n
+        );
+}
+
