@@ -20,3 +20,6 @@ topo/src/extractl2
 topo/src/extractl3
 topo/src/getnetif
 www/htg/src/htgtcl
+
+# Node packages
+server/www/node_modules

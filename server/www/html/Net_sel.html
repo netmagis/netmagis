@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="fr"><head>
+  <title>Netmagis - Network selection</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="print" href="css/print.css" type="text/css">
+  <link rel="stylesheet" media="screen" href="css/screen.css" type="text/css">
+  <link rel="stylesheet" media="screen" href="css/autosuggest.css" type="text/css">
+  <link rel="icon" type="image/png" href="http://localhost/netmagis/css/images/favicon.png">
+  <meta name="Author" content="pda/jean">
+  <meta name="Generator" content="htg">
+  
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.3/jquery.min.js"></script> 
+</head>
+<body onload="" onunload="">
+  <table id="fond-page" cellspacing="0">
+    
+    <tbody><tr>
+      <td id="logo">
+	<a href="http://localhost/"><img src="css/images/logo.png" alt="sommaire"></a>
+      </td>
+      <td id="titre-page">
+        <h1>Netmagis application</h1>
+      </td>
+    </tr>
+    
+    <tr><td id="separation-haut" colspan="2"><div></div></td></tr>
+    
+    <tr>
+      <td id="bandeau">
+	<dl class="menu">
+	  <dt class="menu-titre">Netmagis v2.3.2</dt>
+	  
+	<dt>Session</dt><dd id="smenu10"><ul>
+	    <li><a href="http://localhost/netmagis/profile">Logged as pda</a></li><li><a href="http://localhost/netmagis/login?logout=yes">Log out</a></li>
+	</ul></dd>
+	<dt>Actions</dt><dd id="smenu11"><ul>
+	    <li><a href="http://localhost/netmagis/start">Welcome</a></li>
+
+<li><a href="http://localhost/netmagis/net">Consult</a></li>
+
+<li><a href="http://localhost/netmagis/add">Add</a></li>
+
+<li><a href="http://localhost/netmagis/del">Delete</a></li>
+
+<li><a href="http://localhost/netmagis/mod">Modify</a></li>
+
+<li><a href="http://localhost/netmagis/mail">Mail roles</a></li>
+
+<li><a href="http://localhost/netmagis/dhcp">DHCP ranges</a></li>
+
+<li><a href="http://localhost/netmagis/search">Search</a></li>
+
+<li><a href="http://localhost/netmagis/search?q=_">Where am I?</a></li>
+
+<li><a href="http://localhost/netmagis/pgapasswd">Password</a></li>
+
+<li><a href="http://localhost/netmagis/admindex">Admin</a></li>
+
+<li><a href="http://localhost/netmagis/start?l=fr">[fr]</a></li>
+	</ul></dd>
+
+	</dl>
+      </td>
+      <td id="texte-page">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0"><tbody><tr><td id="image-a-imprimer-seulement" valign="top" align="center"><img src="css/images/logo.png" alt="logo"></td><td valign="middle" align="center"><h2>Consult networks</h2></td></tr></tbody></table><p>    </p><form method="POST" action="net">
+	<table width="100%" border="0"><tbody><tr><td colspan="2" align="CENTER"><table width="100%" border="2" cellpadding="5" cellspacing="1">
+<tbody><tr>
+<td class="tab-text10" width="20%" align="left">
+User
+
+</td>
+<td class="tab-text10" width="80%" align="left"><b>
+Boss Joe
+</b>
+</td>
+</tr>
+<tr>
+<td class="tab-text10" width="20%" align="left">
+Login
+
+</td>
+<td class="tab-text10" width="80%" align="left"><b>
+pda
+</b>
+</td>
+</tr>
+<tr>
+<td class="tab-text10" width="20%" align="left">
+Mail
+
+</td>
+<td class="tab-text10" width="80%" align="left"><b>
+&nbsp;
+</b>
+</td>
+</tr>
+<tr>
+<td class="tab-text10" width="20%" align="left">
+Phone
+
+</td>
+<td class="tab-text10" width="80%" align="left"><b>
+&nbsp;
+</b>
+</td>
+</tr>
+<tr>
+<td class="tab-text10" width="20%" align="left">
+Mobile
+
+</td>
+<td class="tab-text10" width="80%" align="left"><b>
+&nbsp;
+</b>
+</td>
+</tr>
+<tr>
+<td class="tab-text10" width="20%" align="left">
+Fax
+
+</td>
+<td class="tab-text10" width="80%" align="left"><b>
+&nbsp;
+</b>
+</td>
+</tr>
+<tr>
+<td class="tab-text10" width="20%" align="left">
+Address
+
+</td>
+<td class="tab-text10" width="80%" align="left"><b>
+&nbsp;
+</b>
+</td>
+</tr>
+</tbody></table>
+</td></tr><tr><td align="CENTER">
+		    <table width="100%" border="0"><tbody><tr><td bgcolor="#C0C0C0" align="CENTER"><b>Select your networks in the following list...</b></td></tr><tr><td align="CENTER"><select size="2" name="plages" multiple="multiple">
+<option value="1">172.16.0.0/16		(Internal network)
+</option><option value="2">198.51.100.0/24	2001:db8:1234::/48	(Public servers)
+</option></select>
+</td></tr><tr><td bgcolor="#C0C0C0" align="CENTER"><b>... or enter a network prefix (e.g. 192.168.17.0/24 or 2001:db8:1234:10::/64)</b></td></tr><tr><td align="CENTER">
+
+
+
+
+
+
+<!-- Here goes the react component -->
+<!--<div class="autosuggest-input" name="cidr" placeholder="Type a network prefix" type="text" style="width: 300px;"></div> -->
+<div id="app"></div>
+<script src="js/inputs.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</td></tr></tbody></table>
+		</td><td align="CENTER">
+		    <div style="vertical-align: center; display: block">
+			<table width="100%" border="0"><tbody><tr><td bgcolor="#C0C0C0" align="CENTER"><b>Select view</b></td></tr><tr><td align="CENTER">View <select size="1" name="idview">
+<option selected="selected" value="3">external
+</option><option value="2">internal
+</option></select>
+</td></tr></tbody></table>
+		    </div>
+		</td></tr><tr><td colspan="2" align="CENTER">
+		    <div id="buttons">
+		    <input name="dolist" value="Consult list" type="SUBMIT">
+		    <input name="doprint" value="Print list" type="SUBMIT">
+		    <input name="docsv" value="CSV export" type="SUBMIT">
+		    <span style="color: white">(for the selected view)</span>
+		    </div>
+		</td></tr><tr><td colspan="2" align="CENTER">
+		    <div id="buttons">
+		    <input name="domap" value="Display map" type="SUBMIT">
+		    <span style="color: white">(for all views)</span>
+		    </div>
+		</td></tr></tbody></table>
+    </form>
+      </td>
+    </tr>
+    
+    <tr><td id="separation-bas" colspan="2"><div></div></td></tr>
+    
+    <tr id="pied-page">
+      <td align="left">
+        <a href="https://github.com/pdav/netmagis/raw/master/LICENSE">Netmagis license</a>
+      </td>
+      <td align="right">
+        <a href="http://www.netmagis.org/">Netmagis Web site</a>
+      </td>
+    </tr>
+  </tbody></table>
+
+
+
+
+
+</body></html>

@@ -137,6 +137,14 @@ export var Button = React.createClass({
  *		<el> element 2 </el> 
  *		<el> element 3 </el> 
  * 	</Dropdown_internal>
+ *
+ * @warning: <el>{ my_var }</el> Ok! 
+ * 	     <el> { my_var } </el> Avoid it! 
+ *	  Apparently in the latter case React generates an array of 3 elements
+ *	  with leading and trailing white spaces strings. This works still fine
+ *	  for the rendering but could cause some problem when the value 
+ *	  must be retrieved using .val() 
+ *				 
  */
 export var Dropdown_internal = React.createClass({ /*TODO change name */
 
@@ -148,6 +156,8 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 	   the current (selected) contents of the dropdown */
 
 	getInitialState: function(){
+		console.log("getInitialState");
+		console.log(this.props.children);	
 	
 		/* If defaultValue is defined use it as initial
  		   value, otherwise use the contents of the first
@@ -175,6 +185,9 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 
 	componentWillReceiveProps: function(newprops) {
 		
+		console.log("componentWillReceiveProps");	
+		console.log(this.props.children);	
+		
 		if (newprops.value != undefined )
 				this.setState({value: newprops.value });	
 
@@ -195,8 +208,9 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 	   and execute the onChange callback */
 	handleClick: function(child, event){
 			event.preventDefault();
-			this.setState({value: child.props.children});
-			if (this.props.onChange) this.props.onChange();
+			var newValue = child.props.children;//[1];	// <el> ... </el> generates trailing and leading empty strings
+			this.setState({value: newValue});
+			if (this.props.onChange) this.props.onChange(newValue);
 			
 	},
 
@@ -204,9 +218,11 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 	/* Creates an element of the dropdown containing the text inside
 	   the given child (so make sure the child contains only text) */
 	makeOption: function(child, index){
+			console.log(child);	
 			return (
 				<li key={"dopt"+index}>
 					<a href="#" onClick={this.handleClick.bind(this,child)} >
+	 				{/*<el> ... </el> generates trailing and leading empty strings */}
 					{translate(child.props.children)}
 					</a>
 				</li>
@@ -216,7 +232,7 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 
 	/* Main render */
 	render: function(){
-
+		console.log(this.props.children);	
 		return (
 			<div className={this.props.superClass}>
 				<button className="btn btn-default dropdown-toggle" 
@@ -276,7 +292,7 @@ export var AJXdropdown = React.createClass({
 		var values = Prompters[this.props.name].getValues();
 
 		function makeElement(val, index) { 
-			return (<el key={"ajd"+index} > {val} </el>); 
+			return (<el key={"ajd"+index} >{val}</el>); 
 		}
 		
 		return (
@@ -781,11 +797,13 @@ export var FilteredDd = React.createClass({
 
 
 /**
+ * Creates an input and a dropdown (the latter preceded by a 'or' label), where
+ * only the last used can contain a value.
  * @properties:
- *	-label:
- *	-defaultValue:
- *	-iname, dname:
- *	-placeholder:
+ *	-label: Content of the label preceding the input field and the dropdown
+ *	-defaultValue: default value of the dropdown
+ *	-iname, dname: names of input field and dropdown (XXX should I use only one name prop and update an hidden input with the good value? )
+ *	-placeholder:  placeholder attribute of the input field
  */
 
 export var InputXORdd = React.createClass({
@@ -793,24 +811,28 @@ export var InputXORdd = React.createClass({
         contextTypes : {lang: React.PropTypes.string},
 
 	getInitialState: function(){
+		// state: { input value , dropdown value }
 		return {Ivalue: "", Dvalue: undefined };
 	},
 
 	/* An AJXdropdown has a name prop */
 	propTypes: { name: React.PropTypes.string.isRequired },	
 
+	/* Update input when the user types */
 	handleChange: function(event) {
 		event.preventDefault();
 		this.setState({Ivalue: event.target.value });
 	},
-	
+
+	/* Select dropdown value */	
 	ddChange: function() {
 		this.setState({Ivalue: "", Dvalue: undefined});
 	},
 
+	/* User leaves the input */
 	onBlur: function(event) {
 		event.preventDefault();
-		this.setState({Dvalue: ""});
+		this.setState({Dvalue: this.props.defaultValue || ""});
 		
 	},
 	
@@ -832,7 +854,7 @@ export var InputXORdd = React.createClass({
 					 name={this.props.name}  placeholder={this.props.placeholder} />
 				</div>
 				<div className={"dropdown col-md-"+grid_vals[2]}>
-					<AJXdropdown onChange={this.ddChange} value={this.state.Dvalue}
+					<Adropdown label="or" onChange={this.ddChange} value={this.state.Dvalue}
 					 name={this.props.name} defaultValue={this.props.defaultValue}  />
 				</div>
 			</div>
@@ -844,7 +866,10 @@ export var InputXORdd = React.createClass({
 
 
 
-
+/**
+ * Returns an object all the values of the form with the given id. The
+ * keys are the name attributes of the fields of the form 
+ */
 export function form2obj(id){
 	var elements = document.getElementById(id).elements;
 	

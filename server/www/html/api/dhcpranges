@@ -1,0 +1,21 @@
+[
+    {
+	"iddhcprange": 1,
+	"min": "198.51.100.10",
+	"max": "198.51.100.20",
+	"iddom": 1,
+	"default_lease_time": null,
+	"max_lease_time": 3600,
+	"iddhcpprof": 3
+    },
+    {
+	"iddhcprange": 2,
+	"min": "198.51.100.30",
+	"max": "198.51.100.40",
+	"iddom": 2,
+	"default_lease_time": null,
+	"max_lease_time": 3600,
+	"iddhcpprof": 4
+    }
+
+]

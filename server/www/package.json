@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "babel src/ --out-dir js/ || exit 1",
-    "build": "mkdir -p nm_pages/js && webpack && cp dist/* nm_pages/js/ #XXX"
+    "build": "mkdir -p html/js && webpack && cp dist/* html/js/ #XXX"
   },
   "repository": {
     "type": "git",
