@@ -4,7 +4,7 @@ set conf(conffile)	%CONFFILE%
 set conf(addr)		0.0.0.0
 set conf(port)		8080
 set conf(libdir)	%NMLIBDIR%
-set conf(files)		%NMLIBDIR%/www
+set conf(files)		{%NMLIBDIR%/www}
 set conf(minw)		2
 set conf(maxw)		4
 set conf(idle)		30
@@ -17,7 +17,7 @@ set conf(usage) {usage: %s [-h][-d][-c conf][-a addr][-p port][-l libdir][-f fil
     -a addr: listening address (e.g. 0.0.0.0)
     -p port: listening port (e.g. 8080)
     -l libdir: path to the libdir (with subdirectories worker/ and pkgtcl/)
-    -f files: path to the directory containing static files
+    -f files: list (':' separated) of directories containing static files
     -m min: minimum number of workers threads (e.g. 2)
     -x max: maximum number of workers threads (e.g. 4)
     -i idletime: maximum time in sec before a worker thread exists (e.g. 30)
@@ -76,7 +76,7 @@ proc main {argv0 argv} {
 		set argv [lreplace $argv 0 1]
 	    }
 	    -f {
-		set files [lindex $argv 1]
+		set files [split [lindex $argv 1] ":"]
 		set argv [lreplace $argv 0 1]
 	    }
 	    -m {
@@ -109,13 +109,6 @@ proc main {argv0 argv} {
 	usage $argv0
     }
 
-    array set wconf [list \
-			conffile $conffile \
-			libdir   $libdir \
-			files    $files \
-			version  $version \
-	]
-
     global auto_path
     lappend auto_path $libdir/pkgtcl
     package require scgi
@@ -127,12 +120,13 @@ proc main {argv0 argv} {
 	    -minworkers $minw \
 	    -maxworkers $maxw \
 	    -idletime $idle \
-	    "set conf(conffile) $conffile
-		set conf(libdir)  $libdir
-		set conf(files)   $files
-		set conf(version) $version
-		lappend auto_path $libdir/pkgtcl
-		source $libdir/worker/worker.tcl" \
+	    "set conf(conffile) {$conffile}
+		    set conf(libdir)  {$libdir}
+		    set conf(files)   {$files}
+		    set conf(version) {$version}
+		    lappend auto_path {$libdir/pkgtcl}
+		    source {$libdir/worker/worker.tcl}
+		    " \
 	    "handle-request"
 }
 
