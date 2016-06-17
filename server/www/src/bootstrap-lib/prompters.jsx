@@ -36,10 +36,12 @@ export var Prompters = {
 		/* Fill the networks array with the API answer */
 		init : function (callback)  { 
 			C.getJSON(C.APIURL+'/networks', function(response){
+				var networks = [];
 				for (var i = 0; i < response.length; i++){
-					this.networks.push(response[i]["addr4"]);
-					this.networks.push(response[i]["addr6"]);
+					networks.push(response[i]["addr4"]);
+					networks.push(response[i]["addr6"]);
 				}
+				this.networks = networks;
 			}.bind(this), callback);
 		},
 
@@ -124,12 +126,29 @@ export var Prompters = {
 	addr: {
 		addrs: [],
 
-		/* Fill the machines array with the API answer */
+		makeIpv6: function (cidr){
+			return cidr+"#TODO";
+		},
+
+		makeIpv4: function (cidr){
+			var c_m = cidr.split("/");
+			return C.add_to_IPv4(c_m[0],1);
+		},
+
 		init : function (callback) { 
-			C.getJSON(C.APIURL+'/addr', function(response){
-					this.addrs= response;
-					
-			}.bind(this), callback);
+			Prompters.cidr.init(function(){
+				var cidrs = Prompters.cidr.getValues();
+				for (var i = 0; i < cidrs.length; i++){
+					var addr;
+					if (cidrs[i].search(':') > 0){
+						addr = this.makeIpv6(cidrs[i]);	
+					} else {
+						addr = this.makeIpv4(cidrs[i]);	
+					}
+					this.addrs.push(addr);
+				}	
+			}.bind(this));
+				console.log(this.addrs);
 		},
 
 		getSuggestions: function (value, callback){
