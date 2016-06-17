@@ -167,6 +167,43 @@
 
 
 /dhcpprofiles
+    description: Collection of DHCP profiles
+    get:
+	description: get all DHCP profiles allowed for my group, sorted
+	queryParameters:
+	    (none)
+	request:
+	    body: empty
+	responses:
+	    200:
+		body:
+		    application/json:
+			example:
+			    [
+				{
+				    iddhcpprof: 5
+				    name: "x terminal"
+				},
+				{
+				    iddhcpprof: 1
+				    name: "iq laser printer"
+				}
+			    ]
+    /{iddhcpprof}:
+	description: one DHCP profile
+	get:
+	    description: get one specific DHCP profile
+	    queryParameters:
+		(none)
+	    request:
+		body: empty
+	    responses:
+		200:
+		    {
+			iddhcpprof: 1
+			name: "iq laser printer"
+		    }
+
 /networks
     /{networkId}
 /communities
