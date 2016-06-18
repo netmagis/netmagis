@@ -9,7 +9,7 @@ install:
 	@echo ">>> Making install in `pwd`"
 	cd etc ; $(MAKE) install
 	cd bin ; $(MAKE) install
-	cd man ; $(MAKE) clean
+	cd man ; $(MAKE) install
 	cd lib ; $(MAKE) install
 	cd www ; $(MAKE) install
 	cd examples ; $(MAKE) install

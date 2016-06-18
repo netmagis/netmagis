@@ -1,0 +1,62 @@
+% NETMAGIS-DBMAINT(1) Netmagis User Manuals
+% Pierre David
+% June 18, 2016
+
+# NAME
+
+netmagis-dbmaint - Netmagis database maintenance
+
+
+# SYNOPSIS
+
+netmagis-dbmaint [*OPTIONS*]  hourly|daily
+
+
+# DESCRIPTION
+
+Perform daily and hourly maintenance jobs on Netmagis database:
+
+  * backup database in the directory specified by the
+    `dumpdir` key (in `netmagis.conf`).
+    If the value of this parameter is empty, backup is not performed.
+  * create a copy of the Netmagis database into a sandbox database
+    specified by the `dbcopy` key (in `netmagis.conf`).
+    If the value of this parameter is empty, backup is not performed.
+  * garbage collect database with `vacuumdb` (1)
+  * expire spools used in the `topo` Netmagis module
+
+Actions are specified by one of the two following parameters:
+
+hourly
+  : Perform database backup only.
+
+daily
+  : Perform all actions detailed above.
+
+The following options are available:
+
+-h
+  : Prints a brief description of options
+
+-f *CONF*
+  : Specifiy the path to the `netmagis.conf` configuration file.
+
+
+# EXIT STATUS
+
+This utility exits 0 on success, and 1 if an error occurs.
+
+
+# SEE ALSO
+
+`netmagis-config` (1),
+`netmagis-dbcreate` (1),
+`netmagis-dbimport` (1),
+`netmagis-dbupgrade` (1),
+`netmagis-getoui` (1),
+`netmagis-restd` (1),
+`pg_dump` (1),
+`psql` (1),
+`vacuumdb` (1)
+
+<http://netmagis.org>

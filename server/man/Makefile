@@ -3,7 +3,9 @@ NINSTALL	= ../../ninstall
 MAN = \
 	netmagis-config.man \
 	netmagis-dbcreate.man \
+	netmagis-dbmaint.man \
 	netmagis-restd.man \
+
 
 .SUFFIXES: .md .man
 
@@ -18,7 +20,7 @@ install: build
 	mkdir -p $(DESTDIR)$(MANDIR)/man1
 	for page in $(MAN) ; do \
 	    b=`basename $$page .man` ; \
-	    install -m 0644 $(MAN) $(DESTDIR)$(MANDIR)/man1/$$b.1 ; \
+	    install -m 0644 $$page $(DESTDIR)$(MANDIR)/man1/$$b.1 ; \
 	done
 
 clean:
