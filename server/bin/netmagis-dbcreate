@@ -4,7 +4,7 @@
 # Netmagis database creation
 #
 # Syntax :
-#	netmagis-dbcreate [netmagis] [mac]
+#	netmagis-dbcreate [-h][-f conffile] [netmagis] [mac]
 #
 # History
 #   2002/02/11 : pda        : design
@@ -37,7 +37,7 @@
 usage ()
 {
     (
-	echo "usage: $0 [netmagis] [mac]"
+	echo "usage: $0 [-h] [-f conffile] [netmagis] [mac]"
 	echo "  netmagis : create netmagis database and schemas"
 	echo "  mac      : create mac database and schema"
     ) >&2
@@ -47,6 +47,9 @@ usage ()
 # defuser is used for initial database migration
 defuser="nobody"
 
+# default configuration file
+conffile=""
+
 ##############################################################################
 # Configuration file read
 ##############################################################################
@@ -55,7 +58,7 @@ init_env ()
 {
     # Main netmagis database parameters (dnsdb*)
     varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword rootusers"
-    eval `%CONFPROG% -c $varlist`
+    eval `%CONFPROG% $conffile -c $varlist`
 
     if [ $? != 0 ]
     then
@@ -65,7 +68,7 @@ init_env ()
 
     # Mac database parameters (macdb*)
     varlist="macdbhost macdbport macdbname macdbuser macdbpassword"
-    eval `%CONFPROG% -c $varlist`
+    eval `%CONFPROG% $conffile -c $varlist`
 
     if [ $? != 0 ]
     then
@@ -76,7 +79,7 @@ init_env ()
     # These variables are searched in a second pass, since they can be empty
     # (the first pass used the "-c" flag) 
     varlist="pwgen ouiurl"
-    eval `%CONFPROG% $varlist`
+    eval `%CONFPROG% $conffile $varlist`
 }
 
 ##############################################################################
@@ -482,16 +485,10 @@ insert_mac_oui ()
 ##############################################################################
 
 #
-# Initialize environnement
-#
-
-init_env
-
-#
 # Syntax checking
 #       
  
-args=`getopt h $*`
+args=`getopt hf: $*`
 
 if [ $? != 0 ]
 then usage
@@ -505,6 +502,9 @@ do
 	-h) usage
 	    exit 0
 	    ;;
+	-f) conffile="-f $2"
+	    shift 2
+	    ;;
 	--) shift
 	    break
 	    ;;
@@ -514,6 +514,12 @@ done
 if [ $# = 0 ]
 then set netmagis mac
 fi
+
+#
+# Initialize environnement
+#
+
+init_env
 
 #
 # Check actions
