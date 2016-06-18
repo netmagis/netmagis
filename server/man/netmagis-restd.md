@@ -86,6 +86,14 @@ The following options are available:
 This daemon never exits, so there is no exit status. See below (BUGS).
 
 
+# NETMAGIS.CONF KEYS
+
+The following `netmagis.conf` keys are used in this program:
+
+  > `dnsdbhost`, `dnsdbport`, `dnsdbname`, `dnsdbuser`, `dnsdbpassword`,
+  `macdbhost`, `macdbport`, `macdbname`, `macdbuser`, `macdbpassword`
+
+
 # BUGS
 
 The daemon does not fork itself. As such, it never stops.
@@ -93,6 +101,7 @@ The daemon does not fork itself. As such, it never stops.
 
 # SEE ALSO
 
+`netmagis.conf` (5),
 `netmagis-config` (1),
 `netmagis-dbcreate` (1),
 `netmagis-dbimport` (1),

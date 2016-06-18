@@ -14,7 +14,7 @@ netmagis-dbmaint [*OPTIONS*]  hourly|daily
 
 # DESCRIPTION
 
-Perform daily and hourly maintenance jobs on Netmagis database:
+Perform daily and hourly maintenance jobs on the Netmagis main database:
 
   * Backup database in the directory specified by the
     `dumpdir` key (in `netmagis.conf`).
@@ -49,8 +49,21 @@ The following options are available:
 This utility exits 0 on success, and 1 if an error occurs.
 
 
+# NOTE
+
+The Netmagis MAC database is not handled by this program.
+
+
+# NETMAGIS.CONF KEYS
+
+The following `netmagis.conf` keys are used in this program:
+
+  > `dnsdbhost`, `dnsdbport`, `dnsdbname`, `dnsdbuser`, `dnsdbpassword`,
+  `dumpdir`, `dbcopy`
+
 # SEE ALSO
 
+`netmagis.conf` (5),
 `netmagis-config` (1),
 `netmagis-dbcreate` (1),
 `netmagis-dbimport` (1),

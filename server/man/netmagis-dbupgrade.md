@@ -50,6 +50,14 @@ The following options are available:
 This utility exits 0 on success, and 1 if an error occurs.
 
 
+# NETMAGIS.CONF KEYS
+
+The following `netmagis.conf` keys are used in this program:
+
+  > `dnsdbhost`, `dnsdbport`, `dnsdbname`, `dnsdbuser`, `dnsdbpassword`,
+  `macdbhost`, `macdbport`, `macdbname`, `macdbuser`, `macdbpassword`
+
+
 # NOTE
 
 This program does not perform upgrade of underlying PostgreSQL versions.
@@ -64,6 +72,7 @@ This utility cannot upgrade from versions (strictly) lower than Netmagis
 
 # SEE ALSO
 
+`netmagis.conf` (5),
 `netmagis-config` (1),
 `netmagis-dbcreate` (1),
 `netmagis-dbimport` (1),

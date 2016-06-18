@@ -59,6 +59,7 @@ Use values in a script:
 
 # SEE ALSO
 
+`netmagis.conf` (5),
 `netmagis-dbcreate` (1),
 `netmagis-dbimport` (1),
 `netmagis-dbmaint` (1),
