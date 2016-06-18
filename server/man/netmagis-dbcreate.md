@@ -33,10 +33,12 @@ Without parameter, both databases are created and configured.
 The following options are available:
 
 -h
-  : Prints a brief description of options
+  : Prints a brief description of options.
 
 -f *CONF*
   : Specifiy the path to the `netmagis.conf` configuration file.
+
+    Default: `%CONFFILE%`
 
 
 # EXIT STATUS

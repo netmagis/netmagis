@@ -20,10 +20,12 @@ shell variables definitions.
 The following options are available:
 
 -h
-  : Prints a brief description of options
+  : Prints a brief description of options.
 
 -f *CONF*
   : Specifiy the path to the `netmagis.conf` configuration file.
+
+    Default: `%CONFFILE%`
 
 -c
   : Checks that the configuration key is present in the configuration

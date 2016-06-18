@@ -4,6 +4,7 @@ MAN = \
 	netmagis-config.man \
 	netmagis-dbcreate.man \
 	netmagis-dbmaint.man \
+	netmagis-dbupgrade.man \
 	netmagis-restd.man \
 
 
@@ -20,7 +21,11 @@ install: build
 	mkdir -p $(DESTDIR)$(MANDIR)/man1
 	for page in $(MAN) ; do \
 	    b=`basename $$page .man` ; \
-	    install -m 0644 $$page $(DESTDIR)$(MANDIR)/man1/$$b.1 ; \
+	    $(NINSTALL) -m 0644 \
+		    -e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
+		    -e "s|%VERSION%|$(VERSION)|" \
+		    $(SUBST) \
+		    $$page $(DESTDIR)$(MANDIR)/man1/$$b.1 ; \
 	done
 
 clean:

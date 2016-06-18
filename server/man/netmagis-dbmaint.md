@@ -16,14 +16,14 @@ netmagis-dbmaint [*OPTIONS*]  hourly|daily
 
 Perform daily and hourly maintenance jobs on Netmagis database:
 
-  * backup database in the directory specified by the
+  * Backup database in the directory specified by the
     `dumpdir` key (in `netmagis.conf`).
     If the value of this parameter is empty, backup is not performed.
-  * create a copy of the Netmagis database into a sandbox database
+  * Create a copy of the Netmagis database into a sandbox database
     specified by the `dbcopy` key (in `netmagis.conf`).
     If the value of this parameter is empty, backup is not performed.
-  * garbage collect database with `vacuumdb` (1)
-  * expire spools used in the `topo` Netmagis module
+  * Garbage collect database with `vacuumdb` (1).
+  * Expire spools used in the `topo` Netmagis module.
 
 Actions are specified by one of the two following parameters:
 
@@ -36,10 +36,12 @@ daily
 The following options are available:
 
 -h
-  : Prints a brief description of options
+  : Prints a brief description of options.
 
 -f *CONF*
   : Specifiy the path to the `netmagis.conf` configuration file.
+
+    Default: `%CONFFILE%`
 
 
 # EXIT STATUS

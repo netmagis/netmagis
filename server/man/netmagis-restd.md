@@ -20,47 +20,65 @@ such as Apache or Nginx.
 The following options are available:
 
 -h
-  : Prints a brief description of options
+  : Prints a brief description of options.
 
 -d
   : Activates debug messages. When used, error messages returned by
     the daemon will include a stack trace. *Do not activate this
     options* during normal operations.
 
--c *CONF*
+-f *CONF*
   : Specifiy the configuration file (netmagis.conf) path.
+
+    Default: `%CONFFILE%`
 
 -a *ADDR*
   : Specify the address (IPv4 or IPv6) to listen to SCGI requests from
     the HTTP server.
 
+    Default: `0.0.0.0`
+
 -p *PORT*
   : Specify the TCP port to listen to SCGI requests from the HTTP server.
+
+    Default: `8080`
 
 -l *LIBDIR*
   : Specify the to the library directory, which must contain the
     `worker/` and `pkgtcl/` subdirectories
 
--f *FILES*
+    Default: `%NMLIBDIR%`
+
+-s *FILES*
   : Specify the list of directories containing static files to be delivered
     by the daemon, under the `/files` URL. This list is separated by colons.
 
     Example: `netmagis-restd -f /tmp/dir1:/tmp/dir2:/tmp/dir3`
 
+    Default: `%NMLIBDIR%/www`
+
 -m *MIN*
-  : Specify the minimum number of worker threads (e.g. 2)
+  : Specify the minimum number of worker threads.
+
+    Default: `2`
 
 -x *MAX*
-  : Specify the maximum number of worker threads (e.g. 4)
+  : Specify the maximum number of worker threads.
+
+    Default: `4`
 
 -i *IDLETIME*
-  : Specify the maximum idle time in seconds (e.g. 30) before a worker
-    thread exits (as long as the number of threads does not drop below
-    the `-m` minimum number of worker threads).
+  : Specify the maximum idle time in seconds before a worker thread exits
+    (as long as the number of threads does not drop below the `-m`
+    minimum number of worker threads).
+
+    Default: `30`
 
 -v *VERSION*
   : Specify an application version for schema checking (e.g. 3.0.0alpha).
     *Use this option only during development of new Netmagis versions*.
+
+    Default: `%VERSION%`
 
 
 # EXIT STATUS
