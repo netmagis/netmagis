@@ -33,6 +33,12 @@ namespace eval ::pgdb {
 		}
 		set appver $check
 	    }
+	    set dbfd "not connected"
+	    $self reconnect
+	}
+
+	destructor {
+	    $self disconnect
 	}
 
 	method disconnect {} {
