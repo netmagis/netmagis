@@ -40,7 +40,7 @@ export function IPv4_intA_to_dotquadA( strnum ) {
 }
  
 
-
+/* Add n to an IPv4 address */
 export function add_to_IPv4(ip,n){
 	return IPv4_intA_to_dotquadA(
 		IPv4_dotquadA_to_intA(ip)+n

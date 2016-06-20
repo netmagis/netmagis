@@ -234,9 +234,9 @@ export var Prompters = {
 			return {'domain':  Prompters.domain.getValues() };
 		},
 
-		saveNewRow: function(input){
-			var iddom = Prompters.domain.name2Id(input.data.domain);
-			var data_req = $.extend({iddom: iddom}, input.data);
+		save: function(key, input){
+			var iddom = Prompters.domain.name2Id(input.domain);
+			var data_req = $.extend({iddom: iddom}, input);
 			delete data_req.domain;
 			console.log("--------- SAVE ----------");
 			console.log("POST /api/dhcprange "+JSON.stringify(data_req));
@@ -250,27 +250,27 @@ export var Prompters = {
 			
 		},
 
-		updateRow: function(input){
-			var iddom = Prompters.domain.name2Id(input.data.domain);
-			var data_req = $.extend({iddom: iddom}, input.data);
+		update: function(key, input){
+			var iddom = Prompters.domain.name2Id(input.domain);
+			var data_req = $.extend({iddom: iddom}, input);
 			delete data_req.domain;
 			console.log("--------- UPDATE ----------");
-			console.log("PUT /api/dhcpranges/"+input.key+" "+JSON.stringify(data_req));
+			console.log("PUT /api/dhcpranges/"+key+" "+JSON.stringify(data_req));
 			$.ajax({
 				method: 'PUT',
-				url: C.APIURL+"/dhcpranges/"+input.key,
+				url: C.APIURL+"/dhcpranges/"+key,
 				data: JSON.stringify(data_req),
 				contentType: 'application/json'
 			});
 		},
 
-		deleteRow: function(input){
+		delete: function(key, input){
 			console.log("--------- DELETE ----------");
-			console.log("DELETE /api/dhcpranges/"+input.key);
+			console.log("DELETE /api/dhcpranges/"+key);
 			return;
 			$.ajax({
 				method: 'DELETE',
-				url: C.APIURL+"/dhcpranges/"+input.key
+				url: C.APIURL+"/dhcpranges/"+key
 			});
 		}
 

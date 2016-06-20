@@ -5,13 +5,46 @@ import Autosuggest from 'react-autosuggest';
 import {Prompters} from './prompters.jsx';
 
 
+/**
+ * Returns an object all the values of the form with the given id. The
+ * keys are the name attributes of the fields of the form 
+ */
+export function form2obj(id){
+	var elements = document.getElementById(id).elements;
+	
+	var obj = {};
+
+	for (var i = 0; i < elements.length; i++){
+		
+		var value;	
+		var el = elements[i];
+		var tag = el.tagName.toLowerCase();
+
+		switch (tag) {
+			
+			case "input":	if (el.type.toLowerCase() == "text")
+						value = el.value;
+					else if (el.type.toLowerCase() == "checkbox")
+						value = el.checked;
+				break;
+
+			case "button": value = el.textContent;
+			
+		}
+		
+		obj[elements[i].name] = value;
+	}
+
+	return obj;
+}
+
 
 /** 
  * Creates an uncontrolled Bootstrap-like input field preceded by a label.
  * Every property passed to this object is passed to the input field.
  *
  * @properties:
- *	-label: defines the contents of the label (required) //TODO make it optional
+ *	-label: defines the contents of the label (required)
  *	-dims : defines the dimensions of this component following the
  *		Bootstrap grid system. Use the following syntax: "x+y"
  *		where x is the space reserved for the label and y is the
@@ -84,6 +117,11 @@ export var Ainput = React.createClass({
 });
 
 
+
+
+
+
+
 /**
  * Simple Bootstrap-like button. Every property passed to this button is 
  * passed as an attribute to the html button node. 
@@ -95,6 +133,7 @@ export var Ainput = React.createClass({
  *	
  * @prec this component should have only text as a child
  */
+
 export var Button = React.createClass({
 	
  	contextTypes : {lang: React.PropTypes.string},
@@ -117,19 +156,29 @@ export var Button = React.createClass({
 
 
 
+
+
+
+
+
 /**
  * This component creates a simple bootstrap-like dropdown using the 
  * contents of the children as list element. The children can contain only
  * text. You can use whatever html tag to indicate the children (by convention
  * I suggest you to use the tag <el> </el> as it is short and descriptive).
- * All the properties passed to theis component are passed directly to the
- * button element as attributes
+ * All the properties passed to this component are passed directly to the
+ * button element (so if you define a 'className' property this means that
+ * the button will use it to define a class attribute) in this way you can
+ * define 
  *
  * @properties:
- *	-superClass: Is the same of className but it will affect the whole
+ *	-superClass: the same as className but it will affect the whole
  *		     component and not only the internal button
  *	-defaultValue: force the initial value
- *	-value: force the value
+ *	-value:	force the value
+ *	-onChange: a function called every time the user changes the value,
+ *		   this new value is passed by parameter
+ *		   
  * 
  * Example of use:
  *	<Dropdown_internal superClass="beautiful_dropdown" >
@@ -141,12 +190,11 @@ export var Button = React.createClass({
  * @warning: <el>{ my_var }</el> Ok! 
  * 	     <el> { my_var } </el> Avoid it! 
  *	  Apparently in the latter case React generates an array of 3 elements
- *	  with leading and trailing white spaces strings. This works still fine
- *	  for the rendering but could cause some problem when the value 
- *	  must be retrieved using .val() 
+ *	  [" ", my_var, " "]. This works still fine for the rendering but could 
+ *	  cause some problem when the value must be retrieved using .val() 
  *				 
  */
-export var Dropdown_internal = React.createClass({ /*TODO change name */
+export var Dropdown_internal = React.createClass({ 
 
 
  	contextTypes : {lang: React.PropTypes.string},
@@ -203,7 +251,7 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 	   and execute the onChange callback */
 	handleClick: function(child, event){
 			event.preventDefault();
-			var newValue = child.props.children;//[1];	// <el> ... </el> generates trailing and leading empty strings
+			var newValue = child.props.children; 
 			this.setState({value: newValue});
 			if (this.props.onChange) this.props.onChange(newValue);
 			
@@ -216,7 +264,6 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 			return (
 				<li key={"dopt"+index}>
 					<a href="#" onClick={this.handleClick.bind(this,child)} >
-	 				{/*<el> ... </el> generates trailing and leading empty strings */}
 					{translate(child.props.children)}
 					</a>
 				</li>
@@ -250,6 +297,9 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 
 
 
+
+
+
 /**
  * Creates a Bootstrap-like dropdown which element will be charged
  * automatically trough async ajax request using the proper hanlder.
@@ -261,6 +311,7 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
  *	 <AJXdropdown name="foods" superClass="foodSelector" />
  *	
  */
+
 export var AJXdropdown = React.createClass({
 	
         contextTypes : {lang: React.PropTypes.string},
@@ -448,9 +499,13 @@ export var Inputdrop = React.createClass({
 
 
 
+
+
 /**
- * Same as Inputdrop but with a list of elements charged trough 
- * async AJAX call (see AJXdropdown).
+ * Same as Inputdrop but uses an AJXdropdown in order to charge
+ * the values of the dropdown using the ajax api. In this case
+ * use the property `ddname` to specify the name of the handler
+ * for the AJXdropdown.
  */
 
 export var InputAdrop = React.createClass({
@@ -483,6 +538,9 @@ export var InputAdrop = React.createClass({
 	}
 
 });
+
+
+
 
 /**
  * Creates a Bootstrap-like checkbox followed by a label
@@ -569,6 +627,10 @@ export var Row = React.createClass({
 });
 
 
+
+
+
+
 /**
  * Creates a form. The properties passed to this component are passed
  * automatically as attributes of the html element <form>
@@ -592,19 +654,23 @@ export var Form = React.createClass({
 
 
 
+
+
+
 /**
  * Use this component to generate an input field with automatic suggestions.
  * Note that all the properties of AutoInput will be passed to the imput field.
  * AutoInput must have a `name` property and it's value must correspond
  * with the name of an handler contained inside the Prompters (see above).
+ *
+ * @properties: 
+ *	-defaultValue: default value of the input (!= placeholder)
+ *	-name: name of the handler
  * 
  * Example of use:
- *
- *	ReactDOM.render(
- *		<AutoInput placeholder="Insert a network address" name="cidr" 
- *		   className="myclassname" style={{width: "30%"}} />, 
- *		document.getElementById('app')
- * 	);
+ *	<AutoInput placeholder="Insert a network address" name="cidr" 
+ *		   className="myclassname" style={{width: "30%"}} 
+ *	/>
  */
 export var AutoInput = React.createClass({
 
@@ -701,6 +767,7 @@ export var AutoInput = React.createClass({
 /**
  * Creates an input and a dropdown (the latter preceded by a 'or' label), where
  * only the last used can contain a value.
+ *
  * @properties:
  *	-label: Content of the label preceding the input field and the dropdown
  *	-defaultValue: default value of the dropdown
@@ -713,7 +780,8 @@ export var InputXORdd = React.createClass({
         contextTypes : {lang: React.PropTypes.string},
 
 	getInitialState: function(){
-		// state: { input value , dropdown value }
+		// The state contains the value of the input
+		// (Ivalue) and the value of the dropdown (Dvalue)
 		return {Ivalue: "", Dvalue: undefined };
 	},
 
@@ -768,49 +836,17 @@ export var InputXORdd = React.createClass({
 
 
 
+
+
+
 /**
- * Returns an object all the values of the form with the given id. The
- * keys are the name attributes of the fields of the form 
+ * Depending on is property `edit` creates a editable text-input field
+ * or a not editable text.
+ * @properties:
+ *	- name: name to pass to the imput when in edit mode
+ *	- edit: if true the component will be editable 
  */
-export function form2obj(id){
-	var elements = document.getElementById(id).elements;
-	
-	var obj = {};
-
-	for (var i = 0; i < elements.length; i++){
-		
-		var value;	
-		var el = elements[i];
-		var tag = el.tagName.toLowerCase();
-
-		switch (tag) {
-			
-			case "input":	if (el.type.toLowerCase() == "text")
-						value = el.value;
-					else if (el.type.toLowerCase() == "checkbox")
-						value = el.checked;
-				break;
-
-			case "button": value = el.textContent;
-			
-		}
-		
-		obj[elements[i].name] = value;
-	}
-
-	return obj;
-}
-
-
-
-
-
-
-
-/* Div <--> Input (prop edit) 
- * Editable input field 
- */
-var InEdit = React.createClass({
+export var InEdit = React.createClass({
 
 	/* This will force a rerendering on languae change */
  	contextTypes : {lang: React.PropTypes.string},
@@ -818,10 +854,12 @@ var InEdit = React.createClass({
 	getInitialState: function(){
 		return { value: this.props.children }
 	},
+
 	componentWillReceiveProps: function(newProps){
 		//this.setState({ value: newProps.children });
 		
 	},
+
 	/* As this is controlled Update the state with the new value */
 	onChange: function (event) {
 		this.setState({value: event.target.value});
@@ -838,12 +876,24 @@ var InEdit = React.createClass({
 	}
 });
 
-/* 
- * Editable dropdown
- * props:
- *	-values: either a list either an object containing an attribute values (a list) and an attribute value (default value)
+
+
+
+
+
+
+/**
+ * Depending on is property `edit` creates a editable dropdown
+ * or a not editable text.
+ * @properties:
+ *	- name: name to pass to the dropdown when in edit mode
+ *	- edit: if true the component will be editable 
+ *	- values: either a list (array) either an object containing an attribute 
+ *		  values (a list) and an attribute value (default value), in this 
+ *		  latter case the attribute value will be used as default value of
+ *		  this component.
  */
-var DdEdit = React.createClass({
+export var DdEdit = React.createClass({
 
 	/* This will force a rerendering on languae change */
  	contextTypes : {lang: React.PropTypes.string},
@@ -902,24 +952,41 @@ var DdEdit = React.createClass({
 
 
 
+
 /**
- * An editable table's row, allows the user to edit the values
- * and/or save/remove the row.
+ * Creates an editable table's row which allows the user to edit the values
+ * and/or save/remove/cancell the row.
+ *
  * @properties:
- *	-model, contains the descriptionof the data contained into
- *		the row (see the component EdiTable)
- *		(ex: {key: ... , desc: [ ["field" , "type", "name"], ... ]} )
+ *	-model	an object which describes the data contained into
+ *		the row (see the component EdiTable). It must have one attribute
+ *		'key' and an attribute 'desc' (see EditTable)
+ *	
  *	-data,  an object containing a certain number of "name": "value" pairs,
  *		where "name" correspond to one of the names specified on the model.
  *	 	If the type specified on the model is "input" and the data for this
  *		field is not specified then it will be an empty string by default. 
  *		The data of other types (!= "input") must always be specified.
- *	TODO complete
- *	-onRemove
- *	-onSave
- *	-on...
+ *
+ *	-edit, specify if the row is rendered in edit mode or not
+ *
+ * 	-handler, an object containing a serie of function that can handle the data
+ *		  contained in the row, each of them when called will receive a
+ *		  parameter 'key' which containds the key value referenced by the model
+ *                and a object 'input' which fields rapresent the fields of the row
+ *		  they are named accordingly with the model (required)
+ *
+ *	-onRemove, a function called when the row is removed, the property index
+ *	           passed as parameter
+ *
+ *	-index, value passed to the onRemove function when the row is removed
+ *
+ *	-reactKey, must have the same value as the key used by React for 
+ *		   this component. This will be used as id to idetify the
+ *		   row (required)
  */
-var Editable_tr = React.createClass({
+
+export var Editable_tr = React.createClass({
 
 	/* This will force a rerendering on languae change */
  	contextTypes : {lang: React.PropTypes.string},
@@ -955,7 +1022,7 @@ var Editable_tr = React.createClass({
 					/>
 				);
 				
-			default: return (<div> {content} </div>);
+			default: return (<div>{content}</div>);
 		}
 				
 				
@@ -990,9 +1057,10 @@ var Editable_tr = React.createClass({
 			data[name] = $("#etr"+this.props.reactKey+" [name='"+name+"']").val();
 		}
 		var uniquekey = this.props.data[this.props.model.key];
-		return {key:  uniquekey, data: data };
+		return {key:  uniquekey, input: data };
 	},
-			
+		
+	
 	/* Active/desactive edit mode */	
 	switchMode: function(){
 
@@ -1000,28 +1068,33 @@ var Editable_tr = React.createClass({
 			var data = this.collectValues();
 
 			if (data.key.toString().startsWith("__")) { // Invalid api id (given from the application)
-				this.props.handler.saveNewRow(data);
+				this.props.handler.save(data.key, data.input);
 			} else {
-				this.props.handler.updateRow(data);
+				this.props.handler.update(data.key, data.input);
 			}
 		}
 
 		this.setState({ edit: !this.state.edit });
 	},
 
+
 	/* Called when the user remove this row */
 	deleteRow: function(){
-		// XXX do stuffs here
+
 		var data = this.collectValues();
-		if (this.state.edit == false) {
-			this.props.handler.deleteRow(data);
+
+		if (this.state.edit == false) { 
+			this.props.handler.delete(data.key,data.input);
 			this.props.onRemove(this.props.index);
+
 		} else if (data.key.toString().startsWith("__")) { // Invalid api id (given from the application)
 			this.props.onRemove(this.props.index);
+
 		} else {
 			this.setState({ edit: !this.state.edit });
 		}
 	},
+
 	
 	render: function(){
 		return (
@@ -1041,10 +1114,46 @@ var Editable_tr = React.createClass({
 });
 
 
-/* props: model [ ["field" , "type", "name"], ... ]
- * name: prompter
+
+
+
+
+
+
+
+
+/**
+ * Creates an editable table on which the user can remove/add as many rows as 
+ * he wants. The rows can also be edited/saved in any moment.
+ *
+ * @properties:
+ *	-name: the name of the handler
+ *
+ *	-model	an object which describes the data contained into
+ *		the row (see the component EdiTable). It must have one attribute
+ *		'key' and an attribute 'desc':
+ *
+ *		- desc: contains a list of 3-elements arrays, each one describing one field of a
+ *		        row. The 3 elements must be strings representing respectively 
+ *				[Columns label, field type, field name]
+ *			example ["List of addresses", "Input", "address"]
+ *			
+ *		- key: contains the name of an attribute present on the property
+ *	    	       `data` which will be used as identifier for each row. This id
+ *		       is sent to the handler when a row is removed/updated/saved.
+ *		       Example of use: iddhcprange for a table of dhcp ranges
+ *		
+ *		The model should finally look more ore less like this:
+ *		      {key: ... , desc: [ ["field" , "type", "name"], ... ]}
+ * 
+ *	-data,  an object containing a certain number of "name": "value" pairs.
+ *		It must contain all the "names" specified on the model property.
+ *	 	If the type specified on the model is "input" and the data for this
+ *		field is not specified then the value will be an empty string. 
+ *		The data of other types (!= "input") must always be specified.
+ *
  */
-var Table = React.createClass({
+export var Table = React.createClass({
 
 	/* This will force a rerendering on languae change */
  	contextTypes : {lang: React.PropTypes.string},
@@ -1153,7 +1262,7 @@ var Table = React.createClass({
 					</tbody>
 				</table>
 				<Button onClick={this.addRow}>
-					Button
+					Add
 				</Button>
 			</div>
 		);
