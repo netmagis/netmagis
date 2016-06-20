@@ -1,7 +1,7 @@
 api-handler get {/networks} yes {
     } {
     set idgrp [::u idgrp]
-    set sql "SELECT array_to_json (array_agg (row_to_json (t))) AS res
+    set sql "SELECT json_agg (t.*) AS j
 		    FROM (
 			SELECT n.name,
 				global.mklink ('/networks/', n.idnet) AS link,
@@ -22,14 +22,14 @@ api-handler get {/networks} yes {
 			    ORDER BY p.sort ASC, n.name ASC
 		    ) t
 		"
-    # puts "request=$sql"
-    set r ""
     ::dbdns exec $sql tab {
-	set r $tab(res)
-	# puts "r=$r"
+	set j $tab(j)
+    }
+    if {$j eq ""} then {
+	set j {[]}
     }
     ::scgi::set-header Content-Type application/json
-    ::scgi::set-body $r
+    ::scgi::set-body $j
 }
 
 api-handler get {/networks/([0-9]+:idnet)} yes {

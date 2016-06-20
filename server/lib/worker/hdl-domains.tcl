@@ -18,9 +18,11 @@ api-handler get {/domains} yes {
 		    ORDER BY p.sort ASC
 		) AS t
 		"
-    set j {[]}
     ::dbdns exec $sql tab {
 	set j $tab(j)
+    }
+    if {$j eq ""} then {
+	set j {[]}
     }
 
     ::scgi::set-header Content-Type application/json

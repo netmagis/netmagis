@@ -11,9 +11,11 @@ api-handler get {/dhcpprofiles} yes {
 		    ORDER BY p.sort ASC
 		) AS t
 		"
-    set j {[]}
     ::dbdns exec $sql tab {
 	set j $tab(j)
+    }
+    if {$j eq ""} then {
+	set j {[]}
     }
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j
@@ -39,7 +41,7 @@ api-handler get {/dhcpprofiles/([0-9]+:iddhcpprof)} yes {
     }
 
     if {! $found} then {
-	::scgi::serror 404 [mc "DHCP profile %s not found"]
+	::scgi::serror 404 [mc "DHCP profile %s not found" $iddhcpprof]
     }
 
     ::scgi::set-header Content-Type application/json

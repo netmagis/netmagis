@@ -1,10 +1,10 @@
 api-handler get {/views} yes {
     } {
     set idgrp [::u idgrp]
-    set sql "SELECT array_to_json (array_agg (row_to_json (t))) AS res
-		    FROM (
-			SELECT v.name, '/views/' || v.idview AS link,
-				    p.selected, p.sort
+    set sql "SELECT json_agg (t.*) AS j FROM (
+			SELECT v.name,
+				global.mklink ('/views/', v.idview) AS link,
+				p.selected, p.sort
 			    FROM dns.view v
 			    INNER JOIN dns.p_view p
 				ON v.idview = p.idview
@@ -12,18 +12,20 @@ api-handler get {/views} yes {
 			    ORDER BY p.sort ASC, v.name ASC
 		    ) t
 		"
-    set r ""
     ::dbdns exec $sql tab {
-	set r $tab(res)
+	set j $tab(j)
+    }
+    if {$j eq ""} then {
+	set j {[]}
     }
     ::scgi::set-header Content-Type application/json
-    ::scgi::set-body $r
+    ::scgi::set-body $j
 }
 
 api-handler get {/views/([0-9]+:idview)} yes {
     } {
     set idgrp [::u idgrp]
-    set sql "SELECT row_to_json (t) AS res
+    set sql "SELECT row_to_json (t) AS j
 		    FROM (
 			SELECT v.name, p.selected, p.sort
 			    FROM dns.view v
@@ -33,13 +35,13 @@ api-handler get {/views/([0-9]+:idview)} yes {
 				AND v.idview = $idview
 		    ) t
 		"
-    set r ""
+    set j ""
     ::dbdns exec $sql tab {
-	set r $tab(res)
+	set j $tab(j)
     }
-    if {$r eq ""} then {
+    if {$j eq ""} then {
 	::scgi::serror 404 [mc "View '%s' not found" $idview]
     }
     ::scgi::set-header Content-Type application/json
-    ::scgi::set-body $r
+    ::scgi::set-body $j
 }

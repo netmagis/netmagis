@@ -16,9 +16,11 @@ api-handler get {/hinfos} yes {
 		    ORDER BY sort ASC
 		) AS t
 		"
-    set j {[]}
     ::dbdns exec $sql tab {
 	set j $tab(j)
+    }
+    if {$j eq ""} then {
+	set j {[]}
     }
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j

@@ -144,10 +144,11 @@ proc sub-names {view name domain cidr} {
 				WHERE $where
 		    )
 		    "
-    ### puts "sql=$sql"
-    set j ""
     ::dbdns exec $sql tab {
 	set j $tab(j)
+    }
+    if {$j eq ""} then {
+	set j {[]}
     }
 
     return $j

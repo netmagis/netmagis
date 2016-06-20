@@ -61,13 +61,13 @@ api-handler get {/admin/([a-z._]+:table)} yes {
 
     if {$type eq "ref"} then {
 	set idname [lindex $lid 0]
-	set sql "SELECT json_agg (r.*) AS j
-			FROM (SELECT * FROM $table $where) AS r
+	set sql "SELECT json_agg (r.*) AS j FROM (
+			SELECT * FROM $table $where
+		    ) AS r
 		"
     } else {
 	# idname is idgrp
-	set sql "SELECT json_agg (r.*) AS j
-		    FROM (
+	set sql "SELECT json_agg (r.*) AS j FROM (
 			SELECT g.idgrp, gp.perm
 			    FROM global.nmgroup g
 				, LATERAL (
@@ -80,9 +80,11 @@ api-handler get {/admin/([a-z._]+:table)} yes {
 		"
     }
 
-    set j {[]}		;# never used: json_agg always returns exactly 1 row
     ::dbdns exec $sql tab {
 	set j $tab(j)
+    }
+    if {$j eq ""} then {
+	set j {[]}
     }
 
     ::scgi::set-header Content-Type application/json
