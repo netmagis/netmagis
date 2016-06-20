@@ -188,8 +188,7 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 				this.setState({value: newprops.value });	
 
 		else if (newprops.children.length > 0) {
-			if ( this.state.value == undefined /*|| 
-			     this.props.children != newprops.children*/){ //TODO FIX
+			if ( this.state.value == undefined) {
 				
 				this.setState(
 					{value: newprops.children[0].props.children}
@@ -695,97 +694,6 @@ export var AutoInput = React.createClass({
 });
 
 
-
-
-
-
-
-
-/**
- * Generates a dropdown which elements are charged dinamically trough ajax
- * requestm, preceded by an imput field that can be use to filter out the
- * elements of the dropdown. Everything is preceded by a label.
- * 
- * FIXME when all the elements are filtered out the dropdown keeps
- * the previous value.
- *
- * @properties: 
- *	-name : Name of the handler (see AJXdropdown)
- *	-label: Contents of the label preceding the input field and the dropdown
- *	-dims : Dimensions following bootstrap's grid system (see Input)
- * Example of use:
- *	  <FilteredDd name="contacts" label="select a contact" dims="3+2+1" />
- */
-
-export var FilteredDd = React.createClass({
-	
-        contextTypes : {lang: React.PropTypes.string},
-
-	getInitialState: function(){
-		return {value: ""};
-	},
-
-
-	/* An AJXdropdown has a name prop */
-	propTypes: { name: React.PropTypes.string.isRequired },	
-
-	componentWillMount: function () {
-		var prompter = Prompters[this.props.name];
-
-		if (!prompter) {
-			console.error(this.props.name+" is not a prompter!");
-
-		} else if (prompter.init) {
-			prompter.init(function(){this.forceUpdate();}.bind(this));
-			
-		}
-	},
-	handleChange: function(event) {
-		this.setState({value: event.target.value});
-	},
-	
-	getValues: function(){
-		var values = Prompters[this.props.name].getValues();
-		var inputValue = this.state.value.trim().toLowerCase();
-		var inputLength = inputValue.length;
-
-		if (inputLength === 0) return values;
-
-		return values.filter(function (val) {
-	    		return val.toLowerCase().slice(0, inputLength) === inputValue;
-		 });
-		
-	},
-
-	render: function(){
-
-		var values = this.getValues();
-
-		var grid_vals = this.props.dims ? 
-			this.props.dims.split('+') : ['2','2','2'];
-
-		function makeElement(val, index) { 
-			return (<el key={"ajd"+index} > {val} </el>); 
-		}
-		
-		return (
-			<div>
-				<label className={"control-label col-md-"+grid_vals[0]}>
-				{translate(this.props.label)}
-				</label>
-				<div className={"col-md-"+grid_vals[1]}>
-					<input className="form-control" value={this.state.value} onChange={this.handleChange} />
-				</div>
-				<div className={"dropdown col-md-"+grid_vals[2]}>
-					<Dropdown_internal {...this.props}  >
-						{values.map(makeElement)}
-					</ Dropdown_internal>
-				</div>
-			</div>
-		);
-	}
-
-});
 
 
 
