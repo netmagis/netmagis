@@ -34,8 +34,11 @@ var App = React.createClass({
 });
 
 
+
+
 /* Rendering the app on the node with id = 'app'
-   change in case of conflict */
+   change it in case of conflict   */
+
 var dom_node = document.getElementById('app');
 
 ReactDOM.render( <Translator> <App /> </Translator>, dom_node);
