@@ -76,7 +76,7 @@ export var updateTranslations = function() {
 			dataType: 'json',
 
 			// XXX this is not a rapresentative url
-			url:'http://130.79.91.54/stage-l2s4/nm_pages/lang/'+Dict.lang+'.json',
+			url:'lang/'+Dict.lang+'.json',
 			
 			/* In case of success update translations */
 	    		success: function(response, status, xhr){ 
