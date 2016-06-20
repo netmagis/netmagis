@@ -7,7 +7,7 @@ api-handler get {/dhcpranges} yes {
     set qcidr [pg_quote $cidr]
     set idgrp [::u idgrp]
 
-    set sql "SELECT json_agg (t.*) AS j FROM (
+    set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
 		SELECT d.*
 		    FROM dns.dhcprange d
 			INNER JOIN dns.p_dom p USING (iddom)
@@ -20,9 +20,6 @@ api-handler get {/dhcpranges} yes {
 		"
     ::dbdns exec $sql tab {
 	set j $tab(j)
-    }
-    if {$j eq ""} then {
-	set j {[]}
     }
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j

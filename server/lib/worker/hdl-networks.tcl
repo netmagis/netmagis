@@ -1,7 +1,7 @@
 api-handler get {/networks} yes {
     } {
     set idgrp [::u idgrp]
-    set sql "SELECT json_agg (t.*) AS j
+    set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j
 		    FROM (
 			SELECT n.name,
 				global.mklink ('/networks/', n.idnet) AS link,
@@ -24,9 +24,6 @@ api-handler get {/networks} yes {
 		"
     ::dbdns exec $sql tab {
 	set j $tab(j)
-    }
-    if {$j eq ""} then {
-	set j {[]}
     }
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j

@@ -9,7 +9,7 @@ api-handler get {/domains} yes {
 	set w "AND $w"
     }
 
-    set sql "SELECT json_agg (t.*) AS j FROM (
+    set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
 		SELECT d.*, p.mailrole
 		    FROM dns.domain d
 			INNER JOIN dns.p_dom p USING (iddom)
@@ -20,9 +20,6 @@ api-handler get {/domains} yes {
 		"
     ::dbdns exec $sql tab {
 	set j $tab(j)
-    }
-    if {$j eq ""} then {
-	set j {[]}
     }
 
     ::scgi::set-header Content-Type application/json

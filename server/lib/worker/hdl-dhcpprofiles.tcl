@@ -3,7 +3,7 @@
 api-handler get {/dhcpprofiles} yes {
     } {
     set idgrp [::u idgrp]
-    set sql "SELECT json_agg (t.*) AS j FROM (
+    set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
 		SELECT d.iddhcpprof, d.name
 		    FROM dns.dhcpprofile d
 			INNER JOIN dns.p_dhcpprofile p USING (iddhcpprof)
@@ -13,9 +13,6 @@ api-handler get {/dhcpprofiles} yes {
 		"
     ::dbdns exec $sql tab {
 	set j $tab(j)
-    }
-    if {$j eq ""} then {
-	set j {[]}
     }
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j

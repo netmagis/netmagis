@@ -9,7 +9,7 @@ api-handler get {/hinfos} yes {
 	set w "WHERE $w"
     }
 
-    set sql "SELECT json_agg (t.*) AS j FROM (
+    set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
 		SELECT idhinfo, name, present
 		    FROM dns.hinfo
 		    $w
@@ -18,9 +18,6 @@ api-handler get {/hinfos} yes {
 		"
     ::dbdns exec $sql tab {
 	set j $tab(j)
-    }
-    if {$j eq ""} then {
-	set j {[]}
     }
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j
