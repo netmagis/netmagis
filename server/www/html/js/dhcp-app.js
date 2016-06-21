@@ -4651,26 +4651,44 @@ webpackJsonp([2],{
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	/**
-	 * Prompters is the object containing all the handlers that AutoInput
-	 * can use. Every handler is an object containing one or more functions 
-	 * and all the usefull stuffs you need in order to manage your suggestions. 
+	 * Prompters is the object containing all the handlers that link the web
+	 * application to the API. Every handler is an object containing one or more 
+	 * functions and whathever things it needs in order to manage your suggestions. 
 	 * There are few things to know:
 	 *
-	 * - The name of the handler must correspond with the contents of 
-	 *   the `name` props passed to `AutoInput`
+	 * - All the components in form-utils.jsx use their name property to identify the
+	 *   name of the handler that must be used. So make sure that handler exists (if not
+	 *   just write a new one) and it has all the functions required by the component.
 	 * 
-	 * - Every handler must/can (see required/optional) contain the 
-	 *   following stuffs:
-	 *	- A function `init(callback)` (optional):
-	 *		this function will be called once when the element
-	 *		is about to be mounted.
-	 *	- A function `getSuggestions(value,callback)` (required if input):
-	 *		this function take the actual value of the input and 
-	 *		must return an array of suggestions
-	 * 	- A function `getValues()` (required if dropdown):
-	 *		same as getSuggestions but used for the dropdown
+	 * - Here is a list of the functions needed and the components that need them.
 	 *
-	 * TODO update this documentation
+	 *	- function { components }
+	 *
+	 *	- init(callback) { all }
+	 *		this function will be called once when the element
+	 *		is about to be mounted. Use it to retrive the initial
+	 *		data from the API and call the callback once you are done
+	 *
+	 *	- getSuggestions(value) {AutoInput}
+	 *		this function take the actual value of the input and 
+	 *		must return an array of strings (suggestions).
+	 *		
+	 * 	- getValues() {AJXdropdown, Adropdown, Table}
+	 *		returns a list of all the possible values (ex. all the domains)
+	 *		For a dropdown it must be a list of strings, for a table it must
+	 *		return a list of objects where each object represent a row of that
+	 *		table, according with the `model` property of the table.
+	 *	- getEmptyRow() { Table }
+	 *		when a table will create a new empty row, it will ask to this function
+	 *		what should be the content of that new row
+	 *
+	 *	- save/update/delete(key, input) { Table }
+	 *		this functions create the link with the API to perform the action
+	 *		of saving/updating/deleting a given entity.
+	 *		The entity is identified by the argument key (ex: iddhpprof)
+	 *		and the data (if any) resides into the object input.
+	 *
+	 *		
 	 */
 
 	var Prompters = exports.Prompters = {
@@ -4798,7 +4816,7 @@ webpackJsonp([2],{
 				console.log(this.addrs);
 			},
 
-			getSuggestions: function getSuggestions(value, callback) {
+			getSuggestions: function getSuggestions(value) {
 				var inputValue = value.trim().toLowerCase();
 				var inputLength = inputValue.length;
 
