@@ -62,7 +62,8 @@ webpackJsonp([0],{
 						null,
 						' Add an host '
 					),
-					_react2.default.createElement(_add.Add_host, { id: 'form-addsingle' })
+					_react2.default.createElement(_add.Add_host, { id: 'form-addsingle',
+						defaultValues: { "machines": "Unspecified" } })
 				),
 				_react2.default.createElement(
 					_tabs.Pane,
@@ -166,7 +167,7 @@ webpackJsonp([0],{
 			dataType: 'json',
 
 			// XXX this is not a rapresentative url
-			url: 'http://130.79.91.54/stage-l2s4/nm_pages/lang/' + Dict.lang + '.json',
+			url: 'lang/' + Dict.lang + '.json',
 
 			/* In case of success update translations */
 			success: function success(response, status, xhr) {
@@ -475,7 +476,7 @@ webpackJsonp([0],{
 
 		render: function render() {
 
-			var d = this.props.defValues || {};
+			var d = this.props.defaultValues || {};
 
 			return _react2.default.createElement(
 				'div',
@@ -519,7 +520,7 @@ webpackJsonp([0],{
 					_react2.default.createElement(
 						F.Row,
 						null,
-						_react2.default.createElement(F.Adropdown, { label: 'Machine', name: 'machines', defaultValue: d["machines"] })
+						_react2.default.createElement(F.Adropdown, { label: 'Machine', name: 'hinfos', defaultValue: d["machines"] })
 					),
 					_react2.default.createElement(
 						F.Row,
@@ -667,7 +668,7 @@ webpackJsonp([0],{
 
 				case 1:
 					return _react2.default.createElement(Add_host, { id: 'Addblk_addh',
-						defValues: this.state.defaultAddHost,
+						defaultValues: this.state.defaultAddHost,
 						submtCallback: this.addNext });
 
 				case 2:
@@ -731,6 +732,7 @@ webpackJsonp([0],{
 		return byte1 + '.' + byte2 + '.' + byte3 + '.' + byte4;
 	}
 
+	/* Add n to an IPv4 address */
 	function add_to_IPv4(ip, n) {
 		return IPv4_intA_to_dotquadA(IPv4_dotquadA_to_intA(ip) + n);
 	}
@@ -745,7 +747,7 @@ webpackJsonp([0],{
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.InputXORdd = exports.FilteredDd = exports.AutoInput = exports.Form = exports.Row = exports.Space = exports.Checkbox = exports.InputAdrop = exports.Inputdrop = exports.Adropdown = exports.Dropdown = exports.AJXdropdown = exports.Dropdown_internal = exports.Button = exports.Ainput = exports.Input = undefined;
+	exports.Table = exports.Editable_tr = exports.DdEdit = exports.InEdit = exports.InputXORdd = exports.AutoInput = exports.Form = exports.Row = exports.Space = exports.Checkbox = exports.InputAdrop = exports.Inputdrop = exports.Adropdown = exports.Dropdown = exports.AJXdropdown = exports.Dropdown_internal = exports.Button = exports.Ainput = exports.Input = undefined;
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -769,12 +771,44 @@ webpackJsonp([0],{
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	/**
+	 * Returns an object all the values of the form with the given id. The
+	 * keys are the name attributes of the fields of the form 
+	 */
+	function form2obj(id) {
+		var elements = document.getElementById(id).elements;
+
+		var obj = {};
+
+		for (var i = 0; i < elements.length; i++) {
+
+			var value;
+			var el = elements[i];
+			var tag = el.tagName.toLowerCase();
+
+			switch (tag) {
+
+				case "input":
+					if (el.type.toLowerCase() == "text") value = el.value;else if (el.type.toLowerCase() == "checkbox") value = el.checked;
+					break;
+
+				case "button":
+					value = el.textContent;
+
+			}
+
+			obj[elements[i].name] = value;
+		}
+
+		return obj;
+	}
+
 	/** 
 	 * Creates an uncontrolled Bootstrap-like input field preceded by a label.
 	 * Every property passed to this object is passed to the input field.
 	 *
 	 * @properties:
-	 *	-label: defines the contents of the label (required) //TODO make it optional
+	 *	-label: defines the contents of the label (required)
 	 *	-dims : defines the dimensions of this component following the
 	 *		Bootstrap grid system. Use the following syntax: "x+y"
 	 *		where x is the space reserved for the label and y is the
@@ -861,6 +895,7 @@ webpackJsonp([0],{
 	 *	
 	 * @prec this component should have only text as a child
 	 */
+
 	var Button = exports.Button = _react2.default.createClass({
 		displayName: 'Button',
 
@@ -887,14 +922,19 @@ webpackJsonp([0],{
 	 * contents of the children as list element. The children can contain only
 	 * text. You can use whatever html tag to indicate the children (by convention
 	 * I suggest you to use the tag <el> </el> as it is short and descriptive).
-	 * All the properties passed to theis component are passed directly to the
-	 * button element as attributes
+	 * All the properties passed to this component are passed directly to the
+	 * button element (so if you define a 'className' property this means that
+	 * the button will use it to define a class attribute) in this way you can
+	 * define 
 	 *
 	 * @properties:
-	 *	-superClass: Is the same of className but it will affect the whole
+	 *	-superClass: the same as className but it will affect the whole
 	 *		     component and not only the internal button
 	 *	-defaultValue: force the initial value
-	 *	-value: force the value
+	 *	-value:	force the value
+	 *	-onChange: a function called every time the user changes the value,
+	 *		   this new value is passed by parameter
+	 *		   
 	 * 
 	 * Example of use:
 	 *	<Dropdown_internal superClass="beautiful_dropdown" >
@@ -906,14 +946,13 @@ webpackJsonp([0],{
 	 * @warning: <el>{ my_var }</el> Ok! 
 	 * 	     <el> { my_var } </el> Avoid it! 
 	 *	  Apparently in the latter case React generates an array of 3 elements
-	 *	  with leading and trailing white spaces strings. This works still fine
-	 *	  for the rendering but could cause some problem when the value 
-	 *	  must be retrieved using .val() 
+	 *	  [" ", my_var, " "]. This works still fine for the rendering but could 
+	 *	  cause some problem when the value must be retrieved using .val() 
 	 *				 
 	 */
 	var Dropdown_internal = exports.Dropdown_internal = _react2.default.createClass({
 		displayName: 'Dropdown_internal',
-		/*TODO change name */
+
 
 		contextTypes: { lang: _react2.default.PropTypes.string },
 
@@ -936,12 +975,10 @@ webpackJsonp([0],{
 		componentWillReceiveProps: function componentWillReceiveProps(newprops) {
 
 			if (newprops.value != undefined) this.setState({ value: newprops.value });else if (newprops.children.length > 0) {
-				if (this.state.value == undefined /*|| 
-	                                     this.props.children != newprops.children*/) {
-						//TODO FIX
+				if (this.state.value == undefined) {
 
-						this.setState({ value: newprops.children[0].props.children });
-					}
+					this.setState({ value: newprops.children[0].props.children });
+				}
 			}
 		},
 
@@ -949,13 +986,14 @@ webpackJsonp([0],{
 	    and execute the onChange callback */
 		handleClick: function handleClick(child, event) {
 			event.preventDefault();
-			var newValue = child.props.children; //[1];	// <el> ... </el> generates trailing and leading empty strings
+			var newValue = child.props.children;
 			this.setState({ value: newValue });
 			if (this.props.onChange) this.props.onChange(newValue);
 		},
 
 		/* Creates an element of the dropdown containing the text inside
-	    the given child (so make sure the child contains only text) */makeOption: function makeOption(child, index) {
+	    the given child (so make sure the child contains only text) */
+		makeOption: function makeOption(child, index) {
 			return _react2.default.createElement(
 				'li',
 				{ key: "dopt" + index },
@@ -1000,6 +1038,7 @@ webpackJsonp([0],{
 	 *	 <AJXdropdown name="foods" superClass="foodSelector" />
 	 *	
 	 */
+
 	var AJXdropdown = exports.AJXdropdown = _react2.default.createClass({
 		displayName: 'AJXdropdown',
 
@@ -1182,8 +1221,10 @@ webpackJsonp([0],{
 	});
 
 	/**
-	 * Same as Inputdrop but with a list of elements charged trough 
-	 * async AJAX call (see AJXdropdown).
+	 * Same as Inputdrop but uses an AJXdropdown in order to charge
+	 * the values of the dropdown using the ajax api. In this case
+	 * use the property `ddname` to specify the name of the handler
+	 * for the AJXdropdown.
 	 */
 
 	var InputAdrop = exports.InputAdrop = _react2.default.createClass({
@@ -1334,14 +1375,15 @@ webpackJsonp([0],{
 	 * Note that all the properties of AutoInput will be passed to the imput field.
 	 * AutoInput must have a `name` property and it's value must correspond
 	 * with the name of an handler contained inside the Prompters (see above).
+	 *
+	 * @properties: 
+	 *	-defaultValue: default value of the input (!= placeholder)
+	 *	-name: name of the handler
 	 * 
 	 * Example of use:
-	 *
-	 *	ReactDOM.render(
-	 *		<AutoInput placeholder="Insert a network address" name="cidr" 
-	 *		   className="myclassname" style={{width: "30%"}} />, 
-	 *		document.getElementById('app')
-	 * 	);
+	 *	<AutoInput placeholder="Insert a network address" name="cidr" 
+	 *		   className="myclassname" style={{width: "30%"}} 
+	 *	/>
 	 */
 	var AutoInput = exports.AutoInput = _react2.default.createClass({
 		displayName: 'AutoInput',
@@ -1429,107 +1471,9 @@ webpackJsonp([0],{
 	});
 
 	/**
-	 * Generates a dropdown which elements are charged dinamically trough ajax
-	 * requestm, preceded by an imput field that can be use to filter out the
-	 * elements of the dropdown. Everything is preceded by a label.
-	 * 
-	 * FIXME when all the elements are filtered out the dropdown keeps
-	 * the previous value.
-	 *
-	 * @properties: 
-	 *	-name : Name of the handler (see AJXdropdown)
-	 *	-label: Contents of the label preceding the input field and the dropdown
-	 *	-dims : Dimensions following bootstrap's grid system (see Input)
-	 * Example of use:
-	 *	  <FilteredDd name="contacts" label="select a contact" dims="3+2+1" />
-	 */
-
-	var FilteredDd = exports.FilteredDd = _react2.default.createClass({
-		displayName: 'FilteredDd',
-
-
-		contextTypes: { lang: _react2.default.PropTypes.string },
-
-		getInitialState: function getInitialState() {
-			return { value: "" };
-		},
-
-		/* An AJXdropdown has a name prop */
-		propTypes: { name: _react2.default.PropTypes.string.isRequired },
-
-		componentWillMount: function componentWillMount() {
-			var prompter = _prompters.Prompters[this.props.name];
-
-			if (!prompter) {
-				console.error(this.props.name + " is not a prompter!");
-			} else if (prompter.init) {
-				prompter.init(function () {
-					this.forceUpdate();
-				}.bind(this));
-			}
-		},
-		handleChange: function handleChange(event) {
-			this.setState({ value: event.target.value });
-		},
-
-		getValues: function getValues() {
-			var values = _prompters.Prompters[this.props.name].getValues();
-			var inputValue = this.state.value.trim().toLowerCase();
-			var inputLength = inputValue.length;
-
-			if (inputLength === 0) return values;
-
-			return values.filter(function (val) {
-				return val.toLowerCase().slice(0, inputLength) === inputValue;
-			});
-		},
-
-		render: function render() {
-
-			var values = this.getValues();
-
-			var grid_vals = this.props.dims ? this.props.dims.split('+') : ['2', '2', '2'];
-
-			function makeElement(val, index) {
-				return _react2.default.createElement(
-					'el',
-					{ key: "ajd" + index },
-					' ',
-					val,
-					' '
-				);
-			}
-
-			return _react2.default.createElement(
-				'div',
-				null,
-				_react2.default.createElement(
-					'label',
-					{ className: "control-label col-md-" + grid_vals[0] },
-					(0, _lang.translate)(this.props.label)
-				),
-				_react2.default.createElement(
-					'div',
-					{ className: "col-md-" + grid_vals[1] },
-					_react2.default.createElement('input', { className: 'form-control', value: this.state.value, onChange: this.handleChange })
-				),
-				_react2.default.createElement(
-					'div',
-					{ className: "dropdown col-md-" + grid_vals[2] },
-					_react2.default.createElement(
-						Dropdown_internal,
-						this.props,
-						values.map(makeElement)
-					)
-				)
-			);
-		}
-
-	});
-
-	/**
 	 * Creates an input and a dropdown (the latter preceded by a 'or' label), where
 	 * only the last used can contain a value.
+	 *
 	 * @properties:
 	 *	-label: Content of the label preceding the input field and the dropdown
 	 *	-defaultValue: default value of the dropdown
@@ -1544,7 +1488,8 @@ webpackJsonp([0],{
 		contextTypes: { lang: _react2.default.PropTypes.string },
 
 		getInitialState: function getInitialState() {
-			// state: { input value , dropdown value }
+			// The state contains the value of the input
+			// (Ivalue) and the value of the dropdown (Dvalue)
 			return { Ivalue: "", Dvalue: undefined };
 		},
 
@@ -1599,36 +1544,434 @@ webpackJsonp([0],{
 	});
 
 	/**
-	 * Returns an object all the values of the form with the given id. The
-	 * keys are the name attributes of the fields of the form 
+	 * Depending on is property `edit` creates a editable text-input field
+	 * or a not editable text.
+	 * @properties:
+	 *	- name: name to pass to the imput when in edit mode
+	 *	- edit: if true the component will be editable 
 	 */
-	function form2obj(id) {
-		var elements = document.getElementById(id).elements;
+	var InEdit = exports.InEdit = _react2.default.createClass({
+		displayName: 'InEdit',
 
-		var obj = {};
 
-		for (var i = 0; i < elements.length; i++) {
+		/* This will force a rerendering on languae change */
+		contextTypes: { lang: _react2.default.PropTypes.string },
 
-			var value;
-			var el = elements[i];
-			var tag = el.tagName.toLowerCase();
+		getInitialState: function getInitialState() {
+			return { value: this.props.children };
+		},
 
-			switch (tag) {
+		componentWillReceiveProps: function componentWillReceiveProps(newProps) {
+			//this.setState({ value: newProps.children });
+
+		},
+
+		/* As this is controlled Update the state with the new value */
+		onChange: function onChange(event) {
+			this.setState({ value: event.target.value });
+		},
+
+		render: function render() {
+			if (this.props.edit === true) {
+				return _react2.default.createElement('input', { value: this.state.value, style: { width: "100%" },
+					onChange: this.onChange, name: this.props.name });
+			} else {
+				return _react2.default.createElement(
+					'div',
+					null,
+					' ',
+					this.state.value,
+					' '
+				);
+			}
+		}
+	});
+
+	/**
+	 * Depending on is property `edit` creates a editable dropdown
+	 * or a not editable text.
+	 * @properties:
+	 *	- name: name to pass to the dropdown when in edit mode
+	 *	- edit: if true the component will be editable 
+	 *	- values: either a list (array) either an object containing an attribute 
+	 *		  values (a list) and an attribute value (default value), in this 
+	 *		  latter case the attribute value will be used as default value of
+	 *		  this component.
+	 */
+	var DdEdit = exports.DdEdit = _react2.default.createClass({
+		displayName: 'DdEdit',
+
+
+		/* This will force a rerendering on languae change */
+		contextTypes: { lang: _react2.default.PropTypes.string },
+
+		getInitialState: function getInitialState() {
+			if (Array.isArray(this.props.values)) {
+
+				return { value: this.props.values[0],
+					values: this.props.values
+				};
+			} else {
+
+				return { value: this.props.values.value,
+					values: this.props.values.values
+				};
+			}
+		},
+
+		/* As this is controlled Update the state with the new value */
+		onChange: function onChange(newValue) {
+			this.setState({ value: newValue });
+		},
+
+		makeOption: function makeOption(val, index) {
+			return _react2.default.createElement(
+				'el',
+				null,
+				val
+			);
+		},
+
+		render: function render() {
+			if (this.props.edit === true) {
+				return _react2.default.createElement(
+					Dropdown_internal,
+					{ superClass: 'dropdown',
+						onChange: this.onChange, value: this.state.value,
+						name: this.props.name },
+					this.state.values.map(this.makeOption)
+				);
+			} else {
+				return _react2.default.createElement(
+					'div',
+					null,
+					' ',
+					this.state.value,
+					' '
+				);
+			}
+		}
+	});
+
+	/**
+	 * Creates an editable table's row which allows the user to edit the values
+	 * and/or save/remove/cancell the row.
+	 *
+	 * @properties:
+	 *	-model	an object which describes the data contained into
+	 *		the row (see the component EdiTable). It must have one attribute
+	 *		'key' and an attribute 'desc' (see EditTable)
+	 *	
+	 *	-data,  an object containing a certain number of "name": "value" pairs,
+	 *		where "name" correspond to one of the names specified on the model.
+	 *	 	If the type specified on the model is "input" and the data for this
+	 *		field is not specified then it will be an empty string by default. 
+	 *		The data of other types (!= "input") must always be specified.
+	 *
+	 *	-edit, specify if the row is rendered in edit mode or not
+	 *
+	 * 	-handler, an object containing a serie of function that can handle the data
+	 *		  contained in the row, each of them when called will receive a
+	 *		  parameter 'key' which containds the key value referenced by the model
+	 *                and a object 'input' which fields rapresent the fields of the row
+	 *		  they are named accordingly with the model (required)
+	 *
+	 *	-onRemove, a function called when the row is removed, the property index
+	 *	           passed as parameter
+	 *
+	 *	-index, value passed to the onRemove function when the row is removed
+	 *
+	 *	-reactKey, must have the same value as the key used by React for 
+	 *		   this component. This will be used as id to idetify the
+	 *		   row (required)
+	 */
+
+	var Editable_tr = exports.Editable_tr = _react2.default.createClass({
+		displayName: 'Editable_tr',
+
+
+		/* This will force a rerendering on languae change */
+		contextTypes: { lang: _react2.default.PropTypes.string },
+
+		getInitialState: function getInitialState() {
+			return { edit: this.props.edit || false };
+		},
+
+		/**
+	  * Used by this.renderChild to render the correct
+	  * child depending the description on the model
+	  * @param desc, description specified into the model property
+	  * @param content, the content of the child to render
+	  */
+		renderType: function renderType(desc, content) {
+			switch (desc[1].toLowerCase()) {
 
 				case "input":
-					if (el.type.toLowerCase() == "text") value = el.value;else if (el.type.toLowerCase() == "checkbox") value = el.checked;
-					break;
+					return _react2.default.createElement(
+						InEdit,
+						{ edit: this.state.edit,
+							name: desc[2]
+						},
+						content
+					);
 
-				case "button":
-					value = el.textContent;
+				case "dropdown":
+					return _react2.default.createElement(DdEdit, { edit: this.state.edit,
+						values: content,
+						name: desc[2]
+					});
 
+				default:
+					return _react2.default.createElement(
+						'div',
+						null,
+						content
+					);
+			}
+		},
+
+		/**
+	         * Render one element of the row (child)
+	         * @param desc, the description of the element 
+	  * 	   defined into the model props
+	  * @param index, number of the child (usually passed directly by .map())
+	  */
+		renderChild: function renderChild(desc, index) {
+
+			var content = this.props.data[desc[2]];
+
+			return _react2.default.createElement(
+				'td',
+				{ key: "edr" + index, className: 'col-md-1' },
+				this.renderType(desc, content)
+			);
+		},
+
+		collectValues: function collectValues() {
+			var data = {};
+			for (var i = 0; i < this.props.model.desc.length; i++) {
+				var name = this.props.model.desc[i][2];
+				// Use the id specified into the render in order to identify the row
+				data[name] = $("#etr" + this.props.reactKey + " [name='" + name + "']").val();
+			}
+			var uniquekey = this.props.data[this.props.model.key];
+			return { key: uniquekey, input: data };
+		},
+
+		/* Active/desactive edit mode */
+		switchMode: function switchMode() {
+
+			if (this.state.edit == true) {
+				var data = this.collectValues();
+
+				if (data.key.toString().startsWith("__")) {
+					// Invalid api id (given from the application)
+					this.props.handler.save(data.key, data.input);
+				} else {
+					this.props.handler.update(data.key, data.input);
+				}
 			}
 
-			obj[elements[i].name] = value;
-		}
+			this.setState({ edit: !this.state.edit });
+		},
 
-		return obj;
-	}
+		/* Called when the user remove this row */
+		deleteRow: function deleteRow() {
+
+			var data = this.collectValues();
+
+			if (this.state.edit == false) {
+				this.props.handler.delete(data.key, data.input);
+				this.props.onRemove(this.props.index);
+			} else if (data.key.toString().startsWith("__")) {
+				// Invalid api id (given from the application)
+				this.props.onRemove(this.props.index);
+			} else {
+				this.setState({ edit: !this.state.edit });
+			}
+		},
+
+		render: function render() {
+			return _react2.default.createElement(
+				'tr',
+				{ id: "etr" + this.props.reactKey },
+				this.props.model.desc.map(this.renderChild),
+				_react2.default.createElement(
+					'td',
+					{ className: 'outside' },
+					_react2.default.createElement(
+						Button,
+						{ onClick: this.switchMode },
+						this.state.edit ? "Save" : "Edit"
+					),
+					_react2.default.createElement(
+						Button,
+						{ onClick: this.deleteRow },
+						this.state.edit ? "Cancell" : "Remove"
+					)
+				)
+			);
+		}
+	});
+
+	/**
+	 * Creates an editable table on which the user can remove/add as many rows as 
+	 * he wants. The rows can also be edited/saved in any moment.
+	 *
+	 * @properties:
+	 *	-name: the name of the handler
+	 *
+	 *	-model	an object which describes the data contained into
+	 *		the row (see the component EdiTable). It must have one attribute
+	 *		'key' and an attribute 'desc':
+	 *
+	 *		- desc: contains a list of 3-elements arrays, each one describing one field of a
+	 *		        row. The 3 elements must be strings representing respectively 
+	 *				[Columns label, field type, field name]
+	 *			example ["List of addresses", "Input", "address"]
+	 *			
+	 *		- key: contains the name of an attribute present on the property
+	 *	    	       `data` which will be used as identifier for each row. This id
+	 *		       is sent to the handler when a row is removed/updated/saved.
+	 *		       Example of use: iddhcprange for a table of dhcp ranges
+	 *		
+	 *		The model should finally look more ore less like this:
+	 *		      {key: ... , desc: [ ["field" , "type", "name"], ... ]}
+	 * 
+	 *	-data,  an object containing a certain number of "name": "value" pairs.
+	 *		It must contain all the "names" specified on the model property.
+	 *	 	If the type specified on the model is "input" and the data for this
+	 *		field is not specified then the value will be an empty string. 
+	 *		The data of other types (!= "input") must always be specified.
+	 *
+	 */
+	var Table = exports.Table = _react2.default.createClass({
+		displayName: 'Table',
+
+
+		/* This will force a rerendering on languae change */
+		contextTypes: { lang: _react2.default.PropTypes.string },
+
+		/* has a name prop */
+		propTypes: { name: _react2.default.PropTypes.string.isRequired },
+
+		getInitialState: function getInitialState() {
+			return { values: [] };
+		},
+
+		getValues: function getValues() {
+			this.setState({ values: _prompters.Prompters[this.props.name].getValues() });
+		},
+
+		componentWillMount: function componentWillMount() {
+			var prompter = _prompters.Prompters[this.props.name];
+
+			if (!prompter) {
+				console.error(this.props.name + " is not a prompter!");
+			} else if (prompter.init) {
+				prompter.init(this.getValues.bind(this));
+			}
+		},
+
+		renderHead: function renderHead() {
+			function headerEl(mod, index) {
+				return _react2.default.createElement(
+					'th',
+					{ key: "th" + index },
+					' ',
+					mod[0],
+					' '
+				);
+			}
+			return _react2.default.createElement(
+				'thead',
+				null,
+				_react2.default.createElement(
+					'tr',
+					null,
+					this.props.model.desc.map(headerEl)
+				)
+			);
+		},
+
+		renderRow: function renderRow(data, index) {
+
+			var uniqkey = data[this.props.model.key];
+
+			return _react2.default.createElement(Editable_tr, { key: "trw" + uniqkey,
+				reactKey: "trw" + uniqkey,
+				model: this.props.model,
+				data: data,
+				edit: data._edit,
+				index: index,
+				onRemove: this.removeRow,
+				handler: _prompters.Prompters[this.props.name]
+			});
+		},
+
+		removeRow: function removeRow(index) {
+			this.state.values.splice(index, 1);
+			this.setState({ values: this.state.values });
+		},
+
+		emptyRowsCount: 0, // Used to define unique keys when adding empty rows
+
+		addRow: function addRow() {
+
+			var newRow = { _edit: true }; // Add in edit mode
+
+			if (this.state.values.length > 0) {
+
+				/* Use the first row as example */
+				newRow = $.extend(newRow, this.state.values[0]);
+
+				for (var i = 0; i < this.props.model.desc.length; i++) {
+					/* Leave inputs blanks */
+					var type = this.props.model.desc[i][1];
+					if (type.toLowerCase() == "input") {
+						var field = this.props.model.desc[i][2];
+						newRow[field] = "";
+					}
+				}
+			} else if (_prompters.Prompters[this.props.name].getEmptyRow) {
+				/* Ask for an empty row to the prompter */
+				var emptyRow = _prompters.Prompters[this.props.name].getEmptyRow();
+				newRow = $.extend(newRow, emptyRow);
+			} else {
+				console.error("Cannot fetch an the values of an empty row");
+				return;
+			}
+
+			// Set an unique key
+			newRow[this.props.model.key] = "___NotValidId" + this.emptyRowsCount++;
+
+			// Add to the state	
+			this.state.values.push(newRow);
+			this.setState({ values: this.state.values });
+		},
+
+		render: function render() {
+			return _react2.default.createElement(
+				'div',
+				null,
+				_react2.default.createElement(
+					'table',
+					{ className: 'table table-bordered' },
+					this.renderHead(),
+					_react2.default.createElement(
+						'tbody',
+						null,
+						this.state.values.map(this.renderRow)
+					)
+				),
+				_react2.default.createElement(
+					Button,
+					{ onClick: this.addRow },
+					'Add'
+				)
+			);
+		}
+	});
 
 /***/ },
 
@@ -4814,16 +5157,19 @@ webpackJsonp([0],{
 			}
 		},
 
-		/*************************  Handler name="machine" ***********************/
+		/*************************  Handler name="hinfos" ***********************/
 
-		machines: {
+		hinfos: {
 			machines: [],
 
 			/* Fill the machines array with the API answer */
 			init: function init(callback) {
-				console.log("Getting from " + C.TODO_APIURL);
-				C.getJSON(C.TODO_APIURL + '/machines', function (response) {
-					this.machines = response;
+				C.getJSON(C.APIURL + '/hinfos', function (response) {
+					this.machines = response.filter(function (e) {
+						return e.present;
+					}).map(function (e) {
+						return e.name;
+					});
 				}.bind(this), callback);
 			},
 
@@ -4977,9 +5323,9 @@ webpackJsonp([0],{
 				return { 'domain': Prompters.domain.getValues() };
 			},
 
-			saveNewRow: function saveNewRow(input) {
-				var iddom = Prompters.domain.name2Id(input.data.domain);
-				var data_req = $.extend({ iddom: iddom }, input.data);
+			save: function save(key, input) {
+				var iddom = Prompters.domain.name2Id(input.domain);
+				var data_req = $.extend({ iddom: iddom }, input);
 				delete data_req.domain;
 				console.log("--------- SAVE ----------");
 				console.log("POST /api/dhcprange " + JSON.stringify(data_req));
@@ -4991,27 +5337,27 @@ webpackJsonp([0],{
 				});
 			},
 
-			updateRow: function updateRow(input) {
-				var iddom = Prompters.domain.name2Id(input.data.domain);
-				var data_req = $.extend({ iddom: iddom }, input.data);
+			update: function update(key, input) {
+				var iddom = Prompters.domain.name2Id(input.domain);
+				var data_req = $.extend({ iddom: iddom }, input);
 				delete data_req.domain;
 				console.log("--------- UPDATE ----------");
-				console.log("PUT /api/dhcpranges/" + input.key + " " + JSON.stringify(data_req));
+				console.log("PUT /api/dhcpranges/" + key + " " + JSON.stringify(data_req));
 				$.ajax({
 					method: 'PUT',
-					url: C.APIURL + "/dhcpranges/" + input.key,
+					url: C.APIURL + "/dhcpranges/" + key,
 					data: JSON.stringify(data_req),
 					contentType: 'application/json'
 				});
 			},
 
-			deleteRow: function deleteRow(input) {
+			delete: function _delete(key, input) {
 				console.log("--------- DELETE ----------");
-				console.log("DELETE /api/dhcpranges/" + input.key);
+				console.log("DELETE /api/dhcpranges/" + key);
 				return;
 				$.ajax({
 					method: 'DELETE',
-					url: C.APIURL + "/dhcpranges/" + input.key
+					url: C.APIURL + "/dhcpranges/" + key
 				});
 			}
 
