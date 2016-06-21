@@ -43,7 +43,8 @@ var App = React.createClass({
 				<Tabs >
 					<Pane label="Add single host" >
 						<h2 > Add an host </h2>
-						<Add_host id="form-addsingle" />
+						<Add_host id="form-addsingle" 
+						 defaultValues={{"machines" : "Unspecified"}} />
 					</Pane> 
 					<Pane label="Add address block" >
 						<h2> Add many hosts </h2>

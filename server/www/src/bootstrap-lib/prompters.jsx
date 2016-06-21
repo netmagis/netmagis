@@ -63,17 +63,16 @@ export var Prompters = {
 		}
 	},
 
-	/*************************  Handler name="machine" ***********************/
+	/*************************  Handler name="hinfos" ***********************/
 
-	machines: {
+	hinfos: {
 		machines: [],
 
 		/* Fill the machines array with the API answer */
 		init : function (callback)  { 
-			console.log("Getting from "+C.TODO_APIURL);
-			C.getJSON(C.TODO_APIURL+'/machines', function(response){
-					this.machines = response;
-					
+			C.getJSON(C.APIURL+'/hinfos', function(response){
+					this.machines = response.filter(e => e.present)
+								.map(e => e.name);
 			}.bind(this), callback);
 		},
 
