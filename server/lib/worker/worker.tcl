@@ -13,7 +13,9 @@ set conf(lang)		{en fr}
 
 package require snit
 package require Pgtcl
+package require md5crypt
 package require ip
+package require ldapx
 
 package require msgcat
 namespace import ::msgcat::*
