@@ -49,28 +49,46 @@
 		description: Collection of allowed VLANs without IP address for a group
 		/{vlanId}
 		    description: Permission on a VLAN without IP address for a group
-/login
-    description: Management
+/sessions
+    description: Collection of sessions
+    get:
+	description: Get all my sessions
+	queryParameters:
+	    active:
+		description: if present, restrict collection to active (1) or expired (0) sessions
+		required: false
+		default: only active sessions
+	body:
     post:
 	description: Create a new session
-	queryParameters:
-	    login:
-		description: User login name
-		required: true
-		type: string
-	    pass:
-		description: User password
-		required: true
-		type: string
+	queryParameters: (none)
+	body:
+	    application/json:
+		example: |
+		    {
+			login: myusername
+			password: mypassword
+		    }
+	responses:
+	    200:
+		body:
+		    text/plain: ok
+	    412:
+		description: invalid input (json format, invalid login)
+	    403:
+		description: login failed or session already opened
+	    429:
+		description: account or IP temporarily blocked
+	    500:
+		description: temporary failure
+    delete:
+	description: Remove current session
+	queryParameters: (none)
 	body: (none)
 	responses:
 	    200:
 		body:
 		    text/plain: ok
-	    403:
-		description: login failed
-	    429:
-		description: temporary failure
 
 /domains
     description: Collection of domains
@@ -368,6 +386,116 @@
 	    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <--- TO DISCUSS LATER
 	    /{domainId}
 		description: mail relays for a given domain
+
+
+
+/names
+    description: A collection of names
+    get:
+	queryParameters:
+	    view:
+	    name:
+	    domain:
+	    ################### context: => not needed here, will be implicitely checked at put/post/delete time
+	    cidr:
+	    sort:		# sort criterion
+	responses:
+	    200:
+		body:
+		    application/json:	# list of RR
+			example: |
+			    [ 
+				{
+				    idrr: 123,
+				    fqdn: "foo.example.com",
+				    idview: 1
+				},
+				{
+				    idrr: 456,
+				    fqdn: "bar.example.org",
+				    idview: 1
+				}
+			    ]
+	    404: Not found
+	    403: Forbidden 
+    post:
+	description: Create a new name
+	queryParameters: (none)
+	body:
+	    application/json:
+		{
+		    fqdn:
+		    idview:
+		    (see /names/{id})
+		}
+	responses:
+	    200:
+		body:
+		    application/json:
+			{
+			    idrr:
+			    fqdn:
+			    idview:
+			}
+	    403:
+		description: login failed
+	    429:
+		description: temporary failure
+    /{idrr}
+	description: Get a single name
+	get:
+	    responses:
+		200:
+		    body:
+			application/json:
+			    example: |
+				{
+				    name: "atlas",
+				    domain: "example.org",
+				    domainlink: "/domain/5",
+				    view: "external",
+				    viewlink: "/views/5",
+				    mac: "00:11:22:33:44:55",
+				    hinfo: "pc/unix",
+				    hinfolink: "/hinfos/12",
+				    comment: "Simon's PC",
+				    respname: "John Doe",
+				    respmail: "doe@example.org",
+				    dhcpprofile: "diskless",
+				    dhcpprofilelink: "/dhcpprofiles/33",
+				    sendsmtp: "1",
+				    ttl: "3600",
+				    user: "jane",
+				    userlink: "/users/17",
+				    cname: "other.example.org",  <exclusive with MX or addr>
+				    cnamelink: "/names/82",
+				    lastmod: "<time_t>"
+				    addr: [
+					"192.0.2.12",
+					"2001:db8::1",
+					"198.51.100.24",
+				    ],
+				    mx: [
+					{
+					    prio: 100,
+					    fqdn: "mx1.example.com",
+					    link: "/names/532"
+					},
+					{
+					    prio: 200,
+					    fqdn: "mx2.example.com",
+					    link: "/names/79"
+					}
+				    ],
+				}
+	put:
+	delete:
+
+
+
+
+
+
 /names
     description: Get a collection of names
     get:
