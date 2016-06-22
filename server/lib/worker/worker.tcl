@@ -211,6 +211,10 @@ snit::type ::nmuser {
 	set login $newlogin
     }
 
+    method login {} {
+	return $login
+    }
+
     method cap {cap} {
 	set idcor [dict get $ids idcor]
 	if {$idcor == -1} then {
@@ -638,12 +642,12 @@ proc handle-request {uri meth parm cookie} {
 
     set authtoken [::scgi::dget $cookie "session"]
     set login [check-authtoken $authtoken]
-    if {$login ne ""} then {
-	catch {::u destroy}
-	::nmuser create ::u
-	::u setdb ::dbdns
-	::u setlogin $login
-    }
+    # login may be empty (<=> not authenticated)
+
+    catch {::u destroy}
+    ::nmuser create ::u
+    ::u setdb ::dbdns
+    ::u setlogin $login
 
     #
     # Locale settings
