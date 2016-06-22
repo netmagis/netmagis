@@ -11,11 +11,14 @@ var App = React.createClass({
 	submit: function() {
 		$.ajax({
 			method: 'POST',
-			url: C.APIURL+'/login',
-			data: $('#Login_form').serialize(),
+			url: C.APIURL+'/sessions',
+			contentType: "application/json",
+			data: JSON.stringify( { login: $('#Login_form [name="login"]').val(),
+			 	password: $('#Login_form [name="password"]').val()
+			      }),
 			success: function(response){ 
 				console.log(response);
-				window.location = "/www/html/Forms.html";
+			//	window.location = "/www/html/Forms.html";
 			}
 		})
 	},
@@ -28,7 +31,7 @@ var App = React.createClass({
 				<F.Input label="Login" name="login" dims="1+1" />
 				</F.Row>
 				<F.Row>
-				<F.Input label="Password" name="pass" dims="1+1" type="password" />
+				<F.Input label="Password" name="password" dims="1+1" type="password" />
 				</F.Row>
 			</F.Form>
 			<F.Button onClick={this.submit}> Sign in </F.Button>
