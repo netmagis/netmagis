@@ -32,7 +32,6 @@ api-handler get {/sessions} yes {
 
 api-handler post {/sessions} no {
     } {
-
     # get body just to check it's a JSON body
     ::scgi::get-body-json $_parm
 
@@ -58,10 +57,8 @@ api-handler post {/sessions} no {
     global conf
     global env
 
-    # XXX
-    if {[info exists env(REMOTE_ADDR]} then {
-	set srcaddr $env(REMOTE_ADDR)
-    } else {
+    set srcaddr [::scgi::get-header "REMOTE_ADDR"]
+    if {$srcaddr eq ""} then {
 	set srcaddr "::1"
     }
 
@@ -130,7 +127,7 @@ api-handler delete {/sessions} no {
 	set token [::scgi::dget $_cookie "session"]
 	set idcor [::u idcor]
 
-	set message [register-user-logout ::dbdns $token "" "logout"]
+	set message [register-user-logout ::dbdns $idcor $token "" "logout"]
 	if {$message ne ""} then {
 	    ::scgi::serror 500 [mc "Internal server error (%s)" $message]
 	}
@@ -278,10 +275,11 @@ proc register-user-login {dbfd login casticket} {
 	# Register token in utmp table
 	#
 
-	set ip NULL
-	# XXX
-	if {[info exists env(REMOTE_ADDR)]} then {
-	    set ip "'$env(REMOTE_ADDR)'"
+	set ip [::scgi::get-header "REMOTE_ADDR"]
+	if {$ip ne ""} then {
+	    set ip [pg_quote $ip]
+	} else {
+	    set ip NULL
 	}
 	set qcas NULL
 	if {$casticket ne ""} then {
