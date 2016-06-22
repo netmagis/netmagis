@@ -15,5 +15,6 @@ install:
 	$(NINSTALL) -m 0755 \
 		-e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
 		-e "s|%VERSION%|$(VERSION)|" \
-		-e "s|%BINDIR%|$(BINDIR)|" $(SUBST) \
+		-e "s|%BINDIR%|$(BINDIR)|" \
+		$(SUBST) \
 		$(SCRIPTS) $(DESTDIR)$(BINDIR)

@@ -9,14 +9,13 @@ api-handler get {/hinfos} yes {
 	set w "WHERE $w"
     }
 
-    set sql "SELECT json_agg (t.*) AS j FROM (
+    set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
 		SELECT idhinfo, name, present
 		    FROM dns.hinfo
 		    $w
 		    ORDER BY sort ASC
 		) AS t
 		"
-    set j {[]}
     ::dbdns exec $sql tab {
 	set j $tab(j)
     }

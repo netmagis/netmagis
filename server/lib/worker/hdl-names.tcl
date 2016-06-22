@@ -135,7 +135,7 @@ proc sub-names {view name domain cidr} {
 
     set where [join $lwhere " AND "]
 
-    set sql "SELECT json_agg (r.*) AS j
+    set sql "SELECT COALESCE (json_agg (r), '\[\]') AS j
 		    FROM dns.full_rr r
 		    WHERE idrr IN (
 			SELECT DISTINCT idrr
@@ -144,8 +144,6 @@ proc sub-names {view name domain cidr} {
 				WHERE $where
 		    )
 		    "
-    ### puts "sql=$sql"
-    set j ""
     ::dbdns exec $sql tab {
 	set j $tab(j)
     }

@@ -7,6 +7,9 @@
 # - garbage collect database
 # - spool expiration
 #
+# Syntax
+#	netmagis-dbmaint [-h][-f conffile] hourly|daily
+#
 # This script is meant to be run by cron, with entries such as:
 #	0 8-18 * * * netmagis /usr/local/sbin/netmagis-dbmaint hourly
 #	0 23   * * * netmagis /usr/local/sbin/netmagis-dbmaint daily
@@ -17,11 +20,15 @@
 #   2002/07/25 : pda : merge in only one script
 #   2011/03/18 : pda : i18n
 #   2012/06/19 : pda : create copy database and simplify copying
+#   2016/06/18 : pda : add -h and -f options
 #
+
+# default configuration file
+conffile=""
 
 usage ()
 {
-    echo "usage: $0 hourly|daily" >&2
+    echo "usage: $0 [-h] [-f conffile] hourly|daily" >&2
     exit 1
 }
 
@@ -32,7 +39,7 @@ usage ()
 init_env ()
 {
     varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword"
-    eval `%CONFPROG% -c $varlist`
+    eval `%CONFPROG% $conffile -c $varlist`
 
     if [ $? != 0 ]
     then
@@ -50,8 +57,7 @@ init_env ()
     # these variables are searched in a second pass, since they can be
     # empty (the first pass used the "-c" flag)
     varlist="dumpdir dbcopy"
-    eval `%CONFPROG% $varlist`
-
+    eval `%CONFPROG% $conffile $varlist`
 }
 
 backup ()
@@ -109,7 +115,48 @@ clean_spools ()
     fi
 }
 
+#
+# Syntax checking
+#       
+ 
+args=`getopt hf: $*`
+
+if [ $? != 0 ]
+then usage
+fi
+
+set -- $args
+
+while true
+do
+    case "$1" in
+	-h) usage
+	    exit 0
+	    ;;
+	-f) conffile="-f $2"
+	    shift 2
+	    ;;
+	--) shift
+	    break
+	    ;;
+    esac
+done
+
+if [ $# != 1 ]
+then
+    usage
+fi
+
+#
+# Initialize environment
+#
+
 init_env
+
+#
+# Do actions
+#
+
 NOW=`date +%a-%H`			# day of week & hour
 
 case "$1" in

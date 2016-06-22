@@ -4,23 +4,23 @@ set conf(conffile)	%CONFFILE%
 set conf(addr)		0.0.0.0
 set conf(port)		8080
 set conf(libdir)	%NMLIBDIR%
-set conf(files)		%NMLIBDIR%/www
+set conf(files)		{%NMLIBDIR%/www}
 set conf(minw)		2
 set conf(maxw)		4
 set conf(idle)		30
 set conf(version)	%VERSION%
 
-set conf(usage) {usage: %s [-h][-d][-c conf][-a addr][-p port][-l libdir][-f files][-m min][-x max][-i idle][-v vers]
+set conf(usage) {usage: %s [-h][-d][-f conf][-a addr][-p port][-l libdir][-s files][-m min][-x max][-i idle][-v vers]
     -h: this help message
     -d: debug
-    -c conf: path to the configuration file
+    -f conf: path to the configuration file
     -a addr: listening address (e.g. 0.0.0.0)
     -p port: listening port (e.g. 8080)
     -l libdir: path to the libdir (with subdirectories worker/ and pkgtcl/)
-    -f files: path to the directory containing static files
-    -m min: minimum number of workers threads (e.g. 2)
-    -x max: maximum number of workers threads (e.g. 4)
-    -i idletime: maximum time in sec before a worker thread exists (e.g. 30)
+    -s spath: list (':' separated) of directories containing static files
+    -m min: minimum number of worker threads (e.g. 2)
+    -x max: maximum number of worker threads (e.g. 4)
+    -i idletime: maximum time in sec before a worker thread exits (e.g. 30)
     -v vers: application version for schema checking (e.g. 3.0.0alpha)
 }
 
@@ -59,7 +59,7 @@ proc main {argv0 argv} {
 		set debug true
 		set argv [lreplace $argv 0 0]
 	    }
-	    -c {
+	    -f {
 		set conffile [lindex $argv 1]
 		set argv [lreplace $argv 0 1]
 	    }
@@ -75,8 +75,8 @@ proc main {argv0 argv} {
 		set libdir [lindex $argv 1]
 		set argv [lreplace $argv 0 1]
 	    }
-	    -f {
-		set files [lindex $argv 1]
+	    -s {
+		set files [split [lindex $argv 1] ":"]
 		set argv [lreplace $argv 0 1]
 	    }
 	    -m {
@@ -109,13 +109,6 @@ proc main {argv0 argv} {
 	usage $argv0
     }
 
-    array set wconf [list \
-			conffile $conffile \
-			libdir   $libdir \
-			files    $files \
-			version  $version \
-	]
-
     global auto_path
     lappend auto_path $libdir/pkgtcl
     package require scgi
@@ -127,12 +120,13 @@ proc main {argv0 argv} {
 	    -minworkers $minw \
 	    -maxworkers $maxw \
 	    -idletime $idle \
-	    "set conf(conffile) $conffile
-		set conf(libdir)  $libdir
-		set conf(files)   $files
-		set conf(version) $version
-		lappend auto_path $libdir/pkgtcl
-		source $libdir/worker/worker.tcl" \
+	    "set conf(conffile) {$conffile}
+		    set conf(libdir)  {$libdir}
+		    set conf(files)   {$files}
+		    set conf(version) {$version}
+		    lappend auto_path {$libdir/pkgtcl}
+		    source {$libdir/worker/worker.tcl}
+		    " \
 	    "handle-request"
 }
 
