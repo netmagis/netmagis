@@ -620,96 +620,80 @@ proc handle-request {uri meth parm cookie} {
     global conf
     global route
 
-    set msgdir conf(libdir)/worker/msgs
+    #
+    # Try to reconnect to the database
+    #
 
-    uplevel #0 mclocale "en"
-    uplevel #0 mcload $msgdir
+    try {
+	::dbdns reconnect
+	::dbmac reconnect
+    } on error msg {
+	::scgi::serror 503 $msg
+    }
+
+    #
+    # Check if user is authenticated. No decision is made at this
+    # point.
+    #
+
+    set authtoken [::scgi::dget $cookie "session"]
+    set login [check-authtoken $authtoken]
+    if {$login ne ""} then {
+	catch {::u destroy}
+	::nmuser create ::u
+	::u setdb ::dbdns
+	::u setlogin $login
+    }
+
+    #
+    # Locale settings
+    # 1- use "l" query parameter if present
+    # 2- else, use the "Accept-Language" header values
+    # 3- else, use the default ("en")
+    #
+
+    if {[dict exists $parm "l"]} then {
+	set l [string trim [lindex [dict get $parm "l"] 0]]
+    } else {
+	set l [::scgi::get-locale {en fr}]
+    }
+
+    if {$l ne ""} then {
+	set l "en"
+    }
+
+    uplevel #0 mclocale $l
+    uplevel #0 mcload "$conf(libdir)/worker/msgs"
+
+    #
+    # Find the appropriate route
+    #
 
     set bestfit 0
     foreach r $route($meth) {
-	#
-	# Each route is registered as a list
-	#	{ re vars paramspec authneeded script }
-	# with:
-	# - re: regexp including groups "(...)" for variable
-	#	matching
-	# - vars: list of variables for group matching
-	# - paramspec: list of query parameters spec
-	#	{ param min param min ... }
-	#	example : { crit 0 field 1 }
-	#	- param: parameter name
-	#	- min: minimum number of occurrence (max is always 1)
-	# - authneeded: boolean true if access is restricted
-	#	to authenticated users
-	# - hname: name of proc for this handler
-	#
-
-	lassign $r re vars paramspec authneeded hname
-
-	lassign [check-route $uri $parm $re $vars $paramspec] ok tpar
-	switch $ok {
-	    0 { }
-	    1 {
-		if {$bestfit == 0} then {
-		    set bestfit 1
-		    set q $tpar
-		}
-	    }
-	    2 {
-		set bestfit 2
-		break
+	lassign [check-route $uri $parm $login $r] ok hname tpar
+	if {$ok == 3} then {
+	    set bestfit 3
+	    break
+	} else {
+	    if {$ok > $bestfit} then {
+		set bestfit $ok
+		set q $tpar
 	    }
 	}
     }
 
     switch $bestfit {
 	0 {
-	    ::scgi::serror 404 "URI '$uri' not found"
+	    ::scgi::serror 404 [mc "URI '%s' not found" $uri]
 	}
 	1 {
-	    ::scgi::serror 404 "Mandatory query parameter '$q' not found"
+	    ::scgi::serror 401 [mc "Not authenticated"]
 	}
 	2 {
-	    #
-	    # This route is ok. Try to reconnect to the database
-	    # and check authentication
-	    #
-
-	    try {
-		::dbdns reconnect
-		::dbmac reconnect
-	    } on error msg {
-		::scgi::serror 503 $msg
-	    }
-
-	    set authtoken [::scgi::dget $cookie "session"]
-	    set login [check-authtoken $authtoken]
-	    if {$authneeded && $login eq ""} then {
-		::scgi::serror 403 "Not authenticated"
-	    }
-
-	    if {$login ne ""} then {
-		catch {::u destroy}
-		::nmuser create ::u
-		::u setdb ::dbdns
-		::u setlogin $login
-	    }
-
-	    #
-	    # Locale settings
-	    #
-
-	    if {[dict exists $parm "l"]} then {
-		set l [string trim [lindex [dict get $parm "l"] 0]]
-	    } else {
-		set l [::scgi::get-locale {en fr}]
-	    }
-
-	    if {$l ne ""} then {
-		uplevel #0 mclocale $l
-		uplevel #0 mcload $msgdir
-	    }
-
+	    ::scgi::serror 400 [mc "Mandatory query parameter '%s' not found" $q]
+	}
+	3 {
 	    #
 	    # Run the script as a procedure to avoid namespace
 	    # pollution. The procedure is run with the following
@@ -731,12 +715,33 @@ proc handle-request {uri meth parm cookie} {
 # groups and check parameter specifications
 # Named groups and parameters are stored in the tpar dict
 #
-# Returns: list { ok tpar }
-# where ok = 0 if no match, 1 if route match without matching parameter
-# (returned in tpar) or 2 if ok
+# Returns: list { ok hname tpar }
+# where ok value is:
+# - 0 if no match
+# - 1 if route match but not authenticated (even if parameters match)
+# - 2 if route match without matching parameter (tpar=missing parameter)
+# - 3 if ok (hname=handler proc, tpar=parameters)
 #
 
-proc check-route {uri parm re vars paramspec} {
+proc check-route {uri parm login rte} {
+    #
+    # Each route is registered as a list
+    #	{ re vars paramspec authneeded script }
+    # with:
+    # - re: regexp including groups "(...)" for variable
+    #	matching
+    # - vars: list of variables for group matching
+    # - paramspec: list of query parameters spec
+    #	{ param min param min ... }
+    #	example : { crit 0 field 1 }
+    #	- param: parameter name
+    #	- min: minimum number of occurrence (max is always 1)
+    # - authneeded: boolean true if access is restricted
+    #	to authenticated users
+    # - hname: name of proc for this handler
+    #
+
+    lassign $rte re vars paramspec authneeded hname
 
     set ok 0
     set tpar [dict create]
@@ -752,21 +757,28 @@ proc check-route {uri parm re vars paramspec} {
 	    incr i
 	}
 
+	# Check authentication
+	if {$authneeded && $login eq ""} then {
+	    set ok 1
+	}
+
 	# Check parameters
-	set ok 2
-	foreach {var min} $paramspec {
-	    if {! [dict exists $parm $var] && $min > 0} then {
-		set ok 1
-		set tpar $var
-		break
-	    } else {
-		set vals [::scgi::dget $parm $var]
-		dict set tpar $var [lindex $vals 0]
+	if {$ok == 0} then {
+	    set ok 3
+	    foreach {var min} $paramspec {
+		if {! [dict exists $parm $var] && $min > 0} then {
+		    set ok 2
+		    set tpar $var
+		    break
+		} else {
+		    set vals [::scgi::dget $parm $var]
+		    dict set tpar $var [lindex $vals 0]
+		}
 	    }
 	}
     }
 
-    return [list $ok $tpar]
+    return [list $ok $hname $tpar]
 }
 
 try {
