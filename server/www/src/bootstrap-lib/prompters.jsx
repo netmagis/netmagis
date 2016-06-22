@@ -122,6 +122,8 @@ export var Prompters = {
 		},
 
 		id2Name: function (id){
+			if ( id == undefined || id == null ) return "Unspecified";
+
 			for (var i = 0; i < this.domains.length; i++){
 				if (this.domains[i].iddom == id) {
 					return this.domains[i].name;
@@ -208,31 +210,72 @@ export var Prompters = {
 
 	},
 	
-	
+	/*************************  Handler name="dhcpprofiles" *******************/
+	dhcpprofiles: {
+		dhcpprofs : [],
+
+		init : function (callback) { 
+			C.getJSON(C.APIURL+'/dhcpprofiles', function(response){
+					this.dhcpprofiles = response;
+					
+			}.bind(this), callback);
+		},
+
+		getValues: function (){
+			return this.dhcpprofs;
+		},
+
+		id2Name: function (id){
+			if ( id == undefined || id == null ) return "Unspecified";
+
+			for (var i = 0; i < this.dhcpprofs.length; i++){
+				if (this.dhcpprofs[i].iddhcpprof == id) {
+					return this.dhcpprofs[i].name;
+				}
+			}
+		},
+
+		name2Id: function (name){
+			for (var i = 0; i < this.dhcpprofs.length; i++){
+				if (this.dhcpprofs[i].name == name) {
+					return this.dhcpprofs[i].iddhcpprof;
+				}
+			}
+
+			return null;
+		}
+
+	},
 	/*************************  Handler name="dhcp" *******************/
 
 	dhcp: {
 
-		/** TODO **/
 		dhcp: [],
 
 		init : function (callback) { 
 			var _callback = function(){this._combine(callback);}.bind(this);
 
-			var c = new CallbackCountdown(_callback,2); /* XXX This will be 3 */
+			var c = new CallbackCountdown(_callback,3); 
 
 			Prompters.domain.init(c.callback);
 			Prompters.dhcprange.init(c.callback);
+			Prompters.dhcpprofiles.init(c.callback);
 		},
 
 		_combine: function (callback){
 			var dhcpranges = Prompters.dhcprange.getValues();
 			var domains = Prompters.domain.getValues();
+			var dhcpprofiles = Prompters.dhcpprofiles.getValues();
+
 			for (var i = 0; i < dhcpranges.length; i++){
 
-				var value = Prompters.domain.id2Name(dhcpranges[i].iddom);
-				var doms = { 'values': domains, 'value': value };
-				var cpy = $.extend({'domain': doms}, dhcpranges[i]);
+				var value_dom = Prompters.domain.id2Name(dhcpranges[i].iddom);
+				var doms = { 'values': domains, 'value': value_dom };
+
+				var value_dhcpprof = Prompters.dhcpprofiles.id2Name(dhcpranges[i].iddhcpprof);
+				var dhcpprofs = { 'values': dhcpprofiles, 'value': value_dhcpprof };
+
+				var cpy = $.extend({'domain': doms, 'dhcpprof': dhcpprofs}, dhcpranges[i]);
 				this.dhcp.push(cpy);
 
 			}
@@ -253,8 +296,11 @@ export var Prompters = {
 
 		save: function(key, input){
 			var iddom = Prompters.domain.name2Id(input.domain);
-			var data_req = $.extend({iddom: iddom}, input);
-			delete data_req.domain;
+			var iddhcpprof = Prompters.dhcpprofiles.name2Id(input.dhcpprof);
+
+			var data_req = $.extend({iddom: iddom, iddhcpprof: iddhcpprof}, input);
+			delete data_req.domain; delete data_req.dhcpprof;
+
 			console.log("--------- SAVE ----------");
 			console.log("POST /api/dhcprange "+JSON.stringify(data_req));
 			$.ajax({
@@ -269,8 +315,11 @@ export var Prompters = {
 
 		update: function(key, input){
 			var iddom = Prompters.domain.name2Id(input.domain);
-			var data_req = $.extend({iddom: iddom}, input);
-			delete data_req.domain;
+			var iddhcpprof = Prompters.dhcpprofiles.name2Id(input.dhcpprof);
+
+			var data_req = $.extend({iddom: iddom, iddhcpprof: iddhcpprof}, input);
+			delete data_req.domain; delete data_req.dhcpprof;
+
 			console.log("--------- UPDATE ----------");
 			console.log("PUT /api/dhcpranges/"+key+" "+JSON.stringify(data_req));
 			$.ajax({

@@ -20,8 +20,8 @@ var App = React.createClass({
 				[ "Max" , "Input" , "max"],
 				[ "Domain" , "Dropdown" , "domain"],
 				[ "Default lease duration", "Input", "default_lease_time"],
-				[ "Maximum lease duration", "Input", "max_lease_time"]
-			/*      [ "DHCP profile", "Dropdown", "dhcpprof"] XXX dhcpprof could be in conflict*/ 
+				[ "Maximum lease duration", "Input", "max_lease_time"],
+			        [ "DHCP profile", "Dropdown", "dhcpprof"]
 		]
 	},
 		
