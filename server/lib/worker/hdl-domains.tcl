@@ -9,7 +9,7 @@ api-handler get {/domains} yes {
 	set w "AND $w"
     }
 
-    set sql "SELECT json_agg (t.*) AS j FROM (
+    set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
 		SELECT d.*, p.mailrole
 		    FROM dns.domain d
 			INNER JOIN dns.p_dom p USING (iddom)
@@ -18,7 +18,6 @@ api-handler get {/domains} yes {
 		    ORDER BY p.sort ASC
 		) AS t
 		"
-    set j {[]}
     ::dbdns exec $sql tab {
 	set j $tab(j)
     }

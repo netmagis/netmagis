@@ -6,13 +6,13 @@
 # Supported upgrade path from 2.0 to all current Netmagis versions.
 #
 # Syntax :
-#	netmagis-dbupgrade [-f netmagis-conf] [target-version]
+#	netmagis-dbupgrade [-h][-f netmagis-conf][-d dir] [target-version]
 #
 
 usage ()
 {
     (
-	echo "usage: $0 [-f netmagis.conf] [target-version]"
+	echo "usage: $0 [-h][-f netmagis.conf][-d dir] [target-version]"
 	echo "Without argument: display actual versions"
 	echo "With target argument: upgrade database to this version"
     ) >&2
@@ -20,7 +20,7 @@ usage ()
 }
 
 # Directory where upgrade scripts are located
-UPGRADEDIR=%NMLIBDIR%/upgrade
+updir=%NMLIBDIR%/upgrade
 
 ##############################################################################
 # Configuration file read
@@ -118,7 +118,7 @@ check_target_path ()
     end=$2
 
     # get all upgrade directories
-    list=$(cd $UPGRADEDIR ; ls -d *-* | sort -n)
+    list=$(cd $updir ; ls -d *-* | sort -n)
 
     # skip directories not in path
     lastto=""
@@ -251,7 +251,7 @@ eval $(%CONFPROG% -c _conffile)
 # Syntax checking
 #       
  
-args=$(getopt hf: $*)
+args=$(getopt hf:d: $*)
 
 if [ $? != 0 ]
 then usage
@@ -266,6 +266,9 @@ do
 	    exit 0
 	    ;;
 	-f) _conffile=$2
+	    shift 2
+	    ;;
+	-d) updir=$2
 	    shift 2
 	    ;;
 	--) shift
@@ -331,7 +334,7 @@ TMP=/tmp/netmagis-dbupdate.$$
 
 for d in $upgrade_path
 do
-    u=$UPGRADEDIR/$d/upgrade.sql
+    u=$updir/$d/upgrade.sql
     if [ -f $u ]
     then
 	echo "\\echo Upgrading: $d"

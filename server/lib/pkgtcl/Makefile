@@ -1,25 +1,28 @@
 NINSTALL	= ../../../ninstall
 TCLSH		= /usr/local/bin/tclsh
 
-FILES =	\
+SRCS =	\
 	dbconf.tcl \
 	lconf.tcl \
 	pgdb.tcl \
 	scgi.tcl \
 
+FILES = $(SRCS) pkgIndex.tcl
+
 build:	pkgIndex.tcl
 	@echo ">>> Making build in `pwd`"
 
-pkgIndex.tcl:	$(FILES)
+pkgIndex.tcl:	$(SRCS)
 	echo "pkg_mkIndex ." | $(TCLSH)
-	chmod g+w pkgIndex.tcl
+	# chmod g+w pkgIndex.tcl
 
 install: build
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)$(NMLIBDIR)/pkgtcl
 	$(NINSTALL) -m 0644 \
 		    $(SUBST) \
-		    $(FILES) $(DESTDIR)$(NMLIBDIR)/pkgtcl ; \
+		    $(FILES) \
+		    $(DESTDIR)$(NMLIBDIR)/pkgtcl ; \
 	done
 
 clean:

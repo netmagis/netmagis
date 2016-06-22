@@ -49,6 +49,29 @@
 		description: Collection of allowed VLANs without IP address for a group
 		/{vlanId}
 		    description: Permission on a VLAN without IP address for a group
+/login
+    description: Management
+    post:
+	description: Create a new session
+	queryParameters:
+	    login:
+		description: User login name
+		required: true
+		type: string
+	    pass:
+		description: User password
+		required: true
+		type: string
+	body: (none)
+	responses:
+	    200:
+		body:
+		    text/plain: ok
+	    403:
+		description: login failed
+	    429:
+		description: temporary failure
+
 /domains
     description: Collection of domains
     get:
@@ -167,6 +190,43 @@
 
 
 /dhcpprofiles
+    description: Collection of DHCP profiles
+    get:
+	description: get all DHCP profiles allowed for my group, sorted
+	queryParameters:
+	    (none)
+	request:
+	    body: empty
+	responses:
+	    200:
+		body:
+		    application/json:
+			example:
+			    [
+				{
+				    iddhcpprof: 5
+				    name: "x terminal"
+				},
+				{
+				    iddhcpprof: 1
+				    name: "iq laser printer"
+				}
+			    ]
+    /{iddhcpprof}:
+	description: one DHCP profile
+	get:
+	    description: get one specific DHCP profile
+	    queryParameters:
+		(none)
+	    request:
+		body: empty
+	    responses:
+		200:
+		    {
+			iddhcpprof: 1
+			name: "iq laser printer"
+		    }
+
 /networks
     /{networkId}
 /communities
