@@ -1,7 +1,59 @@
-api-handler post {/login} no {
-	login 1
-	pass 1
+api-handler get {/sessions} yes {
+	active 0
     } {
+    set idcor [::u idcor]
+    if {$active eq "" || $active eq "1"} then {
+	set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
+			SELECT token, 1 AS active, api, start, ip,
+				lastaccess
+			    FROM global.utmp
+			    WHERE idcor = $idcor
+		    ) AS t 
+		    "
+    } elseif {$active eq "0"} then {
+	set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
+			SELECT token, 0 AS active, api, start, ip,
+				stop, stopreason
+			    FROM global.wtmp
+			    WHERE idcor = $idcor
+		    ) AS t 
+		    "
+    } else {
+	::scgi::serror 400 [mc "Invalid active value"]
+    }
+    ::dbdns exec $sql tab {
+	set j $tab(j)
+    }
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
+}
+
+##############################################################################
+
+api-handler post {/sessions} no {
+    } {
+
+    # get body just to check it's a JSON body
+    ::scgi::get-body-json $_parm
+
+    set dbody [dict get $_parm "_bodydict"]
+
+    set spec {
+		{login text}
+		{password text}
+	    }
+    if {! [::scgi::check-json-attr $dbody $spec]} then {
+	::scgi::serror 412 [mc "Invalid JSON input"]
+    }
+
+    if {! [check-login $login]} then {
+	::scgi::serror 412 [mc "Invalid login"]
+    }
+
+    set curlogin [::u login]
+    if {$curlogin ne "" && $curlogin ne $login} then {
+	::scgi::serror 403 [mc "You must close your session first"]
+    }
 
     global conf
     global env
@@ -23,17 +75,13 @@ api-handler post {/login} no {
 	::scgi::serror 429 [mc {IP address '%1$s' temporarily blocked. Retry in %2$d seconds} $srcaddr $delay]
     }
 
-    if {! [check-login $login]} then {
-	::scgi::serror 403 [mc "Invalid login (%s)" $login]
-    }
-
     set delay [check-failed-delay ::dbdns "login" $login]
     if {$delay > 0} then {
 	set delay [update-authfail-both ::dbdns $srcaddr $login]
 	::scgi::serror 429 [mc {Login '%1$s' temporarily blocked. Retry in %2$d secondes} $login $delay]
     }
 
-    set ok [check-password ::dbdns $login $pass]
+    set ok [check-password ::dbdns $login $password]
     switch $ok {
 	-1 {
 	    # system error
@@ -67,7 +115,43 @@ api-handler post {/login} no {
 #    }
 
     ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body [mc "Login successful"]
+    ::scgi::set-body [mc "Session opened"]
+}
+
+##############################################################################
+
+# XXX : a user should be able to terminate any one of his sessions
+# XXX : an admin should be able to terminate any of all existing sessions
+
+api-handler delete {/sessions} no {
+    } {
+    set curlogin [::u login]
+    if {$curlogin ne ""} then {
+	set token [::scgi::dget $_cookie "session"]
+	set idcor [::u idcor]
+
+	set message [register-user-logout ::dbdns $token "" "logout"]
+	if {$message ne ""} then {
+	    ::scgi::serror 500 [mc "Internal server error (%s)" $message]
+	}
+###	d writelog "auth" "logout [d uid] $qtoken"
+
+###	d uid "-"
+###	d euid {- -1}
+###	d module "anon"
+###	# leave login unmodified for the "login" page
+###
+###	if {$am eq "casldap"} then {
+###	    set casurl [dnsconfig get "casurl"]
+###	    set home [::webapp::myurl 1]
+###	    set url "$casurl/logout?service=$home/$conf(next-index)"
+###	    ::webapp::redirect $url
+###	    exit 0
+###	}
+    }
+
+    ::scgi::set-header Content-Type text/plain
+    ::scgi::set-body [mc "Session closed"]
 }
 
 ##############################################################################
@@ -228,6 +312,29 @@ proc register-user-login {dbfd login casticket} {
     return ""
 }
 
+proc register-user-logout {dbfd idcor token date reason} {
+    set qtoken [pg_quote $token]
+    set qreason [pg_quote $reason]
+
+    if {$date eq ""} then {
+	set qdate "now()"
+    } else {
+	set qdate [pg_quote $date]
+    }
+
+    set sql "INSERT INTO global.wtmp (idcor, token, api, start, ip, stop, stopreason)
+		SELECT $idcor, token, api, start, ip, $qdate, $qreason
+		    FROM global.utmp
+		    WHERE idcor = $idcor and token = $qtoken
+		    ;
+	     DELETE FROM global.utmp
+		    WHERE idcor = $idcor and token = $qtoken"
+    if {! [$dbfd exec $sql msg]} then {
+	return [mc "Cannot un-register connection (%s)" $msg]
+    }
+    return ""
+}
+
 ##############################################################################
 # Authentication failure management
 ##############################################################################
@@ -381,7 +488,7 @@ proc check-failed-delay {dbfd otype origin} {
 #
 
 proc check-login {name} {
-    return [expr ! [regexp {[()<>*]} $name]]
+    return [expr {$name ne "" && ! [regexp {[()<>*]} $name]}]
 }
 
 
