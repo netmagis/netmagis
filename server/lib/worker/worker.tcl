@@ -68,27 +68,27 @@ proc thread-init {conffile version wdir} {
 snit::type ::nmlog {
 
     # database object
-    variable dbo
+    variable db
 
     variable subsys "netmagis"
     variable table "global.log"
 
-    method setdb {db} {
-	set dbo $db
+    method setdb {dbo} {
+	set db $dbo
     }
 
-    method write {event msg {date {}} {login {}} {ip {}}} {
+    method writelog {event msg {date {}} {login {}} {ip {}}} {
 	if {$ip eq ""} then {
 	    set ip [::scgi::get-header "REMOTE_ADDR"]
 	}
 
 	if {$login eq ""} then {
-	    error XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx
+	    set login [::u login]
 	}
 
 	foreach v {event login ip msg} {
 	    if {[set $v] eq ""} then {
-		    set $v NULL
+		set $v NULL
 	    } else {
 		set $v [pg_quote [set $v]]
 	    }
@@ -109,7 +109,7 @@ snit::type ::nmlog {
 	set sql "INSERT INTO $table
 			($datecol subsys, event, login, ip, msg)
 		    VALUES ($dateval $sub, $event, $login, $ip, $msg)"
-	$dbo exec $sql
+	$db exec $sql
     }
 }
 
@@ -154,7 +154,7 @@ snit::type ::nmlog {
 
 snit::type ::nmuser {
     # database object
-    variable dbo ""
+    variable db ""
     # login of user
     variable login ""
 
@@ -200,8 +200,8 @@ snit::type ::nmuser {
     # myiddoms : sorted list of domains
     variable myiddom {}
 
-    method setdb {db} {
-	set dbo $db
+    method setdb {dbo} {
+	set db $dbo
     }
 
     method setlogin {newlogin} {
@@ -224,7 +224,7 @@ snit::type ::nmuser {
 				NATURAL INNER JOIN global.nmgroup g
 				WHERE login = $qlogin"
 	    set found 0
-	    $dbo exec $sql tab {
+	    $db exec $sql tab {
 		set ids [array get tab]
 		set found 1
 	    }
@@ -252,7 +252,7 @@ snit::type ::nmuser {
 	array unset allgroups
 
 	set sql "SELECT * FROM global.nmgroup"
-	$dbo exec $sql tab {
+	$db exec $sql tab {
 	    set idgrp $tab(idgrp)
 	    set name  $tab(name)
 	    set allgroups(id:$idgrp) $name
@@ -293,7 +293,7 @@ snit::type ::nmuser {
 	set myviewids {}
 
 	set sql "SELECT * FROM dns.view"
-	$dbo exec $sql tab {
+	$db exec $sql tab {
 	    set idview $tab(idview)
 	    set name   $tab(name)
 	    set allviews(id:$idview) $name
@@ -307,7 +307,7 @@ snit::type ::nmuser {
 			    AND p.idview = v.idview
 			    AND u.login = $qlogin
 			ORDER BY p.sort ASC, v.name ASC"
-	$dbo exec $sql tab {
+	$db exec $sql tab {
 	    set idview $tab(idview)
 	    set authviews($idview) 1
 	    lappend myviewids $tab(idview)
@@ -362,7 +362,7 @@ snit::type ::nmuser {
 	set myiddom {}
 
 	set sql "SELECT * FROM dns.domain"
-	$dbo exec $sql tab {
+	$db exec $sql tab {
 	    set iddom $tab(iddom)
 	    set name   $tab(name)
 	    set alldom(id:$iddom) $name
@@ -376,7 +376,7 @@ snit::type ::nmuser {
 			    AND p.iddom = d.iddom
 			    AND u.login = $qlogin
 			ORDER BY p.sort ASC, d.name ASC"
-	$dbo exec $sql tab {
+	$db exec $sql tab {
 	    set iddom $tab(iddom)
 	    set authdom($iddom) 1
 	    lappend myiddom $tab(iddom)

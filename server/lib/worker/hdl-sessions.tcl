@@ -128,7 +128,7 @@ api-handler delete {/sessions} no {
 	if {$message ne ""} then {
 	    ::scgi::serror 500 [mc "Internal server error (%s)" $message]
 	}
-###	d writelog "auth" "logout [d uid] $qtoken"
+	::log writelog "auth" "logout [::u login] $token" "" [::u login] ""
 
 ###	d uid "-"
 ###	d euid {- -1}
@@ -259,8 +259,9 @@ proc register-user-login {dbfd login casticket} {
     $dbfd lock {global.utmp} {
 	set found true
 	while {$found} {
-	    set token [pg_quote [get-random $toklen]]
-	    set sql "SELECT idcor FROM global.tmp WHERE token = $token"
+	    set token [get-random $toklen]
+	    set qtoken [pg_quote $token]
+	    set sql "SELECT idcor FROM global.tmp WHERE token = $qtoken"
 	    set found false
 	    $dbfd exec $sql tab {
 		set found true
@@ -283,7 +284,7 @@ proc register-user-login {dbfd login casticket} {
 	}
 
 	set sql "INSERT INTO global.utmp (idcor, token, casticket, ip)
-		    VALUES ($idcor, $token, $qcas, $ip)"
+		    VALUES ($idcor, $qtoken, $qcas, $ip)"
 	if {! [$dbfd exec $sql msg]} then {
 	    $dbfd abort
 	    return [mc "Cannot register user login (%s)" $msg]
@@ -294,8 +295,7 @@ proc register-user-login {dbfd login casticket} {
     # Log successful flogin
     #
 
-    # XXXX
-#    d writelog "auth" "login $login $token"
+    ::log writelog "auth" "login $login $token" "" $login ""
 
     #
     # Set session cookie
