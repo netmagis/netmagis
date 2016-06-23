@@ -2,11 +2,11 @@
 
 tclsh8.6 netmagis-restd \
 	-d \
-	-c netmagis.conf \
+	-f netmagis.conf \
 	-a 0.0.0.0 \
 	-p 8080 \
 	-l ../lib \
-	-f ../www/static \
+	-s ../www/static \
 	-m 1 \
 	-x 4 \
 	-i 30 \
