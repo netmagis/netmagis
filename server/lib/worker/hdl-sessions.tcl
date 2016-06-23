@@ -54,9 +54,6 @@ api-handler post {/sessions} no {
 	::scgi::serror 403 [mc "You must close your session first"]
     }
 
-    global conf
-    global env
-
     set srcaddr [::scgi::get-header "REMOTE_ADDR"]
     if {$srcaddr eq ""} then {
 	set srcaddr "::1"
@@ -234,7 +231,6 @@ proc check-password {dbfd login upw} {
 }
 
 proc register-user-login {dbfd login casticket} {
-    global env
 
     #
     # Search id for the login
