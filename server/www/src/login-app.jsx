@@ -8,6 +8,10 @@ var App = React.createClass({
 	/* This will force a rerendering on languae change */
  	contextTypes : {lang: React.PropTypes.string},
 	
+	getInitialState: function() {
+		return {message : "", color: ""}; 
+	},
+
 	submit: function() {
 		$.ajax({
 			method: 'POST',
@@ -17,11 +21,16 @@ var App = React.createClass({
 			 	password: $('#Login_form [name="password"]').val()
 			      }),
 			success: function(response){ 
-				console.log(response);
+				this.setState({message: response, color: "green"});
 			//	window.location = "/www/html/Forms.html";
-			}
+			}.bind(this),
+			error: function(jqXHR){
+				console.log(jqXHR);
+				this.setState({message: jqXHR.responseText, color: "red"});
+			}.bind(this)
 		})
 	},
+
 
 	render: function() {
 		return (
@@ -34,7 +43,10 @@ var App = React.createClass({
 				<F.Input label="Password" name="password" dims="1+1" type="password" />
 				</F.Row>
 			</F.Form>
-			<F.Button onClick={this.submit}> Sign in </F.Button>
+			<F.Row>
+				<F.Button onClick={this.submit}> Sign in </F.Button>
+			</F.Row>
+			<p style={{color: this.state.color}}> {this.state.message} </p>
 			</div>
 
 		);
