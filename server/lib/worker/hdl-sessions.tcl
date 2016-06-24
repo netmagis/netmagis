@@ -32,7 +32,6 @@ api-handler get {/sessions} yes {
 
 api-handler post {/sessions} no {
     } {
-
     # get body just to check it's a JSON body
     ::scgi::get-body-json $_parm
 
@@ -55,13 +54,8 @@ api-handler post {/sessions} no {
 	::scgi::serror 403 [mc "You must close your session first"]
     }
 
-    global conf
-    global env
-
-    # XXX
-    if {[info exists env(REMOTE_ADDR]} then {
-	set srcaddr $env(REMOTE_ADDR)
-    } else {
+    set srcaddr [::scgi::get-header "REMOTE_ADDR"]
+    if {$srcaddr eq ""} then {
 	set srcaddr "::1"
     }
 
@@ -130,11 +124,11 @@ api-handler delete {/sessions} no {
 	set token [::scgi::dget $_cookie "session"]
 	set idcor [::u idcor]
 
-	set message [register-user-logout ::dbdns $token "" "logout"]
+	set message [register-user-logout ::dbdns $idcor $token "" "logout"]
 	if {$message ne ""} then {
 	    ::scgi::serror 500 [mc "Internal server error (%s)" $message]
 	}
-###	d writelog "auth" "logout [d uid] $qtoken"
+	::log writelog "auth" "logout [::u login] $token" "" [::u login] ""
 
 ###	d uid "-"
 ###	d euid {- -1}
@@ -237,7 +231,6 @@ proc check-password {dbfd login upw} {
 }
 
 proc register-user-login {dbfd login casticket} {
-    global env
 
     #
     # Search id for the login
@@ -266,8 +259,9 @@ proc register-user-login {dbfd login casticket} {
     $dbfd lock {global.utmp} {
 	set found true
 	while {$found} {
-	    set token [pg_quote [get-random $toklen]]
-	    set sql "SELECT idcor FROM global.tmp WHERE token = $token"
+	    set token [get-random $toklen]
+	    set qtoken [pg_quote $token]
+	    set sql "SELECT idcor FROM global.tmp WHERE token = $qtoken"
 	    set found false
 	    $dbfd exec $sql tab {
 		set found true
@@ -278,10 +272,11 @@ proc register-user-login {dbfd login casticket} {
 	# Register token in utmp table
 	#
 
-	set ip NULL
-	# XXX
-	if {[info exists env(REMOTE_ADDR)]} then {
-	    set ip "'$env(REMOTE_ADDR)'"
+	set ip [::scgi::get-header "REMOTE_ADDR"]
+	if {$ip ne ""} then {
+	    set ip [pg_quote $ip]
+	} else {
+	    set ip NULL
 	}
 	set qcas NULL
 	if {$casticket ne ""} then {
@@ -289,7 +284,7 @@ proc register-user-login {dbfd login casticket} {
 	}
 
 	set sql "INSERT INTO global.utmp (idcor, token, casticket, ip)
-		    VALUES ($idcor, $token, $qcas, $ip)"
+		    VALUES ($idcor, $qtoken, $qcas, $ip)"
 	if {! [$dbfd exec $sql msg]} then {
 	    $dbfd abort
 	    return [mc "Cannot register user login (%s)" $msg]
@@ -300,8 +295,7 @@ proc register-user-login {dbfd login casticket} {
     # Log successful flogin
     #
 
-    # XXXX
-#    d writelog "auth" "login $login $token"
+    ::log writelog "auth" "login $login $token" "" $login ""
 
     #
     # Set session cookie
