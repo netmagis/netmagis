@@ -14,8 +14,8 @@ node_modules/webpack/bin/webpack.js: package.json
 install: build
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)$(NMWWWDIR)
+	$(NINSTALL) -m 0644 $(SUBST) static/*/* $(DESTDIR)$(NMWWWDIR)
 	$(NINSTALL) -m 0644 $(SUBST) dist/* $(DESTDIR)$(NMWWWDIR)
-	$(NINSTALL) -m 0644 $(SUBST) html/*.html html/*/* $(DESTDIR)$(NMWWWDIR)
 
 clean:
 	rm -rf dist node_modules
