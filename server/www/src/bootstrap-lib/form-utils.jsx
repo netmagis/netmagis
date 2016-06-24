@@ -992,7 +992,10 @@ export var Editable_tr = React.createClass({
  	contextTypes : {lang: React.PropTypes.string},
 
 	getInitialState: function(){
-		return { edit: this.props.edit || false };
+		return { 
+			edit: this.props.edit || false,
+			error: false, emessage: ""
+		};
 	},
 
 
@@ -1060,21 +1063,33 @@ export var Editable_tr = React.createClass({
 		return {key:  uniquekey, input: data };
 	},
 		
-	
+
+	error: function (jqXHR){
+		this.setState({error: true, emessage: jqXHR.responseText});
+	},
+
 	/* Active/desactive edit mode */	
 	switchMode: function(){
+
+		function _switch(){
+			this.setState({ edit: !this.state.edit });
+		}
 
 		if (this.state.edit == true){
 			var data = this.collectValues();
 
 			if (data.key.toString().startsWith("__")) { // Invalid api id (given from the application)
-				this.props.handler.save(data.key, data.input);
+				this.props.handler.save(data.key, data.input, 
+						_switch.bind(this), this.error);
 			} else {
-				this.props.handler.update(data.key, data.input);
+				this.props.handler.update(data.key, data.input,
+						_switch.bind(this), this.error);
 			}
+		} else {
+			this.setState({ edit: !this.state.edit });
+			
 		}
 
-		this.setState({ edit: !this.state.edit });
 	},
 
 
@@ -1101,6 +1116,9 @@ export var Editable_tr = React.createClass({
 			<tr id={"etr"+this.props.reactKey} >
 				{this.props.model.desc.map(this.renderChild)}
 				<td className="outside">
+					<p style={{color: 'red'}}>
+						{ this.state.error ? this.state.emessage : ''}
+					</p>
 					<Button onClick={this.switchMode}>
 						{ this.state.edit ? "Save" : "Edit" }
 					</Button>

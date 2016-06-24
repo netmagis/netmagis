@@ -309,7 +309,7 @@ export var Prompters = {
 			return {'domain':  Prompters.domain.getValues() };
 		},
 
-		save: function(key, input){
+		save: function(key, input, success, error){
 			var iddom = Prompters.domain.name2Id(input.domain);
 			var iddhcpprof = Prompters.dhcpprofiles.name2Id(input.dhcpprof);
 
@@ -322,13 +322,15 @@ export var Prompters = {
 				method: 'POST',
 				url: C.APIURL+"/dhcpranges",
 				data: JSON.stringify(data_req),
-				contentType: 'application/json'
+				contentType: 'application/json',
+				success: success,
+				error: error
 			});
 
 			
 		},
 
-		update: function(key, input){
+		update: function(key, input, success, error){
 			var iddom = Prompters.domain.name2Id(input.domain);
 			var iddhcpprof = Prompters.dhcpprofiles.name2Id(input.dhcpprof);
 
@@ -341,17 +343,20 @@ export var Prompters = {
 				method: 'PUT',
 				url: C.APIURL+"/dhcpranges/"+key,
 				data: JSON.stringify(data_req),
-				contentType: 'application/json'
+				contentType: 'application/json',
+				success: success,
+				error: error
 			});
 		},
 
-		delete: function(key, input){
+		delete: function(key, input, success, error){
 			console.log("--------- DELETE ----------");
 			console.log("DELETE /api/dhcpranges/"+key);
-			return;
 			$.ajax({
 				method: 'DELETE',
-				url: C.APIURL+"/dhcpranges/"+key
+				url: C.APIURL+"/dhcpranges/"+key,
+				success: success,
+				error: error
 			});
 		}
 
