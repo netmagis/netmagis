@@ -27,7 +27,7 @@ var App = React.createClass({
 		
 	render: function () {
 		return ( 
-			<F.Table model={this.model} name="dhcp" />
+			<F.Table model={this.model} name="row_dhcprange" />
 		);
 
 	}
