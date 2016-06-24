@@ -7,10 +7,6 @@
 /config
     description: Collection of configuration parameters
     /{configId}
-/utmp
-    description: Collection of currently connected users
-/wtmp
-    description: Collection of last session records
 /groups
     description: Collection of Netmagis groups
     /{groupId}
@@ -116,12 +112,6 @@
 				    "name": "example.org"
 				}
 			    ]
-    post: XXXXXXXXXXXXXXXXXXXXXXxx
-    /{domainId}
-	description: A single domain
-	get: XXX?
-	put: XXXXXXXXXXXXXXXXXXXXXXxx
-	delete:
 
 /dhcpranges
     description: Collection of dynamic DHCP ranges
@@ -394,11 +384,25 @@
     get:
 	queryParameters:
 	    view:
+		description: filter on view name
+		type: string
+		required: false
 	    name:
+		description: filter on name
+		type: string
+		required: false
 	    domain:
-	    ################### context: => not needed here, will be implicitely checked at put/post/delete time
-	    cidr:
-	    sort:		# sort criterion
+		description: filter on domain name
+		type: string
+		required: false
+	    addr:
+		description: filter on IP address
+		type: cidr (v4 or v6)
+		required: false
+	    sort:		# XXX BUG
+		description: sort result
+		type: comma-separated list of {name, domain, addr, view}
+		required: false
 	responses:
 	    200:
 		body:
@@ -407,17 +411,21 @@
 			    [ 
 				{
 				    idrr: 123,
-				    fqdn: "foo.example.com",
-				    idview: 1
+				    name: www,
+				    iddom: 1,
+				    domain: example.org,
+				    idview: 1,
+				    view: internal
 				},
 				{
 				    idrr: 456,
-				    fqdn: "bar.example.org",
-				    idview: 1
+				    name: foo,
+				    iddom: 2,
+				    domain: example.com
+				    idview: 2
+				    view: external
 				}
 			    ]
-	    404: Not found
-	    403: Forbidden 
     post:
 	description: Create a new name
 	queryParameters: (none)
