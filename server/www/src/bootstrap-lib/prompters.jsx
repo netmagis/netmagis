@@ -89,8 +89,7 @@ export var Prompters = {
 		/* Fill the machines array with the API answer */
 		init : function (callback)  { 
 			C.getJSON(C.APIURL+'/hinfos', function(response){
-					this.machines = response.filter(e => e.present)
-								.map(e => e.name);
+					this.machines = response;
 			}.bind(this), callback);
 		},
 
@@ -99,6 +98,22 @@ export var Prompters = {
 			return this.machines;
 		}
 	},
+
+	hinfos_present: {
+		machines: [],
+
+		init : function (callback)  { 
+			C.getJSON(C.APIURL+'/hinfos?present=1', function(response){
+					this.machines = response.map( m => m.name );
+			}.bind(this), callback);
+		},
+
+		getValues: function (){
+			return this.machines;
+		}
+
+	},
+			
 
 
 	/*************************  Handler name="domain" ***********************/
