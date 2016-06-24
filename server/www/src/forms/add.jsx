@@ -51,7 +51,7 @@ export var Add_host = React.createClass({
 					<F.Checkbox label="use SMTP" name="smtp" defaultChecked={d["smtp"]} />
 				</F.Row>
 				<F.Row>
-					<F.Adropdown label="Machine" name="hinfos" defaultValue={d["machines"]} />
+					<F.Adropdown label="Machine" name="hinfos_present" defaultValue={d["machines"]} />
 				</F.Row>
 				<F.Row>
 					<F.Input label="Comment" name="comment" />
