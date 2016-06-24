@@ -4,3 +4,4 @@
 - management of sessions by admin users, or by ordinary users (for their own sessins)
 - test with Apache
 - api-handler for /addrblock?cidr=...&min=...
+- return appropriate error messages (when not in debugg mode)
