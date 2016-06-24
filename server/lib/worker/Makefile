@@ -10,9 +10,10 @@ FILES =	\
 	hdl-domains.tcl \
 	hdl-files.tcl \
 	hdl-hinfos.tcl \
-	hdl-login.tcl \
 	hdl-names.tcl \
 	hdl-networks.tcl \
+	hdl-search.tcl \
+	hdl-sessions.tcl \
 	hdl-views.tcl \
 
 build:

@@ -9,6 +9,8 @@
 *.log
 *.bak
 *.swp
+# Output from pandoc
+*.man
 # Compiled files
 *.[oa]
 topo/src/buildgraph
@@ -21,5 +23,6 @@ topo/src/extractl3
 topo/src/getnetif
 www/htg/src/htgtcl
 
-# Node packages
-server/www/node_modules
+server/lib/pkgtcl/pkgIndex.tcl
+server/www/node_modules/*
+server/www/dist/*

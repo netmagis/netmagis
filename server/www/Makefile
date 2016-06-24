@@ -1,10 +1,5 @@
 NINSTALL	= ../../ninstall
 
-JSSRC = $(find src -type f)
-
-### TODO
-### APPS = dist/app_add.js ....
-
 #
 # Prerequisites:
 #	npm
@@ -18,9 +13,9 @@ node_modules/webpack/bin/webpack.js: package.json
 
 install: build
 	@echo ">>> Making install in `pwd`"
-	mkdir -p $(DESTDIR)$(NMLIBDIR)/www
-	$(NINSTALL) -m 0644 $(SUBST) dist/* $(DESTDIR)$(NMLIBDIR)/www
-	$(NINSTALL) -m 0644 $(SUBST) html/*.html $(DESTDIR)$(NMLIBDIR)/www
+	mkdir -p $(DESTDIR)$(NMWWWDIR)
+	$(NINSTALL) -m 0644 $(SUBST) static/*/* $(DESTDIR)$(NMWWWDIR)
+	$(NINSTALL) -m 0644 $(SUBST) dist/* $(DESTDIR)$(NMWWWDIR)
 
 clean:
 	rm -rf dist node_modules
