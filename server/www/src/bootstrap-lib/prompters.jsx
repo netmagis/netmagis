@@ -263,7 +263,7 @@ export var Prompters = {
 	},
 	/*************************  Handler name="dhcp" *******************/
 
-	dhcp: {
+	row_dhcprange: {
 
 		dhcp: [],
 
