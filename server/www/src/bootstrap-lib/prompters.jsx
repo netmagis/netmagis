@@ -316,8 +316,13 @@ export var Prompters = {
 			var data_req = $.extend({iddom: iddom, iddhcpprof: iddhcpprof}, input);
 			delete data_req.domain; delete data_req.dhcpprof;
 
-			console.log("--------- SAVE ----------");
-			console.log("POST /api/dhcprange "+JSON.stringify(data_req));
+			var max_lease = parseInt(data_req.max_lease_time);
+			var def_lease = parseInt(data_req.default_lease_time);
+
+			data_req.max_lease_time = isNaN(max_lease)? 0 : max_lease;
+			data_req.default_lease_time = isNaN(def_lease)? 0 : def_lease;
+
+
 			$.ajax({
 				method: 'POST',
 				url: C.APIURL+"/dhcpranges",
@@ -336,6 +341,12 @@ export var Prompters = {
 
 			var data_req = $.extend({iddom: iddom, iddhcpprof: iddhcpprof}, input);
 			delete data_req.domain; delete data_req.dhcpprof;
+
+			var max_lease = parseInt(data_req.max_lease_time);
+			var def_lease = parseInt(data_req.default_lease_time);
+
+			data_req.max_lease_time = isNaN(max_lease)? 0 : max_lease;
+			data_req.default_lease_time = isNaN(def_lease)? 0 : def_lease;
 
 			console.log("--------- UPDATE ----------");
 			console.log("PUT /api/dhcpranges/"+key+" "+JSON.stringify(data_req));
