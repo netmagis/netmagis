@@ -3,9 +3,11 @@ array set fileext {
     json application/json
     js   application/javascript
     pdf  application/pdf
+    css  text/css
+    png  image/png
 }
 
-api-handler get {/files/([-a-zA-Z0-9][-a-zA-Z0-9.]*:name)} yes {
+api-handler get {/files/([-a-zA-Z0-9][-a-zA-Z0-9.]*:name)} no {
     } {
     global fileext
     global conf

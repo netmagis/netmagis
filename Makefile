@@ -21,7 +21,8 @@ NMDOCDIR	= $(PREFIX)/share/doc/netmagis
 NMXMPDIR	= $(PREFIX)/share/examples/netmagis
 NMLIBDIR	= $(PREFIX)/lib/netmagis
 NMVARDIR	= $(PREFIX)/var/netmagis
-NMCGIDIR	= $(PREFIX)/www/netmagis
+NMWWWDIR	= $(PREFIX)/www/netmagis
+###NMCGIDIR	= $(PREFIX)/www/netmagis
 NMWSDIR		= $(PREFIX)/www/metro
 
 TCLSH		= /usr/local/bin/tclsh
@@ -43,6 +44,7 @@ VARS		= \
 			NMXMPDIR=$(NMXMPDIR) \
 			NMLIBDIR=$(NMLIBDIR) \
 			NMVARDIR=$(NMVARDIR) \
+			NMWWWDIR=$(NMWWWDIR) \
 			NMCGIDIR=$(NMCGIDIR) \
 			NMWSDIR=$(NMWSDIR) \
 			DESTDIR=$(DESTDIR)

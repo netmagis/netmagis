@@ -1,7 +1,7 @@
 import React from 'react';
 
 
-export var APIURL = "http://130.79.91.54:82/";
+export var APIURL = "";
 export var TODO_APIURL = "http://130.79.91.54:82/www/html/api";
 
 

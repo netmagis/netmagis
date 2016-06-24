@@ -14,6 +14,7 @@ install:
 	mkdir -p $(DESTDIR)$(BINDIR)
 	$(NINSTALL) -m 0755 \
 		-e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
+		-e "s|%NMWWWDIR%|$(NMWWWDIR)|" \
 		-e "s|%VERSION%|$(VERSION)|" \
 		-e "s|%BINDIR%|$(BINDIR)|" \
 		$(SUBST) \
