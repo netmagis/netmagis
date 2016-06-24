@@ -1,0 +1,6 @@
+- api-handler delete /admin
+- pgdb abort => 
+- move all netmagis global vars/methods to ::nmenv class
+- management of sessions by admin users, or by ordinary users (for their own sessins)
+- test with Apache
+- api-handler for /addrblock?cidr=...&min=...
