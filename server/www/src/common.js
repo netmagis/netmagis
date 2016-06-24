@@ -1,7 +1,8 @@
 import React from 'react';
 
 
-export var APIURL = "http://130.79.91.54/stage-l2s4/nm_pages/api";
+export var APIURL = "";
+export var TODO_APIURL = "http://130.79.91.54:82/www/html/api";
 
 
 /* Same as $.getJSON but defines mimeType
@@ -38,3 +39,11 @@ export function IPv4_intA_to_dotquadA( strnum ) {
 	return ( byte1 + '.' + byte2 + '.' + byte3 + '.' + byte4 );
 }
  
+
+/* Add n to an IPv4 address */
+export function add_to_IPv4(ip,n){
+	return IPv4_intA_to_dotquadA(
+		IPv4_dotquadA_to_intA(ip)+n
+        );
+}
+

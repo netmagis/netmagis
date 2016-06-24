@@ -5,13 +5,46 @@ import Autosuggest from 'react-autosuggest';
 import {Prompters} from './prompters.jsx';
 
 
+/**
+ * Returns an object all the values of the form with the given id. The
+ * keys are the name attributes of the fields of the form 
+ */
+export function form2obj(id){
+	var elements = document.getElementById(id).elements;
+	
+	var obj = {};
+
+	for (var i = 0; i < elements.length; i++){
+		
+		var value;	
+		var el = elements[i];
+		var tag = el.tagName.toLowerCase();
+
+		switch (tag) {
+			
+			case "input":	if (el.type.toLowerCase() == "text")
+						value = el.value;
+					else if (el.type.toLowerCase() == "checkbox")
+						value = el.checked;
+				break;
+
+			case "button": value = el.textContent;
+			
+		}
+		
+		obj[elements[i].name] = value;
+	}
+
+	return obj;
+}
+
 
 /** 
  * Creates an uncontrolled Bootstrap-like input field preceded by a label.
  * Every property passed to this object is passed to the input field.
  *
  * @properties:
- *	-label: defines the contents of the label (required) //TODO make it optional
+ *	-label: defines the contents of the label (required)
  *	-dims : defines the dimensions of this component following the
  *		Bootstrap grid system. Use the following syntax: "x+y"
  *		where x is the space reserved for the label and y is the
@@ -84,6 +117,11 @@ export var Ainput = React.createClass({
 });
 
 
+
+
+
+
+
 /**
  * Simple Bootstrap-like button. Every property passed to this button is 
  * passed as an attribute to the html button node. 
@@ -95,6 +133,7 @@ export var Ainput = React.createClass({
  *	
  * @prec this component should have only text as a child
  */
+
 export var Button = React.createClass({
 	
  	contextTypes : {lang: React.PropTypes.string},
@@ -117,19 +156,29 @@ export var Button = React.createClass({
 
 
 
+
+
+
+
+
 /**
  * This component creates a simple bootstrap-like dropdown using the 
  * contents of the children as list element. The children can contain only
  * text. You can use whatever html tag to indicate the children (by convention
  * I suggest you to use the tag <el> </el> as it is short and descriptive).
- * All the properties passed to theis component are passed directly to the
- * button element as attributes
+ * All the properties passed to this component are passed directly to the
+ * button element (so if you define a 'className' property this means that
+ * the button will use it to define a class attribute) in this way you can
+ * define 
  *
  * @properties:
- *	-superClass: Is the same of className but it will affect the whole
+ *	-superClass: the same as className but it will affect the whole
  *		     component and not only the internal button
  *	-defaultValue: force the initial value
- *	-value: force the value
+ *	-value:	force the value
+ *	-onChange: a function called every time the user changes the value,
+ *		   this new value is passed by parameter
+ *		   
  * 
  * Example of use:
  *	<Dropdown_internal superClass="beautiful_dropdown" >
@@ -137,8 +186,15 @@ export var Button = React.createClass({
  *		<el> element 2 </el> 
  *		<el> element 3 </el> 
  * 	</Dropdown_internal>
+ *
+ * @warning: <el>{ my_var }</el> Ok! 
+ * 	     <el> { my_var } </el> Avoid it! 
+ *	  Apparently in the latter case React generates an array of 3 elements
+ *	  [" ", my_var, " "]. This works still fine for the rendering but could 
+ *	  cause some problem when the value must be retrieved using .val() 
+ *				 
  */
-export var Dropdown_internal = React.createClass({ /*TODO change name */
+export var Dropdown_internal = React.createClass({ 
 
 
  	contextTypes : {lang: React.PropTypes.string},
@@ -175,12 +231,12 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 
 	componentWillReceiveProps: function(newprops) {
 		
+		
 		if (newprops.value != undefined )
 				this.setState({value: newprops.value });	
 
 		else if (newprops.children.length > 0) {
-			if ( this.state.value == undefined /*|| 
-			     this.props.children != newprops.children*/){ //TODO FIX
+			if ( this.state.value == undefined) {
 				
 				this.setState(
 					{value: newprops.children[0].props.children}
@@ -195,8 +251,9 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 	   and execute the onChange callback */
 	handleClick: function(child, event){
 			event.preventDefault();
-			this.setState({value: child.props.children});
-			if (this.props.onChange) this.props.onChange();
+			var newValue = child.props.children; 
+			this.setState({value: newValue});
+			if (this.props.onChange) this.props.onChange(newValue);
 			
 	},
 
@@ -216,7 +273,6 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 
 	/* Main render */
 	render: function(){
-
 		return (
 			<div className={this.props.superClass}>
 				<button className="btn btn-default dropdown-toggle" 
@@ -241,6 +297,9 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
 
 
 
+
+
+
 /**
  * Creates a Bootstrap-like dropdown which element will be charged
  * automatically trough async ajax request using the proper hanlder.
@@ -252,6 +311,7 @@ export var Dropdown_internal = React.createClass({ /*TODO change name */
  *	 <AJXdropdown name="foods" superClass="foodSelector" />
  *	
  */
+
 export var AJXdropdown = React.createClass({
 	
         contextTypes : {lang: React.PropTypes.string},
@@ -276,7 +336,7 @@ export var AJXdropdown = React.createClass({
 		var values = Prompters[this.props.name].getValues();
 
 		function makeElement(val, index) { 
-			return (<el key={"ajd"+index} > {val} </el>); 
+			return (<el key={"ajd"+index} >{val}</el>); 
 		}
 		
 		return (
@@ -439,9 +499,13 @@ export var Inputdrop = React.createClass({
 
 
 
+
+
 /**
- * Same as Inputdrop but with a list of elements charged trough 
- * async AJAX call (see AJXdropdown).
+ * Same as Inputdrop but uses an AJXdropdown in order to charge
+ * the values of the dropdown using the ajax api. In this case
+ * use the property `ddname` to specify the name of the handler
+ * for the AJXdropdown.
  */
 
 export var InputAdrop = React.createClass({
@@ -474,6 +538,9 @@ export var InputAdrop = React.createClass({
 	}
 
 });
+
+
+
 
 /**
  * Creates a Bootstrap-like checkbox followed by a label
@@ -560,6 +627,10 @@ export var Row = React.createClass({
 });
 
 
+
+
+
+
 /**
  * Creates a form. The properties passed to this component are passed
  * automatically as attributes of the html element <form>
@@ -583,19 +654,23 @@ export var Form = React.createClass({
 
 
 
+
+
+
 /**
  * Use this component to generate an input field with automatic suggestions.
  * Note that all the properties of AutoInput will be passed to the imput field.
  * AutoInput must have a `name` property and it's value must correspond
  * with the name of an handler contained inside the Prompters (see above).
+ *
+ * @properties: 
+ *	-defaultValue: default value of the input (!= placeholder)
+ *	-name: name of the handler
  * 
  * Example of use:
- *
- *	ReactDOM.render(
- *		<AutoInput placeholder="Insert a network address" name="cidr" 
- *		   className="myclassname" style={{width: "30%"}} />, 
- *		document.getElementById('app')
- * 	);
+ *	<AutoInput placeholder="Insert a network address" name="cidr" 
+ *		   className="myclassname" style={{width: "30%"}} 
+ *	/>
  */
 export var AutoInput = React.createClass({
 
@@ -689,103 +764,15 @@ export var AutoInput = React.createClass({
 
 
 
-
-
 /**
- * Generates a dropdown which elements are charged dinamically trough ajax
- * requestm, preceded by an imput field that can be use to filter out the
- * elements of the dropdown. Everything is preceded by a label.
- * 
- * FIXME when all the elements are filtered out the dropdown keeps
- * the previous value.
+ * Creates an input and a dropdown (the latter preceded by a 'or' label), where
+ * only the last used can contain a value.
  *
- * @properties: 
- *	-name : Name of the handler (see AJXdropdown)
- *	-label: Contents of the label preceding the input field and the dropdown
- *	-dims : Dimensions following bootstrap's grid system (see Input)
- * Example of use:
- *	  <FilteredDd name="contacts" label="select a contact" dims="3+2+1" />
- */
-
-export var FilteredDd = React.createClass({
-	
-        contextTypes : {lang: React.PropTypes.string},
-
-	getInitialState: function(){
-		return {value: ""};
-	},
-
-
-	/* An AJXdropdown has a name prop */
-	propTypes: { name: React.PropTypes.string.isRequired },	
-
-	componentWillMount: function () {
-		var prompter = Prompters[this.props.name];
-
-		if (!prompter) {
-			console.error(this.props.name+" is not a prompter!");
-
-		} else if (prompter.init) {
-			prompter.init(function(){this.forceUpdate();}.bind(this));
-			
-		}
-	},
-	handleChange: function(event) {
-		this.setState({value: event.target.value});
-	},
-	
-	getValues: function(){
-		var values = Prompters[this.props.name].getValues();
-		var inputValue = this.state.value.trim().toLowerCase();
-		var inputLength = inputValue.length;
-
-		if (inputLength === 0) return values;
-
-		return values.filter(function (val) {
-	    		return val.toLowerCase().slice(0, inputLength) === inputValue;
-		 });
-		
-	},
-
-	render: function(){
-
-		var values = this.getValues();
-
-		var grid_vals = this.props.dims ? 
-			this.props.dims.split('+') : ['2','2','2'];
-
-		function makeElement(val, index) { 
-			return (<el key={"ajd"+index} > {val} </el>); 
-		}
-		
-		return (
-			<div>
-				<label className={"control-label col-md-"+grid_vals[0]}>
-				{translate(this.props.label)}
-				</label>
-				<div className={"col-md-"+grid_vals[1]}>
-					<input className="form-control" value={this.state.value} onChange={this.handleChange} />
-				</div>
-				<div className={"dropdown col-md-"+grid_vals[2]}>
-					<Dropdown_internal {...this.props}  >
-						{values.map(makeElement)}
-					</ Dropdown_internal>
-				</div>
-			</div>
-		);
-	}
-
-});
-
-
-
-
-/**
  * @properties:
- *	-label:
- *	-defaultValue:
- *	-iname, dname:
- *	-placeholder:
+ *	-label: Content of the label preceding the input field and the dropdown
+ *	-defaultValue: default value of the dropdown
+ *	-iname, dname: names of input field and dropdown (XXX should I use only one name prop and update an hidden input with the good value? )
+ *	-placeholder:  placeholder attribute of the input field
  */
 
 export var InputXORdd = React.createClass({
@@ -793,24 +780,29 @@ export var InputXORdd = React.createClass({
         contextTypes : {lang: React.PropTypes.string},
 
 	getInitialState: function(){
+		// The state contains the value of the input
+		// (Ivalue) and the value of the dropdown (Dvalue)
 		return {Ivalue: "", Dvalue: undefined };
 	},
 
 	/* An AJXdropdown has a name prop */
 	propTypes: { name: React.PropTypes.string.isRequired },	
 
+	/* Update input when the user types */
 	handleChange: function(event) {
 		event.preventDefault();
 		this.setState({Ivalue: event.target.value });
 	},
-	
+
+	/* Select dropdown value */	
 	ddChange: function() {
 		this.setState({Ivalue: "", Dvalue: undefined});
 	},
 
+	/* User leaves the input */
 	onBlur: function(event) {
 		event.preventDefault();
-		this.setState({Dvalue: ""});
+		this.setState({Dvalue: this.props.defaultValue || ""});
 		
 	},
 	
@@ -832,7 +824,7 @@ export var InputXORdd = React.createClass({
 					 name={this.props.name}  placeholder={this.props.placeholder} />
 				</div>
 				<div className={"dropdown col-md-"+grid_vals[2]}>
-					<AJXdropdown onChange={this.ddChange} value={this.state.Dvalue}
+					<Adropdown label="or" onChange={this.ddChange} value={this.state.Dvalue}
 					 name={this.props.name} defaultValue={this.props.defaultValue}  />
 				</div>
 			</div>
@@ -845,31 +837,452 @@ export var InputXORdd = React.createClass({
 
 
 
-export function form2obj(id){
-	var elements = document.getElementById(id).elements;
-	
-	var obj = {};
 
-	for (var i = 0; i < elements.length; i++){
+
+/**
+ * Depending on is property `edit` creates a editable text-input field
+ * or a not editable text.
+ * @properties:
+ *	- name: name to pass to the imput when in edit mode
+ *	- edit: if true the component will be editable 
+ */
+export var InEdit = React.createClass({
+
+	/* This will force a rerendering on languae change */
+ 	contextTypes : {lang: React.PropTypes.string},
+
+	getInitialState: function(){
+		return { value: this.props.children }
+	},
+
+	componentWillReceiveProps: function(newProps){
+		//this.setState({ value: newProps.children });
 		
-		var value;	
-		var el = elements[i];
-		var tag = el.tagName.toLowerCase();
+	},
 
-		switch (tag) {
+	/* As this is controlled Update the state with the new value */
+	onChange: function (event) {
+		this.setState({value: event.target.value});
+	},
+
+	render: function(){
+		if (this.props.edit === true) {
+			return (<input value={this.state.value} style={{width: "100%"}}
+				 onChange={this.onChange} name={this.props.name} />
+			);
+		} else {
+			return (<div> {this.state.value} </div>);
+		}
+	}
+});
+
+
+
+
+
+
+
+/**
+ * Depending on is property `edit` creates a editable dropdown
+ * or a not editable text.
+ * @properties:
+ *	- name: name to pass to the dropdown when in edit mode
+ *	- edit: if true the component will be editable 
+ *	- values: either a list (array) either an object containing an attribute 
+ *		  values (a list) and an attribute value (default value), in this 
+ *		  latter case the attribute value will be used as default value of
+ *		  this component.
+ */
+export var DdEdit = React.createClass({
+
+	/* This will force a rerendering on languae change */
+ 	contextTypes : {lang: React.PropTypes.string},
+
+	getInitialState: function(){
+		if (Array.isArray(this.props.values)) {
+
+			return { value: this.props.values[0],
+				 values: this.props.values
+			       };
+		} else {
+
+			return { value: this.props.values.value,
+				 values: this.props.values.values
+			       }
+		}
+	},
+
+	/* As this is controlled Update the state with the new value */
+	onChange: function (newValue) {
+		this.setState({	value: newValue });
+	},
+
+	makeOption: function (val, index){
+		return (<el>{val}</el>);
+	},
+
+	render: function(){
+		if (this.props.edit === true) {
+			return (<Dropdown_internal superClass="dropdown" 
+				 onChange={this.onChange} value={this.state.value}
+				 name={this.props.name}  >
+					{this.state.values.map(this.makeOption)}
+				</Dropdown_internal>
+			);
+		} else {
+			return (<div > {this.state.value} </div>);
+		}
+	}
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates an editable table's row which allows the user to edit the values
+ * and/or save/remove/cancell the row.
+ *
+ * @properties:
+ *	-model	an object which describes the data contained into
+ *		the row (see the component EdiTable). It must have one attribute
+ *		'key' and an attribute 'desc' (see EditTable)
+ *	
+ *	-data,  an object containing a certain number of "name": "value" pairs,
+ *		where "name" correspond to one of the names specified on the model.
+ *	 	If the type specified on the model is "input" and the data for this
+ *		field is not specified then it will be an empty string by default. 
+ *		The data of other types (!= "input") must always be specified.
+ *
+ *	-edit, specify if the row is rendered in edit mode or not
+ *
+ * 	-handler, an object containing a serie of function that can handle the data
+ *		  contained in the row, each of them when called will receive a
+ *		  parameter 'key' which containds the key value referenced by the model
+ *                and a object 'input' which fields rapresent the fields of the row
+ *		  they are named accordingly with the model (required)
+ *
+ *	-onRemove, a function called when the row is removed, the property index
+ *	           passed as parameter
+ *
+ *	-index, value passed to the onRemove function when the row is removed
+ *
+ *	-reactKey, must have the same value as the key used by React for 
+ *		   this component. This will be used as id to idetify the
+ *		   row (required)
+ */
+
+export var Editable_tr = React.createClass({
+
+	/* This will force a rerendering on languae change */
+ 	contextTypes : {lang: React.PropTypes.string},
+
+	getInitialState: function(){
+		return { 
+			edit: this.props.edit || false,
+			error: false, emessage: ""
+		};
+	},
+
+
+	/**
+	 * Used by this.renderChild to render the correct
+	 * child depending the description on the model
+	 * @param desc, description specified into the model property
+	 * @param content, the content of the child to render
+	 */
+	renderType: function (desc, content){
+		switch ( desc[1].toLowerCase() ) {
+
+			case "input" :
+				return (
+					<InEdit edit={this.state.edit}
+						name={desc[2]}
+					>
+						{content}
+					</InEdit>
+				);
+
+			case "dropdown":
+				return (
+					<DdEdit edit={this.state.edit} 
+						values={content}
+						name={desc[2]}
+					/>
+				);
+				
+			default: return (<div>{content}</div>);
+		}
+				
+				
+	},
+
+
+	/**
+         * Render one element of the row (child)
+         * @param desc, the description of the element 
+	 * 	   defined into the model props
+	 * @param index, number of the child (usually passed directly by .map())
+	 */
+	renderChild: function (desc, index) {
+
+		var content = this.props.data[desc[2]];
+
+		return (
+			<td key={"edr"+index} className="col-md-1" > 
+				{this.renderType(desc, content)}
+			</td>
+		);
 			
-			case "input":	if (el.type.toLowerCase() == "text")
-						value = el.value;
-					else if (el.type.toLowerCase() == "checkbox")
-						value = el.checked;
-				break;
+	},
 
-			case "button": value = el.textContent;
+
+
+	collectValues: function(){
+		var data = {};
+		for (var i = 0; i < this.props.model.desc.length; i++){
+			var name = this.props.model.desc[i][2];
+			// Use the id specified into the render in order to identify the row
+			data[name] = $("#etr"+this.props.reactKey+" [name='"+name+"']").val();
+		}
+		var uniquekey = this.props.data[this.props.model.key];
+		return {key:  uniquekey, input: data };
+	},
+		
+
+	error: function (jqXHR){
+		this.setState({error: true, emessage: jqXHR.responseText});
+	},
+
+	/* Active/desactive edit mode */	
+	switchMode: function(){
+
+		function _switch(){
+			this.setState({ edit: !this.state.edit });
+		}
+
+		if (this.state.edit == true){
+			var data = this.collectValues();
+
+			if (data.key.toString().startsWith("__")) { // Invalid api id (given from the application)
+				this.props.handler.save(data.key, data.input, 
+						_switch.bind(this), this.error);
+			} else {
+				this.props.handler.update(data.key, data.input,
+						_switch.bind(this), this.error);
+			}
+		} else {
+			this.setState({ edit: !this.state.edit });
 			
 		}
-		
-		obj[elements[i].name] = value;
-	}
 
-	return obj;
-}
+	},
+
+
+	/* Called when the user remove this row */
+	deleteRow: function(){
+
+		var data = this.collectValues();
+
+		if (this.state.edit == false) { 
+			this.props.handler.delete(data.key,data.input);
+			this.props.onRemove(this.props.index);
+
+		} else if (data.key.toString().startsWith("__")) { // Invalid api id (given from the application)
+			this.props.onRemove(this.props.index);
+
+		} else {
+			this.setState({ edit: !this.state.edit });
+		}
+	},
+
+	
+	render: function(){
+		return (
+			<tr id={"etr"+this.props.reactKey} >
+				{this.props.model.desc.map(this.renderChild)}
+				<td className="outside">
+					<p style={{color: 'red'}}>
+						{ this.state.error ? this.state.emessage : ''}
+					</p>
+					<Button onClick={this.switchMode}>
+						{ this.state.edit ? "Save" : "Edit" }
+					</Button>
+					<Button onClick={this.deleteRow}>
+						{ this.state.edit ? "Cancell" : "Remove" }
+					</Button>
+				</td>
+			</tr>
+		);
+	}
+});
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates an editable table on which the user can remove/add as many rows as 
+ * he wants. The rows can also be edited/saved in any moment.
+ *
+ * @properties:
+ *	-name: the name of the handler
+ *
+ *	-model	an object which describes the data contained into
+ *		the row (see the component EdiTable). It must have one attribute
+ *		'key' and an attribute 'desc':
+ *
+ *		- desc: contains a list of 3-elements arrays, each one describing one field of a
+ *		        row. The 3 elements must be strings representing respectively 
+ *				[Columns label, field type, field name]
+ *			example ["List of addresses", "Input", "address"]
+ *			
+ *		- key: contains the name of an attribute present on the property
+ *	    	       `data` which will be used as identifier for each row. This id
+ *		       is sent to the handler when a row is removed/updated/saved.
+ *		       Example of use: iddhcprange for a table of dhcp ranges
+ *		
+ *		The model should finally look more ore less like this:
+ *		      {key: ... , desc: [ ["field" , "type", "name"], ... ]}
+ * 
+ *	-data,  an object containing a certain number of "name": "value" pairs.
+ *		It must contain all the "names" specified on the model property.
+ *	 	If the type specified on the model is "input" and the data for this
+ *		field is not specified then the value will be an empty string. 
+ *		The data of other types (!= "input") must always be specified.
+ *
+ */
+export var Table = React.createClass({
+
+	/* This will force a rerendering on languae change */
+ 	contextTypes : {lang: React.PropTypes.string},
+
+	/* has a name prop */
+	propTypes: { name: React.PropTypes.string.isRequired },	
+
+	getInitialState: function (){ return {values : [] }; },
+
+	getValues: function(){
+		this.setState({values: Prompters[this.props.name].getValues()})
+	},
+
+
+	componentWillMount: function () {
+		var prompter = Prompters[this.props.name];
+
+		if (!prompter) {
+			console.error(this.props.name+" is not a prompter!");
+
+		} else if (prompter.init) {
+			prompter.init(this.getValues.bind(this));
+			
+		}
+	},
+
+	renderHead: function(){
+		function headerEl(mod,index){ return (<th key={"th"+index}> {mod[0]} </th>);}
+		return (
+			<thead>
+				<tr>
+				{this.props.model.desc.map(headerEl)}
+				</tr>
+			</thead>
+		);
+	},
+
+	renderRow: function (data , index){
+
+		var uniqkey = data[this.props.model.key];
+
+		return ( <Editable_tr key={"trw"+uniqkey}
+				      reactKey={"trw"+uniqkey}
+				      model={this.props.model} 
+				      data={data}
+				      edit={data._edit}
+				      index={index}
+				      onRemove={this.removeRow}
+				      handler={Prompters[this.props.name]}
+			/>
+		);
+
+	},
+	
+	removeRow: function (index) {
+		this.state.values.splice(index,1);
+		this.setState({values: this.state.values});
+	},
+
+	emptyRowsCount: 0, // Used to define unique keys when adding empty rows
+
+	addRow: function (){
+
+		var newRow = { _edit: true }; // Add in edit mode
+			
+		if (this.state.values.length > 0){	
+
+			/* Use the first row as example */
+			newRow = $.extend(newRow,this.state.values[0]);
+		
+			for (var i = 0; i < this.props.model.desc.length; i++){
+				/* Leave inputs blanks */
+				var type = this.props.model.desc[i][1];
+				if ( type.toLowerCase() == "input"){
+					var field = this.props.model.desc[i][2];
+					newRow[field] = "";
+				}
+			}
+
+		} else if (Prompters[this.props.name].getEmptyRow) {
+			/* Ask for an empty row to the prompter */
+			var emptyRow = Prompters[this.props.name].getEmptyRow();
+			newRow = $.extend(newRow,emptyRow);
+
+		} else {
+			console.error("Cannot fetch an the values of an empty row");
+			return;
+		}
+
+		// Set an unique key
+		newRow[this.props.model.key] = "___NotValidId"+this.emptyRowsCount++;
+
+		// Add to the state	
+		this.state.values.push(newRow);
+		this.setState({ values: this.state.values });
+		
+	},
+
+	render: function(){
+		return (
+			<div>
+				<table className="table table-bordered">
+					{this.renderHead()}
+					<tbody>
+						{this.state.values.map(this.renderRow)}
+					</tbody>
+				</table>
+				<Button onClick={this.addRow}>
+					Add
+				</Button>
+			</div>
+		);
+	}
+});

@@ -5,12 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "babel src/ --out-dir js/ || exit 1",
-    "build": "mkdir -p nm_pages/js && webpack && cp dist/* nm_pages/js/ #XXX"
+    "build": "mkdir -p dist && webpack"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lgcon/stage-l2s4.git"
+    "url": "git+https://github.com/pdav/netmagis.git"
   },
   "keywords": [
     "React",
@@ -19,11 +18,11 @@
     "netmagis"
   ],
   "author": "lgcon",
-  "license": "ISC",
+  "license": "CeCILL-B",
   "bugs": {
-    "url": "https://github.com/lgcon/stage-l2s4/issues"
+    "url": "https://github.com/pdav/netmagis/issues"
   },
-  "homepage": "https://github.com/lgcon/stage-l2s4#readme",
+  "homepage": "http://netmagis.org",
   "dependencies": {
     "react": "^15.1.0",
     "react-autosuggest": "^3.7.3",

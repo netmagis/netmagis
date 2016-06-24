@@ -4,6 +4,7 @@ build:
 	@echo ">>> Making build in `pwd`"
 	cd lib ; $(MAKE) build
 	cd man ; $(MAKE) build
+	cd www ; $(MAKE) build
 
 install:
 	@echo ">>> Making install in `pwd`"
@@ -18,3 +19,4 @@ install:
 clean:
 	cd lib ; $(MAKE) clean
 	cd man ; $(MAKE) clean
+	cd www ; $(MAKE) clean

@@ -28,7 +28,7 @@ export var Add_host = React.createClass({
 
 	render: function(){
 
-		var d = this.props.defValues || {};
+		var d = this.props.defaultValues || {};
 
 		return (
 			<div>
@@ -51,7 +51,7 @@ export var Add_host = React.createClass({
 					<F.Checkbox label="use SMTP" name="smtp" defaultChecked={d["smtp"]} />
 				</F.Row>
 				<F.Row>
-					<F.Adropdown label="Machine" name="machines" defaultValue={d["machines"]} />
+					<F.Adropdown label="Machine" name="hinfos_present" defaultValue={d["machines"]} />
 				</F.Row>
 				<F.Row>
 					<F.Input label="Comment" name="comment" />
@@ -181,7 +181,7 @@ export var Add_block = React.createClass({
 
 			case 1: return ( 
 					<Add_host id="Addblk_addh" 
-					 defValues={this.state.defaultAddHost}
+					 defaultValues={this.state.defaultAddHost}
 					 submtCallback={this.addNext} />
 				);
 
