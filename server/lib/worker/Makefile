@@ -9,6 +9,7 @@ FILES =	\
 	hdl-dhcpranges.tcl \
 	hdl-domains.tcl \
 	hdl-files.tcl \
+	hdl-freeblocks.tcl \
 	hdl-hinfos.tcl \
 	hdl-names.tcl \
 	hdl-networks.tcl \
