@@ -1077,7 +1077,7 @@ export var Editable_tr = React.createClass({
 	switchMode: function(){
 
 		function _switch(){
-			this.setState({ edit: !this.state.edit });
+			this.setState({ edit: !this.state.edit, error: false });
 		}
 
 		if (this.state.edit == true){
