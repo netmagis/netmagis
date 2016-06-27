@@ -2,19 +2,26 @@ import React from 'react';
 
 
 export var APIURL = "";
+export var LOGIN_PAGE = "/files/login.html";
 export var TODO_APIURL = "http://130.79.91.54:82/www/html/api";
 
 
-/* Same as $.getJSON but defines mimeType
-   usefull in case of static files */
-export var getJSON = function(url, success, callback){
-        $.ajax({
-                url: url,
+/* Same as $.ajax but defines some default values */
+export var reqJSON = function (req){
+	var default_req = {
                 dataType: 'json',
                 mimeType: 'application/json',
-                success:  success,
-                complete: callback
-        });
+		statusCode: {
+			401: function(){ // Redirect when auth error
+				window.location = LOGIN_PAGE;
+			}
+		}
+	}
+	
+	// Overwrite the default request with the values provided
+	$.ajax(
+		$.extend(default_req,req)
+	);
 }
 
 
