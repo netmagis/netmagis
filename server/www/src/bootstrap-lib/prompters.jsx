@@ -339,19 +339,31 @@ export var Prompters = {
 
 		},
 
-		save: function(key, input, success, error){
+		datareqFromInput: function(input){
+			// Convert domain and dhcpprof names to ids
 			var iddom = Prompters.domain.name2Id(input.domain);
 			var iddhcpprof = Prompters.dhcpprofiles.name2Id(input.dhcpprof);
 
 			var data_req = $.extend({iddom: iddom, iddhcpprof: iddhcpprof}, input);
 			delete data_req.domain; delete data_req.dhcpprof;
 
+			// Cast to max_lease/default_lease to numeric values
 			var max_lease = parseInt(data_req.max_lease_time);
 			var def_lease = parseInt(data_req.default_lease_time);
 
 			data_req.max_lease_time = isNaN(max_lease)? 0 : max_lease;
 			data_req.default_lease_time = isNaN(def_lease)? 0 : def_lease;
 
+			// Trim ips just to be nice with the user
+			data_req.min = data_req.min.trim();
+			data_req.max= data_req.max.trim();
+
+
+			return data_req;
+		},
+			
+		save: function(key, input, success, error){
+			var data_req = this.datareqFromInput(input);
 
 			C.reqJSON({
 				method: 'POST',
@@ -366,17 +378,7 @@ export var Prompters = {
 		},
 
 		update: function(key, input, success, error){
-			var iddom = Prompters.domain.name2Id(input.domain);
-			var iddhcpprof = Prompters.dhcpprofiles.name2Id(input.dhcpprof);
-
-			var data_req = $.extend({iddom: iddom, iddhcpprof: iddhcpprof}, input);
-			delete data_req.domain; delete data_req.dhcpprof;
-
-			var max_lease = parseInt(data_req.max_lease_time);
-			var def_lease = parseInt(data_req.default_lease_time);
-
-			data_req.max_lease_time = isNaN(max_lease)? 0 : max_lease;
-			data_req.default_lease_time = isNaN(def_lease)? 0 : def_lease;
+			var data_req = this.datareqFromInput(input);
 
 			C.reqJSON({
 				method: 'PUT',
