@@ -45,6 +45,39 @@
 		description: Collection of allowed VLANs without IP address for a group
 		/{vlanId}
 		    description: Permission on a VLAN without IP address for a group
+/freeblocks
+    description: Collection of free IPv4 addresses
+    get:
+	description: Get all free IPv4 blocks inside a CIDR
+	queryParameters:
+	    cidr:
+		description: address block
+		required: true
+		note: 
+	    size:
+		description: minimal size of block
+		required: true
+	    sort:
+		description: "size" or "addr"
+		required: false
+		default: "addr"
+	responses:
+	    200:
+		body:
+		    application/json:
+			example: |
+			    [
+				{
+				    addr: 172.16.1.10,
+				    size: 20
+				},
+				{
+				    addr: 172.16.1.70,
+				    size: 10
+				}
+			    ]
+	    412:
+		description: invalid input
 /sessions
     description: Collection of sessions
     get:
