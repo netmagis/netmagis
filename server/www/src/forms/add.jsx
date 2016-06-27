@@ -92,14 +92,14 @@ var Select_block = React.createClass({
 			});
 		}
 
-		var params = F.form2obj('Search block');
+		var params = F.form2obj('Search_block');
 		Prompters['freeblocks'].init(update.bind(this),params);
 
 	},
 
 	search_form: function(){
 		return (
-			<F.Form id='Search block'>
+			<F.Form id='Search_block'>
 				<F.Row>
 					<F.InputXORdd label="Network" 
 					 name="cidr" defaultValue="Select one" />
@@ -120,15 +120,23 @@ var Select_block = React.createClass({
 		function makeEl({addr, size}, i){
 			return (<el key={i+"elsf"} > {addr+" (size: "+size+")"} </el>);
 		}
-		
+
+		function onSelect(event){
+			console.log(this);
+			event.preventDefault();
+			var value = $('#Select_block [name="block"]')
+				    .text().trim().split(' ')[0];
+			this.props.onSelect(value);
+		}
+
 		return (
-			<F.Form id='Select block'>
+			<F.Form id='Select_block'>
 				<F.Row>
-					<F.Dropdown label="Block" name="cidr">
+					<F.Dropdown label="Block" name="block">
 						{this.state.blocks.map(makeEl)}
 					</F.Dropdown>
 					<F.Space dims="1" />
-					<F.Button dims="1" onClick={this.props.onSelect}>
+					<F.Button dims="1" onClick={onSelect.bind(this)}>
 						Select
 					</F.Button>
 				</F.Row>
@@ -160,9 +168,8 @@ export var Add_block = React.createClass({
 	},
 
 
-	handleSelect: function(event){
-		event.preventDefault();
-		this.setState({contents: 1});
+	handleSelect: function(value){
+		this.setState({contents: 1, defaultAddHost: {addr: value}});
 	},
 
 	addNext: function(oldValues){
