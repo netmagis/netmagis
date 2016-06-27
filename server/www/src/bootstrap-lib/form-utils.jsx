@@ -18,8 +18,9 @@ export function form2obj(id){
 		
 		var value;	
 		var el = elements[i];
-		var tag = el.tagName.toLowerCase();
+		if (el.name == "_dontUse") continue;
 
+		var tag = el.tagName.toLowerCase();
 		switch (tag) {
 			
 			case "input":	if (el.type.toLowerCase() == "text")
