@@ -87,7 +87,12 @@ var Select_block = React.createClass({
 		var els = document.getElementById('Search block').elements;
 		var query = C.APIURL + "/addrblock";
 
-		C.getJSON(query,function(res){this.setState({ blocks: res });}.bind(this));
+		C.reqJSON({
+			url: query,
+			success: function(res){
+					this.setState({ blocks: res });
+				 }.bind(this)
+		});
 	},
 
 	search_form: function(){

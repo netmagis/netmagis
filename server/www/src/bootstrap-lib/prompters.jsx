@@ -53,14 +53,18 @@ export var Prompters = {
 
 		/* Fill the networks array with the API answer */
 		init : function (callback)  { 
-			C.getJSON(C.APIURL+'/networks', function(response){
-				var networks = [];
-				for (var i = 0; i < response.length; i++){
-					networks.push(response[i]["addr4"]);
-					networks.push(response[i]["addr6"]);
-				}
-				this.networks = networks;
-			}.bind(this), callback);
+			C.reqJSON({
+				url: C.APIURL+'/networks',
+				success: function(response){
+					var networks = [];
+					for (var i = 0; i < response.length; i++){
+						networks.push(response[i]["addr4"]);
+						networks.push(response[i]["addr6"]);
+					}
+					this.networks = networks;
+					}.bind(this),
+				complete: callback
+			});
 		},
 
 		/* Case-insensitive suggestions based on the 
@@ -88,9 +92,13 @@ export var Prompters = {
 
 		/* Fill the machines array with the API answer */
 		init : function (callback)  { 
-			C.getJSON(C.APIURL+'/hinfos', function(response){
+			C.reqJSON({
+				url: C.APIURL+'/hinfos',
+				success: function(response){
 					this.machines = response;
-			}.bind(this), callback);
+				}.bind(this),
+				complete: callback
+			});
 		},
 
 		/* Gives all the machines */
@@ -99,13 +107,19 @@ export var Prompters = {
 		}
 	},
 
+	/*************************  Handler name="hinfos_present" ***********************/
+
 	hinfos_present: {
 		machines: [],
 
 		init : function (callback)  { 
-			C.getJSON(C.APIURL+'/hinfos?present=1', function(response){
-					this.machines = response.map( m => m.name );
-			}.bind(this), callback);
+			C.reqJSON({
+				url: C.APIURL+'/hinfos?present=1', 
+				success: function(response){
+						this.machines = response.map( m => m.name );
+					 }.bind(this),
+				complete: callback
+			});
 		},
 
 		getValues: function (){
@@ -123,13 +137,16 @@ export var Prompters = {
 		_domains: [],	// [ "domain1", "domain2", ... ]
 
 		init : function (callback)  { 
-			C.getJSON(C.APIURL+'/domains', function(response){
-					this.domains = response;
-					response.forEach(function(val){
-						this._domains.push(val.name);
-					}.bind(this));
-					
-			}.bind(this), callback);
+			C.reqJSON({
+				url: C.APIURL+'/domains', 
+				success: function(response){
+						this.domains = response;
+						response.forEach(function(val){
+							this._domains.push(val.name);
+						}.bind(this));
+					 }.bind(this),
+				complete: callback
+			});
 		},
 
 		getValues: function (){
@@ -182,7 +199,6 @@ export var Prompters = {
 					this.addrs.push(addr);
 				}	
 			}.bind(this));
-				console.log(this.addrs);
 		},
 
 		getSuggestions: function (value){
@@ -210,10 +226,13 @@ export var Prompters = {
 
 		init : function (callback) { 
 			var cidr = "172.16.0.0/16"; //XXX retrive this value externally
-			C.getJSON(C.APIURL+'/dhcpranges?cidr='+cidr, function(response){
-					this.dhcpranges = response;
-					
-			}.bind(this), callback);
+			C.reqJSON({
+				url: C.APIURL+'/dhcpranges?cidr='+cidr, 
+				success: function(response){
+						this.dhcpranges = response;
+					}.bind(this),
+				complete: callback
+			});
 		},
 
 		/* Gives all the addresses */
@@ -230,10 +249,13 @@ export var Prompters = {
 		dhcpprofs : [],
 
 		init : function (callback) { 
-			C.getJSON(C.APIURL+'/dhcpprofiles', function(response){
-					this.dhcpprofiles = response;
-					
-			}.bind(this), callback);
+			C.reqJSON({
+				url: C.APIURL+'/dhcpprofiles', 
+				success: function(response){
+						this.dhcpprofiles = response;
+					 }.bind(this),
+				complete: callback
+			});
 		},
 
 		getValues: function (){
@@ -281,6 +303,7 @@ export var Prompters = {
 			var dhcpranges = Prompters.dhcprange.getValues();
 			var domains = Prompters.domain.getValues();
 			var dhcpprofiles = Prompters.dhcpprofiles.getValues();
+			
 
 			for (var i = 0; i < dhcpranges.length; i++){
 
@@ -294,6 +317,7 @@ export var Prompters = {
 				this.dhcp.push(cpy);
 
 			}
+
 
 			callback();
 
@@ -323,11 +347,11 @@ export var Prompters = {
 			data_req.default_lease_time = isNaN(def_lease)? 0 : def_lease;
 
 
-			$.ajax({
+			C.reqJSON({
 				method: 'POST',
 				url: C.APIURL+"/dhcpranges",
+				contentType: 'application/json',	
 				data: JSON.stringify(data_req),
-				contentType: 'application/json',
 				success: success,
 				error: error
 			});
@@ -350,11 +374,11 @@ export var Prompters = {
 
 			console.log("--------- UPDATE ----------");
 			console.log("PUT /api/dhcpranges/"+key+" "+JSON.stringify(data_req));
-			$.ajax({
+			C.reqJSON({
 				method: 'PUT',
 				url: C.APIURL+"/dhcpranges/"+key,
 				data: JSON.stringify(data_req),
-				contentType: 'application/json',
+				contentType: 'application/json',	
 				success: success,
 				error: error
 			});
@@ -363,7 +387,7 @@ export var Prompters = {
 		delete: function(key, input, success, error){
 			console.log("--------- DELETE ----------");
 			console.log("DELETE /api/dhcpranges/"+key);
-			$.ajax({
+			C.reqJSON({
 				method: 'DELETE',
 				url: C.APIURL+"/dhcpranges/"+key,
 				success: success,
