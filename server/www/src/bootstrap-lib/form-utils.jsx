@@ -899,7 +899,12 @@ export var DdEdit = React.createClass({
  	contextTypes : {lang: React.PropTypes.string},
 
 	getInitialState: function(){
-		if (Array.isArray(this.props.values)) {
+		if (this.props.values == undefined){
+			return { value: "",
+				 values: []
+			       };
+
+		} else if (Array.isArray(this.props.values)) {
 
 			return { value: this.props.values[0],
 				 values: this.props.values
@@ -1170,6 +1175,8 @@ export var Editable_tr = React.createClass({
  *		field is not specified then the value will be an empty string. 
  *		The data of other types (!= "input") must always be specified.
  *
+ *	-params TODO
+ *
  */
 export var Table = React.createClass({
 
@@ -1186,17 +1193,21 @@ export var Table = React.createClass({
 	},
 
 
-	componentWillMount: function () {
+	retrieveValues: function (params){
 		var prompter = Prompters[this.props.name];
 
 		if (!prompter) {
 			console.error(this.props.name+" is not a prompter!");
 
 		} else if (prompter.init) {
-			prompter.init(this.getValues.bind(this));
+			prompter.init(this.getValues.bind(this), params);
 			
 		}
 	},
+
+	componentWillMount: function () {this.retrieveValues(this.props.params);},
+
+	componentWillReceiveProps: function (newProps) {this.retrieveValues(newProps.params);},
 
 	renderHead: function(){
 		function headerEl(mod,index){ return (<th key={"th"+index}> {mod[0]} </th>);}

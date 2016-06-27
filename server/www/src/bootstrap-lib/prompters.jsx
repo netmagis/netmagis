@@ -18,8 +18,9 @@ import * as C from '../common.js';
  *	- function { components }
  *
  *	- init(callback) { all }
- *		this function will be called once when the element
- *		is about to be mounted. Use it to retrive the initial
+ *		this function is called when the element
+ *		is about to be mounted. Note that a component can request a 
+ *		re-initialization at eny time. Use this function to retrieve the
  *		data from the API and call the callback once you are done
  *
  *	- getSuggestions(value) {AutoInput}
@@ -141,9 +142,11 @@ export var Prompters = {
 				url: C.APIURL+'/domains', 
 				success: function(response){
 						this.domains = response;
+						var _domains = [];
 						response.forEach(function(val){
-							this._domains.push(val.name);
+							_domains.push(val.name);
 						}.bind(this));
+						this._domains = _domains;
 					 }.bind(this),
 				complete: callback
 			});
@@ -224,10 +227,9 @@ export var Prompters = {
 
 		dhcpranges: [],
 
-		init : function (callback) { 
-			var cidr = "172.16.0.0/16"; //XXX retrive this value externally
+		init : function (callback, params) { 
 			C.reqJSON({
-				url: C.APIURL+'/dhcpranges?cidr='+cidr, 
+				url: C.APIURL+'/dhcpranges?'+$.param(params), 
 				success: function(response){
 						this.dhcpranges = response;
 					}.bind(this),
@@ -263,7 +265,7 @@ export var Prompters = {
 		},
 
 		id2Name: function (id){
-			if ( id == undefined || id == null ) return "Unspecified";
+			if ( id == undefined || id == null ) return "";
 
 			for (var i = 0; i < this.dhcpprofs.length; i++){
 				if (this.dhcpprofs[i].iddhcpprof == id) {
@@ -289,13 +291,13 @@ export var Prompters = {
 
 		dhcp: [],
 
-		init : function (callback) { 
+		init : function (callback,params) { 
 			var _callback = function(){this._combine(callback);}.bind(this);
 
 			var c = new CallbackCountdown(_callback,3); 
 
 			Prompters.domain.init(c.callback);
-			Prompters.dhcprange.init(c.callback);
+			Prompters.dhcprange.init(c.callback,params);
 			Prompters.dhcpprofiles.init(c.callback);
 		},
 
@@ -304,7 +306,7 @@ export var Prompters = {
 			var domains = Prompters.domain.getValues();
 			var dhcpprofiles = Prompters.dhcpprofiles.getValues();
 			
-
+			var dhcp = [];
 			for (var i = 0; i < dhcpranges.length; i++){
 
 				var value_dom = Prompters.domain.id2Name(dhcpranges[i].iddom);
@@ -314,9 +316,10 @@ export var Prompters = {
 				var dhcpprofs = { 'values': dhcpprofiles, 'value': value_dhcpprof };
 
 				var cpy = $.extend({'domain': doms, 'dhcpprof': dhcpprofs}, dhcpranges[i]);
-				this.dhcp.push(cpy);
+				dhcp.push(cpy);
 
 			}
+			this.dhcp = dhcp;
 
 
 			callback();
@@ -330,7 +333,10 @@ export var Prompters = {
 		},
 
 		getEmptyRow: function(){
-			return {'domain':  Prompters.domain.getValues() };
+			return {'domain':  Prompters.domain.getValues(),
+				'dhcpprof':  Prompters.dhcpprofiles.getValues()
+			 };
+
 		},
 
 		save: function(key, input, success, error){
