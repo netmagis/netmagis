@@ -372,8 +372,6 @@ export var Prompters = {
 			data_req.max_lease_time = isNaN(max_lease)? 0 : max_lease;
 			data_req.default_lease_time = isNaN(def_lease)? 0 : def_lease;
 
-			console.log("--------- UPDATE ----------");
-			console.log("PUT /api/dhcpranges/"+key+" "+JSON.stringify(data_req));
 			C.reqJSON({
 				method: 'PUT',
 				url: C.APIURL+"/dhcpranges/"+key,
@@ -385,8 +383,6 @@ export var Prompters = {
 		},
 
 		delete: function(key, input, success, error){
-			console.log("--------- DELETE ----------");
-			console.log("DELETE /api/dhcpranges/"+key);
 			C.reqJSON({
 				method: 'DELETE',
 				url: C.APIURL+"/dhcpranges/"+key,
