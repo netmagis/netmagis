@@ -37,8 +37,11 @@ var App = React.createClass({
 	render: function () {
 		return ( 
 			<div>
-				<F.Adropdown name="cidr" onChange={this.changeNetwork}
-					     defaultValue="Select a network" />
+				<F.Form>
+					<F.Adropdown name="cidr" onChange={this.changeNetwork}
+						     label="Select a network" defaultValue="Unspecified" 
+					/>
+				</F.Form>
 				<F.Table model={this.model} 
 					 name="row_dhcprange" 
 					 params={{cidr: this.state.cidr}}
