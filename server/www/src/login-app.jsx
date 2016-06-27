@@ -25,7 +25,6 @@ var App = React.createClass({
 			//	window.location = "/www/html/Forms.html";
 			}.bind(this),
 			error: function(jqXHR){
-				console.log(jqXHR);
 				this.setState({message: jqXHR.responseText, color: "red"});
 			}.bind(this)
 		})

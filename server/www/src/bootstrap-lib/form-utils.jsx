@@ -1257,7 +1257,7 @@ export var Table = React.createClass({
 			newRow = $.extend(newRow,emptyRow);
 
 		} else {
-			console.error("Cannot fetch an the values of an empty row");
+			console.error("Cannot fetch the values of an empty row");
 			return;
 		}
 
