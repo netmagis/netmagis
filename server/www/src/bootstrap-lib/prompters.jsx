@@ -175,6 +175,28 @@ export var Prompters = {
 		}
 	},
 
+	/*************************  Handler name="freeblocks" ***********************/
+	freeblocks: {
+		blocks: [],
+
+		init: function(callback, params){
+			C.reqJSON({
+				url: '/freeblocks?'+$.param(params),
+				success: function(res){
+					console.log("respo");
+					console.log(res);
+					this.blocks = res;
+				}.bind(this),
+				complete: callback
+			});
+		},
+
+		getValues: function(){
+			console.log("Values");
+			console.log(this.blocks);
+			return this.blocks;
+		}
+	},
 	/*************************  Handler name="addr" ***********************/
 
 	addr: {
