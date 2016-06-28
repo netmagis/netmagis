@@ -1,0 +1,960 @@
+#%RAML 1.0
+title: Netmagis API
+version: v0.1
+# baseUri: https://....
+# securitySchemes:
+mediaType: application/json
+protocols: HTTPS
+documentation: http://netmagis.org/???
+
+##############################################################################
+# Schema (types)
+##############################################################################
+
+types:
+  Session:
+    description: base type used to define active/expired sessions
+    type: object
+    properties:
+      active:		integer
+      api:		integer
+      token:		string
+      start:		datetime
+      ip:		inet
+  ActiveSession:
+    type: Session
+    properties:
+      casticket:	string
+      lastaccess:	datetime
+  ExpiredSession:
+    type: Session
+    properties:
+      stop:		datetime
+      stopreason:
+	enum:		[ logout, expired ]
+
+  AllowedDomain:
+    description: a domain allowed for our group
+    type: object
+    properties:
+      iddom:		integer
+      name:		string
+    example: |
+      {
+	iddom:	5,
+	name:	example.org
+      }
+
+  DHCPRange:
+    description: base type (without id) to defined AllowedDHCPRange
+    type: object
+    properties:
+      min:		inet
+      max:		inet
+      iddom:		integer
+      default_lease_time: integer
+      max_lease_time:	integer
+      iddhcpprof:	integer | ~
+    example: |
+      {
+	iddhcprange: 1
+	min: 198.51.100.10
+	max: 198.51.100.20
+	iddom: 2
+	default_lease_time: null
+	max_lease_time: 3600
+	iddhcpprof: 3
+      }
+  AllowedDHCPRange:		# DHCPRange + id
+    description: a DHCP range in a network/domain allowed for our group
+    type: DHCPRange
+    properties:
+      iddhcprange:	integer
+    example:
+      {
+	iddhcprange: 1
+	min: 198.51.100.10
+	max: 198.51.100.20
+	iddom: 2
+	default_lease_time: null
+	max_lease_time: 3600
+	iddhcpprof: 3
+      }
+
+  AllowedDHCPProfile:
+    description: a DHCP profile allowed for our group
+    type: object
+    properties:
+      iddhcpprof:	integer
+      name:		string
+    example: |
+      {
+	iddhcpprof: 5,
+	name: "x terminal"
+      }
+
+  AllowedView:
+    description: a view allowed for our group
+    type: object
+    properties:
+      name:		string
+      selected:		integer
+    example: |
+      {
+	name:		internal
+	selected:	1
+      }
+
+  AllowedNetwork:
+    description: a network allowed for our group
+    type: object
+    properties:
+      name:		string
+      location:		string
+      addr4:		inet
+      addr6:		inet
+      organizaton:	string
+      community:	string
+      comment:		string
+      dhcp:		integer
+      gw4:		inet
+      gw6:		inet
+    example: |
+      {
+	name:		"my network"
+	location:	"Bldg A"
+	addr4:		198.51.100.0/24
+	addr6:		2001:db8:1234:5678::/64
+	organization:	"Example Inc."
+	community:	"servers"
+	comment:	"an example network fom example Inc."
+	dhcp:		0
+	gw4:		198.51.100.254
+	gw6:		2001:db8:1234:5678::1
+      }
+
+  SearchResult:
+    description: search result item
+    type: object
+    properties:
+      result:		string
+      type:
+	enum: [ "domain", "name"                      ]
+      link:		string
+	example:	"/names/23"
+    example: |
+      {
+	result:		"a string containing the query string",
+	type:		"network",
+	link:		"/networks/123"
+      }
+
+##############################################################################
+# Sessions
+##############################################################################
+
+/sessions
+  description: Collection of sessions
+  get:
+    description: Get all my sessions
+    queryParameters:
+      active:
+        description: restrict collection to active (1) or expired (0) sessions
+        required: false
+        default: 1		# only active sessions
+    responses:
+      200:
+	body:
+	  application/json:
+	    type: ActiveSession[] | ExpiredSession[] # depending on active q
+	    example: |
+	      [
+		{
+		    active:	1
+		    api:	0
+		    token:	kdjfdsfsdhsdjfhsj
+		    start:	2016-04-22T15:35:24
+		    ip:		198.51.100.1
+		    casticket:	
+		    lastaccess:	2016-06-24T16:36:30
+		}
+	      ]
+  post:
+    description: Create a new session
+    queryParameters:		# none
+    body:
+      type: object
+      properties:
+	login:		string
+	password:	string
+      example: |
+	{
+	  login:		myusername
+	  password:		mypassword
+	}
+    responses:
+      200:
+	description: login successful
+        body:
+          mediaType: text/plain
+	  value:	ok
+      412:
+        description: invalid input (json format, invalid login)
+      403:
+        description: login failed or session already opened
+      429:
+        description: account or IP temporarily blocked
+      500:
+        description: temporary failure
+  delete:
+    description: Remove current session
+    queryParameters:		# none
+    body:			# none
+    responses:
+      200:
+        body:
+          text/plain: ok
+
+##############################################################################
+# Blocks of free IPv4 addresses
+##############################################################################
+
+/freeblocks
+  description: Collection of free IPv4 addresses
+  get:
+    description: Get all free IPv4 blocks inside a CIDR
+    queryParameters:
+      cidr:
+        description: address range
+	type: inet
+        required: true
+      size:
+        description: minimal size of desired block
+	type: integer
+        required: true
+      sort:
+	description: sort criterion
+        type:
+	  enum: [ addr, size ]
+        required: false
+        default: addr
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              [
+                {
+                  addr: 172.16.1.10,
+                  size: 20
+                },
+                {
+                  addr: 172.16.1.70,
+                  size: 10
+                }
+              ]
+      412:
+        description: invalid input
+
+##############################################################################
+# Allowed domains
+##############################################################################
+
+/domains
+  description: Collection of allowed domains
+  get:
+    description: Get a list of allowed domains
+    queryParameters:
+      mailrole:
+        description: Restrict list to domains with mailrole permission
+        type: boolean
+        required: false
+        default: no
+        example: yes
+    responses:
+      200:
+        body:
+	  type: AllowedDomain[]
+	  example: |
+	    "domains": [
+	      {
+		"iddom": 5,
+		"name": "example.com"
+	      },
+	      {
+		"iddom": 19,
+		"name": "example.org"
+	      }
+	    ]
+
+##############################################################################
+# Allowed DHCP Range
+##############################################################################
+
+/dhcpranges
+  description: Collection of dynamic DHCP ranges
+
+  get:
+    description: Get all DHCP ranges allowed for my group for a given addr
+    queryParameters:
+      cidr:
+        type: inet
+        required: true
+        example: 198.51.100.0/24
+    responses:
+      200:
+	body:
+	  type: AllowedDHCPRange[]
+	  example: |
+	    [
+	      {
+		iddhcprange: 1
+		min: 198.51.100.10
+		max: 198.51.100.20
+		iddom: 2
+		default_lease_time: null
+		max_lease_time: 3600
+		iddhcpprof: 3
+	      },
+	      {
+		iddhcprange: 5
+		min: 198.51.100.30
+		max: 198.51.100.40
+		iddom: 2
+		default_lease_time: 7200
+		max_lease_time: 3600
+		iddhcpprof: null
+	      }
+	    ]
+
+  post:
+    description: add a new DHCP range
+    queryParameters:			# none
+    body:
+      type: DHCPRange			# without id
+      example: |
+	{
+	  min: 198.51.100.10
+	  max: 198.51.100.20
+	  iddom: 2
+	  default_lease_time: null
+	  max_lease_time: 3600
+	  iddhcpprof: 3
+	}
+    responses:
+      200:
+        body:
+	  type: AllowedDHCPRange
+	  example: |
+	    {
+	      iddhcprange: 12
+	      min: 198.51.100.10
+	      max: 198.51.100.20
+	      iddom: 2
+	      default_lease_time: null
+	      max_lease_time: 3600
+	      iddhcpprof: 3
+	    }
+
+  /{iddhcprange}:
+    description: one dynamic DHCP range
+
+    put:
+      description: update an existing DHCP range
+      body:
+	type: DHCPRange
+	example: |
+	  {
+	    min: 198.51.100.10
+	    max: 198.51.100.20
+	    iddom: 2
+	    default_lease_time: null
+	    max_lease_time: 3600
+	    iddhcpprof: 3
+	  }
+      responses:
+        200:
+          body: empty
+
+    delete:
+      description: delete an existing DHCP range
+      body:				# none
+      responses:
+        200:
+          body: empty
+
+##############################################################################
+# Allowed DHCP profiles
+##############################################################################
+
+/dhcpprofiles
+  description: Collection of DHCP profiles
+
+  get:
+    description: get all DHCP profiles allowed for my group, sorted
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  type: AllowedDHCPRange[]
+	  example: |
+	    [
+	      {
+		iddhcpprof: 5
+		name: "x terminal"
+	      },
+	      {
+		iddhcpprof: 1
+		name: "iq laser printer"
+	      }
+	    ]
+
+  /{iddhcpprof}:
+    description: one DHCP profile
+
+    get:
+      description: get one specific DHCP profile
+      queryParameters:			# none
+      body:				# none
+      responses:
+        200:
+	  body: AllowedDHCPRange
+	  example: |
+	    {
+	      iddhcpprof: 1
+	      name: "iq laser printer"
+	    }
+
+##############################################################################
+# Allowed Views
+##############################################################################
+
+/views
+  description: Collection of allowed views
+
+  get:
+    queryParameter:			# none
+    body:				# none
+    responses:
+      200:
+	description: sorted list of allowed views
+        body:
+	  type: AllowedView []
+          application/json:
+            example: |
+              [
+                {
+                  name: "internal",
+                  selected: 1
+                },
+                {
+                  name: "external",
+                  selected: 0
+                }
+              ]
+
+  /{viewId}
+    description: A single view
+    get:
+      description: get a single view
+      queryParameters: 			# none
+      body:				# none
+      responses:
+        200:
+          body:
+	      type: AllowedView
+              example: |
+                {
+                  name: "external",
+                  selected: 0
+                }
+
+##############################################################################
+# Static files
+##############################################################################
+
+/files/{fileName}
+  description: get a single file
+
+  get:
+    description: get a single file
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:				# XXX
+      404:
+
+##############################################################################
+# Host info (HINFO resource record type)
+##############################################################################
+
+/hinfos
+  description: Collection of host infos (resource record)
+
+  get:
+    description: get all HINFO values
+    queryParameters:
+      present:
+        description: 1 to restrict collection to "present" values only
+        required: false
+        default: get all values (present and non present)
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: sorted list of Hinfo values
+	  type: Hinfo []
+	  example: |
+	    [
+	      {
+		idhinfo: 3
+		name: "X terminal"
+		present: 0
+	      },
+	      {
+		idhinfo: 4
+		name: "unspecified"
+		present: 0
+	      }
+	    ]
+
+##############################################################################
+# Allowed Networks
+##############################################################################
+
+/networks
+  description: Collection of allowed networks
+
+  get:
+    description: get all DHCP profiles allowed for my group, sorted
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: sorted list of networks
+	  type: AllowedNetwork []
+	  example: |
+	    [
+	      {
+		name:		"my network"
+		location:	"Bldg A"
+		addr4:		198.51.100.0/24
+		addr6:		2001:db8:1234:5678::/64
+		organization:	"Example Inc."
+		community:	"servers"
+		comment:	"an example network fom example Inc."
+		dhcp:		0
+		gw4:		198.51.100.254
+		gw6:		2001:db8:1234:5678::1
+	      },
+	      {
+		name:		"another network"
+		location:	"Bldg B"
+		addr4:		192.168.1.0/24
+		addr6:		""
+		organization:	"Example Inc."
+		community:	"workstations"
+		comment:	"another example network fom example Inc."
+		dhcp:		1
+		gw4:		192.168.1.254
+		gw6:		""
+	      }
+	    ]
+
+  /{idnetwork}:				# XXX USEFUL?
+
+##############################################################################
+# Search results
+##############################################################################
+
+/search
+  description: Collection of search results
+  get:
+    description:
+    queryParameters:
+      q:
+        required: true
+        type: string
+        example: "foo"
+    responses:
+      200:
+        body:
+	  type: SearchResult
+	  example: |
+	    [
+	      {
+		type: "domain",
+		link: "/domains/5"
+	      },
+	      {
+		type: "name",
+		link: "/names/123"
+	      },
+	      {
+		type: "name",
+		link: "/names/456"
+	      }
+	    ]
+
+/pggroups
+  description: Collection of users for internal authentication
+  /{pggroupId}
+/pgusers
+  description: Collection of groups for internal authentication
+  /{pguserId}
+/config
+  description: Collection of configuration parameters
+  /{configId}
+/groups
+  description: Collection of Netmagis groups
+  /{groupId}
+    description: a Netmagis group
+    /users
+      description: Collection of Netmagis users belonging to a group
+      /{userId}
+        description: a user belonging to a given group
+    /permissions
+      description: Collection of all permissions for a given group
+      /views
+        description: Collection of allowed views for a group
+        /{viewId}
+          description: Permission on a view for a group
+      /domains
+        description: Collection of allowed domains for a group
+        /{domainId}
+          description: Permission on a domain for a group
+      /dhcpprofiles
+        description: Collection of allowed DHCP profiles for a group
+        /{dhcpprofileId}
+          description: Permission on a DHCP profile for a group
+      /addresses
+        description: Collection of allowed IP addresses for a group
+        /{cidr}
+          description: Permission on an IP address for a group
+      /networks
+        description: Collection of allowed networks for a group
+        /{networkId}
+          description: Permission on a network for a group
+      /equipments
+        description: Collection of allowed equipments for a group
+        /{equipmentId}
+          description: Permission on an equipment for a group
+      /vlans
+        description: Collection of allowed VLANs without IP address for a group
+        /{vlanId}
+          description: Permission on a VLAN without IP address for a group
+
+/communities
+  /{communityId}
+/organizations
+  /{organizationId}
+/zones
+  description: Collection of zones
+  get:
+    description:
+    queryParameters:
+      name:
+        required: false
+        type: string
+        example: "168.192.in-addr.arpa"
+      view:
+        required: false
+        type: string
+        example: "internal"
+      modified:
+        required: false
+        type: boolean (0/1)
+        example: 1
+  /{zoneId}
+    description: zone parameters or zone file ready for ISC-BIND/Unbound/etc
+    get:
+      description: zone parameters (name, prologue, etc.) only
+      queryParameters:
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  name: "example.com.internal",
+                  view: "/views/5",
+                  version: 19700101120005,
+                  prologue: "...",
+                  rrsup: "...",
+                  gen: 0
+                }
+    post:
+      description: generated zone file, ready for production use
+      queryParameters:
+        format:
+          required: true
+          type: string
+          example: bind/unbound/...
+        update:
+          required: false
+          type: 0/1
+          example: 0
+          description: 1=reset the "gen" flag. 0=don't change it
+      responses:
+        200:
+          body:
+            text/plain:
+            "..."
+
+
+    /zones
+      description: Collection of zones
+      /{zoneId}
+    /relays
+      description: Collection of mail relays
+      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <--- TO DISCUSS LATER
+      /{domainId}
+        description: mail relays for a given domain
+
+
+
+/names
+  description: A collection of names
+  get:
+    queryParameters:
+      view:
+        description: filter on view name
+        type: string
+        required: false
+      name:
+        description: filter on name
+        type: string
+        required: false
+      domain:
+        description: filter on domain name
+        type: string
+        required: false
+      addr:
+        description: filter on IP address
+        type: cidr (v4 or v6)
+        required: false
+      sort:         # XXX BUG
+        description: sort result
+        type: comma-separated list of {name, domain, addr, view}
+        required: false
+    responses:
+      200:
+        body:
+          application/json:   # list of RR
+            example: |
+              [ 
+                {
+                  idrr: 123,
+                  name: www,
+                  iddom: 1,
+                  domain: example.org,
+                  idview: 1,
+                  view: internal
+                },
+                {
+                  idrr: 456,
+                  name: foo,
+                  iddom: 2,
+                  domain: example.com
+                  idview: 2
+                  view: external
+                }
+              ]
+  post:
+    description: Create a new name
+    queryParameters: (none)
+    body:
+      application/json:
+        {
+          fqdn:
+          idview:
+          (see /names/{id})
+        }
+    responses:
+      200:
+        body:
+          application/json:
+            {
+              idrr:
+              fqdn:
+              idview:
+            }
+      403:
+        description: login failed
+      429:
+        description: temporary failure
+  /{idrr}
+    description: Get a single name
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  name: "atlas",
+                  domain: "example.org",
+                  domainlink: "/domain/5",
+                  view: "external",
+                  viewlink: "/views/5",
+                  mac: "00:11:22:33:44:55",
+                  hinfo: "pc/unix",
+                  hinfolink: "/hinfos/12",
+                  comment: "Simon's PC",
+                  respname: "John Doe",
+                  respmail: "doe@example.org",
+                  dhcpprofile: "diskless",
+                  dhcpprofilelink: "/dhcpprofiles/33",
+                  sendsmtp: "1",
+                  ttl: "3600",
+                  user: "jane",
+                  userlink: "/users/17",
+                  cname: "other.example.org",  <exclusive with MX or addr>
+                  cnamelink: "/names/82",
+                  lastmod: "<time_t>"
+                  addr: [
+                    "192.0.2.12",
+                    "2001:db8::1",
+                    "198.51.100.24",
+                  ],
+                  mx: [
+                    {
+                      prio: 100,
+                      fqdn: "mx1.example.com",
+                      link: "/names/532"
+                    },
+                    {
+                      prio: 200,
+                      fqdn: "mx2.example.com",
+                      link: "/names/79"
+                    }
+                  ],
+                }
+    put:
+    delete:
+
+
+
+
+
+
+/names
+  description: Get a collection of names
+  get:
+    acceptParameters:
+      application/json
+      application/pdf
+      application/csv
+    queryParameters:
+      view:
+        required: false
+        type: view name
+        example: default
+      name:
+        required: false
+        type: host name (without domain)
+        example: www
+      domain:
+        required: false
+        type: domain name
+        example: example.org
+      context:
+        required: false
+        type: string
+        values: "host", "existing-host", "alias", "del-name", "mx", \
+            "add-mailaddr", "del-mailaddr"
+        note: this parameter may be used only when view/name/domain \
+          are present
+      cidr:
+        required: false
+        type: IPv4 or IPv6 CIDR
+        example: 193.51.100.0/24
+      XXX TODO: draw a table with valid parameter combinations
+      format: pdf, csv, ... ?
+    responses:
+      200:
+        body:
+          application/json:
+          application/pdf:
+          application/csv:
+      404: Not found
+      403: Forbidden 
+  /{nameId}
+    description: Get a single name
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  name: "atlas",
+                  domain: "example.org",
+                  domainlink: "/domain/5",
+                  view: "external",
+                  viewlink: "/views/5",
+                  mac: "00:11:22:33:44:55",
+                  hinfo: "pc/unix",
+                  hinfolink: "/hinfos/12",
+                  comment: "Simon's PC",
+                  respname: "John Doe",
+      cidr:
+        required: false
+        type: IPv4 or IPv6 CIDR
+        example: 193.51.100.0/24
+      format: pdf, csv, ... ?
+    responses:
+      200:
+        body:
+          application/json:
+          application/pdf:
+          application/csv:
+  /{nameId}
+    description: Get a single name
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  name: "atlas",
+                  domain: "example.org",
+                  domainlink: "/domain/5",
+                  view: "external",
+                  viewlink: "/views/5",
+                  mac: "00:11:22:33:44:55",
+                  hinfo: "pc/unix",
+                  hinfolink: "/hinfos/12",
+                  comment: "Simon's PC",
+                  respname: "John Doe",
+                  respmail: "doe@example.org",
+                  dhcpprofile: "diskless",
+                  dhcpprofilelink: "/dhcpprofiles/33",
+                  sendsmtp: "1",
+                  ttl: "3600",
+                  user: "jane",
+                  userlink: "/users/17",
+                  cname: "other.example.org",  <exclusive with MX or addr>
+                  cnamelink: "/names/82",
+                  lastmod: "<time_t>"
+                  addr: [
+                    "192.0.2.12",
+                    "2001:db8::1",
+                    "198.51.100.24",
+                  ],
+                  mx: [
+                    {
+                      prio: 100,
+                      fqdn: "mx1.example.com",
+                      link: "/names/532"
+                    },
+                    {
+                      prio: 200,
+                      fqdn: "mx2.example.com",
+                      link: "/names/79"
+                    }
+                  ],
+                }
