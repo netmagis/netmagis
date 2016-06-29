@@ -1126,10 +1126,16 @@ export var Editable_tr = React.createClass({
 						{ this.state.error ? this.state.emessage : ''}
 					</p>
 					<Button onClick={this.switchMode}>
-						{ this.state.edit ? "Save" : "Edit" }
+						<span className={"glyphicon glyphicon-"+
+							(this.state.edit? "floppy-disk":"pencil")}
+							 aria-hidden="true">
+						</span>
 					</Button>
 					<Button onClick={this.deleteRow}>
-						{ this.state.edit ? "Cancell" : "Remove" }
+						<span className={"glyphicon glyphicon-"+
+							(this.state.edit? "remove":"trash")}
+							 aria-hidden="true">
+						</span>
 					</Button>
 				</td>
 			</tr>
@@ -1291,8 +1297,8 @@ export var Table = React.createClass({
 						{this.state.values.map(this.renderRow)}
 					</tbody>
 				</table>
-				<Button onClick={this.addRow}>
-					Add
+				<Button onClick={this.addRow} class>
+					<span className="glyphicon glyphicon-plus" aria-hidden="true"></span>
 				</Button>
 			</div>
 		);
