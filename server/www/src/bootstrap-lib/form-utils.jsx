@@ -838,6 +838,39 @@ export var InputXORdd = React.createClass({
 
 
 
+/**
+ * Depending on is property `edit` creates a editable text-input field
+ * or a not editable text.
+ * @properties:
+ *	- name: name to pass to the imput when in edit mode
+ *	- edit: if true the component will be editable 
+ */
+export var TextEdit = React.createClass({
+
+	/* This will force a rerendering on languae change */
+ 	contextTypes : {lang: React.PropTypes.string},
+
+	getInitialState: function(){
+		return { value: this.props.children }
+	},
+
+	/* As this is controlled Update the state with the new value */
+	onChange: function (event) {
+		this.setState({value: event.target.value});
+	},
+
+	render: function(){
+		if (this.props.edit === true) {
+			return (<textarea  style={{width: "100%"}}
+				 onChange={this.onChange} name={this.props.name}>
+					{this.state.value}
+				</textarea>
+			);
+		} else {
+			return (<div> {this.state.value} </div>);
+		}
+	}
+});
 
 
 /**
@@ -1021,6 +1054,15 @@ export var Editable_tr = React.createClass({
 					>
 						{content}
 					</InEdit>
+				);
+
+			case "text" :
+				return (
+					<TextEdit edit={this.state.edit}
+						  name={desc[2]}
+					>
+						{content}
+					</TextEdit>
 				);
 
 			case "dropdown":
