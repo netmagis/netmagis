@@ -24,6 +24,8 @@ var App = React.createClass({
 	/* XXX live translation expertiment 
 	   this will not be part of the app */
 	componentWillMount: function(){
+
+	/*
 		var el = $("#langButton")[0];
 		el.onclick = function(){ 
 
@@ -36,6 +38,7 @@ var App = React.createClass({
 
 			updateTranslations();
 		}
+	*/
 	},
 
 	render: function () {
