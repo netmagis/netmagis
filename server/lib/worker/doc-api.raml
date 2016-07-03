@@ -54,7 +54,7 @@ types:
       iddom:		integer
       default_lease_time: integer
       max_lease_time:	integer
-      iddhcpprof:	integer | ~
+      iddhcpprof:	integer | -1
     example: |
       {
 	iddhcprange: 1
@@ -70,15 +70,21 @@ types:
     type: DHCPRange
     properties:
       iddhcprange:	integer
+      domain:		string
+      dhcpprofile:	string
+      editable:		bool
     example:
       {
 	iddhcprange: 1
 	min: 198.51.100.10
 	max: 198.51.100.20
 	iddom: 2
+	domain: example.com
 	default_lease_time: null
 	max_lease_time: 3600
 	iddhcpprof: 3
+	dhcpprofile: "x terminal"
+	editable: True
       }
 
   AllowedDHCPProfile:
@@ -312,18 +318,24 @@ types:
 		min: 198.51.100.10
 		max: 198.51.100.20
 		iddom: 2
+		domain: example.com
 		default_lease_time: null
 		max_lease_time: 3600
 		iddhcpprof: 3
+		dhcpprofile: x-terminal
+		editable: true
 	      },
 	      {
 		iddhcprange: 5
 		min: 198.51.100.30
 		max: 198.51.100.40
 		iddom: 2
+		domain: example.com
 		default_lease_time: 7200
 		max_lease_time: 3600
 		iddhcpprof: null
+		dhcpprofile: null
+		editable: false
 	      }
 	    ]
 
@@ -351,9 +363,12 @@ types:
 	      min: 198.51.100.10
 	      max: 198.51.100.20
 	      iddom: 2
+	      domain: example.com
 	      default_lease_time: null
 	      max_lease_time: 3600
 	      iddhcpprof: 3
+	      dhcpprofile: x-terminal
+	      editable: true
 	    }
 
   /{iddhcprange}:
@@ -374,14 +389,30 @@ types:
 	  }
       responses:
         200:
-          body: empty
+          body:
+	    type: AllowedDHCPRange
+	    example: |
+	      {
+		iddhcprange: 12
+		min: 198.51.100.10
+		max: 198.51.100.20
+		iddom: 2
+		domain: example.com
+		default_lease_time: null
+		max_lease_time: 3600
+		iddhcpprof: 3
+		dhcpprofile: x-terminal
+		editable: true
+	      }
 
     delete:
       description: delete an existing DHCP range
       body:				# none
       responses:
         200:
-          body: empty
+          body:
+	    type: text/plain
+	    example: OK
 
 ##############################################################################
 # Allowed DHCP profiles
