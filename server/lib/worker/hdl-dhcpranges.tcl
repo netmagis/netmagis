@@ -84,7 +84,7 @@ api-handler put {/dhcpranges/([0-9]+:iddhcprange)} yes {
     } {
     set idgrp [::u idgrp]
     set j [dhcp-new $iddhcprange $idgrp $_parm]
-    set j [dhcp-get $iddhcprange [::u idgrp]]
+    set j [dhcp-get $iddhcprange $idgrp]
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j
 }
@@ -93,8 +93,22 @@ api-handler put {/dhcpranges/([0-9]+:iddhcprange)} yes {
 
 api-handler delete {/dhcpranges/([0-9]+:iddhcprange)} yes {
     } {
-    set idgrp [::u idgrp]
+    if {! [dhcp-is-editable $iddhcprange [::u idgrp]]} then {
+	::scgi::serror 404 [mc "DHCP range not found or unauthorized"]
+    }
 
+    set sql "DELETE FROM dns.dhcprange WHERE iddhcprange = $iddhcprange"
+    ::dbdns exec $sql
+
+    ::scgi::set-header Content-Type text/plain
+    ::scgi::set-body "OK"
+}
+
+##############################################################################
+# Utility functions
+##############################################################################
+
+proc dhcp-is-editable {iddhcprange idgrp} {
     set sql "SELECT d.iddhcprange, BOOL_AND (pd.iddom IS NOT NULL
 				    AND pip.allow_deny = 1
 				    AND (d.iddhcpprof IS NULL
@@ -118,27 +132,15 @@ api-handler delete {/dhcpranges/([0-9]+:iddhcprange)} yes {
 			    )
 		    WHERE iddhcprange = $iddhcprange
 		    GROUP BY d.iddhcprange
-		"
+		    "
     set editable 0
     ::dbdns exec $sql tab {
 	if {$tab(editable) eq "t"} then {
 	    set editable 1
 	}
     }
-    if {! $editable} then {
-	::scgi::serror 404 [mc "DHCP range not found or unauthorized"]
-    }
-
-    set sql "DELETE FROM dns.dhcprange WHERE iddhcprange = $iddhcprange"
-    ::dbdns exec $sql
-
-    ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body "OK"
+    return $editable
 }
-
-##############################################################################
-# Utility functions
-##############################################################################
 
 proc dhcp-get {iddhcprange idgrp} {
     set sql "SELECT row_to_json (t.*) AS j FROM (
@@ -260,6 +262,16 @@ proc dhcp-new {iddhcprange idgrp _parm} {
     }
     if {$r eq "f"} then {
 	::scgi::serror 412 [mc {Invalid address range (%1$s > %2$s)} $min $max]
+    }
+
+    #
+    # Check old range, if any
+    #
+
+    if {$iddhcprange != -1} then {
+	if {! [dhcp-is-editable $idgrp $iddhcprange]} then {
+	    ::scgi::serror 412 [mc {Unauthorized existing range}]
+	}
     }
 
     #
