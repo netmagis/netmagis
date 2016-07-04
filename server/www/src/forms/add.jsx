@@ -86,7 +86,6 @@ var Select_block = React.createClass({
 		event.preventDefault();
 
 		function update(){
-			console.log("getValues");
 			this.setState({ 
 				blocks: Prompters['freeblocks'].getValues()
 			});
@@ -122,7 +121,6 @@ var Select_block = React.createClass({
 		}
 
 		function onSelect(event){
-			console.log(this);
 			event.preventDefault();
 			var value = $('#Select_block [name="block"]')
 				    .text().trim().split(' ')[0];
