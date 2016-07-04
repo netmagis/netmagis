@@ -2,7 +2,7 @@ api-handler get {/views} yes {
     } {
     set idgrp [::u idgrp]
     set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
-			SELECT v.name, p.selected
+			SELECT v.idview, v.name, p.selected
 			    FROM dns.view v
 				INNER JOIN dns.p_view p USING (idview)
 			    WHERE p.idgrp = $idgrp
@@ -21,7 +21,7 @@ api-handler get {/views/([0-9]+:idview)} yes {
     set idgrp [::u idgrp]
     set sql "SELECT row_to_json (t) AS j
 		    FROM (
-			SELECT v.name, p.selected
+			SELECT v.idview, v.name, p.selected
 			    FROM dns.view v
 				INNER JOIN dns.p_view p USING (idview)
 			    WHERE p.idgrp = $idgrp
