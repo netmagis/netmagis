@@ -1286,9 +1286,10 @@ export var Table = React.createClass({
 		var copy_values = [];
 		Prompters[this.props.name].getValues().map(
 			function(o){ copy_values.push($.extend({},o)); }
-		)
+		);
 	
-		this.setState({values: copy_values})
+		this.setState({values: copy_values});
+
 	},
 
 
