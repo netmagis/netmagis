@@ -157,6 +157,606 @@ types:
 	link:		"/networks/123"
       }
 
+  AdminNetwork:
+    description: a row in the network table, without id
+    type: object
+    properties:
+      name:		string
+      location:		string
+      addr4:		inet
+      addr6:		inet
+      idorg:		integer
+      idcomm:		integer
+      dhcp:
+	enum: [0, 1]
+      gw4:		inet
+      addr6:		inet
+    example: |
+      {
+	name: "server backbone"
+	location: "bldg a"
+	addr4: 172.16.1.0/24
+	addr6: 2001:db8:1234:5678::/64
+	idorg: 2
+	idcomm: 3
+	dhcp: 1
+	gw4: 172.16.1.254
+	addr6: 2001:db8:1234:5678::1
+      }
+
+  AdminNetworkId:
+    description: a row in the network table, with id
+    type: AdminNetwork
+      properties:
+	idnet:		integer
+    example: |
+      {
+	idnet: 1
+	name: "server backbone"
+	location: "bldg a"
+	addr4: 172.16.1.0/24
+	addr6: 2001:db8:1234:5678::/64
+	idorg: 2
+	idcomm: 3
+	dhcp: 1
+	gw4: 172.16.1.254
+	addr6: 2001:db8:1234:5678::1
+      }
+
+  AdminCommunity:
+    description: a row in the community table, without id
+    type: object
+    properties:
+      name:		string
+    example: |
+      {
+	name: "marketing"
+      }
+
+  AdminCommunityId:
+    description: a row in the community table, with id
+    type: AdminCommunity
+      properties:
+	idcomm:		integer
+    example: |
+      {
+	idcomm: 1
+	name: "marketing"
+      }
+
+  AdminOrganization:
+    description: a row in the organization table, without id
+    type: object
+    properties:
+      name:		string
+    example: |
+      {
+	name: "Example Corp."
+      }
+
+  AdminOrganizationId:
+    description: a row in the organization table, with id
+    type: AdminOrganization
+      properties:
+	idorg:		integer
+    example: |
+      {
+	idorg: 1
+	name: "Example Corp."
+      }
+
+  AdminHinfo:
+    description: a row in the hinfo table, without id
+    type: object
+    properties:
+      name:		string
+      sort:		integer
+      present:
+	enum: [0, 1]
+    example: |
+      {
+	name: "PC/FreeBSD"
+	sort: 100
+	present: 1
+      }
+
+  AdminHinfoId:
+    description: a row in the organization table, with id
+    type: AdminHinfo
+      properties:
+	idhinfo:	integer
+    example: |
+      {
+	idhinfo: 1
+	name: "PC/FreeBSD"
+	sort: 100
+	present: 1
+      }
+
+  AdminDomain:
+    description: a row in the domain table, without id
+    type: object
+    properties:
+      name:		string
+    example: |
+      {
+	name: "example.com"
+      }
+
+  AdminDomainId:
+    description: a row in the domain table, with id
+    type: AdminDomain
+      properties:
+	iddom:		integer
+    example: |
+      {
+	iddom: 1
+	name: "example.com"
+      }
+
+  AdminDHCPProfile:
+    description: a row in the DHCP profile table, without id
+    type: object
+    properties:
+      name:		string
+      text:		string
+    example: |
+      {
+	name: "example.com"
+	text: "server-name \"s.example.com\" ;\nfilename \"/pxeboot\" ;"
+      }
+
+  AdminDHCPProfileId:
+    description: a row in the DHCP profile table, with id
+    type: AdminDHCPProfile
+      properties:
+	iddhcpprof:	integer
+    example: |
+      {
+	iddhcpprof: 1
+	name: "example.com"
+	text: "server-name \"s.example.com\" ;\nfilename \"/pxeboot\" ;"
+      }
+
+  AdminView:
+    description: a row in the view table, without id
+    type: object
+    properties:
+      name:		string
+      gendhcp:
+	enum: [0, 1]
+    example: |
+      {
+	name: "internal"
+	gendhcp: 0
+      }
+
+  AdminViewId:
+    description: a row in the view table, with id
+    type: AdminView
+      properties:
+	idview:	integer
+    example: |
+      {
+	idview: 1
+	name: "internal"
+	gendhcp: 0
+      }
+
+  AdminZone:
+    description: a base type for all zone table, without id
+    type: object
+    properties:
+      name:		string
+      idview:		integer
+      version:		integer
+      prologue:		string
+      rrsup:		string
+      gen:
+	enum: [0, 1]
+
+  AdminZoneId:
+    description: base type for a row in all zone table, with id
+    type: AdminZone
+      properties:
+	idzone:	integer
+
+  AdminForwardZone:
+    description: a row in the forward zone table, without id
+    type: AdminZone
+    properties:
+      selection:	string
+    example: |
+      {
+	name: "example.com"
+	idview: 1
+	version: 2016070401
+	prologue: "@ IN SOA ...\n"
+	rrsup: ""
+	gen: 0
+	selection: "example.com"
+      }
+
+  AdminForwardZoneId:
+    description: a row in the forward zone table, with id
+    type: AdminZoneId
+    properties:
+      selection:	string
+    example: |
+      {
+	idzone: 0
+	name: "example.com"
+	idview: 1
+	version: 2016070401
+	prologue: "@ IN SOA ...\n"
+	rrsup: ""
+	gen: 0
+	selection: "example.com"
+      }
+
+  AdminReverse4Zone:
+    description: a row in the reverse (IPv4) zone table, without id
+    type: AdminZone
+    properties:
+      selection:	cidr
+    example: |
+      {
+	name: "100.51.198.in-addr.arpa"
+	idview: 1
+	version: 2016070401
+	prologue: "@ IN SOA ...\n"
+	rrsup: ""
+	gen: 0
+	selection: "198.51.100.0/24"
+      }
+
+  AdminReverse4ZoneId:
+    description: a row in the reverse (IPv4) zone table, with id
+    type: AdminZoneId
+    properties:
+      selection:	string
+    example: |
+      {
+	name: "100.51.198.in-addr.arpa"
+	idview: 1
+	version: 2016070401
+	prologue: "@ IN SOA ...\n"
+	rrsup: ""
+	gen: 0
+	selection: "198.51.100.0/24"
+      }
+
+  AdminReverse6Zone:
+    description: a row in the reverse (IPv6) zone table, without id
+    type: AdminZone
+    properties:
+      selection:	cidr
+    example: |
+      {
+	name: "4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa"
+	idview: 1
+	version: 2016070401
+	prologue: "@ IN SOA ...\n"
+	rrsup: ""
+	gen: 0
+	selection: "2001:db8:1234::/48"
+      }
+
+  AdminReverse6ZoneId:
+    description: a row in the reverse (IPv6) zone table, with id
+    type: AdminZoneId
+    properties:
+      selection:	string
+    example: |
+      {
+	name: "4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa"
+	idview: 1
+	version: 2016070401
+	prologue: "@ IN SOA ...\n"
+	rrsup: ""
+	gen: 0
+	selection: "2001:db8:1234::/48"
+      }
+
+  AdminConfig:
+    description: a row in the config table, without key
+    type: object
+    properties:
+      value:		string
+    example: |
+      {
+	value: pgsql
+      }
+
+  AdminConfigKey:
+    description: a row in the config table, with key
+    type: AdminConfigKey
+    properties:
+      key:		string
+    example: |
+      {
+	key: authmethod
+	value: pgsql
+      }
+
+  AdminUser:
+    description: a Netmagis user, without id
+    type: object
+    properties:
+      login:		string
+      present:
+	enum: [0, 1]
+      idgrp:		integer
+    example: |
+      {
+	login:	foo
+	present: 1
+	idgrp: 1
+      }
+
+  AdminUserId:
+    description: a Netmagis user, with id
+    type: AdminUser
+      properties:
+	idcor:		integer
+    example: |
+      {
+	idcor: 1
+	login:	foo
+	present: 1
+	idgrp: 1
+      }
+
+  AdminGroup:
+    description: a Netmagis group, without id
+    type: object
+    properties:
+      name:		string
+      p_admin:
+	enum: [0, 1]
+      p_smtp:
+	enum: [0, 1]
+      p_ttl:
+	enum: [0, 1]
+      p_mac:
+	enum: [0, 1]
+      p_genl:
+	enum: [0, 1]
+    example: |
+      {
+	name: staff
+	p_admin: 1
+	p_smtp: 1
+	p_ttl: 1
+	p_mac: 1
+	p_genl: 1
+      }
+
+  AdminGroupId:
+    description: a Netmagis group, with id
+    type: AdminGroup
+      properties:
+	idgrp:		integer
+    example: |
+      {
+	idgrp: 1
+	name: staff
+	p_admin: 1
+	p_smtp: 1
+	p_ttl: 1
+	p_mac: 1
+	p_genl: 1
+      }
+
+  AdminP_Ip:
+    description: base type for IP permission
+    type: object:
+    properties:
+      idgrp:		integer
+      addr:		inet
+      allow_deny:
+	enum: [0, 1]
+    example: |
+      {
+	idgrp: 1
+	addr: 172.16.10.0/24
+	allow_deny: 1
+      }
+
+  AdminP_IpId:
+    description: a IP permission, with
+    type: object
+    properties:
+      idgrp:		integer
+      perm:		AdminP_Ip []
+    example: |
+      {
+	idgrp: 1
+	perm: [
+	  {
+	    idgrp: 1
+	    addr: 172.16.10.0/24
+	    allow_deny: 1
+	  }
+	  {
+	    idgrp: 1
+	    addr: 172.16.10.254/31
+	    allow_deny: 0
+	  }
+	]
+      }
+
+  AdminP_Network:
+    description: base type for network permission
+    type: object:
+    properties:
+      idgrp:		integer
+      idnet:		integer
+      sort:		integer
+      dhcp:
+	enum: [0, 1]
+      acl:
+	enum: [0, 1]
+    example: |
+      {
+	idgrp: 1
+	idnet: 1
+	sort: 100
+	dhcp: 1
+	acl: 0
+      }
+
+  AdminP_NetworkId:
+    description: a network permission, with Id
+    type: object
+    properties:
+      idgrp:		integer
+      perm:		AdminP_Network []
+    example: |
+      {
+	idgrp: 1
+	perm: [
+	  {
+	    idgrp: 1
+	    idnet: 1
+	    sort: 100
+	    dhcp: 1
+	    acl: 0
+	  }
+	  {
+	    idgrp: 1
+	    idnet: 2
+	    sort: 200
+	    dhcp: 0
+	    acl: 0
+	  }
+	]
+      }
+
+  AdminP_View:
+    description: base type for view permission
+    type: object:
+    properties:
+      idgrp:		integer
+      idview:		integer
+      sort:		integer
+      selected:
+	enum: [0, 1]
+    example: |
+      {
+	idgrp: 1
+	idview: 1
+	sort: 100
+	selected: 1
+      }
+
+  AdminP_ViewId:
+    description: a view permission, with Id
+    type: object
+    properties:
+      idgrp:		integer
+      perm:		AdminP_View []
+    example: |
+      {
+	idgrp: 1
+	perm: [
+	  {
+	    idgrp: 1
+	    idview: 1
+	    sort: 100
+	    selected: 1
+	  }
+	  {
+	    idgrp: 1
+	    idview: 2
+	    sort: 200
+	    selected: 0
+	  }
+	]
+      }
+
+
+  AdminP_DHCPProfile:
+    description: base type for DHCP profile permission
+    type: object:
+    properties:
+      idgrp:		integer
+      iddhcpprof:	integer
+      sort:		integer
+    example: |
+      {
+	idgrp: 1
+	iddhcpprof: 1
+	sort: 100
+      }
+
+  AdminP_DHCPProfileId:
+    description: a DHCP profile permission, with Id
+    type: object
+    properties:
+      idgrp:		integer
+      perm:		AdminP_DHCPProfile []
+    example: |
+      {
+	idgrp: 1
+	perm: [
+	  {
+	    idgrp: 1
+	    iddhcpprof: 1
+	    sort: 100
+	  }
+	  {
+	    idgrp: 1
+	    iddhcpprof: 2
+	    sort: 200
+	  }
+	]
+      }
+
+
+  AdminP_Dom:
+    description: base type for domain permission
+    type: object:
+    properties:
+      idgrp:		integer
+      iddom:		integer
+      sort:		integer
+      mailrole:
+	enum: [0, 1]
+    example: |
+      {
+	idgrp: 1
+	iddom: 1
+	sort: 100
+	mailrole: 1
+      }
+
+  AdminP_DomId:
+    description: a domain permission, with Id
+    type: object
+    properties:
+      idgrp:		integer
+      perm:		AdminP_Dom []
+    example: |
+      {
+	idgrp: 1
+	perm: [
+	  {
+	    idgrp: 1
+	    iddom: 1
+	    sort: 100
+	    mailrole: 1
+	  }
+	  {
+	    idgrp: 1
+	    iddom: 2
+	    sort: 200
+	    mailrole: 0
+	  }
+	]
+      }
+
+
 ##############################################################################
 # Sessions
 ##############################################################################
@@ -631,58 +1231,1391 @@ types:
 	      }
 	    ]
 
-/pggroups
-  description: Collection of users for internal authentication
-  /{pggroupId}
-/pgusers
-  description: Collection of groups for internal authentication
-  /{pguserId}
-/config
-  description: Collection of configuration parameters
-  /{configId}
-/groups
-  description: Collection of Netmagis groups
-  /{groupId}
-    description: a Netmagis group
-    /users
-      description: Collection of Netmagis users belonging to a group
-      /{userId}
-        description: a user belonging to a given group
-    /permissions
-      description: Collection of all permissions for a given group
-      /views
-        description: Collection of allowed views for a group
-        /{viewId}
-          description: Permission on a view for a group
-      /domains
-        description: Collection of allowed domains for a group
-        /{domainId}
-          description: Permission on a domain for a group
-      /dhcpprofiles
-        description: Collection of allowed DHCP profiles for a group
-        /{dhcpprofileId}
-          description: Permission on a DHCP profile for a group
-      /addresses
-        description: Collection of allowed IP addresses for a group
-        /{cidr}
-          description: Permission on an IP address for a group
-      /networks
-        description: Collection of allowed networks for a group
-        /{networkId}
-          description: Permission on a network for a group
-      /equipments
-        description: Collection of allowed equipments for a group
-        /{equipmentId}
-          description: Permission on an equipment for a group
-      /vlans
-        description: Collection of allowed VLANs without IP address for a group
-        /{vlanId}
-          description: Permission on a VLAN without IP address for a group
+##############################################################################
+# Admin tables
+##############################################################################
 
-/communities
-  /{communityId}
-/organizations
-  /{organizationId}
+/admin/dns.network
+  description: Collection of all networks
+
+  get:
+    description: Get all networks
+    queryParameters:
+      idorg:
+        description: filter networks for this organization
+        required: false
+        default: get all networks
+      idcomm:
+        description: filter networks for this community
+        required: false
+        default: get all networks
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all networks
+	  type: AdminNetworkId []
+	  example: |
+	    [
+	      {
+		idnet: 1
+		name: "server backbone"
+		location: "bldg a"
+		addr4: 172.16.1.0/24
+		addr6: 2001:db8:1234:5678::/64
+		idorg: 2
+		idcomm: 3
+		dhcp: 1
+		gw4: 172.16.1.254
+		addr6: 2001:db8:1234:5678::1
+	      }
+	    ]
+
+  post:
+    description: Add a new network
+    queryParameters:			# none
+    body:
+      type: AdminNetwork		# without id
+      example: |
+	{
+	  name: "server backbone"
+	  location: "bldg a"
+	  addr4: 172.16.1.0/24
+	  addr6: 2001:db8:1234:5678::/64
+	  idorg: 2
+	  idcomm: 3
+	  dhcp: 1
+	  gw4: 172.16.1.254
+	  addr6: 2001:db8:1234:5678::1
+	}
+    responses:
+      200:
+        body:
+	  type: AdminNetworkId
+	  example: |
+	    {
+	      idnet: 1
+	      name: "server backbone"
+	      location: "bldg a"
+	      addr4: 172.16.1.0/24
+	      addr6: 2001:db8:1234:5678::/64
+	      idorg: 2
+	      idcomm: 3
+	      dhcp: 1
+	      gw4: 172.16.1.254
+	      addr6: 2001:db8:1234:5678::1
+	    }
+
+  /{id}
+    description: a particular network
+
+    put:
+      description: update a network
+      body:
+	type: AdminNetwork
+	example: |
+	  {
+	    name: "server backbone"
+	    location: "bldg a"
+	    addr4: 172.16.1.0/24
+	    addr6: 2001:db8:1234:5678::/64
+	    idorg: 2
+	    idcomm: 3
+	    dhcp: 1
+	    gw4: 172.16.1.254
+	    addr6: 2001:db8:1234:5678::1
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminNetworkId
+	    example: |
+	      {
+		idnet: 1
+		name: "server backbone"
+		location: "bldg a"
+		addr4: 172.16.1.0/24
+		addr6: 2001:db8:1234:5678::/64
+		idorg: 2
+		idcomm: 3
+		dhcp: 1
+		gw4: 172.16.1.254
+		addr6: 2001:db8:1234:5678::1
+	      }
+
+    delete:
+      description: delete an existing network
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/dns.community
+  description: Collection of all communities
+
+  get:
+    description: Get all communities
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all communities
+	  type: AdminCommunityId []
+	  example: |
+	    [
+	      {
+		XXX
+	      }
+	    ]
+
+  post:
+    description: Add a new community
+    queryParameters:			# none
+    body:
+      type: AdminCommunity		# without id
+      example: |
+	{
+	  XXX
+	}
+    responses:
+      200:
+        body:
+	  type: AdminCommunityId
+	  example: |
+	    {
+	      XXX
+	    }
+
+  /{id}
+    description: a particular community
+
+    put:
+      description: update a community
+      body:
+	type: AdminCommunity
+	example: |
+	  {
+	    XXX
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminCommunityId
+	    example: |
+	      {
+		XXX
+	      }
+
+    delete:
+      description: delete an existing community
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/dns.organization
+  description: Collection of all organizations
+
+  get:
+    description: Get all organizations
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all organizations
+	  type: AdminOrganizationId []
+	  example: |
+	    [
+	      {
+		XXX
+	      }
+	    ]
+
+  post:
+    description: Add a new organization
+    queryParameters:			# none
+    body:
+      type: AdminOrganization		# without id
+      example: |
+	{
+	  XXX
+	}
+    responses:
+      200:
+        body:
+	  type: AdminOrganizationId
+	  example: |
+	    {
+	      XXX
+	    }
+
+  /{id}
+    description: a particular organization
+
+    put:
+      description: update an organization
+      body:
+	type: AdminOrganization
+	example: |
+	  {
+	    XXX
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminOrganizationId
+	    example: |
+	      {
+		XXX
+	      }
+
+    delete:
+      description: delete an existing organization
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/dns.hinfo
+  description: Collection of all hinfo values
+
+  get:
+    description: Get all hinfo values
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all hinfo values
+	  type: AdminHinfoId []
+	  example: |
+	    [
+	      {
+		XXX
+	      }
+	    ]
+
+  post:
+    description: Add a new hinfo
+    queryParameters:			# none
+    body:
+      type: AdminHinfo		# without id
+      example: |
+	{
+	  XXX
+	}
+    responses:
+      200:
+        body:
+	  type: AdminHinfoId
+	  example: |
+	    {
+	      XXX
+	    }
+
+  /{id}
+    description: a particular hinfo
+
+    put:
+      description: update a hinfo
+      body:
+	type: AdminHinfo
+	example: |
+	  {
+	    XXX
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminHinfoId
+	    example: |
+	      {
+		XXX
+	      }
+
+    delete:
+      description: delete an existing hinfo
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/dns.domain
+  description: Collection of all domains
+
+  get:
+    description: Get all domains
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all domains
+	  type: AdminDomainId []
+	  example: |
+	    [
+	      {
+		XXX
+	      }
+	    ]
+
+  post:
+    description: Add a new domain
+    queryParameters:			# none
+    body:
+      type: AdminDomain		# without id
+      example: |
+	{
+	  XXX
+	}
+    responses:
+      200:
+        body:
+	  type: AdminDomainId
+	  example: |
+	    {
+	      XXX
+	    }
+
+  /{id}
+    description: a particular domain
+
+    put:
+      description: update a domain
+      body:
+	type: AdminDomain
+	example: |
+	  {
+	    XXX
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminDomainId
+	    example: |
+	      {
+		XXX
+	      }
+
+    delete:
+      description: delete an existing domain
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/dns.dhcpprofile
+  description: Collection of all DHCP profiles
+
+  get:
+    description: Get all DHCP profiles
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all DHCP profiles
+	  type: AdminDHCPProfileId []
+	  example: |
+	    [
+	      {
+		XXX
+	      }
+	    ]
+
+  post:
+    description: Add a new DHCP profile
+    queryParameters:			# none
+    body:
+      type: AdminDHCPProfile		# without id
+      example: |
+	{
+	  XXX
+	}
+    responses:
+      200:
+        body:
+	  type: AdminDHCPProfileId
+	  example: |
+	    {
+	      XXX
+	    }
+
+  /{id}
+    description: a particular DHCP profile
+
+    put:
+      description: update a DHCP profile
+      body:
+	type: AdminDHCPProfile
+	example: |
+	  {
+	    XXX
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminDHCPProfileId
+	    example: |
+	      {
+		XXX
+	      }
+
+    delete:
+      description: delete an existing DHCP profile
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/dns.view
+  description: Collection of all views
+
+  get:
+    description: Get all views
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all views
+	  type: AdminViewId []
+	  example: |
+	    [
+	      {
+		XXX
+	      }
+	    ]
+
+  post:
+    description: Add a new view
+    queryParameters:			# none
+    body:
+      type: AdminView		# without id
+      example: |
+	{
+	  XXX
+	}
+    responses:
+      200:
+        body:
+	  type: AdminViewId
+	  example: |
+	    {
+	      XXX
+	    }
+
+  /{id}
+    description: a particular view
+
+    put:
+      description: update a view
+      body:
+	type: AdminView
+	example: |
+	  {
+	    XXX
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminViewId
+	    example: |
+	      {
+		XXX
+	      }
+
+    delete:
+      description: delete an existing view
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/dns.zone_forward
+  description: Collection of all forward zones
+
+  get:
+    description: Get all forward zones
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all forward zones
+	  type: AdminForwardZoneId []
+	  example: |
+	    [
+	      {
+		XXX
+	      }
+	    ]
+
+  post:
+    description: Add a new forward zone
+    queryParameters:			# none
+    body:
+      type: AdminForwardZone		# without id
+      example: |
+	{
+	  XXX
+	}
+    responses:
+      200:
+        body:
+	  type: AdminForwardZoneId
+	  example: |
+	    {
+	      XXX
+	    }
+
+  /{id}
+    description: a particular forward zone
+
+    put:
+      description: update a forward zone
+      body:
+	type: AdminForwardZone
+	example: |
+	  {
+	    XXX
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminForwardZoneId
+	    example: |
+	      {
+		XXX
+	      }
+
+    delete:
+      description: delete an existing forward zone
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/dns.zone_reverse4
+  description: Collection of all reverse (IPv4) zones
+
+  get:
+    description: Get all reverse (IPv4) zones
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all reverse (IPv4) zones
+	  type: AdminReverse4ZoneId []
+	  example: |
+	    [
+	      {
+		XXX
+	      }
+	    ]
+
+  post:
+    description: Add a new reverse (IPv4) zone
+    queryParameters:			# none
+    body:
+      type: AdminReverse4Zone		# without id
+      example: |
+	{
+	  XXX
+	}
+    responses:
+      200:
+        body:
+	  type: AdminReverse4ZoneId
+	  example: |
+	    {
+	      XXX
+	    }
+
+  /{id}
+    description: a particular reverse (IPv4) zone
+
+    put:
+      description: update a reverse (IPv4) zone
+      body:
+	type: AdminReverse4Zone
+	example: |
+	  {
+	    XXX
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminReverse4ZoneId
+	    example: |
+	      {
+		XXX
+	      }
+
+    delete:
+      description: delete an existing reverse (IPv4) zone
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/dns.zone_reverse6
+  description: Collection of all reverse (IPv6) zones
+
+  get:
+    description: Get all reverse (IPv6) zones
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all reverse (IPv6) zones
+	  type: AdminReverse6ZoneId []
+	  example: |
+	    [
+	      {
+		XXX
+	      }
+	    ]
+
+  post:
+    description: Add a new reverse (IPv6) zone
+    queryParameters:			# none
+    body:
+      type: AdminReverse6Zone		# without id
+      example: |
+	{
+	  XXX
+	}
+    responses:
+      200:
+        body:
+	  type: AdminReverse6ZoneId
+	  example: |
+	    {
+	      XXX
+	    }
+
+  /{id}
+    description: a particular reverse (IPv6) zone
+
+    put:
+      description: update a reverse (IPv6) zone
+      body:
+	type: AdminReverse6Zone
+	example: |
+	  {
+	    XXX
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminReverse6ZoneId
+	    example: |
+	      {
+		XXX
+	      }
+
+    delete:
+      description: delete an existing reverse (IPv6) zone
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/global.config
+  description: Collection of config keys and values
+
+  get:
+    description: Get all config keys
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all config keys
+	  type: AdminConfigKey []
+	  example: |
+	    [
+	      {
+		XXX
+	      }
+	    ]
+
+  /{id}
+    description: a particular configuration key
+
+    put:
+      description: update a configuration value given its key
+      body:
+	type: AdminConfig
+	example: |
+	  {
+	    XXX
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminConfigKey
+	    example: |
+	      {
+		XXX
+	      }
+
+
+/admin/global.nmuser
+  description: Collection of all users
+
+  get:
+    description: Get all users
+    queryParameters:
+      idgrp:
+        description: filter users in a group
+        required: false
+        default: get all users
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all users
+	  type: AdminUserId []
+	  example: |
+	    [
+	      {
+		idcor: 1
+		login: foo
+		present: 1
+		idgrp: 1
+	      }
+	    ]
+
+  post:
+    description: Add a new user
+    queryParameters:			# none
+    body:
+      type: AdminUser			# without id
+      example: |
+	{
+	  login: foo
+	  present: 1
+	  idgrp: 1
+	}
+    responses:
+      200:
+        body:
+	  type: AdminUserId
+	  example: |
+	    {
+	      idcor: 1
+	      login: foo
+	      present: 1
+	      idgrp: 1
+	    }
+
+  /{id}
+    description: a particular user
+
+    put:
+      description: update a user
+      body:
+	type: AdminUser
+	example: |
+	  {
+	    login: foo
+	    present: 0
+	    idgrp: 1
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminUserId
+	    example: |
+	      {
+		idcor: 1
+		login: foo
+		present: 0
+		idgrp: 1
+	      }
+
+    delete:
+      description: delete an existing user
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+/admin/global.nmgroup
+  description: Collection of all groups
+
+  get:
+    description: Get all groups
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all groups
+	  type: AdminGroupId []
+	  example: |
+	    [
+	      {
+		idgrp: 1
+		name: staff
+		p_admin: 1
+		p_smtp: 1
+		p_ttl: 1
+		p_mac: 1
+		p_genl: 1
+	      }
+	    ]
+
+  post:
+    description: Add a new group
+    queryParameters:			# none
+    body:
+      type: AdminGroup			# without id
+      example: |
+	{
+	  name: staff
+	  p_admin: 1
+	  p_smtp: 1
+	  p_ttl: 1
+	  p_mac: 1
+	  p_genl: 1
+	}
+    responses:
+      200:
+        body:
+	  type: AdminGroupId
+	  example: |
+	    {
+	      idgrp: 1
+	      name: staff
+	      p_admin: 1
+	      p_smtp: 1
+	      p_ttl: 1
+	      p_mac: 1
+	      p_genl: 1
+	    }
+
+  /{id}
+    description: a particular group
+
+    put:
+      description: update a group
+      body:
+	type: AdminGroup
+	example: |
+	  {
+	    name: staff
+	    p_admin: 1
+	    p_smtp: 1
+	    p_ttl: 0
+	    p_mac: 1
+	    p_genl: 1
+	  }
+      responses:
+        200:
+          body:
+	    type: AdminGroupId
+	    example: |
+	      {
+		idgrp: 1
+		name: staff
+		p_admin: 1
+		p_smtp: 1
+		p_ttl: 1
+		p_mac: 1
+		p_genl: 1
+	      }
+
+    delete:
+      description: delete an existing group
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+XXXXXXXXXXXXXXXXXXXXXXXX : pgauth.*
+
+
+/admin/dns.p_ip
+  description: Collection of all IP (v4 or v6) permissions
+
+  get:
+    description: Get all IP permissions
+    queryParameters:			# none
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all groups
+	  type: AdminP_IpId []
+	  example: |
+	    [
+	      {
+		idgrp: 1
+		perm: [
+		  {
+		    addr: 172.16.10.0/24
+		    allow_deny: 1
+		    idgrp: 1
+		  }
+		  {
+		    addr: 172.16.10.254/31
+		    allow_deny: 0
+		    idgrp: 1
+		  }
+		]
+	      }
+	      {
+		idgrp: 2
+		perm: [
+		  {
+		    addr: 2001:db8:1234::/48
+		    allow_deny: 1
+		    idgrp: 2
+		  }
+		  {
+		    addr: 2001:db8:1234::1/128
+		    allow_deny: 0
+		    idgrp: 2
+		  }
+		]
+	      }
+	    ]
+
+  /{id}
+    description: IP permissions for a group
+
+    put:
+      description: update IP permissions for a group
+      body:
+	type: AdminP_Ip []
+	example: |
+	  [
+	    {
+	      idgrp: 1
+	      addr: 172.16.10.0/24
+	      allow_deny: 1
+	    }
+	    {
+	      addr: 172.16.10.254/31
+	      allow_deny: 0
+	      idgrp: 1
+	    }
+	  ]
+      responses:
+        200:
+          body:
+	    type: AdminP_IpId
+	      {
+		idgrp: 1
+		perm: [
+		  {
+		    addr: 172.16.10.0/24
+		    allow_deny: 1
+		    idgrp: 1
+		  }
+		  {
+		    addr: 172.16.10.254/31
+		    allow_deny: 0
+		    idgrp: 1
+		  }
+		]
+	      }
+
+
+/admin/dns.p_network
+  description: Collection of all network permissions
+
+  get:
+    description: Get all network permissions
+    queryParameters:
+      idnet:
+        description: filter permissions for a network
+        required: false
+        default: get permissions for all networks
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all network permissions
+	  type: AdminP_NetworkId []
+	  example: |
+	    [
+	      {
+		idgrp: 1
+		perm: [
+		  {
+		    idgrp: 1
+		    idnet: 1
+		    sort: 100
+		    acl: 0
+		    dhcp: 1
+		  }
+		  {
+		    idgrp: 1
+		    idnet: 2
+		    sort: 200
+		    acl: 0
+		    dhcp: 0
+		  }
+		]
+	      }
+	      {
+		idgrp: 2
+		perm: [
+		  {
+		    idgrp: 1
+		    idnet: 3
+		    sort: 200
+		    acl: 0
+		    dhcp: 0
+		  }
+		  {
+		    idgrp: 1
+		    idnet: 2
+		    sort: 400
+		    acl: 0
+		    dhcp: 0
+		  }
+		]
+	      }
+	    ]
+
+  /{id}
+    description: network permissions for a group
+
+    put:
+      description: update network permissions for a group
+      body:
+	type: AdminP_Network []
+	example: |
+	  [
+	    {
+	      idgrp: 1
+	      idnet: 1
+	      sort: 100
+	      acl: 0
+	      dhcp: 1
+	    }
+	    {
+	      idgrp: 1
+	      idnet: 2
+	      sort: 200
+	      acl: 0
+	      dhcp: 0
+	    }
+	  ]
+      responses:
+        200:
+          body:
+	    type: AdminP_NetworkId
+	      {
+		idgrp: 1
+		perm: [
+		  {
+		    idgrp: 1
+		    idnet: 1
+		    sort: 100
+		    acl: 0
+		    dhcp: 1
+		  }
+		  {
+		    idgrp: 1
+		    idnet: 2
+		    sort: 200
+		    acl: 0
+		    dhcp: 0
+		  }
+		]
+	      }
+
+
+/admin/dns.p_view
+  description: Collection of all view permissions
+
+  get:
+    description: Get all view permissions
+    queryParameters:
+      idview:
+        description: filter permissions for a view
+        required: false
+        default: get permissions for all views
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all view permissions
+	  type: AdminP_ViewId []
+	  example: |
+	    [
+	      {
+		idgrp: 1
+		perm: [
+		  {
+		    idgrp: 1
+		    idview: 1
+		    sort: 100
+		    selected: 1
+		  }
+		  {
+		    idgrp: 1
+		    idview: 2
+		    sort: 200
+		    selected: 0
+		  }
+		]
+	      }
+	      {
+		idgrp: 2
+		perm: [
+		  {
+		    idgrp: 2
+		    idview: 1
+		    sort: 100
+		    selected: 1
+		  }
+		]
+	      }
+	    ]
+
+  /{id}
+    description: view permissions for a group
+
+    put:
+      description: update view permissions for a group
+      body:
+	type: AdminP_View []
+	example: |
+	  [
+	    {
+	      idgrp: 2
+	      idview: 1
+	      sort: 100
+	      selected: 1
+	    }
+	  ]
+      responses:
+        200:
+          body:
+	    type: AdminP_ViewId
+	      {
+		idgrp: 2
+		perm: [
+		  {
+		    idgrp: 2
+		    idview: 1
+		    sort: 100
+		    selected: 1
+		  }
+		]
+	      }
+
+/admin/dns.p_dhcpprofile
+  description: Collection of all DHCP profile permissions
+
+  get:
+    description: Get all DHCP profile permissions
+    queryParameters:
+      iddhcpprof:
+        description: filter permissions for a DHCP profile
+        required: false
+        default: get permissions for all DHCP profiles
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all DHCP profile permissions
+	  type: AdminP_DHCPProfileId []
+	  example: |
+	    [
+	      {
+		idgrp: 1
+		perm: [
+		  {
+		    idgrp: 1
+		    iddhcpprof: 1
+		    sort: 100
+		  }
+		  {
+		    idgrp: 1
+		    iddhcpprof: 2
+		    sort: 200
+		  }
+		]
+	      }
+	      {
+		idgrp: 2
+		perm: [
+		  {
+		    idgrp: 2
+		    iddhcpprof: 1
+		    sort: 100
+		  }
+		]
+	      }
+	    ]
+
+  /{id}
+    description: DHCP profile permissions for a group
+
+    put:
+      description: update DHCP profile permissions for a group
+      body:
+	type: AdminP_DHCPProfile []
+	example: |
+	  [
+	    {
+	      idgrp: 2
+	      iddhcpprof: 1
+	      sort: 100
+	    }
+	  ]
+      responses:
+        200:
+          body:
+	    type: AdminP_DHCPProfileId
+	      {
+		idgrp: 2
+		perm: [
+		  {
+		    idgrp: 2
+		    iddhcpprof: 1
+		    sort: 100
+		  }
+		]
+	      }
+
+
+/admin/dns.p_dom
+  description: Collection of all domain permissions
+
+  get:
+    description: Get all domain permissions
+    queryParameters:
+      iddom:
+        description: filter permissions for a domain
+        required: false
+        default: get permissions for all domains
+    body:				# none
+    responses:
+      200:
+        body:
+	  description: List of all domain permissions
+	  type: AdminP_DomId []
+	  example: |
+	    [
+	      {
+		idgrp: 1
+		perm: [
+		  {
+		    idgrp: 1
+		    iddom: 1
+		    sort: 100
+		    mailrole: 1
+		  }
+		  {
+		    idgrp: 1
+		    iddom: 2
+		    sort: 200
+		    mailrole: 0
+		  }
+		]
+	      }
+	      {
+		idgrp: 2
+		perm: [
+		  {
+		    idgrp: 2
+		    iddom: 1
+		    sort: 100
+		    mailrole: 1
+		  }
+		]
+	      }
+	    ]
+
+  /{id}
+    description: domain permissions for a group
+
+    put:
+      description: update domain permissions for a group
+      body:
+	type: AdminP_Dom []
+	example: |
+	  [
+	    {
+	      idgrp: 2
+	      iddom: 1
+	      sort: 100
+	      mailrole: 1
+	    }
+	  ]
+      responses:
+        200:
+          body:
+	    type: AdminP_DomId
+	      {
+		idgrp: 2
+		perm: [
+		  {
+		    idgrp: 2
+		    iddom: 1
+		    sort: 100
+		    mailrole: 1
+		  }
+		]
+	      }
+
+
+
+
+
+
+
+
+
 /zones
   description: Collection of zones
   get:
