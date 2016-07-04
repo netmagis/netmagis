@@ -326,14 +326,17 @@ export var Prompters = {
 			
 			var dhcp = [];
 			for (var i = 0; i < dhcpranges.length; i++){
+		
+				// OLD
+				//var value_dom = Prompters.domain.id2Name(dhcpranges[i].iddom);
+				var doms = { 'values': domains, 'value': dhcpranges[i].domain };
 
-				var value_dom = Prompters.domain.id2Name(dhcpranges[i].iddom);
-				var doms = { 'values': domains, 'value': value_dom };
+				// OLD
+				//var value_dhcpprof = Prompters.dhcpprofiles.id2Name(dhcpranges[i].iddhcpprof);
+				var dhcpprofs = { 'values': dhcpprofiles, 'value': dhcpranges[i].dhcpprofile };
 
-				var value_dhcpprof = Prompters.dhcpprofiles.id2Name(dhcpranges[i].iddhcpprof);
-				var dhcpprofs = { 'values': dhcpprofiles, 'value': value_dhcpprof };
-
-				var cpy = $.extend({'domain': doms, 'dhcpprof': dhcpprofs}, dhcpranges[i]);
+				var cpy = $.extend({}, dhcpranges[i]);
+				cpy.domain = doms; cpy.dhcpprof = dhcpprofs;
 				dhcp.push(cpy);
 
 			}
