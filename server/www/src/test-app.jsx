@@ -19,7 +19,8 @@ var App = React.createClass({
 	model: { key: "_key",
 		 desc: [ 
 				[ "Sort class" , "Input" , "sort"],
-				[ "Name" , "Dropdown" , "view"]
+				[ "Name" , "Dropdown" , "view"],
+				[ "Select def" , "Checkbox" , "selected"]
 		]
 	},
 	
