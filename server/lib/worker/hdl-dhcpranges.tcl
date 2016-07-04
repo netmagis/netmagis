@@ -31,8 +31,8 @@ api-handler get {/dhcpranges} yes {
 				    ) AS editable
 		    FROM dns.dhcprange d
 			INNER JOIN dns.domain dom USING (iddom)
-			INNER JOIN dns.network n
-			    ON ($qcidr <<= n.addr4 AND n.dhcp != 0)
+			INNER JOIN dns.network n ON ($qcidr <<= n.addr4)
+			INNER JOIN dns.p_network pn USING (idnet)
 			LEFT OUTER JOIN dns.p_dom pd
 			    ON (pd.idgrp = $idgrp AND pd.iddom = d.iddom)
 			LEFT OUTER JOIN dns.dhcpprofile dh USING (iddhcpprof)
@@ -46,6 +46,8 @@ api-handler get {/dhcpranges} yes {
 				    OR host (network (pip.addr))::inet > d.max)
 			    )
 		    WHERE d.min <<= $qcidr AND d.max <<= $qcidr
+			AND n.dhcp != 0
+			AND pn.dhcp != 0
 		    GROUP BY d.iddhcprange, d.min, d.max, d.iddom, dom.name,
 			d.default_lease_time, d.max_lease_time,
 			d.iddhcpprof, dh.name
@@ -117,9 +119,8 @@ proc dhcp-is-editable {iddhcprange idgrp} {
 				    ) AS editable
 		    FROM dns.dhcprange d
 			INNER JOIN dns.network n
-			    ON (d.min <<= n.addr4
-				    AND d.max <<= n.addr4
-				    AND n.dhcp != 0)
+			    ON (d.min <<= n.addr4 AND d.max <<= n.addr4)
+			INNER JOIN dns.p_network pn (USING idnet)
 			LEFT OUTER JOIN dns.p_dom pd
 			    ON (pd.idgrp = $idgrp AND pd.iddom = d.iddom)
 			LEFT OUTER JOIN dns.p_dhcpprofile pdh
@@ -132,6 +133,8 @@ proc dhcp-is-editable {iddhcprange idgrp} {
 				    OR host (network (pip.addr))::inet > d.max)
 			    )
 		    WHERE iddhcprange = $iddhcprange
+			AND n.dhcp != 0
+			AND pn.dhcp != 0
 		    GROUP BY d.iddhcprange
 		    "
     set editable 0
@@ -157,8 +160,8 @@ proc dhcp-get {iddhcprange idgrp} {
 		    FROM dns.dhcprange d
 			INNER JOIN dns.domain dom USING (iddom)
 			INNER JOIN dns.network n
-			    ON (d.min <<= n.addr4 AND d.max <<= n.addr4
-				AND n.dhcp != 0)
+			    ON (d.min <<= n.addr4 AND d.max <<= n.addr4)
+			INNER JOIN dns.p_network pn USING (idnet)
 			LEFT OUTER JOIN dns.p_dom pd
 			    ON (pd.idgrp = $idgrp AND pd.iddom = d.iddom)
 			LEFT OUTER JOIN dns.dhcpprofile dh USING (iddhcpprof)
@@ -172,6 +175,8 @@ proc dhcp-get {iddhcprange idgrp} {
 				    OR host (network (pip.addr))::inet > d.max)
 			    )
 		    WHERE d.iddhcprange = $iddhcprange
+			AND n.dhcp != 0
+			AND pn.dhcp != 0
 		    GROUP BY d.iddhcprange, d.min, d.max, d.iddom, dom.name,
 			d.default_lease_time, d.max_lease_time,
 			d.iddhcpprof, dh.name
