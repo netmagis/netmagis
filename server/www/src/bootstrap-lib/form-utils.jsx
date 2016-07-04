@@ -1273,7 +1273,12 @@ export var Table = React.createClass({
 	getInitialState: function (){ return {values : [] }; },
 
 	getValues: function(){
-		this.setState({values: Prompters[this.props.name].getValues()})
+		var copy_values = [];
+		Prompters[this.props.name].getValues().map(
+			function(o){ copy_values.push($.extend({},o)); }
+		)
+	
+		this.setState({values: copy_values})
 	},
 
 
