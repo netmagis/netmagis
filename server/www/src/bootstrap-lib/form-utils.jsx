@@ -1197,28 +1197,38 @@ export var Editable_tr = React.createClass({
 		}
 	},
 
+	renderButtons: function(){
+
+		if (this.props.data.editable && 
+		    this.props.data.editable === false) return;
+
+		return(
+			<td className="outside">
+				<p style={{color: 'red'}}>
+					{ this.state.error ? this.state.emessage : ''}
+				</p>
+				<Button onClick={this.switchMode}>
+					<span className={"glyphicon glyphicon-"+
+						(this.state.edit? "floppy-disk":"pencil")}
+						 aria-hidden="true">
+					</span>
+				</Button>
+				<Button onClick={this.deleteRow}>
+					<span className={"glyphicon glyphicon-"+
+						(this.state.edit? "remove":"trash")}
+						 aria-hidden="true">
+					</span>
+				</Button>
+			</td>
+		);
+	},
+
 	
 	render: function(){
 		return (
 			<tr id={"etr"+this.props.reactKey} >
 				{this.props.model.desc.map(this.renderChild)}
-				<td className="outside">
-					<p style={{color: 'red'}}>
-						{ this.state.error ? this.state.emessage : ''}
-					</p>
-					<Button onClick={this.switchMode}>
-						<span className={"glyphicon glyphicon-"+
-							(this.state.edit? "floppy-disk":"pencil")}
-							 aria-hidden="true">
-						</span>
-					</Button>
-					<Button onClick={this.deleteRow}>
-						<span className={"glyphicon glyphicon-"+
-							(this.state.edit? "remove":"trash")}
-							 aria-hidden="true">
-						</span>
-					</Button>
-				</td>
+				{this.renderButtons()}
 			</tr>
 		);
 	}
