@@ -1202,7 +1202,7 @@ export var Editable_tr = React.createClass({
  *	-name: the name of the handler
  *
  *	-model	an object which describes the data contained into
- *		the row (see the component EdiTable). It must have one attribute
+ *		the rows. It must have one attribute
  *		'key' and an attribute 'desc':
  *
  *		- desc: contains a list of 3-elements arrays, each one describing one field of a
@@ -1218,13 +1218,9 @@ export var Editable_tr = React.createClass({
  *		The model should finally look more ore less like this:
  *		      {key: ... , desc: [ ["field" , "type", "name"], ... ]}
  * 
- *	-data,  an object containing a certain number of "name": "value" pairs.
- *		It must contain all the "names" specified on the model property.
- *	 	If the type specified on the model is "input" and the data for this
- *		field is not specified then the value will be an empty string. 
- *		The data of other types (!= "input") must always be specified.
  *
- *	-params TODO
+ *	-params objects containing all the parameters passed to the init function of the
+ *		handler. 
  *
  */
 export var Table = React.createClass({
@@ -1238,7 +1234,8 @@ export var Table = React.createClass({
 	getInitialState: function (){ return {values : [] }; },
 
 	getValues: function(){
-		this.setState({values: Prompters[this.props.name].getValues()})
+		console.log(Prompters[this.props.name].getValues());
+		//this.setState({values: Prompters[this.props.name].getValues()})
 	},
 
 
