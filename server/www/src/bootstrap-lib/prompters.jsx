@@ -183,8 +183,6 @@ export var Prompters = {
 			C.reqJSON({
 				url: '/freeblocks?'+$.param(params),
 				success: function(res){
-					console.log("respo");
-					console.log(res);
 					this.blocks = res;
 				}.bind(this),
 				complete: callback
@@ -192,8 +190,6 @@ export var Prompters = {
 		},
 
 		getValues: function(){
-			console.log("Values");
-			console.log(this.blocks);
 			return this.blocks;
 		}
 	},
@@ -425,8 +421,49 @@ export var Prompters = {
 
 	},
 
-	/*************************  Handler name="dns_p_view" *******************/
 
+	/*************************  Handler name="views" *******************/
+	views: {
+		views: [],
+		names: [],
+	
+		init: function (callback){
+			C.reqJSON({
+				url: C.APIURL+'/views', 
+				success: function(response){
+						this.views = response;
+						this.names = [];
+						response.map(function(x){
+							this.names.push(x.name);}
+							.bind(this));
+					 }.bind(this),
+				complete: callback
+			});
+		},
+
+		getValues: function(){
+			return this.names;
+		},
+
+		id2Name: function (id){
+			for (var i = 0; i < this.views.length; i++){
+				if (this.views[i].idview == id) {
+					return this.views[i].name;
+				}
+			}
+		},
+
+		name2Id: function (name){
+			for (var i = 0; i < this.views.length; i++){
+				if (this.views[i].name == name) {
+					return this.views[i].idview;
+				}
+			}
+		}
+		
+	},
+	/*************************  Handler name="dns_p_view" *******************/
+	/* A group id must be specified */
 	dns_p_view: {
 		views: [],
 	
@@ -444,7 +481,71 @@ export var Prompters = {
 			return this.views;
 		}
 
+
 		
+	},
+
+	/*************************  Handler name="allowed_views" *******************/
+
+	allowed_views: {
+		idgrp: undefined,
+		aviews: [],
+
+		init: function (callback, params){
+				
+			var _callback = function(){this._combine(callback);}.bind(this);
+
+			var c = new CallbackCountdown(_callback,2); 
+
+			Prompters.dns_p_view.init(c.callback,params);
+			Prompters.views.init(c.callback);
+		},
+
+		_combine: function (callback){
+			var v  = Prompters.dns_p_view.getValues();
+			this.idgrp = v.idgrp;
+			this.aviews = v.perm;
+
+			for (var i = 0; i < this.aviews.length; i++){
+				/* Add references to views for dropdown */
+				this.aviews[i].view = {
+					values: Prompters.views.getValues(),
+					value: Prompters.views.id2Name(this.aviews[i].idview)
+				}
+
+				/* Add a custom key */
+				this.aviews[i]._key = "nokey"+i;
+			}
+			callback();
+		},
+
+		getValues: function(){
+			return this.aviews;
+		},
+
+		save: function(key, input, success, error){
+			this.update(key,input,success,error);
+		},
+		delete: function(key, input, success, error){
+			this.update(key,input,success,error);
+		},
+
+		update: function(key, input, success, error){
+
+			var idview = Prompters.views.name2Id(input.view);
+			var data_req = $.extend({idview: idview}, input);
+			delete data_req.view;
+
+
+			C.reqJSON({
+				method: 'PUT',
+				url: C.APIURL+"/admin/dns.p_view/"+this.idgrp,
+				contentType: 'application/json',	
+				data: JSON.stringify(data_req),
+				success: success,
+				error: error
+			});
+		}
 	},
 
     /***********************************************************/

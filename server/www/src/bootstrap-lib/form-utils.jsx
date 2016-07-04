@@ -1234,8 +1234,7 @@ export var Table = React.createClass({
 	getInitialState: function (){ return {values : [] }; },
 
 	getValues: function(){
-		console.log(Prompters[this.props.name].getValues());
-		//this.setState({values: Prompters[this.props.name].getValues()})
+		this.setState({values: Prompters[this.props.name].getValues()})
 	},
 
 
