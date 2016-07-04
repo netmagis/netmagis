@@ -45,6 +45,7 @@ api-handler get {/dhcpranges} yes {
 			    AND NOT (host (broadcast (pip.addr))::inet < d.min
 				    OR host (network (pip.addr))::inet > d.max)
 			    )
+		    WHERE d.min <<= $qcidr AND d.max <<= $qcidr
 		    GROUP BY d.iddhcprange, d.min, d.max, d.iddom, dom.name,
 			d.default_lease_time, d.max_lease_time,
 			d.iddhcpprof, dh.name
