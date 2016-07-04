@@ -879,7 +879,7 @@ export var CheckboxEdit = React.createClass({
 	},
 	
 	onChange: function (event) {
-		this.setState({value: event.target.value});
+		this.setState({value: event.target.checked? 1 : 0 })
 	},
 
 	render: function(){
