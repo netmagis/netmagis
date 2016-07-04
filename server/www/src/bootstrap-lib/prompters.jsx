@@ -524,18 +524,66 @@ export var Prompters = {
 		},
 
 		save: function(key, input, success, error){
-			this.update(key,input,success,error);
+			input.idview = Prompters.views.name2Id(input.view);
+			input.idgrp = this.idgrp;
+			input.view = {
+				values: Prompters.views.getValues(),
+				value: input.view
+			}
+
+			this.aviews.push(input);
+			this.send(success,function(jqXHR){
+				this.aviews.pop(); error(jqXHR);
+				}.bind(this));
 		},
+
 		delete: function(key, input, success, error){
-			this.update(key,input,success,error);
+			for (var i = 0; i < this.aviews.length; i++){
+				if (this.aviews[i]._key == key){
+					bkp_row = this.aviews[i];
+					this.aviews.splice(i,1);
+					this.send(success,function(jqXHR){
+							this.aviews.push(bkp_row);
+							error(jqXHR);}.bind(this));
+				}
+			}
 		},
 
 		update: function(key, input, success, error){
+			input.idview = Prompters.views.name2Id(input.view);
+			input.idgrp = this.idgrp;
+			input.view = {
+				values: Prompters.views.getValues(),
+				value: input.view
+			}
 
-			var idview = Prompters.views.name2Id(input.view);
-			var data_req = $.extend({idview: idview}, input);
-			delete data_req.view;
+			delete input.view;
 
+			for (var i = 0; i < this.aviews.length; i++){
+				if (this.aviews[i]._key == key){
+					var bkp_row = this.aviews[i];
+					this.aviews[i] = input;
+					this.send(success,function(jqXHR){
+							this.aviews[i] = bkp_row;
+							error(jqXHR);
+					}.bind(this));
+					break;
+				}
+			}
+
+		},
+
+		send: function(success, error){
+			/* Make a copy */
+			var data_req = [];	
+			for (var i = 0; i < this.aviews.length; i++){
+				data_req.push({
+					idgrp: this.aviews[i].idgrp,	
+					idview: this.aviews[i].idview,	
+					sort: this.aviews[i].sort,	
+					selected: this.aviews[i].selected
+				});
+			}
 
 			C.reqJSON({
 				method: 'PUT',
@@ -546,68 +594,9 @@ export var Prompters = {
 				error: error
 			});
 		}
-	},
-
-    /***********************************************************/
-
-	test: {
-		test : [],
-
-		init : function (callback) { 
-			var data = [ { a: 1, b: 2},
-                         { a: 1, b: 3},
-                         { a: 2, b: 2}
-                       ]
-            /* Add a key attribute */
-            for (var i = 0; i < data.lengh; i++){
-                data[i]._key = "nokey"+i;
-            }
-            this.test = data;
-
-		},
-
-		getValues: function (){
-			return this.test;
-		},
-
-		update: function(key, input, success, error){
-            /* Search */
-            for (var i = 0; i < this.test.length; i++){
-                if (this.test[i]._key == key){
-                    this.test[i] = input;
-                    break;
-                }
-            }
-            this.send(success, error);
-
-		},
-
-		save: function(key, input, success, error){
-            this.test.push(input);
-            this.send(success, error);
-		},
-
-		delete: function(key, input, success, error){
-            for (var i = 0; i < this.test.length; i++){
-                if (this.test[i]._key == key){
-                    this.test.splice(i,1);
-                    break;
-                }
-            }
-            this.send(success, error);
-		},
-
-        send: function(success, error){
-            var api_data = $.extend({},this.test);
-            for (var i = 0; i < api_data.legth; i++){
-                delete api_data._key;
-           }
-        }
-
-            
 
 	}
-		
+
 
 }
 
