@@ -4,7 +4,6 @@ api-handler get {/networks} yes {
     set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j
 		    FROM (
 			SELECT n.name,
-				global.mklink ('/networks/', n.idnet) AS link,
 				n.location,
 				COALESCE (CAST (n.addr4 AS text), '') AS addr4,
 				COALESCE (CAST (n.addr6 AS text), '') AS addr6,
