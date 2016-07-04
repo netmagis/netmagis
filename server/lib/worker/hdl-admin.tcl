@@ -63,10 +63,8 @@ api-handler get {/admin/([a-z._]+:table)} yes {
 	    lappend lwhere "$id = $val"
 	}
     }
-    if {[llength $lwhere] > 0} then {
-	set where [format "WHERE %s" [join $lwhere " AND "]]
-    }
 
+    set where ""
     if {$type eq "ref"} then {
 	if {[llength $lwhere] > 0} then {
 	    set where [format "WHERE %s" [join $lwhere " AND "]]
