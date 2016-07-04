@@ -423,6 +423,66 @@ export var Prompters = {
 
 
 
+	},
+
+    /***********************************************************/
+
+	test: {
+		test : [],
+
+		init : function (callback) { 
+			var data = [ { a: 1, b: 2},
+                         { a: 1, b: 3},
+                         { a: 2, b: 2}
+                       ]
+            /* Add a key attribute */
+            for (var i = 0; i < data.lengh; i++){
+                data[i]._key = "nokey"+i;
+            }
+            this.test = data;
+
+		},
+
+		getValues: function (){
+			return this.test;
+		},
+
+		update: function(key, input, success, error){
+            /* Search */
+            for (var i = 0; i < this.test.length; i++){
+                if (this.test[i]._key == key){
+                    this.test[i] = input;
+                    break;
+                }
+            }
+            this.send(success, error);
+
+		},
+
+		save: function(key, input, success, error){
+            this.test.push(input);
+            this.send(success, error);
+		},
+
+		delete: function(key, input, success, error){
+            for (var i = 0; i < this.test.length; i++){
+                if (this.test[i]._key == key){
+                    this.test.splice(i,1);
+                    break;
+                }
+            }
+            this.send(success, error);
+		},
+
+        send: function(success, error){
+            var api_data = $.extend({},this.test);
+            for (var i = 0; i < api_data.legth; i++){
+                delete api_data._key;
+           }
+        }
+
+            
+
 	}
 		
 
