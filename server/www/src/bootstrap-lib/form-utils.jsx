@@ -879,7 +879,7 @@ export var CheckboxEdit = React.createClass({
 	},
 	
 	onChange: function (event) {
-		this.setState({value: event.target.checked? 1: 0});
+		this.setState({value: event.target.value});
 	},
 
 	render: function(){
@@ -988,7 +988,7 @@ export var DdEdit = React.createClass({
 	},
 
 	makeOption: function (val, index){
-		return (<el>{val}</el>);
+		return (<el key={"dded"+index}>{val}</el>);
 	},
 
 	render: function(){
@@ -1300,7 +1300,7 @@ export var Table = React.createClass({
 			console.error(this.props.name+" is not a prompter!");
 
 		} else if (prompter.init) {
-			prompter.init(this.getValues.bind(this), params);
+			prompter.init(this.getValues, params);
 			
 		}
 	},

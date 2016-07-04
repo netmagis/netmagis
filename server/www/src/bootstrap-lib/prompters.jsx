@@ -543,7 +543,7 @@ export var Prompters = {
 		delete: function(key, input, success, error){
 			for (var i = 0; i < this.aviews.length; i++){
 				if (this.aviews[i]._key == key){
-					bkp_row = this.aviews[i];
+					var bkp_row = this.aviews[i];
 					this.aviews.splice(i,1);
 					this.send(success,function(jqXHR){
 							this.aviews.push(bkp_row);
