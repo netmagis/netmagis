@@ -872,6 +872,37 @@ export var TextEdit = React.createClass({
 	}
 });
 
+export var CheckboxEdit = React.createClass({
+
+	getInitialState: function(){
+		return { value: (this.props.defaultChecked === true? 1 : 0) }
+	},
+	
+	onChange: function (event) {
+		this.setState({value: event.target.checked? 1: 0});
+	},
+
+	render: function(){
+		if (this.props.edit === true) {
+			return (<div class="checkbox">
+				  <input type="checkbox" {...this.props} 
+					 value={this.state.value}
+					 onChange={this.onChange} 
+				  />
+				</div>
+			);
+
+		} else {
+			return (<div class="checkbox disabled">
+				  <input type="checkbox" disabled {...this.props}
+					 value={this.state.value}
+					 onChange={this.onChange}
+				  /> 
+				</div>
+			);
+		}
+	}
+});
 
 /**
  * Depending on is property `edit` creates a editable text-input field
@@ -1072,6 +1103,14 @@ export var Editable_tr = React.createClass({
 						name={desc[2]}
 					/>
 				);
+			case "checkbox":
+				return (
+					<CheckboxEdit edit={this.state.edit} 
+						defaultChecked={content}
+						name={desc[2]}
+					/>
+				);
+				
 				
 			default: return (<div>{content}</div>);
 		}
