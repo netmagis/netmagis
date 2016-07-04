@@ -425,6 +425,28 @@ export var Prompters = {
 
 	},
 
+	/*************************  Handler name="dns_p_view" *******************/
+
+	dns_p_view: {
+		views: [],
+	
+		init: function (callback, params){
+			C.reqJSON({
+				url: C.APIURL+'/admin/dns.p_view/'+params.idgrp, 
+				success: function(response){
+						this.views = response;
+					 }.bind(this),
+				complete: callback
+			});
+		},
+
+		getValues: function(){
+			return this.views;
+		}
+
+		
+	},
+
     /***********************************************************/
 
 	test: {
