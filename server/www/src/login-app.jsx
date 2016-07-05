@@ -22,10 +22,9 @@ var App = React.createClass({
 			      }),
 			success: function(response){ 
 				this.setState({message: response, color: "green"});
-			//	window.location = "/www/html/Forms.html";
+				window.location = "welcome.html"; //XXX just to test
 			}.bind(this),
 			error: function(jqXHR){
-				console.log(jqXHR);
 				this.setState({message: jqXHR.responseText, color: "red"});
 			}.bind(this)
 		})

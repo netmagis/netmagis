@@ -1,6 +1,7 @@
 import React from 'react';
 import * as C from '../common.js';
 import * as F from '../bootstrap-lib/form-utils.jsx';
+import {Prompters} from '../bootstrap-lib/prompters.jsx';
 
 
 
@@ -83,24 +84,31 @@ var Select_block = React.createClass({
 
 	handleSearch: function(event){
 		event.preventDefault();
-		/* XXX this is just an example */
-		var els = document.getElementById('Search block').elements;
-		var query = C.APIURL + "/addrblock";
 
-		C.getJSON(query,function(res){this.setState({ blocks: res });}.bind(this));
+		function update(){
+			this.setState({ 
+				blocks: Prompters['freeblocks'].getValues()
+			});
+		}
+
+		var params = F.form2obj('Search_block');
+		Prompters['freeblocks'].init(update.bind(this),params);
+
 	},
 
 	search_form: function(){
 		return (
-			<F.Row>
-				<F.InputXORdd label="Network" 
-				 name="cidr" defaultValue="Select one" />
-				<F.Input label="Address count" dims="1+1"/>
-				<F.Space dims="1" />
-				<F.Button dims="1" onClick={this.handleSearch}  >
-					Search
-				</F.Button>
-			</F.Row>
+			<F.Form id='Search_block'>
+				<F.Row>
+					<F.InputXORdd label="Network" 
+					 name="cidr" defaultValue="Select one" />
+					<F.Input label="Address count" name="size" dims="1+1"/>
+					<F.Space dims="1" />
+					<F.Button name="_dontUse" dims="1" onClick={this.handleSearch}  >
+						Search
+					</F.Button>
+				</F.Row>
+			</F.Form>
 		);
 	},
 
@@ -108,20 +116,29 @@ var Select_block = React.createClass({
 	
 		if (!this.state.blocks) return null;
 
-		function makeEl({first, size}, i){
-			return (<el key={i+"elsf"} > {first+" (size: "+size+")"} </el>);
+		function makeEl({addr, size}, i){
+			return (<el key={i+"elsf"} > {addr+" (size: "+size+")"} </el>);
 		}
-		
+
+		function onSelect(event){
+			event.preventDefault();
+			var value = $('#Select_block [name="block"]')
+				    .text().trim().split(' ')[0];
+			this.props.onSelect(value);
+		}
+
 		return (
-			<F.Row>
-				<F.Dropdown label="Block" name="cidr">
-					{this.state.blocks.map(makeEl)}
-				</F.Dropdown>
-				<F.Space dims="1" />
-				<F.Button dims="1" onClick={this.props.onSelect}>
-					Select
-				</F.Button>
-			</F.Row>
+			<F.Form id='Select_block'>
+				<F.Row>
+					<F.Dropdown label="Block" name="block">
+						{this.state.blocks.map(makeEl)}
+					</F.Dropdown>
+					<F.Space dims="1" />
+					<F.Button dims="1" onClick={onSelect.bind(this)}>
+						Select
+					</F.Button>
+				</F.Row>
+			</F.Form>
 		);
 			
 
@@ -129,10 +146,10 @@ var Select_block = React.createClass({
 
 	render: function(){
 		return ( 
-			<F.Form id='Search block'>
+			<div>
 				{this.search_form()}
 				{this.select_form()}
-			</F.Form>
+			</div>
 		);
 	}
 });
@@ -149,9 +166,8 @@ export var Add_block = React.createClass({
 	},
 
 
-	handleSelect: function(event){
-		event.preventDefault();
-		this.setState({contents: 1});
+	handleSelect: function(value){
+		this.setState({contents: 1, defaultAddHost: {addr: value}});
 	},
 
 	addNext: function(oldValues){

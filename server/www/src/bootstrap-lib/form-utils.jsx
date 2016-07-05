@@ -18,8 +18,9 @@ export function form2obj(id){
 		
 		var value;	
 		var el = elements[i];
-		var tag = el.tagName.toLowerCase();
+		if (el.name == "_dontUse") continue;
 
+		var tag = el.tagName.toLowerCase();
 		switch (tag) {
 			
 			case "input":	if (el.type.toLowerCase() == "text")
@@ -837,7 +838,71 @@ export var InputXORdd = React.createClass({
 
 
 
+/**
+ * Depending on is property `edit` creates a editable text-input field
+ * or a not editable text.
+ * @properties:
+ *	- name: name to pass to the imput when in edit mode
+ *	- edit: if true the component will be editable 
+ */
+export var TextEdit = React.createClass({
 
+	/* This will force a rerendering on languae change */
+ 	contextTypes : {lang: React.PropTypes.string},
+
+	getInitialState: function(){
+		return { value: this.props.children }
+	},
+
+	/* As this is controlled Update the state with the new value */
+	onChange: function (event) {
+		this.setState({value: event.target.value});
+	},
+
+	render: function(){
+		if (this.props.edit === true) {
+			return (<textarea  style={{width: "100%"}}
+				 onChange={this.onChange} name={this.props.name}>
+					{this.state.value}
+				</textarea>
+			);
+		} else {
+			return (<div> {this.state.value} </div>);
+		}
+	}
+});
+
+export var CheckboxEdit = React.createClass({
+
+	getInitialState: function(){
+		return { value: (this.props.defaultChecked === true? 1 : 0) }
+	},
+	
+	onChange: function (event) {
+		this.setState({value: event.target.checked? 1 : 0 })
+	},
+
+	render: function(){
+		if (this.props.edit === true) {
+			return (<div class="checkbox">
+				  <input type="checkbox" {...this.props} 
+					 value={this.state.value}
+					 onChange={this.onChange} 
+				  />
+				</div>
+			);
+
+		} else {
+			return (<div class="checkbox disabled">
+				  <input type="checkbox" disabled {...this.props}
+					 value={this.state.value}
+					 onChange={this.onChange}
+				  /> 
+				</div>
+			);
+		}
+	}
+});
 
 /**
  * Depending on is property `edit` creates a editable text-input field
@@ -899,7 +964,12 @@ export var DdEdit = React.createClass({
  	contextTypes : {lang: React.PropTypes.string},
 
 	getInitialState: function(){
-		if (Array.isArray(this.props.values)) {
+		if (this.props.values == undefined){
+			return { value: "",
+				 values: []
+			       };
+
+		} else if (Array.isArray(this.props.values)) {
 
 			return { value: this.props.values[0],
 				 values: this.props.values
@@ -918,7 +988,7 @@ export var DdEdit = React.createClass({
 	},
 
 	makeOption: function (val, index){
-		return (<el>{val}</el>);
+		return (<el key={"dded"+index}>{val}</el>);
 	},
 
 	render: function(){
@@ -1017,6 +1087,15 @@ export var Editable_tr = React.createClass({
 					</InEdit>
 				);
 
+			case "text" :
+				return (
+					<TextEdit edit={this.state.edit}
+						  name={desc[2]}
+					>
+						{content}
+					</TextEdit>
+				);
+
 			case "dropdown":
 				return (
 					<DdEdit edit={this.state.edit} 
@@ -1024,6 +1103,14 @@ export var Editable_tr = React.createClass({
 						name={desc[2]}
 					/>
 				);
+			case "checkbox":
+				return (
+					<CheckboxEdit edit={this.state.edit} 
+						defaultChecked={content}
+						name={desc[2]}
+					/>
+				);
+				
 				
 			default: return (<div>{content}</div>);
 		}
@@ -1072,7 +1159,7 @@ export var Editable_tr = React.createClass({
 	switchMode: function(){
 
 		function _switch(){
-			this.setState({ edit: !this.state.edit });
+			this.setState({ edit: !this.state.edit, error: false });
 		}
 
 		if (this.state.edit == true){
@@ -1110,22 +1197,38 @@ export var Editable_tr = React.createClass({
 		}
 	},
 
+	renderButtons: function(){
+
+		if (this.props.data.editable && 
+		    this.props.data.editable === false) return;
+
+		return(
+			<td className="outside">
+				<p style={{color: 'red'}}>
+					{ this.state.error ? this.state.emessage : ''}
+				</p>
+				<Button onClick={this.switchMode}>
+					<span className={"glyphicon glyphicon-"+
+						(this.state.edit? "floppy-disk":"pencil")}
+						 aria-hidden="true">
+					</span>
+				</Button>
+				<Button onClick={this.deleteRow}>
+					<span className={"glyphicon glyphicon-"+
+						(this.state.edit? "remove":"trash")}
+						 aria-hidden="true">
+					</span>
+				</Button>
+			</td>
+		);
+	},
+
 	
 	render: function(){
 		return (
 			<tr id={"etr"+this.props.reactKey} >
 				{this.props.model.desc.map(this.renderChild)}
-				<td className="outside">
-					<p style={{color: 'red'}}>
-						{ this.state.error ? this.state.emessage : ''}
-					</p>
-					<Button onClick={this.switchMode}>
-						{ this.state.edit ? "Save" : "Edit" }
-					</Button>
-					<Button onClick={this.deleteRow}>
-						{ this.state.edit ? "Cancell" : "Remove" }
-					</Button>
-				</td>
+				{this.renderButtons()}
 			</tr>
 		);
 	}
@@ -1148,7 +1251,7 @@ export var Editable_tr = React.createClass({
  *	-name: the name of the handler
  *
  *	-model	an object which describes the data contained into
- *		the row (see the component EdiTable). It must have one attribute
+ *		the rows. It must have one attribute
  *		'key' and an attribute 'desc':
  *
  *		- desc: contains a list of 3-elements arrays, each one describing one field of a
@@ -1164,11 +1267,9 @@ export var Editable_tr = React.createClass({
  *		The model should finally look more ore less like this:
  *		      {key: ... , desc: [ ["field" , "type", "name"], ... ]}
  * 
- *	-data,  an object containing a certain number of "name": "value" pairs.
- *		It must contain all the "names" specified on the model property.
- *	 	If the type specified on the model is "input" and the data for this
- *		field is not specified then the value will be an empty string. 
- *		The data of other types (!= "input") must always be specified.
+ *
+ *	-params objects containing all the parameters passed to the init function of the
+ *		handler. 
  *
  */
 export var Table = React.createClass({
@@ -1182,21 +1283,31 @@ export var Table = React.createClass({
 	getInitialState: function (){ return {values : [] }; },
 
 	getValues: function(){
-		this.setState({values: Prompters[this.props.name].getValues()})
+		var copy_values = [];
+		Prompters[this.props.name].getValues().map(
+			function(o){ copy_values.push($.extend({},o)); }
+		);
+	
+		this.setState({values: copy_values});
+
 	},
 
 
-	componentWillMount: function () {
+	retrieveValues: function (params){
 		var prompter = Prompters[this.props.name];
 
 		if (!prompter) {
 			console.error(this.props.name+" is not a prompter!");
 
 		} else if (prompter.init) {
-			prompter.init(this.getValues.bind(this));
+			prompter.init(this.getValues, params);
 			
 		}
 	},
+
+	componentWillMount: function () {this.retrieveValues(this.props.params);},
+
+	componentWillReceiveProps: function (newProps) {this.retrieveValues(newProps.params);},
 
 	renderHead: function(){
 		function headerEl(mod,index){ return (<th key={"th"+index}> {mod[0]} </th>);}
@@ -1257,7 +1368,7 @@ export var Table = React.createClass({
 			newRow = $.extend(newRow,emptyRow);
 
 		} else {
-			console.error("Cannot fetch an the values of an empty row");
+			console.error("Cannot fetch the values of an empty row");
 			return;
 		}
 
@@ -1279,8 +1390,8 @@ export var Table = React.createClass({
 						{this.state.values.map(this.renderRow)}
 					</tbody>
 				</table>
-				<Button onClick={this.addRow}>
-					Add
+				<Button onClick={this.addRow} class>
+					<span className="glyphicon glyphicon-plus" aria-hidden="true"></span>
 				</Button>
 			</div>
 		);

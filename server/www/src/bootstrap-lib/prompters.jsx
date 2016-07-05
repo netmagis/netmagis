@@ -18,8 +18,9 @@ import * as C from '../common.js';
  *	- function { components }
  *
  *	- init(callback) { all }
- *		this function will be called once when the element
- *		is about to be mounted. Use it to retrive the initial
+ *		this function is called when the element
+ *		is about to be mounted. Note that a component can request a 
+ *		re-initialization at eny time. Use this function to retrieve the
  *		data from the API and call the callback once you are done
  *
  *	- getSuggestions(value) {AutoInput}
@@ -53,14 +54,18 @@ export var Prompters = {
 
 		/* Fill the networks array with the API answer */
 		init : function (callback)  { 
-			C.getJSON(C.APIURL+'/networks', function(response){
-				var networks = [];
-				for (var i = 0; i < response.length; i++){
-					networks.push(response[i]["addr4"]);
-					networks.push(response[i]["addr6"]);
-				}
-				this.networks = networks;
-			}.bind(this), callback);
+			C.reqJSON({
+				url: C.APIURL+'/networks',
+				success: function(response){
+					var networks = [];
+					for (var i = 0; i < response.length; i++){
+						networks.push(response[i]["addr4"]);
+						networks.push(response[i]["addr6"]);
+					}
+					this.networks = networks;
+					}.bind(this),
+				complete: callback
+			});
 		},
 
 		/* Case-insensitive suggestions based on the 
@@ -88,9 +93,13 @@ export var Prompters = {
 
 		/* Fill the machines array with the API answer */
 		init : function (callback)  { 
-			C.getJSON(C.APIURL+'/hinfos', function(response){
+			C.reqJSON({
+				url: C.APIURL+'/hinfos',
+				success: function(response){
 					this.machines = response;
-			}.bind(this), callback);
+				}.bind(this),
+				complete: callback
+			});
 		},
 
 		/* Gives all the machines */
@@ -99,13 +108,19 @@ export var Prompters = {
 		}
 	},
 
+	/*************************  Handler name="hinfos_present" ***********************/
+
 	hinfos_present: {
 		machines: [],
 
 		init : function (callback)  { 
-			C.getJSON(C.APIURL+'/hinfos?present=1', function(response){
-					this.machines = response.map( m => m.name );
-			}.bind(this), callback);
+			C.reqJSON({
+				url: C.APIURL+'/hinfos?present=1', 
+				success: function(response){
+						this.machines = response.map( m => m.name );
+					 }.bind(this),
+				complete: callback
+			});
 		},
 
 		getValues: function (){
@@ -123,13 +138,18 @@ export var Prompters = {
 		_domains: [],	// [ "domain1", "domain2", ... ]
 
 		init : function (callback)  { 
-			C.getJSON(C.APIURL+'/domains', function(response){
-					this.domains = response;
-					response.forEach(function(val){
-						this._domains.push(val.name);
-					}.bind(this));
-					
-			}.bind(this), callback);
+			C.reqJSON({
+				url: C.APIURL+'/domains', 
+				success: function(response){
+						this.domains = response;
+						var _domains = [];
+						response.forEach(function(val){
+							_domains.push(val.name);
+						}.bind(this));
+						this._domains = _domains;
+					 }.bind(this),
+				complete: callback
+			});
 		},
 
 		getValues: function (){
@@ -155,6 +175,24 @@ export var Prompters = {
 		}
 	},
 
+	/*************************  Handler name="freeblocks" ***********************/
+	freeblocks: {
+		blocks: [],
+
+		init: function(callback, params){
+			C.reqJSON({
+				url: '/freeblocks?'+$.param(params),
+				success: function(res){
+					this.blocks = res;
+				}.bind(this),
+				complete: callback
+			});
+		},
+
+		getValues: function(){
+			return this.blocks;
+		}
+	},
 	/*************************  Handler name="addr" ***********************/
 
 	addr: {
@@ -182,7 +220,6 @@ export var Prompters = {
 					this.addrs.push(addr);
 				}	
 			}.bind(this));
-				console.log(this.addrs);
 		},
 
 		getSuggestions: function (value){
@@ -208,12 +245,14 @@ export var Prompters = {
 
 		dhcpranges: [],
 
-		init : function (callback) { 
-			var cidr = "172.16.0.0/16"; //XXX retrive this value externally
-			C.getJSON(C.APIURL+'/dhcpranges?cidr='+cidr, function(response){
-					this.dhcpranges = response;
-					
-			}.bind(this), callback);
+		init : function (callback, params) { 
+			C.reqJSON({
+				url: C.APIURL+'/dhcpranges?'+$.param(params), 
+				success: function(response){
+						this.dhcpranges = response;
+					}.bind(this),
+				complete: callback
+			});
 		},
 
 		/* Gives all the addresses */
@@ -230,10 +269,13 @@ export var Prompters = {
 		dhcpprofs : [],
 
 		init : function (callback) { 
-			C.getJSON(C.APIURL+'/dhcpprofiles', function(response){
-					this.dhcpprofiles = response;
-					
-			}.bind(this), callback);
+			C.reqJSON({
+				url: C.APIURL+'/dhcpprofiles', 
+				success: function(response){
+						this.dhcpprofiles = response;
+					 }.bind(this),
+				complete: callback
+			});
 		},
 
 		getValues: function (){
@@ -241,7 +283,7 @@ export var Prompters = {
 		},
 
 		id2Name: function (id){
-			if ( id == undefined || id == null ) return "Unspecified";
+			if ( id == undefined || id == null ) return "";
 
 			for (var i = 0; i < this.dhcpprofs.length; i++){
 				if (this.dhcpprofs[i].iddhcpprof == id) {
@@ -263,17 +305,17 @@ export var Prompters = {
 	},
 	/*************************  Handler name="dhcp" *******************/
 
-	dhcp: {
+	row_dhcprange: {
 
 		dhcp: [],
 
-		init : function (callback) { 
+		init : function (callback,params) { 
 			var _callback = function(){this._combine(callback);}.bind(this);
 
 			var c = new CallbackCountdown(_callback,3); 
 
 			Prompters.domain.init(c.callback);
-			Prompters.dhcprange.init(c.callback);
+			Prompters.dhcprange.init(c.callback,params);
 			Prompters.dhcpprofiles.init(c.callback);
 		},
 
@@ -281,19 +323,25 @@ export var Prompters = {
 			var dhcpranges = Prompters.dhcprange.getValues();
 			var domains = Prompters.domain.getValues();
 			var dhcpprofiles = Prompters.dhcpprofiles.getValues();
-
+			
+			var dhcp = [];
 			for (var i = 0; i < dhcpranges.length; i++){
+		
+				// OLD
+				//var value_dom = Prompters.domain.id2Name(dhcpranges[i].iddom);
+				var doms = { 'values': domains, 'value': dhcpranges[i].domain };
 
-				var value_dom = Prompters.domain.id2Name(dhcpranges[i].iddom);
-				var doms = { 'values': domains, 'value': value_dom };
+				// OLD
+				//var value_dhcpprof = Prompters.dhcpprofiles.id2Name(dhcpranges[i].iddhcpprof);
+				var dhcpprofs = { 'values': dhcpprofiles, 'value': dhcpranges[i].dhcpprofile };
 
-				var value_dhcpprof = Prompters.dhcpprofiles.id2Name(dhcpranges[i].iddhcpprof);
-				var dhcpprofs = { 'values': dhcpprofiles, 'value': value_dhcpprof };
-
-				var cpy = $.extend({'domain': doms, 'dhcpprof': dhcpprofs}, dhcpranges[i]);
-				this.dhcp.push(cpy);
+				var cpy = $.extend({}, dhcpranges[i]);
+				cpy.domain = doms; cpy.dhcpprof = dhcpprofs;
+				dhcp.push(cpy);
 
 			}
+			this.dhcp = dhcp;
+
 
 			callback();
 
@@ -306,23 +354,43 @@ export var Prompters = {
 		},
 
 		getEmptyRow: function(){
-			return {'domain':  Prompters.domain.getValues() };
+			return {'domain':  Prompters.domain.getValues(),
+				'dhcpprof':  Prompters.dhcpprofiles.getValues()
+			 };
+
 		},
 
-		save: function(key, input, success, error){
+		datareqFromInput: function(input){
+			// Convert domain and dhcpprof names to ids
 			var iddom = Prompters.domain.name2Id(input.domain);
 			var iddhcpprof = Prompters.dhcpprofiles.name2Id(input.dhcpprof);
 
 			var data_req = $.extend({iddom: iddom, iddhcpprof: iddhcpprof}, input);
 			delete data_req.domain; delete data_req.dhcpprof;
 
-			console.log("--------- SAVE ----------");
-			console.log("POST /api/dhcprange "+JSON.stringify(data_req));
-			$.ajax({
+			// Cast to max_lease/default_lease to numeric values
+			var max_lease = parseInt(data_req.max_lease_time);
+			var def_lease = parseInt(data_req.default_lease_time);
+
+			data_req.max_lease_time = isNaN(max_lease)? 0 : max_lease;
+			data_req.default_lease_time = isNaN(def_lease)? 0 : def_lease;
+
+			// Trim ips just to be nice with the user
+			data_req.min = data_req.min.trim();
+			data_req.max= data_req.max.trim();
+
+
+			return data_req;
+		},
+			
+		save: function(key, input, success, error){
+			var data_req = this.datareqFromInput(input);
+
+			C.reqJSON({
 				method: 'POST',
 				url: C.APIURL+"/dhcpranges",
+				contentType: 'application/json',	
 				data: JSON.stringify(data_req),
-				contentType: 'application/json',
 				success: success,
 				error: error
 			});
@@ -331,28 +399,20 @@ export var Prompters = {
 		},
 
 		update: function(key, input, success, error){
-			var iddom = Prompters.domain.name2Id(input.domain);
-			var iddhcpprof = Prompters.dhcpprofiles.name2Id(input.dhcpprof);
+			var data_req = this.datareqFromInput(input);
 
-			var data_req = $.extend({iddom: iddom, iddhcpprof: iddhcpprof}, input);
-			delete data_req.domain; delete data_req.dhcpprof;
-
-			console.log("--------- UPDATE ----------");
-			console.log("PUT /api/dhcpranges/"+key+" "+JSON.stringify(data_req));
-			$.ajax({
+			C.reqJSON({
 				method: 'PUT',
 				url: C.APIURL+"/dhcpranges/"+key,
 				data: JSON.stringify(data_req),
-				contentType: 'application/json',
+				contentType: 'application/json',	
 				success: success,
 				error: error
 			});
 		},
 
 		delete: function(key, input, success, error){
-			console.log("--------- DELETE ----------");
-			console.log("DELETE /api/dhcpranges/"+key);
-			$.ajax({
+			C.reqJSON({
 				method: 'DELETE',
 				url: C.APIURL+"/dhcpranges/"+key,
 				success: success,
@@ -362,8 +422,184 @@ export var Prompters = {
 
 
 
-	}
+	},
+
+
+	/*************************  Handler name="views" *******************/
+	views: {
+		views: [],
+		names: [],
+	
+		init: function (callback){
+			C.reqJSON({
+				url: C.APIURL+'/views', 
+				success: function(response){
+						this.views = response;
+						this.names = [];
+						response.map(function(x){
+							this.names.push(x.name);}
+							.bind(this));
+					 }.bind(this),
+				complete: callback
+			});
+		},
+
+		getValues: function(){
+			return this.names;
+		},
+
+		id2Name: function (id){
+			for (var i = 0; i < this.views.length; i++){
+				if (this.views[i].idview == id) {
+					return this.views[i].name;
+				}
+			}
+		},
+
+		name2Id: function (name){
+			for (var i = 0; i < this.views.length; i++){
+				if (this.views[i].name == name) {
+					return this.views[i].idview;
+				}
+			}
+		}
 		
+	},
+	/*************************  Handler name="dns_p_view" *******************/
+	/* A group id must be specified */
+	dns_p_view: {
+		views: [],
+	
+		init: function (callback, params){
+			C.reqJSON({
+				url: C.APIURL+'/admin/dns.p_view/'+params.idgrp, 
+				success: function(response){
+						this.views = response;
+					 }.bind(this),
+				complete: callback
+			});
+		},
+
+		getValues: function(){
+			return this.views;
+		}
+
+
+		
+	},
+
+	/*************************  Handler name="allowed_views" *******************/
+
+	allowed_views: {
+		idgrp: undefined,
+		aviews: [],
+
+		init: function (callback, params){
+				
+			var _callback = function(){this._combine(callback);}.bind(this);
+
+			var c = new CallbackCountdown(_callback,2); 
+
+			Prompters.dns_p_view.init(c.callback,params);
+			Prompters.views.init(c.callback);
+		},
+
+		_combine: function (callback){
+			var v  = Prompters.dns_p_view.getValues();
+			this.idgrp = v.idgrp;
+			this.aviews = v.perm;
+
+			for (var i = 0; i < this.aviews.length; i++){
+				/* Add references to views for dropdown */
+				this.aviews[i].view = {
+					values: Prompters.views.getValues(),
+					value: Prompters.views.id2Name(this.aviews[i].idview)
+				}
+
+				/* Add a custom key */
+				this.aviews[i]._key = "nokey"+i;
+			}
+			callback();
+		},
+
+		getValues: function(){
+			return this.aviews;
+		},
+
+		save: function(key, input, success, error){
+			input.idview = Prompters.views.name2Id(input.view);
+			input.idgrp = this.idgrp;
+			input.view = {
+				values: Prompters.views.getValues(),
+				value: input.view
+			}
+
+			this.aviews.push(input);
+			this.send(success,function(jqXHR){
+				this.aviews.pop(); error(jqXHR);
+				}.bind(this));
+		},
+
+		delete: function(key, input, success, error){
+			for (var i = 0; i < this.aviews.length; i++){
+				if (this.aviews[i]._key == key){
+					var bkp_row = this.aviews[i];
+					this.aviews.splice(i,1);
+					this.send(success,function(jqXHR){
+							this.aviews.push(bkp_row);
+							error(jqXHR);}.bind(this));
+				}
+			}
+		},
+
+		update: function(key, input, success, error){
+			input.idview = Prompters.views.name2Id(input.view);
+			input.idgrp = this.idgrp;
+			input.view = {
+				values: Prompters.views.getValues(),
+				value: input.view
+			}
+
+			delete input.view;
+
+			for (var i = 0; i < this.aviews.length; i++){
+				if (this.aviews[i]._key == key){
+					var bkp_row = this.aviews[i];
+					this.aviews[i] = input;
+					this.send(success,function(jqXHR){
+							this.aviews[i] = bkp_row;
+							error(jqXHR);
+					}.bind(this));
+					break;
+				}
+			}
+
+		},
+
+		send: function(success, error){
+			/* Make a copy */
+			var data_req = [];	
+			for (var i = 0; i < this.aviews.length; i++){
+				data_req.push({
+					idgrp: this.aviews[i].idgrp,	
+					idview: this.aviews[i].idview,	
+					sort: this.aviews[i].sort,	
+					selected: this.aviews[i].selected
+				});
+			}
+
+			C.reqJSON({
+				method: 'PUT',
+				url: C.APIURL+"/admin/dns.p_view/"+this.idgrp,
+				contentType: 'application/json',	
+				data: JSON.stringify(data_req),
+				success: success,
+				error: error
+			});
+		}
+
+	}
+
 
 }
 

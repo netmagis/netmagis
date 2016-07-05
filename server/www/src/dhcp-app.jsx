@@ -14,6 +14,10 @@ var App = React.createClass({
 	/* This will force a rerendering on languae change */
  	contextTypes : {lang: React.PropTypes.string},
 
+	getInitialState: function (){
+		return {cidr: ""};
+	},
+
 	model: { key: "iddhcprange",
 		 desc: [ 
 				[ "Min" , "Input" , "min"],
@@ -24,10 +28,25 @@ var App = React.createClass({
 			        [ "DHCP profile", "Dropdown", "dhcpprof"]
 		]
 	},
+	
+	changeNetwork: function (cidr){
+		this.setState({cidr: cidr})
+		
+	},
 		
 	render: function () {
 		return ( 
-			<F.Table model={this.model} name="dhcp" />
+			<div>
+				<F.Form>
+					<F.Adropdown name="cidr" onChange={this.changeNetwork}
+						     label="Select a network" defaultValue="Unspecified" 
+					/>
+				</F.Form>
+				<F.Table model={this.model} 
+					 name="row_dhcprange" 
+					 params={{cidr: this.state.cidr}}
+				/>
+			</div>
 		);
 
 	}
