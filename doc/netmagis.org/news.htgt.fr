@@ -37,6 +37,20 @@
 
     \titre {1} {Netmagis : Nouveautés}
 
+    \titre {2} {[2016/07/04] Stage de Luigi Coniglio sur Netmagis}
+
+    Luigi Coniglio, étudiant en informatique à l'université de
+    Strasbourg (France) vient de terminer son stage sur Netmagis. Il a
+    travaillé sur la future interface Web, basée sur les frameworks
+    \lien {React} {http://facebook.github.io/react/} et \lien {Bootstrap}
+    {http://getbootstrap.com/}, ainsi que sur la version courante de l'API
+    REST. L'essentiel de son travail a été intégré dans la \lien
+    {branche « rest »} {https://github.com/pdav/netmagis/tree/rest}
+    du \lien {dépôt Netmagis} {https://github.com/pdav/netmagis}.
+    Son travail sera donc partie intégrante de la prochaine version
+    majeure (3.0) de Netmagis.
+
+
     \titre {2} {[2015/09/03] La version 2.3.2 de Netmagis est disponible}
 
     La \lien {version 2.3.2 de Netmagis} {/download.html} est maintenant

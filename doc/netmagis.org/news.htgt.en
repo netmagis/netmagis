@@ -38,6 +38,20 @@
     \titre {1} {Netmagis: News}
 
 
+    \titre {2} {[2016/07/04] Luigi Coniglio internship on Netmagis}
+
+    Luigi Coniglio, student in computer science at University of
+    Strasbourg (France) has just ended its internship on Netmagis. He
+    was working on the future Web interface based on the \lien
+    {React} {https://facebook.github.io/react/} and \lien {Bootstrap}
+    {http://getbootstrap.com/} frameworks and on the new REST API.
+    Most of his work has been integrated in the \lien {"rest" branch}
+    {https://github.com/pdav/netmagis/tree/rest} of the \lien {Netmagis
+    repository} {https://github.com/pdav/netmagis}.  His work will
+    therefore be an integral part of the upcoming major version (3.0)
+    of Netmagis.
+
+
     \titre {2} {[2015/09/03] Netmagis 2.3.2 is released}
 
     The 2.3.2 version of Netmagis is available on the
