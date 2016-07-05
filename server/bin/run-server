@@ -1,0 +1,23 @@
+#!/bin/sh
+
+#
+# This script is designed to run the REST server in-place,
+# during development.
+# DO NOT INSTALL IT!
+#
+
+# use NMCONF, NMSTATIC and NMPORT variables to alter default values
+
+STATIC=$(echo $(ls -d ${NMSTATIC:-../www/static/*}) | sed 's/ /:/g')
+
+tclsh8.6 netmagis-restd \
+	-d \
+	-f ${NMCONF:-/local/netmagis/etc/netmagis.conf} \
+	-a 0.0.0.0 \
+	-p ${NMPORT:-8080} \
+	-l ../lib \
+	-s ../www/dist:$STATIC \
+	-m 1 \
+	-x 4 \
+	-i 30 \
+	-v 3.0.0alpha \
