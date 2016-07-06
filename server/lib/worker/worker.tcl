@@ -580,10 +580,19 @@ proc api-handler {method pathspec authneeded paramspec script} {
 
     #
     # Build regexp for URI matching
+    # Note: URI include the full path of the resource, which is prefixed
+    # by the location on the server (e.g. resource /domain is requested
+    # by the URI /netmagis/foo/bar/domain). There are two solutions to
+    # remove the prefix:
+    # 1- recognize the prefix, which means adding a new flag or
+    #	configuration option to our program
+    # 2- match anything: the simplest way, without security compromise.
     #
 
     regsub -all {\(([^:]+):[^)]+\)} $pathspec {(\1)} re
-    set re "^$re$"
+    # regexp will match anything before the resource name (which must
+    # include a leading /)
+    set re "^.*$re$"
 
     #
     # Create new procedure for this handler

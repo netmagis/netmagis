@@ -1,6 +1,8 @@
 NINSTALL	= ../../ninstall
 
-FILES = crontab.database
+FILES = crontab.database \
+	apache.conf \
+	nginx.conf
 
 install:
 	@echo ">>> Making install in `pwd`"

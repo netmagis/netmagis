@@ -224,9 +224,14 @@ namespace eval ::scgi:: {
 		try {
 		    lassign [scgi-read $sock] state(reqhdrs) body
 
+		    # Uncomment this line to display request headers
+		    # array set x $state(reqhdrs) ; parray x ; puts stdout ""
+
 		    set parm [parse-param $state(reqhdrs) $body]
 		    set cookie [parse-cookie]
-		    set uri [get-header DOCUMENT_URI "/"]
+		    set uri [get-header SCRIPT_NAME "/"]
+		    # normalize URI (apache does not dot it)
+		    regsub -all {/+} $uri {/} uri
 		    set meth [string tolower [get-header REQUEST_METHOD "get"]]
 
 		    $handlefn $uri $meth $parm $cookie

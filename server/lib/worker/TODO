@@ -1,7 +1,5 @@
-- api-handler delete /admin
 - pgdb abort => 
 - move all netmagis global vars/methods to ::nmenv class
 - management of sessions by admin users, or by ordinary users (for their own sessins)
-- test with Apache
 - return appropriate error messages (when not in debug mode)
 - add pgauth.* to /admin
