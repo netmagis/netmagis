@@ -240,17 +240,20 @@ namespace eval ::scgi:: {
 
 		    if {$state(errcode) == 500} then {
 			set-header Status "500 Internal server error" true
+			#### XXX : KEEP A LOG of $msg BEFORE MODIFICATION
+			set msg "Internal server error"
 		    } else {
 			set-header Status "$state(errcode) $msg" true
 		    }
 
 		    if {$debug} then {
-			set-body "<pre>Error during ::scgi::accept</pre>"
-			set-body "\n<p>\n"
 			global errorInfo
-			set-body "<pre>$errorInfo</pre>"
+			set-body "<html>\n"
+			set-body "<h1>$state(errcode) $msg</h1>\n"
+			set-body "<pre>$errorInfo</pre>\n"
+			set-body "</html>\n"
 		    } else {
-			set-body "<pre>The server encountered an error</pre>"
+			set-body "<pre>$msg</pre>"
 		    }
 		}
 
