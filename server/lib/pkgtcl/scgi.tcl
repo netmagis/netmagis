@@ -253,7 +253,7 @@ namespace eval ::scgi:: {
 			set-body "<pre>$errorInfo</pre>\n"
 			set-body "</html>\n"
 		    } else {
-			set-body "<pre>$msg</pre>"
+			set-body "<pre>$state(errcode) $msg</pre>"
 		    }
 		}
 
