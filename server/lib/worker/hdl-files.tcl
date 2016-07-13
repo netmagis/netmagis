@@ -39,7 +39,7 @@ api-handler get {/files/([-a-zA-Z0-9][-a-zA-Z0-9.]*:name)} no {
     }
 
     try {
-	set fd [open $path "r"]
+	set fd [open $path "rb"]
 	set r [read $fd]
 	close $fd
     } on error msg {
@@ -52,5 +52,5 @@ api-handler get {/files/([-a-zA-Z0-9][-a-zA-Z0-9.]*:name)} no {
     }
 
     ::scgi::set-header Content-Type $mimetype
-    ::scgi::set-body $r
+    ::scgi::set-body $r true
 }
