@@ -1,153 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="%LANG%">
 <head>
+  <meta charset="utf-8"> 
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="favicon.png">
 
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="author" content="">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
 
-    <title>Netmagis</title>
-
-    <!-- Bootstrap Core CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
-
-    <!-- MetisMenu CSS -->
-    <link href="metisMenu.min.css" rel="stylesheet">
-
-    <!-- Custom CSS -->
-    <link href="sb-admin-2.css" rel="stylesheet">
-    <link rel="stylesheet"  href="autosuggest.css" type="text/css">
-    <link rel="stylesheet"  href="custom.css" type="text/css">
-
-    <!-- Custom Fonts -->
-    <link href="font-awesome.min.css" rel="stylesheet" type="text/css">
-
-		<style type="text/css">
-			#nextpart {
-			display: block;
-			}
-		</style>
-
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
+  <title>Log in Netmagis</title>
 </head>
-
 <body>
 
-    <div id="wrapper">
+  <nav class="navbar navbar-default">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+	<button type="button" class="navbar-toggle collapsed"
+	    data-toggle="collapse"
+	    data-target="#netmagis-navbar-collapse-1"
+	    aria-expanded="false">
+	  <span class="sr-only">Toggle navigation</span>
+	  <span class="icon-bar"></span>
+	  <span class="icon-bar"></span>
+	  <span class="icon-bar"></span>
+	</button>
+	<a class="logo" rel="home" href="http://www.netmagis.org">
+	  <img alt="Netmagis" src="logo.png" height="50px">
+	</a>
+      </div>
 
-        <!-- Navigation -->
-        <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="index.html">Netmagis</a>
-            </div>
-            <!-- /.navbar-header -->
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="netmagis-navbar-collapse-1">
+	<ul class="nav navbar-nav navbar-right">
+	  <li><p class="navbar-text">Not connected</p></li>
+	  <li class="dropdown">
+	    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">[en]</a>
+	    <ul class="dropdown-menu">
+	      <li><a href="#">[en]</a></li>
+	      <li><a href="#">[fr]</a></li>
+	    </ul>
+	  </li>
+	</ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
 
-            <div class="navbar-default sidebar" role="navigation">
-                <div class="sidebar-nav navbar-collapse">
-                    <ul class="nav" id="side-menu">
-                        <li class="sidebar-search">
-                            <div class="input-group custom-search-form">
-                                <input type="text" class="form-control" placeholder="Search...">
-                                <span class="input-group-btn">
-                                    <button class="btn btn-default" type="button">
-                                        <i class="fa fa-search"></i>
-                                    </button>
-                                </span>
-                            </div>
-                            <!-- /input-group -->
-                        </li>
-                        <li>
-                            <a href="index.html"><i class="fa fa-dashboard fa-fw"></i> Welcome to Netmagis</a>
-                        </li>
-                        <li>
-                            <a class="active" href="login.html"><i class="fa fa-dashboard fa-fw"></i> Login</a>
-                        </li>
-                        <li>
-                            <a href="#"><i class="fa fa-sitemap fa-fw"></i> Contacts<span class="fa arrow"></span></a>
-                            <ul class="nav nav-second-level">
-                                <li>
-                                    <a href="#">Support</a>
-                                </li>
-                                <li>
-                                    <a href="#">Signal an issue</a>
-                                </li>
-                                <li>
-                                    <a href="#">Contribute</a>
-                                </li>
-                            </ul>
-                            <!-- /.nav-second-level -->
-                        </li>
-                    </ul>
-                </div>
-                <!-- /.sidebar-collapse -->
-            </div>
-            <!-- /.navbar-static-side -->
-        </nav>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-6 col-md-offset-3 col-xs-12">
 
-        <!-- Page Content -->
-        <div id="page-wrapper">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-lg-12">
+	  <div id="app"></div>
 
-
-					<!----------------------- Start Add App -------------------------->    
-
-
-						<div id="app"></div>
-
-
-
-	
-					<!----------------------- End Add App -------------------------->    
-
-
-
-
-
-                    </div>
-                    <!-- /.col-lg-12 -->
-                </div>
-                <!-- /.row -->
-            </div>
-            <!-- /.container-fluid -->
-        </div>
-        <!-- /#page-wrapper -->
-
+      </div>
     </div>
-    <!-- /#wrapper -->
-
-    <!-- jQuery -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.3/jquery.min.js"></script> 
-
-    <!-- Bootstrap Core JavaScript -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-
-    <!-- Metis Menu Plugin JavaScript -->
-    <script src="metisMenu.min.js"></script>
-
-    <!-- Custom Theme JavaScript -->
-    <script src="sb-admin-2.js"></script>
+  </div>
 
 
-    <script src="common.js"></script>
-    <script src="login-app.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 
+  <script src="common.js"></script>
+  <script src="login-app.js"></script>
 </body>
-
 </html>
