@@ -1,0 +1,41 @@
+#!/bin/sh
+
+#
+# This script generates all needed logos formats
+#
+# Packages used:
+# - transfig (fig2dev)
+# - ImageMagick (convert)
+#
+
+LOGSRC=logo.fig
+TMP=/tmp/L$$.png
+SMOOTH=2			# Smooth 
+TRANSP="red"			# unused color used to specify transparency
+
+#
+# Logo with natural size on a white background
+#
+
+fig2dev -L png -S $SMOOTH $LOGOSRC $TMP logo.png
+
+#
+# Logo with natural size, transparent background
+#
+
+fig2dev -L png -S $SMOOTH -g "$TRANSP" $LOGOSRC $TMP
+convert $TMP -transparent "$TRANSP" logo-transp.png
+
+#
+# Various sizes for icons
+# See https://en.wikipedia.org/wiki/Favicon#HTML5_recommendation_for_icons_in_multiple_sizes
+#
+
+for i in 16 32 72 144 96 192
+do
+    convert $TMP -transparent "$TRANSP" -gravity Center -resize "${i}x${i}!" icon-$i.png
+done
+
+rm -f $TMP
+
+exit 0
