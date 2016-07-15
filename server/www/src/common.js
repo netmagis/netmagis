@@ -2,7 +2,7 @@ import React from 'react';
 
 
 export var APIURL = "/netmagis";
-export var LOGIN_PAGE = "/files/login.html";
+export var LOGIN_PAGE = APIURL + "/files/login.html";
 export var TODO_APIURL = "http://130.79.91.54:82/www/html/api";
 
 
