@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="%LANG%">
+<head>
+  <meta charset="utf-8"> 
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="shortcut icon" sizes="16x16" href="icon-16.png">
+  <link rel="shortcut icon" sizes="32x32" href="icon-32.png">
+  <link rel="shortcut icon" sizes="72x72" href="icon-72.png">
+  <link rel="shortcut icon" sizes="96x96" href="icon-96.png">
+  <link rel="shortcut icon" sizes="144x144" href="icon-144.png">
+  <link rel="shortcut icon" sizes="192x192" href="icon-192.png">
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+  <title>Hello world (this is the title)</title>
+</head>
+<body>
+
+  <nav class="navbar navbar-default">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+	<button type="button" class="navbar-toggle collapsed"
+	    data-toggle="collapse"
+	    data-target="#nm-navbar-collapse-1"
+	    aria-expanded="false">
+	  <span class="sr-only">Toggle navigation</span>
+	  <span class="icon-bar"></span>
+	  <span class="icon-bar"></span>
+	  <span class="icon-bar"></span>
+	</button>
+	<a class="logo" rel="home" href="http://www.netmagis.org">
+	  <img alt="Netmagis" src="logo-transp.png" height="50px">
+	</a>
+      </div>
+
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="nm-navbar-collapse-1">
+	<ul class="nav navbar-nav">
+	  <li>
+	    <a href="#">
+	      <span class="glyphicon glyphicon-home" aria-hidden="true"></span>
+	      <span class="sr-only">Home</span>
+	    </a>
+	  </li>
+	  <div id="nm-topmenu">
+	    <!-- top menu will be inserted here (replacing div#nm-topmenu) -->
+	  </div>
+	</ul>
+
+	<form class="navbar-form navbar-left" role="search">
+	  <div class="form-group">
+	    <input type="text" class="form-control" placeholder="Search" aria-label="Search">
+	  </div>
+	  <button type="submit" class="btn btn-default">
+	    <span class="glyphicon glyphicon-search" aria-label="Submit"></span>
+	  </button>
+	</form>
+
+	<ul class="nav navbar-nav navbar-right">
+	  <li class="dropdown">
+	    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+	      <span class="glyphicon glyphicon-user"></span>
+		pda
+	      <span class="caret"></span>
+	    </a>
+	    <ul class="dropdown-menu">
+	      <li><a href="#">Profile</a></li>
+	      <li><a href="#">Sessions</a></li>
+	      <li role="separator" class="divider"></li>
+	      <li><a href="#">Disconnect</a></li>
+	    </ul>
+	  </li>
+	  <li class="dropdown">
+	    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">[en]</a>
+	    <ul class="dropdown-menu">
+	      <li><a href="#">[en]</a></li>
+	      <li><a href="#">[fr]</a></li>
+	    </ul>
+	  </li>
+	</ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+
+	<h1 class="page-header">Hello world!</h1>
+
+	<p id="b"> this is the body</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+  <script>
+    function placeMenus (data, status) {
+      var i, j ;
+      var menu = "" ;
+      for (i = 0 ; i < data.length ; i++)
+      {
+	menu += '<li class="dropdown">'
+	      + '<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">'
+	      + data [i].title
+	      + '<span class="caret"></span>'
+	      + '</a>'
+	      + '<ul class="dropdown-menu">'
+	      ;
+	for (j = 0 ; j < data [i].items.length ; j++)
+	{
+	  menu += '<li><a href="'
+	      + data [i].items [j].url
+	      + '">'
+	      + data [i].items [j].title
+	      + '</a></li>'
+	      ;
+	}
+	menu += '</ul>'
+      }
+      $(menu).replaceAll ("#nm-topmenu") ;
+    }
+    $(document).ready(function () {
+      $.get ("/netmagis/menus", placeMenus) ;
+    }) ;
+  </script>
+
+
+</body>
+</html>
