@@ -33,6 +33,97 @@ types:
       stopreason:
 	enum:		[ logout, expired ]
 
+  MenuItem:
+    description: a clickable menu item
+    type: object
+    properties:
+      title:		string
+      url:		string
+    example: |
+      {
+	title: "Add"
+	url: "add.html"
+      }
+  Menu:
+    description: a single top-level menu
+    type: object
+    properties:
+      title:		string
+      items:		MenuItem []
+    example: |
+      {
+	title: "DNS"
+	items: [
+	  {
+	    title: "Consult"
+	    url: "..."
+	  },
+	  {
+	    title: "Add"
+	    url: "..."
+	  },
+	  ...
+	]
+      }
+  MenuBar:
+    description: top-level menu bar
+    type: object
+    properties:
+      left: Menu []
+      search: MenuItem
+      user: Menu
+      lang: Menu
+    example: |
+      {
+	left: [
+	  {
+	    title: "DNS"
+	    items: [
+	      {
+		title: "Consult"
+		url: "..."
+	      },
+	      {
+		title: "Add"
+		url: "..."
+	      },
+	      ...
+	    ]
+	  },
+	  ...
+	],
+	search: {
+	  title: "Search"
+	  url: "..."
+	},
+	user: {
+	  title: "joe"
+	  items: [
+	    {
+	      title: "Profile"
+	      url: "..."
+	    },
+	    {
+	      title: "Sessions"
+	      url: "..."
+	    }
+	  ]
+	},
+	lang: {
+	  title "[en]"
+	  items: [
+	    {
+	      title: "[en]",
+	      url: "..."
+	    },
+	    {
+	      title: "[fr]",
+	      url: "..."
+	    }
+	  ]
+	}
+      }
+
   AllowedDomain:
     description: a domain allowed for our group
     type: object
@@ -139,6 +230,67 @@ types:
 	dhcp:		0
 	gw4:		198.51.100.254
 	gw6:		2001:db8:1234:5678::1
+      }
+
+  ShortName:
+    description: a reference to a RR
+    type: object
+    properties:
+      idrr:		integer
+      name:		string
+      iddom:		integer
+      domain:		string
+      idview:		integer
+      view:		string
+    example: |
+      {
+	idrr: 123,
+	name: www,
+	iddom: 1,
+	domain: example.org,
+	idview: 1,
+	view: internal
+      }
+  FullNameInput:
+    description: a complete RR, without id
+    type: object
+    properties:
+      name:		string
+      iddom:		integer
+      idview:		integer
+      mac:		macaddr
+      idhinfo:		integer
+      comment:		string
+      respname:		string
+      respmail:		string
+      iddhcpprof:	integer
+      sendsmtp:
+	enum: [0, 1]
+      ttl:		integer
+      idcname:		integer
+      idmboxhost:	integer
+      mxlist:		MX []
+      addr:		inet []
+    example: |
+      {
+	name: www
+	iddom: 1
+	idview: 1
+	mac: "01:02:03:04:05:06"
+	idhinfo: 2
+	comment: "a www server"
+	respname: "John Doe"
+	respmail: "foo@example.com"
+	iddhcpprof: -1
+	sendsmtp: 0
+	ttl: 0
+	mxlist: [
+	  {
+	    prio: 100
+	    idrr: 2
+	  }
+	]
+	addr: [172.16.1.1, 2001:db8:1234:5678::ff]
       }
 
   SearchResult:
@@ -824,6 +976,71 @@ types:
           text/plain: ok
 
 ##############################################################################
+# Menus
+##############################################################################
+
+/menus
+  description: Collection of menus to display for this user
+  get:
+    description: Get all my menus
+    queryParameters:		# none
+    responses:
+      200:
+	body:
+	  application/json:
+	    type: MenuBar
+	    example: |
+	      {
+		left: [
+		  {
+		    title: "DNS"
+		    items: [
+		      {
+			title: "Consult"
+			url: "..."
+		      },
+		      {
+			title: "Add"
+			url: "..."
+		      },
+		      ...
+		    ]
+		  },
+		  ...
+		]
+		search: {
+		  title: "Search"
+		  url: "..."
+		},
+		user: {
+		  title: "joe"
+		  items: [
+		    {
+		      title: "Profile"
+		      url: "..."
+		    },
+		    {
+		      title: "Sessions"
+		      url: "..."
+		    }
+		  ]
+		},
+		lang: {
+		  title "[en]"
+		  items: [
+		    {
+		      title: "[en]",
+		      url: "..."
+		    },
+		    {
+		      title: "[fr]",
+		      url: "..."
+		    }
+		  ]
+		}
+	      }
+
+##############################################################################
 # Blocks of free IPv4 addresses
 ##############################################################################
 
@@ -1230,6 +1447,148 @@ types:
 		link: "/names/456"
 	      }
 	    ]
+
+##############################################################################
+# Names
+##############################################################################
+
+/names
+  description: A collection of names
+
+  get:
+    queryParameters:
+      view:
+        description: filter on view name
+        type: string
+        required: false
+      name:
+        description: filter on name
+        type: string
+        required: false
+      domain:
+        description: filter on domain name
+        type: string
+        required: false
+      addr:
+        description: filter on IP address
+        type: cidr (v4 or v6)
+        required: false
+      sort:         # XXX BUG
+        description: sort result
+        type: comma-separated list of {name, domain, addr, view}
+        required: false
+    responses:
+      200:
+        body:
+	  description: unsorted list of names
+	  type: ShortName []
+	  example: |
+            example: |
+              [ 
+                {
+                  idrr: 123,
+                  name: www,
+                  iddom: 1,
+                  domain: example.org,
+                  idview: 1,
+                  view: internal
+                },
+                {
+                  idrr: 456,
+                  name: foo,
+                  iddom: 2,
+                  domain: example.com
+                  idview: 2
+                  view: external
+                }
+              ]
+
+  post:
+    description: Create a new name
+    queryParameters:			# none
+    body:
+      type: FullNameInput		# without id
+      example: |
+	{
+	  name: "server backbone"
+	  location: "bldg a"
+	  addr4: 172.16.1.0/24
+	  addr6: 2001:db8:1234:5678::/64
+	  idorg: 2
+	  idcomm: 3
+	  dhcp: 1
+	  gw4: 172.16.1.254
+	  addr6: 2001:db8:1234:5678::1
+	}
+    responses:
+      200:
+        body:
+	  type: FullNameId
+	  example: |
+
+  /{idrr}
+    description: Get a single name
+    queryParameters:			# none
+
+    get:
+      responses:
+        200:
+          body:
+            type: FullNameId
+	    example: |
+	      {
+		name: "atlas",
+		domain: "example.org",
+		domainlink: "/domain/5",
+		view: "external",
+		viewlink: "/views/5",
+		mac: "00:11:22:33:44:55",
+		hinfo: "pc/unix",
+		hinfolink: "/hinfos/12",
+		comment: "Simon's PC",
+		respname: "John Doe",
+		respmail: "doe@example.org",
+		dhcpprofile: "diskless",
+		dhcpprofilelink: "/dhcpprofiles/33",
+		sendsmtp: "1",
+		ttl: "3600",
+		user: "jane",
+		userlink: "/users/17",
+		cname: "other.example.org",  <exclusive with MX or addr>
+		cnamelink: "/names/82",
+		lastmod: "<time_t>"
+		addr: [
+		  "192.0.2.12",
+		  "2001:db8::1",
+		  "198.51.100.24",
+		],
+		mx: [
+		  {
+		    prio: 100,
+		    fqdn: "mx1.example.com",
+		    link: "/names/532"
+		  },
+		  {
+		    prio: 200,
+		    fqdn: "mx2.example.com",
+		    link: "/names/79"
+		  }
+		],
+	      }
+
+    put:
+
+    delete:
+      description: delete a name
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+
 
 ##############################################################################
 # Admin tables
@@ -2678,249 +3037,3 @@ XXXXXXXXXXXXXXXXXXXXXXXX : pgauth.*
       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <--- TO DISCUSS LATER
       /{domainId}
         description: mail relays for a given domain
-
-
-
-/names
-  description: A collection of names
-  get:
-    queryParameters:
-      view:
-        description: filter on view name
-        type: string
-        required: false
-      name:
-        description: filter on name
-        type: string
-        required: false
-      domain:
-        description: filter on domain name
-        type: string
-        required: false
-      addr:
-        description: filter on IP address
-        type: cidr (v4 or v6)
-        required: false
-      sort:         # XXX BUG
-        description: sort result
-        type: comma-separated list of {name, domain, addr, view}
-        required: false
-    responses:
-      200:
-        body:
-          application/json:   # list of RR
-            example: |
-              [ 
-                {
-                  idrr: 123,
-                  name: www,
-                  iddom: 1,
-                  domain: example.org,
-                  idview: 1,
-                  view: internal
-                },
-                {
-                  idrr: 456,
-                  name: foo,
-                  iddom: 2,
-                  domain: example.com
-                  idview: 2
-                  view: external
-                }
-              ]
-  post:
-    description: Create a new name
-    queryParameters: (none)
-    body:
-      application/json:
-        {
-          fqdn:
-          idview:
-          (see /names/{id})
-        }
-    responses:
-      200:
-        body:
-          application/json:
-            {
-              idrr:
-              fqdn:
-              idview:
-            }
-      403:
-        description: login failed
-      429:
-        description: temporary failure
-  /{idrr}
-    description: Get a single name
-    get:
-      responses:
-        200:
-          body:
-            application/json:
-              example: |
-                {
-                  name: "atlas",
-                  domain: "example.org",
-                  domainlink: "/domain/5",
-                  view: "external",
-                  viewlink: "/views/5",
-                  mac: "00:11:22:33:44:55",
-                  hinfo: "pc/unix",
-                  hinfolink: "/hinfos/12",
-                  comment: "Simon's PC",
-                  respname: "John Doe",
-                  respmail: "doe@example.org",
-                  dhcpprofile: "diskless",
-                  dhcpprofilelink: "/dhcpprofiles/33",
-                  sendsmtp: "1",
-                  ttl: "3600",
-                  user: "jane",
-                  userlink: "/users/17",
-                  cname: "other.example.org",  <exclusive with MX or addr>
-                  cnamelink: "/names/82",
-                  lastmod: "<time_t>"
-                  addr: [
-                    "192.0.2.12",
-                    "2001:db8::1",
-                    "198.51.100.24",
-                  ],
-                  mx: [
-                    {
-                      prio: 100,
-                      fqdn: "mx1.example.com",
-                      link: "/names/532"
-                    },
-                    {
-                      prio: 200,
-                      fqdn: "mx2.example.com",
-                      link: "/names/79"
-                    }
-                  ],
-                }
-    put:
-    delete:
-
-
-
-
-
-
-/names
-  description: Get a collection of names
-  get:
-    acceptParameters:
-      application/json
-      application/pdf
-      application/csv
-    queryParameters:
-      view:
-        required: false
-        type: view name
-        example: default
-      name:
-        required: false
-        type: host name (without domain)
-        example: www
-      domain:
-        required: false
-        type: domain name
-        example: example.org
-      context:
-        required: false
-        type: string
-        values: "host", "existing-host", "alias", "del-name", "mx", \
-            "add-mailaddr", "del-mailaddr"
-        note: this parameter may be used only when view/name/domain \
-          are present
-      cidr:
-        required: false
-        type: IPv4 or IPv6 CIDR
-        example: 193.51.100.0/24
-      XXX TODO: draw a table with valid parameter combinations
-      format: pdf, csv, ... ?
-    responses:
-      200:
-        body:
-          application/json:
-          application/pdf:
-          application/csv:
-      404: Not found
-      403: Forbidden 
-  /{nameId}
-    description: Get a single name
-    get:
-      responses:
-        200:
-          body:
-            application/json:
-              example: |
-                {
-                  name: "atlas",
-                  domain: "example.org",
-                  domainlink: "/domain/5",
-                  view: "external",
-                  viewlink: "/views/5",
-                  mac: "00:11:22:33:44:55",
-                  hinfo: "pc/unix",
-                  hinfolink: "/hinfos/12",
-                  comment: "Simon's PC",
-                  respname: "John Doe",
-      cidr:
-        required: false
-        type: IPv4 or IPv6 CIDR
-        example: 193.51.100.0/24
-      format: pdf, csv, ... ?
-    responses:
-      200:
-        body:
-          application/json:
-          application/pdf:
-          application/csv:
-  /{nameId}
-    description: Get a single name
-    get:
-      responses:
-        200:
-          body:
-            application/json:
-              example: |
-                {
-                  name: "atlas",
-                  domain: "example.org",
-                  domainlink: "/domain/5",
-                  view: "external",
-                  viewlink: "/views/5",
-                  mac: "00:11:22:33:44:55",
-                  hinfo: "pc/unix",
-                  hinfolink: "/hinfos/12",
-                  comment: "Simon's PC",
-                  respname: "John Doe",
-                  respmail: "doe@example.org",
-                  dhcpprofile: "diskless",
-                  dhcpprofilelink: "/dhcpprofiles/33",
-                  sendsmtp: "1",
-                  ttl: "3600",
-                  user: "jane",
-                  userlink: "/users/17",
-                  cname: "other.example.org",  <exclusive with MX or addr>
-                  cnamelink: "/names/82",
-                  lastmod: "<time_t>"
-                  addr: [
-                    "192.0.2.12",
-                    "2001:db8::1",
-                    "198.51.100.24",
-                  ],
-                  mx: [
-                    {
-                      prio: 100,
-                      fqdn: "mx1.example.com",
-                      link: "/names/532"
-                    },
-                    {
-                      prio: 200,
-                      fqdn: "mx2.example.com",
-                      link: "/names/79"
-                    }
-                  ],
-                }
