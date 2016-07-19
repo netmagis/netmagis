@@ -499,7 +499,9 @@ proc check-authtoken {token} {
     set sql "UPDATE global.utmp t
 		    SET lastaccess = NOW()
 		    FROM global.nmuser u
-		    WHERE token = $qtoken AND u.idcor = t.idcor
+		    WHERE token = $qtoken
+			AND u.idcor = t.idcor
+			AND u.present != 0
 		    RETURNING u.login"
     ::dbdns exec $sql tab {
 	set login $tab(login)
@@ -590,9 +592,6 @@ proc api-handler {method pathspec authneeded paramspec script} {
     #
 
     regsub -all {\(([^:]+):[^)]+\)} $pathspec {(\1)} re
-    # regexp will match anything before the resource name (which must
-    # include a leading /)
-    set re "^.*$re$"
 
     #
     # Create new procedure for this handler
@@ -608,7 +607,7 @@ proc api-handler {method pathspec authneeded paramspec script} {
     incr curhdl(count)
 
     set hname "_$curhdl(name)-$curhdl(count)"
-    proc $hname {_meth _parm _cookie _paramdict} "
+    proc $hname {_meth _parm _cookie _prefix _paramdict} "
 	::scgi::import-param \$_paramdict
 	unset _paramdict
 	$script
@@ -623,9 +622,10 @@ proc api-handler {method pathspec authneeded paramspec script} {
 
 #
 # Input:
-#   - sock: socket
-#   - headers: Tcl dictionnary containing http server informations
-#   - body: request body, including form parameters
+#   - uri: CGI pseudo-header "SCRIPT_NAME"
+#   - meth: GET, POST, etc.
+#   - parm: see scgi::parse-param procedure
+#   - cookie: dict containing cookie items
 # Output:
 #   - stdout: <code> <text>
 
@@ -684,7 +684,7 @@ proc handle-request {uri meth parm cookie} {
 
     set bestfit 0
     foreach r $route($meth) {
-	lassign [check-route $uri $parm $login $r] ok hname tpar
+	lassign [check-route $uri $parm $login $r] ok prefix hname tpar
 	if {$ok == 3} then {
 	    set bestfit 3
 	    break
@@ -714,21 +714,22 @@ proc handle-request {uri meth parm cookie} {
 	    # - meth: http method
 	    # - parm: see scgi::parse-param procedure
 	    # - cookie: dict containing cookie items
+	    # - prefix: prefix part of url
 	    # - tpar: query parameters of handler
 	    #
 
-	    $hname $meth $parm $cookie $tpar
+	    $hname $meth $parm $cookie $prefix $tpar
 	}
     }
 }
 
 
 #
-# Check URI: try to match the regexp, extract named
+# Check URI: try to match the regexp, extract prefix and named
 # groups and check parameter specifications
 # Named groups and parameters are stored in the tpar dict
 #
-# Returns: list { ok hname tpar }
+# Returns: list { ok prefix hname tpar }
 # where ok value is:
 # - 0 if no match
 # - 1 if route match but not authenticated (even if parameters match)
@@ -757,14 +758,22 @@ proc check-route {uri parm login rte} {
     lassign $rte re vars paramspec authneeded hname
 
     set ok 0
+    set prefix ""
     set tpar [dict create]
+
+    # uri contains both the prefix (e.g. /where/you/configured/netmagis)
+    # and the pattern to match. We complete the regexp to get the prefix
+    set re "^(.*)$re$"
 
     set l [regexp -inline $re $uri]
     if {[llength $l] > 0} then {
 
+	# Extract prefix
+	set prefix [lindex $l 1]
+
 	# Extract named groups if any
 	set i 0
-	foreach val [lreplace $l 0 0] {
+	foreach val [lreplace $l 0 1] {
 	    set var [lindex $vars $i]
 	    dict set tpar $var $val
 	    incr i
@@ -791,7 +800,7 @@ proc check-route {uri parm login rte} {
 	}
     }
 
-    return [list $ok $hname $tpar]
+    return [list $ok $prefix $hname $tpar]
 }
 
 try {

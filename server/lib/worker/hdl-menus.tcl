@@ -111,13 +111,11 @@ api-handler get {/menus} yes {
 	}
     }
 
-    puts "curcap = $curcap"
-
     #
     # Get links according to capabilities
     #
 
-    set j [get-links $menu_links $curcap]
+    set j [get-links $_prefix $menu_links $curcap]
     if {$j eq ""} then {
 	set j {[]}
     }
@@ -126,7 +124,7 @@ api-handler get {/menus} yes {
     ::scgi::set-body $j
 }
 
-proc get-links {links curcap} {
+proc get-links {prefix links curcap} {
     set r {}
     foreach l $links {
 	lassign $l type title cap value
@@ -134,15 +132,16 @@ proc get-links {links curcap} {
 	    set mct [mc $title]
 	    switch $type {
 		menu {
-		    set r2 [get-links [lreplace $l 0 2] $curcap]
+		    set r2 [get-links $prefix [lreplace $l 0 2] $curcap]
 		    if {$r2 ne ""} then {
 			lappend r [format {{"title": "%1$s", "items": %2$s}} \
 					$mct $r2]
 		    }
 		}
 		item {
+		    set url "$prefix/$value"
 		    lappend r [format {{"title": "%1$s", "url": "%2$s"}} \
-		    			$mct $value]
+		    			$mct $url]
 		}
 		default {
 		    ::scgi::serror 500 {Internal error}
