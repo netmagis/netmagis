@@ -1,11 +1,11 @@
 ##############################################################################
 
-api-handler get {/dhcpranges} yes {
+api-handler get {/dhcpranges} logged {
 	cidr 1
     } {
 
     set qcidr [pg_quote $cidr]
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
 
     #
     # In order to be viewed, a DHCP range must be:
@@ -63,9 +63,9 @@ api-handler get {/dhcpranges} yes {
 
 ##############################################################################
 
-api-handler post {/dhcpranges} yes {
+api-handler post {/dhcpranges} logged {
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set iddhcprange [dhcp-new -1 $idgrp $_parm]
     set j [dhcp-get $iddhcprange $idgrp]
     ::scgi::set-header Content-Type application/json
@@ -74,18 +74,18 @@ api-handler post {/dhcpranges} yes {
 
 ##############################################################################
 
-api-handler get {/dhcpranges/([0-9]+:iddhcprange)} yes {
+api-handler get {/dhcpranges/([0-9]+:iddhcprange)} logged {
     } {
-    set j [dhcp-get $iddhcprange [::u idgrp]]
+    set j [dhcp-get $iddhcprange [::n idgrp]]
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j
 }
 
 ##############################################################################
 
-api-handler put {/dhcpranges/([0-9]+:iddhcprange)} yes {
+api-handler put {/dhcpranges/([0-9]+:iddhcprange)} logged {
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set j [dhcp-new $iddhcprange $idgrp $_parm]
     set j [dhcp-get $iddhcprange $idgrp]
     ::scgi::set-header Content-Type application/json
@@ -94,9 +94,9 @@ api-handler put {/dhcpranges/([0-9]+:iddhcprange)} yes {
 
 ##############################################################################
 
-api-handler delete {/dhcpranges/([0-9]+:iddhcprange)} yes {
+api-handler delete {/dhcpranges/([0-9]+:iddhcprange)} logged {
     } {
-    if {! [dhcp-is-editable $iddhcprange [::u idgrp]]} then {
+    if {! [dhcp-is-editable $iddhcprange [::n idgrp]]} then {
 	::scgi::serror 404 [mc "DHCP range not found or unauthorized"]
     }
 
@@ -219,7 +219,7 @@ proc dhcp-new {iddhcprange idgrp _parm} {
     # Check iddom
     #
 
-    if {! [::u isalloweddom $iddom]} then {
+    if {! [::n isalloweddom $iddom]} then {
 	::scgi::serror 412 [mc "Invalid domain '%s'" $iddom]
     }
 

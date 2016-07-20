@@ -1,7 +1,7 @@
-api-handler get {/sessions} yes {
+api-handler get {/sessions} logged {
 	active 0
     } {
-    set idcor [::u idcor]
+    set idcor [::n idcor]
     if {$active eq "" || $active eq "1"} then {
 	set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
 			SELECT token, 1 AS active, api, start, ip,
@@ -30,7 +30,7 @@ api-handler get {/sessions} yes {
 
 ##############################################################################
 
-api-handler post {/sessions} no {
+api-handler post {/sessions} any {
     } {
     # get body just to check it's a JSON body
     ::scgi::get-body-json $_parm
@@ -49,7 +49,7 @@ api-handler post {/sessions} no {
 	::scgi::serror 412 [mc "Invalid login"]
     }
 
-    set curlogin [::u login]
+    set curlogin [::n login]
     if {$curlogin ne "" && $curlogin ne $login} then {
 	::scgi::serror 403 [mc "You must close your session first"]
     }
@@ -119,16 +119,16 @@ api-handler post {/sessions} no {
 
 api-handler delete {/sessions} no {
     } {
-    set curlogin [::u login]
+    set curlogin [::n login]
     if {$curlogin ne ""} then {
 	set token [::scgi::dget $_cookie "session"]
-	set idcor [::u idcor]
+	set idcor [::n idcor]
 
 	set message [register-user-logout ::dbdns $idcor $token "" "logout"]
 	if {$message ne ""} then {
 	    ::scgi::serror 500 [mc "Internal server error (%s)" $message]
 	}
-	::log writelog "auth" "logout [::u login] $token" "" [::u login] ""
+	::n writelog "auth" "logout [::n login] $token" "" "" ""
 
 ###	d uid "-"
 ###	d euid {- -1}
@@ -295,7 +295,7 @@ proc register-user-login {dbfd login casticket} {
     # Log successful flogin
     #
 
-    ::log writelog "auth" "login $login $token" "" $login ""
+    ::n writelog "auth" "login $login $token" "" $login ""
 
     #
     # Set session cookie

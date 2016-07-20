@@ -7,7 +7,7 @@ array set fileext {
     png  image/png
 }
 
-api-handler get {/files/([-a-zA-Z0-9][-a-zA-Z0-9.]*:name)} no {
+api-handler get {/files/([-a-zA-Z0-9][-a-zA-Z0-9.]*:name)} any {
     } {
     global fileext
     global conf

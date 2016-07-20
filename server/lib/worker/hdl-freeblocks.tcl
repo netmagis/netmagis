@@ -1,4 +1,4 @@
-api-handler get {/freeblocks} yes {
+api-handler get {/freeblocks} logged {
 	cidr	1
 	size	1
 	sort	0
@@ -11,7 +11,7 @@ api-handler get {/freeblocks} yes {
 	::scgi::serror 412 [mc {Invalid query parameter (%1$s=%2$s)} cidr $cidr]
     }
 
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set qcidr [pg_quote $cidr]
 
     switch -- $sort {

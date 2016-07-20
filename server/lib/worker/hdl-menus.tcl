@@ -1,6 +1,11 @@
 #
 # Tree structure of Netmagis Web menus
 #
+# Description of top-level menus:
+#	left: left part of the top-level bar
+#	srch: search bar
+#	user: user profile dropdown 
+#	lang: lang selection dropdown
 # Each list element is either:
 #	{menu <title> <cap> <menuitem> <menuitem> ...}
 #	{item <title> <cap> <url>}
@@ -8,15 +13,15 @@
 
 array set menus_links {
     left {
-	{menu {DNS} dns
-	    {item {Consult}			dns	net}
-	    {item {Add}				dns	add}
-	    {item {Delete}			dns	del}
-	    {item {Modify}			dns	mod}
-	    {item {Mail roles}			dns	mail}
-	    {item {DHCP ranges}			dns	dhcprange}
+	{menu {DNS} logged
+	    {item {Consult}			logged	net}
+	    {item {Add}				logged	add}
+	    {item {Delete}			logged	del}
+	    {item {Modify}			logged	mod}
+	    {item {Mail roles}			logged	mail}
+	    {item {DHCP ranges}			logged	dhcprange}
 	    {item {Password}			pgauth	pgapasswd}
-	    {item {Where am I?}			dns	search?q=_}
+	    {item {Where am I?}			logged	search?q=_}
 	    }
 	{menu {Topo} topo
 	    {item {Equipments}			topo	eq}
@@ -73,59 +78,29 @@ array set menus_links {
 	    {item {Remove realm}		pgadmin	pgarealm?action=del}
 	    }
     }
-    srch {item {Search} dns search}
-    user {menu {%USER%} dns
-	    {item {Profile}			dns	profile.html}
-	    {item {Sessions}			dns	sessions.html}
+    srch {item {Search} logged search}
+    user {menu {%USER%} logged
+	    {item {Profile}			logged	profile.html}
+	    {item {Sessions}			logged	sessions.html}
 	    {separator {}			admin	}
 	    {item {Sudo}			admin	sudo.html}
 	    {item {Back to my id}		suid	sudo.html}
-	    {separator {}			dns	}
-	    {item {Disconnect}			dns	logout.html}
+	    {separator {}			logged	}
+	    {item {Disconnect}			logged	logout.html}
     }
-    lang {menu {[%LANG%]} dns
-	    {item {[en]}			dns	lang?l=en}
-	    {item {[fr]}			dns	lang?l=fr}
+    lang {menu {[%LANG%]} any
+	    {item {[en]}			any	lang?l=en}
+	    {item {[fr]}			any	lang?l=fr}
     }
 }
 
 ##############################################################################
 
-api-handler get {/menus} yes {
+api-handler get {/menus} any {
     } {
     global menus_links
 
-    #
-    # Get capabilities
-    #
-
-    set curcap {dns}
-
-    if {[::config get "topoactive"]} then {
-	lappend curcap "topo"
-    }
-    if {[::config get "macactive"] && [::u cap p_mac]} then {
-	lappend curcap "mac"
-    }
-    if {[::u cap p_genl]} then {
-	lappend curcap "topogenl"
-    }
-    if {[::u cap p_admin]} then {
-	lappend curcap "admin"
-    }
-    if {[::config get "authmethod"] eq "pgsql"} then {
-	lappend curcap "pgauth"
-	set qlogin [pg_quote [::u login]]
-	set sql "SELECT r.admin
-			FROM pgauth.realm r, pgauth.member m
-			WHERE r.realm = m.realm
-			    AND login = $qlogin"
-	::dbdns exec $sql tab {
-	    if {[::u cap p_admin]} then {
-		lappend curcap "pgadmin"
-	    }
-	}
-    }
+    set curcap [::n capabilities]
 
     #
     # Get links according to capabilities
@@ -136,7 +111,7 @@ api-handler get {/menus} yes {
     set user [get-links $_prefix $menus_links(user) $curcap]
     set lang [get-links $_prefix $menus_links(lang) $curcap]
 
-    regsub {%USER%} $user [::u login] user
+    regsub {%USER%} $user [::n login] user
     regsub {%LANG%} $lang [mclocale] lang
 
     set j [format {{"left":%1$s, "search":%2$s, "user":%3$s, "lang":%4$s}} \

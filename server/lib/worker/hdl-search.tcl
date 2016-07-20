@@ -1,9 +1,9 @@
 ##############################################################################
 
-api-handler get {/search} yes {
+api-handler get {/search} logged {
 	q 1
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
 
     set ipversion [::ip::version $q]
 

@@ -1,9 +1,9 @@
 ##############################################################################
 
-api-handler get {/domains} yes {
+api-handler get {/domains} logged {
 	mailrole 0
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set w [domains-test-mailrole $mailrole]
     if {$w ne ""} then {
 	set w "AND $w"
@@ -28,10 +28,10 @@ api-handler get {/domains} yes {
 
 ##############################################################################
 
-api-handler get {/domains/([0-9]+:iddom)} yes {
+api-handler get {/domains/([0-9]+:iddom)} logged {
 	mailrole 0
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set w [domains-test-mailrole $mailrole]
     if {$w ne ""} then {
 	set w "AND $w"

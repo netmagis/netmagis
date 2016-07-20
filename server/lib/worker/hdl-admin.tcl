@@ -28,12 +28,8 @@ set admin_tables {
 
 ################################################################################
 
-api-handler get {/admin/([a-z._]+:table)} yes {
+api-handler get {/admin/([a-z._]+:table)} admin {
     } {
-    if {! [::u cap "p_admin"]} then {
-	::scgi::serror 403 [mc "Forbidden"]
-    }
-
     global admin_tables
 
     if {! [dict exists $admin_tables $table]} then {
@@ -103,12 +99,8 @@ api-handler get {/admin/([a-z._]+:table)} yes {
 
 ################################################################################
 
-api-handler get {/admin/([a-z._]+:table)/([^/]+:id)} yes {
+api-handler get {/admin/([a-z._]+:table)/([^/]+:id)} admin {
     } {
-    if {! [::u cap "p_admin"]} then {
-	::scgi::serror 403 [mc "Forbidden"]
-    }
-
     global admin_tables
 
     if {! [dict exists $admin_tables $table]} then {
@@ -157,12 +149,8 @@ api-handler get {/admin/([a-z._]+:table)/([^/]+:id)} yes {
 
 ################################################################################
 
-api-handler delete {/admin/([a-z._]+:table)/([^/]+:id)} yes {
+api-handler delete {/admin/([a-z._]+:table)/([^/]+:id)} admin {
     } {
-    if {! [::u cap "p_admin"]} then {
-	::scgi::serror 403 [mc "Forbidden"]
-    }
-
     global admin_tables
 
     if {! [dict exists $admin_tables $table]} then {
@@ -202,12 +190,8 @@ api-handler delete {/admin/([a-z._]+:table)/([^/]+:id)} yes {
 #	{"name":"Big Corp. Inc"}
 #
 
-api-handler post {/admin/([a-z._]+:table)} yes {
+api-handler post {/admin/([a-z._]+:table)} admin {
     } {
-    if {! [::u cap "p_admin"]} then {
-	::scgi::serror 403 [mc "Forbidden"]
-    }
-
     global admin_tables
 
     if {! [dict exists $admin_tables $table]} then {
@@ -261,12 +245,8 @@ api-handler post {/admin/([a-z._]+:table)} yes {
 # No check on individual attribute names, except usual identifier syntax
 #	
 
-api-handler put {/admin/([a-z._]+:table)/([^/]+:id)} yes {
+api-handler put {/admin/([a-z._]+:table)/([^/]+:id)} admin {
     } {
-    if {! [::u cap "p_admin"]} then {
-	::scgi::serror 403 [mc "Forbidden"]
-    }
-
     global admin_tables
 
     if {! [dict exists $admin_tables $table]} then {

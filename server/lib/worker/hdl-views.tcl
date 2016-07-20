@@ -1,6 +1,6 @@
-api-handler get {/views} yes {
+api-handler get {/views} logged {
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
 			SELECT v.idview, v.name, p.selected
 			    FROM dns.view v
@@ -16,9 +16,9 @@ api-handler get {/views} yes {
     ::scgi::set-body $j
 }
 
-api-handler get {/views/([0-9]+:idview)} yes {
+api-handler get {/views/([0-9]+:idview)} logged {
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set sql "SELECT row_to_json (t) AS j
 		    FROM (
 			SELECT v.idview, v.name, p.selected

@@ -17,14 +17,13 @@
   <title>Log in Netmagis</title>
 </head>
 <body>
-
   <nav class="navbar navbar-default">
     <div class="container-fluid">
       <!-- Brand and toggle get grouped for better mobile display -->
       <div class="navbar-header">
 	<button type="button" class="navbar-toggle collapsed"
 	    data-toggle="collapse"
-	    data-target="#netmagis-navbar-collapse-1"
+	    data-target="#nm-navbar-collapse-1"
 	    aria-expanded="false">
 	  <span class="sr-only">Toggle navigation</span>
 	  <span class="icon-bar"></span>
@@ -37,16 +36,26 @@
       </div>
 
       <!-- Collect the nav links, forms, and other content for toggling -->
-      <div class="collapse navbar-collapse" id="netmagis-navbar-collapse-1">
-	<ul class="nav navbar-nav navbar-right">
-	  <li><p class="navbar-text">Not connected</p></li>
-	  <li class="dropdown">
-	    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">[en]</a>
-	    <ul class="dropdown-menu">
-	      <li><a href="#">[en]</a></li>
-	      <li><a href="#">[fr]</a></li>
-	    </ul>
+      <div class="collapse navbar-collapse" id="nm-navbar-collapse-1">
+	<ul class="nav navbar-nav">
+	  <li>
+	    <a href="#">
+	      <span class="glyphicon glyphicon-home" aria-hidden="true"></span>
+	      <span class="sr-only">Home</span>
+	    </a>
 	  </li>
+	  <div id="nm-topleftmenu">
+	    <!-- top left menu will be inserted here (replacing this div) -->
+	  </div>
+	</ul>
+	<div id="nm-topsearchbar">
+	  <!-- search bar will be inserted here (replacing this div) -->
+	</div>
+
+	<ul class="nav navbar-nav navbar-right">
+	  <div id="nm-toprightmenu">
+	    <!-- top right menu will be inserted here (replacing this div) -->
+	  </div>
 	</ul>
       </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
@@ -55,17 +64,13 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-md-6 col-md-offset-3 col-xs-12">
-
 	  <div id="app"></div>
-
       </div>
     </div>
   </div>
 
-
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
-
   <script src="common.js"></script>
   <script src="login-app.js"></script>
 </body>

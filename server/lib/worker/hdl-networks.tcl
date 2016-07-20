@@ -1,6 +1,6 @@
-api-handler get {/networks} yes {
+api-handler get {/networks} logged {
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j
 		    FROM (
 			SELECT n.name,
@@ -28,9 +28,9 @@ api-handler get {/networks} yes {
     ::scgi::set-body $j
 }
 
-api-handler get {/networks/([0-9]+:idnet)} yes {
+api-handler get {/networks/([0-9]+:idnet)} logged {
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set sql "SELECT row_to_json (t) AS res
 		    FROM (
 			SELECT n.name,

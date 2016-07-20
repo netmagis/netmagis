@@ -1,8 +1,8 @@
 ##############################################################################
 
-api-handler get {/dhcpprofiles} yes {
+api-handler get {/dhcpprofiles} logged {
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
 		SELECT d.iddhcpprof, d.name
 		    FROM dns.dhcpprofile d
@@ -20,9 +20,9 @@ api-handler get {/dhcpprofiles} yes {
 
 ##############################################################################
 
-api-handler get {/dhcpprofiles/([0-9]+:iddhcpprof)} yes {
+api-handler get {/dhcpprofiles/([0-9]+:iddhcpprof)} logged {
     } {
-    set idgrp [::u idgrp]
+    set idgrp [::n idgrp]
     set sql "SELECT row_to_json (t.*) AS j FROM (
 		SELECT d.iddhcpprof, d.name
 		    FROM dns.dhcpprofile d

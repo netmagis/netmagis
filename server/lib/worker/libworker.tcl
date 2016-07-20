@@ -28,8 +28,8 @@ proc check-views {views} {
 
 	set bad {}
 	foreach id $views {
-	    if {! [::u isallowedview $id]} then {
-		set name [::u viewname $id]
+	    if {! [::n isallowedview $id]} then {
+		set name [::n viewname $id]
 		if {$name eq ""} then {
 		    set name $id
 		}
@@ -385,7 +385,7 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 	read-rr-by-id $dbfd $idrr trr
     }
 
-    if {$trr(idview) ne "" && ! [::u isallowedview $trr(idview)]} then {
+    if {$trr(idview) ne "" && ! [::n isallowedview $trr(idview)]} then {
 	return 0
     }
 
@@ -582,7 +582,7 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		if {$msg ne ""} then {
 		    return $msg
 		}
-		set viewname [::u viewname $idview]
+		set viewname [::n viewname $idview]
 
 		set iddom -1
 		set msg [check-domain $dbfd $idcor iddom domain $parm]
@@ -650,7 +650,7 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 			    # This name is already a mail address
 			    # (it already has a mailbox host)
 			    set fqdnm "$trrh(name).$trrh(domain)"
-			    return [mc {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn $viewname $fqdnm [::u viewname $idviewmbx]]
+			    return [mc {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn $viewname $fqdnm [::n viewname $idviewmbx]]
 			}
 			CHECK {
 

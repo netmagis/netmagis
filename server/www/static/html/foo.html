@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
 
-  <title>Hello world (this is the title)</title>
+  <title>Foo</title>
 </head>
 <body>
 
@@ -65,10 +65,7 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-md-12">
-
-	<h1 class="page-header">Hello world!</h1>
-
-	<p id="b"> this is the body</p>
+	<div id="app"></div>
       </div>
     </div>
   </div>
@@ -76,93 +73,7 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 
-  <script>
-    function dropdown (iconclass, data) {
-      var i ;
-      var menu = "" ;
-      var icon = "" ;
-
-      if (iconclass != "")
-      {
-	icon = '<span class="' + iconclass + '"></span> ' ;
-      }
-
-      menu = '<li class="dropdown">'
-	      + '<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">'
-	      + icon
-	      + data.title
-	      + '<span class="caret"></span>'
-	      + '</a>'
-	      + '<ul class="dropdown-menu">'
-	      ;
-      for (i = 0 ; i < data.items.length ; i++)
-      {
-	  if (data.items [i].title == '')
-	  {
-	    menu += '<li role="separator" class="divider"></li>'
-	  }
-	  else
-	  {
-	    menu += '<li><a href="'
-		+ data.items [i].url
-		+ '">'
-		+ data.items [i].title
-		+ '</a></li>'
-		;
-	  }
-      }
-      menu += '</ul>'
-      return menu ;
-    }
-
-    function placeMenus (data, status) {
-      var i ;
-      var left = "" ;
-      var srch = "" ;
-      var right = "" ;
-
-      /* left dropdowns */
-      for (i = 0 ; i < data.left.length ; i++)
-      {
-	left += dropdown ('', data.left [i]) ;
-      }
-      $(left).replaceAll ("#nm-topleftmenu") ;
-
-      /* search bar */
-      if (data.search.title != "")
-      {
-	srch = '<form class="navbar-form navbar-left" role="search">'
-	     + '<div class="form-group">'
-	     + '<input type="text" class="form-control" placeholder="'
-	     + data.search.title 
-	     + '" aria-label="Search">'
-	     + '</div>'
-	     + '<button type="submit" class="btn btn-default">'
-	     + '<span class="glyphicon glyphicon-search" aria-label="Submit"></span>'
-	     + '</button>'
-	     + '</form>'
-	     ;
-      }
-      $(srch).replaceAll ("#nm-topsearchbar") ;
-
-      /* user and language */
-      if (data.user.items.length == 0)	/* not connected */
-      {
-	right += '<li><p class="navbar-text">Not connected</p></li>'
-      }
-      else
-      {
-	right += dropdown ('glyphicon glyphicon-user', data.user) ;
-      }
-
-      right += dropdown ('', data.lang) ;
-      $(right).replaceAll ("#nm-toprightmenu") ;
-    }
-    $(document).ready(function () {
-      $.get ("/netmagis/menus", placeMenus) ;
-    }) ;
-  </script>
-
-
+  <script src="common.js"></script>
+  <script src="foo-app.js"></script>
 </body>
 </html>

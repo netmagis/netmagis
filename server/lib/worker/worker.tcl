@@ -21,6 +21,7 @@ package require msgcat
 namespace import ::msgcat::*
 
 package require pgdb
+package require nmenv
 package require lconf
 package require dbconf
 
@@ -47,11 +48,14 @@ proc thread-init {conffile version wdir} {
     ::pgdb::db create ::dbmac
     ::dbmac init "mac" ::lc ""
 
+    ::nmenv::nmenv create ::n
+    ::n setdb ::dbdns
+
+    ##########################################################################
+    # REMOVE ME
     ::dbconf::db-config create ::config
     ::config setdb ::dbdns
-
-    ::nmlog create ::log
-    ::log setdb ::dbdns
+    ### END REMOVE ###########################################################
 
     #
     # Create a global object for configuration parameters
@@ -59,367 +63,6 @@ proc thread-init {conffile version wdir} {
 
     uplevel \#0 source $wdir/libworker.tcl
     load-handlers $wdir
-}
-
-##############################################################################
-# Log management
-##############################################################################
-
-snit::type ::nmlog {
-
-    # database object
-    variable db
-
-    variable subsys "netmagis"
-    variable table "global.log"
-
-    method setdb {dbo} {
-	set db $dbo
-    }
-
-    method writelog {event msg {date {}} {login {}} {ip {}}} {
-	if {$ip eq ""} then {
-	    set ip [::scgi::get-header "REMOTE_ADDR"]
-	}
-
-	if {$login eq ""} then {
-	    set login [::u login]
-	}
-
-	foreach v {event login ip msg} {
-	    if {[set $v] eq ""} then {
-		set $v NULL
-	    } else {
-		set $v [pg_quote [set $v]]
-	    }
-	}
-	if {$date eq ""} then {
-	    set datecol ""
-	    set dateval ""
-	} else {
-	    set datecol "date,"
-	    if {[regexp {^\d+$} $date]} then {
-		set dateval "to_timestamp($date)"
-	    } else {
-		set dateval [pg_quote $date]
-	    }
-	    append dateval ","
-	}
-	set sub [pg_quote $subsys]
-	set sql "INSERT INTO $table
-			($datecol subsys, event, login, ip, msg)
-		    VALUES ($dateval $sub, $event, $login, $ip, $msg)"
-	$db exec $sql
-    }
-}
-
-##############################################################################
-# User characteristics
-##############################################################################
-
-#
-# Netmagis user characteristics class
-#
-# This class stores all informations related to current Netmagis user
-#
-# Methods:
-# - setdb dbfd
-#	set the database handle used to access parameters
-# - setlogin login
-#	set the login name
-#
-# ....
-#
-# - viewname id
-#	returns view name associated to view id (or empty string if error)
-# - viewid name
-#	returns view id associated to view name (or -1 if error)
-# - myviewids
-#	get all authorized view ids
-# - isallowedview id
-#	check if a view is authorized (1 if ok, 0 if not)
-#
-# - domainname id
-#	returns domain name associated to domain id (or empty string if error)
-# - domainid name
-#	returns domain id associated to domain name (or -1 if error)
-# - myiddom
-#	get all authorized domain ids
-# - isalloweddom id
-#	check if a domain is authorized (1 if ok, 0 if not)
-#
-# History
-#   2012/10/31 : pda/jean : design
-#
-
-snit::type ::nmuser {
-    # database object
-    variable db ""
-    # login of user
-    variable login ""
-
-    # ids of user
-    variable ids {
-	idcor -1
-	idgrp -1
-	present 0
-	p_admin 0
-	p_smtp 0
-	p_ttl 0
-	p_mac 0
-	p_genl 0
-    }
-
-
-    # Group management
-    # Group information is loaded
-    variable groupsloaded 0
-    # allgroups(id:<id>)=name
-    # allgroups(name:<name>)=id
-    variable allgroups -array {}
-
-    # View management
-    # view information is loaded
-    variable viewsloaded 0
-    # allviews(id:<id>)=name
-    # allviews(name:<name>)=id
-    variable allviews -array {}
-    # authviews(<id>)=1
-    variable authviews -array {}
-    # myviewids : sorted list of views
-    variable myviewids {}
-
-    # Domain management
-    # domain information is loaded
-    variable domainloaded 0
-    # alldom(id:<id>)=name
-    # alldom(name:<name>)=id
-    variable alldom -array {}
-    # authdom(<id>)=1
-    variable authdom -array {}
-    # myiddoms : sorted list of domains
-    variable myiddom {}
-
-    method setdb {dbo} {
-	set db $dbo
-    }
-
-    method setlogin {newlogin} {
-	if {$login ne $newlogin} then {
-	    set viewsisloaded 0
-	}
-	set login $newlogin
-    }
-
-    method login {} {
-	return $login
-    }
-
-    method cap {cap} {
-	set idcor [dict get $ids idcor]
-	if {$idcor == -1} then {
-	    set qlogin [pg_quote $login]
-	    set sql "SELECT u.idcor, g.*
-			    FROM global.nmuser u
-				NATURAL INNER JOIN global.nmgroup g
-				WHERE login = $qlogin"
-	    set found 0
-	    $db exec $sql tab {
-		set ids [array get tab]
-		set found 1
-	    }
-	    if {! $found} then {
-		error "login '$login' not found"
-	    }
-	}
-	return [dict get $ids $cap]
-    }
-
-    method idcor {} {
-	return [$self cap "idcor"]
-    }
-
-    method idgrp {} {
-	return [$self cap "idgrp"]
-    }
-
-
-    #######################################################################
-    # Group management
-    #######################################################################
-
-    proc load-groups {selfns} {
-	array unset allgroups
-
-	set sql "SELECT * FROM global.nmgroup"
-	$db exec $sql tab {
-	    set idgrp $tab(idgrp)
-	    set name  $tab(name)
-	    set allgroups(id:$idgrp) $name
-	    set allgroups(name:$name) $idgrp
-	}
-	set groupsloaded 1
-    }
-
-    method groupname {id} {
-	if {! $groupsloaded} then {
-	    load-groups $selfns
-	}
-	set r -1
-	if {[info exists allgroups(id:$id)]} then {
-	    set r $allgroups(id:$id)
-	}
-	return $r
-    }
-
-    method groupid {name} {
-	if {! $groupsloaded} then {
-	    load-groups $selfns
-	}
-	set r ""
-	if {[info exists allgroups(name:$name)]} then {
-	    set r $allgroups(name:$name)
-	}
-	return $r
-    }
-
-    #######################################################################
-    # View management
-    #######################################################################
-
-    proc load-views {selfns} {
-	array unset allviews
-	array unset authviews
-	set myviewids {}
-
-	set sql "SELECT * FROM dns.view"
-	$db exec $sql tab {
-	    set idview $tab(idview)
-	    set name   $tab(name)
-	    set allviews(id:$idview) $name
-	    set allviews(name:$name) $idview
-	}
-
-	set qlogin [pg_quote $login]
-	set sql "SELECT p.idview
-			FROM dns.p_view p, dns.view v, global.nmuser u
-			WHERE p.idgrp = u.idgrp
-			    AND p.idview = v.idview
-			    AND u.login = $qlogin
-			ORDER BY p.sort ASC, v.name ASC"
-	$db exec $sql tab {
-	    set idview $tab(idview)
-	    set authviews($idview) 1
-	    lappend myviewids $tab(idview)
-	}
-
-	set viewsloaded 1
-    }
-
-    method viewname {id} {
-	if {! $viewsloaded} then {
-	    load-views $selfns
-	}
-	set r -1
-	if {[info exists allviews(id:$id)]} then {
-	    set r $allviews(id:$id)
-	}
-	return $r
-    }
-
-    method viewid {name} {
-	if {! $viewsloaded} then {
-	    load-views $selfns
-	}
-	set r ""
-	if {[info exists allviews(name:$name)]} then {
-	    set r $allviews(name:$name)
-	}
-	return $r
-    }
-
-    method myviewids {} {
-	if {! $viewsloaded} then {
-	    load-views $selfns
-	}
-	return $myviewids
-    }
-
-    method isallowedview {id} {
-	if {! $viewsloaded} then {
-	    load-views $selfns
-	}
-	return [info exists authviews($id)]
-    }
-
-    #######################################################################
-    # Domain management
-    #######################################################################
-
-    proc load-domains {selfns} {
-	array unset alldom
-	array unset authdom
-	set myiddom {}
-
-	set sql "SELECT * FROM dns.domain"
-	$db exec $sql tab {
-	    set iddom $tab(iddom)
-	    set name   $tab(name)
-	    set alldom(id:$iddom) $name
-	    set alldom(name:$name) $iddom
-	}
-
-	set qlogin [pg_quote $login]
-	set sql "SELECT p.iddom
-			FROM dns.p_dom p, dns.domain d, global.nmuser u
-			WHERE p.idgrp = u.idgrp
-			    AND p.iddom = d.iddom
-			    AND u.login = $qlogin
-			ORDER BY p.sort ASC, d.name ASC"
-	$db exec $sql tab {
-	    set iddom $tab(iddom)
-	    set authdom($iddom) 1
-	    lappend myiddom $tab(iddom)
-	}
-
-	set domainloaded 1
-    }
-
-    method domainname {id} {
-	if {! $domainloaded} then {
-	    load-domains $selfns
-	}
-	set r -1
-	if {[info exists alldom(id:$id)]} then {
-	    set r $alldom(id:$id)
-	}
-	return $r
-    }
-
-    method domainid {name} {
-	if {! $domainloaded} then {
-	    load-domains $selfns
-	}
-	set r ""
-	if {[info exists alldom(name:$name)]} then {
-	    set r $alldom(name:$name)
-	}
-	return $r
-    }
-
-    method myiddom {} {
-	if {! $domainloaded} then {
-	    load-domains $selfns
-	}
-	return $myiddom
-    }
-
-    method isalloweddom {id} {
-	if {! $domainloaded} then {
-	    load-domains $selfns
-	}
-	return [info exists authdom($id)]
-    }
 }
 
 ##############################################################################
@@ -485,7 +128,7 @@ proc check-authtoken {token} {
 
 	foreach e $lexp {
 	    lassign $e l tok la
-	    ::log writelog "auth" "lastaccess $l $tok" $la $l
+	    ::n writelog "auth" "lastaccess $l $tok" $la $l
 	}
     }
 
@@ -548,7 +191,7 @@ proc load-handlers {wdir} {
     }
 }
 
-proc api-handler {method pathspec authneeded paramspec script} {
+proc api-handler {method pathspec neededcap paramspec script} {
     global route
 
     set method [string tolower $method]
@@ -613,7 +256,7 @@ proc api-handler {method pathspec authneeded paramspec script} {
 	$script
     "
 
-    lappend route($method) [list $re $vars $paramspec $authneeded $hname]
+    lappend route($method) [list $re $vars $paramspec $neededcap $hname]
 }
 
 ##############################################################################
@@ -653,10 +296,7 @@ proc handle-request {uri meth parm cookie} {
     set login [check-authtoken $authtoken]
     # login may be empty (<=> not authenticated)
 
-    catch {::u destroy}
-    ::nmuser create ::u
-    ::u setdb ::dbdns
-    ::u setlogin $login
+    ::n login $login
 
     #
     # Locale settings
@@ -682,11 +322,12 @@ proc handle-request {uri meth parm cookie} {
     # Find the appropriate route
     #
 
+    set cap [::n capabilities]
     set bestfit 0
     foreach r $route($meth) {
-	lassign [check-route $uri $parm $login $r] ok prefix hname tpar
-	if {$ok == 3} then {
-	    set bestfit 3
+	lassign [check-route $uri $cap $parm $r] ok prefix hname tpar
+	if {$ok == 4} then {
+	    set bestfit 4
 	    break
 	} else {
 	    if {$ok > $bestfit} then {
@@ -704,9 +345,12 @@ proc handle-request {uri meth parm cookie} {
 	    ::scgi::serror 401 [mc "Not authenticated"]
 	}
 	2 {
-	    ::scgi::serror 400 [mc "Mandatory query parameter '%s' not found" $q]
+	    ::scgi::serror 403 [mc "Forbidden"]
 	}
 	3 {
+	    ::scgi::serror 400 [mc "Mandatory query parameter '%s' not found" $q]
+	}
+	4 {
 	    #
 	    # Run the script as a procedure to avoid namespace
 	    # pollution. The procedure is run with the following
@@ -732,15 +376,16 @@ proc handle-request {uri meth parm cookie} {
 # Returns: list { ok prefix hname tpar }
 # where ok value is:
 # - 0 if no match
-# - 1 if route match but not authenticated (even if parameters match)
-# - 2 if route match without matching parameter (tpar=missing parameter)
-# - 3 if ok (hname=handler proc, tpar=parameters)
+# - 1 if route match but not authenticated
+# - 2 if route match but not enough capabilities (even if parameters match)
+# - 3 if route match without matching parameter (tpar=missing parameter)
+# - 4 if ok (hname=handler proc, tpar=parameters)
 #
 
-proc check-route {uri parm login rte} {
+proc check-route {uri cap parm rte} {
     #
     # Each route is registered as a list
-    #	{ re vars paramspec authneeded script }
+    #	{ re vars paramspec neededcap script }
     # with:
     # - re: regexp including groups "(...)" for variable
     #	matching
@@ -750,12 +395,11 @@ proc check-route {uri parm login rte} {
     #	example : { crit 0 field 1 }
     #	- param: parameter name
     #	- min: minimum number of occurrence (max is always 1)
-    # - authneeded: boolean true if access is restricted
-    #	to authenticated users
+    # - neededcap: a capability such as one returned in nmenv package
     # - hname: name of proc for this handler
     #
 
-    lassign $rte re vars paramspec authneeded hname
+    lassign $rte re vars paramspec neededcap hname
 
     set ok 0
     set prefix ""
@@ -779,17 +423,22 @@ proc check-route {uri parm login rte} {
 	    incr i
 	}
 
-	# Check authentication
-	if {$authneeded && $login eq ""} then {
+	# Check capabilities
+	if {! ($neededcap in $cap)} then {
+	    # by default: anonymous => 401 not auth
 	    set ok 1
+	    if {"logged" in $cap} then {
+		# not anonymous => 403 forbidden
+		set ok 2
+	    }
 	}
 
 	# Check parameters
 	if {$ok == 0} then {
-	    set ok 3
+	    set ok 4
 	    foreach {var min} $paramspec {
 		if {! [dict exists $parm $var] && $min > 0} then {
-		    set ok 2
+		    set ok 3
 		    set tpar $var
 		    break
 		} else {

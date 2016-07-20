@@ -6,6 +6,7 @@ module.exports = {
 	'dhcp-app': './src/dhcp-app.jsx',
 	'login-app': './src/login-app.jsx',
 	'test-app': './src/test-app.jsx',
+	'foo-app': './src/foo-app.jsx',
 	'common' : [ 'react' , 'react-dom' ]
     },
     output: {

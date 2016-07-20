@@ -1,6 +1,6 @@
 ##############################################################################
 
-api-handler get {/hinfos} yes {
+api-handler get {/hinfos} logged {
 	present 0
     } {
 
@@ -25,7 +25,7 @@ api-handler get {/hinfos} yes {
 
 ##############################################################################
 
-api-handler get {/hinfos/([0-9]+:idhinfo)} yes {
+api-handler get {/hinfos/([0-9]+:idhinfo)} logged {
 	present 0
     } {
     set w [hinfo-test-present $present]
