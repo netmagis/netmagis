@@ -84,7 +84,7 @@ array set menus_links {
 	    {item {Sessions}			logged	sessions.html}
 	    {separator {}			admin	}
 	    {item {Sudo}			admin	sudo.html}
-	    {item {Back to my id}		suid	sudo.html}
+	    {item {Back to my id}		setuid	sudo.html}
 	    {separator {}			logged	}
 	    {item {Disconnect}			logged	logout.html}
     }
@@ -111,7 +111,7 @@ api-handler get {/menus} any {
     set user [get-links $_prefix $menus_links(user) $curcap]
     set lang [get-links $_prefix $menus_links(lang) $curcap]
 
-    regsub {%USER%} $user [::n login] user
+    regsub {%USER%} $user [::n setuid] user
     regsub {%LANG%} $lang [mclocale] lang
 
     set j [format {{"left":%1$s, "search":%2$s, "user":%3$s, "lang":%4$s}} \

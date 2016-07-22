@@ -299,6 +299,14 @@ proc handle-request {uri meth parm cookie} {
     ::n login $login
 
     #
+    # Check if user is acting as another (through the "uid" cookie)
+    #
+
+    if {[dict exists $cookie "uid"]} then {
+	::n setuid [dict get $cookie "uid"]
+    }
+
+    #
     # Locale settings
     # 1- use "l" query parameter if present
     # 2- else, use the "lang" cookie value

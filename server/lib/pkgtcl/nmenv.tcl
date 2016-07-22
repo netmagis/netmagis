@@ -59,17 +59,19 @@ namespace eval ::nmenv {
     # keep track of lazy-loaded informations
     variable loaded -array {
 	login	0
-	ids	0
 	cap	0
 	views	0
 	domains	0
     }
 
-    # login of user
-    variable login ":none"
+    # real login of user (the one which is authenticated)
+    variable rlogin ""
+
+    # effective login of user (the one we substitued for)
+    variable elogin ""
 
     # ids of user
-    variable ids -array {
+    variable idanon -array {
 	idcor -1
 	idgrp -1
 	present 0
@@ -79,6 +81,8 @@ namespace eval ::nmenv {
 	p_mac 0
 	p_genl 0
     }
+
+    variable ids -array [array get idanon]
 
     variable cap {}
 
@@ -105,60 +109,80 @@ namespace eval ::nmenv {
     # myiddoms : sorted list of domains
     variable myiddom {}
 
+    proc load-ids {selfns login} {
+	#
+	# Get idcor and group info
+	#
+
+	array set ids [array get idanon]
+	if {$login ne ""} then {
+	    set qlogin [pg_quote $login]
+	    set sql "SELECT u.idcor, u.present, g.*
+			    FROM global.nmuser u
+				NATURAL INNER JOIN global.nmgroup g
+				WHERE login = $qlogin"
+	    set found 0
+	    $db exec $sql tab {
+		array set ids [array get tab]
+		set found 1
+	    }
+	    if {! $found} then {
+		error "login '$login' not found"
+	    }
+	}
+    }
+
     # $self login => return the current login
     # $self login "" => set the new login to "anonymous"
     # $self login joe => the the new login to "joe"
 
     method login {{newlogin {:get}}} {
 	if {$newlogin ne ":get"} then {
-	    if {$newlogin ne $login} then {
+	    #
+	    # Reset lazy-load infos
+	    #
 
+	    foreach i [array names loaded] {
+		set loaded($i) 0
+	    }
+	    set rlogin $newlogin
+	    set elogin $newlogin
+	    load-ids $selfns $rlogin
+	    set loaded(login) 1
+	}
+	return $rlogin
+    }
+
+    method setuid {{newlogin {:get}}} {
+	if {! $loaded(login)} then {
+	    error "setuid called before login"
+	}
+
+	if {$newlogin ne ":get"} then {
+	    # silently fails if real (or existing effective) user is not admin
+	    if {$ids(p_admin) != 0} then {
 		#
 		# Reset lazy-load infos
 		#
 
 		foreach i [array names loaded] {
-		    set loaded($i) 0
+		    if {$i ne "login"} then {
+			set loaded($i) 0
+		    }
 		}
-		set login $newlogin
+		set elogin $newlogin
+		load-ids $selfns $elogin
 		set loaded(login) 1
-
-		#
-		# Get idcor and group info
-		#
-
-		if {$login ne ""} then {
-		    set qlogin [pg_quote $login]
-		    set sql "SELECT u.idcor, u.present, g.*
-				    FROM global.nmuser u
-					NATURAL INNER JOIN global.nmgroup g
-					WHERE login = $qlogin"
-		    set found 0
-		    $db exec $sql tab {
-			array set ids [array get tab]
-			set found 1
-		    }
-		    if {! $found} then {
-			error "login '$login' not found"
-		    }
-		}
-		set loaded(ids) 1
 	    }
 	}
-	return $login
+	return $elogin
     }
 
     method idcor {} {
-	if {! $loaded(ids)} then {
-	    load-ids $selfns
-	}
 	return $ids(idcor)
     }
 
     method idgrp {} {
-	if {! $loaded(ids)} then {
-	    load-ids $selfns
-	}
 	return $ids(idgrp)
     }
 
@@ -173,7 +197,7 @@ namespace eval ::nmenv {
     #	- topogenl: right to generate topo links
     #	- pgauth: internal auth active
     #	- pgadmin: admin, internal auth admin and internal auth activated
-    #	- suid: ????
+    #	- setuid: currently acting as another user
 
     method capabilities {} {
 	if {! $loaded(cap)} then {
@@ -181,7 +205,7 @@ namespace eval ::nmenv {
 		error "login not initialized"
 	    }
 	    set cap {any}
-	    if {$login ne ""} then {
+	    if {$elogin ne ""} then {
 		#
 		# Get global config values
 		#
@@ -216,7 +240,7 @@ namespace eval ::nmenv {
 		}
 		if {$cfg(authmethod) eq "pgsql"} then {
 		    lappend cap "pgauth"
-		    set qlogin [pg_quote $login]
+		    set qlogin [pg_quote $elogin]
 		    set sql "SELECT r.admin
 				    FROM pgauth.realm r, pgauth.member m
 				    WHERE r.realm = m.realm
@@ -226,6 +250,9 @@ namespace eval ::nmenv {
 			    lappend cap "pgadmin"
 			}
 		    }
+		}
+		if {$elogin ne $rlogin} then {
+		    lappend cap "setuid"
 		}
 	    }
 	}
@@ -288,12 +315,11 @@ namespace eval ::nmenv {
 	    set allviews(name:$name) $idview
 	}
 
-	set qlogin [pg_quote $login]
 	set sql "SELECT p.idview
-			FROM dns.p_view p, dns.view v, global.nmuser u
+			FROM dns.p_view p, dns.view v
 			WHERE p.idgrp = u.idgrp
 			    AND p.idview = v.idview
-			    AND u.login = $qlogin
+			    AND p.idgrp = $ids(idgrp)
 			ORDER BY p.sort ASC, v.name ASC"
 	$db exec $sql tab {
 	    set idview $tab(idview)
@@ -357,12 +383,11 @@ namespace eval ::nmenv {
 	    set alldom(name:$name) $iddom
 	}
 
-	set qlogin [pg_quote $login]
 	set sql "SELECT p.iddom
-			FROM dns.p_dom p, dns.domain d, global.nmuser u
+			FROM dns.p_dom p, dns.domain d
 			WHERE p.idgrp = u.idgrp
 			    AND p.iddom = d.iddom
-			    AND u.login = $qlogin
+			    AND p.idgrp = $ids(idgrp)
 			ORDER BY p.sort ASC, d.name ASC"
 	$db exec $sql tab {
 	    set iddom $tab(iddom)
@@ -422,7 +447,7 @@ namespace eval ::nmenv {
 	}
 
 	if {$wlogin eq ""} then {
-	    set wlogin $login
+	    set wlogin $rlogin
 	}
 
 	foreach v {event wlogin ip msg} {
