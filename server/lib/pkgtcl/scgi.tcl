@@ -424,17 +424,17 @@ namespace eval ::scgi:: {
 
 		set l {}
 
-		lappend l "$name=$val"
+		lappend l "$name=\"$val\""
 		if {$expire > 0} then {
 		    # Wdy, DD Mon YYYY HH:MM:SS GMT
 		    set max [clock format $expire -gmt yes -format "%a, %d %b %Y %T GMT"]
-		    lappend "Expires=$max"
+		    lappend "Expires=\"$max"\"
 		}
 		if {$path ne ""} then {
-		    lappend "Path=$path"
+		    lappend "Path=\"$path\""
 		}
 		if {$domain ne ""} then {
-		    lappend "Domain=$domain"
+		    lappend "Domain=\"$domain\""
 		}
 		if {$secure} then {
 		    lappend "Secure"
@@ -662,6 +662,7 @@ namespace eval ::scgi:: {
 		set ck [get-header HTTP_COOKIE]
 		foreach kv [split $ck ";"] {
 		    if {[regexp {^\s*([^=]+)=(.*)} $kv foo k v]} then {
+			regsub {"(.*)"} $v {\1} v
 			dict set cookie $k $v
 		    }
 		}
