@@ -301,17 +301,20 @@ proc handle-request {uri meth parm cookie} {
     #
     # Locale settings
     # 1- use "l" query parameter if present
-    # 2- else, use the "Accept-Language" header values
-    # 3- else, use the default ("en")
+    # 2- else, use the "lang" cookie value
+    # 3- else, use the "Accept-Language" header values
+    # 4- else, use the default ("en")
     #
 
     if {[dict exists $parm "l"]} then {
 	set l [string trim [lindex [dict get $parm "l"] 0]]
+    } elseif {[dict exists $cookie "lang"]} then {
+	set l [string trim [dict get $cookie "lang"]]
     } else {
-	set l [::scgi::get-locale {en fr}]
+	set l [::scgi::get-locale $conf(lang)]
     }
 
-    if {$l ne ""} then {
+    if {! ($l in $conf(lang))} then {
 	set l "en"
     }
 
