@@ -130,6 +130,10 @@ api-handler delete {/sessions} no {
 	}
 	::n writelog "auth" "logout [::n login] $token" "" "" ""
 
+	::scgi::del-cookie "session"
+	::scgi::del-cookie "uid"
+	::scgi::del-cookie "lang"
+
 ###	d uid "-"
 ###	d euid {- -1}
 ###	d module "anon"
@@ -302,6 +306,7 @@ proc register-user-login {dbfd login casticket} {
     #
 
     ::scgi::set-cookie "session" $token 0 "" "" 0 0
+    ::scgi::del-cookie "uid"
 
     return ""
 }
