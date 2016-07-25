@@ -97,7 +97,7 @@ export function placeMenus (data, status) {
     $(left).replaceAll ("#nm-topleftmenu") ;
 
     /* search bar */
-    if (data.search.title != "") {
+    if (data.search != null) {
 	srch = '<form class="navbar-form navbar-left" role="search">'
 	     + '<div class="form-group">'
 	     + '<input type="text" class="form-control" placeholder="'
@@ -113,7 +113,7 @@ export function placeMenus (data, status) {
     $(srch).replaceAll ("#nm-topsearchbar") ;
 
     /* user and language */
-    if (data.user.items.length == 0) {	/* not connected */
+    if (data.user == null) {	/* not connected */
 	right += '<li><p class="navbar-text">Not connected</p></li>'
     } else {
 	right += dropdown ('glyphicon glyphicon-user', data.user) ;

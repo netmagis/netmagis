@@ -686,7 +686,7 @@ namespace eval ::scgi:: {
 			dict set cookie $k $v
 		    }
 		}
-		return $cookie
+		set state(reqcook) $cookie
 	    }
 
 	    #

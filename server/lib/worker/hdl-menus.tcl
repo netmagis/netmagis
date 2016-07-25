@@ -122,9 +122,9 @@ api-handler get {/menus} any {
 }
 
 proc get-links {prefix links curcap} {
-    set r {}
     if {[lindex $links 0] in {menu item separator}} then {
 	lassign $links type title cap value
+	set r "null"
 	if {$cap in $curcap} then {
 	    set mct [mc $title]
 	    switch $type {
@@ -149,9 +149,10 @@ proc get-links {prefix links curcap} {
 	    }
 	}
     } else {
+	set r {}
 	foreach l $links {
 	    set r2 [get-links $prefix $l $curcap]
-	    if {$r2 ne {} && $r2 ne {[]}} then {
+	    if {$r2 ne "null" && $r2 ne {[]}} then {
 		lappend r $r2
 	    }
 	}
