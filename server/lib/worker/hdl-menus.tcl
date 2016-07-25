@@ -8,7 +8,7 @@
 #	lang: lang selection dropdown
 # Each list element is either:
 #	{menu <title> <cap> <menuitem> <menuitem> ...}
-#	{item <title> <cap> <url>}
+#	{item <title> <cap> <url> <js>}
 #
 
 array set menus_links {
@@ -89,8 +89,8 @@ array set menus_links {
 	    {item {Disconnect}			logged	logout.html}
     }
     lang {menu {[%LANG%]} any
-	    {item {[en]}			any	lang?l=en}
-	    {item {[fr]}			any	lang?l=fr}
+	    {item {[en]}			any	{} {setLang ('en')}}
+	    {item {[fr]}			any	{} {setLang ('fr')}}
     }
 }
 
@@ -123,7 +123,7 @@ api-handler get {/menus} any {
 
 proc get-links {prefix links curcap} {
     if {[lindex $links 0] in {menu item separator}} then {
-	lassign $links type title cap value
+	lassign $links type title cap value js
 	set r "null"
 	if {$cap in $curcap} then {
 	    set mct [mc $title]
@@ -132,16 +132,20 @@ proc get-links {prefix links curcap} {
 		    set r [get-links $prefix [lreplace $links 0 2] $curcap]
 		    if {$r ne {[]}} then {
 			set r [format {{"title": "%1$s", "items": %2$s}} \
-					$mct $r]
+				$mct $r]
 		    }
 		}
 		item {
-		    set url "$prefix/$value"
-		    set r [format {{"title": "%1$s", "url": "%2$s"}} \
-					$mct $url]
+		    if {$value eq ""} then {
+			set url "#"
+		    } else {
+			set url "$prefix/$value"
+		    }
+		    set r [format {{"title": "%1$s", "url": "%2$s", "js": "%3$s"}} \
+				$mct $url $js]
 		}
 		separator {
-		    set r [format {{"title": "", "url": ""}}]
+		    set r [format {{"title": "", "url": "", "js": ""}}]
 		}
 		default {
 		    ::scgi::serror 500 {Internal error}

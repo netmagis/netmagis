@@ -48,6 +48,16 @@ export function add_to_IPv4 (ip,n) {
 }
 
 /******************************************************************************
+ * Language modification
+ * (call is performed through the js returned by /menus API)
+ */
+
+export function setLang (l) {
+    document.cookie = 'lang' + l + ';Path=' + APIURL ;
+    duocument.location.reload (true) ;
+}
+
+/******************************************************************************
  * Installation of top-level menus
  */
 
@@ -55,6 +65,7 @@ export function dropdown (iconclass, data) {
     var i ;
     var menu = "" ;
     var icon = "" ;
+    var js ;
 
     if (iconclass != "") {
 	icon = '<span class="' + iconclass + '"></span> ' ;
@@ -72,9 +83,16 @@ export function dropdown (iconclass, data) {
 	if (data.items [i].title == '') {
 	  menu += '<li role="separator" class="divider"></li>'
 	} else {
+	  if (data.items [i].js != '') {
+	    js = ' onclick="' + data.items [i].js + '"' ;
+	  } else {
+	    js = '' ;
+	  }
 	  menu += '<li><a href="'
 	      + data.items [i].url
-	      + '">'
+	      + '"'
+	      + js
+	      + '>'
 	      + data.items [i].title
 	      + '</a></li>'
 	      ;
