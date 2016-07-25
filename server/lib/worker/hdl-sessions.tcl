@@ -121,7 +121,7 @@ api-handler delete {/sessions} no {
     } {
     set curlogin [::n login]
     if {$curlogin ne ""} then {
-	set token [::scgi::dget $_cookie "session"]
+	set token [::scgi::get-cookie "session"]
 	set idcor [::n idcor]
 
 	set message [register-user-logout ::dbdns $idcor $token "" "logout"]

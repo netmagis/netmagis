@@ -152,6 +152,7 @@ namespace eval ::scgi:: {
 	    namespace export accept \
 			    get-header get-body-json \
 			    set-header set-body set-json \
+			    get-cookie \
 			    set-cookie del-cookie \
 			    serror \
 			    output
@@ -177,7 +178,8 @@ namespace eval ::scgi:: {
 	    # - rephdrs: reply headers
 	    # - repbody: reply body
 	    # - repbin: true if body is a binary format
-	    # - cooktab: dict of cookies
+	    # - reqcook: dict of received cookies
+	    # - repcook: dict of cookies to be sent
 	    # - done: boolean if output already done
 	    #
 
@@ -189,7 +191,8 @@ namespace eval ::scgi:: {
 		rephdrs {}
 		repbody {}
 		repbin {}
-		cooktab {}
+		reqcook {}
+		repcook {}
 		done {}
 	    }
 
@@ -229,13 +232,13 @@ namespace eval ::scgi:: {
 		    # array set x $state(reqhdrs) ; parray x ; puts stdout ""
 
 		    set parm [parse-param $state(reqhdrs) $body]
-		    set cookie [parse-cookie]
+		    parse-cookies
 		    set uri [get-header SCRIPT_NAME "/"]
 		    # normalize URI (apache does not dot it)
 		    regsub -all {/+} $uri {/} uri
 		    set meth [string tolower [get-header REQUEST_METHOD "get"]]
 
-		    $handlefn $uri $meth $parm $cookie
+		    $handlefn $uri $meth $parm
 
 		} on error msg {
 
@@ -407,6 +410,17 @@ namespace eval ::scgi:: {
 		}
 	    }
 
+	    # Warning: get-cookie gets a cookie value as sent by the
+	    # client, do not confuse with {set,del}-cookie which set
+	    # the cookie to be *returned* to the the client
+
+	    proc get-cookie {name} {
+		variable state
+
+		return [dget $state(reqcook) $name]
+	    }
+
+	    # Set-cookie on reply
 	    # Input:
 	    #   - name: cookie name (printable ascii chars, excluding [,; =])
 	    #   - val: cookie value (printable ascii chars, excluding [,; ])
@@ -444,7 +458,7 @@ namespace eval ::scgi:: {
 		    lappend "HttpOnly"
 		}
 
-		dict set state(cooktab) $name [join $l "; "]
+		dict set state(repcook) $name [join $l "; "]
 	    }
 
 	    proc del-cookie {name} {
@@ -528,7 +542,7 @@ namespace eval ::scgi:: {
 		set-header Content-Length $clen
 
 		# output registered cookies
-		dict for {name val} $state(cooktab) {
+		dict for {name val} $state(repcook) {
 		    set-header Set-Cookie $val false
 		}
 
@@ -662,7 +676,9 @@ namespace eval ::scgi:: {
 	    # Returns a dictionary
 	    #
 
-	    proc parse-cookie {} {
+	    proc parse-cookies {} {
+		variable state
+
 		set cookie [dict create]
 		set ck [get-header HTTP_COOKIE]
 		foreach kv [split $ck ";"] {

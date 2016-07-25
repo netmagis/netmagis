@@ -153,7 +153,8 @@ proc check-authtoken {token} {
 
     if {$found} then {
 	# re-inject cookie (for login/call-cgi)
-	::scgi::set-cookie "session" $token 0 "" "" 0 0
+	# XXX
+	###############::scgi::set-cookie "session" $token 0 "" "" 0 0
     }
 
     return $login
@@ -242,7 +243,6 @@ proc api-handler {method pathspec neededcap paramspec script} {
     # the following parameters
     # - _meth: get/post/delete/put
     # - _parm: all parameters
-    # - _cookie: a dict with cookie items (e.g. "dict get $cookie session")
     # - all parameters given in the handler header
     #
 
@@ -250,7 +250,7 @@ proc api-handler {method pathspec neededcap paramspec script} {
     incr curhdl(count)
 
     set hname "_$curhdl(name)-$curhdl(count)"
-    proc $hname {_meth _parm _cookie _prefix _paramdict} "
+    proc $hname {_meth _parm _prefix _paramdict} "
 	::scgi::import-param \$_paramdict
 	unset _paramdict
 	$script
@@ -268,11 +268,10 @@ proc api-handler {method pathspec neededcap paramspec script} {
 #   - uri: CGI pseudo-header "SCRIPT_NAME"
 #   - meth: GET, POST, etc.
 #   - parm: see scgi::parse-param procedure
-#   - cookie: dict containing cookie items
 # Output:
 #   - stdout: <code> <text>
 
-proc handle-request {uri meth parm cookie} {
+proc handle-request {uri meth parm} {
     global conf
     global route
 
@@ -292,7 +291,7 @@ proc handle-request {uri meth parm cookie} {
     # point.
     #
 
-    set authtoken [::scgi::dget $cookie "session"]
+    set authtoken [::scgi::get-cookie "session"]
     set login [check-authtoken $authtoken]
     # login may be empty (<=> not authenticated)
 
@@ -302,8 +301,9 @@ proc handle-request {uri meth parm cookie} {
     # Check if user is acting as another (through the "uid" cookie)
     #
 
-    if {[dict exists $cookie "uid"]} then {
-	::n setuid [dict get $cookie "uid"]
+    set suid [::scgi::get-cookie "uid"]
+    if {$suid ne ""} then {
+	::n setuid $suid
     }
 
     #
@@ -314,12 +314,12 @@ proc handle-request {uri meth parm cookie} {
     # 4- else, use the default ("en")
     #
 
-    if {[dict exists $parm "l"]} then {
-	set l [string trim [lindex [dict get $parm "l"] 0]]
-    } elseif {[dict exists $cookie "lang"]} then {
-	set l [string trim [dict get $cookie "lang"]]
-    } else {
-	set l [::scgi::get-locale $conf(lang)]
+    set l [::scgi::dget $parm "l"]
+    if {$l eq ""} then {
+	set l [::scgi::get-cookie "lang"]
+	if {$l eq ""} then {
+	    set l [::scgi::get-locale $conf(lang)]
+	}
     }
 
     if {! ($l in $conf(lang))} then {
@@ -373,7 +373,7 @@ proc handle-request {uri meth parm cookie} {
 	    # - tpar: query parameters of handler
 	    #
 
-	    $hname $meth $parm $cookie $prefix $tpar
+	    $hname $meth $parm $prefix $tpar
 	}
     }
 }
