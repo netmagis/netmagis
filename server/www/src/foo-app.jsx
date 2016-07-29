@@ -1,5 +1,6 @@
 import React from 'react' ;
 import ReactDOM from 'react-dom' ;
+import cookie from 'react-cookie' ;
 import {Translator, updateTranslations} from './lang.jsx' ;
 import * as F from './bootstrap-lib/form-utils.jsx' ;
 import * as C from './common.js' ;
@@ -7,6 +8,16 @@ import * as C from './common.js' ;
 /*
  * Top-level menu
  * Holds state: result of the /menus API
+ *
+ * TopMenu
+ *  `--- MenuDropDown []
+ *  `--- SearchBar
+ *  `--- UserMenu
+ *  |     `--- MenuDropDown
+ *  |           `--- MenuDisconnect		XXX SPECIAL CASE TO REMOVE
+ *  `--- LangMenu
+ *        `--- MenuDropDown
+ *  |           `--- MenuLang			XXX SPECIAL CASE TO REMOVE
  */
 
 var TopMenu = React.createClass ({
@@ -100,6 +111,10 @@ var MenuDropdown = React.createClass ({
 					className="divider" />) ;
 		} else if (item.title == "Disconnect") {
 		    menuitems.push (<MenuDisconnect />) ;
+		} else if (item.title == "[en]") {
+		    menuitems.push (<MenuLang lang="en" />) ;
+		} else if (item.title == "[fr]") {
+		    menuitems.push (<MenuLang lang="fr" />) ;
 		} else {
 
 		    if (item.js == "") {
@@ -137,7 +152,7 @@ var MenuDropdown = React.createClass ({
 
 var MenuDisconnect = React.createClass ({
     handleClick: function () {
-	document.cookie = 'session=;Path=' + C.APIURL + '/;Expires=Thu, 01 Jan 1970 00:00:01 GMT;'  ;
+	cookie.remove ('session', { path: C.APIURL}) ;
 	document.location.reload (true) ;
     },
     render: function () {
@@ -146,6 +161,27 @@ var MenuDisconnect = React.createClass ({
 		  <a href="#">
 		    <p onClick={this.handleClick}>
 		      Disconnect
+		    </p>
+		  </a>
+		</li>
+		) ;
+    }
+}) ;
+
+
+var MenuLang = React.createClass ({
+    handleClick: function (l) {
+	console.debug ('handleclick (' + l + ')') ;
+	cookie.save ('lang', l, { path: C.APIURL }) ;
+	document.location.reload (true) ;
+    },
+
+    render: function () {
+	return (
+		<li>
+		  <a href="#">
+		    <p onClick={this.handleClick.bind (this, this.props.lang)}>
+		      [{this.props.lang}]
 		    </p>
 		  </a>
 		</li>

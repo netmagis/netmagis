@@ -26,7 +26,8 @@
   "dependencies": {
     "react": "^15.1.0",
     "react-autosuggest": "^3.7.3",
-    "react-dom": "^15.1.0"
+    "react-dom": "^15.1.0",
+    "react-cookie": "^0.4.3"
   },
   "devDependencies": {
     "babel-cli": "^6.9.0",
