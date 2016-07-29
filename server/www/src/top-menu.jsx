@@ -1,9 +1,8 @@
 import React from 'react' ;
 import ReactDOM from 'react-dom' ;
 import cookie from 'react-cookie' ;
-import {Translator, updateTranslations} from './lang.jsx' ;
-import * as F from './bootstrap-lib/form-utils.jsx' ;
 import * as C from './common.js' ;
+import {Translator, translate, updateTranslations} from './lang.jsx' ;
 
 /*
  * Top-level menu
@@ -20,7 +19,7 @@ import * as C from './common.js' ;
  *  |           `--- MenuLang			XXX SPECIAL CASE TO REMOVE
  */
 
-var TopMenu = React.createClass ({
+export var TopMenu = React.createClass ({
     getInitialState: function () {
 	return {
 	    left: [],
@@ -58,28 +57,68 @@ var TopMenu = React.createClass ({
 	) ;
 
 	return (
-	    <div
-		className="collapse navbar-collapse"
-		id="nm-navbar-collapse-1">
-	      <ul className="nav navbar-nav">
-		<li>
-		  <a href="#">
-		    <span className="glyphicon glyphicon-home"
-			aria-hidden="true"
-			/>
+	  <Translator>
+
+	    <nav className="navbar navbar-default">
+	      <div className="container-fluid">
+		<div className="navbar-header">
+		  <button type="button"
+		      className="navbar-toggle collapsed"
+		      data-toggle="collapse"
+		      data-target="#nm-navbar-collapse-1"
+		      aria-expanded="false">
 		    <span className="sr-only">
-			Home
+		      Toggle navigation
 		    </span>
+		    <span className="icon-bar" />
+		    <span className="icon-bar" />
+		    <span className="icon-bar" />
+		  </button>
+		  <a className="logo" rel="home" href="http://www.netmagis.org">
+		    <img alt="Netmagis" src="logo-transp.png" height="50px" />
 		  </a>
-		</li>
-		{left}
-	      </ul>
-	      <SearchBar item={this.state.search} />
-	      <ul className="nav navbar-nav navbar-right">
-		<UserMenu item={this.state.user} />
-		<LangMenu item={this.state.lang} />
-	      </ul>
+		</div>
+
+		<div className="collapse navbar-collapse"
+		    id="nm-navbar-collapse-1"
+		    >
+		  <ul className="nav navbar-nav">
+		    <li>
+		      <a href="#">
+			<span className="glyphicon glyphicon-home"
+			    aria-hidden="true"
+			    />
+			<span className="sr-only">
+			    Home
+			</span>
+		      </a>
+		    </li>
+
+		    {left}
+
+		  </ul>
+
+		  <SearchBar item={this.state.search} />
+
+		  <ul className="nav navbar-nav navbar-right">
+
+		    <UserMenu item={this.state.user} />
+		    <LangMenu item={this.state.lang} />
+
+		  </ul>
+		</div>
+	      </div>
+	    </nav>
+
+	    <div className="container-fluid">
+	      <div className="row">
+		<div className="col-md-12">
+		  {this.props.children}
+		</div>
+	      </div>
 	    </div>
+
+	  </Translator>
 	) ;
     }
 }) ;
@@ -171,7 +210,6 @@ var MenuDisconnect = React.createClass ({
 
 var MenuLang = React.createClass ({
     handleClick: function (l) {
-	console.debug ('handleclick (' + l + ')') ;
 	cookie.save ('lang', l, { path: C.APIURL }) ;
 	document.location.reload (true) ;
     },
@@ -274,62 +312,3 @@ var LangMenu = React.createClass ({
 		) ;
     }
 }) ;
-
-
-/*
- * Search Results
- */
-
-var SearchResultItem = React.createClass ({
-    render: function () {
-	return (
-	    <li>
-		<a href="{this.props.link}">
-		    {this.props.type}
-		</a>
-	    </li>
-	) ;
-    }
-}) ;
-
-var SearchResults = React.createClass ({
-    render: function () {
-	var rows = [] ;
-	var r ;
-	this.props.items.forEach (function (item) {
-	    rows.push (<SearchResultItem
-			    link={item.link}
-			    type={item.type}
-			    />
-			) ;
-	}) ;
-	return (<ul>{rows}</ul>) ;
-    }
-}) ;
-
-var dom_menus = document.getElementById ('topmenus') ;
-ReactDOM.render (<Translator><TopMenu /></Translator>, dom_menus) ;
-
-
-var App = React.createClass ({
-    /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
-
-    getInitialState: function () {
-	return {message : "", color: ""}; 
-    },
-
-    render: function () {
-	return (
-	    <div>
-		<p>Hi, I'm just an example!</p>
-	    </div>
-	) ;
-    }
-
-}) ;
-
-/* Render the app on the element with id #app */
-var dom_node = document.getElementById ('app') ;
-
-ReactDOM.render (<Translator><App /></Translator>, dom_node) ;
