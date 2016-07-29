@@ -4,6 +4,10 @@ api-handler get {/dhcpranges} logged {
 	cidr 1
     } {
 
+    if {! [::ip::is "ipv4" $cidr]} then {
+	::scgi::serror 412 [mc {Invalid query parameter (%1$s=%2$s)} cidr $cidr]
+    }
+
     set qcidr [pg_quote $cidr]
     set idgrp [::n idgrp]
 
