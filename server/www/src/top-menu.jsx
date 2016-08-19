@@ -9,13 +9,13 @@ import {Translator, translate, updateTranslations} from './lang.jsx' ;
  * Holds state: result of the /menus API
  *
  * TopMenu
- *  `--- MenuDropDown []
+ *  `--- MenuDropdown []
  *  `--- SearchBar
  *  `--- UserMenu
- *  |     `--- MenuDropDown
+ *  |     `--- MenuDropdown
  *  |           `--- MenuDisconnect		XXX SPECIAL CASE TO REMOVE
  *  `--- LangMenu
- *        `--- MenuDropDown
+ *        `--- MenuDropdown
  *  |           `--- MenuLang			XXX SPECIAL CASE TO REMOVE
  */
 
@@ -47,11 +47,13 @@ export var TopMenu = React.createClass ({
 
     render: function () {
 	var left = [] ;
-	this.state.left.forEach (function (menu) {
+	this.state.left.forEach (function (menu, idx) {
 		left.push (<MenuDropdown
 				title={menu.title}
 				items={menu.items}
 				iconClass={""}
+				key={"top" + idx}
+				prefix={"top" + idx + "-"}
 				/>) ;
 	    }.bind (this)
 	) ;
@@ -129,12 +131,14 @@ export var TopMenu = React.createClass ({
  * - iconClass: empty string or icon class
  * - title: title of dropdown
  * - items: items for the dropdown
+ * - prefix: prefix for React key attribute
  */
 
 var MenuDropdown = React.createClass ({
     render: function () {
 	var icon ;
 	var menuitems = [] ;
+	var prefix = this.props.prefix ;
 
 	if (this.props.iconClass == "") {
 	    icon = <span /> ;
@@ -143,23 +147,25 @@ var MenuDropdown = React.createClass ({
 	    icon = <span className={this.props.iconClass} /> ;
 	}
 
-	this.props.items.forEach (function (item) {
+	this.props.items.forEach (function (item, idx) {
 		var js = "" ;
+		var key = prefix + idx ;
 		if (item.title == "") {
 		    menuitems.push (<li role="separator"
-					className="divider" />) ;
+					className="divider"
+					key={key} />) ;
 		} else if (item.title == "Disconnect") {
-		    menuitems.push (<MenuDisconnect />) ;
+		    menuitems.push (<MenuDisconnect key={key}/>) ;
 		} else if (item.title == "[en]") {
-		    menuitems.push (<MenuLang lang="en" />) ;
+		    menuitems.push (<MenuLang lang="en" key={key}/>) ;
 		} else if (item.title == "[fr]") {
-		    menuitems.push (<MenuLang lang="fr" />) ;
+		    menuitems.push (<MenuLang lang="fr" key={key}/>) ;
 		} else {
 
 		    if (item.js == "") {
 			js = ' onclick="' + item.js + '"' ;
 		    }
-		    menuitems.push (<li>
+		    menuitems.push (<li key={key}>
 				      <a href={item.url}>
 					{item.title}
 				      </a>
@@ -276,7 +282,7 @@ var UserMenu = React.createClass ({
 	var u ;
 
 	if (this.props.item == null) {
-	    u = <li>
+	    u = <li key="topuser">
 		  <p className="navbar-text">
 		    Not connected
 		  </p>
@@ -287,6 +293,7 @@ var UserMenu = React.createClass ({
 		    title={this.props.item.title}
 		    items={this.props.item.items}
 		    iconClass="glyphicon glyphicon-user"
+		    prefix="topuser"
 		    />
 		;
 	}
@@ -308,6 +315,7 @@ var LangMenu = React.createClass ({
 		    title={this.props.item.title}
 		    items={this.props.item.items}
 		    iconClass=""
+		    prefix="toplang"
 		    />
 		) ;
     }
