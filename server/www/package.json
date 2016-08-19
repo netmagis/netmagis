@@ -11,6 +11,10 @@
     "type": "git",
     "url": "git+https://github.com/pdav/netmagis.git"
   },
+  "babel": {
+    "presets": ["es2015", "react"],
+    "plugins": ["transform-react-jsx-source"]
+  },
   "keywords": [
     "React",
     "JSX",
