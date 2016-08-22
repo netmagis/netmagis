@@ -317,9 +317,8 @@ namespace eval ::nmenv {
 
 	set sql "SELECT p.idview
 			FROM dns.p_view p, dns.view v
-			WHERE p.idgrp = u.idgrp
+			WHERE p.idgrp = $ids(idgrp)
 			    AND p.idview = v.idview
-			    AND p.idgrp = $ids(idgrp)
 			ORDER BY p.sort ASC, v.name ASC"
 	$db exec $sql tab {
 	    set idview $tab(idview)
@@ -385,7 +384,7 @@ namespace eval ::nmenv {
 
 	set sql "SELECT p.iddom
 			FROM dns.p_dom p, dns.domain d
-			WHERE p.idgrp = u.idgrp
+			WHERE p.idgrp = $ids(idgrp)
 			    AND p.iddom = d.iddom
 			    AND p.idgrp = $ids(idgrp)
 			ORDER BY p.sort ASC, d.name ASC"

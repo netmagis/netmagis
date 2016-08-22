@@ -124,7 +124,7 @@ proc dhcp-is-editable {iddhcprange idgrp} {
 		    FROM dns.dhcprange d
 			INNER JOIN dns.network n
 			    ON (d.min <<= n.addr4 AND d.max <<= n.addr4)
-			INNER JOIN dns.p_network pn (USING idnet)
+			INNER JOIN dns.p_network pn USING (idnet)
 			LEFT OUTER JOIN dns.p_dom pd
 			    ON (pd.idgrp = $idgrp AND pd.iddom = d.iddom)
 			LEFT OUTER JOIN dns.p_dhcpprofile pdh
