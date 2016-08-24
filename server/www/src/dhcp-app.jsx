@@ -33,21 +33,15 @@ var App = React.createClass({
     },
 
     render: function () {
-	var r ;
+	var table = "" ;
 
-	if (this.state.cidr == "") {
-	    r = (
-		  <span>
-		    {translate ('Select network first')}
-		  </span>
-		) ;
-	} else {
-	    r = (
-		  <F.Table model={this.model}
-		      name="row_dhcprange"
-		      params={{cidr: this.state.cidr}}
-		  />
-		) ;
+	if (this.state.cidr != "") {
+	    table = (
+		      <F.Table model={this.model}
+			  name="row_dhcprange"
+			  params={{cidr: this.state.cidr}}
+		      />
+		    ) ;
 	}
 	return (
 	    <div>
@@ -58,7 +52,7 @@ var App = React.createClass({
 			defaultValue="Unspecified"
 			/>
 		</F.Form>
-		{r}
+		{table}
 	    </div>
 	);
     }

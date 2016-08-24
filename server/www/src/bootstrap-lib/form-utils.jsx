@@ -5,22 +5,20 @@ import Autosuggest from 'react-autosuggest' ;
 import {Prompters} from './prompters.jsx' ;
 
 /**
- * Returns an object all the values of the form with the given id. The
- * keys are the name attributes of the fields of the form
+ * Returns an object with all the values of a form (or part of) with the
+ * given id. Keys are the name attributes of the fields.
  */
+
 export function form2obj (id) {
     var elements = document.getElementById (id).elements ;
-
     var obj = {} ;
 
     for (var i = 0 ; i < elements.length ; i++) {
 	var value ;
-	var el = elements[i] ;
+	var el = elements [i] ;
 	if (el.name == "_dontUse")
 	    continue ;
-
-	var tag = el.tagName.toLowerCase () ;
-	switch (tag) {
+	switch (el.tagName.toLowerCase ()) {
 	    case "input":
 		if (el.type.toLowerCase () == "text")
 		    value = el.value ;
@@ -30,10 +28,8 @@ export function form2obj (id) {
 	    case "button":
 		value = el.textContent ;
 	}
-
 	obj [elements [i].name] = value ;
     }
-
     return obj ;
 }
 
@@ -76,7 +72,7 @@ export var Input = React.createClass ({
 		    <input {...iProps} className="form-control" />
 		</div>
 	    </div>
-	);
+	) ;
     }
 }) ;
 
@@ -111,7 +107,7 @@ export var Ainput = React.createClass ({
 		    <AutoInput {...iProps} className="form-control" />
 		</div>
 	    </div>
-	);
+	) ;
 
     }
 }) ;
@@ -145,7 +141,7 @@ export var Button = React.createClass ({
 	    <button className={"btn btn-default col-md-" + gridVal} {...iProps}>
 		{translate (this.props.children)}
 	    </button>
-	);
+	) ;
     }
 }) ;
 
@@ -236,7 +232,7 @@ export var Dropdown_internal = React.createClass ({
 		    {translate (child.props.children)}
 		</a>
 	    </li>
-	);
+	) ;
     },
 
     render: function () {
@@ -265,7 +261,7 @@ export var Dropdown_internal = React.createClass ({
  * automatically trough async ajax request using the proper hanlder.
  *
  * @properties: same as Dropdown_internal, plus
- *	-name: defines the name of the handler
+ * - name: defines the name of the handler
  *
  * Example of use:
  *	 <AJXdropdown name="foods" superClass="foodSelector" />
@@ -280,12 +276,14 @@ export var AJXdropdown = React.createClass ({
     propTypes: { name: React.PropTypes.string.isRequired },
 
     componentWillMount: function () {
-	var prompter = Prompters[this.props.name] ;
+	var prompter = Prompters [this.props.name] ;
 
 	if (! prompter) {
 	    console.error (this.props.name + " is not a prompter!") ;
 	} else if (prompter.init) {
-	    prompter.init (function () {this.forceUpdate () ;}.bind (this)) ;
+	    prompter.init (function () {
+		    this.forceUpdate () ;
+		}.bind (this)) ;
 	}
     },
 
@@ -293,16 +291,16 @@ export var AJXdropdown = React.createClass ({
 	var values = Prompters [this.props.name].getValues () ;
 
 	function makeElement (val, index) {
-	    return (<el key={"ajd" + index}>{val}</el>);
+	    return (<el key={"ajd" + index}>{val}</el>) ;
 	}
 
 	return (
 	    <Dropdown_internal {...this.props}>
-		{values.map(makeElement)}
+		{values.map (makeElement)}
 	    </ Dropdown_internal>
-	);
+	) ;
     }
-});
+}) ;
 
 /**
  * Creates a Bootstrap-like dropdown preceded by a label.
@@ -336,7 +334,7 @@ export var Dropdown = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {translate(this.props.label)}
+		    {translate (this.props.label)}
 		</label>
 		<div className={"dropdown col-md-" + gridVals [1]}>
 		    <Dropdown_internal {...iProps} />
@@ -351,12 +349,12 @@ export var Dropdown = React.createClass ({
  * async AJAX call (see AJXdropdown).
  *
  * @properties:
- *	-label: The contents of the label preceding the dropdown
- *	-dims : Dimensions following bootstrap's grid system (see Input)
- *	-name : Name of the handler (see AJXdropdown)
+ * - label: label before the dropdown
+ * - dims : dimensions (using bootstrap grid system, see Input)
+ * - name : name of the handler (see AJXdropdown)
  *
  * Example of use:
- * 	<Adropdown name="animals" label="Select an animal" dims="3+2" />
+ *   <Adropdown name="animals" label="Select an animal" dims="3+2" />
  */
 
 export var Adropdown = React.createClass ({
@@ -375,13 +373,13 @@ export var Adropdown = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {translate (this.props.label)}
+		    {this.props.label}
 		</label>
 		<div className={"dropdown col-md-"+ gridVals [1]} >
 		    <AJXdropdown {...iProps} />
 		</div>
 	    </div>
-	);
+	) ;
     }
 }) ;
 
@@ -438,7 +436,7 @@ export var Inputdrop = React.createClass ({
 		    </Dropdown_internal>
 		</div>
 	    </div>
-	);
+	) ;
     }
 }) ;
 
@@ -479,7 +477,7 @@ export var InputAdrop = React.createClass ({
 			    />
 		</div>
 	    </div>
-	);
+	) ;
     }
 }) ;
 
@@ -584,9 +582,9 @@ export var Form = React.createClass ({
 		    >
 		{this.props.children}
 	    </form>
-	);
+	) ;
     }
-});
+}) ;
 
 /**
  * Use this component to generate an input field with automatic suggestions.
@@ -621,7 +619,7 @@ export var AutoInput = React.createClass ({
 	if (! prompter) {
 	    console.error (this.props.name + " is not a prompter!") ;
 	} else if (prompter.init) {
-	    prompter.init ();
+	    prompter.init () ;
 	}
     },
 
@@ -643,7 +641,7 @@ export var AutoInput = React.createClass ({
 
     /* */
     onSuggestionsUpdateRequested: function ({value}) {
-	this.setState ({suggestions: this.getSuggestions (value)});
+	this.setState ({suggestions: this.getSuggestions (value)}) ;
     },
 
     /* Suggestions are rendered wrapping them in a <span> element */
@@ -669,7 +667,7 @@ export var AutoInput = React.createClass ({
 		    renderSuggestion={this.renderSuggestion}
 		    inputProps={inputProps}
 		    />
-	);
+	) ;
     }
 }) ;
 
@@ -684,7 +682,7 @@ export var AutoInput = React.createClass ({
  *	-placeholder:  placeholder attribute of the input field
  */
 
-export var InputXORdd = React.createClass({
+export var InputXORdd = React.createClass ({
     /* This will force a rerendering on language change */
     contextTypes: {lang: React.PropTypes.string},
 
@@ -714,12 +712,12 @@ export var InputXORdd = React.createClass({
     },
 
     render: function () {
-	var gridVals = this.props.dims ?  this.props.dims.split('+')
+	var gridVals = this.props.dims ?  this.props.dims.split ('+')
 			    : ['2','2','2'] ;
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]}>
-		    {translate(this.props.label)}
+		    {translate (this.props.label)}
 		</label>
 		<div className={"col-md-" + gridVals [1]}>
 		    <input className="form-control"
@@ -739,7 +737,7 @@ export var InputXORdd = React.createClass({
 			    />
 		</div>
 	    </div>
-	);
+	) ;
     }
 }) ;
 
@@ -867,7 +865,7 @@ export var InEdit = React.createClass ({
  *		  latter case the attribute value will be used as default value of
  *		  this component.
  */
-export var DdEdit = React.createClass({
+export var DdEdit = React.createClass ({
     /* This will force a rerendering on language change */
     contextTypes: {lang: React.PropTypes.string},
 
@@ -893,7 +891,7 @@ export var DdEdit = React.createClass({
     },
 
     makeOption: function (val, index) {
-	return (<el key={"dded" + index}>{val}</el>);
+	return (<el key={"dded" + index}>{val}</el>) ;
     },
 
     render: function () {
@@ -970,25 +968,25 @@ export var Editable_tr = React.createClass ({
 		    <InEdit edit={this.state.edit} name={desc [2]} >
 			{content}
 		    </InEdit>
-		);
+		) ;
 	    case "text" :
 		return (
 		    <TextEdit edit={this.state.edit} name={desc [2]} >
 			{content}
 		    </TextEdit>
-		);
+		) ;
 	    case "dropdown":
 		return (
 		    <DdEdit edit={this.state.edit} name={desc [2]}
 			    values={content}
 			    />
-		);
+		) ;
 	    case "checkbox":
 		return (
 		    <CheckboxEdit edit={this.state.edit} name={desc [2]}
 			    defaultChecked={content}
 			    />
-		);
+		) ;
 	    default: return (<div>{content}</div>) ;
 	}
     },
@@ -997,16 +995,16 @@ export var Editable_tr = React.createClass ({
      * Render one element of the row (child)
      * @param desc, the description of the element
      * 	   defined into the model props
-     * @param index, number of the child (usually passed directly by .map())
+     * @param index, number of the child (usually passed directly by .map ())
      */
     renderChild: function (desc, index) {
 	var content = this.props.data [desc [2]] ;
 
 	return (
 	    <td key={"edr"+index} className="col-md-1">
-		{this.renderType(desc, content)}
+		{this.renderType (desc, content)}
 	    </td>
-	);
+	) ;
     },
 
     collectValues: function () {
@@ -1014,7 +1012,7 @@ export var Editable_tr = React.createClass ({
 	for (var i = 0 ; i < this.props.model.desc.length ; i++) {
 	    var name = this.props.model.desc[i][2] ;
 	    // Use id specified into the render in order to identify the row
-	    data [name] = $("#etr"+this.props.reactKey+" [name='"+name+"']").val();
+	    data [name] = $("#etr"+this.props.reactKey+" [name='"+name+"']").val () ;
 	}
 	var uniquekey = this.props.data [this.props.model.key] ;
 	return {key: uniquekey, input: data } ;
@@ -1030,16 +1028,16 @@ export var Editable_tr = React.createClass ({
 	    this.setState ({ edit: !this.state.edit, error: false }) ;
 	}
 
-	if (this.state.edit == true){
+	if (this.state.edit == true) {
 	    var data = this.collectValues () ;
 
 	    if (data.key.toString ().startsWith ("__")) {
 		// Invalid api id (given from the application)
 		this.props.handler.save (data.key, data.input,
-				    _switch.bind(this), this.error) ;
+				    _switch.bind (this), this.error) ;
 	    } else {
 		this.props.handler.update (data.key, data.input,
-				    _switch.bind(this), this.error) ;
+				    _switch.bind (this), this.error) ;
 	    }
 	} else {
 	    this.setState ({ edit: !this.state.edit }) ;
@@ -1089,7 +1087,7 @@ export var Editable_tr = React.createClass ({
 	) ;
     },
 
-    render: function(){
+    render: function () {
 	return (
 	    <tr id={"etr"+this.props.reactKey} >
 		{this.props.model.desc.map (this.renderChild)}
@@ -1100,36 +1098,29 @@ export var Editable_tr = React.createClass ({
 }) ;
 
 /**
- * Creates an editable table on which the user can remove/add as many rows as
- * he wants. The rows can also be edited/saved in any moment.
+ * Create an editable table where the user can remove/add as many rows as
+ * he wants. Rows can be edited/saved at any moment.
  *
  * @properties:
- *	-name: the name of the handler
- *
- *	-model	an object which describes the data contained into
- *		the rows. It must have one attribute
- *		'key' and an attribute 'desc':
- *
- *		- desc: contains a list of 3-elements arrays, each one describing one field of a
- *		        row. The 3 elements must be strings representing respectively
- *				[Columns label, field type, field name]
- *			example ["List of addresses", "Input", "address"]
- *
- *		- key: contains the name of an attribute present on the property
- *	    	       `data` which will be used as identifier for each row. This id
- *		       is sent to the handler when a row is removed/updated/saved.
- *		       Example of use: iddhcprange for a table of dhcp ranges
- *
- *		The model should finally look more ore less like this:
- *		      {key: ... , desc: [ ["field" , "type", "name"], ... ]}
- *
- *
- *	-params objects containing all the parameters passed to the init function of the
- *		handler.
+ * - name: prompter handler name (cf prompters.jsx)
+ * - model: an object which describes data contained in the rows.
+ *	It must have one attribute 'key' and an attribute 'desc':
+ *	- desc: list of 3-elements arrays, each one describing
+ *		one field of a row.
+ *		The 3 elements must be strings representing respectively
+ *			[column-label, field-type, field-name]
+ *		Example: ["Address list", "Input", "address"]
+ *	- key: name of an attribute present on the property
+ *    	       `data` which will be used as identifier for each row. This id
+ *	       is sent to the handler when a row is removed/updated/saved.
+ *	       Example of use: iddhcprange for a table of dhcp ranges
+ *	Example: {key: ... , desc: [ ["field", "type", "name"], ... ]}
+ * - params: objects containing all the parameters passed to the init
+ *	function of the handler.
  *
  */
 
-export var Table = React.createClass({
+export var Table = React.createClass ({
     /* This will force a rerendering on language change */
     contextTypes : {lang: React.PropTypes.string},
 
@@ -1146,11 +1137,10 @@ export var Table = React.createClass({
 	Prompters [this.props.name].getValues ().map (
 	    function (o) { copy_values.push ($.extend ({},o)) ; }
 	) ;
-	this.setState({values: copy_values});
+	this.setState ({values: copy_values}) ;
     },
 
-
-    retrieveValues: function (params){
+    retrieveValues: function (params) {
 	var prompter = Prompters [this.props.name] ;
 
 	if (! prompter) {
@@ -1180,7 +1170,7 @@ export var Table = React.createClass({
 		    {this.props.model.desc.map (headerEl)}
 		</tr>
 	    </thead>
-	);
+	) ;
     },
 
     renderRow: function (data , index) {
@@ -1209,7 +1199,7 @@ export var Table = React.createClass({
     addRow: function () {
 	var newRow = { _edit: true } ; // Add in edit mode
 
-	if (this.state.values.length > 0){
+	if (this.state.values.length > 0) {
 	    /* Use the first row as example */
 	    newRow = $.extend (newRow, this.state.values [0]) ;
 
@@ -1254,6 +1244,6 @@ export var Table = React.createClass({
 		    </span>
 		</Button>
 	    </div>
-	);
+	) ;
     }
 }) ;
