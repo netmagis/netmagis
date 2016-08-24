@@ -65,10 +65,10 @@ export var Input = React.createClass ({
 
 	return (
 	    <div>
-		<label className={"control-label col-md-" + gridVals[0]} >
+		<label className={"control-label col-md-" + gridVals [0]} >
 		    {translate (this.props.label)}
 		</label>
-		<div className={"col-md-" + gridVals[1]} >
+		<div className={"col-md-" + gridVals [1]} >
 		    <input {...iProps} className="form-control" />
 		</div>
 	    </div>
@@ -207,7 +207,7 @@ export var Dropdown_internal = React.createClass ({
 	    this.setState ({value: newprops.value}) ;
 	else if (newprops.children.length > 0) {
 	    if (this.state.value == undefined) {
-		this.setState ({value: newprops.children[0].props.children}) ;
+		this.setState ({value: newprops.children [0].props.children}) ;
 	    }
 	}
     },
@@ -228,7 +228,7 @@ export var Dropdown_internal = React.createClass ({
     makeOption: function (child, index) {
 	return (
 	    <li key={"dopt" + index}>
-		<a href="#" onClick={this.handleClick.bind (this,child)} >
+		<a href="#" onClick={this.handleClick.bind (this, child)} >
 		    {translate (child.props.children)}
 		</a>
 	    </li>
@@ -713,7 +713,7 @@ export var InputXORdd = React.createClass ({
 
     render: function () {
 	var gridVals = this.props.dims ?  this.props.dims.split ('+')
-			    : ['2','2','2'] ;
+			    : ['2', '2', '2'] ;
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]}>
@@ -875,7 +875,7 @@ export var DdEdit = React.createClass ({
 		     values: []
 		   } ;
 	} else if (Array.isArray (this.props.values)) {
-	    return { value: this.props.values[0],
+	    return { value: this.props.values [0],
 		     values: this.props.values
 		   } ;
 	} else {
@@ -951,7 +951,8 @@ export var Editable_tr = React.createClass ({
     getInitialState: function () {
 	return {
 		    edit: this.props.edit || false,
-		    error: false, emessage: ""
+		    error: false,
+		    emessage: ""
 	    } ;
     },
 
@@ -1010,7 +1011,7 @@ export var Editable_tr = React.createClass ({
     collectValues: function () {
 	var data = {} ;
 	for (var i = 0 ; i < this.props.model.desc.length ; i++) {
-	    var name = this.props.model.desc[i][2] ;
+	    var name = this.props.model.desc [i][2] ;
 	    // Use id specified into the render in order to identify the row
 	    data [name] = $("#etr"+this.props.reactKey+" [name='"+name+"']").val () ;
 	}
@@ -1049,7 +1050,7 @@ export var Editable_tr = React.createClass ({
 	var data = this.collectValues () ;
 
 	if (this.state.edit == false) {
-	    this.props.handler.delete (data.key,data.input) ;
+	    this.props.handler.delete (data.key, data.input) ;
 	    this.props.onRemove (this.props.index) ;
 	} else if (data.key.toString ().startsWith ("__")) {
 	    // Invalid api id (given from the application)
@@ -1065,9 +1066,9 @@ export var Editable_tr = React.createClass ({
 	}
 
 	return (
-	    <td className="outside">
+	    <td>
 		<p style={{color: 'red'}}>
-		    { this.state.error ? this.state.emessage : ''}
+		    {this.state.error ? this.state.emessage : ''}
 		</p>
 		<Button onClick={this.switchMode}>
 		    <span className={"glyphicon glyphicon-" +
@@ -1128,14 +1129,14 @@ export var Table = React.createClass ({
     propTypes: { name: React.PropTypes.string.isRequired },
 
     getInitialState: function () {
-	return {values : [] } ;
+	return {values: [] } ;
     },
 
     getValues: function () {
 	var copy_values = [] ;
 
 	Prompters [this.props.name].getValues ().map (
-	    function (o) { copy_values.push ($.extend ({},o)) ; }
+	    function (o) { copy_values.push ($.extend ({}, o)) ; }
 	) ;
 	this.setState ({values: copy_values}) ;
     },
@@ -1184,7 +1185,7 @@ export var Table = React.createClass ({
 		    edit={data._edit}
 		    index={index}
 		    onRemove={this.removeRow}
-		    handler={Prompters[this.props.name]}
+		    handler={Prompters [this.props.name]}
 		    />
 	) ;
     },
@@ -1208,7 +1209,7 @@ export var Table = React.createClass ({
 		var type = this.props.model.desc [i][1] ;
 		if (type.toLowerCase () == "input") {
 		    var field = this.props.model.desc [i][2] ;
-		    newRow[field] = "" ;
+		    newRow [field] = "" ;
 		}
 	    }
 	} else if (Prompters [this.props.name].getEmptyRow) {
@@ -1231,7 +1232,7 @@ export var Table = React.createClass ({
     render: function () {
 	return (
 	    <div>
-		<table className="table table-bordered">
+		<table className="table table-condensed table-striped">
 		    {this.renderHead ()}
 		    <tbody>
 			{this.state.values.map (this.renderRow)}
