@@ -242,11 +242,11 @@ namespace eval ::nmenv {
 		    lappend cap "pgauth"
 		    set qlogin [pg_quote $elogin]
 		    set sql "SELECT r.admin
-				    FROM pgauth.realm r, pgauth.member m
-				    WHERE r.realm = m.realm
-					AND login = $qlogin"
+				    FROM pgauth.realm r
+					NATURAL INNER JOIN pgauth.member m
+				    WHERE login = $qlogin"
 		    ::dbdns exec $sql tab {
-			if {$ids(p_admin)} then {
+			if {$tab(admin)} then {
 			    lappend cap "pgadmin"
 			}
 		    }
