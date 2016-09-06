@@ -229,6 +229,111 @@ proc rr-mailaddr-by-view {_trr idview} {
     return $lma
 }
 
+#
+# Check host name syntax (first part of a FQDN) according to RFC 1035
+#
+# Input:
+#   - parameters:
+#	- name : name to test
+# Output:
+#   - return value: empty string or error message
+#
+# History
+#   2002/04/11 : pda/jean : design
+#   2010/11/29 : pda      : i18n
+#
+
+proc check-name-syntax {name} {
+    # general case: a letter-or-digit at the beginning, a letter-or-digit
+    # at the end (minus forbidden at the end) and letter-or-digit-or-minus
+    # between.
+    set re1 {[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9]}
+    # particular case: only one letter
+    set re2 {[a-zA-Z0-9]}
+
+    if {[regexp "^$re1$" $name] || [regexp "^$re2$" $name]} then {
+	set msg ""
+    } else {
+	set msg [mc "Invalid name '%s'" $name]
+    }
+
+    return $msg
+}
+
+#
+# Check (IPv4, IPv6, CIDR, MAC) address syntax
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- addr : address to test
+#	- type : "inet", "cidr", "loosecidr", "macaddr", "inet4", "cidr4"
+# Output:
+#   - return value: empty string or error message
+#
+# Note :
+#   - type "cidr" is strict, "host" bits must be 0 (i.e.: "1.1.1.0/24"
+#	is valid, but not "1.1.1.1/24")
+#   - type "loosecidr" accepts "host" bits set to 1
+#
+# History
+#   2002/04/11 : pda/jean : design
+#   2002/05/06 : pda/jean : add type cidr
+#   2002/05/23 : pda/jean : accept simplified cidr (a.b/x)
+#   2004/01/09 : pda/jean : add IPv6 et radical simplification
+#   2004/10/08 : pda/jean : add inet4
+#   2004/10/20 : jean     : forbid / for anything else than cidr type
+#   2008/07/22 : pda      : add type loosecidr (accepts /)
+#   2010/10/07 : pda      : add type cidr4
+#
+
+proc check-addr-syntax {dbfd addr type} {
+
+    switch $type {
+	inet4 {
+	    set cast "inet"
+	    set fam  4
+	}
+	cidr4 {
+	    set cast "cidr"
+	    set type "cidr"
+	    set fam  4
+	}
+	loosecidr {
+	    set cast "inet"
+	    set fam ""
+	}
+	default {
+	    set cast $type
+	    set fam ""
+	    set msg "?"
+	}
+    }
+    set qaddr [pg_quote $addr]
+    set sql "SELECT $cast\($qaddr\) ;"
+    set r ""
+    if {[$dbfd exec $sql msg]} then {
+	if {$fam ne ""} then {
+	    $dbfd exec "SELECT family ($qaddr) AS fam" tab {
+		if {$tab(fam) != $fam} then {
+		    set r [mc {'%1$s' is not a valid IPv%2$s address} $addr $fam]
+		}
+	    }
+	}
+	if {! ($type eq "cidr" || $type eq "loosecidr")} then {
+	    if {[regexp {/}  $addr ]} then {
+		set r [mc "The '/' character is not valid in the address '%s'" $addr]
+	    }
+	}
+    } else {
+	if {$type eq "macaddr"} then {
+	    set r [mc "Invalid syntax for MAC address '%s'" $addr]
+	} else {
+	    set r [mc "Invalid syntax for IP address '%s'" $addr]
+	}
+    }
+    return $r
+}
 
 #
 # Search for a domain name in the database

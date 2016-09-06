@@ -55,6 +55,24 @@ namespace eval ::nmenv {
     # - isalloweddom id
     #	check if a domain is authorized (1 if ok, 0 if not)
     #
+    # - dhcpprofname id
+    #	returns name associated to dhcpprofile id (or empty string if error)
+    # - dhcpprofid name
+    #	returns dhcpprofile id associated to dhcpprofile name (or -1 if error)
+    # - myiddhcpprof
+    #	get all authorized dhcpprofile ids
+    # - isalloweddhcpprof id
+    #	check if a dhcpprofile is authorized (1 if ok, 0 if not)
+    #
+    # - hinfoname id
+    #	returns name associated to hinfo id (or empty string if error)
+    # - hinfoid name
+    #	returns hinfo id associated to hinfo name (or -1 if error)
+    # - myidhinfo
+    #	get all hinfo ids
+    # - isallowedhinfo id
+    #	check if a hinfo is present (1 if ok, 0 if not)
+    #
 
     # keep track of lazy-loaded informations
     variable loaded -array {
@@ -62,6 +80,8 @@ namespace eval ::nmenv {
 	cap	0
 	views	0
 	domains	0
+	dhcpprofs 0
+	hinfos	0
     }
 
     # real login of user (the one which is authenticated)
@@ -108,6 +128,22 @@ namespace eval ::nmenv {
     variable authdom -array {}
     # myiddoms : sorted list of domains
     variable myiddom {}
+
+    # DHCP profile management
+    # alldhcpprof(id:<id>)=name
+    # alldhcpprof(name:<name>)=id
+    variable alldhcpprof -array {}
+    # authdhcpprof(<id>)=1
+    variable authdhcpprof -array {}
+    # myiddhcpprofs : sorted list of dhcp profiles
+    variable myiddhcpprof {}
+
+    # Hinfo management
+    # allhinfo(id:<id>)=name
+    # allhinfo(name:<name>)=id
+    variable allhinfo -array {}
+    # myidhinfo : sorted list of hinfo
+    variable myidhinfo {}
 
     proc load-ids {selfns login} {
 	#
@@ -316,9 +352,9 @@ namespace eval ::nmenv {
 	}
 
 	set sql "SELECT p.idview
-			FROM dns.p_view p, dns.view v
+			FROM dns.p_view p
+			    NATURAL INNER JOIN dns.view v
 			WHERE p.idgrp = $ids(idgrp)
-			    AND p.idview = v.idview
 			ORDER BY p.sort ASC, v.name ASC"
 	$db exec $sql tab {
 	    set idview $tab(idview)
@@ -383,10 +419,9 @@ namespace eval ::nmenv {
 	}
 
 	set sql "SELECT p.iddom
-			FROM dns.p_dom p, dns.domain d
+			FROM dns.p_dom p
+			    NATURAL INNER JOIN dns.domain d
 			WHERE p.idgrp = $ids(idgrp)
-			    AND p.iddom = d.iddom
-			    AND p.idgrp = $ids(idgrp)
 			ORDER BY p.sort ASC, d.name ASC"
 	$db exec $sql tab {
 	    set iddom $tab(iddom)
@@ -431,6 +466,132 @@ namespace eval ::nmenv {
 	    load-domains $selfns
 	}
 	return [info exists authdom($id)]
+    }
+
+    #
+    # DHCP profile management
+    #
+
+    proc load-dhcpprofs {selfns} {
+	array unset alldhcpprof
+	array unset authdhcpprof
+	set myiddhcpprof {}
+
+	set sql "SELECT * FROM dns.dhcpprofile"
+	$db exec $sql tab {
+	    set iddhcpprof $tab(iddhcpprof)
+	    set name       $tab(name)
+	    set alldhcpprof(id:$iddhcpprof) $name
+	    set alldhcpprof(name:$name)     $iddhcpprof
+	}
+
+	set sql "SELECT p.iddhcpprof
+			FROM dns.p_dhcpprofile p
+			    NATURAL INNER JOIN dns.dhcpprofile d
+			WHERE p.idgrp = $ids(idgrp)
+			ORDER BY p.sort ASC, d.name ASC"
+	$db exec $sql tab {
+	    set iddhcpprof $tab(iddhcpprof)
+	    set authdhcpprof($iddhcpprof) 1
+	    lappend myiddhcpprof $tab(iddhcpprof)
+	}
+
+	set loaded(dhcpprofs) 1
+    }
+
+    method dhcpprofname {id} {
+	if {! $loaded(dhcpprofs)} then {
+	    load-dhcpprofs $selfns
+	}
+	set r -1
+	if {[info exists alldhcpprof(id:$id)]} then {
+	    set r $alldhcpprof(id:$id)
+	}
+	return $r
+    }
+
+    method dhcpprofid {name} {
+	if {! $loaded(dhcpprofs)} then {
+	    load-dhcpprofs $selfns
+	}
+	set r ""
+	if {[info exists alldhcpprof(name:$name)]} then {
+	    set r $alldhcpprof(name:$name)
+	}
+	return $r
+    }
+
+    method myiddhcpprof {} {
+	if {! $loaded(dhcpprofs)} then {
+	    load-dhcpprofs $selfns
+	}
+	return $myiddhcpprof
+    }
+
+    method isalloweddhcpprof {id} {
+	if {! $loaded(dhcpprofs)} then {
+	    load-dhcpprofs $selfns
+	}
+	return [info exists authdhcpprof($id)]
+    }
+
+    #
+    # Hinfo management
+    #
+
+    proc load-hinfos {selfns} {
+	array unset allhinfo
+	set myidhinfo {}
+
+	set sql "SELECT * FROM dns.hinfo
+			ORDER BY sort ASC, name ASC"
+	$db exec $sql tab {
+	    set idhinfo $tab(idhinfo)
+	    set name    $tab(name)
+	    set allhinfo(id:$idhinfo) $name
+	    set allhinfo(name:$name)  $idhinfo
+	    if {$tab(present)} then {
+		lappend myidhinfo $idhinfo
+	    }
+	}
+
+	set loaded(hinfos) 1
+    }
+
+    method hinfoname {id} {
+	if {! $loaded(hinfos)} then {
+	    load-hinfos $selfns
+	}
+	set r -1
+	if {[info exists allhinfo(id:$id)]} then {
+	    set r $allhinfo(id:$id)
+	}
+	return $r
+    }
+
+    method hinfoid {name} {
+	if {! $loaded(hinfos)} then {
+	    load-hinfos $selfns
+	}
+	set r ""
+	if {[info exists allhinfo(name:$name)]} then {
+	    set r $allhinfo(name:$name)
+	}
+	return $r
+    }
+
+    method myidhinfo {} {
+	if {! $loaded(hinfos)} then {
+	    load-hinfos $selfns
+	}
+	return $myidhinfo
+    }
+
+    method isallowedhinfo {id} {
+	if {! $loaded(hinfos)} then {
+	    load-hinfos $selfns
+	}
+	return [info exists allhinfo(id:$id)]
     }
 
     ###########################################################################

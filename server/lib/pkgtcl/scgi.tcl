@@ -354,8 +354,8 @@ namespace eval ::scgi:: {
 
 		foreach s $spec {
 		    lassign $s k type defval
-		    set pos [lsearch -exact -index 0 $spec $k]
-		    if {$pos == -1} then {
+		    if {! [dict exists $object $k]} then {
+			serror 404 "JSON tag '$s' not found in request body"
 			return false
 		    }
 		    set v [dict get $object $k]
@@ -383,6 +383,7 @@ namespace eval ::scgi:: {
 			    # null is not distinguishable from the string null
 			}
 			default {
+			    serror 404 "Invalid type for JSON tag '$s'"
 			    return false
 			}
 		    }
@@ -391,9 +392,11 @@ namespace eval ::scgi:: {
 		    } else {
 			set tab($k) $v
 		    }
-		    set spec [lreplace $spec $pos $pos]
+		    set object [dict remove $object $k]
 		}
-		if {[llength $spec] > 0} then {
+		set dk [dict keys $object]
+		if {[llength $dk] > 0} then {
+		    serror 404 "Invalid JSON tags '$dk' in request body"
 		    return false
 		}
 		return true
