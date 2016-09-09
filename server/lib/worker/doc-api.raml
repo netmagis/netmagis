@@ -33,95 +33,18 @@ types:
       stopreason:
 	enum:		[ logout, expired ]
 
-  MenuItem:
-    description: a clickable menu item
+  Capability:
+    description: user capabilities
     type: object
     properties:
-      title:		string
-      url:		string
+      user:		string
+      lang:		string
+      cap:		string []
     example: |
       {
-	title: "Add"
-	url: "add.html"
-      }
-  Menu:
-    description: a single top-level menu
-    type: object
-    properties:
-      title:		string
-      items:		MenuItem []
-    example: |
-      {
-	title: "DNS"
-	items: [
-	  {
-	    title: "Consult"
-	    url: "..."
-	  },
-	  {
-	    title: "Add"
-	    url: "..."
-	  },
-	  ...
-	]
-      }
-  MenuBar:
-    description: top-level menu bar
-    type: object
-    properties:
-      left: Menu []
-      search: MenuItem
-      user: Menu
-      lang: Menu
-    example: |
-      {
-	left: [
-	  {
-	    title: "DNS"
-	    items: [
-	      {
-		title: "Consult"
-		url: "..."
-	      },
-	      {
-		title: "Add"
-		url: "..."
-	      },
-	      ...
-	    ]
-	  },
-	  ...
-	],
-	search: {
-	  title: "Search"
-	  url: "..."
-	},
-	user: {
-	  title: "joe"
-	  items: [
-	    {
-	      title: "Profile"
-	      url: "..."
-	    },
-	    {
-	      title: "Sessions"
-	      url: "..."
-	    }
-	  ]
-	},
-	lang: {
-	  title "[en]"
-	  items: [
-	    {
-	      title: "[en]",
-	      url: "..."
-	    },
-	    {
-	      title: "[fr]",
-	      url: "..."
-	    }
-	  ]
-	}
+	user: "pda"
+	lang: "fr"
+	cap: ["any", "logged", "admin", "topo"]
       }
 
   AllowedDomain:
@@ -976,69 +899,35 @@ types:
           text/plain: ok
 
 ##############################################################################
-# Menus
+# User capabilities
 ##############################################################################
 
-/menus
-  description: Collection of menus to display for this user
+/cap
+  description: Collection of capabilities for this user
   get:
-    description: Get all my menus
+    description: Get all my capabilities
     queryParameters:		# none
     responses:
       200:
 	body:
 	  application/json:
-	    type: MenuBar
+	    type: Capability
 	    example: |
 	      {
-		left: [
-		  {
-		    title: "DNS"
-		    items: [
-		      {
-			title: "Consult"
-			url: "..."
-		      },
-		      {
-			title: "Add"
-			url: "..."
-		      },
-		      ...
-		    ]
-		  },
-		  ...
+		user: "pda"
+		lang: "fr"
+		cap: [
+		  "any",
+		  "logged",
+		  "admin",
+		  "topo",
+		  "topogenl",
+		  "mac",
+		  "pgauth",
+		  "pgadmin"
 		]
-		search: {
-		  title: "Search"
-		  url: "..."
-		},
-		user: {
-		  title: "joe"
-		  items: [
-		    {
-		      title: "Profile"
-		      url: "..."
-		    },
-		    {
-		      title: "Sessions"
-		      url: "..."
-		    }
-		  ]
-		},
-		lang: {
-		  title "[en]"
-		  items: [
-		    {
-		      title: "[en]",
-		      url: "..."
-		    },
-		    {
-		      title: "[fr]",
-		      url: "..."
-		    }
-		  ]
-		}
 	      }
+
 
 ##############################################################################
 # Blocks of free IPv4 addresses
@@ -1504,13 +1393,14 @@ types:
               ]
 
   post:
-    description: Create a new name
+    description: Create a new name (new host, new cname or new mx)
     queryParameters:			# none
     body:
       type: FullNameInput		# without id
       example: |
 	{
 	  name: "server backbone"
+	  addr: [1
 	  location: "bldg a"
 	  addr4: 172.16.1.0/24
 	  addr6: 2001:db8:1234:5678::/64
