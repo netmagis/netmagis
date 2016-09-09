@@ -1,5 +1,5 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React from 'react' ;
+import ReactDOM from 'react-dom' ;
 import cookie from 'react-cookie' ;
 
 /*
@@ -49,16 +49,16 @@ export var updateTranslations = function () {
     if (l == undefined) {
 	l = document.documentElement.lang ;
 	if (l == undefined) {
-	    l = "en"
+	    l = "en" ;
 	}
     }
     Dict.lang = l ;
 
     /* If the language is english dont load translations */
     if (Dict.lang == "en") {
-	Dict.translations = null;
+	Dict.translations = null ;
 	window.dispatchEvent (changeLang_event) ;
-	return;
+	return ;
     }
 
     /*
@@ -80,22 +80,22 @@ export var updateTranslations = function () {
 
 	/* Error: display a message */
 	error: function (xhr, status, error) {
-	    console.error(status + " " + error) ;
+	    console.error (status + ' ' + error) ;
 	},
 
 	/* Finished: dispatch event 'changeLang' */
-	complete: function(xhr, status) {
-	    Dict.loading = false;
+	complete: function (xhr, status) {
+	    Dict.loading = false ;
 	    window.dispatchEvent (changeLang_event) ;
 	}
-    });
+    }) ;
 }
 
 /*
  * React component to wrap app in order to trigger a
  * re-rendering when the dictionary is updated.
  *
- * ex: ReactDOM.render(<Translator> <App /> </Translator>, dom_node);
+ * ex: ReactDOM.render (<Translator> <App /> </Translator>, dom_node) ;
  *
  * Children are given a context containing a `lang` attribute,
  * also note that the  rendering of the children is triggered by the
@@ -117,11 +117,11 @@ export var Translator = React.createClass ({
      * the first rendering)
      */
 
-    componentWillMount: function() {
+    componentWillMount: function () {
 	/* Start listening for language changes */
 	window.addEventListener ('changeLang', function () {
-		    this.forceUpdate();
-		}.bind(this)
+		    this.forceUpdate () ;
+		}.bind (this)
 	    ) ;
 
 	/* Update dictionary for the first time */
@@ -129,12 +129,8 @@ export var Translator = React.createClass ({
     },
 
     /* Just wrap the children */
-    render: function() {
-	return (
-	    <div>
-	      {this.props.children}
-	    </div>
-	) ;
+    render: function () {
+	return <div>{this.props.children}</div> ;
     }
 }) ;
 
