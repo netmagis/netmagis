@@ -5,6 +5,7 @@ FILES =	\
 	worker.tcl \
 	libworker.tcl \
 	hdl-admin.tcl \
+	hdl-cap.tcl \
 	hdl-dhcpprofiles.tcl \
 	hdl-dhcpranges.tcl \
 	hdl-domains.tcl \
@@ -12,7 +13,6 @@ FILES =	\
 	hdl-freeblocks.tcl \
 	hdl-hinfos.tcl \
 	hdl-hosts.tcl \
-	hdl-menus.tcl \
 	hdl-names.tcl \
 	hdl-networks.tcl \
 	hdl-search.tcl \
