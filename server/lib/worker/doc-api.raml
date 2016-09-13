@@ -216,6 +216,39 @@ types:
 	addr: [172.16.1.1, 2001:db8:1234:5678::ff]
       }
 
+  FullHostInput:
+    description: a complete host
+    type: object
+    properties:
+      name:		string
+      iddom:		integer
+      idview:		integer
+      mac:		macaddr			# required. Use '' for no mac
+      idhinfo:		integer			# required
+      comment:		string
+      respname:		string
+      respmail:		string
+      iddhcpprof:	integer			# required. -1 if no profile
+      sendsmtp:					# required
+	enum: [0, 1]
+      ttl:		integer			# required. Use -1 for default
+      addr:		inet []
+    example: |
+      {
+	name: www
+	iddom: 1
+	idview: 1
+	mac: "01:02:03:04:05:06"
+	idhinfo: 2
+	comment: "a www server"
+	respname: "John Doe"
+	respmail: "foo@example.com"
+	iddhcpprof: -1
+	sendsmtp: 0
+	ttl: 0
+	addr: [172.16.1.1, 2001:db8:1234:5678::ff]
+      }
+
   SearchResult:
     description: search result item
     type: object
@@ -1409,6 +1442,150 @@ types:
 	  dhcp: 1
 	  gw4: 172.16.1.254
 	  addr6: 2001:db8:1234:5678::1
+	}
+    responses:
+      200:
+        body:
+	  type: FullNameId
+	  example: |
+
+  /{idrr}
+    description: Get a single name
+    queryParameters:			# none
+
+    get:
+      responses:
+        200:
+          body:
+            type: FullNameId
+	    example: |
+	      {
+		name: "atlas",
+		domain: "example.org",
+		domainlink: "/domain/5",
+		view: "external",
+		viewlink: "/views/5",
+		mac: "00:11:22:33:44:55",
+		hinfo: "pc/unix",
+		hinfolink: "/hinfos/12",
+		comment: "Simon's PC",
+		respname: "John Doe",
+		respmail: "doe@example.org",
+		dhcpprofile: "diskless",
+		dhcpprofilelink: "/dhcpprofiles/33",
+		sendsmtp: "1",
+		ttl: "3600",
+		user: "jane",
+		userlink: "/users/17",
+		cname: "other.example.org",  <exclusive with MX or addr>
+		cnamelink: "/names/82",
+		lastmod: "<time_t>"
+		addr: [
+		  "192.0.2.12",
+		  "2001:db8::1",
+		  "198.51.100.24",
+		],
+		mx: [
+		  {
+		    prio: 100,
+		    fqdn: "mx1.example.com",
+		    link: "/names/532"
+		  },
+		  {
+		    prio: 200,
+		    fqdn: "mx2.example.com",
+		    link: "/names/79"
+		  }
+		],
+	      }
+
+    put:
+
+    delete:
+      description: delete a name
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+
+##############################################################################
+# Host management
+##############################################################################
+
+/hosts
+  description: A collection of hosts
+
+  get:
+    queryParameters:
+      view:
+        description: filter on view name
+        type: string
+        required: false
+      name:
+        description: filter on name
+        type: string
+        required: false
+      domain:
+        description: filter on domain name
+        type: string
+        required: false
+      addr:
+        description: filter on IP address
+        type: cidr (v4 or v6)
+        required: false
+      sort:         # XXX BUG
+        description: sort result
+        type: comma-separated list of {name, domain, addr, view}
+        required: false
+    responses:
+      200:
+        body:
+	  description: unsorted list of names
+	  type: ShortName []
+	  example: |
+            example: |
+              [ 
+                {
+                  idrr: 123,
+                  name: www,
+                  iddom: 1,
+                  domain: example.org,
+                  idview: 1,
+                  view: internal
+                },
+                {
+                  idrr: 456,
+                  name: foo,
+                  iddom: 2,
+                  domain: example.com
+                  idview: 2
+                  view: external
+                }
+              ]
+
+  post:
+    description: Create a new host
+    queryParameters:			# none
+    body:
+      type: FullHostInput		# without id
+      example: |
+	{
+	  name: www
+	  iddom: 1
+	  idview: 1
+	  mac: "01:02:03:04:05:06"
+	  idhinfo: 2
+	  comment: "a www server"
+	  respname: "John Doe"
+	  respmail: "foo@example.com"
+	  iddhcpprof: -1
+	  sendsmtp: 0
+	  ttl: 0
+	  addr: [172.16.1.1, 2001:db8:1234:5678::ff]
 	}
     responses:
       200:

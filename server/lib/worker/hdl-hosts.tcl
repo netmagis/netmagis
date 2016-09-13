@@ -246,7 +246,7 @@ api-handler post {/hosts} logged {
 	    ::scgi::serror 412 $msg
 	}
     } else {
-	set ttl 0
+	set ttl -1
     }
 
     if {"smtp" in [::n capabilities]} then {
@@ -346,23 +346,29 @@ api-handler post {/hosts} logged {
 	}
     }
 
-    ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body $idrr
+    set j [get-host $idrr]
+
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
 }
+
 
 ##############################################################################
 
 api-handler get {/hosts/([0-9]+:idrr)} logged {
     } {
-    set j [names-get $idrr [::n idgrp]]
+    existing-host $idrr
+    set j [get-host $idrr]
+
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j
 }
 
 ##############################################################################
 
-api-handler put {/names/([0-9]+:idrr)} logged {
+api-handler put {/hosts/([0-9]+:idrr)} logged {
     } {
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx
     set idgrp [::n idgrp]
 #    set j [dhcp-new $iddhcprange $idgrp $_parm]
     set j [names-get $idrr $idgrp]
@@ -372,8 +378,60 @@ api-handler put {/names/([0-9]+:idrr)} logged {
 
 ##############################################################################
 
-api-handler delete {/names/([0-9]+:idrr)} logged {
+api-handler delete {/hosts/([0-9]+:idrr)} logged {
     } {
+    existing-host $idrr
+    set sql "SELECT r.name, d.name AS domain
+		FROM dns.mail_role m
+		    INNER JOIN dns.rr r ON (m.mailaddr = r.idrr)
+		    INNER JOIN dns.domain d USING (iddom)
+		WHERE m.mboxhost = $idrr
+		ORDER BY domain ASC, r.name ASC
+		"
+    set lmbox {}
+    ::dbdns exec $sql tab {
+	lappend lmbox "$tab(name).$tab(domain)"
+    }
+    if {[llength $lmbox] > 0} then {
+	::scgi::serror 412 [mc "Host is a mailbox host for domains: %s" [join $lmbox ", "]]
+    }
+
+    set sql "SELECT d.name AS domain
+		FROM dns.relay_dom r
+		    INNER JOIN dns.domain d USING (iddom)
+		WHERE r.mx = $idrr
+		ORDER BY domain ASC
+		"
+    set lrel {}
+    ::dbdns exec $sql tab {
+	lappend lrel $tab(domain)
+    }
+    if {[llength $lrel] > 0} then {
+	::scgi::serror 412 [mc "Host is a mail relay for domains: %s" [join $lrel ", "]]
+    }
+
+    #
+    # Delete IP addresses and aliases pointing to this host
+    # as well as the given RR.
+    #
+
+    set sql "BEGIN WORK ;
+		DELETE FROM dns.rr_ip WHERE idrr = $idrr ;
+		WITH aliases AS (
+			DELETE FROM dns.rr_cname
+			    WHERE cname = $idrr
+			    RETURNING idrr
+		    )
+		    DELETE FROM dns.rr
+			USING aliases
+			WHERE rr.idrr = aliases.idrr
+		    ;
+		DELETE FROM dns.rr
+		    WHERE idrr = $idrr
+		    ;
+		COMMIT WORK"
+    ::dbdns exec $sql
+
     ::scgi::set-header Content-Type text/plain
     ::scgi::set-body "OK"
 }
@@ -382,95 +440,28 @@ api-handler delete {/names/([0-9]+:idrr)} logged {
 # Utility functions
 ##############################################################################
 
-proc names-get {idrr idgrp} {
+proc get-host {idrr} {
     set sql "SELECT row_to_json (t.*) AS j FROM (
 		SELECT
 		    r.idrr,
 		    r.name,
 		    r.iddom,
-		    domain.name AS domain,
 		    r.idview,
-		    view.name AS view,
 		    COALESCE (CAST (r.mac AS text), '') AS mac,
 		    r.idhinfo,
-		    hinfo.name AS hinfo,
 		    COALESCE (r.comment, '') AS comment,
 		    COALESCE (r.respname, '') AS respname,
 		    COALESCE (r.respmail, '') AS respmail,
 		    COALESCE (iddhcpprof, -1) AS iddhcpprof,
-		    COALESCE (dhcpprofile.name, '') AS dhcpprofile,
 		    r.sendsmtp,
 		    r.ttl,
-		    nmuser.login AS user,
-		    r.idcor AS idcor,
-		    r.date AS lastmod,
-		    COALESCE (f1.idrr, -1) AS idcname,
-		    COALESCE (f1.name, '') AS cname,
-		    COALESCE (sreq_aliases.aliases, '{}') AS aliases,
-		    COALESCE (f2.idrr, -1) AS idmboxhost,
-		    COALESCE (f2.idview, -1) AS idmboxhostview,
-		    COALESCE (f2.name, '') AS mboxhost,
-		    COALESCE (sreq_mailaddr.mailaddr, '{}') AS mailaddr,
-		    COALESCE (sreq_mx.mx, '{}') AS mx,
-		    COALESCE (sreq_mxtarg.mxtarg, '{}') AS mxtarg,
-		    COALESCE (sreq_ip.ip, '{}') AS ip
-		FROM dns.rr r
-		    INNER JOIN dns.domain USING (iddom)
-		    INNER JOIN dns.view USING (idview)
-		    INNER JOIN dns.hinfo USING (idhinfo)
-		    LEFT OUTER JOIN dns.dhcpprofile USING (iddhcpprof)
-		    INNER JOIN global.nmuser USING (idcor)
-		    LEFT OUTER JOIN dns.rr_cname USING (idrr)
-		    LEFT OUTER JOIN dns.fqdn f1 ON rr_cname.cname = f1.idrr
-		    LEFT OUTER JOIN dns.mail_role mr ON r.idrr = mr.mailaddr
-		    LEFT OUTER JOIN dns.fqdn f2 ON mr.mboxhost = f2.idrr
-		    , LATERAL (
-			SELECT array_agg (addr) AS ip
+		    COALESCE (sreq.addr, '{}') AS addr
+		FROM dns.rr r,
+		    (
+			SELECT array_agg (addr) AS addr
 			    FROM dns.rr_ip
-			    WHERE rr_ip.idrr = r.idrr
-			) AS sreq_ip
-		    , LATERAL (
-			SELECT array_agg (json_build_object (
-					'idalias', fqdn.idrr,
-				    'alias', fqdn.name,
-				    'aliaslink', global.mklink ('/names/', fqdn.idrr)
-				)) AS aliases
-			    FROM dns.rr_cname
-				INNER JOIN dns.fqdn USING (idrr)
-			    WHERE rr_cname.cname = r.idrr
-			) AS sreq_aliases
-		    , LATERAL (
-			SELECT array_agg (json_build_object (
-					'idmailaddr', fqdn.idrr,
-					'idmailaddrview', fqdn.idview,
-				    'mailaddr', fqdn.name,
-				    'mailaddrlink', global.mklink ('/names/', fqdn.idrr)
-				)) AS mailaddr
-			    FROM dns.mail_role
-				INNER JOIN dns.fqdn ON fqdn.idrr = mail_role.mailaddr
-			    WHERE mboxhost = r.idrr
-			) AS sreq_mailaddr
-		    , LATERAL (
-			SELECT array_agg (json_build_object (
-					'idmx', fqdn.idrr,
-				    'prio', prio,
-				    'mx', fqdn.name,
-				    'mxlink', global.mklink ('/names/', fqdn.idrr)
-				)) AS mx
-			    FROM dns.rr_mx
-				INNER JOIN dns.fqdn ON rr_mx.mx = fqdn.idrr
-			    WHERE rr_mx.idrr = r.idrr
-			) AS sreq_mx
-		    , LATERAL (
-			SELECT array_agg (json_build_object (
-					'idmxtarg', fqdn.idrr,
-				    'mxtarg', fqdn.name,
-				    'mxtarglink', global.mklink ('/names/', fqdn.idrr)
-				)) AS mxtarg
-			    FROM dns.rr_mx
-				INNER JOIN dns.fqdn ON rr_mx.idrr = fqdn.idrr
-			    WHERE rr_mx.mx = r.idrr
-			) AS sreq_mxtarg
+			    WHERE rr_ip.idrr = $idrr
+			) AS sreq
 		WHERE r.idrr = $idrr
 	    ) AS t
 		"
@@ -484,6 +475,31 @@ proc names-get {idrr idgrp} {
     }
     return $j
 }
+
+proc existing-host {idrr} {
+    set sql "SELECT rr.name, domain.name AS domain, rr.idview
+		FROM dns.rr
+		    INNER JOIN dns.domain USING (iddom)
+		WHERE idrr = $idrr
+		"
+    set found 0
+    ::dbdns exec $sql tab {
+	set found 1
+	set name $tab(name)
+	set domain $tab(domain)
+	set idview $tab(idview)
+    }
+
+    if {! $found} then {
+	::scgi::serror 404 [mc "Host not found"]
+    }
+
+    set msg [check-authorized-host ::dbdns [::n idcor] $name $domain $idview trr "existing-host"]
+    if {$msg ne ""} then {
+	::scgi::serror 412 $msg
+    }
+}
+
 
 
 
