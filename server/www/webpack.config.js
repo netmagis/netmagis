@@ -2,11 +2,12 @@ const webpack = require('webpack');
 
 module.exports = {
     entry: {
+	'netmagis': './src/netmagis.jsx',
 	'add-app': './src/add-app.jsx',
 	'dhcp-app': './src/dhcp-app.jsx',
 	'login-app': './src/login-app.jsx',
 	'test-app': './src/test-app.jsx',
-	'foo-app': './src/foo-app.jsx',
+	'login': './src/login.jsx',
 	'common' : [ 'react' , 'react-dom' ]
     },
     output: {

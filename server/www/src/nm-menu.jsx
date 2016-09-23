@@ -1,73 +1,18 @@
 import React from 'react' ;
 import ReactDOM from 'react-dom' ;
-import cookie from 'react-cookie' ;
-import {Translator, translate, updateTranslations} from './lang.jsx' ;
-import * as F from './bootstrap-lib/form-utils.jsx' ;
+import * as S from './nm-state.jsx' ;
 import * as C from './common.js' ;
 
-/*
- * Top-level Netmagis menu
- * Holds state: result of the /cap API
- */
-
-export var TopLevel = React.createClass ({
-    // To enforce a rerendering on language change
-    contextTypes: {lang: React.PropTypes.string},
-
-    // current user capabilities (extracted from /cap API)
-    cap: {
-	any:		true,
-	logged:		false,
-	admin:		false,
-	smtp:		false,
-	ttl:		false,
-	mac:		false,
-	topo:		false,
-	topogenl:	false,
-	pgauth:		false,
-	pgadmin:	false,
-	setuid:		false
-    },
+export var NMMenu = React.createClass ({
+    // Enforce a rerendering on language/capability change
+    contextTypes: {nm: React.PropTypes.object},
 
     getInitialState: function () {
 	return {
 	    curApp: 'index',
 	    p1: '',
 	    p2: '',
-	    cap: [],
-	    user: '',
 	} ;
-    },
-
-    componentDidMount: function () {
-	this.serverRequest = C.reqJSON ({
-	    url: C.APIURL + "/cap",
-	    success: function (result) {
-		    var rc ;
-		    for (var c in this.cap) {
-			this.cap [c] = false ;
-		    }
-		    for (var ic in result.cap) {
-			rc = result.cap [ic] ;
-			if (this.cap [rc] != undefined) {
-			    this.cap [rc] = true ;
-			}
-		    }
-		    this.setState ({
-			cap: result.cap,
-			user: result.user,
-		    }) ;
-		}.bind (this)
-	}) ;
-    },
-
-    componentWillUnmount: function () {
-	this.serverRequest.abort () ;
-    },
-
-    handleDisconnect: function () {
-	cookie.remove ('session', {path: C.APIURL}) ;
-	document.location.reload (true) ;
     },
 
     handleSearchForm: function (event) {
@@ -76,30 +21,15 @@ export var TopLevel = React.createClass ({
 	if (srch != '') {
 	    this.setState ({
 		curApp: 'search',
-		p1: srch,
-		p2: ''
+		p1: srch
 	    }) ;
 	}
-    },
-
-    handleLang: function (l) {
-	// console.log ('handleLang : l=', l, ', C.APIURL=', C.APIURL)
-	cookie.save ('lang', l, {path: C.APIURL}) ;
-	updateTranslations () ;
-    },
-
-    handleLangEn: function () {
-	this.handleLang ('en') ;
-    },
-
-    handleLangFr: function () {
-	this.handleLang ('fr') ;
     },
 
     // hide (with bootstrap class) an element:
     // http://getbootstrap.com/css/#helper-classes-show-hide
     showIf: function (c) {
-	return this.cap [c] ? "" : " hidden" ;
+	return this.context.nm.cap [c] ? "" : " hidden" ;
     },
 
     render: function () {
@@ -148,33 +78,33 @@ export var TopLevel = React.createClass ({
 			  aria-haspopup="true"
 			  aria-expanded="false"
 			  >
-			{translate ('DNS')}
+			{S.mc ('DNS')}
 			<span className="caret" />
 		      </a>
 		      <ul className="dropdown-menu">
 			<li key="dns1">
-			  <a href="#">{translate ('Consult')}</a>
+			  <a href="#">{S.mc ('Consult')}</a>
 			</li>
 			<li key="dns2">
-			  <a href="#">{translate ('Add')}</a>
+			  <a href="#">{S.mc ('Add')}</a>
 			</li>
 			<li key="dns3">
-			  <a href="#">{translate ('Delete')}</a>
+			  <a href="#">{S.mc ('Delete')}</a>
 			</li>
 			<li key="dns4">
-			  <a href="#">{translate ('Modify')}</a>
+			  <a href="#">{S.mc ('Modify')}</a>
 			</li>
 			<li key="dns5">
-			  <a href="#">{translate ('Mail roles')}</a>
+			  <a href="#">{S.mc ('Mail roles')}</a>
 			</li>
 			<li key="dns6">
-			  <a href="#">{translate ('DHCP ranges')}</a>
+			  <a href="#">{S.mc ('DHCP ranges')}</a>
 			</li>
 			<li key="dns7" className={this.showIf ('pgauth')}>
-			  <a href="#">{translate ('Password')}</a>
+			  <a href="#">{S.mc ('Password')}</a>
 			</li>
 			<li key="dns8">
-			  <a href="#">{translate ('Where am I?')}</a>
+			  <a href="#">{S.mc ('Where am I?')}</a>
 			</li>
 		      </ul>
 		    </li>
@@ -187,24 +117,24 @@ export var TopLevel = React.createClass ({
 			  aria-haspopup="true"
 			  aria-expanded="false"
 			  >
-			{translate ('Topo')}
+			{S.mc ('Topo')}
 			<span className="caret" />
 		      </a>
 		      <ul className="dropdown-menu">
 			<li key="topo1">
-			  <a href="#">{translate ('Equipments')}</a>
+			  <a href="#">{S.mc ('Equipments')}</a>
 			</li>
 			<li key="topo2">
-			  <a href="#">{translate ('Vlans')}</a>
+			  <a href="#">{S.mc ('Vlans')}</a>
 			</li>
 			<li key="topo3">
-			  <a href="#">{translate ('Networks')}</a>
+			  <a href="#">{S.mc ('Networks')}</a>
 			</li>
 			<li key="topo4" className={this.showIf ('genl')}>
-			  <a href="#">{translate ('Link number')}</a>
+			  <a href="#">{S.mc ('Link number')}</a>
 			</li>
 			<li key="topo5" className={this.showIf ('admin')}>
-			  <a href="#">{translate ('Status')}</a>
+			  <a href="#">{S.mc ('Status')}</a>
 			</li>
 		      </ul>
 		    </li>
@@ -217,21 +147,21 @@ export var TopLevel = React.createClass ({
 			  aria-haspopup="true"
 			  aria-expanded="false"
 			  >
-			{translate ('MAC')}
+			{S.mc ('MAC')}
 			<span className="caret" />
 		      </a>
 		      <ul className="dropdown-menu">
 			<li key="mac1">
-			  <a href="macindex">{translate ('Index')}</a>
+			  <a href="macindex">{S.mc ('Index')}</a>
 			</li>
 			<li key="mac2">
-			  <a href="mac">{translate ('Search')}</a>
+			  <a href="mac">{S.mc ('Search')}</a>
 			</li>
 			<li key="mac3">
-			  <a href="ipinact">{translate ('Inactive addr.')}</a>
+			  <a href="ipinact">{S.mc ('Inactive addr.')}</a>
 			</li>
 			<li key="mac4">
-			  <a href="macstat">{translate ('Stats')}</a>
+			  <a href="macstat">{S.mc ('Stats')}</a>
 			</li>
 		      </ul>
 		    </li>
@@ -244,93 +174,93 @@ export var TopLevel = React.createClass ({
 			  aria-haspopup="true"
 			  aria-expanded="false"
 			  >
-			{translate ('Admin')}
+			{S.mc ('Admin')}
 			<span className="caret" />
 		      </a>
 		      <ul className="dropdown-menu">
 			<li key="admin1">
-			  <a href="admlmx">{translate ('List MX')}</a>
+			  <a href="admlmx">{S.mc ('List MX')}</a>
 			</li>
 			<li key="admin2">
-			  <a href="lnet">{translate ('List networks')}</a>
+			  <a href="lnet">{S.mc ('List networks')}</a>
 			</li>
 			<li key="admin3">
-			  <a href="lusers">{translate ('List users')}</a>
+			  <a href="lusers">{S.mc ('List users')}</a>
 			</li>
 			<li key="admin4">
-			  <a href="who?action=now">{translate ('Connected users')}</a>
+			  <a href="who?action=now">{S.mc ('Connected users')}</a>
 			</li>
 			<li key="admin5">
-			  <a href="who?action=last">{translate ('Last connections')}</a>
+			  <a href="who?action=last">{S.mc ('Last connections')}</a>
 			</li>
 			<li key="admin6">
-			  <a href="#">{translate ('Status')}</a>
+			  <a href="#">{S.mc ('Status')}</a>
 			</li>
 			<li key="admin7">
-			  <a href="admref?type=org">{translate ('Modify organizations')}</a>
+			  <a href="admref?type=org">{S.mc ('Modify organizations')}</a>
 			</li>
 			<li key="admin8">
-			  <a href="admref?type=comm">{translate ('Modify communities')}</a>
+			  <a href="admref?type=comm">{S.mc ('Modify communities')}</a>
 			</li>
 			<li key="admin9">
-			  <a href="admref?type=hinfo">{translate ('Modify machine types')}</a>
+			  <a href="admref?type=hinfo">{S.mc ('Modify machine types')}</a>
 			</li>
 			<li key="admin10">
-			  <a href="admref?type=net">{translate ('Modify networks')}</a>
+			  <a href="admref?type=net">{S.mc ('Modify networks')}</a>
 			</li>
 			<li key="admin11">
-			  <a href="admref?type=domain">{translate ('Modify domains')}</a>
+			  <a href="admref?type=domain">{S.mc ('Modify domains')}</a>
 			</li>
 			<li key="admin12">
-			  <a href="admmrel">{translate ('Modify mailhost')}</a>
+			  <a href="admmrel">{S.mc ('Modify mailhost')}</a>
 			</li>
 			<li key="admin13">
-			  <a href="admmx">{translate ('Modify MX')}</a>
+			  <a href="admmx">{S.mc ('Modify MX')}</a>
 			</li>
 			<li key="admin14">
-			  <a href="admref?type=view">{translate ('Modify views')}</a>
+			  <a href="admref?type=view">{S.mc ('Modify views')}</a>
 			</li>
 			<li key="admin15">
-			  <a href="admref?type=zone">{translate ('Modify zones')}</a>
+			  <a href="admref?type=zone">{S.mc ('Modify zones')}</a>
 			</li>
 			<li key="admin16">
-			  <a href="admref?type=zone4">{translate ('Modify rev IPv4 zones')}</a>
+			  <a href="admref?type=zone4">{S.mc ('Modify rev IPv4 zones')}</a>
 			</li>
 			<li key="admin17">
-			  <a href="admref?type=zone6">{translate ('Modify rev IPv6 zones')}</a>
+			  <a href="admref?type=zone6">{S.mc ('Modify rev IPv6 zones')}</a>
 			</li>
 			<li key="admin18">
-			  <a href="admref?type=dhcpprof">{translate ('Modify DHCP profiles')}</a>
+			  <a href="admref?type=dhcpprof">{S.mc ('Modify DHCP profiles')}</a>
 			</li>
 			<li key="admin19">
-			  <a href="admref?type=vlan">{translate ('Modify Vlans')}</a>
+			  <a href="admref?type=vlan">{S.mc ('Modify Vlans')}</a>
 			</li>
 			<li key="admin20">
-			  <a href="admref?type=eqtype">{translate ('Modify equipment types')}</a>
+			  <a href="admref?type=eqtype">{S.mc ('Modify equipment types')}</a>
 			</li>
 			<li key="admin21">
-			  <a href="admref?type=eq">{translate ('Modify equipments')}</a>
+			  <a href="admref?type=eq">{S.mc ('Modify equipments')}</a>
 			</li>
 			<li key="admin22">
-			  <a href="admref?type=confcmd">{translate ('Modify configuration commands')}</a>
+			  <a href="admref?type=confcmd">{S.mc ('Modify configuration commands')}</a>
 			</li>
 			<li key="admin23">
-			  <a href="admref?type=dotattr">{translate ('Modify Graphviz attributes')}</a>
+			  <a href="admref?type=dotattr">{S.mc ('Modify Graphviz attributes')}</a>
 			</li>
 			<li key="admin24">
-			  <a href="admgrp">{translate ('Modify users and groups')}</a>
+			  <a href="admgrp">{S.mc ('Modify users and groups')}</a>
 			</li>
 			<li key="admin25">
-			  <a href="admzgen">{translate ('Force zone generation')}</a>
+			  <a href="admzgen">{S.mc ('Force zone generation')}</a>
 			</li>
 			<li key="admin26">
-			  <a href="admpar">{translate ('Application parameters')}</a>
+			  <a href="admpar">{S.mc ('Application parameters')}</a>
 			</li>
 			<li key="admin27">
-			  <a href="statuser">{translate ('Statistics by user')}</a>
+			  <a href="statuser">{S.mc ('Statistics by user')}</a>
 			</li>
 			<li key="admin28">
-			  <a href="statorg">{translate ('Statistics by organization')}</a>
+			  <a href="statorg">{S.mc ('Statistics by organization')}</a>
 			</li>
 		      </ul>
 		    </li>
@@ -343,39 +273,39 @@ export var TopLevel = React.createClass ({
 			  aria-haspopup="true"
 			  aria-expanded="false"
 			  >
-			{translate ('Auth')}
+			{S.mc ('Auth')}
 			<span className="caret" />
 		      </a>
 		      <ul className="dropdown-menu">
 			<li key="pgadmin1">
-			  <a href="pgaacc?action=list">{translate ('List accounts')}</a>
+			  <a href="pgaacc?action=list">{S.mc ('List accounts')}</a>
 			</li>
 			<li key="pgadmin2">
-			  <a href="pgaacc?action=print">{translate ('Print accounts')}</a>
+			  <a href="pgaacc?action=print">{S.mc ('Print accounts')}</a>
 			</li>
 			<li key="pgadmin3">
-			  <a href="pgaacc?action=add">{translate ('Add account')}</a>
+			  <a href="pgaacc?action=add">{S.mc ('Add account')}</a>
 			</li>
 			<li key="pgadmin4">
-			  <a href="pgaacc?action=mod">{translate ('Modify account')}</a>
+			  <a href="pgaacc?action=mod">{S.mc ('Modify account')}</a>
 			</li>
 			<li key="pgadmin5">
-			  <a href="pgaacc?action=del">{translate ('Remove account')}</a>
+			  <a href="pgaacc?action=del">{S.mc ('Remove account')}</a>
 			</li>
 			<li key="pgadmin6">
-			  <a href="pgaacc?action=passwd">{translate ('Change account password')}</a>
+			  <a href="pgaacc?action=passwd">{S.mc ('Change account password')}</a>
 			</li>
 			<li key="pgadmin7">
-			  <a href="pgarealm?action=list">{translate ('List realms')}</a>
+			  <a href="pgarealm?action=list">{S.mc ('List realms')}</a>
 			</li>
 			<li key="pgadmin8">
-			  <a href="pgarealm?action=add">{translate ('Add realm')}</a>
+			  <a href="pgarealm?action=add">{S.mc ('Add realm')}</a>
 			</li>
 			<li key="pgadmin9">
-			  <a href="pgarealm?action=mod">{translate ('Modify realm')}</a>
+			  <a href="pgarealm?action=mod">{S.mc ('Modify realm')}</a>
 			</li>
 			<li key="pgadmin10">
-			  <a href="pgarealm?action=del">{translate ('Remove realm')}</a>
+			  <a href="pgarealm?action=del">{S.mc ('Remove realm')}</a>
 			</li>
 		      </ul>
 		    </li>
@@ -390,7 +320,7 @@ export var TopLevel = React.createClass ({
 		      <div className="form-group">
 			<input type="text"
 			    className="form-control"
-			    placeholder={translate ('Enter text')}
+			    placeholder={S.mc ('Enter text')}
 			    ref="topsearch"
 			    aria-label="Search"
 			    />
@@ -406,11 +336,11 @@ export var TopLevel = React.createClass ({
 
 		  <ul className="nav navbar-nav navbar-right">
 
-		    <li className={this.cap ['logged'] ? 'hidden' : 'show'}
+		    <li className={this.context.nm.cap ['logged'] ? 'hidden' : 'show'}
 			key="notconnected"
 			>
 		      <p className="navbar-text">
-			{translate ('Not connected')}
+			{S.mc ('Not connected')}
 		      </p>
 		    </li>
 		    <li className={"dropdown" + this.showIf ('logged')}
@@ -423,31 +353,31 @@ export var TopLevel = React.createClass ({
 				aria-expanded="false"
 				>
 			<span className="glyphicon glyphicon-user" />
-			&nbsp; {this.state.user}
+			&nbsp; {this.context.nm.user}
 			<span className="caret" />
 		      </a>
 		      <ul className="dropdown-menu">
 			<li key="user1">
-			  <a href="profile.html">{translate ('Profile')}</a>
+			  <a href="profile.html">{S.mc ('Profile')}</a>
 			</li>
 			<li key="user2">
-			  <a href="sessions.html">{translate ('Sessions')}</a>
+			  <a href="sessions.html">{S.mc ('Sessions')}</a>
 			</li>
 			<li key="user3" role="separator"
 			    className={"divider" + this.showIf ('admin')}
 			    />
 			<li key="user4" className={this.showIf ('admin')}>
-			  <a href="sudo.html">{translate ('Sudo')}</a>
+			  <a href="sudo.html">{S.mc ('Sudo')}</a>
 			</li>
 			<li key="user5" className={this.showIf ('setuid')}>
-			  <a href="sudo.html">{translate ('Back to my id')}</a>
+			  <a href="sudo.html">{S.mc ('Back to my id')}</a>
 			</li>
 			<li key="user6" role="separator" className="divider"
 			    />
 			<li key="user7">
 			  <a href="#">
-			    <p onClick={this.handleDisconnect}>
-			      {translate ('Disconnect')}
+			    <p onClick={S.disconnect}>
+			      {S.mc ('Disconnect')}
 			    </p>
 			  </a>
 			</li>
@@ -462,18 +392,18 @@ export var TopLevel = React.createClass ({
 			  aria-haspopup="true"
 			  aria-expanded="false"
 			  >
-			{translate ('[en]')}
+			{S.mc ('[en]')}
 			<span className="caret" />
 		      </a>
 		      <ul className="dropdown-menu">
 			<li key="lang-en">
 			  <a href="#">
-			    <p onClick={this.handleLangEn}>[en]</p>
+			    <p onClick={S.changeLang.bind (this, 'en')}>[en]</p>
 			  </a>
 			</li>
 			<li key="lang-fr">
 			  <a href="#">
-			    <p onClick={this.handleLangFr}>[fr]</p>
+			    <p onClick={S.changeLang.bind (this, 'fr')}>[fr]</p>
 			  </a>
 			</li>
 		      </ul>
@@ -487,7 +417,7 @@ export var TopLevel = React.createClass ({
 	    <div className="container-fluid">
 	      <div className="row">
 		<div className="col-md-12">
-		  <App app={this.state.curApp} p1={this.state.p1} />
+		   <NMRouter app={this.state.curApp} p1={this.state.p1} />
 		</div>
 	      </div>
 	    </div>
@@ -496,22 +426,21 @@ export var TopLevel = React.createClass ({
     }
 }) ;
 
-var App = React.createClass ({
-    // To enforce a rerendering on language change
-    contextTypes: {lang: React.PropTypes.string},
-
-    getInitialState: function () {
-	return {message : "", color: ""}; 
-    },
+var NMRouter = React.createClass ({
+    // Enforce a rerendering on language/capability change
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	switch (this.props.app) {
 	    case 'index' :
-		return (
-			<div>
-			  <p>here is the index</p>
-			</div>
-		    ) ;
+		if (this.context.nm.cap.logged) {
+		    return ( <div> <p>here is the index</p> </div>) ;
+		} else {
+		    return (<div><p>one should call login</p> </div>) ;
+		    /**************************************
+		    return (<Login />) ;
+		    **************************************/
+		}
 	    case 'search' :
 		return (
 			<div>
@@ -534,8 +463,13 @@ var App = React.createClass ({
     }
 }) ;
 
-
-/* Render the app on the element with id #app */
-var dom_node = document.getElementById ('app') ;
-
-ReactDOM.render (<Translator><TopLevel /></Translator>, dom_node) ;
+var NMRouterX = React.createClass ({
+    render: function () {
+	return (
+		    <pre>
+			this.props: {JSON.stringify (this.props)}
+			this.state: {JSON.stringify (this.state)}
+		    </pre>
+		) ;
+    }
+}) ;
