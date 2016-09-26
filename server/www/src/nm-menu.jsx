@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom' ;
 import * as S from './nm-state.jsx' ;
 import * as C from './common.js' ;
 import {Login} from './login.jsx' ;
+import {DHCPRange} from './dhcprange.jsx' ;
 
 export var NMMenu = React.createClass ({
     // Enforce a rerendering on language/capability change
@@ -14,6 +15,10 @@ export var NMMenu = React.createClass ({
 	    p1: '',
 	    p2: '',
 	} ;
+    },
+
+    gotoApp: function (app, p1, p2) {
+	this.setState ({curApp: app, p1: p1, p2: p2}) ;
     },
 
     handleSearchForm: function (event) {
@@ -99,7 +104,11 @@ export var NMMenu = React.createClass ({
 			  <a href="#">{S.mc ('Mail roles')}</a>
 			</li>
 			<li key="dns6">
-			  <a href="#">{S.mc ('DHCP ranges')}</a>
+			  <a href="#">
+			    <p onClick={this.gotoApp.bind (this, 'dhcprange')}>
+			      {S.mc ('DHCP ranges')}
+			    </p>
+			  </a>
 			</li>
 			<li key="dns7" className={this.showIf ('pgauth')}>
 			  <a href="#">{S.mc ('Password')}</a>
@@ -445,6 +454,8 @@ var NMRouter = React.createClass ({
 			  <p>Searching {this.props.p1}</p>
 			</div>
 		    ) ;
+	    case 'dhcprange' :
+		return (<DHCPRange />) ;
 	    case 'foo' :
 		return (
 		    <div>
