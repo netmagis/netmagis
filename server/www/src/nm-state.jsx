@@ -147,7 +147,8 @@ export var changeLang = function (l) {
  */
 
 export var disconnect = function () {
-    cookie.remove ('session', {path: C.APIURL + '/'}) ;
+    cookie.remove ('session', {path: C.APIURL}) ;		// Firefox
+    cookie.remove ('session', {path: C.APIURL + '/'}) ;		// Chromium
     updateCap () ;
 } ;
 

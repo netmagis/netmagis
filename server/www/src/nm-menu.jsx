@@ -2,6 +2,7 @@ import React from 'react' ;
 import ReactDOM from 'react-dom' ;
 import * as S from './nm-state.jsx' ;
 import * as C from './common.js' ;
+import {Login} from './login.jsx' ;
 
 export var NMMenu = React.createClass ({
     // Enforce a rerendering on language/capability change
@@ -436,10 +437,7 @@ var NMRouter = React.createClass ({
 		if (this.context.nm.cap.logged) {
 		    return ( <div> <p>here is the index</p> </div>) ;
 		} else {
-		    return (<div><p>one should call login</p> </div>) ;
-		    /**************************************
 		    return (<Login />) ;
-		    **************************************/
 		}
 	    case 'search' :
 		return (

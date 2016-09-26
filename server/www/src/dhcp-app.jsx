@@ -2,7 +2,7 @@ import React from 'react' ;
 import ReactDOM from 'react-dom' ;
 import {Translator, translate, updateTranslations} from './lang.jsx' ;
 import * as F from './bootstrap-lib/form-utils.jsx' ;
-import {TopMenu} from './top-menu.jsx' ;
+// import {TopMenu} from './top-menu.jsx' ;
 
 /*
  * The input fields can be not defined ---> they will be rendered as empty
@@ -61,4 +61,4 @@ var App = React.createClass({
 /* Render the app on the element with id #app */
 var dom_node = document.getElementById ('app') ;
 /* ReactDOM.render (<App />, dom_node) ; */
-ReactDOM.render (<TopMenu><App /></TopMenu>, dom_node) ;
+ReactDOM.render (<App />, dom_node) ;

@@ -1,6 +1,6 @@
 import React from 'react' ;
 import ReactDOM from 'react-dom' ;
-import {translate} from '../lang.jsx' ;
+import {mc} from '../nm-state.jsx' ;
 import Autosuggest from 'react-autosuggest' ;
 import {Prompters} from './prompters.jsx' ;
 
@@ -52,7 +52,7 @@ export function form2obj (id) {
 
 export var Input = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	var iProps = Object.assign ({}, this.props) ;
@@ -66,7 +66,7 @@ export var Input = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {translate (this.props.label)}
+		    {this.props.label}
 		</label>
 		<div className={"col-md-" + gridVals [1]} >
 		    <input {...iProps} className="form-control" />
@@ -87,7 +87,7 @@ export var Input = React.createClass ({
 
 export var Ainput = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	var iProps = Object.assign ({}, this.props) ;
@@ -101,7 +101,7 @@ export var Ainput = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {translate (this.props.label)}
+		    {mc (this.props.label)}
 		</label>
 		<div className={"col-md-" + gridVals [1]} >
 		    <AutoInput {...iProps} className="form-control" />
@@ -126,7 +126,7 @@ export var Ainput = React.createClass ({
 
 export var Button = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	var iProps = Object.assign ({}, this.props) ;
@@ -139,7 +139,7 @@ export var Button = React.createClass ({
 
 	return (
 	    <button className={"btn btn-default col-md-" + gridVal} {...iProps}>
-		{translate (this.props.children)}
+		{mc (this.props.children)}
 	    </button>
 	) ;
     }
@@ -180,7 +180,7 @@ export var Button = React.createClass ({
  */
 export var Dropdown_internal = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     /* state: attribute value which
      * indicate the current (selected) contents of the dropdown */
@@ -229,7 +229,7 @@ export var Dropdown_internal = React.createClass ({
 	return (
 	    <li key={"dopt" + index}>
 		<a href="#" onClick={this.handleClick.bind (this, child)} >
-		    {translate (child.props.children)}
+		    {mc (child.props.children)}
 		</a>
 	    </li>
 	) ;
@@ -245,7 +245,7 @@ export var Dropdown_internal = React.createClass ({
 			 aria-expanded="true"
 			 {...this.props}
 			 >
-		    {translate (this.state.value)}
+		    {mc (this.state.value)}
 		    <span className="caret"></span>
 		</button>
 		<ul className="dropdown-menu" >
@@ -270,7 +270,7 @@ export var Dropdown_internal = React.createClass ({
 
 export var AJXdropdown = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     /* An AJXdropdown has a name prop */
     propTypes: { name: React.PropTypes.string.isRequired },
@@ -320,7 +320,7 @@ export var AJXdropdown = React.createClass ({
 
 export var Dropdown = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	var iProps = Object.assign ({}, this.props) ;
@@ -334,7 +334,7 @@ export var Dropdown = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {translate (this.props.label)}
+		    {mc (this.props.label)}
 		</label>
 		<div className={"dropdown col-md-" + gridVals [1]}>
 		    <Dropdown_internal {...iProps} />
@@ -359,7 +359,7 @@ export var Dropdown = React.createClass ({
 
 export var Adropdown = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	var iProps = Object.assign ({}, this.props) ;
@@ -407,7 +407,7 @@ export var Adropdown = React.createClass ({
 
 export var Inputdrop = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	var iProps = Object.assign ({}, this.props) ;
@@ -423,7 +423,7 @@ export var Inputdrop = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {translate (this.props.label)}
+		    {mc (this.props.label)}
 		</label>
 		<div className={"input-group col-md-" + gridVals [1]}
 			 style={{"paddingLeft": "15px", "float": "left"}}
@@ -449,7 +449,7 @@ export var Inputdrop = React.createClass ({
 
 export var InputAdrop = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	var iProps = Object.assign ({}, this.props) ;
@@ -465,7 +465,7 @@ export var InputAdrop = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {translate (this.props.label)}
+		    {mc (this.props.label)}
 		</label>
 		<div className={"input-group col-md-" + gridVals [1]}
 			style={{"paddingLeft": "15px", "float": "left"}}
@@ -496,7 +496,7 @@ export var InputAdrop = React.createClass ({
 
 export var Checkbox = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes : {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	var iProps = Object.assign ({}, this.props) ;
@@ -511,7 +511,7 @@ export var Checkbox = React.createClass ({
 	    <div className={"checkbox col-md-" + gridVal}>
 		<label>
 		    <input type="checkbox" {...iProps} />
-		    {translate (this.props.label)}
+		    {mc (this.props.label)}
 		</label>
 	    </div>
 	) ;
@@ -553,7 +553,7 @@ export var Space = React.createClass ({
 
 export var Row = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	return (
@@ -572,7 +572,7 @@ export var Row = React.createClass ({
  */
 export var Form = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     render: function () {
 	return (
@@ -684,7 +684,7 @@ export var AutoInput = React.createClass ({
 
 export var InputXORdd = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     getInitialState: function () {
 	// State : value of the input (Ivalue) + value of the dropdown (Dvalue)
@@ -717,7 +717,7 @@ export var InputXORdd = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]}>
-		    {translate (this.props.label)}
+		    {mc (this.props.label)}
 		</label>
 		<div className={"col-md-" + gridVals [1]}>
 		    <input className="form-control"
@@ -751,7 +751,7 @@ export var InputXORdd = React.createClass ({
 
 export var TextEdit = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes : {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     getInitialState: function () {
 	return { value: this.props.children }
@@ -823,7 +823,7 @@ export var CheckboxEdit = React.createClass ({
 
 export var InEdit = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     getInitialState: function () {
 	return { value: this.props.children }
@@ -867,7 +867,7 @@ export var InEdit = React.createClass ({
  */
 export var DdEdit = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes: {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     getInitialState: function () {
 	if (this.props.values == undefined) {
@@ -946,7 +946,7 @@ export var DdEdit = React.createClass ({
 
 export var Editable_tr = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes : {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     getInitialState: function () {
 	return {
@@ -1123,7 +1123,7 @@ export var Editable_tr = React.createClass ({
 
 export var Table = React.createClass ({
     /* This will force a rerendering on language change */
-    contextTypes : {lang: React.PropTypes.string},
+    contextTypes: {nm: React.PropTypes.object},
 
     /* has a name prop */
     propTypes: { name: React.PropTypes.string.isRequired },
