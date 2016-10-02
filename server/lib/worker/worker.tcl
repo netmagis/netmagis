@@ -23,7 +23,6 @@ namespace import ::msgcat::*
 package require pgdb
 package require nmenv
 package require lconf
-package require dbconf
 
 array set route {
     get {}
@@ -51,12 +50,6 @@ proc thread-init {conffile version wdir} {
     ::nmenv::nmenv create ::n
     ::n setdb ::dbdns
 
-    ##########################################################################
-    # REMOVE ME
-    ::dbconf::db-config create ::config
-    ::config setdb ::dbdns
-    ### END REMOVE ###########################################################
-
     #
     # Create a global object for configuration parameters
     #
@@ -80,9 +73,9 @@ proc thread-init {conffile version wdir} {
 #
 
 proc check-authtoken {token} {
-    set idle       [::config get "authexpire"]
-    set apiexpire  [::config get "apiexpire"]
-    set wtmpexpire [::config get "wtmpexpire"]
+    set idle       [::n confget "authexpire"]
+    set apiexpire  [::n confget "apiexpire"]
+    set wtmpexpire [::n confget "wtmpexpire"]
 
     #
     # Expire old utmp entries
