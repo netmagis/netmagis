@@ -387,6 +387,8 @@ proc handle-request {uri meth parm} {
 #
 
 proc check-route {uri cap parm rte} {
+    global conf
+
     #
     # Each route is registered as a list
     #	{ re vars paramspec neededcap script }
@@ -411,17 +413,17 @@ proc check-route {uri cap parm rte} {
 
     # uri contains both the prefix (e.g. /where/you/configured/netmagis)
     # and the pattern to match. We complete the regexp to get the prefix
-    set re "^(.*)$re$"
+    set re "^$conf(baseurl)$re$"
 
     set l [regexp -inline $re $uri]
     if {[llength $l] > 0} then {
 
 	# Extract prefix
-	set prefix [lindex $l 1]
+	set prefix [lindex $l 0]
 
 	# Extract named groups if any
 	set i 0
-	foreach val [lreplace $l 0 1] {
+	foreach val [lreplace $l 0 0] {
 	    set var [lindex $vars $i]
 	    dict set tpar $var $val
 	    incr i
