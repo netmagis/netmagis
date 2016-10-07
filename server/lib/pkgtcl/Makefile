@@ -6,6 +6,7 @@ SRCS =	\
 	nmenv.tcl \
 	pgdb.tcl \
 	scgi.tcl \
+	rr.tcl \
 
 FILES = $(SRCS) pkgIndex.tcl
 
