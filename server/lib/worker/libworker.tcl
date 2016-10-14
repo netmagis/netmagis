@@ -1,5 +1,6 @@
 package require Pgtcl
 package require json
+package require rr
 
 #
 # Checks if the selected views are authorized for this user
@@ -44,189 +45,6 @@ proc check-views {views} {
     }
 
     return $msg
-}
-
-#
-# Get all informations associated with a name
-#
-# Input:
-#   - parameters:
-#	- dbfd : database handle
-#	- name : name to search for
-#	- iddom : id of the domain in which to search for the name
-#	- idview: view id
-#	- _trr : empty array
-# Output:
-#   - return value: 1 if ok, 0 if not found
-#   - _trr parameter : see read-rr-by-id
-#
-# History
-#   2002/04/11 : pda/jean : design
-#   2002/04/19 : pda/jean : add name and iddom
-#   2002/04/19 : pda/jean : use read-rr-by-id
-#   2010/11/29 : pda      : i18n
-#   2013/04/05 : pda/jean : add view
-#
-
-proc read-rr-by-name {dbfd name iddom idview _trr} {
-    upvar $_trr trr
-
-    set qname [pg_quote $name]
-    set where "name = $qname AND iddom = $iddom AND idview = $idview"
-    return [read-rr $dbfd trr $where]
-}
-
-proc read-rr-by-id {dbfd idrr _trr} {
-    upvar $_trr trr
-
-    return [read-rr $dbfd trr "idrr = $idrr"]
-}
-
-#
-# Get all informations associated with a RR.
-#
-# Input:
-#   - parameters:
-#	- dbfd : database handle
-#	- idrr : RR id to search for
-#	- _trr : empty array
-# Output:
-#   - return value: 1 if ok, 0 if not found
-#   - parameter _trr : (see dns.full_rr_id SQL view)
-#
-# History
-#   2002/04/19 : pda/jean : design
-#   2002/06/02 : pda/jean : hinfo becomes an index in a table
-#   2004/02/06 : pda/jean : add mailrole, mailaddr and roleweb
-#   2004/08/05 : pda/jean : simplification and add mac
-#   2005/04/08 : pda/jean : add dhcpprofil
-#   2008/07/24 : pda/jean : add sendsmtp
-#   2010/10/31 : pda      : add ttl
-#   2010/11/29 : pda      : i18n
-#   2012/10/08 : pda/jean : views
-#   2013/04/05 : pda/jean : temporary hack for views
-#   2013/04/10 : pda/jean : remove roleweb
-#   2016/05/13 : pda/jean : use SQL view
-#
-
-proc read-rr {dbfd _trr where} {
-    upvar $_trr trr
-
-    catch {unset trr}
-    set found 0
-    set sql "SELECT row_to_json (r) FROM dns.full_rr_id r WHERE $where"
-    $dbfd exec $sql tab {
-	array set trr [::json::json2dict $tab(row_to_json)]
-	set found 1
-    }
-
-    if {! $found} then {
-	set l {idrr name iddom domain domainlink
-		idview view viewlink mac
-		idhinfo hinfo hinfolink
-		comment respname respmail
-		dhcpprof dhcpproflink iddhcpprof
-		sendsmtp ttl
-		user userlink idcor
-		lastmod
-		idcname cname cnamelink
-		aliases
-		idmboxhost idmboxhostview mboxhost mboxhostlink
-		mailaddr
-		mx mxtarg
-		ip
-		}
-	foreach c $l {
-	    set trr($c) {}
-	}
-    }
-
-    return $found
-}
-
-#
-# Get RR information filtered for a view
-#
-# XXX: remove view
-#
-# Input:
-#   - parameters:
-#       - _trr : see read-rr-by-id
-#	- idview : view
-# Output:
-#   - return value: list of IP addresses
-#
-# History
-#   2012/10/08 : pda/jean : design
-#
-
-proc rr-ip-by-view {_trr idview} {
-    upvar $_trr trr
-
-    return $trr(ip)
-}
-
-proc rr-cname-by-view {_trr idview} {
-    upvar $_trr trr
-
-    return $trr(cname)
-}
-
-proc rr-aliases-by-view {_trr idview} {
-    upvar $_trr trr
-
-    set laliases {}
-    if [
-    foreach a $trr(aliases) {
-	lappend laliases [dict get $a idalias]
-    }
-    return $laliases
-}
-
-proc rr-mx-by-view {_trr idview} {
-    upvar $_trr trr
-
-    set lmx {}
-    foreach m $trr(mx) {
-	set prio [dict get $m prio]
-	set idrr [dict get $m idmx]
-	lappend lmx [list $prio $idrr]
-    }
-    return $lmx
-}
-
-proc rr-mxtarg-by-view {_trr idview} {
-    upvar $_trr trr
-
-    set lmxt {}
-    foreach m $trr(mxtarg) {
-	lappend lmxt [dict get $m idmxtarg]
-    }
-    return $lmxt
-}
-
-proc rr-mailrole-by-view {_trr idview} {
-    upvar $_trr trr
-
-    set lmr {}
-    if {$trr(mboxhost) ne ""} then {
-	set lmr [list $trr(idmboxhost) $trr(idmboxhostview)]
-    }
-    return $lmr
-}
-
-proc rr-mailaddr-by-view {_trr idview} {
-    upvar $_trr trr
-
-    set lma {}
-    foreach ma $trr(mailaddr) {
-	set idrr [dict get $ma idmailaddr]
-	set idv  [dict get $ma idmailaddrview]
-	if {$idv == $idview} then {
-	    lappend lma [list $idrr $idv]
-	}
-    }
-    return $lma
 }
 
 #
@@ -360,6 +178,8 @@ proc read-domain {dbfd domain} {
 }
 
 #
+# FIXME this function is obsolete. Prefer [::n isalloweddom $iddom $role]
+#
 # Checks if the domain is authorized for this user
 #
 # Input:
@@ -460,52 +280,38 @@ proc check-authorized-ip {dbfd idcor addr} {
 
 #
 # Check if the user has adequate rights to a machine, by checking
-# that he own all IP addresses
+# that he owns all IP addresses
 #
 # Input:
 #   - parameters:
 #       - dbfd : database handle
 #	- idcor : user id
-#	- idrr : RR id to search for, or -1 if _trr is already initialized
-#	- _trr : see read-rr-by-name
+#	- rr : see ::rr::read-by-name (may be not found)
 # Output:
-#   - return value: 1 if ok, 0 if error
-#
-# History
-#   2002/04/19 : pda/jean : design
-#   2010/11/29 : pda      : i18n
-#   2012/10/30 : pda/jean : add views
+#   - return value: error message or empty string
 #
 
-proc check-name-by-addresses {dbfd idcor idrr _trr} {
-    upvar $_trr trr
-
-    set ok 1
-
-    #
-    # Read RR if needed
-    #
-
-    if {$idrr != -1} then {
-	read-rr-by-id $dbfd $idrr trr
+proc check-name-by-addresses {dbfd idcor rr} {
+    if {! [::rr::found $rr]} then {
+	return ""
     }
 
-    if {$trr(idview) ne "" && ! [::n isallowedview $trr(idview)]} then {
-	return 0
+    set idview [::rr::get-idview $rr]
+    if {! [::n isallowedview $idview]} then {
+	return [mc {Invalid view %s} [::n viewname $idview]]
     }
 
     #
     # Check all addresses and views
     #
 
-    foreach ip [rr-ip-by-view trr "NOT USED"] {
+    foreach ip [::rr::get-ip $rr] {
 	if {! [check-authorized-ip $dbfd $idcor $ip]} then {
-	    set ok 0
-	    break
+	    return [mc {Unauthorized IP address '%s'} $ip]
 	}
     }
 
-    return $ok
+    return ""
 }
 
 #
@@ -519,12 +325,12 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #	- name : name to test (first component of FQDN)
 #	- domain : domain to test (the n-1 last components of FQDN)
 #	- idview : view id in which this FQDN must be tested
-#	- trr : in return, information on the host (see read-rr-by-id)
+#	- rr : in return, information on the host (see ::rr::read-by-id)
 #	- context : the context to check
 # Output:
 #   - return value: empty string or error message
-#   - parameter trr : contains informations on the RR found, or if the RR
-#	doesn't exist, trr(idrr) = "" and trr(iddom) = domain id
+#   - parameter rr : if RR exists, contains informations on the RR found
+#	(use ::rr::found to check if RR exists)
 #
 # Detail of tests:
 #    According to context:
@@ -596,28 +402,20 @@ proc check-name-by-addresses {dbfd idcor idrr _trr} {
 #
 # Bug: this procedure is never called with the "mx" parameter
 #
-# History
-#   2004/02/27 : pda/jean : specification
-#   2004/02/27 : pda/jean : coding
-#   2004/03/01 : pda/jean : use trr(iddom) instead of iddom
-#   2010/11/29 : pda      : i18n
-#   2012/10/30 : pda/jean : add views
-#   2013/04/10 : pda/jean : accept only one view
-#
 
-proc check-authorized-host {dbfd idcor name domain idview _trr context} {
-    upvar $_trr trr
+proc check-authorized-host {dbfd idcor name domain idview _rr context} {
+    upvar $_rr rr
 
     array set testrights {
 	host	{
-		    {domain	{}}
+		    {domain	all}
 		    {alias	REJECT}
 		    {mx		REJECT}
 		    {ip		CHECK}
 		    {mailaddr	CHECK}
 		}
 	existing-host	{
-		    {domain	{}}
+		    {domain	all}
 		    {alias	REJECT}
 		    {mx		REJECT}
 		    {ip		CHECK}
@@ -625,21 +423,21 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		    {mailaddr	CHECK}
 		}
 	alias	{
-		    {domain	{}}
+		    {domain	all}
 		    {alias	REJECT}
 		    {mx		REJECT}
 		    {ip		REJECT}
 		    {mailaddr	REJECT}
 		}
 	del-name	{
-		    {domain	{}}
+		    {domain	all}
 		    {alias	CHECK}
 		    {mx		REJECT}
 		    {ip		CHECK}
 		    {mailaddr	CHECK}
 		}
 	mx	{
-		    {domain	{}}
+		    {domain	all}
 		    {alias	REJECT}
 		    {mx		CHECK}
 		    {ip		CHECK}
@@ -678,6 +476,10 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
     #
 
     set fqdn "$name.$domain"
+    set iddom [::n domainid $domain]
+    if {$iddom == -1} then {
+	return [mc "Domain '%s' not found" $domain]
+    }
 
     foreach a $testrights($context) {
 	set parm [lindex $a 1]
@@ -689,29 +491,29 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		}
 		set viewname [::n viewname $idview]
 
-		set iddom -1
-		set msg [check-domain $dbfd $idcor iddom domain $parm]
-		if {$msg ne ""} then {
-		    return $msg
+		if {! [::n isalloweddom $iddom $parm]} then {
+		    return [mc "You don't have rights on domain '%s'" $domain]
 		}
 
-		if {! [read-rr-by-name $dbfd $name $iddom $idview trr]} then {
-		    set trr(iddom) $iddom
-		}
+		set rr [::rr::read-by-name $dbfd $name $iddom $idview]
 	    }
 	    alias {
-		set idcname [rr-cname-by-view trr $idview]
+		set idcname ""
+		if {[::rr::found $rr]} then {
+		    set idcname [::rr::get-cname $rr]
+		}
+
 		if {$idcname ne ""} then {
-		    read-rr-by-id $dbfd $idcname t
-		    set fqdnref "$t(name).$t(domain)"
+		    set r2 [::rr::read-by-id $dbfd $idcname]
+		    set fqdnref [::rr::get-fqdn $r2]
 		    switch $parm {
 			REJECT {
 			    return [mc {%1$s is an alias of host %2$s in view %3$s} $fqdn $fqdnref $viewname]
 			}
 			CHECK {
-			    set ok [check-name-by-addresses $dbfd $idcor -1 t]
-			    if {! $ok} then {
-				return [mc {You don't have rights on some IP addresses of '%1$s' referenced by alias '%2$s'} $fqdnref $fqdn]
+			    set msg [check-name-by-addresses $dbfd $idcor $r2]
+			    if {$msg ne ""} then {
+				return [mc {You don't have rights '%1$s' referenced by alias '%2$s' (%3$s)} $fqdnref $fqdn $msg]
 			    }
 			}
 			default {
@@ -721,18 +523,22 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		}
 	    }
 	    mx {
-		set lmx [rr-mx-by-view trr $idview]
+		set lmx {}
+		if {[::rr::found $rr]} then {
+		    set lmx [::rr::get-mx $rr]
+		}
+
 		foreach mx $lmx {
+		    lassign $mx prio idmx
 		    switch $parm {
 			REJECT {
 			    return [mc "'%s' is a MX" $fqdn]
 			}
 			CHECK {
-			    set idrr [lindex $mx 1]
-			    set ok [check-name-by-addresses $dbfd $idcor $idrr t]
-			    if {! $ok} then {
-				set fqdnmx "$t(name).$t(domain)"
-				return [mc {You don't have rights on some IP addresses of '%1$s' referenced by MX '%2$s'} $fqdnmx $fqdn]
+			    set msg [check-name-by-addresses $dbfd $idcor $rmx]
+			    if {$msg ne ""} then {
+				set fqdnmx [::rr::get-fqdn $rmx]
+				return [mc {You don't have rights on '%1$s' referenced by MX '%2$s' (%3$s)} $fqdnmx $fqdn $msg]
 			    }
 			}
 			default {
@@ -743,35 +549,36 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 	    }
 	    mailaddr {
 		# get mailbox host for this address
-		set rm [rr-mailrole-by-view trr $idview]
-		if {$rm ne ""} then {
-		    lassign $rm idrr idviewmbx
+		set idmboxhost ""
+		if {[::rr::found $rr]} then {
+		    set idmboxhost [::rr::get-mboxhost $rr]
+		}
+
+		if {$idmboxhost ne ""} then {
 		    # get mbox host
-		    if {! [read-rr-by-id $dbfd $idrr trrh]} then {
-			return [mc "Internal error: id '%s' doesn't exists for a mail host" $idrr]
+		    set rrm [::rr::read-by-id $idmboxhost]
+		    if {! [::rr::found $rrm]} then {
+			return [mc "Internal error: id '%s' doesn't exists for a mail host" $idmboxhost]
 		    }
+		    set idviewmbx [::rr::get-idview $rrm]
+		    set fqdnm [::rr::get-fqdn $rrm]
 		    switch $parm {
 			REJECT {
 			    # This name is already a mail address
 			    # (it already has a mailbox host)
-			    set fqdnm "$trrh(name).$trrh(domain)"
 			    return [mc {%1$s in view %2$s is a mail address hosted by %3$s in view %4$s} $fqdn $viewname $fqdnm [::n viewname $idviewmbx]]
 			}
 			CHECK {
-
-			    # IP address check
-			    set ok [check-name-by-addresses $dbfd $idcor -1 trrh]
+			    # Check mboxhost IP addresses
+			    set msg [check-name-by-addresses $dbfd $idcor $rrm]
 			    if {! $ok} then {
-				return [mc "You don't have rights on host holding mail for '%s'" $fqdn]
+				return [mc {You don't have rights on host '%1$s' holding mail for '%2$s' (%3$s)} $fqdnm $fqdn $msg]
 			    }
 
-			    # Mail host checking
-			    set bidon -1
-			    set msg [check-domain $dbfd $idcor bidon trrh(domain) ""]
-			    if {$msg ne ""} then {
-				set r [mc "You don't have rights on host holding mail for '%s'" $fqdn]
-				append r "\n$msg"
-				return $r
+			    # Check mboxhost domain
+			    set mbiddom [::rr::get-iddom $rrm]
+			    if {! [::n isalloweddom $mbiddom "all"]} then {
+				return [mc {You don't have rights on domain of host '%1$s' holding mail for '%2$s'} $fqdnm $fqdn]
 			    }
 			}
 			EXISTS {
@@ -799,17 +606,32 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		}
 	    }
 	    mailhost {
-		set laddr [rr-mailaddr-by-view trr $idview]
+		set lma {}
+		if {[::rr::found $rr]} then {
+		    set lma [::rr::get-mailaddr $rr]
+		}
+
 		switch $parm {
 		    REJECT {
-			# remove the name (in all views) from the list
-			# of mail domains hosted on this host
-			while {[set pos [lsearch -exact -index 0 \
-					    $laddr $trr(idrr)]] != -1} {
-			    set laddr [lreplace $laddr $pos $pos]
+			# check if the new mail-address is a mboxhost
+			# for other mail addresses (except for its own
+			# mail address)
+			# => check if there are mail addresses for this
+			# mboxhost (other than the fqdn of the mboxhost
+			# itself)
+			set l {}
+			foreach idma $lma {
+			    set rrma [::rr::read-by-id $dbfd $idma]
+			    if {! [::rr:found $rrma]} then {
+				return [mc "Internal error: id '%s' doesn't exists for a mail address" $idma]
+			    }
+			    set fqdnma [::rr::get-fqdn $rrma]
+			    if {$fqdnma ne $fqdn} then {
+				lappend l $fqdnma
+			    }
 			}
-			if {[llength $laddr] > 0} then {
-			    return [mc "'%s' is a mail host for mail domains" $fqdn]
+			if {[llength $l] > 0} then {
+			    return [mc {'%1$s' is a mail host for mail domains: %2$s} $fqdn $l]
 			}
 		    }
 		    default {
@@ -818,7 +640,11 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 		}
 	    }
 	    ip {
-		set lip [rr-ip-by-view trr $idview]
+		set lip {}
+		if {[::rr::found $rr]} then {
+		    set lip [::rr::get-ip $rr]
+		}
+
 		switch $parm {
 		    REJECT {
 			if {[llength $lip] > 0} then {
@@ -831,9 +657,9 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 			}
 		    }
 		    CHECK {
-			set ok [check-name-by-addresses $dbfd $idcor -1 trr]
-			if {! $ok} then {
-			    return [mc "You don't have rights on some IP addresses of '%s1$'" $fqdn]
+			set msg [check-name-by-addresses $dbfd $idcor $rr]
+			if {$msg ne ""} then {
+			    return [mc {You don't have rights on '%1$s' (%2$s)} $fqdn $msg]
 			}
 		    }
 		    default {
@@ -846,4 +672,3 @@ proc check-authorized-host {dbfd idcor name domain idview _trr context} {
 
     return ""
 }
-

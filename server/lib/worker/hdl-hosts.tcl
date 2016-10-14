@@ -140,7 +140,7 @@ api-handler post {/hosts} logged {
 	::scgi::serror 412 [mc "Invalid view id '%s'" $idview]
     }
 
-    if {n != -1 && ! [::n isalloweddhcpprof $idview]} then {
+    if {$iddhcpprof != -1 && ! [::n isalloweddhcpprof $iddhcpprof]} then {
 	::scgi::serror 412 [mc "Invalid dhcpprofile id '%s'" $iddhcpprof]
     }
 
@@ -192,7 +192,7 @@ api-handler post {/hosts} logged {
 	lappend lbad $tab(jaddr)
     }
     if {[llength $lbad] > 0} then {
-	::scgi::serror 403 [mc "Invalid address list (%s)" [join $lbad ", "]]
+	::scgi::serror 403 [mc "Unauthorized address(es): %s" [join $lbad ", "]]
     }
 
     #
@@ -220,7 +220,7 @@ api-handler post {/hosts} logged {
     set idcor [::n idcor]
     set domain [::n domainname $iddom]
 
-    set msg [check-authorized-host ::dbdns $idcor $name $domain $idview trr "host"]
+    set msg [check-authorized-host ::dbdns $idcor $name $domain $idview rr "host"]
     if {$msg ne ""} then {
 	::scgi::serror 412 $msg
     }
@@ -273,12 +273,12 @@ api-handler post {/hosts} logged {
 	set qiddhcpprof $iddhcpprof
     }
 
-    if {$trr(idrr) ne ""} then {
+    if {[::rr::found $rr]} then {
 	#
 	# Check if host already exists
 	#
 
-	set idrr $trr(idrr)
+	set idrr [::rr::get-idrr $rr]
 	set sql "SELECT COUNT (addr) AS cnt
 		    FROM dns.rr_ip
 		    WHERE idrr = $idrr"
@@ -494,7 +494,7 @@ proc existing-host {idrr} {
 	::scgi::serror 404 [mc "Host not found"]
     }
 
-    set msg [check-authorized-host ::dbdns [::n idcor] $name $domain $idview trr "existing-host"]
+    set msg [check-authorized-host ::dbdns [::n idcor] $name $domain $idview rr "existing-host"]
     if {$msg ne ""} then {
 	::scgi::serror 412 $msg
     }

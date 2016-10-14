@@ -50,9 +50,9 @@ namespace eval ::nmenv {
     #	returns domain name associated to domain id (or empty string if error)
     # - domainid name
     #	returns domain id associated to domain name (or -1 if error)
-    # - myiddom
+    # - myiddoms [role]
     #	get all authorized domain ids
-    # - isalloweddom id
+    # - isalloweddom id [role]
     #	check if a domain is authorized (1 if ok, 0 if not)
     #
     # - dhcpprofname id
@@ -120,14 +120,14 @@ namespace eval ::nmenv {
     # myviewids : sorted list of views
     variable myviewids {}
 
-    # Domain management
+    # Domain management (role = "all" or "mailrole")
     # alldom(id:<id>)=name
     # alldom(name:<name>)=id
     variable alldom -array {}
-    # authdom(<id>)=1
+    # authdom(<role>:<id>)=1
     variable authdom -array {}
-    # myiddoms : sorted list of domains
-    variable myiddom {}
+    # myiddoms(<role>) : sorted list of domains for this role
+    variable myiddoms -array {}
 
     # DHCP profile management
     # alldhcpprof(id:<id>)=name
@@ -408,7 +408,8 @@ namespace eval ::nmenv {
     proc load-domains {selfns} {
 	array unset alldom
 	array unset authdom
-	set myiddom {}
+	set myiddoms(all) {}
+	set myiddoms(mailrole) {}
 
 	set sql "SELECT * FROM dns.domain"
 	$db exec $sql tab {
@@ -418,15 +419,19 @@ namespace eval ::nmenv {
 	    set alldom(name:$name) $iddom
 	}
 
-	set sql "SELECT p.iddom
+	set sql "SELECT p.iddom, p.mailrole
 			FROM dns.p_dom p
 			    NATURAL INNER JOIN dns.domain d
 			WHERE p.idgrp = $ids(idgrp)
 			ORDER BY p.sort ASC, d.name ASC"
 	$db exec $sql tab {
 	    set iddom $tab(iddom)
-	    set authdom($iddom) 1
-	    lappend myiddom $tab(iddom)
+	    set authdom(all:$iddom) 1
+	    lappend myiddoms(all) $tab(iddom)
+	    if {$tab(mailrole)} then {
+		set authdom(mailrole:$iddom) 1
+		lappend myiddoms(mailrole) $tab(iddom)
+	    }
 	}
 
 	set loaded(domains) 1
@@ -454,18 +459,18 @@ namespace eval ::nmenv {
 	return $r
     }
 
-    method myiddom {} {
+    method myiddoms {{role all}} {
 	if {! $loaded(domains)} then {
 	    load-domains $selfns
 	}
-	return $myiddom
+	return $myiddoms($role)
     }
 
-    method isalloweddom {id} {
+    method isalloweddom {id {role all}} {
 	if {! $loaded(domains)} then {
 	    load-domains $selfns
 	}
-	return [info exists authdom($id)]
+	return [info exists authdom($role:$id)]
     }
 
     #
