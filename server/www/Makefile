@@ -15,6 +15,7 @@ install: build
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)$(NMWWWDIR)
 	$(NINSTALL) -m 0644 $(SUBST) static/*/* $(DESTDIR)$(NMWWWDIR)
+	$(NINSTALL) -m 0644 $(SUBST) static/*.* $(DESTDIR)$(NMWWWDIR)
 	$(NINSTALL) -m 0644 $(SUBST) dist/* $(DESTDIR)$(NMWWWDIR)
 
 clean:

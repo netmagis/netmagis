@@ -77,15 +77,21 @@
 
 
 
-
-"Name" : "Nom",
-"First name": "Prenom",
-"Last name": "Nom",
-"Ip address" : "Adresse Ip",
-"Add single host" : "Adjouter un host",
-"Add block" : "Adjouter un block",
-"View" : "Vue",
-"Mac address": "Adresse Mac",
+"First name":		"Prénom",
+"Last name":		"Nom",
+"Add single host":	"Ajout simple",
+"Add several hosts":	"Ajout multiple",
+"Add alias":		"Ajout d'alias",
+"Name" :		"Nom",
+"IP address" :		"Adresse IP",
+"View" :		"Vue",
+"MAC address":		"Adresse MAC",
+"Use SMTP":		"Utiliser SMTP",
+"Host type":		"Type de machine",
+"DHCP profile":		"Profil DHCP",
+"Comment":		"Infos complémentaires",
+"Responsible (name)":	"Responsable (nom)",
+"Responsible (mail)":	"Responsable (mél)",
 "Select network": "Sélectionner un réseau",
 
 "do-not-remove":"end-without-comma"

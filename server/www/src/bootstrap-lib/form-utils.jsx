@@ -1,6 +1,5 @@
 import React from 'react' ;
 import ReactDOM from 'react-dom' ;
-import {mc} from '../nm-state.jsx' ;
 import Autosuggest from 'react-autosuggest' ;
 import {Prompters} from './prompters.jsx' ;
 
@@ -101,7 +100,7 @@ export var Ainput = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {mc (this.props.label)}
+		    {this.props.label}
 		</label>
 		<div className={"col-md-" + gridVals [1]} >
 		    <AutoInput {...iProps} className="form-control" />
@@ -139,7 +138,7 @@ export var Button = React.createClass ({
 
 	return (
 	    <button className={"btn btn-default col-md-" + gridVal} {...iProps}>
-		{mc (this.props.children)}
+		{this.props.children}
 	    </button>
 	) ;
     }
@@ -229,7 +228,7 @@ export var Dropdown_internal = React.createClass ({
 	return (
 	    <li key={"dopt" + index}>
 		<a href="#" onClick={this.handleClick.bind (this, child)} >
-		    {mc (child.props.children)}
+		    {child.props.children}
 		</a>
 	    </li>
 	) ;
@@ -245,7 +244,7 @@ export var Dropdown_internal = React.createClass ({
 			 aria-expanded="true"
 			 {...this.props}
 			 >
-		    {mc (this.state.value)}
+		    {this.state.value}
 		    <span className="caret"></span>
 		</button>
 		<ul className="dropdown-menu" >
@@ -334,7 +333,7 @@ export var Dropdown = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {mc (this.props.label)}
+		    {this.props.label}
 		</label>
 		<div className={"dropdown col-md-" + gridVals [1]}>
 		    <Dropdown_internal {...iProps} />
@@ -423,7 +422,7 @@ export var Inputdrop = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {mc (this.props.label)}
+		    {this.props.label}
 		</label>
 		<div className={"input-group col-md-" + gridVals [1]}
 			 style={{"paddingLeft": "15px", "float": "left"}}
@@ -465,7 +464,7 @@ export var InputAdrop = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]} >
-		    {mc (this.props.label)}
+		    {this.props.label}
 		</label>
 		<div className={"input-group col-md-" + gridVals [1]}
 			style={{"paddingLeft": "15px", "float": "left"}}
@@ -511,7 +510,7 @@ export var Checkbox = React.createClass ({
 	    <div className={"checkbox col-md-" + gridVal}>
 		<label>
 		    <input type="checkbox" {...iProps} />
-		    {mc (this.props.label)}
+		    {this.props.label}
 		</label>
 	    </div>
 	) ;
@@ -717,7 +716,7 @@ export var InputXORdd = React.createClass ({
 	return (
 	    <div>
 		<label className={"control-label col-md-" + gridVals [0]}>
-		    {mc (this.props.label)}
+		    {this.props.label}
 		</label>
 		<div className={"col-md-" + gridVals [1]}>
 		    <input className="form-control"

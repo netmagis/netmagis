@@ -3,7 +3,6 @@ const webpack = require('webpack');
 module.exports = {
     entry: {
 	'netmagis': './src/netmagis.jsx',
-	'add-app': './src/add-app.jsx',
 	'test-app': './src/test-app.jsx',
 	'common' : [ 'react' , 'react-dom' ]
     },
