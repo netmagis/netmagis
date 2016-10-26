@@ -6,7 +6,6 @@ FILES =	\
 	libworker.tcl \
 	hdl-admin.tcl \
 	hdl-cap.tcl \
-	hdl-default.tcl \
 	hdl-dhcpprofiles.tcl \
 	hdl-dhcpranges.tcl \
 	hdl-domains.tcl \

@@ -59,7 +59,7 @@ api-handler post {/sessions} any {
 	set srcaddr "::1"
     }
 
-    set am [::config get "authmethod"]
+    set am [::n confget "authmethod"]
 
     clean-authfail ::dbdns
 
@@ -167,7 +167,7 @@ api-handler delete {/sessions} no {
 proc check-password {dbfd login upw} {
     set success 0
 
-    set am [::config get "authmethod"]
+    set am [::::n confget "authmethod"]
     switch $am {
 	pgsql {
 	    set qlogin [pg_quote $login]
@@ -185,11 +185,11 @@ proc check-password {dbfd login upw} {
 	    }
 	}
 	ldap {
-	    set url       [::config get "ldapurl"]
-	    set binddn    [::config get "ldapbinddn"]
-	    set bindpw    [::config get "ldapbindpw"]
-	    set basedn    [::config get "ldapbasedn"]
-	    set searchuid [::config get "ldapsearchlogin"]
+	    set url       [::::n confget "ldapurl"]
+	    set binddn    [::::n confget "ldapbinddn"]
+	    set bindpw    [::::n confget "ldapbindpw"]
+	    set basedn    [::::n confget "ldapbasedn"]
+	    set searchuid [::::n confget "ldapsearchlogin"]
 
 	    set handle [::ldapx::ldap create %AUTO%]
 	    if {[$handle connect $url $binddn $bindpw]} then {
@@ -258,7 +258,7 @@ proc register-user-login {dbfd login casticket} {
     # lines)
     #
 
-    set toklen [::config get "authtoklen"]
+    set toklen [::::n confget "authtoklen"]
 
     $dbfd lock {global.utmp} {
 	set found true
@@ -373,10 +373,10 @@ proc reset-authfail {dbfd otype origin} {
 #
 
 proc update-authfail {dbfd otype origin} {
-    set failXthreshold1 [::config get "fail${otype}threshold1"]
-    set failXthreshold2 [::config get "fail${otype}threshold2"]
-    set failXdelay1     [::config get "fail${otype}delay1"]
-    set failXdelay2     [::config get "fail${otype}delay2"]
+    set failXthreshold1 [::::n confget "fail${otype}threshold1"]
+    set failXthreshold2 [::::n confget "fail${otype}threshold2"]
+    set failXdelay1     [::::n confget "fail${otype}delay1"]
+    set failXdelay2     [::::n confget "fail${otype}delay2"]
 
     #
     # Start of critical section

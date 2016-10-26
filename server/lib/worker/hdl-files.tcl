@@ -7,8 +7,21 @@ array set fileext {
     png  image/png
 }
 
+set conf(defaultfile)	netmagis.html
+
+api-handler get {/} any {
+    } {
+    global conf
+
+    file-get $conf(defaultfile)
+}
+
 api-handler get {/files/([-a-zA-Z0-9][-a-zA-Z0-9.]*:name)} any {
     } {
+    file-get $name
+}
+
+proc file-get {name} {
     global fileext
     global conf
 

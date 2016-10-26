@@ -57,7 +57,7 @@ export var NMMenu = React.createClass ({
 		    <span className="icon-bar" />
 		  </button>
 		  <a className="logo" rel="home" href="http://www.netmagis.org">
-		    <img alt="Netmagis" src="logo-transp.png" height="50px" />
+		    <img alt="Netmagis" src="files/logo-transp.png" height="50px" />
 		  </a>
 		</div>
 
