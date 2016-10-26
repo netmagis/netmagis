@@ -261,62 +261,26 @@ var AddAlias = React.createClass ( {
 	    <div>
 	      <F.Form id={this.props.id}>
 		<F.Row>
-		  <F.InputAdrop label="Name"
+		  <F.InputAdrop label={S.mc ('Alias name')}
 		      name ="name"
 		      ddname="domain"
 		      defaultValue={d ["name"]}
 		      ddDef={d ["domain"]}
 		      />
-		  <F.Input label="TTL"
-		      name="ttl"
-		      dims="2+1"
-		      defaultValue={d ["ttl"]}
-		      />
 		</F.Row>
 		<F.Row>
-		  <F.Ainput label="Ip address"
-		      name="addr"
-		      defaultValue={d["addr"]}
-		      />
-		  <F.Dropdown label="View"
-		      name="view" defaultValue={d["view"]}
-		      >
-		    <el>external</el>
-		    <el>internal</el>
-		  </F.Dropdown>
-		</F.Row>
-		<F.Row>
-		  <F.Input label="Mac address" name="mac"/>
-		  <F.Space dims="2" />
-		  <F.Checkbox label="use SMTP"
-		      name="smtp"
-		      defaultChecked={d["smtp"]}
-		      />
-		</F.Row>
-		<F.Row>
-		  <F.Adropdown label="Machine"
-		      name="hinfos_present"
-		      defaultValue={d["machines"]}
-		      />
-		</F.Row>
-		<F.Row>
-		  <F.Input label="Comment" name="comment" />
-		</F.Row>
-		<F.Row>
-		  <F.Input label="Resp. name"
-		      name="rname"
-		      defaultValue={d["rname"]}
-		      />
-		  <F.Input label="Resp. mail"
-		      name="rmail"
-		      defaultValue={d["rmail"]}
+		  <F.InputAdrop label={S.mc ('Reference host')}
+		      name ="nameref"
+		      ddname="domain"
+		      defaultValue={d ["name"]}
+		      ddDef={d ["domain"]}
 		      />
 		</F.Row>
 	      </F.Form>
 	      <F.Row>
 		<F.Space dims="5" />
 		<F.Button dims="1" onClick={this.handleClick}>
-		  Add
+		  {S.mc ('Add')}
 		</F.Button>
 	      </F.Row>
 	    </div>

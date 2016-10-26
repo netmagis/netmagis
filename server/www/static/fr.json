@@ -92,6 +92,8 @@
 "Comment":		"Infos complémentaires",
 "Responsible (name)":	"Responsable (nom)",
 "Responsible (mail)":	"Responsable (mél)",
+"Alias name":		"Nom d'alias",
+"Reference host":	"Pointe vers",
 "Select network": "Sélectionner un réseau",
 
 "do-not-remove":"end-without-comma"
