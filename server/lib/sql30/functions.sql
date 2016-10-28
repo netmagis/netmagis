@@ -135,7 +135,7 @@ CREATE OR REPLACE FUNCTION dns.mark_cidr (net CIDR, lim INTEGER, grp INTEGER)
 --    200?/??/?? : pda : design
 --
 
-DROP TYPE IF EXISTS iprange_t ;
+DROP TYPE IF EXISTS iprange_t CASCADE ;
 CREATE TYPE iprange_t AS (a INET, n INTEGER) ;
 
 CREATE OR REPLACE FUNCTION dns.ipranges (net CIDR, lim INTEGER, grp INTEGER)
@@ -190,43 +190,62 @@ CREATE OR REPLACE FUNCTION dns.ipranges (net CIDR, lim INTEGER, grp INTEGER)
 --    2002/??/?? : pda/jean : design
 --
 
--- called when an IPv4 address is modified ($1=addr, $2=idrr)
+-- called when an IPv4 address is modified ($1=addr, $2=idhost)
 CREATE OR REPLACE FUNCTION dns.gen_rev4 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.zone_reverse4 AS z SET gen = 1
-	    FROM dns.rr
-	    WHERE $1 <<= selection
-		AND rr.idrr = $2
-		AND z.idview = rr.idview ;
+	    FROM dns.host h, dns.name n
+	    WHERE $1 <<= z.selection
+		AND h.idhost = $2
+		AND h.idname = n.idname
+		AND z.idview = n.idview ;
 	RETURN 1 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
 
--- called when an IPv6 address is modified ($1=addr, $2=idrr)
+-- called when an IPv6 address is modified ($1=addr, $2=idhost)
 CREATE OR REPLACE FUNCTION dns.gen_rev6 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.zone_reverse6 AS z SET gen = 1
-	    FROM dns.rr
+	    FROM dns.host h, dns.name n
 	    WHERE $1 <<= selection
-		AND rr.idrr = $2
-		AND z.idview = rr.idview ;
+		AND h.idhost = $2
+		AND h.idname = n.idname
+		AND z.idview = n.idview ;
 	RETURN 1 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
 
--- ID of RR ($1=idrr)
-CREATE OR REPLACE FUNCTION dns.gen_norm_idrr (INTEGER)
+-- ID of host ($1=idhost)
+CREATE OR REPLACE FUNCTION dns.gen_norm_idhost (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.zone_forward SET gen = 1
 		WHERE (selection, idview) = 
 			(
-			    SELECT domain.name, rr.idview
-				FROM dns.domain, dns.rr
-				WHERE rr.idrr = $1
-				    AND rr.iddom = domain.iddom
+			    SELECT d.name, n.idview
+				FROM dns.host h
+				    NATURAL INNER JOIN dns.name n
+				    NATURAL INNER JOIN dns.domain d
+				WHERE h.idhost = $1
+			) ;
+	RETURN 1 ;
+    END ;
+    $$ LANGUAGE 'plpgsql' ;
+
+-- ID of name ($1=idname)
+CREATE OR REPLACE FUNCTION dns.gen_norm_idname (INTEGER)
+    RETURNS INTEGER AS $$
+    BEGIN
+	UPDATE dns.zone_forward SET gen = 1
+		WHERE (selection, idview) = 
+			(
+			    SELECT d.name, n.idview
+				FROM dns.name n
+				    NATURAL INNER JOIN dns.domain d
+				WHERE n.idname = $1
 			) ;
 	RETURN 1 ;
     END ;
@@ -248,13 +267,16 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_iddom (INTEGER, INTEGER)
     $$ LANGUAGE 'plpgsql' ;
 
 -- utility function for the mod_relay trigger function
--- called when a mail relay is modified ($1=iddom, $2=idrr of mx)
+-- called when a mail relay is modified ($1=iddom, $2=idhost of mx)
 CREATE OR REPLACE FUNCTION dns.gen_relay (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.zone_forward SET gen = 1
 	    WHERE selection = ( SELECT name FROM dns.domain WHERE iddom = $1 )
-		AND idview = ( SELECT idview FROM dns.rr WHERE idrr = $2 )
+		AND idview = ( SELECT n.idview
+				    FROM dns.host h
+					NATURAL INNER JOIN dns.name n
+				    WHERE h.idhost = $2 )
 	    ;
 	RETURN 1 ;
     END ;
@@ -264,7 +286,7 @@ CREATE OR REPLACE FUNCTION dns.gen_relay (INTEGER, INTEGER)
 -- Set the DHCP generation flag for one or more views.
 --
 -- Input:
---   - $1: RR id
+--   - $1: idhost
 -- Output:
 --   - an unused integer value, just to be able to call sum() on result
 --
@@ -276,10 +298,11 @@ CREATE OR REPLACE FUNCTION dns.gen_dhcp (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.view SET gendhcp = 1
-	    FROM dns.rr
-		WHERE rr.idrr = $1
-		    AND rr.mac IS NOT NULL
-		    AND view.idview = rr.idview ;
+	    FROM dns.host h
+		NATURAL INNER JOIN dns.name n
+	    WHERE h.idhost = $1
+		AND h.mac IS NOT NULL
+		AND view.idview = n.idview ;
 	RETURN 1 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
@@ -291,36 +314,36 @@ CREATE OR REPLACE FUNCTION dns.gen_dhcp (INTEGER)
 --    200?/??/?? : pda/jean : design
 --
 
-CREATE OR REPLACE FUNCTION dns.mod_ip ()
+CREATE OR REPLACE FUNCTION dns.mod_addr ()
     RETURNS trigger AS $$
     BEGIN
 	IF TG_OP = 'INSERT'
 	THEN
-	    PERFORM sum (dns.gen_rev4 (NEW.addr, NEW.idrr)) ;
-	    PERFORM sum (dns.gen_rev6 (NEW.addr, NEW.idrr)) ;
-	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr)) ;
-	    PERFORM sum (dns.gen_dhcp (NEW.idrr)) ;
+	    PERFORM sum (dns.gen_rev4 (NEW.addr, NEW.idhost)) ;
+	    PERFORM sum (dns.gen_rev6 (NEW.addr, NEW.idhost)) ;
+	    PERFORM sum (dns.gen_norm_idhost (NEW.idhost)) ;
+	    PERFORM sum (dns.gen_dhcp (NEW.idhost)) ;
 
 	END IF ;
 
 	IF TG_OP = 'UPDATE'
 	THEN
-	    PERFORM sum (dns.gen_rev4 (NEW.addr, NEW.idrr)) ;
-	    PERFORM sum (dns.gen_rev4 (OLD.addr, OLD.idrr)) ;
-	    PERFORM sum (dns.gen_rev6 (NEW.addr, NEW.idrr)) ;
-	    PERFORM sum (dns.gen_rev6 (OLD.addr, OLD.idrr)) ;
-	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr)) ;
-	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr)) ;
-	    PERFORM sum (dns.gen_dhcp (NEW.idrr)) ;
-	    PERFORM sum (dns.gen_dhcp (OLD.idrr)) ;
+	    PERFORM sum (dns.gen_rev4 (NEW.addr, NEW.idhost)) ;
+	    PERFORM sum (dns.gen_rev4 (OLD.addr, OLD.idhost)) ;
+	    PERFORM sum (dns.gen_rev6 (NEW.addr, NEW.idhost)) ;
+	    PERFORM sum (dns.gen_rev6 (OLD.addr, OLD.idhost)) ;
+	    PERFORM sum (dns.gen_norm_idhost (NEW.idhost)) ;
+	    PERFORM sum (dns.gen_norm_idhost (OLD.idhost)) ;
+	    PERFORM sum (dns.gen_dhcp (NEW.idhost)) ;
+	    PERFORM sum (dns.gen_dhcp (OLD.idhost)) ;
 	END IF ;
 
 	IF TG_OP = 'DELETE'
 	THEN
-	    PERFORM sum (dns.gen_rev4 (OLD.addr, OLD.idrr)) ;
-	    PERFORM sum (dns.gen_rev6 (OLD.addr, OLD.idrr)) ;
-	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr)) ;
-	    PERFORM sum (dns.gen_dhcp (OLD.idrr)) ;
+	    PERFORM sum (dns.gen_rev4 (OLD.addr, OLD.idhost)) ;
+	    PERFORM sum (dns.gen_rev6 (OLD.addr, OLD.idhost)) ;
+	    PERFORM sum (dns.gen_norm_idhost (OLD.idhost)) ;
+	    PERFORM sum (dns.gen_dhcp (OLD.idhost)) ;
 	END IF ;
 
 	RETURN NEW ;
@@ -334,23 +357,23 @@ CREATE OR REPLACE FUNCTION dns.mod_ip ()
 --    200?/??/?? : pda/jean : design
 --
 
-CREATE OR REPLACE FUNCTION dns.mod_mxcname ()
+CREATE OR REPLACE FUNCTION dns.mod_mx_alias ()
     RETURNS trigger AS $$
     BEGIN
 	IF TG_OP = 'INSERT'
 	THEN
-	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr)) ;
+	    PERFORM sum (dns.gen_norm_idname (NEW.idname)) ;
 	END IF ;
 
 	IF TG_OP = 'UPDATE'
 	THEN
-	    PERFORM sum (dns.gen_norm_idrr (NEW.idrr)) ;
-	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr)) ;
+	    PERFORM sum (dns.gen_norm_idname (NEW.idname)) ;
+	    PERFORM sum (dns.host (OLD.idname)) ;
 	END IF ;
 
 	IF TG_OP = 'DELETE'
 	THEN
-	    PERFORM sum (dns.gen_norm_idrr (OLD.idrr)) ;
+	    PERFORM sum (dns.gen_norm_idname (OLD.idname)) ;
 	END IF ;
 
 	RETURN NEW ;
@@ -358,20 +381,20 @@ CREATE OR REPLACE FUNCTION dns.mod_mxcname ()
     $$ LANGUAGE 'plpgsql' ;
 
 ------------------------------------------------------------------------------
--- Trigger function called when a RR is modified
+-- Trigger function called when a name is modified
 --
 -- History
 --    200?/??/?? : pda/jean : design
 --
 
 -- modify RR and reverse zones for all IP addresses
-CREATE OR REPLACE FUNCTION dns.mod_rr ()
+CREATE OR REPLACE FUNCTION dns.mod_name ()
     RETURNS trigger AS $$
     BEGIN
 	-- IF TG_OP = 'INSERT'
 	-- THEN
-	    -- no need to regenerate anything since no rr_* has
-	    -- been linked to this rr yet
+	    -- no need to regenerate anything since no host/alias/mx/... has
+	    -- been linked to this name yet
 	-- END IF ;
 
 	IF TG_OP = 'UPDATE'
@@ -380,19 +403,68 @@ CREATE OR REPLACE FUNCTION dns.mod_rr ()
 		    ;
 	    PERFORM sum (dns.gen_norm_iddom (OLD.iddom, OLD.idview))
 		    ;
-	    PERFORM sum (dns.gen_rev4 (rr_ip.addr, NEW.idrr))
-		    FROM dns.rr_ip WHERE rr_ip.idrr = NEW.idrr ;
-	    PERFORM sum (dns.gen_rev6 (rr_ip.addr, NEW.idrr))
-		    FROM dns.rr_ip WHERE rr_ip.idrr = NEW.idrr ;
-	    PERFORM sum (dns.gen_dhcp (NEW.idrr))
+	    PERFORM sum (dns.gen_rev4 (a.addr, h.idhost))
+		    FROM dns.host h NATURAL INNER JOIN dns.addr a
+		    WHERE h.idname = NEW.idname
 		    ;
-	    -- no need to regenerate reverse/dhcp for old rr since
+	    PERFORM sum (dns.gen_rev6 (a.addr, h.idhost))
+		    FROM dns.host h NATURAL INNER JOIN dns.addr a
+		    WHERE h.idname = NEW.idname
+		    ;
+	    PERFORM sum (dns.gen_dhcp (h.idhost))
+		    FROM dns.host h
+		    WHERE h.idname = NEW.idname
+		    ;
+	    -- no need to regenerate reverse/dhcp for old name since
 	    -- IP addresses did not change
 	END IF ;
 
 	-- IF TG_OP = 'DELETE'
 	-- THEN
-	    -- no need to regenerate anything since all rr_* have
+	    -- no need to regenerate anything since all host/alias/mx/... have
+	    -- already been removed before
+	-- END IF ;
+
+	RETURN NEW ;
+    END ;
+    $$ LANGUAGE 'plpgsql' ;
+
+CREATE OR REPLACE FUNCTION dns.mod_host ()
+    RETURNS trigger AS $$
+    BEGIN
+	-- IF TG_OP = 'INSERT'
+	-- THEN
+	    -- no need to regenerate anything since no IP address has
+	    -- been linked to this host yet
+	-- END IF ;
+
+	IF TG_OP = 'UPDATE'
+	THEN
+	    PERFORM sum (dns.gen_norm_iddom (n.iddom, n.idview))
+		    FROM dns.name n
+		    WHERE n.idname = NEW.idname
+		    ;
+	    PERFORM sum (dns.gen_norm_iddom (n.iddom, n.idview))
+		    FROM dns.name n
+		    WHERE n.idname = OLD.idname
+		    ;
+	    PERFORM sum (dns.gen_rev4 (a.addr, NEW.idhost))
+		    FROM dns.addr a
+		    WHERE a.idhost = NEW.idhost
+		    ;
+	    PERFORM sum (dns.gen_rev6 (a.addr, NEW.idhost))
+		    FROM dns.addr a
+		    WHERE a.idhost = NEW.idhost
+		    ;
+	    PERFORM sum (dns.gen_dhcp (NEW.idhost))
+		    ;
+	    -- no need to regenerate reverse/dhcp for old host since
+	    -- IP addresses did not change
+	END IF ;
+
+	-- IF TG_OP = 'DELETE'
+	-- THEN
+	    -- no need to regenerate anything since all IP addresses have
 	    -- already been removed before
 	-- END IF ;
 
@@ -540,7 +612,7 @@ CREATE OR REPLACE FUNCTION topo.mod_routerdb ()
 --    200?/??/?? : pda : design
 --
 
-CREATE FUNCTION pgauth.soundex (TEXT)
+CREATE OR REPLACE FUNCTION pgauth.soundex (TEXT)
     RETURNS TEXT AS '
 	array set soundexFrenchCode {
 	    a 0 b 1 c 2 d 3 e 0 f 9 g 7 h 0 i 0 j 7 k 2 l 4 m 5
@@ -598,7 +670,7 @@ CREATE FUNCTION pgauth.soundex (TEXT)
 --    200?/??/?? : pda : design
 --
 
-CREATE FUNCTION pgauth.add_soundex ()
+CREATE OR REPLACE FUNCTION pgauth.add_soundex ()
     RETURNS TRIGGER AS '
     BEGIN
 	NEW.phlast  := pgauth.SOUNDEX (NEW.lastname) ;

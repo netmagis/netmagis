@@ -339,6 +339,10 @@ do
     then
 	echo "\\echo Upgrading: $d"
 	echo "\\i $u"
+	for other in $(ls $updir/$d | grep -v upgrade.sql)
+	do
+	    echo "\\i $updir/$d/$other"
+	done
     fi
 done > $TMP
 
