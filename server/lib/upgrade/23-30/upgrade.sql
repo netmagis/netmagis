@@ -34,6 +34,8 @@ DROP FUNCTION IF EXISTS dns.check_dhcprange_grp (INTEGER, INET, INET) ;
 --		still work)
 --
 
+-- Central point : a name (name + domain) in a view
+
 CREATE SEQUENCE dns.seq_name START 1 ;
 CREATE TABLE dns.name (
     idname	INT			-- name id
@@ -45,6 +47,8 @@ CREATE TABLE dns.name (
     UNIQUE (name, iddom, idview),
     PRIMARY KEY (idname)
 ) ;
+
+-- Some of these names are hosts...
 
 CREATE SEQUENCE dns.seq_host START 1 ;
 CREATE TABLE dns.host (
@@ -67,6 +71,8 @@ CREATE TABLE dns.host (
     PRIMARY KEY (idhost)
 ) ;
 
+-- ... hosts with IP (v4 or v6) addresses
+
 CREATE TABLE dns.addr (
     idhost	INT,			-- host id
     addr	INET,			-- IP (v4 or v6) address
@@ -75,38 +81,52 @@ CREATE TABLE dns.addr (
     PRIMARY KEY (idhost, addr)
 ) ;
 
+-- Some names are aliases to existing hosts
+
 CREATE TABLE dns.alias (
     idname	INT,			-- name id
     idhost	INT,			-- host pointed by this alias
+    ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (idname)     REFERENCES dns.name        (idname),
     FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
     PRIMARY KEY (idname)
 ) ;
 
+-- Some names may also be MX pointing to one or more hosts
+
 CREATE TABLE dns.mx (
     idname	INT,			-- MX name
     prio	INT,			-- priority
     target	INT,			-- target host
+    ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (idname)     REFERENCES dns.name        (idname),
     FOREIGN KEY (target)     REFERENCES dns.host        (idhost),
     PRIMARY KEY (idname, target)
 ) ;
 
+-- Some names are mail addresses (served by a mbox host which
+-- may be in another view)
+
 CREATE TABLE dns.mailrole (
     mailaddr	INT,			-- mail address
     mboxhost	INT,			-- host holding mboxes for this address
+    ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (mailaddr)   REFERENCES dns.name        (idname),
     FOREIGN KEY (mboxhost)   REFERENCES dns.host        (idhost),
     PRIMARY KEY (mailaddr)
 ) ;
 
+-- When a mailrole is declared, Netmagis publishes MX declared
+-- for the domain in the DNS zone
+
 CREATE TABLE dns.relaydom (
     iddom	INT,			-- domain id
     prio	INT,			-- MX priority
     mx		INT,			-- relay host for this domain
+    ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
     FOREIGN KEY (mx)         REFERENCES dns.host        (idhost),
@@ -154,6 +174,8 @@ DROP TABLE dns.rr_mx CASCADE ;
 DROP TABLE dns.rr_cname CASCADE ;
 DROP TABLE dns.rr_ip CASCADE ;
 DROP TABLE dns.rr CASCADE ;
+
+DROP SEQUENCE dns.seq_rr ;
 
 DROP FUNCTION dns.mod_ip () ;
 DROP FUNCTION dns.gen_norm_idrr (INTEGER) ;
