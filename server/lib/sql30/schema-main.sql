@@ -329,86 +329,102 @@ CREATE TABLE dns.dhcprange (
     PRIMARY KEY (iddhcprange)
 ) ;
 
--- Resource records
+-- Central point in Netmagis : a name (name + domain) in a view
 
-CREATE SEQUENCE dns.seq_rr START 1 ;
-CREATE TABLE dns.rr (
-    idrr	INT			-- RR id
-		    DEFAULT NEXTVAL ('dns.seq_rr'),
-    name	TEXT,			-- name of RR (first component)
-    iddom	INT,			-- domain name of RR
+CREATE SEQUENCE dns.seq_name START 1 ;
+CREATE TABLE dns.name (
+    idname	INT			-- name id
+		    DEFAULT NEXTVAL ('dns.seq_name'),
+    name	TEXT,			-- first component of FQDN
+    iddom	INT,			-- domain id
     idview	INT,			-- view id
 
+    UNIQUE (name, iddom, idview),
+    PRIMARY KEY (idname)
+) ;
+
+-- Some of these names are hosts...
+
+CREATE SEQUENCE dns.seq_host START 1 ;
+CREATE TABLE dns.host (
+    idhost	INT			-- host id
+		    DEFAULT NEXTVAL ('dns.seq_host'),
+    idname	INT,			-- reference to the name
     mac		MACADDR,		-- MAC address or NULL
     iddhcpprof	INT,			-- DHCP profile or NULL
-
     idhinfo	INT DEFAULT 0,		-- host type
     comment	TEXT,			-- comment
     respname	TEXT,			-- name of responsible person
     respmail	TEXT,			-- mail address of responsible person
-
-    idcor	INT,			-- last mod author
-    date	TIMESTAMP (0) WITHOUT TIME ZONE		-- last mod date
-		    DEFAULT CURRENT_TIMESTAMP,
     sendsmtp	INT DEFAULT 0,		-- 1 if this host may emit with SMTP
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
-    FOREIGN KEY (idcor)      REFERENCES global.nmuser   (idcor),
-    FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
-    FOREIGN KEY (idview)     REFERENCES dns.view        (idview),
+    FOREIGN KEY (idname)     REFERENCES dns.name        (idname),
     FOREIGN KEY (iddhcpprof) REFERENCES dns.dhcpprofile (iddhcpprof),
     FOREIGN KEY (idhinfo)    REFERENCES dns.hinfo       (idhinfo),
-    UNIQUE (name, iddom, idview),
-    -- MAC address should be unique in a view
-    UNIQUE (mac, idview),
-    PRIMARY KEY (idrr)
+    UNIQUE (idname),
+    PRIMARY KEY (idhost)
 ) ;
 
-CREATE TABLE dns.rr_ip (
-    idrr	INT,			-- RR
+-- ... hosts with IP (v4 or v6) addresses
+
+CREATE TABLE dns.addr (
+    idhost	INT,			-- host id
     addr	INET,			-- IP (v4 or v6) address
 
-    FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
-    PRIMARY KEY (idrr, addr)
+    FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
+    PRIMARY KEY (idhost, addr)
 ) ;
 
-CREATE TABLE dns.rr_cname (
-    idrr	INT,			-- RR
-    cname	INT,			-- pointed RR id
+-- Some names are aliases to existing hosts
 
-    FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
-    FOREIGN KEY (cname)  REFERENCES dns.rr (idrr),
-    PRIMARY KEY (idrr)
+CREATE TABLE dns.alias (
+    idname	INT,			-- name id
+    idhost	INT,			-- host pointed by this alias
+    ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
+
+    FOREIGN KEY (idname)     REFERENCES dns.name        (idname),
+    FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
+    PRIMARY KEY (idname)
 ) ;
 
-CREATE TABLE dns.rr_mx (
-    idrr	INT,			-- RR
+-- Some names may also be MX pointing to one or more hosts
+
+CREATE TABLE dns.mx (
+    idname	INT,			-- MX name
     prio	INT,			-- priority
-    mx		INT,			-- pointed RR id
+    target	INT,			-- target host
+    ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
-    FOREIGN KEY (idrr)   REFERENCES dns.rr (idrr),
-    FOREIGN KEY (mx)     REFERENCES dns.rr (idrr),
-    PRIMARY KEY (idrr, mx)
+    FOREIGN KEY (idname)     REFERENCES dns.name        (idname),
+    FOREIGN KEY (target)     REFERENCES dns.host        (idhost),
+    PRIMARY KEY (idname, target)
 ) ;
 
--- Mail roles
-CREATE TABLE dns.mail_role (
-    mailaddr	INT,			-- id of "mail address"
-    mboxhost	INT,			-- RR holding mboxes for this address
+-- Some names are mail addresses (served by a mbox host which
+-- may be in another view)
 
-    FOREIGN KEY (mailaddr) REFERENCES dns.rr (idrr),
-    FOREIGN KEY (mboxhost) REFERENCES dns.rr (idrr),
+CREATE TABLE dns.mailrole (
+    mailaddr	INT,			-- mail address
+    mboxhost	INT,			-- host holding mboxes for this address
+    ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
+
+    FOREIGN KEY (mailaddr)   REFERENCES dns.name        (idname),
+    FOREIGN KEY (mboxhost)   REFERENCES dns.host        (idhost),
     PRIMARY KEY (mailaddr)
 ) ;
 
--- Mail relays for a domain
-CREATE TABLE dns.relay_dom (
+-- When a mailrole is declared, Netmagis publishes MX declared
+-- for the domain in the DNS zone
+
+CREATE TABLE dns.relaydom (
     iddom	INT,			-- domain id
     prio	INT,			-- MX priority
     mx		INT,			-- relay host for this domain
+    ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
-    FOREIGN KEY (iddom)  REFERENCES dns.domain  (iddom),
-    FOREIGN KEY (mx)     REFERENCES dns.rr      (idrr),
+    FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
+    FOREIGN KEY (mx)         REFERENCES dns.host        (idhost),
     PRIMARY KEY (iddom, mx)
 ) ;
 
