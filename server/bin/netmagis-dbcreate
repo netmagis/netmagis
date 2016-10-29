@@ -50,6 +50,11 @@ defuser="nobody"
 # default configuration file
 conffile=""
 
+# Option to disable NOTICE messages when using psql
+PGOPTIONS='--client-min-messages=warning'
+export PGOPTIONS
+
+
 ##############################################################################
 # Configuration file read
 ##############################################################################
@@ -133,8 +138,7 @@ sql_file_execute ()
     PGCLIENTENCODING=utf8
     export PGCLIENTENCODING
 
-    psql --no-psqlrc --quiet --file %NMLIBDIR%/$1 2>&1 \
-	| grep -v 'NOTICE: .* will create implicit'
+    psql --no-psqlrc --quiet --file %NMLIBDIR%/$1 2>&1
 }
 
 ##############################################################################
@@ -477,7 +481,7 @@ create_mac_schemas ()
 
 insert_mac_oui ()
 {
-    %SBINDIR%/netmagis-getoui
+    %BINDIR%/netmagis-getoui
 }
 
 ##############################################################################
