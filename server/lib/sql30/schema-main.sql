@@ -393,12 +393,12 @@ CREATE TABLE dns.alias (
 CREATE TABLE dns.mx (
     idname	INT,			-- MX name
     prio	INT,			-- priority
-    target	INT,			-- target host
+    idhost	INT,			-- MX target host
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (idname)     REFERENCES dns.name        (idname),
-    FOREIGN KEY (target)     REFERENCES dns.host        (idhost),
-    PRIMARY KEY (idname, target)
+    FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
+    PRIMARY KEY (idname, idhost)
 ) ;
 
 -- Some names are mail addresses (served by a mbox host which
@@ -420,12 +420,12 @@ CREATE TABLE dns.mailrole (
 CREATE TABLE dns.relaydom (
     iddom	INT,			-- domain id
     prio	INT,			-- MX priority
-    mx		INT,			-- relay host for this domain
+    idhost	INT,			-- relay host for this domain
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
-    FOREIGN KEY (mx)         REFERENCES dns.host        (idhost),
-    PRIMARY KEY (iddom, mx)
+    FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
+    PRIMARY KEY (iddom, idhost)
 ) ;
 
 ---------------------------------------------------------------------------

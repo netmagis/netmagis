@@ -98,12 +98,12 @@ CREATE TABLE dns.alias (
 CREATE TABLE dns.mx (
     idname	INT,			-- MX name
     prio	INT,			-- priority
-    target	INT,			-- target host
+    idhost	INT,			-- MX target host
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (idname)     REFERENCES dns.name        (idname),
-    FOREIGN KEY (target)     REFERENCES dns.host        (idhost),
-    PRIMARY KEY (idname, target)
+    FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
+    PRIMARY KEY (idname, idhost)
 ) ;
 
 -- Some names are mail addresses (served by a mbox host which
@@ -125,12 +125,12 @@ CREATE TABLE dns.mailrole (
 CREATE TABLE dns.relaydom (
     iddom	INT,			-- domain id
     prio	INT,			-- MX priority
-    mx		INT,			-- relay host for this domain
+    idhost	INT,			-- relay host for this domain
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
-    FOREIGN KEY (mx)         REFERENCES dns.host        (idhost),
-    PRIMARY KEY (iddom, mx)
+    FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
+    PRIMARY KEY (iddom, idhost)
 ) ;
 
 INSERT INTO dns.name (idname, name, iddom, idview)
@@ -151,13 +151,13 @@ INSERT INTO dns.addr (idhost, addr)
 INSERT INTO dns.alias (idname, idhost)
     SELECT idrr, cname FROM dns.rr_cname ;
 
-INSERT INTO dns.mx (idname, prio, target)
+INSERT INTO dns.mx (idname, prio, idhost)
     SELECT idrr, prio, mx FROM dns.rr_mx ;
 
 INSERT INTO dns.mailrole (mailaddr, mboxhost)
     SELECT mailaddr, mboxhost FROM dns.mail_role ;
 
-INSERT INTO dns.relaydom (iddom, prio, mx)
+INSERT INTO dns.relaydom (iddom, prio, idhost)
     SELECT iddom, prio, mx FROM dns.relay_dom ;
 
 -- use a DO block in order to use PERFORM, in order to ignore setval output
