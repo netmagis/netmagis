@@ -170,7 +170,7 @@ namespace eval ::nmenv {
 
     # $self login => return the current login
     # $self login "" => set the new login to "anonymous"
-    # $self login joe => the the new login to "joe"
+    # $self login joe => set the new login to "joe"
 
     method login {{newlogin {:get}}} {
 	if {$newlogin ne ":get"} then {
