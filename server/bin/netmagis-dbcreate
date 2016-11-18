@@ -467,7 +467,6 @@ create_mac ()
     ###############################
 
     create_mac_schemas
-    insert_mac_oui
 }
 
 ##############################################################################
@@ -477,11 +476,6 @@ create_mac ()
 create_mac_schemas ()
 {
     sql_file_execute schema-mac.sql
-}
-
-insert_mac_oui ()
-{
-    %BINDIR%/netmagis-getoui
 }
 
 ##############################################################################
