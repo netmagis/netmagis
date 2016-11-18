@@ -484,18 +484,18 @@ CREATE OR REPLACE FUNCTION dns.mod_relay ()
     BEGIN
 	IF TG_OP = 'INSERT'
 	THEN
-	    PERFORM sum (dns.gen_relay (NEW.iddom, NEW.mx)) ;
+	    PERFORM sum (dns.gen_relay (NEW.iddom, NEW.idhost)) ;
 	END IF ;
 
 	IF TG_OP = 'UPDATE'
 	THEN
-	    PERFORM sum (dns.gen_relay (NEW.iddom, NEW.mx)) ;
-	    PERFORM sum (dns.gen_relay (OLD.iddom, OLD.mx)) ;
+	    PERFORM sum (dns.gen_relay (NEW.iddom, NEW.idhost)) ;
+	    PERFORM sum (dns.gen_relay (OLD.iddom, OLD.idhost)) ;
 	END IF ;
 
 	IF TG_OP = 'DELETE'
 	THEN
-	    PERFORM sum (dns.gen_relay (OLD.iddom, OLD.mx)) ;
+	    PERFORM sum (dns.gen_relay (OLD.iddom, OLD.idhost)) ;
 	END IF ;
 
 	RETURN NEW ;

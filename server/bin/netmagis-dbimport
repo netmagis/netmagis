@@ -266,6 +266,7 @@ proc check-record {_nrec _t _tab lkeys} {
 #	- fqdn : name to test
 #	- _name : host name in return
 #	- _domain : host domain in return
+#	- _tabdom : tabdom(domain) -> iddom
 #	- _iddom : domain id in return (leave empty to not check domain existence)
 # Output:
 #   - return value: empty string or error message
@@ -280,7 +281,7 @@ proc check-record {_nrec _t _tab lkeys} {
 #   2011/02/18 : pda      : iddom is optional
 #
 
-proc check-fqdn-syntax {fqdn _name _domain {_iddom {}}} {
+proc check-fqdn-syntax {fqdn _name _domain {_tabdom {}} {_iddom {}}} {
     upvar $_name name
     upvar $_domain domain
 
@@ -294,10 +295,12 @@ proc check-fqdn-syntax {fqdn _name _domain {_iddom {}}} {
     }
 
     if {$_iddom ne ""} then {
+	upvar $_tabdom tabdom
 	upvar $_iddom iddom
 
-	set iddom [::n domainid $domain]
-	if {$iddom eq ""} then {
+	if {[info exists tabdom($domain)]} then {
+	    set iddom $tabdom($domain)
+	} else {
 	    return "Invalid domain '$domain'"
 	}
     }
@@ -1731,7 +1734,7 @@ proc import-zone {verbose argv dbfd} {
     set qzonename [pg_quote $zonename]
     set qprologue [pg_quote $prologue]
     set qrrsup [pg_quote $rrsup]
-    set qselector [:pg_quote $selector]
+    set qselector [pg_quote $selector]
 
     switch $version {
 	-1 { set table "dns.zone_forward" }
@@ -1742,7 +1745,7 @@ proc import-zone {verbose argv dbfd} {
     # use same id if it already exists
     set idzone -1
     set sql "SELECT idzone FROM $table
-    			WHERE name = '$qzonename' AND idview = $idview"
+    			WHERE name = $qzonename AND idview = $idview"
     $dbfd exec $sql tab {
 	set idzone $tab(idzone)
     }
@@ -1891,7 +1894,7 @@ proc import-mailrelay {verbose argv dbfd} {
 	    foreach rl [lreplace $mr 0 0] {
 		lassign $rl prio relay
 
-		set msg [check-fqdn-syntax $relay namer domr iddomr]
+		set msg [check-fqdn-syntax $relay namer domr tabdom iddomr]
 		if {$msg ne ""} then {
 		    set err 1
 		    warning $msg
@@ -1901,7 +1904,7 @@ proc import-mailrelay {verbose argv dbfd} {
 		    if {[::rr::found $rr]} then {
 			set idhost [::rr::get-idhost $rr]
 		    }
-		    if {$idhost == -1} then {
+		    if {$idhost != -1} then {
 			set sql "INSERT INTO dns.relaydom
 						(iddom, prio, idhost)
 					VALUES ($iddom, $prio, $idhost)"
@@ -2031,7 +2034,7 @@ proc import-mailrole {verbose argv dbfd} {
 	    if {[::rr::found $rr1]} then {
 		set idname1 [::rr::get-idname $rr1]
 	    } else {
-		set idname1 [::rr::add-rr $dbfd $n1 $iddom1 $idview]
+		set idname1 [::rr::add-name $dbfd $n1 $iddom1 $idview]
 		# XXXXXXXXXXX TEST ?
 #		if {$msg ne ""} then {
 #		    warning "Unable to add $name ($msg)"
@@ -2069,7 +2072,7 @@ proc import-mailrole {verbose argv dbfd} {
 	}
 
 	if {! $err} then {
-	    set sql "INSERT INTO dns.mailrole (mailaddr, mboxhost)
+	    set sql "INSERT INTO dns.mailrole (idname, idhost)
 			VALUES ($idname1, $idhost2)"
 	    if {! [$dbfd exec $sql msg]} then {
 		return "$msg\nAbort"
