@@ -7,6 +7,7 @@ SRCS =	\
 	pgdb.tcl \
 	scgi.tcl \
 	rr.tcl \
+	auth.tcl \
 
 FILES = $(SRCS) pkgIndex.tcl
 

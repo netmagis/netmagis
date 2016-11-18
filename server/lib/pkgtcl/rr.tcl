@@ -11,6 +11,8 @@ package provide rr 0.1
 # Functions:
 # - read-by-idname $db $idname
 #	return a RR object, which may be empty
+# - read-by-idhost $db $idhost
+#	return a RR object, which may be empty
 # - read-by-name $db $name $iddom $idview
 #	return a RR object, which may be empty
 # - found $rr
@@ -37,9 +39,9 @@ package provide rr 0.1
 #	return the DHCP profile name of the host, or an empty string
 #			(XXX WARNING OLD code was returing "No profile")
 # - get-idhinfo $rr
-#	return the idhinf of the hosto
+#	return the idhinfo of the host
 # - get-hinfo $rr
-#	return the hinfo tex of the hostt
+#	return the hinfo text of the host
 # - get-sendsmtp $rr
 #	return 1 if host has the right to emit with non auth SMTP, or 0
 # - get-ttlhost $rr
@@ -60,23 +62,27 @@ package provide rr 0.1
 # - get-mxname $rr
 #	return the list of MX names which target this host {idrr idrr...}
 # - get-cname $rr
-#	return the idrr of the referenced host if $rr is an alias
+#	return the idhost of the target host if $rr is an alias, or -1
 # - get-ttlcname $rr
 #	return the TTL associated to the alias or -1
 # - get-aliases $rr
 #	return the list of names which are aliases of this host
 # - get-mboxhost $rr
-#	return the idhost of the mailbox host for this mail address
+#	return the idhost of mailbox host for this mail address or -1
 # - get-mailaddr $rr
-#	return the list of idname of mail addresses if $rr is a mbox host
+#	return the list of idname of mail addresses if $rr is a mboxhost
 #			(XXX OLD {{idview idmailaddr idviewmailaddr} ...})
+# - add-name $db $name $iddom $idview
+#	add the name into the database and return the new idname
+# - add-host $db $idname $mac $iddhcpprof $idhinfo $comment $respname $respmail $sendsmtp $ttl
+#	add the host into the database and return the new idhost
 #
 
 namespace eval ::rr {
     namespace export read-by-id read-by-name \
 		    found \
-		    is-other-than-host \
-		    get-mx get-fqdn
+		    get-mx get-fqdn \
+		    add-name add-host
 
     proc read-by-name {db name iddom idview} {
 	set qname [pg_quote $name]
@@ -88,6 +94,11 @@ namespace eval ::rr {
 
     proc read-by-idname {db idname} {
 	set where "n.idname = $idname"
+	return [Read-where $db $where]
+    }
+
+    proc read-by-idhost {db idhost} {
+	set where "h.idhost = $idhost"
 	return [Read-where $db $where]
     }
 
@@ -107,10 +118,10 @@ namespace eval ::rr {
 		    COALESCE (sreq_ip.ip, '{}') AS ip,
 		    COALESCE (sreq_mxhost.mxhost, '{}') AS mxhost,
 		    COALESCE (sreq_mxname.mxname, '{}') AS mxname,
-		    COALESCE (CAST (a.idhost AS text), '') AS cname,
+		    COALESCE (a.idhost, -1) AS cname,
 		    COALESCE (a.ttl, -1) AS ttlcname,
 		    COALESCE (sreq_aliases.aliases, '{}') AS aliases,
-		    COALESCE (CAST (mailrole.mboxhost AS text), '') AS mboxhost,
+		    COALESCE (mailrole.mboxhost, -1) AS mboxhost,
 		    COALESCE (mailrole.ttl) AS ttlmboxhost,
 		    COALESCE (sreq_mailaddr.mailaddr, '{}') AS mailaddr
 		FROM dns.name n
@@ -165,16 +176,6 @@ namespace eval ::rr {
 	return [expr [dict size $rr] > 0]
     }
 
-    proc is-other-than-host {rr} {
-	set mb [get-mboxhost $rr]
-	set mx [get-mx $rr]
-	set r 0
-	if {$mb ne "" || [llength $mx] > 0} then {
-	    set r 1
-	}
-	return $r
-    }
-
     # Define all getters, except mx
     foreach key {idname name iddom domain idview
 		    idhost mac iddhcpprof dhcpprof idhinfo hinfo
@@ -205,5 +206,43 @@ namespace eval ::rr {
 	set name [dict get $rr "name"]
 	set domain [dict get $rr "domain"]
 	return "$name.$domain"
+    }
+
+    proc add-name {db name iddom idview} {
+	set qname [pg_quote $name]
+	set sql "INSERT INTO dns.name (name, iddom, idview)
+		    VALUES ($qname, $iddom $idview)
+		    RETURNING idname"
+	set idname -1
+	$db exec $sql tab {
+	    set idname $tab(idname)
+	}
+	return $idname
+    }
+
+    proc add-host {db idname mac iddhcpprof idhinfo comment respname respmail sendsmtp ttl} {
+	set qmac NULL
+	if {$mac ne ""} then {
+	    set qmac [pg_quote $mac]
+	}
+	set qname     [pg_quote $name]
+	set qcomment  [pg_quote $comment]
+	set qrespname [pg_quote $respname]
+	set qrespmail [pg_quote $respmail]
+	set qiddhcpprof NULL
+	if {$iddhcpprof != -1} then {
+	    set qiddhcpprof $iddhcpprof
+	}
+
+	set sql "INSERT INTO dns.host (idname, mac, iddhcpprof, idhinfo,
+			    comment, respname, respmail, sendsmtp, ttl)
+		    VALUES ($idname, $qmac, $qiddhcpprof, $idhinfo,
+			    $qcomment, $qrespname, $qrespmail, $sendsmtp, $ttl)
+		    RETURNING idhost"
+	set idhost -1
+	$db exec $sql tab {
+	    set idhost $tab(idhost)
+	}
+	return $idhost
     }
 }

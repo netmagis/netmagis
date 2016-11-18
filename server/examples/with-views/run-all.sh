@@ -6,7 +6,7 @@
 # This example makes use of DNS views.
 #
 
-PATH=%SBINDIR%:$PATH
+PATH=%BINDIR%:$PATH
 export PATH
 
 # Reverse zones are used only for their prologue (and not PTR RR).

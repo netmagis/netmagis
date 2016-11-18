@@ -7,7 +7,7 @@
 # the "default" view.
 #
 
-PATH=%SBINDIR%:$PATH
+PATH=%BINDIR%:$PATH
 export PATH
 
 netmagis-dbcreate && \

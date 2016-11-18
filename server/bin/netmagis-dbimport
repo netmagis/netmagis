@@ -15,9 +15,13 @@
 #   2011/06/20 : pda      : add dhcp keyword in networks import
 #
 
-source %LIBNETMAGIS%
+#
+# Default values
+#
 
-package require ip
+set conf(conffile)	%CONFFILE%
+set conf(libdir)	%NMLIBDIR%
+set conf(version)	%VERSION%
 
 #
 # Pattern to distinguish zone prologue (including non standard RRs) 
@@ -79,6 +83,8 @@ set conf(usage) {usage: %1$s [-v] <op> <param> ... <param>
     To import mail roles (create mail role):
 	%1$s mailrole <file> <login>
 }
+
+package require ip
 
 ##############################################################################
 # Small utility functions
@@ -248,14 +254,97 @@ proc check-record {_nrec _t _tab lkeys} {
 }
 
 ##############################################################################
+# Checks
+##############################################################################
+
+#
+# Check FQDN syntax according to RFC 1035.
+#
+# Input:
+#   - parameters:
+#	- dbfd : database handle
+#	- fqdn : name to test
+#	- _name : host name in return
+#	- _domain : host domain in return
+#	- _iddom : domain id in return (leave empty to not check domain existence)
+# Output:
+#   - return value: empty string or error message
+#   - parameter _name : host name found
+#   - parameter _domain : host domain found
+#   - parameter _iddom : domain id found, or -1 if error
+#
+# History
+#   2004/09/21 : pda/jean : design
+#   2004/09/29 : pda/jean : add _domain parameter
+#   2010/11/29 : pda      : i18n
+#   2011/02/18 : pda      : iddom is optional
+#
+
+proc check-fqdn-syntax {fqdn _name _domain {_iddom {}}} {
+    upvar $_name name
+    upvar $_domain domain
+
+    if {! [regexp {^([^\.]+)\.(.*)$} $fqdn bidon name domain]} then {
+	return "Invalid FQDN '$fqdn'"
+    }
+
+    set msg [check-name-syntax $name]
+    if {$msg ne ""} then {
+	return $msg
+    }
+
+    if {$_iddom ne ""} then {
+	upvar $_iddom iddom
+
+	set iddom [::n domainid $domain]
+	if {$iddom eq ""} then {
+	    return "Invalid domain '$domain'"
+	}
+    }
+
+    return ""
+}
+
+#
+# Check host name syntax (first part of a FQDN) according to RFC 1035
+#
+# Input:
+#   - parameters:
+#	- name : name to test
+# Output:
+#   - return value: empty string or error message
+#
+# History
+#   2002/04/11 : pda/jean : design
+#   2010/11/29 : pda      : i18n
+#
+
+proc check-name-syntax {name} {
+    # general case: a letter-or-digit at the beginning, a letter-or-digit
+    # at the end (minus forbidden at the end) and letter-or-digit-or-minus
+    # between.
+    set re1 {[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9]}
+    # particular case: only one letter
+    set re2 {[a-zA-Z0-9]}
+
+    if {[regexp "^$re1$" $name] || [regexp "^$re2$" $name]} then {
+	set msg ""
+    } else {
+	set msg "Invalid name '$name'"
+    }
+
+    return $msg
+}
+
+##############################################################################
 # Various database read
 ##############################################################################
 
 proc read-idcor {dbfd login} {
-    set qlogin [::pgsql::quote $login]
-    set sql "SELECT idcor FROM global.nmuser WHERE login = '$qlogin'"
+    set qlogin [pg_quote $login]
+    set sql "SELECT idcor FROM global.nmuser WHERE login = $qlogin"
     set idcor -1
-    pg_select $dbfd $sql tab {
+    $dbfd exec $sql tab {
 	set idcor $tab(idcor)
     }
     return $idcor
@@ -282,9 +371,36 @@ proc read-all-views {dbfd _tabview _tabid} {
     upvar $_tabid   tabid
 
     set sql "SELECT name, idview FROM dns.view"
-    pg_select $dbfd $sql tab {
+    $dbfd exec $sql tab {
 	set tabview($tab(name)) $tab(idview)
 	set tabid($tab(idview)) $tab(name)
+    }
+}
+
+#
+# Read all domains from database
+#
+# Input:
+#   - parameters:
+#	- dbfd: database handle
+#	- _tabdom: array to fill with domain names
+#	- _tabid: array to fill with domain ids
+# Output:
+#   - parameter _tabdom: tabdom(<domainname>) <id>
+#   - parameter _tabid: tabdom(<id>) <domainname>
+#
+# History
+#   2011/03/20 : pda      : place in library
+#
+
+proc read-all-domains {dbfd _tabdom _tabid} {
+    upvar $_tabdom tabdom
+    upvar $_tabid  tabid
+
+    set sql "SELECT name, iddom FROM dns.domain"
+    $dbfd exec $sql tab {
+	set tabdom($tab(name)) $tab(iddom)
+	set tabid($tab(iddom)) $tab(name)
     }
 }
 
@@ -356,16 +472,16 @@ proc import-group {verbose argv dbfd} {
     # Read group, user, realm and account definition from database
     #
     
-    pg_select $dbfd "SELECT * FROM global.nmgroup" tab {
+    $dbfd exec "SELECT * FROM global.nmgroup" tab {
 	set refg($tab(name)) $tab(idgrp)
     }
-    pg_select $dbfd "SELECT * FROM global.nmuser" tab {
+    $dbfd exec "SELECT * FROM global.nmuser" tab {
 	set refu($tab(login)) [list $tab(idcor) $tab(idgrp)]
     }
-    pg_select $dbfd "SELECT * FROM pgauth.user" tab {
+    $dbfd exec "SELECT * FROM pgauth.user" tab {
 	set refa($tab(login)) {}
     }
-    pg_select $dbfd "SELECT * FROM pgauth.member" tab {
+    $dbfd exec "SELECT * FROM pgauth.member" tab {
 	lappend refa($tab(login)) $tab(realm)
     }
 
@@ -376,18 +492,18 @@ proc import-group {verbose argv dbfd} {
     set sql {}
     foreach g [array names tabgrp] {
 	if {! [info exists refg($g)]} then {
-	    set g [::pgsql::quote $g]
-	    lappend sql "INSERT INTO global.nmgroup (name) VALUES ('$g')"
+	    set qg [pg_quote $g]
+	    lappend sql "INSERT INTO global.nmgroup (name) VALUES ($qg)"
 	}
     }
     if {[llength $sql] > 0} then {
 	set sql [join $sql ";"]
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {! [$dbfd exec $sql msg]} then {
 	    return "$msg\nAbort"
 	}
 
 	# re-read idgrp
-	pg_select $dbfd "SELECT * FROM global.nmgroup" tab {
+	$dbfd exec "SELECT * FROM global.nmgroup" tab {
 	    set refg($tab(name)) $tab(idgrp)
 	}
     }
@@ -408,15 +524,15 @@ proc import-group {verbose argv dbfd} {
 					WHERE idcor = $idcor"
 		}
 	    } else {
-		set c [::pgsql::quote $c]
+		set qc [pg_quote $c]
 		lappend sql "INSERT INTO global.nmuser (login, present, idgrp)
-					VALUES ('$c', 1, $idgrp)"
+					VALUES ($qc, 1, $idgrp)"
 	    }
 	}
     }
     if {[llength $sql] > 0} then {
 	set sql [join $sql ";"]
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {! [$dbfd exec $sql msg]} then {
 	    return "$msg\nAbort"
 	}
     }
@@ -428,34 +544,34 @@ proc import-group {verbose argv dbfd} {
     # the netmagis realm.
     #
 
-    set am [dnsconfig get "authmethod"]
+    set am [::n confget "authmethod"]
     if {$am eq "pgsql"} then {
-	set rlm [dnsconfig get "authpggroupes"]
-	set qrlm [::pgsql::quote $rlm]
+	set rlm [::n confget "authpggroupes"]
+	set qrlm [pg_quote $rlm]
 	set sql {}
 	foreach g [array names tabgrp] {
 	    foreach c $tabgrp($g) {
 		if {! [info exists refa($c)]} then {
-		    set p [pgauth-genpw]
+		    set p [::auth::genpw]
 		    puts stderr "Password for user '$c' is '$p'."
-		    set pc [pgauth-crypt $p]
-		    set qc [::pgsql::quote $c]
-		    set qpc [::pgsql::quote $pc]
+		    set pc [::auth::crypt $p]
+		    set qc [pg_quote $c]
+		    set qpc [pg_quote $pc]
 		    lappend sql "INSERT INTO pgauth.user
 					(login, password, lastname, firstname)
-					VALUES ('$qc', '$qpc', 'User', 'Joe')"
+					VALUES ($qc, $qpc, 'User', 'Joe')"
 		    set refa($c) {}
 		}
 		if {[lsearch -exact $refa($c) $rlm] == -1} then {
 		    lappend sql "INSERT INTO pgauth.member (login, realm)
-					VALUES ('$qc', '$qrlm')"
+					VALUES ($qc, $qrlm)"
 		    lappend refa($c) $rlm
 		}
 	    }
 	}
 	if {[llength $sql] > 0} then {
 	    set sql [join $sql ";"]
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    if {! [$dbfd exec $sql msg]} then {
 		return "$msg\nAbort"
 	    }
 	}
@@ -540,16 +656,16 @@ proc import-network {verbose argv dbfd} {
     # Read referential data from database
     #
     
-    pg_select $dbfd "SELECT * FROM global.nmgroup" tab {
+    $dbfd exec "SELECT * FROM global.nmgroup" tab {
 	set refgroup($tab(name)) [list $tab(idgrp) $tab(p_admin)]
     }
-    pg_select $dbfd "SELECT * FROM dns.community" tab {
+    $dbfd exec "SELECT * FROM dns.community" tab {
 	set refcomm($tab(name)) $tab(idcomm)
     }
-    pg_select $dbfd "SELECT * FROM dns.organization" tab {
+    $dbfd exec "SELECT * FROM dns.organization" tab {
 	set reforg($tab(name)) $tab(idorg)
     }
-    pg_select $dbfd "SELECT * FROM dns.domain" tab {
+    $dbfd exec "SELECT * FROM dns.domain" tab {
 	set refdom($tab(name)) $tab(iddom)
     }
 
@@ -578,28 +694,28 @@ proc import-network {verbose argv dbfd} {
     for {set i 1} {$i <= $tabnet(nrec)} {incr i} {
 	set o [lindex $tabnet($i:org) 0]
 	if {! [info exists reforg($o)]} then {
-	    set qo [::pgsql::quote $o]
-	    lappend sql "INSERT INTO dns.organization (name) VALUES ('$qo')"
+	    set qo [pg_quote $o]
+	    lappend sql "INSERT INTO dns.organization (name) VALUES ($qo)"
 	    set reforg($o) ""
 	}
 	set c [lindex $tabnet($i:community) 0]
 	if {! [info exists refcomm($c)]} then {
-	    set qc [::pgsql::quote $c]
-	    lappend sql "INSERT INTO dns.community (name) VALUES ('$qc')"
+	    set qc [pg_quote $c]
+	    lappend sql "INSERT INTO dns.community (name) VALUES ($qc)"
 	    set refcomm($c) ""
 	}
     }
     if {[llength $sql] > 0} then {
 	set sql [join $sql ";"]
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {! [$dbfd exec $sql msg]} then {
 	    return "$msg\nAbort"
 	}
 
 	# re-read referential data
-	pg_select $dbfd "SELECT * FROM dns.community" tab {
+	$dbfd exec "SELECT * FROM dns.community" tab {
 	    set refcomm($tab(name)) $tab(idcomm)
 	}
-	pg_select $dbfd "SELECT * FROM dns.organization" tab {
+	$dbfd exec "SELECT * FROM dns.organization" tab {
 	    set reforg($tab(name)) $tab(idorg)
 	}
     }
@@ -699,7 +815,7 @@ proc import-network {verbose argv dbfd} {
 		# add DHCP range (without DHCP profile)
 		set sql "INSERT INTO dns.dhcprange (min, max, iddom)
 					VALUES ('$min', '$max', $iddom)"
-		if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		if {! [$dbfd exec $sql msg]} then {
 		    return "$msg\nAbort"
 		}
 	    }
@@ -723,23 +839,23 @@ proc import-network {verbose argv dbfd} {
 	# Other data
 	#
 
-	set qcomm  [::pgsql::quote [lindex $tabnet($i:comment) 0]]
-	set qloc   [::pgsql::quote [lindex $tabnet($i:location) 0]]
+	set qcomm  [pg_quote [lindex $tabnet($i:comment) 0]]
+	set qloc   [pg_quote [lindex $tabnet($i:location) 0]]
 
-	set qname  [::pgsql::quote $name]
+	set qname  [pg_quote $name]
 
 	foreach v [array names ad] {
 	    if {$ad($v) eq ""} then {
 		set qad($v) NULL
 	    } else {
-		set qad($v) "'$ad($v)'"
+		set qad($v) [pg_quote $ad($v)]
 	    }
 	}
 	foreach v [array names gw] {
 	    if {$gw($v) eq ""} then {
 		set qgw($v) NULL
 	    } else {
-		set qgw($v) "'$gw($v)'"
+		set qgw($v) [pg_quote $gw($v)]
 	    }
 	}
 
@@ -751,10 +867,10 @@ proc import-network {verbose argv dbfd} {
 					idorg, idcomm,
 					addr4, gw4, addr6, gw6,
 					dhcp)
-			VALUES ('$qname', '$qloc', '$qcomm', $idorg, $idcomm,
+			VALUES ($qname, $qloc, $qcomm, $idorg, $idcomm,
 					$qad(4), $qgw(4), $qad(6), $qgw(6),
 					$dhcpon)"
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {! [$dbfd exec $sql msg]} then {
 	    return "$msg\nAbort"
 	}
 
@@ -769,7 +885,7 @@ proc import-network {verbose argv dbfd} {
 
 	set idnet -1
 	set sql "SELECT idnet FROM dns.network WHERE $w"
-	pg_select $dbfd $sql tab {
+	$dbfd exec $sql tab {
 	    set idnet $tab(idnet)
 	}
 	if {$idnet == -1} then {
@@ -788,7 +904,7 @@ proc import-network {verbose argv dbfd} {
 	}
 	if {[llength $sql] > 0} then {
 	    set sql [join $sql ";"]
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    if {! [$dbfd exec $sql msg]} then {
 		return "$msg\nAbort"
 	    }
 	}
@@ -827,7 +943,7 @@ proc import-network {verbose argv dbfd} {
 	}
 	if {[llength $sql] > 0} then {
 	    set sql [join $sql ";"]
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    if {! [$dbfd exec $sql msg]} then {
 		return "$msg\nAbort"
 	    }
 	}
@@ -859,7 +975,7 @@ proc read-set-allbut-file {file _tab chkdom} {
 	    set err 0
 
 	    if {$chkdom} then {
-		set msg [check-fqdn-syntax "" $name f1 f2]
+		set msg [check-fqdn-syntax $name f1 f2]
 		if {$msg ne ""} then {
 		    set err 1
 		    warning $msg
@@ -889,7 +1005,7 @@ proc check-groups-in-set-allbut {dbfd _tabfile _tabgrp} {
     # Read groups from database
     #
 
-    pg_select $dbfd "SELECT * FROM global.nmgroup" tab {
+    $dbfd exec "SELECT * FROM global.nmgroup" tab {
 	set tabgrp($tab(name)) $tab(idgrp)
     }
 
@@ -957,16 +1073,16 @@ proc import-view {verbose argv dbfd} {
     #
 
     set unused {}
-    pg_select $dbfd "SELECT * FROM dns.view" tab {
+    $dbfd exec "SELECT * FROM dns.view" tab {
 	set v $tab(name)
 	if {! [info exists tabview($v)]} then {
-	    lappend unused "'[::pgsql::quote $v]'"
+	    lappend unused [pg_quote $v]
 	}
     }
     if {[llength $unused] > 0} then {
 	set unused [join $unused ", "]
 	set sql "DELETE FROM dns.view WHERE name in ($unused)"
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {! [$dbfd exec $sql msg]} then {
 	    return "$msg\nAbort"
 	}
     }
@@ -979,19 +1095,19 @@ proc import-view {verbose argv dbfd} {
     foreach v [array names tabview] {
 	set missing($v) yes
     }
-    pg_select $dbfd "SELECT * FROM dns.view" tab {
+    $dbfd exec "SELECT * FROM dns.view" tab {
 	set v $tab(name)
 	if {[info exists missing($v)]} then {
 	    unset missing($v)
 	}
     }
     foreach v [array names missing] {
-	set v [::pgsql::quote $v]
-	lappend sql "INSERT INTO dns.view (name, gendhcp) VALUES ('$v', 0)"
+	set qv [pg_quote $v]
+	lappend sql "INSERT INTO dns.view (name, gendhcp) VALUES ($qv, 0)"
     }
     if {[llength $sql] > 0} then {
 	set sql [join $sql ";"]
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {! [$dbfd exec $sql msg]} then {
 	    return "$msg\nAbort"
 	}
     }
@@ -1007,7 +1123,7 @@ proc import-view {verbose argv dbfd} {
     #
 
     set sql "DELETE FROM dns.p_view"
-    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+    if {! [$dbfd exec $sql msg]} then {
 	return "$msg\nAbort"
     }
 
@@ -1061,7 +1177,7 @@ proc import-view {verbose argv dbfd} {
 
     if {[llength $sql] > 0} then {
 	set sql [join $sql ";"]
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {! [$dbfd exec $sql msg]} then {
 	    return "$msg\nAbort"
 	}
     }
@@ -1111,7 +1227,7 @@ proc import-domain {verbose argv dbfd} {
     foreach d [array names tabdom] {
 	set missing($d) yes
     }
-    pg_select $dbfd "SELECT * FROM dns.domain" tab {
+    $dbfd exec "SELECT * FROM dns.domain" tab {
 	set d $tab(name)
 	if {[info exists missing($d)]} then {
 	    unset missing($d)
@@ -1119,12 +1235,12 @@ proc import-domain {verbose argv dbfd} {
     }
     set sql {}
     foreach d [array names missing] {
-	set d [::pgsql::quote $d]
-	lappend sql "INSERT INTO dns.domain (name) VALUES ('$d')"
+	set qd [pg_quote $d]
+	lappend sql "INSERT INTO dns.domain (name) VALUES ($qd)"
     }
     if {[llength $sql] > 0} then {
 	set sql [join $sql ";"]
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {! [$dbfd exec $sql msg]} then {
 	    return "$msg\nAbort"
 	}
     }
@@ -1140,7 +1256,7 @@ proc import-domain {verbose argv dbfd} {
     #
 
     set sql "DELETE FROM dns.p_dom"
-    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+    if {! [$dbfd exec $sql msg]} then {
 	return "$msg\nAbort"
     }
 
@@ -1191,7 +1307,7 @@ proc import-domain {verbose argv dbfd} {
     }
     if {[llength $sql] > 0} then {
 	set sql [join $sql ";"]
-	if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	if {! [$dbfd exec $sql msg]} then {
 	    return "$msg\nAbort"
 	}
     }
@@ -1260,7 +1376,7 @@ proc read-zone {file selector reverse _prologue _serial _tabaddr _tabcname} {
 			unset tabcname($name)
 		    }
 		    set data [::ip::normalize $data]
-		    if {! [existing-rr-ip $name $data]} then {
+		    if {! [existing-host $name $data]} then {
 			lappend tabaddr($name) $data
 		    }
 		}
@@ -1277,7 +1393,7 @@ proc read-zone {file selector reverse _prologue _serial _tabaddr _tabcname} {
 			    # selector is domain name for forward zones
 			    append data ".$selector."
 			}
-			if {! [existing-rr-cname $name $data]} then {
+			if {! [existing-alias $name $data]} then {
 			    set tabcname($name) $data
 			}
 		    }
@@ -1368,38 +1484,35 @@ proc zone-analyze-rr {line oldname} {
     return [list $type $name $data]
 }
 
-proc get-existing-rr {dbfd idview iddom} {
+proc get-existing-host-aliases {dbfd idview iddom} {
     global existingrr
 
-    set sql "SELECT r.name, i.addr
-			FROM dns.rr r, dns.rr_ip i
-			WHERE r.idrr = i.idrr
-			    AND r.idview = $idview
-			    AND iddom = $iddom"
-    pg_select $dbfd $sql tab {
+    set sql "SELECT n.name, a.addr
+			FROM dns.name n
+			    NATURAL INNER JOIN dns.host h
+			    NATURAL INNER JOIN dns.addr a
+			WHERE n.idview = $idview
+			    AND n.iddom = $iddom"
+    $dbfd exec $sql tab {
 	lappend existingrr(ip:$tab(name)) [::ip::normalize $tab(addr)]
     }
 
-    set sql "SELECT r1.name AS name, r2.name AS cname1, d.name AS cname2
-			FROM dns.rr r1, dns.rr_cname c, dns.rr r2, dns.domain d
-			WHERE r1.idrr = c.idrr
-				AND c.cname = r2.idrr
-				AND r1.idview = $idview
-				AND r2.iddom = d.iddom
-				AND r1.iddom = $iddom"
-    pg_select $dbfd $sql tab {
+    set sql "SELECT n1.name AS name, n2.name AS cname1, d2.name AS cname2
+		FROM dns.name n1, dns.alias a,
+		    dns.host h2, dns.name n2, dns.domain d2
+		WHERE n1.idview = $idview
+		    AND n1.iddom = $iddom
+		    AND n1.idname = a.idname
+		    AND a.idhost = h2.idhost
+		    AND h2.idhost = n2.idname
+		    AND n2.iddom = d2.iddom
+		    "
+    $dbfd exec $sql tab {
 	set existingrr(cname:$tab(name)) "$tab(cname1).$tab(cname2)."
     }
 }
 
-proc existing-rr {name} {
-    global existingrr
-
-    return [expr [info exists existingrr(ip:$name)] \
-			|| [info exists existingrr(cname:$name)] ]
-}
-
-proc existing-rr-ip {name addr} {
+proc existing-host {name addr} {
     global existingrr
 
     set r 0
@@ -1412,7 +1525,7 @@ proc existing-rr-ip {name addr} {
     return $r
 }
 
-proc existing-rr-cname {name cname} {
+proc existing-alias {name cname} {
     global existingrr
 
     set r 0
@@ -1477,7 +1590,7 @@ proc import-zone {verbose argv dbfd} {
 	    fatal-error "Domain '$selector' not found"
 	}
 	set iddom $tabdom($selector)
-	get-existing-rr $dbfd $idview $iddom
+	get-existing-host-aliases $dbfd $idview $iddom
 	set reverse 0
     } else {
 	set reverse 1
@@ -1513,25 +1626,36 @@ proc import-zone {verbose argv dbfd} {
 	#
 
 	foreach name [lsort [array names tabaddr]] {
-	    catch {unset trr}
-	    if {! [read-rr-by-name $dbfd $name $iddom $idview trr]} then {
+	    set rr [::rr::read-by-name $dbfd $name $iddom $idview]
+	    if {[::rr::found $rr]} then {
+		set idname [::rr::get-idname $rr]
+		set idhost [::rr::get-idhost $rr]
+	    } else {
 		if {$verbose >= 2} then {
 		    puts stderr "Adding RR $name"
 		}
-		set msg [add-rr $dbfd $name $iddom $idview "" 0 "" 0 -1 "" "" "" $idcor trr]
-		if {$msg ne ""} then {
-		    warning "Unable to add $name ($msg)"
-		    set err 1
-		    continue
-		}
+		set idname [::rr::add-name $dbfd $name $iddom $idview]
+		# XXXXXXXXXXX TEST ?
+#		if {$msg ne ""} then {
+#		    warning "Unable to add $name ($msg)"
+#		    set err 1
+#		    continue
+#		}
+		set idhost -1
 	    }
+
+	    if {$idhost == -1} then {
+		set idhost [::rr::add-host $dbfd $idname "" -1 0 "" "" "" 0 -1]
+		# XXXXXXXXXXX TEST ?
+	    }
+
 	    foreach a $tabaddr($name) {
 		if {$verbose >= 2} then {
 		    puts stderr "Adding IP $name / $a"
 		}
-		set sql "INSERT INTO dns.rr_ip (idrr, addr)
-					VALUES ($trr(idrr), '$a')"
-		if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		set sql "INSERT INTO dns.addr (idhost, addr)
+					VALUES ($idhost, '$a')"
+		if {! [$dbfd exec $sql msg]} then {
 		    warning "Unable to add $name/$a ($msg)"
 		    set err 1
 		}
@@ -1543,30 +1667,38 @@ proc import-zone {verbose argv dbfd} {
 	#
 
 	foreach name [lsort [array names tabcname]] {
-	    catch {unset trr}
-	    if {! [read-rr-by-name $dbfd $name $iddom $idview trr]} then {
+	    set rr [::rr::read-by-name $dbfd $name $iddom $idview]
+	    if {[::rr::found $rr]} then {
+		set idname [::rr::get-idname $rr]
+	    } else {
 		if {$verbose >= 2} then {
 		    puts stderr "Adding RR $name"
 		}
-		set msg [add-rr $dbfd $name $iddom $idview "" 0 "" 0 -1 "" "" "" $idcor trr]
-		if {$msg ne ""} then {
-		    warning "Unable to add $name ($msg)"
-		    set err 1
-		    continue
-		}
+
+		set idname [::rr::add-name $dbfd $name $iddom $idview]
+		# XXXXXXXXXXX TEST ?
+#		if {$msg ne ""} then {
+#		    warning "Unable to add $name ($msg)"
+#		    set err 1
+#		    continue
+#		}
 	    }
 
 	    set ref $tabcname($name)
 	    if {[regexp {^([^.]+)\.(.+).$} $ref x n dom]} then {
 		if {[info exists tabdom($dom)]} then {
-		    catch {unset tref}
-		    if {[read-rr-by-name $dbfd $n $tabdom($dom) $idview tref]} then {
+		    set rref [::rr::read-by-name $dbfd $n $tabdom($dom) $idview]
+		    set idhost -1
+		    if {[::rr::found $rref]} then {
+			set idhost [::rr::get-idhost $rref]
+		    }
+		    if {$idhost != -1} then {
 			if {$verbose >= 2} then {
 			    puts stderr "Adding CNAME $name / $a"
 			}
-			set sql "INSERT INTO dns.rr_cname (idrr, cname)
-				    	VALUES ($trr(idrr), $tref(idrr))"
-			if {! [::pgsql::execsql $dbfd $sql msg]} then {
+			set sql "INSERT INTO dns.alias (idname, idhost)
+				    	VALUES ($idname, $idhost)"
+			if {! [$dbfd exec $sql msg]} then {
 			    warning "Unable to add CNAME $name -> $ref ($msg)"
 			    set err 1
 			}
@@ -1596,10 +1728,10 @@ proc import-zone {verbose argv dbfd} {
     # Import zone prologue
     #
 
-    set qzonename [::pgsql::quote $zonename]
-    set qprologue [::pgsql::quote $prologue]
-    set qrrsup [::pgsql::quote $rrsup]
-    set qselector [::pgsql::quote $selector]
+    set qzonename [pg_quote $zonename]
+    set qprologue [pg_quote $prologue]
+    set qrrsup [pg_quote $rrsup]
+    set qselector [:pg_quote $selector]
 
     switch $version {
 	-1 { set table "dns.zone_forward" }
@@ -1611,23 +1743,23 @@ proc import-zone {verbose argv dbfd} {
     set idzone -1
     set sql "SELECT idzone FROM $table
     			WHERE name = '$qzonename' AND idview = $idview"
-    pg_select $dbfd $sql tab {
+    $dbfd exec $sql tab {
 	set idzone $tab(idzone)
     }
     if {$idzone == -1} then {
 	set sql "INSERT INTO $table (name, idview, version, prologue,
 					rrsup, gen, selection)
-			VALUES ('$qzonename', $idview, $serial, '$qprologue',
-					'$qrrsup', 1, '$qselector')"
+			VALUES ($qzonename, $idview, $serial, $qprologue,
+					$qrrsup, 1, $qselector)"
     } else {
 	set sql "UPDATE $table SET version = $serial,
-				    prologue = '$qprologue',
-				    rrsup = '$qrrsup',
+				    prologue = $qprologue,
+				    rrsup = $qrrsup,
 				    gen = 1,
-				    selection = '$qselector'
+				    selection = $qselector
 				WHERE idzone = $idzone"
     }
-    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+    if {! [$dbfd exec $sql msg]} then {
 	warning "Unable to change '$zonename' zone specification"
 	set err 1
     }
@@ -1748,7 +1880,7 @@ proc import-mailrelay {verbose argv dbfd} {
 	    #
 
 	    set sql "UPDATE dns.p_dom SET mailrole = 1 WHERE iddom = $iddom"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    if {! [$dbfd exec $sql msg]} then {
 		return "$msg\nAbort"
 	    }
 
@@ -1759,16 +1891,21 @@ proc import-mailrelay {verbose argv dbfd} {
 	    foreach rl [lreplace $mr 0 0] {
 		lassign $rl prio relay
 
-		set msg [check-fqdn-syntax $dbfd $relay namer domr iddomr]
+		set msg [check-fqdn-syntax $relay namer domr iddomr]
 		if {$msg ne ""} then {
 		    set err 1
 		    warning $msg
 		} else {
-		    if {[read-rr-by-name $dbfd $namer $iddomr $idview trr]} then {
-			set sql "INSERT INTO dns.relay_dom
-						(iddom, prio, mx)
-					VALUES ($iddom, $prio, $trr(idrr))"
-			if {! [::pgsql::execsql $dbfd $sql msg]} then {
+		    set rr [::rr::read-by-name $dbfd $namer $iddomr $idview]
+		    set idhost -1
+		    if {[::rr::found $rr]} then {
+			set idhost [::rr::get-idhost $rr]
+		    }
+		    if {$idhost == -1} then {
+			set sql "INSERT INTO dns.relaydom
+						(iddom, prio, idhost)
+					VALUES ($iddom, $prio, $idhost)"
+			if {! [$dbfd exec $sql msg]} then {
 			    return "$msg\nAbort"
 			}
 		    } else {
@@ -1890,12 +2027,17 @@ proc import-mailrole {verbose argv dbfd} {
 	    warning "Unknown domain '$d1' for '$n1.$d1'"
 	} else {
 	    set iddom1 $tabdom($d1)
-	    if {! [read-rr-by-name $dbfd $n1 $iddom1 $idview trr1]} then {
-		set msg [add-rr $dbfd $n1 $iddom1 $idview "" 0 "" 0 -1 "" "" "" $idcor trr1]
-		if {$msg ne ""} then {
-		    set err 1
-		    warning $msg
-		}
+	    set rr1 [::rr::read-by-name $dbfd $n1 $iddom1 $idview]
+	    if {[::rr::found $rr1]} then {
+		set idname1 [::rr::get-idname $rr1]
+	    } else {
+		set idname1 [::rr::add-rr $dbfd $n1 $iddom1 $idview]
+		# XXXXXXXXXXX TEST ?
+#		if {$msg ne ""} then {
+#		    warning "Unable to add $name ($msg)"
+#		    set err 1
+#		    continue
+#		}
 	    }
 	}
 
@@ -1913,8 +2055,10 @@ proc import-mailrole {verbose argv dbfd} {
 	} else {
 	    set idviewmbox $tabview($viewmbox)
 	    set iddom2 $tabdom($d2)
-	    if {[read-rr-by-name $dbfd $n2 $iddom2 $idviewmbox trr2]} then {
-		if {[llength [rr-ip-by-view trr2 $idviewmbox]] == 0} then {
+	    set rr2 [::rr::read-by-name $dbfd $n2 $iddom2 $idviewmbox]
+	    if {[::rr::found $rr2]} then {
+		set idhost2 [::rr::get-idhost $rr2]
+		if {$idhost2 == -1} then {
 		    set err 1
 		    warning "'$n2.$d2' is not a host"
 		}
@@ -1925,9 +2069,9 @@ proc import-mailrole {verbose argv dbfd} {
 	}
 
 	if {! $err} then {
-	    set sql "INSERT INTO dns.mail_role (mailaddr, mboxhost)
-			VALUES ($trr1(idrr), $trr2(idrr))"
-	    if {! [::pgsql::execsql $dbfd $sql msg]} then {
+	    set sql "INSERT INTO dns.mailrole (mailaddr, mboxhost)
+			VALUES ($idname1, $idhost2)"
+	    if {! [$dbfd exec $sql msg]} then {
 		return "$msg\nAbort"
 	    }
 	}
@@ -1950,25 +2094,35 @@ proc main {argv0 argv} {
     setprog $argv0
 
     #
-    # Netmagis database access
-    #
-
-    set msg [d init-script dbfd $argv0 true tabcor]
-    if {$msg ne ""} then {
-	fatal-error "$msg\nAborted."
-    }
-
-    #
     # Argument checking
     #
 
-    set verbose 0
+    set verbose  0
+    set conffile $conf(conffile)
+    set libdir   $conf(libdir)
+    set version  $conf(version)
+
     while {[llength $argv] > 0} {
 	set a [lindex $argv 0]
 	switch -glob -- $a {
+	    -h {
+		usage $argv0
+	    }
 	    -v {
 		incr verbose
 		set argv [lreplace $argv 0 0]
+	    }
+	    -f {
+		set conffile [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -l {
+		set libdir [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
+	    }
+	    -x {
+		set version [lindex $argv 1]
+		set argv [lreplace $argv 0 1]
 	    }
 	    -* {
 		warning "Unknown option '$a'"
@@ -1987,27 +2141,44 @@ proc main {argv0 argv} {
     }
 
     #
+    # Initialize environment
+    #
+
+    global auto_path
+    lappend auto_path $libdir/pkgtcl
+    package require pgdb
+    package require lconf
+    package require nmenv
+    package require rr
+    package require auth
+
+    set lc [::lconf::lconf create %AUTO%]
+    $lc read $conffile
+
+    set dbfd [::pgdb::db create %AUTO%]
+    $dbfd init "dns" $lc $version
+
+    ::nmenv::nmenv create ::n
+    ::n setdb $dbfd
+
+    #
     # Lock database, do the work, and commit modifications
     #
 
-    set msg [d dblock {}]
-    if {$msg ne ""} then {
-	fatal-error $msg
+    set r 0
+
+    $dbfd lock {} {
+	set msg [$fct $verbose [lreplace $argv 0 0] $dbfd]
+	if {$msg ne ""} then {
+	    set r 1
+	    warning $msg
+	    $dbfd abort 
+	}
     }
 
-    set msg [$fct $verbose [lreplace $argv 0 0] $dbfd]
-    if {$msg ne ""} then {
-	set msg [d dbabort "import" $msg]
-	fatal-error $msg
-    }
+    $dbfd destroy
 
-    set msg [d dbcommit "import"]
-    if {$msg ne ""} then {
-	fatal-error $msg
-    }
-
-    d end
-    return 0
+    return $r
 }
 
 exit [main $argv0 $argv]
