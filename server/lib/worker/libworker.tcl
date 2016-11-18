@@ -377,7 +377,7 @@ proc check-name-by-addresses {dbfd idcor rr} {
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX then error
 #	    if name.domain is ADDRMAIL then error
-#	    if name.domain is MAILHOST then error
+#	    if name.domain is MBOXHOST then error
 #	    if name.domain has IP addresses
 #		check-all-IP-addresses (name.domain, idcor)
 #	    if no test is false, then OK
@@ -448,7 +448,7 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 		    {alias	REJECT}
 		    {mx		REJECT}
 		    {mailaddr	REJECT}
-		    {mailhost	REJECT}
+		    {mboxhost	REJECT}
 		    {ip		CHECK}
 		}
 	del-mailaddr	{
@@ -460,7 +460,6 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 		    {ip		CHECK}
 		}
     }
-
 
     #
     # Get the list of actions associated with the context
@@ -498,13 +497,16 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 		set rr [::rr::read-by-name $dbfd $name $iddom $idview]
 	    }
 	    alias {
-		set idcname ""
+		set idcname -1
 		if {[::rr::found $rr]} then {
 		    set idcname [::rr::get-cname $rr]
 		}
 
-		if {$idcname ne ""} then {
-		    set r2 [::rr::read-by-id $dbfd $idcname]
+		if {$idcname != -1} then {
+		    set r2 [::rr::read-by-idhost $dbfd $idcname]
+		    if {! [::rr::found $r2]} then {
+			return [mc "Internal error: alias references non-existant host id '%s'" $idcname]
+		    }
 		    set fqdnref [::rr::get-fqdn $r2]
 		    switch $parm {
 			REJECT {
@@ -525,16 +527,20 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 	    mx {
 		set lmx {}
 		if {[::rr::found $rr]} then {
-		    set lmx [::rr::get-mx $rr]
+		    set lmx [::rr::get-mxhost $rr]
 		}
 
 		foreach mx $lmx {
-		    lassign $mx prio idmx
+		    lassign $mx prio idhost ttl
 		    switch $parm {
 			REJECT {
 			    return [mc "'%s' is a MX" $fqdn]
 			}
 			CHECK {
+			    set rmx [::rr:read-by-idhost $dbfd $idhost]
+			    if {! [::rr::found $rmx]} then {
+				return [mc "Internal error: MX references non-existant host id '%s'" $idhost]
+			    }
 			    set msg [check-name-by-addresses $dbfd $idcor $rmx]
 			    if {$msg ne ""} then {
 				set fqdnmx [::rr::get-fqdn $rmx]
@@ -549,14 +555,14 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 	    }
 	    mailaddr {
 		# get mailbox host for this address
-		set idmboxhost ""
+		set idmboxhost -1
 		if {[::rr::found $rr]} then {
 		    set idmboxhost [::rr::get-mboxhost $rr]
 		}
 
-		if {$idmboxhost ne ""} then {
+		if {$idmboxhost != -1} then {
 		    # get mbox host
-		    set rrm [::rr::read-by-id $idmboxhost]
+		    set rrm [::rr::read-by-idhost $dbfd $idmboxhost]
 		    if {! [::rr::found $rrm]} then {
 			return [mc "Internal error: id '%s' doesn't exists for a mail host" $idmboxhost]
 		    }
@@ -571,7 +577,7 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 			CHECK {
 			    # Check mboxhost IP addresses
 			    set msg [check-name-by-addresses $dbfd $idcor $rrm]
-			    if {! $ok} then {
+			    if {$msg ne ""} then {
 				return [mc {You don't have rights on host '%1$s' holding mail for '%2$s' (%3$s)} $fqdnm $fqdn $msg]
 			    }
 
@@ -605,7 +611,7 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 		    }
 		}
 	    }
-	    mailhost {
+	    mboxhost {
 		set lma {}
 		if {[::rr::found $rr]} then {
 		    set lma [::rr::get-mailaddr $rr]
@@ -621,7 +627,7 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 			# itself)
 			set l {}
 			foreach idma $lma {
-			    set rrma [::rr::read-by-id $dbfd $idma]
+			    set rrma [::rr::read-by-idname $dbfd $idma]
 			    if {! [::rr:found $rrma]} then {
 				return [mc "Internal error: id '%s' doesn't exists for a mail address" $idma]
 			    }

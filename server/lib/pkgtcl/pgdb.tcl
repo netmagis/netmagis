@@ -82,44 +82,67 @@ namespace eval ::pgdb {
 	    }
 	}
 
-	# exec sql [tab script]		(throws an error)
-	# or
-	# exec sql msgvar		(returns 0 or 1)
+	#
+	# exec sql [msgvar] [tab script]
+	# - msgvar: if present, exec returns 1 if ok, or 0 if error (and
+	#	error message in msg variable)
+	#	If not present, exec simply throws an error
+	# - tab script: if present, execute the script for each returned row
+	#
+	# So, the authorized forms are:
+	#	exec sql			(throws an error)
+	#	exec sql msgvar			(returns 0/1 and msg)
+	#	exec sql tab script		(throws an error)
+	#	exec sql msgvar tab script	(returns 0/1 and msg)
+	#
+
 	method exec {sql args} {
 	    set r 1
 	    try {
 		switch [llength $args] {
-		    0 -
+		    0 {
+			set report false
+			uplevel 1 [list pg_execute $dbfd $sql]
+		    }
 		    1 {
+			lassign $args _msg
+			set report true
+			upvar $_msg umsg
 			uplevel 1 [list pg_execute $dbfd $sql]
 		    }
 		    2 {
-			lassign $args tab script
-			uplevel 1 [list pg_execute -array $tab $dbfd $sql $script]
+			lassign $args t scr
+			set report false
+			uplevel 1 [list pg_execute -array $t $dbfd $sql $scr]
+		    }
+		    3 {
+			lassign $args _msg t scr
+			set report true
+			upvar $_msg umsg
+			uplevel 1 [list pg_execute -array $t $dbfd $sql $scr]
 		    }
 		    default {
-			error {wrong # args: should be "exec sql ?tab script?"}
+			error {wrong # args: should be "exec sql ?msgvar? ?tab script?"}
 		    }
 		}
 
-	    } trap {NONE} {msg err} {
+	    } trap {NONE} {errmsg errdict} {
 		# Pgtcl 1.9 returns errorCode == NONE for all errors
-		if {[llength $args] == 1} then {
-		    upvar [lindex $args 0] umsg
-		    set umsg $msg
+		if {$report} then {
+		    set umsg $errmsg
 		    set r 0
 		} else {
-		    set errinfo [dict get $err -errorinfo]
+		    set errinfo [dict get $errdict -errorinfo]
 		    if {[regexp "^PGRES_FATAL_ERROR" $errinfo]} then {
 			# reset db handle
 			set info [pg_dbinfo status $dbfd]
 			if {$info ne "connection_ok"} then {
 			    $self disconnect
 			}
-			error $msg
+			error $errmsg
 		    } else {
 			# it is not a Pgtcl error
-			error $msg $errinfo NONE
+			error $errmsg $errinfo NONE
 		    }
 		}
 	    }

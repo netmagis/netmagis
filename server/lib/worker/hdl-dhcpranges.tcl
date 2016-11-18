@@ -351,11 +351,11 @@ proc dhcp-new {iddhcprange idgrp _parm} {
     #
 
     set sql "SELECT count(*) AS c
-		FROM dns.rr
-		    INNER JOIN dns.rr_ip USING (idrr)
-		WHERE rr.mac IS NOT NULL
-		    AND rr_ip.addr >= $qmin
-		    AND rr_ip.addr <= $qmax
+		FROM dns.host
+		    NATURAL INNER JOIN dns.addr
+		WHERE mac IS NOT NULL
+		    AND addr >= $qmin
+		    AND addr <= $qmax
 		    "
     ::dbdns exec $sql tab {
 	set c $tab(c)

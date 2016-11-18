@@ -570,6 +570,32 @@ CREATE OR REPLACE FUNCTION dns.check_ip_grp (INET, INTEGER)
     $$ LANGUAGE 'plpgsql' ;
 
 ------------------------------------------------------------------------------
+-- Remove name from dns.name if possible (i.e. no other object references
+-- this name), called during a trigger on delete
+--
+-- Input:
+--   - OLD: row
+-- Output:
+--   - none
+--
+-- History
+--    2016/11/18 : pda/jean : design
+--
+
+CREATE OR REPLACE FUNCTION dns.del_name ()
+    RETURNS trigger AS $$
+    BEGIN
+	DELETE FROM dns.name WHERE idname = OLD.idname ;
+	RETURN NULL ;
+    EXCEPTION
+	WHEN foreign_key_violation
+	    THEN
+		-- do nothing
+		RETURN NULL ;
+    END ;
+    $$ LANGUAGE 'plpgsql' ;
+
+------------------------------------------------------------------------------
 -- Trigger function called when a vlan is modified
 --
 -- History

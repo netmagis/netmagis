@@ -16,6 +16,10 @@ DROP TRIGGER IF EXISTS tr_mod_zone6 ON dns.zone_reverse6 ;
 DROP TRIGGER IF EXISTS tr_mod_dhcprange ON dns.dhcprange ;
 DROP TRIGGER IF EXISTS tr_mod_network ON dns.network ;
 DROP TRIGGER IF EXISTS tr_mod_dhcpprofile ON dns.dhcpprofile ;
+DROP TRIGGER IF EXISTS tr_del_host ON dns.host ;
+DROP TRIGGER IF EXISTS tr_del_alias ON dns.alias ;
+DROP TRIGGER IF EXISTS tr_del_mailrole ON dns.mailrole ;
+DROP TRIGGER IF EXISTS tr_del_mx ON dns.mx ;
 DROP TRIGGER IF EXISTS tr_phonetic ON pgauth.user ;
 DROP TRIGGER IF EXISTS tr_mod_vlan ON topo.vlan ;
 
@@ -74,6 +78,22 @@ CREATE TRIGGER tr_mod_network
 CREATE TRIGGER tr_mod_dhcpprofile
     BEFORE UPDATE ON dns.dhcpprofile
     FOR EACH ROW EXECUTE PROCEDURE dns.mod_dhcp () ;
+
+CREATE TRIGGER tr_del_host
+    AFTER DELETE ON dns.host
+    FOR EACH ROW EXECUTE PROCEDURE dns.del_name () ;
+
+CREATE TRIGGER tr_del_alias
+    AFTER DELETE ON dns.alias
+    FOR EACH ROW EXECUTE PROCEDURE dns.del_name () ;
+
+CREATE TRIGGER tr_del_mailrole
+    AFTER DELETE ON dns.mailrole
+    FOR EACH ROW EXECUTE PROCEDURE dns.del_name () ;
+
+CREATE TRIGGER tr_del_mx
+    AFTER DELETE ON dns.mx
+    FOR EACH ROW EXECUTE PROCEDURE dns.del_name () ;
 
 CREATE TRIGGER tr_phonetic
     BEFORE INSERT OR UPDATE ON pgauth.user

@@ -72,6 +72,8 @@ package provide rr 0.1
 # - get-mailaddr $rr
 #	return the list of idname of mail addresses if $rr is a mboxhost
 #			(XXX OLD {{idview idmailaddr idviewmailaddr} ...})
+# - get-relay $rr
+#	return the list of iddom which target this host for relay {iddom ...}
 # - add-name $db $name $iddom $idview
 #	add the name into the database and return the new idname
 # - add-host $db $idname $mac $iddhcpprof $idhinfo $comment $respname $respmail $sendsmtp $ttl
@@ -121,16 +123,17 @@ namespace eval ::rr {
 		    COALESCE (a.idhost, -1) AS cname,
 		    COALESCE (a.ttl, -1) AS ttlcname,
 		    COALESCE (sreq_aliases.aliases, '{}') AS aliases,
-		    COALESCE (mailrole.mboxhost, -1) AS mboxhost,
+		    COALESCE (mailrole.idhost, -1) AS mboxhost,
 		    COALESCE (mailrole.ttl) AS ttlmboxhost,
-		    COALESCE (sreq_mailaddr.mailaddr, '{}') AS mailaddr
+		    COALESCE (sreq_mailaddr.mailaddr, '{}') AS mailaddr,
+		    COALESCE (sreq_relay.relay, '{}') AS relay
 		FROM dns.name n
 		    INNER JOIN dns.domain USING (iddom)
 		    LEFT OUTER JOIN dns.host h USING (idname)
 		    LEFT OUTER JOIN dns.hinfo USING (idhinfo)
 		    LEFT OUTER JOIN dns.dhcpprofile USING (iddhcpprof)
 		    LEFT OUTER JOIN dns.alias a USING (idname)
-		    LEFT OUTER JOIN dns.mailrole ON (mailaddr = n.idname)
+		    LEFT OUTER JOIN dns.mailrole USING (idname)
 		    , LATERAL (
 			    SELECT array_agg (addr) AS ip
 				FROM dns.addr
@@ -156,10 +159,15 @@ namespace eval ::rr {
 				WHERE alias.idhost = h.idhost
 			    ) AS sreq_aliases
 		    , LATERAL (
-			    SELECT array_agg (mailaddr) AS mailaddr
+			    SELECT array_agg (idname) AS mailaddr
 				FROM dns.mailrole
-				WHERE mailrole.mboxhost = h.idhost
+				WHERE mailrole.idhost = h.idhost
 			    ) AS sreq_mailaddr
+		    , LATERAL (
+			    SELECT array_agg (iddom) AS relay
+				FROM dns.relaydom
+				WHERE relaydom.idhost = h.idhost
+			    ) AS sreq_relay
 		WHERE $where
 	    ) AS j
 	"
@@ -185,7 +193,8 @@ namespace eval ::rr {
 		    mxname
 		    cname ttlcname
 		    aliases
-		    mboxhost mailaddr} {
+		    mboxhost mailaddr
+		    relay} {
 	namespace export get-$key
 
 	proc get-$key {rr} "return \[dict get \$rr $key]"
@@ -211,7 +220,7 @@ namespace eval ::rr {
     proc add-name {db name iddom idview} {
 	set qname [pg_quote $name]
 	set sql "INSERT INTO dns.name (name, iddom, idview)
-		    VALUES ($qname, $iddom $idview)
+		    VALUES ($qname, $iddom, $idview)
 		    RETURNING idname"
 	set idname -1
 	$db exec $sql tab {
@@ -225,7 +234,6 @@ namespace eval ::rr {
 	if {$mac ne ""} then {
 	    set qmac [pg_quote $mac]
 	}
-	set qname     [pg_quote $name]
 	set qcomment  [pg_quote $comment]
 	set qrespname [pg_quote $respname]
 	set qrespmail [pg_quote $respmail]

@@ -372,7 +372,7 @@ CREATE TABLE dns.addr (
     idhost	INT,			-- host id
     addr	INET,			-- IP (v4 or v6) address
 
-    FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
+    FOREIGN KEY (idhost) REFERENCES dns.host (idhost) ON DELETE CASCADE,
     PRIMARY KEY (idhost, addr)
 ) ;
 
@@ -383,8 +383,8 @@ CREATE TABLE dns.alias (
     idhost	INT,			-- host pointed by this alias
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
-    FOREIGN KEY (idname)     REFERENCES dns.name        (idname),
-    FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
+    FOREIGN KEY (idname)   REFERENCES dns.name   (idname),
+    FOREIGN KEY (idhost)   REFERENCES dns.host   (idhost),
     PRIMARY KEY (idname)
 ) ;
 
@@ -396,8 +396,8 @@ CREATE TABLE dns.mx (
     idhost	INT,			-- MX target host
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
-    FOREIGN KEY (idname)     REFERENCES dns.name        (idname),
-    FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
+    FOREIGN KEY (idname)   REFERENCES dns.name   (idname),
+    FOREIGN KEY (idhost)   REFERENCES dns.host   (idhost),
     PRIMARY KEY (idname, idhost)
 ) ;
 
@@ -405,13 +405,13 @@ CREATE TABLE dns.mx (
 -- may be in another view)
 
 CREATE TABLE dns.mailrole (
-    mailaddr	INT,			-- mail address
-    mboxhost	INT,			-- host holding mboxes for this address
+    idname	INT,			-- mail address
+    idhost	INT,			-- host holding mboxes for this address
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
-    FOREIGN KEY (mailaddr)   REFERENCES dns.name        (idname),
-    FOREIGN KEY (mboxhost)   REFERENCES dns.host        (idhost),
-    PRIMARY KEY (mailaddr)
+    FOREIGN KEY (idname)   REFERENCES dns.name   (idname),
+    FOREIGN KEY (idhost)   REFERENCES dns.host   (idhost),
+    PRIMARY KEY (idname)
 ) ;
 
 -- When a mailrole is declared, Netmagis publishes MX declared
@@ -423,8 +423,8 @@ CREATE TABLE dns.relaydom (
     idhost	INT,			-- relay host for this domain
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
-    FOREIGN KEY (iddom)      REFERENCES dns.domain      (iddom),
-    FOREIGN KEY (idhost)     REFERENCES dns.host        (idhost),
+    FOREIGN KEY (iddom)    REFERENCES dns.domain (iddom),
+    FOREIGN KEY (idhost)   REFERENCES dns.host   (idhost),
     PRIMARY KEY (iddom, idhost)
 ) ;
 
