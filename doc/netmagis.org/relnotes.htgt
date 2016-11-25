@@ -46,6 +46,58 @@
     \lien {github.com commits} {http://github.com/pdav/netmagis}.
 
 
+    \titre {2} {\ancre {v2.3.3} {Netmagis 2.3.3}}
+
+    Release date: 25 november 2016
+
+    The 2.3.3 release of Netmagis is a maintenance release, providing some
+    bug fixes and some improvements:
+
+    \liste {
+	\item {Bug fixes:
+	    \liste {
+		\item {When searching for a name, an error was issued
+		    if the name was a MX.
+		    See \lien {issue 158}
+				{https://github.com/pdav/netmagis/issues/158}.
+		}
+		\item {When trying to delete an alias in an unauthorized
+		    domain, an internal error was generated.
+		    See \lien {issue 160}
+				{https://github.com/pdav/netmagis/issues/160}.
+		}
+		\item {When displaying an L2 or L3 map, an internal
+		    error was generated due to an invalid syntax with
+		    recent Graphviz versions.
+		    See \lien {issue 166}
+				{https://github.com/pdav/netmagis/issues/166}.
+		}
+		\item {Adding MX records to existing RR was rejected.
+		    See \lien {issue 155}
+				{https://github.com/pdav/netmagis/issues/155}.
+		}
+		\item {Followup about the validation of the CAS ticket:
+		    the regular expression was still too restrictive.
+		}
+	    }
+	}
+	\item {Improvements in the topo/detecteq modules:
+	    \liste {
+		\item {Add support for Rancid 3}
+		\item {Add support for Cisco ASA.
+		    See \lien {pull request 152}
+		    {https://github.com/pdav/netmagis/pull/152} provided by
+		    Benjamin Collet.
+		}
+		\item {Add support for \teletype {routing-instance-access}
+		    for SNMP on Juniper routers
+		}
+		\item {Add basic support for MVRP on Juniper routers}
+	    }
+	}
+    }
+
+
     \titre {2} {\ancre {v2.3.2} {Netmagis 2.3.2}}
 
     Release date: 3 september 2015

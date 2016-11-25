@@ -38,6 +38,16 @@
     \titre {1} {Netmagis: News}
 
 
+    \titre {2} {[2016/11/25] Netmagis 2.3.3 is released}
+
+    The 2.3.3 version of Netmagis is available on the
+    \lien {Download} {/download.html} section. This is a
+    maintenance release fixing some bugs since the 2.3.2
+    release and providing support for Rancid3.
+    See the \lien {release notes} {/relnotes.html#v2.3.3} for 
+    a list of modifications.
+
+
     \titre {2} {[2016/07/04] Luigi Coniglio internship on Netmagis}
 
     Luigi Coniglio, student in computer science at University of
