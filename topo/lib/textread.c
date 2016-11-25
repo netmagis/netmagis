@@ -261,7 +261,6 @@ static void parse_attr (char *tab [], int ntab, struct attrtab **hd)
 	{ "mode",	1, },
 	{ "native",	1, },
 	{ "voice",	1, },
-	{ "localscope",	1, },
 	{ "manual",	1, },
 	{ "ipmac",	1, },
 	{ "portmac",	1, },
@@ -990,7 +989,6 @@ static void process_vlan (char *tab [], int ntab)
     static struct attrcheck vlanattr [] = {
 	{ "desc", 1, 1},
 	{ "voice",  1, 1},
-	{ "localscope",  1, 1},
 	{ "net",  0, 100000},
 	{ NULL, 0, 0}
     } ;
@@ -1033,9 +1031,6 @@ static void process_vlan (char *tab [], int ntab)
 
     av = attr_get_vallist (attrtab, "voice") ;
     tabvlan [vlanid].voice = (av == NULL) ? 0 : atoi (attr_get_val (av)) ;
-
-    av = attr_get_vallist (attrtab, "localscope") ;
-    tabvlan [vlanid].localscope = (av == NULL) ? 0 : atoi (attr_get_val (av)) ;
 
     process_netlist (&tabvlan [vlanid].netlist, attrtab) ;
 

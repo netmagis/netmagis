@@ -75,7 +75,6 @@ proc main {argv0 argv} {
 	set desc $tab(descr)
 	set vlanid $tab(vlanid)
 	set voip $tab(voip)
-	set localscope $tab(localscope)
 
 	if {! [check-vlan-name $desc msg]} then {
 	    puts stderr "$argv0: invalid characters in vlan $vlanid ($msg)"
@@ -83,7 +82,7 @@ proc main {argv0 argv} {
 	}
 	binary scan $desc H* desc
 
-	puts stdout "vlan $vlanid desc $desc voice $voip localscope $localscope"
+	puts stdout "vlan $vlanid desc $desc voice $voip"
     }
 
     if {! $found} then {

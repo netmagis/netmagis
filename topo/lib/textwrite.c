@@ -244,8 +244,8 @@ static void text_write_vlans (FILE *fp)
 	    iptext_t n ;
 	    struct netlist *nl ;
 
-	    fprintf (fp, "vlan %d desc %s voice %d localscope %d", v,
-					tab [v].name, tab [v].voice, tab [v].localscope) ;
+	    fprintf (fp, "vlan %d desc %s voice %d", v,
+					tab [v].name, tab [v].voice) ;
 	    for (nl = tab [v].netlist ; nl != NULL ; nl = nl->next)
 	    {
 		ip_ntop (&nl->net->addr, n, 1) ;
