@@ -2,7 +2,6 @@
 # $FreeBSD: head/net-mgmt/netmagis-metro/Makefile 392183 2015-07-15 18:23:59Z amdmi3 $
 
 PORTNAME=	netmagis
-PORTREVISION=	1
 PKGNAMESUFFIX=	-metro
 
 COMMENT=	Netmagis metrology module

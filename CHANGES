@@ -1,5 +1,8 @@
-Version 2.x.x - ?
-    - bug fix (issue #158): an was issued when a MX was searched for
+Version 2.3.3 - ?
+    - bug fix (issue #158): an error was issued when a MX was searched for
+
+Version 2.3.2 - 2015/09/03
+    - bug fix: the 2.3.1 fix for CAS ticket was buggy
 
 Version 2.3.1 - 2015/08/28
     - bug fix (pull request #145 from Olivier Le Monnier): Netmagis was
