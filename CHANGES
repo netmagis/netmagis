@@ -1,5 +1,16 @@
-Version 2.3.3 - ?
+Version 2.3.3 - 2016/11/25
     - bug fix (issue #158): an error was issued when a MX was searched for
+    - bug fix (issue #160): an error was issued when trying to delete an
+	alias in an unauthorized domain
+    - bug fix (issue #166): in topo module, fix attribute fixedsize for graphviz
+    - bug fix (issue #155): allow adding MX for an existing RR
+    - bug fix (followup to the pull request #145): CAS regexp too restrictive
+    - improvement in the detecteq module: add support for Cisco ASA (pull
+	request #152 from Benjamin Collet, alias bcollet)
+    - improvement in the topo module:
+	- add support for Rancid 3
+	- add support for routing-instance-access in snmp for Juniper routers
+	- add basic support for MVRP for Juniper routers
 
 Version 2.3.2 - 2015/09/03
     - bug fix: the 2.3.1 fix for CAS ticket was buggy
