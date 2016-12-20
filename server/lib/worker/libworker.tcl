@@ -678,3 +678,11 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 
     return ""
 }
+
+proc check-authorized-rr {dbfd idcor rr context} {
+    set name   [::rr::get-name $rr]
+    set domain [::rr::get-domain $rr]
+    set idview [::rr::get-idview $rr]
+
+    return [check-authorized-host ::dbdns $idcor $name $domain $idview nrr $context]
+}

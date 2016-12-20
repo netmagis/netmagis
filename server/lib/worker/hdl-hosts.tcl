@@ -113,16 +113,11 @@ api-handler post {/hosts} logged {
 
 api-handler get {/hosts/([0-9]+:idhost)} logged {
     } {
-    set rrh [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $rrh]} then {
+    set rr [::rr::read-by-idhost ::dbdns $idhost]
+    if {! [::rr::found $rr]} then {
 	::scgi::serror 404 [mc "Host not found"]
     }
-
-    set name   [::rr::get-name $rrh]
-    set domain [::rr::get-domain $rrh]
-    set idview [::rr::get-idview $rrh]
-
-    set msg [check-authorized-host ::dbdns [::n idcor] $name $domain $idview rr "existing-host"]
+    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
     if {$msg ne ""} then {
 	::scgi::serror 412 $msg
     }
@@ -182,11 +177,7 @@ api-handler put {/hosts/([0-9]+:idhost)} logged {
     # Check that we have rights to modify this host before any other test
     #
 
-    set name   [::rr::get-name $orr]
-    set domain [::rr::get-domain $orr]
-    set idview [::rr::get-idview $orr]
-
-    set msg [check-authorized-host ::dbdns [::n idcor] $name $domain $idview rr "existing-host"]
+    set msg [check-authorized-rr ::dbdns [::n idcor] $orr "existing-host"]
     if {$msg ne ""} then {
 	::scgi::serror 412 $msg
     }
@@ -525,11 +516,13 @@ proc hosts-new-and-mod {_parm orr} {
     # Add a log
     #
 
+    set ndom [::n domainname $iddom]
+    set nfqdn "$name.$ndom"
+    set nview [::n viewname $idview]
+
     if {$oidname == -1} then {
 	set logevent "addhost"
-	set domain [::n domainname $iddom]
-	set view [::n viewname $idview]
-	set logmsg "add host $name.$domain/$view"
+	set logmsg "add host $nfqdn/$nview"
 	set jbefore null
     } else {
 	set logevent "modhost"
@@ -538,13 +531,8 @@ proc hosts-new-and-mod {_parm orr} {
 	if {$oidname == $nidname} then {
 	    set logmsg "mod host $ofqdn/$oview"
 	} else {
-	    set ndom [::n domainname $iddom]
-	    set nfqdn "$name.$ndom"
-	    set nview [::n viewname $idview]
 	    set logmsg "mod host $ofqdn/$oview -> $nfqdn/$nview"
 	}
-	set domain [::n domainname $iddom]
-	set view [::n viewname $idview]
 	set jbefore [::rr::json-host $orr]
     }
     set jafter [host-get-json $nidhost]
@@ -562,16 +550,11 @@ proc hosts-new-and-mod {_parm orr} {
 
 api-handler delete {/hosts/([0-9]+:idhost)} logged {
     } {
-    set rrh [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $rrh]} then {
+    set rr [::rr::read-by-idhost ::dbdns $idhost]
+    if {! [::rr::found $rr]} then {
 	::scgi::serror 404 [mc "Host not found"]
     }
-
-    set name   [::rr::get-name $rrh]
-    set domain [::rr::get-domain $rrh]
-    set idview [::rr::get-idview $rrh]
-
-    set msg [check-authorized-host ::dbdns [::n idcor] $name $domain $idview rr "existing-host"]
+    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
     if {$msg ne ""} then {
 	::scgi::serror 412 $msg
     }
@@ -663,9 +646,10 @@ api-handler delete {/hosts/([0-9]+:idhost)} logged {
     # Add a log
     #
 
-    set view [::n viewname $idview]
+    set view [::n viewname [::rr::get-idview $rr]]
+    set fqdn [::rr::get-fqdn $rr]
     set jbefore [::rr::json-host $rr]
-    ::n writelog "delhost" "delete host $name.$domain/$view" $jbefore "null"
+    ::n writelog "delhost" "delete host $fqdn/$view" $jbefore "null"
 
     ::scgi::set-header Content-Type text/plain
     ::scgi::set-body "OK"
