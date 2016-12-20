@@ -54,7 +54,7 @@ package provide rr 0.1
 #	return the name of the responsible person for the host
 # - get-respmail $rr
 #	return the mail address of the responsible person for the host
-# - get-ip $rr
+# - get-addr $rr
 #	return the list of all IP addresses {addr addr...} of the host
 # - get-mxhost $rr
 #	return the list of MX target hosts for this name under the format
@@ -119,7 +119,7 @@ namespace eval ::rr {
 		    h.idhinfo, hinfo.name AS hinfo,
 		    h.sendsmtp, h.ttl AS ttlhost,
 		    h.comment, h.respname, h.respmail,
-		    COALESCE (sreq_ip.ip, '{}') AS ip,
+		    COALESCE (sreq_addr.addr, '{}') AS addr,
 		    COALESCE (sreq_mxhost.mxhost, '{}') AS mxhost,
 		    COALESCE (sreq_mxname.mxname, '{}') AS mxname,
 		    COALESCE (a.idhost, -1) AS cname,
@@ -137,10 +137,10 @@ namespace eval ::rr {
 		    LEFT OUTER JOIN dns.alias a USING (idname)
 		    LEFT OUTER JOIN dns.mailrole USING (idname)
 		    , LATERAL (
-			    SELECT array_agg (addr) AS ip
+			    SELECT array_agg (addr) AS addr
 				FROM dns.addr
 				WHERE addr.idhost = h.idhost
-			) AS sreq_ip
+			) AS sreq_addr
 		    , LATERAL (
 			    SELECT array_agg (json_build_object (
 						'idhost', mx.idhost,
@@ -195,7 +195,7 @@ namespace eval ::rr {
 		    idhost mac iddhcpprof dhcpprof idhinfo hinfo
 		    sendsmtp ttlhost
 		    comment respname respmail
-		    ip
+		    addr
 		    mxname
 		    cname ttlcname
 		    aliases
@@ -262,7 +262,7 @@ namespace eval ::rr {
 
     proc json-host {rr} {
 	set l {}
-	foreach a [dict get $rr "ip"] {
+	foreach a [dict get $rr "addr"] {
 	    lappend l [::json::write string $a]
 	}
 

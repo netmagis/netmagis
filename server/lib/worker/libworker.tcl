@@ -305,7 +305,7 @@ proc check-name-by-addresses {dbfd idcor rr} {
     # Check all addresses and views
     #
 
-    foreach ip [::rr::get-ip $rr] {
+    foreach ip [::rr::get-addr $rr] {
 	if {! [check-authorized-ip $dbfd $idcor $ip]} then {
 	    return [mc {Unauthorized IP address '%s'} $ip]
 	}
@@ -648,7 +648,7 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 	    ip {
 		set lip {}
 		if {[::rr::found $rr]} then {
-		    set lip [::rr::get-ip $rr]
+		    set lip [::rr::get-addr $rr]
 		}
 
 		switch $parm {
