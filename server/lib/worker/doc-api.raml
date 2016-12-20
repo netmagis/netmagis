@@ -159,7 +159,7 @@ types:
     description: minimal description of a single host
     type: object
     properties:
-      idrr:		integer
+      idhost:		integer
       name:		string
       iddom:		integer
       domain:		string
@@ -167,7 +167,7 @@ types:
       view:		string
     example: |
       {
-	idrr: 123,
+	idhost: 123,
 	name: www,
 	iddom: 1,
 	domain: example.org,
@@ -203,8 +203,49 @@ types:
 	respname: "Bill",
 	respmail: bill@example.org,
 	sendsmtp: 0,
-	ttl: -1
+	ttl: -1,
 	addr: [ 198.51.100.2, 2001:db8:1234::2 ],
+      }
+
+  AliasMod:
+    description: description of modifiable alias fields (for put method)
+    type: object
+    properties:
+      ttl:		integer			# required. Use -1 for default
+      idhost:		integer
+    example: |
+      {
+	ttl: -1,
+	idhost: 123,
+      }
+  AliasWithName:
+    description: description of a single alias for post/get methods
+    type: AliasMod
+    properties:
+      name:		string
+      iddom:		integer
+      idview:		integer
+    example: |
+      {
+	name: www,
+	iddom: 1,
+	idview: 1,
+	ttl: -1,
+	idhost: 123,
+      }
+  AliasWithNameId
+    description: description of a single alias in a collection
+    type: AliasWithName
+    properties:
+      idalias:		integer
+    example: |
+      {
+	idalias: 456,
+	name: www,
+	iddom: 1,
+	idview: 1,
+	ttl: -1,
+	idhost: 123,
       }
 
   SearchResult:

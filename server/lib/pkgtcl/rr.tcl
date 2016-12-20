@@ -79,6 +79,8 @@ package provide rr 0.1
 #	add the host into the database and return the new idhost
 # - json-host $rr
 #	return a host representation in JSON format
+# - json-alias $rr
+#	return an alias representation in JSON format
 #
 
 namespace eval ::rr {
@@ -86,7 +88,7 @@ namespace eval ::rr {
 		    found not-a-rr \
 		    get-mx get-fqdn \
 		    add-name add-host \
-		    json-host
+		    json-host json-alias
 
     proc read-by-name {db name iddom idview} {
 	set qname [pg_quote $name]
@@ -279,6 +281,17 @@ namespace eval ::rr {
 		    sendsmtp [dict get $rr "sendsmtp"] \
 		    ttl [dict get $rr "ttlhost"] \
 		    addr [eval ::json::write array $l] \
+		]
+	return $j
+    }
+
+    proc json-alias {rr} {
+	set j [::json::write object \
+		    name [::json::write string [dict get $rr "name"]] \
+		    iddom [dict get $rr "iddom"] \
+		    idview [dict get $rr "idview"] \
+		    idhost [dict get $rr "cname"] \
+		    ttl [dict get $rr "ttlcname"] \
 		]
 	return $j
     }

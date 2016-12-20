@@ -1,10 +1,10 @@
 ##############################################################################
 
-api-handler get {/hosts} logged {
+api-handler get {/aliases} logged {
 	view	0
 	name	0
 	domain	0
-	addr	0
+	idhost	0
     } {
     #
     # Prepare filter clauses
@@ -28,10 +28,20 @@ api-handler get {/hosts} logged {
 	lappend filter "domain.name = $qdomain"
     }
 
-    if {$addr ne ""} then {
-	set qaddr [pg_quote $addr]
-	lappend filter "addr.addr <<= $qaddr"
-	set wip "AND (addr <<= $qaddr OR addr >>= $qaddr)"
+    if {$idhost ne ""} then {
+	if {! [regexp {^[0-9]+$} $idhost]} then {
+	    ::scgi::serror 400 [mc "Invalid idhost '%s'" $idhost]
+	}
+	set rr [::rr::read-by-idhost ::dbdns $idhost]
+	if {! [::rr::found $rr]} then {
+	    ::scgi::serror 400 [mc "Host not found"]
+	}
+
+	set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
+	if {$msg ne ""} then {
+	    ::scgi::serror 400 $msg
+	}
+	lappend filter "a.idhost = $idhost"
     }
 
     #
@@ -52,26 +62,6 @@ api-handler get {/hosts} logged {
 				WHERE idgrp = $idgrp AND allow_deny = 0 $wip)"
 
     #
-    # Order clause
-    #
-
-#    global names_sortcrit
-#
-#    set order {}
-#    foreach c [split $sort ","] {
-#	if {! [info exists names_sortcrit($c)]} then {
-#	    ::scgi::serror 412 [mc "Invalid sort criterion '%s'" $c]
-#	}
-#	lappend order $names_sortcrit($c)
-#    }
-#    if {[llength $order] == 0} then {
-#	set order ""
-#    } else {
-#	set order [join $order ", "]
-#	set order "ORDER BY $order"
-#    }
-
-    #
     # Create SQL request
     #
 
@@ -79,15 +69,16 @@ api-handler get {/hosts} logged {
 
     set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
 		SELECT
-			DISTINCT ON (h.idhost)
-			h.idhost,
+			DISTINCT ON (a.idname)
+			a.idname AS idalias,
 			n.name,
 			n.iddom,
-			domain.name AS domain,
 			n.idview,
-			view.name AS view
-		    FROM dns.name n
-			INNER JOIN dns.host h USING (idname)
+			a.idhost,
+			a.ttl
+		    FROM dns.alias a
+			INNER JOIN dns.name n USING (idname)
+			INNER JOIN dns.host h USING (idhost)
 			INNER JOIN dns.domain USING (iddom)
 			INNER JOIN dns.view USING (idview)
 			INNER JOIN dns.addr USING (idhost)
@@ -103,54 +94,139 @@ api-handler get {/hosts} logged {
 
 ##############################################################################
 
-api-handler post {/hosts} logged {
+api-handler post {/aliases} logged {
     } {
-    hosts-new-and-mod $_parm [::rr::not-a-rr]
-}
+    set idgrp [::n idgrp]
 
+    #
+    # Check input parameters
+    #
 
-##############################################################################
+    # get body just to check it's a JSON body
+    ::scgi::get-body-json $_parm
 
-api-handler get {/hosts/([0-9]+:idhost)} logged {
-    } {
-    set rr [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $rr]} then {
-	::scgi::serror 404 [mc "Host not found"]
+    set dbody [dict get $_parm "_bodydict"]
+
+    set spec {
+		{name text}
+		{iddom int -1}
+		{idview int -1}
+		{idhost int}
+		{ttl int 0}
+	    }
+    if {! [::scgi::check-json-attr $dbody $spec]} then {
+	::scgi::serror 412 [mc "Invalid JSON input"]
     }
-    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
+
+    #
+    # Check various ids
+    #
+
+    if {! [::n isalloweddom $iddom]} then {
+	::scgi::serror 412 [mc "Invalid domain id '%s'" $iddom]
+    }
+
+    if {! [::n isallowedview $idview]} then {
+	::scgi::serror 412 [mc "Invalid view id '%s'" $idview]
+    }
+
+    #
+    # Check syntax of new host name
+    #
+
+    set msg [check-name-syntax $name]
     if {$msg ne ""} then {
-	::scgi::serror 412 $msg
+	::scgi::serror 400 $msg
+    }
+    set name [string tolower $name]
+
+    #
+    # Check new TTL
+    #
+
+    if {"ttl" in [::n capabilities]} then {
+	set msg [check-ttl $ttl]
+	if {$msg ne ""} then {
+	    ::scgi::serror 400 $msg
+	}
+    } else {
+	set ttl -1
     }
 
-    set j [host-get-json $idhost]
+    #
+    # Check if we are authorized to add the new alias
+    #
 
-    ::scgi::set-header Content-Type application/json
-    ::scgi::set-body $j
+    # Check alias name
+    set idcor [::n idcor]
+    set domain [::n domainname $iddom]
+    set msg [check-authorized-host ::dbdns $idcor $name $domain $idview nrr "alias"]
+    if {$msg ne ""} then {
+	::scgi::serror 400 $msg
+    }
+    set nidname -1
+    if {[::rr::found $nrr]} then {
+	set nidname [::rr::get-idname $nrr]
+    }
+
+    # Check target host
+    set rrh [::rr::read-by-idhost ::dbdns $idhost]
+    if {! [::rr::found $rrh]} then {
+	::scgi::serror 400 [mc "Host %d not found" $idhost]
+    }
+    set msg [check-authorized-rr ::dbdns [::n idcor] $rrh "existing-host"]
+    if {$msg ne ""} then {
+	::scgi::serror 400 $msg
+    }
+
+    ::dbdns lock {dns.name dns.alias} {
+	#
+	# Add new name for the host since it did not pre-exist
+	#
+	if {$nidname == -1} then {
+	    set nidname [::rr::add-name ::dbdns $name $iddom $idview]
+	}
+
+	#
+	# Add alias
+	#
+	set sql "INSERT INTO dns.alias (idname, idhost, ttl)
+			VALUES ($nidname, $idhost, $ttl)"
+	::dbdns exec $sql
+    }
+
+    #
+    # Add a log
+    #
+
+    set dom [::n domainname $iddom]
+    set fqdn "$name.$dom"
+    set view [::n viewname $idview]
+    set fqdnh [::rr::get-fqdn $rrh]
+
+    set jafter [alias-get-json $nidname]
+
+    ::n writelog "addalias" "add alias $fqdn/$view -> $fqdnh" null $jafter
+
+    #
+    # Return idname
+    #
+
+    ::scgi::set-header Content-Type text/plain
+    ::scgi::set-body $nidname
 }
 
-proc host-get-json {idhost} {
+proc alias-get-json {idname} {
     set sql "SELECT row_to_json (t.*) AS j FROM (
 		SELECT
 		    n.name,
 		    n.iddom,
 		    n.idview,
-		    COALESCE (CAST (h.mac AS text), '') AS mac,
-		    h.idhinfo,
-		    COALESCE (h.comment, '') AS comment,
-		    COALESCE (h.respname, '') AS respname,
-		    COALESCE (h.respmail, '') AS respmail,
-		    COALESCE (iddhcpprof, -1) AS iddhcpprof,
-		    h.sendsmtp,
-		    h.ttl,
-		    COALESCE (sreq.addr, '{}') AS addr
-		FROM dns.host h
-		    NATURAL INNER JOIN dns.name n,
-		    (
-			SELECT array_agg (addr) AS addr
-			    FROM dns.addr
-			    WHERE addr.idhost = $idhost
-			) AS sreq
-		WHERE h.idhost = $idhost
+		    a.idhost,
+		    a.ttl
+		FROM dns.alias a
+		    NATURAL INNER JOIN dns.name n
+		WHERE a.idname = $idname
 	    ) AS t
 		"
     set found 0
@@ -159,14 +235,49 @@ proc host-get-json {idhost} {
 	set found 1
     }
     if {! $found} then {
-	::scgi::serror 404 [mc "Host not found"]
+	::scgi::serror 404 [mc "Alias not found"]
     }
     return $j
 }
 
+
 ##############################################################################
 
-api-handler put {/hosts/([0-9]+:idhost)} logged {
+api-handler get {/aliases/([0-9]+:idalias)} logged {
+    } {
+    set rr [::rr::read-by-idname ::dbdns $idalias]
+    if {! [::rr::found $rr] || [::rr::get-cname $rr] == -1} then {
+	::scgi::serror 404 [mc "Alias %d not found" $idalias]
+    }
+
+    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "del-name"]
+    if {$msg ne ""} then {
+	::scgi::serror 400 $msg
+    }
+
+    set sql "SELECT row_to_json (t.*) AS j FROM (
+		SELECT
+			n.name,
+			n.iddom,
+			n.idview,
+			a.idhost,
+			a.ttl
+		    FROM dns.alias a
+			INNER JOIN dns.name n USING (idname)
+		    WHERE a.idname = $idalias
+		) AS t"
+
+    ::dbdns exec $sql tab {
+	set j $tab(j)
+    }
+
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
+}
+
+##############################################################################
+
+api-handler put {/aliases/([0-9]+:idhost)} logged {
     } {
     set orr [::rr::read-by-idhost ::dbdns $idhost]
     if {! [::rr::found $orr]} then {
@@ -177,7 +288,11 @@ api-handler put {/hosts/([0-9]+:idhost)} logged {
     # Check that we have rights to modify this host before any other test
     #
 
-    set msg [check-authorized-rr ::dbdns [::n idcor] $orr "existing-host"]
+    set name   [::rr::get-name $orr]
+    set domain [::rr::get-domain $orr]
+    set idview [::rr::get-idview $orr]
+
+    set msg [check-authorized-host ::dbdns [::n idcor] $name $domain $idview rr "existing-host"]
     if {$msg ne ""} then {
 	::scgi::serror 412 $msg
     }
@@ -516,13 +631,11 @@ proc hosts-new-and-mod {_parm orr} {
     # Add a log
     #
 
-    set ndom [::n domainname $iddom]
-    set nfqdn "$name.$ndom"
-    set nview [::n viewname $idview]
-
     if {$oidname == -1} then {
 	set logevent "addhost"
-	set logmsg "add host $nfqdn/$nview"
+	set domain [::n domainname $iddom]
+	set view [::n viewname $idview]
+	set logmsg "add host $name.$domain/$view"
 	set jbefore null
     } else {
 	set logevent "modhost"
@@ -531,8 +644,13 @@ proc hosts-new-and-mod {_parm orr} {
 	if {$oidname == $nidname} then {
 	    set logmsg "mod host $ofqdn/$oview"
 	} else {
+	    set ndom [::n domainname $iddom]
+	    set nfqdn "$name.$ndom"
+	    set nview [::n viewname $idview]
 	    set logmsg "mod host $ofqdn/$oview -> $nfqdn/$nview"
 	}
+	set domain [::n domainname $iddom]
+	set view [::n viewname $idview]
 	set jbefore [::rr::json-host $orr]
     }
     set jafter [host-get-json $nidhost]
@@ -548,155 +666,35 @@ proc hosts-new-and-mod {_parm orr} {
 
 ##############################################################################
 
-api-handler delete {/hosts/([0-9]+:idhost)} logged {
+api-handler delete {/aliases/([0-9]+:idalias)} logged {
     } {
-    set rr [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $rr]} then {
-	::scgi::serror 404 [mc "Host not found"]
+    set rr [::rr::read-by-idname ::dbdns $idalias]
+    if {! [::rr::found $rr] || [::rr::get-cname $rr] == -1} then {
+	::scgi::serror 404 [mc "Alias %d not found" $idalias]
     }
-    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
+
+    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "del-name"]
     if {$msg ne ""} then {
-	::scgi::serror 412 $msg
+	::scgi::serror 400 $msg
     }
 
     #
-    # Is this host a mboxhost for some mail addresses?
+    # Delete the alias
     #
 
-    if {[llength [::rr::get-mailaddr $rr]] > 0} then {
-	set sql "SELECT n.name, d.name AS domain
-		    FROM dns.mailrole m,
-			INNER JOIN dns.name n ON (mailaddr = idname)
-			NATURAL INNER JOIN dns.domain d
-		    WHERE m.mboxhost = $idhost
-		    ORDER BY domain ASC, n.name ASC
-		    "
-	set lmbox {}
-	::dbdns exec $sql tab {
-	    lappend lmbox "$tab(name).$tab(domain)"
-	}
-	::scgi::serror 412 [mc "Host is a mailbox host for addresses: %s" [join $lmbox ", "]]
-    }
-
-    #
-    # Is this host a mail relay for some domains?
-    #
-
-    if {[llength [::rr::get-relay $rr]] > 0} then {
-	set sql "SELECT d.name AS domain
-		    FROM dns.relaydom rd
-			NATURAL INNER JOIN dns.domain d
-		    WHERE rd.idhost = $idhost
-		    ORDER BY d.name ASC
-		    "
-	set lrel {}
-	::dbdns exec $sql tab {
-	    lappend lrel $tab(domain)
-	}
-	::scgi::serror 412 [mc "Host is a mail relay for domains: %s" [join $lrel ", "]]
-    }
-
-    #
-    # Is this host a MX for some fqdn?
-    #
-
-    if {[llength [::rr::get-mxname $rr]] > 0} then {
-	set sql "SELECT n.name, d.name AS domain
-		    FROM dns.mx x
-			NATURAL INNER JOIN dns.name n
-			NATURAL INNER JOIN dns.domain d
-		    WHERE x.idhost = $idhost
-		    ORDER BY domain ASC, n.name ASC
-		    "
-	set lmx {}
-	::dbdns exec $sql tab {
-	    lappend lmx "$tab(name).$tab(domain)"
-	}
-	::scgi::serror 412 [mc "Host is a MX for names: %s" [join $lmx ", "]]
-    }
-
-    #
-    # Do aliases reference this host?
-    #
-
-    if {[llength [::rr::get-aliases $rr]] > 0} then {
-	set sql "SELECT n.name, d.name AS domain
-		    FROM dns.alias a
-			NATURAL INNER JOIN dns.name n
-			NATURAL INNER JOIN dns.domain d
-		    WHERE a.idhost = $idhost
-		    ORDER BY domain ASC, n.name ASC
-		    "
-	set lal {}
-	::dbdns exec $sql tab {
-	    lappend lal "$tab(name).$tab(domain)"
-	}
-	::scgi::serror 412 [mc "Host is referenced by aliases: %s" [join $lal ", "]]
-    }
-
-    #
-    # Delete the host (as well as addresses by cascade)
-    # and don't trap errors, they will be reported by the caller
-    #
-
-    set sql "DELETE FROM dns.host WHERE idhost = $idhost"
+    set sql "DELETE FROM dns.alias WHERE idname = $idalias"
     ::dbdns exec $sql
 
     #
     # Add a log
     #
 
-    set view [::n viewname [::rr::get-idview $rr]]
     set fqdn [::rr::get-fqdn $rr]
-    set jbefore [::rr::json-host $rr]
-    ::n writelog "delhost" "delete host $fqdn/$view" $jbefore "null"
+    set view [::n viewname [::rr::get-idview $rr]]
+    set jbefore [::rr::json-alias $rr]
+    ::n writelog "delalias" "del alias $fqdn/$view" $jbefore "null"
 
     ::scgi::set-header Content-Type text/plain
     ::scgi::set-body "OK"
 }
 
-##############################################################################
-# Utility functions
-##############################################################################
-
-
-#
-# Check MAC against syntax errors and DHCP ranges
-#
-# Input:
-#   - parameters:
-#       - dbfd: database handle
-#	- mac: non-empty MAC address
-#	- lip: list of IP addresses for this host
-# Output:
-#   - return value: empty string or error message
-#
-# History
-#   2013/04/05 : pda/jean : design
-#
-
-proc check-mac-syntax-dhcp {mac lip} {
-    set msg [check-addr-syntax ::dbdns $mac "macaddr"]
-    if {$msg ne ""} then {
-	return $msg
-    }
-
-    #
-    # Check that no static DHCP association (IP address with an associate
-    # non null MAC address) is within a DHCP range
-    #
-
-    foreach ip $lip {
-	set sql "SELECT min, max
-			FROM dns.dhcprange
-			WHERE '$ip' >= min AND '$ip' <= max"
-	::dbdns exec $sql tab {
-	    set msg [mc {Impossible to use MAC address '%1$s' because IP address '%2$s' is in DHCP dynamic range [%3$s..%4$s]} $mac $ip $tab(min) $tab(max)]
-	}
-	if {$msg ne ""} then {
-	    return $msg
-	}
-    }
-
-    return ""
-}

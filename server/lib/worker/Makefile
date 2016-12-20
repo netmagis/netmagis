@@ -5,6 +5,7 @@ FILES =	\
 	worker.tcl \
 	libworker.tcl \
 	hdl-admin.tcl \
+	hdl-aliases.tcl \
 	hdl-cap.tcl \
 	hdl-dhcpprofiles.tcl \
 	hdl-dhcpranges.tcl \

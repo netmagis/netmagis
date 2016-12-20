@@ -154,6 +154,34 @@ proc check-addr-syntax {dbfd addr type} {
 }
 
 #
+# Check possible values for a TTL (see RFC 2181)
+#
+# Input:
+#   - parameters:
+#	- ttl : value to check
+# Output:
+#   - return value: empty string or error message
+#
+# History
+#   2010/11/02 : pda/jean : design, from jean's code
+#   2010/11/29 : pda      : i18n
+#
+
+proc check-ttl {ttl} {
+    set r ""
+    # 2^31-1
+    set maxttl [expr 0x7fffffff]
+    if {! [regexp {^\d+$} $ttl]} then {
+	set r [mc "Invalid TTL: must be a positive integer"]
+    } else {
+	if {$ttl > $maxttl} then {
+	    set r [mc "Invalid TTL: must be less than %s" $maxttl]
+	}
+    }
+    return $r
+}
+
+#
 # Search for a domain name in the database
 #
 # Input:
