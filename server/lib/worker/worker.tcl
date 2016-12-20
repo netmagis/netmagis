@@ -343,7 +343,7 @@ proc handle-request {uri meth parm} {
 
     switch $bestfit {
 	0 {
-	    ::scgi::serror 404 [mc "URI '%s' not found" $uri]
+	    ::scgi::serror 404 [mc {URI '%1$s' not found for method '%2$s'} $uri $meth]
 	}
 	1 {
 	    ::scgi::serror 401 [mc "Not authenticated"]
