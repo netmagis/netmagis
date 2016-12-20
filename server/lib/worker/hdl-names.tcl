@@ -111,7 +111,7 @@ api-handler post {/names} logged {
     set dbody [dict get $_parm "_bodydict"]
 
     set spec {
-		{min inet4}
+		{name string}
 		{max inet4}
 		{iddom int -1}
 		{default_lease_time int 0}

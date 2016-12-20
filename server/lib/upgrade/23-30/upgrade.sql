@@ -181,3 +181,12 @@ DROP FUNCTION dns.mod_ip () ;
 DROP FUNCTION dns.gen_norm_idrr (INTEGER) ;
 DROP FUNCTION dns.mod_mxcname () ;
 DROP FUNCTION dns.mod_rr () ;
+
+-- New log format
+ALTER TABLE global.log
+    ADD COLUMN version INTEGER,
+    ADD COLUMN jbefore JSONB,
+    ADD COLUMN jafter  JSONB ;
+UPDATE global.log SET version = 0 ;
+ALTER TABLE global.log
+    ALTER COLUMN version SET NOT NULL ;

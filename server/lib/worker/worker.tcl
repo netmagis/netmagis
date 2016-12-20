@@ -121,7 +121,7 @@ proc check-authtoken {token} {
 
 	foreach e $lexp {
 	    lassign $e l tok la
-	    ::n writelog "auth" "lastaccess $l $tok" $la $l
+	    ::n writelog "auth" "lastaccess $l $tok" null null $la $l
 	}
     }
 

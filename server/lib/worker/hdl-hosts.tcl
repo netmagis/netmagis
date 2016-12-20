@@ -105,191 +105,7 @@ api-handler get {/hosts} logged {
 
 api-handler post {/hosts} logged {
     } {
-    set idgrp [::n idgrp]
-    # get body just to check it's a JSON body
-    ::scgi::get-body-json $_parm
-
-    set dbody [dict get $_parm "_bodydict"]
-
-    set spec {
-		{name text}
-		{iddom int -1}
-		{idview int -1}
-		{mac text}
-		{idhinfo int -1}
-		{comment text}
-		{respname text}
-		{respmail text}
-		{iddhcpprof int -1}
-		{sendsmtp int 0}
-		{ttl int 0}
-		{addr {}}
-	    }
-    if {! [::scgi::check-json-attr $dbody $spec]} then {
-	::scgi::serror 412 [mc "Invalid JSON input"]
-    }
-
-    #
-    # Check various ids
-    #
-
-    if {! [::n isalloweddom $iddom]} then {
-	::scgi::serror 412 [mc "Invalid domain id '%s'" $iddom]
-    }
-
-    if {! [::n isallowedview $idview]} then {
-	::scgi::serror 412 [mc "Invalid view id '%s'" $idview]
-    }
-
-    if {$iddhcpprof != -1 && ! [::n isalloweddhcpprof $iddhcpprof]} then {
-	::scgi::serror 412 [mc "Invalid dhcpprofile id '%s'" $iddhcpprof]
-    }
-
-    if {! [::n isallowedhinfo $idhinfo]} then {
-	::scgi::serror 412 [mc "Invalid hinfo id '%s'" $idhinfo]
-    }
-
-    #
-    # Check syntax
-    #
-
-    set msg [check-name-syntax $name]
-    if {$msg ne ""} then {
-	::scgi::serror 412 $msg
-    }
-    set name [string tolower $name]
-
-    #
-    # Check addresses
-    #
-
-    if {[llength $addr] == 0} then {
-	::scgi::serror 412 [mc "Empty address list"]
-    }
-
-    set vaddr {}
-    set lbad {}
-    foreach a $addr {
-	if {[::ip::version $a] == 0} then {
-	    lappend lbad $a
-	} else {
-	    set qa [pg_quote $a]
-	    lappend vaddr "(${qa}::inet)"
-	}
-    }
-    if {[llength $lbad] > 0} then {
-	::scgi::serror 403 [mc "Invalid address syntax (%s)" [join $lbad ", "]]
-    }
-
-    set lbad {}
-    set vaddr [join $vaddr ","]
-    set sql "SELECT DISTINCT jaddr
-		FROM (VALUES $vaddr) AS vaddr (jaddr)
-		    LEFT JOIN dns.p_ip p ON
-			(idgrp = $idgrp AND p.addr >>= vaddr.jaddr)
-		WHERE allow_deny IS NULL OR allow_deny = 0
-		"
-    ::dbdns exec $sql tab {
-	lappend lbad $tab(jaddr)
-    }
-    if {[llength $lbad] > 0} then {
-	::scgi::serror 403 [mc "Unauthorized address(es): %s" [join $lbad ", "]]
-    }
-
-    #
-    # Check if IP addresses are already allocated
-    #
-
-    set sql "SELECT DISTINCT jaddr
-		FROM (VALUES $vaddr) AS vaddr (jaddr)
-		    INNER JOIN dns.addr ON (addr = jaddr)
-		    NATURAL INNER JOIN dns.host h
-		    NATURAL INNER JOIN dns.name n
-		WHERE n.idview = $idview
-		"
-    set lbad {}
-    ::dbdns exec $sql tab {
-	lappend lbad $tab(jaddr)
-    }
-    if {[llength $lbad] > 0} then {
-	::scgi::serror 403 [mc "IP addresses already exist (%s)" [join $lbad ", "]]
-    }
-
-    #
-    # Check if host name/domain/idview are authorized
-    #
-
-    set idcor [::n idcor]
-    set domain [::n domainname $iddom]
-
-    set msg [check-authorized-host ::dbdns $idcor $name $domain $idview rr "host"]
-    if {$msg ne ""} then {
-	::scgi::serror 412 $msg
-    }
-
-    #
-    # Check MAC address
-    #
-
-    if {$mac ne ""} then {
-	set msg [check-mac-syntax-dhcp $mac $addr]
-	if {$msg ne ""} then {
-	    ::scgi::serror 412 $msg
-	}
-    }
-
-    #
-    # Check TTL and sendsmtp
-    #
-
-    if {"ttl" in [::n capabilities]} then {
-	set msg [check-ttl $ttl]
-	if {$msg ne ""} then {
-	    ::scgi::serror 412 $msg
-	}
-    } else {
-	set ttl -1
-    }
-
-    if {"smtp" in [::n capabilities]} then {
-	set sendsmtp [expr $sendsmtp != 0]
-    } else {
-	set sendsmtp 0
-    }
-
-    #
-    # Insert host in database
-    #
-
-    ::dbdns lock {dns.name dns.host dns.addr} {
-	if {[::rr::found $rr]} then {
-	    set idname [::rr::get-idname $rr]
-	    set idhost [::rr::get-idhost $rr]
-	} else {
-	    set idname [::rr::add-name ::dbdns $name $iddom $idview]
-	    set idhost -1
-	}
-
-	if {$idhost == -1} then {
-	    set idhost [::rr::add-host ::dbdns $idname \
-	    				$mac $iddhcpprof $idhinfo \
-					$comment $respname $respmail \
-					$sendsmtp $ttl]
-	} else {
-	    ::scgi::serror 412 [mc "Host '%s' already exists" $name]
-	}
-
-	set sql "INSERT INTO dns.addr (idhost, addr)
-		    SELECT $idhost, vaddr.addr
-			FROM (VALUES $vaddr) AS vaddr (addr)
-		    "
-	# don't catch the error: if it fails, it will be trapped by
-	# the scgi.tcl package
-	::dbdns exec $sql
-    }
-
-    ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body $idhost
+    hosts-new-and-mod $_parm [::rr::not-a-rr]
 }
 
 
@@ -311,6 +127,13 @@ api-handler get {/hosts/([0-9]+:idhost)} logged {
 	::scgi::serror 412 $msg
     }
 
+    set j [host-get-json $idhost]
+
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
+}
+
+proc host-get-json {idhost} {
     set sql "SELECT row_to_json (t.*) AS j FROM (
 		SELECT
 		    n.name,
@@ -343,44 +166,37 @@ api-handler get {/hosts/([0-9]+:idhost)} logged {
     if {! $found} then {
 	::scgi::serror 404 [mc "Host not found"]
     }
-
-    ::scgi::set-header Content-Type application/json
-    ::scgi::set-body $j
+    return $j
 }
 
 ##############################################################################
 
-api-handler put {/hosts/([0-9]+:idrr)} logged {
+api-handler put {/hosts/([0-9]+:idhost)} logged {
     } {
-    set rrh [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $rrh]} then {
+    set orr [::rr::read-by-idhost ::dbdns $idhost]
+    if {! [::rr::found $orr]} then {
 	::scgi::serror 404 [mc "Host not found"]
     }
 
-    set name   [::rr::get-name $rrh]
-    set domain [::rr::get-domain $rrh]
-    set idview [::rr::get-idview $rrh]
+    #
+    # Check that we have rights to modify this host before any other test
+    #
+
+    set name   [::rr::get-name $orr]
+    set domain [::rr::get-domain $orr]
+    set idview [::rr::get-idview $orr]
 
     set msg [check-authorized-host ::dbdns [::n idcor] $name $domain $idview rr "existing-host"]
     if {$msg ne ""} then {
 	::scgi::serror 412 $msg
     }
 
-    set orr [::rr::read-by-id ::dbdns $idrr]
-    if {! [::rr::found $orr]} then {
-	::scgi::serror 404 [mc "Host-id %d not found" $idrr]
-    }
-
-    set on [::rr::get-name $rr]
-    set od  [::rr::get-domain $rr]
-    set ov [::rr::get-idview $rr]
-    set msg [check-authorized-host ::dbdns $idcor $on $od $ov dummyrr "del-name"]
-    if {$msg ne ""} then {
-	::scgi::serror 412 $msg
-    }
-
     hosts-new-and-mod $_parm $orr
 }
+
+##############################################################################
+# Huge function to create or update a specific host
+##############################################################################
 
 #
 # Create a new host, or modify an existing host
@@ -390,72 +206,41 @@ api-handler put {/hosts/([0-9]+:idrr)} logged {
 #   - for a new host: orr is empty
 #   - to modify an existing host: orr contains the existing rr
 # Output:
-#   - new idrr (or old one if no id modification)
+#   - new idhost (or old one if no id modification)
 #
-# This procedure handles the following cases:
+# This procedure checks the following cases:
 #   - notations:
-#	rr = new values
-#	nrr = RR found for the new name
-#	orr = RR found for the existing name
-#	MA/MX : the name is a mail address (pointing to a mboxhost) or
-#		a MX (pointing to a MX target)
+#	oidname = idname from orr (or -1)
+#	oidhost = idhost from orr (or -1)
+#	nidname = idname of existing rr for new name (or -1)
+#	nidhost = idhost of existing rr for new name (or -1)
 #
-#   1- new host with a new name (orr = empty)
-#	orr = empty, nrr = empty
-#	=> create the new rr and add IP addresses
-#	=> return new rr(idrr)
-#
-#   2- new host, with an existing name (e.g. MA/MX)
-#	orr = empty, nrr not empty but without IP addresses
-#	=> add IP addresses to nrr
-#	=> return nrr(idrr)
-#
-#   3- new host, with an existing name which is already a host
-#	orr = empty, nrr not empty and with IP addresses
-#	=> error
-#
-#   4- modify host with only IP addresses/MAC/etc.
-#	orr(idrr) = nrr(idrr)
-#	=> update orr with rr, and replace IP addresses
-#	=> return orr(idrr)
-#
-#   5- rename host to a non-existing name, old name was MA/MX
-#	orr = not empty (with mx or mailaddr), nrr = empty
-#	=> create a new rr for the new host name, migrate all refs to the host
-#	    (e.g. if this host is a mailbox host or a MX target)
-#	=> return new rr(idrr)
-#	
-#   6- rename host to a non-existing name, old name was only a host
-#	orr = not empty (without mx or mailaddr), nrr = empty
-#	=> update orr with rr, and replace IP addresses
-#	=> return orr(idrr)
-#	
-#   7- rename host to an existing name without IP address, new name is MA/MX,
-#		old name was a host with MA/MX
-#	orr = not empty (with mx or mailaddr), nrr = not empty (with MX/MA)
-#	=> update nrr with rr, add IP address to nrr, migrate refs to the host
-#	=> return nrr(idrr)
-#	
-#   8- rename host to an existing name without IP address, new name is MA/MX,
-#		old name was just a host (without MA/MX)
-#	orr = not empty (without mx or mailaddr), nrr = not empty (with MX/MA)
-#	=> update nrr with rr, add IP address to nrr, migrate refs to the host
-#	=> remove orr
-#	=> return nrr(idrr)
-#	
-#   9- rename host to an existing name with IP address (existing host)
-#	=> error
+#   oidname oidhost nidname nidhost	comment
+#     -1      -1      -1      -1	host creation with a new name
+#     -1      -1      -1     valid	<cannot happen>
+#     -1      -1     valid    -1	host creation with an existing name
+#     -1      -1     valid   valid	error: host already exists
+#     -1     valid     *       *	<cannot happen>
+#    valid    -1       *       *	<cannot happen (existing host exists!)>
+#    valid   valid    -1      -1	host renaming with a new name
+#    valid   valid    -1     valid	<cannot happen>
+#    valid   valid   valid    -1	host renaming with an existing name
+#    valid   valid     n     m == n	host update
+#    valid   valid     n     m != n	error: host already exists
 #
 
 proc hosts-new-and-mod {_parm orr} {
+    set idgrp [::n idgrp]
 
     #
-    # Use oidrr == -1 as the test for a new host (vs host modification)
+    # Use oidname == -1 as the test for a new host (vs host modification)
     #
 
-    set oidrr -1
+    set oidname -1
+    set oidhost -1
     if {[::rr::found $orr]} then {
-	set oidrr [::rr::get-idrr $orr]
+	set oidname [::rr::get-idname $orr]
+	set oidhost [::rr::get-idhost $orr]
     }
 
     ######################################################################
@@ -516,8 +301,79 @@ proc hosts-new-and-mod {_parm orr} {
     set name [string tolower $name]
 
     #
-    # Check new IP addresses
+    # Check new MAC address
     #
+
+    if {$mac ne ""} then {
+	set msg [check-mac-syntax-dhcp $mac $addr]
+	if {$msg ne ""} then {
+	    ::scgi::serror 412 $msg
+	}
+    }
+
+    #
+    # Check new TTL and sendsmtp
+    #
+
+    if {"ttl" in [::n capabilities]} then {
+	set msg [check-ttl $ttl]
+	if {$msg ne ""} then {
+	    ::scgi::serror 412 $msg
+	}
+    } else {
+	if {$oidhost == -1} then {
+	    set ttl -1
+	} else {
+	    set ttl [::rr::get-ttlhost $orr]
+	}
+    }
+
+    if {"smtp" in [::n capabilities]} then {
+	set sendsmtp [expr $sendsmtp != 0]
+    } else {
+	if {$oidhost == -1} then {
+	    set sendsmtp 0
+	} else {
+	    set sendsmtp [::rr::get-sendsmtp $orr]
+	}
+    }
+
+    ######################################################################
+    # Check if we are authorized to add the new host
+    ######################################################################
+
+    set idcor [::n idcor]
+    set domain [::n domainname $iddom]
+
+    set msg [check-authorized-host ::dbdns $idcor $name $domain $idview nrr "host"]
+    if {$msg ne ""} then {
+	::scgi::serror 412 $msg
+    }
+
+    set nidname -1
+    set nidhost -1
+    if {[::rr::found $nrr]} then {
+	set nidname [::rr::get-idname $nrr]
+	set nidhost [::rr::get-idhost $nrr]
+    }
+
+    #
+    # Check if new host already exists
+    #
+
+    if {$oidname == -1 && $nidhost != -1} then {
+	# host creation ("post" request), but new host already exists
+	::scgi::serror 403 [mc "Host already exists"]
+    }
+
+    if {$oidname != -1 && $nidhost != -1 && $oidhost != $nidhost} then {
+	# host modification ("put" request)
+	::scgi::serror 403 [mc "Host already exists"]
+    }
+
+    ######################################################################
+    # Check new IP addresses
+    ######################################################################
 
     if {[llength $addr] == 0} then {
 	::scgi::serror 412 [mc "Empty address list"]
@@ -554,14 +410,15 @@ proc hosts-new-and-mod {_parm orr} {
 
     #
     # Check if new IP addresses are already allocated to some other hosts
-    # (but don't check our existing addresses if oidrr != -1)
+    # (but don't check our existing addresses if oidname != -1)
     #
 
     set sql "SELECT DISTINCT jaddr
 		FROM (VALUES $vaddr) AS vaddr (jaddr)
-		    INNER JOIN dns.rr_ip ON (addr = jaddr)
-		    NATURAL INNER JOIN dns.rr
-		WHERE rr.idview = $idview AND rr.idrr != $oidrr
+		    INNER JOIN dns.addr ON (addr = jaddr)
+		    NATURAL INNER JOIN dns.host h
+		    NATURAL INNER JOIN dns.name n
+		WHERE n.idview = $idview AND h.idhost != $oidhost
 		"
     set lbad {}
     ::dbdns exec $sql tab {
@@ -571,217 +428,134 @@ proc hosts-new-and-mod {_parm orr} {
 	::scgi::serror 403 [mc "IP addresses already exist (%s)" [join $lbad ", "]]
     }
 
-    #
-    # Check new MAC address
-    #
-
-    if {$mac ne ""} then {
-	set msg [check-mac-syntax-dhcp $mac $addr]
-	if {$msg ne ""} then {
-	    ::scgi::serror 412 $msg
-	}
-    }
-
-    #
-    # Check new TTL and sendsmtp
-    #
-
-    if {"ttl" in [::n capabilities]} then {
-	set msg [check-ttl $ttl]
-	if {$msg ne ""} then {
-	    ::scgi::serror 412 $msg
-	}
-    } else {
-	set ttl -1
-    }
-
-    if {"smtp" in [::n capabilities]} then {
-	set sendsmtp [expr $sendsmtp != 0]
-    } else {
-	set sendsmtp 0
-    }
-
-    ######################################################################
-    # Check if we are authorized to add the new host
-    ######################################################################
-
-    set idcor [::n idcor]
-    set domain [::n domainname $iddom]
-
-    set msg [check-authorized-host ::dbdns $idcor $name $domain $idview nrr "host"]
-    if {$msg ne ""} then {
-	::scgi::serror 412 $msg
-    }
-
     ######################################################################
     # Prepare variables
     ######################################################################
 
-
-    set nidrr -1
-    if {[::rr::found $nrr]} then {
-	set nidrr [::rr::get-idrr $nrr]
-    }
-
-    set qmac NULL
-    if {$mac ne ""} then {
-	set qmac [pg_quote $mac]
-    }
-    set qname     [pg_quote $name]
-    set qcomment  [pg_quote $comment]
-    set qrespname [pg_quote $respname]
-    set qrespmail [pg_quote $respmail]
-    set qiddhcpprof NULL
-    if {$iddhcpprof != -1} then {
-	set qiddhcpprof $iddhcpprof
-    }
-
-    ######################################################################
-    # Test all cases (see proc header comments for case numbers)
-    ######################################################################
-
-    set sameid [expr $oidrr == $nidrr]
-
-    set oldisother 0
-    if {$oidrr != -1} then {
-	set oldisother [::rr::is-other-than-host $orr]
-    }
-
-    set newishost 0
-    if {$nidrr != -1} then {
-	set newishost [expr [llength [::rr::get-ip $nrr]] > 0]
-    }
-
-    set selector "$oidrr:$nidrr:$sameid:$oldisother:$newishost"
-
-    switch -glob -- $selector {
-	-1:-1:*:*:* {
-	    # case 1: new host with a new name
-
-	    TODO
-	}
-	-1:*:*:*:0 {
-	    # case 2: new host with an existing name (e.g. mailaddr or mx)
-
-	    TODO
-	}
-	-1:*:*:*:1 {
-	    # case 3: new host with an existing name which is already a host
-	    ::scgi::serror 412 [mc {Host '%s' already exists} $name]
-	}
-	*:-1:*:1:* {
-	    # case 5: rename to a non existing name, old name is still a MA/MX
-
-	    TODO
-	}
-	*:-1:*:0:* {
-	    # case 6: rename to a non existing name, old name was only a host
-
-	    TODO
-	}
-	*:*:1:*:* {
-	    # case 4: just modify the existing host
-
-	    TODO
-	}
-	*:*:0:*:1 {
-	    # case 9: rename to an existing name, new is already a host
-	    ::scgi::serror 412 [mc {Host '%s' already exists} $name]
-	}
-	*:*:0:1:0 {
-	    # case 7: rename to an existing name, old was MA/MX, new is MA/MX
-
-	    TODO
-	}
-	*:*:0:0:0 {
-	    # case 8: rename to an existing name, old was host, new is MA/MX
-
-	    TODO
-	}
-    }
-
-##############################################################################
-
     #
-    # Check if host already exists,
-    # and create RR if needed
+    # Insert/update host in database
+    #
+    # Remaining cases to analyze:
+    #   oidname oidhost nidname nidhost     comment
+    #     -1      -1      -1      -1        host creation with a new name
+    #     -1      -1     valid    -1        host creation with an existing name
+    #    valid   valid    -1      -1        host renaming with a new name
+    #    valid   valid   valid    -1        host renaming with an existing name
+    #    valid   valid     n     m == n     host update
     #
 
-    if {[::rr::found $nrr]} then {
+    ::dbdns lock {dns.name dns.host dns.addr} {
 	#
-	# Check if host already exists
+	# Add new name for the host since it did not pre-exist
 	#
-
-	set idrr [::rr::get-idrr $nrr]
-	set sql "SELECT COUNT (addr) AS cnt
-		    FROM dns.rr_ip
-		    WHERE idrr = $idrr"
-	set cnt 0
-	::dbdns exec $sql tab {
-	    set cnt $tab(cnt)
+	if {$nidname == -1} then {
+	    set nidname [::rr::add-name ::dbdns $name $iddom $idview]
 	}
-	if {$cnt > 0} then {
-	    ::scgi::serror 412 [mc "Host '%s' already exists" $name]
+	# At this point, nidname exists (but not necessarily the nidhost):
+	#   oidname oidhost nidname nidhost     comment
+	#     -1      -1     valid    -1    host creation with an existing name
+	#    valid   valid   valid    -1    host renaming with an existing name
+	#    valid   valid     n     m == n host update
+
+	if {$oidhost == -1 && $nidhost == -1} then {
+	    #
+	    # Create new host
+	    #
+	    set nidhost [::rr::add-host ::dbdns $nidname \
+	    				$mac $iddhcpprof $idhinfo \
+					$comment $respname $respmail \
+					$sendsmtp $ttl]
+
+	} elseif {$oidhost != -1} then {
+	    #
+	    # Update host attributes (with renaming if $oidname != $nidname)
+	    #
+
+	    set qmac NULL
+	    if {$mac ne ""} then {
+		set qmac [pg_quote $mac]
+	    }
+	    set qcomment  [pg_quote $comment]
+	    set qrespname [pg_quote $respname]
+	    set qrespmail [pg_quote $respmail]
+	    set qiddhcpprof NULL
+	    if {$iddhcpprof != -1} then {
+		set qiddhcpprof $iddhcpprof
+	    }
+
+	    set sql "UPDATE dns.host
+			    SET
+				idname = $nidname,
+				mac = $qmac,
+				comment = $qcomment,
+				respname = $qrespname,
+				respmail = $qrespmail,
+				iddhcpprof = $qiddhcpprof,
+				sendsmtp = $sendsmtp,
+				ttl = $ttl
+			    WHERE idhost = $oidhost
+			    "
+	    ::dbdns exec $sql
+
+	    #
+	    # Delete old IP addresses
+	    #
+
+	    set sql "DELETE FROM dns.addr WHERE idhost = $oidhost"
+	    ::dbdns exec $sql
+
+	    set nidhost $oidhost
+
+	} else {
+	    set msg "oidname=$oidname, oidhost=$oidhost, nidname=$nidname, nidhost=$nidhost"
+	    ::scgi::serror 403 [mc "Internal error (%s)" $msg]
 	}
 
 	#
-	# Update RR and add addresses
+	# Add new IP addresses
 	#
-
-	set sql "BEGIN WORK ;
-		UPDATE dns.rr
-		    SET mac = $qmac,
-			iddhcpprof = $qiddhcpprof,
-			idhinfo = $idhinfo
-			sendsmtp = $sendsmtp,
-			ttl = $ttl,
-			comment = $qcomment,
-			respname = $respname,
-			respmail = $respmail,
-			idcor = $idcor
-		    WHERE idrr = $idrr
-		    ;
-		INSERT INTO dns.rr_ip (idrr, addr)
-		    SELECT $idrr, vaddr.jaddr
-			FROM (VALUES $vaddr) AS vaddr (jaddr)
-		    ;
-		COMMIT WORK
-		"
-	::dbdns exec $sql
-
-    } else {
-	#
-	# Create RR and associated addresses
-	# 
-
-	set sql "WITH insrr AS (
-			INSERT INTO dns.rr
-			    (name, iddom, idview, mac, iddhcpprof,
-				idhinfo, sendsmtp, ttl,
-				comment, respname, respmail,
-				idcor)
-			VALUES
-			    ($qname, $iddom, $idview, $qmac, $qiddhcpprof,
-				$idhinfo, $sendsmtp, $ttl,
-				$qcomment, $qrespname, $qrespmail,
-				$idcor)
-			RETURNING idrr
-		    )
-		    INSERT INTO dns.rr_ip (idrr, addr)
-			SELECT insrr.idrr, vaddr.jaddr
-			    FROM insrr, (VALUES $vaddr) AS vaddr (jaddr)
-			RETURNING idrr
+	set sql "INSERT INTO dns.addr (idhost, addr)
+		    SELECT $nidhost, vaddr.addr
+			FROM (VALUES $vaddr) AS vaddr (addr)
 		    "
-	set idrr -1
-	::dbdns exec $sql tab {
-	    # This request may return more than one line. We don't
-	    # break this loop to avoid cancelling the request.
-	    set idrr $tab(idrr)
-	}
+	::dbdns exec $sql
     }
+
+    #
+    # Add a log
+    #
+
+    if {$oidname == -1} then {
+	set logevent "addhost"
+	set domain [::n domainname $iddom]
+	set view [::n viewname $idview]
+	set logmsg "add host $name.$domain/$view"
+	set jbefore null
+    } else {
+	set logevent "modhost"
+	set ofqdn [::rr::get-fqdn $orr]
+	set oview [::n viewname [::rr::get-idview $orr]]
+	if {$oidname == $nidname} then {
+	    set logmsg "mod host $ofqdn/$oview"
+	} else {
+	    set ndom [::n domainname $iddom]
+	    set nfqdn "$name.$ndom"
+	    set nview [::n viewname $idview]
+	    set logmsg "mod host $ofqdn/$oview -> $nfqdn/$nview"
+	}
+	set domain [::n domainname $iddom]
+	set view [::n viewname $idview]
+	set jbefore [::rr::json-host $orr]
+    }
+    set jafter [host-get-json $nidhost]
+    ::n writelog "$logevent" "$logmsg" $jbefore $jafter
+
+    #
+    # Return idhost
+    #
 
     ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body $idrr
+    ::scgi::set-body $nidhost
 }
 
 ##############################################################################
@@ -884,6 +658,14 @@ api-handler delete {/hosts/([0-9]+:idhost)} logged {
 
     set sql "DELETE FROM dns.host WHERE idhost = $idhost"
     ::dbdns exec $sql
+
+    #
+    # Add a log
+    #
+
+    set view [::n viewname $idview]
+    set jbefore [::rr::json-host $rr]
+    ::n writelog "delhost" "delete host $name.$domain/$view" $jbefore "null"
 
     ::scgi::set-header Content-Type text/plain
     ::scgi::set-body "OK"

@@ -155,8 +155,8 @@ types:
 	gw6:		2001:db8:1234:5678::1
       }
 
-  ShortName:
-    description: a reference to a RR
+  ShortHost:
+    description: minimal description of a single host
     type: object
     properties:
       idrr:		integer
@@ -174,50 +174,8 @@ types:
 	idview: 1,
 	view: internal
       }
-  FullNameInput:
-    description: a complete RR, without id
-    type: object
-    properties:
-      name:		string
-      iddom:		integer
-      idview:		integer
-      mac:		macaddr
-      idhinfo:		integer
-      comment:		string
-      respname:		string
-      respmail:		string
-      iddhcpprof:	integer
-      sendsmtp:
-	enum: [0, 1]
-      ttl:		integer
-      idcname:		integer
-      idmboxhost:	integer
-      mxlist:		MX []
-      addr:		inet []
-    example: |
-      {
-	name: www
-	iddom: 1
-	idview: 1
-	mac: "01:02:03:04:05:06"
-	idhinfo: 2
-	comment: "a www server"
-	respname: "John Doe"
-	respmail: "foo@example.com"
-	iddhcpprof: -1
-	sendsmtp: 0
-	ttl: 0
-	mxlist: [
-	  {
-	    prio: 100
-	    idrr: 2
-	  }
-	]
-	addr: [172.16.1.1, 2001:db8:1234:5678::ff]
-      }
-
-  FullHostInput:
-    description: a complete host
+  FullHost:
+    description: complete description of a single host without idrr
     type: object
     properties:
       name:		string
@@ -225,28 +183,28 @@ types:
       idview:		integer
       mac:		macaddr			# required. Use '' for no mac
       idhinfo:		integer			# required
+      iddhcpprof:	integer			# required. -1 if no profile
       comment:		string
       respname:		string
       respmail:		string
-      iddhcpprof:	integer			# required. -1 if no profile
       sendsmtp:					# required
 	enum: [0, 1]
       ttl:		integer			# required. Use -1 for default
       addr:		inet []
     example: |
       {
-	name: www
-	iddom: 1
-	idview: 1
-	mac: "01:02:03:04:05:06"
-	idhinfo: 2
-	comment: "a www server"
-	respname: "John Doe"
-	respmail: "foo@example.com"
-	iddhcpprof: -1
-	sendsmtp: 0
-	ttl: 0
-	addr: [172.16.1.1, 2001:db8:1234:5678::ff]
+	name: jupiter,
+	iddom: 1,
+	idview: 1,
+	mac: "01:02:03:04:05:06",
+	idhinfo: 0,
+	iddhcpprof: -1,
+	comment: "Bill's laptop",
+	respname: "Bill",
+	respmail: bill@example.org,
+	sendsmtp: 0,
+	ttl: -1
+	addr: [ 198.51.100.2, 2001:db8:1234::2 ],
       }
 
   SearchResult:
@@ -1371,148 +1329,6 @@ types:
 	    ]
 
 ##############################################################################
-# Names
-##############################################################################
-
-/names
-  description: A collection of names
-
-  get:
-    queryParameters:
-      view:
-        description: filter on view name
-        type: string
-        required: false
-      name:
-        description: filter on name
-        type: string
-        required: false
-      domain:
-        description: filter on domain name
-        type: string
-        required: false
-      addr:
-        description: filter on IP address
-        type: cidr (v4 or v6)
-        required: false
-      sort:         # XXX BUG
-        description: sort result
-        type: comma-separated list of {name, domain, addr, view}
-        required: false
-    responses:
-      200:
-        body:
-	  description: unsorted list of names
-	  type: ShortName []
-	  example: |
-            example: |
-              [ 
-                {
-                  idrr: 123,
-                  name: www,
-                  iddom: 1,
-                  domain: example.org,
-                  idview: 1,
-                  view: internal
-                },
-                {
-                  idrr: 456,
-                  name: foo,
-                  iddom: 2,
-                  domain: example.com
-                  idview: 2
-                  view: external
-                }
-              ]
-
-  post:
-    description: Create a new name (new host, new cname or new mx)
-    queryParameters:			# none
-    body:
-      type: FullNameInput		# without id
-      example: |
-	{
-	  name: "server backbone"
-	  addr: [1
-	  location: "bldg a"
-	  addr4: 172.16.1.0/24
-	  addr6: 2001:db8:1234:5678::/64
-	  idorg: 2
-	  idcomm: 3
-	  dhcp: 1
-	  gw4: 172.16.1.254
-	  addr6: 2001:db8:1234:5678::1
-	}
-    responses:
-      200:
-        body:
-	  type: FullNameId
-	  example: |
-
-  /{idrr}
-    description: Get a single name
-    queryParameters:			# none
-
-    get:
-      responses:
-        200:
-          body:
-            type: FullNameId
-	    example: |
-	      {
-		name: "atlas",
-		domain: "example.org",
-		domainlink: "/domain/5",
-		view: "external",
-		viewlink: "/views/5",
-		mac: "00:11:22:33:44:55",
-		hinfo: "pc/unix",
-		hinfolink: "/hinfos/12",
-		comment: "Simon's PC",
-		respname: "John Doe",
-		respmail: "doe@example.org",
-		dhcpprofile: "diskless",
-		dhcpprofilelink: "/dhcpprofiles/33",
-		sendsmtp: "1",
-		ttl: "3600",
-		user: "jane",
-		userlink: "/users/17",
-		cname: "other.example.org",  <exclusive with MX or addr>
-		cnamelink: "/names/82",
-		lastmod: "<time_t>"
-		addr: [
-		  "192.0.2.12",
-		  "2001:db8::1",
-		  "198.51.100.24",
-		],
-		mx: [
-		  {
-		    prio: 100,
-		    fqdn: "mx1.example.com",
-		    link: "/names/532"
-		  },
-		  {
-		    prio: 200,
-		    fqdn: "mx2.example.com",
-		    link: "/names/79"
-		  }
-		],
-	      }
-
-    put:
-
-    delete:
-      description: delete a name
-      body:				# none
-      responses:
-        200:
-          body:
-	    type: text/plain
-	    example: OK
-
-
-
-##############################################################################
 # Host management
 ##############################################################################
 
@@ -1545,7 +1361,7 @@ types:
       200:
         body:
 	  description: unsorted list of names
-	  type: ShortName []
+	  type: ShortHost []
 	  example: |
             example: |
               [ 
@@ -1571,7 +1387,7 @@ types:
     description: Create a new host
     queryParameters:			# none
     body:
-      type: FullHostInput		# without id
+      type: FullHost
       example: |
 	{
 	  name: www
@@ -1590,8 +1406,9 @@ types:
     responses:
       200:
         body:
-	  type: FullNameId
-	  example: |
+	  type: text/plain
+	  exemple:
+	    123
 
   /{idrr}
     description: Get a single name
@@ -1601,52 +1418,36 @@ types:
       responses:
         200:
           body:
-            type: FullNameId
+            type: FullHost
 	    example: |
 	      {
-		name: "atlas",
-		domain: "example.org",
-		domainlink: "/domain/5",
-		view: "external",
-		viewlink: "/views/5",
-		mac: "00:11:22:33:44:55",
-		hinfo: "pc/unix",
-		hinfolink: "/hinfos/12",
-		comment: "Simon's PC",
-		respname: "John Doe",
-		respmail: "doe@example.org",
-		dhcpprofile: "diskless",
-		dhcpprofilelink: "/dhcpprofiles/33",
-		sendsmtp: "1",
-		ttl: "3600",
-		user: "jane",
-		userlink: "/users/17",
-		cname: "other.example.org",  <exclusive with MX or addr>
-		cnamelink: "/names/82",
-		lastmod: "<time_t>"
-		addr: [
-		  "192.0.2.12",
-		  "2001:db8::1",
-		  "198.51.100.24",
-		],
-		mx: [
-		  {
-		    prio: 100,
-		    fqdn: "mx1.example.com",
-		    link: "/names/532"
-		  },
-		  {
-		    prio: 200,
-		    fqdn: "mx2.example.com",
-		    link: "/names/79"
-		  }
-		],
+		name: www
+		iddom: 1
+		idview: 1
+		mac: "01:02:03:04:05:06"
+		idhinfo: 2
+		comment: "a www server"
+		respname: "John Doe"
+		respmail: "foo@example.com"
+		iddhcpprof: -1
+		sendsmtp: 0
+		ttl: 0
+		addr: [172.16.1.1, 2001:db8:1234:5678::ff]
 	      }
 
     put:
+      description: update a host
+      body:
+	type: FullHost
+      responses:
+	200:
+	  body:
+	    type: text/plain		# new idrr, since it may have changed
+	    example: 456
+
 
     delete:
-      description: delete a name
+      description: delete a host
       body:				# none
       responses:
         200:

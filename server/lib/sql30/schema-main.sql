@@ -99,10 +99,13 @@ CREATE TABLE global.log (
 		    DEFAULT CURRENT_TIMESTAMP
 		    NOT NULL,
     subsys	TEXT NOT NULL,		-- subsystem ("dns", "topo", etc.)
+    version	INTEGER NOT NULL,	-- log format version
     event	TEXT NOT NULL,		-- "addhost", "delalias", etc.
     login	TEXT,			-- user login
     ip		INET,			-- IP address
-    msg		TEXT			-- log message
+    msg		TEXT,			-- log message
+    jbefore	JSONB,			-- data before modification
+    jafter	JSONB			-- data after modification
 ) ;
 
 ---------------------------------------------------------------------------

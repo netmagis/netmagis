@@ -1,5 +1,6 @@
 package require Tcl 8.6
 package require json
+package require json::write
 package require pgdb
 
 package provide rr 0.1
@@ -17,6 +18,8 @@ package provide rr 0.1
 #	return a RR object, which may be empty
 # - found $rr
 #	return 1 if the RR has been found, 0 if is has not been found
+# - not-a-rr
+#	return an invalid rr (one which has not been found)
 # - get-idname $rr
 #	return the id of the name
 # - get-name $rr
@@ -37,7 +40,6 @@ package provide rr 0.1
 #	return the DHCP profile id of the host, or 0 if none
 # - get-dhcpprof $rr
 #	return the DHCP profile name of the host, or an empty string
-#			(XXX WARNING OLD code was returing "No profile")
 # - get-idhinfo $rr
 #	return the idhinfo of the host
 # - get-hinfo $rr
@@ -54,11 +56,9 @@ package provide rr 0.1
 #	return the mail address of the responsible person for the host
 # - get-ip $rr
 #	return the list of all IP addresses {addr addr...} of the host
-#			(XXX OLD {{idview addr} ...})
 # - get-mxhost $rr
 #	return the list of MX target hosts for this name under the format
 #	{{prio idrr ttl} {prio idrr ttl}...}
-#			(XXX OLD {{idview prio idrr} {idview prio idrr} ...})
 # - get-mxname $rr
 #	return the list of MX names which target this host {idrr idrr...}
 # - get-cname $rr
@@ -71,20 +71,22 @@ package provide rr 0.1
 #	return the idhost of mailbox host for this mail address or -1
 # - get-mailaddr $rr
 #	return the list of idname of mail addresses if $rr is a mboxhost
-#			(XXX OLD {{idview idmailaddr idviewmailaddr} ...})
 # - get-relay $rr
 #	return the list of iddom which target this host for relay {iddom ...}
 # - add-name $db $name $iddom $idview
 #	add the name into the database and return the new idname
 # - add-host $db $idname $mac $iddhcpprof $idhinfo $comment $respname $respmail $sendsmtp $ttl
 #	add the host into the database and return the new idhost
+# - json-host $rr
+#	return a host representation in JSON format
 #
 
 namespace eval ::rr {
     namespace export read-by-id read-by-name \
-		    found \
+		    found not-a-rr \
 		    get-mx get-fqdn \
-		    add-name add-host
+		    add-name add-host \
+		    json-host
 
     proc read-by-name {db name iddom idview} {
 	set qname [pg_quote $name]
@@ -184,6 +186,10 @@ namespace eval ::rr {
 	return [expr [dict size $rr] > 0]
     }
 
+    proc not-a-rr {} {
+	return [dict create]
+    }
+
     # Define all getters, except mx
     foreach key {idname name iddom domain idview
 		    idhost mac iddhcpprof dhcpprof idhinfo hinfo
@@ -253,4 +259,28 @@ namespace eval ::rr {
 	}
 	return $idhost
     }
+
+    proc json-host {rr} {
+	set l {}
+	foreach a [dict get $rr "ip"] {
+	    lappend l [::json::write string $a]
+	}
+
+	set j [::json::write object \
+		    name [::json::write string [dict get $rr "name"]] \
+		    iddom [dict get $rr "iddom"] \
+		    idview [dict get $rr "idview"] \
+		    mac [::json::write string [dict get $rr "mac"]] \
+		    idhinfo [dict get $rr "idhinfo"] \
+		    comment [::json::write string [dict get $rr "comment"]] \
+		    respname [::json::write string [dict get $rr "respname"]] \
+		    respmail [::json::write string [dict get $rr "respmail"]] \
+		    iddhcpprof [dict get $rr "iddhcpprof"] \
+		    sendsmtp [dict get $rr "sendsmtp"] \
+		    ttl [dict get $rr "ttlhost"] \
+		    addr [eval ::json::write array $l] \
+		]
+	return $j
+    }
+
 }

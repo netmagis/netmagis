@@ -128,7 +128,7 @@ api-handler delete {/sessions} no {
 	if {$message ne ""} then {
 	    ::scgi::serror 500 [mc "Internal server error (%s)" $message]
 	}
-	::n writelog "auth" "logout [::n login] $token" "" "" ""
+	::n writelog "auth" "logout [::n login] $token" null null "" "" ""
 
 	::scgi::del-cookie "session"
 	::scgi::del-cookie "uid"
@@ -299,7 +299,7 @@ proc register-user-login {dbfd login casticket} {
     # Log successful flogin
     #
 
-    ::n writelog "auth" "login $login $token" "" $login ""
+    ::n writelog "auth" "login $login $token" null null "" $login ""
 
     #
     # Set session cookie

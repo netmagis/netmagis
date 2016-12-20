@@ -604,9 +604,9 @@ namespace eval ::nmenv {
     ###########################################################################
 
     variable subsys "netmagis"
-    variable table "global.log"
+    variable logversion 1
 
-    method writelog {event msg {date {}} {wlogin {}} {ip {}}} {
+    method writelog {event msg jbefore jafter {date {}} {wlogin {}} {ip {}}} {
 	if {$ip eq ""} then {
 	    set ip [::scgi::get-header "REMOTE_ADDR"]
 	}
@@ -634,10 +634,14 @@ namespace eval ::nmenv {
 	    }
 	    append dateval ","
 	}
-	set sub [pg_quote $subsys]
-	set sql "INSERT INTO $table
-			($datecol subsys, event, login, ip, msg)
-		    VALUES ($dateval $sub, $event, $wlogin, $ip, $msg)"
+	set sub  [pg_quote $subsys]
+	set jbef [pg_quote $jbefore]
+	set jaft [pg_quote $jafter]
+	set sql "INSERT INTO global.log
+			($datecol subsys, version, event, login, ip,
+				msg, jbefore, jafter)
+		    VALUES ($dateval $sub, $logversion, $event, $wlogin, $ip,
+		    		$msg, $jbef, $jaft)"
 	$db exec $sql
     }
 
