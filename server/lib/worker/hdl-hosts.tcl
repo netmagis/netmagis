@@ -60,7 +60,7 @@ api-handler get {/hosts} logged {
 #    set order {}
 #    foreach c [split $sort ","] {
 #	if {! [info exists names_sortcrit($c)]} then {
-#	    ::scgi::serror 412 [mc "Invalid sort criterion '%s'" $c]
+#	    ::scgi::serror 400 [mc "Invalid sort criterion '%s'" $c]
 #	}
 #	lappend order $names_sortcrit($c)
 #    }
@@ -115,19 +115,141 @@ api-handler post {/hosts} logged {
 
 api-handler get {/hosts/([0-9]+:idhost)} logged {
     } {
+    set rr [check-idhost $idhost]
+    set j [host-get-json $idhost]
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
+}
+
+##############################################################################
+
+api-handler put {/hosts/([0-9]+:idhost)} logged {
+    } {
+    set orr [check-idhost $idhost]
+    lassign [hosts-new-and-mod $_parm $orr] id j
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
+}
+
+##############################################################################
+
+api-handler delete {/hosts/([0-9]+:idhost)} logged {
+    } {
+    set rr [check-idhost $idhost]
+
+    #
+    # Is this host a mboxhost for some mail addresses?
+    #
+
+    if {[llength [::rr::get-mailaddr $rr]] > 0} then {
+	set sql "SELECT n.name, d.name AS domain
+		    FROM dns.mailrole m,
+			INNER JOIN dns.name n ON (mailaddr = idname)
+			NATURAL INNER JOIN dns.domain d
+		    WHERE m.mboxhost = $idhost
+		    ORDER BY domain ASC, n.name ASC
+		    "
+	set lmbox {}
+	::dbdns exec $sql tab {
+	    lappend lmbox "$tab(name).$tab(domain)"
+	}
+	::scgi::serror 400 [mc "Host is a mailbox host for addresses: %s" [join $lmbox ", "]]
+    }
+
+    #
+    # Is this host a mail relay for some domains?
+    #
+
+    if {[llength [::rr::get-relay $rr]] > 0} then {
+	set sql "SELECT d.name AS domain
+		    FROM dns.relaydom rd
+			NATURAL INNER JOIN dns.domain d
+		    WHERE rd.idhost = $idhost
+		    ORDER BY d.name ASC
+		    "
+	set lrel {}
+	::dbdns exec $sql tab {
+	    lappend lrel $tab(domain)
+	}
+	::scgi::serror 400 [mc "Host is a mail relay for domains: %s" [join $lrel ", "]]
+    }
+
+    #
+    # Is this host a MX for some fqdn?
+    #
+
+    if {[llength [::rr::get-mxname $rr]] > 0} then {
+	set sql "SELECT n.name, d.name AS domain
+		    FROM dns.mx x
+			NATURAL INNER JOIN dns.name n
+			NATURAL INNER JOIN dns.domain d
+		    WHERE x.idhost = $idhost
+		    ORDER BY domain ASC, n.name ASC
+		    "
+	set lmx {}
+	::dbdns exec $sql tab {
+	    lappend lmx "$tab(name).$tab(domain)"
+	}
+	::scgi::serror 400 [mc "Host is a MX for names: %s" [join $lmx ", "]]
+    }
+
+    #
+    # Do aliases reference this host?
+    #
+
+    if {[llength [::rr::get-aliases $rr]] > 0} then {
+	set sql "SELECT n.name, d.name AS domain
+		    FROM dns.alias a
+			NATURAL INNER JOIN dns.name n
+			NATURAL INNER JOIN dns.domain d
+		    WHERE a.idhost = $idhost
+		    ORDER BY domain ASC, n.name ASC
+		    "
+	set lal {}
+	::dbdns exec $sql tab {
+	    lappend lal "$tab(name).$tab(domain)"
+	}
+	::scgi::serror 400 [mc "Host is referenced by aliases: %s" [join $lal ", "]]
+    }
+
+    #
+    # Delete the host (as well as addresses by cascade)
+    # and don't trap errors, they will be reported by the caller
+    #
+
+    set sql "DELETE FROM dns.host WHERE idhost = $idhost"
+    ::dbdns exec $sql
+
+    #
+    # Add a log
+    #
+
+    set view [::n viewname [::rr::get-idview $rr]]
+    set fqdn [::rr::get-fqdn $rr]
+    set jbefore [::rr::json-host $rr]
+    ::n writelog "delhost" "delete host $fqdn/$view" $jbefore "null"
+
+    ::scgi::set-header Content-Type text/plain
+    ::scgi::set-body "OK"
+}
+
+
+##############################################################################
+# Utility functions
+##############################################################################
+
+proc check-idhost {idhost} {
     set rr [::rr::read-by-idhost ::dbdns $idhost]
     if {! [::rr::found $rr]} then {
 	::scgi::serror 404 [mc "Host not found"]
     }
+
     set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
     if {$msg ne ""} then {
-	::scgi::serror 412 $msg
+	::scgi::serror 400 $msg
     }
 
-    set j [host-get-json $idhost]
-
-    ::scgi::set-header Content-Type application/json
-    ::scgi::set-body $j
+    return $rr
 }
 
 proc host-get-json {idhost} {
@@ -166,31 +288,45 @@ proc host-get-json {idhost} {
     return $j
 }
 
-##############################################################################
+#
+# Check MAC against syntax errors and DHCP ranges
+#
+# Input:
+#   - parameters:
+#       - dbfd: database handle
+#	- mac: non-empty MAC address
+#	- lip: list of IP addresses for this host
+# Output:
+#   - return value: empty string or error message
+#
+# History
+#   2013/04/05 : pda/jean : design
+#
 
-api-handler put {/hosts/([0-9]+:idhost)} logged {
-    } {
-    set orr [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $orr]} then {
-	::scgi::serror 404 [mc "Host not found"]
-    }
-
-    #
-    # Check that we have rights to modify this host before any other test
-    #
-
-    set msg [check-authorized-rr ::dbdns [::n idcor] $orr "existing-host"]
+proc check-mac-syntax-dhcp {mac lip} {
+    set msg [check-addr-syntax ::dbdns $mac "macaddr"]
     if {$msg ne ""} then {
-	::scgi::serror 412 $msg
+	return $msg
     }
 
     #
-    # Return modified object
+    # Check that no static DHCP association (IP address with an associate
+    # non null MAC address) is within a DHCP range
     #
 
-    lassign [hosts-new-and-mod $_parm $orr] id j
-    ::scgi::set-header Content-Type application/json
-    ::scgi::set-body $j
+    foreach ip $lip {
+	set sql "SELECT min, max
+			FROM dns.dhcprange
+			WHERE '$ip' >= min AND '$ip' <= max"
+	::dbdns exec $sql tab {
+	    set msg [mc {Impossible to use MAC address '%1$s' because IP address '%2$s' is in DHCP dynamic range [%3$s..%4$s]} $mac $ip $tab(min) $tab(max)]
+	}
+	if {$msg ne ""} then {
+	    return $msg
+	}
+    }
+
+    return ""
 }
 
 ##############################################################################
@@ -205,7 +341,7 @@ api-handler put {/hosts/([0-9]+:idhost)} logged {
 #   - for a new host: orr is empty
 #   - to modify an existing host: orr contains the existing rr
 # Output:
-#   - new idhost (or old one if no id modification)
+#   - list {new-idhost json-of-new-host}
 #
 # This procedure checks the following cases:
 #   - notations:
@@ -266,7 +402,7 @@ proc hosts-new-and-mod {_parm orr} {
 		{addr {}}
 	    }
     if {! [::scgi::check-json-attr $dbody $spec]} then {
-	::scgi::serror 412 [mc "Invalid JSON input"]
+	::scgi::serror 400 [mc "Invalid JSON input"]
     }
 
     #
@@ -274,19 +410,19 @@ proc hosts-new-and-mod {_parm orr} {
     #
 
     if {! [::n isalloweddom $iddom]} then {
-	::scgi::serror 412 [mc "Invalid domain id '%s'" $iddom]
+	::scgi::serror 400 [mc "Invalid domain id '%s'" $iddom]
     }
 
     if {! [::n isallowedview $idview]} then {
-	::scgi::serror 412 [mc "Invalid view id '%s'" $idview]
+	::scgi::serror 400 [mc "Invalid view id '%s'" $idview]
     }
 
     if {$iddhcpprof != -1 && ! [::n isalloweddhcpprof $iddhcpprof]} then {
-	::scgi::serror 412 [mc "Invalid dhcpprofile id '%s'" $iddhcpprof]
+	::scgi::serror 400 [mc "Invalid dhcpprofile id '%s'" $iddhcpprof]
     }
 
     if {! [::n isallowedhinfo $idhinfo]} then {
-	::scgi::serror 412 [mc "Invalid hinfo id '%s'" $idhinfo]
+	::scgi::serror 400 [mc "Invalid hinfo id '%s'" $idhinfo]
     }
 
     #
@@ -295,7 +431,7 @@ proc hosts-new-and-mod {_parm orr} {
 
     set msg [check-name-syntax $name]
     if {$msg ne ""} then {
-	::scgi::serror 412 $msg
+	::scgi::serror 400 $msg
     }
     set name [string tolower $name]
 
@@ -306,7 +442,7 @@ proc hosts-new-and-mod {_parm orr} {
     if {$mac ne ""} then {
 	set msg [check-mac-syntax-dhcp $mac $addr]
 	if {$msg ne ""} then {
-	    ::scgi::serror 412 $msg
+	    ::scgi::serror 400 $msg
 	}
     }
 
@@ -317,7 +453,7 @@ proc hosts-new-and-mod {_parm orr} {
     if {"ttl" in [::n capabilities]} then {
 	set msg [check-ttl $ttl]
 	if {$msg ne ""} then {
-	    ::scgi::serror 412 $msg
+	    ::scgi::serror 400 $msg
 	}
     } else {
 	if {$oidhost == -1} then {
@@ -346,7 +482,7 @@ proc hosts-new-and-mod {_parm orr} {
 
     set msg [check-authorized-host ::dbdns $idcor $name $domain $idview nrr "host"]
     if {$msg ne ""} then {
-	::scgi::serror 412 $msg
+	::scgi::serror 400 $msg
     }
 
     set nidname -1
@@ -362,12 +498,12 @@ proc hosts-new-and-mod {_parm orr} {
 
     if {$oidname == -1 && $nidhost != -1} then {
 	# host creation ("post" request), but new host already exists
-	::scgi::serror 403 [mc "Host already exists"]
+	::scgi::serror 400 [mc "Host already exists"]
     }
 
     if {$oidname != -1 && $nidhost != -1 && $oidhost != $nidhost} then {
 	# host modification ("put" request)
-	::scgi::serror 403 [mc "Host already exists"]
+	::scgi::serror 400 [mc "Host already exists"]
     }
 
     ######################################################################
@@ -375,7 +511,7 @@ proc hosts-new-and-mod {_parm orr} {
     ######################################################################
 
     if {[llength $addr] == 0} then {
-	::scgi::serror 412 [mc "Empty address list"]
+	::scgi::serror 400 [mc "Empty address list"]
     }
 
     set vaddr {}
@@ -389,7 +525,7 @@ proc hosts-new-and-mod {_parm orr} {
 	}
     }
     if {[llength $lbad] > 0} then {
-	::scgi::serror 403 [mc "Invalid address syntax (%s)" [join $lbad ", "]]
+	::scgi::serror 400 [mc "Invalid address syntax (%s)" [join $lbad ", "]]
     }
 
     set lbad {}
@@ -404,7 +540,7 @@ proc hosts-new-and-mod {_parm orr} {
 	lappend lbad $tab(jaddr)
     }
     if {[llength $lbad] > 0} then {
-	::scgi::serror 403 [mc "Unauthorized address(es): %s" [join $lbad ", "]]
+	::scgi::serror 400 [mc "Unauthorized address(es): %s" [join $lbad ", "]]
     }
 
     #
@@ -424,7 +560,7 @@ proc hosts-new-and-mod {_parm orr} {
 	lappend lbad $tab(jaddr)
     }
     if {[llength $lbad] > 0} then {
-	::scgi::serror 403 [mc "IP addresses already exist (%s)" [join $lbad ", "]]
+	::scgi::serror 400 [mc "IP addresses already exist (%s)" [join $lbad ", "]]
     }
 
     ######################################################################
@@ -507,7 +643,7 @@ proc hosts-new-and-mod {_parm orr} {
 
 	} else {
 	    set msg "oidname=$oidname, oidhost=$oidhost, nidname=$nidname, nidhost=$nidhost"
-	    ::scgi::serror 403 [mc "Internal error (%s)" $msg]
+	    ::scgi::serror 400 [mc "Internal error (%s)" $msg]
 	}
 
 	#
@@ -552,159 +688,4 @@ proc hosts-new-and-mod {_parm orr} {
     #
 
     return [list $nidhost $jafter]
-}
-
-##############################################################################
-
-api-handler delete {/hosts/([0-9]+:idhost)} logged {
-    } {
-    set rr [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $rr]} then {
-	::scgi::serror 404 [mc "Host not found"]
-    }
-    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
-    if {$msg ne ""} then {
-	::scgi::serror 412 $msg
-    }
-
-    #
-    # Is this host a mboxhost for some mail addresses?
-    #
-
-    if {[llength [::rr::get-mailaddr $rr]] > 0} then {
-	set sql "SELECT n.name, d.name AS domain
-		    FROM dns.mailrole m,
-			INNER JOIN dns.name n ON (mailaddr = idname)
-			NATURAL INNER JOIN dns.domain d
-		    WHERE m.mboxhost = $idhost
-		    ORDER BY domain ASC, n.name ASC
-		    "
-	set lmbox {}
-	::dbdns exec $sql tab {
-	    lappend lmbox "$tab(name).$tab(domain)"
-	}
-	::scgi::serror 412 [mc "Host is a mailbox host for addresses: %s" [join $lmbox ", "]]
-    }
-
-    #
-    # Is this host a mail relay for some domains?
-    #
-
-    if {[llength [::rr::get-relay $rr]] > 0} then {
-	set sql "SELECT d.name AS domain
-		    FROM dns.relaydom rd
-			NATURAL INNER JOIN dns.domain d
-		    WHERE rd.idhost = $idhost
-		    ORDER BY d.name ASC
-		    "
-	set lrel {}
-	::dbdns exec $sql tab {
-	    lappend lrel $tab(domain)
-	}
-	::scgi::serror 412 [mc "Host is a mail relay for domains: %s" [join $lrel ", "]]
-    }
-
-    #
-    # Is this host a MX for some fqdn?
-    #
-
-    if {[llength [::rr::get-mxname $rr]] > 0} then {
-	set sql "SELECT n.name, d.name AS domain
-		    FROM dns.mx x
-			NATURAL INNER JOIN dns.name n
-			NATURAL INNER JOIN dns.domain d
-		    WHERE x.idhost = $idhost
-		    ORDER BY domain ASC, n.name ASC
-		    "
-	set lmx {}
-	::dbdns exec $sql tab {
-	    lappend lmx "$tab(name).$tab(domain)"
-	}
-	::scgi::serror 412 [mc "Host is a MX for names: %s" [join $lmx ", "]]
-    }
-
-    #
-    # Do aliases reference this host?
-    #
-
-    if {[llength [::rr::get-aliases $rr]] > 0} then {
-	set sql "SELECT n.name, d.name AS domain
-		    FROM dns.alias a
-			NATURAL INNER JOIN dns.name n
-			NATURAL INNER JOIN dns.domain d
-		    WHERE a.idhost = $idhost
-		    ORDER BY domain ASC, n.name ASC
-		    "
-	set lal {}
-	::dbdns exec $sql tab {
-	    lappend lal "$tab(name).$tab(domain)"
-	}
-	::scgi::serror 412 [mc "Host is referenced by aliases: %s" [join $lal ", "]]
-    }
-
-    #
-    # Delete the host (as well as addresses by cascade)
-    # and don't trap errors, they will be reported by the caller
-    #
-
-    set sql "DELETE FROM dns.host WHERE idhost = $idhost"
-    ::dbdns exec $sql
-
-    #
-    # Add a log
-    #
-
-    set view [::n viewname [::rr::get-idview $rr]]
-    set fqdn [::rr::get-fqdn $rr]
-    set jbefore [::rr::json-host $rr]
-    ::n writelog "delhost" "delete host $fqdn/$view" $jbefore "null"
-
-    ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body "OK"
-}
-
-##############################################################################
-# Utility functions
-##############################################################################
-
-
-#
-# Check MAC against syntax errors and DHCP ranges
-#
-# Input:
-#   - parameters:
-#       - dbfd: database handle
-#	- mac: non-empty MAC address
-#	- lip: list of IP addresses for this host
-# Output:
-#   - return value: empty string or error message
-#
-# History
-#   2013/04/05 : pda/jean : design
-#
-
-proc check-mac-syntax-dhcp {mac lip} {
-    set msg [check-addr-syntax ::dbdns $mac "macaddr"]
-    if {$msg ne ""} then {
-	return $msg
-    }
-
-    #
-    # Check that no static DHCP association (IP address with an associate
-    # non null MAC address) is within a DHCP range
-    #
-
-    foreach ip $lip {
-	set sql "SELECT min, max
-			FROM dns.dhcprange
-			WHERE '$ip' >= min AND '$ip' <= max"
-	::dbdns exec $sql tab {
-	    set msg [mc {Impossible to use MAC address '%1$s' because IP address '%2$s' is in DHCP dynamic range [%3$s..%4$s]} $mac $ip $tab(min) $tab(max)]
-	}
-	if {$msg ne ""} then {
-	    return $msg
-	}
-    }
-
-    return ""
 }
