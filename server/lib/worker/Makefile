@@ -14,6 +14,7 @@ FILES =	\
 	hdl-freeblocks.tcl \
 	hdl-hinfos.tcl \
 	hdl-hosts.tcl \
+	hdl-mailroles.tcl \
 	hdl-names.tcl \
 	hdl-networks.tcl \
 	hdl-search.tcl \

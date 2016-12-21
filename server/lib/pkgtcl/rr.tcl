@@ -69,6 +69,8 @@ package provide rr 0.1
 #	return the list of names which are aliases of this host
 # - get-mboxhost $rr
 #	return the idhost of mailbox host for this mail address or -1
+# - get-ttlmailaddr $rr
+#	return the ttl associated to the mail address or -1
 # - get-mailaddr $rr
 #	return the list of idname of mail addresses if $rr is a mboxhost
 # - get-relay $rr
@@ -88,7 +90,7 @@ namespace eval ::rr {
 		    found not-a-rr \
 		    get-mx get-fqdn \
 		    add-name add-host \
-		    json-host json-alias
+		    json-host json-alias json-mailrole
 
     proc read-by-name {db name iddom idview} {
 	set qname [pg_quote $name]
@@ -128,7 +130,7 @@ namespace eval ::rr {
 		    COALESCE (a.ttl, -1) AS ttlcname,
 		    COALESCE (sreq_aliases.aliases, '{}') AS aliases,
 		    COALESCE (mailrole.idhost, -1) AS mboxhost,
-		    COALESCE (mailrole.ttl) AS ttlmboxhost,
+		    COALESCE (mailrole.ttl, -1) AS ttlmailaddr,
 		    COALESCE (sreq_mailaddr.mailaddr, '{}') AS mailaddr,
 		    COALESCE (sreq_relay.relay, '{}') AS relay
 		FROM dns.name n
@@ -201,7 +203,7 @@ namespace eval ::rr {
 		    mxname
 		    cname ttlcname
 		    aliases
-		    mboxhost mailaddr
+		    mboxhost mailaddr ttlmailaddr
 		    relay} {
 	namespace export get-$key
 
@@ -292,6 +294,17 @@ namespace eval ::rr {
 		    idview [dict get $rr "idview"] \
 		    idhost [dict get $rr "cname"] \
 		    ttl [dict get $rr "ttlcname"] \
+		]
+	return $j
+    }
+
+    proc json-mailrole {rr} {
+	set j [::json::write object \
+		    name [::json::write string [dict get $rr "name"]] \
+		    iddom [dict get $rr "iddom"] \
+		    idview [dict get $rr "idview"] \
+		    idhost [dict get $rr "mboxhost"] \
+		    ttl [dict get $rr "ttlmailaddr"] \
 		]
 	return $j
     }
