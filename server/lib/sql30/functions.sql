@@ -368,7 +368,7 @@ CREATE OR REPLACE FUNCTION dns.mod_mx_alias ()
 	IF TG_OP = 'UPDATE'
 	THEN
 	    PERFORM sum (dns.gen_norm_idname (NEW.idname)) ;
-	    PERFORM sum (dns.host (OLD.idname)) ;
+	    PERFORM sum (dns.gen_norm_idname (OLD.idname)) ;
 	END IF ;
 
 	IF TG_OP = 'DELETE'
