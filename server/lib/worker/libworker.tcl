@@ -714,3 +714,22 @@ proc check-authorized-rr {dbfd idcor rr context} {
 
     return [check-authorized-host ::dbdns $idcor $name $domain $idview nrr $context]
 }
+
+#
+# Check if host exists and is authorized and exits if this is not the case
+#
+
+proc check-idhost {idhost} {
+    set rr [::rr::read-by-idhost ::dbdns $idhost]
+    if {! [::rr::found $rr]} then {
+	::scgi::serror 404 [mc "Host %d not found" $idhost]
+    }
+
+    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
+    if {$msg ne ""} then {
+	::scgi::serror 400 $msg
+    }
+
+    return $rr
+}
+

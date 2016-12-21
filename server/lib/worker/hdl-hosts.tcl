@@ -238,20 +238,6 @@ api-handler delete {/hosts/([0-9]+:idhost)} logged {
 # Utility functions
 ##############################################################################
 
-proc check-idhost {idhost} {
-    set rr [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $rr]} then {
-	::scgi::serror 404 [mc "Host not found"]
-    }
-
-    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
-    if {$msg ne ""} then {
-	::scgi::serror 400 $msg
-    }
-
-    return $rr
-}
-
 proc host-get-json {idhost} {
     set sql "SELECT row_to_json (t.*) AS j FROM (
 		SELECT

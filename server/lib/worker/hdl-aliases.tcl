@@ -32,15 +32,7 @@ api-handler get {/aliases} logged {
 	if {! [regexp {^[0-9]+$} $idhost]} then {
 	    ::scgi::serror 400 [mc "Invalid idhost '%s'" $idhost]
 	}
-	set rr [::rr::read-by-idhost ::dbdns $idhost]
-	if {! [::rr::found $rr]} then {
-	    ::scgi::serror 400 [mc "Host not found"]
-	}
-
-	set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
-	if {$msg ne ""} then {
-	    ::scgi::serror 400 $msg
-	}
+	check-idhost ::dbdns $idhost
 	lappend filter "a.idhost = $idhost"
     }
 
@@ -300,15 +292,7 @@ proc aliases-new-and-mod {_parm orr} {
     }
 
     # Check target host
-    set rrh [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $rrh]} then {
-	::scgi::serror 400 [mc "Host %d not found" $idhost]
-    }
-    set msg [check-authorized-rr ::dbdns [::n idcor] $rrh "existing-host"]
-    if {$msg ne ""} then {
-	::scgi::serror 400 $msg
-    }
-
+    set rrh [check-idhost $idhost]
     set nfqdnh [::rr::get-fqdn $rrh]
 
     ::dbdns lock {dns.name dns.alias} {
