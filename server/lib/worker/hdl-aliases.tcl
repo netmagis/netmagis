@@ -96,124 +96,73 @@ api-handler get {/aliases} logged {
 
 api-handler post {/aliases} logged {
     } {
-    set idgrp [::n idgrp]
+    lassign [aliases-new-and-mod $_parm [::rr::not-a-rr]] id j
+    ::scgi::set-header Content-Type text/plain
+    ::scgi::set-body $id
+}
+
+##############################################################################
+
+api-handler get {/aliases/([0-9]+:idalias)} logged {
+    } {
+    set rr [check-idalias $idalias]
+    set j [alias-get-json $idalias]
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
+}
+
+##############################################################################
+
+api-handler put {/aliases/([0-9]+:idalias)} logged {
+    } {
+    set orr [check-idalias $idalias]
+    lassign [aliases-new-and-mod $_parm $orr] id j
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
+}
+
+##############################################################################
+
+api-handler delete {/aliases/([0-9]+:idalias)} logged {
+    } {
+    set rr [check-idalias $idalias]
 
     #
-    # Check input parameters
+    # Delete the alias
     #
 
-    # get body just to check it's a JSON body
-    ::scgi::get-body-json $_parm
-
-    set dbody [dict get $_parm "_bodydict"]
-
-    set spec {
-		{name text}
-		{iddom int -1}
-		{idview int -1}
-		{idhost int}
-		{ttl int 0}
-	    }
-    if {! [::scgi::check-json-attr $dbody $spec]} then {
-	::scgi::serror 412 [mc "Invalid JSON input"]
-    }
-
-    #
-    # Check various ids
-    #
-
-    if {! [::n isalloweddom $iddom]} then {
-	::scgi::serror 412 [mc "Invalid domain id '%s'" $iddom]
-    }
-
-    if {! [::n isallowedview $idview]} then {
-	::scgi::serror 412 [mc "Invalid view id '%s'" $idview]
-    }
-
-    #
-    # Check syntax of new host name
-    #
-
-    set msg [check-name-syntax $name]
-    if {$msg ne ""} then {
-	::scgi::serror 400 $msg
-    }
-    set name [string tolower $name]
-
-    #
-    # Check new TTL
-    #
-
-    if {"ttl" in [::n capabilities]} then {
-	set msg [check-ttl $ttl]
-	if {$msg ne ""} then {
-	    ::scgi::serror 400 $msg
-	}
-    } else {
-	set ttl -1
-    }
-
-    #
-    # Check if we are authorized to add the new alias
-    #
-
-    # Check alias name
-    set idcor [::n idcor]
-    set domain [::n domainname $iddom]
-    set msg [check-authorized-host ::dbdns $idcor $name $domain $idview nrr "alias"]
-    if {$msg ne ""} then {
-	::scgi::serror 400 $msg
-    }
-    set nidname -1
-    if {[::rr::found $nrr]} then {
-	set nidname [::rr::get-idname $nrr]
-    }
-
-    # Check target host
-    set rrh [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $rrh]} then {
-	::scgi::serror 400 [mc "Host %d not found" $idhost]
-    }
-    set msg [check-authorized-rr ::dbdns [::n idcor] $rrh "existing-host"]
-    if {$msg ne ""} then {
-	::scgi::serror 400 $msg
-    }
-
-    ::dbdns lock {dns.name dns.alias} {
-	#
-	# Add new name for the host since it did not pre-exist
-	#
-	if {$nidname == -1} then {
-	    set nidname [::rr::add-name ::dbdns $name $iddom $idview]
-	}
-
-	#
-	# Add alias
-	#
-	set sql "INSERT INTO dns.alias (idname, idhost, ttl)
-			VALUES ($nidname, $idhost, $ttl)"
-	::dbdns exec $sql
-    }
+    set sql "DELETE FROM dns.alias WHERE idname = $idalias"
+    ::dbdns exec $sql
 
     #
     # Add a log
     #
 
-    set dom [::n domainname $iddom]
-    set fqdn "$name.$dom"
-    set view [::n viewname $idview]
-    set fqdnh [::rr::get-fqdn $rrh]
-
-    set jafter [alias-get-json $nidname]
-
-    ::n writelog "addalias" "add alias $fqdn/$view -> $fqdnh" null $jafter
-
-    #
-    # Return idname
-    #
+    set fqdn [::rr::get-fqdn $rr]
+    set view [::n viewname [::rr::get-idview $rr]]
+    set jbefore [::rr::json-alias $rr]
+    ::n writelog "delalias" "del alias $fqdn/$view" $jbefore "null"
 
     ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body $nidname
+    ::scgi::set-body "OK"
+}
+
+##############################################################################
+# Utility functions
+##############################################################################
+
+proc check-idalias {idalias} {
+    set rr [::rr::read-by-idname ::dbdns $idalias]
+    if {! [::rr::found $rr] || [::rr::get-cname $rr] == -1} then {
+	::scgi::serror 404 [mc "Alias not found"]
+    }
+
+    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "del-name"]
+    if {$msg ne ""} then {
+	::scgi::serror 400 $msg
+    }
+
+    return $rr
 }
 
 proc alias-get-json {idname} {
@@ -240,461 +189,179 @@ proc alias-get-json {idname} {
     return $j
 }
 
-
 ##############################################################################
-
-api-handler get {/aliases/([0-9]+:idalias)} logged {
-    } {
-    set rr [::rr::read-by-idname ::dbdns $idalias]
-    if {! [::rr::found $rr] || [::rr::get-cname $rr] == -1} then {
-	::scgi::serror 404 [mc "Alias %d not found" $idalias]
-    }
-
-    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "del-name"]
-    if {$msg ne ""} then {
-	::scgi::serror 400 $msg
-    }
-
-    set sql "SELECT row_to_json (t.*) AS j FROM (
-		SELECT
-			n.name,
-			n.iddom,
-			n.idview,
-			a.idhost,
-			a.ttl
-		    FROM dns.alias a
-			INNER JOIN dns.name n USING (idname)
-		    WHERE a.idname = $idalias
-		) AS t"
-
-    ::dbdns exec $sql tab {
-	set j $tab(j)
-    }
-
-    ::scgi::set-header Content-Type application/json
-    ::scgi::set-body $j
-}
-
-##############################################################################
-
-api-handler put {/aliases/([0-9]+:idhost)} logged {
-    } {
-    set orr [::rr::read-by-idhost ::dbdns $idhost]
-    if {! [::rr::found $orr]} then {
-	::scgi::serror 404 [mc "Host not found"]
-    }
-
-    #
-    # Check that we have rights to modify this host before any other test
-    #
-
-    set name   [::rr::get-name $orr]
-    set domain [::rr::get-domain $orr]
-    set idview [::rr::get-idview $orr]
-
-    set msg [check-authorized-host ::dbdns [::n idcor] $name $domain $idview rr "existing-host"]
-    if {$msg ne ""} then {
-	::scgi::serror 412 $msg
-    }
-
-    hosts-new-and-mod $_parm $orr
-}
-
-##############################################################################
-# Huge function to create or update a specific host
+# Huge function to create or update a specific alias
 ##############################################################################
 
 #
-# Create a new host, or modify an existing host
+# Create a new alias, or modify an existing alias
 #
 # Input:
 #   - _parm: JSON for new values
-#   - for a new host: orr is empty
-#   - to modify an existing host: orr contains the existing rr
+#   - for a new alias: orr is empty
+#   - to modify an existing alias: orr contains the existing rr
 # Output:
-#   - new idhost (or old one if no id modification)
-#
-# This procedure checks the following cases:
-#   - notations:
-#	oidname = idname from orr (or -1)
-#	oidhost = idhost from orr (or -1)
-#	nidname = idname of existing rr for new name (or -1)
-#	nidhost = idhost of existing rr for new name (or -1)
-#
-#   oidname oidhost nidname nidhost	comment
-#     -1      -1      -1      -1	host creation with a new name
-#     -1      -1      -1     valid	<cannot happen>
-#     -1      -1     valid    -1	host creation with an existing name
-#     -1      -1     valid   valid	error: host already exists
-#     -1     valid     *       *	<cannot happen>
-#    valid    -1       *       *	<cannot happen (existing host exists!)>
-#    valid   valid    -1      -1	host renaming with a new name
-#    valid   valid    -1     valid	<cannot happen>
-#    valid   valid   valid    -1	host renaming with an existing name
-#    valid   valid     n     m == n	host update
-#    valid   valid     n     m != n	error: host already exists
+#   - list {new-idalias json-of-new-alias}
 #
 
-proc hosts-new-and-mod {_parm orr} {
+proc aliases-new-and-mod {_parm orr} {
     set idgrp [::n idgrp]
 
     #
-    # Use oidname == -1 as the test for a new host (vs host modification)
-    #
-
-    set oidname -1
-    set oidhost -1
-    if {[::rr::found $orr]} then {
-	set oidname [::rr::get-idname $orr]
-	set oidhost [::rr::get-idhost $orr]
-    }
-
-    ######################################################################
     # Check input parameters
-    ######################################################################
+    #
 
     # get body just to check it's a JSON body
     ::scgi::get-body-json $_parm
 
     set dbody [dict get $_parm "_bodydict"]
 
-    set spec {
-		{name text}
-		{iddom int -1}
-		{idview int -1}
-		{mac text}
-		{idhinfo int -1}
-		{comment text}
-		{respname text}
-		{respmail text}
-		{iddhcpprof int -1}
-		{sendsmtp int 0}
-		{ttl int 0}
-		{addr {}}
-	    }
+    if {[::rr::found $orr]} then {
+	# update
+	set oidname [::rr::get-idname $orr]
+	set spec {
+		    {idhost int}
+		    {ttl int 0}
+		}
+    } else {
+	# creation
+	set oidname -1
+	set spec {
+		    {name text}
+		    {iddom int -1}
+		    {idview int -1}
+		    {idhost int}
+		    {ttl int 0}
+		}
+    }
     if {! [::scgi::check-json-attr $dbody $spec]} then {
-	::scgi::serror 412 [mc "Invalid JSON input"]
+	::scgi::serror 400 [mc "Invalid JSON input"]
     }
 
-    #
-    # Check various ids
-    #
+    if {$oidname == -1} then {
+	#
+	# Check various ids
+	#
 
-    if {! [::n isalloweddom $iddom]} then {
-	::scgi::serror 412 [mc "Invalid domain id '%s'" $iddom]
-    }
-
-    if {! [::n isallowedview $idview]} then {
-	::scgi::serror 412 [mc "Invalid view id '%s'" $idview]
-    }
-
-    if {$iddhcpprof != -1 && ! [::n isalloweddhcpprof $iddhcpprof]} then {
-	::scgi::serror 412 [mc "Invalid dhcpprofile id '%s'" $iddhcpprof]
-    }
-
-    if {! [::n isallowedhinfo $idhinfo]} then {
-	::scgi::serror 412 [mc "Invalid hinfo id '%s'" $idhinfo]
-    }
-
-    #
-    # Check syntax of new host name
-    #
-
-    set msg [check-name-syntax $name]
-    if {$msg ne ""} then {
-	::scgi::serror 412 $msg
-    }
-    set name [string tolower $name]
-
-    #
-    # Check new MAC address
-    #
-
-    if {$mac ne ""} then {
-	set msg [check-mac-syntax-dhcp $mac $addr]
-	if {$msg ne ""} then {
-	    ::scgi::serror 412 $msg
+	if {! [::n isalloweddom $iddom]} then {
+	    ::scgi::serror 400 [mc "Invalid domain id '%s'" $iddom]
 	}
+
+	if {! [::n isallowedview $idview]} then {
+	    ::scgi::serror 400 [mc "Invalid view id '%s'" $idview]
+	}
+
+	#
+	# Check syntax of new host name
+	#
+
+	set msg [check-name-syntax $name]
+	if {$msg ne ""} then {
+	    ::scgi::serror 400 $msg
+	}
+	set name [string tolower $name]
     }
 
     #
-    # Check new TTL and sendsmtp
+    # Check new TTL
     #
 
     if {"ttl" in [::n capabilities]} then {
 	set msg [check-ttl $ttl]
 	if {$msg ne ""} then {
-	    ::scgi::serror 412 $msg
+	    ::scgi::serror 400 $msg
 	}
     } else {
-	if {$oidhost == -1} then {
+	if {$oidname == -1} then {
 	    set ttl -1
 	} else {
-	    set ttl [::rr::get-ttlhost $orr]
+	    set ttl [::rr::get-ttlcname $orr]
 	}
     }
 
-    if {"smtp" in [::n capabilities]} then {
-	set sendsmtp [expr $sendsmtp != 0]
-    } else {
-	if {$oidhost == -1} then {
-	    set sendsmtp 0
-	} else {
-	    set sendsmtp [::rr::get-sendsmtp $orr]
-	}
-    }
-
-    ######################################################################
-    # Check if we are authorized to add the new host
-    ######################################################################
-
-    set idcor [::n idcor]
-    set domain [::n domainname $iddom]
-
-    set msg [check-authorized-host ::dbdns $idcor $name $domain $idview nrr "host"]
-    if {$msg ne ""} then {
-	::scgi::serror 412 $msg
-    }
-
-    set nidname -1
-    set nidhost -1
-    if {[::rr::found $nrr]} then {
-	set nidname [::rr::get-idname $nrr]
-	set nidhost [::rr::get-idhost $nrr]
-    }
-
     #
-    # Check if new host already exists
-    #
-
-    if {$oidname == -1 && $nidhost != -1} then {
-	# host creation ("post" request), but new host already exists
-	::scgi::serror 403 [mc "Host already exists"]
-    }
-
-    if {$oidname != -1 && $nidhost != -1 && $oidhost != $nidhost} then {
-	# host modification ("put" request)
-	::scgi::serror 403 [mc "Host already exists"]
-    }
-
-    ######################################################################
-    # Check new IP addresses
-    ######################################################################
-
-    if {[llength $addr] == 0} then {
-	::scgi::serror 412 [mc "Empty address list"]
-    }
-
-    set vaddr {}
-    set lbad {}
-    foreach a $addr {
-	if {[::ip::version $a] == 0} then {
-	    lappend lbad $a
-	} else {
-	    set qa [pg_quote $a]
-	    lappend vaddr "(${qa}::inet)"
-	}
-    }
-    if {[llength $lbad] > 0} then {
-	::scgi::serror 403 [mc "Invalid address syntax (%s)" [join $lbad ", "]]
-    }
-
-    set lbad {}
-    set vaddr [join $vaddr ","]
-    set sql "SELECT DISTINCT jaddr
-		FROM (VALUES $vaddr) AS vaddr (jaddr)
-		    LEFT JOIN dns.p_ip p ON
-			(idgrp = $idgrp AND p.addr >>= vaddr.jaddr)
-		WHERE allow_deny IS NULL OR allow_deny = 0
-		"
-    ::dbdns exec $sql tab {
-	lappend lbad $tab(jaddr)
-    }
-    if {[llength $lbad] > 0} then {
-	::scgi::serror 403 [mc "Unauthorized address(es): %s" [join $lbad ", "]]
-    }
-
-    #
-    # Check if new IP addresses are already allocated to some other hosts
-    # (but don't check our existing addresses if oidname != -1)
-    #
-
-    set sql "SELECT DISTINCT jaddr
-		FROM (VALUES $vaddr) AS vaddr (jaddr)
-		    INNER JOIN dns.addr ON (addr = jaddr)
-		    NATURAL INNER JOIN dns.host h
-		    NATURAL INNER JOIN dns.name n
-		WHERE n.idview = $idview AND h.idhost != $oidhost
-		"
-    set lbad {}
-    ::dbdns exec $sql tab {
-	lappend lbad $tab(jaddr)
-    }
-    if {[llength $lbad] > 0} then {
-	::scgi::serror 403 [mc "IP addresses already exist (%s)" [join $lbad ", "]]
-    }
-
-    ######################################################################
-    # Prepare variables
-    ######################################################################
-
-    #
-    # Insert/update host in database
-    #
-    # Remaining cases to analyze:
-    #   oidname oidhost nidname nidhost     comment
-    #     -1      -1      -1      -1        host creation with a new name
-    #     -1      -1     valid    -1        host creation with an existing name
-    #    valid   valid    -1      -1        host renaming with a new name
-    #    valid   valid   valid    -1        host renaming with an existing name
-    #    valid   valid     n     m == n     host update
-    #
-
-    ::dbdns lock {dns.name dns.host dns.addr} {
-	#
-	# Add new name for the host since it did not pre-exist
-	#
-	if {$nidname == -1} then {
-	    set nidname [::rr::add-name ::dbdns $name $iddom $idview]
-	}
-	# At this point, nidname exists (but not necessarily the nidhost):
-	#   oidname oidhost nidname nidhost     comment
-	#     -1      -1     valid    -1    host creation with an existing name
-	#    valid   valid   valid    -1    host renaming with an existing name
-	#    valid   valid     n     m == n host update
-
-	if {$oidhost == -1 && $nidhost == -1} then {
-	    #
-	    # Create new host
-	    #
-	    set nidhost [::rr::add-host ::dbdns $nidname \
-	    				$mac $iddhcpprof $idhinfo \
-					$comment $respname $respmail \
-					$sendsmtp $ttl]
-
-	} elseif {$oidhost != -1} then {
-	    #
-	    # Update host attributes (with renaming if $oidname != $nidname)
-	    #
-
-	    set qmac NULL
-	    if {$mac ne ""} then {
-		set qmac [pg_quote $mac]
-	    }
-	    set qcomment  [pg_quote $comment]
-	    set qrespname [pg_quote $respname]
-	    set qrespmail [pg_quote $respmail]
-	    set qiddhcpprof NULL
-	    if {$iddhcpprof != -1} then {
-		set qiddhcpprof $iddhcpprof
-	    }
-
-	    set sql "UPDATE dns.host
-			    SET
-				idname = $nidname,
-				mac = $qmac,
-				comment = $qcomment,
-				respname = $qrespname,
-				respmail = $qrespmail,
-				iddhcpprof = $qiddhcpprof,
-				sendsmtp = $sendsmtp,
-				ttl = $ttl
-			    WHERE idhost = $oidhost
-			    "
-	    ::dbdns exec $sql
-
-	    #
-	    # Delete old IP addresses
-	    #
-
-	    set sql "DELETE FROM dns.addr WHERE idhost = $oidhost"
-	    ::dbdns exec $sql
-
-	    set nidhost $oidhost
-
-	} else {
-	    set msg "oidname=$oidname, oidhost=$oidhost, nidname=$nidname, nidhost=$nidhost"
-	    ::scgi::serror 403 [mc "Internal error (%s)" $msg]
-	}
-
-	#
-	# Add new IP addresses
-	#
-	set sql "INSERT INTO dns.addr (idhost, addr)
-		    SELECT $nidhost, vaddr.addr
-			FROM (VALUES $vaddr) AS vaddr (addr)
-		    "
-	::dbdns exec $sql
-    }
-
-    #
-    # Add a log
+    # Check if we are authorized to add the new alias
     #
 
     if {$oidname == -1} then {
-	set logevent "addhost"
+	# Check alias name
+	set idcor [::n idcor]
 	set domain [::n domainname $iddom]
-	set view [::n viewname $idview]
-	set logmsg "add host $name.$domain/$view"
-	set jbefore null
-    } else {
-	set logevent "modhost"
-	set ofqdn [::rr::get-fqdn $orr]
-	set oview [::n viewname [::rr::get-idview $orr]]
-	if {$oidname == $nidname} then {
-	    set logmsg "mod host $ofqdn/$oview"
-	} else {
-	    set ndom [::n domainname $iddom]
-	    set nfqdn "$name.$ndom"
-	    set nview [::n viewname $idview]
-	    set logmsg "mod host $ofqdn/$oview -> $nfqdn/$nview"
+	set msg [check-authorized-host ::dbdns $idcor $name $domain $idview nrr "alias"]
+	if {$msg ne ""} then {
+	    ::scgi::serror 400 $msg
 	}
-	set domain [::n domainname $iddom]
-	set view [::n viewname $idview]
-	set jbefore [::rr::json-host $orr]
-    }
-    set jafter [host-get-json $nidhost]
-    ::n writelog "$logevent" "$logmsg" $jbefore $jafter
-
-    #
-    # Return idhost
-    #
-
-    ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body $nidhost
-}
-
-##############################################################################
-
-api-handler delete {/aliases/([0-9]+:idalias)} logged {
-    } {
-    set rr [::rr::read-by-idname ::dbdns $idalias]
-    if {! [::rr::found $rr] || [::rr::get-cname $rr] == -1} then {
-	::scgi::serror 404 [mc "Alias %d not found" $idalias]
+	set nidname -1
+	if {[::rr::found $nrr]} then {
+	    set nidname [::rr::get-idname $nrr]
+	}
+    } else {
+	set nidname $oidname
     }
 
-    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "del-name"]
+    # Check target host
+    set rrh [::rr::read-by-idhost ::dbdns $idhost]
+    if {! [::rr::found $rrh]} then {
+	::scgi::serror 400 [mc "Host %d not found" $idhost]
+    }
+    set msg [check-authorized-rr ::dbdns [::n idcor] $rrh "existing-host"]
     if {$msg ne ""} then {
 	::scgi::serror 400 $msg
     }
 
+    set nfqdnh [::rr::get-fqdn $rrh]
+
+    ::dbdns lock {dns.name dns.alias} {
+	#
+	# Add new name for the alias since it did not pre-exist
+	#
+	if {$nidname == -1} then {
+	    set nidname [::rr::add-name ::dbdns $name $iddom $idview]
+	}
+
+	#
+	# Create or update alias
+	#
+	if {$oidname == -1} then {
+	    # creation
+	    set sql "INSERT INTO dns.alias (idname, idhost, ttl)
+			    VALUES ($nidname, $idhost, $ttl)"
+
+	    # Prepare log
+	    set dom [::n domainname $iddom]
+	    set fqdn "$name.$dom"
+	    set view [::n viewname $idview]
+	    set jbefore null
+
+	    set logevent "addalias"
+	    set logmsg "add alias $fqdn/$view->$nfqdnh"
+	} else {
+	    # update
+	    set sql "UPDATE dns.alias SET
+					idhost = $idhost,
+					ttl = $ttl
+				    WHERE idname = $nidname"
+
+	    # Prepare log
+	    set fqdn [::rr::get-fqdn $orr]
+	    set view [::n viewname [::rr::get-idview $orr]]
+	    set orrh [::rr::read-by-idhost ::dbdns [::rr::get-cname $orr]]
+	    set ofqdnh [::rr::get-fqdn $orrh]
+	    set jbefore [::rr::json-alias $orr]
+
+	    set logevent "modalias"
+	    set logmsg "mod alias $fqdn/$view->$ofqdnh -> $nfqdnh"
+	}
+	::dbdns exec $sql
+    }
+    set jafter [alias-get-json $nidname]
+    ::n writelog $logevent $logmsg $jbefore $jafter
+
     #
-    # Delete the alias
+    # Return both new id (for POST requests) and actual resource (for
+    # PUT requests)
     #
 
-    set sql "DELETE FROM dns.alias WHERE idname = $idalias"
-    ::dbdns exec $sql
-
-    #
-    # Add a log
-    #
-
-    set fqdn [::rr::get-fqdn $rr]
-    set view [::n viewname [::rr::get-idview $rr]]
-    set jbefore [::rr::json-alias $rr]
-    ::n writelog "delalias" "del alias $fqdn/$view" $jbefore "null"
-
-    ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body "OK"
+    return [list $nidname $jafter]
 }
 
