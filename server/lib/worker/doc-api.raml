@@ -248,6 +248,47 @@ types:
 	idhost: 123,
       }
 
+  MailroleMod:
+    description: description of modifiable mail role fields (for put method)
+    type: object
+    properties:
+      ttl:		integer			# required. Use -1 for default
+      idhost:		integer
+    example: |
+      {
+	ttl: -1,
+	idhost: 123,
+      }
+  MailroleWithName:
+    description: description of a single mail role for post/get methods
+    type: MailroleMod
+    properties:
+      name:		string
+      iddom:		integer
+      idview:		integer
+    example: |
+      {
+	name: www,
+	iddom: 1,
+	idview: 1,
+	ttl: -1,
+	idhost: 123,
+      }
+  MailroleWithNameId
+    description: description of a single mail role in a collection
+    type: MailroleWithName
+    properties:
+      idmailrole:	integer
+    example: |
+      {
+	idmailrole: 456,
+	name: www,
+	iddom: 1,
+	idview: 1,
+	ttl: -1,
+	idhost: 123,
+      }
+
   SearchResult:
     description: search result item
     type: object
@@ -1627,7 +1668,131 @@ types:
 
 
     delete:
-      description: delete a host
+      description: delete a single alias
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+##############################################################################
+# Mailrole management
+##############################################################################
+
+/mailroles
+  description: A collection of mail roles
+
+  get:
+    queryParameters:
+      view:
+        description: filter on view name
+        type: string
+        required: false
+      name:
+        description: filter on mail address name
+        type: string
+        required: false
+      domain:
+        description: filter on domain name
+        type: string
+        required: false
+      idhost:
+        description: filter on a specific mailbox host
+        type: integer
+        required: false
+      sort:         # XXX BUG
+        description: sort result
+        type: comma-separated list of {name, domain, idhost, view}
+        required: false
+    responses:
+      200:
+        body:
+	  description: unsorted list of mail roles
+	  type: MailroleWithNameId []
+	  example: |
+            example: |
+              [ 
+                {
+		  idmailrole: 456,
+		  name: www,
+		  iddom: 1,
+		  idview: 1,
+		  ttl: -1,
+		  idhost: 123,
+		},
+                {
+		  idmailrole: 789,
+		  name: sales,
+		  iddom: 2,
+		  idview: 2,
+		  ttl: -1,
+		  idhost: 543,
+		},
+              ]
+
+  post:
+    description: Create a new mail role
+    queryParameters:			# none
+    body:
+      type: MailroleWithName
+      example: |
+	{
+	  name: www,
+	  iddom: 1,
+	  idview: 1,
+	  ttl: -1,
+	  idhost: 123,
+	}
+    responses:
+      200:
+        body:
+	  type: text/plain
+	  exemple:
+	    123
+
+  /{idmailrole}
+    description: Get a single mail role
+    queryParameters:			# none
+    get:
+      responses:
+        200:
+          body:
+            type: MailroleWithName
+	    example: |
+	      {
+		name: www,
+		iddom: 1,
+		idview: 1,
+		ttl: -1,
+		idhost: 123,
+	      }
+
+    put:
+      description: update a single mail role
+      body:
+	type: MailroleMod
+	example: |
+	  {
+	    ttl: -1,
+	    idhost: 123,
+	  }
+      responses:
+	200:
+	  body:
+	    type: MailroleWithName
+	    example: |
+	      {
+		name: www,
+		iddom: 1,
+		idview: 1,
+		ttl: -1,
+		idhost: 123,
+	      }
+
+
+    delete:
+      description: delete a single mail role
       body:				# none
       responses:
         200:
