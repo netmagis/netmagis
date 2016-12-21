@@ -105,7 +105,9 @@ api-handler get {/hosts} logged {
 
 api-handler post {/hosts} logged {
     } {
-    hosts-new-and-mod $_parm [::rr::not-a-rr]
+    lassign [hosts-new-and-mod $_parm [::rr::not-a-rr]] id j
+    ::scgi::set-header Content-Type text/plain
+    ::scgi::set-body $id
 }
 
 
@@ -182,7 +184,13 @@ api-handler put {/hosts/([0-9]+:idhost)} logged {
 	::scgi::serror 412 $msg
     }
 
-    hosts-new-and-mod $_parm $orr
+    #
+    # Return modified object
+    #
+
+    lassign [hosts-new-and-mod $_parm $orr] id j
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body $j
 }
 
 ##############################################################################
@@ -539,11 +547,11 @@ proc hosts-new-and-mod {_parm orr} {
     ::n writelog "$logevent" "$logmsg" $jbefore $jafter
 
     #
-    # Return idhost
+    # Return both new id (for POST requests) and actual resource (for
+    # PUT requests)
     #
 
-    ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body $nidhost
+    return [list $nidhost $jafter]
 }
 
 ##############################################################################
