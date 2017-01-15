@@ -37,13 +37,13 @@ api-handler post {/sessions} any {
 
     set dbody [dict get $_parm "_bodydict"]
 
-    set spec {
-		{login text}
-		{password text}
-	    }
-    if {! [::scgi::check-json-attr $dbody $spec]} then {
-	::scgi::serror 412 [mc "Invalid JSON input"]
-    }
+    set spec {object {
+			{login		{type string req} req}
+			{password	{type string req} req}
+		    } req
+		}
+    set body [::scgi::check-json-value $dbody $spec]
+    ::scgi::import-json-object $body
 
     if {! [check-login $login]} then {
 	::scgi::serror 412 [mc "Invalid login"]
@@ -117,7 +117,7 @@ api-handler post {/sessions} any {
 # XXX : a user should be able to terminate any one of his sessions
 # XXX : an admin should be able to terminate any of all existing sessions
 
-api-handler delete {/sessions} no {
+api-handler delete {/sessions} logged {
     } {
     set curlogin [::n login]
     if {$curlogin ne ""} then {

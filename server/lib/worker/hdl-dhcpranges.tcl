@@ -205,17 +205,17 @@ proc dhcp-new {iddhcprange idgrp _parm} {
 
     set dbody [dict get $_parm "_bodydict"]
 
-    set spec {
-		{min inet4}
-		{max inet4}
-		{iddom int -1}
-		{default_lease_time int 0}
-		{max_lease_time int 0}
-		{iddhcpprof int -1}
-	    }
-    if {! [::scgi::check-json-attr $dbody $spec]} then {
-	::scgi::serror 412 [mc "Invalid JSON input"]
-    }
+    set spec {object {
+			{min			{type inet4 req} req}
+			{max			{type inet4 req} req}
+			{iddom			{type int opt -1} req}
+			{default_lease_time	{type int opt 0} req}
+			{max_lease_time		{type int opt 0} req}
+			{iddhcpprof		{type int opt -1} req}
+		    } req
+		}
+    set body [::scgi::check-json-value $dbody $spec]
+    ::scgi::import-json-object $body
 
     set min_lease_time [::config get "min_lease_time"]
 

@@ -115,7 +115,7 @@ api-handler post {/hosts} logged {
 
 api-handler get {/hosts/([0-9]+:idhost)} logged {
     } {
-    set rr [check-idhost $idhost]
+    set rr [check-idhost ::dbdns $idhost]
     set j [host-get-json $idhost]
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j
@@ -125,7 +125,7 @@ api-handler get {/hosts/([0-9]+:idhost)} logged {
 
 api-handler put {/hosts/([0-9]+:idhost)} logged {
     } {
-    set orr [check-idhost $idhost]
+    set orr [check-idhost ::dbdns $idhost]
     lassign [hosts-new-and-mod $_parm $orr] id j
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j
@@ -135,7 +135,7 @@ api-handler put {/hosts/([0-9]+:idhost)} logged {
 
 api-handler delete {/hosts/([0-9]+:idhost)} logged {
     } {
-    set rr [check-idhost $idhost]
+    set rr [check-idhost ::dbdns $idhost]
 
     #
     # Is this host a mboxhost for some mail addresses?
@@ -373,23 +373,23 @@ proc hosts-new-and-mod {_parm orr} {
 
     set dbody [dict get $_parm "_bodydict"]
 
-    set spec {
-		{name text}
-		{iddom int -1}
-		{idview int -1}
-		{mac text}
-		{idhinfo int -1}
-		{comment text}
-		{respname text}
-		{respmail text}
-		{iddhcpprof int -1}
-		{sendsmtp int 0}
-		{ttl int 0}
-		{addr {}}
-	    }
-    if {! [::scgi::check-json-attr $dbody $spec]} then {
-	::scgi::serror 400 [mc "Invalid JSON input"]
-    }
+    set spec {object {
+			{name		{type string req} req}
+			{iddom 		{type int opt -1} req}
+			{idview 	{type int opt -1} req}
+			{mac 		{type string req} req}
+			{idhinfo 	{type int opt -1} req}
+			{comment 	{type string req} req}
+			{respname 	{type string req} req}
+			{respmail 	{type string req} req}
+			{iddhcpprof	{type int opt -1} req}
+			{sendsmtp	{type int opt -1} opt -1}
+			{ttl		{type int opt 0} opt 0}
+			{addr		{array {type inet req} req} req}
+		    } req
+		}
+    set body [::scgi::check-json-value $dbody $spec]
+    ::scgi::import-json-object $body
 
     #
     # Check various ids

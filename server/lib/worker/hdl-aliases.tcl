@@ -211,24 +211,25 @@ proc aliases-new-and-mod {_parm orr} {
     if {[::rr::found $orr]} then {
 	# update
 	set oidname [::rr::get-idname $orr]
-	set spec {
-		    {idhost int}
-		    {ttl int 0}
-		}
+	set spec {object {
+			    {idhost	{type int req} req}
+			    {ttl	{type int opt 0} req}
+			} req
+		    }
     } else {
 	# creation
 	set oidname -1
-	set spec {
-		    {name text}
-		    {iddom int -1}
-		    {idview int -1}
-		    {idhost int}
-		    {ttl int 0}
-		}
+	set spec {object {
+			    {name	{type string req} req}
+			    {iddom	{type int opt -1} req}
+			    {idview	{type int opt -1} req}
+			    {idhost	{type int req} req}
+			    {ttl	{type int opt 0} req}
+			} req
+		    }
     }
-    if {! [::scgi::check-json-attr $dbody $spec]} then {
-	::scgi::serror 400 [mc "Invalid JSON input"]
-    }
+    set body [::scgi::check-json-value $dbody $spec]
+    ::scgi::import-json-object $body
 
     if {$oidname == -1} then {
 	#
@@ -292,7 +293,7 @@ proc aliases-new-and-mod {_parm orr} {
     }
 
     # Check target host
-    set rrh [check-idhost $idhost]
+    set rrh [check-idhost ::dbdns $idhost]
     set nfqdnh [::rr::get-fqdn $rrh]
 
     ::dbdns lock {dns.name dns.alias} {
