@@ -56,11 +56,11 @@ package provide rr 0.1
 #	return the mail address of the responsible person for the host
 # - get-addr $rr
 #	return the list of all IP addresses {addr addr...} of the host
-# - get-mxhost $rr
+# - get-mxhosts $rr
 #	return the list of MX target hosts for this name under the format
-#	{{prio idrr ttl} {prio idrr ttl}...}
+#	{{prio idhost ttl} {prio idhost ttl}...}
 # - get-mxname $rr
-#	return the list of MX names which target this host {idrr idrr...}
+#	return the list of MX names which target this host {idname idname...}
 # - get-cname $rr
 #	return the idhost of the target host if $rr is an alias, or -1
 # - get-ttlcname $rr
@@ -83,6 +83,10 @@ package provide rr 0.1
 #	return a host representation in JSON format
 # - json-alias $rr
 #	return an alias representation in JSON format
+# - json-mailrole $rr
+#	return a mailrole representation in JSON format
+# - json-mx $rr
+#	return a mx representation in JSON format
 #
 
 namespace eval ::rr {
@@ -90,7 +94,7 @@ namespace eval ::rr {
 		    found not-a-rr \
 		    get-mx get-fqdn \
 		    add-name add-host \
-		    json-host json-alias json-mailrole
+		    json-host json-alias json-mailrole json-mx
 
     proc read-by-name {db name iddom idview} {
 	set qname [pg_quote $name]
@@ -124,7 +128,7 @@ namespace eval ::rr {
 		    h.sendsmtp, h.ttl AS ttlhost,
 		    h.comment, h.respname, h.respmail,
 		    COALESCE (sreq_addr.addr, '{}') AS addr,
-		    COALESCE (sreq_mxhost.mxhost, '{}') AS mxhost,
+		    COALESCE (sreq_mxhosts.mxhosts, '{}') AS mxhosts,
 		    COALESCE (sreq_mxname.mxname, '{}') AS mxname,
 		    COALESCE (a.idhost, -1) AS cname,
 		    COALESCE (a.ttl, -1) AS ttlcname,
@@ -150,10 +154,10 @@ namespace eval ::rr {
 						'idhost', mx.idhost,
 						'prio', mx.prio,
 						'ttl', mx.ttl
-				    )) AS mxhost
+				    )) AS mxhosts
 				FROM dns.mx
 				WHERE mx.idname = n.idname
-			) AS sreq_mxhost
+			) AS sreq_mxhosts
 		    , LATERAL (
 			SELECT array_agg (mx.idname) AS mxname
 			    FROM dns.mx
@@ -210,9 +214,9 @@ namespace eval ::rr {
 	proc get-$key {rr} "return \[dict get \$rr $key]"
     }
 
-    proc get-mxhost {rr} {
+    proc get-mxhosts {rr} {
 	set r {}
-	foreach j [dict get $rr "mxhost"] {
+	foreach j [dict get $rr "mxhosts"] {
 	    lappend r [list [dict get $j "prio"] \
 			    [dict get $j "idhost"] \
 			    [dict get $j "ttl"] \
@@ -305,6 +309,28 @@ namespace eval ::rr {
 		    idview [dict get $rr "idview"] \
 		    idhost [dict get $rr "mboxhost"] \
 		    ttl [dict get $rr "ttlmailaddr"] \
+		]
+	return $j
+    }
+
+    proc json-mx {rr} {
+	set lmx {}
+	foreach m [get-mxhosts $rr] {
+	    lassign $m prio idhost ttl
+	    lappend lmx [::json::write object \
+					    prio $prio \
+					    ttl $ttl \
+					    idhost $idhost \
+					]
+	}
+	set lmx [join $lmx ","]
+	set lmx "\[$lmx\]"
+	set j [::json::write object \
+		    name [::json::write string [dict get $rr "name"]] \
+		    iddom [dict get $rr "iddom"] \
+		    idview [dict get $rr "idview"] \
+		    idhost [dict get $rr "mboxhost"] \
+		    mxhosts $lmx \
 		]
 	return $j
     }

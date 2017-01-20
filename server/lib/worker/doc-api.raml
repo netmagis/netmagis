@@ -248,7 +248,7 @@ types:
 	idhost: 123,
       }
 
-  MailroleMod:
+  MailroleHost:
     description: description of modifiable mail role fields (for put method)
     type: object
     properties:
@@ -261,7 +261,7 @@ types:
       }
   MailroleWithName:
     description: description of a single mail role for post/get methods
-    type: MailroleMod
+    type: MailroleHost
     properties:
       name:		string
       iddom:		integer
@@ -287,6 +287,65 @@ types:
 	idview: 1,
 	ttl: -1,
 	idhost: 123,
+      }
+
+  MXHost:
+    description: description of single MX target host
+    type: object
+    properties:
+      ttl:		integer			# required. Use -1 for default
+      prio:		integer			# required. No  default
+      idhost:		integer
+    example: |
+      {
+	ttl: -1,
+	prio: 100,
+	idhost: 123,
+      }
+  MXWithName:
+    description: description of a single MX for post/get methods
+    type: object
+    properties:
+      name:		string
+      iddom:		integer
+      idview:		integer
+      mxhosts:		MXHost []
+    example: |
+      {
+	name: marketing,
+	iddom: 2,
+	idview: 2,
+	mxhosts: [
+	  {
+	    prio: 100
+	    ttl: -1,
+	    idhost: 345,
+	  },
+	]
+      }
+  MXWithNameId
+    description: description of a single mail role in a collection
+    type: MXWithName
+    properties:
+      idmx:		integer
+    example: |
+      {
+	idmx: 456,
+	name: sales,
+	iddom: 1,
+	idview: 1,
+	mxhosts: [
+	  {
+	    prio: 100
+	    ttl: -1,
+	    idhost: 123,
+	  },
+	  {
+	    prio: 200
+	    ttl: -1,
+	    idhost: 124,
+	  }
+	]
       }
 
   SearchResult:
@@ -1769,9 +1828,9 @@ types:
 	      }
 
     put:
-      description: update a single mail role
+      description: update a single mail role with a new mboxhost
       body:
-	type: MailroleMod
+	type: MailroleHost
 	example: |
 	  {
 	    ttl: -1,
@@ -1793,6 +1852,180 @@ types:
 
     delete:
       description: delete a single mail role
+      body:				# none
+      responses:
+        200:
+          body:
+	    type: text/plain
+	    example: OK
+
+
+
+##############################################################################
+# MX management
+##############################################################################
+
+/mx
+  description: A collection of MX records associated with a name
+
+  get:
+    queryParameters:
+      view:
+        description: filter on view name
+        type: string
+        required: false
+      name:
+        description: filter on MX name
+        type: string
+        required: false
+      domain:
+        description: filter on MX domain name
+        type: string
+        required: false
+      idhost:
+        description: filter on a specific MX target host
+        type: integer
+        required: false
+      sort:         # XXX BUG
+        description: sort result
+        type: comma-separated list of {name, domain, idhost, view}
+        required: false
+    responses:
+      200:
+        body:
+	  description: unsorted list of MX records
+	  type: MXWithNameId []
+	  example: |
+            example: |
+              [ 
+                {
+		  idmx: 456,
+		  name: sales,
+		  iddom: 1,
+		  idview: 1,
+		  mxhosts: [
+		    {
+		      prio: 100
+		      ttl: -1,
+		      idhost: 123,
+		    },
+		    {
+		      prio: 200
+		      ttl: -1,
+		      idhost: 124,
+		    }
+		  ]
+		},
+                {
+		  idmx: 789,
+		  name: marketing,
+		  iddom: 2,
+		  idview: 2,
+		  mxhosts: [
+		    {
+		      prio: 100
+		      ttl: -1,
+		      idhost: 345,
+		    },
+		  ]
+		},
+              ]
+
+  post:
+    description: Create a new MX
+    queryParameters:			# none
+    body:
+      type: MXWithName
+      example: |
+	{
+	  name: marketing,
+	  iddom: 2,
+	  idview: 2,
+	  mxhosts: [
+	    {
+	      prio: 100
+	      ttl: -1,
+	      idhost: 345,
+	    },
+	  ]
+	}
+    responses:
+      200:
+        body:
+	  type: text/plain
+	  exemple:
+	    789
+
+  /{idmx}
+    description: Get a single MX with all its target hosts
+    queryParameters:			# none
+    get:
+      responses:
+        200:
+          body:
+            type: MXWithName
+	    example: |
+	      {
+		name: sales,
+		iddom: 1,
+		idview: 1,
+		mxhosts: [
+		  {
+		    prio: 100
+		    ttl: -1,
+		    idhost: 123,
+		  },
+		  {
+		    prio: 200
+		    ttl: -1,
+		    idhost: 124,
+		  }
+		]
+	      }
+
+    put:
+      description: update a single MX with all its target hosts
+      body:
+	type: MXHost []
+	example: |
+	  [
+	    {
+	      prio: 100
+	      ttl: -1,
+	      idhost: 123,
+	    },
+	    {
+	      prio: 200
+	      ttl: -1,
+	      idhost: 124,
+	    }
+	  ]
+      responses:
+	200:
+	  body:
+	    type: MXWithName
+	    example: |
+	      {
+		name: sales,
+		iddom: 1,
+		idview: 1,
+		mxhosts: [
+		  {
+		    prio: 100
+		    ttl: -1,
+		    idhost: 123,
+		  },
+		  {
+		    prio: 200
+		    ttl: -1,
+		    idhost: 124,
+		  }
+		]
+	      }
+
+
+    delete:
+      description: delete a single MX
       body:				# none
       responses:
         200:

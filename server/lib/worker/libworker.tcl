@@ -393,7 +393,13 @@ proc check-name-by-addresses {dbfd idcor rr} {
 #	    if name.domain is ADDRMAIL then error
 #	    if name.domain has IP addresses then error
 #	    if no test is false, then OK
-#	"mx"
+#	"add-mx"
+#	    check-domain (domain, idcor, "") and views
+#	    if name.domain is ALIAS then error
+#	    if name.domain is MX then error
+#	    if name.domain is ADDRMAIL then error
+#	    if no test is false, then OK
+#	"del-mx"
 #	    check-domain (domain, idcor, "") and views
 #	    if name.domain is ALIAS then error
 #	    if name.domain is MX
@@ -427,8 +433,6 @@ proc check-name-by-addresses {dbfd idcor rr} {
 #	    then error
 #	    else check that all IP addresses are mine (with an AND)
 #	end if
-#
-# Bug: this procedure is never called with the "mx" parameter
 #
 
 proc check-authorized-host {dbfd idcor name domain idview _rr context} {
@@ -464,7 +468,14 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 		    {ip		CHECK}
 		    {mailaddr	CHECK}
 		}
-	mx	{
+	add-mx	{
+		    {domain	all}
+		    {alias	REJECT}
+		    {mx		REJECT}
+		    {ip		CHECK}
+		    {mailaddr	REJECT}
+		}
+	del-mx	{
 		    {domain	all}
 		    {alias	REJECT}
 		    {mx		CHECK}
@@ -555,7 +566,13 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 	    mx {
 		set lmx {}
 		if {[::rr::found $rr]} then {
-		    set lmx [::rr::get-mxhost $rr]
+		    set lmx [::rr::get-mxhosts $rr]
+		}
+
+		if {$parm eq "CHECK"} then {
+		    if {[llength $lmx] == 0} then {
+			return [mc "%s is not a MX" $fqdn]
+		    }
 		}
 
 		foreach mx $lmx {
@@ -565,7 +582,7 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 			    return [mc "'%s' is a MX" $fqdn]
 			}
 			CHECK {
-			    set rmx [::rr:read-by-idhost $dbfd $idhost]
+			    set rmx [::rr::read-by-idhost $dbfd $idhost]
 			    if {! [::rr::found $rmx]} then {
 				return [mc "Internal error: MX references non-existant host id '%s'" $idhost]
 			    }
@@ -656,7 +673,7 @@ proc check-authorized-host {dbfd idcor name domain idview _rr context} {
 			set l {}
 			foreach idma $lma {
 			    set rrma [::rr::read-by-idname $dbfd $idma]
-			    if {! [::rr:found $rrma]} then {
+			    if {! [::rr::found $rrma]} then {
 				return [mc "Internal error: id '%s' doesn't exists for a mail address" $idma]
 			    }
 			    set fqdnma [::rr::get-fqdn $rrma]
@@ -712,20 +729,20 @@ proc check-authorized-rr {dbfd idcor rr context} {
     set domain [::rr::get-domain $rr]
     set idview [::rr::get-idview $rr]
 
-    return [check-authorized-host ::dbdns $idcor $name $domain $idview nrr $context]
+    return [check-authorized-host $dbfd $idcor $name $domain $idview nrr $context]
 }
 
 #
 # Check if host exists and is authorized and exits if this is not the case
 #
 
-proc check-idhost {idhost} {
-    set rr [::rr::read-by-idhost ::dbdns $idhost]
+proc check-idhost {dbfd idhost} {
+    set rr [::rr::read-by-idhost $dbfd $idhost]
     if {! [::rr::found $rr]} then {
 	::scgi::serror 404 [mc "Host %d not found" $idhost]
     }
 
-    set msg [check-authorized-rr ::dbdns [::n idcor] $rr "existing-host"]
+    set msg [check-authorized-rr $dbfd [::n idcor] $rr "existing-host"]
     if {$msg ne ""} then {
 	::scgi::serror 400 $msg
     }

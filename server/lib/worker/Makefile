@@ -15,6 +15,7 @@ FILES =	\
 	hdl-hinfos.tcl \
 	hdl-hosts.tcl \
 	hdl-mailroles.tcl \
+	hdl-mx.tcl \
 	hdl-names.tcl \
 	hdl-networks.tcl \
 	hdl-search.tcl \
