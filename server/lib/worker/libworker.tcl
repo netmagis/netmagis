@@ -175,7 +175,34 @@ proc check-ttl {ttl} {
 	set r [mc "Invalid TTL: must be a positive integer"]
     } else {
 	if {$ttl > $maxttl} then {
-	    set r [mc "Invalid TTL: must be less than %s" $maxttl]
+	    set r [mc "Invalid TTL: must be less or equal than %s" $maxttl]
+	}
+    }
+    return $r
+}
+
+#
+# Check possible values for a MX priority (see RFC 1035)
+#
+# Input:
+#   - parameters:
+#	- prio : value to check
+# Output:
+#   - return value: empty string or error message
+#
+# History
+#   2017/02/01 : pda/jean : design
+#
+
+proc check-prio {prio} {
+    set r ""
+    # 2^16-1
+    set max [expr 0xffff]
+    if {! [regexp {^\d+$} $prio]} then {
+	set r [mc "Invalid priority: must be a positive integer"]
+    } else {
+	if {$prio > $max} then {
+	    set r [mc "Invalid priority: must be less or equal than %s" $max]
 	}
     }
     return $r

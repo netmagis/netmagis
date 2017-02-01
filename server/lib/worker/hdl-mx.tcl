@@ -404,6 +404,11 @@ proc check-mx-list {jdict omx ttlok} {
 	}
 	set alreadyseen($idhost) 1
 
+	set msg [check-prio $prio]
+	if {$msg ne ""} then {
+	    ::scgi::serror 400 $msg
+	}
+
 	if {$ttlok} then {
 	    set msg [check-ttl $ttl]
 	    if {$msg ne ""} then {
