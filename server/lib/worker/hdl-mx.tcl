@@ -130,9 +130,6 @@ api-handler put {/mx/([0-9]+:idmx)} logged {
 
 api-handler delete {/mx/([0-9]+:idmx)} logged {
     } {
-    puts "#################### TODO"
-    return
-
     set rr [check-idmx $idmx]
 
     #
@@ -148,8 +145,15 @@ api-handler delete {/mx/([0-9]+:idmx)} logged {
 
     set fqdn [::rr::get-fqdn $rr]
     set view [::n viewname [::rr::get-idview $rr]]
+    set lmx {}
+    foreach h [::rr::get-mxhosts $rr] {
+	lassign $h prio idhost ttl
+	set hrr [::rr::read-by-idhost ::dbdns $idhost]
+	lappend lmx [::rr::get-fqdn $hrr]
+    }
+    set lmx [join $lmx ", "]
     set jbefore [::rr::json-mx $rr]
-    ::n writelog "delmx" "del mx $fqdn/$view" $jbefore "null"
+    ::n writelog "delmx" "del mx $fqdn/$view ($lmx)" $jbefore "null"
 
     ::scgi::set-header Content-Type text/plain
     ::scgi::set-body "OK"
