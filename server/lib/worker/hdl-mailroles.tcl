@@ -213,7 +213,7 @@ proc mailrole-new-and-mod {_parm orr} {
 	set oidname [::rr::get-idname $orr]
 	set spec {object {
 			    {idhost	{type int req} req}
-			    {ttl	{type int opt 0} req}
+			    {ttl	{type int opt {}} req}
 			} req
 		    }
     } else {
@@ -224,7 +224,7 @@ proc mailrole-new-and-mod {_parm orr} {
 			    {iddom	{type int opt -1} req}
 			    {idview	{type int opt -1} req}
 			    {idhost	{type int req} req}
-			    {ttl	{type int opt 0} req}
+			    {ttl	{type int opt {}} req}
 			} req
 		    }
     }
@@ -259,18 +259,11 @@ proc mailrole-new-and-mod {_parm orr} {
     # Check new TTL
     #
 
-    if {"ttl" in [::n capabilities]} then {
-	set msg [check-ttl $ttl]
-	if {$msg ne ""} then {
-	    ::scgi::serror 400 $msg
-	}
-    } else {
-	if {$oidname == -1} then {
-	    set ttl -1
-	} else {
-	    set ttl [::rr::get-ttlmailaddr $orr]
-	}
+    set ottl -1
+    if {$oidname != -1} then {
+	set ottl [::rr::get-ttlmailaddr $orr]
     }
+    set ttl [check-ttl $ttl $ottl]
 
     #
     # Check if we are authorized to add the new mailrole

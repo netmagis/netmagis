@@ -154,31 +154,59 @@ proc check-addr-syntax {dbfd addr type} {
 }
 
 #
-# Check possible values for a TTL (see RFC 2181)
+# Check possible values for a TTL (see RFC 2181) and check against permissions
 #
 # Input:
 #   - parameters:
-#	- ttl : value to check
+#	- ttl : new TTL value supplied
+#	- ottl : old value for this object as registered in database
+#   - global variable:
+#	::n : user context
 # Output:
-#   - return value: empty string or error message
+#   - return value: new TTL value
+#   - this function may raise an error
+#
+# Notes:
+#   - ttl may contain:
+#	- (empty string): TTL provided as a null JSON value
+#	- -1: default value (use default zone TTL)
+#	- 0..2^31-1: valid values
+#   - each group has a flag indicating its right to modify TTL
+#
+#	group right        | ttl supplied | error          | new TTL value
+#	------------------ | ------------ | -------------- | -----------------
+#	TTL authorized     | -1, 0..max   | -              | unchanged
+#			   | empty string | -              | $ottl
+#	TTL not authorized | -1, 0..max   | if ttl != ottl | N.A. or unchanged
+#			   | empty string | -              | $ottl
+#
 #
 # History
 #   2010/11/02 : pda/jean : design, from jean's code
 #   2010/11/29 : pda      : i18n
+#   2017/02/01 : pda/jean : new interface
 #
 
-proc check-ttl {ttl} {
-    set r ""
-    # 2^31-1
-    set maxttl [expr 0x7fffffff]
-    if {! [regexp {^\d+$} $ttl]} then {
-	set r [mc "Invalid TTL: must be a positive integer"]
-    } else {
-	if {$ttl > $maxttl} then {
-	    set r [mc "Invalid TTL: must be less or equal than %s" $maxttl]
+proc check-ttl {ttl ottl} {
+    if {$ttl ne ""} then {
+	# 2^31-1
+	set max [expr 0x7fffffff]
+	if {! ([regexp {^-?\d+$} $ttl] && $ttl >= -1 && $ttl <= $max)} then {
+	    ::scgi::serror 400 [mc "Invalid TTL: must be -1 or less or equal than %s" $max]
 	}
     }
-    return $r
+
+    if {$ttl eq ""} then {
+	set ttl $ottl
+    } else {
+	if {! ("ttl" in [::n capabilities])} then {
+	    if {$ttl != $ottl} then {
+		::scgi::serror 400 [mc "You are not allowed to change TTL values"]
+	    }
+	}
+    }
+
+    return $ttl
 }
 
 #

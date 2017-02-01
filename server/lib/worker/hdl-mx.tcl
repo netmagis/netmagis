@@ -233,24 +233,18 @@ proc mx-new-and-mod {_parm orr} {
 
     set dbody [dict get $_parm "_bodydict"]
 
-    if {"ttl" in [::n capabilities]} then {
-	set ttlok 1
-    } else {
-	set ttlok 0
-    }
-
     if {[::rr::found $orr]} then {
 	# update
 	set oidname [::rr::get-idname $orr]
 	set spec {array {object {
 				{prio	{type int req} req}
-				{ttl	{type int opt -1} req}
+				{ttl	{type int opt {}} req}
 				{idhost	{type int req} req}
 			    } req
 			} req
 		    }
 	set body [::scgi::check-json-value $dbody $spec]
-	set mxlist [check-mx-list $body [::rr::get-mxhosts $orr] $ttlok]
+	set mxlist [check-mx-list $body [::rr::get-mxhosts $orr]]
 	set nidname $oidname
     } else {
 	# creation
@@ -261,7 +255,7 @@ proc mx-new-and-mod {_parm orr} {
 			    {idview	{type int opt -1} req}
 			    {mxhosts	{array {object {
 						{prio	{type int req} req}
-						{ttl	{type int opt -1} req}
+						{ttl	{type int opt {}} req}
 						{idhost	{type int req} req}
 						} req
 					    } req
@@ -288,7 +282,7 @@ proc mx-new-and-mod {_parm orr} {
 	set name [string tolower $name]
 
 	# Check MX host list
-	set mxlist [check-mx-list $mxhosts {} $ttlok]
+	set mxlist [check-mx-list $mxhosts {}]
 
 	# Check new mx name
 	set idcor [::n idcor]
@@ -377,14 +371,14 @@ proc mx-new-and-mod {_parm orr} {
 # Check needed operations on the MX list
 # jdict: new MX list, array of dict, returned by scgi::check-json-value
 #				{prio	{type int req} req}
-#				{ttl	{type int opt -1} req}
+#				{ttl	{type int opt {}} req}
 #				{idhost	{type int req} req}
-# orr: old RR, including old MX list
+# omx: old RR, including old MX list
 # returns list {ldel lmod lnew}
 #	where each ldel, lmod, lnew is a list:
 #		{{prio ttl idhost rr} ...}
 
-proc check-mx-list {jdict omx ttlok} {
+proc check-mx-list {jdict omx} {
     # process old MX list
     foreach m $omx {
 	lassign $m oprio oidhost ottl
@@ -409,17 +403,11 @@ proc check-mx-list {jdict omx ttlok} {
 	    ::scgi::serror 400 $msg
 	}
 
-	if {$ttlok} then {
-	    set msg [check-ttl $ttl]
-	    if {$msg ne ""} then {
-		::scgi::serror 400 $msg
-	    }
-	} else {
-	    set ttl -1
-	    if {[info exists old($idhost)]} then {
-		set ttl [lindex $old($idhost) 1]
-	    }
+	set ottl -1
+	if {[info exists old($idhost)]} then {
+	    set ottl [lindex $old($idhost) 1]
 	}
+	set ttl [check-ttl $ttl $ottl]
 
 	if {[info exists old($idhost)]} then {
 	    lassign $old($idhost) oprio ottl orr

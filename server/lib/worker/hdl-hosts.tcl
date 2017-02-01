@@ -384,7 +384,7 @@ proc hosts-new-and-mod {_parm orr} {
 			{respmail 	{type string req} req}
 			{iddhcpprof	{type int opt -1} req}
 			{sendsmtp	{type int opt -1} opt -1}
-			{ttl		{type int opt 0} opt 0}
+			{ttl		{type int opt {}} req}
 			{addr		{array {type inet req} req} req}
 		    } req
 		}
@@ -436,18 +436,12 @@ proc hosts-new-and-mod {_parm orr} {
     # Check new TTL and sendsmtp
     #
 
-    if {"ttl" in [::n capabilities]} then {
-	set msg [check-ttl $ttl]
-	if {$msg ne ""} then {
-	    ::scgi::serror 400 $msg
-	}
-    } else {
-	if {$oidhost == -1} then {
-	    set ttl -1
-	} else {
-	    set ttl [::rr::get-ttlhost $orr]
-	}
+
+    set ottl -1
+    if {$oidhost != -1} then {
+	set ottl [::rr::get-ttlhost $orr]
     }
+    set ttl [check-ttl $ttl $ottl]
 
     if {"smtp" in [::n capabilities]} then {
 	set sendsmtp [expr $sendsmtp != 0]
