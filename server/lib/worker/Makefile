@@ -18,6 +18,7 @@ FILES =	\
 	hdl-mx.tcl \
 	hdl-names.tcl \
 	hdl-networks.tcl \
+	hdl-relaydoms.tcl \
 	hdl-search.tcl \
 	hdl-sessions.tcl \
 	hdl-views.tcl \

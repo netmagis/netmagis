@@ -323,7 +323,7 @@ types:
 	  },
 	]
       }
-  MXWithNameId
+  MXWithNameId:
     description: description of a single mail role in a collection
     type: MXWithName
     properties:
@@ -335,6 +335,29 @@ types:
 	iddom: 1,
 	idview: 1,
 	mxhosts: [
+	  {
+	    prio: 100
+	    ttl: -1,
+	    idhost: 123,
+	  },
+	  {
+	    prio: 200
+	    ttl: -1,
+	    idhost: 124,
+	  }
+	]
+      }
+
+  Relaydom:
+    description: description of mail relays for a domain
+    type: object
+    properties:
+      iddom:		integer
+      relays:		MXHost []
+    example: |
+      {
+	iddom: 3,
+	relays: [
 	  {
 	    prio: 100
 	    ttl: -1,
@@ -1896,40 +1919,39 @@ types:
 	  description: unsorted list of MX records
 	  type: MXWithNameId []
 	  example: |
-            example: |
-              [ 
-                {
-		  idmx: 456,
-		  name: sales,
-		  iddom: 1,
-		  idview: 1,
-		  mxhosts: [
-		    {
-		      prio: 100
-		      ttl: -1,
-		      idhost: 123,
-		    },
-		    {
-		      prio: 200
-		      ttl: -1,
-		      idhost: 124,
-		    }
-		  ]
-		},
-                {
-		  idmx: 789,
-		  name: marketing,
-		  iddom: 2,
-		  idview: 2,
-		  mxhosts: [
-		    {
-		      prio: 100
-		      ttl: -1,
-		      idhost: 345,
-		    },
-		  ]
-		},
-              ]
+	    [ 
+	      {
+		idmx: 456,
+		name: sales,
+		iddom: 1,
+		idview: 1,
+		mxhosts: [
+		  {
+		    prio: 100
+		    ttl: -1,
+		    idhost: 123,
+		  },
+		  {
+		    prio: 200
+		    ttl: -1,
+		    idhost: 124,
+		  }
+		]
+	      },
+	      {
+		idmx: 789,
+		name: marketing,
+		iddom: 2,
+		idview: 2,
+		mxhosts: [
+		  {
+		    prio: 100
+		    ttl: -1,
+		    idhost: 345,
+		  },
+		]
+	      },
+	    ]
 
   post:
     description: Create a new MX
@@ -2035,6 +2057,135 @@ types:
 
 
 
+##############################################################################
+# Relaydom management
+##############################################################################
+
+/relaydoms
+  description: A collection of mail relays associated with a domain
+
+  get:
+    queryParameters:
+      view:
+        description: filter on view name
+        type: string
+        required: false
+      domain:
+        description: filter on domain name
+        type: string
+        required: false
+      idhost:
+        description: filter on a specific relay host
+        type: integer
+        required: false
+      minrelay:
+        description: filter on a minimim number of relays
+        type: integer
+        required: false
+      sort:         # XXX BUG
+        description: sort result
+        type: comma-separated list of {name, domain, idhost, view}
+        required: false
+    responses:
+      200:
+        body:
+	  description: list of relay domains
+	  type: Relaydom []
+	  example: |
+	    [ 
+	      {
+		iddom: 3,
+		relays: [
+		  {
+		    prio: 100
+		    ttl: -1,
+		    idhost: 123,
+		  },
+		  {
+		    prio: 200
+		    ttl: -1,
+		    idhost: 124,
+		  }
+		]
+	      },
+	      {
+		iddom: 4,
+		relays: [
+		  {
+		    prio: 100
+		    ttl: -1,
+		    idhost: 345,
+		  },
+		]
+	      },
+	      {
+		iddom: 5,
+		relays: []
+	      },
+	    ]
+
+  /{iddom}
+    description: Get mail relays for a given domain
+    queryParameters:			# none
+    get:
+      responses:
+        200:
+          body:
+            type: Relaydom
+	    example: |
+	      {
+		iddom: 3,
+		relays: [
+		  {
+		    prio: 100
+		    ttl: -1,
+		    idhost: 123,
+		  },
+		  {
+		    prio: 200
+		    ttl: -1,
+		    idhost: 124,
+		  }
+		]
+	      },
+
+    put:
+      description: update mail relays for a given domain
+      body:
+	type: MXHost []
+	example: |
+	  [
+	    {
+	      prio: 100
+	      ttl: -1,
+	      idhost: 123,
+	    },
+	    {
+	      prio: 200
+	      ttl: -1,
+	      idhost: 124,
+	    }
+	  ]
+      responses:
+	200:
+	  body:
+	    type: Relaydom
+	    example: |
+	      {
+		iddom: 3
+		relays: [
+		  {
+		    prio: 100
+		    ttl: -1,
+		    idhost: 123,
+		  },
+		  {
+		    prio: 200
+		    ttl: -1,
+		    idhost: 124,
+		  }
+		]
+	      }
 
 ##############################################################################
 # Admin tables
