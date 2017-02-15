@@ -369,7 +369,7 @@ namespace eval ::nmenv {
 	if {! $loaded(views)} then {
 	    load-views $selfns
 	}
-	set r -1
+	set r ""
 	if {[info exists allviews(id:$id)]} then {
 	    set r $allviews(id:$id)
 	}
@@ -380,7 +380,7 @@ namespace eval ::nmenv {
 	if {! $loaded(views)} then {
 	    load-views $selfns
 	}
-	set r ""
+	set r -1
 	if {[info exists allviews(name:$name)]} then {
 	    set r $allviews(name:$name)
 	}
@@ -441,7 +441,7 @@ namespace eval ::nmenv {
 	if {! $loaded(domains)} then {
 	    load-domains $selfns
 	}
-	set r -1
+	set r ""
 	if {[info exists alldom(id:$id)]} then {
 	    set r $alldom(id:$id)
 	}
@@ -452,7 +452,7 @@ namespace eval ::nmenv {
 	if {! $loaded(domains)} then {
 	    load-domains $selfns
 	}
-	set r ""
+	set r -1
 	if {[info exists alldom(name:$name)]} then {
 	    set r $alldom(name:$name)
 	}
@@ -508,7 +508,7 @@ namespace eval ::nmenv {
 	if {! $loaded(dhcpprofs)} then {
 	    load-dhcpprofs $selfns
 	}
-	set r -1
+	set r ""
 	if {[info exists alldhcpprof(id:$id)]} then {
 	    set r $alldhcpprof(id:$id)
 	}
@@ -519,7 +519,7 @@ namespace eval ::nmenv {
 	if {! $loaded(dhcpprofs)} then {
 	    load-dhcpprofs $selfns
 	}
-	set r ""
+	set r -1
 	if {[info exists alldhcpprof(name:$name)]} then {
 	    set r $alldhcpprof(name:$name)
 	}
@@ -567,7 +567,7 @@ namespace eval ::nmenv {
 	if {! $loaded(hinfos)} then {
 	    load-hinfos $selfns
 	}
-	set r -1
+	set r ""
 	if {[info exists allhinfo(id:$id)]} then {
 	    set r $allhinfo(id:$id)
 	}
@@ -578,7 +578,7 @@ namespace eval ::nmenv {
 	if {! $loaded(hinfos)} then {
 	    load-hinfos $selfns
 	}
-	set r ""
+	set r -1
 	if {[info exists allhinfo(name:$name)]} then {
 	    set r $allhinfo(name:$name)
 	}
