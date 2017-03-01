@@ -99,7 +99,7 @@ api-handler get {/mx} admin {
 
 ##############################################################################
 
-api-handler post {/mx} logged {
+api-handler post {/mx} admin {
     } {
     lassign [mx-new-and-mod $_parm [::rr::not-a-rr]] id j
     ::scgi::set-header Content-Type text/plain
@@ -108,7 +108,7 @@ api-handler post {/mx} logged {
 
 ##############################################################################
 
-api-handler get {/mx/([0-9]+:idmx)} logged {
+api-handler get {/mx/([0-9]+:idmx)} admin {
     } {
     set rr [check-idmx $idmx]
     set j [mx-get-json $idmx]
@@ -118,7 +118,7 @@ api-handler get {/mx/([0-9]+:idmx)} logged {
 
 ##############################################################################
 
-api-handler put {/mx/([0-9]+:idmx)} logged {
+api-handler put {/mx/([0-9]+:idmx)} admin {
     } {
     set orr [check-idmx $idmx]
     lassign [mx-new-and-mod $_parm $orr] id j
@@ -128,7 +128,7 @@ api-handler put {/mx/([0-9]+:idmx)} logged {
 
 ##############################################################################
 
-api-handler delete {/mx/([0-9]+:idmx)} logged {
+api-handler delete {/mx/([0-9]+:idmx)} admin {
     } {
     set rr [check-idmx $idmx]
 
@@ -236,6 +236,7 @@ proc mx-new-and-mod {_parm orr} {
     if {[::rr::found $orr]} then {
 	# update
 	set oidname [::rr::get-idname $orr]
+	set idview [::rr::get-idview $orr]
 	set spec {array {object {
 				{prio	{type int req} req}
 				{ttl	{type int opt {}} req}
@@ -244,7 +245,7 @@ proc mx-new-and-mod {_parm orr} {
 			} req
 		    }
 	set body [::scgi::check-json-value $dbody $spec]
-	set mxlist [check-mx-list $body [::rr::get-mxhosts $orr]]
+	set mxlist [check-mx-list $idview $body [::rr::get-mxhosts $orr]]
 	set nidname $oidname
     } else {
 	# creation
@@ -282,7 +283,7 @@ proc mx-new-and-mod {_parm orr} {
 	set name [string tolower $name]
 
 	# Check MX host list
-	set mxlist [check-mx-list $mxhosts {}]
+	set mxlist [check-mx-list $idview $mxhosts {}]
 
 	# Check new mx name
 	set idcor [::n idcor]
@@ -365,71 +366,4 @@ proc mx-new-and-mod {_parm orr} {
     #
 
     return [list $nidname $jafter]
-}
-
-#
-# Check needed operations on the MX list
-# jdict: new MX list, array of dict, returned by scgi::check-json-value
-#				{prio	{type int req} req}
-#				{ttl	{type int opt {}} req}
-#				{idhost	{type int req} req}
-# omx: old RR, including old MX list
-# returns list {ldel lmod lnew}
-#	where each ldel, lmod, lnew is a list:
-#		{{prio ttl idhost rr} ...}
-
-proc check-mx-list {jdict omx} {
-    # process old MX list
-    foreach m $omx {
-	lassign $m oprio oidhost ottl
-	set orr [check-idhost ::dbdns $oidhost]
-	set old($oidhost) [list $oprio $ottl $orr]
-    }
-
-    set lmod {}
-    set lnew {}
-
-    # process new MX list
-    foreach e $jdict {
-	::scgi::import-json-object $e
-
-	if {[info exists alreadyseen($idhost)]} then {
-	    ::scgi::serror 400 [mc {Duplicate MX host %d} $idhost]
-	}
-	set alreadyseen($idhost) 1
-
-	set msg [check-prio $prio]
-	if {$msg ne ""} then {
-	    ::scgi::serror 400 $msg
-	}
-
-	set ottl -1
-	if {[info exists old($idhost)]} then {
-	    set ottl [lindex $old($idhost) 1]
-	}
-	set ttl [check-ttl $ttl $ottl]
-
-	if {[info exists old($idhost)]} then {
-	    lassign $old($idhost) oprio ottl orr
-	    if {$oprio != $prio || $ottl != $ttl} then {
-		lappend lmod [list $prio $ttl $idhost $orr]
-	    }
-	    unset old($idhost)
-	} else {
-	    set rr [check-idhost ::dbdns $idhost]
-	    lappend lnew [list $prio $ttl $idhost $rr]
-	}
-    }
-
-    if {[llength [array names alreadyseen]] == 0} then {
-	::scgi::serror 400 [mc {Empty MX host list}]
-    }
-
-    set ldel {}
-    foreach oidhost [array names old] {
-	lassign $old($oidhost) oprio ottl orr
-	lappend ldel [list $oprio $ottl $oidhost $orr]
-    }
-
-    return [list $ldel $lmod $lnew]
 }

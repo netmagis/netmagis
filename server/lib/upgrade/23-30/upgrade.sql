@@ -124,13 +124,15 @@ CREATE TABLE dns.mailrole (
 
 CREATE TABLE dns.relaydom (
     iddom	INT,			-- domain id
+    idview	INT,			-- view id
     prio	INT,			-- MX priority
     idhost	INT,			-- relay host for this domain
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (iddom)      REFERENCES dns.domain (iddom),
+    FOREIGN KEY (idview)     REFERENCES dns.view   (idview),
     FOREIGN KEY (idhost)     REFERENCES dns.host   (idhost),
-    PRIMARY KEY (iddom, idhost)
+    PRIMARY KEY (iddom, idview, idhost)
 ) ;
 
 INSERT INTO dns.name (idname, name, iddom, idview)
@@ -157,8 +159,11 @@ INSERT INTO dns.mx (idname, prio, idhost)
 INSERT INTO dns.mailrole (idname, idhost)
     SELECT mailaddr, mboxhost FROM dns.mail_role ;
 
-INSERT INTO dns.relaydom (iddom, prio, idhost)
-    SELECT iddom, prio, mx FROM dns.relay_dom ;
+INSERT INTO dns.relaydom (iddom, idview, prio, idhost)
+    SELECT rd.iddom, r.idview, rd.prio, rd.mx
+	FROM dns.relay_dom rd
+	    INNER JOIN dns.rr r ON (rd.mx = r.idrr)
+	;
 
 -- use a DO block in order to use PERFORM, in order to ignore setval output
 DO $$

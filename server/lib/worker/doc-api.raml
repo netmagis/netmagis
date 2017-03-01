@@ -349,22 +349,24 @@ types:
       }
 
   Relaydom:
-    description: description of mail relays for a domain
+    description: description of mail relays for a domain and a view
     type: object
     properties:
       iddom:		integer
+      idview:		integer
       relays:		MXHost []
     example: |
       {
 	iddom: 3,
+	idview: 1,
 	relays: [
 	  {
-	    prio: 100
+	    prio: 100,
 	    ttl: -1,
 	    idhost: 123,
 	  },
 	  {
-	    prio: 200
+	    prio: 200,
 	    ttl: -1,
 	    idhost: 124,
 	  }
@@ -2084,7 +2086,7 @@ types:
         required: false
       sort:         # XXX BUG
         description: sort result
-        type: comma-separated list of {name, domain, idhost, view}
+        type: comma-separated list of {view, domain}
         required: false
     responses:
       200:
@@ -2095,14 +2097,15 @@ types:
 	    [ 
 	      {
 		iddom: 3,
+		idview: 1,
 		relays: [
 		  {
-		    prio: 100
+		    prio: 100,
 		    ttl: -1,
 		    idhost: 123,
 		  },
 		  {
-		    prio: 200
+		    prio: 200,
 		    ttl: -1,
 		    idhost: 124,
 		  }
@@ -2110,9 +2113,10 @@ types:
 	      },
 	      {
 		iddom: 4,
+		idview: 1,
 		relays: [
 		  {
-		    prio: 100
+		    prio: 100,
 		    ttl: -1,
 		    idhost: 345,
 		  },
@@ -2120,12 +2124,13 @@ types:
 	      },
 	      {
 		iddom: 5,
+		idview: 2,
 		relays: []
 	      },
 	    ]
 
-  /{iddom}
-    description: Get mail relays for a given domain
+  /{idview}/{iddom}
+    description: Get mail relays for a given domain and a given view
     queryParameters:			# none
     get:
       responses:
@@ -2135,14 +2140,15 @@ types:
 	    example: |
 	      {
 		iddom: 3,
+		idview: 1,
 		relays: [
 		  {
-		    prio: 100
+		    prio: 100,
 		    ttl: -1,
 		    idhost: 123,
 		  },
 		  {
-		    prio: 200
+		    prio: 200,
 		    ttl: -1,
 		    idhost: 124,
 		  }
@@ -2150,18 +2156,18 @@ types:
 	      },
 
     put:
-      description: update mail relays for a given domain
+      description: update mail relays for a given domain and a given view
       body:
 	type: MXHost []
 	example: |
 	  [
 	    {
-	      prio: 100
+	      prio: 100,
 	      ttl: -1,
 	      idhost: 123,
 	    },
 	    {
-	      prio: 200
+	      prio: 200,
 	      ttl: -1,
 	      idhost: 124,
 	    }
@@ -2172,15 +2178,16 @@ types:
 	    type: Relaydom
 	    example: |
 	      {
-		iddom: 3
+		iddom: 3,
+		idview: 1,
 		relays: [
 		  {
-		    prio: 100
+		    prio: 100,
 		    ttl: -1,
 		    idhost: 123,
 		  },
 		  {
-		    prio: 200
+		    prio: 200,
 		    ttl: -1,
 		    idhost: 124,
 		  }

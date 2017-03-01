@@ -805,3 +805,77 @@ proc check-idhost {dbfd idhost} {
     return $rr
 }
 
+
+#
+# Check needed operations on the MX list
+# idview: idview to check with all new MX targets
+# jdict: new MX list, array of dict, returned by scgi::check-json-value
+#				{prio	{type int req} req}
+#				{ttl	{type int opt {}} req}
+#				{idhost	{type int req} req}
+# omx: list of MX records (result of ::rr::get-mxhost for the old values)
+#	{{prio idhost ttl} ...}
+# returns list {ldel lmod lnew}
+#	where each ldel, lmod, lnew is a list:
+#		{{prio ttl idhost rr} ...}
+
+proc check-mx-list {idview jdict omx} {
+    # process old MX list
+    foreach m $omx {
+	lassign $m oprio oidhost ottl
+	set orr [check-idhost ::dbdns $oidhost]
+	set old($oidhost) [list $oprio $ottl $orr]
+    }
+
+    set lmod {}
+    set lnew {}
+
+    # process new MX list
+    foreach e $jdict {
+	::scgi::import-json-object $e
+
+	if {[info exists alreadyseen($idhost)]} then {
+	    ::scgi::serror 400 [mc {Duplicate MX host %d} $idhost]
+	}
+	set alreadyseen($idhost) 1
+
+	set msg [check-prio $prio]
+	if {$msg ne ""} then {
+	    ::scgi::serror 400 $msg
+	}
+
+	set ottl -1
+	if {[info exists old($idhost)]} then {
+	    set ottl [lindex $old($idhost) 1]
+	}
+	set ttl [check-ttl $ttl $ottl]
+
+	if {[info exists old($idhost)]} then {
+	    lassign $old($idhost) oprio ottl orr
+	    if {$oprio != $prio || $ottl != $ttl} then {
+		lappend lmod [list $prio $ttl $idhost $orr]
+	    }
+	    unset old($idhost)
+	} else {
+	    set rr [check-idhost ::dbdns $idhost]
+	    set idv [::rr::get-idview $rr]
+	    if {$idv != $idview} then {
+		::scgi::serror 400 [mc {Invalid view '%1$s' for host '%2$s'} [::n viewname $idv] [::rr::get-fqdn $rr]]
+
+	    }
+	    lappend lnew [list $prio $ttl $idhost $rr]
+	}
+    }
+
+    if {[llength [array names alreadyseen]] == 0} then {
+	::scgi::serror 400 [mc {Empty MX host list}]
+    }
+
+    set ldel {}
+    foreach oidhost [array names old] {
+	lassign $old($oidhost) oprio ottl orr
+	lappend ldel [list $oprio $ottl $oidhost $orr]
+    }
+
+    return [list $ldel $lmod $lnew]
+}

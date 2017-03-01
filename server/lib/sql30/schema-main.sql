@@ -422,13 +422,15 @@ CREATE TABLE dns.mailrole (
 
 CREATE TABLE dns.relaydom (
     iddom	INT,			-- domain id
+    idview	INT,			-- view id
     prio	INT,			-- MX priority
     idhost	INT,			-- relay host for this domain
     ttl		INT DEFAULT -1,		-- TTL if different from zone TTL
 
     FOREIGN KEY (iddom)    REFERENCES dns.domain (iddom),
+    FOREIGN KEY (idview)   REFERENCES dns.view   (idview),
     FOREIGN KEY (idhost)   REFERENCES dns.host   (idhost),
-    PRIMARY KEY (iddom, idhost)
+    PRIMARY KEY (iddom, idview, idhost)
 ) ;
 
 ---------------------------------------------------------------------------
