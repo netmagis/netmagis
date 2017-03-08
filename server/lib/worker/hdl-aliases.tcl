@@ -289,6 +289,16 @@ proc aliases-new-and-mod {_parm orr} {
     set rrh [check-idhost ::dbdns $idhost]
     set nfqdnh [::rr::get-fqdn $rrh]
 
+    if {$oidname == -1} then {
+	# check view of host (if alias creation)
+	set idviewh [::rr::get-idview $rrh]
+	if {$idviewh != $idview} then {
+	    set n [::n viewname $idviewh]
+	    set h [::rr::get-fqdn $rrh]
+	    ::scgi::serror 400 [mc {Inconsistent view '%1$s' for host '%2$s'} $n $h]
+	}
+    }
+
     ::dbdns lock {dns.name dns.alias} {
 	#
 	# Add new name for the alias since it did not pre-exist
