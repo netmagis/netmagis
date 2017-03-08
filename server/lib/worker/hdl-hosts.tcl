@@ -412,6 +412,43 @@ proc hosts-new-and-mod {_parm orr} {
     }
 
     #
+    # If the modification includes a view change, we must check that
+    # no other object which needs view consistency (alias, relaydom, mx)
+    # points to it.
+    # Note: mailrole are not included in this list since a mailbox
+    # target may reside in another view than the announced mail address
+    #
+
+    # is this a view change?
+    if {$oidname != -1 && [::rr::get-idview $orr] != $idview} then {
+	set l [list [::rr::get-mxname $orr]  name "MX" \
+		    [::rr::get-aliases $orr] name "aliases" \
+		    [::rr::get-relay $orr]   dom  "domain relays" \
+		]
+	foreach {lid typeid msg} $l {
+	    if {[llength $lid] > 0} then {
+		set names {}
+		foreach id $lid {
+		    switch $typeid {
+			name {
+			    set rrobj [::rr::read-by-idname ::dbdns $id]
+			    lappend names [::rr::get-fqdn $rrobj]
+			}
+			dom {
+			    lappend names [::n domainname $id]
+			}
+			default {
+			    scgi::serror 400 "Internal error (typeid == $typeid)"
+			}
+		    } 
+		}
+		set names [join $names ", "]
+		::scgi::serror 400 [mc "Cannot change host view since $msg %s points to it" $names]
+	    }
+	}
+    }
+
+    #
     # Check syntax of new host name
     #
 
@@ -435,7 +472,6 @@ proc hosts-new-and-mod {_parm orr} {
     #
     # Check new TTL and sendsmtp
     #
-
 
     set ottl -1
     if {$oidhost != -1} then {
