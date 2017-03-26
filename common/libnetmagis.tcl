@@ -874,7 +874,7 @@ snit::type ::netmagis {
 					"login" $ldapattrlogin \
 					"lastname" $ldapattrname \
 					"firstname" $ldapattrgivenname \
-					"maill" $ldapattrmail \
+					"mail" $ldapattrmail \
 					"phone" $ldapattrphone \
 					"mobile" $ldapattrmobile \
 					"fax" $ldapattrfax \
