@@ -5,6 +5,7 @@ import * as C from './common.js' ;
 import {Login}		from './app-login.jsx' ;
 import {Add}		from './app-add.jsx' ;
 import {DHCPRange}	from './app-dhcprange.jsx' ;
+import {Sessions}	from './app-sessions.jsx' ;
 
 export var NMMenu = React.createClass ({
     // Enforce a rerendering on language/capability change
@@ -310,6 +311,8 @@ var NMRouter = React.createClass ({
 		return (<Add />) ;
 	    case 'dhcprange' :
 		return (<DHCPRange />) ;
+	    case 'sessions' :
+		return (<Sessions />) ;
 	    case 'foo' :
 		return (
 		    <div>
