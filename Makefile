@@ -15,6 +15,7 @@ ETCDIR		= $(PREFIX)/etc
 MANDIR		= $(PREFIX)/man
 RCDIR		= $(PREFIX)/etc/rc.d
 CAFILE		= /usr/local/share/certs/ca-root-nss.crt
+RANDOM		= /dev/random
 
 # Netmagis specific directories
 NMDOCDIR	= $(PREFIX)/share/doc/netmagis
@@ -40,6 +41,7 @@ VARS		= \
 			MANDIR=$(MANDIR) \
 			RCDIR=$(RCDIR) \
 			CAFILE=$(CAFILE) \
+			RANDOM=$(RANDOM) \
 			NMDOCDIR=$(NMDOCDIR) \
 			NMXMPDIR=$(NMXMPDIR) \
 			NMLIBDIR=$(NMLIBDIR) \
@@ -65,6 +67,7 @@ usage:
 	@echo "	build-topo"
 	@echo "	build-www"
 	@echo "	build-server"
+	@echo "	test"
 	@echo "	install"
 	@echo "	install-common"
 	@echo "	install-server"
@@ -96,6 +99,11 @@ build-server:
 
 build-topo:
 	cd topo ; $(MAKE) build
+
+test:	test-server
+
+test-server:
+	cd server ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) test
 
 install: install-common install-server install-servers install-utils \
 	    install-detecteq install-topo install-metro install-www

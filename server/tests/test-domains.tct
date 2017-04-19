@@ -1,0 +1,13 @@
+set title "Test get domain"
+
+set uri /netmagis/domains
+
+set inputjson {}
+set expectedjson {...}
+
+test-reset-cookie
+test-set-cookie session bla
+
+lassign [test-call get $uri {}] stcode stmsg ct body
+
+test-assert $title {$stcode == 200 && [test-json $ct $body $expectedjson]}

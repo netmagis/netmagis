@@ -14,7 +14,7 @@ package require Thread 2.7
 package provide scgi 0.1
 
 namespace eval ::scgi:: {
-    namespace export start
+    namespace export start test-mode
 
     ###########################################################################
     # Server connection and thread pool management
@@ -123,6 +123,24 @@ namespace eval ::scgi:: {
 	    $p(-myport)
 
 	vwait forever
+    }
+
+    #
+    # Activates the scgi test-mode.
+    # This procedure loads the subpart scgi module (containing the accept
+    # procedure) and the test subpart which overloads the accept proc
+    # in order to be called directly from a test environment
+    #
+
+    proc test-mode {dbg initscript hdlfn} {
+	variable thrscript
+	variable tstscript
+
+	uplevel \#0 $thrscript
+	uplevel \#0 $tstscript
+	set ::scgi::handlefn $hdlfn
+	set ::scgi::debug $dbg
+	uplevel \#0 $initscript
     }
 
     proc server-connect-hack {sock host port} {
@@ -997,6 +1015,114 @@ namespace eval ::scgi:: {
 		    set v $defval
 		}
 		return $v
+	    }
+	}
+    }
+
+    ###########################################################################
+    # Test sub-part
+    #
+    # Sub-package which overloads some functions of the connection sub-package
+    ###########################################################################
+
+    variable tstscript {
+	namespace eval ::scgi:: {
+	    namespace export simulcall output
+
+	    #
+	    # This function is called directly from the test program.
+	    # It initializes a pseudo-environment compatible with the
+	    # true scgi.tcl (see variable state) in order to re-use
+	    # original scgi.tcl functions, and it calls the specified
+	    # worker function.
+	    # 
+
+	    proc simulcall {meth uri headers cookies body} {
+		variable handlefn
+		variable debug
+		variable state
+
+		#
+		# Reset global state
+		#
+
+		foreach k [array names state] {
+		    set state($k) ""
+		}
+		set state(done) false
+		set state(errcode) 500
+		set state(repbin) false
+
+		try {
+		    set state(reqhdrs) $headers
+		    set parm [parse-param $state(reqhdrs) $body]
+		    set state(reqcook) $cookies
+
+		    # normalize URI (apache does not dot it)
+		    regsub -all {/+} $uri {/} uri
+
+		    $handlefn $uri $meth $parm
+
+		} on error msg {
+
+		    if {$state(errcode) == 500} then {
+			set-header Status "500 Internal server error" true
+			#### XXX : KEEP A LOG of $msg BEFORE MODIFICATION
+			set msg "Internal server error"
+		    } else {
+			set-header Status "$state(errcode) $msg" true
+		    }
+
+		    if {$debug} then {
+			global errorInfo
+			set-body "<html>\n"
+			set-body "<h1>$state(errcode) $msg</h1>\n"
+			set-body "<pre>$errorInfo</pre>\n"
+			set-body "</html>\n"
+		    } else {
+			set-body "<pre>$state(errcode) $msg</pre>"
+		    }
+		}
+
+		try {
+		    output
+		}
+
+		#
+		# Adapt result to test needs
+		#
+
+		set stcode 500
+		set stmsg ""
+		set ct ""
+		foreach {k v} $state(rephdrs) {
+		    switch $k {
+			Status {
+			    regexp {^(\d+)\s*(.*)} $v foo stcode stmsg
+			}
+			Content-Type { set ct $v }
+		    }
+		}
+
+		return [list $stcode $stmsg $ct $state(repbody)]
+	    }
+
+	    proc output {} {
+		variable state
+
+		if {$state(done)} then {
+		    return
+		}
+
+		set-header Status "200" false
+		set-header Content-Type "text/html; charset=utf-8" false
+
+		# output registered cookies
+		dict for {name val} $state(repcook) {
+		    set-header Set-Cookie $val false
+		}
+
+		set state(done) true
 	    }
 	}
     }

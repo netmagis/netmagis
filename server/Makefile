@@ -16,6 +16,10 @@ install:
 	cd examples ; $(MAKE) install
 	mkdir -p $(DESTDIR)$(NMVARDIR)/dbdump
 
+test:
+	@echo ">>> Making test in `pwd`"
+	cd tests ; $(MAKE) test
+
 clean:
 	cd lib ; $(MAKE) clean
 	cd man ; $(MAKE) clean
