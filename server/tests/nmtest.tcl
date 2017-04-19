@@ -58,7 +58,13 @@ proc test-call {meth uri jsonbody} {
     #
 
     set cook $conf(cookies)
-    return [::scgi::simulcall $meth $uri $hdrs $cook $jsonbody]
+    set r [::scgi::simulcall $meth $uri $hdrs $cook $jsonbody]
+
+    # leave a line in the log
+    lassign $r stcode stmsg ct body
+    puts stderr "test-call: $meth $uri -> $stcode $stmsg $ct"
+
+    return $r
 }
 
 # if expr is false, abort with a message including title
@@ -99,7 +105,7 @@ proc main {argv0 argv} {
     # Initialize default values and parse arguments
     #
 
-    set debug    false
+    set debug    true
 
     if {[llength $argv] != 5} then {
 	usage $argv0

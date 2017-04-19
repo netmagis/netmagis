@@ -26,7 +26,7 @@ do
     ret=ignore
     case "$tfile" in
 	*.sh)			# e.g. load database
-	    sh $tfile > $log 2>&1
+	    sh $tfile $CONFFILE > $log 2>&1
 	    ret=$?
 	    ;;
 	*.tct)			# Tcl test
