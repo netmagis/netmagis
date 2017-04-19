@@ -1,0 +1,4730 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.5.6
+-- Dumped by pg_dump version 9.5.6
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: dns; Type: SCHEMA; Schema: -; Owner: nm
+--
+
+CREATE SCHEMA dns;
+
+
+ALTER SCHEMA dns OWNER TO nm;
+
+--
+-- Name: global; Type: SCHEMA; Schema: -; Owner: nm
+--
+
+CREATE SCHEMA global;
+
+
+ALTER SCHEMA global OWNER TO nm;
+
+--
+-- Name: mac; Type: SCHEMA; Schema: -; Owner: nm
+--
+
+CREATE SCHEMA mac;
+
+
+ALTER SCHEMA mac OWNER TO nm;
+
+--
+-- Name: pgauth; Type: SCHEMA; Schema: -; Owner: nm
+--
+
+CREATE SCHEMA pgauth;
+
+
+ALTER SCHEMA pgauth OWNER TO nm;
+
+--
+-- Name: topo; Type: SCHEMA; Schema: -; Owner: nm
+--
+
+CREATE SCHEMA topo;
+
+
+ALTER SCHEMA topo OWNER TO nm;
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+--
+-- Name: pltcl; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS pltcl WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION pltcl; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION pltcl IS 'PL/Tcl procedural language';
+
+
+SET search_path = mac, pg_catalog;
+
+--
+-- Name: ipmac_t; Type: TYPE; Schema: mac; Owner: nm
+--
+
+CREATE TYPE ipmac_t AS (
+	ip inet,
+	mac macaddr
+);
+
+
+ALTER TYPE ipmac_t OWNER TO nm;
+
+--
+-- Name: portmac_t; Type: TYPE; Schema: mac; Owner: nm
+--
+
+CREATE TYPE portmac_t AS (
+	mac macaddr,
+	port text,
+	vlanid integer
+);
+
+
+ALTER TYPE portmac_t OWNER TO nm;
+
+SET search_path = public, pg_catalog;
+
+--
+-- Name: iprange_t; Type: TYPE; Schema: public; Owner: nm
+--
+
+CREATE TYPE iprange_t AS (
+	a inet,
+	n integer
+);
+
+
+ALTER TYPE iprange_t OWNER TO nm;
+
+SET search_path = dns, pg_catalog;
+
+--
+-- Name: check_ip_cor(inet, integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION check_ip_cor(inet, integer) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $_$
+    BEGIN
+	RETURN dns.check_ip_grp ($1, idgrp) FROM global.nmuser WHERE idcor = $2 ;
+    END ;
+    $_$;
+
+
+ALTER FUNCTION dns.check_ip_cor(inet, integer) OWNER TO nm;
+
+--
+-- Name: check_ip_grp(inet, integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION check_ip_grp(inet, integer) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $_$
+    BEGIN
+	RETURN ($1 <<= ANY (SELECT addr FROM dns.p_ip
+				WHERE allow_deny = 1 AND idgrp = $2)
+	    AND NOT $1 <<= ANY (SELECT addr FROM dns.p_ip
+				WHERE allow_deny = 0 AND idgrp = $2)
+	    ) ;
+    END ;
+    $_$;
+
+
+ALTER FUNCTION dns.check_ip_grp(inet, integer) OWNER TO nm;
+
+--
+-- Name: del_name(); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION del_name() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	DELETE FROM dns.name WHERE idname = OLD.idname ;
+	RETURN NULL ;
+    EXCEPTION
+	WHEN foreign_key_violation
+	    THEN
+		-- do nothing
+		RETURN NULL ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION dns.del_name() OWNER TO nm;
+
+--
+-- Name: gen_dhcp(integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION gen_dhcp(integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $_$
+    BEGIN
+	UPDATE dns.view SET gendhcp = 1
+	    FROM dns.host h
+		NATURAL INNER JOIN dns.name n
+	    WHERE h.idhost = $1
+		AND h.mac IS NOT NULL
+		AND view.idview = n.idview ;
+	RETURN 1 ;
+    END ;
+    $_$;
+
+
+ALTER FUNCTION dns.gen_dhcp(integer) OWNER TO nm;
+
+--
+-- Name: gen_norm_iddom(integer, integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION gen_norm_iddom(integer, integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $_$
+    BEGIN
+	UPDATE dns.zone_forward SET gen = 1
+		WHERE idview = $2
+		    AND selection = (
+			SELECT domain.name
+				FROM dns.domain
+				WHERE domain.iddom = $1
+			) ;
+	RETURN 1 ;
+    END ;
+    $_$;
+
+
+ALTER FUNCTION dns.gen_norm_iddom(integer, integer) OWNER TO nm;
+
+--
+-- Name: gen_norm_idhost(integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION gen_norm_idhost(integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $_$
+    BEGIN
+	UPDATE dns.zone_forward SET gen = 1
+		WHERE (selection, idview) = 
+			(
+			    SELECT d.name, n.idview
+				FROM dns.host h
+				    NATURAL INNER JOIN dns.name n
+				    NATURAL INNER JOIN dns.domain d
+				WHERE h.idhost = $1
+			) ;
+	RETURN 1 ;
+    END ;
+    $_$;
+
+
+ALTER FUNCTION dns.gen_norm_idhost(integer) OWNER TO nm;
+
+--
+-- Name: gen_norm_idname(integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION gen_norm_idname(integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $_$
+    BEGIN
+	UPDATE dns.zone_forward SET gen = 1
+		WHERE (selection, idview) = 
+			(
+			    SELECT d.name, n.idview
+				FROM dns.name n
+				    NATURAL INNER JOIN dns.domain d
+				WHERE n.idname = $1
+			) ;
+	RETURN 1 ;
+    END ;
+    $_$;
+
+
+ALTER FUNCTION dns.gen_norm_idname(integer) OWNER TO nm;
+
+--
+-- Name: gen_relay(integer, integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION gen_relay(integer, integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $_$
+    BEGIN
+	UPDATE dns.zone_forward SET gen = 1
+	    WHERE selection = ( SELECT name FROM dns.domain WHERE iddom = $1 )
+		AND idview = ( SELECT n.idview
+				    FROM dns.host h
+					NATURAL INNER JOIN dns.name n
+				    WHERE h.idhost = $2 )
+	    ;
+	RETURN 1 ;
+    END ;
+    $_$;
+
+
+ALTER FUNCTION dns.gen_relay(integer, integer) OWNER TO nm;
+
+--
+-- Name: gen_rev4(inet, integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION gen_rev4(inet, integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $_$
+    BEGIN
+	UPDATE dns.zone_reverse4 AS z SET gen = 1
+	    FROM dns.host h, dns.name n
+	    WHERE $1 <<= z.selection
+		AND h.idhost = $2
+		AND h.idname = n.idname
+		AND z.idview = n.idview ;
+	RETURN 1 ;
+    END ;
+    $_$;
+
+
+ALTER FUNCTION dns.gen_rev4(inet, integer) OWNER TO nm;
+
+--
+-- Name: gen_rev6(inet, integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION gen_rev6(inet, integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $_$
+    BEGIN
+	UPDATE dns.zone_reverse6 AS z SET gen = 1
+	    FROM dns.host h, dns.name n
+	    WHERE $1 <<= selection
+		AND h.idhost = $2
+		AND h.idname = n.idname
+		AND z.idview = n.idview ;
+	RETURN 1 ;
+    END ;
+    $_$;
+
+
+ALTER FUNCTION dns.gen_rev6(inet, integer) OWNER TO nm;
+
+--
+-- Name: ipranges(cidr, integer, integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION ipranges(net cidr, lim integer, grp integer) RETURNS SETOF public.iprange_t
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+	inarange BOOLEAN ;
+	r RECORD ;
+	q iprange_t%ROWTYPE ;
+    BEGIN
+	PERFORM dns.mark_cidr (net, lim, grp) ;
+	inarange := FALSE ;
+	FOR r IN (SELECT addr, avail FROM allip ORDER BY addr)
+	LOOP
+	    IF inarange THEN
+		-- (q.a, q.n) is already a valid range
+		IF r.avail = 1 THEN
+		    q.n := q.n + 1 ;
+		ELSE
+		    RETURN NEXT q ;
+		    inarange := FALSE ;
+		END IF ;
+	    ELSE
+		-- not inside a range
+		IF r.avail = 1 THEN
+		    -- start a new range (q.a, q.n)
+		    q.a := r.addr ;
+		    q.n := 1 ;
+		    inarange := TRUE ;
+		END IF ;
+	    END IF ;
+	END LOOP ;
+	IF inarange THEN
+	    RETURN NEXT q ;
+	END IF ;
+	DROP TABLE allip ;
+	RETURN ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION dns.ipranges(net cidr, lim integer, grp integer) OWNER TO nm;
+
+--
+-- Name: mark_cidr(cidr, integer, integer); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION mark_cidr(net cidr, lim integer, grp integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+	min INET ;
+	max INET ;
+	a INET ;
+    BEGIN
+	min := INET (HOST (net)) ;
+	max := INET (HOST (BROADCAST (net))) ;
+
+	IF max - min - 2 > lim THEN
+	    RAISE EXCEPTION 'Too many addresses' ;
+	END IF ;
+
+	-- All this exception machinery is here since we can't use :
+	--    DROP TABLE IF EXISTS allip ;
+	-- It raises a notice exception, which prevents
+	-- script "ajout" to function
+	BEGIN
+	    DROP TABLE allip ;
+	EXCEPTION
+	    WHEN OTHERS THEN -- nothing
+	END ;
+
+	CREATE TEMPORARY TABLE allip (
+	    addr INET,
+	    avail INTEGER,
+		-- 0 : unavailable (broadcast addr, no right on addr, etc.)
+		-- 1 : not declared and not in a dhcp range
+		-- 2 : declared and not in a dhcp range
+		-- 3 : not declared and in a dhcp range
+		-- 4 : declared and in a dhcp range
+	    fqdn TEXT		-- if 2 or 4, then fqdn else NULL
+	) ;
+
+	a := min ; 
+	WHILE a <= max LOOP
+	    INSERT INTO allip VALUES (a, 1) ;
+	    a := a + 1 ;
+	END LOOP ;
+
+	UPDATE allip
+	    SET fqdn = rr.name || '.' || domain.name,
+		avail = 2
+	    FROM dns.rr_ip, dns.rr, dns.domain
+	    WHERE allip.addr = rr_ip.addr
+		AND rr_ip.idrr = rr.idrr
+		AND rr.iddom = domain.iddom
+		;
+
+	UPDATE allip
+	    SET avail = CASE
+			    WHEN avail = 1 THEN 3
+			    WHEN avail = 2 THEN 4
+			END
+	    FROM dns.dhcprange
+	    WHERE (avail = 1 OR avail = 2)
+		AND addr >= dhcprange.min
+		AND addr <= dhcprange.max
+	    ;
+
+	UPDATE allip SET avail = 0
+	    WHERE addr = min OR addr = max OR NOT dns.check_ip_grp (addr, grp) ;
+
+	RETURN ;
+
+    END ;
+    $$;
+
+
+ALTER FUNCTION dns.mark_cidr(net cidr, lim integer, grp integer) OWNER TO nm;
+
+--
+-- Name: mod_addr(); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION mod_addr() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	IF TG_OP = 'INSERT'
+	THEN
+	    PERFORM sum (dns.gen_rev4 (NEW.addr, NEW.idhost)) ;
+	    PERFORM sum (dns.gen_rev6 (NEW.addr, NEW.idhost)) ;
+	    PERFORM sum (dns.gen_norm_idhost (NEW.idhost)) ;
+	    PERFORM sum (dns.gen_dhcp (NEW.idhost)) ;
+
+	END IF ;
+
+	IF TG_OP = 'UPDATE'
+	THEN
+	    PERFORM sum (dns.gen_rev4 (NEW.addr, NEW.idhost)) ;
+	    PERFORM sum (dns.gen_rev4 (OLD.addr, OLD.idhost)) ;
+	    PERFORM sum (dns.gen_rev6 (NEW.addr, NEW.idhost)) ;
+	    PERFORM sum (dns.gen_rev6 (OLD.addr, OLD.idhost)) ;
+	    PERFORM sum (dns.gen_norm_idhost (NEW.idhost)) ;
+	    PERFORM sum (dns.gen_norm_idhost (OLD.idhost)) ;
+	    PERFORM sum (dns.gen_dhcp (NEW.idhost)) ;
+	    PERFORM sum (dns.gen_dhcp (OLD.idhost)) ;
+	END IF ;
+
+	IF TG_OP = 'DELETE'
+	THEN
+	    PERFORM sum (dns.gen_rev4 (OLD.addr, OLD.idhost)) ;
+	    PERFORM sum (dns.gen_rev6 (OLD.addr, OLD.idhost)) ;
+	    PERFORM sum (dns.gen_norm_idhost (OLD.idhost)) ;
+	    PERFORM sum (dns.gen_dhcp (OLD.idhost)) ;
+	END IF ;
+
+	RETURN NEW ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION dns.mod_addr() OWNER TO nm;
+
+--
+-- Name: mod_dhcp(); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION mod_dhcp() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	UPDATE dns.view SET gendhcp = 1 ;
+	RETURN NEW ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION dns.mod_dhcp() OWNER TO nm;
+
+--
+-- Name: mod_host(); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION mod_host() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	-- IF TG_OP = 'INSERT'
+	-- THEN
+	    -- no need to regenerate anything since no IP address has
+	    -- been linked to this host yet
+	-- END IF ;
+
+	IF TG_OP = 'UPDATE'
+	THEN
+	    PERFORM sum (dns.gen_norm_iddom (n.iddom, n.idview))
+		    FROM dns.name n
+		    WHERE n.idname = NEW.idname
+		    ;
+	    PERFORM sum (dns.gen_norm_iddom (n.iddom, n.idview))
+		    FROM dns.name n
+		    WHERE n.idname = OLD.idname
+		    ;
+	    PERFORM sum (dns.gen_rev4 (a.addr, NEW.idhost))
+		    FROM dns.addr a
+		    WHERE a.idhost = NEW.idhost
+		    ;
+	    PERFORM sum (dns.gen_rev6 (a.addr, NEW.idhost))
+		    FROM dns.addr a
+		    WHERE a.idhost = NEW.idhost
+		    ;
+	    PERFORM sum (dns.gen_dhcp (NEW.idhost))
+		    ;
+	    -- no need to regenerate reverse/dhcp for old host since
+	    -- IP addresses did not change
+	END IF ;
+
+	-- IF TG_OP = 'DELETE'
+	-- THEN
+	    -- no need to regenerate anything since all IP addresses have
+	    -- already been removed before
+	-- END IF ;
+
+	RETURN NEW ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION dns.mod_host() OWNER TO nm;
+
+--
+-- Name: mod_mx_alias(); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION mod_mx_alias() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	IF TG_OP = 'INSERT'
+	THEN
+	    PERFORM sum (dns.gen_norm_idname (NEW.idname)) ;
+	END IF ;
+
+	IF TG_OP = 'UPDATE'
+	THEN
+	    PERFORM sum (dns.gen_norm_idname (NEW.idname)) ;
+	    PERFORM sum (dns.gen_norm_idname (OLD.idname)) ;
+	END IF ;
+
+	IF TG_OP = 'DELETE'
+	THEN
+	    PERFORM sum (dns.gen_norm_idname (OLD.idname)) ;
+	END IF ;
+
+	RETURN NEW ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION dns.mod_mx_alias() OWNER TO nm;
+
+--
+-- Name: mod_name(); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION mod_name() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	-- IF TG_OP = 'INSERT'
+	-- THEN
+	    -- no need to regenerate anything since no host/alias/mx/... has
+	    -- been linked to this name yet
+	-- END IF ;
+
+	IF TG_OP = 'UPDATE'
+	THEN
+	    PERFORM sum (dns.gen_norm_iddom (NEW.iddom, NEW.idview))
+		    ;
+	    PERFORM sum (dns.gen_norm_iddom (OLD.iddom, OLD.idview))
+		    ;
+	    PERFORM sum (dns.gen_rev4 (a.addr, h.idhost))
+		    FROM dns.host h NATURAL INNER JOIN dns.addr a
+		    WHERE h.idname = NEW.idname
+		    ;
+	    PERFORM sum (dns.gen_rev6 (a.addr, h.idhost))
+		    FROM dns.host h NATURAL INNER JOIN dns.addr a
+		    WHERE h.idname = NEW.idname
+		    ;
+	    PERFORM sum (dns.gen_dhcp (h.idhost))
+		    FROM dns.host h
+		    WHERE h.idname = NEW.idname
+		    ;
+	    -- no need to regenerate reverse/dhcp for old name since
+	    -- IP addresses did not change
+	END IF ;
+
+	-- IF TG_OP = 'DELETE'
+	-- THEN
+	    -- no need to regenerate anything since all host/alias/mx/... have
+	    -- already been removed before
+	-- END IF ;
+
+	RETURN NEW ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION dns.mod_name() OWNER TO nm;
+
+--
+-- Name: mod_relay(); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION mod_relay() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	IF TG_OP = 'INSERT'
+	THEN
+	    PERFORM sum (dns.gen_relay (NEW.iddom, NEW.idhost)) ;
+	END IF ;
+
+	IF TG_OP = 'UPDATE'
+	THEN
+	    PERFORM sum (dns.gen_relay (NEW.iddom, NEW.idhost)) ;
+	    PERFORM sum (dns.gen_relay (OLD.iddom, OLD.idhost)) ;
+	END IF ;
+
+	IF TG_OP = 'DELETE'
+	THEN
+	    PERFORM sum (dns.gen_relay (OLD.iddom, OLD.idhost)) ;
+	END IF ;
+
+	RETURN NEW ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION dns.mod_relay() OWNER TO nm;
+
+--
+-- Name: mod_zone(); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION mod_zone() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	IF NEW.prologue <> OLD.prologue
+		OR NEW.rrsup <> OLD.rrsup
+		OR NEW.selection <> OLD.selection
+	THEN
+	    NEW.gen := 1 ;
+	END IF ;
+	RETURN NEW ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION dns.mod_zone() OWNER TO nm;
+
+--
+-- Name: res_link(integer, text); Type: FUNCTION; Schema: dns; Owner: nm
+--
+
+CREATE FUNCTION res_link(idrr integer, prefix text) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+        BEGIN
+            RETURN CASE
+                        WHEN idrr IS NULL THEN ''
+                        ELSE prefix || CAST (idrr AS TEXT)
+                    END ;
+        END
+    $$;
+
+
+ALTER FUNCTION dns.res_link(idrr integer, prefix text) OWNER TO nm;
+
+SET search_path = global, pg_catalog;
+
+--
+-- Name: mklink(text, integer); Type: FUNCTION; Schema: global; Owner: nm
+--
+
+CREATE FUNCTION mklink(prefix text, idrr integer) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+	BEGIN
+	    RETURN CASE
+			WHEN idrr IS NULL THEN ''
+			ELSE prefix || CAST (idrr AS TEXT)
+		    END ;
+	END
+    $$;
+
+
+ALTER FUNCTION global.mklink(prefix text, idrr integer) OWNER TO nm;
+
+SET search_path = mac, pg_catalog;
+
+--
+-- Name: manuf(macaddr); Type: FUNCTION; Schema: mac; Owner: nm
+--
+
+CREATE FUNCTION manuf(macaddr) RETURNS text
+    LANGUAGE sql
+    AS $_$
+                SELECT name FROM mac.oui m WHERE TRUNC($1) = m.addr;
+$_$;
+
+
+ALTER FUNCTION mac.manuf(macaddr) OWNER TO nm;
+
+SET search_path = pgauth, pg_catalog;
+
+--
+-- Name: add_soundex(); Type: FUNCTION; Schema: pgauth; Owner: nm
+--
+
+CREATE FUNCTION add_soundex() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	NEW.phlast  := pgauth.SOUNDEX (NEW.lastname) ;
+	NEW.phfirst := pgauth.SOUNDEX (NEW.firstname) ;
+	RETURN NEW ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION pgauth.add_soundex() OWNER TO nm;
+
+--
+-- Name: soundex(text); Type: FUNCTION; Schema: pgauth; Owner: nm
+--
+
+CREATE FUNCTION soundex(text) RETURNS text
+    LANGUAGE pltcl STRICT
+    AS $_$
+	array set soundexFrenchCode {
+	    a 0 b 1 c 2 d 3 e 0 f 9 g 7 h 0 i 0 j 7 k 2 l 4 m 5
+	    n 5 o 0 p 1 q 2 r 6 s 8 t 3 u 0 v 9 w 9 x 8 y 0 z 8
+	}
+	set accentedFrenchMap {
+	    é e  ë e  ê e  è e   É E  Ë E  Ê E  È E
+	     ä a  â a  à a        Ä A  Â A  À A
+	     ï i  î i             Ï I  Î I
+	     ö o  ô o             Ö O  Ô O
+	     ü u  û u  ù u        Ü U  Û U  Ù U
+	     ç ss                 Ç SS
+	}
+	set key ""
+
+	# Map accented characters
+	set TempIn [string map $accentedFrenchMap $1]
+
+	# Only use alphabetic characters, so strip out all others
+	# also, soundex index uses only lower case chars, so force to lower
+
+	regsub -all {[^a-z]} [string tolower $TempIn] {} TempIn
+	if {$TempIn eq ""} then {
+	    return Z000
+	}
+	set last [string index $TempIn 0]
+	set key  [string toupper $last]
+	set last $soundexFrenchCode($last)
+
+	# Scan rest of string, stop at end of string or when the key is full
+
+	set count    1
+	set MaxIndex [string length $TempIn]
+
+	for {set index 1} {(($count < 4) && ($index < $MaxIndex))} {incr index } {
+	    set chcode $soundexFrenchCode([string index $TempIn $index])
+	    # Fold together adjacent letters sharing the same code
+	    if {$last ne $chcode} then {
+		set last $chcode
+		# Ignore code==0 letters except as separators
+		if {$last != 0} then {
+		    set key $key$last
+		    incr count
+		}
+	    }
+	}
+	return [string range ${key}0000 0 3]
+    $_$;
+
+
+ALTER FUNCTION pgauth.soundex(text) OWNER TO nm;
+
+SET search_path = topo, pg_catalog;
+
+--
+-- Name: mod_routerdb(); Type: FUNCTION; Schema: topo; Owner: nm
+--
+
+CREATE FUNCTION mod_routerdb() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	INSERT INTO topo.modeq (eq) VALUES ('_routerdb') ;
+	RETURN NEW ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION topo.mod_routerdb() OWNER TO nm;
+
+--
+-- Name: mod_vlan(); Type: FUNCTION; Schema: topo; Owner: nm
+--
+
+CREATE FUNCTION mod_vlan() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+	INSERT INTO topo.modeq (eq) VALUES ('_vlan') ;
+	RETURN NEW ;
+    END ;
+    $$;
+
+
+ALTER FUNCTION topo.mod_vlan() OWNER TO nm;
+
+SET search_path = dns, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: addr; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE addr (
+    idhost integer NOT NULL,
+    addr inet NOT NULL
+);
+
+
+ALTER TABLE addr OWNER TO nm;
+
+--
+-- Name: alias; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE alias (
+    idname integer NOT NULL,
+    idhost integer,
+    ttl integer DEFAULT '-1'::integer
+);
+
+
+ALTER TABLE alias OWNER TO nm;
+
+--
+-- Name: bidon; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE bidon
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE bidon OWNER TO nm;
+
+--
+-- Name: seq_community; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_community
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_community OWNER TO nm;
+
+--
+-- Name: community; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE community (
+    idcomm integer DEFAULT nextval('seq_community'::regclass) NOT NULL,
+    name text
+);
+
+
+ALTER TABLE community OWNER TO nm;
+
+--
+-- Name: seq_dhcpprofile; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_dhcpprofile
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_dhcpprofile OWNER TO nm;
+
+--
+-- Name: dhcpprofile; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE dhcpprofile (
+    iddhcpprof integer DEFAULT nextval('seq_dhcpprofile'::regclass) NOT NULL,
+    name text,
+    text text,
+    CONSTRAINT dhcpprofile_iddhcpprof_check CHECK ((iddhcpprof >= 1))
+);
+
+
+ALTER TABLE dhcpprofile OWNER TO nm;
+
+--
+-- Name: seq_dhcprange; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_dhcprange
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_dhcprange OWNER TO nm;
+
+--
+-- Name: dhcprange; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE dhcprange (
+    iddhcprange integer DEFAULT nextval('seq_dhcprange'::regclass) NOT NULL,
+    min inet,
+    max inet,
+    iddom integer,
+    default_lease_time integer DEFAULT 0,
+    max_lease_time integer DEFAULT 0,
+    iddhcpprof integer,
+    CONSTRAINT dhcprange_check CHECK ((min <= max))
+);
+
+
+ALTER TABLE dhcprange OWNER TO nm;
+
+--
+-- Name: seq_domain; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_domain
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_domain OWNER TO nm;
+
+--
+-- Name: domain; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE domain (
+    iddom integer DEFAULT nextval('seq_domain'::regclass) NOT NULL,
+    name text
+);
+
+
+ALTER TABLE domain OWNER TO nm;
+
+--
+-- Name: seq_hinfo; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_hinfo
+    START WITH 0
+    INCREMENT BY 1
+    MINVALUE 0
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_hinfo OWNER TO nm;
+
+--
+-- Name: hinfo; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE hinfo (
+    idhinfo integer DEFAULT nextval('seq_hinfo'::regclass) NOT NULL,
+    name text,
+    sort integer,
+    present integer
+);
+
+
+ALTER TABLE hinfo OWNER TO nm;
+
+--
+-- Name: seq_host; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_host
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_host OWNER TO nm;
+
+--
+-- Name: host; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE host (
+    idhost integer DEFAULT nextval('seq_host'::regclass) NOT NULL,
+    idname integer,
+    mac macaddr,
+    iddhcpprof integer,
+    idhinfo integer DEFAULT 0,
+    comment text,
+    respname text,
+    respmail text,
+    sendsmtp integer DEFAULT 0,
+    ttl integer DEFAULT '-1'::integer
+);
+
+
+ALTER TABLE host OWNER TO nm;
+
+--
+-- Name: mailrole; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE mailrole (
+    idname integer NOT NULL,
+    idhost integer,
+    ttl integer DEFAULT '-1'::integer
+);
+
+
+ALTER TABLE mailrole OWNER TO nm;
+
+--
+-- Name: mx; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE mx (
+    idname integer NOT NULL,
+    prio integer,
+    idhost integer NOT NULL,
+    ttl integer DEFAULT '-1'::integer
+);
+
+
+ALTER TABLE mx OWNER TO nm;
+
+--
+-- Name: seq_name; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_name
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_name OWNER TO nm;
+
+--
+-- Name: name; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE name (
+    idname integer DEFAULT nextval('seq_name'::regclass) NOT NULL,
+    name text,
+    iddom integer,
+    idview integer
+);
+
+
+ALTER TABLE name OWNER TO nm;
+
+--
+-- Name: seq_network; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_network
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_network OWNER TO nm;
+
+--
+-- Name: network; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE network (
+    idnet integer DEFAULT nextval('seq_network'::regclass) NOT NULL,
+    name text,
+    location text,
+    addr4 cidr,
+    addr6 cidr,
+    idorg integer,
+    idcomm integer,
+    comment text,
+    dhcp integer DEFAULT 0,
+    gw4 inet,
+    gw6 inet,
+    CONSTRAINT at_least_one_prefix_v4_or_v6 CHECK (((addr4 IS NOT NULL) OR (addr6 IS NOT NULL))),
+    CONSTRAINT dhcp_needs_ipv4_gateway CHECK (((dhcp = 0) OR ((dhcp <> 0) AND (gw4 IS NOT NULL)))),
+    CONSTRAINT gw4_in_net CHECK ((gw4 <<= (addr4)::inet)),
+    CONSTRAINT gw6_in_net CHECK ((gw6 <<= (addr6)::inet))
+);
+
+
+ALTER TABLE network OWNER TO nm;
+
+--
+-- Name: seq_organization; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_organization
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_organization OWNER TO nm;
+
+--
+-- Name: organization; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE organization (
+    idorg integer DEFAULT nextval('seq_organization'::regclass) NOT NULL,
+    name text
+);
+
+
+ALTER TABLE organization OWNER TO nm;
+
+--
+-- Name: p_dhcpprofile; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE p_dhcpprofile (
+    idgrp integer NOT NULL,
+    iddhcpprof integer NOT NULL,
+    sort integer
+);
+
+
+ALTER TABLE p_dhcpprofile OWNER TO nm;
+
+--
+-- Name: p_dom; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE p_dom (
+    idgrp integer NOT NULL,
+    iddom integer NOT NULL,
+    sort integer,
+    mailrole integer DEFAULT 0
+);
+
+
+ALTER TABLE p_dom OWNER TO nm;
+
+--
+-- Name: p_ip; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE p_ip (
+    idgrp integer NOT NULL,
+    addr cidr NOT NULL,
+    allow_deny integer
+);
+
+
+ALTER TABLE p_ip OWNER TO nm;
+
+--
+-- Name: p_network; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE p_network (
+    idgrp integer NOT NULL,
+    idnet integer NOT NULL,
+    sort integer,
+    dhcp integer DEFAULT 0,
+    acl integer DEFAULT 0
+);
+
+
+ALTER TABLE p_network OWNER TO nm;
+
+--
+-- Name: p_view; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE p_view (
+    idgrp integer NOT NULL,
+    idview integer NOT NULL,
+    sort integer,
+    selected integer
+);
+
+
+ALTER TABLE p_view OWNER TO nm;
+
+--
+-- Name: relaydom; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE relaydom (
+    iddom integer NOT NULL,
+    idview integer NOT NULL,
+    prio integer,
+    idhost integer NOT NULL,
+    ttl integer DEFAULT '-1'::integer
+);
+
+
+ALTER TABLE relaydom OWNER TO nm;
+
+--
+-- Name: seq_view; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_view
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_view OWNER TO nm;
+
+--
+-- Name: seq_zone; Type: SEQUENCE; Schema: dns; Owner: nm
+--
+
+CREATE SEQUENCE seq_zone
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_zone OWNER TO nm;
+
+--
+-- Name: toto; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE toto (
+    idtoto integer
+);
+
+
+ALTER TABLE toto OWNER TO nm;
+
+--
+-- Name: view; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE view (
+    idview integer DEFAULT nextval('seq_view'::regclass) NOT NULL,
+    name text,
+    gendhcp integer
+);
+
+
+ALTER TABLE view OWNER TO nm;
+
+--
+-- Name: zone; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE zone (
+    idzone integer DEFAULT nextval('seq_zone'::regclass),
+    name text,
+    idview integer,
+    version integer,
+    prologue text,
+    rrsup text,
+    gen integer
+);
+
+
+ALTER TABLE zone OWNER TO nm;
+
+--
+-- Name: zone_forward; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE zone_forward (
+    selection text
+)
+INHERITS (zone);
+ALTER TABLE ONLY zone_forward ALTER COLUMN idzone SET NOT NULL;
+
+
+ALTER TABLE zone_forward OWNER TO nm;
+
+--
+-- Name: zone_reverse4; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE zone_reverse4 (
+    selection cidr
+)
+INHERITS (zone);
+ALTER TABLE ONLY zone_reverse4 ALTER COLUMN idzone SET NOT NULL;
+
+
+ALTER TABLE zone_reverse4 OWNER TO nm;
+
+--
+-- Name: zone_reverse6; Type: TABLE; Schema: dns; Owner: nm
+--
+
+CREATE TABLE zone_reverse6 (
+    selection cidr
+)
+INHERITS (zone);
+ALTER TABLE ONLY zone_reverse6 ALTER COLUMN idzone SET NOT NULL;
+
+
+ALTER TABLE zone_reverse6 OWNER TO nm;
+
+SET search_path = global, pg_catalog;
+
+--
+-- Name: authfail; Type: TABLE; Schema: global; Owner: nm
+--
+
+CREATE TABLE authfail (
+    origin text NOT NULL,
+    otype text NOT NULL,
+    nfail integer,
+    lastfail timestamp(0) without time zone DEFAULT now(),
+    blockexpire timestamp(0) without time zone
+);
+
+
+ALTER TABLE authfail OWNER TO nm;
+
+--
+-- Name: config; Type: TABLE; Schema: global; Owner: nm
+--
+
+CREATE TABLE config (
+    key text NOT NULL,
+    value text
+);
+
+
+ALTER TABLE config OWNER TO nm;
+
+--
+-- Name: log; Type: TABLE; Schema: global; Owner: nm
+--
+
+CREATE TABLE log (
+    date timestamp(0) without time zone DEFAULT now() NOT NULL,
+    subsys text NOT NULL,
+    event text NOT NULL,
+    login text,
+    ip inet,
+    msg text,
+    version integer NOT NULL,
+    jbefore jsonb,
+    jafter jsonb
+);
+
+
+ALTER TABLE log OWNER TO nm;
+
+--
+-- Name: seq_nmgroup; Type: SEQUENCE; Schema: global; Owner: nm
+--
+
+CREATE SEQUENCE seq_nmgroup
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_nmgroup OWNER TO nm;
+
+--
+-- Name: nmgroup; Type: TABLE; Schema: global; Owner: nm
+--
+
+CREATE TABLE nmgroup (
+    idgrp integer DEFAULT nextval('seq_nmgroup'::regclass) NOT NULL,
+    name text,
+    p_admin integer DEFAULT 0,
+    p_smtp integer DEFAULT 0,
+    p_ttl integer DEFAULT 0,
+    p_mac integer DEFAULT 0,
+    p_genl integer DEFAULT 0
+);
+
+
+ALTER TABLE nmgroup OWNER TO nm;
+
+--
+-- Name: seq_nmuser; Type: SEQUENCE; Schema: global; Owner: nm
+--
+
+CREATE SEQUENCE seq_nmuser
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_nmuser OWNER TO nm;
+
+--
+-- Name: nmuser; Type: TABLE; Schema: global; Owner: nm
+--
+
+CREATE TABLE nmuser (
+    idcor integer DEFAULT nextval('seq_nmuser'::regclass) NOT NULL,
+    login text,
+    present integer,
+    idgrp integer
+);
+
+
+ALTER TABLE nmuser OWNER TO nm;
+
+--
+-- Name: tmp; Type: TABLE; Schema: global; Owner: nm
+--
+
+CREATE TABLE tmp (
+    idcor integer,
+    token text NOT NULL,
+    start timestamp(0) without time zone DEFAULT now() NOT NULL,
+    ip inet,
+    api integer DEFAULT 0
+);
+
+
+ALTER TABLE tmp OWNER TO nm;
+
+--
+-- Name: utmp; Type: TABLE; Schema: global; Owner: nm
+--
+
+CREATE TABLE utmp (
+    casticket text,
+    lastaccess timestamp(0) without time zone DEFAULT now() NOT NULL
+)
+INHERITS (tmp);
+ALTER TABLE ONLY utmp ALTER COLUMN idcor SET NOT NULL;
+
+
+ALTER TABLE utmp OWNER TO nm;
+
+--
+-- Name: wtmp; Type: TABLE; Schema: global; Owner: nm
+--
+
+CREATE TABLE wtmp (
+    stop timestamp(0) without time zone NOT NULL,
+    stopreason text NOT NULL
+)
+INHERITS (tmp);
+ALTER TABLE ONLY wtmp ALTER COLUMN idcor SET NOT NULL;
+
+
+ALTER TABLE wtmp OWNER TO nm;
+
+SET search_path = mac, pg_catalog;
+
+--
+-- Name: session; Type: TABLE; Schema: mac; Owner: nm
+--
+
+CREATE TABLE session (
+    start timestamp without time zone,
+    stop timestamp without time zone,
+    src inet,
+    closed boolean
+);
+
+
+ALTER TABLE session OWNER TO nm;
+
+--
+-- Name: ipmac; Type: TABLE; Schema: mac; Owner: nm
+--
+
+CREATE TABLE ipmac (
+    data ipmac_t
+)
+INHERITS (session);
+
+
+ALTER TABLE ipmac OWNER TO nm;
+
+--
+-- Name: oui; Type: TABLE; Schema: mac; Owner: nm
+--
+
+CREATE TABLE oui (
+    addr macaddr NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE oui OWNER TO nm;
+
+--
+-- Name: portmac; Type: TABLE; Schema: mac; Owner: nm
+--
+
+CREATE TABLE portmac (
+    data portmac_t
+)
+INHERITS (session);
+
+
+ALTER TABLE portmac OWNER TO nm;
+
+SET search_path = pgauth, pg_catalog;
+
+--
+-- Name: member; Type: TABLE; Schema: pgauth; Owner: nm
+--
+
+CREATE TABLE member (
+    login text NOT NULL,
+    realm text NOT NULL
+);
+
+
+ALTER TABLE member OWNER TO nm;
+
+--
+-- Name: realm; Type: TABLE; Schema: pgauth; Owner: nm
+--
+
+CREATE TABLE realm (
+    realm text NOT NULL,
+    descr text,
+    admin integer
+);
+
+
+ALTER TABLE realm OWNER TO nm;
+
+--
+-- Name: user; Type: TABLE; Schema: pgauth; Owner: nm
+--
+
+CREATE TABLE "user" (
+    login text NOT NULL,
+    password text,
+    lastname text,
+    firstname text,
+    mail text,
+    phone text,
+    mobile text,
+    fax text,
+    addr text,
+    phlast text,
+    phfirst text
+);
+
+
+ALTER TABLE "user" OWNER TO nm;
+
+SET search_path = topo, pg_catalog;
+
+--
+-- Name: seq_confcmd; Type: SEQUENCE; Schema: topo; Owner: nm
+--
+
+CREATE SEQUENCE seq_confcmd
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_confcmd OWNER TO nm;
+
+--
+-- Name: confcmd; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE confcmd (
+    idccmd integer DEFAULT nextval('seq_confcmd'::regclass) NOT NULL,
+    idtype integer,
+    action text,
+    rank integer,
+    model text,
+    command text
+);
+
+
+ALTER TABLE confcmd OWNER TO nm;
+
+--
+-- Name: dotattr; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE dotattr (
+    rank integer NOT NULL,
+    type integer,
+    regexp text,
+    gvattr text,
+    png bytea
+);
+
+
+ALTER TABLE dotattr OWNER TO nm;
+
+--
+-- Name: seq_eq; Type: SEQUENCE; Schema: topo; Owner: nm
+--
+
+CREATE SEQUENCE seq_eq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_eq OWNER TO nm;
+
+--
+-- Name: eq; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE eq (
+    ideq integer DEFAULT nextval('seq_eq'::regclass) NOT NULL,
+    eq text,
+    idtype integer,
+    up integer
+);
+
+
+ALTER TABLE eq OWNER TO nm;
+
+--
+-- Name: seq_eqtype; Type: SEQUENCE; Schema: topo; Owner: nm
+--
+
+CREATE SEQUENCE seq_eqtype
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_eqtype OWNER TO nm;
+
+--
+-- Name: eqtype; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE eqtype (
+    idtype integer DEFAULT nextval('seq_eqtype'::regclass) NOT NULL,
+    type text
+);
+
+
+ALTER TABLE eqtype OWNER TO nm;
+
+--
+-- Name: filemonitor; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE filemonitor (
+    path text NOT NULL,
+    date timestamp(0) without time zone DEFAULT now()
+);
+
+
+ALTER TABLE filemonitor OWNER TO nm;
+
+--
+-- Name: ifchanges; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE ifchanges (
+    login text,
+    reqdate timestamp(0) without time zone DEFAULT now() NOT NULL,
+    eq text NOT NULL,
+    iface text NOT NULL,
+    ifdesc text,
+    ethervlan integer,
+    voicevlan integer,
+    processed integer DEFAULT 0,
+    moddate timestamp(0) without time zone,
+    modlog text
+);
+
+
+ALTER TABLE ifchanges OWNER TO nm;
+
+--
+-- Name: ignoreequsers; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE ignoreequsers (
+    login text NOT NULL
+);
+
+
+ALTER TABLE ignoreequsers OWNER TO nm;
+
+--
+-- Name: keepstate; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE keepstate (
+    type text NOT NULL,
+    message text,
+    date timestamp(0) without time zone DEFAULT now()
+);
+
+
+ALTER TABLE keepstate OWNER TO nm;
+
+--
+-- Name: lastrun; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE lastrun (
+    date timestamp(0) without time zone
+);
+
+
+ALTER TABLE lastrun OWNER TO nm;
+
+--
+-- Name: seq_link; Type: SEQUENCE; Schema: topo; Owner: nm
+--
+
+CREATE SEQUENCE seq_link
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE seq_link OWNER TO nm;
+
+--
+-- Name: link; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE link (
+    idlink integer DEFAULT nextval('seq_link'::regclass) NOT NULL,
+    descr text
+);
+
+
+ALTER TABLE link OWNER TO nm;
+
+--
+-- Name: modeq; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE modeq (
+    eq text,
+    date timestamp(0) without time zone DEFAULT now(),
+    login text,
+    processed integer DEFAULT 0
+);
+
+
+ALTER TABLE modeq OWNER TO nm;
+
+--
+-- Name: p_eq; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE p_eq (
+    idgrp integer,
+    rw integer,
+    pattern text NOT NULL,
+    allow_deny integer
+);
+
+
+ALTER TABLE p_eq OWNER TO nm;
+
+--
+-- Name: p_l2only; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE p_l2only (
+    idgrp integer NOT NULL,
+    vlanid integer NOT NULL
+);
+
+
+ALTER TABLE p_l2only OWNER TO nm;
+
+--
+-- Name: sensor; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE sensor (
+    id text NOT NULL,
+    type text,
+    eq text,
+    comm text,
+    iface text,
+    param text,
+    lastmod timestamp(0) without time zone DEFAULT now(),
+    lastseen timestamp(0) without time zone DEFAULT now()
+);
+
+
+ALTER TABLE sensor OWNER TO nm;
+
+--
+-- Name: vlan; Type: TABLE; Schema: topo; Owner: nm
+--
+
+CREATE TABLE vlan (
+    vlanid integer NOT NULL,
+    descr text,
+    voip integer DEFAULT 0
+);
+
+
+ALTER TABLE vlan OWNER TO nm;
+
+SET search_path = dns, pg_catalog;
+
+--
+-- Name: idzone; Type: DEFAULT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_forward ALTER COLUMN idzone SET DEFAULT nextval('seq_zone'::regclass);
+
+
+--
+-- Name: idzone; Type: DEFAULT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_reverse4 ALTER COLUMN idzone SET DEFAULT nextval('seq_zone'::regclass);
+
+
+--
+-- Name: idzone; Type: DEFAULT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_reverse6 ALTER COLUMN idzone SET DEFAULT nextval('seq_zone'::regclass);
+
+
+SET search_path = global, pg_catalog;
+
+--
+-- Name: start; Type: DEFAULT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY utmp ALTER COLUMN start SET DEFAULT now();
+
+
+--
+-- Name: api; Type: DEFAULT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY utmp ALTER COLUMN api SET DEFAULT 0;
+
+
+--
+-- Name: start; Type: DEFAULT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY wtmp ALTER COLUMN start SET DEFAULT now();
+
+
+--
+-- Name: api; Type: DEFAULT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY wtmp ALTER COLUMN api SET DEFAULT 0;
+
+
+SET search_path = dns, pg_catalog;
+
+--
+-- Data for Name: addr; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY addr (idhost, addr) FROM stdin;
+1	198.51.100.6
+2	198.51.100.200
+3	198.51.100.254
+4	172.16.100.10
+5	172.16.2.1
+6	172.16.2.10
+7	172.16.2.100
+8	172.16.2.101
+9	172.16.2.102
+10	172.16.2.103
+11	172.16.2.104
+12	172.16.2.105
+13	172.16.2.106
+14	172.16.2.107
+15	172.16.2.108
+16	172.16.2.109
+17	172.16.2.12
+18	172.16.2.120
+19	172.16.2.121
+20	172.16.2.122
+21	172.16.2.123
+22	172.16.2.124
+23	172.16.2.125
+24	172.16.2.126
+25	172.16.2.127
+26	172.16.2.128
+27	172.16.2.129
+28	172.16.2.13
+29	172.16.2.130
+30	172.16.2.131
+31	172.16.2.132
+32	172.16.2.133
+33	172.16.2.134
+34	172.16.2.135
+35	172.16.2.136
+36	172.16.2.137
+37	172.16.2.138
+38	172.16.2.139
+39	172.16.2.14
+40	172.16.2.140
+41	172.16.2.141
+42	172.16.2.142
+43	172.16.2.143
+44	172.16.2.144
+45	172.16.2.145
+46	172.16.2.146
+47	172.16.2.147
+48	172.16.2.148
+49	172.16.2.149
+50	172.16.2.15
+51	172.16.2.150
+52	172.16.2.151
+53	172.16.2.152
+54	172.16.2.153
+55	172.16.2.154
+56	172.16.2.155
+57	172.16.2.156
+58	172.16.2.157
+59	172.16.2.158
+60	172.16.2.159
+61	172.16.2.16
+62	172.16.2.160
+63	172.16.2.161
+64	172.16.2.162
+65	172.16.2.163
+66	172.16.2.164
+67	172.16.2.165
+68	172.16.2.166
+69	172.16.2.167
+70	172.16.2.168
+71	172.16.2.169
+72	172.16.2.170
+73	172.16.2.171
+74	172.16.2.172
+74	192.16.2.192
+75	172.16.2.173
+76	172.16.2.174
+77	172.16.2.175
+78	172.16.2.176
+79	172.16.2.177
+80	172.16.2.178
+81	172.16.2.179
+82	172.16.2.180
+83	172.16.2.181
+84	172.16.2.182
+85	172.16.2.183
+86	172.16.2.184
+87	172.16.2.185
+88	172.16.2.186
+89	172.16.2.187
+90	172.16.2.188
+91	172.16.2.189
+92	172.16.2.19
+93	172.16.2.190
+94	172.16.2.191
+95	172.16.2.193
+96	172.16.2.194
+97	172.16.2.195
+98	172.16.2.196
+99	172.16.2.197
+100	172.16.2.198
+101	172.16.2.199
+102	172.16.2.2
+103	172.16.2.20
+104	172.16.2.21
+105	172.16.2.215
+106	172.16.2.216
+107	172.16.2.217
+108	172.16.2.218
+109	172.16.2.219
+110	172.16.2.22
+111	172.16.2.220
+112	172.16.2.221
+113	172.16.2.222
+114	172.16.2.223
+115	172.16.2.224
+116	172.16.2.225
+117	172.16.2.226
+118	172.16.2.227
+119	172.16.2.228
+120	172.16.2.229
+121	172.16.2.23
+122	172.16.2.230
+123	172.16.2.231
+124	172.16.2.232
+125	172.16.2.233
+126	172.16.2.234
+127	172.16.2.235
+128	172.16.2.236
+129	172.16.2.237
+130	172.16.2.238
+131	172.16.2.239
+132	172.16.2.24
+133	172.16.2.240
+134	172.16.2.241
+135	172.16.2.242
+136	172.16.2.243
+137	172.16.2.244
+138	172.16.2.245
+139	172.16.2.246
+140	172.16.2.247
+141	172.16.2.248
+142	172.16.2.249
+143	172.16.2.25
+143	172.16.11.115
+144	172.16.2.250
+145	172.16.2.251
+146	172.16.2.252
+147	172.16.2.253
+148	172.16.2.26
+148	172.16.11.116
+149	172.16.2.27
+149	172.16.11.117
+150	172.16.2.28
+150	172.16.11.118
+151	172.16.2.29
+151	172.16.11.119
+152	172.16.2.3
+153	172.16.2.30
+154	172.16.2.36
+155	172.16.2.37
+156	172.16.2.38
+157	172.16.2.39
+158	172.16.2.4
+159	172.16.2.40
+160	172.16.2.41
+161	172.16.2.42
+162	172.16.2.43
+163	172.16.2.44
+164	172.16.2.45
+165	172.16.2.46
+166	172.16.2.47
+167	172.16.2.48
+168	172.16.2.49
+169	172.16.2.5
+170	172.16.2.50
+171	172.16.2.51
+172	172.16.2.53
+173	172.16.2.54
+174	172.16.2.55
+175	172.16.2.56
+176	172.16.2.57
+177	172.16.2.58
+178	172.16.2.59
+179	172.16.2.6
+180	172.16.2.60
+181	172.16.2.61
+182	172.16.2.62
+183	172.16.2.63
+184	172.16.2.66
+185	172.16.2.67
+186	172.16.2.68
+187	172.16.2.69
+188	172.16.2.7
+189	172.16.2.70
+190	172.16.2.71
+191	172.16.2.72
+192	172.16.2.73
+193	172.16.2.74
+194	172.16.2.75
+195	172.16.2.76
+196	172.16.2.77
+197	172.16.2.78
+198	172.16.2.79
+199	172.16.2.8
+200	172.16.2.80
+201	172.16.2.81
+202	172.16.2.82
+203	172.16.2.83
+204	172.16.2.84
+205	172.16.2.89
+206	172.16.2.9
+207	172.16.2.90
+208	172.16.2.91
+209	172.16.2.92
+210	172.16.2.93
+211	172.16.2.94
+212	172.16.2.95
+213	172.16.2.96
+214	172.16.2.97
+215	172.16.2.98
+216	172.16.2.99
+217	172.16.1.1
+218	198.51.100.3
+218	2001:db8:1234::3
+219	198.51.100.4
+219	2001:db8:1234::4
+220	198.51.100.1
+220	2001:db8:1234::1
+221	198.51.100.2
+221	2001:db8:1234::2
+222	198.51.100.5
+222	2001:db8:1234::5
+224	198.51.100.200
+225	198.51.100.254
+226	198.51.100.10
+227	198.51.100.3
+227	2001:db8:1234::3
+228	198.51.100.4
+228	2001:db8:1234::4
+229	198.51.100.1
+229	2001:db8:1234::1
+230	198.51.100.2
+230	2001:db8:1234::2
+231	198.51.100.5
+231	2001:db8:1234::5
+236	1.2.3.4
+236	4.5.6.7
+\.
+
+
+--
+-- Data for Name: alias; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY alias (idname, idhost, ttl) FROM stdin;
+223	5	-1
+232	231	-1
+233	231	-1
+\.
+
+
+--
+-- Name: bidon; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('bidon', 237, true);
+
+
+--
+-- Data for Name: community; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY community (idcomm, name) FROM stdin;
+1	Internal
+2	DMZ
+3	tagada
+4	tagada
+5	tagada
+7	tagada
+8	tagada
+9	tagada
+\.
+
+
+--
+-- Data for Name: dhcpprofile; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY dhcpprofile (iddhcpprof, name, text) FROM stdin;
+1	monprofil	texte du profil
+2	tx	blabla
+3	forbidden	bla
+\.
+
+
+--
+-- Data for Name: dhcprange; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY dhcprange (iddhcprange, min, max, iddom, default_lease_time, max_lease_time, iddhcpprof) FROM stdin;
+11	172.16.10.10	172.16.10.20	2	0	0	\N
+13	172.16.10.60	172.16.10.70	1	0	0	\N
+14	172.16.10.80	172.16.10.90	1	0	0	\N
+15	172.16.10.120	172.16.10.130	1	0	0	\N
+17	172.16.10.150	172.16.10.160	1	0	0	3
+18	172.16.10.140	172.16.10.150	1	0	0	\N
+19	172.16.10.170	172.16.10.172	1	0	0	\N
+21	172.16.11.128	172.16.11.130	1	0	0	\N
+22	198.51.100.100	198.51.100.110	1	0	0	\N
+1	172.16.5.1	172.16.8.252	1	0	0	\N
+\.
+
+
+--
+-- Data for Name: domain; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY domain (iddom, name) FROM stdin;
+1	example.com
+2	example.org
+\.
+
+
+--
+-- Data for Name: hinfo; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY hinfo (idhinfo, name, sort, present) FROM stdin;
+0	Unspecified	0	0
+1	PC/Windows	10	1
+2	PC/Unix	20	1
+3	Macintosh/MacOS	30	1
+4	Other/Unix	50	1
+5	Printer	70	1
+6	Network equipment	100	1
+7	telephone	0	1
+\.
+
+
+--
+-- Data for Name: host; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY host (idhost, idname, mac, iddhcpprof, idhinfo, comment, respname, respmail, sendsmtp, ttl) FROM stdin;
+92	92	\N	\N	0				0	-1
+41	41	\N	\N	0				0	-1
+42	42	\N	\N	0				0	-1
+219	219	\N	\N	0				0	-1
+115	115	\N	\N	0				0	-1
+129	129	\N	\N	0				0	-1
+185	185	\N	\N	0				0	-1
+179	179	\N	\N	0				0	-1
+35	35	\N	\N	0				0	-1
+224	224	\N	\N	0				0	-1
+10	10	\N	\N	0				0	-1
+157	157	\N	\N	0				0	-1
+104	104	\N	\N	0				0	-1
+105	105	\N	\N	0				0	-1
+151	151	\N	\N	0				0	-1
+198	198	\N	\N	0				0	-1
+48	48	\N	\N	0				0	-1
+183	183	\N	\N	0				0	-1
+152	152	\N	\N	0				0	-1
+149	149	\N	\N	0				0	-1
+58	58	\N	\N	0				0	-1
+109	109	\N	\N	0				0	-1
+134	134	\N	\N	0				0	-1
+196	196	\N	\N	0				0	-1
+211	211	\N	\N	0				0	-1
+50	50	\N	\N	0				0	-1
+200	200	\N	\N	0				0	-1
+77	77	\N	\N	0				0	-1
+47	47	\N	\N	0				0	-1
+159	159	\N	\N	0				0	-1
+32	32	\N	\N	0				0	-1
+227	227	\N	\N	0				0	-1
+2	2	\N	\N	0				0	-1
+166	166	\N	\N	0				0	-1
+178	178	\N	\N	0				0	-1
+112	112	\N	\N	0				0	-1
+27	27	\N	\N	0				0	-1
+199	199	\N	\N	0				0	-1
+163	163	\N	\N	0				0	-1
+53	53	\N	\N	0				0	-1
+114	114	\N	\N	0				0	-1
+95	95	\N	\N	0				0	-1
+208	208	\N	\N	0				0	-1
+90	90	\N	\N	0				0	-1
+148	148	\N	\N	0				0	-1
+81	81	\N	\N	0				0	-1
+207	207	\N	\N	0				0	-1
+216	216	\N	\N	0				0	-1
+116	116	\N	\N	0				0	-1
+94	94	\N	\N	0				0	-1
+79	79	\N	\N	0				0	-1
+80	80	\N	\N	0				0	-1
+87	87	\N	\N	0				0	-1
+201	201	\N	\N	0				0	-1
+176	176	\N	\N	0				0	-1
+24	24	\N	\N	0				0	-1
+231	231	\N	\N	0				0	-1
+173	173	\N	\N	0				0	-1
+131	131	\N	\N	0				0	-1
+26	26	\N	\N	0				0	-1
+9	9	\N	\N	0				0	-1
+23	23	\N	\N	0				0	-1
+177	177	\N	\N	0				0	-1
+30	30	\N	\N	0				0	-1
+76	76	\N	\N	0				0	-1
+33	33	\N	\N	0				0	-1
+59	59	\N	\N	0				0	-1
+135	135	\N	\N	0				0	-1
+204	204	\N	\N	0				0	-1
+119	119	\N	\N	0				0	-1
+128	128	\N	\N	0				0	-1
+137	137	\N	\N	0				0	-1
+72	72	\N	\N	0				0	-1
+88	88	\N	\N	0				0	-1
+22	22	\N	\N	0				0	-1
+155	155	\N	\N	0				0	-1
+145	145	\N	\N	0				0	-1
+31	31	\N	\N	0				0	-1
+190	190	\N	\N	0				0	-1
+138	138	\N	\N	0				0	-1
+206	206	\N	\N	0				0	-1
+20	20	\N	\N	0				0	-1
+67	67	\N	\N	0				0	-1
+68	68	\N	\N	0				0	-1
+132	132	\N	\N	0				0	-1
+44	44	\N	\N	0				0	-1
+139	139	\N	\N	0				0	-1
+169	169	\N	\N	0				0	-1
+8	8	\N	\N	0				0	-1
+18	18	\N	\N	0				0	-1
+75	75	\N	\N	0				0	-1
+222	222	\N	\N	0				0	-1
+146	146	\N	\N	0				0	-1
+60	60	\N	\N	0				0	-1
+107	107	\N	\N	0				0	-1
+230	230	\N	\N	0				0	-1
+11	11	\N	\N	0				0	-1
+195	195	\N	\N	0				0	-1
+218	218	\N	\N	0				0	-1
+82	82	\N	\N	0				0	-1
+78	78	\N	\N	0				0	-1
+15	15	\N	\N	0				0	-1
+25	25	\N	\N	0				0	-1
+69	69	\N	\N	0				0	-1
+1	1	\N	\N	0				0	-1
+29	29	\N	\N	0				0	-1
+63	63	\N	\N	0				0	-1
+203	203	\N	\N	0				0	-1
+12	12	\N	\N	0				0	-1
+118	118	\N	\N	0				0	-1
+193	193	\N	\N	0				0	-1
+220	220	\N	\N	0				0	-1
+205	205	\N	\N	0				0	-1
+210	210	\N	\N	0				0	-1
+71	71	\N	\N	0				0	-1
+144	144	\N	\N	0				0	-1
+66	66	\N	\N	0				0	-1
+170	170	\N	\N	0				0	-1
+85	85	\N	\N	0				0	-1
+221	221	\N	\N	0				0	-1
+86	86	\N	\N	0				0	-1
+98	98	\N	\N	0				0	-1
+150	150	\N	\N	0				0	-1
+38	38	\N	\N	0				0	-1
+6	6	\N	\N	0				0	-1
+122	122	\N	\N	0				0	-1
+192	192	\N	\N	0				0	-1
+217	217	\N	\N	0				0	-1
+229	229	\N	\N	0				0	-1
+225	225	\N	\N	0				0	-1
+73	73	\N	\N	0				0	-1
+96	96	\N	\N	0				0	-1
+143	143	\N	\N	0				0	-1
+111	111	\N	\N	0				0	-1
+184	184	\N	\N	0				0	-1
+189	189	\N	\N	0				0	-1
+70	70	\N	\N	0				0	-1
+125	125	\N	\N	0				0	-1
+34	34	\N	\N	0				0	-1
+133	133	\N	\N	0				0	-1
+162	162	\N	\N	0				0	-1
+5	5	\N	1	0				0	-1
+21	21	\N	\N	0				0	-1
+187	187	\N	\N	0				0	-1
+16	16	\N	\N	0				0	-1
+228	228	\N	\N	0				0	-1
+43	43	\N	\N	0				0	-1
+56	56	\N	\N	0				0	-1
+215	215	\N	\N	0				0	-1
+141	141	\N	\N	0				0	-1
+209	209	\N	\N	0				0	-1
+7	7	\N	\N	0				0	-1
+167	167	\N	\N	0				0	-1
+182	182	\N	\N	0				0	-1
+61	61	\N	\N	0				0	-1
+13	13	\N	\N	0				0	-1
+120	120	\N	\N	0				0	-1
+126	126	\N	\N	0				0	-1
+14	14	\N	\N	0				0	-1
+54	54	\N	\N	0				0	-1
+4	4	\N	\N	0				0	-1
+130	130	\N	\N	0				0	-1
+212	212	\N	\N	0				0	-1
+214	214	\N	\N	0				0	-1
+93	93	\N	\N	0				0	-1
+17	17	\N	\N	0				0	-1
+39	39	\N	\N	0				0	-1
+49	49	\N	\N	0				0	-1
+236	236	\N	\N	0	\N	\N	\N	0	-1
+51	51	\N	\N	0				0	-1
+153	153	\N	\N	0				0	-1
+83	83	\N	\N	0				0	-1
+124	124	\N	\N	0				0	-1
+172	172	\N	\N	0				0	-1
+194	194	\N	\N	0				0	-1
+102	102	\N	\N	0				0	-1
+89	89	\N	\N	0				0	-1
+46	46	\N	\N	0				0	-1
+97	97	\N	\N	0				0	-1
+154	154	\N	\N	0				0	-1
+186	186	\N	\N	0				0	-1
+36	36	\N	\N	0				0	-1
+84	84	\N	\N	0				0	-1
+164	164	\N	\N	0				0	-1
+171	171	\N	\N	0				0	-1
+191	191	\N	\N	0				0	-1
+197	197	\N	\N	0				0	-1
+140	140	\N	\N	0				0	-1
+28	28	\N	\N	0				0	-1
+180	180	\N	\N	0				0	-1
+202	202	\N	\N	0				0	-1
+110	110	\N	\N	0				0	-1
+226	226	\N	\N	0				0	-1
+174	174	\N	\N	0				0	-1
+19	19	\N	\N	0				0	-1
+168	168	\N	\N	0				0	-1
+64	64	\N	\N	0				0	-1
+165	165	\N	\N	0				0	-1
+106	106	\N	\N	0				0	-1
+136	136	\N	\N	0				0	-1
+55	55	\N	\N	0				0	-1
+52	52	\N	\N	0				0	-1
+57	57	\N	\N	0				0	-1
+100	100	\N	\N	0				0	-1
+108	108	\N	\N	0				0	-1
+158	158	\N	\N	0				0	-1
+181	181	\N	\N	0				0	-1
+101	101	\N	\N	0				0	-1
+161	161	\N	\N	0				0	-1
+142	142	\N	\N	0				0	-1
+3	3	\N	\N	0				0	-1
+91	91	\N	\N	0				0	-1
+113	113	\N	\N	0				0	-1
+188	188	\N	\N	0				0	-1
+117	117	\N	\N	0				0	-1
+156	156	\N	\N	0				0	-1
+121	121	\N	\N	0				0	-1
+103	103	\N	\N	0				0	-1
+160	160	\N	\N	0				0	-1
+62	62	\N	\N	0				0	-1
+45	45	\N	\N	0				0	-1
+127	127	\N	\N	0				0	-1
+213	213	\N	\N	0				0	-1
+37	37	\N	\N	0				0	-1
+74	74	\N	\N	0				0	-1
+147	147	\N	\N	0				0	-1
+40	40	\N	\N	0				0	-1
+65	65	\N	\N	0				0	-1
+99	99	\N	\N	0				0	-1
+123	123	\N	\N	0				0	-1
+175	175	\N	\N	0				0	-1
+\.
+
+
+--
+-- Data for Name: mailrole; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY mailrole (idname, idhost, ttl) FROM stdin;
+234	217	-1
+\.
+
+
+--
+-- Data for Name: mx; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY mx (idname, prio, idhost, ttl) FROM stdin;
+7	100	6	-1
+8	100	6	-1
+9	100	6	-1
+7	200	103	-1
+8	200	103	-1
+\.
+
+
+--
+-- Data for Name: name; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY name (idname, name, iddom, idview) FROM stdin;
+1	antivirus	1	2
+2	fw	1	2
+3	gw	1	2
+4	historic	1	2
+6	host10	1	2
+7	host100	1	2
+8	host101	1	2
+9	host102	1	2
+10	host103	1	2
+11	host104	1	2
+12	host105	1	2
+13	host106	1	2
+14	host107	1	2
+15	host108	1	2
+16	host109	1	2
+17	host12	1	2
+18	host120	1	2
+19	host121	1	2
+20	host122	1	2
+21	host123	1	2
+22	host124	1	2
+23	host125	1	2
+24	host126	1	2
+25	host127	1	2
+26	host128	1	2
+27	host129	1	2
+28	host13	1	2
+29	host130	1	2
+30	host131	1	2
+31	host132	1	2
+32	host133	1	2
+33	host134	1	2
+34	host135	1	2
+35	host136	1	2
+36	host137	1	2
+37	host138	1	2
+38	host139	1	2
+39	host14	1	2
+40	host140	1	2
+41	host141	1	2
+42	host142	1	2
+43	host143	1	2
+44	host144	1	2
+45	host145	1	2
+46	host146	1	2
+47	host147	1	2
+48	host148	1	2
+49	host149	1	2
+50	host15	1	2
+51	host150	1	2
+52	host151	1	2
+53	host152	1	2
+54	host153	1	2
+55	host154	1	2
+56	host155	1	2
+57	host156	1	2
+58	host157	1	2
+59	host158	1	2
+60	host159	1	2
+61	host16	1	2
+62	host160	1	2
+63	host161	1	2
+64	host162	1	2
+65	host163	1	2
+66	host164	1	2
+67	host165	1	2
+68	host166	1	2
+69	host167	1	2
+70	host168	1	2
+71	host169	1	2
+72	host170	1	2
+73	host171	1	2
+74	host172	1	2
+75	host173	1	2
+76	host174	1	2
+77	host175	1	2
+78	host176	1	2
+79	host177	1	2
+80	host178	1	2
+81	host179	1	2
+82	host180	1	2
+83	host181	1	2
+84	host182	1	2
+85	host183	1	2
+86	host184	1	2
+87	host185	1	2
+88	host186	1	2
+89	host187	1	2
+90	host188	1	2
+91	host189	1	2
+92	host19	1	2
+93	host190	1	2
+94	host191	1	2
+95	host193	1	2
+96	host194	1	2
+97	host195	1	2
+98	host196	1	2
+99	host197	1	2
+100	host198	1	2
+101	host199	1	2
+102	host2	1	2
+103	host20	1	2
+104	host21	1	2
+105	host215	1	2
+106	host216	1	2
+107	host217	1	2
+108	host218	1	2
+109	host219	1	2
+110	host22	1	2
+111	host220	1	2
+112	host221	1	2
+113	host222	1	2
+114	host223	1	2
+115	host224	1	2
+116	host225	1	2
+117	host226	1	2
+118	host227	1	2
+119	host228	1	2
+120	host229	1	2
+121	host23	1	2
+122	host230	1	2
+123	host231	1	2
+124	host232	1	2
+125	host233	1	2
+126	host234	1	2
+127	host235	1	2
+128	host236	1	2
+129	host237	1	2
+130	host238	1	2
+131	host239	1	2
+132	host24	1	2
+133	host240	1	2
+134	host241	1	2
+135	host242	1	2
+136	host243	1	2
+137	host244	1	2
+138	host245	1	2
+139	host246	1	2
+140	host247	1	2
+141	host248	1	2
+142	host249	1	2
+143	host25	1	2
+144	host250	1	2
+145	host251	1	2
+146	host252	1	2
+147	host253	1	2
+148	host26	1	2
+149	host27	1	2
+150	host28	1	2
+151	host29	1	2
+152	host3	1	2
+153	host30	1	2
+154	host36	1	2
+155	host37	1	2
+156	host38	1	2
+157	host39	1	2
+158	host4	1	2
+159	host40	1	2
+160	host41	1	2
+161	host42	1	2
+162	host43	1	2
+163	host44	1	2
+164	host45	1	2
+165	host46	1	2
+166	host47	1	2
+167	host48	1	2
+168	host49	1	2
+169	host5	1	2
+170	host50	1	2
+171	host51	1	2
+172	host53	1	2
+173	host54	1	2
+174	host55	1	2
+175	host56	1	2
+176	host57	1	2
+177	host58	1	2
+178	host59	1	2
+179	host6	1	2
+180	host60	1	2
+181	host61	1	2
+182	host62	1	2
+183	host63	1	2
+184	host66	1	2
+185	host67	1	2
+186	host68	1	2
+187	host69	1	2
+188	host7	1	2
+189	host70	1	2
+190	host71	1	2
+191	host72	1	2
+192	host73	1	2
+193	host74	1	2
+194	host75	1	2
+195	host76	1	2
+196	host77	1	2
+197	host78	1	2
+198	host79	1	2
+199	host8	1	2
+200	host80	1	2
+201	host81	1	2
+202	host82	1	2
+203	host83	1	2
+204	host84	1	2
+205	host89	1	2
+206	host9	1	2
+207	host90	1	2
+208	host91	1	2
+209	host92	1	2
+210	host93	1	2
+211	host94	1	2
+212	host95	1	2
+213	host96	1	2
+214	host97	1	2
+215	host98	1	2
+216	host99	1	2
+217	mailhost	1	2
+218	mx1	1	2
+219	mx2	1	2
+220	ns1	1	2
+221	ns2	1	2
+222	www	1	2
+223	intranet	1	2
+224	fw	1	3
+225	gw	1	3
+226	historic	1	3
+227	mx1	1	3
+228	mx2	1	3
+229	ns1	1	3
+230	ns2	1	3
+231	www	1	3
+232	a-marvelous-product	1	3
+233	www	2	3
+234	sales	1	3
+5	host1	1	2
+236	turlututu	1	2
+\.
+
+
+--
+-- Data for Name: network; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY network (idnet, name, location, addr4, addr6, idorg, idcomm, comment, dhcp, gw4, gw6) FROM stdin;
+1	Internal network	1st floor	172.16.0.0/16	\N	1	1	Backbone + servers	1	172.16.255.254	\N
+2	Public servers	Machine room	198.51.100.0/24	2001:db8:1234::/48	1	2		1	198.51.100.254	\N
+\.
+
+
+--
+-- Data for Name: organization; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY organization (idorg, name) FROM stdin;
+7	bouzouh
+1	areuh
+3	bla
+6	tagada
+\.
+
+
+--
+-- Data for Name: p_dhcpprofile; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY p_dhcpprofile (idgrp, iddhcpprof, sort) FROM stdin;
+2	1	100
+1	2	300
+\.
+
+
+--
+-- Data for Name: p_dom; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY p_dom (idgrp, iddom, sort, mailrole) FROM stdin;
+1	1	10	1
+2	1	10	1
+2	2	20	1
+1	2	20	1
+\.
+
+
+--
+-- Data for Name: p_ip; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY p_ip (idgrp, addr, allow_deny) FROM stdin;
+2	172.16.0.0/16	1
+2	172.16.0.0/32	0
+2	172.16.255.255/32	0
+2	172.16.255.254/32	0
+1	172.16.0.0/16	1
+1	172.16.0.0/32	0
+1	172.16.255.255/32	0
+1	198.51.100.0/32	0
+1	198.51.100.255/32	0
+1	2001:db8:1234::/48	1
+1	172.16.10.64/26	0
+1	172.16.11.64/26	0
+1	198.51.100.0/24	1
+\.
+
+
+--
+-- Data for Name: p_network; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY p_network (idgrp, idnet, sort, dhcp, acl) FROM stdin;
+2	1	99	0	\N
+1	1	100	1	0
+1	2	100	1	0
+\.
+
+
+--
+-- Data for Name: p_view; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY p_view (idgrp, idview, sort, selected) FROM stdin;
+2	2	200	0
+1	2	500	0
+1	3	2	0
+\.
+
+
+--
+-- Data for Name: relaydom; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY relaydom (iddom, idview, prio, idhost, ttl) FROM stdin;
+2	3	10	227	-1
+1	3	10	227	-1
+2	3	20	228	-1
+1	3	20	228	-1
+\.
+
+
+--
+-- Name: seq_community; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_community', 10, true);
+
+
+--
+-- Name: seq_dhcpprofile; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_dhcpprofile', 3, true);
+
+
+--
+-- Name: seq_dhcprange; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_dhcprange', 22, true);
+
+
+--
+-- Name: seq_domain; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_domain', 2, true);
+
+
+--
+-- Name: seq_hinfo; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_hinfo', 7, true);
+
+
+--
+-- Name: seq_host; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_host', 236, true);
+
+
+--
+-- Name: seq_name; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_name', 236, true);
+
+
+--
+-- Name: seq_network; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_network', 3, true);
+
+
+--
+-- Name: seq_organization; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_organization', 7, true);
+
+
+--
+-- Name: seq_view; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_view', 3, true);
+
+
+--
+-- Name: seq_zone; Type: SEQUENCE SET; Schema: dns; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_zone', 7, true);
+
+
+--
+-- Data for Name: toto; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY toto (idtoto) FROM stdin;
+\.
+
+
+--
+-- Data for Name: view; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY view (idview, name, gendhcp) FROM stdin;
+3	external	1
+2	internal	1
+\.
+
+
+--
+-- Data for Name: zone; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY zone (idzone, name, idview, version, prologue, rrsup, gen) FROM stdin;
+\.
+
+
+--
+-- Data for Name: zone_forward; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY zone_forward (idzone, name, idview, version, prologue, rrsup, gen, selection) FROM stdin;
+4	example.com-ext	3	2012100901	;\n; Zone example.com\n;\n;\n; History\n;   2012/10/09 : pda : design multi-views example\n;\n\n@\tIN\tSOA\tns1.example.com. hostmaster.example.com. (\n\t\t    %ZONEVERSION%\t\t; serial\n\t\t    86400\t\t; refresh = 1 day\n\t\t    3600\t\t; retry = 1 h\n\t\t    3600000\t\t; expire = 1000 hours (~ 41 day)\n\t\t    86400\t\t; default ttl = 1 day\n\t\t)\n\n;\n; Default TLL for zone records\n;\n$TTL\t86400\n\n;\n; Authoritative servers for this zone\n;\n\n\t\t\tIN\tNS\tns1.example.com.\n\t\t\tIN\tNS\tns2.example.com.\n\t\t\tIN\tNS\tns.myisp.com.\n\n;\n; Default MX for the domain itself\n;\n\n\t\t\tIN\tMX\t10 mx1.example.com.\n\t\t\tIN\tMX\t20 mx2.example.com.\n\n;\n; hack\n;\n\nlocalhost\t\tIN\tA\t127.0.0.1\n\n		1	example.com
+5	example.org-ext	3	2012100901	;\n; Zone example.org\n;\n;\n; History\n;   2012/10/09 : pda : design multi-views example\n;\n\n@\tIN\tSOA\tns1.example.com. hostmaster.example.com. (\n\t\t    %ZONEVERSION%\t\t; serial\n\t\t    86400\t\t; refresh = 1 day\n\t\t    3600\t\t; retry = 1 h\n\t\t    3600000\t\t; expire = 1000 hours (~ 41 day)\n\t\t    86400\t\t; default ttl = 1 day\n\t\t)\n\n;\n; Default TLL for zone records\n;\n$TTL\t86400\n\n;\n; Authoritative servers for this zone\n;\n\n\t\t\tIN\tNS\tns1.example.com.\n\t\t\tIN\tNS\tns2.example.com.\n\t\t\tIN\tNS\tns.myisp.com.\n\n;\n; Default MX for the domain itself\n;\n\n\t\t\tIN\tMX\t10 mx1.example.com.\n\n;\n; hack\n;\n\nlocalhost\t\tIN\tA\t127.0.0.1\n\n		1	example.org
+1	example.com-int	2	2012100901	;\n; Zone example.com\n;\n;\n; History\n;   2012/10/09 : pda : design multi-views example\n;\n\n@\tIN\tSOA\tns1.example.com. hostmaster.example.com. (\n\t\t    %ZONEVERSION%\t\t; serial\n\t\t    86400\t\t; refresh = 1 day\n\t\t    3600\t\t; retry = 1 h\n\t\t    3600000\t\t; expire = 1000 hours (~ 41 day)\n\t\t    86400\t\t; default ttl = 1 day\n\t\t)\n\n;\n; Default TLL for zone records\n;\n$TTL\t86400\n\n;\n; Authoritative servers for this zone\n;\n\n\t\t\tIN\tNS\tns1.example.com.\n\t\t\tIN\tNS\tns2.example.com.\n\t\t\tIN\tNS\tns.myisp.com.\n\n;\n; Default MX for the domain itself\n;\n\n\t\t\tIN\tMX\t10 mx1.example.com.\n\t\t\tIN\tMX\t20 mx2.example.com.\n\n;\n; hack\n;\n\nlocalhost\t\tIN\tA\t127.0.0.1\n\n		1	example.com
+\.
+
+
+--
+-- Data for Name: zone_reverse4; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY zone_reverse4 (idzone, name, idview, version, prologue, rrsup, gen, selection) FROM stdin;
+3	100.51.198.in-addr.arpa-int	2	2012042601	;\n; Zone 100.51.198.in-addr.arpa\n;\n;\n; History\n;   2012/10/09 : pda : design multi-views example\n;\n\n@\tIN\tSOA\tns1.example.com. hostmaster.example.com. (\n\t\t    %ZONEVERSION%\t\t; serial\n\t\t    86400\t\t; refresh = 1 day\n\t\t    3600\t\t; retry = 1 h\n\t\t    3600000\t\t; expire = 1000 hours (~ 41 day)\n\t\t    86400\t\t; default ttl = 1 day\n\t\t)\n\n;\n; Default TLL for zone records\n;\n$TTL\t86400\n\n;\n; Authoritative servers for this zone\n;\n\n\t\t\tIN\tNS\tns1.example.com.\n\t\t\tIN\tNS\tns2.example.com.\n\t\t\tIN\tNS\tns.myisp.com.\n\n		1	198.51.100.0/24
+6	100.51.198.in-addr.arpa-ext	3	2012042601	;\n; Zone 100.51.198.in-addr.arpa\n;\n;\n; History\n;   2012/10/09 : pda : design multi-views example\n;\n\n@\tIN\tSOA\tns1.example.com. hostmaster.example.com. (\n\t\t    %ZONEVERSION%\t\t; serial\n\t\t    86400\t\t; refresh = 1 day\n\t\t    3600\t\t; retry = 1 h\n\t\t    3600000\t\t; expire = 1000 hours (~ 41 day)\n\t\t    86400\t\t; default ttl = 1 day\n\t\t)\n\n;\n; Default TLL for zone records\n;\n$TTL\t86400\n\n;\n; Authoritative servers for this zone\n;\n\n\t\t\tIN\tNS\tns1.example.com.\n\t\t\tIN\tNS\tns2.example.com.\n\t\t\tIN\tNS\tns.myisp.com.\n\n		1	198.51.100.0/24
+2	16.172.in-addr.arpa-int	2	2012100901	;\n; Zone 16.172.in-addr.arpa\n;\n;\n; History\n;   2012/10/09 : pda : design multi-views example\n;\n\n@\tIN\tSOA\tns1.example.com. hostmaster.example.com. (\n\t\t    %ZONEVERSION%\t\t; serial\n\t\t    86400\t\t; refresh = 1 day\n\t\t    3600\t\t; retry = 1 h\n\t\t    3600000\t\t; expire = 1000 hours (~ 41 day)\n\t\t    86400\t\t; default ttl = 1 day\n\t\t)\n\n;\n; Default TLL for zone records\n;\n$TTL\t86400\n\n;\n; Authoritative servers for this zone\n;\n\n\t\t\tIN\tNS\tns1.example.com.\n\t\t\tIN\tNS\tns2.example.com.\n\t\t\tIN\tNS\tns.myisp.com.\n\n		1	172.16.0.0/16
+\.
+
+
+--
+-- Data for Name: zone_reverse6; Type: TABLE DATA; Schema: dns; Owner: nm
+--
+
+COPY zone_reverse6 (idzone, name, idview, version, prologue, rrsup, gen, selection) FROM stdin;
+7	4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa-ext	3	2012100901	;\n; Zone 4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa\n;\n;\n; History\n;   2012/10/09 : pda : design multi-views example\n;\n\n@\tIN\tSOA\tns1.example.com. hostmaster.example.com. (\n\t\t    %ZONEVERSION%\t\t; serial\n\t\t    86400\t\t; refresh = 1 day\n\t\t    3600\t\t; retry = 1 h\n\t\t    3600000\t\t; expire = 1000 hours (~ 41 day)\n\t\t    86400\t\t; default ttl = 1 day\n\t\t)\n\n;\n; Default TLL for zone records\n;\n$TTL\t86400\n\n;\n; Authoritative servers for this zone\n;\n\n\t\t\tIN\tNS\tns1.example.com.\n\t\t\tIN\tNS\tns2.example.com.\n\t\t\tIN\tNS\tns.myisp.com.\n\n		1	2001:db8:1234::/48
+\.
+
+
+SET search_path = global, pg_catalog;
+
+--
+-- Data for Name: authfail; Type: TABLE DATA; Schema: global; Owner: nm
+--
+
+COPY authfail (origin, otype, nfail, lastfail, blockexpire) FROM stdin;
+\.
+
+
+--
+-- Data for Name: config; Type: TABLE DATA; Schema: global; Owner: nm
+--
+
+COPY config (key, value) FROM stdin;
+datefmt	%d/%m/%Y %H:%M:%S
+dayfmt	%a %d %b %Y
+authexpire	36000
+authtoklen	32
+wtmpexpire	365
+pageformat	a4
+default_lease_time	600
+max_lease_time	3600
+min_lease_time	300
+dhcpdefdomain	example.com
+defdomain	example.com
+topofrom	nobody.topo@example.com
+topoto	noc@example.com another@example.com
+topographddelay	5
+toposendddelay	5
+topomaxstatus	100
+sensorexpire	30
+modeqexpire	30
+ifchangeexpire	30
+fullrancidmin	2
+fullrancidmax	4
+failloginthreshold1	3
+failloginthreshold2	10
+faillogindelay1	120
+faillogindelay2	300
+failipthreshold1	10
+failipthreshold2	30
+failipdelay1	300
+failipdelay2	1200
+ldapurl	ldap://ldap.example.com/
+ldapbinddn	cn=admin,ou=accounts,ou=operators,dc=example,dc=com
+ldapbindpw	*
+ldapbasedn	ou=people,dc=example,dc=com
+ldapsearchlogin	(&(objectClass=People)(uid=%s))
+ldapattrlogin	uid
+ldapattrname	sn
+ldapattrgivenname	givenName
+ldapattrmail	mail
+ldapattrphone	telephoneNumber
+ldapattrmobile	
+ldapattrfax	facsimileTelephoneNumber
+ldapattraddr	postalAddress postalCode l
+authpgminpwlen	10
+authpgmaxpwlen	128
+authpgmailfrom	nobody.netmagis@example.com
+authpgmailreplyto	nobody.netmagis@example.com
+authpgmailcc	
+authpgmailbcc	
+authpgmailsubject	Password change
+authpgmailbody	Password changed (%2$s) for user %1$s. Best regards.
+authpggroupes	netmagis
+defuser	nobody
+casurl	toto
+topoactive	1
+macactive	1
+authmethod	pgsql
+schemaversion	30
+apiexpire	182
+\.
+
+
+--
+-- Data for Name: log; Type: TABLE DATA; Schema: global; Owner: nm
+--
+
+COPY log (date, subsys, event, login, ip, msg, version, jbefore, jafter) FROM stdin;
+2016-06-21 08:51:49	netmagis	auth	pda	127.0.0.1	lastaccess pda df74ed8668878811c6e109dbce7415b6c54e51f967f6927a6343a8e22a086cc2	0	\N	\N
+2016-06-21 08:52:01	netmagis	auth	pda	127.0.0.1	lastaccess pda 72d0371a0715c9a131eedd186436e2f802af976e01a1fd41473588b72345a45a	0	\N	\N
+2016-06-21 08:52:09	netmagis	auth	pda	127.0.0.1	lastaccess pda 43bde9361e7634490150903682ef004b6be12e31baaabef4708a3eca4f42f83f	0	\N	\N
+2016-06-21 08:55:22	netmagis	auth	pda	127.0.0.1	lastaccess pda e2befe372f75a90b78ac79f576a73e3e833535b13d62774b9431218a29cb1130	0	\N	\N
+2016-06-21 14:23:51	netmagis	auth	pda	127.0.0.1	lastaccess pda 22028aa7c3d2eb99dc7bb4d9946131f718a496b029059175c1e77997d1377be7	0	\N	\N
+2016-06-21 14:38:05	netmagis	auth	pda	127.0.0.1	lastaccess pda 5e624c87ae11c309028f14378d45cf854d64a7c77700d8a36137a804e8669664	0	\N	\N
+2016-06-21 14:38:09	netmagis	auth	pda	127.0.0.1	lastaccess pda dda03b1988471f0ae41b802629c32558097f025c55bd4084925d36937664e9f1	0	\N	\N
+2016-06-21 14:38:15	netmagis	auth	pda	127.0.0.1	lastaccess pda 277cdce0a9a247248995ac2f48d0110c126a2a0ba164f0fb66f21de1a32cea46	0	\N	\N
+2016-06-21 14:39:03	netmagis	auth	pda	127.0.0.1	lastaccess pda 953af077c3acbc2a58cd0299662ef4e967496c756505ab43faaf5bd4033f1f13	0	\N	\N
+2016-06-22 08:58:39	netmagis	auth	pda	192.168.10.6	lastaccess pda 791b4c68e4e188ea01f466bb4156c018a099710e97428c3c7034ecb6968daddc	0	\N	\N
+2016-06-23 09:10:17	netmagis	auth	\N	127.0.0.1	login pda '5237925a94f4b66ff0025d9599cabd292b6ad7696ad24916a8281df581e5d76c'	0	\N	\N
+2016-06-23 09:16:21	netmagis	auth	pda	127.0.0.1	login pda '010fd433dca9dc2cfbce20b67dde9c6d694cbe78c65e58a418b1ecf582b43e3e'	0	\N	\N
+2016-06-23 09:18:09	netmagis	auth	pda	127.0.0.1	login pda 78e79f2f49715fbce0419e6eff752025d627b27682f5c37f0d46d22fd2179f4b	0	\N	\N
+2016-06-23 09:20:14	netmagis	auth	pda	127.0.0.1	logout pda 45c6632374d3bbc2b07035de819fa2f96852fcb6d7dd9ee61612660136be8e16	0	\N	\N
+2016-06-23 09:16:21	netmagis	auth	pda	127.0.0.1	lastaccess pda 010fd433dca9dc2cfbce20b67dde9c6d694cbe78c65e58a418b1ecf582b43e3e	0	\N	\N
+2016-06-23 09:10:17	netmagis	auth	pda	127.0.0.1	lastaccess pda 5237925a94f4b66ff0025d9599cabd292b6ad7696ad24916a8281df581e5d76c	0	\N	\N
+2016-06-23 09:06:32	netmagis	auth	pda	127.0.0.1	lastaccess pda 0cb11fe566586e02e7407552b4c0080c70e413d935674420f2886c7f0f0d82e7	0	\N	\N
+2016-06-23 07:58:38	netmagis	auth	pda	127.0.0.1	lastaccess pda 71cad6b1b2bc23cc9a55551514c123d9385890c45e60e868a93d36d54879e62c	0	\N	\N
+2016-06-23 07:57:25	netmagis	auth	pda	127.0.0.1	lastaccess pda 98389c9485decbc6cd947253516f2f68b2fff7e80eecf75042fc2e1d31cce76b	0	\N	\N
+2016-06-24 15:03:36	netmagis	auth	pda	127.0.0.1	login pda 6491d41703ae774540f22651f4339527ec582bd37031b11f8c8516913ba9669b	0	\N	\N
+2016-06-24 15:50:45	netmagis	auth	pda	127.0.0.1	login pda 6127da413dffa2bad2d0b1dc7e63cd87a32a58de7ee809df0f6f663108003c5a	0	\N	\N
+2016-06-24 16:36:30	netmagis	auth	pda	127.0.0.1	login pda dff9392421582e94e6d38d4e5380d832115e0da3f6f62a4e73f3d66ea6617f05	0	\N	\N
+2016-06-24 16:36:35	netmagis	auth	pda	127.0.0.1	lastaccess pda dff9392421582e94e6d38d4e5380d832115e0da3f6f62a4e73f3d66ea6617f05	0	\N	\N
+2016-06-24 15:50:45	netmagis	auth	pda	127.0.0.1	lastaccess pda 6491d41703ae774540f22651f4339527ec582bd37031b11f8c8516913ba9669b	0	\N	\N
+2016-06-24 16:36:30	netmagis	auth	pda	127.0.0.1	lastaccess pda 6127da413dffa2bad2d0b1dc7e63cd87a32a58de7ee809df0f6f663108003c5a	0	\N	\N
+2016-07-15 12:35:06	netmagis	auth	pda	127.0.0.1	login pda 6f67802cd25210e7a3442840b7174c643d0e8daea8729cc580145ee8cdfe62b1	0	\N	\N
+2016-07-15 13:03:51	netmagis	auth	pda	127.0.0.1	lastaccess pda 6f67802cd25210e7a3442840b7174c643d0e8daea8729cc580145ee8cdfe62b1	0	\N	\N
+2016-07-18 18:38:45	netmagis	auth	pda	192.168.10.6	login pda 2a4f11ca00326efc5436c9d82833a9a1c6d403b3c26cb581dea889889019966d	0	\N	\N
+2016-07-18 18:39:16	netmagis	auth	pda	127.0.0.1	lastaccess pda 2a4f11ca00326efc5436c9d82833a9a1c6d403b3c26cb581dea889889019966d	0	\N	\N
+2016-07-19 09:15:42	netmagis	auth	pda	127.0.0.1	login pda da48e6581b1ca883a18ef4ed183534cbd5b234d078a12a91a64b294240cbbbdd	0	\N	\N
+2016-07-19 15:49:06	netmagis	auth	pda	127.0.0.1	login pda 4494bbbb9e465bfa7aa269e043b0146534da932b0ad6b32d91bc7e2adf620abc	0	\N	\N
+2016-07-19 09:16:01	netmagis	auth	pda	127.0.0.1	lastaccess pda da48e6581b1ca883a18ef4ed183534cbd5b234d078a12a91a64b294240cbbbdd	0	\N	\N
+2016-07-19 17:48:12	netmagis	auth	pda	127.0.0.1	lastaccess pda 4494bbbb9e465bfa7aa269e043b0146534da932b0ad6b32d91bc7e2adf620abc	0	\N	\N
+2016-07-20 16:04:44	netmagis	auth	pda	127.0.0.1	login pda 9fdc453605b0f84404a98c48f9fdb2c1b7fd38d006d9915fd356836f52fc31ad	0	\N	\N
+2016-07-20 16:05:33	netmagis	auth	pda	127.0.0.1	login pda eccb9494dc1ebe2fdbea62e371d89aa99e3b050add16c6e0800dbdd41107c81b	0	\N	\N
+2016-07-20 16:36:28	netmagis	auth	pda	127.0.0.1	login pda d09fd1d68190d9a227414836502a08de798d2e671c8c8adc64f45e3ce1a9372f	0	\N	\N
+2016-07-20 16:55:49	netmagis	auth	pda	127.0.0.1	login pda 3ac3bead40852c7237b18caf22744509142909143598004b05cefbbaf566d327	0	\N	\N
+2016-07-20 16:55:49	netmagis	auth	pda	127.0.0.1	lastaccess pda d09fd1d68190d9a227414836502a08de798d2e671c8c8adc64f45e3ce1a9372f	0	\N	\N
+2016-07-20 16:05:33	netmagis	auth	pda	127.0.0.1	lastaccess pda 9fdc453605b0f84404a98c48f9fdb2c1b7fd38d006d9915fd356836f52fc31ad	0	\N	\N
+2016-07-20 16:55:50	netmagis	auth	pda	127.0.0.1	lastaccess pda 3ac3bead40852c7237b18caf22744509142909143598004b05cefbbaf566d327	0	\N	\N
+2016-07-20 16:36:28	netmagis	auth	pda	127.0.0.1	lastaccess pda eccb9494dc1ebe2fdbea62e371d89aa99e3b050add16c6e0800dbdd41107c81b	0	\N	\N
+2016-07-22 11:01:11	netmagis	auth	pda	127.0.0.1	login pda 3ed759bedacf558b9366610a9e8a58296d5861818a32df858a7c502f0ae4cd1f	0	\N	\N
+2016-07-22 11:01:41	netmagis	auth	pda	127.0.0.1	login pda 46722ef7c8093c05be4fda6e7e5a8d07b9e4b75e41260b3984e161ab61827985	0	\N	\N
+2016-07-22 11:04:40	netmagis	auth	pda	127.0.0.1	login pda a2ef6389ff2a2ac0a012cc01ed7a24a469619e8d09ceaa3ed965f3da9f888666	0	\N	\N
+2016-07-22 11:05:37	netmagis	auth	pda	127.0.0.1	login pda 8e1a0d3df867721f6cb738503948fef5c9881f63a743387ca4c3fa72da1574a4	0	\N	\N
+2016-07-22 11:15:17	netmagis	auth	pda	127.0.0.1	login pda 506a4a3fe03c6e89205b6d7e004a0991937654ddb5e23194f42b6f75e1c501f7	0	\N	\N
+2016-07-22 11:19:00	netmagis	auth	pda	127.0.0.1	login pda 06ad5e11512d7942f75399801754509432e4848810150e77a2334f622e31df47	0	\N	\N
+2016-07-22 11:20:49	netmagis	auth	pda	127.0.0.1	login pda e4423e8c26fb71ea352158a08922e18c3c43600f16c094997f928dfec1487118	0	\N	\N
+2016-07-22 11:21:03	netmagis	auth	pda	127.0.0.1	login pda 94913a3646d22286c616fc7ab9fbad4983332d8a82fdf5176f5f976d97b06766	0	\N	\N
+2016-07-22 11:21:10	netmagis	auth	pda	127.0.0.1	login pda 8ca21c45b4631e6a065abb1436321e654e0ae4b29074d56993be0bb368e79007	0	\N	\N
+2016-07-22 11:21:40	netmagis	auth	pda	127.0.0.1	login pda 7f96b837850ee7a7514b84a280a81f427fde99dbc3feaefe0aac26cfe6307429	0	\N	\N
+2016-07-22 11:21:46	netmagis	auth	pda	127.0.0.1	login pda 49da67f9227332ea6a00351e9ccde96fc93f26fca114e39cd6286a420cd82fed	0	\N	\N
+2016-07-22 11:22:00	netmagis	auth	pda	127.0.0.1	login pda 7fdb3fd075bc4d923825598dfcf9d5064e651d1fbf53ff458931f350376438e2	0	\N	\N
+2016-07-22 11:31:09	netmagis	auth	pda	127.0.0.1	login pda 180988ffada9dab31eb47f0a9ce1cd0cf60f175acb1e6f8cbeb54db7264196c1	0	\N	\N
+2016-07-22 11:37:56	netmagis	auth	pda	127.0.0.1	login pda 6053f84907e0e14ece5609048d5e7d2fdfe9b560dbb69f5cf7bec53e6d0cbede	0	\N	\N
+2016-07-22 11:38:33	netmagis	auth	pda	127.0.0.1	login pda 62fa37ce8855ed91c2b9c423c4351b0f289f568b330c5323437349197d6fa8e7	0	\N	\N
+2016-07-22 12:49:58	netmagis	auth	pda	127.0.0.1	login pda 347325582ee0aa23622aabc2a2b3ba3c57325af2a6e027e6840f349a3e3500a7	0	\N	\N
+2016-07-22 14:47:46	netmagis	auth	pda	127.0.0.1	login pda 09ac34c399616e494c50e64b5e429dad852eae42699e68545a761559337c19ee	0	\N	\N
+2016-07-22 11:04:40	netmagis	auth	pda	127.0.0.1	lastaccess pda a2ef6389ff2a2ac0a012cc01ed7a24a469619e8d09ceaa3ed965f3da9f888666	0	\N	\N
+2016-07-22 11:05:37	netmagis	auth	pda	127.0.0.1	lastaccess pda 8e1a0d3df867721f6cb738503948fef5c9881f63a743387ca4c3fa72da1574a4	0	\N	\N
+2016-07-22 13:57:50	netmagis	auth	pda	127.0.0.1	lastaccess pda 62fa37ce8855ed91c2b9c423c4351b0f289f568b330c5323437349197d6fa8e7	0	\N	\N
+2016-07-22 11:15:18	netmagis	auth	pda	127.0.0.1	lastaccess pda 506a4a3fe03c6e89205b6d7e004a0991937654ddb5e23194f42b6f75e1c501f7	0	\N	\N
+2016-07-22 11:19:00	netmagis	auth	pda	127.0.0.1	lastaccess pda 06ad5e11512d7942f75399801754509432e4848810150e77a2334f622e31df47	0	\N	\N
+2016-07-22 11:20:49	netmagis	auth	pda	127.0.0.1	lastaccess pda e4423e8c26fb71ea352158a08922e18c3c43600f16c094997f928dfec1487118	0	\N	\N
+2016-07-22 11:21:03	netmagis	auth	pda	127.0.0.1	lastaccess pda 94913a3646d22286c616fc7ab9fbad4983332d8a82fdf5176f5f976d97b06766	0	\N	\N
+2016-07-22 11:21:10	netmagis	auth	pda	127.0.0.1	lastaccess pda 8ca21c45b4631e6a065abb1436321e654e0ae4b29074d56993be0bb368e79007	0	\N	\N
+2016-07-22 11:21:40	netmagis	auth	pda	127.0.0.1	lastaccess pda 7f96b837850ee7a7514b84a280a81f427fde99dbc3feaefe0aac26cfe6307429	0	\N	\N
+2016-07-22 11:21:46	netmagis	auth	pda	127.0.0.1	lastaccess pda 49da67f9227332ea6a00351e9ccde96fc93f26fca114e39cd6286a420cd82fed	0	\N	\N
+2016-07-22 15:09:16	netmagis	auth	pda	127.0.0.1	lastaccess pda 09ac34c399616e494c50e64b5e429dad852eae42699e68545a761559337c19ee	0	\N	\N
+2016-07-22 11:21:56	netmagis	auth	pda	127.0.0.1	lastaccess pda 46722ef7c8093c05be4fda6e7e5a8d07b9e4b75e41260b3984e161ab61827985	0	\N	\N
+2016-07-22 11:22:00	netmagis	auth	pda	127.0.0.1	lastaccess pda 7fdb3fd075bc4d923825598dfcf9d5064e651d1fbf53ff458931f350376438e2	0	\N	\N
+2016-07-22 11:31:09	netmagis	auth	pda	127.0.0.1	lastaccess pda 180988ffada9dab31eb47f0a9ce1cd0cf60f175acb1e6f8cbeb54db7264196c1	0	\N	\N
+2016-07-22 11:37:56	netmagis	auth	pda	127.0.0.1	lastaccess pda 6053f84907e0e14ece5609048d5e7d2fdfe9b560dbb69f5cf7bec53e6d0cbede	0	\N	\N
+2016-07-22 11:01:41	netmagis	auth	pda	127.0.0.1	lastaccess pda 3ed759bedacf558b9366610a9e8a58296d5861818a32df858a7c502f0ae4cd1f	0	\N	\N
+2016-07-22 12:49:57	netmagis	auth	pda	127.0.0.1	lastaccess pda 347325582ee0aa23622aabc2a2b3ba3c57325af2a6e027e6840f349a3e3500a7	0	\N	\N
+2016-07-25 09:00:56	netmagis	auth	pda	127.0.0.1	login pda 814c89195b684630e517031fd8c5908b610a350c4c8f7e3f5ad591402b66a8b4	0	\N	\N
+2016-07-25 09:02:11	netmagis	auth	pda	127.0.0.1	login pda ef86e618e62265e2f8c03599d9b1f74ad6e3bfdecbe7d4a022f24a12f86be82d	0	\N	\N
+2016-07-25 10:54:34	netmagis	auth	pda	127.0.0.1	login pda 37827353a069395cfd28cd77a8ac354550473071b9a1478ab6fc32102c7c3e97	0	\N	\N
+2016-07-25 11:25:16	netmagis	auth	pda	127.0.0.1	login pda 8ac6b9d04add5041fa35afe24b55d97b3756f4116c3b755fd1dea7ea6e0eb664	0	\N	\N
+2016-07-25 11:28:32	netmagis	auth	pda	127.0.0.1	login pda 30245c064c81987afff7ad2ad4bdb4398715b67af93af77842ae298f85841a7e	0	\N	\N
+2016-07-25 13:09:49	netmagis	auth	pda	127.0.0.1	login pda 71d01be7cda49d6e3753f13145eda1d790b32a80fb1838d69854e392ca5c752d	0	\N	\N
+2016-07-25 13:36:34	netmagis	auth	pda	127.0.0.1	login pda d53cf3ab8245f98e297ddcda65c9934583d16609255ba999afe4e5f3a38adc79	0	\N	\N
+2016-07-25 15:50:13	netmagis	auth	pda	127.0.0.1	login pda 1ead67b3c034e9ea046b8fe9261c570021d4ddcfdafcff502149b329d5d77845	0	\N	\N
+2016-07-25 09:02:11	netmagis	auth	pda	192.168.10.6	lastaccess pda 814c89195b684630e517031fd8c5908b610a350c4c8f7e3f5ad591402b66a8b4	0	\N	\N
+2016-07-25 19:06:28	netmagis	auth	pda	192.168.10.6	login pda 226027e33629f18bee4d854a124dbfc966ad6335d2eed713b8f946415c539529	0	\N	\N
+2016-07-25 15:50:19	netmagis	auth	pda	127.0.0.1	lastaccess pda 1ead67b3c034e9ea046b8fe9261c570021d4ddcfdafcff502149b329d5d77845	0	\N	\N
+2016-07-25 13:36:34	netmagis	auth	pda	127.0.0.1	lastaccess pda 71d01be7cda49d6e3753f13145eda1d790b32a80fb1838d69854e392ca5c752d	0	\N	\N
+2016-07-25 11:31:18	netmagis	auth	pda	127.0.0.1	lastaccess pda 30245c064c81987afff7ad2ad4bdb4398715b67af93af77842ae298f85841a7e	0	\N	\N
+2016-07-25 10:55:53	netmagis	auth	pda	127.0.0.1	lastaccess pda 37827353a069395cfd28cd77a8ac354550473071b9a1478ab6fc32102c7c3e97	0	\N	\N
+2016-07-25 19:45:42	netmagis	auth	pda	127.0.0.1	lastaccess pda 226027e33629f18bee4d854a124dbfc966ad6335d2eed713b8f946415c539529	0	\N	\N
+2016-07-25 10:43:27	netmagis	auth	pda	127.0.0.1	lastaccess pda ef86e618e62265e2f8c03599d9b1f74ad6e3bfdecbe7d4a022f24a12f86be82d	0	\N	\N
+2016-07-25 15:31:58	netmagis	auth	pda	127.0.0.1	lastaccess pda d53cf3ab8245f98e297ddcda65c9934583d16609255ba999afe4e5f3a38adc79	0	\N	\N
+2016-07-25 15:50:13	netmagis	auth	pda	127.0.0.1	lastaccess pda 8ac6b9d04add5041fa35afe24b55d97b3756f4116c3b755fd1dea7ea6e0eb664	0	\N	\N
+2016-07-26 11:19:06	netmagis	auth	pda	127.0.0.1	login pda d9a548ead848afa2db565d2c4a9cb1704793df59168fee79b0688b5c3564f37f	0	\N	\N
+2016-07-26 12:33:17	netmagis	auth	pda	127.0.0.1	lastaccess pda d9a548ead848afa2db565d2c4a9cb1704793df59168fee79b0688b5c3564f37f	0	\N	\N
+2016-07-28 11:45:56	netmagis	auth	pda	127.0.0.1	login pda f6366fdd6626817ad36eb1f3f5936d1653ab6875854f53f34c45bb07c7cd7cab	0	\N	\N
+2016-07-28 13:11:20	netmagis	auth	pda	127.0.0.1	login pda ec77ac69ec66f902e361c8880f34fb3b2cd82d4470382f6b49d795b0c5852674	0	\N	\N
+2016-07-28 13:51:42	netmagis	auth	pda	127.0.0.1	login pda 888208e2a8173eb3659cd820fc8445cd7b9158c82129f0301dba31a213ce4867	0	\N	\N
+2016-07-28 14:32:30	netmagis	auth	pda	127.0.0.1	login pda f506678a71e5eb0206f3668ee188b63602a443c4cd8dbafe63859e4792fce0b6	0	\N	\N
+2016-07-28 14:46:10	netmagis	auth	pda	127.0.0.1	login pda fe023bc186dcde7028929d95c4ed6ce2974b299741570cd897c87f893f6e6083	0	\N	\N
+2016-07-28 16:04:25	netmagis	auth	pda	127.0.0.1	login pda 2dca56e6d1d31a43181ddc1331b4652d0bbaa706a5b8958806b940fa3437bdfd	0	\N	\N
+2016-07-28 16:11:40	netmagis	auth	pda	127.0.0.1	login pda ccfac52ad613060d65a8a6cf68ea5f59916a50cc42253ca773b0e1d1966400cc	0	\N	\N
+2016-07-28 16:24:36	netmagis	auth	pda	127.0.0.1	login pda 018d37376176ec11d936fd491ec5d16bcd4ac65338bbbd35fa91681d916f6759	0	\N	\N
+2016-07-28 14:31:09	netmagis	auth	pda	127.0.0.1	lastaccess pda 888208e2a8173eb3659cd820fc8445cd7b9158c82129f0301dba31a213ce4867	0	\N	\N
+2016-07-28 15:55:53	netmagis	auth	pda	127.0.0.1	lastaccess pda fe023bc186dcde7028929d95c4ed6ce2974b299741570cd897c87f893f6e6083	0	\N	\N
+2016-07-28 16:04:25	netmagis	auth	pda	127.0.0.1	lastaccess pda 2dca56e6d1d31a43181ddc1331b4652d0bbaa706a5b8958806b940fa3437bdfd	0	\N	\N
+2016-07-28 13:15:59	netmagis	auth	pda	127.0.0.1	lastaccess pda ec77ac69ec66f902e361c8880f34fb3b2cd82d4470382f6b49d795b0c5852674	0	\N	\N
+2016-07-28 16:23:43	netmagis	auth	pda	127.0.0.1	lastaccess pda ccfac52ad613060d65a8a6cf68ea5f59916a50cc42253ca773b0e1d1966400cc	0	\N	\N
+2016-07-28 14:45:30	netmagis	auth	pda	127.0.0.1	lastaccess pda f506678a71e5eb0206f3668ee188b63602a443c4cd8dbafe63859e4792fce0b6	0	\N	\N
+2016-07-28 11:50:04	netmagis	auth	pda	127.0.0.1	lastaccess pda f6366fdd6626817ad36eb1f3f5936d1653ab6875854f53f34c45bb07c7cd7cab	0	\N	\N
+2016-07-28 16:28:03	netmagis	auth	pda	127.0.0.1	lastaccess pda 018d37376176ec11d936fd491ec5d16bcd4ac65338bbbd35fa91681d916f6759	0	\N	\N
+2016-07-29 09:14:24	netmagis	auth	pda	127.0.0.1	login pda 409d89682b4657ed1b8474b1036583bc47532f33df03be828d16336e192b7f75	0	\N	\N
+2016-07-29 11:35:43	netmagis	auth	pda	127.0.0.1	login pda 599502d6b46599db0d174e0cae027c1b249d01c9bae7ebb36213db25fbbd6b5c	0	\N	\N
+2016-07-29 13:57:30	netmagis	auth	pda	127.0.0.1	login pda 224ce4e619c788f73f941394148787bd68e7a578e1a244cc5beced74681ae6fe	0	\N	\N
+2016-07-29 14:12:02	netmagis	auth	pda	127.0.0.1	login pda 1603b9a3e8a1cef83333ed7e1ac4921c0305a7ac1c5110c6aaeb800eddebecad	0	\N	\N
+2016-07-29 16:00:20	netmagis	auth	pda	127.0.0.1	login pda a402e1044db40b002216438a10dbdb9ad65bc49ea51bf851c144c783fb21d1c8	0	\N	\N
+2016-07-29 11:34:31	netmagis	auth	pda	127.0.0.1	lastaccess pda 409d89682b4657ed1b8474b1036583bc47532f33df03be828d16336e192b7f75	0	\N	\N
+2016-07-29 14:12:20	netmagis	auth	pda	127.0.0.1	lastaccess pda 1603b9a3e8a1cef83333ed7e1ac4921c0305a7ac1c5110c6aaeb800eddebecad	0	\N	\N
+2016-07-29 16:40:19	netmagis	auth	pda	127.0.0.1	lastaccess pda a402e1044db40b002216438a10dbdb9ad65bc49ea51bf851c144c783fb21d1c8	0	\N	\N
+2016-07-29 15:00:55	netmagis	auth	pda	127.0.0.1	lastaccess pda 224ce4e619c788f73f941394148787bd68e7a578e1a244cc5beced74681ae6fe	0	\N	\N
+2016-07-29 13:56:37	netmagis	auth	pda	127.0.0.1	lastaccess pda 599502d6b46599db0d174e0cae027c1b249d01c9bae7ebb36213db25fbbd6b5c	0	\N	\N
+2016-08-18 15:20:03	netmagis	auth	pda	127.0.0.1	login pda a243051dc87c02f87e8892b3aafbbe6c59a7f135abec2b0579047f4aeb562986	0	\N	\N
+2016-08-18 16:01:12	netmagis	auth	pda	127.0.0.1	login pda 2631a27a8183c6671bb6127a2363b25fda175c008291a20edd3f1981c0c220a8	0	\N	\N
+2016-08-18 16:01:12	netmagis	auth	pda	127.0.0.1	lastaccess pda a243051dc87c02f87e8892b3aafbbe6c59a7f135abec2b0579047f4aeb562986	0	\N	\N
+2016-08-18 16:22:24	netmagis	auth	pda	127.0.0.1	lastaccess pda 2631a27a8183c6671bb6127a2363b25fda175c008291a20edd3f1981c0c220a8	0	\N	\N
+2016-08-19 11:20:30	netmagis	auth	pda	127.0.0.1	login pda 010e61b93ad95c16f02f944b89afbf378a1eb5d5e9ae1851692038ffce412288	0	\N	\N
+2016-08-19 13:03:57	netmagis	auth	pda	127.0.0.1	login pda aa3bf33e62aacb819df3c91dbad545482ba2ecaeb26c83810e127bf4306ce227	0	\N	\N
+2016-08-19 14:56:41	netmagis	auth	pda	127.0.0.1	login pda fe4f47ee7a1b1f84e52199aa3020de7141816d5e62107756e7a310abdd50944e	0	\N	\N
+2016-08-19 15:29:26	netmagis	auth	pda	127.0.0.1	login pda 4893858a3d9e1720525211de196790c95b95a13b38a024506027589cffa60c71	0	\N	\N
+2016-08-19 15:29:26	netmagis	auth	pda	127.0.0.1	lastaccess pda aa3bf33e62aacb819df3c91dbad545482ba2ecaeb26c83810e127bf4306ce227	0	\N	\N
+2016-08-19 14:56:41	netmagis	auth	pda	127.0.0.1	lastaccess pda 010e61b93ad95c16f02f944b89afbf378a1eb5d5e9ae1851692038ffce412288	0	\N	\N
+2016-08-19 15:37:40	netmagis	auth	pda	127.0.0.1	lastaccess pda fe4f47ee7a1b1f84e52199aa3020de7141816d5e62107756e7a310abdd50944e	0	\N	\N
+2016-08-19 15:34:21	netmagis	auth	pda	127.0.0.1	lastaccess pda 4893858a3d9e1720525211de196790c95b95a13b38a024506027589cffa60c71	0	\N	\N
+2016-08-22 10:12:30	netmagis	auth	pda	127.0.0.1	login pda 1bca51dfbfd4e34cff7c03868bd90750de05e547e3e4b4a951c531fd151d4766	0	\N	\N
+2016-08-22 15:06:22	netmagis	auth	pda	192.168.10.6	login pda 4d1d083a7453e40182ba8129297bcd221cb02b4db94c8b90c12c3a4e51c906bc	0	\N	\N
+2016-08-22 10:35:32	netmagis	auth	pda	127.0.0.1	lastaccess pda 1bca51dfbfd4e34cff7c03868bd90750de05e547e3e4b4a951c531fd151d4766	0	\N	\N
+2016-08-22 18:42:11	netmagis	auth	pda	127.0.0.1	lastaccess pda 4d1d083a7453e40182ba8129297bcd221cb02b4db94c8b90c12c3a4e51c906bc	0	\N	\N
+2016-08-24 14:30:36	netmagis	auth	pda	127.0.0.1	login pda 4b4257c0da53fab123a5a2368092b01564b8d848f4fd55628a6eeb4bf33068a0	0	\N	\N
+2016-08-24 14:32:04	netmagis	auth	pda	127.0.0.1	login pda 10bac4501db0e4db9fbcd2c2012231d162f2f041d8a8bae97393d766ac73ba83	0	\N	\N
+2016-08-24 16:56:52	netmagis	auth	pda	127.0.0.1	login pda 9d7bfc2fc28e34b5eaae3e91828c1fb5f5708cb51ffbcf6e899f580332e6ac76	0	\N	\N
+2016-08-24 16:57:04	netmagis	auth	pda	127.0.0.1	lastaccess pda 9d7bfc2fc28e34b5eaae3e91828c1fb5f5708cb51ffbcf6e899f580332e6ac76	0	\N	\N
+2016-08-24 16:57:15	netmagis	auth	pda	127.0.0.1	lastaccess pda 10bac4501db0e4db9fbcd2c2012231d162f2f041d8a8bae97393d766ac73ba83	0	\N	\N
+2016-08-24 16:56:52	netmagis	auth	pda	127.0.0.1	lastaccess pda 4b4257c0da53fab123a5a2368092b01564b8d848f4fd55628a6eeb4bf33068a0	0	\N	\N
+2016-08-25 13:36:44	netmagis	auth	pda	127.0.0.1	login pda 3e4edda774673397e6c4241f75e636bc42347b4205d45f41e177941a4ebcc350	0	\N	\N
+2016-08-25 14:13:07	netmagis	auth	pda	127.0.0.1	login pda 0a56d501be9a9bc22c859411d011e5c2067aad85f619dd78cc992cfe9a93b728	0	\N	\N
+2016-08-25 15:18:58	netmagis	auth	pda	127.0.0.1	login pda 02b3814ef950f09cbfca5b1937c3fe223da2145e9e1ee02be240738ac97feae3	0	\N	\N
+2016-08-25 16:36:26	netmagis	auth	pda	127.0.0.1	lastaccess pda 02b3814ef950f09cbfca5b1937c3fe223da2145e9e1ee02be240738ac97feae3	0	\N	\N
+2016-08-25 14:22:57	netmagis	auth	pda	127.0.0.1	lastaccess pda 0a56d501be9a9bc22c859411d011e5c2067aad85f619dd78cc992cfe9a93b728	0	\N	\N
+2016-08-25 15:18:58	netmagis	auth	pda	127.0.0.1	lastaccess pda 3e4edda774673397e6c4241f75e636bc42347b4205d45f41e177941a4ebcc350	0	\N	\N
+2016-08-28 18:12:54	netmagis	auth	pda	192.168.10.6	login pda 0b4e72ec17b671d3162b3d094001292eeada2a8a513649537de2b443e2098aff	0	\N	\N
+2016-08-28 19:48:53	netmagis	auth	pda	192.168.10.6	login pda 0934df75033308e17608c7d2abc445559c71aaaa01a4076a5fef53fc0fefd23d	0	\N	\N
+2016-08-28 20:53:52	netmagis	auth	pda	192.168.10.6	lastaccess pda 0934df75033308e17608c7d2abc445559c71aaaa01a4076a5fef53fc0fefd23d	0	\N	\N
+2016-08-28 19:48:53	netmagis	auth	pda	192.168.10.6	lastaccess pda 0b4e72ec17b671d3162b3d094001292eeada2a8a513649537de2b443e2098aff	0	\N	\N
+2016-08-31 18:46:46	netmagis	auth	pda	192.168.10.6	login pda 56f3f96921445cedc180ea2f59e3ca0654833e11bd38308c0022ea9da0893731	0	\N	\N
+2016-08-31 19:58:56	netmagis	auth	pda	127.0.0.1	lastaccess pda 56f3f96921445cedc180ea2f59e3ca0654833e11bd38308c0022ea9da0893731	0	\N	\N
+2016-09-01 16:00:47	netmagis	auth	pda	127.0.0.1	login pda 53f96380e1a833ff77ee73efd2084fb89faaac84e73a18728352c1619fc2efde	0	\N	\N
+2016-09-01 16:01:19	netmagis	auth	pda	127.0.0.1	lastaccess pda 53f96380e1a833ff77ee73efd2084fb89faaac84e73a18728352c1619fc2efde	0	\N	\N
+2016-09-02 08:36:04	netmagis	auth	pda	127.0.0.1	login pda c3a2047e17865e69c2e73c8ffafd7745171231abcabe62f5477f051260845bc6	0	\N	\N
+2016-09-02 13:35:52	netmagis	auth	pda	127.0.0.1	login pda 85054c0e37381fc8b907ef3d16578594c2d3aacb5c1fee7978e04239c56e724e	0	\N	\N
+2016-09-02 15:35:58	netmagis	auth	pda	127.0.0.1	login pda c6faa2663983e72c59ed8ed0aaca64323a7fa09171b16697f3be2b105c3b5ec6	0	\N	\N
+2016-09-02 08:45:33	netmagis	auth	pda	127.0.0.1	lastaccess pda c3a2047e17865e69c2e73c8ffafd7745171231abcabe62f5477f051260845bc6	0	\N	\N
+2016-09-02 15:37:54	netmagis	auth	pda	127.0.0.1	lastaccess pda c6faa2663983e72c59ed8ed0aaca64323a7fa09171b16697f3be2b105c3b5ec6	0	\N	\N
+2016-09-09 11:12:27	netmagis	auth	pda	127.0.0.1	login pda 2ac73fa73b48995bdd882c8f14028a0911891fd0e5d93320d5ee1767c00f24d5	0	\N	\N
+2016-09-09 14:52:30	netmagis	auth	pda	127.0.0.1	login pda 0cbc28a699fe55ae9ad98724c38361e5e749466a62e132c4fd24ba8e20e5b403	0	\N	\N
+2016-09-09 15:04:54	netmagis	auth	pda	127.0.0.1	login pda f0bf0b7bc35c02d0efeacf1cecd61b42af07792657e2dbe1e72b8d0514f60cb8	0	\N	\N
+2016-09-09 16:32:03	netmagis	auth	pda	127.0.0.1	login pda 42f0e5e9c798ec9650c12a115fbadbd33ed12d70b33e7e33446fac5a3821b8e2	0	\N	\N
+2016-09-09 17:08:51	netmagis	auth	pda	127.0.0.1	login pda 627c7a0ad7674f2c43752d913310a89220b26c674c9269d71d181e7535a3a46f	0	\N	\N
+2016-09-09 16:31:26	netmagis	auth	pda	192.168.10.6	lastaccess pda f0bf0b7bc35c02d0efeacf1cecd61b42af07792657e2dbe1e72b8d0514f60cb8	0	\N	\N
+2016-09-09 11:55:24	netmagis	auth	pda	192.168.10.6	lastaccess pda 2ac73fa73b48995bdd882c8f14028a0911891fd0e5d93320d5ee1767c00f24d5	0	\N	\N
+2016-09-09 17:18:27	netmagis	auth	pda	192.168.10.6	lastaccess pda 627c7a0ad7674f2c43752d913310a89220b26c674c9269d71d181e7535a3a46f	0	\N	\N
+2016-09-09 16:32:10	netmagis	auth	pda	192.168.10.6	lastaccess pda 42f0e5e9c798ec9650c12a115fbadbd33ed12d70b33e7e33446fac5a3821b8e2	0	\N	\N
+2016-09-09 15:04:38	netmagis	auth	pda	192.168.10.6	lastaccess pda 0cbc28a699fe55ae9ad98724c38361e5e749466a62e132c4fd24ba8e20e5b403	0	\N	\N
+2016-09-12 18:12:53	netmagis	auth	pda	192.168.10.6	login pda cf29414fa865f51e24561e05f277c443ff6ec1e2fb3045dfff7dc6481ccc2d5e	0	\N	\N
+2016-09-12 18:13:11	netmagis	auth	pda	127.0.0.1	lastaccess pda cf29414fa865f51e24561e05f277c443ff6ec1e2fb3045dfff7dc6481ccc2d5e	0	\N	\N
+2016-09-13 11:51:51	netmagis	auth	pda	127.0.0.1	login pda 223d6602418aec71edca6fcc72ed9fa23c0938dabd94d904fc15227147a9a199	0	\N	\N
+2016-09-13 15:22:05	netmagis	auth	pda	127.0.0.1	lastaccess pda 223d6602418aec71edca6fcc72ed9fa23c0938dabd94d904fc15227147a9a199	0	\N	\N
+2016-10-26 13:16:40	netmagis	auth	pda	127.0.0.1	login pda 13684b1f98b49ebc7db7978cd14bdb447e8be0386870bc23fe28078ab689aaaf	0	\N	\N
+2016-10-26 13:16:44	netmagis	auth	pda	127.0.0.1	login pda b4a9c96eac40e6e5702bd0c2f20a254de3da971d152bdc0ae6ca6640bb3d283a	0	\N	\N
+2016-10-26 13:19:39	netmagis	auth	pda	127.0.0.1	login pda d6dda6a8d598aad925e84f12b1267882d930541bc288f9fd557aeaeba776d488	0	\N	\N
+2016-10-26 13:20:29	netmagis	auth	pda	127.0.0.1	login pda b067878e7098bf434b4ab1adf90cad655b02929f9c65d07aeb9bf328aeb662db	0	\N	\N
+2016-10-26 13:21:16	netmagis	auth	pda	127.0.0.1	login pda c2ec305f32fda93cd2d7c06f4aec93e5b304d172b40e0aa0106832a802498f4d	0	\N	\N
+2016-10-26 13:23:39	netmagis	auth	pda	127.0.0.1	login pda ca342a5c7f38f37d4bd7a62343ca888e57af2ca8aac8eb6b4ecc88353228acc0	0	\N	\N
+2016-10-26 16:43:31	netmagis	auth	pda	127.0.0.1	login pda caad2a060b0c75bf3fee1d4d679c663693043c226b2c2975958a0d728faefc83	0	\N	\N
+2016-10-26 16:45:11	netmagis	auth	pda	127.0.0.1	login pda 6400a4e0b7691acafbfbc03ad2ab887dd153e2624916ab4e2f93c469bacceab1	0	\N	\N
+2016-10-26 16:51:43	netmagis	auth	pda	127.0.0.1	login pda ced6bedef57e4c0d10a4509ffb2fa3728b48ce8505c3e08b8eeb9d398933910a	0	\N	\N
+2016-10-26 16:51:37	netmagis	auth	pda	127.0.0.1	lastaccess pda 6400a4e0b7691acafbfbc03ad2ab887dd153e2624916ab4e2f93c469bacceab1	0	\N	\N
+2016-10-26 13:24:30	netmagis	auth	pda	127.0.0.1	lastaccess pda d6dda6a8d598aad925e84f12b1267882d930541bc288f9fd557aeaeba776d488	0	\N	\N
+2016-10-26 16:41:37	netmagis	auth	pda	127.0.0.1	lastaccess pda ca342a5c7f38f37d4bd7a62343ca888e57af2ca8aac8eb6b4ecc88353228acc0	0	\N	\N
+2016-10-26 16:43:31	netmagis	auth	pda	127.0.0.1	lastaccess pda caad2a060b0c75bf3fee1d4d679c663693043c226b2c2975958a0d728faefc83	0	\N	\N
+2016-10-26 13:16:40	netmagis	auth	pda	127.0.0.1	lastaccess pda 13684b1f98b49ebc7db7978cd14bdb447e8be0386870bc23fe28078ab689aaaf	0	\N	\N
+2016-10-26 13:16:44	netmagis	auth	pda	127.0.0.1	lastaccess pda b4a9c96eac40e6e5702bd0c2f20a254de3da971d152bdc0ae6ca6640bb3d283a	0	\N	\N
+2016-10-26 17:29:19	netmagis	auth	pda	127.0.0.1	lastaccess pda ced6bedef57e4c0d10a4509ffb2fa3728b48ce8505c3e08b8eeb9d398933910a	0	\N	\N
+2016-10-26 13:20:30	netmagis	auth	pda	127.0.0.1	lastaccess pda b067878e7098bf434b4ab1adf90cad655b02929f9c65d07aeb9bf328aeb662db	0	\N	\N
+2016-10-26 13:21:16	netmagis	auth	pda	127.0.0.1	lastaccess pda c2ec305f32fda93cd2d7c06f4aec93e5b304d172b40e0aa0106832a802498f4d	0	\N	\N
+2016-10-27 08:58:26	netmagis	auth	pda	127.0.0.1	login pda 44d909d779ea1aa636575cb3ebb6b9f4c62b40b96ae2418f3ef5edf8f5fdbcd0	0	\N	\N
+2016-10-27 09:25:21	netmagis	auth	pda	127.0.0.1	login pda bfe1c32729ce60ef38ab9ecb4d2f84b23fe26af1cfba0cba8f0b2b14ca489d9a	0	\N	\N
+2016-10-27 14:25:15	netmagis	auth	pda	127.0.0.1	lastaccess pda bfe1c32729ce60ef38ab9ecb4d2f84b23fe26af1cfba0cba8f0b2b14ca489d9a	0	\N	\N
+2016-10-27 09:25:09	netmagis	auth	pda	127.0.0.1	lastaccess pda 44d909d779ea1aa636575cb3ebb6b9f4c62b40b96ae2418f3ef5edf8f5fdbcd0	0	\N	\N
+2016-10-28 08:12:20	netmagis	auth	pda	127.0.0.1	login pda 9e504bbd5aa4995aa99bf8199a1a456382b04bce8ad7a66dcc730b9eee208ef5	0	\N	\N
+\.
+
+
+--
+-- Data for Name: nmgroup; Type: TABLE DATA; Schema: global; Owner: nm
+--
+
+COPY nmgroup (idgrp, name, p_admin, p_smtp, p_ttl, p_mac, p_genl) FROM stdin;
+1	wheel	1	0	0	1	1
+2	staff	0	0	0	1	1
+\.
+
+
+--
+-- Data for Name: nmuser; Type: TABLE DATA; Schema: global; Owner: nm
+--
+
+COPY nmuser (idcor, login, present, idgrp) FROM stdin;
+2	jean	1	1
+3	nobody	1	1
+4	bob	1	2
+5	alice	1	2
+1	pda	1	1
+\.
+
+
+--
+-- Name: seq_nmgroup; Type: SEQUENCE SET; Schema: global; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_nmgroup', 2, true);
+
+
+--
+-- Name: seq_nmuser; Type: SEQUENCE SET; Schema: global; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_nmuser', 5, true);
+
+
+--
+-- Data for Name: tmp; Type: TABLE DATA; Schema: global; Owner: nm
+--
+
+COPY tmp (idcor, token, start, ip, api) FROM stdin;
+\.
+
+
+--
+-- Data for Name: utmp; Type: TABLE DATA; Schema: global; Owner: nm
+--
+
+COPY utmp (idcor, token, start, ip, casticket, lastaccess, api) FROM stdin;
+\.
+
+
+--
+-- Data for Name: wtmp; Type: TABLE DATA; Schema: global; Owner: nm
+--
+
+COPY wtmp (idcor, token, start, ip, stop, stopreason, api) FROM stdin;
+\.
+
+
+SET search_path = mac, pg_catalog;
+
+--
+-- Data for Name: ipmac; Type: TABLE DATA; Schema: mac; Owner: nm
+--
+
+COPY ipmac (start, stop, src, closed, data) FROM stdin;
+\.
+
+
+--
+-- Data for Name: oui; Type: TABLE DATA; Schema: mac; Owner: nm
+--
+
+COPY oui (addr, name) FROM stdin;
+\.
+
+
+--
+-- Data for Name: portmac; Type: TABLE DATA; Schema: mac; Owner: nm
+--
+
+COPY portmac (start, stop, src, closed, data) FROM stdin;
+\.
+
+
+--
+-- Data for Name: session; Type: TABLE DATA; Schema: mac; Owner: nm
+--
+
+COPY session (start, stop, src, closed) FROM stdin;
+\.
+
+
+SET search_path = pgauth, pg_catalog;
+
+--
+-- Data for Name: member; Type: TABLE DATA; Schema: pgauth; Owner: nm
+--
+
+COPY member (login, realm) FROM stdin;
+pda	authadmin
+pda	netmagis
+jean	authadmin
+jean	netmagis
+nobody	authadmin
+nobody	netmagis
+bob	netmagis
+alice	netmagis
+\.
+
+
+--
+-- Data for Name: realm; Type: TABLE DATA; Schema: pgauth; Owner: nm
+--
+
+COPY realm (realm, descr, admin) FROM stdin;
+authadmin	Administrators of internal PostgreSQL auth	1
+netmagis	Netmagis users	0
+\.
+
+
+--
+-- Data for Name: user; Type: TABLE DATA; Schema: pgauth; Owner: nm
+--
+
+COPY "user" (login, password, lastname, firstname, mail, phone, mobile, fax, addr, phlast, phfirst) FROM stdin;
+jean	$1$cFdoL1bt$CeLCYpShm7XyYbY8teUqg0	Boss	Joe	\N	\N	\N	\N	\N	B800	J000
+nobody	$1$udKbI8Ec$1x/S.vmNCn1W8RXzSfHNK1	Boss	Joe	\N	\N	\N	\N	\N	B800	J000
+bob	$1$HkkurVBO$vMCw22SNSMOoQ8LPXtuY41	User	Joe	\N	\N	\N	\N	\N	U860	J000
+alice	$1$kL3n/qLt$R4jAYgLeP7x3w7FqsCRD51	User	Joe	\N	\N	\N	\N	\N	U860	J000
+pda	$1$RpnKS89p$13CsFgLPiljdyj6pGCwC41	Boss	Joe	\N	\N	\N	\N	\N	B800	J000
+\.
+
+
+SET search_path = topo, pg_catalog;
+
+--
+-- Data for Name: confcmd; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY confcmd (idccmd, idtype, action, rank, model, command) FROM stdin;
+1	1	prologue	100	.*	configure terminal
+2	1	ifreset	90	.*29.0.*	interface %1$s\ndefault switchport nonegotiate\ndefault switchport trunk allowed vlan\ndefault switchport trunk native vlan\ndefault switchport access vlan\ndefault switchport mode
+3	1	ifreset	100	.*	interface %1$s\nno switchport\nswitchport voice vlan none\nswitchport
+4	1	ifdisable	100	.*	interface %1$s\nshutdown
+5	1	ifenable	100	.*	interface %1$s\nno shutdown
+6	1	ifaccess	100	.*	interface %1$s\nswitchport mode access\nswitchport access vlan %2$s\nspanning-tree portfast 
+7	1	ifvoice	100	.*	interface %1$s\nswitchport voice vlan %2$s
+8	1	ifdesc	100	.*	interface %1$s\ndescription %2$s
+9	1	epilogue	100	.*	line con 0\nexit\nexit\nwrite memory 
+10	2	prologue	100	.*	configure
+11	2	ifreset	100	.*	delete interfaces %1$s unit 0 family ethernet-switching\ndelete ethernet-switching-options voip interface %1$s
+12	2	ifdisable	100	.*	set interfaces %1$s disable
+13	2	ifenable	100	.*	delete interfaces %1$s disable
+14	2	ifaccess	100	.*	set interfaces %1$s unit 0 family ethernet-switching port-mode access\nset interfaces %1$s unit 0 family ethernet-switching vlan members %2$s
+15	2	ifdesc	100	.*	set interfaces %1$s description "%2$s"
+16	2	ifvoice	100	.*	set interfaces %1$s unit 0 family ethernet-switching\nset ethernet-switching-options voip interface %1$s vlan %2$s
+17	2	epilogue	100	.*	commit\nexit configuration
+18	3	prologue	100	.*	configure terminal
+19	3	resetvlan	100	.*	vlan %2$s\nno tagged %1$s\nno untagged %1$s
+20	3	ifenable	100	.*	interface %1$s\nenable
+21	3	ifdisable	100	.*	interface %1$s\ndisable
+22	3	ifaccess	100	.*	vlan %2$s\nuntagged %1$s
+23	3	ifvoice	100	.*	vlan %2$s\ntagged %1$s
+24	3	ifdesc	100	.*	interface %1$s\nname "%2$s"
+25	3	epilogue	100	.*	vlan 1\nexit\nexit\nwrite memory
+\.
+
+
+--
+-- Data for Name: dotattr; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY dotattr (rank, type, regexp, gvattr, png) FROM stdin;
+10100	2	juniper/M.*	shape=circle\nstyle=filled fillcolor=lightgrey\nfixedsize height=1	\N
+10200	2	cisco/12000.*	shape=doublecircle\nstyle=filled fillcolor=lightgrey\nfixedsize height=1	\N
+10300	2	juniper/EX8.*	shape=box style=filled fillcolor=lightblue	\N
+10400	2	juniper/Chassis.*	shape=box style=filled fillcolor=lightblue	\N
+10500	2	cisco/WS-C45.*	shape=box style=filled fillcolor=lightblue	\N
+10600	2	cisco/WS-C37.*	shape=box style=filled fillcolor=lightblue height=.25	\N
+10700	2	cisco/WS-C29.*	shape=box style=filled fillcolor=lightblue height=.25	\N
+10800	2	cisco/WS-.*PS	shape=box style=filled fillcolor=yellow height=.25	\N
+10900	2	cisco/37.*	shape=octagon style=filled fillcolor=orange1 height=.25	\N
+11000	2	cisco/38.*	shape=octagon style=filled fillcolor=orange1	\N
+11100	2	cisco/.*routeur	shape=circle\nstyle=filled fillcolor=lightgrey\nfixedsize height=1	\N
+11200	2	cisco/1605.*	shape=circle\nstyle=filled fillcolor=lightgrey\nfixedsize height=1	\N
+11300	2	cisco/1721.*	shape=circle\nstyle=filled fillcolor=lightgrey\nfixedsize height=1	\N
+11400	2	cisco/7206.*	shape=circle\nstyle=filled fillcolor=lightgrey\nfixedsize height=1	\N
+11500	2	juniper/EX2.*	shape=box style=filled fillcolor=SteelBlue height=.25	\N
+11600	2	juniper/EX4.*	shape=box style=filled fillcolor=SteelBlue height=.25	\N
+11900	2	fwroutebridge.*	shape=Mcircle\nstyle=filled fillcolor=tomato\nheight=1	\N
+13000	2	fwroute.*	shape=circle\nstyle=filled fillcolor=tomato\nheight=1	\N
+13100	2	fw.*	shape=box style=filled fillcolor=tomato height=.25	\N
+13200	2	switch.*	shape=box style=filled fillcolor=lightgrey height=.25	\N
+13300	2	hp.*	shape=box style=filled fillcolor=pink height=.25	\N
+13400	2	.*	shape=triangle	\N
+20100	3	router	shape=circle\nstyle=filled fillcolor=lightgrey\nfixedsize height=1.5	\N
+20200	3	host	shape=box\nstyle=filled fillcolor=lightblue\nheight=.25	\N
+20300	3	cloud	shape=ellipse\nstyle=filled fillcolor=palegreen\nwidth=1.5	\N
+\.
+
+
+--
+-- Data for Name: eq; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY eq (ideq, eq, idtype, up) FROM stdin;
+\.
+
+
+--
+-- Data for Name: eqtype; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY eqtype (idtype, type) FROM stdin;
+1	cisco
+2	juniper
+3	hp
+\.
+
+
+--
+-- Data for Name: filemonitor; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY filemonitor (path, date) FROM stdin;
+\.
+
+
+--
+-- Data for Name: ifchanges; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY ifchanges (login, reqdate, eq, iface, ifdesc, ethervlan, voicevlan, processed, moddate, modlog) FROM stdin;
+\.
+
+
+--
+-- Data for Name: ignoreequsers; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY ignoreequsers (login) FROM stdin;
+conf
+\.
+
+
+--
+-- Data for Name: keepstate; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY keepstate (type, message, date) FROM stdin;
+\.
+
+
+--
+-- Data for Name: lastrun; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY lastrun (date) FROM stdin;
+\N
+\.
+
+
+--
+-- Data for Name: link; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY link (idlink, descr) FROM stdin;
+\.
+
+
+--
+-- Data for Name: modeq; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY modeq (eq, date, login, processed) FROM stdin;
+_vlan	2016-04-22 15:30:01	\N	0
+\.
+
+
+--
+-- Data for Name: p_eq; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY p_eq (idgrp, rw, pattern, allow_deny) FROM stdin;
+\.
+
+
+--
+-- Data for Name: p_l2only; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY p_l2only (idgrp, vlanid) FROM stdin;
+\.
+
+
+--
+-- Data for Name: sensor; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY sensor (id, type, eq, comm, iface, param, lastmod, lastseen) FROM stdin;
+\.
+
+
+--
+-- Name: seq_confcmd; Type: SEQUENCE SET; Schema: topo; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_confcmd', 25, true);
+
+
+--
+-- Name: seq_eq; Type: SEQUENCE SET; Schema: topo; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_eq', 1, false);
+
+
+--
+-- Name: seq_eqtype; Type: SEQUENCE SET; Schema: topo; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_eqtype', 3, true);
+
+
+--
+-- Name: seq_link; Type: SEQUENCE SET; Schema: topo; Owner: nm
+--
+
+SELECT pg_catalog.setval('seq_link', 1, false);
+
+
+--
+-- Data for Name: vlan; Type: TABLE DATA; Schema: topo; Owner: nm
+--
+
+COPY vlan (vlanid, descr, voip) FROM stdin;
+1	default	0
+\.
+
+
+SET search_path = dns, pg_catalog;
+
+--
+-- Name: addr_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY addr
+    ADD CONSTRAINT addr_pkey PRIMARY KEY (idhost, addr);
+
+
+--
+-- Name: alias_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY alias
+    ADD CONSTRAINT alias_pkey PRIMARY KEY (idname);
+
+
+--
+-- Name: community_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY community
+    ADD CONSTRAINT community_pkey PRIMARY KEY (idcomm);
+
+
+--
+-- Name: dhcpprofile_name_key; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY dhcpprofile
+    ADD CONSTRAINT dhcpprofile_name_key UNIQUE (name);
+
+
+--
+-- Name: dhcpprofile_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY dhcpprofile
+    ADD CONSTRAINT dhcpprofile_pkey PRIMARY KEY (iddhcpprof);
+
+
+--
+-- Name: dhcprange_max_key; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY dhcprange
+    ADD CONSTRAINT dhcprange_max_key UNIQUE (max);
+
+
+--
+-- Name: dhcprange_min_key; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY dhcprange
+    ADD CONSTRAINT dhcprange_min_key UNIQUE (min);
+
+
+--
+-- Name: dhcprange_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY dhcprange
+    ADD CONSTRAINT dhcprange_pkey PRIMARY KEY (iddhcprange);
+
+
+--
+-- Name: domain_name_key; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY domain
+    ADD CONSTRAINT domain_name_key UNIQUE (name);
+
+
+--
+-- Name: domain_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY domain
+    ADD CONSTRAINT domain_pkey PRIMARY KEY (iddom);
+
+
+--
+-- Name: hinfo_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY hinfo
+    ADD CONSTRAINT hinfo_pkey PRIMARY KEY (idhinfo);
+
+
+--
+-- Name: host_idname_key; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY host
+    ADD CONSTRAINT host_idname_key UNIQUE (idname);
+
+
+--
+-- Name: host_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY host
+    ADD CONSTRAINT host_pkey PRIMARY KEY (idhost);
+
+
+--
+-- Name: mailrole_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY mailrole
+    ADD CONSTRAINT mailrole_pkey PRIMARY KEY (idname);
+
+
+--
+-- Name: mx_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY mx
+    ADD CONSTRAINT mx_pkey PRIMARY KEY (idname, idhost);
+
+
+--
+-- Name: name_name_iddom_idview_key; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY name
+    ADD CONSTRAINT name_name_iddom_idview_key UNIQUE (name, iddom, idview);
+
+
+--
+-- Name: name_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY name
+    ADD CONSTRAINT name_pkey PRIMARY KEY (idname);
+
+
+--
+-- Name: network_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY network
+    ADD CONSTRAINT network_pkey PRIMARY KEY (idnet);
+
+
+--
+-- Name: organization_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY organization
+    ADD CONSTRAINT organization_pkey PRIMARY KEY (idorg);
+
+
+--
+-- Name: p_dhcpprofile_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_dhcpprofile
+    ADD CONSTRAINT p_dhcpprofile_pkey PRIMARY KEY (idgrp, iddhcpprof);
+
+
+--
+-- Name: p_dom_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_dom
+    ADD CONSTRAINT p_dom_pkey PRIMARY KEY (idgrp, iddom);
+
+
+--
+-- Name: p_ip_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_ip
+    ADD CONSTRAINT p_ip_pkey PRIMARY KEY (idgrp, addr);
+
+
+--
+-- Name: p_network_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_network
+    ADD CONSTRAINT p_network_pkey PRIMARY KEY (idgrp, idnet);
+
+
+--
+-- Name: p_view_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_view
+    ADD CONSTRAINT p_view_pkey PRIMARY KEY (idgrp, idview);
+
+
+--
+-- Name: relaydom_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY relaydom
+    ADD CONSTRAINT relaydom_pkey PRIMARY KEY (iddom, idview, idhost);
+
+
+--
+-- Name: view_name_key; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY view
+    ADD CONSTRAINT view_name_key UNIQUE (name);
+
+
+--
+-- Name: view_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY view
+    ADD CONSTRAINT view_pkey PRIMARY KEY (idview);
+
+
+--
+-- Name: zone_forward_name_key; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_forward
+    ADD CONSTRAINT zone_forward_name_key UNIQUE (name);
+
+
+--
+-- Name: zone_forward_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_forward
+    ADD CONSTRAINT zone_forward_pkey PRIMARY KEY (idzone);
+
+
+--
+-- Name: zone_reverse4_name_key; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_reverse4
+    ADD CONSTRAINT zone_reverse4_name_key UNIQUE (name);
+
+
+--
+-- Name: zone_reverse4_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_reverse4
+    ADD CONSTRAINT zone_reverse4_pkey PRIMARY KEY (idzone);
+
+
+--
+-- Name: zone_reverse6_name_key; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_reverse6
+    ADD CONSTRAINT zone_reverse6_name_key UNIQUE (name);
+
+
+--
+-- Name: zone_reverse6_pkey; Type: CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_reverse6
+    ADD CONSTRAINT zone_reverse6_pkey PRIMARY KEY (idzone);
+
+
+SET search_path = global, pg_catalog;
+
+--
+-- Name: authfail_pkey; Type: CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY authfail
+    ADD CONSTRAINT authfail_pkey PRIMARY KEY (origin, otype);
+
+
+--
+-- Name: config_pkey; Type: CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY config
+    ADD CONSTRAINT config_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: nmgroup_name_key; Type: CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY nmgroup
+    ADD CONSTRAINT nmgroup_name_key UNIQUE (name);
+
+
+--
+-- Name: nmgroup_pkey; Type: CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY nmgroup
+    ADD CONSTRAINT nmgroup_pkey PRIMARY KEY (idgrp);
+
+
+--
+-- Name: nmuser_login_key; Type: CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY nmuser
+    ADD CONSTRAINT nmuser_login_key UNIQUE (login);
+
+
+--
+-- Name: nmuser_pkey; Type: CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY nmuser
+    ADD CONSTRAINT nmuser_pkey PRIMARY KEY (idcor);
+
+
+--
+-- Name: utmp_pkey; Type: CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY utmp
+    ADD CONSTRAINT utmp_pkey PRIMARY KEY (idcor, token);
+
+
+--
+-- Name: wtmp_pkey; Type: CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY wtmp
+    ADD CONSTRAINT wtmp_pkey PRIMARY KEY (idcor, token);
+
+
+SET search_path = pgauth, pg_catalog;
+
+--
+-- Name: member_pkey; Type: CONSTRAINT; Schema: pgauth; Owner: nm
+--
+
+ALTER TABLE ONLY member
+    ADD CONSTRAINT member_pkey PRIMARY KEY (login, realm);
+
+
+--
+-- Name: realm_pkey; Type: CONSTRAINT; Schema: pgauth; Owner: nm
+--
+
+ALTER TABLE ONLY realm
+    ADD CONSTRAINT realm_pkey PRIMARY KEY (realm);
+
+
+--
+-- Name: user_pkey; Type: CONSTRAINT; Schema: pgauth; Owner: nm
+--
+
+ALTER TABLE ONLY "user"
+    ADD CONSTRAINT user_pkey PRIMARY KEY (login);
+
+
+SET search_path = topo, pg_catalog;
+
+--
+-- Name: confcmd_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY confcmd
+    ADD CONSTRAINT confcmd_pkey PRIMARY KEY (idccmd);
+
+
+--
+-- Name: dotattr_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY dotattr
+    ADD CONSTRAINT dotattr_pkey PRIMARY KEY (rank);
+
+
+--
+-- Name: eq_eq_key; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY eq
+    ADD CONSTRAINT eq_eq_key UNIQUE (eq);
+
+
+--
+-- Name: eq_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY eq
+    ADD CONSTRAINT eq_pkey PRIMARY KEY (ideq);
+
+
+--
+-- Name: eqtype_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY eqtype
+    ADD CONSTRAINT eqtype_pkey PRIMARY KEY (idtype);
+
+
+--
+-- Name: eqtype_type_key; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY eqtype
+    ADD CONSTRAINT eqtype_type_key UNIQUE (type);
+
+
+--
+-- Name: filemonitor_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY filemonitor
+    ADD CONSTRAINT filemonitor_pkey PRIMARY KEY (path);
+
+
+--
+-- Name: ifchanges_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY ifchanges
+    ADD CONSTRAINT ifchanges_pkey PRIMARY KEY (eq, reqdate, iface);
+
+
+--
+-- Name: ignoreequsers_login_key; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY ignoreequsers
+    ADD CONSTRAINT ignoreequsers_login_key UNIQUE (login);
+
+
+--
+-- Name: keepstate_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY keepstate
+    ADD CONSTRAINT keepstate_pkey PRIMARY KEY (type);
+
+
+--
+-- Name: link_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY link
+    ADD CONSTRAINT link_pkey PRIMARY KEY (idlink);
+
+
+--
+-- Name: p_l2only_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY p_l2only
+    ADD CONSTRAINT p_l2only_pkey PRIMARY KEY (idgrp, vlanid);
+
+
+--
+-- Name: sensor_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY sensor
+    ADD CONSTRAINT sensor_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vlan_pkey; Type: CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY vlan
+    ADD CONSTRAINT vlan_pkey PRIMARY KEY (vlanid);
+
+
+SET search_path = mac, pg_catalog;
+
+--
+-- Name: ipmac_closed_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX ipmac_closed_idx ON ipmac USING btree (closed);
+
+
+--
+-- Name: ipmac_data_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX ipmac_data_idx ON ipmac USING btree (data);
+
+
+--
+-- Name: ipmac_ip_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX ipmac_ip_idx ON ipmac USING btree (((data).ip));
+
+
+--
+-- Name: ipmac_mac_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX ipmac_mac_idx ON ipmac USING btree (((data).mac));
+
+
+--
+-- Name: ipmac_src_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX ipmac_src_idx ON ipmac USING btree (src);
+
+
+--
+-- Name: ipmac_start_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX ipmac_start_idx ON ipmac USING btree (start);
+
+
+--
+-- Name: ipmac_stop_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX ipmac_stop_idx ON ipmac USING btree (stop);
+
+
+--
+-- Name: macoui_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX macoui_idx ON oui USING btree (addr);
+
+
+--
+-- Name: portmac_closed_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX portmac_closed_idx ON portmac USING btree (closed);
+
+
+--
+-- Name: portmac_data_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX portmac_data_idx ON portmac USING btree (data);
+
+
+--
+-- Name: portmac_mac_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX portmac_mac_idx ON portmac USING btree (((data).mac));
+
+
+--
+-- Name: portmac_port_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX portmac_port_idx ON portmac USING btree (((data).port));
+
+
+--
+-- Name: portmac_src_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX portmac_src_idx ON portmac USING btree (src);
+
+
+--
+-- Name: portmac_start_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX portmac_start_idx ON portmac USING btree (start);
+
+
+--
+-- Name: portmac_stop_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX portmac_stop_idx ON portmac USING btree (stop);
+
+
+--
+-- Name: portmac_vlanid_idx; Type: INDEX; Schema: mac; Owner: nm
+--
+
+CREATE INDEX portmac_vlanid_idx ON portmac USING btree (((data).vlanid));
+
+
+SET search_path = topo, pg_catalog;
+
+--
+-- Name: modeq_index; Type: INDEX; Schema: topo; Owner: nm
+--
+
+CREATE INDEX modeq_index ON modeq USING btree (eq);
+
+
+SET search_path = dns, pg_catalog;
+
+--
+-- Name: tr_del_alias; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_del_alias AFTER DELETE ON alias FOR EACH ROW EXECUTE PROCEDURE del_name();
+
+
+--
+-- Name: tr_del_host; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_del_host AFTER DELETE ON host FOR EACH ROW EXECUTE PROCEDURE del_name();
+
+
+--
+-- Name: tr_del_mailrole; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_del_mailrole AFTER DELETE ON mailrole FOR EACH ROW EXECUTE PROCEDURE del_name();
+
+
+--
+-- Name: tr_del_mx; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_del_mx AFTER DELETE ON mx FOR EACH ROW EXECUTE PROCEDURE del_name();
+
+
+--
+-- Name: tr_mod_addr; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_addr AFTER INSERT OR DELETE OR UPDATE ON addr FOR EACH ROW EXECUTE PROCEDURE mod_addr();
+
+
+--
+-- Name: tr_mod_alias; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_alias AFTER INSERT OR DELETE OR UPDATE ON alias FOR EACH ROW EXECUTE PROCEDURE mod_mx_alias();
+
+
+--
+-- Name: tr_mod_dhcpprofile; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_dhcpprofile BEFORE UPDATE ON dhcpprofile FOR EACH ROW EXECUTE PROCEDURE mod_dhcp();
+
+
+--
+-- Name: tr_mod_dhcprange; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_dhcprange BEFORE UPDATE ON dhcprange FOR EACH ROW EXECUTE PROCEDURE mod_dhcp();
+
+
+--
+-- Name: tr_mod_host; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_host AFTER INSERT OR DELETE OR UPDATE ON host FOR EACH ROW EXECUTE PROCEDURE mod_host();
+
+
+--
+-- Name: tr_mod_mx; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_mx AFTER INSERT OR DELETE OR UPDATE ON mx FOR EACH ROW EXECUTE PROCEDURE mod_mx_alias();
+
+
+--
+-- Name: tr_mod_name; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_name AFTER INSERT OR DELETE OR UPDATE ON name FOR EACH ROW EXECUTE PROCEDURE mod_name();
+
+
+--
+-- Name: tr_mod_network; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_network BEFORE UPDATE ON network FOR EACH ROW EXECUTE PROCEDURE mod_dhcp();
+
+
+--
+-- Name: tr_mod_relay; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_relay AFTER INSERT OR DELETE OR UPDATE ON relaydom FOR EACH ROW EXECUTE PROCEDURE mod_relay();
+
+
+--
+-- Name: tr_mod_zone; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_zone BEFORE UPDATE ON zone_forward FOR EACH ROW EXECUTE PROCEDURE mod_zone();
+
+
+--
+-- Name: tr_mod_zone4; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_zone4 BEFORE UPDATE ON zone_reverse4 FOR EACH ROW EXECUTE PROCEDURE mod_zone();
+
+
+--
+-- Name: tr_mod_zone6; Type: TRIGGER; Schema: dns; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_zone6 BEFORE UPDATE ON zone_reverse6 FOR EACH ROW EXECUTE PROCEDURE mod_zone();
+
+
+SET search_path = pgauth, pg_catalog;
+
+--
+-- Name: tr_phonetic; Type: TRIGGER; Schema: pgauth; Owner: nm
+--
+
+CREATE TRIGGER tr_phonetic BEFORE INSERT OR UPDATE ON "user" FOR EACH ROW EXECUTE PROCEDURE add_soundex();
+
+
+SET search_path = topo, pg_catalog;
+
+--
+-- Name: tr_mod_eq; Type: TRIGGER; Schema: topo; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_eq AFTER INSERT OR DELETE OR UPDATE ON eq FOR EACH ROW EXECUTE PROCEDURE mod_routerdb();
+
+
+--
+-- Name: tr_mod_vlan; Type: TRIGGER; Schema: topo; Owner: nm
+--
+
+CREATE TRIGGER tr_mod_vlan AFTER INSERT OR DELETE OR UPDATE ON vlan FOR EACH ROW EXECUTE PROCEDURE mod_vlan();
+
+
+SET search_path = dns, pg_catalog;
+
+--
+-- Name: addr_idhost_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY addr
+    ADD CONSTRAINT addr_idhost_fkey FOREIGN KEY (idhost) REFERENCES host(idhost) ON DELETE CASCADE;
+
+
+--
+-- Name: alias_idhost_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY alias
+    ADD CONSTRAINT alias_idhost_fkey FOREIGN KEY (idhost) REFERENCES host(idhost);
+
+
+--
+-- Name: alias_idname_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY alias
+    ADD CONSTRAINT alias_idname_fkey FOREIGN KEY (idname) REFERENCES name(idname);
+
+
+--
+-- Name: dhcprange_iddhcpprof_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY dhcprange
+    ADD CONSTRAINT dhcprange_iddhcpprof_fkey FOREIGN KEY (iddhcpprof) REFERENCES dhcpprofile(iddhcpprof);
+
+
+--
+-- Name: dhcprange_iddom_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY dhcprange
+    ADD CONSTRAINT dhcprange_iddom_fkey FOREIGN KEY (iddom) REFERENCES domain(iddom);
+
+
+--
+-- Name: host_iddhcpprof_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY host
+    ADD CONSTRAINT host_iddhcpprof_fkey FOREIGN KEY (iddhcpprof) REFERENCES dhcpprofile(iddhcpprof);
+
+
+--
+-- Name: host_idhinfo_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY host
+    ADD CONSTRAINT host_idhinfo_fkey FOREIGN KEY (idhinfo) REFERENCES hinfo(idhinfo);
+
+
+--
+-- Name: host_idname_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY host
+    ADD CONSTRAINT host_idname_fkey FOREIGN KEY (idname) REFERENCES name(idname);
+
+
+--
+-- Name: mailrole_idhost_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY mailrole
+    ADD CONSTRAINT mailrole_idhost_fkey FOREIGN KEY (idhost) REFERENCES host(idhost);
+
+
+--
+-- Name: mailrole_idname_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY mailrole
+    ADD CONSTRAINT mailrole_idname_fkey FOREIGN KEY (idname) REFERENCES name(idname);
+
+
+--
+-- Name: mx_idhost_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY mx
+    ADD CONSTRAINT mx_idhost_fkey FOREIGN KEY (idhost) REFERENCES host(idhost);
+
+
+--
+-- Name: mx_idname_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY mx
+    ADD CONSTRAINT mx_idname_fkey FOREIGN KEY (idname) REFERENCES name(idname);
+
+
+--
+-- Name: network_idcomm_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY network
+    ADD CONSTRAINT network_idcomm_fkey FOREIGN KEY (idcomm) REFERENCES community(idcomm);
+
+
+--
+-- Name: network_idorg_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY network
+    ADD CONSTRAINT network_idorg_fkey FOREIGN KEY (idorg) REFERENCES organization(idorg);
+
+
+--
+-- Name: p_dhcpprofile_iddhcpprof_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_dhcpprofile
+    ADD CONSTRAINT p_dhcpprofile_iddhcpprof_fkey FOREIGN KEY (iddhcpprof) REFERENCES dhcpprofile(iddhcpprof);
+
+
+--
+-- Name: p_dhcpprofile_idgrp_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_dhcpprofile
+    ADD CONSTRAINT p_dhcpprofile_idgrp_fkey FOREIGN KEY (idgrp) REFERENCES global.nmgroup(idgrp);
+
+
+--
+-- Name: p_dom_idgrp_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_dom
+    ADD CONSTRAINT p_dom_idgrp_fkey FOREIGN KEY (idgrp) REFERENCES global.nmgroup(idgrp);
+
+
+--
+-- Name: p_ip_idgrp_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_ip
+    ADD CONSTRAINT p_ip_idgrp_fkey FOREIGN KEY (idgrp) REFERENCES global.nmgroup(idgrp);
+
+
+--
+-- Name: p_network_idgrp_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_network
+    ADD CONSTRAINT p_network_idgrp_fkey FOREIGN KEY (idgrp) REFERENCES global.nmgroup(idgrp);
+
+
+--
+-- Name: p_network_idnet_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_network
+    ADD CONSTRAINT p_network_idnet_fkey FOREIGN KEY (idnet) REFERENCES network(idnet);
+
+
+--
+-- Name: p_view_idgrp_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_view
+    ADD CONSTRAINT p_view_idgrp_fkey FOREIGN KEY (idgrp) REFERENCES global.nmgroup(idgrp);
+
+
+--
+-- Name: p_view_idview_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY p_view
+    ADD CONSTRAINT p_view_idview_fkey FOREIGN KEY (idview) REFERENCES view(idview);
+
+
+--
+-- Name: relaydom_iddom_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY relaydom
+    ADD CONSTRAINT relaydom_iddom_fkey FOREIGN KEY (iddom) REFERENCES domain(iddom);
+
+
+--
+-- Name: relaydom_idhost_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY relaydom
+    ADD CONSTRAINT relaydom_idhost_fkey FOREIGN KEY (idhost) REFERENCES host(idhost);
+
+
+--
+-- Name: relaydom_idview_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY relaydom
+    ADD CONSTRAINT relaydom_idview_fkey FOREIGN KEY (idview) REFERENCES view(idview);
+
+
+--
+-- Name: zone_forward_idview_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_forward
+    ADD CONSTRAINT zone_forward_idview_fkey FOREIGN KEY (idview) REFERENCES view(idview);
+
+
+--
+-- Name: zone_reverse4_idview_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_reverse4
+    ADD CONSTRAINT zone_reverse4_idview_fkey FOREIGN KEY (idview) REFERENCES view(idview);
+
+
+--
+-- Name: zone_reverse6_idview_fkey; Type: FK CONSTRAINT; Schema: dns; Owner: nm
+--
+
+ALTER TABLE ONLY zone_reverse6
+    ADD CONSTRAINT zone_reverse6_idview_fkey FOREIGN KEY (idview) REFERENCES view(idview);
+
+
+SET search_path = global, pg_catalog;
+
+--
+-- Name: nmuser_idgrp_fkey; Type: FK CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY nmuser
+    ADD CONSTRAINT nmuser_idgrp_fkey FOREIGN KEY (idgrp) REFERENCES nmgroup(idgrp);
+
+
+--
+-- Name: utmp_idcor_fkey; Type: FK CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY utmp
+    ADD CONSTRAINT utmp_idcor_fkey FOREIGN KEY (idcor) REFERENCES nmuser(idcor);
+
+
+--
+-- Name: wtmp_idcor_fkey; Type: FK CONSTRAINT; Schema: global; Owner: nm
+--
+
+ALTER TABLE ONLY wtmp
+    ADD CONSTRAINT wtmp_idcor_fkey FOREIGN KEY (idcor) REFERENCES nmuser(idcor);
+
+
+SET search_path = pgauth, pg_catalog;
+
+--
+-- Name: member_login_fkey; Type: FK CONSTRAINT; Schema: pgauth; Owner: nm
+--
+
+ALTER TABLE ONLY member
+    ADD CONSTRAINT member_login_fkey FOREIGN KEY (login) REFERENCES "user"(login);
+
+
+--
+-- Name: member_realm_fkey; Type: FK CONSTRAINT; Schema: pgauth; Owner: nm
+--
+
+ALTER TABLE ONLY member
+    ADD CONSTRAINT member_realm_fkey FOREIGN KEY (realm) REFERENCES realm(realm);
+
+
+SET search_path = topo, pg_catalog;
+
+--
+-- Name: confcmd_idtype_fkey; Type: FK CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY confcmd
+    ADD CONSTRAINT confcmd_idtype_fkey FOREIGN KEY (idtype) REFERENCES eqtype(idtype);
+
+
+--
+-- Name: eq_idtype_fkey; Type: FK CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY eq
+    ADD CONSTRAINT eq_idtype_fkey FOREIGN KEY (idtype) REFERENCES eqtype(idtype);
+
+
+--
+-- Name: p_eq_idgrp_fkey; Type: FK CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY p_eq
+    ADD CONSTRAINT p_eq_idgrp_fkey FOREIGN KEY (idgrp) REFERENCES global.nmgroup(idgrp);
+
+
+--
+-- Name: p_l2only_idgrp_fkey; Type: FK CONSTRAINT; Schema: topo; Owner: nm
+--
+
+ALTER TABLE ONLY p_l2only
+    ADD CONSTRAINT p_l2only_idgrp_fkey FOREIGN KEY (idgrp) REFERENCES global.nmgroup(idgrp);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
