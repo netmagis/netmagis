@@ -530,12 +530,20 @@ proc hosts-new-and-mod {_parm orr} {
 	::scgi::serror 400 [mc "Empty address list"]
     }
 
+    #
+    # Check for syntax errors and duplicates
+    #
+
     set vaddr {}
     set lbad {}
     foreach a $addr {
 	if {[::ip::version $a] == 0} then {
 	    lappend lbad $a
 	} else {
+	    if {[info exists dupaddr($a)]} then {
+		::scgi::serror 400 [mc "Duplicate address (%s) in address list" $a]
+	    }
+	    set dupaddr($a) true
 	    set qa [pg_quote $a]
 	    lappend vaddr "(${qa}::inet)"
 	}
