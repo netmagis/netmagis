@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   dnsaddhost <fqdn> <ip> <viewname>
+#   dnsaddhost [-l libdir][-c configfile] <fqdn> <ip> <viewname>
 #
 # This scripts uses a configuration file for authentication purpose
 #   ~/.config/netmagisrc
@@ -11,19 +11,26 @@
 #           key = a-secret-key-delivered-by-netmagis
 #
 
+import sys
+import os.path
 import argparse
-
-from nmcli.core import netmagis
 
 def main ():
     parser = argparse.ArgumentParser (description='Netmagis add host')
     parser.add_argument ('-c', '--config-file', action='store',
                 help='Config file location (default=~/.config/netmagisrc)')
+    parser.add_argument ('-l', '--libdir', action='store',
+                help='Library directory (default=%NMLIBDIR%)')
     parser.add_argument ('fqdn', help='Host FQDN')
     parser.add_argument ('ip', help='IP (v4 or v6) address to add')
     parser.add_argument ('view', help='View name')
 
     args = parser.parse_args ()
+
+    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
+    sys.path.append (libdir)
+    from pynm.core import netmagis
+
     if args.config_file is None:
         configfile = netmagis.default_conf_filename ()
 
@@ -35,17 +42,17 @@ def main ():
     try:
         nm.read_conf (configfile)
     except RuntimeError as m:
-        netmagis.grmbl (m)
+        nm.grmbl (m)
 
     (name, domain, iddom) = nm.split_fqdn (fqdn)
     if name is None:
-        netmagis.grmbl ('Invalid FQDN {}'.format (fqdn))
+        nm.grmbl ('Invalid FQDN {}'.format (fqdn))
     if iddom is None:
-        netmagis.grmbl ('Unknown domain {}'.format (domain))
+        nm.grmbl ('Unknown domain {}'.format (domain))
 
     idview = nm.get_idview (view)
     if not idview:
-        netmagis.grmbl ('Unknown view {}'.format (view))
+        nm.grmbl ('Unknown view {}'.format (view))
 
     #
     # Test if host already exists
@@ -53,7 +60,7 @@ def main ():
 
     query = {'name': name, 'domain': domain, 'view': view}
     r = nm.api ('get', '/hosts', params=query)
-    netmagis.test_answer (r)
+    nm.test_answer (r)
 
     j = r.json ()
     nr = len (j)
@@ -79,7 +86,7 @@ def main ():
                     'addr': [ip],
                 }
         r = nm.api ('post', '/hosts', json=data)
-        netmagis.test_answer (r)
+        nm.test_answer (r)
 
     elif nr == 1:
         #
@@ -91,17 +98,17 @@ def main ():
         idhost = j [0]['idhost']
         uri = '/hosts/' + str (idhost)
         r = nm.api ('get', uri)
-        netmagis.test_answer (r)
+        nm.test_answer (r)
 
         data = r.json ()
         data ['addr'].append (ip)
         r = nm.api ('put', uri, json=data)
-        netmagis.test_answer (r)
+        nm.test_answer (r)
 
     else:
         # this case should never happen
         msg = "Server error: host '{}.{}' exists more than once in view {}"
-        netmagis.grmbl (msg.format (name, domain, view))
+        nm.grmbl (msg.format (name, domain, view))
 
 if __name__ == '__main__':
     main ()

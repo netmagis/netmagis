@@ -76,12 +76,10 @@ class netmagis:
         iddom = self.get_iddom (domain)
         return (local, domain, iddom)
 
-    @staticmethod
-    def grmbl (msg):
+    def grmbl (self, msg):
         print (msg, file=sys.stderr)
         sys.exit (1)
 
-    @staticmethod
-    def test_answer (req):
+    def test_answer (self, req):
         if req.status_code != 200:
-            grmbl ('Server error {} ({})'.format (req.status_code, req.reason))
+            self.grmbl ('Server error {} ({})'.format (req.status_code, req.reason))

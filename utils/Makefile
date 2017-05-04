@@ -1,5 +1,7 @@
 NINSTALL	= ../ninstall
 
+###### substitute NMLIBDIR for Python scripts
+
 SCRIPTS = \
 	dnsaddalias \
 	dnsaddhost \
