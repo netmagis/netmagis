@@ -31,28 +31,13 @@ def main ():
     sys.path.append (libdir)
     from pynm.core import netmagis
 
-    if args.config_file is None:
-        configfile = netmagis.default_conf_filename ()
+    nm = netmagis (args.config_file)
 
     fqdn = args.fqdn
     ip = args.ip
     view = args.view
 
-    nm = netmagis ()
-    try:
-        nm.read_conf (configfile)
-    except RuntimeError as m:
-        nm.grmbl (m)
-
-    (name, domain, iddom) = nm.split_fqdn (fqdn)
-    if name is None:
-        nm.grmbl ('Invalid FQDN {}'.format (fqdn))
-    if iddom is None:
-        nm.grmbl ('Unknown domain {}'.format (domain))
-
-    idview = nm.get_idview (view)
-    if not idview:
-        nm.grmbl ('Unknown view {}'.format (view))
+    (name, domain, iddom, idview) = nm.split_fqdn (fqdn, view)
 
     #
     # Test if host already exists
@@ -66,7 +51,7 @@ def main ():
     nr = len (j)
     if nr == 0:
         #
-        # Host does not exist: use a POST request to create the jost
+        # Host does not exist: use a POST request to create the host
         #
 
         # TODO : find a way to get a default HINFO value (API change requested)
@@ -107,8 +92,8 @@ def main ():
 
     else:
         # this case should never happen
-        msg = "Server error: host '{}.{}' exists more than once in view {}"
-        nm.grmbl (msg.format (name, domain, view))
+        msg = "Server error: host '{}' exists more than once in view {}"
+        nm.grmbl (msg.format (fqdn, view))
 
 if __name__ == '__main__':
     main ()

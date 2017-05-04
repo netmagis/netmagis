@@ -6,15 +6,19 @@ import re
 import requests
 
 class netmagis:
-    def __init__ (self):
+    def __init__ (self, configfile):
         self._url = None
         self._key = None
         self._domains = None
         self._views = None
 
-    @staticmethod
-    def default_conf_filename ():
-        return os.path.expanduser ('~') + '/.config/netmagisrc'
+        if configfile is None:
+            configfile = os.path.expanduser ('~') + '/.config/netmagisrc'
+
+        try:
+            self.read_conf (configfile)
+        except RuntimeError as m:
+            self.grmbl (m)
 
     def read_conf (self, filename):
         self._url = None
@@ -22,7 +26,7 @@ class netmagis:
 
         config = configparser.ConfigParser ()
         if not config.read (filename):
-            raise RuntimeError ('Cannot read ' + filename)
+            raise RuntimeError ('Cannot read configuration file ' + filename)
 
         try:
             self._url = config ['general']['url']
@@ -68,13 +72,18 @@ class netmagis:
                 break
         return idview
 
-    def split_fqdn (self, fqdn):
+    def split_fqdn (self, fqdn, view):
         m = re.match (r'^([^.]+)\.(.+)', fqdn)
         if m is None:
-            return (None, None, None)
+            self.grmbl ("Invalid FQDN '{}'".format (fqdn))
         (local, domain) = m.groups ()
         iddom = self.get_iddom (domain)
-        return (local, domain, iddom)
+        if iddom is None:
+            self.grmbl ("Invalid domain '{}'".format (domain))
+        idview = self.get_idview (view)
+        if idview is None:
+            self.grmbl ("Invalid view '{}'".format (view))
+        return (local, domain, iddom, idview)
 
     def grmbl (self, msg):
         print (msg, file=sys.stderr)
