@@ -22,6 +22,8 @@ topo/src/extractl2
 topo/src/extractl3
 topo/src/getnetif
 www/htg/src/htgtcl
+# Python module cache
+__pycache__
 
 server/lib/pkgtcl/pkgIndex.tcl
 server/www/node_modules/*
