@@ -1096,11 +1096,11 @@ namespace eval ::scgi:: {
 		set stmsg ""
 		set ct ""
 		foreach {k v} $state(rephdrs) {
-		    switch $k {
-			Status {
+		    switch [string tolower $k] {
+			status {
 			    regexp {^(\d+)\s*(.*)} $v foo stcode stmsg
 			}
-			Content-Type { set ct $v }
+			content-type { set ct $v }
 		    }
 		}
 
