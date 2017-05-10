@@ -21,6 +21,7 @@ CREATE TABLE global.nmgroup (
     p_ttl	INT DEFAULT 0,		-- 1 if right to edit TTL for a host
     p_mac	INT DEFAULT 0,		-- 1 if right to access MAC module
     p_genl	INT DEFAULT 0,		-- 1 if right to generate a link number
+    p_genz	INT DEFAULT 0,		-- 1 if right to generate zones/dhcp/...
 
     UNIQUE (name),
     PRIMARY KEY (idgrp)

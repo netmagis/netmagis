@@ -187,6 +187,11 @@ DROP FUNCTION dns.gen_norm_idrr (INTEGER) ;
 DROP FUNCTION dns.mod_mxcname () ;
 DROP FUNCTION dns.mod_rr () ;
 
+-- New capability
+ALTER TABLE global.nmgroup
+    ADD COLUMN p_genz INTEGER DEFAULT 0 ;
+UPDATE global.nmgroup SET p_genz = p_admin ;	-- set genz perm for admin
+
 -- New log format
 ALTER TABLE global.log
     ADD COLUMN version INTEGER,

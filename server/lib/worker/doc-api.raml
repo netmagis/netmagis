@@ -389,6 +389,62 @@ types:
 	link:		"/networks/123"
       }
 
+  ZoneParam:
+    description: description of a zone
+    type: object
+    properties:
+      name:		string
+      idview:		integer
+      gen:
+	enum: [0, 1]
+    example: |
+      {
+	name: "example.com.internal",
+	idview: 5,
+	gen: 0
+      }
+
+  ZoneContent:
+    description: content of a zone
+    type: object
+    properties:
+      prologue:		string
+      records:		ZoneRecord []
+    example: |
+      {
+	prologue: "@ SOA .... \n ..."
+	records: [
+	  {
+	    name: "foo",
+	    ttl: 60,
+	    type: "A",
+	    rdata: "198.51.100.1"
+	  },
+	  {
+	    name: "foo",
+	    ttl: -1,
+	    type: "MX",
+	    rdata: "100 mx1.example.com"
+	  }
+	]
+      }
+
+    ZoneRecord:
+      description: an individual RR
+      type: object
+      properties:
+	name:		string			# relative to the zone
+	ttl:		integer			# or -1 if no ttl
+	type:		string			# A, AAAA, MX, etc.
+	rdata:		string			# dependant upon type
+      example: |
+	{
+	  name: "foo",
+	  ttl: 60,
+	  type: "MX",
+	  rdata: "100 mx1.example.com"
+	}
+
   AdminNetwork:
     description: a row in the network table, without id
     type: object
@@ -754,6 +810,8 @@ types:
 	enum: [0, 1]
       p_genl:
 	enum: [0, 1]
+      p_genz:
+	enum: [0, 1]
     example: |
       {
 	name: staff
@@ -762,6 +820,7 @@ types:
 	p_ttl: 1
 	p_mac: 1
 	p_genl: 1
+	p_genz: 1
       }
 
   AdminGroupId:
@@ -778,6 +837,7 @@ types:
 	p_ttl: 1
 	p_mac: 1
 	p_genl: 1
+	p_genz: 1
       }
 
   AdminP_Ip:
@@ -1079,6 +1139,7 @@ types:
 		  "admin",
 		  "topo",
 		  "topogenl",
+		  "genz",
 		  "mac",
 		  "pgauth",
 		  "pgadmin"
@@ -2195,6 +2256,112 @@ types:
 	      }
 
 ##############################################################################
+# Zone generation
+##############################################################################
+
+/zones
+  description: Collection of zones
+  get:
+    description:
+    queryParameters:
+      name:
+        required: false
+        type: string
+        example: "168.192.in-addr.arpa"
+      view:
+        required: false
+        type: string
+        example: "internal"
+      modified:
+        required: false
+        type: boolean (0/1)
+        example: 1
+      responses:
+	200:
+	  body:
+	    application/json:
+	      description: list of zones
+	      type: ZoneParam []
+	      example: |
+                [
+		  {
+		    name: "example.com.internal",
+		    idview: 5,
+		    gen: 0
+		  },
+		  {
+		    name: "example.org.external",
+		    idview: 2,
+		    gen: 1
+		  }
+		]
+
+  /{zoneName}
+    description: zone content
+    get:
+      description: get zone content without modify it (no gen=0 nor version inc)
+      queryParameters:
+      responses:
+        200:
+          body:
+            application/json:
+	      type: ZoneContent
+              example: |
+		{
+		  prologue: "@ SOA .... \n ..."
+		  records: [
+		    {
+		      name: "foo",
+		      ttl: 60,
+		      type: "A",
+		      rdata: "198.51.100.1"
+		    },
+		    {
+		      name: "foo",
+		      ttl: -1,
+		      type: "MX",
+		      rdata: "100 mx1.example.com"
+		    }
+		  ]
+		}
+    post:
+      description: get zone content and register generation (gen=1 and vers inc)
+      queryParameters:
+      responses:
+        200:
+          body:
+            application/json:
+	      type: ZoneContent
+              example: |
+		{
+		  prologue: "@ SOA .... \n ..."
+		  records: [
+		    {
+		      name: "foo",
+		      ttl: 60,
+		      type: "A",
+		      rdata: "198.51.100.1"
+		    },
+		    {
+		      name: "foo",
+		      ttl: -1,
+		      type: "MX",
+		      rdata: "100 mx1.example.com"
+		    }
+		  ]
+		}
+
+
+    /zones
+      description: Collection of zones
+      /{zoneId}
+    /relays
+      description: Collection of mail relays
+      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <--- TO DISCUSS LATER
+      /{domainId}
+        description: mail relays for a given domain
+
+##############################################################################
 # Admin tables
 ##############################################################################
 
@@ -3065,6 +3232,7 @@ types:
 		p_ttl: 1
 		p_mac: 1
 		p_genl: 1
+		p_genz: 1
 	      }
 	    ]
 
@@ -3081,6 +3249,7 @@ types:
 	  p_ttl: 1
 	  p_mac: 1
 	  p_genl: 1
+	  p_genz: 1
 	}
     responses:
       200:
@@ -3095,6 +3264,7 @@ types:
 	      p_ttl: 1
 	      p_mac: 1
 	      p_genl: 1
+	      p_genz: 1
 	    }
 
   /{id}
@@ -3112,6 +3282,7 @@ types:
 	    p_ttl: 0
 	    p_mac: 1
 	    p_genl: 1
+	    p_genz: 1
 	  }
       responses:
         200:
@@ -3126,6 +3297,7 @@ types:
 		p_ttl: 1
 		p_mac: 1
 		p_genl: 1
+		p_genz: 1
 	      }
 
     delete:
@@ -3579,65 +3751,3 @@ XXXXXXXXXXXXXXXXXXXXXXXX : pgauth.*
 
 
 
-/zones
-  description: Collection of zones
-  get:
-    description:
-    queryParameters:
-      name:
-        required: false
-        type: string
-        example: "168.192.in-addr.arpa"
-      view:
-        required: false
-        type: string
-        example: "internal"
-      modified:
-        required: false
-        type: boolean (0/1)
-        example: 1
-  /{zoneId}
-    description: zone parameters or zone file ready for ISC-BIND/Unbound/etc
-    get:
-      description: zone parameters (name, prologue, etc.) only
-      queryParameters:
-      responses:
-        200:
-          body:
-            application/json:
-              example: |
-                {
-                  name: "example.com.internal",
-                  view: "/views/5",
-                  version: 19700101120005,
-                  prologue: "...",
-                  rrsup: "...",
-                  gen: 0
-                }
-    post:
-      description: generated zone file, ready for production use
-      queryParameters:
-        format:
-          required: true
-          type: string
-          example: bind/unbound/...
-        update:
-          required: false
-          type: 0/1
-          example: 0
-          description: 1=reset the "gen" flag. 0=don't change it
-      responses:
-        200:
-          body:
-            text/plain:
-            "..."
-
-
-    /zones
-      description: Collection of zones
-      /{zoneId}
-    /relays
-      description: Collection of mail relays
-      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <--- TO DISCUSS LATER
-      /{domainId}
-        description: mail relays for a given domain

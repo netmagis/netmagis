@@ -100,6 +100,7 @@ namespace eval ::nmenv {
 	p_ttl 0
 	p_mac 0
 	p_genl 0
+	p_genz 0
     }
 
     variable ids -array [array get idanon]
@@ -231,6 +232,7 @@ namespace eval ::nmenv {
     #	- mac: right to access mac module and mac module activated
     #	- topo: topo module activated
     #	- topogenl: right to generate topo links
+    #	- genz: right to generate zones/dhcp/routes/etc.
     #	- pgauth: internal auth active
     #	- pgadmin: admin, internal auth admin and internal auth activated
     #	- setuid: currently acting as another user
@@ -270,6 +272,9 @@ namespace eval ::nmenv {
 		    if {$ids(p_genl)} then {
 			lappend cap "topogenl"
 		    }
+		}
+		if {$ids(p_genz)} then {
+		    lappend cap genz
 		}
 		if {$ids(p_mac) && $cfg(macactive)} then {
 		    lappend cap mac
