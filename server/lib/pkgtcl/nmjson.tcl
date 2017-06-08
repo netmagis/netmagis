@@ -144,8 +144,7 @@ namespace eval ::nmjson {
 	    set ltok [_tokenize $str]
 	    set json [_decode ltok]
 	} on error msg {
-	    puts stderr "cannot parse json ($msg)"
-	    exit 1
+	    error "cannot parse json ($msg)"
 	}
 
 	return $json
