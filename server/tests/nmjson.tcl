@@ -1,9 +1,115 @@
+#	{ ... } -> {object <dict>}
+#	[ ... ] -> {array <list>}
+#	true    -> {bool true}
+#	123	-> {number <val>}
+#	"foo"   -> {string <str>}
+#	null	-> {null}
 
 proc json2str {json} {
-    # return string
+    lassign $json type val
+    switch $type {
+	null {
+	    set s null
+	}
+	bool {
+	    set s false
+	    if {$val} then {
+		set s true
+	    }
+	}
+	number {
+	    set s $val
+	}
+	string {
+	    set s [string map {\\ \\\\ \" \\" / \\/ \n \\n \t \\t \b \\b \f \\f \r \\r} $val]
+	    set s "\"$s\""
+	}
+	object {
+	    set first 1
+	    set s "\{"
+	    dict for {k v} $val {
+		if {! $first} then {
+		    append s ", "
+		}
+		append s "\"$k\":"
+		append s [json2str $v]
+		set first 0
+	    }
+	    append s "\}"
+	}
+	array {
+	    set first 1
+	    set s "\["
+	    foreach v $val {
+		if {! $first} then {
+		    append s ", "
+		}
+		append s [json2str $v]
+		set first 0
+	    }
+	    append s "\]"
+	}
+	default {
+	    error "Invalid NMJSON type"
+	}
+    }
+    return $s
 }
 
-proc eq {j1 j2} {
+proc jsoneq {j1 j2} {
+    set r 0
+    lassign $j1 type1 val1
+    lassign $j2 type2 val2
+    if {$type1 eq $type2} then {
+	switch $type1 {
+	    null {
+		set r 1
+	    }
+	    bool {
+		if {($val1 && $val2) || (! $val1 && ! $val2)} then {
+		    set r 1
+		}
+	    }
+	    number {
+		set r [expr {$val1 == $val2}]
+	    }
+	    string {
+		set r [expr {$val1 eq $val2}]
+	    }
+	    object {
+		if {[dict size $val1] == [dict size $val2]} then {
+		    set r 1
+		    dict for {k1 v1} $val1 {
+			if {[dict exists $val2 $k1]} then {
+			    set v2 [dict get $val2 $k1]
+			    set r [jsoneq $v1 $v2]
+			    if {! $r} then {
+				break
+			    }
+			} else {
+			    set r 0
+			    break
+			}
+		    }
+		}
+	    }
+	    array {
+		if {[llength $val1] == [llength $val2]} then {
+		    set r 1
+		    foreach v1 $val1 v2 $val2 {
+			set r [jsoneq $v1 $v2]
+			if {! $r} then {
+			    break
+			}
+		    }
+		}
+	    }
+	    default {
+		error "Invalid NMJSON type"
+	    }
+	}
+    }
+    return $r
 }
 
 
@@ -47,8 +153,9 @@ proc nmjson_decode {_ltok} {
     lassign [nmjson_get-next-token ltok] type val
     switch $type {
 	STRING { set r [list "string" $val] }
+	BOOL   { set r [list "bool"   $val] }
 	NUMBER { set r [list "number" $val] }
-	RAW    { set r [list "null"] }
+	NULL   { set r [list "null"] }
 	OPEN_CURLY { set r [list "object" [nmjson_decode_object ltok]] }
 	OPEN_BRACKET { set r [list "array" [nmjson_decode_array ltok]] }
 	default {
@@ -181,7 +288,11 @@ proc nmjson_tokenize {json} {
                     incr i [expr {[string length $value] - 1}]
                 } elseif {$char in {t f n}} {
                     set value [nmjson_analyze-boolean-or-null $json $i]
-                    lappend tokens [list RAW $value]
+		    if {$value eq "null"} then {
+			lappend tokens [list NULL $value]
+		    } else {
+			lappend tokens [list BOOL $value]
+		    }
 
                     incr i [expr {[string length $value] - 1}]
                 } else {
@@ -226,4 +337,8 @@ proc nmjson_analyze-number {str start} {
 ##############################################################################
 
 puts [nmjson_tokenize [lindex $argv 0]]
-puts [str2json [lindex $argv 0]]
+set j [str2json [lindex $argv 0]]
+puts [json2str $j]
+# set j1 [str2json [lindex $argv 0]]
+# set j2 [str2json [lindex $argv 1]]
+# puts [jsoneq $j1 $j2]
