@@ -4,6 +4,7 @@ TCLSH		= /usr/local/bin/tclsh
 SRCS =	\
 	lconf.tcl \
 	nmenv.tcl \
+	nmjson.tcl \
 	pgdb.tcl \
 	scgi.tcl \
 	rr.tcl \
