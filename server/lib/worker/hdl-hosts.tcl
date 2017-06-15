@@ -645,6 +645,7 @@ proc hosts-new-and-mod {_parm orr} {
 	    set sql "UPDATE dns.host
 			    SET
 				idname = $nidname,
+				idhinfo = $idhinfo,
 				mac = $qmac,
 				comment = $qcomment,
 				respname = $qrespname,
