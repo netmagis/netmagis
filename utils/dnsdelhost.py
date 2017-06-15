@@ -13,6 +13,8 @@ def main ():
     parser = argparse.ArgumentParser (description='Netmagis delete host')
     parser.add_argument ('-c', '--config-file', action='store',
                 help='Config file location (default=~/.config/netmagisrc)')
+    # warning: do not execute this script with "--help" while %...% are
+    # not subtitued
     parser.add_argument ('-l', '--libdir', action='store',
                 help='Library directory (default=%NMLIBDIR%)')
     parser.add_argument ('fqdn', help='Host FQDN')
@@ -29,53 +31,34 @@ def main ():
     fqdn = args.fqdn
     view = args.view
 
-    (name, domain, iddom, idview) = nm.split_fqdn (fqdn, view)
+    (name, domain, iddom, idview, h) = nm.get_host (fqdn, view, must_exist=False)
 
-    #
-    # Test if host already exists
-    #
-
-    query = {'name': name, 'domain': domain, 'view': view}
-    r = nm.api ('get', '/hosts', params=query)
-    nm.test_answer (r)
-
-    j = r.json ()
-    nr = len (j)
-    if nr == 0:
+    if h is None:
         #
         # Host does not exist. Look for an alias.
         #
 
-        query = {'name': name, 'domain': domain, 'view': view}
-        r = nm.api ('get', '/aliases', params=query)
-        nm.test_answer (r)
+        (_, _, _, _, a) = nm.get_alias (fqdn, view, must_exist=False)
 
-        j = r.json ()
-        nr = len (j)
-        if nr == 1:
-            idalias = j [0]['idalias']
+        if a is None:
+            msg = "No host or alias '{}' in view {}"
+            nm.grmbl (msg.format (fqdn, view))
+
+        else:
+            idalias = a ['idalias']
             uri = '/aliases/' + str (idalias)
             r = nm.api ('delete', uri)
             nm.test_answer (r)
 
-        else:
-            msg = "Host '{}' does not exist in view {}"
-            nm.grmbl (msg.format (fqdn, view))
-
-    elif nr == 1:
+    else:
         #
         # Host exists
         #
 
-        idhost = j [0]['idhost']
+        idhost = h ['idhost']
         uri = '/hosts/' + str (idhost)
         r = nm.api ('delete', uri)
         nm.test_answer (r)
-
-    else:
-        # this case should never happen
-        msg = "Server error: host '{}' exists more than once in view {}"
-        nm.grmbl (msg.format (fqdn, view))
 
 if __name__ == '__main__':
     main ()

@@ -11,6 +11,8 @@ class netmagis:
         self._key = None
         self._domains = None
         self._views = None
+        self._hinfos = None
+        self._dhcpprofiles = None
 
         if configfile is None:
             configfile = os.path.expanduser ('~') + '/.config/netmagisrc'
@@ -72,6 +74,35 @@ class netmagis:
                 break
         return idview
 
+    def _read_hinfos (self):
+        res = self.api ('get', '/hinfos')
+        return res.json ()
+
+    def get_idhinfo (self, name, present=True):
+        if self._hinfos is None:
+            self._hinfos = self._read_hinfos ()
+        idhinfo = None
+        for j in self._hinfos:
+            if j ['name'] == name:
+                if not (present and j ['present'] == 0):
+                    idhinfo = j ['idhinfo']
+                break
+        return idhinfo
+
+    def _read_dhcpprofiles (self):
+        res = self.api ('get', '/dhcpprofiles')
+        return res.json ()
+
+    def get_iddhcpprofile (self, name):
+        if self._dhcpprofiles is None:
+            self._dhcpprofiles = self._read_dhcpprofiles ()
+        iddhcpprof = None
+        for j in self._dhcpprofiles:
+            if j ['name'] == name:
+                iddhcpprof = j ['iddhcpprof']
+                break
+        return iddhcpprof
+
     def split_fqdn (self, fqdn, view):
         m = re.match (r'^([^.]+)\.(.+)', fqdn)
         if m is None:
@@ -84,6 +115,54 @@ class netmagis:
         if idview is None:
             self.grmbl ("Invalid view '{}'".format (view))
         return (local, domain, iddom, idview)
+
+    def get_host (self, fqdn, view, must_exist=True):
+        (name, domain, iddom, idview) = self.split_fqdn (fqdn, view)
+
+        query = {'name': name, 'domain': domain, 'view': view}
+        r = self.api ('get', '/hosts', params=query)
+        self.test_answer (r)
+
+        h = None
+
+        j = r.json ()
+        nr = len (j)
+        if nr == 0:
+            if must_exist:
+                msg = "Host '{}' does not exist in view {}"
+                self.grmbl (msg.format (fqdn, view))
+        elif nr == 1:
+            h = j [0]
+        else:
+            # this case should never happen
+            msg = "Server error: host '{}' exists more than once in view {}"
+            self.grmbl (msg.format (fqdn, view))
+
+        return (name, domain, iddom, idview, h)
+
+    def get_alias (self, fqdn, view, must_exist=True):
+        (name, domain, iddom, idview) = self.split_fqdn (fqdn, view)
+
+        query = {'name': name, 'domain': domain, 'view': view}
+        r = self.api ('get', '/aliases', params=query)
+        self.test_answer (r)
+
+        a = None
+
+        j = r.json ()
+        nr = len (j)
+        if nr == 0:
+            if must_exist:
+                msg = "Alias '{}' does not exist in view {}"
+                self.grmbl (msg.format (fqdn, view))
+        elif nr == 1:
+            a = j [0]
+        else:
+            # this case should never happen
+            msg = "Server error: alias '{}' exists more than once in view {}"
+            self.grmbl (msg.format (fqdn, view))
+
+        return (name, domain, iddom, idview, a)
 
     def grmbl (self, msg):
         print (msg, file=sys.stderr)

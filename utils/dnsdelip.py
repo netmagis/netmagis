@@ -14,6 +14,8 @@ def main ():
     parser = argparse.ArgumentParser (description='Netmagis delete host')
     parser.add_argument ('-c', '--config-file', action='store',
                 help='Config file location (default=~/.config/netmagisrc)')
+    # warning: do not execute this script with "--help" while %...% are
+    # not subtitued
     parser.add_argument ('-l', '--libdir', action='store',
                 help='Library directory (default=%NMLIBDIR%)')
     parser.add_argument ('ip', help='IP (v4 or v6) address to delete')
