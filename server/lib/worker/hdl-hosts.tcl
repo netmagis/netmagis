@@ -143,10 +143,10 @@ api-handler delete {/hosts/([0-9]+:idhost)} logged {
 
     if {[llength [::rr::get-mailaddr $rr]] > 0} then {
 	set sql "SELECT n.name, d.name AS domain
-		    FROM dns.mailrole m,
-			INNER JOIN dns.name n ON (mailaddr = idname)
-			NATURAL INNER JOIN dns.domain d
-		    WHERE m.mboxhost = $idhost
+		    FROM dns.mailrole m
+			INNER JOIN dns.name n USING (idname)
+			INNER JOIN dns.domain d USING (iddom)
+		    WHERE m.idhost = $idhost
 		    ORDER BY domain ASC, n.name ASC
 		    "
 	set lmbox {}
