@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   dnsdelhost [-l libdir][-c configfile] <fqdn> <viewname>
+#   dnsdelhost [-l libdir][-c configfile][-t] <fqdn> <viewname>
 #
 
 import sys
@@ -13,6 +13,8 @@ def main ():
     parser = argparse.ArgumentParser (description='Netmagis delete host')
     parser.add_argument ('-c', '--config-file', action='store',
                 help='Config file location (default=~/.config/netmagisrc)')
+    parser.add_argument ('-t', '--trace', action='store_true',
+                help='Trace requests to Netmagis server')
     # warning: do not execute this script with "--help" while %...% are
     # not subtitued
     parser.add_argument ('-l', '--libdir', action='store',
@@ -26,7 +28,7 @@ def main ():
     sys.path.append (libdir)
     from pynm.core import netmagis
 
-    nm = netmagis (args.config_file)
+    nm = netmagis (args.config_file, trace=args.trace)
 
     fqdn = args.fqdn
     view = args.view

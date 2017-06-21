@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   dnsmodattr [-l libdir][-c configfile] <fqdn> <view> <key> <val> [<key> val> ...]
+#   dnsmodattr [-l libdir][-c configfile][-t] <fqdn> <view> <key> <val> [<key> val> ...]
 #
 # Examples:
 #   dnsmodattr www.example.com default MAC 00:68:fe....
@@ -63,6 +63,8 @@ def main ():
     parser = argparse.ArgumentParser (description='Netmagis modify host attributes')
     parser.add_argument ('-c', '--config-file', action='store',
                 help='Config file location (default=~/.config/netmagisrc)')
+    parser.add_argument ('-t', '--trace', action='store_true',
+                help='Trace requests to Netmagis server')
     # warning: do not execute this script with "--help" while %...% are
     # not subtitued
     parser.add_argument ('-l', '--libdir', action='store',
@@ -78,7 +80,7 @@ def main ():
     sys.path.append (libdir)
     from pynm.core import netmagis
 
-    nm = netmagis (args.config_file)
+    nm = netmagis (args.config_file, trace=args.trace)
 
     fqdn = args.fqdn
     view = args.view

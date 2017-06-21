@@ -6,13 +6,14 @@ import re
 import requests
 
 class netmagis:
-    def __init__ (self, configfile):
+    def __init__ (self, configfile, trace=False):
         self._url = None
         self._key = None
         self._domains = None
         self._views = None
         self._hinfos = None
         self._dhcpprofiles = None
+        self._trace = trace
 
         if configfile is None:
             configfile = os.path.expanduser ('~') + '/.config/netmagisrc'
@@ -41,7 +42,14 @@ class netmagis:
     def api (self, verb, url, params=None, json=None):
         url = self._url + url
         cookies = {'session': self._key}
+        if self._trace:
+            print ('{} {} cookies={} params={} json={}'
+                        .format (verb, url, cookies, params, json),
+                        file=sys.stderr)
         r = requests.request (verb, url, cookies=cookies, params=params, json=json)
+        if self._trace:
+            print ('{} {}\n{}'.format (r.status_code, r.reason, r.text),
+                        file=sys.stderr)
         # XXX : check if not authenticated or other non-api errors
         # (server not found, ...)
         return r
