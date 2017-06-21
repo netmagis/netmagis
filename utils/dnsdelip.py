@@ -49,7 +49,6 @@ def main ():
 
     query = {'addr': ip, 'view': view}
     r = nm.api ('get', '/hosts', params=query)
-    nm.test_answer (r)
 
     j = r.json ()
     nr = len (j)
@@ -69,7 +68,6 @@ def main ():
         uri = '/hosts/' + str (idhost)
 
         r = nm.api ('get', uri)
-        nm.test_answer (r)
 
         j = r.json ()
 
@@ -84,14 +82,12 @@ def main ():
             # Delete host
             #
             r = nm.api ('delete', uri)
-            nm.test_answer (r)
 
         else:
             #
             # Modify host to delete just one of its addresses
             #
             r = nm.api ('put', uri, json=j)
-            nm.test_answer (r)
 
     else:
         # this case should never happen

@@ -101,7 +101,6 @@ def main ():
     idhost = h ['idhost']
     uri = '/hosts/' + str (idhost)
     r = nm.api ('get', uri)
-    nm.test_answer (r)
     fullhost = r.json ()
 
     # browse through arguments to get couples <key, val>
@@ -121,7 +120,6 @@ def main ():
 
     # register modifications
     r = nm.api ('put', uri, json=fullhost)
-    nm.test_answer (r)
 
     sys.exit (0)
 

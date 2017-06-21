@@ -70,7 +70,6 @@ def main ():
                     'addr': [ip],
                 }
         r = nm.api ('post', '/hosts', json=data)
-        nm.test_answer (r)
 
     else:
         #
@@ -82,12 +81,10 @@ def main ():
         idhost = h ['idhost']
         uri = '/hosts/' + str (idhost)
         r = nm.api ('get', uri)
-        nm.test_answer (r)
 
         data = r.json ()
         data ['addr'].append (ip)
         r = nm.api ('put', uri, json=data)
-        nm.test_answer (r)
 
 if __name__ == '__main__':
     main ()

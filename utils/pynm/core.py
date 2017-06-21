@@ -39,7 +39,7 @@ class netmagis:
 
         return
 
-    def api (self, verb, url, params=None, json=None):
+    def api (self, verb, url, params=None, json=None, check=True):
         url = self._url + url
         cookies = {'session': self._key}
         if self._trace:
@@ -52,6 +52,8 @@ class netmagis:
                         file=sys.stderr)
         # XXX : check if not authenticated or other non-api errors
         # (server not found, ...)
+        if check and r.status_code != 200:
+            self.grmbl ('Server error {} ({})'.format (r.status_code, r.reason))
         return r
 
     def _read_domains (self):
@@ -129,7 +131,6 @@ class netmagis:
 
         query = {'name': name, 'domain': domain, 'view': view}
         r = self.api ('get', '/hosts', params=query)
-        self.test_answer (r)
 
         h = None
 
@@ -153,7 +154,6 @@ class netmagis:
 
         query = {'name': name, 'domain': domain, 'view': view}
         r = self.api ('get', '/aliases', params=query)
-        self.test_answer (r)
 
         a = None
 
@@ -176,6 +176,3 @@ class netmagis:
         print (msg, file=sys.stderr)
         sys.exit (1)
 
-    def test_answer (self, req):
-        if req.status_code != 200:
-            self.grmbl ('Server error {} ({})'.format (req.status_code, req.reason))

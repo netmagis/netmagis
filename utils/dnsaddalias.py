@@ -62,7 +62,6 @@ def main ():
                     'ttl': -1,
                 }
         r = nm.api ('post', '/aliases', json=data)
-        nm.test_answer (r)
 
     else:
         #
