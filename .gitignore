@@ -24,6 +24,7 @@ topo/src/getnetif
 www/htg/src/htgtcl
 # Python module cache
 __pycache__
+__init__.py
 
 server/lib/pkgtcl/pkgIndex.tcl
 server/www/node_modules/*
