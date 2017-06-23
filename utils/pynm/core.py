@@ -43,7 +43,7 @@ class netmagis:
         url = self._url + url
         cookies = {'session': self._key}
         if self._trace:
-            print ('{} {} cookies={} params={} json={}'
+            print ('\n{} {} cookies={} params={} json={}'
                         .format (verb, url, cookies, params, json),
                         file=sys.stderr)
         r = requests.request (verb, url, cookies=cookies, params=params, json=json)
@@ -171,6 +171,34 @@ class netmagis:
             self.grmbl (msg.format (fqdn, view))
 
         return (name, domain, iddom, idview, a)
+
+    def get_zone (self, name, view):
+        idview = None
+        if view is not None:
+            idview = self.get_idview (view)
+            if not idview:
+                self.grmbl ('Unknown view {}'.format (view))
+
+        query = {'name': name}
+        if idview:
+            query ['idview'] = idview
+        for table in ['zone_forward', 'zone_reverse4', 'zone_reverse6']:
+            r = self.api ('get', '/admin/dns.' + table, params=query)
+            j = r.json ()
+            nr = len (j)
+            if nr == 1:
+                break
+            elif nr > 1:
+                # this case should never happen
+                msg = "Server error: zone '{}' found more than once"
+                self.grmbl (msg.format (name))
+        else:
+            if idview:
+                self.grmbl ("Zone {} not found in view {}".format (name, view))
+            else:
+                self.grmbl ("Zone {} not found".format (name))
+
+        return (table, j [0])
 
     def grmbl (self, msg):
         print (msg, file=sys.stderr)

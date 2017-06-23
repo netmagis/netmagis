@@ -8,9 +8,9 @@ set admin_tables {
     dns.network		{ref {idnet int idorg int idcomm int}}
     dns.community	{ref {idcomm int}}
     dns.organization	{ref {idorg int}}
-    dns.zone_forward	{ref {idview int}}
-    dns.zone_reverse4	{ref {idview int}}
-    dns.zone_reverse6	{ref {idview int}}
+    dns.zone_forward	{ref {idzone int idview int name str}}
+    dns.zone_reverse4	{ref {idzone int idview int name str}}
+    dns.zone_reverse6	{ref {idzone int idview int name str}}
     dns.hinfo		{ref {idhinfo int}}
     dns.domain		{ref {iddom int}}
     dns.dhcpprofile	{ref {iddhcpprof int}}
@@ -28,7 +28,7 @@ set admin_tables {
 
 ################################################################################
 
-api-handler get {/admin/([a-z._]+:table)} admin {
+api-handler get {/admin/([a-z0-9._]+:table)} admin {
     } {
     global admin_tables
 
@@ -99,7 +99,7 @@ api-handler get {/admin/([a-z._]+:table)} admin {
 
 ################################################################################
 
-api-handler get {/admin/([a-z._]+:table)/([^/]+:id)} admin {
+api-handler get {/admin/([a-z0-9._]+:table)/([^/]+:id)} admin {
     } {
     global admin_tables
 
@@ -149,7 +149,7 @@ api-handler get {/admin/([a-z._]+:table)/([^/]+:id)} admin {
 
 ################################################################################
 
-api-handler delete {/admin/([a-z._]+:table)/([^/]+:id)} admin {
+api-handler delete {/admin/([a-z0-9._]+:table)/([^/]+:id)} admin {
     } {
     global admin_tables
 
@@ -245,7 +245,7 @@ api-handler post {/admin/([a-z._]+:table)} admin {
 # No check on individual attribute names, except usual identifier syntax
 #	
 
-api-handler put {/admin/([a-z._]+:table)/([^/]+:id)} admin {
+api-handler put {/admin/([a-z0-9._]+:table)/([^/]+:id)} admin {
     } {
     global admin_tables
 
@@ -265,18 +265,25 @@ api-handler put {/admin/([a-z._]+:table)/([^/]+:id)} admin {
 	}
 
 	#
-	# Update referential table
-	# For this request, due to the rigidity of UPDATE SQL statement,
-	# we have to get all column names. We extrat them from JSON
-	# input.
+	# Update referential table element
+	# For this request (sql1 below), due to the rigidity of
+	# UPDATE SQL statement, we have to get all column names.
+	# We extract them from PostgreSQL information_schema.
+	# (JSON dict order cannot be trusted)
 	#
 
-	set lcol [list $idname]
-	dict for {name val} [dict get $_parm "_bodydict"] {
-	    if {! [regexp {^[a-z][_a-z]*$} $name]} then {
-		::scgi::serror 404 [mc "Invalid JSON field '%s'" $name]
-	    }
-	    lappend lcol $name
+	if {! [regexp {^([^.]+)\.([^.]+)$} $table foo schema rel]} then {
+	    ::scgi::serror 500 [mc {Internal error: cannot split '%1$s'} $table]
+	}
+	set qschema [pg_quote $schema]
+	set qrel [pg_quote $rel]
+	set sql "SELECT column_name
+		    FROM information_schema.columns
+		    WHERE table_schema = $qschema and table_name = $qrel
+		    "
+	set lcol {}
+	::dbdns exec $sql tab {
+	    lappend lcol $tab(column_name)
 	}
 	set cols [join $lcol ","]
 
