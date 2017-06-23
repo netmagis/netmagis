@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   dnsmodattr [-l libdir][-c configfile][-t] <fqdn> <view> <key> <val> [<key> val> ...]
+#   dnsmodattr [-l libdir][-f configfile][-t] <fqdn> <view> <key> <val> [<key> val> ...]
 #
 # Examples:
 #   dnsmodattr www.example.com default MAC 00:68:fe....
@@ -61,7 +61,7 @@ def convert_arg_to_jsonvalue (nm, k, v):
 
 def main ():
     parser = argparse.ArgumentParser (description='Netmagis modify host attributes')
-    parser.add_argument ('-c', '--config-file', action='store',
+    parser.add_argument ('-f', '--config-file', action='store',
                 help='Config file location (default=~/.config/netmagisrc)')
     parser.add_argument ('-t', '--trace', action='store_true',
                 help='Trace requests to Netmagis server')

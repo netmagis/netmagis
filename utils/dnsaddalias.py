@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   dnsaddalias [-l libdir][-c configfile][-t] <fqdn-alias> <fqdn-host> <viewname>
+#   dnsaddalias [-l libdir][-f configfile][-t] <fqdn-alias> <fqdn-host> <viewname>
 #
 
 import sys
@@ -11,7 +11,7 @@ import argparse
 
 def main ():
     parser = argparse.ArgumentParser (description='Netmagis add host')
-    parser.add_argument ('-c', '--config-file', action='store',
+    parser.add_argument ('-f', '--config-file', action='store',
                 help='Config file location (default=~/.config/netmagisrc)')
     parser.add_argument ('-t', '--trace', action='store_true',
                 help='Trace requests to Netmagis server')

@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   dnswriteprol [-l libdir][-c configfile][-t] <zonename> [<viewname>] <file>
+#   dnswriteprol [-l libdir][-f configfile][-t] <zonename> [<viewname>] <file>
 #
 
 import sys
@@ -11,7 +11,7 @@ import argparse
 
 def main ():
     parser = argparse.ArgumentParser (description='Netmagis write zone prologue')
-    parser.add_argument ('-c', '--config-file', action='store',
+    parser.add_argument ('-f', '--config-file', action='store',
                 help='Config file location (default=~/.config/netmagisrc)')
     parser.add_argument ('-t', '--trace', action='store_true',
                 help='Trace requests to Netmagis server')

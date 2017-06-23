@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   dnsdelip [-l libdir][-c configfile][-t] <ip> <viewname>
+#   dnsdelip [-l libdir][-f configfile][-t] <ip> <viewname>
 #
 
 import sys
@@ -12,7 +12,7 @@ import ipaddress
 
 def main ():
     parser = argparse.ArgumentParser (description='Netmagis delete host')
-    parser.add_argument ('-c', '--config-file', action='store',
+    parser.add_argument ('-f', '--config-file', action='store',
                 help='Config file location (default=~/.config/netmagisrc)')
     parser.add_argument ('-t', '--trace', action='store_true',
                 help='Trace requests to Netmagis server')
