@@ -9,23 +9,62 @@ SCRIPTS = \
 	dnsreadprol.py \
 	dnswriteprol.py
 
-build:
+MAN1 = \
+	dnsaddalias.man \
+	dnsaddhost.man \
+	dnsdelhost.man \
+	dnsdelip.man \
+	dnsmodattr.man \
+	dnsreadprol.man \
+	dnswriteprol.man \
+
+MAN5 = \
+	netmagisrc.man \
+
+.SUFFIXES: .md .man
+
+.md.man:
+	pandoc -s -t man $*.md > $*.man
+
+build: $(MAN1) $(MAN5)
 	@echo ">>> Making build in `pwd`"
 
-install:
+install: build
 	@echo ">>> Making install in `pwd`"
 	mkdir -p $(DESTDIR)$(NMLIBDIR)/pynm
 	$(NINSTALL) -m 0644 $(SUBST) pynm/core.py $(DESTDIR)$(NMLIBDIR)/pynm
 	mkdir -p $(DESTDIR)$(BINDIR)
-	for s in $(SCRIPTS) ; do \
-	    f=$$(basename $$s .py) ; \
+	for scr in $(SCRIPTS) ; do \
+	    b=$$(basename $$scr .py) ; \
 	    $(NINSTALL) -m 0755 \
 		    -e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
 		    $(SUBST) \
-		    $$s \
-		    $(DESTDIR)$(BINDIR)/$$f \
-		    ; \
+		    $$scr $(DESTDIR)$(BINDIR)/$$b ; \
+	done
+	mkdir -p $(DESTDIR)$(MANDIR)/man1
+	for page in $(MAN1) ; do \
+	    b=$$(basename $$page .man) ; \
+	    $(NINSTALL) -m 0644 \
+		    -e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
+		    $(SUBST) \
+		    $$page $(DESTDIR)$(MANDIR)/man1/$$b.1 ; \
+	done
+	mkdir -p $(DESTDIR)$(MANDIR)/man5
+	for page in $(MAN5) ; do \
+	    b=$$(basename $$page .man) ; \
+	    $(NINSTALL) -m 0644 \
+		    -e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
+		    $(SUBST) \
+		    $$page $(DESTDIR)$(MANDIR)/man5/$$b.5 ; \
 	done
 
+test:	build
+	for i in *.man ; do \
+	    groff -man $$i | ps2pdf - $$(basename $$i .man).pdf ; \
+	done
+	pdfjam -o all.pdf dns*.pdf netmagisrc.pdf
+	
 clean:
 	rm -rf pynm/__*
+	rm -f $(MAN1) $(MAN5)
+	rm -f *.pdf
