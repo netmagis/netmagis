@@ -12,10 +12,10 @@
 The `netmagisrc` file contains user configuration for various programs in
 the Netmagis server package.
 
-> [general]
->>   _key_= _value_
->>   _key_= _value_
->>   ..
+    [general]
+		_key_= _value_
+		_key_= _value_
+		...
 
 
 # CONFIGURATION KEYS
