@@ -32,12 +32,6 @@ The following options are available:
 
     Default: `%CONFFILE%`
 
--b *BASEURL*
-  : Netmagis base URL on the HTTP server. This parameter should
-    match the location written in the HTTP server configuration.
-
-    Default: '/'
-
 -a *ADDR*
   : Specify the address (IPv4 or IPv6) to listen to SCGI requests from
     the HTTP server.

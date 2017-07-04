@@ -160,7 +160,7 @@ proc check-authtoken {token} {
 
 #
 # Prefix for handler procedures
-# This line is here for documentation purpose only
+# The "array set" below is for documentation purpose only
 #
 array set curhdl {
     name {}
@@ -195,7 +195,8 @@ proc load-handlers {wdir} {
 
 #
 # api-handler is used to register a handler at load-time
-# Arguments are:
+#
+# Arguments:
 # - method: get/post/put/delete
 # - pathspec: a regexp with some group definitions and variables
 # - neededcap: user capability to call this handler
@@ -215,8 +216,9 @@ proc load-handlers {wdir} {
 # Specifications:
 # - pathspec: regexp with group definitions and variable names
 #	group definitions is introduced by parenthesis (...)
-#	as with any regexp (see re_syntax Tcl man page)
-#	Each group is ended by ":" and a variable name
+#	as with any regexp (see re_syntax Tcl man page).
+#	Each group is ended by ":" and a variable name (see example).
+#	The regexp must not contain "^" and "$" symbols.
 # - neededcap: user capabilities (see nmenv.tcl package and
 #	"capabilities" method). The most useful are:
 #	- any: handler need not any capabiliy (even unauthenticated
@@ -227,6 +229,20 @@ proc load-handlers {wdir} {
 #	will be assigned to the corresponding <varname> (an empty
 #	value is assigned for non-existant parameter). A check is
 #	made on the minimum number.
+#	If paramspec is empty, this is the "fall-back" handler
+#	(i.e. any uri will match)
+# - script: the Tcl script is executed as a proc, with the
+#	the following preset variables (in addition to pathspec
+#	and paramspec specific variables):
+#	_meth: method
+#	_parm: dict containing the following keys:
+#		_bodytype: request Content-Type
+#		_body: request body
+#		<query parameter name>: query value
+#	_prefix: uri part before the matched regexp
+#		Example: if uri=/foo/bar/netmagis/resource/123
+#		and pathspec=/resource/(0-9]+:idres)
+#		then _prefix will be set to /foot/bar/netmagis
 #
 
 proc api-handler {method pathspec neededcap paramspec script} {
@@ -265,22 +281,13 @@ proc api-handler {method pathspec neededcap paramspec script} {
     # Build regexp for URI matching
     # Note: URI include the full path of the resource, which is prefixed
     # by the location on the server (e.g. resource /domain is requested
-    # by the URI /netmagis/foo/bar/domain). There are two solutions to
-    # remove the prefix:
-    # 1- recognize the prefix, which means adding a new flag or
-    #	configuration option to our program
-    # 2- match anything: the simplest way, without security compromise.
+    # by the URI /netmagis/foo/bar/domain).
     #
 
     regsub -all {\(([^:]+):[^)]+\)} $pathspec {(\1)} re
 
     #
     # Create new procedure for this handler
-    # An API-handler is transformed into a procedure which accepts
-    # the following parameters
-    # - _meth: get/post/delete/put
-    # - _parm: all parameters
-    # - all parameters given in the handler header
     #
 
     global curhdl
@@ -293,7 +300,23 @@ proc api-handler {method pathspec neededcap paramspec script} {
 	$script
     "
 
-    lappend route($method) [list $re $vars $paramspec $neededcap $hname]
+    set rte [list $re $vars $paramspec $neededcap $hname]
+
+    if {$re eq ""} then {
+	if {[info exists route(fallback-$method)]} then {
+	    lassign $route(fallback-$method) foo1 foo2 foo3 foo4 $hnameold
+	    puts stderr "Fallback method for $method specified more than once"
+	    puts stderr "\t($hname vs $hnameold)"
+	    exit 1
+	}
+	# append the "fallback" indicator
+	lappend rte 1
+	set route(fallback-$method) $rte
+    } else {
+	# append the "no fallback" indicator
+	lappend rte 0
+	lappend route($method) $rte
+    }
 }
 
 ##############################################################################
@@ -367,38 +390,54 @@ proc handle-request {uri meth parm} {
     uplevel #0 mcload "$conf(libdir)/worker/msgs"
 
     #
+    # Get all the routes. Fetch the fall-back handler in order
+    # to check it last.
+    #
+
+    set allroutes $route($meth)
+    if {[info exists route(fallback-$meth)]} then {
+	lappend allroutes $route(fallback-$meth)
+    }
+
+    #
     # Find the appropriate route
     #
 
     set cap [::n capabilities]
     set bestfit 0
-    foreach r $route($meth) {
-	lassign [check-route $uri $cap $parm $r] ok prefix hname tpar
-	if {$ok == 4} then {
-	    set bestfit 4
+
+    foreach r $allroutes {
+	set cr [check-route $uri $cap $parm $r]
+	lassign $cr ok prefix hname tpar
+	if {$ok == 5} then {
+	    set bestfit 5
+	    set bestcr $cr
 	    break
 	} else {
 	    if {$ok > $bestfit} then {
 		set bestfit $ok
-		set q $tpar
+		set bestcr $cr
 	    }
 	}
     }
+
+    lassign $bestcr ok prefix hname tpar
 
     switch $bestfit {
 	0 {
 	    ::scgi::serror 404 [mc {URI '%1$s' not found for method '%2$s'} $uri $meth]
 	}
-	1 {
+	2 {
 	    ::scgi::serror 401 [mc "Not authenticated"]
 	}
-	2 {
+	3 {
 	    ::scgi::serror 403 [mc "Forbidden"]
 	}
-	3 {
+	4 {
 	    ::scgi::serror 400 [mc "Mandatory query parameter '%s' not found" $q]
 	}
-	4 {
+	1 -
+	5 {
 	    #
 	    # Run the script as a procedure to avoid namespace
 	    # pollution. The procedure is run with the following
@@ -424,10 +463,11 @@ proc handle-request {uri meth parm} {
 # Returns: list { ok prefix hname tpar }
 # where ok value is:
 # - 0 if no match
-# - 1 if route match but not authenticated
-# - 2 if route match but not enough capabilities (even if parameters match)
-# - 3 if route match without matching parameter (tpar=missing parameter)
-# - 4 if ok (hname=handler proc, tpar=parameters)
+# - 1 if ok, but fall-back (hname=handler proc, tpar=parameters)
+# - 2 if route match but not authenticated
+# - 3 if route match but not enough capabilities (even if parameters match)
+# - 4 if route match without matching parameter (tpar=missing parameter)
+# - 5 if ok and not fall-back (hname=handler proc, tpar=parameters)
 #
 
 proc check-route {uri cap parm rte} {
@@ -447,9 +487,10 @@ proc check-route {uri cap parm rte} {
     #	- min: minimum number of occurrence (max is always 1)
     # - neededcap: a capability such as one returned in nmenv package
     # - hname: name of proc for this handler
+    # - fall-back: 1 if this is a fall-back handler, 0 if not
     #
 
-    lassign $rte re vars paramspec neededcap hname
+    lassign $rte re vars paramspec neededcap hname fb
 
     set ok 0
     set prefix ""
@@ -457,17 +498,17 @@ proc check-route {uri cap parm rte} {
 
     # uri contains both the prefix (e.g. /where/you/configured/netmagis)
     # and the pattern to match. We complete the regexp to get the prefix
-    set re "^$conf(baseurl)$re$"
+    set re "^(/.*)$re/?$"
 
     set l [regexp -inline $re $uri]
     if {[llength $l] > 0} then {
 
 	# Extract prefix
-	set prefix [lindex $l 0]
+	set prefix [lindex $l 1]
 
 	# Extract named groups if any
 	set i 0
-	foreach val [lreplace $l 0 0] {
+	foreach val [lreplace $l 0 1] {
 	    set var [lindex $vars $i]
 	    dict set tpar $var $val
 	    incr i
@@ -476,19 +517,19 @@ proc check-route {uri cap parm rte} {
 	# Check capabilities
 	if {! ($neededcap in $cap)} then {
 	    # by default: anonymous => 401 not auth
-	    set ok 1
+	    set ok 2
 	    if {"logged" in $cap} then {
 		# not anonymous => 403 forbidden
-		set ok 2
+		set ok 3
 	    }
 	}
 
 	# Check parameters
 	if {$ok == 0} then {
-	    set ok 4
+	    set ok [expr {$fb?1:5}]
 	    foreach {var min} $paramspec {
 		if {! [dict exists $parm $var] && $min > 0} then {
-		    set ok 3
+		    set ok 4
 		    set tpar $var
 		    break
 		} else {

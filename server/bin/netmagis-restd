@@ -1,7 +1,6 @@
 #!%TCLSH%
 
 set conf(conffile)	%CONFFILE%
-set conf(baseurl)	/
 set conf(addr)		0.0.0.0
 set conf(port)		8080
 set conf(libdir)	%NMLIBDIR%
@@ -13,7 +12,6 @@ set conf(version)	%VERSION%
 
 set conf(usage) {usage: %s [-h][-d][-f conf][-a addr][-p port][-l libdir][-s files][-m min][-x max][-i idle][-v vers]
     -h: this help message
-    -b baseurl: should match 'location' http server configuration
     -d: debug
     -f conf: path to the configuration file
     -a addr: listening address (e.g. 0.0.0.0)
@@ -50,17 +48,12 @@ proc main {argv0 argv} {
     set maxw     $conf(maxw)
     set idle     $conf(idle)
     set version  $conf(version)
-    set baseurl  $conf(baseurl)
 
     while {[llength $argv] > 0} {
 	set a [lindex $argv 0]
 	switch -glob -- $a {
 	    -h {
 		usage $argv0
-	    }
-	    -b {
-		set baseurl [lindex $argv 1]
-		set argv [lreplace $argv 0 1]
 	    }
 	    -d {
 		set debug true
@@ -131,7 +124,6 @@ proc main {argv0 argv} {
 		    set conf(libdir)  {$libdir}
 		    set conf(files)   {$files}
 		    set conf(version) {$version}
-		    set conf(baseurl) {$baseurl}
 		    lappend auto_path {$libdir/pkgtcl}
 		    source {$libdir/worker/worker.tcl}
 		    " \
