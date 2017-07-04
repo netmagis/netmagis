@@ -22,6 +22,7 @@ namespace import ::msgcat::*
 
 package require pgdb
 package require nmenv
+package require nmjson
 package require lconf
 
 array set route {
@@ -159,8 +160,15 @@ proc check-authtoken {token} {
 
 #
 # Prefix for handler procedures
+# This line is here for documentation purpose only
 #
-array set curhdl {name {} count 0}
+array set curhdl {
+    name {}
+    count:get 0
+    count:delete 0
+    count:post 0
+    count:put 0
+}
 
 #
 # Load all procedure handlers
@@ -173,10 +181,10 @@ proc load-handlers {wdir} {
 	#
 	# extract the future prefix for handler proc
 	#
+	catch {unset curhdl}
 	set curhdl(name) $f
 	regsub {.*/(hdl-[^/]*).tcl$} $curhdl(name) {\1} curhdl(name)
 	regsub -all {[^-a-zA-Z0-9]+} $curhdl(name) {-} curhdl(name)
-	set curhdl(count) 0
 
 	#
 	# load handler
@@ -184,6 +192,42 @@ proc load-handlers {wdir} {
 	uplevel \#0 source $f
     }
 }
+
+#
+# api-handler is used to register a handler at load-time
+# Arguments are:
+# - method: get/post/put/delete
+# - pathspec: a regexp with some group definitions and variables
+# - neededcap: user capability to call this handler
+# - paramspec: query parameter specifiers
+# - script: Tcl script
+#
+# Example:
+#   api-handler get {/resource/([0-9]+:idres)} logged {
+#	filter 0
+#	sort 1
+#     } {
+#	  # Tcl script using $idres, $filter and $sort
+#	  ::scgi::set-header Content-Type: application/json
+#	  ::scgi::set-body ....
+#     }
+#
+# Specifications:
+# - pathspec: regexp with group definitions and variable names
+#	group definitions is introduced by parenthesis (...)
+#	as with any regexp (see re_syntax Tcl man page)
+#	Each group is ended by ":" and a variable name
+# - neededcap: user capabilities (see nmenv.tcl package and
+#	"capabilities" method). The most useful are:
+#	- any: handler need not any capabiliy (even unauthenticated
+#		users are permitted)
+#	- logged: only authenticated users are permitted
+#	- admin: only users with admin privileges are permitted
+# - paramspec: pairs <varname> <min>. Each query parameter value
+#	will be assigned to the corresponding <varname> (an empty
+#	value is assigned for non-existant parameter). A check is
+#	made on the minimum number.
+#
 
 proc api-handler {method pathspec neededcap paramspec script} {
     global route
@@ -240,9 +284,9 @@ proc api-handler {method pathspec neededcap paramspec script} {
     #
 
     global curhdl
-    incr curhdl(count)
+    incr curhdl(count:$method)
 
-    set hname "_$curhdl(name)-$curhdl(count)"
+    set hname "_$curhdl(name)-$method-$curhdl(count:$method)"
     proc $hname {_meth _parm _prefix _paramdict} "
 	::scgi::import-param \$_paramdict
 	unset _paramdict
