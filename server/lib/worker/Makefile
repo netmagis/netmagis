@@ -22,6 +22,7 @@ FILES =	\
 	hdl-search.tcl \
 	hdl-sessions.tcl \
 	hdl-views.tcl \
+	hdl-zones.tcl \
 
 build:
 	@echo ">>> Making build in `pwd`"

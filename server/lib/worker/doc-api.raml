@@ -2272,29 +2272,29 @@ types:
         required: false
         type: string
         example: "internal"
-      modified:
+      gen:
         required: false
         type: boolean (0/1)
         example: 1
-      responses:
-	200:
-	  body:
-	    application/json:
-	      description: list of zones
-	      type: ZoneParam []
-	      example: |
-                [
-		  {
-		    name: "example.com.internal",
-		    idview: 5,
-		    gen: 0
-		  },
-		  {
-		    name: "example.org.external",
-		    idview: 2,
-		    gen: 1
-		  }
-		]
+    responses:
+      200:
+	body:
+	  application/json:
+	    description: list of zones
+	    type: ZoneParam []
+	    example: |
+	      [
+		{
+		  name: "example.com.internal",
+		  idview: 5,
+		  gen: 0
+		},
+		{
+		  name: "example.org.external",
+		  idview: 2,
+		  gen: 1
+		}
+	      ]
 
   /{zoneName}
     description: zone content
