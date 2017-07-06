@@ -405,6 +405,7 @@ proc handle-request {uri meth parm} {
 
     set cap [::n capabilities]
     set bestfit 0
+    set bestcr {0}
 
     foreach r $allroutes {
 	set cr [check-route $uri $cap $parm $r]
