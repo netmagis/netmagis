@@ -84,7 +84,8 @@ proc gen-zone {name _nversion} {
     set sql "SELECT n.nspname || '.' || c.relname AS table,
 			zone.version,
 			to_json (zone.prologue) AS prologue,
-			zone.rrsup, zone.gen, zone.idview
+			to_json (zone.rrsup) AS rrsup,
+			zone.gen, zone.idview
 		    FROM dns.zone, pg_class c, pg_namespace n
 		    WHERE name = $qname
 			AND c.oid = zone.tableoid
@@ -139,13 +140,13 @@ proc gen-zone {name _nversion} {
 
     switch -- $table {
 	dns.zone_forward {
-	    set records [gen-fwd $name $selection $idview $rrsup]
+	    set records [gen-fwd $name $selection $idview]
 	}
 	dns.zone_reverse4 {
-	    set records [gen-ipv4 $name $selection $idview $rrsup]
+	    set records [gen-ipv4 $name $selection $idview]
 	}
 	dns.zone_reverse6 {
-	    set records [gen-ipv6 $name $selection $idview $rrsup]
+	    set records [gen-ipv6 $name $selection $idview]
 	}
 	default {
 	    ::scgi::serror 500 [mc {Internal error: zone '%1$s': invalid table ('%2$s')} $name $table]
@@ -157,7 +158,7 @@ proc gen-zone {name _nversion} {
     # Assemble the two JSON parts (prologue, record) into a single object
     #
 
-    set j "\{\"prologue\": $prologue, \"records\": $records\}"
+    set j "\{\"prologue\":$prologue, \"rrsup\":$rrsup, \"records\":$records\}"
 
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j
@@ -219,7 +220,6 @@ proc new-serial {serial} {
 #   - zone: name of zone to generate
 #   - selection: selection criterion (domain name)
 #   - idview: view associated with this zone
-#   - rrsup: RR to add to each generated name
 # Output:
 #   - return value: json records
 #
@@ -229,7 +229,7 @@ proc new-serial {serial} {
 #   2012/10/24 : pda/jean : add views
 #
 
-proc gen-fwd {zone selection idview rrsup} {
+proc gen-fwd {zone selection idview} {
     #
     # Get working domain id
     #
@@ -240,15 +240,6 @@ proc gen-fwd {zone selection idview rrsup} {
 
     #
     # Get all IP (v4 or v6) addresses
-    #
-    ############ XXX : RRSUP
-#	if {$rrsup ne "" && ! [info exists affiche($name)]} then {
-#	    set affiche($name) ""
-#	    set r $rrsup
-#	    regsub -all -- {%NAME%} $r $name r
-#	    append txt $r
-#	    append txt "\n"
-#	}
     #
 
     set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
@@ -330,8 +321,6 @@ proc gen-fwd {zone selection idview rrsup} {
 #   - zone: name of zone to generate
 #   - selection: selection criterion (CIDR)
 #   - idview: view associated with this zone
-#   - rrsup: RR to add to each generated PTR address
-#   - _txt: in return, zone contents or error message
 # Output:
 #   - return value: json records
 #
@@ -340,7 +329,7 @@ proc gen-fwd {zone selection idview rrsup} {
 #   2012/10/24 : pda/jean : add views
 #
 
-proc gen-ipv4 {zone selection idview rrsup} {
+proc gen-ipv4 {zone selection idview} {
     #
     # Get CIDR prefix length to compute how many bytes we keep in RR name
     #
@@ -393,7 +382,6 @@ proc gen-ipv4 {zone selection idview rrsup} {
 #   - zone: name of zone to generate
 #   - selection: selection criterion
 #   - idview: view associated with this zone
-#   - rrsup: RR to add to each generated PTR address
 # Output:
 #   - return value: json records
 #
@@ -403,7 +391,7 @@ proc gen-ipv4 {zone selection idview rrsup} {
 #   2012/10/24 : pda/jean : add views
 #
 
-proc gen-ipv6 {zone selection idview rrsup} {
+proc gen-ipv6 {zone selection idview} {
     #
     # Get prefix length to compute how many nibbles we keep in RR name
     #

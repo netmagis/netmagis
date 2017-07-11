@@ -409,10 +409,12 @@ types:
     type: object
     properties:
       prologue:		string
+      rrsup:		string
       records:		ZoneRecord []
     example: |
       {
 	prologue: "@ SOA .... \n ..."
+	rrsup: "%NAME% IN MX 100 mx1.example.com.\n%NAME% IN MX 200 ..."
 	records: [
 	  {
 	    name: "foo",
