@@ -72,7 +72,7 @@ usage:
 	@echo "	install-common"
 	@echo "	install-server"
 	@echo "	install-servers"
-	@echo "	install-utils"
+	@echo "	install-client"
 	@echo "	install-detecteq"
 	@echo "	install-topo"
 	@echo "	install-metro"
@@ -105,7 +105,7 @@ test:	test-server
 test-server:
 	cd server ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) test
 
-install: install-common install-server install-servers install-utils \
+install: install-common install-server install-servers install-client \
 	    install-detecteq install-topo install-metro install-www
 	
 install-common:
@@ -123,8 +123,8 @@ install-www: build-www
 	cd www ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" install
 
-install-utils:
-	cd utils ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+install-client:
+	cd client ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
 
 install-topo: build-topo
 	cd topo ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
@@ -187,7 +187,7 @@ clean:
 	cd server ; $(MAKE) clean
 	cd servers ; $(MAKE) clean
 	cd www ; $(MAKE) clean
-	cd utils ; $(MAKE) clean
+	cd client ; $(MAKE) clean
 	cd detecteq ; $(MAKE) clean
 	cd topo ; $(MAKE) clean
 	cd metro ; $(MAKE) clean
