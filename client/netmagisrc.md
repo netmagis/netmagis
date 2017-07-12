@@ -97,6 +97,6 @@ zonecmd
 `dnsmodattr` (1),
 `dnsreadprol` (1),
 `dnswriteprol` (1),
-`mkzone` (1)
+`mkzones` (1)
 
 <http://netmagis.org>
