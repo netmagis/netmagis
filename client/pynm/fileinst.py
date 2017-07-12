@@ -1,36 +1,70 @@
-import configparser
 import os
 import sys
-import re
 
-import requests
+class fileinst:
+    def __init__ (self):
+        self._state = 'init'        # values in ['init', 'nonempty', 'commit']
+        self._fileq = []
 
-class netmagis:
-    def __init__ (self, configfile, trace=False):
-        self._url = None
-        self._key = None
-        self._domains = None
-        self._views = None
-        self._hinfos = None
-        self._dhcpprofiles = None
-        self._trace = trace
+    def add (self, name, content):
+        err = None
+        if self._state in ['init', 'nonempty']:
+            try:
+                nf = name + '.new'
+                if os.path.exists (nf):
+                    os.remove (nf)
+                with open (nf, 'w') as fd:
+                    fd.write (content)
 
-        gf = '%ETCDIR%/netmagisrc'
-        if configfile is None:
-            lf = os.path.expanduser ('~') + '/.config/netmagisrc'
+                self._fileq.append (name)
+                self._state = 'nonempty'
+            except Exception as m:
+                err = str (m)
         else:
-            lf = configfile
+            err = 'cannot add file: state != init and state != nonempty'
 
-        self._config = configparser.ConfigParser (interpolation=None)
+        return err
 
-        if not self._config.read ([gf, lf]):
-            self.grmbl ('No configuration file found (neither {} nor {})'.
-                                                        format (gf, lf))
+    def commit (self):
+        err = None
+        if self._state in ['init', 'nonempty']:
+            for i, f in enumerate (self._fileq):
+                nf = f + '.new'
+                of = f + '.old'
 
-        self._url = self.getconf ('general', 'url')
-        self._key = self.getconf ('general', 'key')
+                # make a backup of original file if it exists:w
+                if os.path.exists (of):
+                    try:
+                        os.remove (of)
+                    except:
+                        pass
+                if os.path.exists (f):
+                    try:
+                        os.rename (f, of)
+                    except Exception as m:
+                        err = str (m)
+                        break
 
-    def getconf (self, section, key):
+                # install new file
+                try:
+                    os.rename (nf, f)
+                except Exception as m:
+                    err = str (m)
+                    break
+
+            # check if loop succeeded
+            if err is None:
+                self._state = 'commit'
+            else:
+
+
+
+
+
+        else:
+            err = 'cannot commit files: state != init and state != nonempty'
+        return err
+
         try:
             v = self._config.get (section, key)
         except (configparser.NoOptionError, configparser.NoSectionError) as m:

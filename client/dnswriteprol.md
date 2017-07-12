@@ -81,6 +81,7 @@ removed in future Netmagis releases.
 # SEE ALSO
 
 `dnsreadprol` (1),
+'mkzones' (1),
 `netmagis-restd` (1),
 `netmagisrc` (5)
 
