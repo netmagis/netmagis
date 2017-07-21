@@ -35,7 +35,8 @@ def main ():
 
     libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
     sys.path.append (libdir)
-    from pynm.core import netmagis, fileinst
+    from pynm.core import netmagis
+    from pynm.fileinst import fileinst
 
     nm = netmagis (args.config_file, trace=args.trace)
 
@@ -69,13 +70,89 @@ def main ():
         if idview is None:
             self.grmbl ('View \'{}\' not found'.format (view))
 
-    # initialize fq engine
-    # fetch modified zones (and filter result if zones are provided)
-    # for each zone
-    #   gen zone
-    #   fq->add zone
-    # done
-    # fq->commit
+    #
+    # Initialize fq engine
+    #
+
+    fq = fileinst ()
+
+    #
+    # Fetch modified zones (and filter result if zones are provided)
+    # (if view is provided, or no zone is specified)
+    # [if one or more zones are provided on command line, skip this step]
+    #
+
+    params = None
+    if view is not None:
+        params = {'view': view, 'gen': 1}
+    elif not zones:
+        params = {'gen': 1}
+
+    if params:
+        r = nm.api ('get', '/zones', params=params)
+        j = r.json ()
+
+        zones = []
+        for zj in j:
+            zones.append (zj ['name'])
+
+    #
+    # For each zone
+    #
+
+    for z in zones:
+        fname = os.path.join (zonedir, z)
+
+        r = nm.api ('get', '/zones/' + z)
+
+        j = r.json ()
+
+        prologue = j ['prologue']
+        records = j ['records']
+        rrsup = j ['rrsup']
+
+        txt = prologue
+        txt += '\n'
+
+        seen = {}
+
+        #
+        # Get individual records
+        #
+
+        for rr in records:
+            name = rr ['name']
+            if rr ['ttl'] == -1:
+                rr ['ttl'] = ''
+            t = '{name}\t{ttl}\tIN\t{type}\t{rdata}\n'.format (**rr)
+            txt += t
+
+            # rrsup
+            if rrsup and rr ['type'] in ['A', 'AAAA'] and name not in seen:
+                seen [name] = True          # any value
+                txt += rrsup.replace ('%NAME%', name) + '\n'
+
+        #
+        # Show diffs
+        #
+
+        if verbose:
+            show_diff_file_text diff fname txt
+
+        #
+        # Output generated zone to file
+        #
+
+        err = fq.add (fname, txt)
+        if err:
+            nm.grmbl (err)
+
+    #
+    # All files are successfully generated. Commit them.
+    #
+
+    err = fq.commit ()
+
     # reload DNS daemon
     # if error: PROBLEM!
 
