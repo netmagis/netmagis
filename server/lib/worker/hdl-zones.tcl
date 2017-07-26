@@ -366,7 +366,7 @@ proc gen-ipv4 {zone selection idview} {
 	set name [join $lname "."]
 	set ttl   $tab(ttl)
 	set rdata $tab(rdata)
-	set j "\"name\":\"$name\",\"type\":\"PTR\",\"ttl\":$ttl,\"rdata\",$rdata"
+	set j "\"name\":\"$name\",\"type\":\"PTR\",\"ttl\":$ttl,\"rdata\":$rdata"
 	lappend records "\{$j\}"
     }
     set records [join $records ",\n"]
@@ -479,7 +479,7 @@ proc gen-ipv6 {zone selection idview} {
 
 	set ttl   $tab(ttl)
 	set rdata $tab(rdata)
-	set j "\"name\":\"$name\",\"type\":\"PTR\",\"ttl\":$ttl,\"rdata\",$rdata"
+	set j "\"name\":\"$name\",\"type\":\"PTR\",\"ttl\":$ttl,\"rdata\":$rdata"
 	lappend records "\{$j\}"
     }
     set records [join $records ",\n"]
