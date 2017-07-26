@@ -195,7 +195,7 @@ CREATE OR REPLACE FUNCTION dns.gen_rev4 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.zone_reverse4 AS z
-	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_gencounter')
 	    FROM dns.host h, dns.name n
 	    WHERE $1 <<= z.selection
 		AND h.idhost = $2
@@ -210,7 +210,7 @@ CREATE OR REPLACE FUNCTION dns.gen_rev6 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.zone_reverse6 AS z
-	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_gencounter')
 	    FROM dns.host h, dns.name n
 	    WHERE $1 <<= selection
 		AND h.idhost = $2
@@ -225,7 +225,7 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_idhost (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.zone_forward
-	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_gencounter')
 	    WHERE (selection, idview) = 
 		    (
 			SELECT d.name, n.idview
@@ -243,7 +243,7 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_idname (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.zone_forward
-	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_gencounter')
 	    WHERE (selection, idview) = 
 		    (
 			SELECT d.name, n.idview
@@ -260,7 +260,7 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_iddom (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.zone_forward
-	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_gencounter')
 	    WHERE idview = $2
 		AND selection = (
 		    SELECT domain.name
@@ -277,7 +277,7 @@ CREATE OR REPLACE FUNCTION dns.gen_relay (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
 	UPDATE dns.zone_forward
-	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_gencounter')
 	    WHERE selection = ( SELECT name FROM dns.domain WHERE iddom = $1 )
 		AND idview = ( SELECT n.idview
 				    FROM dns.host h
@@ -303,7 +303,8 @@ CREATE OR REPLACE FUNCTION dns.gen_relay (INTEGER, INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_dhcp (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.view SET gendhcp = 1
+	UPDATE dns.view
+	    SET gendhcp = 1, counter = NEXTVAL ('dns.seq_gencounter')
 	    FROM dns.host h
 		NATURAL INNER JOIN dns.name n
 	    WHERE h.idhost = $1
@@ -523,7 +524,7 @@ CREATE OR REPLACE FUNCTION dns.mod_zone ()
 		OR NEW.selection <> OLD.selection
 	THEN
 	    NEW.gen := 1 ;
-	    NEW.counter := NEXTVAL ('dns.seq_zcounter') ;
+	    NEW.counter := NEXTVAL ('dns.seq_gencounter') ;
 	END IF ;
 	RETURN NEW ;
     END ;
@@ -540,7 +541,8 @@ CREATE OR REPLACE FUNCTION dns.mod_zone ()
 CREATE OR REPLACE FUNCTION dns.mod_dhcp ()
     RETURNS TRIGGER AS $$
     BEGIN
-	UPDATE dns.view SET gendhcp = 1 ;
+	UPDATE dns.view
+	    SET gendhcp = 1, counter = NEXTVAL ('dns.seq_gencounter') ;
 	RETURN NEW ;
     END ;
     $$ LANGUAGE 'plpgsql' ;

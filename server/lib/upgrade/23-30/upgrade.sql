@@ -25,13 +25,19 @@ INSERT INTO global.config (key, value) VALUES ('apiexpire', '182') ;
 
 DROP FUNCTION IF EXISTS dns.check_dhcprange_grp (INTEGER, INET, INET) ;
 
-CREATE SEQUENCE dns.seq_zcounter START 1 ;
+CREATE SEQUENCE dns.seq_gencounter START 1 ;
+
+ALTER TABLE dns.view
+    ADD COLUMN counter INT,
+    ALTER COLUMN counter SET DEFAULT NEXTVAL ('dns.seq_gencounter')
+    ;
+UPDATE dns.view SET counter = 0 ;	-- start with any value < seq_gencounter
 
 ALTER TABLE dns.zone
     ADD COLUMN counter INT,
-    ALTER COLUMN counter SET DEFAULT NEXTVAL ('dns.seq_zcounter')
+    ALTER COLUMN counter SET DEFAULT NEXTVAL ('dns.seq_gencounter')
     ;
-UPDATE dns.zone SET counter = 0 ;	-- start with any value < seq_zcounter
+UPDATE dns.zone SET counter = 0 ;	-- start with any value < seq_gencounter
 
 --
 -- Create new tables in order to avoid altering existing tables:

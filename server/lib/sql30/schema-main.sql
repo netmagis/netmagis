@@ -172,6 +172,8 @@ CREATE TABLE dns.network (
 ) ;
 
 
+CREATE SEQUENCE dns.seq_gencounter START 1 ;
+
 -- DNS views
 -- There is one entry for each observation point, which means
 -- a class of clients allowed to see informations. For example:
@@ -183,14 +185,14 @@ CREATE TABLE dns.view (
 		    DEFAULT NEXTVAL ('dns.seq_view'),
     name	TEXT,			-- e.g.: "internal", "external"...
     gendhcp	INT,			-- 1 if dhcp conf must be generated
+    counter	INT
+		    DEFAULT NEXTVAL ('dns.seq_gencounter'),
 
     UNIQUE (name),
     PRIMARY KEY (idview)
 ) ;
 
 -- DNS zone generation
-
-CREATE SEQUENCE dns.seq_zcounter START 1 ;
 
 CREATE SEQUENCE dns.seq_zone START 1 ;
 CREATE TABLE dns.zone (
@@ -203,7 +205,7 @@ CREATE TABLE dns.zone (
     rrsup	TEXT,			-- added to each generated host
     gen		INT,			-- modified since last generation
     counter	INT			-- current generation counter
-		    DEFAULT NEXTVAL ('dns.seq_zcounter')
+		    DEFAULT NEXTVAL ('dns.seq_gencounter')
 ) ;
 
 CREATE TABLE dns.zone_forward (
