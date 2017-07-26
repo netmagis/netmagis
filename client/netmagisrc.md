@@ -16,8 +16,8 @@ the Netmagis server package.
 		url = ...
 		key = ...
 
-    [mkclient]
-		diff = ...
+    [mkzones]
+		lockfile = ...
 		zonedir = ...
 		zonecmd = ...
 
@@ -46,16 +46,16 @@ key
     in order to get such a key or extend its lifetime.
 
 
-## SECTION [mkclient]
+## SECTION [mkzones]
 
-This section is used to configure clients (programs `mk*`) which generate
-files for various Internet services (DNS, DHCP, etc.).
+This section is used to configure `mkzones` client which generate
+files for the ISC BIND daemon.
 
-diff
-  : command to use to show differences between an old file (represented
-    as `%s`) and a new content given on standard input.
-    
-    Example: `diff --unified=0 %s -`
+lockfile
+  : file used as a lock to protect from running multiple instances
+    of `mkzones`
+   
+    Example: `/var/run/mkzones.lock`
 
 zonedir
   : directory where DNS zone files are read by the DNS server.
@@ -81,8 +81,8 @@ zonecmd
    url = https://www.example.com/netmagis
    key = averylongtokenprovidedbytheNetmagisWebserver
 
-[mkclient]
-    diff = diff --unified=0 %s -
+[mkzones]
+    lockfile = /var/run/mkzones.lock
     zonedir = /var/namedb/primary
     zonecmd = /usr/sbin/rndc reload
 ```

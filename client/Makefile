@@ -3,6 +3,8 @@ NINSTALL	= ../ninstall
 MODULES = \
 	core.py \
 	fileinst.py \
+	utils.py \
+	nmlock.py \
 
 SCRIPTS = \
 	dnsaddalias.py \

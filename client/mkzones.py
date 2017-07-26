@@ -10,6 +10,57 @@ import sys
 import os.path
 import argparse
 
+# return list of modified zone names
+def fetch_modified_zones (nm, view, zones):
+    params = None
+    if view is not None:
+        params = {'view': view, 'gen': 1}
+    elif not zones:
+        params = {'gen': 1}
+
+    if params:
+        r = nm.api ('get', '/zones', params=params)
+        j = r.json ()
+
+        zones = []
+        for zj in j:
+            zones.append (zj ['name'])
+
+    return zones
+
+# generate a zone as a string containing all records
+# return (counter, records)
+def generate_zone_text (nm, z):
+    r = nm.api ('get', '/zones/' + z)
+    j = r.json ()
+    prologue = j ['prologue']
+    records = j ['records']
+    rrsup = j ['rrsup']
+    counter = j ['counter']
+
+    txt = prologue
+    txt += '\n'
+
+    #
+    # Get individual records
+    #
+
+    seen = {}
+    for rr in records:
+        name = rr ['name']
+        if rr ['ttl'] == -1:
+            rr ['ttl'] = ''
+        t = '{name}\t{ttl}\tIN\t{type}\t{rdata}\n'.format (**rr)
+        txt += t
+
+        # rrsup
+        if rrsup and rr ['type'] in ['A', 'AAAA'] and name not in seen:
+            seen [name] = True          # any value
+            txt += rrsup.replace ('%NAME%', name) + '\n'
+
+    return (counter, txt)
+
+
 def main ():
     parser = argparse.ArgumentParser (description='Netmagis zone generation')
     parser.add_argument ('-f', '--config-file', action='store',
@@ -37,6 +88,8 @@ def main ():
     sys.path.append (libdir)
     from pynm.core import netmagis
     from pynm.fileinst import fileinst
+    from pynm.nmlock import nmlock
+    from pynm import utils
 
     nm = netmagis (args.config_file, trace=args.trace)
 
@@ -57,9 +110,9 @@ def main ():
     # Get parameters from local configuration file (~/.config/netmagisrc)
     #
 
-    diff = nm.getconf ('mkclient', 'diff')
-    zonedir = nm.getconf ('mkclient', 'zonedir')
-    zonecmd = nm.getconf ('mkclient', 'zonecmd')
+    lockfile = nm.getconf ('mkzones', 'lockfile')
+    zonedir = nm.getconf ('mkzones', 'zonedir')
+    zonecmd = nm.getconf ('mkzones', 'zonecmd')
 
     #
     # Check view name
@@ -71,123 +124,108 @@ def main ():
             self.grmbl ('View \'{}\' not found'.format (view))
 
     #
-    # Initialize fq engine
+    # Prevent multiple mkzone runs
     #
 
-    fq = fileinst ()
+    with nmlock (lockfile) as lck:
 
-    #
-    # Fetch modified zones (and filter result if zones are provided)
-    # (if view is provided, or no zone is specified)
-    # [if one or more zones are provided on command line, skip this step]
-    #
-
-    params = None
-    if view is not None:
-        params = {'view': view, 'gen': 1}
-    elif not zones:
-        params = {'gen': 1}
-
-    if params:
-        r = nm.api ('get', '/zones', params=params)
-        j = r.json ()
-
-        zones = []
-        for zj in j:
-            zones.append (zj ['name'])
-
-    #
-    # For each zone
-    #
-
-    for z in zones:
-        fname = os.path.join (zonedir, z)
-
-        r = nm.api ('get', '/zones/' + z)
-
-        j = r.json ()
-
-        prologue = j ['prologue']
-        records = j ['records']
-        rrsup = j ['rrsup']
-
-        txt = prologue
-        txt += '\n'
-
-        seen = {}
+        if not lck.trylock ():
+            if verbose:
+                print ('Mkzones already running. Abort', file=sys.stderr)
+            sys.exit (0)
 
         #
-        # Get individual records
+        # Initialize fq engine
         #
 
-        for rr in records:
-            name = rr ['name']
-            if rr ['ttl'] == -1:
-                rr ['ttl'] = ''
-            t = '{name}\t{ttl}\tIN\t{type}\t{rdata}\n'.format (**rr)
-            txt += t
-
-            # rrsup
-            if rrsup and rr ['type'] in ['A', 'AAAA'] and name not in seen:
-                seen [name] = True          # any value
-                txt += rrsup.replace ('%NAME%', name) + '\n'
+        fq = fileinst ()
 
         #
-        # Show diffs
+        # Fetch modified zones (and filter result if zones are provided)
+        # (if view is provided, or no zone is specified)
+        # [if one or more zones are provided on command line, skip this step]
         #
 
-        if verbose:
-            show_diff_file_text diff fname txt
+        zones = fetch_modified_zones (nm, view, zones)
 
         #
-        # Output generated zone to file
+        # For each zone
         #
 
-        err = fq.add (fname, txt)
-        if err:
-            nm.grmbl (err)
+        reg = []
+        for z in zones:
+            if verbose:
+                print ("Generating zone '{}'".format (z))
 
-    #
-    # All files are successfully generated. Commit them.
-    #
+            #
+            # Generate zone contents
+            #
 
-    err = fq.commit ()
+            (counter, txt) = generate_zone_text (nm, z)
 
-    # reload DNS daemon
-    # if error: PROBLEM!
+            reg.append ({'name': z, 'counter': counter})
+
+            #
+            # Show diffs
+            #
+
+            fname = os.path.join (zonedir, z)
+            if verbose:
+                utils.diff_file_text (fname, txt)
+
+            #
+            # Output generated zone to file
+            #
+
+            if not dryrun:
+                err = fq.add (fname, txt)
+                if err:
+                    nm.grmbl (err)
 
 
+        #
+        # Install files and run command
+        #
+
+        if not dryrun:
+            err = fq.commit ()
+
+            #
+            # Reload DNS daemon
+            #
+
+            if zonecmd != '':
+                (r, msg) = utils.run (zonecmd)
+                if r != 0:
+                    fq.uncommit ()
+                    try:
+                        # msg is a binary string: decode it in order to
+                        # have a beautiful error message
+                        msg = msg.decode ()
+                    except:
+                        pass
+                    nm.grmbl ("Command failed: {}\n{}".format (zonecmd, msg))
+
+            #
+            # Register generation
+            # POST /zones with zone counters
+            #
+
+            r = nm.api ('post', '/zones', json=reg, check=False)
+            if r.status_code != 200:
+                fq.uncommit ()
+                msg = 'Cannot register zone generation, server returned {}\n{}'
+                nm.grmbl (msg.format (r.status_code, r.reason))
+
+        #
+        # Allow other mkzones to run
+        # (not really needed since the process exit will automatically
+        # remove the advisory file lock)
+        #
+
+        lck.unlock ()
 
     sys.exit (0)
-    fqdn = args.fqdn
-    view = args.view
-
-    (name, domain, iddom, idview, h) = nm.get_host (fqdn, view, must_exist=False)
-
-    if h is None:
-        #
-        # Host does not exist. Look for an alias.
-        #
-
-        (_, _, _, _, a) = nm.get_alias (fqdn, view, must_exist=False)
-
-        if a is None:
-            msg = "No host or alias '{}' in view {}"
-            nm.grmbl (msg.format (fqdn, view))
-
-        else:
-            idalias = a ['idalias']
-            uri = '/aliases/' + str (idalias)
-            r = nm.api ('delete', uri)
-
-    else:
-        #
-        # Host exists
-        #
-
-        idhost = h ['idhost']
-        uri = '/hosts/' + str (idhost)
-        r = nm.api ('delete', uri)
 
 if __name__ == '__main__':
     main ()
