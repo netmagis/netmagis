@@ -397,11 +397,25 @@ types:
       idview:		integer
       gen:
 	enum: [0, 1]
+      counter:		integer
     example: |
       {
 	name: "example.com.internal",
 	idview: 5,
-	gen: 0
+	gen: 0,
+	counter: 123
+      }
+
+  ZoneGen:
+    description: identify a generated zone
+    type: object
+    properties:
+      name:		string
+      counter:		integer
+    example: |
+      {
+	name: "example.com.internal",
+	counter: 123
       }
 
   ZoneContent:
@@ -411,6 +425,7 @@ types:
       prologue:		string
       rrsup:		string
       records:		ZoneRecord []
+      counter:		integer
     example: |
       {
 	prologue: "@ SOA .... \n ..."
@@ -428,7 +443,8 @@ types:
 	    type: "MX",
 	    rdata: "100 mx1.example.com"
 	  }
-	]
+	],
+	counter: 123
       }
 
     ZoneRecord:
@@ -644,6 +660,7 @@ types:
       rrsup:		string
       gen:
 	enum: [0, 1]
+      counter:		integer
 
   AdminZoneId:
     description: base type for a row in all zone table, with id
@@ -664,6 +681,7 @@ types:
 	prologue: "@ IN SOA ...\n"
 	rrsup: ""
 	gen: 0
+	counter: 123
 	selection: "example.com"
       }
 
@@ -681,6 +699,7 @@ types:
 	prologue: "@ IN SOA ...\n"
 	rrsup: ""
 	gen: 0
+	counter: 123
 	selection: "example.com"
       }
 
@@ -697,6 +716,7 @@ types:
 	prologue: "@ IN SOA ...\n"
 	rrsup: ""
 	gen: 0
+	counter: 123
 	selection: "198.51.100.0/24"
       }
 
@@ -713,6 +733,7 @@ types:
 	prologue: "@ IN SOA ...\n"
 	rrsup: ""
 	gen: 0
+	counter: 123
 	selection: "198.51.100.0/24"
       }
 
@@ -729,6 +750,7 @@ types:
 	prologue: "@ IN SOA ...\n"
 	rrsup: ""
 	gen: 0
+	counter: 123
 	selection: "2001:db8:1234::/48"
       }
 
@@ -745,6 +767,7 @@ types:
 	prologue: "@ IN SOA ...\n"
 	rrsup: ""
 	gen: 0
+	counter: 123
 	selection: "2001:db8:1234::/48"
       }
 
@@ -2297,6 +2320,30 @@ types:
 		  gen: 1
 		}
 	      ]
+  post:
+    description: register generation for a collection of zones
+    queryParameters:
+    body:
+      application/json:
+	type: ZoneGen []
+	example: |
+	  [
+	    {
+	      name: "example.org.internal",
+	      counter: 123
+	    },
+	    {
+	      name: "example.org.external",
+	      counter: 456
+	    }
+	  ]
+    responses:
+      200:
+	body:
+	  application/json:
+	    type: empty
+	    example: null
+
 
   /{zoneName}
     description: zone content
@@ -2311,6 +2358,8 @@ types:
               example: |
 		{
 		  prologue: "@ SOA .... \n ..."
+		  rrsup: ""
+		  counter: 123
 		  records: [
 		    {
 		      name: "foo",
@@ -2326,33 +2375,6 @@ types:
 		    }
 		  ]
 		}
-    post:
-      description: get zone content and register generation (gen=1 and vers inc)
-      queryParameters:
-      responses:
-        200:
-          body:
-            application/json:
-	      type: ZoneContent
-              example: |
-		{
-		  prologue: "@ SOA .... \n ..."
-		  records: [
-		    {
-		      name: "foo",
-		      ttl: 60,
-		      type: "A",
-		      rdata: "198.51.100.1"
-		    },
-		    {
-		      name: "foo",
-		      ttl: -1,
-		      type: "MX",
-		      rdata: "100 mx1.example.com"
-		    }
-		  ]
-		}
-
 
     /zones
       description: Collection of zones

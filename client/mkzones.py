@@ -148,6 +148,11 @@ def main ():
 
         zones = fetch_modified_zones (nm, view, zones)
 
+        if not zones:
+            if verbose:
+                print ('No modified zone')
+            sys.exit (0)
+
         #
         # For each zone
         #

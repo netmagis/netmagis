@@ -33,7 +33,7 @@ api-handler get {/zones} genz {
     #
 
     set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
-			SELECT z.name, z.idview, z.gen
+			SELECT z.name, z.idview, z.gen, z.counter
 			    FROM dns.zone z
 				INNER JOIN dns.view v USING (idview)
 			    $where
@@ -47,32 +47,88 @@ api-handler get {/zones} genz {
     ::scgi::set-body $j
 }
 
-api-handler get {/zones/([^/]+:name)} logged {
+api-handler post {/zones} genz {
     } {
-    gen-zone $name nversion
-}
+    # get body just to check it's a JSON body
+    ::scgi::get-body-json $_parm
 
+    set dbody [dict get $_parm "_bodydict"]
 
-api-handler post {/zones/([^/]+:name)} logged {
-    } {
-    ::dbdns lock {dns.zone_forward dns.zone_reverse4 dns.zone_reverse6} {
-	gen-zone $name nversion
+    set spec {array {object {
+				{name	{type string req} req}
+				{counter {type int req} req}
+			}
+			req
+		    }
+		    req
+		}
+    set body [::scgi::check-json-value $dbody $spec]
 
-	set qname [pg_quote $name]
-	set sql "UPDATE dns.zone
-		    SET version=$nversion, gen=0
-		    WHERE name = $qname"
-	::dbdns exec $sql
+    #
+    # Special case for empty list
+    #
+
+    if {[llength $body] > 0} then {
+
+	#
+	# Lock database for an atomic operation
+	#
+
+	::dbdns lock {dns.zone} {
+	    #
+	    # Get zone counters supplied by client
+	    #
+
+	    set lz {}
+	    foreach jz $body {
+		::scgi::import-json-object $jz
+		lappend lz [pg_quote $name]
+	    }
+
+	    set lz [join $lz ","]
+	    set sql "SELECT name, counter, version FROM dns.zone WHERE name IN ($lz)"
+	    ::dbdns exec $sql tab {
+		set cnt($tab(name)) $tab(counter)
+		set ver($tab(name)) $tab(version)
+	    }
+
+	    #
+	    # Build and execute the SQL commands to update zones
+	    #
+
+	    set lzgen {}
+	    set update {}
+	    foreach jz $body {
+		::scgi::import-json-object $jz
+		set qname [pg_quote $name]
+		if {$cnt($name) eq $counter} then {
+		    lappend lzgen $qname
+		}
+		set ver($name) [new-serial $ver($name)]
+		lappend update "UPDATE dns.zone
+				    SET version = $ver($name)
+				    WHERE name = $qname"
+	    }
+
+	    if {[llength $lzgen] > 0} then {
+		set lzgen [join $lzgen ","]
+		set sql "UPDATE dns.zone SET gen = 0 WHERE name IN ($lzgen)"
+		lappend update $sql
+	    }
+
+	    set update [join $update ";"]
+	    ::dbdns exec $update
+	}
     }
+
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body "null"
+
+    return
 }
 
-#
-# Generate a JSON object for zone generation, without modifying 
-# state (version, gen).
-#
-
-proc gen-zone {name _nversion} {
-    upvar $_nversion nversion
+api-handler get {/zones/([^/]+:name)} genz {
+    } {
 
     set qname [pg_quote $name]
 
@@ -85,7 +141,7 @@ proc gen-zone {name _nversion} {
 			zone.version,
 			to_json (zone.prologue) AS prologue,
 			to_json (zone.rrsup) AS rrsup,
-			zone.gen, zone.idview
+			zone.gen, zone.counter, zone.idview
 		    FROM dns.zone, pg_class c, pg_namespace n
 		    WHERE name = $qname
 			AND c.oid = zone.tableoid
@@ -99,6 +155,7 @@ proc gen-zone {name _nversion} {
 	set prologue	$tab(prologue)
 	set rrsup	$tab(rrsup)
 	set gen		$tab(gen)
+	set counter	$tab(counter)
 	set idview	$tab(idview)
 	set found 1
     }
@@ -158,7 +215,7 @@ proc gen-zone {name _nversion} {
     # Assemble the two JSON parts (prologue, record) into a single object
     #
 
-    set j "\{\"prologue\":$prologue, \"rrsup\":$rrsup, \"records\":$records\}"
+    set j "\{\"prologue\":$prologue, \"rrsup\":$rrsup, \"records\":$records, \"counter\":$counter\}"
 
     ::scgi::set-header Content-Type application/json
     ::scgi::set-body $j
