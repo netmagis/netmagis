@@ -25,6 +25,14 @@ INSERT INTO global.config (key, value) VALUES ('apiexpire', '182') ;
 
 DROP FUNCTION IF EXISTS dns.check_dhcprange_grp (INTEGER, INET, INET) ;
 
+CREATE SEQUENCE dns.seq_zcounter START 1 ;
+
+ALTER TABLE dns.zone
+    ADD COLUMN counter INT,
+    ALTER COLUMN counter SET DEFAULT NEXTVAL ('dns.seq_zcounter')
+    ;
+UPDATE dns.zone SET counter = 0 ;	-- start with any value < seq_zcounter
+
 --
 -- Create new tables in order to avoid altering existing tables:
 -- 	- database schema is deeply altered by splitting rr into names

@@ -194,7 +194,8 @@ CREATE OR REPLACE FUNCTION dns.ipranges (net CIDR, lim INTEGER, grp INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_rev4 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_reverse4 AS z SET gen = 1
+	UPDATE dns.zone_reverse4 AS z
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
 	    FROM dns.host h, dns.name n
 	    WHERE $1 <<= z.selection
 		AND h.idhost = $2
@@ -208,7 +209,8 @@ CREATE OR REPLACE FUNCTION dns.gen_rev4 (INET, INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_rev6 (INET, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_reverse6 AS z SET gen = 1
+	UPDATE dns.zone_reverse6 AS z
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
 	    FROM dns.host h, dns.name n
 	    WHERE $1 <<= selection
 		AND h.idhost = $2
@@ -222,15 +224,16 @@ CREATE OR REPLACE FUNCTION dns.gen_rev6 (INET, INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_norm_idhost (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_forward SET gen = 1
-		WHERE (selection, idview) = 
-			(
-			    SELECT d.name, n.idview
-				FROM dns.host h
-				    NATURAL INNER JOIN dns.name n
-				    NATURAL INNER JOIN dns.domain d
-				WHERE h.idhost = $1
-			) ;
+	UPDATE dns.zone_forward
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
+	    WHERE (selection, idview) = 
+		    (
+			SELECT d.name, n.idview
+			    FROM dns.host h
+				NATURAL INNER JOIN dns.name n
+				NATURAL INNER JOIN dns.domain d
+			    WHERE h.idhost = $1
+		    ) ;
 	RETURN 1 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
@@ -239,14 +242,15 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_idhost (INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_norm_idname (INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_forward SET gen = 1
-		WHERE (selection, idview) = 
-			(
-			    SELECT d.name, n.idview
-				FROM dns.name n
-				    NATURAL INNER JOIN dns.domain d
-				WHERE n.idname = $1
-			) ;
+	UPDATE dns.zone_forward
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
+	    WHERE (selection, idview) = 
+		    (
+			SELECT d.name, n.idview
+			    FROM dns.name n
+				NATURAL INNER JOIN dns.domain d
+			    WHERE n.idname = $1
+		    ) ;
 	RETURN 1 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
@@ -255,13 +259,14 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_idname (INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_norm_iddom (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_forward SET gen = 1
-		WHERE idview = $2
-		    AND selection = (
-			SELECT domain.name
-				FROM dns.domain
-				WHERE domain.iddom = $1
-			) ;
+	UPDATE dns.zone_forward
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
+	    WHERE idview = $2
+		AND selection = (
+		    SELECT domain.name
+			    FROM dns.domain
+			    WHERE domain.iddom = $1
+		    ) ;
 	RETURN 1 ;
     END ;
     $$ LANGUAGE 'plpgsql' ;
@@ -271,7 +276,8 @@ CREATE OR REPLACE FUNCTION dns.gen_norm_iddom (INTEGER, INTEGER)
 CREATE OR REPLACE FUNCTION dns.gen_relay (INTEGER, INTEGER)
     RETURNS INTEGER AS $$
     BEGIN
-	UPDATE dns.zone_forward SET gen = 1
+	UPDATE dns.zone_forward
+	    SET gen = 1, counter = NEXTVAL ('dns.seq_zcounter')
 	    WHERE selection = ( SELECT name FROM dns.domain WHERE iddom = $1 )
 		AND idview = ( SELECT n.idview
 				    FROM dns.host h
@@ -517,6 +523,7 @@ CREATE OR REPLACE FUNCTION dns.mod_zone ()
 		OR NEW.selection <> OLD.selection
 	THEN
 	    NEW.gen := 1 ;
+	    NEW.counter := NEXTVAL ('dns.seq_zcounter') ;
 	END IF ;
 	RETURN NEW ;
     END ;

@@ -190,6 +190,8 @@ CREATE TABLE dns.view (
 
 -- DNS zone generation
 
+CREATE SEQUENCE dns.seq_zcounter START 1 ;
+
 CREATE SEQUENCE dns.seq_zone START 1 ;
 CREATE TABLE dns.zone (
     idzone	INT			-- zone id
@@ -199,7 +201,9 @@ CREATE TABLE dns.zone (
     version	INT,			-- version number
     prologue	TEXT,			-- zone prologue (with %ZONEVERSION% pattern)
     rrsup	TEXT,			-- added to each generated host
-    gen		INT			-- modified since last generation
+    gen		INT,			-- modified since last generation
+    counter	INT			-- current generation counter
+		    DEFAULT NEXTVAL ('dns.seq_zcounter')
 ) ;
 
 CREATE TABLE dns.zone_forward (
