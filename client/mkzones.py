@@ -19,7 +19,7 @@ def fetch_modified_zones (nm, view, zones):
         params = {'gen': 1}
 
     if params:
-        r = nm.api ('get', '/zones', params=params)
+        r = nm.api ('get', '/gen/zones', params=params)
         j = r.json ()
 
         zones = []
@@ -31,7 +31,7 @@ def fetch_modified_zones (nm, view, zones):
 # generate a zone as a string containing all records
 # return (counter, records)
 def generate_zone_text (nm, z):
-    r = nm.api ('get', '/zones/' + z)
+    r = nm.api ('get', '/gen/zones/' + z)
     j = r.json ()
     prologue = j ['prologue']
     records = j ['records']
@@ -216,7 +216,7 @@ def main ():
             # POST /zones with zone counters
             #
 
-            r = nm.api ('post', '/zones', json=reg, check=False)
+            r = nm.api ('post', '/gen/zones', json=reg, check=False)
             if r.status_code != 200:
                 fq.uncommit ()
                 msg = 'Cannot register zone generation, server returned {}\n{}'

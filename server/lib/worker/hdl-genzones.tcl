@@ -1,4 +1,4 @@
-api-handler get {/zones} genz {
+api-handler get {/gen/zones} genz {
 	name		0
 	view		0
 	gen		0
@@ -47,7 +47,7 @@ api-handler get {/zones} genz {
     ::scgi::set-body $j
 }
 
-api-handler post {/zones} genz {
+api-handler post {/gen/zones} genz {
     } {
     # get body just to check it's a JSON body
     ::scgi::get-body-json $_parm
@@ -127,7 +127,7 @@ api-handler post {/zones} genz {
     return
 }
 
-api-handler get {/zones/([^/]+:name)} genz {
+api-handler get {/gen/zones/([^/]+:name)} genz {
     } {
 
     set qname [pg_quote $name]

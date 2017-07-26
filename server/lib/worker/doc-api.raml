@@ -2284,97 +2284,179 @@ types:
 # Zone generation
 ##############################################################################
 
-/zones
-  description: Collection of zones
-  get:
-    description:
-    queryParameters:
-      name:
-        required: false
-        type: string
-        example: "168.192.in-addr.arpa"
-      view:
-        required: false
-        type: string
-        example: "internal"
-      gen:
-        required: false
-        type: boolean (0/1)
-        example: 1
-    responses:
-      200:
-	body:
-	  application/json:
-	    description: list of zones
-	    type: ZoneParam []
-	    example: |
-	      [
-		{
-		  name: "example.com.internal",
-		  idview: 5,
-		  gen: 0
-		},
-		{
-		  name: "example.org.external",
-		  idview: 2,
-		  gen: 1
-		}
-	      ]
-  post:
-    description: register generation for a collection of zones
-    queryParameters:
-    body:
-      application/json:
-	type: ZoneGen []
-	example: |
-	  [
-	    {
-	      name: "example.org.internal",
-	      counter: 123
-	    },
-	    {
-	      name: "example.org.external",
-	      counter: 456
-	    }
-	  ]
-    responses:
-      200:
-	body:
-	  application/json:
-	    type: empty
-	    example: null
-
-
-  /{zoneName}
-    description: zone content
+/gen
+  /zones
+    description: Collection of zones for generation
     get:
-      description: get zone content without modify it (no gen=0 nor version inc)
+      description:
       queryParameters:
+	name:
+	  required: false
+	  type: string
+	  example: "168.192.in-addr.arpa"
+	view:
+	  required: false
+	  type: string
+	  example: "internal"
+	gen:
+	  required: false
+	  type: boolean (0/1)
+	  example: 1
       responses:
-        200:
-          body:
-            application/json:
-	      type: ZoneContent
-              example: |
-		{
-		  prologue: "@ SOA .... \n ..."
-		  rrsup: ""
-		  counter: 123
-		  records: [
-		    {
-		      name: "foo",
-		      ttl: 60,
-		      type: "A",
-		      rdata: "198.51.100.1"
-		    },
-		    {
-		      name: "foo",
-		      ttl: -1,
-		      type: "MX",
-		      rdata: "100 mx1.example.com"
-		    }
-		  ]
-		}
+	200:
+	  body:
+	    application/json:
+	      description: list of zones
+	      type: ZoneParam []
+	      example: |
+		[
+		  {
+		    name: "example.com.internal",
+		    idview: 5,
+		    gen: 0
+		  },
+		  {
+		    name: "example.org.external",
+		    idview: 2,
+		    gen: 1
+		  }
+		]
+    post:
+      description: register generation for a collection of zones
+      queryParameters:
+      body:
+	application/json:
+	  type: ZoneGen []
+	  example: |
+	    [
+	      {
+		name: "example.org.internal",
+		counter: 123
+	      },
+	      {
+		name: "example.org.external",
+		counter: 456
+	      }
+	    ]
+      responses:
+	200:
+	  body:
+	    application/json:
+	      type: empty
+	      example: null
+
+
+    /{zoneName}
+      description: zone content
+      get:
+	description: get zone content without modify it (no gen=0 nor version inc)
+	queryParameters:
+	responses:
+	  200:
+	    body:
+	      application/json:
+		type: ZoneContent
+		example: |
+		  {
+		    prologue: "@ SOA .... \n ..."
+		    rrsup: ""
+		    counter: 123
+		    records: [
+		      {
+			name: "foo",
+			ttl: 60,
+			type: "A",
+			rdata: "198.51.100.1"
+		      },
+		      {
+			name: "foo",
+			ttl: -1,
+			type: "MX",
+			rdata: "100 mx1.example.com"
+		      }
+		    ]
+		  }
+
+  /dhcp
+    description: Collection of DHCP informations for generation
+    get:
+      description:
+      queryParameters:
+	view:
+	  required: false
+	  type: string
+	  example: "internal"
+	gen:
+	  required: false
+	  type: boolean (0/1)
+	  example: 1
+      responses:
+	200:
+	  body:
+	    application/json:
+	      description: list of views for which generation is needed
+	      type: GenDHCPParm []
+	      example: |
+		[
+		  {
+		    name: "internal",
+		    gen: 0,
+		    counter: 123
+		  },
+		  {
+		    name: "external",
+		    gen: 1
+		    counter: 456
+		  }
+		]
+    post:
+      description: register generation for a collection of views
+      queryParameters:
+      body:
+	application/json:
+	  type: GenDHCPGen []
+	  example: |
+	    [
+	      {
+		name: "internal",
+		counter: 123
+	      },
+	      {
+		name: "external",
+		counter: 456
+	      }
+	    ]
+      responses:
+	200:
+	  body:
+	    application/json:
+	      type: empty
+	      example: null
+
+
+    /{viewName}
+      description: DHCP informations for generation
+      get:
+	description: get DHCP informations for generation
+	queryParameters:
+	responses:
+	  200:
+	    body:
+	      application/json:
+		type: DHCPContent
+		example: |
+		  {
+		  }
+
+
+
+
+
+
+
+
+
+
 
     /zones
       description: Collection of zones
