@@ -203,12 +203,6 @@ def main ():
                 (r, msg) = utils.run (zonecmd)
                 if r != 0:
                     fq.uncommit ()
-                    try:
-                        # msg is a binary string: decode it in order to
-                        # have a beautiful error message
-                        msg = msg.decode ()
-                    except:
-                        pass
                     nm.grmbl ("Command failed: {}\n{}".format (zonecmd, msg))
 
             #

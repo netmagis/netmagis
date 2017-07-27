@@ -44,4 +44,10 @@ def run (cmd):
     except subprocess.CalledProcessError as err:
         r = err.returncode
         stderr = err.output
+        try:
+            # stderr is a binary string: decode it in order to
+            # have a beautiful error message
+            stderr = stderr.decode ()
+        except:
+            pass
     return (r, stderr)

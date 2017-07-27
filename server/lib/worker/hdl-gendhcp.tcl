@@ -134,7 +134,15 @@ api-handler get {/gen/dhcp/([^/]+:name)} genz {
     #
 
     set json {}
-    ::dbdns lock {global.config dns.view} {
+    ::dbdns lock {global.config
+                    dns.view
+                    dns.network
+                    dns.dhcprange
+                    dns.dhcpprofile
+                    dns.name
+                    dns.domain
+                    dns.host
+                    dns.addr} {
 	#
 	# Get global values
 	#
@@ -147,16 +155,28 @@ api-handler get {/gen/dhcp/([^/]+:name)} genz {
 	    lappend json [tojson "counter" $tab(value) true]
 	}
 
+	set lv {}
+	foreach k {default_lease_time
+			max_lease_time
+			min_lease_time
+			dhcpdefdomain
+			dhcpdefdnslist} {
+	    set tabk($k) 0
+	    lappend lv [pg_quote $k]
+	}
+	set lv [join $lv ","]
 	set sql "SELECT key, to_json (value) AS value
 		    FROM global.config
-		    WHERE key IN ('default_lease_time',
-				    'max_lease_time',
-				    'min_lease_time',
-				    'dhcpdefdomain',
-				    'dhcpdefdnslist')
+		    WHERE key IN ($lv)
 		    "
 	::dbdns exec $sql tab {
 	    lappend json [tojson $tab(key) $tab(value) true]
+	    incr tabk($tab(key))
+	}
+	foreach k [array names tabk] {
+	    if {$tabk($k) == 0} then {
+		lappend json [tojson $k "" false]
+	    }
 	}
 
 	#
@@ -179,10 +199,11 @@ api-handler get {/gen/dhcp/([^/]+:name)} genz {
 	#
 
 	set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
-			SELECT addr4 AS id,
+			SELECT addr4 AS network,
 			    HOST (addr4) AS addr,
 			    NETMASK (addr4) AS netmask,
-			    gw4 AS gw
+			    gw4 AS gw,
+			    comment AS comment
 			FROM dns.network
 			WHERE dhcp > 0 AND gw4 IS NOT NULL
 			ORDER BY addr4
@@ -227,8 +248,8 @@ api-handler get {/gen/dhcp/([^/]+:name)} genz {
 		    SELECT nw.addr4 AS network,
 			    n.name || '.' || d.name AS name,
 			    h.mac,
-			    a.addr as ip,
-			    p.name
+			    a.addr,
+			    p.name AS profile
 			FROM dns.name n
 			    INNER JOIN dns.domain d USING (iddom)
 			    INNER JOIN dns.host h USING (idname)
