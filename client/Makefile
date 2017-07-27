@@ -16,6 +16,7 @@ SCRIPTS = \
 	dnswriteprol.py \
 	mkzones.py \
 	mkdhcp.py \
+	mkmroute.py \
 
 MAN1 = \
 	dnsaddalias.man \

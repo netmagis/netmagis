@@ -5,9 +5,10 @@ import subprocess
 
 #
 # Show diffs (on stdout) between a file and a text
+# Returns True if they differ
 #
 
-def diff_file_text (fname, txt):
+def diff_file_text (fname, txt, show=True):
     #
     # Read existing file as a list of strings
     #
@@ -29,7 +30,11 @@ def diff_file_text (fname, txt):
     #
 
     d = difflib.unified_diff (old, new, fromfile=fname, n=0)
-    sys.stdout.writelines (d)
+    ld = list (d)
+    if show:
+        sys.stdout.writelines (ld)
+
+    return bool (ld)
 
 #
 # Run a command and returns (exit code, stderr-if-exitcode-not-null)
