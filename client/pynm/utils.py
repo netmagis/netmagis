@@ -3,6 +3,15 @@ import os
 import difflib
 import subprocess
 
+# return verbose level as -1 (quiet), 0 (normal) or 1 (verbose)
+def verbosity (quiet, verbose):
+    v = 0
+    if quiet:
+        v = -1
+    elif verbose:
+        v = 1
+    return v
+
 #
 # Show diffs (on stdout) between a file and a text
 # Returns True if they differ
@@ -35,6 +44,7 @@ def diff_file_text (fname, txt, show=True):
         sys.stdout.writelines (ld)
 
     return bool (ld)
+
 
 #
 # Run a command and returns (exit code, stderr-if-exitcode-not-null)

@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   mkdhcp [-l libdir][-f configfile][-t][-q][-v][-n] [-w] [<view-name>]
+#   mkdhcp [-l libdir][-f configfile][-d][-q][-v][-n] [-w] [<view-name>]
 #
 
 import sys
@@ -40,6 +40,7 @@ subnet {addr} netmask {netmask} {{
 """,
 }
 
+
 # return list of modified views
 def fetch_modified_views (nm, view):
     params = None
@@ -56,6 +57,7 @@ def fetch_modified_views (nm, view):
         views.append (vj ['name'])
 
     return views
+
 
 # generate a DHCP file as a string containing all data
 # return (counter, data)
@@ -148,50 +150,7 @@ def generate_view (nm, v, failover):
     return (counter, txt)
 
 
-def main ():
-    parser = argparse.ArgumentParser (description='Netmagis DHCP generation')
-    parser.add_argument ('-f', '--config-file', action='store',
-                help='Config file location (default=~/.config/netmagisrc)')
-    parser.add_argument ('-t', '--trace', action='store_true',
-                help='Trace requests to Netmagis server')
-    # warning: do not execute this script with "--help" while %...% are
-    # not subtitued
-    parser.add_argument ('-l', '--libdir', action='store',
-                help='Library directory (default=%NMLIBDIR%)')
-
-    parser.add_argument ('-q', '--quiet', action='store_true',
-                help='Keep silent on normal operation')
-    parser.add_argument ('-v', '--verbose', action='store_true',
-                help='Verbose (show diffs)')
-    parser.add_argument ('-n', '--dry-run', action='store_true',
-                help='Don\'t perform file installation')
-    parser.add_argument ('-w', '--obsolete-option', action='store_true',
-                help='Option kept for compatibility purpose')
-    parser.add_argument ('view', nargs='?',
-                help='Limit generation to this view')
-
-    args = parser.parse_args ()
-
-    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
-    sys.path.append (libdir)
-    from pynm.core import netmagis
-    from pynm.fileinst import fileinst
-    from pynm.nmlock import nmlock
-    from pynm import utils
-
-    nm = netmagis (args.config_file, trace=args.trace)
-
-    if args.obsolete_option:
-        print ('WARNING: option -w is deprecated', file=sys.stderr)
-
-    verbose = 0
-    if args.quiet:
-        verbose = -1
-    elif args.verbose:
-        verbose = 1
-    dryrun = args.dry_run
-    view = args.view
-
+def doit (nm, verbose, dryrun, view):
     #
     # Check view name
     #
@@ -199,7 +158,7 @@ def main ():
     if view is not None:
         idview = nm.get_idview (view)
         if idview is None:
-            self.grmbl ('View \'{}\' not found'.format (view))
+            nm.grmbl ('View \'{}\' not found'.format (view))
 
     #
     # Get parameters from local configuration file (~/.config/netmagisrc)
@@ -243,10 +202,6 @@ def main ():
             print ('Mkdhcp does not support multiple views', file=sys.stderr)
             sys.exit (1)
 
-        #
-        # For each view (warning: generates junk if multiple views)
-        #
-
         reg = []
         v = views [0]
 
@@ -255,14 +210,13 @@ def main ():
         #
 
         (counter, txt) = generate_view (nm, v, dhcpfailover)
-
         reg.append ({'name': v, 'counter': counter})
 
         #
         # Show diffs
         #
 
-        utils.diff_file_text (dhcpfile, txt, show=(verbose > 0)
+        utils.diff_file_text (dhcpfile, txt, show=(verbose > 0))
 
         #
         # Output generated data to file
@@ -320,6 +274,56 @@ def main ():
         lck.unlock ()
 
     sys.exit (0)
+
+
+def main ():
+    parser = argparse.ArgumentParser (description='Netmagis DHCP generation')
+    parser.add_argument ('-f', '--config-file', action='store',
+                help='Config file location (default=~/.config/netmagisrc)')
+    parser.add_argument ('-d', '--debug', action='store_true',
+                help='Debug/trace requests')
+    # warning: do not execute this script with "--help" while %...% are
+    # not subtitued
+    parser.add_argument ('-l', '--libdir', action='store',
+                help='Library directory (default=%NMLIBDIR%)')
+
+    parser.add_argument ('-q', '--quiet', action='store_true',
+                help='Keep silent on normal operation')
+    parser.add_argument ('-v', '--verbose', action='store_true',
+                help='Verbose (show diffs)')
+    parser.add_argument ('-n', '--dry-run', action='store_true',
+                help='Don\'t perform file installation')
+    parser.add_argument ('-w', '--obsolete-option', action='store_true',
+                help='Option kept for compatibility purpose')
+    parser.add_argument ('view', nargs='?',
+                help='Limit generation to this view')
+
+    args = parser.parse_args ()
+
+    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
+    sys.path.append (libdir)
+
+    from pynm.core import netmagis
+    from pynm.decorator import catchdecorator
+
+    global fileinst
+    from pynm.fileinst import fileinst
+    global nmlock
+    from pynm.nmlock import nmlock
+    global utils
+    from pynm import utils
+
+    nm = netmagis (args.config_file, trace=args.debug)
+
+    if args.obsolete_option:
+        print ('WARNING: option -w is deprecated', file=sys.stderr)
+
+    verbose = utils.verbosity (args.quiet, args.verbose)
+    dryrun = args.dry_run
+    view = args.view
+
+    fdoit = catchdecorator (args.debug) (doit)
+    fdoit (nm, verbose, dryrun, view)
 
 if __name__ == '__main__':
     main ()
