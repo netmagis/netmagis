@@ -6,5 +6,5 @@
 MAILTO = hostmaster@example.com
 
 # use flag -q if status messages are not wanted
-# use flag -w if you want to limit generation to a particular view
-*/1 * * * * %SBINDIR%/mkzones
+# specify -w viewname if you want to limit generation to a particular view
+*/1 * * * * %BINDIR%/mkzones

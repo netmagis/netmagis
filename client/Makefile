@@ -32,6 +32,13 @@ MAN1 = \
 MAN5 = \
 	netmagisrc.man \
 
+SHARE = \
+	crontab.bind \
+	crontab.dhcp \
+	crontab.mroute \
+	crontab.smtpf \
+	pf.conf.sample \
+
 .SUFFIXES: .md .man
 
 .md.man:
@@ -77,6 +84,9 @@ install: build
 		    $(SUBST) \
 		    $$page $(DESTDIR)$(MANDIR)/man5/$$b.5 ; \
 	done
+	mkdir -p $(DESTDIR)$(NMXMPDIR)
+	$(NINSTALL) -m 0644 -e "s|%BINDIR%|$(BINDIR)|" $(SUBST) \
+	    		$(SHARE) $(DESTDIR)$(NMXMPDIR)
 
 test:	build
 	for i in *.man ; do \

@@ -7,4 +7,5 @@
 MAILTO = hostmaster@example.com
 
 # use flag -q if status messages are not wanted
-1-59/1 * * * * %SBINDIR%/mkdhcp
+# specify view name if you want to limit generation to a particular view
+1-59/1 * * * * %BINDIR%/mkdhcp
