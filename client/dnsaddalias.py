@@ -2,35 +2,15 @@
 
 #
 # Syntax:
-#   dnsaddalias [-l libdir][-f configfile][-t] <fqdn-alias> <fqdn-host> <viewname>
+#   dnsaddalias [-l libdir][-f configfile][-d] <fqdn-alias> <fqdn-host> <viewname>
 #
 
 import sys
 import os.path
 import argparse
 
-def main ():
-    parser = argparse.ArgumentParser (description='Netmagis add host')
-    parser.add_argument ('-f', '--config-file', action='store',
-                help='Config file location (default=~/.config/netmagisrc)')
-    parser.add_argument ('-t', '--trace', action='store_true',
-                help='Trace requests to Netmagis server')
-    # warning: do not execute this script with "--help" while %...% are
-    # not subtitued
-    parser.add_argument ('-l', '--libdir', action='store',
-                help='Library directory (default=%NMLIBDIR%)')
-    parser.add_argument ('alias', help='Host FQDN')
-    parser.add_argument ('host', help='Alias FQDN')
-    parser.add_argument ('view', help='View name')
 
-    args = parser.parse_args ()
-
-    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
-    sys.path.append (libdir)
-    from pynm.core import netmagis
-
-    nm = netmagis (args.config_file, trace=args.trace)
-
+def doit (nm, fqdnh, fqdna, view):
     fqdnh = args.host
     fqdna = args.alias
     view = args.view
@@ -68,6 +48,35 @@ def main ():
         # Alias already exists
         #
         nm.grmbl ("Alias '{}' already exists".format (fqdna, view))
+
+
+def main ():
+    parser = argparse.ArgumentParser (description='Netmagis add host')
+    parser.add_argument ('-f', '--config-file', action='store',
+                help='Config file location (default=~/.config/netmagisrc)')
+    parser.add_argument ('-d', '--debug', action='store_true',
+                help='Debug/trace requests')
+    # warning: do not execute this script with "--help" while %...% are
+    # not subtitued
+    parser.add_argument ('-l', '--libdir', action='store',
+                help='Library directory (default=%NMLIBDIR%)')
+    parser.add_argument ('alias', help='Host FQDN')
+    parser.add_argument ('host', help='Alias FQDN')
+    parser.add_argument ('view', help='View name')
+
+    args = parser.parse_args ()
+
+    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
+    sys.path.append (libdir)
+    from pynm.core import netmagis
+    from pynm.decorator import catchdecorator
+
+    nm = netmagis (args.config_file, trace=args.debug)
+
+    fdoit = catchdecorator (args.debug) (doit)
+    fdoit (nm, fqdnh, fqdna, view)
+    sys.exit (0)
+
 
 if __name__ == '__main__':
     main ()

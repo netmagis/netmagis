@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   dnsdelip [-l libdir][-f configfile][-t] <ip> <viewname>
+#   dnsdelip [-l libdir][-f configfile][-d] <ip> <viewname>
 #
 
 import sys
@@ -10,34 +10,12 @@ import os.path
 import argparse
 import ipaddress
 
-def main ():
-    parser = argparse.ArgumentParser (description='Netmagis delete host')
-    parser.add_argument ('-f', '--config-file', action='store',
-                help='Config file location (default=~/.config/netmagisrc)')
-    parser.add_argument ('-t', '--trace', action='store_true',
-                help='Trace requests to Netmagis server')
-    # warning: do not execute this script with "--help" while %...% are
-    # not subtitued
-    parser.add_argument ('-l', '--libdir', action='store',
-                help='Library directory (default=%NMLIBDIR%)')
-    parser.add_argument ('ip', help='IP (v4 or v6) address to delete')
-    parser.add_argument ('view', help='View name')
 
-    args = parser.parse_args ()
-
-    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
-    sys.path.append (libdir)
-    from pynm.core import netmagis
-
-    nm = netmagis (args.config_file, trace=args.trace)
-
-    ip = args.ip
+def doit (nm, ip, view):
     try:
         addr = ipaddress.ip_address (ip)
     except:
         nm.grmbl ('{} is not a valid IP address'.format (ip))
-
-    view = args.view
 
     idview = nm.get_idview (view)
     if not idview:
@@ -68,7 +46,6 @@ def main ():
         uri = '/hosts/' + str (idhost)
 
         r = nm.api ('get', uri)
-
         j = r.json ()
 
         #
@@ -93,6 +70,37 @@ def main ():
         # this case should never happen
         msg = "Server error: address '{}' found more than once in view {}"
         nm.grmbl (msg.format (ip, view))
+
+
+def main ():
+    parser = argparse.ArgumentParser (description='Netmagis delete host')
+    parser.add_argument ('-f', '--config-file', action='store',
+                help='Config file location (default=~/.config/netmagisrc)')
+    parser.add_argument ('-d', '--debug', action='store_true',
+                help='Debug/trace requests')
+    # warning: do not execute this script with "--help" while %...% are
+    # not subtitued
+    parser.add_argument ('-l', '--libdir', action='store',
+                help='Library directory (default=%NMLIBDIR%)')
+    parser.add_argument ('ip', help='IP (v4 or v6) address to delete')
+    parser.add_argument ('view', help='View name')
+
+    args = parser.parse_args ()
+
+    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
+    sys.path.append (libdir)
+    from pynm.core import netmagis
+    from pynm.decorator import catchdecorator
+
+    nm = netmagis (args.config_file, trace=args.debug)
+
+    ip = args.ip
+    view = args.view
+
+    fdoit = catchdecorator (args.debug) (doit)
+    fdoit (nm, ip, view)
+    sys.exit (0)
+
 
 if __name__ == '__main__':
     main ()

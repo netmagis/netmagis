@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   dnsaddhost [-l libdir][-f configfile][-t] <fqdn> <ip> <viewname>
+#   dnsaddhost [-l libdir][-f configfile][-d] <fqdn> <ip> <viewname>
 #
 # This scripts uses a configuration file for authentication purpose
 #   ~/.config/netmagisrc
@@ -15,32 +15,8 @@ import sys
 import os.path
 import argparse
 
-def main ():
-    parser = argparse.ArgumentParser (description='Netmagis add host')
-    parser.add_argument ('-f', '--config-file', action='store',
-                help='Config file location (default=~/.config/netmagisrc)')
-    parser.add_argument ('-t', '--trace', action='store_true',
-                help='Trace requests to Netmagis server')
-    # warning: do not execute this script with "--help" while %...% are
-    # not subtitued
-    parser.add_argument ('-l', '--libdir', action='store',
-                help='Library directory (default=%NMLIBDIR%)')
-    parser.add_argument ('fqdn', help='Host FQDN')
-    parser.add_argument ('ip', help='IP (v4 or v6) address to add')
-    parser.add_argument ('view', help='View name')
 
-    args = parser.parse_args ()
-
-    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
-    sys.path.append (libdir)
-    from pynm.core import netmagis
-
-    nm = netmagis (args.config_file, trace=args.trace)
-
-    fqdn = args.fqdn
-    ip = args.ip
-    view = args.view
-
+def doit (nm, fqdn, ip, view):
     (name, domain, iddom, idview, h) = nm.get_host (fqdn, view, must_exist=False)
 
     #
@@ -69,7 +45,7 @@ def main ():
                     'ttl': -1,
                     'addr': [ip],
                 }
-        r = nm.api ('post', '/hosts', json=data)
+        nm.api ('post', '/hosts', json=data)
 
     else:
         #
@@ -80,11 +56,44 @@ def main ():
 
         idhost = h ['idhost']
         uri = '/hosts/' + str (idhost)
-        r = nm.api ('get', uri)
+        nm.api ('get', uri)
 
         data = r.json ()
         data ['addr'].append (ip)
-        r = nm.api ('put', uri, json=data)
+        nm.api ('put', uri, json=data)
+
+
+def main ():
+    parser = argparse.ArgumentParser (description='Netmagis add host')
+    parser.add_argument ('-f', '--config-file', action='store',
+                help='Config file location (default=~/.config/netmagisrc)')
+    parser.add_argument ('-d', '--debug', action='store_true',
+                help='Debug/trace requests')
+    # warning: do not execute this script with "--help" while %...% are
+    # not subtitued
+    parser.add_argument ('-l', '--libdir', action='store',
+                help='Library directory (default=%NMLIBDIR%)')
+    parser.add_argument ('fqdn', help='Host FQDN')
+    parser.add_argument ('ip', help='IP (v4 or v6) address to add')
+    parser.add_argument ('view', help='View name')
+
+    args = parser.parse_args ()
+
+    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
+    sys.path.append (libdir)
+    from pynm.core import netmagis
+    from pynm.decorator import catchdecorator
+
+    nm = netmagis (args.config_file, trace=args.debug)
+
+    fqdn = args.fqdn
+    ip = args.ip
+    view = args.view
+
+    fdoit = catchdecorator (args.debug) (doit)
+    fdoit (nm, fqdn, ip, view)
+    sys.exit (0)
+
 
 if __name__ == '__main__':
     main ()

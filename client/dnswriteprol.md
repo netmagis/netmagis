@@ -46,10 +46,11 @@ The following options are available:
 
     Default: `%NMLIBDIR%`
 
--t,--trace
-  : verbose trace requests to the Netmagis REST server (`netmagis-restd`).
+-d,--debug
+  : Display stack trace in case of internal errors and trace
+    requests to the Netmagis REST server (`netmagis-restd`).
 
-    Default: do not trace REST requests.
+    Default: do not display debug informations
 
 
 # EXIT STATUS

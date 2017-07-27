@@ -2,7 +2,7 @@
 
 #
 # Syntax:
-#   dnsmodattr [-l libdir][-f configfile][-t] <fqdn> <view> <key> <val> [<key> val> ...]
+#   dnsmodattr [-l libdir][-f configfile][-d] <fqdn> <view> <key> <val> [<key> val> ...]
 #
 # Examples:
 #   dnsmodattr www.example.com default MAC 00:68:fe....
@@ -30,6 +30,7 @@ argmap = {
     'ttl':	{'jsonname': 'ttl',	'type': 'int'},
     'sendsmtp':	{'jsonname': 'sendsmtp','type': 'int'},
 }
+
 
 def convert_arg_to_jsonvalue (nm, k, v):
     kj = argmap [k]['jsonname']
@@ -59,32 +60,8 @@ def convert_arg_to_jsonvalue (nm, k, v):
 
     return (kj, vj)
 
-def main ():
-    parser = argparse.ArgumentParser (description='Netmagis modify host attributes')
-    parser.add_argument ('-f', '--config-file', action='store',
-                help='Config file location (default=~/.config/netmagisrc)')
-    parser.add_argument ('-t', '--trace', action='store_true',
-                help='Trace requests to Netmagis server')
-    # warning: do not execute this script with "--help" while %...% are
-    # not subtitued
-    parser.add_argument ('-l', '--libdir', action='store',
-                help='Library directory (default=%NMLIBDIR%)')
-    parser.add_argument ('fqdn', help='Host FQDN')
-    parser.add_argument ('view', help='View name')
-    parser.add_argument ('keyvals', help='Couples key val', nargs='*',
-                            metavar='key val')
 
-    args = parser.parse_args ()
-
-    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
-    sys.path.append (libdir)
-    from pynm.core import netmagis
-
-    nm = netmagis (args.config_file, trace=args.trace)
-
-    fqdn = args.fqdn
-    view = args.view
-    keyvals = args.keyvals
+def doit (nm, fqdn, view, keyvals):
 
     # Get all valid keys for further error messages
     a = ', '.join (argmap.keys ())
@@ -119,9 +96,41 @@ def main ():
         i += 2
 
     # register modifications
-    r = nm.api ('put', uri, json=fullhost)
+    nm.api ('put', uri, json=fullhost)
 
+
+def main ():
+    parser = argparse.ArgumentParser (description='Netmagis modify host attributes')
+    parser.add_argument ('-f', '--config-file', action='store',
+                help='Config file location (default=~/.config/netmagisrc)')
+    parser.add_argument ('-d', '--debug', action='store_true',
+                help='Debug/trace requests')
+    # warning: do not execute this script with "--help" while %...% are
+    # not subtitued
+    parser.add_argument ('-l', '--libdir', action='store',
+                help='Library directory (default=%NMLIBDIR%)')
+    parser.add_argument ('fqdn', help='Host FQDN')
+    parser.add_argument ('view', help='View name')
+    parser.add_argument ('keyvals', help='Couples key val', nargs='*',
+                            metavar='key val')
+
+    args = parser.parse_args ()
+
+    libdir = os.path.abspath (args.libdir or '%NMLIBDIR%')
+    sys.path.append (libdir)
+    from pynm.core import netmagis
+    from pynm.decorator import catchdecorator
+
+    nm = netmagis (args.config_file, trace=args.debug)
+
+    fqdn = args.fqdn
+    view = args.view
+    keyvals = args.keyvals
+
+    fdoit = catchdecorator (args.debug) (doit)
+    fdoit (nm, fqdn, view, keyvals)
     sys.exit (0)
+
 
 if __name__ == '__main__':
     main ()
