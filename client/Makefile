@@ -27,6 +27,9 @@ MAN1 = \
 	dnsmodattr.man \
 	dnsreadprol.man \
 	dnswriteprol.man \
+	mkdhcp.man \
+	mkmroute.man \
+	mksmtpf.man \
 	mkzones.man \
 
 MAN5 = \
@@ -92,7 +95,7 @@ test:	build
 	for i in *.man ; do \
 	    groff -man $$i | ps2pdf - $$(basename $$i .man).pdf ; \
 	done
-	pdfjam -o all.pdf dns*.pdf netmagisrc.pdf
+	pdfjam -o all.pdf dns*.pdf mk*.pdf netmagisrc.pdf
 	
 clean:
 	rm -rf pynm/__*

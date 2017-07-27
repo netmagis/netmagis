@@ -1,36 +1,26 @@
-% MKZONES(1) Netmagis User Manuals
+% MKSMTPF(1) Netmagis User Manuals
 % Jean Benoit, Pierre David, Arnaud Grausem
-% July 12, 2017
+% July 27, 2017
 
 # NAME
 
-mkzones - generate zone files for the DNS server
+mksmtpf - generate packet filter file for SMTP-enabled hosts
 
 
 # SYNOPSIS
 
-mkzones [*OPTIONS*] ([-w *VIEW*] | [*ZONE* ... *ZONE*])
+mksmtpf [*OPTIONS*] [*VIEW*]
 
 
 # DESCRIPTION
 
-Generates zone files for the DNS server and ask the server to reload
-zone files in memory.
+Generates a file for the packet filter in order to allow connections
+from SMTP-enabled hosts.
 
-
--w *VIEW*
-  : ask for generation of all modified zones in the specified view.
-    This option is mutually exclusive with supplying individual
-    zones as parameters.
-
-*ZONE*
-  : ask for generation of one or more zones, identified by their
-    name.
-    This option is mutually exclusive with supplying a view with
-    _-w_
-
-Without parameter (i.e. without **-w** nor *ZONE*), `mkzone` generates
-zone files for all modified zones.
+*VIEW*
+  : ask for generation of addresses related to the named view.
+    This argument is optional if there is only one view in the
+    Netmagis database.
 
 The following options are available:
 
@@ -66,7 +56,11 @@ The following options are available:
   : Only generate zones, without performing file installation and zone
     reloading. This option may be used to test zone generation, or
     in conjunction with the verbose option (**-v**) to show differences
-    with current zones.
+    with current filter list.
+
+-w
+  : This option is here for compatibility purpose only. It is deprecated
+    and will be removed in a future version.
 
 
 # EXIT STATUS
@@ -78,25 +72,23 @@ This program exits 0 on success, and 1 if an error occurs.
 
 Command to add to `cron`:
 
-    $ mkzones
+    $ mksmtpf
 
-For zone example.com, show only differences between current zone
-and new one, without installing it:
+For view `internal`, only show differences between current addresses
+and new ones, wihtout installing the new configuration:
 
-    $ mkzones -n -v example.com
+    $ mksmtpf -n -v internal
 
-Generates zones for view `external` only:
+Generates filters for view `external` only:
 
-    $ mkzones -v -w external
+    $ mksmtpf -v external
 
 # SEE ALSO
 
-`dnsreadprol` (1),
-`dnswriteprol` (1),
 `netmagis-restd` (1),
 `mkdhcp` (1)
 `mkmroute` (1)
-`mksmtpf` (1)
+`mkzones` (1)
 `netmagisrc` (5),
 
 <http://netmagis.org>

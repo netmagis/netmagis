@@ -1,36 +1,28 @@
-% MKZONES(1) Netmagis User Manuals
+% MKMROUTE(1) Netmagis User Manuals
 % Jean Benoit, Pierre David, Arnaud Grausem
-% July 12, 2017
+% July 27, 2017
 
 # NAME
 
-mkzones - generate zone files for the DNS server
+mkmroute - generate mail routing file for the mail server
 
 
 # SYNOPSIS
 
-mkzones [*OPTIONS*] ([-w *VIEW*] | [*ZONE* ... *ZONE*])
+mkdhcp [*OPTIONS*] [*VIEW*]
 
 
 # DESCRIPTION
 
-Generates zone files for the DNS server and ask the server to reload
-zone files in memory.
+Generates DHCP host/range informations as a file suitable for inclusion
+(via the `include` directive) in the main ISC DHCP server configuration
+file, test the new configuration and ask the server to reload the whole
+configuration.
 
-
--w *VIEW*
-  : ask for generation of all modified zones in the specified view.
-    This option is mutually exclusive with supplying individual
-    zones as parameters.
-
-*ZONE*
-  : ask for generation of one or more zones, identified by their
-    name.
-    This option is mutually exclusive with supplying a view with
-    _-w_
-
-Without parameter (i.e. without **-w** nor *ZONE*), `mkzone` generates
-zone files for all modified zones.
+*VIEW*
+  : ask for generation of informations related to the named view.
+    This argument is optional if there is only one view in the
+    Netmagis database.
 
 The following options are available:
 
@@ -66,7 +58,11 @@ The following options are available:
   : Only generate zones, without performing file installation and zone
     reloading. This option may be used to test zone generation, or
     in conjunction with the verbose option (**-v**) to show differences
-    with current zones.
+    with current routes.
+
+-w
+  : This option is here for compatibility purpose only. It is deprecated
+    and will be removed in a future version.
 
 
 # EXIT STATUS
@@ -78,25 +74,23 @@ This program exits 0 on success, and 1 if an error occurs.
 
 Command to add to `cron`:
 
-    $ mkzones
+    $ mkdhcp
 
-For zone example.com, show only differences between current zone
-and new one, without installing it:
+For view `internal`, only show differences between current DHCP
+informations and new ones, wihtout installing the new configuration:
 
-    $ mkzones -n -v example.com
+    $ mkdhcp -n -v internal
 
-Generates zones for view `external` only:
+Generates information for view `external` only:
 
-    $ mkzones -v -w external
+    $ mkdhcp -v external
 
 # SEE ALSO
 
-`dnsreadprol` (1),
-`dnswriteprol` (1),
 `netmagis-restd` (1),
-`mkdhcp` (1)
 `mkmroute` (1)
 `mksmtpf` (1)
+`mkzones` (1)
 `netmagisrc` (5),
 
 <http://netmagis.org>

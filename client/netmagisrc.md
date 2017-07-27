@@ -46,9 +46,119 @@ key
     in order to get such a key or extend its lifetime.
 
 
+## SECTION [mkdhcp]
+
+This section is used to configure the `mkdhcp` client which generates
+files for the ISC DHCP server.
+
+lockfile
+  : file used as a lock to protect from running multiple instances
+    of `mkdhcp`
+   
+    Example: `/var/run/mkdhcp.lock`
+
+dhcpfile
+  : file containing the generated data. This file is meant to be
+    included by an `include` directive from the main ISC DHCP
+    configuration file.
+
+    Example: `/var/dhcp-gen.conf`
+
+dhcpfailover
+  : configuration line to configure an address pool as shared by
+    two servers in a fail-over configuration. Leave empty if
+    you don't use this feature. Don't forget the final `;`.
+
+    Example: `failover peer "dhcp";`
+
+dhcptest
+  : command to issue to test a configuration before reloading it.
+
+    Example: `/usr/sbin/dhcpd -t -cf /etc/dhcpd.conf`
+
+
+dhcpcmd
+  : command to issue to force ISC DHCP server to reload its configuration.
+
+    Example: `service isc-dhcpd.sh restart`
+
+
+## SECTION [mkmroute]
+
+This section is used to configure the `mkmroute` client which generates
+a routing file for the mail transfer agent.
+
+lockfile
+  : file used as a lock to protect from running multiple instances
+    of `mkmroute`
+   
+    Example: `/var/run/mkmroute.lock`
+
+mroutefile
+  : file containing the generated data. This file is meant to be
+    used by your mail transfer agent.
+
+    Example: `/etc/postfix/transport`
+
+mrouteprologue
+  : static file containing a hand-crafter prologue to include
+    as the first lines in the generated file.
+
+    Example: `/etc/postfix/transport.prologue`
+
+mroutefmt
+  : format string to use for each mailroute.
+
+    Example: `{mailaddr:40} smtp:[{mailhost}]`
+
+mroutecmd
+  : command to issue to force MTA to reload the mail routing file.
+
+    Example: `/usr/sbin/postmap /etc/postfix/transport`
+
+
+## SECTION [mksmtpf]
+
+This section is used to configure the `mksmtpf` client which generates
+the list of addresses of SMTP-enabled hosts for the packet filter.
+
+lockfile
+  : file used as a lock to protect from running multiple instances
+    of `mksmtpf`
+   
+    Example: `/var/run/mksmtpf.lock`
+
+pffile
+  : file containing the generated data. This file is meant to be
+    used by your packet filter.
+
+    Example: `/etc/smtpf.pf`
+
+pfprologue
+  : static file containing a hand-crafter prologue to include
+    as the first lines in the generated file.
+
+    Example: `/etc/smtpf.prologue`
+
+pffmt
+  : format string to use for each mail address.
+
+    Example: `{addr}`
+
+pftest
+  : command to issue to test the generated file before reloading it.
+
+    Example: `pfctl -q -n -t smtpf -T replace -f /etc/smtpf.pf`
+
+pfcmd
+  : command to issue to force the packet filter to reload the table.
+
+    Example: `pfctl -q -t smtpf -T replace -f /etc/smtpf.pf`
+
+
 ## SECTION [mkzones]
 
-This section is used to configure `mkzones` client which generate
+This section is used to configure the `mkzones` client which generates
 files for the ISC BIND daemon.
 
 lockfile
@@ -97,6 +207,9 @@ zonecmd
 `dnsmodattr` (1),
 `dnsreadprol` (1),
 `dnswriteprol` (1),
+`mkdhcp` (1),
+`mkmroute` (1),
+`mksmtpf` (1),
 `mkzones` (1)
 
 <http://netmagis.org>
