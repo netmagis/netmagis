@@ -78,8 +78,11 @@ def main ():
     if args.obsolete_option:
         print ('WARNING: option -w is deprecated', file=sys.stderr)
 
-    quiet = args.quiet
-    verbose = args.verbose
+    verbose = 0
+    if args.quiet:
+        verbose = -1
+    elif args.verbose:
+        verbose = 1
     dryrun = args.dry_run
     view = args.view
 
@@ -109,7 +112,7 @@ def main ():
     with nmlock (lockfile) as lck:
 
         if not lck.trylock ():
-            if verbose:
+            if verbose >= 0:
                 print ('Mkmroute already running. Abort', file=sys.stderr)
             sys.exit (0)
 
@@ -140,7 +143,7 @@ def main ():
         # Show diffs if needed (if verbose)
         #
 
-        diff = utils.diff_file_text (mroutefile, txt, show=verbose)
+        diff = utils.diff_file_text (mroutefile, txt, show=(verbose > 0))
 
         #
         # If no modification, stop
@@ -150,7 +153,7 @@ def main ():
         # Output generated data to file
         #
 
-        if verbose and not dryrun:
+        if verbose >= 0 and not dryrun:
             if diff:
                 print ('Mail routes are modified')
             else:

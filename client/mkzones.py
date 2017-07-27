@@ -93,8 +93,11 @@ def main ():
 
     nm = netmagis (args.config_file, trace=args.trace)
 
-    quiet = args.quiet
-    verbose = args.verbose
+    verbose = 0
+    if args.quiet:
+        verbose = -1
+    elif args.verbose:
+        verbose = 1
     dryrun = args.dry_run
     view = args.view
     zones = args.zone
@@ -130,7 +133,7 @@ def main ():
     with nmlock (lockfile) as lck:
 
         if not lck.trylock ():
-            if verbose:
+            if verbose >= 0:
                 print ('Mkzones already running. Abort', file=sys.stderr)
             sys.exit (0)
 
@@ -149,7 +152,7 @@ def main ():
         zones = fetch_modified_zones (nm, view, zones)
 
         if not zones:
-            if verbose:
+            if verbose >= 0:
                 print ('No modified zone')
             sys.exit (0)
 
@@ -159,7 +162,7 @@ def main ():
 
         reg = []
         for z in zones:
-            if verbose:
+            if verbose >= 0:
                 print ("Generating zone '{}'".format (z))
 
             #
@@ -175,8 +178,7 @@ def main ():
             #
 
             fname = os.path.join (zonedir, z)
-            if verbose:
-                utils.diff_file_text (fname, txt)
+            utils.diff_file_text (fname, txt, show=(verbose > 0))
 
             #
             # Output generated zone to file

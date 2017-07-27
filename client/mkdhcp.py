@@ -184,8 +184,11 @@ def main ():
     if args.obsolete_option:
         print ('WARNING: option -w is deprecated', file=sys.stderr)
 
-    quiet = args.quiet
-    verbose = args.verbose
+    verbose = 0
+    if args.quiet:
+        verbose = -1
+    elif args.verbose:
+        verbose = 1
     dryrun = args.dry_run
     view = args.view
 
@@ -215,7 +218,7 @@ def main ():
     with nmlock (lockfile) as lck:
 
         if not lck.trylock ():
-            if verbose:
+            if verbose >= 0:
                 print ('Mkdhcp already running. Abort', file=sys.stderr)
             sys.exit (0)
 
@@ -232,7 +235,7 @@ def main ():
         views = fetch_modified_views (nm, view)
 
         if not views:
-            if verbose:
+            if verbose >= 0:
                 print ('No generation needed')
             sys.exit (0)
 
@@ -259,8 +262,7 @@ def main ():
         # Show diffs
         #
 
-        if verbose:
-            utils.diff_file_text (dhcpfile, txt)
+        utils.diff_file_text (dhcpfile, txt, show=(verbose > 0)
 
         #
         # Output generated data to file
