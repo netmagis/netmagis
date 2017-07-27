@@ -12,6 +12,10 @@ FILES =	\
 	hdl-domains.tcl \
 	hdl-files.tcl \
 	hdl-freeblocks.tcl \
+	hdl-genzones.tcl \
+	hdl-gendhcp.tcl \
+	hdl-genmroute.tcl \
+	hdl-gensmtpf.tcl \
 	hdl-hinfos.tcl \
 	hdl-hosts.tcl \
 	hdl-mailroles.tcl \
@@ -22,7 +26,6 @@ FILES =	\
 	hdl-search.tcl \
 	hdl-sessions.tcl \
 	hdl-views.tcl \
-	hdl-zones.tcl \
 
 build:
 	@echo ">>> Making build in `pwd`"
