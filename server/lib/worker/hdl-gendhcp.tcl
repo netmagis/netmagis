@@ -158,7 +158,6 @@ api-handler get {/gen/dhcp/([^/]+:name)} genz {
 	set lv {}
 	foreach k {default_lease_time
 			max_lease_time
-			min_lease_time
 			dhcpdefdomain
 			dhcpdefdnslist} {
 	    set tabk($k) 0

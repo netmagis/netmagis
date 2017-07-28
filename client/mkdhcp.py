@@ -69,7 +69,6 @@ def generate_view (nm, v, failover):
 
     default_lease_time = j ['default_lease_time']
     max_lease_time = j ['max_lease_time']
-    min_lease_time = j ['min_lease_time']
     dhcpdefdomain = j ['dhcpdefdomain']
     dhcpdefdnslist = j ['dhcpdefdnslist']
 
