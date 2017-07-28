@@ -463,6 +463,203 @@ types:
 	  rdata: "100 mx1.example.com"
 	}
 
+  DHCPParam:
+    description: description of a view for DHCP generation
+    type: object
+    properties:
+      name:		string
+      gen:
+	enum: [0, 1]
+      counter:		integer
+    example: |
+      {
+	name: "com.internal",
+	gen: 0,
+	counter: 123
+      }
+
+  DHCPGen:
+    description: identify a generated view
+    type: object
+    properties:
+      name:		string
+      counter:		integer
+    example: |
+      {
+	name: "internal",
+	counter: 123
+      }
+
+  DHCPProfile:
+    description: content of a DHCP profile
+    type: object
+    properties:
+      name:		string
+      text:		string
+    example: |
+      {
+	name:	"foo"
+	text:	"some ISC DHCP directives;"
+      }
+
+  DHCPRange;
+    description: content of a DHCP dynamic range
+    type: object
+    properties:
+      network:		cidr
+      domain:		string
+      min:		inet
+      max:		inet
+      default_lease_time:	integer
+      max_lease_time:		integer
+      profile:		string | null
+    example: |
+      {
+	network:		"198.51.100.128/25"
+	domain:			"example.com"
+	min:			"198.51.100.200"
+	max:			"198.51.100.210"
+	default_lease_time:	3600
+	max_lease_time:		0
+	profile:		"foo"
+      }
+
+  DHCPHost;
+    description: content of a DHCP static host
+    type: object
+    properties:
+      network:		cidr
+      name:		string
+      mac:		macaddr
+      addr:		inet
+      profile:		string | null
+    example: |
+      {
+	name:		"www.example.com"
+	network:	"198.51.100.128/25"
+	mac:		"01:02:03:04:05:06"
+	addr:		"198.51.100.130"
+	profile:	"foo"
+      }
+
+  DHCPSubnet:
+    description: content of a DHCP subnet
+    type: object
+    properties:
+      network:		cidr
+      addr:		inet
+      netmask:		inet
+      gw:		inet
+      comment:		string
+    example: |
+      {
+	network:	"198.51.100.128/25"
+	addr:		"198.51.100.128"
+	netmask:	"255.255.255.128"
+	gw:		"198.51.100.254"
+	comment:	"A test network"
+      }
+
+  DHCPContent:
+    description: content of a DHCP generation
+    type: object
+    properties:
+      counter:			integer
+      default_lease_time:	string
+      max_lease_time:		string
+      dhcpdefdomain:		string
+      dhcpdefdnslist:		string
+      profiles:			DHCPProfile []
+      ranges:			DHCPRange []
+      hosts:			DHCPHost []
+      subnets:			DHCPSubnet []
+    example: |
+      {
+	counter:		123
+	default_lease_time:	3600
+	max_lease_time:		7200
+	dhcpdefdomain:		"example.com"
+	dhcpdefdnslist:		"1.2.3.4, 5.6.7.8"
+	profiles:		[
+				  {
+				    name:	"foo"
+				    text:	"some ISC DHCP directives;"
+				  }
+				]
+	ranges:			[
+				  {
+				    network:	"198.51.100.128/25"
+				    domain:	"example.com"
+				    min:	"198.51.100.200"
+				    max:	"198.51.100.210"
+				    default_lease_time:	3600
+				    max_lease_time:		0
+				    profile:	"foo"
+				  }
+				]
+	hosts:			[
+				  {
+				    name:	"www.example.com"
+				    network:	"198.51.100.128/25"
+				    mac:	"01:02:03:04:05:06"
+				    addr:	"198.51.100.130"
+				    profile:	"foo"
+				  }
+				]
+	subnets:		[
+				  {
+				    network:	"198.51.100.128/25"
+				    addr:	"198.51.100.128"
+				    netmask:	"255.255.255.128"
+				    gw:		"198.51.100.254"
+				    comment:	"A test network"
+				  }
+				]
+      }
+
+  MrouteParam:
+    description: description of a view for Mail route generation
+    type: object
+    properties:
+      name:		string
+    example: |
+      {
+	name: "internal",
+      }
+
+  MrouteContent:
+    description: content of an individual mail route
+    type: object
+    properties:
+      mailaddr:			string
+      mailhost:			string
+    example: |
+      {
+	mailaddr:		sales.example.com
+	mailhost:		mailserver.example.com
+      }
+
+  SMTPFParam:
+    description: description of a view for SMTP filter generation
+    type: object
+    properties:
+      name:		string
+    example: |
+      {
+	name: "external",
+      }
+
+  SMTPFContent:
+    description: content of an individual SMTP filter
+    type: object
+    properties:
+      addr:			inet
+    example: |
+      {
+	addr:	"198.51.100.1"
+      }
+
+
   AdminNetwork:
     description: a row in the network table, without id
     type: object
@@ -2446,26 +2643,125 @@ types:
 		type: DHCPContent
 		example: |
 		  {
+		    counter:		123
+		    default_lease_time:	3600
+		    max_lease_time:	7200
+		    dhcpdefdomain:	"example.com"
+		    dhcpdefdnslist:	"1.2.3.4, 5.6.7.8"
+		    profiles:	[
+				  {
+				    name:	"foo"
+				    text:	"some ISC DHCP directives;"
+				  }
+				]
+		    ranges:	[
+				  {
+				    network:	"198.51.100.128/25"
+				    domain:	"example.com"
+				    min:	"198.51.100.200"
+				    max:	"198.51.100.210"
+				    default_lease_time:	3600
+				    max_lease_time:		0
+				    profile:	"foo"
+				  }
+				]
+		    hosts:	[
+				  {
+				    name:	"www.example.com"
+				    network:	"198.51.100.128/25"
+				    mac:	"01:02:03:04:05:06"
+				    addr:	"198.51.100.130"
+				    profile:	"foo"
+				  }
+				]
+		    subnets:	[
+				  {
+				    network:	"198.51.100.128/25"
+				    addr:	"198.51.100.128"
+				    netmask:	"255.255.255.128"
+				    gw:		"198.51.100.254"
+				    comment:	"A test network"
+				  }
+				]
 		  }
 
 
+  /mroute
+    description: Collection of mail routes for generation
+    get:
+      description:
+      queryParameters:
+      responses:
+	200:
+	  body:
+	    application/json:
+	      description: list of views which contain mail routes
+	      type: MrouteParam
+	      example: |
+		[
+		  {
+		    name: "internal",
+		  },
+		  {
+		    name: "external",
+		  }
+		]
 
+    /{viewName}
+      description: informations for mail routes generation
+      get:
+	description: get mail route informations for generation
+	queryParameters:
+	responses:
+	  200:
+	    body:
+	      application/json:
+		type: MrouteContent []
+		example: |
+		  [
+		    {
+		      mailaddr:	sales.example.com
+		      mailhost:	mailserver.example.com
+		    }
+		  ]
 
+  /smtpf
+    description: Collection of addresses of SMTP-enabled hosts for generation
+    get:
+      description:
+      queryParameters:
+      responses:
+	200:
+	  body:
+	    application/json:
+	      description: list of views which contain SMTP-enabled hosts
+	      type: SMTPFParam
+	      example: |
+		[
+		  {
+		    name: "internal",
+		  },
+		  {
+		    name: "external",
+		  }
+		]
 
-
-
-
-
-
-
-    /zones
-      description: Collection of zones
-      /{zoneId}
-    /relays
-      description: Collection of mail relays
-      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <--- TO DISCUSS LATER
-      /{domainId}
-        description: mail relays for a given domain
+    /{viewName}
+      description: informations for SMTP filters for generation
+      get:
+	description: get SMTP-enabled host addresses for generation
+	queryParameters:
+	responses:
+	  200:
+	    body:
+	      application/json:
+		type: SMTPFContent []
+		example: |
+		  [
+		    {
+		      addr:	"198.51.100.1"
+		    }
+		  ]
 
 ##############################################################################
 # Admin tables
