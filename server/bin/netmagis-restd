@@ -12,7 +12,7 @@ set conf(version)	%VERSION%
 
 set conf(usage) {usage: %s [-h][-d][-f conf][-a addr][-p port][-l libdir][-s files][-m min][-x max][-i idle][-v vers]
     -h: this help message
-    -d: debug
+    -d crit,crit,...: debug criteria
     -f conf: path to the configuration file
     -a addr: listening address (e.g. 0.0.0.0)
     -p port: listening port (e.g. 8080)
@@ -38,7 +38,7 @@ proc main {argv0 argv} {
     # Argument checking
     #
 
-    set debug    false
+    set debug    {}
     set conffile $conf(conffile)
     set addr     $conf(addr)
     set port     $conf(port)
@@ -56,8 +56,8 @@ proc main {argv0 argv} {
 		usage $argv0
 	    }
 	    -d {
-		set debug true
-		set argv [lreplace $argv 0 0]
+		set debug [split [lindex $argv 1] ","]
+		set argv [lreplace $argv 0 1]
 	    }
 	    -f {
 		set conffile [lindex $argv 1]

@@ -31,7 +31,7 @@ namespace eval ::scgi:: {
 	-idletime 30
 	-myaddr 0.0.0.0
 	-myport 8080
-	-debug 1
+	-debug {}
     }
 
 
@@ -47,7 +47,7 @@ namespace eval ::scgi:: {
     #		-idletime: idle-time for worker threads
     #		-myaddr: address to listen to connections
     #		-myport: port number to listen to connections
-    #		-debug: get verbose error message
+    #		-debug: debug criteria list
     #
     #	and arguments:
     #	- init-script: script to call in each worker thread. This script
@@ -113,7 +113,7 @@ namespace eval ::scgi:: {
 			-idletime $p(-idletime) \
 			-initcmd "$thrscript ;
 				set ::scgi::handlefn $handlereq ;
-				set ::scgi::debug $p(-debug) ;
+				set ::scgi::debug [list $p(-debug)] ;
 				$initscript" \
 		    ]
 
@@ -174,8 +174,7 @@ namespace eval ::scgi:: {
 			    get-cookie \
 			    set-cookie del-cookie \
 			    check-json-value import-json-object \
-			    serror \
-			    output
+			    isdebug serror output
 
 	    #
 	    # Name of the function (called in accept) to handle requests
@@ -185,10 +184,13 @@ namespace eval ::scgi:: {
 	    variable handlefn
 
 	    #
-	    # Generate a Tcl stack trace in the message sent back
+	    # List of debug criteria
+	    # This package use "error" to send back a Tcl stack trace
+	    # in case of error in handler.
+	    # Any other keyword may be used by handlers.
 	    #
 
-	    variable debug
+	    variable debug {}
 
 	    #
 	    # Global state associated with the current request
@@ -217,6 +219,16 @@ namespace eval ::scgi:: {
 	    }
 
 	    #
+	    # Test if debug criterion is selected
+	    #
+
+	    proc isdebug {crit} {
+		variable debug
+		set r [expr {$crit in $debug}]
+		return $r
+	    }
+
+	    #
 	    # This function is called from the server thread
 	    # by the ::scgi::server-connect function,
 	    # indirectly by the tpool::post command.
@@ -224,7 +236,6 @@ namespace eval ::scgi:: {
 
 	    proc accept {sock host port} {
 		variable handlefn
-		variable debug
 		variable state
 
 		#
@@ -270,7 +281,7 @@ namespace eval ::scgi:: {
 			set-header Status "$state(errcode) $msg" true
 		    }
 
-		    if {$debug} then {
+		    if {[isdebug "error"]} then {
 			global errorInfo
 			set-body "<html>\n"
 			set-body "<h1>$state(errcode) $msg</h1>\n"
@@ -1039,7 +1050,6 @@ namespace eval ::scgi:: {
 
 	    proc simulcall {meth uri headers cookies body} {
 		variable handlefn
-		variable debug
 		variable state
 
 		#
@@ -1073,7 +1083,7 @@ namespace eval ::scgi:: {
 			set-header Status "$state(errcode) $msg" true
 		    }
 
-		    if {$debug} then {
+		    if {[isdebug "error"]} then {
 			global errorInfo
 			set-body "<html>\n"
 			set-body "<h1>$state(errcode) $msg</h1>\n"

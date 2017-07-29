@@ -22,10 +22,17 @@ The following options are available:
 -h
   : Prints a brief description of options.
 
--d
-  : Activates debug messages. When used, error messages returned by
-    the daemon will include a stack trace. *Do not activate this
-    options* during normal operations.
+-d *CRIT*
+  : Activates debug messages depending on specific criteria separated
+    by commas. Available criteria are:
+
+	* *error*: error messages returned by the daemon will include a
+		stack trace.
+	* *request*: display requests sent by clients
+
+    *Do not activate this option* during normal operations.
+
+    Default: no debug criterion is selected.
 
 -f *CONF*
   : Specifiy the configuration file (netmagis.conf) path.

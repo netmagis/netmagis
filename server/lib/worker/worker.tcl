@@ -9,7 +9,7 @@
 # - auto_path: path of Tcl packages specific to Netmagis
 #
 
-set conf(lang)		{en fr}
+set conf(lang)		{en fr de}
 
 package require snit
 package require Pgtcl
@@ -450,6 +450,9 @@ proc handle-request {uri meth parm} {
 	    # - tpar: query parameters of handler
 	    #
 
+	    if {[::scgi::isdebug "request"]} then {
+		puts stderr "$meth $uri -> $hname"
+	    }
 	    $hname $meth $parm $prefix $tpar
 	}
     }

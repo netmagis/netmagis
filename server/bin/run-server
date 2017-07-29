@@ -11,7 +11,7 @@
 STATIC=$(echo $(ls -d ${NMSTATIC:-../www/static ../www/static/*}) | sed 's/ /:/g')
 
 tclsh8.6 netmagis-restd \
-	-d \
+	-d error,request \
 	-f ${NMCONF:-/local/netmagis/etc/netmagis.conf} \
 	-a 0.0.0.0 \
 	-p ${NMPORT:-8080} \
