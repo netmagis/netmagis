@@ -29,6 +29,6 @@ set expectedjson {
     }
 }
 lassign [test-call GET $uri {}] stcode stmsg ct body
-test-assert 10 "Get capabilities for an admin user" \
+test-assert 20 "Get capabilities for an admin user" \
 	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
 	"body=$body\nexpected=$expectedjson"
