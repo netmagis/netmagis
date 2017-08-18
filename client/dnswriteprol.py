@@ -10,7 +10,7 @@ import os.path
 import argparse
 
 
-def doit (nm, zone, view, fd)
+def doit (nm, zone, view, fd):
     (table, j) = nm.get_zone (zone, view)
 
     newprol = fd.read ()
