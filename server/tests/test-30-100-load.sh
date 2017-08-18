@@ -8,7 +8,7 @@ fi
 
 CONFFILE="$1"
 
-DUMPFILE=dump-test-100-load.dump
+DUMPFILE=dump-test-30-100-load.dump
 
 getconf ()
 {
