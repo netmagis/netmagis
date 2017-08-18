@@ -234,7 +234,7 @@ proc mx-new-and-mod {_parm orr} {
 	set idview [::rr::get-idview $orr]
 	set spec {array {object {
 				{prio	{type int req} req}
-				{ttl	{type int opt {}} req}
+				{ttl	{type int opt {null}} req}
 				{idhost	{type int req} req}
 			    } req
 			} req
@@ -248,11 +248,11 @@ proc mx-new-and-mod {_parm orr} {
 	set oidname -1
 	set spec {object {
 			    {name	{type string req} req}
-			    {iddom	{type int opt -1} req}
-			    {idview	{type int opt -1} req}
+			    {iddom	{type int opt {number -1}} req}
+			    {idview	{type int opt {number -1}} req}
 			    {mxhosts	{array {object {
 						{prio	{type int req} req}
-						{ttl	{type int opt {}} req}
+						{ttl	{type int opt {null}} req}
 						{idhost	{type int req} req}
 						} req
 					    } req

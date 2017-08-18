@@ -208,7 +208,7 @@ proc aliases-new-and-mod {_parm orr} {
 	set oidname [::rr::get-idname $orr]
 	set spec {object {
 			    {idhost	{type int req} req}
-			    {ttl	{type int opt {}} req}
+			    {ttl	{type int opt {null}} req}
 			} req
 		    }
     } else {
@@ -219,7 +219,7 @@ proc aliases-new-and-mod {_parm orr} {
 			    {iddom	{type int opt {number -1}} req}
 			    {idview	{type int opt {number -1}} req}
 			    {idhost	{type int req} req}
-			    {ttl	{type int opt {}} req}
+			    {ttl	{type int opt {null}} req}
 			} req
 		    }
     }

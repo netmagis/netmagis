@@ -208,7 +208,7 @@ proc mailrole-new-and-mod {_parm orr} {
 	set oidname [::rr::get-idname $orr]
 	set spec {object {
 			    {idhost	{type int req} req}
-			    {ttl	{type int opt {}} req}
+			    {ttl	{type int opt {null}} req}
 			} req
 		    }
     } else {
@@ -216,10 +216,10 @@ proc mailrole-new-and-mod {_parm orr} {
 	set oidname -1
 	set spec {object {
 			    {name	{type string req} req}
-			    {iddom	{type int opt -1} req}
-			    {idview	{type int opt -1} req}
+			    {iddom	{type int opt {number -1}} req}
+			    {idview	{type int opt {number -1}} req}
 			    {idhost	{type int req} req}
-			    {ttl	{type int opt {}} req}
+			    {ttl	{type int opt {null}} req}
 			} req
 		    }
     }

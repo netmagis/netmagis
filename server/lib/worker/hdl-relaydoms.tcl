@@ -117,7 +117,7 @@ api-handler put {/relaydoms/([0-9]+:idview)/([0-9]+:iddom)} admin {
 
     set spec {array {object {
 			    {prio	{type int req} req}
-			    {ttl	{type int opt {}} req}
+			    {ttl	{type int opt {null}} req}
 			    {idhost	{type int req} req}
 			} req
 		    }

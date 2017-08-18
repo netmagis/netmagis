@@ -370,16 +370,16 @@ proc hosts-new-and-mod {_parm orr} {
 
     set spec {object {
 			{name		{type string req} req}
-			{iddom 		{type int opt -1} req}
-			{idview 	{type int opt -1} req}
+			{iddom 		{type int opt {number -1}} req}
+			{idview 	{type int opt {number -1}} req}
 			{mac 		{type string req} req}
-			{idhinfo 	{type int opt -1} req}
+			{idhinfo 	{type int opt {number -1}} req}
 			{comment 	{type string req} req}
 			{respname 	{type string req} req}
 			{respmail 	{type string req} req}
-			{iddhcpprof	{type int opt -1} req}
-			{sendsmtp	{type int opt -1} opt -1}
-			{ttl		{type int opt {}} req}
+			{iddhcpprof	{type int opt {number -1}} req}
+			{sendsmtp	{type int opt {number -1}} opt {number -1}}
+			{ttl		{type int opt {null}} req}
 			{addr		{array {type inet req} req} req}
 		    } req
 		}

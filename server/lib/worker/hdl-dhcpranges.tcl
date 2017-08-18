@@ -204,10 +204,10 @@ proc dhcp-new {iddhcprange idgrp _parm} {
     set spec {object {
 			{min			{type inet4 req} req}
 			{max			{type inet4 req} req}
-			{iddom			{type int opt -1} req}
-			{default_lease_time	{type int opt 0} req}
-			{max_lease_time		{type int opt 0} req}
-			{iddhcpprof		{type int opt -1} req}
+			{iddom			{type int opt {number -1}} req}
+			{default_lease_time	{type int opt {number 0}} req}
+			{max_lease_time		{type int opt {number 0}} req}
+			{iddhcpprof		{type int opt {number -1}} req}
 		    } req
 		}
     set nmj [check-body-json $_parm $spec]
