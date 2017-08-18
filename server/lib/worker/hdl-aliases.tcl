@@ -89,7 +89,7 @@ api-handler get {/aliases} logged {
 api-handler post {/aliases} logged {
     } {
     lassign [aliases-new-and-mod $_parm [::rr::not-a-rr]] id j
-    ::scgi::set-header Content-Type text/plain
+    ::scgi::set-header Content-Type application/json
     ::scgi::set-body $id
 }
 
