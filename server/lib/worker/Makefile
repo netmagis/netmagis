@@ -20,7 +20,6 @@ FILES =	\
 	hdl-hosts.tcl \
 	hdl-mailroles.tcl \
 	hdl-mx.tcl \
-	hdl-names.tcl \
 	hdl-networks.tcl \
 	hdl-relaydoms.tcl \
 	hdl-search.tcl \
