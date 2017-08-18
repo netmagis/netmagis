@@ -2,12 +2,92 @@ set title "Test get domain"
 
 set uri /netmagis/domains
 
-set inputjson {}
-set expectedjson {...}
-
 test-reset-cookie
 test-set-cookie session bla
 
-lassign [test-call get $uri {}] stcode stmsg ct body
+# TEST 1
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "mailrole": 1,
+	    "name": "example.com"
+	},
+	{
+	    "iddom": 2,
+	    "mailrole": 1,
+	    "name": "example.org"
+	}
+    ]
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 10 "Get all domains" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
+	"body=$body\nexpected=$expectedjson"
 
-test-assert $title {$stcode == 200 && [test-json $ct $body $expectedjson]}
+# TEST 2
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "mailrole": 1,
+	    "name": "example.com"
+	},
+	{
+	    "iddom": 2,
+	    "mailrole": 1,
+	    "name": "example.org"
+	}
+    ]
+}
+lassign [test-call GET $uri?mailrole=1 {}] stcode stmsg ct body
+test-assert 20 "Get all domains with mailroles -> all domains" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
+	"body=$body\nexpected=$expectedjson"
+
+# TEST 3
+set expectedjson {
+    [
+    ]
+}
+lassign [test-call GET $uri?mailrole=0 {}] stcode stmsg ct body
+
+test-assert 30 "Get all domains without mailroles -> none" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
+	"body=$body\nexpected=$expectedjson"
+
+# TEST 4
+set expectedjson {
+    {
+	"iddom": 1,
+	"mailrole": 1,
+	"name": "example.com"
+    }
+}
+lassign [test-call GET $uri/1 {}] stcode stmsg ct body
+test-assert 40 "Get a single domain" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
+	"body=$body\nexpected=$expectedjson"
+
+# TEST 5
+set expectedjson {
+    {
+	"iddom": 1,
+	"mailrole": 1,
+	"name": "example.com"
+    }
+}
+lassign [test-call GET $uri/1?mailrole=1 {}] stcode stmsg ct body
+test-assert 50 "Get a single domain, with mailrole" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
+	"body=$body\nexpected=$expectedjson"
+
+# TEST 6
+set expectedjson {
+    null
+}
+lassign [test-call GET $uri/1?mailrole=0 {}] stcode stmsg ct body
+test-assert 60 "Get a single domain, without mail role -> error" \
+	{$stcode == 404} "status=$stcode, expected=404"
+
+

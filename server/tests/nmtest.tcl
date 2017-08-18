@@ -61,30 +61,40 @@ proc test-call {meth uri jsonbody} {
     set r [::scgi::simulcall $meth $uri $hdrs $cook $jsonbody]
 
     # leave a line in the log
-    lassign $r stcode stmsg ct body
-    puts stderr "test-call: $meth $uri -> $stcode $stmsg $ct"
+    set conf(lastresult) $r
 
     return $r
 }
 
 # if expr is false, abort with a message including title
-proc test-assert {title expr} {
+proc test-assert {num title expr msg} {
     global conf
 
     set r [uplevel "expr $expr"]
     if {$r} then {
-	puts stderr "PASS '$title' ($conf(lastcall))"
-	puts stderr "\texp '$expr' true"
+	puts stderr "ok $num $title"
+	puts stderr "\t$conf(lastcall)"
+	puts stderr ""
     } else {
-	puts stderr "FAIL '$title' ($conf(lastcall))"
-	puts stderr "\texp '$expr' false"
+	lassign $conf(lastresult) stcode stmsg ct body
+	puts stderr "not ok $num $title"
+	puts stderr "\t$conf(lastcall)"
+	puts stderr "\tstatus=$stcode $stmsg, cnotent-type=$ct"
+	puts stderr "\tbody=$body"
+	puts stderr "\tassert '$expr' false"
+	puts stderr "\t$msg"
 	exit 1
     }
 }
 
 # test json equality, returns true or false
 proc test-json {ct jout jref} {
-    return 1
+    if {$ct ne "application/json"} then {
+	return 0
+    }
+    set nmjref [::nmjson::str2nmj $jref]
+    set nmjout [::nmjson::str2nmj $jout]
+    return [::nmjson::nmjeq $nmjref $nmjout]
 }
 
 ##############################################################################
@@ -126,6 +136,7 @@ proc main {argv0 argv} {
     global auto_path
     lappend auto_path $conf(libdir)/pkgtcl
     package require scgi
+    package require nmjson
 
     #
     # Intialize a false worker thread context 
