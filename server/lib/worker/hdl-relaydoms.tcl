@@ -115,11 +115,6 @@ api-handler put {/relaydoms/([0-9]+:idview)/([0-9]+:iddom)} admin {
     # Check input parameters
     #
 
-    # get body just to check it's a JSON body
-    ::scgi::get-body-json $_parm
-
-    set dbody [dict get $_parm "_bodydict"]
-
     set spec {array {object {
 			    {prio	{type int req} req}
 			    {ttl	{type int opt {}} req}
@@ -128,7 +123,8 @@ api-handler put {/relaydoms/([0-9]+:idview)/([0-9]+:iddom)} admin {
 		    }
 		    opt {}
 		}
-    set mxhosts [::scgi::check-json-value $dbody $spec]
+    set nmj [check-body-json $_parm $spec]
+    set mxlist [::nmjson::nmjval $nmj]
 
     #
     # Get the old relaydoms under a format suitable to check-mx-list
@@ -146,7 +142,7 @@ api-handler put {/relaydoms/([0-9]+:idview)/([0-9]+:iddom)} admin {
     # Check the diffs between old and new values
     #
 
-    set mxlist [check-mx-list $idview $mxhosts $omx]
+    set mxlist [check-mx-list $idview $mxlist $omx]
 
     #
     # Store the modifications detected in mxlist

@@ -1,6 +1,7 @@
 package require Tcl 8.6
+package require ip
 
-package provide nmjson 0.1
+package provide nmjson 0.2
 
 #
 # This package provides an enhanced Tcl representation for JSON
@@ -18,7 +19,9 @@ package provide nmjson 0.1
 #
 
 namespace eval ::nmjson {
-    namespace export str2nmj nmj2str nmjeq
+    namespace export str2nmj nmj2str nmjeq \
+			nmjtype nmjval \
+			check-spec import-object
 
     ###################################################
     # Get the string (regular JSON representation) from
@@ -73,6 +76,33 @@ namespace eval ::nmjson {
 	    }
 	}
 	return $s
+    }
+
+    ###################################################
+    # Get components of a NMJson object
+    #
+    # nmjtype:
+    #	{ ... } -> object
+    #	[ ... ] -> array
+    #	true    -> bool
+    #	123	-> number
+    #	"foo"   -> string
+    #	null	-> null
+    #
+    # nmjval:
+    #	{ ... } -> <dict>
+    #	[ ... ] -> <list>
+    #	true    -> <true-or-false>
+    #	123	-> <val>
+    #	"foo"   -> <str>
+    #	null	-> {}
+
+    proc nmjtype {j} {
+	return [lindex $j 0]
+    }
+
+    proc nmjval {j} {
+	return [lindex $j 1]
     }
 
     ###################################################
@@ -132,6 +162,306 @@ namespace eval ::nmjson {
 	    }
 	}
 	return $r
+    }
+
+    ###################################################
+    # Import a NMJson object into Tcl variables according to their
+    # keys. With valonly parameter, only import values (and not
+    # complete individual NMJson values)
+    # 
+    # To be safe, object keys should be checked before (see check-spec)
+    #
+
+    proc import-object {o valonly} {
+	set jt [nmjtype $o]
+	set jv [nmjval  $o]
+	if {$jt ne "object"} then {
+	    error "Invalid JSON object"
+	}
+	dict for {k v} $jv {
+	    if {$valonly} then {
+		set v [nmjval $v]
+	    }
+	    uplevel [list set $k $v]
+	}
+    }
+
+    ###################################################
+    # Check a NMJson value against a specification
+    #
+    # Returns a list:
+    #	{true <new NMJson value>}
+    #	{false <error message>}
+    #
+    # Specification grammar (start symbol = <type>):
+    #   <type> ::= { type <simple> <optreq> }
+    #   	 | { array <type> <optreq> }
+    #   	 | { object { <member>+ } <optreq> }
+    #   <simple> ::= int | float | inet | inet4 | inet6
+    #              | string | bool
+    #   <member> ::= { <name> <type> <optreq> }
+    #   <optreq> ::= req | opt <nmjson-value>
+    #   <tclvalue> ::= <any Tcl value which can result from json2dict>
+    #   <name> ::= <any string suitable for a Tcl variable name>
+    #   
+    # Exemple 1:
+    #   { type int req }
+    #   => 5		ok
+    #	=> null		not ok
+    # Example 2:
+    #	{ type bool opt false}
+    #	=> true		ok
+    #	=> null		ok (default: false)
+    #	=> 5		not ok
+    # Example 3:
+    #	{ array {type int req} req}
+    #	=> [1, 2, 3]	ok
+    #	=> []		ok
+    #	=> [1, null, 3]	not ok (int cannot be null)
+    #	=> null		not ok
+    #	=> 1		not ok
+    # Example 4:
+    #	{ object { {x {type int req} req}
+    #		   {y {type bool req} opt false}
+    #		 } req
+    #	   }
+    # => {"x": 1, "y": false}	ok
+    # => {"x": 1}		ok (default: "y": false)
+    # => {"x": 1, "y": null}	not ok (y value is required)
+    # Example 5:
+    #   { object { {a {type string req} req}
+    #		   {b {type int opt -1} opt -1}
+    #		 } req
+    #	      }
+    #	=> {"a": "foo", "b": 1}		ok
+    #	=> {"a": "foo", "b": null}	ok (default: "b": -1)
+    #	=> {"a": "foo"}			ok (default: "b": -1)
+    # Example 6:
+    #	{ object {
+    #	    {a {type int req} req}
+    #	    {b {type bool req} opt 0}
+    #	    {c {type string req} req}
+    #	    {d {object {
+    #		         {x {type int req} req}
+    #		         {y {type int req} opt 6}
+    #		       } opt {x -1 y 6}
+    #		   }
+    #		}
+    #	    {e {array {type int req} opt {1 2 3}}}
+    #	    {f {array {object {
+    #			    	{g {type int} req}
+    #			    	{h {type int} req}
+    #			     } opt {g 1 h 1}
+    #			}
+    #		    } opt {{g 1 h 1} {g 2 h 2}}
+    #		}
+    #	    } req }
+    #	=> {... "d": null ...}			ok
+    #	=> {... "d": {"x": 1} ...}		ok
+    #	=> {... "d": {"x": 1, "y": null} ...}	not ok
+    #	=> {... "e": null ...}			ok (default: {1 2 3})
+    #	=> {... "e": [] ...}			ok (value: {})
+    #	=> {... "e": [1, 2, null, ...] ...}	not ok (int != null)
+    #
+    # Limitations compared to JSON specifications:
+    # - elements must have same type in an array
+    # - JSON 'null' values cannot be detected in string types
+    #
+
+    proc check-spec {j spec} {
+	try {
+	    set v [_check-spec-internal $j $spec ""]
+	    set r [list true $v]
+	} on error {msg} {
+	    # unhandled error
+	    set r [list false $msg]
+	} on 10 {msg} {
+	    # invalid spec (from application)
+	    set r [list false $msg]
+	} on 11 {msg} {
+	    # invalid JSON value from user
+	    set r [list false $msg]
+	}
+	return $r
+    }
+
+    proc _error-spec {msg ctxt} {
+	if {$ctxt eq ""} then {
+	    set ctxt "at top-level"
+	} else {
+	    set ctxt "in $ctxt"
+	}
+	return -code 10 "Internal error: invalid JSON spec ($msg) $ctxt"
+    }
+
+    proc _error-val {nmj msg ctxt} {
+	set j [nmj2str $nmj]
+	if {[string length $j] > 8} then {
+	    set j [string range $j 0 7]
+	    append j "..."
+	}
+	if {$ctxt eq ""} then {
+	    set ctxt "at top-level"
+	} else {
+	    set ctxt "in $ctxt"
+	}
+	return -code 11 "Invalid JSON value '$j' ($msg) $ctxt"
+    }
+
+    proc _check-spec-internal {j spec ctxt} {
+	lassign $spec type attr optreq defval
+
+	switch -- $optreq {
+	    opt { set opt 1 }
+	    req { set opt 0 }
+	    default {
+		_error-spec "optreq '$optreq' should be opt|req" $ctxt
+	    }
+	}
+
+	switch -- $type {
+	    type {
+		set v [_check-spec-simple $j $attr $opt $defval $ctxt]
+	    }
+	    array {
+		set v [_check-spec-array $j $attr $opt $defval "$ctxt/array"]
+	    }
+	    object {
+		set v [_check-spec-object $j $attr $opt $defval "$ctxt/object"]
+	    }
+	    default {
+		_error-spec "type '$type' should be type|array|object" $ctxt
+	    }
+	}
+
+	return $v
+    }
+
+    #
+    # Internal procedure: check value against a single type spec
+    # and return new NMJson value (changed if default value is used)
+    #
+    # j: NMJson value
+    # type: int|float|inet|...
+    # opt: 1 if optional values are authorized
+    # defval: default value if opt==1
+    # ctxt: context for error messages
+    #
+
+    proc _check-spec-simple {j type opt defval ctxt} {
+	set jt [nmjtype $j]
+	set jv [nmjval $j]
+	if {$jt eq "null"} then {
+	    if {$opt} then {
+		return $defval
+	    } else {
+		_error-val $val "cannot be null" $ctxt
+	    }
+	}
+
+	switch -- $type {
+	    int {
+		if {! ($jt eq "number" && [regexp {^-?[0-9]+$} $jv])} then {
+		    _error-val $j "not an integer" $ctxt
+		}
+	    }
+	    float {
+		if {$jt ne "number" || [catch {expr 0+$jv}]} then {
+		    _error-val $j "not a floating point number" $ctxt
+		}
+	    }
+	    inet4 {
+		if {! ($jt eq "string" && [::ip::version $jv] == 4)} then {
+		    _error-val $j "not an IPv4 address" $ctxt
+		}
+	    }
+	    inet6 {
+		if {! ($jt eq "string" && [::ip::version $jv] == 6)} then {
+		    _error-val $j "not an IPv6 address" $ctxt
+		}
+	    }
+	    inet {
+		if {! ($jt eq "string" && [::ip::version $jv] in {4 6})} then {
+		    _error-val $j "not an IP address" $ctxt
+		}
+	    }
+	    string {
+		if {$jt ne "string"} then {
+		    _error-val $j "not a string" $ctxt
+		}
+	    }
+	    bool {
+		if {$jt ne "bool"} then {
+		    append ctxt "$jv"
+		    _error-val $j "not a boolean" $ctxt
+		}
+	    }
+	    default {
+		_error-spec "type '$type' should be int|float|..." $ctxt
+	    }
+	}
+
+	return $j
+    }
+
+    proc _check-spec-array {j type opt defval ctxt} {
+	set jt [nmjtype $j]
+	set jv [nmjval $j]
+	if {$jt eq "null"} then {
+	    if {$opt} then {
+		return $defval
+	    } else {
+		_error-val $j "array required" $ctxt
+	    }
+	}
+
+	set v {}
+	foreach e $jv {
+	    lappend v [_check-spec-internal $e $type $ctxt]
+	}
+	return [list $jt $v]
+    }
+
+    proc _check-spec-object {j members opt defval ctxt} {
+	set jt [nmjtype $j]
+	set jv [nmjval $j]
+	if {$jt eq "null"} then {
+	    if {$opt} then {
+		return $defval
+	    } else {
+		_error-val $j "object required" $ctxt
+	    }
+	}
+
+	# keep a copy of old dict for error messages
+	set oldjv $jv
+	# create a new directory to return the value
+	set v [dict create]
+	# traverse the list of members
+	foreach m $members {
+	    lassign $m key type optreq defval
+	    if {[dict exists $jv $key]} then {
+		set nv [dict get $jv $key]
+		set nv [_check-spec-internal $nv $type "$ctxt/$key"]
+		dict set v $key $nv
+		dict unset jv $key
+	    } else {
+		if {$optreq eq "opt"} then {
+		    dict set v $key $defval
+		} else {
+		    _error-val $oldjv "key '$key' required" $ctxt
+		}
+	    }
+	}
+	# check if unknown members are still in the old dict
+	set dk [dict keys $jv]
+	if {[llength $dk] > 0} then {
+	    set dk [join $dk "', '"]
+	    set dk "'$dk'"
+	    _error-val $oldjv "unknown key(s) $dk" $ctxt
+	}
+	# return the new object
+	return [list $jt $v]
     }
 
     ###################################################

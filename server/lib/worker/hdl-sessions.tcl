@@ -32,18 +32,14 @@ api-handler get {/sessions} logged {
 
 api-handler post {/sessions} any {
     } {
-    # get body just to check it's a JSON body
-    ::scgi::get-body-json $_parm
-
-    set dbody [dict get $_parm "_bodydict"]
-
+    # Get JSON body and import object
     set spec {object {
 			{login		{type string req} req}
 			{password	{type string req} req}
 		    } req
 		}
-    set body [::scgi::check-json-value $dbody $spec]
-    ::scgi::import-json-object $body
+    set nmj [check-body-json $_parm $spec]
+    ::nmjson::import-object $nmj 1
 
     if {! [check-login $login]} then {
 	::scgi::serror 412 [mc "Invalid login"]
@@ -167,7 +163,7 @@ api-handler delete {/sessions} logged {
 proc check-password {dbfd login upw} {
     set success 0
 
-    set am [::::n confget "authmethod"]
+    set am [::n confget "authmethod"]
     switch $am {
 	pgsql {
 	    set qlogin [pg_quote $login]

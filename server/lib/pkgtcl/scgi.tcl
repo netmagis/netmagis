@@ -164,16 +164,13 @@ namespace eval ::scgi:: {
 	package require Thread 2.7
 	package require ncgi 1.4
 	package require ip 1.3
-	package require json 1.1
-	package require json::write 1.0
 
 	namespace eval ::scgi:: {
 	    namespace export accept \
-			    get-header get-body-json \
-			    set-header set-body set-json \
+			    get-header get-body \
+			    set-header set-body \
 			    get-cookie \
 			    set-cookie del-cookie \
-			    check-json-value import-json-object \
 			    isdebug serror output
 
 	    #
@@ -359,289 +356,13 @@ namespace eval ::scgi:: {
 		return [dget $state(reqhdrs) $key $defval]
 	    }
 
-	    proc get-body-json {parm} {
+	    # get body and optionnaly check content-type if supplied
+	    proc get-body {parm {contenttype {}}} {
 		set btype [dict get $parm "_bodytype"]
-		if {$btype ne "json"} then {
-		    serror 404 "Invalid type (JSON expected)"
+		if {$contenttype ne "" && $btype ne $contenttype} then {
+		    serror 404 "Invalid type ($contenttype expected)"
 		}
 		return [dict get $parm "_body"]
-	    }
-
-	    #
-	    # Check json value (already processed by json::json2dict)
-	    # against a specification
-	    # Raise an error if value does not conform to the specification.
-	    #
-	    # Specification grammar (start symbol = <type>):
-	    #   <type> ::= { type <simple> <optreq> }
-	    #   	 | { array <type> <optreq> }
-	    #   	 | { object { <member>+ } <optreq> }
-	    #   <simple> ::= int | float | inet | inet4 | inet6
-	    #              | string | bool
-	    #   <member> ::= { <name> <type> <optreq> }
-	    #   <optreq> ::= req | opt <tclvalue>
-	    #   <tclvalue> ::= <any Tcl value which can result from json2dict>
-	    #   <name> ::= <any string suitable for a Tcl variable name>
-	    #   
-	    # Exemple 1:
-	    #   { type int req }
-	    #   => 5		ok
-	    #	=> null		not ok
-	    # Example 2:
-	    #	{ type bool opt false}
-	    #	=> true		ok
-	    #	=> null		ok (default: false)
-	    #	=> 5		not ok
-	    # Example 3:
-	    #	{ array {type int req} req}
-	    #	=> [1, 2, 3]	ok
-	    #	=> []		ok
-	    #	=> [1, null, 3]	not ok (int cannot be null)
-	    #	=> null		not ok
-	    #	=> 1		not ok
-	    # Example 4:
-	    #	{ object { {x {type int req} req}
-	    #		   {y {type bool req} opt false}
-	    #		 } req
-	    #	   }
-	    # => {"x": 1, "y": false}	ok
-	    # => {"x": 1}		ok (default: "y": false)
-	    # => {"x": 1, "y": null}	not ok (y value is required)
-	    # Example 5:
-	    #   { object { {a {type string req} req}
-	    #		   {b {type int opt -1} opt -1}
-	    #		 } req
-	    #	      }
-	    #	=> {"a": "foo", "b": 1}		ok
-	    #	=> {"a": "foo", "b": null}	ok (default: "b": -1)
-	    #	=> {"a": "foo"}			ok (default: "b": -1)
-	    # Example 6:
-	    #	{ object {
-	    #	    {a {type int req} req}
-	    #	    {b {type bool req} opt 0}
-	    #	    {c {type string req} req}
-	    #	    {d {object {
-	    #		         {x {type int req} req}
-	    #		         {y {type int req} opt 6}
-	    #		       } opt {x -1 y 6}
-	    #		   }
-	    #		}
-	    #	    {e {array {type int req} opt {1 2 3}}}
-	    #	    {f {array {object {
-	    #			    	{g {type int} req}
-	    #			    	{h {type int} req}
-	    #			     } opt {g 1 h 1}
-	    #			}
-	    #		    } opt {{g 1 h 1} {g 2 h 2}}
-	    #		}
-	    #	    } req }
-	    #	=> {... "d": null ...}			ok
-	    #	=> {... "d": {"x": 1} ...}		ok
-	    #	=> {... "d": {"x": 1, "y": null} ...}	not ok
-	    #	=> {... "e": null ...}			ok (default: {1 2 3})
-	    #	=> {... "e": [] ...}			ok (value: {})
-	    #	=> {... "e": [1, 2, null, ...] ...}	not ok (int != null)
-	    #
-	    # Limitations compared to JSON specifications:
-	    # - elements must have same type in an array
-	    # - JSON 'null' values cannot be detected in string types
-	    #
-
-	    proc check-json-value {val spec} {
-		try {
-		    set v [check-json-internal $val $spec ""]
-		} on error {msg} {
-		    # unhandled error
-		    serror 404 $msg
-		} on 10 {msg} {
-		    # invalid spec (from application)
-		    serror 500 $msg
-		} on 11 {msg} {
-		    # invalid JSON value from user
-		    serror 404 $msg
-		}
-		return $v
-	    }
-
-	    proc error-spec {msg ctxt} {
-		if {$ctxt eq ""} then {
-		    set ctxt "at top-level"
-		} else {
-		    set ctxt "in $ctxt"
-		}
-		return -code 10 "Internal error: invalid JSON spec ($msg) $ctxt"
-	    }
-
-	    proc error-val {val msg ctxt} {
-		if {[string length $val] > 8} then {
-		    set val [string range $val 0 7]
-		    append val "..."
-		}
-		if {$ctxt eq ""} then {
-		    set ctxt "at top-level"
-		} else {
-		    set ctxt "in $ctxt"
-		}
-		return -code 11 "Invalid JSON value '$val' ($msg) $ctxt"
-	    }
-
-	    proc check-json-internal {val spec ctxt} {
-		lassign $spec type attr optreq defval
-
-		switch -- $optreq {
-		    opt { set opt 1 }
-		    req { set opt 0 }
-		    default {
-			error-spec "optreq '$optreq' should be opt|req" $ctxt
-		    }
-		}
-
-		switch -- $type {
-		    type {
-			set v [check-json-simple $val $attr $opt $defval $ctxt]
-		    }
-		    array {
-			set v [check-json-array $val $attr $opt $defval "$ctxt/array"]
-		    }
-		    object {
-			set v [check-json-object $val $attr $opt $defval "$ctxt/object"]
-		    }
-		    default {
-			error-spec "type '$type' should be type|array|object" $ctxt
-		    }
-		}
-
-		return $v
-	    }
-
-	    #
-	    # Internal procedure: check value against a single type spec
-	    # and return new value (changed if default value is used)
-	    #
-	    # val: JSON value
-	    # type: int|float|inet|...
-	    # opt: 1 if optional values are authorized
-	    # defval: default value if opt==1
-	    # ctxt: context for error messages
-	    #
-
-	    proc check-json-simple {val type opt defval ctxt} {
-		if {$val eq "null" && $type ne "string"} then {
-		    if {$opt} then {
-			return $defval
-		    } else {
-			error-val $val "cannot be null" $ctxt
-		    }
-		}
-
-		switch -- $type {
-		    int {
-			if {! [regexp {^-?[0-9]+$} $val]} then {
-			    error-val $val "not an integer" $ctxt
-			}
-		    }
-		    float {
-			if {[catch {expr 0+$val}]} then {
-			    error-val $val "not a number" $ctxt
-			}
-		    }
-		    inet4 {
-			if {[::ip::version $val] != 4} then {
-			    error-val $val "not an IPv4 address" $ctxt
-			}
-		    }
-		    inet6 {
-			if {[::ip::version $val] != 6} then {
-			    error-val $val "not an IPv6 address" $ctxt
-			}
-		    }
-		    inet {
-			if {! ([::ip::version $val] in {4 6})} then {
-			    error-val $val "not an IP address" $ctxt
-			}
-		    }
-		    string {
-			# nothing
-		    }
-		    bool {
-			if {$val ne "true" && $val ne "false"} then {
-			    append ctxt "$val"
-			    error-val $val "not a boolean" $ctxt
-			}
-		    }
-		    default {
-			error-spec "type '$type' should be int|float|..." $ctxt
-		    }
-		}
-
-		return $val
-	    }
-
-	    proc check-json-array {val type opt defval ctxt} {
-		if {$val eq "null"} then {
-		    if {$opt} then {
-			set v $defval
-		    } else {
-			error-val $val "array required" $ctxt
-		    }
-		} else {
-		    set v {}
-		    foreach e $val {
-			lappend v [check-json-internal $e $type $ctxt]
-		    }
-		}
-		return $v
-	    }
-
-	    proc check-json-object {val members opt defval ctxt} {
-		if {$val eq "null"} then {
-		    if {$opt} then {
-			set v $defval
-		    } else {
-			error-val $val "object required" $ctxt
-		    }
-		} else {
-		    # keep a copy of old dict for error messages
-		    set oldval $val
-		    # create a new directory to return the value
-		    set v [dict create]
-		    # traverse the list of members
-		    foreach m $members {
-			lassign $m key type optreq defval
-			if {[dict exists $val $key]} then {
-			    set nv [dict get $val $key]
-			    set nv [check-json-internal $nv $type "$ctxt/$key"]
-			    dict set v $key $nv
-			    dict unset val $key
-			} else {
-			    if {$optreq eq "opt"} then {
-				dict set v $key $defval
-			    } else {
-				error-val $oldval "key '$key' required" $ctxt
-			    }
-			}
-		    }
-		    # check if unknown members are still in the old dict
-		    set dk [dict keys $val]
-		    if {[llength $dk] > 0} then {
-			set dk [join $dk "', '"]
-			set dk "'$dk'"
-			error-val $oldval "unknown key(s) $dk" $ctxt
-		    }
-		}
-		return $v
-	    }
-
-	    #
-	    # Import a json object (in fact, a Tcl dict) into Tcl variables
-	    # To be safe, check-json-value should be called before to
-	    # assert that all keys are legal.
-	    #
-
-	    proc import-json-object {jdict} {
-		dict for {k v} $jdict {
-		    uplevel [list set $k $v]
-		}
 	    }
 
 	    #
@@ -726,55 +447,6 @@ namespace eval ::scgi:: {
 		append state(repbody) $data
 	    }
 
-	    proc set-json {dict} {
-		set-header Content-Type application/json
-		set-body [tcl2json $dict]
-	    }
-
-	    #
-	    # See http://rosettacode.org/wiki/JSON#Tcl
-	    #
-
-	    proc tcl2json {value} {
-		# Guess the type of the value; deep *UNSUPPORTED* magic!
-		regexp {^value is a (.*?) with a refcount} \
-		    [::tcl::unsupported::representation $value] -> type
-	     
-		switch $type {
-		    string {
-			return [json::write string $value]
-		    }
-		    dict {
-			return [json::write object {*}[
-			    dict map {k v} $value {tcl2json $v}]]
-		    }
-		    list {
-			return [json::write array {*}[lmap v $value {tcl2json $v}]]
-		    }
-		    int - double {
-			return [expr {$value}]
-		    }
-		    booleanString {
-			return [expr {$value ? "true" : "false"}]
-		    }
-		    default {
-			# Some other type; do some guessing...
-			if {$value eq "null"} {
-			    # Tcl has *no* null value at all; empty strings are semantically
-			    # different and absent variables aren't values. So cheat!
-			    return $value
-			} elseif {[string is integer -strict $value]} {
-			    return [expr {$value}]
-			} elseif {[string is double -strict $value]} {
-			    return [expr {$value}]
-			} elseif {[string is boolean -strict $value]} {
-			    return [expr {$value ? "true" : "false"}]
-			}
-			return [json::write string $value]
-		    }
-		}
-	    }
-
 	    proc output {} {
 		variable state
 
@@ -842,11 +514,6 @@ namespace eval ::scgi:: {
 			{application/x-www-form-urlencoded} {
 			    dict set parm _bodytype ""
 			    set parm [keyval $parm [split $body "&"]]
-			}
-			{application/json} {
-			    dict set parm _bodytype "json"
-			    dict set parm _body $body
-			    dict set parm _bodydict [::json::json2dict $body]
 			}
 			default {
 			    dict set parm _bodytype $ctype

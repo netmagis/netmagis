@@ -43,11 +43,6 @@ api-handler get {/gen/dhcp} genz {
 
 api-handler post {/gen/dhcp} genz {
     } {
-    # get body just to check it's a JSON body
-    ::scgi::get-body-json $_parm
-
-    set dbody [dict get $_parm "_bodydict"]
-
     set spec {array {object {
 				{name	{type string req} req}
 				{counter {type int req} req}
@@ -56,13 +51,14 @@ api-handler post {/gen/dhcp} genz {
 		    }
 		    req
 		}
-    set body [::scgi::check-json-value $dbody $spec]
+    set nmj [check-body-json $_parm $spec]
+    set nma [::nmjson::nmjval $nmj]
 
     #
     # Special case for empty list
     #
 
-    if {[llength $body] > 0} then {
+    if {[llength $nma] > 0} then {
 
 	#
 	# Lock database for an atomic operation
@@ -74,8 +70,8 @@ api-handler post {/gen/dhcp} genz {
 	    #
 
 	    set lv {}
-	    foreach jv $body {
-		::scgi::import-json-object $jv
+	    foreach jv $nma {
+		::nmjson::import-object $jv 1
 		lappend lv [pg_quote $name]
 	    }
 
@@ -91,8 +87,8 @@ api-handler post {/gen/dhcp} genz {
 
 	    set lvgen {}
 	    set update {}
-	    foreach jv $body {
-		::scgi::import-json-object $jv
+	    foreach jv $nma {
+		::nmjson::import-object $jv 1
 		set qname [pg_quote $name]
 		if {$cnt($name) eq $counter} then {
 		    lappend lvgen $qname

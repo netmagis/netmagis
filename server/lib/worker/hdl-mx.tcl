@@ -228,11 +228,6 @@ proc mx-new-and-mod {_parm orr} {
     # Check input parameters
     #
 
-    # get body just to check it's a JSON body
-    ::scgi::get-body-json $_parm
-
-    set dbody [dict get $_parm "_bodydict"]
-
     if {[::rr::found $orr]} then {
 	# update
 	set oidname [::rr::get-idname $orr]
@@ -244,8 +239,9 @@ proc mx-new-and-mod {_parm orr} {
 			    } req
 			} req
 		    }
-	set body [::scgi::check-json-value $dbody $spec]
-	set mxlist [check-mx-list $idview $body [::rr::get-mxhosts $orr]]
+	set nmj [check-body-json $_parm $spec]
+	set nma [::nmjson::nmjval $nmj]
+	set mxlist [check-mx-list $idview $nma [::rr::get-mxhosts $orr]]
 	set nidname $oidname
     } else {
 	# creation
@@ -264,8 +260,8 @@ proc mx-new-and-mod {_parm orr} {
 			    }
 			} req
 		    }
-	set body [::scgi::check-json-value $dbody $spec]
-	::scgi::import-json-object $body
+	set nmj [check-body-json $_parm $spec]
+	::nmjson::import-object $nmj 1
 
 	# Check various ids
 	if {! [::n isalloweddom $iddom]} then {

@@ -203,11 +203,6 @@ proc mailrole-new-and-mod {_parm orr} {
     # Check input parameters
     #
 
-    # get body just to check it's a JSON body
-    ::scgi::get-body-json $_parm
-
-    set dbody [dict get $_parm "_bodydict"]
-
     if {[::rr::found $orr]} then {
 	# update
 	set oidname [::rr::get-idname $orr]
@@ -228,8 +223,8 @@ proc mailrole-new-and-mod {_parm orr} {
 			} req
 		    }
     }
-    set body [::scgi::check-json-value $dbody $spec]
-    ::scgi::import-json-object $body
+    set nmj [check-body-json $_parm $spec]
+    ::nmjson::import-object $nmj 1
 
     if {$oidname == -1} then {
 	#

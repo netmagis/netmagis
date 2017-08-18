@@ -203,11 +203,6 @@ proc aliases-new-and-mod {_parm orr} {
     # Check input parameters
     #
 
-    # get body just to check it's a JSON body
-    ::scgi::get-body-json $_parm
-
-    set dbody [dict get $_parm "_bodydict"]
-
     if {[::rr::found $orr]} then {
 	# update
 	set oidname [::rr::get-idname $orr]
@@ -221,15 +216,18 @@ proc aliases-new-and-mod {_parm orr} {
 	set oidname -1
 	set spec {object {
 			    {name	{type string req} req}
-			    {iddom	{type int opt -1} req}
-			    {idview	{type int opt -1} req}
+			    {iddom	{type int opt {number -1}} req}
+			    {idview	{type int opt {number -1}} req}
 			    {idhost	{type int req} req}
 			    {ttl	{type int opt {}} req}
 			} req
 		    }
     }
-    set body [::scgi::check-json-value $dbody $spec]
-    ::scgi::import-json-object $body
+
+    # get body and check against spec
+    set nmj [check-body-json $_parm $spec]
+
+    ::nmjson::import-object $nmj 1
 
     if {$oidname == -1} then {
 	#

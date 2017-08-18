@@ -203,7 +203,7 @@ api-handler post {/admin/([a-z._]+:table)} admin {
 	::scgi::serror 403 [mc "Table %s not allowed" $table]
     }
     set idname [lindex $lid 0]
-    set qbody [pg_quote [::scgi::get-body-json $_parm]]
+    set qbody [pg_quote [get-body-json $_parm]]
 
     #
     # Get the sequence associated to the table
@@ -261,7 +261,7 @@ api-handler put {/admin/([a-z0-9._]+:table)/([^/]+:id)} admin {
 	::scgi::serror 404 [mc "Table %s not found" $table]
     }
     lassign [dict get $admin_tables $table] type lid
-    set body [::scgi::get-body-json $_parm]
+    set body [get-body-json $_parm]
     set qbody [pg_quote $body]
     set temp "temp[::thread::id]"
 

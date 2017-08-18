@@ -368,11 +368,6 @@ proc hosts-new-and-mod {_parm orr} {
     # Check input parameters
     ######################################################################
 
-    # get body just to check it's a JSON body
-    ::scgi::get-body-json $_parm
-
-    set dbody [dict get $_parm "_bodydict"]
-
     set spec {object {
 			{name		{type string req} req}
 			{iddom 		{type int opt -1} req}
@@ -388,8 +383,19 @@ proc hosts-new-and-mod {_parm orr} {
 			{addr		{array {type inet req} req} req}
 		    } req
 		}
-    set body [::scgi::check-json-value $dbody $spec]
-    ::scgi::import-json-object $body
+    set nmj [check-body-json $_parm $spec]
+    ::nmjson::import-object $nmj 1
+
+    #
+    # Traverse addr array to keep only individual addresses instead
+    # of complete NMJson elements
+    #
+
+    set naddr {}
+    foreach a $addr {
+	lappend naddr [::nmjson::nmjval $a]
+    }
+    set addr $naddr
 
     #
     # Check various ids

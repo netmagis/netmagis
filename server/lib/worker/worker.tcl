@@ -22,8 +22,9 @@ namespace import ::msgcat::*
 
 package require pgdb
 package require nmenv
-package require nmjson
 package require lconf
+package require nmjson
+package require rr
 
 array set route {
     get {}

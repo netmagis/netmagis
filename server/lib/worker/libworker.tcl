@@ -1,6 +1,34 @@
-package require Pgtcl
-package require json
-package require rr
+# package require Pgtcl
+# package require nmjson
+# package require rr
+
+#
+# Check that body is a JSON value, parse-it as a NMJson value,
+# check this value against the spec (see nmjson::check-spec)
+# and return the new NMJson value (with optional items substitued
+# with default values)
+#
+
+proc get-body-json {parm} {
+    set body [::scgi::get-body $parm "application/json"]
+    try {
+	set nmj [::nmjson::str2nmj $body]
+    } on error msg {
+	::scgi::serror 404 "Invalid JSON value"
+    }
+    return $nmj
+}
+
+proc check-body-json {parm spec} {
+    set nmj [get-body-json $parm]
+    lassign [::nmjson::check-spec $nmj $spec] res cdr
+    if {! $res} then {
+	# cdr is the error message
+	::scgi::serror 404 "Invalid JSON value ($cdr)"
+    }
+    # cdr is the new (with default substitued) nmj
+    return $cdr
+}
 
 #
 # Checks if the selected views are authorized for this user
@@ -809,17 +837,19 @@ proc check-idhost {dbfd idhost} {
 #
 # Check needed operations on the MX list
 # idview: idview to check with all new MX targets
-# jdict: new MX list, array of dict, returned by scgi::check-json-value
-#				{prio	{type int req} req}
-#				{ttl	{type int opt {}} req}
-#				{idhost	{type int req} req}
+# nmx: new MX list, list of NMJson objects:
+#			{object 
+#				{prio	{number ...}
+#				{ttl	{number ...}
+#				{idhost	{number ...}
+#			}
 # omx: list of MX records (result of ::rr::get-mxhost for the old values)
 #	{{prio idhost ttl} ...}
 # returns list {ldel lmod lnew}
 #	where each ldel, lmod, lnew is a list:
 #		{{prio ttl idhost rr} ...}
 
-proc check-mx-list {idview jdict omx} {
+proc check-mx-list {idview nmx omx} {
     # process old MX list
     foreach m $omx {
 	lassign $m oprio oidhost ottl
@@ -831,8 +861,8 @@ proc check-mx-list {idview jdict omx} {
     set lnew {}
 
     # process new MX list
-    foreach e $jdict {
-	::scgi::import-json-object $e
+    foreach e $nmx {
+	::nmjson::import-object $e 1
 
 	if {[info exists alreadyseen($idhost)]} then {
 	    ::scgi::serror 400 [mc {Duplicate MX host %d} $idhost]

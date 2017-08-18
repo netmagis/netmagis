@@ -200,10 +200,6 @@ proc dhcp-get {iddhcprange idgrp} {
 ##############################################################################
 
 proc dhcp-new {iddhcprange idgrp _parm} {
-    # get body just to check it's a JSON body
-    ::scgi::get-body-json $_parm
-
-    set dbody [dict get $_parm "_bodydict"]
 
     set spec {object {
 			{min			{type inet4 req} req}
@@ -214,8 +210,8 @@ proc dhcp-new {iddhcprange idgrp _parm} {
 			{iddhcpprof		{type int opt -1} req}
 		    } req
 		}
-    set body [::scgi::check-json-value $dbody $spec]
-    ::scgi::import-json-object $body
+    set nmj [check-body-json $_parm $spec]
+    ::nmjson::import-object $nmj 1
 
     set min_lease_time [::config get "min_lease_time"]
 
