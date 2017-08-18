@@ -1,5 +1,3 @@
-set title "Test get domain"
-
 set uri /netmagis/domains
 
 test-reset-cookie

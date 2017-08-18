@@ -1,0 +1,34 @@
+set uri /netmagis/cap
+
+test-reset-cookie
+
+#########################################################################
+set expectedjson {
+    {
+	"user": "",
+	"cap": ["any"],
+	"lang": "en"
+    }
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 10 "Get capabilities for unlogged user" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
+	"body=$body\nexpected=$expectedjson"
+
+#########################################################################
+
+
+test-set-cookie session bla
+
+#########################################################################
+set expectedjson {
+    {
+	"user": "pda",
+	"cap": ["any", "logged", "admin", "topo", "topogenl", "mac", "pgauth", "pgadmin"],
+	"lang": "en"
+    }
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 10 "Get capabilities for an admin user" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
+	"body=$body\nexpected=$expectedjson"
