@@ -206,11 +206,19 @@ api-handler post {/admin/([a-z._]+:table)} admin {
     set qbody [pg_quote [::scgi::get-body-json $_parm]]
 
     #
-    # Insert the new item in collection
+    # Get the sequence associated to the table
     #
 
-    regsub {^([^\.]+)\.([^\.]+)$} $table {\1.seq_\2} seq
+    if {$table in {dns.zone_forward dns.zone_reverse4 dns.zone_reverse6}} then {
+	set seq "dns.seq_zone"
+    } else {
+	regsub {^([^\.]+)\.([^\.]+)$} $table {\1.seq_\2} seq
+    }
     set qseq [pg_quote $seq]
+
+    #
+    # Insert the new item in collection
+    #
 
     set temp "temp[::thread::id]"
     set sql "CREATE TEMPORARY TABLE $temp ON COMMIT DROP AS
