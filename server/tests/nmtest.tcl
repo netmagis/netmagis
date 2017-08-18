@@ -70,7 +70,7 @@ proc test-call {meth uri jsonbody} {
 }
 
 # if expr is false, abort with a message including title
-proc test-assert {num title expr msg} {
+proc test-assert {num title expr} {
     global conf
 
     if {$num in $conf(allnums)} then {
@@ -92,7 +92,6 @@ proc test-assert {num title expr msg} {
 	puts stderr "\tstatus=$stcode $stmsg, cnotent-type=$ct"
 	puts stderr "\tbody=$body"
 	puts stderr "\tassert '$expr' false"
-	puts stderr "\t$msg"
 	exit 1
     }
 }

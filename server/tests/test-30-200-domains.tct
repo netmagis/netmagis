@@ -5,12 +5,12 @@ test-reset-cookie
 #########################################################################
 lassign [test-call GET $uri {}] stcode stmsg ct body
 test-assert 5 "Get domain without auth -> error" \
-	{$stcode == 401} "status=$stcode, expected=401"
+	{$stcode == 401}
 
 #########################################################################
 lassign [test-call GET $uri/1 {}] stcode stmsg ct body
-test-assert 5 "Get a single domain, without auth -> error" \
-	{$stcode == 401} "status=$stcode, expected=401"
+test-assert 6 "Get a single domain, without auth -> error" \
+	{$stcode == 401}
 
 
 test-set-cookie session bla
@@ -32,8 +32,7 @@ set expectedjson {
 }
 lassign [test-call GET $uri {}] stcode stmsg ct body
 test-assert 10 "Get all domains" \
-	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
-	"body=$body\nexpected=$expectedjson"
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
 #########################################################################
 set expectedjson {
@@ -52,8 +51,7 @@ set expectedjson {
 }
 lassign [test-call GET $uri?mailrole=1 {}] stcode stmsg ct body
 test-assert 20 "Get all domains with mailroles -> all domains" \
-	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
-	"body=$body\nexpected=$expectedjson"
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
 #########################################################################
 set expectedjson {
@@ -63,8 +61,7 @@ set expectedjson {
 lassign [test-call GET $uri?mailrole=0 {}] stcode stmsg ct body
 
 test-assert 30 "Get all domains without mailroles -> none" \
-	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
-	"body=$body\nexpected=$expectedjson"
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
 #########################################################################
 set expectedjson {
@@ -76,8 +73,7 @@ set expectedjson {
 }
 lassign [test-call GET $uri/1 {}] stcode stmsg ct body
 test-assert 40 "Get a single domain" \
-	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
-	"body=$body\nexpected=$expectedjson"
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
 #########################################################################
 set expectedjson {
@@ -89,12 +85,9 @@ set expectedjson {
 }
 lassign [test-call GET $uri/1?mailrole=1 {}] stcode stmsg ct body
 test-assert 50 "Get a single domain, with mailrole" \
-	{$stcode == 200 && [test-json $ct $body $expectedjson]} \
-	"body=$body\nexpected=$expectedjson"
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
 #########################################################################
 lassign [test-call GET $uri/1?mailrole=0 {}] stcode stmsg ct body
 test-assert 60 "Get a single domain, without mail role -> error" \
-	{$stcode == 404} "status=$stcode, expected=404"
-
-
+	{$stcode == 404}
