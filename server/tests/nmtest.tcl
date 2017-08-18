@@ -11,6 +11,9 @@ set conf(tctfile)	SET-BY-MAIN
 
 set conf(cookies)	[dict create]
 set conf(lastcall) 	"(nothing)"
+set conf(lastresult) 	"(nothing)"
+
+set conf(allnums)	{}
 
 set conf(usage) {usage: %s version conffile libdir files tctfile}
 
@@ -69,6 +72,13 @@ proc test-call {meth uri jsonbody} {
 # if expr is false, abort with a message including title
 proc test-assert {num title expr msg} {
     global conf
+
+    if {$num in $conf(allnums)} then {
+	puts stderr "Test $num already provided"
+	exit 1
+    } else {
+	lappend conf(allnums) $num
+    }
 
     set r [uplevel "expr $expr"]
     if {$r} then {
