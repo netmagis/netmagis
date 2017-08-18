@@ -1,0 +1,162 @@
+set uri /netmagis/aliases
+
+test-reset-cookie
+
+#########################################################################
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 10 "Get aliases without auth -> error" \
+	{$stcode == 401}
+
+
+test-set-cookie session bla
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "idalias": 223,
+	    "iddom": 1,
+	    "idhost": 5,
+	    "idview": 2,
+	    "name": "intranet",
+	    "ttl": -1
+	},
+	{
+	    "idalias": 232,
+	    "iddom": 1,
+	    "idhost": 231,
+	    "idview": 3,
+	    "name": "a-marvelous-product",
+	    "ttl": -1
+	},
+	{
+	    "idalias": 233,
+	    "iddom": 2,
+	    "idhost": 231,
+	    "idview": 3,
+	    "name": "www",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 100 "Get all aliases" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "idalias": 223,
+	    "iddom": 1,
+	    "idhost": 5,
+	    "idview": 2,
+	    "name": "intranet",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri?view=internal {}] stcode stmsg ct body
+test-assert 110 "Get all aliases in view internal" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "idalias": 223,
+	    "iddom": 1,
+	    "idhost": 5,
+	    "idview": 2,
+	    "name": "intranet",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri?name=intranet {}] stcode stmsg ct body
+test-assert 120 "Get all aliases with name intranet" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "idalias": 233,
+	    "iddom": 2,
+	    "idhost": 231,
+	    "idview": 3,
+	    "name": "www",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri?domain=example.org {}] stcode stmsg ct body
+test-assert 130 "Get aliases with domain=example.org" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "idalias": 223,
+	    "iddom": 1,
+	    "idhost": 5,
+	    "idview": 2,
+	    "name": "intranet",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri?idhost=5 {}] stcode stmsg ct body
+test-assert 140 "Get aliases pointing to idhost 5" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "idalias": 223,
+	    "iddom": 1,
+	    "idhost": 5,
+	    "idview": 2,
+	    "name": "intranet",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri?idhost=5&domain=example.com {}] stcode stmsg ct body
+test-assert 150 "Get aliases with multiple criteria" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set expectedjson {
+    [
+    ]
+}
+lassign [test-call GET $uri?idhost=5&domain=example.org {}] stcode stmsg ct body
+test-assert 160 "Get aliases with multiple incompatible criteria" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+
+#########################################################################
+set inputjson {
+    {
+	"name": "invalid-alias",
+	"iddom": 1,
+	"idview": 2,
+	"idhost": 231,
+	"ttl": null
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 170 "Attempt to add an alias in an inappropriate view" \
+	{$stcode == 400}
+
