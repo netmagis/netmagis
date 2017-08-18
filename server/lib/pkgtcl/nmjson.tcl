@@ -134,7 +134,7 @@ namespace eval ::nmjson {
 			dict for {k1 v1} $val1 {
 			    if {[dict exists $val2 $k1]} then {
 				set v2 [dict get $val2 $k1]
-				set r [jsoneq $v1 $v2]
+				set r [nmjeq $v1 $v2]
 				if {! $r} then {
 				    break
 				}
@@ -149,7 +149,7 @@ namespace eval ::nmjson {
 		    if {[llength $val1] == [llength $val2]} then {
 			set r 1
 			foreach v1 $val1 v2 $val2 {
-			    set r [jsoneq $v1 $v2]
+			    set r [nmjeq $v1 $v2]
 			    if {! $r} then {
 				break
 			    }
