@@ -89,7 +89,7 @@ proc test-assert {num title expr} {
 	lassign $conf(lastresult) stcode stmsg ct body
 	puts stderr "not ok $num $title"
 	puts stderr "\t$conf(lastcall)"
-	puts stderr "\tstatus=$stcode $stmsg, cnotent-type=$ct"
+	puts stderr "\tstatus=$stcode $stmsg, content-type=$ct"
 	puts stderr "\tbody=$body"
 	puts stderr "\tassert '$expr' false"
 	exit 1
