@@ -13,7 +13,7 @@ test-assert 6 "Get a single domain, without auth -> error" \
 	{$stcode == 401}
 
 
-test-set-cookie session bla
+test-set-cookie session t2-simple
 
 #########################################################################
 set expectedjson {

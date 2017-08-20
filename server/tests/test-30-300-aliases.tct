@@ -8,7 +8,7 @@ test-assert 10 "Get aliases without auth -> error" \
 	{$stcode == 401}
 
 
-test-set-cookie session bla
+test-set-cookie session t1-wheel
 
 #########################################################################
 set expectedjson {

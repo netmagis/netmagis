@@ -14,19 +14,115 @@ lassign [test-call GET $uri {}] stcode stmsg ct body
 test-assert 10 "Get capabilities for unlogged user" \
 	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
-#########################################################################
-
-
-test-set-cookie session bla
 
 #########################################################################
+test-set-cookie session t1-wheel
+
 set expectedjson {
     {
-	"user": "pda",
-	"cap": ["any", "logged", "admin", "topo", "topogenl", "mac", "pgauth", "pgadmin"],
+	"user": "u1-wheel",
+	"cap": ["any", "logged", "admin", "smtp", "ttl", "topo", "topogenl", "genz", "mac", "pgauth", "pgadmin"],
 	"lang": "en"
     }
 }
 lassign [test-call GET $uri {}] stcode stmsg ct body
-test-assert 20 "Get capabilities for an admin user" \
+test-assert 101 "Get capabilities for u1-wheel user" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+test-set-cookie session t2-simple
+
+set expectedjson {
+    {
+	"user": "u2-simple",
+	"cap": ["any", "logged", "topo", "pgauth"],
+	"lang": "en"
+    }
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 102 "Get capabilities for u2-simple user" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+test-set-cookie session t3-genz
+
+set expectedjson {
+    {
+	"user": "u3-genz",
+	"cap": ["any", "logged", "topo", "genz", "pgauth"],
+	"lang": "en"
+    }
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 103 "Get capabilities for u3-genz user" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+test-set-cookie session t4-mac
+
+set expectedjson {
+    {
+	"user": "u4-mac",
+	"cap": ["any", "logged", "topo", "mac", "pgauth"],
+	"lang": "en"
+    }
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 104 "Get capabilities for u4-mac user" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+test-set-cookie session t5-ttl
+
+set expectedjson {
+    {
+	"user": "u5-ttl",
+	"cap": ["any", "logged", "ttl", "topo", "pgauth"],
+	"lang": "en"
+    }
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 105 "Get capabilities for u5-ttl user" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+test-set-cookie session t6-smtp
+
+set expectedjson {
+    {
+	"user": "u6-smtp",
+	"cap": ["any", "logged", "smtp", "topo", "pgauth"],
+	"lang": "en"
+    }
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 106 "Get capabilities for u6-smtp user" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+test-set-cookie session t7-admin
+
+set expectedjson {
+    {
+	"user": "u7-admin",
+	"cap": ["any", "logged", "admin", "topo", "pgauth", "pgadmin"],
+	"lang": "en"
+    }
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 107 "Get capabilities for u7-admin user" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+test-set-cookie session t8-absent
+
+set expectedjson {
+    {
+	"user": "",
+	"cap": ["any"],
+	"lang": "en"
+    }
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 108 "Get capabilities for u8-absent user" \
 	{$stcode == 200 && [test-json $ct $body $expectedjson]}

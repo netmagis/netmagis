@@ -1471,7 +1471,8 @@ CREATE TABLE nmgroup (
     p_smtp integer DEFAULT 0,
     p_ttl integer DEFAULT 0,
     p_mac integer DEFAULT 0,
-    p_genl integer DEFAULT 0
+    p_genl integer DEFAULT 0,
+    p_genz integer DEFAULT 0
 );
 
 
@@ -3131,205 +3132,6 @@ apiexpire	182
 --
 
 COPY log (date, subsys, event, login, ip, msg, version, jbefore, jafter) FROM stdin;
-2016-06-21 08:51:49	netmagis	auth	pda	127.0.0.1	lastaccess pda df74ed8668878811c6e109dbce7415b6c54e51f967f6927a6343a8e22a086cc2	0	\N	\N
-2016-06-21 08:52:01	netmagis	auth	pda	127.0.0.1	lastaccess pda 72d0371a0715c9a131eedd186436e2f802af976e01a1fd41473588b72345a45a	0	\N	\N
-2016-06-21 08:52:09	netmagis	auth	pda	127.0.0.1	lastaccess pda 43bde9361e7634490150903682ef004b6be12e31baaabef4708a3eca4f42f83f	0	\N	\N
-2016-06-21 08:55:22	netmagis	auth	pda	127.0.0.1	lastaccess pda e2befe372f75a90b78ac79f576a73e3e833535b13d62774b9431218a29cb1130	0	\N	\N
-2016-06-21 14:23:51	netmagis	auth	pda	127.0.0.1	lastaccess pda 22028aa7c3d2eb99dc7bb4d9946131f718a496b029059175c1e77997d1377be7	0	\N	\N
-2016-06-21 14:38:05	netmagis	auth	pda	127.0.0.1	lastaccess pda 5e624c87ae11c309028f14378d45cf854d64a7c77700d8a36137a804e8669664	0	\N	\N
-2016-06-21 14:38:09	netmagis	auth	pda	127.0.0.1	lastaccess pda dda03b1988471f0ae41b802629c32558097f025c55bd4084925d36937664e9f1	0	\N	\N
-2016-06-21 14:38:15	netmagis	auth	pda	127.0.0.1	lastaccess pda 277cdce0a9a247248995ac2f48d0110c126a2a0ba164f0fb66f21de1a32cea46	0	\N	\N
-2016-06-21 14:39:03	netmagis	auth	pda	127.0.0.1	lastaccess pda 953af077c3acbc2a58cd0299662ef4e967496c756505ab43faaf5bd4033f1f13	0	\N	\N
-2016-06-22 08:58:39	netmagis	auth	pda	192.168.10.6	lastaccess pda 791b4c68e4e188ea01f466bb4156c018a099710e97428c3c7034ecb6968daddc	0	\N	\N
-2016-06-23 09:10:17	netmagis	auth	\N	127.0.0.1	login pda '5237925a94f4b66ff0025d9599cabd292b6ad7696ad24916a8281df581e5d76c'	0	\N	\N
-2016-06-23 09:16:21	netmagis	auth	pda	127.0.0.1	login pda '010fd433dca9dc2cfbce20b67dde9c6d694cbe78c65e58a418b1ecf582b43e3e'	0	\N	\N
-2016-06-23 09:18:09	netmagis	auth	pda	127.0.0.1	login pda 78e79f2f49715fbce0419e6eff752025d627b27682f5c37f0d46d22fd2179f4b	0	\N	\N
-2016-06-23 09:20:14	netmagis	auth	pda	127.0.0.1	logout pda 45c6632374d3bbc2b07035de819fa2f96852fcb6d7dd9ee61612660136be8e16	0	\N	\N
-2016-06-23 09:16:21	netmagis	auth	pda	127.0.0.1	lastaccess pda 010fd433dca9dc2cfbce20b67dde9c6d694cbe78c65e58a418b1ecf582b43e3e	0	\N	\N
-2016-06-23 09:10:17	netmagis	auth	pda	127.0.0.1	lastaccess pda 5237925a94f4b66ff0025d9599cabd292b6ad7696ad24916a8281df581e5d76c	0	\N	\N
-2016-06-23 09:06:32	netmagis	auth	pda	127.0.0.1	lastaccess pda 0cb11fe566586e02e7407552b4c0080c70e413d935674420f2886c7f0f0d82e7	0	\N	\N
-2016-06-23 07:58:38	netmagis	auth	pda	127.0.0.1	lastaccess pda 71cad6b1b2bc23cc9a55551514c123d9385890c45e60e868a93d36d54879e62c	0	\N	\N
-2016-06-23 07:57:25	netmagis	auth	pda	127.0.0.1	lastaccess pda 98389c9485decbc6cd947253516f2f68b2fff7e80eecf75042fc2e1d31cce76b	0	\N	\N
-2016-06-24 15:03:36	netmagis	auth	pda	127.0.0.1	login pda 6491d41703ae774540f22651f4339527ec582bd37031b11f8c8516913ba9669b	0	\N	\N
-2016-06-24 15:50:45	netmagis	auth	pda	127.0.0.1	login pda 6127da413dffa2bad2d0b1dc7e63cd87a32a58de7ee809df0f6f663108003c5a	0	\N	\N
-2016-06-24 16:36:30	netmagis	auth	pda	127.0.0.1	login pda dff9392421582e94e6d38d4e5380d832115e0da3f6f62a4e73f3d66ea6617f05	0	\N	\N
-2016-06-24 16:36:35	netmagis	auth	pda	127.0.0.1	lastaccess pda dff9392421582e94e6d38d4e5380d832115e0da3f6f62a4e73f3d66ea6617f05	0	\N	\N
-2016-06-24 15:50:45	netmagis	auth	pda	127.0.0.1	lastaccess pda 6491d41703ae774540f22651f4339527ec582bd37031b11f8c8516913ba9669b	0	\N	\N
-2016-06-24 16:36:30	netmagis	auth	pda	127.0.0.1	lastaccess pda 6127da413dffa2bad2d0b1dc7e63cd87a32a58de7ee809df0f6f663108003c5a	0	\N	\N
-2016-07-15 12:35:06	netmagis	auth	pda	127.0.0.1	login pda 6f67802cd25210e7a3442840b7174c643d0e8daea8729cc580145ee8cdfe62b1	0	\N	\N
-2016-07-15 13:03:51	netmagis	auth	pda	127.0.0.1	lastaccess pda 6f67802cd25210e7a3442840b7174c643d0e8daea8729cc580145ee8cdfe62b1	0	\N	\N
-2016-07-18 18:38:45	netmagis	auth	pda	192.168.10.6	login pda 2a4f11ca00326efc5436c9d82833a9a1c6d403b3c26cb581dea889889019966d	0	\N	\N
-2016-07-18 18:39:16	netmagis	auth	pda	127.0.0.1	lastaccess pda 2a4f11ca00326efc5436c9d82833a9a1c6d403b3c26cb581dea889889019966d	0	\N	\N
-2016-07-19 09:15:42	netmagis	auth	pda	127.0.0.1	login pda da48e6581b1ca883a18ef4ed183534cbd5b234d078a12a91a64b294240cbbbdd	0	\N	\N
-2016-07-19 15:49:06	netmagis	auth	pda	127.0.0.1	login pda 4494bbbb9e465bfa7aa269e043b0146534da932b0ad6b32d91bc7e2adf620abc	0	\N	\N
-2016-07-19 09:16:01	netmagis	auth	pda	127.0.0.1	lastaccess pda da48e6581b1ca883a18ef4ed183534cbd5b234d078a12a91a64b294240cbbbdd	0	\N	\N
-2016-07-19 17:48:12	netmagis	auth	pda	127.0.0.1	lastaccess pda 4494bbbb9e465bfa7aa269e043b0146534da932b0ad6b32d91bc7e2adf620abc	0	\N	\N
-2016-07-20 16:04:44	netmagis	auth	pda	127.0.0.1	login pda 9fdc453605b0f84404a98c48f9fdb2c1b7fd38d006d9915fd356836f52fc31ad	0	\N	\N
-2016-07-20 16:05:33	netmagis	auth	pda	127.0.0.1	login pda eccb9494dc1ebe2fdbea62e371d89aa99e3b050add16c6e0800dbdd41107c81b	0	\N	\N
-2016-07-20 16:36:28	netmagis	auth	pda	127.0.0.1	login pda d09fd1d68190d9a227414836502a08de798d2e671c8c8adc64f45e3ce1a9372f	0	\N	\N
-2016-07-20 16:55:49	netmagis	auth	pda	127.0.0.1	login pda 3ac3bead40852c7237b18caf22744509142909143598004b05cefbbaf566d327	0	\N	\N
-2016-07-20 16:55:49	netmagis	auth	pda	127.0.0.1	lastaccess pda d09fd1d68190d9a227414836502a08de798d2e671c8c8adc64f45e3ce1a9372f	0	\N	\N
-2016-07-20 16:05:33	netmagis	auth	pda	127.0.0.1	lastaccess pda 9fdc453605b0f84404a98c48f9fdb2c1b7fd38d006d9915fd356836f52fc31ad	0	\N	\N
-2016-07-20 16:55:50	netmagis	auth	pda	127.0.0.1	lastaccess pda 3ac3bead40852c7237b18caf22744509142909143598004b05cefbbaf566d327	0	\N	\N
-2016-07-20 16:36:28	netmagis	auth	pda	127.0.0.1	lastaccess pda eccb9494dc1ebe2fdbea62e371d89aa99e3b050add16c6e0800dbdd41107c81b	0	\N	\N
-2016-07-22 11:01:11	netmagis	auth	pda	127.0.0.1	login pda 3ed759bedacf558b9366610a9e8a58296d5861818a32df858a7c502f0ae4cd1f	0	\N	\N
-2016-07-22 11:01:41	netmagis	auth	pda	127.0.0.1	login pda 46722ef7c8093c05be4fda6e7e5a8d07b9e4b75e41260b3984e161ab61827985	0	\N	\N
-2016-07-22 11:04:40	netmagis	auth	pda	127.0.0.1	login pda a2ef6389ff2a2ac0a012cc01ed7a24a469619e8d09ceaa3ed965f3da9f888666	0	\N	\N
-2016-07-22 11:05:37	netmagis	auth	pda	127.0.0.1	login pda 8e1a0d3df867721f6cb738503948fef5c9881f63a743387ca4c3fa72da1574a4	0	\N	\N
-2016-07-22 11:15:17	netmagis	auth	pda	127.0.0.1	login pda 506a4a3fe03c6e89205b6d7e004a0991937654ddb5e23194f42b6f75e1c501f7	0	\N	\N
-2016-07-22 11:19:00	netmagis	auth	pda	127.0.0.1	login pda 06ad5e11512d7942f75399801754509432e4848810150e77a2334f622e31df47	0	\N	\N
-2016-07-22 11:20:49	netmagis	auth	pda	127.0.0.1	login pda e4423e8c26fb71ea352158a08922e18c3c43600f16c094997f928dfec1487118	0	\N	\N
-2016-07-22 11:21:03	netmagis	auth	pda	127.0.0.1	login pda 94913a3646d22286c616fc7ab9fbad4983332d8a82fdf5176f5f976d97b06766	0	\N	\N
-2016-07-22 11:21:10	netmagis	auth	pda	127.0.0.1	login pda 8ca21c45b4631e6a065abb1436321e654e0ae4b29074d56993be0bb368e79007	0	\N	\N
-2016-07-22 11:21:40	netmagis	auth	pda	127.0.0.1	login pda 7f96b837850ee7a7514b84a280a81f427fde99dbc3feaefe0aac26cfe6307429	0	\N	\N
-2016-07-22 11:21:46	netmagis	auth	pda	127.0.0.1	login pda 49da67f9227332ea6a00351e9ccde96fc93f26fca114e39cd6286a420cd82fed	0	\N	\N
-2016-07-22 11:22:00	netmagis	auth	pda	127.0.0.1	login pda 7fdb3fd075bc4d923825598dfcf9d5064e651d1fbf53ff458931f350376438e2	0	\N	\N
-2016-07-22 11:31:09	netmagis	auth	pda	127.0.0.1	login pda 180988ffada9dab31eb47f0a9ce1cd0cf60f175acb1e6f8cbeb54db7264196c1	0	\N	\N
-2016-07-22 11:37:56	netmagis	auth	pda	127.0.0.1	login pda 6053f84907e0e14ece5609048d5e7d2fdfe9b560dbb69f5cf7bec53e6d0cbede	0	\N	\N
-2016-07-22 11:38:33	netmagis	auth	pda	127.0.0.1	login pda 62fa37ce8855ed91c2b9c423c4351b0f289f568b330c5323437349197d6fa8e7	0	\N	\N
-2016-07-22 12:49:58	netmagis	auth	pda	127.0.0.1	login pda 347325582ee0aa23622aabc2a2b3ba3c57325af2a6e027e6840f349a3e3500a7	0	\N	\N
-2016-07-22 14:47:46	netmagis	auth	pda	127.0.0.1	login pda 09ac34c399616e494c50e64b5e429dad852eae42699e68545a761559337c19ee	0	\N	\N
-2016-07-22 11:04:40	netmagis	auth	pda	127.0.0.1	lastaccess pda a2ef6389ff2a2ac0a012cc01ed7a24a469619e8d09ceaa3ed965f3da9f888666	0	\N	\N
-2016-07-22 11:05:37	netmagis	auth	pda	127.0.0.1	lastaccess pda 8e1a0d3df867721f6cb738503948fef5c9881f63a743387ca4c3fa72da1574a4	0	\N	\N
-2016-07-22 13:57:50	netmagis	auth	pda	127.0.0.1	lastaccess pda 62fa37ce8855ed91c2b9c423c4351b0f289f568b330c5323437349197d6fa8e7	0	\N	\N
-2016-07-22 11:15:18	netmagis	auth	pda	127.0.0.1	lastaccess pda 506a4a3fe03c6e89205b6d7e004a0991937654ddb5e23194f42b6f75e1c501f7	0	\N	\N
-2016-07-22 11:19:00	netmagis	auth	pda	127.0.0.1	lastaccess pda 06ad5e11512d7942f75399801754509432e4848810150e77a2334f622e31df47	0	\N	\N
-2016-07-22 11:20:49	netmagis	auth	pda	127.0.0.1	lastaccess pda e4423e8c26fb71ea352158a08922e18c3c43600f16c094997f928dfec1487118	0	\N	\N
-2016-07-22 11:21:03	netmagis	auth	pda	127.0.0.1	lastaccess pda 94913a3646d22286c616fc7ab9fbad4983332d8a82fdf5176f5f976d97b06766	0	\N	\N
-2016-07-22 11:21:10	netmagis	auth	pda	127.0.0.1	lastaccess pda 8ca21c45b4631e6a065abb1436321e654e0ae4b29074d56993be0bb368e79007	0	\N	\N
-2016-07-22 11:21:40	netmagis	auth	pda	127.0.0.1	lastaccess pda 7f96b837850ee7a7514b84a280a81f427fde99dbc3feaefe0aac26cfe6307429	0	\N	\N
-2016-07-22 11:21:46	netmagis	auth	pda	127.0.0.1	lastaccess pda 49da67f9227332ea6a00351e9ccde96fc93f26fca114e39cd6286a420cd82fed	0	\N	\N
-2016-07-22 15:09:16	netmagis	auth	pda	127.0.0.1	lastaccess pda 09ac34c399616e494c50e64b5e429dad852eae42699e68545a761559337c19ee	0	\N	\N
-2016-07-22 11:21:56	netmagis	auth	pda	127.0.0.1	lastaccess pda 46722ef7c8093c05be4fda6e7e5a8d07b9e4b75e41260b3984e161ab61827985	0	\N	\N
-2016-07-22 11:22:00	netmagis	auth	pda	127.0.0.1	lastaccess pda 7fdb3fd075bc4d923825598dfcf9d5064e651d1fbf53ff458931f350376438e2	0	\N	\N
-2016-07-22 11:31:09	netmagis	auth	pda	127.0.0.1	lastaccess pda 180988ffada9dab31eb47f0a9ce1cd0cf60f175acb1e6f8cbeb54db7264196c1	0	\N	\N
-2016-07-22 11:37:56	netmagis	auth	pda	127.0.0.1	lastaccess pda 6053f84907e0e14ece5609048d5e7d2fdfe9b560dbb69f5cf7bec53e6d0cbede	0	\N	\N
-2016-07-22 11:01:41	netmagis	auth	pda	127.0.0.1	lastaccess pda 3ed759bedacf558b9366610a9e8a58296d5861818a32df858a7c502f0ae4cd1f	0	\N	\N
-2016-07-22 12:49:57	netmagis	auth	pda	127.0.0.1	lastaccess pda 347325582ee0aa23622aabc2a2b3ba3c57325af2a6e027e6840f349a3e3500a7	0	\N	\N
-2016-07-25 09:00:56	netmagis	auth	pda	127.0.0.1	login pda 814c89195b684630e517031fd8c5908b610a350c4c8f7e3f5ad591402b66a8b4	0	\N	\N
-2016-07-25 09:02:11	netmagis	auth	pda	127.0.0.1	login pda ef86e618e62265e2f8c03599d9b1f74ad6e3bfdecbe7d4a022f24a12f86be82d	0	\N	\N
-2016-07-25 10:54:34	netmagis	auth	pda	127.0.0.1	login pda 37827353a069395cfd28cd77a8ac354550473071b9a1478ab6fc32102c7c3e97	0	\N	\N
-2016-07-25 11:25:16	netmagis	auth	pda	127.0.0.1	login pda 8ac6b9d04add5041fa35afe24b55d97b3756f4116c3b755fd1dea7ea6e0eb664	0	\N	\N
-2016-07-25 11:28:32	netmagis	auth	pda	127.0.0.1	login pda 30245c064c81987afff7ad2ad4bdb4398715b67af93af77842ae298f85841a7e	0	\N	\N
-2016-07-25 13:09:49	netmagis	auth	pda	127.0.0.1	login pda 71d01be7cda49d6e3753f13145eda1d790b32a80fb1838d69854e392ca5c752d	0	\N	\N
-2016-07-25 13:36:34	netmagis	auth	pda	127.0.0.1	login pda d53cf3ab8245f98e297ddcda65c9934583d16609255ba999afe4e5f3a38adc79	0	\N	\N
-2016-07-25 15:50:13	netmagis	auth	pda	127.0.0.1	login pda 1ead67b3c034e9ea046b8fe9261c570021d4ddcfdafcff502149b329d5d77845	0	\N	\N
-2016-07-25 09:02:11	netmagis	auth	pda	192.168.10.6	lastaccess pda 814c89195b684630e517031fd8c5908b610a350c4c8f7e3f5ad591402b66a8b4	0	\N	\N
-2016-07-25 19:06:28	netmagis	auth	pda	192.168.10.6	login pda 226027e33629f18bee4d854a124dbfc966ad6335d2eed713b8f946415c539529	0	\N	\N
-2016-07-25 15:50:19	netmagis	auth	pda	127.0.0.1	lastaccess pda 1ead67b3c034e9ea046b8fe9261c570021d4ddcfdafcff502149b329d5d77845	0	\N	\N
-2016-07-25 13:36:34	netmagis	auth	pda	127.0.0.1	lastaccess pda 71d01be7cda49d6e3753f13145eda1d790b32a80fb1838d69854e392ca5c752d	0	\N	\N
-2016-07-25 11:31:18	netmagis	auth	pda	127.0.0.1	lastaccess pda 30245c064c81987afff7ad2ad4bdb4398715b67af93af77842ae298f85841a7e	0	\N	\N
-2016-07-25 10:55:53	netmagis	auth	pda	127.0.0.1	lastaccess pda 37827353a069395cfd28cd77a8ac354550473071b9a1478ab6fc32102c7c3e97	0	\N	\N
-2016-07-25 19:45:42	netmagis	auth	pda	127.0.0.1	lastaccess pda 226027e33629f18bee4d854a124dbfc966ad6335d2eed713b8f946415c539529	0	\N	\N
-2016-07-25 10:43:27	netmagis	auth	pda	127.0.0.1	lastaccess pda ef86e618e62265e2f8c03599d9b1f74ad6e3bfdecbe7d4a022f24a12f86be82d	0	\N	\N
-2016-07-25 15:31:58	netmagis	auth	pda	127.0.0.1	lastaccess pda d53cf3ab8245f98e297ddcda65c9934583d16609255ba999afe4e5f3a38adc79	0	\N	\N
-2016-07-25 15:50:13	netmagis	auth	pda	127.0.0.1	lastaccess pda 8ac6b9d04add5041fa35afe24b55d97b3756f4116c3b755fd1dea7ea6e0eb664	0	\N	\N
-2016-07-26 11:19:06	netmagis	auth	pda	127.0.0.1	login pda d9a548ead848afa2db565d2c4a9cb1704793df59168fee79b0688b5c3564f37f	0	\N	\N
-2016-07-26 12:33:17	netmagis	auth	pda	127.0.0.1	lastaccess pda d9a548ead848afa2db565d2c4a9cb1704793df59168fee79b0688b5c3564f37f	0	\N	\N
-2016-07-28 11:45:56	netmagis	auth	pda	127.0.0.1	login pda f6366fdd6626817ad36eb1f3f5936d1653ab6875854f53f34c45bb07c7cd7cab	0	\N	\N
-2016-07-28 13:11:20	netmagis	auth	pda	127.0.0.1	login pda ec77ac69ec66f902e361c8880f34fb3b2cd82d4470382f6b49d795b0c5852674	0	\N	\N
-2016-07-28 13:51:42	netmagis	auth	pda	127.0.0.1	login pda 888208e2a8173eb3659cd820fc8445cd7b9158c82129f0301dba31a213ce4867	0	\N	\N
-2016-07-28 14:32:30	netmagis	auth	pda	127.0.0.1	login pda f506678a71e5eb0206f3668ee188b63602a443c4cd8dbafe63859e4792fce0b6	0	\N	\N
-2016-07-28 14:46:10	netmagis	auth	pda	127.0.0.1	login pda fe023bc186dcde7028929d95c4ed6ce2974b299741570cd897c87f893f6e6083	0	\N	\N
-2016-07-28 16:04:25	netmagis	auth	pda	127.0.0.1	login pda 2dca56e6d1d31a43181ddc1331b4652d0bbaa706a5b8958806b940fa3437bdfd	0	\N	\N
-2016-07-28 16:11:40	netmagis	auth	pda	127.0.0.1	login pda ccfac52ad613060d65a8a6cf68ea5f59916a50cc42253ca773b0e1d1966400cc	0	\N	\N
-2016-07-28 16:24:36	netmagis	auth	pda	127.0.0.1	login pda 018d37376176ec11d936fd491ec5d16bcd4ac65338bbbd35fa91681d916f6759	0	\N	\N
-2016-07-28 14:31:09	netmagis	auth	pda	127.0.0.1	lastaccess pda 888208e2a8173eb3659cd820fc8445cd7b9158c82129f0301dba31a213ce4867	0	\N	\N
-2016-07-28 15:55:53	netmagis	auth	pda	127.0.0.1	lastaccess pda fe023bc186dcde7028929d95c4ed6ce2974b299741570cd897c87f893f6e6083	0	\N	\N
-2016-07-28 16:04:25	netmagis	auth	pda	127.0.0.1	lastaccess pda 2dca56e6d1d31a43181ddc1331b4652d0bbaa706a5b8958806b940fa3437bdfd	0	\N	\N
-2016-07-28 13:15:59	netmagis	auth	pda	127.0.0.1	lastaccess pda ec77ac69ec66f902e361c8880f34fb3b2cd82d4470382f6b49d795b0c5852674	0	\N	\N
-2016-07-28 16:23:43	netmagis	auth	pda	127.0.0.1	lastaccess pda ccfac52ad613060d65a8a6cf68ea5f59916a50cc42253ca773b0e1d1966400cc	0	\N	\N
-2016-07-28 14:45:30	netmagis	auth	pda	127.0.0.1	lastaccess pda f506678a71e5eb0206f3668ee188b63602a443c4cd8dbafe63859e4792fce0b6	0	\N	\N
-2016-07-28 11:50:04	netmagis	auth	pda	127.0.0.1	lastaccess pda f6366fdd6626817ad36eb1f3f5936d1653ab6875854f53f34c45bb07c7cd7cab	0	\N	\N
-2016-07-28 16:28:03	netmagis	auth	pda	127.0.0.1	lastaccess pda 018d37376176ec11d936fd491ec5d16bcd4ac65338bbbd35fa91681d916f6759	0	\N	\N
-2016-07-29 09:14:24	netmagis	auth	pda	127.0.0.1	login pda 409d89682b4657ed1b8474b1036583bc47532f33df03be828d16336e192b7f75	0	\N	\N
-2016-07-29 11:35:43	netmagis	auth	pda	127.0.0.1	login pda 599502d6b46599db0d174e0cae027c1b249d01c9bae7ebb36213db25fbbd6b5c	0	\N	\N
-2016-07-29 13:57:30	netmagis	auth	pda	127.0.0.1	login pda 224ce4e619c788f73f941394148787bd68e7a578e1a244cc5beced74681ae6fe	0	\N	\N
-2016-07-29 14:12:02	netmagis	auth	pda	127.0.0.1	login pda 1603b9a3e8a1cef83333ed7e1ac4921c0305a7ac1c5110c6aaeb800eddebecad	0	\N	\N
-2016-07-29 16:00:20	netmagis	auth	pda	127.0.0.1	login pda a402e1044db40b002216438a10dbdb9ad65bc49ea51bf851c144c783fb21d1c8	0	\N	\N
-2016-07-29 11:34:31	netmagis	auth	pda	127.0.0.1	lastaccess pda 409d89682b4657ed1b8474b1036583bc47532f33df03be828d16336e192b7f75	0	\N	\N
-2016-07-29 14:12:20	netmagis	auth	pda	127.0.0.1	lastaccess pda 1603b9a3e8a1cef83333ed7e1ac4921c0305a7ac1c5110c6aaeb800eddebecad	0	\N	\N
-2016-07-29 16:40:19	netmagis	auth	pda	127.0.0.1	lastaccess pda a402e1044db40b002216438a10dbdb9ad65bc49ea51bf851c144c783fb21d1c8	0	\N	\N
-2016-07-29 15:00:55	netmagis	auth	pda	127.0.0.1	lastaccess pda 224ce4e619c788f73f941394148787bd68e7a578e1a244cc5beced74681ae6fe	0	\N	\N
-2016-07-29 13:56:37	netmagis	auth	pda	127.0.0.1	lastaccess pda 599502d6b46599db0d174e0cae027c1b249d01c9bae7ebb36213db25fbbd6b5c	0	\N	\N
-2016-08-18 15:20:03	netmagis	auth	pda	127.0.0.1	login pda a243051dc87c02f87e8892b3aafbbe6c59a7f135abec2b0579047f4aeb562986	0	\N	\N
-2016-08-18 16:01:12	netmagis	auth	pda	127.0.0.1	login pda 2631a27a8183c6671bb6127a2363b25fda175c008291a20edd3f1981c0c220a8	0	\N	\N
-2016-08-18 16:01:12	netmagis	auth	pda	127.0.0.1	lastaccess pda a243051dc87c02f87e8892b3aafbbe6c59a7f135abec2b0579047f4aeb562986	0	\N	\N
-2016-08-18 16:22:24	netmagis	auth	pda	127.0.0.1	lastaccess pda 2631a27a8183c6671bb6127a2363b25fda175c008291a20edd3f1981c0c220a8	0	\N	\N
-2016-08-19 11:20:30	netmagis	auth	pda	127.0.0.1	login pda 010e61b93ad95c16f02f944b89afbf378a1eb5d5e9ae1851692038ffce412288	0	\N	\N
-2016-08-19 13:03:57	netmagis	auth	pda	127.0.0.1	login pda aa3bf33e62aacb819df3c91dbad545482ba2ecaeb26c83810e127bf4306ce227	0	\N	\N
-2016-08-19 14:56:41	netmagis	auth	pda	127.0.0.1	login pda fe4f47ee7a1b1f84e52199aa3020de7141816d5e62107756e7a310abdd50944e	0	\N	\N
-2016-08-19 15:29:26	netmagis	auth	pda	127.0.0.1	login pda 4893858a3d9e1720525211de196790c95b95a13b38a024506027589cffa60c71	0	\N	\N
-2016-08-19 15:29:26	netmagis	auth	pda	127.0.0.1	lastaccess pda aa3bf33e62aacb819df3c91dbad545482ba2ecaeb26c83810e127bf4306ce227	0	\N	\N
-2016-08-19 14:56:41	netmagis	auth	pda	127.0.0.1	lastaccess pda 010e61b93ad95c16f02f944b89afbf378a1eb5d5e9ae1851692038ffce412288	0	\N	\N
-2016-08-19 15:37:40	netmagis	auth	pda	127.0.0.1	lastaccess pda fe4f47ee7a1b1f84e52199aa3020de7141816d5e62107756e7a310abdd50944e	0	\N	\N
-2016-08-19 15:34:21	netmagis	auth	pda	127.0.0.1	lastaccess pda 4893858a3d9e1720525211de196790c95b95a13b38a024506027589cffa60c71	0	\N	\N
-2016-08-22 10:12:30	netmagis	auth	pda	127.0.0.1	login pda 1bca51dfbfd4e34cff7c03868bd90750de05e547e3e4b4a951c531fd151d4766	0	\N	\N
-2016-08-22 15:06:22	netmagis	auth	pda	192.168.10.6	login pda 4d1d083a7453e40182ba8129297bcd221cb02b4db94c8b90c12c3a4e51c906bc	0	\N	\N
-2016-08-22 10:35:32	netmagis	auth	pda	127.0.0.1	lastaccess pda 1bca51dfbfd4e34cff7c03868bd90750de05e547e3e4b4a951c531fd151d4766	0	\N	\N
-2016-08-22 18:42:11	netmagis	auth	pda	127.0.0.1	lastaccess pda 4d1d083a7453e40182ba8129297bcd221cb02b4db94c8b90c12c3a4e51c906bc	0	\N	\N
-2016-08-24 14:30:36	netmagis	auth	pda	127.0.0.1	login pda 4b4257c0da53fab123a5a2368092b01564b8d848f4fd55628a6eeb4bf33068a0	0	\N	\N
-2016-08-24 14:32:04	netmagis	auth	pda	127.0.0.1	login pda 10bac4501db0e4db9fbcd2c2012231d162f2f041d8a8bae97393d766ac73ba83	0	\N	\N
-2016-08-24 16:56:52	netmagis	auth	pda	127.0.0.1	login pda 9d7bfc2fc28e34b5eaae3e91828c1fb5f5708cb51ffbcf6e899f580332e6ac76	0	\N	\N
-2016-08-24 16:57:04	netmagis	auth	pda	127.0.0.1	lastaccess pda 9d7bfc2fc28e34b5eaae3e91828c1fb5f5708cb51ffbcf6e899f580332e6ac76	0	\N	\N
-2016-08-24 16:57:15	netmagis	auth	pda	127.0.0.1	lastaccess pda 10bac4501db0e4db9fbcd2c2012231d162f2f041d8a8bae97393d766ac73ba83	0	\N	\N
-2016-08-24 16:56:52	netmagis	auth	pda	127.0.0.1	lastaccess pda 4b4257c0da53fab123a5a2368092b01564b8d848f4fd55628a6eeb4bf33068a0	0	\N	\N
-2016-08-25 13:36:44	netmagis	auth	pda	127.0.0.1	login pda 3e4edda774673397e6c4241f75e636bc42347b4205d45f41e177941a4ebcc350	0	\N	\N
-2016-08-25 14:13:07	netmagis	auth	pda	127.0.0.1	login pda 0a56d501be9a9bc22c859411d011e5c2067aad85f619dd78cc992cfe9a93b728	0	\N	\N
-2016-08-25 15:18:58	netmagis	auth	pda	127.0.0.1	login pda 02b3814ef950f09cbfca5b1937c3fe223da2145e9e1ee02be240738ac97feae3	0	\N	\N
-2016-08-25 16:36:26	netmagis	auth	pda	127.0.0.1	lastaccess pda 02b3814ef950f09cbfca5b1937c3fe223da2145e9e1ee02be240738ac97feae3	0	\N	\N
-2016-08-25 14:22:57	netmagis	auth	pda	127.0.0.1	lastaccess pda 0a56d501be9a9bc22c859411d011e5c2067aad85f619dd78cc992cfe9a93b728	0	\N	\N
-2016-08-25 15:18:58	netmagis	auth	pda	127.0.0.1	lastaccess pda 3e4edda774673397e6c4241f75e636bc42347b4205d45f41e177941a4ebcc350	0	\N	\N
-2016-08-28 18:12:54	netmagis	auth	pda	192.168.10.6	login pda 0b4e72ec17b671d3162b3d094001292eeada2a8a513649537de2b443e2098aff	0	\N	\N
-2016-08-28 19:48:53	netmagis	auth	pda	192.168.10.6	login pda 0934df75033308e17608c7d2abc445559c71aaaa01a4076a5fef53fc0fefd23d	0	\N	\N
-2016-08-28 20:53:52	netmagis	auth	pda	192.168.10.6	lastaccess pda 0934df75033308e17608c7d2abc445559c71aaaa01a4076a5fef53fc0fefd23d	0	\N	\N
-2016-08-28 19:48:53	netmagis	auth	pda	192.168.10.6	lastaccess pda 0b4e72ec17b671d3162b3d094001292eeada2a8a513649537de2b443e2098aff	0	\N	\N
-2016-08-31 18:46:46	netmagis	auth	pda	192.168.10.6	login pda 56f3f96921445cedc180ea2f59e3ca0654833e11bd38308c0022ea9da0893731	0	\N	\N
-2016-08-31 19:58:56	netmagis	auth	pda	127.0.0.1	lastaccess pda 56f3f96921445cedc180ea2f59e3ca0654833e11bd38308c0022ea9da0893731	0	\N	\N
-2016-09-01 16:00:47	netmagis	auth	pda	127.0.0.1	login pda 53f96380e1a833ff77ee73efd2084fb89faaac84e73a18728352c1619fc2efde	0	\N	\N
-2016-09-01 16:01:19	netmagis	auth	pda	127.0.0.1	lastaccess pda 53f96380e1a833ff77ee73efd2084fb89faaac84e73a18728352c1619fc2efde	0	\N	\N
-2016-09-02 08:36:04	netmagis	auth	pda	127.0.0.1	login pda c3a2047e17865e69c2e73c8ffafd7745171231abcabe62f5477f051260845bc6	0	\N	\N
-2016-09-02 13:35:52	netmagis	auth	pda	127.0.0.1	login pda 85054c0e37381fc8b907ef3d16578594c2d3aacb5c1fee7978e04239c56e724e	0	\N	\N
-2016-09-02 15:35:58	netmagis	auth	pda	127.0.0.1	login pda c6faa2663983e72c59ed8ed0aaca64323a7fa09171b16697f3be2b105c3b5ec6	0	\N	\N
-2016-09-02 08:45:33	netmagis	auth	pda	127.0.0.1	lastaccess pda c3a2047e17865e69c2e73c8ffafd7745171231abcabe62f5477f051260845bc6	0	\N	\N
-2016-09-02 15:37:54	netmagis	auth	pda	127.0.0.1	lastaccess pda c6faa2663983e72c59ed8ed0aaca64323a7fa09171b16697f3be2b105c3b5ec6	0	\N	\N
-2016-09-09 11:12:27	netmagis	auth	pda	127.0.0.1	login pda 2ac73fa73b48995bdd882c8f14028a0911891fd0e5d93320d5ee1767c00f24d5	0	\N	\N
-2016-09-09 14:52:30	netmagis	auth	pda	127.0.0.1	login pda 0cbc28a699fe55ae9ad98724c38361e5e749466a62e132c4fd24ba8e20e5b403	0	\N	\N
-2016-09-09 15:04:54	netmagis	auth	pda	127.0.0.1	login pda f0bf0b7bc35c02d0efeacf1cecd61b42af07792657e2dbe1e72b8d0514f60cb8	0	\N	\N
-2016-09-09 16:32:03	netmagis	auth	pda	127.0.0.1	login pda 42f0e5e9c798ec9650c12a115fbadbd33ed12d70b33e7e33446fac5a3821b8e2	0	\N	\N
-2016-09-09 17:08:51	netmagis	auth	pda	127.0.0.1	login pda 627c7a0ad7674f2c43752d913310a89220b26c674c9269d71d181e7535a3a46f	0	\N	\N
-2016-09-09 16:31:26	netmagis	auth	pda	192.168.10.6	lastaccess pda f0bf0b7bc35c02d0efeacf1cecd61b42af07792657e2dbe1e72b8d0514f60cb8	0	\N	\N
-2016-09-09 11:55:24	netmagis	auth	pda	192.168.10.6	lastaccess pda 2ac73fa73b48995bdd882c8f14028a0911891fd0e5d93320d5ee1767c00f24d5	0	\N	\N
-2016-09-09 17:18:27	netmagis	auth	pda	192.168.10.6	lastaccess pda 627c7a0ad7674f2c43752d913310a89220b26c674c9269d71d181e7535a3a46f	0	\N	\N
-2016-09-09 16:32:10	netmagis	auth	pda	192.168.10.6	lastaccess pda 42f0e5e9c798ec9650c12a115fbadbd33ed12d70b33e7e33446fac5a3821b8e2	0	\N	\N
-2016-09-09 15:04:38	netmagis	auth	pda	192.168.10.6	lastaccess pda 0cbc28a699fe55ae9ad98724c38361e5e749466a62e132c4fd24ba8e20e5b403	0	\N	\N
-2016-09-12 18:12:53	netmagis	auth	pda	192.168.10.6	login pda cf29414fa865f51e24561e05f277c443ff6ec1e2fb3045dfff7dc6481ccc2d5e	0	\N	\N
-2016-09-12 18:13:11	netmagis	auth	pda	127.0.0.1	lastaccess pda cf29414fa865f51e24561e05f277c443ff6ec1e2fb3045dfff7dc6481ccc2d5e	0	\N	\N
-2016-09-13 11:51:51	netmagis	auth	pda	127.0.0.1	login pda 223d6602418aec71edca6fcc72ed9fa23c0938dabd94d904fc15227147a9a199	0	\N	\N
-2016-09-13 15:22:05	netmagis	auth	pda	127.0.0.1	lastaccess pda 223d6602418aec71edca6fcc72ed9fa23c0938dabd94d904fc15227147a9a199	0	\N	\N
-2016-10-26 13:16:40	netmagis	auth	pda	127.0.0.1	login pda 13684b1f98b49ebc7db7978cd14bdb447e8be0386870bc23fe28078ab689aaaf	0	\N	\N
-2016-10-26 13:16:44	netmagis	auth	pda	127.0.0.1	login pda b4a9c96eac40e6e5702bd0c2f20a254de3da971d152bdc0ae6ca6640bb3d283a	0	\N	\N
-2016-10-26 13:19:39	netmagis	auth	pda	127.0.0.1	login pda d6dda6a8d598aad925e84f12b1267882d930541bc288f9fd557aeaeba776d488	0	\N	\N
-2016-10-26 13:20:29	netmagis	auth	pda	127.0.0.1	login pda b067878e7098bf434b4ab1adf90cad655b02929f9c65d07aeb9bf328aeb662db	0	\N	\N
-2016-10-26 13:21:16	netmagis	auth	pda	127.0.0.1	login pda c2ec305f32fda93cd2d7c06f4aec93e5b304d172b40e0aa0106832a802498f4d	0	\N	\N
-2016-10-26 13:23:39	netmagis	auth	pda	127.0.0.1	login pda ca342a5c7f38f37d4bd7a62343ca888e57af2ca8aac8eb6b4ecc88353228acc0	0	\N	\N
-2016-10-26 16:43:31	netmagis	auth	pda	127.0.0.1	login pda caad2a060b0c75bf3fee1d4d679c663693043c226b2c2975958a0d728faefc83	0	\N	\N
-2016-10-26 16:45:11	netmagis	auth	pda	127.0.0.1	login pda 6400a4e0b7691acafbfbc03ad2ab887dd153e2624916ab4e2f93c469bacceab1	0	\N	\N
-2016-10-26 16:51:43	netmagis	auth	pda	127.0.0.1	login pda ced6bedef57e4c0d10a4509ffb2fa3728b48ce8505c3e08b8eeb9d398933910a	0	\N	\N
-2016-10-26 16:51:37	netmagis	auth	pda	127.0.0.1	lastaccess pda 6400a4e0b7691acafbfbc03ad2ab887dd153e2624916ab4e2f93c469bacceab1	0	\N	\N
-2016-10-26 13:24:30	netmagis	auth	pda	127.0.0.1	lastaccess pda d6dda6a8d598aad925e84f12b1267882d930541bc288f9fd557aeaeba776d488	0	\N	\N
-2016-10-26 16:41:37	netmagis	auth	pda	127.0.0.1	lastaccess pda ca342a5c7f38f37d4bd7a62343ca888e57af2ca8aac8eb6b4ecc88353228acc0	0	\N	\N
-2016-10-26 16:43:31	netmagis	auth	pda	127.0.0.1	lastaccess pda caad2a060b0c75bf3fee1d4d679c663693043c226b2c2975958a0d728faefc83	0	\N	\N
-2016-10-26 13:16:40	netmagis	auth	pda	127.0.0.1	lastaccess pda 13684b1f98b49ebc7db7978cd14bdb447e8be0386870bc23fe28078ab689aaaf	0	\N	\N
-2016-10-26 13:16:44	netmagis	auth	pda	127.0.0.1	lastaccess pda b4a9c96eac40e6e5702bd0c2f20a254de3da971d152bdc0ae6ca6640bb3d283a	0	\N	\N
-2016-10-26 17:29:19	netmagis	auth	pda	127.0.0.1	lastaccess pda ced6bedef57e4c0d10a4509ffb2fa3728b48ce8505c3e08b8eeb9d398933910a	0	\N	\N
-2016-10-26 13:20:30	netmagis	auth	pda	127.0.0.1	lastaccess pda b067878e7098bf434b4ab1adf90cad655b02929f9c65d07aeb9bf328aeb662db	0	\N	\N
-2016-10-26 13:21:16	netmagis	auth	pda	127.0.0.1	lastaccess pda c2ec305f32fda93cd2d7c06f4aec93e5b304d172b40e0aa0106832a802498f4d	0	\N	\N
-2016-10-27 08:58:26	netmagis	auth	pda	127.0.0.1	login pda 44d909d779ea1aa636575cb3ebb6b9f4c62b40b96ae2418f3ef5edf8f5fdbcd0	0	\N	\N
-2016-10-27 09:25:21	netmagis	auth	pda	127.0.0.1	login pda bfe1c32729ce60ef38ab9ecb4d2f84b23fe26af1cfba0cba8f0b2b14ca489d9a	0	\N	\N
-2016-10-27 14:25:15	netmagis	auth	pda	127.0.0.1	lastaccess pda bfe1c32729ce60ef38ab9ecb4d2f84b23fe26af1cfba0cba8f0b2b14ca489d9a	0	\N	\N
-2016-10-27 09:25:09	netmagis	auth	pda	127.0.0.1	lastaccess pda 44d909d779ea1aa636575cb3ebb6b9f4c62b40b96ae2418f3ef5edf8f5fdbcd0	0	\N	\N
-2016-10-28 08:12:20	netmagis	auth	pda	127.0.0.1	login pda 9e504bbd5aa4995aa99bf8199a1a456382b04bce8ad7a66dcc730b9eee208ef5	0	\N	\N
 \.
 
 
@@ -3337,9 +3139,14 @@ COPY log (date, subsys, event, login, ip, msg, version, jbefore, jafter) FROM st
 -- Data for Name: nmgroup; Type: TABLE DATA; Schema: global; Owner: nm
 --
 
-COPY nmgroup (idgrp, name, p_admin, p_smtp, p_ttl, p_mac, p_genl) FROM stdin;
-1	wheel	1	0	0	1	1
-2	staff	0	0	0	1	1
+COPY nmgroup (idgrp, name, p_admin, p_smtp, p_ttl, p_mac, p_genl, p_genz) FROM stdin;
+1	g1-wheel	1	1	1	1	1	1
+2	g2-simple	0	0	0	0	0	0
+3	g3-genz	0	0	0	0	0	1
+4	g4-mac	0	0	0	1	0	0
+5	g5-ttl	0	0	1	0	0	0
+6	g6-smtp	0	1	0	0	0	0
+7	g7-admin	1	0	0	0	0	0
 \.
 
 
@@ -3348,11 +3155,14 @@ COPY nmgroup (idgrp, name, p_admin, p_smtp, p_ttl, p_mac, p_genl) FROM stdin;
 --
 
 COPY nmuser (idcor, login, present, idgrp) FROM stdin;
-2	jean	1	1
-3	nobody	1	1
-4	bob	1	2
-5	alice	1	2
-1	pda	1	1
+1	u1-wheel	1	1
+2	u2-simple	1	2
+3	u3-genz	1	3
+4	u4-mac	1	4
+5	u5-ttl	1	5
+6	u6-smtp	1	6
+7	u7-admin	1	7
+8	u8-absent	1	2
 \.
 
 
@@ -3435,14 +3245,16 @@ SET search_path = pgauth, pg_catalog;
 --
 
 COPY member (login, realm) FROM stdin;
-pda	authadmin
-pda	netmagis
-jean	authadmin
-jean	netmagis
-nobody	authadmin
-nobody	netmagis
-bob	netmagis
-alice	netmagis
+u1-wheel	authadmin
+u1-wheel	netmagis
+u2-simple	netmagis
+u3-gen	netmagis
+u4-mac	netmagis
+u5-ttl	netmagis
+u6-smtp	netmagis
+u7-admin	authadmin
+u7-admin	netmagis
+u8-absent	netmagis
 \.
 
 
@@ -3461,11 +3273,14 @@ netmagis	Netmagis users	0
 --
 
 COPY "user" (login, password, lastname, firstname, mail, phone, mobile, fax, addr, phlast, phfirst) FROM stdin;
-jean	$1$cFdoL1bt$CeLCYpShm7XyYbY8teUqg0	Boss	Joe	\N	\N	\N	\N	\N	B800	J000
-nobody	$1$udKbI8Ec$1x/S.vmNCn1W8RXzSfHNK1	Boss	Joe	\N	\N	\N	\N	\N	B800	J000
-bob	$1$HkkurVBO$vMCw22SNSMOoQ8LPXtuY41	User	Joe	\N	\N	\N	\N	\N	U860	J000
-alice	$1$kL3n/qLt$R4jAYgLeP7x3w7FqsCRD51	User	Joe	\N	\N	\N	\N	\N	U860	J000
-pda	$1$RpnKS89p$13CsFgLPiljdyj6pGCwC41	Boss	Joe	\N	\N	\N	\N	\N	B800	J000
+u1-wheel	$1$cFdoL1bt$CeLCYpShm7XyYbY8teUqg0	Boss	Joe	\N	\N	\N	\N	\N	X	X
+u2-simple	$1$udKbI8Ec$1x/S.vmNCn1W8RXzSfHNK1	Boss	Joe	\N	\N	\N	\N	\N	X	X
+u3-gen	$1$HkkurVBO$vMCw22SNSMOoQ8LPXtuY41	User	Joe	\N	\N	\N	\N	\N	X	X
+u4-mac	$1$kL3n/qLt$R4jAYgLeP7x3w7FqsCRD51	User	Joe	\N	\N	\N	\N	\N	X	X
+u5-ttl	$1$RpnKS89p$13CsFgLPiljdyj6pGCwC41	Boss	Joe	\N	\N	\N	\N	\N	X	X
+u6-smtp	$1$RpnKS89p$13CsFgLPiljdyj6pGCwC41	Boss	Joe	\N	\N	\N	\N	\N	X	X
+u7-admin	$1$RpnKS89p$13CsFgLPiljdyj6pGCwC41	Boss	Joe	\N	\N	\N	\N	\N	X	X
+u8-absent	$1$RpnKS89p$13CsFgLPiljdyj6pGCwC41	Boss	Joe	\N	\N	\N	\N	\N	X	X
 \.
 
 
