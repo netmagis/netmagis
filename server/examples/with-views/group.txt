@@ -13,16 +13,9 @@
 # - groups may or may not already exist in database
 # - users may or may not already exist in database
 #
-# History:
-#   2012/10/09 : pda : design of a multi-view example
-#
 
-# the following line is not really needed: the wheel group is created
-# by default by netmagis-dbcreate with admin privileges, and members
-# are initialized from the "rootusers" parameter in netmagis.conf.
-# However, you can add new members which are not rootusers (they have
-# admin privileges but cannot log when the application is in maintenance
-# mode).
+# the following line use the wheel group, which is created
+# by default by netmagis-dbcreate with admin privileges.
 wheel	pda jean
 
 staff	bob alice

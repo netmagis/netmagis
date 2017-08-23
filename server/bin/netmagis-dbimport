@@ -476,16 +476,14 @@ proc import-group {verbose argv dbfd} {
     #
     
     $dbfd exec "SELECT * FROM global.nmgroup" tab {
-	set refg($tab(name)) $tab(idgrp)
+	set refg($tab(name)) [list $tab(idgrp) $tab(p_admin)]
     }
     $dbfd exec "SELECT * FROM global.nmuser" tab {
 	set refu($tab(login)) [list $tab(idcor) $tab(idgrp)]
     }
+    set refpg {}
     $dbfd exec "SELECT * FROM pgauth.user" tab {
-	set refa($tab(login)) {}
-    }
-    $dbfd exec "SELECT * FROM pgauth.member" tab {
-	lappend refa($tab(login)) $tab(realm)
+	lappend refpg $tab(login)
     }
 
     #
@@ -507,7 +505,7 @@ proc import-group {verbose argv dbfd} {
 
 	# re-read idgrp
 	$dbfd exec "SELECT * FROM global.nmgroup" tab {
-	    set refg($tab(name)) $tab(idgrp)
+	    set refg($tab(name)) [list $tab(idgrp) $tab(p_admin)]
 	}
     }
 
@@ -517,8 +515,10 @@ proc import-group {verbose argv dbfd} {
 
     set sql {}
     foreach g [array names tabgrp] {
-	set idgrp $refg($g)
+	lassign $refg($g) idgrp admin
 	foreach c $tabgrp($g) {
+	    # mark this user as a future pgadmin if it is in the wheel group
+	    set isadmin($c) $admin
 	    if {[info exists refu($c)]} then {
 		lassign $refu($c) idcor idg
 		if {$idg != $idgrp} then {
@@ -542,33 +542,38 @@ proc import-group {verbose argv dbfd} {
 
     #
     # For internal (postgresql) auth, create users
-    # and add them into netmagis realm
+    # and add them into "netmagis" realm
     # Existing pgauth users are supposed to be already in
     # the netmagis realm.
+    # Add admin users in the "authadmin" realm
     #
 
     set am [::n confget "authmethod"]
     if {$am eq "pgsql"} then {
-	set rlm [::n confget "authpggroupes"]
+	set rlm {netmagis}
 	set qrlm [pg_quote $rlm]
 	set sql {}
 	foreach g [array names tabgrp] {
 	    foreach c $tabgrp($g) {
-		if {! [info exists refa($c)]} then {
+		set qc [pg_quote $c]
+		lappend sql "DELETE FROM pgauth.member WHERE login = $qc"
+		if {! ($c in $refpg)} then {
 		    set p [::auth::genpw]
 		    puts stderr "Password for user '$c' is '$p'."
 		    set pc [::auth::crypt $p]
-		    set qc [pg_quote $c]
 		    set qpc [pg_quote $pc]
 		    lappend sql "INSERT INTO pgauth.user
 					(login, password, lastname, firstname)
 					VALUES ($qc, $qpc, 'User', 'Joe')"
-		    set refa($c) {}
 		}
-		if {[lsearch -exact $refa($c) $rlm] == -1} then {
+		set realms {netmagis}
+		if {$isadmin($c)} then {
+		    lappend realms "authadmin"
+		}
+		foreach r $realms {
+		    set qr [pg_quote $r]
 		    lappend sql "INSERT INTO pgauth.member (login, realm)
-					VALUES ($qc, $qrlm)"
-		    lappend refa($c) $rlm
+						    VALUES ($qc, $qr)"
 		}
 	    }
 	}
@@ -1906,14 +1911,14 @@ proc import-mailrelay {verbose argv dbfd} {
 		    }
 		    if {$idhost != -1} then {
 			set sql "INSERT INTO dns.relaydom
-						(iddom, prio, idhost)
-					VALUES ($iddom, $prio, $idhost)"
+					    (iddom, idview, prio, idhost)
+					VALUES ($iddom, $idview, $prio, $idhost)"
 			if {! [$dbfd exec $sql msg]} then {
 			    return "$msg\nAbort"
 			}
 		    } else {
 			set err 1
-			warning "Relay '$relay' not found for domain '$domain'"
+			warning "Relay '$relay' not found for domain '$domain' and view '$viewname'"
 		    }
 		}
 	    }
