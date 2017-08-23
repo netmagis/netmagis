@@ -6,33 +6,6 @@
 # Syntax :
 #	netmagis-dbcreate [-h][-f conffile] [netmagis] [mac]
 #
-# History
-#   2002/02/11 : pda        : design
-#   2002/02/12 : pda/jean   : adapt to new data model
-#   2002/04/19 : pda/jean   : unique constraint on name+domain
-#   2002/04/19 : pda        : unique constraint on domain name
-#   2002/04/23 : pda        : add priority in domain permissions
-#   2002/04/23 : pda/jean   : add zone generation management
-#   2002/05/02 : pda/jean   : use PG objects for zone tables
-#   2002/05/06 : pda        : id for zone table
-#   2002/05/21 : pda        : add communaute table
-#   2004/01/22 : pda        : use new data model
-#   2005/04/08 : pda        : use new data model (v 1.3)
-#   2007/11/27 : pda/jean   : pgsql 8.2
-#   2007/11/27 : pda/jean   : add log table
-#   2011/01/21 : pda        : i18n
-#   2011/01/21 : pda        : use new config file
-#   2011/07/17 : pda        : defuser is given a value and created
-#   2011/12/28 : pda        : add dotattr table
-#   2012/01/21 : jean       : add p_genl attribute
-#   2012/04/08 : pda        : simplify users
-#   2012/04/08 : pda        : mac database creation
-#   2012/06/15 : pda/jean   : drop -u/-w for an obsolete privileged user
-#   2012/06/19 : pda        : don't create copy database
-#   2012/09/20 : pda/jean   : remove dnsupdateperiod
-#   2012/09/27 : pda/jean   : rename dns.zone.domain
-#   2012/10/24 : pda/jean   : dhcp generation is per view
-#
 
 usage ()
 {
@@ -43,9 +16,6 @@ usage ()
     ) >&2
     exit 1
 }
-
-# defuser is used for initial database migration
-defuser="nobody"
 
 # default configuration file
 conffile=""
@@ -62,7 +32,7 @@ export PGOPTIONS
 init_env ()
 {
     # Main netmagis database parameters (dnsdb*)
-    varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword rootusers"
+    varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword"
     eval `%CONFPROG% $conffile -c $varlist`
 
     if [ $? != 0 ]
@@ -80,11 +50,6 @@ init_env ()
 	usage
 	exit 1
     fi
-
-    # These variables are searched in a second pass, since they can be empty
-    # (the first pass used the "-c" flag) 
-    varlist="pwgen ouiurl"
-    eval `%CONFPROG% $conffile $varlist`
 }
 
 ##############################################################################
@@ -199,25 +164,6 @@ create_netmagis ()
     create_netmagis_schemas
 
     netmagis_insert_config
-
-    ###############################
-    # Create netmagis application users
-    ###############################
-
-    for u in $rootusers
-    do
-	netmagis_create_user $u
-    done
-
-    netmagis_create_user $defuser
-
-    if [ "$pwgen" = "" ]
-    then
-	echo "Netmagis configuration parameter 'pwgen' uninitialized" >&2
-    else
-	echo "Users $rootusers have been created" >&2
-	echo "You can change passwords within netmagis application" >&2
-    fi
 }
 
 ##############################################################################
@@ -395,39 +341,7 @@ authadmin	Administrators of internal PostgreSQL auth	1
 netmagis	Netmagis users	0
 \.
 
-    COPY global.nmgroup (name, p_admin) FROM stdin;
-wheel	1
-\.
 EOF
-
-    psql --no-psqlrc --quiet -c "INSERT INTO global.config (key, value)
-					VALUES ('defuser', '$defuser')"
-}
-
-##############################################################################
-# Create Netmagis users
-##############################################################################
-
-netmagis_create_user ()
-{
-    user="$1"
-    psql --no-psqlrc --quiet --file - <<EOF
-    INSERT INTO pgauth.user (login, password, lastname, firstname)
-	VALUES ('$user', '*', 'Boss', 'Joe') ;
-    INSERT INTO pgauth.member (login, realm) VALUES ('$user', 'authadmin') ;
-    INSERT INTO pgauth.member (login, realm) VALUES ('$user', 'netmagis') ;
-    INSERT INTO global.nmuser (login, present, idgrp) VALUES ('$user', 1, 1) ;
-EOF
-
-    if [ "$pwgen" != "" ]
-    then
-	adminpw=$($pwgen)
-	cryptpw=$(openssl passwd -1 "$adminpw")
-	psql --no-psqlrc --quiet -c "UPDATE pgauth.user
-					SET password = '$cryptpw'
-					WHERE login = '$user'"
-	echo "Password for Netmagis user '$user' is '$adminpw'." >&2
-    fi
 
 }
 

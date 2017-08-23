@@ -51,8 +51,7 @@ This utility exits 0 on success, and 1 if an error occurs.
 The following `netmagis.conf` keys are used in this program:
 
   > `dnsdbhost`, `dnsdbport`, `dnsdbname`, `dnsdbuser`, `dnsdbpassword`,
-  `macdbhost`, `macdbport`, `macdbname`, `macdbuser`, `macdbpassword`,
-  `rootusers`, `pwgen`, `ouiurl`
+  `macdbhost`, `macdbport`, `macdbname`, `macdbuser`, `macdbpassword`
 
 
 # SEE ALSO

@@ -22,6 +22,7 @@ UPDATE global.tmp SET api = 0 ;
 
 UPDATE global.config SET value = '30' WHERE key = 'schemaversion' ;
 INSERT INTO global.config (key, value) VALUES ('apiexpire', '182') ;
+DELETE FROM global.config WHERE key = 'defuser' ;
 
 DROP FUNCTION IF EXISTS dns.check_dhcprange_grp (INTEGER, INET, INET) ;
 
