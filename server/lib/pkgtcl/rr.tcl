@@ -231,19 +231,21 @@ namespace eval ::rr {
 	return "$name.$domain"
     }
 
-    proc add-name {db name iddom idview} {
+    proc add-name {db name iddom idview _msg} {
+	upvar $_msg msg
 	set qname [pg_quote $name]
 	set sql "INSERT INTO dns.name (name, iddom, idview)
 		    VALUES ($qname, $iddom, $idview)
 		    RETURNING idname"
 	set idname -1
-	$db exec $sql tab {
+	$db exec $sql msg tab {
 	    set idname $tab(idname)
 	}
 	return $idname
     }
 
-    proc add-host {db idname mac iddhcpprof idhinfo comment respname respmail sendsmtp ttl} {
+    proc add-host {db idname mac iddhcpprof idhinfo comment respname respmail sendsmtp ttl _msg} {
+	upvar $_msg msg
 	set qmac NULL
 	if {$mac ne ""} then {
 	    set qmac [pg_quote $mac]
@@ -262,7 +264,7 @@ namespace eval ::rr {
 			    $qcomment, $qrespname, $qrespmail, $sendsmtp, $ttl)
 		    RETURNING idhost"
 	set idhost -1
-	$db exec $sql tab {
+	$db exec $sql msg tab {
 	    set idhost $tab(idhost)
 	}
 	return $idhost

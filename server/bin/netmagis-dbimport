@@ -1642,19 +1642,21 @@ proc import-zone {verbose argv dbfd} {
 		if {$verbose >= 2} then {
 		    puts stderr "Adding RR $name"
 		}
-		set idname [::rr::add-name $dbfd $name $iddom $idview]
-		# XXXXXXXXXXX TEST ?
-#		if {$msg ne ""} then {
-#		    warning "Unable to add $name ($msg)"
-#		    set err 1
-#		    continue
-#		}
+		set idname [::rr::add-name $dbfd $name $iddom $idview msg]
+		if {$idname == -1} then {
+		    warning "Unable to add $name ($msg)"
+		    set err 1
+		    continue
+		}
 		set idhost -1
 	    }
 
 	    if {$idhost == -1} then {
-		set idhost [::rr::add-host $dbfd $idname "" -1 0 "" "" "" 0 -1]
-		# XXXXXXXXXXX TEST ?
+		set idhost [::rr::add-host $dbfd $idname "" -1 0 "" "" "" 0 -1 msg]
+		if {$idhost == -1} then {
+		    warning "Unable to add host $name ($msg)"
+		    set err 1
+		}
 	    }
 
 	    foreach a $tabaddr($name) {
@@ -1664,7 +1666,7 @@ proc import-zone {verbose argv dbfd} {
 		set sql "INSERT INTO dns.addr (idhost, addr)
 					VALUES ($idhost, '$a')"
 		if {! [$dbfd exec $sql msg]} then {
-		    warning "Unable to add $name/$a ($msg)"
+		    warning "Unable to add address $name/$a ($msg)"
 		    set err 1
 		}
 	    }
@@ -1683,13 +1685,12 @@ proc import-zone {verbose argv dbfd} {
 		    puts stderr "Adding RR $name"
 		}
 
-		set idname [::rr::add-name $dbfd $name $iddom $idview]
-		# XXXXXXXXXXX TEST ?
-#		if {$msg ne ""} then {
-#		    warning "Unable to add $name ($msg)"
-#		    set err 1
-#		    continue
-#		}
+		set idname [::rr::add-name $dbfd $name $iddom $idview msg]
+		if {$idname == -1} then {
+		    warning "Unable to add $name ($msg)"
+		    set err 1
+		    continue
+		}
 	    }
 
 	    set ref $tabcname($name)
@@ -2039,13 +2040,12 @@ proc import-mailrole {verbose argv dbfd} {
 	    if {[::rr::found $rr1]} then {
 		set idname1 [::rr::get-idname $rr1]
 	    } else {
-		set idname1 [::rr::add-name $dbfd $n1 $iddom1 $idview]
-		# XXXXXXXXXXX TEST ?
-#		if {$msg ne ""} then {
-#		    warning "Unable to add $name ($msg)"
-#		    set err 1
-#		    continue
-#		}
+		set idname1 [::rr::add-name $dbfd $n1 $iddom1 $idview msg]
+		if {$idname1 == -1} then {
+		    warning "Unable to add $name ($msg)"
+		    set err 1
+		    continue
+		}
 	    }
 	}
 

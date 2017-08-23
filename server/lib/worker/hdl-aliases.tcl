@@ -302,7 +302,10 @@ proc aliases-new-and-mod {_parm orr} {
 	# Add new name for the alias since it did not pre-exist
 	#
 	if {$nidname == -1} then {
-	    set nidname [::rr::add-name ::dbdns $name $iddom $idview]
+	    set nidname [::rr::add-name ::dbdns $name $iddom $idview msg]
+	    if {$nidname == -1} then {
+		::scgi::serror 500 [mc {Cannot add name '%1$s' (%2$s)} $name $msg]
+	    }
 	}
 
 	#
