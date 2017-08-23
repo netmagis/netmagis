@@ -11,30 +11,24 @@ PATH=%BINDIR%:$PATH
 export PATH
 
 netmagis-dbcreate && \
-    netmagis-dbimport -v group group.txt && \
-    netmagis-dbimport -v domain domain.txt && \
-    netmagis-dbimport -v view view.txt && \
-    netmagis-dbimport -v network network.txt && \
-    netmagis-dbimport -v zone default example.com \
-			zones/example.com example.com \
-			/dev/null pda && \
-    netmagis-dbimport -v zone default plant1.example.com \
-			zones/plant1.example.com plant1.example.com \
-			/dev/null pda && \
-    netmagis-dbimport -v zone default subsid.co.zz \
-			zones/subsid.co.zz subsid.co.zz \
-			/dev/null pda && \
-    netmagis-dbimport -v zone default example.org \
-			zones/example.org example.org \
-			/dev/null pda && \
-    netmagis-dbimport -v zone default 16.172.in-addr.arpa \
-			zones/16.172.in-addr.arpa 172.16/16 \
-			/dev/null pda && \
-    netmagis-dbimport -v zone default 4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa \
-			zones/4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa 2001:db8:1234::/48 \
-			/dev/null pda && \
-    netmagis-dbimport -v mailrelay default mailrelay.txt && \
-    netmagis-dbimport -v mailrole default mailrole.txt pda && \
+    netmagis-dbimport -d group group.txt && \
+    netmagis-dbimport -d domain domain.txt && \
+    netmagis-dbimport -d view view.txt && \
+    netmagis-dbimport -d network network.txt && \
+    netmagis-dbimport -d zone default example.com \
+			zones/example.com example.com && \
+    netmagis-dbimport -d zone default plant1.example.com \
+			zones/plant1.example.com plant1.example.com && \
+    netmagis-dbimport -d zone default subsid.co.zz \
+			zones/subsid.co.zz subsid.co.zz && \
+    netmagis-dbimport -d zone default example.org \
+			zones/example.org example.org && \
+    netmagis-dbimport -d zone default 16.172.in-addr.arpa \
+			zones/16.172.in-addr.arpa 172.16/16 && \
+    netmagis-dbimport -d zone default 4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa \
+			zones/4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa 2001:db8:1234::/48 && \
+    netmagis-dbimport -d mailrelay default mailrelay.txt && \
+    netmagis-dbimport -d mailrole default mailrole.txt && \
     echo "Succeeded"
 
 exit 0

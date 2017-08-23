@@ -3,6 +3,7 @@ NINSTALL	= ../../ninstall
 MAN1 = \
 	netmagis-config.man \
 	netmagis-dbcreate.man \
+	netmagis-dbimport.man \
 	netmagis-dbmaint.man \
 	netmagis-dbupgrade.man \
 	netmagis-restd.man \
