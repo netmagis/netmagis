@@ -117,13 +117,13 @@ OUT=""
 first=true
 for param
 do
-    OUT="$OUT$param='$(get_param $conffile $param)'"
     if [ $first = true ]
     then
 	first=false
     else
 	OUT="$OUT "
     fi
+    OUT="$OUT$param='$(get_param $conffile $param)'"
 done
 
 echo "$OUT"
