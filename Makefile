@@ -30,8 +30,7 @@ TCLSH		= /usr/local/bin/tclsh
 NINSTALL	= ./ninstall
 SUBST		= $(TCLSH) \
 			$(NMLIBDIR)/libnetmagis.tcl \
-			$(ETCDIR)/netmagis.conf \
-			$(BINDIR)/netmagis-config
+			$(ETCDIR)/netmagis.conf
 
 VARS		= \
 			VERSION=$(VERSION) \

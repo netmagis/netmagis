@@ -31,7 +31,7 @@ init_env ()
 
     # Main netmagis database parameters (dnsdb*)
     varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword"
-    eval $(%CONFPROG% -f $_conffile -c $varlist)
+    eval $(netmagis-config -f $_conffile -c $varlist)
 
     if [ $? != 0 ]
     then
@@ -48,7 +48,7 @@ init_env ()
 
     # Mac database parameters (macdb*)
     varlist="macdbhost macdbport macdbname macdbuser macdbpassword"
-    eval $(%CONFPROG% -f $_conffile -c $varlist)
+    eval $(netmagis-config -f $_conffile -c $varlist)
 
     if [ $? != 0 ]
     then
@@ -58,7 +58,7 @@ init_env ()
 
     # Other configuration parameters
     varlist="_version"
-    eval $(%CONFPROG% -f $_conffile -c $varlist)
+    eval $(netmagis-config -f $_conffile -c $varlist)
 
     if [ $? != 0 ]
     then
@@ -244,7 +244,7 @@ create_netmagis ()
 #
 # Get default configuration file location
 #
-eval $(%CONFPROG% -c _conffile)
+eval $(netmagis-config -c _conffile)
 
 
 #

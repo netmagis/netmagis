@@ -25,7 +25,7 @@
 TMP=/tmp/topo.$$
 TMPERR=/tmp/topoerr.$$
 
-eval `%CONFPROG% \
+eval $(netmagis-config -c \
 		ranciddir \
 		eqvirtdir \
 		eqgendir \
@@ -35,7 +35,7 @@ eval `%CONFPROG% \
 		checkrouterif \
 		ssidsensors \
 		topocpgraph \
-		`
+		)
 vlanfile=$eqgendir/_vlan.eq
 
 VERBOSE=0

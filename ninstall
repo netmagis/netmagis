@@ -4,8 +4,8 @@
 # Installation script
 #
 # This script ressembles the BSD "install" program, but it
-# also substitutes some patterns (TCLSH, LIBNETMAGIS, CONFFILE
-# and CONFPROG) while installing the files.
+# also substitutes some patterns (TCLSH, LIBNETMAGIS and CONFFILE)
+# while installing the files.
 #
 # Usage:
 #   ninstall opt tclsh libnetmagis conffile confprog file ... file dir
@@ -21,7 +21,7 @@ subst=
 usage ()
 {
     (
-	echo "usage: `basename $0` opt tclsh libnetmagis conffile confprog file ... file dir"
+	echo "usage: `basename $0` opt tclsh libnetmagis conffile file ... file dir"
 	echo "	opt: [-m mode][-o owner][-g group][-d][-e sed-pattern]"
 	echo "	Warning: no shell special characters in sed-pattern (including space)"
     )
@@ -48,7 +48,7 @@ do
     esac
 done
 
-if [ $# -lt 6 ]
+if [ $# -lt 5 ]
 then
     usage
     exit 1
@@ -57,9 +57,8 @@ fi
 tclsh=$1
 libnetmagis=$2
 conffile=$3
-confprog=$4
 
-shift 4
+shift 3
 
 #
 # Search for dest directory (last argument) and create it if needed
@@ -108,7 +107,6 @@ do
 	    -e "s|%TCLSH%|$tclsh|g" \
 	    -e "s|%LIBNETMAGIS%|$libnetmagis|g" \
 	    -e "s|%CONFFILE%|$conffile|g" \
-	    -e "s|%CONFPROG%|$confprog|g" \
 	    $subst \
 	    $f > "$destfile" \
 	&& chmod $mode "$destfile" \

@@ -17,8 +17,8 @@ usage ()
     exit 1
 }
 
-# default configuration file
-conffile=""
+# default configuration file option
+confopt=""
 
 # Option to disable NOTICE messages when using psql
 PGOPTIONS='--client-min-messages=warning'
@@ -33,7 +33,7 @@ init_env ()
 {
     # Main netmagis database parameters (dnsdb*)
     varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword"
-    eval `%CONFPROG% $conffile -c $varlist`
+    eval $(netmagis-config $confopt -c $varlist)
 
     if [ $? != 0 ]
     then
@@ -43,7 +43,7 @@ init_env ()
 
     # Mac database parameters (macdb*)
     varlist="macdbhost macdbport macdbname macdbuser macdbpassword"
-    eval `%CONFPROG% $conffile -c $varlist`
+    eval $(netmagis-config $confopt -c $varlist)
 
     if [ $? != 0 ]
     then
@@ -420,7 +420,7 @@ do
 	-h) usage
 	    exit 0
 	    ;;
-	-f) conffile="-f $2"
+	-f) confopt="-f $2"
 	    shift 2
 	    ;;
 	--) shift

@@ -3,8 +3,7 @@ TCLSH	= /usr/local/bin/tclsh
 NINSTALL = ../../ninstall
 SUBST	= $(TCLSH) \
 		$(DESTDIR)/lib/netmagis/libnetmagis.tcl \
-		$(DESTDIR)/etc/netmagis.conf \
-		$(DESTDIR)/bin/netmagis-config
+		$(DESTDIR)/etc/netmagis.conf
 
 HTGDIR	= ../../www/htg
 HTGBINDIR = $(HTGDIR)/src

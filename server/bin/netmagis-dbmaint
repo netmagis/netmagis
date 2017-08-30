@@ -39,7 +39,7 @@ usage ()
 init_env ()
 {
     varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword"
-    eval `%CONFPROG% $conffile -c $varlist`
+    eval $(netmagis-config -f $conffile -c $varlist)
 
     if [ $? != 0 ]
     then
@@ -57,7 +57,7 @@ init_env ()
     # these variables are searched in a second pass, since they can be
     # empty (the first pass used the "-c" flag)
     varlist="dumpdir dbcopy"
-    eval `%CONFPROG% $conffile $varlist`
+    eval $(netmagis-config -f $conffile $varlist)
 }
 
 backup ()

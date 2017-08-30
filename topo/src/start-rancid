@@ -12,10 +12,7 @@
 #   2010/12/18 : pda      : rework installation
 #
 
-eval `%CONFPROG% \
-		rancidcmd \
-		topobindir \
-		`
+eval $(netmagis-config -c rancidcmd topobindir)
 
 # In the topodir directory, the fake sendmail program sends result
 # on file descripor number 3 (instead of sending mail).
