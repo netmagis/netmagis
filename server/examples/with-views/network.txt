@@ -43,7 +43,7 @@ comment=Backbone + servers
 org=Example Corp.
 community=Internal
 location=1st floor
-groups=staff wheel
+groups=staff wheel g1-wheel g2-simple g4-mac g5-ttl g6-smtp g7-admin g8-absent
 dhcp=example.com  172.16.5.1-172.16.8.254  172.16.10.100-172.16.10.199
 
 name=Public servers
@@ -52,4 +52,4 @@ address=2001:db8:1234::/48
 community=DMZ
 org=Example Corp.
 location=Machine room
-groups=wheel
+groups=wheel g1-wheel g6-smtp

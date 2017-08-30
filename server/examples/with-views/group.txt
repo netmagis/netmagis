@@ -19,3 +19,13 @@
 wheel	pda jean
 
 staff	bob alice
+
+# these groups are used when running automated tests
+g1-wheel	u1-wheel
+g2-simple	u2-simple
+g3-genz		u3-genz
+g4-mac		u4-mac
+g5-ttl		u5-ttl
+g6-smtp		u6-smtp
+g7-admin	u7-admin
+g8-absent	u2-absent

@@ -20,3 +20,5 @@
 
 external		SET	100	wheel
 internal		ALLBUT	200
+
+external		SET	100	g1-wheel g6-smtp

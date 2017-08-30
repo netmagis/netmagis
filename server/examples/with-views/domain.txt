@@ -24,3 +24,6 @@ example.com		ALLBUT	10
 
 # only wheel group may manage this one
 example.org		SET	20	wheel
+
+# used for automated tests
+example.org		SET	100	g1-wheel g6-smtp

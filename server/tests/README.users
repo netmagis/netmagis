@@ -1,0 +1,19 @@
+Through these tests, we use some groups and users defined in the example
+data for netmagis-dbimport (see server/examples/with-views/).
+
+Each user 'u<n>-<name>' belongs to a group 'g<n>-<name>' which defines
+its access rights. During the initial database loading test, some API
+tokens are added ('t<n>-<name>').
+
+This file gives a summary of rights defined for these groups:
+    g1-wheel	access to 172.16/16 and 198.51.100/24 and example.{com,org}
+		and views external and internal, and all specific rights
+		(mac, ttl, smtp, etc.)
+    g2-simple	access restricted to example.com, 172.16/16 and view
+		internal only, no specific right
+    g3-genz	access to nothing, but right to generate zones/dhcp/etc
+    g4-mac	same as g2-simple, with added right to use the mac module
+    g5-ttl	same as g2-simple, with added right to change ttl value
+    g6-smtp	same as g1-wheel, with the only smtp specific right
+    g7-admin	same as g2-simple, with the admin right
+    g8-absent	same as g2-simple (used only for the u8-absent user)
