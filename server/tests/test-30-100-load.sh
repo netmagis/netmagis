@@ -6,48 +6,90 @@ then
     exit 1
 fi
 
-#export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
-#dropdb --if-exists $PGDATABASE \
-#    && createdb $PGDATABASE \
-#    && psql $PGOPT -f $DUMPFILE \
-#    && psql $PGOPT -c "
-#	INSERT INTO global.utmp (idcor, token, api) VALUES (1, 't1-wheel', 1) ;
-#	INSERT INTO global.utmp (idcor, token, api) VALUES (2, 't2-simple', 1) ;
-#	INSERT INTO global.utmp (idcor, token, api) VALUES (3, 't3-genz', 1) ;
-#	INSERT INTO global.utmp (idcor, token, api) VALUES (4, 't4-mac', 1) ;
-#	INSERT INTO global.utmp (idcor, token, api) VALUES (5, 't5-ttl', 1) ;
-#	INSERT INTO global.utmp (idcor, token, api) VALUES (6, 't6-smtp', 1) ;
-#	INSERT INTO global.utmp (idcor, token, api) VALUES (7, 't7-admin', 1) ;
-#	INSERT INTO global.utmp (idcor, token, api) VALUES (8, 't8-abset', 1) ;
-#	"
-
 IMPORTDIR=../examples/with-views
 
-(
-eval $(netmagis-config -c dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword)
-PGHOST="$dnsdbhost"
-PGPORT="$dnsdbport"
-PGDATABASE="$dnsdbname"
-PGUSER="$dnsdbuser"
-PGPASSWORD="$dnsdbpassword"
+# $1 : return code
+# $2 : test number
+# $3 : message
+fail ()
+{
+    local rcode="$1" num="$2" msg="$3"
 
-export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
-dropdb --if-exists $PGDATABASE
-)
+    if [ "$rcode" = 0 ]
+    then
+	echo "ok $num $msg"
+	echo
+    else
+	echo "not ok $num $msg"
+	echo "	exit code=$rcode"
+	echo
+	exit "$rcode"
+    fi
+}
 
-cd $IMPORTDIR
-sh run-all.sh
+# Get database parameters
+init_env ()
+{
+    local vars
 
-r=$?
-if [ $r = 0 ]
-then
-    echo "ok 10 Load 3.0 import"
-    echo
-else
-    echo "not ok 10 Load 3.0 import"
-    echo "	exit code=$r"
-    echo
-fi
+    vars="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword"
+    eval $(netmagis-config -c $vars)
+    fail $? 10 "init env"
 
-exit $r
+    PGHOST="$dnsdbhost"
+    PGPORT="$dnsdbport"
+    PGDATABASE="$dnsdbname"
+    PGUSER="$dnsdbuser"
+    PGPASSWORD="$dnsdbpassword"
+    export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
+}
 
+# Remove database
+rmdb ()
+{
+    dropdb --if-exists $PGDATABASE
+
+    fail $? 20 "drop db"
+}
+
+# Import example data
+import ()
+{
+    cd $IMPORTDIR
+    fail $? 30 "cd import dir"
+    sh run-all.sh
+    fail $? 35 "import data"
+}
+
+# Patch example data:
+# - add appropriate permissions to g-* groups (see README.users)
+# - create t-* session tickets for u-* users
+patch ()
+{
+    psql --no-psqlrc --single-transaction -c "
+	UPDATE global.nmgroup
+	    SET p_admin=1, p_smtp=1, p_ttl=1, p_mac=1, p_genl=1, p_genz=1
+	    WHERE name = 'g1-wheel' ;
+	UPDATE global.nmgroup
+	    SET p_genz=1 WHERE name = 'g3-simple' ;
+	UPDATE global.nmgroup
+	    SET p_mac=1 WHERE name = 'g4-mac' ;
+	UPDATE global.nmgroup
+	    SET p_ttl=1 WHERE name = 'g5-ttl' ;
+	UPDATE global.nmgroup
+	    SET p_smtp=1 WHERE name = 'g6-smtp' ;
+	UPDATE global.nmgroup
+	    SET p_admin=1 WHERE name = 'g7-admin' ;
+	INSERT INTO global.utmp (idcor, token, api)
+	    SELECT idcor, regexp_replace (login, '^u', 't') AS token, 1 AS api
+		FROM global.nmuser WHERE login like 'u%-%' ;
+	"
+    fail $? 40 "patch data"
+}
+
+init_env \
+    && rmdb \
+    && import \
+    && patch
+
+exit 0
