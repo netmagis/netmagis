@@ -149,6 +149,100 @@ test-assert 160 "Get aliases with multiple incompatible criteria" \
 #########################################################################
 set inputjson {
     {
+	"name": "alias1",
+	"iddom": 1,
+	"idview": 3,
+	"idhost": 230,
+	"ttl": null
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 170 "Add alias" \
+	{$stcode == 200}
+
+
+#########################################################################
+test-set-cookie session t2-simple
+set inputjson {
+    {
+	"name": "inv-alias",
+	"iddom": 1,
+	"idview": 3,
+	"idhost": 230,
+	"ttl": null
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 180 "Attempt to add alias in invalid view" \
+	{$stcode == 400}
+
+#########################################################################
+test-set-cookie session t2-simple
+set inputjson {
+    {
+	"name": "inv-alias",
+	"iddom": 2,
+	"idview": 2,
+	"idhost": 230,
+	"ttl": null
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 190 "Attempt to add alias in invalid domain" \
+	{$stcode == 400}
+
+#########################################################################
+test-set-cookie session t2-simple
+set inputjson {
+    {
+	"name": "inv-alias",
+	"iddom": 1,
+	"idview": 2,
+	"idhost": 230,
+	"ttl": 123
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 200 "Attempt to add alias with a TTL without TTL right" \
+	{$stcode == 400}
+
+
+#########################################################################
+test-set-cookie session t5-ttl
+set inputjson {
+    {
+	"name": "alias2",
+	"iddom": 1,
+	"idview": 2,
+	"idhost": 5,
+	"ttl": 123
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 210 "Add alias with a TTL" \
+	{$stcode == 200}
+
+
+#########################################################################
+test-set-cookie session t5-ttl
+set inputjson {
+    {
+	"name": "alias2",
+	"iddom": 1,
+	"idview": 2,
+	"idhost": 230,
+	"ttl": 123
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 220 "Attempt to add an alias with an existing name" \
+	{$stcode == 400}
+
+
+#########################################################################
+test-set-cookie session t2-simple
+set inputjson {
+    {
 	"name": "invalid-alias",
 	"iddom": 1,
 	"idview": 2,
@@ -157,6 +251,31 @@ set inputjson {
     }
 }
 lassign [test-call POST $uri $inputjson] stcode stmsg ct body
-test-assert 170 "Attempt to add an alias in an inappropriate view" \
+test-assert 230 "Attempt to add an alias in a different view than host" \
 	{$stcode == 400}
+
+
+#########################################################################
+test-set-cookie session t2-simple
+set inputjson {
+    {
+	"idhost": 230,
+    }
+}
+lassign [test-call PUT $uri/230 $inputjson] stcode stmsg ct body
+test-assert 240 "Attempt to modify an alias in a non-allowed view" \
+	{$stcode == 404}
+
+
+#########################################################################
+test-set-cookie session t6-smtp
+set inputjson {
+    {
+	"idhost": 230,
+	"ttl": 123
+    }
+}
+lassign [test-call PUT $uri/230 $inputjson] stcode stmsg ct body
+test-assert 250 "Attempt to modify TTL of an alias without TTL right" \
+	{$stcode == 404}
 
