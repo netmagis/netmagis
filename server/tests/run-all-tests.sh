@@ -20,7 +20,7 @@ here=$(pwd)
 NETMAGIS_LIBDIR=${NETMAGIS_LIBDIR:-${here}/../lib}
 NETMAGIS_CONFIG=${NETMAGIS_CONFIG:-${here}/nm.conf}
 NETMAGIS_VERSION="$VERSION"
-FILES=$(echo $(ls -d ${FILES:-${here}/www/static/*}) | sed 's/ /:/g')
+FILES=$(echo $(ls -d ${FILES:-${here}/../www/static/*}) | sed 's/ /:/g')
 
 export NETMAGIS_LIBDIR NETMAGIS_CONFIG NETMAGIS_VERSION
 
