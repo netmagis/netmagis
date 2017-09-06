@@ -1,4 +1,6 @@
-#!%TCLSH%
+#!/usr/bin/env tclsh
+
+package require Tcl 8.6
 
 # 
 # This script is called from syslogd daemon, with a line such as:

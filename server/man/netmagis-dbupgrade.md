@@ -38,11 +38,12 @@ The following options are available:
 
     Default: `%CONFFILE%`
 
--d *DIR*
-  : Specify the upgrade directory. This directory must contain
-    sub-directories called *XY*-*ZT* giving the upgrade path.
+-l *DIR*
+  : Specify the library directory. This directory must contain
+    an `upgrade` subdirectory, which in turn must contain
+    sub-sub-directories called *XY*-*ZT* giving the upgrade path.
 
-    Default: `%NMLIBDIR%/upgrade`
+    Default: `%NMLIBDIR%`
 
 
 # EXIT STATUS

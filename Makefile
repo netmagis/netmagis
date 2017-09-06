@@ -26,9 +26,8 @@ NMWWWDIR	= $(PREFIX)/www/netmagis
 ###NMCGIDIR	= $(PREFIX)/www/netmagis
 NMWSDIR		= $(PREFIX)/www/metro
 
-TCLSH		= /usr/local/bin/tclsh
 NINSTALL	= ./ninstall
-SUBST		= $(TCLSH) \
+SUBST		= \
 			$(NMLIBDIR)/libnetmagis.tcl \
 			$(ETCDIR)/netmagis.conf
 
@@ -90,11 +89,11 @@ build: build-www build-topo
 
 # NEARLY OBSOLETE
 build-www:
-	cd www ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
+	cd www ; $(MAKE) $(VARS) SUBST="$(SUBST)" \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" build
 
 build-server:
-	cd server ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) build
+	cd server ; $(MAKE) $(VARS) SUBST="$(SUBST)" build
 
 build-topo:
 	cd topo ; $(MAKE) build
@@ -102,44 +101,44 @@ build-topo:
 test:	test-server
 
 test-server:
-	cd server ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) test
+	cd server ; $(MAKE) $(VARS) SUBST="$(SUBST)" test
 
 install: install-common install-server install-servers install-client \
 	    install-detecteq install-topo install-metro install-www
 	
 install-common:
 	cd common ; \
-	    $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) VERSION=$(VERSION) install
+	    $(MAKE) $(VARS) SUBST="$(SUBST)" VERSION=$(VERSION) install
 
 install-server:
-	cd server ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) VERSION=$(VERSION) install
+	cd server ; $(MAKE) $(VARS) SUBST="$(SUBST)" VERSION=$(VERSION) install
 
 install-servers:
-	cd servers ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd servers ; $(MAKE) $(VARS) SUBST="$(SUBST)" install
 
 # NEARLY OBSOLETE
 install-www: build-www
-	cd www ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) \
+	cd www ; $(MAKE) $(VARS) SUBST="$(SUBST)" \
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" install
 
 install-client:
-	cd client ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd client ; $(MAKE) $(VARS) SUBST="$(SUBST)" install
 
 install-topo: build-topo
-	cd topo ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd topo ; $(MAKE) $(VARS) SUBST="$(SUBST)" install
 
 install-detecteq:
-	cd detecteq ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd detecteq ; $(MAKE) $(VARS) SUBST="$(SUBST)" install
 
 install-metro:
-	cd metro ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd metro ; $(MAKE) $(VARS) SUBST="$(SUBST)" install
 
 # PROBLEM
 install-netmagis.org: build-www
-	cd doc/netmagis.org ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd doc/netmagis.org ; $(MAKE) $(VARS) SUBST="$(SUBST)" install
 
 install-devtools:
-	cd devtools ; $(MAKE) $(VARS) SUBST="$(SUBST)" TCLSH=$(TCLSH) install
+	cd devtools ; $(MAKE) $(VARS) SUBST="$(SUBST)" install
 
 distrib: clean
 	rm -rf /tmp/netmagis-$(VERSION)

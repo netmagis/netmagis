@@ -27,7 +27,6 @@ load_rc_config $name
 : ${toposendd_enable:=NO}
 : ${toposendd_user:=rancid}
 
-command_interpreter=%%TCLSH%%
 command=%%PREFIX%%/sbin/toposendd
 
 run_rc_command $1

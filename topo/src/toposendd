@@ -1,4 +1,6 @@
-#! %TCLSH%
+#!/usr/bin/env tclsh
+
+package require Tcl 8.6
 
 #
 # Daemon to send interface modifications on equipments

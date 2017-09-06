@@ -3,21 +3,28 @@
 #
 # This script launches all tests files (beginning with "test-") in
 # the "$TESTDIR" subdirectory
+# Note: this script must be run with working directory set to here.
 #
 
-LIBDIR=${LIBDIR:-../lib}
-CONFFILE=${CONFFILE:-./nm.conf}
-FILES=$(echo $(ls -d ${FILES:-../www/static/*}) | sed 's/ /:/g')
-
-if [ $# != 3 ]
+if [ $# != 2 ]
 then
-    echo "usage: $0 tclsh version testdir" >&2
+    echo "usage: $0 version testdir" >&2
     exit 1
 fi
 
-TCLSH="$1"
-VERSION="$2"
-TESTDIR="$3"
+VERSION="$1"
+TESTDIR="$2"
+
+here=$(pwd)
+
+NETMAGIS_LIBDIR=${NETMAGIS_LIBDIR:-${here}/../lib}
+NETMAGIS_CONFIG=${NETMAGIS_CONFIG:-${here}/nm.conf}
+NETMAGIS_VERSION="$VERSION"
+FILES=$(echo $(ls -d ${FILES:-${here}/www/static/*}) | sed 's/ /:/g')
+
+export NETMAGIS_LIBDIR NETMAGIS_CONFIG NETMAGIS_VERSION
+
+PATH=$(pwd)/../bin:$PATH ; export PATH
 
 for tfile in ${TESTDIR}/test-*
 do
@@ -26,22 +33,30 @@ do
     ret=ignore
     case "$tfile" in
 	*.sh)			# e.g. load database
-	    sh $tfile $CONFFILE > $log 2>&1
+	    # Shell scripts may execute Netmagis programs which use
+	    # NETMAGIS_* environment variables
+	    rm -f $log
+	    echo "# sh $tfile" > $log
+	    sh $tfile >> $log 2>&1
 	    ret=$?
 	    ;;
 	*.tct)			# Tcl test
-	    "$TCLSH" nmtest.tcl $VERSION \
-	    			$CONFFILE \
-				$LIBDIR \
+	    # The nmtest.tcl program does not use NETMAGIS_* environment
+	    # variables
+	    rm -f $log
+	    echo "# ./nmtest.tcl $NETMAGIS_VERSION $NETMAGIS_CONFIG $NETMAGIS_LIBDIR $FILES $tfile" > $log
+	    ./nmtest.tcl $NETMAGIS_VERSION \
+	    			$NETMAGIS_CONFIG \
+				$NETMAGIS_LIBDIR \
 				$FILES \
 				$tfile \
-				> $log 2>&1
+				>> $log 2>&1
 	    ret=$?
 	    ;;
 	*.log)
 	    ;;
 	*)
-	    echo "Unknown file type '$t'" >&2
+	    echo "Unknown file type '$tfile'" >&2
 	    exit 1
 	    ;;
     esac

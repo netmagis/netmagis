@@ -11,7 +11,6 @@ RUN_DEPENDS=	netmagis-config:${PORTSDIR}/net-mgmt/netmagis-common \
 		fping:${PORTSDIR}/net/fping
 
 USE_RC_SUBR=	topographd toposendd
-SUB_LIST=	TCLSH=${TCLSH}
 
 MASTERDIR=	${.CURDIR}/../netmagis-common
 

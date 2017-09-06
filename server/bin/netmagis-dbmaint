@@ -23,9 +23,6 @@
 #   2016/06/18 : pda : add -h and -f options
 #
 
-# default configuration file
-conffile=""
-
 usage ()
 {
     echo "usage: $0 [-h] [-f conffile] hourly|daily" >&2
@@ -115,6 +112,12 @@ clean_spools ()
     fi
 }
 
+##############################################################################
+# Main program
+##############################################################################
+
+confopt=""		# default value is not changed
+
 #
 # Syntax checking
 #       
@@ -133,7 +136,7 @@ do
 	-h) usage
 	    exit 0
 	    ;;
-	-f) conffile="-f $2"
+	-f) confopt="-f $2"
 	    shift 2
 	    ;;
 	--) shift

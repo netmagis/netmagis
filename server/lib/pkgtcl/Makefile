@@ -1,5 +1,4 @@
 NINSTALL	= ../../../ninstall
-TCLSH		= /usr/local/bin/tclsh
 
 SRCS =	\
 	lconf.tcl \
@@ -16,7 +15,7 @@ build:	pkgIndex.tcl
 	@echo ">>> Making build in `pwd`"
 
 pkgIndex.tcl:	$(SRCS)
-	echo "pkg_mkIndex ." | $(TCLSH)
+	echo "pkg_mkIndex ." | tclsh
 	# chmod g+w pkgIndex.tcl
 
 install: build

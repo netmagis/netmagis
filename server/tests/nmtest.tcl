@@ -1,4 +1,6 @@
-#!%TCLSH%
+#!/usr/bin/env tclsh
+
+package require Tcl 8.6
 
 set conf(baseurl)	/netmagis
 set conf(meth)		{get post put delete}

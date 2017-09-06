@@ -1,3 +1,5 @@
-#!%TCLSH%
+#!/usr/bin/env tclsh
+
+package require Tcl 8.6
 
 puts [binary format H* [lindex $argv 0]]

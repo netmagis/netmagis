@@ -1,5 +1,4 @@
 NINSTALL	= ../../../../ninstall
-TCLSH		= /usr/local/bin/tclsh
 
 FILES =	\
 	fr.msg \

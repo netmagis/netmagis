@@ -16,11 +16,22 @@ usage ()
     exit 1
 }
 
-# default configuration file
-conffile="%CONFFILE%"
-
 # default: do not check
 check=false
+
+##############################################################################
+# Default values may be overriden by environment variables
+##############################################################################
+
+get_default_value ()
+{
+    case "$1" in
+	config)  echo ${NETMAGIS_CONFIG:-%NMCONFFILE%} ;;
+	libdir)  echo ${NETMAGIS_LIBDIR:-%NMLIBDIR%} ;;
+	version) echo ${NETMAGIS_VERSION:-%VERSION%} ;;
+	*)       echo "Internal error: no default for '$1'" >&2 ; exit 1 ;;
+    esac
+}
 
 ##############################################################################
 # Check for parameter existance
@@ -60,6 +71,9 @@ get_param ()
 ##############################################################################
 # Main program
 ##############################################################################
+
+# default configuration file
+conffile=$(get_default_value "config")
 
 #
 # Syntax checking

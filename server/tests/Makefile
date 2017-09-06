@@ -2,7 +2,7 @@ TESTDIR=.
 
 test:
 	@echo ">>> Making test in `pwd`"
-	sh run-all-tests.sh $(TCLSH) $(VERSION) $(TESTDIR)
+	sh run-all-tests.sh $(VERSION) $(TESTDIR)
 
 clean:
 	rm -f $(TESTDIR)/*.log

@@ -1,4 +1,6 @@
-#!%TCLSH%
+#!/usr/bin/env tclsh
+
+package require Tcl 8.6
 
 #
 # Vérifie les enregistrement DNS de la base DNS, en fonction de ce qui

@@ -73,7 +73,6 @@ How to release, step by step
 	cd $NETMAGIS
 	make \
 	    DESTDIR=/www/docs \
-	    TCLSH=/usr/local/bin/tclsh8.5 \
 	    TCLCONF=/usr/share/tcltk/tcl8.5/tclConfig.sh \
 	    install-netmagis.org
 

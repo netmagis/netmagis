@@ -1,4 +1,6 @@
-#!%TCLSH%
+#!/usr/bin/env tclsh
+
+package require Tcl 8.6
 
 #
 # Import OUI file from IEEE to the Netmagis MAC database

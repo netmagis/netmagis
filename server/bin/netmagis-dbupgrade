@@ -6,32 +6,43 @@
 # Supported upgrade path from 2.0 to all current Netmagis versions.
 #
 # Syntax :
-#	netmagis-dbupgrade [-h][-f netmagis-conf][-d dir] [target-version]
+#	netmagis-dbupgrade [-h][-f netmagis-conf][-l libdir] [target-version]
 #
 
 usage ()
 {
     (
-	echo "usage: $0 [-h][-f netmagis.conf][-d dir] [target-version]"
+	echo "usage: $0 [-h][-f netmagis.conf][-l libdir] [target-version]"
 	echo "Without argument: display actual versions"
 	echo "With target argument: upgrade database to this version"
     ) >&2
     exit 1
 }
 
-# Directory where upgrade scripts are located
-updir=%NMLIBDIR%/upgrade
+##############################################################################
+# Default values may be overriden by environment variables
+##############################################################################
+
+get_default_value ()
+{
+    case "$1" in
+	config)  echo ${NETMAGIS_CONFIG:-%NMCONFFILE%} ;;
+	libdir)  echo ${NETMAGIS_LIBDIR:-%NMLIBDIR%} ;;
+	version) echo ${NETMAGIS_VERSION:-%VERSION%} ;;
+	*)       echo "Internal error: no default for '$1'" >&2 ; exit 1 ;;
+    esac
+}
 
 ##############################################################################
 # Configuration file read
 ##############################################################################
 
+# $1 : conffile
 init_env ()
 {
-
     # Main netmagis database parameters (dnsdb*)
     varlist="dnsdbhost dnsdbport dnsdbname dnsdbuser dnsdbpassword"
-    eval $(netmagis-config -f $_conffile -c $varlist)
+    eval $(netmagis-config -f "$1" -c $varlist)
 
     if [ $? != 0 ]
     then
@@ -48,17 +59,7 @@ init_env ()
 
     # Mac database parameters (macdb*)
     varlist="macdbhost macdbport macdbname macdbuser macdbpassword"
-    eval $(netmagis-config -f $_conffile -c $varlist)
-
-    if [ $? != 0 ]
-    then
-	usage
-	exit 1
-    fi
-
-    # Other configuration parameters
-    varlist="_version"
-    eval $(netmagis-config -f $_conffile -c $varlist)
+    eval $(netmagis-config -f "$1" -c $varlist)
 
     if [ $? != 0 ]
     then
@@ -241,17 +242,15 @@ create_netmagis ()
 # Main program
 ##############################################################################
 
-#
-# Get default configuration file location
-#
-eval $(netmagis-config -c _conffile)
-
+conffile=$(get_default_value "config")
+libdir=$(get_default_value "libdir")
+codeversion=$(get_default_value "version")
 
 #
 # Syntax checking
 #       
  
-args=$(getopt hf:d: $*)
+args=$(getopt hf:l: $*)
 
 if [ $? != 0 ]
 then usage
@@ -265,10 +264,10 @@ do
 	-h) usage
 	    exit 0
 	    ;;
-	-f) _conffile=$2
+	-f) conffile=$2
 	    shift 2
 	    ;;
-	-d) updir=$2
+	-l) libdir=$2
 	    shift 2
 	    ;;
 	--) shift
@@ -283,18 +282,25 @@ case $# in
     *)	usage ;;
 esac
 
+updir=$libdir/upgrade
+if [ ! -d $updir ]
+then
+    echo "Directory 'upgrade' not found in '$libdir'" >&2
+    exit 1
+fi
+
 #
 # Initialize environnement
 #
 
-init_env
+init_env $conffile
 
 #
 # Detect versions
 #
 
 schemaversion=$(detect_schema_version)
-codeversion=$(echo $_version | sed 's/^\([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1\2/')
+codeversion=$(echo $codeversion | sed 's/^\([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1\2/')
 
 if [ $schemaversion -gt $codeversion ]
 then

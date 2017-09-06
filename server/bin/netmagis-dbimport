@@ -1,4 +1,6 @@
-#!%TCLSH%
+#!/usr/bin/env tclsh
+
+package require Tcl 8.6
 
 #
 # Import existing DNS data into Netmagis database
@@ -14,14 +16,6 @@
 #   2011/03/13 : pda      : end import programming
 #   2011/06/20 : pda      : add dhcp keyword in networks import
 #
-
-#
-# Default values
-#
-
-set conf(conffile)	%CONFFILE%
-set conf(libdir)	%NMLIBDIR%
-set conf(version)	%VERSION%
 
 #
 # Pattern to distinguish zone prologue (including non standard RRs) 
@@ -93,6 +87,38 @@ package require ip
 ##############################################################################
 # Small utility functions
 ##############################################################################
+
+proc get-default-value {type} {
+    global env
+
+    switch $type {
+	config {
+	    if {[info exists env(NETMAGIS_CONFIG)]} then {
+		set v $env(NETMAGIS_CONFIG)
+	    } else {
+		set v %CONFFILE%
+	    }
+	}
+	libdir {
+	    if {[info exists env(NETMAGIS_LIBDIR)]} then {
+		set v $env(NETMAGIS_LIBDIR)
+	    } else {
+		set v %NMLIBDIR%
+	    }
+	}
+	version {
+	    if {[info exists env(NETMAGIS_VERSION)]} then {
+		set v $env(NETMAGIS_VERSION)
+	    } else {
+		set v %BERSION%
+	    }
+	}
+	default {
+	    fatal-error "Internal error: no default for '$type'"
+	}
+    }
+    return $v
+}
 
 set here(prog)	""
 set here(file)	""
@@ -2097,9 +2123,9 @@ proc main {argv0 argv} {
     #
 
     set verbose  0
-    set conffile $conf(conffile)
-    set libdir   $conf(libdir)
-    set version  $conf(version)
+    set conffile [get-default-value "config"]
+    set libdir   [get-default-value "libdir"]
+    set version  [get-default-value "version"]
 
     while {[llength $argv] > 0} {
 	set a [lindex $argv 0]

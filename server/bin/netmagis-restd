@@ -1,4 +1,6 @@
-#!%TCLSH%
+#!/usr/bin/env tclsh
+
+package require Tcl 8.6
 
 set conf(conffile)	%CONFFILE%
 set conf(addr)		0.0.0.0
@@ -24,6 +26,39 @@ set conf(usage) {usage: %s [-h][-d][-f conf][-a addr][-p port][-l libdir][-s fil
     -v vers: application version for schema checking (e.g. 3.0.0alpha)
 }
 
+proc get-default-value {type} {
+    global env
+
+    switch $type {
+	config {
+	    if {[info exists env(NETMAGIS_CONFIG)]} then {
+		set v $env(NETMAGIS_CONFIG)
+	    } else {
+		set v %CONFFILE%
+	    }
+	}
+	libdir {
+	    if {[info exists env(NETMAGIS_LIBDIR)]} then {
+		set v $env(NETMAGIS_LIBDIR)
+	    } else {
+		set v %NMLIBDIR%
+	    }
+	}
+	version {
+	    if {[info exists env(NETMAGIS_VERSION)]} then {
+		set v $env(NETMAGIS_VERSION)
+	    } else {
+		set v %BERSION%
+	    }
+	}
+	default {
+	    puts stderr "Internal error: no default for '$type'"
+	    exit 1
+	}
+    }
+    return $v
+}
+
 proc usage {argv0} {
     global conf
 
@@ -39,15 +74,15 @@ proc main {argv0 argv} {
     #
 
     set debug    {}
-    set conffile $conf(conffile)
+    set conffile [get-default-value "config"]
+    set libdir   [get-default-value "libdir"]
+    set version  [get-default-value "version"]
     set addr     $conf(addr)
     set port     $conf(port)
-    set libdir   $conf(libdir)
     set files    $conf(files)
     set minw     $conf(minw)
     set maxw     $conf(maxw)
     set idle     $conf(idle)
-    set version  $conf(version)
 
     while {[llength $argv] > 0} {
 	set a [lindex $argv 0]

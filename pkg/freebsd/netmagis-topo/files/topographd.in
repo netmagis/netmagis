@@ -27,8 +27,6 @@ load_rc_config $name
 : ${topographd_enable:=NO}
 : ${topographd_user:=rancid}
 
-command_interpreter=%%TCLSH%%
-
 command=%%PREFIX%%/sbin/topographd
 
 run_rc_command $1

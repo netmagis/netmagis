@@ -17,13 +17,24 @@ usage ()
     exit 1
 }
 
-# default configuration file option
-confopt=""
-
 # Option to disable NOTICE messages when using psql
 PGOPTIONS='--client-min-messages=warning'
 export PGOPTIONS
 
+
+##############################################################################
+# Default values may be overriden by environment variables
+##############################################################################
+
+get_default_value ()
+{
+    case "$1" in
+	config)  echo ${NETMAGIS_CONFIG:-%NMCONFFILE%} ;;
+	libdir)  echo ${NETMAGIS_LIBDIR:-%NMLIBDIR%} ;;
+	version) echo ${NETMAGIS_VERSION:-%VERSION%} ;;
+	*)       echo "Internal error: no default for '$1'" >&2 ; exit 1 ;;
+    esac
+}
 
 ##############################################################################
 # Configuration file read
@@ -97,13 +108,13 @@ db_test_schemas ()
 # SQL file execution
 ##############################################################################
 
-# $1 = file (relative to %NMLIBDIR%)
+# $1 = file (relative to global $libdir variable)
 sql_file_execute ()
 {
     PGCLIENTENCODING=utf8
     export PGCLIENTENCODING
 
-    psql --no-psqlrc --quiet --file %NMLIBDIR%/$1 2>&1
+    psql --no-psqlrc --quiet --file $libdir/$1 2>&1
 }
 
 ##############################################################################
@@ -402,7 +413,9 @@ create_mac_schemas ()
 # Main program
 ##############################################################################
 
-#
+confopt=""		# use default value in called programs
+libdir=$(get_default_value libdir)
+
 # Syntax checking
 #       
  

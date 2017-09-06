@@ -6,7 +6,6 @@ set -e # Stop on first error
 export DEBEMAIL=jean@unistra.fr
 export DEBFULLNAME="Jean BENOIT"
 
-TCLSH=/usr/bin/tclsh
 TCLCONF=/usr/lib/tcl8.5/tclConfig.sh
 
 BASEURL=http://www.netmagis.org/files/
@@ -33,7 +32,6 @@ SUBST="-e s/%VERSION%/$VERSION/g"
 modmakefile()
 {
     sed --in-place=.bak \
-    	-e "/^TCLSH/d" \
     	-e "/^TCLCONF/d" \
 	-e "/^PREFIX.*/s||PREFIX=|" \
 	-e "/^BINDIR/s|/bin|/usr&|" \
@@ -47,7 +45,6 @@ modmakefile()
 	-e "/^NMCGIDIR/s|/www/netmagis|/usr/lib/cgi-bin/netmagis|" \
 	-e "/^NMWSDIR/s|/www/metro|/usr/lib/cgi-bin/metro|" \
 	-e "/^PREFIX/a \
-TCLSH=$TCLSH\\
 TCLCONF=$TCLCONF
 " \
     	-e "/^usage:/i \

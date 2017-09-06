@@ -33,7 +33,7 @@ NO_ARCH=	yes
 
 # Variables used in netmagis Makefiles
 MAKE_ARGS+=	DESTDIR=${STAGEDIR}${DESTDIR} PREFIX=${PREFIX}
-MAKE_ARGS+=	TCLSH=${TCLSH} TCLCONF=${TCL_LIBDIR}/tclConfig.sh
+MAKE_ARGS+=	TCLCONF=${TCL_LIBDIR}/tclConfig.sh
 
 .if ${PKGNAMESUFFIX} == -topo || ${PKGNAMESUFFIX} == -www
 ALL_TARGET=build${PKGNAMESUFFIX?=}
