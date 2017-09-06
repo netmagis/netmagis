@@ -126,7 +126,7 @@ proc main {argv0 argv} {
     # Initialize default values and parse arguments
     #
 
-    set debug    true
+    set debug    {error request}
 
     if {[llength $argv] != 5} then {
 	usage $argv0
