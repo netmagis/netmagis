@@ -24,7 +24,7 @@ set expectedjson {
 	{
 	    "idalias": 232,
 	    "iddom": 1,
-	    "idhost": 231,
+	    "idhost": 230,
 	    "idview": 3,
 	    "name": "a-marvelous-product",
 	    "ttl": -1
@@ -32,7 +32,7 @@ set expectedjson {
 	{
 	    "idalias": 233,
 	    "iddom": 2,
-	    "idhost": 231,
+	    "idhost": 230,
 	    "idview": 3,
 	    "name": "www",
 	    "ttl": -1
@@ -86,7 +86,7 @@ set expectedjson {
 	{
 	    "idalias": 233,
 	    "iddom": 2,
-	    "idhost": 231,
+	    "idhost": 230,
 	    "idview": 3,
 	    "name": "www",
 	    "ttl": -1
@@ -152,7 +152,7 @@ set inputjson {
 	"name": "invalid-alias",
 	"iddom": 1,
 	"idview": 2,
-	"idhost": 231,
+	"idhost": 230,
 	"ttl": null
     }
 }
