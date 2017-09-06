@@ -13,7 +13,7 @@ namespace eval ::auth {
 
     proc random {nbytes} {
 	############################
-	set dev "/dev/random"
+	set dev "/dev/urandom"
 	############################
 	if {[catch {set fd [open $dev {RDONLY BINARY}]} msg]} then {
 	    #
