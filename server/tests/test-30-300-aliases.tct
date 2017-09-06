@@ -159,6 +159,25 @@ set inputjson {
 lassign [test-call POST $uri $inputjson] stcode stmsg ct body
 test-assert 170 "Add alias" \
 	{$stcode == 200}
+set alias1 $body
+
+set expectedjson {
+    [
+	{
+	    "idalias": %ID%,
+	    "iddom": 1,
+	    "idhost": 230,
+	    "idview": 3,
+	    "name": "alias1",
+	    "ttl": -1
+	}
+    ]
+}
+regsub "%ID%" $expectedjson $alias1 expectedjson
+lassign [test-call GET $uri?name=alias1 {}] stcode stmsg ct body
+test-assert 201 "Fetch newly added alias" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
 
 
 #########################################################################
@@ -278,4 +297,11 @@ set inputjson {
 lassign [test-call PUT $uri/230 $inputjson] stcode stmsg ct body
 test-assert 250 "Attempt to modify TTL of an alias without TTL right" \
 	{$stcode == 404}
+
+
+#########################################################################
+
+lassign [test-call DELETE $uri/$alias1 {}] stcode stmsg ct body
+test-assert 400 "Remove the added alias" \
+	{$stcode == 200}
 
