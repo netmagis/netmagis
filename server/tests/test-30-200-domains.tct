@@ -4,18 +4,17 @@ test-reset-cookie
 
 #########################################################################
 lassign [test-call GET $uri {}] stcode stmsg ct body
-test-assert 5 "Get domain without auth -> error" \
+test-assert 10 "Get domain without auth -> error" \
 	{$stcode == 401}
 
 #########################################################################
 lassign [test-call GET $uri/1 {}] stcode stmsg ct body
-test-assert 6 "Get a single domain, without auth -> error" \
+test-assert 20 "Get a single domain, without auth -> error" \
 	{$stcode == 401}
 
-
-test-set-cookie session t2-simple
-
 #########################################################################
+test-set-cookie session t6-smtp
+
 set expectedjson {
     [
 	{
@@ -31,10 +30,28 @@ set expectedjson {
     ]
 }
 lassign [test-call GET $uri {}] stcode stmsg ct body
-test-assert 10 "Get all domains" \
+test-assert 100 "Get all domains -> 2 domains" \
 	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
 #########################################################################
+test-set-cookie session t2-simple
+
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "mailrole": 1,
+	    "name": "example.com"
+	}
+    ]
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 110 "Get all domains -> only one" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+test-set-cookie session t6-smtp
+
 set expectedjson {
     [
 	{
@@ -50,7 +67,7 @@ set expectedjson {
     ]
 }
 lassign [test-call GET $uri?mailrole=1 {}] stcode stmsg ct body
-test-assert 20 "Get all domains with mailroles -> all domains" \
+test-assert 120 "Get all domains with mailroles -> all domains" \
 	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
 #########################################################################
@@ -60,7 +77,7 @@ set expectedjson {
 }
 lassign [test-call GET $uri?mailrole=0 {}] stcode stmsg ct body
 
-test-assert 30 "Get all domains without mailroles -> none" \
+test-assert 130 "Get all domains without mailroles -> none" \
 	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
 #########################################################################
@@ -72,7 +89,7 @@ set expectedjson {
     }
 }
 lassign [test-call GET $uri/1 {}] stcode stmsg ct body
-test-assert 40 "Get a single domain" \
+test-assert 140 "Get a single domain" \
 	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
 #########################################################################
@@ -84,10 +101,10 @@ set expectedjson {
     }
 }
 lassign [test-call GET $uri/1?mailrole=1 {}] stcode stmsg ct body
-test-assert 50 "Get a single domain, with mailrole" \
+test-assert 150 "Get a single domain, with mailrole" \
 	{$stcode == 200 && [test-json $ct $body $expectedjson]}
 
 #########################################################################
 lassign [test-call GET $uri/1?mailrole=0 {}] stcode stmsg ct body
-test-assert 60 "Get a single domain, without mail role -> error" \
+test-assert 160 "Get a single domain, without mail role -> error" \
 	{$stcode == 404}
