@@ -1,0 +1,264 @@
+set uri /netmagis/mailroles
+
+test-reset-cookie
+
+#########################################################################
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 10 "Get mailroles without auth -> error" \
+	{$stcode == 401}
+
+
+test-set-cookie session t1-wheel
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "idhost": 217,
+	    "idmailrole": 234,
+	    "idview": 3,
+	    "name": "sales",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 100 "Get all mailroles" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "idhost": 217,
+	    "idmailrole": 234,
+	    "idview": 3,
+	    "name": "sales",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri?view=external {}] stcode stmsg ct body
+test-assert 110 "Get all mailroles in view external" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+set expectedjson {
+    [
+    ]
+}
+lassign [test-call GET $uri?view=internal {}] stcode stmsg ct body
+test-assert 120 "Get all mailroles in view internal" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "idhost": 217,
+	    "idmailrole": 234,
+	    "idview": 3,
+	    "name": "sales",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri?name=sales {}] stcode stmsg ct body
+test-assert 130 "Get all mailroles with name 'sales'" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "idhost": 217,
+	    "idmailrole": 234,
+	    "idview": 3,
+	    "name": "sales",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri?idhost=217 {}] stcode stmsg ct body
+test-assert 140 "Get aliases pointing to idhost 217" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "idhost": 217,
+	    "idmailrole": 234,
+	    "idview": 3,
+	    "name": "sales",
+	    "ttl": -1
+	}
+    ]
+}
+lassign [test-call GET $uri?idhost=217&domain=example.com {}] stcode stmsg ct body
+test-assert 150 "Get aliases with multiple criteria" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set expectedjson {
+    [
+    ]
+}
+lassign [test-call GET $uri?idhost=217&domain=example.org {}] stcode stmsg ct body
+test-assert 160 "Get aliases with multiple incompatible criteria" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+
+#########################################################################
+set inputjson {
+    {
+	"name": "mr1",
+	"iddom": 2,
+	"idhost": 217,
+	"idview": 3,
+	"ttl": null
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 200 "Add mailrole" \
+	{$stcode == 200}
+set mr1 $body
+
+set expectedjson {
+    [
+	{
+	    "idmailrole": %ID%,
+	    "name": "mr1",
+	    "iddom": 2,
+	    "idhost": 217,
+	    "idview": 3,
+	    "ttl": -1
+	}
+    ]
+}
+regsub "%ID%" $expectedjson $mr1 expectedjson
+lassign [test-call GET $uri?name=mr1 {}] stcode stmsg ct body
+test-assert 201 "Fetch newly added mailrole" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+
+#########################################################################
+test-set-cookie session t2-simple
+set inputjson {
+    {
+	"name": "inv-mailrole",
+	"iddom": 1,
+	"idview": 3,
+	"idhost": 217,
+	"ttl": null
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 210 "Attempt to add alias in invalid view" \
+	{$stcode == 400}
+
+#########################################################################
+test-set-cookie session t2-simple
+set inputjson {
+    {
+	"name": "inv-mailrole",
+	"iddom": 2,
+	"idview": 2,
+	"idhost": 217,
+	"ttl": null
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 220 "Attempt to add alias in invalid domain" \
+	{$stcode == 400}
+
+#########################################################################
+test-set-cookie session t2-simple
+set inputjson {
+    {
+	"name": "inv-mailrole",
+	"iddom": 1,
+	"idview": 2,
+	"idhost": 217,
+	"ttl": 123
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 230 "Attempt to add mailrole with a TTL without TTL right" \
+	{$stcode == 400}
+
+
+#########################################################################
+test-set-cookie session t5-ttl
+set inputjson {
+    {
+	"name": "mr2",
+	"iddom": 1,
+	"idview": 2,
+	"idhost": 217,
+	"ttl": 123
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 240 "Add mailrole with a TTL" \
+	{$stcode == 200}
+
+
+#########################################################################
+test-set-cookie session t5-ttl
+set inputjson {
+    {
+	"name": "mr2",
+	"iddom": 1,
+	"idview": 2,
+	"idhost": 230,
+	"ttl": 123
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 250 "Attempt to add a mailrole with an existing name" \
+	{$stcode == 400}
+
+
+#########################################################################
+test-set-cookie session t2-simple
+set inputjson {
+    {
+	"iddom": 1,
+	"idhost": 217,
+	"idmailrole": 234,
+	"idview": 2,
+	"name": "sales",
+	"ttl": -1
+    }
+}
+lassign [test-call PUT $uri/230 $inputjson] stcode stmsg ct body
+test-assert 300 "Attempt to modify a mailrole in an unauthorized view" \
+	{$stcode == 404}
+
+
+#########################################################################
+
+lassign [test-call DELETE $uri/$mr1 {}] stcode stmsg ct body
+test-assert 400 "Attempt to remove the added mailrole without access to the view" \
+	{$stcode == 400}
+
+
+#########################################################################
+test-set-cookie session t1-wheel
+
+lassign [test-call DELETE $uri/$mr1 {}] stcode stmsg ct body
+test-assert 410 "Remove the added mailrole" \
+	{$stcode == 200}
+
