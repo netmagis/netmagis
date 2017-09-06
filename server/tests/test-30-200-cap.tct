@@ -21,7 +21,7 @@ test-set-cookie session t1-wheel
 set expectedjson {
     {
 	"user": "u1-wheel",
-	"cap": ["any", "logged", "admin", "smtp", "ttl", "topo", "topogenl", "genz", "mac", "pgauth", "pgadmin"],
+	"cap": ["any", "logged", "admin", "smtp", "ttl", "genz", "mac", "pgauth", "pgadmin"],
 	"lang": "en"
     }
 }
@@ -35,7 +35,7 @@ test-set-cookie session t2-simple
 set expectedjson {
     {
 	"user": "u2-simple",
-	"cap": ["any", "logged", "topo", "pgauth"],
+	"cap": ["any", "logged", "pgauth"],
 	"lang": "en"
     }
 }
@@ -49,7 +49,7 @@ test-set-cookie session t3-genz
 set expectedjson {
     {
 	"user": "u3-genz",
-	"cap": ["any", "logged", "topo", "genz", "pgauth"],
+	"cap": ["any", "logged", "genz", "pgauth"],
 	"lang": "en"
     }
 }
@@ -63,7 +63,7 @@ test-set-cookie session t4-mac
 set expectedjson {
     {
 	"user": "u4-mac",
-	"cap": ["any", "logged", "topo", "mac", "pgauth"],
+	"cap": ["any", "logged", "mac", "pgauth"],
 	"lang": "en"
     }
 }
@@ -77,7 +77,7 @@ test-set-cookie session t5-ttl
 set expectedjson {
     {
 	"user": "u5-ttl",
-	"cap": ["any", "logged", "ttl", "topo", "pgauth"],
+	"cap": ["any", "logged", "ttl", "pgauth"],
 	"lang": "en"
     }
 }
@@ -91,7 +91,7 @@ test-set-cookie session t6-smtp
 set expectedjson {
     {
 	"user": "u6-smtp",
-	"cap": ["any", "logged", "smtp", "topo", "pgauth"],
+	"cap": ["any", "logged", "smtp", "pgauth"],
 	"lang": "en"
     }
 }
@@ -105,7 +105,7 @@ test-set-cookie session t7-admin
 set expectedjson {
     {
 	"user": "u7-admin",
-	"cap": ["any", "logged", "admin", "topo", "pgauth", "pgadmin"],
+	"cap": ["any", "logged", "admin", "pgauth"],
 	"lang": "en"
     }
 }

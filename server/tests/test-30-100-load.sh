@@ -71,18 +71,22 @@ patch ()
 	    SET p_admin=1, p_smtp=1, p_ttl=1, p_mac=1, p_genl=1, p_genz=1
 	    WHERE name = 'g1-wheel' ;
 	UPDATE global.nmgroup
-	    SET p_genz=1 WHERE name = 'g3-simple' ;
+	    SET p_genz = 1 WHERE name = 'g3-genz' ;
 	UPDATE global.nmgroup
-	    SET p_mac=1 WHERE name = 'g4-mac' ;
+	    SET p_mac = 1 WHERE name = 'g4-mac' ;
+	UPDATE global.config
+	    SET value = 1 WHERE key = 'macactive' ;
 	UPDATE global.nmgroup
-	    SET p_ttl=1 WHERE name = 'g5-ttl' ;
+	    SET p_ttl = 1 WHERE name = 'g5-ttl' ;
 	UPDATE global.nmgroup
-	    SET p_smtp=1 WHERE name = 'g6-smtp' ;
+	    SET p_smtp = 1 WHERE name = 'g6-smtp' ;
 	UPDATE global.nmgroup
-	    SET p_admin=1 WHERE name = 'g7-admin' ;
+	    SET p_admin = 1 WHERE name = 'g7-admin' ;
 	INSERT INTO global.utmp (idcor, token, api)
 	    SELECT idcor, regexp_replace (login, '^u', 't') AS token, 1 AS api
 		FROM global.nmuser WHERE login like 'u%-%' ;
+	INSERT INTO pgauth.member (login, realm)
+	    VALUES ('u1-wheel', 'authadmin') ;
 	"
     fail $? 40 "patch data"
 }
