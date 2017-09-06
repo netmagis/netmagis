@@ -1,0 +1,415 @@
+set uri /netmagis/hosts
+
+test-reset-cookie
+
+#########################################################################
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 10 "Get hosts without auth -> error" \
+	{$stcode == 401}
+
+
+test-set-cookie session t1-wheel
+
+#########################################################################
+set expectedjson {
+    []
+}
+lassign [test-call GET $uri?name=nonexistantname {}] stcode stmsg ct body
+test-assert 90 "Search for a host not found" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "domain": "example.com",
+	    "iddom": 1,
+	    "idhost": 222,
+	    "idview": 2,
+	    "name": "www",
+	    "view": "internal"
+	},
+	{
+	    "domain": "example.com",
+	    "iddom": 1,
+	    "idhost": 230,
+	    "idview": 3,
+	    "name": "www",
+	    "view": "external"
+	}
+    ]
+}
+lassign [test-call GET $uri?name=www {}] stcode stmsg ct body
+test-assert 100 "Get all hosts with name www" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "domain": "example.com",
+	    "iddom": 1,
+	    "idhost": 222,
+	    "idview": 2,
+	    "name": "www",
+	    "view": "internal"
+	}
+    ]
+}
+lassign [test-call GET $uri?name=www&view=internal {}] stcode stmsg ct body
+test-assert 110 "Get all hosts with name www in view internal" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "domain": "example.com",
+	    "iddom": 1,
+	    "idhost": 222,
+	    "idview": 2,
+	    "name": "www",
+	    "view": "internal"
+	},
+	{
+	    "domain": "example.com",
+	    "iddom": 1,
+	    "idhost": 230,
+	    "idview": 3,
+	    "name": "www",
+	    "view": "external"
+	}
+    ]
+}
+lassign [test-call GET $uri?name=www {}] stcode stmsg ct body
+test-assert 120 "Get all hosts with name www in domain example.com" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "domain": "example.com",
+	    "iddom": 1,
+	    "idhost": 220,
+	    "idview": 2,
+	    "name": "ns1",
+	    "view": "internal"
+	},
+	{
+	    "domain": "example.com",
+	    "iddom": 1,
+	    "idhost": 228,
+	    "idview": 3,
+	    "name": "ns1",
+	    "view": "external"
+	}
+    ]
+}
+lassign [test-call GET $uri?addr=198.51.100.1 {}] stcode stmsg ct body
+test-assert 130 "Get all hosts with IP address = 198.51.100.1" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "domain": "example.com",
+	    "iddom": 1,
+	    "idhost": 217,
+	    "idview": 2,
+	    "name": "mailhost",
+	    "view": "internal"
+	}
+    ]
+}
+lassign [test-call GET $uri?addr=172.16.1.1 {}] stcode stmsg ct body
+test-assert 140 "Get all hosts with IP address = 172.16.1.1" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set expectedjson {
+    {
+	"addr": [
+	    "198.51.100.5",
+	    "2001:db8:1234::5"
+	],
+	"comment": "",
+	"iddhcpprof": -1,
+	"iddom": 1,
+	"idhinfo": 0,
+	"idview": 3,
+	"mac": "",
+	"name": "www",
+	"respmail": "",
+	"respname": "",
+	"sendsmtp": 0,
+	"ttl": -1
+    }
+}
+lassign [test-call GET $uri/230 {}] stcode stmsg ct body
+test-assert 150 "Get a simple host with 2 IP addresses" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+test-set-cookie session t2-simple
+
+set expectedjson {}
+lassign [test-call GET $uri/230 {}] stcode stmsg ct body
+test-assert 160 "Attempt to get a host in an unauthorized view" \
+	{$stcode == 400}
+
+#########################################################################
+test-set-cookie session t1-wheel
+
+set inputjson {
+    {
+	"name": "addhost1",
+	"iddom": 1,
+	"idview": 2,
+	"mac": "",
+	"idhinfo": 2,
+	"comment": "hello !",
+	"respname": "Joe User",
+	"respmail": "/dev/null@nowhere.com",
+	"iddhcpprof": -1,
+	"sendsmtp": 0,
+	"ttl": 0,
+	"addr": ["172.16.1.3", "2001:db8:1234::3333"]
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 200 "Add a host with 2 IP addresses" \
+	{$stcode == 200}
+set addhost1 $body
+
+set expectedjson {
+    [
+	{
+	    "name": "addhost1",
+	    "idhost": %ID%,
+	    "iddom": 1,
+	    "idview": 2,
+	    "domain": "example.com",
+	    "view": "internal"
+	}
+    ]
+}
+regsub "%ID%" $expectedjson $addhost1 expectedjson
+lassign [test-call GET $uri?name=addhost1 {}] stcode stmsg ct body
+test-assert 201 "Fetch newly added host" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+set inputjson {
+    {
+	"name": "addhost2",
+	"iddom": 1,
+	"idview": 2,
+	"mac": "",
+	"idhinfo": 2,
+	"comment": "hello !",
+	"respname": "Joe User",
+	"respmail": "/dev/null@nowhere.com",
+	"iddhcpprof": -1,
+	"sendsmtp": 0,
+	"ttl": 0,
+	"addr": ["172.16.1.3"]
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 210 "Attempt to add a host using an existing IP address" \
+	{$stcode == 400}
+
+#########################################################################
+set inputjson {
+    {
+	"name": "addhost3",
+	"iddom": 1,
+	"idview": 2,
+	"mac": "",
+	"idhinfo": 2,
+	"comment": "hello !",
+	"respname": "Joe User",
+	"respmail": "/dev/null@nowhere.com",
+	"iddhcpprof": -1,
+	"sendsmtp": 0,
+	"ttl": 0,
+	"addr": ["1.2.3.4"]
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 220 "Attempt to add a host using an unauthorized IP address" \
+	{$stcode == 400}
+
+#########################################################################
+set inputjson {
+    {
+	"name": "www",
+	"iddom": 2,
+	"idview": 3,
+	"mac": "",
+	"idhinfo": 2,
+	"comment": "hello !",
+	"respname": "Joe User",
+	"respmail": "/dev/null@nowhere.com",
+	"iddhcpprof": -1,
+	"sendsmtp": 0,
+	"ttl": 0,
+	"addr": ["172.16.1.4"]
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 230 "Attempt to add a host with the same name as an alias" \
+	{$stcode == 400}
+
+#########################################################################
+test-set-cookie session t6-smtp
+set host20 103
+set inputjson {
+    {
+	"addr": [ "172.16.2.20", "172.16.2.200"],
+	"comment": "",
+	"iddhcpprof": -1,
+	"iddom": 2,
+	"idhinfo": 2,
+	"idview": 3,
+	"mac": "1:2:3:4:5:6",
+	"name": "host20-new",
+	"respmail": "nobody@example.com",
+	"respname": "Joe Nobody",
+	"sendsmtp": 1,
+	"ttl": -1
+    }
+}
+lassign [test-call PUT $uri/$host20 $inputjson] stcode stmsg ct body
+test-assert 300 "Modify a host" \
+	{$stcode == 200}
+
+set expectedjson {
+    [
+	{
+	    "idhost":103,
+	    "name": "host20-new",
+	    "iddom": 2,
+	    "domain":"example.org",
+	    "idview": 3,
+	    "view":"external"
+	}
+    ]
+}
+lassign [test-call GET $uri?name=host20-new {}] stcode stmsg ct body
+test-assert 301 "Get the modified host (simplified record)" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+set expectedjson {
+    {
+	"addr": [ "172.16.2.20", "172.16.2.200"],
+	"comment": "",
+	"iddhcpprof": -1,
+	"iddom": 2,
+	"idhinfo": 2,
+	"idview": 3,
+	"mac": "01:02:03:04:05:06",
+	"name": "host20-new",
+	"respmail": "nobody@example.com",
+	"respname": "Joe Nobody",
+	"sendsmtp": 1,
+	"ttl": -1
+    }
+}
+lassign [test-call GET $uri/$host20 {}] stcode stmsg ct body
+test-assert 302 "Get the modified host (full record)" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+set inputjson {
+    {
+	"addr": [],
+	"comment": "",
+	"iddhcpprof": -1,
+	"iddom": 2,
+	"idhinfo": 2,
+	"idview": 3,
+	"mac": "1:2:3:4:5:6",
+	"name": "host20-new",
+	"respmail": "nobody@example.com",
+	"respname": "Joe Nobody",
+	"sendsmtp": 1,
+	"ttl": -1
+    }
+}
+lassign [test-call PUT $uri/$host20 $inputjson] stcode stmsg ct body
+test-assert 310 "Attempt to modify a host with an empty IP address list" \
+	{$stcode == 400}
+
+
+#########################################################################
+# www.example.org (idname 233) points to host www.example.com (idhost 230)
+# in view external (3)
+set www 230
+set inputjson {
+    {
+	"addr": [
+	    "198.51.100.5",
+	    "2001:db8:1234::5"
+	],
+	"comment": "",
+	"iddhcpprof": -1,
+	"iddom": 1,
+	"idhinfo": 0,
+	"idview": 2,
+	"mac": "",
+	"name": "www",
+	"respmail": "",
+	"respname": "",
+	"sendsmtp": 0,
+	"ttl": -1
+    }
+}
+lassign [test-call PUT $uri/$www $inputjson] stcode stmsg ct body
+test-assert 320 "Attempt to change the view of a host which supports an alias" \
+	{$stcode == 400}
+
+
+#########################################################################
+# mx1.example.com (idhost 226) is a relaydom for some domains
+# in view external (3)
+set mx1 226
+set inputjson {
+    {
+	"addr": [
+	    "198.51.100.3",
+	    "2001:db8:1234::3"
+	],
+	"comment": "",
+	"iddhcpprof": -1,
+	"iddom": 1,
+	"idhinfo": 0,
+	"idview": 2,
+	"mac": "",
+	"name": "mx1",
+	"respmail": "",
+	"respname": "",
+	"sendsmtp": 0,
+	"ttl": -1
+    }
+}
+lassign [test-call PUT $uri/$mx1 $inputjson] stcode stmsg ct body
+test-assert 330 "Attempt to change the view of a host which supports a relaydom" \
+	{$stcode == 400}
+
+
+
+#########################################################################
+# delete addhost1
+
+lassign [test-call DELETE $uri/$addhost1 {}] stcode stmsg ct body
+test-assert 400 "Delete host addhost1" \
+	{$stcode == 200}
+
