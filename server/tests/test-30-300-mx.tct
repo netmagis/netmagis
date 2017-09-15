@@ -1,0 +1,297 @@
+set uri /netmagis/mx
+
+set urihost /netmagis/hosts
+
+test-reset-cookie
+
+#########################################################################
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 10 "Get mx without auth -> error" \
+	{$stcode == 401}
+
+#########################################################################
+test-set-cookie session t2-simple
+
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 20 "Get mx for a non-admin user -> error" \
+	{$stcode == 403}
+
+
+test-set-cookie session t1-wheel
+
+#########################################################################
+# Document some values
+
+set ns1 228
+set ns2 229
+set www 230
+set examplecom 1
+set external 3
+
+#########################################################################
+set inputjson {
+    {
+	"name": "newmx",
+	"iddom": 1,
+	"idview": 3,
+	"mxhosts": [
+	    {
+		"prio": 100,
+		"ttl": -1,
+		"idhost": 228
+	    },
+	    {
+		"prio": 200,
+		"ttl": -1,
+		"idhost": 229
+	    }
+	]
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 100 "Add a mx 'newmx' to ns1+ns2" \
+	{$stcode == 200}
+
+set idmx $body
+
+#########################################################################
+set expectedjson {
+    {
+	"name": "newmx",
+	"iddom": 1,
+	"idview": 3,
+	"mxhosts": [
+	    {
+		"prio": 100,
+		"ttl": -1,
+		"idhost": 228
+	    },
+	    {
+		"prio": 200,
+		"ttl": -1,
+		"idhost": 229
+	    }
+	]
+    }
+}
+
+lassign [test-call GET $uri/$idmx {}] stcode stmsg ct body
+test-assert 105 "Get mx $idmx -> newmx" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "idmx": %IDMX%,
+	    "name": "newmx",
+	    "iddom": 1,
+	    "idview": 3,
+	    "mxhosts": [
+		{
+		    "prio": 100,
+		    "ttl": -1,
+		    "idhost": 228
+		},
+		{
+		    "prio": 200,
+		    "ttl": -1,
+		    "idhost": 229
+		}
+	    ]
+	}
+    ]
+}
+set expectednothing {
+    [
+    ]
+}
+regsub "%IDMX%" $expectedjson $idmx expectedjson
+
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 110 "Get all mx -> newmx" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+lassign [test-call GET $uri?name=nonexistent {}] stcode stmsg ct body
+test-assert 111 "Get mx name=nonexistant -> \[\]" \
+	{$stcode == 200 && [test-json $ct $body $expectednothing]}
+
+lassign [test-call GET $uri?domain=example.com {}] stcode stmsg ct body
+test-assert 112 "Get mx domain=example.com -> newmx" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+lassign [test-call GET $uri?domain=example.org {}] stcode stmsg ct body
+test-assert 113 "Get mx domain=example.org -> \[\]" \
+	{$stcode == 200 && [test-json $ct $body $expectednothing]}
+
+lassign [test-call GET $uri?view=external {}] stcode stmsg ct body
+test-assert 114 "Get mx view=external -> newmx" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+lassign [test-call GET $uri?view=internal {}] stcode stmsg ct body
+test-assert 115 "Get mx view=internal -> \[\]" \
+	{$stcode == 200 && [test-json $ct $body $expectednothing]}
+
+lassign [test-call GET $uri?name=newmx&domain=example.com&view=external {}] stcode stmsg ct body
+test-assert 116 "Get mx name=newmx/domain=example.com/view=external-> newmx" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+lassign [test-call GET $uri?name=newmx&domain=example.org&view=external {}] stcode stmsg ct body
+test-assert 117 "Get mx name=newmx/domain=example.ORG/view=external-> \[\]" \
+	{$stcode == 200 && [test-json $ct $body $expectednothing]}
+
+
+##########################################################################
+set inputjson {
+    {
+	"name": "errmx",
+	"iddom": 2,
+	"idview": 3,
+	"mxhosts": [
+	    {
+		"prio": 100,
+		"ttl": -1,
+		"idhost": 99999
+	    }
+	]
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 130 "Attempt to add a mx to an invalid host" \
+	{$stcode == 404}
+
+
+##########################################################################
+set viewinternal 2
+
+set inputjson {
+    {
+	"name": "errmx",
+	"iddom": 2,
+	"idview": 2,
+	"mxhosts": [
+	    {
+		"prio": 100,
+		"ttl": -1,
+		"idhost": 99999
+	    }
+	]
+    }
+}
+lassign [test-call POST $uri $inputjson] stcode stmsg ct body
+test-assert 140 "Attempt to add a mx to a host in a different view" \
+	{$stcode == 404}
+
+##########################################################################
+set viewinternal 2
+
+# only idview is important here
+set inputjson {
+    {
+	"name":"ns1",
+	"iddom":1,
+	"idview":2,
+	"mac":"",
+	"idhinfo":0,
+	"comment":"",
+	"respname":"",
+	"respmail":"",
+	"iddhcpprof":-1,
+	"sendsmtp":0,
+	"ttl":-1,
+	"addr":["172.16.2.10"]
+    }
+}
+lassign [test-call PUT $urihost/$ns1 $inputjson] stcode stmsg ct body
+test-assert 150 "Attempt to change view of a host which is the target of a mx" \
+	{$stcode == 400}
+
+##########################################################################
+
+set www 230
+set inputjson {
+    [
+	{
+	    "prio": 100,
+	    "ttl": -1,
+	    "idhost": 228
+	},
+	{
+	    "prio": 300,
+	    "ttl": -1,
+	    "idhost": 230
+	}
+    ]
+}
+lassign [test-call PUT $uri/$idmx $inputjson] stcode stmsg ct body
+test-assert 200 "Modify MX -> change 2nd host" \
+	{$stcode == 200}
+
+##########################################################################
+set inputjson {
+    [
+	{
+	    "prio": 100,
+	    "ttl": null,
+	    "idhost": 228
+	}
+    ]
+}
+lassign [test-call PUT $uri/$idmx $inputjson] stcode stmsg ct body
+test-assert 210 "Modify MX -> only 1 host" \
+	{$stcode == 200}
+
+##########################################################################
+set inputjson {
+    [
+	{
+	    "prio": 5000,
+	    "ttl": 10,
+	    "idhost": 228
+	}
+    ]
+}
+lassign [test-call PUT $uri/$idmx $inputjson] stcode stmsg ct body
+test-assert 220 "Modify MX -> ttl + prio" \
+	{$stcode == 200}
+
+##########################################################################
+set expectedjson {
+    {
+	"name": "newmx",
+	"iddom": 1,
+	"idview": 3,
+	"mxhosts": [
+	    {
+		"prio": 5000,
+		"ttl": 10,
+		"idhost": 228
+	    }
+	]
+    }
+}
+
+lassign [test-call GET $uri/$idmx {}] stcode stmsg ct body
+test-assert 230 "Get mx $idmx -> modified mx" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+##########################################################################
+set inputjson {
+    [
+	{
+	    "prio": 65536,
+	    "ttl": null,
+	    "idhost": 228
+	}
+    ]
+}
+lassign [test-call PUT $uri/$idmx $inputjson] stcode stmsg ct body
+test-assert 240 "Attempt to modify with an invalid priority" \
+	{$stcode == 400}
+
+
+##########################################################################
+lassign [test-call DELETE $uri/$idmx {}] stcode stmsg ct body
+test-assert 300 "Delete MX 'newmx'" \
+	{$stcode == 200}
+
