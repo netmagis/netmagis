@@ -38,6 +38,16 @@
     \titre {1} {Netmagis : Nouveautés}
 
 
+    \titre {2} {[2017/10/06] La version 2.3.4 de Netmagis est disponible}
+
+    La \lien {version 2.3.4 de Netmagis} {/download.html} est maintenant
+    disponible. Il s'agit d'une version de maintenance corrigeant
+    un problème de sécurité apparaissant lors de l'utilisation d'un
+    annuaire LDAP fourni par Active Directory.
+    Voir les \lien {notes de version} {/relnotes.html#v2.3.4}
+    pour une description détaillée.
+
+
     \titre {2} {[2016/11/25] La version 2.3.3 de Netmagis est disponible}
 
     La \lien {version 2.3.3 de Netmagis} {/download.html} est maintenant

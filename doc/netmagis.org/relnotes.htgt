@@ -46,6 +46,17 @@
     \lien {github.com commits} {http://github.com/pdav/netmagis}.
 
 
+    \titre {2} {\ancre {v2.3.4} {Netmagis 2.3.4}}
+
+    Release date: 6 october 2017
+
+    The 2.3.4 release of Netmagis is a maintenance release, fixing
+    an important security issue reported by Daniel Liikamaa: when
+    using an LDAP directory hosted by Active Directory, any user
+    can log-in with an empty password (see \lien {issue 173}
+    {https://github.com/pdav/netmagis/issues/173}).
+
+
     \titre {2} {\ancre {v2.3.3} {Netmagis 2.3.3}}
 
     Release date: 25 november 2016

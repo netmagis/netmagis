@@ -38,6 +38,17 @@
     \titre {1} {Netmagis: News}
 
 
+    \titre {2} {[2017/10/06] Netmagis 2.3.4 is released}
+
+    The 2.3.4 version of Netmagis is available on the
+    \lien {Download} {/download.html} section. This is a
+    maintenance release fixing a security bug which
+    occurs when using an LDAP directory hosted by
+    Active Directory.
+    See the \lien {release notes} {/relnotes.html#v2.3.4} for 
+    detailed description.
+
+
     \titre {2} {[2016/11/25] Netmagis 2.3.3 is released}
 
     The 2.3.3 version of Netmagis is available on the
