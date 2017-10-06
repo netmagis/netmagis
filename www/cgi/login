@@ -61,6 +61,10 @@ proc check-password {dbfd login upw} {
 	    }
 	}
 	ldap {
+	    if {$upw eq ""} then {
+		return 0
+	    }
+
 	    set url       [dnsconfig get "ldapurl"]
 	    set binddn    [dnsconfig get "ldapbinddn"]
 	    set bindpw    [dnsconfig get "ldapbindpw"]
