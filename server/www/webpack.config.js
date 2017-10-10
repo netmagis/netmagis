@@ -1,24 +1,31 @@
-const webpack = require('webpack');
+const webpack = require('webpack') ;
+const path = require ("path") ;
 
 module.exports = {
     entry: {
-	'netmagis': './src/netmagis.jsx',
-	'test-app': './src/test-app.jsx',
-	'common' : [ 'react' , 'react-dom' ]
+	// "netmagis": "./src/netmagis.jsx",
+	// "test-app": "./src/test-app.jsx",
+	// "common" : [ "react" , "react-dom" ]
+	"test-redux": "./src/test-redux.jsx",
     },
     output: {
-        path: 'dist/',
-        filename: '[name].js',
+        path: path.resolve (__dirname, "dist"),
+        filename: "[name].js",
     },
     module: {
-        loaders: [{
-            test: /\.jsx?$/,
-            exclude: /node_modules/,
-            loader: 'babel',
-        }]
+        rules: [
+	    {
+		test: /\.jsx?$/,
+		exclude: /node_modules/,
+		loader: "babel-loader",
+		options: {
+		    presets: ["env"],
+		},
+	    }
+	],
     },
    plugins: [
- 	new webpack.optimize.CommonsChunkPlugin("common", "common.js", Infinity),
+// 	new webpack.optimize.CommonsChunkPlugin("common", "common.js", Infinity),
 // 	new webpack.optimize.UglifyJsPlugin()
 	
   ]

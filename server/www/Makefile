@@ -9,7 +9,7 @@ build:	node_modules/webpack/bin/webpack.js webpack.config.js $(JSSRC)
 	npm run build
 
 node_modules/webpack/bin/webpack.js: package.json
-	npm install
+	npm install --no-optional		# for fsevents warning
 
 install: build
 	@echo ">>> Making install in `pwd`"
