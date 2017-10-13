@@ -11,7 +11,7 @@ set admin_tables {
     dns.zone_forward	{ref {idzone int idview int name str}}
     dns.zone_reverse4	{ref {idzone int idview int name str}}
     dns.zone_reverse6	{ref {idzone int idview int name str}}
-    dns.hinfo		{ref {idhinfo int}}
+    dns.hinfo		{ref {idhinfo int name str sort int}}
     dns.domain		{ref {iddom int}}
     dns.dhcpprofile	{ref {iddhcpprof int}}
     dns.view		{ref {idview int}}
@@ -29,6 +29,7 @@ set admin_tables {
 ################################################################################
 
 api-handler get {/admin/([a-z0-9._]+:table)} admin {
+	order 0
     } {
     global admin_tables
 
@@ -36,6 +37,35 @@ api-handler get {/admin/([a-z0-9._]+:table)} admin {
 	::scgi::serror 404 [mc "Table %s not found" $table]
     }
     lassign [dict get $admin_tables $table] type lid
+
+    #
+    # Check order list (comma separated list, reverse order indicated by -)
+    # Example: order=name,-idview
+    #
+
+    set lorder {}
+    foreach o [split $order ","] {
+	set dir ASC
+	if {[regsub {^-} $o {} o]} then {
+	    set dir DESC
+	}
+	set found 0
+	foreach {id tp} $lid {
+	    if {$o eq $id} then {
+		lappend lorder "$o $dir"
+		set found 1
+		break
+	    }
+	}
+	if {! $found} then {
+	    ::scgi::serror 404 [mc "invalid order field '%s'" $o]
+	}
+    }
+    set orderby ""
+    if {[llength $lorder] > 0} then {
+	set lorder [join $lorder ","]
+	set orderby "ORDER BY $lorder"
+    }
 
     #
     # Check filter given by query parameters
@@ -67,7 +97,7 @@ api-handler get {/admin/([a-z0-9._]+:table)} admin {
 	}
 	set idname [lindex $lid 0]
 	set sql "SELECT COALESCE (json_agg (r), '\[\]') AS j FROM (
-			SELECT * FROM $table $where
+			SELECT * FROM $table $where $orderby
 		    ) AS r
 		"
     } else {
