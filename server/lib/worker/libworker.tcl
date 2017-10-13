@@ -845,11 +845,12 @@ proc check-idhost {dbfd idhost} {
 #			}
 # omx: list of MX records (result of ::rr::get-mxhost for the old values)
 #	{{prio idhost ttl} ...}
+# emptyok: allow empty MX list
 # returns list {ldel lmod lnew}
 #	where each ldel, lmod, lnew is a list:
 #		{{prio ttl idhost rr} ...}
 
-proc check-mx-list {idview nmx omx} {
+proc check-mx-list {idview nmx omx emptyok} {
     # process old MX list
     foreach m $omx {
 	lassign $m oprio oidhost ottl
@@ -897,7 +898,7 @@ proc check-mx-list {idview nmx omx} {
 	}
     }
 
-    if {[llength [array names alreadyseen]] == 0} then {
+    if {[llength [array names alreadyseen]] == 0 && ! $emptyok} then {
 	::scgi::serror 400 [mc {Empty MX host list}]
     }
 

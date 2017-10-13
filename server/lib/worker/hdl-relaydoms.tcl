@@ -77,7 +77,7 @@ api-handler get {/relaydoms} admin {
 				    WHERE r.iddom = dv.iddom
 					AND r.idview = dv.idview
 				) AS sreq_mxhosts
-		    ORDER BY dv.dname ASC
+		    ORDER BY dv.dname ASC, dv.vname ASC
 		) AS t
 		"
 
@@ -142,7 +142,7 @@ api-handler put {/relaydoms/([0-9]+:idview)/([0-9]+:iddom)} admin {
     # Check the diffs between old and new values
     #
 
-    set mxlist [check-mx-list $idview $mxlist $omx]
+    set mxlist [check-mx-list $idview $mxlist $omx true]
 
     #
     # Store the modifications detected in mxlist

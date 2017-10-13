@@ -1,4 +1,4 @@
-set uri /netmagis/mx
+set uri /netmagis/relaydoms
 
 set urihost /netmagis/hosts
 
@@ -6,14 +6,14 @@ test-reset-cookie
 
 #########################################################################
 lassign [test-call GET $uri {}] stcode stmsg ct body
-test-assert 10 "Get mx without auth -> error" \
+test-assert 10 "Get relaydoms without auth -> error" \
 	{$stcode == 401}
 
 #########################################################################
 test-set-cookie session t2-simple
 
 lassign [test-call GET $uri {}] stcode stmsg ct body
-test-assert 20 "Get mx for a non-admin user -> error" \
+test-assert 20 "Get relaydoms for a non-admin user -> error" \
 	{$stcode == 403}
 
 
@@ -22,62 +22,240 @@ test-set-cookie session t1-wheel
 #########################################################################
 # Document some values
 
-set ns1 228
-set ns2 229
-set www 230
+# set www 230
+set mx1 226
+set mx2 227
 set examplecom 1
+set exampleorg 2
+set internal 2
 set external 3
 
-#########################################################################
-set inputjson {
-    {
-	"name": "newmx",
-	"iddom": 1,
-	"idview": 3,
-	"mxhosts": [
-	    {
-		"prio": 100,
-		"ttl": -1,
-		"idhost": 228
-	    },
-	    {
-		"prio": 200,
-		"ttl": -1,
-		"idhost": 229
-	    }
-	]
-    }
-}
-lassign [test-call POST $uri $inputjson] stcode stmsg ct body
-test-assert 100 "Add a mx 'newmx' to ns1+ns2" \
-	{$stcode == 200}
+# in "internal" view
+set ns1 220
+set ns2 221
 
-set idmx $body
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "idview": 3,
+	    "relays": [
+		{
+		    "idhost": 226,
+		    "prio": 10,
+		    "ttl": -1
+		},
+		{
+		    "idhost": 227,
+		    "prio": 20,
+		    "ttl": -1
+		}
+	    ]
+	},
+	{
+	    "iddom": 1,
+	    "idview": 2,
+	    "relays": null
+	},
+	{
+	    "iddom": 2,
+	    "idview": 3,
+	    "relays": [
+		{
+		    "idhost": 226,
+		    "prio": 10,
+		    "ttl": -1
+		},
+		{
+		    "idhost": 227,
+		    "prio": 20,
+		    "ttl": -1
+		}
+	    ]
+	},
+	{
+	    "iddom": 2,
+	    "idview": 2,
+	    "relays": null
+	}
+    ]
+}
+lassign [test-call GET $uri {}] stcode stmsg ct body
+test-assert 100 "Get all relaydoms" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "idview": 2,
+	    "relays": null
+	}
+    ]
+}
+lassign [test-call GET $uri?view=internal&domain=example.com {}] stcode stmsg ct body
+test-assert 110 "Get relaydoms for view internal & domain=example.com" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+set expectedjson {
+    [
+	{
+	    "iddom": 1,
+	    "idview": 3,
+	    "relays": [
+		{
+		    "idhost": 226,
+		    "prio": 10,
+		    "ttl": -1
+		},
+		{
+		    "idhost": 227,
+		    "prio": 20,
+		    "ttl": -1
+		}
+	    ]
+	},
+	{
+	    "iddom": 2,
+	    "idview": 3,
+	    "relays": [
+		{
+		    "idhost": 226,
+		    "prio": 10,
+		    "ttl": -1
+		},
+		{
+		    "idhost": 227,
+		    "prio": 20,
+		    "ttl": -1
+		}
+	    ]
+	}
+    ]
+}
+lassign [test-call GET $uri?idhost=$mx1&minrelay=1 {}] stcode stmsg ct body
+test-assert 120 "Get relaydoms pointing to mx1 & minrelay=1" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
 
 #########################################################################
 set expectedjson {
     {
-	"name": "newmx",
 	"iddom": 1,
 	"idview": 3,
-	"mxhosts": [
+	"relays": [
 	    {
-		"prio": 100,
-		"ttl": -1,
-		"idhost": 228
+		"idhost": 226,
+		"prio": 10,
+		"ttl": -1
 	    },
 	    {
-		"prio": 200,
-		"ttl": -1,
-		"idhost": 229
+		"idhost": 227,
+		"prio": 20,
+		"ttl": -1
 	    }
 	]
     }
 }
-
-lassign [test-call GET $uri/$idmx {}] stcode stmsg ct body
-test-assert 105 "Get mx $idmx -> newmx" \
+lassign [test-call GET $uri/$external/$examplecom {}] stcode stmsg ct body
+test-assert 130 "Get relaydoms/external/example.com" \
 	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+
+#########################################################################
+lassign [test-call GET $uri/9999/9999 {}] stcode stmsg ct body
+test-assert 140 "Get relaydoms/NOVIEW/NODOM" \
+	{$stcode == 404}
+
+#########################################################################
+set expectedjson {
+    {
+	"iddom": 1,
+	"idview": 2,
+	"relays": [
+	    {
+		"idhost": 220,
+		"prio": 1000,
+		"ttl": -1
+	    },
+	    {
+		"idhost": 221,
+		"prio": 2000,
+		"ttl": 123
+	    }
+	]
+    }
+}
+set inputjson {
+    [
+	{
+	    "idhost": 220,
+	    "prio": 1000,
+	    "ttl": -1
+	},
+	{
+	    "idhost": 221,
+	    "prio": 2000,
+	    "ttl": 123
+	}
+    ]
+}
+lassign [test-call PUT $uri/$internal/$examplecom $inputjson] stcode stmsg ct body
+test-assert 200 "Put relaydoms/internal/example.com" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+#########################################################################
+regsub 2000 $inputjson 3000 inputmodprio
+regsub 2000 $expectedjson 3000 expmodprio
+lassign [test-call PUT $uri/$internal/$examplecom $inputmodprio] stcode stmsg ct body
+test-assert 210 "Put relaydoms/internal/example.com => mod prio" \
+	{$stcode == 200 && [test-json $ct $body $expmodprio]}
+
+
+
+#########################################################################
+regsub 2000 $inputjson 65536 inv1
+lassign [test-call PUT $uri/$internal/$examplecom $inv1] stcode stmsg ct body
+test-assert 310 "Put relaydoms/internal/example.com prio=65536" \
+	{$stcode == 400}
+
+regsub 2000 $inputjson -1 inv2
+lassign [test-call PUT $uri/$internal/$examplecom $inv2] stcode stmsg ct body
+test-assert 320 "Put relaydoms/internal/example.com prio=-1" \
+	{$stcode == 400}
+
+regsub 123 $inputjson 2147483648 inv3
+lassign [test-call PUT $uri/$internal/$examplecom $inv3] stcode stmsg ct body
+test-assert 330 "Put relaydoms/internal/example.com ttl=max signed int+1" \
+	{$stcode == 400}
+
+regsub 220 $inputjson 228 inv4
+lassign [test-call PUT $uri/$internal/$examplecom $inv3] stcode stmsg ct body
+test-assert 340 "Put relaydoms/internal/example.com with 1 host in external" \
+	{$stcode == 400}
+
+
+#########################################################################
+set inputjson {
+    null
+}
+set expectedjson {
+    {
+	"iddom": 1,
+	"idview": 2,
+	"relays": null
+    }
+}
+lassign [test-call PUT $uri/$internal/$examplecom $inputjson] stcode stmsg ct body
+test-assert 400 "Reset relaydoms/internal/example.com to empty list" \
+	{$stcode == 200 && [test-json $ct $body $expectedjson]}
+
+exit 0
+
+
 
 #########################################################################
 set expectedjson {
@@ -204,19 +382,6 @@ set inputjson {
 }
 lassign [test-call PUT $urihost/$ns1 $inputjson] stcode stmsg ct body
 test-assert 150 "Attempt to change view of a host which is the target of a mx" \
-	{$stcode == 400}
-
-##########################################################################
-set inputjson {
-    {
-	"name": "errmx",
-	"iddom": 2,
-	"idview": 3,
-	"mxhosts": []
-    }
-}
-lassign [test-call POST $uri $inputjson] stcode stmsg ct body
-test-assert 160 "Attempt to add an empty mx list" \
 	{$stcode == 400}
 
 ##########################################################################

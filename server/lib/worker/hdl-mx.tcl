@@ -241,7 +241,7 @@ proc mx-new-and-mod {_parm orr} {
 		    }
 	set nmj [check-body-json $_parm $spec]
 	set nma [::nmjson::nmjval $nmj]
-	set mxlist [check-mx-list $idview $nma [::rr::get-mxhosts $orr]]
+	set mxlist [check-mx-list $idview $nma [::rr::get-mxhosts $orr] false]
 	set nidname $oidname
     } else {
 	# creation
@@ -279,7 +279,7 @@ proc mx-new-and-mod {_parm orr} {
 	set name [string tolower $name]
 
 	# Check MX host list
-	set mxlist [check-mx-list $idview $mxhosts {}]
+	set mxlist [check-mx-list $idview $mxhosts {} false]
 
 	# Check new mx name
 	set idcor [::n idcor]
