@@ -296,6 +296,15 @@ d cgi-register {action add} {
     set fqdnm "$namem.$domainm"
 
     #
+    # Check mail address syntax
+    #
+
+    set msg [check-name-syntax $name]
+    if {$msg ne ""} then {
+	d error $msg
+    }
+
+    #
     # Check view ids
     #
 
