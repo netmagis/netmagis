@@ -12,7 +12,7 @@
   "bugs": {
     "url":		"https://github.com/pdav/netmagis/issues"
   },
-  "license":		"CeCILL-B",
+  "license":		"CECILL-B",
   "author":		"lgcon",
   "main":		"index.js",
   "repository": {
