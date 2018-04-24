@@ -1,60 +1,65 @@
 {
-  "name":		"Netmagis",
-  "version":		"0.0.0",
-  "description":	"Netmagis Web interface",
+  "name": "Netmagis",
+  "version": "0.0.0",
+  "description": "Netmagis Web interface",
   "keywords": [
     "Netmagis",
     "DNS",
     "DHCP",
     "Network management"
   ],
-  "homepage":		"http://netmagis.org",
+  "homepage": "http://netmagis.org",
   "bugs": {
-    "url":		"https://github.com/pdav/netmagis/issues"
+    "url": "https://github.com/pdav/netmagis/issues"
   },
-  "license":		"CECILL-B",
-  "author":		"lgcon",
-  "main":		"index.js",
+  "license": "CECILL-B",
+  "author": "lgcon",
+  "main": "index.js",
   "repository": {
-    "type":		"git",
-    "url":		"git+https://github.com/pdav/netmagis.git"
+    "type": "git",
+    "url": "git+https://github.com/pdav/netmagis.git"
   },
   "scripts": {
-    "test":	"echo \"Error: no test specified\" && exit 1",
-    "build":	"mkdir -p dist && webpack -d --config webpack.config.js --bail --color=false --hide-modules --devtool source-map",
-    "buildprod":	"mkdir -p dist && webpack -p --config webpack.config.js --bail --color=false",
-    "machin":	"babel scripts/translate.js | node"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "mkdir -p dist && webpack -d --config webpack.config.js --bail --color=false --hide-modules --devtool source-map",
+    "buildprod": "mkdir -p dist && webpack -p --config webpack.config.js --bail --color=false",
+    "machin": "babel scripts/translate.js | node"
   },
   "dependencies": {
-    "universal-cookie":		"^2.1.0",
-    "react":			"^16.0.0",
-    "react-redux":		"^5.0.6",
-    "react-dom":		"^16.0.0",
-    "react-autosuggest":	"^9.3.2",
-    "react-router":		"^4.2.0",
-    "prop-types":		"^15.5.10",
-    "redux":			"^3.7.2",
-    "redux-thunk":		"^2.2.0",
-    "redux-logger":		"^3.0.6",
-    "isomorphic-fetch":		"^2.2.1",
-    "react-intl":		"^2.4.0",
-    "react-intl-redux":		"^0.6.0",
-    "sprintf-js":		"^1.1.1"
+    "universal-cookie": "^2.1.2",
+    "react": "^16.3.2",
+    "react-redux": "^5.0.7",
+    "react-dom": "^16.3.2",
+    "react-autosuggest": "^9.3.4",
+    "react-router": "^4.2.0",
+    "prop-types": "^15.6.1",
+    "redux": "^4.0.0",
+    "redux-thunk": "^2.2.0",
+    "redux-logger": "^3.0.6",
+    "isomorphic-fetch": "^2.2.1",
+    "react-intl": "^2.4.0",
+    "react-intl-redux": "^0.7.0",
+    "sprintf-js": "^1.1.1"
   },
   "devDependencies": {
-    "babel-cli":		"^6.24.1",
-    "babel-core":		"^6.25.0",
-    "babel-loader":		"^7.0.0",
-    "babel-preset-env":		"^1.6.0",
-    "babel-preset-react":	"^6.24.1",
-    "babel-plugin-react-intl":	"^2.3.1",
-    "webpack":			"^2.6.1"
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.4",
+    "babel-plugin-react-intl": "^2.4.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-react": "^6.24.1",
+    "webpack": "^4.6.0",
+    "webpack-cli": "^2.0.15",
+    "jscodeshift": "^0.5.0"
   },
   "babel": {
-    "presets":			["env", "react"],
-    "plugins":			[
-				    "transform-react-jsx-source",
-				    "react-intl"
-				]
+    "presets": [
+      "env",
+      "react"
+    ],
+    "plugins": [
+      "transform-react-jsx-source",
+      "react-intl"
+    ]
   }
 }
