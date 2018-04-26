@@ -270,7 +270,8 @@ d cgi-register {logoutRequest ^.+$} {
     set query "//samlp:LogoutRequest/samlp:SessionIndex/text()"
     dom parse $body document
     $document documentElement root
-    set casticket [$root selectNodes $query]
+    set node [$root selectNodes $query]
+    set casticket [$node nodeValue]
 
     if {$casticket eq ""} then {
 	# Emit a message for the Web server log
@@ -286,7 +287,9 @@ d cgi-register {logoutRequest ^.+$} {
 
     set qcas [::pgsql::quote $casticket]
     set login ""
-    set sql "SELECT login, token FROM global.utmp WHERE casticket = '$qcas'"
+    set sql "SELECT login, token FROM global.utmp
+				    NATURAL JOIN global.nmuser
+    				WHERE casticket = '$qcas'"
     pg_select $dbfd $sql tab {
 	set login $tab(login)
 	set token $tab(token)
@@ -304,6 +307,13 @@ d cgi-register {logoutRequest ^.+$} {
 	    exit 1
 	}
     }
+
+    #
+    # Return a minimal page to the CAS server
+    #
+
+    puts stdout "Content-type: text/html"
+    puts stdout ""
 
     exit 0
 }
