@@ -4,6 +4,7 @@ Version 2.3.5 -
 	modify RELENG accordingly
     - bug fix (issue #175): a mail role cannot be empty
     - bug fix (issue #163): invalid url for sort link in multiple host add
+    - bug fix (issue #168): work-around for Tcllib 1.18 (ldap.tcl 1.8)
     - feature (issue #177): add network name on host address in search results
     - feature (pull request #179 + issue #169) : wildcard in search
 

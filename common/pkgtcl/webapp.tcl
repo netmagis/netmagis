@@ -40,6 +40,13 @@ package require snit ;			# tcllib >= 1.10
 package require ldapx ;			# tcllib >= 1.10
 package require pgsql ;			# package local
 
+############### Ugly hack for distributions which include Tcllib 1.18
+############### without the patched ldap.tcl (see Netmagis issue #168)
+if {[package version ldap] eq "1.8"} then {
+    set dir [file dirname [info script]]
+    source $dir/ldap-bug-fix.192
+}
+
 # package require Pgtcl
 
 package provide webapp 1.17

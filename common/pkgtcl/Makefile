@@ -15,6 +15,8 @@ pkgIndex.tcl:	$(FILES)
 install: build
 	@echo ">>> Making install in `pwd`"
 	install -m 0644 *.tcl *.n $(DESTDIR)$(NMLIBDIR)/pkgtcl
+	# Ugly hack (see issue #168)
+	install -m 0644 ldap-bug-fix.192 *.n $(DESTDIR)$(NMLIBDIR)/pkgtcl
 
 clean:
 	rm -f pkgIndex.tcl 
