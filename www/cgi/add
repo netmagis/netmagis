@@ -621,6 +621,7 @@ d cgi-register {action add-multi} {
     set largs [list {action add-multi} \
 		    [list "plage" $plage] \
 		    [list "naddr" $naddr] \
+		    [list "idview" $idview] \
 		]
 
     # first line (with sort URLs)
