@@ -4,6 +4,7 @@
 # Netmagis issue #168). However, distributions which are stuck
 # with Tcllib 1.18 suffer from this bug, so we include the
 # fixed ldap.tcl.
+# See also "package provide" below
 # This hack should be removed as soon as possible
 #########################
 #-----------------------------------------------------------------------------
@@ -52,7 +53,13 @@
 
 package require Tcl 8.4
 package require asn 0.7
-package provide ldap 1.9.2
+#########################
+# Ugly hack for Netmagis
+# Provide the same package version as the original one in order to
+# override the previously loaded package.
+# This file should be removed as soon as possible
+#########################
+package provide ldap 1.8
 
 namespace eval ldap {
 
