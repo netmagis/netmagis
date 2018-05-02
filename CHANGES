@@ -1,4 +1,4 @@
-Version 2.3.5 - 
+Version 2.3.5 - 2018/05/02
     - move the github repository to the new "netmagis" organization
     - infrastructure change: add the devtools/utils/mkrel script and
 	modify RELENG accordingly
