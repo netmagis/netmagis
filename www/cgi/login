@@ -195,8 +195,9 @@ d cgi-register {ticket ^ST-.*} {
 	    # CAS v1
 	    d error [mc "Invalid CAS answer"]
 	}
+	{application/xml;*} -
 	{text/html;*} {
-	    # CAS v2
+	    # CAS v2 (text/html) or v3 (application/xml)
 	    set body $state(body)
 
 	    #

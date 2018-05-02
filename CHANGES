@@ -6,6 +6,8 @@ Version 2.3.5 -
     - bug fix (issue #163): invalid url for sort link in multiple host add
     - bug fix (issue #168): work-around for Tcllib 1.18 (ldap.tcl 1.8)
     - bug fix (issue #182): CAS sign-out from another application
+    - bug fix (issue #153): accept application/xml for jasig 4.1 CAS server
+    - bug fix (pull request #170): typo on mail attribute mapping for LDAP
     - feature (issue #177): add network name on host address in search results
     - feature (pull request #179 + issue #169) : wildcard in search
 
