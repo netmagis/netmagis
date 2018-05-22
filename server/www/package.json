@@ -1,6 +1,6 @@
 {
   "name": "Netmagis",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Netmagis Web interface",
   "keywords": [
     "Netmagis",
@@ -13,7 +13,7 @@
     "url": "https://github.com/pdav/netmagis/issues"
   },
   "license": "CECILL-B",
-  "author": "lgcon",
+  "author": "pda",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -28,17 +28,13 @@
   "dependencies": {
     "universal-cookie": "^2.1.2",
     "react": "^16.3.2",
-    "react-redux": "^5.0.7",
     "react-dom": "^16.3.2",
     "react-autosuggest": "^9.3.4",
     "react-router": "^4.2.0",
     "prop-types": "^15.6.1",
-    "redux": "^4.0.0",
-    "redux-thunk": "^2.2.0",
-    "redux-logger": "^3.0.6",
+    "es6-promise": "^4.2.4",
     "isomorphic-fetch": "^2.2.1",
     "react-intl": "^2.4.0",
-    "react-intl-redux": "^0.7.0",
     "sprintf-js": "^1.1.1"
   },
   "devDependencies": {

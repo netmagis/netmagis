@@ -1,254 +1,43 @@
 import React from 'react' ;
-import ReactDOM from 'react-dom' ;
-import * as S from './nm-state.jsx' ;
-import * as C from './common.js' ;
-import {Login}		from './app-login.jsx' ;
-import {Add}		from './app-add.jsx' ;
-import {DHCPRange}	from './app-dhcprange.jsx' ;
-import {Sessions}	from './app-sessions.jsx' ;
+// import PropTypes from 'prop-types' ;
+import { withUser, UserContext } from './user-context.jsx' ;
+import { injectIntl, formatMessage, FormattedMessage } from 'react-intl' ;
 
-export var NMMenu = React.createClass ({
-    // Enforce a rerendering on language/capability change
-    contextTypes: {nm: React.PropTypes.object},
-
-    getInitialState: function () {
-	return {
-	    curApp: 'index',
-	    p1: '',
-	    p2: '',
-	} ;
-    },
-
-    gotoApp: function (app, p1, p2) {
-	this.setState ({curApp: app, p1: p1, p2: p2}) ;
-    },
-
-    handleSearchForm: function (event) {
-	event.preventDefault () ;
-	var srch = this.refs.topsearch.value ;
-	if (srch != '') {
-	    this.setState ({
-		curApp: 'search',
-		p1: srch
-	    }) ;
-	}
-    },
-
-    // hide (with bootstrap class) an element:
-    // http://getbootstrap.com/css/#helper-classes-show-hide
-    showIf: function (c) {
-	return this.context.nm.cap [c] ? "" : " hidden" ;
-    },
-
-    render: function () {
-	return (
-	  <div>
-	    <nav className="navbar navbar-default">
-	      <div className="container-fluid">
-		<div className="navbar-header">
-		  <button type="button"
-		      className="navbar-toggle collapsed"
-		      data-toggle="collapse"
-		      data-target="#nm-navbar-collapse-1"
-		      aria-expanded="false">
-		    <span className="sr-only">
-		      Toggle navigation
-		    </span>
-		    <span className="icon-bar" />
-		    <span className="icon-bar" />
-		    <span className="icon-bar" />
-		  </button>
-		  <a className="logo" rel="home" href="http://www.netmagis.org">
-		    <img alt="Netmagis" src="files/logo-transp.png" height="50px" />
-		  </a>
-		</div>
-
-		<div className="collapse navbar-collapse"
-		    id="nm-navbar-collapse-1"
-		    >
-		  <ul className="nav navbar-nav">
-		    <li>
-		      <a href="#">
-			<span className="glyphicon glyphicon-home"
-			    aria-hidden="true"
-			    />
-			<span className="sr-only">
-			    Home
-			</span>
-		      </a>
-		    </li>
-
-		    <NMDropdown k="dns" t={S.mc ('DNS')} show={this.showIf ('logged')}>
-		      <NMItem k="dns1" js={this.gotoApp.bind (this, 'consult')} t={S.mc ('Consult')} />
-		      <NMItem k="dns2" js={this.gotoApp.bind (this, 'add')} t={S.mc ('Add')} />
-		      <NMItem k="dns3" js={this.gotoApp.bind (this, 'del')} t={S.mc ('Delete')} />
-		      <NMItem k="dns4" js={this.gotoApp.bind (this, 'mod')} t={S.mc ('Modify')} />
-		      <NMItem k="dns5" js={this.gotoApp.bind (this, 'mailrole')} t={S.mc ('Mail roles')} />
-		      <NMItem k="dns6" js={this.gotoApp.bind (this, 'dhcprange')} t={S.mc ('DHCP ranges')} />
-		      <NMItem k="dns7" js={this.gotoApp.bind (this, 'pgpasswd')} t={S.mc ('Password')} show={this.showIf ('pgauth')} />
-		      <NMItem k="dns8" js={this.gotoApp.bind (this, 'where')} t={S.mc ('Where am I?')} />
-		    </NMDropdown>
-
-		    <NMDropdown k="topo" t={S.mc ('Topo')} show={this.showIf ('topo')}>
-		      <NMItem k="topo1" js={this.gotoApp.bind (this, 'eq')} t={S.mc ('Equipments')} />
-		      <NMItem k="topo2" js={this.gotoApp.bind (this, 'l2')} t={S.mc ('Vlans')} />
-		      <NMItem k="topo3" js={this.gotoApp.bind (this, 'l3')} t={S.mc ('Networks')} />
-		      <NMItem k="topo4" js={this.gotoApp.bind (this, 'genl')} t={S.mc ('Link number')} show={this.showIf ('genl')} />
-		      <NMItem k="topo5" js={this.gotoApp.bind (this, 'topotop')} t={S.mc ('Status')} show={this.showIf ('admin')} />
-		    </NMDropdown>
-
-		    <NMDropdown k="mac" t={S.mc ('MAC')} show={this.showIf ('mac')}>
-		      <NMItem k="mac1" js={this.gotoApp.bind (this, 'macindex')} t={S.mc ('Index')} />
-		      <NMItem k="mac2" js={this.gotoApp.bind (this, 'mac')} t={S.mc ('Search')} />
-		      <NMItem k="mac3" js={this.gotoApp.bind (this, 'ipinact')} t={S.mc ('Inactive addr.')} />
-		      <NMItem k="mac4" js={this.gotoApp.bind (this, 'macstat')} t={S.mc ('Stats')} />
-		    </NMDropdown>
-
-		    <NMDropdown k="admin" t={S.mc ('Admin')} show={this.showIf ('admin')}>
-		      <NMItem k="admin1" js={this.gotoApp.bind (this, 'admlmx')} t={S.mc ('List MX')} />
-		      <NMItem k="admin2" js={this.gotoApp.bind (this, 'lnet')} t={S.mc ('List networks')} />
-		      <NMItem k="admin3" js={this.gotoApp.bind (this, 'lusers')} t={S.mc ('List users')} />
-		      <NMItem k="admin4" js={this.gotoApp.bind (this, 'who?action=now')} t={S.mc ('Connected users')} />
-		      <NMItem k="admin5" js={this.gotoApp.bind (this, 'who?action=last')} t={S.mc ('Last connections')} />
-		      <NMItem k="admin6" js={this.gotoApp.bind (this, '#')} t={S.mc ('Status')} />
-		      <NMItem k="admin7" js={this.gotoApp.bind (this, 'admref?type=org')} t={S.mc ('Modify organizations')} />
-		      <NMItem k="admin8" js={this.gotoApp.bind (this, 'admref?type=comm')} t={S.mc ('Modify communities')} />
-		      <NMItem k="admin9" js={this.gotoApp.bind (this, 'admref?type=hinfo')} t={S.mc ('Modify machine types')} />
-		      <NMItem k="admin10" js={this.gotoApp.bind (this, 'admref?type=net')} t={S.mc ('Modify networks')} />
-		      <NMItem k="admin11" js={this.gotoApp.bind (this, 'admref?type=domain')} t={S.mc ('Modify domains')} />
-		      <NMItem k="admin12" js={this.gotoApp.bind (this, 'admmrel')} t={S.mc ('Modify mailhost')} />
-		      <NMItem k="admin13" js={this.gotoApp.bind (this, 'admmx')} t={S.mc ('Modify MX')} />
-		      <NMItem k="admin14" js={this.gotoApp.bind (this, 'admref?type=view')} t={S.mc ('Modify views')} />
-		      <NMItem k="admin15" js={this.gotoApp.bind (this, 'admref?type=zone')} t={S.mc ('Modify zones')} />
-		      <NMItem k="admin16" js={this.gotoApp.bind (this, 'admref?type=zone4')} t={S.mc ('Modify rev IPv4 zones')} />
-		      <NMItem k="admin17" js={this.gotoApp.bind (this, 'admref?type=zone6')} t={S.mc ('Modify rev IPv6 zones')} />
-		      <NMItem k="admin18" js={this.gotoApp.bind (this, 'admref?type=dhcpprof')} t={S.mc ('Modify DHCP profiles')} />
-		      <NMItem k="admin19" js={this.gotoApp.bind (this, 'admref?type=vlan')} t={S.mc ('Modify Vlans')} />
-		      <NMItem k="admin20" js={this.gotoApp.bind (this, 'admref?type=eqtype')} t={S.mc ('Modify equipment types')} />
-		      <NMItem k="admin21" js={this.gotoApp.bind (this, 'admref?type=eq')} t={S.mc ('Modify equipments')} />
-		      <NMItem k="admin22" js={this.gotoApp.bind (this, 'admref?type=confcmd')} t={S.mc ('Modify configuration commands')} />
-		      <NMItem k="admin23" js={this.gotoApp.bind (this, 'admref?type=dotattr')} t={S.mc ('Modify Graphviz attributes')} />
-		      <NMItem k="admin24" js={this.gotoApp.bind (this, 'admgrp')} t={S.mc ('Modify users and groups')} />
-		      <NMItem k="admin25" js={this.gotoApp.bind (this, 'admzgen')} t={S.mc ('Force zone generation')} />
-		      <NMItem k="admin26" js={this.gotoApp.bind (this, 'admpar')} t={S.mc ('Application parameters')} />
-		      <NMItem k="admin27" js={this.gotoApp.bind (this, 'statuser')} t={S.mc ('Statistics by user')} />
-		      <NMItem k="admin28" js={this.gotoApp.bind (this, 'statorg')} t={S.mc ('Statistics by organization')} />
-		    </NMDropdown>
-
-		    <NMDropdown k="pgadmin" t={S.mc ('Auth')} show={this.showIf ('pgadmin')}>
-		      <NMItem k="pgadmin1" js={this.gotoApp.bind (this, 'pgaacc?action=list')} t={S.mc ('List accounts')} />
-		      <NMItem k="pgadmin2" js={this.gotoApp.bind (this, 'pgaacc?action=print')} t={S.mc ('Print accounts')} />
-		      <NMItem k="pgadmin3" js={this.gotoApp.bind (this, 'pgaacc?action=add')} t={S.mc ('Add account')} />
-		      <NMItem k="pgadmin4" js={this.gotoApp.bind (this, 'pgaacc?action=mod')} t={S.mc ('Modify account')} />
-		      <NMItem k="pgadmin5" js={this.gotoApp.bind (this, 'pgaacc?action=del')} t={S.mc ('Remove account')} />
-		      <NMItem k="pgadmin6" js={this.gotoApp.bind (this, 'pgaacc?action=passwd')} t={S.mc ('Change account password')} />
-		      <NMItem k="pgadmin7" js={this.gotoApp.bind (this, 'pgarealm?action=list')} t={S.mc ('List realms')} />
-		      <NMItem k="pgadmin8" js={this.gotoApp.bind (this, 'pgarealm?action=add')} t={S.mc ('Add realm')} />
-		      <NMItem k="pgadmin9" js={this.gotoApp.bind (this, 'pgarealm?action=mod')} t={S.mc ('Modify realm')} />
-		      <NMItem k="pgadmin10" js={this.gotoApp.bind (this, 'pgarealm?action=del')} t={S.mc ('Remove realm')} />
-		    </NMDropdown>
-
-		  </ul>
-
-		  <span className={this.showIf ('logged')}>
-		    <form className="navbar-form navbar-left"
-			  role="search"
-			  action=""
-			  onSubmit={this.handleSearchForm}>
-		      <div className="form-group">
-			<input type="text"
-			    className="form-control"
-			    placeholder={S.mc ('Enter text')}
-			    ref="topsearch"
-			    aria-label="Search"
-			    />
-		      </div>
-		      <button type="submit" className="btn btn-default"
-			    >
-			<span className="glyphicon glyphicon-search"
-			    aria-label="Submit"
-			    />
-		      </button>
-		    </form>
-		  </span>
-
-		  <ul className="nav navbar-nav navbar-right">
-
-		    <li className={this.context.nm.cap ['logged'] ? 'hidden' : 'show'}
-			key="notconnected"
-			>
-		      <p className="navbar-text">
-			{S.mc ('Not connected')}
-		      </p>
-		    </li>
-		    <NMDropdown k="user" t={this.context.nm.user} i="glyphicon glyphicon-user" show={this.showIf ('logged')}>
-			<NMItem k="user1" js={this.gotoApp.bind (this, 'profile')} t={S.mc ('Profile')} />
-			<NMItem k="user2" js={this.gotoApp.bind (this, 'sessions')} t={S.mc ('Sessions')} />
-			<NMISep k="user3" show={this.showIf ('admin')} />
-			<NMItem k="user4" js={this.gotoApp.bind (this, 'sudo')} t={S.mc ('Sudo')} show={this.showIf ('admin')} />
-			<NMItem k="user5" js={this.gotoApp.bind (this, 'sudoback')} t={S.mc ('Back to my id')} show={this.showIf ('setuid')} />
-			<NMISep k="user6" />
-			<NMItem k="user7" js={S.disconnect} t={S.mc ('Disconnect')} />
-		    </NMDropdown>
-
-		    <NMDropdown k="lang" t={S.mc ('[en]')}>
-			<NMItem k="lang-en" js={S.changeLang.bind (this, 'en')} t="[en]" />
-			<NMItem k="lang-fr" js={S.changeLang.bind (this, 'fr')} t="[fr]" />
-		    </NMDropdown>
-
-		  </ul>
-		</div>
-	      </div>
-	    </nav>
-
-	    <div className="container-fluid">
-	      <div className="row">
-		<div className="col-md-12">
-		   <NMRouter app={this.state.curApp} p1={this.state.p1} />
-		</div>
-	      </div>
-	    </div>
-	  </div>
-	) ;
-    }
-}) ;
-
+// import * as S from './nm-state.jsx' ;
+// import * as C from './common.js' ;
+// import {Login}		from './app-login.jsx' ;
+// import {Add}		from './app-add.jsx' ;
+// import {DHCPRange}	from './app-dhcprange.jsx' ;
+// import {Sessions}	from './app-sessions.jsx' ;
 
 /*
- * Short-hand to help defining menu dropdowns
- * props:
- * - k: key
- * - show (optional): 'hidden' or nothing
- * - t: text for this menu
- # - i (optional): icon
+ * Display or hide a Bootstrap 4 component according to the current
+ * capabilities (using class "d-none" or "" for Bootstrap).
+ * cap: current capability array
+ * cond: condition (i.e. 'logged', 'admin', or any capability)
  */
 
-var NMDropdown = React.createClass ({
-    render: function () {
-	var icon = 'hidden' ;
-	if (this.props.i) {
-	    icon = this.props.i
-	}
-	return (
-		<li className={"dropdown" + this.props.show}>
-		  <a href="#"
-		      className="dropdown-toggle"
-		      data-toggle="dropdown"
-		      role="button"
-		      aria-haspopup="true"
-		      aria-expanded="false"
-		      >
-		    <span className={icon}>&nbsp;</span>
-		    {this.props.t}
-		    <span className="caret" />
-		  </a>
-		  <ul className="dropdown-menu">
-		    {this.props.children}
-		  </ul>
-		</li>
-	    ) ;
+function showIf (cap, cond) {
+    return cond == undefined ? "" : (cap [cond] ? "" : " d-none") ;
+}
+
+/******************* NOT USED NOW */
+function handleSearchForm (event) {
+    event.preventDefault () ;
+    var srch = this.refs.topsearch.value ;
+    if (srch != '') {
+	this.setState ({
+	    curApp: 'search',
+	    p1: srch
+	}) ;
     }
-}) ;
+}
+
+function gotoApp (t) {
+}
+
+function disconnect () {
+}
 
 /*
  * Short-hand to help defining menu items
@@ -256,20 +45,25 @@ var NMDropdown = React.createClass ({
  * - k: key
  * - show (optional): 'hidden' or nothing
  * - js: javascript to call when clicked
- * - t: text for this menu item
+ * - title: title for this menu item (usually message id or any text if 'tranlate' = false)
+ * - translate (optional): do not translate the title (default=true)
  */
 
-var NMItem = React.createClass ({
-    render: function () {
-	return (
-		<li key={this.props.k} className={this.props.show}>
-		  <a href="#" onClick={this.props.js}>
-		    {this.props.t}
-		  </a>
-		</li>
-	    ) ;
-    }
-}) ;
+function RawNMItem (props) {
+    const { cap, title, translate, show, js, intl } = props ;
+    var tr = (translate == false) ? false : true ;
+    {console.log ('title=', title, ', tr=', tr)}
+    return (
+	<a className={'dropdown-item' + showIf (cap, show)}
+	    href="#"
+	    onClick={js}
+	    >
+	  {tr ? intl.formatMessage ({id: title}) : title}
+	</a>
+    ) ;
+}
+
+const NMItem = injectIntl (withUser (RawNMItem)) ;
 
 /*
  * Short-hand to help defining a menu item separator
@@ -278,22 +72,232 @@ var NMItem = React.createClass ({
  * - show (optional): 'hidden' or nothing
  */
 
-var NMISep = React.createClass ({
-    render: function () {
-	return (
-		<li key={this.props.k}
-		    role="separator"
-		    className={'divider ' + this.props.show}
-		    />
-	    ) ;
-    }
-}) ;
+function RawNMISep (props) {
+    const { cap, show } = props ;
+    return (
+	<div className={'dropdown-divider' + showIf (cap, show)} />
+    ) ;
+}
 
-var NMRouter = React.createClass ({
-    // Enforce a rerendering on language/capability change
-    contextTypes: {nm: React.PropTypes.object},
+const NMISep = injectIntl (withUser (RawNMISep)) ;
 
-    render: function () {
+
+/*
+ * Short-hand to help defining menu dropdowns
+ * props:
+ * - k: key
+ * - show (optional): 'hidden' or nothing
+ * - align (optional): 'right' to align items to the right of dropdown
+ * - title: menu title (usually message id or any text if 'tranlate' = false)
+ * - translate (optional): translate title (default=true)
+ * - icon (optional): set of classes (e.g. "fa fa-user") or nothing
+ */
+
+function RawNMDropdown (props) {
+    const { cap, title, translate, show, align, icon, intl, children } = props ;
+    var ic = (icon == '') ? "d-none" : icon ;
+    var dir = (align == 'right') ? ' dropdown-menu-right' : '' ;
+    var tr = (translate === undefined) ? true : !translate ;
+    return (
+	<li className={'nav-item dropdown' + showIf (cap, show)}>
+	  <a href="#"
+	      id={'nbdd' + title}
+	      className="nav-link dropdown-toggle"
+	      data-toggle="dropdown"
+	      role="button"
+	      aria-haspopup="true"
+	      aria-expanded="false"
+	      >
+	    <span>
+	    <i className={ic} />
+	    &nbsp;
+	    {console.log ('title=', title, ', tr=', tr)}
+	    {tr ? intl.formatMessage ({id: title}) : title}
+	    </span>
+	  </a>
+	  <div className={'dropdown-menu' + dir}
+	      aria-labelledby={'nbdd' + title}>
+	    {children}
+	  </div>
+	</li>
+    ) ;
+}
+
+export const NMDropdown = injectIntl (withUser (RawNMDropdown)) ;
+
+
+function toto (s) {
+  return () => {
+    return 'toto' ;
+  } ;
+}
+
+
+function RawNMMenu (props) {
+    const {user, cap, lang, changeLang, intl} = props ;
+    console.log ('changeLang=', changeLang) ;
+    return (
+      <div>
+	<nav className="navbar navbar-expand-lg navbar-light bg-light">
+	  <a className="navbar-brand" rel="home" href="http://www.netmagis.org">
+	    <img alt="Netmagis" src="files/logo-transp.png" height="50px" />
+	  </a>
+	  <button className="navbar-toggler" type="button"
+	      data-toggle="collapse"
+	      data-target="#navbarSupportedContent"
+	      aria-controls="navbarSupportedContent"
+	      aria-expanded="false" aria-label="Toggle navigation">
+	    <span className="navbar-toggler-icon"></span>
+	  </button>
+
+	  <div className="collapse navbar-collapse"
+	      id="navbarSupportedContent">
+
+	    <ul className="navbar-nav mr-auto">
+	      <li className="nav-item">
+		<a className="nav-link" href="#">
+		  Home
+		  <span className="sr-only">(current)</span>
+		</a>
+	      </li>
+
+	      <NMDropdown key="dns" title="menu/dns" show="logged">
+		<NMItem key="dns1" title="menu/consult" js={toto.bind('consult')} />
+		<NMItem key="dns2" title="menu/add" js={toto.bind('add')} />
+		<NMItem key="dns3" title="menu/del" js={toto.bind('del')} />
+		<NMItem key="dns4" title="menu/mod" js={toto.bind('mod')} />
+		<NMItem key="dns5" title="menu/mailrole" js={toto.bind('mailrole')} />
+		<NMItem key="dns6" title="menu/dhcprange" js={toto.bind('dhcprange')} />
+		<NMItem key="dns7" title="menu/pgpassword" show="pgauth" js={toto.bind('pgpassword')} />
+		<NMItem key="dns8" title="menu/where" show="pgauth" js={toto.bind('where')} />
+	      </NMDropdown>
+
+	      <NMDropdown key="topo" title="menu/topo" show="topo">
+		<NMItem key="topo1" title="menu/eq" js={toto.bind('eq')} />
+		<NMItem key="topo2" title="menu/l2" js={toto.bind('l2')} />
+		<NMItem key="topo3" title="menu/l3" js={toto.bind('l3')} />
+		<NMItem key="topo4" title="menu/genl" show="genl" js={toto.bind('genl')} />
+		<NMItem key="topo5" title="menu/topotop" show="admin" js={toto.bind('topotop')} />
+	      </NMDropdown>
+
+	      <NMDropdown key="mac" title="menu/mac" show="mac">
+		<NMItem key="mac1" title="menu/macindex" js={toto.bind('macindex')} />
+		<NMItem key="mac2" title="menu/macsearch" js={toto.bind('mac')} />
+		<NMItem key="mac3" title="menu/ipinact" js={toto.bind('ipinact')} />
+		<NMItem key="mac4" title="menu/macstat" show="genl" js={toto.bind('macstat')} />
+	      </NMDropdown>
+
+	      <NMDropdown key="admin" title="menu/admin" show="admin">
+		<NMItem key="admin1" title="menu/admlmx" js={toto.bind('admlmx')} />
+		<NMItem key="admin2" title="menu/lnet" js={toto.bind('lnet')} />
+		<NMItem key="admin3" title="menu/lusers" js={toto.bind('lusers')} />
+		<NMItem key="admin4" title="menu/who?action=now" js={toto.bind('who?action=now')} />
+		<NMItem key="admin5" title="menu/who?action=last" js={toto.bind('who?action=last')} />
+		<NMItem key="admin6" title="menu/status" js={toto.bind('status')} />
+		<NMItem key="admin7" title="menu/admref?type=org" js={toto.bind('admref?type=org')} />
+		<NMItem key="admin8" title="menu/admref?type=comm" js={toto.bind('admref?type=comm')} />
+		<NMItem key="admin9" title="menu/admref?type=hinfo" js={toto.bind('admref?type=hinfo')} />
+		<NMItem key="admina" title="menu/admref?type=net" js={toto.bind('admref?type=net')} />
+		<NMItem key="adminb" title="menu/admref?type=domain" js={toto.bind('admref?type=domain')} />
+		<NMItem key="adminc" title="menu/admmrel" js={toto.bind('admmrel')} />
+		<NMItem key="admind" title="menu/admmx" js={toto.bind('admmx')} />
+		<NMItem key="admine" title="menu/admref?type=view" js={toto.bind('admref?type=view')} />
+		<NMItem key="adminf" title="menu/admref?type=zone" js={toto.bind('admref?type=zone')} />
+		<NMItem key="adming" title="menu/admref?type=zone4" js={toto.bind('admref?type=zone4')} />
+		<NMItem key="adminh" title="menu/admref?type=zone6" js={toto.bind('admref?type=zone6')} />
+		<NMItem key="admini" title="menu/admref?type=dhcpprof" js={toto.bind('admref?type=dhcpprof')} />
+		<NMItem key="adminj" title="menu/admref?type=vlan" js={toto.bind('admref?type=vlan')} />
+		<NMItem key="admink" title="menu/admref?type=eqtype" js={toto.bind('admref?type=eqtype')} />
+		<NMItem key="adminl" title="menu/admref?type=eq" js={toto.bind('admref?type=eq')} />
+		<NMItem key="adminm" title="menu/admref?type=confcmd" js={toto.bind('admref?type=confcmd')} />
+		<NMItem key="adminn" title="menu/admref?type=dotattr" js={toto.bind('admref?type=dotattr')} />
+		<NMItem key="admino" title="menu/admgrp" js={toto.bind('admgrp')} />
+		<NMItem key="adminp" title="menu/admzgen" js={toto.bind('admzgen')} />
+		<NMItem key="adminq" title="menu/admpar" js={toto.bind('admpar')} />
+		<NMItem key="adminr" title="menu/statuser" js={toto.bind('statuser')} />
+		<NMItem key="admins" title="menu/statorg" js={toto.bind('statorg')} />
+	      </NMDropdown>
+
+	      <NMDropdown key="pgadmin" title="menu/auth" show="pgadmin">
+		<NMItem key="pgadmin1" title="menu/pgaacc?action=list" js={toto.bind('pgaacc?action=list')} />
+		<NMItem key="pgadmin2" title="menu/pgaacc?action=print" js={toto.bind('pgaacc?action=print')} />
+		<NMItem key="pgadmin3" title="menu/pgaacc?action=add" js={toto.bind('pgaacc?action=add')} />
+		<NMItem key="pgadmin4" title="menu/pgaacc?action=mod" js={toto.bind('pgaacc?action=mod')} />
+		<NMItem key="pgadmin5" title="menu/pgaacc?action=del" js={toto.bind('pgaacc?action=del')} />
+		<NMItem key="pgadmin6" title="menu/pgaacc?action=passwd" js={toto.bind('pgaacc?action=passwd')} />
+		<NMItem key="pgadmin7" title="menu/pgarealm?action=list" js={toto.bind('pgarealm?action=list')} />
+		<NMItem key="pgadmin8" title="menu/pgarealm?action=add" js={toto.bind('pgarealm?action=add')} />
+		<NMItem key="pgadmin9" title="menu/pgarealm?action=mod" js={toto.bind('pgarealm?action=mod')} />
+		<NMItem key="pgadmina" title="menu/pgarealm?action=del" js={toto.bind('pgarealm?action=del')} />
+	      </NMDropdown>
+
+	      <li>
+		<form className={"form-inline my-1 my-lg-0"+showIf (cap, 'logged')}
+		      role="search"
+		      action=""
+		      onSubmit={handleSearchForm}>
+		  <div className="input-group">
+		    <input className="form-control py-2"
+			type="search"
+			placeholder={intl.formatMessage ({id: 'menu/searchbox'})}
+			aria-label="Search" />
+		    <span className="input-group-append">
+		      <button className="btn btn-outline-secondary border-left0 border"
+			  aria-label="Submit"
+			  type="button">
+			<i className="fas fa-search" />
+		      </button>
+		    </span>
+		  </div>
+		</form>
+	      </li>
+	    </ul>
+
+	    <ul className="navbar-nav">
+	      <li className={cap ['logged'] ? 'd-none' : 'show'}
+		 key="notconnected"
+		  >
+		<p className="navbar-text">
+		  <FormattedMessage id='menu/notconnected' />
+		</p>
+	      </li>
+
+	      <NMDropdown key="user" title={user == '' ? 'NOTHING' : user} translate={false} show="logged" align="right" icon="fas fa-user">
+		<NMItem key="user1" title="menu/profile" js={toto.bind('profile')} />
+		<NMItem key="user2" title="menu/sessions" js={toto.bind('sessions')} />
+		<NMISep key="user3" show="admin" />
+		<NMItem key="user4" title="menu/sudo" js={toto.bind('sudo')} show="admin" />
+		<NMItem key="user5" title="menu/sudoback" js={toto.bind('sudoback')} show="setuid" />
+		<NMISep key="user6" />
+		<NMItem key="user7" title="menu/logout" js={toto.bind('logout')} />
+	      </NMDropdown>
+
+	      <NMDropdown key="lang" title="menu/curlang" align="right">
+		<NMItem key="lang1" title="[en]" translate={false} js={changeLang.bind(this, 'en')} />
+		<NMItem key="lang2" title="[fr]" translate={false} js={changeLang.bind(this, 'fr')} />
+	      </NMDropdown>
+
+	    </ul>
+
+	  </div>
+	</nav>
+
+	<p> Je suis une application qui applique ! </p>
+      </div>
+    ) ;
+}
+
+export const NMMenu = injectIntl (withUser (RawNMMenu)) ;
+
+
+
+
+
+
+
+class NMRouter extends React.Component {
+
+    render () {
 	switch (this.props.app) {
 	    case 'index' :
 		if (this.context.nm.cap.logged) {
@@ -327,10 +331,10 @@ var NMRouter = React.createClass ({
 		    ) ;
 	}
     }
-}) ;
+}
 
-var NMRouterX = React.createClass ({
-    render: function () {
+class NMRouterX extends React.Component {
+    render () {
 	return (
 		    <pre>
 			this.props: {JSON.stringify (this.props)}
@@ -338,4 +342,4 @@ var NMRouterX = React.createClass ({
 		    </pre>
 		) ;
     }
-}) ;
+}

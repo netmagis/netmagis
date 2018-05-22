@@ -3,10 +3,10 @@ const path = require ("path") ;
 
 module.exports = {
     entry: {
-	// "netmagis": "./src/netmagis.jsx",
+	"netmagis": "./src/netmagis.jsx",
 	// "test-app": "./src/test-app.jsx",
 	// "common" : [ "react" , "react-dom" ]
-	"test-redux": "./src/test-redux.jsx",
+	// "test-redux": "./src/test-redux.jsx",
     },
     output: {
         path: path.resolve (__dirname, "dist"),
