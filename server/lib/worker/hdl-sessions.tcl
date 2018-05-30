@@ -104,8 +104,8 @@ api-handler post {/sessions} any {
 #	exit 0
 #    }
 
-    ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body [mc "Session opened"]
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body null
 }
 
 ##############################################################################
@@ -144,8 +144,8 @@ api-handler delete {/sessions} logged {
 ###	}
     }
 
-    ::scgi::set-header Content-Type text/plain
-    ::scgi::set-body [mc "Session closed"]
+    ::scgi::set-header Content-Type application/json
+    ::scgi::set-body null
 }
 
 ##############################################################################

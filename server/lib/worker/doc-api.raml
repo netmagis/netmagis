@@ -1318,8 +1318,8 @@ types:
       200:
 	description: login successful
         body:
-          mediaType: text/plain
-	  value:	ok
+          application/json:
+	    value:	null
       412:
         description: invalid input (json format, invalid login)
       403:
@@ -1335,7 +1335,8 @@ types:
     responses:
       200:
         body:
-          text/plain: ok
+          application/json:
+	    value: null
 
 ##############################################################################
 # User capabilities
