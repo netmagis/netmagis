@@ -5,7 +5,8 @@ export const UserContext = React.createContext ({
     cap: {},
     lang: 'C',
     transl: {},
-    changeUser: (x) => {},
+    disconnect: () => {},
+    fetchCap: () => {},
     changeLang: (l) => {},
 }) ;
 
@@ -15,7 +16,7 @@ export function withUser (Component) {
 	    <UserContext.Consumer>
 		{(c) => <Component {...props}
 				user={c.user} cap={c.cap} lang={c.lang}
-				changeUser={c.changeUser}
+				disconnect={c.disconnect}
 				changeLang={c.changeLang}
 				/>}
 	    </UserContext.Consumer>

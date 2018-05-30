@@ -86,6 +86,11 @@ class App extends React.Component {
 	api ("GET", l + ".json", this.decodeTransl.bind (this, l)) ;
     }
 
+    disconnect () {
+	cookies.remove ('session', {path: baseUrl}) ;
+	this.fetchCap () ;
+    }
+
     constructor (props) {
 	super (props) ;
 
@@ -101,9 +106,9 @@ class App extends React.Component {
 	    cap: {},
 	    transl: {},
 	    /****************
-	    fetchCap: this.fetchCap.bind (this),
 	    fetchTransl: this.fetchTransl.bind (this),
 	    ****************/
+	    disconnect: this.disconnect.bind (this),
 	    changeLang: this.changeLang,
 	} ;
 	this.fetchCap () ;

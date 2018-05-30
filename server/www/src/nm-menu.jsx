@@ -36,9 +36,6 @@ function handleSearchForm (event) {
 function gotoApp (t) {
 }
 
-function disconnect () {
-}
-
 /*
  * Short-hand to help defining menu items
  * props:
@@ -52,7 +49,6 @@ function disconnect () {
 function RawNMItem (props) {
     const { cap, title, translate, show, js, intl } = props ;
     var tr = (translate == false) ? false : true ;
-    {console.log ('title=', title, ', tr=', tr)}
     return (
 	<a className={'dropdown-item' + showIf (cap, show)}
 	    href="#"
@@ -97,7 +93,7 @@ function RawNMDropdown (props) {
     const { cap, title, translate, show, align, icon, intl, children } = props ;
     var ic = (icon == '') ? "d-none" : icon ;
     var dir = (align == 'right') ? ' dropdown-menu-right' : '' ;
-    var tr = (translate === undefined) ? true : !translate ;
+    var tr = (translate === undefined) ? true : translate ;
     return (
 	<li className={'nav-item dropdown' + showIf (cap, show)}>
 	  <a href="#"
@@ -111,7 +107,6 @@ function RawNMDropdown (props) {
 	    <span>
 	    <i className={ic} />
 	    &nbsp;
-	    {console.log ('title=', title, ', tr=', tr)}
 	    {tr ? intl.formatMessage ({id: title}) : title}
 	    </span>
 	  </a>
@@ -134,8 +129,7 @@ function toto (s) {
 
 
 function RawNMMenu (props) {
-    const {user, cap, lang, changeLang, intl} = props ;
-    console.log ('changeLang=', changeLang) ;
+    const {user, cap, disconnect, lang, changeLang, intl} = props ;
     return (
       <div>
 	<nav className="navbar navbar-expand-lg navbar-light bg-light">
@@ -262,14 +256,14 @@ function RawNMMenu (props) {
 		</p>
 	      </li>
 
-	      <NMDropdown key="user" title={user == '' ? 'NOTHING' : user} translate={false} show="logged" align="right" icon="fas fa-user">
+	      <NMDropdown key="user" title={user == '' ? '???' : user} translate={false} show="logged" align="right" icon="fas fa-user">
 		<NMItem key="user1" title="menu/profile" js={toto.bind('profile')} />
 		<NMItem key="user2" title="menu/sessions" js={toto.bind('sessions')} />
 		<NMISep key="user3" show="admin" />
 		<NMItem key="user4" title="menu/sudo" js={toto.bind('sudo')} show="admin" />
 		<NMItem key="user5" title="menu/sudoback" js={toto.bind('sudoback')} show="setuid" />
 		<NMISep key="user6" />
-		<NMItem key="user7" title="menu/logout" js={toto.bind('logout')} />
+		<NMItem key="user7" title="menu/logout" js={disconnect} />
 	      </NMDropdown>
 
 	      <NMDropdown key="lang" title="menu/curlang" align="right">
