@@ -19,13 +19,29 @@ import { NMMenu } from './nm-menu.jsx' ;
 
 var baseUrl = window.location.toString ().replace (/[^/]*$/, '') ;
 
+// hack to decode pathname
+function getPathname (url) {
+    var parser = document.createElement ('a') ;
+    parser.href = window.location ;
+    return parser.pathname ;
+
+}
+var pathUrl = getPathname (window.location).replace (/[^/]*$/, '') ;
+
+
 const cookies = new Cookies () ;
 
-function api (verb, name, handler) {
+export function api (verb, name, jsonbody, handler) {
     let url = baseUrl + '/' + name
     let opt = {
 	method: verb,
 	credentials: "same-origin",
+    }
+    if (jsonbody != null) {
+	opt.headers = {
+	    'Content-Type': 'application/json'
+	}
+	opt.body = JSON.stringify (jsonbody)
     }
     fetch (url, opt)
 	.then (
@@ -74,20 +90,20 @@ class App extends React.Component {
 	    lang: lang,
 	    transl: json,
 	}) ;
-	cookies.set ('lang', lang, {path: baseUrl}) ;
+	cookies.set ('lang', lang, {path: pathUrl}) ;
     }
 
     fetchCap () {
-	api ("GET", "cap", this.decodeCap.bind (this)) ;
+	api ("GET", "cap", null, this.decodeCap.bind (this)) ;
     }
 
     fetchTransl (l) {
 	console.log ("fetchTransl(", l, ")") ;
-	api ("GET", l + ".json", this.decodeTransl.bind (this, l)) ;
+	api ("GET", l + ".json", null, this.decodeTransl.bind (this, l)) ;
     }
 
     disconnect () {
-	cookies.remove ('session', {path: baseUrl}) ;
+	cookies.remove ('session', {path: pathUrl}) ;
 	this.fetchCap () ;
     }
 

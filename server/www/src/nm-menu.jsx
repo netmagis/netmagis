@@ -2,6 +2,7 @@ import React from 'react' ;
 // import PropTypes from 'prop-types' ;
 import { withUser, UserContext } from './user-context.jsx' ;
 import { injectIntl, formatMessage, FormattedMessage } from 'react-intl' ;
+import { api } from './netmagis.jsx' ;
 
 // import * as S from './nm-state.jsx' ;
 // import * as C from './common.js' ;
@@ -119,6 +120,71 @@ function RawNMDropdown (props) {
 }
 
 export const NMDropdown = injectIntl (withUser (RawNMDropdown)) ;
+
+/*
+ * Pop-up with a login form
+ */
+
+class LoginForm extends React.Component {
+  constructor (props) {
+    super (props) ;
+    this.state = {
+      login: '',
+      password: '',
+    } ;
+    this.handleChange = this.handleChange.bind (this) ;
+    this.handleSubmit = this.handleSubmit.bind (this) ;
+  }
+
+  handleChange (ev) {
+    const target = ev.target ;
+    const name = target.name ;
+    const value = target.value ;
+
+    this.setState ({
+      [name]: value
+    }) ;
+    ev.preventDefault () ;
+  }
+
+  nullhandler (ev) {
+    ev.preventDefault () ;
+  }
+
+  handleSubmit (ev) {
+    console.log ('login=', this.state.login, ', pass=', this.state.password) ;
+    const body = {
+      login: this.state.login,
+      password: this.state.password,
+    }
+    api ("POST", "sessions", body, this.nullhandler.bind (ev)) ;
+    ev.preventDefault () ;
+  }
+
+  render () {
+    return (
+	<div className="modal" id={this.props.modalid} tabIndex="-1" role="dialog">
+	  <div className="modal-dialog" role="document">
+	    <div className="modal-content">
+	      <div className="modal-header">
+		<h2 className="modal-title">Please login</h2>
+		<button type="button" className="close" data-dismiss="modal" aria-label="Close">
+		  <span aria-hidden="true">&times;</span>
+		</button>
+	      </div>
+	      <div className="modal-body">
+		<form onSubmit={this.handleSubmit}>
+		  <input type="text" className="form-control" name="login" placeholder="Username" autoComplete="username" required="" autoFocus="" onChange={this.handleChange} />
+		  <input type="password" className="form-control" name="password" placeholder="Password" autoComplete="current-password" required="" onChange={this.handleChange} />
+		  <button className="btn btn-lg btn-primary btn-block" type="submit">Login</button>
+		</form>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+    ) ;
+  }
+}
 
 
 function toto (s) {
@@ -251,9 +317,11 @@ function RawNMMenu (props) {
 	      <li className={cap ['logged'] ? 'd-none' : 'show'}
 		 key="notconnected"
 		  >
-		<p className="navbar-text">
+		<p className="navbar-text" data-toggle="modal" data-target="#loginform">
 		  <FormattedMessage id='menu/notconnected' />
 		</p>
+		<LoginForm modalid="loginform" />
+
 	      </li>
 
 	      <NMDropdown key="user" title={user == '' ? '???' : user} translate={false} show="logged" align="right" icon="fas fa-user">
