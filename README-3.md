@@ -87,6 +87,3 @@ contains subdirectories:
 Files are served by the REST server from the `static` and `dist` 
 subdirectories. In order to transpile the react sources, just type 
 `make` in the `server/www` directory.
-
-
-  - `cd server/bin ; NMCONF=/local/nm30/etc/netmagis.conf sh run-server`
