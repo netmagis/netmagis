@@ -56,7 +56,7 @@ function RawNMItem(props) {
         <Link
             className={"dropdown-item" + showIf(cap, show)}
             /*temporary solution to url problem*/
-            to={`/netmagis/netmagis/${pDropdown}/${title.split("/")[1]}`}
+            to={`/netmagis/netmagis/${title.split("/")[1]}`}
         >
             {tr ? intl.formatMessage({ id: title }) : title}
         </Link>
@@ -275,10 +275,14 @@ function RawNMMenu(props) {
                     >
                         <ul className="navbar-nav mr-auto">
                             <li className="nav-item">
-                                <a className="nav-link" href="#">
+                                <Link
+                                    className={"nav-link"}
+                                    /*temporary solution to url problem*/
+                                    to={"/netmagis/netmagis/"}
+                                >
                                     Home
                                     <span className="sr-only">(current)</span>
-                                </a>
+                                </Link>
                             </li>
 
                             <NMDropdown
@@ -289,51 +293,43 @@ function RawNMMenu(props) {
                                 <NMItem
                                     key="dns1"
                                     title="menu/consult"
-                                    pDropdown="dns"
                                     //js={toto.bind("consult")}
                                 />
                                 <NMItem
                                     key="dns2"
                                     title="menu/add"
-                                    pDropdown="dns"
                                     //js={toto.bind("add")}
                                 />
                                 <NMItem
                                     key="dns3"
                                     title="menu/del"
-                                    pDropdown="dns"
                                     //js={toto.bind("del")}
                                 />
                                 <NMItem
                                     key="dns4"
                                     title="menu/mod"
-                                    pDropdown="dns"
                                     //js={toto.bind("mod")}
                                 />
                                 <NMItem
                                     key="dns5"
                                     title="menu/mailrole"
-                                    pDropdown="dns"
                                     //js={toto.bind("mailrole")}
                                 />
                                 <NMItem
                                     key="dns6"
                                     title="menu/dhcprange"
-                                    pDropdown="dns"
                                     //js={toto.bind("dhcprange")}
                                 />
                                 <NMItem
                                     key="dns7"
                                     title="menu/pgpassword"
                                     show="pgauth"
-                                    pDropdown="dns"
                                     //js={toto.bind("pgpassword")}
                                 />
                                 <NMItem
                                     key="dns8"
                                     title="menu/where"
                                     show="pgauth"
-                                    pDropdown="dns"
                                     //js={toto.bind("where")}
                                 />
                             </NMDropdown>
@@ -404,169 +400,141 @@ function RawNMMenu(props) {
                                 <NMItem
                                     key="admin1"
                                     title="menu/admlmx"
-                                    pDropdown="admin"
                                     //js={toto.bind("admlmx")}
                                 />
                                 <NMItem
                                     key="admin2"
                                     title="menu/lnet"
-                                    pDropdown="admin"
                                     //js={toto.bind("lnet")}
                                 />
                                 <NMItem
                                     key="admin3"
                                     title="menu/lusers"
-                                    pDropdown="admin"
                                     //js={toto.bind("lusers")}
                                 />
                                 <NMItem
                                     key="admin4"
                                     title="menu/who?action=now"
-                                    pDropdown="admin"
                                     //js={toto.bind("who?action=now")}
                                 />
                                 <NMItem
                                     key="admin5"
                                     title="menu/who?action=last"
-                                    pDropdown="admin"
                                     //js={toto.bind("who?action=last")}
                                 />
                                 <NMItem
                                     key="admin6"
                                     title="menu/status"
-                                    pDropdown="admin"
                                     //js={toto.bind("status")}
                                 />
                                 <NMItem
                                     key="admin7"
                                     title="menu/admref?type=org"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=org")}
                                 />
                                 <NMItem
                                     key="admin8"
                                     title="menu/admref?type=comm"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=comm")}
                                 />
                                 <NMItem
                                     key="admin9"
                                     title="menu/admref?type=hinfo"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=hinfo")}
                                 />
                                 <NMItem
                                     key="admina"
                                     title="menu/admref?type=net"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=net")}
                                 />
                                 <NMItem
                                     key="adminb"
                                     title="menu/admref?type=domain"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=domain")}
                                 />
                                 <NMItem
                                     key="adminc"
                                     title="menu/admmrel"
-                                    pDropdown="admin"
                                     //js={toto.bind("admmrel")}
                                 />
                                 <NMItem
                                     key="admind"
                                     title="menu/admmx"
-                                    pDropdown="admin"
                                     //js={toto.bind("admmx")}
                                 />
                                 <NMItem
                                     key="admine"
                                     title="menu/admref?type=view"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=view")}
                                 />
                                 <NMItem
                                     key="adminf"
                                     title="menu/admref?type=zone"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=zone")}
                                 />
                                 <NMItem
                                     key="adming"
                                     title="menu/admref?type=zone4"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=zone4")}
                                 />
                                 <NMItem
                                     key="adminh"
                                     title="menu/admref?type=zone6"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=zone6")}
                                 />
                                 <NMItem
                                     key="admini"
                                     title="menu/admref?type=dhcpprof"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=dhcpprof")}
                                 />
                                 <NMItem
                                     key="adminj"
                                     title="menu/admref?type=vlan"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=vlan")}
                                 />
                                 <NMItem
                                     key="admink"
                                     title="menu/admref?type=eqtype"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=eqtype")}
                                 />
                                 <NMItem
                                     key="adminl"
                                     title="menu/admref?type=eq"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=eq")}
                                 />
                                 <NMItem
                                     key="adminm"
                                     title="menu/admref?type=confcmd"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=confcmd")}
                                 />
                                 <NMItem
                                     key="adminn"
                                     title="menu/admref?type=dotattr"
-                                    pDropdown="admin"
                                     //js={toto.bind("admref?type=dotattr")}
                                 />
                                 <NMItem
                                     key="admino"
                                     title="menu/admgrp"
-                                    pDropdown="admin"
                                     //js={toto.bind("admgrp")}
                                 />
                                 <NMItem
                                     key="adminp"
                                     title="menu/admzgen"
-                                    pDropdown="admin"
                                     //js={toto.bind("admzgen")}
                                 />
                                 <NMItem
                                     key="adminq"
                                     title="menu/admpar"
-                                    pDropdown="admin"
                                     //js={toto.bind("admpar")}
                                 />
                                 <NMItem
                                     key="adminr"
                                     title="menu/statuser"
-                                    pDropdown="admin"
                                     //js={toto.bind("statuser")}
                                 />
                                 <NMItem
                                     key="admins"
                                     title="menu/statorg"
-                                    pDropdown="admin"
                                     //js={toto.bind("statorg")}
                                 />
                             </NMDropdown>
@@ -637,6 +605,7 @@ function RawNMMenu(props) {
                                     role="search"
                                     action=""
                                     onSubmit={handleSearchForm}
+                                    onChange={props.searchChange}
                                 >
                                     <div className="input-group">
                                         <input
@@ -736,25 +705,32 @@ function RawNMMenu(props) {
                         </ul>
                     </div>
                 </nav>
-                <p> Je suis une application qui applique ! </p>
 
-                <Route path="*/netmagis/dns/:item" component={DNSView} />
-                <Route path="*/netmagis/admin/:item" component={AdminView} />
+                <Route path="*/netmagis/add" component={Add} />
+                <Route path="*/netmagis/consult" component={Consult} />
+                <Route exact={true} path="*/netmagis/" component={Welcome}/>
             </div>
         </Router>
     );
 }
 
-const DNSView = ({ match }) => (
+/*  Some basic components to demonstrate the usability of the routes*/
+const Welcome = ({match}) => (
     <div>
-        <p> Contenu Dns </p>
+        <p> Bienvenue ! </p>
+    </div>
+);
+
+const Add = ({ match }) => (
+    <div>
+        <p> Add component </p>
         {match.params.item}
     </div>
 );
 
-const AdminView = ({ match }) => (
+const Consult = ({ match }) => (
     <div>
-        <p> Contenu Admin </p>
+        <p> Consult component </p>
         {match.params.item}
     </div>
 );
