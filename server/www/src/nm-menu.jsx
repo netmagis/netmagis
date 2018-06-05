@@ -55,7 +55,8 @@ function RawNMItem(props) {
     return (
         <Link
             className={"dropdown-item" + showIf(cap, show)}
-            to={`/${pDropdown}/${title.split("/")[1]}`}
+            /*temporary solution to url problem*/
+            to={`/netmagis/netmagis/${pDropdown}/${title.split("/")[1]}`}
         >
             {tr ? intl.formatMessage({ id: title }) : title}
         </Link>
@@ -737,8 +738,8 @@ function RawNMMenu(props) {
                 </nav>
                 <p> Je suis une application qui applique ! </p>
 
-                <Route path="/dns/:item" component={DNSView} />
-                <Route path="/admin/:item" component={AdminView} />
+                <Route path="*/netmagis/dns/:item" component={DNSView} />
+                <Route path="*/netmagis/admin/:item" component={AdminView} />
             </div>
         </Router>
     );
