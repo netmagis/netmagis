@@ -110,7 +110,7 @@ proc get-default-value {type} {
 	    if {[info exists env(NETMAGIS_VERSION)]} then {
 		set v $env(NETMAGIS_VERSION)
 	    } else {
-		set v %BERSION%
+		set v %VERSION%
 	    }
 	}
 	default {

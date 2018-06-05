@@ -26,7 +26,7 @@ check=false
 get_default_value ()
 {
     case "$1" in
-	config)  echo ${NETMAGIS_CONFIG:-%NMCONFFILE%} ;;
+	config)  echo ${NETMAGIS_CONFIG:-%CONFFILE%} ;;
 	libdir)  echo ${NETMAGIS_LIBDIR:-%NMLIBDIR%} ;;
 	version) echo ${NETMAGIS_VERSION:-%VERSION%} ;;
 	*)       echo "Internal error: no default for '$1'" >&2 ; exit 1 ;;

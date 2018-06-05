@@ -40,7 +40,7 @@ Step 2 - Install PostgreSQL and initialize database
 
   - required packages: `postgresql`, `postgresql-pltcl`
   - create user: `createuser --no-superuser --no-createrole --createdb --pwprompt nm`
-  - create database: `createdb -U nm nm30`
+  - create an empty database: `createdb -U nm nm30`
 
 ### Initialize database
 
@@ -53,15 +53,13 @@ machine.
     version), see:
       `curl -sL https://deb.nodesource.com/setup_8.x | bash -`, 
       then `apt install nodejs`
-  - `PREFIX=/local/nm30 make PREFIX=$PREFIX TCLSH=/usr/bin/tclsh TCLCONF=/usr/lib/tcl8.6/tclConfig.sh NMDOCDIR=$PREFIX/share/doc NMXMPDIR=$PREFIX/share/examples NMLIBDIR=$PREFIX/lib NMVARDIR=$PREFIX/var install-client install-server`
+  - `PREFIX=/local/nm30 ; make PREFIX=$PREFIX TCLSH=/usr/bin/tclsh TCLCONF=/usr/lib/tcl8.6/tclConfig.sh NMDOCDIR=$PREFIX/share/doc NMXMPDIR=$PREFIX/share/examples NMLIBDIR=$PREFIX/lib NMVARDIR=$PREFIX/var install-client install-server`
   - copy `/local/nm30/etc/netmagis.conf.sample` to 
     `/local/nm30/etc/netmagis.conf` and modify the lines 
     `dnsdbhost` (`localhost`), `dnsdbname` (`nm30`), 
-    `dnsdbpassword` and copy the same values for `macdb*`
-  - run `/local/nm30/share/examples/with-views/run-all.sh` to fill 
+    `dnsdbpassword`, then copy the same values for `macdb*`
+  - run `(cd /local/nm30/share/examples/with-views ; sh run-all.sh)` to fill 
     the database with example data
-
-  - FIXME : some bugs to fix in netmagis-dbcreate and ninstall
 
 
 Step 3 - Run the REST server in-place
