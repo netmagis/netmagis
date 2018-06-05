@@ -52,11 +52,12 @@ function gotoApp(t) {}
 function RawNMItem(props) {
     const { cap, title, translate, show, js, pDropdown, intl } = props;
     var tr = translate == false ? false : true;
+    //console.log("Current pathname=" + props.pathname);
     return (
         <Link
             className={"dropdown-item" + showIf(cap, show)}
             /*temporary solution to url problem*/
-            to={`/netmagis/netmagis/${title.split("/")[1]}`}
+            to={`${title.split("/")[1]}`}
         >
             {tr ? intl.formatMessage({ id: title }) : title}
         </Link>
@@ -278,7 +279,7 @@ function RawNMMenu(props) {
                                 <Link
                                     className={"nav-link"}
                                     /*temporary solution to url problem*/
-                                    to={"/netmagis/netmagis/"}
+                                    to={props.pathname} //global const declared in netmagis.jsx
                                 >
                                     Home
                                     <span className="sr-only">(current)</span>
@@ -707,7 +708,7 @@ function RawNMMenu(props) {
                 </nav>
 
                 <Route path="*/netmagis/add" component={Add} />
-                <Route path="*/netmagis/consult" component={Consult} />
+                <Route path="*/netmagis/consult:args" component={Consult} />
                 <Route exact={true} path="*/netmagis/" component={Welcome}/>
             </div>
         </Router>
@@ -724,16 +725,27 @@ const Welcome = ({match}) => (
 const Add = ({ match }) => (
     <div>
         <p> Add component </p>
-        {match.params.item}
     </div>
 );
 
-const Consult = ({ match }) => (
-    <div>
-        <p> Consult component </p>
-        {match.params.item}
-    </div>
-);
+const Consult = ({ match }) => {
+
+    const args = match.params.args;
+    const net = args.split("net=")[1];
+
+
+
+    //console.log("Network= "+ net);
+
+
+    return (
+        <div>
+            <h3> Consult component </h3>
+            <p> {`Request on ${net}`}</p>
+        </div>
+    );
+}
+
 
 export const NMMenu = injectIntl(withUser(RawNMMenu));
 

@@ -17,6 +17,7 @@ import { UserContext } from './user-context.jsx' ;
 
 import { NMMenu } from './nm-menu.jsx' ;
 
+//could take the url before netmagis/ to get the adress right on every machine
 var baseUrl = window.location.toString ().replace (/[^/]*$/, '') ;
 
 // hack to decode pathname
@@ -26,8 +27,8 @@ function getPathname (url) {
     return parser.pathname ;
 
 }
-var pathUrl = getPathname (window.location).replace (/[^/]*$/, '') ;
-
+const pathUrl = getPathname (window.location).replace (/[^/]*$/, '') ;
+//pathname = /netmagis/netmagis/ on test server -> put it router
 
 const cookies = new Cookies () ;
 
@@ -136,7 +137,7 @@ class App extends React.Component {
 		<IntlProvider locale={this.state.lang}
 			    messages={this.state.transl}
 			    >
-		    <NMMenu />
+		    <NMMenu pathname={pathUrl}/>
 		</IntlProvider>
 	    </UserContext.Provider>
 	) ;
