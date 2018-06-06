@@ -6,6 +6,7 @@ import { injectIntl, formatMessage, FormattedMessage } from "react-intl";
 import { api } from "./netmagis.jsx";
 import { BrowserRouter as Router, Link, Route } from "react-router-dom";
 
+
 // import * as S from './nm-state.jsx' ;
 // import * as C from './common.js' ;
 // import {Login}		from './app-login.jsx' ;
@@ -708,7 +709,8 @@ function RawNMMenu(props) {
                 </nav>
 
                 <Route path="*/netmagis/add" component={Add} />
-                <Route path="*/netmagis/consult:args" component={Consult} />
+                <Route path="*/netmagis/consult" component={Consult} />
+
                 <Route exact={true} path="*/netmagis/" component={Welcome}/>
             </div>
         </Router>
@@ -728,26 +730,44 @@ const Add = ({ match }) => (
     </div>
 );
 
-const Consult = ({ match }) => {
-
-    const args = match.params.args;
-    const net = args.split("net=")[1];
-
-
-
-    //console.log("Network= "+ net);
-
+const Consult_ = ({ match }) => {
 
     return (
         <div>
-            <h3> Consult component </h3>
-            <p> {`Request on ${net}`}</p>
+            <h4> Consult component simple</h4>
+        </div>
+    );
+}
+
+const Consult = ({ match }) => {
+
+    const queryString = require('query-string');
+    const parsed = queryString.parse(location.search);
+    console.log("N keys: " + Object.keys(parsed));
+
+    return (
+        <div>
+            <h4> Consult component + args</h4>
+            {
+                Object.keys(parsed).length>0 ? (
+                    <div>
+                        {parsed.net ?
+                                <p> Infos about <b>{parsed.net}</b> </p>
+                                : <p>No network specified</p>
+                        }
+                    </div>
+
+                )
+                : ( <p> Generic page</p> )
+
+
+            }
+
         </div>
     );
 }
 
 
-export const NMMenu = injectIntl(withUser(RawNMMenu));
 
 /*
 class NMRouter extends React.Component {
@@ -803,3 +823,5 @@ class NMRouterX extends React.Component {
     }
 }
 */
+
+export const NMMenu = injectIntl(withUser(RawNMMenu));
