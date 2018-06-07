@@ -235,6 +235,43 @@ class LoginForm extends React.Component {
     }
 }
 
+/*
+ * Content of the error banner
+ */
+const ErrorMsg = ({errdesc}) => (
+                 <div className="alert alert-danger" role="alert">
+                     Error: {errdesc}
+                 </div>
+)
+
+/*
+ * Error banner component
+ * props:
+ * - errdesc: description of the error to display
+ */
+class ErrorBanner extends React.Component{
+    constructor(props){
+        super(props);
+        this.state = {
+            showBanner: true
+        };
+        this.handleClick = this.handleClick.bind(this);
+    }
+
+    handleClick() {
+        this.setState({showBanner: false});
+    }
+
+    render(){
+        return (
+            <div onClick={this.handleClick}>
+                {this.state.showBanner  ? <ErrorMsg errdesc={this.props.errdesc}/> : null}
+            </div>
+        )
+    }
+}
+
+
 //str pour la traduction ?
 function toto(s) {
     return () => {
@@ -708,6 +745,9 @@ function RawNMMenu(props) {
                     </div>
                 </nav>
 
+
+                <ErrorBanner errdesc="Une erreur inconnue est survenue" />
+
                 <Route path="*/netmagis/add" component={Add} />
                 <Route path="*/netmagis/consult" component={Consult} />
 
@@ -729,15 +769,6 @@ const Add = ({ match }) => (
         <p> Add component </p>
     </div>
 );
-
-const Consult_ = ({ match }) => {
-
-    return (
-        <div>
-            <h4> Consult component simple</h4>
-        </div>
-    );
-}
 
 const Consult = ({ match }) => {
 
