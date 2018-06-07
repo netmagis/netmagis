@@ -31,7 +31,7 @@ Netmagis 3.0 can be run either with Apache or Nginx.
   - edit `/etc/nginx/sites-available/netmagis`. In particular, you 
     may want to remove the SSL configuration in order to run a non 
     HTTPS server on a non-standard TCP port (e.g. 82)
-  - run _<a command I don't remember>_ to enable the site
+  - run `ln -s /etc/nginx/sites-available/netmagis /etc/nginx/sites-enabled/netmagis` to enable the site
 
 Step 2 - Install PostgreSQL and initialize database
 ---------------------------------------------------
