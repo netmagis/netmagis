@@ -4,8 +4,8 @@ import { withUser, UserContext } from "./user-context.jsx";
 //internationalization
 import { injectIntl, formatMessage, FormattedMessage } from "react-intl";
 import { api } from "./netmagis.jsx";
+import { Consult } from "./app-consult.jsx";
 import { BrowserRouter as Router, Link, Route } from "react-router-dom";
-
 
 // import * as S from './nm-state.jsx' ;
 // import * as C from './common.js' ;
@@ -238,19 +238,19 @@ class LoginForm extends React.Component {
 /*
  * Content of the error banner
  */
-const ErrorMsg = ({errdesc}) => (
-                 <div className="alert alert-danger" role="alert">
-                     Error: {errdesc}
-                 </div>
-)
+const ErrorMsg = ({ errdesc }) => (
+    <div className="alert alert-danger" role="alert">
+        Error: {errdesc}
+    </div>
+);
 
 /*
  * Error banner component
  * props:
  * - errdesc: description of the error to display
  */
-class ErrorBanner extends React.Component{
-    constructor(props){
+class ErrorBanner extends React.Component {
+    constructor(props) {
         super(props);
         this.state = {
             showBanner: true
@@ -259,18 +259,19 @@ class ErrorBanner extends React.Component{
     }
 
     handleClick() {
-        this.setState({showBanner: false});
+        this.setState({ showBanner: false });
     }
 
-    render(){
+    render() {
         return (
             <div onClick={this.handleClick}>
-                {this.state.showBanner  ? <ErrorMsg errdesc={this.props.errdesc}/> : null}
+                {this.state.showBanner ? (
+                    <ErrorMsg errdesc={this.props.errdesc} />
+                ) : null}
             </div>
-        )
+        );
     }
 }
-
 
 //str pour la traduction ?
 function toto(s) {
@@ -279,17 +280,18 @@ function toto(s) {
     };
 }
 
-const Error = (desc) => {
-    {errdesc: desc.toString}
-}
+const Error = desc => {
+    {
+        errdesc: desc.toString;
+    }
+};
 
 /*
  * Main page
  * errors prop receives errors from the api
  */
 class RawNMMenu extends React.Component {
-
-    constructor(props){
+    constructor(props) {
         super(props);
         //not used for now, but should be moved higher to old the current errors to display,
         //and pass it to this compoent using props
@@ -300,10 +302,16 @@ class RawNMMenu extends React.Component {
 */
     }
 
-
-
-    render(){
-        const { user, cap, disconnect, lang, changeLang, intl, errors } = this.props;
+    render() {
+        const {
+            user,
+            cap,
+            disconnect,
+            lang,
+            changeLang,
+            intl,
+            errors
+        } = this.props;
         return (
             <Router>
                 <div>
@@ -343,7 +351,9 @@ class RawNMMenu extends React.Component {
                                         to={this.props.pathname} //global const declared in netmagis.jsx
                                     >
                                         Home
-                                        <span className="sr-only">(current)</span>
+                                        <span className="sr-only">
+                                            (current)
+                                        </span>
                                     </Link>
                                 </li>
 
@@ -430,7 +440,11 @@ class RawNMMenu extends React.Component {
                                     />
                                 </NMDropdown>
 
-                                <NMDropdown key="mac" title="menu/mac" show="mac">
+                                <NMDropdown
+                                    key="mac"
+                                    title="menu/mac"
+                                    show="mac"
+                                >
                                     <NMItem
                                         key="mac1"
                                         title="menu/macindex"
@@ -673,9 +687,11 @@ class RawNMMenu extends React.Component {
                                             <input
                                                 className="form-control py-2"
                                                 type="search"
-                                                placeholder={intl.formatMessage({
-                                                    id: "menu/searchbox"
-                                                })}
+                                                placeholder={intl.formatMessage(
+                                                    {
+                                                        id: "menu/searchbox"
+                                                    }
+                                                )}
                                                 aria-label="Search"
                                             />
                                             <span className="input-group-append">
@@ -694,7 +710,9 @@ class RawNMMenu extends React.Component {
 
                             <ul className="navbar-nav">
                                 <li
-                                    className={cap["logged"] ? "d-none" : "show"}
+                                    className={
+                                        cap["logged"] ? "d-none" : "show"
+                                    }
                                     key="notconnected"
                                 >
                                     <p
@@ -768,16 +786,31 @@ class RawNMMenu extends React.Component {
                         </div>
                     </nav>
 
-                    {errors ? (
-                        errors.map(error => (
-                            <ErrorBanner errdesc={error.errdesc}/>
-                        ))
-                    ) : null}
+                    {errors
+                        ? errors.map(error => (
+                              <ErrorBanner errdesc={error.errdesc} />
+                          ))
+                        : null}
 
                     <Route path="*/netmagis/add" component={Add} />
-                    <Route path="*/netmagis/consult" component={Consult} />
+                    <Route
+                        path="*/netmagis/consult"
+                        render={() => (
+                            <Consult
+                                entries={[
+                                    { adress: "192.168.1.1" },
+                                    { adress: "10.0.0.1" },
+                                    { adress: "130.79.16" }
+                                ]}
+                            />
+                        )}
+                    />
 
-                    <Route exact={true} path="*/netmagis/" component={Welcome}/>
+                    <Route
+                        exact={true}
+                        path="*/netmagis/"
+                        component={Welcome}
+                    />
                 </div>
             </Router>
         );
@@ -785,7 +818,7 @@ class RawNMMenu extends React.Component {
 }
 
 /*  Some basic components to demonstrate the usability of the routes*/
-const Welcome = ({match}) => (
+const Welcome = ({ match }) => (
     <div>
         <p> Bienvenue ! </p>
     </div>
@@ -796,37 +829,35 @@ const Add = ({ match }) => (
         <p> Add component </p>
     </div>
 );
-
+/*
 const Consult = ({ match }) => {
+    console.log("Consut page loading");
 
-    const queryString = require('query-string');
+    const queryString = require("query-string");
     const parsed = queryString.parse(location.search);
     console.log("N keys: " + Object.keys(parsed));
 
     return (
         <div>
             <h4> Consult component + args</h4>
-            {
-                Object.keys(parsed).length>0 ? (
-                    <div>
-                        {parsed.net ?
-                                <p> Infos about <b>{parsed.net}</b> </p>
-                                : <p>No network specified</p>
-                        }
-                    </div>
-
-                )
-                : ( <p> Generic page</p> )
-
-
-            }
-
+            {Object.keys(parsed).length > 0 ? (
+                <div>
+                    {parsed.net ? (
+                        <p>
+                            {" "}
+                            Infos about <b>{parsed.net}</b>{" "}
+                        </p>
+                    ) : (
+                        <p>No network specified</p>
+                    )}
+                </div>
+            ) : (
+                <p> Generic page</p>
+            )}
         </div>
     );
-}
-
-
-
+};
+*/
 /*
 class NMRouter extends React.Component {
     render() {
