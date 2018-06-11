@@ -278,15 +278,24 @@ namespace eval ::scgi:: {
 			set-header Status "$state(errcode) $msg" true
 		    }
 
+		    # RFC7807 compatible error report
+		    ::scgi::set-header Content-Type application/problem+json
+		    set j {{"type": "error", "title": "%MSG%", "status": %STATUS%, "detail": "%DETAIL%", "instance": ""}}
+		    regsub "%MSG%" $j $msg j
+		    regsub "%STATUS%" $j $state(errcode) j
+
 		    if {[isdebug "error"]} then {
 			global errorInfo
-			set-body "<html>\n"
-			set-body "<h1>$state(errcode) $msg</h1>\n"
-			set-body "<pre>$errorInfo</pre>\n"
-			set-body "</html>\n"
+			set detail "<html>\n"
+			append detail "<h1>$state(errcode) $msg</h1>\n"
+			append detail "<pre>$errorInfo</pre>\n"
+			append detail "</html>\n"
 		    } else {
-			set-body "<pre>$state(errcode) $msg</pre>"
+			set detail "<pre>$state(errcode) $msg</pre>"
 		    }
+		    regsub "%DETAIL%" $j $detail j
+
+		    set-body $j
 		}
 
 		try {

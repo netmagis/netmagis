@@ -12,6 +12,16 @@ documentation: http://netmagis.org/???
 ##############################################################################
 
 types:
+  ErrorReport
+    description: RFC7807 based error report (see 3.1)
+    type: object
+    properties:
+      type:		string
+      title: 		string
+      status:		integer
+      detail:		string
+      instance:		string
+      
   Session:
     description: base type used to define active/expired sessions
     type: object
