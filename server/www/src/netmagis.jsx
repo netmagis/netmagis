@@ -17,7 +17,6 @@ import { UserContext } from "./user-context.jsx";
 
 import { NMMenu } from "./nm-menu.jsx";
 
-//could take the url before netmagis/ to get the adress right on every machine
 var baseUrl = window.location.toString().replace(/[^/]*$/, "");
 
 // hack to decode pathname
@@ -31,6 +30,42 @@ const pathUrl = getPathname(window.location).replace(/[^/]*$/, "");
 
 const cookies = new Cookies();
 
+//could take the url before netmagis/ to get the adress right on every machine
+
+/*
+    catch les erreurs ici, les mettre dans le state et puis on est ~ bon
+*/
+/*
+function handleErrors(response) {
+    if (!response.ok) {
+        throw Error(response.body);
+    }
+    return response;
+}
+
+export function api(verb, name, jsonbody, handler) {
+    let url = baseUrl + "/" + name;
+    let opt = {
+        method: verb,
+        credentials: "same-origin"
+    };
+    if (jsonbody != null) {
+        opt.headers = {
+            "Content-Type": "application/json"
+        };
+        opt.body = JSON.stringify(jsonbody);
+    }
+    fetch(url, opt)
+        .then(handleErrors)
+        .then(json => handler(json))
+        .catch(error => {
+            console.log("Erreur reçue !" + error);
+            this.setState({ errors: error });
+        });
+}
+*/
+/*
+// old api function
 export function api(verb, name, jsonbody, handler) {
     let url = baseUrl + "/" + name;
     let opt = {
@@ -46,7 +81,8 @@ export function api(verb, name, jsonbody, handler) {
     fetch(url, opt)
         .then(
             response => {
-                if (response.status >= 400) {
+                console.log(response);
+                if (!response.ok) {
                     throw new Error("ERROR ", url, "=> ", response.status);
                 }
                 return response.json();
@@ -57,17 +93,56 @@ export function api(verb, name, jsonbody, handler) {
         )
         .then(
             json => {
+                console.log("JSON recupere");
                 handler(json);
             },
             error => {
-                console.log("ERROR ", url, " WHILE DECODING JSON ", error);
+                console.log("ERROR", url, " WHILE DECODING JSON ", error);
             }
         );
 }
-
+*/
 /////////////////////////////////////////// App
 
 class App extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.changeLang = (l, e) => {
+            e.preventDefault();
+            this.setState({ lang: l });
+            this.fetchTransl(l);
+        };
+
+        this.state = {
+            user: "",
+            lang: "C",
+            cap: {},
+            transl: {},
+            errors: [
+                { errdesc: "Erreur de test" },
+                { errdesc: "Deuxieme erreur de test" }
+            ],
+            /****************
+        fetchTransl: this.fetchTransl.bind (this),
+        ****************/
+            disconnect: this.disconnect.bind(this),
+            changeLang: this.changeLang
+        };
+        this.fetchCap();
+
+        this.api = this.api.bind(this);
+        this.removeError = this.removeError.bind(this);
+        this.addError = this.addError.bind(this);
+        this.componentDidUpdate = this.componentDidUpdate.bind(this);
+
+        //this.api_ = api.bind(this);
+    }
+
+    componentDidUpdate() {
+        console.log(this.state.errors);
+    }
+
     decodeCap(json) {
         if (this.state.lang != json.lang) this.fetchTransl(json.lang);
         let cap = {};
@@ -93,40 +168,105 @@ class App extends React.Component {
     }
 
     fetchCap() {
-        api("GET", "cap", null, this.decodeCap.bind(this));
+        this.api("GET", "cap", null, this.decodeCap.bind(this));
     }
 
     fetchTransl(l) {
         console.log("fetchTransl(", l, ")");
-        api("GET", l + ".json", null, this.decodeTransl.bind(this, l));
+        this.api("GET", l + ".json", null, this.decodeTransl.bind(this, l));
     }
 
     disconnect() {
-        cookies.remove("session", { path: pathUrl });
+        console.log("deconnexion demandée ");
+        cookies.remove("session");
+        console.log("fonction executee");
         this.fetchCap();
     }
 
-    constructor(props) {
-        super(props);
-
-        this.changeLang = (l, e) => {
-            e.preventDefault();
-            this.setState({ lang: l });
-            this.fetchTransl(l);
+    api(verb, name, jsonbody, handler) {
+        let url = baseUrl + "/" + name;
+        let opt = {
+            method: verb,
+            credentials: "same-origin"
         };
+        if (jsonbody != null) {
+            opt.headers = {
+                "Content-Type": "application/json"
+            };
+            opt.body = JSON.stringify(jsonbody);
+        }
+        fetch(url, opt)
+            .then(
+                response => {
+                    console.log(response);
+                    if (!response.ok) {
+                        throw new Error("ERROR ", url, "=> ", response.status);
+                    }
+                    return response.json();
+                },
+                error => {
+                    console.log("ERROR FETCH ", url, " => ", error);
+                }
+            )
+            .then(
+                json => {
+                    console.log("JSON recupere");
+                    handler(json);
+                },
+                error => {
+                    console.log("ERROR", url, " WHILE DECODING JSON ", error);
+                    //this.setState({
+                    //    errors: error
+                    //});
+                }
+            );
+    }
 
-        this.state = {
-            user: "",
-            lang: "C",
-            cap: {},
-            transl: {},
-            /****************
-	    fetchTransl: this.fetchTransl.bind (this),
-	    ****************/
-            disconnect: this.disconnect.bind(this),
-            changeLang: this.changeLang
-        };
-        this.fetchCap();
+    addError(str) {
+        //const oldSt = this.state.errors;
+        //console.log(oldSt);
+        //const newSt = oldSt.push({ errdesc: str });
+        /*
+        this.setState({
+            errors: newSt
+        });*/
+        /*
+        this.setState({
+            errors: [{ errdesc: str }]
+        });
+        */
+
+        this.setState(prevState => ({
+            errors: [...prevState.errors, { errdesc: str }]
+        }));
+    }
+
+    removeError(event) {
+        console.log("Suppression d'une erreur ! ");
+        console.log(event.target);
+        let tmpArray = this.state.errors;
+        tmpArray.splice(
+            tmpArray.indexOf(event.target.innerText.split(": ")[1]),
+            1
+        );
+
+        this.setState({
+            errors: tmpArray
+        });
+        /*
+        this.setState(
+            (this.state,
+            props => {
+                return {
+                    errors: prevState.errors.splice(
+                        prevState.errors.indexOf(
+                            event.target.innerText.split(": ")[1]
+                        ),
+                        1
+                    )
+                };
+            })
+        );*/
     }
 
     render() {
@@ -139,7 +279,16 @@ class App extends React.Component {
                     {
                         //errors prop is for passing error messages received from the api
                     }
-                    <NMMenu pathname={pathUrl} errors={[{errdesc:"Problème d'hote"}, {errdesc: "Could not find server"}]}/>
+                    <NMMenu
+                        pathname={pathUrl}
+                        errors={this.state.errors}
+                        disconnect={function() {
+                            this.disconnect();
+                        }}
+                        api={this.api}
+                        removeError={this.removeError}
+                        addError={this.addError}
+                    />
                 </IntlProvider>
             </UserContext.Provider>
         );

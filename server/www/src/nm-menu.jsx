@@ -3,7 +3,7 @@ import React from "react";
 import { withUser, UserContext } from "./user-context.jsx";
 //internationalization
 import { injectIntl, formatMessage, FormattedMessage } from "react-intl";
-import { api } from "./netmagis.jsx";
+//import { api } from "./netmagis.jsx";
 import { Consult } from "./app-consult.jsx";
 import { BrowserRouter as Router, Link, Route } from "react-router-dom";
 
@@ -54,23 +54,25 @@ function RawNMItem(props) {
     const { cap, title, translate, show, js, pDropdown, intl } = props;
     var tr = translate == false ? false : true;
     //console.log("Current pathname=" + props.pathname);
+
     return (
         <Link
             className={"dropdown-item" + showIf(cap, show)}
             /*temporary solution to url problem*/
             to={`${title.split("/")[1]}`}
+            onClick={js}
         >
             {tr ? intl.formatMessage({ id: title }) : title}
         </Link>
         /*
-        <a
-            className={"dropdown-item" + showIf(cap, show)}
-            href="#"
-            onClick={js}
-        >
-            {tr ? intl.formatMessage({ id: title }) : title}
-        </a>
-        */
+            <a
+                className={"dropdown-item" + showIf(cap, show)}
+                href="#"
+                onClick={js}
+            >
+                {tr ? intl.formatMessage({ id: title }) : title}
+            </a>
+            */
     );
 }
 
@@ -174,7 +176,7 @@ class LoginForm extends React.Component {
             login: this.state.login,
             password: this.state.password
         };
-        api("POST", "sessions", body, this.nullhandler.bind(ev));
+        this.props.api("POST", "sessions", body, this.nullhandler.bind(ev));
         ev.preventDefault();
     }
 
@@ -258,8 +260,10 @@ class ErrorBanner extends React.Component {
         this.handleClick = this.handleClick.bind(this);
     }
 
-    handleClick() {
+    handleClick(event) {
+        //console.log("On vire l'erreur");
         this.setState({ showBanner: false });
+        this.props.removeError(event);
     }
 
     render() {
@@ -310,8 +314,11 @@ class RawNMMenu extends React.Component {
             lang,
             changeLang,
             intl,
-            errors
+            errors,
+            removeError,
+            api
         } = this.props;
+
         return (
             <Router>
                 <div>
@@ -722,7 +729,10 @@ class RawNMMenu extends React.Component {
                                     >
                                         <FormattedMessage id="menu/notconnected" />
                                     </p>
-                                    <LoginForm modalid="loginform" />
+                                    <LoginForm
+                                        api={this.props.api}
+                                        modalid="loginform"
+                                    />
                                 </li>
 
                                 <NMDropdown
@@ -788,7 +798,10 @@ class RawNMMenu extends React.Component {
 
                     {errors
                         ? errors.map(error => (
-                              <ErrorBanner errdesc={error.errdesc} />
+                              <ErrorBanner
+                                  removeError={removeError}
+                                  errdesc={error.errdesc}
+                              />
                           ))
                         : null}
 
@@ -809,7 +822,12 @@ class RawNMMenu extends React.Component {
                     <Route
                         exact={true}
                         path="*/netmagis/"
-                        component={Welcome}
+                        render={() => (
+                            <Welcome
+                                addError={this.props.addError}
+                                api={this.props.api}
+                            />
+                        )}
                     />
                 </div>
             </Router>
@@ -818,9 +836,17 @@ class RawNMMenu extends React.Component {
 }
 
 /*  Some basic components to demonstrate the usability of the routes*/
-const Welcome = ({ match }) => (
+const Welcome = ({ match, api, addError }) => (
     <div>
         <p> Bienvenue ! </p>
+        {/*<p>{api("GET", "sessions", null, null)}</p>*/}
+        <button
+            onClick={() => {
+                addError("test");
+            }}
+        >
+            Test error
+        </button>
     </div>
 );
 
