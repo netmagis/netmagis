@@ -270,9 +270,6 @@ class ErrorBanner extends React.Component {
         return (
             <div onClick={this.handleClick}>
                 <ErrorMsg errdesc={this.props.errdesc} />
-                {/*this.state.showBanner ? (
-                    <ErrorMsg errdesc={this.props.errdesc} />
-                ) : null*/}
             </div>
         );
     }

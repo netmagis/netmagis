@@ -222,20 +222,10 @@ class App extends React.Component {
             );
     }
 
+    /*
+    * This function adds an error in the state
+    */
     addError(str) {
-        //const oldSt = this.state.errors;
-        //console.log(oldSt);
-        //const newSt = oldSt.push({ errdesc: str });
-        /*
-        this.setState({
-            errors: newSt
-        });*/
-        /*
-        this.setState({
-            errors: [{ errdesc: str }]
-        });
-        */
-
         this.setState(prevState => ({
             errors: [...prevState.errors, { errdesc: str }]
         }));
@@ -246,43 +236,24 @@ class App extends React.Component {
     * get the correct index for deleting the clicked item.
     */
     removeError(event) {
-        //console.log("Suppression d'une erreur ! ");
-        //console.log(event.target);
-        //console.log(
-        //    "Inner text extract: " + event.target.innerText.split(": ")[1]
-        //);
-
         let tmpArray = this.state.errors;
+
+        //used to get the errdesc props from the state.errors
         let workArray = [];
         for (const v of tmpArray) {
             workArray.push(v.errdesc);
         }
-        //console.log(workArray);
-        //console.log(
-        //    "index: " + workArray.indexOf(event.target.innerText.split(": ")[1])
-        //);
+
+        //removing the entry that has been clicked
         tmpArray.splice(
             workArray.indexOf(event.target.innerText.split(": ")[1]),
             1
         );
 
+        //update state
         this.setState({
             errors: tmpArray
         });
-        /*
-        this.setState(
-            (this.state,
-            props => {
-                return {
-                    errors: prevState.errors.splice(
-                        prevState.errors.indexOf(
-                            event.target.innerText.split(": ")[1]
-                        ),
-                        1
-                    )
-                };
-            })
-        );*/
     }
 
     render() {
