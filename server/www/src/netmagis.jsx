@@ -119,10 +119,7 @@ class App extends React.Component {
             lang: "C",
             cap: {},
             transl: {},
-            errors: [
-                { errdesc: "Erreur de test" },
-                { errdesc: "Deuxieme erreur de test" }
-            ],
+            errors: [],
             /****************
         fetchTransl: this.fetchTransl.bind (this),
         ****************/
@@ -200,6 +197,17 @@ class App extends React.Component {
                 response => {
                     console.log(response);
                     if (!response.ok) {
+                        console.log("ERROR resp");
+                        console.log(
+                            response.json().then(json => {
+                                this.addError(
+                                    `${json.type}: status ${json.status}, ${
+                                        json.title
+                                    }. Details: ${json.detail}`
+                                );
+                            })
+                        );
+
                         throw new Error("ERROR ", url, "=> ", response.status);
                     }
                     return response.json();
@@ -211,13 +219,12 @@ class App extends React.Component {
             .then(
                 json => {
                     console.log("JSON recupere");
+                    console.log(json);
                     handler(json);
+                    return json;
                 },
                 error => {
                     console.log("ERROR", url, " WHILE DECODING JSON ", error);
-                    //this.setState({
-                    //    errors: error
-                    //});
                 }
             );
     }
@@ -274,7 +281,6 @@ class App extends React.Component {
                         }}
                         api={this.api}
                         removeError={this.removeError}
-                        addError={this.addError}
                     />
                 </IntlProvider>
             </UserContext.Provider>

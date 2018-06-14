@@ -820,12 +820,7 @@ class RawNMMenu extends React.Component {
                     <Route
                         exact={true}
                         path="*/netmagis/"
-                        render={() => (
-                            <Welcome
-                                addError={this.props.addError}
-                                api={this.props.api}
-                            />
-                        )}
+                        render={() => <Welcome api={this.props.api} />}
                     />
                 </div>
             </Router>
@@ -834,13 +829,18 @@ class RawNMMenu extends React.Component {
 }
 
 /*  Some basic components to demonstrate the usability of the routes*/
-const Welcome = ({ match, api, addError }) => (
+const Welcome = ({ match, api }) => (
     <div>
         <p> Bienvenue ! </p>
-        {/*<p>{api("GET", "sessions", null, null)}</p>*/}
+
         <button
             onClick={() => {
-                addError("test");
+                console.log("Test catch");
+                try {
+                    api("GET", "sessions", null, null);
+                } catch (e) {
+                    console.log("Catch: " + e);
+                }
             }}
         >
             Test error
