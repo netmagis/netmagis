@@ -38,6 +38,38 @@
     \titre {1} {Netmagis : Nouveautés}
 
 
+    \titre {2} {[2018/06/01] Stage de Thomas Weissgerber sur Netmagis}
+
+    Thomas Weissgerber, étudiant en informatique à l'université de
+    Strasbourg (France) vient de commencer son stage sur Netmagis. Il va
+    travailler sur la future interface Web, basée sur les frameworks
+    \lien {React} {http://facebook.github.io/react/} et \lien {Bootstrap}
+    {http://getbootstrap.com/}.
+
+    Ce stage est financé par la \lien {Direction du Numérique}
+    {https://services-numeriques.unistra.fr/organisation-du-numerique/direction-du-numerique-dnum.html}
+    de l'\lien {Université de Strasbourg} {https://www.unistra.fr}.
+    Merci à toutes les personnes impliquées~!
+
+    \titre {2} {[2018/05/02] Nouveau dépôt netmagis-debian}
+
+    Le \lien {dépôt netmagis} {https://github.com/netmagis/netmagis}
+    a été migré d'un compte personnel vers une nouvelle "organisation"
+    (au sens Github) \gras {netmagis}.
+
+    Cette migration a été suivie par une séparation en 2 dépôts distincts~:
+    \liste {
+	\item {\gras {netmagis}: le cœur}
+	\item {\gras {netmagis-debian}: toute la machinerie pour construire
+	    les paquets Debian}
+    }
+
+    Les plans sont de continuer cette séparation pour migrer la
+    documentation hors du dépôt Netmagis principal, et de supprimer la
+    construction des ports FreeBSD qui ne sont plus nécessaires puisque
+    les ports Netmagis sont intégrés dans le système FreeBSD.
+
+
     \titre {2} {[2017/10/06] La version 2.3.4 de Netmagis est disponible}
 
     La \lien {version 2.3.4 de Netmagis} {/download.html} est maintenant
