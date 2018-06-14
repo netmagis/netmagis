@@ -241,12 +241,28 @@ class App extends React.Component {
         }));
     }
 
+    /*
+    * This function gets the 'errdesc' properties of all error objects and
+    * get the correct index for deleting the clicked item.
+    */
     removeError(event) {
-        console.log("Suppression d'une erreur ! ");
-        console.log(event.target);
+        //console.log("Suppression d'une erreur ! ");
+        //console.log(event.target);
+        //console.log(
+        //    "Inner text extract: " + event.target.innerText.split(": ")[1]
+        //);
+
         let tmpArray = this.state.errors;
+        let workArray = [];
+        for (const v of tmpArray) {
+            workArray.push(v.errdesc);
+        }
+        //console.log(workArray);
+        //console.log(
+        //    "index: " + workArray.indexOf(event.target.innerText.split(": ")[1])
+        //);
         tmpArray.splice(
-            tmpArray.indexOf(event.target.innerText.split(": ")[1]),
+            workArray.indexOf(event.target.innerText.split(": ")[1]),
             1
         );
 
