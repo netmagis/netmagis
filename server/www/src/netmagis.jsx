@@ -18,7 +18,6 @@ import { UserContext } from "./user-context.jsx";
 import { NMMenu } from "./nm-menu.jsx";
 
 var baseUrl = window.location.toString().replace(/[^/]*$/, "");
-
 // hack to decode pathname
 function getPathname(url) {
     var parser = document.createElement("a");
@@ -27,82 +26,7 @@ function getPathname(url) {
 }
 const pathUrl = getPathname(window.location).replace(/[^/]*$/, "");
 //pathname = /netmagis/netmagis/ on test server -> put it router
-
 const cookies = new Cookies();
-
-//could take the url before netmagis/ to get the adress right on every machine
-
-/*
-    catch les erreurs ici, les mettre dans le state et puis on est ~ bon
-*/
-/*
-function handleErrors(response) {
-    if (!response.ok) {
-        throw Error(response.body);
-    }
-    return response;
-}
-
-export function api(verb, name, jsonbody, handler) {
-    let url = baseUrl + "/" + name;
-    let opt = {
-        method: verb,
-        credentials: "same-origin"
-    };
-    if (jsonbody != null) {
-        opt.headers = {
-            "Content-Type": "application/json"
-        };
-        opt.body = JSON.stringify(jsonbody);
-    }
-    fetch(url, opt)
-        .then(handleErrors)
-        .then(json => handler(json))
-        .catch(error => {
-            console.log("Erreur reçue !" + error);
-            this.setState({ errors: error });
-        });
-}
-*/
-/*
-// old api function
-export function api(verb, name, jsonbody, handler) {
-    let url = baseUrl + "/" + name;
-    let opt = {
-        method: verb,
-        credentials: "same-origin"
-    };
-    if (jsonbody != null) {
-        opt.headers = {
-            "Content-Type": "application/json"
-        };
-        opt.body = JSON.stringify(jsonbody);
-    }
-    fetch(url, opt)
-        .then(
-            response => {
-                console.log(response);
-                if (!response.ok) {
-                    throw new Error("ERROR ", url, "=> ", response.status);
-                }
-                return response.json();
-            },
-            error => {
-                console.log("ERROR FETCH ", url, " => ", error);
-            }
-        )
-        .then(
-            json => {
-                console.log("JSON recupere");
-                handler(json);
-            },
-            error => {
-                console.log("ERROR", url, " WHILE DECODING JSON ", error);
-            }
-        );
-}
-*/
-/////////////////////////////////////////// App
 
 class App extends React.Component {
     constructor(props) {
@@ -132,10 +56,11 @@ class App extends React.Component {
         this.removeError = this.removeError.bind(this);
         this.addError = this.addError.bind(this);
         this.componentDidUpdate = this.componentDidUpdate.bind(this);
-
-        //this.api_ = api.bind(this);
     }
 
+    /*
+     * Debug only function, prints the state at every update
+     */
     componentDidUpdate() {
         console.log(this.state.errors);
     }
@@ -180,6 +105,9 @@ class App extends React.Component {
         this.fetchCap();
     }
 
+    /*
+     * Make a request to the api
+     */
     api(verb, name, jsonbody, handler) {
         let url = baseUrl + "/" + name;
         let opt = {
@@ -198,15 +126,13 @@ class App extends React.Component {
                     console.log(response);
                     if (!response.ok) {
                         console.log("ERROR resp");
-                        console.log(
-                            response.json().then(json => {
-                                this.addError(
-                                    `${json.type}: status ${json.status}, ${
-                                        json.title
-                                    }. Details: ${json.detail}`
-                                );
-                            })
-                        );
+                        response.json().then(json => {
+                            this.addError(
+                                `${json.type}: status ${json.status}, ${
+                                    json.title
+                                }. Details: ${json.detail}`
+                            );
+                        });
 
                         throw new Error("ERROR ", url, "=> ", response.status);
                     }
@@ -270,9 +196,6 @@ class App extends React.Component {
                     locale={this.state.lang}
                     messages={this.state.transl}
                 >
-                    {
-                        //errors prop is for passing error messages received from the api
-                    }
                     <NMMenu
                         pathname={pathUrl}
                         errors={this.state.errors}

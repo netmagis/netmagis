@@ -1,11 +1,14 @@
 import React from "react";
+import { BrowserRouter as Router, Link, Route } from "react-router-dom";
 
 const Infos = props => {
     const { adress } = props;
 
     return (
         <tr>
-            <td>{adress.adress}</td>
+            <td>
+                <Link to={"consult?net=" + adress.adress}>{adress.adress}</Link>
+            </td>
         </tr>
     );
 };
@@ -32,7 +35,9 @@ export const Consult = ({ match, entries }) => {
                 </div>
             ) : entries ? (
                 <table className="consult-tab">
-                    {entries.map(entry => <Infos adress={entry} />)}
+                    <tbody>
+                        {entries.map(entry => <Infos adress={entry} />)}
+                    </tbody>
                 </table>
             ) : (
                 <div> Nothing to display </div>

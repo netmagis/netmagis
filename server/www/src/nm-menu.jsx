@@ -37,8 +37,6 @@ function handleSearchForm(event) {
     }
 }
 
-function gotoApp(t) {}
-
 /*
  * Short-hand to help defining menu items
  * props:
@@ -64,7 +62,7 @@ function RawNMItem(props) {
         >
             {tr ? intl.formatMessage({ id: title }) : title}
         </Link>
-        /*
+        /* Old code
             <a
                 className={"dropdown-item" + showIf(cap, show)}
                 href="#"
@@ -240,6 +238,7 @@ class LoginForm extends React.Component {
 /*
  * Content of the error banner
  */
+
 const ErrorMsg = ({ errdesc }) => (
     <div className="alert alert-danger" role="alert">
         Error: {errdesc}
@@ -249,8 +248,10 @@ const ErrorMsg = ({ errdesc }) => (
 /*
  * Error banner component
  * props:
+ * - removeError: function used to remove errors from the App component's state
  * - errdesc: description of the error to display
  */
+
 class ErrorBanner extends React.Component {
     constructor(props) {
         super(props);
@@ -275,33 +276,29 @@ class ErrorBanner extends React.Component {
     }
 }
 
-//str pour la traduction ?
 function toto(s) {
     return () => {
         return "toto";
     };
 }
 
-const Error = desc => {
-    {
-        errdesc: desc.toString;
-    }
-};
-
 /*
  * Main page
- * errors prop receives errors from the api
+ * props:
+ * - user:
+ * - cap:
+ * - disconnect: function used to disconnect a user
+ * - lang:
+ * - changeLang:
+ * - intl:
+ * - errors: array of current errors to display
+ * - removeError: function passed to ErrorBanner components
+ * - api: function used to called the API
  */
+
 class RawNMMenu extends React.Component {
     constructor(props) {
         super(props);
-        //not used for now, but should be moved higher to old the current errors to display,
-        //and pass it to this compoent using props
-        /*
-        this.state = {
-            errors: []
-        };
-*/
     }
 
     render() {
@@ -853,88 +850,5 @@ const Add = ({ match }) => (
         <p> Add component </p>
     </div>
 );
-/*
-const Consult = ({ match }) => {
-    console.log("Consut page loading");
-
-    const queryString = require("query-string");
-    const parsed = queryString.parse(location.search);
-    console.log("N keys: " + Object.keys(parsed));
-
-    return (
-        <div>
-            <h4> Consult component + args</h4>
-            {Object.keys(parsed).length > 0 ? (
-                <div>
-                    {parsed.net ? (
-                        <p>
-                            {" "}
-                            Infos about <b>{parsed.net}</b>{" "}
-                        </p>
-                    ) : (
-                        <p>No network specified</p>
-                    )}
-                </div>
-            ) : (
-                <p> Generic page</p>
-            )}
-        </div>
-    );
-};
-*/
-/*
-class NMRouter extends React.Component {
-    render() {
-        switch (this.props.app) {
-            case "index":
-                if (this.context.nm.cap.logged) {
-                    return (
-                        <div>
-                            {" "}
-                            <p>here is the index</p>{" "}
-                        </div>
-                    );
-                } else {
-                    return <Login />;
-                }
-            case "search":
-                return (
-                    <div>
-                        <p>Searching {this.props.p1}</p>
-                    </div>
-                );
-            case "add":
-                return <Add />;
-            case "dhcprange":
-                return <DHCPRange />;
-            case "sessions":
-                return <Sessions />;
-            case "foo":
-                return (
-                    <div>
-                        <p>Foo!</p>
-                    </div>
-                );
-            default:
-                return (
-                    <div>
-                        <p>Default</p>
-                    </div>
-                );
-        }
-    }
-}
-
-class NMRouterX extends React.Component {
-    render() {
-        return (
-            <pre>
-                this.props: {JSON.stringify(this.props)}
-                this.state: {JSON.stringify(this.state)}
-            </pre>
-        );
-    }
-}
-*/
 
 export const NMMenu = injectIntl(withUser(RawNMMenu));
