@@ -15,8 +15,9 @@ Netmagis 3.0 can be run either with Apache or Nginx.
 ### Apache
 
   - install `apache2` and `libapache2-mod-scgi` Debian packages
-  - run `a2enmod scgi`
-  - run `a2enmod proxy_scgi`
+      apt install apache2 libapache2-mod-scgi
+  - activate needed modules
+      a2enmod scgi proxy_scgi rewrite
   - copy `server/examples/apache.conf` to `/etc/apache2/sites-available/010-netmagis.conf`
   - edit `/etc/apache2/sites-available/010-netmagis.conf`. In 
     particular, you may want to remove the SSL configuration in 
