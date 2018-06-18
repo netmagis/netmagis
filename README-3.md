@@ -15,9 +15,13 @@ Netmagis 3.0 can be run either with Apache or Nginx.
 ### Apache
 
   - install `apache2` and `libapache2-mod-scgi` Debian packages
+```bash
       apt install apache2 libapache2-mod-scgi
+```
   - activate needed modules
+```bash
       a2enmod scgi proxy_scgi rewrite
+```  
   - copy `server/examples/apache.conf` to `/etc/apache2/sites-available/010-netmagis.conf`
   - edit `/etc/apache2/sites-available/010-netmagis.conf`. In 
     particular, you may want to remove the SSL configuration in 
@@ -40,9 +44,17 @@ Step 2 - Install PostgreSQL and initialize database
 ### Install PostgreSQL
 
   - required packages: `postgresql`, `postgresql-pltcl`
-  - create user: `createuser --no-superuser --no-createrole --createdb --pwprompt nm`
-  - create an empty database: `createdb -U nm nm30`
-
+```bash
+    apt install postgresql postgresql-pltcl
+```
+  - create database user nm and give a password:
+```bash
+    sudo -u postgres createuser --no-superuser --no-createrole --createdb --pwprompt nm
+```
+  - create an empty database owned by user nm: 
+```bash
+    sudo -u postgres createdb -O nm nm30
+```
 ### Initialize database
 
 This step requires that Netmagis 3.0 is installed on the local 
@@ -50,24 +62,38 @@ machine.
 
   - required packages: `tcl`, `tcl8.6-dev`, `pandoc`, 
     `tcl-thread`, `tcl-tls`, `tcllib`, `libpgtcl`
+```bash
+    apt install tcl tcl8.6-dev pandoc tcl-thread tcl-tls tcllib libpgtcl
+```
   - to install `nodejs` and `npm` (packages with a recent 
     version), see:
-      `curl -sL https://deb.nodesource.com/setup_8.x | bash -`, 
-      then `apt install nodejs`
-  - `PREFIX=/local/nm30 ; make PREFIX=$PREFIX TCLSH=/usr/bin/tclsh TCLCONF=/usr/lib/tcl8.6/tclConfig.sh NMDOCDIR=$PREFIX/share/doc NMXMPDIR=$PREFIX/share/examples NMLIBDIR=$PREFIX/lib NMVARDIR=$PREFIX/var install-client install-server`
+```bash    
+      curl -sL https://deb.nodesource.com/setup_8.x | bash -
+```
+  - install nodejs
+ ```bash
+      apt install nodejs
+```
+  - deploy netmagis REST server :
+```bash
+  PREFIX=/local/nm30 ; make PREFIX=$PREFIX TCLSH=/usr/bin/tclsh TCLCONF=/usr/lib/tcl8.6/tclConfig.sh NMDOCDIR=$PREFIX/share/doc NMXMPDIR=$PREFIX/share/examples NMLIBDIR=$PREFIX/lib NMVARDIR=$PREFIX/var install-client install-server
+```
   - copy `/local/nm30/etc/netmagis.conf.sample` to 
     `/local/nm30/etc/netmagis.conf` and modify the lines 
     `dnsdbhost` (`localhost`), `dnsdbname` (`nm30`), 
-    `dnsdbpassword`, then copy the same values for `macdb*`
-  - run `(cd /local/nm30/share/examples/with-views ; sh run-all.sh)` to fill 
-    the database with example data
-
+    `dnsdbpassword` (the password you entered when creating user 'nm'), then copy the same values for `macdb*`
+  - load example data in the database:
+```bash
+  (cd /local/nm30/share/examples/with-views ; sh run-all.sh)
+```
 
 Step 3 - Run the REST server in-place
 --------------------------------------
 
-  - `cd server/bin ; NMCONF=/local/nm30/etc/netmagis.conf sh run-server`
-
+  - start server:
+```bash
+  cd server/bin ; NMCONF=/local/nm30/etc/netmagis.conf sh run-server`
+```
 
 Step 4 - Web application development
 ------------------------------------
