@@ -56,6 +56,7 @@ class App extends React.Component {
         this.removeError = this.removeError.bind(this);
         this.addError = this.addError.bind(this);
         this.componentDidUpdate = this.componentDidUpdate.bind(this);
+        this.errorTimeout = this.errorTimeout.bind(this);
     }
 
     /*
@@ -162,6 +163,32 @@ class App extends React.Component {
         this.setState(prevState => ({
             errors: [...prevState.errors, { errdesc: str }]
         }));
+
+        setTimeout(() => {
+            this.errorTimeout(this.state.errors.length);
+        }, 10000);
+    }
+
+    //renforcer cette fonction
+    errorTimeout(i) {
+        let tmpArray = this.state.errors;
+        tmpArray.splice(i - 1);
+        /*
+        let workArray = [];
+        for (let v of tmpArray) {
+            workArray.push(v.errdesc);
+        }
+
+        for (let [index, element] of workArray.entries()) {
+            if (element.errdesc == str) {
+                tmpArray.splice(index);
+            }
+        }
+*/
+        //update state
+        this.setState({
+            errors: tmpArray
+        });
     }
 
     /*
