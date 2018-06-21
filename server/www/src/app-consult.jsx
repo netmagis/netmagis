@@ -11,7 +11,10 @@ const Infos = props => {
         <tr>
             <td>{idhost}</td>
             <td>
-                <Link onClick={() => callback(addr4)} to={"host/" + idhost}>
+                <Link
+                    onClick={() => callback(addr4)}
+                    to={"/netmagis/consult/host/" + idhost}
+                >
                     {name}
                 </Link>
             </td>
@@ -51,7 +54,7 @@ const NetworkListItem = props => {
                 </Link> */}
                 <Link
                     onClick={() => callback(addr4)}
-                    to={"consult/net=" + addr4}
+                    to={"/netmagis/consult/net=" + addr4}
                 >
                     {addr4}
                 </Link>
@@ -59,7 +62,7 @@ const NetworkListItem = props => {
             <td>
                 <Link
                     onClick={() => callback(addr6)}
-                    to={"consult/net=" + addr6}
+                    to={"/netmagis/consult/net=" + addr6}
                 >
                     {addr6}
                 </Link>

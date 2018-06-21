@@ -57,7 +57,7 @@ function RawNMItem(props) {
         <Link
             className={"dropdown-item" + showIf(cap, show)}
             /*temporary solution to url problem*/
-            to={`${title.split("/")[1]}`}
+            to={`/netmagis/${title.split("/")[1]}`}
             onClick={js}
         >
             {tr ? intl.formatMessage({ id: title }) : title}
