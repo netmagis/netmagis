@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Link, Route } from "react-router-dom";
+import { BrowserRouter as Router, Link, Route, Switch } from "react-router-dom";
 
 //host infos
 const Infos = props => {
@@ -10,7 +10,11 @@ const Infos = props => {
     return (
         <tr>
             <td>{idhost}</td>
-            <td>{name}</td>
+            <td>
+                <Link onClick={() => callback(addr4)} to={"host/" + idhost}>
+                    {name}
+                </Link>
+            </td>
             <td>{iddom}</td>
             <td>{domain}</td>
             <td>{idview}</td>
@@ -236,11 +240,11 @@ class HostList extends React.Component {
     }
 }
 
-const PageHote = ({ match }) => (
-    <div>
-        <h3>Page Hotes {match.params.net}</h3>
-    </div>
-);
+// const PageHote = ({ match }) => (
+//     <div>
+//         <h3>Page Hotes {match.params.net}</h3>
+//     </div>
+// );
 //
 // const PageNet = props => (
 //     <div>
@@ -251,6 +255,55 @@ const PageHote = ({ match }) => (
 //     </div>
 // );
 
+class HostPage extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            hostInfo: {}
+        };
+
+        this.parseHost = this.parseHost.bind(this);
+    }
+
+    componentDidMount() {
+        this.props.api(
+            "GET",
+            "hosts/" + this.props.m.params.id,
+            null,
+            this.parseHost.bind(this)
+        );
+    }
+
+    parseHost(json) {
+        console.log("Consult json received: ");
+        this.setState({ hostInfo: json });
+        console.log("SetState ok: ");
+        console.log(this.state.hostInfo);
+    }
+
+    render() {
+        const st = this.state.hostInfo;
+        return (
+            <div>
+                <p>Host n°{this.props.m.params.id}</p>
+                <p>Adresses</p>
+                {/* <table>{st.addr.map(a => <tr>{a}</tr>)}</table> */}
+                <p>Comment: {st.comment}</p>
+                <p>Id DHCP profile: {st.iddhcpprof}</p>
+                <p>Id domain: {st.iddom}</p>
+                <p>ID hinfo: {st.idhinfo}</p>
+                <p>ID view: {st.idview}</p>
+                <p>MAC address: {st.mac}</p>
+                <p>Name: {st.name}</p>
+                <p>Resp mail: {st.respmail}</p>
+                <p>Resp name: {st.respname}</p>
+                <p>Send smtp: {st.sendsmtp}</p>
+                <p>TTL: {st.ttl}</p>
+            </div>
+        );
+    }
+}
 //main consult component
 export class Consult extends React.Component {
     constructor(props) {
@@ -402,31 +455,38 @@ export class Consult extends React.Component {
                     </button>
                     <h3>Page {this.state.page}</h3>
                     {this.displayPage(this.state.page)} */}
-
-                    <Route
-                        exact={true}
-                        path="*/consult"
-                        render={() => (
-                            <NetworkList
-                                networks={this.state.networks}
-                                updateHosts={this.updateHosts}
-                                api={api}
-                            />
-                        )}
-                    />
-                    {/* <Route path="/consult/:net" component={PageHote} /> */}
-                    <Route
-                        path="*/consult/:net/:mask"
-                        render={({ match }) => (
-                            <HostList
-                                parsed={this.parsed}
-                                updateHosts={this.updateHosts}
-                                hosts={this.state.hosts}
-                                api={api}
-                                m={match}
-                            />
-                        )}
-                    />
+                    <Switch>
+                        <Route
+                            exact={true}
+                            path="*/consult"
+                            render={() => (
+                                <NetworkList
+                                    networks={this.state.networks}
+                                    updateHosts={this.updateHosts}
+                                    api={api}
+                                />
+                            )}
+                        />
+                        {/* <Route path="/consult/:net" component={PageHote} /> */}
+                        <Route
+                            path="*/consult/host/:id"
+                            render={({ match }) => (
+                                <HostPage m={match} api={api} />
+                            )}
+                        />
+                        <Route
+                            path="*/consult/:net/:mask"
+                            render={({ match }) => (
+                                <HostList
+                                    parsed={this.parsed}
+                                    updateHosts={this.updateHosts}
+                                    hosts={this.state.hosts}
+                                    api={api}
+                                    m={match}
+                                />
+                            )}
+                        />
+                    </Switch>
                 </div>
             </Router>
         );
