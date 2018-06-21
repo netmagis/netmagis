@@ -367,44 +367,44 @@ class RawNMMenu extends React.Component {
                                     <NMItem
                                         key="dns1"
                                         title="menu/consult"
-                                        //js={toto.bind("consult")}
+                                        js={toto.bind("consult")}
                                     />
                                     <NMItem
                                         key="dns2"
                                         title="menu/add"
-                                        //js={toto.bind("add")}
+                                        js={toto.bind("add")}
                                     />
                                     <NMItem
                                         key="dns3"
                                         title="menu/del"
-                                        //js={toto.bind("del")}
+                                        js={toto.bind("del")}
                                     />
                                     <NMItem
                                         key="dns4"
                                         title="menu/mod"
-                                        //js={toto.bind("mod")}
+                                        js={toto.bind("mod")}
                                     />
                                     <NMItem
                                         key="dns5"
                                         title="menu/mailrole"
-                                        //js={toto.bind("mailrole")}
+                                        js={toto.bind("mailrole")}
                                     />
                                     <NMItem
                                         key="dns6"
                                         title="menu/dhcprange"
-                                        //js={toto.bind("dhcprange")}
+                                        js={toto.bind("dhcprange")}
                                     />
                                     <NMItem
                                         key="dns7"
                                         title="menu/pgpassword"
                                         show="pgauth"
-                                        //js={toto.bind("pgpassword")}
+                                        js={toto.bind("pgpassword")}
                                     />
                                     <NMItem
                                         key="dns8"
                                         title="menu/where"
                                         show="pgauth"
-                                        //js={toto.bind("where")}
+                                        js={toto.bind("where")}
                                     />
                                 </NMDropdown>
 
@@ -478,142 +478,142 @@ class RawNMMenu extends React.Component {
                                     <NMItem
                                         key="admin1"
                                         title="menu/admlmx"
-                                        //js={toto.bind("admlmx")}
+                                        js={toto.bind("admlmx")}
                                     />
                                     <NMItem
                                         key="admin2"
                                         title="menu/lnet"
-                                        //js={toto.bind("lnet")}
+                                        js={toto.bind("lnet")}
                                     />
                                     <NMItem
                                         key="admin3"
                                         title="menu/lusers"
-                                        //js={toto.bind("lusers")}
+                                        js={toto.bind("lusers")}
                                     />
                                     <NMItem
                                         key="admin4"
                                         title="menu/who?action=now"
-                                        //js={toto.bind("who?action=now")}
+                                        js={toto.bind("who?action=now")}
                                     />
                                     <NMItem
                                         key="admin5"
                                         title="menu/who?action=last"
-                                        //js={toto.bind("who?action=last")}
+                                        js={toto.bind("who?action=last")}
                                     />
                                     <NMItem
                                         key="admin6"
                                         title="menu/status"
-                                        //js={toto.bind("status")}
+                                        js={toto.bind("status")}
                                     />
                                     <NMItem
                                         key="admin7"
                                         title="menu/admref?type=org"
-                                        //js={toto.bind("admref?type=org")}
+                                        js={toto.bind("admref?type=org")}
                                     />
                                     <NMItem
                                         key="admin8"
                                         title="menu/admref?type=comm"
-                                        //js={toto.bind("admref?type=comm")}
+                                        js={toto.bind("admref?type=comm")}
                                     />
                                     <NMItem
                                         key="admin9"
                                         title="menu/admref?type=hinfo"
-                                        //js={toto.bind("admref?type=hinfo")}
+                                        js={toto.bind("admref?type=hinfo")}
                                     />
                                     <NMItem
                                         key="admina"
                                         title="menu/admref?type=net"
-                                        //js={toto.bind("admref?type=net")}
+                                        js={toto.bind("admref?type=net")}
                                     />
                                     <NMItem
                                         key="adminb"
                                         title="menu/admref?type=domain"
-                                        //js={toto.bind("admref?type=domain")}
+                                        js={toto.bind("admref?type=domain")}
                                     />
                                     <NMItem
                                         key="adminc"
                                         title="menu/admmrel"
-                                        //js={toto.bind("admmrel")}
+                                        js={toto.bind("admmrel")}
                                     />
                                     <NMItem
                                         key="admind"
                                         title="menu/admmx"
-                                        //js={toto.bind("admmx")}
+                                        js={toto.bind("admmx")}
                                     />
                                     <NMItem
                                         key="admine"
                                         title="menu/admref?type=view"
-                                        //js={toto.bind("admref?type=view")}
+                                        js={toto.bind("admref?type=view")}
                                     />
                                     <NMItem
                                         key="adminf"
                                         title="menu/admref?type=zone"
-                                        //js={toto.bind("admref?type=zone")}
+                                        js={toto.bind("admref?type=zone")}
                                     />
                                     <NMItem
                                         key="adming"
                                         title="menu/admref?type=zone4"
-                                        //js={toto.bind("admref?type=zone4")}
+                                        js={toto.bind("admref?type=zone4")}
                                     />
                                     <NMItem
                                         key="adminh"
                                         title="menu/admref?type=zone6"
-                                        //js={toto.bind("admref?type=zone6")}
+                                        js={toto.bind("admref?type=zone6")}
                                     />
                                     <NMItem
                                         key="admini"
                                         title="menu/admref?type=dhcpprof"
-                                        //js={toto.bind("admref?type=dhcpprof")}
+                                        js={toto.bind("admref?type=dhcpprof")}
                                     />
                                     <NMItem
                                         key="adminj"
                                         title="menu/admref?type=vlan"
-                                        //js={toto.bind("admref?type=vlan")}
+                                        js={toto.bind("admref?type=vlan")}
                                     />
                                     <NMItem
                                         key="admink"
                                         title="menu/admref?type=eqtype"
-                                        //js={toto.bind("admref?type=eqtype")}
+                                        js={toto.bind("admref?type=eqtype")}
                                     />
                                     <NMItem
                                         key="adminl"
                                         title="menu/admref?type=eq"
-                                        //js={toto.bind("admref?type=eq")}
+                                        js={toto.bind("admref?type=eq")}
                                     />
                                     <NMItem
                                         key="adminm"
                                         title="menu/admref?type=confcmd"
-                                        //js={toto.bind("admref?type=confcmd")}
+                                        js={toto.bind("admref?type=confcmd")}
                                     />
                                     <NMItem
                                         key="adminn"
                                         title="menu/admref?type=dotattr"
-                                        //js={toto.bind("admref?type=dotattr")}
+                                        js={toto.bind("admref?type=dotattr")}
                                     />
                                     <NMItem
                                         key="admino"
                                         title="menu/admgrp"
-                                        //js={toto.bind("admgrp")}
+                                        js={toto.bind("admgrp")}
                                     />
                                     <NMItem
                                         key="adminp"
                                         title="menu/admzgen"
-                                        //js={toto.bind("admzgen")}
+                                        js={toto.bind("admzgen")}
                                     />
                                     <NMItem
                                         key="adminq"
                                         title="menu/admpar"
-                                        //js={toto.bind("admpar")}
+                                        js={toto.bind("admpar")}
                                     />
                                     <NMItem
                                         key="adminr"
                                         title="menu/statuser"
-                                        //js={toto.bind("statuser")}
+                                        js={toto.bind("statuser")}
                                     />
                                     <NMItem
                                         key="admins"
                                         title="menu/statorg"
-                                        //js={toto.bind("statorg")}
+                                        js={toto.bind("statorg")}
                                     />
                                 </NMDropdown>
 
@@ -810,6 +810,7 @@ class RawNMMenu extends React.Component {
                                     { adress: "10.0.0.1" },
                                     { adress: "130.79.16" }
                                 ]}
+                                api={this.props.api}
                             />
                         )}
                     />
