@@ -14,42 +14,57 @@ api-handler get {/search} logged {
 	set qq1 [pg_quote "$q%"]
 	set qq2 [pg_quote "%$q%"]
 	set sql "SELECT COALESCE (json_agg (t), '\[\]') AS j FROM (
-		    SELECT r.name AS result,
-			    'rr' AS type,
-			    global.mklink ('/names/', r.idrr) AS link
-			FROM dns.rr r
-			WHERE r.name LIKE $qq1
-		    UNION 
-		    SELECT r.name AS result,
-			    'network' AS type,
-			    global.mklink ('/networks/', r.idnet) AS link
-			FROM dns.network r
+		    SELECT 'alias' AS type,
+			    n.name || '.' || d.name AS result,
+			    v.name AS view,
+			    'aliases/' || idname AS link
+			FROM dns.name n
+			    INNER JOIN dns.view v USING (idview)
+			    INNER JOIN dns.domain d USING (iddom)
+			    INNER JOIN dns.alias USING (idname)
+			WHERE n.name ILIKE $qq2
+		    UNION
+		    SELECT 'host' AS type,
+			    n.name || '.' || d.name AS result,
+			    v.name AS view,
+			    'hosts/' || idname AS link
+			FROM dns.name n
+			    INNER JOIN dns.view v USING (idview)
+			    INNER JOIN dns.domain d USING (iddom)
+			    INNER JOIN dns.host USING (idname)
+			WHERE n.name ILIKE $qq2
+		    UNION
+		    SELECT 'network' AS type,
+			    w.name AS result,
+			    NULL as view,
+			    'networks/' || idnet AS link
+			FROM dns.network w
 			    INNER JOIN dns.p_network p USING (idnet)
 			WHERE p.idgrp = $idgrp
-			    AND (r.name LIKE $qq2
-				    OR r.location LIKE $qq2
-				    OR r.comment LIKE $qq2
+			    AND (w.name ILIKE $qq2
+				    OR w.location LIKE $qq2
+				    OR w.comment LIKE $qq2
 				    )
 		    UNION
-		    SELECT r.name AS result,
-			    'domain' AS type,
-			    global.mklink ('/domains/', r.iddom) AS link
-			FROM dns.domain r
-			    INNER JOIN dns.p_domain p USING (iddom)
+		    SELECT 'domain' AS type,
+			    d.name AS result,
+			    NULL as view,
+			    'domains/' || d.iddom AS link
+			FROM dns.domain d
+			    INNER JOIN dns.p_dom p USING (iddom)
 			WHERE p.idgrp = $idgrp
-			    AND r.name LIKE $qq2
+			    AND d.name ILIKE $qq2
 		    UNION
-		    SELECT r.name AS result,
-			    'dhcpprofile' AS type,
-			    global.mklink ('/dhcpprofiles/', r.iddhcpprof)
-				    AS link
-			FROM dns.dhcpprofile r
+		    SELECT 'dhcpprofile' AS type,
+		    	    d.name AS result,
+			    NULL as view,
+			    'dhcpprofiles/' || d.iddhcpprof AS link
+			FROM dns.dhcpprofile d
 			    INNER JOIN dns.p_dhcpprofile p USING (iddhcpprof)
 			WHERE p.idgrp = $idgrp
-			    AND (r.name LIKE $qq2
-				    OR r.text LIKE $qq2
+			    AND (d.name LIKE $qq2
+				    OR d.text LIKE $qq2
 				    )
-			ORDER BY p.sort ASC
 		    ) AS t
 		    "
     }
