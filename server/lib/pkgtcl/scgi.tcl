@@ -164,6 +164,7 @@ namespace eval ::scgi:: {
 	package require Thread 2.7
 	package require ncgi 1.4
 	package require ip 1.3
+	package require json::write
 
 	namespace eval ::scgi:: {
 	    namespace export accept \
@@ -278,12 +279,6 @@ namespace eval ::scgi:: {
 			set-header Status "$state(errcode) $msg" true
 		    }
 
-		    # RFC7807 compatible error report
-		    ::scgi::set-header Content-Type application/problem+json
-		    set j {{"type": "error", "title": "%MSG%", "status": %STATUS%, "detail": "%DETAIL%", "instance": ""}}
-		    regsub "%MSG%" $j $msg j
-		    regsub "%STATUS%" $j $state(errcode) j
-
 		    if {[isdebug "error"]} then {
 			global errorInfo
 			set detail "<html>\n"
@@ -293,8 +288,16 @@ namespace eval ::scgi:: {
 		    } else {
 			set detail "<pre>$state(errcode) $msg</pre>"
 		    }
-		    regsub "%DETAIL%" $j $detail j
 
+		    # RFC7807 compatible error report
+		    ::scgi::set-header Content-Type application/problem+json
+		    set j [::json::write object \
+		    			type [::json::write string error] \
+					title [::json::write string $msg] \
+					status $state(errcode) \
+					detail [::json::write string $detail] \
+					instance "" \
+					]
 		    set-body $j
 		}
 
