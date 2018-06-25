@@ -38,6 +38,16 @@
     \titre {1} {Netmagis: News}
 
 
+    \titre {2} {[2018/06/25] Netmagis 2.3.5 is released}
+
+    The 2.3.5 version of Netmagis is available on the
+    \lien {Download} {/download.html} section. This is a
+    maintenance release fixing some bugs and adding a few
+    features.
+    See the \lien {release notes} {/relnotes.html#v2.3.5} for 
+    detailed description.
+
+
     \titre {2} {[2018/06/01] Thomas Weissgerber internship on Netmagis}
 
     Thomas Weissgerber, student in computer science at University of

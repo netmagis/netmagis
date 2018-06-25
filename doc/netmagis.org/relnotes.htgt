@@ -41,9 +41,98 @@
     release.
 
     A more detailed change log is provided in the \lien {CHANGES}
-    {https://github.com/pdav/netmagis/blob/master/CHANGES} file.
+    {https://github.com/netmagis/netmagis/blob/master/CHANGES} file.
     Complete list of changes can be obtained by viewing the
-    \lien {github.com commits} {http://github.com/pdav/netmagis}.
+    \lien {github.com commits} {http://github.com/netmagis/netmagis}.
+
+
+    \titre {2} {\ancre {v2.3.5} {Netmagis 2.3.5}}
+
+    Release date: 25 june 2018
+
+    The 2.3.5 release of Netmagis is a maintenance release, fixing
+    some bugs and adding a few features:
+
+    \liste {
+	\item {Bug fixes:
+	    \liste {
+		\item {Netmagis was accepting empty mail roles.
+		    See \lien {issue 175}
+			{https://github.com/netmagis/netmagis/issues/175}.
+		}
+		\item {When adding multiple host with consecutive
+		    addresses, the URL for the sort link was incorrect.
+		    Reported by Emmanuel Blindauer.
+		    See \lien {issue 163}
+			{https://github.com/netmagis/netmagis/issues/163}.
+		}
+		\item {The accepted MIME type for answers from the CAS
+		    server was not correct.
+		    Reported by dgeo.
+		    See \lien {issue 153}
+			{https://github.com/netmagis/netmagis/issues/153}.
+		}
+		\item {CAS sign-out was incorrectly handled.
+		    See \lien {issue 182}
+			{https://github.com/netmagis/netmagis/issues/182}.
+		}
+		\item {Mapping for the mail attribute for LDAP was
+		    not correct.
+		    Reported (and fixed) by dgeo.
+		    See \lien {pull request 170}
+			{https://github.com/netmagis/netmagis/pull/170}.
+		}
+	    }
+	}
+	\item {New features:
+	    \liste {
+		\item {Network name is added in search results.
+		    See \lien {issue 177}
+			{https://github.com/netmagis/netmagis/issues/177}
+			reported by Emmanuel Halbwachs.
+		}
+		\item {Add wildcard in search.
+		    See \lien {issue 169}
+			{https://github.com/netmagis/netmagis/issues/169}
+			reported by Bahram123.
+		    Thanks to Bahram123 and fmeynadier for their
+			contributed code and
+			\lien {pull request 179}
+			    {https://github.com/netmagis/netmagis/pull/179}.
+		}
+		\item {A work-around for Tclllib 1.18 has been implemented
+		    for installation which have not upgraded their Tcllib to
+		    at least 1.19.
+		    See \lien {issue 168}
+			{https://github.com/netmagis/netmagis/issues/168}
+			for a complete history.
+		}
+	    }
+	}
+	\item {Infrastructure changes:
+	    \liste {
+		\item {The Github repository has been moved from an
+		    individual account to the \lien {Netmagis organization}
+		    {https://github.com/netmagis}.
+		}
+		\item {The release engineering documentation is being
+		    reworked.
+		}
+		\item {The Debian package building programs are now
+		    in a new, dedicated repository \lien {netmagis-debian}
+		    {https://github.com/netmagis/netmagis-debian}.
+		}
+		\item {Debian packages must now be signed. You need to
+		    apply the following command to install the Netmagis
+		    distribution key to your Debian/Ubuntu installation:
+		    \retrait\verbatim {
+# wget -O - http://netmagis.org/files/netmagis.key | apt-key add  -
+# apt-get update
+}
+		}
+	    }
+	}
+    }
 
 
     \titre {2} {\ancre {v2.3.4} {Netmagis 2.3.4}}
@@ -54,7 +143,7 @@
     an important security issue reported by Daniel Liikamaa: when
     using an LDAP directory hosted by Active Directory, any user
     can log-in with an empty password (see \lien {issue 173}
-    {https://github.com/pdav/netmagis/issues/173}).
+    {https://github.com/netmagis/netmagis/issues/173}).
 
 
     \titre {2} {\ancre {v2.3.3} {Netmagis 2.3.3}}
@@ -70,22 +159,22 @@
 		\item {When searching for a name, an error was issued
 		    if the name was a MX.
 		    See \lien {issue 158}
-				{https://github.com/pdav/netmagis/issues/158}.
+				{https://github.com/netmagis/netmagis/issues/158}.
 		}
 		\item {When trying to delete an alias in an unauthorized
 		    domain, an internal error was generated.
 		    See \lien {issue 160}
-				{https://github.com/pdav/netmagis/issues/160}.
+				{https://github.com/netmagis/netmagis/issues/160}.
 		}
 		\item {When displaying an L2 or L3 map, an internal
 		    error was generated due to an invalid syntax with
 		    recent Graphviz versions.
 		    See \lien {issue 166}
-				{https://github.com/pdav/netmagis/issues/166}.
+				{https://github.com/netmagis/netmagis/issues/166}.
 		}
 		\item {Adding MX records to existing RR was rejected.
 		    See \lien {issue 155}
-				{https://github.com/pdav/netmagis/issues/155}.
+				{https://github.com/netmagis/netmagis/issues/155}.
 		}
 		\item {Followup about the validation of the CAS ticket:
 		    the regular expression was still too restrictive.
@@ -97,7 +186,7 @@
 		\item {Add support for Rancid 3}
 		\item {Add support for Cisco ASA.
 		    See \lien {pull request 152}
-		    {https://github.com/pdav/netmagis/pull/152} provided by
+		    {https://github.com/netmagis/netmagis/pull/152} provided by
 		    Benjamin Collet.
 		}
 		\item {Add support for \teletype {routing-instance-access}
@@ -131,24 +220,24 @@
 	\item {Validation of the CAS ticket was using a over-restrictive
 	    syntax.
 	    See \lien {pull request 145}
-	    {https://github.com/pdav/netmagis/pull/145} provided by
+	    {https://github.com/netmagis/netmagis/pull/145} provided by
 	    Olivier Le Monnier.
 	}
 	\item {Access to internal authentication menu items was broken.
 	    Problem reported by Russell Sutherland.
 	    See \lien {issue 146}
-	                {https://github.com/pdav/netmagis/issues/146}.
+	                {https://github.com/netmagis/netmagis/issues/146}.
 	}
 	\item {An internal error message, that you should never see,
 	    was still not translated to English.
 	    See \lien {issue 147}
-	                {https://github.com/pdav/netmagis/issues/147}.
+	                {https://github.com/netmagis/netmagis/issues/147}.
 	}
 	\item {Previous release introduced a fix in the topo
 	    module. This fix revealed another subtile bug, which broke
 	    the graph generation.
 	    See \lien {issue 148}
-	                {https://github.com/pdav/netmagis/issues/148}.
+	                {https://github.com/netmagis/netmagis/issues/148}.
 	}
 	\item {A minor improvement has been made in the topo module to
 	    support the "\teletype {analyzer}" keyword in the \teletype
@@ -247,7 +336,7 @@
 	\item {Netmagis provides support for Apache 2.4.x only. Support
 	    for Apache 2.2.x has been dropped since it does not provide
 	    the \teletype {REQUEST_SCHEME} variable. See \lien {issue 143}
-	    {https://github.com/pdav/netmagis/issues/143} for a complete
+	    {https://github.com/netmagis/netmagis/issues/143} for a complete
 	    description, and the \lien {StackOverflow discussion}
 	    {http://stackoverflow.com/questions/18008135/is-serverrequest-scheme-reliable}
 	    for a work-around if you really want to stick with Apache 2.2.x.
@@ -257,11 +346,11 @@
 	    target. We now accept the Wireshark \teletype {manuf} file
 	    format and the \teletype {ouiurl} configuration parameter
 	    (in \teletype {netmagis.conf}) has been updated accordingly.
-	    See \lien {issue 138} {https://github.com/pdav/netmagis/issues/138}.
+	    See \lien {issue 138} {https://github.com/netmagis/netmagis/issues/138}.
 	}
 	\item {Debian packaging has been improved by Christophe Martin.
 	    See \lien {pull request 141}
-	    {https://github.com/pdav/netmagis/pull/141}.
+	    {https://github.com/netmagis/netmagis/pull/141}.
 	}
 	\item {Many minor improvements or bug fixes has been done for the
 	    \italique {topo} module:
@@ -298,7 +387,7 @@
 	    file (missing "\teletype {file}" in "\teletype {nologinfile}").
 	    Problem detected and corrected by Christophe Martin.
 	    See \lien {pull request 134}
-	    {https://github.com/pdav/netmagis/pull/134}.
+	    {https://github.com/netmagis/netmagis/pull/134}.
 	    Update your own \teletype {netmagis.conf} to reflect the
 	    valid parameter name.
 	}
@@ -307,11 +396,11 @@
 	    (\teletype {netmagis.conf.sample})
 	    now reflects the new URL, thanks to Mathieu Parent. See
 	    \lien {pull request 133}
-	    {https://github.com/pdav/netmagis/pull/133}.
+	    {https://github.com/netmagis/netmagis/pull/133}.
 	}
 	\item {In addition, the \teletype {netmagis-getoui} has been
 	    updated to follow HTTP redirections. See \lien {issue 137}
-	    {https://github.com/pdav/netmagis/issues/137}.
+	    {https://github.com/netmagis/netmagis/issues/137}.
 
 	}
 	\item {To summarize, for \gras {users of previous Netmagis versions},
@@ -339,19 +428,19 @@
 	\item {the \teletype {dchpprofile} keyword of the \teletype {dnsmodattr}
 	    program was incorrectly spelled
 	    (missing "e"). See \lien {issue 125}
-	    {https://github.com/pdav/netmagis/issues/125} and \lien
-	    {issue 131} {https://github.com/pdav/netmagis/issues/131}.
+	    {https://github.com/netmagis/netmagis/issues/125} and \lien
+	    {issue 131} {https://github.com/netmagis/netmagis/issues/131}.
 	}
 	\item {Cisco ASA configuration files were incorrectly analyzed
 	    by the Topo module as switch configuration files. Syntax of
 	    these configuration files is closer to router configuration
 	    files. See \lien {issue 127}
-	    {https://github.com/pdav/netmagis/issues/127}.
+	    {https://github.com/netmagis/netmagis/issues/127}.
 	}
 	\item {The Topo module did not report an error when the link
 	    name was missing in an interface description
 	    of an HP equipment.
-	    See \lien {issue 90} {https://github.com/pdav/netmagis/issues/90}.
+	    See \lien {issue 90} {https://github.com/netmagis/netmagis/issues/90}.
 	}
 	\item {The MAC database includes a table for OUI attributed by the
 	    IEEE, but this table was not filled in. The new program
@@ -359,7 +448,7 @@
 	    from the IEEE and stores it in the MAC database. This new
 	    program is called in the MAC database creation program as well
 	    as periodically with \teletype {cron}.
-	    See \lien {issue 132} {https://github.com/pdav/netmagis/issues/132}.
+	    See \lien {issue 132} {https://github.com/netmagis/netmagis/issues/132}.
 
 	    Attention for \gras {users of previous Netmagis versions}:
 	    \liste {
@@ -373,11 +462,11 @@
 	}
 	\item {The Debian/Ubuntu netmagis-database package had a dependancy on the
 	    exact 9.1 version of postgresql-pltcl.
-	    See \lien {issue 129} {https://github.com/pdav/netmagis/issues/129}.
+	    See \lien {issue 129} {https://github.com/netmagis/netmagis/issues/129}.
 	}
 	\item {The FreeBSD ports are now adapted to the new staging
 	    FreeBSD infrastructure.
-	    See \lien {issue 128} {https://github.com/pdav/netmagis/issues/128}.
+	    See \lien {issue 128} {https://github.com/netmagis/netmagis/issues/128}.
 	}
     }
 
@@ -394,7 +483,7 @@
 	    created to ease database schema upgrading when a new version
 	    is issued. This solution for upgrading is different from the
 	    one proposed in \lien {issue 103}
-	    {https://github.com/pdav/netmagis/issues/103}, since we
+	    {https://github.com/netmagis/netmagis/issues/103}, since we
 	    don't want automatic upgrade by package post-install scripts
 	    which could possibly break an production system.
 	}
@@ -402,29 +491,29 @@
 	    Linux distributions which default to Apache 2.4 and no longer
 	    provide the \teletype {mod-auth-pgsql} prerequisite.
 	    (see
-	    \lien {issue 116} {https://github.com/pdav/netmagis/issues/116})
+	    \lien {issue 116} {https://github.com/netmagis/netmagis/issues/116})
 	}
 	\item {new example httpd.conf, adapted to Apache versions 2.2
 	    and 2.4, without using the \teletype {mod-auth-pgsql}
 	    authentication module
 	    (see
-	    \lien {issue 122} {https://github.com/pdav/netmagis/issues/122})
+	    \lien {issue 122} {https://github.com/netmagis/netmagis/issues/122})
 	}
 	\item {the \teletype {netmagis-config} is modified:
 	    \liste {
 		\item {to accept an alternate configuration file with
 		    the \teletype {-f} flag (see \lien {issue 119}
-		    {https://github.com/pdav/netmagis/issues/119})
+		    {https://github.com/netmagis/netmagis/issues/119})
 		}
 		\item {to return the current configuration file
 		    with the pseudo-parameter \teletype {_conffile}
 		    (see \lien {issue 119}
-		    {https://github.com/pdav/netmagis/issues/119})
+		    {https://github.com/netmagis/netmagis/issues/119})
 		}
 		\item {to return the current Netmagis code version
 		    with the pseudo-parameter \teletype {_version}
 		    (see \lien {issue 120}
-		    {https://github.com/pdav/netmagis/issues/120})
+		    {https://github.com/netmagis/netmagis/issues/120})
 		}
 	    }
 	}
@@ -432,12 +521,12 @@
 	    \liste {
 		\item {in \teletype {netmagis-dbmaint} translation
 		    (see \lien {issue 118}
-		    {https://github.com/pdav/netmagis/issues/118})
+		    {https://github.com/netmagis/netmagis/issues/118})
 		}
 		\item {in a rare error message in programs from
 		    the package \italique {utils} 
 		    (see \lien {issue 121}
-		    {https://github.com/pdav/netmagis/issues/121})
+		    {https://github.com/netmagis/netmagis/issues/121})
 		}
 		\item {in the URL returned by the version consistency
 		    check
@@ -455,27 +544,27 @@
 
     \liste {
 	\item {it was impossible to delete aliases (see
-	    \lien {issue 103} {https://github.com/pdav/netmagis/issues/103})
+	    \lien {issue 103} {https://github.com/netmagis/netmagis/issues/103})
 	}
 	\item {it was impossible to modify interfaces of an equipment in the
 	    topo module (see
-	    \lien {issue 104} {https://github.com/pdav/netmagis/issues/104})
+	    \lien {issue 104} {https://github.com/netmagis/netmagis/issues/104})
 	}
 	\item {no command was sent to equipments in the topo module
 	    (see
-	    \lien {issue 106} {https://github.com/pdav/netmagis/issues/106})
+	    \lien {issue 106} {https://github.com/netmagis/netmagis/issues/106})
 	}
 	\item {the ifchg CGI script, part of the topo module, was
 	    expecting a FQDN 
 	    (see
-	    \lien {issue 107} {https://github.com/pdav/netmagis/issues/107})
+	    \lien {issue 107} {https://github.com/netmagis/netmagis/issues/107})
 	}
 	\item {the initial zone serial number was not conforming to specification
 	    (see
-	    \lien {issue 108} {https://github.com/pdav/netmagis/issues/108})
+	    \lien {issue 108} {https://github.com/netmagis/netmagis/issues/108})
 	}
 	\item {a partial fix is provided to
-	    \lien {issue 100} {https://github.com/pdav/netmagis/issues/100}:
+	    \lien {issue 100} {https://github.com/netmagis/netmagis/issues/100}:
 	    no database upgrade script is provided, but the version check is
 	    now correct
 	}

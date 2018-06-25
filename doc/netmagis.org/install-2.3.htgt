@@ -189,8 +189,8 @@
 
     Linux packages are provided for installing on:
     \liste {
-	\item {Ubuntu (minimum distribution is 11.10, Oneiric Ocelot)}
-	\item {Debian (minimum distribution is wheezy - stable)}
+	\item {Ubuntu (minimum distribution is 18.04)}
+	\item {Debian (minimum distribution is stretch - stable)}
     }
 
     Append the following lines to your \teletype {/etc/apt/sources.list}:
@@ -198,6 +198,15 @@
     \retrait\teletype {
 	deb http://netmagis.org/files/repo stable main \br
 	deb-src http://netmagis.org/files/repo stable main
+    }
+
+    \gras {Warning: starting from Ubuntu 18.04/Debian stretch, packages
+	must be signed. You need to run the following command to add the
+	Netmagis signature:
+
+	\retrait\verbatim {
+# wget -O - http://netmagis.org/files/netmagis.key | apt-key add  -
+}
     }
 
     If you are using an Ubuntu distribution, check that the "\teletype
@@ -212,8 +221,8 @@
     The next step depends upon your architecture:
 
     \liste {
-	\item {If your system is based on an i386 or amd64
-	    architecture (i386 or x86_64 in \teletype "{uname -i}"
+	\item {If your system is based on an amd64
+	    architecture (x86_64 in \teletype "{uname -i}"
 	    output), you can install from binary packages (example for
 	    the \italique {database} package):
 
@@ -221,12 +230,13 @@
 		# apt-get install netmagis-database
 	    }
 
-	    Since packages are not signed, you must manually answer
-	    "Yes" to the question "Install these packages without
-	    verification?".
+	    \* Since packages are not signed, you must manually answer
+	    \* "Yes" to the question "Install these packages without
+	    \* verification?".
 
 	}
-	\item {If your system is based on another architecture, you have
+	\item {If your system is based on another architecture (including
+	    i386 for old 32 bit hardware), you have
 	    to rebuild from source package:
 
 	    \retrait\teletype {

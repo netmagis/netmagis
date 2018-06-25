@@ -44,6 +44,20 @@
     the \lien {installation documentation} {/install-2.3.html#source}.
 
 
+    \titre {2} {Release 2.3.5}
+
+    Release 2.3.5 is available on
+    \lien {http://netmagis.org/files/netmagis-2.3.5.tar.gz} {/files/netmagis-2.3.5.tar.gz}
+
+    Linux (Debian/Ubuntu) signed binary packages are available. See the
+    \lien {installation documentation} {/install-2.3.html} to install
+    them. FreeBSD ports and binary packages are integrated in FreeBSD
+    and should appear soon after the Netmagis release.
+
+    Don't forget to \lien {read the documentation and to subscribe to
+    the mailing list} {/support.html}!
+
+
     \titre {2} {Release 2.3.4}
 
     Release 2.3.4 is available on

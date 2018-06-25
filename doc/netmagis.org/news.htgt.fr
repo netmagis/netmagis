@@ -38,6 +38,22 @@
     \titre {1} {Netmagis : Nouveautés}
 
 
+    \titre {2} {[2018/06/25] La version 2.3.5 de Netmagis est disponible}
+
+    The 2.3.5 version of Netmagis is available on the
+    \lien {Download} {/download.html} section. This is a
+    maintenance release fixing some bugs and adding a few
+    features.
+    See the \lien {release notes} {/relnotes.html#v2.3.5} for 
+    detailed description.
+
+    La \lien {version 2.3.5 de Netmagis} {/download.html} est maintenant
+    disponible. Il s'agit d'une version de maintenance corrigeant
+    quelques bugs et ajoutant des nouvelles fonctionnalités.
+    Voir les \lien {notes de version} {/relnotes.html#v2.3.5}
+    pour une description détaillée.
+
+
     \titre {2} {[2018/06/01] Stage de Thomas Weissgerber sur Netmagis}
 
     Thomas Weissgerber, étudiant en informatique à l'université de
