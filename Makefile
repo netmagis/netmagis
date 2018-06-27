@@ -132,7 +132,7 @@ install-devtools:
 distrib: clean
 	rm -rf /tmp/netmagis-$(VERSION)
 	mkdir /tmp/netmagis-$(VERSION)
-	tar cf - --exclude "pkg/*" \
+	tar cf - \
 		--exclude "doc/jres/*" \
 		--exclude "doc/pres/*" \
 		--exclude "doc/old/*" \
@@ -141,33 +141,6 @@ distrib: clean
 	    | tar xf - -C /tmp/netmagis-$(VERSION)
 	tar -czf netmagis-$(VERSION).tar.gz -C /tmp netmagis-$(VERSION)
 	rm -rf /tmp/netmagis-$(VERSION)
-
-freebsd-ports:
-	@if [ `uname -s` != FreeBSD ] ; then \
-	    echo "Please, make this target on a FreeBSD host" ; \
-	    echo "once netmagis-$(VERSION).tar.gz is on the master site" ; \
-	    exit 1 ; \
-	fi
-	for i in pkg/freebsd/netmagis-* ; do (cd $$i ; make clean) ; done
-	cd pkg/freebsd/netmagis-common ; make makesum
-	tar -czf netmagis-freebsd-ports-$(VERSION).tar.gz -C pkg/freebsd .
-
-debian-packages:
-	@if [ `uname -s` != Linux ] ; then \
-	    echo "Please, make this target on a Debian/Ubuntu host" ; \
-	    echo "once netmagis-$(VERSION).tar.gz is on the master site" ; \
-	    exit 1 ; \
-	fi
-	cd pkg/debian ; make VERSION=$(VERSION) release
-
-debian-packages-other-arch:
-	cd pkg/debian ; \
-	for arch in $(DEBIAN_PKG_ARCH) ; do \
-	     make VERSION=$(VERSION) ARCH=$$arch release-arch ; \
-	done
-
-debian-repo:
-	pkg/debian/update-repo $(VERSION) pkg/debian $(DEBIAN_DISTRIB) $(REPODIR)
 
 clean:
 	cd common ; make clean
