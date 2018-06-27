@@ -171,63 +171,10 @@ class Infos extends React.Component {
         );
     }
 }
-//host infos
-// class Infos extends React.Component {
-//     constructor(props) {
-//         super(props);
-//
-//         this.state = {
-//             showDetails: false
-//         };
-//
-//         this.displayOk = this.displayOk.bind(this);
-//     }
-//
-//     displayOk() {
-//         this.setState({ showDetails: true });
-//         console.log("showDetails in state: " + this.state.showDetails);
-//     }
-//
-//     render() {
-//         const { host } = this.props;
-//         const { domain, iddom, idhost, idview, name, view } = host;
-//         console.log("Host obj: " + host);
-//
-//         return (
-//             <tbody>
-//                 <tr
-//                     onClick={() => {
-//                         console.log("tr tag clicked");
-//                         //this.props.hideDetails(this.displayOk);
-//                     }}
-//                     data-toggle="collapse"
-//                     data-target={"#accordion" + idhost}
-//                     className="clickable"
-//                 >
-//                     <td>{idhost}</td>
-//                     <td>{name}</td>
-//                     <td>{iddom}</td>
-//                     <td>{domain}</td>
-//                     <td>{idview}</td>
-//                     <td>{view}</td>
-//                 </tr>
-//                 {this.state.showDetails ? (
-//                     <tr>
-//                         <td colSpan="6">
-//                             <div id={"accordion" + idhost} className="collapse">
-//                                 Details de l'hote
-//                             </div>
-//                         </td>
-//                     </tr>
-//                 ) : null}
-//             </tbody>
-//         );
-//     }
-// }
 
 //list of available networks
 const NetworkListItem = props => {
-    const { net, callback } = props;
+    const { net, callback, m } = props;
     const {
         name,
         addr4,
@@ -247,7 +194,7 @@ const NetworkListItem = props => {
             <td>
                 <Link
                     onClick={() => callback(addr4)}
-                    to={"/netmagis/consult/net=" + addr4}
+                    to={`${m.url}/net=${addr4}`}
                 >
                     {addr4}
                 </Link>
@@ -255,7 +202,7 @@ const NetworkListItem = props => {
             <td>
                 <Link
                     onClick={() => callback(addr6)}
-                    to={"/netmagis/consult/net=" + addr6}
+                    to={`${m.url}/net=${addr6}`}
                 >
                     {addr6}
                 </Link>
@@ -346,6 +293,7 @@ class NetworkList extends React.Component {
                                 <NetworkListItem
                                     net={n}
                                     callback={this.props.updateHosts}
+                                    m={this.props.m}
                                 />
                             ))}
                         </tbody>
@@ -392,8 +340,12 @@ class HostList extends React.Component {
         console.log(this.state.hosts);
         return (
             <div>
-                <h3>
-                    {this.props.m.params.net + "/" + this.props.m.params.mask}
+                <h3 style={{ textAlign: "center" }}>
+                    Hosts on the{" "}
+                    {this.props.m.params.net.split("=")[1] +
+                        "/" +
+                        this.props.m.params.mask}{" "}
+                    network
                 </h3>
                 <div>
                     {this.state.hosts == null ? (
@@ -612,13 +564,17 @@ export class Consult extends React.Component {
         }
     }
 
+    componentWillReceiveProps() {
+        this.forceUpdate();
+    }
+
     render() {
         const queryString = require("query-string");
         const parser = queryString.parse(location.search);
         console.log("Parser result: ");
         console.log(parser);
 
-        const { match, entries, api } = this.props;
+        const { m, entries, api } = this.props;
         return (
             <Router>
                 <div>
@@ -633,38 +589,31 @@ export class Consult extends React.Component {
                     </button>
                     <h3>Page {this.state.page}</h3>
                     {this.displayPage(this.state.page)} */}
-                    <Switch>
-                        <Route
-                            exact={true}
-                            path="*/consult"
-                            render={() => (
-                                <NetworkList
-                                    networks={this.state.networks}
-                                    updateHosts={this.updateHosts}
-                                    api={api}
-                                />
-                            )}
-                        />
-                        {/* <Route path="/consult/:net" component={PageHote} /> */}
-                        <Route
-                            path="*/consult/host/:id"
-                            render={({ match }) => (
-                                <HostPage m={match} api={api} />
-                            )}
-                        />
-                        <Route
-                            path="*/consult/:net/:mask"
-                            render={({ match }) => (
-                                <HostList
-                                    parsed={this.parsed}
-                                    updateHosts={this.updateHosts}
-                                    hosts={this.state.hosts}
-                                    api={api}
-                                    m={match}
-                                />
-                            )}
-                        />
-                    </Switch>
+
+                    <Route
+                        exact
+                        path={m.url}
+                        render={({ match }) => (
+                            <NetworkList
+                                networks={this.state.networks}
+                                updateHosts={this.updateHosts}
+                                api={api}
+                                m={match}
+                            />
+                        )}
+                    />
+                    <Route
+                        path={`${m.url}/:net/:mask`}
+                        render={({ match }) => (
+                            <HostList
+                                parsed={this.parsed}
+                                updateHosts={this.updateHosts}
+                                hosts={this.state.hosts}
+                                api={api}
+                                m={match}
+                            />
+                        )}
+                    />
                 </div>
             </Router>
         );

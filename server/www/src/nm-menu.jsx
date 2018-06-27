@@ -803,15 +803,8 @@ class RawNMMenu extends React.Component {
                     <Route path="*/netmagis/add" component={Add} />
                     <Route
                         path="*/netmagis/consult"
-                        render={() => (
-                            <Consult
-                                entries={[
-                                    { adress: "192.168.1.1" },
-                                    { adress: "10.0.0.1" },
-                                    { adress: "130.79.16" }
-                                ]}
-                                api={this.props.api}
-                            />
+                        render={({ match }) => (
+                            <Consult m={match} api={this.props.api} />
                         )}
                     />
 
