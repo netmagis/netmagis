@@ -1,0 +1,258 @@
+#!/bin/sh
+
+#
+# Perform various checks and operations to release a new Netmagis version
+#
+# Usage:
+#    mkrel [-n] X.Y.Z
+# Exemple:
+#    mkrel 2.3.5
+# Option -n perform checks only.
+#
+# Checks implemented:
+# - X, Y and Z are numbers
+# - current directory is the root dir of Netmagis repository and
+#	containts Makefile and CHANGES files
+# - current directory is on git branch "X.Y"
+# - "make version" returns X.Y.Z
+# - first line of the CHANGES file has the correct format (i.e.
+#	"Version X.Y.Z - $today")
+# - tag vX.Y.Z-1 exists (if Z > 0) and tag vX.Y.Z does not exist
+#
+# Operations implemented:
+# - "make distrib" => creates netmagis-X.Y.Z.tar.gz
+# - "git tag" with "vX.Y.Z" and "git push"
+#
+
+usage ()
+{
+    local argv0="$1" msg="$2"
+
+    (
+	if [ "$msg" != "" ]
+	then
+	    echo "$msg"
+	fi
+	echo "usage: $argv0 [-n] release"
+	echo "	e.g.: $argv0 2.3.5"
+    ) >&2
+    exit 1
+}
+
+error ()
+{
+    local argv0="$1" msg="$2"
+
+    echo "$argv0: $msg" >&2
+    exit 1
+}
+
+dispatch ()
+{
+    (
+	IFS=.
+	set $1
+	echo $*
+    )
+}
+
+##############################################################################
+# Check argument syntax
+##############################################################################
+
+#
+# Check argument: it must be a release number
+#
+
+doit=true
+while getopts n name
+do
+    case "$name" in
+	n)	doit=false ;;
+	?)	usage $0 ;;
+    esac
+done
+shift $(($OPTIND-1))
+
+if [ $# != 1 ]
+then usage $0 ""
+fi
+
+arg="$1"
+
+set $(dispatch $1)
+
+if [ $# != 3 ]
+then usage $0 "Invalid version ($arg). Should be X.Y.Z"
+fi
+
+#
+# Check each member of release number is a valid number
+# and get branch name
+#
+
+rel=""
+branch=""
+
+for i
+do
+    branch=$rel
+
+    if ! echo "$i" | grep -q '^[0-9][0-9]*$'
+    then usage $0 "Invalid number ($i) in $arg."
+    fi
+
+    n=$(expr $i + 0 2> /dev/null)
+
+    if [ "$rel" = "" ]
+    then rel=$n
+    else rel=$rel.$n
+    fi
+done
+
+tag=v$rel				# the new tag
+
+#
+# Get previous release number
+#
+
+if [ $n = 0 ]				# last number in release
+then ptag=""
+else
+    nm1=$((n-1))
+    ptag=$(echo $tag | sed "s/$n\$/$nm1/")
+fi
+
+##############################################################################
+# Check current git repository configuration
+##############################################################################
+
+#
+# Check the current branch name: we must be in the correct branch for
+# this release.
+#
+
+curbranch=$(git status | sed -n '/On branch /s///p')
+if [ $curbranch != $branch ]
+then
+    (
+	echo "$0: current branch is $curbranch, should be $branch."
+	if [ $(git branch -l | sed 's/^..//' | grep "^$branch\$" | wc -l) = 0 ]
+	then
+	   echo "Please use 'git checkout -b $branch' to create the branch'"
+	   echo "and 'git push --all' to push it"
+	else
+	   echo "Please use 'git checkout $branch' to enter this branch."
+	fi
+    ) >&2
+    exit 1
+fi
+
+#
+# Check the new tag name: it must not already exist
+#
+
+if [ $(git tag -l $tag | wc -l) -gt 0 ]
+then
+    (
+       echo "$0: tag '$tag' already exists."
+       echo "Use 'git tag -l v$branch' to list all tags."
+    ) >&2
+    exit 1
+fi
+
+#
+# The previous release tag must exist
+#
+
+if [ "$ptag" != "" ] && [ $(git tag -l $ptag | wc -l) = 0 ]
+then
+    (
+       echo "$0: tag '$ptag' for previous release does not exist."
+       echo "Is this release '$rel' correctly numbered?"
+       echo "Use 'git tag -l v$branch' to list all tags."
+    ) >&2
+    exit 1
+fi
+
+##############################################################################
+# Check various values in Netmagis source tree
+##############################################################################
+
+if ! [ -f Makefile -a -f CHANGES ]
+then
+    (
+	echo "File 'Makefile' or 'CHANGES' not found."
+	echo "Is current dir '$(pwd)' the Netmagis source directory?"
+    ) >&2
+    exit 1
+fi
+
+nmversion=$(make version 2>&1)
+if [ $? != 0 ]
+then
+    (
+	echo "'make version' failed ($nmversion)"
+	echo "Is 'Makefile' the valid Netmagis main makefile?"
+    ) >&2
+    exit 1
+fi
+
+if [ x"$nmversion" != x"$rel" ]
+then
+    (
+	echo "'make version' returned '$nmversion'"
+	echo "You should update 'VERSION =' line in Makefile"
+    ) >&2
+    exit 1
+fi
+
+date=$(date +"%Y/%m/%d")
+expected="Version $rel - $date"
+first="$(head -1 CHANGES)"
+if [ x"$first" != x"$expected" ]
+then
+    (
+	echo "First line of file 'CHANGES' does not match required format"
+	echo "It should be '$expected'"
+    ) >&2
+    exit 1
+fi
+
+##############################################################################
+# Create the new release
+##############################################################################
+
+(
+    umask 002
+    make distrib
+)
+
+if [ $? != 0 ]
+then
+    (
+	echo "'make distrib' failed."
+    ) >&2
+    exit 1
+fi
+
+ls -l netmagis-$rel.tar.gz
+
+##############################################################################
+# Tag the new release
+##############################################################################
+
+#
+# Ok. Create the new tag and push it
+# 
+
+if [ $doit = true ]
+then
+    git tag -m "Version $rel" $tag
+    git push --tags
+else
+    echo "git tag -m \"Version $rel\" $tag"
+    echo "git push --tags"
+fi
+
+exit 0

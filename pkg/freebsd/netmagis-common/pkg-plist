@@ -11,3 +11,4 @@ lib/netmagis/pkgtcl/pgsql.tcl
 lib/netmagis/pkgtcl/pkgIndex.tcl
 lib/netmagis/pkgtcl/webapp.n
 lib/netmagis/pkgtcl/webapp.tcl
+lib/netmagis/pkgtcl/ldap-bug-fix.192

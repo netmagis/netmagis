@@ -874,7 +874,7 @@ snit::type ::netmagis {
 					"login" $ldapattrlogin \
 					"lastname" $ldapattrname \
 					"firstname" $ldapattrgivenname \
-					"maill" $ldapattrmail \
+					"mail" $ldapattrmail \
 					"phone" $ldapattrphone \
 					"mobile" $ldapattrmobile \
 					"fax" $ldapattrfax \
@@ -5328,7 +5328,16 @@ proc display-rr {dbfd idrr _trr idview rrtmpl} {
 	} else {
 	    set aa {}
 	    foreach ip $lip {
-		lappend aa [get-rr-tmpl "ip" $rrtmpl $ip $ip $idview]
+		set a [get-rr-tmpl "ip" $rrtmpl $ip $ip $idview]
+		set sql "SELECT name FROM dns.network
+				    WHERE '$ip'::inet <<= addr4
+				       OR '$ip'::inet <<= addr6
+				    "
+		set name ""
+		pg_select $dbfd $sql tab {
+		    append a " ($tab(name))"
+		}
+		lappend aa $a
 	    }
 	    set aa [join $aa ", "]
 	}

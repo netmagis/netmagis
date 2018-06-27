@@ -37,31 +37,48 @@ vill looks like:
 How to release, step by step
 ----------------------------
 
-1. On the web server
+1. On the development server
 
-    1.a. Be sure to get the files updated
+    1.a. You should already be in the development branch
+
+	git checkout X.Y
+
+    1.b. Be sure to get the files updated
 
 	cd $NETMAGIS
 	git pull
 
-    1.b. Update the CHANGES file and the doc/netmagis/relnotes.htgt
-	to reflect changes made by the release, and don't forget
-	to update the release date
+    1.c. Update the CHANGES file to reflect changes made by the
+	release, and don't forget to update the release date
 
-    1.c. Update version number
+    1.d. Update version number
 
 	cd $NETMAGIS
 	vi Makefile				# Modify the VERSION variable
-	vi pkg/freebsd/netmagis-common/Makefile	# Modify the PORTVERSION var
 
-    1.d. Create netmagis distribution file
+    1.e. Check everything is ok before releasing
 
-	umask 002
-	cd $NETMAGIS 
-	make distrib
-	mv netmagis*.tar.gz /www/docs/files/
+	./devtools/utils/mkrel -n X.Y.Z
 
-    1.e. Update installation documentation and web site 
+    1.f. If everything is ok, tag the release
+
+	./devtools/utils/mkrel X.Y.Z
+
+    1.g. Copy the tar.gz file to the distribution server
+
+	scp netmagis*.tar.gz www:/www/docs/files/
+
+2. On the web server
+
+    2.a. Be sure to get the files updated
+
+	cd $NETMAGIS
+	git pull
+
+    2.b. Update the doc/netmagis/relnotes.htgt to reflect changes
+	made by the release, and don't forget to update the release date
+
+    2.c. Update installation documentation and web site 
 
 	umask 002
 	cd $NETMAGIS/doc/netmagis.org
@@ -77,85 +94,20 @@ How to release, step by step
 	    TCLCONF=/usr/share/tcltk/tcl8.5/tclConfig.sh \
 	    install-netmagis.org
 
-    1.f. Update screenshots
+    2.d. Update screenshots
 
 	cd $NETMAGIS/doc/netmagis.org
 	# create new screenshots (1024x768) as shot-*.png
 	for i in shot-*.png ; do cp $i `echo $i | sed 's/shot-/vign-/'` ; done
 	mogrify -resize 256x192 vign-*.png
 
-    1.g. Commit changes
+    2.e. Commit changes
 
 	git commit -a
 
-    1.h. Create branch if it is a new version (vX.Y.0)
-
-	git checkout -b X.Y
-	git push --all
-	
-    1.i. Tag the new version every time
-
-	git tag -m "version X.Y.Z" vX.Y.Z 
-	git push --tags
-
-2. On the FreeBSD host
-
-    2.a. Be sure to get the files updated
-
-	cd $NETMAGIS
-	git pull --all
-	git checkout X.Y
-    
-    2.b. Generate ports
-
-	cd $NETMAGIS
-    	make freebsd-ports
-
-    2.c. Copy ports to the web server
-
-    	scp netmagis-freebsd-ports-*.tar.gz netmagis.org:/www/docs/files/
-
 3. On the Debian/Ubuntu host
 
-    3.a. Be sure to get the files updated
-
-	cd $NETMAGIS
-	git pull --all
-	git checkout X.Y
-    
-    3.b. Generate debian packages
-
-	cd $NETMAGIS
-    	make debian-packages
-    	sudo make debian-packages-other-arch
-
-    3.c. Create repository if needed
-    	
-	mkdir -p /local/repo/conf
-	# add the following lines in /local/repo/conf/distributions
-	    Origin: netmagis
-	    Label: netmagis
-	    Codename: stable
-	    Architectures: amd64 i386 source
-	    Components: main
-	    Description: Apt repository for netmagis
-
-	    Origin: netmagis
-	    Label: netmagis
-	    Codename: dev
-	    Architectures: amd64 i386 source
-	    Components: main
-	    Description: Dev apt repository for netmagis
-
-    3.d. Update local repository
-
-	make DEBIAN_DISTRIB=stable debian-repo
-	# use DEBIAN_DISTRIB=dev to update the dev distribution
-
-    3.e. Copy local repository to the web server
-
-	tar cf - -C /local repo | \
-		ssh netmagis.org tar xf - -C /www/docs/files
+    See README.md in netmagis-debian repository.
 
 4. Announce the release
 
@@ -164,11 +116,7 @@ How to release, step by step
 	If this is a major version, post to some other carefully
 	choosen lists
 
-    4.b Update Wikipedia pages
-
-	http://en.wikipedia.org/wiki/Internet_Protocol_Address_Management
-
-    4.c Close all remaining issues for this milestone
+    4.b Close all remaining issues for this milestone
 
 	https://github.com/pdav/netmagis/issues
 

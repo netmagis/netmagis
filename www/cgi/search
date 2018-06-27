@@ -18,6 +18,8 @@
 #   2013/03/06 : pda/jean : multi-views
 #   2013/03/13 : pda/jean : generalization to different object types
 #   2013/20/06 : schplurtz: fix bug
+#   2017/03/14 : bahram123: Added wildcard search (zip patch)
+#   2018/04/06 :fmeynadier: zip patch turned into Pull Request 
 #
 
 #
@@ -98,7 +100,6 @@ proc parse-query {dbfd q _sel _val _type} {
     upvar $_sel sel
     upvar $_val val
     upvar $_type type
-
     set sel ""
     set val ""
     set type ""
@@ -109,17 +110,28 @@ proc parse-query {dbfd q _sel _val _type} {
     # Avoid case where the beginning of a MAC address is confused with
     # an operator
     #
+	if {[regexp {^(([a-z]+):\s*)?(\S+)$} $q dum1 dum2 sel val]} then {
+	    # nothing
+	} elseif {[regexp {^\S+$} $q val]} then {
+	    set sel ""
+	} else {
+	    return [mc "Invalid search query '%s'" $q]
+	}
     if {$q eq "_"} then {
 	set sel "myaddr"
 	set val "_"
 	set type ""
 	set matchproc myaddr
-    } elseif {[check-mac-syntax $dbfd $q] eq ""} then {
+    } elseif {[string match "*:*" $q] } then {
+	 if {[string match "group:*" $q]} then {
+            # nothing
+        } else {
 	set sel ""
 	set val $q
 	set type "mac"
 	set matchproc host
-    } elseif {[check-ip-syntax $dbfd $q "inet"] eq ""} then {
+	}
+    } elseif {[string match "*.*" $q] } then {
 	set sel ""
 	set val $q
 	set type "inet"
@@ -136,13 +148,6 @@ proc parse-query {dbfd q _sel _val _type} {
 	# Check operator and value
 	#
 
-	if {[regexp {^(([a-z]+):\s*)?(\S+)$} $q dum1 dum2 sel val]} then {
-	    # nothing
-	} elseif {[regexp {^\S+$} $q val]} then {
-	    set sel ""
-	} else {
-	    return [mc "Invalid search query '%s'" $q]
-	}
 
 	#
 	# Recognize type
@@ -301,18 +306,26 @@ proc cgi-search-150-host {dbfd q val type} {
 	    # We don't test result, since existence of trr(idrr) will
 	    # suffice for next steps.
 	    #
-	    if {[read-rr-by-mac $dbfd $val trr]} then {
-		set lhost {}
-		foreach idview [u myviewids] {
-		    if {[llength [rr-ip-by-view trr $idview]] > 0} then {
-			lappend lhost $idview
-			break
-		    }
+		set newval [string map {* %} $val]
+		set sql "SELECT idrr FROM dns.rr 
+			WHERE mac::text LIKE '$newval'
+			"
+		   pg_select $dbfd $sql tab {
+		    	foreach idmac $tab(idrr)  {
+			if {[read-rr-by-id $dbfd $idmac trr]} then {
+			set lhost {}
+		        	foreach idview [u myviewids] {
+				    if {[llength [rr-ip-by-view trr $idview]] > 0} then {
+					lappend lhost $idview
+					break
+				    }
+				}
+				foreach idview $lhost {
+			    		lappend lfound [display-host $dbfd trr $idview $q]
+				}
+	    		}
+			}
 		}
-		foreach idview $lhost {
-		    lappend lfound [display-host $dbfd trr $idview $q]
-		}
-	    }
 	}
 	inet {
 	    #
@@ -320,51 +333,76 @@ proc cgi-search-150-host {dbfd q val type} {
 	    # be filled. If it does not exists, trr will not be created.
 	    # We don't test result, since existence of trr(idrr) will
 	    # suffice for next steps.
-	    #
-	    foreach idview [u myviewids] {
-		if {[read-rr-by-ip $dbfd $val $idview trr]} then {
-		    lappend lfound [display-host $dbfd trr $idview $q]
+		set newval [string map {* %} $val]
+		if {$newval ne $val} then {
+			foreach idview [u myviewids] {
+				 set sql "SELECT i.idrr FROM dns.rr_ip i, dns.rr r WHERE i.idrr = r.idrr AND i.addr::text LIKE '$newval' AND r.idview = $idview"
+				 pg_select $dbfd $sql tab {
+					 foreach idip $tab(idrr)  {
+						if {[read-rr-by-id $dbfd $idip trr]} then {
+						    lappend lfound [display-host $dbfd trr $idview $q]
+						}
+					    }
+				}
+			}
+		} else {
+			foreach idview [u myviewids] {
+				 set sql "SELECT i.idrr FROM dns.rr_ip i, dns.rr r WHERE i.idrr = r.idrr AND i.addr='$newval' AND r.idview = $idview"
+				 pg_select $dbfd $sql tab {
+					 foreach idip $tab(idrr)  {
+						if {[read-rr-by-id $dbfd $idip trr]} then {
+						    lappend lfound [display-host $dbfd trr $idview $q]
+						}
+					    }
+				}
+			}
 		}
-	    }
 	}
 	cidr {
 	}
 	string {
-	    if {[regexp {^[^.]+\..+$} $val]} then {
-		#
-		# Name and domain
-		#
-		set msg [check-fqdn-syntax $dbfd $val name domain iddom]
-		if {$msg ne ""} then {
-		    display-message $val $msg
-		}
-		set ldom [list $iddom]
-	    } else {
-		set msg [check-name-syntax $val]
-		if {$msg ne ""} then {
-		    display-message $val $msg
-		}
 		set ldom [u myiddom]
 		set name $val
-	    }
-
+		 set newval [string map {* %} $val]
 	    foreach iddom $ldom {
 		foreach idview [u myviewids] {
-		    if {[read-rr-by-name $dbfd $name $iddom $idview trr]} then {
-			if {[llength [rr-ip-by-view trr $idview]] > 0} then {
-			    lappend lfound [display-host $dbfd trr $idview $q]
-			}
-			if {[rr-cname-by-view trr $idview] ne ""} then {
-			    lappend lfound [display-alias $dbfd trr $idview $q]
-			}
-			if {[rr-mx-by-view trr $idview] ne ""} then {
-			    foreach l [display-all-mx $dbfd trr $idview $q] {
-				lappend lfound $l
-			    }
-			}
+#puts($idview)
+		 set sql "SELECT idrr FROM dns.rr  WHERE name::text LIKE  '$newval' AND iddom = $iddom AND idview = $idview"
+		    pg_select $dbfd $sql tab {
+				set idrr $tab(idrr)
+		#puts($idrr)
+				foreach idname $tab(idrr)  {
+                                        if {[read-rr-by-id $dbfd $idname trr]} then {
+	#puts("$trr(name).$trr(domain)")
+			
+					  if {[llength [rr-ip-by-view trr $idview]] > 0} then {
+                                            lappend lfound [display-host $dbfd trr $idview $q]
+					}
+				         if {[rr-cname-by-view trr $idview] ne ""} then {
+					    lappend lfound [display-alias $dbfd trr $idview $q]
+					}
+					if {[rr-mx-by-view trr $idview] ne ""} then {
+					    foreach l [display-all-mx $dbfd trr $idview $q] {
+						lappend lfound $l
+					    }
+					}
+
+                                      }
+                                    }
+                        }
+
 		    }
-		}
-	    }
+
+#
+#			if {[rr-cname-by-view trr $idview] ne ""} then {
+#			    lappend lfound [display-alias $dbfd trr $idview $q]
+#			}
+#			if {[rr-mx-by-view trr $idview] ne ""} then {
+#			    foreach l [display-all-mx $dbfd trr $idview $q] {
+#				lappend lfound $l
+#			    }
+#			}
+		    }
 	}
 	default {
 	    d error [mc "Internal error: unknown type"]
@@ -376,7 +414,6 @@ proc cgi-search-150-host {dbfd q val type} {
 
 proc cgi-search-160-mailrole {dbfd q val type} {
     set lfound {}
-
     switch $type {
 	string {
 	    if {[regexp {^[^.]+\..+$} $val]} then {
@@ -385,13 +422,13 @@ proc cgi-search-160-mailrole {dbfd q val type} {
 		#
 		set msg [check-fqdn-syntax $dbfd $val name domain iddom]
 		if {$msg ne ""} then {
-		    display-message $val $msg
+	#	    display-message $val $msg
 		}
 		set ldom [list $iddom]
 	    } else {
 		set msg [check-name-syntax $val]
 		if {$msg ne ""} then {
-		    display-message $val $msg
+	#	    display-message $val $msg
 		}
 		set ldom [u myiddom]
 		set name $val
