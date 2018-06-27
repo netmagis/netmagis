@@ -1,30 +1,229 @@
 import React from "react";
+import "./app-consult.css";
 import { BrowserRouter as Router, Link, Route, Switch } from "react-router-dom";
 
-//host infos
-const Infos = props => {
-    const { host } = props;
-    const { domain, iddom, idhost, idview, name, view } = host;
-    console.log("Host obj: " + host);
+class Infos extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            hostInfo: []
+        };
+        this.parseHost = this.parseHost.bind(this);
+        // this.props.api("GET", "hosts/" + this.props.host.idhost, null, json =>
+        //     this.setState({ hostInfo: json })
+        // );
+    }
 
-    return (
-        <tr>
-            <td>{idhost}</td>
-            <td>
-                <Link
-                    onClick={() => callback(addr4)}
-                    to={"/netmagis/consult/host/" + idhost}
+    componentDidMount() {
+        this.props.api(
+            "GET",
+            "hosts/" + this.props.host.idhost,
+            null,
+            this.parseHost.bind(this)
+        );
+    }
+
+    parseHost(json) {
+        console.log("Consult json received: ");
+        if (JSON.stringify(json) !== JSON.stringify(this.state.hostInfo)) {
+            this.setState({ hostInfo: json });
+        }
+        console.log("SetState ok: ");
+        //this.state.hostInfo.addr.map(a => console.log(a));
+    }
+
+    render() {
+        const { idhost, name, iddom, domain, idview, view } = this.props.host;
+
+        const st = this.state.hostInfo;
+
+        return (
+            <tbody className="panel">
+                <tr
+                    data-toggle="collapse"
+                    data-target={"#accordion" + idhost}
+                    className="clickable"
                 >
-                    {name}
-                </Link>
-            </td>
-            <td>{iddom}</td>
-            <td>{domain}</td>
-            <td>{idview}</td>
-            <td>{view}</td>
-        </tr>
-    );
-};
+                    <td>{idhost}</td>
+                    <td>{name}</td>
+                    <td>{iddom}</td>
+                    <td>{domain}</td>
+                    <td>{idview}</td>
+                    <td>{view}</td>
+                </tr>
+                <tr style={{ background: "white" }}>
+                    <td colSpan="6" className="hiddenRow">
+                        <div id={"accordion" + idhost} className="collapse">
+                            <div className="container">
+                                <div className="row">
+                                    <div className="col">
+                                        <h3 style={{ textAlign: "center" }}>
+                                            Details about <b>{st.name}</b> host,
+                                            n°{idhost}
+                                        </h3>
+                                    </div>
+                                </div>
+                                <div className="row">
+                                    <div
+                                        style={{ textAlign: "center" }}
+                                        className="col"
+                                    >
+                                        Comment: {st.comment}
+                                        <br />
+                                    </div>
+                                </div>
+                                <div className="row">
+                                    <div className="col-12">
+                                        <table className="table table-bordered">
+                                            <tbody>
+                                                <tr>
+                                                    <td>Adresses</td>
+                                                    {st.addr == undefined ? (
+                                                        <td>Loading</td>
+                                                    ) : (
+                                                        st.addr.map(a => (
+                                                            <table className="val col-12">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td className="val">
+                                                                            <b>
+                                                                                {
+                                                                                    a
+                                                                                }
+                                                                            </b>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        ))
+                                                    )}
+                                                </tr>
+
+                                                <tr>
+                                                    <td>Host id</td>
+                                                    <td className="val">
+                                                        <b>{idhost}</b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>DHCP profile id</td>
+                                                    <td className="val">
+                                                        <b>{st.iddhcpprof}</b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Domain id</td>
+                                                    <td className="val">
+                                                        <b>{st.iddom}</b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>H info id</td>
+                                                    <td className="val">
+                                                        <b>{st.idhinfo}</b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>View id</td>
+                                                    <td className="val">
+                                                        <b>{st.idview}</b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>MAC addres</td>
+                                                    <td className="val">
+                                                        <b>{st.mac}</b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Responsible</td>
+                                                    <td className="val">
+                                                        <b>{st.respname}</b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Responsible's mail</td>
+                                                    <td className="val">
+                                                        <b>{st.respmail}</b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Send smtp</td>
+                                                    <td className="val">
+                                                        <b>{st.sendsmtp}</b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>TTL</td>
+                                                    <td className="val">
+                                                        <b>{st.ttl}</b>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        );
+    }
+}
+//host infos
+// class Infos extends React.Component {
+//     constructor(props) {
+//         super(props);
+//
+//         this.state = {
+//             showDetails: false
+//         };
+//
+//         this.displayOk = this.displayOk.bind(this);
+//     }
+//
+//     displayOk() {
+//         this.setState({ showDetails: true });
+//         console.log("showDetails in state: " + this.state.showDetails);
+//     }
+//
+//     render() {
+//         const { host } = this.props;
+//         const { domain, iddom, idhost, idview, name, view } = host;
+//         console.log("Host obj: " + host);
+//
+//         return (
+//             <tbody>
+//                 <tr
+//                     onClick={() => {
+//                         console.log("tr tag clicked");
+//                         //this.props.hideDetails(this.displayOk);
+//                     }}
+//                     data-toggle="collapse"
+//                     data-target={"#accordion" + idhost}
+//                     className="clickable"
+//                 >
+//                     <td>{idhost}</td>
+//                     <td>{name}</td>
+//                     <td>{iddom}</td>
+//                     <td>{domain}</td>
+//                     <td>{idview}</td>
+//                     <td>{view}</td>
+//                 </tr>
+//                 {this.state.showDetails ? (
+//                     <tr>
+//                         <td colSpan="6">
+//                             <div id={"accordion" + idhost} className="collapse">
+//                                 Details de l'hote
+//                             </div>
+//                         </td>
+//                     </tr>
+//                 ) : null}
+//             </tbody>
+//         );
+//     }
+// }
 
 //list of available networks
 const NetworkListItem = props => {
@@ -46,12 +245,6 @@ const NetworkListItem = props => {
         <tr>
             <td>{name}</td>
             <td>
-                {/* <Link
-                    onClick={() => props.goToHost()}
-                    to={"consult?net=" + addr4}
-                >
-                    {addr4}
-                </Link> */}
                 <Link
                     onClick={() => callback(addr4)}
                     to={"/netmagis/consult/net=" + addr4}
@@ -102,10 +295,6 @@ class NetworkList extends React.Component {
             )
                 return { networks: json };
         });
-        // if (json != JSON.stringify(this.state.networks)) {
-        //     this.setState({ networks: json });
-        //     console.log("SetState ok: ");
-        // }
 
         console.log(this.state.networks);
     }
@@ -176,6 +365,7 @@ class HostList extends React.Component {
 
         //this.props.updateHosts(this.props.m.params.net);
         this.parseConsult = this.parseConsult.bind(this);
+        // this.hideDetails = this.hideDetails.bind(this);
     }
 
     componentDidMount() {
@@ -209,7 +399,7 @@ class HostList extends React.Component {
                     {this.state.hosts == null ? (
                         <p>Loading...</p>
                     ) : (
-                        <table className="table table-hover">
+                        <table className="table table-hover" id="myTable">
                             <thead className="thead-light">
                                 <tr>
                                     <th>
@@ -232,9 +422,9 @@ class HostList extends React.Component {
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {this.state.hosts.map(h => <Infos host={h} />)}
-                            </tbody>
+                            {this.state.hosts.map(h => (
+                                <Infos host={h} api={this.props.api} />
+                            ))}
                         </table>
                     )}
                 </div>
@@ -242,21 +432,6 @@ class HostList extends React.Component {
         );
     }
 }
-
-// const PageHote = ({ match }) => (
-//     <div>
-//         <h3>Page Hotes {match.params.net}</h3>
-//     </div>
-// );
-//
-// const PageNet = props => (
-//     <div>
-//         <h3>Page réseaux</h3>
-//         <Link onClick={() => props.goto()} to="consult?net=10.0.0.1">
-//             {"10.0.0.1"}
-//         </Link>
-//     </div>
-// );
 
 class HostPage extends React.Component {
     constructor(props) {
@@ -495,72 +670,5 @@ export class Consult extends React.Component {
         );
     }
 }
-
-/*this.props.entries ? (
-                    <table className="consult-tab">
-                        <div>
-                            <button
-                                onClick={() => {
-                                    console.log(
-                                        "Api call: " +
-                                            api(
-                                                "GET",
-                                                "hosts",
-                                                null,
-                                                this.parseConsult
-                                            )
-                                    );
-                                }}
-                            >
-                                Call api
-                            </button>
-                        </div>
-                        <tbody>
-                            <div className />
-                            {this.props.entries.map(entry => (
-                                <Infos adress={entry} />
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <div> Nothing to display </div>
-                )
-                */
-
-/*
-                    //////tmp /////////////////
-
-                    <table>
-                        {this.state.hosts == null ? (
-                            <p>Loading...</p>
-                        ) : (
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <b>domain id</b>
-                                    </td>
-                                    <td>
-                                        <b>domain</b>
-                                    </td>
-                                    <td>
-                                        <b>host id</b>
-                                    </td>
-                                    <td>
-                                        <b>host name</b>
-                                    </td>
-                                    <td>
-                                        <b>view id</b>
-                                    </td>
-                                    <td>
-                                        <b>view name</b>
-                                    </td>
-                                </tr>
-                                {this.state.hosts.map(h => <Infos host={h} />)}
-                            </tbody>
-                        )}
-                    </table>
-
-                    //////////////
-                */
 
 //export default Consult;
