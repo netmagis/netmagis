@@ -41,7 +41,7 @@ The following options are available:
 -f *CONF*
   : Specifiy the path to the `netmagis.conf` configuration file.
 
-    Default: `%CONFFILE%`
+    Default: `%CONFFILE%`, or `NETMAGIS_CONFIG` shell variable
 
 
 # EXIT STATUS
@@ -60,6 +60,29 @@ The following `netmagis.conf` keys are used in this program:
 
   > `dnsdbhost`, `dnsdbport`, `dnsdbname`, `dnsdbuser`, `dnsdbpassword`,
   `dumpdir`, `dbcopy`
+
+
+# ENVIRONMENT VARIABLES
+
+The following Shell environment variables, if set, provide
+alternative values for some installation-defined constants:
+
+`NETMAGIS_CONFIG`
+  : path of `netmagis.conf` configuration file.
+
+    Default: `%CONFFILE%`
+
+`NETMAGIS_LIBDIR`
+  : library directory, which must contain the worker/
+    and pkgtcl/ subdirectories.
+    
+    Default: `%NMLIBDIR%`
+
+`NETMAGIS_VERSION`
+  : Netmagis program version, used to check against database schema.
+
+    Default: %VERSION%
+
 
 # SEE ALSO
 

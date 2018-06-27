@@ -25,7 +25,7 @@ The following options are available:
 -f *CONF*
   : Specifiy the path to the `netmagis.conf` configuration file.
 
-    Default: `%CONFFILE%`
+    Default: `%CONFFILE%`, or `NETMAGIS_CONFIG` shell variable
 
 -c
   : Checks that the configuration key is present in the configuration
@@ -36,6 +36,28 @@ The following options are available:
 # EXIT STATUS
 
 This utility exits 0 on success, and 1 if an error occurs.
+
+
+# ENVIRONMENT VARIABLES
+
+The following Shell environment variables, if set, provide
+alternative values for some installation-defined constants:
+
+`NETMAGIS_CONFIG`
+  : path of `netmagis.conf` configuration file.
+
+    Default: `%CONFFILE%`
+
+`NETMAGIS_LIBDIR`
+  : library directory, which must contain the worker/
+    and pkgtcl/ subdirectories.
+    
+    Default: `%NMLIBDIR%`
+
+`NETMAGIS_VERSION`
+  : Netmagis program version, used to check against database schema.
+
+    Default: %VERSION%
 
 # EXAMPLES
 

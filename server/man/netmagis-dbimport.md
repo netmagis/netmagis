@@ -40,7 +40,7 @@ Common options are:
 -f *CONF*
   : Specifiy the path to the `netmagis.conf` configuration file.
 
-    Default: `%CONFFILE%`
+    Default: `%CONFFILE%`, or `NETMAGIS_CONFIG` shell variable
 
 -d
   : Enable debug/verbose messages. Each `-d` option increase verbosity
@@ -50,13 +50,13 @@ Common options are:
   : Specify the to the library directory, which must contain the
     `pkgtcl/` subdirectory.
 
-    Default: `%NMLIBDIR%`
+    Default: `%NMLIBDIR%`, or `NETMAGIS_LIBDIR` shell variable
 
 -v *VERSION*
   : Specify an application version for schema checking (e.g. 3.0.0alpha).
     *Use this option only during development of new Netmagis versions*.
 
-    Default: `%VERSION%`
+    Default: `%VERSION%`, or `NETMAGIS_VERSION` shell variable
 
 To shorten this page, you can refer to individual files in the `examples`
 directory provided with your Netmagis installation.
@@ -446,6 +446,29 @@ The following `netmagis.conf` keys are used in this program:
   > `dnsdbhost`, `dnsdbport`, `dnsdbname`, `dnsdbuser`, `dnsdbpassword`,
   `macdbhost`, `macdbport`, `macdbname`, `macdbuser`, `macdbpassword`,
   `rootusers`, `pwgen`, `ouiurl`
+
+
+# ENVIRONMENT VARIABLES
+
+The following Shell environment variables, if set, provide
+alternative values for some installation-defined constants:
+
+`NETMAGIS_CONFIG`
+  : path of `netmagis.conf` configuration file.
+
+    Default: `%CONFFILE%`
+
+`NETMAGIS_LIBDIR`
+  : library directory, which must contain the worker/
+    and pkgtcl/ subdirectories.
+    
+    Default: `%NMLIBDIR%`
+
+`NETMAGIS_VERSION`
+  : Netmagis program version, used to check against database schema.
+
+    Default: %VERSION%
+
 
 # SEE ALSO
 

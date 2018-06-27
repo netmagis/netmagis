@@ -80,6 +80,8 @@ dbcopy
 
 %CONFFILE%
 
+See also the `NETMAGIS_CONFIG` environment variable in various programs.
+
 
 # SEE ALSO
 

@@ -36,14 +36,14 @@ The following options are available:
 -f *CONF*
   : Specifiy the path to the `netmagis.conf` configuration file.
 
-    Default: `%CONFFILE%`
+    Default: `%CONFFILE%`, or `NETMAGIS_CONFIG` shell variable
 
 -l *DIR*
   : Specify the library directory. This directory must contain
     an `upgrade` subdirectory, which in turn must contain
     sub-sub-directories called *XY*-*ZT* giving the upgrade path.
 
-    Default: `%NMLIBDIR%`
+    Default: `%NMLIBDIR%`, or `NETMAGIS_LIBDIR` shell variable
 
 
 # EXIT STATUS
@@ -57,6 +57,28 @@ The following `netmagis.conf` keys are used in this program:
 
   > `dnsdbhost`, `dnsdbport`, `dnsdbname`, `dnsdbuser`, `dnsdbpassword`,
   `macdbhost`, `macdbport`, `macdbname`, `macdbuser`, `macdbpassword`
+
+
+# ENVIRONMENT VARIABLES
+
+The following Shell environment variables, if set, provide
+alternative values for some installation-defined constants:
+
+`NETMAGIS_CONFIG`
+  : path of `netmagis.conf` configuration file.
+
+    Default: `%CONFFILE%`
+
+`NETMAGIS_LIBDIR`
+  : library directory, which must contain the worker/
+    and pkgtcl/ subdirectories.
+    
+    Default: `%NMLIBDIR%`
+
+`NETMAGIS_VERSION`
+  : Netmagis program version, used to check against database schema.
+
+    Default: %VERSION%
 
 
 # NOTE
