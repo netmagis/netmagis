@@ -1,5 +1,29 @@
 #!/bin/sh
 
+#
+# Perform various checks and operations to release a new Netmagis version
+#
+# Usage:
+#    mkrel [-n] X.Y.Z
+# Exemple:
+#    mkrel 2.3.5
+# Option -n perform checks only.
+#
+# Checks implemented:
+# - X, Y and Z are numbers
+# - current directory is the root dir of Netmagis repository and
+#	containts Makefile and CHANGES files
+# - current directory is on git branch "X.Y"
+# - "make version" returns X.Y.Z
+# - first line of the CHANGES file has the correct format (i.e.
+#	"Version X.Y.Z - $today")
+# - tag vX.Y.Z-1 exists (if Z > 0) and tag vX.Y.Z does not exist
+#
+# Operations implemented:
+# - "make distrib" => creates netmagis-X.Y.Z.tar.gz
+# - "git tag" with "vX.Y.Z" and "git push"
+#
+
 usage ()
 {
     local argv0="$1" msg="$2"
@@ -89,7 +113,7 @@ done
 tag=v$rel				# the new tag
 
 #
-# Get previous release yumber
+# Get previous release number
 #
 
 if [ $n = 0 ]				# last number in release

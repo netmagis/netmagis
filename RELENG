@@ -78,12 +78,7 @@ How to release, step by step
     2.b. Update the doc/netmagis/relnotes.htgt to reflect changes
 	made by the release, and don't forget to update the release date
 
-    2.c. Update version number [XXX TODO]
-
-	cd $NETMAGIS
-	vi pkg/freebsd/netmagis-common/Makefile	# Modify the PORTVERSION var
-
-    2.d. Update installation documentation and web site 
+    2.c. Update installation documentation and web site 
 
 	umask 002
 	cd $NETMAGIS/doc/netmagis.org
@@ -99,103 +94,44 @@ How to release, step by step
 	    TCLCONF=/usr/share/tcltk/tcl8.5/tclConfig.sh \
 	    install-netmagis.org
 
-    2.e. Update screenshots
+    2.d. Update screenshots
 
 	cd $NETMAGIS/doc/netmagis.org
 	# create new screenshots (1024x768) as shot-*.png
 	for i in shot-*.png ; do cp $i `echo $i | sed 's/shot-/vign-/'` ; done
 	mogrify -resize 256x192 vign-*.png
 
-    2.f. Commit changes
+    2.e. Commit changes
 
 	git commit -a
 
-3. On the FreeBSD host
+3. On the Debian/Ubuntu host
 
-    3.a. Be sure to get the files updated
+    See README.md in netmagis-debian repository.
 
-	cd $NETMAGIS
-	git pull --all
-	git checkout X.Y
-    
-    3.b. Generate ports
+4. Announce the release
 
-	cd $NETMAGIS
-    	make freebsd-ports
-
-    3.c. Copy ports to the web server
-
-    	scp netmagis-freebsd-ports-*.tar.gz netmagis.org:/www/docs/files/
-
-4. On the Debian/Ubuntu host
-
-    4.a. Be sure to get the files updated
-
-	cd $NETMAGIS
-	git pull --all
-	git checkout X.Y
-    
-    4.b. Generate debian packages
-
-	cd $NETMAGIS
-    	make debian-packages
-    	sudo make debian-packages-other-arch
-
-    4.c. Create repository if needed
-    	
-	mkdir -p /local/repo/conf
-	# add the following lines in /local/repo/conf/distributions
-	    Origin: netmagis
-	    Label: netmagis
-	    Codename: stable
-	    Architectures: amd64 i386 source
-	    Components: main
-	    Description: Apt repository for netmagis
-
-	    Origin: netmagis
-	    Label: netmagis
-	    Codename: dev
-	    Architectures: amd64 i386 source
-	    Components: main
-	    Description: Dev apt repository for netmagis
-
-    4.d. Update local repository
-
-	make DEBIAN_DISTRIB=stable debian-repo
-	# use DEBIAN_DISTRIB=dev to update the dev distribution
-
-    4.e. Copy local repository to the web server
-
-	tar cf - -C /local repo | \
-		ssh netmagis.org tar xf - -C /www/docs/files
-
-5. Announce the release
-
-    5.a Post to the netmagis mailing-list
+    4.a Post to the netmagis mailing-list
 
 	If this is a major version, post to some other carefully
 	choosen lists
 
-    5.b Update Wikipedia pages
-
-	http://en.wikipedia.org/wiki/Internet_Protocol_Address_Management
-
-    5.c Close all remaining issues for this milestone
+    4.b Close all remaining issues for this milestone
 
 	https://github.com/pdav/netmagis/issues
 
-6. Prepare new version vX.Z
+5. Prepare new version vX.Z
 
-    6.a Change git branch
+    5.a Change git branch
 
 	git checkout master
 
-    6.b Create a github milestone for the new version
+    5.b Create a github milestone for the new version
 
 	If needed, create a milestone vX.Z on
 	https://github.com/pdav/netmagis/issues/milestones
 
-    6.b Open release engineering issues for the new version
+    5.b Open release engineering issues for the new version
 
 	create issues labelled :
 	    CHANGES and release notes
