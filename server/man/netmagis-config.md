@@ -1,4 +1,4 @@
-% NETMAGIS-CONFIG(1) Netmagis User Manuals
+% NETMAGIS-CONFIG(1) Netmagis User Manuals | Version %VERSION%
 % Pierre David
 % June 17, 2016
 

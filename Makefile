@@ -122,7 +122,7 @@ install-www: build-www
 		TCLCFLAGS="$(TCLCFLAGS)" TCLLFLAGS="$(TCLLFLAGS)" install
 
 install-client:
-	cd client ; $(MAKE) $(VARS) SUBST="$(SUBST)" install
+	cd client ; $(MAKE) $(VARS) SUBST="$(SUBST)" VERSION=$(VERSION) install
 
 install-topo: build-topo
 	cd topo ; $(MAKE) $(VARS) SUBST="$(SUBST)" install

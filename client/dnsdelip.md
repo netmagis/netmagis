@@ -1,4 +1,4 @@
-% DNSDELIP(1) Netmagis User Manuals
+% DNSDELIP(1) Netmagis User Manuals | Version %VERSION%
 % Jean Benoit, Pierre David, Arnaud Grausem
 % June 23, 2017
 

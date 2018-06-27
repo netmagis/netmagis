@@ -1,4 +1,4 @@
-% MKSMTPF(1) Netmagis User Manuals
+% MKSMTPF(1) Netmagis User Manuals | Version %VERSION%
 % Jean Benoit, Pierre David, Arnaud Grausem
 % July 27, 2017
 

@@ -1,4 +1,4 @@
-% NETMAGIS-DBUPGRADE(1) Netmagis User Manuals
+% NETMAGIS-DBUPGRADE(1) Netmagis User Manuals | Version %VERSION%
 % Pierre David
 % June 18, 2016
 

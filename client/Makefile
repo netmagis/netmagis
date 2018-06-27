@@ -74,6 +74,7 @@ install: build
 	    b=$$(basename $$page .man) ; \
 	    $(NINSTALL) -m 0644 \
 		    -e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
+		    -e "s|%VERSION%|$(VERSION)|" \
 		    -e "s|%ETCDIR%|$(ETCDIR)|" \
 		    $(SUBST) \
 		    $$page $(DESTDIR)$(MANDIR)/man1/$$b.1 ; \
@@ -83,6 +84,7 @@ install: build
 	    b=$$(basename $$page .man) ; \
 	    $(NINSTALL) -m 0644 \
 		    -e "s|%NMLIBDIR%|$(NMLIBDIR)|" \
+		    -e "s|%VERSION%|$(VERSION)|" \
 		    -e "s|%ETCDIR%|$(ETCDIR)|" \
 		    $(SUBST) \
 		    $$page $(DESTDIR)$(MANDIR)/man5/$$b.5 ; \

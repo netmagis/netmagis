@@ -1,4 +1,4 @@
-% NETMAGIS-DBIMPORT(1) Netmagis User Manuals
+% NETMAGIS-DBIMPORT(1) Netmagis User Manuals | Version %VERSION%
 % Pierre David
 % August 23, 2017
 
