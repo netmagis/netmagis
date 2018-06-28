@@ -26,6 +26,7 @@ source %LIBNETMAGIS%
 
 set conf(usage) {usage: %1$s [-h]|-q][-v][-n][-w <view>]
     -h : get this help
+    -f : force the generation
     -q : keep silent on normal operation
     -v : verbose (show diffs)
     -n : don't perform file installation
@@ -408,6 +409,7 @@ proc main {argv0 argv} {
     set verbose 0
     set doit 1
     set view ""
+    set force 0
 
     while {[llength $argv] > 0} {
 	set a [lindex $argv 0]
@@ -417,6 +419,10 @@ proc main {argv0 argv} {
 	    }
 	    -q {
 		set verbose -1
+		set argv [lreplace $argv 0 0]
+	    }
+	    -f {
+		set force 1
 		set argv [lreplace $argv 0 0]
 	    }
 	    -v {
@@ -482,7 +488,7 @@ proc main {argv0 argv} {
     # Generate DHCP configuration
     #
 
-    if {[need-dhcp-generation $dbfd $idview]} then {
+    if {[need-dhcp-generation $dbfd $idview] || $force} then {
 
 	#
 	# Perform DHCP configuration
