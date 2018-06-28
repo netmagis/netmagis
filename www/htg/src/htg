@@ -71,7 +71,7 @@ set conf(version)	1.1
 # Paramètres à ne pas changer
 #
 
-set conf(langages)	{html latex}
+set conf(langages)	{html latex md}
 set conf(usage)		{htg [-v 0|1] [-l lang] -d repmodeles [-m model] [-i rép] [fichier]}
 
 ##############################################################################
