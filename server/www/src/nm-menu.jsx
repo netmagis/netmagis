@@ -5,6 +5,7 @@ import { withUser, UserContext } from "./user-context.jsx";
 import { injectIntl, formatMessage, FormattedMessage } from "react-intl";
 //import { api } from "./netmagis.jsx";
 import { Consult } from "./app-consult.jsx";
+import { Search } from "./app-search.jsx";
 import { BrowserRouter as Router, Link, Route } from "react-router-dom";
 
 // import * as S from './nm-state.jsx' ;
@@ -299,6 +300,29 @@ function toto(s) {
 class RawNMMenu extends React.Component {
     constructor(props) {
         super(props);
+
+        this.state = {
+            searchfield: "",
+            searchresult: {}
+        };
+
+        this.onSearchChange = this.onSearchChange.bind(this);
+    }
+
+    onSearchChange(event) {
+        //need to do so because of a react behaviour
+        //https://reactjs.org/docs/events.html#event-pooling
+        //event.persist();
+        console.log("OnSearchChange event:");
+        const val = event.target.value;
+        this.props.api("GET", "search?q=" + val, null, json => {
+            this.setState({
+                searchfield: val,
+                searchresult: json
+            });
+        });
+        console.log("Searchfield state: ");
+        console.log(this.state.searchfield);
     }
 
     render() {
@@ -695,6 +719,7 @@ class RawNMMenu extends React.Component {
                                                     }
                                                 )}
                                                 aria-label="Search"
+                                                onChange={this.onSearchChange}
                                             />
                                             <span className="input-group-append">
                                                 <button
@@ -799,7 +824,10 @@ class RawNMMenu extends React.Component {
                               />
                           ))
                         : null}
-
+                    <Search
+                        res={this.state.searchresult}
+                        search={this.state.searchfield}
+                    />
                     <Route path="*/netmagis/add" component={Add} />
                     <Route
                         path="*/netmagis/consult"
