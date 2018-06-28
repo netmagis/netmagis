@@ -6,6 +6,7 @@ import { injectIntl, formatMessage, FormattedMessage } from "react-intl";
 //import { api } from "./netmagis.jsx";
 import { Consult } from "./app-consult.jsx";
 import { Search } from "./app-search.jsx";
+import { Add } from "./app-add.jsx";
 import { BrowserRouter as Router, Link, Route } from "react-router-dom";
 
 // import * as S from './nm-state.jsx' ;
@@ -321,8 +322,6 @@ class RawNMMenu extends React.Component {
                 searchresult: json
             });
         });
-        console.log("Searchfield state: ");
-        console.log(this.state.searchfield);
     }
 
     render() {
@@ -867,10 +866,10 @@ const Welcome = ({ match, api }) => (
     </div>
 );
 
-const Add = ({ match }) => (
-    <div>
-        <p> Add component </p>
-    </div>
-);
+//const Add = ({ match }) => (
+//     <div>
+//         <p> Add component </p>
+//     </div>
+// );
 
 export const NMMenu = injectIntl(withUser(RawNMMenu));
