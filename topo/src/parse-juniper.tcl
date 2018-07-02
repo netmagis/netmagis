@@ -305,7 +305,9 @@ proc juniper-parse-list {kwtab conf tab idx} {
 	    juniper-debug "kw = <$kw>"
 	}
 
-	if {[string equal $kw "inactive:"]} then {
+	if {[string equal $kw "protect:"]} then {
+	    set last 0
+	} elseif {[string equal $kw "inactive:"]} then {
 	    set inactive 1
 	    set last 0
 	} else {
