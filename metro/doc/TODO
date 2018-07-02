@@ -1,8 +1,0 @@
-- collector IP/MAC	-> to finish
-- collector PORT/MAC
-- flat database. Delete session table 
-- plugin to specialize collector
-- plugin to feed database for ipmac and portmac
-- improve parsenet script
-- install documentation
- 

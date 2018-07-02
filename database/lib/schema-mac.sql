@@ -1,1 +1,0 @@
-sql23/schema-mac.sql
